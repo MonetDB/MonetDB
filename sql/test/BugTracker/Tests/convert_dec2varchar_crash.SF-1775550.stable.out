@@ -31,8 +31,8 @@ Ready.
 [ 11.456	]
 % . # table_name
 % concat_single_value # name
-% char # type
-% 0 # length
+% clob # type
+% 8 # length
 [ "11.456hi"	]
 
 # 23:35:37 >  

@@ -2384,7 +2384,7 @@ drop_func( mvc *sql, char *sname, char *name, int fid, int type, int action)
 	if (!s)
 		s = cur_schema(sql);
 	if (fid >= 0) {
-		node *n = find_sql_func_node(s, NULL, fid);
+		node *n = find_sql_func_node(s, fid);
 		if (n) {
 			sql_func *func = n->data;
 

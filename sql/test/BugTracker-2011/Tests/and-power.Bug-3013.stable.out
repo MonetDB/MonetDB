@@ -47,8 +47,8 @@ Ready.
 #select bit_and(1, power(2, 1));
 % . # table_name
 % bit_and_single_value # name
-% tinyint # type
-% 1 # length
+% decimal # type
+% 20 # length
 [ 0	]
 
 # 14:12:27 >  

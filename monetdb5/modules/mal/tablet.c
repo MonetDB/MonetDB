@@ -210,7 +210,8 @@ TABLETdestroy_format(Tablet *as)
 	for (p = 0; p < as->nr_attrs; p++) {
 		if (fmt[p].c[0])
 			BBPunfix(fmt[p].c[0]->batCacheid);
-		GDKfree(fmt[p].sep);
+		if (fmt[p].sep)
+			GDKfree(fmt[p].sep);
 		if (fmt[p].nullstr)
 			GDKfree(fmt[p].nullstr);
 		if (fmt[p].data)

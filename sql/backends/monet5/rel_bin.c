@@ -2719,7 +2719,6 @@ sql_parse(mvc *m, sql_allocator *sa, char *query, char mode)
 	*o = *m;
 
 	m->qc = NULL;
-	m->last = NULL;
 
 	m->caching = 0;
 	m->emode = mode;
@@ -2795,7 +2794,6 @@ sql_parse(mvc *m, sql_allocator *sa, char *query, char mode)
 		}
 	}
 	_DELETE(o);
-	m->last = NULL;
 	return sq;
 }
 

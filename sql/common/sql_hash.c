@@ -22,6 +22,17 @@
 #include "sql_mem.h"
 #include "sql_hash.h"
 
+static unsigned int
+log_base2(unsigned int n)
+{
+	unsigned int l ;
+
+	for (l = 0; n; l++)
+		n >>= 1 ;
+	return l ;
+}
+
+
 sql_hash *
 hash_new(sql_allocator *sa, int size, fkeyvalue key)
 {
@@ -29,10 +40,10 @@ hash_new(sql_allocator *sa, int size, fkeyvalue key)
 	sql_hash *ht = SA_ZNEW(sa, sql_hash);
 
 	ht->sa = sa;
-	ht->size = (size/2)*2;
+	ht->size = (1<<log_base2(size-1));
 	ht->key = key;
-	ht->buckets = SA_NEW_ARRAY(sa, sql_hash_e*, size);
-	for(i = 0; i < size; i++)
+	ht->buckets = SA_NEW_ARRAY(sa, sql_hash_e*, ht->size);
+	for(i = 0; i < ht->size; i++)
 		ht->buckets[i] = NULL;
 	return ht;
 }
@@ -49,19 +60,35 @@ hash_add(sql_hash *h, int key, void *value)
 	return e;
 }
 
-int
+void
+hash_del(sql_hash *h, int key, void *value)
+{
+	sql_hash_e *e = h->buckets[key&(h->size-1)], *p = NULL;
+
+	while (e && (e->key != key || e->value != value)) {
+		p = e;
+		e = e->chain;
+	}
+	if (e) {
+		if (p) 
+			p->chain = e->chain;
+		else
+			h->buckets[key&(h->size-1)] = e->chain;
+	}
+}
+
+unsigned int
 hash_key(char *k)
 {
-	char *s = k;
-	int h = 1, l;
+	unsigned char *s = (unsigned char*)k;
+	unsigned int h = 0;
 
 	while (*k) {
-		h <<= 5;
-		h += (*k - 'a');
+		h += *k;
+		h += (h << 10);
+		h ^= (h >> 6);
 		k++;
 	}
-	l = (int) (k - s);
-	h <<= 4;
-	h += l;
-	return (h < 0) ? -h : h;
+	h += (k - (char*)s);
+	return h;
 }

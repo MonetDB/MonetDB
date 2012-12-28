@@ -29,6 +29,9 @@ stderr of test 'incorrect_cast_from_double_to_int.Bug-2579` in directory 'test/B
 # 11:13:50 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=lyon" "--port=31897"
 # 11:13:50 >  
 
+MAPI  = (monetdb) /var/tmp/mtest-26728/.s.monetdb.35892
+QUERY = SELECT '3.1'/'5.1';
+ERROR = !wrong format (3.1)
 
 # 11:13:50 >  
 # 11:13:50 >  "Done."

@@ -20,12 +20,6 @@
 #include "monetdb_config.h"
 #include "sql_catalog.h"
 
-static int
-base_key( sql_base *b )
-{
-	return hash_key(b->name);
-}
-
 static void *
 _list_find_name(list *l, char *name)
 {
@@ -148,51 +142,24 @@ list_find_base_id(list *l, int id)
 }
 
 
-node *
-find_sql_key_node(sql_table *t, char *kname, int id)
-{
-	if (kname)
-		return cs_find_name(&t->keys, kname);
-	else
-		return cs_find_id(&t->keys, id);
-}
-
 sql_key *
 find_sql_key(sql_table *t, char *kname)
 {
-	node *n = find_sql_key_node(t, kname, -1);
+	sql_key *k = _cs_find_name(&t->keys, kname);
 
-	if (n)
-		return n->data;
+	if (k)
+		return k;
 	return NULL;
-}
-
-node *
-find_sql_idx_node(sql_table *t, char *kname, int id)
-{
-	if (kname)
-		return cs_find_name(&t->idxs, kname);
-	else
-		return cs_find_id(&t->idxs, id);
 }
 
 sql_idx *
-find_sql_idx(sql_table *t, char *kname)
+find_sql_idx(sql_table *t, char *iname)
 {
-	node *n = find_sql_idx_node(t, kname, -1);
+	sql_idx *i = _cs_find_name(&t->idxs, iname);
 
-	if (n)
-		return n->data;
+	if (i)
+		return i;
 	return NULL;
-}
-
-node *
-find_sql_column_node(sql_table *t, char *cname, int id)
-{
-	if (cname)
-		return cs_find_name(&t->columns, cname);
-	else
-		return cs_find_id(&t->columns, id);
 }
 
 sql_column *
@@ -203,15 +170,6 @@ find_sql_column(sql_table *t, char *cname)
 	if (c)
 		return c;
 	return NULL;
-}
-
-node *
-find_sql_table_node(sql_schema *s, char *tname, int id)
-{
-	if (tname)
-		return cs_find_name(&s->tables, tname);
-	else
-		return cs_find_id(&s->tables, id);
 }
 
 sql_table *
@@ -227,7 +185,7 @@ find_sql_table(sql_schema *s, char *tname)
 sql_table *
 find_sql_table_id(sql_schema *s, int id)
 {
-	node *n = find_sql_table_node(s, NULL, id);
+	node *n = cs_find_id(&s->tables, id);
 
 	if (n)
 		return n->data;
@@ -235,18 +193,35 @@ find_sql_table_id(sql_schema *s, int id)
 }
 
 node *
-find_sql_sequence_node(sql_schema *s, char *sname, int id)
+find_sql_table_node(sql_schema *s, int id)
 {
-	if (sname)
-		return cs_find_name(&s->seqs, sname);
-	else
-		return cs_find_id(&s->seqs, id);
+	return cs_find_id(&s->tables, id);
 }
 
 sql_sequence *
 find_sql_sequence(sql_schema *s, char *sname)
 {
-	node *n = find_sql_sequence_node(s, sname, -1);
+	sql_sequence *seq = _cs_find_name(&s->seqs, sname);
+
+	if (seq)
+		return seq;
+	return NULL;
+}
+
+sql_schema *
+find_sql_schema(sql_trans *t, char *sname)
+{
+	sql_schema *s = _cs_find_name(&t->schemas, sname);
+
+	if (s)
+		return s;
+	return NULL;
+}
+
+sql_schema *
+find_sql_schema_id(sql_trans *t, int id)
+{
+	node *n = cs_find_id(&t->schemas, id);
 
 	if (n)
 		return n->data;
@@ -254,25 +229,12 @@ find_sql_sequence(sql_schema *s, char *sname)
 }
 
 node *
-find_sql_schema_node(sql_trans *t, char *sname, int id)
+find_sql_schema_node(sql_trans *t, int id)
 {
-	if (sname)
-		return cs_find_name(&t->schemas, sname);
-	else
-		return cs_find_id(&t->schemas, id);
+	return cs_find_id(&t->schemas, id);
 }
 
-sql_schema *
-find_sql_schema(sql_trans *t, char *sname)
-{
-	node *n = find_sql_schema_node(t, sname, -1);
-
-	if (n)
-		return n->data;
-	return NULL;
-}
-
-static node *
+static sql_type *
 find_sqlname(list *l, char *name)
 {
 	if (l) {
@@ -282,29 +244,16 @@ find_sqlname(list *l, char *name)
 			sql_type *t = n->data;
 
 			if (strcmp(t->sqlname, name) == 0)
-				return n;
+				return t;
 		} 
 	}
 	return NULL;
 }
 
-node *
-find_sql_type_node(sql_schema * s, char *tname, int id)
-{
-	if (tname)
-		return find_sqlname(s->types.set, tname);
-	else 
-		return cs_find_id(&s->types, id);
-}
-
 sql_type *
 find_sql_type(sql_schema * s, char *tname)
 {
-	node *n = find_sql_type_node(s, tname, -1);
-
-	if (n)
-		return n->data;
-	return NULL;
+	return find_sqlname(s->types.set, tname);
 }
 
 sql_type *
@@ -325,26 +274,22 @@ sql_trans_bind_type(sql_trans *tr, sql_schema *c, char *name)
 
 	if (!t)
 		return NULL;
-	/* t->base.rtime = tr->rtime; */
 	return t;
 }
 
 node *
-find_sql_func_node(sql_schema * s, char *tname, int id)
+find_sql_func_node(sql_schema * s, int id)
 {
-	if (tname)
-		return cs_find_name(&s->funcs, tname);
-	else
-		return cs_find_id(&s->funcs, id);
+	return cs_find_id(&s->funcs, id);
 }
 
 sql_func *
 find_sql_func(sql_schema * s, char *tname)
 {
-	node *n = find_sql_func_node(s, tname, -1);
+	sql_func *f = _cs_find_name(&s->funcs, tname);
 
-	if (n)
-		return n->data;
+	if (f)
+		return f;
 	return NULL;
 }
 
@@ -384,9 +329,5 @@ sql_trans_bind_func(sql_trans *tr, char *name)
 		}
 	if (!t)
 		return NULL;
-	/*
-	   t->base.rtime = tr->rtime;
-	 */
-
 	return t;
 }

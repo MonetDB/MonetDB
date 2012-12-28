@@ -86,12 +86,6 @@ Ready.
 % decimal # type
 % 7 # length
 [ 0.500	]
-#SELECT '3.1'/'5.1';
-% . # table_name
-% sql_div_single_value # name
-% tinyint # type
-% 1 # length
-[ 0	]
 #SELECT '3.1'/5.1;
 % . # table_name
 % sql_div_single_value # name
