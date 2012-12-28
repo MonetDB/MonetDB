@@ -523,6 +523,7 @@ colors[] =
 	{ 0, 0, "calc", "lng", "lightpink" },
 	{ 0, 0, "calc", "str", "lightpink" },
 	{ 0, 0, "calc", "*", "lightpink" },
+
 	{ 0, 0, "mtime", "*", "lightpink" },
 
 	{ 0, 0, "group", "multicolumns", "mediumorchid" },
@@ -536,10 +537,10 @@ colors[] =
 	{ 0, 0, "mat", "packIncrement", "red" },
 	{ 0, 0, "mat", "*", "red" },
 
-
 	{ 0, 0, "pcre", "likesubselect", "burlywood" },
-	{ 0, 0, "batstr", "likeselect", "burlywood" },
 	{ 0, 0, "pcre", "*", "burlywood" },
+
+	{ 0, 0, "batstr", "likeselect", "burlywood" },
 
 	//{0,0,"pqueue","topn_max","lightcoral"},
 	//{0,0,"pqueue","utopn_max","lightcoral"},
