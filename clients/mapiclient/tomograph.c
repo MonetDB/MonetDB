@@ -523,6 +523,7 @@ colors[] =
 	{ 0, 0, "calc", "lng", "lightpink" },
 	{ 0, 0, "calc", "str", "lightpink" },
 	{ 0, 0, "calc", "*", "lightpink" },
+
 	{ 0, 0, "mtime", "*", "lightpink" },
 
 	{ 0, 0, "group", "multicolumns", "mediumorchid" },
@@ -536,10 +537,10 @@ colors[] =
 	{ 0, 0, "mat", "packIncrement", "red" },
 	{ 0, 0, "mat", "*", "red" },
 
-
 	{ 0, 0, "pcre", "likesubselect", "burlywood" },
-	{ 0, 0, "batstr", "likeselect", "burlywood" },
 	{ 0, 0, "pcre", "*", "burlywood" },
+
+	{ 0, 0, "batstr", "likeselect", "burlywood" },
 
 	//{0,0,"pqueue","topn_max","lightcoral"},
 	//{0,0,"pqueue","utopn_max","lightcoral"},
@@ -558,6 +559,7 @@ colors[] =
 	{ 0, 0, "sql", "tid ", "plum" },
 	{ 0, 0, "sql", "bind", "thistle" },
 	{ 0, 0, "sql", "bind_idxbat", "deeppink" },
+	{ 0, 0, "sql", "copy_from", "darksalmon" },
 	{ 0, 0, "sql", "*", "pink" },
 
 	{ 0, 0, "*", "*", "lavender" },
@@ -826,15 +828,13 @@ static void updmap(int idx)
 	} else
 		fcn = "*";
 	for (i = 0; colors[i].col; i++)
-		if (mod && strcmp(mod, colors[i].mod) == 0) {
-			if (strcmp(fcn, colors[i].fcn) == 0) {
+		if (mod && (strcmp(mod, colors[i].mod) == 0 || strcmp("*", colors[i].mod) == 0)) {
+			if (strcmp(fcn, colors[i].fcn) == 0 || strcmp("*", colors[i].fcn) == 0) {
 				fnd = i;
 				break;
 			}
 		}
 
-	if (colors[i].col == 0)
-		fnd = i - 1;
 	colors[fnd].freq++;
 	colors[fnd].timeused += box[idx].clkend - box[idx].clkstart;
 	box[idx].color = fnd;
