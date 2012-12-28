@@ -263,8 +263,7 @@ stop_disconnect:
 }
 
 #define MAXTHREADS 2048
-//#define MAXBOX 32678	 /* should be > MAXTHREADS */
-#define MAXBOX 2100
+#define MAXBOX 32678	 /* should be > MAXTHREADS */
 
 #define START 0
 #define DONE 1
