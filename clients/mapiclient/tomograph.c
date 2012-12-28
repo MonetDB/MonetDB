@@ -263,7 +263,8 @@ stop_disconnect:
 }
 
 #define MAXTHREADS 2048
-#define MAXBOX 32678
+//#define MAXBOX 32678	 /* should be > MAXTHREADS */
+#define MAXBOX 2100
 
 #define START 0
 #define DONE 1
@@ -948,7 +949,7 @@ static void createTomogram(void)
 	double w = (lastclktick - starttime) / 10.0;
 	int scale;
 	char *scalename;
-	lng totalticks, tick;
+	lng totalticks;
 	static int figures = 0;
 
 	snprintf(buf, BUFSIZ, "%s.gpl", filename);
@@ -1020,7 +1021,6 @@ static void createTomogram(void)
 	fprintf(gnudata, "set xlabel \"%sseconds, parallelism usage %6.1f %%\"\n", scalename, totalclkticks / (totalticks / 100.0));
 
 	h = 10; /* unit height of bars */
-	tick = totalticks/2000;
 	fprintf(gnudata, "set ytics (");
 	for (i = 0; i < top; i++)
 		fprintf(gnudata, "\"%d\" %d%c", rows[i], i * 2 * h + h / 2, (i < top - 1 ? ',' : ' '));
@@ -1044,8 +1044,8 @@ static void createTomogram(void)
 		case PING:
 			break;
 		case WAIT:
-			fprintf(gnudata, "set object %d rectangle from "LLFMT", %d to "LLFMT", %d front fillcolor rgb \"red\" fillstyle solid 1.0\n",
-					object++, box[i].clkstart, box[i].row * 2 * h+h, box[i].clkend+tick, (int)(box[i].row * 2 * h + 1.25*h));
+			fprintf(gnudata, "set object %d rectangle at "LLFMT", %d size 0.2,0.3 front fillcolor rgb \"red\" fillstyle solid 1.0\n",
+					object++, box[i].clkstart, box[i].row * 2 * h+h);
 		}
 
 
