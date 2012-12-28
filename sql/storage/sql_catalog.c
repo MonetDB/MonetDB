@@ -111,9 +111,8 @@ cs_find_id(changeset * cs, int id)
 node *
 list_find_id(list *l, int id)
 {
-	node *n;
-
-	if (l)
+	if (l) {
+		node *n;
 		for (n = l->h; n; n = n->next) {
 
 			/* check if ids match */
@@ -121,23 +120,22 @@ list_find_id(list *l, int id)
 				return n;
 			}
 		}
+	}
 	return NULL;
 }
 
 node *
 list_find_base_id(list *l, int id)
 {
-	node *n;
-
-	if (l)
+	if (l) {
+		node *n;
 		for (n = l->h; n; n = n->next) {
 			sql_base *b = n->data;
 
-			/* check if names match */
-			if (id == b->id) {
+			if (id == b->id) 
 				return n;
-			}
 		}
+	}
 	return NULL;
 }
 
@@ -145,41 +143,25 @@ list_find_base_id(list *l, int id)
 sql_key *
 find_sql_key(sql_table *t, char *kname)
 {
-	sql_key *k = _cs_find_name(&t->keys, kname);
-
-	if (k)
-		return k;
-	return NULL;
+	return _cs_find_name(&t->keys, kname);
 }
 
 sql_idx *
 find_sql_idx(sql_table *t, char *iname)
 {
-	sql_idx *i = _cs_find_name(&t->idxs, iname);
-
-	if (i)
-		return i;
-	return NULL;
+	return _cs_find_name(&t->idxs, iname);
 }
 
 sql_column *
 find_sql_column(sql_table *t, char *cname)
 {
-	sql_column *c = _cs_find_name(&t->columns, cname);
-
-	if (c)
-		return c;
-	return NULL;
+	return _cs_find_name(&t->columns, cname);
 }
 
 sql_table *
 find_sql_table(sql_schema *s, char *tname)
 {
-	sql_table *t = _cs_find_name(&s->tables, tname);
-
-	if (t)
-		return t;
-	return NULL;
+	return _cs_find_name(&s->tables, tname);
 }
 
 sql_table *
@@ -201,21 +183,13 @@ find_sql_table_node(sql_schema *s, int id)
 sql_sequence *
 find_sql_sequence(sql_schema *s, char *sname)
 {
-	sql_sequence *seq = _cs_find_name(&s->seqs, sname);
-
-	if (seq)
-		return seq;
-	return NULL;
+	return _cs_find_name(&s->seqs, sname);
 }
 
 sql_schema *
 find_sql_schema(sql_trans *t, char *sname)
 {
-	sql_schema *s = _cs_find_name(&t->schemas, sname);
-
-	if (s)
-		return s;
-	return NULL;
+	return _cs_find_name(&t->schemas, sname);
 }
 
 sql_schema *
@@ -271,9 +245,6 @@ sql_trans_bind_type(sql_trans *tr, sql_schema *c, char *name)
 
 	if (!t && c)
 		t = find_sql_type(c, name);
-
-	if (!t)
-		return NULL;
 	return t;
 }
 
@@ -286,11 +257,7 @@ find_sql_func_node(sql_schema * s, int id)
 sql_func *
 find_sql_func(sql_schema * s, char *tname)
 {
-	sql_func *f = _cs_find_name(&s->funcs, tname);
-
-	if (f)
-		return f;
-	return NULL;
+	return _cs_find_name(&s->funcs, tname);
 }
 
 list *
