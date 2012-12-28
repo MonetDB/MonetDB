@@ -826,15 +826,13 @@ static void updmap(int idx)
 	} else
 		fcn = "*";
 	for (i = 0; colors[i].col; i++)
-		if (mod && strcmp(mod, colors[i].mod) == 0) {
-			if (strcmp(fcn, colors[i].fcn) == 0) {
+		if (mod && (strcmp(mod, colors[i].mod) == 0 || strcmp("*", colors[i].mod) == 0)) {
+			if (strcmp(fcn, colors[i].fcn) == 0 || strcmp("*", colors[i].fcn) == 0) {
 				fnd = i;
 				break;
 			}
 		}
 
-	if (colors[i].col == 0)
-		fnd = i - 1;
 	colors[fnd].freq++;
 	colors[fnd].timeused += box[idx].clkend - box[idx].clkstart;
 	box[idx].color = fnd;
