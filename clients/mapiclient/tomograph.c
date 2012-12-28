@@ -559,6 +559,7 @@ colors[] =
 	{ 0, 0, "sql", "tid ", "plum" },
 	{ 0, 0, "sql", "bind", "thistle" },
 	{ 0, 0, "sql", "bind_idxbat", "deeppink" },
+	{ 0, 0, "sql", "copy_from", "darksalmon" },
 	{ 0, 0, "sql", "*", "pink" },
 
 	{ 0, 0, "*", "*", "lavender" },
