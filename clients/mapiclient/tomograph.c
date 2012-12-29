@@ -749,6 +749,7 @@ static void showio(void)
 			if (box[i].writes > max)
 				max = box[i].writes;
 		}
+	max += beat;
 
 
 	fprintf(gnudata, "\nset tmarg 1\n");
@@ -758,11 +759,11 @@ static void showio(void)
 	fprintf(gnudata, "set size 1,0.07\n");
 	fprintf(gnudata, "set origin 0.0,0.87\n");
 	fprintf(gnudata, "set xrange ["LLFMT":"LLFMT"]\n", startrange, lastclktick - starttime);
-	fprintf(gnudata, "set yrange [1:"LLFMT"]\n", ((1.1 * max / beat) <= 2 ? 2 : (lng) (1.1 * max / beat)));
+	fprintf(gnudata, "set yrange [0:"LLFMT"]\n", max / beat);
 	fprintf(gnudata, "unset xtics\n");
 	fprintf(gnudata, "unset ytics\n");
 	fprintf(gnudata, "unset ylabel\n");
-	fprintf(gnudata, "set y2tics in (\""LLFMT"\" "LLFMT")\n", max / beat, max / beat);
+	fprintf(gnudata, "set y2tics in (0, "LLFMT") nomirror\n", max / beat);
 	fprintf(gnudata, "set y2label \"IO per ms\"\n");
 	fprintf(gnudata, "plot \"%s.dat\" using 1:(($3+$4)/%d.0) title \"reads\" with boxes fs solid linecolor rgb \"gray\" ,\\\n", (tracefile ? "scratch" : filename), beat);
 	fprintf(gnudata, "\"%s.dat\" using 1:($4/%d.0) title \"writes\" with boxes fs solid linecolor rgb \"red\"  \n", (tracefile ? "scratch" : filename), beat);
