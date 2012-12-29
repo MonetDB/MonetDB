@@ -1022,7 +1022,6 @@ endofcompile:
 	m->vars = vars;
 	m->session->status = status;
 	m->session->auto_commit = ac;
-	m->last = NULL;
 	return msg;
 }
 
@@ -1550,6 +1549,7 @@ SQLparser(Client c)
 		sqlcleanup(m, err);
 		goto finalize;
 	}
+	assert(m->session->schema != NULL);
 	/*
 	 * We have dealt with the first parsing step and advanced the input reader
 	 * to the next statement (if any).

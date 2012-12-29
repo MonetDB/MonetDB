@@ -827,19 +827,18 @@ load_schema(sql_trans *tr, sqlid id, oid rid)
 	v = table_funcs.column_find_value(tr, find_sql_column(ss, "id"), rid);
 	sid = *(sqlid *)v; 	_DELETE(v);
 	if (sid < id) {
-		node *n = find_sql_schema_node(tr, NULL, sid);
+		s = find_sql_schema_id(tr, sid);
 
-		if (n==NULL) {
+		if (s==NULL) {
 			char *name;
 
 			v = table_funcs.column_find_value(tr, find_sql_column(ss, "name"), rid);
 			name = (char*)v;
-			n = find_sql_schema_node(tr, name, -1);
+			s = find_sql_schema(tr, name);
 			_DELETE(v);
-			if (n == NULL) 
+			if (s == NULL) 
 				GDKfatal("SQL schema missing or incompatible, rebuild from archive");
 		}
-		s = n->data;
 		s->base.id = sid;
 	} else {
 		s = SA_ZNEW(tr->sa, sql_schema);
@@ -2833,6 +2832,8 @@ reset_changeset(sql_trans *tr, changeset * fs, changeset * pfs, sql_base *b, res
 		for (n = fs->nelm; n; ) {
 			node *nxt = n->next;
 			list_remove_node(fs->set, n);
+			if(fs->set->ht)
+				hash_del(fs->set->ht, base_key(n->data), n->data);
 			n = nxt;
 		}
 		fs->nelm = NULL;
@@ -2867,6 +2868,8 @@ reset_changeset(sql_trans *tr, changeset * fs, changeset * pfs, sql_base *b, res
 						(b->name)?b->name:"help");
 				}
 				list_remove_node(fs->set, n);
+				if(fs->set->ht)
+					hash_del(fs->set->ht, base_key(n->data), n->data);
 				n = t;
 			} else { /* a new id */
 				sql_base *r = fd(tr, TR_OLD, pfb,  b);
@@ -2899,6 +2902,8 @@ reset_changeset(sql_trans *tr, changeset * fs, changeset * pfs, sql_base *b, res
 					(b->name)?b->name:"help");
 			}
 			list_remove_node(fs->set, n);
+			if(fs->set->ht)
+				hash_del(fs->set->ht, base_key(n->data), n->data);
 			n = t;
 		}
 	}
@@ -3165,8 +3170,7 @@ sql_trans_drop_all_dependencies(sql_trans *tr, sql_schema *s, int id, short type
 	sql_table *t = NULL;
 
 	list *dep = sql_trans_get_dependencies(tr, id, type, NULL);
-	node *n = dep->h, *t_n = NULL;
-
+	node *n = dep->h;
 
 	while (n) {
 		dep_id = *(int*) n->data;
@@ -3183,10 +3187,8 @@ sql_trans_drop_all_dependencies(sql_trans *tr, sql_schema *s, int id, short type
 							break;
 				case COLUMN_DEPENDENCY :
 							t_id = sql_trans_get_dependency_type(tr, dep_id, TABLE_DEPENDENCY);
-							t_n = find_sql_table_node(s, NULL, t_id);
-							t = t_n->data;
+							t = find_sql_table_id(s, t_id);
 							sql_trans_drop_column(tr, t, dep_id, DROP_CASCADE);
-							t_n = NULL;
 							t = NULL;
 							break;
 				case VIEW_DEPENDENCY :
@@ -3672,7 +3674,7 @@ sql_trans_create_func(sql_trans *tr, sql_schema * s, char *func, list *args, sql
 void
 sql_trans_drop_func(sql_trans *tr, sql_schema *s, int id, int drop_action)
 {
-	node *n = find_sql_func_node(s, NULL, id);
+	node *n = find_sql_func_node(s, id);
 	sql_func *func = n->data;
 
 	if (drop_action == DROP_CASCADE_START || drop_action == DROP_CASCADE) {
@@ -3752,7 +3754,7 @@ sql_trans_create_schema(sql_trans *tr, char *name, int auth_id, int owner)
 void
 sql_trans_drop_schema(sql_trans *tr, int id, int drop_action)
 {
-	node *n = find_sql_schema_node(tr, NULL, id);
+	node *n = find_sql_schema_node(tr, id);
 	sql_schema *s = n->data;
 	sql_table *sysschema = find_sql_table(find_sql_schema(tr, "sys"), "schemas");
 	oid rid = table_funcs.column_find_row(tr, find_sql_column(sysschema, "id"), &s->base.id, NULL);
@@ -3985,7 +3987,7 @@ create_sql_column(sql_allocator *sa, sql_table *t, char *name, sql_subtype *tpe)
 void
 sql_trans_drop_table(sql_trans *tr, sql_schema *s, int id, int drop_action)
 {
-	node *n = find_sql_table_node(s, NULL, id);
+	node *n = find_sql_table_node(s, id);
 	sql_table *t = n->data;
 
 	if (drop_action == DROP_CASCADE_START || drop_action == DROP_CASCADE) {

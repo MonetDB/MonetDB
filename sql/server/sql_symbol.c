@@ -313,7 +313,7 @@ newAtomNode(sql_allocator *sa, atom *data)
 
 static int dlist_cmp(dlist *l1, dlist *l2);
 
-static int
+static inline int
 dnode_cmp(dnode *d1, dnode *d2)
 {
 	if (d1 == d2)
@@ -350,7 +350,7 @@ dnode_cmp(dnode *d1, dnode *d2)
 	return -1;
 }
 
-static int
+static inline int
 dlist_cmp(dlist *l1, dlist *l2)
 {
 	int res = 0;
@@ -368,7 +368,7 @@ dlist_cmp(dlist *l1, dlist *l2)
 	return res;
 }
 
-static int
+static inline int
 AtomNodeCmp(AtomNode *a1, AtomNode *a2)
 {
 	if (a1 == a2)
@@ -377,11 +377,10 @@ AtomNodeCmp(AtomNode *a1, AtomNode *a2)
 		return -1;
 	if (a1->a && a2->a)
 		return atom_cmp(a1->a, a2->a);
-
 	return -1;
 }
 
-static int
+static inline int
 SelectNodeCmp(SelectNode *s1, SelectNode *s2)
 {
 	if (s1 == s2)
@@ -404,18 +403,15 @@ SelectNodeCmp(SelectNode *s1, SelectNode *s2)
 	return -1;
 }
 
-
-int
-symbol_cmp(symbol *s1, symbol *s2)
+static inline int
+_symbol_cmp(symbol *s1, symbol *s2)
 {
 	if (s1 == s2)
 		return 0;
 	if (!s1 || !s2)
 		return -1;
-
-	if (s1->token != s2->token || s1->type != s2->type) {
+	if (s1->token != s2->token || s1->type != s2->type) 
 		return -1;
-	}
 	switch (s1->type) {
 	case type_int:
 		return (s1->data.i_val - s2->data.i_val);
@@ -448,3 +444,8 @@ symbol_cmp(symbol *s1, symbol *s2)
 	return 0;		/* never reached, just to pacify compilers */
 }
 
+int
+symbol_cmp(symbol *s1, symbol *s2)
+{
+	return _symbol_cmp(s1,s2);
+}

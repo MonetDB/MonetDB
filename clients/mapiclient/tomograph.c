@@ -263,7 +263,7 @@ stop_disconnect:
 }
 
 #define MAXTHREADS 2048
-#define MAXBOX 32678
+#define MAXBOX 32678	 /* should be > MAXTHREADS */
 
 #define START 0
 #define DONE 1
@@ -475,11 +475,14 @@ static char *getRGB(char *name)
 
 
 /* The initial dictionary is geared towars TPCH-use */
+typedef
 struct COLOR {
 	int freq;
 	lng timeused;
 	char *mod, *fcn, *col;
-}
+} Color;
+
+Color
 colors[] =
 {
 	{ 0, 0, "mal", "idle", "white" },
@@ -566,6 +569,17 @@ colors[] =
 	{ 0, 0, 0, 0, 0 }
 };
 
+static int cmp_clr_dsc ( const void * _one , const void * _two )
+{
+	Color *one = (Color*) _one, *two = (Color*) _two;
+	/* -1 & 1 swapped for descending order */
+	return ((one->timeused < two->timeused) ? 1 :
+		((one->timeused > two->timeused) ? -1 :
+		 ((one->freq < two->freq) ? 1 :
+		  ((one->freq > two->freq) ? -1 :
+		   0))));
+}
+
 int object = 1;
 
 static void initcolors(void)
@@ -607,15 +621,15 @@ static void dumpboxes(void)
 		if (box[i].clkend && box[i].fcn) {
 			if (box[i].state < PING) {
 				//io counters are zero at start of instruction !
-				//fprintf(f,""LLFMT" %3.2f 0 0 \n", box[i].clkstart, (box[i].memstart/1024.0));
-				fprintf(f, ""LLFMT" %3.2f 0 0\n", box[i].clkend, (box[i].memend / 1024.0));
+				//fprintf(f,""LLFMT" %f 0 0 \n", box[i].clkstart, (box[i].memstart/1024.0));
+				fprintf(f, ""LLFMT" %f 0 0\n", box[i].clkend, (box[i].memend / 1024.0));
 			} else 
 			if (box[i].state == PING) {
 				/* cpu stat events may arrive out of order, drop those */
 				if ( box[i].clkstart <= e)
 					continue;
 				e = box[i].clkstart;
-				fprintf(f, ""LLFMT" %3.2f "LLFMT" "LLFMT"\n", box[i].clkstart, (box[i].memend / 1024.0), box[i].reads, box[i].writes);
+				fprintf(f, ""LLFMT" %f "LLFMT" "LLFMT"\n", box[i].clkstart, (box[i].memend / 1024.0), box[i].reads, box[i].writes);
 				if (cpus == 0) {
 					char *s = box[i].stmt;
 					while (s && isspace((int) *s))
@@ -646,7 +660,10 @@ static void showmemory(void)
 {
 	int i;
 	lng max = 0, min = LLONG_MAX;
-	lng mx, mn;
+	double mx, mn;
+	double scale = 1.0;
+	const char * scalename = "MB";
+	int digits = 0;
 
 	for (i = 0; i < topbox; i++)
 		if (box[i].clkend && box[i].fcn) {
@@ -660,6 +677,11 @@ static void showmemory(void)
 				min = box[i].memend;
 		}
 
+	if (max >= 1024) {
+		scale = 1024.0;
+		scalename = "GB";
+		digits = 1;
+	}
 
 	fprintf(gnudata, "\nset tmarg 1\n");
 	fprintf(gnudata, "set bmarg 1\n");
@@ -669,13 +691,13 @@ static void showmemory(void)
 	fprintf(gnudata, "set origin 0.0,0.87\n");
 
 	fprintf(gnudata, "set xrange ["LLFMT":"LLFMT"]\n", startrange, lastclktick - starttime);
-	fprintf(gnudata, "set ylabel \"memory in GB\"\n");
+	fprintf(gnudata, "set ylabel \"memory in %s\"\n", scalename);
 	fprintf(gnudata, "unset xtics\n");
-	mn = (lng) (min / 1024.0);
-	mx = (lng) (max / 1024.0);
-	mx += (mn == mx) + 1;
-	fprintf(gnudata, "set yrange ["LLFMT":"LLFMT"]\n", mn, mx);
-	fprintf(gnudata, "set ytics (\"%.1f\" "LLFMT", \"%.1f\" "LLFMT")\n", min / 1024.0, mn, max / 1024.0, mx);
+	mn = min / 1024.0;
+	mx = max / 1024.0;
+	mx += (mn == mx);
+	fprintf(gnudata, "set yrange [%f:%f]\n", mn, mx);
+	fprintf(gnudata, "set ytics (\"%.*f\" %f, \"%.*f\" %f)\n", digits, min / scale, mn, digits, max / scale, mx);
 	fprintf(gnudata, "plot \"%s.dat\" using 1:2 notitle with dots linecolor rgb \"blue\"\n", (tracefile ? "scratch" : filename));
 	fprintf(gnudata, "unset yrange\n");
 }
@@ -741,6 +763,68 @@ static void showio(void)
 	fprintf(gnudata, "unset title\n");
 }
 
+#define TME_US  1
+#define TME_MS  2
+#define TME_SS  4
+#define TME_MM  8
+#define TME_HH 16
+#define TME_DD 32
+
+#define US_MS ((lng) 1000)
+#define US_SS (US_MS * 1000)
+#define US_MM (US_SS * 60)
+#define US_HH (US_MM * 60)
+#define US_DD (US_HH * 24)
+
+/* print time (given in microseconds) in human-readable form
+ * showing the highest two relevant units */
+static void fprintf_time ( FILE *f, lng time )
+{
+	int TME = TME_DD|TME_HH|TME_MM|TME_SS|TME_MS|TME_US;
+	int tail = 0;
+	const char *fmt = NULL;
+
+	if (TME & TME_DD && (tail || time >= US_DD)) {
+		fmt = LLFMT"%s";
+		fprintf(f, fmt, time / US_DD, " d ");
+		time %= US_DD;
+		TME &= TME_HH;
+		tail = 1;
+	}
+	if (TME & TME_HH && (tail || time >= US_HH)) {
+		fmt = tail ? "%02d%s" : "%d%s";
+		fprintf(f, fmt, (int) (time / US_HH), " h ");
+		time %= US_HH;
+		TME &= TME_MM;
+		tail = 1;
+	}
+	if (TME & TME_MM && (tail || time >= US_MM)) {
+		fmt = tail ? "%02d%s" : "%d%s";
+		fprintf(f, fmt, (int) (time / US_MM), " m ");
+		time %= US_MM;
+		TME &= TME_SS;
+		tail = 1;
+	}
+	if (TME & TME_SS && (tail || time >= US_SS)) {
+		fmt = tail ? "%02d%s" : "%d%s";
+		fprintf(f, fmt, (int) (time / US_SS), (TME & TME_MS) ? "." : " s ");
+		time %= US_SS;
+		TME &= TME_MS;
+		tail = 1;
+	}
+	if (TME & TME_MS && (tail || time >= US_MS)) {
+		fmt = tail ? "%03d%s" : "%d%s";
+		fprintf(f, fmt, time / US_MS, (TME & TME_US) ? "." : " s ");
+		time %= US_MS;
+		TME &= TME_US;
+		tail = 1;
+	}
+	if (TME & TME_US) {
+		fmt = tail ? "%03d%s" : "%d%s";
+		fprintf(f, fmt, time, tail ? " ms " : " us ");
+	}
+}
+
 /* produce a legenda image for the color map */
 static void showcolormap(char *filename, int all)
 {
@@ -749,15 +833,14 @@ static void showcolormap(char *filename, int all)
 	int i, k = 0;
 	int w = 600;
 	int h = 500;
-	char *scale;
-	double tu = 0;
-	lng total = 0, totfreq = 0;
+	lng totfreq = 0, tottime = 0;
+	Color *clrs = colors, *_clrs_ = NULL;
 
 	if (all) {
 		snprintf(buf, BUFSIZ, "%s.gpl", filename);
 		f = fopen(buf, "w");
 		assert(f);
-		fprintf(f, "set terminal pdfcairo enhanced color solid size 8.3, 11.7\n");
+		fprintf(f, "set terminal pdfcairo noenhanced color solid size 8.3, 11.7\n");
 		fprintf(f, "set output \"%s.pdf\"\n", filename);
 		fprintf(f, "set size 1,1\n");
 		fprintf(f, "set xrange [0:1800]\n");
@@ -787,31 +870,42 @@ static void showcolormap(char *filename, int all)
 		fprintf(f, "unset title\n");
 		fprintf(f, "unset ylabel\n");
 	}
-	for (i = 0; colors[i].col; i++)
-		if (colors[i].mod && (colors[i].freq > 0 || all)) {
-			scale = "ms";
-			tu = colors[i].timeused / 1000.0;
-			total += tu;
-			totfreq += colors[i].freq;
-			if (tu > 1000) {
-				tu /= 1000.0;
-				scale = "sec";
-			}
+	_clrs_ = (Color*) malloc (sizeof(colors));
+	if (_clrs_) {
+		memcpy (_clrs_, colors, sizeof(colors));
+		qsort (_clrs_, sizeof(colors) / sizeof(Color) - 1, sizeof(Color), cmp_clr_dsc);
+		clrs = _clrs_;
+	}
+	for (i = 0; clrs[i].col; i++)
+		if (clrs[i].mod && (clrs[i].freq > 0 || all)) {
+			tottime += clrs[i].timeused;
+			totfreq += clrs[i].freq;
 
 			fprintf(f, "set object %d rectangle from %f, %f to %f, %f fillcolor rgb \"%s\" fillstyle solid 0.6\n",
-					object++, (double) (k % 3) * w, (double) h - 40, (double) ((k % 3) * w + 0.15 * w), (double) h - 5, colors[i].col);
+					object++, (double) (k % 3) * w, (double) h - 40, (double) ((k % 3) * w + 0.15 * w), (double) h - 5, clrs[i].col);
 			fprintf(f, "set label %d \"%s.%s \" at %d,%d\n",
-					object++, colors[i].mod, colors[i].fcn, (int) ((k % 3) * w + 0.2 * w), h - 15);
-			fprintf(f, "set label %d \"%d calls %3.2f %s\" at %f,%f\n",
-					object++, colors[i].freq, tu, scale, (double) ((k % 3) * w + 0.2 * w), (double) h - 35);
+					object++, clrs[i].mod, clrs[i].fcn, (int) ((k % 3) * w + 0.2 * w), h - 15);
+			fprintf(f, "set label %d \"%d calls: ",
+					object++, clrs[i].freq);
+			fprintf_time(f, clrs[i].timeused);
+			fprintf(f, "\" at %f,%f\n",
+					(double) ((k % 3) * w + 0.2 * w), (double) h - 35);
 			if (k % 3 == 2)
 				h -= 45;
 			k++;
 		}
+	if (_clrs_) {
+		clrs = colors;
+		free(_clrs_);
+		_clrs_ = NULL;
+	}
 
 	h -= 45;
-	fprintf(f, "set label %d \" "LLFMT" MAL instructions executed\" at %d,%d\n",
-			object++, totfreq, (int) (0.2 * w), h - 35);
+	fprintf(f, "set label %d \" "LLFMT" MAL instructions executed in ",
+			object++, totfreq);
+	fprintf_time(f, tottime);
+	fprintf(f, "\" at %d,%d\n",
+			(int) (0.2 * w), h - 35);
 	fprintf(f, "plot 0 notitle with lines linecolor rgb \"white\"\n");
 }
 
@@ -923,7 +1017,7 @@ static void gnuplotheader(char *filename)
 {
 	time_t tm;
 	char *date, *c;
-	fprintf(gnudata, "set terminal pdfcairo enhanced color solid size 8.3,11.7\n");
+	fprintf(gnudata, "set terminal pdfcairo noenhanced color solid size 8.3,11.7\n");
 	fprintf(gnudata, "set output \"%s.pdf\"\n", filename);
 	fprintf(gnudata, "set size 1,1\n");
 	fprintf(gnudata, "set tics front\n");
@@ -946,9 +1040,9 @@ static void createTomogram(void)
 	int i, j;
 	int h, prevobject = 1;
 	double w = (lastclktick - starttime) / 10.0;
-	int scale;
+	lng scale;
 	char *scalename;
-	lng totalticks, tick;
+	lng totalticks;
 	static int figures = 0;
 
 	snprintf(buf, BUFSIZ, "%s.gpl", filename);
@@ -992,21 +1086,30 @@ static void createTomogram(void)
 	fprintf(gnudata, "unset colorbox\n");
 	fprintf(gnudata, "unset title\n");
 
-	if (w > 1000000) {
-		scale = 1000000;
-		scalename = "";
-	} else if (w > 1000) {
-		scale = 1000;
-		scalename = "milli";
+	if (w >= US_DD) {
+		scale = US_DD;
+		scalename = "days";
+	} else if (w >= US_HH) {
+		scale = US_HH;
+		scalename = "hours";
+	} else if (w >= US_MM) {
+		scale = US_MM;
+		scalename = "minutes";
+	} else if (w >= US_SS) {
+		scale = US_SS;
+		scalename = "seconds";
+	} else if (w >= US_MS) {
+		scale = US_MS;
+		scalename = "milliseconds";
 	} else {
 		scale = 1;
-		scalename = "micro";
+		scalename = "microseconds";
 	}
 
-	fprintf(gnudata, "set xtics (");
-	for (i = 0; i < 10; i++)
-		fprintf(gnudata, "\"%d\" %d,", (int) (i * w / scale), (int) (i * w));
-	fprintf(gnudata, "\"%6.2f\" %d", ((double) i * w / scale), (int) (i * w));
+	fprintf(gnudata, "set xtics (\"0\" 0,");
+	for (i = 1; i < 10; i++)
+		fprintf(gnudata, "\"%.1f\" "LLFMT",", ((double) i * w / scale), (lng) (i * w));
+	fprintf(gnudata, "\"%.2f\" "LLFMT, ((double) i * w / scale), (lng) (i * w));
 	fprintf(gnudata, ")\n");
 	fprintf(gnudata, "set grid xtics\n");
 
@@ -1017,10 +1120,9 @@ static void createTomogram(void)
 	totalticks = 0;
 	for (i = 0; i < top; i++)
 		totalticks += lastclk[rows[i]];
-	fprintf(gnudata, "set xlabel \"%sseconds, parallelism usage %6.1f %%\"\n", scalename, totalclkticks / (totalticks / 100.0));
+	fprintf(gnudata, "set xlabel \"%s, parallelism usage %.1f %%\"\n", scalename, totalclkticks / (totalticks / 100.0));
 
 	h = 10; /* unit height of bars */
-	tick = totalticks/2000;
 	fprintf(gnudata, "set ytics (");
 	for (i = 0; i < top; i++)
 		fprintf(gnudata, "\"%d\" %d%c", rows[i], i * 2 * h + h / 2, (i < top - 1 ? ',' : ' '));
@@ -1044,8 +1146,8 @@ static void createTomogram(void)
 		case PING:
 			break;
 		case WAIT:
-			fprintf(gnudata, "set object %d rectangle from "LLFMT", %d to "LLFMT", %d front fillcolor rgb \"red\" fillstyle solid 1.0\n",
-					object++, box[i].clkstart, box[i].row * 2 * h+h, box[i].clkend+tick, (int)(box[i].row * 2 * h + 1.25*h));
+			fprintf(gnudata, "set object %d rectangle at "LLFMT", %d size 0.2,0.3 front fillcolor rgb \"red\" fillstyle solid 1.0\n",
+					object++, box[i].clkstart, box[i].row * 2 * h+h);
 		}
 
 
@@ -1496,7 +1598,7 @@ doProfile(void *d)
 		doRequest(dbhsql, sqlstatement);
 	}
 	len = 0;
-	while ((n = mnstr_read(wthr->s, buf, 1, BUFSIZ - len)) > 0) {
+	while (wthr->s && (n = mnstr_read(wthr->s, buf, 1, BUFSIZ - len)) > 0) {
 		buf[n] = 0;
 		response = buf;
 		while ((e = strchr(response, '\n')) != NULL) {

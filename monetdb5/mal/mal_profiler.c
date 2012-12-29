@@ -534,11 +534,11 @@ openProfilerStream(stream *fd)
 str
 closeProfilerStream(void)
 {
+	profilerHeartbeatEvent("ping");
 	if (eventstream) {
 		(void)mnstr_close(eventstream);
 		(void)mnstr_destroy(eventstream);
 	}
-	profilerHeartbeatEvent("ping");
 	eventstream = NULL;
 	malProfileMode = FALSE;
 	return MAL_SUCCEED;
@@ -604,10 +604,12 @@ startProfiling(void)
 str
 stopProfiling(void)
 {
+	MT_lock_set(&mal_profileLock, "profileLock");
 	malProfileMode = FALSE;
 	offlineProfiling = FALSE;
 	cachedProfiling = FALSE;
 	closeProfilerStream();
+	MT_lock_unset(&mal_profileLock, "profileLock");
 	return MAL_SUCCEED;
 }
 

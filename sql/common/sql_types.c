@@ -622,12 +622,13 @@ func_cmp(sql_allocator *sa, sql_func *f, char *name, int nrargs)
 sql_subfunc *
 sql_find_func(sql_allocator *sa, sql_schema *s, char *sqlfname, int nrargs, int type)
 {
-	node *n = funcs->h;
 	sql_subfunc *fres;
+	int key = hash_key(sqlfname);
+	sql_hash_e *he = funcs->ht->buckets[key&(funcs->ht->size-1)]; 
 
 	assert(nrargs);
-	for (; n; n = n->next) {
-		sql_func *f = n->data;
+	for (; he; he = he->chain) {
+		sql_func *f = he->value;
 
 		if (f->type != type) 
 			continue;
@@ -637,8 +638,19 @@ sql_find_func(sql_allocator *sa, sql_schema *s, char *sqlfname, int nrargs, int 
 	}
 	if (s) {
 		node *n;
+		sql_func * f = find_sql_func(s, sqlfname);
 
-		if (s->funcs.set) for (n=s->funcs.set->h; n; n = n->next) {
+		if (f && f->type == type && (fres = func_cmp(sa, f, sqlfname, nrargs )) != NULL) 
+			return fres;
+		if (s->funcs.set && s->funcs.set->ht) for (he=s->funcs.set->ht->buckets[key&(s->funcs.set->ht->size-1)]; he; he = he->chain) {
+			sql_func *f = he->value;
+
+			if (f->type != type) 
+				continue;
+			if ((fres = func_cmp(sa, f, sqlfname, nrargs )) != NULL) {
+				return fres;
+			}
+		} else if (s->funcs.set && !s->funcs.set->ht) for (n=s->funcs.set->h; n; n = n->next) {
 			sql_func *f = n->data;
 
 			if (f->type != type) 
@@ -1090,10 +1102,12 @@ sql_create_func_(sql_allocator *sa, char *name, char *mod, char *imp, list *ops,
 	t->side_effect = side_effect;
 	t->fix_scale = fix_scale;
 	t->s = NULL;
-	if (aggr)
+	if (aggr) {
 		list_append(aggrs, t);
-	else
+	} else {
 		list_append(funcs, t);
+		hash_add(funcs->ht, base_key(&t->base), t);
+	}
 	return t;
 }
 
@@ -1118,6 +1132,7 @@ sql_create_sqlfunc(sql_allocator *sa, char *name, char *imp, list *ops, sql_subt
 	t->sql = 1;
 	t->side_effect = FALSE;
 	list_append(funcs, t);
+	hash_add(funcs->ht, base_key(&t->base), t);
 	return t;
 }
 
@@ -1567,6 +1582,7 @@ types_init(sql_allocator *nsa, int debug)
 	localtypes = sa_list(sa);
 	aggrs = sa_list(sa);
 	funcs = sa_list(sa);
+	funcs->ht = hash_new(sa, 1024, (fkeyvalue)&base_key);
 	sqltypeinit( nsa );
 }
 

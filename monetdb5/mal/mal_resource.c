@@ -187,7 +187,8 @@ MALresourceFairness(Client cntxt, MalBlkPtr mb, lng usec)
 	if ( running == 0) // reset workers pool count
 		running = threads;
 
-	rss = MT_getrss();
+	/* use GDKmem_cursize as MT_getrss(); is to expensive */
+	rss = GDKmem_cursize();
 	/* ample of memory available*/
 	if ( rss < MEMORY_THRESHOLD * monet_memory)
 		return;
@@ -211,7 +212,7 @@ MALresourceFairness(Client cntxt, MalBlkPtr mb, lng usec)
 			if (running < 2)
 				break;
 			/* speed up wake up when we have memory */
-			rss = MT_getrss();
+			rss = GDKmem_cursize();
 			if (rss < MEMORY_THRESHOLD * monet_memory)
 				break;
 			factor = ((double) rss) / (MEMORY_THRESHOLD * monet_memory);

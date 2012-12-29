@@ -31,8 +31,8 @@ Ready.
 [ 1	]
 % sys.test456,	sys.,	sys.,	sys. # table_name
 % col1,	substring_col1,	substring_col1,	substring_col1 # name
-% int,	char,	char,	char # type
-% 8,	0,	0,	0 # length
+% int,	clob,	clob,	clob # type
+% 8,	4,	2,	2 # length
 [ 20080101,	"2008",	"01",	"01"	]
 [ 20080227,	"2008",	"02",	"27"	]
 [ 20080215,	"2008",	"02",	"15"	]

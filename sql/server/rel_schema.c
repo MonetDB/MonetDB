@@ -437,6 +437,9 @@ table_foreign_key(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table *t)
 	char *rtname = qname_table(n->data.lval);
 	sql_table *ft = mvc_bind_table(sql, ss, rtname);
 
+	/* self referenced table */
+	if (!ft && t->s == ss && strcmp(t->base.name, rtname) == 0)
+		ft = t;
 	if (!ft) {
 		sql_error(sql, 02, "42S02!CONSTRAINT FOREIGN KEY: no such table '%s'\n", rtname);
 		return SQL_ERR;
@@ -1730,7 +1733,6 @@ rel_schemas(mvc *sql, symbol *s)
 		return sql_error(sql, 01, "M0M03!schema statement unknown symbol(" PTRFMT ")->token = %s", PTRFMTCAST s, token2string(s->token));
 	}
 
-	sql->last = NULL;
 	sql->type = Q_SCHEMA;
 	return ret;
 }

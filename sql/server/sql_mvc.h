@@ -123,7 +123,6 @@ typedef struct mvc {
 
 	int result_id;
 	res_table *results;
-	sql_column *last; 	/* last accessed column */
 #ifdef HAVE_TIMES
 	struct tms times;
 #endif	
