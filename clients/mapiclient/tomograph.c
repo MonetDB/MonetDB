@@ -660,10 +660,10 @@ static void showmemory(void)
 {
 	int i;
 	lng max = 0, min = LLONG_MAX;
-	double mx, mn;
+	double mx, mn, mm;
 	double scale = 1.0;
 	const char * scalename = "MB";
-	int digits = 0;
+	int digits;
 
 	for (i = 0; i < topbox; i++)
 		if (box[i].clkend && box[i].fcn) {
@@ -676,12 +676,21 @@ static void showmemory(void)
 			if (box[i].memend < min)
 				min = box[i].memend;
 		}
+	if (min == max) {
+		min -= 1;
+		max += 1;
+	}
 
 	if (max >= 1024) {
 		scale = 1024.0;
 		scalename = "GB";
-		digits = 1;
 	}
+	if (max / scale >= 100)
+		digits = 0;
+	else if (max / scale >= 10)
+		digits = 1;
+	else
+		digits = 2;
 
 	fprintf(gnudata, "\nset tmarg 1\n");
 	fprintf(gnudata, "set bmarg 1\n");
@@ -695,9 +704,9 @@ static void showmemory(void)
 	fprintf(gnudata, "unset xtics\n");
 	mn = min / 1024.0;
 	mx = max / 1024.0;
-	mx += (mn == mx);
-	fprintf(gnudata, "set yrange [%f:%f]\n", mn, mx);
-	fprintf(gnudata, "set ytics (\"%.*f\" %f, \"%.*f\" %f)\n", digits, min / scale, mn, digits, max / scale, mx);
+	mm = (mx - mn) / 50.0; /* 2% top & bottom margin */
+	fprintf(gnudata, "set yrange [%f:%f]\n", mn - mm, mx + mm);
+	fprintf(gnudata, "set ytics (\"%.*f\" %f, \"%.*f\" %f) nomirror\n", digits, min / scale, mn, digits, max / scale, mx);
 	fprintf(gnudata, "plot \"%s.dat\" using 1:2 notitle with dots linecolor rgb \"blue\"\n", (tracefile ? "scratch" : filename));
 	fprintf(gnudata, "unset yrange\n");
 }
@@ -740,6 +749,7 @@ static void showio(void)
 			if (box[i].writes > max)
 				max = box[i].writes;
 		}
+	max += beat;
 
 
 	fprintf(gnudata, "\nset tmarg 1\n");
@@ -749,11 +759,11 @@ static void showio(void)
 	fprintf(gnudata, "set size 1,0.07\n");
 	fprintf(gnudata, "set origin 0.0,0.87\n");
 	fprintf(gnudata, "set xrange ["LLFMT":"LLFMT"]\n", startrange, lastclktick - starttime);
-	fprintf(gnudata, "set yrange [1:"LLFMT"]\n", ((1.1 * max / beat) <= 2 ? 2 : (lng) (1.1 * max / beat)));
+	fprintf(gnudata, "set yrange [0:"LLFMT"]\n", max / beat);
 	fprintf(gnudata, "unset xtics\n");
 	fprintf(gnudata, "unset ytics\n");
 	fprintf(gnudata, "unset ylabel\n");
-	fprintf(gnudata, "set y2tics in (\""LLFMT"\" "LLFMT")\n", max / beat, max / beat);
+	fprintf(gnudata, "set y2tics in (0, "LLFMT") nomirror\n", max / beat);
 	fprintf(gnudata, "set y2label \"IO per ms\"\n");
 	fprintf(gnudata, "plot \"%s.dat\" using 1:(($3+$4)/%d.0) title \"reads\" with boxes fs solid linecolor rgb \"gray\" ,\\\n", (tracefile ? "scratch" : filename), beat);
 	fprintf(gnudata, "\"%s.dat\" using 1:($4/%d.0) title \"writes\" with boxes fs solid linecolor rgb \"red\"  \n", (tracefile ? "scratch" : filename), beat);
@@ -1039,9 +1049,10 @@ static void createTomogram(void)
 	int top = 0;
 	int i, j;
 	int h, prevobject = 1;
-	double w = (lastclktick - starttime) / 10.0;
+	lng w = lastclktick - starttime;
 	lng scale;
 	char *scalename;
+	int digits;
 	lng totalticks;
 	static int figures = 0;
 
@@ -1086,30 +1097,39 @@ static void createTomogram(void)
 	fprintf(gnudata, "unset colorbox\n");
 	fprintf(gnudata, "unset title\n");
 
-	if (w >= US_DD) {
+	if (w >= 10 * US_DD) {
 		scale = US_DD;
-		scalename = "days";
-	} else if (w >= US_HH) {
+		scalename = "d\0\0days";
+	} else if (w >= 10 * US_HH) {
 		scale = US_HH;
-		scalename = "hours";
-	} else if (w >= US_MM) {
+		scalename = "h\0\0hours";
+	} else if (w >= 10 * US_MM) {
 		scale = US_MM;
-		scalename = "minutes";
+		scalename = "m\0\0minutes";
 	} else if (w >= US_SS) {
 		scale = US_SS;
-		scalename = "seconds";
+		scalename = "s\0\0seconds";
 	} else if (w >= US_MS) {
 		scale = US_MS;
-		scalename = "milliseconds";
+		scalename = "ms\0milliseconds";
 	} else {
 		scale = 1;
-		scalename = "microseconds";
+		scalename = "us\0microseconds";
 	}
+	if (w / scale >= 1000)
+		digits = 0;
+	else if (w / scale >= 100)
+		digits = 1;
+	else if (w / scale >= 10)
+		digits = 2;
+	else
+		digits = 3;
 
+	w /= 10;
 	fprintf(gnudata, "set xtics (\"0\" 0,");
 	for (i = 1; i < 10; i++)
-		fprintf(gnudata, "\"%.1f\" "LLFMT",", ((double) i * w / scale), (lng) (i * w));
-	fprintf(gnudata, "\"%.2f\" "LLFMT, ((double) i * w / scale), (lng) (i * w));
+		fprintf(gnudata, "\"%.*f\" "LLFMT",", digits, (double) i * w / scale, i * w);
+	fprintf(gnudata, "\"%.*f %s\" "LLFMT, digits, (double) i * w / scale, scalename, i * w);
 	fprintf(gnudata, ")\n");
 	fprintf(gnudata, "set grid xtics\n");
 
@@ -1120,7 +1140,7 @@ static void createTomogram(void)
 	totalticks = 0;
 	for (i = 0; i < top; i++)
 		totalticks += lastclk[rows[i]];
-	fprintf(gnudata, "set xlabel \"%s, parallelism usage %.1f %%\"\n", scalename, totalclkticks / (totalticks / 100.0));
+	fprintf(gnudata, "set xlabel \"%s, parallelism usage %.1f %%\"\n", scalename+3, totalclkticks / (totalticks / 100.0));
 
 	h = 10; /* unit height of bars */
 	fprintf(gnudata, "set ytics (");
