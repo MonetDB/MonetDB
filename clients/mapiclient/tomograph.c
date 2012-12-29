@@ -856,7 +856,7 @@ static void showcolormap(char *filename, int all)
 					object++, (double) (k % 3) * w, (double) h - 40, (double) ((k % 3) * w + 0.15 * w), (double) h - 5, colors[i].col);
 			fprintf(f, "set label %d \"%s.%s \" at %d,%d\n",
 					object++, colors[i].mod, colors[i].fcn, (int) ((k % 3) * w + 0.2 * w), h - 15);
-			fprintf(f, "set label %d \"%d calls  ",
+			fprintf(f, "set label %d \"%d calls: ",
 					object++, colors[i].freq);
 			fprintf_time(f, colors[i].timeused);
 			fprintf(f, "\" at %f,%f\n",
@@ -1006,7 +1006,7 @@ static void createTomogram(void)
 	int i, j;
 	int h, prevobject = 1;
 	double w = (lastclktick - starttime) / 10.0;
-	int scale;
+	lng scale;
 	char *scalename;
 	lng totalticks;
 	static int figures = 0;
@@ -1052,21 +1052,30 @@ static void createTomogram(void)
 	fprintf(gnudata, "unset colorbox\n");
 	fprintf(gnudata, "unset title\n");
 
-	if (w > 1000000) {
-		scale = 1000000;
-		scalename = "";
-	} else if (w > 1000) {
-		scale = 1000;
-		scalename = "milli";
+	if (w >= US_DD) {
+		scale = US_DD;
+		scalename = "days";
+	} else if (w >= US_HH) {
+		scale = US_HH;
+		scalename = "hours";
+	} else if (w >= US_MM) {
+		scale = US_MM;
+		scalename = "minutes";
+	} else if (w >= US_SS) {
+		scale = US_SS;
+		scalename = "seconds";
+	} else if (w >= US_MS) {
+		scale = US_MS;
+		scalename = "milliseconds";
 	} else {
 		scale = 1;
-		scalename = "micro";
+		scalename = "microseconds";
 	}
 
-	fprintf(gnudata, "set xtics (");
-	for (i = 0; i < 10; i++)
-		fprintf(gnudata, "\"%d\" %d,", (int) (i * w / scale), (int) (i * w));
-	fprintf(gnudata, "\"%6.2f\" %d", ((double) i * w / scale), (int) (i * w));
+	fprintf(gnudata, "set xtics (\"0\" 0,");
+	for (i = 1; i < 10; i++)
+		fprintf(gnudata, "\"%.1f\" "LLFMT",", ((double) i * w / scale), (lng) (i * w));
+	fprintf(gnudata, "\"%6.2f\" "LLFMT, ((double) i * w / scale), (lng) (i * w));
 	fprintf(gnudata, ")\n");
 	fprintf(gnudata, "set grid xtics\n");
 
@@ -1077,7 +1086,7 @@ static void createTomogram(void)
 	totalticks = 0;
 	for (i = 0; i < top; i++)
 		totalticks += lastclk[rows[i]];
-	fprintf(gnudata, "set xlabel \"%sseconds, parallelism usage %6.1f %%\"\n", scalename, totalclkticks / (totalticks / 100.0));
+	fprintf(gnudata, "set xlabel \"%s, parallelism usage %6.1f %%\"\n", scalename, totalclkticks / (totalticks / 100.0));
 
 	h = 10; /* unit height of bars */
 	fprintf(gnudata, "set ytics (");
