@@ -741,6 +741,68 @@ static void showio(void)
 	fprintf(gnudata, "unset title\n");
 }
 
+#define TME_US  1
+#define TME_MS  2
+#define TME_SS  4
+#define TME_MM  8
+#define TME_HH 16
+#define TME_DD 32
+
+#define US_MS ((lng) 1000)
+#define US_SS (US_MS * 1000)
+#define US_MM (US_SS * 60)
+#define US_HH (US_MM * 60)
+#define US_DD (US_HH * 24)
+
+/* print time (given in microseconds) in human-readable form
+ * showing the highest two relevant units */
+static void fprintf_time ( FILE *f, lng time )
+{
+	int TME = TME_DD|TME_HH|TME_MM|TME_SS|TME_MS|TME_US;
+	int tail = 0;
+	const char *fmt = NULL;
+
+	if (TME & TME_DD && (tail || time >= US_DD)) {
+		fmt = LLFMT"%s";
+		fprintf(f, fmt, time / US_DD, " d ");
+		time %= US_DD;
+		TME &= TME_HH;
+		tail = 1;
+	}
+	if (TME & TME_HH && (tail || time >= US_HH)) {
+		fmt = tail ? "%02d%s" : "%d%s";
+		fprintf(f, fmt, (int) (time / US_HH), " h ");
+		time %= US_HH;
+		TME &= TME_MM;
+		tail = 1;
+	}
+	if (TME & TME_MM && (tail || time >= US_MM)) {
+		fmt = tail ? "%02d%s" : "%d%s";
+		fprintf(f, fmt, (int) (time / US_MM), " m ");
+		time %= US_MM;
+		TME &= TME_SS;
+		tail = 1;
+	}
+	if (TME & TME_SS && (tail || time >= US_SS)) {
+		fmt = tail ? "%02d%s" : "%d%s";
+		fprintf(f, fmt, (int) (time / US_SS), (TME & TME_MS) ? "." : " s ");
+		time %= US_SS;
+		TME &= TME_MS;
+		tail = 1;
+	}
+	if (TME & TME_MS && (tail || time >= US_MS)) {
+		fmt = tail ? "%03d%s" : "%d%s";
+		fprintf(f, fmt, time / US_MS, (TME & TME_US) ? "." : " s ");
+		time %= US_MS;
+		TME &= TME_US;
+		tail = 1;
+	}
+	if (TME & TME_US) {
+		fmt = tail ? "%03d%s" : "%d%s";
+		fprintf(f, fmt, time, tail ? " ms " : " us ");
+	}
+}
+
 /* produce a legenda image for the color map */
 static void showcolormap(char *filename, int all)
 {
@@ -749,9 +811,7 @@ static void showcolormap(char *filename, int all)
 	int i, k = 0;
 	int w = 600;
 	int h = 500;
-	char *scale;
-	double tu = 0, total = 0;
-	lng totfreq = 0;
+	lng totfreq = 0, tottime = 0;
 
 	if (all) {
 		snprintf(buf, BUFSIZ, "%s.gpl", filename);
@@ -789,34 +849,29 @@ static void showcolormap(char *filename, int all)
 	}
 	for (i = 0; colors[i].col; i++)
 		if (colors[i].mod && (colors[i].freq > 0 || all)) {
-			scale = "ms";
-			tu = colors[i].timeused / 1000.0;
-			total += tu;
+			tottime += colors[i].timeused;
 			totfreq += colors[i].freq;
-			if (tu > 1000) {
-				tu /= 1000.0;
-				scale = "sec";
-			}
 
 			fprintf(f, "set object %d rectangle from %f, %f to %f, %f fillcolor rgb \"%s\" fillstyle solid 0.6\n",
 					object++, (double) (k % 3) * w, (double) h - 40, (double) ((k % 3) * w + 0.15 * w), (double) h - 5, colors[i].col);
 			fprintf(f, "set label %d \"%s.%s \" at %d,%d\n",
 					object++, colors[i].mod, colors[i].fcn, (int) ((k % 3) * w + 0.2 * w), h - 15);
-			fprintf(f, "set label %d \"%d calls %3.2f %s\" at %f,%f\n",
-					object++, colors[i].freq, tu, scale, (double) ((k % 3) * w + 0.2 * w), (double) h - 35);
+			fprintf(f, "set label %d \"%d calls  ",
+					object++, colors[i].freq);
+			fprintf_time(f, colors[i].timeused);
+			fprintf(f, "\" at %f,%f\n",
+					(double) ((k % 3) * w + 0.2 * w), (double) h - 35);
 			if (k % 3 == 2)
 				h -= 45;
 			k++;
 		}
 
-	scale = "ms";
-	if (total > 1000) {
-		total /= 1000.0;
-		scale = "sec";
-	}
 	h -= 45;
-	fprintf(f, "set label %d \" "LLFMT" MAL instructions executed in %3.2f %s\" at %d,%d\n",
-			object++, totfreq, total, scale, (int) (0.2 * w), h - 35);
+	fprintf(f, "set label %d \" "LLFMT" MAL instructions executed in ",
+			object++, totfreq);
+	fprintf_time(f, tottime);
+	fprintf(f, "\" at %d,%d\n",
+			(int) (0.2 * w), h - 35);
 	fprintf(f, "plot 0 notitle with lines linecolor rgb \"white\"\n");
 }
 
