@@ -1075,7 +1075,7 @@ static void createTomogram(void)
 	fprintf(gnudata, "set xtics (\"0\" 0,");
 	for (i = 1; i < 10; i++)
 		fprintf(gnudata, "\"%.1f\" "LLFMT",", ((double) i * w / scale), (lng) (i * w));
-	fprintf(gnudata, "\"%6.2f\" "LLFMT, ((double) i * w / scale), (lng) (i * w));
+	fprintf(gnudata, "\"%.2f\" "LLFMT, ((double) i * w / scale), (lng) (i * w));
 	fprintf(gnudata, ")\n");
 	fprintf(gnudata, "set grid xtics\n");
 
@@ -1086,7 +1086,7 @@ static void createTomogram(void)
 	totalticks = 0;
 	for (i = 0; i < top; i++)
 		totalticks += lastclk[rows[i]];
-	fprintf(gnudata, "set xlabel \"%s, parallelism usage %6.1f %%\"\n", scalename, totalclkticks / (totalticks / 100.0));
+	fprintf(gnudata, "set xlabel \"%s, parallelism usage %.1f %%\"\n", scalename, totalclkticks / (totalticks / 100.0));
 
 	h = 10; /* unit height of bars */
 	fprintf(gnudata, "set ytics (");
