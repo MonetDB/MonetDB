@@ -475,11 +475,14 @@ static char *getRGB(char *name)
 
 
 /* The initial dictionary is geared towars TPCH-use */
+typedef
 struct COLOR {
 	int freq;
 	lng timeused;
 	char *mod, *fcn, *col;
-}
+} Color;
+
+Color
 colors[] =
 {
 	{ 0, 0, "mal", "idle", "white" },
@@ -565,6 +568,17 @@ colors[] =
 	{ 0, 0, "*", "*", "lavender" },
 	{ 0, 0, 0, 0, 0 }
 };
+
+static int cmp_clr_dsc ( const void * _one , const void * _two )
+{
+	Color *one = (Color*) _one, *two = (Color*) _two;
+	/* -1 & 1 swapped for descending order */
+	return ((one->timeused < two->timeused) ? 1 :
+		((one->timeused > two->timeused) ? -1 :
+		 ((one->freq < two->freq) ? 1 :
+		  ((one->freq > two->freq) ? -1 :
+		   0))));
+}
 
 int object = 1;
 
@@ -820,6 +834,7 @@ static void showcolormap(char *filename, int all)
 	int w = 600;
 	int h = 500;
 	lng totfreq = 0, tottime = 0;
+	Color *clrs = colors, *_clrs_ = NULL;
 
 	if (all) {
 		snprintf(buf, BUFSIZ, "%s.gpl", filename);
@@ -855,24 +870,35 @@ static void showcolormap(char *filename, int all)
 		fprintf(f, "unset title\n");
 		fprintf(f, "unset ylabel\n");
 	}
-	for (i = 0; colors[i].col; i++)
-		if (colors[i].mod && (colors[i].freq > 0 || all)) {
-			tottime += colors[i].timeused;
-			totfreq += colors[i].freq;
+	_clrs_ = (Color*) malloc (sizeof(colors));
+	if (_clrs_) {
+		memcpy (_clrs_, colors, sizeof(colors));
+		qsort (_clrs_, sizeof(colors) / sizeof(Color) - 1, sizeof(Color), cmp_clr_dsc);
+		clrs = _clrs_;
+	}
+	for (i = 0; clrs[i].col; i++)
+		if (clrs[i].mod && (clrs[i].freq > 0 || all)) {
+			tottime += clrs[i].timeused;
+			totfreq += clrs[i].freq;
 
 			fprintf(f, "set object %d rectangle from %f, %f to %f, %f fillcolor rgb \"%s\" fillstyle solid 0.6\n",
-					object++, (double) (k % 3) * w, (double) h - 40, (double) ((k % 3) * w + 0.15 * w), (double) h - 5, colors[i].col);
+					object++, (double) (k % 3) * w, (double) h - 40, (double) ((k % 3) * w + 0.15 * w), (double) h - 5, clrs[i].col);
 			fprintf(f, "set label %d \"%s.%s \" at %d,%d\n",
-					object++, colors[i].mod, colors[i].fcn, (int) ((k % 3) * w + 0.2 * w), h - 15);
+					object++, clrs[i].mod, clrs[i].fcn, (int) ((k % 3) * w + 0.2 * w), h - 15);
 			fprintf(f, "set label %d \"%d calls: ",
-					object++, colors[i].freq);
-			fprintf_time(f, colors[i].timeused);
+					object++, clrs[i].freq);
+			fprintf_time(f, clrs[i].timeused);
 			fprintf(f, "\" at %f,%f\n",
 					(double) ((k % 3) * w + 0.2 * w), (double) h - 35);
 			if (k % 3 == 2)
 				h -= 45;
 			k++;
 		}
+	if (_clrs_) {
+		clrs = colors;
+		free(_clrs_);
+		_clrs_ = NULL;
+	}
 
 	h -= 45;
 	fprintf(f, "set label %d \" "LLFMT" MAL instructions executed in ",
