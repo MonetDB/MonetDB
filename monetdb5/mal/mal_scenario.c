@@ -533,17 +533,10 @@ runScenarioBody(Client c)
 {
 	str msg= MAL_SUCCEED;
 	lng start;
-#ifdef HAVE_TIMES
-	struct tms t0,t1;
-#endif
-
 
 	c->exception_buf_initialized = 1;
 	if (setjmp( c->exception_buf) < 0)
 		c->mode = FINISHING;
-#ifdef HAVE_TIMES
-	times(&t0);
-#endif
 	while ((c->mode > FINISHING || msg != MAL_SUCCEED) && !GDKexiting()) {
 		if (msg != MAL_SUCCEED){
 /* we should actually show it [postponed]
@@ -576,14 +569,6 @@ runScenarioBody(Client c)
 		c->actions++;
 		start = GDKusec()-start;
 		c->totaltime += start;
-#ifdef HAVE_TIMES
-		times(&t1);
-		c->workload.tms_utime += t1.tms_utime-t0.tms_utime;
-		c->workload.tms_cutime += t1.tms_cutime-t0.tms_cutime;
-		c->workload.tms_stime += t1.tms_stime-t0.tms_stime;
-		c->workload.tms_cstime += t1.tms_cstime-t0.tms_cstime;
-		t0 = t1;
-#endif
 	}
 	if (c->phase[MAL_SCENARIO_EXITCLIENT])
 		(*c->phase[MAL_SCENARIO_EXITCLIENT]) (c);
