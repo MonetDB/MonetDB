@@ -311,7 +311,7 @@ newAtomNode(sql_allocator *sa, atom *data)
 	return s;
 }
 
-static int dlist_cmp(dlist *l1, dlist *l2);
+static inline int dlist_cmp(dlist *l1, dlist *l2);
 
 static inline int
 dnode_cmp(dnode *d1, dnode *d2)
