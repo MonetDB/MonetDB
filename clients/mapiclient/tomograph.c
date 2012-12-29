@@ -1049,9 +1049,10 @@ static void createTomogram(void)
 	int top = 0;
 	int i, j;
 	int h, prevobject = 1;
-	double w = (lastclktick - starttime) / 10.0;
+	lng w = lastclktick - starttime;
 	lng scale;
 	char *scalename;
+	int digits;
 	lng totalticks;
 	static int figures = 0;
 
@@ -1096,30 +1097,39 @@ static void createTomogram(void)
 	fprintf(gnudata, "unset colorbox\n");
 	fprintf(gnudata, "unset title\n");
 
-	if (w >= US_DD) {
+	if (w >= 10 * US_DD) {
 		scale = US_DD;
-		scalename = "days";
-	} else if (w >= US_HH) {
+		scalename = "d\0\0days";
+	} else if (w >= 10 * US_HH) {
 		scale = US_HH;
-		scalename = "hours";
-	} else if (w >= US_MM) {
+		scalename = "h\0\0hours";
+	} else if (w >= 10 * US_MM) {
 		scale = US_MM;
-		scalename = "minutes";
+		scalename = "m\0\0minutes";
 	} else if (w >= US_SS) {
 		scale = US_SS;
-		scalename = "seconds";
+		scalename = "s\0\0seconds";
 	} else if (w >= US_MS) {
 		scale = US_MS;
-		scalename = "milliseconds";
+		scalename = "ms\0milliseconds";
 	} else {
 		scale = 1;
-		scalename = "microseconds";
+		scalename = "us\0microseconds";
 	}
+	if (w / scale >= 1000)
+		digits = 0;
+	else if (w / scale >= 100)
+		digits = 1;
+	else if (w / scale >= 10)
+		digits = 2;
+	else
+		digits = 3;
 
+	w /= 10;
 	fprintf(gnudata, "set xtics (\"0\" 0,");
 	for (i = 1; i < 10; i++)
-		fprintf(gnudata, "\"%.1f\" "LLFMT",", ((double) i * w / scale), (lng) (i * w));
-	fprintf(gnudata, "\"%.2f\" "LLFMT, ((double) i * w / scale), (lng) (i * w));
+		fprintf(gnudata, "\"%.*f\" "LLFMT",", digits, (double) i * w / scale, i * w);
+	fprintf(gnudata, "\"%.*f %s\" "LLFMT, digits, (double) i * w / scale, scalename, i * w);
 	fprintf(gnudata, ")\n");
 	fprintf(gnudata, "set grid xtics\n");
 
@@ -1130,7 +1140,7 @@ static void createTomogram(void)
 	totalticks = 0;
 	for (i = 0; i < top; i++)
 		totalticks += lastclk[rows[i]];
-	fprintf(gnudata, "set xlabel \"%s, parallelism usage %.1f %%\"\n", scalename, totalclkticks / (totalticks / 100.0));
+	fprintf(gnudata, "set xlabel \"%s, parallelism usage %.1f %%\"\n", scalename+3, totalclkticks / (totalticks / 100.0));
 
 	h = 10; /* unit height of bars */
 	fprintf(gnudata, "set ytics (");
