@@ -750,8 +750,8 @@ static void showcolormap(char *filename, int all)
 	int w = 600;
 	int h = 500;
 	char *scale;
-	double tu = 0;
-	lng total = 0, totfreq = 0;
+	double tu = 0, total = 0;
+	lng totfreq = 0;
 
 	if (all) {
 		snprintf(buf, BUFSIZ, "%s.gpl", filename);
@@ -809,9 +809,14 @@ static void showcolormap(char *filename, int all)
 			k++;
 		}
 
+	scale = "ms";
+	if (total > 1000) {
+		total /= 1000.0;
+		scale = "sec";
+	}
 	h -= 45;
-	fprintf(f, "set label %d \" "LLFMT" MAL instructions executed\" at %d,%d\n",
-			object++, totfreq, (int) (0.2 * w), h - 35);
+	fprintf(f, "set label %d \" "LLFMT" MAL instructions executed in %3.2f %s\" at %d,%d\n",
+			object++, totfreq, total, scale, (int) (0.2 * w), h - 35);
 	fprintf(f, "plot 0 notitle with lines linecolor rgb \"white\"\n");
 }
 
