@@ -660,10 +660,10 @@ static void showmemory(void)
 {
 	int i;
 	lng max = 0, min = LLONG_MAX;
-	double mx, mn;
+	double mx, mn, mm;
 	double scale = 1.0;
 	const char * scalename = "MB";
-	int digits = 0;
+	int digits;
 
 	for (i = 0; i < topbox; i++)
 		if (box[i].clkend && box[i].fcn) {
@@ -676,12 +676,21 @@ static void showmemory(void)
 			if (box[i].memend < min)
 				min = box[i].memend;
 		}
+	if (min == max) {
+		min -= 1;
+		max += 1;
+	}
 
 	if (max >= 1024) {
 		scale = 1024.0;
 		scalename = "GB";
-		digits = 1;
 	}
+	if (max / scale >= 100)
+		digits = 0;
+	else if (max / scale >= 10)
+		digits = 1;
+	else
+		digits = 2;
 
 	fprintf(gnudata, "\nset tmarg 1\n");
 	fprintf(gnudata, "set bmarg 1\n");
@@ -695,9 +704,9 @@ static void showmemory(void)
 	fprintf(gnudata, "unset xtics\n");
 	mn = min / 1024.0;
 	mx = max / 1024.0;
-	mx += (mn == mx);
-	fprintf(gnudata, "set yrange [%f:%f]\n", mn, mx);
-	fprintf(gnudata, "set ytics (\"%.*f\" %f, \"%.*f\" %f)\n", digits, min / scale, mn, digits, max / scale, mx);
+	mm = (mx - mn) / 50.0; /* 2% top & bottom margin */
+	fprintf(gnudata, "set yrange [%f:%f]\n", mn - mm, mx + mm);
+	fprintf(gnudata, "set ytics (\"%.*f\" %f, \"%.*f\" %f) nomirror\n", digits, min / scale, mn, digits, max / scale, mx);
 	fprintf(gnudata, "plot \"%s.dat\" using 1:2 notitle with dots linecolor rgb \"blue\"\n", (tracefile ? "scratch" : filename));
 	fprintf(gnudata, "unset yrange\n");
 }
