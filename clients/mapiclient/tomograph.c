@@ -741,18 +741,6 @@ static void showio(void)
 	fprintf(gnudata, "unset title\n");
 }
 
-static char *underscore(char *s)
-{
-	char *new = (char*) malloc( 2 * strlen(s) +1), *n=new;
-	assert(new != 0);
-	for ( ; *s; s++){
-		if ( *s == '_') *n++= '\\';
-		*n++ = *s++;
-	}
-	*n = 0;
-	return s;
-}
-
 /* produce a legenda image for the color map */
 static void showcolormap(char *filename, int all)
 {
@@ -769,7 +757,7 @@ static void showcolormap(char *filename, int all)
 		snprintf(buf, BUFSIZ, "%s.gpl", filename);
 		f = fopen(buf, "w");
 		assert(f);
-		fprintf(f, "set terminal pdfcairo enhanced color solid size 8.3, 11.7\n");
+		fprintf(f, "set terminal pdfcairo noenhanced color solid size 8.3, 11.7\n");
 		fprintf(f, "set output \"%s.pdf\"\n", filename);
 		fprintf(f, "set size 1,1\n");
 		fprintf(f, "set xrange [0:1800]\n");
@@ -813,7 +801,7 @@ static void showcolormap(char *filename, int all)
 			fprintf(f, "set object %d rectangle from %f, %f to %f, %f fillcolor rgb \"%s\" fillstyle solid 0.6\n",
 					object++, (double) (k % 3) * w, (double) h - 40, (double) ((k % 3) * w + 0.15 * w), (double) h - 5, colors[i].col);
 			fprintf(f, "set label %d \"%s.%s \" at %d,%d\n",
-					object++, underscore(colors[i].mod), underscore(colors[i].fcn), (int) ((k % 3) * w + 0.2 * w), h - 15);
+					object++, colors[i].mod, colors[i].fcn, (int) ((k % 3) * w + 0.2 * w), h - 15);
 			fprintf(f, "set label %d \"%d calls %3.2f %s\" at %f,%f\n",
 					object++, colors[i].freq, tu, scale, (double) ((k % 3) * w + 0.2 * w), (double) h - 35);
 			if (k % 3 == 2)
@@ -935,7 +923,7 @@ static void gnuplotheader(char *filename)
 {
 	time_t tm;
 	char *date, *c;
-	fprintf(gnudata, "set terminal pdfcairo enhanced color solid size 8.3,11.7\n");
+	fprintf(gnudata, "set terminal pdfcairo noenhanced color solid size 8.3,11.7\n");
 	fprintf(gnudata, "set output \"%s.pdf\"\n", filename);
 	fprintf(gnudata, "set size 1,1\n");
 	fprintf(gnudata, "set tics front\n");
