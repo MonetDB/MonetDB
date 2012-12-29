@@ -607,15 +607,15 @@ static void dumpboxes(void)
 		if (box[i].clkend && box[i].fcn) {
 			if (box[i].state < PING) {
 				//io counters are zero at start of instruction !
-				//fprintf(f,""LLFMT" %3.2f 0 0 \n", box[i].clkstart, (box[i].memstart/1024.0));
-				fprintf(f, ""LLFMT" %3.2f 0 0\n", box[i].clkend, (box[i].memend / 1024.0));
+				//fprintf(f,""LLFMT" %f 0 0 \n", box[i].clkstart, (box[i].memstart/1024.0));
+				fprintf(f, ""LLFMT" %f 0 0\n", box[i].clkend, (box[i].memend / 1024.0));
 			} else 
 			if (box[i].state == PING) {
 				/* cpu stat events may arrive out of order, drop those */
 				if ( box[i].clkstart <= e)
 					continue;
 				e = box[i].clkstart;
-				fprintf(f, ""LLFMT" %3.2f "LLFMT" "LLFMT"\n", box[i].clkstart, (box[i].memend / 1024.0), box[i].reads, box[i].writes);
+				fprintf(f, ""LLFMT" %f "LLFMT" "LLFMT"\n", box[i].clkstart, (box[i].memend / 1024.0), box[i].reads, box[i].writes);
 				if (cpus == 0) {
 					char *s = box[i].stmt;
 					while (s && isspace((int) *s))
@@ -646,7 +646,10 @@ static void showmemory(void)
 {
 	int i;
 	lng max = 0, min = LLONG_MAX;
-	lng mx, mn;
+	double mx, mn;
+	double scale = 1.0;
+	const char * scalename = "MB";
+	int digits = 0;
 
 	for (i = 0; i < topbox; i++)
 		if (box[i].clkend && box[i].fcn) {
@@ -660,6 +663,11 @@ static void showmemory(void)
 				min = box[i].memend;
 		}
 
+	if (max >= 1024) {
+		scale = 1024.0;
+		scalename = "GB";
+		digits = 1;
+	}
 
 	fprintf(gnudata, "\nset tmarg 1\n");
 	fprintf(gnudata, "set bmarg 1\n");
@@ -669,13 +677,13 @@ static void showmemory(void)
 	fprintf(gnudata, "set origin 0.0,0.87\n");
 
 	fprintf(gnudata, "set xrange ["LLFMT":"LLFMT"]\n", startrange, lastclktick - starttime);
-	fprintf(gnudata, "set ylabel \"memory in GB\"\n");
+	fprintf(gnudata, "set ylabel \"memory in %s\"\n", scalename);
 	fprintf(gnudata, "unset xtics\n");
-	mn = (lng) (min / 1024.0);
-	mx = (lng) (max / 1024.0);
-	mx += (mn == mx) + 1;
-	fprintf(gnudata, "set yrange ["LLFMT":"LLFMT"]\n", mn, mx);
-	fprintf(gnudata, "set ytics (\"%.1f\" "LLFMT", \"%.1f\" "LLFMT")\n", min / 1024.0, mn, max / 1024.0, mx);
+	mn = min / 1024.0;
+	mx = max / 1024.0;
+	mx += (mn == mx);
+	fprintf(gnudata, "set yrange [%f:%f]\n", mn, mx);
+	fprintf(gnudata, "set ytics (\"%.*f\" %f, \"%.*f\" %f)\n", digits, min / scale, mn, digits, max / scale, mx);
 	fprintf(gnudata, "plot \"%s.dat\" using 1:2 notitle with dots linecolor rgb \"blue\"\n", (tracefile ? "scratch" : filename));
 	fprintf(gnudata, "unset yrange\n");
 }
