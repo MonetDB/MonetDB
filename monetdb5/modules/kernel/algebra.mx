@@ -575,7 +575,7 @@ comment "Returns 2 columns with all BUNs, consisting of the head-oids
 	  from 'left' and 'right' for which there are BUNs in 'left' 
 	  and 'right' with equal tails";
 
-command bandjoin( outer:bat[:oid,:any_2], inner:bat[:oid,:any_3], minus:any_2 , plus:any_2, li:bit, hi:bit ) 
+command bandjoin( outer:bat[:oid,:any_2], inner:bat[:oid,:any_2], minus:any_2 , plus:any_2, li:bit, hi:bit ) 
 		(l:bat[:oid,:oid],r:bat[:oid,:oid])
 address ALGbandjoin2
 comment "This is a join() for which the predicate is that two BUNs match 
