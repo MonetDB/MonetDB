@@ -731,7 +731,7 @@ static void showmemory(void)
 	fprintf(gnudata, "set size 1,0.07\n");
 	fprintf(gnudata, "set origin 0.0,0.87\n");
 
-	fprintf(gnudata, "set xrange ["LLFMT":"LLFMT"]\n", startrange, lastclktick - starttime);
+	fprintf(gnudata, "set xrange ["LLFMT".0:"LLFMT".0]\n", startrange, lastclktick - starttime);
 	fprintf(gnudata, "set ylabel \"memory in %s\"\n", scalename);
 	fprintf(gnudata, "unset xtics\n");
 	mn = min / 1024.0;
@@ -758,7 +758,7 @@ static void showcpu(void)
 	fprintf(gnudata, "unset ytics\n");
 	fprintf(gnudata, "unset border\n");
 
-	fprintf(gnudata, "set xrange ["LLFMT":"LLFMT"]\n", startrange, lastclktick - starttime);
+	fprintf(gnudata, "set xrange ["LLFMT".0:"LLFMT".0]\n", startrange, lastclktick - starttime);
 	fprintf(gnudata, "set yrange [0:%d.%d]\n", cpus, cpus);
 	if (cpus)
 		fprintf(gnudata, "plot ");
@@ -790,12 +790,12 @@ static void showio(void)
 	fprintf(gnudata, "set rmarg 10\n");
 	fprintf(gnudata, "set size 1,0.07\n");
 	fprintf(gnudata, "set origin 0.0,0.87\n");
-	fprintf(gnudata, "set xrange ["LLFMT":"LLFMT"]\n", startrange, lastclktick - starttime);
-	fprintf(gnudata, "set yrange [0:"LLFMT"]\n", max / beat);
+	fprintf(gnudata, "set xrange ["LLFMT".0:"LLFMT".0]\n", startrange, lastclktick - starttime);
+	fprintf(gnudata, "set yrange [0:"LLFMT".0]\n", max / beat);
 	fprintf(gnudata, "unset xtics\n");
 	fprintf(gnudata, "unset ytics\n");
 	fprintf(gnudata, "unset ylabel\n");
-	fprintf(gnudata, "set y2tics in (0, "LLFMT") nomirror\n", max / beat);
+	fprintf(gnudata, "set y2tics in (0, "LLFMT".0) nomirror\n", max / beat);
 	fprintf(gnudata, "set y2label \"IO per ms\"\n");
 	fprintf(gnudata, "plot \"%s.dat\" using 1:(($3+$4)/%d.0) title \"reads\" with boxes fs solid linecolor rgb \"gray\" ,\\\n", (tracefile ? "scratch" : filename), beat);
 	fprintf(gnudata, "\"%s.dat\" using 1:($4/%d.0) title \"writes\" with boxes fs solid linecolor rgb \"red\"  \n", (tracefile ? "scratch" : filename), beat);
@@ -1124,7 +1124,7 @@ static void createTomogram(void)
 	fprintf(gnudata, "set rmarg 10\n");
 	fprintf(gnudata, "set size 1,0.4\n");
 	fprintf(gnudata, "set origin 0.0,0.4\n");
-	fprintf(gnudata, "set xrange ["LLFMT":"LLFMT"]\n", startrange, lastclktick - starttime);
+	fprintf(gnudata, "set xrange ["LLFMT".0:"LLFMT".0]\n", startrange, lastclktick - starttime);
 
 	/* detect all different threads and assign them a row */
 	for (i = 0; i < topbox; i++)
@@ -1177,8 +1177,8 @@ static void createTomogram(void)
 	w /= 10;
 	fprintf(gnudata, "set xtics (\"0\" 0,");
 	for (i = 1; i < 10; i++)
-		fprintf(gnudata, "\"%.*f\" "LLFMT",", digits, (double) i * w / scale, i * w);
-	fprintf(gnudata, "\"%.*f %s\" "LLFMT, digits, (double) i * w / scale, scalename, i * w);
+		fprintf(gnudata, "\"%.*f\" "LLFMT".0,", digits, (double) i * w / scale, i * w);
+	fprintf(gnudata, "\"%.*f %s\" "LLFMT".0", digits, (double) i * w / scale, scalename, i * w);
 	fprintf(gnudata, ")\n");
 	fprintf(gnudata, "set grid xtics\n");
 
@@ -1199,7 +1199,7 @@ static void createTomogram(void)
 
 	/* mark duration of each thread */
 	for (i = 0; i < top; i++)
-		fprintf(gnudata, "set object %d rectangle from %d, %d to "LLFMT", %d\n",
+		fprintf(gnudata, "set object %d rectangle from %d, %d to "LLFMT".0, %d\n",
 				object++, 0, i * 2 * h, lastclk[rows[i]], i * 2 * h + h);
 
 	/* fill the duration of each instruction encountered that fit our range constraint */
@@ -1209,13 +1209,13 @@ static void createTomogram(void)
 		default:
 			if (debug)
 				dumpbox(i);
-			fprintf(gnudata, "set object %d rectangle from "LLFMT", %d to "LLFMT", %d fillcolor rgb \"%s\" fillstyle solid 0.6\n",
+			fprintf(gnudata, "set object %d rectangle from "LLFMT".0, %d to "LLFMT".0, %d fillcolor rgb \"%s\" fillstyle solid 0.6\n",
 					object++, box[i].clkstart, box[i].row * 2 * h, box[i].clkend, box[i].row * 2 * h + h, colors[box[i].color].col);
 			break;
 		case PING:
 			break;
 		case WAIT:
-			fprintf(gnudata, "set object %d rectangle at "LLFMT", %d size 0.2,0.3 front fillcolor rgb \"red\" fillstyle solid 1.0\n",
+			fprintf(gnudata, "set object %d rectangle at "LLFMT".0, %d size 0.2,0.3 front fillcolor rgb \"red\" fillstyle solid 1.0\n",
 					object++, box[i].clkstart, box[i].row * 2 * h+h);
 		}
 
