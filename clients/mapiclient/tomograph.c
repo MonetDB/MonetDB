@@ -556,6 +556,113 @@ fixed_colors[] = {
 	{ 0, 0, "*", "*", "peachpuff" },
 	{ 0, 0, 0, 0, 0 }
 };
+/* initial mod.fcn list for adaptive colormap */
+Color
+base_colors[] = {
+	/* reserve (base_)colors[0] for generic "*.*" */
+	{ 0, 0, "*", "*", 0 },
+	{ 0, 0, "aggr", "count", 0 },
+	{ 0, 0, "aggr", "max", 0 },
+	{ 0, 0, "aggr", "subcount", 0 },
+	{ 0, 0, "aggr", "submin", 0 },
+	{ 0, 0, "aggr", "subsum", 0 },
+	{ 0, 0, "aggr", "sum", 0 },
+	{ 0, 0, "algebra", "fetch", 0 },
+	{ 0, 0, "algebra", "join", 0 },
+	{ 0, 0, "algebra", "leftfetchjoin", 0 },
+	{ 0, 0, "algebra", "leftfetchjoinPath", 0 },
+	{ 0, 0, "algebra", "leftjoin", 0 },
+	{ 0, 0, "algebra", "likesubselect", 0 },
+	{ 0, 0, "algebra", "project", 0 },
+	{ 0, 0, "algebra", "selectNotNil", 0 },
+	{ 0, 0, "algebra", "subselect", 0 },
+	{ 0, 0, "algebra", "subslice", 0 },
+	{ 0, 0, "algebra", "subsort", 0 },
+	{ 0, 0, "algebra", "tdiff", 0 },
+	{ 0, 0, "algebra", "thetajoin", 0 },
+	{ 0, 0, "algebra", "thetasubselect", 0 },
+	{ 0, 0, "algebra", "tinter", 0 },
+	{ 0, 0, "bat", "append", 0 },
+	{ 0, 0, "batcalc", "<", 0 },
+	{ 0, 0, "batcalc", "==", 0 },
+	{ 0, 0, "batcalc", ">", 0 },
+	{ 0, 0, "batcalc", "-", 0 },
+	{ 0, 0, "batcalc", "!=", 0 },
+	{ 0, 0, "batcalc", "/", 0 },
+	{ 0, 0, "batcalc", "*", 0 },
+	{ 0, 0, "batcalc", "+", 0 },
+	{ 0, 0, "batcalc", "and", 0 },
+	{ 0, 0, "batcalc", "dbl", 0 },
+	{ 0, 0, "batcalc", "hash", 0 },
+	{ 0, 0, "batcalc", "ifthenelse", 0 },
+	{ 0, 0, "batcalc", "isnil", 0 },
+	{ 0, 0, "batcalc", "lng", 0 },
+	{ 0, 0, "batcalc", "or", 0 },
+	{ 0, 0, "bat", "insert", 0 },
+	{ 0, 0, "bat", "mergecand", 0 },
+	{ 0, 0, "bat", "mirror", 0 },
+	{ 0, 0, "batmtime", "year", 0 },
+	{ 0, 0, "bat", "new", 0 },
+	{ 0, 0, "bat", "reverse", 0 },
+	{ 0, 0, "batstr", "like", 0 },
+	{ 0, 0, "batstr", "substring", 0 },
+	{ 0, 0, "calc", "==", 0 },
+	{ 0, 0, "calc", "-", 0 },
+	{ 0, 0, "calc", "!=", 0 },
+	{ 0, 0, "calc", "/", 0 },
+	{ 0, 0, "calc", "*", 0 },
+	{ 0, 0, "calc", "+", 0 },
+	{ 0, 0, "calc", "bit", 0 },
+	{ 0, 0, "calc", "date", 0 },
+	{ 0, 0, "calc", "dbl", 0 },
+	{ 0, 0, "calc", "ifthenelse", 0 },
+	{ 0, 0, "calc", "int", 0 },
+	{ 0, 0, "calc", "isnil", 0 },
+	{ 0, 0, "calc", "lng", 0 },
+	{ 0, 0, "calc", "max", 0 },
+	{ 0, 0, "calc", "min", 0 },
+	{ 0, 0, "calc", "ptr", 0 },
+	{ 0, 0, "calc", "str", 0 },
+	{ 0, 0, "calc", "wrd", 0 },
+	{ 0, 0, "group", "subgroup", 0 },
+	{ 0, 0, "group", "subgroupdone", 0 },
+	{ 0, 0, "io", "stdout", 0 },
+	{ 0, 0, "iterator", "new", 0 },
+	{ 0, 0, "iterator", "next", 0 },
+	{ 0, 0, "language", "dataflow", 0 },
+	{ 0, 0, "language", "pass", 0 },
+	{ 0, 0, "mat", "pack", 0 },
+	{ 0, 0, "mat", "packIncrement", 0 },
+	{ 0, 0, "mkey", "bulk_rotate_xor_hash", 0 },
+	{ 0, 0, "mtime", "addmonths", 0 },
+	{ 0, 0, "mtime", "date_sub_msec_interval", 0 },
+	{ 0, 0, "pqueue", "topn_max", 0 },
+	{ 0, 0, "pqueue", "topn_min", 0 },
+	{ 0, 0, "pqueue", "utopn_max", 0 },
+	{ 0, 0, "pqueue", "utopn_min", 0 },
+	{ 0, 0, "profiler", "ping", 0 },
+	{ 0, 0, "profiler", "wait", 0 },
+	{ 0, 0, "sql", "affectedRows", 0 },
+	{ 0, 0, "sql", "assert", 0 },
+	{ 0, 0, "sql", "bind", 0 },
+	{ 0, 0, "sql", "bind_idxbat", 0 },
+	{ 0, 0, "sql", "catalog", 0 },
+	{ 0, 0, "sql", "copy_from", 0 },
+	{ 0, 0, "sql", "dec_round", 0 },
+	{ 0, 0, "sql", "delta", 0 },
+	{ 0, 0, "sql", "exportOperation", 0 },
+	{ 0, 0, "sql", "exportResult", 0 },
+	{ 0, 0, "sql", "exportValue", 0 },
+	{ 0, 0, "sql", "mvc", 0 },
+	{ 0, 0, "sql", "projectdelta", 0 },
+	{ 0, 0, "sql", "resultSet", 0 },
+	{ 0, 0, "sql", "rsColumn", 0 },
+	{ 0, 0, "sql", "setVariable", 0 },
+	{ 0, 0, "sql", "subdelta", 0 },
+	{ 0, 0, "sql", "tid", 0 },
+	{ 0, 0, "sql", "update", 0 },
+	{ 0, 0, 0, 0, 0 }
+};
 
 static char *getRGB(char *name)
 {
@@ -625,10 +732,9 @@ static void initcolors(FILE *map)
 				fprintf(stderr, "color '%s' not found\n", fixed_colors[i].col);
 		}
 	} else {
-		/* use fixed assignment of colors */
-		for (i = 0; i < NUM_COLORS && fixed_colors[i].mod; i++) {
-			colors[i].mod = fixed_colors[i].mod;
-			colors[i].fcn = fixed_colors[i].fcn;
+		for (i = 0; i < NUM_COLORS && base_colors[i].mod; i++) {
+			colors[i].mod = base_colors[i].mod;
+			colors[i].fcn = base_colors[i].fcn;
 			colors[i].freq = 0;
 			colors[i].timeused = 0;
 			colors[i].col = dictionary[i].hsv;
@@ -926,9 +1032,9 @@ static void showcolormap(char *filename, int all)
 		fprintf(f, "unset title\n");
 		fprintf(f, "unset ylabel\n");
 	}
-	/* create copy of colormap and sort in ascending order of timeused;
-	 * "*.*" stays first (colors[0]) */
 	if ( !fixedmap ){
+		/* create copy of colormap and sort in ascending order of timeused;
+		 * "*.*" stays first (colors[0]) */
 		_clrs_ = (Color*) malloc (sizeof(colors));
 		if (_clrs_) {
 			memcpy (_clrs_, colors, sizeof(colors));
@@ -1022,21 +1128,31 @@ static void updmap(int idx)
 		fcn++;
 	} else
 		fcn = "*";
-	/* find "mod.fcn" */
-	for (i = 1; i < NUM_COLORS && colors[i].mod; i++)
-		if (strcmp(mod, colors[i].mod) == 0 || colors[i].mod[0] == '*') {
-			if (strcmp(fcn, colors[i].fcn) == 0 || colors[i].fcn[0] == '*') {
-				fnd = i;
-				break;
-			} 
+	if (fixedmap) {
+		/* find first match for "mod.fcn", "*.fcn", "mod.*", "*.*" */
+		for (i = 0; i < NUM_COLORS && colors[i].mod; i++)
+			if (strcmp(mod, colors[i].mod) == 0 || colors[i].mod[0] == '*') {
+				if (strcmp(fcn, colors[i].fcn) == 0 || colors[i].fcn[0] == '*') {
+					fnd = i;
+					break;
+				}
+			}
+	} else {
+		/* find "mod.fcn" */
+		for (i = 1; i < NUM_COLORS && colors[i].mod; i++)
+			if (strcmp(mod, colors[i].mod) == 0) {
+				if (strcmp(fcn, colors[i].fcn) == 0) {
+					fnd = i;
+					break;
+				}
+			}
+		if (fnd == 0 && i < NUM_COLORS) {
+			/* not found, but still free slot: add new one */
+			fnd = i;
+			colors[fnd].mod = strdup(mod);
+			colors[fnd].fcn = strdup(fcn);
+			printf("added function #%d: %s.%s\n", fnd, mod, fcn);
 		}
-
-	if ( !fixedmap && fnd == 0 && i < NUM_COLORS) {
-		/* not found, but still free slot: add new one */
-		fnd = i;
-		colors[fnd].mod = strdup(mod);
-		colors[fnd].fcn = strdup(fcn);
-		printf("added function #%d: %s.%s\n", fnd, mod, fcn);
 	}
 
 	colors[fnd].freq++;
@@ -1251,7 +1367,7 @@ static void createTomogram(void)
 	/* mark duration of each thread */
 	for (i = 0; i < top; i++)
 		fprintf(gnudata, "set object %d rectangle from %d, %d to "LLFMT".0, %d\n",
-				object++, 0, i * 2 * h, lastclk[rows[i]], i * 2 * h + h);
+				object++, 0, i * 2 * h + (1-fixedmap)*h/3, lastclk[rows[i]], i * 2 * h + h - (1-fixedmap)*h/3);
 
 	/* fill the duration of each instruction encountered that fit our range constraint */
 	for (i = 0; i < topbox; i++)
