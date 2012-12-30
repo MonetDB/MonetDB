@@ -1409,7 +1409,7 @@ mvc_export_head(mvc *m, stream *s, int res_id, int only_header)
 	/* tuple count */
 	if (only_header) {
 		if (t->order) {
-			order = BATdescriptor(t->order);
+			order = BBPquickdesc(ABS(t->order), FALSE);
 			if (!order)
 				return -1;
 
@@ -1419,53 +1419,53 @@ mvc_export_head(mvc *m, stream *s, int res_id, int only_header)
 	}
 	if (!mvc_send_lng(s, (lng) count) ||
 			mnstr_write(s, " ", 1, 1) != 1)
-		return export_error(order);
+		return -1;
 
 	/* column count */
 	if (!mvc_send_int(s, t->nr_cols) ||
 			mnstr_write(s, " ", 1, 1) != 1)
-		return export_error(order);
+		return -1;
 
 	/* row count, min(count, reply_size) */
 	if (!mvc_send_int(s, (m->reply_size >= 0 && (BUN) m->reply_size < count) ? m->reply_size : (int) count)) 
-		return export_error(order);
+		return -1;
 
 	if (mnstr_write(s, "\n% ", 3, 1) != 1)
-		return export_error(order);
+		return -1;
 	for (i = 0; i < t->nr_cols; i++) {
 		res_col *c = t->cols + i;
 		size_t len = strlen(c->tn);
 
 		if (len && mnstr_write(s, c->tn, len, 1) != 1)
-			return export_error(order);
+			return -1;
 		if (i + 1 < t->nr_cols && mnstr_write(s, ",\t", 2, 1) != 1)
-			return export_error(order);
+			return -1;
 	}
 	if (mnstr_write(s, " # table_name\n% ", 16, 1) != 1)
-		return export_error(order);
+		return -1;
 
 	for (i = 0; i < t->nr_cols; i++) {
 		res_col *c = t->cols + i;
 
 		if (mnstr_write(s, c->name, strlen(c->name), 1) != 1)
-			return export_error(order);
+			return -1;
 		if (i + 1 < t->nr_cols && mnstr_write(s, ",\t", 2, 1) != 1)
-			return export_error(order);
+			return -1;
 	}
 	if (mnstr_write(s, " # name\n% ", 10, 1) != 1)
-		return export_error(order);
+		return -1;
 
 	for (i = 0; i < t->nr_cols; i++) {
 		res_col *c = t->cols + i;
 
 		if (mnstr_write(s, c->type.type->sqlname,
 					strlen(c->type.type->sqlname), 1) != 1)
-			return export_error(order);
+			return -1;
 		if (i + 1 < t->nr_cols && mnstr_write(s, ",\t", 2, 1) != 1)
-			return export_error(order);
+			return -1;
 	}
 	if (mnstr_write(s, " # type\n% ", 10, 1) != 1)
-		return export_error(order);
+		return -1;
 
 	for (i = 0; i < t->nr_cols; i++) {
 		res_col *c = t->cols + i;
@@ -1473,32 +1473,29 @@ mvc_export_head(mvc *m, stream *s, int res_id, int only_header)
 		int eclass = c->type.type->eclass;
 
 		if (!export_length(s, mtype, eclass, c->type.digits, c->type.scale, type_has_tz(&c->type), c->b, c->p))
-			return export_error(order);
+			return -1;
 		if (i + 1 < t->nr_cols && mnstr_write(s, ",\t", 2, 1) != 1)
-			return export_error(order);
+			return -1;
 	}
 	if (mnstr_write(s, " # length\n", 10, 1) != 1)
-		return export_error(order);
+		return -1;
 
 	if (m->sizeheader) {
 		if (mnstr_write(s, "% ", 2, 1) != 1)
-			return export_error(order);
+			return -1;
 		for (i = 0; i < t->nr_cols; i++) {
 			res_col *c = t->cols + i;
 
 			if (mnstr_printf(s, "%u %u",
 					 c->type.digits, c->type.scale) < 0)
-				return export_error(order);
+				return -1;
 			if (i + 1 < t->nr_cols &&
 			    mnstr_write(s, ",\t", 2, 1) != 1)
-				return export_error(order);
+				return -1;
 		}
 		if (mnstr_write(s, " # typesizes\n", 13, 1) != 1)
-			return export_error(order);
+			return -1;
 	}
-
-	if ( order)
-		BBPunfix(order->batCacheid);
 	return res;
 }
 

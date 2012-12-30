@@ -314,11 +314,13 @@ static void dumpbox(int i)
 
 /* color map management, fixed */
 /* see http://www.uni-hamburg.de/Wiss/FB/15/Sustainability/schneider/gnuplot/colors.htm */
-struct {
+typedef struct {
 	char *name;
 	char *hsv;
 	int red, green, blue;
-}
+} RGB;
+
+RGB
 dictionary[] = {
 	{ "aliceblue", "#F0F8FF", 240, 248, 255 },
 	{ "antiquewhite", "#FAEBD7", 250, 235, 215 },
@@ -460,123 +462,42 @@ dictionary[] = {
 	{ "white", "#FFFFFF", 255, 255, 255 },
 	{ "whitesmoke", "#F5F5F5", 245, 245, 245 },
 	{ "yellow", "#FFFF00", 255, 255, 0 },
-	{ "yellowgreen", "#9ACD32", 139, 205, 50 },
-	{ 0, 0, 0, 0, 0 }
+	{ "yellowgreen", "#9ACD32", 139, 205, 50 }
 };
 
-static char *getRGB(char *name)
-{
-	int i;
-	for (i = 0; dictionary[i].name; i++)
-		if (strcmp(dictionary[i].name, name) == 0)
-			return dictionary[i].hsv;
-	return 0;
-}
+#define NUM_COLORS ((int) (sizeof(dictionary) / sizeof(RGB)))
+#define MAX_LEGEND 30	/* max. size of colormap / legend */
 
 
 /* The initial dictionary is geared towars TPCH-use */
-typedef
-struct COLOR {
+typedef struct COLOR {
 	int freq;
 	lng timeused;
 	char *mod, *fcn, *col;
 } Color;
 
 Color
-colors[] =
-{
-	{ 0, 0, "mal", "idle", "white" },
-	{ 0, 0, "mal", "*", "white" },
+colors[NUM_COLORS] = {{0,0,0,0,0}};
 
-	{ 0, 0, "aggr", "subcount", "darkgreen" },
-	{ 0, 0, "aggr", "count", "darkgreen" },
-	{ 0, 0, "aggr", "subsum", "lawngreen" },
-	{ 0, 0, "aggr", "submin", "lawngreen" },
-	{ 0, 0, "aggr", "min", "lawngreen" },
-	{ 0, 0, "aggr", "submax", "lawngreen" },
-	{ 0, 0, "aggr", "max", "lawngreen" },
-	{ 0, 0, "aggr", "*", "green" },
-
-	{ 0, 0, "algebra", "leftjoin", "yellow" },
-	{ 0, 0, "algebra", "leftfetchjoin", "yellow" },
-	{ 0, 0, "algebra", "join", "navy" },
-	{ 0, 0, "algebra", "semijoin", "lightblue" },
-	{ 0, 0, "algebra", "kdifference", "cyan" },
-	{ 0, 0, "algebra", "kunion", "cyan" },
-	{ 0, 0, "algebra", "slice", "royalblue" },
-	//{0,0,"algebra","sortTail","cyan"},
-	{ 0, 0, "algebra", "markT", "blue" },
-	{ 0, 0, "algebra", "selectNotNil", "forestgreen" },
-	{ 0, 0, "algebra", "thetaselect", "mediumseagreen" },
-	{ 0, 0, "algebra", "thetasubselect", "mediumseagreen" },
-	{ 0, 0, "algebra", "subselect", "green" },
-	{ 0, 0, "algebra", "*", "lightgreen" },
-
-	//{0,0,"bat","mirror","orange"},
-	//{0,0,"bat","reverse","orange"},
-	{ 0, 0, "bat", "*", "orange" },
-
-	//{0,0,"batcalc","-","moccasin"},
-	//{0,0,"batcalc","*","moccasin"},
-	//{0,0,"batcalc","+","moccasin"},
-	{ 0, 0, "batcalc", "dbl", "papayawhip" },
-	{ 0, 0, "batcalc", "str", "papayawhip" },
-	{ 0, 0, "batcalc", "*", "lightyellow" },
-
-	{ 0, 0, "calc", "lng", "lightpink" },
-	{ 0, 0, "calc", "str", "lightpink" },
-	{ 0, 0, "calc", "*", "lightpink" },
-
-	{ 0, 0, "mtime", "*", "lightpink" },
-
-	{ 0, 0, "group", "multicolumns", "mediumorchid" },
-	{ 0, 0, "group", "refine", "darkorchid" },
-	{ 0, 0, "group", "*", "orchid" },
-
-	{ 0, 0, "language", "dataflow", "lightslategray" },
-	{ 0, 0, "language", "*", "darkgray" },
-
-	{ 0, 0, "mat", "pack", "red" },
-	{ 0, 0, "mat", "packIncrement", "red" },
-	{ 0, 0, "mat", "*", "red" },
-
-	{ 0, 0, "pcre", "likesubselect", "burlywood" },
-	{ 0, 0, "pcre", "*", "burlywood" },
-
-	{ 0, 0, "batstr", "likeselect", "burlywood" },
-
-	//{0,0,"pqueue","topn_max","lightcoral"},
-	//{0,0,"pqueue","utopn_max","lightcoral"},
-	//{0,0,"pqueue","utopn_min","lightcoral"},
-	{ 0, 0, "pqueue", "*", "lightcoral" },
-
-	{ 0, 0, "io", "stdout", "gray" },
-	{ 0, 0, "io", "*", "gray" },
-
-	//{0,0,"sql","bind","thistle"},
-	//{0,0,"sql","bind_dbat","thistle"},
-	//{0,0,"sql","mvc","thistle"},
-	{ 0, 0, "sql", "projectdelta", "hotpink" },
-	{ 0, 0, "sql", "subdelta", "violet" },
-	{ 0, 0, "sql", "delta", "salmon" },
-	{ 0, 0, "sql", "tid ", "plum" },
-	{ 0, 0, "sql", "bind", "thistle" },
-	{ 0, 0, "sql", "bind_idxbat", "deeppink" },
-	{ 0, 0, "sql", "copy_from", "darksalmon" },
-	{ 0, 0, "sql", "*", "pink" },
-
-	{ 0, 0, "*", "*", "lavender" },
-	{ 0, 0, 0, 0, 0 }
-};
-
-static int cmp_clr_dsc ( const void * _one , const void * _two )
+static int cmp_clr ( const void * _one , const void * _two )
 {
 	Color *one = (Color*) _one, *two = (Color*) _two;
-	/* -1 & 1 swapped for descending order */
-	return ((one->timeused < two->timeused) ? 1 :
-		((one->timeused > two->timeused) ? -1 :
-		 ((one->freq < two->freq) ? 1 :
-		  ((one->freq > two->freq) ? -1 :
+
+	/* "*.*" should always be smallest / first */
+	if (one->mod && one->fcn && 
+	    one->mod[0] == '*' && one->mod[1] == '\0' &&
+	    one->fcn[0] == '*' && one->fcn[1] == '\0')
+		return -1;
+	if (two->mod && two->fcn && 
+	    two->mod[0] == '*' && two->mod[1] == '\0' &&
+	    two->fcn[0] == '*' && two->fcn[1] == '\0')
+		return 1;
+
+	/* order on timeused; use freq as tiebreaker */
+	return ((one->timeused < two->timeused) ? -1 :
+		((one->timeused > two->timeused) ? 1 :
+		 ((one->freq < two->freq) ? -1 :
+		  ((one->freq > two->freq) ? 1 :
 		   0))));
 }
 
@@ -585,16 +506,16 @@ int object = 1;
 static void initcolors(void)
 {
 	int i;
-	char *c;
-	for (i = 0; colors[i].col; i++) {
+	for (i = 0; i < NUM_COLORS; i++) {
+		colors[i].mod = 0;
+		colors[i].fcn = 0;
 		colors[i].freq = 0;
 		colors[i].timeused = 0;
-		c = getRGB(colors[i].col);
-		if (c)
-			colors[i].col = c;
-		else
-			fprintf(stderr, "color '%s' not found\n", colors[i].col);
+		colors[i].col = dictionary[i].hsv;
 	}
+	/* reserve colors[0] for generic "*.*" */
+	colors[0].mod = "*";
+	colors[0].fcn = "*";
 }
 
 static void dumpboxes(void)
@@ -842,7 +763,7 @@ static void showcolormap(char *filename, int all)
 	char buf[BUFSIZ];
 	int i, k = 0;
 	int w = 600;
-	int h = 500;
+	int h = 590;
 	lng totfreq = 0, tottime = 0;
 	Color *clrs = colors, *_clrs_ = NULL;
 
@@ -880,29 +801,39 @@ static void showcolormap(char *filename, int all)
 		fprintf(f, "unset title\n");
 		fprintf(f, "unset ylabel\n");
 	}
+	/* create copy of colormap and sort in ascending order of timeused;
+	 * "*.*" stays first (colors[0]) */
 	_clrs_ = (Color*) malloc (sizeof(colors));
 	if (_clrs_) {
 		memcpy (_clrs_, colors, sizeof(colors));
-		qsort (_clrs_, sizeof(colors) / sizeof(Color) - 1, sizeof(Color), cmp_clr_dsc);
+		qsort (_clrs_, NUM_COLORS, sizeof(Color), cmp_clr);
 		clrs = _clrs_;
 	}
-	for (i = 0; clrs[i].col; i++)
+	/* show colormap / legend in descending order of timeused;
+	 * show max. the MAX_LEGEND-1 most expensive function calls;
+	 * show all remaining aggregated as "*.*" */
+	for (i = NUM_COLORS - 1; i >= 0; i--)
 		if (clrs[i].mod && (clrs[i].freq > 0 || all)) {
-			tottime += clrs[i].timeused;
-			totfreq += clrs[i].freq;
+			if (all || k < MAX_LEGEND - 1 || i == 0) {
+				tottime += clrs[i].timeused;
+				totfreq += clrs[i].freq;
 
-			fprintf(f, "set object %d rectangle from %f, %f to %f, %f fillcolor rgb \"%s\" fillstyle solid 0.6\n",
-					object++, (double) (k % 3) * w, (double) h - 40, (double) ((k % 3) * w + 0.15 * w), (double) h - 5, clrs[i].col);
-			fprintf(f, "set label %d \"%s.%s \" at %d,%d\n",
-					object++, clrs[i].mod, clrs[i].fcn, (int) ((k % 3) * w + 0.2 * w), h - 15);
-			fprintf(f, "set label %d \"%d calls: ",
-					object++, clrs[i].freq);
-			fprintf_time(f, clrs[i].timeused);
-			fprintf(f, "\" at %f,%f\n",
-					(double) ((k % 3) * w + 0.2 * w), (double) h - 35);
-			if (k % 3 == 2)
-				h -= 45;
-			k++;
+				if (k % 3 == 0)
+					h -= 45;
+				fprintf(f, "set object %d rectangle from %f, %f to %f, %f fillcolor rgb \"%s\" fillstyle solid 0.6\n",
+						object++, (double) (k % 3) * w, (double) h - 40, (double) ((k % 3) * w + 0.15 * w), (double) h - 5, clrs[i].col);
+				fprintf(f, "set label %d \"%s.%s \" at %d,%d\n",
+						object++, clrs[i].mod, clrs[i].fcn, (int) ((k % 3) * w + 0.2 * w), h - 15);
+				fprintf(f, "set label %d \"%d calls: ",
+						object++, clrs[i].freq);
+				fprintf_time(f, clrs[i].timeused);
+				fprintf(f, "\" at %f,%f\n",
+						(double) ((k % 3) * w + 0.2 * w), (double) h - 35);
+				k++;
+			} else {
+				clrs[0].timeused += clrs[i].timeused;
+				clrs[0].freq += clrs[i].freq;
+			}
 		}
 	if (_clrs_) {
 		clrs = colors;
@@ -931,13 +862,20 @@ static void updmap(int idx)
 		fcn++;
 	} else
 		fcn = "*";
-	for (i = 0; colors[i].col; i++)
-		if (mod && (strcmp(mod, colors[i].mod) == 0 || strcmp("*", colors[i].mod) == 0)) {
-			if (strcmp(fcn, colors[i].fcn) == 0 || strcmp("*", colors[i].fcn) == 0) {
+	/* find "mod.fcn" */
+	for (i = 1; i < NUM_COLORS && colors[i].mod; i++)
+		if (strcmp(mod, colors[i].mod) == 0) {
+			if (strcmp(fcn, colors[i].fcn) == 0) {
 				fnd = i;
 				break;
 			}
 		}
+	if (fnd == 0 && i < NUM_COLORS) {
+		/* not found, but still free slot: add new one */
+		fnd = i;
+		colors[fnd].mod = strdup(mod);
+		colors[fnd].fcn = strdup(fcn);
+	}
 
 	colors[fnd].freq++;
 	colors[fnd].timeused += box[idx].clkend - box[idx].clkstart;

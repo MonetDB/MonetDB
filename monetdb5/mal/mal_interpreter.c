@@ -804,19 +804,22 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 					for (i = 0; i < pci->retc; i++) {
 						if (garbage[i] == -1 && stk->stk[getArg(pci, i)].vtype == TYPE_bat &&
 							stk->stk[getArg(pci, i)].val.bval) {
-							b = BATdescriptor(stk->stk[getArg(pci, i)].val.bval);
+							b = BBPquickdesc(ABS(stk->stk[getArg(pci, i)].val.bval), FALSE);
 							if (b == NULL) {
 								ret = createException(MAL, "mal.propertyCheck", RUNTIME_OBJECT_MISSING);
 								continue;
 							}
 							if (b->batStamp <= stamp) {
 								if (GDKdebug & PROPMASK) {
+									b = BATdescriptor(stk->stk[getArg(pci, i)].val.bval);
 									BATassertProps(b);
+									BBPunfix(b->batCacheid);
 								}
 							} else if (GDKdebug & CHECKMASK) {
+								b = BATdescriptor(stk->stk[getArg(pci, i)].val.bval);
 								BATassertProps(b);
+								BBPunfix(b->batCacheid);
 							}
-							BBPunfix(b->batCacheid);
 						}
 					}
 				}
