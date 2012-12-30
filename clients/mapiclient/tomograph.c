@@ -592,7 +592,7 @@ int object = 1;
 
 static void initcolors(FILE *map)
 {
-	int i;
+	int i = 0;
 	char *c;
 	char buf[3][128];
 
