@@ -133,7 +133,8 @@ static char *tracefile = 0;
 static lng startrange = 0, endrange = 0;
 static char *title = 0;
 static int debug = 0;
-static int colormap = 1;
+static int colormap = 0;
+static int fixedmap=1;
 static int beat = 50;
 static char *sqlstatement = NULL;
 static int batch = 1; /* number of queries to combine in one run */
@@ -158,7 +159,8 @@ usage(void)
 	fprintf(stderr, "  -o | --output=<file prefix > (default 'tomograph'\n");
 	fprintf(stderr, "  -b | --beat=<delay> in milliseconds (default 50)\n");
 	fprintf(stderr, "  -B | --batch=<number> of combined queries\n");
-	fprintf(stderr, "  -m | --colormap produces colormap \n");
+	fprintf(stderr, "  -a | --adaptive colormap \n");
+	fprintf(stderr, "  -m | --colormap=<userdefined colormap>\n");
 	fprintf(stderr, "  -D | --debug\n");
 	fprintf(stderr, "  -? | --help\n");
 }
@@ -467,6 +469,7 @@ dictionary[] = {
 
 #define NUM_COLORS ((int) (sizeof(dictionary) / sizeof(RGB)))
 #define MAX_LEGEND 30	/* max. size of colormap / legend */
+#define PERCENTAGE 0.01 /* threshold for time filter */
 
 
 /* The initial dictionary is geared towars TPCH-use */
@@ -479,112 +482,89 @@ typedef struct COLOR {
 Color
 colors[NUM_COLORS] = {{0,0,0,0,0}};
 
+/*
+ * The fixed color scheme is designed to keep the legend
+ * consistent over multiple tomograms. Furthermore, groups
+ * of instructions are kept within the same color group.
+ * For less frequent or important operations, we re-use the color.
+ *
+ * The map design is initially based on the relative frequency
+ * of MAL instructions encountered in TPCH and those that
+ * take significant time.
+ *
+ * The built-in fixed color map can be over-ruled using a color
+ * map file, which consists of mod\tfcn\tcol lines using
+ * the color dictionary as a frame of reference.
+ *
+ * Use the adaptive scheme if you want distinct colors 
+ * targeted for a single tomogram.
+ */
 Color
 fixed_colors[] = {
-	/* reserve (fixed_)colors[0] for generic "*.*" */
-	{ 0, 0, "*", "*", 0 },
-	{ 0, 0, "aggr", "count", 0 },
-	{ 0, 0, "aggr", "max", 0 },
-	{ 0, 0, "aggr", "subcount", 0 },
-	{ 0, 0, "aggr", "submin", 0 },
-	{ 0, 0, "aggr", "subsum", 0 },
-	{ 0, 0, "aggr", "sum", 0 },
-	{ 0, 0, "algebra", "fetch", 0 },
-	{ 0, 0, "algebra", "join", 0 },
-	{ 0, 0, "algebra", "leftfetchjoin", 0 },
-	{ 0, 0, "algebra", "leftfetchjoinPath", 0 },
-	{ 0, 0, "algebra", "leftjoin", 0 },
-	{ 0, 0, "algebra", "likesubselect", 0 },
-	{ 0, 0, "algebra", "project", 0 },
-	{ 0, 0, "algebra", "selectNotNil", 0 },
-	{ 0, 0, "algebra", "subselect", 0 },
-	{ 0, 0, "algebra", "subslice", 0 },
-	{ 0, 0, "algebra", "subsort", 0 },
-	{ 0, 0, "algebra", "tdiff", 0 },
-	{ 0, 0, "algebra", "thetajoin", 0 },
-	{ 0, 0, "algebra", "thetasubselect", 0 },
-	{ 0, 0, "algebra", "tinter", 0 },
-	{ 0, 0, "bat", "append", 0 },
-	{ 0, 0, "batcalc", "<", 0 },
-	{ 0, 0, "batcalc", "==", 0 },
-	{ 0, 0, "batcalc", ">", 0 },
-	{ 0, 0, "batcalc", "-", 0 },
-	{ 0, 0, "batcalc", "!=", 0 },
-	{ 0, 0, "batcalc", "/", 0 },
-	{ 0, 0, "batcalc", "*", 0 },
-	{ 0, 0, "batcalc", "+", 0 },
-	{ 0, 0, "batcalc", "and", 0 },
-	{ 0, 0, "batcalc", "dbl", 0 },
-	{ 0, 0, "batcalc", "hash", 0 },
-	{ 0, 0, "batcalc", "ifthenelse", 0 },
-	{ 0, 0, "batcalc", "isnil", 0 },
-	{ 0, 0, "batcalc", "lng", 0 },
-	{ 0, 0, "batcalc", "or", 0 },
-	{ 0, 0, "bat", "insert", 0 },
-	{ 0, 0, "bat", "mergecand", 0 },
-	{ 0, 0, "bat", "mirror", 0 },
-	{ 0, 0, "batmtime", "year", 0 },
-	{ 0, 0, "bat", "new", 0 },
-	{ 0, 0, "bat", "reverse", 0 },
-	{ 0, 0, "batstr", "like", 0 },
-	{ 0, 0, "batstr", "substring", 0 },
-	{ 0, 0, "calc", "==", 0 },
-	{ 0, 0, "calc", "-", 0 },
-	{ 0, 0, "calc", "!=", 0 },
-	{ 0, 0, "calc", "/", 0 },
-	{ 0, 0, "calc", "*", 0 },
-	{ 0, 0, "calc", "+", 0 },
-	{ 0, 0, "calc", "bit", 0 },
-	{ 0, 0, "calc", "date", 0 },
-	{ 0, 0, "calc", "dbl", 0 },
-	{ 0, 0, "calc", "ifthenelse", 0 },
-	{ 0, 0, "calc", "int", 0 },
-	{ 0, 0, "calc", "isnil", 0 },
-	{ 0, 0, "calc", "lng", 0 },
-	{ 0, 0, "calc", "max", 0 },
-	{ 0, 0, "calc", "min", 0 },
-	{ 0, 0, "calc", "ptr", 0 },
-	{ 0, 0, "calc", "str", 0 },
-	{ 0, 0, "calc", "wrd", 0 },
-	{ 0, 0, "group", "subgroup", 0 },
-	{ 0, 0, "group", "subgroupdone", 0 },
-	{ 0, 0, "io", "stdout", 0 },
-	{ 0, 0, "iterator", "new", 0 },
-	{ 0, 0, "iterator", "next", 0 },
-	{ 0, 0, "language", "dataflow", 0 },
-	{ 0, 0, "language", "pass", 0 },
-	{ 0, 0, "mat", "pack", 0 },
-	{ 0, 0, "mat", "packIncrement", 0 },
-	{ 0, 0, "mkey", "bulk_rotate_xor_hash", 0 },
-	{ 0, 0, "mtime", "addmonths", 0 },
-	{ 0, 0, "mtime", "date_sub_msec_interval", 0 },
-	{ 0, 0, "pqueue", "topn_max", 0 },
-	{ 0, 0, "pqueue", "topn_min", 0 },
-	{ 0, 0, "pqueue", "utopn_max", 0 },
-	{ 0, 0, "pqueue", "utopn_min", 0 },
-	{ 0, 0, "profiler", "ping", 0 },
-	{ 0, 0, "profiler", "wait", 0 },
-	{ 0, 0, "sql", "affectedRows", 0 },
-	{ 0, 0, "sql", "assert", 0 },
-	{ 0, 0, "sql", "bind", 0 },
-	{ 0, 0, "sql", "bind_idxbat", 0 },
-	{ 0, 0, "sql", "catalog", 0 },
-	{ 0, 0, "sql", "copy_from", 0 },
-	{ 0, 0, "sql", "dec_round", 0 },
-	{ 0, 0, "sql", "delta", 0 },
-	{ 0, 0, "sql", "exportOperation", 0 },
-	{ 0, 0, "sql", "exportResult", 0 },
-	{ 0, 0, "sql", "exportValue", 0 },
-	{ 0, 0, "sql", "mvc", 0 },
-	{ 0, 0, "sql", "projectdelta", 0 },
-	{ 0, 0, "sql", "resultSet", 0 },
-	{ 0, 0, "sql", "rsColumn", 0 },
-	{ 0, 0, "sql", "setVariable", 0 },
-	{ 0, 0, "sql", "subdelta", 0 },
-	{ 0, 0, "sql", "tid", 0 },
-	{ 0, 0, "sql", "update", 0 },
+	{ 0, 0, "aggr", "count", "darkgreen" },
+	{ 0, 0, "aggr", "max", "lawngreen" },
+	{ 0, 0, "aggr", "min", "lawngreen" },
+	{ 0, 0, "aggr", "subcount", "darkgreen" },
+	{ 0, 0, "aggr", "submin", "lawngreen" },
+	{ 0, 0, "aggr", "submax", "lawngreen" },
+	{ 0, 0, "aggr", "subsum", "lawngreen" },
+	{ 0, 0, "aggr", "*", "green" },
+	{ 0, 0, "algebra", "join", "navy" },
+	{ 0, 0, "algebra", "leftfetchjoin", "lightblue" },
+	{ 0, 0, "algebra", "leftfetchjoinPath", "lightcyan" },
+	{ 0, 0, "algebra", "leftjoin", "blue" },
+	{ 0, 0, "algebra", "likesubselect", "greenyellow" },
+	{ 0, 0, "algebra", "selectNotNil", "lime" },
+	{ 0, 0, "algebra", "subselect", "forestgreen" },
+	{ 0, 0, "algebra", "subslice", "lightgreen" },
+	{ 0, 0, "algebra", "subsort", "springgreen" },
+	{ 0, 0, "algebra", "tdiff", "cyan" },
+	{ 0, 0, "algebra", "thetajoin", "darkblue" },
+	{ 0, 0, "algebra", "thetasubselect", "lightgreen" },
+	{ 0, 0, "algebra", "tinter", "seagreen" },
+	{ 0, 0, "algebra", "*", "lightgreen" },
+	{ 0, 0, "batcalc", "dbl", "deeppink" },
+	{ 0, 0, "batcalc", "lng", "deeppink" },
+	{ 0, 0, "batcalc", "hash", "coral" },
+	{ 0, 0, "batcalc", "ifthenelse", "plum" },
+	{ 0, 0, "batcalc", "*", "lightyellow" },
+	{ 0, 0, "bat", "append", "salmon" },
+	{ 0, 0, "bat", "insert", "salmon" },
+	{ 0, 0, "bat", "mergecand", "orange" },
+	{ 0, 0, "bat", "mirror", "lightsalmon" },
+	{ 0, 0, "bat", "*", "sandybrown" },
+	{ 0, 0, "batmtime", "*", "lightpink" },
+	{ 0, 0, "batstr", "*", "yellowgreen" },
+	{ 0, 0, "group", "subgroup", "linen" },
+	{ 0, 0, "group", "subgroupdone", "violet" },
+	{ 0, 0, "group", "*", "orchid" },
+	{ 0, 0, "io", "stdout", "gray" },
+	{ 0, 0, "language", "dataflow", "lightgrey" },
+	{ 0, 0, "language", "*", "lightslategray" },
+	{ 0, 0, "mat", "pack", "darkred" },
+	{ 0, 0, "mat", "packIncrement", "red" },
+	{ 0, 0, "mat", "*", "indianred" },
+	{ 0, 0, "mkey", "bulk_rotate_xor_hash", "sienna" },
+	{ 0, 0, "pqueue", "*", "khaki" },
+	{ 0, 0, "sql", "bind", "lavender" },
+	{ 0, 0, "sql", "bind_idxbat", "lavenderblush" },
+	{ 0, 0, "sql", "delta", "tan" },
+	{ 0, 0, "sql", "projectdelta", "gold" },
+	{ 0, 0, "sql", "subdelta", "goldenrod" },
+	{ 0, 0, "sql", "tid", "thistle" },
+	{ 0, 0, "sql", "*", "mistyrose" },
+	{ 0, 0, "*", "*", "peachpuff" },
 	{ 0, 0, 0, 0, 0 }
 };
+
+static char *getRGB(char *name)
+{
+	int i;
+	for (i = 0; dictionary[i].name; i++)
+		if (strcmp(dictionary[i].name, name) == 0)
+			return dictionary[i].hsv;
+	return 0;
+}
 
 static int cmp_clr ( const void * _one , const void * _two )
 {
@@ -610,22 +590,56 @@ static int cmp_clr ( const void * _one , const void * _two )
 
 int object = 1;
 
-static void initcolors(void)
+static void initcolors(FILE *map)
 {
 	int i;
-	for (i = 0; i < NUM_COLORS && fixed_colors[i].mod; i++) {
-		colors[i].mod = fixed_colors[i].mod;
-		colors[i].fcn = fixed_colors[i].fcn;
-		colors[i].freq = 0;
-		colors[i].timeused = 0;
-		colors[i].col = dictionary[i].hsv;
-	}
-	for (; i < NUM_COLORS; i++) {
-		colors[i].mod = 0;
-		colors[i].fcn = 0;
-		colors[i].freq = 0;
-		colors[i].timeused = 0;
-		colors[i].col = dictionary[i].hsv;
+	char *c;
+	char buf[3][128];
+
+	if ( map){
+		/* read the color map */
+		while ( fscanf(map,"%s\t%s\t%s\n", buf[0],buf[1],buf[2])== 3 && i< NUM_COLORS){
+			colors[i].mod = strdup(buf[0]);
+			colors[i].fcn = strdup(buf[1]);
+			colors[i].freq = 0;
+			colors[i].timeused = 0;
+			c  = getRGB(buf[2]);
+			if (c)
+				colors[i].col = c;
+			else
+				fprintf(stderr, " %s.%s color '%s' not found\n", buf[0],buf[1],buf[2]);
+			i++;
+		}
+			
+	} else
+	if (fixedmap) {
+		for ( i = 0; fixed_colors[i].mod; i++){
+			colors[i].mod = fixed_colors[i].mod;
+			colors[i].fcn = fixed_colors[i].fcn;
+			colors[i].freq = 0;
+			colors[i].timeused = 0;
+			c  = getRGB(fixed_colors[i].col);
+			if (c)
+				colors[i].col = c;
+			else
+				fprintf(stderr, "color '%s' not found\n", fixed_colors[i].col);
+		}
+	} else {
+		/* use fixed assignment of colors */
+		for (i = 0; i < NUM_COLORS && fixed_colors[i].mod; i++) {
+			colors[i].mod = fixed_colors[i].mod;
+			colors[i].fcn = fixed_colors[i].fcn;
+			colors[i].freq = 0;
+			colors[i].timeused = 0;
+			colors[i].col = dictionary[i].hsv;
+		}
+		for (; i < NUM_COLORS; i++) {
+			colors[i].mod = 0;
+			colors[i].fcn = 0;
+			colors[i].freq = 0;
+			colors[i].timeused = 0;
+			colors[i].col = dictionary[i].hsv;
+		}
 	}
 }
 
@@ -914,42 +928,76 @@ static void showcolormap(char *filename, int all)
 	}
 	/* create copy of colormap and sort in ascending order of timeused;
 	 * "*.*" stays first (colors[0]) */
-	_clrs_ = (Color*) malloc (sizeof(colors));
-	if (_clrs_) {
-		memcpy (_clrs_, colors, sizeof(colors));
-		qsort (_clrs_, NUM_COLORS, sizeof(Color), cmp_clr);
-		clrs = _clrs_;
-	}
-	/* show colormap / legend in descending order of timeused;
-	 * show max. the MAX_LEGEND-1 most expensive function calls;
-	 * show all remaining aggregated as "*.*" */
-	for (i = NUM_COLORS - 1; i >= 0; i--)
-		if (clrs[i].mod && (clrs[i].freq > 0 || all)) {
-			if (all || k < MAX_LEGEND - 1 || i == 0) {
-				tottime += clrs[i].timeused;
-				totfreq += clrs[i].freq;
+	if ( !fixedmap ){
+		_clrs_ = (Color*) malloc (sizeof(colors));
+		if (_clrs_) {
+			memcpy (_clrs_, colors, sizeof(colors));
+			qsort (_clrs_, NUM_COLORS, sizeof(Color), cmp_clr);
+			clrs = _clrs_;
+		}
+		/* show colormap / legend in descending order of timeused;
+		 * show max. the MAX_LEGEND-1 most expensive function calls;
+		 * show all remaining aggregated as "*.*" */
+		for (i = NUM_COLORS - 1; i >= 0; i--)
+			if (clrs[i].mod && (clrs[i].freq > 0 || all)) {
+				if (all || k < MAX_LEGEND - 1 || i == 0) {
+					tottime += clrs[i].timeused;
+					totfreq += clrs[i].freq;
 
+					if (k % 3 == 0)
+						h -= 45;
+					fprintf(f, "set object %d rectangle from %f, %f to %f, %f fillcolor rgb \"%s\" fillstyle solid 0.6\n",
+							object++, (double) (k % 3) * w, (double) h - 40, (double) ((k % 3) * w + 0.15 * w), (double) h - 5, clrs[i].col);
+					fprintf(f, "set label %d \"%s.%s \" at %d,%d\n",
+							object++, clrs[i].mod, clrs[i].fcn, (int) ((k % 3) * w + 0.2 * w), h - 15);
+					fprintf(f, "set label %d \"%d calls: ",
+							object++, clrs[i].freq);
+					fprintf_time(f, clrs[i].timeused);
+					fprintf(f, "\" at %f,%f\n",
+							(double) ((k % 3) * w + 0.2 * w), (double) h - 35);
+					k++;
+				} else {
+					clrs[0].timeused += clrs[i].timeused;
+					clrs[0].freq += clrs[i].freq;
+				}
+			}
+		if (_clrs_) {
+			clrs = colors;
+			free(_clrs_);
+			_clrs_ = NULL;
+		}
+	} else {
+		/* use a heuristic fixed map to highlight the important operations */
+		/* limit the legend to the most important ones <MAX_LEGEND and > 1% */
+		int	map[MAX_LEGEND], n, j ;
+		for (j =0; j < MAX_LEGEND; j++) 
+			map[j] = 0;
+		for (i = 0; i < NUM_COLORS - 1; i++) {
+			tottime += clrs[i].timeused;
+			totfreq += clrs[i].freq;
+			for ( j = 0; j < MAX_LEGEND && clrs[map[j]].timeused > clrs[i].timeused; j++)
+				;
+			if ( j < MAX_LEGEND){
+				for( n = MAX_LEGEND-1; n > j; n--)
+					map[n] = map[n-1];
+				map[j] = i;
+			}
+		}
+		for (i = 0; i < MAX_LEGEND; i++)
+			if (clrs[map[i]].mod && ((clrs[map[i]].freq > 0 && (clrs[map[i]].timeused > PERCENTAGE * tottime || clrs[map[i]].freq > PERCENTAGE *  totfreq)) || all) ){
 				if (k % 3 == 0)
 					h -= 45;
 				fprintf(f, "set object %d rectangle from %f, %f to %f, %f fillcolor rgb \"%s\" fillstyle solid 0.6\n",
-						object++, (double) (k % 3) * w, (double) h - 40, (double) ((k % 3) * w + 0.15 * w), (double) h - 5, clrs[i].col);
+						object++, (double) (k % 3) * w, (double) h - 40, (double) ((k % 3) * w + 0.15 * w), (double) h - 5, clrs[map[i]].col);
 				fprintf(f, "set label %d \"%s.%s \" at %d,%d\n",
-						object++, clrs[i].mod, clrs[i].fcn, (int) ((k % 3) * w + 0.2 * w), h - 15);
+						object++, clrs[map[i]].mod, clrs[map[i]].fcn, (int) ((k % 3) * w + 0.2 * w), h - 15);
 				fprintf(f, "set label %d \"%d calls: ",
-						object++, clrs[i].freq);
-				fprintf_time(f, clrs[i].timeused);
+						object++, clrs[map[i]].freq);
+				fprintf_time(f, clrs[map[i]].timeused);
 				fprintf(f, "\" at %f,%f\n",
 						(double) ((k % 3) * w + 0.2 * w), (double) h - 35);
 				k++;
-			} else {
-				clrs[0].timeused += clrs[i].timeused;
-				clrs[0].freq += clrs[i].freq;
 			}
-		}
-	if (_clrs_) {
-		clrs = colors;
-		free(_clrs_);
-		_clrs_ = NULL;
 	}
 
 	h -= 45;
@@ -965,6 +1013,7 @@ static void updmap(int idx)
 {
 	char *mod, *fcn, buf[BUFSIZ], *call = buf;
 	int i, fnd = 0;
+
 	strcpy(buf, box[idx].fcn);
 	mod = call;
 	fcn = strchr(call, (int) '.');
@@ -975,13 +1024,14 @@ static void updmap(int idx)
 		fcn = "*";
 	/* find "mod.fcn" */
 	for (i = 1; i < NUM_COLORS && colors[i].mod; i++)
-		if (strcmp(mod, colors[i].mod) == 0) {
-			if (strcmp(fcn, colors[i].fcn) == 0) {
+		if (strcmp(mod, colors[i].mod) == 0 || colors[i].mod[0] == '*') {
+			if (strcmp(fcn, colors[i].fcn) == 0 || colors[i].fcn[0] == '*') {
 				fnd = i;
 				break;
-			}
+			} 
 		}
-	if (fnd == 0 && i < NUM_COLORS) {
+
+	if ( !fixedmap && fnd == 0 && i < NUM_COLORS) {
 		/* not found, but still free slot: add new one */
 		fnd = i;
 		colors[fnd].mod = strdup(mod);
@@ -1719,10 +1769,11 @@ main(int argc, char **argv)
 	char *user = NULL;
 	char *password = NULL;
 	struct stat statb;
+	char *othermap= NULL;
 
 	wthread *walk;
 
-	static struct option long_options[15] = {
+	static struct option long_options[16] = {
 		{ "dbname", 1, 0, 'd' },
 		{ "user", 1, 0, 'u' },
 		{ "port", 1, 0, 'p' },
@@ -1736,22 +1787,25 @@ main(int argc, char **argv)
 		{ "beat", 1, 0, 'b' },
 		{ "batch", 1, 0, 'B' },
 		{ "sql", 1, 0, 's' },
-		{ "colormap", 0, 0, 'm' },
+		{ "colormap", 1, 0, 'm' },
+		{ "adaptive", 0, 0, 'a' },
 		{ 0, 0, 0, 0 }
 	};
 
 	/* parse config file first, command line options override */
 	parse_dotmonetdb(&user, &password, NULL, NULL, NULL, NULL);
 
-	initcolors();
 
 	while (1) {
 		int option_index = 0;
-		int c = getopt_long(argc, argv, "d:u:p:h:?T:t:r:o:Db:B:s:m",
+		int c = getopt_long(argc, argv, "d:u:p:h:?T:t:r:o:Db:B:s:m:a",
 				long_options, &option_index);
 		if (c == -1)
 			break;
 		switch (c) {
+		case 'a':
+			fixedmap = 0;
+			break;
 		case 'B':
 			batch = atoi(optarg ? optarg : "1");
 			break;
@@ -1774,7 +1828,10 @@ main(int argc, char **argv)
 			password = NULL;
 			break;
 		case 'm':
-			colormap = 1;
+			if ( optarg){
+				othermap = optarg;
+				colormap = 0;
+			} else colormap =1;
 			break;
 		case 'P':
 			if (password)
@@ -1835,6 +1892,18 @@ main(int argc, char **argv)
 			exit(-1);
 		}
 	}
+	if ( othermap){
+		FILE *map ;
+		map = fopen(othermap,"r");
+		if ( map == NULL){
+			printf("Could not open color map %s\n",othermap);
+			exit(-1);
+		}
+		fixedmap =1;
+		initcolors(map);
+		(void) fclose(map);
+	} else
+		initcolors(0);
 
 	if (dbname == NULL && optind != argc && argv[optind][0] != '+' &&
 		(stat(argv[optind], &statb) != 0 || !S_ISREG(statb.st_mode)))
