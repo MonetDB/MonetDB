@@ -479,6 +479,113 @@ typedef struct COLOR {
 Color
 colors[NUM_COLORS] = {{0,0,0,0,0}};
 
+Color
+fixed_colors[] = {
+	/* reserve (fixed_)colors[0] for generic "*.*" */
+	{ 0, 0, "*", "*", 0 },
+	{ 0, 0, "aggr", "count", 0 },
+	{ 0, 0, "aggr", "max", 0 },
+	{ 0, 0, "aggr", "subcount", 0 },
+	{ 0, 0, "aggr", "submin", 0 },
+	{ 0, 0, "aggr", "subsum", 0 },
+	{ 0, 0, "aggr", "sum", 0 },
+	{ 0, 0, "algebra", "fetch", 0 },
+	{ 0, 0, "algebra", "join", 0 },
+	{ 0, 0, "algebra", "leftfetchjoin", 0 },
+	{ 0, 0, "algebra", "leftfetchjoinPath", 0 },
+	{ 0, 0, "algebra", "leftjoin", 0 },
+	{ 0, 0, "algebra", "likesubselect", 0 },
+	{ 0, 0, "algebra", "project", 0 },
+	{ 0, 0, "algebra", "selectNotNil", 0 },
+	{ 0, 0, "algebra", "subselect", 0 },
+	{ 0, 0, "algebra", "subslice", 0 },
+	{ 0, 0, "algebra", "subsort", 0 },
+	{ 0, 0, "algebra", "tdiff", 0 },
+	{ 0, 0, "algebra", "thetajoin", 0 },
+	{ 0, 0, "algebra", "thetasubselect", 0 },
+	{ 0, 0, "algebra", "tinter", 0 },
+	{ 0, 0, "bat", "append", 0 },
+	{ 0, 0, "batcalc", "<", 0 },
+	{ 0, 0, "batcalc", "==", 0 },
+	{ 0, 0, "batcalc", ">", 0 },
+	{ 0, 0, "batcalc", "-", 0 },
+	{ 0, 0, "batcalc", "!=", 0 },
+	{ 0, 0, "batcalc", "/", 0 },
+	{ 0, 0, "batcalc", "*", 0 },
+	{ 0, 0, "batcalc", "+", 0 },
+	{ 0, 0, "batcalc", "and", 0 },
+	{ 0, 0, "batcalc", "dbl", 0 },
+	{ 0, 0, "batcalc", "hash", 0 },
+	{ 0, 0, "batcalc", "ifthenelse", 0 },
+	{ 0, 0, "batcalc", "isnil", 0 },
+	{ 0, 0, "batcalc", "lng", 0 },
+	{ 0, 0, "batcalc", "or", 0 },
+	{ 0, 0, "bat", "insert", 0 },
+	{ 0, 0, "bat", "mergecand", 0 },
+	{ 0, 0, "bat", "mirror", 0 },
+	{ 0, 0, "batmtime", "year", 0 },
+	{ 0, 0, "bat", "new", 0 },
+	{ 0, 0, "bat", "reverse", 0 },
+	{ 0, 0, "batstr", "like", 0 },
+	{ 0, 0, "batstr", "substring", 0 },
+	{ 0, 0, "calc", "==", 0 },
+	{ 0, 0, "calc", "-", 0 },
+	{ 0, 0, "calc", "!=", 0 },
+	{ 0, 0, "calc", "/", 0 },
+	{ 0, 0, "calc", "*", 0 },
+	{ 0, 0, "calc", "+", 0 },
+	{ 0, 0, "calc", "bit", 0 },
+	{ 0, 0, "calc", "date", 0 },
+	{ 0, 0, "calc", "dbl", 0 },
+	{ 0, 0, "calc", "ifthenelse", 0 },
+	{ 0, 0, "calc", "int", 0 },
+	{ 0, 0, "calc", "isnil", 0 },
+	{ 0, 0, "calc", "lng", 0 },
+	{ 0, 0, "calc", "max", 0 },
+	{ 0, 0, "calc", "min", 0 },
+	{ 0, 0, "calc", "ptr", 0 },
+	{ 0, 0, "calc", "str", 0 },
+	{ 0, 0, "calc", "wrd", 0 },
+	{ 0, 0, "group", "subgroup", 0 },
+	{ 0, 0, "group", "subgroupdone", 0 },
+	{ 0, 0, "io", "stdout", 0 },
+	{ 0, 0, "iterator", "new", 0 },
+	{ 0, 0, "iterator", "next", 0 },
+	{ 0, 0, "language", "dataflow", 0 },
+	{ 0, 0, "language", "pass", 0 },
+	{ 0, 0, "mat", "pack", 0 },
+	{ 0, 0, "mat", "packIncrement", 0 },
+	{ 0, 0, "mkey", "bulk_rotate_xor_hash", 0 },
+	{ 0, 0, "mtime", "addmonths", 0 },
+	{ 0, 0, "mtime", "date_sub_msec_interval", 0 },
+	{ 0, 0, "pqueue", "topn_max", 0 },
+	{ 0, 0, "pqueue", "topn_min", 0 },
+	{ 0, 0, "pqueue", "utopn_max", 0 },
+	{ 0, 0, "pqueue", "utopn_min", 0 },
+	{ 0, 0, "profiler", "ping", 0 },
+	{ 0, 0, "profiler", "wait", 0 },
+	{ 0, 0, "sql", "affectedRows", 0 },
+	{ 0, 0, "sql", "assert", 0 },
+	{ 0, 0, "sql", "bind", 0 },
+	{ 0, 0, "sql", "bind_idxbat", 0 },
+	{ 0, 0, "sql", "catalog", 0 },
+	{ 0, 0, "sql", "copy_from", 0 },
+	{ 0, 0, "sql", "dec_round", 0 },
+	{ 0, 0, "sql", "delta", 0 },
+	{ 0, 0, "sql", "exportOperation", 0 },
+	{ 0, 0, "sql", "exportResult", 0 },
+	{ 0, 0, "sql", "exportValue", 0 },
+	{ 0, 0, "sql", "mvc", 0 },
+	{ 0, 0, "sql", "projectdelta", 0 },
+	{ 0, 0, "sql", "resultSet", 0 },
+	{ 0, 0, "sql", "rsColumn", 0 },
+	{ 0, 0, "sql", "setVariable", 0 },
+	{ 0, 0, "sql", "subdelta", 0 },
+	{ 0, 0, "sql", "tid", 0 },
+	{ 0, 0, "sql", "update", 0 },
+	{ 0, 0, 0, 0, 0 }
+};
+
 static int cmp_clr ( const void * _one , const void * _two )
 {
 	Color *one = (Color*) _one, *two = (Color*) _two;
@@ -506,16 +613,20 @@ int object = 1;
 static void initcolors(void)
 {
 	int i;
-	for (i = 0; i < NUM_COLORS; i++) {
+	for (i = 0; i < NUM_COLORS && fixed_colors[i].mod; i++) {
+		colors[i].mod = fixed_colors[i].mod;
+		colors[i].fcn = fixed_colors[i].fcn;
+		colors[i].freq = 0;
+		colors[i].timeused = 0;
+		colors[i].col = dictionary[i].hsv;
+	}
+	for (; i < NUM_COLORS; i++) {
 		colors[i].mod = 0;
 		colors[i].fcn = 0;
 		colors[i].freq = 0;
 		colors[i].timeused = 0;
 		colors[i].col = dictionary[i].hsv;
 	}
-	/* reserve colors[0] for generic "*.*" */
-	colors[0].mod = "*";
-	colors[0].fcn = "*";
 }
 
 static void dumpboxes(void)
