@@ -133,7 +133,7 @@ static char *tracefile = 0;
 static lng startrange = 0, endrange = 0;
 static char *title = 0;
 static int debug = 0;
-static int colormap = 0;
+static int colormap = 1;
 static int beat = 50;
 static char *sqlstatement = NULL;
 static int batch = 1; /* number of queries to combine in one run */
@@ -1216,8 +1216,8 @@ static void createTomogram(void)
 		case PING:
 			break;
 		case WAIT:
-			fprintf(gnudata, "set object %d rectangle at "LLFMT".0, %d size 0.2,0.3 front fillcolor rgb \"red\" fillstyle solid 1.0\n",
-					object++, box[i].clkstart, box[i].row * 2 * h+h);
+			fprintf(gnudata, "set object %d rectangle from "LLFMT".0, %d to %f,%f front fillcolor rgb \"red\" fillstyle solid 1.0\n",
+					object++, box[i].clkstart, box[i].row * 2 * h+h, box[i].clkstart + w /50.0, box[i].row *2 *h + 1.3 * h);
 		}
 
 
