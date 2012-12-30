@@ -986,6 +986,7 @@ static void updmap(int idx)
 		fnd = i;
 		colors[fnd].mod = strdup(mod);
 		colors[fnd].fcn = strdup(fcn);
+		printf("added function #%d: %s.%s\n", fnd, mod, fcn);
 	}
 
 	colors[fnd].freq++;
