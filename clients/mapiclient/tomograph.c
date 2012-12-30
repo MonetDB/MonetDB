@@ -953,7 +953,7 @@ static void showcolormap(char *filename, int all)
 	}
 
 	h -= 45;
-	fprintf(f, "set label %d \" "LLFMT" MAL instructions executed in ",
+	fprintf(f, "set label %d \" "LLFMT" MAL instructions executed; total CPU core time: ",
 			object++, totfreq);
 	fprintf_time(f, tottime);
 	fprintf(f, "\" at %d,%d\n",
