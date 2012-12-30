@@ -479,6 +479,113 @@ typedef struct COLOR {
 Color
 colors[NUM_COLORS] = {{0,0,0,0,0}};
 
+Color
+fixed_colors[] = {
+	/* reserve (fixed_)colors[0] for generic "*.*" */
+	{ 0, 0, "*", "*", 0 },
+	{ 0, 0, "aggr", "count", 0 },
+	{ 0, 0, "aggr", "max", 0 },
+	{ 0, 0, "aggr", "subcount", 0 },
+	{ 0, 0, "aggr", "submin", 0 },
+	{ 0, 0, "aggr", "subsum", 0 },
+	{ 0, 0, "aggr", "sum", 0 },
+	{ 0, 0, "algebra", "fetch", 0 },
+	{ 0, 0, "algebra", "join", 0 },
+	{ 0, 0, "algebra", "leftfetchjoin", 0 },
+	{ 0, 0, "algebra", "leftfetchjoinPath", 0 },
+	{ 0, 0, "algebra", "leftjoin", 0 },
+	{ 0, 0, "algebra", "likesubselect", 0 },
+	{ 0, 0, "algebra", "project", 0 },
+	{ 0, 0, "algebra", "selectNotNil", 0 },
+	{ 0, 0, "algebra", "subselect", 0 },
+	{ 0, 0, "algebra", "subslice", 0 },
+	{ 0, 0, "algebra", "subsort", 0 },
+	{ 0, 0, "algebra", "tdiff", 0 },
+	{ 0, 0, "algebra", "thetajoin", 0 },
+	{ 0, 0, "algebra", "thetasubselect", 0 },
+	{ 0, 0, "algebra", "tinter", 0 },
+	{ 0, 0, "bat", "append", 0 },
+	{ 0, 0, "batcalc", "<", 0 },
+	{ 0, 0, "batcalc", "==", 0 },
+	{ 0, 0, "batcalc", ">", 0 },
+	{ 0, 0, "batcalc", "-", 0 },
+	{ 0, 0, "batcalc", "!=", 0 },
+	{ 0, 0, "batcalc", "/", 0 },
+	{ 0, 0, "batcalc", "*", 0 },
+	{ 0, 0, "batcalc", "+", 0 },
+	{ 0, 0, "batcalc", "and", 0 },
+	{ 0, 0, "batcalc", "dbl", 0 },
+	{ 0, 0, "batcalc", "hash", 0 },
+	{ 0, 0, "batcalc", "ifthenelse", 0 },
+	{ 0, 0, "batcalc", "isnil", 0 },
+	{ 0, 0, "batcalc", "lng", 0 },
+	{ 0, 0, "batcalc", "or", 0 },
+	{ 0, 0, "bat", "insert", 0 },
+	{ 0, 0, "bat", "mergecand", 0 },
+	{ 0, 0, "bat", "mirror", 0 },
+	{ 0, 0, "batmtime", "year", 0 },
+	{ 0, 0, "bat", "new", 0 },
+	{ 0, 0, "bat", "reverse", 0 },
+	{ 0, 0, "batstr", "like", 0 },
+	{ 0, 0, "batstr", "substring", 0 },
+	{ 0, 0, "calc", "==", 0 },
+	{ 0, 0, "calc", "-", 0 },
+	{ 0, 0, "calc", "!=", 0 },
+	{ 0, 0, "calc", "/", 0 },
+	{ 0, 0, "calc", "*", 0 },
+	{ 0, 0, "calc", "+", 0 },
+	{ 0, 0, "calc", "bit", 0 },
+	{ 0, 0, "calc", "date", 0 },
+	{ 0, 0, "calc", "dbl", 0 },
+	{ 0, 0, "calc", "ifthenelse", 0 },
+	{ 0, 0, "calc", "int", 0 },
+	{ 0, 0, "calc", "isnil", 0 },
+	{ 0, 0, "calc", "lng", 0 },
+	{ 0, 0, "calc", "max", 0 },
+	{ 0, 0, "calc", "min", 0 },
+	{ 0, 0, "calc", "ptr", 0 },
+	{ 0, 0, "calc", "str", 0 },
+	{ 0, 0, "calc", "wrd", 0 },
+	{ 0, 0, "group", "subgroup", 0 },
+	{ 0, 0, "group", "subgroupdone", 0 },
+	{ 0, 0, "io", "stdout", 0 },
+	{ 0, 0, "iterator", "new", 0 },
+	{ 0, 0, "iterator", "next", 0 },
+	{ 0, 0, "language", "dataflow", 0 },
+	{ 0, 0, "language", "pass", 0 },
+	{ 0, 0, "mat", "pack", 0 },
+	{ 0, 0, "mat", "packIncrement", 0 },
+	{ 0, 0, "mkey", "bulk_rotate_xor_hash", 0 },
+	{ 0, 0, "mtime", "addmonths", 0 },
+	{ 0, 0, "mtime", "date_sub_msec_interval", 0 },
+	{ 0, 0, "pqueue", "topn_max", 0 },
+	{ 0, 0, "pqueue", "topn_min", 0 },
+	{ 0, 0, "pqueue", "utopn_max", 0 },
+	{ 0, 0, "pqueue", "utopn_min", 0 },
+	{ 0, 0, "profiler", "ping", 0 },
+	{ 0, 0, "profiler", "wait", 0 },
+	{ 0, 0, "sql", "affectedRows", 0 },
+	{ 0, 0, "sql", "assert", 0 },
+	{ 0, 0, "sql", "bind", 0 },
+	{ 0, 0, "sql", "bind_idxbat", 0 },
+	{ 0, 0, "sql", "catalog", 0 },
+	{ 0, 0, "sql", "copy_from", 0 },
+	{ 0, 0, "sql", "dec_round", 0 },
+	{ 0, 0, "sql", "delta", 0 },
+	{ 0, 0, "sql", "exportOperation", 0 },
+	{ 0, 0, "sql", "exportResult", 0 },
+	{ 0, 0, "sql", "exportValue", 0 },
+	{ 0, 0, "sql", "mvc", 0 },
+	{ 0, 0, "sql", "projectdelta", 0 },
+	{ 0, 0, "sql", "resultSet", 0 },
+	{ 0, 0, "sql", "rsColumn", 0 },
+	{ 0, 0, "sql", "setVariable", 0 },
+	{ 0, 0, "sql", "subdelta", 0 },
+	{ 0, 0, "sql", "tid", 0 },
+	{ 0, 0, "sql", "update", 0 },
+	{ 0, 0, 0, 0, 0 }
+};
+
 static int cmp_clr ( const void * _one , const void * _two )
 {
 	Color *one = (Color*) _one, *two = (Color*) _two;
@@ -506,16 +613,20 @@ int object = 1;
 static void initcolors(void)
 {
 	int i;
-	for (i = 0; i < NUM_COLORS; i++) {
+	for (i = 0; i < NUM_COLORS && fixed_colors[i].mod; i++) {
+		colors[i].mod = fixed_colors[i].mod;
+		colors[i].fcn = fixed_colors[i].fcn;
+		colors[i].freq = 0;
+		colors[i].timeused = 0;
+		colors[i].col = dictionary[i].hsv;
+	}
+	for (; i < NUM_COLORS; i++) {
 		colors[i].mod = 0;
 		colors[i].fcn = 0;
 		colors[i].freq = 0;
 		colors[i].timeused = 0;
 		colors[i].col = dictionary[i].hsv;
 	}
-	/* reserve colors[0] for generic "*.*" */
-	colors[0].mod = "*";
-	colors[0].fcn = "*";
 }
 
 static void dumpboxes(void)
@@ -620,7 +731,7 @@ static void showmemory(void)
 	fprintf(gnudata, "set size 1,0.07\n");
 	fprintf(gnudata, "set origin 0.0,0.87\n");
 
-	fprintf(gnudata, "set xrange ["LLFMT":"LLFMT"]\n", startrange, lastclktick - starttime);
+	fprintf(gnudata, "set xrange ["LLFMT".0:"LLFMT".0]\n", startrange, lastclktick - starttime);
 	fprintf(gnudata, "set ylabel \"memory in %s\"\n", scalename);
 	fprintf(gnudata, "unset xtics\n");
 	mn = min / 1024.0;
@@ -647,7 +758,7 @@ static void showcpu(void)
 	fprintf(gnudata, "unset ytics\n");
 	fprintf(gnudata, "unset border\n");
 
-	fprintf(gnudata, "set xrange ["LLFMT":"LLFMT"]\n", startrange, lastclktick - starttime);
+	fprintf(gnudata, "set xrange ["LLFMT".0:"LLFMT".0]\n", startrange, lastclktick - starttime);
 	fprintf(gnudata, "set yrange [0:%d.%d]\n", cpus, cpus);
 	if (cpus)
 		fprintf(gnudata, "plot ");
@@ -679,12 +790,12 @@ static void showio(void)
 	fprintf(gnudata, "set rmarg 10\n");
 	fprintf(gnudata, "set size 1,0.07\n");
 	fprintf(gnudata, "set origin 0.0,0.87\n");
-	fprintf(gnudata, "set xrange ["LLFMT":"LLFMT"]\n", startrange, lastclktick - starttime);
-	fprintf(gnudata, "set yrange [0:"LLFMT"]\n", max / beat);
+	fprintf(gnudata, "set xrange ["LLFMT".0:"LLFMT".0]\n", startrange, lastclktick - starttime);
+	fprintf(gnudata, "set yrange [0:"LLFMT".0]\n", max / beat);
 	fprintf(gnudata, "unset xtics\n");
 	fprintf(gnudata, "unset ytics\n");
 	fprintf(gnudata, "unset ylabel\n");
-	fprintf(gnudata, "set y2tics in (0, "LLFMT") nomirror\n", max / beat);
+	fprintf(gnudata, "set y2tics in (0, "LLFMT".0) nomirror\n", max / beat);
 	fprintf(gnudata, "set y2label \"IO per ms\"\n");
 	fprintf(gnudata, "plot \"%s.dat\" using 1:(($3+$4)/%d.0) title \"reads\" with boxes fs solid linecolor rgb \"gray\" ,\\\n", (tracefile ? "scratch" : filename), beat);
 	fprintf(gnudata, "\"%s.dat\" using 1:($4/%d.0) title \"writes\" with boxes fs solid linecolor rgb \"red\"  \n", (tracefile ? "scratch" : filename), beat);
@@ -1013,7 +1124,7 @@ static void createTomogram(void)
 	fprintf(gnudata, "set rmarg 10\n");
 	fprintf(gnudata, "set size 1,0.4\n");
 	fprintf(gnudata, "set origin 0.0,0.4\n");
-	fprintf(gnudata, "set xrange ["LLFMT":"LLFMT"]\n", startrange, lastclktick - starttime);
+	fprintf(gnudata, "set xrange ["LLFMT".0:"LLFMT".0]\n", startrange, lastclktick - starttime);
 
 	/* detect all different threads and assign them a row */
 	for (i = 0; i < topbox; i++)
@@ -1066,8 +1177,8 @@ static void createTomogram(void)
 	w /= 10;
 	fprintf(gnudata, "set xtics (\"0\" 0,");
 	for (i = 1; i < 10; i++)
-		fprintf(gnudata, "\"%.*f\" "LLFMT",", digits, (double) i * w / scale, i * w);
-	fprintf(gnudata, "\"%.*f %s\" "LLFMT, digits, (double) i * w / scale, scalename, i * w);
+		fprintf(gnudata, "\"%.*f\" "LLFMT".0,", digits, (double) i * w / scale, i * w);
+	fprintf(gnudata, "\"%.*f %s\" "LLFMT".0", digits, (double) i * w / scale, scalename, i * w);
 	fprintf(gnudata, ")\n");
 	fprintf(gnudata, "set grid xtics\n");
 
@@ -1088,7 +1199,7 @@ static void createTomogram(void)
 
 	/* mark duration of each thread */
 	for (i = 0; i < top; i++)
-		fprintf(gnudata, "set object %d rectangle from %d, %d to "LLFMT", %d\n",
+		fprintf(gnudata, "set object %d rectangle from %d, %d to "LLFMT".0, %d\n",
 				object++, 0, i * 2 * h, lastclk[rows[i]], i * 2 * h + h);
 
 	/* fill the duration of each instruction encountered that fit our range constraint */
@@ -1098,13 +1209,13 @@ static void createTomogram(void)
 		default:
 			if (debug)
 				dumpbox(i);
-			fprintf(gnudata, "set object %d rectangle from "LLFMT", %d to "LLFMT", %d fillcolor rgb \"%s\" fillstyle solid 0.6\n",
+			fprintf(gnudata, "set object %d rectangle from "LLFMT".0, %d to "LLFMT".0, %d fillcolor rgb \"%s\" fillstyle solid 0.6\n",
 					object++, box[i].clkstart, box[i].row * 2 * h, box[i].clkend, box[i].row * 2 * h + h, colors[box[i].color].col);
 			break;
 		case PING:
 			break;
 		case WAIT:
-			fprintf(gnudata, "set object %d rectangle at "LLFMT", %d size 0.2,0.3 front fillcolor rgb \"red\" fillstyle solid 1.0\n",
+			fprintf(gnudata, "set object %d rectangle at "LLFMT".0, %d size 0.2,0.3 front fillcolor rgb \"red\" fillstyle solid 1.0\n",
 					object++, box[i].clkstart, box[i].row * 2 * h+h);
 		}
 
