@@ -1077,11 +1077,11 @@ static void showcolormap(char *filename, int all)
 		/* limit the legend to the most important ones <MAX_LEGEND and > 1% */
 		int	map[MAX_LEGEND], n, j ;
 		for (j =0; j < MAX_LEGEND; j++) 
-			map[j] = 0;
+			map[j] = -1;
 		for (i = 0; i < NUM_COLORS - 1; i++) {
 			tottime += clrs[i].timeused;
 			totfreq += clrs[i].freq;
-			for ( j = 0; j < MAX_LEGEND && clrs[map[j]].timeused > clrs[i].timeused; j++)
+			for ( j = 0; j < MAX_LEGEND && map[j] >= 0 && clrs[map[j]].timeused > clrs[i].timeused; j++)
 				;
 			if ( j < MAX_LEGEND){
 				for( n = MAX_LEGEND-1; n > j; n--)
@@ -1090,7 +1090,7 @@ static void showcolormap(char *filename, int all)
 			}
 		}
 		for (i = 0; i < MAX_LEGEND; i++)
-			if (clrs[map[i]].mod && ((clrs[map[i]].freq > 0 && (clrs[map[i]].timeused > PERCENTAGE * tottime || clrs[map[i]].freq > PERCENTAGE *  totfreq)) || all) ){
+			if (map[j] >= 0 && clrs[map[i]].mod && ((clrs[map[i]].freq > 0 && (clrs[map[i]].timeused > PERCENTAGE * tottime || clrs[map[i]].freq > PERCENTAGE *  totfreq)) || all) ){
 				if (k % 3 == 0)
 					h -= 45;
 				fprintf(f, "set object %d rectangle from %f, %f to %f, %f fillcolor rgb \"%s\" fillstyle solid 0.6\n",
