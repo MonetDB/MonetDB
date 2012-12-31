@@ -881,12 +881,12 @@ static void showcpu(void)
 	fprintf(gnudata, "unset border\n");
 
 	fprintf(gnudata, "set xrange ["LLFMT".0:"LLFMT".0]\n", startrange, lastclktick - starttime);
-	fprintf(gnudata, "set yrange [0:%d.%d]\n", cpus, cpus);
+	fprintf(gnudata, "set yrange [0:%d*1.1]\n", cpus);
 	if (cpus)
 		fprintf(gnudata, "plot ");
 	for (i = 0; i < cpus; i++)
-		fprintf(gnudata, "\"%s_cpu.dat\" using 1:($%d+%d.%d) notitle with lines linecolor rgb \"%s\"%s",
-				(tracefile ? "scratch" : filename), i + 2, i, i, (i % 2 == 0 ? "black" : "red"), (i < cpus - 1 ? ",\\\n" : "\n"));
+		fprintf(gnudata, "\"%s_cpu.dat\" using 1:($%d+(%d*1.1)) notitle with lines linecolor rgb \"%s\"%s",
+				(tracefile ? "scratch" : filename), i + 2, i, (i % 2 == 0 ? "black" : "red"), (i < cpus - 1 ? ",\\\n" : "\n"));
 	fprintf(gnudata, "unset yrange\n");
 }
 
