@@ -694,6 +694,7 @@ mvc_import_table(Client cntxt, mvc *m, bstream *bs, char *sname, char *tname, ch
 
 				c->base.wtime = c->t->base.wtime = c->t->s->base.wtime = m->session->tr->wtime = m->session->tr->stime;
 				d->cnt = BATcount(b);
+				d->ibase = BATcount(b);
 
 				BBPunfix(b->batCacheid);
 			}

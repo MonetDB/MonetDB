@@ -131,7 +131,7 @@ SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 				sql_idx *i = mvc_bind_idx(m, s, cname);
 
 				if (i && !isRemote(i->t)) { /* skip alter and remote statements */
-					cnt = store_funcs.count_idx(i);
+					cnt = store_funcs.count_idx(i, 1);
 					assert(cnt <= (size_t) GDK_oid_max);
 					b = store_funcs.bind_idx(m->session->tr,i,0);
 					if ( b ) {
@@ -151,7 +151,7 @@ SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 				if (c && !isRemote(c->t)) {
 					not_null = !c->null;
 
-					cnt = store_funcs.count_col(c);
+					cnt = store_funcs.count_col(c, 1);
 					assert(cnt <= (size_t) GDK_oid_max);
 					b = store_funcs.bind_col(m->session->tr,c,0);
 					if ( b ){
@@ -171,7 +171,7 @@ SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 				if (t->columns.set->h) {
 					c = t->columns.set->h->data;
 
-					cnt = store_funcs.count_col(c);
+					cnt = store_funcs.count_col(c, 1);
 					rows = (wrd) cnt;
 				}
 			}
