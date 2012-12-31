@@ -510,7 +510,7 @@ fixed_colors[] = {
 	{ 0, 0, "aggr", "submin", "lawngreen" },
 	{ 0, 0, "aggr", "submax", "lawngreen" },
 	{ 0, 0, "aggr", "subsum", "lawngreen" },
-	{ 0, 0, "aggr", "*", "green" },
+	{ 0, 0, "aggr", "*", "limegreen" },
 	{ 0, 0, "algebra", "join", "navy" },
 	{ 0, 0, "algebra", "leftfetchjoin", "lightblue" },
 	{ 0, 0, "algebra", "leftfetchjoinPath", "lightcyan" },
@@ -1009,6 +1009,7 @@ static void showcolormap(char *filename, int all)
 	int h = 590;
 	lng totfreq = 0, tottime = 0;
 	Color *clrs = colors, *_clrs_ = NULL;
+	lng duration = lastclktick - starttime;
 
 	if (all) {
 		snprintf(buf, BUFSIZ, "%s.gpl", filename);
@@ -1087,22 +1088,39 @@ static void showcolormap(char *filename, int all)
 	} else {
 		/* use a heuristic fixed map to highlight the important operations */
 		/* limit the legend to the most important ones <MAX_LEGEND and > 1% */
-		int	map[MAX_LEGEND], n, j ;
-		for (j =0; j < MAX_LEGEND; j++) 
-			map[j] = -1;
+		int	map[MAX_LEGEND], n, m=0, j;
+		for (i = 0; i < MAX_LEGEND; i++)
+			map[i] = -1;
 		for (i = 0; i < NUM_COLORS - 1; i++) {
 			tottime += clrs[i].timeused;
 			totfreq += clrs[i].freq;
-			for ( j = 0; j < MAX_LEGEND && map[j] >= 0 && clrs[map[j]].timeused > clrs[i].timeused; j++)
-				;
-			if ( j < MAX_LEGEND){
-				for( n = MAX_LEGEND-1; n > j; n--)
-					map[n] = map[n-1];
-				map[j] = i;
+		}
+		/* filter out the top N interesting elements */
+		for (i = 0; i < NUM_COLORS - 1; i++)
+		if (clrs[i].col && clrs[i].mod  && clrs[i].freq > 0)
+		{
+			if (clrs[i].timeused > PERCENTAGE * duration || clrs[i].freq > PERCENTAGE *  totfreq) {
+				for ( j = 0; j < m && clrs[map[j]].timeused > clrs[i].timeused; j++)
+					;
+				if ( m < MAX_LEGEND){
+					for( n = m-1; n > j; n--)
+						map[n] = map[n-1];
+					map[j] = i;
+					m++;
+				}
 			}
 		}
-		for (i = 0; i < MAX_LEGEND; i++)
-			if (map[j] >= 0 && clrs[map[i]].mod && ((clrs[map[i]].freq > 0 && (clrs[map[i]].timeused > PERCENTAGE * tottime || clrs[map[i]].freq > PERCENTAGE *  totfreq)) || all) ){
+		/* sort them back into the color map order */
+		for ( i = 0; i < m; i++)
+		for ( j = i+1; j< m; j++)
+		if ( map[i] > map[j] ){
+			n = map[i];
+			map[i]= map[j];
+			map[j] = n;
+		}
+
+		for (i = 0; i < m; i++)
+		if ( clrs[map[i]].col){
 				if (k % 3 == 0)
 					h -= 45;
 				fprintf(f, "set object %d rectangle from %f, %f to %f, %f fillcolor rgb \"%s\" fillstyle solid 0.6\n",
@@ -2059,6 +2077,7 @@ main(int argc, char **argv)
 		exit(0);
 	}
 	if (colormap) {
+		fixedmap = 0;
 		showcolormap(filename, 1);
 		printf("Color map file '%s.gpl' generated\n", filename);
 		exit(0);
