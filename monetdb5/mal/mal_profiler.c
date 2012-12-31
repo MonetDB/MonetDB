@@ -193,6 +193,7 @@ static void logsent(int header, char *logbuffer)
 void
 profilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc, int start)
 {
+	InstrPtr p;
 	if (mb->profiler == NULL) return;
 	if (profileCounter[PROFdot].status == 1 && start && pc == 0){
 		if (mb->dotfile == 0){
@@ -203,6 +204,9 @@ profilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc, int start)
 	}
 	if (profileCounter[PROFstart].status == 0 && start)
 		return;
+	p = getInstrPtr(mb,pc);
+	if ( !start && p && p->token == ENDsymbol)
+		profilerHeartbeatEvent("ping");
 	if (myname == 0)
 		myname = putName("profiler", 8);
 	if (getModuleId(getInstrPtr(mb, pc)) == myname)
