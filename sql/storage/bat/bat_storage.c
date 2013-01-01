@@ -293,14 +293,13 @@ delta_append_bat( sql_delta *bat, BAT *i )
        			BATmmap(b, STORE_MMAP, STORE_MMAP, STORE_MMAP, STORE_MMAP, 1);
     		}
 		assert(b->T->heap.storage != STORE_PRIV);
-		BATappend(b, i, TRUE);
 	} else {
 		temp_destroy(bat->ibid);
 		bat->ibid = ebat2real(b->batCacheid, bat->ibase);
 		bat_destroy(b);
 		b = temp_descriptor(bat->ibid);
-		BATappend(b, i, TRUE);
 	}
+	BATappend(b, i, TRUE);
 	bat_destroy(b);
 }
 
@@ -355,21 +354,17 @@ delta_delete_bat( sql_dbat *bat, BAT *i )
 {
 	BAT *b = temp_descriptor(bat->dbid);
 
-	bat->cnt += BATcount(i);
-	if (BATcount(b) == 0 && !isVIEW(i) && i->htype == TYPE_void && i->ttype != TYPE_void){
+	if (isEbat(b)) {
 		temp_destroy(bat->dbid);
-		bat->dbid = temp_create(i);
-	} else {
-		if (isEbat(b)) {
-			temp_destroy(bat->dbid);
-			bat->dbid = temp_copy(b->batCacheid, FALSE);
-			bat_destroy(b);
-			b = temp_descriptor(bat->dbid);
-		}
-		assert(b->T->heap.storage != STORE_PRIV);
-		BATappend(b, i, TRUE);
+		bat->dbid = temp_copy(b->batCacheid, FALSE);
+		bat_destroy(b);
+		b = temp_descriptor(bat->dbid);
 	}
+	assert(b->T->heap.storage != STORE_PRIV);
+	BATappend(b, i, TRUE);
 	bat_destroy(b);
+
+	bat->cnt += BATcount(i);
 }
 
 void
@@ -377,15 +372,17 @@ delta_delete_val( sql_dbat *bat, oid rid )
 {
 	BAT *b = temp_descriptor(bat->dbid);
 
-	bat->cnt ++;
 	if (isEbat(b)) {
 		temp_destroy(bat->dbid);
 		bat->dbid = temp_copy(b->batCacheid, FALSE);
 		bat_destroy(b);
 		b = temp_descriptor(bat->dbid);
 	}
+	assert(b->T->heap.storage != STORE_PRIV);
 	BUNappend(b, (ptr)&rid, TRUE);
 	bat_destroy(b);
+
+	bat->cnt ++;
 }
 
 static void
@@ -425,23 +422,37 @@ delete_tab(sql_trans *tr, sql_table * t, void *ib, int tpe)
 }
 
 static size_t
-count_col(sql_column *col)
+count_col(sql_column *col, int all)
 {
 	sql_delta *b = col->data;
 	if (!b)
 		return 1;
-	return b->cnt;
+	if (all) 
+		return b->cnt;
+	else
+		return b->cnt - b->ibase;
 }
 
 static size_t
-count_idx(sql_idx *idx)
+count_idx(sql_idx *idx, int all)
 {
 	sql_delta *b = idx->data;
 	if (!b)
 		return 0;
-	return b->cnt;
+	if (all) 
+		return b->cnt;
+	else
+		return b->cnt - b->ibase;
 }
 
+static size_t
+count_del(sql_table *t)
+{
+	sql_dbat *d = t->data;
+	if (!d)
+		return 0;
+	return d->cnt;
+}
 
 static sql_column *
 find_col( sql_trans *tr, char *sname, char *tname, char *cname )
@@ -548,6 +559,7 @@ new_persistent_delta( sql_delta *bat, int sz )
 		BAT *i = temp_descriptor(bat->ibid);
 
 		bat->ibase = BATcount(b);
+		bat->cnt = BATcount(b) + BATcount(i);
 		bat->ibid = temp_copy(i->batCacheid, FALSE);
 		bat_destroy(i);
 		i = temp_descriptor(bat->ibid);
@@ -559,7 +571,7 @@ new_persistent_delta( sql_delta *bat, int sz )
 		int type = b->ttype;
 
 		bat->bid = bat->ibid;
-		bat->ibase = BATcount(b);
+		bat->cnt = bat->ibase = BATcount(b);
 		bat_destroy(b);
 
 		i = bat_new(TYPE_void, type, sz);
@@ -864,6 +876,9 @@ dup_delta(sql_trans *tr, sql_delta *obat, sql_delta *bat, int type, int oc_isnew
 			b = bat_new(TYPE_void, type, sz);
 			bat_set_access(b, BAT_READ);
 			obat->ibid = temp_create(b);
+			obat->ibase = bat->ibase = obat->cnt;
+			BATseqbase(b, obat->ibase);
+			bat_destroy(b);
 			if (c_isnew && tr->parent == gtrans) { 
 				/* new cols are moved to gtrans and bat.bid */
 				temp_dup(bat->ibid);
@@ -873,15 +888,9 @@ dup_delta(sql_trans *tr, sql_delta *obat, sql_delta *bat, int type, int oc_isnew
 
 				b = bat_new(TYPE_void, type, sz);
 				bat_set_access(b, BAT_READ);
+				BATseqbase(b, bat->ibase);
 				bat->ibid = temp_create(b);
 			}
-			if (obat->bid) {
-				BAT *cb = temp_descriptor(obat->bid);
-				bat->ibase = obat->ibase = BATcount(cb);
-				BATseqbase(b, obat->ibase);
-				bat_destroy(cb);
-			}
-			bat_destroy(b);
 		} else { /* old column */
 			bat->ibid = ebat_copy(bat->ibid, bat->ibase, 0); 
 		}
@@ -935,6 +944,7 @@ int
 dup_dbat( sql_trans *tr, sql_dbat *obat, sql_dbat *bat, int is_new, int temp)
 {
 	bat->dbid = obat->dbid;
+	bat->cnt = obat->cnt;
 	bat->dname = _STRDUP(obat->dname);
 	if (bat->dbid) {
 		if (is_new) {
@@ -1654,6 +1664,7 @@ bat_storage_init( store_functions *sf)
 	sf->update_idx = (update_idx_fptr)&update_idx;
 	sf->delete_tab = (delete_tab_fptr)&delete_tab;
 
+	sf->count_del = (count_del_fptr)&count_del;
 	sf->count_col = (count_col_fptr)&count_col;
 	sf->count_idx = (count_idx_fptr)&count_idx;
 	sf->sorted_col = (sorted_col_fptr)&sorted_col;

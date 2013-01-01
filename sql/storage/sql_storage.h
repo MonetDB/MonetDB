@@ -112,8 +112,9 @@ typedef void (*delete_tab_fptr) (sql_trans *tr, sql_table *t, void *d, int tpe);
 -- count number of rows in column (excluding the deletes)
 -- check for sortedness
  */
-typedef size_t (*count_col_fptr) (sql_column *c);
-typedef size_t (*count_idx_fptr) (sql_idx *i);
+typedef size_t (*count_del_fptr) (sql_table *t);
+typedef size_t (*count_col_fptr) (sql_column *c, int all /* all or new only */);
+typedef size_t (*count_idx_fptr) (sql_idx *i, int all /* all or new only */);
 typedef int (*sorted_col_fptr) (sql_trans *tr, sql_column *c);
 
 /*
@@ -187,6 +188,7 @@ typedef struct store_functions {
 	update_idx_fptr update_idx;
 	delete_tab_fptr delete_tab;
 
+	count_del_fptr count_del;
 	count_col_fptr count_col;
 	count_idx_fptr count_idx;
 	sorted_col_fptr sorted_col;
