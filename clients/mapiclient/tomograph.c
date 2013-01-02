@@ -1441,9 +1441,9 @@ static void createTomogram(void)
 	} else {
 		if (w >= US_DD) {
 			TME = TME_DD|TME_HH;
-		} else if (w >= 10 * US_HH) {
+		} else if (w >= US_HH) {
 			TME = TME_HH|TME_MM;
-		} else if (w >= 10 * US_MM) {
+		} else if (w >= US_MM) {
 			TME = TME_MM|TME_SS;
 		} else if (w >= US_SS) {
 			TME = TME_SS|TME_MS;
