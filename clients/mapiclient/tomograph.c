@@ -296,6 +296,7 @@ int topbox = 0;
 lng totalclkticks = 0; /* number of clock ticks reported */
 lng totalexecticks = 0; /* number of ticks reported for processing */
 lng lastclktick = 0;
+lng totalticks; 
 
 
 lng starttime = 0;
@@ -988,14 +989,72 @@ static void fprintf_time ( FILE *f, lng time )
 	}
 	if (TME & TME_MS && (tail || time >= US_MS)) {
 		fmt = tail ? "%03d%s" : "%d%s";
-		fprintf(f, fmt, time / US_MS, (TME & TME_US) ? "." : " s ");
+		fprintf(f, fmt, (int) (time / US_MS), (TME & TME_US) ? "." : " s ");
 		time %= US_MS;
 		TME &= TME_US;
 		tail = 1;
 	}
 	if (TME & TME_US) {
 		fmt = tail ? "%03d%s" : "%d%s";
-		fprintf(f, fmt, time, tail ? " ms " : " us ");
+		fprintf(f, fmt, (int) time, tail ? " ms " : " us ");
+	}
+}
+
+/* print time (given in microseconds) in compact human-readable form
+ * showing the units specified via TME */
+static void fprintf_tm ( FILE *f, lng time, int TME )
+{
+	int tail = 0, digits = 1;
+	const char *fmt = NULL;
+
+	if (TME & TME_DD && (tail || time >= US_DD)) {
+		fmt = LLFMT"%s";
+		fprintf(f, fmt, time / US_DD, "d");
+		time %= US_DD;
+		TME &= TME_HH;
+		tail = 1;
+	}
+	if (TME & TME_HH && (tail || time >= US_HH)) {
+		fmt = tail ? "%02d%s" : "%d%s";
+		fprintf(f, fmt, (int) (time / US_HH), "h");
+		time %= US_HH;
+		TME &= TME_MM;
+		tail = 1;
+	}
+	if (TME & TME_MM && (tail || time >= US_MM)) {
+		fmt = tail ? "%02d%s" : "%d%s";
+		fprintf(f, fmt, (int) (time / US_MM), "m");
+		time %= US_MM;
+		TME &= TME_SS;
+		tail = 1;
+	}
+	if (TME & TME_SS && (tail || time >= US_SS)) {
+		fmt = tail ? "%02d%s" : "%d%s";
+		fprintf(f, fmt, (int) (time / US_SS), (TME & TME_MS) ? "." : "s");
+		if (time / US_SS > 99)
+			digits = 2;
+		else
+			digits = 3;
+		time %= US_SS;
+		TME &= TME_MS;
+		tail = 1;
+	}
+	if (TME & TME_MS && (tail || time >= US_MS)) {
+		fmt = tail ? "%0*d%s" : "%*d%s";
+		fprintf(f, fmt, digits, (int) (time / US_MS), (TME & TME_US) ? "." : "s");
+		if (time / US_MS > 99)
+			digits = 1;
+		else if (time / US_MS > 9)
+			digits = 2;
+		else
+			digits = 3;
+		time %= US_MS;
+		TME &= TME_US;
+		tail = 1;
+	}
+	if (TME & TME_US) {
+		fmt = tail ? "%0*d%s" : "%*d%s";
+		fprintf(f, fmt, digits, (int) time, tail ? "ms" : "us");
 	}
 }
 
@@ -1140,6 +1199,8 @@ static void showcolormap(char *filename, int all)
 	fprintf(f, "set label %d \" "LLFMT" MAL instructions executed; total CPU core time: ",
 			object++, totfreq);
 	fprintf_time(f, tottime);
+	if (!fixedmap)
+		fprintf(f, "; parallelism usage %.1f %%", totalclkticks / (totalticks / 100.0));
 	fprintf(f, "\" at %d,%d\n",
 			(int) (0.2 * w), h - 35);
 	fprintf(f, "plot 0 notitle with lines linecolor rgb \"white\"\n");
@@ -1297,9 +1358,9 @@ static void createTomogram(void)
 	int h, prevobject = 1;
 	lng w = lastclktick - starttime;
 	lng scale;
-	char *scalename;
+	char *scalename = "\0\0\0\0";
 	int digits;
-	lng totalticks;
+	int TME;
 	static int figures = 0;
 
 	snprintf(buf, BUFSIZ, "%s.gpl", filename);
@@ -1343,40 +1404,64 @@ static void createTomogram(void)
 	fprintf(gnudata, "unset colorbox\n");
 	fprintf(gnudata, "unset title\n");
 
-	if (w >= 10 * US_DD) {
-		scale = US_DD;
-		scalename = "d\0\0days";
-	} else if (w >= 10 * US_HH) {
-		scale = US_HH;
-		scalename = "h\0\0hours";
-	} else if (w >= 10 * US_MM) {
-		scale = US_MM;
-		scalename = "m\0\0minutes";
-	} else if (w >= US_SS) {
-		scale = US_SS;
-		scalename = "s\0\0seconds";
-	} else if (w >= US_MS) {
-		scale = US_MS;
-		scalename = "ms\0milliseconds";
+	if (fixedmap) {
+		if (w >= 10 * US_DD) {
+			scale = US_DD;
+			scalename = "d\0\0days";
+		} else if (w >= 10 * US_HH) {
+			scale = US_HH;
+			scalename = "h\0\0hours";
+		} else if (w >= 10 * US_MM) {
+			scale = US_MM;
+			scalename = "m\0\0minutes";
+		} else if (w >= US_SS) {
+			scale = US_SS;
+			scalename = "s\0\0seconds";
+		} else if (w >= US_MS) {
+			scale = US_MS;
+			scalename = "ms\0milliseconds";
+		} else {
+			scale = 1;
+			scalename = "us\0microseconds";
+		}
+		if (w / scale >= 1000)
+			digits = 0;
+		else if (w / scale >= 100)
+			digits = 1;
+		else if (w / scale >= 10)
+			digits = 2;
+		else
+			digits = 3;
+		w /= 10;
+		fprintf(gnudata, "set xtics (\"0\" 0,");
+		for (i = 1; i < 10; i++)
+			fprintf(gnudata, "\"%.*f\" "LLFMT".0,", digits, (double) i * w / scale, i * w);
+		fprintf(gnudata, "\"%.*f %s\" "LLFMT".0", digits, (double) i * w / scale, scalename, i * w);
+		fprintf(gnudata, ")\n");
 	} else {
-		scale = 1;
-		scalename = "us\0microseconds";
+		if (w >= US_DD) {
+			TME = TME_DD|TME_HH;
+		} else if (w >= 10 * US_HH) {
+			TME = TME_HH|TME_MM;
+		} else if (w >= 10 * US_MM) {
+			TME = TME_MM|TME_SS;
+		} else if (w >= US_SS) {
+			TME = TME_SS|TME_MS;
+		} else if (w >= US_MS) {
+			TME = TME_MS|TME_US;
+		} else {
+			TME = TME_US;
+		}
+		w /= 10;
+		fprintf(gnudata, "set xtics (\"0\" 0,\"");
+		for (i = 1; i < 10; i++) {
+			fprintf_tm(gnudata, i * w, TME);
+			fprintf(gnudata, "\" "LLFMT".0,\"", i * w);
+		}
+		fprintf_tm(gnudata, i * w, TME);
+		fprintf(gnudata, "\" "LLFMT".0)\n", i * w);
 	}
-	if (w / scale >= 1000)
-		digits = 0;
-	else if (w / scale >= 100)
-		digits = 1;
-	else if (w / scale >= 10)
-		digits = 2;
-	else
-		digits = 3;
 
-	w /= 10;
-	fprintf(gnudata, "set xtics (\"0\" 0,");
-	for (i = 1; i < 10; i++)
-		fprintf(gnudata, "\"%.*f\" "LLFMT".0,", digits, (double) i * w / scale, i * w);
-	fprintf(gnudata, "\"%.*f %s\" "LLFMT".0", digits, (double) i * w / scale, scalename, i * w);
-	fprintf(gnudata, ")\n");
 	fprintf(gnudata, "set grid xtics\n");
 
 	if (endrange > lastclktick)
@@ -1386,7 +1471,8 @@ static void createTomogram(void)
 	totalticks = 0;
 	for (i = 0; i < top; i++)
 		totalticks += lastclk[rows[i]];
-	fprintf(gnudata, "set xlabel \"%s, parallelism usage %.1f %%\"\n", scalename+3, totalclkticks / (totalticks / 100.0));
+	if (fixedmap)
+		fprintf(gnudata, "set xlabel \"%s, parallelism usage %.1f %%\"\n", scalename+3, totalclkticks / (totalticks / 100.0));
 
 	h = 10; /* unit height of bars */
 	fprintf(gnudata, "set ytics (");
