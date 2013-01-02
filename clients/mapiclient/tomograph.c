@@ -1041,7 +1041,7 @@ static void fprintf_tm ( FILE *f, lng time, int TME )
 	}
 	if (TME & TME_MS && (tail || time >= US_MS)) {
 		fmt = tail ? "%0*d%s" : "%*d%s";
-		fprintf(f, fmt, digits, (int) (time / US_MS), (TME & TME_US) ? "." : "s");
+		fprintf(f, fmt, digits, (int) (time / US_MS), (TME & TME_US) ? "." : tail ? "s" : "ms");
 		if (time / US_MS > 99)
 			digits = 1;
 		else if (time / US_MS > 9)
