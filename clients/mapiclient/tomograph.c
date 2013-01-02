@@ -988,14 +988,14 @@ static void fprintf_time ( FILE *f, lng time )
 	}
 	if (TME & TME_MS && (tail || time >= US_MS)) {
 		fmt = tail ? "%03d%s" : "%d%s";
-		fprintf(f, fmt, time / US_MS, (TME & TME_US) ? "." : " s ");
+		fprintf(f, fmt, (int) (time / US_MS), (TME & TME_US) ? "." : " s ");
 		time %= US_MS;
 		TME &= TME_US;
 		tail = 1;
 	}
 	if (TME & TME_US) {
 		fmt = tail ? "%03d%s" : "%d%s";
-		fprintf(f, fmt, time, tail ? " ms " : " us ");
+		fprintf(f, fmt, (int) time, tail ? " ms " : " us ");
 	}
 }
 
