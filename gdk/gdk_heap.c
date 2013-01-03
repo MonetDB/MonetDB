@@ -212,10 +212,10 @@ HEAPcacheFind(size_t *maxsz, char *fn, storage_t mode)
 		MT_lock_unset(&HEAPcacheLock, "HEAPcache_init");
 	}
 	if (!base) {
-		FILE *fp = GDKfilelocate(fn, "wb", NULL);
+		int fd = GDKfdlocate(fn, "wb", NULL);
 
-		if (fp) {
-			fclose(fp);
+		if (fd >= 0) {
+			close(fd);
 			return GDKload(fn, NULL, *maxsz, *maxsz, mode);
 		}
 	} else
@@ -301,7 +301,6 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 	}
 	if (h->filename && h->base == NULL) {
 		char *of = h->filename;
-		FILE *fp;
 
 		h->filename = NULL;
 
@@ -311,13 +310,14 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 			h->filename = of;
 		} else {
 			char *ext;
+			int fd;
 
 			strncpy(nme, of, sizeof(nme));
 			nme[sizeof(nme) - 1] = 0;
 			ext = decompose_filename(nme);
-			fp = GDKfilelocate(nme, "wb", ext);
-			if (fp != NULL) {
-				fclose(fp);
+			fd = GDKfdlocate(nme, "wb", ext);
+			if (fd >= 0) {
+				close(fd);
 				h->newstorage = STORE_MMAP;
 				HEAPload(h, nme, ext, FALSE);
 			}
@@ -408,7 +408,7 @@ HEAPextend(Heap *h, size_t size)
 		}
 		/* too big: convert it to a disk-based temporary heap */
 		if (can_mmap) {
-			FILE *fp;
+			int fd;
 			char *of = h->filename;
 			int existing = 0;
 
@@ -417,15 +417,15 @@ HEAPextend(Heap *h, size_t size)
 			 * mapped files), but if the heap file doesn't
 			 * exist yet, the BAT is new and we can use
 			 * STORE_MMAP */
-			fp = GDKfilelocate(nme, "rb", ext);
-			if (fp != NULL) {
+			fd = GDKfdlocate(nme, "rb", ext);
+			if (fd >= 0) {
 				existing = 1;
-				fclose(fp);
+				close(fd);
 			}
 			h->filename = NULL;
-			fp = GDKfilelocate(nme, "wb", ext);
-			if (fp != NULL) {
-				fclose(fp);
+			fd = GDKfdlocate(nme, "wb", ext);
+			if (fd >= 0) {
+				close(fd);
 				if (h->storage == STORE_MEM) {
 					storage_t newmode = h->newstorage == STORE_MMAP && existing && !h->forcemap ? STORE_PRIV : h->newstorage;
 					/* make sure we really MMAP */
@@ -627,7 +627,6 @@ HEAPload_intern(Heap *h, const char *nme, const char *ext, const char *suffix, i
 {
 	size_t truncsize = (1 + (((size_t) (h->free * 1.05)) >> REMAP_PAGE_MAXBITS)) << REMAP_PAGE_MAXBITS;
 	size_t minsize = (1 + ((h->size - 1) >> REMAP_PAGE_MAXBITS)) << REMAP_PAGE_MAXBITS;
-	FILE *fp = NULL;
 	int ret = 0, desc_status = 0;
 	long_str srcpath, dstpath;
 	struct stat st;
@@ -650,11 +649,11 @@ HEAPload_intern(Heap *h, const char *nme, const char *ext, const char *suffix, i
 	/* when a bat is made read-only, we can truncate any unused
 	 * space at the end of the heap */
 	if (trunc && truncsize < h->size) {
-		fp = (FILE *) GDKfilelocate(nme, "mrb+", ext);
-		if (fp) {
-			ret = ftruncate(fileno(fp), (off_t) truncsize);
+		int fd = GDKfdlocate(nme, "mrb+", ext);
+		if (fd >= 0) {
+			ret = ftruncate(fd, (off_t) truncsize);
 			HEAPDEBUG fprintf(stderr, "#ftruncate(file=%s.%s, size=" SZFMT ") = %d\n", nme, ext, truncsize, ret);
-			fclose(fp);
+			close(fd);
 			if (ret == 0) {
 				h->size = h->maxsize = truncsize;
 				desc_status = 1;

@@ -133,7 +133,7 @@ GDKremovedir(const char *dirname)
 #define _FWRTHR         0x080000
 #define _FRDSEQ         0x100000
 
-static int
+int
 GDKfdlocate(const char *nme, const char *mode, const char *extension)
 {
 	char buf[PATHLENGTH], *path = buf;
