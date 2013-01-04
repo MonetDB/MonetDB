@@ -49,6 +49,7 @@ class Connection(object):
             password=password, database=database, language="sql")
         self.set_autocommit(autocommit)
         self.set_sizeheader(True)
+        self.set_replysize(100)
 
     def close(self):
         """ Close the connection. The connection will be unusable from this
@@ -81,6 +82,9 @@ class Connection(object):
         self.command("Xsizeheader %s" % int(sizeheader))
         self.sizeheader = sizeheader
 
+    def set_replysize(self, replysize):
+        self.command("Xreply_size %s" % int(replysize))
+        self.replysize = replysize
 
     def commit(self):
         """
