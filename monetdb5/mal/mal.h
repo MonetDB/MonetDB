@@ -118,6 +118,7 @@ mal_export MT_Lock  mal_remoteLock;
 mal_export MT_Lock  mal_profileLock ;
 mal_export MT_Lock  mal_copyLock ;
 mal_export MT_Lock  mal_delayLock ;
+mal_export MT_Sema	mal_parallelism;
 
 
 mal_export int mal_init(void);
