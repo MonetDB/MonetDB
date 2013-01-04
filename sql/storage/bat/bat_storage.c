@@ -198,6 +198,7 @@ delta_update_bat( sql_delta *bat, BAT *tids, BAT *updates, int is_new)
 		b = temp_descriptor(bat->ibid);
 		void_replace_bat(b, upd, TRUE);
 	}
+	bat->ucnt = BATcount(b);
 	bat_destroy(b);
 	bat_destroy(upd);
 }
@@ -236,8 +237,10 @@ delta_update_val( sql_delta *bat, oid rid, void *upd)
 		b = temp_descriptor(bat->ibid);
 		void_inplace(b, rid, upd, TRUE);
 	}
-	if (b)
+	if (b) {
+		bat->ucnt = BATcount(b);
 		bat_destroy(b);
+	}
 }
 
 static void
@@ -276,17 +279,6 @@ delta_append_bat( sql_delta *bat, BAT *i )
 		bat->cached = NULL;
 	}
 	bat->cnt += BATcount(i);
-	/* We simply use the to be inserted bat directly.
-	 * Disabled this optimization: sometimes the bat is used later in the
-	 * mal plan. 
-	 * This should be solved by changing the input into a view (somehow).
-	 * Alternatively, COPY INTO ... LOCKED can/should be used.
-	if (BATcount(b) == 0 && !isVIEW(i) && BBP_lrefs(i->batCacheid) <= 1 && i->htype == TYPE_void && i->ttype != TYPE_void && bat->ibase == i->H->seq){
-		temp_destroy(bat->ibid);
-		bat->ibid = temp_create(i);
-		BATseqbase(i, bat->ibase);
-	} else 
-	 */
 	if (!isEbat(b)){
 		/* try to use mmap() */
 		if (BATcount(b)+BATcount(i) > (BUN) REMAP_PAGE_MAXSIZE) { 
@@ -560,6 +552,7 @@ new_persistent_delta( sql_delta *bat, int sz )
 
 		bat->ibase = BATcount(b);
 		bat->cnt = BATcount(b) + BATcount(i);
+		bat->ucnt = 0;
 		bat->ibid = temp_copy(i->batCacheid, FALSE);
 		bat_destroy(i);
 		i = temp_descriptor(bat->ibid);
@@ -572,6 +565,7 @@ new_persistent_delta( sql_delta *bat, int sz )
 
 		bat->bid = bat->ibid;
 		bat->cnt = bat->ibase = BATcount(b);
+		bat->ucnt = 0;
 		bat_destroy(b);
 
 		i = bat_new(TYPE_void, type, sz);
@@ -604,6 +598,12 @@ create_delta( sql_delta *d, BAT *b, BAT *i, bat u)
 		d->bid = temp_create(b);
 	}
 	d->ubid = u;
+	d->ucnt = 0;
+	if (u) {
+		BAT *U = BBPquickdesc(ABS(u), 0);
+
+		d->ucnt = BATcount(U);
+	}
 }
 
 static bat
@@ -743,6 +743,7 @@ create_idx(sql_trans *tr, sql_idx *ni)
 		bat->ibid = copyBat(d->ibid, type, d->ibase);
 		bat->ibase = d->ibase;
 		bat->cnt = d->cnt;
+		bat->ucnt = 0;
 
 		if (d->ubid) 
 			bat->ubid = e_ubat(type);
@@ -862,6 +863,7 @@ dup_delta(sql_trans *tr, sql_delta *obat, sql_delta *bat, int type, int oc_isnew
 	bat->ubid = obat->ubid;
 	bat->ibase = obat->ibase;
 	bat->cnt = obat->cnt;
+	bat->ucnt = obat->ucnt;
 
 	bat->name = _STRDUP(obat->name);
 
@@ -1129,6 +1131,7 @@ clear_delta(sql_trans *tr, sql_delta *bat)
 		bat_destroy(b);
 	}
 	bat->cnt = 0;
+	bat->ucnt = 0;
 	return sz;
 }
 
@@ -1361,10 +1364,10 @@ tr_update_delta( sql_trans *tr, sql_delta *obat, sql_delta *cbat, BUN snapshot_m
 			append_inserted(ci, ins);
 			BATcleanProps(ci);
 			bat_destroy(ci);
+			obat->cnt = cbat->cnt;
 		}
-		obat->cnt = cbat->cnt;
 		if (store_nr_active == 1) { /* flush all */
-			BAT *pi = temp_descriptor(obat->ibid);
+			size_t cnt = 0;
 			if (!BATcount(cur) && BATcount(ins) > snapshot_minsize){
 				/* swap cur and ins */
 				BAT *newcur = ins;
@@ -1378,56 +1381,73 @@ tr_update_delta( sql_trans *tr, sql_delta *obat, sql_delta *cbat, BUN snapshot_m
 				bat_destroy(cur);
 				cur = newcur;
 			} else {
-				if (BATcount(cur)+BATcount(ins) > (BUN) REMAP_PAGE_MAXSIZE) { /* try to use mmap() */
+				if (BATcount(cur)+BATcount(ins) > (BUN) REMAP_PAGE_MAXSIZE) /* try to use mmap() */
        					BATmmap(cur, STORE_MMAP, STORE_MMAP, STORE_MMAP, STORE_MMAP, 1);
-    				}
 				assert(cur->T->heap.storage != STORE_PRIV);
 				BATappend(cur,ins,TRUE);
 				BATcleanProps(cur);
-				temp_destroy(cbat->ibid);
-				cbat->ibid = e_bat(cur->ttype);
+				if (ATOMstorage(ins->ttype) < TYPE_str && BATcount(ins) < 10) {
+					bat_clear(ins);
+					BATseqbase(ins, BATcount(cur));
+				} else {
+					temp_destroy(cbat->ibid);
+					cbat->ibid = e_bat(cur->ttype);
+				}
 			}
-			bat_clear(pi);
+			cnt = obat->cnt - obat->ibase;
+			obat->cnt = cbat->cnt =
 			obat->ibase = cbat->ibase = BATcount(cur);
-			BATseqbase(pi, obat->ibase);
-			bat_destroy(pi);
+			if (cnt > 0) {
+				if (ATOMstorage(ins->ttype) < TYPE_str && cnt < 10) {
+					BAT *pi = temp_descriptor(obat->ibid);
+
+					bat_clear(pi);
+					BATseqbase(pi, obat->ibase);
+					bat_destroy(pi);
+				} else {
+					temp_destroy(obat->ibid);
+					obat->ibid = e_bat(cur->ttype);
+				}
+			}
 		} else {
 			BATcommit(ins);
 		}
 	}
 	bat_destroy(ins);
 
-	ups = temp_descriptor(cbat->ubid);
-	/* any updates */
-	if (BUNlast(ups) > BUNfirst(ups) || cleared ) {
-		if ((BUNlast(ups) > ups->batInserted || BATdirty(ups)) && (store_nr_active > 1)) { 
-			BAT *cu = temp_descriptor(obat->ubid);
+	if (cbat->ucnt) {
+		ups = temp_descriptor(cbat->ubid);
+		/* any updates */
+		if (BUNlast(ups) > BUNfirst(ups) || cleared ) {
+			if ((BUNlast(ups) > ups->batInserted || BATdirty(ups)) && (store_nr_active > 1)) { 
+				BAT *cu = temp_descriptor(obat->ubid);
 
-			if (isEUbat(cu)) {
-				temp_destroy(obat->ubid);
-				obat->ubid = temp_copy(cu->batCacheid, FALSE);
+				if (isEUbat(cu)) {
+					temp_destroy(obat->ubid);
+					obat->ubid = temp_copy(cu->batCacheid, FALSE);
+					bat_destroy(cu);
+					cu = temp_descriptor(obat->ubid);
+				}
+				BATkey(cu, BOUND2BTRUE);
+				/* should be insert_inserted */
+				BATins(cu, ups, TRUE);
+				BATreplace(cu, ups, TRUE);
+				BATcleanProps(cu);
 				bat_destroy(cu);
-				cu = temp_descriptor(obat->ubid);
 			}
-			BATkey(cu, BOUND2BTRUE);
-			/* should be insert_inserted */
-			BATins(cu, ups, TRUE);
-			BATreplace(cu, ups, TRUE);
-			BATcleanProps(cu);
-			bat_destroy(cu);
+			if (store_nr_active == 1) { /* flush all */
+				void_replace_bat(cur, ups, TRUE);
+				/* cleanup the old deltas */
+				temp_destroy(obat->ubid);
+				obat->ubid = e_ubat(cur->ttype);
+				temp_destroy(cbat->ubid);
+				cbat->ubid = e_ubat(cur->ttype);
+			} else {
+				BATcommit(ups);
+			}
 		}
-		if (store_nr_active == 1) { /* flush all */
-			void_replace_bat(cur, ups, TRUE);
-			/* cleanup the old deltas */
-			temp_destroy(obat->ubid);
-			obat->ubid = e_ubat(cur->ttype);
-			temp_destroy(cbat->ubid);
-			cbat->ubid = e_ubat(cur->ttype);
-		} else {
-			BATcommit(ups);
-		}
+		bat_destroy(ups);
 	}
-	bat_destroy(ups);
 	bat_destroy(cur);
 	return ok;
 }
@@ -1511,7 +1531,7 @@ int
 tr_log_delta( sql_trans *tr, sql_delta *cbat, int cleared)
 {
 	int ok = LOG_OK;
-	BAT *ups, *ins, *cur = NULL;
+	BAT *ups, *ins;
 
 	(void)tr;
 	assert(tr->parent == gtrans);
@@ -1522,26 +1542,24 @@ tr_log_delta( sql_trans *tr, sql_delta *cbat, int cleared)
 	/* any inserts */
 	if (BUNlast(ins) > BUNfirst(ins)) {
 		assert(store_nr_active>0);
-		if (cbat->bid)
-			cur = temp_descriptor(cbat->bid);
-		if (BUNlast(ins) > ins->batInserted && (store_nr_active != 1 || (cur && BATcount(cur)) || BATcount(ins) <= SNAPSHOT_MINSIZE))
+		if (BUNlast(ins) > ins->batInserted && (store_nr_active != 1 || cbat->ibase || BATcount(ins) <= SNAPSHOT_MINSIZE))
 			ok = log_bat(bat_logger, ins, cbat->name);
 		if (store_nr_active == 1 && 
-		    ((!cur || !BATcount(cur)) && BATcount(ins) > SNAPSHOT_MINSIZE)) {
+		    !cbat->ibase && BATcount(ins) > SNAPSHOT_MINSIZE) {
 			/* log new snapshot */
 			logger_add_bat(bat_logger, ins, cbat->name);
 			ok = log_bat_persists(bat_logger, ins, cbat->name);
 		}
-		if (cur)
-			bat_destroy(cur);
 	}
 	bat_destroy(ins);
 
-	ups = temp_descriptor(cbat->ubid);
-	/* any updates */
-	if (ok == LOG_OK && (BUNlast(ups) > ups->batInserted || BATdirty(ups))) 
-		ok = log_delta(bat_logger, ups, cbat->name);
-	bat_destroy(ups);
+	if (cbat->ucnt) {
+		ups = temp_descriptor(cbat->ubid);
+		/* any updates */
+		if (ok == LOG_OK && (BUNlast(ups) > ups->batInserted || BATdirty(ups))) 
+			ok = log_delta(bat_logger, ups, cbat->name);
+		bat_destroy(ups);
+	}
 	return ok;
 }
 
@@ -1602,22 +1620,18 @@ tr_snapshot_bat( sql_trans *tr, sql_delta *cbat)
 
 	(void)tr;
 	if (store_nr_active == 1) { 
-		BAT *cur = NULL, *ins = temp_descriptor(cbat->ibid);
+		if (!cbat->ibase && cbat->cnt > SNAPSHOT_MINSIZE) {
+			BAT *ins = temp_descriptor(cbat->ibid);
 
-		/* any inserts */
-		if (BUNlast(ins) > BUNfirst(ins)) {
-			if (cbat->bid)
-				cur = temp_descriptor(cbat->bid);
-		        if ((!cur || !BATcount(cur)) && BATcount(ins) > SNAPSHOT_MINSIZE) {
+			/* any inserts */
+			if (BUNlast(ins) > BUNfirst(ins)) {
 				bat_set_access(ins, BAT_READ);
 				BATmode(ins, PERSISTENT);
 				if (BATcount(ins) > (BUN) REMAP_PAGE_MAXSIZE)
        					BATmmap(ins, STORE_MMAP, STORE_MMAP, STORE_MMAP, STORE_MMAP, 0);
 			}
-			if (cur)
-				bat_destroy(cur);
+			bat_destroy(ins);
 		}
-		bat_destroy(ins);
 	}
 	return ok;
 }

@@ -1310,7 +1310,6 @@ extern int sqlcleanup(mvc *c, int err);
 extern sql_rel *sql_symbol2relation(mvc *c, symbol *sym);
 extern stmt *sql_relation2stmt(mvc *c, sql_rel *r);
 
-extern BAT *mvc_bind(mvc *m, char *sname, char *tname, char *cname, int access);
 extern BAT *mvc_bind_dbat(mvc *m, char *sname, char *tname, int access);
 extern BAT *mvc_bind_idxbat(mvc *m, char *sname, char *tname, char *iname, int access);
 
@@ -3038,9 +3037,7 @@ mvc_restart_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	throw(SQL, "sql.restart", "sequence %s not found", *sname);
 }
 
-
-
-BAT *
+static BAT *
 mvc_bind(mvc *m, char *sname, char *tname, char *cname, int access)
 {
 	sql_trans *tr = m->session->tr;
@@ -3470,44 +3467,34 @@ DELTAbat(bat *result, bat *col, bat *uid, bat *uval, bat *ins)
 {
 	BAT *c, *u_id, *u_val, *u, *i = NULL, *res;
 
-	if ((u_id = BATdescriptor(*uid)) == NULL) 
+	if ((u_id = BBPquickdesc(ABS(*uid), 0)) == NULL) 
 		throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
-	if (ins && (i = BATdescriptor(*ins)) == NULL) {
-		BBPunfix(u_id->batCacheid);
+	if (ins && (i = BBPquickdesc(ABS(*ins), 0)) == NULL) 
 		throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
-	}
 
 	/* no updates, no inserts */
 	if (BATcount(u_id) == 0 && (!i || BATcount(i) == 0)) {
-		BBPunfix(u_id->batCacheid);
-		if (i) BBPunfix(i->batCacheid);
 		BBPincref(*result = *col, TRUE);
 		return MAL_SUCCEED;
 	}
 
-	if ((c = BATdescriptor(*col)) == NULL) {
-		BBPunfix(u_id->batCacheid);
-		if (i) BBPunfix(i->batCacheid);
+	if ((c = BBPquickdesc(ABS(*col), 0)) == NULL) 
 		throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
-	}
 
 	/* bat may change */
 	if (i && BATcount(c) == 0 && BATcount(u_id) == 0) {
-		BBPunfix(c->batCacheid);
-		BBPunfix(u_id->batCacheid);
-		BBPkeepref(*result = i->batCacheid);
+		BBPincref(*result = *ins, TRUE);
 		return MAL_SUCCEED;
 	}
 
+	c = BATdescriptor(*col);
 	if ((res = BATcopy(c, TYPE_void, c->ttype, TRUE)) == NULL) 
 		throw(MAL, "sql.delta", OPERATION_FAILED);
 	BBPunfix(c->batCacheid);
 
-	if ((u_val = BATdescriptor(*uval)) == NULL) {
-		BBPunfix(u_id->batCacheid);
-		if (i) BBPunfix(i->batCacheid);
+	if ((u_val = BATdescriptor(*uval)) == NULL) 
 		throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
-	}
+	u_id = BATdescriptor(*uid);
 	u = BATleftfetchjoin(BATmirror(u_id), u_val, BATcount(u_val));
 	BBPunfix(u_id->batCacheid);
 	BBPunfix(u_val->batCacheid);
@@ -3515,9 +3502,11 @@ DELTAbat(bat *result, bat *col, bat *uid, bat *uval, bat *ins)
 		res = BATreplace(res, u, TRUE);
 	BBPunfix(u->batCacheid);
 
-	if (i && BATcount(i)) 
+	if (i && BATcount(i)) {
+		i = BATdescriptor(*ins);
 		res = BATappend(res, i, TRUE);
-	if (i) BBPunfix(i->batCacheid);
+		BBPunfix(i->batCacheid);
+	}
 
 	BBPkeepref(*result = res->batCacheid);
 	return MAL_SUCCEED;
@@ -3528,37 +3517,30 @@ DELTAsub(bat *result, bat *col, bat *uid, bat *uval, bat *ins)
 {
 	BAT *c, *cminu, *u_id, *u_val, *u, *i = NULL, *res;
 
-	if ((u_id = BATdescriptor(*uid)) == NULL) 
+	if ((u_id = BBPquickdesc(ABS(*uid), 0)) == NULL) 
 		throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
-	if (ins && (i = BATdescriptor(*ins)) == NULL) {
-		BBPunfix(u_id->batCacheid);
+	if (ins && (i = BBPquickdesc(ABS(*ins), 0)) == NULL) 
 		throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
-	}
 
 	/* no updates, no inserts */
 	if (BATcount(u_id) == 0 && (!i || BATcount(i) == 0)) {
-		BBPunfix(u_id->batCacheid);
-		if (i) BBPunfix(i->batCacheid);
 		BBPincref(*result = *col, TRUE);
 		return MAL_SUCCEED;
 	}
 
-	if ((c = BATdescriptor(*col)) == NULL) {
-		BBPunfix(u_id->batCacheid);
-		if (i) BBPunfix(i->batCacheid);
+	if ((c = BBPquickdesc(ABS(*col), 0)) == NULL) 
 		throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
-	}
 
 	/* bat may change */
 	if (i && BATcount(c) == 0 && BATcount(u_id) == 0) {
-		BBPunfix(c->batCacheid);
-		BBPunfix(u_id->batCacheid);
-		BBPkeepref(*result = i->batCacheid);
+		BBPincref(*result = *ins, TRUE);
 		return MAL_SUCCEED;
 	}
 
+	c = BATdescriptor(*col);
 	res = c;
 	if (BATcount(u_id)) {
+		u_id = BATdescriptor(*uid);
 		cminu = BATkdiff(BATmirror(c), BATmirror(u_id));
 		BBPunfix(c->batCacheid);
 		c = BATmirror(BATmark(cminu, 0));
@@ -3566,7 +3548,6 @@ DELTAsub(bat *result, bat *col, bat *uid, bat *uval, bat *ins)
 
 		if ((u_val = BATdescriptor(*uval)) == NULL) {
 			BBPunfix(c->batCacheid);
-			if (i) BBPunfix(i->batCacheid);
 			BBPunfix(u_id->batCacheid);
 			throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
 		}
@@ -3577,9 +3558,11 @@ DELTAsub(bat *result, bat *col, bat *uid, bat *uval, bat *ins)
 		BBPunfix(u->batCacheid);
 	}
 
-	if (i) res = BATappend(res, i, TRUE);
-	if (i) BBPunfix(i->batCacheid);
-
+	if (i) {
+		i = BATdescriptor(*ins);
+		res = BATappend(res, i, TRUE);
+		BBPunfix(i->batCacheid);
+	}
 	BBPkeepref(*result = res->batCacheid);
 	return MAL_SUCCEED;
 }

@@ -729,6 +729,7 @@ logger_open(logger *lg)
 	snprintf(filename, BUFSIZ, "%s%s." LLFMT, lg->dir, LOGFILE, lg->id);
 
 	lg->log = open_wstream(filename);
+	lg->end = 0;
 	if (mnstr_errnr(lg->log))
 		return LOG_ERR;
 
@@ -1868,7 +1869,7 @@ log_tstart(logger *lg)
 
 #define DBLKSZ 8192
 #define DBLKMASK 8191
-#define SEGSZ 16*DBLKSZ
+#define SEGSZ 64*DBLKSZ
 static char zeros[DBLKSZ] = { 0 };
 
 static void
@@ -1881,7 +1882,7 @@ pre_allocate(logger *lg)
 		lng s = p;
 
 		if (p > lg->end) {
-			lg->end = p & ~DBLKMASK;
+			lg->end = (p & ~DBLKMASK);
 			if (p > DBLKSZ)
 				p -= DBLKSZ;
 		}
@@ -1891,7 +1892,7 @@ pre_allocate(logger *lg)
 			lg->end += p;
 			p = 0;
 		}
-		for (; p < SEGSZ; p += DBLKSZ, lg->end += DBLKSZ)
+		for (; p < SEGSZ; p += DBLKSZ, lg->end += DBLKSZ) 
 			mnstr_write(lg->log, zeros, DBLKSZ, 1);
 		mnstr_fsetpos(lg->log, s);
 	}

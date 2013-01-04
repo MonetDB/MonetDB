@@ -1124,6 +1124,7 @@ SQLreader(Client c)
 {
 	int go = TRUE;
 	int more = TRUE;
+	int commit_done = FALSE;
 	backend *be = (backend *) c->sqlcontext;
 	bstream *in = c->fdin;
 	int language = -1;
@@ -1174,8 +1175,10 @@ SQLreader(Client c)
 		    B \n C; -- statements in one block	S
 		 */
 		/* auto_commit on end of statement */
-		if (m->scanner.mode == LINE_N)
+		if (m->scanner.mode == LINE_N && !commit_done) {
 			go = SQLautocommit(c, m);
+			commit_done=TRUE;
+		}
 
 		if (go && in->pos >= in->len) {
 			ssize_t rd;
@@ -1195,8 +1198,10 @@ SQLreader(Client c)
 
 				/* The rules of auto_commit require us to finish
 				   and start a transaction on the start of a new statement (s A;B; case) */
-				if (!(m->emod & mod_debug))
+				if (!(m->emod & mod_debug) && !commit_done) {
 					go = SQLautocommit(c, m);
+					commit_done = TRUE;
+				}
 
 				if (go && ((!blocked && mnstr_write(c->fdout, c->prompt, c->promptlength, 1) != 1) || mnstr_flush(c->fdout))) {
 					go = FALSE;

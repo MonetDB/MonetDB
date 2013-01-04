@@ -30,6 +30,7 @@ typedef struct sql_delta {
 	int ibid;		/* bat with inserts */
 	int ubid;		/* bat with updates */
 	size_t cnt;		/* number of tuples (excluding the deletes) */
+	size_t ucnt;		/* number of updates */
 	BAT *cached;		/* cached copy, used for schema bats only */
 } sql_delta;
 
