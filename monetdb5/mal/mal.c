@@ -234,7 +234,7 @@ int mal_init(void){
 	MT_lock_init( &mal_profileLock, "mal_profileLock");
 	MT_lock_init( &mal_copyLock, "mal_copyLock");
 	MT_lock_init( &mal_delayLock, "mal_delayLock");
-	MT_sema_init( &mal_parallelism, (GDKnr_threads ? GDKnr_threads/2: 4), "mal_parallelism");
+	MT_sema_init( &mal_parallelism, (GDKnr_threads > 1 ? GDKnr_threads/2: 4), "mal_parallelism");
 
 	tstAligned();
 	MCinit();
