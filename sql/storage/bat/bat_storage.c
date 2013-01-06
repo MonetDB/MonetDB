@@ -247,32 +247,20 @@ delta_append_bat( sql_delta *bat, BAT *i )
 		bat_destroy(bat->cached);
 		bat->cached = NULL;
 	}
-	bat->cnt += BATcount(i);
-	/* We simply use the to be inserted bat directly.
-	 * Disabled this optimization: sometimes the bat is used later in the
-	 * mal plan. 
-	 * This should be solved by changing the input into a view (somehow).
-	 * Alternatively, COPY INTO ... LOCKED can/should be used.
-	if (BATcount(b) == 0 && !isVIEW(i) && BBP_lrefs(i->batCacheid) <= 1 && i->htype == TYPE_void && i->ttype != TYPE_void && bat->ibase == i->H->seq){
-		temp_destroy(bat->ibid);
-		bat->ibid = temp_create(i);
-		BATseqbase(i, bat->ibase);
-	} else 
-	 */
 	if (!isEbat(b)){
 		/* try to use mmap() */
 		if (BATcount(b)+BATcount(i) > (BUN) REMAP_PAGE_MAXSIZE) { 
        			BATmmap(b, STORE_MMAP, STORE_MMAP, STORE_MMAP, STORE_MMAP, 1);
     		}
 		assert(b->T->heap.storage != STORE_PRIV);
-		BATappend(b, i, TRUE);
 	} else {
 		temp_destroy(bat->ibid);
 		bat->ibid = ebat2real(b->batCacheid, bat->ibase);
 		bat_destroy(b);
 		b = temp_descriptor(bat->ibid);
-		BATappend(b, i, TRUE);
 	}
+	BATappend(b, i, TRUE);
+	bat->cnt += BATcount(i);
 	bat_destroy(b);
 }
 
@@ -327,21 +315,17 @@ delta_delete_bat( sql_dbat *bat, BAT *i )
 {
 	BAT *b = temp_descriptor(bat->dbid);
 
-	bat->cnt += BATcount(i);
-	if (BATcount(b) == 0 && !isVIEW(i) && i->htype == TYPE_void && i->ttype != TYPE_void){
+	if (isEbat(b)) {
 		temp_destroy(bat->dbid);
-		bat->dbid = temp_create(i);
-	} else {
-		if (isEbat(b)) {
-			temp_destroy(bat->dbid);
-			bat->dbid = temp_copy(b->batCacheid, FALSE);
-			bat_destroy(b);
-			b = temp_descriptor(bat->dbid);
-		}
-		assert(b->T->heap.storage != STORE_PRIV);
-		BATappend(b, i, TRUE);
+		bat->dbid = temp_copy(b->batCacheid, FALSE);
+		bat_destroy(b);
+		b = temp_descriptor(bat->dbid);
 	}
+	assert(b->T->heap.storage != STORE_PRIV);
+	BATappend(b, i, TRUE);
 	bat_destroy(b);
+
+	bat->cnt += BATcount(i);
 }
 
 void
@@ -349,7 +333,6 @@ delta_delete_val( sql_dbat *bat, oid rid )
 {
 	BAT *b = temp_descriptor(bat->dbid);
 
-	bat->cnt ++;
 	if (isEbat(b)) {
 		temp_destroy(bat->dbid);
 		bat->dbid = temp_copy(b->batCacheid, FALSE);
@@ -358,6 +341,8 @@ delta_delete_val( sql_dbat *bat, oid rid )
 	}
 	BUNappend(b, (ptr)&rid, TRUE);
 	bat_destroy(b);
+
+	bat->cnt ++;
 }
 
 static void
@@ -1159,6 +1144,7 @@ gtr_update_delta( sql_trans *tr, sql_delta *cbat)
     		}
 		assert(cur->T->heap.storage != STORE_PRIV);
 		BATappend(cur,ins,TRUE);
+		cbat->cnt = cbat->ibase = BATcount(cur);
 		BATcleanProps(cur);
 		temp_destroy(cbat->ibid);
 		cbat->ibid = e_bat(cur->ttype);
