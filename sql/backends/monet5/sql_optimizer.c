@@ -232,18 +232,16 @@ initSQLoptimizer(void)
 }
 
 void
-addOptimizers(Client c, MalBlkPtr mb)
+addOptimizers(Client c, MalBlkPtr mb, char *pipe)
 {
 	int i;
 	InstrPtr q;
-	ValRecord *val;
 	backend *be;
 
 	be = (backend *) c->sqlcontext;
 	assert( be && be->mvc ); 	/* SQL clients should always have their state set */
 
-	val = stack_get_var(be->mvc,"optimizer");
-	addOptimizerPipe(c, mb, val? val->val.sval:"default_pipe");
+	addOptimizerPipe(c, mb, pipe? pipe:"default_pipe");
 	/* point queries do not require mitosis and dataflow */
 	if ( be->mvc->point_query)
 	for( i = mb->stop -1; i > 0; i--){
@@ -260,6 +258,12 @@ addQueryToCache(Client c)
 {
 	MalBlkPtr mb;
 	mvc *m;
+	ValRecord *val;
+	backend *be;
+
+	be = (backend *) c->sqlcontext;
+	assert( be && be->mvc ); 	/* SQL clients should always have their state set */
+	val = stack_get_var(be->mvc,"optimizer");
 
 	insertSymbol(c->nspace, c->curprg);
 	trimMalBlk(c->curprg->def);
@@ -285,7 +289,7 @@ addQueryToCache(Client c)
 			runMALDebugger(c,c->curprg);
 		return;
 	}
-	addOptimizers(c, mb);
+	addOptimizers(c, mb, val->val.sval);
 	SQLgetStatistics(c,m,mb);
 	if ( m->emod & mod_debug )
 		addtoMalBlkHistory(mb,"getStatistics");
