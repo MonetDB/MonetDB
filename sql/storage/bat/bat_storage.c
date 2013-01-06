@@ -278,7 +278,6 @@ delta_append_bat( sql_delta *bat, BAT *i )
 		bat_destroy(bat->cached);
 		bat->cached = NULL;
 	}
-	bat->cnt += BATcount(i);
 	if (!isEbat(b)){
 		/* try to use mmap() */
 		if (BATcount(b)+BATcount(i) > (BUN) REMAP_PAGE_MAXSIZE) { 
@@ -292,6 +291,7 @@ delta_append_bat( sql_delta *bat, BAT *i )
 		b = temp_descriptor(bat->ibid);
 	}
 	BATappend(b, i, TRUE);
+	bat->cnt += BATcount(i);
 	bat_destroy(b);
 }
 
@@ -1202,6 +1202,7 @@ gtr_update_delta( sql_trans *tr, sql_delta *cbat)
     		}
 		assert(cur->T->heap.storage != STORE_PRIV);
 		BATappend(cur,ins,TRUE);
+		cbat->cnt = cbat->ibase = BATcount(cur);
 		BATcleanProps(cur);
 		temp_destroy(cbat->ibid);
 		cbat->ibid = e_bat(cur->ttype);
