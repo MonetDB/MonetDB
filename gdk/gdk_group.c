@@ -70,6 +70,33 @@
  * At the MAL level, the multigroup function would perform the dynamic
  * optimization.
  */
+#define GRPnotfound							\
+	do {								\
+		/* no equal found: start new group */			\
+		if (ngrp == maxgrps) {					\
+			/* we need to extend extents			\
+			 * and histo bats, do it at			\
+			 * most once */					\
+			maxgrps = BATcount(b);				\
+			if (extents) {					\
+				BATsetcount(en, ngrp);			\
+				en = BATextend(en, maxgrps);		\
+				exts = (oid *) Tloc(en, BUNfirst(en));	\
+			}						\
+			if (histo) {					\
+				BATsetcount(hn, ngrp);			\
+				hn = BATextend(hn, maxgrps);		\
+				cnts = (wrd *) Tloc(hn, BUNfirst(hn));	\
+			}						\
+		}							\
+		if (extents)						\
+			exts[ngrp] = b->hseqbase + (oid) (p - r);	\
+		if (histo)						\
+			cnts[ngrp] = 1;					\
+		ngrps[p - r] = ngrp;					\
+		ngrp++;							\
+	} while (0)
+
 #define GRPhashloop(TYPE)						\
 	do {								\
 		v = BUNtail(bi, p);					\
@@ -499,29 +526,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				}
 			}
 			if (hb == BUN_NONE || (gc && grps[hb - r] != grps[p - r])) {
-				/* no equal found: start new group */
-				if (ngrp == maxgrps) {
-					/* we need to extend extents
-					 * and histo bats, do it
-					 * once */
-					maxgrps = BATcount(b);
-					if (extents) {
-						BATsetcount(en, ngrp);
-						en = BATextend(en, maxgrps);
-						exts = (oid *) Tloc(en, BUNfirst(en));
-					}
-					if (histo) {
-						BATsetcount(hn, ngrp);
-						hn = BATextend(hn, maxgrps);
-						cnts = (wrd *) Tloc(hn, BUNfirst(hn));
-					}
-				}
-				if (extents)
-					exts[ngrp] = b->hseqbase + (oid) (p - r);
-				if (histo)
-					cnts[ngrp] = 1;
-				ngrps[p - r] = ngrp;
-				ngrp++;
+				GRPnotfound;
 			}
 		}
 		gn->tsorted = BATcount(gn) <= 1;
@@ -643,30 +648,8 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				}
 			}
 			if (hb == BUN_NONE || (gc && grps[hb - r] != grps[p - r])) {
-				/* no equal found: start new group and
-				 * enter into hash table */
-				if (ngrp == maxgrps) {
-					/* we need to extend extents
-					 * and histo bats, do it at
-					 * most once */
-					maxgrps = BATcount(b);
-					if (extents) {
-						BATsetcount(en, ngrp);
-						en = BATextend(en, maxgrps);
-						exts = (oid *) Tloc(en, BUNfirst(en));
-					}
-					if (histo) {
-						BATsetcount(hn, ngrp);
-						hn = BATextend(hn, maxgrps);
-						cnts = (wrd *) Tloc(hn, BUNfirst(hn));
-					}
-				}
-				if (extents)
-					exts[ngrp] = b->hseqbase + (oid) (p - r);
-				if (histo)
-					cnts[ngrp] = 1;
-				ngrps[p - r] = ngrp;
-				ngrp++;
+				GRPnotfound;
+				/* enter new group into hash table */
 				hs->link[p] = hs->hash[prb];
 				hs->hash[prb] = p;
 			}
