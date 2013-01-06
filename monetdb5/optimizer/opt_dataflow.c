@@ -62,10 +62,15 @@ simpleFlow(InstrPtr *old, int start, int last)
 	return 1;
 }
 
-void removeDataflow(InstrPtr *old, int limit)
+/* optimizers may remove the dataflow hints first */
+void removeDataflow(MalBlkPtr mb, InstrPtr *old, int limit)
 {
-	int i, flowblock=0;
+	int i, j, k, flowblock=0;
 	InstrPtr p;
+	int *init= GDKzalloc(mb->vtop * sizeof(int)), skip = 0;
+
+	if ( init == 0)
+		return;
 	/* remove the inlined dataflow barriers */
 	for (i = 1; i<limit; i++) {
 		p = old[i];
@@ -80,8 +85,33 @@ void removeDataflow(InstrPtr *old, int limit)
 			flowblock = 0;
 			freeInstruction(p);
 			old[i] = NULL;
+		} else {
+			/* remember first initialization */
+			if ( p->argc == 2 && isVarConstant(mb,getArg(p,1))  && init[getArg(p,0)] == 0)
+				init[getArg(p,0)] = i;
+			if( blockStart(p) && !skip)
+				skip++;
 		}
 	}
+	/* remove the superflous variable initializations */
+	/* when there are no auxillary barrier blocks */
+	if ( !skip)
+	for (i = 1; i<limit; i++) {
+		p = old[i];
+		if ( p && init[ j = getArg(p,0)]  != i  &&  j && old[init[j]] == 0){
+			/* check for self-use in second assignment */
+			for ( k = p->retc; k < p->argc; k++)
+				if ( getArg(p,k) == getArg(p,0) )
+					break;
+			if ( k == p->argc) {
+				freeInstruction( old[init[j]]);
+				old[j] = NULL;
+			}
+			/* ignore further */
+			init[j] = 0;
+		} 
+	}
+	GDKfree(init);
 }
 
 static int
@@ -223,7 +253,7 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	}
 	pushInstruction(mb,old[0]);
 
-	removeDataflow(old,limit);
+	//removeDataflow(mb, old,limit); To be done explicit by optimizers
 
 	/* inject new dataflow barriers */
 	for (i = 1; i<limit; i++) {
