@@ -23,7 +23,13 @@ create procedure datacell.basket(tbl string)
 create procedure datacell.receptor(tbl string, host string, portid integer)
     external name datacell.receptor;
 
+create procedure datacell.receptor(tbl string, host string, portid integer, proto string, mode string)
+    external name datacell.receptor;
+
 create procedure datacell.emitter(tbl string, host string, portid integer)
+    external name datacell.emitter;
+
+create procedure datacell.emitter(tbl string, host string, portid integer, proto string, mode string)
     external name datacell.emitter;
 
 create procedure datacell.pause (tbl string)

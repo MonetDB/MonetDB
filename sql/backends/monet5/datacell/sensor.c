@@ -206,6 +206,7 @@ int main(int argc, char **argv)
 		{ "columns", 1, 0, 'c' },
 		{ "client", 0, 0, 'c' },
 		{ "port", 1, 0, 'p' },
+		{ "protocol", 1, 0, 'p' },
 		{ "timestamp", 0, 0, 't' },
 		{ "time", 1, 0, 't' },
 		{ "events", 1, 0, 'e' },
@@ -216,7 +217,6 @@ int main(int argc, char **argv)
 		{ "file", 1, 0, 'f' },
 		{ "host", 1, 0, 'h' },
 		{ "trace", 0, 0, 't' },
-		{ "protocol", 1, 0, 'p' },
 		{ "help", 1, 0, '?' },
 		{ 0, 0, 0, 0 }
 	};
@@ -227,7 +227,7 @@ int main(int argc, char **argv)
 	}
 	for (;;) {
 		int option_index = 0;
-		int c = getopt_long(argc, argv, "b:i:e:c:p:s:d:f:h:t:?:0",
+		int c = getopt_long(argc, argv, "i:b:c:c:p:p:t:t:e:s:s:r:d:f:h:t:?:0",
 				long_options, &option_index);
 		if (c == -1)
 			break;
@@ -318,19 +318,20 @@ int main(int argc, char **argv)
 			break;
 		case 'p':
 			if (strcmp(long_options[option_index].name, "protocol") == 0) {
-				if (strcmp(optarg, "TCP") == 0 || strcmp(optarg, "tcp") == 0) {
+				char *name= optarg? optarg: "xyz";
+				if (strcmp(name, "TCP") == 0 || strcmp(name, "tcp") == 0) {
 					protocol = TCP;
 					break;
 				}
-				if (strcmp(optarg, "UDP") == 0 || strcmp(optarg, "udp") == 0) {
+				if (strcmp(name, "UDP") == 0 || strcmp(name, "udp") == 0) {
 					protocol = UDP;
 					break;
 				}
-				if (strcmp(optarg, "CSV") == 0 || strcmp(optarg, "csv") == 0) {
+				if (strcmp(name, "CSV") == 0 || strcmp(name, "csv") == 0) {
 					protocol = CSV;
 					break;
 				}
-				if (strcmp(optarg, "debug") == 0) {
+				if (strcmp(name, "debug") == 0) {
 					protocol = DEB;
 					break;
 				}
