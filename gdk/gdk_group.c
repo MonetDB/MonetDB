@@ -99,47 +99,57 @@
 
 #define GRPhashloop(TYPE)						\
 	do {								\
-		v = BUNtail(bi, p);					\
-		if (gc) {						\
-			prb = hash_##TYPE(hs, v);			\
-			for (hb = hs->hash[prb];			\
-			     hb != BUN_NONE && grps[hb - r] == grps[p - r]; \
-			     hb = hs->link[hb]) {			\
-				if (*(TYPE *) v == *(TYPE *) BUNtail(bi, hb)){ \
-					ngrps[p - r] = ngrps[hb - r];	\
-					if (histo)			\
-						cnts[ngrps[hb - r]]++;	\
-					break;				\
-				}					\
-			}						\
-		} else if (grps) {					\
-			BUN hv = hash_##TYPE(hs, v);			\
-			BUN hg = hash_oid(hs, &grps[p-r]);		\
-			prb = ((hv << bits) ^ hg) & hs->mask;		\
-			for (hb = hs->hash[prb];			\
-			     hb != BUN_NONE;				\
-			     hb = hs->link[hb]) {			\
-				if (grps[hb - r] == grps[p - r] &&	\
-				    *(TYPE *) v == *(TYPE *) BUNtail(bi, hb)){ \
-					ngrps[p - r] = ngrps[hb - r];	\
-					if (histo)			\
-						cnts[ngrps[hb - r]]++;	\
-					break;				\
-				}					\
-			}						\
-		} else {						\
-			prb = hash_##TYPE(hs, v);			\
-			for (hb = hs->hash[prb];			\
-			     hb != BUN_NONE;				\
-			     hb = hs->link[hb]) {			\
-				if (*(TYPE *) v == *(TYPE *) BUNtail(bi, hb)){ \
-					ngrps[p - r] = ngrps[hb - r];	\
-					if (histo)			\
-						cnts[ngrps[hb - r]]++;	\
-					break;				\
-				}					\
-			}						\
-		}							\
+		TYPE *w = (TYPE *) Tloc(b, 0);					\
+		for (r = BUNfirst(b), p = r, q = r + BATcount(b); p < q; p++) { \
+			if (gc) {						\
+				prb = hash_##TYPE(hs, &w[p]);			\
+				for (hb = hs->hash[prb];			\
+				     hb != BUN_NONE &&				\
+				      grps[hb - r] == grps[p - r];		\
+				     hb = hs->link[hb]) {			\
+					if (w[p] == w[hb]) {			\
+						ngrps[p - r] = ngrps[hb - r];	\
+						if (histo)			\
+							cnts[ngrps[hb - r]]++;	\
+						break;				\
+					}					\
+				}						\
+			} else if (grps) {					\
+				BUN hv = hash_##TYPE(hs, &w[p]);		\
+				BUN hg = hash_oid(hs, &grps[p-r]);		\
+				prb = ((hv << bits) ^ hg) & hs->mask;		\
+				for (hb = hs->hash[prb];			\
+				     hb != BUN_NONE;				\
+				     hb = hs->link[hb]) {			\
+					if (grps[hb - r] == grps[p - r] &&	\
+					    w[p] == w[hb]) {			\
+						ngrps[p - r] = ngrps[hb - r];	\
+						if (histo)			\
+							cnts[ngrps[hb - r]]++;	\
+						break;				\
+					}					\
+				}						\
+			} else {						\
+				prb = hash_##TYPE(hs, &w[p]);			\
+				for (hb = hs->hash[prb];			\
+				     hb != BUN_NONE;				\
+				     hb = hs->link[hb]) {			\
+					if (w[p] == w[hb]) {			\
+						ngrps[p - r] = ngrps[hb - r];	\
+						if (histo)			\
+							cnts[ngrps[hb - r]]++;	\
+						break;				\
+					}					\
+				}						\
+			}							\
+			if (hb == BUN_NONE || 					\
+			    (gc && grps[hb - r] != grps[p - r])) {		\
+				GRPnotfound;					\
+				/* enter new group into hash table */		\
+				hs->link[p] = hs->hash[prb];			\
+				hs->hash[prb] = p;				\
+			}							\
+		}								\
 	} while (0)
 
 gdk_return
@@ -584,27 +594,27 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			goto error;
 		}
 
-		for (r = BUNfirst(b), p = r, q = r + BATcount(b); p < q; p++) {
-			switch (ATOMstorage(hs->type)) {
-			case TYPE_bte:
-				GRPhashloop(bte);
-				break;
-			case TYPE_sht:
-				GRPhashloop(sht);
-				break;
-			case TYPE_int:
-				GRPhashloop(int);
-				break;
-			case TYPE_lng:
-				GRPhashloop(lng);
-				break;
-			case TYPE_flt:
-				GRPhashloop(flt);
-				break;
-			case TYPE_dbl:
-				GRPhashloop(dbl);
-				break;
-			default:
+		switch (ATOMstorage(hs->type)) {
+		case TYPE_bte:
+			GRPhashloop(bte);
+			break;
+		case TYPE_sht:
+			GRPhashloop(sht);
+			break;
+		case TYPE_int:
+			GRPhashloop(int);
+			break;
+		case TYPE_lng:
+			GRPhashloop(lng);
+			break;
+		case TYPE_flt:
+			GRPhashloop(flt);
+			break;
+		case TYPE_dbl:
+			GRPhashloop(dbl);
+			break;
+		default:
+			for (r = BUNfirst(b), p = r, q = r + BATcount(b); p < q; p++) {
 				v = BUNtail(bi, p);
 				if (gc) {
 					prb = hash_any(hs, v);
@@ -646,12 +656,12 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 						}
 					}
 				}
-			}
-			if (hb == BUN_NONE || (gc && grps[hb - r] != grps[p - r])) {
-				GRPnotfound;
-				/* enter new group into hash table */
-				hs->link[p] = hs->hash[prb];
-				hs->hash[prb] = p;
+				if (hb == BUN_NONE || (gc && grps[hb - r] != grps[p - r])) {
+					GRPnotfound;
+					/* enter new group into hash table */
+					hs->link[p] = hs->hash[prb];
+					hs->hash[prb] = p;
+				}
 			}
 		}
 		if (hp->storage == STORE_MEM)
