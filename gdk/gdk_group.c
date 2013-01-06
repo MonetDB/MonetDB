@@ -76,8 +76,7 @@
 		if (grps) {						\
 			BUN hv = hash_##TYPE(hs, v);			\
 			BUN hg = hash_oid(hs, &grps[p-r]);		\
-			prb = (hv ^ (hv << bits1) ^			\
-			       hg ^ (hg << bits2)) & hs->mask;		\
+			prb = ((hv << bits) ^ hg) & hs->mask;		\
 			for (hb = hs->hash[prb];			\
 			     hb != BUN_NONE;				\
 			     hb = hs->link[hb]) {			\
@@ -489,17 +488,15 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		Heap *hp = NULL;
 		BUN prb;
 		BUN mask = HASHmask(b->batCount) >> 3;
-		int bits1 = 3, bits2;
+		int bits = 3;
 
 		/* when combining value and group-id hashes,
-		 * left-shift them by, respectively,
-		 * 1/3 & 2/3 of the hash-mask width
-		 * to better spread bits and use entire hash-mask,
+		 * we left-shift one of them by half the hash-mask width
+		 * to better spread bits and use the entire hash-mask,
 		 * and thus reduce collisions */
 		while (mask>>=1)
-			bits1++;
-		bits1 /= 3;
-		bits2 = 2 * bits1;
+			bits++;
+		bits /= 2;
 
 		/* not sorted, and no pre-existing hash table: we'll
 		 * build an incomplete hash table on the fly--also see
@@ -562,8 +559,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				if (grps) {
 					BUN hv = hash_any(hs, v);
 					BUN hg = hash_oid(hs, &grps[p-r]);
-					prb = (hv ^ (hv << bits1) ^
-					       hg ^ (hg << bits2)) & hs->mask;
+					prb = ((hv << bits) ^ hg) & hs->mask;
 					for (hb = hs->hash[prb];
 					     hb != BUN_NONE;
 					     hb = hs->link[hb]) {
