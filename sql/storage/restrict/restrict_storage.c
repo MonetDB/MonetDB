@@ -152,7 +152,7 @@ update_col(sql_trans *tr, sql_column *c, void *rid, void *upd, int tpe)
 {
 	sql_bat *bat = c->data;
 
-	c->base.wtime = c->t->base.wtime = c->t->s->base.wtime = tr->wtime = tr->stime;
+	c->base.wtime = c->t->base.wtime = c->t->s->base.wtime = tr->wtime = tr->wstime;
 	c->base.rtime = c->t->base.rtime = c->t->s->base.rtime = tr->rtime = tr->stime;
 	if (tpe == TYPE_bat)
 		update_bat(bat, rid, upd, isNew(c));
@@ -165,7 +165,7 @@ update_idx(sql_trans *tr, sql_idx * i, void *rid, void *upd, int tpe)
 {
 	sql_bat *bat = i->data;
 
-	i->base.wtime = i->t->base.wtime = i->t->s->base.wtime = tr->wtime = tr->stime;
+	i->base.wtime = i->t->base.wtime = i->t->s->base.wtime = tr->wtime = tr->wstime;
 	i->base.rtime = i->t->base.rtime = i->t->s->base.rtime = tr->rtime = tr->stime;
 	if (tpe == TYPE_bat)
 		update_bat(bat, rid, upd, isNew(i));
@@ -207,7 +207,7 @@ append_col(sql_trans *tr, sql_column *c, void *i, int tpe)
 {
 	sql_bat *bat = c->data;
 
-	c->base.wtime = c->t->base.wtime = c->t->s->base.wtime = tr->wtime = tr->stime;
+	c->base.wtime = c->t->base.wtime = c->t->s->base.wtime = tr->wtime = tr->wstime;
 	c->base.rtime = c->t->base.rtime = c->t->s->base.rtime = tr->rtime = tr->stime;
 	if (tpe == TYPE_bat)
 		append_bat(bat, i);
@@ -220,7 +220,7 @@ append_idx(sql_trans *tr, sql_idx * i, void *ib, int tpe)
 {
 	sql_bat *bat = i->data;
 
-	i->base.wtime = i->t->base.wtime = i->t->s->base.wtime = tr->wtime = tr->stime;
+	i->base.wtime = i->t->base.wtime = i->t->s->base.wtime = tr->wtime = tr->wstime;
 	i->base.rtime = i->t->base.rtime = i->t->s->base.rtime = tr->rtime = tr->stime;
 	if (tpe == TYPE_bat)
 		append_bat(bat, ib);
@@ -277,7 +277,7 @@ delete_tab(sql_trans *tr, sql_table * t, void *ib, int tpe)
 	}
 
 
-	t->base.wtime = t->s->base.wtime = tr->wtime = tr->stime;
+	t->base.wtime = t->s->base.wtime = tr->wtime = tr->wstime;
 	t->base.rtime = t->s->base.rtime = tr->rtime = tr->stime;
 	if (tpe == TYPE_bat)
 		delete_bat(bat, ib);
@@ -639,7 +639,7 @@ destroy_bat(sql_trans *tr, sql_bat *b, int rollback)
 static int
 destroy_col(sql_trans *tr, sql_column *c)
 {
-	int ok = destroy_bat(tr, c->data, (tr && tr->stime == c->base.wtime));
+	int ok = destroy_bat(tr, c->data, (tr && tr->wstime == c->base.wtime));
 	c->data = NULL;
 	return ok;
 }
@@ -653,7 +653,7 @@ log_destroy_col(sql_trans *tr, sql_column *c)
 static int
 destroy_idx(sql_trans *tr, sql_idx *i)
 {
-	int ok = destroy_bat(tr, i->data, (tr && tr->stime == i->base.wtime));
+	int ok = destroy_bat(tr, i->data, (tr && tr->wstime == i->base.wtime));
 	i->data = NULL;
 	return ok;
 }
@@ -668,7 +668,7 @@ log_destroy_idx(sql_trans *tr, sql_idx *i)
 static int
 destroy_del(sql_trans *tr, sql_table *t)
 {
-	int ok = destroy_bat(tr, t->data, (tr && tr->stime == t->base.wtime));
+	int ok = destroy_bat(tr, t->data, (tr && tr->wstime == t->base.wtime));
 	t->data = NULL;
 	return ok;
 }
@@ -774,7 +774,7 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 
 		if (cc->base.rtime)
 			oc->base.rtime = tr->stime;
-		oc->base.wtime = tr->stime;
+		oc->base.wtime = tr->wstime;
 		cc->base.rtime = cc->base.wtime = 0;
 	}
 	if (ok == LOG_OK && tt->idxs.set) {
@@ -793,7 +793,7 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 
 			if (ci->base.rtime)
 				oi->base.rtime = tr->stime;
-			oi->base.wtime = tr->stime;
+			oi->base.wtime = tr->wstime;
 			ci->base.rtime = ci->base.wtime = 0;
 		}
 	}

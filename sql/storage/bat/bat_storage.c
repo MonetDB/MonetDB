@@ -248,7 +248,7 @@ update_col(sql_trans *tr, sql_column *c, void *tids, void *upd, int tpe)
 {
 	sql_delta *bat = c->data;
 
-	c->base.wtime = c->t->base.wtime = c->t->s->base.wtime = tr->wtime = tr->stime;
+	c->base.wtime = c->t->base.wtime = c->t->s->base.wtime = tr->wtime = tr->wstime;
 	c->base.rtime = c->t->base.rtime = c->t->s->base.rtime = tr->rtime = tr->stime;
 	if (tpe == TYPE_bat)
 		delta_update_bat(bat, tids, upd, isNew(c));
@@ -261,7 +261,7 @@ update_idx(sql_trans *tr, sql_idx * i, void *tids, void *upd, int tpe)
 {
 	sql_delta *bat = i->data;
 
-	i->base.wtime = i->t->base.wtime = i->t->s->base.wtime = tr->wtime = tr->stime;
+	i->base.wtime = i->t->base.wtime = i->t->s->base.wtime = tr->wtime = tr->wstime;
 	i->base.rtime = i->t->base.rtime = i->t->s->base.rtime = tr->rtime = tr->stime;
 	if (tpe == TYPE_bat)
 		delta_update_bat(bat, tids, upd, isNew(i));
@@ -272,12 +272,17 @@ update_idx(sql_trans *tr, sql_idx * i, void *tids, void *upd, int tpe)
 void
 delta_append_bat( sql_delta *bat, BAT *i ) 
 {
-	BAT *b = temp_descriptor(bat->ibid);
+	BAT *c = BBPquickdesc(bat->bid, 0), *b;
+
+	if (!BATcount(i))
+		return ;
+	b = temp_descriptor(bat->ibid);
 
 	if (bat->cached) {
 		bat_destroy(bat->cached);
 		bat->cached = NULL;
 	}
+	assert(!c || BATcount(c) == bat->ibase);
 	if (!isEbat(b)){
 		/* try to use mmap() */
 		if (BATcount(b)+BATcount(i) > (BUN) REMAP_PAGE_MAXSIZE) { 
@@ -292,6 +297,7 @@ delta_append_bat( sql_delta *bat, BAT *i )
 	}
 	BATappend(b, i, TRUE);
 	bat->cnt += BATcount(i);
+	assert(BUNlast(b) > b->batInserted);
 	bat_destroy(b);
 }
 
@@ -299,11 +305,13 @@ void
 delta_append_val( sql_delta *bat, void *i ) 
 {
 	BAT *b = temp_descriptor(bat->ibid);
+	BAT *c = BBPquickdesc(bat->bid, 0);
 
 	if (bat->cached) {
 		bat_destroy(bat->cached);
 		bat->cached = NULL;
 	}
+	assert(!c || BATcount(c) == bat->ibase);
 	if (isEbat(b)) {
 		bat_destroy(b);
 		temp_destroy(bat->ibid);
@@ -311,6 +319,7 @@ delta_append_val( sql_delta *bat, void *i )
 		b = temp_descriptor(bat->ibid);
 	}
 	BUNappend(b, i, TRUE);
+	assert(BUNlast(b) > b->batInserted);
 	bat->cnt ++;
 	bat_destroy(b);
 }
@@ -321,7 +330,7 @@ append_col(sql_trans *tr, sql_column *c, void *i, int tpe)
 	sql_delta *bat = c->data;
 
 	/* appends only write */
-	c->base.wtime = c->t->base.wtime = c->t->s->base.wtime = tr->wtime = tr->stime;
+	c->base.wtime = c->t->base.wtime = c->t->s->base.wtime = tr->wtime = tr->wstime;
 	if (tpe == TYPE_bat)
 		delta_append_bat(bat, i);
 	else
@@ -334,7 +343,7 @@ append_idx(sql_trans *tr, sql_idx * i, void *ib, int tpe)
 	sql_delta *bat = i->data;
 
 	/* appends only write */
-	i->base.wtime = i->t->base.wtime = i->t->s->base.wtime = tr->wtime = tr->stime;
+	i->base.wtime = i->t->base.wtime = i->t->s->base.wtime = tr->wtime = tr->wstime;
 	if (tpe == TYPE_bat)
 		delta_append_bat(bat, ib);
 	else
@@ -406,7 +415,7 @@ delete_tab(sql_trans *tr, sql_table * t, void *ib, int tpe)
 	}
 
 	/* deletes only write */
-	t->base.wtime = t->s->base.wtime = tr->wtime = tr->stime;
+	t->base.wtime = t->s->base.wtime = tr->wtime = tr->wstime;
 	if (tpe == TYPE_bat)
 		delta_delete_bat(bat, ib);
 	else
@@ -1185,7 +1194,7 @@ BATcleanProps( BAT *b )
 }
 
 static int 
-gtr_update_delta( sql_trans *tr, sql_delta *cbat)
+gtr_update_delta( sql_trans *tr, sql_delta *cbat, int *changes)
 {
 	int ok = LOG_OK;
 	BAT *ups, *ins, *cur;
@@ -1197,6 +1206,7 @@ gtr_update_delta( sql_trans *tr, sql_delta *cbat)
 	ins = temp_descriptor(cbat->ibid);
 	/* any inserts */
 	if (BUNlast(ins) > BUNfirst(ins)) {
+		(*changes)++;
 		if (BATcount(cur)+BATcount(ins) > (BUN) REMAP_PAGE_MAXSIZE) { /* try to use mmap() */
        			BATmmap(cur, STORE_MMAP, STORE_MMAP, STORE_MMAP, STORE_MMAP, 1);
     		}
@@ -1209,66 +1219,89 @@ gtr_update_delta( sql_trans *tr, sql_delta *cbat)
 	}
 	bat_destroy(ins);
 
-	ups = temp_descriptor(cbat->ubid);
-	/* any updates */
-	if (BUNlast(ups) > BUNfirst(ups)) {
-		void_replace_bat(cur, ups, TRUE);
-		temp_destroy(cbat->ubid);
-		cbat->ubid = e_ubat(cur->ttype);
+	if (cbat->ucnt) {
+		ups = temp_descriptor(cbat->ubid);
+		/* any updates */
+		if (BUNlast(ups) > BUNfirst(ups)) {
+			(*changes)++;
+			void_replace_bat(cur, ups, TRUE);
+			temp_destroy(cbat->ubid);
+			cbat->ubid = e_ubat(cur->ttype);
+			cbat->ucnt = 0;
+		}
+		bat_destroy(ups);
 	}
-	bat_destroy(ups);
 	bat_destroy(cur);
 	return ok;
 }
 
 static int
-gtr_update_table(sql_trans *tr, sql_table *t)
+gtr_update_table(sql_trans *tr, sql_table *t, int *tchanges)
 {
 	int ok = LOG_OK;
 	node *n;
 
 	for (n = t->columns.set->h; ok == LOG_OK && n; n = n->next) {
+		int changes = 0;
 		sql_column *c = n->data;
 
 		if (!c->base.wtime) 
 			continue;
-		ok = gtr_update_delta(tr, c->data);
+		ok = gtr_update_delta(tr, c->data, &changes);
+		if (changes)
+			c->base.wtime = tr->wstime;
+		(*tchanges) |= changes;
 	}
 	if (ok == LOG_OK && t->idxs.set) {
 		for (n = t->idxs.set->h; ok == LOG_OK && n; n = n->next) {
+			int changes = 0;
 			sql_idx *ci = n->data;
 
 			/* some indices have no bats */
 			if (!ci->base.wtime)
 				continue;
 
-			ok = gtr_update_delta(tr, ci->data);
+			ok = gtr_update_delta(tr, ci->data, &changes);
+			if (changes)
+				ci->base.wtime = tr->wstime;
+			(*tchanges) |= changes;
 		}
 	}
+	if (*tchanges)
+		t->base.wtime = tr->wstime;
 	return ok;
 }
 
-typedef int (*gtr_update_table_fptr)( sql_trans *tr, sql_table *t);
+typedef int (*gtr_update_table_fptr)( sql_trans *tr, sql_table *t, int *changes);
 
 static int
-_gtr_update( sql_trans *tr, gtr_update_table_fptr gtr_update_table_f )
+_gtr_update( sql_trans *tr, gtr_update_table_fptr gtr_update_table_f)
 {
-	int ok = LOG_OK;
+	int ok = LOG_OK, tchanges = 0;
 	node *sn;
 
 	for(sn = tr->schemas.set->h; sn && ok == LOG_OK; sn = sn->next) {
+		int schanges = 0;
 		sql_schema *s = sn->data;
 		
 		if (!isTempSchema(s) && s->tables.set) {
 			node *n;
 			for (n = s->tables.set->h; n && ok == LOG_OK; n = n->next) {
+				int changes = 0;
 				sql_table *t = n->data;
 
 				if (isTable(t) && isGlobal(t))
-					ok = gtr_update_table_f(tr, t);
+					ok = gtr_update_table_f(tr, t, &changes);
+				schanges |= changes;
 			}
 		}
+		if (schanges){
+			s->base.wtime = tr->wstime;
+			tchanges ++;
+		}
 	}
+	if (tchanges)
+		tr->wtime = tr->wstime;
 	return LOG_OK;
 }
 
@@ -1309,11 +1342,12 @@ gtr_minmax_col( sql_trans *tr, sql_column *c)
 }
 
 static int
-gtr_minmax_table(sql_trans *tr, sql_table *t)
+gtr_minmax_table(sql_trans *tr, sql_table *t, int *changes)
 {
 	int ok = LOG_OK;
 	node *n;
 
+	(void)changes;
 	if (t->readonly) {
 		for (n = t->columns.set->h; ok == LOG_OK && n; n = n->next) {
 			sql_column *c = n->data;
@@ -1353,6 +1387,7 @@ tr_update_delta( sql_trans *tr, sql_delta *obat, sql_delta *cbat, BUN snapshot_m
 	if (BUNlast(ins) > BUNfirst(ins) || cleared) {
 		if (BUNlast(ins) > ins->batInserted && (store_nr_active > 1)) { 
 			BAT *ci = temp_descriptor(obat->ibid);
+			BUN nr;
 
 			if (isEbat(ci)) {
 				temp_destroy(obat->ibid);
@@ -1361,15 +1396,18 @@ tr_update_delta( sql_trans *tr, sql_delta *obat, sql_delta *cbat, BUN snapshot_m
 				ci = temp_descriptor(obat->ibid);
 				BATseqbase(ci, cbat->ibase);
 			}
+			assert(BATcount(cur) == cbat->ibase);
 			assert(obat->ibase == cbat->ibase);
-			append_inserted(ci, ins);
+			nr = append_inserted(ci, ins);
+			obat->cnt += nr;
+			assert(obat->cnt == cbat->cnt);
+			assert(BATcount(ci) == BATcount(ins));
 			BATcleanProps(ci);
 			bat_destroy(ci);
-			obat->cnt = cbat->cnt;
 		}
 		if (store_nr_active == 1) { /* flush all */
 			size_t cnt = 0;
-			if (!BATcount(cur) && BATcount(ins) > snapshot_minsize){
+			if (!obat->ibase && BATcount(ins) > snapshot_minsize){
 				/* swap cur and ins */
 				BAT *newcur = ins;
 
@@ -1385,6 +1423,8 @@ tr_update_delta( sql_trans *tr, sql_delta *obat, sql_delta *cbat, BUN snapshot_m
 				if (BATcount(cur)+BATcount(ins) > (BUN) REMAP_PAGE_MAXSIZE) /* try to use mmap() */
        					BATmmap(cur, STORE_MMAP, STORE_MMAP, STORE_MMAP, STORE_MMAP, 1);
 				assert(cur->T->heap.storage != STORE_PRIV);
+				assert((BATcount(cur) + BATcount(ins)) == cbat->cnt);
+				assert((BATcount(cur) + BATcount(ins)) == (obat->cnt + (BUNlast(ins) - ins->batInserted)));
 				BATappend(cur,ins,TRUE);
 				BATcleanProps(cur);
 				if (ATOMstorage(ins->ttype) < TYPE_str && BATcount(ins) < 10) {
@@ -1398,21 +1438,23 @@ tr_update_delta( sql_trans *tr, sql_delta *obat, sql_delta *cbat, BUN snapshot_m
 			cnt = obat->cnt - obat->ibase;
 			obat->cnt = cbat->cnt =
 			obat->ibase = cbat->ibase = BATcount(cur);
-			if (cnt > 0) {
-				if (ATOMstorage(ins->ttype) < TYPE_str && cnt < 10) {
-					BAT *pi = temp_descriptor(obat->ibid);
+			if (ATOMstorage(ins->ttype) < TYPE_str && cnt < 10) {
+				BAT *pi = temp_descriptor(obat->ibid);
 
-					bat_clear(pi);
-					BATseqbase(pi, obat->ibase);
-					bat_destroy(pi);
-				} else {
-					temp_destroy(obat->ibid);
-					obat->ibid = e_bat(cur->ttype);
-				}
+				bat_clear(pi);
+				BATseqbase(pi, obat->ibase);
+				bat_destroy(pi);
+			} else {
+				temp_destroy(obat->ibid);
+				obat->ibid = e_bat(cur->ttype);
 			}
 		} else {
 			BATcommit(ins);
 		}
+	}
+	if (obat->cnt != cbat->cnt) { /* locked */
+		obat->cnt = cbat->cnt;
+		obat->ibase = cbat->ibase;
 	}
 	bat_destroy(ins);
 
@@ -1505,7 +1547,7 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 
 		if (cc->base.rtime)
 			oc->base.rtime = tr->stime;
-		oc->base.wtime = tr->stime;
+		oc->base.wtime = tr->wstime;
 		cc->base.rtime = cc->base.wtime = 0;
 	}
 	if (ok == LOG_OK && tt->idxs.set) {
@@ -1521,7 +1563,7 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 
 			if (ci->base.rtime)
 				oi->base.rtime = tr->stime;
-			oi->base.wtime = tr->stime;
+			oi->base.wtime = tr->wstime;
 			ci->base.rtime = ci->base.wtime = 0;
 		}
 	}

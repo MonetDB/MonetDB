@@ -193,7 +193,8 @@ typedef size_t backend_stack;
 
 typedef struct sql_trans {
 	char *name;
-	int stime;		/* transaction time stamp (aka start time) */
+	int stime;		/* read transaction time stamp */
+	int wstime;		/* write transaction time stamp */
 	int rtime;
 	int wtime;
 	int schema_number;	/* schema timestamp */
