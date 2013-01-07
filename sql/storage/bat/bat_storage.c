@@ -241,7 +241,10 @@ update_idx(sql_trans *tr, sql_idx * i, void *ib, int tpe)
 void
 delta_append_bat( sql_delta *bat, BAT *i ) 
 {
-	BAT *c = BBPquickdesc(bat->bid, 0), *b;
+#ifndef NDEBUG
+	BAT *c = BBPquickdesc(bat->bid, 0); 
+#endif
+	BAT *b;
 
 	if (!BATcount(i))
 		return ;
