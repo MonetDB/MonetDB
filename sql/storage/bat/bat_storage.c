@@ -305,7 +305,9 @@ void
 delta_append_val( sql_delta *bat, void *i ) 
 {
 	BAT *b = temp_descriptor(bat->ibid);
+#ifndef NDEBUG
 	BAT *c = BBPquickdesc(bat->bid, 0);
+#endif
 
 	if (bat->cached) {
 		bat_destroy(bat->cached);
