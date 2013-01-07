@@ -692,8 +692,9 @@ mvc_import_table(Client cntxt, mvc *m, bstream *bs, char *sname, char *tname, ch
 				BAT *b = store_funcs.bind_col(m->session->tr, c, RDONLY);
 				sql_delta *d = c->data;
 
-				c->base.wtime = c->t->base.wtime = c->t->s->base.wtime = m->session->tr->wtime = m->session->tr->stime;
+				c->base.wtime = c->t->base.wtime = c->t->s->base.wtime = m->session->tr->wtime = m->session->tr->wstime;
 				d->cnt = BATcount(b);
+				d->ibase = BATcount(b);
 
 				BBPunfix(b->batCacheid);
 			}

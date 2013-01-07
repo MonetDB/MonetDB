@@ -6347,7 +6347,7 @@ str SQLcluster1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	if ( t == NULL)
 		throw(SQL,"sql.cluster","42S02!Table missing");
 	tr = m->session->tr;
-	t->base.wtime = s->base.wtime = tr->wtime = tr->stime;
+	t->base.wtime = s->base.wtime = tr->wtime = tr->wstime;
 	t->base.rtime = s->base.rtime = tr->rtime = tr->stime;
 
 	/* actually build the hash on the multi-column primary key */
@@ -6385,7 +6385,8 @@ str SQLcluster1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		d->bid = 0;
 		d->ibase = 0;
 		d->ibid = bid; /* use the insert bat */
-		c->base.wtime = c->base.rtime = tr->stime;
+		c->base.wtime = tr->wstime;
+		c->base.rtime = tr->stime;
 	}
 	/* bat was cleared */
 	t->cleared = 1;
@@ -6422,7 +6423,7 @@ SQLcluster2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL,"sql.cluster","42S02!Table missing");
 	tr = m->session->tr;
 
-	t->base.wtime = s->base.wtime = tr->wtime = tr->stime;
+	t->base.wtime = s->base.wtime = tr->wtime = tr->wstime;
 	t->base.rtime = s->base.rtime = tr->rtime = tr->stime;
 	for (o = t->columns.set->h; o; o = o->next) {
 		sql_delta *d;
@@ -6461,7 +6462,8 @@ SQLcluster2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		d->ibase = 0;
 		d->ibid = bid; /* use the insert bat */
 
-		c->base.wtime = c->base.rtime = tr->stime;
+		c->base.wtime = tr->wstime;
+		c->base.rtime = tr->stime;
 	}
 	/* bat was cleared */
 	t->cleared = 1;
@@ -6520,7 +6522,7 @@ vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	}
 
 	tr = m->session->tr;
-	t->base.wtime = s->base.wtime = tr->wtime = tr->stime;
+	t->base.wtime = s->base.wtime = tr->wtime = tr->wstime;
 	t->base.rtime = s->base.rtime = tr->rtime = tr->stime;
 
 	/* get the deletions BAT*/
@@ -6569,7 +6571,8 @@ vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		d->bid = 0;
 		d->ibase = 0;
 		d->ibid = bids[i]; /* use the insert bat */
-		c->base.wtime = c->base.rtime = tr->stime;
+		c->base.wtime = tr->wstime;
+		c->base.rtime = tr->stime;
 	}
 	BATclear(del, TRUE);
 	BBPreleaseref(del->batCacheid);
@@ -6748,7 +6751,8 @@ compression(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int compr)
 		d->bid = 0;
 		d->ibase = 0;
 		d->ibid = e->batCacheid; /* use the insert bat */
-		c->base.wtime = c->base.rtime = tr->stime;
+		c->base.wtime = tr->wstime;
+		c->base.rtime = tr->stime;
 		snprintf(buf,BUFSIZ,"%s/%s/%s/0", *sch, *tbl, c->base.name);
 		if (compr)
 			msg = DICTcompress(&ret, &nme, &b->batCacheid);
@@ -6760,7 +6764,7 @@ compression(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int compr)
 	}
 	/* bat was cleared */
 	t->cleared = 1;
-	t->base.wtime = s->base.wtime = tr->wtime = tr->stime;
+	t->base.wtime = s->base.wtime = tr->wtime = tr->wstime;
 	t->base.rtime = s->base.rtime = tr->rtime = tr->stime;
 	return msg;
 }
