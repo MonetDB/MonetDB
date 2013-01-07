@@ -91,21 +91,10 @@ temp_copy(log_bid b, int temp)
 	return r;
 }
 
-void
-update_table_bat(BAT *b, BAT *ub)
-{
-	if (ub && BATcount(ub)) {
-		void_replace_bat(b, ub, TRUE);
-		BATclear(ub, TRUE);
-		BATcommit(ub);
-	}
-}
-
 BUN
 append_inserted(BAT *b, BAT *i )
 {
-	BUN nr = 0;
-	BUN r;
+	BUN nr = 0, r;
        	BATiter ii = bat_iterator(i);
 
        	for (r = i->batInserted; r < BUNlast(i); r++) {

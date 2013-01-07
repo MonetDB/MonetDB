@@ -113,7 +113,12 @@ sql2str(char *s)
 
 	if (strcmp(str_nil, s) == 0)
 		return s;
+	for (cur = s; *cur && !escaped; cur++)
+		escaped = (*cur == '\\'); 
 
+	if (!escaped)
+		return s;
+	escaped = 0;
 	for (cur = s; *cur; cur++) {
 		if (escaped) {
 			if (*cur == 'n') {

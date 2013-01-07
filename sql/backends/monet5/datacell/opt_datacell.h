@@ -23,8 +23,7 @@
 #include "opt_support.h"
 #include "opt_pipes.h"
 
-#define OPTDEBUGdatacell  if (optDebug & (1 << DEBUG_OPT_DATACELL))
-opt_export str OPTdatacell(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+#define OPTDEBUGdatacell   if (1)
+//#define OPTDEBUGdatacell  if (optDebug & (1 << DEBUG_OPT_DATACELL))
 opt_export int OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-opt_export str OPTdatacellPrelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 #endif

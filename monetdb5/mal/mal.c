@@ -195,6 +195,7 @@ MT_Lock     mal_remoteLock;
 MT_Lock  	mal_profileLock ;
 MT_Lock     mal_copyLock;
 MT_Lock     mal_delayLock;
+MT_Sema		mal_parallelism;
 /*
  * Initialization of the MAL context
  * The compiler directive STRUCT_ALIGNED tells that the
@@ -233,6 +234,7 @@ int mal_init(void){
 	MT_lock_init( &mal_profileLock, "mal_profileLock");
 	MT_lock_init( &mal_copyLock, "mal_copyLock");
 	MT_lock_init( &mal_delayLock, "mal_delayLock");
+	MT_sema_init( &mal_parallelism, (GDKnr_threads > 1 ? GDKnr_threads/2: 4), "mal_parallelism");
 
 	tstAligned();
 	MCinit();

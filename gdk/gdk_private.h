@@ -59,6 +59,7 @@ void BBPreleaselref(bat i);
 void BBPtrim(size_t delta);
 void BBPunshare(bat b);
 void GDKclrerr(void);
+int GDKfdlocate(const char *nme, const char *mode, const char *ext);
 FILE *GDKfilelocate(const char *nme, const char *mode, const char *ext);
 char *GDKload(const char *nme, const char *ext, size_t size, size_t chunk, storage_t mode);
 void GDKlockHome(void);

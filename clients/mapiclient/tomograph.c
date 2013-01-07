@@ -1004,7 +1004,7 @@ static void fprintf_time ( FILE *f, lng time )
  * showing the units specified via TME */
 static void fprintf_tm ( FILE *f, lng time, int TME )
 {
-	int tail = 0, digits = 1;
+	int tail = 0, digits = 1, scale = 1;
 	const char *fmt = NULL;
 
 	if (TME & TME_DD && (tail || time >= US_DD)) {
@@ -1031,30 +1031,40 @@ static void fprintf_tm ( FILE *f, lng time, int TME )
 	if (TME & TME_SS && (tail || time >= US_SS)) {
 		fmt = tail ? "%02d%s" : "%d%s";
 		fprintf(f, fmt, (int) (time / US_SS), (TME & TME_MS) ? "." : "s");
-		if (time / US_SS > 99)
+		if (time / US_SS > 99) {
+			digits = 1;
+			scale = 100;
+		} else if (time / US_SS > 9) {
 			digits = 2;
-		else
+			scale = 10;
+		} else {
 			digits = 3;
+			scale = 1;
+		}
 		time %= US_SS;
 		TME &= TME_MS;
 		tail = 1;
 	}
 	if (TME & TME_MS && (tail || time >= US_MS)) {
 		fmt = tail ? "%0*d%s" : "%*d%s";
-		fprintf(f, fmt, digits, (int) (time / US_MS), (TME & TME_US) ? "." : tail ? "s" : "ms");
-		if (time / US_MS > 99)
+		fprintf(f, fmt, digits, (int) (time / US_MS / scale), (TME & TME_US) ? "." : tail ? "s" : "ms");
+		if (time / US_MS > 99) {
 			digits = 1;
-		else if (time / US_MS > 9)
+			scale = 100;
+		} else if (time / US_MS > 9) {
 			digits = 2;
-		else
+			scale = 10;
+		} else {
 			digits = 3;
+			scale = 1;
+		}
 		time %= US_MS;
 		TME &= TME_US;
 		tail = 1;
 	}
 	if (TME & TME_US) {
 		fmt = tail ? "%0*d%s" : "%*d%s";
-		fprintf(f, fmt, digits, (int) time, tail ? "ms" : "us");
+		fprintf(f, fmt, digits, (int) (time / scale), tail ? "ms" : "us");
 	}
 }
 

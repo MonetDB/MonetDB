@@ -220,7 +220,7 @@ main(int argc, char **argv)
 		{ "active", 0, 0, 'a' },
 		{ "passive", 0, 0, 'p' },
 		{ "statistics", 0, 0, 's' },
-		{ "protocol", 1, 0, 'o' },
+		{ "protocol", 1, 0, 'p' },
 		{ "events", 1, 0, 'e' },
 		{ "host", 1, 0, 'h' },
 		{ "help", 1, 0, '?' },
@@ -236,7 +236,7 @@ main(int argc, char **argv)
 
 	for (;;) {
 		/*	int option_index=0;*/
-		int c = getopt_long(argc, argv, "a:c:p:s:S:b:h:?:t:0", long_options, &option_index);
+		int c = getopt_long(argc, argv, "p:a:a:p:s:p:e:h:?:t:t:0", long_options, &option_index);
 
 		if (c == -1)
 			break;

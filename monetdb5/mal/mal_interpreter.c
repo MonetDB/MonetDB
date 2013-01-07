@@ -479,7 +479,13 @@ callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[], char debug)
 	ValPtr lhs;
 	InstrPtr pci = getInstrPtr(mb, 0);
 	RuntimeProfileRecord runtimeProfile;
-
+ 
+/*
+ * Control the level of parallelism. The maximum number of concurrent MAL plans
+ * is determined by an environment variable. It is initially set equal to the
+ * number of cores, which may be too coarse.
+ */
+	MT_sema_down(&mal_parallelism,"mal_parallelism");
 	runtimeProfileInit(mb, &runtimeProfile, cntxt->flags & memoryFlag);
 #ifdef DEBUG_CALLMAL
 	mnstr_printf(cntxt->fdout, "callMAL\n");
@@ -518,8 +524,10 @@ callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[], char debug)
 	case PATcall:
 	case CMDcall:
 	default:
+		MT_sema_up(&mal_parallelism,"mal_parallelism");
 		throw(MAL, "mal.interpreter", RUNTIME_UNKNOWN_INSTRUCTION);
 	}
+	MT_sema_up(&mal_parallelism,"mal_parallelism");
 	if (cntxt->qtimeout && time(NULL) - stk->clock.tv_usec > cntxt->qtimeout)
 		throw(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
 	return ret;
