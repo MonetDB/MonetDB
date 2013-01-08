@@ -1590,12 +1590,6 @@ delArgument(InstrPtr p, int idx)
 		p->retc--;
 }
 
-int
-getGDKType(int tpe)
-{
-	return tpe <= TYPE_str ? tpe : (tpe == TYPE_any ? TYPE_void : findGDKtype(tpe));
-}
-
 void
 setVarType(MalBlkPtr mb, int i, int tpe)
 {

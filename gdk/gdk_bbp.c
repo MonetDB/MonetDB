@@ -100,6 +100,7 @@ BBPrec *BBP[N_BBPINIT];		/* fixed base VM address of BBP array */
 bat BBPlimit = 0;		/* current committed VM BBP array */
 bat BBPsize = 0;		/* current used size of BBP array */
 
+#define KITTENNAP 2 * GDKnr_threads	/* used to suspend processing */
 #define BBPNONAME "."		/* filler for no name in BBP.dir */
 /*
  * The hash index uses a bucket index (int array) of size mask that is
@@ -1926,7 +1927,7 @@ BBPspin(bat i, str s, int event)
 		lng spin = LL_CONSTANT(0);
 
 		while (BBP_status(i) & event) {
-			MT_sleep_ms(1);
+			MT_sleep_ms(KITTENNAP);
 			spin++;
 		}
 		BATDEBUG THRprintf(GDKstdout, "#BBPspin(%d,%s,%d): " LLFMT " loops\n", (int) i, s, event, spin);
@@ -1961,7 +1962,7 @@ incref(bat i, int logical, int lock)
 				break;
 			/* the BATs is "unstable", try again */
 			MT_lock_unset(&GDKswapLock(i), "BBPincref");
-			MT_sleep_ms(1);
+			MT_sleep_ms(KITTENNAP);
 		}
 	}
 	/* we have the lock */
@@ -2306,7 +2307,7 @@ getBBPdescriptor(bat i, int lock)
 		while (BBP_status(j) & BBPWAITING) {	/* wait for bat to be loaded by other thread */
 			if (lock)
 				MT_lock_unset(&GDKswapLock(j), "BBPdescriptor");
-			MT_sleep_ms(1);
+			MT_sleep_ms(KITTENNAP);
 			if (lock)
 				MT_lock_set(&GDKswapLock(j), "BBPdescriptor");
 		}
