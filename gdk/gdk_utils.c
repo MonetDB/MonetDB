@@ -1034,6 +1034,7 @@ GDKmunmap(void *addr, size_t size)
  * Their value is turned into a blanc space.
  */
 
+#define CATNAP 500
 int GDKrecovery = 0;
 
 static MT_Id GDKvmtrim_id;
@@ -1053,8 +1054,8 @@ GDKvmtrim(void *limit)
 		size_t cursize;
 
 		/* sleep using catnaps so we can exit in a timely fashion */
-		for (t = highload ? 500 : 5000; t > 0; t -= 50) {
-			MT_sleep_ms(50);
+		for (t = highload ? CATNAP : 10 * CATNAP; t > 0; t -= CATNAP) {
+			MT_sleep_ms(CATNAP);
 			if (GDKexiting())
 				return;
 		}
