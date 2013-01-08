@@ -44,7 +44,9 @@ BuildRequires: openssl-devel
 BuildRequires: pcre-devel >= 4.5
 BuildRequires: perl
 BuildRequires: python-devel
+%if %{?centos:0}%{!?centos:1}
 BuildRequires: python3-devel
+%endif
 # BuildRequires: raptor-devel >= 1.4.16
 BuildRequires: readline-devel
 BuildRequires: ruby
@@ -540,6 +542,7 @@ program.
 %{python_sitelib}/python_monetdb-*.egg-info
 %doc clients/python2/README.rst
 
+%if %{?centos:0}%{!?centos:1}
 %package -n python3-monetdb
 Summary: Native MonetDB client Python3 API
 Group: Applications/Databases
@@ -561,6 +564,7 @@ program.
 %{python3_sitelib}/monetdb/*
 %{python3_sitelib}/python_monetdb-*.egg-info
 %doc clients/python3/README.rst
+%endif
 
 %package testing
 Summary: MonetDB - Monet Database Management System
@@ -650,7 +654,7 @@ developer, but if you do want to test, this is the package you need.
 	--with-perl=yes \
 	--with-pthread=yes \
 	--with-python2=yes \
-	--with-python3=yes \
+	--with-python3=%{?centos:no}%{!?centos:yes} \
 	--with-readline=yes \
 	--with-rubygem=yes \
 	--with-rubygem-dir="%{gem_dir}" \
