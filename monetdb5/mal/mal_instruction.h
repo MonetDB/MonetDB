@@ -171,6 +171,7 @@ typedef struct MALBLK {
 #define getVarType(M,I)		((M)->var[I]->type)
 #define getVarGDKType(M,I)	getGDKType((M)->var[I]->type)
 #define ignoreVar(M,I)		((M)->var[I]->type == TYPE_ptr? 1: 0)
+#define getGDKType(T) 		( T <= TYPE_str ? T : (T == TYPE_any ? TYPE_void : findGDKtype(T)))
 
 #define clrVarFixed(M,I)		((M)->var[I]->flags &= ~VAR_FIXTYPE)
 #define setVarFixed(M,I)		((M)->var[I]->flags |= VAR_FIXTYPE)
@@ -229,7 +230,6 @@ mal_export Symbol newSymbol(str nme, int kind);
 mal_export void freeSymbol(Symbol s);
 mal_export void freeSymbolList(Symbol s);
 mal_export void printSignature(stream *fd, Symbol s, int flg);
-mal_export int getGDKType(int tpe);
 
 mal_export MalBlkPtr newMalBlk(int maxvars, int maxstmts);
 mal_export void resetMalBlk(MalBlkPtr mb, int stop);
