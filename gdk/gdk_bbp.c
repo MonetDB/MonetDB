@@ -100,7 +100,7 @@ BBPrec *BBP[N_BBPINIT];		/* fixed base VM address of BBP array */
 bat BBPlimit = 0;		/* current committed VM BBP array */
 bat BBPsize = 0;		/* current used size of BBP array */
 
-#define KITTENNAP 2 * GDKnr_threads	/* used to suspend processing */
+#define KITTENNAP 4 	/* used to suspend processing */
 #define BBPNONAME "."		/* filler for no name in BBP.dir */
 /*
  * The hash index uses a bucket index (int array) of size mask that is
