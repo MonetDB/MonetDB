@@ -33,8 +33,8 @@ BuildRequires: bison
 BuildRequires: bzip2-devel
 # BuildRequires: cfitsio-devel
 BuildRequires: flex
-%if %{?centos:0}%{!?centos:1}
-# no geos library on CentOS
+%if %{?rhel:0}%{!?rhel:1}
+# no geos library on RedHat Enterprise Linux and derivatives
 BuildRequires: geos-devel >= 2.2.0
 %endif
 BuildRequires: libcurl-devel
@@ -44,14 +44,14 @@ BuildRequires: openssl-devel
 BuildRequires: pcre-devel >= 4.5
 BuildRequires: perl
 BuildRequires: python-devel
-%if %{?centos:0}%{!?centos:1}
+%if %{?rhel:0}%{!?rhel:1}
 BuildRequires: python3-devel
 %endif
 # BuildRequires: raptor-devel >= 1.4.16
 BuildRequires: readline-devel
 BuildRequires: ruby
 BuildRequires: rubygems
-%if %{?centos:0}%{!?centos:1}
+%if %{?rhel:0}%{!?rhel:1}
 BuildRequires: rubygems-devel
 %endif
 BuildRequires: unixODBC-devel
@@ -338,7 +338,7 @@ developer.
 %{_bindir}/sqlsample.php
 %{_bindir}/sqlsample.pl
 
-%if %{?centos:0}%{!?centos:1}
+%if %{?rhel:0}%{!?rhel:1}
 %package geom-MonetDB5
 Summary: MonetDB5 SQL GIS support module
 Group: Applications/Databases
@@ -432,7 +432,7 @@ fi
 %{_libdir}/libmonetdb5.so.*
 %dir %{_libdir}/monetdb5
 %dir %{_libdir}/monetdb5/autoload
-%if %{?centos:0}%{!?centos:1}
+%if %{?rhel:0}%{!?rhel:1}
 %exclude %{_libdir}/monetdb5/geom.mal
 %endif
 # %exclude %{_libdir}/monetdb5/rdf.mal
@@ -445,7 +445,7 @@ fi
 %{_libdir}/monetdb5/autoload/*_opt_sql_append.mal
 %{_libdir}/monetdb5/autoload/*_udf.mal
 %{_libdir}/monetdb5/autoload/*_vault.mal
-%if %{?centos:0}%{!?centos:1}
+%if %{?rhel:0}%{!?rhel:1}
 %exclude %{_libdir}/monetdb5/lib_geom.so
 %endif
 # %exclude %{_libdir}/monetdb5/lib_rdf.so
@@ -508,7 +508,7 @@ systemd-tmpfiles --create %{_sysconfdir}/tmpfiles.d/monetdbd.conf
 %{_libdir}/monetdb5/lib_sql.so
 %{_libdir}/monetdb5/*.sql
 %dir %{_libdir}/monetdb5/createdb
-%if %{?centos:0}%{!?centos:1}
+%if %{?rhel:0}%{!?rhel:1}
 %exclude %{_libdir}/monetdb5/createdb/*_geom.sql
 %endif
 # %exclude %{_libdir}/monetdb5/createdb/*_rdf.sql
@@ -542,7 +542,7 @@ program.
 %{python_sitelib}/python_monetdb-*.egg-info
 %doc clients/python2/README.rst
 
-%if %{?centos:0}%{!?centos:1}
+%if %{?rhel:0}%{!?rhel:1}
 %package -n python3-monetdb
 Summary: Native MonetDB client Python3 API
 Group: Applications/Databases
@@ -631,7 +631,7 @@ developer, but if you do want to test, this is the package you need.
 	--enable-developer=no \
 	--enable-fits=no \
 	--enable-gdk=yes \
-	--enable-geom=%{?centos:no}%{!?centos:yes} \
+	--enable-geom=%{?rhel:no}%{!?rhel:yes} \
 	--enable-instrument=no \
 	--enable-jaql=yes \
 	--enable-jdbc=no \
@@ -647,14 +647,14 @@ developer, but if you do want to test, this is the package you need.
 	--enable-testing=yes \
 	--with-ant=no \
 	--with-bz2=yes \
-	--with-geos=%{?centos:no}%{!?centos:yes} \
+	--with-geos=%{?rhel:no}%{!?rhel:yes} \
 	--with-hwcounters=no \
 	--with-java=no \
 	--with-mseed=no \
 	--with-perl=yes \
 	--with-pthread=yes \
 	--with-python2=yes \
-	--with-python3=%{?centos:no}%{!?centos:yes} \
+	--with-python3=%{?rhel:no}%{!?rhel:yes} \
 	--with-readline=yes \
 	--with-rubygem=yes \
 	--with-rubygem-dir="%{gem_dir}" \
