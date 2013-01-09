@@ -46,7 +46,10 @@
 /* Linux gprof messes up on multithreaded programs */
 #ifdef PROFILE
 /* Linux gprof messes up on multithreaded programs */
-gdk_export int gprof_pthread_create(pthread_t * __restrict, __const pthread_attr_t * __restrict, void *(*fcn) (void *), void *__restrict);
+gdk_export int gprof_pthread_create(pthread_t * __restrict,
+				    __const pthread_attr_t * __restrict,
+				    void *(*fcn) (void *),
+				    void *__restrict);
 #define pthread_create gprof_pthread_create
 #endif
 #endif
@@ -57,7 +60,7 @@ gdk_export int gprof_pthread_create(pthread_t * __restrict, __const pthread_attr
 #endif
 
 #ifdef HAVE_SYS_PARAM_H
-# include <sys/param.h>  /* prerequisite of sys/sysctl on OpenBSD */
+# include <sys/param.h>	   /* prerequisite of sys/sysctl on OpenBSD */
 #endif
 #ifdef HAVE_SYS_SYSCTL_H
 # include <sys/sysctl.h>
@@ -84,18 +87,17 @@ gdk_export unsigned long long MT_locktrace_cnt[65536];
 gdk_export char *MT_locktrace_nme[65536];
 gdk_export unsigned long long MT_clock(void);
 
-#define MT_locktrace_hash(_id)  ((int) (((lng) ((size_t) _id))^(((lng) ((size_t) _id))>>16))&65535)
+#define MT_locktrace_hash(_id)	((int) (((lng) ((size_t) (_id))) ^ (((lng) ((size_t) (_id))) >> 16)) & 65535)
 #define MT_log_trace(_impl, _object, _action, _caller, _fp, _pat)	\
 	do {								\
 		unsigned long long _c=0;				\
 		if (MT_locktrace)					\
-			_c=(MT_getpid() == MT_locktrace)?MT_clock():0;	\
+			_c = MT_getpid() == MT_locktrace ? MT_clock() : 0; \
 		MT_log(_impl, _object, _action, _caller, _fp);		\
-		if (_c) {						\
+		if (_c)						\
 			MT_locktrace_cnt[MT_locktrace_hash(_pat)] += MT_clock() - _c; \
-		}							\
 	} while(0)
-#define MT_locktrace_set(s,n)\
+#define MT_locktrace_set(s, n)						\
 	do {								\
 		int _i = MT_locktrace_hash(s);				\
 		if (MT_locktrace_nme[_i] && MT_locktrace_nme[_i] != (n)) { \
@@ -106,10 +108,18 @@ gdk_export unsigned long long MT_clock(void);
 	} while (0)
 #else
 #define MT_log_trace(_impl, _object, _action, _caller, _fp, _pat) MT_log(_impl, _object, _action, _caller, _fp)
-#define MT_locktrace_set(s,n)
+#define MT_locktrace_set(s, n)
 #endif
 
-#define MT_log(_impl, _object, _action, _caller, _fp) do { TEMDEBUG { fprintf(_fp, "%s: " _action "(" PTRFMT ")\n", _caller, PTRFMTCAST(void*) _object); fflush(_fp); } _impl; } while (0)
+#define MT_log(_impl, _object, _action, _caller, _fp)			\
+	do {								\
+		TEMDEBUG {						\
+			fprintf(_fp, "%s: " _action "(" PTRFMT ")\n",	\
+				_caller, PTRFMTCAST(void*) _object);	\
+			fflush(_fp);					\
+		}							\
+		_impl;							\
+	} while (0)
 
 /* API */
 
@@ -120,7 +130,8 @@ typedef size_t MT_Id;		/* thread number. will not be zero */
 
 enum MT_thr_detach { MT_THR_JOINABLE, MT_THR_DETACHED };
 
-gdk_export int MT_create_thread(MT_Id *t, void (*function) (void *), void *arg, enum MT_thr_detach d);
+gdk_export int MT_create_thread(MT_Id *t, void (*function) (void *),
+				void *arg, enum MT_thr_detach d);
 gdk_export void MT_exit_thread(int status)
 	__attribute__((__noreturn__));
 gdk_export void MT_global_exit(int status)
@@ -148,7 +159,8 @@ gdk_export int MT_kill_thread(MT_Id t);
 #if !defined(HAVE_PTHREAD_H) && defined(_MSC_VER)
 typedef HANDLE pthread_mutex_t;
 typedef void *pthread_mutexattr_t;
-gdk_export void pthread_mutex_init(pthread_mutex_t *, const pthread_mutexattr_t *);
+gdk_export void pthread_mutex_init(pthread_mutex_t *,
+				   const pthread_mutexattr_t *);
 gdk_export void pthread_mutex_destroy(pthread_mutex_t *);
 gdk_export int pthread_mutex_lock(pthread_mutex_t *);
 gdk_export int pthread_mutex_trylock(pthread_mutex_t *);
@@ -157,12 +169,16 @@ gdk_export int pthread_mutex_unlock(pthread_mutex_t *);
 
 typedef pthread_mutex_t MT_Lock;
 
-#define MT_lock_init(l,n)    do { pthread_mutex_init((pthread_mutex_t*) l, 0); MT_locktrace_set(l,n); } while (0)
-#define MT_lock_destroy(l)   pthread_mutex_destroy((pthread_mutex_t*) l)
-#define MT_lock_set(l,n)     MT_log_trace(pthread_mutex_lock((pthread_mutex_t *) l), l, "MT_set_lock", n, stderr, l)
-#define MT_lock_unset(l,n)   MT_log(pthread_mutex_unlock((pthread_mutex_t *) l), l, "MT_unset_lock", n, stderr)
-#define MT_lock_try(l)       pthread_mutex_trylock((pthread_mutex_t *) l)
-#define MT_lock_dump(l,fp,n) MT_log(/*nothing*/, &l, "MT_dump_lock", n, fp)
+#define MT_lock_init(l, n)					\
+	do {							\
+		pthread_mutex_init((pthread_mutex_t*) (l), 0);	\
+		MT_locktrace_set(l, n);				\
+	} while (0)
+#define MT_lock_destroy(l)	pthread_mutex_destroy((pthread_mutex_t*) (l))
+#define MT_lock_set(l, n)	MT_log_trace(pthread_mutex_lock((pthread_mutex_t *) (l)), (l), "MT_set_lock", n, stderr, (l))
+#define MT_lock_unset(l, n)	MT_log(pthread_mutex_unlock((pthread_mutex_t *) (l)), (l), "MT_unset_lock", n, stderr)
+#define MT_lock_try(l)		pthread_mutex_trylock((pthread_mutex_t *) (l))
+#define MT_lock_dump(l, fp, n)	MT_log(/*nothing*/, &(l), "MT_dump_lock", n, fp)
 
 /*
  * @- MT Semaphore API
@@ -185,20 +201,24 @@ gdk_export void pthread_sema_destroy(pthread_sema_t *s);
 gdk_export void pthread_sema_up(pthread_sema_t *s);
 gdk_export void pthread_sema_down(pthread_sema_t *s);
 #else
-#define pthread_sema_t       sem_t
-#define pthread_sema_init    sem_init
-#define pthread_sema_destroy sem_destroy
-#define pthread_sema_up      sem_post
-#define pthread_sema_down(x) while(sem_wait(x))
+#define pthread_sema_t		sem_t
+#define pthread_sema_init	sem_init
+#define pthread_sema_destroy	sem_destroy
+#define pthread_sema_up		sem_post
+#define pthread_sema_down(x)	while(sem_wait(x))
 #endif
 
 typedef pthread_sema_t MT_Sema;
 
-#define MT_sema_init(s,nr,n) do { pthread_sema_init(s,0,nr); MT_locktrace_set(s,n); } while (0)
-#define MT_sema_destroy(s)   pthread_sema_destroy(s)
-#define MT_sema_up(s,n)      MT_log(pthread_sema_up(s), s, "MT_up_sema", n, stderr)
-#define MT_sema_down(s,n)    MT_log_trace(pthread_sema_down(s), s, "MT_down_sema", n, stderr, s)
-#define MT_sema_dump(s,fp,n) MT_log(/*nothing*/, s, "MT_dump_sema", n, fp)
+#define MT_sema_init(s, nr, n)			\
+	do {					\
+		pthread_sema_init((s), 0, nr);	\
+		MT_locktrace_set((s), n);	\
+	} while (0)
+#define MT_sema_destroy(s)	pthread_sema_destroy(s)
+#define MT_sema_up(s, n)	MT_log(pthread_sema_up(s), (s), "MT_up_sema", n, stderr)
+#define MT_sema_down(s, n)	MT_log_trace(pthread_sema_down(s), (s), "MT_down_sema", n, stderr, s)
+#define MT_sema_dump(s, fp, n)	MT_log(/*nothing*/, (s), "MT_dump_sema", n, fp)
 
 /*
  * @- MT Conditional Variable API
@@ -207,7 +227,7 @@ typedef pthread_sema_t MT_Sema;
 typedef struct {
 	int waiters_count;	/* number of waiting threads */
 	CRITICAL_SECTION waiters_count_lock; /* serialize access to waiters_count_ */
-	HANDLE sema;	  /* queue up threads waiting for condition */
+	HANDLE sema;		/* queue up threads waiting for condition */
 } pthread_cond_t;
 typedef void *pthread_condattr_t;
 gdk_export int pthread_cond_init(pthread_cond_t *, pthread_condattr_t *);
@@ -217,10 +237,14 @@ gdk_export int pthread_cond_wait(pthread_cond_t *, pthread_mutex_t *);
 #endif
 typedef pthread_cond_t MT_Cond;
 
-#define MT_cond_init(c,n)    do { pthread_cond_init((pthread_cond_t*) c, NULL); MT_locktrace_set(c,n); } while (0)
-#define MT_cond_destroy(c)   pthread_cond_destroy((pthread_cond_t*) c)
-#define MT_cond_signal(c,n)  MT_log(pthread_cond_signal((pthread_cond_t*) c), c, "MT_signal_cond", n, stderr)
-#define MT_cond_wait(c,l,n)  MT_log_trace(pthread_cond_wait((pthread_cond_t*) c, (pthread_mutex_t *) l), c, "MT_wait_cond", n, stderr, c)
+#define MT_cond_init(c, n)					\
+	do {							\
+		pthread_cond_init((pthread_cond_t*) (c), NULL); \
+		MT_locktrace_set((c), n);			\
+	} while (0)
+#define MT_cond_destroy(c)	pthread_cond_destroy((pthread_cond_t*) (c))
+#define MT_cond_signal(c, n)	MT_log(pthread_cond_signal((pthread_cond_t*) (c)), (c), "MT_signal_cond", n, stderr)
+#define MT_cond_wait(c, l, n)	MT_log_trace(pthread_cond_wait((pthread_cond_t*) (c), (pthread_mutex_t *) (l)), (c), "MT_wait_cond", n, stderr, c)
 
 gdk_export int MT_check_nr_cores(void);
 

@@ -317,123 +317,18 @@ int GDK_vm_trim = 1;
  * the compiler) for both the GNU C compiler and Microsoft Visual
  * Studio.  By doing this, we avoid locking overhead.  There is also a
  * fall-back for other compilers. */
-#if defined(__GNUC__)
-#if SIZEOF_SSIZE_T == SIZEOF_LONG_LONG
-static volatile long long GDK_mallocedbytes_estimate = 0;
-static volatile long long GDK_vm_cursize = 0;
+#include "gdk_atomic.h"
+static volatile ATOMIC_TYPE GDK_mallocedbytes_estimate = 0;
+static volatile ATOMIC_TYPE GDK_vm_cursize = 0;
 #ifdef GDK_VM_KEEPHISTO
-volatile long long GDK_vm_nallocs[MAX_BIT] = { 0 };
+volatile ATOMIC_TYPE GDK_vm_nallocs[MAX_BIT] = { 0 };
 #endif
 #ifdef GDK_MEM_KEEPHISTO
-volatile long long GDK_nmallocs[MAX_BIT] = { 0 };
+volatile ATOMIC_TYPE GDK_nmallocs[MAX_BIT] = { 0 };
 #endif
-#define ATOMIC_ADD(var, val)	__sync_add_and_fetch(&var, (long long) (val))
-#define ATOMIC_INC(var)		__sync_add_and_fetch(&var, (long long) 1)
-#define ATOMIC_SUB(var, val)	__sync_sub_and_fetch(&var, (long long) (val))
-#define ATOMIC_DEC(var)		__sync_sub_and_fetch(&var, (long long) 1)
-#else
-static volatile long GDK_mallocedbytes_estimate = 0;
-static volatile long GDK_vm_cursize = 0;
-#ifdef GDK_VM_KEEPHISTO
-volatile long GDK_vm_nallocs[MAX_BIT] = { 0 };
-#endif
-#ifdef GDK_MEM_KEEPHISTO
-volatile long GDK_nmallocs[MAX_BIT] = { 0 };
-#endif
-#define ATOMIC_ADD(var, val)	__sync_add_and_fetch(&var, (long) (val))
-#define ATOMIC_INC(var)		__sync_add_and_fetch(&var, (long) 1)
-#define ATOMIC_SUB(var, val)	__sync_sub_and_fetch(&var, (long) (val))
-#define ATOMIC_DEC(var)		__sync_sub_and_fetch(&var, (long) 1)
-#endif
-#define ATOMIC_START(lock, func)
-#define ATOMIC_END(lock, func)
-#define ATOMIC_INIT(lock, func)
-#define ATOMIC_COMP_SWAP(var, old, new, lock, func)	\
-	__sync_val_compare_and_swap(&var, old, new)
-#define ATOMIC_GET(var, lock, func)	var
-#elif defined(_MSC_VER)
-#include <intrin.h>
-#if SIZEOF_SSIZE_T == SIZEOF___INT64
-static volatile __int64 GDK_mallocedbytes_estimate = 0;
-static volatile __int64 GDK_vm_cursize = 0;
-#ifdef GDK_VM_KEEPHISTO
-volatile __int64 GDK_vm_nallocs[MAX_BIT] = { 0 };
-#endif
-#ifdef GDK_MEM_KEEPHISTO
-volatile __int64 GDK_nmallocs[MAX_BIT] = { 0 };
-#endif
-#define ATOMIC_ADD(var, val)	_InterlockedExchangeAdd64(&var, (__int64) (val))
-#define ATOMIC_INC(var)		_InterlockedIncrement64(&var)
-#define ATOMIC_SUB(var, val)	_InterlockedExchangeAdd64(&var, -(__int64) (val))
-#define ATOMIC_DEC(var)		_InterlockedDecrement64(&var)
-#pragma intrinsic(_InterlockedExchangeAdd64)
-#pragma intrinsic(_InterlockedIncrement64)
-#pragma intrinsic(_InterlockedDecrement64)
-#else
-static volatile long GDK_mallocedbytes_estimate = 0;
-static volatile long GDK_vm_cursize = 0;
-#ifdef GDK_VM_KEEPHISTO
-volatile long GDK_vm_nallocs[MAX_BIT] = { 0 };
-#endif
-#ifdef GDK_MEM_KEEPHISTO
-volatile long GDK_nmallocs[MAX_BIT] = { 0 };
-#endif
-#define ATOMIC_ADD(var, val)	_InterlockedExchangeAdd(&var, (long) (val))
-#define ATOMIC_INC(var)		_InterlockedIncrement(&var)
-#define ATOMIC_SUB(var, val)	_InterlockedExchangeAdd(&var, -(long) (val))
-#define ATOMIC_DEC(var)		_InterlockedDecrement(&var)
-#pragma intrinsic(_InterlockedExchangeAdd)
-#pragma intrinsic(_InterlockedIncrement)
-#pragma intrinsic(_InterlockedDecrement)
-#endif
-#define ATOMIC_START(lock, func)
-#define ATOMIC_END(lock, func)
-#define ATOMIC_INIT(lock, func)
-#define ATOMIC_COMP_SWAP(var, old, new, lock, func)	\
-	_InterlockedCompareExchange(&var, new, old)
-#pragma intrinsic(_InterlockedCompareExchange)
-#define ATOMIC_GET(var, lock, func)	var
-#else
-static volatile ssize_t GDK_mallocedbytes_estimate = 0;
-static volatile ssize_t GDK_vm_cursize = 0;
-#ifdef GDK_VM_KEEPHISTO
-volatile ssize_t GDK_vm_nallocs[MAX_BIT] = { 0 };
-#endif
-#ifdef GDK_MEM_KEEPHISTO
-volatile ssize_t GDK_nmallocs[MAX_BIT] = { 0 };
-#endif
+#ifdef ATOMIC_LOCK
 static MT_Lock mbyteslock;
 static MT_Lock GDKstoppedLock;
-#define ATOMIC_ADD(var, val)	var += (ssize_t) (val)
-#define ATOMIC_INC(var)		var++
-#define ATOMIC_SUB(var, val)	var -= (ssize_t) (val)
-#define ATOMIC_DEC(var)		var--
-#define ATOMIC_START(lock, func)	MT_lock_set(&lock, func)
-#define ATOMIC_END(lock, func)	MT_lock_unset(&lock, func)
-#define ATOMIC_INIT(lock, func)	MT_lock_init(&lock, func)
-static inline int
-atomic_comp_swap(volatile int *var, int old, int new, MT_Lock *lock, const char *func)
-{
-	int orig;
-	MT_lock_set(lock, func);
-	orig = *var;
-	if (*var == old)
-		*var = new;
-	MT_lock_unset(lock, func);
-	return orig;
-}
-#define ATOMIC_COMP_SWAP(var, old, new, lock, func)	\
-	atomic_comp_swap(&var, old, new, &lock, func)
-static inline int
-atomic_get(volatile int *var, MT_Lock *lock, const char *func)
-{
-	int orig;
-	MT_lock_set(lock, func);
-	orig = *var;
-	MT_lock_unset(lock, func);
-	return orig;
-}
-#define ATOMIC_GET(var, lock, func)	atomic_get(&var, &lock, func)
 #endif
 
 size_t _MT_pagesize = 0;	/* variable holding memory size */

@@ -170,7 +170,11 @@ MALadmission(lng argclaim, lng hotclaim)
  * By keeping the query start time in the client record we can delay
  * them when resource stress occurs.
  */
-static int running; /* should be protected, but no need for accurateness here. saving locks */
+#include "gdk_atomic.h"
+static volatile ATOMIC_TYPE running;
+#ifdef ATOMIC_LOCK
+static MT_Lock runningLock = ATOMIC_LOCK;
+#endif
 
 void
 MALresourceFairness(Client cntxt, MalBlkPtr mb, lng usec)
@@ -184,8 +188,10 @@ MALresourceFairness(Client cntxt, MalBlkPtr mb, lng usec)
 	if ( usec > 0 && ( (usec = GDKusec()-usec)) <= TIMESLICE )
 		return;
 	threads= GDKnr_threads > 0? GDKnr_threads: 1;
+	ATOMIC_START(runningLock, "MALresourceFairness");
 	if ( running == 0) // reset workers pool count
 		running = threads;
+	ATOMIC_END(runningLock, "MALresourceFairness");
 
 	/* use GDKmem_cursize as MT_getrss(); is to expensive */
 	rss = GDKmem_cursize();
@@ -209,7 +215,7 @@ MALresourceFairness(Client cntxt, MalBlkPtr mb, lng usec)
 		PARDEBUG mnstr_printf(GDKstdout, "#delay %d initial "LLFMT"n", cntxt->idx, clk);
 		while (clk > 0) {
 			/* always keep one running to avoid all waiting  */
-			if (running < 2)
+			if (ATOMIC_GET(running, runningLock, "MALresourceFairness") < 2)
 				break;
 			/* speed up wake up when we have memory */
 			rss = GDKmem_cursize();
@@ -217,8 +223,10 @@ MALresourceFairness(Client cntxt, MalBlkPtr mb, lng usec)
 				break;
 			factor = ((double) rss) / (MEMORY_THRESHOLD * monet_memory);
 			delay = (lng) (DELAYUNIT * (factor > 1.0 ? 1.0 : factor));
+			ATOMIC_START(runningLock, "MALresourceFairness");
 			delay = (lng) ( ((double)delay) * running / threads);
-			running--;
+			ATOMIC_DEC(running);
+			ATOMIC_END(runningLock, "MALresourceFairness");
 			if (delay) {
 				if ( delayed++ == 0){
 						mnstr_printf(GDKstdout, "#delay %d initial "LLFMT"["LLFMT"] memory  "SZFMT"[%f]\n", cntxt->idx, delay, clk, rss, MEMORY_THRESHOLD * monet_memory);
@@ -226,7 +234,9 @@ MALresourceFairness(Client cntxt, MalBlkPtr mb, lng usec)
 				}
 				MT_sleep_ms(delay);
 			}
-			running++;
+			ATOMIC_START(runningLock, "MALresourceFairness");
+			ATOMIC_INC(running);
+			ATOMIC_END(runningLock, "MALresourceFairness");
 			clk -= DELAYUNIT;
 		}
 	}
