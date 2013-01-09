@@ -1241,6 +1241,7 @@ sqltypeinit( sql_allocator *sa)
 	/* needed for relational version */
 	sql_create_func(sa, "in", "calc", "in", ANY, ANY, BIT, SCALE_NONE);
 	sql_create_func(sa, "identity", "batcalc", "identity", ANY, NULL, OID, SCALE_NONE);
+	sql_create_func(sa, "rowid", "calc", "identity", ANY, NULL, INT, SCALE_NONE);
 	/* needed for indices/clusters oid(schema.table,val) returns max(head(schema.table))+1 */
 	sql_create_func3(sa, "rowid", "calc", "rowid", ANY, STR, STR, OID, SCALE_NONE);
 	sql_create_aggr(sa, "min", "aggr", "min", ANY, ANY);

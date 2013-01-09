@@ -80,6 +80,7 @@ stderr of test 'python3_test_monetdb_sql` in directory 'test/mapi` itself:
 # 11:54:47 >  
 
 test_BLOB (__main__.Test_Capabilities) ... ok
+test_BOOL (__main__.Test_Capabilities) ... ok
 test_CHAR (__main__.Test_Capabilities) ... ok
 test_DATE (__main__.Test_Capabilities) ... ok
 test_DATETIME (__main__.Test_Capabilities) ... ok
@@ -102,7 +103,7 @@ test_transactions (__main__.Test_Capabilities) ... ok
 test_truncation (__main__.Test_Capabilities) ... ok
 
 ----------------------------------------------------------------------
-Ran 21 tests
+Ran 22 tests
 
 OK
 test_BINARY (__main__.Test_DBAPI20) ... ok
@@ -142,10 +143,9 @@ test_setoutputsize_basic (__main__.Test_DBAPI20) ... ok
 test_substring (__main__.Test_DBAPI20) ... ok
 test_threadsafety (__main__.Test_DBAPI20) ... ok
 test_unicode (__main__.Test_DBAPI20) ... ok
-test_utf8 (__main__.Test_DBAPI20) ... ok
 
 ----------------------------------------------------------------------
-Ran 38 tests
+Ran 37 tests
 
 OK
 

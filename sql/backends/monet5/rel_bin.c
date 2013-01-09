@@ -202,37 +202,6 @@ row2cols(mvc *sql, stmt *sub)
 	return sub;
 }
 
-/* Here we also recognize 'IN/NOT IN'.
- * We change that into multiple subselects (with for IN merges). 
- */
-static int
-are_equality_exps( list *exps ) 
-{
-	if (list_length(exps) == 1) {
-		sql_exp *e = exps->h->data, *le = e->l, *re = e->r;
-
-		if (e->type == e_cmp && e->flag == cmp_equal && le->card != CARD_ATOM && re->card == CARD_ATOM)
-			return 1;
-		if (e->type == e_cmp && e->flag == cmp_or)
-			return (are_equality_exps(e->l) && 
-				are_equality_exps(e->r));
-	}
-	return 0;
-}
-
-static void 
-get_exps( list *n, list *l )
-{
-	sql_exp *e = l->h->data, *re = e->r;
-
-	if (e->type == e_cmp && e->flag == cmp_equal && re->card == CARD_ATOM)
-		list_append(n, e);
-	if (e->type == e_cmp && e->flag == cmp_or) {
-		get_exps(n, e->l);
-		get_exps(n, e->r);
-	}
-}
-
 static stmt *
 handle_in_exps( mvc *sql, sql_exp *ce, list *nl, stmt *left, stmt *right, stmt *grp, stmt *ext, stmt *cnt, stmt *sel, int in, int use_r) 
 {
@@ -278,30 +247,6 @@ handle_in_exps( mvc *sql, sql_exp *ce, list *nl, stmt *left, stmt *right, stmt *
 		}
 	}
 	return s;
-}
-
-/* For now this only works if all or's are part of the 'IN' */
-static stmt *
-handle_equality_exps( mvc *sql, list *l, list *r, stmt *left, stmt *right, stmt *grp, stmt *ext, stmt *cnt, stmt *sel )
-{
-	node *n;
-	sql_exp *ce = NULL;
-	list *nl = new_exp_list(sql->sa);
-
-	get_exps(nl, l);
-	get_exps(nl, r);
-
-	for( n = nl->h; n; n = n->next) {
-		sql_exp *e = n->data;
-		if (!ce) {
-			ce = e->l;
-			if (!is_column(ce->type))
-				return NULL;
-		}
-		if (!exp_match(ce, e->l)) 
-			return NULL;
-	} 
-	return handle_in_exps( sql, ce, nl, left, right, grp, ext, cnt, sel, 1, 1);
 }
 
 static stmt *
@@ -612,12 +557,6 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, stm
 			node *n;
 			stmt *sel1 = NULL, *sel2 = NULL;
 
-			/* Here we also recognize 'IN/NOT IN'.
-			 * We change that into multiple subselects (with for IN merges). 
-			 */
-			if (are_equality_exps(e->l) && are_equality_exps(e->r))
-				if ((s = handle_equality_exps(sql, e->l, e->r, left, right, grp, ext, cnt, sel)) != NULL)
-					return s;
 			sel1 = sel;
 			sel2 = sel;
 			for( n = l->h; n; n = n->next ) {

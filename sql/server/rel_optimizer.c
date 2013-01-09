@@ -2324,6 +2324,52 @@ exps_cse( sql_allocator *sa, list *oexps, list *l, list *r )
 	return res;
 }
 
+static int
+are_equality_exps( list *exps, sql_exp **L) 
+{
+	sql_exp *l = *L;
+
+	if (list_length(exps) == 1) {
+		sql_exp *e = exps->h->data, *le = e->l, *re = e->r;
+
+		if (e->type == e_cmp && e->flag == cmp_equal && le->card != CARD_ATOM && re->card == CARD_ATOM) {
+			if (!l) {
+				*L = l = le;
+				if (!is_column(le->type))
+					return 0;
+			}
+			return (exp_match(l, le));
+		}
+		if (e->type == e_cmp && e->flag == cmp_or)
+			return (are_equality_exps(e->l, L) && 
+				are_equality_exps(e->r, L));
+	}
+	return 0;
+}
+
+static void 
+get_exps( list *n, list *l )
+{
+	sql_exp *e = l->h->data, *re = e->r;
+
+	if (e->type == e_cmp && e->flag == cmp_equal && re->card == CARD_ATOM)
+		list_append(n, re);
+	if (e->type == e_cmp && e->flag == cmp_or) {
+		get_exps(n, e->l);
+		get_exps(n, e->r);
+	}
+}
+
+static sql_exp *
+equality_exps_2_in( mvc *sql, sql_exp *ce, list *l, list *r)
+{
+	list *nl = new_exp_list(sql->sa);
+
+	get_exps(nl, l);
+	get_exps(nl, r);
+
+	return exp_in( sql->sa, ce, nl, cmp_in);
+}
 
 static sql_rel *
 rel_select_cse(int *changes, mvc *sql, sql_rel *rel) 
@@ -2343,6 +2389,32 @@ rel_select_cse(int *changes, mvc *sql, sql_rel *rel)
 		if (!needed)
 			return rel;
 
+ 		nexps = new_exp_list(sql->sa);
+		for (n=rel->exps->h; n; n = n->next) {
+			sql_exp *e = n->data, *l = NULL;
+
+			if (e->type == e_cmp && e->flag == cmp_or && are_equality_exps(e->l, &l) && are_equality_exps(e->r, &l) && l) {
+				(*changes)++;
+				append(nexps, equality_exps_2_in(sql, l, e->l, e->r));
+			} else {
+				append(nexps, e);
+			}
+		}
+		rel->exps = nexps;
+	}
+	if (is_select(rel->op) && rel->exps) { 
+		node *n;
+		list *nexps;
+		int needed = 0;
+
+		for (n=rel->exps->h; n && !needed; n = n->next) {
+			sql_exp *e = n->data;
+
+			if (e->type == e_cmp && e->flag == cmp_or) 
+				needed = 1;
+		}
+		if (!needed)
+			return rel;
  		nexps = new_exp_list(sql->sa);
 		for (n=rel->exps->h; n; n = n->next) {
 			sql_exp *e = n->data;
