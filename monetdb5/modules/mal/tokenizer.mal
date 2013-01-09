@@ -14,10 +14,6 @@ pattern take(i:oid):str
 address TKNZRtakeOid
 comment "reconstruct and returns the i-th string";
 
-command rdf2str(i:bat[:oid,:oid],map:bat[:oid,:str]):bat[:oid,:str]
-address TKNZRrdf2str
-comment "converts id's into strings using the dictionary, but if (id >= RDF_MIN_LITERAL) look it up in a literal map bat";
-
 pattern locate(s:str):oid
 address TKNZRlocate
 comment "if the given string is in the store returns its oid, otherwise oid_nil";
