@@ -70,11 +70,13 @@ DCprocedureStmt(Client cntxt, MalBlkPtr mb, str schema, str nme)
 		f = o->data;
 		if (strcmp(f->base.name, nme) == 0) {
 			be = (void *) backend_create(m, cntxt);
-			backend_create_func(be, f);
-			break;
+			if  (be->mvc->sa ) {
+				backend_create_func(be, f);
+				return MAL_SUCCEED;
+			}
 		}
 	}
-	return MAL_SUCCEED;
+	throw(SQL, "datacell.query", "Procedure missing");
 }
 
 str
@@ -299,11 +301,12 @@ DCquery(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	lng clk = GDKusec();
 	char buf[BUFSIZ], *lsch, *lnme;
 
+	if ( mb->errors)
+		throw(SQL, "datacell.query", "Query contains errors");
 	BSKTelements(nme, buf, &lsch, &lnme);
 	BSKTtolower(lsch);
 	BSKTtolower(lnme);
 
-	(void) mb;
 	/* check if the argument denotes a procedure name */
 	/* if so, get its definition to be compiled */
 
