@@ -971,6 +971,7 @@ SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output)
 			MSresetInstructions(c->curprg->def, oldstop);
 			freeVariables(c,c->curprg->def, c->glb, oldvtop);
 			c->curprg->def->errors = 0;
+			msg = createException(SQL, "SQLparser","Errors encountered in query");
 			goto endofcompile;
 		}
 
