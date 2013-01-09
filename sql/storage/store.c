@@ -1260,6 +1260,9 @@ store_init(int debug, store_type store, char *logdir, backend_stack stk)
 
 	bs_debug = debug;
 
+	MT_lock_init(&bs_lock, "SQL_bs_lock");
+	MT_lock_set(&bs_lock, "store_init");
+
 	/* initialize empty bats */
 	if (store == store_bat ||
 	    store == store_su ||
@@ -1285,11 +1288,13 @@ store_init(int debug, store_type store, char *logdir, backend_stack stk)
 	}
 	active_store_type = store;
 	if (!logger_funcs.create ||
-	    logger_funcs.create(logdir, CATALOG_VERSION*v) == LOG_ERR)
+	    logger_funcs.create(logdir, CATALOG_VERSION*v) == LOG_ERR) {
+		MT_lock_unset(&bs_lock, "store_init");
 		return -1;
+	}
 
-	MT_lock_init(&bs_lock, "SQL_bs_lock");
 	sa = sa_create();
+	MT_lock_unset(&bs_lock, "store_init");
 	types_init(sa, debug);
 
 #define FUNC_OIDS 2000

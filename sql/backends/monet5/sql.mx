@@ -1257,7 +1257,7 @@ sql.prelude();
 #include <mal_function.h>
 #include <mal_stack.h>
 #include <mal_interpreter.h>
-#include <mal_session.h>
+
 #include <tablet.h>
 #include <streams.h>
 #include <mtime.h>

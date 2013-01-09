@@ -21,6 +21,7 @@
 
 #include "mal_client.h"
 #include <stream.h>
+#include <sql.h>
 #include <sql_mvc.h>
 #include <sql_catalog.h>
 #include <sql_qc.h>

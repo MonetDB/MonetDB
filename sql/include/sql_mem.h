@@ -17,8 +17,8 @@
  * All Rights Reserved.
  */
 
-#ifndef _MEM_H_
-#define _MEM_H_
+#ifndef _SQL_MEM_H_
+#define _SQL_MEM_H_
 
 #include <gdk.h>
 
@@ -90,4 +90,4 @@ extern size_t sa_size( sql_allocator *sa );
 
 #define _strlen(s) (int)strlen(s)
 
-#endif /*_MEM_H_*/
+#endif /*_SQL_MEM_H_*/
