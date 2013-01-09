@@ -7191,7 +7191,7 @@ SQLrdfShred(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (rid != oid_nil)
 		throw(SQL, "sql.rdfShred", "graph name already exists in rdf.graph");
 
-	id = (int) store_funcs.count_col(gname);
+	id = (int) store_funcs.count_col(gname, 1);
 	store_funcs.append_col(m->session->tr, gname, *name, TYPE_str);
 	store_funcs.append_col(m->session->tr, gid, &id, TYPE_int);
 
