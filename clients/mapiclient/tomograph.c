@@ -1307,13 +1307,20 @@ static void scandata(char *filename)
 	starttime = 0;
 
 	while (!feof(f)) {
+		int x;
 		if ( fgets(line,2 * BUFSIZ,f) == NULL) {
 			fprintf(stderr, "scandata read error\n");
 		}
-		sscanf(line, "%d\t"LLFMT"\t"LLFMT"\t"LLFMT"\t"LLFMT"\t"LLFMT"\t%d\t"LLFMT"\t"LLFMT"\t%s\t%s\n", 
+		x = sscanf(line, "%d\t"LLFMT"\t"LLFMT"\t"LLFMT"\t"LLFMT"\t"LLFMT"\t%d\t"LLFMT"\t"LLFMT"\t%s\t%s\n", 
 			&box[i].thread, &box[i].clkstart, &box[i].clkend,
 			&box[i].ticks, &box[i].memstart, &box[i].memend,
 			&box[i].state, &box[i].reads, &box[i].writes, buf, buf2);
+		if (x != 11) {
+			fprintf(stderr, "scandata: sscanf() matched %d instead of 11 items in\n'%s'\n", x, line);
+		}
+		if (box[i].thread < 0 || box[i].clkstart < 0 || box[i].clkend < 0 || box[i].ticks < 0 || box[i].memstart < 0 || box[i].memend < 0 || box[i].state < 0 || box[i].reads < 0 || box[i].writes < 0) {
+			fprintf(stderr, "scandata: sscanf() read negative value(s) from\n'%s'\n", line);
+		}
 		box[i].fcn = strdup(buf);
 		box[i].stmt = strdup(buf);
 		/* focus on part of the time frame */
@@ -1550,6 +1557,7 @@ static void update(int state, int thread, lng clkticks, lng ticks, lng memory, l
 		/* ignore all instructions up to the first function call */
 		if (state >= PING || fcn == 0 || strncmp(fcn, "function", 8) != 0)
 			return;
+		assert(clkticks >= 0);
 		starttime = clkticks;
 		return;
 	}
@@ -1696,6 +1704,9 @@ static int parser(char *row)
 			clkticks += usec;
 		}
 		c = strchr(c + 1, (int) '"');
+		if (clkticks < 0) {
+			fprintf(stderr, "parser: read negative value "LLFMT" from\n'%s'\n", clkticks, row);
+		}
 	} else
 		return -3;
 
