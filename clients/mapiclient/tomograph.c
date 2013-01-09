@@ -1576,8 +1576,19 @@ static void update(int state, int thread, lng clkticks, lng ticks, lng memory, l
 		return;
 	}
 
-	assert(clkticks - starttime >= 0);
+	assert(clkticks >= 0);
 	clkticks -= starttime;
+	if (clkticks < 0) {
+		/* HACK: *TRY TO* compensate for the fact that the MAL
+		 * profiler chops-off day information, and assume that
+		 * clkticks is < starttime because the tomograph run
+		 * crossed a day boundary (midnight);
+		 * we simply add 1 day (24 hours) worth of microseconds.
+		 * NOTE: this surely does NOT work correctly if the
+		 * tomograph run takes 24 hours or more ...
+		 */
+		clkticks += US_DD;
+	}
 
 	/* handle a ping event, keep the current instruction in focus */
 	if (state >= PING) {
