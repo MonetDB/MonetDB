@@ -479,8 +479,10 @@ fi
 Summary: MonetDB5 SQL server modules
 Group: Applications/Databases
 Requires: MonetDB5-server = %{version}-%{release}
+%if %{?rhel:0}%{!?rhel:1}
 # for systemd-tmpfiles
 Requires: systemd-units
+%endif
 Obsoletes: MonetDB-SQL-devel
 Obsoletes: %{name}-SQL
 
@@ -493,16 +495,24 @@ accelerators.  It also has an SQL frontend.
 This package contains the SQL frontend for MonetDB5.  If you want to
 use SQL with MonetDB, you will need to install this package.
 
+%if %{?rhel:0}%{!?rhel:1}
 %post SQL-server5
 systemd-tmpfiles --create %{_sysconfdir}/tmpfiles.d/monetdbd.conf
+%endif
 
 %files SQL-server5
 %defattr(-,root,root)
 %{_bindir}/monetdb
 %{_bindir}/monetdbd
 %dir %attr(775,monetdb,monetdb) %{_localstatedir}/log/monetdb
+%if %{?rhel:0}%{!?rhel:1}
 # Fedora 15 and newer
 %{_sysconfdir}/tmpfiles.d/monetdbd.conf
+%else
+# RedHat Enterprise Linux
+%dir %attr(775,monetdb,monetdb) %{_localstatedir}/run/monetdb
+%exclude %{_sysconfdir}/tmpfiles.d/monetdbd.conf
+%endif
 %config(noreplace) %{_localstatedir}/monetdb5/dbfarm/.merovingian_properties
 %{_libdir}/monetdb5/autoload/*_sql.mal
 %{_libdir}/monetdb5/lib_sql.so
