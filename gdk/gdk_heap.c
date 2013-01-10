@@ -111,8 +111,8 @@ HEAPcacheAdd(void *base, size_t maxsz, char *fn, storage_t storage, int free_fil
 	int added = 0;
 
 
+	MT_lock_set(&HEAPcacheLock, "HEAPcache_init");
 	if (hc && free_file && fn && storage == STORE_MMAP && hc->used < hc->sz) {
-		MT_lock_set(&HEAPcacheLock, "HEAPcache_init");
 		if (hc->used < hc->sz) {
 			heap_cache_e *e = hc->hc+hc->used;
 
@@ -124,8 +124,8 @@ HEAPcacheAdd(void *base, size_t maxsz, char *fn, storage_t storage, int free_fil
 			hc->used++;
 			added = 1;
 		}
-		MT_lock_unset(&HEAPcacheLock, "HEAPcache_init");
 	}
+	MT_lock_unset(&HEAPcacheLock, "HEAPcache_init");
 	if (!added)
 		return GDKmunmap(base, maxsz);
 	HEAPDEBUG fprintf(stderr, "#HEAPcacheAdd (%s) " SZFMT " " PTRFMT " %d %d %d\n", fn, maxsz, PTRFMTCAST base, (int) storage, free_file, hc->used);
@@ -138,79 +138,98 @@ HEAPcacheFind(size_t *maxsz, char *fn, storage_t mode)
 	void *base = NULL;
 
 	*maxsz = (1 + (*maxsz >> 16)) << 16;	/* round up to 64K */
+	MT_lock_set(&HEAPcacheLock, "HEAPcache_init");
 	if (hc && mode == STORE_MMAP && hc->used < hc->sz) {
 		HEAPDEBUG fprintf(stderr, "#HEAPcacheFind (%s)" SZFMT " %d %d\n", fn, *maxsz, (int) mode, hc->used);
-		MT_lock_set(&HEAPcacheLock, "HEAPcache_init");
 
 		if (hc->used) {
 			int i;
 			heap_cache_e *e = NULL;
+			size_t cursz = 0;
 
-			/* find best match */
-			for(i=0;i<hc->used;i++) {
-				if (hc->hc[i].maxsz >= *maxsz) {
-					if (!e || hc->hc[i].maxsz < e->maxsz)
-						e = hc->hc+i;
+			/* find best match: prefer smallest larger
+			 * than or equal to requested, otherwise
+			 * largest smaller than requested */
+			for (i = 0; i < hc->used; i++) {
+				if ((hc->hc[i].maxsz >= *maxsz &&
+				     (e == NULL || hc->hc[i].maxsz < cursz)) ||
+				    (hc->hc[i].maxsz < *maxsz &&
+				     cursz < *maxsz &&
+				     hc->hc[i].maxsz > cursz)) {
+					e = hc->hc + i;
+					cursz = e->maxsz;
 				}
 			}
-			if (!e)
-				e = hc->hc;
-			i = (int) (e - hc->hc);
-			if (e->maxsz < *maxsz) {
-				/* resize file ? */
-				FILE *fp;
-				long_str fn;
+			if (e != NULL) {
+				if (e->maxsz < *maxsz) {
+					/* resize file ? */
+					FILE *fp;
+					long_str fn;
 
-				GDKfilepath(fn, HCDIR, e->fn, NULL);
+					GDKfilepath(fn, HCDIR, e->fn, NULL);
 
-				if ((fp = fopen(fn, "rb+")) != NULL &&
+					if ((fp = fopen(fn, "rb+")) != NULL &&
 #ifdef _WIN64
-				    _fseeki64(fp, (ssize_t) *maxsz-1, SEEK_SET) >= 0 &&
+					    _fseeki64(fp, (ssize_t) *maxsz-1, SEEK_SET) >= 0 &&
 #else
 #ifdef HAVE_FSEEKO
-				    fseeko(fp, (off_t) *maxsz-1, SEEK_SET) >= 0 &&
+					    fseeko(fp, (off_t) *maxsz-1, SEEK_SET) >= 0 &&
 #else
-				    fseek(fp, (long) *maxsz-1, SEEK_SET) >= 0 &&
+					    fseek(fp, (long) *maxsz-1, SEEK_SET) >= 0 &&
 #endif
 #endif
-				    fputc('\n', fp) >= 0 &&
-				    fflush(fp) >= 0) {
-					if (fclose(fp) >= 0) {
-						void *base = GDKload(fn, NULL, *maxsz, *maxsz, STORE_MMAP);
-						GDKmunmap(e->base, e->maxsz);
-						e->base = base;
-						e->maxsz = *maxsz;
+					    fputc('\n', fp) >= 0 &&
+					    fflush(fp) >= 0) {
+						if (fclose(fp) >= 0) {
+							void *base = GDKload(fn, NULL, *maxsz, *maxsz, STORE_MMAP);
+							GDKmunmap(e->base, e->maxsz);
+							e->base = base;
+							e->maxsz = *maxsz;
+						} else {
+							/* extending
+							 * may have
+							 * failed
+							 * since
+							 * fclose
+							 * failed */
+							e = NULL;
+						}
+						/* after fclose, successful or
+						 * not, we can't call fclose
+						 * again */
+						fp = NULL;
 					}
-					/* after fclose, successful or
-					 * not, we can't call fclose
-					 * again */
-					fp = NULL;
-				}
-				if (fp) {
-					/* if set, extending the file failed */
-					fclose(fp);
+					if (fp) {
+						/* if set, extending
+						 * the file failed */
+						fclose(fp);
+						e = NULL;
+					}
 				}
 			}
-			base = e->base;
-			*maxsz = e->maxsz;
-			if (GDKmove(HCDIR, e->fn, NULL, BATDIR, fn, NULL)<0) {
-				/* try to create the directory, if
-				 * that was the problem */
-				char path[PATHLENGTH];
+			if (e != NULL) {
+				base = e->base;
+				*maxsz = e->maxsz;
+				if (GDKmove(HCDIR, e->fn, NULL, BATDIR, fn, NULL)<0) {
+					/* try to create the directory, if
+					 * that was the problem */
+					char path[PATHLENGTH];
 
-				GDKfilepath(path, BATDIR, fn, NULL);
-				GDKcreatedir(path);
-				GDKmove(HCDIR, e->fn, NULL, BATDIR, fn, NULL);
-			}
-			hc->used--;
-			if (i < hc->used) {
-				e->base = hc->hc[hc->used].base;
-				e->maxsz = hc->hc[hc->used].maxsz;
-				GDKmove(HCDIR, hc->hc[hc->used].fn, NULL, HCDIR, e->fn, NULL);
+					GDKfilepath(path, BATDIR, fn, NULL);
+					GDKcreatedir(path);
+					GDKmove(HCDIR, e->fn, NULL, BATDIR, fn, NULL);
+				}
+				hc->used--;
+				i = (int) (e - hc->hc);
+				if (i < hc->used) {
+					e->base = hc->hc[hc->used].base;
+					e->maxsz = hc->hc[hc->used].maxsz;
+					GDKmove(HCDIR, hc->hc[hc->used].fn, NULL, HCDIR, e->fn, NULL);
+				}
 			}
 		}
-		MT_lock_unset(&HEAPcacheLock, "HEAPcache_init");
 	}
+	MT_lock_unset(&HEAPcacheLock, "HEAPcache_init");
 	if (!base) {
 		int fd = GDKfdlocate(fn, "wb", NULL);
 
