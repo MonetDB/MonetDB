@@ -63,13 +63,19 @@ simpleFlow(InstrPtr *old, int start, int last)
 }
 
 /* optimizers may remove the dataflow hints first */
-void removeDataflow(MalBlkPtr mb, InstrPtr *old, int limit)
+void removeDataflow( Client cntxt, MalBlkPtr mb)
 {
-	int i, j, k, flowblock=0;
-	InstrPtr p;
+	int i, k, flowblock=0, limit;
+	InstrPtr p, *old;
 	int *init= GDKzalloc(mb->vtop * sizeof(int)), skip = 0;
+	char *delete= (char*) GDKzalloc(mb->stop);
+	char *used= (char*) GDKzalloc(mb->vtop);
 
-	if ( init == 0)
+	if ( delete == 0 || init == 0 || used == 0)
+		return;
+	old = mb->stmt;
+	limit = mb->stop;
+	if ( newMalBlkStmt(mb, mb->ssize) <0 )
 		return;
 	/* remove the inlined dataflow barriers */
 	for (i = 1; i<limit; i++) {
@@ -79,39 +85,34 @@ void removeDataflow(MalBlkPtr mb, InstrPtr *old, int limit)
 		    getModuleId(p) == languageRef &&
 		    getFunctionId(p) == dataflowRef){
 			flowblock = getArg(p,0);
-			freeInstruction(p);
-			old[i] = NULL;
-		} else if (flowblock && blockExit(p) && getArg(p,0) == flowblock) {
+			delete[i] = 1;
+		} else if (blockExit(p) && getArg(p,0) == flowblock) {
 			flowblock = 0;
-			freeInstruction(p);
-			old[i] = NULL;
-		} else {
-			/* remember first initialization */
-			if ( p->argc == 2 && isVarConstant(mb,getArg(p,1))  && init[getArg(p,0)] == 0)
-				init[getArg(p,0)] = i;
-			if( blockStart(p) && !skip)
+			delete[i] = 1;
+		} else if ( blockStart(p) )
 				skip++;
+		else {
+			/* remember first initialization */
+			for ( k = p->retc; k < p->argc; k++)
+				used[getArg(p,k)] = 1;
+			if ( init[getArg(p,0)]  && ! used[getArg(p,0)]) 
+				/* remove the old initialization */
+				delete[ init[getArg(p,0)]] = 1;
+			init[getArg(p,0)] = i;
 		}
 	}
 	/* remove the superflous variable initializations */
 	/* when there are no auxillary barrier blocks */
-	if ( !skip)
-	for (i = 1; i<limit; i++) {
-		p = old[i];
-		if ( p && init[ j = getArg(p,0)]  != i  &&  j && old[init[j]] == 0){
-			/* check for self-use in second assignment */
-			for ( k = p->retc; k < p->argc; k++)
-				if ( getArg(p,k) == getArg(p,0) )
-					break;
-			if ( k == p->argc) {
-				freeInstruction( old[init[j]]);
-				old[j] = NULL;
-			}
-			/* ignore further */
-			init[j] = 0;
-		} 
-	}
+	for (i = 0; i<limit; i++) 
+		if ( delete[i] == 0 || !skip )
+			pushInstruction(mb,old[i]);
+		else freeInstruction(old[i]);
+	mnstr_printf(cntxt->fdout, "Remove dataflow\n");
+	printFunction(cntxt->fdout, mb, 0, LIST_MAL_STMT);
 	GDKfree(init);
+	GDKfree(old);
+	GDKfree(used);
+	GDKfree(delete);
 }
 
 static int

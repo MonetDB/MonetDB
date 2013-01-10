@@ -40,7 +40,7 @@ int
 OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int actions = 0, fnd, mvc = 0;
-	int bskt, i, j, k, limit, /*vlimit,*/ slimit;
+	int bskt, i, j, k, limit, slimit;
 	InstrPtr r, p, qq, *old;
 	str col;
 	int maxbasket = 128, m = 0, a = 0;
@@ -61,10 +61,10 @@ OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	} else
 		(void) stk;
 
+	removeDataflow(cntxt, mb);
 	old = mb->stmt;
 	limit = mb->stop;
 	slimit = mb->ssize;
-	/*vlimit = mb->vtop;*/
 	if (newMalBlkStmt(mb, slimit) < 0)
 		return 0;
 
@@ -72,7 +72,6 @@ OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	tidlist = (char *) GDKzalloc(mb->vtop );
 	if (alias == 0)
 		return 0;
-	removeDataflow(mb, old, limit);
 
 	pushInstruction(mb, old[0]);
 	newFcnCall(mb, sqlRef, putName("transaction", 11));
@@ -251,6 +250,8 @@ OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 							getArg(qq, 0) = getArg(qa[j], k + 2);
 							getArg(qq, 1) = getArg(p, 5);
 							qq->argc = 2;
+							p->argc =2;
+							pushInstruction(mb,p);
 							p = qq;
 						} else {
 							qq= newAssignment(mb);
@@ -279,14 +280,20 @@ OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	(void) pci;
 
 	OPTDEBUGdatacell {
-		mnstr_printf(cntxt->fdout, "#Datacell optimizer finished\n");
+		mnstr_printf(cntxt->fdout, "#Datacell optimizer intermediate\n");
 		printFunction(cntxt->fdout, mb, stk, LIST_MAL_STMT);
 	} 
 	/* optimize this new continous query using the default pipe */
 	addOptimizers(cntxt, mb, "default_pipe");
 	msg = optimizeMALBlock(cntxt, mb);
-	if (msg == MAL_SUCCEED)
+	if (msg == MAL_SUCCEED) {
+		removeDataflow(cntxt, mb);
 		msg = optimizerCheck(cntxt, mb, "optimizer.datacell", actions, (GDKusec() - clk), OPT_CHECK_ALL);
+	}
+	OPTDEBUGdatacell {
+		mnstr_printf(cntxt->fdout, "#Datacell optimizer finished\n");
+		printFunction(cntxt->fdout, mb, stk, LIST_MAL_STMT);
+	} 
 
 	if (actions)
 	{
