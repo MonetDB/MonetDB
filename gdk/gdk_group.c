@@ -106,6 +106,8 @@
 				     hb != BUN_NONE &&			\
 				      grps[hb - r] == grps[p - r];	\
 				     hb = hs->link[hb]) {		\
+					assert(hs->link[hb] == BUN_NONE \
+					       || hs->link[hb] < hb);	\
 					if (w[p] == w[hb]) {		\
 						ngrps[p - r] = ngrps[hb - r]; \
 						if (histo)		\
@@ -459,12 +461,17 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			 * backwards through BAT */
 			for (hb = hs->hash[HASHprobe(hs, v)];
 			     hb != BUN_NONE && hb >= p;
-			     hb = hs->link[hb])
+			     hb = hs->link[hb]) {
+				assert(hs->link[hb] == BUN_NONE
+				       || hs->link[hb] < hb);
+			}
 				;
 			if (gc) {
 				for (;
 				     hb != BUN_NONE && grps[hb - r] == grps[p - r];
 				     hb = hs->link[hb]) {
+					assert(hs->link[hb] == BUN_NONE
+					       || hs->link[hb] < hb);
 					if (cmp(v, BUNtail(bi, hb)) == 0) {
 						ngrps[p - r] = ngrps[hb - r];
 						if (histo)
@@ -582,6 +589,8 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 					for (hb = hs->hash[prb];
 					     hb != BUN_NONE && grps[hb - r] == grps[p - r];
 					     hb = hs->link[hb]) {
+						assert(hs->link[hb] == BUN_NONE
+						       || hs->link[hb] < hb);
 						if (cmp(v, BUNtail(bi, hb)) == 0) {
 							ngrps[p - r] = ngrps[hb - r];
 							if (histo)
