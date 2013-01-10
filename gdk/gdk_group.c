@@ -115,6 +115,8 @@
 						break;			\
 					}				\
 				}					\
+				if (grps[hb - r] != grps[p - r])	\
+					hb = BUN_NONE;			\
 			} else if (grps) {				\
 				BUN hv = hash_##TYPE(hs, &w[p]);	\
 				BUN hg = hash_oid(hs, &grps[p-r]);	\
@@ -143,8 +145,7 @@
 					}				\
 				}					\
 			}						\
-			if (hb == BUN_NONE ||				\
-			    (gc && grps[hb - r] != grps[p - r])) {	\
+			if (hb == BUN_NONE) {				\
 				GRPnotfound();				\
 				/* enter new group into hash table */	\
 				hs->link[p] = hs->hash[prb];		\
@@ -479,6 +480,8 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 						break;
 					}
 				}
+				if (grps[hb - r] != grps[p - r])
+					hb = BUN_NONE;
 			} else if (grps) {
 				for (;
 				     hb != BUN_NONE;
@@ -503,7 +506,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 					}
 				}
 			}
-			if (hb == BUN_NONE || (gc && grps[hb - r] != grps[p - r])) {
+			if (hb == BUN_NONE) {
 				GRPnotfound();
 			}
 		}
@@ -598,6 +601,8 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 							break;
 						}
 					}
+					if (grps[hb - r] != grps[p - r])
+						hb = BUN_NONE;
 				} else if (grps) {
 					BUN hv = hash_any(hs, v);
 					BUN hg = hash_oid(hs, &grps[p-r]);
@@ -626,7 +631,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 						}
 					}
 				}
-				if (hb == BUN_NONE || (gc && grps[hb - r] != grps[p - r])) {
+				if (hb == BUN_NONE) {
 					GRPnotfound();
 					/* enter new group into hash table */
 					hs->link[p] = hs->hash[prb];
