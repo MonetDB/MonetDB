@@ -80,21 +80,6 @@ gdk_export void BBPshare(bat b);
 #define BBP_status_off(bid, flags, nme)					\
 		BBP_status_set(bid, BBP_status(bid) & ~(flags), nme);
 
-#define BBP_unload_inc(bid, nme)			\
-	do {						\
-		MT_lock_set(&GDKunloadLock, nme);	\
-		BBPunloadCnt++;				\
-		MT_lock_unset(&GDKunloadLock, nme);	\
-	} while (0)
-
-#define BBP_unload_dec(bid, nme)					\
-	do {								\
-		MT_lock_set(&GDKunloadLock, nme);			\
-		if (--BBPunloadCnt == 0)				\
-			MT_cond_signal(&GDKunloadCond, nme);		\
-		assert(BBPunloadCnt >= 0);				\
-		MT_lock_unset(&GDKunloadLock, nme);			\
-	} while (0)
 #define BBPswappable(b) ((b) && (b)->batCacheid && BBP_refs((b)->batCacheid) == 0)
 #define BBPtrimmable(b) (BBPswappable(b) && isVIEW(b) == 0 && (BBP_status((b)->batCacheid)&BBPWAITING) == 0)
 

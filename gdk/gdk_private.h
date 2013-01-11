@@ -134,8 +134,6 @@ extern int GDKrecovery;
 extern int GDKsilent;	/* should GDK shut up? */
 extern MT_Lock GDKthreadLock;
 extern MT_Lock GDKtmLock;
-extern MT_Cond GDKunloadCond;
-extern MT_Lock GDKunloadLock;
 extern MT_Lock MT_system_lock;
 
 #define ATOMappendpriv(t, h)						\
