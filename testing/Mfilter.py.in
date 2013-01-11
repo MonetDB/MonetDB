@@ -57,6 +57,8 @@ test = (
                 # varying variable names in dataflow barriers
                     r'^barrier X_\d+ := language.dataflow\(\);$',
                     r'^exit X_\d+;$',
+                # varying width of table frames
+                    r'^\+[=-]+\+$',
                  ])+')',  re.MULTILINE),
         # warnings and messages that should be treated as errors:
         re.compile('(?:'+')|(?:'.join([
