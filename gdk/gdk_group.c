@@ -106,13 +106,21 @@
 				     hb != BUN_NONE &&			\
 				      grps[hb - r] == grps[p - r];	\
 				     hb = hs->link[hb]) {		\
+					assert(hs->link[hb] == BUN_NONE \
+					       || hs->link[hb] < hb);	\
 					if (w[p] == w[hb]) {		\
-						ngrps[p - r] = ngrps[hb - r]; \
+						oid grp = ngrps[hb - r]; \
+						ngrps[p - r] = grp; 	\
 						if (histo)		\
-							cnts[ngrps[hb - r]]++; \
+							cnts[grp]++;	\
+						if (gn->tsorted &&	\
+						    grp != ngrp - 1)	\
+							gn->tsorted = 0; \
 						break;			\
 					}				\
 				}					\
+				if (grps[hb - r] != grps[p - r])	\
+					hb = BUN_NONE;			\
 			} else if (grps) {				\
 				BUN hv = hash_##TYPE(hs, &w[p]);	\
 				BUN hg = hash_oid(hs, &grps[p-r]);	\
@@ -122,9 +130,13 @@
 				     hb = hs->link[hb]) {		\
 					if (grps[hb - r] == grps[p - r] && \
 					    w[p] == w[hb]) {		\
-						ngrps[p - r] = ngrps[hb - r]; \
+						oid grp = ngrps[hb - r]; \
+						ngrps[p - r] = grp;	\
 						if (histo)		\
-							cnts[ngrps[hb - r]]++; \
+							cnts[grp]++;	\
+						if (gn->tsorted &&	\
+						    grp != ngrp - 1)	\
+							gn->tsorted = 0; \
 						break;			\
 					}				\
 				}					\
@@ -134,15 +146,18 @@
 				     hb != BUN_NONE;			\
 				     hb = hs->link[hb]) {		\
 					if (w[p] == w[hb]) {		\
-						ngrps[p - r] = ngrps[hb - r]; \
+						oid grp = ngrps[hb - r]; \
+						ngrps[p - r] = grp;	\
 						if (histo)		\
-							cnts[ngrps[hb - r]]++; \
+							cnts[grp]++;	\
+						if (gn->tsorted &&	\
+						    grp != ngrp - 1)	\
+							gn->tsorted = 0; \
 						break;			\
 					}				\
 				}					\
 			}						\
-			if (hb == BUN_NONE ||				\
-			    (gc && grps[hb - r] != grps[p - r])) {	\
+			if (hb == BUN_NONE) {				\
 				GRPnotfound();				\
 				/* enter new group into hash table */	\
 				hs->link[p] = hs->hash[prb];		\
@@ -413,7 +428,8 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 						ngrps[p - r] = grp;
 						if (histo)
 							cnts[grp]++;
-						if (grp != ngrp - 1)
+						if (gn->tsorted &&
+						    grp != ngrp - 1)
 							gn->tsorted = 0;
 						break;
 					}
@@ -448,6 +464,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				  h ? BATgetId(h) : "NULL", h ? BATcount(h) : 0,
 				  subsorted, gc ? " (g clustered)" : "");
 		hs = b->T->hash;
+		gn->tsorted = 1; /* be optimistic */
 		for (r = BUNfirst(b), p = r, q = r + BATcount(b); p < q; p++) {
 			v = BUNtail(bi, p);
 			/* this loop is similar, but not equal, to
@@ -461,28 +478,43 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			 * backwards through BAT */
 			for (hb = hs->hash[HASHprobe(hs, v)];
 			     hb != BUN_NONE && hb >= p;
-			     hb = hs->link[hb])
+			     hb = hs->link[hb]) {
+				assert(hs->link[hb] == BUN_NONE
+				       || hs->link[hb] < hb);
+			}
 				;
 			if (gc) {
 				for (;
 				     hb != BUN_NONE && grps[hb - r] == grps[p - r];
 				     hb = hs->link[hb]) {
+					assert(hs->link[hb] == BUN_NONE
+					       || hs->link[hb] < hb);
 					if (cmp(v, BUNtail(bi, hb)) == 0) {
-						ngrps[p - r] = ngrps[hb - r];
+						oid grp = ngrps[hb - r];
+						ngrps[p - r] = grp;
 						if (histo)
-							cnts[ngrps[hb - r]]++;
+							cnts[grp]++;
+						if (gn->tsorted &&
+						    grp != ngrp - 1)
+							gn->tsorted = 0;
 						break;
 					}
 				}
+				if (grps[hb - r] != grps[p - r])
+					hb = BUN_NONE;
 			} else if (grps) {
 				for (;
 				     hb != BUN_NONE;
 				     hb = hs->link[hb]) {
 					if (grps[hb - r] == grps[p - r] &&
 					    cmp(v, BUNtail(bi, hb)) == 0) {
-						ngrps[p - r] = ngrps[hb - r];
+						oid grp = ngrps[hb - r];
+						ngrps[p - r] = grp;
 						if (histo)
-							cnts[ngrps[hb - r]]++;
+							cnts[grp]++;
+						if (gn->tsorted &&
+						    grp != ngrp - 1)
+							gn->tsorted = 0;
 						break;
 					}
 				}
@@ -491,18 +523,21 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				     hb != BUN_NONE;
 				     hb = hs->link[hb]) {
 					if (cmp(v, BUNtail(bi, hb)) == 0) {
-						ngrps[p - r] = ngrps[hb - r];
+						oid grp = ngrps[hb - r];
+						ngrps[p - r] = grp;
 						if (histo)
-							cnts[ngrps[hb - r]]++;
+							cnts[grp]++;
+						if (gn->tsorted &&
+						    grp != ngrp - 1)
+							gn->tsorted = 0;
 						break;
 					}
 				}
 			}
-			if (hb == BUN_NONE || (gc && grps[hb - r] != grps[p - r])) {
+			if (hb == BUN_NONE) {
 				GRPnotfound();
 			}
 		}
-		gn->tsorted = BATcount(gn) <= 1;
 	} else {
 		bit gc = g && (g->tsorted || g->trevsorted);
 		const char *nme;
@@ -557,6 +592,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			goto error;
 		}
 
+		gn->tsorted = 1; /* be optimistic */
 		switch (ATOMstorage(hs->type)) {
 		case TYPE_bte:
 			GRPhashloop(bte);
@@ -584,13 +620,21 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 					for (hb = hs->hash[prb];
 					     hb != BUN_NONE && grps[hb - r] == grps[p - r];
 					     hb = hs->link[hb]) {
+						assert(hs->link[hb] == BUN_NONE
+						       || hs->link[hb] < hb);
 						if (cmp(v, BUNtail(bi, hb)) == 0) {
-							ngrps[p - r] = ngrps[hb - r];
+							oid grp = ngrps[hb - r];
+							ngrps[p - r] = grp;
 							if (histo)
-								cnts[ngrps[hb - r]]++;
+								cnts[grp]++;
+							if (gn->tsorted &&
+							    grp != ngrp - 1)
+								gn->tsorted = 0;
 							break;
 						}
 					}
+					if (grps[hb - r] != grps[p - r])
+						hb = BUN_NONE;
 				} else if (grps) {
 					BUN hv = hash_any(hs, v);
 					BUN hg = hash_oid(hs, &grps[p-r]);
@@ -600,9 +644,13 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 					     hb = hs->link[hb]) {
 						if (grps[hb - r] == grps[p - r] &&
 						    cmp(v, BUNtail(bi, hb)) == 0) {
-							ngrps[p - r] = ngrps[hb - r];
+							oid grp = ngrps[hb - r];
+							ngrps[p - r] = grp;
 							if (histo)
-								cnts[ngrps[hb - r]]++;
+								cnts[grp]++;
+							if (gn->tsorted &&
+							    grp != ngrp - 1)
+								gn->tsorted = 0;
 							break;
 						}
 					}
@@ -612,14 +660,18 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 					     hb != BUN_NONE;
 					     hb = hs->link[hb]) {
 						if (cmp(v, BUNtail(bi, hb)) == 0) {
-							ngrps[p - r] = ngrps[hb - r];
+							oid grp = ngrps[hb - r];
+							ngrps[p - r] = grp;
 							if (histo)
-								cnts[ngrps[hb - r]]++;
+								cnts[grp]++;
+							if (gn->tsorted &&
+							    grp != ngrp - 1)
+								gn->tsorted = 0;
 							break;
 						}
 					}
 				}
-				if (hb == BUN_NONE || (gc && grps[hb - r] != grps[p - r])) {
+				if (hb == BUN_NONE) {
 					GRPnotfound();
 					/* enter new group into hash table */
 					hs->link[p] = hs->hash[prb];
@@ -634,7 +686,6 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		GDKfree(hp);
 		GDKfree(hs);
 		GDKfree(ext);
-		gn->tsorted = BATcount(gn) <= 1;
 	}
 	if (extents) {
 		BATsetcount(en, (BUN) ngrp);
