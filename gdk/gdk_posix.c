@@ -335,7 +335,7 @@ MT_getrss(void)
 	fd = open("/proc/self/stat", O_RDONLY);
 	if (fd >= 0) {
 		char buf[1024], *r = buf;
-		size_t i, sz = read(fd, buf, 1024);
+		ssize_t i, sz = read(fd, buf, 1024);
 
 		close(fd);
 		if (sz > 0) {
