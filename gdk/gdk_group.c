@@ -123,7 +123,7 @@
 					hb = BUN_NONE;			\
 			} else if (grps) {				\
 				BUN hv = hash_##TYPE(hs, &w[p]);	\
-				BUN hg = hash_oid(hs, &grps[p-r]);	\
+				BUN hg = (BUN) grps[p-r];		\
 				prb = ((hv << bits) ^ hg) & hs->mask;	\
 				for (hb = hs->hash[prb];		\
 				     hb != BUN_NONE;			\
@@ -635,7 +635,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 						hb = BUN_NONE;
 				} else if (grps) {
 					BUN hv = hash_any(hs, v);
-					BUN hg = hash_oid(hs, &grps[p-r]);
+					BUN hg = (BUN) grps[p-r];
 					prb = ((hv << bits) ^ hg) & hs->mask;
 					for (hb = hs->hash[prb];
 					     hb != BUN_NONE;
