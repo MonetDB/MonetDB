@@ -946,7 +946,7 @@ GDKvmtrim(void *limit)
 
 	(void) limit;
 
-	ATOMIC_INIT(vmtrim_lock, "GDKvmtrim")
+	ATOMIC_INIT(vmtrimLock, "GDKvmtrim");
 	do {
 		int t;
 		size_t rss;
