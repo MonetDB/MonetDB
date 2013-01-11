@@ -20,23 +20,7 @@
 #ifndef _GDK_ATOMIC_H_
 #define _GDK_ATOMIC_H_
 
-#if defined(__GNUC__) || defined(__INTEL_COMPILER)
-#if SIZEOF_SSIZE_T == SIZEOF_LONG_LONG
-#define ATOMIC_TYPE		long long
-#else
-#define ATOMIC_TYPE		long
-#endif
-#define ATOMIC_ADD(var, val)	__sync_fetch_and_add(&var, (ATOMIC_TYPE) (val))
-#define ATOMIC_INC(var)		__sync_add_and_fetch(&var, (ATOMIC_TYPE) 1)
-#define ATOMIC_SUB(var, val)	__sync_fetch_and_sub(&var, (ATOMIC_TYPE) (val))
-#define ATOMIC_DEC(var)		__sync_sub_and_fetch(&var, (ATOMIC_TYPE) 1)
-#define ATOMIC_START(lock, func)
-#define ATOMIC_END(lock, func)
-#define ATOMIC_INIT(lock, func)
-#define ATOMIC_COMP_SWAP(var, old, new, lock, func)	\
-	__sync_val_compare_and_swap(&var, old, new)
-#define ATOMIC_GET(var, lock, func)	var
-#elif defined(_MSC_VER)
+#if defined(_MSC_VER)
 #include <intrin.h>
 #if SIZEOF_SSIZE_T == SIZEOF___INT64
 #define ATOMIC_TYPE		__int64
@@ -63,6 +47,22 @@
 #define ATOMIC_COMP_SWAP(var, old, new, lock, func)	\
 	_InterlockedCompareExchange(&var, new, old)
 #pragma intrinsic(_InterlockedCompareExchange)
+#define ATOMIC_GET(var, lock, func)	var
+#elif defined(__GNUC__) || defined(__INTEL_COMPILER)
+#if SIZEOF_SSIZE_T == SIZEOF_LONG_LONG
+#define ATOMIC_TYPE		long long
+#else
+#define ATOMIC_TYPE		long
+#endif
+#define ATOMIC_ADD(var, val)	__sync_fetch_and_add(&var, (ATOMIC_TYPE) (val))
+#define ATOMIC_INC(var)		__sync_add_and_fetch(&var, (ATOMIC_TYPE) 1)
+#define ATOMIC_SUB(var, val)	__sync_fetch_and_sub(&var, (ATOMIC_TYPE) (val))
+#define ATOMIC_DEC(var)		__sync_sub_and_fetch(&var, (ATOMIC_TYPE) 1)
+#define ATOMIC_START(lock, func)
+#define ATOMIC_END(lock, func)
+#define ATOMIC_INIT(lock, func)
+#define ATOMIC_COMP_SWAP(var, old, new, lock, func)	\
+	__sync_val_compare_and_swap(&var, old, new)
 #define ATOMIC_GET(var, lock, func)	var
 #else
 #define ATOMIC_LOCK		PTHREAD_MUTEX_INITIALIZER /* must use locks */
