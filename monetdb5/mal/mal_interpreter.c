@@ -785,20 +785,22 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				}
 				stkpc = mb->stop;
 				continue;
-			default:
+			default: {
+				str w;
 				if (pci->token < 0) {
 					/* temporary NOOP instruction */
 					break;
 				}
-				ret = createScriptException(mb, stkpc, MAL,
-					NULL, "unkown operation");
+				w= instruction2str(mb, 0, pci, FALSE);
+				ret = createScriptException(mb, stkpc, MAL, NULL, "unkown operation:%s",w);
+				GDKfree(w);
 				if (cntxt->qtimeout && time(NULL) - stk->clock.tv_usec > cntxt->qtimeout){
 					ret= createException(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
 					break;
 				}
 				stkpc= mb->stop;
 				continue;
-			}
+			}	}
 
 			/* monitoring information should reflect the input arguments,
 			   which may be removed by garbage collection  */
