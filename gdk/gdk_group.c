@@ -119,7 +119,8 @@
 						break;			\
 					}				\
 				}					\
-				if (grps[hb - r] != grps[p - r])	\
+				if (hb != BUN_NONE &&			\
+				    grps[hb - r] != grps[p - r])	\
 					hb = BUN_NONE;			\
 			} else if (grps) {				\
 				BUN hv = hash_##TYPE(hs, &w[p]);	\
@@ -498,7 +499,8 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 						break;
 					}
 				}
-				if (grps[hb - r] != grps[p - r])
+				if (hb != BUN_NONE &&
+				    grps[hb - r] != grps[p - r])
 					hb = BUN_NONE;
 			} else if (grps) {
 				for (;
@@ -631,7 +633,8 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 							break;
 						}
 					}
-					if (grps[hb - r] != grps[p - r])
+					if (hb != BUN_NONE &&
+					    grps[hb - r] != grps[p - r])
 						hb = BUN_NONE;
 				} else if (grps) {
 					BUN hv = hash_any(hs, v);
