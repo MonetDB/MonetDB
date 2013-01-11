@@ -89,13 +89,13 @@ HEAPcacheInit(void)
 
 		MT_lock_init(&HEAPcacheLock, "HEAPcache_init");
 		MT_lock_set(&HEAPcacheLock, "HEAPcache_init");
-		hc = (heap_cache*)GDKmalloc(sizeof(heap_cache));
+		hc = (heap_cache *) GDKmalloc(sizeof(heap_cache));
 		hc->used = 0;
 		hc->sz = HEAP_CACHE_SIZE;
-		hc->hc = (heap_cache_e*)GDKmalloc(sizeof(heap_cache_e)*hc->sz);
+		hc->hc = (heap_cache_e *) GDKmalloc(sizeof(heap_cache_e) * hc->sz);
 		GDKcreatedir(HCDIR DIR_SEP_STR);
 		/* clean old leftovers */
-		for(i=0;i<HEAP_CACHE_SIZE;i++){
+		for (i = 0; i < HEAP_CACHE_SIZE; i++) {
 			char fn[PATHLENGTH];
 
 			snprintf(fn, PATHLENGTH, "%d", i);
@@ -113,7 +113,7 @@ HEAPcacheAdd(void *base, size_t maxsz, char *fn, storage_t storage, int free_fil
 
 	MT_lock_set(&HEAPcacheLock, "HEAPcache_init");
 	if (hc && free_file && fn && storage == STORE_MMAP && hc->used < hc->sz) {
-		heap_cache_e *e = hc->hc+hc->used;
+		heap_cache_e *e = hc->hc + hc->used;
 
 		e->base = base;
 		e->maxsz = maxsz;
@@ -177,12 +177,12 @@ HEAPcacheFind(size_t *maxsz, char *fn, storage_t mode)
 
 				if ((fp = fopen(fn, "rb+")) != NULL &&
 #ifdef _WIN64
-				    _fseeki64(fp, (ssize_t) *maxsz-1, SEEK_SET) >= 0 &&
+				    _fseeki64(fp, (ssize_t) *maxsz - 1, SEEK_SET) >= 0 &&
 #else
 #ifdef HAVE_FSEEKO
-				    fseeko(fp, (off_t) *maxsz-1, SEEK_SET) >= 0 &&
+				    fseeko(fp, (off_t) *maxsz - 1, SEEK_SET) >= 0 &&
 #else
-				    fseek(fp, (long) *maxsz-1, SEEK_SET) >= 0 &&
+				    fseek(fp, (long) *maxsz - 1, SEEK_SET) >= 0 &&
 #endif
 #endif
 				    fputc('\n', fp) >= 0 &&
@@ -214,7 +214,7 @@ HEAPcacheFind(size_t *maxsz, char *fn, storage_t mode)
 				/* move cached heap to its new location */
 				base = e->base;
 				*maxsz = e->maxsz;
-				if (GDKmove(HCDIR, e->fn, NULL, BATDIR, fn, NULL)<0) {
+				if (GDKmove(HCDIR, e->fn, NULL, BATDIR, fn, NULL) < 0) {
 					/* try to create the directory, if
 					 * that was the problem */
 					char path[PATHLENGTH];
@@ -1351,4 +1351,3 @@ HEAP_mmappable(Heap *heap)
 	}
 	return FALSE;
 }
-
