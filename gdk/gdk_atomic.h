@@ -20,7 +20,7 @@
 #ifndef _GDK_ATOMIC_H_
 #define _GDK_ATOMIC_H_
 
-#if defined(__GNUC__)
+#if defined(__GNUC__) || defined(__INTEL_COMPILER)
 #if SIZEOF_SSIZE_T == SIZEOF_LONG_LONG
 #define ATOMIC_TYPE		long long
 #else
