@@ -236,7 +236,25 @@ BBP_getpid(void)
 	return x;
 }
 
+#define BBP_unload_inc(bid, nme)			\
+	do {						\
+		MT_lock_set(&GDKunloadLock, nme);	\
+		BBPunloadCnt++;				\
+		MT_lock_unset(&GDKunloadLock, nme);	\
+	} while (0)
+
+#define BBP_unload_dec(bid, nme)				\
+	do {							\
+		MT_lock_set(&GDKunloadLock, nme);		\
+		if (--BBPunloadCnt == 0)			\
+			MT_cond_signal(&GDKunloadCond, nme);	\
+		assert(BBPunloadCnt >= 0);			\
+		MT_lock_unset(&GDKunloadLock, nme);		\
+	} while (0)
+
 static int BBPunloadCnt = 0;
+static MT_Lock GDKunloadLock;
+static MT_Cond GDKunloadCond;
 
 void
 BBPlock(const char *nme)
@@ -971,6 +989,9 @@ BBPinit(void)
 	int bbpversion;
 	int oidsize;
 	oid BBPoid;
+
+	MT_lock_init(&GDKunloadLock, "GDKunloadLock");
+	MT_cond_init(&GDKunloadCond, "GDKunloadCond");
 
 	/* first move everything from SUBDIR to BAKDIR (its parent) */
 	if (BBPrecover_subdir() < 0)

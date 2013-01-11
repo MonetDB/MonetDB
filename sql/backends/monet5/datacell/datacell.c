@@ -233,6 +233,7 @@ DCpauseObject(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int idx, ret = 0;
 	str tbl = *(str *) getArgReference(stk, pci, 1);
+	str msg1= MAL_SUCCEED, msg2 = MAL_SUCCEED;
 
 	if ( strcmp(tbl,"*")== 0){
 		str msg = RCpause(&ret);
@@ -243,8 +244,15 @@ DCpauseObject(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	idx = BSKTlocate(tbl);
 	if (idx ) {
-		RCreceptorPause(&ret, &tbl);
-		EMemitterPause(&ret, &tbl);
+		msg1 = RCreceptorPause(&ret, &tbl);
+		if ( msg1 == MAL_SUCCEED)
+			return msg1;
+		msg2 = EMemitterPause(&ret, &tbl);
+		if ( msg2 == MAL_SUCCEED ){
+			GDKfree(msg1);
+			return MAL_SUCCEED;
+		}
+		return msg2;
 	}
 	return PNpauseQuery(cntxt,mb,stk,pci);
 }

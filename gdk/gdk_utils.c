@@ -1016,8 +1016,6 @@ GDKinit(opt *set, int setlen)
 	}
 	MT_lock_init(&GDKnameLock, "GDKnameLock");
 	MT_lock_init(&GDKthreadLock, "GDKthreadLock");
-	MT_lock_init(&GDKunloadLock, "GDKunloadLock");
-	MT_cond_init(&GDKunloadCond, "GDKunloadCond");
 	MT_lock_init(&GDKtmLock, "GDKtmLock");
 	ATOMIC_INIT(mbyteslock, "mbyteslock");
 	errno = 0;
@@ -1216,9 +1214,7 @@ batlock_t GDKbatLock[BBP_BATMASK + 1];
 bbplock_t GDKbbpLock[BBP_THREADMASK + 1];
 MT_Lock GDKnameLock;
 MT_Lock GDKthreadLock;
-MT_Lock GDKunloadLock;
 MT_Lock GDKtmLock;
-MT_Cond GDKunloadCond;
 
 
 /*
