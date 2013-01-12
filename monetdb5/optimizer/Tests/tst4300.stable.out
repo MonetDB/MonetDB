@@ -28,8 +28,10 @@ exit v;
     d := algebra.select(b,0:lng,49:lng);
     i := aggr.count(d);
     io.print(i);
-    cr := bat.reverse(c);
-    zz := algebra.joinPath(b,cr,d);
+    bo := batcalc.oid(b);
+    co := batcalc.oid(c);
+    cor := bat.reverse(co);
+    zz := algebra.joinPath(bo,cor,d);
     i := aggr.count(zz);
     io.print(i);
 #to be detected by join inversion 
