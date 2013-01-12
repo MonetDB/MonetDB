@@ -194,13 +194,13 @@ Ready.
 #select 'transient', count(*) from bbp() as bbp where kind like 'tran%';
 % .L1,	.bbp # table_name
 % L1,	L2 # name
-% char,	wrd # type
+% varchar,	wrd # type
 % 9,	3 # length
 [ "transient",	170	]
 #select 'persistent', count(*) from bbp() as bbp where kind like 'pers%';
 % .L1,	.bbp # table_name
 % L1,	L2 # name
-% char,	wrd # type
+% varchar,	wrd # type
 % 10,	3 # length
 [ "persistent",	163	]
 
