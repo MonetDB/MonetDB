@@ -41,7 +41,7 @@ SELECT c.name, k.name, 'DEP_KEY' from columns as c, objects as kc, keys as k whe
 SELECT c.name, i.name, 'DEP_INDEX' from columns as c, objects as kc, idxs as i where kc."name" = c.name AND kc.id = i.id AND c.table_id = i.table_id AND i.name not in (select name from keys);
 
 --Column c has a dependency on function f
-SELECT c.name, f.name,'DEP_FUNC' from functions as f, columns as c, dependencies as dep where c.id = dep.id AND f.id = dep.depend_id AND dep.depend_type = 7;
+SELECT c.name, f.name, 'DEP_FUNC' from functions as f, columns as c, dependencies as dep where c.id = dep.id AND f.id = dep.depend_id AND dep.depend_type = 7 ORDER BY c.name, f.name;
 
 --Column c has a dependency on trigger tri
 SELECT c.name, tri.name, 'DEP_TRIGGER' from columns as c, triggers as tri, dependencies as dep where dep.id = c.id AND dep.depend_id =tri.id AND dep.depend_type = 8;
@@ -58,7 +58,7 @@ SELECT v.name, tri.name, 'DEP_TRIGGER' from tables as v, triggers as tri, depend
 
 
 --Functions f1 has a dependency on function f2
-SELECT f1.name, f2.name, 'DEP_FUNC' from functions as f1, functions as f2, dependencies as dep where f1.id = dep.id AND f2.id = dep.depend_id AND dep.depend_type = 7;
+SELECT f1.name, f2.name, 'DEP_FUNC' from functions as f1, functions as f2, dependencies as dep where f1.id = dep.id AND f2.id = dep.depend_id AND dep.depend_type = 7 ORDER BY f1.name, f2.name;
 
 --Function f1 has a dependency on trigger tri
 SELECT f.name, tri.name, 'DEP_TRIGGER' from functions as f, triggers as tri, dependencies as dep where dep.id = f.id AND dep.depend_id =tri.id AND dep.depend_type = 8;
