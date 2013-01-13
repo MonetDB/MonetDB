@@ -334,6 +334,13 @@ class DatabaseTest(unittest.TestCase):
             ('col1 char(1)','col2 char(1)'),
             generator)
 
+    def test_BOOL(self):
+        def generator(row,col):
+            return bool(row%2)
+        self.check_data_integrity(
+            ('col1 BOOL',),
+            generator)
+
     def test_description(self):
         self.table = self.new_table_name()
         shouldbe = [
