@@ -143,9 +143,10 @@ test_setoutputsize_basic (__main__.Test_DBAPI20) ... ok
 test_substring (__main__.Test_DBAPI20) ... ok
 test_threadsafety (__main__.Test_DBAPI20) ... ok
 test_unicode (__main__.Test_DBAPI20) ... ok
+test_utf8 (__main__.Test_DBAPI20) ... ok
 
 ----------------------------------------------------------------------
-Ran 37 tests
+Ran 38 tests
 
 OK
 
