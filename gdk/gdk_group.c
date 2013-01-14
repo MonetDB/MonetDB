@@ -64,8 +64,8 @@
  *
  * Otherwise we build a partial hash table on the fly.
  *
- * A decision should be made on the order in which grouping occurs 
- * Let |b| has << different values as |g| then the linked lists gets
+ * A decision should be made on the order in which grouping occurs Let
+ * |b| have << different values than |g| then the linked lists gets
  * extremely long, leading to a n^2 algorithm.
  * At the MAL level, the multigroup function would perform the dynamic
  * optimization.
@@ -100,8 +100,8 @@
 	do {								\
 		TYPE *w = (TYPE *) Tloc(b, 0);				\
 		for (r = BUNfirst(b), p = r, q = r + BATcount(b); p < q; p++) { \
+			prb = hash_##TYPE(hs, &w[p]);			\
 			if (gc) {					\
-				prb = hash_##TYPE(hs, &w[p]);		\
 				for (hb = hs->hash[prb];		\
 				     hb != BUN_NONE &&			\
 				      grps[hb - r] == grps[p - r];	\
@@ -120,12 +120,13 @@
 					}				\
 				}					\
 				if (hb != BUN_NONE &&			\
-				    grps[hb - r] != grps[p - r])	\
+				    grps[hb - r] != grps[p - r]) {	\
+					/* we didn't assign a group */	\
+					/* yet */			\
 					hb = BUN_NONE;			\
+				}					\
 			} else if (grps) {				\
-				BUN hv = hash_##TYPE(hs, &w[p]);	\
-				BUN hg = (BUN) grps[p-r];		\
-				prb = ((hv << bits) ^ hg) & hs->mask;	\
+				prb = ((prb << bits) ^ (BUN) grps[p-r]) & hs->mask; \
 				for (hb = hs->hash[prb];		\
 				     hb != BUN_NONE;			\
 				     hb = hs->link[hb]) {		\
@@ -142,7 +143,6 @@
 					}				\
 				}					\
 			} else {					\
-				prb = hash_##TYPE(hs, &w[p]);		\
 				for (hb = hs->hash[prb];		\
 				     hb != BUN_NONE;			\
 				     hb = hs->link[hb]) {		\
@@ -500,8 +500,11 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 					}
 				}
 				if (hb != BUN_NONE &&
-				    grps[hb - r] != grps[p - r])
+				    grps[hb - r] != grps[p - r]) {
+					/* we didn't assign a group
+					 * yet */
 					hb = BUN_NONE;
+				}
 			} else if (grps) {
 				for (;
 				     hb != BUN_NONE;
@@ -615,8 +618,8 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		default:
 			for (r = BUNfirst(b), p = r, q = r + BATcount(b); p < q; p++) {
 				v = BUNtail(bi, p);
+				prb = hash_any(hs, v);
 				if (gc) {
-					prb = hash_any(hs, v);
 					for (hb = hs->hash[prb];
 					     hb != BUN_NONE && grps[hb - r] == grps[p - r];
 					     hb = hs->link[hb]) {
@@ -634,12 +637,13 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 						}
 					}
 					if (hb != BUN_NONE &&
-					    grps[hb - r] != grps[p - r])
+					    grps[hb - r] != grps[p - r]) {
+						/* we didn't assign a
+						 * group yet */
 						hb = BUN_NONE;
+					}
 				} else if (grps) {
-					BUN hv = hash_any(hs, v);
-					BUN hg = (BUN) grps[p-r];
-					prb = ((hv << bits) ^ hg) & hs->mask;
+					prb = ((prb << bits) ^ (BUN) grps[p-r]) & hs->mask;
 					for (hb = hs->hash[prb];
 					     hb != BUN_NONE;
 					     hb = hs->link[hb]) {
@@ -656,7 +660,6 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 						}
 					}
 				} else {
-					prb = hash_any(hs, v);
 					for (hb = hs->hash[prb];
 					     hb != BUN_NONE;
 					     hb = hs->link[hb]) {
