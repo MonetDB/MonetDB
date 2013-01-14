@@ -329,7 +329,6 @@ volatile ATOMIC_TYPE GDK_nmallocs[MAX_BIT] = { 0 };
 #ifdef ATOMIC_LOCK
 static MT_Lock mbyteslock;
 static MT_Lock GDKstoppedLock;
-static MT_Lock vmtrimLock;
 #endif
 
 size_t _MT_pagesize = 0;	/* variable holding memory size */
@@ -930,13 +929,11 @@ GDKmunmap(void *addr, size_t size)
  * Their value is turned into a blanc space.
  */
 
-#define CATNAP 500
 int GDKrecovery = 0;
 
-#define VMTRIM_IDLE 0
-#define VMTRIM_BUSY 1
+#define CATNAP		50	/* time to sleep in ms for catnaps */
+
 static MT_Id GDKvmtrim_id;
-static int vmtrimStatus = VMTRIM_BUSY; /* owned by vmtrim thread */
 
 static void
 GDKvmtrim(void *limit)
@@ -946,7 +943,6 @@ GDKvmtrim(void *limit)
 
 	(void) limit;
 
-	ATOMIC_INIT(vmtrimLock, "GDKvmtrim");
 	do {
 		int t;
 		size_t rss;
@@ -954,12 +950,10 @@ GDKvmtrim(void *limit)
 		size_t cursize;
 
 		/* sleep using catnaps so we can exit in a timely fashion */
-		for (t = highload ? CATNAP : 10 * CATNAP; t > 0; t -= CATNAP) {
-			/* allow GDKexit to kill GDKvmtrim thread while sleeping */
-			(void) ATOMIC_COMP_SWAP(vmtrimStatus, VMTRIM_BUSY, VMTRIM_IDLE,vmtrimLock, "GDKvmtrim");
+		for (t = highload ? 500 : 5000; t > 0; t -= CATNAP) {
 			MT_sleep_ms(CATNAP);
-			/* prevent from being killed while active */
-			(void) ATOMIC_COMP_SWAP(vmtrimStatus, VMTRIM_IDLE, VMTRIM_BUSY, vmtrimLock, "GDKvmtrim");
+			if (GDKexiting())
+				return;
 		}
 		rss = MT_getrss();
 		rssdiff = (ssize_t) rss - (ssize_t) prevrss;
@@ -1167,16 +1161,11 @@ GDKexit(int status)
 {
 	MT_lock_set(&GDKthreadLock, "GDKexit");
 	if (ATOMIC_COMP_SWAP(GDKstopped, 0, 1, GDKstoppedLock, "GDKexit") == 0) {
-		/* we have to wait for possible concurrent vmtrim actions to finish properly */
-		if (GDKvmtrim_id) {
-			if (ATOMIC_GET(vmtrimStatus, vmtrimLock, "GDKexit") == VMTRIM_IDLE)
-				MT_kill_thread(GDKvmtrim_id);
-			else
-				MT_join_thread(GDKvmtrim_id);
-		}
+		if (GDKvmtrim_id)
+			MT_join_thread(GDKvmtrim_id);
 		GDKnrofthreads = 0;
 		MT_lock_unset(&GDKthreadLock, "GDKexit");
-		MT_sleep_ms(50);
+		MT_sleep_ms(CATNAP);
 
 		/* Kill all threads except myself */
 		if (status == 0) {
