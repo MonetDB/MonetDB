@@ -59,6 +59,8 @@ test = (
                     r'^exit X_\d+;$',
                 # varying width of table frames
                     r'^\+[=-]+\+$',
+                # varying error message
+                    r"^ERROR = !conversion of string '.*' to type [^ ]* failed\.$",
                  ])+')',  re.MULTILINE),
         # warnings and messages that should be treated as errors:
         re.compile('(?:'+')|(?:'.join([
