@@ -931,6 +931,8 @@ GDKmunmap(void *addr, size_t size)
 
 int GDKrecovery = 0;
 
+#define CATNAP		50	/* time to sleep in ms for catnaps */
+
 static MT_Id GDKvmtrim_id;
 
 static void
@@ -948,8 +950,8 @@ GDKvmtrim(void *limit)
 		size_t cursize;
 
 		/* sleep using catnaps so we can exit in a timely fashion */
-		for (t = highload ? 500 : 5000; t > 0; t -= 50) {
-			MT_sleep_ms(50);
+		for (t = highload ? 500 : 5000; t > 0; t -= CATNAP) {
+			MT_sleep_ms(CATNAP);
 			if (GDKexiting())
 				return;
 		}
@@ -1163,7 +1165,7 @@ GDKexit(int status)
 			MT_join_thread(GDKvmtrim_id);
 		GDKnrofthreads = 0;
 		MT_lock_unset(&GDKthreadLock, "GDKexit");
-		MT_sleep_ms(50);
+		MT_sleep_ms(CATNAP);
 
 		/* Kill all threads except myself */
 		if (status == 0) {
