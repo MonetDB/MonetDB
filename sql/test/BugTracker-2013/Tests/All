@@ -1,1 +1,1 @@
-php-size-limit-bug
+HAVE_PHP?php-size-limit-bug
