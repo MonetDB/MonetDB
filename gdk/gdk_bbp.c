@@ -1989,7 +1989,12 @@ incref(bat i, int logical, int lock)
 	/* we have the lock */
 
 	bs = BBP_desc(i);
-
+	if ( bs == 0) {
+		/* should not have happened */
+		if (lock)
+			MT_lock_unset(&GDKswapLock(i), "BBPincref");
+		return 0;
+	}
 	/* parent BATs are not relevant for logical refs */
 	hp = logical ? 0 : bs->B.H->heap.parentid;
 	tp = logical ? 0 : bs->B.T->heap.parentid;
