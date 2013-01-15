@@ -1688,7 +1688,7 @@ static int parser(char *row)
 	lng footprint = 0; /* in MB*/
 	char *fcn = 0, *stmt = 0;
 	int state = 0;
-	lng reads, writes;
+	lng reads= 0, writes= 0;
 
 	/* check basic validaty first */
 	if (row[0] != '[')
