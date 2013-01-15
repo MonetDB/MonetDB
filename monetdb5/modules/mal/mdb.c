@@ -273,9 +273,9 @@ MDBsetBigfoot(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) mb;
 	if( *flag)
-		cntxt->flags |= bigfootFlag;
+		cntxt->flags |= footprintFlag;
 	else
-		cntxt->flags &= ~bigfootFlag;
+		cntxt->flags &= ~footprintFlag;
 	return MAL_SUCCEED;
 }
 

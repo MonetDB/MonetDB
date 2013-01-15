@@ -41,6 +41,7 @@
 #include "mal_function.h"
 #include "mal_listing.h"
 #include "mal_profiler.h"
+#include "mal_runtime.h"
 #include "mal_debugger.h"
 
 stream *eventstream = 0;
@@ -86,6 +87,7 @@ static int eventcounter = 0;
 #define PROFdot     18
 #define PROFflow   19
 #define PROFping   20	/* heartbeat ping messages */
+#define PROFfootprint 21
 
 static struct {
 	str name;		/* which logical counter is needed */
@@ -112,6 +114,7 @@ static struct {
 	/*  18 */  { "dot", 0},
 	/*  19 */  { "flow", 0},
 	/*  20 */  { "ping", 0},
+	/*  21 */  { "footprint", 0},
 	/*  21 */  { 0, 0}
 };
 
@@ -268,6 +271,9 @@ offlineProfilerHeader(void)
 		logadd("uordblks,\t");
 */
 	}
+	if (profileCounter[PROFfootprint].status) {
+		logadd("footprint,\t");
+	}
 	if (profileCounter[PROFreads].status)
 		logadd("blk reads,\t");
 	if (profileCounter[PROFwrites].status)
@@ -410,6 +416,9 @@ offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc, int start)
 		logadd(SZFMT ",\t", (size_t)(infoMalloc.uordblks - prevMalloc.uordblks));
 		prevMalloc = infoMalloc;
 */
+	}
+	if (profileCounter[PROFfootprint].status) {
+		logadd(LLFMT",\t", getFootPrint(mb,stk)/1024/1024);
 	}
 #ifdef HAVE_SYS_RESOURCE_H
 	if ((profileCounter[PROFreads].status ||
@@ -1236,11 +1245,12 @@ static struct{
 	double load;
 } corestat[256];
 
-static int gatherCPULoad(char cpuload[BUFSIZ]){
+static int getCPULoad(char cpuload[BUFSIZ]){
     int cpu, len, i;
 	lng user, nice, system, idle, iowait;
     char buf[BUFSIZ],*s;
 	static FILE *proc= NULL;
+	double newload;
 
 	if ( proc == NULL || ferror(proc))
 		proc = fopen("/proc/stat","r");
@@ -1258,19 +1268,19 @@ static int gatherCPULoad(char cpuload[BUFSIZ]){
 			s +=3;
 			if ( *s == ' ') {
 				s++;
-				cpu = 0;
-			} else{
-				cpu = atoi(s);
-				s= strchr(s,' ');
-				if ( s== 0) goto skip;
-			}
+				goto skip;
+			} 
+			cpu = atoi(s);
+			s= strchr(s,' ');
+			if ( s== 0) goto skip;
+			
 			while( *s && isspace((int)*s)) s++;
 			i= sscanf(s,LLFMT" "LLFMT" "LLFMT" "LLFMT" "LLFMT,  &user, &nice, &system, &idle, &iowait);
 			if ( i != 5 )
 				goto skip;
-			corestat[cpu].load = (user - corestat[cpu].user + nice - corestat[cpu].nice + system - corestat[cpu].system);
-			if ( corestat[cpu].load )
-				corestat[cpu].load = corestat[cpu].load / (corestat[cpu].load + idle - corestat[cpu].idle);
+			newload = (user - corestat[cpu].user + nice - corestat[cpu].nice + system - corestat[cpu].system);
+			if (  newload)
+				corestat[cpu].load = newload / (newload + idle - corestat[cpu].idle);
 			corestat[cpu].user = user;
 			corestat[cpu].nice = nice;
 			corestat[cpu].system = system;
@@ -1324,7 +1334,7 @@ void profilerHeartbeatEvent(str msg)
 	clock = (time_t) tv.tv_sec;
 
 	/* get CPU load on second boundaries only */
-	if ( gatherCPULoad(cpuload) )
+	if ( getCPULoad(cpuload) )
 		return;
 	lognew();
 #ifdef HAVE_TIMES
@@ -1380,6 +1390,9 @@ void profilerHeartbeatEvent(str msg)
 		logadd("%ld,\t", infoUsage.ru_inblock - prevUsage.ru_inblock);
 		logadd("%ld,\t", infoUsage.ru_oublock - prevUsage.ru_oublock);
 		prevUsage = infoUsage;
+	}
+	if (profileCounter[PROFfootprint].status) {
+		logadd(LLFMT",\t", getFootPrint(0,0)/1024/1024);
 	}
 	if (profileCounter[PROFprocess].status && delayswitch < 0) {
 		logadd("%ld,\t", infoUsage.ru_minflt - prevUsage.ru_minflt);

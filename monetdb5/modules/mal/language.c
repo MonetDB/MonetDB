@@ -273,11 +273,11 @@ CMDsetMemoryTrace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
     (void) mb;
     if( *flag) {
-		cntxt->flags |= bigfootFlag;
-        MCdefault |= bigfootFlag;
+		cntxt->flags |= footprintFlag;
+        MCdefault |= footprintFlag;
     } else {
-		cntxt->flags &= bigfootFlag;
-        MCdefault &= ~bigfootFlag;
+		cntxt->flags &= footprintFlag;
+        MCdefault &= ~footprintFlag;
 	}
     return MAL_SUCCEED;
 }
