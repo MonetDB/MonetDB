@@ -1,3 +1,6 @@
+-- disable parallelism (mitosis & dataflow) to avoid ambiguous results 
+set optimizer='sequential_pipe';
+
 start transaction;
 
 -- only explain output because not like's give to many rows.
