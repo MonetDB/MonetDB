@@ -61,7 +61,7 @@ OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	} else
 		(void) stk;
 
-	removeDataflow(cntxt, mb);
+	removeDataflow(mb);
 	old = mb->stmt;
 	limit = mb->stop;
 	slimit = mb->ssize;
@@ -281,7 +281,7 @@ OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	addOptimizers(cntxt, mb, "default_pipe");
 	msg = optimizeMALBlock(cntxt, mb);
 	if (msg == MAL_SUCCEED) {
-		removeDataflow(cntxt, mb);
+		removeDataflow(mb);
 		msg = optimizerCheck(cntxt, mb, "optimizer.datacell", actions, (GDKusec() - clk), OPT_CHECK_ALL);
 	}
 	OPTDEBUGdatacell {
