@@ -19,6 +19,9 @@
 
 #include "mal_resource.h"
 
+#define heapinfo(X) if ((X) && (X)->base) vol = (X)->free; else vol = 0;
+#define hashinfo(X) if ((X) && (X)->mask) vol = ((X)->mask + (X)->lim + 1) * sizeof(int) + sizeof(*(X)) + cnt * sizeof(int); else vol = 0;
+
 /* MEMORY admission does not seem to have a major impact */
 lng memorypool = 0;      /* memory claimed by concurrent threads */
 int memoryclaims = 0;    /* number of threads active with expensive operations */
@@ -67,6 +70,7 @@ getMemoryClaim(MalBlkPtr mb, MalStkPtr stk, int pc, int i, int flag)
 	lng total = 0, vol = 0;
 	BAT *b;
 	InstrPtr pci = getInstrPtr(mb,pc);
+	BUN cnt;
 
 	(void)mb;
 	if (stk->stk[getArg(pci, i)].vtype == TYPE_bat) {
@@ -77,6 +81,7 @@ getMemoryClaim(MalBlkPtr mb, MalStkPtr stk, int pc, int i, int flag)
 			BBPunfix(b->batCacheid);
 			return 0;
 		}
+		cnt = BATcount(b);
 		heapinfo(&b->H->heap); total += vol;
 		heapinfo(b->H->vheap); total += vol;
 		hashinfo(b->H->hash); total += vol;
@@ -84,8 +89,6 @@ getMemoryClaim(MalBlkPtr mb, MalStkPtr stk, int pc, int i, int flag)
 		heapinfo(&b->T->heap); total += vol;
 		heapinfo(b->T->vheap); total += vol;
 		hashinfo(b->T->hash); total += vol;
-		if ( b->T->hash == 0  || b->H->hash ==0)	/* assume one hash claim */
-			total+= BATcount(b) * sizeof(lng);
 		total = total > (lng)(MEMORY_THRESHOLD * monet_memory) ? (lng)(MEMORY_THRESHOLD * monet_memory) : total;
 		BBPunfix(b->batCacheid);
 	}

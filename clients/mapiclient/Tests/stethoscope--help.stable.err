@@ -28,6 +28,7 @@ The trace options (default 'ISTest'):
   t = ticks in microseconds
   c = cpu statistics (utime,ctime,stime,cstime)
   m = rss memory as provided by OS (in MB)
+  M = memory footprint of non-persistent objects
   r = block reads
   w = block writes
   b = bytes read/written

@@ -53,8 +53,5 @@ mal_export str catchKernelException(Client cntxt, str ret);
 
 mal_export ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k);
 
-#define heapinfo(X) if ((X) && (X)->base) vol = (X)->free; else vol = 0;
-#define hashinfo(X) if ((X) && (X)->mask) vol = ((X)->mask + (X)->lim + 1) * sizeof(int) + sizeof(*(X)); else vol = 0;
-
 #define FREE_EXCEPTION(p) do { if (p && p != M5OutOfMemory) GDKfree(p); } while (0)
 #endif /*  _MAL_INTERPRET_H*/

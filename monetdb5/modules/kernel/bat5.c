@@ -1439,7 +1439,7 @@ str
 BKCsetPersistent(int *r, int *bid)
 {
 	bit flag= TRUE;
-	return BKCpersists(r,bid, &flag);
+	return BKCpersists(r, bid, &flag);
 }
 
 str
@@ -1458,15 +1458,8 @@ BKCisPersistent(bit *res, int *bid)
 str
 BKCsetTransient(int *r, int *bid)
 {
-	BAT *b;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "bat.setTransient", RUNTIME_OBJECT_MISSING);
-	}
-	BATmode(b, TRANSIENT);
-	*r = 0;
-	BBPreleaseref(b->batCacheid);
-	return MAL_SUCCEED;
+	bit flag = FALSE;
+	return BKCpersists(r, bid, &flag);
 }
 
 str

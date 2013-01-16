@@ -2777,6 +2777,8 @@ BATmode(BAT *b, int mode)
 		if (mode == PERSISTENT) {
 			if (!(BBP_status(bid) & BBPDELETED))
 				BBP_status_on(bid, BBPNEW, "BATmode");
+			else
+				BBP_status_on(bid, BBPEXISTING, "BATmode");
 			BBP_status_off(bid, BBPDELETED, "BATmode");
 		} else if (b->batPersistence == PERSISTENT) {
 			if (!(BBP_status(bid) & BBPNEW))
@@ -3037,6 +3039,7 @@ BATassertProps(BAT *b)
 {
 #ifndef NDEBUG
 	BAT *bm;
+	int bbpstatus;
 
 	/* general BAT sanity */
 	assert(b != NULL);
@@ -3051,6 +3054,11 @@ BATassertProps(BAT *b)
 	assert(b->batInserted >= b->batFirst);
 	assert(b->batFirst + b->batCount >= b->batInserted);
 	assert(b->U->first == 0);
+	bbpstatus = BBP_status(b->batCacheid);
+	/* only at most one of BBPDELETED, BBPEXISTING, BBPNEW may be set */
+	assert(((bbpstatus & BBPDELETED) != 0) +
+	       ((bbpstatus & BBPEXISTING) != 0) +
+	       ((bbpstatus & BBPNEW) != 0) <= 1);
 
 	BATassertHeadProps(b);
 	if (b->H != bm->H)

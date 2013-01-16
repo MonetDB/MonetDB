@@ -70,10 +70,10 @@ DCprocedureStmt(Client cntxt, MalBlkPtr mb, str schema, str nme)
 		f = o->data;
 		if (strcmp(f->base.name, nme) == 0) {
 			be = (void *) backend_create(m, cntxt);
-			if  (be->mvc->sa ) {
-				backend_create_func(be, f);
-				return MAL_SUCCEED;
-			}
+			if ( be->mvc->sa == NULL)
+				be->mvc->sa = sa_create();
+			backend_create_func(be, f);
+			return MAL_SUCCEED;
 		}
 	}
 	throw(SQL, "datacell.query", "Procedure missing");

@@ -29,6 +29,8 @@
 #include "mal_profiler.h"
 #include "mal_listing.h"
 
+#define heapinfo(X) ((X) && (X)->base ? (X)->free: 0)
+#define hashinfo(X) (((X) && (X)->mask)? ((X)->mask + (X)->lim + 1) * sizeof(int) + sizeof(*(X)) + cnt * sizeof(int):  0)
 /*
  * Manage the runtime profiling information
  */
@@ -141,12 +143,8 @@ runtimeTiming(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int tid, 
 			displayVolume(cntxt, getVolume(stk, pci, 1));
 			mnstr_printf(cntxt->fdout, " ");
 		}
-		if (cntxt->flags & bigfootFlag) {
-			displayVolume(cntxt, cntxt->vmfoot);
-			mnstr_printf(cntxt->fdout, ":");
-			displayVolume(cntxt, cntxt->bigfoot);
-			mnstr_printf(cntxt->fdout, " ");
-		}
+		if (cntxt->flags & footprintFlag) 
+			displayVolume(cntxt, getFootPrint(mb,stk));
 		if (cntxt->flags & cntFlag) {
 			char buf[32];
 			snprintf(buf, sizeof(buf), OIDFMT, cntxt->cnt);
@@ -206,4 +204,51 @@ void displayVolume(Client cntxt, lng vol)
 	char buf[32];
 	formatVolume(buf, (int) sizeof(buf), vol);
 	mnstr_printf(cntxt->fdout, "%s", buf);
+}
+/*
+ * The getFootPrint operation calculates the total size of all non-persistent
+ * objects and the sizes of hashes for persistent objects. Together it gives
+ * an impression of the total extra memory needed during query evaluation.
+ * The operation is relatively expensive, as it goes through the complete
+ * variable list and it may be influenced by concurrent activity.
+ * The BAT descriptors should be accessed to private access.
+ */
+static lng prevtotal=0;
+
+lng
+getFootPrint(MalBlkPtr mb, MalStkPtr stk)
+{
+    BAT *b;
+	BUN cnt;
+    lng total = 0;
+	int i, bid;
+
+	if ( !mb || !stk)
+		return prevtotal;
+	for ( i = 1; i < mb->vtop; i++)
+	if ( isaBatType(getVarType(mb,i)) && (bid = stk->stk[i].val.bval) != bat_nil){
+
+        b = BATdescriptor(bid);
+        if (b == NULL)
+            continue;
+        if (isVIEW(b)){
+			BBPreleaseref(b->batCacheid);
+            continue;
+		}
+        cnt = BATcount(b);
+		if ( b->batPersistence != PERSISTENT) {
+			if( b->H ) total += heapinfo(&b->H->heap);
+			if( b->H ) total += heapinfo(b->H->vheap);
+
+			if( b->T ) total += heapinfo(&b->T->heap);
+			if( b->T ) total += heapinfo(b->T->vheap);
+		}
+
+		if ( b->H ) total += hashinfo(b->H->hash);
+		if ( b->T ) total += hashinfo(b->T->hash); 
+		BBPreleaseref(b->batCacheid);
+    }
+	if (total)
+		prevtotal= total;
+	return total;
 }
