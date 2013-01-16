@@ -2777,6 +2777,8 @@ BATmode(BAT *b, int mode)
 		if (mode == PERSISTENT) {
 			if (!(BBP_status(bid) & BBPDELETED))
 				BBP_status_on(bid, BBPNEW, "BATmode");
+			else
+				BBP_status_on(bid, BBPEXISTING, "BATmode");
 			BBP_status_off(bid, BBPDELETED, "BATmode");
 		} else if (b->batPersistence == PERSISTENT) {
 			if (!(BBP_status(bid) & BBPNEW))
