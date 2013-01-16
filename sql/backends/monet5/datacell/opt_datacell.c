@@ -134,7 +134,7 @@ OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			/* remove delta processing for baskets */
 			if (getModuleId(p) == sqlRef && (getFunctionId(p) == deltaRef || getFunctionId(p) == projectdeltaRef || getFunctionId(p) == subdeltaRef) ) {
 				clrFunction(p);
-				getArg(p,1) = alias[getArg(p, 1)];
+				getArg(p,1) = alias[getArg(p,1)];
 				p->argc =2;
 				pushInstruction(mb, p);
 				continue;
@@ -175,13 +175,7 @@ OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 							break;
 						}
 
-					if (fnd == 0){
-						for (j = 0; j < p->argc; j++)
-							if (alias[getArg(p, j)])
-								getArg(p, j) = alias[getArg(p, j)];
-						pushInstruction(mb, p);
-					} else
-						freeInstruction(p);
+					pushInstruction(mb, p);
 					continue;
 				} else
 				if (bskt) {

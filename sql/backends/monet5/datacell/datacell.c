@@ -70,6 +70,8 @@ DCprocedureStmt(Client cntxt, MalBlkPtr mb, str schema, str nme)
 		f = o->data;
 		if (strcmp(f->base.name, nme) == 0) {
 			be = (void *) backend_create(m, cntxt);
+			if ( be->mvc->sa == NULL)
+				be->mvc->sa = sa_create();
 			backend_create_func(be, f);
 			return MAL_SUCCEED;
 		}
