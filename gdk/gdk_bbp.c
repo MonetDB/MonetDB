@@ -1302,8 +1302,6 @@ BBPdir_subcommit(int cnt, bat *subcommit)
 	n = 0;
 	i = 1;
 	for (;;) {
-		int mask = BBPPERSISTENT;	/* BBP.dir consists of all persistent bats only */
-
 		/* but for subcommits, all except the bats in the list
 		 * retain their existing mode */
 		if (n == 0 && fp != NULL) {
@@ -1317,7 +1315,8 @@ BBPdir_subcommit(int cnt, bat *subcommit)
 			break;
 		if (j < cnt && (n == 0 || subcommit[j] <= n || fp == NULL)) {
 			i = subcommit[j];
-			if (BBP_status(i) & mask) {
+			/* BBP.dir consists of all persistent bats only */
+			if (BBP_status(i) & BBPPERSISTENT) {
 				if (new_bbpentry(s, i) < 0)
 					goto bailout;
 				IODEBUG new_bbpentry(GDKstdout, i);
@@ -1382,10 +1381,9 @@ BBPdir(int cnt, bat *subcommit)
 		goto bailout;
 
 	for (i = 1; i < BBPsize; i++) {
-		int mask = BBPPERSISTENT;	/* BBP.dir consists of all persistent bats */
-
-		/* write the entry */
-		if (BBP_status(i) & mask) {
+		/* write the entry
+		 * BBP.dir consists of all persistent bats */
+		if (BBP_status(i) & BBPPERSISTENT) {
 			if (new_bbpentry(s, i) < 0)
 				break;
 			IODEBUG new_bbpentry(GDKstdout, i);
