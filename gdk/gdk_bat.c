@@ -3039,6 +3039,7 @@ BATassertProps(BAT *b)
 {
 #ifndef NDEBUG
 	BAT *bm;
+	int bbpstatus;
 
 	/* general BAT sanity */
 	assert(b != NULL);
@@ -3052,6 +3053,11 @@ BATassertProps(BAT *b)
 	assert(b->batFirst >= b->batDeleted);
 	assert(b->batInserted >= b->batFirst);
 	assert(b->batFirst + b->batCount >= b->batInserted);
+	bbpstatus = BBP_status(b->batCacheid);
+	/* only at most one of BBPDELETED, BBPEXISTING, BBPNEW may be set */
+	assert(((bbpstatus & BBPDELETED) != 0) +
+	       ((bbpstatus & BBPEXISTING) != 0) +
+	       ((bbpstatus & BBPNEW) != 0) <= 1);
 
 	BATassertHeadProps(b);
 	if (b->H != bm->H)
