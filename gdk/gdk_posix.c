@@ -307,7 +307,7 @@ MT_getrss(void)
 	if (task_info(task, TASK_BASIC_INFO_64, (task_info_t)&t_info, &t_info_count) != KERN_INVALID_POLICY)
 		return t_info.resident_size;  /* bytes */
 #elif defined(HAVE_KVM_H) && defined(HAVE_SYS_SYSCTL_H)
-	/* get RSS on FreeBSD */
+	/* get RSS on FreeBSD and NetBSD */
 	struct kinfo_proc *ki;
 	int ski = 1;
 	kvm_t *kd;
@@ -323,7 +323,12 @@ MT_getrss(void)
 		return 0;
 	}
 
+#ifdef __NetBSD__		/* should we use configure for this? */
+	/* see bug 3217 */
+	rss = ki->kp_eproc.e_vm.vm_rssize;
+#else
 	rss = ki->ki_rssize;
+#endif
 
 	kvm_close(kd);
 
