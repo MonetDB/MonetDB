@@ -26,7 +26,7 @@ Ready.
 # 10:08:23 >  
 
 #start transaction;
-#create table t3220 (y double, z float);
+#create table t3220 (y double, z real);
 #insert into t3220 values (0,0);
 [ 1	]
 #insert into t3220 values (0.1,0.1);
@@ -40,99 +40,99 @@ Ready.
 #select * from t3220;
 % sys.t3220,	sys.t3220 # table_name
 % y,	z # name
-% double,	double # type
-% 24,	24 # length
+% double,	real # type
+% 24,	15 # length
 [ 0,	0	]
-[ 0.1,	0.1	]
-[ -0.1,	-0.1	]
-[ -0.2,	-0.2	]
-[ 0.2,	0.2	]
+[ 0.1,	0.100000001	]
+[ -0.1,	-0.100000001	]
+[ -0.2,	-0.200000003	]
+[ 0.2,	0.200000003	]
 #select * from t3220 where y = 0;
 % sys.t3220,	sys.t3220 # table_name
 % y,	z # name
-% double,	double # type
-% 24,	24 # length
+% double,	real # type
+% 24,	15 # length
 [ 0,	0	]
 #select * from t3220 where z = 0;
 % sys.t3220,	sys.t3220 # table_name
 % y,	z # name
-% double,	double # type
-% 24,	24 # length
+% double,	real # type
+% 24,	15 # length
 [ 0,	0	]
 #select * from t3220 where y < 0;
 % sys.t3220,	sys.t3220 # table_name
 % y,	z # name
-% double,	double # type
-% 24,	24 # length
-[ -0.1,	-0.1	]
-[ -0.2,	-0.2	]
+% double,	real # type
+% 24,	15 # length
+[ -0.1,	-0.100000001	]
+[ -0.2,	-0.200000003	]
 #select * from t3220 where z < 0;
 % sys.t3220,	sys.t3220 # table_name
 % y,	z # name
-% double,	double # type
-% 24,	24 # length
-[ -0.1,	-0.1	]
-[ -0.2,	-0.2	]
+% double,	real # type
+% 24,	15 # length
+[ -0.1,	-0.100000001	]
+[ -0.2,	-0.200000003	]
 #select * from t3220 where y > 0;
 % sys.t3220,	sys.t3220 # table_name
 % y,	z # name
-% double,	double # type
-% 24,	24 # length
-[ 0.1,	0.1	]
-[ 0.2,	0.2	]
+% double,	real # type
+% 24,	15 # length
+[ 0.1,	0.100000001	]
+[ 0.2,	0.200000003	]
 #select * from t3220 where z > 0;
 % sys.t3220,	sys.t3220 # table_name
 % y,	z # name
-% double,	double # type
-% 24,	24 # length
-[ 0.1,	0.1	]
-[ 0.2,	0.2	]
+% double,	real # type
+% 24,	15 # length
+[ 0.1,	0.100000001	]
+[ 0.2,	0.200000003	]
 #select * from t3220 where y <> 0;
 % sys.t3220,	sys.t3220 # table_name
 % y,	z # name
-% double,	double # type
-% 24,	24 # length
-[ 0.1,	0.1	]
-[ -0.1,	-0.1	]
-[ -0.2,	-0.2	]
-[ 0.2,	0.2	]
+% double,	real # type
+% 24,	15 # length
+[ 0.1,	0.100000001	]
+[ -0.1,	-0.100000001	]
+[ -0.2,	-0.200000003	]
+[ 0.2,	0.200000003	]
 #select * from t3220 where z <> 0;
 % sys.t3220,	sys.t3220 # table_name
 % y,	z # name
-% double,	double # type
-% 24,	24 # length
-[ 0.1,	0.1	]
-[ -0.1,	-0.1	]
-[ -0.2,	-0.2	]
-[ 0.2,	0.2	]
+% double,	real # type
+% 24,	15 # length
+[ 0.1,	0.100000001	]
+[ -0.1,	-0.100000001	]
+[ -0.2,	-0.200000003	]
+[ 0.2,	0.200000003	]
 #select * from t3220 where y > 0.1;
 % sys.t3220,	sys.t3220 # table_name
 % y,	z # name
-% double,	double # type
-% 24,	24 # length
-[ 0.2,	0.2	]
+% double,	real # type
+% 24,	15 # length
+[ 0.2,	0.200000003	]
 #select * from t3220 where y < 0.1;
 % sys.t3220,	sys.t3220 # table_name
 % y,	z # name
-% double,	double # type
-% 24,	24 # length
+% double,	real # type
+% 24,	15 # length
 [ 0,	0	]
-[ -0.1,	-0.1	]
-[ -0.2,	-0.2	]
+[ -0.1,	-0.100000001	]
+[ -0.2,	-0.200000003	]
 #select * from t3220 where y < -0.1;
 % sys.t3220,	sys.t3220 # table_name
 % y,	z # name
-% double,	double # type
-% 24,	24 # length
-[ -0.2,	-0.2	]
+% double,	real # type
+% 24,	15 # length
+[ -0.2,	-0.200000003	]
 #select * from t3220 where y > -0.1;
 % sys.t3220,	sys.t3220 # table_name
 % y,	z # name
-% double,	double # type
-% 24,	24 # length
+% double,	real # type
+% 24,	15 # length
 [ 0,	0	]
-[ 0.1,	0.1	]
-[ 0.2,	0.2	]
+[ 0.1,	0.100000001	]
+[ 0.2,	0.200000003	]
 #rollback;
 
 # 10:08:24 >  
