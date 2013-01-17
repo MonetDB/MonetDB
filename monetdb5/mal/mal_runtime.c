@@ -109,7 +109,7 @@ runtimeTiming(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int tid, 
 	str line;
 	if (cntxt->flags && stk->cmd != '\0' && stk->cmd != 't' && stk->cmd != 'C') {
 		if (lock)
-			MT_lock_set(&*lock, "timing");
+			MT_lock_set(lock, "timing");
 		mnstr_printf(cntxt->fdout, "= ");    /* single column rendering */
 		if (cntxt->flags & timerFlag) {
 			char buf[32];
@@ -158,7 +158,7 @@ runtimeTiming(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int tid, 
 		if (cntxt->flags & timerFlag)
 			cntxt->timer = GDKusec();
 		if (lock)
-			MT_lock_unset(&*lock, "timing");
+			MT_lock_unset(lock, "timing");
 	}
 }
 /*

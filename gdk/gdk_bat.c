@@ -146,31 +146,31 @@ BATcreatedesc(int ht, int tt, int heapnames)
 	bn->batMaphheap = 0;
 	bn->batMaptheap = 0;
 	if (heapnames) {
-		str nme = BBP_physical(bn->batCacheid);
+		const char *nme = BBP_physical(bn->batCacheid);
 
 		if (ht) {
-			bn->H->heap.filename = (str) GDKmalloc(strlen(nme) + 12);
+			bn->H->heap.filename = GDKmalloc(strlen(nme) + 12);
 			if (bn->H->heap.filename == NULL)
 				goto bailout;
 			GDKfilepath(bn->H->heap.filename, NULL, nme, "head");
 		}
 
 		if (tt) {
-			bn->T->heap.filename = (str) GDKmalloc(strlen(nme) + 12);
+			bn->T->heap.filename = GDKmalloc(strlen(nme) + 12);
 			if (bn->T->heap.filename == NULL)
 				goto bailout;
 			GDKfilepath(bn->T->heap.filename, NULL, nme, "tail");
 		}
 
 		if (ATOMneedheap(ht)) {
-			if ((bn->H->vheap = (Heap *) GDKzalloc(sizeof(Heap))) == NULL || (bn->H->vheap->filename = (str) GDKmalloc(strlen(nme) + 12)) == NULL)
+			if ((bn->H->vheap = (Heap *) GDKzalloc(sizeof(Heap))) == NULL || (bn->H->vheap->filename = GDKmalloc(strlen(nme) + 12)) == NULL)
 				goto bailout;
 			GDKfilepath(bn->H->vheap->filename, NULL, nme, "hheap");
 			bn->H->vheap->parentid = bn->batCacheid;
 		}
 
 		if (ATOMneedheap(tt)) {
-			if ((bn->T->vheap = (Heap *) GDKzalloc(sizeof(Heap))) == NULL || (bn->T->vheap->filename = (str) GDKmalloc(strlen(nme) + 12)) == NULL)
+			if ((bn->T->vheap = (Heap *) GDKzalloc(sizeof(Heap))) == NULL || (bn->T->vheap->filename = GDKmalloc(strlen(nme) + 12)) == NULL)
 				goto bailout;
 			GDKfilepath(bn->T->vheap->filename, NULL, nme, "theap");
 			bn->T->vheap->parentid = bn->batCacheid;
@@ -710,9 +710,9 @@ static int
 heapcopy(BAT *bn, char *ext, Heap *dst, Heap *src)
 {
 	if (src->filename && src->newstorage != STORE_MEM) {
-		str nme = BBP_physical(bn->batCacheid);
+		const char *nme = BBP_physical(bn->batCacheid);
 
-		if ((dst->filename = (str) GDKmalloc(strlen(nme) + 12)) == NULL)
+		if ((dst->filename = GDKmalloc(strlen(nme) + 12)) == NULL)
 			return -1;
 		GDKfilepath(dst->filename, NULL, nme, ext);
 	}
