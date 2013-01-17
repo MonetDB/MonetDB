@@ -1,4 +1,4 @@
-stderr of test 'cast_select` in directory 'test/snodgrass` itself:
+stderr of test 'cast_select` in directory 'sql/test/snodgrass` itself:
 
 MAPI  = monetdb@sofia:38848
 QUERY = SELECT CAST(TIME '12:34:56' AS TIMESTAMP WITH TIME ZONE) = TIMESTAMP '1997-07-23 12:34:56-07:00';
