@@ -56,6 +56,7 @@ MRqueueCreate(int sz)
 	MT_lock_set(&mrqlock, "q_create");
 	MT_sema_init(&mrqsema, 0, "q_create");
 	if ( mrqueue ) {
+		MT_lock_unset(&mrqlock, "q_create");
 		GDKerror("One map-reduce queue allowed");
 		return;
 	}
