@@ -1,4 +1,4 @@
-stdout of test 'remote04` in directory 'modules/mal` itself:
+stdout of test 'remote04` in directory 'monetdb5/modules/mal` itself:
 
 
 # 18:53:42 >  
@@ -40,7 +40,7 @@ function user.main():void;
 # shutdown 
     remote.disconnect(conn);
 end main;
-[ "mTests_modules_mal_monetdb_0" ]
+[ "mTests_monetdb5_modules_mal_monetdb_0" ]
 [ "rmt0_b_bat_oid_str" ]
 [ "rmt1__16_str" ]
 [ "rmt2__12_str" ]

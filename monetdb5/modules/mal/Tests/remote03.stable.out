@@ -1,4 +1,4 @@
-stdout of test 'remote03` in directory 'modules/mal` itself:
+stdout of test 'remote03` in directory 'monetdb5/modules/mal` itself:
 
 
 # 15:28:56 >  
@@ -66,7 +66,7 @@ exit MALException:str ;
     remote.disconnect(conn);
 end main;
 [ "Received first error from the remote site" ]
-!SyntaxException:remote.exec:(mapi:monetdb://monetdb@vienna.ins.cwi.nl/mTests_modules_mal) rmt0__8_void := io.print.bla();
+!SyntaxException:remote.exec:(mapi:monetdb://monetdb@vienna.ins.cwi.nl/mTests_monetdb5_modules_mal) rmt0__8_void := io.print.bla();
 SyntaxException:parseError:                    ^'(' expected
 
 [ "rmt1_bn_bat_oid_str" ]
