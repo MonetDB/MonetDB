@@ -56,7 +56,12 @@
 # endif
 #endif
 
+/* #define FOOTPRINT */
+#ifdef FOOTPRINT
+#define COUNTERSDEFAULT "ISTestMmrw"
+#else
 #define COUNTERSDEFAULT "ISTestmrw"
+#endif
 
 /* #define _DEBUG_TOMOGRAPH_*/
 
@@ -102,7 +107,9 @@ profileCounter[] = {
 	/*  2  */ { 'D', "dot", "dot", 0 },
 	/*  3  */ { 'F', "flow", "flow", 0 },
 	/*  4  */ { 'x', "ping50", "ping", 0 },
+#ifdef FOOTPRINT
 	/*  5  */ { 'M', "footprint", "footprint", 0 },
+#endif
 	/*  6  */ { 0, 0, 0, 0 }
 };
 
@@ -835,6 +842,7 @@ static void showmemory(void)
 			if (box[i].memend < min)
 				min = box[i].memend;
 
+#ifdef FOOTPRINT
 			if (box[i].footstart > max)
 				max = box[i].footstart;
 			if (box[i].footend > max)
@@ -843,6 +851,7 @@ static void showmemory(void)
 				min = box[i].footstart;
 			if (box[i].footend < min && box[i].footend > 0)
 				min = box[i].footend;
+#endif
 		}
 	if (min == max) {
 		min -= 1;
@@ -875,8 +884,12 @@ static void showmemory(void)
 	mm = (mx - mn) / 50.0; /* 2% top & bottom margin */
 	fprintf(gnudata, "set yrange [%f:%f]\n", mn - mm, mx + mm);
 	fprintf(gnudata, "set ytics (\"%.*f\" %f, \"%.*f\" %f) nomirror\n", digits, min / scale, mn, digits, max / scale, mx);
+#ifdef FOOTPRINT
 	fprintf(gnudata, "plot \"%s.dat\" using 1:2 notitle with dots linecolor rgb \"blue\", \\\n", (tracefile ? "scratch" : filename));
 	fprintf(gnudata, " \"%s.dat\" using 1:3 notitle with dots linecolor rgb \"black\"\n", (tracefile ? "scratch" : filename));
+#else
+	fprintf(gnudata, "plot \"%s.dat\" using 1:2 notitle with dots linecolor rgb \"blue\"\n", (tracefile ? "scratch" : filename));
+#endif
 	fprintf(gnudata, "unset yrange\n");
 }
 
@@ -1754,12 +1767,14 @@ static int parser(char *row)
 	if (c == 0)
 		return -8;
 
+#ifdef FOOTPRINT
 	footprint = strtoll(c + 1, NULL, 10);
 	if (debug && state < PING)
 		fprintf(stderr, "%s\n", row);
 	c = strchr(c + 1, (int) ',');
 	if (c == 0 && state >= PING) 
 		goto wrapup;
+#endif
 
 	reads = strtoll(c + 1, NULL, 10);
 	c = strchr(c + 1, (int) ',');
@@ -1796,7 +1811,9 @@ static int parser(char *row)
 	if (fcn && strchr(fcn, (int) '('))
 		*strchr(fcn, (int) '(') = 0;
 
+#ifdef FOOTPRINT
 wrapup:
+#endif
 	update(state, thread, clkticks, ticks, memory, footprint, reads, writes, fcn, stmt);
 #else
 	(void) row;
