@@ -56,7 +56,7 @@
 # endif
 #endif
 
-#define COUNTERSDEFAULT "ISTestmMrw"
+#define COUNTERSDEFAULT "ISTestmrw"
 
 /* #define _DEBUG_TOMOGRAPH_*/
 
