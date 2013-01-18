@@ -156,6 +156,10 @@ gdk_export int MT_kill_thread(MT_Id t);
 /*
  * @- MT Lock API
  */
+#include "gdk_atomic.h"
+
+#ifdef ATOMIC_LOCK
+
 #if !defined(HAVE_PTHREAD_H) && defined(_MSC_VER)
 typedef HANDLE pthread_mutex_t;
 typedef void *pthread_mutexattr_t;
@@ -180,16 +184,56 @@ typedef pthread_mutex_t MT_Lock;
 #define MT_lock_try(l)		pthread_mutex_trylock((pthread_mutex_t *) (l))
 #define MT_lock_dump(l, fp, n)	MT_log(/*nothing*/, &(l), "MT_dump_lock", n, fp)
 
+#else
+
+typedef volatile int MT_Lock;
+#ifndef NDEBUG
+gdk_export volatile ATOMIC_TYPE GDKlockcnt;
+gdk_export volatile ATOMIC_TYPE GDKlockcontentioncnt;
+gdk_export volatile ATOMIC_TYPE GDKlocksleepcnt;
+#define _INCREMENT_COUNTER_(v, n)	ATOMIC_INC(v, dummy, n)
+#else
+#define _INCREMENT_COUNTER_(v, n)	((void) 0)
+#endif
+#define MT_lock_init(l, n)	ATOMIC_SET_int(*l, 0, dummy, n)
+#define MT_lock_set(l, n)						\
+	do {								\
+		_INCREMENT_COUNTER_(GDKlockcnt, n);			\
+		if (ATOMIC_CAS_int(*l, 0, 1, dummy, n) != 0) {		\
+			/* we didn't get the lock */			\
+			int _spincnt = 0;				\
+			_INCREMENT_COUNTER_(GDKlockcontentioncnt, n);	\
+			do {						\
+				if (++_spincnt >= 1024) {		\
+					if (_spincnt == 1024)		\
+						_INCREMENT_COUNTER_(GDKlocksleepcnt, n); \
+					MT_sleep_ms(_spincnt >> 10);	\
+				}					\
+			} while (ATOMIC_CAS_int(*l, 0, 1, dummy, n) != 0); \
+		}							\
+	} while (0)
+#define MT_lock_unset(l, n)	ATOMIC_SET_int(*l, 0, dummy, n)
+#define MT_lock_destroy(l)	((void) 0)
+/* return 0 on success, -1 on failure to get the lock */
+#define MT_lock_try(l)	((ATOMIC_CAS_int(*l, 0, 1, dummy, dummy) == 0) - 1)
+
+#undef PTHREAD_MUTEX_INITIALIZER
+#define PTHREAD_MUTEX_INITIALIZER	0
+#endif
+
 /*
  * @- MT Semaphore API
  */
 #if !defined(HAVE_PTHREAD_H) && defined(_MSC_VER)
+
 typedef HANDLE pthread_sema_t;
 gdk_export void pthread_sema_init(pthread_sema_t *s, int flag, int nresources);
 gdk_export void pthread_sema_destroy(pthread_sema_t *s);
 gdk_export void pthread_sema_up(pthread_sema_t *s);
 gdk_export void pthread_sema_down(pthread_sema_t *s);
+
 #elif defined(_AIX) || defined(__MACH__)
+
 typedef struct {
 	int cnt;
 	pthread_mutex_t mutex;
@@ -200,12 +244,15 @@ gdk_export void pthread_sema_init(pthread_sema_t *s, int flag, int nresources);
 gdk_export void pthread_sema_destroy(pthread_sema_t *s);
 gdk_export void pthread_sema_up(pthread_sema_t *s);
 gdk_export void pthread_sema_down(pthread_sema_t *s);
+
 #else
+
 #define pthread_sema_t		sem_t
 #define pthread_sema_init	sem_init
 #define pthread_sema_destroy	sem_destroy
 #define pthread_sema_up		sem_post
 #define pthread_sema_down(x)	while(sem_wait(x))
+
 #endif
 
 typedef pthread_sema_t MT_Sema;
@@ -219,32 +266,6 @@ typedef pthread_sema_t MT_Sema;
 #define MT_sema_up(s, n)	MT_log(pthread_sema_up(s), (s), "MT_up_sema", n, stderr)
 #define MT_sema_down(s, n)	MT_log_trace(pthread_sema_down(s), (s), "MT_down_sema", n, stderr, s)
 #define MT_sema_dump(s, fp, n)	MT_log(/*nothing*/, (s), "MT_dump_sema", n, fp)
-
-/*
- * @- MT Conditional Variable API
- */
-#if !defined(HAVE_PTHREAD_H) && defined(_MSC_VER)
-typedef struct {
-	int waiters_count;	/* number of waiting threads */
-	CRITICAL_SECTION waiters_count_lock; /* serialize access to waiters_count_ */
-	HANDLE sema;		/* queue up threads waiting for condition */
-} pthread_cond_t;
-typedef void *pthread_condattr_t;
-gdk_export int pthread_cond_init(pthread_cond_t *, pthread_condattr_t *);
-gdk_export int pthread_cond_destroy(pthread_cond_t *);
-gdk_export int pthread_cond_signal(pthread_cond_t *);
-gdk_export int pthread_cond_wait(pthread_cond_t *, pthread_mutex_t *);
-#endif
-typedef pthread_cond_t MT_Cond;
-
-#define MT_cond_init(c, n)					\
-	do {							\
-		pthread_cond_init((pthread_cond_t*) (c), NULL); \
-		MT_locktrace_set((c), n);			\
-	} while (0)
-#define MT_cond_destroy(c)	pthread_cond_destroy((pthread_cond_t*) (c))
-#define MT_cond_signal(c, n)	MT_log(pthread_cond_signal((pthread_cond_t*) (c)), (c), "MT_signal_cond", n, stderr)
-#define MT_cond_wait(c, l, n)	MT_log_trace(pthread_cond_wait((pthread_cond_t*) (c), (pthread_mutex_t *) (l)), (c), "MT_wait_cond", n, stderr, c)
 
 gdk_export int MT_check_nr_cores(void);
 

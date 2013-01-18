@@ -71,6 +71,12 @@ MT_Lock MT_system_lock
 #endif
 	;
 
+#ifndef NDEBUG
+volatile ATOMIC_TYPE GDKlockcnt;
+volatile ATOMIC_TYPE GDKlockcontentioncnt;
+volatile ATOMIC_TYPE GDKlocksleepcnt;
+#endif
+
 #ifdef MT_LOCK_TRACE
 unsigned long long MT_locktrace_cnt[65536] = { 0 };
 char *MT_locktrace_nme[65536] = { NULL };

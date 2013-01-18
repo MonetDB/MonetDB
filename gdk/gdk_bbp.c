@@ -246,15 +246,13 @@ BBP_getpid(void)
 #define BBP_unload_dec(bid, nme)				\
 	do {							\
 		MT_lock_set(&GDKunloadLock, nme);		\
-		if (--BBPunloadCnt == 0)			\
-			MT_cond_signal(&GDKunloadCond, nme);	\
+		--BBPunloadCnt;					\
 		assert(BBPunloadCnt >= 0);			\
 		MT_lock_unset(&GDKunloadLock, nme);		\
 	} while (0)
 
 static int BBPunloadCnt = 0;
 static MT_Lock GDKunloadLock;
-static MT_Cond GDKunloadCond;
 
 void
 BBPlock(const char *nme)
@@ -262,9 +260,13 @@ BBPlock(const char *nme)
 	int i;
 
 	/* wait for all pending unloads to finish */
+	(void) nme;
 	MT_lock_set(&GDKunloadLock, nme);
-	if (BBPunloadCnt > 0)
-		MT_cond_wait(&GDKunloadCond, &GDKunloadLock, nme);
+	while (BBPunloadCnt > 0) {
+		MT_lock_unset(&GDKunloadLock, nme);
+		MT_sleep_ms(1);
+		MT_lock_set(&GDKunloadLock, nme);
+	}
 
 	for (i = 0; i <= BBP_THREADMASK; i++)
 		MT_lock_set(&GDKtrimLock(i), nme);
@@ -283,6 +285,7 @@ BBPunlock(const char *nme)
 {
 	int i;
 
+	(void) nme;
 	for (i = BBP_BATMASK; i >= 0; i--)
 		MT_lock_unset(&GDKswapLock(i), nme);
 	for (i = BBP_THREADMASK; i >= 0; i--)
@@ -976,7 +979,6 @@ BBPinit(void)
 	oid BBPoid;
 
 	MT_lock_init(&GDKunloadLock, "GDKunloadLock");
-	MT_cond_init(&GDKunloadCond, "GDKunloadCond");
 
 	/* first move everything from SUBDIR to BAKDIR (its parent) */
 	if (BBPrecover_subdir() < 0)
@@ -2467,6 +2469,7 @@ BBPfree(BAT *b, const char *calledFrom)
 	int ret;
 
 	assert(BBPswappable(b));
+	(void) calledFrom;
 
 	/* write dirty BATs before being unloaded */
 	ret = BBPsave(b);
