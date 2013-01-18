@@ -485,14 +485,11 @@ MT_ignore_exceptions(struct _EXCEPTION_POINTERS *ExceptionInfo)
 	return EXCEPTION_EXECUTE_HANDLER;
 }
 
-static pthread_mutex_t MT_mmap_lock;
-
 void
 MT_init_posix(void)
 {
 	MT_heapbase = 0;
 	SetUnhandledExceptionFilter(MT_ignore_exceptions);
-	pthread_mutex_init(&MT_mmap_lock, 0);
 }
 
 size_t

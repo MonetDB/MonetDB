@@ -283,6 +283,8 @@ MT_kill_thread(MT_Id t)
 	return -1;
 }
 
+#ifdef ATOMIC_LOCK
+
 void
 pthread_mutex_init(pthread_mutex_t *mutex, const pthread_mutexattr_t *mutexattr)
 {
@@ -314,6 +316,8 @@ pthread_mutex_unlock(pthread_mutex_t *mutex)
 	return ReleaseMutex(*mutex) ? 0 : -1;
 }
 
+#endif
+
 void
 pthread_sema_init(pthread_sema_t *s, int flag, int nresources)
 {
@@ -338,60 +342,9 @@ pthread_sema_down(pthread_sema_t *s)
 {
 	WaitForSingleObject(*s, INFINITE);
 }
-int
-pthread_cond_init(pthread_cond_t *cv, pthread_condattr_t *a)
-{
-	(void) a;
-	cv->waiters_count = 0;
-	cv->sema = CreateSemaphore(NULL, 0, 0x7fffffff, NULL);
-	InitializeCriticalSection(&cv->waiters_count_lock);
-	return 0;
-}
 
-int
-pthread_cond_destroy(pthread_cond_t *cv)
-{
-	CloseHandle(cv->sema);
-	return 0;
-}
-
-int
-pthread_cond_signal(pthread_cond_t *cv)
-{
-	int have_waiters;
-
-	EnterCriticalSection(&cv->waiters_count_lock);
-	have_waiters = cv->waiters_count > 0;
-	LeaveCriticalSection(&cv->waiters_count_lock);
-
-	/* If there aren't any waiters, then this is a no-op. */
-	if (have_waiters)
-		ReleaseSemaphore(cv->sema, 1, 0);
-	return 0;
-}
-
-int
-pthread_cond_wait(pthread_cond_t *cv, pthread_mutex_t *external_mutex)
-{
-	EnterCriticalSection(&cv->waiters_count_lock);
-	cv->waiters_count++;
-	LeaveCriticalSection(&cv->waiters_count_lock);
-
-	/* This call atomically releases the mutex and waits on the
-	 * semaphore until <pthread_cond_signal> or
-	 * <pthread_cond_broadcast> are called by another thread. */
-	SignalObjectAndWait(*external_mutex, cv->sema, INFINITE, FALSE);
-
-	EnterCriticalSection(&cv->waiters_count_lock);
-	cv->waiters_count--;
-	LeaveCriticalSection(&cv->waiters_count_lock);
-
-	/* Always regain the external mutex since that's the guarantee
-	 * we give to our callers. */
-	WaitForSingleObject(*external_mutex, INFINITE);
-	return 0;
-}
 #else  /* !defined(HAVE_PTHREAD_H) && defined(_MSC_VER) */
+
 #ifdef HAVE_PTHREAD_SIGMASK
 static void
 MT_thread_sigmask(sigset_t * new_mask, sigset_t * orig_mask)
