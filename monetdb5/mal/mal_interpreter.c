@@ -540,6 +540,7 @@ callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[], char debug)
 		stk->cmd = debug;
 		runtimeProfileBegin(cntxt, mb, stk, 0, &runtimeProfile, 1);
 		ret = runMALsequence(cntxt, mb, 1, 0, stk, 0, 0);
+		runtimeProfile.ppc = 0; /* also finalize function call event */
 		runtimeProfileExit(cntxt, mb, stk, &runtimeProfile);
 		break;
 	case FACTORYsymbol:
@@ -595,10 +596,8 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 	}
 
 	/* also produce event record for start of function */
-	if ( startpc == 1 )  {
+	if ( startpc == 1 ) 
 		runtimeProfileInit(mb, &runtimeProfileFunction, cntxt->flags & memoryFlag);
-		runtimeProfileBegin(cntxt, mb, stk, 0, &runtimeProfileFunction, 1);
-	}
 	stkpc = startpc;
 	exceptionVar = -1;
 

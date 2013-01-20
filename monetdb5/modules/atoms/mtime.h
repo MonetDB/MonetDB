@@ -176,8 +176,10 @@ mtime_export str MTIMEdate_addyears(date *ret, date *v, int *delta);
 mtime_export str MTIMEdate_adddays(date *ret, date *v, int *delta);
 mtime_export str MTIMEdate_addmonths(date *ret, date *v, int *delta);
 mtime_export str MTIMEdate_diff(int *ret, date *v1, date *v2);
+mtime_export str MTIMEdate_diff_bulk(bat *ret, bat *bid1, bat *bid2);
 mtime_export str MTIMEtimestamp_add(timestamp *ret, timestamp *v, lng *msecs);
 mtime_export str MTIMEtimestamp_diff(lng *ret, timestamp *v1, timestamp *v2);
+mtime_export str MTIMEtimestamp_diff_bulk(bat *ret, bat *bid1, bat *bid2);
 mtime_export str MTIMEtimestamp_inside_dst(bit *ret, timestamp *p, tzone *z);
 
 mtime_export str MTIMEtimestamp_year(int *ret, timestamp *t);

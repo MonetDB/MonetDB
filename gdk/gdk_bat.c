@@ -2201,9 +2201,9 @@ BATseqbase(BAT *b, oid o)
 				if (!b->hkey) {
 					b->hkey = TRUE;
 					b->H->nokey[0] = b->H->nokey[1] = 0;
-					b->H->nonil = 1;
-					b->H->nil = 0;
 				}
+				b->H->nonil = 1;
+				b->H->nil = 0;
 				b->hsorted = 1;
 				b->hrevsorted = b->U->count <= 1;
 			}

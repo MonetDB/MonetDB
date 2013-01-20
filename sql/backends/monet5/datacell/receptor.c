@@ -81,7 +81,8 @@ RCfind(str nme)
 	for (r = rcAnchor; r; r = r->nxt)
 		if (strcmp(nme, r->name) == 0)
 			return r;
-	snprintf(buf,BUFSIZ,"datacell.%s",nme);
+	snprintf(buf, BUFSIZ, "datacell.%s", nme);
+	BSKTtolower(buf);
 	for (r = rcAnchor; r; r = r->nxt)
 		if (strcmp(buf, r->name) == 0)
 			return r;
@@ -102,10 +103,13 @@ RCreceptorStartInternal(int *ret, str *tbl, str *host, int *port, int mode, int 
 	BAT *b;
 
 	if (RCfind(*tbl))
-		throw(MAL, "receptor.new", "Duplicate receptor");
+		throw(MAL, "receptor.new", "Duplicate receptor '%s'", *tbl);
+	idx = BSKTlocate(*tbl);
+	if (idx == 0) /* should not happen */
+		throw(MAL, "receptor.new", "Basket '%s' not found", *tbl);
 	for (rc = rcAnchor; rc; rc = rc->nxt)
 		if (rc->port == *port)
-			throw(MAL, "receptor.new", "Port already in use");
+			throw(MAL, "receptor.new", "Port '%d' already in use",rc->port);
 
 	rc = RCnew(*tbl);
 	if (rc == 0)
@@ -124,9 +128,7 @@ RCreceptorStartInternal(int *ret, str *tbl, str *host, int *port, int mode, int 
 	rc->protocol = protocol;
 	rc->lastseen = *timestamp_nil;
 
-	rc->bskt = idx = BSKTlocate(*tbl);
-	if (idx == 0) /* should not happen */
-		throw(MAL, "receptor.new", "Basket not found");
+	rc->bskt = idx;
 	len = BSKTmemberCount(*tbl);
 	fmt = rc->table.format = GDKzalloc(sizeof(Column) * len);
 
@@ -157,14 +159,15 @@ RCreceptorStartInternal(int *ret, str *tbl, str *host, int *port, int mode, int 
 #ifdef _DEBUG_RECEPTOR_
 	mnstr_printf(RCout, "#Instantiate a new receptor %d fields\n", j);
 #endif
-	if (MT_create_thread(&rc->pid, (void (*)(void *))RCstartThread, rc, MT_THR_DETACHED) != 0) 
-		throw(MAL, "receptor.start", "Receptor initiation failed");
+	if (MT_create_thread(&rc->pid, (void (*)(void *))RCstartThread, rc, MT_THR_DETACHED) != 0)
+		throw(MAL, "receptor.start", "Receptor '%s' initiation failed", rc->name);
 	(void) ret;
 	return MAL_SUCCEED;
 }
 str
-RCreceptorStart(int *ret, str *tbl, str *host, int *port) {
-	return RCreceptorStartInternal(ret,tbl,host,port,BSKTPASSIVE,TCP,PAUSEDEFAULT);
+RCreceptorStart(int *ret, str *tbl, str *host, int *port)
+{
+	return RCreceptorStartInternal(ret, tbl, host, port, BSKTPASSIVE, TCP, PAUSEDEFAULT);
 }
 
 str
@@ -174,11 +177,11 @@ RCreceptorPause(int *ret, str *nme)
 
 	rc = RCfind(*nme);
 	if (rc == NULL)
-		throw(MAL, "receptor.resume", "Receptor not defined");
+		throw(MAL, "receptor.resume", "Receptor '%s' not defined",*nme);
 	rc->status = BSKTPAUSE;
 
 #ifdef _DEBUG_RECEPTOR_
-	mnstr_printf(RCout, "#Pause receptor %s\n",*nme);
+	mnstr_printf(RCout, "#Pause receptor %s\n", *nme);
 #endif
 	(void) ret;
 	return MAL_SUCCEED;
@@ -191,11 +194,11 @@ RCreceptorResume(int *ret, str *nme)
 
 	rc = RCfind(*nme);
 	if (rc == NULL)
-		throw(MAL, "receptor.resume", "Receptor not defined");
+		throw(MAL, "receptor.resume", "Receptor '%s' not defined",*nme);
 	rc->status = BSKTRUNNING;
 
 #ifdef _DEBUG_RECEPTOR_
-	mnstr_printf(RCout, "#Resume receptor %s\n",*nme);
+	mnstr_printf(RCout, "#Resume receptor %s\n", *nme);
 #endif
 	(void) ret;
 	return MAL_SUCCEED;
@@ -229,7 +232,7 @@ str RCreceptorStop(int *ret, str *nme)
 
 	rc = RCfind(*nme);
 	if (rc == NULL)
-		throw(MAL, "receptor.drop", "Receptor not defined");
+		throw(MAL, "receptor.drop", "Receptor '%s' not defined", *nme);
 #ifdef _DEBUG_RECEPTOR_
 	mnstr_printf(RCout, "#Drop a receptor\n");
 #endif
@@ -265,14 +268,14 @@ RCscenario(int *ret, str *nme, str *fname, int *seq)
 	Receptor rc;
 	rc = RCfind(*nme);
 	if (rc == NULL)
-		throw(MAL, "receptor.scenario", "Receptor not defined");
+		throw(MAL, "receptor.scenario", "Receptor '%s' not defined",*nme);
 #ifdef _DEBUG_RECEPTOR_
 	mnstr_printf(RCout, "#Define receptor scenario\n");
 #endif
 	(void) ret;
 	rc->scenario = GDKstrdup(*fname);
 	rc->sequence = *seq;
-	throw(MAL, "receptor.scenario", "Scenario not yet implemented");
+	throw(MAL, "receptor.scenario", "Scenario '%s' not yet implemented", *nme);
 }
 
 str
@@ -281,14 +284,14 @@ RCgenerator(int *ret, str *nme, str *modnme, str *fcnnme)
 	Receptor rc;
 	rc = RCfind(*nme);
 	if (rc == NULL)
-		throw(MAL, "receptor.generator", "Receptor not defined");
+		throw(MAL, "receptor.generator", "Receptor '%s' not defined",*nme);
 #ifdef _DEBUG_RECEPTOR_
 	mnstr_printf(RCout, "#Define receptor generator\n");
 #endif
 	(void) ret;
 	rc->modnme = GDKstrdup(*modnme);
 	rc->modnme = GDKstrdup(*fcnnme);
-	throw(MAL, "receptor.generator", "Receptor not yet implemented");
+	throw(MAL, "receptor.generator", "Receptor '%s' not yet implemented",*nme);
 }
 
 /*
@@ -308,7 +311,7 @@ RCreconnect(Receptor rc)
 		if (rc->error) {
 			mnstr_printf(RCout, "#Receptor connect fails: %s\n", rc->error);
 			MT_sleep_ms(rc->delay);
-		} 
+		}
 	} while (rc->error);
 }
 
@@ -324,10 +327,13 @@ RCbody(Receptor rc)
 	str e, he;
 	str line = "\0";
 	int i, k, n;
+	SOCKET newsockfd = rc->newsockfd;
+	stream *receptor;
 #ifdef _DEBUG_RECEPTOR_
 	int m = 0;
 #endif
 	buf[MYBUFSIZ] = 0; /* ensure null terminated string */
+	rc->newsockfd = 0;
 
 	if (rc->scenario) {
 		RCscenarioInternal(rc);
@@ -342,13 +348,13 @@ RCbody(Receptor rc)
 bodyRestart:
 	/* create the channel the first time or when connection was lost. */
 	if (rc->mode == BSKTACTIVE && rc->protocol == UDP)
-		rc->receptor = udp_rastream(rc->host, rc->port, rc->name);
+		receptor = udp_rastream(rc->host, rc->port, rc->name);
 	else
-		rc->receptor = socket_rastream(rc->newsockfd, rc->name);
-	if (rc->receptor == NULL) {
+		receptor = socket_rastream(newsockfd, rc->name);
+	if (receptor == NULL) {
 		perror("Receptor: Could not open stream");
 		mnstr_printf(RCout, "#stream %s.%d.%s\n", rc->host, rc->port, rc->name);
-		socket_close(rc->newsockfd);
+		socket_close(newsockfd);
 #ifdef _DEBUG_RECEPTOR_
 		mnstr_printf(RCout, "#Terminate RCbody loop\n");
 #endif
@@ -361,9 +367,9 @@ bodyRestart:
 	 * In case of a locked basket we sleep for a millisecond.
 	 */
 
-	rc->cycles ++;
+	rc->cycles++;
 	for (n = 1; n > 0;) {
-		if ( rc->status == BSKTPAUSE){
+		if (rc->status == BSKTPAUSE) {
 #ifdef _DEBUG_RECEPTOR_
 			mnstr_printf(RCout, "#pause receptor %s\n", rc->name);
 #endif
@@ -375,15 +381,17 @@ bodyRestart:
 		}
 
 		if (rc->status == BSKTSTOP) {
-			mnstr_close(rc->receptor);
+			mnstr_close(receptor);
 			for (j = 0; j < rc->table.nr_attrs; j++) {
 				GDKfree(rc->table.format[j].sep);
 				GDKfree(rc->table.format[j].name);
 				GDKfree(rc->table.format[j].data);
 				GDKfree(rc->table.format[j].nullstr);
 				BBPdecref(rc->table.format[j].c[0]->batCacheid, TRUE);
+				/* above will be double freed with multiple
+				 * streams/threads */
 			}
-			shutdown(rc->newsockfd, SHUT_RDWR);
+			shutdown(newsockfd, SHUT_RDWR);
 			GDKfree(rc);
 			rc = NULL;
 			break;
@@ -394,18 +402,23 @@ bodyRestart:
 		mnstr_printf(RCout, "#wait for data read m: %d\n", m);
 #endif
 
-/* actually we should switch here based on the event syntax protocol */
+		/* actually we should switch here based on the event syntax protocol */
 
-/*Batch Processing
-   The Datadriver (see linear road benchmark) or the Sensor tools, are connected through TCP/IP
-   connection to the receptor module and	feed the DataCell with tuples,
-   Both tools are able to send batches of tuples to the stream engine
-   The first line of each batch always contains the number of tuples that the receptor is going to read (i.e.,#number)
-   When the receptor reads the first line of the incoming message, it immediately LOCKS the bats (that constitute the basket)
-   and keeps the lock until the end of the reading/writting procedure
-   When the receptor reads all the tuples UNLOCKS the bats, and then the Factories/Queries that are waiting for these data are able to read it*/
+		/*Batch Processing
+		  The Datadriver (see linear road benchmark) or the Sensor
+		  tools, are connected through TCP/IP connection to the receptor
+		  module and	feed the DataCell with tuples, Both tools are
+		  able to send batches of tuples to the stream engine The first
+		  line of each batch always contains the number of tuples that
+		  the receptor is going to read (i.e.,#number) When the receptor
+		  reads the first line of the incoming message, it immediately
+		  LOCKS the bats (that constitute the basket) and keeps the lock
+		  until the end of the reading/writting procedure When the
+		  receptor reads all the tuples UNLOCKS the bats, and then the
+		  Factories/Queries that are waiting for these data are able to
+		  read it*/
 
-		if ((n = (int) mnstr_readline(rc->receptor, buf, MYBUFSIZ)) > 0) {
+		if ((n = (int) mnstr_readline(receptor, buf, MYBUFSIZ)) > 0) {
 			buf[n + 1] = 0;
 #ifdef _DEBUG_RECEPTOR_
 			mnstr_printf(RCout, "#Receptor buf [%d]:%s \n", n, buf);
@@ -414,10 +427,11 @@ bodyRestart:
 			/* use trivial concurrency measure */
 			line = buf;
 
-			BSKTlock(&rc->lck, &rc->name, &rc->delay);
 			/* BATs may be replaced in the meantime */
+			BSKTlock(&rc->lck, &rc->name, &rc->delay);
 			for (i = 0; i < baskets[rc->bskt].colcount; i++)
 				rc->table.format[i].c[0] = baskets[rc->bskt].primary[i];
+			BSKTunlock(&rc->lck, &rc->name);
 
 			cnt = 0;
 			he = strchr(line, '#');
@@ -430,9 +444,9 @@ bodyRestart:
 				goto parse;
 			}
 
-/* this code should be optimized for block-based reads */
+			/* this code should be optimized for block-based reads */
 			while (cnt < counter) {
-				if ((n = (int) mnstr_readline(rc->receptor, buf, MYBUFSIZ)) > 0) {
+				if ((n = (int) mnstr_readline(receptor, buf, MYBUFSIZ)) > 0) {
 					buf[n + 1] = 0;
 #ifdef _DEBUG_RECEPTOR_
 					mnstr_printf(RCout, "#Receptor buf [%d]:%s \n", n, buf);
@@ -456,6 +470,7 @@ parse:
 #ifdef _DEBUG_RECEPTOR_
 						mnstr_printf(RCout, "#insert line :%s \n", line);
 #endif
+						BSKTlock(&rc->lck, &rc->name, &rc->delay);
 						if (insert_line(&rc->table, line, NULL, 0, rc->table.nr_attrs) < 0) {
 							if (baskets[rc->bskt].errors)
 								BUNappend(baskets[rc->bskt].errors, line, TRUE);
@@ -466,17 +481,18 @@ parse:
 							if (rcError)
 								snprintf(rcError, k, "parsing error:%s", line);
 							rcErrorEvent = cnt;
+							BSKTunlock(&rc->lck, &rc->name);
 							break;
 						}
 						rc->received++;
 						rc->pending++;
+						BSKTunlock(&rc->lck, &rc->name);
 						e++;
 						line = e;
 					} while (*e);
 				}
 				cnt++;
 			}
-			BSKTunlock(&rc->lck, &rc->name);
 			if (rc->table.error) {
 				mnstr_printf(GDKerr, "%s", rc->table.error);
 				rc->table.error = 0;
@@ -484,7 +500,7 @@ parse:
 		}
 	}
 	/* only when reading fails we attempt to reconnect */
-	mnstr_close(rc->receptor);
+	mnstr_close(receptor);
 	if (rc->mode == BSKTACTIVE) {
 		/* try to reconnect */
 		RCreconnect(rc);
@@ -649,7 +665,7 @@ RCstartThread(Receptor rc)
 	}
 	/* the receptor should continously attempt to either connect the
 	   remote site for new events or listing for the next request */
-	while(rc->status != BSKTSTOP){
+	while (rc->status != BSKTSTOP) {
 		if (rc->mode == BSKTPASSIVE) {
 			/* in server mode you should expect new connections */
 #ifdef _DEBUG_RECEPTOR_
@@ -664,16 +680,21 @@ RCstartThread(Receptor rc)
 			mnstr_printf(RCout, "#Receptor connection request received \n");
 #endif
 			if (MT_create_thread(&rc->pid, (void (*)(void *))RCbody, rc, MT_THR_DETACHED) != 0) {
-				mnstr_close(rc->receptor);
-				throw(MAL, "receptor.start", "Process creation failed");
+				shutdown(rc->newsockfd, SHUT_RDWR);
+				close(rc->newsockfd);
+				GDKfree(rc);
+				throw(MAL, "receptor.start", "Process '%s' creation failed",rc->name);
 			}
+			/* ensure the thread took rc->newsockfd */
+			while (rc->newsockfd > 0)
+				MT_sleep_ms(100);
 		} else if (rc->mode == BSKTACTIVE) {
 			/* take the initiative to connect to sensor */
 			RCreconnect(rc);
 			RCbody(rc);
 		}
 	}
-	shutdown(rc->newsockfd, SHUT_RDWR);
+	shutdown(rc->sockfd, SHUT_RDWR);
 	return MAL_SUCCEED;
 }
 
@@ -744,19 +765,21 @@ RCtable(int *nameId, int *hostId, int *portId, int *protocolId, int *modeId, int
 		goto wrapup;
 	BATseqbase(status, 0);
 
-	for (; rc; rc = rc->nxt){
-		BUNappend(name, rc->name, FALSE);
-		BUNappend(host, rc->host, FALSE);
-		BUNappend(port, &rc->port, FALSE);
-		BUNappend(protocol, protocolname[rc->protocol], FALSE);
-		BUNappend(mode, modename[rc->mode], FALSE);
-		BUNappend(status, statusname[rc->status], FALSE);
-		BUNappend(seen, &rc->lastseen, FALSE);
-		BUNappend(cycles, &rc->cycles, FALSE);
-		rc->pending = (int) BATcount(rc->table.format[1].c[0]);
-		BUNappend(pending, &rc->pending, FALSE);
-		BUNappend(received, &rc->received, FALSE);
-	}
+	for (; rc; rc = rc->nxt)
+		if (rc->table.format[1].c[0]) {
+			BUNappend(name, rc->name, FALSE);
+			BUNappend(host, rc->host, FALSE);
+			BUNappend(port, &rc->port, FALSE);
+			BUNappend(protocol, protocolname[rc->protocol], FALSE);
+			BUNappend(mode, modename[rc->mode], FALSE);
+			BUNappend(status, statusname[rc->status], FALSE);
+			BUNappend(seen, &rc->lastseen, FALSE);
+			BUNappend(cycles, &rc->cycles, FALSE);
+			rc->pending = (int) BATcount(rc->table.format[1].c[0]);
+			BUNappend(pending, &rc->pending, FALSE);
+			BUNappend(received, &rc->received, FALSE);
+		}
+
 
 	BBPkeepref(*nameId = name->batCacheid);
 	BBPkeepref(*hostId = host->batCacheid);

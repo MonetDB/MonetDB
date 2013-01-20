@@ -1324,7 +1324,7 @@ exps_can_push_func(list *exps, sql_rel *rel)
  *  sometimes share (correct or not) expressions on a shared referenced table).
  *
  *  not renaming gives problems with overloaded names (ie on the lower level an expression
- *  with the given name could allready exist
+ *  with the given name could already exist
  *
  * 2 
  *  creating projections for subqueries are empty, for now we just don't rewrite these.

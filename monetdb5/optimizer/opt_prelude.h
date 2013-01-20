@@ -24,6 +24,7 @@
 /* cf., gdk/gdk.mx */
 #define DEBUGoptimizers		if (GDKdebug & GRPoptimizers && actions)
 
+opt_export  str abortRef;
 opt_export  str affectedRowsRef;
 opt_export  str aggrRef;
 opt_export  str alarmRef;

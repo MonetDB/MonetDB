@@ -271,6 +271,7 @@ global_variables(mvc *sql, char *user, char *schema)
 	bit T = TRUE;
 	bit F = FALSE;
 	ValRecord src;
+	str opt;
 
  	typename = "int";
 	sql_find_subtype(&ctype, typename, 0, 0);
@@ -282,7 +283,9 @@ global_variables(mvc *sql, char *user, char *schema)
 	SQLglobal("current_user", user);
 	SQLglobal("current_role", user);
 	/* inherit the optimizer from the server */
-	SQLglobal("optimizer", initSQLoptimizer());
+	opt = initSQLoptimizer();
+	SQLglobal("optimizer", opt);
+	GDKfree(opt);
 	SQLglobal("trace","show,ticks,stmt");
 
 	typename = "sec_interval";
@@ -829,13 +832,16 @@ SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output)
 		}
 
 		/*
-		 * @-
 		 * We have dealt with the first parsing step and advanced the input reader
 		 * to the next statement (if any).
 		 * Now is the time to also perform the semantic analysis,
 		 * optimize and produce code.
 		 * We don;t search the cache for a previous incarnation yet.
 		 */
+		if (c->glb) {
+			/* MSinitClientPrg clears c->glb, so free it here */
+			_DELETE(c->glb);
+		}
 		MSinitClientPrg(c,"user",nme);
 		oldvtop = c->curprg->def->vtop;
 		oldstop = c->curprg->def->stop;

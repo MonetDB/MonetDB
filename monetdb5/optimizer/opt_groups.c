@@ -28,22 +28,16 @@ OPTgroupsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	InstrPtr q;
 	InstrPtr *old;
 	int limit,slimit;
-    	Lifespan span;
 
 	(void) cntxt;
 	(void) stk;
-    	span= setLifespan(mb);
-    	if( span == NULL)
-        	return 0;
 	if (varGetProp(mb, getArg(mb->stmt[0], 0), inlineProp) != NULL) {
-		GDKfree(span);
 		return 0;
 	}
 
 	/* beware, new variables and instructions are introduced */
 	pc= (int*) GDKzalloc(sizeof(int)* mb->vtop * 2); /* to find last assignment */
 	if ( pc == NULL) {
-		GDKfree(span);
 		return 0;
 	}
 
@@ -51,7 +45,6 @@ OPTgroupsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	limit= mb->stop;
 	slimit= mb->ssize;
 	if ( newMalBlkStmt(mb,mb->ssize) <0) {
-		GDKfree(span);
 		GDKfree(pc);
 		return 0;
 	}
@@ -96,7 +89,6 @@ OPTgroupsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			freeInstruction(old[i]);
 	GDKfree(old);
 	GDKfree(pc);
-	GDKfree(span);
 	DEBUGoptimizers
 		mnstr_printf(cntxt->fdout,"#opt_groups: %d statements glued\n",actions);
 	return actions;

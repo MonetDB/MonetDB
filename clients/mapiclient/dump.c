@@ -512,8 +512,15 @@ dump_column_definition(Mapi mid, stream *toConsole, const char *schema, const ch
 				"\"c\".\"type_scale\","		/* 3 */
 				"\"c\".\"null\","		/* 4 */
 				"\"c\".\"default\","		/* 5 */
-				"\"c\".\"number\" "		/* 6 */
+				"\"c\".\"number\","		/* 6 */
+				"CASE WHEN \"d\".\"column_id\" IS NULL THEN FALSE ELSE TRUE END"
+				" AS \"isdimension\","  /* 7 */
+				"\"d\".\"start\","		/* 8 */
+				"\"d\".\"step\","		/* 9 */
+				"\"d\".\"stop\" "		/* 10 */
 			 "FROM \"sys\".\"_columns\" \"c\" "
+			 	"LEFT JOIN \"sys\".\"_dimensions\" \"d\" "
+					"ON \"c\".\"id\" = \"d\".\"column_id\" "
 			 "WHERE \"c\".\"table_id\" = %s "
 			 "ORDER BY \"number\"", tid);
 	else
@@ -524,8 +531,15 @@ dump_column_definition(Mapi mid, stream *toConsole, const char *schema, const ch
 				"\"c\".\"type_scale\","		/* 3 */
 				"\"c\".\"null\","		/* 4 */
 				"\"c\".\"default\","		/* 5 */
-				"\"c\".\"number\" "		/* 6 */
-			 "FROM \"sys\".\"_columns\" \"c\", "
+				"\"c\".\"number\","		/* 6 */
+				"CASE WHEN \"d\".\"column_id\" IS NULL THEN FALSE ELSE TRUE END"
+				" AS \"isdimension\","  /* 7 */
+				"\"d\".\"start\","		/* 8 */
+				"\"d\".\"step\","		/* 9 */
+				"\"d\".\"stop\" "		/* 10 */
+			 "FROM \"sys\".\"_columns\" \"c\" "
+			 	"LEFT JOIN \"sys\".\"_dimensions\" \"d\" "
+					"ON \"c\".\"id\" = \"d\".\"column_id\", "
 			      "\"sys\".\"_tables\" \"t\", "
 			      "\"sys\".\"schemas\" \"s\" "
 			 "WHERE \"c\".\"table_id\" = \"t\".\"id\" "
@@ -545,6 +559,10 @@ dump_column_definition(Mapi mid, stream *toConsole, const char *schema, const ch
 		char *c_type_scale = mapi_fetch_field(hdl, 3);
 		char *c_null = mapi_fetch_field(hdl, 4);
 		char *c_default = mapi_fetch_field(hdl, 5);
+		char *isdimension = mapi_fetch_field(hdl, 7);
+		char *d_start = mapi_fetch_field(hdl, 8);
+		char *d_step = mapi_fetch_field(hdl, 9);
+		char *d_stop = mapi_fetch_field(hdl, 10);
 		int space;
 
 		if (mapi_error(mid))
@@ -555,9 +573,19 @@ dump_column_definition(Mapi mid, stream *toConsole, const char *schema, const ch
 		mnstr_printf(toConsole, "\t\"%s\"%*s ",
 			     c_name, CAP(slen - strlen(c_name)), "");
 		space = dump_type(mid, toConsole, c_type, c_type_digits, c_type_scale);
-		if (strcmp(c_null, "false") == 0)
+		if (strcmp(isdimension, "true") == 0) {
+			mnstr_printf(toConsole, "%*s DIMENSION [%s:%s:%s]",
+					CAP(13 - space), "",
+					strcmp(d_start, "") == 0 ? "*" : d_start,
+					strcmp(d_step, "") == 0 ? "*" : d_step,
+					strcmp(d_stop, "") == 0 ? "*" : d_stop);
+			space = 13;
+		}
+		if (strcmp(c_null, "false") == 0) {
 			mnstr_printf(toConsole, "%*s NOT NULL",
 					CAP(13 - space), "");
+			space = 13;
+		}
 		if (c_default != NULL)
 			mnstr_printf(toConsole, "%*s DEFAULT %s",
 					CAP(13 - space), "", c_default);
@@ -728,6 +756,7 @@ describe_table(Mapi mid, char *schema, char *tname, stream *toConsole, int forei
 	char *view = NULL;
 	size_t maxquerylen;
 	char *sname = NULL;
+	char *isarray = NULL;
 
 	if (schema == NULL) {
 		if ((sname = strchr(tname, '.')) != NULL) {
@@ -747,7 +776,8 @@ describe_table(Mapi mid, char *schema, char *tname, stream *toConsole, int forei
 
 	query = malloc(maxquerylen);
 	snprintf(query, maxquerylen,
-		 "SELECT \"t\".\"name\", \"t\".\"query\" "
+		 "SELECT \"t\".\"name\", \"t\".\"query\", "
+		 "CASE WHEN \"t\".\"nr_dimensions\" = 0 THEN FALSE ELSE TRUE END AS \"isarray\" "
 		 "FROM \"sys\".\"_tables\" \"t\", \"sys\".\"schemas\" \"s\" "
 		 "WHERE \"s\".\"name\" = '%s' "
 		 "AND \"t\".\"schema_id\" = \"s\".\"id\" "
@@ -760,6 +790,7 @@ describe_table(Mapi mid, char *schema, char *tname, stream *toConsole, int forei
 	while ((mapi_fetch_row(hdl)) != 0) {
 		cnt++;
 		view = mapi_fetch_field(hdl, 1);
+		isarray = mapi_fetch_field(hdl, 2);
 	}
 	if (mapi_error(mid)) {
 		view = NULL;
@@ -767,6 +798,11 @@ describe_table(Mapi mid, char *schema, char *tname, stream *toConsole, int forei
 	}
 	if (view)
 		view = strdup(view);
+	if (isarray) {
+		isarray = "t";
+	} else {
+		isarray = "f";
+	}
 	mapi_close_handle(hdl);
 	hdl = NULL;
 
@@ -785,7 +821,8 @@ describe_table(Mapi mid, char *schema, char *tname, stream *toConsole, int forei
 		goto doreturn;
 	}
 
-	mnstr_printf(toConsole, "CREATE TABLE \"%s\".\"%s\" ", schema, tname);
+	mnstr_printf(toConsole, "CREATE %s \"%s\".\"%s\" ",
+			*isarray == 't' ? "ARRAY" : "TABLE", schema, tname);
 
 	if (dump_column_definition(mid, toConsole, schema, tname, NULL, foreign))
 		goto bailout;

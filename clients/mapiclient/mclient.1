@@ -340,22 +340,23 @@ Dump the given
 .IR table .
 .TP
 \fB\ed\fP
-Alias for \\dvt.
+Alias for \\dvta.
 .TP
-\fB\ed[Stvsfn]+\fP
+\fB\ed[Stavsfn]+\fP
 List database objects of the given type.  Multiple type specifiers can
 be used at the same time.  The specifiers \fIS\fP, \fIt\fP, \fIv\fP,
-\fIs\fP, \fIf\fP and \fIn\fP stand for System, table, view, sequence,
+\fIa\fP, \fIs\fP, \fIf\fP and \fIn\fP stand for System, table, view,
+array, sequence,
 function and schema respectively.  Note that \fIS\fP simply switches on
 viewing system catalog objects, which is orthogonal on the other
 specifiers.
 .TP
-\fB\ed[Stvsfn]+\fP \fIobject\fP
+\fB\ed[Stavsfn]+\fP \fIobject\fP
 Describe the given
 .I object
 in the database using SQL statements that reconstruct the object.  The
 same specifiers as above can be used, following the same rules.  When no
-specifiers are given, \fBvt\fP is assumed.
+specifiers are given, \fBvta\fP is assumed.
 The object can be given with or without a schema, separated by a dot.
 The object name
 can contain the wildcard characters \fB*\fP and \fB_\fP that represent

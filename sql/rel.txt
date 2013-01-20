@@ -72,7 +72,7 @@ INSERT|DELETE|UPDATE 	(card MULTI)
 			For update the ->r projection joins in current
 			values for 'none' updated columns.
 
-	-> flag		(if set don't insert (is done allready))
+	-> flag		(if set don't insert (is done already))
 only (UPDATE)
 	-> exps		
 			Named columns to update

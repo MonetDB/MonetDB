@@ -119,6 +119,7 @@ BSKTlocate(str tbl)
 			return i;
 	/* try prefixing it with datacell */
 	snprintf(buf,BUFSIZ,"datacell.%s",tbl);
+	BSKTtolower(buf);
 	for (i = 1; i < bsktTop; i++)
 		if (baskets[i].name && strcmp(buf, baskets[i].name) == 0)
 			return i;
@@ -191,7 +192,7 @@ BSKTregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	t = mvc_bind_table(m, s, ltbl);
 	if (t == NULL)
-		throw(SQL, "datacell.register", "Table missing");
+		throw(SQL, "datacell.register", "Table missing '%s'", ltbl);
 
 	/* check double registration */
 	if (BSKTlocate(tbl))
