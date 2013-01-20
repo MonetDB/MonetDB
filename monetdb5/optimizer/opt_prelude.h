@@ -30,6 +30,7 @@ opt_export  str alarmRef;
 opt_export  str algebraRef;
 opt_export  str appendidxRef;
 opt_export  str appendRef;
+opt_export  str sciqlRef;
 opt_export  str assertRef;
 opt_export  str attachRef;
 opt_export  str avgRef;

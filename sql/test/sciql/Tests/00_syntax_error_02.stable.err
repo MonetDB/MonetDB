@@ -30,14 +30,14 @@ stderr of test '00_syntax_error_02` in directory 'test/sciql` itself:
 # 13:43:49 >  mclient -lsql -ftest -i -e --host=jarl --port=37241 
 # 13:43:49 >  
 
-MAPI  = monetdb@riga:36718
-QUERY = create array err(x char dimension[1:128:1], v float);
+MAPI  = monetdb@riga:38335
+QUERY = CREATE ARRAY err1(x CHAR DIMENSION[1:128:1], v FLOAT);
 ERROR = !CREATE ARRAY: dimension type 'char' not supported yet
-MAPI  = monetdb@riga:36718
-QUERY = create array err(s varchar(25) dimension['a':'z':1], v float);
+MAPI  = monetdb@riga:38335
+QUERY = CREATE ARRAY err2(s VARCHAR(25) DIMENSION['a':'z':1], v FLOAT);
 ERROR = !CREATE ARRAY: dimension type 'varchar' not supported yet
-MAPI  = monetdb@riga:36718
-QUERY = create array err(s varchar(25) dimension[1:3:1], v float);
+MAPI  = monetdb@riga:38335
+QUERY = CREATE ARRAY err3(s VARCHAR(25) DIMENSION[1:3:1], v FLOAT);
 ERROR = !CREATE ARRAY: dimension type 'varchar' not supported yet
 
 # 13:43:49 >  

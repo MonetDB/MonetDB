@@ -77,7 +77,10 @@ sql_table *
 rel_ddl_table_get(sql_rel *r)
 {
 	if (r->flag == DDL_ALTER_TABLE || r->flag == DDL_CREATE_TABLE || r->flag == DDL_CREATE_ARRAY || r->flag == DDL_CREATE_VIEW) {
-		sql_exp *e = r->exps->t->data;
+		/* In case of DDL_CREATE_ARRAY, r->exps now contains the dimension
+		 * range expressions in its end.  The pointer to the sql_table is the
+		 * third expression in r->exps */
+		sql_exp *e = r->exps->h->next->next->data;
 		atom *a = e->l;
 
 		return a->data.val.pval;
@@ -346,9 +349,9 @@ rel_insert_array(mvc *sql, sql_table *t, sql_rel *ins)
 				list *rng_exps = new_exp_list(sql->sa), *drngs = sa_list(sql->sa);
 				assert(rng_exps && drngs);
 
-				append(rng_exps, exp_atom(sql->sa, atom_general(sql->sa, &c->type, c->dim->start)));
-				append(rng_exps, exp_atom(sql->sa, atom_general(sql->sa, &c->type, c->dim->step)));
-				append(rng_exps, exp_atom(sql->sa, atom_general(sql->sa, &c->type, c->dim->stop)));
+				append(rng_exps, exp_atom_lng(sql->sa, c->dim->strt));
+				append(rng_exps, exp_atom_lng(sql->sa, c->dim->step));
+				append(rng_exps, exp_atom_lng(sql->sa, c->dim->stop));
 				append(drngs, rng_exps);
 				append(drngs, new_exp_list(sql->sa)); /* empty lists for slicing and */
 				append(drngs, new_exp_list(sql->sa)); /* tiling ranges */
@@ -873,9 +876,9 @@ rel_update(mvc *sql, sql_rel *t, sql_rel *uprel, sql_exp **updates, list *exps)
 				list *rng_exps = new_exp_list(sql->sa), *drngs = sa_list(sql->sa);
 				assert(rng_exps && drngs);
 
-				append(rng_exps, exp_atom(sql->sa, atom_general(sql->sa, &c->type, c->dim->start)));
-				append(rng_exps, exp_atom(sql->sa, atom_general(sql->sa, &c->type, c->dim->step)));
-				append(rng_exps, exp_atom(sql->sa, atom_general(sql->sa, &c->type, c->dim->stop)));
+				append(rng_exps, exp_atom_lng(sql->sa, c->dim->strt));
+				append(rng_exps, exp_atom_lng(sql->sa, c->dim->step));
+				append(rng_exps, exp_atom_lng(sql->sa, c->dim->stop));
 				append(drngs, rng_exps);
 				append(drngs, new_exp_list(sql->sa)); /* empty lists for slicing and */
 				append(drngs, new_exp_list(sql->sa)); /* tiling ranges */
@@ -1033,9 +1036,9 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_where)
 				list *rng_exps = new_exp_list(sql->sa), *drngs = sa_list(sql->sa);
 				assert(rng_exps && drngs);
 
-				append(rng_exps, exp_atom(sql->sa, atom_general(sql->sa, &c->type, c->dim->start)));
-				append(rng_exps, exp_atom(sql->sa, atom_general(sql->sa, &c->type, c->dim->step)));
-				append(rng_exps, exp_atom(sql->sa, atom_general(sql->sa, &c->type, c->dim->stop)));
+				append(rng_exps, exp_atom_lng(sql->sa, c->dim->strt));
+				append(rng_exps, exp_atom_lng(sql->sa, c->dim->step));
+				append(rng_exps, exp_atom_lng(sql->sa, c->dim->stop));
 				append(drngs, rng_exps);
 				append(drngs, new_exp_list(sql->sa)); /* empty lists for slicing and */
 				append(drngs, new_exp_list(sql->sa)); /* tiling ranges */
@@ -1171,9 +1174,9 @@ rel_import(mvc *sql, sql_table *t, char *tsep, char *rsep, char *ssep, char *ns,
 			list *rng_exps = new_exp_list(sql->sa), *drngs = sa_list(sql->sa);
 			assert(rng_exps && drngs);
 
-			append(rng_exps, exp_atom(sql->sa, atom_general(sql->sa, &c->type, c->dim->start)));
-			append(rng_exps, exp_atom(sql->sa, atom_general(sql->sa, &c->type, c->dim->step)));
-			append(rng_exps, exp_atom(sql->sa, atom_general(sql->sa, &c->type, c->dim->stop)));
+			append(rng_exps, exp_atom_lng(sql->sa, c->dim->strt));
+			append(rng_exps, exp_atom_lng(sql->sa, c->dim->step));
+			append(rng_exps, exp_atom_lng(sql->sa, c->dim->stop));
 			append(drngs, rng_exps);
 			append(drngs, new_exp_list(sql->sa)); /* empty lists for slicing and */
 			append(drngs, new_exp_list(sql->sa)); /* tiling ranges */
@@ -1361,9 +1364,9 @@ bincopyfrom(mvc *sql, dlist *qname, dlist *files)
 			list *rng_exps = new_exp_list(sql->sa), *drngs = sa_list(sql->sa);
 			assert(rng_exps && drngs);
 
-			append(rng_exps, exp_atom(sql->sa, atom_general(sql->sa, &c->type, c->dim->start)));
-			append(rng_exps, exp_atom(sql->sa, atom_general(sql->sa, &c->type, c->dim->step)));
-			append(rng_exps, exp_atom(sql->sa, atom_general(sql->sa, &c->type, c->dim->stop)));
+			append(rng_exps, exp_atom_lng(sql->sa, c->dim->strt));
+			append(rng_exps, exp_atom_lng(sql->sa, c->dim->step));
+			append(rng_exps, exp_atom_lng(sql->sa, c->dim->stop));
 			append(drngs, rng_exps);
 			append(drngs, new_exp_list(sql->sa)); /* empty lists for slicing and */
 			append(drngs, new_exp_list(sql->sa)); /* tiling ranges */

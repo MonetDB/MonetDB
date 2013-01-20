@@ -31,6 +31,7 @@ str alarmRef;
 str algebraRef;
 str appendidxRef;
 str appendRef;
+str sciqlRef;
 str assertRef;
 str attachRef;
 str avgRef;
@@ -255,6 +256,7 @@ void optimizerInit(void){
 		algebraRef = putName("algebra",7);
 		appendidxRef = putName("append_idxbat",13);
 		appendRef = putName("append",6);
+		sciqlRef = putName("sciql",5);
 		assertRef = putName("assert",6);
 		attachRef = putName("attach",6);
 		avgRef = putName("avg",3);

@@ -45,16 +45,24 @@ _bind_table(sql_table *t, sql_schema *ss, sql_schema *s, char *name)
 	return tt;
 }
 
+/* drngs: the <start>, <step>, <stop> range for each dimension.
+ * Empty string represents an unspecified range constraint.
+ */
 static sql_rel *
-rel_table(mvc *sql, int cat_type, char *sname, sql_table *t, int nr)
+rel_table(mvc *sql, int cat_type, char *sname, sql_table *t, int nr, list *drngs)
 {
 	sql_rel *rel = rel_create(sql->sa);
 	list *exps = new_exp_list(sql->sa);
 
 	append(exps, exp_atom_int(sql->sa, nr));
 	append(exps, exp_atom_str(sql->sa, sname, sql_bind_localtype("str") ));
-	if (t)
-		append(exps, exp_atom_ptr(sql->sa, t));
+	append(exps, exp_atom_ptr(sql->sa, t));
+	if(drngs) {
+		node *n; 
+		assert(drngs->cnt == t->valence * 4);
+		for (n = drngs->h ; n; n = n->next)
+			append(exps, n->data);
+	}
 	rel->l = rel_basetable(sql, t, t->base.name);
 	rel->r = NULL;
 	rel->op = op_ddl;
@@ -563,60 +571,18 @@ table_constraint(mvc *sql, symbol *s, sql_schema *ss, sql_table *t)
 	return res;
 }
 
-/**
- * Get the string value of a dimension constraint 'dimcstr' out of the parse
- * tree 'lst'.  Also check if the data type of this dimension constraint
- * conforms the data type of the column 'ctype'.
- *
- * TODO: deal with TIMESTAMP dimensions differently, since the 'step' is an
- * interval.
- */
-static int
-get_dim_constraints(mvc *sql, sql_subtype *ctype, dlist *lst, char **dimcstr, int isStep)
-{
-	sql_exp *exp = NULL;
-	atom *a = NULL;
-
-	assert(lst->h->type == type_string || lst->h->type == type_symbol);
-
-	if(lst->h->type == type_symbol && !lst->h->data.sym) { /* case: [*] */
-		*dimcstr = GDKstrdup("");
-		return SQL_OK;
-	}
-
-	if (isStep && (strcmp(ctype->type->base.name, "str") == 0 || strcmp(ctype->type->base.name, "date") == 0 || strcmp(ctype->type->base.name, "daytime") == 0 || strcmp(ctype->type->base.name, "timestamp") == 0 ))
-	{
-		/* TODO: for these type of dimensions, their step size should always be an int-typed value */
-		sql_error(sql, 02, "CREATE ARRAY: dimension type \"%s\" unsupported yet", ctype->type->sqlname);
-		return SQL_ERR;
-	}
-
-	if (lst->h->type == type_string) { /* handle negative (numerical) value */
-		a = ((AtomNode *) lst->h->next->data.sym)->a;
-		atom_neg(a);
-	} else { /* handle non-negative value */
-		a = ((AtomNode *) lst->h->data.sym)->a;
-	}
-	exp = exp_atom(sql->sa, a);
-	if (!(exp = rel_check_type(sql, ctype, exp, type_equal)))
-		return SQL_ERR;
-	/* TODO: do we want to convert the atom? */
-	*dimcstr = atom2string(sql->sa, a);
-	return SQL_OK;
-}
-
-
 /* checks if 'tpe' is one of the MonetDB int types */
 #define isAnInternIntType(tpe) (tpe == TYPE_bit || tpe == TYPE_bte || tpe == TYPE_sht || tpe == TYPE_int || tpe == TYPE_wrd || tpe == TYPE_lng)
 /* checks if 'tpe' is one of the SQL int types, i.e., TINYINT, SMALLINT, INT or BIGINT */
 #define isAnSQLIntType(tpe, len) (tpe[len-3] == 'i' && tpe[len-2] == 'n' && tpe[len-1] == 't')
+/* TODO: update this check if more dimension types are supported. */
+#define isSupportedType(tpe) (isAnSQLIntType(tpe, strlen(tpe)))
 
 static int
 create_column(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 {
 	dlist *l = s->data.lval;
-	dlist *dim = NULL;
-	char *cname = l->h->data.sval, *tname = NULL;
+	char *cname = l->h->data.sval;
 	char *action = alter ? "ALTER":"CREATE";
 	sql_subtype *ctype = &l->h->next->data.typeval;
 	dlist *opt_list = NULL;
@@ -641,139 +607,6 @@ create_column(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 		}
 
 		cs = mvc_create_column(sql, t, cname, ctype);
-		if (l->h->next->next->next) {
-			/* this is a dimension, see its structure in parser.y/column_def */
-			assert(l->h->next->next->next->type == type_symbol && l->h->next->next->next->data.sym->token == SQL_DIMENSION);
-			if (!isArray(t)){
-				sql_error(sql, 02, "%s %s: dimensions ('%s') not allowed in non-ARRAY\n", action, (t->type==tt_table)?"TABLE":"OTHER_TT", cname);
-				return SQL_ERR;
-			}
-
-			tname = ctype->type->sqlname;
-			if(!isAnSQLIntType(tname, strlen(tname))) { /* TODO: update this check if more dimension types are supported. */
-				sql_error(sql, 02, "%s ARRAY: dimension type '%s' not supported yet\n", action, tname);
-				return SQL_ERR;
-			}
-
-			t->ndims++;
-
-			dim = l->h->next->next->next->data.sym->data.lval;
-			if (dim && !dim->h->next) { /* "DIMENSION dim_range" case */
-				dim = dim->h->data.lval; /* here starts the actual dimension constraints */
-
-				cs->dim = ZNEW(sql_dimspec);
-				switch (dim->cnt) {
-					case 1: {/* [*], [size], [-size], [seqname], [varname (represent size)] */
-						if(dim->h->type == type_string) {
-							void *ptr = NULL;
-							if ((ptr = stack_get_var(sql, dim->h->data.sval))) { /* [varname] */
-								ValRecord var;
-								VALcopy((ValPtr)&var, ptr); /* to prevent VALconvert overwriting the variable on the stack */
-
-								/* In case that the [size] shortcut is given as a variable, the column's data type MUST be INT */
-								tname = ctype->type->sqlname;
-								if(!isAnSQLIntType(tname, strlen(tname))) {
-									sql_error(sql, 02, "%s ARRAY: syntax shortcut '[size]' only allowed for int typed dimensions, dimension '%s' has type '%s'\n", action, cname, tname);
-									return SQL_ERR;
-								}
-								if(!isAnInternIntType(var.vtype)) {
-									if (var.vtype == TYPE_void)
-										sql_error(sql, 02, "%s ARRAY: syntax shortcut '[size]' expects an int typed value, but variable '%s' is of type 'TYPE_void', most probably because it is declared inside a PSM\n", action, dim->h->data.sval);
-									else
-										sql_error(sql, 02, "%s ARRAY: syntax shortcut '[size]' expects an int typed value, but variable '%s' is of type '%d'\n", action, dim->h->data.sval, var.vtype);
-									return SQL_ERR;	
-								}
-
-								if (var.vtype > ctype->type->localtype) { /* TODO: ideally, even if (var.vtype > ctype->type->localtype), we should check if the value of 'var' fits into the type 'ctype.type->localtype' */
-									sql_error(sql, 02, "%s ARRAY: type '%d' of variable '%s' does not match type '%d' of dimension '%s'\n", action, var.vtype, dim->h->data.sval, ctype->type->localtype, cname);
-									return SQL_ERR;
-								}
-								cs->dim->start = GDKstrdup("0");
-								cs->dim->step = GDKstrdup("1");
-								cs->dim->stop = VALconvert(TYPE_str, &var);
-							} else if ((ptr = find_sql_sequence(cur_schema(sql), dim->h->data.sval))) { /* [seqname] */
-								/* TODO 1: extend the parser to accept a [qname] as [seqname] */
-								/* TODO 2: implementation: look up the constraints of the [seqname] */
-								sql_error(sql, 02, "%s ARRAY: SQL SEQUENCE (\'%s\') as dimension ('%s') constraint not implemented yet\n", action, dim->h->data.sval, cname);
-								return SQL_ERR;
-							} else {
-								sql_error(sql, 02, "%s ARRAY: identifier '%s' unknown\n", action, dim->h->data.sval);
-								return SQL_ERR;
-							}
-						} else {
-							/* In cases [size] or [-size], the column's data type MUST be INT */
-							tname = ctype->type->sqlname;
-							if(!isAnSQLIntType(tname, strlen(tname))) {
-								sql_error(sql, 02, "%s ARRAY: syntax shortcut '[size]' only allowed for int typed dimensions, dimension column '%s' has type '%s'\n", action, cname, tname);
-								return SQL_ERR;
-							}
-
-							assert(dim->h->type == type_list);
-							if (dim->h->data.lval->h->type == type_symbol){
-								if (dim->h->data.lval->h->data.sym) { 		/* the case: [size] */
-									tname = ((AtomNode*)dim->h->data.lval->h->data.sym)->a->tpe.type->sqlname;
-									if(!isAnSQLIntType(tname, strlen(tname))) {
-										sql_error(sql, 02, "%s ARRAY: constraints of dimension '%s' has invalid data type: expect int type, got '%s'\n", action, cname, tname);
-										return SQL_ERR;
-									}
-
-									cs->dim->start = GDKstrdup("0");
-									cs->dim->step = GDKstrdup("1");
-									cs->dim->stop = atom2string(sql->sa, ((AtomNode*)dim->h->data.lval->h->data.sym)->a);
-								} else {									/* the case: [*] */
-									cs->dim->start = GDKstrdup("");
-									cs->dim->step = GDKstrdup("");
-									cs->dim->stop = GDKstrdup("");
-								}
-							} else { 										/* the case: [-size] */
-								assert(dim->h->data.lval->h->type == type_string && strcmp(dim->h->data.lval->h->data.sval, "sql_neg")==0);
-
-								tname = ((AtomNode*)dim->h->data.lval->h->next->data.sym)->a->tpe.type->sqlname;
-								if(!isAnSQLIntType(tname, strlen(tname))) {
-									sql_error(sql, 02, "%s ARRAY: constraints of dimension column '%s' has invalid data type: expect int type, got '%s'\n", action, cname, tname);
-									return SQL_ERR;
-								}
-
-								cs->dim->start = GDKstrdup("0");
-								cs->dim->step = GDKstrdup("-1");
-								atom_neg( ((AtomNode *) dim->h->data.lval->h->next->data.sym)->a );
-								cs->dim->stop = atom2string(sql->sa, ((AtomNode*)dim->h->data.lval->h->next->data.sym)->a);
-							}
-						}
-					} break;
-					case 2: /* [start:stop] */
-						if((res = get_dim_constraints(sql, ctype, dim->h->data.lval, &cs->dim->start, 0)) != SQL_OK)
-							return res;
-						if((res = get_dim_constraints(sql, ctype, dim->h->next->data.lval, &cs->dim->stop, 0)) != SQL_OK)
-							return res;
-						tname = ctype->type->sqlname;
-						/* For int-typed dimensions, we allow [start:stop] to be the shortcut of [start:1:stop] */
-						cs->dim->step = isAnSQLIntType(tname, strlen(tname)) ? GDKstrdup("1") : GDKstrdup("");
-						break;
-					case 3: /* [start:step:stop] */
-						if((res = get_dim_constraints(sql, ctype, dim->h->data.lval, &cs->dim->start, 0)) != SQL_OK)
-							return res;
-						if((res = get_dim_constraints(sql, ctype, dim->h->next->data.lval, &cs->dim->step, 1)) != SQL_OK)
-							return res;
-						if((res = get_dim_constraints(sql, ctype, dim->h->next->next->data.lval, &cs->dim->stop, 0)) != SQL_OK)
-							return res;
-						break;
-					default:
-						sql_error(sql, 02, "%s ARRAY: dimension '%s' has wrong number of range constraints %d\n", action, cname, dim->cnt);
-						return SQL_ERR;
-				}
-			} else if (dim && dim->h->next) { /* TODO: the case "ARRAY dim_range_list" is not dealt with */
-				sql_error(sql, 02, "%s ARRAY: dimension '%s' constraint with syntax 'ARRAY dim_range_list' not implemented yet\n", action, cname);
-				return SQL_ERR;
-			} else { /* "DIMENSION" case: only allocate space for empty [start:step:stop] */
-				cs->dim = ZNEW(sql_dimspec);
-				cs->dim->start = GDKstrdup("");
-				cs->dim->step = GDKstrdup("");
-				cs->dim->stop = GDKstrdup("");
-			}
-			if (!(isFixedDim(cs->dim)))
-				t->fixed = 0;
-		}
 		if (column_options(sql, opt_list, ss, t, cs) == SQL_ERR)
 			return SQL_ERR;
 	}
@@ -989,16 +822,13 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, char *sname, char *name, sy
 	int deps = (sql->emode == m_deps);
 	int create = (!instantiate && !deps);
 	int tt = 0;
+	char *action = (temp == SQL_DECLARED_TABLE || temp == SQL_DECLARED_ARRAY)?"DECLARE":"CREATE";
 
 	(void)create;
 
 	switch (temp) {
 	case SQL_PERSIST:
-		tt = (table_elements_or_subquery->token == SQL_CREATE_ARRAY) ? tt_array : tt_table;
-		break;
 	case SQL_LOCAL_TEMP:
-		tt = (table_elements_or_subquery->token == SQL_CREATE_ARRAY) ? tt_array : tt_table;
-		break;
 	case SQL_GLOBAL_TEMP:
 		tt = (table_elements_or_subquery->token == SQL_CREATE_ARRAY) ? tt_array : tt_table;
 		break;
@@ -1025,7 +855,7 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, char *sname, char *name, sy
 	}
 
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
-		return sql_error(sql, 02, "3F000!CREATE %s: no such schema '%s'", tt2string(tt), sname);
+		return sql_error(sql, 02, "3F000!%s %s: no such schema '%s'", action, tt2string(tt), sname);
 
 	if (temp != SQL_PERSIST && (tt == tt_table || tt == tt_array) &&
 			commit_action == CA_COMMIT)
@@ -1043,8 +873,7 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, char *sname, char *name, sy
 		sname = s->base.name;
 
 	if (mvc_bind_table(sql, s, name)) {
-		char *cd = (temp == SQL_DECLARED_TABLE || temp == SQL_DECLARED_ARRAY)?"DECLARE":"CREATE";
-		return sql_error(sql, 02, "42S01!%s %s: name '%s' already in use", cd, tt2string(tt), name);
+		return sql_error(sql, 02, "42S01!%s %s: name '%s' already in use", action, tt2string(tt), name);
 	} else if (temp != SQL_DECLARED_TABLE && temp != SQL_DECLARED_ARRAY && (!schema_privs(sql->role_id, s) && !(isTempSchema(s) && temp == SQL_LOCAL_TEMP))){
 		return sql_error(sql, 02, "42000!CREATE %s: insufficient privileges for user '%s' in schema '%s'", tt2string(tt), stack_get_string(sql, "current_user"), s->base.name);
 	} else if (table_elements_or_subquery->token == SQL_CREATE_TABLE || table_elements_or_subquery->token == SQL_CREATE_ARRAY) {
@@ -1055,155 +884,85 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, char *sname, char *name, sy
 			mvc_create_table(sql, s, name, tt, 0, SQL_DECLARED_TABLE, commit_action, -1);
 		dnode *n;
 		dlist *columns = table_elements_or_subquery->data.lval;
-		sql_exp *id_l = NULL, *id_r = NULL;
-		sql_rel *res = NULL, *joinl = NULL, *joinr = NULL;
-		list *rp = new_exp_list(sql->sa);
-		node *col = NULL;
-		int i = 0, j = 0, cnt = 0, *N = NULL, *M = NULL;
-		lng cntall = 1;
+		list *drngs = sa_list(sql->sa);
 
-		if (isArray(t))
-			t->fixed = 1;
 		for (n = columns->h; n; n = n->next) {
 			symbol *sym = n->data.sym;
 			int res = table_element(sql, sym, s, t, 0);
 			if (res == SQL_ERR) 
 				return NULL;
+
+			/* A dimension column? Add the range expressions to rel_table */
+			if (sym->token == SQL_COLUMN && sym->data.lval->cnt == 4) {
+				dnode *dn = sym->data.lval->h->next->next->next;
+				sql_column *dc = t->columns.set->t->data;
+				char *sqltpe = dc->type.type->sqlname;
+				int is_int_dc = isAnSQLIntType(sqltpe, strlen(sqltpe));
+				dlist *drng = NULL;
+				sql_exp *val_exp = NULL;
+
+				exp_kind ek = {type_value, card_value, TRUE};
+				sql_subtype *lngtpe = sql_bind_localtype("lng");
+
+				if (!isArray(t))
+					return sql_error(sql, 02, "%s %s: dimensions ('%s') not allowed in non-ARRAY\n", action, tt2string(tt), dc->base.name);
+
+				if (!isSupportedType(sqltpe))
+					return sql_error(sql, 02, "%s ARRAY: dimension type '%s' not supported yet\n", action, sqltpe);
+
+				/* for each dimension, we store its colnr and <start, step, stop> values */
+				append(drngs, exp_atom_int(sql->sa, dc->colnr));
+
+				drng = dn->data.sym->data.lval;
+				switch(drng->cnt) {
+#define append_rng_exp(sym) \
+{ \
+	if (sym) {\
+		if (!(val_exp = rel_value_exp(sql, NULL, sym, sql_sel, ek)))\
+		return NULL;\
+		append(drngs, rel_check_type(sql, lngtpe, rel_check_type(sql, &dc->type, val_exp, type_cast), type_cast));\
+	} else {\
+		append(drngs, exp_atom_lng(sql->sa, lng_nil));\
+	} \
+}
+				case 0: /* 'DIMENSION' */
+					append(drngs, exp_atom_lng(sql->sa, lng_nil)); /* start */
+					append(drngs, exp_atom_lng(sql->sa, lng_nil)); /* step */
+					append(drngs, exp_atom_lng(sql->sa, lng_nil)); /* stop */
+					break;
+				case 1: /* 'DIMENSION [size-exp]' */
+					if (drng->h->data.sym && !is_int_dc)
+						return sql_error(sql, 02, "%s ARRAY: syntax shortcut '[size]' only allowed for int typed dimensions.  Dimension '%s' has type '%s'\n", action, dc->base.name, sqltpe);
+
+					append(drngs, exp_atom_lng(sql->sa, drng->h->data.sym?0:lng_nil));
+					append(drngs, exp_atom_lng(sql->sa, drng->h->data.sym?1:lng_nil));
+					append_rng_exp(drng->h->data.sym);
+					break;
+				case 2:
+					append_rng_exp(drng->h->data.sym);
+					/* the shortcut [start:stop] => [start:1:stop] for int typed dimensions */
+					append(drngs, exp_atom_lng(sql->sa, is_int_dc?1:lng_nil));
+					/* 'stop' or '*' */
+					append_rng_exp(drng->h->next->data.sym);
+					break;
+				case 3:
+					append_rng_exp(drng->h->data.sym);
+					append_rng_exp(drng->h->next->data.sym);
+					append_rng_exp(drng->h->next->next->data.sym);
+					break;
+				default: /* should not happen */
+					return sql_error(sql, 02, "%s ARRAY: too many values (%d) for a dimension range", action, dn->data.sym->data.lval->cnt);
+				}
+				t->valence++;
+			}
 		}
 
-		if (isArray(t) && t->ndims == 0)
+		if (isArray(t) && t->valence == 0)
 			return sql_error(sql, 02, "CREATE ARRAY: an array must have at least one dimension");
 
 		temp = (tt == tt_table || tt == tt_array)?temp:SQL_PERSIST;
-		/* For tables and unbounded arrays we are done. */
-		if (!isFixedArray(t)) {
-			return isArray(t)? rel_table(sql, DDL_CREATE_ARRAY, sname, t, temp) : rel_table(sql, DDL_CREATE_TABLE, sname, t, temp);
-		}
-		/* For fixed arrays, we immediately create and fill in BATs for dimensions with dimension values, and for non-dim. attributes with default values */
-
-		/* To compute N (the #times each value is repeated), multiply the size of dimensions defined after the current dimension.  For the last dimension, its N is 1.  To compute M (the #times each value group is repeated), multiply the size of dimensions defined before the current dimension.  For the first dimension, its M is 1. */
-		N = SA_NEW_ARRAY(sql->sa, int, t->ndims);
-		M = SA_NEW_ARRAY(sql->sa, int, t->ndims);
-		if(!N || !M) {
-			return sql_error(sql, 02, "CREATE ARRAY: failed to allocate space");
-		}
-		for(i = 0; i < t->ndims; i++) N[i] = M[i] = 1;
-
-		for (col = t->columns.set->h, i = 0; col; col = col->next){
-			sql_column *sc = (sql_column *) col->data;
-			if (sc->dim){
-				atom *a_sta = atom_general(sql->sa, &sc->type, sc->dim->start);
-				atom *a_ste = atom_general(sql->sa, &sc->type, sc->dim->step);
-				atom *a_sto = atom_general(sql->sa, &sc->type, sc->dim->stop);
-				switch(a_sto->data.vtype){
-				case TYPE_bte:
-					cnt = ceil((*(bte *)VALget(&a_sto->data) * 1.0 - *(bte *)VALget(&a_sta->data)) / *(bte *)VALget(&a_ste->data)); break;
-				case TYPE_sht:
-					cnt = ceil((*(sht *)VALget(&a_sto->data) * 1.0 - *(sht *)VALget(&a_sta->data)) / *(sht *)VALget(&a_ste->data)); break;
-				case TYPE_int:
-					cnt = ceil((*(int *)VALget(&a_sto->data) * 1.0 - *(int *)VALget(&a_sta->data)) / *(int *)VALget(&a_ste->data)); break;
-				case TYPE_flt:
-					cnt = ceil((*(flt *)VALget(&a_sto->data) - *(flt *)VALget(&a_sta->data)) / *(flt *)VALget(&a_ste->data)); break;
-				case TYPE_dbl:
-					cnt = ceil((*(dbl *)VALget(&a_sto->data) - *(dbl *)VALget(&a_sta->data)) / *(dbl *)VALget(&a_ste->data)); break;
-				case TYPE_lng:
-					cnt = ceil((*(lng *)VALget(&a_sto->data) * 1.0 - *(lng *)VALget(&a_sta->data)) / *(lng *)VALget(&a_ste->data)); break;
-				default: /* should not reach here */
-					return sql_error(sql, 02, "CREATE ARRAY: unsupported data type \"%s\"", sc->type.type->sqlname);
-				}
-				for (j = 0; j < i; j++) N[j] = N[j] * cnt;
-				for (j = t->ndims-1; j > i; j--) M[j] = M[j] * cnt;
-				cntall *= cnt;
-				i++;
-			}
-		}
-		if (i != t->ndims) {
-			return sql_error(sql, 02, "CREATE ARRAY: expected number of dimension columns (%d) does not match actual numbre of dimension columns (%d)", t->ndims, i);
-		}
-
-		/* create and fill all columns */
-		for (col = t->columns.set->h, i = 0; col; col = col->next){
-			sql_column *sc = (sql_column *) col->data;
-			list *args = new_exp_list(sql->sa), *col_exps = new_exp_list(sql->sa), *rng_exps = new_exp_list(sql->sa), *drngs = sa_list(sql->sa);
-			sql_exp *e = NULL, *func_exp = NULL, *estrt = NULL, *estep = NULL, *estop = NULL;
-			sql_subtype *oid_tpe = sql_bind_localtype("oid");
-			sql_subfunc *sf = NULL;
-
-			if (sc->dim){
-				/* TODO: can we avoid computing these 'atom_general' twice? */
-				estrt = exp_atom(sql->sa, atom_general(sql->sa, &sc->type, sc->dim->start));
-				estep = exp_atom(sql->sa, atom_general(sql->sa, &sc->type, sc->dim->step));
-				estop = exp_atom(sql->sa, atom_general(sql->sa, &sc->type, sc->dim->stop));
-
-				append(args, estrt);
-				append(args, estep);
-				append(args, estop);
-				append(args, exp_atom_int(sql->sa, N[i]));
-				append(args, exp_atom_int(sql->sa, M[i]));
-				sf = sql_bind_func_(sql->sa, mvc_bind_schema(sql, "sys"), "array_series", exps_subtype(args), F_FUNC);
-				if (!sf)
-					return sql_error(sql, 02, "failed to bind to the SQL function \"array_series\"");
-				func_exp = exp_op(sql->sa, args, sf);
-				if (!id_l) {
-					id_l = exp_column(sql->sa, sc->base.name, "id", oid_tpe, CARD_MULTI, 0, 0, NULL);
-					append(col_exps, id_l);
-				} else {
-					id_r = exp_column(sql->sa, sc->base.name, "id", oid_tpe, CARD_MULTI, 0, 0, NULL);
-					append(col_exps, id_r);
-				}
-				append(rng_exps, estrt);
-				append(rng_exps, estep);
-				append(rng_exps, estop);
-				list_append(drngs, rng_exps);
-				list_append(drngs, new_exp_list(sql->sa)); /* empty lists for slicing and */
-				list_append(drngs, new_exp_list(sql->sa)); /* tiling ranges */
-				append(col_exps, exp_column(sql->sa, sc->base.name, "dimval", &sc->type, CARD_MULTI, 0, 0, drngs));
-				append(rp, exp_column(sql->sa, sc->base.name, "dimval", &sc->type, CARD_MULTI, 0, 0, drngs));
-				i++;
-			} else {
-				if (sc->def) {
-					char *q = sql_message("select %s;", sc->def);
-					e = rel_parse_val(sql, q, sql->emode);
-					_DELETE(q);
-					if (!e || (e = rel_check_type(sql, &sc->type, e, type_equal)) == NULL)
-						return NULL;
-				} else {
-					atom *a = atom_general(sql->sa, &sc->type, NULL);
-					e = exp_atom(sql->sa, a);
-				}
-				append(args, exp_atom_lng(sql->sa, cntall));
-				append(args, e);
-				sf = sql_bind_func_(sql->sa, mvc_bind_schema(sql, "sys"), "array_filler", exps_subtype(args), F_FUNC);
-				if (!sf)
-					return sql_error(sql, 02, "failed to bind to the SQL function \"array_filler\"");
-				func_exp = exp_op(sql->sa, args, sf);
-				if (!id_l) {
-					id_l = exp_column(sql->sa, sc->base.name, "id", oid_tpe, CARD_MULTI, 0, 0, NULL);
-					append(col_exps, id_l);
-				} else {
-					id_r = exp_column(sql->sa, sc->base.name, "id", oid_tpe, CARD_MULTI, 0, 0, NULL);
-					append(col_exps, id_r);
-
-				}
-				append(col_exps, exp_column(sql->sa, sc->base.name, "cellval", &sc->type, CARD_MULTI, (!sc->dim && !sc->def)?1:0, 0, NULL));
-				append(rp, exp_column(sql->sa, sc->base.name, "cellval", &sc->type, CARD_MULTI, (!sc->dim && !sc->def)?1:0, 0, NULL));
-			}
-			if (!joinl) {
-				joinl = rel_table_func(sql->sa, NULL, func_exp, col_exps);
-			} else {
-				joinr = rel_table_func(sql->sa, NULL, func_exp, col_exps);
-				joinl = rel_crossproduct(sql->sa, joinl, joinr, op_join);
-				rel_join_add_exp(sql->sa, joinl, exp_compare(sql->sa, id_l, id_r, cmp_equal));
-			}
-
-		}
-		if (i != t->ndims) {
-			return sql_error(sql, 02, "CREATE ARRAY: expected number of dimension columns (%d) does not match actual numbre of dimension columns (%d)", t->ndims, i);
-		}
-		res = rel_table(sql, DDL_CREATE_ARRAY, sname, t, temp);
-		return rel_insert(sql, res, rel_project(sql->sa, joinl, rp));
+		return isArray(t)? rel_table(sql, DDL_CREATE_ARRAY, sname, t, temp, drngs) : rel_table(sql, DDL_CREATE_TABLE, sname, t, temp, NULL);
 	} else { /* [col name list] as subquery with or without data */
-		/* TODO: handle create_array_as_subquery??? */
 		sql_rel *sq = NULL, *res = NULL;
 		dlist *as_sq = table_elements_or_subquery->data.lval;
 		dlist *column_spec = as_sq->h->data.lval;
@@ -1222,9 +981,11 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, char *sname, char *name, sy
 			return NULL;
 		}
 
+		/* TODO: handle create_array_as_subquery??? */
+
 		/* insert query result into this table */
 		temp = (tt == tt_table || tt == tt_array)?temp:SQL_PERSIST;
-		res = (tt == tt_array)? rel_table(sql, DDL_CREATE_ARRAY, sname, t, temp) : rel_table(sql, DDL_CREATE_TABLE, sname, t, temp);
+		res = (tt == tt_array)? rel_table(sql, DDL_CREATE_ARRAY, sname, t, temp, NULL) : rel_table(sql, DDL_CREATE_TABLE, sname, t, temp, NULL);
 		if (with_data) {
 			res = rel_insert(sql, res, sq);
 		} else {
@@ -1283,7 +1044,7 @@ rel_create_view(mvc *sql, sql_schema *ss, dlist *qname, dlist *column_spec, symb
 				rel_destroy(sq);
 				return NULL;
 			}
-			return rel_table(sql, DDL_CREATE_VIEW, s->base.name, t, SQL_PERSIST);
+			return rel_table(sql, DDL_CREATE_VIEW, s->base.name, t, SQL_PERSIST, NULL);
 		}
 		t = mvc_bind_table(sql, s, name);
 		if (!persistent && column_spec) 
@@ -1451,7 +1212,7 @@ rel_alter_table(mvc *sql, dlist *qname, symbol *te)
 
 		if (!te) /* Set Read only */
 			nt = mvc_readonly(sql, nt, 1);
-		res = rel_table(sql, DDL_ALTER_TABLE, sname, nt, 0);
+		res = rel_table(sql, DDL_ALTER_TABLE, sname, nt, 0, NULL);
 		if (!te) /* Set Read only */
 			return res;
 		/* table add table */
@@ -1500,9 +1261,9 @@ rel_alter_table(mvc *sql, dlist *qname, symbol *te)
 					list *rng_exps = new_exp_list(sql->sa), *drngs = sa_list(sql->sa);
 					assert(rng_exps && drngs);
 
-					append(rng_exps, exp_atom(sql->sa, atom_general(sql->sa, &c->type, c->dim->start)));
-					append(rng_exps, exp_atom(sql->sa, atom_general(sql->sa, &c->type, c->dim->step)));
-					append(rng_exps, exp_atom(sql->sa, atom_general(sql->sa, &c->type, c->dim->stop)));
+					append(rng_exps, exp_atom_lng(sql->sa, c->dim->strt));
+					append(rng_exps, exp_atom_lng(sql->sa, c->dim->step));
+					append(rng_exps, exp_atom_lng(sql->sa, c->dim->stop));
 					append(drngs, rng_exps);
 					append(drngs, new_exp_list(sql->sa)); /* empty lists for slicing and */
 					append(drngs, new_exp_list(sql->sa)); /* tiling ranges */

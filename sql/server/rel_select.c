@@ -620,7 +620,7 @@ rel_arrayslice(mvc *sql, sql_table *t, char *tname, symbol *dimref)
 
 	assert(dimref->token == SQL_ARRAY_DIM_SLICE);
 
-	if (!t->ndims)
+	if (!t->valence)
 		return sql_error(sql, 02, "array slicing over a table ('%s')not allowed", t->base.name);
 
 	/* Handling array slicing using normal SQL: WHERE <pred_exp> IN '(' <value_commalist> ')'.
@@ -630,8 +630,12 @@ rel_arrayslice(mvc *sql, sql_table *t, char *tname, symbol *dimref)
 	 */
 	for (cn = t->columns.set->h, idx_exp = dimref->data.lval->h->next->data.lval->h;
 			cn && idx_exp; cn = cn->next, idx_exp = idx_exp->next) {
-		list *args = new_exp_list(sql->sa), *rng_exps = NULL, *srng_exps = NULL;
+		list *args = new_exp_list(sql->sa),
+			 *rng_exps = new_exp_list(sql->sa),
+			 *srng_exps = new_exp_list(sql->sa);
 		int skip = 1;
+
+		assert(args != NULL && rng_exps != NULL && srng_exps != NULL);
 
 		col = (sql_column *) cn->data;
 		while(!col->dim) { /* skip the non-dimensional attributes in the table columns */
@@ -644,18 +648,13 @@ rel_arrayslice(mvc *sql, sql_table *t, char *tname, symbol *dimref)
 			if (idx_term->data.sym) skip = 0;
 		if (skip) continue;
 
-
-		rng_exps  = new_exp_list(sql->sa);
-		assert(rng_exps);
-		append(rng_exps , exp_atom(sql->sa, atom_general(sql->sa, &col->type, col->dim->start)));
-		append(rng_exps , exp_atom(sql->sa, atom_general(sql->sa, &col->type, col->dim->step)));
-		append(rng_exps , exp_atom(sql->sa, atom_general(sql->sa, &col->type, col->dim->stop)));
+		append(rng_exps, rel_check_type(sql, &col->type, exp_atom_lng(sql->sa, col->dim->strt), type_cast));
+		append(rng_exps, rel_check_type(sql, &col->type, exp_atom_lng(sql->sa, col->dim->step), type_cast));
+		append(rng_exps, rel_check_type(sql, &col->type, exp_atom_lng(sql->sa, col->dim->stop), type_cast));
 
 		/* build the slc_val expression, which is going to compute a list of to be sliced dimensional values. */
 		/* FIXME: some expressions of rng_exps and the slc_val are reused, because exp_column makes a complete copy of its input drngs? */
 		idx_term = idx_exp->data.lval->h;
-		srng_exps  = new_exp_list(sql->sa);
-		assert(srng_exps );
 		if (idx_exp->data.lval->cnt == 1) {
 			slc_val = rel_check_type(sql, &col->type, rel_value_exp(sql, &rel, idx_term->data.sym, sql_where, ek), type_cast);
 			append(srng_exps, slc_val); /* sliced start */
@@ -668,25 +667,25 @@ rel_arrayslice(mvc *sql, sql_table *t, char *tname, symbol *dimref)
 		} else {
 			/* If the value of start/step/stop is omitted, we get its value from the dimension definition.
 			 */
-			if (!col->dim->start || !col->dim->step || !col->dim->stop)
+			if (col->dim->strt == lng_nil || col->dim->step == lng_nil || col->dim->stop == lng_nil)
 				return sql_error(sql, 02, "TODO: slicing over unbounded dimension");
 
 			/* the first <exp> is always the start */
 			slc_val = idx_term->data.sym ? /* check for '*' */
 					rel_check_type(sql, &col->type, rel_value_exp(sql, &rel, idx_term->data.sym, sql_where, ek), type_cast) :
-					exp_atom(sql->sa, atom_general(sql->sa, &col->type, col->dim->start));
+					rel_check_type(sql, &col->type, exp_atom_lng(sql->sa, col->dim->strt), type_cast);
 			append(args, slc_val);
 			append(srng_exps, slc_val);
 
 			if (idx_exp->data.lval->cnt == 2) {
-				slc_val = exp_atom(sql->sa, atom_general(sql->sa, &col->type, col->dim->step));
+				slc_val = rel_check_type(sql, &col->type, exp_atom_lng(sql->sa, col->dim->step), type_cast);
 				append(args, slc_val);
 				append(srng_exps, slc_val);
 			} else {
 				idx_term = idx_term->next;
 				slc_val = idx_term->data.sym ?
 					rel_check_type(sql, &col->type, rel_value_exp(sql, &rel, idx_term->data.sym, sql_where, ek), type_cast) :
-					exp_atom(sql->sa, atom_general(sql->sa, &col->type, col->dim->step));
+					rel_check_type(sql, &col->type, exp_atom_lng(sql->sa, col->dim->step), type_cast);
 				append(args, slc_val);
 				append(srng_exps, slc_val);
 			}
@@ -694,7 +693,7 @@ rel_arrayslice(mvc *sql, sql_table *t, char *tname, symbol *dimref)
 			idx_term = idx_term->next;
 			slc_val = idx_term->data.sym ?
 					rel_check_type(sql, &col->type, rel_value_exp(sql, &rel, idx_term->data.sym, sql_where, ek), type_cast) :
-					exp_atom(sql->sa, atom_general(sql->sa, &col->type, col->dim->stop));
+					rel_check_type(sql, &col->type, exp_atom_lng(sql->sa, col->dim->stop), type_cast);
 			append(args, slc_val);
 			append(srng_exps, slc_val);
 			if (!(ce = _slicing2basetable(sql, rel, tname, col->base.name, srng_exps)))
@@ -746,9 +745,10 @@ rel_basetable(mvc *sql, sql_table *t, char *atname)
 			list *rng_exps = new_exp_list(sql->sa), *drngs = new_exp_list(sql->sa);
 			assert(rng_exps && drngs);
 
-			append(rng_exps , exp_atom(sql->sa, atom_general(sql->sa, &c->type, c->dim->start)));
-			append(rng_exps , exp_atom(sql->sa, atom_general(sql->sa, &c->type, c->dim->step)));
-			append(rng_exps , exp_atom(sql->sa, atom_general(sql->sa, &c->type, c->dim->stop)));
+			append(rng_exps, rel_check_type(sql, &c->type, exp_atom_lng(sql->sa, c->dim->strt), type_cast));
+			append(rng_exps, rel_check_type(sql, &c->type, exp_atom_lng(sql->sa, c->dim->step), type_cast));
+			append(rng_exps, rel_check_type(sql, &c->type, exp_atom_lng(sql->sa, c->dim->stop), type_cast));
+
 			list_append(drngs, rng_exps);
 			list_append(drngs, new_exp_list(sql->sa)); /* an empty list for the slicing range */
 			list_append(drngs, new_exp_list(sql->sa)); /* an empty list for the tiling range */
@@ -1767,9 +1767,9 @@ rel_named_table_function(mvc *sql, sql_rel *rel, symbol *query)
 			list *rng_exps = new_exp_list(sql->sa), *drngs = sa_list(sql->sa);
 			assert(rng_exps && drngs);
 
-			append(rng_exps , exp_atom(sql->sa, atom_general(sql->sa, &c->type, c->dim->start)));
-			append(rng_exps , exp_atom(sql->sa, atom_general(sql->sa, &c->type, c->dim->step)));
-			append(rng_exps , exp_atom(sql->sa, atom_general(sql->sa, &c->type, c->dim->stop)));
+			append(rng_exps, rel_check_type(sql, &c->type, exp_atom_lng(sql->sa, c->dim->strt), type_cast));
+			append(rng_exps, rel_check_type(sql, &c->type, exp_atom_lng(sql->sa, c->dim->step), type_cast));
+			append(rng_exps, rel_check_type(sql, &c->type, exp_atom_lng(sql->sa, c->dim->stop), type_cast));
 			append(drngs, rng_exps);
 			append(drngs, new_exp_list(sql->sa)); /* empty lists for slicing and */
 			append(drngs, new_exp_list(sql->sa)); /* tiling ranges */
@@ -2196,12 +2196,12 @@ rel_arraytiling(mvc *sql, sql_rel **rel, symbol *tile_def, int f)
 		return sql_error(sql, 02, "SELECT: no such array '%s.%s'", (cur_schema(sql))->base.name, aalias);
 	}
 	a = rbt->l;
-	if (a->ndims > ARRAY_TILING_MAX_DIMS)
+	if (a->valence > ARRAY_TILING_MAX_DIMS)
 		return sql_error(sql, 02, "TODO: tiling over arrays with >%d dimensions", ARRAY_TILING_MAX_DIMS);
 
 	idx_exps = tile_def->data.lval->h->next->data.lval;
-	if (dlist_length(idx_exps) > a->ndims)
-		return sql_error(sql, 02, "SELECT: #dimensions (%d) in array tiling larger than #dimensions (%d) in the array", dlist_length(idx_exps), a->ndims);
+	if (dlist_length(idx_exps) > a->valence)
+		return sql_error(sql, 02, "SELECT: #dimensions (%d) in array tiling larger than #dimensions (%d) in the array", dlist_length(idx_exps), a->valence);
 
 	/* copy all dimensional columns to the output groupby exps, since the
 	 * omitting of a dimension in the GROUP BY clause equals to '[*]' */
@@ -4334,14 +4334,14 @@ _rel_tiling_aggr(mvc *sql, sql_rel **rel, sql_rel *groupby, int distinct, char *
 		append(aggr_types, exp_subtype(exp));
 	}
 
-	dim    = SA_NEW_ARRAY(sql->sa, sql_exp*, t->ndims);
-	os_sta = SA_NEW_ARRAY(sql->sa, sql_exp*, t->ndims);
-	os_ste = SA_NEW_ARRAY(sql->sa, sql_exp*, t->ndims);
-	os_sto = SA_NEW_ARRAY(sql->sa, sql_exp*, t->ndims);
-	oss    = SA_NEW_ARRAY(sql->sa, sql_exp*, t->ndims);
-	dsize  = SA_NEW_ARRAY(sql->sa, sql_exp*, t->ndims);
-	nrep = SA_NEW_ARRAY(sql->sa, sql_exp*, t->ndims);
-	ngrp = SA_NEW_ARRAY(sql->sa, sql_exp*, t->ndims);
+	dim    = SA_NEW_ARRAY(sql->sa, sql_exp*, t->valence);
+	os_sta = SA_NEW_ARRAY(sql->sa, sql_exp*, t->valence);
+	os_ste = SA_NEW_ARRAY(sql->sa, sql_exp*, t->valence);
+	os_sto = SA_NEW_ARRAY(sql->sa, sql_exp*, t->valence);
+	oss    = SA_NEW_ARRAY(sql->sa, sql_exp*, t->valence);
+	dsize  = SA_NEW_ARRAY(sql->sa, sql_exp*, t->valence);
+	nrep = SA_NEW_ARRAY(sql->sa, sql_exp*, t->valence);
+	ngrp = SA_NEW_ARRAY(sql->sa, sql_exp*, t->valence);
 	if (!dim || !os_sta || !os_ste || !os_sto || !oss || !dsize || !nrep || !ngrp) {
 		return sql_error(sql, 02, "SELECT: failed to allocate space");
 	}
@@ -4385,9 +4385,9 @@ _rel_tiling_aggr(mvc *sql, sql_rel **rel, sql_rel *groupby, int distinct, char *
 	/* Compute the repeatings, see the formula in rel_schema.c.
 	 * The parameters of array_series1() are dynamically computed by the sql_exp-s.
 	 */
-	for (i = 0; i < t->ndims; i++)
+	for (i = 0; i < t->valence; i++)
 		nrep[i] = ngrp[i] = exp_atom_int(sql->sa, 1);
-	for (i = 0; i < t->ndims; i++){
+	for (i = 0; i < t->valence; i++){
 		if (!(sf = sql_bind_func(sql->sa, sql->session->schema, "sql_sub", exp_subtype(os_sto[i]), exp_subtype(os_sta[i]), F_FUNC)))
 			return sql_error(sql, 02, "failed to bind to the SQL function \"-\"");
 		exp = exp_binop(sql->sa, os_sto[i], os_sta[i], sf);
@@ -4407,7 +4407,7 @@ _rel_tiling_aggr(mvc *sql, sql_rel **rel, sql_rel *groupby, int distinct, char *
 				return sql_error(sql, 02, "failed to bind to the SQL function \"*\"");
 			nrep[j] = exp_binop(sql->sa, nrep[j], exp, sf);
 		}
-		for (j = t->ndims-1; j > i; j--) {
+		for (j = t->valence-1; j > i; j--) {
 			if (!(sf = sql_bind_func(sql->sa, sql->session->schema, "sql_mul", exp_subtype(ngrp[j]), exp_subtype(exp), F_FUNC)))
 				return sql_error(sql, 02, "failed to bind to the SQL function \"*\"");
 			ngrp[j] = exp_binop(sql->sa, ngrp[j], exp, sf);
@@ -4415,7 +4415,7 @@ _rel_tiling_aggr(mvc *sql, sql_rel **rel, sql_rel *groupby, int distinct, char *
 	}
 
 	/* Append all args to 'aggr_args' for the SciQL AGGR functions. */
-	for (i = 0; i < t->ndims; i++) {
+	for (i = 0; i < t->valence; i++) {
 		list *srs_args = new_exp_list(sql->sa);
 
 		/* The dimension column */
@@ -5574,7 +5574,7 @@ is_tiling_groupby (sql_exp *e)
 	if(e->type == e_atom) {
 		return 0;
 	} else if (e->type == e_func || e->type == e_aggr) {
-		node *n = ((list*)e->l)->h;
+		node *n = e->l? ((list*)e->l)->h:NULL;
 		for (; n; n = n->next) {
 			if(is_tiling_groupby((sql_exp*)n->data))
 				return 1;

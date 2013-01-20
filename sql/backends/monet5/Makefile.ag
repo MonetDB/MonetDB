@@ -43,7 +43,8 @@ lib__sql = {
 		sql_optimizer.c sql_optimizer.h \
 		sql_result.c sql_result.h \
 		sql_readline.c sql_readline.h \
-		sql_emptyset.c sql_emptyset.h
+		sql_emptyset.c sql_emptyset.h \
+		sciql.c sciql.h
 	LIBS = ../../server/libsqlserver \
 		   ../../storage/libstore \
 		   ../../storage/bat/libbatstore \
@@ -94,14 +95,15 @@ lib__sql = {
 headers_mal = {
 	HEADERS = mal
 	DIR = libdir/monetdb5
-	SOURCES = sql.mx
+	SOURCES = sql.mx sciql.mal
 }
 
 headers_autoload = {
 	HEADERS = mal
 	DIR = libdir/monetdb5/autoload
-	SOURCES = 40_sql.mal
+	SOURCES = 40_sql.mal \
+			  41_sciql.mal
 }
 
-EXTRA_DIST = 40_sql.mal
+EXTRA_DIST = 40_sql.mal 41_sciql.mal
 EXTRA_DIST_DIR = Tests

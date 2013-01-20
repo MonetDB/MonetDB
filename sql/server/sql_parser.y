@@ -1654,12 +1654,10 @@ generated_column:
 dimension:
 	DIMENSION range_exp
 	{
-		dlist *l = L();
-		append_list(l, $2);
-		$$= _symbol_create_list(SQL_DIMENSION,l);
+		$$= _symbol_create_list(SQL_DIMENSION,$2);
 	}
   | DIMENSION {
-		$$= _symbol_create_list(SQL_DIMENSION,NULL);
+		$$= _symbol_create_list(SQL_DIMENSION,L());
 	}
 ;
 

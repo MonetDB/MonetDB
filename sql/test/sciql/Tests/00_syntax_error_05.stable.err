@@ -32,7 +32,7 @@ stderr of test '00_syntax_error_05` in directory 'test/sciql` itself:
 
 MAPI  = monetdb@riga:33209
 QUERY = CREATE ARRAY err(x INTEGER DIMENSION[1:10:1]);
-ERROR = !Illegal dimension range, [start:step:stop] have values: [1:10:1]
+ERROR = !Illegal range of dimension 'x': [1:10:1]
 
 
 

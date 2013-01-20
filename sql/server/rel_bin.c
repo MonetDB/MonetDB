@@ -4246,6 +4246,11 @@ rel2bin_catalog_table(mvc *sql, sql_rel *rel, list *refs)
 	append(l, sname);
 	append(l, table);
 	append(l, action);
+	if (rel->flag == DDL_CREATE_ARRAY){ /* the dimension range exps */
+		assert(en && en->next);
+		for(en = en->next; en; en = en->next)
+			append(l, exp_bin(sql, en->data, NULL, NULL, NULL, NULL));
+	}
 	return stmt_catalog(sql->sa, rel->flag, stmt_list(sql->sa, l));
 }
 

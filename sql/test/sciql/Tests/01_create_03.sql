@@ -1,35 +1,3 @@
--- use the [size] shortcut for integer type dimensions
-CREATE ARRAY test_01_03_tinyint  (x TINYINT  DIMENSION[4], v FLOAT DEFAULT 3.7);
-CREATE ARRAY test_01_03_smallint (x SMALLINT DIMENSION[4], v FLOAT DEFAULT 3.7);
-CREATE ARRAY test_01_03_int      (x INTEGER  DIMENSION[4], v FLOAT DEFAULT 3.7);
-CREATE ARRAY test_01_03_bigint   (x BIGINT   DIMENSION[4], v FLOAT DEFAULT 3.7);
-
-SELECT * FROM test_01_03_tinyint;
-SELECT * FROM test_01_03_smallint;
-SELECT * FROM test_01_03_int;
-SELECT * FROM test_01_03_bigint;
-
-DROP ARRAY test_01_03_tinyint;
-DROP ARRAY test_01_03_smallint;
-DROP ARRAY test_01_03_int;
-DROP ARRAY test_01_03_bigint;
-
--- use the [-size] shortcut for integer type dimensions
-CREATE ARRAY test_01_03_neg_tinyint  (x TINYINT  DIMENSION[-4], v FLOAT DEFAULT 3.7);
-CREATE ARRAY test_01_03_neg_smallint (x SMALLINT DIMENSION[-4], v FLOAT DEFAULT 3.7);
-CREATE ARRAY test_01_03_neg_int      (x INTEGER  DIMENSION[-4], v FLOAT DEFAULT 3.7);
-CREATE ARRAY test_01_03_neg_bigint   (x BIGINT   DIMENSION[-4], v FLOAT DEFAULT 3.7);
-
-SELECT * FROM test_01_03_neg_tinyint;
-SELECT * FROM test_01_03_neg_smallint;
-SELECT * FROM test_01_03_neg_int;
-SELECT * FROM test_01_03_neg_bigint;
-
-DROP ARRAY test_01_03_neg_tinyint;
-DROP ARRAY test_01_03_neg_smallint;
-DROP ARRAY test_01_03_neg_int;
-DROP ARRAY test_01_03_neg_bigint;
-
 -- use the [varname] shortcut for integer type dimensions
 DECLARE vTinyint  TINYINT;  SET vTinyint = 6;
 DECLARE vSmallint SMALLINT; SET vSmallint = 6;
@@ -95,4 +63,31 @@ DROP ARRAY test_01_03_tinyint_bigint;
 DROP ARRAY test_01_03_smallint_bigint;
 DROP ARRAY test_01_03_int_bigint;
 DROP ARRAY test_01_03_bigint_bigint;
+
+-- overflow checking
+DECLARE vOverflow BIGINT;   SET vOverflow = 4294967296;
+
+CREATE ARRAY test_01_03_tinyint_overflow       (x TINYINT  DIMENSION[vOverflow], v FLOAT DEFAULT 3.7);
+CREATE ARRAY test_01_03_smallint_overflow      (x SMALLINT DIMENSION[vOverflow], v FLOAT DEFAULT 3.7);
+CREATE ARRAY test_01_03_int_overflow           (x INTEGER  DIMENSION[vOverflow], v FLOAT DEFAULT 3.7);
+
+SELECT * FROM test_01_03_tinyint_overflow;
+SELECT * FROM test_01_03_smallint_overflow;
+SELECT * FROM test_01_03_int_overflow;
+
+DROP ARRAY test_01_03_tinyint_overflow;
+DROP ARRAY test_01_03_smallint_overflow;
+DROP ARRAY test_01_03_int_overflow;
+
+CREATE ARRAY test_01_03_tinyint_cell_overflow  (x SMALLINT DIMENSION[1], v TINYINT  DEFAULT 4294967296);
+CREATE ARRAY test_01_03_smallint_cell_overflow (x SMALLINT DIMENSION[1], v SMALLINT DEFAULT 4294967296);
+CREATE ARRAY test_01_03_int_cell_overflow      (x SMALLINT DIMENSION[1], v INT      DEFAULT 4294967296);
+
+SELECT * FROM test_01_03_tinyint_cell_overflow;
+SELECT * FROM test_01_03_smallint_cell_overflow;
+SELECT * FROM test_01_03_int_cell_overflow;
+
+DROP ARRAY test_01_03_tinyint_cell_overflow;
+DROP ARRAY test_01_03_smallint_cell_overflow;
+DROP ARRAY test_01_03_int_cell_overflow;
 

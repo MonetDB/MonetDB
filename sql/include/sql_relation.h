@@ -93,7 +93,7 @@ typedef struct expression {
 #define DDL_DROP_TABLE 	 26
 #define DDL_DROP_ARRAY 27
 #define DDL_CREATE_VIEW  28
-#define DDL_CREATE_VIEW_ARRAY 29
+#define DDL_CREATE_ARRAY_VIEW 29
 #define DDL_DROP_VIEW    30
 #define DDL_DROP_CONSTRAINT    31
 #define DDL_ALTER_TABLE  32

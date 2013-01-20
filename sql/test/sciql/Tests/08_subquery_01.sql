@@ -1,6 +1,6 @@
 set optimizer='no_mitosis_pipe';
 
-CREATE ARRAY ary(x INT DIMENSION[4], y INT DIMENSION[-5], v FLOAT DEFAULT 3.7);
+CREATE ARRAY ary(x INT DIMENSION[4], y INT DIMENSION[0:-1:-5], v FLOAT DEFAULT 3.7);
 
 SELECT  x, SUM(v), COUNT(*) FROM (SELECT * FROM ary[1:3]) AS a GROUP BY x;
 

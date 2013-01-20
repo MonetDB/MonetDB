@@ -23,94 +23,6 @@ Ready.
 # 16:32:40 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=jarl" "--port=31347"
 # 16:32:40 >  
 
-#CREATE ARRAY test_01_03_tinyint  (x TINYINT  DIMENSION[4], v FLOAT DEFAULT 3.7);
-#CREATE ARRAY test_01_03_smallint (x SMALLINT DIMENSION[4], v FLOAT DEFAULT 3.7);
-#CREATE ARRAY test_01_03_int      (x INTEGER  DIMENSION[4], v FLOAT DEFAULT 3.7);
-#CREATE ARRAY test_01_03_bigint   (x BIGINT   DIMENSION[4], v FLOAT DEFAULT 3.7);
-#SELECT * FROM test_01_03_tinyint;
-% sys.test_01_03_tinyint,	sys.test_01_03_tinyint # table_name
-% x,	v # name
-% tinyint,	double # type
-% 1,	24 # length
-[ 0,	3.7	]
-[ 1,	3.7	]
-[ 2,	3.7	]
-[ 3,	3.7	]
-#SELECT * FROM test_01_03_smallint;
-% sys.test_01_03_smallint,	sys.test_01_03_smallint # table_name
-% x,	v # name
-% smallint,	double # type
-% 1,	24 # length
-[ 0,	3.7	]
-[ 1,	3.7	]
-[ 2,	3.7	]
-[ 3,	3.7	]
-#SELECT * FROM test_01_03_int;
-% sys.test_01_03_int,	sys.test_01_03_int # table_name
-% x,	v # name
-% int,	double # type
-% 1,	24 # length
-[ 0,	3.7	]
-[ 1,	3.7	]
-[ 2,	3.7	]
-[ 3,	3.7	]
-#SELECT * FROM test_01_03_bigint;
-% sys.test_01_03_bigint,	sys.test_01_03_bigint # table_name
-% x,	v # name
-% bigint,	double # type
-% 1,	24 # length
-[ 0,	3.7	]
-[ 1,	3.7	]
-[ 2,	3.7	]
-[ 3,	3.7	]
-#DROP ARRAY test_01_03_tinyint;
-#DROP ARRAY test_01_03_smallint;
-#DROP ARRAY test_01_03_int;
-#DROP ARRAY test_01_03_bigint;
-#CREATE ARRAY test_01_03_neg_tinyint  (x TINYINT  DIMENSION[-4], v FLOAT DEFAULT 3.7);
-#CREATE ARRAY test_01_03_neg_smallint (x SMALLINT DIMENSION[-4], v FLOAT DEFAULT 3.7);
-#CREATE ARRAY test_01_03_neg_int      (x INTEGER  DIMENSION[-4], v FLOAT DEFAULT 3.7);
-#CREATE ARRAY test_01_03_neg_bigint   (x BIGINT   DIMENSION[-4], v FLOAT DEFAULT 3.7);
-#SELECT * FROM test_01_03_neg_tinyint;
-% sys.test_01_03_neg_tinyint,	sys.test_01_03_neg_tinyint # table_name
-% x,	v # name
-% tinyint,	double # type
-% 2,	24 # length
-[ 0,	3.7	]
-[ -1,	3.7	]
-[ -2,	3.7	]
-[ -3,	3.7	]
-#SELECT * FROM test_01_03_neg_smallint;
-% sys.test_01_03_neg_smallint,	sys.test_01_03_neg_smallint # table_name
-% x,	v # name
-% smallint,	double # type
-% 2,	24 # length
-[ 0,	3.7	]
-[ -1,	3.7	]
-[ -2,	3.7	]
-[ -3,	3.7	]
-#SELECT * FROM test_01_03_neg_int;
-% sys.test_01_03_neg_int,	sys.test_01_03_neg_int # table_name
-% x,	v # name
-% int,	double # type
-% 2,	24 # length
-[ 0,	3.7	]
-[ -1,	3.7	]
-[ -2,	3.7	]
-[ -3,	3.7	]
-#SELECT * FROM test_01_03_neg_bigint;
-% sys.test_01_03_neg_bigint,	sys.test_01_03_neg_bigint # table_name
-% x,	v # name
-% bigint,	double # type
-% 2,	24 # length
-[ 0,	3.7	]
-[ -1,	3.7	]
-[ -2,	3.7	]
-[ -3,	3.7	]
-#DROP ARRAY test_01_03_neg_tinyint;
-#DROP ARRAY test_01_03_neg_smallint;
-#DROP ARRAY test_01_03_neg_int;
-#DROP ARRAY test_01_03_neg_bigint;
 #DECLARE vTinyint  TINYINT;  SET vTinyint = 6;
 #DECLARE vTinyint  TINYINT;  SET vTinyint = 6;
 #DECLARE vSmallint SMALLINT; SET vSmallint = 6;
@@ -173,6 +85,17 @@ Ready.
 [ 3,	3.7	]
 [ 4,	3.7	]
 [ 5,	3.7	]
+#SELECT * FROM test_01_03_tinyint_smallint;
+% sys.test_01_03_tinyint_smallint,	sys.test_01_03_tinyint_smallint # table_name
+% x,	v # name
+% tinyint,	double # type
+% 1,	24 # length
+[ 0,	3.7	]
+[ 1,	3.7	]
+[ 2,	3.7	]
+[ 3,	3.7	]
+[ 4,	3.7	]
+[ 5,	3.7	]
 #SELECT * FROM test_01_03_smallint_smallint;
 % sys.test_01_03_smallint_smallint,	sys.test_01_03_smallint_smallint # table_name
 % x,	v # name
@@ -206,6 +129,28 @@ Ready.
 [ 3,	3.7	]
 [ 4,	3.7	]
 [ 5,	3.7	]
+#SELECT * FROM test_01_03_tinyint_int;
+% sys.test_01_03_tinyint_int,	sys.test_01_03_tinyint_int # table_name
+% x,	v # name
+% tinyint,	double # type
+% 1,	24 # length
+[ 0,	3.7	]
+[ 1,	3.7	]
+[ 2,	3.7	]
+[ 3,	3.7	]
+[ 4,	3.7	]
+[ 5,	3.7	]
+#SELECT * FROM test_01_03_smallint_int;
+% sys.test_01_03_smallint_int,	sys.test_01_03_smallint_int # table_name
+% x,	v # name
+% smallint,	double # type
+% 1,	24 # length
+[ 0,	3.7	]
+[ 1,	3.7	]
+[ 2,	3.7	]
+[ 3,	3.7	]
+[ 4,	3.7	]
+[ 5,	3.7	]
 #SELECT * FROM test_01_03_int_int;
 % sys.test_01_03_int_int,	sys.test_01_03_int_int # table_name
 % x,	v # name
@@ -221,6 +166,39 @@ Ready.
 % sys.test_01_03_bigint_int,	sys.test_01_03_bigint_int # table_name
 % x,	v # name
 % bigint,	double # type
+% 1,	24 # length
+[ 0,	3.7	]
+[ 1,	3.7	]
+[ 2,	3.7	]
+[ 3,	3.7	]
+[ 4,	3.7	]
+[ 5,	3.7	]
+#SELECT * FROM test_01_03_tinyint_bigint;
+% sys.test_01_03_tinyint_bigint,	sys.test_01_03_tinyint_bigint # table_name
+% x,	v # name
+% tinyint,	double # type
+% 1,	24 # length
+[ 0,	3.7	]
+[ 1,	3.7	]
+[ 2,	3.7	]
+[ 3,	3.7	]
+[ 4,	3.7	]
+[ 5,	3.7	]
+#SELECT * FROM test_01_03_smallint_bigint;
+% sys.test_01_03_smallint_bigint,	sys.test_01_03_smallint_bigint # table_name
+% x,	v # name
+% smallint,	double # type
+% 1,	24 # length
+[ 0,	3.7	]
+[ 1,	3.7	]
+[ 2,	3.7	]
+[ 3,	3.7	]
+[ 4,	3.7	]
+[ 5,	3.7	]
+#SELECT * FROM test_01_03_int_bigint;
+% sys.test_01_03_int_bigint,	sys.test_01_03_int_bigint # table_name
+% x,	v # name
+% int,	double # type
 % 1,	24 # length
 [ 0,	3.7	]
 [ 1,	3.7	]

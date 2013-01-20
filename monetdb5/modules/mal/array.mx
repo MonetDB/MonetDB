@@ -207,11 +207,14 @@ ARRAYseries_@1(int *ret, @1 *start, @1 *step, @1 *stop, int *group, int *series)
 		throw(MAL, "array.series", "#groups must be > 0,  got (%d)", *group);
 	if ( *series < 1 )
 		throw(MAL, "array.series", "#series must be > 0,  got (%d)", *series);
+	
+	if (*step == 0 || *start == *stop || (*start < *stop && *step < 0) ||
+			(*start > *stop && *step > 0))
+		throw(MAL, "array.series", "Illegal dimension range: [@2:@2:@2]",
+				*start, *step, *stop);
 
-	if ( (*start < *stop && *step > 0) || (*start > *stop && *step < 0) ) {
-		cnt =  (BUN) ceil(((*stop * 1.0 - *start) / *step)) * *group * *series ;
-	} else
-		throw(MAL, "array.series", "Illegal dimension range, [start:step:stop] have values: [@2:@2:@2]", *start, *step, *stop);
+
+	cnt =  (BUN) ceil(((*stop * 1.0 - *start) / *step)) * *group * *series ;
 	bn = BATnew(TYPE_void, TYPE_@1, cnt);
 	if ( bn == NULL)
 		throw(MAL, "array.series", MAL_MALLOC_FAIL);
@@ -400,8 +403,11 @@ ARRAYtiles@4_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	dMin = (int*) GDKzalloc(sizeof(int) * ndims);
 	dMax = (int*) GDKzalloc(sizeof(int) * ndims);
 	dSize = (int*) GDKzalloc(sizeof(int) * ndims);
-	bVal = BATdescriptor(*(int*)getArgReference(stk,pci,1));
-	if(!bDims || !bDimsT || !bOffsets || !bOffsetsT || !dMin || !dMax || !dSize || !bVal) {
+	if(!bDims || !bDimsT || !bOffsets || !bOffsetsT || !dMin || !dMax || !dSize) {
+		AGGR_CLEANUP();
+		throw(MAL, "array.@5", MAL_MALLOC_FAIL);
+	}
+	if(!(bVal = BATdescriptor(*(int*)getArgReference(stk,pci,1)))) {
 		AGGR_CLEANUP();
 		throw(MAL, "array.@5", RUNTIME_OBJECT_MISSING);
 	}
@@ -569,8 +575,11 @@ ARRAYtiles@2_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	dMin = (int*) GDKzalloc(sizeof(int) * ndims);
 	dMax = (int*) GDKzalloc(sizeof(int) * ndims);
 	dSize = (int*) GDKzalloc(sizeof(int) * ndims);
-	bVal = BATdescriptor(*(int*)getArgReference(stk,pci,1));
-	if(!bDims || !bDimsT || !bOffsets || !bOffsetsT || !dMin || !dMax || !dSize || !bVal) {
+	if(!bDims || !bDimsT || !bOffsets || !bOffsetsT || !dMin || !dMax || !dSize) {
+		AGGR_CLEANUP();
+		throw(MAL, "array.@3", MAL_MALLOC_FAIL);
+	}
+	if (!(bVal = BATdescriptor(*(int*)getArgReference(stk,pci,1)))) {
 		AGGR_CLEANUP();
 		throw(MAL, "array.@3", RUNTIME_OBJECT_MISSING);
 	}

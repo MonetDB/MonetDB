@@ -5,7 +5,7 @@
 
 set optimizer='no_mitosis_pipe';
 
-CREATE ARRAY ary(x INT DIMENSION[4], y INT DIMENSION[-5], v FLOAT DEFAULT 3.7);
+CREATE ARRAY ary(x INT DIMENSION[4], y INT DIMENSION[0:-1:-5], v FLOAT DEFAULT 3.7);
 
 WITH a AS (SELECT * FROM ary[1:3]) SELECT x, y, SUM(v), AVG(v) FROM a GROUP BY a[x-1:x+1][y+1:y-1];
 

@@ -30,9 +30,21 @@ stderr of test '00_syntax_error_01` in directory 'test/sciql` itself:
 # 13:37:16 >  mclient -lsql -ftest -i -e --host=jarl --port=38847 
 # 13:37:16 >  
 
-MAPI  = monetdb@riga:39460
-QUERY = create array err(payload float);
+MAPI  = monetdb@riga:36629
+QUERY = CREATE ARRAY test_00_01          (payload FLOAT);
 ERROR = !CREATE ARRAY: an array must have at least one dimension
+MAPI  = monetdb@riga:36629
+QUERY = CREATE ARRAY test_00_01_tinyint  (x TINYINT  DIMENSION[-4]);
+ERROR = !Illegal range of dimension 'x': [0:1:-4]
+MAPI  = monetdb@riga:36629
+QUERY = CREATE ARRAY test_00_01_smallint (x SMALLINT DIMENSION[-4]);
+ERROR = !Illegal range of dimension 'x': [0:1:-4]
+MAPI  = monetdb@riga:36629
+QUERY = CREATE ARRAY test_00_01_int      (x INTEGER  DIMENSION[-4]);
+ERROR = !Illegal range of dimension 'x': [0:1:-4]
+MAPI  = monetdb@riga:36629
+QUERY = CREATE ARRAY test_00_01_bigint   (x BIGINT   DIMENSION[-4]);
+ERROR = !Illegal range of dimension 'x': [0:1:-4]
 
 
 # 13:37:16 >  

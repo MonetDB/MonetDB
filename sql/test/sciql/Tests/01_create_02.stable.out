@@ -23,13 +23,38 @@ Ready.
 # 16:32:40 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=jarl" "--port=31347"
 # 16:32:40 >  
 
-#CREATE ARRAY ary (x INTEGER DIMENSION, v FLOAT DEFAULT 3.7);
-#SELECT * FROM ary;
-% ts.ary,	ts.ary # table_name
+#CREATE SCHEMA TS; 
+#SET SCHEMA TS; 
+#CREATE ARRAY test_01_02_tinyint  (x TINYINT  DIMENSION, v FLOAT DEFAULT 3.7);
+#CREATE ARRAY test_01_02_smallint (x SMALLINT DIMENSION, v FLOAT);
+#CREATE ARRAY test_01_02_int      (x INTEGER  DIMENSION, v FLOAT DEFAULT 3.7);
+#CREATE ARRAY test_01_02_bigint   (x BIGINT   DIMENSION, v FLOAT DEFAULT NULL);
+#SELECT * FROM test_01_02_tinyint;
+% ts.test_01_02_tinyint,	ts.test_01_02_tinyint # table_name
+% x,	v # name
+% tinyint,	double # type
+% 1,	24 # length
+#SELECT * FROM test_01_02_smallint;
+% ts.test_01_02_smallint,	ts.test_01_02_smallint # table_name
+% x,	v # name
+% smallint,	double # type
+% 1,	24 # length
+#SELECT * FROM test_01_02_int;
+% ts.test_01_02_int,	ts.test_01_02_int # table_name
 % x,	v # name
 % int,	double # type
 % 1,	24 # length
-#DROP ARRAY ary;
+#SELECT * FROM test_01_02_bigint;
+% ts.test_01_02_bigint,	ts.test_01_02_bigint # table_name
+% x,	v # name
+% bigint,	double # type
+% 1,	24 # length
+#DROP ARRAY test_01_02_tinyint;
+#DROP ARRAY test_01_02_smallint;
+#DROP ARRAY test_01_02_int;
+#DROP ARRAY test_01_02_bigint;
+#SET SCHEMA SYS;
+#DROP SCHEMA TS; 
 
 # 23:27:05 >  
 # 23:27:05 >  Done.

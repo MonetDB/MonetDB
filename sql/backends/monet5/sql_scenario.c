@@ -856,7 +856,7 @@ SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output)
 			goto endofcompile;
 		}
 		/* generate MAL code */
-		backend_callinline(sql, c, s );
+		backend_callinline(sql, c, s, r);
 		addQueryToCache(c);
 
 		if( c->curprg->def->errors){
@@ -1537,7 +1537,7 @@ SQLparser(Client c)
 			MalBlkPtr mb;
 
 			scanner_query_processed(&(m->scanner));
-			backend_callinline(be, c, s);
+			backend_callinline(be, c, s, r);
 			trimMalBlk(c->curprg->def);
 			mb = c->curprg->def;
         		chkProgram(c->fdout, c->nspace, mb);
@@ -1557,7 +1557,7 @@ SQLparser(Client c)
 					m->type,  /* the type of the statement */
 					sql_escape_str(QUERY(m->scanner)));
 			scanner_query_processed(&(m->scanner));
-			be->q->code = (backend_code) backend_dumpproc(be, c, be->q, s);
+			be->q->code = (backend_code) backend_dumpproc(be, c, be->q, s, r);
 			be->q->stk = 0;
 
 			/* passed over to query cache, used during dumpproc */
@@ -1877,7 +1877,7 @@ SQLrecompile(Client c, backend *be)
 
 	SQLCacheRemove(c, be->q->name);
 	s = sql_relation2stmt(m, be->q->rel);
-	be->q->code = (backend_code)backend_dumpproc(be, c, be->q, s);
+	be->q->code = (backend_code)backend_dumpproc(be, c, be->q, s, be->q->rel);
 	be->q->stk = 0;
 
 	pushEndInstruction(c->curprg->def);

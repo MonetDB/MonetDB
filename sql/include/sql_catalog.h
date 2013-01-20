@@ -229,11 +229,12 @@ typedef struct sql_subtype {
 	struct sql_table *comp_type;	
 } sql_subtype;
 
-typedef struct sql_dimspec {
-	char *start; /* NULL means unbounded */
-	char *step;
-	char *stop;
-} sql_dimspec;
+typedef struct sql_dimrange {
+	int ord; /* this dimension is stored as the ord-th dimension */
+	lng strt; /* lng_nil means unbounded */
+	lng step;
+	lng stop;
+} sql_dimrange;
 
 /* sql_func need type transform rules types are equal if underlying
  * types are equal + scale is equal if types do not mach we try type
@@ -392,7 +393,7 @@ typedef enum sql_histype {
 typedef struct sql_column {
 	sql_base base;
 	sql_subtype type;
-	sql_dimspec *dim;
+	sql_dimrange *dim;
 	int colnr;
 	bit null;
 	char *def;
@@ -426,7 +427,7 @@ typedef enum table_types {
 #define isArray(x)  	(x->type==tt_array)
 #define isTableOrArray(x)(x->type==tt_array || x->type==tt_table)
 #define isFixedArray(a) (a->type == tt_array && a->fixed)
-#define isFixedDim(d)   (d->start && d->step && d->stop && d->start[0] != '\0' && d->step[0] != '\0' && d->stop[0] != '\0')
+#define isFixedDim(d)   (d->strt != lng_nil && d->step != lng_nil && d->stop != lng_nil)
 
 typedef struct sql_table {
 	sql_base base;
@@ -451,12 +452,15 @@ typedef struct sql_table {
 	int drop_action;	/* only needed for alter drop table */
 
 	int cleared;		/* cleared in the current transaction */
-	bit fixed; /* for arrays: fixed or unbounded */
-	int ndims; /* for arrays: number of dimensions */
 
 	void *data;
 	struct sql_schema *s;
 	struct sql_table *p;
+
+	/* array properties: */
+	int valence; /* number of dimensions */
+	bit fixed; /* fixed or unbounded */
+	bit materialised; /* are the columns materialised? */
 } sql_table;
 
 typedef struct res_col {

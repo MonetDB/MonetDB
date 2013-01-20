@@ -23,53 +23,50 @@ Ready.
 # 11:12:52 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=jarl" "--port=33649"
 # 11:12:52 >  
 
-#CREATE ARRAY ary(x TINYINT DIMENSION[4], y BIGINT DIMENSION[-5], v FLOAT DEFAULT 3.7);
-#SELECT * FROM ary;
-% sys.ary,	sys.ary,	sys.ary # table_name
-% x,	y,	v # name
-% tinyint,	bigint,	double # type
-% 1,	2,	24 # length
-[ 0,	0,	3.7	]
-[ 0,	-1,	3.7	]
-[ 0,	-2,	3.7	]
-[ 0,	-3,	3.7	]
-[ 0,	-4,	3.7	]
-[ 1,	0,	3.7	]
-[ 1,	-1,	3.7	]
-[ 1,	-2,	3.7	]
-[ 1,	-3,	3.7	]
-[ 1,	-4,	3.7	]
-[ 2,	0,	3.7	]
-[ 2,	-1,	3.7	]
-[ 2,	-2,	3.7	]
-[ 2,	-3,	3.7	]
-[ 2,	-4,	3.7	]
-[ 3,	0,	3.7	]
-[ 3,	-1,	3.7	]
-[ 3,	-2,	3.7	]
-[ 3,	-3,	3.7	]
-[ 3,	-4,	3.7	]
-#CREATE ARRAY ary1(x TINYINT DIMENSION, y BIGINT DIMENSION, v FLOAT DEFAULT 3.7);
-#SELECT * FROM ary1;
-% sys.ary1,	sys.ary1,	sys.ary1 # table_name
-% x,	y,	v # name
-% tinyint,	bigint,	double # type
-% 1,	1,	24 # length
-#CREATE ARRAY ary2(x TINYINT DIMENSION[4], y BIGINT DIMENSION, z BIGINT DIMENSION[-5], v FLOAT DEFAULT 3.7);
-#SELECT * FROM ary2;
-% sys.ary2,	sys.ary2,	sys.ary2,	sys.ary2 # table_name
-% x,	y,	z,	v # name
-% tinyint,	bigint,	bigint,	double # type
-% 1,	1,	1,	24 # length
-#SELECT * FROM _tables WHERE type = 7 OR fixed_array = TRUE;
-% sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables # table_name
-% id,	name,	schema_id,	query,	type,	system,	commit_action,	readonly,	fixed_array,	nr_dimensions # name
-% int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	boolean,	boolean,	int # type
-% 4,	4,	4,	0,	1,	5,	1,	5,	5,	1 # length
-[ 7029,	"ary",	2000,	NULL,	7,	false,	0,	false,	true,	2	]
-[ 7034,	"ary1",	2000,	NULL,	7,	false,	0,	false,	false,	2	]
-[ 7040,	"ary2",	2000,	NULL,	7,	false,	0,	false,	false,	3	]
-#DROP ARRAY ary;
+#CREATE ARRAY test_01_01_tinyint  (x TINYINT  DIMENSION[4], v FLOAT DEFAULT 3.7);
+#CREATE ARRAY test_01_01_smallint (x SMALLINT DIMENSION[4], v FLOAT);
+#CREATE ARRAY test_01_01_int      (x INTEGER  DIMENSION[4], v FLOAT DEFAULT 3.7);
+#CREATE ARRAY test_01_01_bigint   (x BIGINT   DIMENSION[4], v FLOAT DEFAULT NULL);
+#SELECT * FROM test_01_01_tinyint;
+% sys.test_01_01_tinyint,	sys.test_01_01_tinyint # table_name
+% x,	v # name
+% tinyint,	double # type
+% 1,	24 # length
+[ 0,	3.7	]
+[ 1,	3.7	]
+[ 2,	3.7	]
+[ 3,	3.7	]
+#SELECT * FROM test_01_01_smallint;
+% sys.test_01_01_smallint,	sys.test_01_01_smallint # table_name
+% x,	v # name
+% smallint,	double # type
+% 1,	24 # length
+[ 0,	NULL	]
+[ 1,	NULL	]
+[ 2,	NULL	]
+[ 3,	NULL	]
+#SELECT * FROM test_01_01_int;
+% sys.test_01_01_int,	sys.test_01_01_int # table_name
+% x,	v # name
+% int,	double # type
+% 1,	24 # length
+[ 0,	3.7	]
+[ 1,	3.7	]
+[ 2,	3.7	]
+[ 3,	3.7	]
+#SELECT * FROM test_01_01_bigint;
+% sys.test_01_01_bigint,	sys.test_01_01_bigint # table_name
+% x,	v # name
+% bigint,	double # type
+% 1,	24 # length
+[ 0,	NULL	]
+[ 1,	NULL	]
+[ 2,	NULL	]
+[ 3,	NULL	]
+#DROP ARRAY test_01_01_tinyint;
+#DROP ARRAY test_01_01_smallint;
+#DROP ARRAY test_01_01_int;
+#DROP ARRAY test_01_01_bigint;
 
 # 13:50:46 >  
 # 13:50:46 >  Done.

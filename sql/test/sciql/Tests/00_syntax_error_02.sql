@@ -1,5 +1,5 @@
 -- array dimension types should comply with attribute type
-create array err(x char dimension[1:128:1], v float);
-create array err(s varchar(25) dimension['a':'z':1], v float);
-create array err(s varchar(25) dimension[1:3:1], v float);
+CREATE ARRAY err1(x CHAR DIMENSION[1:128:1], v FLOAT);
+CREATE ARRAY err2(s VARCHAR(25) DIMENSION['a':'z':1], v FLOAT);
+CREATE ARRAY err3(s VARCHAR(25) DIMENSION[1:3:1], v FLOAT);
 

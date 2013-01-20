@@ -55,7 +55,7 @@
 #include <rel_bin.h>
 
 static int _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s);
-static void backend_dumpstmt(backend *be, MalBlkPtr mb, stmt *s);
+static void backend_dumpstmt(backend *be, MalBlkPtr mb, stmt *s, sql_rel *rel);
 
 /*
  * @+ MAL code support
@@ -317,7 +317,7 @@ _create_relational_function(mvc *m, char *name, sql_rel *rel, stmt *call)
 		}
 	}
 
-	backend_dumpstmt(be, curBlk, s);
+	backend_dumpstmt(be, curBlk, s, NULL);
 	/* SQL function definitions meant for inlineing should not be optimized before */
 	varSetProp(curBlk, getArg(curInstr, 0), sqlfunctionProp, op_eq, NULL);
 	addQueryToCache(c);
@@ -2176,7 +2176,9 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
  * They have to be initialized, which is currently hacked
  * by using the SQLstatment.
  */
-static void setCommitProperty(MalBlkPtr mb){
+static void
+setCommitProperty(MalBlkPtr mb)
+{
 	ValRecord cst;
 
 	if ( varGetProp(mb, getArg(mb->stmt[0],0), PropertyIndex("autoCommit")) )
@@ -2186,7 +2188,78 @@ static void setCommitProperty(MalBlkPtr mb){
 	varSetProperty(mb, getArg(getInstrPtr(mb,0),0), "autoCommit","=", &cst);
 }
 
-static void backend_dumpstmt(backend *be, MalBlkPtr mb, stmt *s)
+/*
+ * @-
+ * Walk down the rel tree to find usage of arrays.
+ * Add a sciql.materialise statement for each not materialised array.
+ */
+static void
+add_materialise_stmt(MalBlkPtr mb, sql_rel *rel, list *processed)
+{
+	switch(rel->op) {
+	case op_basetable:
+		{
+			sql_table *t = rel->l;
+			if(isArray(t) && t->fixed && !t->materialised) {
+				int found = 0;
+				node *n = processed->h;
+
+				for ( ; n; n = n->next) {
+					sql_table *tp = n->data;
+					if (strcmp(tp->s->base.name, t->s->base.name) == 0 &&
+							strcmp(tp->base.name, t->base.name) == 0)
+						found = 1;
+				}
+				if (!found) {
+					InstrPtr q = newStmt1(mb, sciqlRef, "materialise");
+					q = pushSchema(mb, q, t);
+					(void) pushStr(mb, q, t->base.name);
+					/* FIXME: is it safe to just append t?  Do we need to copy it? */
+					list_append(processed, t);	
+				}
+			}
+		}
+		break;
+	case op_table:
+		if (rel->flag == 0 && rel->r != NULL) { /* a table returning UDF */
+			sql_table *t = ((sql_subfunc*)((sql_exp*)rel->r)->f)->res.comp_type;
+			if (t->valence > 0) { /* an array returning UDF */
+				/* TODO: materialise the arrays defined/returned by the function */
+			}
+		}
+
+		if (rel->l)
+			add_materialise_stmt(mb, rel->l, processed);	
+		break;
+	case op_select:
+	case op_project:
+	case op_groupby:
+	case op_topn:
+	case op_sample:
+	case op_insert:
+	/* case op_delete: don't create data just to be deleted */
+	case op_update:
+		add_materialise_stmt(mb, rel->l, processed);
+		break;
+	case op_join:
+	case op_left:
+	case op_right:
+	case op_full:
+	case op_semi:
+	case op_anti:
+	case op_union:
+	case op_except:
+	case op_inter:
+		add_materialise_stmt(mb, rel->l, processed);
+		add_materialise_stmt(mb, rel->r, processed);
+		break;
+	default:
+		break;
+	}
+}
+
+static void
+backend_dumpstmt(backend *be, MalBlkPtr mb, stmt *s, sql_rel *rel)
 {
 	mvc *c = be->mvc;
 	stmt **stmts = stmt_array(c->sa, s);
@@ -2198,6 +2271,11 @@ static void backend_dumpstmt(backend *be, MalBlkPtr mb, stmt *s)
 		setCommitProperty(mb);
 	q = newStmt1(mb, sqlRef, "mvc");
 	be->mvc_var = getDestVar(q);
+
+	if (rel != NULL) {
+		list *processed = sa_list(c->sa);
+		add_materialise_stmt(mb, rel, processed);
+	}
 
 	/*print_stmts(c->sa, stmts);*/
 	clear_stmts(stmts);
@@ -2223,7 +2301,7 @@ static void backend_dumpstmt(backend *be, MalBlkPtr mb, stmt *s)
 }
 
 void
-backend_callinline(backend *be, Client c, stmt *s )
+backend_callinline(backend *be, Client c, stmt *s, sql_rel *rel)
 {
 	mvc *m = be->mvc;
 	InstrPtr curInstr = 0;
@@ -2256,12 +2334,12 @@ backend_callinline(backend *be, Client c, stmt *s )
 			}
 		}
 	}
-	backend_dumpstmt(be, curBlk, s);
+	backend_dumpstmt(be, curBlk, s, rel);
 	c->curprg->def = curBlk;
 }
 
 Symbol
-backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
+backend_dumpproc(backend *be, Client c, cq *cq, stmt *s, sql_rel *rel)
 {
 	mvc *m = be->mvc;
 	MalBlkPtr mb = 0;
@@ -2327,7 +2405,7 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 		}
 	}
 
-	backend_dumpstmt(be, mb, s);
+	backend_dumpstmt(be, mb, s, rel);
 	Toptimize = GDKusec();
 	Tparse = Toptimize - m->Tparse;
 
@@ -2445,7 +2523,7 @@ monet5_create_table_function(ptr M, char *name, sql_rel *rel, sql_table *t)
 
 	/* no ops */
 
-	backend_dumpstmt(be, curBlk, s);
+	backend_dumpstmt(be, curBlk, s, NULL);
 	/* SQL function definitions meant for inlineing should not be optimized before */
 	varSetProp(curBlk, getArg(curInstr, 0), sqlfunctionProp, op_eq, NULL);
 	addQueryToCache(c);
@@ -2575,7 +2653,7 @@ backend_create_func(backend *be, sql_func *f)
 	if ( m->session->auto_commit)
 		setCommitProperty(curBlk);
 
-	backend_dumpstmt(be, curBlk, s);
+	backend_dumpstmt(be, curBlk, s, NULL);
 	/* selectively make functions available for inlineing */
 	/* for the time being we only inline scalar functions */
 	/* and only if we see a single return value */

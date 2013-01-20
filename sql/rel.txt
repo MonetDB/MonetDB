@@ -133,10 +133,12 @@ e_column
 	-> l 	optional relation name 
 	-> r	expression name
 	-> f	only used by the dimensional columns of the arrays
-			a list of three lists, with each of them containing three expressions denoting the [start:step:stop] values
-			->h->data: the original range
-			->h->next->data: the slicing range, is empty if there has been no slicing
-			->h->next->next->data: the tiling ranges, is empty if there has been no tiling
+			a list of four lists, with each of them containing three expressions denoting the [start:step:stop] values
+			->h->data: the initial range of the array
+			->h->next->data: for unbounded arrays, the range of the _current_ bounding box.
+			                 The same as ->h->data in case of fixed arrays.
+			->h->next->next->data: the slicing range, is empty if there has been no slicing
+			->h->next->next->next->data: the tiling ranges, is empty if there has been no tiling
 	-> type 
 
 	

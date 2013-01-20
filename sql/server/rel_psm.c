@@ -173,17 +173,12 @@ rel_psm_declare_table(mvc *sql, dnode *n)
 		if (rel->flag != DDL_CREATE_TABLE && rel->flag != DDL_CREATE_ARRAY)
 			return NULL;
 
-		ctype.comp_type = (sql_table*)((atom*)((sql_exp*)rel->exps->t->data)->l)->data.val.pval;
+		/* In case of DDL_CREATE_ARRAY, rel->exps now contains the dimension
+		 * range expressions in its end.  The pointer to the sql_table is the
+		 * third expression in rel->exps */
+		ctype.comp_type = (sql_table*)((atom*)((sql_exp*)rel->exps->h->next->next->data)->l)->data.val.pval;
 		stack_push_rel_var(sql, name, rel_dup(rel), &ctype);
 		return exp_var(sql->sa, sa_strdup(sql->sa, name), &ctype, sql->frame);
-	} else if (rel->op == op_insert) {
-		/* in care of a DECLARE ARRAY, the declared array is hidden in an INSERT relation */
-		sql_rel *l = rel->l;
-		if (l->op != op_ddl || l->flag != DDL_CREATE_ARRAY)
-			return NULL;
-		ctype.comp_type = (sql_table*)((atom*)((sql_exp*)l->exps->t->data)->l)->data.val.pval;
-		stack_push_rel_var(sql, name, rel_dup(l), &ctype);
-		return exp_rel(sql->sa, rel);
 	}
 
 	return NULL;
@@ -440,9 +435,9 @@ rel_psm_return( mvc *sql, sql_subtype *restype, symbol *return_sym )
 				list *rng_exps = new_exp_list(sql->sa), *drngs = sa_list(sql->sa);
 				assert(rng_exps && drngs);
 
-				append(rng_exps, exp_atom(sql->sa, atom_general(sql->sa, &c->type, c->dim->start)));
-				append(rng_exps, exp_atom(sql->sa, atom_general(sql->sa, &c->type, c->dim->step)));
-				append(rng_exps, exp_atom(sql->sa, atom_general(sql->sa, &c->type, c->dim->stop)));
+				append(rng_exps, rel_check_type(sql, &c->type, exp_atom_lng(sql->sa, c->dim->strt), type_cast));
+				append(rng_exps, rel_check_type(sql, &c->type, exp_atom_lng(sql->sa, c->dim->step), type_cast));
+				append(rng_exps, rel_check_type(sql, &c->type, exp_atom_lng(sql->sa, c->dim->stop), type_cast));
 				append(drngs, rng_exps);
 				append(drngs, new_exp_list(sql->sa)); /* empty lists for slicing and */
 				append(drngs, new_exp_list(sql->sa)); /* tiling ranges */
@@ -663,16 +658,16 @@ result_type(mvc *sql, sql_subfunc *f, char *fname, symbol *res)
 					if (res->token != SQL_ARRAY) {
 						return sql_error(sql, 01, "DIMENSION declaration not allowed in a TABLE data type");
 					}
-					if (n->data.sym->data.lval) {
+					if (n->data.sym->data.lval->cnt > 0) {
 						return sql_error(sql, 01, "Dimension range specification not allowed in function return declaration");
 					}
-					cs->dim = ZNEW(sql_dimspec);
-					tbl->ndims++;
+					cs->dim = ZNEW(sql_dimrange);
+					tbl->valence++;
 					/* skip the additional SQL_DIMENSION dnode */
 					n = n->next;
 				}
 			}
-			if (res->token == SQL_ARRAY && tbl->ndims == 0) {
+			if (res->token == SQL_ARRAY && tbl->valence == 0) {
 				return sql_error(sql, 01, "An array must have at least one column declared as a DIMENSION");
 			}
 		}

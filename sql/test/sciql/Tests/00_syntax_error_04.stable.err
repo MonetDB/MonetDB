@@ -30,14 +30,14 @@ stderr of test '00_syntax_error_04` in directory 'test/sciql` itself:
 # 13:47:35 >  mclient -lsql -ftest -i -e --host=jarl --port=32630 
 # 13:47:35 >  
 
-MAPI  = monetdb@riga:38241
-QUERY = create array err(x integer dimension[128], v float default 'unknown');
-ERROR = !conversion of string 'unknown' to type dbl failed.
-MAPI  = monetdb@riga:38241
-QUERY = create array err(x integer dimension[128], v float default (v > 0));
+MAPI  = monetdb@riga:38335
+QUERY = SELECT * FROM err1;
+ERROR = !conversion of string ''unknown'' to type dbl failed.
+MAPI  = monetdb@riga:38335
+QUERY = CREATE ARRAY err2(x INTEGER DIMENSION[128], v FLOAT DEFAULT (v > 0));
 ERROR = !incorrect default value ''
-MAPI  = monetdb@riga:38241
-QUERY = create array err(x integer dimension[128], v float default true);
+MAPI  = monetdb@riga:38335
+QUERY = CREATE ARRAY err3(x INTEGER DIMENSION[128], v FLOAT DEFAULT TRUE);
 ERROR = !types boolean(1,0) and double(53,0) are not equal
 
 # 13:47:35 >  
