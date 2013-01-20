@@ -157,6 +157,28 @@ HASHnew(Heap *hp, int tpe, BUN size, BUN mask)
 		}					\
 	} while (0)
 
+/* collect HASH statistics for analysis */
+static void HASHcollisions(BAT *b, Hash *h)
+{
+	BUN p, *i, *j;
+	lng cnt, entries=0, max =0;
+	double total=0;
+	
+	if ( b == 0 || h == 0 )
+		return;
+	for (i = h->hash, j = i + h->mask; i <= j; i++) 
+	if ( *i != BUN_NONE){
+		entries++;
+		p = *i;
+		cnt = 0;
+		for ( ; p != BUN_NONE; p = h->link[p])
+			cnt++;
+		if ( cnt > max ) max = cnt;
+		total += cnt;
+	}
+
+	fprintf(stderr, "BAThash: statistics (" BUNFMT ", entries " LLFMT", mask " BUNFMT", max " LLFMT ", avg %2.6f);\n", BATcount(b), entries, h->mask, max, total/entries);
+}
 /*
  * The prime routine for the BAT layer is to create a new hash index.
  * Its argument is the element type and the maximum number of BUNs be
@@ -312,6 +334,7 @@ BAThash(BAT *b, BUN masksize)
 			break;
 		}
 		b->H->hash = h;
+		ALGODEBUG HASHcollisions(b,b->H->hash);
 	}
 	MT_lock_unset(&GDKhashLock(ABS(b->batCacheid)), "BAThash");
 	if (o != NULL) {
