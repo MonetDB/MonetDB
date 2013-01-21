@@ -185,22 +185,22 @@ address AX3count_no_nil3;
 
 #define SCAN_aggr_init \
 	oid _h; \
-	BUN _j = BATcount(bn); \
-	oid *_bnh = (oid*) Hloc(bn, BUNfirst(bn)); \
-	BUN _r = BUNfirst(bn);
+	BUN _j = BATcount(e); \
+	oid *_eh = (oid*) Hloc(e, BUNfirst(e)); \
+	BUN _r = BUNfirst(e);
 
-#define SCANfndOID(r, bn, h)	\
-	_h = *(oid*)(h), _j = BATcount(bn.b);         \
+#define SCANfndOID(r, e, h)	\
+	_h = *(oid*)(h), _j = BATcount(e.b);         \
 	r = BUN_NONE;                                     \
 	switch (_j) {                                     \
-	case 8: if (_bnh[7] == _h) { r = _r + 7; break; } \
-	case 7: if (_bnh[6] == _h) { r = _r + 6; break; } \
-	case 6: if (_bnh[5] == _h) { r = _r + 5; break; } \
-	case 5: if (_bnh[4] == _h) { r = _r + 4; break; } \
-	case 4: if (_bnh[3] == _h) { r = _r + 3; break; } \
-	case 3: if (_bnh[2] == _h) { r = _r + 2; break; } \
-	case 2: if (_bnh[1] == _h) { r = _r + 1; break; } \
-	case 1: if (_bnh[0] == _h) { r = _r + 0; break; } \
+	case 8: if (_eh[7] == _h) { r = _r + 7; break; } \
+	case 7: if (_eh[6] == _h) { r = _r + 6; break; } \
+	case 6: if (_eh[5] == _h) { r = _r + 5; break; } \
+	case 5: if (_eh[4] == _h) { r = _r + 4; break; } \
+	case 4: if (_eh[3] == _h) { r = _r + 3; break; } \
+	case 3: if (_eh[2] == _h) { r = _r + 2; break; } \
+	case 2: if (_eh[1] == _h) { r = _r + 1; break; } \
+	case 1: if (_eh[0] == _h) { r = _r + 0; break; } \
 	}
 
 /*
@@ -217,20 +217,20 @@ address AX3count_no_nil3;
  * than hash-lookups in case the tail of the group map (g) is in random order.
  */
 #define MERGE_aggr_init						\
-	BUN _i = 0, _j = BATcount(bn), _r = BUNfirst(bn);	\
-	oid _h, *_bnh = (oid*) Hloc(bn, _r);		\
+	BUN _i = 0, _j = BATcount(e), _r = BUNfirst(e);	\
+	oid _h, *_eh = (oid*) Hloc(e, _r);		\
 	if (_j > 0)						\
 		_j--;
 
-#define MERGEfndOID(r, bn, h)				\
+#define MERGEfndOID(r, e, h)				\
 	_h = *(oid*)(h);				\
 	r = BUN_NONE;					\
 	if (min <= _h && _h <= max ) {			\
-		while ( _i < _j && _bnh[_i] < _h)	\
+		while ( _i < _j && _eh[_i] < _h)	\
 			_i++;				\
-		while ( _i > 0 && _bnh[_i] > _h)	\
+		while ( _i > 0 && _eh[_i] > _h)	\
 			_i--;				\
-		if (_bnh[_i] == _h)			\
+		if (_eh[_i] == _h)			\
 			r = _i + _r;			\
 	}
 

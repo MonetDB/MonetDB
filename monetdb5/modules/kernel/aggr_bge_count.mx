@@ -186,7 +186,7 @@ All Rights Reserved.
 			@7 {
 				@8;
 
-				@3(r, bni, h);
+				@3(r, ei, h);
 				if (r != BUN_NONE) {
 					wrd *dst = (wrd*) @6;
 					(*dst)++;
@@ -208,7 +208,7 @@ CMDaggrX3_count3(BAT **ret, BAT *b, BAT *g, BAT *e, bit *ignore_nils);
 int
 CMDaggrX3_count3(BAT **ret, BAT *b, BAT *g, BAT *e, bit *ignore_nils)
 {
-	BATiter bni, bi = bat_iterator(b);
+	BATiter bni, bi = bat_iterator(b), ei = bat_iterator(e);
 	BAT *bn;
 	wrd zero = 0, *cnt = NULL;
 	BUN p, q, r;

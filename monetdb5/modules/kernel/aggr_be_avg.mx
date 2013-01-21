@@ -114,7 +114,7 @@ All Rights Reserved.
 			@6 *t = (@6*) BUNt@7(bi,p);
 			oid *h = (oid*) @5;
 
-			@3(r, bni, h);
+			@3(r, ei, h);
 			if (r != BUN_NONE) {
 				dbl *dst = (dbl*) @8;
 				*dst += *t;
@@ -126,7 +126,7 @@ All Rights Reserved.
 			@6 *t = (@6*) BUNt@7(bi,p);
 			oid *h = (oid*) @5;
 
-			@3(r, bni, h);
+			@3(r, ei, h);
 			if (r != BUN_NONE) {
 				dbl *dst = (dbl*) @8;
 				if (*dst != dbl_nil) {
@@ -198,7 +198,7 @@ int
 CMDaggrX3_avg_@1(BAT **ret, BAT *b, BAT *e)
 {
 	BAT *bn = BATnew(TYPE_void, TYPE_dbl, BATcount(e));
-	BATiter bni, bi = bat_iterator(b);
+	BATiter bni, bi = bat_iterator(b), ei = bat_iterator(e);
 	BUN off;
 	BUN *cnt = NULL;
 	BUN slots;

@@ -117,7 +117,7 @@ All Rights Reserved.
 			@6 *t = (@6*) BUNt@7(bi,p);
 			oid *h = (oid*) @5;
 
-			@3(r, bni, h);
+			@3(r, ei, h);
 			if (r != BUN_NONE) {
 				@9 *dst = (@9*) @8;
 				*dst *= (@9) *t;
@@ -129,7 +129,7 @@ All Rights Reserved.
 			@6 *t = (@6*) BUNt@7(bi,p);
 			oid *h = (oid*) @5;
 
-			@3(r, bni, h);
+			@3(r, ei, h);
 			if (r != BUN_NONE) {
 				@9 *dst = (@9*) @8;
 				if (*dst != @9_nil) {
@@ -198,7 +198,7 @@ int
 CMDaggrX3_prod_@1_@3(BAT **ret, BAT *b, BAT *e)
 {
 	BAT *bn = BATnew(TYPE_void, TYPE_@3, BATcount(e));
-	BATiter bni, bi = bat_iterator(b);
+	BATiter bni, bi = bat_iterator(b), ei = bat_iterator(e);
 	@3 zero = (@3) 1, *prods = NULL;
 	bit *hit = NULL;
 	BUN slots, off;

@@ -182,7 +182,7 @@ All Rights Reserved.
 			if (w >= base && w < end) {
 				@[11];
 
-				@3(r, bni, (oid*)h);
+				@3(r, ei, (oid*)h);
 				if (r != BUN_NONE) {
 					dbl *dst = (dbl*) @8;
 					*dst += *t;
@@ -199,7 +199,7 @@ All Rights Reserved.
 			if (w >= base && w < end) {
 				@[11];
 
-				@3(r, bni, (oid*)h);
+				@3(r, ei, (oid*)h);
 				if (r != BUN_NONE) {
 					dbl *dst = (dbl*) @8;
 					if (*dst != dbl_nil) {
@@ -230,7 +230,7 @@ int
 CMDaggrX3_avg3_@1(BAT **ret, BAT *b, BAT *g, BAT *e)
 {
 	BAT *bn;
-	BATiter bni, bi = bat_iterator(b);
+	BATiter bni, bi = bat_iterator(b), ei = bat_iterator(e);
 	BUN off;
 	BUN *cnt = NULL;
 	oid range;
