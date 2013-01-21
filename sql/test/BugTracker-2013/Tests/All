@@ -1,1 +1,2 @@
 HAVE_PHP?php-size-limit-bug
+segfault_in_aggregation.Bug-3225
