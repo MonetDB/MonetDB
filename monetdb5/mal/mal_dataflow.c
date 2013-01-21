@@ -253,6 +253,8 @@ q_create(int sz)
 static void
 q_destroy(queue *q)
 {
+	MT_lock_destroy(&q->l);
+	MT_sema_destroy(&q->s);
 	GDKfree(q->data);
 	GDKfree(q);
 }
@@ -1246,6 +1248,7 @@ str runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc,
 	GDKfree(flow->status);
 	GDKfree(flow->edges);
 	GDKfree(flow->nodes);
+	MT_lock_destroy(&flow->termlock);
 	GDKfree(flow);
 	return ret;
 }
