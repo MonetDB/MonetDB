@@ -3011,7 +3011,10 @@ rel_remove_empty_select(int *changes, mvc *sql, sql_rel *rel)
 /*
  * Push {semi}joins down, pushes the joins through group by expressions. 
  * When the join is on the group by columns, we can push the joins left
- * under the group by.
+ * under the group by. This should only be done, iff the new semijoin would
+ * reduce the input table to the groupby. So there should be a reduction 
+ * (selection) on the table A and this should be propagated to the groupby via
+ * for example a primary key.
  *
  * {semi}join( A, groupby( B ) [gbe][aggrs] ) [ gbe == A.x ]
  * ->
@@ -3096,11 +3099,12 @@ rel_push_join_down(int *changes, mvc *sql, sql_rel *rel)
 							fnd = 1;
 						}
 						if (fnd) {
+							sql_exp *le = je->l;
 							sql_exp *re = exp_push_down_prj(sql, r, gb, gb->l);
-							if (!re) {
+							if (!re || (list_length(jes) == 0 && !find_prop(le->p, PROP_HASHCOL))) {
 								fnd = 0;
 							} else {
-								je = exp_compare(sql->sa, je->l, re, je->flag);
+								je = exp_compare(sql->sa, le, re, je->flag);
 								list_append(jes, je);
 							}
 						}

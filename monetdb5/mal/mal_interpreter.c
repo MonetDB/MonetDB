@@ -801,14 +801,15 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 							bat bid = stk->stk[a].val.bval;
 
 							if (i < pci->retc && backup[i].val.bval) {
-								BBPdecref(backup[i].val.bval, TRUE);
+								bat bx = backup[i].val.bval;
 								backup[i].val.bval = 0;
+								BBPdecref(bx, TRUE);
 							}
 							if (garbage[i] >= 0) {
-								bid = ABS(stk->stk[garbage[i]].val.bval);
-								BBPdecref(bid, TRUE);
 								PARDEBUG mnstr_printf(GDKstdout, "#GC pc=%d bid=%d %s done\n", stkpc, bid, getVarName(mb, garbage[i]));
+								bid = ABS(stk->stk[garbage[i]].val.bval);
 								stk->stk[garbage[i]].val.bval = 0;
+								BBPdecref(bid, TRUE);
 							}
 						} else if (i < pci->retc &&
 								   0 < stk->stk[a].vtype &&
@@ -1439,8 +1440,8 @@ void releaseBAT(MalBlkPtr mb, MalStkPtr stk, int bid)
 	do {
 		for (k = 0; k < mb->vtop; k++)
 			if (stk->stk[k].vtype == TYPE_bat && abs(stk->stk[k].val.bval) == bid) {
-				BBPdecref(bid, TRUE);
 				stk->stk[k].val.ival = 0;
+				BBPdecref(bid, TRUE);
 			}
 		if (stk->up) {
 			stk = stk->up;

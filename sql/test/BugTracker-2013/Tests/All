@@ -1,2 +1,3 @@
 HAVE_PHP?php-size-limit-bug
 select-around-zero.Bug-3220
+segfault_in_aggregation.Bug-3225
