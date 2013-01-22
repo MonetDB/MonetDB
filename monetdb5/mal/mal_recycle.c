@@ -71,7 +71,7 @@
 #include "mal_listing.h"
 #include "mal_runtime.h"
 
-static MT_Lock recycleLock ;
+static MT_Lock recycleLock MT_LOCK_INITIALIZER("recycleLock");
 MalBlkPtr recycleBlk = NULL;
 
 #define set1(x,i) ( x | ((lng)1 << i) )
@@ -370,7 +370,9 @@ static void RECYCLEspace(void)
 }
 
 void RECYCLEinit(void){
+#ifdef NEED_MT_LOCK_INIT
 	MT_lock_init(&recycleLock,"recycleLock");
+#endif
 	RECYCLEinitQPat(20);
 }
 

@@ -33,7 +33,7 @@
 #include "winsock2.h"
 #endif
 
-MT_Lock dcLock;
+MT_Lock dcLock MT_LOCK_INITIALIZER("dcLock");
 /*
  * The scheduler works against a converted datacell schema.
  * It should be stopped before additions to the scheme will take effect
@@ -85,7 +85,9 @@ DCprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	(void) stk;
 	(void) pci;
+#ifdef NEED_MT_LOCK_INIT
 	MT_lock_init( &dcLock, "datacellLock");
+#endif
 	addPipeDefinition(cntxt, "datacell_pipe",
 		"optimizer.inline();optimizer.remap();optimizer.datacell();optimizer.garbageCollector();"
 		"optimizer.evaluate();optimizer.costModel();optimizer.coercions();optimizer.emptySet();"

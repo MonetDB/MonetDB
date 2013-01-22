@@ -65,11 +65,7 @@
 
 #include <unistd.h>		/* for sysconf symbols */
 
-MT_Lock MT_system_lock
-#ifdef PTHREAD_MUTEX_INITIALIZER
-	= PTHREAD_MUTEX_INITIALIZER
-#endif
-	;
+MT_Lock MT_system_lock MT_LOCK_INITIALIZER("MT_system_lock");
 
 #ifndef NDEBUG
 volatile ATOMIC_TYPE GDKlockcnt;

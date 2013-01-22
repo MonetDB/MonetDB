@@ -64,7 +64,7 @@ static int SQLinitialized = 0;
 static int SQLnewcatalog = 0;
 static int SQLdebug = 0;
 static char *sqlinit = NULL;
-MT_Lock sql_contextLock;
+MT_Lock sql_contextLock MT_LOCK_INITIALIZER("sql_contextLock");
 
 static void
 monet5_freestack(int clientid, backend_stack stk)
@@ -205,7 +205,9 @@ SQLinit(void)
 	if (SQLinitialized)
 		return MAL_SUCCEED;
 
+#ifdef NEED_MT_LOCK_INIT
 	MT_lock_init( &sql_contextLock, "sql_contextLock");
+#endif
 
 	MT_lock_set(&sql_contextLock, "SQL init");
 	memset((char*)&be_funcs, 0, sizeof(backend_functions));

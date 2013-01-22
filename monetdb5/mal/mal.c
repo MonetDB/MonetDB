@@ -189,12 +189,12 @@ size_t monet_memory;
 #include "mal_sabaoth.h"
 #include "mal_recycle.h"
 
-MT_Lock     mal_contextLock;
-MT_Lock     mal_namespaceLock;
-MT_Lock     mal_remoteLock;
-MT_Lock  	mal_profileLock ;
-MT_Lock     mal_copyLock;
-MT_Lock     mal_delayLock;
+MT_Lock     mal_contextLock MT_LOCK_INITIALIZER("mal_contextLock");
+MT_Lock     mal_namespaceLock MT_LOCK_INITIALIZER("mal_namespaceLock");
+MT_Lock     mal_remoteLock MT_LOCK_INITIALIZER("mal_remoteLock");
+MT_Lock  	mal_profileLock MT_LOCK_INITIALIZER("mal_profileLock");
+MT_Lock     mal_copyLock MT_LOCK_INITIALIZER("mal_copyLock");
+MT_Lock     mal_delayLock MT_LOCK_INITIALIZER("mal_delayLock");
 MT_Sema		mal_parallelism;
 /*
  * Initialization of the MAL context
@@ -228,12 +228,14 @@ void tstAligned(void)
 #endif
 }
 int mal_init(void){
+#ifdef NEED_MT_LOCK_INIT
 	MT_lock_init( &mal_contextLock, "mal_contextLock");
 	MT_lock_init( &mal_namespaceLock, "mal_namespaceLock");
 	MT_lock_init( &mal_remoteLock, "mal_remoteLock");
 	MT_lock_init( &mal_profileLock, "mal_profileLock");
 	MT_lock_init( &mal_copyLock, "mal_copyLock");
 	MT_lock_init( &mal_delayLock, "mal_delayLock");
+#endif
 	/* "/2" is arbitrarily used / chosen, as on systems with
 	 * hyper-threading enabled, using all hardware threads rather than
 	 * "only" all physical cores does not necessarily yield a linear

@@ -252,7 +252,7 @@ BBP_getpid(void)
 	} while (0)
 
 static int BBPunloadCnt = 0;
-static MT_Lock GDKunloadLock;
+static MT_Lock GDKunloadLock MT_LOCK_INITIALIZER("GDKunloadLock");
 
 void
 BBPlock(const char *nme)
@@ -978,7 +978,9 @@ BBPinit(void)
 	int oidsize;
 	oid BBPoid;
 
+#ifdef NEED_MT_LOCK_INIT
 	MT_lock_init(&GDKunloadLock, "GDKunloadLock");
+#endif
 
 	/* first move everything from SUBDIR to BAKDIR (its parent) */
 	if (BBPrecover_subdir() < 0)

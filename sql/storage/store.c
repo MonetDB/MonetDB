@@ -37,7 +37,7 @@
 #define CATALOG_VERSION 52001
 int catalog_version = 0;
 
-static MT_Lock bs_lock;
+static MT_Lock bs_lock MT_LOCK_INITIALIZER("bs_lock");
 static int store_oid = 0;
 static int prev_oid = 0;
 static int nr_sessions = 0;
@@ -1260,7 +1260,9 @@ store_init(int debug, store_type store, char *logdir, backend_stack stk)
 
 	bs_debug = debug;
 
+#ifdef NEED_MT_LOCK_INIT
 	MT_lock_init(&bs_lock, "SQL_bs_lock");
+#endif
 	MT_lock_set(&bs_lock, "store_init");
 
 	/* initialize empty bats */

@@ -105,10 +105,11 @@ DFLOWgraphSize(MalBlkPtr mb, int start, int stop)
  */
 
 static queue*
-q_create(int sz)
+q_create(int sz, const char *name)
 {
 	queue *q = (queue*)GDKmalloc(sizeof(queue));
 
+	(void) name;
 	if (q == NULL)
 		return NULL;
 	q->size = ((sz << 1) >> 1); /* we want a multiple of 2 */
@@ -119,8 +120,8 @@ q_create(int sz)
 		return NULL;
 	}
 
-	MT_lock_init(&q->l, "q_create");
-	MT_sema_init(&q->s, 0, "q_create");
+	MT_lock_init(&q->l, name);
+	MT_sema_init(&q->s, 0, name);
 	return q;
 }
 
@@ -360,7 +361,7 @@ DFLOWinitialize(void)
 	if (todo)
 		return;
 	MT_lock_set(&mal_contextLock, "DFLOWinitialize");
-	todo = q_create(2048);
+	todo = q_create(2048, "todo");
 	limit = GDKnr_threads ? GDKnr_threads : 1;
 	for (i = 0; i < limit; i++)
 		MT_create_thread(&workers[i], DFLOWworker, (void *) &workers[i], MT_THR_JOINABLE);
@@ -599,7 +600,7 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr st
 	flow->stop = stoppc;
 
 	MT_lock_init(&flow->flowlock, "DFLOWworker");
-	flow->done = q_create(stoppc- startpc+1);
+	flow->done = q_create(stoppc- startpc+1, "flow->done");
 
 	flow->status = (FlowEvent)GDKzalloc((stoppc - startpc + 1) * sizeof(FlowEventRec));
 	size = DFLOWgraphSize(mb, startpc, stoppc);

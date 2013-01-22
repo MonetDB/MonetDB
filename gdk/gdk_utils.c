@@ -327,13 +327,8 @@ volatile ATOMIC_TYPE GDK_vm_nallocs[MAX_BIT] = { 0 };
 volatile ATOMIC_TYPE GDK_nmallocs[MAX_BIT] = { 0 };
 #endif
 #ifdef ATOMIC_LOCK
-#ifdef PTHREAD_MUTEX_INITIALIZER
-static MT_Lock mbyteslock = PTHREAD_MUTEX_INITIALIZER;
-static MT_Lock GDKstoppedLock = PTHREAD_MUTEX_INITIALIZER;
-#else
-static MT_Lock mbyteslock;
-static MT_Lock GDKstoppedLock;
-#endif
+static MT_Lock mbyteslock MT_LOCK_INITIALIZER("mbyteslock");
+static MT_Lock GDKstoppedLock MT_LOCK_INITIALIZER("GDKstoppedLock");
 #endif
 
 size_t _MT_pagesize = 0;	/* variable holding memory size */
@@ -959,9 +954,9 @@ GDKinit(opt *set, int setlen)
 	assert(sizeof(ptrdiff_t) == SIZEOF_PTRDIFF_T);
 	assert(SIZEOF_OID == SIZEOF_INT || SIZEOF_OID == SIZEOF_LNG);
 
-#ifndef PTHREAD_MUTEX_INITIALIZER
-	MT_lock_init(&MT_system_lock,"GDKinit");
-	ATOMIC_INIT(GDKstoppedLock, "GDKinit");
+#ifdef NEED_MT_LOCK_INIT
+	MT_lock_init(&MT_system_lock,"MT_system_lock");
+	ATOMIC_INIT(GDKstoppedLock, "GDKstoppedLock");
 	ATOMIC_INIT(mbyteslock, "mbyteslock");
 	MT_lock_init(&GDKnameLock, "GDKnameLock");
 	MT_lock_init(&GDKthreadLock, "GDKthreadLock");
@@ -1165,15 +1160,9 @@ int GDKdebug = 0;
 
 batlock_t GDKbatLock[BBP_BATMASK + 1];
 bbplock_t GDKbbpLock[BBP_THREADMASK + 1];
-#ifdef PTHREAD_MUTEX_INITIALIZER
-MT_Lock GDKnameLock = PTHREAD_MUTEX_INITIALIZER;
-MT_Lock GDKthreadLock = PTHREAD_MUTEX_INITIALIZER;
-MT_Lock GDKtmLock = PTHREAD_MUTEX_INITIALIZER;
-#else
-MT_Lock GDKnameLock;
-MT_Lock GDKthreadLock;
-MT_Lock GDKtmLock;
-#endif
+MT_Lock GDKnameLock MT_LOCK_INITIALIZER("GDKnameLock");
+MT_Lock GDKthreadLock MT_LOCK_INITIALIZER("GDKthredLock");
+MT_Lock GDKtmLock MT_LOCK_INITIALIZER("GDKtmLock");
 
 /*
  * @+ Concurrency control

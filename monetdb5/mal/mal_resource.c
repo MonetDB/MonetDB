@@ -176,11 +176,7 @@ MALadmission(lng argclaim, lng hotclaim)
 #include "gdk_atomic.h"
 static volatile int running;
 #ifdef ATOMIC_LOCK
-static MT_Lock runningLock
-#ifdef PTHREAD_MUTEX_INITIALIZER
-	= PTHREAD_MUTEX_INITIALIZER
-#endif
-	;
+static MT_Lock runningLock MT_LOCK_INITIALIZER("runningLock");
 #endif
 
 void
@@ -192,10 +188,10 @@ MALresourceFairness(Client cntxt, MalBlkPtr mb, lng usec)
 	double factor;
 	int delayed= 0;
 #ifdef ATOMIC_LOCK
-#ifndef PTHREAD_MUTEX_INITIALIZER
+#ifdef NEED_MT_LOCK_INIT
 	static int initialized = 0;
 	if (initialized++ == 0)
-		ATOMIC_INIT(runningLock, "MALresourceFairness");
+		ATOMIC_INIT(runningLock, "runningLock");
 #endif
 #endif
 

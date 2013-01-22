@@ -184,6 +184,14 @@ typedef pthread_mutex_t MT_Lock;
 #define MT_lock_try(l)		pthread_mutex_trylock((pthread_mutex_t *) (l))
 #define MT_lock_dump(l, fp, n)	MT_log(/*nothing*/, &(l), "MT_dump_lock", n, fp)
 
+#ifdef PTHREAD_MUTEX_INITIALIZER
+#define MT_LOCK_INITIALIZER(name)	= PTHREAD_MUTEX_INITIALIZER
+#else
+/* no static initialization possible, so we need dynamic initialization */
+#define MT_LOCK_INITIALIZER(name)
+#define NEED_MT_LOCK_INIT
+#endif
+
 #else
 
 typedef volatile int MT_Lock;
@@ -195,6 +203,7 @@ gdk_export volatile ATOMIC_TYPE GDKlocksleepcnt;
 #else
 #define _INCREMENT_COUNTER_(v, n)	((void) 0)
 #endif
+#define MT_LOCK_INITIALIZER(name)	= 0
 #define MT_lock_init(l, n)	ATOMIC_SET_int(*l, 0, dummy, n)
 #define MT_lock_set(l, n)						\
 	do {								\
@@ -216,9 +225,6 @@ gdk_export volatile ATOMIC_TYPE GDKlocksleepcnt;
 #define MT_lock_destroy(l)	((void) 0)
 /* return 0 on success, -1 on failure to get the lock */
 #define MT_lock_try(l)	((ATOMIC_CAS_int(*l, 0, 1, dummy, dummy) == 0) - 1)
-
-#undef PTHREAD_MUTEX_INITIALIZER
-#define PTHREAD_MUTEX_INITIALIZER	0
 #endif
 
 /*

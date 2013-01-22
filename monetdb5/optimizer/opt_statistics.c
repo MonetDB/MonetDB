@@ -33,7 +33,7 @@
 #define QOTtimings	3
 
 static BAT *qotStat[4] = { NULL };
-static MT_Lock qotlock;
+static MT_Lock qotlock MT_LOCK_INITIALIZER("qotlock");
 
 static BAT *
 QOT_create(str hnme, str tnme, int ht, int tt)
@@ -61,7 +61,9 @@ static void QOTstatisticsInit(void){
 	int i;
 
 	if (qotStat[QOTnames]) return;
+#ifdef NEED_MT_LOCK_INIT
 	MT_lock_init(&qotlock,"QOT statistics");
+#endif
 
 	MT_lock_set(&qotlock, "QOT statistics");
 	qotStat[QOTnames]= QOT_create("opt","names",TYPE_void,TYPE_str);

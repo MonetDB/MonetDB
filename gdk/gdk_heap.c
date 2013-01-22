@@ -79,7 +79,7 @@ typedef struct heap_cache {
 } heap_cache;
 
 static heap_cache *hc = NULL;
-static MT_Lock HEAPcacheLock;
+static MT_Lock HEAPcacheLock MT_LOCK_INITIALIZER("HEAPcacheLock");
 
 void
 HEAPcacheInit(void)
@@ -87,7 +87,9 @@ HEAPcacheInit(void)
 	if (!hc) {
 		int i;
 
+#ifdef NEED_MT_LOCK_INIT
 		MT_lock_init(&HEAPcacheLock, "HEAPcache_init");
+#endif
 		MT_lock_set(&HEAPcacheLock, "HEAPcache_init");
 		hc = (heap_cache *) GDKmalloc(sizeof(heap_cache));
 		hc->used = 0;
