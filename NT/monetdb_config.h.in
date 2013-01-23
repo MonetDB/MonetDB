@@ -907,6 +907,9 @@
 #define va_copy(x,y) ((x) = (y))
 
 typedef unsigned char uint8_t;
+typedef unsigned short uint16_t;
+typedef unsigned int uint32_t;
+typedef unsigned __int64 uint64_t;
 
 #if _MSC_VER < 1500
 #ifndef vsnprintf
