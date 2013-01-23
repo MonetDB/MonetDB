@@ -965,6 +965,7 @@ GDKinit(opt *set, int setlen)
 	for (i = 0; i <= BBP_BATMASK; i++) {
 		MT_lock_init(&GDKbatLock[i].swap, "GDKswapLock");
 		MT_lock_init(&GDKbatLock[i].hash, "GDKhashLock");
+		MT_lock_init(&GDKbatLock[i].imprints, "GDKimprintsLock");
 	}
 	for (i = 0; i <= BBP_THREADMASK; i++) {
 		MT_lock_init(&GDKbbpLock[i].alloc, "GDKcacheLock");
