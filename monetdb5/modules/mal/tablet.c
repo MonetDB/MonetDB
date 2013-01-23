@@ -1687,6 +1687,8 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 	for (j = 0; j < threads; j++) {
 		MT_join_thread(ptask[j].tid);
 		GDKfree(ptask[j].cols);
+		MT_sema_destroy(&ptask[j].sema);
+		MT_sema_destroy(&ptask[j].reply);
 	}
 	MT_join_thread(task->tid);
 
@@ -1699,6 +1701,8 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 	GDKfree(task->cols);
 	GDKfree(task->time);
 	GDKfree(task->base);
+	MT_sema_destroy(&task->consumer);
+	MT_sema_destroy(&task->producer);
 	GDKfree(task);
 #ifdef MLOCK_TST
 	munlockall();

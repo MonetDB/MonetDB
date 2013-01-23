@@ -381,6 +381,7 @@ freeClient(Client c)
 	c->glb = NULL;
 	if (t)
 		THRdel(t);  /* you may perform suicide */
+	MT_sema_destroy(&c->s);
 }
 
 /*

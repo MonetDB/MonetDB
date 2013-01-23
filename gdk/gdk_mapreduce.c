@@ -156,4 +156,5 @@ MRschedule(int taskcnt, void **arg, void (*cmd) (void *p))
 	/* waiting for all report result */
 	for (i = 0; i < taskcnt; i++)
 		MT_sema_down(&sema, "MRschedule");
+	MT_sema_destroy(&sema);
 }
