@@ -1330,14 +1330,14 @@ SQLloader(void *p)
 	mnstr_printf(GDKout, "SQLloader started\n");
 #endif
 	while (task->ateof == 0) {
-		MT_sema_down(&task->producer, "tablet loader");
+		MT_sema_down(&task->producer, "SQLloader");
 #ifdef _DEBUG_TABLET_
 		mnstr_printf(GDKout, "SQL loader got buffer \n");
 #endif
 		if (task->ateof)		/* forced exit received */
 			break;
 		task->ateof = tablet_read_more(task->b, task->out, task->b->size - (task->b->len - task->b->pos)) == EOF;
-		MT_sema_up(&task->consumer, "tablet loader");
+		MT_sema_up(&task->consumer, "SQLloader");
 	}
 }
 
@@ -1395,8 +1395,8 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 	task->input = task->base + 1;	/* wrap the buffer with null bytes */
 	task->base[b->size + 1] = 0;
 
-	MT_sema_init(&task->consumer, 0, "tablet load");
-	MT_sema_init(&task->producer, 0, "tablet load");
+	MT_sema_init(&task->consumer, 0, "task->consumer");
+	MT_sema_init(&task->producer, 0, "task->producer");
 	task->ateof = 0;
 	task->b = b;
 	task->out = out;
@@ -1443,8 +1443,8 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 #ifdef MLOCK_TST
 		mlock(ptask[j].cols, sizeof(char *) * task->limit);
 #endif
-		MT_sema_init(&ptask[j].sema, 0, "sqlworker");
-		MT_sema_init(&ptask[j].reply, 0, "sqlworker");
+		MT_sema_init(&ptask[j].sema, 0, "ptask[j].sema");
+		MT_sema_init(&ptask[j].reply, 0, "ptask[j].reply");
 		MT_create_thread(&ptask[j].tid, SQLworker, (void *) &ptask[j], MT_THR_JOINABLE);
 	}
 
@@ -1454,8 +1454,8 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 #endif
 
 	tio = GDKusec();
-	MT_sema_up(&task->producer, "tablet load");
-	MT_sema_down(&task->consumer, "tablet loader");
+	MT_sema_up(&task->producer, "SQLload_file");
+	MT_sema_down(&task->consumer, "SQLload_file");
 	tio = GDKusec() - tio;
 	t1 = GDKusec();
 #ifdef MLOCK_TST
@@ -1590,7 +1590,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 			}
 		}
 		/* start feeding new data */
-		MT_sema_up(&task->producer, "tablet load");
+		MT_sema_up(&task->producer, "SQLload_file");
 		t1 = GDKusec() - t1;
 		total += t1;
 		iototal += tio;
@@ -1607,13 +1607,13 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 				ptask[j].next = task->next;
 				ptask[j].fields = task->fields;
 				ptask[j].limit = task->limit;
-				MT_sema_up(&ptask[j].sema, "SQLworker");
+				MT_sema_up(&ptask[j].sema, "SQLload_file");
 			}
 		}
 		if (task->next) {
 			/* await completion of line break phase */
 			for (j = 0; j < threads; j++) {
-				MT_sema_down(&ptask[j].reply, "sqlreader");
+				MT_sema_down(&ptask[j].reply, "SQLload_file");
 				if (ptask[j].error)
 					res = -1;
 			}
@@ -1627,7 +1627,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 				for (j = 0; j < threads; j++) {
 					/* stage two, update the BATs */
 					ptask[j].state = UPDATEBAT;
-					MT_sema_up(&ptask[j].sema, "SQLworker");
+					MT_sema_up(&ptask[j].sema, "SQLload_file");
 				}
 			}
 		}
@@ -1642,11 +1642,11 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 		if (res == 0 && task->next) {
 			/* await completion of the BAT updates */
 			for (j = 0; j < threads; j++)
-				MT_sema_down(&ptask[j].reply, "sqlreader");
+				MT_sema_down(&ptask[j].reply, "SQLload_file");
 		}
 		if (task->ateof)
 			break;
-		MT_sema_down(&task->consumer, "tablet loader");
+		MT_sema_down(&task->consumer, "SQLload_file");
 	}
 
 	if (task->b->pos < task->b->len && cnt < (BUN) maxrow && task->ateof) {
@@ -1673,14 +1673,14 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 	}
 
 	task->ateof = 1;
-	MT_sema_up(&task->producer, "tablet load");
+	MT_sema_up(&task->producer, "SQLload_file");
 	for (j = 0; j < threads; j++) {
 		ptask[j].next = -1;
-		MT_sema_up(&ptask[j].sema, "SQLworker");
+		MT_sema_up(&ptask[j].sema, "SQLload_file");
 	}
 	/* wait for their death */
 	for (j = 0; j < threads; j++)
-		MT_sema_down(&ptask[j].reply, "sqlreader");
+		MT_sema_down(&ptask[j].reply, "SQLload_file");
 #ifdef _DEBUG_TABLET_
 	mnstr_printf(GDKout, "Kill the workers\n");
 #endif

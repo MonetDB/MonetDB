@@ -438,7 +438,7 @@ callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[], char debug)
  * is determined by an environment variable. It is initially set equal to the
  * number of cores, which may be too coarse.
  */
-	MT_sema_down(&mal_parallelism,"mal_parallelism");
+	MT_sema_down(&mal_parallelism,"callMAL");
 	runtimeProfileInit(mb, &runtimeProfile, cntxt->flags & memoryFlag);
 #ifdef DEBUG_CALLMAL
 	mnstr_printf(cntxt->fdout, "callMAL\n");
@@ -477,10 +477,10 @@ callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[], char debug)
 	case PATcall:
 	case CMDcall:
 	default:
-		MT_sema_up(&mal_parallelism,"mal_parallelism");
+		MT_sema_up(&mal_parallelism,"callMAL");
 		throw(MAL, "mal.interpreter", RUNTIME_UNKNOWN_INSTRUCTION);
 	}
-	MT_sema_up(&mal_parallelism,"mal_parallelism");
+	MT_sema_up(&mal_parallelism,"callMAL");
 	if (cntxt->qtimeout && time(NULL) - stk->clock.tv_usec > cntxt->qtimeout)
 		throw(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
 	return ret;

@@ -246,7 +246,7 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	c->rcc = (RecPtr) GDKzalloc(sizeof(RecStat));
 	c->rcc->curQ = -1;
 	c->exception_buf_initialized = 0;
-	MT_sema_init(&c->s, 0, "MCinitClient");
+	MT_sema_init(&c->s, 0, "Client->s");
 	return c;
 }
 

@@ -54,19 +54,19 @@ MRqueueCreate(int sz)
 	MT_Id tid;
 
 #ifdef NEED_MT_LOCK_INIT
-	MT_lock_init(&mrqlock, "q_create");
+	MT_lock_init(&mrqlock, "mrqlock");
 #endif
-	MT_lock_set(&mrqlock, "q_create");
-	MT_sema_init(&mrqsema, 0, "q_create");
+	MT_lock_set(&mrqlock, "MRqueueCreate");
+	MT_sema_init(&mrqsema, 0, "mrqsema");
 	if ( mrqueue ) {
-		MT_lock_unset(&mrqlock, "q_create");
+		MT_lock_unset(&mrqlock, "MRqueueCreate");
 		GDKerror("One map-reduce queue allowed");
 		return;
 	}
 	sz *= 2;
 	mrqueue = (MRqueue *) GDKzalloc(sizeof(MRqueue) * sz);
 	if ( mrqueue == 0) {
-		MT_lock_unset(&mrqlock, "q_create");
+		MT_lock_unset(&mrqlock, "MRqueueCreate");
 		GDKerror("Could not create the map-reduce queue");
 		return;
 	}
@@ -75,19 +75,19 @@ MRqueueCreate(int sz)
 	/* create a worker thread for each core as specified as system parameter */
 	for (i = 0; i < GDKnr_threads; i++)
 		MT_create_thread(&tid, MRworker, (void *) 0, MT_THR_DETACHED);
-	MT_lock_unset(&mrqlock, "q_create");
+	MT_lock_unset(&mrqlock, "MRqueueCreate");
 }
 
 static void
 MRenqueue(int taskcnt, MRtask ** tasks)
 {
 	assert(taskcnt > 0);
-	MT_lock_set(&mrqlock, "mrqlock");
+	MT_lock_set(&mrqlock, "MRenqueue");
 	if (mrqlast == mrqsize) {
 		mrqsize <<= 1;
 		mrqueue = (MRqueue *) GDKrealloc(mrqueue, sizeof(MRqueue) * mrqsize);
 		if ( mrqueue == 0) {
-			MT_lock_unset(&mrqlock, "mrqlock");
+			MT_lock_unset(&mrqlock, "MRenqueue");
 			GDKerror("Could not enlarge the map-reduce queue");
 			return;
 		}
@@ -96,10 +96,10 @@ MRenqueue(int taskcnt, MRtask ** tasks)
 	mrqueue[mrqlast].tasks = tasks;
 	mrqueue[mrqlast].size = taskcnt;
 	mrqlast++;
-	MT_lock_unset(&mrqlock, "mrqlock");
+	MT_lock_unset(&mrqlock, "MRenqueue");
 	/* a task list is added for consumption */
 	while (taskcnt-- > 0)
-		MT_sema_up(&mrqsema, "mrqsema");
+		MT_sema_up(&mrqsema, "MRenqueue");
 }
 
 static MRtask *
@@ -108,9 +108,9 @@ MRdequeue(void)
 	MRtask *r = NULL;
 	int idx;
 
-	MT_sema_down(&mrqsema, "mrqsema");
+	MT_sema_down(&mrqsema, "MRdequeue");
 	assert(mrqlast);
-	MT_lock_set(&mrqlock, "mrqlock");
+	MT_lock_set(&mrqlock, "MRdequeue");
 	if (mrqlast > 0) {
 		idx = mrqueue[mrqlast - 1].index;
 		r = mrqueue[mrqlast - 1].tasks[idx++];
@@ -119,7 +119,7 @@ MRdequeue(void)
 		else
 			mrqueue[mrqlast - 1].index = idx;
 	}
-	MT_lock_unset(&mrqlock, "mrqlock");
+	MT_lock_unset(&mrqlock, "MRdequeue");
 	assert(r);
 	return r;
 }
@@ -132,7 +132,7 @@ MRworker(void *arg)
 	do {
 		task = MRdequeue();
 		(task->cmd) (task);
-		MT_sema_up(task->sema, "mrqsema");
+		MT_sema_up(task->sema, "MRworker");
 	} while (1);
 }
 
@@ -147,7 +147,7 @@ MRschedule(int taskcnt, void **arg, void (*cmd) (void *p))
 	if (mrqueue == 0)
 		MRqueueCreate(1024);
 
-	MT_sema_init(&sema, 0, "q_create");
+	MT_sema_init(&sema, 0, "sema");
 	for (i = 0; i < taskcnt; i++) {
 		task[i]->sema = &sema;
 		task[i]->cmd = cmd;
@@ -155,5 +155,5 @@ MRschedule(int taskcnt, void **arg, void (*cmd) (void *p))
 	MRenqueue(taskcnt, task);
 	/* waiting for all report result */
 	for (i = 0; i < taskcnt; i++)
-		MT_sema_down(&sema, "mrqsema");
+		MT_sema_down(&sema, "MRschedule");
 }
