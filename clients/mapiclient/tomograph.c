@@ -56,7 +56,12 @@
 # endif
 #endif
 
+/* #define FOOTPRINT */
+#ifdef FOOTPRINT
+#define COUNTERSDEFAULT "ISTestMmrw"
+#else
 #define COUNTERSDEFAULT "ISTestmrw"
+#endif
 
 /* #define _DEBUG_TOMOGRAPH_*/
 
@@ -102,7 +107,10 @@ profileCounter[] = {
 	/*  2  */ { 'D', "dot", "dot", 0 },
 	/*  3  */ { 'F', "flow", "flow", 0 },
 	/*  4  */ { 'x', "ping50", "ping", 0 },
-	/*  5  */ { 0, 0, 0, 0 }
+#ifdef FOOTPRINT
+	/*  5  */ { 'M', "footprint", "footprint", 0 },
+#endif
+	/*  6  */ { 0, 0, 0, 0 }
 };
 
 typedef struct _wthread {
@@ -280,6 +288,7 @@ typedef struct BOX {
 	lng clkstart, clkend;
 	lng ticks;
 	lng memstart, memend;
+	lng footstart, footend;
 	lng reads, writes;
 	char *stmt;
 	char *fcn;
@@ -309,6 +318,7 @@ static void dumpbox(int i)
 	printf("thread %d ", box[i].thread);
 	printf("clk "LLFMT" - "LLFMT" ", box[i].clkstart, box[i].clkend);
 	printf("mem "LLFMT" - "LLFMT" ", box[i].memstart, box[i].memend);
+	printf("foot "LLFMT" - "LLFMT" ", box[i].footstart, box[i].footend);
 	printf("ticks "LLFMT" ", box[i].ticks);
 	if (box[i].stmt)
 		printf("%s ", box[i].stmt);
@@ -525,12 +535,12 @@ fixed_colors[] = {
 	{ 0, 0, "algebra", "thetajoin", "darkblue" },
 	{ 0, 0, "algebra", "thetasubselect", "lightgreen" },
 	{ 0, 0, "algebra", "tinter", "seagreen" },
-	{ 0, 0, "algebra", "*", "lightgreen" },
+	{ 0, 0, "algebra", "*", "green" },
 	{ 0, 0, "batcalc", "dbl", "deeppink" },
 	{ 0, 0, "batcalc", "lng", "deeppink" },
 	{ 0, 0, "batcalc", "hash", "coral" },
 	{ 0, 0, "batcalc", "ifthenelse", "plum" },
-	{ 0, 0, "batcalc", "*", "lightyellow" },
+	{ 0, 0, "batcalc", "*", "yellow" },
 	{ 0, 0, "bat", "append", "salmon" },
 	{ 0, 0, "bat", "insert", "salmon" },
 	{ 0, 0, "bat", "mergecand", "orange" },
@@ -778,14 +788,14 @@ static void dumpboxes(void)
 			if (box[i].state < PING) {
 				//io counters are zero at start of instruction !
 				//fprintf(f,""LLFMT" %f 0 0 \n", box[i].clkstart, (box[i].memstart/1024.0));
-				fprintf(f, ""LLFMT" %f 0 0\n", box[i].clkend, (box[i].memend / 1024.0));
+				fprintf(f, ""LLFMT" %f %f 0 0\n", box[i].clkend, (box[i].memend / 1024.0), box[i].footend/1024.0);
 			} else 
 			if (box[i].state == PING) {
 				/* cpu stat events may arrive out of order, drop those */
 				if ( box[i].clkstart <= e)
 					continue;
 				e = box[i].clkstart;
-				fprintf(f, ""LLFMT" %f "LLFMT" "LLFMT"\n", box[i].clkstart, (box[i].memend / 1024.0), box[i].reads, box[i].writes);
+				fprintf(f, ""LLFMT" %f %f "LLFMT" "LLFMT"\n", box[i].clkstart, (box[i].memend / 1024.0), box[i].footend/1024.0, box[i].reads, box[i].writes);
 				if (cpus == 0) {
 					char *s = box[i].stmt;
 					while (s && isspace((int) *s))
@@ -831,6 +841,17 @@ static void showmemory(void)
 				min = box[i].memstart;
 			if (box[i].memend < min)
 				min = box[i].memend;
+
+#ifdef FOOTPRINT
+			if (box[i].footstart > max)
+				max = box[i].footstart;
+			if (box[i].footend > max)
+				max = box[i].footend;
+			if (box[i].footstart < min && box[i].footstart > 0)
+				min = box[i].footstart;
+			if (box[i].footend < min && box[i].footend > 0)
+				min = box[i].footend;
+#endif
 		}
 	if (min == max) {
 		min -= 1;
@@ -863,7 +884,12 @@ static void showmemory(void)
 	mm = (mx - mn) / 50.0; /* 2% top & bottom margin */
 	fprintf(gnudata, "set yrange [%f:%f]\n", mn - mm, mx + mm);
 	fprintf(gnudata, "set ytics (\"%.*f\" %f, \"%.*f\" %f) nomirror\n", digits, min / scale, mn, digits, max / scale, mx);
+#ifdef FOOTPRINT
+	fprintf(gnudata, "plot \"%s.dat\" using 1:2 notitle with dots linecolor rgb \"blue\", \\\n", (tracefile ? "scratch" : filename));
+	fprintf(gnudata, " \"%s.dat\" using 1:3 notitle with dots linecolor rgb \"black\"\n", (tracefile ? "scratch" : filename));
+#else
 	fprintf(gnudata, "plot \"%s.dat\" using 1:2 notitle with dots linecolor rgb \"blue\"\n", (tracefile ? "scratch" : filename));
+#endif
 	fprintf(gnudata, "unset yrange\n");
 }
 
@@ -930,8 +956,8 @@ static void showio(void)
 	fprintf(gnudata, "unset ylabel\n");
 	fprintf(gnudata, "set y2tics in (0, "LLFMT".0) nomirror\n", max / beat);
 	fprintf(gnudata, "set y2label \"IO per ms\"\n");
-	fprintf(gnudata, "plot \"%s.dat\" using 1:(($3+$4)/%d.0) title \"reads\" with boxes fs solid linecolor rgb \"gray\" ,\\\n", (tracefile ? "scratch" : filename), beat);
-	fprintf(gnudata, "\"%s.dat\" using 1:($4/%d.0) title \"writes\" with boxes fs solid linecolor rgb \"red\"  \n", (tracefile ? "scratch" : filename), beat);
+	fprintf(gnudata, "plot \"%s.dat\" using 1:(($4+$5)/%d.0) title \"reads\" with boxes fs solid linecolor rgb \"gray\" ,\\\n", (tracefile ? "scratch" : filename), beat);
+	fprintf(gnudata, "\"%s.dat\" using 1:($5/%d.0) title \"writes\" with boxes fs solid linecolor rgb \"red\"  \n", (tracefile ? "scratch" : filename), beat);
 	fprintf(gnudata, "unset y2label\n");
 	fprintf(gnudata, "unset y2tics\n");
 	fprintf(gnudata, "unset y2range\n");
@@ -1544,7 +1570,7 @@ static void createTomogram(void)
  * system is already processing. This leads to
  * receiving 'done' events without matching 'start'
  */
-static void update(int state, int thread, lng clkticks, lng ticks, lng memory, lng reads, lng writes, char *fcn, char *stmt)
+static void update(int state, int thread, lng clkticks, lng ticks, lng memory, lng footprint, lng reads, lng writes, char *fcn, char *stmt)
 {
 	int idx;
 	Box b;
@@ -1599,6 +1625,7 @@ static void update(int state, int thread, lng clkticks, lng ticks, lng memory, l
 		lastclk[thread] = clkticks;
 		box[idx].clkend = box[idx].clkstart = clkticks;
 		box[idx].memend = box[idx].memstart = memory;
+		box[idx].footstart = box[idx].footend = footprint;
 		box[idx].reads = reads;
 		box[idx].writes = writes;
 		s = strchr(stmt, (int) ']');
@@ -1622,6 +1649,7 @@ static void update(int state, int thread, lng clkticks, lng ticks, lng memory, l
 		box[idx].thread = thread;
 		box[idx].clkstart = clkticks;
 		box[idx].memstart = memory;
+		box[idx].footstart = footprint;
 		box[idx].stmt = stmt;
 		box[idx].fcn = fcn ? strdup(fcn) : "";
 	}
@@ -1630,6 +1658,7 @@ static void update(int state, int thread, lng clkticks, lng ticks, lng memory, l
 		lastclk[thread] = clkticks;
 		box[idx].clkend = clkticks;
 		box[idx].memend = memory;
+		box[idx].footend = footprint;
 		box[idx].ticks = ticks;
 		box[idx].state = ACTION;
 		box[idx].reads = reads;
@@ -1669,9 +1698,10 @@ static int parser(char *row)
 	int thread = 0;
 	lng ticks = 0;
 	lng memory = 0; /* in MB*/
+	lng footprint = 0; /* in MB*/
 	char *fcn = 0, *stmt = 0;
 	int state = 0;
-	lng reads, writes;
+	lng reads= 0, writes= 0;
 
 	/* check basic validaty first */
 	if (row[0] != '[')
@@ -1734,10 +1764,18 @@ static int parser(char *row)
 		return -6;
 	memory = strtoll(c + 1, NULL, 10);
 	c = strchr(c + 1, (int) ',');
+	if (c == 0)
+		return -8;
+
+#ifdef FOOTPRINT
+	footprint = strtoll(c + 1, NULL, 10);
 	if (debug && state < PING)
 		fprintf(stderr, "%s\n", row);
-	if (c == 0) 
-		return state >= PING ? 0 : -7;
+	c = strchr(c + 1, (int) ',');
+	if (c == 0 && state >= PING) 
+		goto wrapup;
+#endif
+
 	reads = strtoll(c + 1, NULL, 10);
 	c = strchr(c + 1, (int) ',');
 	if (c == 0)
@@ -1773,7 +1811,10 @@ static int parser(char *row)
 	if (fcn && strchr(fcn, (int) '('))
 		*strchr(fcn, (int) '(') = 0;
 
-	update(state, thread, clkticks, ticks, memory, reads, writes, fcn, stmt);
+#ifdef FOOTPRINT
+wrapup:
+#endif
+	update(state, thread, clkticks, ticks, memory, footprint, reads, writes, fcn, stmt);
 #else
 	(void) row;
 #endif

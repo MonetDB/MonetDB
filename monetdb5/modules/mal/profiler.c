@@ -362,7 +362,7 @@ CMDsetFootprintFlag( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	(void) mb;
 	(void) stk;
 	(void) pci;
-	cntxt->flags |= bigfootFlag;
+	cntxt->flags |= footprintFlag;
 	return MAL_SUCCEED;
 }
 
@@ -370,11 +370,8 @@ str
 CMDgetFootprint( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	lng *l= getArgReference(stk,pci,0);
 
-	(void) mb;
-	*l = cntxt->bigfoot;
-	cntxt->flags &= ~bigfootFlag;
-	cntxt->bigfoot= 0;
-	cntxt->vmfoot= 0;
+	(void) cntxt;
+	*l = getFootPrint(mb,stk);
 	return MAL_SUCCEED;
 }
 

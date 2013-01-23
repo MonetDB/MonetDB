@@ -27,7 +27,7 @@ Vendor: MonetDB BV <info@monetdb.org>
 Group: Applications/Databases
 License: MPL - http://www.monetdb.org/Legal/MonetDBLicense
 URL: http://www.monetdb.org/
-Source: http://dev.monetdb.org/downloads/sources/Oct2012-SP2/%{name}-%{version}.tar.bz2
+Source: http://dev.monetdb.org/downloads/sources/Oct2012-SP3/%{name}-%{version}.tar.bz2
 
 BuildRequires: bison
 BuildRequires: bzip2-devel
@@ -478,8 +478,10 @@ fi
 Summary: MonetDB5 SQL server modules
 Group: Applications/Databases
 Requires: MonetDB5-server = %{version}-%{release}
+%if %{?rhel:0}%{!?rhel:1}
 # for systemd-tmpfiles
 Requires: systemd-units
+%endif
 Obsoletes: MonetDB-SQL-devel
 Obsoletes: %{name}-SQL
 
@@ -492,16 +494,24 @@ accelerators.  It also has an SQL frontend.
 This package contains the SQL frontend for MonetDB5.  If you want to
 use SQL with MonetDB, you will need to install this package.
 
+%if %{?rhel:0}%{!?rhel:1}
 %post SQL-server5
 systemd-tmpfiles --create %{_sysconfdir}/tmpfiles.d/monetdbd.conf
+%endif
 
 %files SQL-server5
 %defattr(-,root,root)
 %{_bindir}/monetdb
 %{_bindir}/monetdbd
 %dir %attr(775,monetdb,monetdb) %{_localstatedir}/log/monetdb
+%if %{?rhel:0}%{!?rhel:1}
 # Fedora 15 and newer
 %{_sysconfdir}/tmpfiles.d/monetdbd.conf
+%else
+# RedHat Enterprise Linux
+%dir %attr(775,monetdb,monetdb) %{_localstatedir}/run/monetdb
+%exclude %{_sysconfdir}/tmpfiles.d/monetdbd.conf
+%endif
 %config(noreplace) %{_localstatedir}/monetdb5/dbfarm/.merovingian_properties
 %{_libdir}/monetdb5/autoload/*_sql.mal
 %{_libdir}/monetdb5/lib_sql.so
@@ -696,6 +706,9 @@ rm -f $RPM_BUILD_ROOT%{_libdir}/libmonetdb5.so
 rm -fr $RPM_BUILD_ROOT
 
 %changelog
+* Tue Jan 15 2013 Sjoerd Mullender <sjoerd@acm.org> - 11.13.9-20130115
+- Rebuilt.
+
 * Wed Dec 12 2012 Sjoerd Mullender <sjoerd@acm.org> - 11.13.7-20121212
 - Rebuilt.
 

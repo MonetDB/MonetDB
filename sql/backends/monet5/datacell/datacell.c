@@ -70,10 +70,10 @@ DCprocedureStmt(Client cntxt, MalBlkPtr mb, str schema, str nme)
 		f = o->data;
 		if (strcmp(f->base.name, nme) == 0) {
 			be = (void *) backend_create(m, cntxt);
-			if  (be->mvc->sa ) {
-				backend_create_func(be, f);
-				return MAL_SUCCEED;
-			}
+			if ( be->mvc->sa == NULL)
+				be->mvc->sa = sa_create();
+			backend_create_func(be, f);
+			return MAL_SUCCEED;
 		}
 	}
 	throw(SQL, "datacell.query", "Procedure missing");
@@ -233,6 +233,7 @@ DCpauseObject(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int idx, ret = 0;
 	str tbl = *(str *) getArgReference(stk, pci, 1);
+	str msg1= MAL_SUCCEED, msg2 = MAL_SUCCEED;
 
 	if ( strcmp(tbl,"*")== 0){
 		str msg = RCpause(&ret);
@@ -243,8 +244,15 @@ DCpauseObject(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	idx = BSKTlocate(tbl);
 	if (idx ) {
-		RCreceptorPause(&ret, &tbl);
-		EMemitterPause(&ret, &tbl);
+		msg1 = RCreceptorPause(&ret, &tbl);
+		if ( msg1 == MAL_SUCCEED)
+			return msg1;
+		msg2 = EMemitterPause(&ret, &tbl);
+		if ( msg2 == MAL_SUCCEED ){
+			GDKfree(msg1);
+			return MAL_SUCCEED;
+		}
+		return msg2;
 	}
 	return PNpauseQuery(cntxt,mb,stk,pci);
 }

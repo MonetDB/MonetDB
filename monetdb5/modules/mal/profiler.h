@@ -38,6 +38,7 @@
 #include "mal_client.h"
 #include "mal_profiler.h"
 #include "mal_interpreter.h"
+#include "mal_runtime.h"
 
 #ifdef WIN32
 #if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5)

@@ -1934,7 +1934,7 @@ int GDKatomcnt = TYPE_str + 1;
 static str unknown[MAXATOMS] = { NULL };
 
 int
-ATOMunknown_add(str nme)
+ATOMunknown_add(const char *nme)
 {
 	int i = 1;
 
@@ -1958,7 +1958,7 @@ ATOMunknown_del(int i)
 }
 
 int
-ATOMunknown_find(str nme)
+ATOMunknown_find(const char *nme)
 {
 	int i = 1;
 

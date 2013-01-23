@@ -362,7 +362,8 @@ handleClient(int sock, char isusock)
 		{
 			/* we need to let the client login in order not to violate
 			 * the protocol */
-			mnstr_printf(fout, "void:merovingian:8:plain:BIG");
+			mnstr_printf(fout, "void:merovingian:9:%s:BIG:%s:",
+					algos, MONETDB5_PASSWDHASH);
 			mnstr_flush(fout);
 			mnstr_read_block(fdin, buf, 8095, 1); /* eat away client response */
 			mnstr_printf(fout, "!monetdbd: an internal error has occurred, refer to the logs for details, please try again later\n");

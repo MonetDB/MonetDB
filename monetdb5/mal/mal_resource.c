@@ -19,6 +19,9 @@
 
 #include "mal_resource.h"
 
+#define heapinfo(X) if ((X) && (X)->base) vol = (X)->free; else vol = 0;
+#define hashinfo(X) if ((X) && (X)->mask) vol = ((X)->mask + (X)->lim + 1) * sizeof(int) + sizeof(*(X)) + cnt * sizeof(int); else vol = 0;
+
 /* MEMORY admission does not seem to have a major impact */
 lng memorypool = 0;      /* memory claimed by concurrent threads */
 int memoryclaims = 0;    /* number of threads active with expensive operations */
@@ -67,6 +70,7 @@ getMemoryClaim(MalBlkPtr mb, MalStkPtr stk, int pc, int i, int flag)
 	lng total = 0, vol = 0;
 	BAT *b;
 	InstrPtr pci = getInstrPtr(mb,pc);
+	BUN cnt;
 
 	(void)mb;
 	if (stk->stk[getArg(pci, i)].vtype == TYPE_bat) {
@@ -77,6 +81,7 @@ getMemoryClaim(MalBlkPtr mb, MalStkPtr stk, int pc, int i, int flag)
 			BBPunfix(b->batCacheid);
 			return 0;
 		}
+		cnt = BATcount(b);
 		heapinfo(&b->H->heap); total += vol;
 		heapinfo(b->H->vheap); total += vol;
 		hashinfo(b->H->hash); total += vol;
@@ -84,8 +89,6 @@ getMemoryClaim(MalBlkPtr mb, MalStkPtr stk, int pc, int i, int flag)
 		heapinfo(&b->T->heap); total += vol;
 		heapinfo(b->T->vheap); total += vol;
 		hashinfo(b->T->hash); total += vol;
-		if ( b->T->hash == 0  || b->H->hash ==0)	/* assume one hash claim */
-			total+= BATcount(b) * sizeof(lng);
 		total = total > (lng)(MEMORY_THRESHOLD * monet_memory) ? (lng)(MEMORY_THRESHOLD * monet_memory) : total;
 		BBPunfix(b->batCacheid);
 	}
@@ -171,9 +174,13 @@ MALadmission(lng argclaim, lng hotclaim)
  * them when resource stress occurs.
  */
 #include "gdk_atomic.h"
-static volatile ATOMIC_TYPE running;
+static volatile int running;
 #ifdef ATOMIC_LOCK
-static MT_Lock runningLock = ATOMIC_LOCK;
+static MT_Lock runningLock
+#ifdef PTHREAD_MUTEX_INITIALIZER
+	= PTHREAD_MUTEX_INITIALIZER
+#endif
+	;
 #endif
 
 void
@@ -184,14 +191,18 @@ MALresourceFairness(Client cntxt, MalBlkPtr mb, lng usec)
 	int threads;
 	double factor;
 	int delayed= 0;
+#ifdef ATOMIC_LOCK
+#ifndef PTHREAD_MUTEX_INITIALIZER
+	static int initialized = 0;
+	if (initialized++ == 0)
+		ATOMIC_INIT(runningLock, "MALresourceFairness");
+#endif
+#endif
 
 	if ( usec > 0 && ( (usec = GDKusec()-usec)) <= TIMESLICE )
 		return;
-	threads= GDKnr_threads > 0? GDKnr_threads: 1;
-	ATOMIC_START(runningLock, "MALresourceFairness");
-	if ( running == 0) // reset workers pool count
-		running = threads;
-	ATOMIC_END(runningLock, "MALresourceFairness");
+	threads = GDKnr_threads > 0 ? GDKnr_threads : 1;
+	ATOMIC_CAS_int(running, 0, threads, runningLock, "MALresourceFairness");
 
 	/* use GDKmem_cursize as MT_getrss(); is to expensive */
 	rss = GDKmem_cursize();
@@ -215,7 +226,7 @@ MALresourceFairness(Client cntxt, MalBlkPtr mb, lng usec)
 		PARDEBUG mnstr_printf(GDKstdout, "#delay %d initial "LLFMT"n", cntxt->idx, clk);
 		while (clk > 0) {
 			/* always keep one running to avoid all waiting  */
-			if (ATOMIC_GET(running, runningLock, "MALresourceFairness") < 2)
+			if (ATOMIC_GET_int(running, runningLock, "MALresourceFairness") < 2)
 				break;
 			/* speed up wake up when we have memory */
 			rss = GDKmem_cursize();
@@ -223,10 +234,8 @@ MALresourceFairness(Client cntxt, MalBlkPtr mb, lng usec)
 				break;
 			factor = ((double) rss) / (MEMORY_THRESHOLD * monet_memory);
 			delay = (lng) (DELAYUNIT * (factor > 1.0 ? 1.0 : factor));
-			ATOMIC_START(runningLock, "MALresourceFairness");
-			delay = (lng) ( ((double)delay) * running / threads);
-			ATOMIC_DEC(running);
-			ATOMIC_END(runningLock, "MALresourceFairness");
+			delay = (lng) ( ((double)delay) * ATOMIC_GET_int(running, runningLock, "MALresourceFairness") / threads);
+			ATOMIC_DEC_int(running, runningLock, "MALresourceFairness");
 			if (delay) {
 				if ( delayed++ == 0){
 						mnstr_printf(GDKstdout, "#delay %d initial "LLFMT"["LLFMT"] memory  "SZFMT"[%f]\n", cntxt->idx, delay, clk, rss, MEMORY_THRESHOLD * monet_memory);
@@ -234,9 +243,7 @@ MALresourceFairness(Client cntxt, MalBlkPtr mb, lng usec)
 				}
 				MT_sleep_ms(delay);
 			}
-			ATOMIC_START(runningLock, "MALresourceFairness");
-			ATOMIC_INC(running);
-			ATOMIC_END(runningLock, "MALresourceFairness");
+			ATOMIC_INC_int(running, runningLock, "MALresourceFairness");
 			clk -= DELAYUNIT;
 		}
 	}

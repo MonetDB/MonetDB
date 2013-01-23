@@ -63,7 +63,7 @@ simpleFlow(InstrPtr *old, int start, int last)
 }
 
 /* optimizers may remove the dataflow hints first */
-void removeDataflow( Client cntxt, MalBlkPtr mb)
+void removeDataflow(MalBlkPtr mb)
 {
 	int i, k, flowblock=0, limit;
 	InstrPtr p, *old;
@@ -81,17 +81,22 @@ void removeDataflow( Client cntxt, MalBlkPtr mb)
 	for (i = 1; i<limit; i++) {
 		p = old[i];
 
-		if (!flowblock && blockStart(p) && 
-		    getModuleId(p) == languageRef &&
-		    getFunctionId(p) == dataflowRef){
-			flowblock = getArg(p,0);
-			delete[i] = 1;
-		} else if (blockExit(p) && getArg(p,0) == flowblock) {
-			flowblock = 0;
-			delete[i] = 1;
-		} else if ( blockStart(p) )
-				skip++;
-		else {
+		if (blockStart(p) ){
+			if ( getModuleId(p) == languageRef &&
+				getFunctionId(p) == dataflowRef){
+				flowblock = getArg(p,0);
+				delete[i] = 1;
+			} else skip++;
+		} else 
+		if (blockExit(p) ){
+			if ( skip )
+				skip--;
+			else
+			if ( getArg(p,0) == flowblock) {
+				flowblock = 0;
+				delete[i] = 1;
+			}
+		} else {
 			/* remember first initialization */
 			for ( k = p->retc; k < p->argc; k++)
 				used[getArg(p,k)] = 1;
@@ -104,11 +109,9 @@ void removeDataflow( Client cntxt, MalBlkPtr mb)
 	/* remove the superflous variable initializations */
 	/* when there are no auxillary barrier blocks */
 	for (i = 0; i<limit; i++) 
-		if ( delete[i] == 0 || !skip )
+		if ( delete[i] == 0 )
 			pushInstruction(mb,old[i]);
 		else freeInstruction(old[i]);
-	mnstr_printf(cntxt->fdout, "Remove dataflow\n");
-	printFunction(cntxt->fdout, mb, 0, LIST_MAL_STMT);
 	GDKfree(init);
 	GDKfree(old);
 	GDKfree(used);
@@ -254,7 +257,7 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	}
 	pushInstruction(mb,old[0]);
 
-	//removeDataflow(mb, old,limit); To be done explicit by optimizers
+	//removeDataflow(mb); To be done explicit by optimizers
 
 	/* inject new dataflow barriers */
 	for (i = 1; i<limit; i++) {

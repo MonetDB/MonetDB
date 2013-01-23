@@ -1786,10 +1786,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
             ErrMsg("test missing: '"+os.path.join(TSTSRCDIR,TST)+"[.py|.mal|.malC|.sql|.jaql]`")
         return TX,Failed,Failed,elem,reason,links
 
-    if par['PACKAGE'] not in ('common', 'clients', 'gdk', 'java'):
-        MissingMods = CheckMods(env, TST, SERVER, CALL)
-    else:
-        MissingMods = []
+    MissingMods = CheckMods(env, TST, SERVER, CALL)
     MissingTests = CheckTests(env, TST, oktests)
 
     os.chdir(TSTTRGDIR)
@@ -3142,27 +3139,36 @@ else:
 if SYST == "Linux":
     #  Please keep this aligned / in sync with configure.ag !
     LINUX_DIST=''
-    if os.path.isfile('/etc/fedora-release'):
+    if os.path.isfile('/etc/os-release'):
+        l = open('/etc/os-release').read()
+        x0 = re.search('^NAME=[\'"]?([^\'"\n]*)[\'"]?$', l, re.MULTILINE)
+        if x0:
+            x0 = x0.group(1)
+        x1 = re.search('^VERSION_ID=[\'"]?([^\'"\n]*)[\'"]?$', l, re.MULTILINE)
+        if x1:
+            x1 = x1.group(1)
+        LINUX_DIST = '%s:%s' % (x0 or 'Linux', x1 or '')
+    elif os.path.isfile('/etc/fedora-release'):
         l = open('/etc/fedora-release').readline()
-        x = re.compile('^.*(Fedora).* release ([0-9][^ \n]*)( .*)*$').match(l)
+        x = re.match('^.*(Fedora).* release ([0-9][^ \n]*)( .*)*$', l)
         if x:
             LINUX_DIST = '%s:%s' % (x.group(1),x.group(2))
     elif os.path.isfile('/etc/centos-release'):
         l = open('/etc/centos-release').readline()
-        x = re.compile('^(CentOS).* release ([0-9][^ \n]*)( .*)*$').match(l)
+        x = re.match('^(CentOS).* release ([0-9][^ \n]*)( .*)*$', l)
         if x:
             LINUX_DIST = '%s:%s' % (x.group(1),x.group(2))
     elif os.path.isfile('/etc/yellowdog-release'):
         l = open('/etc/yellowdog-release').readline()
-        x = re.compile('^(Yellow) Dog Linux release ([0-9][^ \n]*)( .*)*$').match(l)
+        x = re.match('^(Yellow) Dog Linux release ([0-9][^ \n]*)( .*)*$', l)
         if x:
             LINUX_DIST = '%s:%s' % (x.group(1),x.group(2))
     elif os.path.isfile('/etc/redhat-release'):
         l = open('/etc/redhat-release').readline()
-        x0 = re.compile('^.*(Red) (Hat).* Linux *([A-Z]*) release ([0-9][^ \n]*)( .*)*$').match(l)
-        x1 = re.compile('^Red Hat Enterprise Linux ([AW]S) release ([0-9][^ \n]*)( .*)*$').match(l)
-        x2 = re.compile('^(CentOS).* release ([0-9][^ \n]*)( .*)*$').match(l)
-        x3 = re.compile('^(Scientific) Linux SL release ([0-9][^ \n]*)( .*)*$').match(l)
+        x0 = re.match('^.*(Red) (Hat).* Linux *([A-Z]*) release ([0-9][^ \n]*)( .*)*$', l)
+        x1 = re.match('^Red Hat Enterprise Linux ([AW]S) release ([0-9][^ \n]*)( .*)*$', l)
+        x2 = re.match('^(CentOS).* release ([0-9][^ \n]*)( .*)*$', l)
+        x3 = re.match('^(Scientific) Linux SL release ([0-9][^ \n]*)( .*)*$', l)
         if x0:
             LINUX_DIST = '%s%s:%s%s' % (x0.group(1),x0.group(2),x0.group(4),x0.group(3))
         elif x1:
@@ -3173,10 +3179,10 @@ if SYST == "Linux":
             LINUX_DIST = '%s:%s' % (x3.group(1),x3.group(2))
     elif os.path.isfile('/etc/SuSE-release'):
         l = open('/etc/SuSE-release').readline()
-        x0 = re.compile('^.*(S[Uu]SE) LINUX Enterprise ([SD])[ervsktop]* ([0-9][^ \n]*)( .*)*$').match(l)
-        x1 = re.compile('^S[Uu]SE LINUX Enterprise ([SD])[ervsktop]* ([0-9][^ \n]*)( .*)*$').match(l)
-        x2 = re.compile('^.*(S[Uu]SE) [Ll][Ii][Nn][Uu][Xx].* ([0-9][^ \n]*)( .*)*$').match(l)
-        x3 = re.compile('^open(S[Uu]SE) ([0-9][^ \n]*)( .*)*$').match(l)
+        x0 = re.match('^.*(S[Uu]SE) LINUX Enterprise ([SD])[ervsktop]* ([0-9][^ \n]*)( .*)*$', l)
+        x1 = re.match('^S[Uu]SE LINUX Enterprise ([SD])[ervsktop]* ([0-9][^ \n]*)( .*)*$', l)
+        x2 = re.match('^.*(S[Uu]SE) [Ll][Ii][Nn][Uu][Xx].* ([0-9][^ \n]*)( .*)*$', l)
+        x3 = re.match('^open(S[Uu]SE) ([0-9][^ \n]*)( .*)*$', l)
         if x0:
             LINUX_DIST = '%s:%sE%s' % (x0.group(1),x0.group(3),x0.group(2))
         elif x1:
@@ -3187,22 +3193,22 @@ if SYST == "Linux":
             LINUX_DIST = '%s:%s' % (x3.group(1),x3.group(2))
     elif os.path.isfile('/etc/gentoo-release'):
         l = open('/etc/gentoo-release').readline()
-        x = re.compile('^.*(Gentoo) Base System.* [versionrelease]* ([0-9][^ \n]*)( .*)*$').match(l)
+        x = re.match('^.*(Gentoo) Base System.* [versionrelease]* ([0-9][^ \n]*)( .*)*$', l)
         if x:
             LINUX_DIST = '%s:%s' % (x.group(1),x.group(2))
     elif os.path.isfile('/etc/lsb-release'):
         x0 = x1 = None
         for l in open('/etc/lsb-release'):
             if not x0:
-                x0 = re.compile('^DISTRIB_ID=([^ \n]*)( .*)*$').match(l)
+                x0 = re.match('^DISTRIB_ID=([^ \n]*)( .*)*$', l)
             if not x1:
-                x1 = re.compile('^DISTRIB_RELEASE=([^ \n]*)( .*)*$').match(l)
+                x1 = re.match('^DISTRIB_RELEASE=([^ \n]*)( .*)*$', l)
         if x0 and x1:
             LINUX_DIST = '%s:%s' % (x0.group(1),x1.group(1))
     elif os.path.isfile('/etc/debian_version'):
         LINUX_DIST = "Debian:"+open('/etc/debian_version').readline().strip()
     if not LINUX_DIST:
-        LINUX_DIST = SYST+':'+re.compile('^([0-9\.]*)([^0-9\.].*)$').match(RELEASE).group(1)
+        LINUX_DIST = SYST+':'+re.match('^([0-9\.]*)([^0-9\.].*)$', RELEASE).group(1)
     DIST,VERSION = LINUX_DIST.split(':', 1)
 else:
     DIST = SYST
@@ -3233,36 +3239,6 @@ else:
 URLPREFIX = 'http://dev.monetdb.org/hg/MonetDB/file/'
 
 par = {}
-# the default; only used for usage information in case -p/--package has not been given
-par['PACKAGE'] = 'none'
-# try to be "smart"
-repo = ''
-try:
-    if procdebug:
-        print 'starting process "hg" "root" (inpipe,outpipe)\n'
-    proc = subprocess.Popen(['hg','root'], stdin = subprocess.PIPE, stdout = subprocess.PIPE, stderr = subprocess.PIPE, universal_newlines = True)
-    out,err = proc.communicate()
-    if procdebug:
-        print 'process exited "hg" "root" (%s)\n' % proc.returncode
-    if out:
-        hgr = os.path.normcase(os.path.normpath(os.path.realpath(out.strip())))
-        cwd = os.path.normcase(os.path.normpath(os.path.realpath(os.getcwd())))
-        if hgr == cwd[:len(hgr)]:
-            repo = cwd[len(hgr+os.sep):].split(os.sep)[0]
-except:
-    pass
-if not repo:
-    src = os.path.normcase(os.path.normpath(os.path.realpath(_configure('@QXSOURCE@'))))
-    cwd = os.path.normcase(os.path.normpath(os.path.realpath(os.getcwd())))
-    if src == cwd[:len(src)]:
-        repo = cwd[len(src+os.sep):].split(os.sep)[0]
-if not repo:
-    repo = os.getcwd().split(os.sep)[-1]
-if repo:
-    if repo == '.':
-        repo = 'none'
-    par['PACKAGE'] = repo
-
 dft = {}
 
 def main(argv) :
@@ -3277,7 +3253,7 @@ def main(argv) :
     env['DIRSEP'] = os.sep
 
     # most intuitive (?) default settings
-    dft['TSTSRCBASE']     = "os.path.join(_configure('@QXSOURCE@'),par['PACKAGE'])"
+    dft['TSTSRCBASE']     = "_configure('@QXSOURCE@')"
     dft['TSTTRGBASE']     = "_configure('@QXprefix@')"   # or os.getcwd() ?
     if THISFILE == "Mtest.py":
         dft['GDK_DEBUG']      = "TSTDBG"
@@ -3302,16 +3278,12 @@ def main(argv) :
     # commandline options overrule environment
     cmd_options = [
         # long name, short name, GDK option, argument, comment
-        ('package', 'p', 'package', '<package>',
-         "package to be tested, e.g.:\nmonetdb5, (java|clients|template|sql|geom);\ndefault: %s" % par['PACKAGE']),
-        ('monetdb5', '5', 'monetdb5', None,
-         "use mserver5 of MonetDB Version 5 (default)"),
         ('recursive', 'r', 'recursive', None,
          "recurse into subdirectories (implies 'All')"),
         ('revision', None, 'revision', '<hgid>',
          'use given revision as the HG short hash'),
         ('TSTSRCBASE', None, 'TSTSRCBASE', '<path>',
-         'default: "%s"' % os.path.join(_configure('@QXSOURCE@'),par['PACKAGE'])),
+         'default: "%s"' % _configure('@QXSOURCE@')),
         ('TSTTRGBASE', None, 'TSTTRGBASE', '<path>',
          'default: "%s"' % _configure('@QXprefix@')),
         ('quiet', 'q', 'quiet', None,
@@ -3319,7 +3291,7 @@ def main(argv) :
         ('verbose', 'v', 'verbose', None,
          "more verbose test output"),
         ('procdebug', None, 'procdebug', None,
-         'process debugging (Mtest developers only'),
+         'process debugging (Mtest developers only)'),
         ]
 
     if THISFILE == "Mtest.py":
@@ -3400,11 +3372,6 @@ def main(argv) :
         head, tst = os.path.split(head)
         if tst != 'Tests':
             ErrXit("%s: not a valid test name" % args[0])
-        if not opts.get('package'):
-            for d in ('common', 'clients', 'gdk', 'java', 'monetdb5', 'sql'):
-                if head.startswith(d + os.sep):
-                    setattr(opts, 'package', d)
-                    head = head[len(d + os.sep):]
         args = [head]
         if tail != 'All':
             for ext in ('_s00.malC', '_p00.malC', '_s00.mal', '_s00.sql',
@@ -3418,20 +3385,6 @@ def main(argv) :
                     break
             else:
                 ErrXit("%s: not a valid test name" % args[0])
-
-    m5 = opts.get('monetdb5', False)
-
-    pkg = opts.get('package')
-    if pkg is None:
-        if par['PACKAGE'] == 'none':
-            if m5:
-                par['PACKAGE'] = 'monetdb5'
-            Warn('No -p/--package specified. Using default package="%s". Please use -p/--package to overrule.' % par['PACKAGE'])
-    else:
-        par['PACKAGE'] = pkg
-
-    if not m5 and par['PACKAGE'] not in ('common', 'clients', 'gdk', 'java'):
-        m5 = True
 
     config = opts.get('config', '')
     if config:
@@ -3525,10 +3478,6 @@ def main(argv) :
         CONDITIONALS['HAVE_PHP'] = '#'
 #     else:
 #         CONDITIONALS['HAVE_PHP'] = ''
-    if m5:
-        CONDITIONALS['HAVE_MONETDB5'] = '#'
-    else:
-        CONDITIONALS['HAVE_MONETDB5'] = ''
     CheckClassPath()
 
     # tidy-up and fall-back to defaults where necessary
@@ -3707,7 +3656,7 @@ def main(argv) :
             pass
     # fix up URLPREFIX
     if REV:
-        URLPREFIX += '%s/%s/' % (REV.split()[0].rstrip('+'), par['PACKAGE'])
+        URLPREFIX += '%s/' % REV.split()[0].rstrip('+')
         os.environ['REVISION'] = REV
     else:
         # if no revision known, can't refer to repository
@@ -3877,40 +3826,16 @@ def main(argv) :
         env['TST_OIDS'] = ""
         env['TST_SINGLE'] = ""
         env['TST_STATIC'] = ""
-        if par['PACKAGE'] in ('common', 'clients', 'gdk', 'java'):
-            if   CONDITIONALS.has_key('BITS32') and CONDITIONALS['BITS32']:
-                env['TST_BITS'] = "32bit"
-            elif CONDITIONALS.has_key('BITS64') and CONDITIONALS['BITS64']:
-                env['TST_BITS'] = "64bit"
-        else:
-            if Check(splitcommand(env['exe']['Mserver'][1]) + ['--dbpath=%s' % os.path.join(env['GDK_DBFARM'], TSTPREF)], 'clients.quit();\n'):
-                sys.exit(1)
-            if GetBitsAndOIDsAndModsAndStaticAndThreads(env):
-                sys.exit(1)
+        if Check(splitcommand(env['exe']['Mserver'][1]) + ['--dbpath=%s' % os.path.join(env['GDK_DBFARM'], TSTPREF)], 'clients.quit();\n'):
+            sys.exit(1)
+        if GetBitsAndOIDsAndModsAndStaticAndThreads(env):
+            sys.exit(1)
         STDERR.flush()
         if not quiet:
             print "Bits: ", env['TST_BITS']
             print "OIDs: ", env['TST_OIDS']
             print "Modules: ", env['TST_MODS']
         STDOUT.flush()
-
-        is_sql = par['PACKAGE'] == 'sql'
-        if is_sql:
-            MissingMods = CheckMods(env, '', 'SQL', '')
-            if MissingMods:
-                ErrXit('Stopping SQL testing as modules "%s" are missing!' % str(MissingMods))
-
-        if par['PACKAGE'] == 'geom':
-            MissingMods = CheckMods(env, '', 'SQL', '')
-            if 'geom' not in env['TST_MODS']:
-                MissingMods.append('geom')
-            if MissingMods:
-                ErrXit('Stopping Geom testing as modules "%s" are missing!' % str(MissingMods))
-            mod_name = 'geom'
-
-        if par['PACKAGE'] in ('sql','geom'):
-            if not env['exe']['SQL_Client'][0]:
-                ErrXit('Stopping %s testing as "%s" is not available!' % (par['PACKAGE'], env['SQLCLIENT'].split(None, 1)[0]))
 
         port = int(env['MAPIPORT'])
         busy, host, Serrno, Serrstr, S = CheckPort(port)

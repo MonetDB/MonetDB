@@ -23,9 +23,9 @@ int ALIGNcommit(BAT *b);
 int ALIGNundo(BAT *b);
 int ATOMheap(int id, Heap *hp, size_t cap);
 int ATOMisdescendant(int id, int parentid);
-int ATOMunknown_add(str nme);
+int ATOMunknown_add(const char *nme);
 int ATOMunknown_del(int a);
-int ATOMunknown_find(str nme);
+int ATOMunknown_find(const char *nme);
 str ATOMunknown_name(int a);
 BUN BATbuncount(BAT *b);
 int BATcheckmodes(BAT *b, int persistent);
@@ -134,8 +134,6 @@ extern int GDKrecovery;
 extern int GDKsilent;	/* should GDK shut up? */
 extern MT_Lock GDKthreadLock;
 extern MT_Lock GDKtmLock;
-extern MT_Cond GDKunloadCond;
-extern MT_Lock GDKunloadLock;
 extern MT_Lock MT_system_lock;
 
 #define ATOMappendpriv(t, h)						\

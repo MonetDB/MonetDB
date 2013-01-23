@@ -146,31 +146,31 @@ BATcreatedesc(int ht, int tt, int heapnames)
 	bn->batMaphheap = 0;
 	bn->batMaptheap = 0;
 	if (heapnames) {
-		str nme = BBP_physical(bn->batCacheid);
+		const char *nme = BBP_physical(bn->batCacheid);
 
 		if (ht) {
-			bn->H->heap.filename = (str) GDKmalloc(strlen(nme) + 12);
+			bn->H->heap.filename = GDKmalloc(strlen(nme) + 12);
 			if (bn->H->heap.filename == NULL)
 				goto bailout;
 			GDKfilepath(bn->H->heap.filename, NULL, nme, "head");
 		}
 
 		if (tt) {
-			bn->T->heap.filename = (str) GDKmalloc(strlen(nme) + 12);
+			bn->T->heap.filename = GDKmalloc(strlen(nme) + 12);
 			if (bn->T->heap.filename == NULL)
 				goto bailout;
 			GDKfilepath(bn->T->heap.filename, NULL, nme, "tail");
 		}
 
 		if (ATOMneedheap(ht)) {
-			if ((bn->H->vheap = (Heap *) GDKzalloc(sizeof(Heap))) == NULL || (bn->H->vheap->filename = (str) GDKmalloc(strlen(nme) + 12)) == NULL)
+			if ((bn->H->vheap = (Heap *) GDKzalloc(sizeof(Heap))) == NULL || (bn->H->vheap->filename = GDKmalloc(strlen(nme) + 12)) == NULL)
 				goto bailout;
 			GDKfilepath(bn->H->vheap->filename, NULL, nme, "hheap");
 			bn->H->vheap->parentid = bn->batCacheid;
 		}
 
 		if (ATOMneedheap(tt)) {
-			if ((bn->T->vheap = (Heap *) GDKzalloc(sizeof(Heap))) == NULL || (bn->T->vheap->filename = (str) GDKmalloc(strlen(nme) + 12)) == NULL)
+			if ((bn->T->vheap = (Heap *) GDKzalloc(sizeof(Heap))) == NULL || (bn->T->vheap->filename = GDKmalloc(strlen(nme) + 12)) == NULL)
 				goto bailout;
 			GDKfilepath(bn->T->vheap->filename, NULL, nme, "theap");
 			bn->T->vheap->parentid = bn->batCacheid;
@@ -710,9 +710,9 @@ static int
 heapcopy(BAT *bn, char *ext, Heap *dst, Heap *src)
 {
 	if (src->filename && src->newstorage != STORE_MEM) {
-		str nme = BBP_physical(bn->batCacheid);
+		const char *nme = BBP_physical(bn->batCacheid);
 
-		if ((dst->filename = (str) GDKmalloc(strlen(nme) + 12)) == NULL)
+		if ((dst->filename = GDKmalloc(strlen(nme) + 12)) == NULL)
 			return -1;
 		GDKfilepath(dst->filename, NULL, nme, ext);
 	}
@@ -2777,6 +2777,8 @@ BATmode(BAT *b, int mode)
 		if (mode == PERSISTENT) {
 			if (!(BBP_status(bid) & BBPDELETED))
 				BBP_status_on(bid, BBPNEW, "BATmode");
+			else
+				BBP_status_on(bid, BBPEXISTING, "BATmode");
 			BBP_status_off(bid, BBPDELETED, "BATmode");
 		} else if (b->batPersistence == PERSISTENT) {
 			if (!(BBP_status(bid) & BBPNEW))
@@ -3037,6 +3039,7 @@ BATassertProps(BAT *b)
 {
 #ifndef NDEBUG
 	BAT *bm;
+	int bbpstatus;
 
 	/* general BAT sanity */
 	assert(b != NULL);
@@ -3050,6 +3053,11 @@ BATassertProps(BAT *b)
 	assert(b->batFirst >= b->batDeleted);
 	assert(b->batInserted >= b->batFirst);
 	assert(b->batFirst + b->batCount >= b->batInserted);
+	bbpstatus = BBP_status(b->batCacheid);
+	/* only at most one of BBPDELETED, BBPEXISTING, BBPNEW may be set */
+	assert(((bbpstatus & BBPDELETED) != 0) +
+	       ((bbpstatus & BBPEXISTING) != 0) +
+	       ((bbpstatus & BBPNEW) != 0) <= 1);
 
 	BATassertHeadProps(b);
 	if (b->H != bm->H)

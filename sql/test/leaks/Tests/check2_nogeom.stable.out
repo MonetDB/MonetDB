@@ -1,4 +1,4 @@
-stdout of test 'check2_nogeom` in directory 'test/leaks` itself:
+stdout of test 'check2_nogeom` in directory 'sql/test/leaks` itself:
 
 
 # 22:02:16 >  
@@ -34,8 +34,8 @@ Ready.
 [ "oid",	"bit",	61	]
 [ "oid",	"bit",	61	]
 [ "oid",	"bit",	326	]
-[ "oid",	"bit",	1127	]
-[ "oid",	"bit",	1127	]
+[ "oid",	"bit",	1166	]
+[ "oid",	"bit",	1166	]
 [ "oid",	"int",	0	]
 [ "oid",	"int",	0	]
 [ "oid",	"int",	0	]
@@ -81,22 +81,22 @@ Ready.
 [ "oid",	"int",	61	]
 [ "oid",	"int",	61	]
 [ "oid",	"int",	155	]
-[ "oid",	"int",	235	]
-[ "oid",	"int",	235	]
+[ "oid",	"int",	271	]
+[ "oid",	"int",	271	]
 [ "oid",	"int",	326	]
 [ "oid",	"int",	326	]
 [ "oid",	"int",	326	]
 [ "oid",	"int",	326	]
 [ "oid",	"int",	326	]
-[ "oid",	"int",	1127	]
-[ "oid",	"int",	1127	]
-[ "oid",	"int",	1127	]
-[ "oid",	"int",	1127	]
-[ "oid",	"int",	3111	]
-[ "oid",	"int",	3111	]
-[ "oid",	"int",	3111	]
-[ "oid",	"int",	3111	]
-[ "oid",	"int",	3111	]
+[ "oid",	"int",	1166	]
+[ "oid",	"int",	1166	]
+[ "oid",	"int",	1166	]
+[ "oid",	"int",	1166	]
+[ "oid",	"int",	3207	]
+[ "oid",	"int",	3207	]
+[ "oid",	"int",	3207	]
+[ "oid",	"int",	3207	]
+[ "oid",	"int",	3207	]
 [ "oid",	"lng",	0	]
 [ "oid",	"lng",	0	]
 [ "oid",	"lng",	0	]
@@ -141,7 +141,7 @@ Ready.
 [ "oid",	"sht",	0	]
 [ "oid",	"sht",	61	]
 [ "oid",	"sht",	61	]
-[ "oid",	"sht",	235	]
+[ "oid",	"sht",	271	]
 [ "oid",	"str",	0	]
 [ "oid",	"str",	0	]
 [ "oid",	"str",	0	]
@@ -180,11 +180,11 @@ Ready.
 [ "oid",	"str",	326	]
 [ "oid",	"str",	326	]
 [ "oid",	"str",	326	]
-[ "oid",	"str",	1127	]
-[ "oid",	"str",	1127	]
-[ "oid",	"str",	1127	]
-[ "oid",	"str",	3111	]
-[ "oid",	"str",	3111	]
+[ "oid",	"str",	1166	]
+[ "oid",	"str",	1166	]
+[ "oid",	"str",	1166	]
+[ "oid",	"str",	3207	]
+[ "oid",	"str",	3207	]
 [ "oid",	"timestamp",	0	]
 [ "oid",	"timestamp",	0	]
 [ "oid",	"wrd",	0	]
@@ -194,13 +194,13 @@ Ready.
 #select 'transient', count(*) from bbp() as bbp where kind like 'tran%';
 % .L1,	.bbp # table_name
 % L1,	L2 # name
-% char,	wrd # type
+% varchar,	wrd # type
 % 9,	3 # length
 [ "transient",	170	]
 #select 'persistent', count(*) from bbp() as bbp where kind like 'pers%';
 % .L1,	.bbp # table_name
 % L1,	L2 # name
-% char,	wrd # type
+% varchar,	wrd # type
 % 10,	3 # length
 [ "persistent",	163	]
 

@@ -1,4 +1,4 @@
-stdout of test 'exports` in directory '.` itself:
+stdout of test 'exports` in directory 'clients` itself:
 
 
 # 15:10:42 >  
@@ -3034,7 +3034,7 @@ void releaseBAT(MalBlkPtr mb, MalStkPtr stk, int bid);
 int releaseBox(Box box, str name);
 str remapRef;
 str remoteRef;
-void removeDataflow(Client cntxt, MalBlkPtr mb);
+void removeDataflow(MalBlkPtr mb);
 void removeInstruction(MalBlkPtr mb, InstrPtr p);
 void removeInstructionBlock(MalBlkPtr mb, int pc, int cnt);
 int removeProp;

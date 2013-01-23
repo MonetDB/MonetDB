@@ -307,7 +307,7 @@ MT_getrss(void)
 	if (task_info(task, TASK_BASIC_INFO_64, (task_info_t)&t_info, &t_info_count) != KERN_INVALID_POLICY)
 		return t_info.resident_size;  /* bytes */
 #elif defined(HAVE_KVM_H) && defined(HAVE_SYS_SYSCTL_H)
-	/* get RSS on FreeBSD */
+	/* get RSS on FreeBSD and NetBSD */
 	struct kinfo_proc *ki;
 	int ski = 1;
 	kvm_t *kd;
@@ -323,7 +323,12 @@ MT_getrss(void)
 		return 0;
 	}
 
+#ifdef __NetBSD__		/* should we use configure for this? */
+	/* see bug 3217 */
+	rss = ki->kp_eproc.e_vm.vm_rssize;
+#else
 	rss = ki->ki_rssize;
+#endif
 
 	kvm_close(kd);
 
@@ -335,7 +340,7 @@ MT_getrss(void)
 	fd = open("/proc/self/stat", O_RDONLY);
 	if (fd >= 0) {
 		char buf[1024], *r = buf;
-		size_t i, sz = read(fd, buf, 1024);
+		ssize_t i, sz = read(fd, buf, 1024);
 
 		close(fd);
 		if (sz > 0) {
@@ -1007,37 +1012,4 @@ MT_sleep_ms(unsigned int ms)
 	Sleep(ms);
 }
 
-
-/*
- * cygnus1.1.X has a bug in the semaphore routines. we work around it
- * by directly using the WIN32 primitives.
- */
-#ifndef NATIVE_WIN32
-
-int
-sem_init(sem_t * sem, int pshared, unsigned int value)
-{
-	(void) pshared;
-	*sem = (sem_t) CreateSemaphore(NULL, value, 128, NULL);
-	return (*sem) ? 0 : -1;
-}
-
-int
-sem_destroy(sem_t * sem)
-{
-	return CloseHandle((HANDLE) *sem) ? 0 : -1;
-}
-
-int
-sem_wait(sem_t * sem)
-{
-	return (WaitForSingleObject((HANDLE) *sem, (unsigned int) INFINITE) != WAIT_FAILED) ? 0 : -1;
-}
-
-int
-sem_post(sem_t * sem)
-{
-	return (ReleaseSemaphore((HANDLE) *sem, 1, NULL) == 0) ? -1 : 0;
-}
-#endif
 #endif

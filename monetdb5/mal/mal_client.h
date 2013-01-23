@@ -91,8 +91,6 @@ typedef struct CLIENT {
 	 */
 	sht	flags;	 /* resource tracing flags */
 	lng     timer;   /* trace time in usec */
-	lng	bigfoot; /* maximum virtual memory use */
-	lng	vmfoot;  /* virtual memory use */
 	lng memory;	/* memory claimed for keeping BATs */
 	BUN	cnt;	/* bat count */
 
@@ -100,7 +98,7 @@ typedef struct CLIENT {
 #define memoryFlag	2
 #define ioFlag		4
 #define flowFlag	8
-#define bigfootFlag	16
+#define footprintFlag	16
 #define cntFlag		32
 #define threadFlag	64
 #define bbpFlag		128

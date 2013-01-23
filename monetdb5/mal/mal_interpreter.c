@@ -80,53 +80,6 @@ void showErrors(Client cntxt)
 		errbuf[0] = '\0';
 	}
 }
-/*
- * The bigfoot memory tracker keeps track on the space occupancy of BATs.
- * The property 'memory' illustrates the total amount of memory claimed.
- * It ignores for the time being the heaps for the variable sized atoms.
- * Moreover, it is not thread safe and it can not correctly handle
- * aliases embedded in MAL assignments.
- * This means that the footprint is only to be used as indicative.
- */
-inline void
-updateBigFoot(Client cntxt, int bid, int add)
-{
-	BAT *b;
-	lng total = 0, vol = 0;
-
-	if (bid != bat_nil) {
-		BUN cnt = 0;
-		b = BBPquickdesc(ABS(bid), TRUE);
-		if (b == NULL)
-			return;
-		if (isVIEW(b))
-			return;
-		/* count it once ! */
-		cntxt->cnt = cnt = BATcount(b);
-		heapinfo(&b->H->heap); total += vol;
-		heapinfo(b->H->vheap); total += vol;
-		hashinfo(b->H->hash); total += vol;
-
-		heapinfo(&b->T->heap); total += vol;
-		heapinfo(b->T->vheap); total += vol;
-		hashinfo(b->T->hash); total += vol;
-		if (b->H->hash)
-			total += cnt * sizeof(int);
-		if (b->T->hash)
-			total += cnt * sizeof(int);
-
-		if (add) {
-			cntxt->vmfoot += total;
-			cntxt->memory += total;
-		} else
-			cntxt->vmfoot -= total;
-		/* correct for limitations by resetting */
-		if (cntxt->vmfoot < 0)
-			cntxt->vmfoot = 0;
-		if (cntxt->vmfoot > cntxt->bigfoot)
-			cntxt->bigfoot = cntxt->vmfoot;
-	}
-}
 
 str malCommandCall(MalStkPtr stk, InstrPtr pci)
 {
@@ -785,20 +738,22 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				}
 				stkpc = mb->stop;
 				continue;
-			default:
+			default: {
+				str w;
 				if (pci->token < 0) {
 					/* temporary NOOP instruction */
 					break;
 				}
-				ret = createScriptException(mb, stkpc, MAL,
-					NULL, "unkown operation");
+				w= instruction2str(mb, 0, pci, FALSE);
+				ret = createScriptException(mb, stkpc, MAL, NULL, "unkown operation:%s",w);
+				GDKfree(w);
 				if (cntxt->qtimeout && time(NULL) - stk->clock.tv_usec > cntxt->qtimeout){
 					ret= createException(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
 					break;
 				}
 				stkpc= mb->stop;
 				continue;
-			}
+			}	}
 
 			/* monitoring information should reflect the input arguments,
 			   which may be removed by garbage collection  */
@@ -845,23 +800,16 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 						if (isaBatType(getArgType(mb, pci, i))) {
 							bat bid = stk->stk[a].val.bval;
 
-							/* update the bigfoot information only if we need to gc */
-							if (cntxt->flags & bigfootFlag)
-								updateBigFoot(cntxt, bid, TRUE);
 							if (i < pci->retc && backup[i].val.bval) {
-								if (backup[i].val.bval != bid && i < pci->retc) {
-									/* possible garbage collect the variable */
-									if (cntxt->flags & bigfootFlag)
-										updateBigFoot(cntxt, backup[i].val.bval, FALSE);
-								}
-								BBPdecref(backup[i].val.bval, TRUE);
+								bat bx = backup[i].val.bval;
 								backup[i].val.bval = 0;
+								BBPdecref(bx, TRUE);
 							}
 							if (garbage[i] >= 0) {
-								bid = ABS(stk->stk[garbage[i]].val.bval);
-								BBPdecref(bid, TRUE);
 								PARDEBUG mnstr_printf(GDKstdout, "#GC pc=%d bid=%d %s done\n", stkpc, bid, getVarName(mb, garbage[i]));
+								bid = ABS(stk->stk[garbage[i]].val.bval);
 								stk->stk[garbage[i]].val.bval = 0;
+								BBPdecref(bid, TRUE);
 							}
 						} else if (i < pci->retc &&
 								   0 < stk->stk[a].vtype &&
@@ -1407,6 +1355,7 @@ str catchKernelException(Client cntxt, str ret)
  */
 void garbageElement(Client cntxt, ValPtr v)
 {
+	(void) cntxt;
 	if (v->vtype == TYPE_str) {
 		if (v->val.sval) {
 			GDKfree(v->val.sval);
@@ -1430,8 +1379,6 @@ void garbageElement(Client cntxt, ValPtr v)
 			return;
 		if (!BBP_lrefs(bid))
 			return;
-		if (cntxt && cntxt->flags & bigfootFlag)
-			updateBigFoot(cntxt, bid, FALSE);
 		BBPdecref(bid, TRUE);
 	} else if (0 < v->vtype && v->vtype < TYPE_any && ATOMextern(v->vtype)) {
 		if (v->val.pval)
@@ -1493,8 +1440,8 @@ void releaseBAT(MalBlkPtr mb, MalStkPtr stk, int bid)
 	do {
 		for (k = 0; k < mb->vtop; k++)
 			if (stk->stk[k].vtype == TYPE_bat && abs(stk->stk[k].val.bval) == bid) {
-				BBPdecref(bid, TRUE);
 				stk->stk[k].val.ival = 0;
+				BBPdecref(bid, TRUE);
 			}
 		if (stk->up) {
 			stk = stk->up;
