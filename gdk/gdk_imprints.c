@@ -412,7 +412,7 @@ imprints_create(BAT *b, BAT *histo, bte bits,
 {
 	BUN i;
 	BUN dcnt, icnt, new;
-	bte bin;
+	bte bin = 0;
 	cchdc_t *d = (cchdc_t *) dict;
 	dcnt = icnt = 0;
 
