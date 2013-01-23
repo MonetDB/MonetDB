@@ -1161,7 +1161,7 @@ int GDKdebug = 0;
 batlock_t GDKbatLock[BBP_BATMASK + 1];
 bbplock_t GDKbbpLock[BBP_THREADMASK + 1];
 MT_Lock GDKnameLock MT_LOCK_INITIALIZER("GDKnameLock");
-MT_Lock GDKthreadLock MT_LOCK_INITIALIZER("GDKthredLock");
+MT_Lock GDKthreadLock MT_LOCK_INITIALIZER("GDKthreadLock");
 MT_Lock GDKtmLock MT_LOCK_INITIALIZER("GDKtmLock");
 
 /*
