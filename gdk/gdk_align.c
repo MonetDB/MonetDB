@@ -343,6 +343,9 @@ VIEWcreate_(BAT *h, BAT *t, int slice_view)
 		bn->T->hash = NULL;
 	else
 		bn->T->hash = t->T->hash;
+	/* imprints can and must be shared */
+	bn->H->imprints = h->H->imprints;
+	bn->T->imprints = t->T->imprints;
 	BBPcacheit(bs, 1);	/* enter in BBP */
 	/* View of VIEW combine, ie we need to fix the head of the mirror */
 	if (vc) {
@@ -462,6 +465,7 @@ BATmaterializeh(BAT *b)
 
 	/* cleanup possible ACC's */
 	HASHdestroy(b);
+	IMPSdestroy(b);
 
 	b->H->heap.filename = NULL;
 	if (HEAPalloc(&b->H->heap, cnt, sizeof(oid)) < 0) {
@@ -790,6 +794,7 @@ VIEWdestroy(BAT *b)
 		HASHremove(b);
 	if (b->T->hash)
 		HASHremove(BATmirror(b));
+	IMPSdestroy(b);
 	VIEWunlink(b);
 
 	if (b->htype && !b->H->heap.parentid) {

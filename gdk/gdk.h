@@ -641,6 +641,16 @@ typedef struct {
 	Heap *heap;		/* heap where the hash is stored */
 } Hash;
 
+typedef struct {
+	bte bits;       /* how many bits in imprints */
+	bat histogram;  /* id for histogram bat */
+	Heap *imps;     /* heap of imprints */
+	BUN impcnt;     /* counter for imprints*/
+	Heap *dict;     /* cache dictionary for compressing imprints */
+	BUN dictcnt;    /* counter for cache dictionary */
+} Imprints;
+
+
 /*
  * @+ Binary Association Tables
  * Having gone to the previous preliminary definitions, we will now
@@ -762,6 +772,7 @@ gdk_export int VALisnil(const ValRecord *v);
  *           int    hloc;             // byte-offset in BUN for head elements
  *           Heap   *hheap;           // heap for varsized head values
  *           Hash   *hhash;           // linear chained hash table on head
+ *           Imprints *himprints;     // column imprints index on head
  *           // Tail properties
  *           int    ttype;            // Tail type number
  *           str    tident;           // name for tail column
@@ -774,6 +785,7 @@ gdk_export int VALisnil(const ValRecord *v);
  *           int    tloc;             // byte-offset in BUN for tail elements
  *           Heap   *theap;           // heap for varsized tail values
  *           Hash   *thash;           // linear chained hash table on tail
+ *           Imprints *timprints;     // column imprints index on tail
  *  } BAT;
  * @end verbatim
  *
@@ -834,29 +846,30 @@ typedef struct PROPrec {
 /* see also comment near BATassertProps() for more information about
  * the properties */
 typedef struct {
-	str id;			/* label for head/tail column */
+	str id;				/* label for head/tail column */
 
 	unsigned short width;	/* byte-width of the atom array */
-	bte type;		/* type id. */
-	bte shift;		/* log2 of bunwidth */
+	bte type;			/* type id. */
+	bte shift;			/* log2 of bunwidth */
 	unsigned int
 	 varsized:1,		/* varsized (1) or fixedsized (0) */
-	 key:2,			/* duplicates allowed? */
-	 dense:1,		/* OID only: only consecutive values */
-	 nonil:1,		/* nonil isn't propchecked yet */
-	 nil:1,			/* there is a nil in the column */
-	 sorted:1,		/* column is sorted in ascending order */
+	 key:2,				/* duplicates allowed? */
+	 dense:1,			/* OID only: only consecutive values */
+	 nonil:1,			/* nonil isn't propchecked yet */
+	 nil:1,				/* there is a nil in the column */
+	 sorted:1,			/* column is sorted in ascending order */
 	 revsorted:1;		/* column is sorted in descending order */
-	oid align;		/* OID for sync alignment */
+	oid align;			/* OID for sync alignment */
 	BUN nokey[2];		/* positions that prove key ==FALSE */
 	BUN nosorted;		/* position that proves sorted==FALSE */
 	BUN norevsorted;	/* position that proves revsorted==FALSE */
 	BUN nodense;		/* position that proves dense==FALSE */
-	oid seq;		/* start of dense head sequence */
+	oid seq;			/* start of dense head sequence */
 
-	Heap heap;		/* space for the column. */
+	Heap heap;			/* space for the column. */
 	Heap *vheap;		/* space for the varsized data. */
-	Hash *hash;		/* hash table */
+	Hash *hash;			/* hash table */
+	Imprints *imprints;	/* column imprints index */
 
 	PROPrec *props;		/* list of dynamic properties stored in the bat descriptor */
 } COLrec;
@@ -2150,6 +2163,24 @@ gdk_export BAT *BAThashjoin(BAT *l, BAT *r, BUN estimate);
 /* low level functions */
 
 #define BATprepareHash(X) (((X)->H->hash == NULL) && !BAThash(X, 0))
+
+/*
+ * @- Column Imprints Functions
+ *
+ * @multitable @columnfractions 0.08 0.7
+ * @item BAT*
+ * @tab
+ *  BATimprints (BAT *b)
+ * @end multitable
+ *
+ * The column imprints index structure.
+ *
+ */
+
+#define BATprepareImprints(X) (((X)->T->imprints == NULL) && !BATimprints(X))
+gdk_export void IMPSdestroy(BAT *b);
+gdk_export BAT *BATimprints(BAT *b);
+
 /*
  * @- Multilevel Storage Modes
  *

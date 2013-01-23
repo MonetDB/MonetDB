@@ -111,6 +111,8 @@ int VALprint(stream *fd, const ValRecord *res);
 void VIEWdestroy(BAT *b);
 BAT *VIEWreset(BAT *b);
 void VIEWunlink(BAT *b);
+int IMPSgetbin(int tpe, bte bits, void *bins, const void *v);
+void IMPSremove(BAT *b);
 
 #define BBP_BATMASK	511
 #define BBP_THREADMASK	63
@@ -118,6 +120,7 @@ void VIEWunlink(BAT *b);
 typedef struct {
 	MT_Lock swap;
 	MT_Lock hash;
+	MT_Lock imprints;
 } batlock_t;
 
 typedef struct {
@@ -145,6 +148,7 @@ extern MT_Lock MT_system_lock;
 
 #define GDKswapLock(x)  GDKbatLock[(x)&BBP_BATMASK].swap
 #define GDKhashLock(x)  GDKbatLock[(x)&BBP_BATMASK].hash
+#define GDKimprintsLock(x)  GDKbatLock[(x)&BBP_BATMASK].imprints
 #define GDKtrimLock(y)  GDKbbpLock[(y)&BBP_THREADMASK].trim
 #define GDKcacheLock(y) GDKbbpLock[(y)&BBP_THREADMASK].alloc
 #define BBP_free(y)	GDKbbpLock[(y)&BBP_THREADMASK].free

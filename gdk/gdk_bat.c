@@ -487,6 +487,7 @@ BATextend(BAT *b, BUN newcap)
 	if (b->T->heap.base && HEAPextend(&b->T->heap, theap_size) < 0)
 		return NULL;
 	HASHdestroy(b);
+	IMPSdestroy(b);
 	return b;
 }
 
@@ -536,6 +537,7 @@ BATclear(BAT *b, int force)
 	if (b->T->hash) {
 		HASHremove(bm);
 	}
+	IMPSdestroy(b);
 
 	/* we must dispose of all inserted atoms */
 	if (b->batDeleted == b->batInserted &&
@@ -628,6 +630,7 @@ BATfree(BAT *b)
 		PROPdestroy(b->T->props);
 	b->T->props = NULL;
 	HASHdestroy(b);
+	IMPSdestroy(b);
 	if (b->htype)
 		HEAPfree(&b->H->heap);
 	else
@@ -1242,6 +1245,7 @@ BUNins(BAT *b, const void *h, const void *t, bit force)
 				HEAPwarm(b->T->vheap);
 		}
 	}
+	IMPSdestroy(b); /* no support for inserts in imprints yet */
 	return b;
       bunins_failed:
 	return NULL;
@@ -1326,6 +1330,9 @@ BUNappend(BAT *b, const void *t, bit force)
 	} else {
 		BATsetcount(b, b->batCount + 1);
 	}
+
+
+	IMPSdestroy(b); /* no support for inserts in imprints yet */
 
 	/* first adapt the hashes; then the user-defined accelerators.
 	 * REASON: some accelerator updates (qsignature) use the hashes!
@@ -1514,6 +1521,7 @@ BUNdelete_(BAT *b, BUN p, bit force)
 	}
 	b->batCount--;
 	b->batDirty = 1;	/* bat is dirty */
+	IMPSdestroy(b); /* no support for inserts in imprints yet */
 	return p;
 }
 

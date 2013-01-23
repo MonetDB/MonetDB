@@ -496,6 +496,7 @@ BATappend(BAT *b, BAT *n, bit force)
 			return NULL;
 	}
 
+	IMPSdestroy(b); /* imprints do not support updates yet */
 	/* a hash is useless for void bats */
 	if (b->H->hash)
 		HASHremove(b);
@@ -862,6 +863,7 @@ BATtopN(BAT *b, BUN topN)
 		HASHremove(b);
 		BATsetcount(b, topN);
 	}
+	IMPSdestroy(b);
 	/* we no longer know if there are NILs */
 	b->H->nil = b->htype == TYPE_void && b->hseqbase == oid_nil && topN >= 1;
 	b->T->nil = b->ttype == TYPE_void && b->tseqbase == oid_nil && topN >= 1;
@@ -1170,6 +1172,7 @@ BATorder_internal(BAT *b, int stable, int reverse, int copy, const char *func)
 	}
 	b->tsorted = b->trevsorted = 0;
 	HASHdestroy(b);
+	IMPSdestroy(b);
 	ALIGNdel(b, func, FALSE);
 	b->hdense = 0;
 	b->tdense = 0;
@@ -1504,6 +1507,7 @@ BATrevert(BAT *b)
 		GDKfree(t);
 	}
 	HASHdestroy(b);
+	IMPSdestroy(b);
 	/* interchange sorted and revsorted */
 	x = b->hrevsorted;
 	b->hrevsorted = b->hsorted;
@@ -1976,6 +1980,7 @@ BATpropagate(BAT *dst, BAT *src, int idx)
 			(* (int *) BUNtloc(bni, r))++;			\
 		}							\
 		HASHdestroy(bn);					\
+		IMPSdestroy(bn);					\
 	} while (0)
 
 BAT *
