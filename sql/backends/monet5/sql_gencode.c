@@ -2196,6 +2196,9 @@ setCommitProperty(MalBlkPtr mb)
 static void
 add_materialise_stmt(MalBlkPtr mb, sql_rel *rel, list *processed)
 {
+	if (!rel)
+		return;
+
 	switch(rel->op) {
 	case op_basetable:
 		{
