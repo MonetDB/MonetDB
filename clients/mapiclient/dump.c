@@ -576,9 +576,9 @@ dump_column_definition(Mapi mid, stream *toConsole, const char *schema, const ch
 		if (strcmp(isdimension, "true") == 0) {
 			mnstr_printf(toConsole, "%*s DIMENSION [%s:%s:%s]",
 					CAP(13 - space), "",
-					strcmp(d_start, "") == 0 ? "*" : d_start,
-					strcmp(d_step, "") == 0 ? "*" : d_step,
-					strcmp(d_stop, "") == 0 ? "*" : d_stop);
+					d_start == NULL ? "*" : d_start,
+					d_step  == NULL ? "*" : d_step,
+					d_stop  == NULL ? "*" : d_stop);
 			space = 13;
 		}
 		if (strcmp(c_null, "false") == 0) {
@@ -777,8 +777,8 @@ describe_table(Mapi mid, char *schema, char *tname, stream *toConsole, int forei
 	query = malloc(maxquerylen);
 	snprintf(query, maxquerylen,
 		 "SELECT \"t\".\"name\", \"t\".\"query\", "
-		 "CASE WHEN \"t\".\"nr_dimensions\" = 0 THEN FALSE ELSE TRUE END AS \"isarray\" "
-		 "FROM \"sys\".\"_tables\" \"t\", \"sys\".\"schemas\" \"s\" "
+		 "CASE WHEN \"a\".\"table_id\" IS NULL THEN FALSE ELSE TRUE END AS \"isarray\" "
+		 "FROM \"sys\".\"_tables\" \"t\" LEFT OUTER JOIN \"sys\".\"_arrays\" \"a\" ON \"t\".\"id\" = \"a\".\"table_id\", \"sys\".\"schemas\" \"s\" "
 		 "WHERE \"s\".\"name\" = '%s' "
 		 "AND \"t\".\"schema_id\" = \"s\".\"id\" "
 		 "AND \"t\".\"name\" = '%s'",
@@ -810,8 +810,8 @@ describe_table(Mapi mid, char *schema, char *tname, stream *toConsole, int forei
 		if (cnt == 0)
 			fprintf(stderr, "table %s.%s does not exist\n", schema, tname);
 		else
-			fprintf(stderr, "table %s.%s is not unique, corrupt catalog?\n",
-					schema, tname);
+			fprintf(stderr, "%s %s.%s is not unique, corrupt catalog?\n",
+					*isarray == 't' ? "array" : "table", schema, tname);
 		goto bailout;
 	}
 
