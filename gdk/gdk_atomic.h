@@ -122,230 +122,230 @@
 
 #else
 
-static inline sht
-__ATOMIC_GET_sht(volatile sht *var, MT_Lock *lck, const char *fcn)
+static inline short
+__ATOMIC_GET_sht(volatile short *var, pthread_mutex_t *lck)
 {
-	sht old;
-	MT_lock_set(lck, fcn);
+	short old;
+	pthread_mutex_lock(lck);
 	old = *var;
-	MT_lock_unset(lck, fcn);
+	pthread_mutex_unlock(lck);
 	return old;
 }
-#define ATOMIC_GET_sht(var, lck, fcn)	__ATOMIC_GET_sht(&var, &lck, fcn)
+#define ATOMIC_GET_sht(var, lck, fcn)	__ATOMIC_GET_sht(&var, &lck)
 
-static inline sht
-__ATOMIC_SET_sht(volatile sht *var, sht val, MT_Lock *lck, const char *fcn)
+static inline short
+__ATOMIC_SET_sht(volatile short *var, short val, pthread_mutex_t *lck)
 {
-	sht new;
-	MT_lock_set(lck, fcn);
+	short new;
+	pthread_mutex_lock(lck);
 	*var = val;
 	new = *var;
-	MT_lock_unset(lck, fcn);
+	pthread_mutex_unlock(lck);
 	return new;
 }
-#define ATOMIC_SET_sht(var, val, lck, fcn)	__ATOMIC_SET_sht(&var, (val), &lck, fcn)
+#define ATOMIC_SET_sht(var, val, lck, fcn)	__ATOMIC_SET_sht(&var, (val), &lck)
 
-static inline sht
-__ATOMIC_INC_sht(volatile sht *var, MT_Lock *lck, const char *fcn)
+static inline short
+__ATOMIC_INC_sht(volatile short *var, pthread_mutex_t *lck)
 {
-	sht new;
-	MT_lock_set(lck, fcn);
+	short new;
+	pthread_mutex_lock(lck);
 	new = ++*var;
-	MT_lock_unset(lck, fcn);
+	pthread_mutex_unlock(lck);
 	return new;
 }
-#define ATOMIC_INC_sht(var, lck, fcn)		__ATOMIC_INC_sht(&var, &lck, fcn)
+#define ATOMIC_INC_sht(var, lck, fcn)		__ATOMIC_INC_sht(&var, &lck)
 
-static inline sht
-__ATOMIC_DEC_sht(volatile sht *var, MT_Lock *lck, const char *fcn)
+static inline short
+__ATOMIC_DEC_sht(volatile short *var, pthread_mutex_t *lck)
 {
-	sht new;
-	MT_lock_set(lck, fcn);
+	short new;
+	pthread_mutex_lock(lck);
 	new = --*var;
-	MT_lock_unset(lck, fcn);
+	pthread_mutex_unlock(lck);
 	return new;
 }
-#define ATOMIC_DEC_sht(var, lck, fcn)		__ATOMIC_DEC_sht(&var, &lck, fcn)
+#define ATOMIC_DEC_sht(var, lck, fcn)		__ATOMIC_DEC_sht(&var, &lck)
 
-static inline sht
-__ATOMIC_CAS_sht(volatile sht *var, sht old, sht new, MT_Lock *lck, const char *fcn)
+static inline short
+__ATOMIC_CAS_sht(volatile short *var, short old, short new, pthread_mutex_t *lck)
 {
-	sht orig;
-	MT_lock_set(lck, fcn);
+	short orig;
+	pthread_mutex_lock(lck);
 	orig = *var;
 	if (*var == old)
 		*var = new;
-	MT_lock_unset(lck, fcn);
+	pthread_mutex_unlock(lck);
 	return orig;
 }
-#define ATOMIC_CAS_sht(var, old, new, lck, fcn)	__ATOMIC_CAS_sht(&var, (old), (new), &lck, fcn)
+#define ATOMIC_CAS_sht(var, old, new, lck, fcn)	__ATOMIC_CAS_sht(&var, (old), (new), &lck)
 
 
 static inline int
-__ATOMIC_GET_int(volatile int *var, MT_Lock *lck, const char *fcn)
+__ATOMIC_GET_int(volatile int *var, pthread_mutex_t *lck)
 {
 	int old;
-	MT_lock_set(lck, fcn);
+	pthread_mutex_lock(lck);
 	old = *var;
-	MT_lock_unset(lck, fcn);
+	pthread_mutex_unlock(lck);
 	return old;
 }
-#define ATOMIC_GET_int(var, lck, fcn)	__ATOMIC_GET_int(&var, &lck, fcn)
+#define ATOMIC_GET_int(var, lck, fcn)	__ATOMIC_GET_int(&var, &lck)
 
 static inline int
-__ATOMIC_SET_int(volatile int *var, int val, MT_Lock *lck, const char *fcn)
+__ATOMIC_SET_int(volatile int *var, int val, pthread_mutex_t *lck)
 {
 	int new;
-	MT_lock_set(lck, fcn);
+	pthread_mutex_lock(lck);
 	*var = val;
 	new = *var;
-	MT_lock_unset(lck, fcn);
+	pthread_mutex_unlock(lck);
 	return new;
 }
-#define ATOMIC_SET_int(var, val, lck, fcn)	__ATOMIC_SET_int(&var, (val), &lck, fcn)
+#define ATOMIC_SET_int(var, val, lck, fcn)	__ATOMIC_SET_int(&var, (val), &lck)
 
 static inline int
-__ATOMIC_ADD_int(volatile int *var, int val, MT_Lock *lck, const char *fcn)
+__ATOMIC_ADD_int(volatile int *var, int val, pthread_mutex_t *lck)
 {
 	int old;
-	MT_lock_set(lck, fcn);
+	pthread_mutex_lock(lck);
 	old = *var;
 	*var += val;
-	MT_lock_unset(lck, fcn);
+	pthread_mutex_unlock(lck);
 	return old;
 }
-#define ATOMIC_ADD_int(var, val, lck, fcn)	__ATOMIC_ADD_int(&var, (val), &lck, fcn)
+#define ATOMIC_ADD_int(var, val, lck, fcn)	__ATOMIC_ADD_int(&var, (val), &lck)
 
 static inline int
-__ATOMIC_SUB_int(volatile int *var, int val, MT_Lock *lck, const char *fcn)
+__ATOMIC_SUB_int(volatile int *var, int val, pthread_mutex_t *lck)
 {
 	int old;
-	MT_lock_set(lck, fcn);
+	pthread_mutex_lock(lck);
 	old = *var;
 	*var -= val;
-	MT_lock_unset(lck, fcn);
+	pthread_mutex_unlock(lck);
 	return old;
 }
-#define ATOMIC_SUB_int(var, val, lck, fcn)	__ATOMIC_SUB_int(&var, (val), &lck, fcn)
+#define ATOMIC_SUB_int(var, val, lck, fcn)	__ATOMIC_SUB_int(&var, (val), &lck)
 
 static inline int
-__ATOMIC_INC_int(volatile int *var, MT_Lock *lck, const char *fcn)
+__ATOMIC_INC_int(volatile int *var, pthread_mutex_t *lck)
 {
 	int new;
-	MT_lock_set(lck, fcn);
+	pthread_mutex_lock(lck);
 	new = ++*var;
-	MT_lock_unset(lck, fcn);
+	pthread_mutex_unlock(lck);
 	return new;
 }
-#define ATOMIC_INC_int(var, lck, fcn)		__ATOMIC_INC_int(&var, &lck, fcn)
+#define ATOMIC_INC_int(var, lck, fcn)		__ATOMIC_INC_int(&var, &lck)
 
 static inline int
-__ATOMIC_DEC_int(volatile int *var, MT_Lock *lck, const char *fcn)
+__ATOMIC_DEC_int(volatile int *var, pthread_mutex_t *lck)
 {
 	int new;
-	MT_lock_set(lck, fcn);
+	pthread_mutex_lock(lck);
 	new = --*var;
-	MT_lock_unset(lck, fcn);
+	pthread_mutex_unlock(lck);
 	return new;
 }
-#define ATOMIC_DEC_int(var, lck, fcn)		__ATOMIC_DEC_int(&var, &lck, fcn)
+#define ATOMIC_DEC_int(var, lck, fcn)		__ATOMIC_DEC_int(&var, &lck)
 
 static inline int
-__ATOMIC_CAS_int(volatile int *var, int old, int new, MT_Lock *lck, const char *fcn)
+__ATOMIC_CAS_int(volatile int *var, int old, int new, pthread_mutex_t *lck)
 {
 	int orig;
-	MT_lock_set(lck, fcn);
+	pthread_mutex_lock(lck);
 	orig = *var;
 	if (*var == old)
 		*var = new;
-	MT_lock_unset(lck, fcn);
+	pthread_mutex_unlock(lck);
 	return orig;
 }
-#define ATOMIC_CAS_int(var, old, new, lck, fcn)	__ATOMIC_CAS_int(&var, (old), (new), &lck, fcn)
+#define ATOMIC_CAS_int(var, old, new, lck, fcn)	__ATOMIC_CAS_int(&var, (old), (new), &lck)
 
 #if SIZEOF_SSIZE_T == SIZEOF_LNG
 
 static inline lng
-__ATOMIC_GET_lng(volatile lng *var, MT_Lock *lck, const char *fcn)
+__ATOMIC_GET_lng(volatile lng *var, pthread_mutex_t *lck)
 {
 	lng old;
-	MT_lock_set(lck, fcn);
+	pthread_mutex_lock(lck);
 	old = *var;
-	MT_lock_unset(lck, fcn);
+	pthread_mutex_unlock(lck);
 	return old;
 }
-#define ATOMIC_GET_lng(var, lck, fcn)	__ATOMIC_GET_lng(&var, &lck, fcn)
+#define ATOMIC_GET_lng(var, lck, fcn)	__ATOMIC_GET_lng(&var, &lck)
 
 static inline lng
-__ATOMIC_SET_lng(volatile lng *var, lng val, MT_Lock *lck, const char *fcn)
+__ATOMIC_SET_lng(volatile lng *var, lng val, pthread_mutex_t *lck)
 {
 	lng new;
-	MT_lock_set(lck, fcn);
+	pthread_mutex_lock(lck);
 	*var = val;
 	new = *var;
-	MT_lock_unset(lck, fcn);
+	pthread_mutex_unlock(lck);
 	return new;
 }
-#define ATOMIC_SET_lng(var, val, lck, fcn)	__ATOMIC_SET_lng(&var, (val), &lck, fcn)
+#define ATOMIC_SET_lng(var, val, lck, fcn)	__ATOMIC_SET_lng(&var, (val), &lck)
 
 static inline lng
-__ATOMIC_ADD_lng(volatile lng *var, lng val, MT_Lock *lck, const char *fcn)
+__ATOMIC_ADD_lng(volatile lng *var, lng val, pthread_mutex_t *lck)
 {
 	lng old;
-	MT_lock_set(lck, fcn);
+	pthread_mutex_lock(lck);
 	old = *var;
 	*var += val;
-	MT_lock_unset(lck, fcn);
+	pthread_mutex_unlock(lck);
 	return old;
 }
-#define ATOMIC_ADD_lng(var, val, lck, fcn)	__ATOMIC_ADD_lng(&var, (val), &lck, fcn)
+#define ATOMIC_ADD_lng(var, val, lck, fcn)	__ATOMIC_ADD_lng(&var, (val), &lck)
 
 static inline lng
-__ATOMIC_SUB_lng(volatile lng *var, lng val, MT_Lock *lck, const char *fcn)
+__ATOMIC_SUB_lng(volatile lng *var, lng val, pthread_mutex_t *lck)
 {
 	lng old;
-	MT_lock_set(lck, fcn);
+	pthread_mutex_lock(lck);
 	old = *var;
 	*var -= val;
-	MT_lock_unset(lck, fcn);
+	pthread_mutex_unlock(lck);
 	return old;
 }
-#define ATOMIC_SUB_lng(var, val, lck, fcn)	__ATOMIC_SUB_lng(&var, (val), &lck, fcn)
+#define ATOMIC_SUB_lng(var, val, lck, fcn)	__ATOMIC_SUB_lng(&var, (val), &lck)
 
 static inline lng
-__ATOMIC_INC_lng(volatile lng *var, MT_Lock *lck, const char *fcn)
+__ATOMIC_INC_lng(volatile lng *var, pthread_mutex_t *lck)
 {
 	lng new;
-	MT_lock_set(lck, fcn);
+	pthread_mutex_lock(lck);
 	new = ++*var;
-	MT_lock_unset(lck, fcn);
+	pthread_mutex_unlock(lck);
 	return new;
 }
-#define ATOMIC_INC_lng(var, lck, fcn)		__ATOMIC_INC_lng(&var, &lck, fcn)
+#define ATOMIC_INC_lng(var, lck, fcn)		__ATOMIC_INC_lng(&var, &lck)
 
 static inline lng
-__ATOMIC_DEC_lng(volatile lng *var, MT_Lock *lck, const char *fcn)
+__ATOMIC_DEC_lng(volatile lng *var, pthread_mutex_t *lck)
 {
 	lng new;
-	MT_lock_set(lck, fcn);
+	pthread_mutex_lock(lck);
 	new = --*var;
-	MT_lock_unset(lck, fcn);
+	pthread_mutex_unlock(lck);
 	return new;
 }
-#define ATOMIC_DEC_lng(var, lck, fcn)		__ATOMIC_DEC_lng(&var, &lck, fcn)
+#define ATOMIC_DEC_lng(var, lck, fcn)		__ATOMIC_DEC_lng(&var, &lck)
 
 static inline lng
-__ATOMIC_CAS_lng(volatile lng *var, lng old, lng new, MT_Lock *lck, const char *fcn)
+__ATOMIC_CAS_lng(volatile lng *var, lng old, lng new, pthread_mutex_t *lck)
 {
 	lng orig;
-	MT_lock_set(lck, fcn);
+	pthread_mutex_lock(lck);
 	orig = *var;
 	if (*var == old)
 		*var = new;
-	MT_lock_unset(lck, fcn);
+	pthread_mutex_unlock(lck);
 	return orig;
 }
-#define ATOMIC_CAS_lng(var, old, new, lck, fcn)	__ATOMIC_CAS_lng(&var, (old), (new), &lck, fcn)
+#define ATOMIC_CAS_lng(var, old, new, lck, fcn)	__ATOMIC_CAS_lng(&var, (old), (new), &lck)
 
 #endif
 

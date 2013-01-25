@@ -67,7 +67,7 @@
 
 MT_Lock MT_system_lock MT_LOCK_INITIALIZER("MT_system_lock");
 
-#ifndef NDEBUG
+#if !defined(ATOMIC_LOCK) && !defined(NDEBUG)
 ATOMIC_TYPE volatile GDKlockcnt;
 ATOMIC_TYPE volatile GDKlockcontentioncnt;
 ATOMIC_TYPE volatile GDKlocksleepcnt;

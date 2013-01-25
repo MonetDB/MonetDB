@@ -156,10 +156,6 @@ gdk_export int MT_kill_thread(MT_Id t);
 /*
  * @- MT Lock API
  */
-#include "gdk_atomic.h"
-
-#ifdef ATOMIC_LOCK
-
 #if !defined(HAVE_PTHREAD_H) && defined(_MSC_VER)
 typedef HANDLE pthread_mutex_t;
 typedef void *pthread_mutexattr_t;
@@ -170,6 +166,10 @@ gdk_export int pthread_mutex_lock(pthread_mutex_t *);
 gdk_export int pthread_mutex_trylock(pthread_mutex_t *);
 gdk_export int pthread_mutex_unlock(pthread_mutex_t *);
 #endif
+
+#include "gdk_atomic.h"
+
+#ifdef ATOMIC_LOCK
 
 typedef pthread_mutex_t MT_Lock;
 
