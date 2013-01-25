@@ -825,8 +825,7 @@ IMPSprint(BAT *b) {
 	Imprints *imprints;
 	cchdc_t *d;
 	str s;
-	BUN icnt, dcnt, l;
-	unsigned long long pages;
+	BUN icnt, dcnt, l, pages;
 	bte j;
 
 	if (BATprepareImprints(b))
@@ -849,13 +848,13 @@ do {									\
 		if (d[dcnt].repeat) {
 			BINSIZE(imprints->bits,IMPSPRNTMASK, " ");
 			pages += d[dcnt].cnt;
-			fprintf(stderr,"[ %10llu ]r %s\n", pages, s);
+			fprintf(stderr,"[ "BUNFMT" ]r %s\n",pages,s);
 			icnt++;
 		} else {
 			l = icnt+d[dcnt].cnt;
 			for (; icnt < l; icnt++) {
 				BINSIZE(imprints->bits,IMPSPRNTMASK, " ");
-				fprintf(stderr,"[ %10d ]  %s\n", pages++, s);
+				fprintf(stderr,"[ "BUNFMT" ]  %s\n",pages++,s);
 			}
 		}
 	}
