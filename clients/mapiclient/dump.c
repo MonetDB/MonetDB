@@ -800,7 +800,7 @@ describe_table(Mapi mid, char *schema, char *tname, stream *toConsole, int forei
 	}
 	if (view)
 		view = strdup(view);
-	if (isarray) {
+	if (isarray[0] == 't') {
 		isarray = "t";
 	} else {
 		isarray = "f";
@@ -813,7 +813,7 @@ describe_table(Mapi mid, char *schema, char *tname, stream *toConsole, int forei
 			fprintf(stderr, "table %s.%s does not exist\n", schema, tname);
 		else
 			fprintf(stderr, "%s %s.%s is not unique, corrupt catalog?\n",
-					*isarray == 't' ? "array" : "table", schema, tname);
+					isarray[0] == 't' ? "array" : "table", schema, tname);
 		goto bailout;
 	}
 
@@ -824,7 +824,7 @@ describe_table(Mapi mid, char *schema, char *tname, stream *toConsole, int forei
 	}
 
 	mnstr_printf(toConsole, "CREATE %s \"%s\".\"%s\" ",
-			*isarray == 't' ? "ARRAY" : "TABLE", schema, tname);
+			isarray[0] == 't' ? "ARRAY" : "TABLE", schema, tname);
 
 	if (dump_column_definition(mid, toConsole, schema, tname, NULL, foreign))
 		goto bailout;
