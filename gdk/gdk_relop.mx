@@ -1453,10 +1453,11 @@ batjoin(BAT *l, BAT *r, BUN estimate, bit swap)
 	 */
 	/* Simple rule, always build hash on the smallest */
 	if (swap && rsize > lsize) {
-		ALGODEBUG fprintf(stderr, "#BATjoin: BATmirror(BAThashjoin(BATmirror(r), BATmirror(l)," BUNFMT "));\n", estimate);
+		ALGODEBUG fprintf(stderr, "#BATjoin: swap = %d, rsize = "SZFMT", lsize = "SZFMT" => BATmirror(BAThashjoin(BATmirror(r), BATmirror(l)," BUNFMT "));\n", (int)swap, rsize, lsize, estimate);
 
 		return BATmirror(BAThashjoin(BATmirror(r), BATmirror(l), estimate));
 	}
+	ALGODEBUG fprintf(stderr, "#BATjoin: swap = %d, rsize = "SZFMT", lsize = "SZFMT" => BAThashjoin(l,r," BUNFMT ");\n", (int)swap, rsize, lsize, estimate);
 
 	return BAThashjoin(l, r, estimate);
 }
