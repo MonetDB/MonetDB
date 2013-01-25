@@ -68,9 +68,88 @@
 MT_Lock MT_system_lock MT_LOCK_INITIALIZER("MT_system_lock");
 
 #ifndef NDEBUG
-volatile ATOMIC_TYPE GDKlockcnt;
-volatile ATOMIC_TYPE GDKlockcontentioncnt;
-volatile ATOMIC_TYPE GDKlocksleepcnt;
+ATOMIC_TYPE volatile GDKlockcnt;
+ATOMIC_TYPE volatile GDKlockcontentioncnt;
+ATOMIC_TYPE volatile GDKlocksleepcnt;
+MT_Lock * volatile GDKlocklist;
+
+/* merge sort of linked list */
+static MT_Lock *
+sortlocklist(MT_Lock *l)
+{
+	MT_Lock *r, *t, *ll = NULL;
+
+	if (l == NULL || l->next == NULL) {
+		/* list is trivially sorted (0 or 1 element) */
+		return l;
+	}
+	/* break list into two (almost) equal pieces:
+	* l is start of "left" list, r of "right" list, ll last
+	* element of "left" list */
+	for (t = r = l; t && t->next; t = t->next->next) {
+		ll = r;
+		r = r->next;
+	}
+	ll->next = NULL;	/* break list into two */
+	/* recursively sort both sublists */
+	l = sortlocklist(l);
+	r = sortlocklist(r);
+	/* merge
+	 * t is new list, ll is last element of new list, l and r are
+	 * start of unprocessed part of left and right lists */
+	t = ll = NULL;
+	while (l && r) {
+		if (l->contention < r->contention ||
+		    (l->contention == r->contention &&
+		     l->sleep < r->sleep) ||
+		    (l->contention == r->contention &&
+		     l->sleep == r->sleep &&
+		     l->count <= r->count)) {
+			/* l is smaller */
+			if (ll == NULL) {
+				assert(t == NULL);
+				t = ll = l;
+			} else {
+				ll->next = l;
+				ll = ll->next;
+			}
+			l = l->next;
+		} else {
+			/* r is smaller */
+			if (ll == NULL) {
+				assert(t == NULL);
+				t = ll = r;
+			} else {
+				ll->next = r;
+				ll = ll->next;
+			}
+			r = r->next;
+		}
+	}
+	/* append rest of remaining list */
+	ll->next = l ? l : r;
+	return t;
+}
+
+void
+GDKlockstatistics(int what)
+{
+	MT_Lock *l;
+
+	GDKlocklist = sortlocklist(GDKlocklist);
+	for (l = GDKlocklist; l; l = l->next)
+		if (what == 0 ||
+		    (what == 1 && l->count) ||
+		    (what == 2 && l->contention) ||
+		    (what == 3 && l->lock))
+			fprintf(stderr, "#lock %-18s\t" SZFMT "\t" SZFMT "\t" SZFMT "%s\n",
+				l->name ? l->name : "unknown",
+				l->count, l->contention, l->sleep,
+				what != 3 && l->lock ? "\tlocked" : "");
+	fprintf(stderr, "#total lock count " SZFMT "\n", (size_t) GDKlockcnt);
+	fprintf(stderr, "#lock contention  " SZFMT "\n", (size_t) GDKlockcontentioncnt);
+	fprintf(stderr, "#lock sleep count " SZFMT "\n", (size_t) GDKlocksleepcnt);
+}
 #endif
 
 #ifdef MT_LOCK_TRACE

@@ -1148,6 +1148,9 @@ GDKexit(int status)
 #endif
 		GDKlog(GDKLOGOFF);
 		GDKunlockHome();
+#ifndef NDEBUG
+		TEMDEBUG GDKlockstatistics(1);
+#endif
 		MT_global_exit(status);
 	}
 	MT_lock_unset(&GDKthreadLock, "GDKexit");

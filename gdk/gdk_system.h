@@ -194,37 +194,128 @@ typedef pthread_mutex_t MT_Lock;
 
 #else
 
-typedef volatile int MT_Lock;
+/* if NDEBUG is not set, i.e., if assertions are enabled, we maintain
+ * a bunch of counters and maintain a linked list of active locks */
+typedef struct MT_Lock {
+	int volatile lock;
 #ifndef NDEBUG
-gdk_export volatile ATOMIC_TYPE GDKlockcnt;
-gdk_export volatile ATOMIC_TYPE GDKlockcontentioncnt;
-gdk_export volatile ATOMIC_TYPE GDKlocksleepcnt;
-#define _INCREMENT_COUNTER_(v, n)	ATOMIC_INC(v, dummy, n)
-#else
-#define _INCREMENT_COUNTER_(v, n)	((void) 0)
+	size_t count;
+	size_t contention;
+	size_t sleep;
+	struct MT_Lock * volatile next;
+	const char *name;
 #endif
-#define MT_LOCK_INITIALIZER(name)	= 0
-#define MT_lock_init(l, n)	ATOMIC_SET_int(*l, 0, dummy, n)
+} MT_Lock;
+
+#ifndef NDEBUG
+
+#define MT_LOCK_INITIALIZER(name)	= {0, 0, 0, 0, (struct MT_Lock *) -1, name}
+
+gdk_export void GDKlockstatistics(int);
+gdk_export MT_Lock * volatile GDKlocklist;
+gdk_export ATOMIC_TYPE volatile GDKlockcnt;
+gdk_export ATOMIC_TYPE volatile GDKlockcontentioncnt;
+gdk_export ATOMIC_TYPE volatile GDKlocksleepcnt;
+#ifdef _MSC_VER
+#if SIZEOF_SIZE_T == 8
+#define ATOMIC_XCG_ptr(var, val)	_InterlockedExchange64(&var, val)
+#define ATOMIC_CAS_ptr(var, old, new)	_InterlockedCompareExchange64(var, new, old)
+#else
+#define ATOMIC_XCG_ptr(var, val)	_InterlockedExchange(&var, val)
+#define ATOMIC_CAS_ptr(var, old, new)	_InterlockedCompareExchange(var, new, old)
+#endif
+#else
+#define ATOMIC_XCG_ptr(var, val)	__sync_lock_test_and_set(&var, val)
+#define ATOMIC_CAS_ptr(var, old, new)	__sync_val_compare_and_swap(&var, old, new)
+#endif
+#define _DBG_LOCK_COUNT_0(l, n)		ATOMIC_INC(GDKlockcnt, dummy, n)
+#define _DBG_LOCK_CONTENTION(l, n)					\
+	do {								\
+		TEMDEBUG fprintf(stderr, "#lock %s contention in %s\n", (l)->name, n); \
+		ATOMIC_INC(GDKlockcontentioncnt, dummy, n);		\
+	} while (0)
+#define _DBG_LOCK_SLEEP(l, n)					\
+	do {							\
+		if (_spincnt == 1024)				\
+			ATOMIC_INC(GDKlocksleepcnt, dummy, n);	\
+	} while (0)
+#define _DBG_LOCK_COUNT_1(l)			\
+	do {					\
+		(l)->contention++;		\
+		(l)->sleep += _spincnt >= 1024;	\
+	} while (0)
+#define _DBG_LOCK_COUNT_2(l)						\
+	do {								\
+		(l)->count++;						\
+		if ((l)->next == (struct MT_Lock *) -1)			\
+			(l)->next = ATOMIC_XCG_ptr(GDKlocklist, (l));	\
+	} while (0)
+#define _DBG_LOCK_INIT(l, n)					\
+	do {							\
+		(l)->count = (l)->contention = (l)->sleep = 0;	\
+		(l)->name = n;					\
+		(l)->next = ATOMIC_XCG_ptr(GDKlocklist, (l));	\
+	} while (0)
+#define _DBG_LOCK_DESTROY(l)						\
+	do {								\
+		MT_Lock * volatile _p;					\
+		int _done = 0;						\
+		/* save a copy for statistical purposes */		\
+		_p = GDKmalloc(sizeof(MT_Lock));			\
+		memcpy(_p, l, sizeof(MT_Lock));				\
+		_p->next = ATOMIC_XCG_ptr(GDKlocklist, _p);		\
+		do {							\
+			if (ATOMIC_CAS_ptr(GDKlocklist, (l), (l)->next) == (l)) \
+				break;					\
+			for (_p = GDKlocklist; _p; _p = _p->next)	\
+				if (ATOMIC_CAS_ptr(_p->next, (l), (l)->next) == (l)) { \
+					_done = 1;			\
+					break;				\
+				}					\
+		} while (!_done);					\
+	} while (0)
+
+#else
+
+#define MT_LOCK_INITIALIZER(name)	= {0}
+
+#define _DBG_LOCK_COUNT_0(l, n)		((void) n)
+#define _DBG_LOCK_CONTENTION(l, n)	((void) n)
+#define _DBG_LOCK_SLEEP(l, n)		((void) n)
+#define _DBG_LOCK_COUNT_1(l)		((void) 0)
+#define _DBG_LOCK_COUNT_2(l)		((void) 0)
+#define _DBG_LOCK_INIT(l, n)		((void) n)
+#define _DBG_LOCK_DESTROY(l)		((void) 0)
+
+#endif
+
 #define MT_lock_set(l, n)						\
 	do {								\
-		_INCREMENT_COUNTER_(GDKlockcnt, n);			\
-		if (ATOMIC_CAS_int(*l, 0, 1, dummy, n) != 0) {		\
+		_DBG_LOCK_COUNT_0(l, n);				\
+		if (ATOMIC_CAS_int((l)->lock, 0, 1, dummy, n) != 0) {	\
 			/* we didn't get the lock */			\
-			int _spincnt = 0;				\
-			_INCREMENT_COUNTER_(GDKlockcontentioncnt, n);	\
+			int _spincnt = GDKnr_threads > 1 ? 0 : 1023;	\
+			_DBG_LOCK_CONTENTION(l, n);			\
 			do {						\
 				if (++_spincnt >= 1024) {		\
-					if (_spincnt == 1024)		\
-						_INCREMENT_COUNTER_(GDKlocksleepcnt, n); \
+					_DBG_LOCK_SLEEP(l, n);		\
 					MT_sleep_ms(_spincnt >> 10);	\
 				}					\
-			} while (ATOMIC_CAS_int(*l, 0, 1, dummy, n) != 0); \
+			} while (ATOMIC_CAS_int((l)->lock, 0, 1, dummy, n) != 0); \
+			_DBG_LOCK_COUNT_1(l);				\
 		}							\
+		_DBG_LOCK_COUNT_2(l);					\
 	} while (0)
-#define MT_lock_unset(l, n)	ATOMIC_SET_int(*l, 0, dummy, n)
-#define MT_lock_destroy(l)	((void) 0)
+#define MT_lock_init(l, n)				\
+	do {						\
+		ATOMIC_SET_int((l)->lock, 0, dummy, n);	\
+		_DBG_LOCK_INIT(l, n);			\
+	} while (0)
+#define MT_lock_unset(l, n)	ATOMIC_SET_int((l)->lock, 0, dummy, n)
+#define MT_lock_destroy(l)	_DBG_LOCK_DESTROY(l)
 /* return 0 on success, -1 on failure to get the lock */
-#define MT_lock_try(l)	((ATOMIC_CAS_int(*l, 0, 1, dummy, dummy) == 0) - 1)
+#define MT_lock_try(l)	((ATOMIC_CAS_int((l)->lock, 0, 1, dummy, dummy) == 0) - 1)
+
 #endif
 
 /*
