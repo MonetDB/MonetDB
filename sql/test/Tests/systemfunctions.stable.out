@@ -49,7 +49,7 @@ Ready.
 % sys.s,	sys.f,	sys.a,	sys.a,	sys. # table_name
 % schema,	function,	argno,	argtype,	definition # name
 % varchar,	varchar,	int,	varchar,	varchar # type
-% 3,	35,	2,	15,	1317 # length
+% 3,	35,	2,	15,	1579 # length
 [ "rs",	"attach",	0,	"varchar",	"create procedure rs.attach(fname varchar(256)) external name geotiff.attach;"	]
 [ "rs",	"import",	0,	"int",	"create procedure rs.import(imgid int) external name geotiff.import;"	]
 [ "sys",	"Dimension",	0,	"int",	"-- CREATE FUNCTION Point(g Geometry) RETURNS Point external name geom.point;\n-- CREATE FUNCTION Curve(g Geometry) RETURNS Curve external name geom.curve;\n-- CREATE FUNCTION LineString(g Geometry) RETURNS LineString external name geom.linestring;\n-- CREATE FUNCTION Surface(g Geometry) RETURNS Surface external name geom.surface;\n-- CREATE FUNCTION Polygon(g Geometry) RETURNS Polygon external name geom.polygon;\n\n-- ogc basic methods\ncreate function \"Dimension\"(g geometry) returns integer external name geom.\"Dimension\";"	]
