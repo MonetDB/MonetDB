@@ -487,6 +487,8 @@ BAThashjoin(BAT *l, BAT *r, BUN estimate)
 	@:joincheck(BAThashjoin,l->ttype,r->htype)@
 	@:joinbat(JOIN_EQ,BAThashjoin(l,r,BUN_NONE),estimate)@
 
+	ALGODEBUG fprintf(stderr, "#BATjoin: BAThashjoin(l %d  "BUNFMT",r %d  "BUNFMT"," BUNFMT " ldense %d rdense %d lkey %d rkey %d lordered %d rordered %d);\n", 
+			l->ttype, BATcount(l), r->htype,BATcount(r),  estimate,  BATtdense(l), BAThdense(r),BATtkey(l), BAThkey(r), BATtordered(l), BAThordered(r));
 	if (BATprepareHash(r)) {
 		return NULL;
 	}
@@ -1455,7 +1457,6 @@ batjoin(BAT *l, BAT *r, BUN estimate, bit swap)
 
 		return BATmirror(BAThashjoin(BATmirror(r), BATmirror(l), estimate));
 	}
-	ALGODEBUG fprintf(stderr, "#BATjoin: BAThashjoin(l,r," BUNFMT ");\n", estimate);
 
 	return BAThashjoin(l, r, estimate);
 }
