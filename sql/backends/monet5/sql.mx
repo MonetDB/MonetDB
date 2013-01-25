@@ -3611,11 +3611,7 @@ DELTAproject(bat *result, bat *sub, bat *col, bat *uid, bat *uval, bat *ins)
 	if (i) BBPunfix(i->batCacheid);
 
 	tres = BATleftfetchjoin(s, res, BATcount(res));
-	if (!tres) {
-		BATprint(s);
-		BATprint(res);
-		assert(0);
-	}
+	assert(tres);
 	BBPunfix(res->batCacheid);
 	res = tres;
 
@@ -7190,7 +7186,7 @@ SQLrdfShred(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (rid != oid_nil)
 		throw(SQL, "sql.rdfShred", "graph name already exists in rdf.graph");
 
-	id = (int) store_funcs.count_col(gname);
+	id = (int) store_funcs.count_col(gname, 1);
 	store_funcs.append_col(m->session->tr, gname, *name, TYPE_str);
 	store_funcs.append_col(m->session->tr, gid, &id, TYPE_int);
 

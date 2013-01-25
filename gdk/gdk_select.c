@@ -267,8 +267,10 @@ do {									    \
 	hbin = IMPSgetbin(ATOMstorage(b->ttype), imprints->bits, bins, th); \
 	for (j=lbin; j<=hbin; j++) mask = IMPSsetBit(mask, j);		    \
 	innermask = mask;						    \
-	innermask = IMPSunsetBit(innermask, lbin);			    \
-	innermask = IMPSunsetBit(innermask, hbin);			    \
+	if (!b->T->nonil || vl != minval)				    \
+		innermask = IMPSunsetBit(innermask, lbin);		    \
+	if (vh != maxval)						    \
+		innermask = IMPSunsetBit(innermask, hbin);		    \
 	if (anti) {							    \
 		uint##B##_t tmp = mask;					    \
 		mask = ~innermask;					    \
