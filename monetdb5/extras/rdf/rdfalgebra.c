@@ -23,6 +23,7 @@
 #include "rdf.h"
 #include "algebra.h"
 #include <gdk.h>
+#include "tokenizer.h"
 
 str
 RDFleftfetchjoin_sorted(bat *result, bat *lid, bat *rid)
@@ -48,5 +49,68 @@ RDFleftfetchjoin_sorted(bat *result, bat *lid, bat *rid)
 		bn = BATsetaccess(bn, BAT_READ);
 	*result = bn->batCacheid;
 	BBPkeepref(*result);
+	return MAL_SUCCEED;
+}
+
+
+str
+TKNZRrdf2str(bat *res, bat *bid, bat *map)
+{
+	BAT *r, *b, *m;
+	BATiter bi, mi;
+	BUN p, q;
+	str s = NULL;
+
+	b = BATdescriptor(*bid);
+	if (b == NULL) {
+		throw(MAL, "rdf.rdf2str", RUNTIME_OBJECT_MISSING " null bat b");
+	}
+	m = BATdescriptor(*map);
+	if (m == NULL) {
+		BBPunfix(*bid);
+		throw(MAL, "rdf.rdf2str", RUNTIME_OBJECT_MISSING "null bat m");
+	}
+	if (!BAThdense(b)) {
+		BBPunfix(*bid);
+		BBPunfix(*map);
+		throw(MAL, "rdf.rdf2str", SEMANTIC_TYPE_ERROR " semantic error");
+	}
+	r = BATnew(TYPE_void, TYPE_str, BATcount(b));
+	if (r == NULL) {
+		BBPunfix(*bid);
+		BBPunfix(*map);
+		throw(MAL, "rdf.rdf2str", RUNTIME_OBJECT_MISSING "null bat r");
+	}
+	*res = r->batCacheid;
+	BATseqbase(r, b->hseqbase);
+	bi = bat_iterator(b);
+	mi = bat_iterator(m);
+
+	BATloop(b, p, q)
+	{
+		oid id = *(oid *) BUNtloc(bi, p);
+		if (id >= RDF_MIN_LITERAL) {
+			BUN pos = BUNfirst(m) + (id - RDF_MIN_LITERAL);
+			if (pos < BUNfirst(m) || pos >= BUNlast(m)) {
+				BBPunfix(*bid);
+				BBPunfix(*map);
+				BBPunfix(*res);
+				throw(MAL, "rdf.rdf2str", OPERATION_FAILED " illegal oid");
+			}
+			s = (str) BUNtail(mi, pos);
+		} else {
+			str ret = takeOid(id, &s);
+			if (ret != MAL_SUCCEED) {
+				BBPunfix(*bid);
+				BBPunfix(*map);
+				BBPunfix(*res);
+				return ret;
+			}
+		}
+		BUNappend(r, s, FALSE);
+	}
+	BBPunfix(*bid);
+	BBPunfix(*map);
+	BBPkeepref(*res);
 	return MAL_SUCCEED;
 }

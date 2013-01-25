@@ -448,7 +448,7 @@ TKNZRlocate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-static str
+str
 takeOid(oid id, str *val)
 {
 	int i, depth;
@@ -502,68 +502,6 @@ TKNZRtakeOid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		VALset(getArgReference(stk, pci, 0), TYPE_str, val);
 	}
 	return ret;
-}
-
-str
-TKNZRrdf2str(bat *res, bat *bid, bat *map)
-{
-	BAT *r, *b, *m;
-	BATiter bi, mi;
-	BUN p, q;
-	str s = NULL;
-
-	b = BATdescriptor(*bid);
-	if (b == NULL) {
-		throw(MAL, "tokenizer.rdf2str", RUNTIME_OBJECT_MISSING " null bat b");
-	}
-	m = BATdescriptor(*map);
-	if (m == NULL) {
-		BBPunfix(*bid);
-		throw(MAL, "tokenizer.rdf2str", RUNTIME_OBJECT_MISSING "null bat m");
-	}
-	if (!BAThdense(b)) {
-		BBPunfix(*bid);
-		BBPunfix(*map);
-		throw(MAL, "tokenizer.rdf2str", SEMANTIC_TYPE_ERROR " semantic error");
-	}
-	r = BATnew(TYPE_void, TYPE_str, BATcount(b));
-	if (r == NULL) {
-		BBPunfix(*bid);
-		BBPunfix(*map);
-		throw(MAL, "tokenizer.rdf2str", RUNTIME_OBJECT_MISSING "null bat r");
-	}
-	*res = r->batCacheid;
-	BATseqbase(r, b->hseqbase);
-	bi = bat_iterator(b);
-	mi = bat_iterator(m);
-
-	BATloop(b, p, q)
-	{
-		oid id = *(oid *) BUNtloc(bi, p);
-		if (id >= RDF_MIN_LITERAL) {
-			BUN pos = BUNfirst(m) + (id - RDF_MIN_LITERAL);
-			if (pos < BUNfirst(m) || pos >= BUNlast(m)) {
-				BBPunfix(*bid);
-				BBPunfix(*map);
-				BBPunfix(*res);
-				throw(MAL, "tokenizer.rdf2str", OPERATION_FAILED " illegal oid");
-			}
-			s = (str) BUNtail(mi, pos);
-		} else {
-			str ret = takeOid(id, &s);
-			if (ret != MAL_SUCCEED) {
-				BBPunfix(*bid);
-				BBPunfix(*map);
-				BBPunfix(*res);
-				return ret;
-			}
-		}
-		BUNappend(r, s, FALSE);
-	}
-	BBPunfix(*bid);
-	BBPunfix(*map);
-	BBPkeepref(*res);
-	return MAL_SUCCEED;
 }
 
 str

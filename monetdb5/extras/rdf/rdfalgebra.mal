@@ -20,3 +20,7 @@ module rdf;
 command leftfetchjoin_sorted ( left:bat[:any_1,:oid], right:bat[:oid,:any_3] ) :bat[:any_1,:any_3]
 address RDFleftfetchjoin_sorted
 comment "like algebra_leftfetchjoin(), but asserts that the resulting tail column is sorted -- ONLY USE IF YOU ARE SURE OF THIS!!! also requires sorted tail left input"
+
+command rdf2str(i:bat[:oid,:oid],map:bat[:oid,:str]):bat[:oid,:str]
+address TKNZRrdf2str
+comment "converts id's into strings using the dictionary, but if (id >= RDF_MIN_LITERAL) look it up in a literal map bat";
