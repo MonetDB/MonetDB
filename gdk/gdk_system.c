@@ -450,8 +450,6 @@ pthread_mutex_unlock(pthread_mutex_t *mutex)
 	return ReleaseMutex(*mutex) ? 0 : -1;
 }
 
-#endif
-
 void
 pthread_sema_init(pthread_sema_t *s, int flag, int nresources)
 {
@@ -476,6 +474,8 @@ pthread_sema_down(pthread_sema_t *s)
 {
 	WaitForSingleObject(*s, INFINITE);
 }
+
+#endif
 
 #else  /* !defined(HAVE_PTHREAD_H) && defined(_MSC_VER) */
 
