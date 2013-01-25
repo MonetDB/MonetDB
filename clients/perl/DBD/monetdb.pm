@@ -300,14 +300,15 @@ SQL
     $sql .=   " order by table_type, table_schem, table_name\n";
     my $sth = $dbh->prepare($sql) or return;
     $sth->execute(@bv) or return;
-    $dbh->set_err(0,"Catalog parameter '$c' ignored") if defined $c;
+    
+    $dbh->set_err(0,"Catalog parameter c has to be an empty string, as MonetDB does not support multiple catalogs") if $c ne "";
     return $sth;
 }
 
 
 sub table_info {
     my($dbh, $c, $s, $t, $tt) = @_;
-
+            
     if ( defined $c && defined $s && defined $t ) {
         if    ( $c eq '%' && $s eq ''  && $t eq '') {
             return monetdb_catalog_info($dbh);
@@ -330,6 +331,7 @@ sub table_info {
 
 sub column_info {
     my($dbh, $catalog, $schema, $table, $column) = @_;
+     # TODO: test $catalog for equality with empty string
     my $sql = <<'SQL';
 select cast( null            as varchar( 128 ) ) as table_cat
      , s."name"                                  as table_schem
@@ -368,7 +370,7 @@ SQL
     $sql .=   " order by table_cat, table_schem, table_name, ordinal_position\n";
     my $sth = $dbh->prepare($sql) or return;
     $sth->execute(@bv) or return;
-    $dbh->set_err(0,"Catalog parameter '$catalog' ignored") if defined $catalog;
+    $dbh->set_err(0,"Catalog parameter catalog has to be an empty string, as MonetDB does not support multiple catalogs") if $catalog ne "";
     my $rows;
     while ( my $row = $sth->fetch ) {
         $row->[ 4] = $DBD::monetdb::TypeInfo::typeinfo{$row->[5]}->[ 1];
@@ -385,6 +387,7 @@ SQL
 
 sub primary_key_info {
     my($dbh, $catalog, $schema, $table) = @_;
+    # TODO: test $catalog for equality with empty string
     return $dbh->set_err(-1,'Undefined schema','HY009') unless defined $schema;
     return $dbh->set_err(-1,'Undefined table' ,'HY009') unless defined $table;
     my $sql = <<'SQL';
@@ -408,7 +411,7 @@ select cast( null        as varchar( 128 ) ) as table_cat
 SQL
     my $sth = $dbh->prepare($sql) or return;
     $sth->execute($schema, $table) or return;
-    $dbh->set_err(0,"Catalog parameter '$catalog' ignored") if defined $catalog;
+    $dbh->set_err(0,"Catalog parameter catalog has to be an empty string, as MonetDB does not support multiple catalogs") if $catalog ne "";
     return $sth;
 }
 
@@ -464,8 +467,7 @@ SQL
     $sql .= " order by uk_table_schem, uk_table_name, fk_table_schem, fk_table_name, ordinal_position\n";
     my $sth = $dbh->prepare($sql) or return;
     $sth->execute(@bv) or return;
-    $dbh->set_err(0,"Catalog parameter '$c1' ignored") if defined $c1;
-    $dbh->set_err(0,"Catalog parameter '$c2' ignored") if defined $c2;
+	$dbh->set_err(0,"Catalog parameters c1 and c2 have to be an empty strings, as MonetDB does not support multiple catalogs") if $c1 ne "" || $c2 ne "";
     return $sth;
 }
 

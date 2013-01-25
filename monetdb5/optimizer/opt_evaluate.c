@@ -143,7 +143,7 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			p->barrier = 0;
 			profiler = malProfileMode;	/* we don't trace it */
 			malProfileMode = 0;
-			msg = reenterMAL(cntxt, mb, i, i + 1, env, 0, 0);
+			msg = reenterMAL(cntxt, mb, i, i + 1, env);
 			malProfileMode= profiler;
 			p->barrier = barrier;
 			OPTDEBUGevaluate {
@@ -184,8 +184,6 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		}
 	}
 	actions += OPTremoveUnusedBlocks(cntxt, mb);
-	DEBUGoptimizers
-		mnstr_printf(cntxt->fdout, "#opt_evaluate: %d constant expressions\n", actions);
 	GDKfree(span);
 	GDKfree(alias);
 	freeStack(env);

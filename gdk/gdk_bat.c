@@ -365,7 +365,11 @@ BATattach(int tt, const char *heapfile)
 	bn->batRestricted = BAT_READ;
 	bn->T->heap.size = (size_t) st.st_size;
 	bn->T->heap.newstorage = bn->T->heap.storage = (bn->T->heap.size < REMAP_PAGE_MAXSIZE) ? STORE_MEM : STORE_MMAP;
-	HEAPload(&bn->T->heap, BBP_physical(bn->batCacheid), "tail", TRUE);
+	if (HEAPload(&bn->T->heap, BBP_physical(bn->batCacheid), "tail", TRUE) < 0) {
+		HEAPfree(&bn->T->heap);
+		GDKfree(bs);
+		return NULL;
+	}
 	BBPcacheit(bs, 1);
 	return bn;
 }
@@ -716,14 +720,14 @@ heapcopy(BAT *bn, char *ext, Heap *dst, Heap *src)
 }
 
 static void
-heapfree(Heap *src, Heap *dst)
+heapfree(Heap *dst, Heap *src)
 {
-	if (dst->filename == NULL) {
-		dst->filename = src->filename;
-		src->filename = NULL;
+	if (src->filename == NULL) {
+		src->filename = dst->filename;
+		dst->filename = NULL;
 	}
-	HEAPfree(src);
-	*src = *dst;
+	HEAPfree(dst);
+	*dst = *src;
 }
 
 static int
@@ -973,7 +977,7 @@ BATcopy(BAT *b, int ht, int tt, int writable)
 		bn->H->nonil = b->H->nonil;
 	} else {
 		bn->hsorted = bn->hrevsorted = (cnt <= 1 && BATatoms[b->htype].linear);
-		bn->hdense = bn->T->nonil = 0;
+		bn->hdense = bn->H->nonil = 0;
 	}
 	if (ATOMtype(tt) == ATOMtype(b->ttype)) {
 		ALIGNsetT(bn, b);
@@ -2192,10 +2196,9 @@ BATseqbase(BAT *b, oid o)
 		/* adapt keyness */
 		if (BAThvoid(b)) {
 			if (o == oid_nil) {
-				if (b->hkey)
-					b->hkey = FALSE;
-				b->H->nonil = 0;
-				b->H->nil = 1;
+				b->hkey = b->U->count <= 1;
+				b->H->nonil = b->U->count == 0;
+				b->H->nil = b->U->count > 0;
 				b->hsorted = b->hrevsorted = 1;
 			} else {
 				if (!b->hkey) {
@@ -2646,7 +2649,7 @@ BATsetaccess(BAT *b, int newmode)
 	}
 	bakmode = b->batRestricted;
 	bakdirty = b->batDirtydesc;
-	if (bakmode != newmode) {
+	if (bakmode != newmode || (b->batSharecnt && newmode != BAT_READ)) {
 		int existing = BBP_status(b->batCacheid) & BBPEXISTING;
 		int wr = (newmode == BAT_WRITE);
 		int rd = (bakmode == BAT_WRITE);
@@ -2654,8 +2657,7 @@ BATsetaccess(BAT *b, int newmode)
 		storage_t b0, b1, b2 = STORE_MEM, b3 = STORE_MEM;
 
 		if (b->batSharecnt && newmode != BAT_READ) {
-
-			PROPDEBUG THRprintf(GDKout, "#BATsetaccess: %s has %d views; deliver a copy.\n", BATgetId(b), b->batSharecnt);
+			BATDEBUG THRprintf(GDKout, "#BATsetaccess: %s has %d views; creating a copy\n", BATgetId(b), b->batSharecnt);
 			b = BATsetaccess(BATcopy(b, b->htype, b->ttype, TRUE), newmode);
 			if (b && b->batStamp > 0)
 				b->batStamp = -b->batStamp;	/* prevent MIL setaccess */
@@ -2762,13 +2764,6 @@ BATmode(BAT *b, int mode)
 		}
 		BBPdirty(1);
 
-		/* a SESSION bat is a TRANSIENT with one logical
-		 * reference added */
-		if (mode == SESSION) {
-			BBPincref(bid, TRUE);
-		} else if (b->batPersistence == SESSION) {
-			BBPdecref(bid, TRUE);
-		}
 		if (mode == PERSISTENT && isVIEW(b)) {
 			VIEWreset(b);
 		}
@@ -3027,7 +3022,7 @@ BATassertHeadProps(BAT *b)
  * Note also that the "set" property is somewhat confused.  On the one
  * hand, some comments suggest it is merely an indication of the
  * current state of affairs, i.e. all head/tail combinations are
- * distinct.  The code in BUNins suggests that is means that the
+ * distinct.  The code in BUNins suggests that it means that the
  * combinations must be distinct.
  *
  * Note that the functions BATseqbase and BATkey also set more
@@ -3055,6 +3050,7 @@ BATassertProps(BAT *b)
 	assert(b->batFirst >= b->batDeleted);
 	assert(b->batInserted >= b->batFirst);
 	assert(b->batFirst + b->batCount >= b->batInserted);
+	assert(b->U->first == 0);
 
 	BATassertHeadProps(b);
 	if (b->H != bm->H)

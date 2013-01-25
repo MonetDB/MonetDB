@@ -3,6 +3,8 @@ iterator02
 iterator03
 clients01
 
+bigsum
+
 compress
 
 inspect00
@@ -44,9 +46,6 @@ remote12
 remote99
 
 remote10
-
-# unlikely to work
-#attach00
 
 # this will always return something else
 #sabaoth00

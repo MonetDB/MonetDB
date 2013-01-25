@@ -26,7 +26,7 @@ Ready.
 # 23:32:53 >  
 
 % sys.b,	sys.b,	sys.b # table_name
-% prop,	obj,	L36 # name
+% prop,	obj,	L1 # name
 % int,	int,	wrd # type
 % 1,	1,	1 # length
 

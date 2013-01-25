@@ -28,7 +28,7 @@ function f1(s:str):void;
 	t25 := algebra.join(t24,t16);
 	t30 := batcalc.oid(t21);
 	t31 := array.grid(1,800,1,0);
-	t32 := aggr.product(t25,t30,t31);
+	t32 := aggr.prod(t25,t30,t31);
 	t33 := batcalc.*(t15,t32);
 	t34 := batcalc./(t8,t33);
 	t40 := algebra.join(t6,t34);

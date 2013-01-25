@@ -1,2 +1,2 @@
-select 2 ^ 2;
-select 2.8 ^ 2;
+select power(2,2);
+select power(2.8,2);

@@ -46,7 +46,6 @@
  */
 #define MAXSCRIPT 64
 #define MEMORY_THRESHOLD  0.8
-#define DELAYUNIT 100 /* ms delay in parallel processing decissions */
 
 mal_export char     monet_cwd[PATHLENGTH];
 mal_export size_t	monet_memory;
@@ -114,6 +113,7 @@ mal_export int 		memoryclaims;    /* number of threads active with expensive ope
 
 
 mal_export MT_Lock  mal_contextLock;
+mal_export MT_Lock  mal_namespaceLock;
 mal_export MT_Lock  mal_remoteLock;
 mal_export MT_Lock  mal_profileLock ;
 mal_export MT_Lock  mal_copyLock ;

@@ -146,7 +146,7 @@ copts.produceHelpMessage()
 			Iterator<SabaothDB> it = sdbs.iterator();
 			while (it.hasNext()) {
 				SabaothDB sdb = it.next();
-				System.out.println(sdb.getName());
+				System.out.println(sdb.getName() + " " + sdb.getURI());
 			}
 		}
 	}

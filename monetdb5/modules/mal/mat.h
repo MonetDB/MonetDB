@@ -36,6 +36,7 @@
 mat_export str MATpack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mat_export str MATpack2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mat_export str MATpack3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mat_export str MATpackIncrement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mat_export str MATpackValues(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mat_export str MATpackSlice(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mat_export str MATnewIterator(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);

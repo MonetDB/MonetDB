@@ -24,7 +24,6 @@
 #include <stdarg.h>
 #include <sql_list.h>
 #include "sql_symbol.h"
-#include "sql_statement.h"
 
 extern sql_rel *rel_schemas(mvc *sql, symbol *sym);
 

@@ -1,0 +1,43 @@
+stdout of test 'bigsum` in directory 'modules/mal` itself:
+
+
+# 16:05:46 >  
+# 16:05:46 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=31406" "--set" "monet_prompt=" "--trace" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/sjoerd/Monet-devel/var/MonetDB/mTests_modules_mal" "bigsum.mal"
+# 16:05:46 >  
+
+# MonetDB 5 server v11.14.0 (hg id: 7fb99d31ceec+)
+# This is an unreleased version
+# Serving database 'mTests_modules_mal', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.629 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2012 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://madrid.ins.cwi.nl:31406/
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+function user.main():void;
+    b := bat.new(:oid,:lng,10000001);
+    INT_MAX := 2147483647;
+    dbgmsk_restore := mdb.getDebug();
+    dbgmsk_unset := calc.+(8,8388608);
+    dbgmsk_keep := calc.xor(INT_MAX,dbgmsk_unset);
+    dbgmsk_set := calc.and(dbgmsk_restore,dbgmsk_keep);
+    mdb.setDebug(dbgmsk_set);
+    bat.insert(b,nil:oid,10000000000000000:lng);
+barrier i := 0:lng;
+    bat.insert(b,nil:oid,1:lng);
+    redo i := iterator.next(1:lng,10000000:lng);
+exit i;
+    mdb.setDebug(dbgmsk_restore);
+    s:dbl  := aggr.sum(b);
+# should be 10000000010000000, not 10000000000000000 
+    io.print(s);
+end main;
+[ 10000000010000000 ]
+
+# 16:05:54 >  
+# 16:05:54 >  "Done."
+# 16:05:54 >  
+

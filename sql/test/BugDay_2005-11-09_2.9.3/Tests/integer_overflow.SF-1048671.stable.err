@@ -79,9 +79,9 @@ stderr of test 'integer_overflow.SF-1048671` in directory 'test/BugDay_2005-11-0
 # 19:27:23 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=31581 
 # 19:27:23 >  
 
-MAPI  = monetdb@madrid:32540
+MAPI  = monetdb@madrid:32350
 QUERY = insert into test1048671 values (9876543210);
-ERROR = !overflow in calculation.
+ERROR = !overflow in conversion of 9876543210 to int.
 
 # 19:27:23 >  
 # 19:27:23 >  Done.

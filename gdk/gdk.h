@@ -437,7 +437,7 @@
  * @- GDK session handling
  * @multitable @columnfractions 0.08 0.7
  * @item int
- * @tab GDKinit (char *db, char *dbfarm, int allocmap)
+ * @tab GDKinit (char *db, char *dbpath, int allocmap)
  * @item int
  * @tab GDKexit (int status)
  * @end multitable
@@ -772,8 +772,8 @@ gdk_export int VALisnil(const ValRecord *v);
  *           oid    talign;           // alignment OID for head.
  *           // Tail storage
  *           int    tloc;             // byte-offset in BUN for tail elements
- *           Heap   theap;            // heap for varsized tail values
- *           Hash   thash;            // linear chained hash table on tail
+ *           Heap   *theap;           // heap for varsized tail values
+ *           Hash   *thash;           // linear chained hash table on tail
  *  } BAT;
  * @end verbatim
  *
@@ -807,8 +807,8 @@ typedef struct {
 	 descdirty:1,		/* bat descriptor dirty marker */
 	 set:1,			/* real set semantics */
 	 restricted:2,		/* access priviliges */
-	 persistence:2,		/* should the BAT persist on disk? */
-	 unused:21;		/* value=0 for now */
+	 persistence:1,		/* should the BAT persist on disk? */
+	 unused:23;		/* value=0 for now */
 	int sharecnt;		/* incoming view count */
 	char map_head;		/* mmap mode for head bun heap */
 	char map_tail;		/* mmap mode for tail bun heap */
@@ -1449,13 +1449,11 @@ bat_iterator(BAT *b)
  * dimensions.
  *
  * The persistency indicator tells the retention period of BATs.  The
- * system support three modes: PERSISTENT, TRANSIENT, and SESSION.
+ * system support three modes: PERSISTENT and TRANSIENT.
  * The PERSISTENT BATs are automatically saved upon session boundary
  * or transaction commit.  TRANSIENT BATs are removed upon transaction
- * boundary.  SESSION BATs are removed at the end of a session.  They
- * are normally used to maintain temporary results.  All BATs are
- * initially TRANSIENT unless their mode is changed using the routine
- * BATmode.
+ * boundary.  All BATs are initially TRANSIENT unless their mode is
+ * changed using the routine BATmode.
  *
  * The BAT properties may be changed at any time using BATkey, BATset,
  * and BATmode.
@@ -1491,8 +1489,7 @@ gdk_export int BATgetaccess(BAT *b);
 			 ((b)->H->vheap?(b)->H->vheap->dirty:0) ||	\
 			 ((b)->T->vheap?(b)->T->vheap->dirty:0))
 
-#define PERSISTENT		3
-#define SESSION			2
+#define PERSISTENT		0
 #define TRANSIENT		1
 
 #define BAT_WRITE		0	/* all kinds of access allowed */
@@ -1841,11 +1838,11 @@ typedef struct {
 } BBPrec;
 
 gdk_export bat BBPlimit;
-#define N_BBPINIT	100
+#define N_BBPINIT	1000
 #if SIZEOF_VOID_P == 4
 #define BBPINITLOG	11
 #else
-#define BBPINITLOG	13
+#define BBPINITLOG	14
 #endif
 #define BBPINIT		(1 << BBPINITLOG)
 /* absolute maximum number of BATs is N_BBPINIT * BBPINIT */
@@ -2193,7 +2190,7 @@ gdk_export BAT *BAThashjoin(BAT *l, BAT *r, BUN estimate);
 #define GDK_HISTO_MAX_BIT	((int) (sizeof(size_t)<<3))
 
 /* we prefer to use vm_alloc routines on size > GDKmmap */
-gdk_export void *GDKmmap(const char *path, int mode, off_t off, size_t len);
+gdk_export void *GDKmmap(const char *path, int mode, size_t len);
 
 gdk_export size_t GDK_mem_bigsize;	/* size after which we use anonymous VM rather than malloc */
 gdk_export size_t GDK_mem_maxsize;	/* max allowed size of committed memory */
@@ -3151,6 +3148,9 @@ gdk_export BAT *BATkunion(BAT *b, BAT *c);
 gdk_export BAT *BATsdiff(BAT *b, BAT *c);
 gdk_export BAT *BATkdiff(BAT *b, BAT *c);
 
+gdk_export BAT *BATmergecand(BAT *a, BAT *b);
+gdk_export BAT *BATintersectcand(BAT *a, BAT *b);
+
 #include "gdk_calc.h"
 
 /*
@@ -3165,6 +3165,7 @@ gdk_export BAT *BATkdiff(BAT *b, BAT *c);
  *
  */
 gdk_export BAT *BATsample(BAT *b, BUN n);
+gdk_export BAT *BATsample_(BAT *b, BUN n); /* version that expects void head and returns oids */
 
 /* generic n-ary multijoin beast, with defines to interpret retval */
 #define MULTIJOIN_SORTED(r)	((char*) &r)[0]

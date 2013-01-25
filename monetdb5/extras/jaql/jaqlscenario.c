@@ -145,14 +145,19 @@ freeVariables(Client c, MalBlkPtr mb, MalStkPtr glb, int start)
 str
 JAQLreader(Client c)
 {
-	if (MCreadClient(c) > 0)
-		return MAL_SUCCEED;
+	/* dummy stub, the scanner reads for us
+	 * TODO: pre-fill the buf if we have single line mode */
 
-	c->mode = FINISHING;
-	if (c->fdin) {
-		c->fdin->buf[c->fdin->pos] = 0;
-	} else {
+	if (c->fdin == NULL)
 		throw(MAL, "jaql.reader", RUNTIME_IO_EOF);
+
+	/* "activate" the stream by sending a prompt (client sync) */
+	if (c->fdin->eof != 0) {
+		if (mnstr_flush(c->fdout) < 0) {
+			c->mode = FINISHING;
+		} else {
+			c->fdin->eof = 0;
+		}
 	}
 
 	return MAL_SUCCEED;
@@ -182,44 +187,46 @@ JAQLparser(Client c)
 	oldvtop = c->curprg->def->vtop;
 	oldstop = c->curprg->def->stop;
 	j->vtop = oldvtop;
-	j->explain = 0;
-	j->buf = in->buf + in->pos;
+	j->explain = j->plan = j->planf = j->debug = j->trace = j->mapimode = 0;
+	j->buf = NULL;
+	j->scanstreamin = in;
+	j->scanstreamout = out;
+	j->scanstreameof = 0;
 	j->pos = 0;
 	j->p = NULL;
+	j->timing.parse = j->timing.optimise = j->timing.gencode = 0L;
 
+	j->timing.parse = GDKusec();
 	jaqlparse(j);
-	
-	/* now the parsing is done we should advance the stream */
-	in->pos = in->len;
+	j->timing.parse = GDKusec() - j->timing.parse;
+
+	/* stop if it seems nothing is going to come any more */
+	if (j->scanstreameof == 1) {
+		c->mode = FINISHING;
+		freetree(j->p);
+		j->p = NULL;
+		return MAL_SUCCEED;
+	}
+
+	/* parsing is done */
+	in->pos = j->pos;
 	c->yycur = 0;
 
 	if (j->err[0] != '\0') {
 		/* tell the client */
 		mnstr_printf(out, "!%s\n", j->err);
-		/* read away anything left */
-		while (j->buf[j->pos + (j->tokstart - j->scanbuf)] != '\0') {
-			freetree(j->p);
-			jaqlparse(j);
-		}
 		j->err[0] = '\0';
 		return MAL_SUCCEED;
 	}
 
-	if (j->p == NULL) { /* there was nothing to parse, EOF */
-		/* read away anything left */
-		while (j->buf[j->pos + (j->tokstart - j->scanbuf)] != '\0') {
-			freetree(j->p);
-			jaqlparse(j);
-		}
-		j->err[0] = '\0';
+	if (j->p == NULL)  /* there was nothing to parse, EOF */
 		return MAL_SUCCEED;
-	}
 
-	if (j->explain < 2 || j->explain == 4) {
+	if (!j->plan && !j->planf) {
 		Symbol prg = c->curprg;
-		j->explain |= 64;  /* request dumping in MAPI mode */
+		j->mapimode = 1;  /* request dumping in MAPI mode */
 		(void)dumptree(j, c, prg->def, j->p);
-		j->explain &= ~64;
+		j->mapimode = 0;
 		pushEndInstruction(prg->def);
 		/* codegen could report an error */
 		if (j->err[0] != '\0') {
@@ -231,7 +238,9 @@ JAQLparser(Client c)
 			throw(PARSE, "JAQLparse", "%s", j->err);
 		}
 
+		j->timing.optimise = GDKusec();
 		chkTypes(out, c->nspace, prg->def, FALSE);
+		j->timing.optimise = GDKusec() - j->timing.optimise;
 		if (prg->def->errors) {
 			/* this is bad already, so let's try to make it debuggable */
 			mnstr_printf(out, "!jaqlgencode: generated program contains errors\n");
@@ -246,12 +255,6 @@ JAQLparser(Client c)
 		}
 	}
 
-	/* read away anything left */
-	while (j->buf[j->pos + (j->tokstart - j->scanbuf)] != '\0') {
-		freetree(j->p);
-		jaqlparse(j);
-	}
-	j->err[0] = '\0';
 	return MAL_SUCCEED;
 }
 
@@ -271,20 +274,20 @@ JAQLengine(Client c)
 	chkProgram(c->fdout, c->nspace, c->curprg->def);
 
 	c->glb = 0;
-	if (j->explain == 1) {
+	if (j->explain) {
 		printFunction(c->fdout, c->curprg->def, 0, LIST_MAL_STMT | LIST_MAPI);
-	} else if (j->explain == 2 || j->explain == 3) {
+	} else if (j->plan || j->planf) {
 		mnstr_printf(c->fdout, "=");
-		printtree(c->fdout, j->p, 0, j->explain == 3);
+		printtree(c->fdout, j->p, 0, j->planf);
 		mnstr_printf(c->fdout, "\n");
 		freetree(j->p);
 		return MAL_SUCCEED;  /* don't have a plan generated */
-	} else if (j->explain == 4) {
+	} else if (j->debug) {
 		msg = runMALDebugger(c, c->curprg);
 	} else if (MALcommentsOnly(c->curprg->def)) {
 		msg = MAL_SUCCEED;
 	} else {
-		msg = runMAL(c, c->curprg->def, 1, 0, 0, 0);
+		msg = runMAL(c, c->curprg->def, 0, 0);
 	}
 
 	if (msg) {

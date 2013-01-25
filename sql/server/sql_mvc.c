@@ -25,7 +25,6 @@
 
 #include "sql_mvc.h"
 #include "sql_qc.h"
-#include "sql_statement.h"
 #include "sql_types.h"
 #include "sql_env.h"
 #include "sql_semantic.h"
@@ -35,20 +34,18 @@
 static int mvc_debug = 0;
 
 int
-mvc_init(char *dbname, int debug, store_type store, backend_stack stk)
+mvc_init(int debug, store_type store, backend_stack stk)
 {
 	int first = 0;
 	char *logdir = "sql_logs";
 
-	assert(dbname);
-
 	mvc_debug = debug;
 	if (mvc_debug)
-		fprintf(stderr, "#mvc_init logdir %s%c%s\n", logdir, DIR_SEP, dbname);
+		fprintf(stderr, "#mvc_init logdir %s\n", logdir);
 	keyword_init();
 	scanner_init_keywords();
 
-	if ((first = store_init(debug, store, logdir, dbname, stk)) < 0) {
+	if ((first = store_init(debug, store, logdir, stk)) < 0) {
 		fprintf(stderr, "!mvc_init: unable to create system tables\n");
 		return -1;
 	}
@@ -236,7 +233,7 @@ mvc_trans(mvc *m)
 
 	store_lock();
 	schema_changed = sql_trans_begin(m->session);
-	if (m->qc && (schema_changed || m->qc->nr > 20000 || err)){
+	if (m->qc && (schema_changed || m->qc->nr > m->cache || err)){
 		if (schema_changed || err) {
 			int seqnr = m->qc->id;
 			if (m->qc)
@@ -477,7 +474,7 @@ mvc_create(int clientid, backend_stack stk, int debug, bstream *rs, stream *ws)
 	m->emod = mod_none;
 	m->reply_size = 100;
 	m->debug = debug;
-	m->cache = 1;
+	m->cache = DEFAULT_CACHESIZE;
 	m->caching = m->cache;
 	m->history = 0;
 
@@ -545,9 +542,9 @@ mvc_reset(mvc *m, bstream *rs, stream *ws, int debug, int globalvars)
 	if (m->debug != debug)
 		stack_set_number(m, "debug", debug);
 	m->debug = debug;
-	if (m->cache != 1)
-		stack_set_number(m, "cache", 1);
-	m->cache = 1;
+	if (m->cache != DEFAULT_CACHESIZE)
+		stack_set_number(m, "cache", DEFAULT_CACHESIZE);
+	m->cache = DEFAULT_CACHESIZE;
 	m->caching = m->cache;
 	if (m->history != 0)
 		stack_set_number(m, "history", 0);

@@ -58,10 +58,10 @@ A as $ -> expand: $.ids => <result>
 [1,2,3] as $ -> transform: { "value": $ } 
 [1,2,3] => <result> 
 [1,2,3] as $ -> transform: ( $ * 2 ) 
-[1,2,3] as $ -> transform: ( $ * 2 ) 
+[1,2,3] as $ -> transform: ( 2 * $ ) 
 [1,2,3] as $ -> transform: 4 
-[1,2,3] as $ -> transform: ( ( $ * 2 ) * 2 ) 
-[1,2,3] as $ -> transform: ( ( $ * 2.000000 ) * 2 ) 
+[1,2,3] as $ -> transform: ( 2 * ( $ * 2 ) ) 
+[1,2,3] as $ -> transform: ( 2 * ( 2.000000 * $ ) ) 
 [1,2,3] as $ -> transform: ( ( $ * 2.000000 ) / 4 ) 
 as users in users , pages in pages -> join: where ( ( users.id == pages.userid ) ) into { "name": users.name , "url": pages.url } 
 as u in users , p in pages -> join: where ( ( u.id == p.userid ) ) into { "name": u.name , "url": p.url } 

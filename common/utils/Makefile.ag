@@ -40,3 +40,5 @@ lib_msabaoth = {
 	NOINST
 	SOURCES = msabaoth.h msabaoth.c
 }
+
+EXTRA_DIST = s_nextafterf.c math_private.h

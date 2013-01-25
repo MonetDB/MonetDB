@@ -100,7 +100,7 @@ static int convert_matrix[EC_MAX][EC_MAX] = {
 /* EC_DEC */	{ 0, 0, 0, 1, 1, 0, 1, 1, 1, 1, 0, 0, 0, 0 },
 /* EC_FLT */	{ 0, 0, 0, 1, 1, 0, 1, 3, 1, 1, 0, 0, 0, 0 },
 /* EC_TIME */	{ 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0 },
-/* EC_DATE */	{ 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 1, 3, 0 },
+/* EC_DATE */	{ 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 3, 0 },
 /* EC_TSTAMP */	{ 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 0 },
 /* EC_EXTERNAL*/{ 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }
 };
@@ -1251,27 +1251,27 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_aggr(sa, "sum", "aggr", "sum", *(t), *(t));
 
 	/* prod for numerical and decimals */
-	sql_create_aggr(sa, "prod", "aggr", "product", BTE, LNG);
-	sql_create_aggr(sa, "prod", "aggr", "product", SHT, LNG);
-	sql_create_aggr(sa, "prod", "aggr", "product", INT, LNG);
-	sql_create_aggr(sa, "prod", "aggr", "product", LNG, LNG);
-	/*sql_create_aggr(sa, "prod", "aggr", "product", WRD, WRD);*/
+	sql_create_aggr(sa, "prod", "aggr", "prod", BTE, LNG);
+	sql_create_aggr(sa, "prod", "aggr", "prod", SHT, LNG);
+	sql_create_aggr(sa, "prod", "aggr", "prod", INT, LNG);
+	sql_create_aggr(sa, "prod", "aggr", "prod", LNG, LNG);
+	/*sql_create_aggr(sa, "prod", "aggr", "prod", WRD, WRD);*/
 
 	t = decimals; /* BTE */
-	sql_create_aggr(sa, "prod", "aggr", "product", *(t), *(t+3));
+	sql_create_aggr(sa, "prod", "aggr", "prod", *(t), *(t+3));
 	t++; /* SHT */
-	sql_create_aggr(sa, "prod", "aggr", "product", *(t), *(t+2));
+	sql_create_aggr(sa, "prod", "aggr", "prod", *(t), *(t+2));
 	t++; /* INT */
-	sql_create_aggr(sa, "prod", "aggr", "product", *(t), *(t+1));
+	sql_create_aggr(sa, "prod", "aggr", "prod", *(t), *(t+1));
 	t++; /* LNG */
-	sql_create_aggr(sa, "prod", "aggr", "product", *(t), *(t));
+	sql_create_aggr(sa, "prod", "aggr", "prod", *(t), *(t));
 
 	for (t = numerical; t < dates; t++) 
 		sql_create_func(sa, "mod", "calc", "%", *t, *t, *t, SCALE_FIX);
 
 	for (t = floats; t < dates; t++) {
 		sql_create_aggr(sa, "sum", "aggr", "sum", *t, *t);
-		sql_create_aggr(sa, "prod", "aggr", "product", *t, *t);
+		sql_create_aggr(sa, "prod", "aggr", "prod", *t, *t);
 	}
 	/*
 	sql_create_aggr(sa, "avg", "aggr", "avg", BTE, DBL);
@@ -1289,16 +1289,24 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_func(sa, "percent_rank", "calc", "precent_rank_grp", ANY, NULL, INT, SCALE_NONE);
 	sql_create_func(sa, "cume_dist", "calc", "cume_dist_grp", ANY, NULL, ANY, SCALE_NONE);
 	sql_create_func(sa, "row_number", "calc", "mark_grp", ANY, NULL, INT, SCALE_NONE);
+
+	sql_create_func3(sa, "rank", "calc", "rank_grp", ANY, OID, ANY, INT, SCALE_NONE);
+	sql_create_func3(sa, "dense_rank", "calc", "dense_rank_grp", ANY, OID, ANY, INT, SCALE_NONE);
+	sql_create_func3(sa, "percent_rank", "calc", "precent_rank_grp", ANY, OID, ANY, INT, SCALE_NONE);
+	sql_create_func3(sa, "cume_dist", "calc", "cume_dist_grp", ANY, OID, ANY, ANY, SCALE_NONE);
+	sql_create_func3(sa, "row_number", "calc", "mark_grp", ANY, OID, ANY, INT, SCALE_NONE);
+
+	sql_create_func4(sa, "rank", "calc", "rank_grp", ANY, OID, OID, OID, INT, SCALE_NONE);
+	sql_create_func4(sa, "dense_rank", "calc", "dense_rank_grp", ANY, OID, OID, OID, INT, SCALE_NONE);
+	sql_create_func4(sa, "percent_rank", "calc", "precent_rank_grp", ANY, OID, OID, OID, INT, SCALE_NONE);
+	sql_create_func4(sa, "cume_dist", "calc", "cume_dist_grp", ANY, OID, OID, OID, ANY, SCALE_NONE);
+	sql_create_func4(sa, "row_number", "calc", "mark_grp", ANY, OID, OID, OID, INT, SCALE_NONE);
+
 	sql_create_func(sa, "lag", "calc", "lag_grp", ANY, NULL, ANY, SCALE_NONE);
 	sql_create_func(sa, "lead", "calc", "lead_grp", ANY, NULL, ANY, SCALE_NONE);
 	sql_create_func(sa, "lag", "calc", "lag_grp", ANY, INT, ANY, SCALE_NONE);
 	sql_create_func(sa, "lead", "calc", "lead_grp", ANY, INT, ANY, SCALE_NONE);
 
-	sql_create_func3(sa, "rank", "calc", "rank_grp", ANY, OID, OID, INT, SCALE_NONE);
-	sql_create_func3(sa, "dense_rank", "calc", "dense_rank_grp", ANY, OID, OID, INT, SCALE_NONE);
-	sql_create_func3(sa, "percent_rank", "calc", "precent_rank_grp", ANY, OID, OID, INT, SCALE_NONE);
-	sql_create_func3(sa, "cume_dist", "calc", "cume_dist_grp", ANY, OID, OID, ANY, SCALE_NONE);
-	sql_create_func3(sa, "row_number", "calc", "mark_grp", ANY, OID, OID, INT, SCALE_NONE);
 	sql_create_func3(sa, "lag", "calc", "lag_grp", ANY, OID, OID, ANY, SCALE_NONE);
 	sql_create_func3(sa, "lead", "calc", "lead_grp", ANY, OID, OID, ANY, SCALE_NONE);
 	sql_create_func4(sa, "lag", "calc", "lag_grp", ANY, INT, OID, OID, ANY, SCALE_NONE);
@@ -1467,6 +1475,10 @@ sqltypeinit( sql_allocator *sa)
 		sql_create_func3(sa, "like", "str", "like", *t, *t, *t, BIT, SCALE_NONE);
 		sql_create_func(sa, "ilike", "str", "ilike", *t, *t, BIT, SCALE_NONE);
 		sql_create_func3(sa, "ilike", "str", "ilike", *t, *t, *t, BIT, SCALE_NONE);
+		sql_create_func(sa, "not_like", "str", "not_like", *t, *t, BIT, SCALE_NONE);
+		sql_create_func3(sa, "not_like", "str", "not_like", *t, *t, *t, BIT, SCALE_NONE);
+		sql_create_func(sa, "not_ilike", "str", "not_ilike", *t, *t, BIT, SCALE_NONE);
+		sql_create_func3(sa, "not_ilike", "str", "not_ilike", *t, *t, *t, BIT, SCALE_NONE);
 		sql_create_func(sa, "patindex", "pcre", "patindex", *t, *t, INT, SCALE_NONE);
 		sql_create_func(sa, "truncate", "str", "stringleft", *t, INT, *t, SCALE_NONE);
 		sql_create_func(sa, "concat", "calc", "+", *t, *t, *t, DIGITS_ADD);

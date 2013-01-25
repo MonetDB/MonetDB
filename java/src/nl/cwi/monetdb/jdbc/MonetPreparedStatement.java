@@ -302,7 +302,7 @@ public class MonetPreparedStatement
 	private int getColumnIdx(int colnr) throws SQLException {
 		int curcol = 0;
 		for (int i = 0; i < size; i++) {
-			if (column[i] != null)
+			if (column[i] == null)
 				continue;
 			curcol++;
 			if (curcol == colnr)
@@ -310,6 +310,22 @@ public class MonetPreparedStatement
 		}
 		throw new SQLException("No such column with index: " + colnr, "M1M05");
 	}
+	/**
+	 * Returns the index in the backing arrays for the given
+	 * parameter number
+	 */
+	private int getParamIdx(int paramnr) throws SQLException {
+		int curparam = 0;
+		for (int i = 0; i < size; i++) {
+			if (column[i] != null)
+				continue;
+			curparam++;
+			if (curparam == paramnr)
+				return i;
+		}
+		throw new SQLException("No such parameter with index: " + paramnr, "M1M05");
+	}
+
 
 	/* helper for the anonymous class inside getMetaData */
 	private abstract class rsmdw extends MonetWrapper implements ResultSetMetaData {}
@@ -480,7 +496,7 @@ public class MonetPreparedStatement
 			 * @return table name or "" if not applicable
 			 */
 			public String getTableName(int col) throws SQLException {
-				return column[getColumnIdx(col)];
+				return table[getColumnIdx(col)];
 			}
 
 			/**
@@ -695,7 +711,14 @@ public class MonetPreparedStatement
 			 * @throws SQLException if a database access error occurs
 			 */
 			public int getParameterCount() throws SQLException {
-				return size;
+				int cnt = 0;
+
+				for (int i = 0; i < size; i++) {
+					if (column[i] == null)
+						cnt++;
+				}
+				
+				return cnt;
 			}
 
 			/**
@@ -724,12 +747,9 @@ public class MonetPreparedStatement
 			 * @throws SQLException if a database access error occurs
 			 */
 			public boolean isSigned(int param) throws SQLException {
-				if (param < 1 || param > size)
-					throw new SQLException("No such parameter with index: " + param, "M1M05");
-
 				// we can hardcode this, based on the colum type
 				// (from ResultSetMetaData.isSigned)
-				switch (javaType[param - 1]) {
+				switch (javaType[getParamIdx(param)]) {
 					case Types.NUMERIC:
 					case Types.DECIMAL:
 					case Types.TINYINT:
@@ -759,10 +779,7 @@ public class MonetPreparedStatement
 			 * @throws SQLException if a database access error occurs
 			 */
 			public int getPrecision(int param) throws SQLException {
-				if (param < 1 || param > size)
-					throw new SQLException("No such parameter with index: " + param, "M1M05");
-
-				return digits[param - 1];
+				return digits[getParamIdx(param)];
 			}
 
 			/**
@@ -774,10 +791,7 @@ public class MonetPreparedStatement
 			 * @throws SQLException if a database access error occurs
 			 */
 			public int getScale(int param) throws SQLException {
-				if (param < 1 || param > size)
-					throw new SQLException("No such parameter with index: " + param, "M1M05");
-
-				return scale[param - 1];
+				return scale[getParamIdx(param)];
 			}
 
 			/**
@@ -788,10 +802,7 @@ public class MonetPreparedStatement
 			 * @throws SQLException if a database access error occurs
 			 */
 			public int getParameterType(int param) throws SQLException {
-				if (param < 1 || param > size)
-					throw new SQLException("No such parameter with index: " + param, "M1M05");
-
-				return javaType[param - 1];
+				return javaType[getParamIdx(param)];
 			}
 
 			/**
@@ -805,10 +816,7 @@ public class MonetPreparedStatement
 			 * @throws SQLException if a database access error occurs
 			 */
 			public String getParameterTypeName(int param) throws SQLException {
-				if (param < 1 || param > size)
-					throw new SQLException("No such parameter with index: " + param, "M1M05");
-
-				return monetdbType[param - 1];
+				return monetdbType[getParamIdx(param)];
 			}
 
 			/**
@@ -825,10 +833,16 @@ public class MonetPreparedStatement
 			 * @throws SQLException if a database access error occurs
 			 */
 			public String getParameterClassName(int param) throws SQLException {
-				if (param < 1 || param > size)
-					throw new SQLException("No such parameter with index: " + param, "M1M05");
-
-				return MonetResultSet.getClassForType(javaType[param - 1]).getName();
+				Map map = getConnection().getTypeMap();
+				Class c;
+				if (map.containsKey(monetdbType[getParamIdx(param)])) {
+					c = (Class)map.get(monetdbType[getParamIdx(param)]);
+				} else {
+					c = MonetResultSet.getClassForType(
+							javaType[getParamIdx(param)]
+					);
+				}
+				return c.getName();
 			}
 
 			/**
@@ -1525,15 +1539,12 @@ public class MonetPreparedStatement
 	 *                      the given object is ambiguous
 	 */
 	public void setObject(int index, Object x) throws SQLException {
-		if (index < 1 || index > size)
-			throw new SQLException("No such parameter with index: " + index, "M1M05");
-
-		setObject(index, x, javaType[index - 1]);
+		setObject(index, x, javaType[getParamIdx(index)]);
 	}
 
 	/**
 	 * Sets the value of the designated parameter with the given object. This
-	 * method is like the method setObject blow, except that it assumes a scale
+	 * method is like the method setObject below, except that it assumes a scale
 	 * of zero.
 	 *
 	 * @param parameterIndex the first parameter is 1, the second is 2, ...
@@ -1909,10 +1920,126 @@ public class MonetPreparedStatement
 		} else if (x instanceof SQLXML) {
 			throw new SQLFeatureNotSupportedException("Operation setObject() with object of type SQLXML currently not supported!", "0A000");
 		} else if (x instanceof SQLData) { // not in JDBC4.1???
-			// do something with:
-			// ((SQLData)x).writeSQL( [java.sql.SQLOutput] );
-			// needs an SQLOutput stream... bit too far away from reality
-			throw new SQLFeatureNotSupportedException("Operation setObject() with object of type SQLData currently not supported!", "0A000");
+			SQLData sx = (SQLData)x;
+			final int paramnr = parameterIndex;
+			final String sqltype = sx.getSQLTypeName();
+			SQLOutput out = new SQLOutput() {
+				public void writeString(String x) throws SQLException {
+					// special situation, this is when a string
+					// representation is given, but we need to prefix it
+					// with the actual sqltype the server expects, or we
+					// will get an error back
+					setValue(
+							paramnr,
+							sqltype + " '" + x.replaceAll("\\\\", "\\\\\\\\").replaceAll("'", "\\\\'") + "'"
+					);
+				}
+
+				public void writeBoolean(boolean x) throws SQLException {
+					setBoolean(paramnr, x);
+				}
+
+				public void writeByte(byte x) throws SQLException {
+					setByte(paramnr, x);
+				}
+
+				public void writeShort(short x) throws SQLException {
+					setShort(paramnr, x);
+				}
+
+				public void writeInt(int x) throws SQLException {
+					setInt(paramnr, x);
+				}
+
+				public void writeLong(long x) throws SQLException {
+					setLong(paramnr, x);
+				}
+				
+				public void writeFloat(float x) throws SQLException {
+					setFloat(paramnr, x);
+				}
+
+				public void writeDouble(double x) throws SQLException {
+					setDouble(paramnr, x);
+				}
+
+				public void writeBigDecimal(BigDecimal x) throws SQLException {
+					setBigDecimal(paramnr, x);
+				}
+
+				public void writeBytes(byte[] x) throws SQLException {
+					setBytes(paramnr, x);
+				}
+
+				public void writeDate(java.sql.Date x) throws SQLException {
+					setDate(paramnr, x);
+				}
+
+				public void writeTime(java.sql.Time x) throws SQLException {
+					setTime(paramnr, x);
+				}
+
+				public void writeTimestamp(Timestamp x) throws SQLException {
+					setTimestamp(paramnr, x);
+				}
+
+				public void writeCharacterStream(Reader x) throws SQLException {
+					setCharacterStream(paramnr, x);
+				}
+
+				public void writeAsciiStream(InputStream x) throws SQLException {
+					setAsciiStream(paramnr, x);
+				}
+
+				public void writeBinaryStream(InputStream x) throws SQLException {
+					setBinaryStream(paramnr, x);
+				}
+
+				public void writeObject(SQLData x) throws SQLException {
+					setObject(paramnr, x);
+				}
+
+				public void writeRef(Ref x) throws SQLException {
+					setRef(paramnr, x);
+				}
+
+				public void writeBlob(Blob x) throws SQLException {
+					setBlob(paramnr, x);
+				}
+
+				public void writeClob(Clob x) throws SQLException {
+					setClob(paramnr, x);
+				}
+
+				public void writeStruct(Struct x) throws SQLException {
+					setObject(paramnr, x);
+				}
+
+				public void writeArray(Array x) throws SQLException {
+					setArray(paramnr, x);
+				}
+
+				public void writeURL(URL x) throws SQLException {
+					setURL(paramnr, x);
+				}
+
+				public void writeNString(String x) throws SQLException {
+					setNString(paramnr, x);
+				}
+
+				public void writeNClob(NClob x) throws SQLException {
+					setNClob(paramnr, x);
+				}
+
+				public void writeRowId(RowId x) throws SQLException {
+					setRowId(paramnr, x);
+				}
+
+				public void writeSQLXML(SQLXML x) throws SQLException {
+					setSQLXML(paramnr, x);
+				}
+			};
+			sx.writeSQL(out);
 		} else {	// java Class
 			throw new SQLFeatureNotSupportedException("Operation setObject() with object of type Class currently not supported!", "0A000");
 		}
@@ -2023,10 +2150,7 @@ public class MonetPreparedStatement
 	public void setTime(int index, Time x, Calendar cal)
 		throws SQLException
 	{
-		if (index < 1 || index > size)
-			throw new SQLException("No such parameter with index: " + index, "M1M05");
-
-		boolean hasTimeZone = monetdbType[index - 1].endsWith("tz");
+		boolean hasTimeZone = monetdbType[getParamIdx(index)].endsWith("tz");
 		if (hasTimeZone) {
 			// timezone shouldn't matter, since the server is timezone
 			// aware in this case
@@ -2081,10 +2205,7 @@ public class MonetPreparedStatement
 	public void setTimestamp(int index, Timestamp x, Calendar cal)
 		throws SQLException
 	{
-		if (index < 1 || index > size)
-			throw new SQLException("No such parameter with index: " + index, "M1M05");
-
-		boolean hasTimeZone = monetdbType[index - 1].endsWith("tz");
+		boolean hasTimeZone = monetdbType[getParamIdx(index)].endsWith("tz");
 		if (hasTimeZone) {
 			// timezone shouldn't matter, since the server is timezone
 			// aware in this case
@@ -2188,7 +2309,7 @@ public class MonetPreparedStatement
 	 * @throws SQLException if the given index is out of bounds
 	 */
 	void setValue(int index, String val) throws SQLException {
-		values[getColumnIdx(index)] = val;
+		values[getParamIdx(index)] = val;
 	}
 
 	/**

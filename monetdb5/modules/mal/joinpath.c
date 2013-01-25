@@ -208,6 +208,9 @@ ALGjoinPathBody(Client cntxt, int top, BAT **joins, int flag)
 			break;
 		case 2:
 			b = BATsemijoin(joins[j], joins[j + 1]);
+			break;
+		case 3:
+			b = BATleftfetchjoin(joins[j], joins[j + 1], BATcount(joins[j]));
 		}
 		if (b==NULL){
 			if ( postpone[j] && postpone[j+1]){
@@ -272,9 +275,10 @@ ALGjoinPath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int i,*bid,top=0;
 	int *r = (int*) getArgReference(stk, pci, 0);
 	BAT *b, **joins = (BAT**)GDKmalloc(pci->argc*sizeof(BAT*)); 
-	str joinPathRef = putName("joinPath",8);
-	str leftjoinPathRef = putName("leftjoinPath",12);
 	int error = 0;
+	str joinPathRef = putName("joinPath",8);
+	str semijoinPathRef = putName("semijoinPath",12);
+	str leftjoinPathRef = putName("leftjoinPath",12);
 
 	if ( joins == NULL)
 		throw(MAL, "algebra.joinPath", MAL_MALLOC_FAIL);
@@ -304,7 +308,17 @@ ALGjoinPath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		fprintf(stderr,"#joinpath %s\n", ps ? ps : "");
 		GDKfree(ps);
 	}
-	b= ALGjoinPathBody(cntxt,top,joins, (getFunctionId(pci)== joinPathRef?1: (getFunctionId(pci) == leftjoinPathRef? 0:2)));
+	if ( getFunctionId(pci) == joinPathRef)
+		b= ALGjoinPathBody(cntxt,top,joins, 1);
+	else
+	if ( getFunctionId(pci) == leftjoinPathRef)
+		b= ALGjoinPathBody(cntxt,top,joins, 0); 
+	else
+	if ( getFunctionId(pci) == semijoinPathRef)
+		b= ALGjoinPathBody(cntxt,top,joins, 2);
+	else
+		b= ALGjoinPathBody(cntxt,top,joins, 3); 
+
 	GDKfree(joins);
 	if ( b)
 		BBPkeepref( *r = b->batCacheid);

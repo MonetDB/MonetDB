@@ -85,19 +85,19 @@
 #endif
 
 /* the wrappers */
-logger_export str logger_create_wrap( logger *L, int *debug, str *fn, str *dirname, str *dbname, int *version);
+logger_export str logger_create_wrap( logger *L, int *debug, str *fn, str *dirname, int *version);
 
 str
-logger_create_wrap( logger *L, int *debug, str *fn, str *dirname, str *dbname, int *version)
+logger_create_wrap( logger *L, int *debug, str *fn, str *dirname, int *version)
 {
-	logger *l = logger_create(*debug, *fn, *dirname, *dbname, *version, NULL, NULL);
+	logger *l = logger_create(*debug, *fn, *dirname, *version, NULL, NULL);
 
 	if (l) {
 		*(logger**)L = l;
 		return MAL_SUCCEED;
 	}
-	throw(MAL, "logger.create", OPERATION_FAILED "directory %s database %s version %d" ,
-		*dirname, *dbname, *version);
+	throw(MAL, "logger.create", OPERATION_FAILED "database %s version %d" ,
+		*dirname, *version);
 }
 
 logger_export str logger_destroy_wrap( logger *L ) ;

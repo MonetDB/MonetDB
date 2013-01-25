@@ -1,4 +1,5 @@
 HAVE_JAQL?expand
+HAVE_JAQL?unroll
 HAVE_JAQL?group
 HAVE_JAQL?top
 HAVE_JAQL?filter
@@ -7,3 +8,6 @@ HAVE_JAQL?sort
 HAVE_JAQL?transform
 HAVE_JAQL?shred
 HAVE_JAQL?in
+HAVE_JAQL?documents
+HAVE_JAQL?multiline
+HAVE_JAQL?calculations

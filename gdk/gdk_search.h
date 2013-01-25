@@ -29,7 +29,6 @@
  * of mean size 4.  This was shown to be inferior to direct hashing
  * with integer anding. The new implementation reflects this.
  */
-gdk_export void HASHremove(BAT *b);
 gdk_export void HASHdestroy(BAT *b);
 gdk_export BUN HASHprobe(Hash *h, const void *v);
 gdk_export BUN HASHlist(Hash *h, BUN i);

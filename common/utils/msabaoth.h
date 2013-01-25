@@ -24,6 +24,8 @@ typedef struct Ssablist {
 	struct Ssablist* next;   /* pointer to the next available value*/
 } sablist;
 
+/* only append to this enum, as its numbers are used in
+ * serialise/deserialise */
 typedef enum {
 	SABdbIllegal = 0,
 	SABdbRunning,
@@ -34,12 +36,13 @@ typedef enum {
 
 typedef struct Ssabdb {
 	char *dbname;            /* database name */
-	char *path;              /* full path to database */
+	char *path;              /* path to this database */
 	int locked;              /* whether this database is under maintenance */
 	SABdbState state;        /* current database state */
 	sablist* scens;          /* scenarios available for this database */
 	sablist* conns;          /* connections available for this database */
 	struct Ssabuplog *uplog; /* sabuplog struct for this database */
+	char *uri;               /* URI to connect to this database */
 	struct Ssabdb* next;     /* next database */
 } sabdb;
 
@@ -52,6 +55,7 @@ typedef struct Ssabuplog {
 	time_t minuptime;  /* shortest uptime when not crashing */
 	time_t lastcrash;  /* time of last crash, -1 if none */
 	time_t laststart;  /* time of last start */
+	time_t laststop;   /* time of last stop, -1 if running */
 	int crashavg1;     /* if there was a crash in the last start attempt */
 	double crashavg10; /* average of crashes in the last 10 start attempts */
 	double crashavg30; /* average of crashes in the last 30 start attempts */
@@ -67,7 +71,8 @@ typedef struct Ssabuplog {
 #define msab_export extern
 #endif
 
-msab_export void msab_init(char *dbfarm, char *dbname);
+msab_export void msab_dbpathinit(const char *dbpath);
+msab_export void msab_dbfarminit(const char *dbfarm);
 msab_export char *msab_getDBfarm(char **ret);
 msab_export char *msab_getDBname(char **ret);
 msab_export char *msab_marchScenario(const char *lang);

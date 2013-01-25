@@ -71,6 +71,28 @@ leavedbS(sabdb *stats)
 	free(props);
 }
 
+static char _internal_uri_buf[256];
+static void
+setURI(sabdb *stats)
+{
+	confkeyval *props = getDefaultProps();
+	char *shared;
+	readProps(props, stats->path);
+	shared = getConfVal(props, "shared");
+	if (stats->locked != 1 && (shared == NULL || strcmp(shared, "no") != 0)) {
+		snprintf(_internal_uri_buf, sizeof(_internal_uri_buf),
+				"mapi:monetdb://%s:%u/%s%s%s",
+				_mero_hostname,
+				(unsigned int)getConfNum(_mero_props, "port"),
+				stats->dbname,
+				shared == NULL ? "" : "/",
+				shared == NULL ? "" : shared);
+		stats->uri = _internal_uri_buf;
+	}
+	freeConfFile(props);
+	free(props);
+}
+
 static void
 anncdbS(sabdb *stats)
 {
@@ -731,14 +753,12 @@ static void ctl_handle_client(
 				}
 
 				for (topdb = stats; stats != NULL; stats = stats->next) {
-					/* Jul2012 HACK: don't change the remote interface,
-					 * never return SABdbStarting */
-					if (stats->state == SABdbStarting)
-						stats->state = SABdbInactive;
+					/* set uri */
+					setURI(stats);
 					/* currently never fails (just crashes) */
 					msab_serialise(&sdb, stats);
-					len = snprintf(buf2, sizeof(buf2),
-							"%s\n", sdb);
+					stats->uri = NULL;
+					len = snprintf(buf2, sizeof(buf2), "%s\n", sdb);
 					if (fout == NULL) {
 						send(msgsock, buf2, len, 0);
 					} else {

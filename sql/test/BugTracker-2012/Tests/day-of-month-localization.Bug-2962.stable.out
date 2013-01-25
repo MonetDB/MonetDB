@@ -1,0 +1,59 @@
+stdout of test 'day-of-month-localization.Bug-2962` in directory 'test/BugTracker-2012` itself:
+
+
+# 13:31:23 >  
+# 13:31:23 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=31302" "--set" "monet_prompt=" "--trace" "--forcemito" "--set" "mal_listing=2" "--dbpath=/Users/holger/Applications/MonetDB.app/Contents/var/MonetDB/mTests_test_BugTracker-2012" "--set" "mal_listing=0"
+# 13:31:23 >  
+
+# MonetDB 5 server v11.14.0
+# This is an unreleased version
+# Serving database 'mTests_test_BugTracker-2012', using 4 threads
+# Compiled for x86_64-apple-darwin12.2.1/64bit with 64bit OIDs dynamically linked
+# Found 8.000 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2012 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://dhcp-89.eduroam.cwi.nl:31302/
+# MonetDB/SQL module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_history.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_compress.sql
+# loading sql script: 18_dictionary.sql
+# loading sql script: 19_cluster.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 24_zorder.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 91_bwd.sql
+# loading sql script: 99_system.sql
+
+# 14:24:54 >  
+# 14:24:54 >  "/usr/bin/python" "day-of-month-localization.Bug-2962.SQL.py" "day-of-month-localization.Bug-2962"
+# 14:24:54 >  
+
+#set time zone interval -'14:00' hour to minute;
+#SELECT EXTRACT(DAY FROM CURRENT_TIMESTAMP) <> 27;
+% . # table_name
+% current_timestamp # name
+% boolean # type
+% 5 # length
+[ true	]
+
+# 14:24:54 >  
+# 14:24:54 >  "Done."
+# 14:24:54 >  
+

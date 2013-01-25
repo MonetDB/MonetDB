@@ -1,5 +1,5 @@
 %define name MonetDB
-%define version 11.14.0
+%define version 11.16.0
 %{!?buildno: %define buildno %(date +%Y%m%d)}
 
 # groups of related archs
@@ -27,7 +27,7 @@ Vendor: MonetDB BV <info@monetdb.org>
 Group: Applications/Databases
 License: MPL - http://www.monetdb.org/Legal/MonetDBLicense
 URL: http://www.monetdb.org/
-Source: http://dev.monetdb.org/downloads/sources/Jul2012-SP1/%{name}-%{version}.tar.bz2
+Source: http://dev.monetdb.org/downloads/sources/Oct2012-SP2/%{name}-%{version}.tar.bz2
 
 BuildRequires: bison
 BuildRequires: bzip2-devel
@@ -140,7 +140,6 @@ MonetDB, you will very likely need this package.
 %files client
 %defattr(-,root,root)
 %{_bindir}/mclient
-%{_bindir}/mnc
 %{_bindir}/msqldump
 %{_bindir}/stethoscope
 %{_libdir}/libmapi.so.*
@@ -335,7 +334,6 @@ developer.
 %{_bindir}/malsample.pl
 %{_bindir}/sqlsample.php
 %{_bindir}/sqlsample.pl
-%{_bindir}/sqlsample.py
 
 %if %{?centos:0}%{!?centos:1}
 %package geom-MonetDB5
@@ -540,7 +538,7 @@ program.
 %dir %{python_sitelib}/monetdb
 %{python_sitelib}/monetdb/*
 %{python_sitelib}/python_monetdb-*.egg-info
-%doc clients/python/README.rst
+%doc clients/python2/README.rst
 
 %package -n python3-monetdb
 Summary: Native MonetDB client Python3 API
@@ -636,7 +634,6 @@ developer, but if you do want to test, this is the package you need.
 	--enable-jdbc=no \
 	--enable-merocontrol=no \
 	--enable-monetdb5=yes \
-	--enable-noexpand=no \
 	--enable-odbc=yes \
 	--enable-oid32=%{?oid32:yes}%{!?oid32:no} \
 	--enable-optimize=yes \
@@ -654,7 +651,7 @@ developer, but if you do want to test, this is the package you need.
 	--with-geotiff=no \
 	--with-perl=yes \
 	--with-pthread=yes \
-	--with-python=yes \
+	--with-python2=yes \
 	--with-python3=yes \
 	--with-readline=yes \
 	--with-rubygem=yes \
@@ -698,6 +695,93 @@ rm -f $RPM_BUILD_ROOT%{_libdir}/libmonetdb5.so
 rm -fr $RPM_BUILD_ROOT
 
 %changelog
+* Wed Dec 12 2012 Sjoerd Mullender <sjoerd@acm.org> - 11.13.7-20121212
+- Rebuilt.
+
+* Fri Nov 23 2012 Fabian Groffen <fabian@monetdb.org> - 11.13.7-20121212
+- java: Implemented type map support of Connection to allow custom mapping
+  of UDTs to Java classes.  By default the INET and URL UDTs are
+  now mapped to nl.cwi.monetdb.jdbc.types.{INET,URL}.  Most notably,
+  ResultSet.getObject() and PreparedStatement.setObject() deal with the
+  type map.
+
+* Thu Nov 22 2012 Fabian Groffen <fabian@monetdb.org> - 11.13.7-20121212
+- java: Fixed a problem in PreparedStatement where the prepared statement's
+  ResultSetMetaData (on its columns to be produced) incorrectly threw
+  exceptions about non existing columns.  Bug #3192
+
+* Wed Nov 21 2012 Fabian Groffen <fabian@monetdb.org> - 11.13.7-20121212
+- sql: Fixed crash when performing an INSERT on a table with string-like column
+  defaulting to NULL and omitting that column from VALUES, bug #3168
+
+* Fri Nov 16 2012 Sjoerd Mullender <sjoerd@acm.org> - 11.13.5-20121116
+- Rebuilt.
+
+* Tue Oct 16 2012 Fabian Groffen <fabian@monetdb.org> - 11.13.3-20121016
+- Rebuilt.
+
+* Wed Oct 10 2012 Fabian Groffen <fabian@cwi.nl> - 11.13.3-20121016
+- java: Fixed problem with PreparedStatements and setXXX() methods using column
+  numbers instead of names, bug #3158
+
+* Wed Oct 10 2012 Fabian Groffen <fabian@monetdb.org> - 11.13.1-20121010
+- Rebuilt.
+
+* Tue Oct  9 2012 Fabian Groffen <fabian@cwi.nl> - 11.13.1-20121010
+- merovingian: Fixed problem where monetdbd would refuse to startup when discovery
+  was set to false, bug #3155
+
+* Tue Sep 25 2012 Sjoerd Mullender <sjoerd@acm.org> - 11.13.1-20121010
+- monetdb5: Removed module attach since it wasn't used or even tested.
+
+* Mon Sep 17 2012 Fabian Groffen <fabian@cwi.nl> - 11.13.1-20121010
+- clients: mclient now accepts URIs as database to connect to.
+
+* Mon Sep 17 2012 Fabian Groffen <fabian@cwi.nl> - 11.13.1-20121010
+- monetdb5: The MAL-to-C Compiler (mcc) was removed.  The code wasn't tested and
+  most likely non-functional.
+
+* Mon Sep 17 2012 Sjoerd Mullender <sjoerd@acm.org> - 11.13.1-20121010
+- gdk: Removed the gdk_embedded (and embedded) option.  The code wasn't tested
+  and most likely non-functional.
+
+* Mon Sep 17 2012 Gijs Molenaar <g.j.molenaar@uva.nl> - 11.13.1-20121010
+- clients: all strings returned by python2 are unicode, removed use_unicode option
+- clients: python2 and 3 type convertion speed improvements
+- clients: python2 uses new styl objects now (bug #3104)
+- clients: split python2 and python3
+
+* Mon Sep 17 2012 Sjoerd Mullender <sjoerd@acm.org> - 11.13.1-20121010
+- gdk: BAT-of-BATs is no longer allowed.  It was already not allowed to
+  make these types of BATs persistent, but now they can't be created at
+  all anymore.
+
+* Mon Sep 17 2012 Sjoerd Mullender <sjoerd@acm.org> - 11.13.1-20121010
+- buildtools: Removed --enable-noexpand configure option.
+
+* Mon Sep 17 2012 Sjoerd Mullender <sjoerd@acm.org> - 11.11.11-20120917
+- Rebuilt.
+
+* Tue Sep 11 2012 Sjoerd Mullender <sjoerd@acm.org> - 11.11.9-20120911
+- Rebuilt.
+
+* Fri Sep  7 2012 Fabian Groffen <fabian@cwi.nl> - 11.11.9-20120911
+- monetdb5: Changed the way nclients maximum was calculated to avoid 'out of client
+  slots' errors way before the maximum was reached.
+
+* Fri Aug 31 2012 Fabian Groffen <fabian@cwi.nl> - 11.11.9-20120911
+- merovingian: Resolved a problem where monetdb could fail to start a database with
+  the message "database 'X' started up, but failed to open up a
+  communication channel".  Bug #3134, comment #7.
+
+* Fri Aug 31 2012 Sjoerd Mullender <sjoerd@acm.org> - 11.11.9-20120911
+- gdk: Fixed a bug in BATantijoin when either side is a singleton BAT.
+  This fixes bug 3139.
+
+* Tue Aug 14 2012 Fabian Groffen <fabian@cwi.nl> - 11.11.9-20120911
+- java: Fixed a bug where DatabaseMetaData.getURL() did return null:0 for
+  hostname:port.
+
 * Mon Aug 13 2012 Sjoerd Mullender <sjoerd@acm.org> - 11.11.7-20120813
 - Rebuilt.
 

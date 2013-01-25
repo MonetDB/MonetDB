@@ -281,7 +281,7 @@ GTIFFimportImage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	arr = mvc_bind_table(m, sch, aname);
 	col = mvc_bind_column(m, arr, "v");
 	b = BATdescriptor(res);
-	store_funcs.update_col(m->session->tr, col, b, TYPE_bat, 0);
+	store_funcs.append_col(m->session->tr, col, b, TYPE_bat);
 	BBPunfix(b->batCacheid);
 
 	/* set status to 1 (loaded) */

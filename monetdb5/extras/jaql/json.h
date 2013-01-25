@@ -37,8 +37,8 @@
 
 json_export str JSONshred(int *kind, int *string, int *integer, int *doble, int *array, int *object, int *name, str *json);
 json_export str JSONshredstream(int *kind, int *string, int *integer, int *doble, int *array, int *object, int *name, str *uri);
-json_export str JSONprint(int *ret, stream **s, int *kind, int *string, int *integer, int *doble, int *array, int *object, int *name, bit *pretty);
-json_export str JSONexportResult(int *ret, stream **s, int *kind, int *string, int *integer, int *doble, int *array, int *object, int *name);
+json_export str JSONprint(int *ret, stream **s, int *kind, int *string, int *integer, int *doble, int *array, int *object, int *name, oid *start, bit *pretty);
+json_export str JSONexportResult(int *ret, stream **s, int *kind, int *string, int *integer, int *doble, int *array, int *object, int *name, oid *start);
 json_export str JSONstore(int *ret, str *nme, int *kind, int *string, int *integer, int *doble, int *array, int *object, int *name);
 json_export str JSONload(int *kind, int *string, int *integer, int *doble, int *array, int *object, int *name, str *nme);
 json_export str JSONdrop(int *ret, str *name);

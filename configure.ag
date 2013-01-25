@@ -21,7 +21,7 @@ dnl All Rights Reserved.
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.60)
-AC_INIT([MonetDB], [11.14.0], [info@monetdb.org], [MonetDB])
+AC_INIT([MonetDB], [11.16.0], [info@monetdb.org], [MonetDB])
 AC_CONFIG_AUX_DIR([buildtools/conf])
 AC_CONFIG_MACRO_DIR([buildtools/conf])
 AC_CANONICAL_HOST
@@ -870,79 +870,58 @@ if test "x$enable_optim" = xyes; then
 	JAVACFLAGS="$JAVACFLAGS -g:none -O"
 	case "$GCC-$CC" in
     yes-*clang*)
-                      CFLAGS="$CFLAGS -O3 -fomit-frame-pointer -finline-functions"
+	  CFLAGS="$CFLAGS -O3 -fomit-frame-pointer -finline-functions"
       ;;
     yes-*)
       dnl -fomit-frame-pointer crashes memprof
-      case "$host-$gcc_ver" in
-		powerpc*-apple-darwin*)
-		  # -fast switch causes arithmetic differences, and slower
-		  # running code for SQL, some faster for M5, so we don't use
-		  # it.  Instead we just run with modest -O3 and
-		  # -fomit-frame-pointer (we don't intend to debug the binary).
-		  CFLAGS="-O3 -fomit-frame-pointer -pipe ${CFLAGS}"
-		;;
-		i?86-apple-darwin*|x86_64-apple-darwin*)
-		  # -fast switch on Intel is a lot less tuned, and hence safer:
-		  #  -O3 -fomit-frame-pointer -fstrict-aliasing
-		  #  -momit-leaf-frame-pointer -fno-tree-pre -falign-loops
-		  CFLAGS="-fast -pipe ${CFLAGS}"
-		;;
-        *)
-		  # -O1 on gcc enables all slight optimisations:
-		  #   -fauto-inc-dec -fcprop-registers -fdce -fdefer-pop
-		  #   -fdelayed-branch -fdse -fguess-branch-probability
-		  #   -fif-conversion2 -fif-conversion -fipa-pure-const
-		  #   -fipa-reference -fmerge-constants -fsplit-wide-types
-		  #   -ftree-builtin-call-dce -ftree-ccp -ftree-ch
-		  #   -ftree-copyrename -ftree-dce -ftree-dominator-opts
-		  #   -ftree-dse -ftree-forwprop -ftree-fre -ftree-phiprop
-		  #   -ftree-sra -ftree-pta -ftree-ter -funit-at-a-time 
-		  # on top of this -fomit-frame-pointer is enabled on machines
-		  # where this does not interfere with debugging.
-		  # -O2 on gcc enables optimisations which do not involve a
-		  # speed-space tradeoff on top of -O1:
-		  #   -fthread-jumps -falign-functions  -falign-jumps
-		  #   -falign-loops -falign-labels -fcaller-saves -fcrossjumping
-		  #   -fcse-follow-jumps  -fcse-skip-blocks
-		  #   -fdelete-null-pointer-checks -fexpensive-optimizations
-		  #   -fgcse -fgcse-lm -finline-small-functions
-		  #   -findirect-inlining -fipa-sra -foptimize-sibling-calls
-		  #   -fpeephole2 -fregmove -freorder-blocks -freorder-functions
-		  #   -frerun-cse-after-loop -fsched-interblock -fsched-spec
-		  #   -fschedule-insns -fschedule-insns2 -fstrict-aliasing
-		  #   -fstrict-overflow -ftree-switch-conversion -ftree-pre
-		  #   -ftree-vrp
-		  # (Gentoo enables -D_FORTIFY_SOURCE=2 starting at -O2)
-		  # -O3 on gcc enables some more expensive optimisations on top
-		  # of -O2:
-		  #  -finline-functions, -funswitch-loops,
-		  #  -fpredictive-commoning, -fgcse-after-reload,
-		  #  -ftree-vectorize and -fipa-cp-clone 
-		  CFLAGS="-O3 -fomit-frame-pointer -pipe ${CFLAGS}"
-		  # because we explicitly disable debugging, we can explicitly
-		  # enable -fomit-frame-pointer here
-		  # notes on -funroll-all-loops:
-		  # - does nothing on i?86-linux and x86_64-linux
-		  # - speeds up and causes crashes on powerpc-linux
-		  # - slows down and makes output incorrect on sparc-solaris
-		  # - speeds up and fixes some outputs on sparcv9-solaris
-		;;
-      esac
-
-      # The default configure invocation when doing an rpmbuild also uses this
-      MCHECK_ADD_FLAG([-Wp,-D_FORTIFY_SOURCE=2])
-      ;;
+	  # -O1 on gcc enables all slight optimisations:
+	  #   -fauto-inc-dec -fcprop-registers -fdce -fdefer-pop
+	  #   -fdelayed-branch -fdse -fguess-branch-probability
+	  #   -fif-conversion2 -fif-conversion -fipa-pure-const
+	  #   -fipa-reference -fmerge-constants -fsplit-wide-types
+	  #   -ftree-builtin-call-dce -ftree-ccp -ftree-ch
+	  #   -ftree-copyrename -ftree-dce -ftree-dominator-opts
+	  #   -ftree-dse -ftree-forwprop -ftree-fre -ftree-phiprop
+	  #   -ftree-sra -ftree-pta -ftree-ter -funit-at-a-time 
+	  # on top of this -fomit-frame-pointer is enabled on machines
+	  # where this does not interfere with debugging.
+	  # -O2 on gcc enables optimisations which do not involve a
+	  # speed-space tradeoff on top of -O1:
+	  #   -fthread-jumps -falign-functions  -falign-jumps
+	  #   -falign-loops -falign-labels -fcaller-saves -fcrossjumping
+	  #   -fcse-follow-jumps  -fcse-skip-blocks
+	  #   -fdelete-null-pointer-checks -fexpensive-optimizations
+	  #   -fgcse -fgcse-lm -finline-small-functions
+	  #   -findirect-inlining -fipa-sra -foptimize-sibling-calls
+	  #   -fpeephole2 -fregmove -freorder-blocks -freorder-functions
+	  #   -frerun-cse-after-loop -fsched-interblock -fsched-spec
+	  #   -fschedule-insns -fschedule-insns2 -fstrict-aliasing
+	  #   -fstrict-overflow -ftree-switch-conversion -ftree-pre
+	  #   -ftree-vrp
+	  # (Gentoo enables -D_FORTIFY_SOURCE=2 starting at -O2)
+	  # -O3 on gcc enables some more expensive optimisations on top
+	  # of -O2:
+	  #  -finline-functions, -funswitch-loops,
+	  #  -fpredictive-commoning, -fgcse-after-reload,
+	  #  -ftree-vectorize and -fipa-cp-clone 
+	  CFLAGS="-O3 -fomit-frame-pointer -pipe ${CFLAGS}"
+	  # because we explicitly disable debugging, we can explicitly
+	  # enable -fomit-frame-pointer here
+	  # notes on -funroll-all-loops:
+	  # - does nothing on i?86-linux and x86_64-linux
+	  # - speeds up and causes crashes on powerpc-linux
+	  # - slows down and makes output incorrect on sparc-solaris
+	  # - speeds up and fixes some outputs on sparcv9-solaris
+	  # notes on -fast for Darwin:
+	  # - ppc: -fast switch causes arithmetic differences, and slower
+	  #   running code for SQL, some faster for M5
+	  # - x86/x64: -fast switch results in json code producing wrong
+	  #   results, or segaults (when used with Mtest)
+	  ;;
     *)
       case "$host-$icc_ver" in
       dnl handle non-Intel compilers ($icc_ver=""), first
       *solaris*-)      CFLAGS="$CFLAGS -xO5"
-                       ;;
-#     *irix*-)         CFLAGS="$CFLAGS -O3 -Ofast=IP27 -OPT:alias=restrict -IPA"
-      *irix*-)         CFLAGS="$CFLAGS -O3 -OPT:div_split=ON:fast_complex=ON:fast_exp=ON:fast_nint=ON:Olimit=2147483647:roundoff=3 -TARG:processor=r10k -IPA"
-                       LDFLAGS="$LDFLAGS -IPA"
-                       ;;
-      *aix*-)          CFLAGS="$CFLAGS -O3"
                        ;;
       *-*-*-)          CFLAGS="$CFLAGS -O2"
                        ;;
@@ -1022,6 +1001,9 @@ if test "x$enable_optim" = xyes; then
 	done
 	changedCFLAGS="`echo $changedCFLAGS | sed -e 's|^, ||'`"
 	AC_MSG_RESULT([yes: $changedCFLAGS])
+
+	# The default configure invocation when doing an rpmbuild also uses this
+	MCHECK_ADD_FLAG([-Wp,-D_FORTIFY_SOURCE=2])
 else
 	AC_MSG_RESULT([no])
 fi
@@ -1117,76 +1099,25 @@ AC_SUBST(PERL)
 AM_CONDITIONAL(HAVE_PERL, test x"$have_perl" != xno)
 AC_SUBST(PERL_LIBDIR)
 
-have_python=auto
-PYTHON=python
+# check major version of python
+# check if python2 and python3 exist
+# if python2 or python3 doesn't exist, use python if major matches
 
-AC_ARG_WITH(python,
-	AS_HELP_STRING([--with-python=FILE], [python is installed as FILE]),
-	have_python="$withval")
-
-case "$have_python" in
-	yes|no|auto) ;;
-	*)
-		PYTHON="$have_python"
-		have_python=yes
-		;;
-esac
-
-if test "x$have_python" != xno; then
-	if test x$cross_compiling != xyes; then
-		AC_PATH_PROG(PYTHON,$PYTHON,no,$PATH)
-		if test "x$PYTHON" = xno; then
-			if test "x$have_python" != xauto; then
-				AC_MSG_ERROR([No Python executable found])
-			fi
-			have_python=no
-		fi
-	fi
-fi
-
-if test "x$have_python" != xno; then
-	have_python_libdir=auto
-
-	AC_ARG_WITH(python-libdir,
-		AS_HELP_STRING([--with-python-libdir=DIR],
-			[relative path for Python library directory (where Python modules should be installed)]),
-		have_python_libdir="$withval")
-
-	case "$have_python_libdir" in
-		yes|auto)
-			if test x$cross_compiling = xyes; then
-				AC_MSG_ERROR([Must specify --with-python-libdir when cross compiling])
-			fi
-			case "$host_os-`"$PYTHON" -V 2>&1`" in
-				darwin9*-*2.5.1)
-					PYTHON_LIBDIR="`"$PYTHON" -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_lib(0,1,"")' 2>/dev/null`/site-packages";;
-				*)
-					PYTHON_LIBDIR="`"$PYTHON" -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_lib(0,0,"")' 2>/dev/null`";;
-			esac
-			;;
-		no)	;;
-		$Qprefix/*) dnl dubious
-			PYTHON_LIBDIR=`echo "$have_python_libdir" | sed "s|^$Qprefix/||"`
-			have_python_libdir=yes
-			;;
-		*)	PYTHON_LIBDIR="$have_python_libdir"
-			have_python_libdir=yes
-			;;
-	esac
-else
-	# no Python implies no Python libraries
-	have_python_libdir=no
-	PYTHON_LIBDIR=""
-	# and no interpreter
-	PYTHON=false
-fi
-
-AC_SUBST(PYTHON)
-AM_CONDITIONAL(HAVE_PYTHON, test x"$have_python" != xno)
-AC_SUBST(PYTHON_LIBDIR)
-
+have_python2=auto
+PYTHON2=python2
 have_python3=auto
 PYTHON3=python3
+
+AC_ARG_WITH(python2,
+	AS_HELP_STRING([--with-python2=FILE], [python2 is installed as FILE]),
+	have_python2="$withval")
+
+case "$have_python2" in
+	yes|no|auto) ;;
+	*)
+		PYTHON2="$have_python2"
+		;;
+esac
 
 AC_ARG_WITH(python3,
 	AS_HELP_STRING([--with-python3=FILE], [python3 is installed as FILE]),
@@ -1196,18 +1127,102 @@ case "$have_python3" in
 	yes|no|auto) ;;
 	*)
 		PYTHON3="$have_python3"
-		have_python3=yes
 		;;
 esac
+
+AC_PATH_PROG(PYTHON,python,no,$PATH)
+PYTHON_MAJ=
+if test "x$PYTHON" != xno; then
+	AC_MSG_CHECKING([major version of $PYTHON])
+	case "`"$PYTHON" -V 2>&1`" in
+		"Python 2."[[67]]*)  # older Pythons don't get Python3 syntax
+			PYTHON_MAJ=2
+			;;
+		"Python 3."*)
+			PYTHON_MAJ=3
+			;;
+		*)
+			AC_MSG_ERROR([unknown or unsupported Python version])
+			;;
+	esac
+	AC_MSG_RESULT($PYTHON_MAJ)
+fi
+
+
+if test "x$have_python2" != xno; then
+	if test x$cross_compiling != xyes; then
+		AC_PATH_PROG(PYTHON2,$PYTHON2,no,$PATH)
+		if test "x$PYTHON2" = xno; then
+			if ( test "x$have_python2" = xyes || test "x$have_python2" = xauto ) && test "x$PYTHON_MAJ" = x2; then
+				PYTHON2="$PYTHON"
+				have_python2=yes
+			elif test "x$have_python2" != xauto; then
+				AC_MSG_ERROR([Python 2 executable not found])
+			else
+				have_python2=no
+			fi
+		fi
+	fi
+fi
+
+if test "x$have_python2" != xno; then
+	have_python2_libdir=auto
+
+	AC_ARG_WITH(python2-libdir,
+		AS_HELP_STRING([--with-python2-libdir=DIR],
+			[relative path for Python 2 library directory (where Python 2 modules should be installed)]),
+		have_python2_libdir="$withval")
+
+	case "$have_python2_libdir" in
+		yes|auto)
+			if test x$cross_compiling = xyes; then
+				AC_MSG_ERROR([Must specify --with-python2-libdir when cross compiling])
+			fi
+			case "$host_os-`"$PYTHON2" -V 2>&1`" in
+				darwin9*-*2.5.1)
+					# This is the Python installed on OSX Leopard, in
+					# later versions of OSX, Python is fixed to return
+					# standard output
+					PYTHON2_LIBDIR="`"$PYTHON2" -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_lib(0,1,"'"$Qprefix"'")' 2>/dev/null`/site-packages";;
+				*)
+					# Use prefix field for Ubuntu Python, bug #3207
+					PYTHON2_LIBDIR="`"$PYTHON2" -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_lib(0,0,"'"$Qprefix"'")' 2>/dev/null`";;
+			esac
+			PYTHON2_LIBDIR=`echo "$PYTHON2_LIBDIR" | sed "s|^$Qprefix/||"`
+			;;
+		no)	;;
+		$Qprefix/*) dnl dubious
+			PYTHON2_LIBDIR=`echo "$have_python2_libdir" | sed "s|^$Qprefix/||"`
+			have_python2_libdir=yes
+			;;
+		*)	PYTHON2_LIBDIR="$have_python2_libdir"
+			have_python2_libdir=yes
+			;;
+	esac
+else
+	# no Python 2 implies no Python 2 libraries
+	have_python2_libdir=no
+	PYTHON2_LIBDIR=""
+	# and no interpreter
+	PYTHON2=false
+fi
+
+AC_SUBST(PYTHON2)
+AM_CONDITIONAL(HAVE_PYTHON2, test x"$have_python2" != xno)
+AC_SUBST(PYTHON2_LIBDIR)
 
 if test "x$have_python3" != xno; then
 	if test x$cross_compiling != xyes; then
 		AC_PATH_PROG(PYTHON3,$PYTHON3,no,$PATH)
 		if test "x$PYTHON3" = xno; then
-			if test "x$have_python3" != xauto; then
-				AC_MSG_ERROR([No Python3 executable found])
+			if ( test "x$have_python3" = xyes || test "x$have_python3" = xauto ) && test "x$PYTHON_MAJ" = x3; then
+				PYTHON3="$PYTHON"
+				have_python3=yes
+			elif test "x$have_python3" != xauto; then
+				AC_MSG_ERROR([Python3 executable not found])
+			else
+				have_python3=no
 			fi
-			have_python3=no
 		fi
 	fi
 fi
@@ -1217,7 +1232,7 @@ if test "x$have_python3" != xno; then
 
 	AC_ARG_WITH(python3-libdir,
 		AS_HELP_STRING([--with-python3-libdir=DIR],
-			[relative path for Python3 library directory (where Python3 modules should be installed)]),
+			[relative path for Python 3 library directory (where Python 3 modules should be installed)]),
 		have_python3_libdir="$withval")
 
 	case "$have_python3_libdir" in
@@ -1225,12 +1240,9 @@ if test "x$have_python3" != xno; then
 			if test x$cross_compiling = xyes; then
 				AC_MSG_ERROR([Must specify --with-python3-libdir when cross compiling])
 			fi
-			case "$host_os-`"$PYTHON3" -V 2>&1`" in
-				darwin9*-*2.5.1)
-					PYTHON3_LIBDIR="`"$PYTHON3" -c 'import distutils.sysconfig; print distutils.sysconfig.get_python3_lib(0,1,"")' 2>/dev/null`/site-packages";;
-				*)
-					PYTHON3_LIBDIR="`"$PYTHON3" -c 'import distutils.sysconfig; print distutils.sysconfig.get_python3_lib(0,0,"")' 2>/dev/null`";;
-			esac
+			# Use prefix field for Ubuntu Python, bug #3207
+			PYTHON3_LIBDIR="`"$PYTHON3" -c 'import distutils.sysconfig; print(distutils.sysconfig.get_python_lib(0,0,"'"$Qprefix"'"))' 2>/dev/null`"
+			PYTHON3_LIBDIR=`echo "$PYTHON3_LIBDIR" | sed "s|^$Qprefix/||"`
 			;;
 		no)	;;
 		$Qprefix/*) dnl dubious
@@ -1242,7 +1254,7 @@ if test "x$have_python3" != xno; then
 			;;
 	esac
 else
-	# no Python3 implies no Python3 libraries
+	# no Python 3 implies no Python 3 libraries
 	have_python3_libdir=no
 	PYTHON3_LIBDIR=""
 	# and no interpreter
@@ -1252,6 +1264,24 @@ fi
 AC_SUBST(PYTHON3)
 AM_CONDITIONAL(HAVE_PYTHON3, test x"$have_python3" != xno)
 AC_SUBST(PYTHON3_LIBDIR)
+
+AM_CONDITIONAL(HAVE_PYTHON, test x"$have_python2" != xno -o x"$have_python3" != xno)
+
+if test "x$PYTHON" = xno; then
+	if test "x$PYTHON2" != xno; then
+		PYTHON="$PYTHON2"
+	elif test "x$PYTHON3" != xno; then
+		PYTHON="$PYTHON3"
+	fi
+fi
+AC_SUBST(PYTHON)
+
+# Mtest/Mfilter currently require Python 2
+if test "x$enable_testing" != xno ; then
+	if test "x$PYTHON2" = xfalse ; then
+		enable_testing=no
+	fi
+fi
 
 RUBY=ruby
 have_rubygem_dir=auto
@@ -2268,7 +2298,11 @@ yes|auto)
 	fi
 	if test "x$have_geos" != xno; then
 		GEOS_INCS="`$GEOS_CONFIG --cflags`"
-		GEOS_LIBS="`$GEOS_CONFIG --libs | sed 's:-lgeos:-lgeos_c:'`"
+		if GEOS_LIBS="`$GEOS_CONFIG --clibs 2> /dev/null`"; then
+			:
+		else
+			GEOS_LIBS="`$GEOS_CONFIG --libs | sed 's:-lgeos:-lgeos_c:'`"
+		fi
 	fi
 	if test "x$have_geos" = xno; then
 		if test "x$enable_geom" = xyes; then
@@ -2300,7 +2334,7 @@ AC_HEADER_STDC
 AC_HEADER_TIME
 AC_HEADER_DIRENT
 # NOTE: these header files are in alphabetical order to ease maintenance
-AC_CHECK_HEADERS([crypt.h \
+AC_CHECK_HEADERS([ \
 	dlfcn.h \
 	execinfo.h \
 	fcntl.h \
@@ -2440,7 +2474,7 @@ AC_TYPE_SSIZE_T
 AC_TYPE_PID_T
 AC_TYPE_OFF_T
 
-AC_CHECK_TYPES([__int64, long long])
+AC_CHECK_TYPES([__int64, long long, __int128])
 AC_CHECK_TYPES([ptrdiff_t],,,[#include <stddef.h>
 #include <sys/types.h>])
 AC_CHECK_TYPES(bool)
@@ -2602,14 +2636,7 @@ AC_CHECK_FUNCS([\
 				trunc \
 				uname \
 				])
-
 LIBS="$save_LIBS"
-save_LIBS="$LIBS"
-LIBS=
-AC_SEARCH_LIBS(crypt, crypt, AC_DEFINE(HAVE_CRYPT, 1, [crypt]))
-CRYPT_LIBS="$LIBS"
-LIBS="$save_LIBS"
-AC_SUBST(CRYPT_LIBS)
 
 dnl check for getopt in standard library
 AC_CHECK_HEADERS([getopt.h])

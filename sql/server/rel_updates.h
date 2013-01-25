@@ -24,7 +24,8 @@
 #include <stdarg.h>
 #include <sql_list.h>
 #include "sql_symbol.h"
-#include "sql_statement.h"
+#include "sql_mvc.h"
+#include <sql_relation.h>
 
 #define is_updateble(rel) \
 	(rel->op == op_basetable || \

@@ -38,7 +38,7 @@ bat5_export char *BKCgetAlpha(int *r, int *bid);
 bat5_export char *BKCgetDelta(int *r, int *bid);
 bat5_export char *BKCinsert_bun(int *r, int *bid, ptr h, ptr t);
 bat5_export char *BKCinsert_bun_force(int *r, int *bid, ptr h, ptr t, bit *force);
-bat5_export char *BKCdelete(int *r, int *bid, ptr h);
+bat5_export char *BKCdelete(int *r, int *bid, const void *h);
 bat5_export char *BKCdelete_bat(int *r, int *bid, int *bnid);
 bat5_export char *BKCdelete_bun(int *r, int *bid, ptr h, ptr t);
 bat5_export char *BKCdestroy(signed char *r, int *bid);
@@ -131,4 +131,7 @@ bat5_export str BKCsetReadMode(int *res, int *bid) ;
 bat5_export str BKChasReadMode(bit *res, int *bid);
 bat5_export str BKCsetAppendMode(int *res, int *bid) ;
 bat5_export str BKChasAppendMode(bit *res, int *bid);
+
+bat5_export str BKCmergecand(bat *ret, bat *aid, bat *bid);
+bat5_export str BKCintersectcand(bat *ret, bat *aid, bat *bid);
 #endif /*_BAT_H_*/

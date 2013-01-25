@@ -93,8 +93,6 @@ OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 		for (k=0; k < p->argc; k++)
 			getArg(p,k) = alias[getArg(p,k)];
 	}
-	DEBUGoptimizers
-		mnstr_printf(cntxt->fdout,"#opt_constants: %d constant duplicates removed\n", actions);
 	GDKfree(alias);
 	GDKfree(cst);
 	GDKfree(index);

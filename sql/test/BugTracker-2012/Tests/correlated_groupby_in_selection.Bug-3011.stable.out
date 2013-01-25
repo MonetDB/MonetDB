@@ -105,16 +105,16 @@ Ready.
 % dataownercode,	lineplanningnumber,	journeypatterncode,	timinglinkorder,	userstopcodebegin,	istimingstop,	passagesequencenumber # name
 % varchar,	varchar,	varchar,	decimal,	varchar,	boolean,	wrd # type
 % 3,	4,	1,	4,	8,	5,	1 # length
-[ "CXX",	"A001",	"0",	0,	"40000010",	true,	1	]
-[ "CXX",	"A001",	"0",	1,	"40004015",	false,	1	]
-[ "CXX",	"A001",	"0",	2,	"40004021",	false,	1	]
-[ "CXX",	"A001",	"0",	3,	"40002570",	false,	1	]
-[ "CXX",	"A001",	"0",	4,	"40002550",	false,	1	]
-[ "CXX",	"A001",	"0",	5,	"40002590",	false,	1	]
-[ "CXX",	"A001",	"0",	6,	"40002610",	false,	1	]
-[ "CXX",	"A001",	"0",	7,	"40002630",	false,	1	]
-[ "CXX",	"A001",	"0",	8,	"40002690",	false,	1	]
-[ "CXX",	"A001",	"0",	9,	"40002770",	false,	1	]
+[ "CXX",	"A001",	"0",	0,	"40000010",	true,	0	]
+[ "CXX",	"A001",	"0",	1,	"40004015",	false,	0	]
+[ "CXX",	"A001",	"0",	2,	"40004021",	false,	0	]
+[ "CXX",	"A001",	"0",	3,	"40002570",	false,	0	]
+[ "CXX",	"A001",	"0",	4,	"40002550",	false,	0	]
+[ "CXX",	"A001",	"0",	5,	"40002590",	false,	0	]
+[ "CXX",	"A001",	"0",	6,	"40002610",	false,	0	]
+[ "CXX",	"A001",	"0",	7,	"40002630",	false,	0	]
+[ "CXX",	"A001",	"0",	8,	"40002690",	false,	0	]
+[ "CXX",	"A001",	"0",	9,	"40002770",	false,	0	]
 #DROP table test;
 
 # 10:56:33 >  

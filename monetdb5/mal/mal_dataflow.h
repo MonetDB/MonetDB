@@ -22,13 +22,8 @@
 
 #include "mal_interpreter.h"
 #include "mal_runtime.h"
+#include "mal_resource.h"
 
-#define USE_DFLOW_ADMISSION
-#ifdef USE_DFLOW_ADMISSION
-mal_export int DFLOWadmission(lng argclaim, lng hotclaim);
-#endif
-
-mal_export str runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr stk, MalStkPtr env, InstrPtr pcicaller);
-mal_export lng getMemoryClaim(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int i, int flag);
+mal_export str runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr stk);
 
 #endif /*  _MAL_DATAFLOW_H*/

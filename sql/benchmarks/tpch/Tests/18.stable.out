@@ -24,7 +24,7 @@ Ready.
 # 11:48:03 >  
 
 % sys.customer,	sys.customer,	sys.orders,	sys.orders,	sys.orders,	sys.lineitem # table_name
-% c_name,	c_custkey,	o_orderkey,	o_orderdate,	o_totalprice,	L4 # name
+% c_name,	c_custkey,	o_orderkey,	o_orderdate,	o_totalprice,	L6 # name
 % varchar,	int,	int,	date,	decimal,	bigint # type
 % 18,	3,	5,	10,	17,	3 # length
 [ "Customer#000000667",	667,	29158,	1995-10-21,	439687.23,	305	]

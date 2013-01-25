@@ -112,13 +112,16 @@ huphandler(int sig)
 	if (kv->val != NULL) {
 		char *h = kv->val + 1;
 		if ((f = strchr(h, '}')) == NULL) {
+			Mfprintf(stderr, "ignoring invalid passphrase: %s\n", kv->val);
 			setConfVal(kv, NULL);
 		} else {
-			*f = '\0';
+			*f++ = '\0';
 			if (strcmp(h, MONETDB5_PASSWDHASH) != 0) {
+				Mfprintf(stderr, "ignoring passphrase with incompatible "
+						"password hash: %s\n", h);
 				setConfVal(kv, NULL);
 			} else {
-				setConfVal(kv, f + 1);
+				setConfVal(kv, f);
 			}
 		}
 	}

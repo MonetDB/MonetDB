@@ -111,6 +111,9 @@ sql2str(char *s)
 	int escaped = 0;
 	char *cur, *p = s;
 
+	if (strcmp(str_nil, s) == 0)
+		return s;
+
 	for (cur = s; *cur; cur++) {
 		if (escaped) {
 			if (*cur == 'n') {

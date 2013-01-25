@@ -69,15 +69,17 @@ struct PIPELINES {
 	 "optimizer.coercions();"
 	 "optimizer.emptySet();"
 	 "optimizer.aliases();"
+	 "optimizer.pushselect();"
 	 "optimizer.mitosis();"
 	 "optimizer.mergetable();"
 	 "optimizer.deadcode();"
 	 "optimizer.commonTerms();"
-	 "optimizer.groups();"
+	 //"optimizer.groups();"
 	 "optimizer.joinPath();"
 	 "optimizer.reorder();"
 	 "optimizer.deadcode();"
 	 "optimizer.reduce();"
+	 "optimizer.matpack();"
 	 "optimizer.dataflow();"
 	 "optimizer.history();"
 	 "optimizer.multiplex();"
@@ -97,10 +99,11 @@ struct PIPELINES {
 	 "optimizer.coercions();"
 	 "optimizer.emptySet();"
 	 "optimizer.aliases();"
+	 "optimizer.pushselect();"
 	 "optimizer.mergetable();"
 	 "optimizer.deadcode();"
 	 "optimizer.commonTerms();"
-	 "optimizer.groups();"
+	 //"optimizer.groups();"
 	 "optimizer.joinPath();"
 	 "optimizer.reorder();"
 	 "optimizer.deadcode();"
@@ -124,10 +127,11 @@ struct PIPELINES {
 	 "optimizer.coercions();"
 	 "optimizer.emptySet();"
 	 "optimizer.aliases();"
+	 "optimizer.pushselect();"
 	 "optimizer.mergetable();"
 	 "optimizer.deadcode();"
 	 "optimizer.commonTerms();"
-	 "optimizer.groups();"
+	 //"optimizer.groups();"
 	 "optimizer.joinPath();"
 	 "optimizer.reorder();"
 	 "optimizer.deadcode();"
@@ -563,6 +567,9 @@ addOptimizerPipe(Client cntxt, MalBlkPtr mb, str name)
 	for (i = 0; i < MAXOPTPIPES && pipes[i].name; i++)
 		if (strcmp(pipes[i].name, name) == 0)
 			break;
+
+	if (i == MAXOPTPIPES)
+		throw(MAL, "optimizer.addOptimizerPipe", "Out of slots");;
 
 	if (pipes[i].mb == NULL)
 		msg = compileOptimizer(cntxt, name);

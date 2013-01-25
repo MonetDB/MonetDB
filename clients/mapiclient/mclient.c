@@ -56,6 +56,7 @@
 #include "stream.h"
 #include "msqldump.h"
 #include "mprompt.h"
+#include "dotmonetdb.h"
 #ifdef HAVE_LOCALE_H
 #include <locale.h>
 #endif
@@ -93,7 +94,7 @@ static stream *toConsole_raw;	/* toConsole without iconv conversion */
 static stream *stdout_stream;
 static stream *stderr_stream;
 static FILE *fromConsole = NULL;
-static char *language = "sql";
+static char *language = NULL;
 static char *logfile = NULL;
 static char promptbuf[16];
 static int echoquery = 0;
@@ -150,7 +151,7 @@ static char *pager = 0;		/* use external pager */
 #include <signal.h>		/* to block SIGPIPE */
 #endif
 static int rowsperpage = 0;	/* for SQL pagination */
-static int pagewidth = -1;	/* -1: take whatever is necessary, >0: limit */
+static int pagewidth = 0;	/* -1: take whatever is necessary, >0: limit */
 static int pagewidthset = 0;	/* whether the user set the width explicitly */
 static int croppedfields = 0;  /* whatever got cropped/truncated */
 static char firstcrop = 1;     /* first time we see cropping/truncation */
@@ -2601,7 +2602,7 @@ usage(const char *prog, int xit)
 #endif
 	fprintf(stderr, " -p portnr   | --port=portnr      port to connect to\n");
 	fprintf(stderr, " -u user     | --user=user        user id\n");
-	fprintf(stderr, " -d database | --database=database  database to connect to\n");
+	fprintf(stderr, " -d database | --database=database  database to connect to (may be URI)\n");
 
 	fprintf(stderr, " -e          | --echo             echo the query\n");
 #ifdef HAVE_ICONV
@@ -2618,6 +2619,7 @@ usage(const char *prog, int xit)
 #ifdef HAVE_POPEN
 	fprintf(stderr, " -| cmd      | --pager=cmd        for pagination\n");
 #endif
+	fprintf(stderr, " -v          | --version          show version information and exit\n");
 	fprintf(stderr, " -?          | --help             show this usage message\n");
 
 	fprintf(stderr, "\nSQL specific opions \n");
@@ -2655,7 +2657,6 @@ main(int argc, char **argv)
 	int settz = 1;
 	int autocommit = 1;	/* autocommit mode default on */
 	struct stat statb;
-	stream *config = NULL;
 	char user_set_as_flag = 0;
 	static struct option long_options[] = {
 		{"autocommit", 0, 0, 'a'},
@@ -2710,99 +2711,19 @@ main(int argc, char **argv)
 #endif
 
 	/* parse config file first, command line options override */
-	if (getenv("DOTMONETDBFILE") == NULL) {
-		if (stat(".monetdb", &statb) == 0) {
-			config = open_rastream(".monetdb");
-		} else if (getenv("HOME") != NULL) {
-			char buf[1024];
-			snprintf(buf, sizeof(buf), "%s/.monetdb", getenv("HOME"));
-			if (stat(buf, &statb) == 0) {
-				config = open_rastream(buf);
-			}
+	parse_dotmonetdb(&user, &passwd, &language, &save_history, &output, &pagewidth);
+	pagewidthset = pagewidth != 0;
+	if (language) {
+		if (strcmp(language, "sql") == 0) {
+			mode = SQL;
+		} else if (strcmp(language, "mal") == 0) {
+			mode = MAL;
+		} else if (strcmp(language, "jaql") == 0) {
+			mode = JAQL;
 		}
 	} else {
-		char *cfile = getenv("DOTMONETDBFILE");
-		if (strcmp(cfile, "") != 0) {
-			if (stat(cfile, &statb) == 0) {
-				config = open_rastream(cfile);
-			} else {
-				mnstr_printf(stderr_stream,
-					      "failed to open file '%s': %s\n",
-					      cfile, strerror(errno));
-			}
-		}
-	}
-
-	if (config != NULL) {
-		char buf[1024];
-		char *q;
-		ssize_t len;
-		int line = 0;
-		while ((len = mnstr_readline(config, buf, sizeof(buf) - 1)) > 0) {
-			line++;
-			buf[len - 1] = '\0';	/* drop newline */
-			if (buf[0] == '#' || buf[0] == '\0')
-				continue;
-			if ((q = strchr(buf, '=')) == NULL) {
-				mnstr_printf(stderr_stream, "%s:%d: syntax error: %s\n", mnstr_name(config), line, buf);
-				continue;
-			}
-			*q++ = '\0';
-			/* this basically sucks big time, as I can't easily set
-			 * a default, hence I only do things I think are useful
-			 * for now, needs a better solution */
-			if (strcmp(buf, "user") == 0) {
-				user = strdup(q);	/* leak */
-				q = NULL;
-			} else if (strcmp(buf, "password") == 0 || strcmp(buf, "passwd") == 0) {
-				passwd = strdup(q);	/* leak */
-				q = NULL;
-			} else if (strcmp(buf, "language") == 0) {
-				language = strdup(q);	/* leak */
-				if (strcmp(language, "sql") == 0) {
-					mode = SQL;
-					q = NULL;
-				} else if (strcmp(language, "mal") == 0) {
-					mode = MAL;
-					q = NULL;
-				} else if (strcmp(language, "jaql") == 0) {
-					mode = JAQL;
-					q = NULL;
-				} else {
-					/* make sure we don't set garbage */
-					mnstr_printf(stderr_stream,
-						      "%s:%d: unsupported "
-						      "language: %s\n",
-						      mnstr_name(config),
-						      line, q);
-					free(language);
-					language = NULL;
-					q = NULL;
-				}
-			} else if (strcmp(buf, "save_history") == 0) {
-				if (strcmp(q, "true") == 0 ||
-				    strcmp(q, "on") == 0)
-				{
-					save_history = 1;
-					q = NULL;
-				} else if (strcmp(q, "false") == 0 ||
-					   strcmp(q, "off") == 0)
-				{
-					save_history = 0;
-					q = NULL;
-				}
-			} else if (strcmp(buf, "format") == 0) {
-				output = strdup(q);
-			} else if (strcmp(buf, "width") == 0) {
-				pagewidth = atoi(q);
-				pagewidthset = pagewidth != 0;
-			}
-			if (q != NULL)
-				mnstr_printf(stderr_stream,
-					      "%s:%d: unknown property: %s\n",
-					      mnstr_name(config), line, buf);
-		}
-		mnstr_destroy(config);
+		language = strdup("sql");
+		mode = SQL;
 	}
 
 	while ((c = getopt_long(argc, argv, "aDNd:e"
@@ -2847,21 +2768,25 @@ main(int argc, char **argv)
 			    strcmp(optarg, "sq") == 0 ||
 				strcmp(optarg, "s") == 0)
 			{
-				language = optarg;
+				free(language);
+				language = strdup(optarg);
 				mode = SQL;
 			} else if (strcmp(optarg, "mal") == 0 ||
 				   strcmp(optarg, "ma") == 0) {
-				language = "mal";
+				free(language);
+				language = strdup("mal");
 				mode = MAL;
 			} else if (strcmp(optarg, "jaql") == 0 ||
 					strcmp(optarg, "jaq") == 0 ||
 					strcmp(optarg, "ja") == 0 ||
 					strcmp(optarg, "j") == 0)
 			{
-				language = "jaql";
+				free(language);
+				language = strdup("jaql");
 				mode = JAQL;
 			} else if (strcmp(optarg, "msql") == 0) {
-				language = "msql";
+				free(language);
+				language = strdup("msql");
 				mode = MAL;
 			} else {
 				fprintf(stderr, "language option needs to be sql or mal\n");
@@ -2872,7 +2797,9 @@ main(int argc, char **argv)
 			nullstring = optarg;
 			break;
 		case 'u':
-			user = optarg;
+			if (user)
+				free(user);
+			user = strdup(optarg);
 			user_set_as_flag = 1;
 			break;
 		case 'f':
@@ -2991,8 +2918,11 @@ main(int argc, char **argv)
 #endif /* HAVE_ICONV */
 
 	/* when config file would provide defaults */
-	if (user_set_as_flag)
+	if (user_set_as_flag) {
+		if (passwd)
+			free(passwd);
 		passwd = NULL;
+	}
 
 	if (user == NULL)
 		user = simple_prompt("user", BUFSIZ, 1, prompt_getlogin());
@@ -3009,7 +2939,19 @@ main(int argc, char **argv)
 		has_fileargs = optind != argc;
 	}
 
-	mid = mapi_connect(host, port, user, passwd, language, dbname);
+	if (dbname != NULL && strncmp(dbname, "mapi:monetdb://", 15) == 0) {
+		mid = mapi_mapiuri(dbname, user, passwd, language);
+	} else {
+		mid = mapi_mapi(host, port, user, passwd, language, dbname);
+	}
+	if (user)
+		free(user);
+	user = NULL;
+	if (passwd)
+		free(passwd);
+	passwd = NULL;
+	if (mid && mapi_error(mid) == MOK)
+		mapi_reconnect(mid);	/* actually, initial connect */
 
 	if (mid == NULL) {
 		fprintf(stderr, "failed to allocate Mapi structure\n");

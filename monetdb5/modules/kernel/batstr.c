@@ -792,7 +792,7 @@ str STRbatTail(int *ret, int *l, int *r)
 	BATiter lefti, righti;
 	BAT *bn, *left, *right;
 	BUN p,q;
-	str v, *vp= &v;
+	str v;
 
 	prepareOperand2(left,l,right,r,);
 	if( BATcount(left) != BATcount(right) )
@@ -806,8 +806,8 @@ str STRbatTail(int *ret, int *l, int *r)
 		ptr h = BUNhead(lefti,p);
 		ptr tl = BUNtail(lefti,p);
 		ptr tr = BUNtail(righti,p);
-		strTail(vp, tl, tr);
-		bunfastins(bn, h, vp);
+		strTail(&v, tl, tr);
+		bunfastins(bn, h, v);
 		GDKfree(v);
 	}
 	bn->T->nonil = 0;
@@ -827,7 +827,7 @@ str STRbatTailcst(int *ret, int *l, int *cst)
 	BATiter lefti;
 	BAT *bn, *left;
 	BUN p,q;
-	str v, *vp= &v;
+	str v;
 
 	prepareOperand(left,l,);
 	prepareResult(bn,left,TYPE_str,);
@@ -837,8 +837,8 @@ str STRbatTailcst(int *ret, int *l, int *cst)
 	BATloop(left, p, q) {
 		ptr h = BUNhead(lefti,p);
 		ptr tl = BUNtail(lefti,p);
-		strTail(vp, tl, cst);
-		bunfastins(bn, h, vp);
+		strTail(&v, tl, cst);
+		bunfastins(bn, h, v);
 		GDKfree(v);
 	}
 	bn->T->nonil = 0;
@@ -850,6 +850,7 @@ bunins_failed:
 	BBPreleaseref(*ret);
 	throw(MAL, "batstr", OPERATION_FAILED " During bulk operation");
 }
+
 str STRbatWChrAt(int *ret, int *l, int *r)
 {   
 	BATiter lefti, righti;
@@ -1004,13 +1005,12 @@ STRbatsubstringcst(int *ret, int *bid, int *start, int *length)
 	BAT *b,*bn;
 	BUN p, q;
 	str res;
-	oid o=oid_nil;
 	char *msg = MAL_SUCCEED;
 
 	if( (b= BATdescriptor(*bid)) == NULL)
 		throw(MAL, "batstr.substring",RUNTIME_OBJECT_MISSING);
-	bn= BATnew(BAThtype(b),TYPE_str, BATcount(b)/10+5);
-	BATseqbase(BATmirror(b),o);
+	bn= BATnew(TYPE_void, TYPE_str, BATcount(b)/10+5);
+	BATseqbase(bn, 0);
 	bn->hsorted = b->hsorted;
 	bn->hrevsorted = b->hrevsorted;
 	bn->tsorted = b->tsorted;
@@ -1018,14 +1018,21 @@ STRbatsubstringcst(int *ret, int *bid, int *start, int *length)
 
 	bi = bat_iterator(b);
 	BATloop(b, p, q) {
-		ptr h = BUNhead(bi, p);
 		str t =  (str) BUNtail(bi, p);
 
 		if ((msg=STRsubstring(&res, &t, start, length))) 
 			goto bunins_failed;
-		bunfastins(bn, h, (ptr)res);
+		BUNappend(bn, (ptr)res, FALSE);
 		GDKfree(res);
 	}
+
+        if (b->htype != bn->htype) {
+                BAT *r = VIEWcreate(b,bn);
+
+                BBPreleaseref(bn->batCacheid);
+                bn = r;
+        }
+
 	bn->T->nonil = 0;
 bunins_failed:
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); 
@@ -1059,15 +1066,15 @@ str STRbatsubstring(int *ret, int *l, int *r, int *t)
 	if( BATcount(left) != BATcount(length) )
 		throw(MAL, "batstr.substring", ILLEGAL_ARGUMENT " Requires bats of identical size");
 
-	bn= BATnew(left->htype,TYPE_str,BATcount(left)); 
-	if( left->htype== TYPE_void)
-		BATseqbase(bn, left->hseqbase); 
+	bn= BATnew(TYPE_void, TYPE_str,BATcount(left)); 
+	BATseqbase(bn, 0); 
 	if( bn == NULL){
 		BBPreleaseref(left->batCacheid);
 		BBPreleaseref(start->batCacheid);
 		BBPreleaseref(length->batCacheid);
 		throw(MAL, "batstr.substring", MAL_MALLOC_FAIL);
 	}
+
 	bn->hsorted= left->hsorted; 
 	bn->hrevsorted= left->hrevsorted; 
 	bn->tsorted=0; 
@@ -1077,26 +1084,24 @@ str STRbatsubstring(int *ret, int *l, int *r, int *t)
 	starti = bat_iterator(start);
 	lengthi = bat_iterator(length);
 	BATloop(left, p, q) {
-		ptr h = BUNhead(lefti,p);
 		str tl = (str) BUNtail(lefti,p);
 		int *t1 = (int *) BUNtail(starti,p);
 		int *t2 = (int *) BUNtail(lengthi,p);
 		STRsubstring(vp, &tl, t1, t2);
-		bunfastins(bn, h, *vp);
+		BUNappend(bn, *vp, FALSE);
 		GDKfree(*vp);
 	}
+        if (left->htype != bn->htype) {
+                BAT *r = VIEWcreate(left,bn);
+
+                BBPreleaseref(bn->batCacheid);
+                bn = r;
+        }
 	bn->T->nonil = 0;
 	BBPreleaseref(start->batCacheid);
 	BBPreleaseref(length->batCacheid);
 	finalizeResult(ret,bn,left);
 	return MAL_SUCCEED;
-
-bunins_failed:
-	BBPreleaseref(left->batCacheid);
-	BBPreleaseref(start->batCacheid);
-	BBPreleaseref(length->batCacheid);
-	BBPunfix(*ret);
-	throw(MAL, "batstr.substring", OPERATION_FAILED " During bulk operation");
 }
 
 batstr_export str STRbatreplace(int *ret, int *l, str *pat, str *s2);
@@ -1109,9 +1114,8 @@ str STRbatreplace(int *ret, int *l, str *pat, str *s2)
 
 	if( (left= BATdescriptor(*l)) == NULL ) 
 		throw(MAL, "batstr.replace" , RUNTIME_OBJECT_MISSING); 
-	bn= BATnew(left->htype,TYPE_str,BATcount(left)); 
-	if (left->htype== TYPE_void)
-		BATseqbase(bn, left->hseqbase); 
+	bn= BATnew(TYPE_void, TYPE_str,BATcount(left)); 
+	BATseqbase(bn, 0); 
 	if (bn == NULL){
 		BBPreleaseref(left->batCacheid);
 		throw(MAL, "batstr.replace", MAL_MALLOC_FAIL);
@@ -1123,20 +1127,20 @@ str STRbatreplace(int *ret, int *l, str *pat, str *s2)
 
 	li = bat_iterator(left);
 	BATloop(left, p, q) {
-		ptr h = BUNhead(li,p);
 		str tl = (str) BUNtail(li,p);
 		STRreplace(vp, &tl, pat, s2);
-		bunfastins(bn, h, *vp);
+		BUNappend(bn, *vp, FALSE);
 		GDKfree(*vp);
 	}
+        if (left->htype != bn->htype) {
+                BAT *r = VIEWcreate(left,bn);
+
+                BBPreleaseref(bn->batCacheid);
+                bn = r;
+        }
 	bn->T->nonil = 0;
 	finalizeResult(ret,bn,left);
 	return MAL_SUCCEED;
-
-bunins_failed:
-	BBPreleaseref(left->batCacheid);
-	BBPunfix(*ret);
-	throw(MAL, "batstr.replace", OPERATION_FAILED " During bulk operation");
 }
 
 

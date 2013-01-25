@@ -121,10 +121,7 @@ str DCdeleteUpperSlice(int *ret, int *bid, int *pos)
 	assert(b != NULL);
 
 	/* remove Hashes etc */
-	if (b->H->hash)
-		HASHremove(b);
-	if (b->T->hash)
-		HASHremove(BATmirror(b));
+	HASHdestroy(b);
 
 	size = BATcount(b);
 	writerT = (int *) Tloc(b, BUNfirst(b));
@@ -166,10 +163,7 @@ str DCreplaceTailBasedOnHead(int *ret, int *res, int *bid)
 
 
 	/* remove Hashes etc */
-	if (r->H->hash)
-		HASHremove(r);
-	if (r->T->hash)
-		HASHremove(BATmirror(r));
+	HASHdestroy(r);
 
 	size_r = BATcount(r);
 	size_b = BATcount(b);

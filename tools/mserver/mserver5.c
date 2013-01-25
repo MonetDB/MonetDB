@@ -76,15 +76,14 @@ mserver_abort()
 }
 #endif
 
-static void usage(char *prog)
+static void usage(char *prog, int xit)
 __attribute__((__noreturn__));
 
 static void
-usage(char *prog)
+usage(char *prog, int xit)
 {
 	fprintf(stderr, "Usage: %s [options] [scripts]\n", prog);
-	fprintf(stderr, "    --dbname=<database_name>  Specify database name\n");
-	fprintf(stderr, "    --dbfarm=<directory>      Specify database location\n");
+	fprintf(stderr, "    --dbpath=<directory>      Specify database location\n");
 	fprintf(stderr, "    --dbinit=<stmt>           Execute statement at startup\n");
 	fprintf(stderr, "    --config=<config_file>    Use config_file to read options from\n");
 	fprintf(stderr, "    --daemon=yes|no           Do not read commands from standard input [no]\n");
@@ -103,13 +102,15 @@ usage(char *prog)
 	fprintf(stderr, "     --transactions\n");
 	fprintf(stderr, "     --modules\n");
 	fprintf(stderr, "     --algorithms\n");
+#if 0
 	fprintf(stderr, "     --xproperties\n");
+#endif
 	fprintf(stderr, "     --performance\n");
 	fprintf(stderr, "     --optimizers\n");
 	fprintf(stderr, "     --forcemito\n");
 	fprintf(stderr, "     --debug=<bitmask>\n");
 
-	exit(0);
+	exit(xit);
 }
 
 static void
@@ -145,7 +146,7 @@ monet_hello(void)
 	printf("# Found %.3f %ciB available main-memory.\n",
 			sz_mem_h, qc[qi]);
 #ifdef MONET_GLOBAL_DEBUG
-	printf("# Database farm:%s\n", GDKgetenv("gdk_dbfarm"));
+	printf("# Database path:%s\n", GDKgetenv("gdk_dbpath"));
 	printf("# Module path:%s\n", GDKgetenv("monet_mod_path"));
 #endif
 	printf("# Copyright (c) 1993-July 2008 CWI.\n");
@@ -215,27 +216,27 @@ main(int argc, char **av)
 
 	static struct option long_options[] = {
 		{ "config", 1, 0, 'c' },
-		{ "dbname", 1, 0, 0 },
-		{ "dbfarm", 1, 0, 0 },
+		{ "dbpath", 1, 0, 0 },
 		{ "dbinit", 1, 0, 0 },
 		{ "daemon", 1, 0, 0 },
 		{ "debug", 2, 0, 'd' },
-		{ "help", 0, 0, 'h' },
+		{ "help", 0, 0, '?' },
 		{ "version", 0, 0, 0 },
 		{ "readonly", 0, 0, 'r' },
 		{ "single-user", 0, 0, 0 },
 		{ "set", 1, 0, 's' },
-		{ "trace", 0, 0, 't' },
 		{ "threads", 0, 0, 0 },
 		{ "memory", 0, 0, 0 },
 		{ "properties", 0, 0, 0 },
 		{ "io", 0, 0, 0 },
-		{ "transaction", 0, 0, 0 },
+		{ "transactions", 0, 0, 0 },
 		{ "modules", 0, 0, 0 },
 		{ "algorithms", 0, 0, 0 },
 		{ "optimizers", 0, 0, 0 },
 		{ "performance", 0, 0, 0 },
+#if 0
 		{ "xproperties", 0, 0, 0 },
+#endif
 		{ "forcemito", 0, 0, 0 },
 		{ "heaps", 0, 0, 0 },
 		{ 0, 0, 0, 0 }
@@ -277,12 +278,12 @@ main(int argc, char **av)
 	binpath = get_bin_path();
 
 	if (!(setlen = mo_builtin_settings(&set)))
-		usage(prog);
+		usage(prog, -1);
 
 	for (;;) {
 		int option_index = 0;
 
-		int c = getopt_long(argc, av, "c:d::t:rh?s:m:i:a:e:x:h",
+		int c = getopt_long(argc, av, "c:d::rs:?",
 				long_options, &option_index);
 
 		if (c == -1)
@@ -290,12 +291,8 @@ main(int argc, char **av)
 
 		switch (c) {
 		case 0:
-			if (strcmp(long_options[option_index].name, "dbname") == 0) {
-				setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_dbname", optarg);
-				break;
-			}
-			if (strcmp(long_options[option_index].name, "dbfarm") == 0) {
-				setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_dbfarm", optarg);
+			if (strcmp(long_options[option_index].name, "dbpath") == 0) {
+				setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_dbpath", optarg);
 				break;
 			}
 			if (strcmp(long_options[option_index].name, "dbinit") == 0) {
@@ -332,10 +329,12 @@ main(int argc, char **av)
 				grpdebug |= GRPoptimizers;
 				break;
 			}
+#if 0
 			if (strcmp(long_options[option_index].name, "xproperties") == 0) {
 				grpdebug |= GRPxproperties;
 				break;
 			}
+#endif
 			if (strcmp(long_options[option_index].name, "forcemito") == 0) {
 				grpdebug |= GRPforcemito;
 				break;
@@ -368,7 +367,7 @@ main(int argc, char **av)
 				grpdebug |= GRPheaps;
 				break;
 			}
-			usage(prog);
+			usage(prog, -1);
 		/* not reached */
 		case 'c':
 			setlen = mo_add_option(&set, setlen, opt_cmdline, "config", optarg);
@@ -395,22 +394,20 @@ main(int argc, char **av)
 			}
 		}
 		break;
-		case 't':   /* trace option, ignored to reduce testweb complaints
-			           fprintf(stderr, "#warning: trace option not yet supported\n");
-			         */
-			break;
-		case 'h':
 		case '?':
-			usage(prog);
+			/* a bit of a hack: look at the option that the
+			   current `c' is based on and see if we recognize
+			   it: if -? or --help, exit with 0, else with -1 */
+			usage(prog, strcmp(av[optind - 1], "-?") == 0 || strcmp(av[optind - 1], "--help") == 0 ? 0 : -1);
 		default:
 			fprintf(stderr, "ERROR: getopt returned character "
 							"code '%c' 0%o\n", c, c);
-			usage(prog);
+			usage(prog, -1);
 		}
 	}
 
 	if (!(setlen = mo_system_config(&set, setlen)))
-		usage(prog);
+		usage(prog, -1);
 
 	if (debug || grpdebug) {
 		long_str buf;
@@ -482,8 +479,8 @@ main(int argc, char **av)
 			GDKsetenv("monet_mod_path", modpath);
 	}
 
-	/* configure sabaoth to use the right dbfarm and active database */
-	msab_init(GDKgetenv("gdk_dbfarm"), GDKgetenv("gdk_dbname"));
+	/* configure sabaoth to use the right dbpath and active database */
+	msab_dbpathinit(GDKgetenv("gdk_dbpath"));
 	/* wipe out all cruft, if left over */
 	if ((err = msab_wildRetreat()) != NULL) {
 		/* just swallow the error */

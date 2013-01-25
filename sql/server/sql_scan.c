@@ -25,7 +25,6 @@
 #include "sql_symbol.h"
 #include "sql_mvc.h"
 #include "sql_parser.tab.h"
-#include "sql_statement.h"
 #include "sql_semantic.h"
 #include "sql_parser.h"		/* for sql_error() */
 
@@ -805,12 +804,13 @@ int scanner_symbol(mvc * c, int cur)
 		lc->started = 1;
 		utf8_putchar(lc, next); 
 		return scanner_token(lc, cur);
+	case '~': /* binary not */
+	case '^': /* binary xor */
+	case '&': /* binary and */
 	case '*':
 	case '?':
 	case '%':
-	case '^':
 	case '+':
-	case '&':
 	case '(':
 	case ')':
 	case ',':
@@ -861,7 +861,7 @@ int scanner_symbol(mvc * c, int cur)
 			cur = '.';
 			return number(c, cur);
 		}
-	case '|':
+	case '|': /* binary or or string concat */
 		lc->started = 1;
 		cur = scanner_getc(lc);
 		if (cur == '|') {
@@ -1017,7 +1017,7 @@ sqllex(YYSTYPE * yylval, void *parm)
 	if (token == UNION) {
 		int next = sqllex(yylval, parm);
 
-		if (token == JOIN) {
+		if (next == JOIN) {
 			token = UNIONJOIN;
 		} else {
 			lc->yynext = next;

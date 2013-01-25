@@ -7,7 +7,10 @@ import tempfile
 import copy
 import atexit
 import threading
-import Queue
+if sys.version[:1] == '2':
+    import Queue as queue
+else:
+    import queue
 
 from subprocess import PIPE
 
@@ -44,6 +47,7 @@ _mal_client = splitcommand(os.getenv('MAL_CLIENT', 'mclient -lmal'))
 _sql_client = splitcommand(os.getenv('SQL_CLIENT', 'mclient -lsql'))
 _sql_dump = splitcommand(os.getenv('SQL_DUMP', 'msqldump -q'))
 _server = splitcommand(os.getenv('MSERVER', ''))
+_dbfarm = os.getenv('GDK_DBFARM', None)
 
 _dotmonetdbfile = []
 
@@ -59,10 +63,10 @@ atexit.register(_delfiles)
 class _BufferedPipe:
     def __init__(self, fd, waitfor = None, skip = None):
         self._pipe = fd
-        self._queue = Queue.Queue()
+        self._queue = queue.Queue()
         self._eof = False
         if waitfor is not None:
-            self._wfq = Queue.Queue()
+            self._wfq = queue.Queue()
         else:
             self._wfq = None
         self._thread = threading.Thread(target = self._readerthread,
@@ -270,24 +274,24 @@ def client(lang, args = [], stdin = None, stdout = None, stderr = None,
                 break
         cmd.append('--host=%s' % host)
     if verbose:
-        print 'Executing', ' '.join(cmd +  args)
+        sys.stdout.write('Executing' + ' '.join(cmd +  args) + '\n')
         sys.stdout.flush()
     if log:
         prompt = time.strftime('# %H:%M:%S >  ')
         cmdstr = ' '.join(cmd +  args)
         if hasattr(stdin, 'name'):
             cmdstr += ' < "%s"' % stdin.name
-        print
-        print prompt
-        print '%s%s' % (prompt, cmdstr)
-        print prompt
-        print
+        sys.stdout.write('\n')
+        sys.stdout.write(prompt + '\n')
+        sys.stdout.write('%s%s\n' % (prompt, cmdstr))
+        sys.stdout.write(prompt + '\n')
+        sys.stdout.write('\n')
         sys.stdout.flush()
-        print >> sys.stderr
-        print >> sys.stderr, prompt
-        print >> sys.stderr, '%s%s' % (prompt, cmdstr)
-        print >> sys.stderr, prompt
-        print >> sys.stderr
+        sys.stderr.write('\n')
+        sys.stderr.write(prompt + '\n')
+        sys.stderr.write('%s%s\n' % (prompt, cmdstr))
+        sys.stderr.write(prompt + '\n')
+        sys.stderr.write('\n')
         sys.stderr.flush()
     if stdin is None:
         # if no input provided, use /dev/null as input
@@ -319,8 +323,7 @@ def server(args = [], stdin = None, stdout = None, stderr = None,
         cmd = ['mserver5',
                '--set', 'mapi_open=true',
                '--set', 'gdk_nr_threads=1',
-               '--set', 'monet_prompt=',
-               '--trace']
+               '--set', 'monet_prompt=']
     if notrace and '--trace' in cmd:
         cmd.remove('--trace')
     if dbinit is not None:
@@ -334,36 +337,46 @@ def server(args = [], stdin = None, stdout = None, stderr = None,
                 break
         cmd.append('--set')
         cmd.append('mapi_port=%d' % int(mapiport))
+    for i in range(len(cmd)):
+        if cmd[i][:9] == '--dbpath=':
+            dbpath = cmd[i][9:]
+            del cmd[i]
+            break
+        elif cmd[i] == '--dbpath':
+            dbpath = cmd[i+1]
+            del cmd[i:i+2]
+            break
+    else:
+        dbpath = None
+    if dbname is None and dbfarm is not None:
+        dbname = 'demo'
     if dbname is not None:
-        cmd.append('--set')
-        cmd.append('gdk_dbname=%s' % dbname)
-    if dbfarm is not None:
-        for i in range(len(cmd)):
-            if cmd[i][:11] == 'gdk_dbfarm=':
-                del cmd[i]
-                del cmd[i - 1]
-                break
-        cmd.append('--set')
-        cmd.append('gdk_dbfarm=%s' % dbfarm)
+        if dbfarm is None:
+            if _dbfarm is None:
+                raise RuntimeError('no dbfarm known')
+            dbfarm = _dbfarm
+        dbpath = os.path.join(dbfarm, dbname)
+    if dbpath is not None:
+        cmd.append('--dbpath=%s' % dbpath)
     if verbose:
-        print 'Executing', ' '.join(cmd +  args)
+        sys.stdout.write('Executing' + ' '.join(cmd +  args) + '\n')
         sys.stdout.flush()
     if log:
         prompt = time.strftime('# %H:%M:%S >  ')
         cmdstr = ' '.join(cmd +  args)
         if hasattr(stdin, 'name'):
             cmdstr += ' < "%s"' % stdin.name
-        print
-        print prompt
-        print '%s%s' % (prompt, cmdstr)
-        print prompt
-        print
+        sys.stdout.write('\n')
+        sys.stdout.write(prompt + '\n')
+        sys.stdout.write('%s%s\n' % (prompt, cmdstr))
+        sys.stdout.write(prompt + '\n')
+        sys.stdout.write('\n')
         sys.stdout.flush()
-        print >> sys.stderr
-        print >> sys.stderr, prompt
-        print >> sys.stderr, '%s%s' % (prompt, cmdstr)
-        print >> sys.stderr, prompt
-        print >> sys.stderr
+        sys.stderr.write('\n')
+        sys.stderr.write(prompt + '\n')
+        sys.stderr.write('%s%s\n' % (prompt, cmdstr))
+        sys.stderr.write(prompt + '\n')
+        sys.stderr.write('\n')
         sys.stderr.flush()
     p = Popen(cmd + args,
               stdin = stdin,

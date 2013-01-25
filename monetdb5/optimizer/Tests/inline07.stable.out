@@ -28,7 +28,7 @@ end main;
 function user.qry():void;               #  0 qry:void := user.qry() {G}
     b := bat.new(:oid,:int);            #  1 b:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}
     bat.insert(b,0@0,1);                #  2 _4:bat[:oid,:int] := BKCinsert_bun(b:bat[:oid,:int], _5:oid, _6:int) {G}
-    X_13 := aggr.sum(b);                #  3 _13:dbl := aggr.sum(b:bat[:oid,:int]) {G}
+    X_13 := aggr.sum(b);                #  3 _13:dbl := CMDBATsum(b:bat[:oid,:int]) {G}
     X_14 := batcalc.+(b,X_13);          #  4 _14:bat[:oid,:dbl] := CMDbatADDsignal(b:bat[:oid,:int], _13:dbl) {G}
     z:bat[:oid,:dbl] {inline} := X_14;  #  5 z:bat[:oid,:dbl] := _14:bat[:oid,:dbl] {G}
 end qry;                                #  6  

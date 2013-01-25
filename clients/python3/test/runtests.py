@@ -23,6 +23,17 @@ import sys
 import os
 import logging
 
+try:
+    import monetdb.sql
+except ImportError:
+    logging.warning("monetdb python API not found, using local monetdb python API")
+    import sys
+    import os
+    here = os.path.dirname(__file__)
+    parent = os.path.join(here, os.pardir)
+    sys.path.append(parent)
+    import monetdb.sql
+
 import capabilities
 import dbapi20
 
@@ -38,17 +49,6 @@ if os.environ.get("TSTDEBUG", "no") == "yes":
     logging.basicConfig(level=logging.DEBUG)
     logger = logging.getLogger('monetdb')
 
-try:
-    import monetdb.sql
-except ImportError:
-    logging.warning("monetdb python API not found, using local monetdb python API")
-    import sys
-    import os
-    here = os.path.dirname(__file__)
-    parent = os.path.join(here, os.pardir)
-    sys.path.append(parent)
-    import monetdb.sql
-
 
 class TextTestRunnerNoTime(unittest.TextTestRunner):
     """A test runner class that displays results in textual form, but without time """
@@ -63,7 +63,7 @@ class TextTestRunnerNoTime(unittest.TextTestRunner):
         self.stream.writeln()
         if not result.wasSuccessful():
             self.stream.write("FAILED (")
-            failed, errored = map(len, (result.failures, result.errors))
+            failed, errored = list(map(len, (result.failures, result.errors)))
             if failed:
                 self.stream.write("failures=%d" % failed)
             if errored:
@@ -89,23 +89,17 @@ class Test_DBAPI20(dbapi20.DatabaseAPI20Test):
     connect_kwargs = dict(database=TSTDB, port=MAPIPORT, hostname=TSTHOSTNAME,
             username=TSTUSERNAME, password=TSTPASSWORD, autocommit=False)
 
-    def test_Exceptions(self):
-        # we override this since StandardError is depricated in python 3
-        self.assertTrue(issubclass(self.driver.Warning,Exception))
-        self.assertTrue(issubclass(self.driver.Error,Exception))
-        self.assertTrue(issubclass(self.driver.InterfaceError, self.driver.Error))
-        self.assertTrue(issubclass(self.driver.DatabaseError, self.driver.Error))
-        self.assertTrue(issubclass(self.driver.OperationalError, self.driver.Error))
-        self.assertTrue(issubclass(self.driver.IntegrityError, self.driver.Error))
-        self.assertTrue(issubclass(self.driver.InternalError, self.driver.Error))
-        self.assertTrue(issubclass(self.driver.ProgrammingError, self.driver.Error))
-        self.assertTrue(issubclass(self.driver.NotSupportedError, self.driver.Error))
-
 if __name__ == '__main__':
-    suite1 = unittest.TestLoader().loadTestsFromTestCase(Test_Capabilities)
-    TextTestRunnerNoTime(verbosity=3).run(suite1)
-    suite2 = unittest.TestLoader().loadTestsFromTestCase(Test_DBAPI20)
-    TextTestRunnerNoTime(verbosity=3).run(suite2)
+    suites = [
+        Test_Capabilities,
+        Test_DBAPI20,
+    ]
+
+    for suite in suites:
+        tests = unittest.TestLoader().loadTestsFromTestCase(suite)
+        TextTestRunnerNoTime(verbosity=3).run(tests)
+
+
 
 
 

@@ -187,7 +187,7 @@ str TRADERmakeBid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	/* log bidding */
 	if ( biddingLog == NULL) {
-		sprintf(fname,"%s/%s/bidding.log",GDKgetenv("gdk_dbfarm"),GDKgetenv("gdk_dbname"));
+		sprintf(fname,"%s%cbidding.log", GDKgetenv("gdk_dbpath"), DIR_SEP);
 		biddingLog = fname;
 	}
 	s = append_wastream(biddingLog);

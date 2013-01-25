@@ -58,7 +58,7 @@ jaql_import void GDKfree(const char *);
 %start stmt
 
 %token EACH FILTER TRANSFORM EXPAND GROUP INTO BY AS JOIN WHERE IN
-%token SORT TOP DESC ASC EXPLAIN PLAN PLANF DEBUG UNROLL PRESERVE
+%token SORT TOP DESC ASC EXPLAIN PLAN PLANF DEBUG TRACE TIME UNROLL PRESERVE
 
 %token ARROW ASSIGN EQUALS NEQUAL TRUE FALSE NIL
 %token GREATER GEQUAL LESS LEQUAL NOT AND OR
@@ -130,19 +130,39 @@ stmt: jaql ';'
 	| PLAN jaql ';'
 	{
 		j->p = $2;
-		j->explain = 2;
+		j->plan = 1;
 		YYACCEPT;
 	}
 	| PLANF jaql ';'
 	{
 		j->p = $2;
-		j->explain = 3;
+		j->planf = 1;
 		YYACCEPT;
 	}
 	| DEBUG jaql ';'
 	{
 		j->p = $2;
-		j->explain = 4;
+		j->debug = 1;
+		YYACCEPT;
+	}
+	| TRACE INTO IDENT jaql ';'
+	{
+		j->p = make_json_output($3);
+		j->p->next = $4;
+		j->trace = 1;
+		YYACCEPT;
+	}
+	| TRACE jaql ';'
+	{
+		j->p = make_json_output(NULL);
+		j->p->next = $2;
+		j->trace = 1;
+		YYACCEPT;
+	}
+	| TIME jaql ';'
+	{
+		j->p = $2;
+		j->time = 1;
 		YYACCEPT;
 	}
 	| error ';'
@@ -153,8 +173,8 @@ stmt: jaql ';'
 		YYACCEPT;
 	};
 
-jaql: jaqlpipe                  {$$ = append_jaql_pipe($1, make_json_output(NULL));}
-	| IDENT ASSIGN jaqlpipe     {$$ = append_jaql_pipe($3, make_json_output($1));}
+jaql: jaqlpipe              {$$ = append_jaql_pipe($1, make_json_output(NULL));}
+	| IDENT ASSIGN jaqlpipe {$$ = append_jaql_pipe($3, make_json_output($1));}
 	;
 
 jaqlpipe: IDENT opt_actions     {$$ = append_jaql_pipe(make_varname($1), $2);}
@@ -338,7 +358,7 @@ arr_list: arr_list ',' val_var_arith  {$$ = append_elem($1, $3);}
 
 obj_pair: variable                    {$$ = make_pair(NULL, $1);}
 		| variable '.' '*'            {$$ = make_pair(NULL, append_varname($1, NULL));}
-		| STRING ':' val_var_arith    {$$ = make_pair($1, $3);}
+		| STRING ':' json_value       {$$ = make_pair($1, $3);}
 		;
 
 json_value: val_var_arith             {$$ = $1;}

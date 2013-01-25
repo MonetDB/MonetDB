@@ -48,7 +48,7 @@
 
 /**
  * Parses the given file stream matching the keys from list.  If a match
- * is found, the value is set in list->value.  Values are GDKmalloced.
+ * is found, the value is set in list->value.  Values are malloced.
  */
 void
 readConfFile(confkeyval *list, FILE *cnf) {
@@ -130,7 +130,7 @@ getConfNum(confkeyval *list, char *key) {
  * Sets the value in the given confkeyval struct to val ensuring it is
  * of the desired type.  In case of type BOOL, val is converted to "yes"
  * or "no", based on val.  If the type does not match, this function
- * returns a GDKmalloced diagnostic message, or if everything is
+ * returns a malloced diagnostic message, or if everything is
  * successful, NULL.  If val is NULL, this function always returns
  * successful and unsets the value for the given key.  Upon an error,
  * the original value for the key is left untouched.
@@ -228,7 +228,15 @@ secondsToString(char *buf, time_t t, int longness)
 	time_t p;
 	size_t i = 0;
 
-	p = 1 * 60 * 60 * 24 * 7;
+	p = 1 * 60 * 60 * 24 * 7 * 52;
+	if (t > p) {
+		i += sprintf(buf + i, "%dy", (int)(t / p));
+		t -= (t / p) * p;
+		if (--longness == 0)
+			return;
+		buf[i++] = ' ';
+	}
+	p /= 52;
 	if (t > p) {
 		i += sprintf(buf + i, "%dw", (int)(t / p));
 		t -= (t / p) * p;
@@ -335,6 +343,7 @@ generatePassphraseFile(char *path)
 		char err[512];
 		snprintf(err, sizeof(err), "unable to open '%s': %s",
 				path, strerror(errno));
+		return(strdup(err));
 	}
 
 	generateSalt(buf, len);

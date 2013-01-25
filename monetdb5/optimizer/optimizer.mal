@@ -211,7 +211,7 @@ pattern optimizer.groups(mod:str, fcn:str):str
 address OPTwrapper
 comment "Join path constructor";
 
-pattern group.multicolumns(l:bat[:oid,:any]...)(grp:bat[:oid,:any],ext:bat[:oid,:any])
+pattern group.multicolumns(l:bat[:oid,:any]...)(ref:bat[:oid,:oid],grp:bat[:oid,:any],ext:bat[:oid,:any])
 address GRPmulticolumngroup
 comment "Derive a group index over multiple columns.";
 
@@ -288,6 +288,10 @@ pattern algebra.leftjoinPath(l:bat[:any,:any]...):bat[:any,:any]
 address ALGjoinPath
 comment "Routine to handle join paths.  The type analysis is rather tricky.";
 
+pattern algebra.leftfetchjoinPath(l:bat[:any,:any]...):bat[:any,:any]
+address ALGjoinPath
+comment "Routine to handle join paths.  The type analysis is rather tricky.";
+
 pattern algebra.semijoinPath(l:bat[:any,:any]...):bat[:any,:any]
 address ALGjoinPath
 comment "Routine to handle join paths.  The type analysis is rather tricky.";
@@ -353,6 +357,13 @@ comment "Compiler for multiplexed instructions.";
 pattern optimizer.multiplex(mod:str,fcn:str):void
 address OPTwrapper
 comment "Compiler for multiplexed instructions.";
+
+#opt_matpack
+pattern optimizer.matpack():str
+address OPTwrapper;
+pattern optimizer.matpack(mod:str, fcn:str):str
+address OPTwrapper
+comment "Unroll the mat.pack operation";
 
 #opt_octopus.mal
 module octopus;
@@ -491,5 +502,13 @@ comment "Collect trace of a specific operation";
 pattern mdb.collect(v:any_1):void
 address OPTtraceCall
 comment "Dump the previous instruction to a temporary file";
+
+#opt_pushranges.mal
+
+pattern optimizer.pushselect():str
+address OPTwrapper;
+pattern optimizer.pushselect(mod:str, fcn:str):str
+address OPTwrapper
+comment "Push selects down projections";
 
 optimizer.prelude();

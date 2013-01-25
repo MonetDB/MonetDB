@@ -127,7 +127,7 @@ read_from_stream(jsonbat *jb, char **pos, char **start, char **recall)
 
 	shift = *pos - jb->streambuf;
 	if (*pos == jb->streambuf + jb->streambuflen - 1) {
-		size_t rshift = *recall - jb->streambuf;
+		size_t rshift = recall != NULL ? *recall - jb->streambuf : 0;
 		char *newbuf = realloc(jb->streambuf, jb->streambuflen += 8096);
 		if (newbuf == NULL)
 			return 0;
@@ -470,10 +470,9 @@ parse_json_array(jsonbat *jb, oid *id, char *p)
 }
 
 #define loadbat(name) \
-	jb.name = BBPquickdesc(ABS(*name), FALSE); \
+	jb.name = BATdescriptor(ABS(*name)); \
 	if (*name < 0) \
-		jb.name = BATmirror(jb.name); \
-	BBPfix(*name);
+		jb.name = BATmirror(jb.name);
 #define loadbats() \
 	loadbat(kind); \
 	loadbat(string); \
@@ -799,22 +798,26 @@ print_json_value(jsonbat *jb, stream *s, oid id, int indent)
 }
 
 str
-JSONprint(int *ret, stream **s, int *kind, int *string, int *integer, int *doble, int *array, int *object, int *name, bit *pretty)
+JSONprint(int *ret, stream **s, int *kind, int *string, int *integer, int *doble, int *array, int *object, int *name, oid *start, bit *pretty)
 {
 	jsonbat jb;
 	BATiter bi;
+	BUN startoid;
 
 	loadbats();
 
 	bi = bat_iterator(jb.kind);
+	BUNfndOID(startoid, bi, start);
+	if (startoid == BUN_NONE)
+		throw(ILLARG, "json.print", "start must be a valid oid from kind");
 
-	if (*pretty == TRUE && *(char *)BUNtail(bi, BUNfirst(jb.kind)) == 'a') {
+	if (*pretty == TRUE && *(char *)BUNtail(bi, startoid) == 'a') {
 		BAT *elems;
 		BUN p, q;
 		size_t esize = 0, fsize = 0;
 		int indent;
 		char first = 1;
-		oid id = *(oid *)BUNhead(bi, BUNfirst(jb.kind));
+		oid id = *(oid *)BUNhead(bi, startoid);
 
 		/* look into the first array's members to see if breaking up is
 		 * going to be necessary */
@@ -858,7 +861,7 @@ JSONprint(int *ret, stream **s, int *kind, int *string, int *integer, int *doble
 		}
 		mnstr_printf(*s, "%c]\n", indent >= 0 ? '\n' : ' ');
 	} else {
-		print_json_value(&jb, *s, *(oid *)BUNhead(bi, BUNfirst(jb.kind)), -1);
+		print_json_value(&jb, *s, *(oid *)BUNhead(bi, startoid), -1);
 		mnstr_printf(*s, "\n");
 	}
 
@@ -869,7 +872,7 @@ JSONprint(int *ret, stream **s, int *kind, int *string, int *integer, int *doble
 }
 
 str
-JSONexportResult(int *ret, stream **s, int *kind, int *string, int *integer, int *doble, int *array, int *object, int *name)
+JSONexportResult(int *ret, stream **s, int *kind, int *string, int *integer, int *doble, int *array, int *object, int *name, oid *start)
 {
 	stream *f;
 	buffer *bufstr = NULL;
@@ -881,7 +884,7 @@ JSONexportResult(int *ret, stream **s, int *kind, int *string, int *integer, int
 
 	bufstr = buffer_create(8096);
 	f = buffer_wastream(bufstr, "bufstr_write");
-	JSONprint(ret, &f, kind, string, integer, doble, array, object, name, &pretty);
+	JSONprint(ret, &f, kind, string, integer, doble, array, object, name, start, &pretty);
 
 	/* calculate width of column, and the number of tuples */
 	buf = buffer_get_buf(bufstr);
@@ -987,7 +990,7 @@ JSONload(int *kind, int *string, int *integer, int *doble, int *array, int *obje
 	snprintf(buf, sizeof(buf), "json_%s_kind", *nme);
 	bid = BBPindex(buf);
 	if (!bid)
-		throw(MAL, "json.store",
+		throw(MAL, "json.load",
 				"no such JSON object with name: %s", *nme);
 
 	*kind = bid;
@@ -1034,6 +1037,14 @@ JSONload(int *kind, int *string, int *integer, int *doble, int *array, int *obje
 		*name = 0;
 	}
 
+	/* incref for MAL interpreter ref */
+	BBPincref(*kind, TRUE);
+	BBPincref(*string, TRUE);
+	BBPincref(*integer, TRUE);
+	BBPincref(*doble, TRUE);
+	BBPincref(*array, TRUE);
+	BBPincref(*object, TRUE);
+	BBPincref(*name, TRUE);
 	return MAL_SUCCEED;
 }
 
@@ -1042,60 +1053,52 @@ JSONdrop(int *ret, str *name)
 {
 	char buf[256];
 	int bid;
-	BAT *t;
 	bat blist[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
 	int bcnt = 1;
 
 	snprintf(buf, sizeof(buf), "json_%s_kind", *name);
 	bid = BBPindex(buf);
 	if (!bid)
-		throw(MAL, "json.store",
+		throw(MAL, "json.drop",
 				"no such JSON object with name: %s", *name);
 
-	t = BBPquickdesc(ABS(bid), FALSE);
-	BATmode(t, TRANSIENT);
+	BBPclear(bid);
 	blist[bcnt++] = ABS(bid);
 
 	snprintf(buf, sizeof(buf), "json_%s_string", *name);
 	bid = BBPindex(buf);
 	if (bid) {
-		t = BBPquickdesc(ABS(bid), FALSE);
-		BATmode(t, TRANSIENT);
+		BBPclear(bid);
 		blist[bcnt++] = ABS(bid);
 	}
 	snprintf(buf, sizeof(buf), "json_%s_integer", *name);
 	bid = BBPindex(buf);
 	if (bid) {
-		t = BBPquickdesc(ABS(bid), FALSE);
-		BATmode(t, TRANSIENT);
+		BBPclear(bid);
 		blist[bcnt++] = ABS(bid);
 	}
 	snprintf(buf, sizeof(buf), "json_%s_doble", *name);
 	bid = BBPindex(buf);
 	if (bid) {
-		t = BBPquickdesc(ABS(bid), FALSE);
-		BATmode(t, TRANSIENT);
+		BBPclear(bid);
 		blist[bcnt++] = ABS(bid);
 	}
 	snprintf(buf, sizeof(buf), "json_%s_array", *name);
 	bid = BBPindex(buf);
 	if (bid) {
-		t = BBPquickdesc(ABS(bid), FALSE);
-		BATmode(t, TRANSIENT);
+		BBPclear(bid);
 		blist[bcnt++] = ABS(bid);
 	}
 	snprintf(buf, sizeof(buf), "json_%s_object", *name);
 	bid = BBPindex(buf);
 	if (bid) {
-		t = BBPquickdesc(ABS(bid), FALSE);
-		BATmode(t, TRANSIENT);
+		BBPclear(bid);
 		blist[bcnt++] = ABS(bid);
 	}
 	snprintf(buf, sizeof(buf), "json_%s_name", *name);
 	bid = BBPindex(buf);
 	if (bid) {
-		t = BBPquickdesc(ABS(bid), FALSE);
-		BATmode(t, TRANSIENT);
+		BBPclear(bid);
 		blist[bcnt++] = ABS(bid);
 	}
 
@@ -1108,7 +1111,7 @@ JSONdrop(int *ret, str *name)
 static oid
 json_copy_entry(BATiter bik, BATiter bis, BATiter bii, BATiter bid, BATiter bia, BATiter bio, BATiter bin, oid start, oid v, jsonbat *jb, jsonbat *jbr)
 {
-	oid w, x;
+	BUN w, x;
 	bte k;
 
 	BUNfndOID(w, bik, &v);
@@ -1135,8 +1138,8 @@ json_copy_entry(BATiter bik, BATiter bis, BATiter bii, BATiter bid, BATiter bia,
 			/* nothing to do here */
 			break;
 		case 'o': {
-			BUN p, q;
-			oid y, z;
+			BUN p, q, y;
+			oid z;
 			BATloop (jb->object, p, q) {
 				if (*(oid *)BUNhead(bio, p) != v)
 					continue;
@@ -1365,8 +1368,8 @@ JSONunwrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	jsonbat jb;
 	BATiter bi, bis, bii, bid, ci;
 	BAT *b, *c, *r = NULL;
-	BUN p, q, t, u;
-	oid v = 0, x;
+	BUN p, q, t, u, x;
+	oid v = 0;
 	lng l;
 	dbl d;
 	str s;
@@ -1404,7 +1407,27 @@ JSONunwrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	b = BATselect(BATmirror(jb.array), BUNhead(bi, p), NULL);
 	b = BATsemijoin(jb.kind, b);
 	bi = bat_iterator(b);
-	assert(BATcount(b) != 0);
+
+	if (BATcount(b) == 0) {
+		/* input empty, return empty result */
+		unloadbats();
+		switch (tpe->vtype) {
+			case TYPE_str:
+				r = BATnew(TYPE_oid, TYPE_str, 0);
+				break;
+			case TYPE_dbl:
+				r = BATnew(TYPE_oid, TYPE_dbl, 0);
+				break;
+			case TYPE_lng:
+				r = BATnew(TYPE_oid, TYPE_lng, 0);
+				break;
+			default:
+				assert(0); /* should not happen, checked above */
+		}
+		BBPkeepref(r->batCacheid);
+		*ret = r->batCacheid;
+		return MAL_SUCCEED;
+	}
 
 	/* special case for when the argument is a single array */
 	c = BATantiuselect_(b, "a", NULL, TRUE, TRUE);

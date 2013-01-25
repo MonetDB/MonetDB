@@ -52,6 +52,8 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import nl.cwi.monetdb.jdbc.types.INET;
+import nl.cwi.monetdb.jdbc.types.URL;
 import nl.cwi.monetdb.mcl.MCLException;
 import nl.cwi.monetdb.mcl.io.BufferedMCLReader;
 import nl.cwi.monetdb.mcl.io.BufferedMCLWriter;
@@ -114,8 +116,11 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	/** The stack of warnings for this Connection object */
 	private SQLWarning warnings = null;
 	/** The Connection specific mapping of user defined types to Java
-	 * types (not used) */
-	private Map<String,Class<?>> typeMap = new HashMap<String,Class<?>>();
+	 * types */
+	private Map<String,Class<?>> typeMap = new HashMap<String,Class<?>>() {{
+			put("inet", INET.class);
+			put("url",  URL.class);
+	}};
 
 	// See javadoc for documentation about WeakHashMap if you don't know what
 	// it does !!!NOW!!! (only when you deal with it of course)
@@ -333,6 +338,11 @@ public class MonetConnection extends MonetWrapper implements Connection {
 			}
 			// close the socket
 			server.close();
+			// close active SendThread if any
+			if (sendThread != null) {
+				sendThread.shutdown();
+				sendThread = null;
+			}
 			// report ourselves as closed
 			closed = true;
 		}
@@ -2323,7 +2333,8 @@ public class MonetConnection extends MonetWrapper implements Connection {
 					// but block.
 					if (query.length() > MapiSocket.BLOCK) {
 						// get a reference to the send thread
-						if (sendThread == null) sendThread = new SendThread(out);
+						if (sendThread == null)
+							sendThread = new SendThread(out);
 						// tell it to do some work!
 						sendThread.runQuery(templ, query);
 						sendThreadInUse = true;
@@ -2551,12 +2562,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	 * facilitates the prevention of such 'full block', because this
 	 * separate thread only will block.<br />
 	 * This thread is designed for reuse, as thread creation costs are
-	 * high.<br />
-	 * <br />
-	 * NOTE: This thread is neither thread safe nor synchronised.  The
-	 * reason for this is that program wise only one thread (the
-	 * CacheThread) will use this thread, so costly locking mechanisms
-	 * can be avoided.
+	 * high.
 	 */
 	// {{{ SendThread class implementation
 	static class SendThread extends Thread {
@@ -2565,6 +2571,8 @@ public class MonetConnection extends MonetWrapper implements Connection {
 		private final static int WAIT = 0;
 		/** The state QUERY represents this thread to be executing a query */
 		private final static int QUERY = 1;
+		/** The state SHUTDOWN is the final state that ends this thread */
+		private final static int SHUTDOWN = -1;
 
 		private String[] templ;
 		private String query;
@@ -2593,7 +2601,6 @@ public class MonetConnection extends MonetWrapper implements Connection {
 			sendLock.lock();
 			try {
 				while (true) {
-					
 					while (state == WAIT) {
 						try {
 							queryAvailable.await();
@@ -2601,12 +2608,11 @@ public class MonetConnection extends MonetWrapper implements Connection {
 							// woken up, eh?
 						}
 					}
+					if (state == SHUTDOWN)
+						break;
 
 					// state is QUERY here
 					try {
-						// we issue notify here, so incase we get blocked on IO
-						// the thread that waits on us in runQuery can continue
-//						this.notify();
 						out.writeLine(
 								(templ[0] == null ? "" : templ[0]) +
 								query +
@@ -2638,7 +2644,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 			sendLock.lock();
 			try {
 				if (state != WAIT) 
-					throw new SQLException("SendThread already in use!", "M0M03");
+					throw new SQLException("SendThread already in use or shutting down!", "M0M03");
 
 				this.templ = templ;
 				this.query = query;
@@ -2646,13 +2652,6 @@ public class MonetConnection extends MonetWrapper implements Connection {
 				// let the thread know there is some work to do
 				state = QUERY;
 				queryAvailable.signal();
-
-				// implement the following behaviour:
-				// - let the SendThread first try to send whatever it can over
-				//   the socket
-				// - return as soon as the SendThread gets blocked
-				// the effect is a relatively high chance of data waiting to be
-				// read when returning from this method.
 			} finally {
 				sendLock.unlock();
 			}
@@ -2667,17 +2666,29 @@ public class MonetConnection extends MonetWrapper implements Connection {
 			sendLock.lock();
 			try {
 				// make sure the thread is in WAIT state, not QUERY
-				while (state != WAIT) {
+				while (state == QUERY) {
 					try {
 						waiting.await();
 					} catch (InterruptedException e) {
 						// just try again
 					}
 				}
+				if (state == SHUTDOWN)
+					error = "SendThread is shutting down";
 			} finally {
 				sendLock.unlock();
 			}
 			return error;
+		}
+
+		/**
+		 * Requests this SendThread to stop. 
+		 */
+		public void shutdown() {
+			sendLock.lock();
+			state = SHUTDOWN;
+			sendLock.unlock();
+			this.interrupt();  // break any wait conditions
 		}
 	}
 	// }}}

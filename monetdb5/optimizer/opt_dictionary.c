@@ -389,7 +389,7 @@ OPTdictionaryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			if (  getModuleId(q) == groupRef ){
 				if (q->argc == 3 &&
 			           (getFunctionId(q) == newRef ||
-				    getFunctionId(q) == doneRef) && 
+				    getFunctionId(q) == subgroupdoneRef) && 
 				    isDiction(getArg(q,2))) {
 					j = getArg(q,0);
 					qq = newStmt(mb,dictionaryRef,groupRef);
@@ -407,7 +407,7 @@ OPTdictionaryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				}
 				if (q->argc == 5 &&
 				   (getFunctionId(q) == deriveRef ||
-				    getFunctionId(q) == doneRef) && 
+				    getFunctionId(q) == subgroupdoneRef) && 
 				    isDiction(getArg(q,4))) {
 					j = getArg(q,0);
 					getArg(q,4) = idx[getArg(q,4)];

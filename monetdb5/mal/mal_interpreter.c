@@ -24,6 +24,7 @@
 #include "monetdb_config.h"
 #include "mal_runtime.h"
 #include "mal_interpreter.h"
+#include "mal_resource.h"
 #include "mal_listing.h"
 #include "mal_debugger.h"   /* for mdbStep() */
 #include "mal_recycle.h"
@@ -356,15 +357,14 @@ prepareMALstack(MalBlkPtr mb, int size)
 	return stk;
 }
 
-str runMAL(Client cntxt, MalBlkPtr mb, int startpc, MalBlkPtr mbcaller,
-		   MalStkPtr env, InstrPtr pcicaller)
+str runMAL(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr env)
 {
 	MalStkPtr stk = NULL;
 	int i;
 	ValPtr lhs, rhs;
-	InstrPtr pci = getInstrPtr(mb, 0);
 	str ret;
 	RuntimeProfileRecord runtimeProfile;
+	(void) mbcaller;
 
 	runtimeProfileInit(mb, &runtimeProfile, cntxt->flags & memoryFlag);
 	if (mb->errors) {
@@ -385,13 +385,12 @@ str runMAL(Client cntxt, MalBlkPtr mb, int startpc, MalBlkPtr mbcaller,
  * allocate space for value stack
  * the global stack should be large enough
 */
-	if (mbcaller == NULL && env != NULL) {
+	if (env != NULL) {
 		stk = env;
 		if (mb != stk->blk)
 			showScriptException(cntxt->fdout, mb, 0, MAL, "runMAL:misalignment of symbols\n");
 		if (mb->vtop > stk->stksize)
 			showScriptException(cntxt->fdout, mb, 0, MAL, "stack too small\n");
-		pci = pcicaller;
 		initStack(env->stkbot);
 	} else {
 		stk = prepareMALstack(mb, mb->vsize);
@@ -419,39 +418,12 @@ str runMAL(Client cntxt, MalBlkPtr mb, int startpc, MalBlkPtr mbcaller,
  */
 	}
 
-	if (env && mbcaller) {
-		InstrPtr pp;
-		int k;
-		/*
-		 * Moreover, we have to copy the result types to the stack for later
-		 * use. The stack value has been cleared to avoid misinterpretation of left-over
-		 * information. Since a stack frame may contain values of a previous call,
-		 * we should first remove garbage.
-		 */
-		pci = pcicaller;
-		pp = getInstrPtr(mb, 0);
-		/* set return types */
-		for (i = 0; i < pci->retc; i++) {
-			lhs = &stk->stk[pp->argv[i]];
-			lhs->vtype = getVarGDKType(mb, i);
-		}
-		for (k = pp->retc; i < pci->argc; i++, k++) {
-			lhs = &stk->stk[pp->argv[k]];
-			/* variable arguments ? */
-			if (k == pp->argc - 1)
-				k--;
-
-			rhs = &env->stk[pci->argv[i]];
-			VALcopy(lhs, rhs);
-			if (lhs->vtype == TYPE_bat)
-				BBPincref(lhs->val.bval, TRUE);
-		}
-		stk->up = env;
-	}
-
 	if (stk->cmd && env && stk->cmd != 'f')
 		stk->cmd = env->cmd;
-	ret = runMALsequence(cntxt, mb, startpc, 0, stk, env, pcicaller);
+	runtimeProfileBegin(cntxt, mb, stk, 0, &runtimeProfile, 1);
+	ret = runMALsequence(cntxt, mb, 1, 0, stk, env, 0);
+	runtimeProfile.ppc = 0; /* also finalize function call event */
+	runtimeProfileExit(cntxt, mb, stk, &runtimeProfile);
 
 	/* pass the new debug mode to the caller */
 	if (stk->cmd && env && stk->cmd != 'f')
@@ -474,8 +446,7 @@ str runMAL(Client cntxt, MalBlkPtr mb, int startpc, MalBlkPtr mbcaller,
  * answer to direct their actions. Or, a dataflow scheduler could step in
  * to enforce a completely different execution order.
  */
-str reenterMAL(Client cntxt, MalBlkPtr mb, int startpc, int stoppc,
-			   MalStkPtr stk, MalStkPtr env, InstrPtr pcicaller)
+str reenterMAL(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr stk)
 {
 	str ret;
 	int keepAlive;
@@ -483,14 +454,11 @@ str reenterMAL(Client cntxt, MalBlkPtr mb, int startpc, int stoppc,
 	if (stk == NULL)
 		throw(MAL, "mal.interpreter", MAL_STACK_FAIL);
 	keepAlive = stk->keepAlive;
-	if (env && stk && stk->cmd != 'f') stk->cmd = env->cmd;
-
-	ret = runMALsequence(cntxt, mb, startpc, stoppc, stk, env, pcicaller);
+	ret = runMALsequence(cntxt, mb, startpc, stoppc, stk, 0, 0);
 
 	/* pass the new debug mode to the caller */
-	if (env && stk->cmd != 'f') env->cmd = stk->cmd;
 	if (keepAlive == 0 && garbageControl(getInstrPtr(mb, 0)))
-		garbageCollector(cntxt, mb, stk, env != stk);
+		garbageCollector(cntxt, mb, stk, stk != 0);
 	return ret;
 }
 
@@ -561,6 +529,8 @@ callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[], char debug)
  * The core of the interpreter is presented next. It takes the context information
  * and starts the interpretation at the designated instruction.
  * Note that the stack frame is aligned and initialized in the enclosing routine.
+ * When we start executing the first instruction, we take the wall-clock time for
+ * resource management.
  */
 str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				   int stoppc, MalStkPtr stk, MalStkPtr env, InstrPtr pcicaller)
@@ -593,11 +563,14 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 	} else {
 		backup = backups;
 		garbage = garbages;
+		memset((char*) garbages, 0, 16 * sizeof(int));
 	}
 
 	/* also produce event record for start of function */
-	if ( startpc == 1 ) 
+	if ( startpc == 1 ) {
 		runtimeProfileInit(mb, &runtimeProfileFunction, cntxt->flags & memoryFlag);
+		mb->starttime = GDKusec();
+	}
 	stkpc = startpc;
 	exceptionVar = -1;
 
@@ -626,6 +599,8 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			}
 		}
 
+		if ( cntxt->idx > 1 )
+			MALresourceFairness(cntxt,mb,0);
 		runtimeProfileBegin(cntxt, mb, stk, stkpc, &runtimeProfile, 1);
 		if (pci->recycle > 0)
 			stk->clk = GDKusec();
@@ -792,9 +767,9 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 					ret = shutdownFactory(cntxt, mb);
 				if (oldtimer)
 					cntxt->timer = oldtimer;
+				runtimeProfileExit(cntxt, mb, stk, &runtimeProfile);
 				if (pcicaller && garbageControl(getInstrPtr(mb, 0)))
 					garbageCollector(cntxt, mb, stk, TRUE);
-				runtimeProfileExit(cntxt, mb, stk, &runtimeProfile);
 				runtimeProfile.ppc = 0; /* also finalize function call event */
 				if (cntxt->qtimeout && time(NULL) - stk->clock.tv_usec > cntxt->qtimeout){
 					ret= createException(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
@@ -817,6 +792,10 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				continue;
 			}
 
+			/* monitoring information should reflect the input arguments,
+			   which may be removed by garbage collection  */
+			runtimeProfileExit(cntxt, mb, stk, &runtimeProfile);
+			runtimeTiming(cntxt, mb, stk, pci, tid, lock, &runtimeProfile);
 			/* check for strong debugging after each MAL statement */
 			if ( pci->token != FACcall && ret== MAL_SUCCEED) {
 				if (GDKdebug & (CHECKMASK|PROPMASK) && exceptionVar < 0) {
@@ -994,7 +973,6 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 					}
 				}
 				if (stkpc == mb->stop) {
-					runtimeProfileExit(cntxt, mb, stk, &runtimeProfile);
 					if (cntxt->qtimeout && time(NULL) - stk->clock.tv_usec > cntxt->qtimeout){
 						ret= createException(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
 						stkpc = mb->stop;
@@ -1004,8 +982,6 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				pci = getInstrPtr(mb, stkpc);
 			}
 		}
-		runtimeProfileExit(cntxt, mb, stk, &runtimeProfile);
-		runtimeTiming(cntxt, mb, stk, pci, tid, lock, &runtimeProfile);
 
 /*
  * After the expression has been evaluated we should check for a
@@ -1179,7 +1155,6 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				}
 			}
 			if (stkpc == mb->stop) {
-				runtimeProfileExit(cntxt, mb, stk, &runtimeProfile);
 				runtimeProfile.ppc = 0; /* also finalize function call event */
 				runtimeProfileExit(cntxt, mb, stk, &runtimeProfile);
 				break;
@@ -1201,7 +1176,6 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				yieldResult(mb, pci, stkpc);
 				shutdownFactory(cntxt, mb);
 			} else {
-				runtimeProfileExit(cntxt, mb, stk, &runtimeProfile);
 				/* a fake multi-assignment */
 				if (env != NULL && pcicaller != NULL) {
 					InstrPtr pp = pci;

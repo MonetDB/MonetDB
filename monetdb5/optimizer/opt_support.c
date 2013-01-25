@@ -164,6 +164,7 @@ struct OPTcatalog {
 {"joinPath",	0,	0,	0,	DEBUG_OPT_JOINPATH},
 {"macro",		0,	0,	0,	DEBUG_OPT_MACRO},
 {"mapreduce",	0,	0,	0,	DEBUG_OPT_MAPREDUCE},
+{"matpack",		0,	0,	0,	DEBUG_OPT_MATPACK},
 {"mergetable",	0,	0,	0,	DEBUG_OPT_MERGETABLE},
 {"mitosis",		0,	0,	0,	DEBUG_OPT_MITOSIS},
 {"multiplex",	0,	0,	0,	DEBUG_OPT_MULTIPLEX},
@@ -182,6 +183,7 @@ struct OPTcatalog {
 {"sidcrack",	0,	0,	0,	DEBUG_OPT_SIDCRACK},
 {"strengthreduction",	0,	0,	0,	DEBUG_OPT_STRENGTHREDUCTION},
 {"centipede",	0,	0,	0,	DEBUG_OPT_CENTIPEDE},
+{"pushselect",	0,	0,	0,	DEBUG_OPT_PUSHSELECT},
 { 0,	0,	0,	0,	0}
 };
 
@@ -541,57 +543,8 @@ safetyBarrier(InstrPtr p, InstrPtr q)
 	}
 	return FALSE;
 }
-/*
- * @-
- * Variables can be changed later in the program and, thus, may
- * not be simply replaced by an alias.
- * Variables could also be changed by functions with side effects.
- */
-int
-isUpdated(MalBlkPtr mb, int pc)
-{
-	InstrPtr p, q;
-	int j, k;
-
-	p = getInstrPtr(mb, pc);
-	for (pc++; pc < mb->stop; pc++) {
-		q = getInstrPtr(mb, pc);
-		/* target is later assigned a new value */
-		for (j = 0; j < p->retc; j++)
-			for (k = 0; k < q->retc; k++)
-				if (p->argv[j] == q->argv[k]) {
-					int c = 0;
-
-					if (p->argc != q->argc)
-						return TRUE;
-
-					/* instruction q may not be a common expression */
-					/* TO WEAK, test stability of its arguments */
-					for (j = 0; j < p->argc; j++)
-						if (p->argv[j] == q->argv[k] && isInvariant(mb, 0, pc, q->argv[k]))
-							c++;
-					return c != p->argc;
-				}
-
-		/* result is used in an unsafe function */
-		for (j = 0; j < p->retc; j++)
-			for (k = q->retc; k < q->argc; k++)
-				if (p->argv[j] == q->argv[k] ){
-				/*
-				 * @-
-				 * If the operation involves an update of the operand it should told.
-				 */
-				if ( isUpdateInstruction(q) )
-					return TRUE;
-				if (getFunctionId(q) && idcmp("destroy", getFunctionId(q)) == 0)
-					return TRUE;
-			}
-	}
-	return FALSE;
-}
 
 /*
- * @-
  * In many cases we should be assured that a variable is not used in
  * the instruction range identified. For, we may exchange some instructions that
  * might change its content.
@@ -769,6 +722,10 @@ hasSideEffects(InstrPtr p, int strict)
 			return TRUE;
 
 	if (getModuleId(p) == sqlRef){
+		if (getFunctionId(p) == tidRef) return FALSE;
+		if (getFunctionId(p) == deltaRef) return FALSE;
+		if (getFunctionId(p) == subdeltaRef) return FALSE;
+		if (getFunctionId(p) == projectdeltaRef) return FALSE;
 		if (getFunctionId(p) == bindRef) return FALSE;
 		if (getFunctionId(p) == bindidxRef) return FALSE;
 		if (getFunctionId(p) == binddbatRef) return FALSE;
@@ -861,16 +818,23 @@ int isAllScalar(MalBlkPtr mb, InstrPtr p)
 }
 
 /*
- * @-
  * Used in the merge table optimizer. It is built incrementally
  * and should be conservative.
  */
 int isMapOp(InstrPtr p){
-	return	(getModuleId(p) == multiplexRef) ||
+	return	(getModuleId(p) == malRef && getFunctionId(p) == multiplexRef) ||
 		(getModuleId(p)== batcalcRef && getFunctionId(p) != mark_grpRef && getFunctionId(p) != rank_grpRef) ||
 		(getModuleId(p)== batmtimeRef) ||
 		(getModuleId(p)== batstrRef) ||
 		(getModuleId(p)== mkeyRef);
+}
+
+int isLikeOp(InstrPtr p){
+	return	(getModuleId(p) == batstrRef &&
+		(getFunctionId(p) == likeRef || 
+		 getFunctionId(p) == not_likeRef || 
+		 getFunctionId(p) == ilikeRef ||
+		 getFunctionId(p) == not_ilikeRef));
 }
 
 int isTopn(InstrPtr p){
@@ -883,7 +847,7 @@ int isTopn(InstrPtr p){
 
 int isSlice(InstrPtr p){
 	return (getModuleId(p) == algebraRef &&
-		getFunctionId(p) == sliceRef);
+		getFunctionId(p) == subsliceRef);
 }
 
 int isOrderby(InstrPtr p){
@@ -901,75 +865,70 @@ int isDiffOp(InstrPtr p){
  	     	 getFunctionId(p) == kdifferenceRef));
 }
 
-int isProjection(InstrPtr p){
-	return (getModuleId(p) == algebraRef &&
-                 getFunctionId(p) == leftjoinRef
-		);
-}
-
 int isMatJoinOp(InstrPtr p){
 	return (getModuleId(p) == algebraRef &&
                 (getFunctionId(p) == joinRef ||
-/*               getFunctionId(p) == antijoinRef || is not mat save */
-                 getFunctionId(p) == leftjoinRef ||
+                 getFunctionId(p) == antijoinRef || /* is not mat save */
                  getFunctionId(p) == thetajoinRef ||
                  getFunctionId(p) == bandjoinRef)
 		);
 }
 
+int isDelta(InstrPtr p){
+	return
+			(getModuleId(p)== sqlRef && (
+				getFunctionId(p)== deltaRef ||
+				getFunctionId(p)== projectdeltaRef ||
+				getFunctionId(p)== subdeltaRef 
+			) 
+		);
+}
+
+int isFragmentGroup2(InstrPtr p){
+	return
+			(getModuleId(p)== algebraRef && (
+				getFunctionId(p)== leftfetchjoinRef
+			)) ||
+			(getModuleId(p)== batRef && (
+				getFunctionId(p)== mergecandRef || 
+				getFunctionId(p)== intersectcandRef 
+			) 
+		);
+}
+
+int isSubSelect(InstrPtr p)
+{
+	return (getModuleId(p)== algebraRef && (
+			getFunctionId(p)== subselectRef ||
+			getFunctionId(p)== thetasubselectRef ||
+			getFunctionId(p)== likesubselectRef ||
+			getFunctionId(p)== ilikesubselectRef));
+}
+
 int isFragmentGroup(InstrPtr p){
 	return
-/*
-			(getModuleId(p)== constraintsRef &&
-				getFunctionId(p)== putName("emptySet",8)) ||
-*/
 			(getModuleId(p)== pcreRef && (
 			getFunctionId(p)== likeselectRef ||
 			getFunctionId(p)== likeuselectRef  ||
 			getFunctionId(p)== ilikeselectRef  ||
-			getFunctionId(p)== ilikeuselectRef
+			getFunctionId(p)== ilikeuselectRef 
 			))  ||
 			(getModuleId(p)== algebraRef && (
+				getFunctionId(p)== projectRef ||
 				getFunctionId(p)== selectRef ||
 				getFunctionId(p)== selectNotNilRef ||
 				getFunctionId(p)== uselectRef ||
-				getFunctionId(p)== projectRef ||
 				getFunctionId(p)== antiuselectRef ||
-				getFunctionId(p)== thetauselectRef ||
-				getFunctionId(p)== reuseRef
-			)	)  ||
-			(getModuleId(p)== pcreRef && (
-				getFunctionId(p)== likeselectRef ||
-				getFunctionId(p)== likeuselectRef
-			)	)  ||
+				getFunctionId(p)== thetauselectRef 
+			))  ||
+			isSubSelect(p) ||
 			(getModuleId(p)== batRef && (
-				getFunctionId(p)== reverseRef ||
-				getFunctionId(p)== mirrorRef /*||
-				getFunctionId(p)== setAccessRef ||
-				getFunctionId(p)== setWriteModeRef */
-			) );
+				getFunctionId(p)== mirrorRef 
+			)
+		);
 }
 
-int isSelect(InstrPtr p)
-{
-	return  (getModuleId(p)== pcreRef && (
-			getFunctionId(p)== likeselectRef ||
-			getFunctionId(p)== likeuselectRef  ||
-			getFunctionId(p)== ilikeselectRef  ||
-			getFunctionId(p)== ilikeuselectRef
-			))  ||
-			(getModuleId(p)== algebraRef && (
-		getFunctionId(p)== selectRef ||
-		getFunctionId(p)== selectNotNilRef ||
-		getFunctionId(p)== uselectRef ||
-		getFunctionId(p)== projectRef ||
-		getFunctionId(p)== antiuselectRef ||
-		getFunctionId(p)== thetauselectRef ||
-		getFunctionId(p)== likeselectRef ||
-		getFunctionId(p)== likeuselectRef ));
-}
 /*
- * @-
  * Some optimizers are interdependent (e.g. mitosis and octopus), which
  * requires inspection of the pipeline attached to a MAL block.
  */

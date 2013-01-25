@@ -39,15 +39,12 @@ class DatabaseTest(unittest.TestCase):
         db = self.db_module.connect(*self.connect_args, **self.connect_kwargs)
         self.connection = db
         self.cursor = db.cursor()
-        self.BLOBText = ''.join([chr(i) for i in range(33,127)] * 1);
+        self.BLOBText = ''.join([chr(i) for i in range(33,127)] * 100);
         self.BLOBBinary = self.db_module.Binary(''.join([chr(i) for i in range(256)] * 16))
-        self.BLOBUText = ''.join([chr(i) for i in range(1,16384)])
-
-
+        self.BLOBUText = str(''.join([chr(i) for i in range(1,16384)]))
 
     def tearDown(self):
         self.connection.close()
-
 
     def table_exists(self, name):
         try:
@@ -58,10 +55,8 @@ class DatabaseTest(unittest.TestCase):
         else:
             return True
 
-
     def quote_identifier(self, ident):
         return '"%s"' % ident
-
 
     def new_table_name(self):
         i = id(self.cursor)
@@ -70,7 +65,6 @@ class DatabaseTest(unittest.TestCase):
             if not self.table_exists(name):
                 return name
             i = i + 1
-
 
     def create_table(self, columndefs):
         """ Create a table using a list of column definitions given in
@@ -86,7 +80,6 @@ class DatabaseTest(unittest.TestCase):
                             (self.table,
                              ',\n'.join(columndefs),
                              self.create_table_extra))
-
 
     def check_data_integrity(self, columndefs, generator):
         self.create_table(columndefs)
@@ -107,7 +100,6 @@ class DatabaseTest(unittest.TestCase):
                     self.assertEqual(l[i][j], generator(i,j))
         finally:
             self.cursor.execute('drop table %s' % (self.table))
-
 
     def test_transactions(self):
         columndefs = ( 'col1 INT', 'col2 VARCHAR(255)')
@@ -141,7 +133,6 @@ class DatabaseTest(unittest.TestCase):
         l = self.cursor.fetchall()
         self.assertTrue(len(l) == 1, "ROLLBACK didn't work")
         self.cursor.execute('drop table %s' % (self.table))
-
 
     def test_truncation(self):
         columndefs = ( 'col1 INT', 'col2 VARCHAR(255)')
@@ -195,7 +186,6 @@ class DatabaseTest(unittest.TestCase):
 
         self.connection.rollback()
 
-
     def test_CHAR(self):
         # Character data
         def generator(row,col):
@@ -204,7 +194,6 @@ class DatabaseTest(unittest.TestCase):
             ('col1 char(255)','col2 char(255)'),
             generator)
 
-
     def test_INT(self):
         # Number data
         def generator(row,col):
@@ -212,7 +201,6 @@ class DatabaseTest(unittest.TestCase):
         self.check_data_integrity(
             ('col1 INT',),
             generator)
-
 
     def test_DECIMAL(self):
         # DECIMAL
@@ -237,8 +225,6 @@ class DatabaseTest(unittest.TestCase):
             ('col1 DOUBLE',),
             generator)
 
-
-
     def test_DATE(self):
         ticks = time()
         def generator(row,col):
@@ -246,7 +232,6 @@ class DatabaseTest(unittest.TestCase):
         self.check_data_integrity(
                  ('col1 DATE',),
                  generator)
-
 
     def test_TIME(self):
         ticks = time()
@@ -256,7 +241,6 @@ class DatabaseTest(unittest.TestCase):
                  ('col1 TIME',),
                  generator)
 
-
     def test_DATETIME(self):
         ticks = time()
         def generator(row,col):
@@ -264,7 +248,6 @@ class DatabaseTest(unittest.TestCase):
         self.check_data_integrity(
                  ('col1 TIMESTAMP',),
                  generator)
-
 
     def test_TIMESTAMP(self):
         ticks = time()
@@ -274,7 +257,6 @@ class DatabaseTest(unittest.TestCase):
                  ('col1 TIMESTAMP',),
                  generator)
 
-
     def test_TIMESTAMPTZ(self):
         ticks = time()
         def generator(row,col):
@@ -282,7 +264,6 @@ class DatabaseTest(unittest.TestCase):
         self.check_data_integrity(
                  ('col1 TIMESTAMPTZ',),
                   generator)
-
 
     def test_fractional_TIMESTAMP(self):
         ticks = time()
@@ -292,14 +273,12 @@ class DatabaseTest(unittest.TestCase):
                  ('col1 TIMESTAMP',),
                  generator)
 
-
     def test_TEXT(self):
         def generator(row,col):
             return self.BLOBText # 'BLOB Text ' * 1024
         self.check_data_integrity(
                  ('col2 TEXT',),
                  generator)
-
 
     def test_BLOB(self):
         def generator(row,col):
@@ -310,7 +289,6 @@ class DatabaseTest(unittest.TestCase):
         self.check_data_integrity(
                  ('col1 INT','col2 BLOB'),
                  generator)
-
 
     def test_TINYINT(self):
         # Number data
@@ -334,6 +312,13 @@ class DatabaseTest(unittest.TestCase):
             ('col1 char(1)','col2 char(1)'),
             generator)
 
+    def test_BOOL(self):
+        def generator(row,col):
+            return bool(row%2)
+        self.check_data_integrity(
+            ('col1 BOOL',),
+            generator)
+
     def test_description(self):
         self.table = self.new_table_name()
         shouldbe = [
@@ -353,7 +338,7 @@ class DatabaseTest(unittest.TestCase):
         self.cursor.execute('select count(*) from tables')
         r = self.cursor.fetchone()
         n = r[0]
-        self.cursor.arraysize=1000
+        self.cursor.arraysize=100000
         self.cursor.execute('select * from tables, tables')
         r = self.cursor.fetchall()
         self.assertEqual(len(r), n**2)

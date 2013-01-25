@@ -86,9 +86,14 @@ All Rights Reserved.
 @mal
 module group;
 
-command subgroup(b:bat[:oid,:any_1]) (groups:bat[:oid,:oid],extents:bat[:oid,:oid],histo:bat[:bat,:wrd])
+command subgroup(b:bat[:oid,:any_1]) (groups:bat[:oid,:oid],extents:bat[:oid,:oid],histo:bat[:oid,:wrd])
 address GRPsubgroup1;
-command subgroup(b:bat[:oid,:any_1],g:bat[:oid,:oid]) (groups:bat[:oid,:oid],extents:bat[:oid,:oid],histo:bat[:bat,:wrd])
+command subgroup(b:bat[:oid,:any_1],g:bat[:oid,:oid]) (groups:bat[:oid,:oid],extents:bat[:oid,:oid],histo:bat[:oid,:wrd])
+address GRPsubgroup2;
+
+command subgroupdone(b:bat[:oid,:any_1]) (groups:bat[:oid,:oid],extents:bat[:oid,:oid],histo:bat[:oid,:wrd])
+address GRPsubgroup1;
+command subgroupdone(b:bat[:oid,:any_1],g:bat[:oid,:oid]) (groups:bat[:oid,:oid],extents:bat[:oid,:oid],histo:bat[:oid,:wrd])
 address GRPsubgroup2;
 
 command new(attr:bat[:any_1,:any_2] )
@@ -1705,7 +1710,10 @@ str GRPslidingsum_@1(int *retval, int *bid, int  *size, int *shift)
 	BATloop(b, p, q) {
 		sum += *(@1*) BUNtail(bi,p);
 		if (--i == 0){
-			BUNfastins(bn, &o, &sum);
+			if (BUNfastins(bn, &o, &sum) == NULL) {
+				BBPreclaim(bn);
+				throw(MAL, "group.sum", OPERATION_FAILED);
+			}
 			/* slide here */
 			if (*size != *shift ){
 				p -= (*size-*shift);
@@ -1714,8 +1722,10 @@ str GRPslidingsum_@1(int *retval, int *bid, int  *size, int *shift)
 			sum =0;
 		}
 	}
-	if(i != *size)
-		BUNfastins(bn, &o, &sum);
+	if(i != *size && BUNfastins(bn, &o, &sum) == NULL) {
+		BBPreclaim(bn);
+		throw(MAL, "group.sum", OPERATION_FAILED);
+	}
 
 	bn->tsorted = bn->hsorted = 0;
 	bn->trevsorted = bn->hrevsorted = 0;

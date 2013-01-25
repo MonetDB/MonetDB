@@ -25,6 +25,7 @@
 #include <sql_symbol.h>
 #include <sql_backend.h>
 
+#define DEFAULT_CACHESIZE 100
 typedef struct cq {
 	struct cq *next;	/* link them into a queue */
 	int type;		/* sql_query_t: Q_PARSE,Q_SCHEMA,.. */

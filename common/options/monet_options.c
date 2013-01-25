@@ -232,19 +232,16 @@ mo_builtin_settings(opt **Set)
 	if (Set == NULL)
 		return 0;
 
-#define N_OPTIONS	11	/*MUST MATCH # OPTIONS BELOW */
+#define N_OPTIONS	10	/*MUST MATCH # OPTIONS BELOW */
 	set = malloc(sizeof(opt) * N_OPTIONS);
 	if (set == NULL)
 		return 0;
 
 	set[i].kind = opt_builtin;
-	set[i].name = strdup("gdk_dbname");
-	set[i].value = strdup("demo");
-	i++;
-	set[i].kind = opt_builtin;
-	set[i].name = strdup("gdk_dbfarm");
-	snprintf(buf, BUFSIZ, "%s%c%s%c%s",
-		 LOCALSTATEDIR, DIR_SEP, "monetdb5", DIR_SEP, "dbfarm");
+	set[i].name = strdup("gdk_dbpath");
+	snprintf(buf, BUFSIZ, "%s%c%s%c%s%c%s",
+		 LOCALSTATEDIR, DIR_SEP, "monetdb5", DIR_SEP, "dbfarm",
+		 DIR_SEP, "demo");
 	set[i].value = strdup(buf);
 	i++;
 	set[i].kind = opt_builtin;

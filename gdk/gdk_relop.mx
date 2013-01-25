@@ -895,14 +895,14 @@ batfetchjoin(BAT *l, BAT *r, BUN estimate, bit swap, bit hitalways)
 		return bn;
 @
 @c
-	} else if (hitalways && BATtdense(l) && BAThdense(r) && l->tseqbase == r->hseqbase) {
+	} else if (BATtdense(l) && BAThdense(r) && l->tseqbase == r->hseqbase && BATcount(l) <= BATcount(r)) {
 		/* always hit and tail of left is alligned with head
 		 * of right */
 		ALGODEBUG fprintf(stderr, "#BATfetchjoin: BATtdense(l) && BAThdense(r)\n");
 		ALGODEBUG fprintf(stderr, "#BATfetchjoin: VIEWcreate(l,r)\n");
 
 		return VIEWcreate(l, r);
-	} else if (hitalways && BAThdense(r) && BATtdense(r) && r->hseqbase == r->tseqbase) {
+	} else if (hitalways && BAThdense(r) && BATtdense(r) && r->hseqbase == r->tseqbase && BATcount(l) <= BATcount(r)) {
 		/* idempotent join: always hit and substitute tail with the same value */
 		ALGODEBUG fprintf(stderr, "#BATfetchjoin: BAThdense(r) && BATtdense(r)\n");
 		ALGODEBUG fprintf(stderr, "#BATfetchjoin: VIEWcreate(l,l)\n");
@@ -2518,11 +2518,18 @@ BATantijoin(BAT *l, BAT *r)
 		BATiter li = bat_iterator(l);
 		BATiter ri = bat_iterator(r);
 
-		/* try to keep void columns where possible */
-		if (rc == 1)
-			return BATconst(l, BATttype(r), BUNtail(ri, BUNfirst(r)));
-		if (lc == 1)
-			return BATmirror(BATconst(BATmirror(r), BAThtype(l), BUNhead(li, BUNfirst(l))));
+		if (rc == 1) {
+			l = BATantiuselect_(l, BUNhead(ri, BUNfirst(r)), NULL, 1, 1);
+			bn = BATconst(l, BATttype(r), BUNtail(ri, BUNfirst(r)));
+			BBPunfix(l->batCacheid);
+			return bn;
+		}
+		if (lc == 1) {
+			r = BATantiuselect_(BATmirror(r), BUNtail(li, BUNfirst(l)), NULL, 1, 1);
+			bn = BATmirror(BATconst(r, BAThtype(l), BUNhead(li, BUNfirst(l))));
+			BBPunfix(r->batCacheid);
+			return bn;
+		}
 	}
 
 	bn = BATnew(BAThtype(l), BATttype(r), sz);

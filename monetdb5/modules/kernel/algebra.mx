@@ -34,7 +34,7 @@ All Rights Reserved.
  * to simplify recursive bat-expression and manage reference counts.
  * In the current version we return only a BAT identifier when a new
  * bat is being created.
- * @-
+ *
  * All parameters to the modules are passed by reference.
  * In particular, this means that
  * string values are passed to the module layer as (str *)
@@ -188,7 +188,7 @@ comment "Select all BUNs of a BAT with a certain
 command selectNotNil(b:bat[:any_1,:any_2]):bat[:any_1,:any_2]
 address ALGselectNotNil
 comment "Select all not-nil values";
-# @-
+
 # The second group uses the head to perform the range selection.
 command selectH(b:bat[:any_1,:any_2], low:any_1, high:any_1) 
 			:bat[:any_1,:any_2] 
@@ -200,7 +200,7 @@ address ALGselectInclusiveHead;
 
 command selectH(b:bat[:any_1,:any_2],value:any_1) :bat[:any_1,:any_2] 
 address ALGselect1Head;
-# @-
+
 # A special case for this set are the void tailed bats.
 command select(b:bat[:any_2,:void], low:any_2) 
 		:bat[:any_2,:void] 
@@ -213,7 +213,6 @@ command select(b:bat[:any_2,:void], low:any_2, high:any_2,li:bit, hi:bit)
 		:bat[:any_2,:void] 
 address ALGselectInclusiveHead;
 
-# @-
 # The second group uses the head to perform the range selection
 
 command fragment ( b:bat[:any_1,:any_2], hlow:any_1, hhigh:any_1,
@@ -237,11 +236,15 @@ command slice(b:bat[:any_1,:any_2], x:wrd, y:wrd) :bat[:any_1,:any_2]
 address ALGslice_wrd
 comment "Return the slice with the BUNs at position x till y.";
 
+command subslice(b:bat[:oid,:any_1], x:wrd, y:wrd) :bat[:oid,:oid] 
+address ALGsubslice_wrd
+comment "Return the oids of the slice with the BUNs at position x till y.";
+
 command topN( b:bat[:any_1,:any_2], top:lng ) :bat[:any_1,:any_2]
 address ALGtopN
 comment "Trim all but the top N tuples.";
 
-command groupby(b:bat[:any_1,:wrd]) :bat[:any_1,:oid] 
+command groupby(gids:bat[:oid,:oid], cnts:bat[:oid,:wrd]) :bat[:oid,:oid] 
 address ALGgroupby
 comment "Produces a new BAT with groups identified by the head column. The result contains tail times the head value, ie the tail contains the result group sizes.";
 
@@ -279,6 +282,11 @@ comment "Selects all elements that have 'substr' as in the tail.";
 command sample ( b:bat[:oid,:any_2], num:int ) :bat[:oid,:any_2] 
 address ALGsample
 comment "Produce a random selection of size 'num' from the input BAT.";
+
+command subsample(b:bat[:oid,:any_1], num:int ) :bat[:oid,:oid] 
+address ALGsubsample
+comment "Return the oids of a random selection of size 'num' from the input BAT.";
+
 # @+ BAT copying
 command copy( b:bat[:any_1,:any_2]) :bat[:any_1,:any_2] 
 address ALGcopy
@@ -476,6 +484,8 @@ comment "Returns the intersection taken over only the *head* columns of two BATs
 command tintersect( left:bat[:any_1,:any_2], right:bat[:any_1,:any] ) 
 		:bat[:any_1,:any_2] 
 address ALGtintersect;
+command tinter( left:bat[:oid,:oid], right:bat[:oid,:oid] ) :bat[:oid,:oid] 
+address ALGtinter;
 
 # @- Bun-differing elements
 command difference( left:bat[:any_1,:any_2], right:bat[:any_1,:any_2] ) 
@@ -502,6 +512,8 @@ comment "Returns the difference taken over only the *head* columns of two BATs.
 	or: 'kdifference(left,right).kunique'.";
 command tdifference ( left:bat[:any_1,:any_2], right:bat[:any_1,:any] ) 
 		:bat[:any_1,:any_2] 
+address ALGtdifference;
+command tdiff( left:bat[:oid,:oid], right:bat[:oid,:oid] ) :bat[:oid,:oid] 
 address ALGtdiff;
 # @- Unions on bun
 command union ( left:bat[:any_1,:any_2], right:bat[:any_1,:any_2]) 
@@ -529,9 +541,53 @@ comment "Returns the union of two BATs; looking at head-columns only.
 command tunion ( left:bat[:any_1,:any_2], right:bat[:any_1,:any_2])
 		:bat[:any_1,:any_2] 
 address ALGtunion;
+
+
 # @+ Join operations
 # The core of every relational engine.
 # The join collection provided by the GDK kernel.
+command antijoin( left:bat[:oid,:any_1], right:bat[:oid,:any_1])
+		(l:bat[:oid,:oid],r:bat[:oid,:oid])
+address ALGantijoin2
+comment "Returns 2 columns with all BUNs, consisting of the head-oids 
+	  from 'left' and 'right' for which there are BUNs in 'left' 
+	  and 'right' with equal tails";
+
+command join( left:bat[:oid,:any_1], right:bat[:oid,:any_1])
+		(l:bat[:oid,:oid],r:bat[:oid,:oid])
+address ALGjoin2
+comment "Returns 2 columns with all BUNs, consisting of the head-oids 
+	  from 'left' and 'right' for which there are BUNs in 'left' 
+	  and 'right' with equal tails";
+
+# @- Theta Join
+command thetajoin( left:bat[:oid,:any_1], right:bat[:oid,:any_1], opname:int)
+		(l:bat[:oid,:oid],r:bat[:oid,:oid])
+address ALGthetajoin2
+comment "Returns 2 columns with all BUNs, consisting of the head-oids 
+	  from 'left' and 'right' for which there are BUNs in 'left' 
+	  and 'right' with equal tails";
+
+command crossproduct( left:bat[:oid,:any_1], right:bat[:oid,:any_2])
+		(l:bat[:oid,:oid],r:bat[:oid,:oid])
+address ALGcrossproduct2
+comment "Returns 2 columns with all BUNs, consisting of the head-oids 
+	  from 'left' and 'right' for which there are BUNs in 'left' 
+	  and 'right' with equal tails";
+
+command bandjoin( outer:bat[:oid,:any_2], inner:bat[:oid,:any_3], minus:any_2 , plus:any_2, li:bit, hi:bit ) 
+		(l:bat[:oid,:oid],r:bat[:oid,:oid])
+address ALGbandjoin2
+comment "This is a join() for which the predicate is that two BUNs match 
+		if the left-tail value is within the range [right-head - minus, 
+		right-head + plus], depending on (l_in/h_in), the bounds 
+		are included. Works only for the builtin numerical types, 
+		and their derivates.";
+
+command join(left:bat[:oid,:any_2], rl:bat[:oid,:any_2], rh:bat[:oid,:any_2], li:bit, hi:bit) 
+		(l:bat[:oid,:oid],r:bat[:oid,:oid])
+address ALGrangejoin2;
+
 # Note that joins over void columns are handled as if they are oids.
 command crossproduct(left:bat[:any_1,:any_2], right:bat[:any_3,:any_4])
 	:bat[:any_1,:any_4]
@@ -769,13 +825,12 @@ comment "Produce a BAT containing the histogram over the tail values.";
 command cardinality( b:bat[:any_1,:any_2] ) :lng 
 address ALGcard
 comment "Return the cardinality of the BAT tail values.";
-# @-
+
 # Implementations a generic Min and Max routines get declared first. The
 # @emph{ min()} and @emph{ max()} routines below catch any tail-type.
 # The type-specific routines defined later are faster, and will
 # override these any implementations.
-#
-# @-
+
 command min(b:bat[:any_1,:any_2]):any_2 
 address ALGminany
 comment "Return the lowest tail value or nil.";
@@ -783,48 +838,6 @@ comment "Return the lowest tail value or nil.";
 command max(b:bat[:any_1,:any_2]):any_2 
 address ALGmaxany
 comment "Return the highest tail value or nil.";
-
-# @+ Type-Specific Sum, Prod, Max and Min
-# For X in @{ bte,sht,int,wrd,flt,dbl,lng @},  we generate the
-# aggregate functions using a macro.
-# @-
-@:sumprod(sum,"Gives the sum of all tail values.")@
-@:sumprod(prod,"Gives the product of all tail values.")@
-@= sumprod_definition
-command @1 (b:bat[:any_1,:@2], empty_is_nil:bit ) :@4 
-address ALG@1_@2_@4
-comment @3;
-
-function @1 (b:bat[:any_1,:@2] ) :@4;
-	return @1 := aggr.@1(b, true); 
-end @1;
-@
-@mal
-@= sumprod
-@:sumprod_definition(@1,bte,@2,bte)@
-@:sumprod_definition(@1,bte,@2,sht)@
-@:sumprod_definition(@1,bte,@2,int)@
-@:sumprod_definition(@1,bte,@2,wrd)@
-@:sumprod_definition(@1,bte,@2,lng)@
-@:sumprod_definition(@1,sht,@2,sht)@
-@:sumprod_definition(@1,sht,@2,int)@
-@:sumprod_definition(@1,sht,@2,wrd)@
-@:sumprod_definition(@1,sht,@2,lng)@
-@:sumprod_definition(@1,int,@2,int)@
-@:sumprod_definition(@1,int,@2,wrd)@
-@:sumprod_definition(@1,int,@2,lng)@
-@:sumprod_definition(@1,wrd,@2,wrd)@
-@:sumprod_definition(@1,wrd,@2,lng)@
-@:sumprod_definition(@1,lng,@2,lng)@
-@:sumprod_definition(@1,flt,@2,flt)@
-@:sumprod_definition(@1,flt,@2,dbl)@
-@:sumprod_definition(@1,dbl,@2,dbl)@
-
-@:sumprod_definition(@1,bte,@2,dbl)@
-@:sumprod_definition(@1,sht,@2,dbl)@
-@:sumprod_definition(@1,int,@2,dbl)@
-@:sumprod_definition(@1,wrd,@2,dbl)@
-@:sumprod_definition(@1,lng,@2,dbl)@
 
 @= avg_definition
 command avg (b:bat[:any_1,:@1] ) :dbl
@@ -846,8 +859,17 @@ comment "Gives the avg of all tail values";
 # from the mean (average) value, divided by the population of the set.
 @= stdev_definition
 command stdev (b:bat[:any_1,:@1] ) :dbl
-address ALGstdev_@1
+address ALGstdev
 comment "Gives the standard deviation of all tail values";
+command stdevp (b:bat[:any_1,:@1] ) :dbl
+address ALGstdevp
+comment "Gives the standard deviation of all tail values";
+command variance (b:bat[:any_1,:@1] ) :dbl
+address ALGvariance
+comment "Gives the variance of all tail values";
+command variancep (b:bat[:any_1,:@1] ) :dbl
+address ALGvariancep
+comment "Gives the variance of all tail values";
 @
 @mal
 @:stdev_definition(bte)@
@@ -858,7 +880,6 @@ comment "Gives the standard deviation of all tail values";
 @:stdev_definition(flt)@
 @:stdev_definition(dbl)@
 
-# @-
 @= aggregate_definition
 command @1 ( b:bat[:any_1,:@2] ) :@2 
 address ALG@1_@2 comment @3;
@@ -964,73 +985,10 @@ algebra_export ptr BATmin(BAT *b, ptr aggr);
 
 algebra_export str ALGavg(dbl *res, int *bid);
 
-@= stdev_export
-algebra_export str ALGstdev_@1(dbl *res, int *bid);
-@
-@h
-@:stdev_export(bte)@
-@:stdev_export(sht)@
-@:stdev_export(int)@
-@:stdev_export(wrd)@
-@:stdev_export(lng)@
-@:stdev_export(flt)@
-@:stdev_export(dbl)@
-
-@= ALGsum_export
-algebra_export str ALGsum_@1_@2(@2* res, int *bid, bit *empty_is_nil) ;
-@= ALGprod_export
-algebra_export str ALGprod_@1_@2(@2* res, int *bid, bit *empty_is_nil) ;
-@
-@h
-@:ALGsum_export(bte,bte,0)@
-@:ALGsum_export(bte,sht,0)@
-@:ALGsum_export(bte,int,0)@
-@:ALGsum_export(bte,wrd,0)@
-@:ALGsum_export(bte,lng,0)@
-@:ALGsum_export(sht,sht,0)@
-@:ALGsum_export(sht,int,0)@
-@:ALGsum_export(sht,wrd,0)@
-@:ALGsum_export(sht,lng,0)@
-@:ALGsum_export(int,int,0)@
-@:ALGsum_export(int,wrd,0)@
-@:ALGsum_export(int,lng,0)@
-@:ALGsum_export(wrd,wrd,0)@
-@:ALGsum_export(wrd,lng,0)@
-@:ALGsum_export(lng,lng,0)@
-@:ALGsum_export(flt,flt,0.0)@
-@:ALGsum_export(flt,dbl,0.0)@
-@:ALGsum_export(dbl,dbl,0.0)@
-
-@:ALGsum_export(bte,dbl,0.0)@
-@:ALGsum_export(sht,dbl,0.0)@
-@:ALGsum_export(int,dbl,0.0)@
-@:ALGsum_export(wrd,dbl,0.0)@
-@:ALGsum_export(lng,dbl,0.0)@
-
-@:ALGprod_export(bte,bte,1)@
-@:ALGprod_export(bte,sht,1)@
-@:ALGprod_export(bte,int,1)@
-@:ALGprod_export(bte,wrd,1)@
-@:ALGprod_export(bte,lng,1)@
-@:ALGprod_export(sht,sht,1)@
-@:ALGprod_export(sht,int,1)@
-@:ALGprod_export(sht,wrd,1)@
-@:ALGprod_export(sht,lng,1)@
-@:ALGprod_export(int,int,1)@
-@:ALGprod_export(int,wrd,1)@
-@:ALGprod_export(int,lng,1)@
-@:ALGprod_export(wrd,wrd,1)@
-@:ALGprod_export(wrd,lng,1)@
-@:ALGprod_export(lng,lng,1)@
-@:ALGprod_export(flt,flt,1.0)@
-@:ALGprod_export(flt,dbl,1.0)@
-@:ALGprod_export(dbl,dbl,1.0)@
-
-@:ALGprod_export(bte,dbl,0.0)@
-@:ALGprod_export(sht,dbl,0.0)@
-@:ALGprod_export(int,dbl,0.0)@
-@:ALGprod_export(wrd,dbl,0.0)@
-@:ALGprod_export(lng,dbl,0.0)@
+algebra_export str ALGstdev(dbl *res, int *bid);
+algebra_export str ALGstdevp(dbl *res, int *bid);
+algebra_export str ALGvariance(dbl *res, int *bid);
+algebra_export str ALGvariancep(dbl *res, int *bid);
 
 @= ALGaggregate_export
 algebra_export str ALGmin_@1(@1* res, int *bid) ;
@@ -1048,7 +1006,7 @@ algebra_export str ALGmax_@1(@1* res, int *bid) ;
 algebra_export str ALGminany(ptr result, int *bid);
 algebra_export str ALGmaxany(ptr result, int *bid);
 algebra_export str ALGtopN(int *res, int *bid, lng *top);
-algebra_export str ALGgroupby(int *res, int *bid);
+algebra_export str ALGgroupby(int *res, int *gids, int *cnts);
 algebra_export str ALGcard(lng *result, int *bid);
 algebra_export str ALGBATminimum(ptr *result, int *bid);
 algebra_export str ALGBATmaximum(ptr *result, int *bid);
@@ -1070,6 +1028,14 @@ algebra_export str ALGselectInclusiveHead(int *result, int *bid, ptr low, ptr hi
 algebra_export str ALGuselectInclusive(int *result, int *bid, ptr low, ptr high, bit *lin, bit *rin);
 algebra_export str ALGantiuselectInclusive(int *result, int *bid, ptr low, ptr high, bit *lin, bit *rin);
 algebra_export str ALGfragment(int *result, int *bid, ptr hlow, ptr hhigh, ptr tlow, ptr thigh);
+
+algebra_export str ALGantijoin2(int *l, int *r, int *lid, int *rid);
+algebra_export str ALGjoin2(int *l, int *r, int *lid, int *rid);
+algebra_export str ALGthetajoin2(int *l, int *r, int *lid, int *rid, int *opc);
+algebra_export str ALGcrossproduct2(int *l, int *r, int *lid, int *rid);
+algebra_export str ALGbandjoin2(int *l, int *r, int *lid, int *rid, ptr *minus, ptr *plus, bit *li, bit *hi);
+algebra_export str ALGrangejoin2(int *l, int *r, int *lid, int *rlid, int *rhid, bit *li, bit *hi);
+
 algebra_export str ALGthetajoinEstimate(int *result, int *lid, int *rid, int *opc, lng *estimate);
 algebra_export str ALGthetajoin(int *result, int *lid, int *rid, int *opc);
 algebra_export str ALGbandjoin_default(int *result, int *lid, int *rid, ptr *minus, ptr *plus);
@@ -1109,10 +1075,13 @@ algebra_export str ALG@1(int *result, int* lid, int *rid);
 @:ALGbinaryExport(tunion)@
 @:ALGbinaryExport(sintersect)@
 @:ALGbinaryExport(tintersect)@
+@:ALGbinaryExport(tinter)@
 @:ALGbinaryExport(sdiff)@
 @:ALGbinaryExport(kdiff)@
+@:ALGbinaryExport(tdifference)@
 @:ALGbinaryExport(tdiff)@
 @:ALGbinaryintExport(sample)@
+@:ALGbinaryintExport(subsample)@
 
 algebra_export str ALGtunique(int *result, int *bid);
 algebra_export str ALGtsort(int *result, int *bid);
@@ -1150,6 +1119,7 @@ algebra_export str ALGslice(int *ret, bat *bid, lng *start, lng *end);
 algebra_export str ALGslice_int(int *ret, bat *bid, int *start, int *end);
 algebra_export str ALGslice_wrd(int *ret, bat *bid, wrd *start, wrd *end);
 algebra_export str ALGslice_oid(int *ret, bat *bid, oid *start, oid *end);
+algebra_export str ALGsubslice_wrd(int *ret, bat *bid, wrd *start, wrd *end);
 algebra_export str ALGposition(wrd *retval, int *bid, ptr val);
 algebra_export str ALGpositionBUN(wrd *retval, int *bid, ptr val, ptr tval);
 algebra_export str ALGfetch(ptr ret, int *bid, lng *pos);
@@ -1188,78 +1158,14 @@ algebra_export str ALGreuse(int *ret, int *bid);
  * The routines below assumes that the caller knows what type
  * is large enough to prevent overflow.
  */
-@= sum_implementation
-static int
-CMDsum_@1_@2(@2* res, BAT *b, bit *empty_is_nil)
-{
-	BATiter bi = bat_iterator(b);
-	BUN p,q;
-	@2 result=@3;
 
-	BATcheck(b,"BATsum_@1_@2");
-	if (!BATcount(b) && *empty_is_nil)
-		result = @2_nil;
-	if (b->T->nonil) {
-		BATloop(b, p, q) {
-			result += *(@1*) BUNtloc(bi, p);
-		}
-	} else {
-		BATloop(b, p, q) {
-			@1 *value = (@1*) BUNtloc(bi, p);
-			if (*value == @1_nil) {
-				result = @2_nil;
-				break;
-			} else {
-				result += *value;
-			}
-		}
-	}
-	*res = result;
-	return GDK_SUCCEED;
-}
-
-@
- * @+ BAT prod[uct] operation
- * The prod[uct] aggregate only works for int and float fields.
- * The routines below assumes that the caller knows what type
- * is large enough to prevent overflow.
-@= prod_implementation
-static int
-CMDprod_@1_@2(@2* res, BAT *b, bit *empty_is_nil)
-{
-	BATiter bi = bat_iterator(b);
-	BUN p,q;
-	@2 result=@3;
-
-	BATcheck(b,"BATprodInt");
-	if (!BATcount(b) && *empty_is_nil)
-		result = @2_nil;
-	if (b->T->nonil) {
-		BATloop(b, p, q) {
-			result *= *(@1*) BUNtloc(bi, p);
-		}
-	} else {
-		BATloop(b, p, q) {
-			@1 *value = (@1*) BUNtloc(bi, p);
-			if (*value == @1_nil) {
-				result = @2_nil;
-				break;
-			} else {
-				result *= *value;
-			}
-		}
-	}
-	*res = result;
-	return GDK_SUCCEED;
-}
-
-@
- * @+ Minimum and Maximum
+/* @+ Minimum and Maximum
  * The routines @`BATmin@5(b) and @`BATmax@5(b) compute the minimum and
  * maximum value of the tail column of a BAT.
  * Aggregate values are calculated just before they are requested by
  * the user. They are not maintained continuously, because we expect
  * them to be used sparsely.
+ */
 @= aggregate_implementation
 static int
 CMDmin_@1(@1* result, BAT *b)
@@ -1372,56 +1278,6 @@ BAT@1(BAT *b, ptr aggr)
 @:BATaggr(min)@
 @:BATaggr(max)@
 
-@:sum_implementation(bte,bte,0)@
-@:sum_implementation(bte,sht,0)@
-@:sum_implementation(bte,int,0)@
-@:sum_implementation(bte,wrd,0)@
-@:sum_implementation(bte,lng,0)@
-@:sum_implementation(sht,sht,0)@
-@:sum_implementation(sht,int,0)@
-@:sum_implementation(sht,wrd,0)@
-@:sum_implementation(sht,lng,0)@
-@:sum_implementation(int,int,0)@
-@:sum_implementation(int,wrd,0)@
-@:sum_implementation(int,lng,0)@
-@:sum_implementation(wrd,wrd,0)@
-@:sum_implementation(wrd,lng,0)@
-@:sum_implementation(lng,lng,0)@
-@:sum_implementation(flt,flt,0.0)@
-@:sum_implementation(flt,dbl,0.0)@
-@:sum_implementation(dbl,dbl,0.0)@
-
-@:sum_implementation(bte,dbl,0.0)@
-@:sum_implementation(sht,dbl,0.0)@
-@:sum_implementation(int,dbl,0.0)@
-@:sum_implementation(wrd,dbl,0.0)@
-@:sum_implementation(lng,dbl,0.0)@
-
-@:prod_implementation(bte,bte,1)@
-@:prod_implementation(bte,sht,1)@
-@:prod_implementation(bte,int,1)@
-@:prod_implementation(bte,wrd,1)@
-@:prod_implementation(bte,lng,1)@
-@:prod_implementation(sht,sht,1)@
-@:prod_implementation(sht,int,1)@
-@:prod_implementation(sht,wrd,1)@
-@:prod_implementation(sht,lng,1)@
-@:prod_implementation(int,int,1)@
-@:prod_implementation(int,wrd,1)@
-@:prod_implementation(int,lng,1)@
-@:prod_implementation(wrd,wrd,1)@
-@:prod_implementation(wrd,lng,1)@
-@:prod_implementation(lng,lng,1)@
-@:prod_implementation(flt,flt,1.0)@
-@:prod_implementation(flt,dbl,1.0)@
-@:prod_implementation(dbl,dbl,1.0)@
-
-@:prod_implementation(bte,dbl,0.0)@
-@:prod_implementation(sht,dbl,0.0)@
-@:prod_implementation(int,dbl,0.0)@
-@:prod_implementation(wrd,dbl,0.0)@
-@:prod_implementation(lng,dbl,0.0)@
-
 @:aggregate_implementation(bte)@
 @:aggregate_implementation(sht)@
 @:aggregate_implementation(int)@
@@ -1515,40 +1371,45 @@ CMDantiuselect_(BAT **result, BAT *b, ptr low, ptr high, bit *l_in, bit *h_in)
 }
 
 static int
-CMDgen_group(BAT **result, BAT *b )
+CMDgen_group(BAT **result, BAT *gids, BAT *cnts )
 {
-	BATiter bi = bat_iterator(b);
-	BUN u, v;
-	int htpe = (b->htype == TYPE_void)?TYPE_oid:b->htype;
-	BAT *r = BATnew(htpe, TYPE_void, BATcount(b)*2);
+	wrd j, gcnt = BATcount(gids);
+	BAT *r = BATnew(TYPE_void, TYPE_oid, BATcount(gids)*2);
 
-	if (b->hvarsized) {
-		BATloop(b, u, v) {
-			wrd i, sz = *(wrd*)BUNtloc(bi, u);
+	BATseqbase(r, 0);
+	if (gids->ttype == TYPE_void) {
+		oid id = gids->hseqbase;
+		wrd *cnt = (wrd*)Tloc(cnts, 0);
+		for(j = 0; j < gcnt; j++) {
+			wrd i, sz = cnt[j];
 			for(i = 0; i < sz; i++) {
-				if (BUNfastins(r, BUNhvar(bi, u), NULL) == NULL) {
+				if (BUNappend(r, &id, FALSE) == NULL) {
 					BBPreclaim(r);
 					return GDK_FAIL;
 				}
 			}
+			id++;
 		}
 	} else {
-		BATloop(b, u, v) {
-			wrd i, sz = *(wrd*)BUNtloc(bi, u);
+		oid *id = (oid*)Tloc(gids, 0);
+		wrd *cnt = (wrd*)Tloc(cnts, 0);
+		for(j = 0; j < gcnt; j++) {
+			wrd i, sz = cnt[j];
 			for(i = 0; i < sz; i++) {
-				if (BUNfastins(r, BUNhloc(bi, u), NULL) == NULL) {
+				if (BUNappend(r, id, FALSE) == NULL) {
 					BBPreclaim(r);
 					return GDK_FAIL;
 				}
 			}
+			id++;
 		}
 	}
-	r -> hsorted = BAThordered(b);
-	r -> hrevsorted = BAThrevordered(b);
-	r -> tsorted = BATtordered(b);
-	r -> trevsorted = BATtrevordered(b);
-	r -> H ->nonil = b->H->nonil;
-	r -> T ->nonil = 0;
+	r -> hdense = TRUE;
+	r -> hsorted = TRUE;
+	r -> hrevsorted = FALSE;
+	r -> tsorted = BATtordered(gids);
+	r -> trevsorted = BATtrevordered(gids);
+	r -> T ->nonil = gids->T->nonil;
 	*result = r;
 	return GDK_SUCCEED;
 }
@@ -1764,84 +1625,7 @@ bunins_failed:
  * The routines below assumes that the caller knows what type
  * is large enough to prevent overflow.
  */
-@= ALGsum_implementation
-str ALGsum_@1_@2(@2* res, int *bid, bit *empty_is_nil) {
-	BAT *b;
-	if( (b= BATdescriptor(*bid)) == NULL ){
-		 throw(MAL, "algebra.sum", RUNTIME_OBJECT_MISSING);
-	}
 
-	CMDsum_@1_@2(res, b, empty_is_nil);
-	BBPreleaseref(b->batCacheid);
-	return MAL_SUCCEED;
-}
-
-@= ALGprod_implementation
-str ALGprod_@1_@2(@2* res, int *bid, bit *empty_is_nil) {
-	BAT *b;
-	if( (b= BATdescriptor(*bid)) == NULL ){
-		 throw(MAL, "algebra.prod", RUNTIME_OBJECT_MISSING);
-	}
-	CMDprod_@1_@2(res, b, empty_is_nil);
-	BBPreleaseref(b->batCacheid);
-	return MAL_SUCCEED;
-}
-@
-@c
-@:ALGsum_implementation(bte,bte,0)@
-@:ALGsum_implementation(bte,sht,0)@
-@:ALGsum_implementation(bte,int,0)@
-@:ALGsum_implementation(bte,wrd,0)@
-@:ALGsum_implementation(bte,lng,0)@
-@:ALGsum_implementation(sht,sht,0)@
-@:ALGsum_implementation(sht,int,0)@
-@:ALGsum_implementation(sht,wrd,0)@
-@:ALGsum_implementation(sht,lng,0)@
-@:ALGsum_implementation(int,int,0)@
-@:ALGsum_implementation(int,wrd,0)@
-@:ALGsum_implementation(int,lng,0)@
-@:ALGsum_implementation(wrd,wrd,0)@
-@:ALGsum_implementation(wrd,lng,0)@
-@:ALGsum_implementation(lng,lng,0)@
-@:ALGsum_implementation(flt,flt,0.0)@
-@:ALGsum_implementation(flt,dbl,0.0)@
-@:ALGsum_implementation(dbl,dbl,0.0)@
-
-@:ALGsum_implementation(bte,dbl,0.0)@
-@:ALGsum_implementation(sht,dbl,0.0)@
-@:ALGsum_implementation(int,dbl,0.0)@
-@:ALGsum_implementation(wrd,dbl,0.0)@
-@:ALGsum_implementation(lng,dbl,0.0)@
-
-@:ALGprod_implementation(bte,bte,1)@
-@:ALGprod_implementation(bte,sht,1)@
-@:ALGprod_implementation(bte,int,1)@
-@:ALGprod_implementation(bte,wrd,1)@
-@:ALGprod_implementation(bte,lng,1)@
-@:ALGprod_implementation(sht,sht,1)@
-@:ALGprod_implementation(sht,int,1)@
-@:ALGprod_implementation(sht,wrd,1)@
-@:ALGprod_implementation(sht,lng,1)@
-@:ALGprod_implementation(int,int,1)@
-@:ALGprod_implementation(int,wrd,1)@
-@:ALGprod_implementation(int,lng,1)@
-@:ALGprod_implementation(wrd,wrd,1)@
-@:ALGprod_implementation(wrd,lng,1)@
-@:ALGprod_implementation(lng,lng,1)@
-@:ALGprod_implementation(flt,flt,1.0)@
-@:ALGprod_implementation(flt,dbl,1.0)@
-@:ALGprod_implementation(dbl,dbl,1.0)@
-
-@:ALGprod_implementation(bte,dbl,0.0)@
-@:ALGprod_implementation(sht,dbl,0.0)@
-@:ALGprod_implementation(int,dbl,0.0)@
-@:ALGprod_implementation(wrd,dbl,0.0)@
-@:ALGprod_implementation(lng,dbl,0.0)@
-
-
-/*
- * @-
- */
 @= ALGaggregate_implementation
 str ALGmin_@1(@1* res, int *bid) {
 	BAT *b;
@@ -1927,16 +1711,22 @@ ALGtopN(int *res, int *bid, lng *top)
 }
 
 str
-ALGgroupby(int *res, int *bid)
+ALGgroupby(int *res, int *gids, int *cnts)
 {
-	BAT *b,*bn;
+	BAT *bn, *g, *c;
 
-	b = BATdescriptor(*bid);
-	if (b == NULL) {
+	g = BATdescriptor(*gids);
+	if (g == NULL) {
 		throw(MAL, "algebra.groupby", RUNTIME_OBJECT_MISSING);
 	}
-	if( CMDgen_group(&bn,b) == GDK_FAIL){
-		BBPreleaseref(b->batCacheid);
+	c = BATdescriptor(*cnts);
+	if (c == NULL) {
+		BBPreleaseref(g->batCacheid);
+		throw(MAL, "algebra.groupby", RUNTIME_OBJECT_MISSING);
+	}
+	if( CMDgen_group(&bn, g, c) == GDK_FAIL){
+		BBPreleaseref(g->batCacheid);
+		BBPreleaseref(c->batCacheid);
 		throw(MAL, "algebra.groupby",GDK_EXCEPTION);
 	}
 	if( bn){
@@ -1944,7 +1734,8 @@ ALGgroupby(int *res, int *bid)
 		*res = bn->batCacheid;
 		BBPkeepref(bn->batCacheid);
 	}
-	BBPreleaseref(b->batCacheid);
+	BBPreleaseref(g->batCacheid);
+	BBPreleaseref(c->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -2013,7 +1804,7 @@ ALGsubselect2(bat *result, bat *bid, bat *sid, const void *low, const void *high
 	@:derefStr(b,t,low)@
 	@:derefStr(b,t,high)@
 	nilptr = ATOMnilptr(b->ttype);
-	if (*li == 1 && *hi == 1 &&
+	if (*li == 1 && *hi == 1 && 
 		ATOMcmp(b->ttype, low, nilptr) == 0 &&
 		ATOMcmp(b->ttype, high, nilptr) == 0) {
 		/* special case: equi-select for NIL */
@@ -2694,6 +2485,191 @@ ALGantijoin(bat *result, bat *lid, bat *rid)
 }
 
 str
+ALGantijoin2( bat *l, bat *r, bat *left, bat *right)
+{
+	BAT *L, *R, *j;
+
+	if ((L = BATdescriptor(*left)) == NULL) {
+		throw(MAL, "algebra.antijoin", RUNTIME_OBJECT_MISSING);
+	}
+	if ((R = BATdescriptor(*right)) == NULL) {
+		BBPunfix(L->batCacheid);
+		throw(MAL, "algebra.antijoin", RUNTIME_OBJECT_MISSING);
+	}
+
+	/* j = antijoin(left,reverse(right))
+	   l = reverse(mark(j))
+	   r = reverse(mark(reverse(j)))
+	*/
+	j = BATantijoin(L, BATmirror(R));
+	if (!j)
+		throw(MAL, "algebra.antijoin", GDK_EXCEPTION);
+	BBPunfix(L->batCacheid);
+	BBPunfix(R->batCacheid);
+	L = BATmirror(BATmark(j,0));
+	R = BATmirror(BATmark(BATmirror(j),0));
+	BBPunfix(j->batCacheid);
+	BBPkeepref(*l = L->batCacheid);
+	BBPkeepref(*r = R->batCacheid);
+	return MAL_SUCCEED;
+}
+
+str
+ALGjoin2( bat *l, bat *r, bat *left, bat *right)
+{
+	BAT *L, *R, *j;
+
+	if ((L = BATdescriptor(*left)) == NULL) {
+		throw(MAL, "algebra.join", RUNTIME_OBJECT_MISSING);
+	}
+	if ((R = BATdescriptor(*right)) == NULL) {
+		BBPunfix(L->batCacheid);
+		throw(MAL, "algebra.join", RUNTIME_OBJECT_MISSING);
+	}
+
+	/* j = join(left,reverse(right))
+	   l = reverse(mark(j))
+	   r = reverse(mark(reverse(j)))
+	*/
+	j = BATjoin(L, BATmirror(R), BUN_NONE);
+	if (!j)
+		throw(MAL, "algebra.join", GDK_EXCEPTION);
+	BBPunfix(L->batCacheid);
+	BBPunfix(R->batCacheid);
+	L = BATmirror(BATmark(j,0));
+	R = BATmirror(BATmark(BATmirror(j),0));
+	BBPunfix(j->batCacheid);
+	BBPkeepref(*l = L->batCacheid);
+	BBPkeepref(*r = R->batCacheid);
+	return MAL_SUCCEED;
+}
+
+str
+ALGthetajoin2( bat *l, bat *r, bat *left, bat *right, int *opc)
+{
+	BAT *L, *R, *j;
+
+	if ((L = BATdescriptor(*left)) == NULL) {
+		throw(MAL, "algebra.thetajoin", RUNTIME_OBJECT_MISSING);
+	}
+	if ((R = BATdescriptor(*right)) == NULL) {
+		BBPunfix(L->batCacheid);
+		throw(MAL, "algebra.thetajoin", RUNTIME_OBJECT_MISSING);
+	}
+
+	/* j = thetajoin(left,reverse(right), opc)
+	   l = reverse(mark(j))
+	   r = reverse(mark(reverse(j)))
+	*/
+	j = BATthetajoin(L, BATmirror(R), *opc, lng_nil);
+	if (!j)
+		throw(MAL, "algebra.thetajoin", GDK_EXCEPTION);
+	BBPunfix(L->batCacheid);
+	BBPunfix(R->batCacheid);
+	L = BATmirror(BATmark(j,0));
+	R = BATmirror(BATmark(BATmirror(j),0));
+	BBPunfix(j->batCacheid);
+	BBPkeepref(*l = L->batCacheid);
+	BBPkeepref(*r = R->batCacheid);
+	return MAL_SUCCEED;
+}
+
+str
+ALGcrossproduct2( bat *l, bat *r, bat *left, bat *right)
+{
+	BAT *L, *R, *j;
+
+	if ((L = BATdescriptor(*left)) == NULL) {
+		throw(MAL, "algebra.crossproduct", RUNTIME_OBJECT_MISSING);
+	}
+	if ((R = BATdescriptor(*right)) == NULL) {
+		BBPunfix(L->batCacheid);
+		throw(MAL, "algebra.crossproduct", RUNTIME_OBJECT_MISSING);
+	}
+
+	/* j = crossproduct(left,reverse(right))
+	   l = reverse(mark(j))
+	   r = reverse(mark(reverse(j)))
+	*/
+	j = BATcross(L, BATmirror(R));
+	if (!j)
+		throw(MAL, "algebra.crossproduct", GDK_EXCEPTION);
+	BBPunfix(L->batCacheid);
+	BBPunfix(R->batCacheid);
+	L = BATmirror(BATmark(j,0));
+	R = BATmirror(BATmark(BATmirror(j),0));
+	BBPunfix(j->batCacheid);
+	BBPkeepref(*l = L->batCacheid);
+	BBPkeepref(*r = R->batCacheid);
+	return MAL_SUCCEED;
+}
+str
+ALGbandjoin2(bat *l, bat *r, bat *left, bat *right, ptr *minus, ptr *plus, bit *li, bit *hi)
+{
+	BAT *L, *R, *j;
+
+	if ((L = BATdescriptor(*left)) == NULL) {
+		throw(MAL, "algebra.bandjoin", RUNTIME_OBJECT_MISSING);
+	}
+	if ((R = BATdescriptor(*right)) == NULL) {
+		BBPunfix(L->batCacheid);
+		throw(MAL, "algebra.bandjoin", RUNTIME_OBJECT_MISSING);
+	}
+
+	/* j = bandjoin(left,reverse(right), minus, plus, li, hi)
+	   l = reverse(mark(j))
+	   r = reverse(mark(reverse(j)))
+	*/
+	j = BATbandjoin(L, BATmirror(R), minus, plus, *li, *hi);
+	if (!j)
+		throw(MAL, "algebra.bandjoin", GDK_EXCEPTION);
+	BBPunfix(L->batCacheid);
+	BBPunfix(R->batCacheid);
+	L = BATmirror(BATmark(j,0));
+	R = BATmirror(BATmark(BATmirror(j),0));
+	BBPunfix(j->batCacheid);
+	BBPkeepref(*l = L->batCacheid);
+	BBPkeepref(*r = R->batCacheid);
+	return MAL_SUCCEED;
+}
+
+str 
+ALGrangejoin2(int *l, int *r, int *left, int *rightl, int *righth, bit *li, bit *hi)
+{
+	BAT *L, *R, *RL, *RH, *j;
+
+	if ((L = BATdescriptor(*left)) == NULL) {
+		throw(MAL, "algebra.join", RUNTIME_OBJECT_MISSING);
+	}
+	if ((RL = BATdescriptor(*rightl)) == NULL) {
+		BBPunfix(L->batCacheid);
+		throw(MAL, "algebra.join", RUNTIME_OBJECT_MISSING);
+	}
+	if ((RH = BATdescriptor(*righth)) == NULL) {
+		BBPunfix(L->batCacheid);
+		BBPunfix(RL->batCacheid);
+		throw(MAL, "algebra.join", RUNTIME_OBJECT_MISSING);
+	}
+
+	/* j = join(left,rightl,righth, li, hi)
+	   l = reverse(mark(j))
+	   r = reverse(mark(reverse(j)))
+	*/
+	j = BATrangejoin(L, RL, RH, *li, *hi);
+	if (!j)
+		throw(MAL, "algebra.join", GDK_EXCEPTION);
+	BBPunfix(L->batCacheid);
+	BBPunfix(RL->batCacheid);
+	BBPunfix(RH->batCacheid);
+	L = BATmirror(BATmark(j,0));
+	R = BATmirror(BATmark(BATmirror(j),0));
+	BBPunfix(j->batCacheid);
+	BBPkeepref(*l = L->batCacheid);
+	BBPkeepref(*r = R->batCacheid);
+	return MAL_SUCCEED;
+}
+
+str
 ALGjoinestimate(bat *result, bat *lid, bat *rid, lng *estimate)
 {
 	return ALGbinaryestimate(result, lid, rid, estimate, BATjoin, "algebra.join");
@@ -2795,6 +2771,11 @@ ALGsample(bat *result, bat *bid, int *param)
 	return ALGbinaryint(result, bid, param, BATsample, "algebra.sample");
 }
 
+str
+ALGsubsample(bat *result, bat *bid, int *param)
+{
+	return ALGbinaryint(result, bid, param, BATsample_, "algebra.subsample");
+}
 
 /* add items missing in the kernel */
 str
@@ -2846,7 +2827,7 @@ ALGtunion(int *result, int *bid, int *bid2)
 }
 
 str
-ALGtdiff(int *result, int *bid, int *bid2)
+ALGtdifference(int *result, int *bid, int *bid2)
 {
 	BAT *b, *b2, *bn;
 
@@ -2873,30 +2854,84 @@ ALGtdiff(int *result, int *bid, int *bid2)
 }
 
 str
+ALGtdiff(int *result, int *bid, int *bid2)
+{
+	BAT *b, *b2, *bn;
+
+	if ((b = BATdescriptor(*bid)) == NULL)
+		throw(MAL, "algebra.tdiff", RUNTIME_OBJECT_MISSING);
+	if ((b2 = BATdescriptor(*bid2)) == NULL){
+		BBPreleaseref(*bid2);
+		throw(MAL, "algebra.tdiff", RUNTIME_OBJECT_MISSING);
+	}
+	
+	bn = BATkdiff(BATmirror(b),BATmirror(b2));
+	BBPreleaseref(b->batCacheid);
+	BBPreleaseref(b2->batCacheid);
+	if (bn) {
+		BAT *r = BATmirror(BATmark(bn,0));
+		
+		BBPreleaseref(bn->batCacheid);
+		bn = r;
+		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
+		*result = bn->batCacheid;
+		BBPkeepref(*result);
+		return MAL_SUCCEED;
+	}
+	throw(MAL, "algebra.tdiff", GDK_EXCEPTION);
+}
+
+str
 ALGtintersect(int *result, int *bid, int *bid2)
 {
 	BAT *b, *b2, *bn;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "algebra.tdifference", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "algebra.tintersect", RUNTIME_OBJECT_MISSING);
 	if ((b2 = BATdescriptor(*bid2)) == NULL){
 		BBPreleaseref(*bid2);
-		throw(MAL, "algebra.tdifference", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "algebra.tintersect", RUNTIME_OBJECT_MISSING);
 	}
 	
 	bn = BATsemijoin(BATmirror(b),BATmirror(b2));
+	BBPreleaseref(b->batCacheid);
+	BBPreleaseref(b2->batCacheid);
 	if (bn) {
 		bn = BATmirror(bn);
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
 		*result = bn->batCacheid;
 		BBPkeepref(*result);
-		BBPreleaseref(b->batCacheid);
-		BBPreleaseref(b2->batCacheid);
 		return MAL_SUCCEED;
 	}
+	throw(MAL, "algebra.tintersect", GDK_EXCEPTION);
+}
+
+str
+ALGtinter(int *result, int *bid, int *bid2)
+{
+	BAT *b, *b2, *bn;
+
+	if ((b = BATdescriptor(*bid)) == NULL)
+		throw(MAL, "algebra.tinter", RUNTIME_OBJECT_MISSING);
+	if ((b2 = BATdescriptor(*bid2)) == NULL){
+		BBPreleaseref(*bid2);
+		throw(MAL, "algebra.tinter", RUNTIME_OBJECT_MISSING);
+	}
+	
+	bn = BATsemijoin(BATmirror(b),BATmirror(b2));
 	BBPreleaseref(b->batCacheid);
 	BBPreleaseref(b2->batCacheid);
-	throw(MAL, "algebra.tdifference", GDK_EXCEPTION);
+	if (bn) {
+		BAT *r = BATmirror(BATmark(bn,0));
+
+		BBPreleaseref(bn->batCacheid);
+		bn = r;
+		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
+		*result = bn->batCacheid;
+		BBPkeepref(*result);
+		return MAL_SUCCEED;
+	}
+	throw(MAL, "algebra.tinter", GDK_EXCEPTION);
 }
 
 str
@@ -3464,6 +3499,24 @@ ALGslice_oid(int *ret, bat *bid, oid *start, oid *end)
 	return MAL_SUCCEED;
 }
 
+str
+ALGsubslice_wrd(int *ret, bat *bid, wrd *start, wrd *end)
+{
+	lng s = *start;
+	lng e = (*end == wrd_nil ? lng_nil : *end);
+	bat slc;
+	str msg;
+
+	if ((msg = ALGslice(&slc, bid, &s, &e)) == MAL_SUCCEED) {
+		if ((msg = ALGtmark_default(ret, &slc)) == MAL_SUCCEED) {
+			BBPdecref(slc, TRUE); 
+			*ret = -*ret; /* ugly reverse */ 
+			return MAL_SUCCEED;
+		}
+	}
+	return msg;
+}
+
 /*
  * @- BUN Get/Fetch
  */
@@ -3764,7 +3817,6 @@ ALGprojectNIL(int *ret, int *bid)
 }
 
 /*
- * @-
  * The constant versions are typed by the parser
  */
 str
@@ -3888,11 +3940,11 @@ ALGavg(dbl *res, int *bid)
 	BUN cnt;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "algebra.avg", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "aggr.avg", RUNTIME_OBJECT_MISSING);
 	ret = BATcalcavg(b, NULL, res, &cnt);
 	BBPreleaseref(b->batCacheid);
 	if (ret == GDK_FAIL)
-		throw(MAL, "algebra.avg", SEMANTIC_TYPE_MISMATCH);
+		throw(MAL, "aggr.avg", SEMANTIC_TYPE_MISMATCH);
 	/* backward compatibility: return nil if there are nils in the input */
 	if (cnt < BATcount(b))
 		*res = dbl_nil;
@@ -3902,60 +3954,69 @@ ALGavg(dbl *res, int *bid)
 /*
  * @+ BAT standard deviation
  */
-@= stdev_impl
-str ALGstdev_@1(dbl *res, int *bid) {
+str
+ALGstdev(dbl *res, int *bid)
+{
 	BAT *b;
-	BUN cnt = 0;
+	dbl stdev;
 
-	if ((b=BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "algebra.stdev", RUNTIME_OBJECT_MISSING);
-	}
-	cnt = BATcount(b);
-
-	if (cnt) {
-		dbl stdev = 0;
-		/* first, we need the average of the tail values */
-		bit t = TRUE;
-		dbl avg = 0;
-		CMDsum_@1_dbl(&avg, b, &t);
-		if (avg != dbl_nil) {
-			BATiter bi = bat_iterator(b);
-			BUN p,q;
-
-			avg /= cnt;
-
-			/* next, we need the sum of the squares of the difference of each
-			   value in the tail with the avg */
-
-			/* no need to check for nil values on the tail, the CMDsum has
-			   already done that and reported back */
-			BATloop(b, p, q) {
-				dbl value = (dbl) *(@1*) BUNtloc(bi, p);
-				value -= avg;    /* diff from avg  */
-				value *= value;  /* square         */
-				stdev += value;  /* sum of squares */
-			}
-
-			/* finaly, divide by the cnt and compute the square root */
-			*res = sqrt(stdev/cnt);
-		} else {
-			*res = dbl_nil;
-		}
-	} else {
-		*res = dbl_nil;
-	}
-
+	if ((b = BATdescriptor(*bid)) == NULL)
+		throw(MAL, "aggr.stdev", RUNTIME_OBJECT_MISSING);
+	stdev = BATcalcstdev_sample(NULL, b);
 	BBPreleaseref(b->batCacheid);
+	if (stdev == dbl_nil)
+		throw(MAL, "aggr.stdev", SEMANTIC_TYPE_MISMATCH);
+	*res = stdev;
 	return MAL_SUCCEED;
 }
 
-@
-@c
-@:stdev_impl(bte)@
-@:stdev_impl(sht)@
-@:stdev_impl(int)@
-@:stdev_impl(wrd)@
-@:stdev_impl(lng)@
-@:stdev_impl(flt)@
-@:stdev_impl(dbl)@
+str
+ALGstdevp(dbl *res, int *bid)
+{
+	BAT *b;
+	dbl stdev;
 
+	if ((b = BATdescriptor(*bid)) == NULL)
+		throw(MAL, "aggr.stdevp", RUNTIME_OBJECT_MISSING);
+	stdev = BATcalcstdev_population(NULL, b);
+	BBPreleaseref(b->batCacheid);
+	if (stdev == dbl_nil)
+		throw(MAL, "aggr.stdevp", SEMANTIC_TYPE_MISMATCH);
+	*res = stdev;
+	return MAL_SUCCEED;
+}
+
+/*
+ * @+ BAT variance
+ */
+str
+ALGvariance(dbl *res, int *bid)
+{
+	BAT *b;
+	dbl variance;
+
+	if ((b = BATdescriptor(*bid)) == NULL)
+		throw(MAL, "aggr.variance", RUNTIME_OBJECT_MISSING);
+	variance = BATcalcvariance_sample(NULL, b);
+	BBPreleaseref(b->batCacheid);
+	if (variance == dbl_nil)
+		throw(MAL, "aggr.variance", SEMANTIC_TYPE_MISMATCH);
+	*res = variance;
+	return MAL_SUCCEED;
+}
+
+str
+ALGvariancep(dbl *res, int *bid)
+{
+	BAT *b;
+	dbl variance;
+
+	if ((b = BATdescriptor(*bid)) == NULL)
+		throw(MAL, "aggr.variancep", RUNTIME_OBJECT_MISSING);
+	variance = BATcalcvariance_population(NULL, b);
+	BBPreleaseref(b->batCacheid);
+	if (variance == dbl_nil)
+		throw(MAL, "aggr.variancep", SEMANTIC_TYPE_MISMATCH);
+	*res = variance;
+	return MAL_SUCCEED;
+}

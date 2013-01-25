@@ -1,4 +1,4 @@
-.TH MCLIENT 1 "APRIL 2011" MonetDB "MonetDB Applications"
+.TH MCLIENT 1 "NOVEMBER 2012" MonetDB "MonetDB Applications"
 .SH NAME
 mclient \- the MonetDB command-line tool
 .SH SYNOPSIS
@@ -17,7 +17,7 @@ mclient \- the MonetDB command-line tool
 MonetDB is a database management system that is developed from a
 main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
-accelerators, SQL- and XML- frontends.
+accelerators, SQL- and JAQL- frontends.
 .PP
 .I mclient
 is the command-line interface to the MonetDB server.
@@ -86,6 +86,9 @@ General Options
 \fB\-\-help\fP (\fB\-?\fP)
 Print usage information and exit.
 .TP
+\fB\-\-version\fP (\fB\-v\fP)
+Print version information and exit.
+.TP
 \fB\-\-encoding=\fP\fIencoding\fP (\fB\-E\fP \fIencoding\fP)
 Specify the character encoding of the input.  The option applies to
 both the standard input of
@@ -114,10 +117,12 @@ option is omitted, the default of
 is assumed.
 .TP
 \fB\-\-database=\fP\fIdatabase\fP (\fB\-d\fP \fIdatabase\fP)
-Specify the name of the database to connect to.  The \fB-d\fP can be
+Specify the name or URI of the database to connect to.  The \fB-d\fP can be
 omitted if an equally named file does not exist in the current
 directory.  As such, the first non-option argument will be interpreted
 as database to connect to if the argument does not exist as file.
+Valid URIs are as returned by
+.RB "`monetdb discover`, see " monetdb "(1), and look like " "mapi:monetdb://hostname:port/database" .
 .TP
 \fB\-\-host=\fP\fIhostname\fP (\fB\-h\fP \fIhostname\fP)
 Specify the name of the host on which the server runs (default:

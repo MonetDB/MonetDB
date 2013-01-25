@@ -31,6 +31,8 @@ gdk_export int GDKgetenv_isyes(const char *name);
 
 gdk_export int GDKgetenv_istrue(const char *name);
 
+gdk_export int GDKgetenv_int(const char *name, int def);
+
 gdk_export void GDKsetenv(str name, str value);
 
 /*

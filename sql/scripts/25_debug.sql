@@ -42,11 +42,6 @@ create function environment()
 	returns table ("name" string, value string)
 	external name sql.sql_environment;
 
--- The database foot print
-create function storage()
-returns table ("schema" string, "table" string, "column" string, location string, "count" bigint, capacity bigint, width int, size bigint, hashsize bigint, sorted boolean)
-external name sql.storage;
-
 -- The BAT buffer pool overview
 create function bbp () 
 	returns table (id int, name string, htype string, 

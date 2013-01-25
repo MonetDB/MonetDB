@@ -409,6 +409,12 @@ try:
 except:
     MAXFD = 256
 
+try:
+    xrange
+except NameError:
+    # Python 2 vs Python 3 compatibility: in Py3, use range instead of xrange
+    xrange = range
+
 # True/False does not exist on 2.2.0
 try:
     False
@@ -420,7 +426,7 @@ _active = []
 
 def _cleanup():
     for inst in _active[:]:
-        if inst.poll(_deadstate=sys.maxint) >= 0:
+        if inst.poll(_deadstate=sys.maxsize) >= 0:
             try:
                 _active.remove(inst)
             except ValueError:
@@ -540,7 +546,7 @@ class Popen(object):
         _cleanup()
 
         self._child_created = False
-        if not isinstance(bufsize, (int, long)):
+        if not isinstance(bufsize, int):
             raise TypeError("bufsize must be an integer")
 
         if mswindows:
@@ -633,7 +639,7 @@ class Popen(object):
             # We didn't get to successfully create a child process.
             return
         # In case the child hasn't been waited on, check if it's done.
-        self.poll(_deadstate=sys.maxint)
+        self.poll(_deadstate=sys.maxsize)
         if self.returncode is None and _active is not None:
             # Child is still running, keep us alive until we can wait on it.
             _active.append(self)
@@ -768,7 +774,7 @@ class Popen(object):
                            errread, errwrite):
             """Execute program (MS Windows version)"""
 
-            if not isinstance(args, types.StringTypes):
+            if not isinstance(args, str):
                 args = list2cmdline(args)
 
             # Process startup details
@@ -785,7 +791,7 @@ class Popen(object):
                 startupinfo.wShowWindow = SW_HIDE
                 comspec = os.environ.get("COMSPEC", "cmd.exe")
                 args = comspec + " /c " + args
-                if (GetVersion() >= 0x80000000L or
+                if (GetVersion() >= 0x80000000 or
                         os.path.basename(comspec).lower() == "command.com"):
                     # Win9x, or using command.com on NT. We need to
                     # use the w9xpopen intermediate program. For more
@@ -813,12 +819,12 @@ class Popen(object):
                                          env,
                                          cwd,
                                          startupinfo)
-            except pywintypes.error, e:
+            except pywintypes.error:
                 # Translate pywintypes.error to WindowsError, which is
                 # a subclass of OSError.  FIXME: We should really
                 # translate errno using _sys_errlist (or simliar), but
                 # how can this be done from Python?
-                raise WindowsError(*e.args)
+                raise WindowsError(*sys.exc_info()[1].args)
 
             # Retain the process handle, but close the thread handle
             self._child_created = True
@@ -985,7 +991,7 @@ class Popen(object):
                            errread, errwrite):
             """Execute program (POSIX version)"""
 
-            if isinstance(args, types.StringTypes):
+            if isinstance(args, str):
                 args = [args]
             else:
                 args = list(args)
@@ -1193,8 +1199,8 @@ def _demo_posix():
     # Example 1: Simple redirection: Get process list
     #
     plist = Popen(["ps"], stdout=PIPE).communicate()[0]
-    print "Process list:"
-    print plist
+    sys.stdout.write("Process list:\n")
+    sys.stdout.write(plist + "\n")
 
     #
     # Example 2: Change uid before executing child
@@ -1206,42 +1212,43 @@ def _demo_posix():
     #
     # Example 3: Connecting several subprocesses
     #
-    print "Looking for 'hda'..."
+    sys.stdout.write("Looking for 'hda'...\n")
     p1 = Popen(["dmesg"], stdout=PIPE)
     p2 = Popen(["grep", "hda"], stdin=p1.stdout, stdout=PIPE)
-    print repr(p2.communicate()[0])
+    sys.stdout.write(repr(p2.communicate()[0]) + "\n")
 
     #
     # Example 4: Catch execution error
     #
-    print
-    print "Trying a weird file..."
+    sys.stdout.write("\n")
+    sys.stdout.write("Trying a weird file...\n")
     try:
-        print Popen(["/this/path/does/not/exist"]).communicate()
-    except OSError, e:
+        sys.stdout.write(Popen(["/this/path/does/not/exist"]).communicate() + "\n")
+    except OSError:
+        e = sys.exc_info()[1]
         if e.errno == errno.ENOENT:
-            print "The file didn't exist.  I thought so..."
-            print "Child traceback:"
-            print e.child_traceback
+            sys.stdout.write("The file didn't exist.  I thought so..." + "\n")
+            sys.stdout.write("Child traceback:\n")
+            sys.stdout.write(e.child_traceback + "\n")
         else:
-            print "Error", e.errno
+            sys.stdout.write("Error " + e.errno + "\n")
     else:
-        print >>sys.stderr, "Gosh.  No error."
+        sys.stderr.write("Gosh.  No error.\n")
 
 
 def _demo_windows():
     #
     # Example 1: Connecting several subprocesses
     #
-    print "Looking for 'PROMPT' in set output..."
+    sys.stdout.write("Looking for 'PROMPT' in set output...\n")
     p1 = Popen("set", stdout=PIPE, shell=True)
     p2 = Popen('find "PROMPT"', stdin=p1.stdout, stdout=PIPE)
-    print repr(p2.communicate()[0])
+    sys.stdout.write(repr(p2.communicate()[0]) + "\n")
 
     #
     # Example 2: Simple execution of program
     #
-    print "Executing calc..."
+    sys.stdout.write("Executing calc...\n")
     p = Popen("calc")
     p.wait()
 

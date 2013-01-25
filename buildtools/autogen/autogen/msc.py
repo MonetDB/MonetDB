@@ -32,14 +32,14 @@ automake_ext = ['c', 'h', 'tab.c', 'tab.h', 'yy.c', 'pm.i', '']
 def split_filename(f):
     base = f
     ext = ""
-    if string.find(f, ".") >= 0:
-        return string.split(f, ".", 1)
+    if f.find(".") >= 0:
+        return f.split(".", 1)
     return base, ext
 
 def rsplit_filename(f):
     base = f
     ext = ""
-    s = string.rfind(f, ".")
+    s = f.rfind(".")
     if s >= 0:
         return f[:s], f[s+1:]
     return base, ext
@@ -47,7 +47,7 @@ def rsplit_filename(f):
 def msc_basename(f):
     # return basename (i.e. just the file name part) of a path, no
     # matter which directory separator was used
-    return string.split(string.split(f, '/')[-1], '\\')[-1]
+    return f.split('/')[-1].split('\\')[-1]
 
 def msc_dummy(fd, var, values, msc):
     res = fd
@@ -84,16 +84,16 @@ def empty_dir(fd, n, i):
 
 def create_subdir(fd, dir, i):
     res = ""
-    if string.find(dir, "?") > -1:
-        parts = string.split(dir, "?")
+    if dir.find("?") > -1:
+        parts = dir.split("?")
         if len(parts) == 2:
-            dirs = string.split(parts[1], ":")
+            dirs = parts[1].split(":")
             fd.write("!IFDEF %s\n" % parts[0])
-            if len(dirs) > 0 and string.strip(dirs[0]) != "":
+            if len(dirs) > 0 and dirs[0].strip() != "":
                 create_dir(fd, dirs[0], parts[0], i)
             else:
                 empty_dir(fd, parts[0], i)
-            if len(dirs) > 1 and string.strip(dirs[1]) != "":
+            if len(dirs) > 1 and dirs[1].strip() != "":
                 fd.write("!ELSE\n")
                 create_dir(fd, dirs[1], parts[0], i)
             else:
@@ -124,7 +124,7 @@ def msc_subdirs(fd, var, values, msc):
 def msc_assignment(fd, var, values, msc):
     o = ""
     for v in values:
-        o = o + " " + string.replace(v, '/', '\\')
+        o = o + " " + v.replace('/', '\\')
     if var[0] != '@':
         fd.write("%s = %s\n" % (var, o))
 
@@ -156,13 +156,13 @@ def msc_add_srcdir(path, msc, prefix =""):
         dir = "$(srcdir)/" + dir
     else:
         return ""
-    return prefix+string.replace(dir, '/', '\\')
+    return prefix+dir.replace('/', '\\')
 
 def msc_translate_dir(path, msc):
     dir = path
     rest = ""
-    if string.find(path, '/') >= 0:
-        dir, rest = string.split(path, '/', 1)
+    if path.find('/') >= 0:
+        dir, rest = path.split('/', 1)
     if dir == "top_builddir":
         dir = "$(TOPDIR)"
     elif dir == "top_srcdir":
@@ -180,7 +180,7 @@ def msc_translate_dir(path, msc):
         dir = "$("+dir+")"
     if rest:
         dir = dir+ "\\" + rest
-    return string.replace(dir, '/', '\\')
+    return dir.replace('/', '\\')
 
 def msc_translate_file(path, msc):
     if os.path.isfile(os.path.join(msc['cwd'], path)):
@@ -197,13 +197,13 @@ def msc_find_srcs(target, deps, msc):
     base, ext = split_filename(target)
     f = target
     pf = f
-    while ext != "h" and deps.has_key(f):
+    while ext != "h" and f in deps:
         f = deps[f][0]
         b, ext = split_filename(f)
         if ext in automake_ext:
             pf = f
     # built source if has dep and ext != cur ext
-    if deps.has_key(pf) and pf not in msc['BUILT_SOURCES']:
+    if pf in deps and pf not in msc['BUILT_SOURCES']:
         pfb, pfext = split_filename(pf)
         sfb, sfext = split_filename(deps[pf][0])
         if sfext != pfext:
@@ -214,7 +214,7 @@ def msc_find_hdrs(target, deps, hdrs):
     base, ext = split_filename(target)
     f = target
     pf = f
-    while ext != "h" and deps.has_key(f):
+    while ext != "h" and f in deps:
         f = deps[f][0]
         b, ext = split_filename(f)
         if ext in automake_ext:
@@ -292,21 +292,21 @@ def msc_additional_libs(fd, name, sep, type, list, dlibs, msc, pref, ext):
     fd.write(add + "\n")
 
 def msc_translate_ext(f):
-    return string.replace(f, '.o', '.obj')
+    return f.replace('.o', '.obj')
 
 def msc_find_target(target, msc):
     tree = msc['TREE']
     for t, v in tree.items():
-        if type(v) is type({}) and v.has_key('TARGETS'):
+        if type(v) is type({}) and 'TARGETS' in v:
             targets = v['TARGETS']
             if target in targets:
                 if t == "BINS" or t[0:4] == "bin_":
                     return "BIN", "BIN"
                 elif (t[0:4] == "lib_"):
-                    return "LIB", string.upper(t[4:])
+                    return "LIB", t[4:].upper()
                 elif t == "LIBS":
                     name, ext = split_filename(target)
-                    return "LIB", string.upper(name)
+                    return "LIB", name.upper()
     return "UNKNOWN", "UNKNOWN"
 
 def msc_dep(fd, tar, deplist, msc):
@@ -328,7 +328,7 @@ def msc_dep(fd, tar, deplist, msc):
                 if dep.endswith('.mx') and tar not in msc['BUILT_SOURCES']:
                     msc['BUILT_SOURCES'].append(tar)
         else:
-            print "!WARNING: dropped absolute dependency " + d
+            print("!WARNING: dropped absolute dependency " + d)
     if sep == " ":
         fd.write("\n")
         if tf+'.mx.in' in deplist:
@@ -380,13 +380,13 @@ def msc_deps(fd, deps, objext, msc):
 # list of scripts to install
 def msc_scripts(fd, var, scripts, msc):
 
-    s, ext = string.split(var, '_', 1);
+    s, ext = var.split('_', 1);
     ext = [ ext ]
-    if scripts.has_key("EXT"):
+    if "EXT" in scripts:
         ext = scripts["EXT"] # list of extentions
 
     sd = "bindir"
-    if scripts.has_key("DIR"):
+    if "DIR" in scripts:
         sd = scripts["DIR"][0] # use first name given
     sd = msc_translate_dir(sd, msc)
 
@@ -394,7 +394,7 @@ def msc_scripts(fd, var, scripts, msc):
         s,ext2 = rsplit_filename(script)
         if not ext2 in ext:
             continue
-        if msc['INSTALL'].has_key(script):
+        if script in msc['INSTALL']:
             continue
         if os.path.isfile(os.path.join(msc['cwd'], script+'.in')):
             inf = '$(srcdir)\\%s.in' % script
@@ -407,7 +407,7 @@ def msc_scripts(fd, var, scripts, msc):
         elif os.path.isfile(os.path.join(msc['cwd'], script)):
             fd.write('%s: "$(srcdir)\\%s"\n' % (script, script))
             fd.write('\t$(INSTALL) "$(srcdir)\\%s" "%s"\n' % (script, script))
-        if scripts.has_key('COND'):
+        if 'COND' in scripts:
             condname = 'defined(' + ') && defined('.join(scripts['COND']) + ')'
             mkname = script.replace('.', '_').replace('-', '_')
             fd.write('!IF %s\n' % condname)
@@ -419,7 +419,7 @@ def msc_scripts(fd, var, scripts, msc):
         else:
             cscript = script
             condname = ''
-        if not scripts.has_key('NOINST') and not scripts.has_key('NOINST_MSC'):
+        if not 'NOINST' in scripts and not 'NOINST_MSC' in scripts:
             msc['INSTALL'][script] = cscript, '', sd, '', condname
         msc['SCRIPTS'].append(cscript)
 
@@ -439,7 +439,7 @@ def uniq(l):
 def msc_headers(fd, var, headers, msc):
 
     sd = "includedir"
-    if headers.has_key("DIR"):
+    if "DIR" in headers:
         sd = headers["DIR"][0] # use first name given
     sd = msc_translate_dir(sd, msc)
 
@@ -466,7 +466,7 @@ def msc_headers(fd, var, headers, msc):
 ##                fd.write('\t$(INSTALL) "$(srcdir)\\%s" "%s"\n' % (header, header))
 ##                fd.write('\tif not exist "%s" if exist "$(srcdir)\\%s" $(INSTALL) "$(srcdir)\\%s" "%s"\n' % (header, header, header, header))
                 fd.write('\t$(INSTALL) "$(srcdir)\\%s" "%s"\n' % (header, header))
-            if headers.has_key('COND'):
+            if 'COND' in headers:
                 condname = 'defined(' + ') && defined('.join(headers['COND']) + ')'
                 mkname = header.replace('.', '_').replace('-', '_')
                 fd.write('!IF %s\n' % condname)
@@ -527,32 +527,32 @@ def msc_binary(fd, var, binmap, msc):
             msc['SCRIPTS'].append(name)
         return
 
-    if binmap.has_key('MTSAFE'):
+    if 'MTSAFE' in binmap:
         fd.write("CFLAGS=$(CFLAGS) $(thread_safe_flag_spec)\n")
 
     HDRS = []
     hdrs_ext = []
-    if binmap.has_key('HEADERS'):
+    if 'HEADERS' in binmap:
         hdrs_ext = binmap['HEADERS']
 
     SCRIPTS = []
     scripts_ext = []
-    if binmap.has_key('SCRIPTS'):
+    if 'SCRIPTS' in binmap:
         scripts_ext = binmap['SCRIPTS']
 
     name = var[4:]
-    if binmap.has_key("NAME"):
+    if "NAME" in binmap:
         binname = binmap['NAME'][0]
     else:
         binname = name
     binname2 = binname.replace('-','_').replace('.', '_')
 
-    if binmap.has_key('COND'):
+    if 'COND' in binmap:
         condname = 'defined(' + ') && defined('.join(binmap['COND']) + ')'
         fd.write('!IF %s\n' % condname)
         fd.write('C_%s_exe = %s.exe\n' % (binname2, binname))
         msc['BINS'].append((binname, '$(C_%s_exe)' % binname2, condname))
-    elif binmap.has_key('CONDINST'):
+    elif 'CONDINST' in binmap:
         condname = 'defined(' + ') && defined('.join(binmap['CONDINST']) + ')'
         fd.write('!IF %s\n' % condname)
         fd.write('C_inst_%s_exe = %s.exe\n' % (binname2, binname))
@@ -566,21 +566,21 @@ def msc_binary(fd, var, binmap, msc):
         msc['NBINS'].append((binname, '$(C_noinst_%s_exe)' % binname2, condname))
     else:
         condname = ''
-        if binmap.has_key('NOINST'):
+        if 'NOINST' in binmap:
             msc['NBINS'].append((binname, binname, condname))
         else:
             msc['BINS'].append((binname, binname, condname))
 
-    if binmap.has_key("DIR"):
+    if "DIR" in binmap:
         bd = binmap["DIR"][0] # use first name given
         fd.write("%sdir = %s\n" % (binname2, msc_translate_dir(bd,msc)) );
     else:
         fd.write("%sdir = $(bindir)\n" % binname2);
 
     binlist = []
-    if binmap.has_key("LIBS"):
+    if "LIBS" in binmap:
         binlist = binlist + binmap["LIBS"]
-    if binmap.has_key("WINLIBS"):
+    if "WINLIBS" in binmap:
         binlist = binlist + binmap["WINLIBS"]
     if binlist:
         msc_additional_libs(fd, binname, "", "BIN", binlist, [], msc, '', '.exe')
@@ -619,7 +619,7 @@ def msc_binary(fd, var, binmap, msc):
         fd.write(binname2+"_SCRIPTS =" + msc_space_sep_list(SCRIPTS))
         msc['BUILT_SOURCES'].append("$(" + binname2 + "_SCRIPTS)")
 
-    if binmap.has_key('HEADERS'):
+    if 'HEADERS' in binmap:
         for h in HDRS:
             msc['HDRS'].append(h)
 
@@ -629,18 +629,18 @@ def msc_bins(fd, var, binsmap, msc):
 
     HDRS = []
     hdrs_ext = []
-    if binsmap.has_key('HEADERS'):
+    if 'HEADERS' in binsmap:
         hdrs_ext = binsmap['HEADERS']
 
     SCRIPTS = []
     scripts_ext = []
-    if binsmap.has_key('SCRIPTS'):
+    if 'SCRIPTS' in binsmap:
         scripts_ext = binsmap['SCRIPTS']
 
     name = ""
-    if binsmap.has_key("NAME"):
+    if "NAME" in binsmap:
         name = binsmap["NAME"][0] # use first name given
-    if binsmap.has_key('MTSAFE'):
+    if 'MTSAFE' in binsmap:
         fd.write("CFLAGS=$(CFLAGS) $(thread_safe_flag_spec)\n")
 
     for binsrc in binsmap['SOURCES']:
@@ -649,13 +649,13 @@ def msc_bins(fd, var, binsmap, msc):
         msc['EXTRA_DIST'].append(binsrc)
         bin2 = bin.replace('-','_')
 
-        if binsmap.has_key("DIR"):
+        if "DIR" in binsmap:
             bd = binsmap["DIR"][0] # use first name given
             fd.write("%sdir = %s\n" % (bin2, msc_translate_dir(bd,msc)) );
         else:
             fd.write("%sdir = $(bindir)\n" % (bin2) );
 
-        if binsmap.has_key('CONDINST'):
+        if 'CONDINST' in binsmap:
             condname = 'defined(' + ') && defined('.join(binsmap['CONDINST']) + ')'
             fd.write('!IF %s\n' % condname)
             fd.write('C_inst_%s_exe = %s.exe\n' % (bin2, bin))
@@ -667,18 +667,18 @@ def msc_bins(fd, var, binsmap, msc):
             msc['BINS'].append((bin, '$(C_inst_%s_exe)' % bin2, condname))
             condname = '!defined(' + ') && !defined('.join(binsmap['CONDINST']) + ')'
             msc['NBINS'].append((bin, '$(C_noinst_%s_exe)' % bin2, condname))
-        elif binsmap.has_key('NOINST'):
+        elif 'NOINST' in binsmap:
             msc['NBINS'].append((bin, bin, ''))
         else:
             msc['BINS'].append((bin, bin, ''))
 
-        if binsmap.has_key(bin + "_LIBS"):
+        if bin + "_LIBS" in binsmap:
             msc_additional_libs(fd, bin, "", "BIN", binsmap[bin + "_LIBS"], [], msc, '', '.exe')
         else:
             binslist = []
-            if binsmap.has_key("LIBS"):
+            if "LIBS" in binsmap:
                 binslist = binslist + binsmap["LIBS"]
-            if binsmap.has_key("WINLIBS"):
+            if "WINLIBS" in binsmap:
                 binslist = binslist + binsmap["WINLIBS"]
             if binslist:
                 msc_additional_libs(fd, bin, "", "BIN", binslist, [], msc, '', '.exe')
@@ -711,7 +711,7 @@ def msc_bins(fd, var, binsmap, msc):
         fd.write(name.replace('-','_')+"_SCRIPTS =" + msc_space_sep_list(SCRIPTS))
         msc['BUILT_SOURCES'].append("$(" + name.replace('-','_') + "_SCRIPTS)")
 
-    if binsmap.has_key('HEADERS'):
+    if 'HEADERS' in binsmap:
         for h in HDRS:
             msc['HDRS'].append(h)
 
@@ -728,12 +728,12 @@ def msc_library(fd, var, libmap, msc):
     sep = ""
     pref = 'lib'
     dll = '.dll'
-    if libmap.has_key("NAME"):
+    if "NAME" in libmap:
         libname = libmap['NAME'][0]
     else:
         libname = name
 
-    if libmap.has_key('PREFIX'):
+    if 'PREFIX' in libmap:
         if libmap['PREFIX']:
             pref = libmap['PREFIX'][0]
         else:
@@ -743,35 +743,35 @@ def msc_library(fd, var, libmap, msc):
     if (libname[0] == "_"):
         sep = "_"
         libname = libname[1:]
-    if libmap.has_key('SEP'):
+    if 'SEP' in libmap:
         sep = libmap['SEP'][0]
 
     lib = "lib"
     ld = "LIBDIR"
-    if libmap.has_key("DIR"):
+    if "DIR" in libmap:
         lib = libname
         ld = libmap["DIR"][0] # use first name given
     ld = msc_translate_dir(ld,msc)
 
     HDRS = []
     hdrs_ext = []
-    if libmap.has_key('HEADERS'):
+    if 'HEADERS' in libmap:
         hdrs_ext = libmap['HEADERS']
 
     SCRIPTS = []
     scripts_ext = []
-    if libmap.has_key('SCRIPTS'):
+    if 'SCRIPTS' in libmap:
         scripts_ext = libmap['SCRIPTS']
 
     v = sep + libname
     makedll = pref + v + dll
-    if libmap.has_key('NOINST') or libmap.has_key('NOINST_MSC'):
-        if libmap.has_key("LIBS") or libmap.has_key("WINLIBS"):
-            print "!WARNING: no sense in having a LIBS section with NOINST"
+    if 'NOINST' in libmap or 'NOINST_MSC' in libmap:
+        if "LIBS" in libmap or "WINLIBS" in libmap:
+            print("!WARNING: no sense in having a LIBS section with NOINST")
         makelib = pref + v + '.lib'
     else:
         makelib = makedll
-    if libmap.has_key('COND'):
+    if 'COND' in libmap:
         condname = 'defined(' + ') && defined('.join(libmap['COND']) + ')'
         mkname = (pref + v).replace('.', '_').replace('-', '_')
         fd.write('!IF %s\n' % condname)
@@ -786,7 +786,7 @@ def msc_library(fd, var, libmap, msc):
     else:
         condname = ''
 
-    if libmap.has_key('NOINST') or libmap.has_key('NOINST_MSC'):
+    if 'NOINST' in libmap or 'NOINST_MSC' in libmap:
         msc['NLIBS'].append(makelib)
     else:
         msc['LIBS'].append(makelib)
@@ -799,16 +799,16 @@ def msc_library(fd, var, libmap, msc):
         else:
             msc['INSTALL'][pref + v] = makedll, dll, '$(%sdir)' % lib.replace('-', '_'), i, condname
 
-    if libmap.has_key('MTSAFE'):
+    if 'MTSAFE' in libmap:
         fd.write("CFLAGS=$(CFLAGS) $(thread_safe_flag_spec)\n")
 
     dlib = []
-    if libmap.has_key(libname+ "_DLIBS"):
+    if libname+ "_DLIBS" in libmap:
         dlib = libmap[libname+"_DLIBS"]
     liblist = []
-    if libmap.has_key("LIBS"):
+    if "LIBS" in libmap:
         liblist = liblist + libmap["LIBS"]
-    if libmap.has_key("WINLIBS"):
+    if "WINLIBS" in libmap:
         liblist = liblist + libmap["WINLIBS"]
     if liblist:
         msc_additional_libs(fd, libname, sep, "LIB", liblist, dlib, msc, pref, dll)
@@ -847,7 +847,7 @@ def msc_library(fd, var, libmap, msc):
     fd.write(srcs + "\n")
     fd.write(deps + "\n")
     ln = pref + sep + libname
-    if libmap.has_key('NOINST') or libmap.has_key('NOINST_MSC'):
+    if 'NOINST' in libmap or 'NOINST_MSC' in libmap:
         ln_ = ln.replace('-','_')
         fd.write("%s.lib: $(%s_DEPS)\n" % (ln, ln_))
         fd.write('\t$(ARCHIVER) /out:"%s.lib" $(%s_OBJS) $(%s_LIBS)\n' % (ln, ln_, ln_))
@@ -865,7 +865,7 @@ def msc_library(fd, var, libmap, msc):
         fd.write(libname.replace('-','_')+"_SCRIPTS =" + msc_space_sep_list(SCRIPTS))
         msc['BUILT_SOURCES'].append("$(" + name.replace('-','_') + "_SCRIPTS)")
 
-    if libmap.has_key('HEADERS'):
+    if 'HEADERS' in libmap:
         for h in HDRS:
             msc['HDRS'].append(h)
 
@@ -875,21 +875,21 @@ def msc_libs(fd, var, libsmap, msc):
 
     lib = "lib"
     ld = "LIBDIR"
-    if libsmap.has_key("DIR"):
+    if "DIR" in libsmap:
         lib = "libs"
         ld = libsmap["DIR"][0] # use first name given
     ld = msc_translate_dir(ld,msc)
 
     sep = ""
-    if libsmap.has_key('SEP'):
+    if 'SEP' in libsmap:
         sep = libsmap['SEP'][0]
 
     SCRIPTS = []
     scripts_ext = []
-    if libsmap.has_key('SCRIPTS'):
+    if 'SCRIPTS' in libsmap:
         scripts_ext = libsmap['SCRIPTS']
 
-    if libsmap.has_key('MTSAFE'):
+    if 'MTSAFE' in libsmap:
         fd.write("CFLAGS=$(CFLAGS) $(thread_safe_flag_spec)\n")
 
     for libsrc in libsmap['SOURCES']:
@@ -901,15 +901,15 @@ def msc_libs(fd, var, libsmap, msc):
         msc['INSTALL']['lib' + v] = 'lib' + v + '.dll', '.dll', ld, 'lib' + v + '.lib', ''
 
         dlib = []
-        if libsmap.has_key(libname + "_DLIBS"):
+        if libname + "_DLIBS" in libsmap:
             dlib = libsmap[libname+"_DLIBS"]
-        if libsmap.has_key(libname + "_LIBS"):
+        if libname + "_LIBS" in libsmap:
             msc_additional_libs(fd, libname, sep, "LIB", libsmap[libname + "_LIBS"], dlib, msc, 'lib', '.dll')
         else:
             libslist = []
-            if libsmap.has_key("LIBS"):
+            if "LIBS" in libsmap:
                 libslist = libslist + libsmap["LIBS"]
-            if libsmap.has_key("WINLIBS"):
+            if "WINLIBS" in libsmap:
                 libslist = libslist + libsmap["WINLIBS"]
             if libslist:
                 msc_additional_libs(fd, libname, sep, "LIB", libslist, dlib, msc, 'lib', '.dll')
@@ -952,7 +952,7 @@ def msc_libs(fd, var, libsmap, msc):
         msc['BUILT_SOURCES'].append("$(SCRIPTS)")
         msc['SCRIPTS'].append("$(SCRIPTS)")
 
-    if libsmap.has_key('HEADERS'):
+    if 'HEADERS' in libsmap:
         HDRS = []
         hdrs_ext = libsmap['HEADERS']
         for target in libsmap['DEPS'].keys():
@@ -979,15 +979,15 @@ def msc_includes(fd, var, values, msc):
 def msc_gem(fd, var, gem, msc):
     gemre = re.compile(r'\.files *= *\[ *(.*[^ ]) *\]')
     rd = 'RUBY_DIR'
-    if gem.has_key('DIR'):
+    if 'DIR' in gem:
         rd = gem['DIR'][0]
     rd = msc_translate_dir(rd, msc)
     rd = '$(prefix)\\' + rd
     fd.write('!IF defined(HAVE_RUBYGEM)\n')
     for f in gem['FILES']:
         msc['SCRIPTS'].append(f[:-4])
-        srcs = map(lambda x: x.strip('" '),
-                   gemre.search(open(os.path.join(msc['cwd'], f)).read()).group(1).split(', '))
+        srcs = list(map(lambda x: x.strip('" '),
+                   gemre.search(open(os.path.join(msc['cwd'], f)).read()).group(1).split(', ')))
         srcs.append(f)
         fd.write('%s: %s\n' % (f[:-4], ' '.join(srcs)))
         fd.write('\tgem build %s\n' % f)
@@ -1029,8 +1029,8 @@ def msc_python_generic(fd, var, python, msc, PYTHON):
         fd.write('install_%s:\n' % f)
         fd.write('\t$(%s) %s install --prefix "$(prefix)"\n' % (PYTHON, f))
 
-def msc_python(fd, var, python, msc):
-    msc_python_generic(fd, var, python, msc, 'PYTHON')
+def msc_python2(fd, var, python, msc):
+    msc_python_generic(fd, var, python, msc, 'PYTHON2')
 
 def msc_python3(fd, var, python3, msc):
     msc_python_generic(fd, var, python3, msc, 'PYTHON3')
@@ -1042,15 +1042,15 @@ def msc_ant(fd, var, ant, msc):
     target = var[4:]                    # the ant target to call
 
     jd = "JAVADIR"
-    if ant.has_key("DIR"):
+    if "DIR" in ant:
         jd = ant["DIR"][0] # use first name given
     jd = msc_translate_dir(jd, msc)
 
-    if ant.has_key("SOURCES"):
+    if "SOURCES" in ant:
         for src in ant['SOURCES']:
             msc['EXTRA_DIST'].append(src)
 
-    if ant.has_key('COND'):
+    if 'COND' in ant:
         condname = 'defined(' + ') && defined('.join(ant['COND']) + ')'
         condname = 'defined(HAVE_JAVA) && ' + condname
     else:
@@ -1105,23 +1105,26 @@ output_funcs = {'SUBDIRS': msc_subdirs,
                 'HEADERS': msc_headers,
                 'ANT': msc_ant,
                 'GEM': msc_gem,
-                'PYTHON': msc_python,
+                'PYTHON2': msc_python2,
                 'PYTHON3': msc_python3,
                 }
 
 def output(tree, cwd, topdir):
     # HACKS to keep uncompilable stuff out of Windows makefiles.
+    todelete = []
     for k, v in tree.items():
         if type(v) is type({}):
-            if v.has_key('COND'):
+            if 'COND' in v:
                 if 'NOT_WIN32' in v['COND']:
-                    del tree[k]
+                    todelete += [ k ]
+    for k in todelete:
+        del tree[k]
 
     fd = open(os.path.join(cwd, 'Makefile.msc'), "w")
 
     fd.write(MAKEFILE_HEAD)
 
-    if not tree.has_key('INCLUDES'):
+    if 'INCLUDES' not in tree:
         tree.add('INCLUDES', [])
 
     msc = {}
@@ -1150,10 +1153,10 @@ def output(tree, cwd, topdir):
             reldir = os.path.join(reldir, os.pardir)
             d, t = os.path.split(d)
 
-    fd.write("TOPDIR = %s\n" % string.replace(reldir, '/', '\\'))
-    fd.write("srcdir = $(TOPDIR)\\..%s\n" % string.replace(srcdir, '/', '\\'))
+    fd.write("TOPDIR = %s\n" % reldir.replace('/', '\\'))
+    fd.write("srcdir = $(TOPDIR)\\..%s\n" % srcdir.replace('/', '\\'))
     fd.write("!INCLUDE $(TOPDIR)\\..\\NT\\rules.msc\n")
-    if tree.has_key("SUBDIRS"):
+    if 'SUBDIRS' in tree:
         fd.write("all: build-all\n")
         fd.write("check: check-recursive check-msc\n")
         fd.write("install: install-recursive install-msc\n")
@@ -1164,26 +1167,26 @@ def output(tree, cwd, topdir):
 
     for i, v in tree.items():
         j = i
-        if string.find(i, '_') >= 0:
-            k, j = string.split(i, '_', 1)
-            j = string.upper(k)
+        if i.find('_') >= 0:
+            k, j = i.split('_', 1)
+            j = k.upper()
         if type(v) is type([]):
-            if output_funcs.has_key(i):
+            if i in output_funcs:
                 output_funcs[i](fd, i, v, msc)
-            elif output_funcs.has_key(j):
+            elif j in output_funcs:
                 output_funcs[j](fd, i, v, msc)
             elif i != 'TARGETS':
                 msc_assignment(fd, i, v, msc)
 
     for i, v in tree.items():
         j = i
-        if string.find(i, '_') >= 0:
-            k, j = string.split(i, '_', 1)
-            j = string.upper(k)
+        if i.find('_') >= 0:
+            k, j = i.split('_', 1)
+            j = k.upper()
         if type(v) is type({}):
-            if output_funcs.has_key(i):
+            if i in output_funcs:
                 output_funcs[i](fd, i, v, msc)
-            elif output_funcs.has_key(j):
+            elif j in output_funcs:
                 output_funcs[j](fd, i, v, msc)
             elif i != 'TARGETS':
                 msc_assignment(fd, i, v, msc)
@@ -1194,7 +1197,7 @@ def output(tree, cwd, topdir):
             fd.write(" %s" % v)
         fd.write("\n")
 
-    if tree.has_key('SUBDIRS'):
+    if 'SUBDIRS' in tree:
         fd.write('build-all: $(BUILT_SOURCES) all-recursive all-msc\n')
 
 ##    fd.write("EXTRA_DIST = Makefile.ag Makefile.msc")
@@ -1298,7 +1301,7 @@ def output(tree, cwd, topdir):
         for dst, (src, ext, dir, instlib, cond) in msc['INSTALL'].items():
             if not dir:
                 continue
-            if not td.has_key(dir):
+            if not dir in td:
                 fd.write('"%s":\n' % dir)
                 fd.write('\tif not exist "%s" $(MKDIR) "%s"\n' % (dir, dir))
                 td[dir] = 1

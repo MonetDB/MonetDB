@@ -527,7 +527,7 @@ address MTIMEdaytime_extract_hours_bulk;
 command minutes(d:daytime) :int
 address MTIMEdaytime_extract_minutes
 comment "extracts minutes from daytime";
-command minutes(d:bat[:oid,:daytime]):bat[:oid,:int]
+command batmtime.minutes(d:bat[:oid,:daytime]):bat[:oid,:int]
 address MTIMEdaytime_extract_minutes_bulk;
 
 command seconds(d:daytime) :int

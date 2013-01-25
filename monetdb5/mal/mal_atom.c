@@ -278,6 +278,7 @@ void malAtomDefinition(stream *out, str name, int tpe)
 	if (tpe) {
 		BATatoms[i] = BATatoms[tpe];
 		strncpy(BATatoms[i].name, name, sizeof(BATatoms[i].name));
+		BATatoms[i].name[sizeof(BATatoms[i].name) - 1] = 0; /* make coverity happy */
 		BATatoms[i].storage = BATatoms[tpe].storage;
 	} else { /* cannot overload void atoms */
 		BATatoms[i].storage = i;
@@ -299,6 +300,7 @@ int malAtomFixed(int size, int align, char *name)
 	i = ATOMindex(name);
 	BATatoms[i] = BATatoms[TYPE_bte];
 	strncpy(BATatoms[i].name, name, sizeof(BATatoms[i].name));
+	BATatoms[i].name[sizeof(BATatoms[i].name) - 1] = 0;
 	BATatoms[i].storage = i;
 	BATatoms[i].size = size;
 	assert_shift_width(ATOMelmshift(BATatoms[i].size), BATatoms[i].size);
@@ -321,7 +323,7 @@ int malAtomSize(int size, int align, char *name)
 void showAtoms(stream *fd)
 {
 	int i;
-	for (i = 0; BATatoms[i].name[0] && i < TYPE_any; i++) {
+	for (i = 0; BATatoms[i].name[0] && i < MAXATOMS; i++) {
 		mnstr_printf(fd, "%s", BATatoms[i].name);
 		if (BATatoms[i + 1].name[0]) mnstr_printf(fd, ",");
 	}

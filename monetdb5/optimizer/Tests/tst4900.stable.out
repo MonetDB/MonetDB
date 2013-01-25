@@ -46,7 +46,7 @@ function user.f1(s:str):void;
     t25 := algebra.join(t24,t16);
     t30 := batcalc.oid(t21);
     t31 := array.grid(1,800,1,0);
-    t32 := aggr.product(t25,t30,t31);
+    t32 := aggr.prod(t25,t30,t31);
     t33 := batcalc.*(t15,t32);
     t34 := batcalc./(t8,t33);
     t40 := algebra.join(t6,t34);
@@ -135,7 +135,7 @@ factory user.f1(s:str):void;            #  0 f1:void := user.f1(s:str) {G}
     t25 := algebra.join(t24,t16);       # 27 t25:bat[:oid,:dbl] := ALGjoin(t24:bat[:oid,:oid], t16:bat[:oid,:dbl]) {G}
     t30 := batcalc.oid(t21);            # 28 t30:bat[:oid,:oid] := CMDconvertsignal_oid(t21:bat[:oid,:int]) {G}
     t31 := array.grid(1,800,1,0);       # 29 t31:bat[:oid,:int] := ARRAYgrid_int(_47:int, _32:int, _47:int, _48:int) {G}
-    t32 := aggr.product(t25,t30,t31);   # 30 t32:bat[:oid,:dbl] := AX3aggrX3_prod3_dbl_dbl(t25:bat[:oid,:dbl], t30:bat[:oid,:oid], t31:bat[:oid,:int]) {G}
+    t32 := aggr.prod(t25,t30,t31);      # 30 t32:bat[:oid,:dbl] := AGGRprod3_dbl(t25:bat[:oid,:dbl], t30:bat[:oid,:oid], t31:bat[:oid,:int]) {G}
     t33 := batcalc.*(t15,t32);          # 31 t33:bat[:oid,:dbl] := CMDbatMULsignal(t15:dbl, t32:bat[:oid,:dbl]) {G}
     t34 := batcalc./(t8,t33);           # 32 t34:bat[:oid,:dbl] := CMDbatDIVsignal(t8:dbl, t33:bat[:oid,:dbl]) {G}
     t40 := algebra.join(t6,t34);        # 33 t40:bat[:oid,:dbl] := ALGjoin(t6:bat[:oid,:oid], t34:bat[:oid,:dbl]) {G}
@@ -180,14 +180,14 @@ barrier always := true;                 # 69 always:bit := _118:bit {J87}
     t59 := batcalc.-(t48,t58);          # 72 t59:bat[:oid,:dbl] := CMDbatSUBsignal(t48:bat[:oid,:dbl], t58:bat[:oid,:dbl]) {G}
     t61 := batcalc.*(t59,t59);          # 73 t61:bat[:oid,:dbl] := CMDbatMULsignal(t59:bat[:oid,:dbl], t59:bat[:oid,:dbl]) {G}
     t72 := batcalc./(t61,t71);          # 74 t72:bat[:oid,:dbl] := CMDbatDIVsignal(t61:bat[:oid,:dbl], t71:bat[:oid,:dbl]) {G}
-    t82 := aggr.sum(t72,t80,t81);       # 75 t82:bat[:oid,:dbl] := AX3aggrX3_sum3_dbl_dbl(t72:bat[:oid,:dbl], t80:bat[:oid,:oid], t81:bat[:oid,:int]) {G}
+    t82 := aggr.sum(t72,t80,t81);       # 75 t82:bat[:oid,:dbl] := AGGRsum3_dbl(t72:bat[:oid,:dbl], t80:bat[:oid,:oid], t81:bat[:oid,:int]) {G}
     t83 := batcalc.*(t41,t82);          # 76 t83:bat[:oid,:dbl] := CMDbatMULsignal(t41:dbl, t82:bat[:oid,:dbl]) {G}
     t84 := batmmath.exp(t83);           # 77 t84:bat[:oid,:dbl] := CMDscience_bat_dbl_exp(t83:bat[:oid,:dbl]) {G}
     t85 := batcalc.*(t40,t84);          # 78 t85:bat[:oid,:dbl] := CMDbatMULsignal(t40:bat[:oid,:dbl], t84:bat[:oid,:dbl]) {G}
     t86 := batcalc.*(t7,t85);           # 79 t86:bat[:oid,:dbl] := CMDbatMULsignal(t7:bat[:oid,:dbl], t85:bat[:oid,:dbl]) {G}
-    t93 := aggr.sum(t86,t91,t92);       # 80 t93:bat[:oid,:dbl] := AX3aggrX3_sum3_dbl_dbl(t86:bat[:oid,:dbl], t91:bat[:oid,:oid], t92:bat[:oid,:int]) {G}
+    t93 := aggr.sum(t86,t91,t92);       # 80 t93:bat[:oid,:dbl] := AGGRsum3_dbl(t86:bat[:oid,:dbl], t91:bat[:oid,:oid], t92:bat[:oid,:int]) {G}
     t94 := batmmath.log(t93);           # 81 t94:bat[:oid,:dbl] := CMDscience_bat_dbl_log(t93:bat[:oid,:dbl]) {G}
-    t98 := aggr.sum(t94,t96,t97);       # 82 t98:bat[:oid,:dbl] := AX3aggrX3_sum3_dbl_dbl(t94:bat[:oid,:dbl], t96:bat[:oid,:oid], t97:bat[:oid,:int]) {G}
+    t98 := aggr.sum(t94,t96,t97);       # 82 t98:bat[:oid,:dbl] := AGGRsum3_dbl(t94:bat[:oid,:dbl], t96:bat[:oid,:oid], t97:bat[:oid,:int]) {G}
     top := t98;                         # 83 top:bat[:oid,:dbl] := t98:bat[:oid,:dbl] {G}
     io.table(t97,top);                  # 84 _117:void := IOttable(t97:bat[:oid,:int], top:bat[:oid,:dbl]) {G}
     yield f1;                           # 85 f1:void 

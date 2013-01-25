@@ -74,6 +74,7 @@ mal_export int profilerAvailable(void);
 mal_export str startProfiling(void);
 mal_export str stopProfiling(void);
 mal_export str cleanupProfiler(void);
+mal_export void initHeartbeat(void);
 
 mal_export int instrFilter(InstrPtr pci, str mod, str fcn);
 mal_export void setFilter(Module cntxt, str mod, str fcn);

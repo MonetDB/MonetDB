@@ -14,7 +14,14 @@ ptroid = f.readline()
 ptr, oid = ptroid.split()
 f.close()
 
-z = zipfile.ZipFile(os.path.join(dbfarm, 'newrel.zip'), 'w')
+try:
+    # try to create compressed zip file
+    z = zipfile.ZipFile(os.path.join(dbfarm, 'newrel.zip'), 'w',
+                        zipfile.ZIP_DEFLATED)
+except RuntimeError:
+    # if that fails, create uncompressed zip file
+    z = zipfile.ZipFile(os.path.join(dbfarm, 'newrel.zip'), 'w')
+
 if rev:
     revcomment = ' (hg id %s)' % rev
 else:

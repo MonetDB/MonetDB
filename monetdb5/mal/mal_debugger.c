@@ -913,9 +913,6 @@ retryRead:
 				printStackElm(out, mb, stk->stk + i, i, size, first);
 			continue;
 		}
-		case 'S':
-			dumpNamespaceStatistics(out, 1);
-			break;
 		case 'u':
 			if (strncmp("unset", b, 5)) {
 				skipWord(cntxt, b);
@@ -1296,7 +1293,7 @@ str
 runMALDebugger(Client cntxt, Symbol s)
 {
 	cntxt->itrace = 'n';
-	runMAL(cntxt, s->def, 1, 0, 0, 0);
+	runMAL(cntxt, s->def, 0, 0);
 	return MAL_SUCCEED;
 }
 

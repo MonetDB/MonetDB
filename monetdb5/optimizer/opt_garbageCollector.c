@@ -116,8 +116,6 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 	}
 	GDKfree(span);
 
-	DEBUGoptimizers
-		mnstr_printf(cntxt->fdout,"#opt_garbagecollector: %d variables reset\n",actions);
 	return actions+1;
 }
 

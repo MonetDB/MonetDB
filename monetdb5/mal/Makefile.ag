@@ -40,6 +40,7 @@ lib_mal = {
 		mal_import.c mal_import.h \
 		mal_runtime.c mal_runtime.h \
 		mal_instruction.c mal_instruction.h \
+		mal_resource.c mal_resource.h \
 		mal_interpreter.c mal_interpreter.h \
 		mal_dataflow.c mal_dataflow.h \
 		mal_linker.c mal_linker.h \

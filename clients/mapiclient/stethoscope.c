@@ -28,9 +28,8 @@
 #include <errno.h>
 #include <signal.h>
 #include <unistd.h>
-#ifdef HAVE_PTHREAD_H
-#include <pthread.h>
-#endif
+#include "mprompt.h"
+#include "dotmonetdb.h"
 
 #ifndef HAVE_GETOPT_LONG
 # include "monet_getopt.h"
@@ -87,34 +86,18 @@ static struct {
 	/*  3  */ { 0, 0, 0, 0 }
 };
 
-typedef struct _wthread {
-#if !defined(HAVE_PTHREAD_H) && defined(_MSC_VER)
-	HANDLE id;
-#else
-	pthread_t id;
-#endif
-	int tid;
-	char *uri;
-	char *user;
-	char *pass;
-	stream *s;
-	size_t argc;
-	char **argv;
-	struct _wthread *next;
-} wthread;
-
-static wthread *thds = NULL;
+static stream *conn = NULL;
 static char hostname[128];
 
 static void
 usage(void)
 {
-	fprintf(stderr, "stethoscope [options] +[trace options] {<mod>.<fcn>}\n");
+	fprintf(stderr, "stethoscope [options] [dbname] +[trace options] {<mod>.<fcn>}\n");
 	fprintf(stderr, "  -d | --dbname=<database_name>\n");
 	fprintf(stderr, "  -u | --user=<user>\n");
-	fprintf(stderr, "  -P | --password=<password>\n");
 	fprintf(stderr, "  -p | --port=<portnr>\n");
 	fprintf(stderr, "  -h | --host=<hostname>\n");
+	fprintf(stderr, "  -? | --help\n");
 	fprintf(stderr, "\n");
 	fprintf(stderr, "The trace options (default '%s'):\n",COUNTERSDEFAULT);
 	fprintf(stderr, "  S = monitor start of instruction profiling\n");
@@ -143,13 +126,9 @@ usage(void)
 static void
 stopListening(int i)
 {
-	wthread *walk;
 	(void)i;
-	/* kill all connections */
-	for (walk = thds; walk != NULL; walk = walk->next) {
-		if (walk->s != NULL)
-			mnstr_close(walk->s);
-	}
+	if (conn != NULL)
+		mnstr_close(conn);
 }
 
 static int
@@ -169,51 +148,145 @@ setCounter(char *nme)
 
 #define die(dbh, hdl) while (1) {(hdl ? mapi_explain_query(hdl, stderr) :  \
 					   dbh ? mapi_explain(dbh, stderr) :        \
-					   fprintf(stderr, "!! %scommand failed\n", id)); \
+					   fprintf(stderr, "!! command failed\n")); \
 					   goto stop_disconnect;}
 #define doQ(X) \
 	if ((hdl = mapi_query(dbh, X)) == NULL || mapi_error(dbh) != MOK) \
 			 die(dbh, hdl);
 
-#if !defined(HAVE_PTHREAD_H) && defined(_MSC_VER)
-static DWORD WINAPI
-#else
-static void *
-#endif
-doProfile(void *d)
+int
+main(int argc, char **argv)
 {
-	wthread *wthr = (wthread*)d;
-	int i;
-	size_t a;
+	int i, k;
 	ssize_t n;
+	char *e;
+	char *host = NULL;
+	int portnr = 0;
+	char *dbname = NULL;
+	char *uri = NULL;
+	char *user = NULL;
+	char *password = NULL;
+	struct stat statb;
 	char *response, *x;
 	char buf[BUFSIZ + 1];
-	char *e;
 	char *mod, *fcn;
-	char *host;
-	int portnr;
-	char id[10];
 	Mapi dbh;
 	MapiHdl hdl = NULL;
 
+	static struct option long_options[6] = {
+		{ "dbname", 1, 0, 'd' },
+		{ "user", 1, 0, 'u' },
+		{ "port", 1, 0, 'p' },
+		{ "host", 1, 0, 'h' },
+		{ "help", 0, 0, '?' },
+		{ 0, 0, 0, 0 }
+	};
+
+	/* parse config file first, command line options override */
+	parse_dotmonetdb(&user, &password, NULL, NULL, NULL, NULL);
+
+	while (1) {
+		int option_index = 0;
+		int c = getopt_long(argc, argv, "d:u:p:h:?",
+			long_options, &option_index);
+		if (c == -1)
+			break;
+		switch (c) {
+		case 'd':
+			dbname = optarg;
+			break;
+		case 'u':
+			if (user)
+				free(user);
+			user = strdup(optarg);
+			/* force password prompt */
+			if (password)
+				free(password);
+			password = NULL;
+			break;
+		case 'p':
+			portnr = atol(optarg);
+			break;
+		case 'h':
+			host = optarg;
+			break;
+		case '?':
+			usage();
+			/* a bit of a hack: look at the option that the
+			   current `c' is based on and see if we recognize
+			   it: if -? or --help, exit with 0, else with -1 */
+			exit(strcmp(argv[optind - 1], "-?") == 0 || strcmp(argv[optind - 1], "--help") == 0 ? 0 : -1);
+		default:
+			usage();
+			exit(-1);
+		}
+	}
+
+	if (dbname == NULL && optind != argc && argv[optind][0] != '+' &&
+			(stat(argv[optind], &statb) != 0 || !S_ISREG(statb.st_mode)))
+	{
+		dbname = argv[optind];
+		optind++;
+	}
+
+	if (dbname != NULL && strncmp(dbname, "mapi:monetdb://", 15) == 0) {
+		uri = dbname;
+		dbname = NULL;
+	}
+
+	i = optind;
+	if (argc > 1 && i < argc && argv[i][0] == '+') {
+		k = setCounter(argv[i] + 1);
+		i++;
+	} else
+		k = setCounter(COUNTERSDEFAULT);
+
+	/* DOT needs function id and PC to correlate */
+	if (profileCounter[32].status) {
+		profileCounter[3].status = k++;
+		profileCounter[4].status = k;
+	}
+
+	if (user == NULL)
+		user = simple_prompt("user", BUFSIZ, 1, prompt_getlogin());
+	if (password == NULL)
+		password = simple_prompt("password", BUFSIZ, 0, NULL);
+
+	close(0); /* get rid of stdin */
+
+	/* our hostname, how remote servers have to contact us */
+	gethostname(hostname, sizeof(hostname));
+
+	/* forget about the options we've parsed */
+	argc = argc - i;
+	argv = &argv[i];
+
+#ifdef SIGPIPE
+	signal(SIGPIPE, stopListening);
+#endif
+#ifdef SIGHUP
+	signal(SIGHUP, stopListening);
+#endif
+#ifdef SIGQUIT
+	signal(SIGQUIT, stopListening);
+#endif
+	signal(SIGINT, stopListening);
+	signal(SIGTERM, stopListening);
+
 	/* set up the profiler */
-	id[0] = '\0';
-	dbh = mapi_mapiuri(wthr->uri, wthr->user, wthr->pass, "mal");
+	if (uri)
+		dbh = mapi_mapiuri(uri, user, password, "mal");
+	else
+		dbh = mapi_mapi(host, portnr, user, password, "mal", dbname);
 	if (dbh == NULL || mapi_error(dbh))
 		die(dbh, hdl);
 	mapi_reconnect(dbh);
 	if (mapi_error(dbh))
 		die(dbh, hdl);
-	if (wthr->tid > 0) {
-		snprintf(id, 10, "[%d] ", wthr->tid);
+	host = strdup(mapi_get_host(dbh));
 #ifdef _DEBUG_STETHOSCOPE_
-		printf("-- connection with server %s is %s\n", wthr->uri, id);
+	printf("-- connection with server %s\n", uri ? uri : host);
 #endif
-	} else {
-#ifdef _DEBUG_STETHOSCOPE_
-		printf("-- connection with server %s\n", wthr->uri);
-#endif
-	}
 
 	/* set counters */
 	x = NULL;
@@ -230,25 +303,23 @@ doProfile(void *d)
 					profileCounter[i].ptag);
 			doQ(buf);
 #ifdef _DEBUG_STETHOSCOPE_
-			printf("-- %s%s\n", id, buf);
+			printf("-- %s\n", buf);
 #endif
 		}
 		x = profileCounter[i].ptag;
 	}
 
-	host = mapi_get_host(dbh);
 	for (portnr = 50010; portnr < 62010; portnr++) {
-		if ((wthr->s = udp_rastream(host, portnr, "profileStream")) != NULL)
+		if ((conn = udp_rastream(hostname, portnr, "profileStream")) != NULL)
 			break;
 	}
-	if (wthr->s == NULL) {
-		fprintf(stderr, "!! %sopening stream failed: no free ports available\n",
-				id);
+	if (conn == NULL) {
+		fprintf(stderr, "!! opening stream failed: no free ports available\n");
 		goto stop_cleanup;
 	}
 
-	printf("-- %sopened UDP profile stream %s:%d for %s\n",
-			id, hostname, portnr, host);
+	printf("-- opened UDP profile stream %s:%d for %s\n",
+			hostname, portnr, host);
 
 	snprintf(buf, BUFSIZ, "port := profiler.openStream(\"%s\", %d);",
 			hostname, portnr);
@@ -257,15 +328,15 @@ doProfile(void *d)
 	/* Set Filters */
 	doQ("profiler.setNone();");
 
-	if (wthr->argc == 0) {
+	if (argc == 0) {
 #ifdef _DEBUG_STETHOSCOPE_
-		printf("-- %sprofiler.setAll();\n", id);
+		printf("-- profiler.setAll();\n");
 #endif
 		doQ("profiler.setAll();");
 	} else {
-		for (a = 0; a < wthr->argc; a++) {
+		for (i = 0; i < argc; i++) {
 			char *c;
-			char *arg = strdup(wthr->argv[a]);
+			char *arg = strdup(argv[i]);
 			c = strchr(arg, '.');
 			if (c) {
 				mod = arg;
@@ -281,30 +352,30 @@ doProfile(void *d)
 			}
 			snprintf(buf, BUFSIZ, "profiler.setFilter(\"%s\",\"%s\");", mod, fcn);
 #ifdef _DEBUG_STETHOSCOPE_
-			printf("-- %s%s\n", id, buf);
+			printf("-- %s\n", buf);
 #endif
 			doQ(buf);
 			free(arg);
 		}
 	}
 #ifdef _DEBUG_STETHOSCOPE_
-	printf("-- %sprofiler.start();\n", id);
+	printf("-- profiler.start();\n");
 #endif
 	doQ("profiler.start();");
 	fflush(NULL);
 
 	i = 0;
-	while ((n = mnstr_read(wthr->s, buf, 1, BUFSIZ)) > 0) {
+	while ((n = mnstr_read(conn, buf, 1, BUFSIZ)) > 0) {
 		buf[n] = 0;
 		response = buf;
 		while ((e = strchr(response, '\n')) != NULL) {
 			*e = 0;
-			printf("%s%s\n", id, response);
+			printf("%s\n", response);
 			response = e + 1;
 		}
 		/* handle last line in buffer */
-		if ( *response)
-			printf("%s",response);
+		if (*response)
+			printf("%s\n", response);
 		if (++i % 200) {
 			i = 0;
 			fflush(NULL);
@@ -317,226 +388,17 @@ stop_cleanup:
 	doQ("profiler.stop();");
 	doQ("profiler.closeStream();");
 stop_disconnect:
-	mapi_disconnect(dbh);
-	mapi_destroy(dbh);
-
-	printf("-- %sconnection with server %s closed\n", id, wthr->uri);
-
-	return(0);
-}
-
-int
-main(int argc, char **argv)
-{
-	int a = 1;
-	int i, k;
-	char *host = NULL;
-	int portnr = 50000;
-	char *dbname = NULL;
-	char *user = NULL;
-	char *password = NULL;
-
-	/* some .monetdb properties are used by mclient, perhaps we need them as well later */
-	struct stat statb;
-
-	char **alts, **oalts;
-	wthread *walk;
-	stream * config = NULL;
-
-	static struct option long_options[8] = {
-		{ "dbname", 1, 0, 'd' },
-		{ "user", 1, 0, 'u' },
-		{ "password", 1, 0, 'P' },
-		{ "port", 1, 0, 'p' },
-		{ "host", 1, 0, 'h' },
-		{ "help", 0, 0, '?' },
-		{ 0, 0, 0, 0 }
-	};
-
-	/* parse config file first, command line options override */
-	if (getenv("DOTMONETDBFILE") == NULL) {
-		if (stat(".monetdb", &statb) == 0) {
-			config = open_rastream(".monetdb");
-		} else if (getenv("HOME") != NULL) {
-			char buf[1024];
-			snprintf(buf, sizeof(buf), "%s/.monetdb", getenv("HOME"));
-			if (stat(buf, &statb) == 0) {
-				config = open_rastream(buf);
-			}
-		}
-	} else {
-		char *cfile = getenv("DOTMONETDBFILE");
-		if (strcmp(cfile, "") != 0) {
-			if (stat(cfile, &statb) == 0) {
-				config = open_rastream(cfile);
-			} else {
-				fprintf(stderr,
-					      "failed to open file '%s': %s\n",
-					      cfile, strerror(errno));
-			}
-		}
+	if (dbh) {
+		mapi_disconnect(dbh);
+		mapi_destroy(dbh);
 	}
 
-	if (config != NULL) {
-		char buf[1024];
-		char *q;
-		ssize_t len;
-		int line = 0;
-		while ((len = mnstr_readline(config, buf, sizeof(buf) - 1)) > 0) {
-			line++;
-			buf[len - 1] = '\0';	/* drop newline */
-			if (buf[0] == '#' || buf[0] == '\0')
-				continue;
-			if ((q = strchr(buf, '=')) == NULL) {
-				fprintf(stderr, "%s:%d: syntax error: %s\n", mnstr_name(config), line, buf);
-				continue;
-			}
-			*q++ = '\0';
-			/* this basically sucks big time, as I can't easily set
-			 * a default, hence I only do things I think are useful
-			 * for now, needs a better solution */
-			if (strcmp(buf, "user") == 0) {
-				user = strdup(q);	/* leak */
-			} else if (strcmp(buf, "password") == 0 || strcmp(buf, "passwd") == 0) {
-				password = strdup(q);	/* leak */
-			}
-		}
-		mnstr_destroy(config);
+	if (host != NULL) {
+		printf("-- connection with server %s closed\n", uri ? uri : host);
+
+		free(host);
 	}
-
-	while (1) {
-		int option_index = 0;
-		int c = getopt_long(argc, argv, "d:u:P:p:?:h:g",
-			long_options, &option_index);
-		if (c == -1)
-			break;
-		switch (c) {
-		case 'd':
-			dbname = optarg;
-			break;
-		case 'u':
-			user = optarg;
-			break;
-		case 'P':
-			password = optarg;
-			break;
-		case 'p':
-			portnr = atol(optarg);
-			break;
-		case 'h':
-			host = optarg;
-			break;
-		case '?':
-		default:
-			usage();
-			exit(0);
-		}
-	}
-
-	a = optind;
-	if (argc > 1 && a < argc && argv[a][0] == '+') {
-		k= setCounter(argv[a] + 1);
-		a++;
-	} else
-		k= setCounter(COUNTERSDEFAULT);
-
-	/* DOT needs function id and PC to correlate */
-	if( profileCounter[32].status ) {
-		profileCounter[3].status= k++;
-		profileCounter[4].status= k;
-	}
-
-	if (user == NULL || password == NULL) {
-		fprintf(stderr, "%s: need -u and -P arguments\n", argv[0]);
-		usage();
-		exit(-1);
-	}
-
-#ifdef SIGPIPE
-	signal(SIGPIPE, stopListening);
-#endif
-#ifdef SIGHUP
-	signal(SIGHUP, stopListening);
-#endif
-#ifdef SIGQUIT
-	signal(SIGQUIT, stopListening);
-#endif
-	signal(SIGINT, stopListening);
-	signal(SIGTERM, stopListening);
-
-	close(0); /* get rid of stdin */
-
-	/* our hostname, how remote servers have to contact us */
-	gethostname(hostname, sizeof(hostname));
-
-	/* try and find multiple options, we assume that we always need a
-	 * local merovingian for that, in the future we probably need to fix
-	 * this in a decent manner */
-	if (dbname != NULL && host == NULL) {
-		oalts = alts = mapi_resolve(host, portnr, dbname);
-	} else 
-		alts = NULL;
-
-	if (alts == NULL || *alts == NULL) {
-		/* nothing to redirect, so a single host to try */
-		char uri[512];
-		snprintf(uri, 512, "mapi:monetdb://%s:%d/%s", host, portnr, dbname);
-		walk = thds = malloc(sizeof(wthread));
-		walk->uri = uri;
-		walk->user = user;
-		walk->pass = password;
-		walk->argc = argc - a;
-		walk->argv = &argv[a];
-		walk->tid = 0;
-		walk->s = NULL;
-		walk->next = NULL;
-		/* In principle we could do this without a thread, but it seems
-		 * that if we do it that way, ctrl-c (or any other signal)
-		 * doesn't interrupt the read inside this function, and hence
-		 * the function never terminates... at least on Linux */
-#if !defined(HAVE_PTHREAD_H) && defined(_MSC_VER)
-		walk->id = CreateThread(NULL, 0, doProfile, walk, 0, NULL);
-		WaitForSingleObject(walk->id, INFINITE);
-		CloseHandle(walk->id);
-#else
-		pthread_create(&walk->id, NULL, &doProfile, walk);
-		pthread_join(walk->id, NULL);
-#endif
-		free(walk);
-	} else {
-		/* fork runner threads for all alternatives */
-		i = 1;
-		walk = thds = malloc(sizeof(wthread));
-		while (1) {
-			walk->tid = i++;
-			walk->uri = *alts;
-			walk->user = user;
-			walk->pass = password;
-			walk->argc = argc - a;
-			walk->argv = &argv[a];
-			walk->s = NULL;
-#if !defined(HAVE_PTHREAD_H) && defined(_MSC_VER)
-			walk->id = CreateThread(NULL, 0, doProfile, walk, 0, NULL);
-#else
-			pthread_create(&walk->id, NULL, &doProfile, walk);
-#endif
-			alts++;
-			if (*alts == NULL)
-				break;
-			walk = walk->next = malloc(sizeof(wthread));
-		}
-		walk->next = NULL;
-		free(oalts);
-		for (walk = thds; walk != NULL; walk = walk->next) {
-#if !defined(HAVE_PTHREAD_H) && defined(_MSC_VER)
-			WaitForSingleObject(walk->id, INFINITE);
-			CloseHandle(walk->id);
-#else
-			pthread_join(walk->id, NULL);
-#endif
-			free(walk->uri);
-			free(walk);
-		}
-	}
+	free(user);
+	free(password);
 	return 0;
 }

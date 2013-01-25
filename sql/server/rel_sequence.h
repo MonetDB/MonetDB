@@ -21,7 +21,6 @@
 #define _REL_SEQUENCE_H_
 
 #include "sql_symbol.h"
-#include <sql_statement.h>
 #include <store_sequence.h>
 
 extern sql_rel *rel_sequences(mvc *sql, symbol *s);

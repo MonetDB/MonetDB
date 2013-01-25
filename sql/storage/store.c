@@ -1179,7 +1179,7 @@ dup_sql_column(sql_allocator *sa, sql_table *t, sql_column *c)
 {
 	sql_column *col = SA_ZNEW(sa, sql_column);
 
-	base_init(sa, &col->base, c->base.id, TR_NEW, c->base.name);
+	base_init(sa, &col->base, c->base.id, c->base.flag, c->base.name);
 	col->type = c->type;
 	col->def = NULL;
 	if (c->def)
@@ -1209,6 +1209,7 @@ dup_sql_table(sql_allocator *sa, sql_table *t)
 	node *n;
 	sql_table *nt = create_sql_table(sa, t->base.name, t->type, t->system, SQL_DECLARED_TABLE, t->commit_action, t->valence, t->fixed, t->materialised);
 
+	nt->base.flag = t->base.flag;
 	for (n = t->columns.set->h; n; n = n->next) 
 		dup_sql_column(sa, nt, n->data);
 	nt->columns.dset = NULL;
@@ -1292,7 +1293,7 @@ store_schema_number(void)
 }
 
 int
-store_init(int debug, store_type store, char *logdir, char *dbname, backend_stack stk)
+store_init(int debug, store_type store, char *logdir, backend_stack stk)
 {
 	sqlid id = 0;
 	lng lng_store_oid;
@@ -1330,7 +1331,7 @@ store_init(int debug, store_type store, char *logdir, char *dbname, backend_stac
 	}
 	active_store_type = store;
 	if (!logger_funcs.create ||
-	    logger_funcs.create(logdir, dbname, CATALOG_VERSION*v) == LOG_ERR)
+	    logger_funcs.create(logdir, CATALOG_VERSION*v) == LOG_ERR)
 		return -1;
 
 	MT_lock_init(&bs_lock, "SQL_bs_lock");

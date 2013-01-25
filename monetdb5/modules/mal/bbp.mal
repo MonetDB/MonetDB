@@ -144,7 +144,7 @@ address CMDgetBATlrefcnt
 comment "Utility for debugging MAL interpreter";
 command getDiskSpace() :lng
 address CMDbbpDiskSpace
-comment "Estimate the amount of disk space occupied by dbfarm";
+comment "Estimate the amount of disk space occupied by dbpath";
 command getPageSize():int
 address CMDgetPageSize
 comment "Obtain the memory page size";

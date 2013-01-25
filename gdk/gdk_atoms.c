@@ -231,6 +231,7 @@ ATOMproperty(str id, str property, GDKfcn arg, int val)
 	} else if (strcmp("storage", property) == 0) {
 		BATatoms[t] = BATatoms[val];	/* copy from example */
 		strncpy(BATatoms[t].name, id, IDLENGTH); /* restore name */
+		BATatoms[t].name[IDLENGTH - 1] = 0;
 	} else if (strcmp("fromstr", property) == 0) {
 		BATatoms[t].atomFromStr = (int (*)(const char *, int *, void **)) arg;
 	} else if (strcmp("tostr", property) == 0) {

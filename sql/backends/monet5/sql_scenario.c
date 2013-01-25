@@ -100,8 +100,8 @@ SQLsession(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg = MAL_SUCCEED;
 
 	(void)mb;
-	if (SQLinitialized == 0 )
-		SQLprelude();
+	if (SQLinitialized == 0 && (msg = SQLprelude()) != MAL_SUCCEED)
+		return msg;
 	msg = setScenario(cntxt, "sql");
 	*ret = 0;
 	return msg;
@@ -114,8 +114,8 @@ SQLsession2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg = MAL_SUCCEED;
 
 	(void)mb;
-	if (SQLinitialized == 0 )
-		SQLprelude();
+	if (SQLinitialized == 0 && (msg = SQLprelude()) != MAL_SUCCEED)
+		return msg;
 	msg = setScenario(cntxt, "msql");
 	*ret = 0;
 	return msg;
@@ -156,11 +156,11 @@ SQLprelude(void)
 	ms->optimizer = "MALoptimizer";
 	/* ms->tactics = .. */
 	ms->engine = "MALengine";
-	fprintf(stdout, "# MonetDB/SQL module loaded\n");
-	fflush(stdout); /* make merovingian see this *now* */
 	tmp = SQLinit();
 	if (tmp != MAL_SUCCEED)
 		return(tmp);
+	fprintf(stdout, "# MonetDB/SQL module loaded\n");
+	fflush(stdout); /* make merovingian see this *now* */
 
 	/* only register availability of scenarios AFTER we are inited! */
 	s->name = "sql";
@@ -196,7 +196,7 @@ SQLinit(void)
 	char *debug_str = GDKgetenv("sql_debug");
 	int readonly  = GDKgetenv_isyes("gdk_readonly");
 	int single_user = GDKgetenv_isyes("gdk_single_user");
-	char *gmt = "GMT", *dbname = NULL;
+	char *gmt = "GMT";
 	tzone tz;
 
 #ifdef _SQL_SCENARIO_DEBUG
@@ -223,11 +223,10 @@ SQLinit(void)
 		SQLdebug |= 64;
 	if (readonly)
 		SQLdebug |= 32;
-	dbname = GDKgetenv("gdk_dbname");
-	if (((SQLdebug&96)==96 && (SQLnewcatalog = mvc_init(dbname, FALSE, store_suro, 0)) < 0) ||
-			((SQLdebug&96)==64 && (SQLnewcatalog = mvc_init(dbname, FALSE, store_su, 0)) < 0) ||
-			((SQLdebug&96)==32 && (SQLnewcatalog = mvc_init(dbname, FALSE, store_ro, 0)) < 0) ||
-			((SQLdebug&112)==0 && (SQLnewcatalog = mvc_init(dbname, FALSE, store_bat, 0)) < 0))
+	if (((SQLdebug&96)==96 && (SQLnewcatalog = mvc_init(FALSE, store_suro, 0)) < 0) ||
+			((SQLdebug&96)==64 && (SQLnewcatalog = mvc_init(FALSE, store_su, 0)) < 0) ||
+			((SQLdebug&96)==32 && (SQLnewcatalog = mvc_init(FALSE, store_ro, 0)) < 0) ||
+			((SQLdebug&112)==0 && (SQLnewcatalog = mvc_init(FALSE, store_bat, 0)) < 0))
 		throw(SQL, "SQLinit", "Catalogue initialization failed");
 	SQLinitialized = TRUE;
 	MT_lock_unset(&sql_contextLock, "SQL init");
@@ -268,7 +267,6 @@ global_variables(mvc *sql, char *user, char *schema)
 	sql_subtype ctype;
 	char *typename;
 	lng sec = 0;
-	bit T = TRUE;
 	bit F = FALSE;
 	ValRecord src;
 	str opt;
@@ -276,6 +274,7 @@ global_variables(mvc *sql, char *user, char *schema)
  	typename = "int";
 	sql_find_subtype(&ctype, typename, 0, 0);
 	SQLglobal("debug", &sql->debug);
+	SQLglobal("cache", &sql->cache);
 
 	typename = "varchar";
 	sql_find_subtype(&ctype, typename, 1024, 0);
@@ -294,7 +293,6 @@ global_variables(mvc *sql, char *user, char *schema)
 
 	typename = "boolean";
 	sql_find_subtype(&ctype, typename, 0, 0);
-	SQLglobal("cache", &T);
 	SQLglobal("history", &F);
 
 	return 0;
@@ -492,6 +490,95 @@ sql_update_oct2012(Client c)
 	return err;		/* usually MAL_SUCCEED */
 }
 
+static str
+sql_update_oct2012_sp1(Client c)
+{
+	char *buf = GDKmalloc(2048), *err = NULL;
+	size_t bufsize = 2048, pos = 0;
+
+	/* sys.stddev functions */
+	pos += snprintf(buf+pos, bufsize-pos, "drop aggregate sys.stddev(TINYINT);\n");
+	pos += snprintf(buf+pos, bufsize-pos, "drop aggregate sys.stddev(SMALLINT);\n");
+	pos += snprintf(buf+pos, bufsize-pos, "drop aggregate sys.stddev(INTEGER);\n");
+	pos += snprintf(buf+pos, bufsize-pos, "drop aggregate sys.stddev(BIGINT);\n");
+	pos += snprintf(buf+pos, bufsize-pos, "drop aggregate sys.stddev(REAL);\n");
+	pos += snprintf(buf+pos, bufsize-pos, "drop aggregate sys.stddev(DOUBLE);\n");
+
+	pos += snprintf(buf+pos, bufsize-pos, "drop aggregate sys.stddev(DATE);\n");
+	pos += snprintf(buf+pos, bufsize-pos, "drop aggregate sys.stddev(TIME);\n");
+	pos += snprintf(buf+pos, bufsize-pos, "drop aggregate sys.stddev(TIMESTAMP);\n");
+
+	pos += snprintf(buf + pos, bufsize-pos, "delete from sys.systemfunctions where function_id in (select f.id from sys.functions f, sys.schemas s where f.name = 'stddev' and f.type = %d and f.schema_id = s.id and s.name = 'sys');\n", F_AGGR);
+
+	assert(pos < 2048);
+
+	printf("Running database upgrade commands:\n%s\n", buf);
+	err = SQLstatementIntern(c, &buf, "update", 1, 0);
+	GDKfree(buf);
+	return err;		/* usually MAL_SUCCEED */
+}
+
+static str
+sql_update_feb2013(Client c)
+{
+	char *buf = GDKmalloc(4096), *err = NULL;
+	size_t bufsize = 4096, pos = 0;
+
+	/* sys.stddev_samp functions */
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate sys.stddev_samp(val TINYINT) returns DOUBLE external name \"aggr\".\"stdev\";\n");
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate sys.stddev_samp(val SMALLINT) returns DOUBLE external name \"aggr\".\"stdev\";\n");
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate sys.stddev_samp(val INTEGER) returns DOUBLE external name \"aggr\".\"stdev\";\n");
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate sys.stddev_samp(val BIGINT) returns DOUBLE external name \"aggr\".\"stdev\";\n");
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate sys.stddev_samp(val REAL) returns DOUBLE external name \"aggr\".\"stdev\";\n");
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate sys.stddev_samp(val DOUBLE) returns DOUBLE external name \"aggr\".\"stdev\";\n");
+
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate sys.stddev_samp(val DATE) returns DOUBLE external name \"aggr\".\"stdev\";\n");
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate sys.stddev_samp(val TIME) returns DOUBLE external name \"aggr\".\"stdev\";\n");
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate sys.stddev_samp(val TIMESTAMP) returns DOUBLE external name \"aggr\".\"stdev\";\n");
+
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate sys.stddev_pop(val TINYINT) returns DOUBLE external name \"aggr\".\"stdevp\";\n");
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate sys.stddev_pop(val SMALLINT) returns DOUBLE external name \"aggr\".\"stdevp\";\n");
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate sys.stddev_pop(val INTEGER) returns DOUBLE external name \"aggr\".\"stdevp\";\n");
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate sys.stddev_pop(val BIGINT) returns DOUBLE external name \"aggr\".\"stdevp\";\n");
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate sys.stddev_pop(val REAL) returns DOUBLE external name \"aggr\".\"stdevp\";\n");
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate sys.stddev_pop(val DOUBLE) returns DOUBLE external name \"aggr\".\"stdevp\";\n");
+
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate sys.stddev_pop(val DATE) returns DOUBLE external name \"aggr\".\"stdevp\";\n");
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate sys.stddev_pop(val TIME) returns DOUBLE external name \"aggr\".\"stdevp\";\n");
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate sys.stddev_pop(val TIMESTAMP) returns DOUBLE external name \"aggr\".\"stdevp\";\n");
+
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate sys.var_samp(val TINYINT) returns DOUBLE external name \"aggr\".\"variance\";\n");
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate sys.var_samp(val SMALLINT) returns DOUBLE external name \"aggr\".\"variance\";\n");
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate sys.var_samp(val INTEGER) returns DOUBLE external name \"aggr\".\"variance\";\n");
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate sys.var_samp(val BIGINT) returns DOUBLE external name \"aggr\".\"variance\";\n");
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate sys.var_samp(val REAL) returns DOUBLE external name \"aggr\".\"variance\";\n");
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate sys.var_samp(val DOUBLE) returns DOUBLE external name \"aggr\".\"variance\";\n");
+
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate sys.var_samp(val DATE) returns DOUBLE external name \"aggr\".\"variance\";\n");
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate sys.var_samp(val TIME) returns DOUBLE external name \"aggr\".\"variance\";\n");
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate sys.var_samp(val TIMESTAMP) returns DOUBLE external name \"aggr\".\"variance\";\n");
+
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate sys.var_pop(val TINYINT) returns DOUBLE external name \"aggr\".\"variancep\";\n");
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate sys.var_pop(val SMALLINT) returns DOUBLE external name \"aggr\".\"variancep\";\n");
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate sys.var_pop(val INTEGER) returns DOUBLE external name \"aggr\".\"variancep\";\n");
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate sys.var_pop(val BIGINT) returns DOUBLE external name \"aggr\".\"variancep\";\n");
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate sys.var_pop(val REAL) returns DOUBLE external name \"aggr\".\"variancep\";\n");
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate sys.var_pop(val DOUBLE) returns DOUBLE external name \"aggr\".\"variancep\";\n");
+
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate sys.var_pop(val DATE) returns DOUBLE external name \"aggr\".\"variancep\";\n");
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate sys.var_pop(val TIME) returns DOUBLE external name \"aggr\".\"variancep\";\n");
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate sys.var_pop(val TIMESTAMP) returns DOUBLE external name \"aggr\".\"variancep\";\n");
+
+	pos += snprintf(buf + pos, bufsize-pos, "insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('stddev_samp', 'stddev_pop', 'var_samp', 'var_pop') and f.type = %d and f.schema_id = s.id and s.name = 'sys');\n", F_AGGR);
+
+	assert(pos < 4096);
+
+	printf("Running database upgrade commands:\n%s\n", buf);
+	err = SQLstatementIntern(c, &buf, "update", 1, 0);
+	GDKfree(buf);
+	return err;		/* usually MAL_SUCCEED */
+}
+
 str
 SQLinitClient(Client c)
 {
@@ -505,8 +592,8 @@ SQLinitClient(Client c)
 #ifdef _SQL_SCENARIO_DEBUG
 	mnstr_printf(GDKout, "#SQLinitClient\n");
 #endif
-	if (SQLinitialized == 0 )
-		SQLprelude();
+	if (SQLinitialized == 0 && (msg = SQLprelude()) != MAL_SUCCEED)
+		return msg;
 	/*
 	 * Based on the initialization return value we can prepare a SQLinit
 	 * string with all information needed to initialize the catalog
@@ -630,7 +717,7 @@ SQLinitClient(Client c)
 			if ((err = sql_update_apr2012_sp1(c)) != NULL)
 				fprintf(stderr, "!%s\n", err);
 		}
-		/* if aggregate function sys.median(int) does not
+		/* if function sys.alpa(double) does not
 		 * exist, we need to update */
         	sql_find_subtype(&tp, "double", 0, 0);
 		if (!sql_bind_func(m->sa, mvc_bind_schema(m,"sys"), "alpha", &tp, &tp, F_FUNC )) {
@@ -651,6 +738,20 @@ SQLinitClient(Client c)
 				if ((err = sql_update_oct2012(c)) != NULL)
 					fprintf(stderr, "!%s\n", err);
 			}
+		}
+		/* if aggregate function sys.stddev(int) does
+		 * exist, we need to update */
+        	sql_find_subtype(&tp, "int", 0, 0);
+		if (sql_bind_func(m->sa, mvc_bind_schema(m,"sys"), "stddev", &tp, NULL, F_AGGR )) {
+			if ((err = sql_update_oct2012_sp1(c)) != NULL)
+				fprintf(stderr, "!%s\n", err);
+		}
+		/* if aggregate function sys.stddev_samp(int) does not
+		 * exist, we need to update */
+        	sql_find_subtype(&tp, "int", 0, 0);
+		if (!sql_bind_func(m->sa, mvc_bind_schema(m,"sys"), "stddev_samp", &tp, NULL, F_AGGR )) {
+			if ((err = sql_update_feb2013(c)) != NULL)
+				fprintf(stderr, "!%s\n", err);
 		}
 	}
 	fflush(stdout);
@@ -821,7 +922,7 @@ SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output)
 			(mvc_status(m) && m->type != Q_TRANS) || !m->sym) {
 			if (!err)
 				err = mvc_status(m);
-			if (m->errstr && *m->errstr)
+			if (*m->errstr)
 				msg = createException(PARSE, "SQLparser", "%s", m->errstr);
 			*m->errstr = 0;
 			sqlcleanup(m, err);
@@ -881,7 +982,7 @@ SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output)
 		if ( execute) {
 			if (!output)
 				sql->out = NULL; /* no output */
-			msg = (str) runMAL(c, c->curprg->def, 1, 0, 0, 0);
+			msg = (str) runMAL(c, c->curprg->def, 0, 0);
 			MSresetInstructions(c->curprg->def, oldstop);
 			freeVariables(c,c->curprg->def, c->glb, oldvtop);
 		}
@@ -1291,25 +1392,6 @@ SQLsetTrace(backend *be, Client c, bit onoff)
 	GDKfree(def);
 }
 
-static void
-SQLshowPlan(Client c)
-{
-	/* we should determine rendering requirements first */
-	/* FIXME: unify this with direct printFunction() calls as used below */
-	newStmt(c->curprg->def, "mdb", "listMapi");
-}
-
-static void
-SQLshowDot(Client c)
-{
-	InstrPtr q;
-	/* we should determine rendering requirements first */
-	/* FIXME: unify this with direct showFlowGraph() calls as used below */
-	q = newStmt(c->curprg->def, "mdb", "dot");
-	q = pushStr(c->curprg->def, q, "stdout-mapi");
-}
-
-
 #define MAX_QUERY 	(64*1024*1024)
 
 static int 
@@ -1456,15 +1538,8 @@ SQLparser(Client c)
 		goto finalize;
 	}
 
-	if ((err = sqlparse(m)) && m->debug & 1) {
-		/* switch to different language mode */
-		char oldlang = be->language;
-		be->language = 'D';
-		runMALDebugger(c, c->curprg);
-		be->language = oldlang;
-	}
-	if (err ||
-	    /* Only forget old errors on transaction boundaries */
+	if ( (err = sqlparse(m)) ||
+	    	/* Only forget old errors on transaction boundaries */
 		(mvc_status(m) && m->type != Q_TRANS) || !m->sym) {
 		if (!err && m->scanner.started) /* repeat old errors, with a parsed query */
 			err = mvc_status(m);
@@ -1476,7 +1551,6 @@ SQLparser(Client c)
 		goto finalize;
 	}
 	/*
-	 * @-
 	 * We have dealt with the first parsing step and advanced the input reader
 	 * to the next statement (if any).
 	 * Now is the time to also perform the semantic analysis, optimize and
@@ -1510,10 +1584,9 @@ SQLparser(Client c)
 		}
 		m->emode = m_inplace;
 		scanner_query_processed(&(m->scanner));
-	} else if (cachable(m, NULL) && 
+	} else if (cachable(m, NULL) && m->emode != m_prepare &&
                   (be->q = qc_match(m->qc, m->sym, m->args, m->argc, m->scanner.key ^ m->session->schema->base.id)) != NULL) {
-		if (m->emod & mod_explain)
-			SQLshowPlan(c);
+
 		if (m->emod & mod_debug)
 			SQLsetDebugger(c, m, TRUE);
 		if (m->emod & mod_trace)
@@ -1532,9 +1605,8 @@ SQLparser(Client c)
 			goto finalize;
 		}
 		assert(s);
-		/* generate and call the MAL code */
-		if (m->emod & mod_explain)
-			SQLshowPlan(c);
+
+		/* generate the MAL code */
 		if (m->emod & mod_trace)
 			SQLsetTrace(be, c, TRUE);
 		if (m->emod & mod_debug)
@@ -1546,8 +1618,8 @@ SQLparser(Client c)
 			backend_callinline(be, c, s, r);
 			trimMalBlk(c->curprg->def);
 			mb = c->curprg->def;
-        		chkProgram(c->fdout, c->nspace, mb);
-        		addOptimizerPipe(c, mb, "minimal_pipe");
+			chkProgram(c->fdout, c->nspace, mb);
+			addOptimizerPipe(c, mb, "minimal_pipe");
 			optimizeMALBlock(c, mb);
 			c->curprg->def = mb;
 		} else {
@@ -1586,20 +1658,13 @@ SQLparser(Client c)
 		}
 	}
 
-	/*
-	 * @-
-	 * In the final phase we add any debugging control
-	 */
-
-	if (m->emod & mod_dot)
-		SQLshowDot(c);
+	/* In the final phase we add any debugging control */
 	if (m->emod & mod_trace)
 		SQLsetTrace(be, c, FALSE);
 	if (m->emod & mod_debug)
 		SQLsetDebugger(c, m, FALSE);
 
 	/*
-	 * @-
 	 * During the execution of the query exceptions can be raised.
 	 * The default action is to print them out at the end of the
 	 * query block.
@@ -1612,13 +1677,6 @@ SQLparser(Client c)
 		/* we know more in this case than
 		    chkProgram(c->fdout, c->nspace, c->curprg->def); */
 		if (c->curprg->def->errors) {
-			if (m->emod & mod_debug) {
-				/* switch to differnt language mode */
-				char oldlang = be->language;
-				be->language = 'D';
-				runMALDebugger(c, c->curprg);
-				be->language = oldlang;
-			}
 			showErrors(c);
 			/* restore the state */
 			MSresetInstructions(c->curprg->def, oldstop);
@@ -1627,26 +1685,7 @@ SQLparser(Client c)
 			msg = createException(PARSE, "SQLparser", "Semantic errors");
 		}
 	}
-/*
- * Inspect the variables for post code-generation actions.
- */
 finalize:
-	if (m->emod & mod_explain && !msg) {
-		if (be->q && be->q->code)
-			printFunction(c->fdout, ((Symbol) (be->q->code))->def, 0, LIST_MAL_STMT | LIST_MAL_UDF | LIST_MAPI);
-		else if (c->curprg && c->curprg->def)
-			printFunction(c->fdout, c->curprg->def, 0, LIST_MAL_STMT | LIST_MAL_UDF | LIST_MAPI);
-	}
-	if (m->emod & mod_dot && !msg) {
-		if (be->q && be->q->code)
-			showFlowGraph(((Symbol) (be->q->code))->def, 0, "stdout-mapi");
-		else if (c->curprg && c->curprg->def)
-			showFlowGraph(c->curprg->def, 0, "stdout-mapi");
-	}
-	/*
-	 * Gather the statistics for post analysis. It should preferably
-	 * be stored in an SQL table
-	 */
 	if (msg)
 		sqlcleanup(m, 0);
 	return msg;
@@ -1726,8 +1765,6 @@ SQLexecutePrepared(Client c, backend *be, cq *q )
 	}
 	glb = (MalStkPtr)(q->stk);
 	ret= callMAL(c, mb, &glb, argv, (m->emod & mod_debug?'n':0));
-	if (ret && SQLdebug&16)
-		printFunction(c->fdout, mb, 0, LIST_MAL_STMT | LIST_MAPI );
 	/* cleanup the arguments */
 	for(i=pci->retc; i<pci->argc; i++) {
 		garbageElement(c,v= &glb->stk[pci->argv[i]]);
@@ -1756,19 +1793,34 @@ SQLengineIntern(Client c, backend *be)
 	InstrPtr p;
 	MalBlkPtr mb;
 
-	if ( oldlang == 'X'){ 	/* return directly from X-commands */
+	if (oldlang == 'X'){ 	/* return directly from X-commands */
 		sqlcleanup(be->mvc, 0);
 		return MAL_SUCCEED;
 	}
 
+	if (m->emod & mod_explain) {
+		if (be->q && be->q->code)
+			printFunction(c->fdout, ((Symbol) (be->q->code))->def, 0, LIST_MAL_STMT | LIST_MAL_UDF | LIST_MAPI);
+		else if (c->curprg && c->curprg->def)
+			printFunction(c->fdout, c->curprg->def, 0, LIST_MAL_STMT | LIST_MAL_UDF | LIST_MAPI);
+	}
+	if (m->emod & mod_dot) {
+		if (be->q && be->q->code)
+			showFlowGraph(((Symbol) (be->q->code))->def, 0, "stdout-mapi");
+		else if (c->curprg && c->curprg->def)
+			showFlowGraph(c->curprg->def, 0, "stdout-mapi");
+	}
 	if (m->emod & (mod_explain | mod_dot)) {
 		sqlcleanup(be->mvc, 0);
 		goto cleanup_engine;
 	}
+
 	if (c->curprg->def->errors){
+		assert(0);
 		sqlcleanup(be->mvc, 0);
 		throw(SQL, "SQLengine", "39000!program contains errors");
 	}
+
 #ifdef SQL_SCENARIO_DEBUG
 	mnstr_printf(GDKout, "#Ready to execute SQL statement\n");
 #endif
@@ -1777,32 +1829,15 @@ SQLengineIntern(Client c, backend *be)
 		sqlcleanup(be->mvc, 0);
 		return MAL_SUCCEED;
 	}
+
 	if (m->emode == m_inplace) {
 		msg = SQLexecutePrepared(c, be, be->q );
 		goto cleanup_engine;
 	}
-	if( m->emode == m_prepare){
+
+	if( m->emode == m_prepare)
 		goto cleanup_engine;
-	} else if (m->emod & (mod_explain | mod_dot)) {
-		/*
-		 * If you want to see the detailed code, we have to pick it up from
-		 * the cache as well. This calls for finding the call to the
-		 * cached routine, which may be hidden. For now we take a shortcut.
-		 */
-		assert(0);
-		if (be->q) {
-			InstrPtr p;
-			p = getInstrPtr(c->curprg->def,1);
-			if (p->blk) {
-				if (m->emod & mod_explain) {
-					printFunction(c->fdout, p->blk, 0, c->listing | LIST_MAPI);
-				} else {
-					showFlowGraph(p->blk, 0, "stdout-mapi");
-				}
-			}
-		}
-		c->curprg->def->errors = -1; /* don't execute */
-	}
+
 	c->glb = 0;
 	be->language = 'D';
 	/*
@@ -1813,7 +1848,7 @@ SQLengineIntern(Client c, backend *be)
 	if (MALcommentsOnly(c->curprg->def)) {
 		msg = MAL_SUCCEED;
 	} else {
-		msg = (str) runMAL(c, c->curprg->def, 1, 0, 0, 0);
+		msg = (str) runMAL(c, c->curprg->def, 0, 0);
 	}
 
 cleanup_engine:
@@ -1843,12 +1878,6 @@ cleanup_engine:
 		showErrors(c);
 		m->session->status = -10;
 	}
-/*
- * @-
- * If we are dealing with a {runonce} plan, the query cache should
- * be adjusted too.
- */
-/* postpone */
 
 	mb= c->curprg->def;
 	if (be->q && mb &&
@@ -1865,7 +1894,6 @@ cleanup_engine:
 	freeVariables(c,c->curprg->def, c->glb, be->vtop);
 	be->language = oldlang;
 	/*
-	 * @-
 	 * Any error encountered during execution should block further processing
 	 * unless auto_commit has been set.
 	 */

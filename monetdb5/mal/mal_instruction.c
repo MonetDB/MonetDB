@@ -130,6 +130,7 @@ newMalBlk(int maxvars, int maxstmts)
 	mb->recycle = 0;
 	mb->recid = 0;
 	mb->trap = 0;
+	mb->starttime = 0;
 	if (newMalBlkStmt(mb, maxstmts) < 0)
 		return NULL;
 	return mb;
@@ -1489,6 +1490,7 @@ defConstant(MalBlkPtr mb, int type, ValPtr cst)
 InstrPtr
 pushArgument(MalBlkPtr mb, InstrPtr p, int varid)
 {
+	assert(varid >= 0);
 	if (p->argc + 1 == p->maxarg) {
 		InstrPtr pn;
 		int pc = 0, pclimit;

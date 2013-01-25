@@ -38,6 +38,7 @@ OPToriginImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	ValRecord val;
 	VarPtr h, t;
 
+	(void) cntxt;
 	(void) pci;
 	(void) stk;		/* to fool compilers */
 
@@ -83,14 +84,13 @@ OPToriginImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					varSetProp(mb, getArg(p,0), horiginProp, op_eq, &val);
 				}
 				if ( t ){
-					VALset(&val, TYPE_str, GDKstrdup(h->value.val.sval));
+					VALset(&val, TYPE_str, GDKstrdup(t->value.val.sval));
 					varSetProp(mb, getArg(p,0), toriginProp, op_eq, &val);
 				}
 			}
 		}
 		if ( getModuleId(p) == groupRef) {
-			if ( getFunctionId(p) == newRef ||
-				 getFunctionId(p) == doneRef ) {
+			if ( getFunctionId(p) == newRef) {
 				h= varGetProp(mb, getArg(p,1), horiginProp);
 				if ( h ){
 					VALset(&val, TYPE_str, GDKstrdup(h->value.val.sval));
@@ -124,7 +124,5 @@ OPToriginImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		}
 	}
-	DEBUGoptimizers
-		mnstr_printf(cntxt->fdout,"#opt_origin: %d statements marked\n", actions);
 	return actions;
 }

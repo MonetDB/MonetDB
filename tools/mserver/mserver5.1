@@ -38,13 +38,10 @@ MAL scripts will be executed directly after startup on the console,
 which eases e.g. testing of MAL scripts directly, without starting a
 client.
 .P 
-.IP "--dbfarm=<path>"
+.IP "--dbpath=<path>"
 Path where mserver5 should find a database.  Shorthand for option
-gdk_dbfarm.  Default value:
-@localstatedir@/monetdb5/dbfarm.
-.IP "--dbname=<name>"
-Database name to start, within the dbfarm.  Shorthand for option
-gdk_dbname.  Default value: demo.
+gdk_dbpath.  Default value:
+@localstatedir@/monetdb5/dbfarm/demo.
 .IP "--dbinit=<stmt>"
 MAL statement to execute as part of the startup of the server.
 .IP "--config=<file>"
@@ -115,7 +112,7 @@ integer, which value can be (a combination of):
                              for debugging (GDK developers, only)
   134217728 = OPTMASK      = trace the actions, decisions and
                              effects of MAL optimizers
-  268435456 = HEAPMASK   = trace/debug HEAPextend;
+  268435456 = HEAPMASK     = trace/debug HEAPextend;
                              used only for development & debugging
   536870912 = FORCEMITOMASK = forcefully activate mitosis even on
                               small tables, i.e., split small tables
@@ -133,14 +130,15 @@ integer, which value can be (a combination of):
 Note that mserver5 recognizes a series of command line options that sets
 one or more of these debug flags as well:
 .EX
-  --threads       (1 | PARMASK)
-  --memory        (MEMMASK)
+  --threads       (THRDMASK | PARMASK)
+  --memory        (MEMMASK | ALLOCMASK)
   --properties    (CHECKMASK | PROPMASK | BATMASK)
   --io            (IOMASK | PERFMASK)
+  --heaps         (HEAPMASK) 
   --transactions  (TMMASK | DELTAMASK | TEMMASK)
-  --modules       (DLMASK | LOADMASK)
+  --modules       (LOADMASK)
   --algorithms    (ALGOMASK | ESTIMASK)
-  --xproperties   (XPROPMASK )
+.\"  --xproperties   (XPROPMASK )
   --performance   (JOINPROPMASK | DEADBEEFMASK)
   --optimizers    (OPTMASK)
   --forcemito     (FORCEMITOMASK)

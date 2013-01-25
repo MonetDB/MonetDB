@@ -62,6 +62,7 @@
 #define DEBUG_OPT_INLINE			20
 #define DEBUG_OPT_JOINPATH			21
 #define DEBUG_OPT_MACRO				23
+#define DEBUG_OPT_MATPACK			53
 #define DEBUG_OPT_MERGETABLE		24
 #define DEBUG_OPT_OCTOPUS			25
 #define DEBUG_OPT_ORIGIN			52
@@ -89,6 +90,7 @@
 #define DEBUG_OPT_TRACE				48
 #define DEBUG_OPT_HEURISTIC			49
 #define DEBUG_OPT_CENTIPEDE			50
+#define DEBUG_OPT_PUSHSELECT		51
 
 #define DEBUG_OPT(X) ((lng) 1 << (X))
 opt_export lng optDebug;
@@ -106,7 +108,6 @@ opt_export int isDependent(InstrPtr p, InstrPtr q);
 opt_export int safetyBarrier(InstrPtr p, InstrPtr q);
 opt_export int hasSameSignature(MalBlkPtr mb, InstrPtr p, InstrPtr q, int stop);
 opt_export int hasSameArguments(MalBlkPtr mb, InstrPtr p, InstrPtr q);
-opt_export int isUpdated(MalBlkPtr mb, int pc);
 opt_export int hasCommonResults(InstrPtr p, InstrPtr q);
 opt_export int isProcedure(MalBlkPtr mb, InstrPtr p);
 opt_export int isUpdateInstruction(InstrPtr p);
@@ -115,14 +116,16 @@ opt_export int isSideEffectFree(MalBlkPtr mb);
 opt_export int isBlocking(InstrPtr p);
 opt_export int isAllScalar(MalBlkPtr mb, InstrPtr p);
 opt_export int isFragmentGroup(InstrPtr q);
-opt_export int isSelect(InstrPtr p);
-opt_export int isProjection(InstrPtr p);
+opt_export int isFragmentGroup2(InstrPtr q);
+opt_export int isDelta(InstrPtr q);
 opt_export int isMatJoinOp(InstrPtr q);
 opt_export int isMapOp(InstrPtr q);
+opt_export int isLikeOp(InstrPtr q);
 opt_export int isTopn(InstrPtr q);
 opt_export int isSlice(InstrPtr q);
 opt_export int isOrderby(InstrPtr q);
 opt_export int isDiffOp(InstrPtr q);
+opt_export int isSubSelect(InstrPtr q);
 opt_export int allTargetsVisible(MalBlkPtr mb, Lifespan span, int pc,int qc);
 opt_export int isOptimizerEnabled(MalBlkPtr mb, str opt);
 opt_export str OPTsetDebugStr(int *ret, str *nme);

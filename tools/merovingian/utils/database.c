@@ -139,6 +139,7 @@ char* db_create(char* dbname) {
 		snprintf(buf, sizeof(buf), "cannot write lock file: %s",
 				strerror(errno));
 		free(dbfarm);
+		fclose(f);
 		return(strdup(buf));
 	}
 	fclose(f);
@@ -274,6 +275,18 @@ char* db_rename(char *olddb, char *newdb) {
 	/* check if dbname matches [A-Za-z0-9-_]+ */
 	if ((p = db_validname(newdb)) != NULL)
 		return(p);
+
+	if ((p = msab_getStatus(&stats, newdb)) != NULL) {
+		snprintf(buf, sizeof(buf), "internal error: %s", p);
+		free(p);
+		return(strdup(buf));
+	}
+	if (stats != NULL) {
+		msab_freeStatus(&stats);
+		snprintf(buf, sizeof(buf), "a database with the same name "
+				"already exists: %s", newdb);
+		return(strdup(buf));
+	}
 
 	if ((p = msab_getStatus(&stats, olddb)) != NULL) {
 		snprintf(buf, sizeof(buf), "internal error: %s", p);

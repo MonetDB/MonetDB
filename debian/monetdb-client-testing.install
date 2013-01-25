@@ -11,4 +11,3 @@ debian/tmp/usr/bin/testgetinfo usr/bin
 debian/tmp/usr/bin/malsample.pl usr/bin
 debian/tmp/usr/bin/sqlsample.php usr/bin
 debian/tmp/usr/bin/sqlsample.pl usr/bin
-debian/tmp/usr/bin/sqlsample.py usr/bin
