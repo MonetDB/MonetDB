@@ -26,17 +26,17 @@ Ready.
 # 09:37:07 >  
 
 #SELECT * from tables OFFSET 2147483647; -- never finishes
-% .tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables # table_name
-% id,	name,	schema_id,	query,	type,	system,	commit_action,	readonly,	fixed_array,	nr_dimensions,	temporary # name
-% int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	boolean,	boolean,	int,	tinyint # type
-% 1,	0,	1,	0,	1,	5,	1,	5,	5,	1,	1 # length
+% .tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables # table_name
+% id,	name,	schema_id,	query,	type,	system,	commit_action,	readonly,	temporary # name
+% int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	boolean,	tinyint # type
+% 1,	0,	1,	0,	1,	5,	1,	5,	1 # length
 #SELECT * from tables OFFSET 2147483646; -- returns instantly
-% .tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables # table_name
-% id,	name,	schema_id,	query,	type,	system,	commit_action,	readonly,	fixed_array,	nr_dimensions,	temporary # name
-% int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	boolean,	boolean,	int,	tinyint # type
-% 1,	0,	1,	0,	1,	5,	1,	5,	5,	1,	1 # length
+% .tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables # table_name
+% id,	name,	schema_id,	query,	type,	system,	commit_action,	readonly,	temporary # name
+% int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	boolean,	tinyint # type
+% 1,	0,	1,	0,	1,	5,	1,	5,	1 # length
 
-# 18:45:19 >  
-# 18:45:19 >  "Done."
-# 18:45:19 >  
+# 19:07:19 >  
+# 19:07:19 >  "Done."
+# 19:07:19 >  
 

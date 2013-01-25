@@ -28,20 +28,20 @@ Ready.
 [ 1	]
 [ 1	]
 #select * from tables, x limit 10;
-% .tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	sys.x,	sys.x # table_name
-% id,	name,	schema_id,	query,	type,	system,	commit_action,	readonly,	fixed_array,	nr_dimensions,	temporary,	n,	s # name
-% int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	boolean,	boolean,	int,	tinyint,	int,	varchar # type
-% 4,	9,	4,	0,	1,	5,	1,	5,	5,	1,	1,	1,	5 # length
-[ 2001,	"schemas",	2000,	NULL,	0,	true,	0,	false,	false,	0,	0,	1,	"one"	]
-[ 2001,	"schemas",	2000,	NULL,	0,	true,	0,	false,	false,	0,	0,	2,	"two"	]
-[ 2001,	"schemas",	2000,	NULL,	0,	true,	0,	false,	false,	0,	0,	3,	"three"	]
-[ 2006,	"types",	2000,	NULL,	0,	true,	0,	false,	false,	0,	0,	1,	"one"	]
-[ 2006,	"types",	2000,	NULL,	0,	true,	0,	false,	false,	0,	0,	2,	"two"	]
-[ 2006,	"types",	2000,	NULL,	0,	true,	0,	false,	false,	0,	0,	3,	"three"	]
-[ 2015,	"functions",	2000,	NULL,	0,	true,	0,	false,	false,	0,	0,	1,	"one"	]
-[ 2015,	"functions",	2000,	NULL,	0,	true,	0,	false,	false,	0,	0,	2,	"two"	]
-[ 2015,	"functions",	2000,	NULL,	0,	true,	0,	false,	false,	0,	0,	3,	"three"	]
-[ 2024,	"args",	2000,	NULL,	0,	true,	0,	false,	false,	0,	0,	1,	"one"	]
+% .tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	sys.x,	sys.x # table_name
+% id,	name,	schema_id,	query,	type,	system,	commit_action,	readonly,	temporary,	n,	s # name
+% int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	boolean,	tinyint,	int,	varchar # type
+% 4,	9,	4,	0,	1,	5,	1,	5,	1,	1,	5 # length
+[ 2001,	"schemas",	2000,	NULL,	0,	true,	0,	false,	0,	1,	"one"	]
+[ 2001,	"schemas",	2000,	NULL,	0,	true,	0,	false,	0,	2,	"two"	]
+[ 2001,	"schemas",	2000,	NULL,	0,	true,	0,	false,	0,	3,	"three"	]
+[ 2006,	"types",	2000,	NULL,	0,	true,	0,	false,	0,	1,	"one"	]
+[ 2006,	"types",	2000,	NULL,	0,	true,	0,	false,	0,	2,	"two"	]
+[ 2006,	"types",	2000,	NULL,	0,	true,	0,	false,	0,	3,	"three"	]
+[ 2015,	"functions",	2000,	NULL,	0,	true,	0,	false,	0,	1,	"one"	]
+[ 2015,	"functions",	2000,	NULL,	0,	true,	0,	false,	0,	2,	"two"	]
+[ 2015,	"functions",	2000,	NULL,	0,	true,	0,	false,	0,	3,	"three"	]
+[ 2024,	"args",	2000,	NULL,	0,	true,	0,	false,	0,	1,	"one"	]
 #drop table x cascade;
 
 # 18:40:33 >  

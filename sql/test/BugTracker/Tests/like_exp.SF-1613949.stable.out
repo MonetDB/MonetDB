@@ -25,12 +25,12 @@ Ready.
 # 19:37:54 >  
 
 #select * from tables where name LIKE ('hel%');
-% .tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables # table_name
-% id,	name,	schema_id,	query,	type,	system,	commit_action,	readonly,	fixed_array,	nr_dimensions,	temporary # name
-% int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	boolean,	boolean,	int,	tinyint # type
-% 1,	0,	1,	0,	1,	5,	1,	5,	5,	1,	1 # length
+% .tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables # table_name
+% id,	name,	schema_id,	query,	type,	system,	commit_action,	readonly,	temporary # name
+% int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	boolean,	tinyint # type
+% 1,	0,	1,	0,	1,	5,	1,	5,	1 # length
 
-# 21:48:45 >  
-# 21:48:45 >  "Done."
-# 21:48:45 >  
+# 19:00:50 >  
+# 19:00:50 >  "Done."
+# 19:00:50 >  
 
