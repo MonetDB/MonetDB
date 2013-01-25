@@ -460,7 +460,7 @@ do {                                                                          \
 			mask = 0;                                             \
 		}                                                             \
 		GETBIN##B(bin,col[i]);                                        \
-		mask = IMPSsetBit(mask,bin);                                  \
+		mask = IMPSsetBit(B,mask,bin);                                \
 	}                                                                     \
 	/* one last left */                                                   \
 	if (prvmask == mask && dcnt > 0 &&                                    \
@@ -708,7 +708,6 @@ do {                                                              \
 		}
 		BBPkeepref(imprints->histogram);
 		b->T->imprints = imprints;
-
 	}
 	MT_lock_unset(&GDKimprintsLock(ABS(b->batCacheid)), "BATimprints");
 
@@ -819,4 +818,45 @@ IMPSdestroy(BAT *b) {
 	}
 
 	return;
+}
+
+void
+IMPSprint(BAT *b) {
+	Imprints *imprints;
+	cchdc_t *d;
+	str s;
+	BUN icnt, dcnt, l;
+	unsigned long long pages;
+	bte j;
+
+	if (BATprepareImprints(b))
+		return;
+	imprints = b->T->imprints;
+	d = (cchdc_t *) imprints->dict->base;
+	s = (char *) malloc(sizeof(char)*(imprints->bits+1));
+
+#define IMPSPRNTMASK(T,B)						\
+do {									\
+	uint##B##_t *im = (uint##B##_t *) imprints->imps->base;		\
+	for (j=0; j<imprints->bits; j++)				\
+		s[j] = IMPSisSet(B, im[icnt], j)?'x':'.';		\
+	s[j] = '\0';							\
+} while (0)
+
+	fprintf(stderr,"bits = %d, impcnt = "BUNFMT", dictcnt = "BUNFMT"\n",
+			imprints->bits, imprints->impcnt, imprints->dictcnt);
+	for (dcnt=0, icnt = 0, pages = 1; dcnt < imprints->dictcnt; dcnt++) {
+		if (d[dcnt].repeat) {
+			BINSIZE(imprints->bits,IMPSPRNTMASK, " ");
+			pages += d[dcnt].cnt;
+			fprintf(stderr,"[ %10llu ]r %s\n", pages, s);
+			icnt++;
+		} else {
+			l = icnt+d[dcnt].cnt;
+			for (; icnt < l; icnt++) {
+				BINSIZE(imprints->bits,IMPSPRNTMASK, " ");
+				fprintf(stderr,"[ %10d ]  %s\n", pages++, s);
+			}
+		}
+	}
 }

@@ -113,6 +113,7 @@ BAT *VIEWreset(BAT *b);
 void VIEWunlink(BAT *b);
 int IMPSgetbin(int tpe, bte bits, void *bins, const void *v);
 void IMPSremove(BAT *b);
+void IMPSprint(BAT *b);
 
 #define BBP_BATMASK	511
 #define BBP_THREADMASK	63
