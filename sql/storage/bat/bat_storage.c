@@ -303,7 +303,8 @@ append_col(sql_trans *tr, sql_column *c, void *i, int tpe)
 {
 	sql_delta *bat = c->data;
 
-	/* appends only write */
+	/* appends only write (isn't save!, ie also set read times) */
+	c->base.rtime = c->t->base.rtime = c->t->s->base.rtime = tr->rtime = tr->stime;
 	c->base.wtime = c->t->base.wtime = c->t->s->base.wtime = tr->wtime = tr->wstime;
 	if (tpe == TYPE_bat)
 		delta_append_bat(bat, i);
@@ -316,7 +317,8 @@ append_idx(sql_trans *tr, sql_idx * i, void *ib, int tpe)
 {
 	sql_delta *bat = i->data;
 
-	/* appends only write */
+	/* appends only write (isn't save!, ie also set read times) */
+	i->base.rtime = i->t->base.rtime = i->t->s->base.rtime = tr->rtime = tr->stime;
 	i->base.wtime = i->t->base.wtime = i->t->s->base.wtime = tr->wtime = tr->wstime;
 	if (tpe == TYPE_bat)
 		delta_append_bat(bat, ib);
@@ -1381,6 +1383,8 @@ tr_update_delta( sql_trans *tr, sql_delta *obat, sql_delta *cbat, BUN snapshot_m
 			bat_destroy(pi);
 		} else {
 			BATcommit(ins);
+			obat->cnt = cbat->cnt;
+			obat->ibase = cbat->ibase;
 		}
 	}
 	bat_destroy(ins);
