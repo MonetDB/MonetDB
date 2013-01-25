@@ -2769,13 +2769,16 @@ rollforward_trans(sql_trans *tr, int mode)
 		ok = rollforward_changeset_updates(tr, &tr->schemas, &tr->parent->schemas, (sql_base *) tr->parent, (rfufunc) &rollforward_update_schema, (rfcfunc) &rollforward_create_schema, (rfdfunc) &rollforward_drop_schema, (dupfunc) &schema_dup, mode);
 	if (mode == R_APPLY) {
 		if (tr->parent == gtrans) {
-			gtrans->stime = tr->stime;
-			gtrans->wstime = tr->wstime;
+			if (gtrans->stime < tr->stime)
+				gtrans->stime = tr->stime;
+			if (gtrans->wstime < tr->wstime)
+				gtrans->wstime = tr->wstime;
 			
 			if (tr->schema_updates) 
 				schema_number++;
 		}
 		tr->wtime = tr->rtime = 0;
+		assert(gtrans->wstime == gtrans->wtime);
 	}
 	return ok;
 }
