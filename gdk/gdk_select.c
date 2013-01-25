@@ -212,9 +212,9 @@ do {									    \
 
 /* main loop for imprints */
 /*
- * icnt is the itterator for imprints
- * dcnt is the itterator for dictionary entries
- * i    is the itterator for the values in imprints
+ * icnt is the iterator for imprints
+ * dcnt is the iterator for dictionary entries
+ * i    is the iterator for the values in imprints
  */
 #define impsloop(CAND,TEST,ADD)						    \
 do {									    \
