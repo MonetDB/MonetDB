@@ -800,7 +800,7 @@ describe_table(Mapi mid, char *schema, char *tname, stream *toConsole, int forei
 	}
 	if (view)
 		view = strdup(view);
-	if (isarray[0] == 't') {
+	if (isarray && isarray[0] == 't') {
 		isarray = "t";
 	} else {
 		isarray = "f";
