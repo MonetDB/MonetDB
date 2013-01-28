@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -146,31 +146,31 @@ BATcreatedesc(int ht, int tt, int heapnames)
 	bn->batMaphheap = 0;
 	bn->batMaptheap = 0;
 	if (heapnames) {
-		str nme = BBP_physical(bn->batCacheid);
+		const char *nme = BBP_physical(bn->batCacheid);
 
 		if (ht) {
-			bn->H->heap.filename = (str) GDKmalloc(strlen(nme) + 12);
+			bn->H->heap.filename = GDKmalloc(strlen(nme) + 12);
 			if (bn->H->heap.filename == NULL)
 				goto bailout;
 			GDKfilepath(bn->H->heap.filename, NULL, nme, "head");
 		}
 
 		if (tt) {
-			bn->T->heap.filename = (str) GDKmalloc(strlen(nme) + 12);
+			bn->T->heap.filename = GDKmalloc(strlen(nme) + 12);
 			if (bn->T->heap.filename == NULL)
 				goto bailout;
 			GDKfilepath(bn->T->heap.filename, NULL, nme, "tail");
 		}
 
 		if (ATOMneedheap(ht)) {
-			if ((bn->H->vheap = (Heap *) GDKzalloc(sizeof(Heap))) == NULL || (bn->H->vheap->filename = (str) GDKmalloc(strlen(nme) + 12)) == NULL)
+			if ((bn->H->vheap = (Heap *) GDKzalloc(sizeof(Heap))) == NULL || (bn->H->vheap->filename = GDKmalloc(strlen(nme) + 12)) == NULL)
 				goto bailout;
 			GDKfilepath(bn->H->vheap->filename, NULL, nme, "hheap");
 			bn->H->vheap->parentid = bn->batCacheid;
 		}
 
 		if (ATOMneedheap(tt)) {
-			if ((bn->T->vheap = (Heap *) GDKzalloc(sizeof(Heap))) == NULL || (bn->T->vheap->filename = (str) GDKmalloc(strlen(nme) + 12)) == NULL)
+			if ((bn->T->vheap = (Heap *) GDKzalloc(sizeof(Heap))) == NULL || (bn->T->vheap->filename = GDKmalloc(strlen(nme) + 12)) == NULL)
 				goto bailout;
 			GDKfilepath(bn->T->vheap->filename, NULL, nme, "theap");
 			bn->T->vheap->parentid = bn->batCacheid;
@@ -487,6 +487,7 @@ BATextend(BAT *b, BUN newcap)
 	if (b->T->heap.base && HEAPextend(&b->T->heap, theap_size) < 0)
 		return NULL;
 	HASHdestroy(b);
+	IMPSdestroy(b);
 	return b;
 }
 
@@ -536,6 +537,7 @@ BATclear(BAT *b, int force)
 	if (b->T->hash) {
 		HASHremove(bm);
 	}
+	IMPSdestroy(b);
 
 	/* we must dispose of all inserted atoms */
 	if (b->batDeleted == b->batInserted &&
@@ -628,6 +630,7 @@ BATfree(BAT *b)
 		PROPdestroy(b->T->props);
 	b->T->props = NULL;
 	HASHdestroy(b);
+	IMPSdestroy(b);
 	if (b->htype)
 		HEAPfree(&b->H->heap);
 	else
@@ -710,9 +713,9 @@ static int
 heapcopy(BAT *bn, char *ext, Heap *dst, Heap *src)
 {
 	if (src->filename && src->newstorage != STORE_MEM) {
-		str nme = BBP_physical(bn->batCacheid);
+		const char *nme = BBP_physical(bn->batCacheid);
 
-		if ((dst->filename = (str) GDKmalloc(strlen(nme) + 12)) == NULL)
+		if ((dst->filename = GDKmalloc(strlen(nme) + 12)) == NULL)
 			return -1;
 		GDKfilepath(dst->filename, NULL, nme, ext);
 	}
@@ -1242,6 +1245,7 @@ BUNins(BAT *b, const void *h, const void *t, bit force)
 				HEAPwarm(b->T->vheap);
 		}
 	}
+	IMPSdestroy(b); /* no support for inserts in imprints yet */
 	return b;
       bunins_failed:
 	return NULL;
@@ -1326,6 +1330,9 @@ BUNappend(BAT *b, const void *t, bit force)
 	} else {
 		BATsetcount(b, b->batCount + 1);
 	}
+
+
+	IMPSdestroy(b); /* no support for inserts in imprints yet */
 
 	/* first adapt the hashes; then the user-defined accelerators.
 	 * REASON: some accelerator updates (qsignature) use the hashes!
@@ -1514,6 +1521,7 @@ BUNdelete_(BAT *b, BUN p, bit force)
 	}
 	b->batCount--;
 	b->batDirty = 1;	/* bat is dirty */
+	IMPSdestroy(b); /* no support for inserts in imprints yet */
 	return p;
 }
 
@@ -2777,6 +2785,8 @@ BATmode(BAT *b, int mode)
 		if (mode == PERSISTENT) {
 			if (!(BBP_status(bid) & BBPDELETED))
 				BBP_status_on(bid, BBPNEW, "BATmode");
+			else
+				BBP_status_on(bid, BBPEXISTING, "BATmode");
 			BBP_status_off(bid, BBPDELETED, "BATmode");
 		} else if (b->batPersistence == PERSISTENT) {
 			if (!(BBP_status(bid) & BBPNEW))
@@ -3037,6 +3047,7 @@ BATassertProps(BAT *b)
 {
 #ifndef NDEBUG
 	BAT *bm;
+	int bbpstatus;
 
 	/* general BAT sanity */
 	assert(b != NULL);
@@ -3051,6 +3062,11 @@ BATassertProps(BAT *b)
 	assert(b->batInserted >= b->batFirst);
 	assert(b->batFirst + b->batCount >= b->batInserted);
 	assert(b->U->first == 0);
+	bbpstatus = BBP_status(b->batCacheid);
+	/* only at most one of BBPDELETED, BBPEXISTING, BBPNEW may be set */
+	assert(((bbpstatus & BBPDELETED) != 0) +
+	       ((bbpstatus & BBPEXISTING) != 0) +
+	       ((bbpstatus & BBPNEW) != 0) <= 1);
 
 	BATassertHeadProps(b);
 	if (b->H != bm->H)

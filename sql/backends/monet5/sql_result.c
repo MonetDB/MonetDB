@@ -13,7 +13,7 @@
  * 
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
 */
 
@@ -615,7 +615,7 @@ mvc_import_table(Client cntxt, mvc *m, bstream *bs, char *sname, char *tname, ch
 			sql_column *col = n->data;
 
 			fmt[i].name = col->base.name;
-			fmt[i].sep = (n->next) ? _STRDUP(sep) : _STRDUP(rsep);
+			fmt[i].sep = (n->next) ? sep : rsep;
 			fmt[i].seplen = _strlen(fmt[i].sep);
 			fmt[i].type = sql_subtype_string(&col->type);
 			fmt[i].adt = ATOMindex(col->type.type->base.name);
@@ -628,7 +628,7 @@ mvc_import_table(Client cntxt, mvc *m, bstream *bs, char *sname, char *tname, ch
 			fmt[i].c[0] = NULL;
 			fmt[i].ws = !(has_whitespace(fmt[i].sep));
 			fmt[i].quote = ssep?ssep[0]:0;
-			fmt[i].nullstr = _STRDUP(ns);
+			fmt[i].nullstr = ns;
 			fmt[i].null_length = strlen(ns);
 			fmt[i].nildata = GDKmalloc(fmt[i].nillen);
 			memcpy(fmt[i].nildata, ATOMnilptr(fmt[i].adt), fmt[i].nillen);
@@ -691,14 +691,17 @@ mvc_import_table(Client cntxt, mvc *m, bstream *bs, char *sname, char *tname, ch
 				BAT *b = store_funcs.bind_col(m->session->tr, c, RDONLY);
 				sql_delta *d = c->data;
 
-				c->base.wtime = c->t->base.wtime = c->t->s->base.wtime = m->session->tr->wtime = m->session->tr->stime;
-				d->cnt = BATcount(b);
-
+				c->base.wtime = t->base.wtime = t->s->base.wtime = m->session->tr->wtime = m->session->tr->wstime;
+				d->ibase = d->cnt = BATcount(b);
 				BBPunfix(b->batCacheid);
 			}
 		}
 		if (as.error) 
 			sql_error(m, 500, "%s", as.error);
+		for (n = t->columns.set->h, i = 0; n; n = n->next, i++) {
+			fmt[i].sep = NULL;
+			fmt[i].nullstr = NULL;
+		}
 		TABLETdestroy_format(&as);
 	}
 	return bats;
@@ -1091,7 +1094,7 @@ mvc_export_table(mvc *m, stream *s, res_table *t, BAT *order, BUN offset, BUN nr
 	tres = GDKmalloc(sizeof(struct time_res) * (as.nr_attrs));
 
 	fmt[0].c[0] = NULL;
-	fmt[0].sep = _STRDUP(btag);
+	fmt[0].sep = btag;
 	fmt[0].seplen = _strlen(fmt[0].sep);
 	fmt[0].ws = 0;
 	fmt[0].nullstr = NULL;
@@ -1105,9 +1108,9 @@ mvc_export_table(mvc *m, stream *s, res_table *t, BAT *order, BUN offset, BUN nr
 		fmt[i].c[0] = BATdescriptor(c->b);
 		fmt[i].ci[0] = bat_iterator(fmt[i].c[0]);
 		fmt[i].name = NULL;
-		fmt[i].sep = ((i - 1) < (t->nr_cols - 1)) ? _STRDUP(sep) : _STRDUP(rsep);
+		fmt[i].sep = ((i - 1) < (t->nr_cols - 1)) ? sep : rsep;
 		fmt[i].seplen = _strlen(fmt[i].sep);
-		fmt[i].type = _STRDUP(ATOMname(fmt[i].c[0]->ttype));
+		fmt[i].type = ATOMname(fmt[i].c[0]->ttype);
 		fmt[i].adt = fmt[i].c[0]->ttype;
 		fmt[i].tostr = &_ASCIIadt_toStr;
 		fmt[i].frstr = &_ASCIIadt_frStr;
@@ -1117,7 +1120,7 @@ mvc_export_table(mvc *m, stream *s, res_table *t, BAT *order, BUN offset, BUN nr
 		fmt[i].nillen = 0;
 		fmt[i].ws = 0;
 		fmt[i].quote = ssep?ssep[0]:0;
-		fmt[i].nullstr = _STRDUP(ns);
+		fmt[i].nullstr = ns;
 		if (c->type.type->eclass == EC_DEC) {
 			fmt[i].tostr = &dec_tostr;
 			fmt[i].frstr = &dec_frstr;
@@ -1151,6 +1154,11 @@ mvc_export_table(mvc *m, stream *s, res_table *t, BAT *order, BUN offset, BUN nr
 	}
 	if (i == t->nr_cols + 1) {
 		TABLEToutput_file(&as, order, s);
+	}
+	for (i = 0; i <= t->nr_cols; i++) {
+		fmt[i].sep = NULL;
+		fmt[i].type = NULL;
+		fmt[i].nullstr = NULL;
 	}
 	TABLETdestroy_format(&as);
 	GDKfree(tres);
@@ -1400,7 +1408,7 @@ mvc_export_head(mvc *m, stream *s, int res_id, int only_header)
 	/* tuple count */
 	if (only_header) {
 		if (t->order) {
-			order = BATdescriptor(t->order);
+			order = BBPquickdesc(ABS(t->order), FALSE);
 			if (!order)
 				return -1;
 
@@ -1410,53 +1418,53 @@ mvc_export_head(mvc *m, stream *s, int res_id, int only_header)
 	}
 	if (!mvc_send_lng(s, (lng) count) ||
 			mnstr_write(s, " ", 1, 1) != 1)
-		return export_error(order);
+		return -1;
 
 	/* column count */
 	if (!mvc_send_int(s, t->nr_cols) ||
 			mnstr_write(s, " ", 1, 1) != 1)
-		return export_error(order);
+		return -1;
 
 	/* row count, min(count, reply_size) */
 	if (!mvc_send_int(s, (m->reply_size >= 0 && (BUN) m->reply_size < count) ? m->reply_size : (int) count)) 
-		return export_error(order);
+		return -1;
 
 	if (mnstr_write(s, "\n% ", 3, 1) != 1)
-		return export_error(order);
+		return -1;
 	for (i = 0; i < t->nr_cols; i++) {
 		res_col *c = t->cols + i;
 		size_t len = strlen(c->tn);
 
 		if (len && mnstr_write(s, c->tn, len, 1) != 1)
-			return export_error(order);
+			return -1;
 		if (i + 1 < t->nr_cols && mnstr_write(s, ",\t", 2, 1) != 1)
-			return export_error(order);
+			return -1;
 	}
 	if (mnstr_write(s, " # table_name\n% ", 16, 1) != 1)
-		return export_error(order);
+		return -1;
 
 	for (i = 0; i < t->nr_cols; i++) {
 		res_col *c = t->cols + i;
 
 		if (mnstr_write(s, c->name, strlen(c->name), 1) != 1)
-			return export_error(order);
+			return -1;
 		if (i + 1 < t->nr_cols && mnstr_write(s, ",\t", 2, 1) != 1)
-			return export_error(order);
+			return -1;
 	}
 	if (mnstr_write(s, " # name\n% ", 10, 1) != 1)
-		return export_error(order);
+		return -1;
 
 	for (i = 0; i < t->nr_cols; i++) {
 		res_col *c = t->cols + i;
 
 		if (mnstr_write(s, c->type.type->sqlname,
 					strlen(c->type.type->sqlname), 1) != 1)
-			return export_error(order);
+			return -1;
 		if (i + 1 < t->nr_cols && mnstr_write(s, ",\t", 2, 1) != 1)
-			return export_error(order);
+			return -1;
 	}
 	if (mnstr_write(s, " # type\n% ", 10, 1) != 1)
-		return export_error(order);
+		return -1;
 
 	for (i = 0; i < t->nr_cols; i++) {
 		res_col *c = t->cols + i;
@@ -1464,32 +1472,29 @@ mvc_export_head(mvc *m, stream *s, int res_id, int only_header)
 		int eclass = c->type.type->eclass;
 
 		if (!export_length(s, mtype, eclass, c->type.digits, c->type.scale, type_has_tz(&c->type), c->b, c->p))
-			return export_error(order);
+			return -1;
 		if (i + 1 < t->nr_cols && mnstr_write(s, ",\t", 2, 1) != 1)
-			return export_error(order);
+			return -1;
 	}
 	if (mnstr_write(s, " # length\n", 10, 1) != 1)
-		return export_error(order);
+		return -1;
 
 	if (m->sizeheader) {
 		if (mnstr_write(s, "% ", 2, 1) != 1)
-			return export_error(order);
+			return -1;
 		for (i = 0; i < t->nr_cols; i++) {
 			res_col *c = t->cols + i;
 
 			if (mnstr_printf(s, "%u %u",
 					 c->type.digits, c->type.scale) < 0)
-				return export_error(order);
+				return -1;
 			if (i + 1 < t->nr_cols &&
 			    mnstr_write(s, ",\t", 2, 1) != 1)
-				return export_error(order);
+				return -1;
 		}
 		if (mnstr_write(s, " # typesizes\n", 13, 1) != 1)
-			return export_error(order);
+			return -1;
 	}
-
-	if ( order)
-		BBPunfix(order->batCacheid);
 	return res;
 }
 

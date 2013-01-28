@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -41,7 +41,7 @@ str protocolname[4] = { "<unknown>", "TCP", "UDP", "CSV" };
 
 BSKTbasketRec *baskets;   /* the datacell catalog */
 int bsktTop = 0, bsktLimit = 0;
-static MT_Lock bsktLock;
+static MT_Lock bsktLock MT_LOCK_INITIALIZER("bsktLock");
 
 #define lockBSKTbasketCatalog() MT_lock_set(&bsktLock, "basket");
 #define unlockBSKTbasketCatalog() MT_lock_unset(&bsktLock, "basket");
@@ -90,7 +90,9 @@ static int BSKTnewEntry(void)
 	if (bsktLimit == 0) {
 		bsktLimit = MAXBSK;
 		baskets = (BSKTbasketRec *) GDKzalloc(bsktLimit * sizeof(BSKTbasketRec));
+#ifdef NEED_MT_LOCK_INIT
 		MT_lock_init(&bsktLock, "basket");
+#endif
 		bsktTop = 1; /* entry 0 is used as non-initialized */
 	} else if (bsktTop == bsktLimit) {
 		bsktLimit += MAXBSK;

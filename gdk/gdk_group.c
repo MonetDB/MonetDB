@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -64,39 +64,105 @@
  *
  * Otherwise we build a partial hash table on the fly.
  *
- * A decision should be made on the order in which grouping occurs 
- * Let |b| has << different values as |g| then the linked lists gets
+ * A decision should be made on the order in which grouping occurs Let
+ * |b| have << different values than |g| then the linked lists gets
  * extremely long, leading to a n^2 algorithm.
  * At the MAL level, the multigroup function would perform the dynamic
  * optimization.
  */
+#define GRPnotfound()							\
+	do {								\
+		/* no equal found: start new group */			\
+		if (ngrp == maxgrps) {					\
+			/* we need to extend extents and histo bats, */	\
+			/* do it at most once */			\
+			maxgrps = BATcount(b);				\
+			if (extents) {					\
+				BATsetcount(en, ngrp);			\
+				en = BATextend(en, maxgrps);		\
+				exts = (oid *) Tloc(en, BUNfirst(en));	\
+			}						\
+			if (histo) {					\
+				BATsetcount(hn, ngrp);			\
+				hn = BATextend(hn, maxgrps);		\
+				cnts = (wrd *) Tloc(hn, BUNfirst(hn));	\
+			}						\
+		}							\
+		if (extents)						\
+			exts[ngrp] = b->hseqbase + (oid) (p - r);	\
+		if (histo)						\
+			cnts[ngrp] = 1;					\
+		ngrps[p - r] = ngrp;					\
+		ngrp++;							\
+	} while (0)
+
 #define GRPhashloop(TYPE)						\
 	do {								\
-		v = BUNtail(bi, p);					\
-		if (grps) {						\
-			prb = hash_##TYPE(hs, v) ^ hash_oid(hs, &grps[p-r]); \
-			for (hb = hs->hash[prb];			\
-			     hb != BUN_NONE;				\
-			     hb = hs->link[hb]) {			\
-				if (grps[hb - r] == grps[p - r] &&	\
-				    *(TYPE *) v == *(TYPE *) BUNtail(bi, hb)){ \
-					ngrps[p - r] = ngrps[hb - r];	\
-					if (histo)			\
-						cnts[ngrps[hb - r]]++;	\
-					break;				\
+		TYPE *w = (TYPE *) Tloc(b, 0);				\
+		for (r = BUNfirst(b), p = r, q = r + BATcount(b); p < q; p++) { \
+			prb = hash_##TYPE(hs, &w[p]);			\
+			if (gc) {					\
+				for (hb = hs->hash[prb];		\
+				     hb != BUN_NONE &&			\
+				      grps[hb - r] == grps[p - r];	\
+				     hb = hs->link[hb]) {		\
+					assert(hs->link[hb] == BUN_NONE \
+					       || hs->link[hb] < hb);	\
+					if (w[p] == w[hb]) {		\
+						oid grp = ngrps[hb - r]; \
+						ngrps[p - r] = grp; 	\
+						if (histo)		\
+							cnts[grp]++;	\
+						if (gn->tsorted &&	\
+						    grp != ngrp - 1)	\
+							gn->tsorted = 0; \
+						break;			\
+					}				\
+				}					\
+				if (hb != BUN_NONE &&			\
+				    grps[hb - r] != grps[p - r]) {	\
+					/* we didn't assign a group */	\
+					/* yet */			\
+					hb = BUN_NONE;			\
+				}					\
+			} else if (grps) {				\
+				prb = ((prb << bits) ^ (BUN) grps[p-r]) & hs->mask; \
+				for (hb = hs->hash[prb];		\
+				     hb != BUN_NONE;			\
+				     hb = hs->link[hb]) {		\
+					if (grps[hb - r] == grps[p - r] && \
+					    w[p] == w[hb]) {		\
+						oid grp = ngrps[hb - r]; \
+						ngrps[p - r] = grp;	\
+						if (histo)		\
+							cnts[grp]++;	\
+						if (gn->tsorted &&	\
+						    grp != ngrp - 1)	\
+							gn->tsorted = 0; \
+						break;			\
+					}				\
+				}					\
+			} else {					\
+				for (hb = hs->hash[prb];		\
+				     hb != BUN_NONE;			\
+				     hb = hs->link[hb]) {		\
+					if (w[p] == w[hb]) {		\
+						oid grp = ngrps[hb - r]; \
+						ngrps[p - r] = grp;	\
+						if (histo)		\
+							cnts[grp]++;	\
+						if (gn->tsorted &&	\
+						    grp != ngrp - 1)	\
+							gn->tsorted = 0; \
+						break;			\
+					}				\
 				}					\
 			}						\
-		} else {						\
-			prb = hash_##TYPE(hs, v);			\
-			for (hb = hs->hash[prb];			\
-			     hb != BUN_NONE;				\
-			     hb = hs->link[hb]) {			\
-				if (*(TYPE *) v == *(TYPE *) BUNtail(bi, hb)){ \
-					ngrps[p - r] = ngrps[hb - r];	\
-					if (histo)			\
-						cnts[ngrps[hb - r]]++;	\
-					break;				\
-				}					\
+			if (hb == BUN_NONE) {				\
+				GRPnotfound();				\
+				/* enter new group into hash table */	\
+				hs->link[p] = hs->hash[prb];		\
+				hs->hash[prb] = p;			\
 			}						\
 		}							\
 	} while (0)
@@ -152,10 +218,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				  e ? BATgetId(e) : "NULL", e ? BATcount(e) : 0,
 				  h ? BATgetId(h) : "NULL", h ? BATcount(h) : 0,
 				  subsorted);
-		if (BATcount(b) == 1 && b->htype == TYPE_oid)
-			ngrp = * (oid *) Hloc(b, BUNfirst(b));
-		else
-			ngrp = BATcount(b) == 0 ? 0 : b->hseqbase;
+		ngrp = BATcount(b) == 0 ? 0 : b->hseqbase;
 		gn = BATnew(TYPE_void, TYPE_void, BATcount(b));
 		if (gn == NULL)
 			goto error;
@@ -306,47 +369,27 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		if (grps)
 			prev = *grps++;
 		pv = BUNtail(bi, BUNfirst(b));
-		*ngrps++ = ngrp;
+		ngrps[0] = ngrp;
+		ngrp++;
 		if (extents)
-			*exts++ = b->hseqbase;
+			exts[0] = b->hseqbase;
 		if (histo)
-			*cnts = 1;
+			cnts[0] = 1;
 		for (r = BUNfirst(b), p = r + 1, q = r + BATcount(b);
 		     p < q;
 		     p++) {
 			v = BUNtail(bi, p);
 			if ((grps && *grps != prev) || cmp(pv, v) != 0) {
-				ngrp++;
-				if (ngrp == maxgrps) {
-					/* we need to extend extents
-					 * and histo bats, do it
-					 * once */
-					maxgrps = BATcount(b);
-					if (extents) {
-						BATsetcount(en, ngrp);
-						en = BATextend(en, maxgrps);
-						exts = (oid *) Tloc(en, BUNfirst(en) + ngrp);
-					}
-					if (histo) {
-						BATsetcount(hn, ngrp);
-						hn = BATextend(hn, maxgrps);
-						cnts = (wrd *) Tloc(hn, BUNfirst(hn) + ngrp - 1);
-					}
-				}
-				if (extents)
-					*exts++ = b->hseqbase + (oid) (p - r);
+				GRPnotfound();
+			} else {
+				ngrps[p - r] = ngrp - 1;
 				if (histo)
-					*++cnts = 1;
-			} else if (histo) {
-				*cnts += 1;
+					cnts[ngrp - 1]++;
 			}
-			*ngrps++ = ngrp;
 			pv = v;
 			if (grps)
 				prev = *grps++;
 		}
-		/* ngrp is the id of the last group, turn it into the count */
-		ngrp++;
 		gn->tsorted = 1;
 		*groups = gn;
 	} else if (b->tsorted || b->trevsorted) {
@@ -386,7 +429,8 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 						ngrps[p - r] = grp;
 						if (histo)
 							cnts[grp]++;
-						if (grp != ngrp - 1)
+						if (gn->tsorted &&
+						    grp != ngrp - 1)
 							gn->tsorted = 0;
 						break;
 					}
@@ -403,108 +447,134 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				pv = v;
 			}
 			/* start a new group */
-			if (ngrp == maxgrps) {
-				/* we need to extend extents and histo
-				 * bats, do it once */
-				maxgrps = BATcount(b);
-				if (extents) {
-					BATsetcount(en, ngrp);
-					en = BATextend(en, maxgrps);
-					exts = (oid *) Tloc(en, BUNfirst(en));
-				}
-				if (histo) {
-					BATsetcount(hn, ngrp);
-					hn = BATextend(hn, maxgrps);
-					cnts = (wrd *) Tloc(hn, BUNfirst(hn));
-				}
-			}
-			if (extents)
-				exts[ngrp] = b->hseqbase + (oid) (p - r);
-			if (histo)
-				cnts[ngrp] = 1;
-			ngrps[p - r] = ngrp;
-			ngrp++;
+			GRPnotfound();
 		}
 	} else if (b->T->hash) {
-		/* we already have a hash table on b */
+		bit gc = g && (g->tsorted || g->trevsorted);
+
+		/* we already have a hash table on b;
+		 * we also exploit if g is clustered */
 		ALGODEBUG fprintf(stderr, "#BATgroup(b=%s#" BUNFMT ","
 				  "g=%s#" BUNFMT ","
 				  "e=%s#" BUNFMT ","
 				  "h=%s#" BUNFMT ",subsorted=%d): "
-				  "use existing hash table\n",
+				  "use existing hash table%s\n",
 				  BATgetId(b), BATcount(b),
 				  g ? BATgetId(g) : "NULL", g ? BATcount(g) : 0,
 				  e ? BATgetId(e) : "NULL", e ? BATcount(e) : 0,
 				  h ? BATgetId(h) : "NULL", h ? BATcount(h) : 0,
-				  subsorted);
+				  subsorted, gc ? " (g clustered)" : "");
 		hs = b->T->hash;
+		gn->tsorted = 1; /* be optimistic */
 		for (r = BUNfirst(b), p = r, q = r + BATcount(b); p < q; p++) {
 			v = BUNtail(bi, p);
 			/* this loop is similar, but not equal, to
 			 * HASHloop: the difference is that we only
 			 * consider BUNs smaller than the one we're
 			 * looking up (p), and that we also consider
-			 * the input groups */
+			 * the input groups;
+			 * we also exploit if g is clustered */
+			/* skip irrelevant BUNs after the current
+			 * BUNs; exploit that hash-table links
+			 * backwards through BAT */
 			for (hb = hs->hash[HASHprobe(hs, v)];
-			     hb != BUN_NONE;
+			     hb != BUN_NONE && hb >= p;
 			     hb = hs->link[hb]) {
-				if (hb < p &&
-				    (grps == NULL ||
-				     grps[hb - r] == grps[p - r]) &&
-				    cmp(v, BUNtail(bi, hb)) == 0) {
-					ngrps[p - r] = ngrps[hb - r];
-					if (histo)
-						cnts[ngrps[hb - r]]++;
-					break;
+				assert(hs->link[hb] == BUN_NONE
+				       || hs->link[hb] < hb);
+			}
+				;
+			if (gc) {
+				for (;
+				     hb != BUN_NONE && grps[hb - r] == grps[p - r];
+				     hb = hs->link[hb]) {
+					assert(hs->link[hb] == BUN_NONE
+					       || hs->link[hb] < hb);
+					if (cmp(v, BUNtail(bi, hb)) == 0) {
+						oid grp = ngrps[hb - r];
+						ngrps[p - r] = grp;
+						if (histo)
+							cnts[grp]++;
+						if (gn->tsorted &&
+						    grp != ngrp - 1)
+							gn->tsorted = 0;
+						break;
+					}
+				}
+				if (hb != BUN_NONE &&
+				    grps[hb - r] != grps[p - r]) {
+					/* we didn't assign a group
+					 * yet */
+					hb = BUN_NONE;
+				}
+			} else if (grps) {
+				for (;
+				     hb != BUN_NONE;
+				     hb = hs->link[hb]) {
+					if (grps[hb - r] == grps[p - r] &&
+					    cmp(v, BUNtail(bi, hb)) == 0) {
+						oid grp = ngrps[hb - r];
+						ngrps[p - r] = grp;
+						if (histo)
+							cnts[grp]++;
+						if (gn->tsorted &&
+						    grp != ngrp - 1)
+							gn->tsorted = 0;
+						break;
+					}
+				}
+			} else {
+				for (;
+				     hb != BUN_NONE;
+				     hb = hs->link[hb]) {
+					if (cmp(v, BUNtail(bi, hb)) == 0) {
+						oid grp = ngrps[hb - r];
+						ngrps[p - r] = grp;
+						if (histo)
+							cnts[grp]++;
+						if (gn->tsorted &&
+						    grp != ngrp - 1)
+							gn->tsorted = 0;
+						break;
+					}
 				}
 			}
 			if (hb == BUN_NONE) {
-				/* no equal found: start new group */
-				if (ngrp == maxgrps) {
-					/* we need to extend extents
-					 * and histo bats, do it
-					 * once */
-					maxgrps = BATcount(b);
-					if (extents) {
-						BATsetcount(en, ngrp);
-						en = BATextend(en, maxgrps);
-						exts = (oid *) Tloc(en, BUNfirst(en));
-					}
-					if (histo) {
-						BATsetcount(hn, ngrp);
-						hn = BATextend(hn, maxgrps);
-						cnts = (wrd *) Tloc(hn, BUNfirst(hn));
-					}
-				}
-				if (extents)
-					exts[ngrp] = b->hseqbase + (oid) (p - r);
-				if (histo)
-					cnts[ngrp] = 1;
-				ngrps[p - r] = ngrp;
-				ngrp++;
+				GRPnotfound();
 			}
 		}
-		gn->tsorted = BATcount(gn) <= 1;
 	} else {
+		bit gc = g && (g->tsorted || g->trevsorted);
 		const char *nme;
 		size_t nmelen;
 		Heap *hp = NULL;
 		BUN prb;
+		BUN mask = HASHmask(b->batCount) >> 3;
+		int bits = 3;
+
+		/* when combining value and group-id hashes,
+		 * we left-shift one of them by half the hash-mask width
+		 * to better spread bits and use the entire hash-mask,
+		 * and thus reduce collisions */
+		while (mask>>=1)
+			bits++;
+		bits /= 2;
 
 		/* not sorted, and no pre-existing hash table: we'll
 		 * build an incomplete hash table on the fly--also see
 		 * BATassertHeadProps and BATderiveHeadProps for
-		 * similar code */
+		 * similar code;
+		 * we also exploit if g is clustered */
 		ALGODEBUG fprintf(stderr, "#BATgroup(b=%s#" BUNFMT ","
 				  "g=%s#" BUNFMT ","
 				  "e=%s#" BUNFMT ","
 				  "h=%s#" BUNFMT ",subsorted=%d): "
-				  "create partial hash table\n",
+				  "create partial hash table%s\n",
 				  BATgetId(b), BATcount(b),
 				  g ? BATgetId(g) : "NULL", g ? BATcount(g) : 0,
 				  e ? BATgetId(e) : "NULL", e ? BATcount(e) : 0,
 				  h ? BATgetId(h) : "NULL", h ? BATcount(h) : 0,
-				  subsorted);
+				  subsorted, gc ? " (g clustered)" : "");
 		nme = BBP_physical(b->batCacheid);
 		nmelen = strlen(nme);
 		if ((hp = GDKzalloc(sizeof(Heap))) == NULL ||
@@ -527,39 +597,67 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			goto error;
 		}
 
-		for (r = BUNfirst(b), p = r, q = r + BATcount(b); p < q; p++) {
-			switch (ATOMstorage(hs->type)) {
-			case TYPE_bte:
-				GRPhashloop(bte);
-				break;
-			case TYPE_sht:
-				GRPhashloop(sht);
-				break;
-			case TYPE_int:
-				GRPhashloop(int);
-				break;
-			case TYPE_lng:
-				GRPhashloop(lng);
-				break;
-			case TYPE_flt:
-				GRPhashloop(flt);
-				break;
-			case TYPE_dbl:
-				GRPhashloop(dbl);
-				break;
-			default:
+		gn->tsorted = 1; /* be optimistic */
+		switch (ATOMstorage(hs->type)) {
+		case TYPE_bte:
+			GRPhashloop(bte);
+			break;
+		case TYPE_sht:
+			GRPhashloop(sht);
+			break;
+		case TYPE_int:
+			GRPhashloop(int);
+			break;
+		case TYPE_lng:
+			GRPhashloop(lng);
+			break;
+		case TYPE_flt:
+			GRPhashloop(flt);
+			break;
+		case TYPE_dbl:
+			GRPhashloop(dbl);
+			break;
+		default:
+			for (r = BUNfirst(b), p = r, q = r + BATcount(b); p < q; p++) {
 				v = BUNtail(bi, p);
 				prb = hash_any(hs, v);
-				if (grps) {
-					prb ^= hash_oid(hs, &grps[p-r]);
+				if (gc) {
+					for (hb = hs->hash[prb];
+					     hb != BUN_NONE && grps[hb - r] == grps[p - r];
+					     hb = hs->link[hb]) {
+						assert(hs->link[hb] == BUN_NONE
+						       || hs->link[hb] < hb);
+						if (cmp(v, BUNtail(bi, hb)) == 0) {
+							oid grp = ngrps[hb - r];
+							ngrps[p - r] = grp;
+							if (histo)
+								cnts[grp]++;
+							if (gn->tsorted &&
+							    grp != ngrp - 1)
+								gn->tsorted = 0;
+							break;
+						}
+					}
+					if (hb != BUN_NONE &&
+					    grps[hb - r] != grps[p - r]) {
+						/* we didn't assign a
+						 * group yet */
+						hb = BUN_NONE;
+					}
+				} else if (grps) {
+					prb = ((prb << bits) ^ (BUN) grps[p-r]) & hs->mask;
 					for (hb = hs->hash[prb];
 					     hb != BUN_NONE;
 					     hb = hs->link[hb]) {
 						if (grps[hb - r] == grps[p - r] &&
 						    cmp(v, BUNtail(bi, hb)) == 0) {
-							ngrps[p - r] = ngrps[hb - r];
+							oid grp = ngrps[hb - r];
+							ngrps[p - r] = grp;
 							if (histo)
-								cnts[ngrps[hb - r]]++;
+								cnts[grp]++;
+							if (gn->tsorted &&
+							    grp != ngrp - 1)
+								gn->tsorted = 0;
 							break;
 						}
 					}
@@ -568,41 +666,23 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 					     hb != BUN_NONE;
 					     hb = hs->link[hb]) {
 						if (cmp(v, BUNtail(bi, hb)) == 0) {
-							ngrps[p - r] = ngrps[hb - r];
+							oid grp = ngrps[hb - r];
+							ngrps[p - r] = grp;
 							if (histo)
-								cnts[ngrps[hb - r]]++;
+								cnts[grp]++;
+							if (gn->tsorted &&
+							    grp != ngrp - 1)
+								gn->tsorted = 0;
 							break;
 						}
 					}
 				}
-			}
-			if (hb == BUN_NONE) {
-				/* no equal found: start new group and
-				 * enter into hash table */
-				if (ngrp == maxgrps) {
-					/* we need to extend extents
-					 * and histo bats, do it at
-					 * most once */
-					maxgrps = BATcount(b);
-					if (extents) {
-						BATsetcount(en, ngrp);
-						en = BATextend(en, maxgrps);
-						exts = (oid *) Tloc(en, BUNfirst(en));
-					}
-					if (histo) {
-						BATsetcount(hn, ngrp);
-						hn = BATextend(hn, maxgrps);
-						cnts = (wrd *) Tloc(hn, BUNfirst(hn));
-					}
+				if (hb == BUN_NONE) {
+					GRPnotfound();
+					/* enter new group into hash table */
+					hs->link[p] = hs->hash[prb];
+					hs->hash[prb] = p;
 				}
-				if (extents)
-					exts[ngrp] = b->hseqbase + (oid) (p - r);
-				if (histo)
-					cnts[ngrp] = 1;
-				ngrps[p - r] = ngrp;
-				ngrp++;
-				hs->link[p] = hs->hash[prb];
-				hs->hash[prb] = p;
 			}
 		}
 		if (hp->storage == STORE_MEM)
@@ -612,7 +692,6 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		GDKfree(hp);
 		GDKfree(hs);
 		GDKfree(ext);
-		gn->tsorted = BATcount(gn) <= 1;
 	}
 	if (extents) {
 		BATsetcount(en, (BUN) ngrp);

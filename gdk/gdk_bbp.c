@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -100,6 +100,7 @@ BBPrec *BBP[N_BBPINIT];		/* fixed base VM address of BBP array */
 bat BBPlimit = 0;		/* current committed VM BBP array */
 bat BBPsize = 0;		/* current used size of BBP array */
 
+#define KITTENNAP 4 	/* used to suspend processing */
 #define BBPNONAME "."		/* filler for no name in BBP.dir */
 /*
  * The hash index uses a bucket index (int array) of size mask that is
@@ -109,8 +110,8 @@ bat BBPsize = 0;		/* current used size of BBP array */
 bat *BBP_hash = NULL;		/* BBP logical name hash buckets */
 bat BBP_mask = 0;		/* number of buckets = & mask */
 
-static void BBPspin(bat bid, str debug, int event);
-static int BBPfree(BAT *b, str calledFrom);
+static void BBPspin(bat bid, const char *debug, int event);
+static int BBPfree(BAT *b, const char *calledFrom);
 static int BBPdestroy(BAT *b);
 static void BBPuncacheit(bat bid, int unloaddesc);
 static int BBPprepare(bit subcommit);
@@ -146,7 +147,7 @@ static void
 BBP_delete(bat i)
 {
 	bat *h = BBP_hash;
-	str s = BBP_logical(i);
+	const char *s = BBP_logical(i);
 	bat idx = (bat) (strHash(s) & BBP_mask);
 
 	for (h += idx; (i = *h) != 0; h = &BBP_next(i)) {
@@ -225,7 +226,7 @@ int BBPout = 0;			/* bats saved statistic */
  * read actions are to go on unlocked while other entries in the BBP
  * may be modified).
  */
-static MT_Id locked_by = 0;
+static volatile MT_Id locked_by = 0;
 
 static inline MT_Id
 BBP_getpid(void)
@@ -235,7 +236,23 @@ BBP_getpid(void)
 	return x;
 }
 
+#define BBP_unload_inc(bid, nme)			\
+	do {						\
+		MT_lock_set(&GDKunloadLock, nme);	\
+		BBPunloadCnt++;				\
+		MT_lock_unset(&GDKunloadLock, nme);	\
+	} while (0)
+
+#define BBP_unload_dec(bid, nme)				\
+	do {							\
+		MT_lock_set(&GDKunloadLock, nme);		\
+		--BBPunloadCnt;					\
+		assert(BBPunloadCnt >= 0);			\
+		MT_lock_unset(&GDKunloadLock, nme);		\
+	} while (0)
+
 static int BBPunloadCnt = 0;
+static MT_Lock GDKunloadLock MT_LOCK_INITIALIZER("GDKunloadLock");
 
 void
 BBPlock(const char *nme)
@@ -243,9 +260,13 @@ BBPlock(const char *nme)
 	int i;
 
 	/* wait for all pending unloads to finish */
+	(void) nme;
 	MT_lock_set(&GDKunloadLock, nme);
-	if (BBPunloadCnt > 0)
-		MT_cond_wait(&GDKunloadCond, &GDKunloadLock, nme);
+	while (BBPunloadCnt > 0) {
+		MT_lock_unset(&GDKunloadLock, nme);
+		MT_sleep_ms(1);
+		MT_lock_set(&GDKunloadLock, nme);
+	}
 
 	for (i = 0; i <= BBP_THREADMASK; i++)
 		MT_lock_set(&GDKtrimLock(i), nme);
@@ -264,6 +285,7 @@ BBPunlock(const char *nme)
 {
 	int i;
 
+	(void) nme;
 	for (i = BBP_BATMASK; i >= 0; i--)
 		MT_lock_unset(&GDKswapLock(i), nme);
 	for (i = BBP_THREADMASK; i >= 0; i--)
@@ -288,10 +310,10 @@ BBPinithash(void)
 	BBP_mask--;
 
 	while (--i > 0) {
-		str s = BBP_logical(i);
+		const char *s = BBP_logical(i);
 
 		if (s) {
-			str sm = BBP_logical(-i);
+			const char *sm = BBP_logical(-i);
 
 			if (*s != '.' && BBPtmpcheck(s) == 0) {
 				BBP_insert(i);
@@ -340,21 +362,6 @@ BBPextend(int buildhash)
 	}
 	BBP_notrim = 0;
 }
-
-static inline char *
-BBPparse(str *cur)
-{
-	char *base, *c = *cur;
-
-	for (c++; GDKisspace(*c); c++)
-		;
-	for (base = c; !(GDKisspace(*c) || *c == ','); c++)
-		;
-	*c = 0;
-	*cur = c;
-	return base;
-}
-
 
 static inline str
 BBPtmpname(str s, int len, bat i)
@@ -588,7 +595,7 @@ fixoidheap(void)
 {
 	bat bid;
 	BATstore *bs;
-	str nme, bnme;
+	const char *nme, *bnme;
 	long_str srcdir;
 	long_str filename;
 	size_t len;
@@ -971,6 +978,10 @@ BBPinit(void)
 	int oidsize;
 	oid BBPoid;
 
+#ifdef NEED_MT_LOCK_INIT
+	MT_lock_init(&GDKunloadLock, "GDKunloadLock");
+#endif
+
 	/* first move everything from SUBDIR to BAKDIR (its parent) */
 	if (BBPrecover_subdir() < 0)
 		GDKfatal("BBPinit: cannot properly process %s.", SUBDIR);
@@ -1280,8 +1291,6 @@ BBPdir_subcommit(int cnt, bat *subcommit)
 	n = 0;
 	i = 1;
 	for (;;) {
-		int mask = BBPPERSISTENT;	/* BBP.dir consists of all persistent bats only */
-
 		/* but for subcommits, all except the bats in the list
 		 * retain their existing mode */
 		if (n == 0 && fp != NULL) {
@@ -1295,7 +1304,8 @@ BBPdir_subcommit(int cnt, bat *subcommit)
 			break;
 		if (j < cnt && (n == 0 || subcommit[j] <= n || fp == NULL)) {
 			i = subcommit[j];
-			if (BBP_status(i) & mask) {
+			/* BBP.dir consists of all persistent bats only */
+			if (BBP_status(i) & BBPPERSISTENT) {
 				if (new_bbpentry(s, i) < 0)
 					goto bailout;
 				IODEBUG new_bbpentry(GDKstdout, i);
@@ -1360,10 +1370,9 @@ BBPdir(int cnt, bat *subcommit)
 		goto bailout;
 
 	for (i = 1; i < BBPsize; i++) {
-		int mask = BBPPERSISTENT;	/* BBP.dir consists of all persistent bats */
-
-		/* write the entry */
-		if (BBP_status(i) & mask) {
+		/* write the entry
+		 * BBP.dir consists of all persistent bats */
+		if (BBP_status(i) & BBPPERSISTENT) {
 			if (new_bbpentry(s, i) < 0)
 				break;
 			IODEBUG new_bbpentry(GDKstdout, i);
@@ -1503,7 +1512,7 @@ BBP_find(const char *nme, int lock)
 
 	if (i != 0) {
 		/* for tmp_X and tmpr_X BATs, we already know X */
-		str s;
+		const char *s;
 
 		if (ABS(i) >= BBPsize || (s = BBP_logical(i)) == NULL || strcmp(s, nme)) {
 			i = 0;
@@ -1605,7 +1614,7 @@ BBPinsert(BATstore *bs)
 {
 	MT_Id pid = BBP_getpid();
 	int lock = locked_by ? pid != locked_by : 1;
-	str s;
+	const char *s;
 	long_str dirname;
 	bat i;
 	int idx = (int) (pid & BBP_THREADMASK);
@@ -1694,7 +1703,7 @@ BBPinsert(BATstore *bs)
 		BBPgetsubdir(dirname, i);
 		nme = BBPphysicalname(name, 64, i);
 
-		BBP_physical(i) = (str) GDKmalloc(strlen(dirname) + strlen(nme) + 1 + 1 /* EOS + DIR_SEP */ );
+		BBP_physical(i) = GDKmalloc(strlen(dirname) + strlen(nme) + 1 + 1 /* EOS + DIR_SEP */ );
 		GDKfilepath(BBP_physical(i), dirname, nme, NULL);
 
 		BATDEBUG THRprintf(GDKstdout, "#%d = new %s(%s,%s)\n", (int) i, BBPname(i), ATOMname(bs->H.type), ATOMname(bs->T.type));
@@ -1776,7 +1785,7 @@ BBPuncacheit(bat i, int unloaddesc)
  * BBPclear removes a BAT from the BBP directory forever.
  */
 static inline void
-bbpclear(bat i, int idx, str lock)
+bbpclear(bat i, int idx, const char *lock)
 {
 	BATDEBUG {
 		THRprintf(GDKstdout, "#clear %d (%s)\n", (int) i, BBPname(i));
@@ -1920,13 +1929,13 @@ BBPrename(bat bid, const char *nme)
  * memory references can be unloaded.
  */
 static inline void
-BBPspin(bat i, str s, int event)
+BBPspin(bat i, const char *s, int event)
 {
 	if (BBPcheck(i, "BBPspin") && (BBP_status(i) & event)) {
 		lng spin = LL_CONSTANT(0);
 
 		while (BBP_status(i) & event) {
-			MT_sleep_ms(1);
+			MT_sleep_ms(KITTENNAP);
 			spin++;
 		}
 		BATDEBUG THRprintf(GDKstdout, "#BBPspin(%d,%s,%d): " LLFMT " loops\n", (int) i, s, event, spin);
@@ -1961,13 +1970,18 @@ incref(bat i, int logical, int lock)
 				break;
 			/* the BATs is "unstable", try again */
 			MT_lock_unset(&GDKswapLock(i), "BBPincref");
-			MT_sleep_ms(1);
+			MT_sleep_ms(KITTENNAP);
 		}
 	}
 	/* we have the lock */
 
 	bs = BBP_desc(i);
-
+	if ( bs == 0) {
+		/* should not have happened */
+		if (lock)
+			MT_lock_unset(&GDKswapLock(i), "BBPincref");
+		return 0;
+	}
 	/* parent BATs are not relevant for logical refs */
 	hp = logical ? 0 : bs->B.H->heap.parentid;
 	tp = logical ? 0 : bs->B.T->heap.parentid;
@@ -2306,7 +2320,7 @@ getBBPdescriptor(bat i, int lock)
 		while (BBP_status(j) & BBPWAITING) {	/* wait for bat to be loaded by other thread */
 			if (lock)
 				MT_lock_unset(&GDKswapLock(j), "BBPdescriptor");
-			MT_sleep_ms(1);
+			MT_sleep_ms(KITTENNAP);
 			if (lock)
 				MT_lock_set(&GDKswapLock(j), "BBPdescriptor");
 		}
@@ -2451,12 +2465,13 @@ BBPdestroy(BAT *b)
 }
 
 static int
-BBPfree(BAT *b, str calledFrom)
+BBPfree(BAT *b, const char *calledFrom)
 {
 	bat bid = ABS(b->batCacheid), hp = VIEWhparent(b), tp = VIEWtparent(b), vhp = VIEWvhparent(b), vtp = VIEWvtparent(b);
 	int ret;
 
 	assert(BBPswappable(b));
+	(void) calledFrom;
 
 	/* write dirty BATs before being unloaded */
 	ret = BBPsave(b);
@@ -2770,8 +2785,6 @@ BBPtrim_select(size_t target, int dirty)
 	MEMDEBUG THRprintf(GDKstdout, "#TRIMSELECT: end\n");
 	return target;
 }
-
-extern int monet_exec(str);
 
 void
 BBPtrim(size_t target)
@@ -3215,7 +3228,7 @@ static int
 BBPbackup(BAT *b, bit subcommit)
 {
 	long_str srcdir, nme;
-	str s = BBP_physical(b->batCacheid);
+	const char *s = BBP_physical(b->batCacheid);
 
 	if (BBPprepare(subcommit)) {
 		return -1;
@@ -3366,9 +3379,9 @@ BBPsync(int cnt, bat *subcommit)
  * later with the left over files.
  */
 static int
-force_move(str srcdir, str dstdir, str name)
+force_move(const char *srcdir, const char *dstdir, const char *name)
 {
-	char *p;
+	const char *p;
 	long_str srcpath, dstpath, killfile;
 	int ret = 0;
 
@@ -3448,7 +3461,7 @@ BBPrecover(void)
 
 	/* move back all files */
 	while ((dent = readdir(dirp)) != NULL) {
-		str q = strchr(dent->d_name, '.');
+		const char *q = strchr(dent->d_name, '.');
 
 		if (q == dent->d_name) {
 			int uret;
@@ -3609,7 +3622,7 @@ BBPdiskscan(const char *parent)
 	}
 
 	while ((dent = readdir(dirp)) != NULL) {
-		str p;
+		const char *p;
 		bat bid;
 		int ok, delete;
 		struct stat st;
@@ -3696,7 +3709,7 @@ void
 BBPatom_drop(int atom)
 {
 	int i;
-	str nme = ATOMname(atom);
+	const char *nme = ATOMname(atom);
 	int unknown = ATOMunknown_add(nme);
 
 	BBPlock("BBPatom_drop");
@@ -3719,7 +3732,7 @@ BBPatom_drop(int atom)
 void
 BBPatom_load(int atom)
 {
-	str nme;
+	const char *nme;
 	int i, unknown;
 
 	BBPlock("BBPatom_load");

@@ -13,7 +13,7 @@
  * 
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
 */
 /*
@@ -52,9 +52,6 @@ mal_export str safeguardStack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 mal_export str catchKernelException(Client cntxt, str ret);
 
 mal_export ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k);
-
-#define heapinfo(X) if ((X) && (X)->base) vol = (X)->free; else vol = 0;
-#define hashinfo(X) if ((X) && (X)->mask) vol = ((X)->mask + (X)->lim + 1) * sizeof(int) + sizeof(*(X)); else vol = 0;
 
 #define FREE_EXCEPTION(p) do { if (p && p != M5OutOfMemory) GDKfree(p); } while (0)
 #endif /*  _MAL_INTERPRET_H*/

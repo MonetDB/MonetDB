@@ -1,4 +1,4 @@
-stdout of test 'select_from_values` in directory 'test/bugs` itself:
+stdout of test 'select_from_values` in directory 'sql/test/bugs` itself:
 
 
 # 23:25:51 >  
@@ -26,7 +26,7 @@ Ready.
 
 % .t,	.t # table_name
 % L1,	L2 # name
-% tinyint,	char # type
+% tinyint,	varchar # type
 % 1,	6 # length
 [ 0,	"Promo0"	]
 [ 1,	"Promo1"	]

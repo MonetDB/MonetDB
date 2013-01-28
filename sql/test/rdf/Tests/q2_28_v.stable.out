@@ -1,4 +1,4 @@
-stdout of test 'q2_28_v` in directory 'test/rdf` itself:
+stdout of test 'q2_28_v` in directory 'sql/test/rdf` itself:
 
 
 # 23:32:52 >  
@@ -27,7 +27,7 @@ Ready.
 
 % .trip,	.trip # table_name
 % L1,	L2 # name
-% char,	wrd # type
+% varchar,	wrd # type
 % 16,	1 # length
 [ "prop14657017_pso",	0	]
 [ "prop14657018_pso",	0	]

@@ -12,7 +12,7 @@
 #
 # The Initial Developer of the Original Code is CWI.
 # Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-# Copyright August 2008-2012 MonetDB B.V.
+# Copyright August 2008-2013 MonetDB B.V.
 # All Rights Reserved.
 
 import sys
@@ -23,6 +23,7 @@ from monetdb.exceptions import *
 from monetdb import mapi
 
 logger = logging.getLogger("monetdb")
+logger.addHandler(logging.NullHandler())
 
 class Connection(object):
     """This represents a MonetDB SQL database connection"""
@@ -49,6 +50,7 @@ class Connection(object):
             password=password, database=database, language="sql")
         self.set_autocommit(autocommit)
         self.set_sizeheader(True)
+        self.set_replysize(100)
 
     def close(self):
         """ Close the connection. The connection will be unusable from this
@@ -81,6 +83,9 @@ class Connection(object):
         self.command("Xsizeheader %s" % int(sizeheader))
         self.sizeheader = sizeheader
 
+    def set_replysize(self, replysize):
+        self.command("Xreply_size %s" % int(replysize))
+        self.replysize = replysize
 
     def commit(self):
         """

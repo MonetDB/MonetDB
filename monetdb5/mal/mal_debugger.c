@@ -13,7 +13,7 @@
  * 
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
 */
 
@@ -573,9 +573,9 @@ retryRead:
 							resource.ru_oublock);
 #endif
 				}
-				if (strncmp("bigfoot", b, 7) == 0) {
+				if (strncmp("footprint", b, 7) == 0) {
 					/* calculate the virtual memory footprint */
-					cntxt->flags |= bigfootFlag;
+					cntxt->flags |= footprintFlag;
 				}
 				continue;
 			}
@@ -923,8 +923,8 @@ retryRead:
 					cntxt->flags &= ~memoryFlag;
 				if (strncmp("timer", b, 5) == 0)
 					cntxt->flags &= ~timerFlag;
-				if (strncmp("bigfoot", b, 7) == 0)
-					cntxt->flags &= ~bigfootFlag;
+				if (strncmp("footprint", b, 7) == 0)
+					cntxt->flags &= ~footprintFlag;
 				if (strncmp("io", b, 2) == 0)
 					cntxt->flags &= ~ioFlag;
 				continue;

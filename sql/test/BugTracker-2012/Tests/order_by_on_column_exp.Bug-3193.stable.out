@@ -1,4 +1,4 @@
-stdout of test 'order_by_on_column_exp.Bug-3193` in directory 'test/BugTracker-2012` itself:
+stdout of test 'order_by_on_column_exp.Bug-3193` in directory 'sql/test/BugTracker-2012` itself:
 
 
 # 13:04:02 >  
@@ -11,7 +11,7 @@ stdout of test 'order_by_on_column_exp.Bug-3193` in directory 'test/BugTracker-2
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Found 3.778 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2012 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008-2013 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://niels.nesco.mine.nu:31937/
 # MonetDB/GIS module loaded
@@ -43,14 +43,14 @@ Ready.
 #order by CASE WHEN "time_by_day"."the_year" IS NULL THEN 1 ELSE 0 END, "time_by_day"."the_year" ASC;
 % sys.time_by_day,	sys. # table_name
 % c0,	c1 # name
-% smallint,	char # type
+% smallint,	clob # type
 % 1,	0 # length
 #select "time_by_day"."the_year" as "c0", "the_year" || '-12-31' as "c1" from "time_by_day" as "time_by_day" 
 #group by c0, c1  
 #order by CASE WHEN c0 IS NULL THEN 1 ELSE 0 END, c0 ASC;
 % sys.time_by_day,	sys. # table_name
 % c0,	c1 # name
-% smallint,	char # type
+% smallint,	clob # type
 % 1,	0 # length
 #rollback;
 

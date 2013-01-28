@@ -27,14 +27,14 @@ Vendor: MonetDB BV <info@monetdb.org>
 Group: Applications/Databases
 License: MPL - http://www.monetdb.org/Legal/MonetDBLicense
 URL: http://www.monetdb.org/
-Source: http://dev.monetdb.org/downloads/sources/Oct2012-SP2/%{name}-%{version}.tar.bz2
+Source: http://dev.monetdb.org/downloads/sources/Oct2012-SP3/%{name}-%{version}.tar.bz2
 
 BuildRequires: bison
 BuildRequires: bzip2-devel
 # BuildRequires: cfitsio-devel libgeotiff-devel
 BuildRequires: flex
-%if %{?centos:0}%{!?centos:1}
-# no geos library on CentOS
+%if %{?rhel:0}%{!?rhel:1}
+# no geos library on RedHat Enterprise Linux and derivatives
 BuildRequires: geos-devel >= 2.2.0
 %endif
 BuildRequires: libcurl-devel
@@ -44,12 +44,14 @@ BuildRequires: openssl-devel
 BuildRequires: pcre-devel >= 4.5
 BuildRequires: perl
 BuildRequires: python-devel
+%if %{?rhel:0}%{!?rhel:1}
 BuildRequires: python3-devel
+%endif
 # BuildRequires: raptor-devel >= 1.4.16
 BuildRequires: readline-devel
 BuildRequires: ruby
 BuildRequires: rubygems
-%if %{?centos:0}%{!?centos:1}
+%if %{?rhel:0}%{!?rhel:1}
 BuildRequires: rubygems-devel
 %endif
 BuildRequires: unixODBC-devel
@@ -335,7 +337,7 @@ developer.
 %{_bindir}/sqlsample.php
 %{_bindir}/sqlsample.pl
 
-%if %{?centos:0}%{!?centos:1}
+%if %{?rhel:0}%{!?rhel:1}
 %package geom-MonetDB5
 Summary: MonetDB5 SQL GIS support module
 Group: Applications/Databases
@@ -429,7 +431,7 @@ fi
 %{_libdir}/libmonetdb5.so.*
 %dir %{_libdir}/monetdb5
 %dir %{_libdir}/monetdb5/autoload
-%if %{?centos:0}%{!?centos:1}
+%if %{?rhel:0}%{!?rhel:1}
 %exclude %{_libdir}/monetdb5/geom.mal
 %endif
 # %exclude %{_libdir}/monetdb5/rdf.mal
@@ -443,7 +445,7 @@ fi
 %{_libdir}/monetdb5/autoload/*_opt_sql_append.mal
 %{_libdir}/monetdb5/autoload/*_udf.mal
 %{_libdir}/monetdb5/autoload/*_vault.mal
-%if %{?centos:0}%{!?centos:1}
+%if %{?rhel:0}%{!?rhel:1}
 %exclude %{_libdir}/monetdb5/lib_geom.so
 %endif
 # %exclude %{_libdir}/monetdb5/lib_rdf.so
@@ -477,8 +479,10 @@ fi
 Summary: MonetDB5 SQL server modules
 Group: Applications/Databases
 Requires: MonetDB5-server = %{version}-%{release}
+%if %{?rhel:0}%{!?rhel:1}
 # for systemd-tmpfiles
 Requires: systemd-units
+%endif
 Obsoletes: MonetDB-SQL-devel
 Obsoletes: %{name}-SQL
 
@@ -491,22 +495,30 @@ accelerators.  It also has an SQL frontend.
 This package contains the SQL frontend for MonetDB5.  If you want to
 use SQL with MonetDB, you will need to install this package.
 
+%if %{?rhel:0}%{!?rhel:1}
 %post SQL-server5
 systemd-tmpfiles --create %{_sysconfdir}/tmpfiles.d/monetdbd.conf
+%endif
 
 %files SQL-server5
 %defattr(-,root,root)
 %{_bindir}/monetdb
 %{_bindir}/monetdbd
 %dir %attr(775,monetdb,monetdb) %{_localstatedir}/log/monetdb
+%if %{?rhel:0}%{!?rhel:1}
 # Fedora 15 and newer
 %{_sysconfdir}/tmpfiles.d/monetdbd.conf
+%else
+# RedHat Enterprise Linux
+%dir %attr(775,monetdb,monetdb) %{_localstatedir}/run/monetdb
+%exclude %{_sysconfdir}/tmpfiles.d/monetdbd.conf
+%endif
 %config(noreplace) %{_localstatedir}/monetdb5/dbfarm/.merovingian_properties
 %{_libdir}/monetdb5/autoload/*_sql.mal
 %{_libdir}/monetdb5/lib_sql.so
 %{_libdir}/monetdb5/*.sql
 %dir %{_libdir}/monetdb5/createdb
-%if %{?centos:0}%{!?centos:1}
+%if %{?rhel:0}%{!?rhel:1}
 %exclude %{_libdir}/monetdb5/createdb/*_geom.sql
 %endif
 # %exclude %{_libdir}/monetdb5/createdb/*_rdf.sql
@@ -540,6 +552,7 @@ program.
 %{python_sitelib}/python_monetdb-*.egg-info
 %doc clients/python2/README.rst
 
+%if %{?rhel:0}%{!?rhel:1}
 %package -n python3-monetdb
 Summary: Native MonetDB client Python3 API
 Group: Applications/Databases
@@ -561,6 +574,7 @@ program.
 %{python3_sitelib}/monetdb/*
 %{python3_sitelib}/python_monetdb-*.egg-info
 %doc clients/python3/README.rst
+%endif
 
 %package testing
 Summary: MonetDB - Monet Database Management System
@@ -628,7 +642,7 @@ developer, but if you do want to test, this is the package you need.
 	--enable-fits=no \
 	--enable-geotiff=no \
 	--enable-gdk=yes \
-	--enable-geom=%{?centos:no}%{!?centos:yes} \
+	--enable-geom=%{?rhel:no}%{!?rhel:yes} \
 	--enable-instrument=no \
 	--enable-jaql=yes \
 	--enable-jdbc=no \
@@ -644,7 +658,7 @@ developer, but if you do want to test, this is the package you need.
 	--enable-testing=yes \
 	--with-ant=no \
 	--with-bz2=yes \
-	--with-geos=%{?centos:no}%{!?centos:yes} \
+	--with-geos=%{?rhel:no}%{!?rhel:yes} \
 	--with-hwcounters=no \
 	--with-java=no \
 	--with-mseed=no \
@@ -652,7 +666,7 @@ developer, but if you do want to test, this is the package you need.
 	--with-perl=yes \
 	--with-pthread=yes \
 	--with-python2=yes \
-	--with-python3=yes \
+	--with-python3=%{?rhel:no}%{!?rhel:yes} \
 	--with-readline=yes \
 	--with-rubygem=yes \
 	--with-rubygem-dir="%{gem_dir}" \
@@ -695,6 +709,9 @@ rm -f $RPM_BUILD_ROOT%{_libdir}/libmonetdb5.so
 rm -fr $RPM_BUILD_ROOT
 
 %changelog
+* Tue Jan 15 2013 Sjoerd Mullender <sjoerd@acm.org> - 11.13.9-20130115
+- Rebuilt.
+
 * Wed Dec 12 2012 Sjoerd Mullender <sjoerd@acm.org> - 11.13.7-20121212
 - Rebuilt.
 

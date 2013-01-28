@@ -1,4 +1,4 @@
-stdout of test 'VOC` in directory 'test/VOC` itself:
+stdout of test 'VOC` in directory 'sql/test/VOC` itself:
 
 
 # 17:10:01 >  
@@ -11,7 +11,7 @@ stdout of test 'VOC` in directory 'test/VOC` itself:
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Found 7.749 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2012 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008-2013 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://ottar.ins.cwi.nl:37097/
 # MonetDB/GIS module loaded
@@ -68141,7 +68141,7 @@ Ready.
 #SELECT type, COUNT(*) AS total FROM onboard_people GROUP BY type ORDER BY type;
 % .onboard_people,	.onboard_people # table_name
 % type,	total # name
-% char,	wrd # type
+% varchar,	wrd # type
 % 10,	4 # length
 [ "craftsmen",	2349	]
 [ "impotenten",	938	]

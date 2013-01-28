@@ -1,4 +1,4 @@
-stdout of test 'udf-reverse` in directory 'backends/monet5/UDF` itself:
+stdout of test 'udf-reverse` in directory 'sql/backends/monet5/UDF` itself:
 
 
 # 18:44:21 >  
@@ -11,7 +11,7 @@ stdout of test 'udf-reverse` in directory 'backends/monet5/UDF` itself:
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Found 15.630 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2012 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008-2013 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://rome.ins.cwi.nl:36851/
 # MonetDB/GIS module loaded
@@ -82,7 +82,7 @@ end s0_1;
 % mal # name
 % clob # type
 % 62 # length
-function user.s7_1{autoCommit=true}():void;
+function user.s3_1{autoCommit=true}():void;
     X_2 := sql.mvc();
     X_3:bat[:oid,:oid]  := sql.tid(X_2,"sys","udf_reverse");
     X_6 := sql.bind(X_2,"sys","udf_reverse","x",0);
@@ -95,7 +95,7 @@ function user.s7_1{autoCommit=true}():void;
     sql.rsColumn(X_18,"sys.","reverse_x":str,"clob",0,0,X_16);
     X_22 := io.stdout();
     sql.exportResult(X_22,X_18);
-end s7_1;
+end s3_1;
 #select reverse(x) from udf_reverse;
 % sys. # table_name
 % reverse_x # name

@@ -13,11 +13,14 @@
  * 
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
 */
 
 #include "mal_resource.h"
+
+#define heapinfo(X) if ((X) && (X)->base) vol = (X)->free; else vol = 0;
+#define hashinfo(X) if ((X) && (X)->mask) vol = ((X)->mask + (X)->lim + 1) * sizeof(int) + sizeof(*(X)) + cnt * sizeof(int); else vol = 0;
 
 /* MEMORY admission does not seem to have a major impact */
 lng memorypool = 0;      /* memory claimed by concurrent threads */
@@ -67,6 +70,7 @@ getMemoryClaim(MalBlkPtr mb, MalStkPtr stk, int pc, int i, int flag)
 	lng total = 0, vol = 0;
 	BAT *b;
 	InstrPtr pci = getInstrPtr(mb,pc);
+	BUN cnt;
 
 	(void)mb;
 	if (stk->stk[getArg(pci, i)].vtype == TYPE_bat) {
@@ -77,6 +81,7 @@ getMemoryClaim(MalBlkPtr mb, MalStkPtr stk, int pc, int i, int flag)
 			BBPunfix(b->batCacheid);
 			return 0;
 		}
+		cnt = BATcount(b);
 		heapinfo(&b->H->heap); total += vol;
 		heapinfo(b->H->vheap); total += vol;
 		hashinfo(b->H->hash); total += vol;
@@ -84,8 +89,6 @@ getMemoryClaim(MalBlkPtr mb, MalStkPtr stk, int pc, int i, int flag)
 		heapinfo(&b->T->heap); total += vol;
 		heapinfo(b->T->vheap); total += vol;
 		hashinfo(b->T->hash); total += vol;
-		if ( b->T->hash == 0  || b->H->hash ==0)	/* assume one hash claim */
-			total+= BATcount(b) * sizeof(lng);
 		total = total > (lng)(MEMORY_THRESHOLD * monet_memory) ? (lng)(MEMORY_THRESHOLD * monet_memory) : total;
 		BBPunfix(b->batCacheid);
 	}
@@ -170,21 +173,35 @@ MALadmission(lng argclaim, lng hotclaim)
  * By keeping the query start time in the client record we can delay
  * them when resource stress occurs.
  */
-static int running; /* should be protected, but no need for accurateness here. saving locks */
+#include "gdk_atomic.h"
+static volatile int running;
+#ifdef ATOMIC_LOCK
+static MT_Lock runningLock MT_LOCK_INITIALIZER("runningLock");
+#endif
 
 void
 MALresourceFairness(Client cntxt, MalBlkPtr mb, lng usec)
 {
-	long rss = MT_getrss();
+	size_t rss;
 	lng delay, clk;
 	int threads;
 	double factor;
 	int delayed= 0;
+#ifdef ATOMIC_LOCK
+#ifdef NEED_MT_LOCK_INIT
+	static int initialized = 0;
+	if (initialized++ == 0)
+		ATOMIC_INIT(runningLock, "runningLock");
+#endif
+#endif
 
-	threads= GDKnr_threads > 0? GDKnr_threads: 1;
-	if ( running == 0) // reset workers pool count
-		running = threads;
+	if ( usec > 0 && ( (usec = GDKusec()-usec)) <= TIMESLICE )
+		return;
+	threads = GDKnr_threads > 0 ? GDKnr_threads : 1;
+	ATOMIC_CAS_int(running, 0, threads, runningLock, "MALresourceFairness");
 
+	/* use GDKmem_cursize as MT_getrss(); is to expensive */
+	rss = GDKmem_cursize();
 	/* ample of memory available*/
 	if ( rss < MEMORY_THRESHOLD * monet_memory)
 		return;
@@ -201,28 +218,28 @@ MALresourceFairness(Client cntxt, MalBlkPtr mb, lng usec)
 			clk = DELAYUNIT;
 		}
 
-	if ( clk >= DELAYUNIT ) {
+	if ( clk > DELAYUNIT ) {
 		PARDEBUG mnstr_printf(GDKstdout, "#delay %d initial "LLFMT"n", cntxt->idx, clk);
 		while (clk > 0) {
 			/* always keep one running to avoid all waiting  */
-			if (running < 2)
+			if (ATOMIC_GET_int(running, runningLock, "MALresourceFairness") < 2)
 				break;
 			/* speed up wake up when we have memory */
-			rss = MT_getrss();
+			rss = GDKmem_cursize();
 			if (rss < MEMORY_THRESHOLD * monet_memory)
 				break;
 			factor = ((double) rss) / (MEMORY_THRESHOLD * monet_memory);
-			delay = (long) (DELAYUNIT * (factor > 1.0 ? 1.0 : factor));
-			delay = (long) ( ((double)delay) * running / threads);
-			running--;
+			delay = (lng) (DELAYUNIT * (factor > 1.0 ? 1.0 : factor));
+			delay = (lng) ( ((double)delay) * ATOMIC_GET_int(running, runningLock, "MALresourceFairness") / threads);
+			ATOMIC_DEC_int(running, runningLock, "MALresourceFairness");
 			if (delay) {
 				if ( delayed++ == 0){
-						mnstr_printf(GDKstdout, "#delay %d initial "LLFMT"["LLFMT"] memory  %ld[%f]\n", cntxt->idx, delay, clk, rss, MEMORY_THRESHOLD * monet_memory);
+						mnstr_printf(GDKstdout, "#delay %d initial "LLFMT"["LLFMT"] memory  "SZFMT"[%f]\n", cntxt->idx, delay, clk, rss, MEMORY_THRESHOLD * monet_memory);
 						mnstr_flush(GDKstdout);
 				}
 				MT_sleep_ms(delay);
 			}
-			running++;
+			ATOMIC_INC_int(running, runningLock, "MALresourceFairness");
 			clk -= DELAYUNIT;
 		}
 	}

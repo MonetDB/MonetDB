@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -23,9 +23,9 @@ int ALIGNcommit(BAT *b);
 int ALIGNundo(BAT *b);
 int ATOMheap(int id, Heap *hp, size_t cap);
 int ATOMisdescendant(int id, int parentid);
-int ATOMunknown_add(str nme);
+int ATOMunknown_add(const char *nme);
 int ATOMunknown_del(int a);
-int ATOMunknown_find(str nme);
+int ATOMunknown_find(const char *nme);
 str ATOMunknown_name(int a);
 BUN BATbuncount(BAT *b);
 int BATcheckmodes(BAT *b, int persistent);
@@ -59,6 +59,7 @@ void BBPreleaselref(bat i);
 void BBPtrim(size_t delta);
 void BBPunshare(bat b);
 void GDKclrerr(void);
+int GDKfdlocate(const char *nme, const char *mode, const char *ext);
 FILE *GDKfilelocate(const char *nme, const char *mode, const char *ext);
 char *GDKload(const char *nme, const char *ext, size_t size, size_t chunk, storage_t mode);
 void GDKlockHome(void);
@@ -93,9 +94,6 @@ void MT_global_exit(int status)
 	__attribute__((__noreturn__));
 void MT_init_posix(void);
 int MT_msync(void *p, size_t off, size_t len, int mode);
-void *MT_vmalloc(size_t size, size_t *maxsize);
-void MT_vmfree(void *p, size_t size);
-void *MT_vmrealloc(void *voidptr, size_t oldsize, size_t newsize, size_t oldmaxsize, size_t *newmaxsize);
 int OIDdirty(void);
 int OIDinit(void);
 oid *oidRead(oid *a, stream *s, size_t cnt);
@@ -113,6 +111,9 @@ int VALprint(stream *fd, const ValRecord *res);
 void VIEWdestroy(BAT *b);
 BAT *VIEWreset(BAT *b);
 void VIEWunlink(BAT *b);
+int IMPSgetbin(int tpe, bte bits, void *bins, const void *v);
+void IMPSremove(BAT *b);
+void IMPSprint(BAT *b);
 
 #define BBP_BATMASK	511
 #define BBP_THREADMASK	63
@@ -120,6 +121,7 @@ void VIEWunlink(BAT *b);
 typedef struct {
 	MT_Lock swap;
 	MT_Lock hash;
+	MT_Lock imprints;
 } batlock_t;
 
 typedef struct {
@@ -137,8 +139,6 @@ extern int GDKrecovery;
 extern int GDKsilent;	/* should GDK shut up? */
 extern MT_Lock GDKthreadLock;
 extern MT_Lock GDKtmLock;
-extern MT_Cond GDKunloadCond;
-extern MT_Lock GDKunloadLock;
 extern MT_Lock MT_system_lock;
 
 #define ATOMappendpriv(t, h)						\
@@ -149,6 +149,7 @@ extern MT_Lock MT_system_lock;
 
 #define GDKswapLock(x)  GDKbatLock[(x)&BBP_BATMASK].swap
 #define GDKhashLock(x)  GDKbatLock[(x)&BBP_BATMASK].hash
+#define GDKimprintsLock(x)  GDKbatLock[(x)&BBP_BATMASK].imprints
 #define GDKtrimLock(y)  GDKbbpLock[(y)&BBP_THREADMASK].trim
 #define GDKcacheLock(y) GDKbbpLock[(y)&BBP_THREADMASK].alloc
 #define BBP_free(y)	GDKbbpLock[(y)&BBP_THREADMASK].free

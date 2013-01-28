@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -345,7 +345,8 @@ runFactory(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr stk, InstrP
 	pl->inuse = 1;
 	/* inherit debugging */
 	cmd = stk->cmd;
-	assert(pl->stk != NULL); /* we should have a stack to run against */
+	if ( pl->stk == NULL)
+			throw(MAL, "factory.new", "internal error, stack frame missing");
 
 	/* copy the calling arguments onto the stack
 	   of the factory */

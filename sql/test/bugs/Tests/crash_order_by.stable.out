@@ -1,4 +1,4 @@
-stdout of test 'crash_order_by` in directory 'test/bugs` itself:
+stdout of test 'crash_order_by` in directory 'sql/test/bugs` itself:
 
 
 # 23:16:56 >  
@@ -27,7 +27,7 @@ Ready.
 #select row_number() over (order by name) as row, '1' from tables limit 10;
 % .,	. # table_name
 % row,	single_value # name
-% int,	char # type
+% int,	varchar # type
 % 2,	1 # length
 [ 30,	"1"	]
 [ 38,	"1"	]

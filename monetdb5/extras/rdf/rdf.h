@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -50,6 +50,10 @@ RDFleftfetchjoin_sortedestimate(int *result, int *lid, int *rid, lng *estimate);
 rdf_export str 
 RDFleftfetchjoin_sorted(int *result, int* lid, int *rid);
 
+rdf_export str 
+TKNZRrdf2str (bat *res, bat *bid, bat *map);
+
+#define RDF_MIN_LITERAL (((oid) 1) << ((sizeof(oid)==8)?62:30))
 
 #define TRIPLE_STORE 1
 #define MLA_STORE    2

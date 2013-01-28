@@ -1,4 +1,4 @@
-stdout of test 'crash_in_case.SF-1097749` in directory 'test/BugDay_2005-11-09_2.8` itself:
+stdout of test 'crash_in_case.SF-1097749` in directory 'sql/test/BugDay_2005-11-09_2.8` itself:
 
 
 # 19:25:02 >  
@@ -26,8 +26,8 @@ Ready.
 
 % . # table_name
 % isnull_>_single_value # name
-% char # type
-% 5 # length
+% varchar # type
+% 4 # length
 [ "true"	]
 
 # 12:45:07 >  

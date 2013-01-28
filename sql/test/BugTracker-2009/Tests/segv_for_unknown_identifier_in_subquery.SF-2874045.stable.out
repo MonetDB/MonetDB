@@ -1,4 +1,4 @@
-stdout of test 'segv_for_unknown_identifier_in_subquery.SF-2874045` in directory 'test/BugTracker-2009` itself:
+stdout of test 'segv_for_unknown_identifier_in_subquery.SF-2874045` in directory 'sql/test/BugTracker-2009` itself:
 
 
 # 18:30:54 >  

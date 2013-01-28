@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -41,4 +41,5 @@ void runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, RuntimeProfil
 void runtimeTiming(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int tid, MT_Lock *lock, RuntimeProfile prof);
 lng getVolume(MalStkPtr stk, InstrPtr pci, int rd);
 void displayVolume(Client cntxt, lng vol);
+lng getFootPrint(MalBlkPtr mb, MalStkPtr stk);
 #endif

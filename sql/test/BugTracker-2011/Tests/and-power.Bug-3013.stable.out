@@ -1,4 +1,4 @@
-stdout of test 'and-power.Bug-3013` in directory 'test/BugTracker-2011` itself:
+stdout of test 'and-power.Bug-3013` in directory 'sql/test/BugTracker-2011` itself:
 
 
 # 14:12:27 >  
@@ -11,7 +11,7 @@ stdout of test 'and-power.Bug-3013` in directory 'test/BugTracker-2011` itself:
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Found 15.629 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2012 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008-2013 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://madrid.ins.cwi.nl:30422/
 # MonetDB/GIS module loaded
@@ -47,8 +47,8 @@ Ready.
 #select bit_and(1, power(2, 1));
 % . # table_name
 % bit_and_single_value # name
-% tinyint # type
-% 1 # length
+% decimal # type
+% 20 # length
 [ 0	]
 
 # 14:12:27 >  

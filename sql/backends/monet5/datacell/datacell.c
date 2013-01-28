@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -33,7 +33,7 @@
 #include "winsock2.h"
 #endif
 
-MT_Lock dcLock;
+MT_Lock dcLock MT_LOCK_INITIALIZER("dcLock");
 /*
  * The scheduler works against a converted datacell schema.
  * It should be stopped before additions to the scheme will take effect
@@ -70,11 +70,13 @@ DCprocedureStmt(Client cntxt, MalBlkPtr mb, str schema, str nme)
 		f = o->data;
 		if (strcmp(f->base.name, nme) == 0) {
 			be = (void *) backend_create(m, cntxt);
+			if ( be->mvc->sa == NULL)
+				be->mvc->sa = sa_create();
 			backend_create_func(be, f);
-			break;
+			return MAL_SUCCEED;
 		}
 	}
-	return MAL_SUCCEED;
+	throw(SQL, "datacell.query", "Procedure missing");
 }
 
 str
@@ -83,7 +85,9 @@ DCprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	(void) stk;
 	(void) pci;
+#ifdef NEED_MT_LOCK_INIT
 	MT_lock_init( &dcLock, "datacellLock");
+#endif
 	addPipeDefinition(cntxt, "datacell_pipe",
 		"optimizer.inline();optimizer.remap();optimizer.datacell();optimizer.garbageCollector();"
 		"optimizer.evaluate();optimizer.costModel();optimizer.coercions();optimizer.emptySet();"
@@ -231,6 +235,7 @@ DCpauseObject(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int idx, ret = 0;
 	str tbl = *(str *) getArgReference(stk, pci, 1);
+	str msg1= MAL_SUCCEED, msg2 = MAL_SUCCEED;
 
 	if ( strcmp(tbl,"*")== 0){
 		str msg = RCpause(&ret);
@@ -241,8 +246,15 @@ DCpauseObject(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	idx = BSKTlocate(tbl);
 	if (idx ) {
-		RCreceptorPause(&ret, &tbl);
-		EMemitterPause(&ret, &tbl);
+		msg1 = RCreceptorPause(&ret, &tbl);
+		if ( msg1 == MAL_SUCCEED)
+			return msg1;
+		msg2 = EMemitterPause(&ret, &tbl);
+		if ( msg2 == MAL_SUCCEED ){
+			GDKfree(msg1);
+			return MAL_SUCCEED;
+		}
+		return msg2;
 	}
 	return PNpauseQuery(cntxt,mb,stk,pci);
 }
@@ -299,11 +311,12 @@ DCquery(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	lng clk = GDKusec();
 	char buf[BUFSIZ], *lsch, *lnme;
 
+	if ( mb->errors)
+		throw(SQL, "datacell.query", "Query contains errors");
 	BSKTelements(nme, buf, &lsch, &lnme);
 	BSKTtolower(lsch);
 	BSKTtolower(lnme);
 
-	(void) mb;
 	/* check if the argument denotes a procedure name */
 	/* if so, get its definition to be compiled */
 
@@ -351,7 +364,7 @@ DCquery(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* optimize the code and register at scheduler */
 	if (msg == MAL_SUCCEED) {
 		OPTdatacellImplementation(cntxt, s->def, 0, 0);
-		addOptimizers(cntxt, s->def);
+		addOptimizers(cntxt, s->def,"default_pipe");
 		if (msg == MAL_SUCCEED)
 			msg = optimizeMALBlock(cntxt, s->def);
 		if (msg == MAL_SUCCEED)

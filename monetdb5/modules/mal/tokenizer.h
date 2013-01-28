@@ -13,7 +13,7 @@
  * 
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
 */
 #ifndef _TKNZR_H
@@ -21,8 +21,6 @@
 #include "mal.h"
 #include "mal_client.h"
 #include "mal_interpreter.h"
-
-#define RDF_MIN_LITERAL (((oid) 1) << ((sizeof(oid)==8)?62:30))
 
 #ifdef WIN32
 #if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5)
@@ -39,11 +37,11 @@ tokenizer_export str TKNZRclose            (int *r);
 tokenizer_export str TKNZRappend          (oid *pos, str *tuple);
 tokenizer_export str TKNZRlocate           (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 tokenizer_export str TKNZRtakeOid          (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-tokenizer_export str TKNZRrdf2str          (bat *res, bat *bid, bat *map);
 tokenizer_export str TKNZRdepositFile      (int *r, str *fnme);
 tokenizer_export str TKNZRgetLevel         (int *r, int *level);
 tokenizer_export str TKNZRgetIndex         (int *r);
 tokenizer_export str TKNZRgetCount         (int *r);
 tokenizer_export str TKNZRgetCardinality   (int *r);
+tokenizer_export str takeOid	 	   (oid id, str *val); 			
 
 #endif /* _TKNZR_H */

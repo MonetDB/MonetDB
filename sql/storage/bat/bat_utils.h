@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -36,7 +36,6 @@ extern log_bid temp_copy(log_bid b, int temp);
 extern void bat_destroy(BAT *b);
 extern BAT *bat_new(int ht, int tt, BUN size);
 
-extern void update_table_bat(BAT *b, BAT *ub);
 extern BUN append_inserted(BAT *b, BAT *i );
 extern BUN copy_inserted(BAT *b, BAT *i );
 

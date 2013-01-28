@@ -1,4 +1,4 @@
-stdout of test 'floor-bug-sf-967066` in directory 'test/bugs` itself:
+stdout of test 'floor-bug-sf-967066` in directory 'sql/test/bugs` itself:
 
 
 # 20:18:54 >  
@@ -26,8 +26,8 @@ Ready.
 
 % . # table_name
 % floor_single_value # name
-% double # type
-% 24 # length
+% real # type
+% 15 # length
 [ 3	]
 
 # 12:51:03 >  

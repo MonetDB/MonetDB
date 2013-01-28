@@ -12,7 +12,7 @@
 #
 # The Initial Developer of the Original Code is CWI.
 # Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-# Copyright August 2008-2012 MonetDB B.V.
+# Copyright August 2008-2013 MonetDB B.V.
 # All Rights Reserved.
 
 ''' Python DB API 2.0 driver compliance unit test suite.
@@ -878,6 +878,20 @@ class DatabaseAPI20Test(unittest.TestCase):
         self.assertTrue(hasattr(self.driver,'ROWID'),
             'module.ROWID must be defined.'
             )
+    def test_utf8(self):
+        con = self._connect()
+        try:
+            cur = con.cursor()
+            self.executeDDL1(cur)
+            args = {'beer': '\xc4\xa5'}
+            cur.execute( 'insert into %sbooze values (%%(beer)s)' % self.table_prefix, args )
+            cur.execute('select name from %sbooze' % self.table_prefix)
+            res = cur.fetchall()
+            beer = res[0][0]
+            self.assertEqual(beer,args['beer'],'incorrect data retrieved')
+        finally:
+            con.close()
+
 
     def test_unicode(self):
         con = self._connect()

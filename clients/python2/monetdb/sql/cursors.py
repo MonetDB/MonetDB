@@ -12,7 +12,7 @@
 #
 # The Initial Developer of the Original Code is CWI.
 # Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-# Copyright August 2008-2012 MonetDB B.V.
+# Copyright August 2008-2013 MonetDB B.V.
 # All Rights Reserved.
 
 import logging
@@ -22,7 +22,6 @@ from monetdb.exceptions import *
 from monetdb import mapi
 
 logger = logging.getLogger("monetdb")
-
 
 class Cursor(object):
     """This object represents a database cursor, which is used to manage
@@ -40,7 +39,7 @@ class Cursor(object):
 
         """This read/write attribute specifies the number of rows to
         fetch at a time with .fetchmany()"""
-        self.arraysize = 100
+        self.arraysize = connection.replysize
 
 
         """This read-only attribute specifies the number of rows that
@@ -165,7 +164,8 @@ class Cursor(object):
         operation = unicode(operation).encode('utf-8')
 
         # set the number of rows to fetch
-        self.connection.command('Xreply_size %s' % self.arraysize)
+        if self.arraysize != self.connection.replysize:
+            self.connection.set_replysize(self.arraysize)
 
         if operation == self.operation:
             #same operation, DBAPI mentioned something about reuse

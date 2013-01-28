@@ -13,7 +13,7 @@
  * 
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
 */
 
@@ -105,10 +105,11 @@ DFLOWgraphSize(MalBlkPtr mb, int start, int stop)
  */
 
 static queue*
-q_create(int sz)
+q_create(int sz, const char *name)
 {
 	queue *q = (queue*)GDKmalloc(sizeof(queue));
 
+	(void) name;
 	if (q == NULL)
 		return NULL;
 	q->size = ((sz << 1) >> 1); /* we want a multiple of 2 */
@@ -119,14 +120,16 @@ q_create(int sz)
 		return NULL;
 	}
 
-	MT_lock_init(&q->l, "q_create");
-	MT_sema_init(&q->s, 0, "q_create");
+	MT_lock_init(&q->l, name);
+	MT_sema_init(&q->s, 0, name);
 	return q;
 }
 
 static void
 q_destroy(queue *q)
 {
+	MT_lock_destroy(&q->l);
+	MT_sema_destroy(&q->s);
 	GDKfree(q->data);
 	GDKfree(q);
 }
@@ -244,7 +247,7 @@ DFLOWworker(void *t)
 	str error = 0;
 
 	int i;
-	long usec = 0;
+	lng usec = 0;
 
 	thr = THRnew("DFLOWworker");
 
@@ -332,8 +335,13 @@ DFLOWworker(void *t)
 		MT_lock_unset(&flow->flowlock, "MALworker");
 
 		q_enqueue(flow->done, fe);
-		if ( fnxt == 0)
-			MALresourceFairness(flow->cntxt, flow->mb, usec);
+		if ( fnxt == 0) {
+			if (todo->last == 0)
+				profilerHeartbeatEvent("wait");
+			else
+				MALresourceFairness(flow->cntxt, flow->mb, usec);
+			
+		}
 	}
 	GDKfree(GDKerrbuf);
 	GDKsetbuf(0);
@@ -355,7 +363,7 @@ DFLOWinitialize(void)
 	if (todo)
 		return;
 	MT_lock_set(&mal_contextLock, "DFLOWinitialize");
-	todo = q_create(2048);
+	todo = q_create(2048, "todo");
 	limit = GDKnr_threads ? GDKnr_threads : 1;
 	for (i = 0; i < limit; i++)
 		MT_create_thread(&workers[i], DFLOWworker, (void *) &workers[i], MT_THR_JOINABLE);
@@ -594,7 +602,7 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr st
 	flow->stop = stoppc;
 
 	MT_lock_init(&flow->flowlock, "DFLOWworker");
-	flow->done = q_create(stoppc- startpc+1);
+	flow->done = q_create(stoppc- startpc+1, "flow->done");
 
 	flow->status = (FlowEvent)GDKzalloc((stoppc - startpc + 1) * sizeof(FlowEventRec));
 	size = DFLOWgraphSize(mb, startpc, stoppc);
@@ -609,6 +617,7 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr st
 	GDKfree(flow->edges);
 	GDKfree(flow->nodes);
 	q_destroy(flow->done);
+	MT_lock_destroy(&flow->flowlock);
 	GDKfree(flow);
 	return ret;
 }

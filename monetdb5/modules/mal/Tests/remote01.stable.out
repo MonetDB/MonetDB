@@ -1,4 +1,4 @@
-stdout of test 'remote01` in directory 'modules/mal` itself:
+stdout of test 'remote01` in directory 'monetdb5/modules/mal` itself:
 
 
 # 09:35:17 >  
@@ -42,10 +42,10 @@ catch MALException:str ;
     io.printf("!%s\n",MALException);
 exit MALException:str ;
 end main;
-[ "mTests_modules_mal_monetdb_0" ]
-!TypeException:remote.get:(mapi:monetdb://monetdb@volund.ins.cwi.nl/mTests_modules_mal) 'b1_str' may not be used before being initialized
+[ "mTests_monetdb5_modules_mal_monetdb_0" ]
+!TypeException:remote.get:(mapi:monetdb://monetdb@volund.ins.cwi.nl/mTests_monetdb5_modules_mal) 'b1_str' may not be used before being initialized
 
-!MALException:remote.disconnect:no such connection: mTests_modules_mal_monetdb_0
+!MALException:remote.disconnect:no such connection: mTests_monetdb5_modules_mal_monetdb_0
 
 
 

@@ -13,7 +13,7 @@
  * 
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
 */
 
@@ -141,7 +141,9 @@ str
 MATpackIncrement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int *ret = (int*) getArgReference(stk,p,0);
+	int	pieces;
 	BAT *b, *bb, *bn;
+	size_t newsize;
 
 	(void) cntxt;
 	b = BATdescriptor( stk->stk[getArg(p,1)].val.ival);
@@ -149,10 +151,17 @@ MATpackIncrement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		throw(MAL, "mat.pack", RUNTIME_OBJECT_MISSING);
 
 	if ( getArgType(mb,p,2) == TYPE_int){
-		/* first step */
-		bn = BATnew(TYPE_void, b->ttype, BATcount(b) * stk->stk[getArg(p,2)].val.ival);
+		/* first step, estimate with some slack */
+		pieces = stk->stk[getArg(p,2)].val.ival;
+		bn = BATnew(TYPE_void, b->ttype?b->ttype:TYPE_oid, (BUN)(1.2 * BATcount(b) * pieces));
 		if (bn == NULL)
 			throw(MAL, "mat.pack", MAL_MALLOC_FAIL);
+		/* allocate enough space for the strings */
+		if ( b->T->vheap && bn->T->vheap ){
+			newsize =  b->T->vheap->size * pieces;
+			if (HEAPextend(bn->T->vheap, newsize) < 0) 
+				throw(MAL, "mat.pack", MAL_MALLOC_FAIL);
+		}
 		BATsettrivprop(bn);
 		BATseqbase(bn, b->H->seq);
 		BATseqbase(BATmirror(bn), b->T->seq);

@@ -16,8 +16,9 @@ call datacell.receptor('datacell.potin','localhost',50502);
 call datacell.emitter('datacell.potout','localhost',50602);
 
 call datacell.query('datacell.putter', 'insert into datacell.potout select now(), count(*) from datacell.potin;');
-call datacell.pause('potout'); -- hold the events
+call datacell.pause('datacell.potout'); -- hold up the events
 
+select * from datacell.receptors(); select * from datacell.emitters(); select * from datacell.queries(); select * from datacell.baskets();
 call datacell.resume();
 select * from datacell.receptors(); select * from datacell.emitters(); select * from datacell.queries(); select * from datacell.baskets();
 

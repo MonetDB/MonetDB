@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -40,15 +40,17 @@ int
 OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int actions = 0, fnd, mvc = 0;
-	int bskt, i, j, k, limit, /*vlimit,*/ slimit;
+	int bskt, i, j, k, limit, slimit;
 	InstrPtr r, p, qq, *old;
 	str col;
 	int maxbasket = 128, m = 0, a = 0;
 	char *tables[128] = { NULL };
 	char *appends[128] = { NULL };
 	InstrPtr q[128], qa[128] = { NULL };
-	lng clk /*,t*/;
+	lng clk = GDKusec();
 	int *alias;
+	char *msg = MAL_SUCCEED;
+	char *tidlist;
 	char buf[BUFSIZ];
 
 	(void) pci;
@@ -59,17 +61,17 @@ OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	} else
 		(void) stk;
 
+	removeDataflow(mb);
 	old = mb->stmt;
 	limit = mb->stop;
 	slimit = mb->ssize;
-	/*vlimit = mb->vtop;*/
 	if (newMalBlkStmt(mb, slimit) < 0)
 		return 0;
 
 	alias = (int *) GDKzalloc(mb->vtop * 2 * sizeof(int));
+	tidlist = (char *) GDKzalloc(mb->vtop );
 	if (alias == 0)
 		return 0;
-	removeDataflow(old, limit);
 
 	pushInstruction(mb, old[0]);
 	newFcnCall(mb, sqlRef, putName("transaction", 11));
@@ -119,14 +121,25 @@ OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 				(void) newFcnCall(mb, sqlRef, commitRef);
 				break;
 			}
+
+			if (getModuleId(p) == sqlRef && getFunctionId(p) == mvcRef)
+				mvc = getArg(p, 0);
+
+			/* trim the number of sql instructions dealing with baskets */
 			if (getModuleId(p) == sqlRef && getFunctionId(p) == putName("affectedRows", 12)) {
 				freeInstruction(p);
 				continue;
 			}
 
-			if (getModuleId(p) == sqlRef && getFunctionId(p) == mvcRef)
-				mvc = getArg(p, 0);
-
+			/* remove delta processing for baskets */
+			if (getModuleId(p) == sqlRef && (getFunctionId(p) == deltaRef || getFunctionId(p) == projectdeltaRef || getFunctionId(p) == subdeltaRef) ) {
+				clrFunction(p);
+				getArg(p,1) = alias[getArg(p,1)];
+				p->argc =2;
+				pushInstruction(mb, p);
+				continue;
+			}
+			/* localize access to basket tables */
 			if (getModuleId(p) == sqlRef && (getFunctionId(p) == bindRef || getFunctionId(p) == binddbatRef)) {
 				snprintf(buf, BUFSIZ, "%s.%s", getVarConstant(mb, getArg(p, 2)).val.sval, getVarConstant(mb, getArg(p, 3)).val.sval);
 				col = getVarConstant(mb, getArg(p, 4)).val.sval;
@@ -162,13 +175,7 @@ OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 							break;
 						}
 
-					if (fnd == 0){
-						for (j = 0; j < p->argc; j++)
-							if (alias[getArg(p, j)])
-								getArg(p, j) = alias[getArg(p, j)];
-						pushInstruction(mb, p);
-					} else
-						freeInstruction(p);
+					pushInstruction(mb, p);
 					continue;
 				} else
 				if (bskt) {
@@ -182,6 +189,18 @@ OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 					p = pushType(mb, p, getTailType(getVarType(mb,getArg(p,0))));
 					varSetProp(mb, p->argv[0], rowsProp, op_eq, VALset(&vr, TYPE_wrd, &rows));
 				}
+			}
+			/* localize access to tid lists for basket tables */
+			if (getModuleId(p) == sqlRef && getFunctionId(p) == tidRef ){
+				snprintf(buf, BUFSIZ, "%s.%s", getVarConstant(mb, getArg(p, 2)).val.sval, getVarConstant(mb, getArg(p, 3)).val.sval);
+				bskt = BSKTlocate(buf);
+				tidlist[getArg(p,0)] = bskt > 0;
+			}
+			/* remove consolidation of tid lists */
+			if (getModuleId(p) == algebraRef && getFunctionId(p) == leftfetchjoinRef  && tidlist[getArg(p,1)]){
+				alias[getArg(p, 0)] = getArg(p,2);
+				freeInstruction(p);
+				continue;
 			}
 
 			for (j = 0; j < p->argc; j++)
@@ -225,6 +244,8 @@ OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 							getArg(qq, 0) = getArg(qa[j], k + 2);
 							getArg(qq, 1) = getArg(p, 5);
 							qq->argc = 2;
+							p->argc =2;
+							pushInstruction(mb,p);
 							p = qq;
 						} else {
 							qq= newAssignment(mb);
@@ -252,77 +273,32 @@ OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	(void) stk;
 	(void) pci;
 
+	OPTDEBUGdatacell {
+		mnstr_printf(cntxt->fdout, "#Datacell optimizer intermediate\n");
+		printFunction(cntxt->fdout, mb, stk, LIST_MAL_STMT);
+	} 
+	/* optimize this new continous query using the default pipe */
+	addOptimizers(cntxt, mb, "default_pipe");
+	msg = optimizeMALBlock(cntxt, mb);
+	if (msg == MAL_SUCCEED) {
+		removeDataflow(mb);
+		msg = optimizerCheck(cntxt, mb, "optimizer.datacell", actions, (GDKusec() - clk), OPT_CHECK_ALL);
+	}
+	OPTDEBUGdatacell {
+		mnstr_printf(cntxt->fdout, "#Datacell optimizer finished\n");
+		printFunction(cntxt->fdout, mb, stk, LIST_MAL_STMT);
+	} 
+
 	if (actions)
 	{
 		/* extend the plan with the new optimizer pipe required */
 		clk = GDKusec();
-		optimizerCheck(cntxt, mb, "optimizer.datacell", 1, /*t =*/ (GDKusec() - clk), OPT_CHECK_ALL);
+		optimizerCheck(cntxt, mb, "optimizer.datacell", 1,  (GDKusec() - clk), OPT_CHECK_ALL);
 		addtoMalBlkHistory(mb, "datacell");
 	}
 	GDKfree(alias);
+	GDKfree(tidlist);
 	for (j = 0; j < m; j++)
 		GDKfree(tables[j]);
 	return actions;
-}
-
-/* #define _DEBUG_OPTIMIZER_*/
-
-str OPTdatacell(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
-{
-	str modnme;
-	str fcnnme;
-	str msg = MAL_SUCCEED;
-	Symbol s = NULL;
-	lng t = 0, clk = GDKusec();
-	int actions = 0;
-
-	optimizerInit();
-	if (p)
-		removeInstruction(mb, p);
-	OPTDEBUGdatacell mnstr_printf(cntxt->fdout, "=APPLY OPTIMIZER datacell\n");
-	if (p && p->argc > 1) {
-		if (getArgType(mb, p, 1) != TYPE_str ||
-			getArgType(mb, p, 2) != TYPE_str ||
-			!isVarConstant(mb, getArg(p, 1)) ||
-			!isVarConstant(mb, getArg(p, 2))
-			) {
-			throw(MAL, "optimizer.datacell", ILLARG_CONSTANTS);
-		}
-		if (stk != 0) {
-			modnme = *(str *) getArgReference(stk, p, 1);
-			fcnnme = *(str *) getArgReference(stk, p, 2);
-		} else {
-			modnme = getArgDefault(mb, p, 1);
-			fcnnme = getArgDefault(mb, p, 2);
-		}
-		s = findSymbol(cntxt->nspace, putName(modnme, strlen(modnme)), putName(fcnnme, strlen(fcnnme)));
-
-		if (s == NULL) {
-			char buf[1024];
-			snprintf(buf, 1024, "%s.%s", modnme, fcnnme);
-			throw(MAL, "optimizer.datacell", RUNTIME_OBJECT_UNDEFINED ":%s", buf);
-		}
-		mb = s->def;
-		stk = 0;
-	}
-	if (mb->errors) {
-		/* when we have errors, we still want to see them */
-		addtoMalBlkHistory(mb, "datacell");
-		return MAL_SUCCEED;
-	}
-	actions = OPTdatacellImplementation(cntxt, mb, stk, p);
-	addOptimizers(cntxt, mb);
-	if (msg == MAL_SUCCEED)
-		msg = optimizeMALBlock(cntxt, mb);
-	if (msg == MAL_SUCCEED)
-		msg = optimizerCheck(cntxt, mb, "optimizer.datacell", actions, t = (GDKusec() - clk), OPT_CHECK_ALL);
-	OPTDEBUGdatacell {
-		mnstr_printf(cntxt->fdout, "=FINISHED datacell %d\n", actions);
-		printFunction(cntxt->fdout, mb, 0, LIST_MAL_STMT | LIST_MAPI);
-	}
-	DEBUGoptimizers
-		mnstr_printf(cntxt->fdout, "#opt_reduce: " LLFMT " ms\n", t);
-	QOTupdateStatistics("datacell", actions, t);
-	addtoMalBlkHistory(mb, "datacell");
-	return msg;
 }

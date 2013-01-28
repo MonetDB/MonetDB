@@ -1,4 +1,4 @@
-stdout of test 'case-when-alias.Bug-2848` in directory 'test/BugTracker-2011` itself:
+stdout of test 'case-when-alias.Bug-2848` in directory 'sql/test/BugTracker-2011` itself:
 
 
 # 15:35:59 >  
@@ -11,7 +11,7 @@ stdout of test 'case-when-alias.Bug-2848` in directory 'test/BugTracker-2011` it
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Found 7.749 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2012 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008-2013 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://ottar.ins.cwi.nl:31386/
 # MonetDB/GIS module loaded
@@ -36,7 +36,7 @@ Ready.
 #SELECT CASE WHEN id = 'a' THEN 'x' ELSE 'y' END AS id FROM table2848;
 % sys. # table_name
 % id # name
-% char # type
+% varchar # type
 % 1 # length
 [ "x"	]
 [ "y"	]
@@ -44,7 +44,7 @@ Ready.
 #select * from ( SELECT CASE WHEN id = 'a' THEN 'x' ELSE 'y' END AS othercolnamealias FROM table2848) as req;
 % sys.req # table_name
 % othercolnamealias # name
-% char # type
+% varchar # type
 % 1 # length
 [ "x"	]
 [ "y"	]
@@ -52,7 +52,7 @@ Ready.
 #select * from ( SELECT CASE WHEN id = 'a' THEN 'x' ELSE 'y' END AS id FROM table2848) as req;
 % sys.req # table_name
 % id # name
-% char # type
+% varchar # type
 % 1 # length
 [ "x"	]
 [ "y"	]

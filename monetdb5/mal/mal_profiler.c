@@ -13,7 +13,7 @@
  * 
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
 */
 
@@ -41,6 +41,7 @@
 #include "mal_function.h"
 #include "mal_listing.h"
 #include "mal_profiler.h"
+#include "mal_runtime.h"
 #include "mal_debugger.h"
 
 stream *eventstream = 0;
@@ -63,7 +64,7 @@ static void stopHeartbeat(void);
 int malProfileMode = 0;     /* global flag to indicate profiling mode */
 static int profileAll = 0;  /* all instructions should be profiled */
 static int delayswitch = 0; /* to wait before sending the profile info */
-static int eventcounter;
+static int eventcounter = 0;
 
 #define PROFevent   0
 #define PROFtime    1
@@ -86,6 +87,7 @@ static int eventcounter;
 #define PROFdot     18
 #define PROFflow   19
 #define PROFping   20	/* heartbeat ping messages */
+#define PROFfootprint 21
 
 static struct {
 	str name;		/* which logical counter is needed */
@@ -112,6 +114,7 @@ static struct {
 	/*  18 */  { "dot", 0},
 	/*  19 */  { "flow", 0},
 	/*  20 */  { "ping", 0},
+	/*  21 */  { "footprint", 0},
 	/*  21 */  { 0, 0}
 };
 
@@ -165,16 +168,23 @@ deactivateCounter(str name)
 		(void) snprintf(logbase+loglen, LOGLEN -1 - loglen, __VA_ARGS__);					\
 		loglen += (int) strlen(logbase+loglen);					\
 	} while (0)
-#define logsent()												\
-	do { assert(loglen <= LOGLEN);								\
-		MT_lock_set(&mal_profileLock, "profileLock");			\
-		if (eventstream) {										\
-			(void)mnstr_write(eventstream, logbuffer,loglen,1 );\
-			mnstr_flush(eventstream);							\
-		}														\
-		eventcounter++;											\
-		MT_lock_unset(&mal_profileLock, "profileLock");			\
-	} while (0)
+
+static void logsent(int header, char *logbuffer)
+{
+	MT_lock_set(&mal_profileLock, "profileLock");
+	if (eventstream) {
+		if ( header)
+			mnstr_printf(eventstream,"%s\n", logbuffer);
+		else
+		if (profileCounter[PROFevent].status && eventcounter)
+			mnstr_printf(eventstream,"[ %d,\t%s ]\n", eventcounter, logbuffer);
+		else
+			mnstr_printf(eventstream,"[ %s ]\n", logbuffer);
+		mnstr_flush(eventstream);
+	}
+	eventcounter++;
+	MT_lock_unset(&mal_profileLock, "profileLock");
+}
 
 #define flushLog() if (eventstream) mnstr_flush(eventstream);
 
@@ -186,6 +196,7 @@ deactivateCounter(str name)
 void
 profilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc, int start)
 {
+	InstrPtr p;
 	if (mb->profiler == NULL) return;
 	if (profileCounter[PROFdot].status == 1 && start && pc == 0){
 		if (mb->dotfile == 0){
@@ -196,13 +207,16 @@ profilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc, int start)
 	}
 	if (profileCounter[PROFstart].status == 0 && start)
 		return;
+	p = getInstrPtr(mb,pc);
+	if ( !start && p && p->token == ENDsymbol)
+		profilerHeartbeatEvent("ping");
 	if (myname == 0)
 		myname = putName("profiler", 8);
 	if (getModuleId(getInstrPtr(mb, pc)) == myname)
 		return;
 	if (offlineProfiling)
 		offlineProfilerEvent(idx, mb, stk, pc,start);
-	if (cachedProfiling)
+	if (cachedProfiling && !start)
 		cachedProfilerEvent(idx, mb, stk, pc);
 }
 
@@ -257,6 +271,9 @@ offlineProfilerHeader(void)
 		logadd("uordblks,\t");
 */
 	}
+	if (profileCounter[PROFfootprint].status) {
+		logadd("footprint,\t");
+	}
 	if (profileCounter[PROFreads].status)
 		logadd("blk reads,\t");
 	if (profileCounter[PROFwrites].status)
@@ -280,8 +297,8 @@ offlineProfilerHeader(void)
 		logadd("types,\t");
 	if (profileCounter[PROFuser].status)
 		logadd("user,\t");
-	logadd("# name\n");
-	logsent();
+	logadd("# name");
+	logsent(1, logbuffer);
 }
 
 void
@@ -330,10 +347,6 @@ offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc, int start)
 
 	/* make basic profile event tuple  */
 	lognew();
-	logadd("[ ");
-	if (profileCounter[PROFevent].status) {
-		logadd("%d,\t", eventcounter);
-	}
 	if (profileCounter[PROFstart].status) {
 		if ( start) {
 			logadd("\"start\",\t");
@@ -381,10 +394,10 @@ offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc, int start)
 	}
 #ifdef HAVE_TIMES
 	if (profileCounter[PROFcpu].status && delayswitch < 0) {
-		logadd("%ld,\t", (long) (newTms.tms_utime - mb->profiler[pc].timer.tms_utime));
-		logadd("%ld,\t", (long) (newTms.tms_cutime - mb->profiler[pc].timer.tms_cutime));
-		logadd("%ld,\t", (long) (newTms.tms_stime - mb->profiler[pc].timer.tms_stime));
-		logadd("%ld,\t", (long) (newTms.tms_cstime - mb->profiler[pc].timer.tms_cstime));
+		logadd(LLFMT",\t", (lng) (newTms.tms_utime - mb->profiler[pc].timer.tms_utime));
+		logadd(LLFMT",\t", (lng) (newTms.tms_cutime - mb->profiler[pc].timer.tms_cutime));
+		logadd(LLFMT",\t", (lng) (newTms.tms_stime - mb->profiler[pc].timer.tms_stime));
+		logadd(LLFMT",\t", (lng) (newTms.tms_cstime - mb->profiler[pc].timer.tms_cstime));
 	}
 #endif
 
@@ -403,6 +416,9 @@ offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc, int start)
 		logadd(SZFMT ",\t", (size_t)(infoMalloc.uordblks - prevMalloc.uordblks));
 		prevMalloc = infoMalloc;
 */
+	}
+	if (profileCounter[PROFfootprint].status) {
+		logadd(LLFMT",\t", getFootPrint(mb,stk)/1024/1024);
 	}
 #ifdef HAVE_SYS_RESOURCE_H
 	if ((profileCounter[PROFreads].status ||
@@ -459,8 +475,7 @@ offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc, int start)
 	if (profileCounter[PROFuser].status) {
 		logadd(" %d", idx);
 	}
-	logadd(" ]\n");
-	logsent();
+	logsent(0, logbuffer);
 }
 /*
  * Postprocessing events
@@ -532,6 +547,7 @@ openProfilerStream(stream *fd)
 str
 closeProfilerStream(void)
 {
+	profilerHeartbeatEvent("ping");
 	if (eventstream) {
 		(void)mnstr_close(eventstream);
 		(void)mnstr_destroy(eventstream);
@@ -593,6 +609,7 @@ startProfiling(void)
 	if (TRACE_init == 0)
 		_initTrace();
 	malProfileMode = TRUE;
+	eventcounter = 0;
 	MT_lock_unset(&mal_profileLock, "profileLock");
 	return MAL_SUCCEED;
 }
@@ -600,10 +617,12 @@ startProfiling(void)
 str
 stopProfiling(void)
 {
+	MT_lock_set(&mal_profileLock, "profileLock");
 	malProfileMode = FALSE;
 	offlineProfiling = FALSE;
 	cachedProfiling = FALSE;
 	closeProfilerStream();
+	MT_lock_unset(&mal_profileLock, "profileLock");
 	return MAL_SUCCEED;
 }
 
@@ -1049,16 +1068,15 @@ cachedProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc)
 #ifdef HAVE_SYS_RESOURCE_H
 	getrusage(RUSAGE_SELF, &infoUsage);
 #endif
-	MT_lock_set(&mal_profileLock, "profileLock");
-	if (initTrace() || TRACE_init == 0) {
-		MT_lock_unset(&mal_profileLock, "profileLock");
+	if (initTrace() || TRACE_init == 0)
 		return;
-	}
 
 	/* update the Trace tables */
 	snprintf(buf, 1024, "%s.%s[%d]",
 		getModuleId(getInstrPtr(mb, 0)),
 		getFunctionId(getInstrPtr(mb, 0)), getPC(mb, pci));
+
+	MT_lock_set(&mal_profileLock, "profileLock");
 	TRACE_id_pc = BUNappend(TRACE_id_pc, buf, FALSE);
 
 	TRACE_id_thread = BUNappend(TRACE_id_thread, &tid, FALSE);
@@ -1223,17 +1241,16 @@ static int hbdelay = 0;
  * Given the parsing involved, it should be used sparingly */
 
 static struct{
-	long user, nice, system, idle, iowait;
+	lng user, nice, system, idle, iowait;
 	double load;
 } corestat[256];
 
-static char cpuload[BUFSIZ];
-
-static int gatherCPULoad(void){
+static int getCPULoad(char cpuload[BUFSIZ]){
     int cpu, len, i;
-	long user, nice, system, idle, iowait;
+	lng user, nice, system, idle, iowait;
     char buf[BUFSIZ],*s;
 	static FILE *proc= NULL;
+	double newload;
 
 	if ( proc == NULL || ferror(proc))
 		proc = fopen("/proc/stat","r");
@@ -1251,19 +1268,19 @@ static int gatherCPULoad(void){
 			s +=3;
 			if ( *s == ' ') {
 				s++;
-				cpu = 0;
-			} else{
-				cpu = atoi(s);
-				s= strchr(s,' ');
-				if ( s== 0) goto skip;
-			}
+				goto skip;
+			} 
+			cpu = atoi(s);
+			s= strchr(s,' ');
+			if ( s== 0) goto skip;
+			
 			while( *s && isspace((int)*s)) s++;
-			i= sscanf(s,"%ld %ld %ld %ld %ld",  &user, &nice, &system, &idle, &iowait);
+			i= sscanf(s,LLFMT" "LLFMT" "LLFMT" "LLFMT" "LLFMT,  &user, &nice, &system, &idle, &iowait);
 			if ( i != 5 )
 				goto skip;
-			corestat[cpu].load = (user - corestat[cpu].user + nice - corestat[cpu].nice + system - corestat[cpu].system);
-			if ( corestat[cpu].load )
-				corestat[cpu].load = corestat[cpu].load / (corestat[cpu].load + idle - corestat[cpu].idle);
+			newload = (user - corestat[cpu].user + nice - corestat[cpu].nice + system - corestat[cpu].system);
+			if (  newload)
+				corestat[cpu].load = newload / (newload + idle - corestat[cpu].idle);
 			corestat[cpu].user = user;
 			corestat[cpu].nice = nice;
 			corestat[cpu].system = system;
@@ -1283,8 +1300,10 @@ static int gatherCPULoad(void){
 	return 0;
 }
 
-static void profilerHeartbeat(void *dummy){
+void profilerHeartbeatEvent(str msg)
+{
 	char logbuffer[LOGLEN], *logbase;
+	char cpuload[BUFSIZ];
 	int loglen;
 #ifdef HAVE_SYS_RESOURCE_H
 	static struct rusage prevUsage;
@@ -1296,119 +1315,120 @@ static void profilerHeartbeat(void *dummy){
 #ifdef HAVE_TIMES
 	struct tms newTms;
 	struct tms prevtimer;
+
+	if( hbdelay ==0 || eventstream  == NULL ) 
+		return;
 	times(&prevtimer);
 #endif
 #ifdef HAVE_SYS_RESOURCE_H
 		getrusage(RUSAGE_SELF, &prevUsage);
 #endif
-	(void) dummy;
-	(void) gatherCPULoad();
 	gettimeofday(&tv,NULL);
 	//prevclock = (time_t) tv.tv_sec;
 
+	/* without this cast, compilation on Windows fails with
+	 * argument of type "long *" is incompatible with parameter of type "const time_t={__time64_t={__int64}} *"
+	 */
+
+	gettimeofday(&tv,NULL);
+	clock = (time_t) tv.tv_sec;
+
+	/* get CPU load on second boundaries only */
+	if ( getCPULoad(cpuload) )
+		return;
+	lognew();
+#ifdef HAVE_TIMES
+	times(&newTms);
+#endif
+#ifdef HAVE_SYS_RESOURCE_H
+	getrusage(RUSAGE_SELF, &infoUsage);
+#endif
+
+	/* make ping profile event tuple  */
+	if (profileCounter[PROFstart].status) 
+		logadd("\"%s\",\t",msg);
+	if (profileCounter[PROFtime].status) {
+		char *tbuf, *c;
+		tbuf = ctime(&clock);
+		if (tbuf) {
+			c = strchr(tbuf, '\n');
+			if (c) {
+				c[-5] = 0;
+			}
+			tbuf[10] = '"';
+			logadd("%s", tbuf + 10);
+			logadd(".%06d\",\t", (int)tv.tv_usec);
+		} else
+			logadd("%s,\t", "nil");
+	}
+	if (profileCounter[PROFthread].status)
+		logadd(" %d,\t", THRgettid());
+	if (profileCounter[PROFflow].status) {
+		logadd("%d,\t", memoryclaims);
+		logadd(LLFMT",\t", memoryclaims?((lng)(MEMORY_THRESHOLD * monet_memory)-memorypool)/1024/1024:0);
+	}
+	if (profileCounter[PROFfunc].status) 
+			logadd("\"ping\",\t");
+	if (profileCounter[PROFpc].status) 
+		logadd("0,\t");
+	if (profileCounter[PROFticks].status) 
+		logadd("0,\t");
+#ifdef HAVE_TIMES
+	if (profileCounter[PROFcpu].status && delayswitch < 0) {
+		logadd(LLFMT",\t", (lng) (newTms.tms_utime - prevtimer.tms_utime));
+		logadd(LLFMT",\t", (lng) (newTms.tms_cutime -prevtimer.tms_cutime));
+		logadd(LLFMT",\t", (lng) (newTms.tms_stime - prevtimer.tms_stime));
+		logadd(LLFMT",\t", (lng) (newTms.tms_cstime -prevtimer.tms_cstime));
+		prevtimer = newTms;
+	}
+#endif
+	if (profileCounter[PROFmemory].status && delayswitch < 0)
+		logadd(SZFMT ",\t", MT_getrss()/1024/1024);
+#ifdef HAVE_SYS_RESOURCE_H
+	if ((profileCounter[PROFreads].status ||
+		 profileCounter[PROFwrites].status) && delayswitch < 0) {
+		logadd("%ld,\t", infoUsage.ru_inblock - prevUsage.ru_inblock);
+		logadd("%ld,\t", infoUsage.ru_oublock - prevUsage.ru_oublock);
+		prevUsage = infoUsage;
+	}
+	if (profileCounter[PROFfootprint].status) {
+		logadd(LLFMT",\t", getFootPrint(0,0)/1024/1024);
+	}
+	if (profileCounter[PROFprocess].status && delayswitch < 0) {
+		logadd("%ld,\t", infoUsage.ru_minflt - prevUsage.ru_minflt);
+		logadd("%ld,\t", infoUsage.ru_majflt - prevUsage.ru_majflt);
+		logadd("%ld,\t", infoUsage.ru_nswap - prevUsage.ru_nswap);
+		logadd("%ld,\t", infoUsage.ru_nvcsw - prevUsage.ru_nvcsw);
+		logadd("%ld,\t", infoUsage.ru_nivcsw - prevUsage.ru_nivcsw);
+		prevUsage = infoUsage;
+	}
+#endif
+	if (profileCounter[PROFrbytes].status)
+		logadd("0,\t");
+	if (profileCounter[PROFwbytes].status)
+		logadd("0,\t");
+
+	if (profileCounter[PROFaggr].status)
+		logadd("0,\t0,\t");
+
+	if (profileCounter[PROFstmt].status)
+			logadd(" %s", cpuload);
+	//if (profileCounter[PROFtype].status)
+		//logadd("\"\",\t");
+	//if (profileCounter[PROFuser].status)
+		//logadd(" 0");
+	logsent(0, logbuffer);
+}
+
+static void profilerHeartbeat(void *dummy)
+{
+	(void) dummy;
 	while (1){
 		/* wait until you need this info */
 		while( hbdelay ==0 || eventstream  == NULL ) 
 			MT_sleep_ms(1000);
 		MT_sleep_ms(hbdelay);
-
-		/* without this cast, compilation on Windows fails with
-		 * argument of type "long *" is incompatible with parameter of type "const time_t={__time64_t={__int64}} *"
-		 */
-
-		gettimeofday(&tv,NULL);
-		clock = (time_t) tv.tv_sec;
-
-		/* get CPU load on second boundaries only */
-		//if ( clock - prevclock >= 0 ) {
-			if ( gatherCPULoad() )
-				continue;
-			//prevclock = clock;
-		//}
-		lognew();
-#ifdef HAVE_TIMES
-		times(&newTms);
-#endif
-#ifdef HAVE_SYS_RESOURCE_H
-		getrusage(RUSAGE_SELF, &infoUsage);
-#endif
-
-		/* make ping profile event tuple  */
-		logadd("[ ");
-		if (profileCounter[PROFevent].status) {
-			logadd("%d,\t", eventcounter);
-		}
-		if (profileCounter[PROFstart].status) 
-			logadd("\"ping\",\t");
-		if (profileCounter[PROFtime].status) {
-			char *tbuf, *c;
-			tbuf = ctime(&clock);
-			if (tbuf) {
-				c = strchr(tbuf, '\n');
-				if (c) {
-					c[-5] = 0;
-				}
-				tbuf[10] = '"';
-				logadd("%s", tbuf + 10);
-				logadd(".%06d\",\t", (int)tv.tv_usec);
-			} else
-				logadd("%s,\t", "nil");
-		}
-		if (profileCounter[PROFthread].status)
-			logadd(" %d,\t", THRgettid());
-		if (profileCounter[PROFflow].status) {
-			logadd("%d,\t", memoryclaims);
-			logadd(LLFMT",\t", memoryclaims?((lng)(MEMORY_THRESHOLD * monet_memory)-memorypool)/1024/1024:0);
-		}
-		if (profileCounter[PROFfunc].status) 
-				logadd("\"ping\",\t");
-		if (profileCounter[PROFpc].status) 
-			logadd("0,\t");
-		if (profileCounter[PROFticks].status) 
-			logadd("0,\t");
-#ifdef HAVE_TIMES
-		if (profileCounter[PROFcpu].status && delayswitch < 0) {
-			logadd("%ld,\t", (long) (newTms.tms_utime - prevtimer.tms_utime));
-			logadd("%ld,\t", (long) (newTms.tms_cutime -prevtimer.tms_cutime));
-			logadd("%ld,\t", (long) (newTms.tms_stime - prevtimer.tms_stime));
-			logadd("%ld,\t", (long) (newTms.tms_cstime -prevtimer.tms_cstime));
-			prevtimer = newTms;
-		}
-#endif
-		if (profileCounter[PROFmemory].status && delayswitch < 0)
-			logadd(SZFMT ",\t", MT_getrss()/1024/1024);
-#ifdef HAVE_SYS_RESOURCE_H
-		if ((profileCounter[PROFreads].status ||
-			 profileCounter[PROFwrites].status) && delayswitch < 0) {
-			logadd("%ld,\t", infoUsage.ru_inblock - prevUsage.ru_inblock);
-			logadd("%ld,\t", infoUsage.ru_oublock - prevUsage.ru_oublock);
-			prevUsage = infoUsage;
-		}
-		if (profileCounter[PROFprocess].status && delayswitch < 0) {
-			logadd("%ld,\t", infoUsage.ru_minflt - prevUsage.ru_minflt);
-			logadd("%ld,\t", infoUsage.ru_majflt - prevUsage.ru_majflt);
-			logadd("%ld,\t", infoUsage.ru_nswap - prevUsage.ru_nswap);
-			logadd("%ld,\t", infoUsage.ru_nvcsw - prevUsage.ru_nvcsw);
-			logadd("%ld,\t", infoUsage.ru_nivcsw - prevUsage.ru_nivcsw);
-			prevUsage = infoUsage;
-		}
-#endif
-		if (profileCounter[PROFrbytes].status)
-			logadd("0,\t");
-		if (profileCounter[PROFwbytes].status)
-			logadd("0,\t");
-
-		if (profileCounter[PROFaggr].status)
-			logadd("0,\t0,\t");
-
-		if (profileCounter[PROFstmt].status)
-				logadd(" %s", cpuload);
-		//if (profileCounter[PROFtype].status)
-			//logadd("\"\",\t");
-		//if (profileCounter[PROFuser].status)
-			//logadd(" 0");
-		logadd(" ]\n");
-		logsent();
+		profilerHeartbeatEvent("ping");
 	}
 	hbdelay = 0;
 }

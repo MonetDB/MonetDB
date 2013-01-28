@@ -1,4 +1,4 @@
-stdout of test 'predicate_select.Bug-3090_nogeom` in directory 'test/BugTracker-2012` itself:
+stdout of test 'predicate_select.Bug-3090_nogeom` in directory 'sql/test/BugTracker-2012` itself:
 
 
 # 18:53:13 >  
@@ -11,7 +11,7 @@ stdout of test 'predicate_select.Bug-3090_nogeom` in directory 'test/BugTracker-
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Found 3.778 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2012 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008-2013 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://niels.nesco.mine.nu:32323/
 # MonetDB/GIS module loaded
@@ -47,20 +47,20 @@ Ready.
 [ 2130,	"idxs",	2102,	NULL,	0,	true,	2,	false,	0	]
 [ 2135,	"triggers",	2102,	NULL,	0,	true,	2,	false,	0	]
 [ 2146,	"objects",	2102,	NULL,	0,	true,	2,	false,	0	]
-[ 5018,	"tables",	2000,	"SELECT * FROM (SELECT p.*, 0 AS \"temporary\" FROM \"sys\".\"_tables\" AS p UNION ALL SELECT t.*, 1 AS \"temporary\" FROM \"tmp\".\"_tables\" AS t) AS tables where tables.type < 2;",	1,	true,	0,	false,	0	]
-[ 5028,	"columns",	2000,	"SELECT * FROM (SELECT p.* FROM \"sys\".\"_columns\" AS p UNION ALL SELECT t.* FROM \"tmp\".\"_columns\" AS t) AS columns;",	1,	true,	0,	false,	0	]
-[ 5048,	"db_user_info",	2000,	NULL,	0,	true,	0,	false,	0	]
-[ 5056,	"users",	2000,	"SELECT u.\"name\" AS \"name\", ui.\"fullname\", ui.\"default_schema\" FROM db_users() AS u LEFT JOIN \"sys\".\"db_user_info\" AS ui ON u.\"name\" = ui.\"name\" ;",	1,	true,	0,	false,	0	]
-[ 5060,	"user_role",	2000,	NULL,	0,	true,	0,	false,	0	]
-[ 5063,	"auths",	2000,	NULL,	0,	true,	0,	false,	0	]
-[ 5067,	"privileges",	2000,	NULL,	0,	true,	0,	false,	0	]
-[ 5220,	"queryhistory",	2000,	NULL,	0,	true,	0,	false,	0	]
-[ 5234,	"callhistory",	2000,	NULL,	0,	true,	0,	false,	0	]
-[ 5251,	"querylog",	2000,	"create view querylog as\nselect qd.*, ql.ctime, ql.arguments, ql.exec, ql.result, ql.foot, ql.memory, ql.tuples, ql.inblock, ql.oublock from queryhistory qd, callhistory ql\nwhere qd.id = ql.id;",	1,	true,	0,	false,	0	]
-[ 5684,	"storagemodelinput",	2000,	NULL,	0,	true,	0,	false,	0	]
-[ 5725,	"tablestoragemodel",	2000,	"-- A summary of the table storage requirement is is available as a table view.\n-- The auxillary column denotes the maximum space if all non-sorted columns\n-- would be augmented with a hash (rare situation)\ncreate view tablestoragemodel\nas select \"schema\",\"table\",max(count) as \"count\",\n\tsum(columnsize) as columnsize,\n\tsum(heapsize) as heapsize,\n\tsum(indices) as indices,\n\tsum(case when sorted = false then 8 * count else 0 end) as auxillary\nfrom storagemodel() group by \"schema\",\"table\";",	1,	true,	0,	false,	0	]
-[ 5747,	"systemfunctions",	2000,	NULL,	0,	true,	0,	false,	0	]
-[ 5856,	"r",	2000,	NULL,	0,	false,	0,	false,	0	]
+[ 5062,	"tables",	2000,	"SELECT * FROM (SELECT p.*, 0 AS \"temporary\" FROM \"sys\".\"_tables\" AS p UNION ALL SELECT t.*, 1 AS \"temporary\" FROM \"tmp\".\"_tables\" AS t) AS tables where tables.type < 2;",	1,	true,	0,	false,	0	]
+[ 5072,	"columns",	2000,	"SELECT * FROM (SELECT p.* FROM \"sys\".\"_columns\" AS p UNION ALL SELECT t.* FROM \"tmp\".\"_columns\" AS t) AS columns;",	1,	true,	0,	false,	0	]
+[ 5092,	"db_user_info",	2000,	NULL,	0,	true,	0,	false,	0	]
+[ 5100,	"users",	2000,	"SELECT u.\"name\" AS \"name\", ui.\"fullname\", ui.\"default_schema\" FROM db_users() AS u LEFT JOIN \"sys\".\"db_user_info\" AS ui ON u.\"name\" = ui.\"name\" ;",	1,	true,	0,	false,	0	]
+[ 5104,	"user_role",	2000,	NULL,	0,	true,	0,	false,	0	]
+[ 5107,	"auths",	2000,	NULL,	0,	true,	0,	false,	0	]
+[ 5111,	"privileges",	2000,	NULL,	0,	true,	0,	false,	0	]
+[ 5264,	"queryhistory",	2000,	NULL,	0,	true,	0,	false,	0	]
+[ 5278,	"callhistory",	2000,	NULL,	0,	true,	0,	false,	0	]
+[ 5295,	"querylog",	2000,	"create view querylog as\nselect qd.*, ql.ctime, ql.arguments, ql.exec, ql.result, ql.foot, ql.memory, ql.tuples, ql.inblock, ql.oublock from queryhistory qd, callhistory ql\nwhere qd.id = ql.id;",	1,	true,	0,	false,	0	]
+[ 5836,	"storagemodelinput",	2000,	NULL,	0,	true,	0,	false,	0	]
+[ 5877,	"tablestoragemodel",	2000,	"-- A summary of the table storage requirement is is available as a table view.\n-- The auxillary column denotes the maximum space if all non-sorted columns\n-- would be augmented with a hash (rare situation)\ncreate view tablestoragemodel\nas select \"schema\",\"table\",max(count) as \"count\",\n\tsum(columnsize) as columnsize,\n\tsum(heapsize) as heapsize,\n\tsum(indices) as indices,\n\tsum(case when sorted = false then 8 * count else 0 end) as auxillary\nfrom storagemodel() group by \"schema\",\"table\";",	1,	true,	0,	false,	0	]
+[ 5899,	"systemfunctions",	2000,	NULL,	0,	true,	0,	false,	0	]
+[ 6008,	"r",	2000,	NULL,	0,	false,	0,	false,	0	]
 
 # 18:53:13 >  
 # 18:53:13 >  "Done."

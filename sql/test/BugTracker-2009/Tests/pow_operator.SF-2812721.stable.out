@@ -1,4 +1,4 @@
-stdout of test 'pow_operator.SF-2812721` in directory 'test/BugTracker-2009` itself:
+stdout of test 'pow_operator.SF-2812721` in directory 'sql/test/BugTracker-2009` itself:
 
 
 # 23:30:52 >  
@@ -26,16 +26,16 @@ Ready.
 
 % . # table_name
 % power_single_value # name
-% double # type
-% 24 # length
+% real # type
+% 15 # length
 [ 4	]
 % . # table_name
 % power_single_value # name
-% double # type
-% 24 # length
-[ 7.84	]
+% real # type
+% 15 # length
+[ 7.83999968	]
 
-# 23:30:53 >  
-# 23:30:53 >  Done.
-# 23:30:53 >  
+# 09:09:06 >  
+# 09:09:06 >  "Done."
+# 09:09:06 >  
 

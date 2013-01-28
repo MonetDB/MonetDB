@@ -1,4 +1,4 @@
-stdout of test 'optimizers` in directory 'backends/monet5` itself:
+stdout of test 'optimizers` in directory 'sql/backends/monet5` itself:
 
 
 # 03:16:16 >  
@@ -11,7 +11,7 @@ stdout of test 'optimizers` in directory 'backends/monet5` itself:
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Found 15.630 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2012 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008-2013 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://rome.ins.cwi.nl:36613/
 # MonetDB/GIS module loaded
@@ -47,31 +47,31 @@ Ready.
 #select 'optimizer test:',optimizer;
 % .,	. # table_name
 % single_value,	single_value # name
-% char,	varchar # type
+% varchar,	varchar # type
 % 15,	12 # length
 [ "optimizer test:",	"default_pipe"	]
 #select 'optimizer off test:',optimizer;
 % .,	. # table_name
 % single_value,	single_value # name
-% char,	varchar # type
+% varchar,	varchar # type
 % 19,	12 # length
 [ "optimizer off test:",	"default_pipe"	]
 #select 'optimizer on test:',optimizer;
 % .,	. # table_name
 % single_value,	single_value # name
-% char,	varchar # type
+% varchar,	varchar # type
 % 18,	12 # length
 [ "optimizer on test:",	"default_pipe"	]
 #select 'optimizer <empty> test:',optimizer;
 % .,	. # table_name
 % single_value,	single_value # name
-% char,	varchar # type
+% varchar,	varchar # type
 % 23,	12 # length
 [ "optimizer <empty> test:",	"default_pipe"	]
 #select 'done';
 % . # table_name
 % single_value # name
-% char # type
+% varchar # type
 % 4 # length
 [ "done"	]
 

@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -64,7 +64,7 @@ static int SQLinitialized = 0;
 static int SQLnewcatalog = 0;
 static int SQLdebug = 0;
 static char *sqlinit = NULL;
-MT_Lock sql_contextLock;
+MT_Lock sql_contextLock MT_LOCK_INITIALIZER("sql_contextLock");
 
 static void
 monet5_freestack(int clientid, backend_stack stk)
@@ -205,7 +205,9 @@ SQLinit(void)
 	if (SQLinitialized)
 		return MAL_SUCCEED;
 
+#ifdef NEED_MT_LOCK_INIT
 	MT_lock_init( &sql_contextLock, "sql_contextLock");
+#endif
 
 	MT_lock_set(&sql_contextLock, "SQL init");
 	memset((char*)&be_funcs, 0, sizeof(backend_functions));
@@ -971,6 +973,7 @@ SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output)
 			MSresetInstructions(c->curprg->def, oldstop);
 			freeVariables(c,c->curprg->def, c->glb, oldvtop);
 			c->curprg->def->errors = 0;
+			msg = createException(SQL, "SQLparser","Errors encountered in query");
 			goto endofcompile;
 		}
 
@@ -1022,7 +1025,6 @@ endofcompile:
 	m->vars = vars;
 	m->session->status = status;
 	m->session->auto_commit = ac;
-	m->last = NULL;
 	return msg;
 }
 
@@ -1125,6 +1127,7 @@ SQLreader(Client c)
 {
 	int go = TRUE;
 	int more = TRUE;
+	int commit_done = FALSE;
 	backend *be = (backend *) c->sqlcontext;
 	bstream *in = c->fdin;
 	int language = -1;
@@ -1175,8 +1178,10 @@ SQLreader(Client c)
 		    B \n C; -- statements in one block	S
 		 */
 		/* auto_commit on end of statement */
-		if (m->scanner.mode == LINE_N)
+		if (m->scanner.mode == LINE_N && !commit_done) {
 			go = SQLautocommit(c, m);
+			commit_done=TRUE;
+		}
 
 		if (go && in->pos >= in->len) {
 			ssize_t rd;
@@ -1196,8 +1201,10 @@ SQLreader(Client c)
 
 				/* The rules of auto_commit require us to finish
 				   and start a transaction on the start of a new statement (s A;B; case) */
-				if (!(m->emod & mod_debug))
+				if (!(m->emod & mod_debug) && !commit_done) {
 					go = SQLautocommit(c, m);
+					commit_done = TRUE;
+				}
 
 				if (go && ((!blocked && mnstr_write(c->fdout, c->prompt, c->promptlength, 1) != 1) || mnstr_flush(c->fdout))) {
 					go = FALSE;
@@ -1550,6 +1557,7 @@ SQLparser(Client c)
 		sqlcleanup(m, err);
 		goto finalize;
 	}
+	assert(m->session->schema != NULL);
 	/*
 	 * We have dealt with the first parsing step and advanced the input reader
 	 * to the next statement (if any).

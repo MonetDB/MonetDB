@@ -1,4 +1,4 @@
-stdout of test 'basic_arithmetics.SF-922252` in directory 'test/BugDay_2005-10-06_2.9.3` itself:
+stdout of test 'basic_arithmetics.SF-922252` in directory 'sql/test/BugDay_2005-10-06_2.9.3` itself:
 
 
 # 18:41:19 >  
@@ -63,8 +63,9 @@ Ready.
 [ 1	]
 % . # table_name
 % single_value # name
-% char # type
-% 1 # length
+% varchar # type
+% 0 # length
+#select * from my_table where 1 = 0;
 % sys.my_table # table_name
 % att # name
 % int # type

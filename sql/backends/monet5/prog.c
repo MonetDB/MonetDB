@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -52,20 +52,20 @@
 # endif
 #endif
 
-static long
+static mapi_int64
 gettime(void)
 {
 #ifdef HAVE_GETTIMEOFDAY
 	struct timeval tp;
 
 	gettimeofday(&tp, NULL);
-	return (long) tp.tv_sec * 1000000 + (long) tp.tv_usec;
+	return (mapi_int64) tp.tv_sec * 1000000 + (mapi_int64) tp.tv_usec;
 #else
 #ifdef HAVE_FTIME
 	struct timeb tb;
 
 	ftime(&tb);
-	return (long) tb.time * 1000000 + (long) tb.millitm * 1000;
+	return (mapi_int64) tb.time * 1000000 + (mapi_int64) tb.millitm * 1000;
 #endif
 #endif
 }
@@ -92,7 +92,7 @@ main(int argc, char **av)
 	char *prog = *av;
 	opt *set = NULL;
 	int setlen = 0, timeflag = 0;
-	long t0 = 0;
+	mapi_int64 t0 = 0;
 	Mapi mid;
 	MapiHdl hdl;
 	char *buf, *line;
@@ -208,7 +208,7 @@ main(int argc, char **av)
 		} while (mapi_next_result(hdl) == 1);
 		mapi_close_handle(hdl);
 		if (timeflag)
-			printf("Timer: %ld (usec)\n", gettime() - t0);
+			printf("Timer: "LLFMT" (usec)\n", gettime() - t0);
 	}
 	free(buf);
 	mapi_destroy(mid);

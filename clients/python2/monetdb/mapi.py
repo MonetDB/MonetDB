@@ -12,7 +12,7 @@
 #
 # The Initial Developer of the Original Code is CWI.
 # Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-# Copyright August 2008-2012 MonetDB B.V.
+# Copyright August 2008-2013 MonetDB B.V.
 # All Rights Reserved.
 
 """
@@ -163,9 +163,9 @@ class Connection(object):
         self.__putblock(operation)
         response = self.__getblock()
         if not len(response):
-            return True
+            return ""
         elif response.startswith(MSG_OK):
-            return response[3:].strip() or True
+            return response[3:].strip() or ""
         if response == MSG_MORE:
             # tell server it isn't going to get more
             return self.cmd("")

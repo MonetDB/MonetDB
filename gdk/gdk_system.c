@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -65,11 +65,151 @@
 
 #include <unistd.h>		/* for sysconf symbols */
 
-MT_Lock MT_system_lock
-#ifdef PTHREAD_MUTEX_INITIALIZER
-	= PTHREAD_MUTEX_INITIALIZER
+MT_Lock MT_system_lock MT_LOCK_INITIALIZER("MT_system_lock");
+
+#if !defined(ATOMIC_LOCK) && !defined(NDEBUG)
+ATOMIC_TYPE volatile GDKlockcnt;
+ATOMIC_TYPE volatile GDKlockcontentioncnt;
+ATOMIC_TYPE volatile GDKlocksleepcnt;
+ATOMIC_TYPE volatile GDKsemacnt;
+ATOMIC_TYPE volatile GDKsemawaitcnt;
+ATOMIC_TYPE volatile GDKsemasleepcnt;
+MT_Lock * volatile GDKlocklist;
+MT_Sema * volatile GDKsemalist;
+
+/* merge sort of linked list
+ * these two functions are nearly identical */
+static MT_Lock *
+sortlocklist(MT_Lock *l)
+{
+	MT_Lock *r, *t, *ll = NULL;
+
+	if (l == NULL || l->next == NULL) {
+		/* list is trivially sorted (0 or 1 element) */
+		return l;
+	}
+	/* break list into two (almost) equal pieces:
+	* l is start of "left" list, r of "right" list, ll last
+	* element of "left" list */
+	for (t = r = l; t && t->next; t = t->next->next) {
+		ll = r;
+		r = r->next;
+	}
+	ll->next = NULL;	/* break list into two */
+	/* recursively sort both sublists */
+	l = sortlocklist(l);
+	r = sortlocklist(r);
+	/* merge
+	 * t is new list, ll is last element of new list, l and r are
+	 * start of unprocessed part of left and right lists */
+	t = ll = NULL;
+	while (l && r) {
+		if (l->contention < r->contention ||
+		    (l->contention == r->contention &&
+		     l->sleep < r->sleep) ||
+		    (l->contention == r->contention &&
+		     l->sleep == r->sleep &&
+		     l->count <= r->count)) {
+			/* l is smaller */
+			if (ll == NULL) {
+				assert(t == NULL);
+				t = ll = l;
+			} else {
+				ll->next = l;
+				ll = ll->next;
+			}
+			l = l->next;
+		} else {
+			/* r is smaller */
+			if (ll == NULL) {
+				assert(t == NULL);
+				t = ll = r;
+			} else {
+				ll->next = r;
+				ll = ll->next;
+			}
+			r = r->next;
+		}
+	}
+	/* append rest of remaining list */
+	ll->next = l ? l : r;
+	return t;
+}
+
+static MT_Sema *
+sortsemalist(MT_Sema *l)
+{
+	MT_Sema *r, *t, *ll = NULL;
+
+	if (l == NULL || l->next == NULL)
+		return l;
+	for (t = r = l; t && t->next; t = t->next->next) {
+		ll = r;
+		r = r->next;
+	}
+	ll->next = NULL;
+	l = sortsemalist(l);
+	r = sortsemalist(r);
+	t = ll = NULL;
+	while (l && r) {
+		if (l->waitcount < r->waitcount ||
+		    (l->waitcount == r->waitcount &&
+		     l->sleep < r->sleep) ||
+		    (l->waitcount == r->waitcount &&
+		     l->sleep == r->sleep &&
+		     l->count <= r->count)) {
+			if (ll == NULL) {
+				assert(t == NULL);
+				t = ll = l;
+			} else {
+				ll->next = l;
+				ll = ll->next;
+			}
+			l = l->next;
+		} else {
+			if (ll == NULL) {
+				assert(t == NULL);
+				t = ll = r;
+			} else {
+				ll->next = r;
+				ll = ll->next;
+			}
+			r = r->next;
+		}
+	}
+	ll->next = l ? l : r;
+	return t;
+}
+
+void
+GDKlockstatistics(int what)
+{
+	MT_Lock *l;
+	MT_Sema *s;
+
+	GDKlocklist = sortlocklist(GDKlocklist);
+	GDKsemalist = sortsemalist(GDKsemalist);
+	for (l = GDKlocklist; l; l = l->next)
+		if (what == 0 ||
+		    (what == 1 && l->count) ||
+		    (what == 2 && l->contention) ||
+		    (what == 3 && l->lock))
+			fprintf(stderr, "#lock %-18s\t" SZFMT "\t" SZFMT "\t" SZFMT "%s\n",
+				l->name ? l->name : "unknown",
+				l->count, l->contention, l->sleep,
+				what != 3 && l->lock ? "\tlocked" : "");
+	for (s = GDKsemalist; s; s = s->next)
+		fprintf(stderr, "#sema %-18s\t" SZFMT "\t" SZFMT "\t" SZFMT "\n",
+			s->name ? s->name : "unknown",
+			s->count, s->waitcount, s->sleep);
+	fprintf(stderr, "#total lock count " SZFMT "\n", (size_t) GDKlockcnt);
+	fprintf(stderr, "#lock contention  " SZFMT "\n", (size_t) GDKlockcontentioncnt);
+	fprintf(stderr, "#lock sleep count " SZFMT "\n", (size_t) GDKlocksleepcnt);
+	fprintf(stderr, "#total sema count " SZFMT "\n", (size_t) GDKsemacnt);
+	fprintf(stderr, "#sema wait count  " SZFMT "\n", (size_t) GDKsemawaitcnt);
+	fprintf(stderr, "#sema sleep count " SZFMT "\n", (size_t) GDKsemasleepcnt);
+}
 #endif
-	;
 
 #ifdef MT_LOCK_TRACE
 unsigned long long MT_locktrace_cnt[65536] = { 0 };
@@ -277,6 +417,8 @@ MT_kill_thread(MT_Id t)
 	return -1;
 }
 
+#ifdef ATOMIC_LOCK
+
 void
 pthread_mutex_init(pthread_mutex_t *mutex, const pthread_mutexattr_t *mutexattr)
 {
@@ -332,60 +474,11 @@ pthread_sema_down(pthread_sema_t *s)
 {
 	WaitForSingleObject(*s, INFINITE);
 }
-int
-pthread_cond_init(pthread_cond_t *cv, pthread_condattr_t *a)
-{
-	(void) a;
-	cv->waiters_count = 0;
-	cv->sema = CreateSemaphore(NULL, 0, 0x7fffffff, NULL);
-	InitializeCriticalSection(&cv->waiters_count_lock);
-	return 0;
-}
 
-int
-pthread_cond_destroy(pthread_cond_t *cv)
-{
-	CloseHandle(cv->sema);
-	return 0;
-}
+#endif
 
-int
-pthread_cond_signal(pthread_cond_t *cv)
-{
-	int have_waiters;
-
-	EnterCriticalSection(&cv->waiters_count_lock);
-	have_waiters = cv->waiters_count > 0;
-	LeaveCriticalSection(&cv->waiters_count_lock);
-
-	/* If there aren't any waiters, then this is a no-op. */
-	if (have_waiters)
-		ReleaseSemaphore(cv->sema, 1, 0);
-	return 0;
-}
-
-int
-pthread_cond_wait(pthread_cond_t *cv, pthread_mutex_t *external_mutex)
-{
-	EnterCriticalSection(&cv->waiters_count_lock);
-	cv->waiters_count++;
-	LeaveCriticalSection(&cv->waiters_count_lock);
-
-	/* This call atomically releases the mutex and waits on the
-	 * semaphore until <pthread_cond_signal> or
-	 * <pthread_cond_broadcast> are called by another thread. */
-	SignalObjectAndWait(*external_mutex, cv->sema, INFINITE, FALSE);
-
-	EnterCriticalSection(&cv->waiters_count_lock);
-	cv->waiters_count--;
-	LeaveCriticalSection(&cv->waiters_count_lock);
-
-	/* Always regain the external mutex since that's the guarantee
-	 * we give to our callers. */
-	WaitForSingleObject(*external_mutex, INFINITE);
-	return 0;
-}
 #else  /* !defined(HAVE_PTHREAD_H) && defined(_MSC_VER) */
+
 #ifdef HAVE_PTHREAD_SIGMASK
 static void
 MT_thread_sigmask(sigset_t * new_mask, sigset_t * orig_mask)
@@ -475,7 +568,7 @@ MT_kill_thread(MT_Id t)
 #endif
 }
 
-#if defined(_AIX) || defined(__MACH__)
+#if defined(ATOMIC_LOCK) && (defined(_AIX) || defined(__MACH__))
 void
 pthread_sema_init(pthread_sema_t *s, int flag, int nresources)
 {

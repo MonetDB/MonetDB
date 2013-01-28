@@ -13,15 +13,12 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
 */
 
 /*
- * @a M. Kersten
- * @v 1.0
- * TODO, this code base should be protected against overflow using
- * a temporary file store
+ * M. Kersten
 */
 
 #include "monetdb_config.h"
@@ -46,7 +43,7 @@
  * 
  * The protection against overflow is not tight.
 */
-#define advance(X,B,L)  assert(X< B+L); while(*(X) && B+L>X)(X)++;
+#define advance(X,B,L)  while(*(X) && B+L>X)(X)++;
 
 str
 instructionCall(MalBlkPtr mb, InstrPtr p, str s, str base, size_t len)

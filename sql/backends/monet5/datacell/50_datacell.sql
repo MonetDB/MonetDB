@@ -12,7 +12,7 @@
 #
 # The Initial Developer of the Original Code is CWI.
 # Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-# Copyright August 2008-2012 MonetDB B.V.
+# Copyright August 2008-2013 MonetDB B.V.
 # All Rights Reserved.
 
 -- Datacell basket  wrappers
@@ -23,7 +23,13 @@ create procedure datacell.basket(tbl string)
 create procedure datacell.receptor(tbl string, host string, portid integer)
     external name datacell.receptor;
 
+create procedure datacell.receptor(tbl string, host string, portid integer, proto string, mode string)
+    external name datacell.receptor;
+
 create procedure datacell.emitter(tbl string, host string, portid integer)
+    external name datacell.emitter;
+
+create procedure datacell.emitter(tbl string, host string, portid integer, proto string, mode string)
     external name datacell.emitter;
 
 create procedure datacell.pause (tbl string)

@@ -1,0 +1,17 @@
+stdout of test 'tomograph--help` in directory 'clients/mapiclient` itself:
+
+
+# 11:43:47 >  
+# 11:43:47 >  Mtimeout -timeout 120 ./tomograph--help tomograph--help 
+# 11:43:47 >  
+
+
+# 11:43:47 >  
+# 11:43:47 >  Mtimeout -timeout 60 tomograph --help
+# 11:43:47 >  
+
+
+# 11:43:47 >  
+# 11:43:47 >  Done.
+# 11:43:47 >  
+

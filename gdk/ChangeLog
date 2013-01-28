@@ -1,3 +1,8 @@
 # ChangeLog file for MonetDB
 # This file is updated with Maddlog
 
+* Tue Jan 22 2013 Sjoerd Mullender <sjoerd@acm.org>
+- Replaced the mutex implementation for both GNU C and Visual Studio with
+  a home-grown implementation that uses atomic instructions (__sync_*()
+  in gcc, _Interlocked*() in VS).
+
