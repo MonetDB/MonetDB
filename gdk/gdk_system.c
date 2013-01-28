@@ -568,7 +568,7 @@ MT_kill_thread(MT_Id t)
 #endif
 }
 
-#if defined(_AIX) || defined(__MACH__)
+#if defined(ATOMIC_LOCK) && (defined(_AIX) || defined(__MACH__))
 void
 pthread_sema_init(pthread_sema_t *s, int flag, int nresources)
 {
