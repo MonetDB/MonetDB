@@ -97,7 +97,7 @@ GTIFFattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	/* add row in the rs.files catalog table */
 	col = mvc_bind_column(m, fls, "fileid");
-	fid = store_funcs.count_col(col) + 1;
+	fid = store_funcs.count_col(col, 1) + 1;
 
 	snprintf(buf, BUFSIZ, INSFILE, (int)fid, fname, 0);
 	if ( ( msg = SQLstatementIntern(cntxt,&s,"geotiff.attach",TRUE,FALSE)) != MAL_SUCCEED)
@@ -106,7 +106,7 @@ GTIFFattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	/* add row in the rs.catalog catalog table */
 	col = mvc_bind_column(m, cat, "imageid");
-	imid = store_funcs.count_col(col) + 1;
+	imid = store_funcs.count_col(col, 1) + 1;
 	TIFFGetField(tif, TIFFTAG_IMAGEWIDTH, &wid);
 	TIFFGetField(tif, TIFFTAG_IMAGELENGTH, &len);
 	TIFFGetField(tif, TIFFTAG_BITSPERSAMPLE, &bps);
