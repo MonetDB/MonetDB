@@ -1518,19 +1518,28 @@ dump_database(Mapi mid, stream *toConsole, int describe, const char useInserts)
 		      "\"t\".\"schema_id\" = \"s\".\"id\" AND "
 		      "\"t\".\"system\" = FALSE AND "
 		      "\"p\".\"grantor\" = \"g\".\"id\"";
+	/* FIXME: taking into account of the 'rs' system schema, introduced by
+	 * the geotiff module only in the sciql branch, is just a quick fix to
+	 * avoid the functions and tables created in the 'rs' schema being dumped
+	 * as ordinary functions/tables.
+	 * However, the use of the 'rs' schema should be reconsidered so that the
+	 * geotiff catalog can be integrated into the SQL catalog.
+	 * When removing the 'rs' schame, the code below MUST be adapted
+	 * accordingly.
+	 */
 	const char *schemas =
 		"SELECT \"s\".\"name\", \"a\".\"name\" "
 		"FROM \"sys\".\"schemas\" \"s\", "
 		     "\"sys\".\"auths\" \"a\" "
 		"WHERE \"s\".\"authorization\" = \"a\".\"id\" AND "
-		      "\"s\".\"name\" NOT IN ('sys', 'tmp') "
+		      "\"s\".\"name\" NOT IN ('sys', 'tmp', 'rs') "
 		"ORDER BY \"s\".\"name\"";
 	/* alternative, but then need to handle NULL in second column:
 	   SELECT "s"."name", "a"."name"
 	   FROM "sys"."schemas" "s"
 		LEFT OUTER JOIN "sys"."auths" "a"
 		     ON "s"."authorization" = "a"."id" AND
-		"s"."name" NOT IN ('sys', 'tmp')
+		"s"."name" NOT IN ('sys', 'tmp', 'rs')
 	   ORDER BY "s"."name"
 
 	   This may be needed after a sequence:
@@ -1583,6 +1592,7 @@ dump_database(Mapi mid, stream *toConsole, int describe, const char useInserts)
 			"WHERE \"t\".\"type\" BETWEEN 0 AND 1 AND "
 			      "\"t\".\"system\" = FALSE AND "
 			      "\"s\".\"id\" = \"t\".\"schema_id\" AND "
+			      "\"s\".\"name\" <> 'rs' AND "
 			      "\"s\".\"name\" <> 'tmp' "
 			"UNION "
 			"SELECT \"s\".\"name\" AS \"sname\", "

@@ -26,6 +26,12 @@
 #include <xtiffio.h>  /* for TIFF */
 
 
+/* FIXME: the use of the 'rs' schema should be reconsidered so that the geotiff
+ * catalog can be integrated into the SQL catalog.
+ * When removing the 'rs' schame, the code of client/mapiclient/dump.c MUST be
+ * adapted accordingly.
+ */
+
 #define INSFILE "INSERT INTO rs.files(fileid,location,status,lastmodified) \
 	 VALUES(%d, '%s', %d, CURRENT_TIMESTAMP());"
 #define INSCAT "INSERT INTO rs.catalog(imageid,fileid,width,length,bps) \

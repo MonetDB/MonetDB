@@ -14,6 +14,12 @@
 -- Copyright August 2008-2012 MonetDB B.V.
 -- All Rights Reserved.
 
+/* FIXME: the use of the 'rs' schema should be reconsidered so that the geotiff
+ * catalog can be integrated into the SQL catalog.
+ * When removing the 'rs' schame, the code of client/mapiclient/dump.c MUST be
+ * adapted accordingly.
+ */
+
 create schema rs;
 
 create table rs.files(
