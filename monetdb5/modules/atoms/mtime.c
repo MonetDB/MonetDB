@@ -1476,7 +1476,7 @@ date_adddays(date *ret, date *v, int *delta)
 }
 
 /* returns the date that comes a number of months after 'v' (or before
- * iff *delta < 0). */
+ * if *delta < 0). */
 static str
 date_addmonths(date *ret, date *v, int *delta)
 {
@@ -1490,14 +1490,18 @@ date_addmonths(date *ret, date *v, int *delta)
 		while (z > 0) {
 			z--;
 			x = MONTHDAYS(m, y);
-			if (++m == 13)
+			if (++m == 13) {
 				m = 1;
+				y++;
+			}
 			date_adddays(ret, ret, &x);
 		}
 		while (z < 0) {
 			z++;
-			if (--m == 0)
+			if (--m == 0) {
 				m = 12;
+				y--;
+			}
 			x = -MONTHDAYS(m, y);
 			date_adddays(ret, ret, &x);
 		}
