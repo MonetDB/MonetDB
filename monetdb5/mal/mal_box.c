@@ -342,7 +342,6 @@ closeBox(str name, int flag)
 
 	if ((box = findBox(name))) {
 		saveBox(box, flag);
-		MT_lock_destroy(&box->lock);
 		return 0;
 	}
 	return -1;

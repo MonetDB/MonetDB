@@ -23,16 +23,43 @@ Running database upgrade commands:
 drop function sys.zorder_slice;
 
 Running database upgrade commands:
-create aggregate sys.stddev(val TINYINT) returns TINYINT external name "aggr"."stddev";
-create aggregate sys.stddev(val SMALLINT) returns SMALLINT external name "aggr"."stddev";
-create aggregate sys.stddev(val INTEGER) returns INTEGER external name "aggr"."stddev";
-create aggregate sys.stddev(val BIGINT) returns BIGINT external name "aggr"."stddev";
-create aggregate sys.stddev(val REAL) returns REAL external name "aggr"."stddev";
-create aggregate sys.stddev(val DOUBLE) returns DOUBLE external name "aggr"."stddev";
-create aggregate sys.stddev(val DATE) returns DATE external name "aggr"."stddev";
-create aggregate sys.stddev(val TIME) returns TIME external name "aggr"."stddev";
-create aggregate sys.stddev(val TIMESTAMP) returns TIMESTAMP external name "aggr"."stddev";
-insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name = 'stddev' and f.type = 3 and f.schema_id = s.id and s.name = 'sys');
+create aggregate sys.stddev_samp(val TINYINT) returns DOUBLE external name "aggr"."stdev";
+create aggregate sys.stddev_samp(val SMALLINT) returns DOUBLE external name "aggr"."stdev";
+create aggregate sys.stddev_samp(val INTEGER) returns DOUBLE external name "aggr"."stdev";
+create aggregate sys.stddev_samp(val BIGINT) returns DOUBLE external name "aggr"."stdev";
+create aggregate sys.stddev_samp(val REAL) returns DOUBLE external name "aggr"."stdev";
+create aggregate sys.stddev_samp(val DOUBLE) returns DOUBLE external name "aggr"."stdev";
+create aggregate sys.stddev_samp(val DATE) returns DOUBLE external name "aggr"."stdev";
+create aggregate sys.stddev_samp(val TIME) returns DOUBLE external name "aggr"."stdev";
+create aggregate sys.stddev_samp(val TIMESTAMP) returns DOUBLE external name "aggr"."stdev";
+create aggregate sys.stddev_pop(val TINYINT) returns DOUBLE external name "aggr"."stdevp";
+create aggregate sys.stddev_pop(val SMALLINT) returns DOUBLE external name "aggr"."stdevp";
+create aggregate sys.stddev_pop(val INTEGER) returns DOUBLE external name "aggr"."stdevp";
+create aggregate sys.stddev_pop(val BIGINT) returns DOUBLE external name "aggr"."stdevp";
+create aggregate sys.stddev_pop(val REAL) returns DOUBLE external name "aggr"."stdevp";
+create aggregate sys.stddev_pop(val DOUBLE) returns DOUBLE external name "aggr"."stdevp";
+create aggregate sys.stddev_pop(val DATE) returns DOUBLE external name "aggr"."stdevp";
+create aggregate sys.stddev_pop(val TIME) returns DOUBLE external name "aggr"."stdevp";
+create aggregate sys.stddev_pop(val TIMESTAMP) returns DOUBLE external name "aggr"."stdevp";
+create aggregate sys.var_samp(val TINYINT) returns DOUBLE external name "aggr"."variance";
+create aggregate sys.var_samp(val SMALLINT) returns DOUBLE external name "aggr"."variance";
+create aggregate sys.var_samp(val INTEGER) returns DOUBLE external name "aggr"."variance";
+create aggregate sys.var_samp(val BIGINT) returns DOUBLE external name "aggr"."variance";
+create aggregate sys.var_samp(val REAL) returns DOUBLE external name "aggr"."variance";
+create aggregate sys.var_samp(val DOUBLE) returns DOUBLE external name "aggr"."variance";
+create aggregate sys.var_samp(val DATE) returns DOUBLE external name "aggr"."variance";
+create aggregate sys.var_samp(val TIME) returns DOUBLE external name "aggr"."variance";
+create aggregate sys.var_samp(val TIMESTAMP) returns DOUBLE external name "aggr"."variance";
+create aggregate sys.var_pop(val TINYINT) returns DOUBLE external name "aggr"."variancep";
+create aggregate sys.var_pop(val SMALLINT) returns DOUBLE external name "aggr"."variancep";
+create aggregate sys.var_pop(val INTEGER) returns DOUBLE external name "aggr"."variancep";
+create aggregate sys.var_pop(val BIGINT) returns DOUBLE external name "aggr"."variancep";
+create aggregate sys.var_pop(val REAL) returns DOUBLE external name "aggr"."variancep";
+create aggregate sys.var_pop(val DOUBLE) returns DOUBLE external name "aggr"."variancep";
+create aggregate sys.var_pop(val DATE) returns DOUBLE external name "aggr"."variancep";
+create aggregate sys.var_pop(val TIME) returns DOUBLE external name "aggr"."variancep";
+create aggregate sys.var_pop(val TIMESTAMP) returns DOUBLE external name "aggr"."variancep";
+insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('stddev_samp', 'stddev_pop', 'var_samp', 'var_pop') and f.type = 3 and f.schema_id = s.id and s.name = 'sys');
 
 
 # 15:17:06 >  

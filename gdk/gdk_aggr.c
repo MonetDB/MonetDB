@@ -2145,7 +2145,7 @@ BATgroupmedian(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_
 }
 
 /* ---------------------------------------------------------------------- */
-/* standard deviation (both biases and non-biased) */
+/* standard deviation (both biased and non-biased) */
 
 #define AGGR_STDEV_SINGLE(TYPE)						\
 	do {								\

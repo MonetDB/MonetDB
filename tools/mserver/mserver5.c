@@ -419,7 +419,7 @@ main(int argc, char **av)
 		setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_debug", buf);
 	}
 
-	monet_script = (str *) GDKmalloc(sizeof(str) * (argc + 1));
+	monet_script = (str *) malloc(sizeof(str) * (argc + 1));
 	if (monet_script) {
 		monet_script[idx] = NULL;
 		while (optind < argc) {
@@ -610,7 +610,7 @@ main(int argc, char **av)
 	}
 
 	if (monet_script)
-		GDKfree(monet_script);
+		free(monet_script);
 #ifdef HAVE_CONSOLE
 	if (!monet_daemon) {
 		MSserveClient(mal_clients);
