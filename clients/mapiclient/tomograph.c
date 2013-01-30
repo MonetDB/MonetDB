@@ -1883,7 +1883,8 @@ static void *
 doProfile(void *d)
 {
 	wthread *wthr = (wthread *) d;
-	int i, len;
+	int i;
+	size_t len;
 	size_t a;
 	ssize_t n;
 	char *response, *x;
