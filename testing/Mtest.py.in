@@ -3075,7 +3075,8 @@ TSTSUFF = "Tests"
 if hasattr(os,"symlink"):
     SymlinkOrCopy = os.symlink
 else:
-    SymlinkOrCopy = shutil.copy
+    def SymlinkOrCopy(src, dst):
+        shutil.copy(os.path.normpath(os.path.join(os.getcwd(), src)), dst)
 
 os.environ['CYGPATH_W'] = '@CYGPATH_W@'
 os.environ['CYGPATH_WP'] = '@CYGPATH_WP@'

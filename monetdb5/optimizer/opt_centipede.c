@@ -353,7 +353,7 @@ OPTplanStub(Client cntxt, MalBlkPtr mb, MalBlkPtr pmb, oid plantag)
 /* derive an OID partition from a bind column */
 /* it leads to horizontal fragmentation by OID ranges */
 static void
-OPTmaterializePartition(MalBlkPtr mb, InstrPtr p, oid low, oid hgh)
+OPTmaterializePartition(MalBlkPtr mb, InstrPtr p, int low, int hgh)
 {
 	int v,oldvar;
 
@@ -1100,7 +1100,7 @@ OPTvectorOid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ( pci->retc >= 2 ) {
 		for ( i= 1; i < pci->retc-1; i++){
 			o= (oid*) getArgReference(stk, pci, i);
-			*o = (rows * i ) / (pci->retc - 1)  + 1; /* last one excluded */
+			*o = (oid) ((rows * i ) / (pci->retc - 1)  + 1); /* last one excluded */
 		}
 		/* i == pci->retc-1 */
 		o= (oid*) getArgReference(stk,pci,i);

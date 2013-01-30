@@ -742,7 +742,7 @@ GDKfree_(void *blk)
 	DEADBEEFCHK memset(s, 0xDB, size - (MALLOC_EXTRA_SPACE + (size & 1)));	/* 0xDeadBeef */
 #endif
 	free(((char *) s) - MALLOC_EXTRA_SPACE);
-	heapdec((size_t) size);
+	heapdec(size);
 }
 
 void
@@ -805,7 +805,7 @@ GDKreallocmax(void *blk, size_t size, size_t *maxsize, int emergency)
 
 	/* adapt statistics */
 	heapinc(newsize);
-	heapdec((size_t) oldsize);
+	heapdec(oldsize);
 	*maxsize = size;
 	return blk;
 }

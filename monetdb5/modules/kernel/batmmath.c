@@ -121,7 +121,7 @@ str CMDscience_bat_cst_##X1##_##X2(int *ret, int *bid, X2 *d)\
 
 #define scienceImpl(Operator)\
 scienceFcnImpl(Operator,dbl,)\
-scienceFcnImpl(Operator,flt,)
+scienceFcnImpl(Operator,flt,f)
 
 scienceImpl(asin)
 scienceImpl(acos)

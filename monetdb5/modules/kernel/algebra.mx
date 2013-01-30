@@ -2561,7 +2561,7 @@ ALGthetajoin2( bat *l, bat *r, bat *left, bat *right, int *opc)
 	   l = reverse(mark(j))
 	   r = reverse(mark(reverse(j)))
 	*/
-	j = BATthetajoin(L, BATmirror(R), *opc, lng_nil);
+	j = BATthetajoin(L, BATmirror(R), *opc, BUN_NONE);
 	if (!j)
 		throw(MAL, "algebra.thetajoin", GDK_EXCEPTION);
 	BBPunfix(L->batCacheid);
