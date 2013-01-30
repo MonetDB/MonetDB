@@ -89,6 +89,6 @@ hash_key(char *k)
 		h ^= (h >> 6);
 		k++;
 	}
-	h += (k - (char*)s);
+	h += (unsigned int) (k - (char*)s);
 	return h;
 }

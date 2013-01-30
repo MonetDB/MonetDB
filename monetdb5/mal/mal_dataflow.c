@@ -241,7 +241,7 @@ DFLOWworker(void *t)
 {
 	DataFlow flow;
 	FlowEvent fe = 0, fnxt = 0;
-	int id = (MT_Id *) t - workers, last = 0;
+	int id = (int) ((MT_Id *) t - workers), last = 0;
 	Thread thr;
 	str error = 0;
 

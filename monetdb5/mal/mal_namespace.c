@@ -56,7 +56,7 @@
 #define NME_HASH(x,y,K)                \
     do {                        \
         const char *_key = (const char *) (x);  \
-        int _i;                 \
+        size_t _i;                 \
         for (_i = y = 0; K-- && _key[_i]; _i++) {  \
             y += _key[_i];          \
             y += (y << 10);         \

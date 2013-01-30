@@ -187,7 +187,8 @@ void
 MALresourceFairness(Client cntxt, MalBlkPtr mb, lng usec)
 {
 	size_t rss;
-	lng delay, clk;
+	unsigned int delay;
+	lng clk;
 	int threads;
 	double factor;
 	int delayed= 0;
@@ -233,12 +234,12 @@ MALresourceFairness(Client cntxt, MalBlkPtr mb, lng usec)
 			if (rss < MEMORY_THRESHOLD * monet_memory)
 				break;
 			factor = ((double) rss) / (MEMORY_THRESHOLD * monet_memory);
-			delay = (lng) (DELAYUNIT * (factor > 1.0 ? 1.0 : factor));
-			delay = (lng) ( ((double)delay) * ATOMIC_GET_int(running, runningLock, "MALresourceFairness") / threads);
+			delay = (unsigned int) (DELAYUNIT * (factor > 1.0 ? 1.0 : factor));
+			delay = (unsigned int) ( ((double)delay) * ATOMIC_GET_int(running, runningLock, "MALresourceFairness") / threads);
 			ATOMIC_DEC_int(running, runningLock, "MALresourceFairness");
 			if (delay) {
 				if ( delayed++ == 0){
-						mnstr_printf(GDKstdout, "#delay %d initial "LLFMT"["LLFMT"] memory  "SZFMT"[%f]\n", cntxt->idx, delay, clk, rss, MEMORY_THRESHOLD * monet_memory);
+						mnstr_printf(GDKstdout, "#delay %d initial %u["LLFMT"] memory  "SZFMT"[%f]\n", cntxt->idx, delay, clk, rss, MEMORY_THRESHOLD * monet_memory);
 						mnstr_flush(GDKstdout);
 				}
 				MT_sleep_ms(delay);

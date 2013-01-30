@@ -1251,7 +1251,7 @@ static int getCPULoad(char cpuload[BUFSIZ]){
 	size_t n;
     char buf[BUFSIZ+1],*s;
 	static FILE *proc= NULL;
-	double newload;
+	lng newload;
 
 	if ( proc == NULL || ferror(proc))
 		proc = fopen("/proc/stat","r");
@@ -1282,7 +1282,7 @@ static int getCPULoad(char cpuload[BUFSIZ]){
 				goto skip;
 			newload = (user - corestat[cpu].user + nice - corestat[cpu].nice + system - corestat[cpu].system);
 			if (  newload)
-				corestat[cpu].load = newload / (newload + idle - corestat[cpu].idle);
+				corestat[cpu].load = (double) newload / (newload + idle - corestat[cpu].idle);
 			corestat[cpu].user = user;
 			corestat[cpu].nice = nice;
 			corestat[cpu].system = system;
