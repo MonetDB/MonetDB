@@ -1248,7 +1248,8 @@ static struct{
 static int getCPULoad(char cpuload[BUFSIZ]){
     int cpu, len, i;
 	lng user, nice, system, idle, iowait;
-    char buf[BUFSIZ],*s;
+	size_t n;
+    char buf[BUFSIZ+1],*s;
 	static FILE *proc= NULL;
 	double newload;
 
@@ -1260,8 +1261,9 @@ static int getCPULoad(char cpuload[BUFSIZ]){
 		return -1;
 	}
 	/* read complete file to avoid concurrent write issues */
-	if ( fread(buf, 1, BUFSIZ,proc) == 0 )
+	if ((n = fread(buf, 1, BUFSIZ,proc)) == 0 )
 		return -1;
+	buf[n] = 0;
 	for ( s= buf; *s; s++)
 	{
 		if ( strncmp(s,"cpu",3)== 0){
