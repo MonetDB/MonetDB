@@ -234,7 +234,7 @@ do {									    \
 			limit = ((BUN) d[dcnt].cnt) << rpp;		    \
 		}							    \
 		if (!d[dcnt].repeat) {					    \
-			limit = 1 << rpp;				    \
+			limit = (BUN) 1 << rpp;				\
 			l = icnt + d[dcnt].cnt;				    \
 			while (i+limit <= (o+pr_off)) {			    \
 				icnt++;					    \
