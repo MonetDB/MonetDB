@@ -3686,7 +3686,7 @@ TID(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	    t->persistence == SQL_PERSIST && !t->commit_action) 
 		inr = store_funcs.count_col(c, 0);
 	nr -= inr;
-	if ( pci->argc == 6){ /* partion version */
+	if ( pci->argc == 6){ /* partitioned version */
 		size_t cnt = nr;
 		int part_nr = *(int *)getArgReference(stk, pci, 4);
 		int nr_parts = *(int *)getArgReference(stk, pci, 5);
