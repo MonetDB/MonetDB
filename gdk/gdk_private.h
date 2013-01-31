@@ -111,7 +111,7 @@ int VALprint(stream *fd, const ValRecord *res);
 void VIEWdestroy(BAT *b);
 BAT *VIEWreset(BAT *b);
 void VIEWunlink(BAT *b);
-int IMPSgetbin(int tpe, bte bits, void *bins, const void *v);
+int IMPSgetbin(int tpe, bte bits, char *bins, const void *v);
 void IMPSremove(BAT *b);
 void IMPSprint(BAT *b);
 

@@ -261,11 +261,11 @@ do {									    \
 	uint##B##_t *im = (uint##B##_t *) imprints->imps->base;		    \
 	uint##B##_t mask = 0, innermask;				    \
 	int j, lbin, hbin;						    \
-	BAT *histo = BATdescriptor(imprints->histogram);		    \
-	void *bins = Tloc(histo, 0);					    \
-	lbin = IMPSgetbin(ATOMstorage(b->ttype), imprints->bits, bins, tl); \
-	hbin = IMPSgetbin(ATOMstorage(b->ttype), imprints->bits, bins, th); \
-	for (j=lbin; j<=hbin; j++) mask = IMPSsetBit(B, mask, j);		    \
+	lbin = IMPSgetbin(ATOMstorage(b->ttype), imprints->bits,	    \
+			imprints->bins->base, tl);			    \
+	hbin = IMPSgetbin(ATOMstorage(b->ttype), imprints->bits,	    \
+			imprints->bins->base, th);			    \
+	for (j=lbin; j<=hbin; j++) mask = IMPSsetBit(B, mask, j);	    \
 	innermask = mask;						    \
 	if (!b->T->nonil || vl != minval)				    \
 		innermask = IMPSunsetBit(B, innermask, lbin);		    \
@@ -286,7 +286,6 @@ do {									    \
 	} else {							    \
 		impsloop(CAND, TEST, dst[cnt] = o + off);		    \
 	}								    \
-	BBPunfix(histo->batCacheid);					    \
 } while (0)
 
 /* choose number of bits */

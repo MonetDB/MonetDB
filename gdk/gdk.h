@@ -642,12 +642,12 @@ typedef struct {
 } Hash;
 
 typedef struct {
-	bte bits;       /* how many bits in imprints */
-	bat histogram;  /* id for histogram bat */
-	Heap *imps;     /* heap of imprints */
-	BUN impcnt;     /* counter for imprints*/
-	Heap *dict;     /* cache dictionary for compressing imprints */
-	BUN dictcnt;    /* counter for cache dictionary */
+	bte bits;        /* how many bits in imprints */
+	Heap *bins;      /* ranges of bins */
+	Heap *imps;      /* heap of imprints */
+	BUN impcnt;      /* counter for imprints*/
+	Heap *dict;      /* cache dictionary for compressing imprints */
+	BUN dictcnt;     /* counter for cache dictionary */
 } Imprints;
 
 
