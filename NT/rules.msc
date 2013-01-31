@@ -183,11 +183,11 @@ PYTHON = python
 YACC = bison
 LEX = flex
 
-ARCHIVER = lib
+ARCHIVER = lib /nologo
 GENDLL =
-RC = rc
+RC = rc /nologo
 
-MT = mt -nologo
+MT = mt /nologo
 JAVAC = javac
 JAR = jar
 ANT = ant.bat
