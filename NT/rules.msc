@@ -185,7 +185,7 @@ LEX = flex
 
 ARCHIVER = lib /nologo
 GENDLL =
-RC = rc /nologo
+RC = rc
 
 MT = mt /nologo
 JAVAC = javac
