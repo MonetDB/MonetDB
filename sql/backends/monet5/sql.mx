@@ -3724,7 +3724,7 @@ TID(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	nr = store_funcs.count_col(c, 1);
 
-	if (isTable(t) && !readonly &&
+	if (isTableOrArray(t) && !readonly &&
 	   (t->base.flag != TR_NEW /* alter */) &&
 	    t->persistence == SQL_PERSIST && !t->commit_action) 
 		inr = store_funcs.count_col(c, 0);
