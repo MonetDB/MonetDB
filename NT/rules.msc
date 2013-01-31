@@ -185,9 +185,9 @@ LEX = flex
 
 ARCHIVER = lib
 GENDLL =
-RC = rc
+RC = rc /nologo
 
-MT = mt -nologo
+MT = mt /nologo
 JAVAC = javac
 JAR = jar
 ANT = ant.bat
