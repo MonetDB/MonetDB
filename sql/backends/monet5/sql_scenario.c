@@ -374,7 +374,7 @@ sql_update_dec2011( Client c, mvc *m )
 			for( ntab = (s)->tables.set->h ;ntab; ntab = ntab->next){
 				sql_table *t = ntab->data;
 
-				if (!isTable(t) || !t->columns.set)
+				if (!isTableOrArray(t) || !t->columns.set)
 					continue;
 				for ( ncol = (t)->columns.set->h; ncol; ncol= ncol->next){
 					sql_column *c = (sql_column *) ncol->data;
