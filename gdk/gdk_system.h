@@ -279,15 +279,15 @@ gdk_export ATOMIC_TYPE volatile GDKsemawaitcnt;
 gdk_export ATOMIC_TYPE volatile GDKsemasleepcnt;
 #ifdef _MSC_VER
 #if SIZEOF_SIZE_T == 8
-#define ATOMIC_XCG_ptr(var, val)	_InterlockedExchange64(&var, val)
-#define ATOMIC_CAS_ptr(var, old, new)	_InterlockedCompareExchange64(var, new, old)
+#define ATOMIC_XCG_ptr(var, val)	_InterlockedExchangePointer(&(var), (val))
+#define ATOMIC_CAS_ptr(var, old, new)	_InterlockedCompareExchangePointer(&(var), (new), (old))
 #else
-#define ATOMIC_XCG_ptr(var, val)	_InterlockedExchange(&var, val)
-#define ATOMIC_CAS_ptr(var, old, new)	_InterlockedCompareExchange(var, new, old)
+#define ATOMIC_XCG_ptr(var, val)	((void *) _InterlockedExchange((volatile long *) &(var), (long) (val)))
+#define ATOMIC_CAS_ptr(var, old, new)	((void *) _InterlockedCompareExchange((volatile long *) &(var), (long) (new), (long) (old)))
 #endif
 #else
-#define ATOMIC_XCG_ptr(var, val)	__sync_lock_test_and_set(&var, val)
-#define ATOMIC_CAS_ptr(var, old, new)	__sync_val_compare_and_swap(&var, old, new)
+#define ATOMIC_XCG_ptr(var, val)	__sync_lock_test_and_set(&(var), (val))
+#define ATOMIC_CAS_ptr(var, old, new)	__sync_val_compare_and_swap(&(var), (old), (new))
 #endif
 #define _DBG_LOCK_COUNT_0(l, n)		ATOMIC_INC(GDKlockcnt, dummy, n)
 #define _DBG_LOCK_CONTENTION(l, n)					\
