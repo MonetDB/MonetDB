@@ -1,4 +1,4 @@
-stderr of test '00_syntax_error_03` in directory 'test/sciql` itself:
+stderr of test '00_syntax_error_03` in directory 'sql/test/sciql` itself:
 
 
 # 13:45:43 >  
@@ -30,7 +30,7 @@ stderr of test '00_syntax_error_03` in directory 'test/sciql` itself:
 # 13:45:43 >  mclient -lsql -ftest -i -e --host=jarl --port=30420 
 # 13:45:43 >  
 
-MAPI  = monetdb@riga:38335
+MAPI  = (monetdb) /var/tmp/mtest-13130/.s.monetdb.39483
 QUERY = CREATE ARRAY err(x CHAR DIMENSION[128]);
 ERROR = !CREATE ARRAY: dimension type 'char' not supported yet
 

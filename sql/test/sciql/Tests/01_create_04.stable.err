@@ -1,4 +1,4 @@
-stderr of test '01_create_04` in directory 'test/sciql` itself:
+stderr of test '01_create_04` in directory 'sql/test/sciql` itself:
 
 
 # 23:27:27 >  
@@ -30,22 +30,22 @@ stderr of test '01_create_04` in directory 'test/sciql` itself:
 # 23:27:27 >  mclient -lsql -ftest -i -e --host=jarl --port=31410 
 # 23:27:27 >  
 
-MAPI  = monetdb@riga:33312
+MAPI  = (monetdb) /var/tmp/mtest-13130/.s.monetdb.39483
 QUERY = CREATE ARRAY test01_04_real     (x REAL     DIMENSION[1:5], v FLOAT DEFAULT 3.7);
 ERROR = !CREATE ARRAY: dimension type 'real' not supported yet
-MAPI  = monetdb@riga:33312
+MAPI  = (monetdb) /var/tmp/mtest-13130/.s.monetdb.39483
 QUERY = CREATE ARRAY test01_04_double   (x DOUBLE   DIMENSION[1:5], v FLOAT DEFAULT 3.7);
 ERROR = !CREATE ARRAY: dimension type 'double' not supported yet
-MAPI  = monetdb@riga:33312
+MAPI  = (monetdb) /var/tmp/mtest-13130/.s.monetdb.39483
 QUERY = SELECT * FROM test01_04_real;
 ERROR = !SELECT: no such table 'test01_04_real'
-MAPI  = monetdb@riga:33312
+MAPI  = (monetdb) /var/tmp/mtest-13130/.s.monetdb.39483
 QUERY = SELECT * FROM test01_04_double;
 ERROR = !SELECT: no such table 'test01_04_double'
-MAPI  = monetdb@riga:33312
+MAPI  = (monetdb) /var/tmp/mtest-13130/.s.monetdb.39483
 QUERY = DROP ARRAY test01_04_real;
 ERROR = !DROP ARRAY: no such array 'test01_04_real'
-MAPI  = monetdb@riga:33312
+MAPI  = (monetdb) /var/tmp/mtest-13130/.s.monetdb.39483
 QUERY = DROP ARRAY test01_04_double;
 ERROR = !DROP ARRAY: no such array 'test01_04_double'
 

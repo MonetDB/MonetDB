@@ -1,4 +1,4 @@
-stderr of test '00_syntax_error_05` in directory 'test/sciql` itself:
+stderr of test '00_syntax_error_05` in directory 'sql/test/sciql` itself:
 
 
 # 13:48:15 >  
@@ -30,7 +30,7 @@ stderr of test '00_syntax_error_05` in directory 'test/sciql` itself:
 # 13:48:15 >  mclient -lsql -ftest -i -e --host=jarl --port=38366 
 # 13:48:15 >  
 
-MAPI  = monetdb@riga:33209
+MAPI  = (monetdb) /var/tmp/mtest-13130/.s.monetdb.39483
 QUERY = CREATE ARRAY err(x INTEGER DIMENSION[1:10:1]);
 ERROR = !Illegal range of dimension 'x': [1:10:1]
 

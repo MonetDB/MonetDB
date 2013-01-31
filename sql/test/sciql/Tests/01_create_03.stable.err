@@ -1,4 +1,4 @@
-stderr of test '01_create_03` in directory 'test/sciql` itself:
+stderr of test '01_create_03` in directory 'sql/test/sciql` itself:
 
 
 # 23:27:27 >  
@@ -30,40 +30,40 @@ stderr of test '01_create_03` in directory 'test/sciql` itself:
 # 23:27:27 >  mclient -lsql -ftest -i -e --host=jarl --port=31410 
 # 23:27:27 >  
 
-MAPI  = monetdb@riga:33476
+MAPI  = (monetdb) /var/tmp/mtest-13130/.s.monetdb.39483
 QUERY = CREATE ARRAY test_01_03_tinyint_overflow       (x TINYINT  DIMENSION[vOverflow], v FLOAT DEFAULT 3.7);
-ERROR = !overflow in calculation.
-MAPI  = monetdb@riga:33476
+ERROR = !overflow in conversion of 4294967296 to bte.
+MAPI  = (monetdb) /var/tmp/mtest-13130/.s.monetdb.39483
 QUERY = CREATE ARRAY test_01_03_smallint_overflow      (x SMALLINT DIMENSION[vOverflow], v FLOAT DEFAULT 3.7);
-ERROR = !overflow in calculation.
-MAPI  = monetdb@riga:33476
+ERROR = !overflow in conversion of 4294967296 to sht.
+MAPI  = (monetdb) /var/tmp/mtest-13130/.s.monetdb.39483
 QUERY = CREATE ARRAY test_01_03_int_overflow           (x INTEGER  DIMENSION[vOverflow], v FLOAT DEFAULT 3.7);
-ERROR = !overflow in calculation.
-MAPI  = monetdb@riga:33476
+ERROR = !overflow in conversion of 4294967296 to int.
+MAPI  = (monetdb) /var/tmp/mtest-13130/.s.monetdb.39483
 QUERY = SELECT * FROM test_01_03_tinyint_overflow;
 ERROR = !SELECT: no such table 'test_01_03_tinyint_overflow'
-MAPI  = monetdb@riga:33476
+MAPI  = (monetdb) /var/tmp/mtest-13130/.s.monetdb.39483
 QUERY = SELECT * FROM test_01_03_smallint_overflow;
 ERROR = !SELECT: no such table 'test_01_03_smallint_overflow'
-MAPI  = monetdb@riga:33476
+MAPI  = (monetdb) /var/tmp/mtest-13130/.s.monetdb.39483
 QUERY = SELECT * FROM test_01_03_int_overflow;
 ERROR = !SELECT: no such table 'test_01_03_int_overflow'
-MAPI  = monetdb@riga:33476
+MAPI  = (monetdb) /var/tmp/mtest-13130/.s.monetdb.39483
 QUERY = DROP ARRAY test_01_03_tinyint_overflow;
 ERROR = !DROP ARRAY: no such array 'test_01_03_tinyint_overflow'
-MAPI  = monetdb@riga:33476
+MAPI  = (monetdb) /var/tmp/mtest-13130/.s.monetdb.39483
 QUERY = DROP ARRAY test_01_03_smallint_overflow;
 ERROR = !DROP ARRAY: no such array 'test_01_03_smallint_overflow'
-MAPI  = monetdb@riga:33476
+MAPI  = (monetdb) /var/tmp/mtest-13130/.s.monetdb.39483
 QUERY = DROP ARRAY test_01_03_int_overflow;
 ERROR = !DROP ARRAY: no such array 'test_01_03_int_overflow'
-MAPI  = monetdb@riga:33476
+MAPI  = (monetdb) /var/tmp/mtest-13130/.s.monetdb.39483
 QUERY = SELECT * FROM test_01_03_tinyint_cell_overflow;
 ERROR = !conversion of string '4294967296' to type bte failed.
-MAPI  = monetdb@riga:33476
+MAPI  = (monetdb) /var/tmp/mtest-13130/.s.monetdb.39483
 QUERY = SELECT * FROM test_01_03_smallint_cell_overflow;
 ERROR = !conversion of string '4294967296' to type sht failed.
-MAPI  = monetdb@riga:33476
+MAPI  = (monetdb) /var/tmp/mtest-13130/.s.monetdb.39483
 QUERY = SELECT * FROM test_01_03_int_cell_overflow;
 ERROR = !conversion of string '4294967296' to type int failed.
 

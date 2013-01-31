@@ -1,4 +1,4 @@
-stderr of test '01_create_20` in directory 'test/sciql` itself:
+stderr of test '01_create_20` in directory 'sql/test/sciql` itself:
 
 
 # 17:53:49 >  
@@ -30,13 +30,13 @@ stderr of test '01_create_20` in directory 'test/sciql` itself:
 # 17:53:50 >  mclient -lsql -ftest -i -e --host=jarl --port=39586 
 # 17:53:50 >  
 
-MAPI  = monetdb@riga:36718
+MAPI  = (monetdb) /var/tmp/mtest-13130/.s.monetdb.39483
 QUERY = CREATE ARRAY timeseries (tick TIMESTAMP DIMENSION, payload FLOAT DEFAULT 0.0 );
 ERROR = !CREATE ARRAY: dimension type 'timestamp' not supported yet
-MAPI  = monetdb@riga:36718
+MAPI  = (monetdb) /var/tmp/mtest-13130/.s.monetdb.39483
 QUERY = SELECT * FROM timeseries;
 ERROR = !SELECT: no such table 'timeseries'
-MAPI  = monetdb@riga:36718
+MAPI  = (monetdb) /var/tmp/mtest-13130/.s.monetdb.39483
 QUERY = DROP ARRAY timeseries;
 ERROR = !DROP ARRAY: no such array 'timeseries'
 

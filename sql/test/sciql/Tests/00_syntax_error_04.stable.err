@@ -1,4 +1,4 @@
-stderr of test '00_syntax_error_04` in directory 'test/sciql` itself:
+stderr of test '00_syntax_error_04` in directory 'sql/test/sciql` itself:
 
 
 # 13:47:35 >  
@@ -30,13 +30,13 @@ stderr of test '00_syntax_error_04` in directory 'test/sciql` itself:
 # 13:47:35 >  mclient -lsql -ftest -i -e --host=jarl --port=32630 
 # 13:47:35 >  
 
-MAPI  = monetdb@riga:38335
+MAPI  = (monetdb) /var/tmp/mtest-13130/.s.monetdb.39483
 QUERY = SELECT * FROM err1;
 ERROR = !conversion of string ''unknown'' to type dbl failed.
-MAPI  = monetdb@riga:38335
+MAPI  = (monetdb) /var/tmp/mtest-13130/.s.monetdb.39483
 QUERY = CREATE ARRAY err2(x INTEGER DIMENSION[128], v FLOAT DEFAULT (v > 0));
 ERROR = !incorrect default value ''
-MAPI  = monetdb@riga:38335
+MAPI  = (monetdb) /var/tmp/mtest-13130/.s.monetdb.39483
 QUERY = CREATE ARRAY err3(x INTEGER DIMENSION[128], v FLOAT DEFAULT TRUE);
 ERROR = !types boolean(1,0) and double(53,0) are not equal
 
