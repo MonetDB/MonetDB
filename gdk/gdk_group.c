@@ -333,8 +333,9 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		maxgrps += BATcount(h);
 	if (maxgrps < GROUPBATINCR)
 		maxgrps = GROUPBATINCR;
-	if (b->T->width <= 2 && maxgrps > (1<<(8<<(b->T->width==2?1:0))))
-		maxgrps = 1 << (8<<(b->T->width==2?1:0));
+	if (b->T->width <= 2 &&
+	    maxgrps > ((BUN) 1 << (8 << (b->T->width == 2 ? 1 : 0))))
+		maxgrps = (BUN) 1 << (8 << (b->T->width == 2 ? 1 : 0));
 	if (extents) {
 		en = BATnew(TYPE_void, TYPE_oid, maxgrps);
 		if (en == NULL)
