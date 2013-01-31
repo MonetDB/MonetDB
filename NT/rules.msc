@@ -183,7 +183,7 @@ PYTHON = python
 YACC = bison
 LEX = flex
 
-ARCHIVER = lib
+ARCHIVER = lib /nologo
 GENDLL =
 RC = rc /nologo
 
