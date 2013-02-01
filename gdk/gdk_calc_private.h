@@ -42,7 +42,7 @@ typedef unsigned __int64 ulng;
 
 #define GT(a, b)	((bit) ((a) > (b)))
 
-#define CANDINIT(b, s)							\
+#define CANDINIT(b, s, start, end, cnt, cand, candend)			\
 	do {								\
 		start = 0;						\
 		end = cnt = BATcount(b);				\

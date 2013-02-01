@@ -140,7 +140,7 @@ BATgroupaggrinit(const BAT *b, const BAT *g, const BAT *e, const BAT *s,
 	*maxp = max;
 	*ngrpp = ngrp;
 
-	CANDINIT(b, s);
+	CANDINIT(b, s, start, end, cnt, cand, candend);
 	*startp = start;
 	*endp = end;
 	*cntp = cnt;
@@ -1410,7 +1410,7 @@ BATcalcavg(BAT *b, BAT *s, dbl *avg, BUN *vals)
 	int abort_on_error = 1;
 	BUN nils = 0;
 
-	CANDINIT(b, s);
+	CANDINIT(b, s, start, end, cnt, cand, candend);
 
 	src = Tloc(b, b->U->first);
 
