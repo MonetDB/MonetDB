@@ -292,6 +292,12 @@ main(int argc, char **av)
 		switch (c) {
 		case 0:
 			if (strcmp(long_options[option_index].name, "dbpath") == 0) {
+				size_t optarglen = strlen(optarg);
+				/* remove trailing directory separator */
+				while (optarglen > 0 &&
+				       (optarg[optarglen - 1] == '/' ||
+					optarg[optarglen - 1] == '\\'))
+					optarg[--optarglen] = '\0';
 				setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_dbpath", optarg);
 				break;
 			}
