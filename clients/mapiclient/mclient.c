@@ -2560,7 +2560,7 @@ set_timezone(Mapi mid)
 	gt = mktime(tmp);
 	tmp = localtime(&t);
 	lt = mktime(tmp);
-	assert((lng) (gt - lt) >= (lng) INT_MIN && (lng) (gt - lt) <= (lng) INT_MAX);
+	assert((lng) gt - (lng) lt >= (lng) INT_MIN && (lng) gt - (lng) lt <= (lng) INT_MAX);
 	tzone = (int) (gt - lt);
 	if (tzone < 0)
 		snprintf(buf, sizeof(buf),
