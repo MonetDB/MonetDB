@@ -116,7 +116,7 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, i
 	const oid *lcand = NULL, *lcandend = NULL;
 	BUN rstart, rend, rcnt;
 	const oid *rcand = NULL, *rcandend = NULL;
-	BUN rscan;
+	BUN lscan, rscan;
 	const char *lvals, *rvals;
 	const char *lvars, *rvars;
 	int shift;
@@ -126,7 +126,7 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, i
 	BUN nl, nr;
 	int insert_nil;
 	int equal_order;
-	int reverse;
+	int lreverse, rreverse;
 	oid lv;
 	BUN i;
 
@@ -155,9 +155,10 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, i
 	 * order, so when both are sorted or both are reverse
 	 * sorted */
 	equal_order = l->tsorted == r->tsorted || l->trevsorted == r->trevsorted;
-	/* reverse is either 1 or -1 depending on the order of r: it
-	 * determines the comparison function used */
-	reverse = r->tsorted ? 1 : -1;
+	/* [lr]reverse is either 1 or -1 depending on the order of
+	 * l/r: it determines the comparison function used */
+	lreverse = l->tsorted ? 1 : -1;
+	rreverse = r->tsorted ? 1 : -1;
 
 	/* set basic properties, they will be adjusted if necessary
 	 * later on */
@@ -175,13 +176,34 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, i
 		return GDK_SUCCEED;
 	}
 
-	/* determine opportunistic scan window for r */
+	/* determine opportunistic scan window for l/r */
+	for (nl = lcand ? (BUN) (lcandend - lcand) : lend - lstart, lscan = 4;
+	     nl > 0;
+	     lscan++)
+		nl >>= 1;
 	for (nl = rcand ? (BUN) (rcandend - rcand) : rend - rstart, rscan = 4;
 	     nl > 0;
 	     rscan++)
 		nl >>= 1;
 
 	while (lcand ? lcand < lcandend : lstart < lend) {
+		if (!nil_on_miss) {
+			/* if next value in r too far away (more than
+			 * lscan from current position in l), use
+			 * binary search on l to skip over
+			 * non-matching values */
+			if (lcand) {
+				if (lscan < (BUN) (lcandend - lcand) &&
+				    lreverse * cmp(VALUE(l, *lcand - l->hseqbase + lscan),
+						   (v = VALUE(r, rcand ? *rcand - r->hseqbase : rstart))) < 0)
+					lcand += binsearch(lcand, l->hseqbase, lvals, lvars, shift, lscan, lcandend - lcand, v, cmp, lreverse, 0);
+			} else {
+				if (lscan < lend - lstart &&
+				    lreverse * cmp(VALUE(l, lstart + lscan),
+						   (v = VALUE(r, rcand ? *rcand - r->hseqbase : rstart))) < 0)
+					lstart = binsearch(NULL, 0, lvals, lvars, shift, lstart + lscan, lend, v, cmp, lreverse, 0);
+			}
+		}
 		/* v is the value we're going to work with in this
 		 * iteration */
 		v = VALUE(l, lcand ? *lcand - l->hseqbase : lstart);
@@ -208,14 +230,14 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, i
 				 * see whether we're better off doing
 				 * a binary search */
 				if (rscan < (BUN) (rcandend - rcand) &&
-				    reverse * cmp(v, VALUE(r, *rcand - r->hseqbase + rscan)) > 0) {
+				    rreverse * cmp(v, VALUE(r, *rcand - r->hseqbase + rscan)) > 0) {
 					/* value too far away in r:
 					 * use binary search */
-					rcand += binsearch(rcand, r->hseqbase, rvals, rvars, shift, rscan, rcandend - rcand, v, cmp, reverse, 0);
+					rcand += binsearch(rcand, r->hseqbase, rvals, rvars, shift, rscan, rcandend - rcand, v, cmp, rreverse, 0);
 				} else {
 					/* scan r for v */
 					while (rcand < rcandend &&
-					       reverse * cmp(v, VALUE(r, *rcand - r->hseqbase)) > 0)
+					       rreverse * cmp(v, VALUE(r, *rcand - r->hseqbase)) > 0)
 						rcand++;
 				}
 			} else {
@@ -223,14 +245,14 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, i
 				 * see whether we're better off doing
 				 * a binary search */
 				if (rscan < rend - rstart &&
-				    reverse * cmp(v, VALUE(r, rstart + rscan)) > 0) {
+				    rreverse * cmp(v, VALUE(r, rstart + rscan)) > 0) {
 					/* value too far away in r:
 					 * use binary search */
-					rstart = binsearch(NULL, 0, rvals, rvars, shift, rstart + rscan, rend, v, cmp, reverse, 0);
+					rstart = binsearch(NULL, 0, rvals, rvars, shift, rstart + rscan, rend, v, cmp, rreverse, 0);
 				} else {
 					/* scan r for v */
 					while (rstart < rend &&
-					       reverse * cmp(v, VALUE(r, rstart)) > 0)
+					       rreverse * cmp(v, VALUE(r, rstart)) > 0)
 						rstart++;
 				}
 			}
@@ -242,14 +264,14 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, i
 				 * see whether we're better off doing
 				 * a binary search */
 				if (rscan < (BUN) (rcandend - rcand) &&
-				    reverse * cmp(v, VALUE(r, *rcandend - r->hseqbase - rscan - 1)) < 0) {
+				    rreverse * cmp(v, VALUE(r, *rcandend - r->hseqbase - rscan - 1)) < 0) {
 					/* value too far away in r:
 					 * use binary search */
-					rcandend = rcand + binsearch(rcand, r->hseqbase, rvals, rvars, shift, 0, (BUN) (rcandend - rcand) - rscan, v, cmp, reverse, 1);
+					rcandend = rcand + binsearch(rcand, r->hseqbase, rvals, rvars, shift, 0, (BUN) (rcandend - rcand) - rscan, v, cmp, rreverse, 1);
 				} else {
 					/* scan r for v */
 					while (rcand < rcandend &&
-					       reverse * cmp(v, VALUE(r, rcandend[-1] - r->hseqbase)) < 0)
+					       rreverse * cmp(v, VALUE(r, rcandend[-1] - r->hseqbase)) < 0)
 						rcandend--;
 				}
 			} else {
@@ -257,14 +279,14 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, i
 				 * see whether we're better off doing
 				 * a binary search */
 				if (rscan < rend - rstart &&
-				    reverse * cmp(v, VALUE(r, rend - rscan - 1)) < 0) {
+				    rreverse * cmp(v, VALUE(r, rend - rscan - 1)) < 0) {
 					/* value too far away in r:
 					 * use binary search */
-					rend = binsearch(NULL, 0, rvals, rvars, shift, rstart, rend - rscan, v, cmp, reverse, 1);
+					rend = binsearch(NULL, 0, rvals, rvars, shift, rstart, rend - rscan, v, cmp, rreverse, 1);
 				} else {
 					/* scan r for v */
 					while (rstart < rend &&
-					       reverse * cmp(v, VALUE(r, rend - 1)) < 0)
+					       rreverse * cmp(v, VALUE(r, rend - 1)) < 0)
 						rend--;
 				}
 			}
