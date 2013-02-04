@@ -162,12 +162,12 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, i
 
 	/* set basic properties, they will be adjusted if necessary
 	 * later on */
-	r1->tsorted = l->tsorted;
-	r1->trevsorted = l->trevsorted;
+	r1->tsorted = 1;
+	r1->trevsorted = 1;
 	r1->T->nil = 0;
 	r1->T->nonil = 1;
-	r2->tsorted = r->tsorted;
-	r2->trevsorted = r->trevsorted;
+	r2->tsorted = 1;
+	r2->trevsorted = 1;
 	r2->T->nil = 0;
 	r2->T->nonil = 1;
 
@@ -356,8 +356,25 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, i
 			}
 			assert(BATcapacity(r1) == BATcapacity(r2));
 		}
+
+		/* maintain properties */
 		if (nl > 1)
+			r2->tkey = 0;
+		if (nl > 1 || BATcount(r1) > 0)
+			r1->trevsorted = 0;
+		if (nr > 1) {
 			r1->tkey = 0;
+			r2->trevsorted = 0;
+			if (nl > 1)
+				r2->tsorted = 0;
+		}
+		if (BATcount(r1) > 0) {
+			if (equal_order)
+				r2->trevsorted = 0;
+			else
+				r2->tsorted = 0;
+		}
+
 		/* insert values: various different ways of doing it */
 		if (insert_nil) {
 			do {
@@ -404,11 +421,6 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, i
 					APPEND(r2, rend + r->hseqbase + i);
 				}
 			} while (--nl > 0);
-		}
-		if (nr > 1) {
-			r1->tkey = 0;
-			r2->tsorted = 0;
-			r2->trevsorted = 0;
 		}
 	}
 	assert(BATcount(r1) == BATcount(r2));
