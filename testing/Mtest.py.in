@@ -2119,8 +2119,18 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
             else:
                 f = '%s/%s%s' % (d, TST, EXT)
             if testweb:
-                titlefmt = '-tTest %s%s (id <a href="%s">%s</a>) (<a href="%s.%%s.diff.html">%%s</a>)' % (TST, EXT, f, REV, TST)
+                # splice in a link to the bug report if we recognize a
+                # reference
+                res = bugre.search(TST)
+                if res is not None:
+                    bugno = res.group('bugno')
+                    tst = '%s<a target="_blank" href="http://bugs.monetdb.org/%s">%s</a>%s' % (TST[:res.start(0)+1], bugno, res.group(0)[1:], TST[res.end(0):])
+                else:
+                    tst = TST
+                titlefmt = '-tTest %s%s (id <a href="%s">%s</a>) (<a href="%s.%%s.diff.html">%%s</a>)' % (tst, EXT, f, REV, TST)
             else:
+                # no need (and no space) to add link to bug report:
+                # it's done already elsewhere
                 titlefmt = '-tTest <a href="%s%s">%s%s</a> (id <a href="%s">%s</a>) (<a href="%s.%%s.diff.html">%%s</a>)' % (TST, EXT, TST, EXT, f, REV, TST)
         elif testweb:
             titlefmt = '-tTest %s%s (<a href="%s.%%s.diff.html">%%s</a>)' % (TST, EXT, TST)
