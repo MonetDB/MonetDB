@@ -46,7 +46,7 @@
 #define FMToid	OIDFMT
 
 /* Most of the internal routines return a count of the number of NIL
- * values the produced.  They indicate an error by returning a value
+ * values they produced.  They indicate an error by returning a value
  * >= BUN_NONE.  BUN_NONE means that the error was dealt with by
  * calling GDKerror (generally for overflow or conversion errors).
  * BUN_NONE+1 is returned by the DIV and MOD functions to indicate
@@ -81,6 +81,8 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 			end = (i) + 1;				\
 	}
 
+/* fill in NILs from low to high, used to write NILs before and after
+ * the range that the candidates list covers */
 #define CANDLOOP(dst, i, NIL, low, high)		\
 	do {						\
 		for ((i) = (low); (i) < (high); (i)++)	\
