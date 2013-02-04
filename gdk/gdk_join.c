@@ -184,12 +184,12 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, i
 	while (lcand ? lcand < lcandend : lstart < lend) {
 		/* v is the value we're going to work with in this
 		 * iteration */
-		v = VALUE(l, lcand ? *lcand - l->tseqbase : lstart);
+		v = VALUE(l, lcand ? *lcand - l->hseqbase : lstart);
 		nl = 1;
 		/* count number of equal values in left */
 		if (lcand) {
 			while (++lcand < lcandend &&
-			       cmp(v, VALUE(l, *lcand - l->tseqbase)) == 0)
+			       cmp(v, VALUE(l, *lcand - l->hseqbase)) == 0)
 				nl++;
 		} else {
 			while (++lstart < lend &&
@@ -208,14 +208,14 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, i
 				 * see whether we're better off doing
 				 * a binary search */
 				if (rscan < (BUN) (rcandend - rcand) &&
-				    reverse * cmp(v, VALUE(r, *rcand - r->tseqbase + rscan)) > 0) {
+				    reverse * cmp(v, VALUE(r, *rcand - r->hseqbase + rscan)) > 0) {
 					/* value too far away in r:
 					 * use binary search */
-					rcand += binsearch(rcand, r->tseqbase, rvals, rvars, shift, rscan, rcandend - rcand, v, cmp, reverse, 0);
+					rcand += binsearch(rcand, r->hseqbase, rvals, rvars, shift, rscan, rcandend - rcand, v, cmp, reverse, 0);
 				} else {
 					/* scan r for v */
 					while (rcand < rcandend &&
-					       reverse * cmp(v, VALUE(r, *rcand - r->tseqbase)) > 0)
+					       reverse * cmp(v, VALUE(r, *rcand - r->hseqbase)) > 0)
 						rcand++;
 				}
 			} else {
@@ -242,14 +242,14 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, i
 				 * see whether we're better off doing
 				 * a binary search */
 				if (rscan < (BUN) (rcandend - rcand) &&
-				    reverse * cmp(v, VALUE(r, *rcandend - r->tseqbase - rscan - 1)) < 0) {
+				    reverse * cmp(v, VALUE(r, *rcandend - r->hseqbase - rscan - 1)) < 0) {
 					/* value too far away in r:
 					 * use binary search */
-					rcandend = rcand + binsearch(rcand, r->tseqbase, rvals, rvars, shift, 0, (BUN) (rcandend - rcand) - rscan, v, cmp, reverse, 1);
+					rcandend = rcand + binsearch(rcand, r->hseqbase, rvals, rvars, shift, 0, (BUN) (rcandend - rcand) - rscan, v, cmp, reverse, 1);
 				} else {
 					/* scan r for v */
 					while (rcand < rcandend &&
-					       reverse * cmp(v, VALUE(r, rcandend[-1] - r->tseqbase)) < 0)
+					       reverse * cmp(v, VALUE(r, rcandend[-1] - r->hseqbase)) < 0)
 						rcandend--;
 				}
 			} else {
@@ -275,7 +275,7 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, i
 		nr = 0;
 		if (equal_order) {
 			while ((rcand ? rcand < rcandend : rstart < rend) &&
-			       cmp(v, VALUE(r, rcand ? *rcand - r->tseqbase : rstart)) == 0) {
+			       cmp(v, VALUE(r, rcand ? *rcand - r->hseqbase : rstart)) == 0) {
 				nr++;
 				if (rcand)
 					rcand++;
@@ -284,7 +284,7 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, i
 			}
 		} else {
 			while ((rcand ? rcand < rcandend : rstart < rend) &&
-			       cmp(v, VALUE(r, rcand ? rcandend[-1] - r->tseqbase : rend - 1)) == 0) {
+			       cmp(v, VALUE(r, rcand ? rcandend[-1] - r->hseqbase : rend - 1)) == 0) {
 				nr++;
 				if (rcand)
 					rcandend--;
@@ -339,7 +339,7 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, i
 		/* insert values: various different ways of doing it */
 		if (insert_nil) {
 			do {
-				lv = lcand ? lcand[-(ssize_t)nl] : lstart + l->tseqbase - nl;
+				lv = lcand ? lcand[-(ssize_t)nl] : lstart + l->hseqbase - nl;
 
 				for (i = 0; i < nr; i++) {
 					APPEND(r1, lv);
@@ -348,7 +348,7 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, i
 			} while (--nl > 0);
 		} else if (rcand && equal_order) {
 			do {
-				lv = lcand ? lcand[-(ssize_t)nl] : lstart + l->tseqbase - nl;
+				lv = lcand ? lcand[-(ssize_t)nl] : lstart + l->hseqbase - nl;
 
 				for (i = nr; i > 0; i--) {
 					APPEND(r1, lv);
@@ -357,7 +357,7 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, i
 			} while (--nl > 0);
 		} else if (rcand) {
 			do {
-				lv = lcand ? lcand[-(ssize_t)nl] : lstart + l->tseqbase - nl;
+				lv = lcand ? lcand[-(ssize_t)nl] : lstart + l->hseqbase - nl;
 
 				for (i = 0; i < nr; i++) {
 					APPEND(r1, lv);
@@ -366,20 +366,20 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, i
 			} while (--nl > 0);
 		} else if (equal_order) {
 			do {
-				lv = lcand ? lcand[-(ssize_t)nl] : lstart + l->tseqbase - nl;
+				lv = lcand ? lcand[-(ssize_t)nl] : lstart + l->hseqbase - nl;
 
 				for (i = nr; i > 0; i--) {
 					APPEND(r1, lv);
-					APPEND(r2, rstart + r->tseqbase - i);
+					APPEND(r2, rstart + r->hseqbase - i);
 				}
 			} while (--nl > 0);
 		} else {
 			do {
-				lv = lcand ? lcand[-(ssize_t)nl] : lstart + l->tseqbase - nl;
+				lv = lcand ? lcand[-(ssize_t)nl] : lstart + l->hseqbase - nl;
 
 				for (i = 0; i < nr; i++) {
 					APPEND(r1, lv);
-					APPEND(r2, rend + r->tseqbase + i);
+					APPEND(r2, rend + r->hseqbase + i);
 				}
 			} while (--nl > 0);
 		}
