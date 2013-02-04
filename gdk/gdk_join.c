@@ -358,17 +358,40 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, i
 		}
 
 		/* maintain properties */
-		if (nl > 1)
+		if (nl > 1) {
+			/* value occurs multiple times in l, so entry
+			 * in r will be repeated multiple times: hence
+			 * r2 is not key */
 			r2->tkey = 0;
-		if (nl > 1 || BATcount(r1) > 0)
+			/* multiple different values will be inserted
+			 * in r1 (always in order), so not reverse
+			 * ordered anymore */
 			r1->trevsorted = 0;
+		}
 		if (nr > 1) {
+			/* value occurs multiple times in r, so entry
+			 * in l will be repeated multiple times: hence
+			 * r1 is not key */
 			r1->tkey = 0;
+			/* multiple different values will be inserted
+			 * in r2 (in order), so not reverse ordered
+			 * anymore */
 			r2->trevsorted = 0;
-			if (nl > 1)
+			if (nl > 1) {
+				/* multiple values in l match multiple
+				 * values in r, so an ordered sequence
+				 * will be inserted multiple times in
+				 * r2, so r2 is not ordered anymore */
 				r2->tsorted = 0;
+			}
 		}
 		if (BATcount(r1) > 0) {
+			/* a new, higher value will be inserted into
+			 * r1, so r1 is not reverse ordered anymore */
+			r1->trevsorted = 0;
+			/* depending on whether l and r are ordered
+			 * the same or not, a new higher or lower
+			 * value will be added to r2 */
 			if (equal_order)
 				r2->trevsorted = 0;
 			else
