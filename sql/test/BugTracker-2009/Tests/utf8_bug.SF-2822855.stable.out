@@ -36,8 +36,8 @@ Ready.
 [ "€",	1	]
 % . # table_name
 % Liever euro # name
-% varchar # type
-% 11 # length
+% char # type
+% 13 # length
 [ "Liever €uro"	]
 
 # 20:06:13 >  

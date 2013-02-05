@@ -47,19 +47,19 @@ Ready.
 [ 6	]
 % . # table_name
 % test # name
-% varchar # type
+% char # type
 % 1 # length
 [ "a"	]
 [ "a"	]
 % . # table_name
 % test # name
-% varchar # type
+% char # type
 % 1 # length
 [ "a"	]
 [ "b"	]
 % . # table_name
 % test # name
-% varchar # type
+% char # type
 % 1 # length
 [ "a"	]
 [ "a"	]

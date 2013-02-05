@@ -22,7 +22,7 @@ Ready.
 [ 1	]
 % . # table_name
 % single_value # name
-% varchar # type
+% char # type
 % 47 # length
 [ "the following query causes mserver5 to segfault"	]
 [ 1	]

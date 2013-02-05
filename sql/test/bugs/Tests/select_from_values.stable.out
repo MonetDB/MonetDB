@@ -26,7 +26,7 @@ Ready.
 
 % .t,	.t # table_name
 % L1,	L2 # name
-% tinyint,	varchar # type
+% tinyint,	char # type
 % 1,	6 # length
 [ 0,	"Promo0"	]
 [ 1,	"Promo1"	]

@@ -26,8 +26,8 @@ Ready.
 
 % . # table_name
 % isnull_>_single_value # name
-% varchar # type
-% 4 # length
+% char # type
+% 5 # length
 [ "true"	]
 
 # 12:45:07 >  

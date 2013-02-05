@@ -68141,7 +68141,7 @@ Ready.
 #SELECT type, COUNT(*) AS total FROM onboard_people GROUP BY type ORDER BY type;
 % .onboard_people,	.onboard_people # table_name
 % type,	total # name
-% varchar,	wrd # type
+% char,	wrd # type
 % 10,	4 # length
 [ "craftsmen",	2349	]
 [ "impotenten",	938	]

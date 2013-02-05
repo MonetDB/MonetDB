@@ -36,7 +36,7 @@ Ready.
 #SELECT CASE WHEN id = 'a' THEN 'x' ELSE 'y' END AS id FROM table2848;
 % sys. # table_name
 % id # name
-% varchar # type
+% char # type
 % 1 # length
 [ "x"	]
 [ "y"	]
@@ -44,7 +44,7 @@ Ready.
 #select * from ( SELECT CASE WHEN id = 'a' THEN 'x' ELSE 'y' END AS othercolnamealias FROM table2848) as req;
 % sys.req # table_name
 % othercolnamealias # name
-% varchar # type
+% char # type
 % 1 # length
 [ "x"	]
 [ "y"	]
@@ -52,7 +52,7 @@ Ready.
 #select * from ( SELECT CASE WHEN id = 'a' THEN 'x' ELSE 'y' END AS id FROM table2848) as req;
 % sys.req # table_name
 % id # name
-% varchar # type
+% char # type
 % 1 # length
 [ "x"	]
 [ "y"	]

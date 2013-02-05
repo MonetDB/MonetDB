@@ -32,7 +32,7 @@ tables
 [ 12	]
 % . # table_name
 % single_value # name
-% varchar # type
+% char # type
 % 6 # length
 [ "Region"	]
 [ 1	]
@@ -69,7 +69,7 @@ tables
 [ 923	]
 % . # table_name
 % single_value # name
-% varchar # type
+% char # type
 % 14 # length
 [ "TiledTargetAll"	]
 [ 968	]
@@ -116,8 +116,8 @@ tables
 [ 84	]
 % . # table_name
 % single_value # name
-% varchar # type
-% 8 # length
+% char # type
+% 14 # length
 [ "ALL DONE"	]
 views
 functions

@@ -25,12 +25,12 @@ Ready.
 
 % . # table_name
 % single_value # name
-% varchar # type
+% char # type
 % 15 # length
 [ "creating tables"	]
 % . # table_name
 % single_value # name
-% varchar # type
+% char # type
 % 14 # length
 [ "filling kwTemp"	]
 [ 1	]
@@ -55,7 +55,7 @@ Ready.
 [ 1	]
 % . # table_name
 % single_value # name
-% varchar # type
+% char # type
 % 15 # length
 [ "filling kwmTemp"	]
 [ 1	]
@@ -85,14 +85,14 @@ Ready.
 [ 20	]
 % . # table_name
 % single_value # name
-% varchar # type
+% char # type
 % 31 # length
 [ "filling s4_keywords from kwTemp"	]
 [ 20	]
 % . # table_name
 % single_value # name
-% varchar # type
-% 15 # length
+% char # type
+% 31 # length
 [ "dropping kwTemp"	]
 % sys.kwmtemp # table_name
 % L1 # name
@@ -101,14 +101,14 @@ Ready.
 [ 20	]
 % . # table_name
 % single_value # name
-% varchar # type
+% char # type
 % 27 # length
 [ "filling s4_kwm from kwmTemp"	]
 [ 20	]
 % . # table_name
 % single_value # name
-% varchar # type
-% 16 # length
+% char # type
+% 27 # length
 [ "dropping kwmTemp"	]
 #DROP TABLE kwmTemp;
 #COMMIT;
@@ -116,18 +116,18 @@ Ready.
 #SELECT 'expect 20', COUNT(*) FROM s4_keywords;
 % .L1,	sys.s4_keywords # table_name
 % L1,	L2 # name
-% varchar,	wrd # type
+% char,	wrd # type
 % 9,	2 # length
 [ "expect 20",	20	]
 #SELECT 'expect 20', COUNT(*) FROM s4_kwm;
 % .L1,	sys.s4_kwm # table_name
 % L1,	L2 # name
-% varchar,	wrd # type
+% char,	wrd # type
 % 9,	2 # length
 [ "expect 20",	20	]
 % . # table_name
 % single_value # name
-% varchar # type
+% char # type
 % 31 # length
 [ "dropping s4_kwm and s4_keywords"	]
 
