@@ -20,12 +20,12 @@ Ready.
 
 % . # table_name
 % single_value # name
-% varchar # type
+% char # type
 % 2 # length
 [ "aa"	]
 % . # table_name
 % single_value # name
-% varchar # type
+% char # type
 % 3 # length
 [ "a'a"	]
 

@@ -40,7 +40,7 @@ Ready.
 #SELECT '' AS two, * FROM TEXT_TBL;
 % .,	sys.text_tbl # table_name
 % two,	f1 # name
-% varchar,	clob # type
+% char,	clob # type
 % 0,	17 # length
 [ "",	"doh!"	]
 [ "",	"hi de ho neighbor"	]

@@ -27,7 +27,7 @@ Ready.
 
 % .trip,	.trip # table_name
 % L1,	L2 # name
-% varchar,	wrd # type
+% char,	wrd # type
 % 16,	1 # length
 [ "prop14657240_pso",	0	]
 [ "prop14660343_pso",	0	]

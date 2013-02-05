@@ -458,7 +458,7 @@ Ready.
 #(SELECT 'Major' AS grade, count(na
 % .,	.inspector # table_name
 % grade,	inspectors # name
-% varchar,	wrd # type
+% char,	wrd # type
 % 9,	1 # length
 [ "Detective",	3	]
 [ "Constable",	3	]
@@ -475,7 +475,7 @@ Ready.
 #    + cast(substring(length from (position('\'' in length) + 1) for (position('"' in length) + 1)) AS integer)) as height from victim v
 % .L1,	. # table_name
 % L1,	average_height # name
-% varchar,	varchar # type
+% char,	char # type
 % 6,	4 # length
 [ "blonde",	"5'7\""	]
 [ "brown",	"5'5\""	]

@@ -27,8 +27,8 @@ Ready.
 
 % .trip,	.trip,	.trip # table_name
 % prop,	obj,	cnt # name
-% varchar,	int,	wrd # type
-% 0,	1,	1 # length
+% char,	int,	wrd # type
+% 16,	1,	1 # length
 
 # 23:32:53 >  
 # 23:32:53 >  Done.

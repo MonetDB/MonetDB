@@ -20,19 +20,19 @@ Ready.
 
 % .a # table_name
 % col1 # name
-% varchar # type
+% char # type
 % 1 # length
 [ "a"	]
 [ "b"	]
 % .a # table_name
 % col1 # name
-% varchar # type
+% char # type
 % 1 # length
 [ "a"	]
 [ "b"	]
 % .a # table_name
 % col1 # name
-% varchar # type
+% char # type
 % 1 # length
 [ "a"	]
 
