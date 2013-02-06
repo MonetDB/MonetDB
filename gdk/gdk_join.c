@@ -64,7 +64,7 @@ joininitresults(BAT **r1p, BAT **r2p, BUN size, const char *func)
 	return GDK_SUCCEED;
 }
 
-#define VALUE(side, x)		(side##vars ? side##vars + VarHeapVal(side##vals, (x), shift) : side##vals + ((x) << shift))
+#define VALUE(side, x)		(side##vars ? side##vars + VarHeapVal(side##vals, (x), side##width) : side##vals + ((x) * side##width))
 
 /* Do a binary search for the first/last occurrence of v between lo and hi
  * (lo inclusive, hi not inclusive) in values.
@@ -76,7 +76,7 @@ joininitresults(BAT **r1p, BAT **r2p, BUN size, const char *func)
 static BUN
 binsearch(const oid *rcand, oid offset,
 	  const char *rvals, const char *rvars,
-	  int shift, BUN lo, BUN hi, const char *v,
+	  int rwidth, BUN lo, BUN hi, const char *v,
 	  int (*cmp)(const void *, const void *), int reverse, int last)
 {
 	BUN mid;
@@ -119,7 +119,7 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, i
 	BUN lscan, rscan;
 	const char *lvals, *rvals;
 	const char *lvars, *rvars;
-	int shift;
+	int lwidth, rwidth;
 	const void *nil = ATOMnilptr(l->ttype);
 	int (*cmp)(const void *, const void *) = BATatoms[l->ttype].atomCmp;
 	const char *v;
@@ -150,7 +150,8 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, i
 		assert(!r->tvarsized || !r->ttype);
 		lvars = rvars = NULL;
 	}
-	shift = l->T->shift;
+	lwidth = l->T->width;
+	rwidth = r->T->width;
 	/* equal_order is set if we can scan both BATs in the same
 	 * order, so when both are sorted or both are reverse
 	 * sorted */
@@ -196,12 +197,12 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, i
 				if (lscan < (BUN) (lcandend - lcand) &&
 				    lreverse * cmp(VALUE(l, *lcand - l->hseqbase + lscan),
 						   (v = VALUE(r, rcand ? *rcand - r->hseqbase : rstart))) < 0)
-					lcand += binsearch(lcand, l->hseqbase, lvals, lvars, shift, lscan, lcandend - lcand, v, cmp, lreverse, 0);
+					lcand += binsearch(lcand, l->hseqbase, lvals, lvars, lwidth, lscan, lcandend - lcand, v, cmp, lreverse, 0);
 			} else {
 				if (lscan < lend - lstart &&
 				    lreverse * cmp(VALUE(l, lstart + lscan),
 						   (v = VALUE(r, rcand ? *rcand - r->hseqbase : rstart))) < 0)
-					lstart = binsearch(NULL, 0, lvals, lvars, shift, lstart + lscan, lend, v, cmp, lreverse, 0);
+					lstart = binsearch(NULL, 0, lvals, lvars, lwidth, lstart + lscan, lend, v, cmp, lreverse, 0);
 			}
 		}
 		/* v is the value we're going to work with in this
@@ -233,7 +234,7 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, i
 				    rreverse * cmp(v, VALUE(r, *rcand - r->hseqbase + rscan)) > 0) {
 					/* value too far away in r:
 					 * use binary search */
-					rcand += binsearch(rcand, r->hseqbase, rvals, rvars, shift, rscan, rcandend - rcand, v, cmp, rreverse, 0);
+					rcand += binsearch(rcand, r->hseqbase, rvals, rvars, rwidth, rscan, rcandend - rcand, v, cmp, rreverse, 0);
 				} else {
 					/* scan r for v */
 					while (rcand < rcandend &&
@@ -248,7 +249,7 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, i
 				    rreverse * cmp(v, VALUE(r, rstart + rscan)) > 0) {
 					/* value too far away in r:
 					 * use binary search */
-					rstart = binsearch(NULL, 0, rvals, rvars, shift, rstart + rscan, rend, v, cmp, rreverse, 0);
+					rstart = binsearch(NULL, 0, rvals, rvars, rwidth, rstart + rscan, rend, v, cmp, rreverse, 0);
 				} else {
 					/* scan r for v */
 					while (rstart < rend &&
@@ -267,7 +268,7 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, i
 				    rreverse * cmp(v, VALUE(r, *rcandend - r->hseqbase - rscan - 1)) < 0) {
 					/* value too far away in r:
 					 * use binary search */
-					rcandend = rcand + binsearch(rcand, r->hseqbase, rvals, rvars, shift, 0, (BUN) (rcandend - rcand) - rscan, v, cmp, rreverse, 1);
+					rcandend = rcand + binsearch(rcand, r->hseqbase, rvals, rvars, rwidth, 0, (BUN) (rcandend - rcand) - rscan, v, cmp, rreverse, 1);
 				} else {
 					/* scan r for v */
 					while (rcand < rcandend &&
@@ -282,7 +283,7 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, i
 				    rreverse * cmp(v, VALUE(r, rend - rscan - 1)) < 0) {
 					/* value too far away in r:
 					 * use binary search */
-					rend = binsearch(NULL, 0, rvals, rvars, shift, rstart, rend - rscan, v, cmp, rreverse, 1);
+					rend = binsearch(NULL, 0, rvals, rvars, rwidth, rstart, rend - rscan, v, cmp, rreverse, 1);
 				} else {
 					/* scan r for v */
 					while (rstart < rend &&
