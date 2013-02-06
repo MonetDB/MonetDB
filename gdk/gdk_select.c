@@ -27,7 +27,7 @@
 float nextafterf(float x, float y);
 #endif
 
-/* auxilary functions and structs for imprints */
+/* auxiliary functions and structs for imprints */
 #include "gdk_imprints.h"
 
 #define buninsfix(B,C,A,I,T,V,G,M,R)				\
