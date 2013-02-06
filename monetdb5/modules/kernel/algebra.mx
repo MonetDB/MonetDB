@@ -712,6 +712,13 @@ command submergejoin(l:bat[:oid,:any_1],r:bat[:oid,:any_1],sl:bat[:oid,:oid],sr:
 address ALGsubmergejoin4
 comment "Merge join with candidate lists";
 
+command subhashjoin(l:bat[:oid,:any_1],r:bat[:oid,:any_1]) (:bat[:oid,:oid],:bat[:oid,:oid])
+address ALGsubhashjoin
+comment "Hash join";
+command subhashjoin(l:bat[:oid,:any_1],r:bat[:oid,:any_1],sl:bat[:oid,:oid],sr:bat[:oid,:oid]) (:bat[:oid,:oid],:bat[:oid,:oid])
+address ALGsubhashjoin4
+comment "Hash join with candidate lists";
+
 # @+ Projection operations
 command project(b:bat[:any_1,:any_2]) :bat[:any_1,:void]
 address ALGprojectNIL
@@ -1050,6 +1057,8 @@ algebra_export str ALGbandjoin(int *result, int *lid, int *rid, ptr *minus, ptr 
 algebra_export str ALGrangejoin(int *result, int *lid, int *rlid, int *rhid, bit *li, bit *hi);
 algebra_export str ALGsubmergejoin(bat *r1, bat *r2, bat *l, bat *r);
 algebra_export str ALGsubmergejoin4(bat *r1, bat *r2, bat *l, bat *r, bat *sl, bat *sr);
+algebra_export str ALGsubhashjoin(bat *r1, bat *r2, bat *l, bat *r);
+algebra_export str ALGsubhashjoin4(bat *r1, bat *r2, bat *l, bat *r, bat *sl, bat *sr);
 
 @= ALGunaryExport
 algebra_export str ALG@1(int *result, int *bid);
@@ -2397,6 +2406,53 @@ str
 ALGsubmergejoin(bat *r1, bat *r2, bat *l, bat *r)
 {
 	return ALGsubmergejoin4(r1, r2, l, r, NULL, NULL);
+}
+
+str
+ALGsubhashjoin4(bat *r1, bat *r2, bat *lid, bat *rid, bat *slid, bat *srid)
+{
+	BAT *left = NULL, *right = NULL, *candleft = NULL, *candright = NULL;
+	BAT *result1, *result2;
+
+	if ((left = BATdescriptor(*lid)) == NULL)
+		goto fail;
+	if ((right = BATdescriptor(*rid)) == NULL)
+		goto fail;
+	if (slid && (candleft = BATdescriptor(*slid)) == NULL)
+		goto fail;
+	if (srid && (candright = BATdescriptor(*srid)) == NULL)
+		goto fail;
+
+	if (BATsubhashjoin(&result1, &result2, left, right, candleft, candright) == GDK_FAIL)
+		goto fail;
+	*r1 = result1->batCacheid;
+	*r2 = result2->batCacheid;
+	BBPkeepref(*r1);
+	BBPkeepref(*r2);
+	BBPreleaseref(left->batCacheid);
+	BBPreleaseref(right->batCacheid);
+	if (candleft)
+		BBPreleaseref(candleft->batCacheid);
+	if (candright)
+		BBPreleaseref(candright->batCacheid);
+	return MAL_SUCCEED;
+
+  fail:
+	if (left)
+		BBPreclaim(left);
+	if (right)
+		BBPreclaim(right);
+	if (candleft)
+		BBPreclaim(candleft);
+	if (candright)
+		BBPreclaim(candright);
+	throw(MAL, "algebra.subhashjoin", RUNTIME_OBJECT_MISSING);
+}
+
+str
+ALGsubhashjoin(bat *r1, bat *r2, bat *l, bat *r)
+{
+	return ALGsubhashjoin4(r1, r2, l, r, NULL, NULL);
 }
 
 static str

@@ -466,3 +466,258 @@ BATsubmergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr)
 	*r2p = r2;
 	return mergejoin(r1, r2, l, r, sl, sr, 0, 0, 0);
 }
+
+/* binary search in a candidate list, return 1 if found, 0 if not */
+static int
+binsearchcand(const oid *cand, BUN lo, BUN hi, oid v)
+{
+	BUN mid;
+
+	--hi;			/* now hi is inclusive */
+	if (v < cand[lo] || v > cand[hi])
+		return 0;
+	while (hi > lo) {
+		mid = (lo + hi) / 2;
+		if (cand[mid] == v)
+			return 1;
+		if (cand[mid] < v)
+			lo = mid + 1;
+		else
+			hi = mid - 1;
+	}
+	return cand[lo] == v;
+}
+
+static gdk_return
+hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, int nil_on_miss, int semi)
+{
+	BUN lstart, lend, lcnt;
+	const oid *lcand = NULL, *lcandend = NULL;
+	BUN rstart, rend, rcnt;
+	const oid *rcand = NULL, *rcandend = NULL;
+	oid lo, ro;
+	BATiter ri;
+	BUN rb;
+	wrd off;
+	BUN nr, nrcand, newcap;
+	const char *lvals;
+	const char *lvars;
+	int lwidth;
+	const void *nil = ATOMnilptr(l->ttype);
+	int (*cmp)(const void *, const void *) = BATatoms[l->ttype].atomCmp;
+	const char *v;
+
+	assert(BAThdense(l));
+	assert(BAThdense(r));
+	assert(l->ttype == r->ttype);
+	assert(sl == NULL || sl->tsorted);
+	assert(sr == NULL || sr->tsorted);
+
+	CANDINIT(l, sl, lstart, lend, lcnt, lcand, lcandend);
+	CANDINIT(r, sr, rstart, rend, rcnt, rcand, rcandend);
+	lwidth = l->T->width;
+	lvals = (const char *) Tloc(l, BUNfirst(l));
+	if (l->tvarsized && l->ttype) {
+		assert(r->tvarsized && r->ttype);
+		lvars = l->T->vheap->base;
+	} else {
+		assert(!r->tvarsized || !r->ttype);
+		lvars = NULL;
+	}
+	off = r->hseqbase - BUNfirst(r);
+
+	/* set basic properties, they will be adjusted if necessary
+	 * later on */
+	r1->tsorted = 1;
+	r1->trevsorted = 1;
+	r1->tkey = 1;
+	r1->T->nil = 0;
+	r1->T->nonil = 1;
+	/* r2 is not likely to be sorted (although it is certainly
+	 * possible) */
+	r2->tsorted = 0;
+	r2->trevsorted = 0;
+	r2->T->nil = 0;
+	r2->T->nonil = 1;
+	/* we may miss "key" opportunities: duplicates in l and r
+	 * might not match a value on the other side */
+	r2->tkey = l->tkey && r->tkey;
+
+	if (lstart == lend || (!nil_on_miss && rstart == rend)) {
+		/* nothing to do: there are no matches */
+		return GDK_SUCCEED;
+	}
+
+	/* hashes work on HEAD column */
+	r = BATmirror(r);
+	if (BATprepareHash(r))
+		goto bailout;
+	ri = bat_iterator(r);
+	nrcand = (BUN) (rcandend - rcand);
+
+	if (lcand) {
+		while (lcand < lcandend) {
+			lo = *lcand++;
+			v = VALUE(l, lo - l->hseqbase);
+			if (!nil_matches && cmp(v, nil) == 0)
+				continue;
+			nr = 0;
+			if (rcand) {
+				HASHloop(ri, r->H->hash, rb, v) {
+					ro = (oid) rb + off;
+					if (!binsearchcand(rcand, 0, nrcand, ro))
+						continue;
+					if (BUNlast(r1) == BATcapacity(r1)) {
+						newcap = BATgrows(r1);
+						r1 = BATextend(r1, newcap);
+						r2 = BATextend(r2, newcap);
+						if (r1 == NULL || r2 == NULL)
+							goto bailout;
+						assert(BATcapacity(r1) == BATcapacity(r2));
+					}
+					APPEND(r1, lo);
+					APPEND(r2, ro);
+					nr++;
+					if (semi)
+						break;
+				}
+			} else {
+				HASHloop(ri, r->H->hash, rb, v) {
+					ro = (oid) rb + off;
+					if (ro < rstart || ro >= rend)
+						continue;
+					if (BUNlast(r1) == BATcapacity(r1)) {
+						newcap = BATgrows(r1);
+						r1 = BATextend(r1, newcap);
+						r2 = BATextend(r2, newcap);
+						if (r1 == NULL || r2 == NULL)
+							goto bailout;
+						assert(BATcapacity(r1) == BATcapacity(r2));
+					}
+					APPEND(r1, lo);
+					APPEND(r2, ro);
+					nr++;
+					if (semi)
+						break;
+				}
+			}
+			if (nr == 0 && nil_on_miss) {
+				nr = 1;
+				r2->T->nil = 1;
+				r2->T->nonil = 0;
+				r2->tkey = 0;
+				if (BUNlast(r1) == BATcapacity(r1)) {
+					newcap = BATgrows(r1);
+					r1 = BATextend(r1, newcap);
+					r2 = BATextend(r2, newcap);
+					if (r1 == NULL || r2 == NULL)
+						goto bailout;
+					assert(BATcapacity(r1) == BATcapacity(r2));
+				}
+				APPEND(r1, lo);
+				APPEND(r2, oid_nil);
+			} else if (nr > 1)
+				r1->tkey = 0;
+			if (nr > 0 && BATcount(r1) > nr)
+				r1->trevsorted = 0;
+		}
+	} else {
+		for (lo = lstart - BUNfirst(l) + l->hseqbase; lstart < lend; lo++) {
+			v = VALUE(l, lstart);
+			lstart++;
+			if (!nil_matches && cmp(v, nil) == 0)
+				continue;
+			nr = 0;
+			if (rcand) {
+				HASHloop(ri, r->H->hash, rb, v) {
+					ro = (oid) rb + off;
+					if (!binsearchcand(rcand, 0, nrcand, ro))
+						continue;
+					if (BUNlast(r1) == BATcapacity(r1)) {
+						newcap = BATgrows(r1);
+						r1 = BATextend(r1, newcap);
+						r2 = BATextend(r2, newcap);
+						if (r1 == NULL || r2 == NULL)
+							goto bailout;
+						assert(BATcapacity(r1) == BATcapacity(r2));
+					}
+					APPEND(r1, lo);
+					APPEND(r2, ro);
+					nr++;
+					if (semi)
+						break;
+				}
+			} else {
+				HASHloop(ri, r->H->hash, rb, v) {
+					ro = (oid) rb + off;
+					if (ro < rstart || ro >= rend)
+						continue;
+					if (BUNlast(r1) == BATcapacity(r1)) {
+						newcap = BATgrows(r1);
+						r1 = BATextend(r1, newcap);
+						r2 = BATextend(r2, newcap);
+						if (r1 == NULL || r2 == NULL)
+							goto bailout;
+						assert(BATcapacity(r1) == BATcapacity(r2));
+					}
+					APPEND(r1, lo);
+					APPEND(r2, ro);
+					nr++;
+					if (semi)
+						break;
+				}
+			}
+			if (nr == 0 && nil_on_miss) {
+				nr = 1;
+				r2->T->nil = 1;
+				r2->T->nonil = 0;
+				if (BUNlast(r1) == BATcapacity(r1)) {
+					newcap = BATgrows(r1);
+					r1 = BATextend(r1, newcap);
+					r2 = BATextend(r2, newcap);
+					if (r1 == NULL || r2 == NULL)
+						goto bailout;
+					assert(BATcapacity(r1) == BATcapacity(r2));
+				}
+				APPEND(r1, lo);
+				APPEND(r2, oid_nil);
+			} else if (nr > 1)
+				r1->tkey = 0;
+			if (nr > 0 && BATcount(r1) > nr)
+				r1->trevsorted = 0;
+		}
+	}
+	assert(BATcount(r1) == BATcount(r2));
+	if (BATcount(r1) <= 1) {
+		r1->tsorted = 1;
+		r1->trevsorted = 1;
+		r1->tkey = 1;
+		r2->tsorted = 1;
+		r2->trevsorted = 1;
+		r2->tkey = 1;
+	}
+	return GDK_SUCCEED;
+
+  bailout:
+	if (r1)
+		BBPreclaim(r1);
+	if (r2)
+		BBPreclaim(r2);
+	return GDK_FAIL;
+}
+
+gdk_return
+BATsubhashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr)
+{
+	BAT *r1, *r2;
+
+	*r1p = NULL;
+	*r2p = NULL;
+	if (joinparamcheck(l, r, sl, sr, "BATsubleftjoin") == GDK_FAIL)
+		return GDK_FAIL;
+	if (joininitresults(&r1, &r2, sl ? BATcount(sl) : BATcount(l), "BATsubhashjoin") == GDK_FAIL)
+		return GDK_FAIL;
+	*r1p = r1;
+	*r2p = r2;
+	return hashjoin(r1, r2, l, r, sl, sr, 0, 0, 0);
+}
