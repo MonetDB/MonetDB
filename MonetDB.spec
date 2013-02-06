@@ -143,10 +143,27 @@ MonetDB, you will very likely need this package.
 %defattr(-,root,root)
 %{_bindir}/mclient
 %{_bindir}/msqldump
-%{_bindir}/stethoscope
 %{_libdir}/libmapi.so.*
 %doc %{_mandir}/man1/mclient.1.gz
 %doc %{_mandir}/man1/msqldump.1.gz
+
+%package client-tools
+Summary: MonetDB - Monet Database Management System Client Programs
+Group: Applications/Databases
+Requires: %{name}-client = %{version}-%{release}
+
+%description client-tools
+MonetDB is a database management system that is developed from a
+main-memory perspective with use of a fully decomposed storage model,
+automatic index management, extensibility of data types and search
+accelerators.  It also has an SQL frontend.
+
+This package contains stethoscope and tomograph.
+
+%files client-tools
+%defattr(-,root,root)
+%{_bindir}/stethoscope
+%{_bindir}/tomograph
 
 %package client-devel
 Summary: MonetDB - Monet Database Management System Client Programs
@@ -688,7 +705,6 @@ mkdir -p $RPM_BUILD_ROOT%{_localstatedir}/run/monetdb
 # .la files
 rm -f $RPM_BUILD_ROOT%{_libdir}/monetdb5/*.la
 # internal development stuff
-rm -f $RPM_BUILD_ROOT%{_bindir}/calibrator
 rm -f $RPM_BUILD_ROOT%{_bindir}/Maddlog
 rm -f $RPM_BUILD_ROOT%{_libdir}/libbat.la
 rm -f $RPM_BUILD_ROOT%{_libdir}/libbat.so
