@@ -1688,6 +1688,8 @@ BATouterjoin(BAT *l, BAT *r, BUN estimate)
  *
  * In the end, this results in 4*5*2*2 = 80 different inner loops.
  */
+static BAT *BATnlthetajoin(BAT *l, BAT *r, int op, BUN estimate);
+
 BAT *
 BATthetajoin(BAT *l, BAT *r, int op, BUN estimate)
 {
@@ -1840,7 +1842,7 @@ nlthetajoin_@2_@1(BAT *bn, BAT *l, BAT *r)
 @:nlthetajoin_tpe(impl,lt,<)@
 @:nlthetajoin_tpe(impl,le,<=)@
 @:nlthetajoin_tpe(impl,eq,==)@
-BAT *
+static BAT *
 BATnlthetajoin(BAT *l, BAT *r, int op, BUN estimate)
 {
 	int optimize = (l->htype == TYPE_oid || BAThdense(l)) && (r->ttype == TYPE_oid || BATtdense(r))
