@@ -222,7 +222,7 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, i
 		/* lcand/lstart points one beyond the value we're
 		 * going to match: ready for the next */
 		if (!nil_matches && cmp(v, nil) == 0) {
-			/* v is nil and nils don't match anythin */
+			/* v is nil and nils don't match anything */
 			continue;
 		}
 		if (equal_order) {
