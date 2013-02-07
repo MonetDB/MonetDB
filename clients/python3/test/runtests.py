@@ -25,6 +25,7 @@ import logging
 
 import capabilities
 import dbapi20
+import test_pythonize
 
 warnings.filterwarnings('error')
 
@@ -102,10 +103,15 @@ class Test_DBAPI20(dbapi20.DatabaseAPI20Test):
         self.assertTrue(issubclass(self.driver.NotSupportedError, self.driver.Error))
 
 if __name__ == '__main__':
-    suite1 = unittest.TestLoader().loadTestsFromTestCase(Test_Capabilities)
-    TextTestRunnerNoTime(verbosity=3).run(suite1)
-    suite2 = unittest.TestLoader().loadTestsFromTestCase(Test_DBAPI20)
-    TextTestRunnerNoTime(verbosity=3).run(suite2)
+    suites = [
+        Test_Capabilities,
+        Test_DBAPI20,
+        test_pythonize.TestPythonize,
+        ]
+
+    for suite in suites:
+        tests = unittest.TestLoader().loadTestsFromTestCase(suite)
+        TextTestRunnerNoTime(verbosity=3).run(tests)
 
 
 
