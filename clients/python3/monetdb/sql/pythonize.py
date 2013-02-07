@@ -27,8 +27,8 @@ from monetdb.exceptions import ProgrammingError
 import re
 
 def strip(data):
-    """ returns a python string, chops off quotes,
-    replaces escape characters"""
+    """ returns a python string, with chopped off quotes,
+    and replaced escape characters"""
     return ''.join([w.encode('utf-8').decode('unicode_escape') if '\\' in w else w for w in re.split('([\000-\200]+)', data[1:-1])])
 
 def py_bool(data):
@@ -120,7 +120,7 @@ def convert(data, type_code):
 
 def Binary(data):
     """returns binary encoding of data"""
-    return ''.join([hex(ord(i))[2:] for i in data]).upper()
+    return ''.join(["%02X" % ord(i) for i in data])
 
 def DateFromTicks(ticks):
     """Convert ticks to python Date"""

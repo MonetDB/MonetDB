@@ -36,6 +36,7 @@ except ImportError:
 
 import capabilities
 import dbapi20
+import test_pythonize
 
 warnings.filterwarnings('error')
 
@@ -100,6 +101,16 @@ if __name__ == '__main__':
         TextTestRunnerNoTime(verbosity=3).run(tests)
 
 
+if __name__ == '__main__':
+    suites = [
+        Test_Capabilities,
+        Test_DBAPI20,
+        test_pythonize.TestPythonize,
+        ]
+
+    for suite in suites:
+        tests = unittest.TestLoader().loadTestsFromTestCase(suite)
+        TextTestRunnerNoTime(verbosity=3).run(tests)
 
 
 
