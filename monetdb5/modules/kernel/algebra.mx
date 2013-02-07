@@ -719,6 +719,13 @@ command subouterjoin(l:bat[:oid,:any_1],r:bat[:oid,:any_1],sl:bat[:oid,:oid],sr:
 address ALGsubouterjoin4
 comment "Left outer join with candidate lists";
 
+command subthetajoin(l:bat[:oid,:any_1],r:bat[:oid,:any_1],op:str) (:bat[:oid,:oid],:bat[:oid,:oid])
+address ALGsubthetajoin
+comment "Theta join";
+command subthetajoin(l:bat[:oid,:any_1],r:bat[:oid,:any_1],sl:bat[:oid,:oid],sr:bat[:oid,:oid],op:str) (:bat[:oid,:oid],:bat[:oid,:oid])
+address ALGsubthetajoin4
+comment "Theta join with candidate lists";
+
 # @+ Projection operations
 command project(b:bat[:any_1,:any_2]) :bat[:any_1,:void]
 address ALGprojectNIL
@@ -1059,6 +1066,8 @@ algebra_export str ALGsubleftjoin(bat *r1, bat *r2, bat *l, bat *r);
 algebra_export str ALGsubleftjoin4(bat *r1, bat *r2, bat *l, bat *r, bat *sl, bat *sr);
 algebra_export str ALGsubouterjoin(bat *r1, bat *r2, bat *l, bat *r);
 algebra_export str ALGsubouterjoin4(bat *r1, bat *r2, bat *l, bat *r, bat *sl, bat *sr);
+algebra_export str ALGsubthetajoin(bat *r1, bat *r2, bat *l, bat *r, str *op);
+algebra_export str ALGsubthetajoin4(bat *r1, bat *r2, bat *l, bat *r, bat *sl, bat *sr, str *op);
 
 @= ALGunaryExport
 algebra_export str ALG@1(int *result, int *bid);
@@ -2453,6 +2462,53 @@ str
 ALGsubouterjoin(bat *r1, bat *r2, bat *l, bat *r)
 {
 	return ALGsubouterjoin4(r1, r2, l, r, NULL, NULL);
+}
+
+str
+ALGsubthetajoin4(bat *r1, bat *r2, bat *lid, bat *rid, bat *slid, bat *srid, str *op)
+{
+	BAT *left = NULL, *right = NULL, *candleft = NULL, *candright = NULL;
+	BAT *result1, *result2;
+
+	if ((left = BATdescriptor(*lid)) == NULL)
+		goto fail;
+	if ((right = BATdescriptor(*rid)) == NULL)
+		goto fail;
+	if (slid && (candleft = BATdescriptor(*slid)) == NULL)
+		goto fail;
+	if (srid && (candright = BATdescriptor(*srid)) == NULL)
+		goto fail;
+
+	if (BATsubthetajoin(&result1, &result2, left, right, candleft, candright, *op, BUN_NONE) == GDK_FAIL)
+		goto fail;
+	*r1 = result1->batCacheid;
+	*r2 = result2->batCacheid;
+	BBPkeepref(*r1);
+	BBPkeepref(*r2);
+	BBPreleaseref(left->batCacheid);
+	BBPreleaseref(right->batCacheid);
+	if (candleft)
+		BBPreleaseref(candleft->batCacheid);
+	if (candright)
+		BBPreleaseref(candright->batCacheid);
+	return MAL_SUCCEED;
+
+  fail:
+	if (left)
+		BBPreclaim(left);
+	if (right)
+		BBPreclaim(right);
+	if (candleft)
+		BBPreclaim(candleft);
+	if (candright)
+		BBPreclaim(candright);
+	throw(MAL, "algebra.subthetajoin", RUNTIME_OBJECT_MISSING);
+}
+
+str
+ALGsubthetajoin(bat *r1, bat *r2, bat *l, bat *r, str *op)
+{
+	return ALGsubthetajoin4(r1, r2, l, r, NULL, NULL, op);
 }
 
 static str

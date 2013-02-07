@@ -730,6 +730,169 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, in
 	return GDK_FAIL;
 }
 
+#define MASK_EQ		1
+#define MASK_LT		2
+#define MASK_GT		4
+#define MASK_LE		(MASK_EQ | MASK_LT)
+#define MASK_GE		(MASK_EQ | MASK_GT)
+#define MASK_NE		(MASK_LT | MASK_GT)
+
+static gdk_return
+thetajoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, const char *op)
+{
+	BUN lstart, lend, lcnt;
+	const oid *lcand = NULL, *lcandend = NULL;
+	BUN rstart, rend, rcnt;
+	const oid *rcand = NULL, *rcandend = NULL;
+	const char *lvals, *rvals;
+	const char *lvars, *rvars;
+	int lwidth, rwidth;
+	const void *nil = ATOMnilptr(l->ttype);
+	int (*cmp)(const void *, const void *) = BATatoms[l->ttype].atomCmp;
+	const char *vl, *vr;
+	const oid *p;
+	oid lastr = 0;		/* last value inserted into r2 */
+	BUN n, nr;
+	BUN newcap;
+	int opcode = 0;
+	oid lo, ro;
+	int c;
+
+	assert(BAThdense(l));
+	assert(BAThdense(r));
+	assert(l->ttype == r->ttype);
+	assert(sl == NULL || sl->tsorted);
+	assert(sr == NULL || sr->tsorted);
+
+	/* encode operator as a bit mask into opcode */
+	if (op[0] == '=' && ((op[1] == '=' && op[2] == 0) || op[2] == 0)) {
+		/* "=" or "==" */
+		opcode |= MASK_EQ;
+	} else if (op[0] == '!' && op[1] == '=' && op[2] == 0) {
+		/* "!=" (equivalent to "<>") */
+		opcode |= MASK_NE;
+	} else 	if (op[0] == '<') {
+		if (op[1] == 0) {
+			/* "<" */
+			opcode |= MASK_LT;
+		} else if (op[1] == '=' && op[2] == 0) {
+			/* "<=" */
+			opcode |= MASK_LE;
+		} else if (op[1] == '>' && op[2] == 0) {
+			/* "<>" (equivalent to "!=") */
+			opcode |= MASK_NE;
+		}
+	} else if (op[0] == '>') {
+		if (op[1] == 0) {
+			/* ">" */
+			opcode |= MASK_GT;
+		} else if (op[1] == '=' && op[2] == 0) {
+			/* ">=" */
+			opcode |= MASK_GE;
+		}
+	}
+	if (opcode == 0) {
+		GDKerror("BATthetasubjoin: unknown operator.\n");
+		return GDK_FAIL;
+	}
+
+	CANDINIT(l, sl, lstart, lend, lcnt, lcand, lcandend);
+	CANDINIT(r, sr, rstart, rend, rcnt, rcand, rcandend);
+
+	lvals = (const char *) Tloc(l, BUNfirst(l));
+	rvals = (const char *) Tloc(r, BUNfirst(r));
+	if (l->tvarsized && l->ttype) {
+		assert(r->tvarsized && r->ttype);
+		lvars = l->T->vheap->base;
+		rvars = r->T->vheap->base;
+	} else {
+		assert(!r->tvarsized || !r->ttype);
+		lvars = rvars = NULL;
+	}
+	lwidth = l->T->width;
+	rwidth = r->T->width;
+
+	r1->tkey = 1;
+	r1->tsorted = 1;
+	r1->trevsorted = 1;
+	r2->tkey = 1;
+	r2->tsorted = 1;
+	r2->trevsorted = 1;
+
+	/* nested loop implementation for theta join */
+	for (;;) {
+		if (lcand) {
+			if (lcand == lcandend)
+				break;
+			lo = *lcand++;
+			vl = VALUE(l, lo - l->hseqbase);
+		} else {
+			if (lstart == lend)
+				break;
+			vl = VALUE(l, lstart);
+			lo = lstart++ + l->hseqbase;
+		}
+		if (cmp(vl, nil) == 0)
+			continue;
+		nr = 0;
+		p = rcand;
+		n = rstart;
+		for (;;) {
+			if (rcand) {
+				if (p == rcandend)
+					break;
+				ro = *p++;
+				vr = VALUE(r, ro - r->hseqbase);
+			} else {
+				if (n == rend)
+					break;
+				vr = VALUE(r, n);
+				ro = n++ + r->hseqbase;
+			}
+			if (cmp(vr, nil) == 0)
+				continue;
+			c = cmp(vl, vr);
+			if (!((c < 0 && opcode & MASK_LT) ||
+			      (c > 0 && opcode & MASK_GT) ||
+			      (c == 0 && opcode & MASK_EQ)))
+				continue;
+			if (BUNlast(r1) == BATcapacity(r1)) {
+				newcap = BATgrows(r1);
+				r1 = BATextend(r1, newcap);
+				r2 = BATextend(r2, newcap);
+				if (r1 == NULL || r2 == NULL)
+					goto bailout;
+				assert(BATcapacity(r1) == BATcapacity(r2));
+			}
+			if (nr == 0 && BATcount(r2) > 0) {
+				r1->trevsorted = 0;
+				if (lastr > ro) {
+					r2->tsorted = 0;
+					r2->tkey = 0;
+				} else if (lastr < ro)
+					r2->trevsorted = 0;
+			}
+			APPEND(r1, lo);
+			APPEND(r2, ro);
+			lastr = ro;
+			nr++;
+		}
+		if (nr > 1) {
+			r1->tkey = 0;
+			r2->trevsorted = 0;
+		}
+	}
+	assert(BATcount(r1) == BATcount(r2));
+	return GDK_SUCCEED;
+
+  bailout:
+	if (r1)
+		BBPreclaim(r1);
+	if (r2)
+		BBPreclaim(r2);
+	return GDK_FAIL;
+}
+
 /* Perform an equi-join over l and r.  Returns two new, aligned,
  * dense-headed bats with in the tail the oids (head column values) of
  * matching tuples.  The result is in the same order as l (i.e. r1 is
@@ -743,7 +906,7 @@ BATsubleftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, BUN estim
 	*r2p = NULL;
 	if (joinparamcheck(l, r, sl, sr, "BATsubleftjoin") == GDK_FAIL)
 		return GDK_FAIL;
-	if (joininitresults(&r1, &r2, estimate != BUN_NONE ? estimate : sl ? BATcount(sl) : BATcount(l), "BATsubhashjoin") == GDK_FAIL)
+	if (joininitresults(&r1, &r2, estimate != BUN_NONE ? estimate : sl ? BATcount(sl) : BATcount(l), "BATsubleftjoin") == GDK_FAIL)
 		return GDK_FAIL;
 	*r1p = r1;
 	*r2p = r2;
@@ -764,13 +927,29 @@ BATsubouterjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, BUN esti
 
 	*r1p = NULL;
 	*r2p = NULL;
-	if (joinparamcheck(l, r, sl, sr, "BATsubleftjoin") == GDK_FAIL)
+	if (joinparamcheck(l, r, sl, sr, "BATsubouterjoin") == GDK_FAIL)
 		return GDK_FAIL;
-	if (joininitresults(&r1, &r2, estimate != BUN_NONE ? estimate : sl ? BATcount(sl) : BATcount(l), "BATsubhashjoin") == GDK_FAIL)
+	if (joininitresults(&r1, &r2, estimate != BUN_NONE ? estimate : sl ? BATcount(sl) : BATcount(l), "BATsubouterjoin") == GDK_FAIL)
 		return GDK_FAIL;
 	*r1p = r1;
 	*r2p = r2;
 	if (r->tsorted || r->trevsorted)
 		return mergejoin(r1, r2, l, r, sl, sr, 0, 1, 0);
 	return hashjoin(r1, r2, l, r, sl, sr, 0, 1, 0);
+}
+
+gdk_return
+BATsubthetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, const char *op, BUN estimate)
+{
+	BAT *r1, *r2;
+
+	*r1p = NULL;
+	*r2p = NULL;
+	if (joinparamcheck(l, r, sl, sr, "BATsubthetajoin") == GDK_FAIL)
+		return GDK_FAIL;
+	if (joininitresults(&r1, &r2, estimate != BUN_NONE ? estimate : sl ? BATcount(sl) : BATcount(l), "BATsubthetajoin") == GDK_FAIL)
+		return GDK_FAIL;
+	*r1p = r1;
+	*r2p = r2;
+	return thetajoin(r1, r2, l, r, sl, sr, op);
 }
