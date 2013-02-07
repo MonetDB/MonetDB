@@ -1,8 +1,28 @@
+/*
+ * The contents of this file are subject to the MonetDB Public License
+ * Version 1.1 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ * http://www.monetdb.org/Legal/MonetDBLicense
+ *
+ * Software distributed under the License is distributed on an "AS IS"
+ * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+ * License for the specific language governing rights and limitations
+ * under the License.
+ *
+ * The Original Code is the MonetDB Database System.
+ *
+ * The Initial Developer of the Original Code is CWI.
+ * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+ * Copyright August 2008-2013 MonetDB B.V.
+ * All Rights Reserved.
+ */
+
 #include "monetdb_config.h"
 #include "gdk.h"
 #include "gdk_private.h"
 #include "gdk_calc_private.h"
 
+/* Perform a bunch of sanity checks on the inputs to a join. */
 static gdk_return
 joinparamcheck(BAT *l, BAT *r, BAT *sl, BAT *sr, const char *func)
 {
@@ -36,10 +56,12 @@ joinparamcheck(BAT *l, BAT *r, BAT *sl, BAT *sr, const char *func)
 	return GDK_SUCCEED;
 }
 
+/* Create the result bats for a join. */
 static gdk_return
 joininitresults(BAT **r1p, BAT **r2p, BUN size, const char *func)
 {
 	BAT *r1, *r2;
+
 	r1 = BATnew(TYPE_void, TYPE_oid, size);
 	r2 = BATnew(TYPE_void, TYPE_oid, size);
 	if (r1 == NULL || r2 == NULL) {
@@ -67,7 +89,7 @@ joininitresults(BAT **r1p, BAT **r2p, BUN size, const char *func)
 #define VALUE(side, x)		(side##vars ? side##vars + VarHeapVal(side##vals, (x), side##width) : side##vals + ((x) * side##width))
 
 /* Do a binary search for the first/last occurrence of v between lo and hi
- * (lo inclusive, hi not inclusive) in values.
+ * (lo inclusive, hi not inclusive) in rvals/rvars.
  * If last is set, return the index of the first value > v; if last is
  * not set, return the index of the first value >= v.
  * If reverse is -1, the values are sorted in reverse order and hence
@@ -92,6 +114,8 @@ binsearch(const oid *rcand, oid offset,
 	if ((c = reverse * cmp(VALUE(r, rcand ? rcand[hi] - offset : hi), v)) < 0 ||
 	    (last && c == 0))
 		return hi + 1;
+	/* loop invariant:
+	 * last ? value@lo <= v < value@hi : value@lo < v <= value@hi */
 	while (hi - lo > 1) {
 		mid = (hi + lo) / 2;
 		if ((c = reverse * cmp(VALUE(r, rcand ? rcand[mid] - offset : mid), v)) > 0 ||
@@ -105,17 +129,18 @@ binsearch(const oid *rcand, oid offset,
 
 #define APPEND(b, o)		(((oid *) b->T->heap.base)[b->batFirst + b->batCount++] = (o))
 
-/* Perform a "merge" join on l and r (must both be sorted) with
- * optional candidate lists.  The return BATs have already been
- * created by the caller.
+/* Perform a "merge" join on l and r (if both are sorted) with
+ * optional candidate lists, or join using binary search on r if l is
+ * not sorted.  The return BATs have already been created by the
+ * caller.
  */
 static gdk_return
 mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, int nil_on_miss, int semi)
 {
 	BUN lstart, lend, lcnt;
 	const oid *lcand = NULL, *lcandend = NULL;
-	BUN rstart, rend, rcnt;
-	const oid *rcand = NULL, *rcandend = NULL;
+	BUN rstart, rend, rcnt, rstartorig;
+	const oid *rcand = NULL, *rcandend = NULL, *rcandorig;
 	BUN lscan, rscan;
 	const char *lvals, *rvals;
 	const char *lvars, *rvars;
@@ -133,13 +158,14 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, i
 	assert(BAThdense(l));
 	assert(BAThdense(r));
 	assert(l->ttype == r->ttype);
-	assert(l->tsorted || l->trevsorted);
 	assert(r->tsorted || r->trevsorted);
 	assert(sl == NULL || sl->tsorted);
 	assert(sr == NULL || sr->tsorted);
 
 	CANDINIT(l, sl, lstart, lend, lcnt, lcand, lcandend);
 	CANDINIT(r, sr, rstart, rend, rcnt, rcand, rcandend);
+	rcandorig = rcand;
+	rstartorig = rstart;
 	lvals = (const char *) Tloc(l, BUNfirst(l));
 	rvals = (const char *) Tloc(r, BUNfirst(r));
 	if (l->tvarsized && l->ttype) {
@@ -177,18 +203,25 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, i
 		return GDK_SUCCEED;
 	}
 
-	/* determine opportunistic scan window for l/r */
-	for (nl = lcand ? (BUN) (lcandend - lcand) : lend - lstart, lscan = 4;
-	     nl > 0;
-	     lscan++)
-		nl >>= 1;
-	for (nl = rcand ? (BUN) (rcandend - rcand) : rend - rstart, rscan = 4;
-	     nl > 0;
-	     rscan++)
-		nl >>= 1;
+	if (l->tsorted || l->trevsorted) {
+		/* determine opportunistic scan window for l/r */
+		for (nl = lcand ? (BUN) (lcandend - lcand) : lend - lstart, lscan = 4;
+		     nl > 0;
+		     lscan++)
+			nl >>= 1;
+		for (nl = rcand ? (BUN) (rcandend - rcand) : rend - rstart, rscan = 4;
+		     nl > 0;
+		     rscan++)
+			nl >>= 1;
+	} else {
+		/* if l not sorted, we will always use binary search
+		 * on r */
+		lscan = rscan = 0;
+		equal_order = 1;
+	}
 
 	while (lcand ? lcand < lcandend : lstart < lend) {
-		if (!nil_on_miss) {
+		if (!nil_on_miss && lscan > 0) {
 			/* if next value in r too far away (more than
 			 * lscan from current position in l), use
 			 * binary search on l to skip over
@@ -204,6 +237,11 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, i
 						   (v = VALUE(r, rcand ? *rcand - r->hseqbase : rstart))) < 0)
 					lstart = binsearch(NULL, 0, lvals, lvars, lwidth, lstart + lscan, lend, v, cmp, lreverse, 0);
 			}
+		} else if (lscan == 0) {
+			/* always search r completely */
+			assert(rscan == 0);
+			rcand = rcandorig;
+			rstart = rstartorig;
 		}
 		/* v is the value we're going to work with in this
 		 * iteration */
@@ -230,8 +268,9 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, i
 				/* look ahead a little (rscan) in r to
 				 * see whether we're better off doing
 				 * a binary search */
-				if (rscan < (BUN) (rcandend - rcand) &&
-				    rreverse * cmp(v, VALUE(r, *rcand - r->hseqbase + rscan)) > 0) {
+				if (rscan == 0 ||
+				    (rscan < (BUN) (rcandend - rcand) &&
+				     rreverse * cmp(v, VALUE(r, *rcand - r->hseqbase + rscan)) > 0)) {
 					/* value too far away in r:
 					 * use binary search */
 					rcand += binsearch(rcand, r->hseqbase, rvals, rvars, rwidth, rscan, rcandend - rcand, v, cmp, rreverse, 0);
@@ -245,8 +284,9 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, i
 				/* look ahead a little (rscan) in r to
 				 * see whether we're better off doing
 				 * a binary search */
-				if (rscan < rend - rstart &&
-				    rreverse * cmp(v, VALUE(r, rstart + rscan)) > 0) {
+				if (rscan == 0 ||
+				    (rscan < rend - rstart &&
+				     rreverse * cmp(v, VALUE(r, rstart + rscan)) > 0)) {
 					/* value too far away in r:
 					 * use binary search */
 					rstart = binsearch(NULL, 0, rvals, rvars, rwidth, rstart + rscan, rend, v, cmp, rreverse, 0);
@@ -449,22 +489,6 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, i
 	}
 	assert(BATcount(r1) == BATcount(r2));
 	return GDK_SUCCEED;
-}
-
-gdk_return
-BATsubmergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr)
-{
-	BAT *r1, *r2;
-
-	*r1p = NULL;
-	*r2p = NULL;
-	if (joinparamcheck(l, r, sl, sr, "BATsubleftjoin") == GDK_FAIL)
-		return GDK_FAIL;
-	if (joininitresults(&r1, &r2, sl ? BATcount(sl) : BATcount(l), "BATsubmergejoin") == GDK_FAIL)
-		return GDK_FAIL;
-	*r1p = r1;
-	*r2p = r2;
-	return mergejoin(r1, r2, l, r, sl, sr, 0, 0, 0);
 }
 
 /* binary search in a candidate list, return 1 if found, 0 if not */
@@ -706,8 +730,12 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, in
 	return GDK_FAIL;
 }
 
+/* Perform an equi-join over l and r.  Returns two new, aligned,
+ * dense-headed bats with in the tail the oids (head column values) of
+ * matching tuples.  The result is in the same order as l (i.e. r1 is
+ * sorted). */
 gdk_return
-BATsubhashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr)
+BATsubleftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, BUN estimate)
 {
 	BAT *r1, *r2;
 
@@ -715,9 +743,34 @@ BATsubhashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr)
 	*r2p = NULL;
 	if (joinparamcheck(l, r, sl, sr, "BATsubleftjoin") == GDK_FAIL)
 		return GDK_FAIL;
-	if (joininitresults(&r1, &r2, sl ? BATcount(sl) : BATcount(l), "BATsubhashjoin") == GDK_FAIL)
+	if (joininitresults(&r1, &r2, estimate != BUN_NONE ? estimate : sl ? BATcount(sl) : BATcount(l), "BATsubhashjoin") == GDK_FAIL)
 		return GDK_FAIL;
 	*r1p = r1;
 	*r2p = r2;
+	if (r->tsorted || r->trevsorted)
+		return mergejoin(r1, r2, l, r, sl, sr, 0, 0, 0);
 	return hashjoin(r1, r2, l, r, sl, sr, 0, 0, 0);
+}
+
+/* Performs a left outer join over l and r.  Returns two new, aligned,
+ * dense-headed bats with in the tail the oids (head column values) of
+ * matching tuples, or the oid in the first output bat and nil in the
+ * second output bat if the value in l does not occur in r.  The
+ * result is in the same order as l (i.e. r1 is sorted). */
+gdk_return
+BATsubouterjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, BUN estimate)
+{
+	BAT *r1, *r2;
+
+	*r1p = NULL;
+	*r2p = NULL;
+	if (joinparamcheck(l, r, sl, sr, "BATsubleftjoin") == GDK_FAIL)
+		return GDK_FAIL;
+	if (joininitresults(&r1, &r2, estimate != BUN_NONE ? estimate : sl ? BATcount(sl) : BATcount(l), "BATsubhashjoin") == GDK_FAIL)
+		return GDK_FAIL;
+	*r1p = r1;
+	*r2p = r2;
+	if (r->tsorted || r->trevsorted)
+		return mergejoin(r1, r2, l, r, sl, sr, 0, 1, 0);
+	return hashjoin(r1, r2, l, r, sl, sr, 0, 1, 0);
 }

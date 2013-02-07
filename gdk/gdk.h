@@ -3165,8 +3165,8 @@ gdk_export BAT *BATleftjoin(BAT *l, BAT *r, BUN estimate);
 gdk_export BAT *BATouterjoin(BAT *l, BAT *r, BUN estimate);
 gdk_export BAT *BATcross(BAT *l, BAT *r);
 
-gdk_export gdk_return BATsubmergejoin(BAT **r1, BAT **r2, BAT *l, BAT *r, BAT *sl, BAT *sr);
-gdk_export gdk_return BATsubhashjoin(BAT **r1, BAT **r2, BAT *l, BAT *r, BAT *sl, BAT *sr);
+gdk_export gdk_return BATsubleftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, BUN estimate);
+gdk_export gdk_return BATsubouterjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, BUN estimate);
 
 gdk_export BAT *BATslice(BAT *b, BUN low, BUN high);
 gdk_export BAT *BATfetch(BAT *b, BAT *s);
