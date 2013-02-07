@@ -1356,9 +1356,10 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
  * candidates.  s should be sorted on the tail value.
  *
  * Theta select returns all values from b which are less/greater than
- * or equal to the provided value depending on the value of op.  Op is
- * a string with one of the values: "=", "==", "<", "<=", ">", ">="
- * (the first two are equivalent).  Theta select never returns nils.
+ * or (not) equal to the provided value depending on the value of op.
+ * Op is a string with one of the values: "=", "==", "<", "<=", ">",
+ * ">=", "<>", "!=" (the first two are equivalent and the last two are
+ * equivalent).  Theta select never returns nils.
  *
  * If value is nil, the result is empty.
  */
@@ -1378,6 +1379,10 @@ BATthetasubselect(BAT *b, BAT *s, const void *val, const char *op)
 		/* "=" or "==" */
 		return BATsubselect(b, s, val, NULL, 1, 1, 0);
 	}
+	if (op[0] == '!' && op[1] == '=' && op[2] == 0) {
+		/* "!=" (equivalent to "<>") */
+		return BATsubselect(b, s, val, NULL, 1, 1, 1);
+	}
 	if (op[0] == '<') {
 		if (op[1] == 0) {
 			/* "<" */
@@ -1386,6 +1391,10 @@ BATthetasubselect(BAT *b, BAT *s, const void *val, const char *op)
 		if (op[1] == '=' && op[2] == 0) {
 			/* "<=" */
 			return BATsubselect(b, s, nil, val, 0, 1, 0);
+		}
+		if (op[1] == '>' && op[2] == 0) {
+			/* "<>" (equivalent to "!=") */
+			return BATsubselect(b, s, val, NULL, 1, 1, 1);
 		}
 	}
 	if (op[0] == '>') {
