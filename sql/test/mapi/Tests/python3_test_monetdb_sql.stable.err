@@ -149,6 +149,12 @@ test_utf8 (__main__.Test_DBAPI20) ... ok
 Ran 38 tests
 
 OK
+test_Binary (test_pythonize.TestPythonize) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test
+
+OK
 
 # 11:54:48 >  
 # 11:54:48 >  Done.
