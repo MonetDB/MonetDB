@@ -71,11 +71,7 @@ MT_Lock MT_system_lock MT_LOCK_INITIALIZER("MT_system_lock");
 ATOMIC_TYPE volatile GDKlockcnt;
 ATOMIC_TYPE volatile GDKlockcontentioncnt;
 ATOMIC_TYPE volatile GDKlocksleepcnt;
-ATOMIC_TYPE volatile GDKsemacnt;
-ATOMIC_TYPE volatile GDKsemawaitcnt;
-ATOMIC_TYPE volatile GDKsemasleepcnt;
 MT_Lock * volatile GDKlocklist;
-MT_Sema * volatile GDKsemalist;
 
 /* merge sort of linked list
  * these two functions are nearly identical */
@@ -136,59 +132,12 @@ sortlocklist(MT_Lock *l)
 	return t;
 }
 
-static MT_Sema *
-sortsemalist(MT_Sema *l)
-{
-	MT_Sema *r, *t, *ll = NULL;
-
-	if (l == NULL || l->next == NULL)
-		return l;
-	for (t = r = l; t && t->next; t = t->next->next) {
-		ll = r;
-		r = r->next;
-	}
-	ll->next = NULL;
-	l = sortsemalist(l);
-	r = sortsemalist(r);
-	t = ll = NULL;
-	while (l && r) {
-		if (l->waitcount < r->waitcount ||
-		    (l->waitcount == r->waitcount &&
-		     l->sleep < r->sleep) ||
-		    (l->waitcount == r->waitcount &&
-		     l->sleep == r->sleep &&
-		     l->count <= r->count)) {
-			if (ll == NULL) {
-				assert(t == NULL);
-				t = ll = l;
-			} else {
-				ll->next = l;
-				ll = ll->next;
-			}
-			l = l->next;
-		} else {
-			if (ll == NULL) {
-				assert(t == NULL);
-				t = ll = r;
-			} else {
-				ll->next = r;
-				ll = ll->next;
-			}
-			r = r->next;
-		}
-	}
-	ll->next = l ? l : r;
-	return t;
-}
-
 void
 GDKlockstatistics(int what)
 {
 	MT_Lock *l;
-	MT_Sema *s;
 
 	GDKlocklist = sortlocklist(GDKlocklist);
-	GDKsemalist = sortsemalist(GDKsemalist);
 	for (l = GDKlocklist; l; l = l->next)
 		if (what == 0 ||
 		    (what == 1 && l->count) ||
@@ -198,16 +147,9 @@ GDKlockstatistics(int what)
 				l->name ? l->name : "unknown",
 				l->count, l->contention, l->sleep,
 				what != 3 && l->lock ? "\tlocked" : "");
-	for (s = GDKsemalist; s; s = s->next)
-		fprintf(stderr, "#sema %-18s\t" SZFMT "\t" SZFMT "\t" SZFMT "\n",
-			s->name ? s->name : "unknown",
-			s->count, s->waitcount, s->sleep);
 	fprintf(stderr, "#total lock count " SZFMT "\n", (size_t) GDKlockcnt);
 	fprintf(stderr, "#lock contention  " SZFMT "\n", (size_t) GDKlockcontentioncnt);
 	fprintf(stderr, "#lock sleep count " SZFMT "\n", (size_t) GDKlocksleepcnt);
-	fprintf(stderr, "#total sema count " SZFMT "\n", (size_t) GDKsemacnt);
-	fprintf(stderr, "#sema wait count  " SZFMT "\n", (size_t) GDKsemawaitcnt);
-	fprintf(stderr, "#sema sleep count " SZFMT "\n", (size_t) GDKsemasleepcnt);
 }
 #endif
 
@@ -450,6 +392,8 @@ pthread_mutex_unlock(pthread_mutex_t *mutex)
 	return ReleaseMutex(*mutex) ? 0 : -1;
 }
 
+#endif
+
 void
 pthread_sema_init(pthread_sema_t *s, int flag, int nresources)
 {
@@ -474,8 +418,6 @@ pthread_sema_down(pthread_sema_t *s)
 {
 	WaitForSingleObject(*s, INFINITE);
 }
-
-#endif
 
 #else  /* !defined(HAVE_PTHREAD_H) && defined(_MSC_VER) */
 

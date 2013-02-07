@@ -192,51 +192,6 @@ typedef pthread_mutex_t MT_Lock;
 #define NEED_MT_LOCK_INIT
 #endif
 
-/*
- * @- MT Semaphore API
- */
-#if !defined(HAVE_PTHREAD_H) && defined(_MSC_VER)
-
-typedef HANDLE pthread_sema_t;
-gdk_export void pthread_sema_init(pthread_sema_t *s, int flag, int nresources);
-gdk_export void pthread_sema_destroy(pthread_sema_t *s);
-gdk_export void pthread_sema_up(pthread_sema_t *s);
-gdk_export void pthread_sema_down(pthread_sema_t *s);
-
-#elif defined(_AIX) || defined(__MACH__)
-
-typedef struct {
-	int cnt;
-	pthread_mutex_t mutex;
-	pthread_cond_t cond;
-} pthread_sema_t;
-
-gdk_export void pthread_sema_init(pthread_sema_t *s, int flag, int nresources);
-gdk_export void pthread_sema_destroy(pthread_sema_t *s);
-gdk_export void pthread_sema_up(pthread_sema_t *s);
-gdk_export void pthread_sema_down(pthread_sema_t *s);
-
-#else
-
-#define pthread_sema_t		sem_t
-#define pthread_sema_init	sem_init
-#define pthread_sema_destroy	sem_destroy
-#define pthread_sema_up		sem_post
-#define pthread_sema_down(x)	while(sem_wait(x))
-
-#endif
-
-typedef pthread_sema_t MT_Sema;
-
-#define MT_sema_init(s, nr, n)			\
-	do {					\
-		pthread_sema_init((s), 0, nr);	\
-		MT_locktrace_set((s), n);	\
-	} while (0)
-#define MT_sema_destroy(s)	pthread_sema_destroy(s)
-#define MT_sema_up(s, n)	MT_log(pthread_sema_up(s), (s), "MT_up_sema", n, stderr)
-#define MT_sema_down(s, n)	MT_log_trace(pthread_sema_down(s), (s), "MT_down_sema", n, stderr, s)
-
 #else
 
 /* if NDEBUG is not set, i.e., if assertions are enabled, we maintain
@@ -252,31 +207,15 @@ typedef struct MT_Lock {
 #endif
 } MT_Lock;
 
-typedef struct MT_Sema {
-	int volatile lock;
-	int volatile sema;
-#ifndef NDEBUG
-	size_t count;
-	size_t waitcount;
-	size_t sleep;
-	struct MT_Sema * volatile next;
-	const char *name;
-#endif
-} MT_Sema;
-
 #ifndef NDEBUG
 
 #define MT_LOCK_INITIALIZER(name)	= {0, 0, 0, 0, (struct MT_Lock *) -1, name}
 
 gdk_export void GDKlockstatistics(int);
 gdk_export MT_Lock * volatile GDKlocklist;
-gdk_export MT_Sema * volatile GDKsemalist;
 gdk_export ATOMIC_TYPE volatile GDKlockcnt;
 gdk_export ATOMIC_TYPE volatile GDKlockcontentioncnt;
 gdk_export ATOMIC_TYPE volatile GDKlocksleepcnt;
-gdk_export ATOMIC_TYPE volatile GDKsemacnt;
-gdk_export ATOMIC_TYPE volatile GDKsemawaitcnt;
-gdk_export ATOMIC_TYPE volatile GDKsemasleepcnt;
 #ifdef _MSC_VER
 #if SIZEOF_SIZE_T == 8
 #define ATOMIC_XCG_ptr(var, val)	_InterlockedExchangePointer(&(var), (val))
@@ -335,48 +274,6 @@ gdk_export ATOMIC_TYPE volatile GDKsemasleepcnt;
 				}					\
 		} while (!_done);					\
 	} while (0)
-#define _DBG_SEMA_INIT(s, n)					\
-	do {							\
-		(s)->name = n;					\
-		(s)->count = 0;					\
-		(s)->waitcount = 0;				\
-		(s)->sleep = 0;					\
-		(s)->next = ATOMIC_XCG_ptr(GDKsemalist, (s));	\
-	} while (0)
-#define _DBG_SEMA_DESTROY(s)						\
-	do {								\
-		MT_Sema * volatile _p;					\
-		int _done = 0;						\
-		/* save a copy for statistical purposes */		\
-		_p = GDKmalloc(sizeof(MT_Sema));			\
-		memcpy(_p, s, sizeof(MT_Sema));				\
-		_p->next = ATOMIC_XCG_ptr(GDKsemalist, _p);		\
-		do {							\
-			if (ATOMIC_CAS_ptr(GDKsemalist, (s), (s)->next) == (s)) \
-				break;					\
-			for (_p = GDKsemalist; _p; _p = _p->next)	\
-				if (ATOMIC_CAS_ptr(_p->next, (s), (s)->next) == (s)) { \
-					_done = 1;			\
-					break;				\
-				}					\
-		} while (!_done);					\
-	} while (0)
-#define _DBG_SEMA_COUNT_0(s, n)		ATOMIC_INC(GDKsemacnt, dummy, n)
-#define _DBG_SEMA_COUNT_1(s)		((s)->count++)
-#define _DBG_SEMA_WAIT(s, n)						\
-	do {								\
-		(s)->waitcount++;					\
-		ATOMIC_INC(GDKsemawaitcnt, dummy, n);			\
-	} while (0)
-#define _DBG_SEMA_SLEEP(s, n)					\
-	do {							\
-		if (_spincnt == 1024)				\
-			ATOMIC_INC(GDKsemasleepcnt, dummy, n);	\
-	} while (0)
-#define _DBG_SEMA_COUNT_2(s)			\
-	do {					\
-		(s)->sleep += _spincnt >= 1024;	\
-	} while (0)
 
 #else
 
@@ -389,13 +286,6 @@ gdk_export ATOMIC_TYPE volatile GDKsemasleepcnt;
 #define _DBG_LOCK_COUNT_2(l)		((void) 0)
 #define _DBG_LOCK_INIT(l, n)		((void) n)
 #define _DBG_LOCK_DESTROY(l)		((void) 0)
-#define _DBG_SEMA_INIT(s, n)		((void) n)
-#define _DBG_SEMA_DESTROY(s)		((void) 0)
-#define _DBG_SEMA_COUNT_0(s, n)		((void) n)
-#define _DBG_SEMA_COUNT_1(s)		((void) 0)
-#define _DBG_SEMA_WAIT(s, n)		((void) n)
-#define _DBG_SEMA_SLEEP(s, n)		((void) n)
-#define _DBG_SEMA_COUNT_2(s)		((void) 0)
 
 #endif
 
@@ -426,43 +316,52 @@ gdk_export ATOMIC_TYPE volatile GDKsemasleepcnt;
 /* return 0 on success, -1 on failure to get the lock */
 #define MT_lock_try(l)	((ATOMIC_CAS_int((l)->lock, 0, 1, dummy, dummy) == 0) - 1)
 
-#define MT_sema_init(s, nr, n)			\
-	do {					\
-		(s)->lock = 0;			\
-		(s)->sema = (nr);		\
-		_DBG_SEMA_INIT(s, n);		\
-	} while (0)
-#define MT_sema_destroy(s)			\
-	do {					\
-		_DBG_SEMA_DESTROY(s);		\
-		(s)->sema = (s)->lock = -1;	\
-	} while (0)
-#define MT_sema_up(s, n)	ATOMIC_INC_int((s)->sema, dummy, n)
-#define MT_sema_down(s, n)						\
-	do {								\
-		int _spincnt = GDKnr_threads > 1 ? 0 : 1023;		\
-		_DBG_SEMA_COUNT_0(s, n);				\
-		while (ATOMIC_CAS_int((s)->lock, 0, 1, dummy, n) != 0)	\
-			;						\
-		_DBG_SEMA_COUNT_1(s);					\
-		if (ATOMIC_GET_int((s)->sema, dummy, n) == 0) {		\
-			_DBG_SEMA_WAIT(s, n);				\
-			do {						\
-				ATOMIC_SET_int((s)->lock, 0, dummy, n);	\
-				if (++_spincnt >= 1024) {		\
-					_DBG_SEMA_SLEEP(s, n);		\
-					MT_sleep_ms(_spincnt >> 10);	\
-				}					\
-				while (ATOMIC_CAS_int((s)->lock, 0, 1, dummy, n) != 0) \
-					;				\
-			} while (ATOMIC_GET_int((s)->sema, dummy, n) == 0); \
-			_DBG_SEMA_COUNT_2(s);				\
-		}							\
-		ATOMIC_DEC_int((s)->sema, dummy, n);			\
-		ATOMIC_SET_int((s)->lock, 0, dummy, n);			\
-	} while (0)
+#endif
+
+/*
+ * @- MT Semaphore API
+ */
+#if !defined(HAVE_PTHREAD_H) && defined(_MSC_VER)
+
+typedef HANDLE pthread_sema_t;
+gdk_export void pthread_sema_init(pthread_sema_t *s, int flag, int nresources);
+gdk_export void pthread_sema_destroy(pthread_sema_t *s);
+gdk_export void pthread_sema_up(pthread_sema_t *s);
+gdk_export void pthread_sema_down(pthread_sema_t *s);
+
+#elif defined(_AIX) || defined(__MACH__)
+
+typedef struct {
+	int cnt;
+	pthread_mutex_t mutex;
+	pthread_cond_t cond;
+} pthread_sema_t;
+
+gdk_export void pthread_sema_init(pthread_sema_t *s, int flag, int nresources);
+gdk_export void pthread_sema_destroy(pthread_sema_t *s);
+gdk_export void pthread_sema_up(pthread_sema_t *s);
+gdk_export void pthread_sema_down(pthread_sema_t *s);
+
+#else
+
+#define pthread_sema_t		sem_t
+#define pthread_sema_init	sem_init
+#define pthread_sema_destroy	sem_destroy
+#define pthread_sema_up		sem_post
+#define pthread_sema_down(x)	while(sem_wait(x))
 
 #endif
+
+typedef pthread_sema_t MT_Sema;
+
+#define MT_sema_init(s, nr, n)			\
+	do {					\
+		pthread_sema_init((s), 0, nr);	\
+		MT_locktrace_set((s), n);	\
+	} while (0)
+#define MT_sema_destroy(s)	pthread_sema_destroy(s)
+#define MT_sema_up(s, n)	MT_log(pthread_sema_up(s), (s), "MT_up_sema", n, stderr)
+#define MT_sema_down(s, n)	MT_log_trace(pthread_sema_down(s), (s), "MT_down_sema", n, stderr, s)
 
 gdk_export int MT_check_nr_cores(void);
 
