@@ -119,7 +119,7 @@ def convert(data, type_code):
 
 def Binary(data):
     """returns binary encoding of data"""
-    return ''.join([hex(ord(i))[2:] for i in data]).upper()
+    return ''.join(["%02X" % ord(i) for i in data])
 
 def DateFromTicks(ticks):
     """Convert ticks to python Date"""
