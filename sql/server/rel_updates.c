@@ -232,7 +232,7 @@ rel_insert_join_idx(mvc *sql, sql_idx *i, sql_rel *inserts)
 	nnlls->exps = join_exps;
 	nnlls = rel_project(sql->sa, nnlls, pexps);
 	/* add row numbers */
-	e = exp_column(sql->sa, rel_name(rt), "%TID%", sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
+	e = exp_column(sql->sa, rel_name(rt), TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
 	exp_setname(sql->sa, e, i->t->base.name, iname);
 	append(nnlls->exps, e);
 
@@ -673,7 +673,7 @@ rel_update_join_idx(mvc *sql, sql_idx *i, sql_rel *updates)
 	nnlls->exps = join_exps;
 	nnlls = rel_project(sql->sa, nnlls, pexps);
 	/* add row numbers */
-	e = exp_column(sql->sa, rel_name(rt), "%TID%", sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
+	e = exp_column(sql->sa, rel_name(rt), TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
 	exp_setname(sql->sa, e, i->t->base.name, iname);
 	append(nnlls->exps, e);
 
@@ -842,12 +842,12 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_where)
 		}
 	
 		pexps = rel_projections(sql, r, NULL, 1, 0);
-		/* We simply create a relation %TID%, updates */
+		/* We simply create a relation TID, updates */
 
 		/* first create the project */
-		e = exp_column(sql->sa, rel_name(r), "%TID%", sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
+		e = exp_column(sql->sa, rel_name(r), TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
 		r = rel_project(sql->sa, r, append(new_exp_list(sql->sa),e));
-		e = exp_column(sql->sa, rel_name(r), "%TID%", sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
+		e = exp_column(sql->sa, rel_name(r), TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
 		append(exps, e);
 		updates = table_update_array(sql, t);
 		for (n = assignmentlist->h; n; n = n->next) {
@@ -986,7 +986,7 @@ delete_table(mvc *sql, dlist *qname, symbol *opt_where)
 			if (!r) {
 				return NULL;
 			} else {
-				sql_exp *e = exp_column(sql->sa, rel_name(r), "%TID%", sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
+				sql_exp *e = exp_column(sql->sa, rel_name(r), TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
 
 				r = rel_project(sql->sa, r, append(new_exp_list(sql->sa), e));
 

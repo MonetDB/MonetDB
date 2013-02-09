@@ -30,8 +30,6 @@
 
 static stmt * subrel_bin(mvc *sql, sql_rel *rel, list *refs);
 
-static char *TID = "%TID%";
-
 static stmt *
 refs_find_rel(list *refs, sql_rel *rel)
 {
@@ -594,38 +592,11 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, stm
 		}
 		if (e->flag == cmp_or && right)  /* join */
 			assert(0);
-		/* here we handle join indices */
-		if (right && (p=find_prop(e->p, PROP_JOINIDX)) != NULL) {
-			sql_idx *i = p->value;
-			sql_exp *el = e->l;
-			sql_exp *er = e->r;
-			char *iname = sa_strconcat(sql->sa, "%", i->base.name);
 
-			/* find out left and right */
-			l = bin_find_column(sql->sa, left, el->l, iname);
-			if (!l) {
-				swapped = 1;
-				l = bin_find_column(sql->sa, right, el->l, iname);
-				r = bin_find_column(sql->sa, left, er->l, TID);
-			} else {
-				r = bin_find_column(sql->sa, right, er->l, TID);
-			}
-			if (!l || !r)
-				return NULL;
-			/* small performance improvement, ie use idx directly */
-			if (l->type == st_alias && 
-			    l->op1->type == st_idxbat &&
-			    r->type == st_alias && 
-			    r->op1->type == st_mirror) {
-				s = l;
-			} else if (swapped)
-				s = stmt_join(sql->sa, r, l, cmp_equal);
-			else
-				s = stmt_join(sql->sa, l, r, cmp_equal);
+		/* mark use of join indices */
+		if (right && (p=find_prop(e->p, PROP_JOINIDX)) != NULL) 
 			sql->opt_stats[0]++; 
-			assert(sel==NULL);
-			break;
-		}
+
 		if (!l) {
 			l = exp_bin(sql, e->l, left, NULL, grp, ext, cnt, sel);
 			swapped = 0;
@@ -1315,18 +1286,18 @@ rel2bin_hash_lookup( mvc *sql, sql_rel *rel, stmt *left, stmt *right, sql_idx *i
 	stmt *idx = bin_find_column(sql->sa, left, l->l, sa_strconcat(sql->sa, "%", i->base.name));
 	int swap_exp = 0, swap_rel = 0;
 
-	if (!idx) {
+	if (!idx && left) {
 		swap_exp = 1;
 		l = e->r;
 		idx = bin_find_column(sql->sa, left, l->l, sa_strconcat(sql->sa, "%", i->base.name));
 	}
-	if (!idx) {
+	if (!idx && right) {
 		swap_exp = 0;
 		swap_rel = 1;
 		l = e->l;
 		idx = bin_find_column(sql->sa, right, l->l, sa_strconcat(sql->sa, "%", i->base.name));
 	}
-	if (!idx) {
+	if (!idx && right) {
 		swap_exp = 1;
 		swap_rel = 1;
 		l = e->r;
@@ -1367,7 +1338,6 @@ rel2bin_hash_lookup( mvc *sql, sql_rel *rel, stmt *left, stmt *right, sql_idx *i
 			return stmt_join(sql->sa, h, idx, cmp_equal);
 		}
 	} else {
-		assert(0);
 		return stmt_uselect(sql->sa, idx, h, cmp_equal, NULL);
 	}
 }

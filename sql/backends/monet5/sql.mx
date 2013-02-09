@@ -283,11 +283,11 @@ address mvc_clear_table_wrap
 comment "Clear table";
 
 pattern tid( mvc:int, sname:str, tname:str):bat[:oid,:any_3] 
-address TID
+address SQLtid
 comment "Return the tables tid column.";
 
 pattern tid( mvc:int, sname:str, tname:str, part_nr:int, nr_parts:int ):bat[:oid,:any_3] 
-address TID
+address SQLtid
 comment "Return the tables tid column.";
 
 pattern delete{unsafe}(mvc:int, sname:str, tname:str, b:any):int
@@ -1327,7 +1327,7 @@ sql5_export str mvc_bind_dbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, In
 sql5_export str mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str mvc_clear_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str mvc_delete_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str TID(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str DELTAbat(bat *result, bat *col, bat *uid, bat *uval, bat *ins);
 sql5_export str DELTAsub(bat *result, bat *col, bat *uid, bat *uval, bat *ins);
 sql5_export str DELTAproject(bat *result, bat *subselect, bat *col, bat *uid, bat *uval, bat *ins);
@@ -3649,9 +3649,9 @@ DELTAproject(bat *result, bat *sub, bat *col, bat *uid, bat *uval, bat *ins)
 	return MAL_SUCCEED;
 }
 
-/* str TID(bat *result, mvc *m, str *sname, str *tname) */
+/* str SQLtid(bat *result, mvc *m, str *sname, str *tname) */
 str
-TID(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int *res = (int*)getArgReference(stk, pci, 0);
 	mvc *m = NULL;

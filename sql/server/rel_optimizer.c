@@ -639,8 +639,36 @@ order_join_expressions(sql_allocator *sa, list *dje, list *rels)
 	return res;
 }
 
+static sql_exp *
+rel_find_column( sql_allocator *sa, sql_rel *rel, char *tname, char *cname )
+{
+	if (!rel)
+		return NULL;
+
+	if (rel->exps && (is_project(rel->op) || is_base(rel->op))) {
+		sql_exp *e = exps_bind_column2(rel->exps, tname, cname);
+		if (e)
+			return exp_alias(sa, e->rname, exp_name(e), tname, cname, exp_subtype(e), e->card, has_nil(e), is_intern(e));
+	}
+	if (is_project(rel->op) && rel->l) {
+		return rel_find_column(sa, rel->l, tname, cname);
+	} else if (is_join(rel->op)) {
+		sql_exp *e = rel_find_column(sa, rel->l, tname, cname);
+		if (!e)
+			e = rel_find_column(sa, rel->r, tname, cname);
+		return e;
+	} else if (is_set(rel->op) ||
+		   is_sort(rel) ||
+		   is_semi(rel->op) ||
+		   is_select(rel->op)) {
+		if (rel->l)
+			return rel_find_column(sa, rel->l, tname, cname);
+	}
+	return NULL;
+}
+
 static list *
-find_fk(sql_allocator *sa, list *rels, list *exps) 
+find_fk( sql_allocator *sa, list *rels, list *exps) 
 {
 	node *djn;
 	list *sdje, *aje, *dje;
@@ -697,18 +725,29 @@ find_fk(sql_allocator *sa, list *rels, list *exps)
 			if (idx) { 
 				prop *p;
 				node *n;
+				sql_exp *t = NULL, *i = NULL;
 	
-				/* Remove all other join expressions */
-				for (n = eje->h; n; n = n->next) {
-					if (je != n->data)
-						list_remove_data(exps, n->data);
-				}
-				/* Add the join index using PROP_JOINIDX  */
+				/* Add join between idx and TID */
 				if (swapped) {
-					sql_exp *s = je->l;
-					je->l = je->r;
-					je->r = s;
+					sql_exp *s = je->l, *l = je->r;
+
+					t = rel_find_column(sa, lr, s->l, TID);
+					i = rel_find_column(sa, rr, l->l, iname);
+					assert(t && i);
+					je = exp_compare(sa, i, t, cmp_equal);
+				} else {
+					sql_exp *s = je->r, *l = je->l;
+
+					t = rel_find_column(sa, rr, s->l, TID);
+					i = rel_find_column(sa, lr, l->l, iname);
+					assert(t && i);
+					je = exp_compare(sa, i, t, cmp_equal);
 				}
+				/* Remove all join expressions */
+				for (n = eje->h; n; n = n->next) 
+					list_remove_data(exps, n->data);
+				append(exps, je);
+				djn->data = je;
 				je->p = p = prop_create(sa, PROP_JOINIDX, je->p);
 				p->value = idx;
 			}
@@ -4234,6 +4273,7 @@ rel_push_project_up(int *changes, mvc *sql, sql_rel *rel)
 static int
 exp_mark_used(sql_rel *subrel, sql_exp *e)
 {
+	int nr = 0;
 	sql_exp *ne = NULL;
 
 	switch(e->type) {
@@ -4249,7 +4289,7 @@ exp_mark_used(sql_rel *subrel, sql_exp *e)
 			node *n = l->h;
 	
 			for (;n != NULL; n = n->next) 
-				exp_mark_used(subrel, n->data);
+				nr += exp_mark_used(subrel, n->data);
 		}
 		/* rank operators have a second list of arguments */
 		if (e->r) {
@@ -4257,7 +4297,7 @@ exp_mark_used(sql_rel *subrel, sql_exp *e)
 			node *n = l->h;
 	
 			for (;n != NULL; n = n->next) 
-				exp_mark_used(subrel, n->data);
+				nr += exp_mark_used(subrel, n->data);
 		}
 		break;
 	}
@@ -4267,22 +4307,22 @@ exp_mark_used(sql_rel *subrel, sql_exp *e)
 			node *n;
 	
 			for (n = l->h; n != NULL; n = n->next) 
-				exp_mark_used(subrel, n->data);
+				nr += exp_mark_used(subrel, n->data);
 			l = e->r;
 			for (n = l->h; n != NULL; n = n->next) 
-				exp_mark_used(subrel, n->data);
+				nr += exp_mark_used(subrel, n->data);
 		} else if (e->flag == cmp_in || e->flag == cmp_notin || get_cmp(e) == cmp_filter) {
 			list *r = e->r;
 			node *n;
 
-			exp_mark_used(subrel, e->l);
+			nr += exp_mark_used(subrel, e->l);
 			for (n = r->h; n != NULL; n = n->next)
-				exp_mark_used(subrel, n->data);
+				nr += exp_mark_used(subrel, n->data);
 		} else {
-			exp_mark_used(subrel, e->l);
-			exp_mark_used(subrel, e->r);
+			nr += exp_mark_used(subrel, e->l);
+			nr += exp_mark_used(subrel, e->r);
 			if (e->f)
-				exp_mark_used(subrel, e->f);
+				nr += exp_mark_used(subrel, e->f);
 		}
 		break;
 	case e_atom:
@@ -4298,7 +4338,7 @@ exp_mark_used(sql_rel *subrel, sql_exp *e)
 		ne->used = 1;
 		return ne->used;
 	}
-	return 0;
+	return nr;
 }
 
 static void
@@ -4507,7 +4547,7 @@ rel_remove_unused(mvc *sql, sql_rel *rel)
 			for(n=rel->exps->h; n && !needed; n = n->next) {
 				sql_exp *e = n->data;
 
-				if (!e->used && !is_intern(e))
+				if (!e->used)
 					needed = 1;
 			}
 
@@ -4518,11 +4558,12 @@ rel_remove_unused(mvc *sql, sql_rel *rel)
 			for(n=rel->exps->h; n; n = n->next) {
 				sql_exp *e = n->data;
 
-				if (e->used || is_intern(e))
+				if (e->used)
 					append(exps, e);
 			}
 			/* atleast one (needed for crossproducts, count(*), rank() and single value projections) !, handled by exps_mark_used */
-			assert(list_length(exps) > 0);
+			if (list_length(exps) == 0)
+				append(exps, rel->exps->h->data);
 			rel->exps = exps;
 		}
 		return rel;
@@ -4545,7 +4586,7 @@ rel_remove_unused(mvc *sql, sql_rel *rel)
 			for(n=rel->exps->h; n && !needed; n = n->next) {
 				sql_exp *e = n->data;
 
-				if (!e->used && !is_intern(e))
+				if (!e->used)
 					needed = 1;
 			}
 			if (!needed)
@@ -4555,7 +4596,7 @@ rel_remove_unused(mvc *sql, sql_rel *rel)
 			for(n=rel->exps->h; n; n = n->next) {
 				sql_exp *e = n->data;
 
-				if (e->used || is_intern(e))
+				if (e->used)
 					append(exps, e);
 			}
 			/* atleast one (needed for crossproducts, count(*), rank() and single value projections) !, handled by exps_mark_used */
@@ -4823,6 +4864,7 @@ find_index(sql_allocator *sa, sql_rel *rel, sql_rel *sub, list **EXPS)
 				/* fix the destroy function */
 				cols->destroy = NULL;
 				*EXPS = es;
+				e->used = 1;
 				return i;
 			}
 			cols->destroy = NULL;
@@ -4836,9 +4878,9 @@ rel_use_index(int *changes, mvc *sql, sql_rel *rel)
 {
 	(void)changes;
 	(void)sql;
-	if (is_select(rel->op) || is_join(rel->op)) {
+	if (rel->l && (is_select(rel->op) || is_join(rel->op))) {
 		list *exps = NULL;
-		sql_idx *i = find_index(sql->sa, rel, rel, &exps);
+		sql_idx *i = find_index(sql->sa, rel, rel->l, &exps);
 		int left = 1;
 
 		if (!i && is_join(rel->op))
@@ -4862,7 +4904,7 @@ rel_use_index(int *changes, mvc *sql, sql_rel *rel)
 				 	((left && !rel_find_exp(rel->l, e->l)) ||
 				 	(!left && !rel_find_exp(rel->r, e->l)))) 
 					nre = e->l;
-				single_table = (re && !exps_match_col_exps(nre, re));
+				single_table = (!re || !exps_match_col_exps(nre, re));
 				re = nre;
 			}
 			if (single_table) { /* add PROP_HASHCOL to all column exps */
@@ -5434,8 +5476,8 @@ rel_semijoin_use_fk(int *changes, mvc *sql, sql_rel *rel)
 		rel->exps = NULL;
 		append(rels, rel->l);
 		append(rels, rel->r);
-		(void) find_fk( sql->sa, rels, exps);
 
+		(void) find_fk( sql->sa, rels, exps);
 		rel->exps = exps;
 	}
 	return rel;
@@ -5636,8 +5678,6 @@ _rel_optimizer(mvc *sql, sql_rel *rel, int level)
 	if (gp.cnt[op_select]) 
 		rel = rewrite(sql, rel, &rel_select_cse, &changes); 
 
-	/* Remove unused expressions */
-	rel = rel_dce(sql, rel);
 	if (gp.cnt[op_project]) 
 		rel = rewrite(sql, rel, &rel_project_cse, &changes);
 
@@ -5725,6 +5765,9 @@ _rel_optimizer(mvc *sql, sql_rel *rel, int level)
 	}
 
 	rel = rewrite(sql, rel, &rel_merge_table_rewrite, &changes);
+
+	/* Remove unused expressions */
+	rel = rel_dce(sql, rel);
 
 	if (changes && level > 10) {
 		assert(0);

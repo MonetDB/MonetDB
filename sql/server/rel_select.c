@@ -460,7 +460,7 @@ rel_basetable(mvc *sql, sql_table *t, char *atname)
 		}
 		append(rel->exps, e);
 	}
-	append(rel->exps, exp_alias(sa, atname, "%TID%", tname, "%TID%", sql_bind_localtype("oid"), CARD_MULTI, 0, 1));
+	append(rel->exps, exp_alias(sa, atname, TID, tname, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1));
 
 	if (t->idxs.set) {
 		for (cn = t->idxs.set->h; cn; cn = cn->next) {
@@ -1359,26 +1359,6 @@ rel_bind_column_(mvc *sql, sql_rel **p, sql_rel *rel, char *cname )
 	}
 	return NULL;
 }
-
-#if 0
-static sql_exp *
-rel_find_column( mvc *sql, sql_rel *rel, char *cname )
-{
-	sql_rel *p = NULL;
-
-	if (!rel || (rel = rel_bind_column_(sql, &p, rel, cname)) == NULL)
-		return NULL;
-
-	if (is_project(rel->op) || rel->op == op_table) {
-		if (rel->exps) {
-			sql_exp *e = exps_bind_column(rel->exps, cname, NULL);
-			if (e)
-				return e;
-		}
-	}
-	return NULL;
-}
-#endif
 
 sql_exp *
 rel_bind_column( mvc *sql, sql_rel *rel, char *cname, int f )

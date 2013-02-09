@@ -72,7 +72,7 @@ CSTprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (box == 0)
 		throw(MAL, "const.prelude", BOX_CLOSED);
 	/* if the box was already filled we can skip initialization */
-	if (box->sym->vtop == 0) {
+	if (box->sym && box->sym->vtop == 0) {
 		insertToBox(box, "dbpath", GDKgetenv("gdk_dbpath"));
 		insertToBox(box, "version", VERSION);
 		snprintf(u, 24, "%s", GDKversion());

@@ -3965,10 +3965,10 @@ create_sql_ic(sql_allocator *sa, sql_idx *i, sql_column *c)
 	}
 
 	/* should we switch to oph_idx ? */
-	if (i->type == hash_idx && list_length(i->columns) == 1 && ic->c->sorted) 
+	if (i->type == hash_idx && list_length(i->columns) == 1 && ic->c->sorted) {
 		/*i->type = oph_idx;*/
 		i->type = no_idx;
-
+	}
 	return i;
 }
 
