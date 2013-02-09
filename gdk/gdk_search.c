@@ -61,10 +61,10 @@
  * In situations where an index is expected, a call is made to
  * BAThash.  This operation check for indexing on the header.
  *
- * @+ Interface Declarations
+ * Interface Declarations
  */
 /*
- * @- Hash Table Creation
+ * - Hash Table Creation
  * The hash indexing scheme for BATs reserves a block of memory to
  * maintain the hash table and a collision list. A one-to-one mapping
  * exists between the BAT and the collision list using the BUN
@@ -92,6 +92,14 @@
 #include "gdk.h"
 #include "gdk_private.h"
 
+int HASHwidth(BUN hashsize){
+	//if ( hashsize < BUN_NONE/8 ) return BUN1; does not make much sense
+	if ( hashsize < BUN_NONE/4 ) return BUN2;
+	if ( hashsize < BUN_NONE/2) return BUN4;
+	(void) hashsize;
+	return BUN8;
+}
+
 BUN
 HASHmask(BUN cnt)
 {
@@ -107,30 +115,33 @@ HASHmask(BUN cnt)
 static void
 HASHclear(Hash *h)
 {
-	BUN *i, *j;
-
-	for (i = h->hash, j = i + h->mask; i <= j; i++) {
-		*i = BUN_NONE;
-	}
+	BUN i, j, nil = (BUN) HASHnil(h);
+	for (i = 0, j = h->mask; i <= j; i++) 
+		(void) HASHput(h,i,nil);
 }
 
 Hash *
 HASHnew(Heap *hp, int tpe, BUN size, BUN mask)
 {
 	Hash *h = NULL;
-	if (HEAPalloc(hp, mask + size, sizeof(BUN)) < 0)
+	int width = HASHwidth(mask + size);
+
+	if (HEAPalloc(hp, mask + size, width) < 0)
 		return NULL;
-	hp->free = (mask + size) * sizeof(BUN);
+	hp->free = (mask + size) * width;
 	h = (Hash *) GDKmalloc(sizeof(Hash));
 	if (!h)
 		return h;
 	h->lim = size;
 	h->mask = mask - 1;
+	h->width = width;
+	h->nil = (BUN) h->mask;
 	h->link = (BUN *) hp->base;
-	h->hash = h->link + h->lim;
+	h->hash = (BUN *) ((char*)h->link + h->lim *width);
 	h->type = tpe;
 	h->heap = hp;
 	HASHclear(h);		/* zero the mask */
+	ALGODEBUG fprintf(stderr, "#HASHnew: create hash(size " BUNFMT ", mask " BUNFMT ",width %d, nil "BUNFMT ", total "BUNFMT " bytes);\n", size, mask, width, h->nil, (size+mask) * width);
 	return h;
 }
 
@@ -138,47 +149,46 @@ HASHnew(Heap *hp, int tpe, BUN size, BUN mask)
 	do {								\
 		TYPE *v = (TYPE*)BUNhloc(bi, 0);			\
 		for (; r < p; r++) {					\
-			BUN c = hash_##TYPE(h, v+r);			\
+			BUN c = (BUN) hash_##TYPE(h, v+r);			\
 									\
-			if (h->hash[c] == BUN_NONE && nslots-- == 0)	\
+			if ( HASHget(h,c) == HASHnil(h) && nslots-- == 0)	\
 				break; /* mask too full */		\
-			h->link[r] = h->hash[c];			\
-			h->hash[c] = r;					\
+			HASHputlink(h, r, HASHget(h,c));	\
+			HASHput(h, c, r);	\
 		}							\
 	} while (0)
 #define finishhash(TYPE)				\
 	do {						\
 		TYPE *v = (TYPE*)BUNhloc(bi, 0);	\
 		for (; p < q; p++) {			\
-			BUN c = hash_##TYPE(h, v+p);	\
+			BUN c = (BUN) hash_##TYPE(h, v+p);	\
 							\
-			h->link[p] = h->hash[c];	\
-			h->hash[c] = p;			\
+			HASHputlink(h,p, HASHget(h,c));\
+			HASHput(h,c,p);\
 		}					\
 	} while (0)
 
 /* collect HASH statistics for analysis */
 static void HASHcollisions(BAT *b, Hash *h)
 {
-	BUN p, *i, *j;
 	lng cnt, entries=0, max =0;
 	double total=0;
+	BUN p, i, j, nil = HASHnil(h);
 	
 	if ( b == 0 || h == 0 )
 		return;
-	for (i = h->hash, j = i + h->mask; i <= j; i++) 
-	if ( *i != BUN_NONE){
+	for (i = 0, j = h->mask; i <= j; i++) 
+	if ( (p = HASHget(h,i)) != nil){
 		entries++;
-		p = *i;
 		cnt = 0;
-		for ( ; p != BUN_NONE; p = h->link[p])
+		for ( ; p != nil; p = HASHgetlink(h,p))
 			cnt++;
 		if ( cnt > max ) max = cnt;
 		total += cnt;
 	}
-
-	fprintf(stderr, "BAThash: statistics (" BUNFMT ", entries " LLFMT", mask " BUNFMT", max " LLFMT ", avg %2.6f);\n", BATcount(b), entries, h->mask, max, total/entries);
+	fprintf(stderr, "#BAThash: statistics (" BUNFMT ", entries " LLFMT", mask " BUNFMT", max " LLFMT ", avg %2.6f);\n", BATcount(b), entries, h->mask, max, total/entries);
 }
+
 /*
  * The prime routine for the BAT layer is to create a new hash index.
  * Its argument is the element type and the maximum number of BUNs be
@@ -188,6 +198,9 @@ BAT *
 BAThash(BAT *b, BUN masksize)
 {
 	BAT *o = NULL;
+	lng t0,t1;
+	(void) t0; 
+	(void) t1;
 
 	if (VIEWhparent(b)) {
 		bat p = VIEWhparent(b);
@@ -250,6 +263,7 @@ BAThash(BAT *b, BUN masksize)
 
 		if (mask < 1024)
 			mask = 1024;
+		t0 = GDKusec();
 		do {
 			BUN nslots = mask >> 3;	/* 1/8 full is too full */
 
@@ -258,8 +272,10 @@ BAThash(BAT *b, BUN masksize)
 				HEAPfree(hp);
 				GDKfree(hp);
 			}
-			if (h)
+			if (h) {
+				ALGODEBUG fprintf(stderr, "#BAThash: retry hash construction\n");
 				GDKfree(h);
+			}
 			/* create the hash structures */
 			hp = (Heap *) GDKzalloc(sizeof(Heap));
 			if (hp &&
@@ -268,6 +284,7 @@ BAThash(BAT *b, BUN masksize)
 			if (hp == NULL ||
 			    hp->filename == NULL ||
 			    (h = HASHnew(hp, ATOMtype(b->htype), BATcapacity(b), mask)) == NULL) {
+
 				MT_lock_unset(&GDKhashLock(ABS(b->batCacheid)), "BAThash");
 				if (hp != NULL) {
 					GDKfree(hp->filename);
@@ -294,13 +311,13 @@ BAThash(BAT *b, BUN masksize)
 			default:
 				for (; r < p; r++) {
 					ptr v = BUNhead(bi, r);
-					BUN c = heap_hash_any(b->H->vheap, h, v);
+					BUN c = (BUN) heap_hash_any(b->H->vheap, h, v);
 
-					if (h->hash[c] == BUN_NONE &&
+					if ( HASHget(h,c) == HASHnil(h) &&
 					    nslots-- == 0)
 						break;	/* mask too full */
-					h->link[r] = h->hash[c];
-					h->hash[c] = r;
+					HASHputlink(h,r, HASHget(h,c));
+					HASHput(h,c, r);
 				}
 				break;
 			}
@@ -326,14 +343,17 @@ BAThash(BAT *b, BUN masksize)
 		default:
 			for (; p < q; p++) {
 				ptr v = BUNhead(bi, p);
-				BUN c = heap_hash_any(b->H->vheap, h, v);
+				BUN c = (BUN) heap_hash_any(b->H->vheap, h, v);
 
-				h->link[p] = h->hash[c];
-				h->hash[c] = p;
+				HASHputlink(h,p, HASHget(h,c));
+				HASHput(h,c,p);
 			}
 			break;
 		}
 		b->H->hash = h;
+		t1 = GDKusec();
+		ALGODEBUG 
+				fprintf(stderr, "#BAThash: hash construction "LLFMT" usec\n", t1-t0);
 		ALGODEBUG HASHcollisions(b,b->H->hash);
 	}
 	MT_lock_unset(&GDKhashLock(ABS(b->batCacheid)), "BAThash");
@@ -371,17 +391,11 @@ HASHprobe(Hash *h, const void *v)
 BUN
 HASHlist(Hash *h, BUN i)
 {
-	BUN j;
 	BUN c = 1;
+ 	BUN j = HASHget(h,i), nil= HASHnil(h); 
 
-	while ((j = h->link[i]) != BUN_NONE) {
-		c++;
-		i = j;
-		if (i > h->lim) {
-			mnstr_printf(GDKstdout, "hash inconsistency link " BUNFMT "\n", i);
-			break;
-		}
-	}
+	if ( j == nil) return 1;
+	while ((j = HASHgetlink(h,i)) != nil) { c++; i = j; }
 	return c;
 }
 
@@ -423,16 +437,16 @@ HASHgonebad(BAT *b, const void *v)
 {
 	Hash *h = b->H->hash;
 	BATiter bi = bat_iterator(b);
+	BUN cnt, hit;
 
 	if (h == NULL)
 		return 1;	/* no hash is bad hash? */
 
 	if (h->mask * 2 < BATcount(b)) {
 		int (*cmp) (const void *, const void *) = BATatoms[b->htype].atomCmp;
-		BUN cnt, hit, i = h->hash[HASHprobe(h, v)];
-
-		for (cnt = hit = 1; i != BUN_NONE; i = h->link[i], cnt++)
-			hit += ((*cmp) (v, BUNhead(bi, i)) == 0);
+		BUN i = HASHget(h, (BUN)HASHprobe(h, v)), nil= HASHnil(h);
+		for (cnt = hit = 1; i != nil; i = HASHgetlink(h,i), cnt++)
+			hit += ((*cmp) (v, BUNhead(bi, (BUN)i)) == 0);
 
 		if (cnt / hit > 4)
 			return 1;	/* linked list too long */

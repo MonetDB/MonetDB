@@ -538,6 +538,15 @@ typedef oid var_t;		/* type used for heap index of var-sized BAT */
 #endif
 
 typedef oid BUN;		/* BUN position */
+#define BUN1 1
+#define BUN2 2
+#define BUN4 4
+#define BUN8 8
+typedef unsigned char BUN1type;
+typedef unsigned short BUN2type;
+typedef unsigned int BUN4type;
+typedef BUN BUN8type;
+
 #define SIZEOF_BUN	SIZEOF_OID
 #define BUNFMT		OIDFMT
 /* alternatively:
@@ -634,6 +643,8 @@ typedef struct {
 
 typedef struct {
 	int type;		/* type of index entity */
+	int width;		/* width of hash entries */
+	BUN nil;		/* nil representation */
 	BUN lim;		/* collision list size */
 	BUN mask;		/* number of hash buckets-1 (power of 2) */
 	BUN *hash;		/* hash table */
@@ -2904,19 +2915,19 @@ gdk_export int ALIGNsetH(BAT *b1, BAT *b2);
 #define GDK_STREQ(l,r) (*(char*) (l) == *(char*) (r) && !strcmp(l,r))
 
 #define HASHloop(bi, h, hb, v)					\
-	for (hb = (h)->hash[HASHprobe((h), v)];			\
-	     hb != BUN_NONE;					\
-	     hb = (h)->link[hb])				\
+	for (hb = HASHget(h, HASHprobe((h), v));			\
+	     hb != HASHnil(h);					\
+	     hb = HASHgetlink(h,hb))				\
 		if (ATOMcmp(h->type, v, BUNhead(bi, hb)) == 0)
 #define HASHloop_str_hv(bi, h, hb, v)				\
-	for (hb = (h)->hash[((BUN *) (v))[-1]&(h)->mask];	\
-	     hb != BUN_NONE;					\
-	     hb = (h)->link[hb])				\
+	for (hb = HASHget((h),((BUN *) (v))[-1]&(h)->mask);	\
+	     hb != HASHnil(h);					\
+	     hb = HASHgetlink(h,hb))				\
 		if (GDK_STREQ(v, BUNhvar(bi, hb)))
 #define HASHloop_str(bi, h, hb, v)			\
-	for (hb = (h)->hash[strHash(v)&(h)->mask];	\
-	     hb != BUN_NONE;				\
-	     hb = (h)->link[hb])			\
+	for (hb = HASHget((h),strHash(v)&(h)->mask);	\
+	     hb != HASHnil(h);				\
+	     hb = HASHgetlink(h,hb))			\
 		if (GDK_STREQ(v, BUNhvar(bi, hb)))
 
 /*
@@ -2927,8 +2938,8 @@ gdk_export int ALIGNsetH(BAT *b1, BAT *b2);
  * numbers instead of strings:
  */
 #define HASHloop_fstr(bi, h, hb, idx, v)				\
-	for (hb = h->hash[strHash(v)&h->mask], idx = strLocate((bi.b)->H->vheap,v); \
-	     hb != BUN_NONE; hb = h->link[hb])				\
+	for (hb = HASHget(h, strHash(v)&h->mask), idx = strLocate((bi.b)->H->vheap,v); \
+	     hb != HASHnil(h); hb = HASHgetlink(h,hb))				\
 		if (VarHeapValRaw((bi).b->H->heap.base, hb, (bi).b->H->width) == idx)
 /*
  * The following example shows how the hashloop is used:
@@ -2958,20 +2969,20 @@ gdk_export int ALIGNsetH(BAT *b1, BAT *b2);
  * (HASHlooploc) or variable-sized (HASHloopvar).
  */
 #define HASHlooploc(bi, h, hb, v)				\
-	for (hb = (h)->hash[HASHprobe(h, v)];			\
-	     hb != BUN_NONE;					\
-	     hb = (h)->link[hb])				\
+	for (hb = HASHget(h, HASHprobe(h, v));			\
+	     hb != HASHnil(h);					\
+	     hb = HASHgetlink(h,hb))				\
 		if (ATOMcmp(h->type, v, BUNhloc(bi, hb)) == 0)
 #define HASHloopvar(bi, h, hb, v)				\
-	for (hb = (h)->hash[HASHprobe(h, v)];			\
-	     hb != BUN_NONE;					\
-	     hb = (h)->link[hb])				\
+	for (hb = HASHget(h,HASHprobe(h, v));			\
+	     hb != HASHnil(h);					\
+	     hb = HASHgetlink(h,hb))				\
 		if (ATOMcmp(h->type, v, BUNhvar(bi, hb)) == 0)
 
 #define HASHloop_TYPE(bi, h, hb, v, TYPE)			\
-	for (hb = (h)->hash[hash_##TYPE(h, v)];			\
-	     hb != BUN_NONE;					\
-	     hb = (h)->link[hb])				\
+	for (hb = HASHget(h, hash_##TYPE(h, v));			\
+	     hb != HASHnil(h);					\
+	     hb = HASHgetlink(h,hb))				\
 		if (simple_EQ(v, BUNhloc(bi, hb), TYPE))
 
 #define HASHloop_bit(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, bte)
@@ -2987,9 +2998,9 @@ gdk_export int ALIGNsetH(BAT *b1, BAT *b2);
 #define HASHloop_ptr(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, ptr)
 
 #define HASHloop_any(bi, h, hb, v)				\
-	for (hb = (h)->hash[hash_any(h, v)];			\
-	     hb != BUN_NONE;					\
-	     hb = (h)->link[hb])				\
+	for (hb = HASHget(h, hash_any(h, v));			\
+	     hb != HASHnil(h);					\
+	     hb = HASHgetlink(h,hb))				\
 		if (atom_EQ(v, BUNhead(bi, hb), (bi).b->htype))
 
 /*

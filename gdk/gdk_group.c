@@ -102,12 +102,12 @@
 		for (r = BUNfirst(b), p = r, q = r + BATcount(b); p < q; p++) { \
 			prb = hash_##TYPE(hs, &w[p]);			\
 			if (gc) {					\
-				for (hb = hs->hash[prb];		\
-				     hb != BUN_NONE &&			\
+				for (hb = HASHget(hs,prb);		\
+				     hb != HASHnil(hs) &&			\
 				      grps[hb - r] == grps[p - r];	\
-				     hb = hs->link[hb]) {		\
-					assert(hs->link[hb] == BUN_NONE \
-					       || hs->link[hb] < hb);	\
+				     hb = HASHgetlink(hs,hb)) {		\
+					assert( HASHgetlink(hs,hb) == HASHnil(hs) \
+					       || HASHgetlink(hs,hb) < hb);	\
 					if (w[p] == w[hb]) {		\
 						oid grp = ngrps[hb - r]; \
 						ngrps[p - r] = grp; 	\
@@ -119,17 +119,17 @@
 						break;			\
 					}				\
 				}					\
-				if (hb != BUN_NONE &&			\
+				if (hb != HASHnil(hs) &&			\
 				    grps[hb - r] != grps[p - r]) {	\
 					/* we didn't assign a group */	\
 					/* yet */			\
-					hb = BUN_NONE;			\
+					hb = HASHnil(hs);			\
 				}					\
 			} else if (grps) {				\
 				prb = ((prb << bits) ^ (BUN) grps[p-r]) & hs->mask; \
-				for (hb = hs->hash[prb];		\
-				     hb != BUN_NONE;			\
-				     hb = hs->link[hb]) {		\
+				for (hb = HASHget(hs,prb);		\
+				     hb != HASHnil(hs);			\
+				     hb = HASHgetlink(hs,hb)) {		\
 					if (grps[hb - r] == grps[p - r] && \
 					    w[p] == w[hb]) {		\
 						oid grp = ngrps[hb - r]; \
@@ -143,9 +143,9 @@
 					}				\
 				}					\
 			} else {					\
-				for (hb = hs->hash[prb];		\
-				     hb != BUN_NONE;			\
-				     hb = hs->link[hb]) {		\
+				for (hb = HASHget(hs,prb);		\
+				     hb != HASHnil(hs);			\
+				     hb = HASHgetlink(hs,hb)) {		\
 					if (w[p] == w[hb]) {		\
 						oid grp = ngrps[hb - r]; \
 						ngrps[p - r] = grp;	\
@@ -158,11 +158,11 @@
 					}				\
 				}					\
 			}						\
-			if (hb == BUN_NONE) {				\
+			if (hb == HASHnil(hs)) {				\
 				GRPnotfound();				\
 				/* enter new group into hash table */	\
-				hs->link[p] = hs->hash[prb];		\
-				hs->hash[prb] = p;			\
+				HASHputlink(hs,p, HASHget(hs,prb));	\
+				HASHput(hs,prb,p); 			\
 			}						\
 		}							\
 	} while (0)
@@ -478,19 +478,19 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			/* skip irrelevant BUNs after the current
 			 * BUNs; exploit that hash-table links
 			 * backwards through BAT */
-			for (hb = hs->hash[HASHprobe(hs, v)];
-			     hb != BUN_NONE && hb >= p;
-			     hb = hs->link[hb]) {
-				assert(hs->link[hb] == BUN_NONE
-				       || hs->link[hb] < hb);
+			for (hb = HASHget(hs,HASHprobe(hs, v));
+			     hb != HASHnil(hs)&& hb >= p;
+			     hb = HASHgetlink(hs,hb)) {
+				assert( HASHgetlink(hs,hb) == HASHnil(hs)
+				       || HASHgetlink(hs,hb) < hb);
 			}
 				;
 			if (gc) {
 				for (;
-				     hb != BUN_NONE && grps[hb - r] == grps[p - r];
-				     hb = hs->link[hb]) {
-					assert(hs->link[hb] == BUN_NONE
-					       || hs->link[hb] < hb);
+				     hb != HASHnil(hs) && grps[hb - r] == grps[p - r];
+				     hb = HASHgetlink(hs,hb)) {
+					assert( HASHgetlink(hs,hb) == HASHnil(hs)
+					       || HASHgetlink(hs,hb) < hb);
 					if (cmp(v, BUNtail(bi, hb)) == 0) {
 						oid grp = ngrps[hb - r];
 						ngrps[p - r] = grp;
@@ -502,16 +502,16 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 						break;
 					}
 				}
-				if (hb != BUN_NONE &&
+				if (hb != HASHnil(hs) &&
 				    grps[hb - r] != grps[p - r]) {
 					/* we didn't assign a group
 					 * yet */
-					hb = BUN_NONE;
+					hb = HASHnil(hs);
 				}
 			} else if (grps) {
 				for (;
-				     hb != BUN_NONE;
-				     hb = hs->link[hb]) {
+				     hb != HASHnil(hs);
+				     hb = HASHgetlink(hs,hb)) {
 					if (grps[hb - r] == grps[p - r] &&
 					    cmp(v, BUNtail(bi, hb)) == 0) {
 						oid grp = ngrps[hb - r];
@@ -526,8 +526,8 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				}
 			} else {
 				for (;
-				     hb != BUN_NONE;
-				     hb = hs->link[hb]) {
+				     hb != HASHnil(hs);
+				     hb = HASHgetlink(hs,hb)) {
 					if (cmp(v, BUNtail(bi, hb)) == 0) {
 						oid grp = ngrps[hb - r];
 						ngrps[p - r] = grp;
@@ -540,7 +540,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 					}
 				}
 			}
-			if (hb == BUN_NONE) {
+			if (hb == HASHnil(hs)) {
 				GRPnotfound();
 			}
 		}
@@ -623,11 +623,11 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				v = BUNtail(bi, p);
 				prb = hash_any(hs, v);
 				if (gc) {
-					for (hb = hs->hash[prb];
-					     hb != BUN_NONE && grps[hb - r] == grps[p - r];
-					     hb = hs->link[hb]) {
-						assert(hs->link[hb] == BUN_NONE
-						       || hs->link[hb] < hb);
+					for (hb = HASHget(hs,prb);
+					     hb != HASHnil(hs) && grps[hb - r] == grps[p - r];
+					     hb = HASHgetlink(hs,hb)) {
+						assert( HASHgetlink(hs,hb) == HASHnil(hs)
+						       || HASHgetlink(hs,hb) < hb);
 						if (cmp(v, BUNtail(bi, hb)) == 0) {
 							oid grp = ngrps[hb - r];
 							ngrps[p - r] = grp;
@@ -639,17 +639,17 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 							break;
 						}
 					}
-					if (hb != BUN_NONE &&
+					if (hb != HASHnil(hs) &&
 					    grps[hb - r] != grps[p - r]) {
 						/* we didn't assign a
 						 * group yet */
-						hb = BUN_NONE;
+						hb = HASHnil(hs);
 					}
 				} else if (grps) {
 					prb = ((prb << bits) ^ (BUN) grps[p-r]) & hs->mask;
-					for (hb = hs->hash[prb];
-					     hb != BUN_NONE;
-					     hb = hs->link[hb]) {
+					for (hb = HASHget(hs,prb);
+					     hb != HASHnil(hs);
+					     hb = HASHgetlink(hs,hb)) {
 						if (grps[hb - r] == grps[p - r] &&
 						    cmp(v, BUNtail(bi, hb)) == 0) {
 							oid grp = ngrps[hb - r];
@@ -663,9 +663,9 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 						}
 					}
 				} else {
-					for (hb = hs->hash[prb];
-					     hb != BUN_NONE;
-					     hb = hs->link[hb]) {
+					for (hb = HASHget(hs,prb);
+					     hb != HASHnil(hs);
+					     hb = HASHgetlink(hs,hb)) {
 						if (cmp(v, BUNtail(bi, hb)) == 0) {
 							oid grp = ngrps[hb - r];
 							ngrps[p - r] = grp;
@@ -678,11 +678,11 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 						}
 					}
 				}
-				if (hb == BUN_NONE) {
+				if (hb == HASHnil(hs)) {
 					GRPnotfound();
 					/* enter new group into hash table */
-					hs->link[p] = hs->hash[prb];
-					hs->hash[prb] = p;
+					HASHputlink(hs, p, HASHget(hs,prb));
+					HASHput(hs, prb,p);
 				}
 			}
 		}

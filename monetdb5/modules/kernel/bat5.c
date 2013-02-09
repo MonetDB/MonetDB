@@ -116,16 +116,10 @@ HASHinfo(BAT *bk, BAT *bv, Hash *h, str s)
 		cnt[i] = 0;
 	}
 	for (i = 0; i <= h->mask; i++) {
-		if (h->hash[i] == BUN_NONE) {
-			cnt[0]++;
-		} else if (h->hash[i] > h->lim) {
-			GDKerror("HASHinfo: hash consistency problem " BUNFMT "\n", i);
-		} else {
-			j = HASHlist(h, h->hash[i]);
-			for (k = 0; j; k++)
-				j >>= 1;
-			cnt[k]++;
-		}
+		j = HASHlist(h, i);
+		for (k = 0; j; k++)
+			j >>= 1;
+		cnt[k]++;
 	}
 
 	for (i = 0; i <= COLLISION + 1; i++)

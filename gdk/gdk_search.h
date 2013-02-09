@@ -32,6 +32,16 @@
 gdk_export void HASHdestroy(BAT *b);
 gdk_export BUN HASHprobe(Hash *h, const void *v);
 gdk_export BUN HASHlist(Hash *h, BUN i);
+gdk_export int HASHwidth(BUN mask);
+
+
+#define HASHnil(H)  (BUN) (H->nil)
+
+/* play around with h->hash[i] and h->link[j] */
+#define HASHget(h,i) ((BUN) (h->width == BUN4? ((BUN4type*)h->hash)[i]: (h->width == BUN8 ?((BUN8type*)h->hash)[i]:((BUN2type*)h->hash)[i])))
+#define HASHput(h,i,v) (void) (h->width == BUN4? (((BUN4type*)h->hash)[i] = (BUN4type)v) : (h->width == BUN8 ? (((BUN8type*)h->hash)[i] = (BUN8type)v) : (((BUN2type*)h->hash)[i] = (BUN2type)v)))
+#define HASHgetlink(h,i) ((BUN) (h->width == BUN4? ((BUN4type*)h->link)[i]: (h->width == BUN8 ?((BUN8type*)h->link)[i]:((BUN2type*)h->link)[i])))
+#define HASHputlink(h,i,v) (void) (h->width == BUN4? (((BUN4type*)h->link)[i] = (BUN4type)v) : (h->width == BUN8 ? (((BUN8type*)h->link)[i] = (BUN8type)v) : (((BUN2type*)h->link)[i] = (BUN2type)v)))
 
 #define mix_sht(X)            (((X)>>7)^(X))
 #define mix_int(X)            (((X)>>7)^((X)>>13)^((X)>>21)^(X))
@@ -85,7 +95,7 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
 #define HASHfnd(x,y,z)							\
 	do {								\
 		BUN _i;							\
-		(x) = BUN_NONE;						\
+		(x) = BUN_NONE;					\
 		if ((y).b->H->hash || BAThash((y).b, 0) ||		\
 		    GDKfatal("HASHfnd: hash build failed on %s.\n",	\
 			     BATgetId((y).b)))				\
@@ -97,7 +107,7 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
 #define HASHfnd_TYPE(x,y,z,TYPE)					\
 	do {								\
 		BUN _i;							\
-		(x) = BUN_NONE;						\
+		(x) = BUN_NONE;					\
 		if ((y).b->H->hash || BAThash((y).b, 0) ||		\
 		    GDKfatal("HASHfnd_" #TYPE ": hash build failed on %s.\n", \
 			     BATgetId((y).b)))				\
@@ -129,8 +139,8 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
 #define HASHins_TYPE(h, i, v, TYPE)		\
 	do {					\
 		BUN _c = hash_##TYPE(h,v);	\
-		h->link[i] = h->hash[_c];	\
-		h->hash[_c] = i;		\
+		HASHputlink(h,i, HASHget(h,_c));\
+		HASHput(h, _c, i);\
 	} while (0)
 
 #define HASHins_str(h,i,v)			\
@@ -138,21 +148,21 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
 		BUN _c;				\
 		GDK_STRHASH(v,_c);		\
 		_c &= (h)->mask;		\
-		h->link[i] = h->hash[_c];	\
-		h->hash[_c] = i;		\
+		HASHputlink(h,i, HASHget(h,_c));\
+		HASHput(h,_c,i);\
 	} while (0)
 #define HASHins_str_hv(h,i,v)				\
 	do {						\
 		BUN _c = ((BUN *) v)[-1] & (h)->mask;	\
-		h->link[i] = h->hash[_c];		\
-		h->hash[_c] = i;			\
+		HASHputlink(h,i, HASHget(h,_c));\
+		HASHput(h,_c,i);\
 	} while (0)
 
 #define HASHins_any(h,i,v)			\
 	do {					\
 		BUN _c = HASHprobe(h, v);	\
-		h->link[i] = h->hash[_c];	\
-		h->hash[_c] = i;		\
+		HASHputlink(h,i, HASHget(h,_c));\
+		HASHput(h,_c,i);\
 	} while (0)
 
 /* HASHins now receives a BAT* param and has become adaptive; killing
@@ -190,42 +200,42 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
 
 #define HASHdel(h, i, v, next)						\
 	do {								\
-		if (next && h->link[i+1] == i) {			\
-			h->link[i+1] = h->link[i];			\
+		if (next && HASHgetlink(h, i+1) == i) {			\
+			HASHputlink(h,i+1,HASHgetlink(h,i));  	\
 		} else {						\
 			BUN _c = HASHprobe(h, v);			\
-			if (h->hash[_c] == i) {				\
-				h->hash[_c] = h->link[i];		\
+			if ( HASHget(h,_c) == i) {				\
+				HASHput(h,_c, HASHgetlink(h,i));\
 			} else {					\
-				for(_c = h->hash[_c]; _c != BUN_NONE;	\
-						_c = h->link[_c]){	\
-					if (h->link[_c] == i) {		\
-						h->link[_c] = h->link[i]; \
+				for(_c = HASHget(h,_c); _c != HASHnil(h);	\
+						_c = HASHgetlink(h,_c)){	\
+					if ( HASHgetlink(h,_c) == i) {		\
+						HASHputlink(h,_c, HASHgetlink(h,i));\
 						break;			\
 					}				\
 				}					\
 			}						\
-		} h->link[i] = BUN_NONE;				\
+		} HASHputlink(h,i,HASHnil(h)); \
 	} while (0)
 
 #define HASHmove(h, i, j, v, next)					\
 	do {								\
-		if (next && h->link[i+1] == i) {			\
-			h->link[i+1] = j;				\
+		if (next && HASHgetlink(h,i+1) == i) {			\
+			HASHputlink(h,i+1,j);\
 		} else {						\
 			BUN _c = HASHprobe(h, v);			\
-			if (h->hash[_c] == i) {				\
-				h->hash[_c] = j;			\
+			if ( HASHget(h,_c) == i) {				\
+				HASHput(h,_c,j);\
 			} else {					\
-				for(_c = h->hash[_c]; _c != BUN_NONE;	\
-						_c = h->link[_c]){	\
-					if (h->link[_c] == i) {		\
-						h->link[_c] = j;	\
+				for(_c = HASHget(h,_c) ; _c != HASHnil(h);	\
+						_c = HASHgetlink(h,_c)){	\
+					if ( HASHgetlink(h,_c) == i) {		\
+						HASHputlink(h,_c,j);\
 						break;			\
 					}				\
 				}					\
 			}						\
-		} h->link[j] = h->link[i];				\
+		} HASHputlink(h,j, HASHgetlink(h,i));\
 	} while (0)
 /*
  * @+ Binary Search on a Sorted BAT
@@ -241,7 +251,7 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
  *
  * From the above routines we now also defined the SORTfnd function
  * that looks for a certain value in the HEAD and returns a (not
- * necessarily the first or last) reference to it, or BUN_NONE (if the
+ * necessarily the first or last) reference to it, or hash BUN_NONE (if the
  * value does not exist).
  *
  * Note: of the SORTfnd, only SORTfndfirst(b,v) and
