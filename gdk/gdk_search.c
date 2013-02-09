@@ -94,7 +94,7 @@
 
 int HASHwidth(BUN hashsize){
 	//if ( hashsize < BUN_NONE/8 ) return BUN1; does not make much sense
-	if ( hashsize < BUN_NONE/4 ) return BUN2;
+	//if ( hashsize < BUN_NONE/4 ) return BUN2;
 	if ( hashsize < BUN_NONE/2) return BUN4;
 	(void) hashsize;
 	return BUN8;
