@@ -311,25 +311,6 @@ group_export int CTrefine_rev(BAT **res, BAT *b, BAT *a);
 #define str_hv_EQ(a,b,t) GDK_STREQ(a,b)
 
 /*
-   Note:
-	following macros take advantage of clustered property;
-	if b is clustered, then we can stop early traversing collision lists.
-
-	BTW, simply stopping possibly breaks chain construction, so the resulting
-	map is not directly reuseable as a hash table; the current Monet cannot
-	however handle multiple accellerators, so this ain't a real problem for now :)
- */
-
-#define declare_unclustered	/* avoid warning */
-#define declare_clustered   int samecluster = TRUE;
-
-#define chain_unclustered   for (zz = hash[c]; zz != BUN_NONE; zz = e->use.link)
-#define chain_clustered     for (zz = hash[c]; (zz != BUN_NONE) && (samecluster); zz = e->use.link)
-
-#define tst_grp_unclustered(eq,p,t)    (eq(p, tcur, t))
-#define tst_grp_clustered(eq,p,t)      (samecluster = eq(p, tcur, t))
-
-/*
  * @+ Support for Order-by
  */
 #define DEFAULT_SIZE 10000
