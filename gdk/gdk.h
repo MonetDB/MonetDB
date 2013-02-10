@@ -2970,19 +2970,22 @@ gdk_export int ALIGNsetH(BAT *b1, BAT *b2);
  */
 #define HASHlooploc(bi, h, hb, v)				\
 	for (hb = HASHget(h, HASHprobe(h, v));			\
-	     hb != HASHnil(h);					\
+	     TRUE;					\
 	     hb = HASHgetlink(h,hb))				\
+		if ( hb == HASHnil(h) ){ hb = BUN_NONE; break;} else \
 		if (ATOMcmp(h->type, v, BUNhloc(bi, hb)) == 0)
 #define HASHloopvar(bi, h, hb, v)				\
 	for (hb = HASHget(h,HASHprobe(h, v));			\
-	     hb != HASHnil(h);					\
+	     TRUE;					\
 	     hb = HASHgetlink(h,hb))				\
+		if ( hb == HASHnil(h) ){ hb = BUN_NONE; break;} else \
 		if (ATOMcmp(h->type, v, BUNhvar(bi, hb)) == 0)
 
 #define HASHloop_TYPE(bi, h, hb, v, TYPE)			\
 	for (hb = HASHget(h, hash_##TYPE(h, v));			\
-	     hb != HASHnil(h);					\
+	     TRUE;					\
 	     hb = HASHgetlink(h,hb))				\
+		if ( hb == HASHnil(h) ){ hb = BUN_NONE; break;} else \
 		if (simple_EQ(v, BUNhloc(bi, hb), TYPE))
 
 #define HASHloop_bit(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, bte)
@@ -2999,8 +3002,9 @@ gdk_export int ALIGNsetH(BAT *b1, BAT *b2);
 
 #define HASHloop_any(bi, h, hb, v)				\
 	for (hb = HASHget(h, hash_any(h, v));			\
-	     hb != HASHnil(h);					\
+	     TRUE;					\
 	     hb = HASHgetlink(h,hb))				\
+		if ( hb == HASHnil(h) ){ hb = BUN_NONE; break;} else \
 		if (atom_EQ(v, BUNhead(bi, hb), (bi).b->htype))
 
 /*
