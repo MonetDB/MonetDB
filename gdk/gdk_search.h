@@ -38,10 +38,26 @@ gdk_export int HASHwidth(BUN hashsize);
 #define HASHnil(H)  (BUN) (H->nil)
 
 /* play around with h->hash[i] and h->link[j] */
-#define HASHget(h,i) ((BUN) (h->width == BUN4? ((BUN4type*)h->hash)[i]: (h->width == BUN8 ?((BUN8type*)h->hash)[i]:((BUN2type*)h->hash)[i])))
-#define HASHput(h,i,v) (void) (h->width == BUN4? (((BUN4type*)h->hash)[i] = (BUN4type)v) : (h->width == BUN8 ? (((BUN8type*)h->hash)[i] = (BUN8type)v) : (((BUN2type*)h->hash)[i] = (BUN2type)v)))
-#define HASHgetlink(h,i) ((BUN) (h->width == BUN4? ((BUN4type*)h->link)[i]: (h->width == BUN8 ?((BUN8type*)h->link)[i]:((BUN2type*)h->link)[i])))
-#define HASHputlink(h,i,v) (void) (h->width == BUN4? (((BUN4type*)h->link)[i] = (BUN4type)v) : (h->width == BUN8 ? (((BUN8type*)h->link)[i] = (BUN8type)v) : (((BUN2type*)h->link)[i] = (BUN2type)v)))
+#define HASHget(h,i)	\
+	((BUN)	(h->width == BUN8 ? ((BUN8type*) h->hash)[i] : \
+		(h->width == BUN4 ? ((BUN4type*) h->hash)[i] : \
+		(h->width == BUN2 ? ((BUN2type*) h->hash)[i] : \
+		                    ((BUN1type*) h->hash)[i] ))))
+#define HASHput(h,i,v)	\
+	(void)	(h->width == BUN8 ? (((BUN8type*) h->hash)[i] = (BUN8type) v) : \
+		(h->width == BUN4 ? (((BUN4type*) h->hash)[i] = (BUN4type) v) : \
+		(h->width == BUN2 ? (((BUN2type*) h->hash)[i] = (BUN2type) v) : \
+		                    (((BUN1type*) h->hash)[i] = (BUN1type) v) )))
+#define HASHgetlink(h,i)	\
+	((BUN)	(h->width == BUN8 ? ((BUN8type*) h->link)[i] : \
+		(h->width == BUN4 ? ((BUN4type*) h->link)[i] : \
+		(h->width == BUN2 ? ((BUN2type*) h->link)[i] : \
+		                    ((BUN1type*) h->link)[i] ))))
+#define HASHputlink(h,i,v)	\
+	(void)	(h->width == BUN8 ? (((BUN8type*) h->link)[i] = (BUN8type) v) : \
+		(h->width == BUN4 ? (((BUN4type*) h->link)[i] = (BUN4type) v) : \
+		(h->width == BUN2 ? (((BUN2type*) h->link)[i] = (BUN2type) v) : \
+		                    (((BUN1type*) h->link)[i] = (BUN1type) v) )))
 
 #define mix_sht(X)            (((X)>>7)^(X))
 #define mix_int(X)            (((X)>>7)^((X)>>13)^((X)>>21)^(X))
