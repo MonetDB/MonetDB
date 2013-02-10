@@ -538,15 +538,6 @@ typedef oid var_t;		/* type used for heap index of var-sized BAT */
 #endif
 
 typedef oid BUN;		/* BUN position */
-#define BUN1 1
-#define BUN2 2
-#define BUN4 4
-#define BUN8 8
-typedef unsigned char BUN1type;
-typedef unsigned short BUN2type;
-typedef unsigned int BUN4type;
-typedef BUN BUN8type;
-
 #define SIZEOF_BUN	SIZEOF_OID
 #define BUNFMT		OIDFMT
 /* alternatively:
@@ -560,6 +551,20 @@ typedef size_t BUN;
 #define BUN_NONE ((BUN) LLONG_MAX)
 #endif
 #define BUN_MAX (BUN_NONE - 1)	/* maximum allowed size of a BAT */
+
+#define BUN1 1
+#define BUN2 2
+#define BUN4 4
+#define BUN8 8
+typedef unsigned char BUN1type;
+typedef unsigned short BUN2type;
+typedef unsigned int BUN4type;
+typedef BUN BUN8type;
+#define BUN1_NONE ((BUN1type) 0xFF)
+#define BUN2_NONE ((BUN2type) 0xFFFF)
+#define BUN4_NONE ((BUN4type) 0xFFFFFFFF)
+#define BUN8_NONE ((BUN8type) BUN_NONE)
+
 
 /*
  * @- Checking and Error definitions:

@@ -93,9 +93,9 @@
 #include "gdk_private.h"
 
 int HASHwidth(BUN hashsize){
-	//if ( hashsize < BUN_NONE/8 ) return BUN1; does not make much sense
-	//if ( hashsize < BUN_NONE/4 ) return BUN2;
-	if ( hashsize < BUN_NONE/2) return BUN4;
+	//if (hashsize < BUN1_NONE) return BUN1; does not make much sense
+	//if (hashsize < BUN2_NONE) return BUN2;
+	if (hashsize < BUN4_NONE) return BUN4;
 	(void) hashsize;
 	return BUN8;
 }
@@ -135,7 +135,22 @@ HASHnew(Heap *hp, int tpe, BUN size, BUN mask)
 	h->lim = size;
 	h->mask = mask - 1;
 	h->width = width;
-	h->nil = (BUN) h->mask;
+	switch (width) {
+	case BUN1:
+		h->nil = BUN1_NONE;
+		break;
+	case BUN2:
+		h->nil = BUN2_NONE;
+		break;
+	case BUN4:
+		h->nil = BUN4_NONE;
+		break;
+	case BUN8:
+		h->nil = BUN8_NONE;
+		break;
+	default:
+		assert(0);
+	}
 	h->link = (BUN *) hp->base;
 	h->hash = (BUN *) ((char*)h->link + h->lim *width);
 	h->type = tpe;
