@@ -32,7 +32,7 @@
 gdk_export void HASHdestroy(BAT *b);
 gdk_export BUN HASHprobe(Hash *h, const void *v);
 gdk_export BUN HASHlist(Hash *h, BUN i);
-gdk_export int HASHwidth(BUN mask);
+gdk_export int HASHwidth(BUN hashsize);
 
 
 #define HASHnil(H)  (BUN) (H->nil)
