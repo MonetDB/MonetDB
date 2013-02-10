@@ -125,7 +125,7 @@ Hash *
 HASHnew(Heap *hp, int tpe, BUN size, BUN mask)
 {
 	Hash *h = NULL;
-	int width = HASHwidth(mask + size);
+	int width = HASHwidth(MAX(mask,size));
 
 	if (HEAPalloc(hp, mask + size, width) < 0)
 		return NULL;
