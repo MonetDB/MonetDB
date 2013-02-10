@@ -93,9 +93,9 @@
 #include "gdk_private.h"
 
 int HASHwidth(BUN hashsize){
-	//if (hashsize < BUN1_NONE) return BUN1; does not make much sense
-	//if (hashsize < BUN2_NONE) return BUN2;
-	if (hashsize < BUN4_NONE) return BUN4;
+	//if (hashsize <= BUN1_NONE) return BUN1; does not make much sense
+	//if (hashsize <= BUN2_NONE) return BUN2;
+	if (hashsize <= BUN4_NONE) return BUN4;
 	(void) hashsize;
 	return BUN8;
 }
