@@ -26,7 +26,7 @@ Ready.
 
 % .tt,	.tv,	.tv # table_name
 % name,	s,	i # name
-% varchar,	varchar,	tinyint # type
+% varchar,	char,	tinyint # type
 % 17,	3,	1 # length
 [ "schemas",	"str",	1	]
 [ "types",	"str",	1	]

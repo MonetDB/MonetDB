@@ -31,7 +31,7 @@ Ready.
 [ 1	]
 % sys. # table_name
 % ifthenelse_isnull_=_i # name
-% varchar # type
+% char # type
 % 23 # length
 [ "base table"	]
 [ "system table"	]

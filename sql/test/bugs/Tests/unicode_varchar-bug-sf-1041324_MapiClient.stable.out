@@ -27,13 +27,13 @@ Ready.
 
 % . # table_name
 % single_value # name
-% varchar # type
-% 126 # length
+% char # type
+% 128 # length
 [ "http://shopping.b92.net/index.php?IDS=11&ID_Group=39&ID_prod=754&PROD_NAME=Belgrade+Coffee+Shop+4&GROUP_NAME=Muzi�a+produkcija"	]
 % . # table_name
 % single_value # name
-% varchar # type
-% 21 # length
+% char # type
+% 128 # length
 [ "SAVE 25¢ ON ICE CREAM"	]
 
 # 12:55:03 >  

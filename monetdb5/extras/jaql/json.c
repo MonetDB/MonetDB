@@ -111,7 +111,7 @@ static size_t
 read_from_stream(jsonbat *jb, char **pos, char **start, char **recall)
 {
 	size_t shift = 0;
-	int sret = 0;
+	ssize_t sret = 0;
 	
 	assert(*start - jb->streambuf >= 0);
 	shift = *start - jb->streambuf;
@@ -145,7 +145,7 @@ read_from_stream(jsonbat *jb, char **pos, char **start, char **recall)
 	jb->streambuf[shift + sret] = '\0';
 	assert(**pos != '\0');
 
-	return sret;
+	return (size_t) sret;
 }
 
 static char *

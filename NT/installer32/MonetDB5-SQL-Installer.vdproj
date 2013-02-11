@@ -231,6 +231,12 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_399DA9FEC3D14CA1ABCAA84D75F3532E"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_3B793520B49D47C18CC14D2B737DA38C"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -1707,6 +1713,26 @@
             "TargetName" = "8:aggr.mal"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_399DA9FEC3D14CA1ABCAA84D75F3532E"
+            {
+            "SourcePath" = "8:lib\\monetdb5\\createdb\\75_storagemodel.sql"
+            "TargetName" = "8:75_storagemodel.sql"
+            "Tag" = "8:"
+            "Folder" = "8:_7F962DDBDF894636B6CAFE6FE4887567"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"

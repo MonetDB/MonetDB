@@ -1915,9 +1915,9 @@ BUNlocate(BAT *b, const void *x, const void *y)
 				BUN i;
 
 				for (i = 0; i <= v->H->hash->mask; i++)
-					hcnt += (v->H->hash->hash[i] != BUN_NONE);
+					hcnt += HASHget(v->H->hash,i) != HASHnil(v->H->hash);
 				for (i = 0; i <= v->T->hash->mask; i++)
-					tcnt += (v->T->hash->hash[i] != BUN_NONE);
+					tcnt += HASHget(v->T->hash,i) != HASHnil(v->T->hash);
 				if (hcnt < tcnt) {
 					usemirror();
 					v = BATmirror(v);
@@ -2976,13 +2976,13 @@ BATassertHeadProps(BAT *b)
 				BUN prb;
 				valp = BUNhead(bi, p);
 				prb = HASHprobe(hs, valp);
-				for (hb = hs->hash[prb];
-				     hb != BUN_NONE;
-				     hb = hs->link[hb])
+				for (hb = HASHget(hs,prb);
+				     hb != HASHnil(hs);
+				     hb = HASHgetlink(hs,hb))
 					if (cmpf(valp, BUNhead(bi, hb)) == 0)
 						assert(!b->hkey);
-				hs->link[p] = hs->hash[prb];
-				hs->hash[prb] = p;
+				HASHputlink(hs,p, HASHget(hs,prb));
+				HASHput(hs,prb,p);
 				cmp = cmpf(valp, nilp);
 				assert(!b->H->nonil || cmp != 0);
 				if (cmp == 0)
@@ -3242,9 +3242,9 @@ BATderiveHeadProps(BAT *b, int expensive)
 		prev = valp;
 		if (key && hs) {
 			prb = HASHprobe(hs, valp);
-			for (hb = hs->hash[prb];
-			     hb != BUN_NONE;
-			     hb = hs->link[hb]) {
+			for (hb = HASHget(hs,prb);
+			     hb != HASHnil(hs);
+			     hb = HASHgetlink(hs,hb)) {
 				if (cmpf(valp, BUNhead(bi, hb)) == 0) {
 					key = 0;
 					b->H->nokey[0] = hb;
@@ -3252,8 +3252,8 @@ BATderiveHeadProps(BAT *b, int expensive)
 					break;
 				}
 			}
-			hs->link[p] = hs->hash[prb];
-			hs->hash[prb] = p;
+			HASHputlink(hs,p, HASHget(hs,prb));
+			HASHput(hs,prb,p);
 		}
 	}
 	if (hs) {

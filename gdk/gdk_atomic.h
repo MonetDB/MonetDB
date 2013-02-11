@@ -54,9 +54,9 @@
 
 #define ATOMIC_GET_sht(var, lck, fcn)		var
 #define ATOMIC_SET_sht(var, val, lck, fcn)	(var = (val))
-#define ATOMIC_INC_sht(var, lck, fcn)		_InterlockedIncrement16(&var)
-#define ATOMIC_DEC_sht(var, lck, fcn)		_InterlockedDecrement16(&var)
-#define ATOMIC_CAS_sht(var, old, new, lck, fcn)	_InterlockedCompareExchange16(&var, new, old)
+#define ATOMIC_INC_sht(var, lck, fcn)		_InterlockedIncrement16(&(var))
+#define ATOMIC_DEC_sht(var, lck, fcn)		_InterlockedDecrement16(&(var))
+#define ATOMIC_CAS_sht(var, old, new, lck, fcn)	_InterlockedCompareExchange16(&(var), new, old)
 
 #pragma intrinsic(_InterlockedIncrement16)
 #pragma intrinsic(_InterlockedDecrement16)
@@ -64,11 +64,11 @@
 
 #define ATOMIC_GET_int(var, lck, fcn)		var
 #define ATOMIC_SET_int(var, val, lck, fcn)	(var = (val))
-#define ATOMIC_ADD_int(var, val, lck, fcn)	_InterlockedExchangeAdd(&var, (val))
-#define ATOMIC_SUB_int(var, val, lck, fcn)	_InterlockedExchangeAdd(&var, -(val))
-#define ATOMIC_INC_int(var, lck, fcn)		_InterlockedIncrement(&var)
-#define ATOMIC_DEC_int(var, lck, fcn)		_InterlockedDecrement(&var)
-#define ATOMIC_CAS_int(var, old, new, lck, fcn)	_InterlockedCompareExchange(&var, new, old)
+#define ATOMIC_ADD_int(var, val, lck, fcn)	_InterlockedExchangeAdd(&(var), (val))
+#define ATOMIC_SUB_int(var, val, lck, fcn)	_InterlockedExchangeAdd(&(var), -(val))
+#define ATOMIC_INC_int(var, lck, fcn)		_InterlockedIncrement(&(var))
+#define ATOMIC_DEC_int(var, lck, fcn)		_InterlockedDecrement(&(var))
+#define ATOMIC_CAS_int(var, old, new, lck, fcn)	_InterlockedCompareExchange(&(var), new, old)
 
 #pragma intrinsic(_InterlockedExchangeAdd)
 #pragma intrinsic(_InterlockedIncrement)
@@ -78,11 +78,11 @@
 #if SIZEOF_SSIZE_T == SIZEOF_LNG
 #define ATOMIC_GET_lng(var, lck, fcn)		var
 #define ATOMIC_SET_lng(var, val, lck, fcn)	(var = (val))
-#define ATOMIC_ADD_lng(var, val, lck, fcn)	_InterlockedExchangeAdd64(&var, val)
-#define ATOMIC_SUB_lng(var, val, lck, fcn)	_InterlockedExchangeAdd64(&var, -(val))
-#define ATOMIC_INC_lng(var, lck, fcn)		_InterlockedIncrement64(&var)
-#define ATOMIC_DEC_lng(var, lck, fcn)		_InterlockedDecrement64(&var)
-#define ATOMIC_CAS_lng(var, old, new, lck, fcn)	_InterlockedCompareExchange64(&var, new, old)
+#define ATOMIC_ADD_lng(var, val, lck, fcn)	_InterlockedExchangeAdd64(&(var), val)
+#define ATOMIC_SUB_lng(var, val, lck, fcn)	_InterlockedExchangeAdd64(&(var), -(val))
+#define ATOMIC_INC_lng(var, lck, fcn)		_InterlockedIncrement64(&(var))
+#define ATOMIC_DEC_lng(var, lck, fcn)		_InterlockedDecrement64(&(var))
+#define ATOMIC_CAS_lng(var, old, new, lck, fcn)	_InterlockedCompareExchange64(&(var), new, old)
 
 #pragma intrinsic(_InterlockedExchangeAdd64)
 #pragma intrinsic(_InterlockedIncrement64)
@@ -96,26 +96,26 @@
 
 #define ATOMIC_GET_sht(var, lck, fcn)		var
 #define ATOMIC_SET_sht(var, val, lck, fcn)	(var = (val))
-#define ATOMIC_INC_sht(var, lck, fcn)		__sync_add_and_fetch(&var, 1)
-#define ATOMIC_DEC_sht(var, lck, fcn)		__sync_sub_and_fetch(&var, 1)
-#define ATOMIC_CAS_sht(var, old, new, lck, fcn)	__sync_val_compare_and_swap(&var, old, new)
+#define ATOMIC_INC_sht(var, lck, fcn)		__sync_add_and_fetch(&(var), 1)
+#define ATOMIC_DEC_sht(var, lck, fcn)		__sync_sub_and_fetch(&(var), 1)
+#define ATOMIC_CAS_sht(var, old, new, lck, fcn)	__sync_val_compare_and_swap(&(var), old, new)
 
 #define ATOMIC_GET_int(var, lck, fcn)		var
 #define ATOMIC_SET_int(var, val, lck, fcn)	(var = (val))
-#define ATOMIC_ADD_int(var, val, lck, fcn)	__sync_fetch_and_add(&var, (val))
-#define ATOMIC_SUB_int(var, val, lck, fcn)	__sync_fetch_and_sub(&var, (val))
-#define ATOMIC_INC_int(var, lck, fcn)		__sync_add_and_fetch(&var, 1)
-#define ATOMIC_DEC_int(var, lck, fcn)		__sync_sub_and_fetch(&var, 1)
-#define ATOMIC_CAS_int(var, old, new, lck, fcn)	__sync_val_compare_and_swap(&var, old, new)
+#define ATOMIC_ADD_int(var, val, lck, fcn)	__sync_fetch_and_add(&(var), (val))
+#define ATOMIC_SUB_int(var, val, lck, fcn)	__sync_fetch_and_sub(&(var), (val))
+#define ATOMIC_INC_int(var, lck, fcn)		__sync_add_and_fetch(&(var), 1)
+#define ATOMIC_DEC_int(var, lck, fcn)		__sync_sub_and_fetch(&(var), 1)
+#define ATOMIC_CAS_int(var, old, new, lck, fcn)	__sync_val_compare_and_swap(&(var), old, new)
 
 #if SIZEOF_SSIZE_T == SIZEOF_LNG
 #define ATOMIC_GET_lng(var, lck, fcn)		var
 #define ATOMIC_SET_lng(var, val, lck, fcn)	(var = (val))
-#define ATOMIC_ADD_lng(var, val, lck, fcn)	__sync_fetch_and_add(&var, (val))
-#define ATOMIC_SUB_lng(var, val, lck, fcn)	__sync_fetch_and_sub(&var, (val))
-#define ATOMIC_INC_lng(var, lck, fcn)		__sync_add_and_fetch(&var, 1)
-#define ATOMIC_DEC_lng(var, lck, fcn)		__sync_sub_and_fetch(&var, 1)
-#define ATOMIC_CAS_lng(var, old, new, lck, fcn)	__sync_val_compare_and_swap(&var, old, new)
+#define ATOMIC_ADD_lng(var, val, lck, fcn)	__sync_fetch_and_add(&(var), (val))
+#define ATOMIC_SUB_lng(var, val, lck, fcn)	__sync_fetch_and_sub(&(var), (val))
+#define ATOMIC_INC_lng(var, lck, fcn)		__sync_add_and_fetch(&(var), 1)
+#define ATOMIC_DEC_lng(var, lck, fcn)		__sync_sub_and_fetch(&(var), 1)
+#define ATOMIC_CAS_lng(var, old, new, lck, fcn)	__sync_val_compare_and_swap(&(var), old, new)
 #endif
 
 #define ATOMIC_INIT(lck, fcn)	((void) 0)
@@ -131,7 +131,7 @@ __ATOMIC_GET_sht(volatile short *var, pthread_mutex_t *lck)
 	pthread_mutex_unlock(lck);
 	return old;
 }
-#define ATOMIC_GET_sht(var, lck, fcn)	__ATOMIC_GET_sht(&var, &lck)
+#define ATOMIC_GET_sht(var, lck, fcn)	__ATOMIC_GET_sht(&(var), &(lck))
 
 static inline short
 __ATOMIC_SET_sht(volatile short *var, short val, pthread_mutex_t *lck)
@@ -143,7 +143,7 @@ __ATOMIC_SET_sht(volatile short *var, short val, pthread_mutex_t *lck)
 	pthread_mutex_unlock(lck);
 	return new;
 }
-#define ATOMIC_SET_sht(var, val, lck, fcn)	__ATOMIC_SET_sht(&var, (val), &lck)
+#define ATOMIC_SET_sht(var, val, lck, fcn)	__ATOMIC_SET_sht(&(var), (val), &(lck))
 
 static inline short
 __ATOMIC_INC_sht(volatile short *var, pthread_mutex_t *lck)
@@ -154,7 +154,7 @@ __ATOMIC_INC_sht(volatile short *var, pthread_mutex_t *lck)
 	pthread_mutex_unlock(lck);
 	return new;
 }
-#define ATOMIC_INC_sht(var, lck, fcn)		__ATOMIC_INC_sht(&var, &lck)
+#define ATOMIC_INC_sht(var, lck, fcn)		__ATOMIC_INC_sht(&(var), &(lck))
 
 static inline short
 __ATOMIC_DEC_sht(volatile short *var, pthread_mutex_t *lck)
@@ -165,7 +165,7 @@ __ATOMIC_DEC_sht(volatile short *var, pthread_mutex_t *lck)
 	pthread_mutex_unlock(lck);
 	return new;
 }
-#define ATOMIC_DEC_sht(var, lck, fcn)		__ATOMIC_DEC_sht(&var, &lck)
+#define ATOMIC_DEC_sht(var, lck, fcn)		__ATOMIC_DEC_sht(&(var), &(lck))
 
 static inline short
 __ATOMIC_CAS_sht(volatile short *var, short old, short new, pthread_mutex_t *lck)
@@ -178,7 +178,7 @@ __ATOMIC_CAS_sht(volatile short *var, short old, short new, pthread_mutex_t *lck
 	pthread_mutex_unlock(lck);
 	return orig;
 }
-#define ATOMIC_CAS_sht(var, old, new, lck, fcn)	__ATOMIC_CAS_sht(&var, (old), (new), &lck)
+#define ATOMIC_CAS_sht(var, old, new, lck, fcn)	__ATOMIC_CAS_sht(&(var), (old), (new), &(lck))
 
 
 static inline int
@@ -190,7 +190,7 @@ __ATOMIC_GET_int(volatile int *var, pthread_mutex_t *lck)
 	pthread_mutex_unlock(lck);
 	return old;
 }
-#define ATOMIC_GET_int(var, lck, fcn)	__ATOMIC_GET_int(&var, &lck)
+#define ATOMIC_GET_int(var, lck, fcn)	__ATOMIC_GET_int(&(var), &(lck))
 
 static inline int
 __ATOMIC_SET_int(volatile int *var, int val, pthread_mutex_t *lck)
@@ -202,7 +202,7 @@ __ATOMIC_SET_int(volatile int *var, int val, pthread_mutex_t *lck)
 	pthread_mutex_unlock(lck);
 	return new;
 }
-#define ATOMIC_SET_int(var, val, lck, fcn)	__ATOMIC_SET_int(&var, (val), &lck)
+#define ATOMIC_SET_int(var, val, lck, fcn)	__ATOMIC_SET_int(&(var), (val), &(lck))
 
 static inline int
 __ATOMIC_ADD_int(volatile int *var, int val, pthread_mutex_t *lck)
@@ -214,7 +214,7 @@ __ATOMIC_ADD_int(volatile int *var, int val, pthread_mutex_t *lck)
 	pthread_mutex_unlock(lck);
 	return old;
 }
-#define ATOMIC_ADD_int(var, val, lck, fcn)	__ATOMIC_ADD_int(&var, (val), &lck)
+#define ATOMIC_ADD_int(var, val, lck, fcn)	__ATOMIC_ADD_int(&(var), (val), &(lck))
 
 static inline int
 __ATOMIC_SUB_int(volatile int *var, int val, pthread_mutex_t *lck)
@@ -226,7 +226,7 @@ __ATOMIC_SUB_int(volatile int *var, int val, pthread_mutex_t *lck)
 	pthread_mutex_unlock(lck);
 	return old;
 }
-#define ATOMIC_SUB_int(var, val, lck, fcn)	__ATOMIC_SUB_int(&var, (val), &lck)
+#define ATOMIC_SUB_int(var, val, lck, fcn)	__ATOMIC_SUB_int(&(var), (val), &(lck))
 
 static inline int
 __ATOMIC_INC_int(volatile int *var, pthread_mutex_t *lck)
@@ -237,7 +237,7 @@ __ATOMIC_INC_int(volatile int *var, pthread_mutex_t *lck)
 	pthread_mutex_unlock(lck);
 	return new;
 }
-#define ATOMIC_INC_int(var, lck, fcn)		__ATOMIC_INC_int(&var, &lck)
+#define ATOMIC_INC_int(var, lck, fcn)		__ATOMIC_INC_int(&(var), &(lck))
 
 static inline int
 __ATOMIC_DEC_int(volatile int *var, pthread_mutex_t *lck)
@@ -248,7 +248,7 @@ __ATOMIC_DEC_int(volatile int *var, pthread_mutex_t *lck)
 	pthread_mutex_unlock(lck);
 	return new;
 }
-#define ATOMIC_DEC_int(var, lck, fcn)		__ATOMIC_DEC_int(&var, &lck)
+#define ATOMIC_DEC_int(var, lck, fcn)		__ATOMIC_DEC_int(&(var), &(lck))
 
 static inline int
 __ATOMIC_CAS_int(volatile int *var, int old, int new, pthread_mutex_t *lck)
@@ -261,7 +261,7 @@ __ATOMIC_CAS_int(volatile int *var, int old, int new, pthread_mutex_t *lck)
 	pthread_mutex_unlock(lck);
 	return orig;
 }
-#define ATOMIC_CAS_int(var, old, new, lck, fcn)	__ATOMIC_CAS_int(&var, (old), (new), &lck)
+#define ATOMIC_CAS_int(var, old, new, lck, fcn)	__ATOMIC_CAS_int(&(var), (old), (new), &(lck))
 
 #if SIZEOF_SSIZE_T == SIZEOF_LNG
 
@@ -274,7 +274,7 @@ __ATOMIC_GET_lng(volatile lng *var, pthread_mutex_t *lck)
 	pthread_mutex_unlock(lck);
 	return old;
 }
-#define ATOMIC_GET_lng(var, lck, fcn)	__ATOMIC_GET_lng(&var, &lck)
+#define ATOMIC_GET_lng(var, lck, fcn)	__ATOMIC_GET_lng(&(var), &(lck))
 
 static inline lng
 __ATOMIC_SET_lng(volatile lng *var, lng val, pthread_mutex_t *lck)
@@ -286,7 +286,7 @@ __ATOMIC_SET_lng(volatile lng *var, lng val, pthread_mutex_t *lck)
 	pthread_mutex_unlock(lck);
 	return new;
 }
-#define ATOMIC_SET_lng(var, val, lck, fcn)	__ATOMIC_SET_lng(&var, (val), &lck)
+#define ATOMIC_SET_lng(var, val, lck, fcn)	__ATOMIC_SET_lng(&(var), (val), &(lck))
 
 static inline lng
 __ATOMIC_ADD_lng(volatile lng *var, lng val, pthread_mutex_t *lck)
@@ -298,7 +298,7 @@ __ATOMIC_ADD_lng(volatile lng *var, lng val, pthread_mutex_t *lck)
 	pthread_mutex_unlock(lck);
 	return old;
 }
-#define ATOMIC_ADD_lng(var, val, lck, fcn)	__ATOMIC_ADD_lng(&var, (val), &lck)
+#define ATOMIC_ADD_lng(var, val, lck, fcn)	__ATOMIC_ADD_lng(&(var), (val), &(lck))
 
 static inline lng
 __ATOMIC_SUB_lng(volatile lng *var, lng val, pthread_mutex_t *lck)
@@ -310,7 +310,7 @@ __ATOMIC_SUB_lng(volatile lng *var, lng val, pthread_mutex_t *lck)
 	pthread_mutex_unlock(lck);
 	return old;
 }
-#define ATOMIC_SUB_lng(var, val, lck, fcn)	__ATOMIC_SUB_lng(&var, (val), &lck)
+#define ATOMIC_SUB_lng(var, val, lck, fcn)	__ATOMIC_SUB_lng(&(var), (val), &(lck))
 
 static inline lng
 __ATOMIC_INC_lng(volatile lng *var, pthread_mutex_t *lck)
@@ -321,7 +321,7 @@ __ATOMIC_INC_lng(volatile lng *var, pthread_mutex_t *lck)
 	pthread_mutex_unlock(lck);
 	return new;
 }
-#define ATOMIC_INC_lng(var, lck, fcn)		__ATOMIC_INC_lng(&var, &lck)
+#define ATOMIC_INC_lng(var, lck, fcn)		__ATOMIC_INC_lng(&(var), &(lck))
 
 static inline lng
 __ATOMIC_DEC_lng(volatile lng *var, pthread_mutex_t *lck)
@@ -332,7 +332,7 @@ __ATOMIC_DEC_lng(volatile lng *var, pthread_mutex_t *lck)
 	pthread_mutex_unlock(lck);
 	return new;
 }
-#define ATOMIC_DEC_lng(var, lck, fcn)		__ATOMIC_DEC_lng(&var, &lck)
+#define ATOMIC_DEC_lng(var, lck, fcn)		__ATOMIC_DEC_lng(&(var), &(lck))
 
 static inline lng
 __ATOMIC_CAS_lng(volatile lng *var, lng old, lng new, pthread_mutex_t *lck)
@@ -345,12 +345,12 @@ __ATOMIC_CAS_lng(volatile lng *var, lng old, lng new, pthread_mutex_t *lck)
 	pthread_mutex_unlock(lck);
 	return orig;
 }
-#define ATOMIC_CAS_lng(var, old, new, lck, fcn)	__ATOMIC_CAS_lng(&var, (old), (new), &lck)
+#define ATOMIC_CAS_lng(var, old, new, lck, fcn)	__ATOMIC_CAS_lng(&(var), (old), (new), &(lck))
 
 #endif
 
 #define ATOMIC_LOCK		/* must use locks */
-#define ATOMIC_INIT(lck, fcn)	MT_lock_init(&lck, fcn)
+#define ATOMIC_INIT(lck, fcn)	MT_lock_init(&(lck), fcn)
 
 #endif
 

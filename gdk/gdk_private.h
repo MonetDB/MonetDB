@@ -42,7 +42,6 @@ BAT *BATleftthetajoin(BAT *l, BAT *r, int mode, BUN estimate);
 BAT *BATload_intern(bat bid, int lock);
 BAT *BATmaterializet(BAT *b);
 int BATmultijoin(int argc, BAT *argv[], RowFcn tuple_fcn, ptr tuple_data, ColFcn value_fcn[], ptr value_data[], int orderspec);
-BAT *BATnlthetajoin(BAT *l, BAT *r, int mode, BUN estimate);
 void BATpropagate(BAT *dst, BAT *src, int idx);
 str BATrename(BAT *b, const char *nme);
 void BATsetdims(BAT *b);
@@ -111,7 +110,7 @@ int VALprint(stream *fd, const ValRecord *res);
 void VIEWdestroy(BAT *b);
 BAT *VIEWreset(BAT *b);
 void VIEWunlink(BAT *b);
-int IMPSgetbin(int tpe, bte bits, void *bins, const void *v);
+int IMPSgetbin(int tpe, bte bits, char *bins, const void *v);
 void IMPSremove(BAT *b);
 void IMPSprint(BAT *b);
 

@@ -686,75 +686,75 @@ comment "Grouped tail average on bte";
 
 command subavg(b:bat[:oid,:bte],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:bit,abort_on_error:bit) :bat[:oid,:dbl]
 address AGGRsubavg_dbl
-comment "Grouped avg aggregate";
+comment "Grouped average aggregate";
 
 command subavg(b:bat[:oid,:bte],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:bit,abort_on_error:bit) :bat[:oid,:dbl]
 address AGGRsubavgcand_dbl
-comment "Grouped avg aggregate with candidates list";
+comment "Grouped average aggregate with candidates list";
 
 command stdev(b:bat[:oid,:bte], e:bat[:oid,:any_1]) :bat[:oid,:dbl]
 address AGGRstdev2_dbl
-comment "Grouped tail average on bte";
+comment "Grouped tail standard deviation (sample/non-biased) on bte";
 
 command stdev(b:bat[:oid,:bte], g:bat[:oid,:oid], e:bat[:oid,:any_1]):bat[:oid,:dbl]
 address AGGRstdev3_dbl
-comment "Grouped tail average on bte";
+comment "Grouped tail standard deviation (sample/non-biased) on bte";
 
 command substdev(b:bat[:oid,:bte],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:bit,abort_on_error:bit) :bat[:oid,:dbl]
 address AGGRsubstdev_dbl
-comment "Grouped stdev aggregate";
+comment "Grouped standard deviation (sample/non-biased) aggregate";
 
 command substdev(b:bat[:oid,:bte],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:bit,abort_on_error:bit) :bat[:oid,:dbl]
 address AGGRsubstdevcand_dbl
-comment "Grouped stdev aggregate with candidates list";
+comment "Grouped standard deviation (sample/non-biased) aggregate with candidates list";
 
 command stdevp(b:bat[:oid,:bte], e:bat[:oid,:any_1]) :bat[:oid,:dbl]
 address AGGRstdevp2_dbl
-comment "Grouped tail average on bte";
+comment "Grouped tail standard deviation (population/biased) on bte";
 
 command stdevp(b:bat[:oid,:bte], g:bat[:oid,:oid], e:bat[:oid,:any_1]):bat[:oid,:dbl]
 address AGGRstdevp3_dbl
-comment "Grouped tail average on bte";
+comment "Grouped tail standard deviation (population/biased) on bte";
 
 command substdevp(b:bat[:oid,:bte],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:bit,abort_on_error:bit) :bat[:oid,:dbl]
 address AGGRsubstdevp_dbl
-comment "Grouped stdevp aggregate";
+comment "Grouped standard deviation (population/biased) aggregate";
 
 command substdevp(b:bat[:oid,:bte],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:bit,abort_on_error:bit) :bat[:oid,:dbl]
 address AGGRsubstdevpcand_dbl
-comment "Grouped stdevp aggregate with candidates list";
+comment "Grouped standard deviation (population/biased) aggregate with candidates list";
 
 command variance(b:bat[:oid,:bte], e:bat[:oid,:any_1]) :bat[:oid,:dbl]
 address AGGRvariance2_dbl
-comment "Grouped tail average on bte";
+comment "Grouped tail variance (sample/non-biased) on bte";
 
 command variance(b:bat[:oid,:bte], g:bat[:oid,:oid], e:bat[:oid,:any_1]):bat[:oid,:dbl]
 address AGGRvariance3_dbl
-comment "Grouped tail average on bte";
+comment "Grouped tail variance (sample/non-biased) on bte";
 
 command subvariance(b:bat[:oid,:bte],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:bit,abort_on_error:bit) :bat[:oid,:dbl]
 address AGGRsubvariance_dbl
-comment "Grouped variance aggregate";
+comment "Grouped variance (sample/non-biased) aggregate";
 
 command subvariance(b:bat[:oid,:bte],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:bit,abort_on_error:bit) :bat[:oid,:dbl]
 address AGGRsubvariancecand_dbl
-comment "Grouped variance aggregate with candidates list";
+comment "Grouped variance (sample/non-biased) aggregate with candidates list";
 
 command variancep(b:bat[:oid,:bte], e:bat[:oid,:any_1]) :bat[:oid,:dbl]
 address AGGRvariancep2_dbl
-comment "Grouped tail average on bte";
+comment "Grouped tail variance (population/biased) on bte";
 
 command variancep(b:bat[:oid,:bte], g:bat[:oid,:oid], e:bat[:oid,:any_1]):bat[:oid,:dbl]
 address AGGRvariancep3_dbl
-comment "Grouped tail average on bte";
+comment "Grouped tail variance (population/biased) on bte";
 
 command subvariancep(b:bat[:oid,:bte],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:bit,abort_on_error:bit) :bat[:oid,:dbl]
 address AGGRsubvariancep_dbl
-comment "Grouped variancep aggregate";
+comment "Grouped variance (population/biased) aggregate";
 
 command subvariancep(b:bat[:oid,:bte],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:bit,abort_on_error:bit) :bat[:oid,:dbl]
 address AGGRsubvariancepcand_dbl
-comment "Grouped variancep aggregate with candidates list";
+comment "Grouped variance (population/biased) aggregate with candidates list";
 
 command avg(b:bat[:oid,:sht], e:bat[:oid,:any_1]) :bat[:oid,:dbl]
 address AGGRavg2_dbl
@@ -766,75 +766,75 @@ comment "Grouped tail average on sht";
 
 command subavg(b:bat[:oid,:sht],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:bit,abort_on_error:bit) :bat[:oid,:dbl]
 address AGGRsubavg_dbl
-comment "Grouped avg aggregate";
+comment "Grouped average aggregate";
 
 command subavg(b:bat[:oid,:sht],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:bit,abort_on_error:bit) :bat[:oid,:dbl]
 address AGGRsubavgcand_dbl
-comment "Grouped avg aggregate with candidates list";
+comment "Grouped average aggregate with candidates list";
 
 command stdev(b:bat[:oid,:sht], e:bat[:oid,:any_1]) :bat[:oid,:dbl]
 address AGGRstdev2_dbl
-comment "Grouped tail average on sht";
+comment "Grouped tail standard deviation (sample/non-biased) on sht";
 
 command stdev(b:bat[:oid,:sht], g:bat[:oid,:oid], e:bat[:oid,:any_1]):bat[:oid,:dbl]
 address AGGRstdev3_dbl
-comment "Grouped tail average on sht";
+comment "Grouped tail standard deviation (sample/non-biased) on sht";
 
 command substdev(b:bat[:oid,:sht],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:bit,abort_on_error:bit) :bat[:oid,:dbl]
 address AGGRsubstdev_dbl
-comment "Grouped stdev aggregate";
+comment "Grouped standard deviation (sample/non-biased) aggregate";
 
 command substdev(b:bat[:oid,:sht],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:bit,abort_on_error:bit) :bat[:oid,:dbl]
 address AGGRsubstdevcand_dbl
-comment "Grouped stdev aggregate with candidates list";
+comment "Grouped standard deviation (sample/non-biased) aggregate with candidates list";
 
 command stdevp(b:bat[:oid,:sht], e:bat[:oid,:any_1]) :bat[:oid,:dbl]
 address AGGRstdevp2_dbl
-comment "Grouped tail average on sht";
+comment "Grouped tail standard deviation (population/biased) on sht";
 
 command stdevp(b:bat[:oid,:sht], g:bat[:oid,:oid], e:bat[:oid,:any_1]):bat[:oid,:dbl]
 address AGGRstdevp3_dbl
-comment "Grouped tail average on sht";
+comment "Grouped tail standard deviation (population/biased) on sht";
 
 command substdevp(b:bat[:oid,:sht],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:bit,abort_on_error:bit) :bat[:oid,:dbl]
 address AGGRsubstdevp_dbl
-comment "Grouped stdevp aggregate";
+comment "Grouped standard deviation (population/biased) aggregate";
 
 command substdevp(b:bat[:oid,:sht],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:bit,abort_on_error:bit) :bat[:oid,:dbl]
 address AGGRsubstdevpcand_dbl
-comment "Grouped stdevp aggregate with candidates list";
+comment "Grouped standard deviation (population/biased) aggregate with candidates list";
 
 command variance(b:bat[:oid,:sht], e:bat[:oid,:any_1]) :bat[:oid,:dbl]
 address AGGRvariance2_dbl
-comment "Grouped tail average on sht";
+comment "Grouped tail variance (sample/non-biased) on sht";
 
 command variance(b:bat[:oid,:sht], g:bat[:oid,:oid], e:bat[:oid,:any_1]):bat[:oid,:dbl]
 address AGGRvariance3_dbl
-comment "Grouped tail average on sht";
+comment "Grouped tail variance (sample/non-biased) on sht";
 
 command subvariance(b:bat[:oid,:sht],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:bit,abort_on_error:bit) :bat[:oid,:dbl]
 address AGGRsubvariance_dbl
-comment "Grouped variance aggregate";
+comment "Grouped variance (sample/non-biased) aggregate";
 
 command subvariance(b:bat[:oid,:sht],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:bit,abort_on_error:bit) :bat[:oid,:dbl]
 address AGGRsubvariancecand_dbl
-comment "Grouped variance aggregate with candidates list";
+comment "Grouped variance (sample/non-biased) aggregate with candidates list";
 
 command variancep(b:bat[:oid,:sht], e:bat[:oid,:any_1]) :bat[:oid,:dbl]
 address AGGRvariancep2_dbl
-comment "Grouped tail average on sht";
+comment "Grouped tail variance (population/biased) on sht";
 
 command variancep(b:bat[:oid,:sht], g:bat[:oid,:oid], e:bat[:oid,:any_1]):bat[:oid,:dbl]
 address AGGRvariancep3_dbl
-comment "Grouped tail average on sht";
+comment "Grouped tail variance (population/biased) on sht";
 
 command subvariancep(b:bat[:oid,:sht],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:bit,abort_on_error:bit) :bat[:oid,:dbl]
 address AGGRsubvariancep_dbl
-comment "Grouped variancep aggregate";
+comment "Grouped variance (population/biased) aggregate";
 
 command subvariancep(b:bat[:oid,:sht],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:bit,abort_on_error:bit) :bat[:oid,:dbl]
 address AGGRsubvariancepcand_dbl
-comment "Grouped variancep aggregate with candidates list";
+comment "Grouped variance (population/biased) aggregate with candidates list";
 
 command avg(b:bat[:oid,:int], e:bat[:oid,:any_1]) :bat[:oid,:dbl]
 address AGGRavg2_dbl
@@ -846,75 +846,75 @@ comment "Grouped tail average on int";
 
 command subavg(b:bat[:oid,:int],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:bit,abort_on_error:bit) :bat[:oid,:dbl]
 address AGGRsubavg_dbl
-comment "Grouped avg aggregate";
+comment "Grouped average aggregate";
 
 command subavg(b:bat[:oid,:int],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:bit,abort_on_error:bit) :bat[:oid,:dbl]
 address AGGRsubavgcand_dbl
-comment "Grouped avg aggregate with candidates list";
+comment "Grouped average aggregate with candidates list";
 
 command stdev(b:bat[:oid,:int], e:bat[:oid,:any_1]) :bat[:oid,:dbl]
 address AGGRstdev2_dbl
-comment "Grouped tail average on int";
+comment "Grouped tail standard deviation (sample/non-biased) on int";
 
 command stdev(b:bat[:oid,:int], g:bat[:oid,:oid], e:bat[:oid,:any_1]):bat[:oid,:dbl]
 address AGGRstdev3_dbl
-comment "Grouped tail average on int";
+comment "Grouped tail standard deviation (sample/non-biased) on int";
 
 command substdev(b:bat[:oid,:int],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:bit,abort_on_error:bit) :bat[:oid,:dbl]
 address AGGRsubstdev_dbl
-comment "Grouped stdev aggregate";
+comment "Grouped standard deviation (sample/non-biased) aggregate";
 
 command substdev(b:bat[:oid,:int],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:bit,abort_on_error:bit) :bat[:oid,:dbl]
 address AGGRsubstdevcand_dbl
-comment "Grouped stdev aggregate with candidates list";
+comment "Grouped standard deviation (sample/non-biased) aggregate with candidates list";
 
 command stdevp(b:bat[:oid,:int], e:bat[:oid,:any_1]) :bat[:oid,:dbl]
 address AGGRstdevp2_dbl
-comment "Grouped tail average on int";
+comment "Grouped tail standard deviation (population/biased) on int";
 
 command stdevp(b:bat[:oid,:int], g:bat[:oid,:oid], e:bat[:oid,:any_1]):bat[:oid,:dbl]
 address AGGRstdevp3_dbl
-comment "Grouped tail average on int";
+comment "Grouped tail standard deviation (population/biased) on int";
 
 command substdevp(b:bat[:oid,:int],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:bit,abort_on_error:bit) :bat[:oid,:dbl]
 address AGGRsubstdevp_dbl
-comment "Grouped stdevp aggregate";
+comment "Grouped standard deviation (population/biased) aggregate";
 
 command substdevp(b:bat[:oid,:int],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:bit,abort_on_error:bit) :bat[:oid,:dbl]
 address AGGRsubstdevpcand_dbl
-comment "Grouped stdevp aggregate with candidates list";
+comment "Grouped standard deviation (population/biased) aggregate with candidates list";
 
 command variance(b:bat[:oid,:int], e:bat[:oid,:any_1]) :bat[:oid,:dbl]
 address AGGRvariance2_dbl
-comment "Grouped tail average on int";
+comment "Grouped tail variance (sample/non-biased) on int";
 
 command variance(b:bat[:oid,:int], g:bat[:oid,:oid], e:bat[:oid,:any_1]):bat[:oid,:dbl]
 address AGGRvariance3_dbl
-comment "Grouped tail average on int";
+comment "Grouped tail variance (sample/non-biased) on int";
 
 command subvariance(b:bat[:oid,:int],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:bit,abort_on_error:bit) :bat[:oid,:dbl]
 address AGGRsubvariance_dbl
-comment "Grouped variance aggregate";
+comment "Grouped variance (sample/non-biased) aggregate";
 
 command subvariance(b:bat[:oid,:int],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:bit,abort_on_error:bit) :bat[:oid,:dbl]
 address AGGRsubvariancecand_dbl
-comment "Grouped variance aggregate with candidates list";
+comment "Grouped variance (sample/non-biased) aggregate with candidates list";
 
 command variancep(b:bat[:oid,:int], e:bat[:oid,:any_1]) :bat[:oid,:dbl]
 address AGGRvariancep2_dbl
-comment "Grouped tail average on int";
+comment "Grouped tail variance (population/biased) on int";
 
 command variancep(b:bat[:oid,:int], g:bat[:oid,:oid], e:bat[:oid,:any_1]):bat[:oid,:dbl]
 address AGGRvariancep3_dbl
-comment "Grouped tail average on int";
+comment "Grouped tail variance (population/biased) on int";
 
 command subvariancep(b:bat[:oid,:int],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:bit,abort_on_error:bit) :bat[:oid,:dbl]
 address AGGRsubvariancep_dbl
-comment "Grouped variancep aggregate";
+comment "Grouped variance (population/biased) aggregate";
 
 command subvariancep(b:bat[:oid,:int],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:bit,abort_on_error:bit) :bat[:oid,:dbl]
 address AGGRsubvariancepcand_dbl
-comment "Grouped variancep aggregate with candidates list";
+comment "Grouped variance (population/biased) aggregate with candidates list";
 
 command avg(b:bat[:oid,:wrd], e:bat[:oid,:any_1]) :bat[:oid,:dbl]
 address AGGRavg2_dbl
@@ -926,75 +926,75 @@ comment "Grouped tail average on wrd";
 
 command subavg(b:bat[:oid,:wrd],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:bit,abort_on_error:bit) :bat[:oid,:dbl]
 address AGGRsubavg_dbl
-comment "Grouped avg aggregate";
+comment "Grouped average aggregate";
 
 command subavg(b:bat[:oid,:wrd],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:bit,abort_on_error:bit) :bat[:oid,:dbl]
 address AGGRsubavgcand_dbl
-comment "Grouped avg aggregate with candidates list";
+comment "Grouped average aggregate with candidates list";
 
 command stdev(b:bat[:oid,:wrd], e:bat[:oid,:any_1]) :bat[:oid,:dbl]
 address AGGRstdev2_dbl
-comment "Grouped tail average on wrd";
+comment "Grouped tail standard deviation (sample/non-biased) on wrd";
 
 command stdev(b:bat[:oid,:wrd], g:bat[:oid,:oid], e:bat[:oid,:any_1]):bat[:oid,:dbl]
 address AGGRstdev3_dbl
-comment "Grouped tail average on wrd";
+comment "Grouped tail standard deviation (sample/non-biased) on wrd";
 
 command substdev(b:bat[:oid,:wrd],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:bit,abort_on_error:bit) :bat[:oid,:dbl]
 address AGGRsubstdev_dbl
-comment "Grouped stdev aggregate";
+comment "Grouped standard deviation (sample/non-biased) aggregate";
 
 command substdev(b:bat[:oid,:wrd],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:bit,abort_on_error:bit) :bat[:oid,:dbl]
 address AGGRsubstdevcand_dbl
-comment "Grouped stdev aggregate with candidates list";
+comment "Grouped standard deviation (sample/non-biased) aggregate with candidates list";
 
 command stdevp(b:bat[:oid,:wrd], e:bat[:oid,:any_1]) :bat[:oid,:dbl]
 address AGGRstdevp2_dbl
-comment "Grouped tail average on wrd";
+comment "Grouped tail standard deviation (population/biased) on wrd";
 
 command stdevp(b:bat[:oid,:wrd], g:bat[:oid,:oid], e:bat[:oid,:any_1]):bat[:oid,:dbl]
 address AGGRstdevp3_dbl
-comment "Grouped tail average on wrd";
+comment "Grouped tail standard deviation (population/biased) on wrd";
 
 command substdevp(b:bat[:oid,:wrd],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:bit,abort_on_error:bit) :bat[:oid,:dbl]
 address AGGRsubstdevp_dbl
-comment "Grouped stdevp aggregate";
+comment "Grouped standard deviation (population/biased) aggregate";
 
 command substdevp(b:bat[:oid,:wrd],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:bit,abort_on_error:bit) :bat[:oid,:dbl]
 address AGGRsubstdevpcand_dbl
-comment "Grouped stdevp aggregate with candidates list";
+comment "Grouped standard deviation (population/biased) aggregate with candidates list";
 
 command variance(b:bat[:oid,:wrd], e:bat[:oid,:any_1]) :bat[:oid,:dbl]
 address AGGRvariance2_dbl
-comment "Grouped tail average on wrd";
+comment "Grouped tail variance (sample/non-biased) on wrd";
 
 command variance(b:bat[:oid,:wrd], g:bat[:oid,:oid], e:bat[:oid,:any_1]):bat[:oid,:dbl]
 address AGGRvariance3_dbl
-comment "Grouped tail average on wrd";
+comment "Grouped tail variance (sample/non-biased) on wrd";
 
 command subvariance(b:bat[:oid,:wrd],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:bit,abort_on_error:bit) :bat[:oid,:dbl]
 address AGGRsubvariance_dbl
-comment "Grouped variance aggregate";
+comment "Grouped variance (sample/non-biased) aggregate";
 
 command subvariance(b:bat[:oid,:wrd],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:bit,abort_on_error:bit) :bat[:oid,:dbl]
 address AGGRsubvariancecand_dbl
-comment "Grouped variance aggregate with candidates list";
+comment "Grouped variance (sample/non-biased) aggregate with candidates list";
 
 command variancep(b:bat[:oid,:wrd], e:bat[:oid,:any_1]) :bat[:oid,:dbl]
 address AGGRvariancep2_dbl
-comment "Grouped tail average on wrd";
+comment "Grouped tail variance (population/biased) on wrd";
 
 command variancep(b:bat[:oid,:wrd], g:bat[:oid,:oid], e:bat[:oid,:any_1]):bat[:oid,:dbl]
 address AGGRvariancep3_dbl
-comment "Grouped tail average on wrd";
+comment "Grouped tail variance (population/biased) on wrd";
 
 command subvariancep(b:bat[:oid,:wrd],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:bit,abort_on_error:bit) :bat[:oid,:dbl]
 address AGGRsubvariancep_dbl
-comment "Grouped variancep aggregate";
+comment "Grouped variance (population/biased) aggregate";
 
 command subvariancep(b:bat[:oid,:wrd],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:bit,abort_on_error:bit) :bat[:oid,:dbl]
 address AGGRsubvariancepcand_dbl
-comment "Grouped variancep aggregate with candidates list";
+comment "Grouped variance (population/biased) aggregate with candidates list";
 
 command avg(b:bat[:oid,:lng], e:bat[:oid,:any_1]) :bat[:oid,:dbl]
 address AGGRavg2_dbl
@@ -1006,75 +1006,75 @@ comment "Grouped tail average on lng";
 
 command subavg(b:bat[:oid,:lng],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:bit,abort_on_error:bit) :bat[:oid,:dbl]
 address AGGRsubavg_dbl
-comment "Grouped avg aggregate";
+comment "Grouped average aggregate";
 
 command subavg(b:bat[:oid,:lng],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:bit,abort_on_error:bit) :bat[:oid,:dbl]
 address AGGRsubavgcand_dbl
-comment "Grouped avg aggregate with candidates list";
+comment "Grouped average aggregate with candidates list";
 
 command stdev(b:bat[:oid,:lng], e:bat[:oid,:any_1]) :bat[:oid,:dbl]
 address AGGRstdev2_dbl
-comment "Grouped tail average on lng";
+comment "Grouped tail standard deviation (sample/non-biased) on lng";
 
 command stdev(b:bat[:oid,:lng], g:bat[:oid,:oid], e:bat[:oid,:any_1]):bat[:oid,:dbl]
 address AGGRstdev3_dbl
-comment "Grouped tail average on lng";
+comment "Grouped tail standard deviation (sample/non-biased) on lng";
 
 command substdev(b:bat[:oid,:lng],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:bit,abort_on_error:bit) :bat[:oid,:dbl]
 address AGGRsubstdev_dbl
-comment "Grouped stdev aggregate";
+comment "Grouped standard deviation (sample/non-biased) aggregate";
 
 command substdev(b:bat[:oid,:lng],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:bit,abort_on_error:bit) :bat[:oid,:dbl]
 address AGGRsubstdevcand_dbl
-comment "Grouped stdev aggregate with candidates list";
+comment "Grouped standard deviation (sample/non-biased) aggregate with candidates list";
 
 command stdevp(b:bat[:oid,:lng], e:bat[:oid,:any_1]) :bat[:oid,:dbl]
 address AGGRstdevp2_dbl
-comment "Grouped tail average on lng";
+comment "Grouped tail standard deviation (population/biased) on lng";
 
 command stdevp(b:bat[:oid,:lng], g:bat[:oid,:oid], e:bat[:oid,:any_1]):bat[:oid,:dbl]
 address AGGRstdevp3_dbl
-comment "Grouped tail average on lng";
+comment "Grouped tail standard deviation (population/biased) on lng";
 
 command substdevp(b:bat[:oid,:lng],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:bit,abort_on_error:bit) :bat[:oid,:dbl]
 address AGGRsubstdevp_dbl
-comment "Grouped stdevp aggregate";
+comment "Grouped standard deviation (population/biased) aggregate";
 
 command substdevp(b:bat[:oid,:lng],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:bit,abort_on_error:bit) :bat[:oid,:dbl]
 address AGGRsubstdevpcand_dbl
-comment "Grouped stdevp aggregate with candidates list";
+comment "Grouped standard deviation (population/biased) aggregate with candidates list";
 
 command variance(b:bat[:oid,:lng], e:bat[:oid,:any_1]) :bat[:oid,:dbl]
 address AGGRvariance2_dbl
-comment "Grouped tail average on lng";
+comment "Grouped tail variance (sample/non-biased) on lng";
 
 command variance(b:bat[:oid,:lng], g:bat[:oid,:oid], e:bat[:oid,:any_1]):bat[:oid,:dbl]
 address AGGRvariance3_dbl
-comment "Grouped tail average on lng";
+comment "Grouped tail variance (sample/non-biased) on lng";
 
 command subvariance(b:bat[:oid,:lng],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:bit,abort_on_error:bit) :bat[:oid,:dbl]
 address AGGRsubvariance_dbl
-comment "Grouped variance aggregate";
+comment "Grouped variance (sample/non-biased) aggregate";
 
 command subvariance(b:bat[:oid,:lng],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:bit,abort_on_error:bit) :bat[:oid,:dbl]
 address AGGRsubvariancecand_dbl
-comment "Grouped variance aggregate with candidates list";
+comment "Grouped variance (sample/non-biased) aggregate with candidates list";
 
 command variancep(b:bat[:oid,:lng], e:bat[:oid,:any_1]) :bat[:oid,:dbl]
 address AGGRvariancep2_dbl
-comment "Grouped tail average on lng";
+comment "Grouped tail variance (population/biased) on lng";
 
 command variancep(b:bat[:oid,:lng], g:bat[:oid,:oid], e:bat[:oid,:any_1]):bat[:oid,:dbl]
 address AGGRvariancep3_dbl
-comment "Grouped tail average on lng";
+comment "Grouped tail variance (population/biased) on lng";
 
 command subvariancep(b:bat[:oid,:lng],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:bit,abort_on_error:bit) :bat[:oid,:dbl]
 address AGGRsubvariancep_dbl
-comment "Grouped variancep aggregate";
+comment "Grouped variance (population/biased) aggregate";
 
 command subvariancep(b:bat[:oid,:lng],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:bit,abort_on_error:bit) :bat[:oid,:dbl]
 address AGGRsubvariancepcand_dbl
-comment "Grouped variancep aggregate with candidates list";
+comment "Grouped variance (population/biased) aggregate with candidates list";
 
 command avg(b:bat[:oid,:flt], e:bat[:oid,:any_1]) :bat[:oid,:dbl]
 address AGGRavg2_dbl
@@ -1086,75 +1086,75 @@ comment "Grouped tail average on flt";
 
 command subavg(b:bat[:oid,:flt],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:bit,abort_on_error:bit) :bat[:oid,:dbl]
 address AGGRsubavg_dbl
-comment "Grouped avg aggregate";
+comment "Grouped average aggregate";
 
 command subavg(b:bat[:oid,:flt],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:bit,abort_on_error:bit) :bat[:oid,:dbl]
 address AGGRsubavgcand_dbl
-comment "Grouped avg aggregate with candidates list";
+comment "Grouped average aggregate with candidates list";
 
 command stdev(b:bat[:oid,:flt], e:bat[:oid,:any_1]) :bat[:oid,:dbl]
 address AGGRstdev2_dbl
-comment "Grouped tail average on flt";
+comment "Grouped tail standard deviation (sample/non-biased) on flt";
 
 command stdev(b:bat[:oid,:flt], g:bat[:oid,:oid], e:bat[:oid,:any_1]):bat[:oid,:dbl]
 address AGGRstdev3_dbl
-comment "Grouped tail average on flt";
+comment "Grouped tail standard deviation (sample/non-biased) on flt";
 
 command substdev(b:bat[:oid,:flt],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:bit,abort_on_error:bit) :bat[:oid,:dbl]
 address AGGRsubstdev_dbl
-comment "Grouped stdev aggregate";
+comment "Grouped standard deviation (sample/non-biased) aggregate";
 
 command substdev(b:bat[:oid,:flt],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:bit,abort_on_error:bit) :bat[:oid,:dbl]
 address AGGRsubstdevcand_dbl
-comment "Grouped stdev aggregate with candidates list";
+comment "Grouped standard deviation (sample/non-biased) aggregate with candidates list";
 
 command stdevp(b:bat[:oid,:flt], e:bat[:oid,:any_1]) :bat[:oid,:dbl]
 address AGGRstdevp2_dbl
-comment "Grouped tail average on flt";
+comment "Grouped tail standard deviation (population/biased) on flt";
 
 command stdevp(b:bat[:oid,:flt], g:bat[:oid,:oid], e:bat[:oid,:any_1]):bat[:oid,:dbl]
 address AGGRstdevp3_dbl
-comment "Grouped tail average on flt";
+comment "Grouped tail standard deviation (population/biased) on flt";
 
 command substdevp(b:bat[:oid,:flt],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:bit,abort_on_error:bit) :bat[:oid,:dbl]
 address AGGRsubstdevp_dbl
-comment "Grouped stdevp aggregate";
+comment "Grouped standard deviation (population/biased) aggregate";
 
 command substdevp(b:bat[:oid,:flt],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:bit,abort_on_error:bit) :bat[:oid,:dbl]
 address AGGRsubstdevpcand_dbl
-comment "Grouped stdevp aggregate with candidates list";
+comment "Grouped standard deviation (population/biased) aggregate with candidates list";
 
 command variance(b:bat[:oid,:flt], e:bat[:oid,:any_1]) :bat[:oid,:dbl]
 address AGGRvariance2_dbl
-comment "Grouped tail average on flt";
+comment "Grouped tail variance (sample/non-biased) on flt";
 
 command variance(b:bat[:oid,:flt], g:bat[:oid,:oid], e:bat[:oid,:any_1]):bat[:oid,:dbl]
 address AGGRvariance3_dbl
-comment "Grouped tail average on flt";
+comment "Grouped tail variance (sample/non-biased) on flt";
 
 command subvariance(b:bat[:oid,:flt],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:bit,abort_on_error:bit) :bat[:oid,:dbl]
 address AGGRsubvariance_dbl
-comment "Grouped variance aggregate";
+comment "Grouped variance (sample/non-biased) aggregate";
 
 command subvariance(b:bat[:oid,:flt],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:bit,abort_on_error:bit) :bat[:oid,:dbl]
 address AGGRsubvariancecand_dbl
-comment "Grouped variance aggregate with candidates list";
+comment "Grouped variance (sample/non-biased) aggregate with candidates list";
 
 command variancep(b:bat[:oid,:flt], e:bat[:oid,:any_1]) :bat[:oid,:dbl]
 address AGGRvariancep2_dbl
-comment "Grouped tail average on flt";
+comment "Grouped tail variance (population/biased) on flt";
 
 command variancep(b:bat[:oid,:flt], g:bat[:oid,:oid], e:bat[:oid,:any_1]):bat[:oid,:dbl]
 address AGGRvariancep3_dbl
-comment "Grouped tail average on flt";
+comment "Grouped tail variance (population/biased) on flt";
 
 command subvariancep(b:bat[:oid,:flt],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:bit,abort_on_error:bit) :bat[:oid,:dbl]
 address AGGRsubvariancep_dbl
-comment "Grouped variancep aggregate";
+comment "Grouped variance (population/biased) aggregate";
 
 command subvariancep(b:bat[:oid,:flt],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:bit,abort_on_error:bit) :bat[:oid,:dbl]
 address AGGRsubvariancepcand_dbl
-comment "Grouped variancep aggregate with candidates list";
+comment "Grouped variance (population/biased) aggregate with candidates list";
 
 command avg(b:bat[:oid,:dbl], e:bat[:oid,:any_1]) :bat[:oid,:dbl]
 address AGGRavg2_dbl
@@ -1166,75 +1166,75 @@ comment "Grouped tail average on dbl";
 
 command subavg(b:bat[:oid,:dbl],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:bit,abort_on_error:bit) :bat[:oid,:dbl]
 address AGGRsubavg_dbl
-comment "Grouped avg aggregate";
+comment "Grouped average aggregate";
 
 command subavg(b:bat[:oid,:dbl],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:bit,abort_on_error:bit) :bat[:oid,:dbl]
 address AGGRsubavgcand_dbl
-comment "Grouped avg aggregate with candidates list";
+comment "Grouped average aggregate with candidates list";
 
 command stdev(b:bat[:oid,:dbl], e:bat[:oid,:any_1]) :bat[:oid,:dbl]
 address AGGRstdev2_dbl
-comment "Grouped tail average on dbl";
+comment "Grouped tail standard deviation (sample/non-biased) on dbl";
 
 command stdev(b:bat[:oid,:dbl], g:bat[:oid,:oid], e:bat[:oid,:any_1]):bat[:oid,:dbl]
 address AGGRstdev3_dbl
-comment "Grouped tail average on dbl";
+comment "Grouped tail standard deviation (sample/non-biased) on dbl";
 
 command substdev(b:bat[:oid,:dbl],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:bit,abort_on_error:bit) :bat[:oid,:dbl]
 address AGGRsubstdev_dbl
-comment "Grouped stdev aggregate";
+comment "Grouped standard deviation (sample/non-biased) aggregate";
 
 command substdev(b:bat[:oid,:dbl],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:bit,abort_on_error:bit) :bat[:oid,:dbl]
 address AGGRsubstdevcand_dbl
-comment "Grouped stdev aggregate with candidates list";
+comment "Grouped standard deviation (sample/non-biased) aggregate with candidates list";
 
 command stdevp(b:bat[:oid,:dbl], e:bat[:oid,:any_1]) :bat[:oid,:dbl]
 address AGGRstdevp2_dbl
-comment "Grouped tail average on dbl";
+comment "Grouped tail standard deviation (population/biased) on dbl";
 
 command stdevp(b:bat[:oid,:dbl], g:bat[:oid,:oid], e:bat[:oid,:any_1]):bat[:oid,:dbl]
 address AGGRstdevp3_dbl
-comment "Grouped tail average on dbl";
+comment "Grouped tail standard deviation (population/biased) on dbl";
 
 command substdevp(b:bat[:oid,:dbl],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:bit,abort_on_error:bit) :bat[:oid,:dbl]
 address AGGRsubstdevp_dbl
-comment "Grouped stdevp aggregate";
+comment "Grouped standard deviation (population/biased) aggregate";
 
 command substdevp(b:bat[:oid,:dbl],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:bit,abort_on_error:bit) :bat[:oid,:dbl]
 address AGGRsubstdevpcand_dbl
-comment "Grouped stdevp aggregate with candidates list";
+comment "Grouped standard deviation (population/biased) aggregate with candidates list";
 
 command variance(b:bat[:oid,:dbl], e:bat[:oid,:any_1]) :bat[:oid,:dbl]
 address AGGRvariance2_dbl
-comment "Grouped tail average on dbl";
+comment "Grouped tail variance (sample/non-biased) on dbl";
 
 command variance(b:bat[:oid,:dbl], g:bat[:oid,:oid], e:bat[:oid,:any_1]):bat[:oid,:dbl]
 address AGGRvariance3_dbl
-comment "Grouped tail average on dbl";
+comment "Grouped tail variance (sample/non-biased) on dbl";
 
 command subvariance(b:bat[:oid,:dbl],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:bit,abort_on_error:bit) :bat[:oid,:dbl]
 address AGGRsubvariance_dbl
-comment "Grouped variance aggregate";
+comment "Grouped variance (sample/non-biased) aggregate";
 
 command subvariance(b:bat[:oid,:dbl],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:bit,abort_on_error:bit) :bat[:oid,:dbl]
 address AGGRsubvariancecand_dbl
-comment "Grouped variance aggregate with candidates list";
+comment "Grouped variance (sample/non-biased) aggregate with candidates list";
 
 command variancep(b:bat[:oid,:dbl], e:bat[:oid,:any_1]) :bat[:oid,:dbl]
 address AGGRvariancep2_dbl
-comment "Grouped tail average on dbl";
+comment "Grouped tail variance (population/biased) on dbl";
 
 command variancep(b:bat[:oid,:dbl], g:bat[:oid,:oid], e:bat[:oid,:any_1]):bat[:oid,:dbl]
 address AGGRvariancep3_dbl
-comment "Grouped tail average on dbl";
+comment "Grouped tail variance (population/biased) on dbl";
 
 command subvariancep(b:bat[:oid,:dbl],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:bit,abort_on_error:bit) :bat[:oid,:dbl]
 address AGGRsubvariancep_dbl
-comment "Grouped variancep aggregate";
+comment "Grouped variance (population/biased) aggregate";
 
 command subvariancep(b:bat[:oid,:dbl],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:bit,abort_on_error:bit) :bat[:oid,:dbl]
 address AGGRsubvariancepcand_dbl
-comment "Grouped variancep aggregate with candidates list";
+comment "Grouped variance (population/biased) aggregate with candidates list";
 
 command min(b:bat[:oid,:any_1], e:bat[:oid,:any_2]) :bat[:oid,:any_1]
 address AGGRmin2;

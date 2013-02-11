@@ -516,7 +516,7 @@ BATcalcop(BAT *b1, BAT *b2, BAT *s)
 	if (checkbats(b1, b2, BATcalcop_name) == GDK_FAIL)
 		return NULL;
 
-	CANDINIT(b1, s);
+	CANDINIT(b1, s, start, end, cnt, cand, candend);
 
 	if (BATtvoid(b1) && BATtvoid(b2) && cand == NULL) {
 		TPE res;
@@ -556,7 +556,7 @@ BATcalcopcst(BAT *b, const ValRecord *v, BAT *s)
 	if (checkbats(b, NULL, BATcalcopcst_name) == GDK_FAIL)
 		return NULL;
 
-	CANDINIT(b, s);
+	CANDINIT(b, s, start, end, cnt, cand, candend);
 
 	bn = BATcalcop_intern(Tloc(b, b->U->first), b->T->type, 1,
 			      b->T->vheap ? b->T->vheap->base : NULL,
@@ -582,7 +582,7 @@ BATcalccstop(const ValRecord *v, BAT *b, BAT *s)
 	if (checkbats(b, NULL, BATcalccstop_name) == GDK_FAIL)
 		return NULL;
 
-	CANDINIT(b, s);
+	CANDINIT(b, s, start, end, cnt, cand, candend);
 
 	bn = BATcalcop_intern(VALptr(v), v->vtype, 0,
 			      NULL, 0,

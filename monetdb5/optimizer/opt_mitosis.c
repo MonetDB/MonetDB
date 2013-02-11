@@ -146,7 +146,7 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		pieces = mito_parts;
 	mito_size = GDKgetenv_int("mito_size", 0);
 	if (mito_size > 0) 
-		pieces = (rowcnt * row_size)/ (mito_size * 1024);
+		pieces = (int) ((rowcnt * row_size) / (mito_size * 1024));
 
 	OPTDEBUGmitosis
 	mnstr_printf(cntxt->fdout, "#opt_mitosis: target is %s.%s "

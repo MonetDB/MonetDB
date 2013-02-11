@@ -46,7 +46,7 @@
 #define FMToid	OIDFMT
 
 /* Most of the internal routines return a count of the number of NIL
- * values the produced.  They indicate an error by returning a value
+ * values they produced.  They indicate an error by returning a value
  * >= BUN_NONE.  BUN_NONE means that the error was dealt with by
  * calling GDKerror (generally for overflow or conversion errors).
  * BUN_NONE+1 is returned by the DIV and MOD functions to indicate
@@ -81,6 +81,8 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 			end = (i) + 1;				\
 	}
 
+/* fill in NILs from low to high, used to write NILs before and after
+ * the range that the candidates list covers */
 #define CANDLOOP(dst, i, NIL, low, high)		\
 	do {						\
 		for ((i) = (low); (i) < (high); (i)++)	\
@@ -185,7 +187,7 @@ BATcalcnot(BAT *b, BAT *s)
 	BATcheck(b, "BATcalcnot");
 	if (checkbats(b, NULL, "BATcalcnot") == GDK_FAIL)
 		return NULL;
-	CANDINIT(b, s);
+	CANDINIT(b, s, start, end, cnt, cand, candend);
 
 	bn = BATnew(TYPE_void, b->T->type, cnt);
 	if (bn == NULL)
@@ -297,7 +299,7 @@ BATcalcnegate(BAT *b, BAT *s)
 	BATcheck(b, "BATcalcnegate");
 	if (checkbats(b, NULL, "BATcalcnegate") == GDK_FAIL)
 		return NULL;
-	CANDINIT(b, s);
+	CANDINIT(b, s, start, end, cnt, cand, candend);
 
 	bn = BATnew(TYPE_void, b->T->type, cnt);
 	if (bn == NULL)
@@ -414,7 +416,7 @@ BATcalcabsolute(BAT *b, BAT *s)
 	BATcheck(b, "BATcalcabsolute");
 	if (checkbats(b, NULL, "BATcalcabsolute") == GDK_FAIL)
 		return NULL;
-	CANDINIT(b, s);
+	CANDINIT(b, s, start, end, cnt, cand, candend);
 
 	bn = BATnew(TYPE_void, b->T->type, cnt);
 	if (bn == NULL)
@@ -535,7 +537,7 @@ BATcalciszero(BAT *b, BAT *s)
 	BATcheck(b, "BATcalciszero");
 	if (checkbats(b, NULL, "BATcalciszero") == GDK_FAIL)
 		return NULL;
-	CANDINIT(b, s);
+	CANDINIT(b, s, start, end, cnt, cand, candend);
 
 	bn = BATnew(TYPE_void, TYPE_bit, cnt);
 	if (bn == NULL)
@@ -654,7 +656,7 @@ BATcalcsign(BAT *b, BAT *s)
 	BATcheck(b, "BATcalcsign");
 	if (checkbats(b, NULL, "BATcalcsign") == GDK_FAIL)
 		return NULL;
-	CANDINIT(b, s);
+	CANDINIT(b, s, start, end, cnt, cand, candend);
 
 	bn = BATnew(TYPE_void, TYPE_bte, cnt);
 	if (bn == NULL)
@@ -785,7 +787,7 @@ BATcalcisnil(BAT *b, BAT *s)
 
 	BATcheck(b, "BATcalcisnil");
 
-	CANDINIT(b, s);
+	CANDINIT(b, s, start, end, cnt, cand, candend);
 
 	if (start == 0 && end == cnt && cand == NULL) {
 		if (b->T->nonil ||
@@ -1886,7 +1888,7 @@ BATcalcadd(BAT *b1, BAT *b2, BAT *s, int tp, int abort_on_error)
 	if (checkbats(b1, b2, "BATcalcadd") == GDK_FAIL)
 		return NULL;
 
-	CANDINIT(b1, s);
+	CANDINIT(b1, s, start, end, cnt, cand, candend);
 
 	bn = BATnew(TYPE_void, tp, cnt);
 	if (bn == NULL)
@@ -1934,7 +1936,7 @@ BATcalcaddcst(BAT *b, const ValRecord *v, BAT *s, int tp, int abort_on_error)
 	if (checkbats(b, NULL, "BATcalcaddcst") == GDK_FAIL)
 		return NULL;
 
-	CANDINIT(b, s);
+	CANDINIT(b, s, start, end, cnt, cand, candend);
 
 	bn = BATnew(TYPE_void, tp, cnt);
 	if (bn == NULL)
@@ -1982,7 +1984,7 @@ BATcalccstadd(const ValRecord *v, BAT *b, BAT *s, int tp, int abort_on_error)
 	if (checkbats(b, NULL, "BATcalccstadd") == GDK_FAIL)
 		return NULL;
 
-	CANDINIT(b, s);
+	CANDINIT(b, s, start, end, cnt, cand, candend);
 
 	bn = BATnew(TYPE_void, tp, cnt);
 	if (bn == NULL)
@@ -2043,7 +2045,7 @@ BATcalcincr(BAT *b, BAT *s, int abort_on_error)
 	if (checkbats(b, NULL, "BATcalcincr") == GDK_FAIL)
 		return NULL;
 
-	CANDINIT(b, s);
+	CANDINIT(b, s, start, end, cnt, cand, candend);
 
 	bn = BATnew(TYPE_void, b->T->type, cnt);
 	if (bn == NULL)
@@ -3109,7 +3111,7 @@ BATcalcsub(BAT *b1, BAT *b2, BAT *s, int tp, int abort_on_error)
 	if (checkbats(b1, b2, "BATcalcsub") == GDK_FAIL)
 		return NULL;
 
-	CANDINIT(b1, s);
+	CANDINIT(b1, s, start, end, cnt, cand, candend);
 
 	bn = BATnew(TYPE_void, tp, cnt);
 	if (bn == NULL)
@@ -3152,7 +3154,7 @@ BATcalcsubcst(BAT *b, const ValRecord *v, BAT *s, int tp, int abort_on_error)
 	if (checkbats(b, NULL, "BATcalcsubcst") == GDK_FAIL)
 		return NULL;
 
-	CANDINIT(b, s);
+	CANDINIT(b, s, start, end, cnt, cand, candend);
 
 	bn = BATnew(TYPE_void, tp, cnt);
 	if (bn == NULL)
@@ -3200,7 +3202,7 @@ BATcalccstsub(const ValRecord *v, BAT *b, BAT *s, int tp, int abort_on_error)
 	if (checkbats(b, NULL, "BATcalccstsub") == GDK_FAIL)
 		return NULL;
 
-	CANDINIT(b, s);
+	CANDINIT(b, s, start, end, cnt, cand, candend);
 
 	bn = BATnew(TYPE_void, tp, cnt);
 	if (bn == NULL)
@@ -3262,7 +3264,7 @@ BATcalcdecr(BAT *b, BAT *s, int abort_on_error)
 	if (checkbats(b, NULL, "BATcalcdecr") == GDK_FAIL)
 		return NULL;
 
-	CANDINIT(b, s);
+	CANDINIT(b, s, start, end, cnt, cand, candend);
 
 	bn = BATnew(TYPE_void, b->T->type, cnt);
 	if (bn == NULL)
@@ -4412,7 +4414,7 @@ BATcalcmul(BAT *b1, BAT *b2, BAT *s, int tp, int abort_on_error)
 	if (checkbats(b1, b2, "BATcalcmul") == GDK_FAIL)
 		return NULL;
 
-	CANDINIT(b1, s);
+	CANDINIT(b1, s, start, end, cnt, cand, candend);
 
 	bn = BATnew(TYPE_void, tp, cnt);
 	if (bn == NULL)
@@ -4455,7 +4457,7 @@ BATcalcmulcst(BAT *b, const ValRecord *v, BAT *s, int tp, int abort_on_error)
 	if (checkbats(b, NULL, "BATcalcmulcst") == GDK_FAIL)
 		return NULL;
 
-	CANDINIT(b, s);
+	CANDINIT(b, s, start, end, cnt, cand, candend);
 
 	bn = BATnew(TYPE_void, tp, cnt);
 	if (bn == NULL)
@@ -4513,7 +4515,7 @@ BATcalccstmul(const ValRecord *v, BAT *b, BAT *s, int tp, int abort_on_error)
 	if (checkbats(b, NULL, "BATcalccstmul") == GDK_FAIL)
 		return NULL;
 
-	CANDINIT(b, s);
+	CANDINIT(b, s, start, end, cnt, cand, candend);
 
 	bn = BATnew(TYPE_void, tp, cnt);
 	if (bn == NULL)
@@ -5692,7 +5694,7 @@ BATcalcdiv(BAT *b1, BAT *b2, BAT *s, int tp, int abort_on_error)
 	if (checkbats(b1, b2, "BATcalcdiv") == GDK_FAIL)
 		return NULL;
 
-	CANDINIT(b1, s);
+	CANDINIT(b1, s, start, end, cnt, cand, candend);
 
 	bn = BATnew(TYPE_void, tp, cnt);
 	if (bn == NULL)
@@ -5735,7 +5737,7 @@ BATcalcdivcst(BAT *b, const ValRecord *v, BAT *s, int tp, int abort_on_error)
 	if (checkbats(b, NULL, "BATcalcdivcst") == GDK_FAIL)
 		return NULL;
 
-	CANDINIT(b, s);
+	CANDINIT(b, s, start, end, cnt, cand, candend);
 
 	bn = BATnew(TYPE_void, tp, cnt);
 	if (bn == NULL)
@@ -5796,7 +5798,7 @@ BATcalccstdiv(const ValRecord *v, BAT *b, BAT *s, int tp, int abort_on_error)
 	if (checkbats(b, NULL, "BATcalccstdiv") == GDK_FAIL)
 		return NULL;
 
-	CANDINIT(b, s);
+	CANDINIT(b, s, start, end, cnt, cand, candend);
 
 	bn = BATnew(TYPE_void, tp, cnt);
 	if (bn == NULL)
@@ -6751,7 +6753,7 @@ BATcalcmod(BAT *b1, BAT *b2, BAT *s, int tp, int abort_on_error)
 	if (checkbats(b1, b2, "BATcalcmod") == GDK_FAIL)
 		return NULL;
 
-	CANDINIT(b1, s);
+	CANDINIT(b1, s, start, end, cnt, cand, candend);
 
 	bn = BATnew(TYPE_void, tp, cnt);
 	if (bn == NULL)
@@ -6794,7 +6796,7 @@ BATcalcmodcst(BAT *b, const ValRecord *v, BAT *s, int tp, int abort_on_error)
 	if (checkbats(b, NULL, "BATcalcmodcst") == GDK_FAIL)
 		return NULL;
 
-	CANDINIT(b, s);
+	CANDINIT(b, s, start, end, cnt, cand, candend);
 
 	bn = BATnew(TYPE_void, tp, cnt);
 	if (bn == NULL)
@@ -6837,7 +6839,7 @@ BATcalccstmod(const ValRecord *v, BAT *b, BAT *s, int tp, int abort_on_error)
 	if (checkbats(b, NULL, "BATcalccstmod") == GDK_FAIL)
 		return NULL;
 
-	CANDINIT(b, s);
+	CANDINIT(b, s, start, end, cnt, cand, candend);
 
 	bn = BATnew(TYPE_void, tp, cnt);
 	if (bn == NULL)
@@ -6956,7 +6958,7 @@ BATcalcxor(BAT *b1, BAT *b2, BAT *s)
 		return NULL;
 	}
 
-	CANDINIT(b1, s);
+	CANDINIT(b1, s, start, end, cnt, cand, candend);
 
 	bn = BATnew(TYPE_void, b1->T->type, cnt);
 	if (bn == NULL)
@@ -7005,7 +7007,7 @@ BATcalcxorcst(BAT *b, const ValRecord *v, BAT *s)
 		return NULL;
 	}
 
-	CANDINIT(b, s);
+	CANDINIT(b, s, start, end, cnt, cand, candend);
 
 	bn = BATnew(TYPE_void, b->T->type, cnt);
 	if (bn == NULL)
@@ -7054,7 +7056,7 @@ BATcalccstxor(const ValRecord *v, BAT *b, BAT *s)
 		return NULL;
 	}
 
-	CANDINIT(b, s);
+	CANDINIT(b, s, start, end, cnt, cand, candend);
 
 	bn = BATnew(TYPE_void, b->T->type, cnt);
 	if (bn == NULL)
@@ -7195,7 +7197,7 @@ BATcalcor(BAT *b1, BAT *b2, BAT *s)
 		return NULL;
 	}
 
-	CANDINIT(b1, s);
+	CANDINIT(b1, s, start, end, cnt, cand, candend);
 
 	bn = BATnew(TYPE_void, b1->T->type, cnt);
 	if (bn == NULL)
@@ -7244,7 +7246,7 @@ BATcalcorcst(BAT *b, const ValRecord *v, BAT *s)
 		return NULL;
 	}
 
-	CANDINIT(b, s);
+	CANDINIT(b, s, start, end, cnt, cand, candend);
 
 	bn = BATnew(TYPE_void, b->T->type, cnt);
 	if (bn == NULL)
@@ -7293,7 +7295,7 @@ BATcalccstor(const ValRecord *v, BAT *b, BAT *s)
 		return NULL;
 	}
 
-	CANDINIT(b, s);
+	CANDINIT(b, s, start, end, cnt, cand, candend);
 
 	bn = BATnew(TYPE_void, b->T->type, cnt);
 	if (bn == NULL)
@@ -7431,7 +7433,7 @@ BATcalcand(BAT *b1, BAT *b2, BAT *s)
 		return NULL;
 	}
 
-	CANDINIT(b1, s);
+	CANDINIT(b1, s, start, end, cnt, cand, candend);
 
 	bn = BATnew(TYPE_void, b1->T->type, cnt);
 	if (bn == NULL)
@@ -7480,7 +7482,7 @@ BATcalcandcst(BAT *b, const ValRecord *v, BAT *s)
 		return NULL;
 	}
 
-	CANDINIT(b, s);
+	CANDINIT(b, s, start, end, cnt, cand, candend);
 
 	bn = BATnew(TYPE_void, b->T->type, cnt);
 	if (bn == NULL)
@@ -7528,7 +7530,7 @@ BATcalccstand(const ValRecord *v, BAT *b, BAT *s)
 		return NULL;
 	}
 
-	CANDINIT(b, s);
+	CANDINIT(b, s, start, end, cnt, cand, candend);
 
 	bn = BATnew(TYPE_void, b->T->type, cnt);
 	if (bn == NULL)
@@ -7709,7 +7711,7 @@ BATcalclsh(BAT *b1, BAT *b2, BAT *s, int abort_on_error)
 	if (checkbats(b1, b2, "BATcalclsh") == GDK_FAIL)
 		return NULL;
 
-	CANDINIT(b1, s);
+	CANDINIT(b1, s, start, end, cnt, cand, candend);
 
 	bn = BATnew(TYPE_void, b1->T->type, cnt);
 	if (bn == NULL)
@@ -7751,7 +7753,7 @@ BATcalclshcst(BAT *b, const ValRecord *v, BAT *s, int abort_on_error)
 	if (checkbats(b, NULL, "BATcalclshcst") == GDK_FAIL)
 		return NULL;
 
-	CANDINIT(b, s);
+	CANDINIT(b, s, start, end, cnt, cand, candend);
 
 	bn = BATnew(TYPE_void, b->T->type, cnt);
 	if (bn == NULL)
@@ -7793,7 +7795,7 @@ BATcalccstlsh(const ValRecord *v, BAT *b, BAT *s, int abort_on_error)
 	if (checkbats(b, NULL, "BATcalccstlsh") == GDK_FAIL)
 		return NULL;
 
-	CANDINIT(b, s);
+	CANDINIT(b, s, start, end, cnt, cand, candend);
 
 	bn = BATnew(TYPE_void, v->vtype, cnt);
 	if (bn == NULL)
@@ -7967,7 +7969,7 @@ BATcalcrsh(BAT *b1, BAT *b2, BAT *s, int abort_on_error)
 	if (checkbats(b1, b2, "BATcalcrsh") == GDK_FAIL)
 		return NULL;
 
-	CANDINIT(b1, s);
+	CANDINIT(b1, s, start, end, cnt, cand, candend);
 
 	bn = BATnew(TYPE_void, b1->T->type, cnt);
 	if (bn == NULL)
@@ -8009,7 +8011,7 @@ BATcalcrshcst(BAT *b, const ValRecord *v, BAT *s, int abort_on_error)
 	if (checkbats(b, NULL, "BATcalcrshcst") == GDK_FAIL)
 		return NULL;
 
-	CANDINIT(b, s);
+	CANDINIT(b, s, start, end, cnt, cand, candend);
 
 	bn = BATnew(TYPE_void, b->T->type, cnt);
 	if (bn == NULL)
@@ -8051,7 +8053,7 @@ BATcalccstrsh(const ValRecord *v, BAT *b, BAT *s, int abort_on_error)
 	if (checkbats(b, NULL, "BATcalccstrsh") == GDK_FAIL)
 		return NULL;
 
-	CANDINIT(b, s);
+	CANDINIT(b, s, start, end, cnt, cand, candend);
 
 	bn = BATnew(TYPE_void, v->vtype, cnt);
 	if (bn == NULL)
@@ -8466,7 +8468,7 @@ BATcalcbetween(BAT *b, BAT *lo, BAT *hi, BAT *s)
 	if (checkbats(b, hi, "BATcalcbetween") == GDK_FAIL)
 		return NULL;
 
-	CANDINIT(b, s);
+	CANDINIT(b, s, start, end, cnt, cand, candend);
 
 	if (b->T->type == TYPE_void &&
 	    lo->T->type == TYPE_void &&
@@ -8519,7 +8521,7 @@ BATcalcbetweencstcst(BAT *b, const ValRecord *lo, const ValRecord *hi, BAT *s)
 		return NULL;
 	}
 
-	CANDINIT(b, s);
+	CANDINIT(b, s, start, end, cnt, cand, candend);
 
 	bn = BATcalcbetween_intern(Tloc(b, b->U->first), 1,
 				   b->T->vheap ? b->T->vheap->base : NULL,
@@ -8550,7 +8552,7 @@ BATcalcbetweenbatcst(BAT *b, BAT *lo, const ValRecord *hi, BAT *s)
 		return NULL;
 	}
 
-	CANDINIT(b, s);
+	CANDINIT(b, s, start, end, cnt, cand, candend);
 
 	bn = BATcalcbetween_intern(Tloc(b, b->U->first), 1,
 				   b->T->vheap ? b->T->vheap->base : NULL,
@@ -8583,7 +8585,7 @@ BATcalcbetweencstbat(BAT *b, const ValRecord *lo, BAT *hi, BAT *s)
 		return NULL;
 	}
 
-	CANDINIT(b, s);
+	CANDINIT(b, s, start, end, cnt, cand, candend);
 
 	bn = BATcalcbetween_intern(Tloc(b, b->U->first), 1,
 				   b->T->vheap ? b->T->vheap->base : NULL,
@@ -9726,7 +9728,7 @@ BATconvert(BAT *b, BAT *s, int tp, int abort_on_error)
 	if (tp == TYPE_void)
 		tp = TYPE_oid;
 
-	CANDINIT(b, s);
+	CANDINIT(b, s, start, end, cnt, cand, candend);
 
 	if (s == NULL && tp != TYPE_bit && ATOMstorage(b->T->type) == ATOMstorage(tp))
 		return BATcopy(b, b->H->type, tp, 0);

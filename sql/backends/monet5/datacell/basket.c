@@ -41,10 +41,6 @@ str protocolname[4] = { "<unknown>", "TCP", "UDP", "CSV" };
 
 BSKTbasketRec *baskets;   /* the datacell catalog */
 int bsktTop = 0, bsktLimit = 0;
-static MT_Lock bsktLock MT_LOCK_INITIALIZER("bsktLock");
-
-#define lockBSKTbasketCatalog() MT_lock_set(&bsktLock, "basket");
-#define unlockBSKTbasketCatalog() MT_lock_unset(&bsktLock, "basket");
 
 /* We have to obtain the precise wall-clock time
  * This is not produced by GDKusec, which returns microseconds
@@ -90,9 +86,6 @@ static int BSKTnewEntry(void)
 	if (bsktLimit == 0) {
 		bsktLimit = MAXBSK;
 		baskets = (BSKTbasketRec *) GDKzalloc(bsktLimit * sizeof(BSKTbasketRec));
-#ifdef NEED_MT_LOCK_INIT
-		MT_lock_init(&bsktLock, "basket");
-#endif
 		bsktTop = 1; /* entry 0 is used as non-initialized */
 	} else if (bsktTop == bsktLimit) {
 		bsktLimit += MAXBSK;

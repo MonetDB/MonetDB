@@ -27,7 +27,7 @@
 float nextafterf(float x, float y);
 #endif
 
-/* auxilary functions and structs for imprints */
+/* auxiliary functions and structs for imprints */
 #include "gdk_imprints.h"
 
 #define buninsfix(B,C,A,I,T,V,G,M,R)				\
@@ -234,7 +234,7 @@ do {									    \
 			limit = ((BUN) d[dcnt].cnt) << rpp;		    \
 		}							    \
 		if (!d[dcnt].repeat) {					    \
-			limit = 1 << rpp;				    \
+			limit = (BUN) 1 << rpp;				\
 			l = icnt + d[dcnt].cnt;				    \
 			while (i+limit <= (o+pr_off)) {			    \
 				icnt++;					    \
@@ -261,11 +261,11 @@ do {									    \
 	uint##B##_t *im = (uint##B##_t *) imprints->imps->base;		    \
 	uint##B##_t mask = 0, innermask;				    \
 	int j, lbin, hbin;						    \
-	BAT *histo = BATdescriptor(imprints->histogram);		    \
-	void *bins = Tloc(histo, 0);					    \
-	lbin = IMPSgetbin(ATOMstorage(b->ttype), imprints->bits, bins, tl); \
-	hbin = IMPSgetbin(ATOMstorage(b->ttype), imprints->bits, bins, th); \
-	for (j=lbin; j<=hbin; j++) mask = IMPSsetBit(B, mask, j);		    \
+	lbin = IMPSgetbin(ATOMstorage(b->ttype), imprints->bits,	    \
+			imprints->bins->base, tl);			    \
+	hbin = IMPSgetbin(ATOMstorage(b->ttype), imprints->bits,	    \
+			imprints->bins->base, th);			    \
+	for (j=lbin; j<=hbin; j++) mask = IMPSsetBit(B, mask, j);	    \
 	innermask = mask;						    \
 	if (!b->T->nonil || vl != minval)				    \
 		innermask = IMPSunsetBit(B, innermask, lbin);		    \
@@ -286,7 +286,6 @@ do {									    \
 	} else {							    \
 		impsloop(CAND, TEST, dst[cnt] = o + off);		    \
 	}								    \
-	BBPunfix(histo->batCacheid);					    \
 } while (0)
 
 /* choose number of bits */
@@ -1357,9 +1356,10 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
  * candidates.  s should be sorted on the tail value.
  *
  * Theta select returns all values from b which are less/greater than
- * or equal to the provided value depending on the value of op.  Op is
- * a string with one of the values: "=", "==", "<", "<=", ">", ">="
- * (the first two are equivalent).  Theta select never returns nils.
+ * or (not) equal to the provided value depending on the value of op.
+ * Op is a string with one of the values: "=", "==", "<", "<=", ">",
+ * ">=", "<>", "!=" (the first two are equivalent and the last two are
+ * equivalent).  Theta select never returns nils.
  *
  * If value is nil, the result is empty.
  */
@@ -1379,6 +1379,10 @@ BATthetasubselect(BAT *b, BAT *s, const void *val, const char *op)
 		/* "=" or "==" */
 		return BATsubselect(b, s, val, NULL, 1, 1, 0);
 	}
+	if (op[0] == '!' && op[1] == '=' && op[2] == 0) {
+		/* "!=" (equivalent to "<>") */
+		return BATsubselect(b, s, val, NULL, 1, 1, 1);
+	}
 	if (op[0] == '<') {
 		if (op[1] == 0) {
 			/* "<" */
@@ -1387,6 +1391,10 @@ BATthetasubselect(BAT *b, BAT *s, const void *val, const char *op)
 		if (op[1] == '=' && op[2] == 0) {
 			/* "<=" */
 			return BATsubselect(b, s, nil, val, 0, 1, 0);
+		}
+		if (op[1] == '>' && op[2] == 0) {
+			/* "<>" (equivalent to "!=") */
+			return BATsubselect(b, s, val, NULL, 1, 1, 1);
 		}
 	}
 	if (op[0] == '>') {

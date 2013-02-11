@@ -552,6 +552,20 @@ typedef size_t BUN;
 #endif
 #define BUN_MAX (BUN_NONE - 1)	/* maximum allowed size of a BAT */
 
+#define BUN1 1
+#define BUN2 2
+#define BUN4 4
+#define BUN8 8
+typedef unsigned char BUN1type;
+typedef unsigned short BUN2type;
+typedef unsigned int BUN4type;
+typedef BUN BUN8type;
+#define BUN1_NONE ((BUN1type) 0xFF)
+#define BUN2_NONE ((BUN2type) 0xFFFF)
+#define BUN4_NONE ((BUN4type) 0xFFFFFFFF)
+#define BUN8_NONE ((BUN8type) BUN_NONE)
+
+
 /*
  * @- Checking and Error definitions:
  */
@@ -634,6 +648,8 @@ typedef struct {
 
 typedef struct {
 	int type;		/* type of index entity */
+	int width;		/* width of hash entries */
+	BUN nil;		/* nil representation */
 	BUN lim;		/* collision list size */
 	BUN mask;		/* number of hash buckets-1 (power of 2) */
 	BUN *hash;		/* hash table */
@@ -642,12 +658,12 @@ typedef struct {
 } Hash;
 
 typedef struct {
-	bte bits;       /* how many bits in imprints */
-	bat histogram;  /* id for histogram bat */
-	Heap *imps;     /* heap of imprints */
-	BUN impcnt;     /* counter for imprints*/
-	Heap *dict;     /* cache dictionary for compressing imprints */
-	BUN dictcnt;    /* counter for cache dictionary */
+	bte bits;        /* how many bits in imprints */
+	Heap *bins;      /* ranges of bins */
+	Heap *imps;      /* heap of imprints */
+	BUN impcnt;      /* counter for imprints*/
+	Heap *dict;      /* cache dictionary for compressing imprints */
+	BUN dictcnt;     /* counter for cache dictionary */
 } Imprints;
 
 
@@ -2904,19 +2920,19 @@ gdk_export int ALIGNsetH(BAT *b1, BAT *b2);
 #define GDK_STREQ(l,r) (*(char*) (l) == *(char*) (r) && !strcmp(l,r))
 
 #define HASHloop(bi, h, hb, v)					\
-	for (hb = (h)->hash[HASHprobe((h), v)];			\
-	     hb != BUN_NONE;					\
-	     hb = (h)->link[hb])				\
+	for (hb = HASHget(h, HASHprobe((h), v));			\
+	     hb != HASHnil(h);					\
+	     hb = HASHgetlink(h,hb))				\
 		if (ATOMcmp(h->type, v, BUNhead(bi, hb)) == 0)
 #define HASHloop_str_hv(bi, h, hb, v)				\
-	for (hb = (h)->hash[((BUN *) (v))[-1]&(h)->mask];	\
-	     hb != BUN_NONE;					\
-	     hb = (h)->link[hb])				\
+	for (hb = HASHget((h),((BUN *) (v))[-1]&(h)->mask);	\
+	     hb != HASHnil(h);					\
+	     hb = HASHgetlink(h,hb))				\
 		if (GDK_STREQ(v, BUNhvar(bi, hb)))
 #define HASHloop_str(bi, h, hb, v)			\
-	for (hb = (h)->hash[strHash(v)&(h)->mask];	\
-	     hb != BUN_NONE;				\
-	     hb = (h)->link[hb])			\
+	for (hb = HASHget((h),strHash(v)&(h)->mask);	\
+	     hb != HASHnil(h);				\
+	     hb = HASHgetlink(h,hb))			\
 		if (GDK_STREQ(v, BUNhvar(bi, hb)))
 
 /*
@@ -2927,8 +2943,8 @@ gdk_export int ALIGNsetH(BAT *b1, BAT *b2);
  * numbers instead of strings:
  */
 #define HASHloop_fstr(bi, h, hb, idx, v)				\
-	for (hb = h->hash[strHash(v)&h->mask], idx = strLocate((bi.b)->H->vheap,v); \
-	     hb != BUN_NONE; hb = h->link[hb])				\
+	for (hb = HASHget(h, strHash(v)&h->mask), idx = strLocate((bi.b)->H->vheap,v); \
+	     hb != HASHnil(h); hb = HASHgetlink(h,hb))				\
 		if (VarHeapValRaw((bi).b->H->heap.base, hb, (bi).b->H->width) == idx)
 /*
  * The following example shows how the hashloop is used:
@@ -2958,20 +2974,20 @@ gdk_export int ALIGNsetH(BAT *b1, BAT *b2);
  * (HASHlooploc) or variable-sized (HASHloopvar).
  */
 #define HASHlooploc(bi, h, hb, v)				\
-	for (hb = (h)->hash[HASHprobe(h, v)];			\
-	     hb != BUN_NONE;					\
-	     hb = (h)->link[hb])				\
+	for (hb = HASHget(h, HASHprobe(h, v));			\
+	     hb != HASHnil(h);					\
+	     hb = HASHgetlink(h,hb))				\
 		if (ATOMcmp(h->type, v, BUNhloc(bi, hb)) == 0)
 #define HASHloopvar(bi, h, hb, v)				\
-	for (hb = (h)->hash[HASHprobe(h, v)];			\
-	     hb != BUN_NONE;					\
-	     hb = (h)->link[hb])				\
+	for (hb = HASHget(h,HASHprobe(h, v));			\
+	     hb != HASHnil(h);					\
+	     hb = HASHgetlink(h,hb))				\
 		if (ATOMcmp(h->type, v, BUNhvar(bi, hb)) == 0)
 
 #define HASHloop_TYPE(bi, h, hb, v, TYPE)			\
-	for (hb = (h)->hash[hash_##TYPE(h, v)];			\
-	     hb != BUN_NONE;					\
-	     hb = (h)->link[hb])				\
+	for (hb = HASHget(h, hash_##TYPE(h, v));			\
+	     hb != HASHnil(h);					\
+	     hb = HASHgetlink(h,hb))				\
 		if (simple_EQ(v, BUNhloc(bi, hb), TYPE))
 
 #define HASHloop_bit(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, bte)
@@ -2987,9 +3003,9 @@ gdk_export int ALIGNsetH(BAT *b1, BAT *b2);
 #define HASHloop_ptr(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, ptr)
 
 #define HASHloop_any(bi, h, hb, v)				\
-	for (hb = (h)->hash[hash_any(h, v)];			\
-	     hb != BUN_NONE;					\
-	     hb = (h)->link[hb])				\
+	for (hb = HASHget(h, hash_any(h, v));			\
+	     hb != HASHnil(h);					\
+	     hb = HASHgetlink(h,hb))				\
 		if (atom_EQ(v, BUNhead(bi, hb), (bi).b->htype))
 
 /*
@@ -3164,6 +3180,10 @@ gdk_export BAT *BATantijoin(BAT *l, BAT *r);
 gdk_export BAT *BATleftjoin(BAT *l, BAT *r, BUN estimate);
 gdk_export BAT *BATouterjoin(BAT *l, BAT *r, BUN estimate);
 gdk_export BAT *BATcross(BAT *l, BAT *r);
+
+gdk_export gdk_return BATsubleftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, BUN estimate);
+gdk_export gdk_return BATsubouterjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, BUN estimate);
+gdk_export gdk_return BATsubthetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, const char *op, BUN estimate);
 
 gdk_export BAT *BATslice(BAT *b, BUN low, BUN high);
 gdk_export BAT *BATfetch(BAT *b, BAT *s);

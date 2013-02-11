@@ -26,7 +26,7 @@ Ready.
 [ 1	]
 % . # table_name
 % single_value # name
-% varchar # type
+% char # type
 % 110 # length
 [ "the following query causes the message \"missing head type 2: var\" in the server. i don't know if that matters."	]
 [ 1	]
@@ -39,7 +39,7 @@ Ready.
 [ 1	]
 % . # table_name
 % single_value # name
-% varchar # type
+% char # type
 % 112 # length
 [ "the following query causes the server to crash printing \"sql_optimize.mx:1011: set2pivot: Assertion `n' failed.\""	]
 [ 96	]

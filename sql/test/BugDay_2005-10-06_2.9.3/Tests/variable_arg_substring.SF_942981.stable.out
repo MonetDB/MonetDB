@@ -21,8 +21,8 @@ Ready.
 [ 5	]
 % . # table_name
 % substring_single_value # name
-% varchar # type
-% 3 # length
+% char # type
+% 5 # length
 [ "hal"	]
 [ "o"	]
 [ "llo"	]

@@ -407,7 +407,7 @@
 /* end of binary search */
 
 static int
-imprints_create(BAT *b, BAT *histo, bte bits,
+imprints_create(BAT *b, char *inbins, bte bits,
 		char *imps, BUN *impcnt, char *dict, BUN *dictcnt)
 {
 	BUN i;
@@ -421,7 +421,7 @@ do {                                                                          \
 	uint##B##_t mask, prvmask;                                            \
 	uint##B##_t *im = (uint##B##_t *) imps;                               \
 	TYPE *col = (TYPE *) Tloc(b, 0);                                      \
-	TYPE *bins = (TYPE *) Tloc(histo, 0);                                 \
+	TYPE *bins = (TYPE *) inbins;                                         \
 	prvmask = mask = 0;                                                   \
 	new = (IMPS_PAGE/sizeof(TYPE))-1;                                     \
 	for (i = 0; i < b->batFirst+b->batCount; i++) {                       \
@@ -551,7 +551,7 @@ BATimprints(BAT *b) {
 	MT_lock_set(&GDKimprintsLock(ABS(b->batCacheid)), "BATimprints");
 	if (b->T->imprints == NULL) {
 		Imprints *imprints;
-		BAT *smp, *histo;
+		BAT *smp;
 		BUN cnt;
 		str nme = BBP_physical(b->batCacheid);
 
@@ -575,9 +575,14 @@ BATimprints(BAT *b) {
 		assert(smp->tkey && smp->tsorted);
 		cnt = BATcount(smp);
 
-		/* histogram */
-		histo = BATnew(TYPE_void, b->ttype, 64);
-		if (histo == NULL) {
+		/* bins of histogram */
+		imprints->bins = (Heap *) GDKzalloc(sizeof(Heap));
+		if (imprints->bins == NULL ||
+				(imprints->bins->filename =
+				GDKmalloc(strlen(nme) + 12)) == NULL ) {
+			if (imprints->imps != NULL) {
+				GDKfree(imprints->bins);
+			}
 			GDKerror("#BATimprints: memory allocation error.\n");
 			GDKfree(imprints);
 			BBPunfix(smp->batCacheid);
@@ -585,12 +590,21 @@ BATimprints(BAT *b) {
 			"BATimprints");
 			return NULL;
 		}
+		sprintf(imprints->bins->filename, "%s.bins", nme);
+		if (HEAPalloc(imprints->bins, 64, b->T->width) < 0 ) {
+			GDKerror("#BATimprints: memory allocation error");
+			GDKfree(imprints->bins);
+			GDKfree(imprints);
+			MT_lock_unset(&GDKimprintsLock(ABS(b->batCacheid)),
+					"BATimprints");
+			return NULL;
+		}
 
 #define FILL_HISTOGRAM(TYPE)                                      \
 do {                                                              \
 	BUN k;                                                    \
 	TYPE *s = (TYPE *)Tloc(smp, smp->U->first);               \
-	TYPE *h = (TYPE *)Tloc(histo, 0);                         \
+	TYPE *h = (TYPE *)imprints->bins->base;                   \
 	if (cnt < 64-1) {                                         \
 		TYPE max = GDK_##TYPE##_max;                      \
 		for (k = 0; k < cnt; k++)                         \
@@ -634,14 +648,7 @@ do {                                                              \
 			assert(0);
 		}
 
-		BATsetcount(histo, imprints->bits);
-		histo->tsorted = TRUE;
-		histo->trevsorted = FALSE;
-		BATseqbase(histo, 0);
-		BATseqbase(BATmirror(histo), smp->T->seq);
-		imprints->histogram = histo->batCacheid;
 		BBPunfix(smp->batCacheid);
-
 
 		/* alloc heaps for imprints vectors and cache dictionary */
 		imprints->imps = (Heap *) GDKzalloc(sizeof(Heap));
@@ -652,7 +659,8 @@ do {                                                              \
 				(imprints->dict->filename =
 				GDKmalloc(strlen(nme) + 12)) == NULL) {
 			GDKerror("#BATimprints: memory allocation error");
-			BBPreclaim(histo);
+			HEAPfree(imprints->bins);
+			GDKfree(imprints->bins);
 			if (imprints->imps->filename != NULL) {
 				GDKfree(imprints->imps->filename);
 			}
@@ -679,9 +687,10 @@ do {                                                              \
 			HEAPalloc(imprints->dict, b->T->heap.size/IMPS_PAGE,
 				sizeof(cchdc_t)) < 0) {
 			GDKerror("#BATimprints: memory allocation error");
-			BBPreclaim(histo);
+			HEAPfree(imprints->bins);
 			HEAPfree(imprints->imps);
 			HEAPfree(imprints->dict);
+			GDKfree(imprints->bins);
 			GDKfree(imprints->imps);
 			GDKfree(imprints->dict);
 			GDKfree(imprints);
@@ -690,15 +699,16 @@ do {                                                              \
 			return NULL;
 		}
 
-		if (!imprints_create(b, histo, imprints->bits,
+		if (!imprints_create(b, imprints->bins->base, imprints->bits,
 					imprints->imps->base,
 					&imprints->impcnt,
 					imprints->dict->base,
 					&imprints->dictcnt)) {
 			GDKerror("#BATimprints: failed to create imprints");
-			BBPreclaim(histo);
+			HEAPfree(imprints->bins);
 			HEAPfree(imprints->imps);
 			HEAPfree(imprints->dict);
+			GDKfree(imprints->bins);
 			GDKfree(imprints->imps);
 			GDKfree(imprints->dict);
 			GDKfree(imprints);
@@ -706,7 +716,6 @@ do {                                                              \
 					"BATimprints");
 			return NULL;
 		}
-		BBPkeepref(imprints->histogram);
 		b->T->imprints = imprints;
 	}
 	MT_lock_unset(&GDKimprintsLock(ABS(b->batCacheid)), "BATimprints");
@@ -720,7 +729,7 @@ do {                                                              \
 };
 
 int
-IMPSgetbin(int tpe, bte bits, void *inbins, const void *v)
+IMPSgetbin(int tpe, bte bits, char *inbins, const void *v)
 {
 	int ret = -1;
 
@@ -794,8 +803,13 @@ IMPSremove(BAT *b) {
 					BBP_physical(b->batCacheid), "dict");
 		else
 			HEAPfree(imprints->dict);
+		if (imprints->bins->storage != STORE_MEM)
+			HEAPdelete(imprints->bins,
+					BBP_physical(b->batCacheid), "bins");
+		else
+			HEAPfree(imprints->bins);
 
-		BBPreleaselref(imprints->histogram);
+
 		GDKfree(imprints);
 		b->T->imprints = NULL;
 	}

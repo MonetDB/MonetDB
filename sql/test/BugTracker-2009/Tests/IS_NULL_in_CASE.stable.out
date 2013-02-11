@@ -29,14 +29,14 @@ Ready.
 [ 1	]
 % sys.sometable,	sys. # table_name
 % somecol,	NewColumnName # name
-% int,	varchar # type
+% int,	char # type
 % 1,	10 # length
 [ 0,	"small"	]
 [ 1,	"small"	]
 [ NULL,	"NULL FOUND"	]
 % sys.sometable,	sys. # table_name
 % somecol,	NewColumnName # name
-% int,	varchar # type
+% int,	char # type
 % 1,	10 # length
 [ 0,	"small"	]
 [ 1,	"small"	]

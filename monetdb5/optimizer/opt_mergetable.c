@@ -700,7 +700,7 @@ mat_group_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int b, int g, int e)
 	ai2 = pushArgument(mb, ai2, mat[e].mv);
 	ai2 = pushBit(mb, ai2, 1); /* skip nils */
 	if (getFunctionId(p) != subminRef && getFunctionId(p) != submaxRef)
-		ai2 = pushBit(mb, ai2, 0); /* continue on errors */
+		ai2 = pushBit(mb, ai2, 1);
 	pushInstruction(mb, ai2);
 }
 

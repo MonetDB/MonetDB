@@ -1027,7 +1027,7 @@ def msc_python_generic(fd, var, python, msc, PYTHON):
         fd.write('\t$(INSTALL) "$(srcdir)\\README.rst" "README.rst"\n')
         msc['INSTALL'][f] = f, '', '', '', ''
         fd.write('install_%s:\n' % f)
-        fd.write('\t$(%s) %s install --prefix "$(prefix)"\n' % (PYTHON, f))
+        fd.write('\t$(%s) %s install --prefix "$(prefix)" --install-lib "$(prefix)\\lib\\%s\n' % (PYTHON, f, PYTHON.lower()))
 
 def msc_python2(fd, var, python, msc):
     msc_python_generic(fd, var, python, msc, 'PYTHON2')

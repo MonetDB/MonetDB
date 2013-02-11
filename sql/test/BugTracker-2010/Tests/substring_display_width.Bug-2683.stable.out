@@ -27,8 +27,8 @@ Ready.
 #select substring('123456789', 1, 3);
 % . # table_name
 % substring_single_value # name
-% varchar # type
-% 3 # length
+% char # type
+% 9 # length
 [ "123"	]
 
 # 21:48:05 >  
