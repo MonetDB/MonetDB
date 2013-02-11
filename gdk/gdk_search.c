@@ -96,8 +96,12 @@ static int
 HASHwidth(BUN hashsize){
 	if (hashsize <= (BUN) BUN1_NONE) return BUN1;
 	if (hashsize <= (BUN) BUN2_NONE) return BUN2;
+#if SIZEOF_BUN <= 4
+	return BUN4;
+#else
 	if (hashsize <= (BUN) BUN4_NONE) return BUN4;
 	return BUN8;
+#endif
 }
 
 BUN
@@ -145,9 +149,11 @@ HASHnew(Heap *hp, int tpe, BUN size, BUN mask)
 	case BUN4:
 		h->nil = (BUN) BUN4_NONE;
 		break;
+#if SIZEOF_BUN > 4
 	case BUN8:
 		h->nil = (BUN) BUN8_NONE;
 		break;
+#endif
 	default:
 		assert(0);
 	}

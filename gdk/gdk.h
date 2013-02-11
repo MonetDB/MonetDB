@@ -555,15 +555,21 @@ typedef size_t BUN;
 #define BUN1 1
 #define BUN2 2
 #define BUN4 4
+#if SIZEOF_BUN > 4
 #define BUN8 8
+#endif
 typedef uint8_t  BUN1type;
 typedef uint16_t BUN2type;
 typedef uint32_t BUN4type;
+#if SIZEOF_BUN > 4
 typedef uint64_t BUN8type;
+#endif
 #define BUN1_NONE ((BUN1type) 0xFF)
 #define BUN2_NONE ((BUN2type) 0xFFFF)
 #define BUN4_NONE ((BUN4type) 0xFFFFFFFF)
+#if SIZEOF_BUN > 4
 #define BUN8_NONE ((BUN8type) LL_CONSTANT(0xFFFFFFFFFFFFFFFF))
+#endif
 
 
 /*

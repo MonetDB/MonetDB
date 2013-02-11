@@ -37,6 +37,24 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
 #define HASHnil(H)	H->nil
 
 /* play around with h->Hash[i] and h->Link[j] */
+#if SIZEOF_BUN <= 4
+#define HASHget(h,i)	\
+	((BUN)	(h->width == BUN4 ? ((BUN4type*) h->Hash)[i] : \
+		(h->width == BUN2 ? ((BUN2type*) h->Hash)[i] : \
+		                    ((BUN1type*) h->Hash)[i] )))
+#define HASHput(h,i,v)	\
+	(void)	(h->width == BUN4 ? (((BUN4type*) h->Hash)[i] = (BUN4type) v) : \
+		(h->width == BUN2 ? (((BUN2type*) h->Hash)[i] = (BUN2type) v) : \
+		                    (((BUN1type*) h->Hash)[i] = (BUN1type) v) ))
+#define HASHgetlink(h,i)	\
+	((BUN)	(h->width == BUN4 ? ((BUN4type*) h->Link)[i] : \
+		(h->width == BUN2 ? ((BUN2type*) h->Link)[i] : \
+		                    ((BUN1type*) h->Link)[i] )))
+#define HASHputlink(h,i,v)	\
+	(void)	(h->width == BUN4 ? (((BUN4type*) h->Link)[i] = (BUN4type) v) : \
+		(h->width == BUN2 ? (((BUN2type*) h->Link)[i] = (BUN2type) v) : \
+		                    (((BUN1type*) h->Link)[i] = (BUN1type) v) ))
+#else
 #define HASHget(h,i)	\
 	((BUN)	(h->width == BUN8 ? ((BUN8type*) h->Hash)[i] : \
 		(h->width == BUN4 ? ((BUN4type*) h->Hash)[i] : \
@@ -57,6 +75,7 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
 		(h->width == BUN4 ? (((BUN4type*) h->Link)[i] = (BUN4type) v) : \
 		(h->width == BUN2 ? (((BUN2type*) h->Link)[i] = (BUN2type) v) : \
 		                    (((BUN1type*) h->Link)[i] = (BUN1type) v) )))
+#endif
 
 #define mix_sht(X)            (((X)>>7)^(X))
 #define mix_int(X)            (((X)>>7)^((X)>>13)^((X)>>21)^(X))
