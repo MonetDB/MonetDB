@@ -94,12 +94,15 @@
 
 static int
 HASHwidth(BUN hashsize){
-	if (hashsize <= (BUN) BUN1_NONE) return BUN1;
-	if (hashsize <= (BUN) BUN2_NONE) return BUN2;
+	if (hashsize <= (BUN) BUN1_NONE)
+		return BUN1;
+	if (hashsize <= (BUN) BUN2_NONE)
+		return BUN2;
 #if SIZEOF_BUN <= 4
 	return BUN4;
 #else
-	if (hashsize <= (BUN) BUN4_NONE) return BUN4;
+	if (hashsize <= (BUN) BUN4_NONE)
+		return BUN4;
 	return BUN8;
 #endif
 }
