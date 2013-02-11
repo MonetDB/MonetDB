@@ -648,7 +648,7 @@ rel_find_column( sql_allocator *sa, sql_rel *rel, char *tname, char *cname )
 	if (rel->exps && (is_project(rel->op) || is_base(rel->op))) {
 		sql_exp *e = exps_bind_column2(rel->exps, tname, cname);
 		if (e)
-			return exp_alias(sa, e->rname, exp_name(e), tname, cname, exp_subtype(e), e->card, has_nil(e), is_intern(e));
+			return exp_alias(sa, e->rname, exp_name(e), tname, cname, exp_subtype(e), e->card, has_nil(e), is_intern(e), e->type == e_column?e->f:NULL);
 	}
 	if (is_project(rel->op) && rel->l) {
 		return rel_find_column(sa, rel->l, tname, cname);
