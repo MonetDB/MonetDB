@@ -34,7 +34,7 @@ gdk_export BUN HASHprobe(Hash *h, const void *v);
 gdk_export BUN HASHlist(Hash *h, BUN i);
 
 
-#define HASHnil(H)  (BUN) (H->nil)
+#define HASHnil(H)	H->nil
 
 /* play around with h->hash[i] and h->link[j] */
 #define HASHget(h,i)	\

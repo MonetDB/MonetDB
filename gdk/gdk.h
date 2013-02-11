@@ -556,14 +556,14 @@ typedef size_t BUN;
 #define BUN2 2
 #define BUN4 4
 #define BUN8 8
-typedef unsigned char BUN1type;
-typedef unsigned short BUN2type;
-typedef unsigned int BUN4type;
-typedef BUN BUN8type;
+typedef uint8_t  BUN1type;
+typedef uint16_t BUN2type;
+typedef uint32_t BUN4type;
+typedef uint64_t BUN8type;
 #define BUN1_NONE ((BUN1type) 0xFF)
 #define BUN2_NONE ((BUN2type) 0xFFFF)
 #define BUN4_NONE ((BUN4type) 0xFFFFFFFF)
-#define BUN8_NONE ((BUN8type) BUN_NONE)
+#define BUN8_NONE ((BUN8type) LL_CONSTANT(0xFFFFFFFFFFFFFFFF))
 
 
 /*
@@ -652,8 +652,8 @@ typedef struct {
 	BUN nil;		/* nil representation */
 	BUN lim;		/* collision list size */
 	BUN mask;		/* number of hash buckets-1 (power of 2) */
-	BUN *hash;		/* hash table */
-	BUN *link;		/* collision list */
+	void *hash;		/* hash table */
+	void *link;		/* collision list */
 	Heap *heap;		/* heap where the hash is stored */
 } Hash;
 
