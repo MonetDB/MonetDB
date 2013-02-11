@@ -537,7 +537,6 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, stm
 		stmt *l = NULL, *r = NULL, *r2 = NULL;
 		int swapped = 0, is_select = 0;
 		sql_exp *re = e->r, *re2 = e->f;
-		prop *p;
 
 		if (get_cmp(e) == cmp_filter) {
 			list *r = e->r;
@@ -594,7 +593,7 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, stm
 			assert(0);
 
 		/* mark use of join indices */
-		if (right && (p=find_prop(e->p, PROP_JOINIDX)) != NULL) 
+		if (right && find_prop(e->p, PROP_JOINIDX) != NULL) 
 			sql->opt_stats[0]++; 
 
 		if (!l) {
