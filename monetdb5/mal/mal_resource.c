@@ -190,7 +190,6 @@ MALresourceFairness(Client cntxt, MalBlkPtr mb, lng usec)
 	unsigned int delay;
 	lng clk;
 	int threads;
-	double factor;
 	int delayed= 0;
 #ifdef ATOMIC_LOCK
 #ifndef PTHREAD_MUTEX_INITIALIZER
@@ -225,27 +224,26 @@ MALresourceFairness(Client cntxt, MalBlkPtr mb, lng usec)
 
 	if ( clk > DELAYUNIT ) {
 		PARDEBUG mnstr_printf(GDKstdout, "#delay %d initial "LLFMT"n", cntxt->idx, clk);
+		ATOMIC_DEC_int(running, runningLock, "MALresourceFairness");
 		while (clk > 0) {
-			/* always keep one running to avoid all waiting  */
-			if (ATOMIC_GET_int(running, runningLock, "MALresourceFairness") < 2)
-				break;
 			/* speed up wake up when we have memory */
-			rss = GDKmem_cursize();
 			if (rss < MEMORY_THRESHOLD * monet_memory)
 				break;
-			factor = ((double) rss) / (MEMORY_THRESHOLD * monet_memory);
-			delay = (unsigned int) (DELAYUNIT * (factor > 1.0 ? 1.0 : factor));
-			delay = (unsigned int) ( ((double)delay) * ATOMIC_GET_int(running, runningLock, "MALresourceFairness") / threads);
-			ATOMIC_DEC_int(running, runningLock, "MALresourceFairness");
+			/* always keep one running to avoid all waiting  */
+			if ( running < 2) /* dirty read of shared variable is safe  here */
+			//if ( (r =ATOMIC_GET_int(running, runningLock, "MALresourceFairness")) < 2)
+				break;
+			delay = (unsigned int) ( ((double)DELAYUNIT * running) / threads);
 			if (delay) {
 				if ( delayed++ == 0){
 						mnstr_printf(GDKstdout, "#delay %d initial %u["LLFMT"] memory  "SZFMT"[%f]\n", cntxt->idx, delay, clk, rss, MEMORY_THRESHOLD * monet_memory);
 						mnstr_flush(GDKstdout);
 				}
 				MT_sleep_ms(delay);
+				rss = GDKmem_cursize();
 			}
-			ATOMIC_INC_int(running, runningLock, "MALresourceFairness");
 			clk -= DELAYUNIT;
 		}
+		ATOMIC_INC_int(running, runningLock, "MALresourceFairness");
 	}
 }
