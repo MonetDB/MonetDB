@@ -265,7 +265,6 @@ class Connection(object):
         if self.socket:
             self.socket.close()
 
-
 #backwards compatiblity
 Server = Connection
 
