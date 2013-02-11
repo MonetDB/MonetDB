@@ -34,7 +34,7 @@
 
 geotiff_export str GTIFFtest(int *wid, int *len, str *fname);
 geotiff_export str GTIFFattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-geotiff_export str GTIFFloadImage(bat *result, str *fname);
+geotiff_export str GTIFFloadGreyscaleImage(bat *x, bat *y, bat *intensity, str *fname);
 geotiff_export str GTIFFimportImage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 #endif
 
