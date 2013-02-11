@@ -878,6 +878,7 @@ class DatabaseAPI20Test(unittest.TestCase):
         self.assertTrue(hasattr(self.driver,'ROWID'),
             'module.ROWID must be defined.'
             )
+
     def test_utf8(self):
         con = self._connect()
         try:
