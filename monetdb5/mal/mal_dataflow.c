@@ -324,13 +324,8 @@ DFLOWworker(void *t)
 				flow->status[i].blocks = 0;
 				flow->status[i].hotclaim = fe->hotclaim;
 				flow->status[i].argclaim += fe->hotclaim;
-				if (fnxt) {
-					if (flow->error)
-						q_enqueue(flow->done, fnxt);
-					else
-						q_enqueue(todo, fnxt);
-				}
 				fnxt = flow->status + i;
+				break;
 			}
 		MT_lock_unset(&flow->flowlock, "MALworker");
 
