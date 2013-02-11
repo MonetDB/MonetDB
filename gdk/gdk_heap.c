@@ -84,6 +84,7 @@ static MT_Lock HEAPcacheLock;
 void
 HEAPcacheInit(void)
 {
+#if HEAP_CACHE_SIZE > 0
 	if (!hc) {
 		int i;
 
@@ -103,6 +104,7 @@ HEAPcacheInit(void)
 		}
 		MT_lock_unset(&HEAPcacheLock, "HEAPcache_init");
 	}
+#endif
 }
 
 static int
