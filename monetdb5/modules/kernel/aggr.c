@@ -35,12 +35,19 @@
  * grouped aggregates
  */
 static str
-AGGRgrouped(bat *retval, BAT *b, BAT *g, BAT *e, int tp,
-			BAT *(*grpfunc)(BAT *, BAT *, BAT *, BAT *, int, int, int),
+AGGRgrouped(bat *retval1, bat *retval2, BAT *b, BAT *g, BAT *e, int tp,
+			BAT *(*grpfunc1)(BAT *, BAT *, BAT *, BAT *, int, int, int),
+			gdk_return (*grpfunc2)(BAT **, BAT **, BAT *, BAT *, BAT *, BAT *, int, int, int),
 			int skip_nils,
 			const char *malfunc)
 {
-	BAT *bn, *t, *map;
+	BAT *bn, *cnts = NULL, *t, *map;
+
+	/* one or the other of grpfunc1 and grpfunc2 is non-NULL */
+	assert(grpfunc1 == NULL || grpfunc2 == NULL);
+	assert(grpfunc1 || grpfunc2);
+	/* if retval2 is non-NULL, we must have grpfunc2 */
+	assert(retval2 == NULL || grpfunc2 != NULL);
 
 	if (b == NULL || g == NULL || e == NULL) {
 		if (b)
@@ -51,7 +58,7 @@ AGGRgrouped(bat *retval, BAT *b, BAT *g, BAT *e, int tp,
 			BBPreleaseref(e->batCacheid);
 		throw(MAL, malfunc, RUNTIME_OBJECT_MISSING);
 	}
-	if (tp == TYPE_any && grpfunc == BATgroupmedian)
+	if (tp == TYPE_any && grpfunc1 == BATgroupmedian)
 		tp = b->ttype;
 	if (!BAThdense(b) || !BAThdense(g)) {
 		/* if b or g don't have a dense head, replace the head with a
@@ -103,11 +110,14 @@ AGGRgrouped(bat *retval, BAT *b, BAT *g, BAT *e, int tp,
 	} else {
 		map = NULL;
 	}
-	bn = (*grpfunc)(b, g, e, NULL, tp, skip_nils, 1);
-	if (bn != NULL && (grpfunc == BATgroupmin || grpfunc == BATgroupmax)) {
-		BAT *bnn = BATouterjoin(bn, b, BATcount(bn));
+	if (grpfunc1)
+		bn = (*grpfunc1)(b, g, e, NULL, tp, skip_nils, 1);
+	else if ((*grpfunc2)(&bn, retval2 ? &cnts : NULL, b, g, e, NULL, tp, skip_nils, 1) == GDK_FAIL)
+		bn = NULL;
+	if (bn != NULL && (grpfunc1 == BATgroupmin || grpfunc1 == BATgroupmax)) {
+		t = BATouterjoin(bn, b, BATcount(bn));
 		BBPreleaseref(bn->batCacheid);
-		bn = bnn;
+		bn = t;
 	}
 	BBPreleaseref(b->batCacheid);
 	BBPreleaseref(g->batCacheid);
@@ -137,18 +147,28 @@ AGGRgrouped(bat *retval, BAT *b, BAT *g, BAT *e, int tp,
 	}
 	if (map) {
 		t = BATleftjoin(map, bn, BATcount(bn));
-		BBPreleaseref(map->batCacheid);
 		BBPreleaseref(bn->batCacheid);
 		bn = t;
+		if (cnts) {
+			t = BATleftjoin(map, cnts, BATcount(cnts));
+			BBPreleaseref(cnts->batCacheid);
+			cnts = t;
+		}
+		BBPreleaseref(map->batCacheid);
 	}
-	*retval = bn->batCacheid;
+	*retval1 = bn->batCacheid;
 	BBPkeepref(bn->batCacheid);
+	if (retval2) {
+		*retval2 = cnts->batCacheid;
+		BBPkeepref(cnts->batCacheid);
+	}
 	return MAL_SUCCEED;
 }
 
 static str
-AGGRgrouped3(bat *retval, bat *bid, bat *gid, bat *eid, int tp,
-			 BAT *(*grpfunc)(BAT *, BAT *, BAT *, BAT *, int, int, int),
+AGGRgrouped3(bat *retval1, bat *retval2, bat *bid, bat *gid, bat *eid, int tp,
+			 BAT *(*grpfunc1)(BAT *, BAT *, BAT *, BAT *, int, int, int),
+			 gdk_return (*grpfunc2)(BAT **, BAT **, BAT *, BAT *, BAT *, BAT *, int, int, int),
 			 int skip_nils,
 			 const char *malfunc)
 {
@@ -157,12 +177,13 @@ AGGRgrouped3(bat *retval, bat *bid, bat *gid, bat *eid, int tp,
 	b = BATdescriptor(*bid);	/* [head,value] */
 	g = BATdescriptor(*gid);	/* [head,gid] */
 	e = BATdescriptor(*eid);	/* [gid,any] */
-	return AGGRgrouped(retval, b, g, e, tp, grpfunc, skip_nils, malfunc);
+	return AGGRgrouped(retval1, retval2, b, g, e, tp, grpfunc1, grpfunc2, skip_nils, malfunc);
 }
 
 static str
-AGGRgrouped2(bat *retval, bat *bid, bat *eid, int tp,
-			 BAT *(*grpfunc)(BAT *, BAT *, BAT *, BAT *, int, int, int),
+AGGRgrouped2(bat *retval1, bat *retval2, bat *bid, bat *eid, int tp,
+			 BAT *(*grpfunc1)(BAT *, BAT *, BAT *, BAT *, int, int, int),
+			 gdk_return (*grpfunc2)(BAT **, BAT **, BAT *, BAT *, BAT *, BAT *, int, int, int),
 			 int skip_nils,
 			 const char *malfunc)
 {
@@ -176,395 +197,417 @@ AGGRgrouped2(bat *retval, bat *bid, bat *eid, int tp,
 	BBPreleaseref(b->batCacheid);
 	b = e;
 	e = BATdescriptor(*eid);	/* [gid,any] */
-	return AGGRgrouped(retval, b, g, e, tp, grpfunc, skip_nils, malfunc);
+	return AGGRgrouped(retval1, retval2, b, g, e, tp, grpfunc1, grpfunc2, skip_nils, malfunc);
 }
 
 aggr_export str AGGRsum3_bte(bat *retval, bat *bid, bat *gid, bat *eid);
 str
 AGGRsum3_bte(bat *retval, bat *bid, bat *gid, bat *eid)
 {
-	return AGGRgrouped3(retval, bid, gid, eid, TYPE_bte,
-						BATgroupsum, 1, "aggr.sum");
+	return AGGRgrouped3(retval, NULL, bid, gid, eid, TYPE_bte,
+						BATgroupsum, NULL, 1, "aggr.sum");
 }
 
 aggr_export str AGGRsum3_sht(bat *retval, bat *bid, bat *gid, bat *eid);
 str
 AGGRsum3_sht(bat *retval, bat *bid, bat *gid, bat *eid)
 {
-	return AGGRgrouped3(retval, bid, gid, eid, TYPE_sht,
-						BATgroupsum, 1, "aggr.sum");
+	return AGGRgrouped3(retval, NULL, bid, gid, eid, TYPE_sht,
+						BATgroupsum, NULL, 1, "aggr.sum");
 }
 
 aggr_export str AGGRsum3_int(bat *retval, bat *bid, bat *gid, bat *eid);
 str
 AGGRsum3_int(bat *retval, bat *bid, bat *gid, bat *eid)
 {
-	return AGGRgrouped3(retval, bid, gid, eid, TYPE_int,
-						BATgroupsum, 1, "aggr.sum");
+	return AGGRgrouped3(retval, NULL, bid, gid, eid, TYPE_int,
+						BATgroupsum, NULL, 1, "aggr.sum");
 }
 
 aggr_export str AGGRsum3_wrd(bat *retval, bat *bid, bat *gid, bat *eid);
 str
 AGGRsum3_wrd(bat *retval, bat *bid, bat *gid, bat *eid)
 {
-	return AGGRgrouped3(retval, bid, gid, eid, TYPE_wrd,
-						BATgroupsum, 1, "aggr.sum");
+	return AGGRgrouped3(retval, NULL, bid, gid, eid, TYPE_wrd,
+						BATgroupsum, NULL, 1, "aggr.sum");
 }
 
 aggr_export str AGGRsum3_lng(bat *retval, bat *bid, bat *gid, bat *eid);
 str
 AGGRsum3_lng(bat *retval, bat *bid, bat *gid, bat *eid)
 {
-	return AGGRgrouped3(retval, bid, gid, eid, TYPE_lng,
-						BATgroupsum, 1, "aggr.sum");
+	return AGGRgrouped3(retval, NULL, bid, gid, eid, TYPE_lng,
+						BATgroupsum, NULL, 1, "aggr.sum");
 }
 
 aggr_export str AGGRsum3_flt(bat *retval, bat *bid, bat *gid, bat *eid);
 str
 AGGRsum3_flt(bat *retval, bat *bid, bat *gid, bat *eid)
 {
-	return AGGRgrouped3(retval, bid, gid, eid, TYPE_flt,
-						BATgroupsum, 1, "aggr.sum");
+	return AGGRgrouped3(retval, NULL, bid, gid, eid, TYPE_flt,
+						BATgroupsum, NULL, 1, "aggr.sum");
 }
 
 aggr_export str AGGRsum3_dbl(bat *retval, bat *bid, bat *gid, bat *eid);
 str
 AGGRsum3_dbl(bat *retval, bat *bid, bat *gid, bat *eid)
 {
-	return AGGRgrouped3(retval, bid, gid, eid, TYPE_dbl,
-						BATgroupsum, 1, "aggr.sum");
+	return AGGRgrouped3(retval, NULL, bid, gid, eid, TYPE_dbl,
+						BATgroupsum, NULL, 1, "aggr.sum");
 }
 
 aggr_export str AGGRsum2_bte(bat *retval, bat *bid, bat *eid);
 str
 AGGRsum2_bte(bat *retval, bat *bid, bat *eid)
 {
-	return AGGRgrouped2(retval, bid, eid, TYPE_bte, BATgroupsum, 1, "aggr.sum");
+	return AGGRgrouped2(retval, NULL, bid, eid, TYPE_bte, BATgroupsum, NULL, 1, "aggr.sum");
 }
 
 aggr_export str AGGRsum2_sht(bat *retval, bat *bid, bat *eid);
 str
 AGGRsum2_sht(bat *retval, bat *bid, bat *eid)
 {
-	return AGGRgrouped2(retval, bid, eid, TYPE_sht, BATgroupsum, 1, "aggr.sum");
+	return AGGRgrouped2(retval, NULL, bid, eid, TYPE_sht, BATgroupsum, NULL, 1, "aggr.sum");
 }
 
 aggr_export str AGGRsum2_int(bat *retval, bat *bid, bat *eid);
 str
 AGGRsum2_int(bat *retval, bat *bid, bat *eid)
 {
-	return AGGRgrouped2(retval, bid, eid, TYPE_int, BATgroupsum, 1, "aggr.sum");
+	return AGGRgrouped2(retval, NULL, bid, eid, TYPE_int, BATgroupsum, NULL, 1, "aggr.sum");
 }
 
 aggr_export str AGGRsum2_wrd(bat *retval, bat *bid, bat *eid);
 str
 AGGRsum2_wrd(bat *retval, bat *bid, bat *eid)
 {
-	return AGGRgrouped2(retval, bid, eid, TYPE_wrd, BATgroupsum, 1, "aggr.sum");
+	return AGGRgrouped2(retval, NULL, bid, eid, TYPE_wrd, BATgroupsum, NULL, 1, "aggr.sum");
 }
 
 aggr_export str AGGRsum2_lng(bat *retval, bat *bid, bat *eid);
 str
 AGGRsum2_lng(bat *retval, bat *bid, bat *eid)
 {
-	return AGGRgrouped2(retval, bid, eid, TYPE_lng, BATgroupsum, 1, "aggr.sum");
+	return AGGRgrouped2(retval, NULL, bid, eid, TYPE_lng, BATgroupsum, NULL, 1, "aggr.sum");
 }
 
 aggr_export str AGGRsum2_flt(bat *retval, bat *bid, bat *eid);
 str
 AGGRsum2_flt(bat *retval, bat *bid, bat *eid)
 {
-	return AGGRgrouped2(retval, bid, eid, TYPE_flt, BATgroupsum, 1, "aggr.sum");
+	return AGGRgrouped2(retval, NULL, bid, eid, TYPE_flt, BATgroupsum, NULL, 1, "aggr.sum");
 }
 
 aggr_export str AGGRsum2_dbl(bat *retval, bat *bid, bat *eid);
 str
 AGGRsum2_dbl(bat *retval, bat *bid, bat *eid)
 {
-	return AGGRgrouped2(retval, bid, eid, TYPE_dbl, BATgroupsum, 1, "aggr.sum");
+	return AGGRgrouped2(retval, NULL, bid, eid, TYPE_dbl, BATgroupsum, NULL, 1, "aggr.sum");
 }
 
 aggr_export str AGGRprod3_bte(bat *retval, bat *bid, bat *gid, bat *eid);
 str
 AGGRprod3_bte(bat *retval, bat *bid, bat *gid, bat *eid)
 {
-	return AGGRgrouped3(retval, bid, gid, eid, TYPE_bte,
-						BATgroupprod, 1, "aggr.prod");
+	return AGGRgrouped3(retval, NULL, bid, gid, eid, TYPE_bte,
+						BATgroupprod, NULL, 1, "aggr.prod");
 }
 
 aggr_export str AGGRprod3_sht(bat *retval, bat *bid, bat *gid, bat *eid);
 str
 AGGRprod3_sht(bat *retval, bat *bid, bat *gid, bat *eid)
 {
-	return AGGRgrouped3(retval, bid, gid, eid, TYPE_sht,
-						BATgroupprod, 1, "aggr.prod");
+	return AGGRgrouped3(retval, NULL, bid, gid, eid, TYPE_sht,
+						BATgroupprod, NULL, 1, "aggr.prod");
 }
 
 aggr_export str AGGRprod3_int(bat *retval, bat *bid, bat *gid, bat *eid);
 str
 AGGRprod3_int(bat *retval, bat *bid, bat *gid, bat *eid)
 {
-	return AGGRgrouped3(retval, bid, gid, eid, TYPE_int,
-						BATgroupprod, 1, "aggr.prod");
+	return AGGRgrouped3(retval, NULL, bid, gid, eid, TYPE_int,
+						BATgroupprod, NULL, 1, "aggr.prod");
 }
 
 aggr_export str AGGRprod3_wrd(bat *retval, bat *bid, bat *gid, bat *eid);
 str
 AGGRprod3_wrd(bat *retval, bat *bid, bat *gid, bat *eid)
 {
-	return AGGRgrouped3(retval, bid, gid, eid, TYPE_wrd,
-						BATgroupprod, 1, "aggr.prod");
+	return AGGRgrouped3(retval, NULL, bid, gid, eid, TYPE_wrd,
+						BATgroupprod, NULL, 1, "aggr.prod");
 }
 
 aggr_export str AGGRprod3_lng(bat *retval, bat *bid, bat *gid, bat *eid);
 str
 AGGRprod3_lng(bat *retval, bat *bid, bat *gid, bat *eid)
 {
-	return AGGRgrouped3(retval, bid, gid, eid, TYPE_lng,
-						BATgroupprod, 1, "aggr.prod");
+	return AGGRgrouped3(retval, NULL, bid, gid, eid, TYPE_lng,
+						BATgroupprod, NULL, 1, "aggr.prod");
 }
 
 aggr_export str AGGRprod3_flt(bat *retval, bat *bid, bat *gid, bat *eid);
 str
 AGGRprod3_flt(bat *retval, bat *bid, bat *gid, bat *eid)
 {
-	return AGGRgrouped3(retval, bid, gid, eid, TYPE_flt,
-						BATgroupprod, 1, "aggr.prod");
+	return AGGRgrouped3(retval, NULL, bid, gid, eid, TYPE_flt,
+						BATgroupprod, NULL, 1, "aggr.prod");
 }
 
 aggr_export str AGGRprod3_dbl(bat *retval, bat *bid, bat *gid, bat *eid);
 str
 AGGRprod3_dbl(bat *retval, bat *bid, bat *gid, bat *eid)
 {
-	return AGGRgrouped3(retval, bid, gid, eid, TYPE_dbl,
-						BATgroupprod, 1, "aggr.prod");
+	return AGGRgrouped3(retval, NULL, bid, gid, eid, TYPE_dbl,
+						BATgroupprod, NULL, 1, "aggr.prod");
 }
 
 aggr_export str AGGRprod2_bte(bat *retval, bat *bid, bat *eid);
 str
 AGGRprod2_bte(bat *retval, bat *bid, bat *eid)
 {
-	return AGGRgrouped2(retval, bid, eid, TYPE_bte, BATgroupprod, 1, "aggr.prod");
+	return AGGRgrouped2(retval, NULL, bid, eid, TYPE_bte, BATgroupprod, NULL, 1, "aggr.prod");
 }
 
 aggr_export str AGGRprod2_sht(bat *retval, bat *bid, bat *eid);
 str
 AGGRprod2_sht(bat *retval, bat *bid, bat *eid)
 {
-	return AGGRgrouped2(retval, bid, eid, TYPE_sht, BATgroupprod, 1, "aggr.prod");
+	return AGGRgrouped2(retval, NULL, bid, eid, TYPE_sht, BATgroupprod, NULL, 1, "aggr.prod");
 }
 
 aggr_export str AGGRprod2_int(bat *retval, bat *bid, bat *eid);
 str
 AGGRprod2_int(bat *retval, bat *bid, bat *eid)
 {
-	return AGGRgrouped2(retval, bid, eid, TYPE_int, BATgroupprod, 1, "aggr.prod");
+	return AGGRgrouped2(retval, NULL, bid, eid, TYPE_int, BATgroupprod, NULL, 1, "aggr.prod");
 }
 
 aggr_export str AGGRprod2_wrd(bat *retval, bat *bid, bat *eid);
 str
 AGGRprod2_wrd(bat *retval, bat *bid, bat *eid)
 {
-	return AGGRgrouped2(retval, bid, eid, TYPE_wrd, BATgroupprod, 1, "aggr.prod");
+	return AGGRgrouped2(retval, NULL, bid, eid, TYPE_wrd, BATgroupprod, NULL, 1, "aggr.prod");
 }
 
 aggr_export str AGGRprod2_lng(bat *retval, bat *bid, bat *eid);
 str
 AGGRprod2_lng(bat *retval, bat *bid, bat *eid)
 {
-	return AGGRgrouped2(retval, bid, eid, TYPE_lng, BATgroupprod, 1, "aggr.prod");
+	return AGGRgrouped2(retval, NULL, bid, eid, TYPE_lng, BATgroupprod, NULL, 1, "aggr.prod");
 }
 
 aggr_export str AGGRprod2_flt(bat *retval, bat *bid, bat *eid);
 str
 AGGRprod2_flt(bat *retval, bat *bid, bat *eid)
 {
-	return AGGRgrouped2(retval, bid, eid, TYPE_flt, BATgroupprod, 1, "aggr.prod");
+	return AGGRgrouped2(retval, NULL, bid, eid, TYPE_flt, BATgroupprod, NULL, 1, "aggr.prod");
 }
 
 aggr_export str AGGRprod2_dbl(bat *retval, bat *bid, bat *eid);
 str
 AGGRprod2_dbl(bat *retval, bat *bid, bat *eid)
 {
-	return AGGRgrouped2(retval, bid, eid, TYPE_dbl, BATgroupprod, 1, "aggr.prod");
+	return AGGRgrouped2(retval, NULL, bid, eid, TYPE_dbl, BATgroupprod, NULL, 1, "aggr.prod");
 }
 
-aggr_export str AGGRavg3_dbl(bat *retval, bat *bid, bat *gid, bat *eid);
+aggr_export str AGGRavg13_dbl(bat *retval, bat *bid, bat *gid, bat *eid);
 str
-AGGRavg3_dbl(bat *retval, bat *bid, bat *gid, bat *eid)
+AGGRavg13_dbl(bat *retval, bat *bid, bat *gid, bat *eid)
 {
-	return AGGRgrouped3(retval, bid, gid, eid, TYPE_dbl,
-						BATgroupavg, 1, "aggr.avg");
+	return AGGRgrouped3(retval, NULL, bid, gid, eid, TYPE_dbl,
+						NULL, BATgroupavg, 1, "aggr.avg");
 }
 
-aggr_export str AGGRavg2_dbl(bat *retval, bat *bid, bat *eid);
+aggr_export str AGGRavg12_dbl(bat *retval, bat *bid, bat *eid);
 str
-AGGRavg2_dbl(bat *retval, bat *bid, bat *eid)
+AGGRavg12_dbl(bat *retval, bat *bid, bat *eid)
 {
-	return AGGRgrouped2(retval, bid, eid, TYPE_dbl, BATgroupavg, 1, "aggr.avg");
+	return AGGRgrouped2(retval, NULL, bid, eid, TYPE_dbl, NULL, BATgroupavg, 1, "aggr.avg");
+}
+
+aggr_export str AGGRavg23_dbl(bat *retval1, bat *retval2, bat *bid, bat *gid, bat *eid);
+str
+AGGRavg23_dbl(bat *retval1, bat *retval2, bat *bid, bat *gid, bat *eid)
+{
+	return AGGRgrouped3(retval1, retval2, bid, gid, eid, TYPE_dbl,
+						NULL, BATgroupavg, 1, "aggr.avg");
+}
+
+aggr_export str AGGRavg22_dbl(bat *retval1, bat *retval2, bat *bid, bat *eid);
+str
+AGGRavg22_dbl(bat *retval1, bat *retval2, bat *bid, bat *eid)
+{
+	return AGGRgrouped2(retval1, retval2, bid, eid, TYPE_dbl, NULL, BATgroupavg, 1, "aggr.avg");
 }
 
 aggr_export str AGGRstdev3_dbl(bat *retval, bat *bid, bat *gid, bat *eid);
 str
 AGGRstdev3_dbl(bat *retval, bat *bid, bat *gid, bat *eid)
 {
-	return AGGRgrouped3(retval, bid, gid, eid, TYPE_dbl,
-						BATgroupstdev_sample, 1, "aggr.stdev");
+	return AGGRgrouped3(retval, NULL, bid, gid, eid, TYPE_dbl,
+						BATgroupstdev_sample, NULL, 1, "aggr.stdev");
 }
 
 aggr_export str AGGRstdev2_dbl(bat *retval, bat *bid, bat *eid);
 str
 AGGRstdev2_dbl(bat *retval, bat *bid, bat *eid)
 {
-	return AGGRgrouped2(retval, bid, eid, TYPE_dbl, BATgroupstdev_sample, 1, "aggr.stdev");
+	return AGGRgrouped2(retval, NULL, bid, eid, TYPE_dbl, BATgroupstdev_sample, NULL, 1, "aggr.stdev");
 }
 
 aggr_export str AGGRstdevp3_dbl(bat *retval, bat *bid, bat *gid, bat *eid);
 str
 AGGRstdevp3_dbl(bat *retval, bat *bid, bat *gid, bat *eid)
 {
-	return AGGRgrouped3(retval, bid, gid, eid, TYPE_dbl,
-						BATgroupstdev_population, 1, "aggr.stdevp");
+	return AGGRgrouped3(retval, NULL, bid, gid, eid, TYPE_dbl,
+						BATgroupstdev_population, NULL, 1, "aggr.stdevp");
 }
 
 aggr_export str AGGRstdevp2_dbl(bat *retval, bat *bid, bat *eid);
 str
 AGGRstdevp2_dbl(bat *retval, bat *bid, bat *eid)
 {
-	return AGGRgrouped2(retval, bid, eid, TYPE_dbl, BATgroupstdev_population, 1, "aggr.stdevp");
+	return AGGRgrouped2(retval, NULL, bid, eid, TYPE_dbl, BATgroupstdev_population, NULL, 1, "aggr.stdevp");
 }
 
 aggr_export str AGGRvariance3_dbl(bat *retval, bat *bid, bat *gid, bat *eid);
 str
 AGGRvariance3_dbl(bat *retval, bat *bid, bat *gid, bat *eid)
 {
-	return AGGRgrouped3(retval, bid, gid, eid, TYPE_dbl,
-						BATgroupvariance_sample, 1, "aggr.variance");
+	return AGGRgrouped3(retval, NULL, bid, gid, eid, TYPE_dbl,
+						BATgroupvariance_sample, NULL, 1, "aggr.variance");
 }
 
 aggr_export str AGGRvariance2_dbl(bat *retval, bat *bid, bat *eid);
 str
 AGGRvariance2_dbl(bat *retval, bat *bid, bat *eid)
 {
-	return AGGRgrouped2(retval, bid, eid, TYPE_dbl, BATgroupvariance_sample, 1, "aggr.variance");
+	return AGGRgrouped2(retval, NULL, bid, eid, TYPE_dbl, BATgroupvariance_sample, NULL, 1, "aggr.variance");
 }
 
 aggr_export str AGGRvariancep3_dbl(bat *retval, bat *bid, bat *gid, bat *eid);
 str
 AGGRvariancep3_dbl(bat *retval, bat *bid, bat *gid, bat *eid)
 {
-	return AGGRgrouped3(retval, bid, gid, eid, TYPE_dbl,
-						BATgroupvariance_population, 1, "aggr.variancep");
+	return AGGRgrouped3(retval, NULL, bid, gid, eid, TYPE_dbl,
+						BATgroupvariance_population, NULL, 1, "aggr.variancep");
 }
 
 aggr_export str AGGRvariancep2_dbl(bat *retval, bat *bid, bat *eid);
 str
 AGGRvariancep2_dbl(bat *retval, bat *bid, bat *eid)
 {
-	return AGGRgrouped2(retval, bid, eid, TYPE_dbl, BATgroupvariance_population, 1, "aggr.variancep");
+	return AGGRgrouped2(retval, NULL, bid, eid, TYPE_dbl, BATgroupvariance_population, NULL, 1, "aggr.variancep");
 }
 
 aggr_export str AGGRcount3(bat *retval, bat *bid, bat *gid, bat *eid, bit *ignorenils);
 str
 AGGRcount3(bat *retval, bat *bid, bat *gid, bat *eid, bit *ignorenils)
 {
-	return AGGRgrouped3(retval, bid, gid, eid, TYPE_wrd,
-						BATgroupcount, *ignorenils, "aggr.count");
+	return AGGRgrouped3(retval, NULL, bid, gid, eid, TYPE_wrd,
+						BATgroupcount, NULL, *ignorenils, "aggr.count");
 }
 
 aggr_export str AGGRcount3nonils(bat *retval, bat *bid, bat *gid, bat *eid);
 str
 AGGRcount3nonils(bat *retval, bat *bid, bat *gid, bat *eid)
 {
-	return AGGRgrouped3(retval, bid, gid, eid, TYPE_wrd,
-						BATgroupcount, 1, "aggr.count");
+	return AGGRgrouped3(retval, NULL, bid, gid, eid, TYPE_wrd,
+						BATgroupcount, NULL, 1, "aggr.count");
 }
 
 aggr_export str AGGRcount3nils(bat *retval, bat *bid, bat *gid, bat *eid);
 str
 AGGRcount3nils(bat *retval, bat *bid, bat *gid, bat *eid)
 {
-	return AGGRgrouped3(retval, bid, gid, eid, TYPE_wrd,
-						BATgroupcount, 0, "aggr.count");
+	return AGGRgrouped3(retval, NULL, bid, gid, eid, TYPE_wrd,
+						BATgroupcount, NULL, 0, "aggr.count");
 }
 
 aggr_export str AGGRcount2(bat *retval, bat *bid, bat *eid, bit *ignorenils);
 str
 AGGRcount2(bat *retval, bat *bid, bat *eid, bit *ignorenils)
 {
-	return AGGRgrouped2(retval, bid, eid, TYPE_wrd,
-						BATgroupcount, *ignorenils, "aggr.count");
+	return AGGRgrouped2(retval, NULL, bid, eid, TYPE_wrd,
+						BATgroupcount, NULL, *ignorenils, "aggr.count");
 }
 
 aggr_export str AGGRcount2nonils(bat *retval, bat *bid, bat *eid);
 str
 AGGRcount2nonils(bat *retval, bat *bid, bat *eid)
 {
-	return AGGRgrouped2(retval, bid, eid, TYPE_wrd,
-						BATgroupcount, 1, "aggr.count");
+	return AGGRgrouped2(retval, NULL, bid, eid, TYPE_wrd,
+						BATgroupcount, NULL, 1, "aggr.count");
 }
 
 aggr_export str AGGRcount2nils(bat *retval, bat *bid, bat *eid);
 str
 AGGRcount2nils(bat *retval, bat *bid, bat *eid)
 {
-	return AGGRgrouped2(retval, bid, eid, TYPE_wrd,
-						BATgroupcount, 0, "aggr.count");
+	return AGGRgrouped2(retval, NULL, bid, eid, TYPE_wrd,
+						BATgroupcount, NULL, 0, "aggr.count");
 }
 
 aggr_export str AGGRsize2(bat *retval, bat *bid, bat *eid);
 str
 AGGRsize2(bat *retval, bat *bid, bat *eid)
 {
-	return AGGRgrouped2(retval, bid, eid, TYPE_wrd,
-						BATgroupsize, 1, "aggr.size");
+	return AGGRgrouped2(retval, NULL, bid, eid, TYPE_wrd,
+						BATgroupsize, NULL, 1, "aggr.size");
 }
 
 aggr_export str AGGRmin3(bat *retval, bat *bid, bat *gid, bat *eid);
 str
 AGGRmin3(bat *retval, bat *bid, bat *gid, bat *eid)
 {
-	return AGGRgrouped3(retval, bid, gid, eid, TYPE_oid,
-						BATgroupmin, 0, "aggr.min");
+	return AGGRgrouped3(retval, NULL, bid, gid, eid, TYPE_oid,
+						BATgroupmin, NULL, 0, "aggr.min");
 }
 
 aggr_export str AGGRmin2(bat *retval, bat *bid, bat *eid);
 str
 AGGRmin2(bat *retval, bat *bid, bat *eid)
 {
-	return AGGRgrouped2(retval, bid, eid, TYPE_oid, BATgroupmin, 0, "aggr.min");
+	return AGGRgrouped2(retval, NULL, bid, eid, TYPE_oid, BATgroupmin, NULL, 0, "aggr.min");
 }
 
 aggr_export str AGGRmax3(bat *retval, bat *bid, bat *gid, bat *eid);
 str
 AGGRmax3(bat *retval, bat *bid, bat *gid, bat *eid)
 {
-	return AGGRgrouped3(retval, bid, gid, eid, TYPE_oid,
-						BATgroupmax, 0, "aggr.max");
+	return AGGRgrouped3(retval, NULL, bid, gid, eid, TYPE_oid,
+						BATgroupmax, NULL, 0, "aggr.max");
 }
 
 aggr_export str AGGRmax2(bat *retval, bat *bid, bat *eid);
 str
 AGGRmax2(bat *retval, bat *bid, bat *eid)
 {
-	return AGGRgrouped2(retval, bid, eid, TYPE_oid, BATgroupmax, 0, "aggr.max");
+	return AGGRgrouped2(retval, NULL, bid, eid, TYPE_oid, BATgroupmax, NULL, 0, "aggr.max");
 }
 
 aggr_export str AGGRmedian3(bat *retval, bat *bid, bat *gid, bat *eid);
 str
 AGGRmedian3(bat *retval, bat *bid, bat *gid, bat *eid)
 {
-	return AGGRgrouped3(retval, bid, gid, eid, TYPE_any,
-						BATgroupmedian, 0, "aggr.median");
+	return AGGRgrouped3(retval, NULL, bid, gid, eid, TYPE_any,
+						BATgroupmedian, NULL, 0, "aggr.median");
 }
 
 static str
-AGGRsubgrouped(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid,
+AGGRsubgrouped(bat *retval1, bat *retval2, bat *bid, bat *gid, bat *eid, bat *sid,
 			   int skip_nils, int abort_on_error, int tp,
-			   BAT *(*grpfunc)(BAT *, BAT *, BAT *, BAT *, int, int, int),
+			   BAT *(*grpfunc1)(BAT *, BAT *, BAT *, BAT *, int, int, int),
+			   gdk_return (*grpfunc2)(BAT **, BAT **, BAT *, BAT *, BAT *, BAT *, int, int, int),
 			   const char *malfunc)
 {
-	BAT *b, *g, *e, *s, *bn;
+	BAT *b, *g, *e, *s, *bn, *cnts = NULL;
+
+	/* one or the other of grpfunc1 and grpfunc2 is non-NULL */
+	assert(grpfunc1 == NULL || grpfunc2 == NULL);
+	assert(grpfunc1 || grpfunc2);
+	/* if retval2 is non-NULL, we must have grpfunc2 */
+	assert(retval2 == NULL || grpfunc2 != NULL);
 
 	b = BATdescriptor(*bid);
 	g = gid ? BATdescriptor(*gid) : NULL;
@@ -578,7 +621,7 @@ AGGRsubgrouped(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid,
 			BBPreleaseref(e->batCacheid);
 		throw(MAL, malfunc, RUNTIME_OBJECT_MISSING);
 	}
-	if (tp == TYPE_any && grpfunc == BATgroupmedian)
+	if (tp == TYPE_any && grpfunc1 == BATgroupmedian)
 		tp = b->ttype;
 
 	if (sid) {
@@ -594,7 +637,11 @@ AGGRsubgrouped(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid,
 	} else {
 		s = NULL;
 	}
-	bn = (*grpfunc)(b, g, e, s, tp, skip_nils, abort_on_error);
+	if (grpfunc1)
+		bn = (*grpfunc1)(b, g, e, s, tp, skip_nils, abort_on_error);
+	else if ((*grpfunc2)(&bn, retval2 ? &cnts : NULL, b, g, e, s, tp, skip_nils, abort_on_error) == GDK_FAIL)
+		bn = NULL;
+
 	BBPreleaseref(b->batCacheid);
 	if (g)
 		BBPreleaseref(g->batCacheid);
@@ -621,8 +668,12 @@ AGGRsubgrouped(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid,
 		}
 		throw(MAL, malfunc, OPERATION_FAILED);
 	}
-	*retval = bn->batCacheid;
+	*retval1 = bn->batCacheid;
 	BBPkeepref(bn->batCacheid);
+	if (retval2) {
+		*retval2 = cnts->batCacheid;
+		BBPkeepref(cnts->batCacheid);
+	}
 	return MAL_SUCCEED;
 }
 
@@ -630,352 +681,368 @@ aggr_export str AGGRsubsum_bte(bat *retval, bat *bid, bat *gid, bat *eid, bit *s
 str
 AGGRsubsum_bte(bat *retval, bat *bid, bat *gid, bat *eid, bit *skip_nils, bit *abort_on_error)
 {
-	return AGGRsubgrouped(retval, bid, gid, eid, NULL, *skip_nils,
-						  *abort_on_error, TYPE_bte, BATgroupsum, "aggr.subsum");
+	return AGGRsubgrouped(retval, NULL, bid, gid, eid, NULL, *skip_nils,
+						  *abort_on_error, TYPE_bte, BATgroupsum, NULL, "aggr.subsum");
 }
 
 aggr_export str AGGRsubsum_sht(bat *retval, bat *bid, bat *gid, bat *eid, bit *skip_nils, bit *abort_on_error);
 str
 AGGRsubsum_sht(bat *retval, bat *bid, bat *gid, bat *eid, bit *skip_nils, bit *abort_on_error)
 {
-	return AGGRsubgrouped(retval, bid, gid, eid, NULL, *skip_nils,
-						  *abort_on_error, TYPE_sht, BATgroupsum, "aggr.subsum");
+	return AGGRsubgrouped(retval, NULL, bid, gid, eid, NULL, *skip_nils,
+						  *abort_on_error, TYPE_sht, BATgroupsum, NULL, "aggr.subsum");
 }
 
 aggr_export str AGGRsubsum_int(bat *retval, bat *bid, bat *gid, bat *eid, bit *skip_nils, bit *abort_on_error);
 str
 AGGRsubsum_int(bat *retval, bat *bid, bat *gid, bat *eid, bit *skip_nils, bit *abort_on_error)
 {
-	return AGGRsubgrouped(retval, bid, gid, eid, NULL, *skip_nils,
-						  *abort_on_error, TYPE_int, BATgroupsum, "aggr.subsum");
+	return AGGRsubgrouped(retval, NULL, bid, gid, eid, NULL, *skip_nils,
+						  *abort_on_error, TYPE_int, BATgroupsum, NULL, "aggr.subsum");
 }
 
 aggr_export str AGGRsubsum_wrd(bat *retval, bat *bid, bat *gid, bat *eid, bit *skip_nils, bit *abort_on_error);
 str
 AGGRsubsum_wrd(bat *retval, bat *bid, bat *gid, bat *eid, bit *skip_nils, bit *abort_on_error)
 {
-	return AGGRsubgrouped(retval, bid, gid, eid, NULL, *skip_nils,
-						  *abort_on_error, TYPE_wrd, BATgroupsum, "aggr.subsum");
+	return AGGRsubgrouped(retval, NULL, bid, gid, eid, NULL, *skip_nils,
+						  *abort_on_error, TYPE_wrd, BATgroupsum, NULL, "aggr.subsum");
 }
 
 aggr_export str AGGRsubsum_lng(bat *retval, bat *bid, bat *gid, bat *eid, bit *skip_nils, bit *abort_on_error);
 str
 AGGRsubsum_lng(bat *retval, bat *bid, bat *gid, bat *eid, bit *skip_nils, bit *abort_on_error)
 {
-	return AGGRsubgrouped(retval, bid, gid, eid, NULL, *skip_nils,
-						  *abort_on_error, TYPE_lng, BATgroupsum, "aggr.subsum");
+	return AGGRsubgrouped(retval, NULL, bid, gid, eid, NULL, *skip_nils,
+						  *abort_on_error, TYPE_lng, BATgroupsum, NULL, "aggr.subsum");
 }
 
 aggr_export str AGGRsubsum_flt(bat *retval, bat *bid, bat *gid, bat *eid, bit *skip_nils, bit *abort_on_error);
 str
 AGGRsubsum_flt(bat *retval, bat *bid, bat *gid, bat *eid, bit *skip_nils, bit *abort_on_error)
 {
-	return AGGRsubgrouped(retval, bid, gid, eid, NULL, *skip_nils,
-						  *abort_on_error, TYPE_flt, BATgroupsum, "aggr.subsum");
+	return AGGRsubgrouped(retval, NULL, bid, gid, eid, NULL, *skip_nils,
+						  *abort_on_error, TYPE_flt, BATgroupsum, NULL, "aggr.subsum");
 }
 
 aggr_export str AGGRsubsum_dbl(bat *retval, bat *bid, bat *gid, bat *eid, bit *skip_nils, bit *abort_on_error);
 str
 AGGRsubsum_dbl(bat *retval, bat *bid, bat *gid, bat *eid, bit *skip_nils, bit *abort_on_error)
 {
-	return AGGRsubgrouped(retval, bid, gid, eid, NULL, *skip_nils,
-						  *abort_on_error, TYPE_dbl, BATgroupsum, "aggr.subsum");
+	return AGGRsubgrouped(retval, NULL, bid, gid, eid, NULL, *skip_nils,
+						  *abort_on_error, TYPE_dbl, BATgroupsum, NULL, "aggr.subsum");
 }
 
 aggr_export str AGGRsubsumcand_bte(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, bit *skip_nils, bit *abort_on_error);
 str
 AGGRsubsumcand_bte(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, bit *skip_nils, bit *abort_on_error)
 {
-	return AGGRsubgrouped(retval, bid, gid, eid, sid, *skip_nils,
-						  *abort_on_error, TYPE_bte, BATgroupsum, "aggr.subsum");
+	return AGGRsubgrouped(retval, NULL, bid, gid, eid, sid, *skip_nils,
+						  *abort_on_error, TYPE_bte, BATgroupsum, NULL, "aggr.subsum");
 }
 
 aggr_export str AGGRsubsumcand_sht(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, bit *skip_nils, bit *abort_on_error);
 str
 AGGRsubsumcand_sht(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, bit *skip_nils, bit *abort_on_error)
 {
-	return AGGRsubgrouped(retval, bid, gid, eid, sid, *skip_nils,
-						  *abort_on_error, TYPE_sht, BATgroupsum, "aggr.subsum");
+	return AGGRsubgrouped(retval, NULL, bid, gid, eid, sid, *skip_nils,
+						  *abort_on_error, TYPE_sht, BATgroupsum, NULL, "aggr.subsum");
 }
 
 aggr_export str AGGRsubsumcand_int(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, bit *skip_nils, bit *abort_on_error);
 str
 AGGRsubsumcand_int(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, bit *skip_nils, bit *abort_on_error)
 {
-	return AGGRsubgrouped(retval, bid, gid, eid, sid, *skip_nils,
-						  *abort_on_error, TYPE_int, BATgroupsum, "aggr.subsum");
+	return AGGRsubgrouped(retval, NULL, bid, gid, eid, sid, *skip_nils,
+						  *abort_on_error, TYPE_int, BATgroupsum, NULL, "aggr.subsum");
 }
 
 aggr_export str AGGRsubsumcand_wrd(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, bit *skip_nils, bit *abort_on_error);
 str
 AGGRsubsumcand_wrd(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, bit *skip_nils, bit *abort_on_error)
 {
-	return AGGRsubgrouped(retval, bid, gid, eid, sid, *skip_nils,
-						  *abort_on_error, TYPE_wrd, BATgroupsum, "aggr.subsum");
+	return AGGRsubgrouped(retval, NULL, bid, gid, eid, sid, *skip_nils,
+						  *abort_on_error, TYPE_wrd, BATgroupsum, NULL, "aggr.subsum");
 }
 
 aggr_export str AGGRsubsumcand_lng(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, bit *skip_nils, bit *abort_on_error);
 str
 AGGRsubsumcand_lng(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, bit *skip_nils, bit *abort_on_error)
 {
-	return AGGRsubgrouped(retval, bid, gid, eid, sid, *skip_nils,
-						  *abort_on_error, TYPE_lng, BATgroupsum, "aggr.subsum");
+	return AGGRsubgrouped(retval, NULL, bid, gid, eid, sid, *skip_nils,
+						  *abort_on_error, TYPE_lng, BATgroupsum, NULL, "aggr.subsum");
 }
 
 aggr_export str AGGRsubsumcand_flt(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, bit *skip_nils, bit *abort_on_error);
 str
 AGGRsubsumcand_flt(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, bit *skip_nils, bit *abort_on_error)
 {
-	return AGGRsubgrouped(retval, bid, gid, eid, sid, *skip_nils,
-						  *abort_on_error, TYPE_flt, BATgroupsum, "aggr.subsum");
+	return AGGRsubgrouped(retval, NULL, bid, gid, eid, sid, *skip_nils,
+						  *abort_on_error, TYPE_flt, BATgroupsum, NULL, "aggr.subsum");
 }
 
 aggr_export str AGGRsubsumcand_dbl(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, bit *skip_nils, bit *abort_on_error);
 str
 AGGRsubsumcand_dbl(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, bit *skip_nils, bit *abort_on_error)
 {
-	return AGGRsubgrouped(retval, bid, gid, eid, sid, *skip_nils,
-						  *abort_on_error, TYPE_dbl, BATgroupsum, "aggr.subsum");
+	return AGGRsubgrouped(retval, NULL, bid, gid, eid, sid, *skip_nils,
+						  *abort_on_error, TYPE_dbl, BATgroupsum, NULL, "aggr.subsum");
 }
 
 aggr_export str AGGRsubprod_bte(bat *retval, bat *bid, bat *gid, bat *eid, bit *skip_nils, bit *abort_on_error);
 str
 AGGRsubprod_bte(bat *retval, bat *bid, bat *gid, bat *eid, bit *skip_nils, bit *abort_on_error)
 {
-	return AGGRsubgrouped(retval, bid, gid, eid, NULL, *skip_nils,
-						  *abort_on_error, TYPE_bte, BATgroupprod, "aggr.subprod");
+	return AGGRsubgrouped(retval, NULL, bid, gid, eid, NULL, *skip_nils,
+						  *abort_on_error, TYPE_bte, BATgroupprod, NULL, "aggr.subprod");
 }
 
 aggr_export str AGGRsubprod_sht(bat *retval, bat *bid, bat *gid, bat *eid, bit *skip_nils, bit *abort_on_error);
 str
 AGGRsubprod_sht(bat *retval, bat *bid, bat *gid, bat *eid, bit *skip_nils, bit *abort_on_error)
 {
-	return AGGRsubgrouped(retval, bid, gid, eid, NULL, *skip_nils,
-						  *abort_on_error, TYPE_sht, BATgroupprod, "aggr.subprod");
+	return AGGRsubgrouped(retval, NULL, bid, gid, eid, NULL, *skip_nils,
+						  *abort_on_error, TYPE_sht, BATgroupprod, NULL, "aggr.subprod");
 }
 
 aggr_export str AGGRsubprod_int(bat *retval, bat *bid, bat *gid, bat *eid, bit *skip_nils, bit *abort_on_error);
 str
 AGGRsubprod_int(bat *retval, bat *bid, bat *gid, bat *eid, bit *skip_nils, bit *abort_on_error)
 {
-	return AGGRsubgrouped(retval, bid, gid, eid, NULL, *skip_nils,
-						  *abort_on_error, TYPE_int, BATgroupprod, "aggr.subprod");
+	return AGGRsubgrouped(retval, NULL, bid, gid, eid, NULL, *skip_nils,
+						  *abort_on_error, TYPE_int, BATgroupprod, NULL, "aggr.subprod");
 }
 
 aggr_export str AGGRsubprod_wrd(bat *retval, bat *bid, bat *gid, bat *eid, bit *skip_nils, bit *abort_on_error);
 str
 AGGRsubprod_wrd(bat *retval, bat *bid, bat *gid, bat *eid, bit *skip_nils, bit *abort_on_error)
 {
-	return AGGRsubgrouped(retval, bid, gid, eid, NULL, *skip_nils,
-						  *abort_on_error, TYPE_wrd, BATgroupprod, "aggr.subprod");
+	return AGGRsubgrouped(retval, NULL, bid, gid, eid, NULL, *skip_nils,
+						  *abort_on_error, TYPE_wrd, BATgroupprod, NULL, "aggr.subprod");
 }
 
 aggr_export str AGGRsubprod_lng(bat *retval, bat *bid, bat *gid, bat *eid, bit *skip_nils, bit *abort_on_error);
 str
 AGGRsubprod_lng(bat *retval, bat *bid, bat *gid, bat *eid, bit *skip_nils, bit *abort_on_error)
 {
-	return AGGRsubgrouped(retval, bid, gid, eid, NULL, *skip_nils,
-						  *abort_on_error, TYPE_lng, BATgroupprod, "aggr.subprod");
+	return AGGRsubgrouped(retval, NULL, bid, gid, eid, NULL, *skip_nils,
+						  *abort_on_error, TYPE_lng, BATgroupprod, NULL, "aggr.subprod");
 }
 
 aggr_export str AGGRsubprod_flt(bat *retval, bat *bid, bat *gid, bat *eid, bit *skip_nils, bit *abort_on_error);
 str
 AGGRsubprod_flt(bat *retval, bat *bid, bat *gid, bat *eid, bit *skip_nils, bit *abort_on_error)
 {
-	return AGGRsubgrouped(retval, bid, gid, eid, NULL, *skip_nils,
-						  *abort_on_error, TYPE_flt, BATgroupprod, "aggr.subprod");
+	return AGGRsubgrouped(retval, NULL, bid, gid, eid, NULL, *skip_nils,
+						  *abort_on_error, TYPE_flt, BATgroupprod, NULL, "aggr.subprod");
 }
 
 aggr_export str AGGRsubprod_dbl(bat *retval, bat *bid, bat *gid, bat *eid, bit *skip_nils, bit *abort_on_error);
 str
 AGGRsubprod_dbl(bat *retval, bat *bid, bat *gid, bat *eid, bit *skip_nils, bit *abort_on_error)
 {
-	return AGGRsubgrouped(retval, bid, gid, eid, NULL, *skip_nils,
-						  *abort_on_error, TYPE_dbl, BATgroupprod, "aggr.subprod");
+	return AGGRsubgrouped(retval, NULL, bid, gid, eid, NULL, *skip_nils,
+						  *abort_on_error, TYPE_dbl, BATgroupprod, NULL, "aggr.subprod");
 }
 
 aggr_export str AGGRsubprodcand_bte(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, bit *skip_nils, bit *abort_on_error);
 str
 AGGRsubprodcand_bte(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, bit *skip_nils, bit *abort_on_error)
 {
-	return AGGRsubgrouped(retval, bid, gid, eid, sid, *skip_nils,
-						  *abort_on_error, TYPE_bte, BATgroupprod, "aggr.subprod");
+	return AGGRsubgrouped(retval, NULL, bid, gid, eid, sid, *skip_nils,
+						  *abort_on_error, TYPE_bte, BATgroupprod, NULL, "aggr.subprod");
 }
 
 aggr_export str AGGRsubprodcand_sht(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, bit *skip_nils, bit *abort_on_error);
 str
 AGGRsubprodcand_sht(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, bit *skip_nils, bit *abort_on_error)
 {
-	return AGGRsubgrouped(retval, bid, gid, eid, sid, *skip_nils,
-						  *abort_on_error, TYPE_sht, BATgroupprod, "aggr.subprod");
+	return AGGRsubgrouped(retval, NULL, bid, gid, eid, sid, *skip_nils,
+						  *abort_on_error, TYPE_sht, BATgroupprod, NULL, "aggr.subprod");
 }
 
 aggr_export str AGGRsubprodcand_int(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, bit *skip_nils, bit *abort_on_error);
 str
 AGGRsubprodcand_int(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, bit *skip_nils, bit *abort_on_error)
 {
-	return AGGRsubgrouped(retval, bid, gid, eid, sid, *skip_nils,
-						  *abort_on_error, TYPE_int, BATgroupprod, "aggr.subprod");
+	return AGGRsubgrouped(retval, NULL, bid, gid, eid, sid, *skip_nils,
+						  *abort_on_error, TYPE_int, BATgroupprod, NULL, "aggr.subprod");
 }
 
 aggr_export str AGGRsubprodcand_wrd(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, bit *skip_nils, bit *abort_on_error);
 str
 AGGRsubprodcand_wrd(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, bit *skip_nils, bit *abort_on_error)
 {
-	return AGGRsubgrouped(retval, bid, gid, eid, sid, *skip_nils,
-						  *abort_on_error, TYPE_wrd, BATgroupprod, "aggr.subprod");
+	return AGGRsubgrouped(retval, NULL, bid, gid, eid, sid, *skip_nils,
+						  *abort_on_error, TYPE_wrd, BATgroupprod, NULL, "aggr.subprod");
 }
 
 aggr_export str AGGRsubprodcand_lng(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, bit *skip_nils, bit *abort_on_error);
 str
 AGGRsubprodcand_lng(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, bit *skip_nils, bit *abort_on_error)
 {
-	return AGGRsubgrouped(retval, bid, gid, eid, sid, *skip_nils,
-						  *abort_on_error, TYPE_lng, BATgroupprod, "aggr.subprod");
+	return AGGRsubgrouped(retval, NULL, bid, gid, eid, sid, *skip_nils,
+						  *abort_on_error, TYPE_lng, BATgroupprod, NULL, "aggr.subprod");
 }
 
 aggr_export str AGGRsubprodcand_flt(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, bit *skip_nils, bit *abort_on_error);
 str
 AGGRsubprodcand_flt(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, bit *skip_nils, bit *abort_on_error)
 {
-	return AGGRsubgrouped(retval, bid, gid, eid, sid, *skip_nils,
-						  *abort_on_error, TYPE_flt, BATgroupprod, "aggr.subprod");
+	return AGGRsubgrouped(retval, NULL, bid, gid, eid, sid, *skip_nils,
+						  *abort_on_error, TYPE_flt, BATgroupprod, NULL, "aggr.subprod");
 }
 
 aggr_export str AGGRsubprodcand_dbl(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, bit *skip_nils, bit *abort_on_error);
 str
 AGGRsubprodcand_dbl(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, bit *skip_nils, bit *abort_on_error)
 {
-	return AGGRsubgrouped(retval, bid, gid, eid, sid, *skip_nils,
-						  *abort_on_error, TYPE_dbl, BATgroupprod, "aggr.subprod");
+	return AGGRsubgrouped(retval, NULL, bid, gid, eid, sid, *skip_nils,
+						  *abort_on_error, TYPE_dbl, BATgroupprod, NULL, "aggr.subprod");
 }
 
-aggr_export str AGGRsubavg_dbl(bat *retval, bat *bid, bat *gid, bat *eid, bit *skip_nils, bit *abort_on_error);
+aggr_export str AGGRsubavg1_dbl(bat *retval, bat *bid, bat *gid, bat *eid, bit *skip_nils, bit *abort_on_error);
 str
-AGGRsubavg_dbl(bat *retval, bat *bid, bat *gid, bat *eid, bit *skip_nils, bit *abort_on_error)
+AGGRsubavg1_dbl(bat *retval, bat *bid, bat *gid, bat *eid, bit *skip_nils, bit *abort_on_error)
 {
-	return AGGRsubgrouped(retval, bid, gid, eid, NULL, *skip_nils,
-						  *abort_on_error, TYPE_dbl, BATgroupavg, "aggr.subavg");
+	return AGGRsubgrouped(retval, NULL, bid, gid, eid, NULL, *skip_nils,
+						  *abort_on_error, TYPE_dbl, NULL, BATgroupavg, "aggr.subavg");
 }
 
-aggr_export str AGGRsubavgcand_dbl(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, bit *skip_nils, bit *abort_on_error);
+aggr_export str AGGRsubavg1cand_dbl(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, bit *skip_nils, bit *abort_on_error);
 str
-AGGRsubavgcand_dbl(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, bit *skip_nils, bit *abort_on_error)
+AGGRsubavg1cand_dbl(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, bit *skip_nils, bit *abort_on_error)
 {
-	return AGGRsubgrouped(retval, bid, gid, eid, sid, *skip_nils,
-						  *abort_on_error, TYPE_dbl, BATgroupavg, "aggr.subavg");
+	return AGGRsubgrouped(retval, NULL, bid, gid, eid, sid, *skip_nils,
+						  *abort_on_error, TYPE_dbl, NULL, BATgroupavg, "aggr.subavg");
+}
+
+aggr_export str AGGRsubavg2_dbl(bat *retval1, bat *retval2, bat *bid, bat *gid, bat *eid, bit *skip_nils, bit *abort_on_error);
+str
+AGGRsubavg2_dbl(bat *retval1, bat *retval2, bat *bid, bat *gid, bat *eid, bit *skip_nils, bit *abort_on_error)
+{
+	return AGGRsubgrouped(retval1, retval2, bid, gid, eid, NULL, *skip_nils,
+						  *abort_on_error, TYPE_dbl, NULL, BATgroupavg, "aggr.subavg");
+}
+
+aggr_export str AGGRsubavg2cand_dbl(bat *retval1, bat *retval2, bat *bid, bat *gid, bat *eid, bat *sid, bit *skip_nils, bit *abort_on_error);
+str
+AGGRsubavg2cand_dbl(bat *retval1, bat *retval2, bat *bid, bat *gid, bat *eid, bat *sid, bit *skip_nils, bit *abort_on_error)
+{
+	return AGGRsubgrouped(retval1, retval2, bid, gid, eid, sid, *skip_nils,
+						  *abort_on_error, TYPE_dbl, NULL, BATgroupavg, "aggr.subavg");
 }
 
 aggr_export str AGGRsubstdev_dbl(bat *retval, bat *bid, bat *gid, bat *eid, bit *skip_nils, bit *abort_on_error);
 str
 AGGRsubstdev_dbl(bat *retval, bat *bid, bat *gid, bat *eid, bit *skip_nils, bit *abort_on_error)
 {
-	return AGGRsubgrouped(retval, bid, gid, eid, NULL, *skip_nils,
-						  *abort_on_error, TYPE_dbl, BATgroupstdev_sample, "aggr.substdev");
+	return AGGRsubgrouped(retval, NULL, bid, gid, eid, NULL, *skip_nils,
+						  *abort_on_error, TYPE_dbl, BATgroupstdev_sample, NULL, "aggr.substdev");
 }
 
 aggr_export str AGGRsubstdevcand_dbl(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, bit *skip_nils, bit *abort_on_error);
 str
 AGGRsubstdevcand_dbl(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, bit *skip_nils, bit *abort_on_error)
 {
-	return AGGRsubgrouped(retval, bid, gid, eid, sid, *skip_nils,
-						  *abort_on_error, TYPE_dbl, BATgroupstdev_sample, "aggr.substdev");
+	return AGGRsubgrouped(retval, NULL, bid, gid, eid, sid, *skip_nils,
+						  *abort_on_error, TYPE_dbl, BATgroupstdev_sample, NULL, "aggr.substdev");
 }
 
 aggr_export str AGGRsubstdevp_dbl(bat *retval, bat *bid, bat *gid, bat *eid, bit *skip_nils, bit *abort_on_error);
 str
 AGGRsubstdevp_dbl(bat *retval, bat *bid, bat *gid, bat *eid, bit *skip_nils, bit *abort_on_error)
 {
-	return AGGRsubgrouped(retval, bid, gid, eid, NULL, *skip_nils,
-						  *abort_on_error, TYPE_dbl, BATgroupstdev_population, "aggr.substdevp");
+	return AGGRsubgrouped(retval, NULL, bid, gid, eid, NULL, *skip_nils,
+						  *abort_on_error, TYPE_dbl, BATgroupstdev_population, NULL, "aggr.substdevp");
 }
 
 aggr_export str AGGRsubstdevpcand_dbl(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, bit *skip_nils, bit *abort_on_error);
 str
 AGGRsubstdevpcand_dbl(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, bit *skip_nils, bit *abort_on_error)
 {
-	return AGGRsubgrouped(retval, bid, gid, eid, sid, *skip_nils,
-						  *abort_on_error, TYPE_dbl, BATgroupstdev_population, "aggr.substdevp");
+	return AGGRsubgrouped(retval, NULL, bid, gid, eid, sid, *skip_nils,
+						  *abort_on_error, TYPE_dbl, BATgroupstdev_population, NULL, "aggr.substdevp");
 }
 
 aggr_export str AGGRsubvariance_dbl(bat *retval, bat *bid, bat *gid, bat *eid, bit *skip_nils, bit *abort_on_error);
 str
 AGGRsubvariance_dbl(bat *retval, bat *bid, bat *gid, bat *eid, bit *skip_nils, bit *abort_on_error)
 {
-	return AGGRsubgrouped(retval, bid, gid, eid, NULL, *skip_nils,
-						  *abort_on_error, TYPE_dbl, BATgroupvariance_sample, "aggr.subvariance");
+	return AGGRsubgrouped(retval, NULL, bid, gid, eid, NULL, *skip_nils,
+						  *abort_on_error, TYPE_dbl, BATgroupvariance_sample, NULL, "aggr.subvariance");
 }
 
 aggr_export str AGGRsubvariancecand_dbl(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, bit *skip_nils, bit *abort_on_error);
 str
 AGGRsubvariancecand_dbl(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, bit *skip_nils, bit *abort_on_error)
 {
-	return AGGRsubgrouped(retval, bid, gid, eid, sid, *skip_nils,
-						  *abort_on_error, TYPE_dbl, BATgroupvariance_sample, "aggr.subvariance");
+	return AGGRsubgrouped(retval, NULL, bid, gid, eid, sid, *skip_nils,
+						  *abort_on_error, TYPE_dbl, BATgroupvariance_sample, NULL, "aggr.subvariance");
 }
 
 aggr_export str AGGRsubvariancep_dbl(bat *retval, bat *bid, bat *gid, bat *eid, bit *skip_nils, bit *abort_on_error);
 str
 AGGRsubvariancep_dbl(bat *retval, bat *bid, bat *gid, bat *eid, bit *skip_nils, bit *abort_on_error)
 {
-	return AGGRsubgrouped(retval, bid, gid, eid, NULL, *skip_nils,
-						  *abort_on_error, TYPE_dbl, BATgroupvariance_population, "aggr.subvariancep");
+	return AGGRsubgrouped(retval, NULL, bid, gid, eid, NULL, *skip_nils,
+						  *abort_on_error, TYPE_dbl, BATgroupvariance_population, NULL, "aggr.subvariancep");
 }
 
 aggr_export str AGGRsubvariancepcand_dbl(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, bit *skip_nils, bit *abort_on_error);
 str
 AGGRsubvariancepcand_dbl(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, bit *skip_nils, bit *abort_on_error)
 {
-	return AGGRsubgrouped(retval, bid, gid, eid, sid, *skip_nils,
-						  *abort_on_error, TYPE_dbl, BATgroupvariance_population, "aggr.subvariancep");
+	return AGGRsubgrouped(retval, NULL, bid, gid, eid, sid, *skip_nils,
+						  *abort_on_error, TYPE_dbl, BATgroupvariance_population, NULL, "aggr.subvariancep");
 }
 
 aggr_export str AGGRsubcount(bat *retval, bat *bid, bat *gid, bat *eid, bit *skip_nils);
 str
 AGGRsubcount(bat *retval, bat *bid, bat *gid, bat *eid, bit *skip_nils)
 {
-	return AGGRsubgrouped(retval, bid, gid, eid, NULL, *skip_nils,
-						  0, TYPE_wrd, BATgroupcount, "aggr.subcount");
+	return AGGRsubgrouped(retval, NULL, bid, gid, eid, NULL, *skip_nils,
+						  0, TYPE_wrd, BATgroupcount, NULL, "aggr.subcount");
 }
 
 aggr_export str AGGRsubcountcand(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, bit *skip_nils);
 str
 AGGRsubcountcand(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, bit *skip_nils)
 {
-	return AGGRsubgrouped(retval, bid, gid, eid, sid, *skip_nils,
-						  0, TYPE_wrd, BATgroupcount, "aggr.subcount");
+	return AGGRsubgrouped(retval, NULL, bid, gid, eid, sid, *skip_nils,
+						  0, TYPE_wrd, BATgroupcount, NULL, "aggr.subcount");
 }
 
 aggr_export str AGGRsubmin(bat *retval, bat *bid, bat *gid, bat *eid, bit *skip_nils);
 str
 AGGRsubmin(bat *retval, bat *bid, bat *gid, bat *eid, bit *skip_nils)
 {
-	return AGGRsubgrouped(retval, bid, gid, eid, NULL, *skip_nils,
-						  0, TYPE_oid, BATgroupmin, "aggr.submin");
+	return AGGRsubgrouped(retval, NULL, bid, gid, eid, NULL, *skip_nils,
+						  0, TYPE_oid, BATgroupmin, NULL, "aggr.submin");
 }
 
 aggr_export str AGGRsubmincand(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, bit *skip_nils);
 str
 AGGRsubmincand(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, bit *skip_nils)
 {
-	return AGGRsubgrouped(retval, bid, gid, eid, sid, *skip_nils,
-						  0, TYPE_oid, BATgroupmin, "aggr.submin");
+	return AGGRsubgrouped(retval, NULL, bid, gid, eid, sid, *skip_nils,
+						  0, TYPE_oid, BATgroupmin, NULL, "aggr.submin");
 }
 
 aggr_export str AGGRsubmax(bat *retval, bat *bid, bat *gid, bat *eid, bit *skip_nils);
 str
 AGGRsubmax(bat *retval, bat *bid, bat *gid, bat *eid, bit *skip_nils)
 {
-	return AGGRsubgrouped(retval, bid, gid, eid, NULL, *skip_nils,
-						  0, TYPE_oid, BATgroupmax, "aggr.submax");
+	return AGGRsubgrouped(retval, NULL, bid, gid, eid, NULL, *skip_nils,
+						  0, TYPE_oid, BATgroupmax, NULL, "aggr.submax");
 }
 
 aggr_export str AGGRsubmaxcand(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, bit *skip_nils);
 str
 AGGRsubmaxcand(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, bit *skip_nils)
 {
-	return AGGRsubgrouped(retval, bid, gid, eid, sid, *skip_nils,
-						  0, TYPE_oid, BATgroupmax, "aggr.submax");
+	return AGGRsubgrouped(retval, NULL, bid, gid, eid, sid, *skip_nils,
+						  0, TYPE_oid, BATgroupmax, NULL, "aggr.submax");
 }
 
 aggr_export str AGGRsubmin_val(bat *retval, bat *bid, bat *gid, bat *eid, bit *skip_nils);
@@ -985,8 +1052,8 @@ AGGRsubmin_val(bat *retval, bat *bid, bat *gid, bat *eid, bit *skip_nils)
 	BAT *a, *b, *r;
 	str res;
 
-	if ((res = AGGRsubgrouped(retval, bid, gid, eid, NULL, *skip_nils,
-						  0, TYPE_oid, BATgroupmin, "aggr.submin")) != MAL_SUCCEED)
+	if ((res = AGGRsubgrouped(retval, NULL, bid, gid, eid, NULL, *skip_nils,
+						  0, TYPE_oid, BATgroupmin, NULL, "aggr.submin")) != MAL_SUCCEED)
 		return res;
 	b = BATdescriptor(*bid);
 	a = BATdescriptor(*retval);
@@ -1005,8 +1072,8 @@ AGGRsubmincand_val(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, bit *ski
 	BAT *a, *b, *r;
 	str res;
 
-	if ((res = AGGRsubgrouped(retval, bid, gid, eid, sid, *skip_nils,
-						  0, TYPE_oid, BATgroupmin, "aggr.submin")) != MAL_SUCCEED)
+	if ((res = AGGRsubgrouped(retval, NULL, bid, gid, eid, sid, *skip_nils,
+						  0, TYPE_oid, BATgroupmin, NULL, "aggr.submin")) != MAL_SUCCEED)
 		return res;
 	b = BATdescriptor(*bid);
 	a = BATdescriptor(*retval);
@@ -1025,8 +1092,8 @@ AGGRsubmax_val(bat *retval, bat *bid, bat *gid, bat *eid, bit *skip_nils)
 	BAT *a, *b, *r;
 	str res;
 
-	if ((res = AGGRsubgrouped(retval, bid, gid, eid, NULL, *skip_nils,
-						  0, TYPE_oid, BATgroupmax, "aggr.submax")) != MAL_SUCCEED)
+	if ((res = AGGRsubgrouped(retval, NULL, bid, gid, eid, NULL, *skip_nils,
+						  0, TYPE_oid, BATgroupmax, NULL, "aggr.submax")) != MAL_SUCCEED)
 		return res;
 	b = BATdescriptor(*bid);
 	a = BATdescriptor(*retval);
@@ -1045,8 +1112,8 @@ AGGRsubmaxcand_val(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, bit *ski
 	BAT *a, *b, *r;
 	str res;
 
-	if ((res = AGGRsubgrouped(retval, bid, gid, eid, sid, *skip_nils,
-						  0, TYPE_oid, BATgroupmax, "aggr.submax")) != MAL_SUCCEED)
+	if ((res = AGGRsubgrouped(retval, NULL, bid, gid, eid, sid, *skip_nils,
+						  0, TYPE_oid, BATgroupmax, NULL, "aggr.submax")) != MAL_SUCCEED)
 		return res;
 	b = BATdescriptor(*bid);
 	a = BATdescriptor(*retval);
@@ -1063,22 +1130,22 @@ aggr_export str AGGRmedian(bat *retval, bat *bid, bit *skip_nils);
 str
 AGGRmedian(bat *retval, bat *bid, bit *skip_nils)
 {
-	return AGGRsubgrouped(retval, bid, NULL, NULL, NULL, *skip_nils,
-						  0, TYPE_any, BATgroupmedian, "aggr.submedian");
+	return AGGRsubgrouped(retval, NULL, bid, NULL, NULL, NULL, *skip_nils,
+						  0, TYPE_any, BATgroupmedian, NULL, "aggr.submedian");
 }
 
 aggr_export str AGGRsubmedian(bat *retval, bat *bid, bat *gid, bat *eid, bit *skip_nils);
 str
 AGGRsubmedian(bat *retval, bat *bid, bat *gid, bat *eid, bit *skip_nils)
 {
-	return AGGRsubgrouped(retval, bid, gid, eid, NULL, *skip_nils,
-						  0, TYPE_any, BATgroupmedian, "aggr.submedian");
+	return AGGRsubgrouped(retval, NULL, bid, gid, eid, NULL, *skip_nils,
+						  0, TYPE_any, BATgroupmedian, NULL, "aggr.submedian");
 }
 
 aggr_export str AGGRsubmediancand(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, bit *skip_nils);
 str
 AGGRsubmediancand(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, bit *skip_nils)
 {
-	return AGGRsubgrouped(retval, bid, gid, eid, sid, *skip_nils,
-						  0, TYPE_any, BATgroupmedian, "aggr.submedian");
+	return AGGRsubgrouped(retval, NULL, bid, gid, eid, sid, *skip_nils,
+						  0, TYPE_any, BATgroupmedian, NULL, "aggr.submedian");
 }

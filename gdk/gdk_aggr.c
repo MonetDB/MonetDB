@@ -1053,7 +1053,7 @@ BATprod(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, in
 			z2 = (BUN) (xn - an);				\
 			/* loop invariant: */				\
 			/* (x - a) - z1 * n == z2 */			\
-			while (z2 >= (n)) {				\
+			while (z2 >= (BUN) (n)) {			\
 				z2 -= (n);				\
 				z1++;					\
 			}						\
@@ -1063,7 +1063,7 @@ BATprod(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, in
 			/* (x - a) - z1 * n == -z2 */			\
 			for (;;) {					\
 				z1--;					\
-				if (z2 < (n)) {				\
+				if (z2 < (BUN) (n)) {			\
 					/* proper remainder */		\
 					z2 = (n) - z2;			\
 					break;				\
@@ -1073,8 +1073,8 @@ BATprod(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, in
 		}							\
 		(a) += z1;						\
 		(r) += z2;						\
-		if ((r) >= (n)) {					\
-			(r) -= (n);					\
+		if ((r) >= (BUN) (n)) {					\
+			(r) -= (BUN) (n);				\
 			(a)++;						\
 		}							\
 	} while (0)
@@ -1119,8 +1119,8 @@ BATprod(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, in
 					gid = (oid) i;			\
 				if (vals[i] == TYPE##_nil) {		\
 					if (!skip_nils)			\
-						cnts[gid] = BUN_NONE;	\
-				} else if (cnts[gid] != BUN_NONE) {	\
+						cnts[gid] = wrd_nil;	\
+				} else if (cnts[gid] != wrd_nil) {	\
 					AVERAGE_ITER(TYPE, vals[i],	\
 						     avgs[gid],		\
 						     rems[gid],		\
@@ -1129,8 +1129,9 @@ BATprod(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, in
 			}						\
 		}							\
 		for (i = 0; i < ngrp; i++) {				\
-			if (cnts[i] == 0 || cnts[i] == BUN_NONE) {	\
+			if (cnts[i] == 0 || cnts[i] == wrd_nil) {	\
 				dbls[i] = dbl_nil;			\
+				cnts[i] = 0;				\
 				nils++;					\
 			} else {					\
 				dbls[i] = avgs[i] + (dbl) rems[i] / cnts[i]; \
@@ -1164,8 +1165,8 @@ BATprod(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, in
 					gid = (oid) i;			\
 				if (vals[i] == TYPE##_nil) {		\
 					if (!skip_nils)			\
-						cnts[gid] = BUN_NONE;	\
-				} else if (cnts[gid] != BUN_NONE) {	\
+						cnts[gid] = wrd_nil;	\
+				} else if (cnts[gid] != wrd_nil) {	\
 					AVERAGE_ITER_FLOAT(TYPE, vals[i], \
 							   dbls[gid],	\
 							   cnts[gid]);	\
@@ -1173,23 +1174,25 @@ BATprod(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, in
 			}						\
 		}							\
 		for (i = 0; i < ngrp; i++) {				\
-			if (cnts[i] == 0 || cnts[i] == BUN_NONE) {	\
+			if (cnts[i] == 0 || cnts[i] == wrd_nil) {	\
 				dbls[i] = dbl_nil;			\
+				cnts[i] = 0;				\
 				nils++;					\
 			}						\
 		}							\
 	} while (0)
 
 /* calculate group averages with optional candidates list */
-BAT *
-BATgroupavg(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_error)
+gdk_return
+BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_error)
 {
 	const oid *gids;
 	oid gid;
 	oid min, max;
 	BUN i, ngrp;
 	BUN nils = 0;
-	BUN *rems = NULL, *cnts = NULL;
+	BUN *rems = NULL;
+	wrd *cnts = NULL;
 	dbl *dbls;
 	BAT *bn = NULL;
 	BUN start, end, cnt;
@@ -1203,19 +1206,28 @@ BATgroupavg(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_
 	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &start, &end,
 				    &cnt, &cand, &candend)) != NULL) {
 		GDKerror("BATgroupavg: %s\n", err);
-		return NULL;
+		return GDK_FAIL;
 	}
 	if (g == NULL) {
 		GDKerror("BATgroupavg: b and g must be aligned\n");
-		return NULL;
+		return GDK_FAIL;
 	}
 
 	if (BATcount(b) == 0 || ngrp == 0) {
-		/* trivial: no products, so return bat aligned with g
+		/* trivial: no averages, so return bat aligned with g
 		 * with nil in the tail */
 		bn = BATconstant(TYPE_dbl, &dbl_nil, ngrp);
 		BATseqbase(bn, ngrp == 0 ? 0 : min);
-		return bn;
+		if (cntsp) {
+			wrd zero = 0;
+			if ((*cntsp = BATconstant(TYPE_wrd, &zero, ngrp)) == NULL) {
+				BBPreclaim(bn);
+				return GDK_FAIL;
+			}
+			BATseqbase(*cntsp, ngrp == 0 ? 0 : min);
+		}
+		*bnp = bn;
+		return GDK_SUCCEED;
 	}
 
 	if ((e == NULL ||
@@ -1223,7 +1235,18 @@ BATgroupavg(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_
 	    (BATtdense(g) || (g->tkey && g->T->nonil))) {
 		/* trivial: singleton groups, so all results are equal
 		 * to the inputs (but possibly a different type) */
-		return BATconvert(b, s, TYPE_dbl, abort_on_error);
+		if ((bn = BATconvert(b, s, TYPE_dbl, abort_on_error)) == NULL)
+			return GDK_FAIL;
+		if (cntsp) {
+			wrd one = 1;
+			if ((*cntsp = BATconstant(TYPE_wrd, &one, ngrp)) == NULL) {
+				BBPreclaim(bn);
+				return GDK_FAIL;
+			}
+			BATseqbase(*cntsp, ngrp == 0 ? 0 : min);
+		}
+		*bnp = bn;
+		return GDK_SUCCEED;
 	}
 
 	/* allocate temporary space to do per group calculations */
@@ -1239,9 +1262,16 @@ BATgroupavg(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_
 	default:
 		break;
 	}
-	cnts = GDKzalloc(ngrp * sizeof(BUN));
-	if (cnts == NULL)
-		goto alloc_fail;
+	if (cntsp) {
+		if ((*cntsp = BATnew(TYPE_void, TYPE_wrd, ngrp)) == NULL)
+			goto alloc_fail;
+		cnts = (wrd *) Tloc(*cntsp, BUNfirst(*cntsp));
+		memset(cnts, 0, ngrp * sizeof(wrd));
+	} else {
+		cnts = GDKzalloc(ngrp * sizeof(wrd));
+		if (cnts == NULL)
+			goto alloc_fail;
+	}
 
 	bn = BATnew(TYPE_void, TYPE_dbl, ngrp);
 	if (bn == NULL)
@@ -1274,14 +1304,18 @@ BATgroupavg(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_
 		break;
 	default:
 		GDKfree(rems);
-		GDKfree(cnts);
+		if (cntsp)
+			BBPreclaim(*cntsp);
+		else
+			GDKfree(cnts);
 		BBPunfix(bn->batCacheid);
 		GDKerror("BATgroupavg: type (%s) not supported.\n",
 			 ATOMname(b->ttype));
-		return NULL;
+		return GDK_FAIL;
 	}
 	GDKfree(rems);
-	GDKfree(cnts);
+	if (cntsp == NULL)
+		GDKfree(cnts);
 	BATsetcount(bn, ngrp);
 	BATseqbase(bn, min);
 	bn->tkey = BATcount(bn) <= 1;
@@ -1289,15 +1323,21 @@ BATgroupavg(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_
 	bn->trevsorted = BATcount(bn) <= 1;
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
-	return bn;
+	*bnp = bn;
+	return GDK_SUCCEED;
 
   alloc_fail:
 	if (bn)
 		BBPunfix(bn->batCacheid);
 	GDKfree(rems);
-	GDKfree(cnts);
+	if (cntsp) {
+		if (*cntsp)
+			BBPreclaim(*cntsp);
+	} else if (cnts) {
+		GDKfree(cnts);
+	}
 	GDKerror("BATgroupavg: cannot allocate enough memory.\n");
-	return NULL;
+	return GDK_FAIL;
 }
 
 #define AVERAGE_TYPE(TYPE)						\
