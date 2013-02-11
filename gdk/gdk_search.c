@@ -151,8 +151,8 @@ HASHnew(Heap *hp, int tpe, BUN size, BUN mask)
 	default:
 		assert(0);
 	}
-	h->link = (void *) hp->base;
-	h->hash = (void *) ((char *) h->link + h->lim * width);
+	h->Link = (void *) hp->base;
+	h->Hash = (void *) ((char *) h->Link + h->lim * width);
 	h->type = tpe;
 	h->heap = hp;
 	HASHclear(h);		/* zero the mask */
