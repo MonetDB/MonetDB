@@ -27,7 +27,7 @@ Vendor: MonetDB BV <info@monetdb.org>
 Group: Applications/Databases
 License: MPL - http://www.monetdb.org/Legal/MonetDBLicense
 URL: http://www.monetdb.org/
-Source: http://dev.monetdb.org/downloads/sources/Oct2012-SP3/%{name}-%{version}.tar.bz2
+Source: http://dev.monetdb.org/downloads/sources/Feb2013/%{name}-%{version}.tar.bz2
 
 BuildRequires: bison
 BuildRequires: bzip2-devel
@@ -722,6 +722,68 @@ rm -f $RPM_BUILD_ROOT%{_libdir}/libmonetdb5.so
 rm -fr $RPM_BUILD_ROOT
 
 %changelog
+* Tue Feb 12 2013 Sjoerd Mullender <sjoerd@acm.org> - 11.15.1-20130212
+- Rebuilt.
+
+* Thu Jan 17 2013 Stefan Manegold <Stefan.Manegold@cwi.nl> - 11.15.1-20130212
+- testing:
+enabled "top-level" Mtest.py
+So far, while Mtest.py could be called in any subdirectory of the MonetDB
+source tree (and could then run all tests in the entire sub-tree),
+it was not possible to call Mtest.py in the top-level MonetDB source
+directory to run all tests.  Instead, to run all tests, Mtest.py had to
+be called at least 4 times, once in each of these directories: "clients",
+"monetdb5", "sql", "geom".
+Now, it is possible to call Mtest.py once in the top-level MonetDB source
+directory to run all tests in one go.
+The behaviour of calling Mtest.py in any subdirectory, including the
+four mentioned above, did not changed, other than that now obsolete
+command line options "-p / --package <package>" and "-5 / --monetdb5"
+have been removed.
+
+* Tue Jan 15 2013 Fabian Groffen <fabian@monetdb.org> - 11.15.1-20130212
+- clients: Mapi protocol v8 support was removed from all client drivers.  Protocol
+  v8 has not been used by the servers any more since Apr2012 release
+- clients: The tool mnc was removed from installations
+
+* Tue Jan 15 2013 Fabian Groffen <fabian@monetdb.org> - 11.15.1-20130212
+- java: merocontrol was changed to return server URIs, and lastStop time.
+  Connections and dbpath were removed.
+- java: Mapi protocol v8 support was removed from MapiSocket.  Protocol
+  v8 has not been used by the servers any more since Apr2012 release
+
+* Tue Jan 15 2013 Fabian Groffen <fabian@monetdb.org> - 11.15.1-20130212
+- merovingian: Upgrade support for dbfarms from Mar2011 and Aug2011 was dropped
+
+* Tue Jan 15 2013 Fabian Groffen <fabian@monetdb.org> - 11.15.1-20130212
+- merovingian: monetdb status now uses a more condensed output, to cater for the uris
+  being shown, and prints how long a database is stopped, or how long
+  ago it crashed
+
+* Tue Jan 15 2013 Fabian Groffen <fabian@monetdb.org> - 11.15.1-20130212
+- merovingian: monetdb status now prints the connection uri for each database,
+  when available.  The connections and database path properties have
+  been dropped.
+
+* Tue Jan 15 2013 Fabian Groffen <fabian@cwi.nl> - 11.15.1-20130212
+- merovingian: monetdb status now prints last crash date only if the database has
+  not been started since.
+
+* Tue Jan 15 2013 Sjoerd Mullender <sjoerd@acm.org> - 11.15.1-20130212
+- monetdb5: mserver5: The --dbname and --dbfarm options have been replaced by the
+  single --dbpath option.
+
+* Tue Jan 15 2013 Sjoerd Mullender <sjoerd@acm.org> - 11.15.1-20130212
+- clients: msqldump: Implmented an option (--table/-t) to dump a single table.
+- clients: Changed msqdump's trace option to be in line with mclient.  In both
+  cases, the long option is --Xdebug and the short option is -X.
+
+* Tue Jan 15 2013 Martin Kersten <mk@cwi.nl> - 11.15.1-20130212
+- monetdb5: The scheduler of mserver5 was changed to use a fixed set of workers to
+  perform the work for all connected clients.  Previously, each client
+  connection had its own set of workers, easily causing resource problems
+  upon multiple connections to the server.
+
 * Tue Jan 15 2013 Sjoerd Mullender <sjoerd@acm.org> - 11.13.9-20130115
 - Rebuilt.
 

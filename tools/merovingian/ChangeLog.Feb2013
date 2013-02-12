@@ -1,20 +1,3 @@
 # ChangeLog file for sql/src/backends/monet5/merovingian
 # This file is updated with mchangelog
 
-* Sat Dec  1 2012 Fabian Groffen <fabian@monetdb.org>
-- Upgrade support for dbfarms from Mar2011 and Aug2011 was dropped
-
-* Fri Nov 30 2012 Fabian Groffen <fabian@monetdb.org>
-- monetdb status now uses a more condensed output, to cater for the uris
-  being shown, and prints how long a database is stopped, or how long
-  ago it crashed
-
-* Wed Nov 21 2012 Fabian Groffen <fabian@monetdb.org>
-- monetdb status now prints the connection uri for each database,
-  when available.  The connections and database path properties have
-  been dropped.
-
-* Tue Nov 20 2012 Fabian Groffen <fabian@cwi.nl>
-- monetdb status now prints last crash date only if the database has
-  not been started since.
-
