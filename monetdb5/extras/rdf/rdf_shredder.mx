@@ -318,13 +318,13 @@ parserData_create (str location, BAT** graph)
  * @-
  * After the RDF document has been shredded into 3 bats and a lexical value
  * dictionary, a post-shred processing step follows that orders the lexical
- * dictionary, re-maps oids to match the ordered dictionary and finaly creates
+ * dictionary, re-maps oids to match the ordered dictionary and finally creates
  * all 6 permutations of the (subject, predicate, object) order.
  *
  * However, it is still to be examined if it worth the time to refine the order
  * of the last column. In most cases, during query time, the last column will need
- * to be re-order for a subsequent sort-merge join. We introduce sort3 and sort2
- * so we can investigate both possibilities. In addition, the first column need to
+ * to be re-ordered for a subsequent sort-merge join. We introduce order3 and order2
+ * so we can investigate both possibilities. In addition, the first column needs to
  * be stored only once for each couple of orders with the same first column. For
  * example, it holds that S_SPO == S_SOP.
  */
