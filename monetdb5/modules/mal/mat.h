@@ -45,8 +45,7 @@ mat_export str MATdummy(int *ret, str *grp);
 mat_export str MATinfo(int *ret, str *grp, str *elm);
 mat_export str MATprint(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mat_export str MATproject(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mat_export str MATrefine(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mat_export str MATsortReverseTail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mat_export str MATsortTail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mat_export str MATrefineReverse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+
 #endif /* _INSPECT_H */

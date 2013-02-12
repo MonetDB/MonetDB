@@ -77,7 +77,6 @@ str dblRef;
 str decompressRef;
 str deleteRef;
 str depositRef;
-str deriveRef;
 str differenceRef;
 str tdifferenceRef;
 str tintersectRef;
@@ -337,7 +336,6 @@ void optimizerInit(void){
 		decompressRef = putName("decompress",10);
 		deleteRef = putName("delete",6);
 		depositRef = putName("deposit",7);
-		deriveRef = putName("derive",6);
 		differenceRef= putName("difference",10);
 		tdifferenceRef= putName("tdifference",11);
 		tintersectRef= putName("tintersect",10);

@@ -136,7 +136,7 @@ tst256
 tst2560
 tst260
 tst2570
-tst265
+# tst265 -- windowsum and slidingsum have been removed
 tst267
 tst270
 tst272

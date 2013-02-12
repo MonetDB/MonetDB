@@ -76,7 +76,6 @@ opt_export  str decompressRef;
 opt_export  str dblRef;
 opt_export  str deleteRef;
 opt_export  str depositRef;
-opt_export  str deriveRef;
 opt_export  str differenceRef;
 opt_export  str tdifferenceRef;
 opt_export  str tintersectRef;

@@ -36,9 +36,9 @@
 	if_a := bat.insert(z,7@0,"c");
 	jf_a := bat.insert(z,8@0,"a");
 io.print("group x");io.print(x,y,z);
-        (zb1,b1) := group.new(x);
-io.print("b1 becomes"); io.print(b1);
-io.print("zb1 becomes"); io.print(zb1);
-        (zb2,b2) := group.derive(zb1,b1,y);
-io.print("b2 becomes"); io.print(b2);
-
+	(g1,e1,h1) := group.subgroup(x);
+io.print("g1 becomes"); io.print(g1);
+io.print("e1 becomes"); io.print(e1);
+io.print("h1 becomes"); io.print(h1);
+	(g2,e2,h2) := group.subgroup(y,g1,e1,h1);
+io.print("g2 becomes"); io.print(g2);

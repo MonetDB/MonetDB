@@ -97,14 +97,16 @@ function user.main():void;
     jf_a := bat.insert(z,8@0,"a");
     io.print("group x");
     io.print(x,y,z);
-    (zb1,b1) := group.new(x);
-    io.print("b1 becomes");
-    io.print(b1);
-    io.print("zb1 becomes");
-    io.print(zb1);
-    (zb2,b2) := group.derive(zb1,b1,y);
-    io.print("b2 becomes");
-    io.print(b2);
+    (g1,e1,h1) := group.subgroup(x);
+    io.print("g1 becomes");
+    io.print(g1);
+    io.print("e1 becomes");
+    io.print(e1);
+    io.print("h1 becomes");
+    io.print(h1);
+    (g2,e2,h2) := group.subgroup(y,g1,e1,h1);
+    io.print("g2 becomes");
+    io.print(g2);
 end main;
 [ "group x" ]
 #---------------------------------#
@@ -119,40 +121,48 @@ end main;
 [ 6@0,	  2,	  3,	  "a"	  ]
 [ 7@0,	  3,	  1,	  "c"	  ]
 [ 8@0,	  3,	  1,	  "a"	  ]
-[ "b1 becomes" ]
+[ "g1 becomes" ]
 #-----------------#
-# h	tmp_7	  # name
-# oid	oid	  # type
-#-----------------#
-[ 1@0,	  1@0	  ]
-[ 2@0,	  1@0	  ]
-[ 3@0,	  3@0	  ]
-[ 4@0,	  3@0	  ]
-[ 5@0,	  3@0	  ]
-[ 6@0,	  3@0	  ]
-[ 7@0,	  7@0	  ]
-[ 8@0,	  7@0	  ]
-[ "zb1 becomes" ]
-#-------------------------#
-# h	histo_tmp_7	  # name
-# oid	int		  # type
-#-------------------------#
-[ 1@0,	  2		  ]
-[ 3@0,	  4		  ]
-[ 7@0,	  2		  ]
-[ "b2 becomes" ]
-#-----------------#
-# h	tmp_9	  # name
+# h	t	  # name
 # void	oid	  # type
 #-----------------#
-[ 1@0,	  1@0	  ]
-[ 2@0,	  2@0	  ]
-[ 3@0,	  3@0	  ]
-[ 4@0,	  3@0	  ]
-[ 5@0,	  3@0	  ]
-[ 6@0,	  6@0	  ]
-[ 7@0,	  7@0	  ]
-[ 8@0,	  7@0	  ]
+[ 1@0,	  0@0	  ]
+[ 2@0,	  0@0	  ]
+[ 3@0,	  1@0	  ]
+[ 4@0,	  1@0	  ]
+[ 5@0,	  1@0	  ]
+[ 6@0,	  1@0	  ]
+[ 7@0,	  2@0	  ]
+[ 8@0,	  2@0	  ]
+[ "e1 becomes" ]
+#-----------------#
+# h	t	  # name
+# void	oid	  # type
+#-----------------#
+[ 0@0,	  1@0	  ]
+[ 1@0,	  3@0	  ]
+[ 2@0,	  7@0	  ]
+[ "h1 becomes" ]
+#-----------------#
+# h	t	  # name
+# void	wrd	  # type
+#-----------------#
+[ 0@0,	  2	  ]
+[ 1@0,	  4	  ]
+[ 2@0,	  2	  ]
+[ "g2 becomes" ]
+#-----------------#
+# h	t	  # name
+# void	oid	  # type
+#-----------------#
+[ 1@0,	  0@0	  ]
+[ 2@0,	  1@0	  ]
+[ 3@0,	  2@0	  ]
+[ 4@0,	  2@0	  ]
+[ 5@0,	  2@0	  ]
+[ 6@0,	  3@0	  ]
+[ 7@0,	  4@0	  ]
+[ 8@0,	  4@0	  ]
 
 # 07:59:07 >  
 # 07:59:07 >  Done.

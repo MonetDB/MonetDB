@@ -979,8 +979,8 @@ function batcalc.dense_rank_grp{inline}( b:bat[:oid,:any_1]) :bat[:oid,:int];
 end batcalc.dense_rank_grp;
 
 function sql.subzero_or_one{inline}( b:bat[:oid,:any_1], gp:bat[:oid,:oid], gpe:bat[:oid,:oid], no_nil:bit) :bat[:oid,:any_1];
-	(e,g) := group.new(gp);
-	m := aggr.max(e);
+	(g,e,h) := group.subgroup(gp);
+	m := aggr.max(h);
 	c0 := calc.isnil(m);
 	c01 := calc.not(c0);
 	c1 := calc.>(m,1:wrd);
@@ -7740,20 +7740,6 @@ function sql.sortReverseTail( b:bat[:oid,:any_1]) :bat[:oid,:oid];
 	m := algebra.markT(s, 0:oid);
 	return bat.reverse(m);
 end sql.sortReverseTail;
-
-function sql.refine(b:bat[:oid,:oid],  a:bat[:oid,:any_1]) :bat[:oid,:oid];
-	r := bat.reverse(b);
-	s := group.refine(r, a);
-	m := algebra.markT(s, 0:oid);
-	return bat.reverse(m);
-end sql.refine;
-
-function sql.refine_rev(b:bat[:oid,:oid],  a:bat[:oid,:any_1]) :bat[:oid,:oid];
-	r := bat.reverse(b);
-	s := group.refine_rev(r,a);
-	m := algebra.markT(s, 0:oid);
-	return bat.reverse(m);
-end sql.refine_rev;
 
 @mal
 @:analytic(bte)@

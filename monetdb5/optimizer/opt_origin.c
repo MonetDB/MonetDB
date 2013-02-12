@@ -89,17 +89,6 @@ OPToriginImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				}
 			}
 		}
-		if ( getModuleId(p) == groupRef) {
-			if ( getFunctionId(p) == newRef) {
-				h= varGetProp(mb, getArg(p,1), horiginProp);
-				if ( h ){
-					VALset(&val, TYPE_str, GDKstrdup(h->value.val.sval));
-					varSetProp(mb, getArg(p,0), horiginProp, op_eq, &val);
-					VALset(&val, TYPE_str, GDKstrdup(h->value.val.sval));
-					varSetProp(mb, getArg(p,1), horiginProp, op_eq, &val);
-				}
-			}
-		}
 		if ( getModuleId(p) == batRef) {
 			if ( getFunctionId(p) == mirrorRef) {
 				h= varGetProp(mb, getArg(p,1), horiginProp);
