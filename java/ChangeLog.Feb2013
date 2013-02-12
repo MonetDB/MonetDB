@@ -1,9 +1,3 @@
 # ChangeLog file for java
 # This file is updated with Maddlog
 
-* Sat Dec  1 2012 Fabian Groffen <fabian@monetdb.org>
-- merocontrol was changed to return server URIs, and lastStop time.
-  Connections and dbpath were removed.
-- Mapi protocol v8 support was removed from MapiSocket.  Protocol
-  v8 has not been used by the servers any more since Apr2012 release
-
