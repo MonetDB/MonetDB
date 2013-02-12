@@ -99,6 +99,7 @@ pcre_export str PCREilike_select_pcre(int *ret, int *b, str *pat, str *esc);
 pcre_export str pcre_init(void);
 pcre_export str PCRElikesubselect1(bat *ret, bat *bid, str *pat, str *esc, bit *caseignore, bit *anti);
 pcre_export str PCRElikesubselect2(bat *ret, bat *bid, bat *sid, str *pat, str *esc, bit *caseignore, bit *anti);
+pcre_export str PCRElikesubselect3(bat *ret, bat *bid, str *pat, str *esc, bit *anti);
 
 /* current implementation assumes simple %keyword% [keyw%]* */
 typedef struct RE {
@@ -1707,6 +1708,13 @@ str
 PCRElikesubselect1(bat *ret, bat *bid, str *pat, str *esc, bit *caseignore, bit *anti)
 {
 	return PCRElikesubselect2(ret, bid, NULL, pat, esc, caseignore, anti);
+}
+
+str
+PCRElikesubselect3(bat *ret, bat *bid, str *pat, str *esc, bit *anti)
+{
+	bit f = FALSE;
+	return PCRElikesubselect2(ret, bid, NULL, pat, esc, &f, anti);
 }
 
 static str

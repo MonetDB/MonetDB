@@ -1316,6 +1316,13 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, int 
 	GDKfree(rems);
 	if (cntsp == NULL)
 		GDKfree(cnts);
+	else {
+		BATsetcount(*cntsp, ngrp);
+		BATseqbase(*cntsp, min);
+		(*cntsp)->tkey = BATcount(*cntsp) <= 1;
+		(*cntsp)->tsorted = BATcount(*cntsp) <= 1;
+		(*cntsp)->trevsorted = BATcount(*cntsp) <= 1;
+	}
 	BATsetcount(bn, ngrp);
 	BATseqbase(bn, min);
 	bn->tkey = BATcount(bn) <= 1;

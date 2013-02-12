@@ -583,9 +583,9 @@ mat_join3(MalBlkPtr mb, InstrPtr p, mat_t *mat, int mtop, int m, int n, int o)
 static char *
 aggr_phase2(char *aggr)
 {
-	if (aggr == countRef || aggr == count_no_nilRef)
+	if (aggr == countRef || aggr == count_no_nilRef || aggr == avgRef)
 		return sumRef;
-	if (aggr == subcountRef)
+	if (aggr == subcountRef || aggr == subavgRef)
 		return subsumRef;
 	/* min/max/sum/prod and unique are fine */
 	return aggr;
@@ -594,36 +594,122 @@ aggr_phase2(char *aggr)
 static void
 mat_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m)
 {
-	int tp = getArgType(mb,p,0), k;
-	int battp = (getModuleId(p)==aggrRef)?newBatType(TYPE_oid,tp):tp;
-	int v = newTmpVariable(mb, battp);
-	InstrPtr r = NULL, s = NULL, q = NULL;
+	int tp = getArgType(mb,p,0), k, tp2 = TYPE_lng;
+	int battp = (getModuleId(p)==aggrRef)?newBatType(TYPE_oid,tp):tp, battp2 = 0;
+	int isAvg = (getFunctionId(p) == avgRef);
+	InstrPtr r = NULL, s = NULL, q = NULL, u = NULL;
 
 	/* we pack the partitial result */
 	r = newInstruction(mb,ASSIGNsymbol);
 	setModuleId(r, matRef);
 	setFunctionId(r, packRef);
-	getArg(r,0) = v;
+	getArg(r,0) = newTmpVariable(mb, battp);
+
+	if (isAvg) { /* counts */
+		battp2 = newBatType(TYPE_oid, tp2);
+		u = newInstruction(mb, ASSIGNsymbol);
+		setModuleId(u,matRef);
+		setFunctionId(u,packRef);
+		getArg(u,0) = newTmpVariable(mb, battp2);
+	}
 	for(k=1; k< mat[m].mi->argc; k++) {
 		q = newInstruction(mb,ASSIGNsymbol);
 		setModuleId(q,getModuleId(p));
+		if (isAvg)
+			setModuleId(q,batcalcRef);
 		setFunctionId(q,getFunctionId(p));
 		getArg(q,0) = newTmpVariable(mb, tp);
+		if (isAvg) 
+			q = pushReturn(mb, q, newTmpVariable(mb, tp2));
 		q = pushArgument(mb,q,getArg(mat[m].mi,k));
 		pushInstruction(mb,q);
 		
 		r = pushArgument(mb,r,getArg(q,0));
+		if (isAvg) 
+			u = pushArgument(mb,u,getArg(q,1));
 	}
 	pushInstruction(mb,r);
+	if (isAvg)
+		pushInstruction(mb, u);
 
+	/* Filter empty partitions */
 	if (getModuleId(p) == aggrRef) {
 		s = newInstruction(mb,ASSIGNsymbol);
 		setModuleId(s, algebraRef);
 		setFunctionId(s, selectNotNilRef);
-		getArg(s,0) = newTmpVariable(mb, newBatType(TYPE_oid,tp));
+		getArg(s,0) = newTmpVariable(mb, battp);
 		s = pushArgument(mb, s, getArg(r,0));
 		pushInstruction(mb, s);
 		r = s;
+
+		if (isAvg) {
+			s = newInstruction(mb,ASSIGNsymbol);
+			setModuleId(s, algebraRef);
+			setFunctionId(s, selectNotNilRef);
+			getArg(s,0) = newTmpVariable(mb, battp2);
+			s = pushArgument(mb, s, getArg(u,0));
+			pushInstruction(mb, s);
+			u = s;
+		}
+	}
+
+	/* for avg we do sum (avg*(count/sumcount) ) */
+	if (isAvg) {
+		InstrPtr v,w,x,y,cond;
+
+		/* lng w = sum counts */
+ 		w = newInstruction(mb, ASSIGNsymbol);
+		setModuleId(w, aggrRef);
+		setFunctionId(w, sumRef);
+		getArg(w,0) = newTmpVariable(mb, tp2);
+		w = pushArgument(mb, w, getArg(u, 0));
+		pushInstruction(mb, w);
+
+		/*  y=count = ifthenelse(w=count==0,NULL,w=count)  */
+		cond = newInstruction(mb, ASSIGNsymbol);
+		setModuleId(cond, calcRef);
+		setFunctionId(cond, eqRef); 
+		getArg(cond,0) = newTmpVariable(mb, TYPE_bit);
+		cond = pushArgument(mb, cond, getArg(w, 0));
+		cond = pushWrd(mb, cond, 0);
+		pushInstruction(mb,cond);
+
+		y = newInstruction(mb, ASSIGNsymbol);
+		setModuleId(y, calcRef);
+		setFunctionId(y, ifthenelseRef); 
+		getArg(y,0) = newTmpVariable(mb, tp2);
+		y = pushArgument(mb, y, getArg(cond, 0));
+		y = pushNil(mb, y, tp2);
+		y = pushArgument(mb, y, getArg(w, 0));
+		pushInstruction(mb,y);
+
+		/* dbl v = double(count) */
+		v = newInstruction(mb, ASSIGNsymbol);
+		setModuleId(v, batcalcRef);
+		setFunctionId(v, dblRef); 
+		getArg(v,0) = newTmpVariable(mb, newBatType(TYPE_oid, TYPE_dbl));
+		v = pushArgument(mb, v, getArg(u, 0));
+		pushInstruction(mb, v);
+
+		/* dbl x = v / y */
+		x = newInstruction(mb, ASSIGNsymbol);
+		setModuleId(x, batcalcRef);
+		setFunctionId(x, divRef); 
+		getArg(x,0) = newTmpVariable(mb, newBatType(TYPE_oid, TYPE_dbl));
+		x = pushArgument(mb, x, getArg(v, 0));
+		x = pushArgument(mb, x, getArg(y, 0));
+		pushInstruction(mb, x);
+
+		/* dbl w = avg * x */
+		w = newInstruction(mb, ASSIGNsymbol);
+		setModuleId(w, batcalcRef);
+		setFunctionId(w, mulRef); 
+		getArg(w,0) = newTmpVariable(mb, battp);
+		w = pushArgument(mb, w, getArg(r, 0));
+		w = pushArgument(mb, w, getArg(x, 0));
+		pushInstruction(mb, w);
+
+		r = w;
 	}
 
 	s = newInstruction(mb,ASSIGNsymbol);
@@ -667,30 +753,126 @@ group_by_ext(mat_t *mat, int mtop, int g)
 	return 0;
 }
 
+/* Per partition aggregates are merged and aggregated together. For 
+ * most (handled) aggregates thats relatively simple. AVG is somewhat
+ * more complex. */
 static void
 mat_group_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int b, int g, int e)
 {
-	int tp = getArgType(mb,p,0), k;
+	int tp = getArgType(mb,p,0), k, tp2 = 0;
 	char *aggr2 = aggr_phase2(getFunctionId(p));
-	InstrPtr ai1 = newInstruction(mb, ASSIGNsymbol), ai2;
+	int isAvg = (getFunctionId(p) == subavgRef);
+	InstrPtr ai1 = newInstruction(mb, ASSIGNsymbol), ai10, ai2;
 
 	setModuleId(ai1,matRef);
 	setFunctionId(ai1,packRef);
 	getArg(ai1,0) = newTmpVariable(mb, tp);
 
+	if (isAvg) { /* counts */
+		tp2 = newBatType(TYPE_oid, TYPE_wrd);
+		ai10 = newInstruction(mb, ASSIGNsymbol);
+		setModuleId(ai10,matRef);
+		setFunctionId(ai10,packRef);
+		getArg(ai10,0) = newTmpVariable(mb, tp2);
+	}
+
 	for(k=1; k<mat[b].mi->argc; k++) {
 		InstrPtr q = copyInstruction(p);
+
 		getArg(q,0) = newTmpVariable(mb, tp);
-		getArg(q,1) = getArg(mat[b].mi,k);
-		getArg(q,2) = getArg(mat[g].mi,k);
-		getArg(q,3) = getArg(mat[e].mi,k);
+		if (isAvg) {
+			getArg(q,1) = newTmpVariable(mb, tp2);
+			q = pushArgument(mb, q, getArg(q,1)); /* push at end, create space */
+			q->retc = 2;
+			getArg(q,q->argc-1) = getArg(q,q->argc-2);
+			getArg(q,q->argc-2) = getArg(q,q->argc-3);
+		}
+		getArg(q,1+isAvg) = getArg(mat[b].mi,k);
+		getArg(q,2+isAvg) = getArg(mat[g].mi,k);
+		getArg(q,3+isAvg) = getArg(mat[e].mi,k);
 		pushInstruction(mb,q);
 
 		/* pack the result into a mat */
 		ai1 = pushArgument(mb,ai1,getArg(q,0));
+		if (isAvg)
+			ai10 = pushArgument(mb,ai10,getArg(q,1));
 	}
 	pushInstruction(mb, ai1);
+	if (isAvg)
+		pushInstruction(mb, ai10);
 
+	/* for avg we do sum (avg*(count/sumcount) ) */
+	if (isAvg) {
+		InstrPtr r,s,v,w, cond;
+
+		/* wrd s = sum counts */
+ 		s = newInstruction(mb, ASSIGNsymbol);
+		setModuleId(s, aggrRef);
+		setFunctionId(s, subsumRef);
+		getArg(s,0) = newTmpVariable(mb, tp2);
+		s = pushArgument(mb, s, getArg(ai10, 0));
+		s = pushArgument(mb, s, mat[g].mv);
+		s = pushArgument(mb, s, mat[e].mv);
+		s = pushBit(mb, s, 1); /* skip nils */
+		s = pushBit(mb, s, 1);
+		pushInstruction(mb,s);
+
+		/*  w=count = ifthenelse(s=count==0,NULL,s=count)  */
+		cond = newInstruction(mb, ASSIGNsymbol);
+		setModuleId(cond, batcalcRef);
+		setFunctionId(cond, eqRef); 
+		getArg(cond,0) = newTmpVariable(mb, newBatType(TYPE_oid, TYPE_bit));
+		cond = pushArgument(mb, cond, getArg(s, 0));
+		cond = pushWrd(mb, cond, 0);
+		pushInstruction(mb,cond);
+
+		w = newInstruction(mb, ASSIGNsymbol);
+		setModuleId(w, batcalcRef);
+		setFunctionId(w, ifthenelseRef); 
+		getArg(w,0) = newTmpVariable(mb, tp2);
+		w = pushArgument(mb, w, getArg(cond, 0));
+		w = pushNil(mb, w, TYPE_wrd);
+		w = pushArgument(mb, w, getArg(s, 0));
+		pushInstruction(mb,w);
+
+		/* fetchjoin with groups */
+ 		r = newInstruction(mb, ASSIGNsymbol);
+		setModuleId(r, algebraRef);
+		setFunctionId(r, leftfetchjoinRef);
+		getArg(r, 0) = newTmpVariable(mb, tp2);
+		r = pushArgument(mb, r, mat[g].mv);
+		r = pushArgument(mb, r, getArg(w,0));
+		pushInstruction(mb,r);
+		s = r;
+
+		/* dbl v = double(count) */
+		v = newInstruction(mb, ASSIGNsymbol);
+		setModuleId(v, batcalcRef);
+		setFunctionId(v, dblRef); 
+		getArg(v,0) = newTmpVariable(mb, newBatType(TYPE_oid, TYPE_dbl));
+		v = pushArgument(mb, v, getArg(ai10, 0));
+		pushInstruction(mb, v);
+
+		/* dbl r = v / s */
+		r = newInstruction(mb, ASSIGNsymbol);
+		setModuleId(r, batcalcRef);
+		setFunctionId(r, divRef); 
+		getArg(r,0) = newTmpVariable(mb, newBatType(TYPE_oid, TYPE_dbl));
+		r = pushArgument(mb, r, getArg(v, 0));
+		r = pushArgument(mb, r, getArg(s, 0));
+		pushInstruction(mb,r);
+
+		/* dbl s = avg * r */
+		s = newInstruction(mb, ASSIGNsymbol);
+		setModuleId(s, batcalcRef);
+		setFunctionId(s, mulRef); 
+		getArg(s,0) = newTmpVariable(mb, tp);
+		s = pushArgument(mb, s, getArg(ai1, 0));
+		s = pushArgument(mb, s, getArg(r, 0));
+		pushInstruction(mb,s);
+
+		ai1 = s;
+	}
  	ai2 = newInstruction(mb, ASSIGNsymbol);
 	setModuleId(ai2, aggrRef);
 	setFunctionId(ai2, aggr2);
@@ -698,7 +880,10 @@ mat_group_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int b, int g, int e)
 	ai2 = pushArgument(mb, ai2, getArg(ai1, 0));
 	ai2 = pushArgument(mb, ai2, mat[g].mv);
 	ai2 = pushArgument(mb, ai2, mat[e].mv);
-	ai2 = pushBit(mb, ai2, 1); /* skip nils */
+	if (isAvg)
+		ai2 = pushBit(mb, ai2, 0); /* do not skip nils */
+	else
+		ai2 = pushBit(mb, ai2, 1); /* skip nils */
 	if (getFunctionId(p) != subminRef && getFunctionId(p) != submaxRef)
 		ai2 = pushBit(mb, ai2, 1);
 	pushInstruction(mb, ai2);
@@ -707,6 +892,7 @@ mat_group_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int b, int g, int e)
 /* The mat_group_{new,derive} keep an ext,attr1..attrn table.
  * This is the input for the final second phase group by.
  */
+
 static void
 mat_pack_group(MalBlkPtr mb, mat_t *mat, int mtop, int g)
 {
@@ -1196,6 +1382,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			 getFunctionId(p)== count_no_nilRef || 
 			 getFunctionId(p)== minRef ||
 			 getFunctionId(p)== maxRef ||
+			 getFunctionId(p)== avgRef ||
 			 getFunctionId(p)== sumRef ||
 			 getFunctionId(p) == prodRef)) ||
 		    (getModuleId(p) == algebraRef &&
@@ -1249,6 +1436,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		   (getFunctionId(p) == subcountRef ||
 		    getFunctionId(p) == subminRef ||
 		    getFunctionId(p) == submaxRef ||
+		    getFunctionId(p) == subavgRef ||
 		    getFunctionId(p) == subsumRef ||
 		    getFunctionId(p) == subprodRef) &&
 		   ((m=is_a_mat(getArg(p,1), mat, mtop)) >= 0) &&

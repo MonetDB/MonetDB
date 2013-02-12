@@ -1789,15 +1789,16 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			char *mod, *aggrfunc;
 			char aggrF[64];
 			int restype = s->op4.aggrval->res.type->localtype;
-			int sum_or_prod = 0;
+			int complex_aggr = 0;
 
 			backend_create_func(sql, s->op4.aggrval->aggr);
 			mod = s->op4.aggrval->aggr->mod;
 			aggrfunc = s->op4.aggrval->aggr->imp;
 
-			if (strcmp(aggrfunc, "sum") == 0 ||
+			if (strcmp(aggrfunc, "avg") == 0 ||
+			    strcmp(aggrfunc, "sum") == 0 ||
 			    strcmp(aggrfunc, "prod") == 0)
-				sum_or_prod = 1;
+				complex_aggr = 1;
 
 			if (s->op3) {
 				snprintf(aggrF, 64, "sub%s", aggrfunc);
@@ -1825,7 +1826,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					}
 				}
 				q = newStmt(mb, mod, aggrfunc);
-				if (sum_or_prod){
+				if (complex_aggr){
 					setVarType(mb, getArg(q, 0), restype);
 					setVarUDFtype(mb, getArg(q, 0));
 				}
@@ -1844,7 +1845,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				q = pushArgument(mb, q, e);
 				g = getDestVar(q);
 				q = pushBit(mb, q, no_nil);
-				if (sum_or_prod)
+				if (complex_aggr)
 					q = pushBit(mb, q, TRUE);
 			}
 			s->nr = getDestVar(q);

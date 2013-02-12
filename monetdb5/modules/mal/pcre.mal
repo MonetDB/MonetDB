@@ -185,9 +185,19 @@ comment "Select all head values of the first input BAT for which the
 	the tail the head value of the input BAT for which the
 	relationship holds.  The output BAT is sorted on the tail value.";
 
-function likesubselect(b:bat[:oid,:str], pat:str, esc:str, anti:bit) :bat[:oid,:oid];
-	return likesubselect(b, pat, esc, false, anti);
-end likesubselect;
+command algebra.likesubselect(b:bat[:oid,:str], pat:str, esc:str, anti:bit) :bat[:oid,:oid]
+address PCRElikesubselect3
+comment "Select all head values of the first input BAT for which the
+	tail value is \"like\" the given (SQL-style) pattern and for
+	which the head value occurs in the tail of the second input
+	BAT.
+	Input is a dense-headed BAT, output is a dense-headed BAT with in
+	the tail the head value of the input BAT for which the
+	relationship holds.  The output BAT is sorted on the tail value.";
+
+#function likesubselect(b:bat[:oid,:str], pat:str, esc:str, anti:bit) :bat[:oid,:oid];
+	#return likesubselect(b, pat, esc, false, anti);
+#end likesubselect;
 
 function ilikesubselect(b:bat[:oid,:str], pat:str, esc:str, anti:bit) :bat[:oid,:oid];
 	return likesubselect(b, pat, esc, true, anti);
