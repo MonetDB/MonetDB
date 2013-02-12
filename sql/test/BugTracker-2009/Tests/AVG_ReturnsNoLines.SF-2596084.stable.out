@@ -27,32 +27,44 @@ Ready.
 [ 1	]
 [ 1	]
 [ 1	]
-% sys.,	sys. # table_name
+#SELECT AVG(x) AS avgx, AVG(x) AS avgx2
+#FROM x;
+% sys.x,	sys.x # table_name
 % avgx,	avgx2 # name
 % double,	double # type
 % 24,	24 # length
 [ 2,	2	]
-% sys.,	sys.x # table_name
+#SELECT AVG(x) AS avgx, SUM(x) AS sumx
+#FROM x;
+% sys.x,	sys.x # table_name
 % avgx,	sumx # name
 % double,	double # type
 % 24,	24 # length
 [ 2,	6	]
-% sys.,	sys.x # table_name
+#SELECT AVG(x) AS avgx, COUNT(x) AS countx
+#FROM x;
+% sys.x,	sys.x # table_name
 % avgx,	countx # name
 % double,	wrd # type
 % 24,	1 # length
 [ 2,	3	]
-% sys.,	sys.x # table_name
+#SELECT AVG(x) AS avgx, COUNT(*) AS countstar
+#FROM x;
+% sys.x,	sys.x # table_name
 % avgx,	countstar # name
 % double,	wrd # type
 % 24,	1 # length
 [ 2,	3	]
-% sys.,	sys.x # table_name
+#SELECT AVG(x) AS avgx, MIN(x) AS minx
+#FROM x;
+% sys.x,	sys.x # table_name
 % avgx,	minx # name
 % double,	double # type
 % 24,	24 # length
 [ 2,	1	]
-% sys.,	sys.x # table_name
+#SELECT AVG(x) AS avgx, MAX(x) AS maxx
+#FROM x;
+% sys.x,	sys.x # table_name
 % avgx,	maxx # name
 % double,	double # type
 % 24,	24 # length

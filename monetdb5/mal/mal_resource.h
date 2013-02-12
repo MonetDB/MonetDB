@@ -23,7 +23,7 @@
 #include "mal_interpreter.h"
 
 #define TIMESLICE  2000 /* ms */
-#define DELAYUNIT 100 /* ms delay in parallel processing decissions */
+#define DELAYUNIT 5 /* ms delay in parallel processing decisions */
 
 #define USE_MAL_ADMISSION
 #ifdef USE_MAL_ADMISSION

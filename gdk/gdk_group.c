@@ -103,11 +103,11 @@
 			prb = hash_##TYPE(hs, &w[p]);			\
 			if (gc) {					\
 				for (hb = HASHget(hs,prb);		\
-				     hb != HASHnil(hs) &&			\
+				     hb != HASHnil(hs) &&		\
 				      grps[hb - r] == grps[p - r];	\
 				     hb = HASHgetlink(hs,hb)) {		\
 					assert( HASHgetlink(hs,hb) == HASHnil(hs) \
-					       || HASHgetlink(hs,hb) < hb);	\
+					       || HASHgetlink(hs,hb) < hb); \
 					if (w[p] == w[hb]) {		\
 						oid grp = ngrps[hb - r]; \
 						ngrps[p - r] = grp; 	\
@@ -119,11 +119,11 @@
 						break;			\
 					}				\
 				}					\
-				if (hb != HASHnil(hs) &&			\
+				if (hb != HASHnil(hs) &&		\
 				    grps[hb - r] != grps[p - r]) {	\
 					/* we didn't assign a group */	\
 					/* yet */			\
-					hb = HASHnil(hs);			\
+					hb = HASHnil(hs);		\
 				}					\
 			} else if (grps) {				\
 				prb = ((prb << bits) ^ (BUN) grps[p-r]) & hs->mask; \
@@ -158,7 +158,7 @@
 					}				\
 				}					\
 			}						\
-			if (hb == HASHnil(hs)) {				\
+			if (hb == HASHnil(hs)) {			\
 				GRPnotfound();				\
 				/* enter new group into hash table */	\
 				HASHputlink(hs,p, HASHget(hs,prb));	\

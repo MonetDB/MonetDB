@@ -35,7 +35,7 @@ lib_kernel = {
 		batmmath.c batmmath.h \
 		batstr.c batstr.h \
 		counters.c counters.h \
-		group.mx \
+		group.c group.h \
 		lock.c lock.h \
 		logger.c \
 		microbenchmark.c microbenchmark.h \
@@ -55,6 +55,6 @@ headers_mal = {
 		counters.mal logger.mal microbenchmark.mal
 }
 
-EXTRA_DIST = alarm.mal counters.mal lock.mal logger.mal microbenchmark.mal sema.mal unix.mal aggr.mal
+EXTRA_DIST = alarm.mal counters.mal lock.mal logger.mal microbenchmark.mal sema.mal unix.mal aggr.mal group.mal
 
 EXTRA_DIST_DIR = Tests

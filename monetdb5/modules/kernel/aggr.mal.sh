@@ -139,20 +139,36 @@ done
 for tp in bte sht int wrd lng flt dbl; do
     cat <<EOF
 command avg(b:bat[:oid,:${tp}], e:bat[:oid,:any_1]) :bat[:oid,:dbl]
-address AGGRavg2_dbl
+address AGGRavg12_dbl
 comment "Grouped tail average on ${tp}";
 
 command avg(b:bat[:oid,:${tp}], g:bat[:oid,:oid], e:bat[:oid,:any_1]):bat[:oid,:dbl]
-address AGGRavg3_dbl
+address AGGRavg13_dbl
 comment "Grouped tail average on ${tp}";
 
+command avg(b:bat[:oid,:${tp}], e:bat[:oid,:any_1]) (:bat[:oid,:dbl],:bat[:oid,:wrd])
+address AGGRavg22_dbl
+comment "Grouped tail average on ${tp}, also returns count";
+
+command avg(b:bat[:oid,:${tp}], g:bat[:oid,:oid], e:bat[:oid,:any_1]) (:bat[:oid,:dbl],:bat[:oid,:wrd])
+address AGGRavg23_dbl
+comment "Grouped tail average on ${tp}, also returns count";
+
 command subavg(b:bat[:oid,:${tp}],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:bit,abort_on_error:bit) :bat[:oid,:dbl]
-address AGGRsubavg_dbl
+address AGGRsubavg1_dbl
 comment "Grouped average aggregate";
 
 command subavg(b:bat[:oid,:${tp}],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:bit,abort_on_error:bit) :bat[:oid,:dbl]
-address AGGRsubavgcand_dbl
+address AGGRsubavg1cand_dbl
 comment "Grouped average aggregate with candidates list";
+
+command subavg(b:bat[:oid,:${tp}],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:bit,abort_on_error:bit) (:bat[:oid,:dbl],:bat[:oid,:wrd])
+address AGGRsubavg2_dbl
+comment "Grouped average aggregate, also returns count";
+
+command subavg(b:bat[:oid,:${tp}],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:bit,abort_on_error:bit) (:bat[:oid,:dbl],:bat[:oid,:wrd])
+address AGGRsubavg2cand_dbl
+comment "Grouped average aggregate with candidates list, also returns count";
 
 EOF
     for func in stdev:'standard deviation' variance:variance; do

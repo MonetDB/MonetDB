@@ -14,10 +14,12 @@ tst4610
 tst4611
 tst4620
 tst4630
-tst4631
+# tst4631 -- uses group.refine
 tst4700
 tst4701
-tst4730
+# tst4730 -- uses group.refine
+tst4800
+tst4801
 tst4820
 # use obsolete array.grid()
 #tst4800
@@ -37,7 +39,7 @@ inlineFunction
 inlineFunction2
 
 reorder00
-reorder01
+# reorder01 -- uses group.new/group.derive
 
 #mapreduce00   has no output, won't run this way
 
@@ -98,6 +100,6 @@ SRexample
 
 dataflow
 dataflow3
-common
+# common -- uses group.new/group.derive
 common01
 garbage

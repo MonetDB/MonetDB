@@ -324,13 +324,8 @@ DFLOWworker(void *t)
 				flow->status[i].blocks = 0;
 				flow->status[i].hotclaim = fe->hotclaim;
 				flow->status[i].argclaim += fe->hotclaim;
-				if (fnxt) {
-					if (flow->error)
-						q_enqueue(flow->done, fnxt);
-					else
-						q_enqueue(todo, fnxt);
-				}
 				fnxt = flow->status + i;
+				break;
 			}
 		MT_lock_unset(&flow->flowlock, "MALworker");
 
@@ -352,22 +347,29 @@ DFLOWworker(void *t)
  * Create a set of DFLOW interpreters.
  * One worker will adaptively be available for each client.
  * The remainder are taken from the GDKnr_threads argument and
- * typically is equal to the number of cores
+ * typically is equal to the number of cores.
+ * A recursive MAL function call would make for one worker less,
+ * which limits the number of cores for parallel processing.
  * The workers are assembled in a local table to enable debugging.
  */
-static void
+static str
 DFLOWinitialize(void)
 {
 	int i, limit;
 
 	if (todo)
-		return;
+		return MAL_SUCCEED;
 	MT_lock_set(&mal_contextLock, "DFLOWinitialize");
 	todo = q_create(2048, "todo");
 	limit = GDKnr_threads ? GDKnr_threads : 1;
-	for (i = 0; i < limit; i++)
-		MT_create_thread(&workers[i], DFLOWworker, (void *) &workers[i], MT_THR_JOINABLE);
+	for (i = 0; i < limit && i < THREADS; i++) {
+		if (MT_create_thread(&workers[i], DFLOWworker, (void *) &workers[i], MT_THR_JOINABLE) < 0) {
+			MT_lock_unset(&mal_contextLock, "DFLOWinitialize");
+			throw(MAL, "dataflow", "Can not create interpreter thread");
+		}
+	}
 	MT_lock_unset(&mal_contextLock, "DFLOWinitialize");
+	return MAL_SUCCEED;
 }
  
 /*
@@ -586,7 +588,9 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr st
 
 	/* check existence of workers */
 	if (workers[0] == 0)
-		DFLOWinitialize();
+		ret = DFLOWinitialize();
+	if ( ret != MAL_SUCCEED)
+		return ret;
 	assert(workers[0]);
 	assert(todo);
 

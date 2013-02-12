@@ -26,7 +26,7 @@ create schema rdf;
 create table rdf.graph (gname string, gid int);
 
 -- create a procudure to load an RDF document
--- the chema string should be removed in the future and auto-fill it from
+-- the schema string should be removed in the future and auto-fill it from
 -- the backend
 create procedure rdf_shred(location string, gname string, sch string)
 	external name sql.rdfshred;

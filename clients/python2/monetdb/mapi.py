@@ -84,12 +84,7 @@ class Connection(object):
         self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 0)
         self.socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
 
-        try:
-            self.socket.connect((hostname, port))
-        except socket.error, error:
-            (error_code, error_str) = error
-            raise OperationalError(error_str + " (%s:%s)" % (self.hostname, self.port))
-
+        self.socket.connect((hostname, port))
         self.__login()
 
 
@@ -232,13 +227,10 @@ class Connection(object):
         result = StringIO()
         count = bytes
         while count > 0:
-            try:
-                recv = self.socket.recv(count)
-                if len(recv) == 0:
-                    time.sleep(1)
-                #logger.debug("II: package size: %i payload: %s" % (len(recv), recv))
-            except socket.error, error:
-                raise OperationalError(error[1])
+            recv = self.socket.recv(count)
+            if len(recv) == 0:
+                time.sleep(1)
+            #logger.debug("II: package size: %i payload: %s" % (len(recv), recv))
             count -= len(recv)
             result.write(recv)
         return result.getvalue()
@@ -256,11 +248,8 @@ class Connection(object):
             flag = struct.pack( '<H', ( length << 1 ) + last )
             #logger.debug("II: sending %i bytes, last: %s" % (length, bool(last)))
             #logger.debug("TX: %s" % data)
-            try:
-                self.socket.send(flag)
-                self.socket.send(data)
-            except socket.error, error:
-                raise OperationalError(error[1])
+            self.socket.send(flag)
+            self.socket.send(data)
             pos += length
 
 

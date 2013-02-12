@@ -55,16 +55,6 @@ pattern sortReverseTail(b:bat[:oid,:any_2]...)
 address MATsortReverseTail
 comment "Returns a BAT copy sorted on the head column.";
 
-pattern refine(sorted:bat[:oid,:any_2], map:bat[:oid,:bte], b:bat[:oid,:any_3]...)
-	(rsorted:bat[:oid,:oid], rmap:bat[:oid,:bte]) 
-address MATrefine
-comment "refine map.";
-
-pattern refine_reverse(sorted:bat[:oid,:any_2], map:bat[:oid,:bte], b:bat[:oid,:any_3]...)
-	(rsorted:bat[:oid,:oid], rmap:bat[:oid,:bte]) 
-address MATrefineReverse
-comment "refine map.";
-
 pattern print(b:bat[:oid,:any_2]...):void
 address MATprint;
 

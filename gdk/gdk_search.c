@@ -94,11 +94,17 @@
 
 static int
 HASHwidth(BUN hashsize){
-	if (hashsize <= BUN1_NONE) return BUN1;
-	if (hashsize <= BUN2_NONE) return BUN2;
-	if (hashsize <= BUN4_NONE) return BUN4;
-	(void) hashsize;
+	if (hashsize <= (BUN) BUN1_NONE)
+		return BUN1;
+	if (hashsize <= (BUN) BUN2_NONE)
+		return BUN2;
+#if SIZEOF_BUN <= 4
+	return BUN4;
+#else
+	if (hashsize <= (BUN) BUN4_NONE)
+		return BUN4;
 	return BUN8;
+#endif
 }
 
 BUN
@@ -125,7 +131,7 @@ Hash *
 HASHnew(Heap *hp, int tpe, BUN size, BUN mask)
 {
 	Hash *h = NULL;
-	int width = HASHwidth(MAX(mask,size));
+	int width = HASHwidth(size);
 
 	if (HEAPalloc(hp, mask + size, width) < 0)
 		return NULL;
@@ -138,22 +144,24 @@ HASHnew(Heap *hp, int tpe, BUN size, BUN mask)
 	h->width = width;
 	switch (width) {
 	case BUN1:
-		h->nil = BUN1_NONE;
+		h->nil = (BUN) BUN1_NONE;
 		break;
 	case BUN2:
-		h->nil = BUN2_NONE;
+		h->nil = (BUN) BUN2_NONE;
 		break;
 	case BUN4:
-		h->nil = BUN4_NONE;
+		h->nil = (BUN) BUN4_NONE;
 		break;
+#if SIZEOF_BUN > 4
 	case BUN8:
-		h->nil = BUN8_NONE;
+		h->nil = (BUN) BUN8_NONE;
 		break;
+#endif
 	default:
 		assert(0);
 	}
-	h->link = (BUN *) hp->base;
-	h->hash = (BUN *) ((char*)h->link + h->lim *width);
+	h->Link = (void *) hp->base;
+	h->Hash = (void *) ((char *) h->Link + h->lim * width);
 	h->type = tpe;
 	h->heap = hp;
 	HASHclear(h);		/* zero the mask */

@@ -39,12 +39,13 @@ function user.main():void;
     ke_a := bat.insert(x,8@0,3:bte);
     io.print("group x");
     io.print(x);
-#b1 := group.new(x); 
-    (hb1,b1) := group.new(x);
-    io.print("b1 becomes");
-    io.print(b1);
-    io.print("hb1 becomes");
-    io.print(hb1);
+    (g1,e1,h1) := group.subgroup(x);
+    io.print("g1 becomes");
+    io.print(g1);
+    io.print("e1 becomes");
+    io.print(e1);
+    io.print("h1 becomes");
+    io.print(h1);
 end main;
 [ "group x" ]
 #-----------------#
@@ -59,27 +60,35 @@ end main;
 [ 6@0,	  2	  ]
 [ 7@0,	  3	  ]
 [ 8@0,	  3	  ]
-[ "b1 becomes" ]
+[ "g1 becomes" ]
 #-----------------#
 # h	tmp_5	  # name
 # oid	oid	  # type
 #-----------------#
-[ 1@0,	  1@0	  ]
-[ 2@0,	  1@0	  ]
-[ 3@0,	  3@0	  ]
-[ 4@0,	  3@0	  ]
-[ 5@0,	  3@0	  ]
-[ 6@0,	  3@0	  ]
-[ 7@0,	  7@0	  ]
-[ 8@0,	  7@0	  ]
-[ "hb1 becomes" ]
-#-------------------------#
-# h	histo_tmp_5	  # name
-# oid	int		  # type
-#-------------------------#
-[ 1@0,	  2		  ]
-[ 3@0,	  4		  ]
-[ 7@0,	  2		  ]
+[ 1@0,	  0@0	  ]
+[ 2@0,	  0@0	  ]
+[ 3@0,	  1@0	  ]
+[ 4@0,	  1@0	  ]
+[ 5@0,	  1@0	  ]
+[ 6@0,	  1@0	  ]
+[ 7@0,	  2@0	  ]
+[ 8@0,	  2@0	  ]
+[ "e1 becomes" ]
+#-----------------#
+# h	t	  # name
+# void	oid	  # type
+#-----------------#
+[ 0@0,	  1@0	  ]
+[ 1@0,	  3@0	  ]
+[ 2@0,	  7@0	  ]
+[ "h1 becomes" ]
+#-----------------#
+# h	t	  # name
+# void	wrd	  # type
+#-----------------#
+[ 0@0,	  2	  ]
+[ 1@0,	  4	  ]
+[ 2@0,	  2	  ]
 
 # 07:59:06 >  
 # 07:59:06 >  Done.

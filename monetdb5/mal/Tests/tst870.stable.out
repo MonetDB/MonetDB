@@ -36,121 +36,50 @@ stdout of test 'tst870` in directory 'monetdb5/mal` itself:
 function user.main():void;
 #testing the multiplex operations on simple groups 
     b := bat.new(:oid,:oid);
-    bat.insert(b,0@0,0@0);
-    bat.insert(b,1@0,1@0);
-    bat.insert(b,1@0,2@0);
-    bat.insert(b,1@0,3@0);
-    bat.insert(b,2@0,2@0);
-    bat.insert(b,2@0,0@0);
-    bat.insert(b,2@0,3@0);
-    bat.insert(b,3@0,nil:oid);
-    bat.insert(b,3@0,1@0);
-    io.print(b);
-    ma_a := io.printf("#~BeginVariableOutput~#\n");
-    (bk,bv) := bat.info(b);
-    oa_a := io.print(bk,bv);
-    pa_a := io.printf("#~EndVariableOutput~#\n");
-    bt := algebra.markH(b);
-    hb := algebra.markT(b);
-    bh := bat.reverse(hb);
-    (e,m) := group.new(bh);
-    i := aggr.min(bt,m,e);
-    g := algebra.join(hb,i);
-    io.print(g);
-    a := aggr.max(bt,m,e);
-    h := algebra.join(hb,a);
+    bat.append(b,0@0);
+    bat.append(b,1@0);
+    bat.append(b,2@0);
+    bat.append(b,3@0);
+    bat.append(b,2@0);
+    bat.append(b,0@0);
+    bat.append(b,3@0);
+    bat.append(b,nil:oid);
+    bat.append(b,1@0);
+    g := bat.new(:oid,:oid);
+    bat.append(g,0@0);
+    bat.append(g,1@0);
+    bat.append(g,1@0);
+    bat.append(g,1@0);
+    bat.append(g,2@0);
+    bat.append(g,2@0);
+    bat.append(g,2@0);
+    bat.append(g,3@0);
+    bat.append(g,3@0);
+    io.print(g,b);
+# only head is used 
+    e := bat.new(:oid,:oid);
+    bat.append(e,0@0);
+    bat.append(e,1@0);
+    bat.append(e,2@0);
+    bat.append(e,3@0);
+    i := aggr.min(b,g,e);
+    io.print(i);
+    h := aggr.max(b,g,e);
     io.print(h);
 end main;
-#-----------------#
-# h	t	  # name
-# oid	oid	  # type
-#-----------------#
-[ 0@0,	  0@0	  ]
-[ 1@0,	  1@0	  ]
-[ 1@0,	  2@0	  ]
-[ 1@0,	  3@0	  ]
-[ 2@0,	  2@0	  ]
-[ 2@0,	  0@0	  ]
-[ 2@0,	  3@0	  ]
-[ 3@0,	  nil	  ]
-[ 3@0,	  1@0	  ]
-#~BeginVariableOutput~#
-#-------------------------------------------------#
+#-------------------------#
 # h	t		t			  # name
-# oid	str		str			  # type
-#-------------------------------------------------#
-[ 0@0,	  "batId",		  "tmp_651"	  ]
-[ 1@0,	  "batCacheid",		  "425"		  ]
-[ 2@0,	  "hparentid",		  "0"		  ]
-[ 3@0,	  "tparentid",		  "0"		  ]
-[ 4@0,	  "batSharecnt",	  "0"		  ]
-[ 5@0,	  "batCount",		  "9"		  ]
-[ 6@0,	  "batCapacity",	  "256"		  ]
-[ 7@0,	  "head",		  "oid"		  ]
-[ 8@0,	  "tail",		  "oid"		  ]
-[ 9@0,	  "batPersistence",	  "transient"	  ]
-[ 10@0,	  "batRestricted",	  "updatable"	  ]
-[ 11@0,	  "batRefcnt",		  "1"		  ]
-[ 12@0,	  "batLRefcnt",		  "10"		  ]
-[ 13@0,	  "batDirty",		  "dirty"	  ]
-[ 14@0,	  "batSet",		  "0"		  ]
-[ 15@0,	  "hsorted",		  "1"		  ]
-[ 16@0,	  "hrevsorted",		  "0"		  ]
-[ 17@0,	  "hident",		  "h"		  ]
-[ 18@0,	  "hdense",		  "0"		  ]
-[ 19@0,	  "hseqbase",		  "0@0"		  ]
-[ 20@0,	  "hkey",		  "0"		  ]
-[ 21@0,	  "hvarsized",		  "0"		  ]
-[ 22@0,	  "halign",		  "0"		  ]
-[ 23@0,	  "hnosorted",		  "0"		  ]
-[ 24@0,	  "hnorevsorted",	  "0"		  ]
-[ 25@0,	  "hnodense",		  "2"		  ]
-[ 26@0,	  "hnokey[0]",		  "1"		  ]
-[ 27@0,	  "hnokey[1]",		  "2"		  ]
-[ 28@0,	  "hnonil",		  "1"		  ]
-[ 29@0,	  "hnil",		  "0"		  ]
-[ 30@0,	  "tident",		  "t"		  ]
-[ 31@0,	  "tdense",		  "0"		  ]
-[ 32@0,	  "tseqbase",		  "0@0"		  ]
-[ 33@0,	  "tsorted",		  "0"		  ]
-[ 34@0,	  "trevsorted",		  "0"		  ]
-[ 35@0,	  "tkey",		  "0"		  ]
-[ 36@0,	  "tvarsized",		  "0"		  ]
-[ 37@0,	  "talign",		  "0"		  ]
-[ 38@0,	  "tnosorted",		  "4"		  ]
-[ 39@0,	  "tnorevsorted",	  "1"		  ]
-[ 40@0,	  "tnodense",		  "4"		  ]
-[ 41@0,	  "tnokey[0]",		  "3"		  ]
-[ 42@0,	  "tnokey[1]",		  "4"		  ]
-[ 43@0,	  "tnonil",		  "0"		  ]
-[ 44@0,	  "tnil",		  "1"		  ]
-[ 45@0,	  "batInserted",	  "0"		  ]
-[ 46@0,	  "batDeleted",		  "0"		  ]
-[ 47@0,	  "batFirst",		  "0"		  ]
-[ 48@0,	  "htop",		  "72"		  ]
-[ 49@0,	  "ttop",		  "72"		  ]
-[ 50@0,	  "batStamp",		  "212"		  ]
-[ 51@0,	  "lastUsed",		  "17698"	  ]
-[ 52@0,	  "curStamp",		  "214"		  ]
-[ 53@0,	  "batCopiedtodisk",	  "0"		  ]
-[ 54@0,	  "batDirtydesc",	  "dirty"	  ]
-[ 55@0,	  "H->heap.dirty",	  "dirty"	  ]
-[ 56@0,	  "T->heap.dirty",	  "clean"	  ]
-[ 57@0,	  "head.free",		  "72"		  ]
-[ 58@0,	  "head.size",		  "2048"	  ]
-[ 59@0,	  "head.maxsize",	  "2048"	  ]
-[ 60@0,	  "head.storage",	  "malloced"	  ]
-[ 61@0,	  "head.newstorage",	  "malloced"	  ]
-[ 62@0,	  "head.filename",	  "no file"	  ]
-[ 63@0,	  "tail.free",		  "72"		  ]
-[ 64@0,	  "tail.size",		  "2048"	  ]
-[ 65@0,	  "tail.maxsize",	  "2048"	  ]
-[ 66@0,	  "tail.storage",	  "malloced"	  ]
-[ 67@0,	  "tail.newstorage",	  "malloced"	  ]
-[ 68@0,	  "tail.filename",	  "06/651.tail"	  ]
-[ 69@0,	  "H->vheap->dirty",	  "clean"	  ]
-[ 70@0,	  "T->vheap->dirty",	  "clean"	  ]
-#~EndVariableOutput~#
+# void	oid	oid	  # type
+#-------------------------#
+[ 0@0,	  0@0,	  0@0	  ]
+[ 1@0,	  1@0,	  1@0	  ]
+[ 2@0,	  1@0,	  2@0	  ]
+[ 3@0,	  1@0,	  3@0	  ]
+[ 4@0,	  2@0,	  2@0	  ]
+[ 5@0,	  2@0,	  0@0	  ]
+[ 6@0,	  2@0,	  3@0	  ]
+[ 7@0,	  3@0,	  nil	  ]
+[ 8@0,	  3@0,	  1@0	  ]
 #-----------------#
 # h	t	  # name
 # oid	oid	  # type

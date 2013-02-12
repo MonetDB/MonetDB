@@ -851,12 +851,9 @@ int isSlice(InstrPtr p){
 }
 
 int isOrderby(InstrPtr p){
-	return ((getModuleId(p) == algebraRef &&
+	return getModuleId(p) == algebraRef &&
 		(getFunctionId(p) == sortTailRef ||
-		 getFunctionId(p) == sortReverseTailRef)) ||
-		(getModuleId(p) == groupRef &&
-		(getFunctionId(p) == refineRef ||
-		 getFunctionId(p) == refine_reverseRef)));
+		 getFunctionId(p) == sortReverseTailRef);
 }
 
 int isDiffOp(InstrPtr p){
