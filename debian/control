@@ -16,7 +16,7 @@ Standards-Version: 3.8.0
 X-Python-Version: >= 2.6
 X-Python3-Version: >= 3.0
 
-Package: libmonetdb8
+Package: libmonetdb9
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Conflicts: libmonetdb1, libmonetdb2, libmonetdb-dev
