@@ -762,7 +762,7 @@ mat_group_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int b, int g, int e)
 	int tp = getArgType(mb,p,0), k, tp2 = 0;
 	char *aggr2 = aggr_phase2(getFunctionId(p));
 	int isAvg = (getFunctionId(p) == subavgRef);
-	InstrPtr ai1 = newInstruction(mb, ASSIGNsymbol), ai10, ai2;
+	InstrPtr ai1 = newInstruction(mb, ASSIGNsymbol), ai10 = NULL, ai2;
 
 	setModuleId(ai1,matRef);
 	setFunctionId(ai1,packRef);
