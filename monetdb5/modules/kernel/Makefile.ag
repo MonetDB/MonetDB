@@ -51,7 +51,7 @@ headers_mal = {
 	SOURCES = bat5.mal algebra.mx status.mal unix.mal \
 		mmath.mal lock.mal sema.mal alarm.mal batstr.mal \
 		batcolor.mal batmmath.mal \
-		group.mx aggr.mal \
+		group.mal aggr.mal \
 		counters.mal logger.mal microbenchmark.mal
 }
 
