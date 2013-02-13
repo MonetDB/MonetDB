@@ -783,36 +783,39 @@ IMPSgetbin(int tpe, bte bits, char *inbins, const void *v)
 
 void
 IMPSremove(BAT *b) {
+	Imprints *imprints;
 
 	assert(BAThdense(b)); /* assert void head */
+	assert(b->T->imprints != NULL);
+
+	if (VIEWtparent(b)) {
+		b->T->imprints = NULL;
+		return;
+	}
 
 	MT_lock_set(&GDKimprintsLock(ABS(b->batCacheid)),
 			"BATimprints");
-	if (VIEWtparent(b)) {
-		b->T->imprints = NULL;
-	} else if (b->T->imprints != NULL) {
-		Imprints *imprints = b->T->imprints;
+	imprints = b->T->imprints;
+	b->T->imprints = NULL;
 
-		if (imprints->imps->storage != STORE_MEM)
-			HEAPdelete(imprints->imps,
-					BBP_physical(b->batCacheid), "imps");
-		else
-			HEAPfree(imprints->imps);
-		if (imprints->dict->storage != STORE_MEM)
-			HEAPdelete(imprints->dict,
-					BBP_physical(b->batCacheid), "dict");
-		else
-			HEAPfree(imprints->dict);
-		if (imprints->bins->storage != STORE_MEM)
-			HEAPdelete(imprints->bins,
-					BBP_physical(b->batCacheid), "bins");
-		else
-			HEAPfree(imprints->bins);
+	if (imprints->imps->storage != STORE_MEM)
+		HEAPdelete(imprints->imps,
+				BBP_physical(b->batCacheid), "imps");
+	else
+		HEAPfree(imprints->imps);
+	if (imprints->dict->storage != STORE_MEM)
+		HEAPdelete(imprints->dict,
+				BBP_physical(b->batCacheid), "dict");
+	else
+		HEAPfree(imprints->dict);
+	if (imprints->bins->storage != STORE_MEM)
+		HEAPdelete(imprints->bins,
+				BBP_physical(b->batCacheid), "bins");
+	else
+		HEAPfree(imprints->bins);
 
+	GDKfree(imprints);
 
-		GDKfree(imprints);
-		b->T->imprints = NULL;
-	}
 	MT_lock_unset(&GDKimprintsLock(ABS(b->batCacheid)),
 			"BATimprints");
 
@@ -822,11 +825,12 @@ IMPSremove(BAT *b) {
 void
 IMPSdestroy(BAT *b) {
 
-	/* imprints are build on tails of BATs with void head */
 	if (b) {
-		if (BAThdense(b) && (b->T->imprints != NULL)) {
+		if (b->T->imprints != NULL) {
 			IMPSremove(b);
-		} else if (BATtdense(b) && (b->H->imprints != NULL)) {
+		}
+
+		if (b->H->imprints != NULL) {
 			IMPSremove(BATmirror(b));
 		}
 	}

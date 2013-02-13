@@ -1329,7 +1329,7 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 		int use_imprints = 0;
 		if (((b->batPersistence == PERSISTENT) ||
 		    ((parent = VIEWtparent(b)) &&
-		     BBPquickdesc(ABS(parent),0)->batPersistence == PERSISTENT))
+		     (BBPquickdesc(ABS(parent),0)->batPersistence == PERSISTENT)))
 		   && !equi
 		   && !ATOMvarsized(b->ttype)) {
 			/* use imprints if
