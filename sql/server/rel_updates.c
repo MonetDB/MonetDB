@@ -861,6 +861,8 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_where)
 				rel_destroy(r);
 				return sql_error(sql, 02, "42S22!UPDATE: no such column '%s.%s'", t->base.name, cname);
 			}
+			if (!table_privs(sql, t, PRIV_UPDATE) && !sql_privilege(sql, sql->user_id, c->base.id, PRIV_UPDATE, 0)) 
+				return sql_error(sql, 02, "UPDATE: insufficient privileges for user '%s' to update table '%s' on column '%s'", stack_get_string(sql, "current_user"), tname, c->base.name);
 			a = assignment->h->data.sym;
 			if (a) {
 				int status = sql->session->status;
