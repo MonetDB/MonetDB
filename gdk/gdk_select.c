@@ -291,7 +291,6 @@ do {									    \
 /* choose number of bits */
 #define bitswitch(CAND,TEST)						    \
 do {									    \
-	Imprints *imprints = b->T->imprints;				    \
 	assert(imprints);						    \
 	ALGODEBUG fprintf(stderr,					    \
 			"#BATsubselect(b=%s#"BUNFMT",s=%s,anti=%d): "	    \
@@ -399,6 +398,7 @@ NAME##_##TYPE (BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,	     \
 	oid o;								     \
 	BUN w, p = r;							     \
 	BUN pr_off = 0;							     \
+	Imprints *imprints;						     \
 	(void) candlist;						     \
 	(void) li;							     \
 	(void) hi;							     \
@@ -406,9 +406,12 @@ NAME##_##TYPE (BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,	     \
 	(void) hval;							     \
 	if (use_imprints && VIEWtparent(b)) {				     \
 		BAT *parent = BATmirror(BATdescriptor(VIEWtparent(b)));	     \
+		imprints = parent->T->imprints;				     \
 		pr_off = (TYPE *)Tloc(b,0) -				     \
 		         (TYPE *)Tloc(parent,0)+BUNfirst(parent);	     \
 		BBPunfix(parent->batCacheid);				     \
+	} else {							     \
+		imprints= b->T->imprints;				     \
 	}								     \
 	END;								     \
 	if (equi) {							     \

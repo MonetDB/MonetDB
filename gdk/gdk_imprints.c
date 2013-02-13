@@ -721,7 +721,9 @@ do {                                                              \
 	MT_lock_unset(&GDKimprintsLock(ABS(b->batCacheid)), "BATimprints");
 
 	if (o != NULL) {
-		o->T->imprints = b->T->imprints;
+		o->T->imprints = NULL; /* views always keep null pointer and need to
+								  obtain the latest imprint from the parent
+								  at query time */
 		BBPunfix(b->batCacheid);
 		b = o;
 	}
@@ -787,11 +789,7 @@ IMPSremove(BAT *b) {
 
 	assert(BAThdense(b)); /* assert void head */
 	assert(b->T->imprints != NULL);
-
-	if (VIEWtparent(b)) {
-		b->T->imprints = NULL;
-		return;
-	}
+	assert(!VIEWtparent(b));
 
 	MT_lock_set(&GDKimprintsLock(ABS(b->batCacheid)),
 			"BATimprints");
@@ -826,11 +824,11 @@ void
 IMPSdestroy(BAT *b) {
 
 	if (b) {
-		if (b->T->imprints != NULL) {
+		if (b->T->imprints != NULL && !VIEWtparent(b)) {
 			IMPSremove(b);
 		}
 
-		if (b->H->imprints != NULL) {
+		if (b->H->imprints != NULL && !VIEWhparent(b)) {
 			IMPSremove(BATmirror(b));
 		}
 	}
