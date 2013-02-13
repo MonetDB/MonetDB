@@ -116,12 +116,6 @@ backend_schema_user_dependencies(ptr trans, int schema_id)
 		return(be_funcs.fschuserdep(trans, schema_id));
 	return NULL;
 }
-void	
-backend_create_table_function(ptr trans, str name, sql_rel *rel, sql_table *t)
-{
-	if (be_funcs.fcreate_table_function != NULL)
-		be_funcs.fcreate_table_function(trans, name, rel, t);
-}
 int	
 backend_resolve_function(ptr M, sql_func *f)
 {

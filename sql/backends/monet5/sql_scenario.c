@@ -211,7 +211,6 @@ SQLinit(void)
 	memset((char*)&be_funcs, 0, sizeof(backend_functions));
 	be_funcs.fstack		= &monet5_freestack;
 	be_funcs.fcode		= &monet5_freecode;
-	be_funcs.fcreate_table_function	= &monet5_create_table_function;
 	be_funcs.fresolve_function	= &monet5_resolve_function;
 	monet5_user_init(&be_funcs);
 
@@ -963,10 +962,12 @@ SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output)
 			goto endofcompile;
 		}
 		/* generate MAL code */
-		backend_callinline(sql, c, s );
-		addQueryToCache(c);
+		if (backend_callinline(sql, c, s ) == 0)
+			addQueryToCache(c);
+		else
+			err = 1;
 
-		if( c->curprg->def->errors){
+		if( err || c->curprg->def->errors){
 			/* restore the state */
 			MSresetInstructions(c->curprg->def, oldstop);
 			freeVariables(c,c->curprg->def, c->glb, oldvtop);
@@ -1621,13 +1622,16 @@ SQLparser(Client c)
 			MalBlkPtr mb;
 
 			scanner_query_processed(&(m->scanner));
-			backend_callinline(be, c, s);
-			trimMalBlk(c->curprg->def);
-			mb = c->curprg->def;
-			chkProgram(c->fdout, c->nspace, mb);
-			addOptimizerPipe(c, mb, "minimal_pipe");
-			optimizeMALBlock(c, mb);
-			c->curprg->def = mb;
+			if (backend_callinline(be, c, s) == 0) {
+				trimMalBlk(c->curprg->def);
+				mb = c->curprg->def;
+				chkProgram(c->fdout, c->nspace, mb);
+				addOptimizerPipe(c, mb, "minimal_pipe");
+				optimizeMALBlock(c, mb);
+				c->curprg->def = mb;
+			} else {
+				err = 1;
+			}
 		} else {
 			/* generate a factory instantiation */
 			be->q = qc_insert(m->qc,
@@ -1642,6 +1646,8 @@ SQLparser(Client c)
 					sql_escape_str(QUERY(m->scanner)));
 			scanner_query_processed(&(m->scanner));
 			be->q->code = (backend_code) backend_dumpproc(be, c, be->q, s);
+			if (!be->q->code)
+				err = 1;
 			be->q->stk = 0;
 
 			/* passed over to query cache, used during dumpproc */
@@ -1716,14 +1722,14 @@ SQLexecutePrepared(Client c, backend *be, cq *q )
 	InstrPtr pci;
 	int i;
 	str ret;
+	Symbol qcode = q->code;
 
-#ifdef DEBUG_CALLMAL
-	mnstr_printf(GDKout,"SQLexecute\n");
-	printFunction(GDKout, ((Symbol)q->code)->def, 0, LIST_MAL_ALL);
-#endif
-	mb = ((Symbol)q->code)->def;
-	if ( mb->errors )
+	if (!qcode || qcode->def->errors ) {
+		if (!qcode && *m->errstr)
+			return createException(PARSE, "SQLparser", "%s", m->errstr);
 		throw(SQL, "SQLengine", "39000!program contains errors");
+	}
+	mb = qcode->def;
 	pci = getInstrPtr(mb,0);
 	if( pci->argc >= MAXARG)
 		argv = (ValPtr *) GDKmalloc(sizeof(ValPtr) * pci->argc);
@@ -1923,7 +1929,7 @@ SQLrecompile(Client c, backend *be)
 	pushEndInstruction(c->curprg->def);
 
 	chkTypes(c->fdout, c->nspace, c->curprg->def, TRUE); /* resolve types */
-	if (c->curprg->def->errors) {
+	if (!be->q->code || c->curprg->def->errors) {
 		showErrors(c);
 		/* restore the state */
 		MSresetInstructions(c->curprg->def, oldstop);
