@@ -2199,7 +2199,6 @@ gdk_export BAT *BAThashjoin(BAT *l, BAT *r, BUN estimate);
  *
  */
 
-#define BATprepareImprints(X) (((X)->T->imprints == NULL) && !BATimprints(X))
 gdk_export void IMPSdestroy(BAT *b);
 gdk_export BAT *BATimprints(BAT *b);
 

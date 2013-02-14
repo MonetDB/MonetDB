@@ -721,9 +721,9 @@ do {                                                              \
 	MT_lock_unset(&GDKimprintsLock(ABS(b->batCacheid)), "BATimprints");
 
 	if (o != NULL) {
-		o->T->imprints = NULL; /* views always keep null pointer and need to
-								  obtain the latest imprint from the parent
-								  at query time */
+		o->T->imprints = NULL; /* views always keep null pointer and
+					  need to obtain the latest imprint
+					  from the parent at query time */
 		BBPunfix(b->batCacheid);
 		b = o;
 	}
@@ -844,7 +844,7 @@ IMPSprint(BAT *b) {
 	BUN icnt, dcnt, l, pages;
 	bte j;
 
-	if (BATprepareImprints(b))
+	if (!BATimprints(b))
 		return;
 	imprints = b->T->imprints;
 	d = (cchdc_t *) imprints->dict->base;

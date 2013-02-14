@@ -639,7 +639,7 @@ BAT_scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 	assert(!lval || !hval || (*cmp)(tl, th) <= 0);
 
 	/* build imprints if they do not exist */
-	if (use_imprints && BATprepareImprints(b)) {
+	if (use_imprints && (BATimprints(b) == NULL)) {
 		use_imprints = 0;
 	}
 
