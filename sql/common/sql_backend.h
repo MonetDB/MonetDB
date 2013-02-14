@@ -51,7 +51,6 @@ typedef struct _backend_functions {
 	alter_user_fptr fauser;
 	rename_user_fptr fruser;
 	schema_user_dependencies fschuserdep;
-	create_function fcreate_table_function;
 	resolve_function fresolve_function;
 } backend_functions;
 
@@ -66,7 +65,6 @@ extern int  backend_schema_has_user(ptr mvc, sql_schema *s);
 extern int	backend_alter_user(ptr mvc, str user, str passwd, char enc, sqlid schema_id, str oldpasswd);
 extern int	backend_rename_user(ptr mvc, str olduser, str newuser);
 extern void*	backend_schema_user_dependencies(ptr trans, int schema_id);
-extern void	backend_create_table_function(ptr trans, str name, sql_rel *rel, sql_table *t);
 extern int	backend_resolve_function(ptr trans, sql_func *f);
 
 extern backend_functions be_funcs;

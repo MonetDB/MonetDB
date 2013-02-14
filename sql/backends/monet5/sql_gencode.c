@@ -54,7 +54,8 @@
 #include <rel_bin.h>
 
 static int _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s);
-static void backend_dumpstmt(backend *be, MalBlkPtr mb, stmt *s);
+static int backend_dumpstmt(backend *be, MalBlkPtr mb, stmt *s);
+static int backend_create_func(backend *be, sql_func *f);
 
 /*
  * @+ MAL code support
@@ -261,7 +262,7 @@ relational_func_create_result( mvc *sql, MalBlkPtr mb, InstrPtr q, sql_rel *f)
 }
 
 
-static void
+static int
 _create_relational_function(mvc *m, char *name, sql_rel *rel, stmt *call)
 {
 	sql_rel *r;
@@ -314,16 +315,18 @@ _create_relational_function(mvc *m, char *name, sql_rel *rel, stmt *call)
 		}
 	}
 
-	backend_dumpstmt(be, curBlk, s);
+	if (backend_dumpstmt(be, curBlk, s) < 0)
+		return -1;
 	/* SQL function definitions meant for inlineing should not be optimized before */
 	varSetProp(curBlk, getArg(curInstr, 0), sqlfunctionProp, op_eq, NULL);
 	addQueryToCache(c);
 	if (backup)
 		c->curprg = backup;
+	return 0;
 }
 
 /* stub and remote function */
-static void
+static int
 _create_relational_remote(mvc *m, char *name, sql_rel *rel, stmt *call, prop *prp)
 {
 	Client c = MCgetClient(m->clientid);
@@ -346,7 +349,8 @@ _create_relational_remote(mvc *m, char *name, sql_rel *rel, stmt *call, prop *pr
 	/* dirty hack, rename (change first char of name) L->l, local
          * functions name start with 'l' 	 */ 
 	name[0] = 'l';
-	_create_relational_function(m, name, rel, call);
+	if (_create_relational_function(m, name, rel, call) < 0)
+		return -1;
 
 	/* create stub */
 	name[0] = old;
@@ -462,18 +466,19 @@ _create_relational_remote(mvc *m, char *name, sql_rel *rel, stmt *call, prop *pr
 	if (backup)
 		c->curprg = backup;
 	name[0] = old; /* make sure stub is called */
+	return 0;
 }
 
-static void
+static int
 monet5_create_relational_function(mvc *m, char *name, sql_rel *rel, stmt *call)
 
 {
 	prop *p = NULL;
 
 	if (rel && (p = find_prop(rel->p, PROP_REMOTE)) != NULL)
-		_create_relational_remote(m, name, rel, call, p);
+		return _create_relational_remote(m, name, rel, call, p);
 	else
-		_create_relational_function(m, name, rel, call);
+		return _create_relational_function(m, name, rel, call);
 }
 
 /*
@@ -663,7 +668,8 @@ dump_joinN(backend *sql, MalBlkPtr mb, stmt *s)
 	InstrPtr q;
 	int op1, op2, op3 = 0;
 
-	backend_create_func(sql, s->op4.funcval->func);
+	if (backend_create_func(sql, s->op4.funcval->func) < 0)
+		return -1;
 	mod = sql_func_mod(s->op4.funcval->func);
 	fimp = sql_func_imp(s->op4.funcval->func);
 
@@ -1121,7 +1127,8 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					node *n;
 					char *mod, *fimp;
 
-					backend_create_func(sql, s->op4.funcval->func);
+					if (backend_create_func(sql, s->op4.funcval->func) < 0)
+						return -1;
 					mod  = sql_func_mod(s->op4.funcval->func);
 					fimp = sql_func_imp(s->op4.funcval->func);
 
@@ -1632,7 +1639,8 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			char *mod, *fimp;
 			int l = _dumpstmt(sql, mb, s->op1);
 
-			backend_create_func(sql, s->op4.funcval->func);
+			if (backend_create_func(sql, s->op4.funcval->func) < 0)
+				return -1;
 			mod = sql_func_mod(s->op4.funcval->func);
 			fimp = sql_func_imp(s->op4.funcval->func);
 			if (s->op1->nrcols && strcmp(fimp, "not_uniques") == 0) {
@@ -1666,7 +1674,8 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			int l = _dumpstmt(sql, mb, s->op1);
 			int r = _dumpstmt(sql, mb, s->op2);
 
-			backend_create_func(sql, s->op4.funcval->func);
+			if (backend_create_func(sql, s->op4.funcval->func) < 0)
+				return -1;
 			mod  = sql_func_mod(s->op4.funcval->func);
 			fimp = sql_func_imp(s->op4.funcval->func);
 
@@ -1713,7 +1722,8 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			/* dump operands */
 			_dumpstmt(sql, mb, s->op1);
 
-			backend_create_func(sql, f->func);
+			if (backend_create_func(sql, f->func) < 0)
+				return -1;
 			mod = sql_func_mod(f->func);
 			fimp = sql_func_imp(f->func);
 			if (s->nrcols) {
@@ -1769,7 +1779,8 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			/* dump args */
 			if (s->op1)
 				_dumpstmt(sql, mb, s->op1);
-			monet5_create_relational_function(sql->mvc, fimp, rel, s);
+			if (monet5_create_relational_function(sql->mvc, fimp, rel, s) < 0)
+				return -1;
 
 			q = newStmt(mb, mod, fimp);
 			q = relational_func_create_result(sql->mvc, mb, q, rel);
@@ -1791,7 +1802,8 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			int restype = s->op4.aggrval->res.type->localtype;
 			int complex_aggr = 0;
 
-			backend_create_func(sql, s->op4.aggrval->aggr);
+			if (backend_create_func(sql, s->op4.aggrval->aggr) < 0)
+				return -1;
 			mod = s->op4.aggrval->aggr->mod;
 			aggrfunc = s->op4.aggrval->aggr->imp;
 
@@ -2242,7 +2254,8 @@ static void setCommitProperty(MalBlkPtr mb){
 	varSetProperty(mb, getArg(getInstrPtr(mb,0),0), "autoCommit","=", &cst);
 }
 
-static void backend_dumpstmt(backend *be, MalBlkPtr mb, stmt *s)
+static int 
+backend_dumpstmt(backend *be, MalBlkPtr mb, stmt *s)
 {
 	mvc *c = be->mvc;
 	stmt **stmts = stmt_array(c->sa, s);
@@ -2259,9 +2272,11 @@ static void backend_dumpstmt(backend *be, MalBlkPtr mb, stmt *s)
 	clear_stmts(stmts);
 	while(stmts[nr]) {
 		stmt *s = stmts[nr++];
-		(void)_dumpstmt(be, mb, s);
+		if (_dumpstmt(be, mb, s) < 0)
+			return -1;
 	}
-	(void)_dumpstmt(be, mb, s);
+	if (_dumpstmt(be, mb, s) < 0)
+		return -1;
 
 	be->mvc_var = old_mv;
 	if (c->caching && (c->type == Q_SCHEMA || c->type == Q_TRANS)) {
@@ -2276,9 +2291,10 @@ static void backend_dumpstmt(backend *be, MalBlkPtr mb, stmt *s)
 		q->barrier = RETURNsymbol;
 	}
 	pushEndInstruction(mb);
+	return 0;
 }
 
-void
+int
 backend_callinline(backend *be, Client c, stmt *s )
 {
 	mvc *m = be->mvc;
@@ -2312,8 +2328,10 @@ backend_callinline(backend *be, Client c, stmt *s )
 			}
 		}
 	}
-	backend_dumpstmt(be, curBlk, s);
+	if (backend_dumpstmt(be, curBlk, s) < 0)
+		return -1;
 	c->curprg->def = curBlk;
+	return 0;
 }
 
 Symbol
@@ -2336,8 +2354,9 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 		sql_subfunc *cq = sql_find_func(m->sa, sys, "keepcall", NR_KEEPCALL_ARGS, F_PROC);
 
 		assert(kq && cq);
-		backend_create_func(be, kq->func);
-		backend_create_func(be, cq->func);
+		if (backend_create_func(be, kq->func) < 0 ||
+		    backend_create_func(be, cq->func) < 0)
+			return NULL;
 		/* only needed once */
 		m->history = 2;
 	}
@@ -2383,7 +2402,8 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 		}
 	}
 
-	backend_dumpstmt(be, mb, s);
+	if (backend_dumpstmt(be, mb, s) < 0)
+		return NULL;
 	Toptimize = GDKusec();
 	Tparse = Toptimize - m->Tparse;
 
@@ -2460,53 +2480,6 @@ backend_call(backend *be, Client c, cq *cq)
 	}
 }
 
-void
-monet5_create_table_function(ptr M, char *name, sql_rel *rel, sql_table *t)
-{
-	sql_rel *r;
-	mvc *m = (mvc*)M;
-	Client c = MCgetClient(m->clientid);
-	backend *be = (backend *) c->sqlcontext;
-	MalBlkPtr curBlk = 0;
-	InstrPtr curInstr = 0;
-	Symbol backup = NULL;
-	stmt *s;
-
-	(void)t;
-	r = rel_optimizer(m, rel);
-	s = rel_bin(m, r);
-
-	if (s->type == st_list && s->nrcols == 0 && s->key) {
-		/* row to columns */
-		node *n;
-		list *l = sa_list(m->sa);
-
-		for(n=s->op4.lval->h; n; n = n->next)
-			list_append(l, const_column(m->sa, n->data));
-		s = stmt_list(m->sa, l);
-	}
-	s = stmt_table(m->sa, s, 1);
-	s = stmt_return(m->sa, s, 0);
-
-	backup = c->curprg;
-	c->curprg = newFunction(userRef,putName(name,strlen(name)), FUNCTIONsymbol);
-
-	curBlk = c->curprg->def;
-	curInstr = getInstrPtr(curBlk, 0);
-
-	curInstr = table_func_create_result(curBlk, curInstr, t);
-	setVarUDFtype(curBlk,0);
-
-	/* no ops */
-
-	backend_dumpstmt(be, curBlk, s);
-	/* SQL function definitions meant for inlineing should not be optimized before */
-	varSetProp(curBlk, getArg(curInstr, 0), sqlfunctionProp, op_eq, NULL);
-	addQueryToCache(c);
-	if (backup)
-		c->curprg = backup;
-}
-
 int
 monet5_resolve_function(ptr M, sql_func *f)
 {
@@ -2549,7 +2522,7 @@ monet5_resolve_function(ptr M, sql_func *f)
 }
 
 /* TODO handle aggr */
-void
+static int
 backend_create_func(backend *be, sql_func *f)
 {
 	mvc *m = be->mvc;
@@ -2564,7 +2537,7 @@ backend_create_func(backend *be, sql_func *f)
 
 	/* nothing to do for internal and ready (not recompiling) functions */
 	if (!f->sql || f->sql > 1)
-		return;
+		return 0;
 	f->sql++;
  	sa = sa_create();
 	m->session->schema = f->s;
@@ -2573,13 +2546,12 @@ backend_create_func(backend *be, sql_func *f)
 	m->session->schema = schema;
 	if (s && !f->sql) { /* native function */
 		sa_destroy(sa);
-		return;
+		return 0;
 	}
 
 	if (!s) {
-		fputs(m->errstr, stderr);
 		sa_destroy(sa);
-		return;
+		return -1;
 	}
 	assert(s);
 
@@ -2623,7 +2595,8 @@ backend_create_func(backend *be, sql_func *f)
 	if ( m->session->auto_commit)
 		setCommitProperty(curBlk);
 
-	backend_dumpstmt(be, curBlk, s);
+	if (backend_dumpstmt(be, curBlk, s) < 0)
+		return -1;
 	/* selectively make functions available for inlineing */
 	/* for the time being we only inline scalar functions */
 	/* and only if we see a single return value */
@@ -2649,4 +2622,5 @@ backend_create_func(backend *be, sql_func *f)
 	addQueryToCache(c);
 	if (backup)
 		c->curprg = backup;
+	return 0;
 }

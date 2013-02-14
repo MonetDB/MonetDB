@@ -1033,8 +1033,6 @@ rel_parse_value(mvc *m, char *query, char emode)
 	m->argc = 0;
 	m->sym = NULL;
 	m->errstr[0] = '\0';
-	/* via views we give access to protected objects */
-	m->user_id = USER_MONETDB;
 
 	(void) sqlparse(m);	/* blindly ignore errors */
 	
@@ -2648,8 +2646,6 @@ sql_parse(mvc *m, sql_allocator *sa, char *query, char mode)
 	m->sym = NULL;
 	m->errstr[0] = '\0';
 	m->errstr[ERRSIZE-1] = '\0';
-	/* via views we give access to protected objects */
-	m->user_id = USER_MONETDB;
 
 	/* create private allocator */
 	m->sa = (sa)?sa:sa_create();

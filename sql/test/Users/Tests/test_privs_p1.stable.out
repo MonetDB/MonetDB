@@ -1,0 +1,43 @@
+stdout of test 'test_privs_p1` in directory 'sql/test/Users` itself:
+
+
+# 13:35:20 >  
+# 13:35:20 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=35552" "--set" "mapi_usock=/var/tmp/mtest-14654/.s.monetdb.35552" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/niels/scratch/rc-clean/Linux-x86_64/var/MonetDB/mTests_sql_test_Users" "--set" "mal_listing=0"
+# 13:35:20 >  
+
+# MonetDB 5 server v11.15.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_Users', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 3.778 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2013 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://niels.nesco.mine.nu:35552/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-14654/.s.monetdb.35552
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 13:35:20 >  
+# 13:35:20 >  "/usr/bin/python2" "test_privs_p1.SQL.py" "test_privs_p1"
+# 13:35:20 >  
+
+#select * from test;
+% my_schema.test,	my_schema.test # table_name
+% i,	b # name
+% int,	bigint # type
+% 1,	1 # length
+#insert into test values(1,1);
+[ 1	]
+#update test set b = 2;
+[ 1	]
+#delete from test;
+[ 1	]
+
+# 13:35:21 >  
+# 13:35:21 >  "Done."
+# 13:35:21 >  
+
