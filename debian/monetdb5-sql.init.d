@@ -71,7 +71,7 @@ case "$1" in
 
         if running; then
             echo "$NAME is already running"
-            exit 1
+            exit 0
         fi
 
         init
@@ -83,10 +83,6 @@ case "$1" in
         else
             echo " ERROR, $NAME didn't start"
         fi
-
-        if [ "$START_ALL_DBS" = "yes" ]; then
-             sudo -u monetdb "/usr/bin/monetdb start -a"
-        fi
         ;;
   stop)
         if running ;  then
@@ -94,7 +90,7 @@ case "$1" in
             start-stop-daemon --stop --pidfile $PIDFILE --exec $DAEMON -c monetdb:monetdb -- stop ${DBFARM}
             echo "$NAME."
 		else
-			echo "$NAME not running (${PIDFILE}."
+			echo "$NAME not running."
         fi
         ;;
   restart)
