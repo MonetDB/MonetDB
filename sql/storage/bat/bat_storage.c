@@ -105,6 +105,14 @@ delta_bind_bat( sql_delta *bat, int access, int temp)
 	if (temp || access == RD_INS) {
 		assert(bat->ibid);
 		b = temp_descriptor(bat->ibid);
+		if (BATcount(b) && bat->ubid) {
+			BAT *upd = temp_descriptor(bat->ubid), *updins;
+			
+			updins = BATsemijoin(upd, b);
+			bat_destroy(upd);
+			void_replace_bat(b, updins, TRUE);
+			bat_destroy(updins);
+		}
 	} else if (!bat->bid) {
 		int tt = 0;
 		b = temp_descriptor(bat->ibid);
