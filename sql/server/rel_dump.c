@@ -707,7 +707,7 @@ read_exps(mvc *sql, sql_rel *lrel, sql_rel *rrel, char *r, int *pos, char bracke
 static sql_exp*
 exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, char *r, int *pos, int grp) 
 {
-	comp_type f = cmp_equal;
+	int f = -1;
 	int not = 1, old, d=0, s=0, unique = 0, no_nils = 0;
 	char *tname, *cname = NULL, *e, *b = r + *pos, *st;
 	sql_exp *exp = NULL;
@@ -862,6 +862,11 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, char *r, int *pos, int grp)
 		exp->p = prop_create(sql->sa, PROP_HASHIDX, exp->p);
 		skipWS(r,pos);
 	}
+	if (strncmp(r+*pos, "HASHCOL",  strlen("HASHCOL")) == 0) {
+		(*pos)+= (int) strlen("HASHCOL");
+		exp->p = prop_create(sql->sa, PROP_HASHCOL, exp->p);
+		skipWS(r,pos);
+	}
 	if (strncmp(r+*pos, "FETCH",  strlen("FETCH")) == 0) {
 		(*pos)+= (int) strlen("FETCH");
 		exp->p = prop_create(sql->sa, PROP_FETCH, exp->p);
@@ -924,7 +929,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, char *r, int *pos, int grp)
 	default:
 		return exp;
 	}
-	if (f) {
+	if (f >= 0) {
 		sql_exp *e;
 
 		skipWS(r,pos);
@@ -993,6 +998,10 @@ rel_read(mvc *sql, char *r, int *pos)
 			exps = read_exps(sql, rel, NULL, r, pos, '[', 0);
 			if (exps && list_length(exps))
 				rel->exps = exps;
+			if (strncmp(r+*pos, "COUNT",  strlen("COUNT")) == 0) {
+				(*pos)+= (int) strlen("COUNT");
+				skipWS( r, pos);
+			}
 			return rel;
 		} else { /* top N */
 			*pos += (int) strlen("top N");
@@ -1058,22 +1067,23 @@ rel_read(mvc *sql, char *r, int *pos)
 		rel->exps = exps;
 		return rel;
 	case 's':
-		*pos += (int) strlen("sample");
-		skipWS(r, pos);
-		if (r[*pos] != '(') 
-			return sql_error(sql, -1, "sample: missing '('\n");
-		(*pos)++;
-		skipWS(r, pos);
-		nrel = rel_read(sql, r, pos);
-		if (r[*pos] != ')') 
-			return sql_error(sql, -1, "sample: missing ')'\n");
-		(*pos)++;
-		skipWS(r, pos);
-		exps = read_exps(sql, nrel, NULL, r, pos, '[', 0);
-		rel = rel_sample(sql->sa, nrel, exps);
-		return rel;
 	case 'a':
-		if (r[*pos+2] == 'l') {
+		if (r[*pos+1] == 'a') {
+			*pos += (int) strlen("sample");
+			skipWS(r, pos);
+			if (r[*pos] != '(') 
+				return sql_error(sql, -1, "sample: missing '('\n");
+			(*pos)++;
+			skipWS(r, pos);
+			nrel = rel_read(sql, r, pos);
+			if (r[*pos] != ')') 
+				return sql_error(sql, -1, "sample: missing ')'\n");
+			(*pos)++;
+			skipWS(r, pos);
+			exps = read_exps(sql, nrel, NULL, r, pos, '[', 0);
+			rel = rel_sample(sql->sa, nrel, exps);
+			return rel;
+		} else if (r[*pos+2] == 'l') {
 			*pos += (int) strlen("select");
 			skipWS(r, pos);
 			if (r[*pos] != '(') 
