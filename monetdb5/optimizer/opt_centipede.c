@@ -563,8 +563,8 @@ OPTbakePlans(Client cntxt, MalBlkPtr mb, Slices *slices)
 */
 		if (    getModuleId(p) == batRef && getFunctionId(p) == mirrorRef )  {
 			if (head[getArg(p,1)]){
-				head[getArg(p,0)] = head[getArgs(p,1)];
-				tail[getArg(p,0)] = head[getArgs(p,1)];
+				head[getArg(p,0)] = head[getArg(p,1)];
+				tail[getArg(p,0)] = head[getArg(p,1)];
 				status[i] = PARTITION;
 			}
 		} else
