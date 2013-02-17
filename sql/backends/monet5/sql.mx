@@ -7614,10 +7614,12 @@ RAstatement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	mvc *m = NULL;
 	str msg = getSQLContext(cntxt, mb, &m, &b);
 	sql_rel *rel;
+	list *refs;
 
 	if (!m->sa)
 		m->sa = sa_create();
- 	rel = rel_read(m, *expr, &pos);
+ 	refs = sa_list(m->sa);
+ 	rel = rel_read(m, *expr, &pos, refs);
 	if (rel) {
 		int oldvtop = cntxt->curprg->def->vtop;
 		int oldstop = cntxt->curprg->def->stop;
