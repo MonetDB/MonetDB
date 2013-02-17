@@ -7615,8 +7615,8 @@ RAstatement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg = getSQLContext(cntxt, mb, &m, &b);
 	sql_rel *rel;
 
-	assert(m->sa == NULL);
-	m->sa = sa_create();
+	if (!m->sa)
+		m->sa = sa_create();
  	rel = rel_read(m, *expr, &pos);
 	if (rel) {
 		int oldvtop = cntxt->curprg->def->vtop;
@@ -7624,11 +7624,8 @@ RAstatement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		stmt *s;
 		char *msg;
 
-		rel_print(m, rel, 0);
-		if (*opt) { 
+		if (*opt) 
 			rel = rel_optimizer(m, rel);
-			rel_print(m, rel, 0);
-		}
 		s = output_rel_bin(m, rel);
 		rel_destroy(rel);
 
