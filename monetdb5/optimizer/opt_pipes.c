@@ -140,57 +140,11 @@ struct PIPELINES {
 	 "optimizer.multiplex();"
 	 "optimizer.garbageCollector();",
 	 "stable", NULL, NULL, 1},
-/* The default pipeline used in the November 2009 release
-	{"nov2009_pipe",	
-	 "optimizer.inline();"
-	 "optimizer.remap();"
-	 "optimizer.costModel();"
-	 "optimizer.coercions();"
-	 "optimizer.evaluate();"
-	 "optimizer.emptySet();"
-	 "optimizer.aliases();"
-	 "optimizer.mergetable();"
-	 "optimizer.deadcode();"
-	 "optimizer.constants();"
-	 "optimizer.commonTerms();"
-	 "optimizer.groups();"
-	 "optimizer.joinPath();"
-	 "optimizer.deadcode();"
-	 "optimizer.reduce();"
-	 "optimizer.dataflow();"
-	 "optimizer.history();"
-	 "optimizer.multiplex();"
-	 "optimizer.garbageCollector();",
-	 "stable", NULL, NULL, 1},
- */
 /* Experimental pipelines stressing various components under
  * development.  Do not use any of these pipelines in production
  * settings!
  */
-/* Not yet compiled
-	{"replication_pipe",	
-	 "optimizer.inline();"
-	 "optimizer.remap();"
-	 "optimizer.costModel();"
-	 "optimizer.coercions();"
-	 "optimizer.evaluate();"
-	 "optimizer.emptySet();"
-	 "optimizer.aliases();"
-	 "optimizer.mergetable();"
-	 "optimizer.deadcode();"
-	 "optimizer.constants();"
-	 "optimizer.commonTerms();"
-	 "optimizer.groups();"
-	 "optimizer.joinPath();"
-	 "optimizer.deadcode();"
-	 "optimizer.reduce();"
-	 "optimizer.dataflow();"
-	 "optimizer.history();"
-	 "optimizer.replication();"
-	 "optimizer.multiplex();"
-	 "optimizer.garbageCollector();",
-	 "experimental", NULL, NULL, 1},
-* The recycler needs a patch to align with the new select implementation
+/* The recycler needs a patch to align with the new select implementation
 	{"recycler_pipe",
 	 "optimizer.inline();"
 	 "optimizer.remap();"
@@ -242,7 +196,7 @@ struct PIPELINES {
 /*
  * The centipede pipe line aims at a map-reduce style of query processing
  */
-	{"centipede",
+	{"centipede_pipe",
 	 "optimizer.inline();"
 	 "optimizer.remap();"
 	 "optimizer.costModel();"
@@ -264,7 +218,7 @@ struct PIPELINES {
 	 "optimizer.history();"
 	 "optimizer.multiplex();"
 	 "optimizer.garbageCollector();",
-	 "experimental", "OPTcentipede", NULL, 1},
+	 "experimental", NULL, NULL, 1},
 #endif
 /* The default + dictionary*/
 	{"dictionary_pipe",
