@@ -55,7 +55,6 @@
 
 static int _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s);
 static int backend_dumpstmt(backend *be, MalBlkPtr mb, stmt *s);
-static int backend_create_func(backend *be, sql_func *f);
 
 /*
  * @+ MAL code support
@@ -2521,7 +2520,7 @@ monet5_resolve_function(ptr M, sql_func *f)
 }
 
 /* TODO handle aggr */
-static int
+int
 backend_create_func(backend *be, sql_func *f)
 {
 	mvc *m = be->mvc;
