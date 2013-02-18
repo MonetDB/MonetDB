@@ -1,7 +1,26 @@
-pattern optimizer.DVframework():str
-address OPTdvf
+pattern optimizer.DVframeworkI():str
+address OPTdvfIterative
+comment "Inject a static MAL code to iteratively mount files, right after knowing about the files to be mounted.";
+
+pattern optimizer.DVframeworkI(mod:str, fcn:str):str
+address OPTdvfIterative
+comment "Inject a static MAL code to iteratively mount files, right after knowing about the files to be mounted.";
+
+
+pattern optimizer.DVframeworkS():str
+address OPTdvfSemiparallel
 comment "Inject an execution-time MAL plan modifier call right after knowing about the files to be mounted.";
 
-pattern optimizer.DVframework(mod:str, fcn:str):str
-address OPTdvf
+pattern optimizer.DVframeworkS(mod:str, fcn:str):str
+address OPTdvfSemiparallel
 comment "Inject an execution-time MAL plan modifier call right after knowing about the files to be mounted.";
+
+
+pattern optimizer.DVframeworkP():str
+address OPTdvfParallel
+comment "Inject an execution-time MAL plan modifier call right after knowing about the files to be mounted.";
+
+pattern optimizer.DVframeworkP(mod:str, fcn:str):str
+address OPTdvfParallel
+comment "Inject an execution-time MAL plan modifier call right after knowing about the files to be mounted.";
+

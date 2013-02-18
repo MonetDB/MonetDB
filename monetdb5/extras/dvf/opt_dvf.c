@@ -96,7 +96,7 @@
 #include "opt_statistics.h"
 
 static int
-OPTdvfImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+OPTdvfImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int mode)
 {
 	//TODO: Replace these with a proper (global) constants
 	str sys_schema_name = "sys";
@@ -111,7 +111,7 @@ OPTdvfImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	//state variables (instruction index) numbered with state
 	int i1 = 0, i2 = 0;
 
-	InstrPtr *old = NULL, q = NULL, r = NULL, s = NULL, t = NULL;
+	InstrPtr *old = NULL, q = NULL, r = NULL, s = NULL, t = NULL, *ps_iter = NULL;
 	int i, limit, actions = 0;
 
 	stk = stk; //to escape 'unused' parameter error.
@@ -124,7 +124,10 @@ OPTdvfImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* save the old stage of the MAL block */
 	old = mb->stmt;
 	limit= mb->stop;
-
+	
+	ps_iter = ps_iter;
+	printf("mode:%d\n", mode);
+	
 	/* iterate over the instructions of the input MAL program */
 	for (i = 1; i < limit; i++) /* the plan signature can be skipped safely */
 	{
@@ -200,54 +203,63 @@ OPTdvfImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					//throw(MAL,"optimizer.DVframework", "Schema of %s vault is not well-organized.\n", getVarConstant(mb, getArg(p, 2)).val.sval);
 				case 2:
 					/* pattern found! What to do */
-					/* (t1, t2) := group.done(v6);
-					 *  t3 := bat.mirror(t1);
-					 *  t4 := algebra.leftjoin(t3, v6);
-					 *  dvf.plan_modifier(schema_name, t4);
-					 */
+					
+					if(mode == 1)
+					{
+						
+						
+					}
+					else
+					{
+						/* (t1, t2) := group.done(v6);
+						*  t3 := bat.mirror(t1);
+						*  t4 := algebra.leftjoin(t3, v6);
+						*  dvf.plan_modifier(schema_name, t4);
+						*/
 
-					/* create group.done instruction */
-					r = newInstruction(mb, ASSIGNsymbol);
-					setModuleId(r, groupRef);
-					setFunctionId(r, doneRef);
-					r = pushReturn(mb, r, newTmpVariable(mb, TYPE_bat));
-					r = pushReturn(mb, r, newTmpVariable(mb, TYPE_bat));
-					r = pushArgument(mb, r, getArg(old[i2], 0));
+						/* create group.done instruction */
+						r = newInstruction(mb, ASSIGNsymbol);
+						setModuleId(r, groupRef);
+						setFunctionId(r, doneRef);
+						r = pushReturn(mb, r, newTmpVariable(mb, TYPE_bat));
+						r = pushReturn(mb, r, newTmpVariable(mb, TYPE_bat));
+						r = pushArgument(mb, r, getArg(old[i2], 0));
 
 
-					/* create bat.mirror instruction */
-					s = newInstruction(mb, ASSIGNsymbol);
-					setModuleId(s, batRef);
-					setFunctionId(s, mirrorRef);
-					s = pushReturn(mb, s, newTmpVariable(mb, TYPE_bat));
-					s = pushArgument(mb, s, getArg(r, 0));
+						/* create bat.mirror instruction */
+						s = newInstruction(mb, ASSIGNsymbol);
+						setModuleId(s, batRef);
+						setFunctionId(s, mirrorRef);
+						s = pushReturn(mb, s, newTmpVariable(mb, TYPE_bat));
+						s = pushArgument(mb, s, getArg(r, 0));
 
-					/* create algebra.leftjoin instruction */
-					t = newInstruction(mb, ASSIGNsymbol);
-					setModuleId(t, algebraRef);
-					setFunctionId(t, leftjoinRef);
-					t = pushReturn(mb, t, newTmpVariable(mb, TYPE_bat));
-					t = pushArgument(mb, t, getArg(s, 0));
-					t = pushArgument(mb, t, getArg(old[i2], 0));
+						/* create algebra.leftjoin instruction */
+						t = newInstruction(mb, ASSIGNsymbol);
+						setModuleId(t, algebraRef);
+						setFunctionId(t, leftjoinRef);
+						t = pushReturn(mb, t, newTmpVariable(mb, TYPE_bat));
+						t = pushArgument(mb, t, getArg(s, 0));
+						t = pushArgument(mb, t, getArg(old[i2], 0));
 
-					/* create dvf.plan_modifier instruction */
-					q = newInstruction(mb, ASSIGNsymbol);
-					q->argc = 3;
-					q->retc = 1;
-					setModuleId(q, dvfRef);
-					setFunctionId(q, planmodifierRef);
-					q = pushReturn(mb, q, newTmpVariable(mb, TYPE_void));
-					getArg(q, 1) = getArg(p, 2);
-					getArg(q, 2) = getArg(t, 0);
+						/* create dvf.plan_modifier instruction */
+						q = newInstruction(mb, ASSIGNsymbol);
+						q->argc = 3;
+						q->retc = 1;
+						setModuleId(q, dvfRef);
+						setFunctionId(q, planmodifierRef);
+						q = pushReturn(mb, q, newTmpVariable(mb, TYPE_void));
+						getArg(q, 1) = getArg(p, 2);
+						getArg(q, 2) = getArg(t, 0);
 
-					/* insert the new instruction in pc i2+1 */
-					insertInstruction(mb, q, i2+1);
-					insertInstruction(mb, t, i2+1);
-					insertInstruction(mb, s, i2+1);
-					insertInstruction(mb, r, i2+1);
+						/* insert the new instruction in pc i2+1 */
+						insertInstruction(mb, q, i2+1);
+						insertInstruction(mb, t, i2+1);
+						insertInstruction(mb, s, i2+1);
+						insertInstruction(mb, r, i2+1);
 
-					actions++;
-					goto finish;
+						actions++;
+						goto finish;
+					}
 			}
 		}
 	}
@@ -257,7 +269,7 @@ finish:
 
 }
 
-str OPTdvf(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+str OPTdvfIterative(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	str msg= MAL_SUCCEED;
 	lng t,clk= GDKusec();
@@ -272,7 +284,63 @@ str OPTdvf(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		addtoMalBlkHistory(mb,"dvf");
 		return MAL_SUCCEED;
 	}
-	actions= OPTdvfImplementation(cntxt, mb,stk,p);
+	actions= OPTdvfImplementation(cntxt, mb,stk,p, 1);
+	msg= optimizerCheck(cntxt, mb, "optimizer.DVframework", actions, t=(GDKusec() - clk),OPT_CHECK_ALL);
+	OPTDEBUGdvf {
+		mnstr_printf(cntxt->fdout,"=FINISHED opt_dvf %d\n",actions);
+		printFunction(cntxt->fdout,mb,0,LIST_MAL_STMT | LIST_MAPI);
+	}
+	DEBUGoptimizers
+	mnstr_printf(cntxt->fdout,"#opt_dvf: " LLFMT " ms\n",t);
+	QOTupdateStatistics("dvf",actions,t);
+	addtoMalBlkHistory(mb,"dvf");
+	return msg;
+}
+
+str OPTdvfSemiparallel(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
+	str msg= MAL_SUCCEED;
+	lng t,clk= GDKusec();
+	int actions = 0;
+	
+	optimizerInit();
+	if( p )
+		removeInstruction(mb, p);
+	
+	if( mb->errors ){
+		/* when we have errors, we still want to see them */
+		addtoMalBlkHistory(mb,"dvf");
+		return MAL_SUCCEED;
+	}
+	actions= OPTdvfImplementation(cntxt, mb,stk,p, 2);
+	msg= optimizerCheck(cntxt, mb, "optimizer.DVframework", actions, t=(GDKusec() - clk),OPT_CHECK_ALL);
+	OPTDEBUGdvf {
+		mnstr_printf(cntxt->fdout,"=FINISHED opt_dvf %d\n",actions);
+		printFunction(cntxt->fdout,mb,0,LIST_MAL_STMT | LIST_MAPI);
+	}
+	DEBUGoptimizers
+	mnstr_printf(cntxt->fdout,"#opt_dvf: " LLFMT " ms\n",t);
+	QOTupdateStatistics("dvf",actions,t);
+	addtoMalBlkHistory(mb,"dvf");
+	return msg;
+}
+
+str OPTdvfParallel(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
+	str msg= MAL_SUCCEED;
+	lng t,clk= GDKusec();
+	int actions = 0;
+	
+	optimizerInit();
+	if( p )
+		removeInstruction(mb, p);
+	
+	if( mb->errors ){
+		/* when we have errors, we still want to see them */
+		addtoMalBlkHistory(mb,"dvf");
+		return MAL_SUCCEED;
+	}
+	actions= OPTdvfImplementation(cntxt, mb,stk,p, 3);
 	msg= optimizerCheck(cntxt, mb, "optimizer.DVframework", actions, t=(GDKusec() - clk),OPT_CHECK_ALL);
 	OPTDEBUGdvf {
 		mnstr_printf(cntxt->fdout,"=FINISHED opt_dvf %d\n",actions);

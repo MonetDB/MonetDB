@@ -35,7 +35,9 @@
 #include "opt_support.h"
 
 /*@:exportOptimizer(dvf)@*/
-opt_dvf_export str OPTdvf(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+opt_dvf_export str OPTdvfIterative(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+opt_dvf_export str OPTdvfSemiparallel(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+opt_dvf_export str OPTdvfParallel(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
 //TODO: What are the following two lines?
 /* #define DEBUG_OPT_DVF 61 
