@@ -406,7 +406,10 @@ dosum(const void *values, int nonil, oid seqb, BUN start, BUN end,
 	if (nils == 0 && nil_if_empty) {
 		/* figure out whether there were any empty groups
 		 * (that result in a nil value) */
-		seen[ngrp >> 5] |= ~0U << (ngrp & 0x1F); /* fill last slot */
+		if (ngrp & 0x1F) {
+			/* fill last slot */
+			seen[ngrp >> 5] |= ~0U << (ngrp & 0x1F);
+		}
 		for (i = 0, ngrp = (ngrp + 31) / 32; i < ngrp; i++) {
 			if (seen[i] != ~0U) {
 				nils = 1;
@@ -888,7 +891,10 @@ doprod(const void *values, oid seqb, BUN start, BUN end, void *results,
 	if (nils == 0 && nil_if_empty) {
 		/* figure out whether there were any empty groups
 		 * (that result in a nil value) */
-		seen[ngrp >> 5] |= ~0U << (ngrp & 0x1F); /* fill last slot */
+		if (ngrp & 0x1F) {
+			/* fill last slot */
+			seen[ngrp >> 5] |= ~0U << (ngrp & 0x1F);
+		}
 		for (i = 0, ngrp = (ngrp + 31) / 32; i < ngrp; i++) {
 			if (seen[i] != ~0U) {
 				nils = 1;
