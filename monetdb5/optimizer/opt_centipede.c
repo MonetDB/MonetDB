@@ -42,7 +42,7 @@ typedef	struct{
 	str schema, table, column;
 	int type, slice;	
 	int lslices, hslices;  /* variables holding the range bound */
-	BUN rowcnt;
+	lng rowcnt;
 	ValRecord bounds[MAXSITES];
 } Slices;
 
@@ -126,14 +126,13 @@ OPTexecController(Client cntxt, MalBlkPtr mb, MalBlkPtr pmb, Slices *slices, oid
 	}
 
 	/* under dataflow control, initialize the variables 
-	   Arguments are considered defined already
+	   Arguments are considered defined already */
 	for ( k=0 ; k < nrpack ; k++){
 		q = newInstruction(cmb,ASSIGNsymbol);
 		getArg(q,0) = getArg(pack[k],0);
 		pushNil(cmb,q, getArgType(cmb,pack[k],0));
 		pushInstruction(cmb,q);
 	}
-	*/
 
 #ifdef REMOTE_EXECUTION
 	q= newFcnCall(cmb,schedulerRef,srvpoolRef);
@@ -154,6 +153,7 @@ OPTexecController(Client cntxt, MalBlkPtr mb, MalBlkPtr pmb, Slices *slices, oid
 	p= q;
 #endif
 
+	/* Inject the calls to the individual sub plans */
 	for ( i = 0; i < nrservers ; i++) {
 		q= copyInstruction(getInstrPtr(pmb,0));
 		q->token = ASSIGNsymbol;
@@ -220,10 +220,9 @@ OPTexecController(Client cntxt, MalBlkPtr mb, MalBlkPtr pmb, Slices *slices, oid
 				snprintf(buf,BUFSIZ,"grp%d",k);
 				setVarName(cmb, getArg(p,k), GDKstrdup(buf));
 				setVarType(cmb, getArg(p,k), newBatType(TYPE_oid, TYPE_oid));
-			} else
-			{
+			} else {
 				pushInstruction(cmb, pack[k]);
-				getArg(pack[k],0)= getArg(p,k);
+				setVarUsed(cmb,getArg(pack[k],0));
 			}
 		}
 	}
@@ -243,15 +242,25 @@ OPTexecController(Client cntxt, MalBlkPtr mb, MalBlkPtr pmb, Slices *slices, oid
 	for( k= 0; k< ret->retc; k++) {
 		getArg(ret,k) = getArg(q,k);
 		setVarUsed(cmb,getArg(ret,k));
-		ret = pushArgument(cmb,ret,getArg(ret,k));
+		//ret = pushArgument(cmb,ret,getArg(ret,k));
+		ret = pushArgument(cmb,ret,getArg(pack[k],0));
+		//mnstr_printf(cntxt->fdout,"#return map %d = %d\n", getArg(ret,k), getArg(pack[k],0));
 	}
 	pushInstruction(cmb,ret);
 	getInstrPtr(cmb,0)->argc -= 2;
 
 	pushEndInstruction(cmb);
+#ifdef _DEBUG_OPT_CENTIPEDE_
+	mnstr_printf(cntxt->fdout,"#rough cntrl plan %d \n", cmb->errors);
+	printFunction(cntxt->fdout, cmb, 0, LIST_MAL_STMT);
+#endif
 
-	optimizeMALBlock(cntxt, cmb);
+	//optimizeMALBlock(cntxt, cmb);
 	chkProgram(cntxt->fdout, cntxt->nspace, cmb);
+#ifdef _DEBUG_OPT_CENTIPEDE_
+	mnstr_printf(cntxt->fdout,"#rough cntrl plan %d \n", cmb->errors);
+	printFunction(cntxt->fdout, cmb, 0, LIST_MAL_STMT);
+#endif
 	GDKfree(alias);
 	GDKfree(pack);
 
@@ -435,7 +444,7 @@ OPTbakePlans(Client cntxt, MalBlkPtr mb, Slices *slices)
 {
 	int *status,*vars;
 	int i, j, k, limit, last;
-	InstrPtr ret, orig, call, p = NULL, *old;
+	InstrPtr ret, orig, call, q = NULL, p = NULL, *old;
 	Symbol s;
 	MalBlkPtr plan, cntrl, stub;
 	str msg= MAL_SUCCEED;
@@ -724,6 +733,14 @@ OPTbakePlans(Client cntxt, MalBlkPtr mb, Slices *slices)
 	pushInstruction(plan,p);
 
 
+	/* under dataflow control, initialize the variables 
+	   Arguments are considered defined already */
+	for ( k=0 ; k < ret->retc ; k++){
+		q = newInstruction(plan,ASSIGNsymbol);
+		getArg(q,0) = getArg(ret,k);
+		pushNil(plan,q, getArgType(plan,ret,k));
+		pushInstruction(plan,q);
+	}
 	/* keep the original variable list for the caller */
 	orig = copyInstruction(ret);
 	for ( i = 1; i < limit ; i++) 
@@ -737,7 +754,6 @@ OPTbakePlans(Client cntxt, MalBlkPtr mb, Slices *slices)
 			for( j= 0; j< ret->retc; j++) {
 				if (sscanf(getVarName(plan, getArg(ret,j)),"grp%d",&k) == 1){
 					char buf[BUFSIZ];
-					InstrPtr q;
 					/* grp := algebra.join(ret,src) */
 					q = newStmt(plan, algebraRef, joinRef);
 					snprintf(buf,BUFSIZ,"grp%dvalues",k);
