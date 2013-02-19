@@ -251,8 +251,8 @@ OPTexecController(Client cntxt, MalBlkPtr mb, MalBlkPtr pmb, Slices *slices, oid
 
 	pushEndInstruction(cmb);
 #ifdef _DEBUG_OPT_CENTIPEDE_
-	mnstr_printf(cntxt->fdout,"#rough cntrl plan %d \n", cmb->errors);
-	printFunction(cntxt->fdout, cmb, 0, LIST_MAL_STMT);
+	//mnstr_printf(cntxt->fdout,"#rough cntrl plan %d \n", cmb->errors);
+	//printFunction(cntxt->fdout, cmb, 0, LIST_MAL_STMT);
 #endif
 
 	//optimizeMALBlock(cntxt, cmb);
@@ -444,7 +444,7 @@ OPTbakePlans(Client cntxt, MalBlkPtr mb, Slices *slices)
 {
 	int *status,*vars;
 	int i, j, k, limit, last;
-	InstrPtr ret, orig, call, q = NULL, p = NULL, *old;
+	InstrPtr ret, orig, planargs= 0, call, q = NULL, p = NULL, *old;
 	Symbol s;
 	MalBlkPtr plan, cntrl, stub;
 	str msg= MAL_SUCCEED;
@@ -699,14 +699,16 @@ OPTbakePlans(Client cntxt, MalBlkPtr mb, Slices *slices)
 	/* Phase 4: determine all variables to be exported 
 	   this is limited to all variables produced and consumed by a blocked instruction
 	*/
-	ret= newInstruction(plan,ASSIGNsymbol);
+	ret= newInstruction(0,ASSIGNsymbol);
 	ret->barrier = RETURNsymbol;
 	ret->argc= ret->retc = 0;
+	planargs = copyInstruction(ret);
 
 	for ( i = 0; i< limit; i++)
 	if ( status[i] == BLOCKED  )
 	{
 		p = old[i];
+		if ( p )
 		for( j = p->retc; j < p->argc; j++)
 		if ( (vars[getArg(p,j)] == PARTITION || vars[getArg(p,j)] == SUPPORTIVE)  && isaBatType(getArgType(plan,p,j)) ){
 			/* limit the number of returned BATs to those that are expensive 
@@ -718,7 +720,11 @@ OPTbakePlans(Client cntxt, MalBlkPtr mb, Slices *slices)
 			if (getArg(ret,k) == getArg(p,j))
 				break;
 			if ( k == ret->retc)  {
+				int w = newTmpVariable(plan, getArgType(plan,p,j));
+				setVarUsed(plan,w); (void) w;
 				ret= pushReturn(plan,ret, getArg(p,j));
+				planargs = pushReturn(plan,planargs , w);
+				planargs = pushArgument(plan,planargs , getArg(p,j));
 			}
 		}
 	} else
@@ -732,26 +738,21 @@ OPTbakePlans(Client cntxt, MalBlkPtr mb, Slices *slices)
 	p = copyInstruction(getInstrPtr(mb, 0));
 	pushInstruction(plan,p);
 
-
-	/* under dataflow control, initialize the variables 
-	   Arguments are considered defined already */
-	for ( k=0 ; k < ret->retc ; k++){
-		q = newInstruction(plan,ASSIGNsymbol);
-		getArg(q,0) = getArg(ret,k);
-		pushNil(plan,q, getArgType(plan,ret,k));
-		pushInstruction(plan,q);
-	}
-	/* keep the original variable list for the caller */
+	/* keep the original variable list for the caller, but ignore local names */
 	orig = copyInstruction(ret);
+	mnstr_printf(cntxt->fdout,"\n#return stmt\n");
+	printInstruction(cntxt->fdout, mb,0,ret,LIST_MAL_STMT);
+	mnstr_printf(cntxt->fdout,"\n#call stmt\n");
+	printInstruction(cntxt->fdout, plan,0,planargs,LIST_MAL_STMT);
+
 	for ( i = 1; i < limit ; i++) 
 	if( status[i] == PARTITION || status[i] == SUPPORTIVE ) {
 		p = copyInstruction(getInstrPtr(mb, i));
 		if ( old[i]->token == ENDsymbol) {
+			int retc = ret->retc;
 			getFunctionId(plan->stmt[0]) = putName(nme,strlen(nme));
 			/* fix the return statement to become a complete assignment */
-			ret->retc= ret->argc;
-			ret->token= ASSIGNsymbol;
-			for( j= 0; j< ret->retc; j++) {
+			for( j= 0; j< retc; j++) {
 				if (sscanf(getVarName(plan, getArg(ret,j)),"grp%d",&k) == 1){
 					char buf[BUFSIZ];
 					/* grp := algebra.join(ret,src) */
@@ -766,9 +767,9 @@ OPTbakePlans(Client cntxt, MalBlkPtr mb, Slices *slices)
 					setVarType(plan, getArg(q,0), newBatType(TYPE_oid, getTailType(getVarType(plan,k))));
 					getArg(ret,j) = getArg(q,0);
 				} 
-				ret= pushArgument(plan,ret,getArg(ret,j));
+				//ret= pushArgument(plan,ret,getArg(ret,j));
 			}
-			pushInstruction(plan,ret);
+			pushInstruction(plan,planargs);
 			pushEndInstruction(plan);
 		} else
 		if (getModuleId(p) == sqlRef && (getFunctionId(p) == bindRef || getFunctionId(p) == bindidxRef))  
@@ -784,16 +785,8 @@ OPTbakePlans(Client cntxt, MalBlkPtr mb, Slices *slices)
 	/* fix the signature and modify the underlying plan */
 	while ( plan->stmt[0]->retc )
 		delArgument(plan->stmt[0],0);
-	for( i =0; i< ret->retc; i++) {
-		plan->stmt[0]= pushReturn(plan, plan->stmt[0], getArg(ret,i));
-/*
-		for( j = 0; j< mb->stop; j++) {
-			p = getInstrPtr(mb,j);
-			for ( k = 0; k< p->retc; k++)
-			if( getArg(p,k) == getArg(ret,i))
-				getArg(p,k) = newTmpVariable(mb, getArgType(mb,p,k));
-		}
-*/
+	for( i =0; i< planargs->retc; i++) {
+		plan->stmt[0]= pushReturn(plan, plan->stmt[0], getArg(planargs,i));
 	}
 
 	insertSymbol(cntxt->nspace,s);
@@ -901,7 +894,7 @@ OPTcentipedeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 		if ( ! (getModuleId(q) == sqlRef && getFunctionId(q) == bindRef  && q->retc == 1) )
 			continue;
 		r = getVarRows(mb, getArg(q, 0));
-		if (r > rowcnt && getTailType( getArgType(mb,q,0)) <= TYPE_str){
+		if (r > rowcnt ){
 			rowcnt = r;
 			target = q;
 			r = 0;
@@ -911,7 +904,7 @@ OPTcentipedeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 		return 0;
 
 	/* the target becomes the table against which we break the query */
-	/* for the time being assume we use the first column of the target*/
+	/* for the time being assume we use the oid range of the target*/
 	slices.target = target;
 	slices.rowcnt = rowcnt;
 	slices.schema = GDKstrdup(getVarConstant(mb, getArg(target,2)).val.sval);
@@ -925,9 +918,7 @@ OPTcentipedeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	OPTDEBUGcentipede
 		mnstr_printf(cntxt->fdout,"#opt_centipede: target is %s.%s "
 			" with " SSZFMT " rows into %d servers\n",
-				getVarConstant(mb, getArg(slices.target,2)).val.sval,
-				getVarConstant(mb, getArg(slices.target,3)).val.sval,
-				rowcnt, nrservers);
+			slices.schema, slices.table, rowcnt, nrservers);
 
 	/* derive a local plan based on forward flow reasoning */
 	OPTbakePlans(cntxt, mb, &slices);
