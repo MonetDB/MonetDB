@@ -578,6 +578,45 @@ sql_update_feb2013(Client c)
 	return err;		/* usually MAL_SUCCEED */
 }
 
+
+static str
+sql_update_feb2013_sp1(Client c)
+{
+	size_t bufsize = 10240, pos = 0;
+	char *buf = GDKmalloc(bufsize), *err = NULL;
+	char *fullname;
+	FILE *fp = NULL;
+
+	snprintf(buf, bufsize, "createdb%c75_storagemodel", DIR_SEP);
+ 	if ((fullname = MSP_locate_sqlscript(buf, 1)) != NULL) {
+		fp = fopen(fullname, "r");
+		GDKfree(fullname);
+	}
+
+	/* sys.stddev functions */
+	pos += snprintf(buf+pos, bufsize-pos, "drop filter function sys.\"like\"(string, string, string);\n");
+	pos += snprintf(buf+pos, bufsize-pos, "drop filter function sys.\"ilike\"(string, string, string);\n");
+	pos += snprintf(buf+pos, bufsize-pos, "create filter function sys.\"like\"(val string, pat string, esc string) external name algebra.likesubselect;\n");
+	pos += snprintf(buf+pos, bufsize-pos, "create filter function sys.\"ilike\"(val string, pat string, esc string) external name algebra.ilikesubselect;\n");
+
+	pos += snprintf(buf+pos, bufsize-pos, "drop function sys.storage;\n");
+	if (fp) {
+		pos += fread(buf+pos, 1, bufsize-pos, fp);
+		fclose(fp);
+	}
+
+	pos += snprintf(buf + pos, bufsize-pos, "insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('like', 'ilike') and f.type = %d and f.schema_id = s.id and s.name = 'sys';\n", F_FILT);
+	pos += snprintf(buf + pos, bufsize-pos, "insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('storage', 'columnsize', 'heapsize', 'indexsize', 'storagemodel') and f.type = %d and f.schema_id = s.id and s.name = 'sys';\n", F_FUNC);
+	pos += snprintf(buf + pos, bufsize-pos, "insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name = 'storagemodelinit' and f.type = %d and f.schema_id = s.id and s.name = 'sys';\n", F_PROC);
+
+	assert(pos < bufsize);
+
+	printf("Running database upgrade commands:\n%s\n", buf);
+	err = SQLstatementIntern(c, &buf, "update", 1, 0);
+	GDKfree(buf);
+	return err;		/* usually MAL_SUCCEED */
+}
+
 str
 SQLinitClient(Client c)
 {
@@ -700,28 +739,36 @@ SQLinitClient(Client c)
 		 * exist, we need to update */
         	sql_find_subtype(&tp, "clob", 0, 0);
 		if (!sql_bind_func3(m->sa, mvc_bind_schema(m,"sys"), "like", &tp, &tp, &tp, F_FILT )) {
-			if ((err = sql_update_dec2011(c, m)) != NULL)
+			if ((err = sql_update_dec2011(c, m)) != NULL) {
 				fprintf(stderr, "!%s\n", err);
+				GDKfree(err);
+			}
 		}
 		/* if aggregate function sys.median(int) does not
 		 * exist, we need to update */
         	sql_find_subtype(&tp, "int", 0, 0);
 		if (!sql_bind_func(m->sa, mvc_bind_schema(m,"sys"), "median", &tp, NULL, F_AGGR )) {
-			if ((err = sql_update_apr2012(c)) != NULL)
+			if ((err = sql_update_apr2012(c)) != NULL) {
 				fprintf(stderr, "!%s\n", err);
+				GDKfree(err);
+			}
 		}
 		/* if function sys.optimizers() does not exist, we
 		 * need to update */
 		if (!sql_bind_func(m->sa, mvc_bind_schema(m,"sys"), "optimizers", NULL, NULL, F_FUNC )) {
-			if ((err = sql_update_apr2012_sp1(c)) != NULL)
+			if ((err = sql_update_apr2012_sp1(c)) != NULL) {
 				fprintf(stderr, "!%s\n", err);
+				GDKfree(err);
+			}
 		}
 		/* if function sys.alpa(double) does not
 		 * exist, we need to update */
         	sql_find_subtype(&tp, "double", 0, 0);
 		if (!sql_bind_func(m->sa, mvc_bind_schema(m,"sys"), "alpha", &tp, &tp, F_FUNC )) {
-			if ((err = sql_update_jul2012(c)) != NULL)
+			if ((err = sql_update_jul2012(c)) != NULL) {
 				fprintf(stderr, "!%s\n", err);
+				GDKfree(err);
+			}
 		}
 		/* if function sys.zorder_slice() does exist, we need
 		 * to update */
@@ -734,23 +781,37 @@ SQLinitClient(Client c)
 			list_append(l, &tp);
 			if (sql_bind_func_(m->sa, mvc_bind_schema(m,"sys"),
 					   "zorder_slice", l, F_FUNC )) {
-				if ((err = sql_update_oct2012(c)) != NULL)
+				if ((err = sql_update_oct2012(c)) != NULL) {
 					fprintf(stderr, "!%s\n", err);
+					GDKfree(err);
+				}
 			}
 		}
 		/* if aggregate function sys.stddev(int) does
 		 * exist, we need to update */
         	sql_find_subtype(&tp, "int", 0, 0);
 		if (sql_bind_func(m->sa, mvc_bind_schema(m,"sys"), "stddev", &tp, NULL, F_AGGR )) {
-			if ((err = sql_update_oct2012_sp1(c)) != NULL)
+			if ((err = sql_update_oct2012_sp1(c)) != NULL) {
 				fprintf(stderr, "!%s\n", err);
+				GDKfree(err);
+			}
 		}
 		/* if aggregate function sys.stddev_samp(int) does not
 		 * exist, we need to update */
         	sql_find_subtype(&tp, "int", 0, 0);
 		if (!sql_bind_func(m->sa, mvc_bind_schema(m,"sys"), "stddev_samp", &tp, NULL, F_AGGR )) {
-			if ((err = sql_update_feb2013(c)) != NULL)
+			if ((err = sql_update_feb2013(c)) != NULL) {
 				fprintf(stderr, "!%s\n", err);
+				GDKfree(err);
+			}
+		}
+		/* if function sys.storagemodel() does not exist, we
+		 * need to update */
+		if (!sql_bind_func(m->sa, mvc_bind_schema(m,"sys"), "storagemodel", NULL, NULL, F_FUNC )) {
+			if ((err = sql_update_feb2013_sp1(c)) != NULL) {
+				fprintf(stderr, "!%s\n", err);
+				GDKfree(err);
+			}
 		}
 	}
 	fflush(stdout);
