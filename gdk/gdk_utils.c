@@ -1119,12 +1119,12 @@ GDKexiting(void)
 void
 GDKexit(int status)
 {
-	MT_lock_set(&GDKthreadLock, "GDKexit");
 	if (ATOMIC_CAS_int(GDKstopped, 0, 1, GDKstoppedLock, "GDKexit") == 0) {
-		if (GDKvmtrim_id)
-			MT_join_thread(GDKvmtrim_id);
+		MT_lock_set(&GDKthreadLock, "GDKexit");
 		GDKnrofthreads = 0;
 		MT_lock_unset(&GDKthreadLock, "GDKexit");
+		if (GDKvmtrim_id)
+			MT_join_thread(GDKvmtrim_id);
 		MT_sleep_ms(CATNAP);
 
 		/* Kill all threads except myself */
@@ -1153,7 +1153,6 @@ GDKexit(int status)
 #endif
 		MT_global_exit(status);
 	}
-	MT_lock_unset(&GDKthreadLock, "GDKexit");
 }
 
 /*
