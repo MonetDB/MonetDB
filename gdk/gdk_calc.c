@@ -3382,6 +3382,48 @@ mul_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 	return nils;							\
 }
 
+#ifdef HAVE__MUL128
+#include <intrin.h>
+#pragma intrinsic(_mul128)
+
+#define MUL_2TYPE_lng(TYPE1, TYPE2)					\
+static BUN								\
+mul_##TYPE1##_##TYPE2##_lng(const TYPE1 *lft, int incr1,		\
+			    const TYPE2 *rgt, int incr2,		\
+			    lng *dst, BUN cnt, BUN start,		\
+			    BUN end, const oid *cand,			\
+			    const oid *candend, oid candoff,		\
+			    int abort_on_error)				\
+{									\
+	BUN i, j, k;							\
+	BUN nils = 0;							\
+	lng clo, chi;							\
+									\
+	CANDLOOP(dst, k, lng_nil, 0, start);				\
+	for (i = start * incr1, j = start * incr2, k = start;		\
+	     k < end; i += incr1, j += incr2, k++) {			\
+		CHECKCAND(dst, k, candoff, lng_nil);			\
+		if (lft[i] == TYPE1##_nil || rgt[j] == TYPE2##_nil) {	\
+			dst[k] = lng_nil;				\
+			nils++;						\
+		} else {						\
+			clo = _mul128((lng) lft[i],			\
+				      (lng) rgt[j], &chi);		\
+			if ((chi == 0 && clo >= 0) ||			\
+			    (chi == -1 && clo < 0 && clo != lng_nil)) {	\
+				dst[k] = clo;				\
+			} else {					\
+				if (abort_on_error)			\
+					ON_OVERFLOW(TYPE1, TYPE2, "*");	\
+				dst[k] = lng_nil;			\
+				nils++;					\
+			}						\
+		}							\
+	}								\
+	CANDLOOP(dst, k, lng_nil, end, cnt);				\
+	return nils;							\
+}
+#else
 #define MUL_2TYPE_lng(TYPE1, TYPE2)					\
 static BUN								\
 mul_##TYPE1##_##TYPE2##_lng(const TYPE1 *lft, int incr1,		\
@@ -3411,6 +3453,7 @@ mul_##TYPE1##_##TYPE2##_lng(const TYPE1 *lft, int incr1,		\
 	CANDLOOP(dst, k, lng_nil, end, cnt);				\
 	return nils;							\
 }
+#endif
 
 #define MUL_2TYPE_float(TYPE1, TYPE2, TYPE3)				\
 static BUN								\
