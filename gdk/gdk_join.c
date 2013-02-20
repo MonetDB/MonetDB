@@ -852,9 +852,9 @@ thetajoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, const char *op)
 			if (cmp(vr, nil) == 0)
 				continue;
 			c = cmp(vl, vr);
-			if (!((c < 0 && opcode & MASK_LT) ||
-			      (c > 0 && opcode & MASK_GT) ||
-			      (c == 0 && opcode & MASK_EQ)))
+			if (!((opcode & MASK_LT && c < 0) ||
+			      (opcode & MASK_GT && c > 0) ||
+			      (opcode & MASK_EQ && c == 0)))
 				continue;
 			if (BUNlast(r1) == BATcapacity(r1)) {
 				newcap = BATgrows(r1);
@@ -952,4 +952,164 @@ BATsubthetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, const ch
 	*r1p = r1;
 	*r2p = r2;
 	return thetajoin(r1, r2, l, r, sl, sr, op);
+}
+
+gdk_return
+BATsubjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, BUN estimate)
+{
+	BAT *r1, *r2;
+	BUN lcount, rcount;
+	int swap;
+
+	*r1p = NULL;
+	*r2p = NULL;
+	if (joinparamcheck(l, r, sl, sr, "BATsubleftjoin") == GDK_FAIL)
+		return GDK_FAIL;
+	lcount = BATcount(l);
+	if (sl)
+		lcount = MIN(lcount, BATcount(sl));
+	rcount = BATcount(r);
+	if (sr)
+		rcount = MIN(rcount, BATcount(sr));
+	if (lcount == 0 || rcount == 0) {
+		r1 = BATnew(TYPE_void, TYPE_void, 0);
+		BATseqbase(r1, 0);
+		BATseqbase(BATmirror(r1), 0);
+		r2 = BATnew(TYPE_void, TYPE_void, 0);
+		BATseqbase(r2, 0);
+		BATseqbase(BATmirror(r2), 0);
+		*r1p = r1;
+		*r2p = r2;
+		return GDK_SUCCEED;
+	}
+	if (joininitresults(&r1, &r2, estimate != BUN_NONE ? estimate : sl ? BATcount(sl) : BATcount(l), "BATsubleftjoin") == GDK_FAIL)
+		return GDK_FAIL;
+	*r1p = r1;
+	*r2p = r2;
+	swap = 0;
+	if ((l->tsorted || l->trevsorted) && (r->tsorted || r->trevsorted)) {
+		/* both sorted, don't swap */
+		return mergejoin(r1, r2, l, r, sl, sr, 0, 0, 0);
+	} else if (l->T->hash && r->T->hash) {
+		/* both have hash, smallest on right */
+		if (lcount < rcount)
+			swap = 1;
+	} else if (l->T->hash) {
+		/* only left has hash, swap */
+		swap = 1;
+	} else if (r->T->hash) {
+		/* only right has hash, don't swap */
+		swap = 0;
+	} else if (l->tsorted || l->trevsorted) {
+		/* left is sorted, swap */
+		return mergejoin(r2, r1, r, l, sr, sl, 0, 0, 0);
+	} else if (r->tsorted || r->trevsorted) {
+		/* right is sorted, don't swap */
+		return mergejoin(r1, r2, l, r, sl, sr, 0, 0, 0);
+	} else if (BATcount(r1) < BATcount(r2)) {
+		/* no hashes, not sorted, create hash on smallest BAT */
+		swap = 1;
+	}
+	if (swap) {
+		return hashjoin(r2, r1, r, l, sr, sl, 0, 0, 0);
+	} else {
+		return hashjoin(r1, r2, l, r, sl, sr, 0, 0, 0);
+	}
+}
+
+BAT *
+BATproject(BAT *l, BAT *r)
+{
+	BAT *bn;
+	const oid *o;
+	const void *nil = ATOMnilptr(r->ttype);
+	const void *v, *prev;
+	BATiter ri;
+	oid lo, hi;
+	BUN n;
+	int (*cmp)(const void *, const void *) = BATatoms[r->ttype].atomCmp;
+	int c;
+
+	assert(BAThdense(l));
+	assert(BAThdense(r));
+	assert(l->ttype == TYPE_void || l->ttype == TYPE_oid);
+
+	if (BATtdense(l)) {
+		lo = l->tseqbase;
+		hi = l->tseqbase + BATcount(l);
+		if (lo < r->hseqbase || hi > r->hseqbase + BATcount(r)) {
+			GDKerror("BATproject: does not match always\n");
+			return NULL;
+		}
+		bn = BATslice(r, lo - r->hseqbase, hi - r->hseqbase);
+		if (bn == NULL)
+			return NULL;
+		return BATseqbase(bn, l->hseqbase + (lo - l->tseqbase));
+	}
+	if (l->ttype == TYPE_void) {
+		assert(l->tseqbase == oid_nil);
+		bn = BATconstant(r->ttype, nil, BATcount(l));
+		if (bn != NULL)
+			bn = BATseqbase(bn, l->hseqbase);
+		return bn;
+	}
+	assert(l->ttype == TYPE_oid);
+	bn = BATnew(TYPE_void, r->ttype, BATcount(l));
+	if (bn == NULL)
+		return NULL;
+	o = (const oid *) Tloc(l, BUNfirst(l));
+	n = BUNfirst(bn);
+	ri = bat_iterator(r);
+	/* be optimistic, we'll change this as needed */
+	bn->T->nonil = 1;
+	bn->T->nil = 0;
+	bn->tsorted = 1;
+	bn->trevsorted = 1;
+	bn->tkey = 1;
+	prev = NULL;
+	for (lo = l->hseqbase, hi = lo + BATcount(l); lo < hi; lo++, o++, n++) {
+		if (*o == oid_nil) {
+			tfastins_nocheck(bn, n, nil, Tsize(bn));
+			bn->T->nonil = 0;
+			bn->T->nil = 1;
+			bn->tsorted = 0;
+			bn->trevsorted = 0;
+			bn->tkey = 0;
+		} else if (*o < r->hseqbase ||
+			   *o >= r->hseqbase + BATcount(r)) {
+			GDKerror("BATproject: does not match always\n");
+			goto bunins_failed;
+		} else {
+			v = BUNtail(ri, *o - r->hseqbase + BUNfirst(r));
+			tfastins_nocheck(bn, n, v, Tsize(bn));
+			if (bn->T->nonil && cmp(v, nil) == 0) {
+				bn->T->nonil = 0;
+				bn->T->nil = 1;
+			}
+			if (prev && (bn->trevsorted | bn->tsorted | bn->tkey)) {
+				c = cmp(prev, v);
+				if (c < 0) {
+					bn->trevsorted = 0;
+					if (!bn->tsorted)
+						bn->tkey = 0; /* can't be sure */
+				}
+				if (c > 0) {
+					bn->tsorted = 0;
+					if (!bn->trevsorted)
+						bn->tkey = 0; /* can't be sure */
+				}
+				if (c == 0)
+					bn->tkey = 0; /* definitely */
+			}
+			prev = v;
+		}
+	}
+	assert(n == BATcount(l));
+	BATsetcount(bn, n);
+	BATseqbase(bn, l->hseqbase);
+	return bn;
+
+  bunins_failed:
+	BBPreclaim(bn);
+	return NULL;
 }
