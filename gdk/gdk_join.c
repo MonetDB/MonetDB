@@ -963,7 +963,7 @@ BATsubjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, BUN estimate)
 
 	*r1p = NULL;
 	*r2p = NULL;
-	if (joinparamcheck(l, r, sl, sr, "BATsubleftjoin") == GDK_FAIL)
+	if (joinparamcheck(l, r, sl, sr, "BATsubjoin") == GDK_FAIL)
 		return GDK_FAIL;
 	lcount = BATcount(l);
 	if (sl)
@@ -982,7 +982,7 @@ BATsubjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, BUN estimate)
 		*r2p = r2;
 		return GDK_SUCCEED;
 	}
-	if (joininitresults(&r1, &r2, estimate != BUN_NONE ? estimate : sl ? BATcount(sl) : BATcount(l), "BATsubleftjoin") == GDK_FAIL)
+	if (joininitresults(&r1, &r2, estimate != BUN_NONE ? estimate : sl ? BATcount(sl) : BATcount(l), "BATsubjoin") == GDK_FAIL)
 		return GDK_FAIL;
 	*r1p = r1;
 	*r2p = r2;
@@ -1034,7 +1034,7 @@ BATproject(BAT *l, BAT *r)
 	assert(BAThdense(r));
 	assert(l->ttype == TYPE_void || l->ttype == TYPE_oid);
 
-	if (BATtdense(l)) {
+	if (BATtdense(l) && BATcount(l) > 0) {
 		lo = l->tseqbase;
 		hi = l->tseqbase + BATcount(l);
 		if (lo < r->hseqbase || hi > r->hseqbase + BATcount(r)) {
@@ -1046,8 +1046,8 @@ BATproject(BAT *l, BAT *r)
 			return NULL;
 		return BATseqbase(bn, l->hseqbase + (lo - l->tseqbase));
 	}
-	if (l->ttype == TYPE_void) {
-		assert(l->tseqbase == oid_nil);
+	if (l->ttype == TYPE_void || BATcount(l) == 0) {
+		assert(BATcount(l) == 0 || l->tseqbase == oid_nil);
 		bn = BATconstant(r->ttype, nil, BATcount(l));
 		if (bn != NULL)
 			bn = BATseqbase(bn, l->hseqbase);
