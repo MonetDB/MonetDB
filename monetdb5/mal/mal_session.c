@@ -435,6 +435,10 @@ MSserveClient(void *dummy)
 			} while (c->scenario && !GDKexiting());
 		} while (c->scenario && c->mode != FINISHING && !GDKexiting());
 	}
+	/* pre announce our exiting: cleaning up may take a while and we
+	 * don't want to get killed during that time for fear of
+	 * deadlocks */
+	MT_exiting_thread();
 	/*
 	 * At this stage we should clean out the MAL block
 	 */

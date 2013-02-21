@@ -83,6 +83,7 @@ typedef struct DATAFLOW {
 
 static MT_Id workers[THREADS];
 static queue *todo = 0;	/* pending instructions */
+static int volatile exiting;
 
 /*
  * Calculate the size of the dataflow dependency graph.
@@ -195,6 +196,8 @@ q_dequeue(queue *q)
 	void *r = NULL;
 
 	MT_sema_down(&q->s, "q_dequeue");
+	if (exiting)
+		return NULL;
 	assert(q->last);
 	MT_lock_set(&q->l, "q_dequeue");
 	if (q->last > 0) {
@@ -256,7 +259,11 @@ DFLOWworker(void *t)
 	while (1) {
 		if (fnxt == 0)
 			fe = q_dequeue(todo);
-		else fe = fnxt;
+		else
+			fe = fnxt;
+		if (exiting) {
+			break;
+		}
 		fnxt = 0;
 		assert(fe);
 		flow = fe->flow;
@@ -535,6 +542,8 @@ DFLOWscheduler(DataFlow flow)
 
 	while (actions != tasks ) {
 		f = q_dequeue(flow->done);
+		if (exiting)
+			break;
 
 		/*
 		 * When an instruction is finished we have to reduce the blocked
@@ -624,4 +633,21 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr st
 	MT_lock_destroy(&flow->flowlock);
 	GDKfree(flow);
 	return ret;
+}
+
+void
+stopMALdataflow(void)
+{
+	int i;
+
+	exiting = 1;
+	if (todo) {
+		for (i = 0; i < THREADS; i++)
+			MT_sema_up(&todo->s, "stopMALdataflow");
+		for (i = 0; i < THREADS; i++) {
+			if (workers[i])
+				MT_join_thread(workers[i]);
+			workers[i] = 0;
+		}
+	}
 }

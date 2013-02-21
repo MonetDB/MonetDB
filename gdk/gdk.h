@@ -2199,7 +2199,6 @@ gdk_export BAT *BAThashjoin(BAT *l, BAT *r, BUN estimate);
  *
  */
 
-#define BATprepareImprints(X) (((X)->T->imprints == NULL) && !BATimprints(X))
 gdk_export void IMPSdestroy(BAT *b);
 gdk_export BAT *BATimprints(BAT *b);
 
@@ -3190,6 +3189,8 @@ gdk_export BAT *BATcross(BAT *l, BAT *r);
 gdk_export gdk_return BATsubleftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, BUN estimate);
 gdk_export gdk_return BATsubouterjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, BUN estimate);
 gdk_export gdk_return BATsubthetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, const char *op, BUN estimate);
+gdk_export gdk_return BATsubjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, BUN estimate);
+gdk_export BAT *BATproject(BAT *l, BAT *r);
 
 gdk_export BAT *BATslice(BAT *b, BUN low, BUN high);
 gdk_export BAT *BATfetch(BAT *b, BAT *s);

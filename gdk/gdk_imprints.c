@@ -721,7 +721,9 @@ do {                                                              \
 	MT_lock_unset(&GDKimprintsLock(ABS(b->batCacheid)), "BATimprints");
 
 	if (o != NULL) {
-		o->T->imprints = b->T->imprints;
+		o->T->imprints = NULL; /* views always keep null pointer and
+					  need to obtain the latest imprint
+					  from the parent at query time */
 		BBPunfix(b->batCacheid);
 		b = o;
 	}
@@ -783,36 +785,35 @@ IMPSgetbin(int tpe, bte bits, char *inbins, const void *v)
 
 void
 IMPSremove(BAT *b) {
+	Imprints *imprints;
 
 	assert(BAThdense(b)); /* assert void head */
+	assert(b->T->imprints != NULL);
+	assert(!VIEWtparent(b));
 
 	MT_lock_set(&GDKimprintsLock(ABS(b->batCacheid)),
 			"BATimprints");
-	if (VIEWtparent(b)) {
-		b->T->imprints = NULL;
-	} else if (b->T->imprints != NULL) {
-		Imprints *imprints = b->T->imprints;
+	imprints = b->T->imprints;
+	b->T->imprints = NULL;
 
-		if (imprints->imps->storage != STORE_MEM)
-			HEAPdelete(imprints->imps,
-					BBP_physical(b->batCacheid), "imps");
-		else
-			HEAPfree(imprints->imps);
-		if (imprints->dict->storage != STORE_MEM)
-			HEAPdelete(imprints->dict,
-					BBP_physical(b->batCacheid), "dict");
-		else
-			HEAPfree(imprints->dict);
-		if (imprints->bins->storage != STORE_MEM)
-			HEAPdelete(imprints->bins,
-					BBP_physical(b->batCacheid), "bins");
-		else
-			HEAPfree(imprints->bins);
+	if (imprints->imps->storage != STORE_MEM)
+		HEAPdelete(imprints->imps,
+				BBP_physical(b->batCacheid), "imps");
+	else
+		HEAPfree(imprints->imps);
+	if (imprints->dict->storage != STORE_MEM)
+		HEAPdelete(imprints->dict,
+				BBP_physical(b->batCacheid), "dict");
+	else
+		HEAPfree(imprints->dict);
+	if (imprints->bins->storage != STORE_MEM)
+		HEAPdelete(imprints->bins,
+				BBP_physical(b->batCacheid), "bins");
+	else
+		HEAPfree(imprints->bins);
 
+	GDKfree(imprints);
 
-		GDKfree(imprints);
-		b->T->imprints = NULL;
-	}
 	MT_lock_unset(&GDKimprintsLock(ABS(b->batCacheid)),
 			"BATimprints");
 
@@ -822,11 +823,12 @@ IMPSremove(BAT *b) {
 void
 IMPSdestroy(BAT *b) {
 
-	/* imprints are build on tails of BATs with void head */
 	if (b) {
-		if (BAThdense(b) && (b->T->imprints != NULL)) {
+		if (b->T->imprints != NULL && !VIEWtparent(b)) {
 			IMPSremove(b);
-		} else if (BATtdense(b) && (b->H->imprints != NULL)) {
+		}
+
+		if (b->H->imprints != NULL && !VIEWhparent(b)) {
 			IMPSremove(BATmirror(b));
 		}
 	}
@@ -842,7 +844,7 @@ IMPSprint(BAT *b) {
 	BUN icnt, dcnt, l, pages;
 	bte j;
 
-	if (BATprepareImprints(b))
+	if (!BATimprints(b))
 		return;
 	imprints = b->T->imprints;
 	d = (cchdc_t *) imprints->dict->base;

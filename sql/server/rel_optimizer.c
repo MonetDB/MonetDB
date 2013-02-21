@@ -2621,10 +2621,10 @@ exps_merge_rse( mvc *sql, list *l, list *r )
  *      (x = c and y > 1 and y < 10) or 
  *      (x = e and y > 1 and y < 20) 
  * ->
- *     ((x = a and y > 1 and b < 5) or 
- *      (x = c and y > 1 and y < 5) or 
- *      (x = e and y > 1 and y < 5)) and
- *     	 x in (a,b,c) and
+ *     ((x = a and y > 1 and y < 5) or 
+ *      (x = c and y > 1 and y < 10) or 
+ *      (x = e and y > 1 and y < 20)) and
+ *     	 x in (a,c,e) and
  *     	 y > 1 and y < 20
  * */
 static sql_rel *
@@ -5534,11 +5534,12 @@ _rel_optimizer(mvc *sql, sql_rel *rel, int level)
 	}
 
 	if (gp.cnt[op_select]) {
-		rel = rewrite_topdown(sql, rel, &rel_push_select_down, &changes); 
-		rel = rewrite(sql, rel, &rel_remove_empty_select, &e_changes); 
 		/* only once */
 		if (level <= 0)
 			rel = rewrite(sql, rel, &rel_merge_rse, &changes); 
+
+		rel = rewrite_topdown(sql, rel, &rel_push_select_down, &changes); 
+		rel = rewrite(sql, rel, &rel_remove_empty_select, &e_changes); 
 	}
 
 	if (gp.cnt[op_select] && gp.cnt[op_join]) {

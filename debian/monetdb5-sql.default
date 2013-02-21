@@ -5,8 +5,5 @@
 # should monetdbd be started at system startup (yes/no)
 STARTUP="no"
 
-# should all databases be started (yes/no)
-START_ALL_DBS="no"
-
 # the database farm where databases are kept
 DBFARM=/var/lib/monetdb

@@ -59,7 +59,6 @@ static void offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc, i
 static void cachedProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc);
 static int initTrace(void);
 static void startHeartbeat(int delay);
-static void stopHeartbeat(void);
 
 int malProfileMode = 0;     /* global flag to indicate profiling mode */
 static int profileAll = 0;  /* all instructions should be profiled */
@@ -148,7 +147,7 @@ deactivateCounter(str name)
 			return 0;
 		} else
 		if ( strncmp("ping",name,4) == 0){
-			stopHeartbeat();
+			startHeartbeat(0);
 			return 0;
 		}
 	throw(MAL, "deactivateCounter", RUNTIME_OBJECT_UNDEFINED ":%s", name);
@@ -1422,14 +1421,28 @@ void profilerHeartbeatEvent(str msg)
 	logsent(0, logbuffer);
 }
 
+static MT_Id hbthread;
+static int volatile hbrunning;
+
 static void profilerHeartbeat(void *dummy)
 {
+	int t;
+
 	(void) dummy;
-	while (1){
+	while (hbrunning) {
 		/* wait until you need this info */
-		while( hbdelay ==0 || eventstream  == NULL ) 
-			MT_sleep_ms(1000);
-		MT_sleep_ms(hbdelay);
+		while( hbdelay ==0 || eventstream  == NULL ) {
+			for (t = 1000; t > 0; t -= 50) {
+				MT_sleep_ms(50);
+				if (!hbrunning)
+					return;
+			}
+		}
+		for (t = hbdelay; t > 0; t -= 50) {
+			MT_sleep_ms(t > 50 ? 50 : t);
+			if (!hbrunning)
+				return;
+		}
 		profilerHeartbeatEvent("ping");
 	}
 	hbdelay = 0;
@@ -1438,20 +1451,21 @@ static void profilerHeartbeat(void *dummy)
 void startHeartbeat(int delay){
 	if ( delay < 0 )
 		return;
-	if ( hbdelay ) {
-		/* thread already running */	
-		hbdelay = delay;
-		return;
-	}
 	hbdelay = delay;
 }
 
 void stopHeartbeat(void){
-	hbdelay = 0;
+	hbrunning = 0;
+	if (hbthread)
+		MT_join_thread(hbthread);
 }
 
 void initHeartbeat(void)
 {
-	static MT_Id p =0;
-	MT_create_thread(&p, profilerHeartbeat, (void *) 0, MT_THR_JOINABLE);
+	hbrunning = 1;
+	if (MT_create_thread(&hbthread, profilerHeartbeat, NULL, MT_THR_JOINABLE) < 0) {
+		/* it didn't happen */
+		hbthread = 0;
+		hbrunning = 0;
+	}
 }
