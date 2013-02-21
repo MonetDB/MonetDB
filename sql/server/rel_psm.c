@@ -893,7 +893,7 @@ rel_drop_func(mvc *sql, dlist *qname, dlist *typelist, int drop_action, int type
 		} else {
 			return sql_error(sql, 02, "DROP %s%s: no such %s%s '%s'", KF, F, kf, f, name);
 		}
-	} else if ((is_func && !func->res.type) || 
+	} else if (((is_func && type != F_FILT) && !func->res.type) || 
 		   (!is_func && func->res.type)) {
 		if (list_func)
 			list_destroy(list_func);

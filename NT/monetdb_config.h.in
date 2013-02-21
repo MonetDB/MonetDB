@@ -611,6 +611,11 @@
 /* Define to 1 if the system has the type `_Bool'. */
 #define HAVE__BOOL 1
 
+#ifdef _WIN64
+/* Define to 1 if you have the `_mul128' function. */
+#define HAVE__MUL128 1
+#endif
+
 /* Define if you have _sys_siglist */
 /* #undef HAVE__SYS_SIGLIST */
 

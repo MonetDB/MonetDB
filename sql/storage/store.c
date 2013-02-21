@@ -2179,7 +2179,7 @@ static sql_trans *
 trans_init(sql_trans *t, backend_stack stk, sql_trans *ot)
 {
 	t->wtime = t->rtime = 0;
-	t->stime = ot->wstime;
+	t->stime = ot->wtime;
 	t->wstime = timestamp ();
 	t->schema_updates = 0;
 	t->dropped = NULL;
@@ -2282,13 +2282,13 @@ rollforward_changeset_updates(sql_trans *tr, changeset * fs, changeset * ts, sql
 					if (tbn) {
 						sql_base *tb = tbn->data;
 
-						/* update timestamps */
-						if (apply && fb->rtime && tr->stime > tb->rtime)
-							tb->rtime = tr->stime;
-						if (apply && fb->wtime && tr->wstime > tb->wtime)
-							tb->wtime = tr->wstime;
-
 						ok = rollforward_updates(tr, fb, tb, mode);
+
+						/* update timestamps */
+						if (apply && fb->rtime && fb->rtime > tb->rtime)
+							tb->rtime = fb->rtime;
+						if (apply && fb->wtime && fb->wtime > tb->wtime)
+							tb->wtime = fb->wtime;
 					}
 				}
 				if (apply)
@@ -2313,8 +2313,10 @@ rollforward_changeset_updates(sql_trans *tr, changeset * fs, changeset * ts, sql
 							cs_add(ts, r, TR_NEW);
 						else
 							ok = LOG_ERR;
-						fb->rtime = fb->wtime = 0;
-						fb->flag = TR_OLD;
+						if (apply) {
+							fb->rtime = fb->wtime = 0;
+							fb->flag = TR_OLD;
+						}
 					}
 				} else if (!rollforward_creates(tr, fb, mode)) {
 					ok = LOG_ERR;
@@ -2670,9 +2672,6 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt, int mode)
 		ok = store_funcs.log_table(tr, ft, tt);
 	} else if (mode == R_APPLY) {
 		assert(cs_size(&tt->columns) == cs_size(&ft->columns));
-		if (ft->base.rtime)
-			tt->base.rtime = tr->stime;
-		tt->base.wtime = tr->wstime;
 		if (bs_debug) 
 			fprintf(stderr, "#update table %s\n", tt->base.name);
 		ok = store_funcs.update_table(tr, ft, tt);
@@ -2804,28 +2803,24 @@ validate_tables(sql_schema *s, sql_schema *os)
 
  			ot = find_sql_table(os, t->base.name);
 			if (ot && isTable(ot) && isTable(t)) {
-				if ((t->base.wtime && (t->base.wtime > ot->base.rtime && (t->base.wtime > ot->base.wtime))) &&
-				    (t->base.rtime && t->base.rtime > ot->base.wtime)) 
-					continue;
-				if ((t->base.wtime && (t->base.wtime < ot->base.rtime || (t->base.wtime < ot->base.wtime && t->base.rtime))) ||
-				    (t->base.rtime && t->base.rtime < ot->base.wtime)) 
+				if ((t->base.wtime && (t->base.wtime < ot->base.rtime || t->base.wtime < ot->base.wtime)) ||
+				    (t->base.rtime && (t->base.rtime < ot->base.wtime))) 
+					return 0;
 				for (o = t->columns.set->h, p = ot->columns.set->h; o && p; o = o->next, p = p->next) {
 					sql_column *c = o->data;
 					sql_column *oc = p->data;
 
+					if (!c->base.wtime && !c->base.rtime)
+						continue;
+
 					/* t wrote, ie. check read and write time */
 					/* read or write after t's write */
 					if (c->base.wtime && (c->base.wtime < oc->base.rtime
-							      /* allow for late appends, ie 
-							       * wtime but no rtime 
-							       */
-							      || (c->base.wtime < oc->base.wtime && c->base.rtime))) {
+							  ||  c->base.wtime < oc->base.wtime)) 
 						return 0;
-					}
 					/* commited write before t's read */
-					if (c->base.rtime && c->base.rtime < oc->base.wtime) {
+					if (c->base.rtime && c->base.rtime < oc->base.wtime) 
 						return 0;
-					}
 				}
 			}
 		}

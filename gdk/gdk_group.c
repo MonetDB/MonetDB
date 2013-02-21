@@ -484,7 +484,6 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				assert( HASHgetlink(hs,hb) == HASHnil(hs)
 				       || HASHgetlink(hs,hb) < hb);
 			}
-				;
 			if (gc) {
 				for (;
 				     hb != HASHnil(hs) && grps[hb - r] == grps[p - r];

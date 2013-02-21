@@ -2684,7 +2684,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                 SrvrOut.write(ln)
                 SrvrOut.flush()
             if ln[:6] != 'Ready.':
-                # If not ready, it may be that there are far to many
+                # If not ready, it may be that there are far too many
                 # network connections in use, all in TIME_WAIT status.
                 # We'll just wait a while for that to clear and try
                 # again.
