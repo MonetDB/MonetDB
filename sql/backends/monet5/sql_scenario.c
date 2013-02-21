@@ -605,9 +605,9 @@ sql_update_feb2013_sp1(Client c)
 		fclose(fp);
 	}
 
-	pos += snprintf(buf + pos, bufsize-pos, "insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('like', 'ilike') and f.type = %d and f.schema_id = s.id and s.name = 'sys';\n", F_FILT);
-	pos += snprintf(buf + pos, bufsize-pos, "insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('storage', 'columnsize', 'heapsize', 'indexsize', 'storagemodel') and f.type = %d and f.schema_id = s.id and s.name = 'sys';\n", F_FUNC);
-	pos += snprintf(buf + pos, bufsize-pos, "insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name = 'storagemodelinit' and f.type = %d and f.schema_id = s.id and s.name = 'sys';\n", F_PROC);
+	pos += snprintf(buf + pos, bufsize-pos, "insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('like', 'ilike') and f.type = %d and f.schema_id = s.id and s.name = 'sys');\n", F_FILT);
+	pos += snprintf(buf + pos, bufsize-pos, "insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('storage', 'columnsize', 'heapsize', 'indexsize', 'storagemodel') and f.type = %d and f.schema_id = s.id and s.name = 'sys');\n", F_FUNC);
+	pos += snprintf(buf + pos, bufsize-pos, "insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name = 'storagemodelinit' and f.type = %d and f.schema_id = s.id and s.name = 'sys');\n", F_PROC);
 
 	assert(pos < bufsize);
 
