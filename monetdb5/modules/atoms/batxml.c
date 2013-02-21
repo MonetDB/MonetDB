@@ -1458,7 +1458,7 @@ BATxmlaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 		goto out;
 	}
 	bi = bat_iterator(b);
-	if (g) {
+	if (g && !BATtdense(g) && BATcount(g) > 0) {
 		/* stable sort g */
 		if (BATsubsort(&t1, &t2, NULL, g, NULL, NULL, 0, 1) == GDK_FAIL) {
 			BBPreclaim(bn);
@@ -1533,7 +1533,24 @@ BATxmlaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 		BBPunfix(t2->batCacheid);
 		t2 = NULL;
 	} else {
-		for (p = BUNfirst(b), q = p + BATcount(b); p < q; p++) {
+		if (g) {
+			if (BATcount(g) == 0) {
+				p = q = 0;
+			} else {
+				p = g->tseqbase;
+				q = p + BATcount(g);
+			}
+			if (p < b->hseqbase)
+				p = b->hseqbase;
+			if (q > b->hseqbase + BATcount(b))
+				q = b->hseqbase + BATcount(b);
+			p -= b->hseqbase;
+			q -= b->hseqbase;
+		} else {
+			p = 0;
+			q = BATcount(b);
+		}
+		for (p += BUNfirst(b), q += BUNfirst(b); p < q; p++) {
 			v = (const char *) BUNtail(bi, p);
 			if (strNil(v)) {
 				if (skip_nils)
