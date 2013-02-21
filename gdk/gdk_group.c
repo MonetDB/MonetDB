@@ -481,7 +481,6 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				assert(hs->link[hb] == BUN_NONE
 				       || hs->link[hb] < hb);
 			}
-				;
 			if (gc) {
 				for (;
 				     hb != BUN_NONE && grps[hb - r] == grps[p - r];
