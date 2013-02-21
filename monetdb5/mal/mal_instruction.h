@@ -306,11 +306,11 @@ mal_export void pushEndInstruction(MalBlkPtr mb);	/* used in src/mal/mal_parser.
 
 #define blockStart(X)   ((X)->barrier && (((X)->barrier == BARRIERsymbol || \
              (X)->barrier == CATCHsymbol )))
-#define blockExit(X) (X)->barrier == EXITsymbol
+#define blockExit(X) ((X)->barrier == EXITsymbol)
 #define blockCntrl(X) ( (X)->barrier== LEAVEsymbol ||  \
              (X)->barrier== REDOsymbol || (X)->barrier== RETURNsymbol )
-#define isLinearFlow(X)  !(blockStart(X) || blockExit(X) || \
-				(X)->barrier== LEAVEsymbol ||  (X)->barrier== REDOsymbol )
+#define isLinearFlow(X)  (!(blockStart(X) || blockExit(X) || \
+				(X)->barrier== LEAVEsymbol ||  (X)->barrier== REDOsymbol ))
 
 mal_export void strBeforeCall(ValPtr v, ValPtr bak);
 mal_export void strAfterCall(ValPtr v, ValPtr bak);
