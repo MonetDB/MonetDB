@@ -342,8 +342,7 @@ append_col(sql_trans *tr, sql_column *c, void *i, int tpe)
 {
 	sql_delta *bat = c->data;
 
-	/* appends only write (isn't save!, ie also set read times) */
-	c->base.rtime = c->t->base.rtime = c->t->s->base.rtime = tr->rtime = tr->stime;
+	/* appends only write */
 	c->base.wtime = c->t->base.wtime = c->t->s->base.wtime = tr->wtime = tr->wstime;
 	if (tpe == TYPE_bat)
 		delta_append_bat(bat, i);
@@ -356,8 +355,7 @@ append_idx(sql_trans *tr, sql_idx * i, void *ib, int tpe)
 {
 	sql_delta *bat = i->data;
 
-	/* appends only write (isn't save!, ie also set read times) */
-	i->base.rtime = i->t->base.rtime = i->t->s->base.rtime = tr->rtime = tr->stime;
+	/* appends only write */
 	i->base.wtime = i->t->base.wtime = i->t->s->base.wtime = tr->wtime = tr->wstime;
 	if (tpe == TYPE_bat)
 		delta_append_bat(bat, ib);
@@ -517,6 +515,7 @@ load_delta(sql_delta *bat, int bid, int type)
 	bat->bid = temp_create(b);
 	bat->ibase = BATcount(b);
 	bat->cnt = bat->ibase; 
+	bat->ucnt = 0; 
 	bat->ubid = e_ubat(type);
 	bat->ibid = e_bat(type);
 	return LOG_OK;
@@ -676,7 +675,7 @@ create_col(sql_trans *tr, sql_column *c)
 	} else if (bat && bat->ibid && !isTempTable(c->t)) {
 		return new_persistent_bat(tr, c->data, c->t->sz);
 	} else if (!bat->ibid) {
-		sql_column *fc;
+		sql_column *fc = NULL;
 		size_t cnt = 0;
 
 		/* alter ? */
@@ -1492,6 +1491,7 @@ tr_update_delta( sql_trans *tr, sql_delta *obat, sql_delta *cbat, BUN snapshot_m
 				/* should be insert_inserted */
 				BATins(cu, ups, TRUE);
 				BATreplace(cu, ups, TRUE);
+				obat->ucnt = BATcount(cu);
 				BATcleanProps(cu);
 				bat_destroy(cu);
 			}
@@ -1502,6 +1502,8 @@ tr_update_delta( sql_trans *tr, sql_delta *obat, sql_delta *cbat, BUN snapshot_m
 				obat->ubid = e_ubat(cur->ttype);
 				temp_destroy(cbat->ubid);
 				cbat->ubid = e_ubat(cur->ttype);
+				cbat->ucnt = 0;
+				obat->ucnt = 0;
 			} else {
 				BATcommit(ups);
 			}
@@ -1560,11 +1562,13 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 
 		if (!cc->base.wtime) 
 			continue;
+		assert(oc->base.wtime < cc->base.wtime);
 		tr_update_delta(tr, oc->data, cc->data, SNAPSHOT_MINSIZE);
 
-		if (cc->base.rtime)
-			oc->base.rtime = tr->stime;
-		oc->base.wtime = tr->wstime;
+		if (oc->base.rtime < cc->base.rtime)
+			oc->base.rtime = cc->base.rtime;
+		if (oc->base.wtime < cc->base.wtime)
+			oc->base.wtime = cc->base.wtime;
 		cc->base.rtime = cc->base.wtime = 0;
 	}
 	if (ok == LOG_OK && tt->idxs.set) {
@@ -1578,12 +1582,18 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 
 			tr_update_delta(tr, oi->data, ci->data, SNAPSHOT_MINSIZE);
 
-			if (ci->base.rtime)
-				oi->base.rtime = tr->stime;
-			oi->base.wtime = tr->wstime;
+			if (oi->base.rtime < ci->base.rtime)
+				oi->base.rtime = ci->base.rtime;
+			if (oi->base.wtime < ci->base.wtime)
+				oi->base.wtime = ci->base.wtime;
 			ci->base.rtime = ci->base.wtime = 0;
 		}
 	}
+	if (tt->base.rtime < ft->base.rtime)
+		tt->base.rtime = ft->base.rtime;
+	if (tt->base.wtime < ft->base.wtime)
+		tt->base.wtime = ft->base.wtime;
+	ft->base.rtime = ft->base.wtime = 0;
 	return ok;
 }
 
