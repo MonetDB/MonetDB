@@ -88,8 +88,7 @@ GTIFFattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return createException(MAL, "geotiff.attach", "Catalog table missing\n");
 
 	tif = XTIFFOpen(fname, "r");
-	if (!tif)
-		return createException(MAL, "geotiff.attach", "Missing GEOTIFF file %s\n", fname);
+	if (!tif) return createException(MAL, "geotiff.attach", "Missing GEOTIFF file %s\n", fname);
 
 	/* check if the file is already attached */
 	col = mvc_bind_column(m, fls, "location");
@@ -127,16 +126,6 @@ finish:
 	return msg;
 }
 
-#define LOAD_GREY_CLEANUP() \
-{\
-	if (tif) XTIFFClose(tif); \
-	if (linebuf) GDKfree(linebuf); \
-	if (resX) BBPunfix(resX->batCacheid); \
-	if (resY) BBPunfix(resX->batCacheid); \
-	/* FIXME: is this correct, if we haven't doen any BBPkeepref yet */ \
-	if (resI) BBPunfix(resX->batCacheid); \
-}
-
 str
 GTIFFloadGreyscaleImage(bat *x, bat *y, bat *intensity, str *fname)
 {
@@ -147,6 +136,7 @@ GTIFFloadGreyscaleImage(bat *x, bat *y, bat *intensity, str *fname)
 	tsize_t i, j;
 	void *linebuf = NULL;
 	BAT *resX = NULL, *resY = NULL, *resI = NULL;
+	char *errbuf = NULL;
 
 	tif = XTIFFOpen(*fname, "r");
 	if (!tif)
@@ -162,37 +152,6 @@ GTIFFloadGreyscaleImage(bat *x, bat *y, bat *intensity, str *fname)
 	}
 	pixels = (BUN)wid * (BUN)len;
 
-	/* Manually compute values for the X-dimension, since we know that its
-	 * range is [strt:step:wid] and each of its value must be repeated 'len'
-	 * times with 1 #repeats */
-	ARRAYseries_int(&bid, &strt, &step, &wid, &len, &rep1);
-	resX = BATdescriptor(bid);
-	if (resX == NULL) {
-		XTIFFClose(tif);
-		return createException(MAL, "geotiff.loadimage", "Failed to load the X-dimension of %s", *fname);
-	}
-	if (BATcount(resX) != pixels) {
-		XTIFFClose(tif);
-		BBPunfix(resX->batCacheid);
-		return createException(MAL, "geotiff.loadimage", "X-dimension has invalid number of pixels: " BUNFMT " (!= " BUNFMT ")", BATcount(resX), pixels);
-	}
-
-	/* Manually compute values for the Y-dimension, since we know that its
-	 * range is [strt:step:len] and each of its value must be repeated 1 times
-	 * with 'wid' #repeats */
-	ARRAYseries_int(&bid, &strt, &step, &len, &rep1, &wid);
-	resY = BATdescriptor(bid);
-	if (resY == NULL) {
-		XTIFFClose(tif);
-		return createException(MAL, "geotiff.loadimage", "Failed to load the Y-dimension of %s", *fname);
-	}
-	if (BATcount(resY) != pixels) {
-		XTIFFClose(tif);
-		BBPunfix(resX->batCacheid);
-		BBPunfix(resY->batCacheid);
-		return createException(MAL, "geotiff.loadimage", "Y-dimension has invalid number of pixels: " BUNFMT " (!= " BUNFMT ")", BATcount(resY), pixels);
-	}
-
 	/* Read the pixel intensities from the GeoTIFF file and fill in the BAT */
 	switch (bps/8){ /* sacrifice some storage to avoid values become signed */
 	case sizeof(bte):
@@ -200,14 +159,9 @@ GTIFFloadGreyscaleImage(bat *x, bat *y, bat *intensity, str *fname)
 		sht *data_sht = NULL;
 
 		resI = BATnew(TYPE_void, TYPE_sht, pixels);
-		if (resI == NULL) {
-			LOAD_GREY_CLEANUP();
-			return createException(MAL, "geotiff.loadimage", MAL_MALLOC_FAIL);
-		}
-
 		linebuf = GDKmalloc(wid); /* buffer for one line of image */
-		if (linebuf == NULL) {
-			LOAD_GREY_CLEANUP();
+		if (resI == NULL || linebuf == NULL) {
+			XTIFFClose(tif);
 			return createException(MAL, "geotiff.loadimage", MAL_MALLOC_FAIL);
 		}
 
@@ -225,14 +179,9 @@ GTIFFloadGreyscaleImage(bat *x, bat *y, bat *intensity, str *fname)
 		int *data_int = NULL;
 
 		resI = BATnew(TYPE_void, TYPE_int, pixels);
-		if (resI == NULL) {
-			LOAD_GREY_CLEANUP();
-			return createException(MAL, "geotiff.loadimage", MAL_MALLOC_FAIL);
-		}
-
 		linebuf = GDKmalloc(wid*2); /* buffer for one line of image */
-		if (linebuf == NULL) {
-			LOAD_GREY_CLEANUP();
+		if (resI == NULL || linebuf == NULL) {
+			XTIFFClose(tif);
 			return createException(MAL, "geotiff.loadimage", MAL_MALLOC_FAIL);
 		}
 
@@ -246,11 +195,12 @@ GTIFFloadGreyscaleImage(bat *x, bat *y, bat *intensity, str *fname)
 		break;
 	}
 	default:
-		LOAD_GREY_CLEANUP();
+		XTIFFClose(tif);
 		return createException(MAL, "geotiff.loadimage", "Unexpected BitsPerSample: %d not in {8,16}", bps);
 	}
 	XTIFFClose(tif);
 	GDKfree(linebuf);
+
 	BATsetcount(resI, pixels);
 	BATseqbase(resI, 0);
 	BATkey(resI, TRUE);
@@ -258,6 +208,35 @@ GTIFFloadGreyscaleImage(bat *x, bat *y, bat *intensity, str *fname)
 	resI->T->nil = FALSE;
 	resI->tsorted = FALSE;
 	BBPkeepref(resI->batCacheid);
+
+	/* Manually compute values for the X-dimension, since we know that its
+	 * range is [strt:step:wid] and each of its value must be repeated 'len'
+	 * times with 1 #repeats */
+	errbuf = ARRAYseries_int(&bid, &strt, &step, &wid, &len, &rep1);
+	if (errbuf != MAL_SUCCEED) {
+		BBPdecref(resI->batCacheid, 1); /* undo the BBPkeepref(resI->batCacheid) above */
+		return createException(MAL, "geotiff.loadimage", "Failed to create the X-dimension of %s", *fname);
+	}
+	/* Manually compute values for the Y-dimension, since we know that its
+	 * range is [strt:step:len] and each of its value must be repeated 1 times
+	 * with 'wid' #repeats */
+	errbuf = ARRAYseries_int(&bid, &strt, &step, &len, &rep1, &wid);
+	if (errbuf != MAL_SUCCEED) {
+		BBPdecref(resI->batCacheid, 1); /* undo the BBPkeepref(resI->batCacheid) above */
+		BBPdecref(resX->batCacheid, 1); /* undo the BBPkeepref(resX->batCacheid) by ARRAYseries_int() */
+		return createException(MAL, "geotiff.loadimage", "Failed to create the y-dimension of %s", *fname);
+	}
+
+	resX = BATdescriptor(bid); /* these should not fail... */
+	resY = BATdescriptor(bid);
+	if (BATcount(resX) != pixels || BATcount(resY) != pixels) {
+		BBPdecref(resX->batCacheid, 1);
+		BBPdecref(resY->batCacheid, 1);
+		BBPdecref(resI->batCacheid, 1);
+		BBPunfix(resX->batCacheid);
+		BBPunfix(resY->batCacheid);
+		return createException(MAL, "geotiff.loadimage", "X or Y dimension has invalid number of pixels. Got " BUNFMT "," BUNFMT " (!= " BUNFMT ")", BATcount(resX), BATcount(resY), pixels);
+	}
 
 	*x = resX->batCacheid;
 	*y = resY->batCacheid;
