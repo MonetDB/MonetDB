@@ -126,6 +126,19 @@ finish:
 	return msg;
 }
 
+
+#define MALLOC_CHECK(tpe, sz) \
+{ \
+	resI = BATnew(TYPE_void, TYPE_##tpe, pixels); \
+	linebuf = GDKmalloc(sz); /* buffer for one line of image */ \
+	if (resI == NULL || linebuf == NULL) { \
+		XTIFFClose(tif); \
+		if (resI) BBPunfix(resI->batCacheid); \
+		if (linebuf) GDKfree(linebuf); \
+		return createException(MAL, "geotiff.loadimage", MAL_MALLOC_FAIL); \
+	} \
+}
+
 str
 GTIFFloadGreyscaleImage(bat *x, bat *y, bat *intensity, str *fname)
 {
@@ -158,13 +171,7 @@ GTIFFloadGreyscaleImage(bat *x, bat *y, bat *intensity, str *fname)
 	{
 		sht *data_sht = NULL;
 
-		resI = BATnew(TYPE_void, TYPE_sht, pixels);
-		linebuf = GDKmalloc(wid); /* buffer for one line of image */
-		if (resI == NULL || linebuf == NULL) {
-			XTIFFClose(tif);
-			return createException(MAL, "geotiff.loadimage", MAL_MALLOC_FAIL);
-		}
-
+		MALLOC_CHECK(sht, wid);
 		data_sht = (sht *)Tloc(resI, BUNfirst(resI));
 		for( i = 0; i < len; i++){
 			if (TIFFReadScanline(tif, linebuf, i, 0) != -1) {
@@ -178,13 +185,7 @@ GTIFFloadGreyscaleImage(bat *x, bat *y, bat *intensity, str *fname)
 	{
 		int *data_int = NULL;
 
-		resI = BATnew(TYPE_void, TYPE_int, pixels);
-		linebuf = GDKmalloc(wid*2); /* buffer for one line of image */
-		if (resI == NULL || linebuf == NULL) {
-			XTIFFClose(tif);
-			return createException(MAL, "geotiff.loadimage", MAL_MALLOC_FAIL);
-		}
-
+		MALLOC_CHECK(int, wid*2);
 		data_int = (int *)Tloc(resI, BUNfirst(resI));
 		for( i = 0; i < len; i++){
 			if (TIFFReadScanline(tif, linebuf, i, 0) != -1) {
