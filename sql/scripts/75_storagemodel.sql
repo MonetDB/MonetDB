@@ -50,7 +50,7 @@ create table storagemodelinput(
 update _tables
 	set system = true
 	where name = 'storagemodelinput'
-		and schema_id = (select id from schemas where name = 'sys');
+		and schema_id = (select id from sys.schemas where name = 'sys');
 -- this table can be adjusted to reflect the anticipated final database size
 
 -- The model input can be derived from the current database using
@@ -159,4 +159,4 @@ from storagemodel() group by "schema","table";
 update _tables
 	set system = true
 	where name = 'tablestoragemodel'
-		and schema_id = (select id from schemas where name = 'sys');
+		and schema_id = (select id from sys.schemas where name = 'sys');
