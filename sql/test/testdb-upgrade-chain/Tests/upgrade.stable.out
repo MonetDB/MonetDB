@@ -20,51 +20,181 @@ stdout of test 'upgrade` in directory 'sql/test/testdb-upgrade-chain` itself:
 
 Ready.
 Running database upgrade commands:
-drop function sys.zorder_slice;
-
-Running database upgrade commands:
-create aggregate sys.stddev_samp(val TINYINT) returns DOUBLE external name "aggr"."stdev";
-create aggregate sys.stddev_samp(val SMALLINT) returns DOUBLE external name "aggr"."stdev";
-create aggregate sys.stddev_samp(val INTEGER) returns DOUBLE external name "aggr"."stdev";
-create aggregate sys.stddev_samp(val BIGINT) returns DOUBLE external name "aggr"."stdev";
-create aggregate sys.stddev_samp(val REAL) returns DOUBLE external name "aggr"."stdev";
-create aggregate sys.stddev_samp(val DOUBLE) returns DOUBLE external name "aggr"."stdev";
-create aggregate sys.stddev_samp(val DATE) returns DOUBLE external name "aggr"."stdev";
-create aggregate sys.stddev_samp(val TIME) returns DOUBLE external name "aggr"."stdev";
-create aggregate sys.stddev_samp(val TIMESTAMP) returns DOUBLE external name "aggr"."stdev";
-create aggregate sys.stddev_pop(val TINYINT) returns DOUBLE external name "aggr"."stdevp";
-create aggregate sys.stddev_pop(val SMALLINT) returns DOUBLE external name "aggr"."stdevp";
-create aggregate sys.stddev_pop(val INTEGER) returns DOUBLE external name "aggr"."stdevp";
-create aggregate sys.stddev_pop(val BIGINT) returns DOUBLE external name "aggr"."stdevp";
-create aggregate sys.stddev_pop(val REAL) returns DOUBLE external name "aggr"."stdevp";
-create aggregate sys.stddev_pop(val DOUBLE) returns DOUBLE external name "aggr"."stdevp";
-create aggregate sys.stddev_pop(val DATE) returns DOUBLE external name "aggr"."stdevp";
-create aggregate sys.stddev_pop(val TIME) returns DOUBLE external name "aggr"."stdevp";
-create aggregate sys.stddev_pop(val TIMESTAMP) returns DOUBLE external name "aggr"."stdevp";
-create aggregate sys.var_samp(val TINYINT) returns DOUBLE external name "aggr"."variance";
-create aggregate sys.var_samp(val SMALLINT) returns DOUBLE external name "aggr"."variance";
-create aggregate sys.var_samp(val INTEGER) returns DOUBLE external name "aggr"."variance";
-create aggregate sys.var_samp(val BIGINT) returns DOUBLE external name "aggr"."variance";
-create aggregate sys.var_samp(val REAL) returns DOUBLE external name "aggr"."variance";
-create aggregate sys.var_samp(val DOUBLE) returns DOUBLE external name "aggr"."variance";
-create aggregate sys.var_samp(val DATE) returns DOUBLE external name "aggr"."variance";
-create aggregate sys.var_samp(val TIME) returns DOUBLE external name "aggr"."variance";
-create aggregate sys.var_samp(val TIMESTAMP) returns DOUBLE external name "aggr"."variance";
-create aggregate sys.var_pop(val TINYINT) returns DOUBLE external name "aggr"."variancep";
-create aggregate sys.var_pop(val SMALLINT) returns DOUBLE external name "aggr"."variancep";
-create aggregate sys.var_pop(val INTEGER) returns DOUBLE external name "aggr"."variancep";
-create aggregate sys.var_pop(val BIGINT) returns DOUBLE external name "aggr"."variancep";
-create aggregate sys.var_pop(val REAL) returns DOUBLE external name "aggr"."variancep";
-create aggregate sys.var_pop(val DOUBLE) returns DOUBLE external name "aggr"."variancep";
-create aggregate sys.var_pop(val DATE) returns DOUBLE external name "aggr"."variancep";
-create aggregate sys.var_pop(val TIME) returns DOUBLE external name "aggr"."variancep";
-create aggregate sys.var_pop(val TIMESTAMP) returns DOUBLE external name "aggr"."variancep";
-insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('stddev_samp', 'stddev_pop', 'var_samp', 'var_pop') and f.type = 3 and f.schema_id = s.id and s.name = 'sys');
+drop filter function sys."like"(string, string, string);
+drop filter function sys."ilike"(string, string, string);
+create filter function sys."like"(val string, pat string, esc string) external name algebra.likesubselect;
+create filter function sys."ilike"(val string, pat string, esc string) external name algebra.ilikesubselect;
+drop function sys.storage;
+-- The contents of this file are subject to the MonetDB Public License
+-- Version 1.1 (the "License"); you may not use this file except in
+-- compliance with the License. You may obtain a copy of the License at
+-- http://www.monetdb.org/Legal/MonetDBLicense
+--
+-- Software distributed under the License is distributed on an "AS IS"
+-- basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+-- License for the specific language governing rights and limitations
+-- under the License.
+--
+-- The Original Code is the MonetDB Database System.
+--
+-- The Initial Developer of the Original Code is CWI.
+-- Copyright August 2008-2013 MonetDB B.V.
+-- All Rights Reserved.
 
 
-# 15:17:06 >  
-# 15:17:06 >  "/usr/bin/python" "upgrade.SQL.py" "upgrade"
-# 15:17:06 >  
+-- Author M.Kersten
+-- This script gives the database administrator insight in the actual
+-- footprint of the persistent tables and the maximum playground used
+-- when indices are introduced upon them.
+-- By chancing the storagemodelinput table directly, the footprint for
+-- yet to be loaded databases can be assessed.
+
+-- The actual storage footprint of an existing database can be 
+-- obtained by the table procuding function storage()
+-- It represents the actual state of affairs, i.e. storage on disk
+-- of columns and foreign key indices, and possible temporary hash indices.
+-- For strings we take a sample to determine their average length.
+
+create function storage()
+returns table ("schema" string, "table" string, "column" string, "type" string, location string, "count" bigint, typewidth int, columnsize bigint, heapsize bigint, indices bigint, sorted boolean)
+external name sql.storage;
+
+-- To determine the footprint of an arbitrary database, we first have
+-- to define its schema, followed by an indication of the properties of each column.
+-- A storage model input table for the size prediction is shown below:
+create table storagemodelinput(
+	"schema" string,
+	"table" string,
+	"column" string,
+	"type" string,
+	"typewidth" int,
+	"count"	bigint,		-- estimated number of tuples
+	"distinct" bigint,	-- indication of distinct number of strings
+	"atomwidth" int,		-- average width of strings or clob
+	"reference" boolean,-- used as foreign key reference
+	"sorted" boolean 	-- if set there is no need for an index
+);
+update _tables
+	set system = true
+	where name = 'storagemodelinput'
+		and schema_id = (select id from sys.schemas where name = 'sys');
+-- this table can be adjusted to reflect the anticipated final database size
+
+-- The model input can be derived from the current database using
+create procedure storagemodelinit()
+begin
+	delete from storagemodelinput;
+
+	insert into storagemodelinput 
+	select X."schema", X."table", X."column", X."type", X.typewidth, X.count, 0, X.typewidth, false, X.sorted from storage() X;
+
+	update storagemodelinput
+	set reference = true
+	where concat(concat("schema","table"), "column") in (
+		SELECT concat( concat("fkschema"."name", "fktable"."name"), "fkkeycol"."name" )
+		FROM	"sys"."keys" AS    "fkkey",
+				"sys"."objects" AS "fkkeycol",
+				"sys"."tables" AS  "fktable",
+				"sys"."schemas" AS "fkschema"
+		WHERE   "fktable"."id" = "fkkey"."table_id"
+			AND "fkkey"."id" = "fkkeycol"."id"
+			AND "fkschema"."id" = "fktable"."schema_id"
+			AND "fkkey"."rkey" > -1);
+
+	update storagemodelinput
+	set "distinct" = "count" -- assume all distinct
+	where "type" = 'varchar' or "type"='clob';
+end;
+
+-- The predicted storage footprint of the complete database 
+-- determines the amount of diskspace needed for persistent storage
+-- and the upperbound when all possible index structures are created.
+-- The storage requirement for foreign key joins is split amongst the participants.
+
+create function columnsize(nme string, i bigint, d bigint)
+returns bigint
+begin
+	case
+	when nme = 'boolean' then return i;
+	when nme = 'char' then return 2*i;
+	when nme = 'smallint' then return 2 * i;
+	when nme = 'int'	 then return 4 * i;
+	when nme = 'bigint'	 then return 8 * i;
+	when nme = 'timestamp' then return 8 * i;
+	when  nme = 'varchar' then 
+		case
+		when cast(d as bigint) << 8 then return i;
+		when cast(d as bigint) << 16 then return 2 * i;
+		when cast(d as bigint) << 32 then return 4 * i;
+		else return 8 * i;
+		end case;
+	else return 8 * i;
+	end case;
+end;
+
+create function heapsize(tpe string, i bigint, w int)
+returns bigint
+begin
+	if  tpe <> 'varchar' and tpe <> 'clob'
+	then
+		return 0;
+	end if;
+	return 10240 + i * w;
+end;
+
+create function indexsize(b boolean, i bigint)
+returns bigint
+begin
+	-- assume non-compound keys
+	if  b = true
+	then
+		return 8 * i;
+	end if;
+	return 0;
+end;
+
+create function storagemodel()
+returns table (
+	"schema" string,
+	"table" string,
+	"column" string,
+	"type" string,
+	"count"	bigint,		
+	columnsize bigint,
+	heapsize bigint,
+	indices bigint,
+	sorted boolean)
+begin
+	return select I."schema", I."table", I."column", I."type", I."count",
+	columnsize(I."type", I.count, I."distinct"), 
+	heapsize(I."type", I."distinct", I."atomwidth"), 
+	indexsize(I."reference", I."count"),
+	I.sorted
+	from storagemodelinput I;
+end;
+
+-- A summary of the table storage requirement is is available as a table view.
+-- The auxillary column denotes the maximum space if all non-sorted columns
+-- would be augmented with a hash (rare situation)
+create view tablestoragemodel
+as select "schema","table",max(count) as "count",
+	sum(columnsize) as columnsize,
+	sum(heapsize) as heapsize,
+	sum(indices) as indices,
+	sum(case when sorted = false then 8 * count else 0 end) as auxillary
+from storagemodel() group by "schema","table";
+update _tables
+	set system = true
+	where name = 'tablestoragemodel'
+		and schema_id = (select id from sys.schemas where name = 'sys');
+insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('like', 'ilike') and f.type = 4 and f.schema_id = s.id and s.name = 'sys');
+insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('storage', 'columnsize', 'heapsize', 'indexsize', 'storagemodel') and f.type = 1 and f.schema_id = s.id and s.name = 'sys');
+insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name = 'storagemodelinit' and f.type = 2 and f.schema_id = s.id and s.name = 'sys');
+
+
+# 16:00:11 >  
+# 16:00:11 >  "/usr/bin/python2" "upgrade.SQL.py" "upgrade"
+# 16:00:11 >  
 
 #select count(*) from testschema.smallstring;
 % testschema.smallstring # table_name
