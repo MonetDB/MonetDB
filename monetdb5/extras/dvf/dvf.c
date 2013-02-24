@@ -71,6 +71,7 @@ str plan_modifier(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	str *schema_name = (str*) getArgReference(stk,pci,1); /* arg 1: schema_name */
 	int bat_fl = *(int*) getArgReference(stk,pci,2); /* arg 2: bat of file_locations */
+	int run_mergetable_opt = *(int*) getArgReference(stk,pci,3); /* arg 3: whether plan_modifier should integrate mergetable optimizer */
 
 	BATiter fli;
 	
@@ -269,8 +270,11 @@ str plan_modifier(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	 * *optimizer.inline();optimizer.remap();optimizer.evaluate();optimizer.costModel();optimizer.coercions();optimizer.emptySet();optimizer.aliases(); optimizer.mergetable();optimizer.deadcode();optimizer.commonTerms();optimizer.groups();optimizer.joinPath();optimizer.reorder();optimizer.deadcode();optimizer.reduce();optimizer.history();optimizer.multiplex();optimizer.accumulators();optimizer.garbageCollector();
 	 */
 
-	o = newFcnCall(mb, "optimizer", "mergetable");
-	typeChecker(cntxt->fdout, cntxt->nspace, mb, o, FALSE);
+	if(run_mergetable_opt)
+	{
+		o = newFcnCall(mb, "optimizer", "mergetable");
+		typeChecker(cntxt->fdout, cntxt->nspace, mb, o, FALSE);
+	}
 	
 	if(run_dataflow_opt)
 	{
@@ -278,7 +282,8 @@ str plan_modifier(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		typeChecker(cntxt->fdout, cntxt->nspace, mb, o, FALSE);
 	}
 
-	optimizeMALBlock(cntxt, mb);
+	if(run_mergetable_opt || run_dataflow_opt)
+		optimizeMALBlock(cntxt, mb);
 
 	/* New variables might have been created by the optimizers, so their values has to be copied into the stack. However, there might not be enough space in stack for them. We cannot reallocate the stack, but we may create our own enlarged stack, then run the rest of the plan with our own stack. */
 

@@ -379,6 +379,10 @@ OPTdvfImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, in
 						q = pushReturn(mb, q, newTmpVariable(mb, TYPE_void));
 						q = pushArgument(mb, q, getArg(p, 2));
 						q = pushArgument(mb, q, getArg(t, 0));
+						if(mode == 2)
+							q = pushInt(mb, q, 0);
+						else
+							q = pushInt(mb, q, 1);
 
 						/* insert the new instructions in pc i2+1 */
 						insertInstruction(mb, q, i2+1);
