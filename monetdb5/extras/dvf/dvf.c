@@ -7,11 +7,6 @@
 #include "dvf.h"
 #include "mal_interpreter.h"
 
-#define NUM_RET_MOUNT 4
-
-int get_column_num(str schema_name, str table_name, str column_name);
-int get_column_type(str schema_name, str table_name, int column_num);
-
 int get_column_type(str schema_name, str table_name, int column_num)
 {
 	if(strcmp(schema_name, "mseed") != 0 || strcmp(table_name, "data") != 0)
