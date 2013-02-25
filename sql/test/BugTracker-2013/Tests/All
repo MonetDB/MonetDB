@@ -3,3 +3,4 @@ select-around-zero.Bug-3220
 segfault_in_aggregation.Bug-3225
 subtract-one-year.Bug-3215
 perl-undef-0.Bug-3235
+crash-from-optimizer.Bug-3241
