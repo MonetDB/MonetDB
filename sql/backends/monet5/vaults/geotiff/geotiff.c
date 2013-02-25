@@ -143,7 +143,7 @@ str
 GTIFFloadGreyscaleImage(bat *x, bat *y, bat *intensity, str *fname)
 {
 	TIFF *tif = (TIFF*)0;
-	int  bid = 0, strt = 0, step = 1, rep1 = 1, wid = 0, len = 0;
+	int  bidx = 0, bidy = 0, strt = 0, step = 1, rep1 = 1, wid = 0, len = 0;
 	BUN pixels = BUN_NONE;
 	sht photoint, bps;
 	tsize_t i, j;
@@ -213,7 +213,7 @@ GTIFFloadGreyscaleImage(bat *x, bat *y, bat *intensity, str *fname)
 	/* Manually compute values for the X-dimension, since we know that its
 	 * range is [strt:step:wid] and each of its value must be repeated 'len'
 	 * times with 1 #repeats */
-	errbuf = ARRAYseries_int(&bid, &strt, &step, &wid, &len, &rep1);
+	errbuf = ARRAYseries_int(&bidx, &strt, &step, &wid, &len, &rep1);
 	if (errbuf != MAL_SUCCEED) {
 		BBPdecref(resI->batCacheid, 1); /* undo the BBPkeepref(resI->batCacheid) above */
 		return createException(MAL, "geotiff.loadimage", "Failed to create the X-dimension of %s", *fname);
@@ -221,15 +221,15 @@ GTIFFloadGreyscaleImage(bat *x, bat *y, bat *intensity, str *fname)
 	/* Manually compute values for the Y-dimension, since we know that its
 	 * range is [strt:step:len] and each of its value must be repeated 1 times
 	 * with 'wid' #repeats */
-	errbuf = ARRAYseries_int(&bid, &strt, &step, &len, &rep1, &wid);
+	errbuf = ARRAYseries_int(&bidy, &strt, &step, &len, &rep1, &wid);
 	if (errbuf != MAL_SUCCEED) {
 		BBPdecref(resI->batCacheid, 1); /* undo the BBPkeepref(resI->batCacheid) above */
 		BBPdecref(resX->batCacheid, 1); /* undo the BBPkeepref(resX->batCacheid) by ARRAYseries_int() */
 		return createException(MAL, "geotiff.loadimage", "Failed to create the y-dimension of %s", *fname);
 	}
 
-	resX = BATdescriptor(bid); /* these should not fail... */
-	resY = BATdescriptor(bid);
+	resX = BATdescriptor(bidx); /* these should not fail... */
+	resY = BATdescriptor(bidy);
 	if (BATcount(resX) != pixels || BATcount(resY) != pixels) {
 		BBPdecref(resX->batCacheid, 1);
 		BBPdecref(resY->batCacheid, 1);
