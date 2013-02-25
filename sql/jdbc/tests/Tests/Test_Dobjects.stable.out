@@ -96,13 +96,13 @@ mTests_sql_jdbc_tests	sys	tables	SYSTEM VIEW	SELECT * FROM (SELECT p.*, 0 AS "te
 mTests_sql_jdbc_tests	sys	tablestoragemodel	SYSTEM VIEW	-- A summary of the table storage requirement is is available as a table view.
 -- The auxillary column denotes the maximum space if all non-sorted columns
 -- would be augmented with a hash (rare situation)
-create view tablestoragemodel
+create view sys.tablestoragemodel
 as select "schema","table",max(count) as "count",
 	sum(columnsize) as columnsize,
 	sum(heapsize) as heapsize,
 	sum(indices) as indices,
 	sum(case when sorted = false then 8 * count else 0 end) as auxillary
-from storagemodel() group by "schema","table";	null	null	null	rowid	SYSTEM	
+from sys.storagemodel() group by "schema","table";	null	null	null	rowid	SYSTEM	
 mTests_sql_jdbc_tests	sys	users	SYSTEM VIEW	SELECT u."name" AS "name", ui."fullname", ui."default_schema" FROM db_users() AS u LEFT JOIN "sys"."db_user_info" AS ui ON u."name" = ui."name" ;	null	null	null	rowid	SYSTEM	
 
 # 20:09:14 >  
