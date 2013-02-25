@@ -64,9 +64,9 @@
  *
  * Otherwise we build a partial hash table on the fly.
  *
- * A decision should be made on the order in which grouping occurs Let
- * |b| have << different values than |g| then the linked lists gets
- * extremely long, leading to a n^2 algorithm.
+ * A decision should be made on the order in which grouping occurs.
+ * Let |b| have << different values than |g| then the linked lists
+ * gets extremely long, leading to a n^2 algorithm.
  * At the MAL level, the multigroup function would perform the dynamic
  * optimization.
  */
@@ -451,20 +451,17 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			GRPnotfound();
 		}
 	} else if (b->T->hash) {
-		bit gc = g && (g->tsorted || g->trevsorted);
-
-		/* we already have a hash table on b;
-		 * we also exploit if g is clustered */
+		/* we already have a hash table on b */
 		ALGODEBUG fprintf(stderr, "#BATgroup(b=%s#" BUNFMT ","
 				  "g=%s#" BUNFMT ","
 				  "e=%s#" BUNFMT ","
 				  "h=%s#" BUNFMT ",subsorted=%d): "
-				  "use existing hash table%s\n",
+				  "use existing hash table\n",
 				  BATgetId(b), BATcount(b),
 				  g ? BATgetId(g) : "NULL", g ? BATcount(g) : 0,
 				  e ? BATgetId(e) : "NULL", e ? BATcount(e) : 0,
 				  h ? BATgetId(h) : "NULL", h ? BATcount(h) : 0,
-				  subsorted, gc ? " (g clustered)" : "");
+				  subsorted);
 		hs = b->T->hash;
 		gn->tsorted = 1; /* be optimistic */
 		for (r = BUNfirst(b), p = r, q = r + BATcount(b); p < q; p++) {
@@ -473,45 +470,13 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			 * HASHloop: the difference is that we only
 			 * consider BUNs smaller than the one we're
 			 * looking up (p), and that we also consider
-			 * the input groups;
-			 * we also exploit if g is clustered */
-			/* skip irrelevant BUNs after the current
-			 * BUNs; exploit that hash-table links
-			 * backwards through BAT */
-			for (hb = HASHget(hs,HASHprobe(hs, v));
-			     hb != HASHnil(hs)&& hb >= p;
-			     hb = HASHgetlink(hs,hb)) {
-				assert( HASHgetlink(hs,hb) == HASHnil(hs)
-				       || HASHgetlink(hs,hb) < hb);
-			}
-			if (gc) {
-				for (;
-				     hb != HASHnil(hs) && grps[hb - r] == grps[p - r];
-				     hb = HASHgetlink(hs,hb)) {
-					assert( HASHgetlink(hs,hb) == HASHnil(hs)
-					       || HASHgetlink(hs,hb) < hb);
-					if (cmp(v, BUNtail(bi, hb)) == 0) {
-						oid grp = ngrps[hb - r];
-						ngrps[p - r] = grp;
-						if (histo)
-							cnts[grp]++;
-						if (gn->tsorted &&
-						    grp != ngrp - 1)
-							gn->tsorted = 0;
-						break;
-					}
-				}
-				if (hb != HASHnil(hs) &&
-				    grps[hb - r] != grps[p - r]) {
-					/* we didn't assign a group
-					 * yet */
-					hb = HASHnil(hs);
-				}
-			} else if (grps) {
-				for (;
+			 * the input groups */
+			if (grps) {
+				for (hb = HASHget(hs, HASHprobe(hs, v));
 				     hb != HASHnil(hs);
-				     hb = HASHgetlink(hs,hb)) {
-					if (grps[hb - r] == grps[p - r] &&
+				     hb = HASHgetlink(hs, hb)) {
+					if (hb < p &&
+					    grps[hb - r] == grps[p - r] &&
 					    cmp(v, BUNtail(bi, hb)) == 0) {
 						oid grp = ngrps[hb - r];
 						ngrps[p - r] = grp;
@@ -524,10 +489,11 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 					}
 				}
 			} else {
-				for (;
+				for (hb = HASHget(hs, HASHprobe(hs, v));
 				     hb != HASHnil(hs);
-				     hb = HASHgetlink(hs,hb)) {
-					if (cmp(v, BUNtail(bi, hb)) == 0) {
+				     hb = HASHgetlink(hs, hb)) {
+					if (hb < p &&
+					    cmp(v, BUNtail(bi, hb)) == 0) {
 						oid grp = ngrps[hb - r];
 						ngrps[p - r] = grp;
 						if (histo)
