@@ -138,15 +138,16 @@ def _configure(str):
             str = nstr
     return str
 
+# use our own process module because it has _BufferedPipe
 try:
-    import subprocess26 as subprocess
+    import process
 except ImportError:
     try:
-        import MonetDBtesting.subprocess26 as subprocess
+        import MonetDBtesting.process as process
     except ImportError:
         p = _configure(os.path.join('@QXprefix@', '@PYTHON2_LIBDIR@'))
         sys.path.insert(0, p)
-        import MonetDBtesting.subprocess26 as subprocess
+        import MonetDBtesting.process as process
         if os.environ.has_key('PYTHONPATH'):
             p += os.pathsep + os.environ['PYTHONPATH']
         os.environ['PYTHONPATH'] = p
@@ -157,8 +158,8 @@ if isatty and os.isatty(sys.stdin.fileno()):
         ttywidth = 80
     else:
         try:
-            proc = subprocess.Popen(['stty', '-a'], stdout = subprocess.PIPE,
-                                    stderr = subprocess.PIPE)
+            proc = process.Popen(['stty', '-a'], stdout = process.PIPE,
+                                 stderr = process.PIPE)
         except OSError:
             pass
         else:
@@ -1306,9 +1307,9 @@ def ApproveOutput (env, TST) :
                 patch = os.path.join(os.sep, 'tmp')
             patch = os.path.join(patch, "%s.patch-%s" % (os.path.basename(stableOUTPUT), str(os.getpid())))
             f = open(patch + '.0', 'w')
-            proc = subprocess.Popen(['diff', '-Bb', '-I^[#=]', '-U0',
-                                     stableOUTPUT, testOUTPUT],
-                                    stdout = f)
+            proc = process.Popen(['diff', '-Bb', '-I^[#=]', '-U0',
+                                  stableOUTPUT, testOUTPUT],
+                                 stdout = f)
             proc.wait()
             f.close()
             if os.path.getsize(patch + ".0"):
@@ -1335,10 +1336,12 @@ def ApproveOutput (env, TST) :
                 f.flush()
                 f.close()
                 shutil.copy(stableOUTPUT, stableOUTPUT + ".ORG")
-                proc = subprocess.Popen(['patch', stableOUTPUT, patch + '.1'])
+                proc = process.Popen(['patch', stableOUTPUT, patch + '.1'])
                 proc.wait()
                 f = open(patch, 'w')
-                proc = subprocess.Popen(['diff', '-u', stableOUTPUT + '.ORG', stableOUTPUT], stdout = f)
+                proc = process.Popen(['diff', '-u', stableOUTPUT + '.ORG',
+                                      stableOUTPUT],
+                                     stdout = f)
                 proc.wait()
                 f.close()
                 remove(stableOUTPUT + ".ORG")
@@ -1471,7 +1474,8 @@ def GetBitsAndOIDsAndModsAndStaticAndThreads(env) :
     cmd.append('--dbpath=%s' % os.path.join(env['GDK_DBFARM'], TSTPREF))
     if procdebug:
         print 'GetBitsAndOIDsAndModsAndStaticAndThreads: starting process "%s" (inpipe, outpipe, errpipe)\n' % '" "'.join(cmd)
-    proc = subprocess.Popen(cmd, stdin = subprocess.PIPE, stdout = subprocess.PIPE, stderr = subprocess.PIPE, universal_newlines = True)
+    proc = process.Popen(cmd, stdin = process.PIPE, stdout = process.PIPE,
+                         stderr = process.PIPE, universal_newlines = True)
     proc.killed = False
     t = Timer(float(par['TIMEOUT']), killProc, args = [proc, proc.stderr, cmd])
     try:
@@ -2170,7 +2174,8 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
                         '%s.out.diff.html' % TST])
             if procdebug:
                 print 'RunTest: starting process "%s"\n' % '" "'.join(cmd)
-            proc = subprocess.Popen(cmd, stdout = subprocess.PIPE, stderr = subprocess.PIPE)
+            proc = process.Popen(cmd, stdout = process.PIPE,
+                                 stderr = process.PIPE)
             proc.killed = False
             t = Timer(float(par['TIMEOUT']), killProc, args = [proc])
             try:
@@ -2203,7 +2208,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
                         '-U%s' % par['CONTEXT'],
                         '%s%s.FILTERED' % (TST, STABLEout),
                         '%s.test.out.FILTERED' % TST])
-            proc = subprocess.Popen(cmd)
+            proc = process.Popen(cmd)
             proc.wait()
 
         diff_html = open('%s.err.diff.html' % TST,"w")
@@ -2239,7 +2244,8 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
                         '%s.err.diff.html' % TST])
             if procdebug:
                 print 'RunTest: starting process "%s"\n' % '" "'.join(cmd)
-            proc = subprocess.Popen(cmd, stdout = subprocess.PIPE, stderr = subprocess.PIPE)
+            proc = process.Popen(cmd, stdout = process.PIPE,
+                                 stderr = process.PIPE)
             proc.killed = False
             t = Timer(float(par['TIMEOUT']), killProc, args = [proc])
             try:
@@ -2272,7 +2278,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
                         '-U%s' % par['CONTEXT'],
                         '%s%s.FILTERED' % (TST, STABLEerr),
                         '%s.test.err.FILTERED' % TST])
-            proc = subprocess.Popen(cmd)
+            proc = process.Popen(cmd)
             proc.wait()
 
         FailedOut, FailedErr = CategorizeResult(TST, max(sockerr, errcode))
@@ -2467,15 +2473,15 @@ def killProc(proc, outfile = None, cmd = None):
         else:
             cdb = None
         if cdb:
-            p = subprocess.Popen([cdb, '-pv', '-p', str(proc.pid),
-                                  '-y', '%scache*;srv*http://msdl.microsoft.com/download/symbols' % sym, '-lines', '-c', '~*kP;!locks;q'],
-                                 stdout = subprocess.PIPE)
+            p = process.Popen([cdb, '-pv', '-p', str(proc.pid),
+                               '-y', '%scache*;srv*http://msdl.microsoft.com/download/symbols' % sym, '-lines', '-c', '~*kP;!locks;q'],
+                              stdout = process.PIPE)
             out, err = p.communicate()
         else:
             out = ''
     else:
         try:
-            p = subprocess.Popen(['pstack', str(proc.pid)], stdout = subprocess.PIPE)
+            p = process.Popen(['pstack', str(proc.pid)], stdout = process.PIPE)
             out, err = p.communicate()
         except:
             out = ''
@@ -2490,8 +2496,8 @@ def killProc(proc, outfile = None, cmd = None):
     except AttributeError:
         if procdebug:
             print 'killProc: starting process "taskkill" "/F" "/T" "/PID" "%s"\n' % str(proc.pid)
-        p = subprocess.Popen(['taskkill','/F','/T','/PID',str(proc.pid)],
-                             stdout = subprocess.PIPE, stderr = subprocess.PIPE)
+        p = process.Popen(['taskkill','/F','/T','/PID',str(proc.pid)],
+                          stdout = process.PIPE, stderr = process.PIPE)
         out, err = p.communicate()
         if procdebug:
             print 'killProc: process exited "taskkill" "/F" "/T" "/PID" "%s" (%s)\n' % (str(proc.pid), proc.returncode)
@@ -2500,7 +2506,7 @@ def killProc(proc, outfile = None, cmd = None):
 
 def LaunchIt(cmd, TestInput, TestOut, TestErr, TimeOut, SrvrOut = None) :
     if not SrvrOut:
-        SrvrOut = subprocess.PIPE
+        SrvrOut = process.PIPE
 
     TestOut.write(Prompt(cmd))
     TestOut.flush()
@@ -2509,7 +2515,13 @@ def LaunchIt(cmd, TestInput, TestOut, TestErr, TimeOut, SrvrOut = None) :
 
     if procdebug:
         print 'LaunchIt: starting process "%s" (inpipe)\n' % '" "'.join(cmd)
-    proc = subprocess.Popen(cmd, stdin = subprocess.PIPE, stdout = SrvrOut, stderr = TestErr, universal_newlines = True)
+    proc = process.Popen(cmd, stdin = process.PIPE, stdout = SrvrOut,
+                         stderr = TestErr, universal_newlines = True)
+    # maybe buffer output as it comes to avoid deadlock
+    if SrvrOut == process.PIPE:
+        proc.stdout = process._BufferedPipe(proc.stdout)
+    if TestErr == process.PIPE:
+        proc.stderr = process._BufferedPipe(proc.stderr)
     proc.killed = False
     t = Timer(TimeOut, killProc, args = [proc, TestErr, cmd])
     t.start()
@@ -2536,7 +2548,7 @@ def CollectIt(pOut, TestOut) :
 def RunIt(cmd, TestIn, TestOut, TestErr, TimeOut) :
     if type(TestIn) is type(''):
         TestInput = TestIn
-        TestIn = subprocess.PIPE
+        TestIn = process.PIPE
     else:
         TestInput = None
     TestOut.write(Prompt(cmd))
@@ -2545,7 +2557,7 @@ def RunIt(cmd, TestIn, TestOut, TestErr, TimeOut) :
     TestErr.flush()
     if procdebug:
         print 'RunIt: starting process "%s"\n' % '" "'.join(cmd)
-    proc = subprocess.Popen(cmd, stdin = TestIn, stdout = TestOut, stderr = TestErr, universal_newlines = True)
+    proc = process.Popen(cmd, stdin = TestIn, stdout = TestOut, stderr = TestErr, universal_newlines = True)
     proc.killed = False
     t = Timer(TimeOut, killProc, args = [proc, TestErr, cmd])
     try:
@@ -2922,7 +2934,8 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
 def Check(command, input) :
     if procdebug:
         print 'Check: starting process "%s" (inpipe,outpipe,errpipe)\n' % '" "'.join(command)
-    proc = subprocess.Popen(command, stdin = subprocess.PIPE, stdout = subprocess.PIPE, stderr = subprocess.PIPE, universal_newlines = True)
+    proc = process.Popen(command, stdin = process.PIPE, stdout = process.PIPE,
+                         stderr = process.PIPE, universal_newlines = True)
     proc.killed = False
     t = Timer(float(par['TIMEOUT']), killProc, args = [proc])
     try:
@@ -2963,7 +2976,10 @@ def Check(command, input) :
                 STDERR.flush()
                 #sys.exit(1)
                 if sys.platform == 'linux2':
-                    proc = subprocess.Popen(['netstat', '-ap'], stdout = subprocess.PIPE, stderr = subprocess.PIPE, universal_newlines = True)
+                    proc = process.Popen(['netstat', '-ap'],
+                                         stdout = process.PIPE,
+                                         stderr = process.PIPE,
+                                         universal_newlines = True)
                     out, err = proc.communicate()
                     STDERR.write(err)
                     STDOUT.write(out)
@@ -3117,7 +3133,9 @@ if os.name == "nt":
     r = re.compile('^Microsoft Windows (.*)\[Version ([0-9]+\.[0-9]+)([^\[0-9].*)\]$')
     if procdebug:
         print 'starting process "cmd" "/c" "ver" (inpipe,outpipe)\n'
-    proc = subprocess.Popen('cmd /c ver', stdin = subprocess.PIPE, stdout = subprocess.PIPE, stderr = subprocess.PIPE, universal_newlines = True)
+    proc = process.Popen('cmd /c ver', stdin = process.PIPE,
+                         stdout = process.PIPE, stderr = process.PIPE,
+                         universal_newlines = True)
     qOut, qErr = proc.communicate()
     if procdebug:
         print 'process exited "cmd" "/c" "ver" (%s)\n' % proc.returncode
@@ -3661,7 +3679,7 @@ def main(argv) :
     REV = opts.get('revision')
     if REV is None:             # no --revision option: try to find out
         try:
-            proc = subprocess.Popen(['hg', 'id', '-i'], stdout = subprocess.PIPE)
+            proc = process.Popen(['hg', 'id', '-i'], stdout = process.PIPE)
             out, err = proc.communicate()
             if proc.returncode == 0:
                 REV = out.strip()
