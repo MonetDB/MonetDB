@@ -368,7 +368,7 @@ DFLOWinitialize(void)
 		MT_lock_unset(&mal_contextLock, "DFLOWinitialize");
 		return MAL_SUCCEED;
 	}
-	todo = q_create(2048);
+	todo = q_create(2048, "todo");
 	limit = GDKnr_threads ? GDKnr_threads : 1;
 	for (i = 0; i < limit && i < THREADS; i++) {
 		if (MT_create_thread(&workers[i], DFLOWworker, (void *) &workers[i], MT_THR_JOINABLE) < 0) {
