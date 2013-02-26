@@ -180,7 +180,7 @@ static MT_Lock runningLock MT_LOCK_INITIALIZER("runningLock");
 #endif
 
 void
-MALresourceFairness(Client cntxt, MalBlkPtr mb, lng usec)
+MALresourceFairness(lng usec)
 {
 	size_t rss;
 	unsigned int delay;
@@ -206,20 +206,11 @@ MALresourceFairness(Client cntxt, MalBlkPtr mb, lng usec)
 	if ( rss < MEMORY_THRESHOLD * monet_memory)
 		return;
 
-	if ( usec )
-		/* worker reporting time spent ! */
-		clk =  usec / 1000;
-	else  {
-		/* interpreter calling without timing */
-		/* punish based on total duration of call */
-		clk = (GDKusec() - mb->starttime)/1000;
-		if ( clk <= TIMESLICE) 
-			/* use fake time for penalty */
-			clk = DELAYUNIT;
-		}
+	/* worker reporting time spent  in usec! */
+	clk =  usec / 1000;
 
 	if ( clk > DELAYUNIT ) {
-		PARDEBUG mnstr_printf(GDKstdout, "#delay %d initial "LLFMT"n", cntxt->idx, clk);
+		PARDEBUG mnstr_printf(GDKstdout, "#delay initial "LLFMT"n", clk);
 		ATOMIC_DEC_int(running, runningLock, "MALresourceFairness");
 		while (clk > 0) {
 			/* speed up wake up when we have memory */
@@ -232,7 +223,7 @@ MALresourceFairness(Client cntxt, MalBlkPtr mb, lng usec)
 			delay = (unsigned int) ( ((double)DELAYUNIT * running) / threads);
 			if (delay) {
 				if ( delayed++ == 0){
-						mnstr_printf(GDKstdout, "#delay %d initial %u["LLFMT"] memory  "SZFMT"[%f]\n", cntxt->idx, delay, clk, rss, MEMORY_THRESHOLD * monet_memory);
+						mnstr_printf(GDKstdout, "#delay initial %u["LLFMT"] memory  "SZFMT"[%f]\n", delay, clk, rss, MEMORY_THRESHOLD * monet_memory);
 						mnstr_flush(GDKstdout);
 				}
 				MT_sleep_ms(delay);
