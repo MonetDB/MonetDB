@@ -31,6 +31,6 @@ mal_export int MALadmission(lng argclaim, lng hotclaim);
 #endif
 
 mal_export lng getMemoryClaim(MalBlkPtr mb, MalStkPtr stk, int pc, int i, int flag);
-mal_export void MALresourceFairness(lng usec);
+mal_export void MALresourceFairness(Client cntxt, MalBlkPtr mb, lng usec);
 
 #endif /*  _MAL_RESOURCE_H*/

@@ -333,7 +333,7 @@ DFLOWworker(void *t)
 			if (todo->last == 0)
 				profilerHeartbeatEvent("wait");
 			else
-				MALresourceFairness(usec);
+				MALresourceFairness(NULL, NULL, usec);
 		}
 	}
 	GDKfree(GDKerrbuf);

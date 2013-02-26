@@ -184,7 +184,7 @@ static MT_Lock runningLock
 #endif
 
 void
-MALresourceFairness(lng usec)
+MALresourceFairness(Client cntxt, MalBlkPtr mb, lng usec)
 {
 	size_t rss;
 	unsigned int delay;
@@ -198,6 +198,9 @@ MALresourceFairness(lng usec)
 		ATOMIC_INIT(runningLock, "MALresourceFairness");
 #endif
 #endif
+
+	(void) cntxt;
+	(void) mb;
 
 	if ( usec > 0 && ( (usec = GDKusec()-usec)) <= TIMESLICE )
 		return;
