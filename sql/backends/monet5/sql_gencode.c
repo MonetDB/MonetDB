@@ -1247,9 +1247,13 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				p = pushArgument(mb, p, getDestVar(r));
 				k = getDestVar(p);
 
-				q = newStmt2(mb, algebraRef, uselectRef);
+				q = newStmt1(mb, algebraRef, "subselect" );
 				q = pushArgument(mb, q, k);
 				q = pushBit(mb, q, TRUE);
+				q = pushBit(mb, q, TRUE);
+				q = pushBit(mb, q, TRUE);
+				q = pushBit(mb, q, TRUE);
+				q = pushBit(mb, q, FALSE);
 				s->nr = getDestVar(q);
 				break;
 			}
