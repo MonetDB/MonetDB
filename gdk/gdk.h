@@ -1861,7 +1861,7 @@ typedef struct {
 	BAT *cache[2];		/* if loaded: BAT* handle + reverse */
 	str logical[2];		/* logical name + reverse */
 	str bak[2];		/* logical name + reverse backups */
-	bat next[2];		/* next BBP slot in link list */
+	bat next[2];		/* next BBP slot in linked list */
 	BATstore *desc;		/* the BAT descriptor */
 	str physical;		/* dir + basename for storage */
 	str options;		/* A string list of options */

@@ -1154,7 +1154,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 						cntxt->timer = oldtimer;
 				} 
 			}
-			stkpc = mb->stop-1;
+			stkpc = mb->stop;
 			continue;
 		default:
 			stkpc++;

@@ -237,7 +237,7 @@ class Connection(object):
         while count > 0:
             recv = self.socket.recv(count)
             if len(recv) == 0:
-                time.sleep(1)
+                raise OperationalError("Server closed connection")
             #logger.debug("II: package size: %i payload: %s" % (len(recv), recv))
             count -= len(recv)
             result.write(recv)

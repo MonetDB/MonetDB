@@ -336,14 +336,13 @@ DFLOWworker(void *t)
 			}
 		MT_lock_unset(&flow->flowlock, "MALworker");
 
-		q_enqueue(flow->done, fe);
 		if ( fnxt == 0) {
 			if (todo->last == 0)
 				profilerHeartbeatEvent("wait");
 			else
 				MALresourceFairness(flow->cntxt, flow->mb, usec);
-			
 		}
+		q_enqueue(flow->done, fe);
 	}
 	GDKfree(GDKerrbuf);
 	GDKsetbuf(0);
@@ -364,10 +363,12 @@ DFLOWinitialize(void)
 {
 	int i, limit;
 
-	if (todo)
-		return MAL_SUCCEED;
 	MT_lock_set(&mal_contextLock, "DFLOWinitialize");
-	todo = q_create(2048, "todo");
+	if (todo) {
+		MT_lock_unset(&mal_contextLock, "DFLOWinitialize");
+		return MAL_SUCCEED;
+	}
+	todo = q_create(2048);
 	limit = GDKnr_threads ? GDKnr_threads : 1;
 	for (i = 0; i < limit && i < THREADS; i++) {
 		if (MT_create_thread(&workers[i], DFLOWworker, (void *) &workers[i], MT_THR_JOINABLE) < 0) {
