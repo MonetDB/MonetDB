@@ -353,9 +353,11 @@ DFLOWinitialize(void)
 {
 	int i, limit;
 
-	if (todo)
-		return;
 	MT_lock_set(&mal_contextLock, "DFLOWinitialize");
+	if (todo) {
+		MT_lock_unset(&mal_contextLock, "DFLOWinitialize");
+		return;
+	}
 	todo = q_create(2048);
 	limit = GDKnr_threads ? GDKnr_threads : 1;
 	for (i = 0; i < limit; i++)
