@@ -64,7 +64,7 @@ extern void jaqlerror(jc* j, char const *msg);
 /* set line numbers each time a token is recognised */
 #define YY_USER_ACTION yyextra->tokstart = yytext;
 
-#define YY_INPUT(buf, res, max_size) readinput(yyextra, buf, &res, max_size)
+#define YY_INPUT(buf, res, max_size) res = readinput(yyextra, buf, res, max_size)
 #define YY_NO_INPUT
 
 /* ugly as hell, but needed to prevent flex from assigning stdin to yyin */
@@ -77,14 +77,14 @@ extern void jaqlerror(jc* j, char const *msg);
 #endif
 #define stdout (FILE *)0
 
-static void readinput(jc *j, char *buf, int *res, size_t max_size) {
+static size_t readinput(jc *j, char *buf, size_t res, size_t max_size) {
 	if (j->buf != NULL && j->buf[j->pos] != '\0') {
-		*res = (int)strlen(j->buf + j->pos);  /* FIXME: cache this */
-		if ((size_t)*res > max_size)
-			*res = (int)max_size;
-		memcpy(buf, j->buf + j->pos, *res);
+		res = (int)strlen(j->buf + j->pos);  /* FIXME: cache this */
+		if (res > max_size)
+			res = max_size;
+		memcpy(buf, j->buf + j->pos, res);
 		j->start = j->pos;
-		j->pos += *res;
+		j->pos += res;
 		j->scanbuf = buf;
 	} else {
 		if (j->expect_json != ';' && j->scanstreamin != NULL) {
@@ -94,8 +94,8 @@ static void readinput(jc *j, char *buf, int *res, size_t max_size) {
 			if (bstream_next(bs) < 0) {
 				/* read failed, force shutdown next iteration */
 				j->scanstreameof = 1;
-				*res = YY_NULL;
-				return;
+				res = YY_NULL;
+				return res;
 			}
 
 			/* request more if we appear to be at the end of current
@@ -109,20 +109,21 @@ static void readinput(jc *j, char *buf, int *res, size_t max_size) {
 				if (bstream_next(bs) < 0) {
 					/* read failed, force shutdown next iteration */
 					j->scanstreameof = 1;
-					*res = YY_NULL;
-					return;
+					res = YY_NULL;
+					return res;
 				}
 			}
 
 			/* did we get some query text */
 			if (bs->eof == 0) {
 				j->buf = bs->buf;
-				readinput(j, buf, res, max_size);
-				return;
+				res = readinput(j, buf, res, max_size);
+				return res;
 			}
 		}
-		*res = YY_NULL;
+		res = YY_NULL;
 	}
+	return res;
 }
 %}
 
