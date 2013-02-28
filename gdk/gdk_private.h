@@ -111,8 +111,6 @@ extern batlock_t GDKbatLock[BBP_BATMASK + 1];
 extern bbplock_t GDKbbpLock[BBP_THREADMASK + 1];
 extern size_t GDK_mmap_minsize;	/* size after which we use memory mapped files */
 extern MT_Lock GDKnameLock;
-extern int GDKrecovery;
-extern int GDKsilent;	/* should GDK shut up? */
 extern MT_Lock GDKthreadLock;
 extern MT_Lock GDKtmLock;
 extern MT_Lock MT_system_lock;

@@ -2208,8 +2208,6 @@ gdk_export str GDKstrdup(const char *s);
  * @tab
  *  GDKmessage
  * @item bit
- * @tab GDKsilent
- * @item int
  * @tab
  *  GDKfatal(str msg)
  * @item int
@@ -2235,9 +2233,8 @@ gdk_export str GDKstrdup(const char *s);
  * should show if this mechanism is sufficient.  Most routines return
  * a pointer with zero to indicate an error.
  *
- * The error messages are also copied to standard output unless
- * GDKsilent is set to a non-zero value.  The last error message is
- * kept around in a global variable.
+ * The error messages are also copied to standard output.  The last
+ * error message is kept around in a global variable.
  *
  * Error messages can also be collected in a user-provided buffer,
  * instead of being echoed to a stream. This is a thread-specific
