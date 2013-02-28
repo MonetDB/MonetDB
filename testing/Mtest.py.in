@@ -32,12 +32,6 @@
 # - normalize all path's used
 # - Python 3? (or do a full rewrite?)
 
-try:
-    True
-except NameError:
-    # provide values for old Python versions
-    False, True = 0, 1
-
 import os
 import sys
 import shutil
@@ -71,15 +65,6 @@ if os.name != 'nt' and isatty:
 else:
     # no coloring if not to a tty
     RED = GREEN = PURPLE = BLACK = ''
-
-# Python 2.3 doesn't know about os.devnull...
-try:
-    os.devnull
-except AttributeError:
-    if os.name == 'nt':
-        os.devnull = 'nul'
-    else:
-        os.devnull = '/dev/null'
 
 def ErrExit(msg):
     print >> sys.stderr, msg
