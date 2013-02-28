@@ -34,6 +34,9 @@ All Rights Reserved.
 
 #define SAMPLE_TRESHOLD_LOG 17
 #define SAMPLE_SLICE_SIZE 1000
+
+static BAT *BATnlthetajoin(BAT *l, BAT *r, int op, BUN estimate);
+
 /*
  * @+ Join Algorithms
  * All join related operations have the same prelude to check
@@ -437,14 +440,6 @@ BATmergejoin(BAT *l, BAT *r, BUN estimate)
 {
 	/* allows swapping of left and right input for faster processing */
 	return batmergejoin(l, r, estimate, TRUE, NULL);
-}
-
-BAT *
-BATleftmergejoin(BAT *l, BAT *r, BUN estimate)
-{
-	/* do not swap left and right input, and hence maintain order
-	 * of left head in result */
-	return batmergejoin(l, r, estimate, FALSE, NULL);
 }
 
 /*
@@ -1706,26 +1701,6 @@ BATthetajoin(BAT *l, BAT *r, int op, BUN estimate)
 		ALGODEBUG fprintf(stderr, "#BATthetajoin(l,r,JOIN_EQ): BATjoin(l, r);\n");
 
 		return BATjoin(l, r, _estimate);
-	}
-	return BATnlthetajoin(l, r, op, _estimate);
-}
-
-BAT *
-BATleftthetajoin(BAT *l, BAT *r, int op, BUN estimate)
-{
-	BUN _lcount = BATcount(l);
-	BUN _rcount = BATcount(r);
-	BUN _estimate = (BUN) MIN((lng) _lcount * _rcount, BUN_MAX);
-
-	assert(_estimate <= BUN_MAX);
-	@:joincheck(BATleftthetajoin,l->ttype,r->htype)@
-	if (estimate < _estimate)
-		_estimate = estimate;
-	if (op == JOIN_EQ) {
-		/* exploit all equi-join optimizations */
-		ALGODEBUG fprintf(stderr, "#BATleftthetajoin(l,r,JOIN_EQ): BATleftjoin(l, r);\n");
-
-		return BATleftjoin(l, r, _estimate);
 	}
 	return BATnlthetajoin(l, r, op, _estimate);
 }

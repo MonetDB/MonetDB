@@ -175,19 +175,6 @@ VALinit(ValPtr d, int tpe, const void *s)
 	return d;
 }
 
-/*
- * VALprint shows the contents of a value record, but without
- * expanding the BAT contents.
- */
-int
-VALprint(stream *s, const ValRecord *res)
-{
-	int t = ATOMstorage(res->vtype);
-
-	return ATOMprint(t, VALptr(res), s);
-}
-
-
 int
 VALformat(char **buf, const ValRecord *res)
 {
