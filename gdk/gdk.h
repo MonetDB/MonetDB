@@ -1414,8 +1414,6 @@ bat_iterator(BAT *b)
  * @item void
  * @tab BATsetcount (BAT *b, BUN cnt)
  * @item BUN
- * @tab BATbuncount (BAT *b)
- * @item str
  * @tab BATrename (BAT *b, str nme)
  * @item BAT *
  * @tab BATkey (BAT *b, int onoff)
@@ -1433,10 +1431,6 @@ bat_iterator(BAT *b)
  *
  * The function BATcount returns the number of associations stored in
  * the BAT.
- *
- * The function BATbuncount returns the space that is occupied in
- * associations in the BAT. This is not the same as BATcount, since
- * the first N associations may be unused or delta data.
  *
  * The BAT is given a new logical name using BATrename.
  *

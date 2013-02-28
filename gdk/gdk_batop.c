@@ -1191,18 +1191,6 @@ BATorder_rev(BAT *b)
 }
 
 BAT *
-BATsorder(BAT *b)
-{
-	return BATorder_internal(b, 1, 0, 0, "BATsorder");
-}
-
-BAT *
-BATsorder_rev(BAT *b)
-{
-	return BATorder_internal(b, 1, 1, 0, "BATsorder_rev");
-}
-
-BAT *
 BATsort(BAT *b)
 {
 	return BATorder_internal(b, 0, 0, 1, "BATsort");

@@ -2229,19 +2229,6 @@ BBPkeepref(bat i)
 }
 
 void
-BBPreleaselref(bat i)
-{
-	int lock = locked_by ? BBP_getpid() != locked_by : 1;
-
-	if (i == bat_nil)
-		return;
-	if (i < 0)
-		i = -i;
-	assert(BBP_lrefs(i) > 0);
-	decref(i, TRUE, FALSE, lock);
-}
-
-void
 BBPreleaseref(bat i)
 {
         int lock = locked_by ? BBP_getpid() != locked_by : 1;

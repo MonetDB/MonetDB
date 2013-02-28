@@ -936,6 +936,7 @@ GDKvmtrim(void *limit)
 }
 
 static int THRinit(void);
+static void GDKlockHome(void);
 
 int
 GDKinit(opt *set, int setlen)
@@ -1188,7 +1189,7 @@ MT_Lock GDKtmLock;
  * normal routines yet. So we have a local fatal here instead of
  * GDKfatal.
  */
-void
+static void
 GDKlockHome(void)
 {
 	char *p = 0, buf[1024], host[PATHLENGTH];
