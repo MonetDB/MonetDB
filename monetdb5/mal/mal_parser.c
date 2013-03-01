@@ -1683,14 +1683,13 @@ parseAssign(Client cntxt, int cntrl)
 	/* look for assignment operator */
 	if (!keyphrase2(cntxt, ":=")) {
 		/* no assignment !! a control variable is allowed */
-		/* for the case RETURN X, we normalize it */
+		/* for the case RETURN X, we normalize it to include the function arguments */
 		if (cntrl == RETURNsymbol || cntrl == YIELDsymbol) {
-			int e, lim;
-			lim = curInstr->retc;
-			for (e = 0; e < lim; e++) {
-				curInstr = pushArgument(curBlk, curInstr, getArg(curInstr, e));
-				curInstr->argv[e] = getArg(getInstrPtr(curBlk, 0), e);
-			}
+			int e;
+			InstrPtr sig = getInstrPtr(curBlk,0);
+			curInstr->retc = 0;
+			for (e = 0; e < sig->retc; e++) 
+				curInstr = pushReturn(curBlk, curInstr, getArg(sig, e));
 		}
 
 		goto part3;
