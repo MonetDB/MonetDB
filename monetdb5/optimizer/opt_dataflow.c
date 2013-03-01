@@ -33,10 +33,13 @@
  * a dataflow block and who are used multiple times. They should be
  * garbage collected outside the parallel block.
  */
+
+#define isSimple(p) (getModuleId(p) == calcRef || getModuleId(p) == mtimeRef || getModuleId(p) == strRef || getModuleId(p)== mmathRef || \
+	 p->token == ENDsymbol || getFunctionId(p) == multiplexRef || blockCntrl(p) || blockStart(p) || blockExit(p))
 static int
 simpleFlow(InstrPtr *old, int start, int last)
 {
-	int i, j, simple = TRUE;
+	int i, j, k, simple = TRUE;
 	InstrPtr p = NULL, q;
 
 	/* skip simple first */
@@ -52,8 +55,9 @@ simpleFlow(InstrPtr *old, int start, int last)
 		if( !simple)  {
 			simple = FALSE;
 			for( j= q->retc; j < q->argc; j++)
-				if( getArg(p,0) == getArg(q,j))
-					simple= TRUE;
+				for( k =0; k < p->retc; k++)
+					if( getArg(p,k) == getArg(q,j))
+						simple= TRUE;
 			if( !simple)
 				return 0;
 		}
@@ -118,16 +122,25 @@ void removeDataflow(MalBlkPtr mb)
 	GDKfree(delete);
 }
 
+// take care of side-effects in updates
+static void setAssigned(InstrPtr p, int k, int *assigned){
+	if ( isUpdateInstruction(p) || hasSideEffects(p,TRUE))
+		assigned[getArg(p,p->retc)] ++;
+	assigned[getArg(p,k)]++;
+}
+
 static int
-dflowAssignTest(Lifespan span, InstrPtr p, int i)
+dflowAssignConflict(InstrPtr p, int *assigned)
 {
 	int j;
-	/* flow blocks should be closed (and not opened) when we reach a point
-	   where a variable is assigned that is not the last
+	/* flow blocks should be closed when we reach a point
+	   where a variable is assigned  more then once
 	*/
 	for(j=0; j<p->retc; j++)
-		if (getLastUpdate(span, getArg(p,j)) != i)
+		if ( assigned[getArg(p,j)] )
 			return 1;
+	if ( isUpdateInstruction(p) && assigned[getArg(p,p->retc)] )
+		return 1;
 	return 0;
 }
 
@@ -140,25 +153,24 @@ dflowAssignTest(Lifespan span, InstrPtr p, int i)
 
 /* a limited set of MAL instructions may appear in the dataflow block*/
 static int
-dflowInstruction(InstrPtr p) {
+dflowConflict(InstrPtr p) {
+	if ( p->token == ENDsymbol || getFunctionId(p) == multiplexRef || blockCntrl(p) || blockStart(p) || blockExit(p))	
+		return TRUE;
 	switch(p->token){
 	case ASSIGNsymbol:
 	case PATcall:
 	case CMDcall:
 	case FACcall:
 	case FCNcall:
-		return ! (	hasSideEffects(p,FALSE) || isUnsafeFunction(p) || blockCntrl(p) );
+		return (	hasSideEffects(p,FALSE) || isUnsafeFunction(p) );
 	}
-	return FALSE;
+	return TRUE;
 }
 
 static int
-dflowGarbagesink(MalBlkPtr mb, InstrPtr *old, int start, int last, int var, InstrPtr *sink, int top){
+dflowGarbagesink(MalBlkPtr mb, int var, InstrPtr *sink, int top){
 	InstrPtr r;
 	
-	(void) start;
-	(void) last;
-	(void) old;
 	r = newInstruction(NULL,ASSIGNsymbol);
 	getModuleId(r) = languageRef;
 	getFunctionId(r) = passRef;
@@ -168,219 +180,165 @@ dflowGarbagesink(MalBlkPtr mb, InstrPtr *old, int start, int last, int var, Inst
 	return top;
 }
 
-static void
-DFLOWinitvars(MalBlkPtr mb, InstrPtr p,int start, int last, Lifespan span, char *init)
-{
-	int k;
-	for( k=0; k<p->retc; k++)
-	if( getBeginLifespan(span,getArg(p,k)) >= start && getEndLifespan(span,getArg(p,k)) >= last && init[getArg(p,k)]==0){
-		InstrPtr r= newAssignment(mb);
-		getArg(r,0)= getArg(p,k);
-		pushNil(mb,r,getArgType(mb,p,k));
-		init[getArg(p,k)]=1;
-	}
-}
-
-#define copyblock() \
-	for( j=start ; j<i; j++) if (old[j]) pushInstruction(mb,old[j]);\
-	for( j=0; j<top; j++) pushInstruction(mb,sink[j]);
-
-#define exitblock() \
-	if (!sf && entries>1){ \
-		q= newAssignment(mb); \
-		q->barrier= EXITsymbol; \
-		getArg(q,0) = flowblock; \
-	}\
-	memset((char*) usage, 0, vlimit);\
-	entries = flowblock = 0;\
-	actions++;
-
 /* dataflow blocks are transparent, because they are always
    executed, either sequentially or in parallell */
-#define startblock()\
-	q= newFcnCall(mb,languageRef,dataflowRef);\
-	q->barrier= BARRIERsymbol;\
-	getArg(q,0)= flowblock;\
-	varSetProperty(mb, getArg(q,0), "transparent",0,0);
 
 int
 OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	int i,j,k, var, cnt, start=1,entries=0, actions=0;
-	int flowblock= 0, dumbcopy=0;
-	InstrPtr *sink, *old, q;
+	int i,j,k, start=1, conflict, actions=0, simple = TRUE;
+	int flowblock= 0;
+	InstrPtr *sink = NULL, *old = NULL, q;
 	int limit, slimit, vlimit, top = 0;
-	Lifespan span;
-	char *init;
-	int *usage;
+	char *init = NULL;
+	int *used = NULL, *assigned = NULL, *eolife = NULL;
 
 	/* don't use dataflow on single processor systems */
 	if (GDKnr_threads <= 1)
 		return 0;
 
-	(void) cntxt;
 	(void) stk;
 	/* inlined functions will get their dataflow control later */
 	if ( varGetProp(mb, getArg(getInstrPtr(mb,0),0),inlineProp)!= NULL) 
 		return 0;
-	span= setLifespan(mb);
-	if( span == NULL)
-		return 0;
-	init= (char*) GDKzalloc(mb->vtop);
-	if ( init == NULL){
-		GDKfree(span);
-		return 0;
-	}
-	usage= (int*) GDKzalloc(vlimit = mb->vtop * sizeof(int));
-	if ( usage == NULL){
-		GDKfree(span);
-		GDKfree(init);
-		return 0;
-	}
-	sink= (InstrPtr*) GDKzalloc(mb->vsize * sizeof(InstrPtr));
-	if ( sink == NULL){
-		GDKfree(span);
-		GDKfree(init);
-		GDKfree(usage);
-		return 0;
+	OPTDEBUGdataflow{
+		mnstr_printf(cntxt->fdout,"#dataflow input\n");
+		printFunction(cntxt->fdout, mb, 0, LIST_MAL_STMT);
 	}
 
+	vlimit = mb->vsize;
+	eolife= (int*) GDKzalloc(vlimit * sizeof(int));
+	init= (char*) GDKzalloc(mb->vtop);
+	used= (int*) GDKzalloc(vlimit * sizeof(int));
+	sink= (InstrPtr*) GDKzalloc(vlimit * sizeof(InstrPtr));
+	assigned= (int*) GDKzalloc(vlimit * sizeof(int));
+	if (eolife == NULL || init == NULL || used == NULL || sink == NULL || assigned == NULL)
+		goto wrapup;
+	
 	limit= mb->stop;
 	slimit= mb->ssize;
 	old = mb->stmt;
-	if ( newMalBlkStmt(mb, mb->ssize+mb->vtop) <0 ){
-		GDKfree(span);
-		GDKfree(init);
-		GDKfree(usage);
-		GDKfree(sink);
-		return 0;
+	// collect end of variable lives
+	for (i = 0; i<limit; i++) {
+		p = old[i];
+		assert( p);
+		for (j = 0; j < p->argc; j++)
+			eolife[getArg(p,j)]= i;
 	}
-	pushInstruction(mb,old[0]);
 
-	//removeDataflow(mb); To be done explicit by optimizers
+	if ( newMalBlkStmt(mb, mb->ssize+mb->vtop) <0 )
+		goto wrapup;
+	
+	pushInstruction(mb,old[0]);
 
 	/* inject new dataflow barriers */
 	for (i = 1; i<limit; i++) {
 		p = old[i];
+		assert(p);
+		conflict = 0;
 
-		if (p == NULL)
-			continue;
-
-		if (p->token == ENDsymbol)
-			break;
-		if (!dflowInstruction(p) || (!dumbcopy && blockExit(p)) || dflowAssignTest(span,p,i) ){
-			/* close old flow block */
-			if (flowblock){
-				int sf = simpleFlow(old,start,i);
-				top = 0;
-				if (!sf && entries > 1){
-					for( j=start ; j<i; j++)
-					if (old[j]) {
-						DFLOWinitvars(mb, old[j], start, i, span, init);
-						/* collect variables garbage collected within the block */
-						for( k=old[j]->retc; k<old[j]->argc; k++)
-							if( getEndLifespan(span, var = getArg(old[j],k)) == j && usage[var]>=1 && isaBatType(getVarType(mb,var)))
-								top = dflowGarbagesink(mb,old, start, i, getArg(old[j],k), sink,top);
-							else
-							if( getEndLifespan(span,getArg(old[j],k)) < i && isaBatType(getVarType(mb,var)))
-								usage[getArg(old[j],k)]++;
-						assert(top <mb->vsize);
+		if ( dflowConflict(p) || (conflict = dflowAssignConflict(p,assigned)) )  {
+			/* close previous flow block */
+			if ( !(simple = simpleFlow(old,start,i))){
+				for( j=start ; j<i; j++){
+					q = old[j];
+					// initialize variables used beyond the dataflow block
+					for( k=0; k<p->retc; k++)
+					if( eolife[getArg(q,k)] >= i && init[getArg(q,k)]==0){
+						InstrPtr r= newAssignment(mb);
+						getArg(r,0)= getArg(q,k);
+						pushNil(mb,r,getArgType(mb,q,k));
+						init[getArg(r,0)]=1;
 					}
-					startblock();
+					// collect BAT variables garbage collected within the block 
+					for( k=q->retc; k<q->argc; k++)
+					if ( isaBatType(getVarType(mb,getArg(q,k))) ){
+						if( eolife[getArg(q,k)] == j && used[getArg(q,k)]>=1 )
+							top = dflowGarbagesink(mb, getArg(q,k), sink, top);
+						else
+						if( eolife[getArg(q,k)] < i )
+							used[getArg(q,k)]++;
+					}
 				}
-				copyblock();
-				exitblock();
+				flowblock = newTmpVariable(mb,TYPE_bit);
+				q= newFcnCall(mb,languageRef,dataflowRef);\
+				q->barrier= BARRIERsymbol;\
+				getArg(q,0)= flowblock;\
+				varSetProperty(mb, getArg(q,0), "transparent",0,0);
 			}
-			pushInstruction(mb,p);
-			continue;
+			//copyblock 
+			for( j=start ; j<i; j++) 
+				pushInstruction(mb,old[j]);
+			// force the pending final garbage statements
+			for( j=0; j<top; j++) 
+				pushInstruction(mb,sink[j]);
+			/* exit block */
+			if ( ! simple){ 
+				q= newAssignment(mb); 
+				q->barrier= EXITsymbol; 
+				getArg(q,0) = flowblock; 
+			}
+			// implicitly a new flow block starts
+			(void) memset((char*)assigned, 0, vlimit * sizeof (int));
+			(void) memset((char*) used, 0, vlimit * sizeof(int));
+			top = 0;
+			actions++;
+			start = i+1;
+			if ( ! blockStart(p) && !conflict  ){
+				for ( k = 0; k < p->retc; k++)
+					init[getArg(p,k)]=1;
+				pushInstruction(mb,p);
+				(void) memset((char*)assigned, 0, vlimit * sizeof (int));
+				(void) memset((char*) used, 0, vlimit * sizeof(int));
+				continue;
+			} 
+			if ( conflict ) 
+				start --;
 		}
 
 		if (blockStart(p)){
-			dumbcopy++;
-			if (dumbcopy == 1)
-				/* close old flow block */
-				if (flowblock){
-					int sf = simpleFlow(old,start,i);
-					top = 0;
-					if (!sf && entries > 1){
-						for( j=start ; j<i; j++)
-						if (old[j]) {
-							DFLOWinitvars(mb, old[j], start, i, span, init);
-							/* collect variables garbagecollected in the block */
-							for( k=old[j]->retc; k<old[j]->argc; k++)
-								if( getEndLifespan(span, var = getArg(old[j],k)) == j && usage[var]>=1 && isaBatType(getVarType(mb,var)))
-									top = dflowGarbagesink(mb,old, start, i, getArg(old[j],k), sink,top);
-								else
-								if( getEndLifespan(span,getArg(old[j],k)) < i && isaBatType(getVarType(mb,var)))
-									usage[getArg(old[j],k)]++;
-						}
-						startblock();
-					}
-					/* inject the optional garbage sink statement */
-					copyblock();
-					exitblock();
-				}
-		}
-		if (blockExit(p)) {
-			assert(flowblock == 0);
-			dumbcopy--;
+			/* barrier blocks are kept out of the dataflow */
+			/* assumes that barrier entry/exit pairs are correct. */
+			/* A refinement is parallelize within a barrier block */
+			int copy= 1;
 			pushInstruction(mb,p);
-			continue;
-		}
-		if (dumbcopy) {
-			assert(flowblock == 0);
-			pushInstruction(mb,p);
-			continue;
-		}
-		if (flowblock == 0){
-			flowblock = newTmpVariable(mb,TYPE_bit);
-			entries = 0;
-			start = i;
-		}
-		/* check if the instruction can start a flow */
-		/* this should be a function call with multiple arguments */
-		cnt = 0;
-		if (getFunctionId(p))
-			for(j=p->retc; j<p->argc; j++) 
-				if ( isVarConstant(mb, getArg(p,j)) || getLastUpdate(span, getArg(p,j)) <= start)
-					cnt++;
-		if (cnt && dflowAssignTest(span,p,i))
-			cnt = 0;
+			for ( k = 0; k < p->retc; k++)
+				init[getArg(p,k)]=1;
+			for ( i++; i<limit; i++) {
+				p = old[i];
+				for ( k = 0; k < p->retc; k++)
+					init[getArg(p,k)]=1;
+				pushInstruction(mb,p);
 
-		if (cnt && cnt == p->argc-p->retc)
-			entries++;
-	}
-	/* close old flow block */
-	if (flowblock){
-		int sf = simpleFlow(old,start,i);
-		top = 0;
-		if (!sf && entries > 1){
-			for( j=start ; j<i; j++)
-			if (old[j]) {
-				DFLOWinitvars(mb, old[j], start, i, span, init);
-				for( k=old[j]->retc; k<old[j]->argc; k++)
-					if( getEndLifespan(span, var = getArg(old[j],k)) == j && usage[var]>=1 && isaBatType(getVarType(mb,var)))
-						top = dflowGarbagesink(mb,old, start, i, getArg(old[j],k), sink,top);
-					else
-					if( getEndLifespan(span,getArg(old[j],k)) < i && isaBatType(getVarType(mb,var)))
-						usage[getArg(old[j],k)]++;
+				if (blockStart(p))
+					copy++;
+				if (blockExit(p)) {
+					copy--;
+					if ( copy == 0) break;
+				}
 			}
-			startblock();
-		}
-		copyblock();
-		exitblock();
+			// reset admin
+			(void) memset((char*)assigned, 0, vlimit * sizeof (int));
+			(void) memset((char*) used, 0, vlimit * sizeof(int));
+			start = i+1;
+		} else {
+			for ( k = 0; k < p->retc; k++)
+				init[getArg(p,k)]=1;
+		} 
+		// remember you assigned to variables
+		for ( k = 0; k < p->retc; k++)
+			setAssigned(p,k,assigned);
 	}
 	/* take the remainder as is */
-	for (; i<limit; i++) 
-		if (old[i])
-			pushInstruction(mb,old[i]);
 	for (; i<slimit; i++) 
 		if (old[i])
 			freeInstruction(old[i]);
-	GDKfree(old);
-	GDKfree(span);
-	GDKfree(init);
-	GDKfree(sink);
-	GDKfree(usage);
+wrapup:
+	if( eolife) GDKfree(eolife);
+	if( init) GDKfree(init);
+	if( used) GDKfree(used);
+	if( sink) GDKfree(sink);
+	if( assigned) GDKfree(assigned);
+	if( old) GDKfree(old);
 	return actions;
 }
