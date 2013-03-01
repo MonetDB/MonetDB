@@ -105,6 +105,8 @@ str plan_modifier(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	num_fl = BAT_fl->U->count;
 
+	printf("files of interest: %d\n", num_fl);
+	
 	/* when number of files to be mounted is 0. */
 	if(num_fl == 0)
 		goto finish;
