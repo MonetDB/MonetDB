@@ -418,7 +418,7 @@ DESCload(int i)
 	int ht, tt;
 
 	IODEBUG {
-		THRprintf(GDKstdout, "#DESCload %s\n", nme);
+		THRprintf(GDKstdout, "#DESCload %s\n", nme ? nme : "<noname>");
 	}
 	bs = BBP_desc(i);
 
