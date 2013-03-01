@@ -1492,12 +1492,12 @@ def returnCode(proc, f = None):
     return None                 # no error
 
 def GetBitsAndOIDsAndModsAndStaticAndThreads(env) :
+    global setpgrp
     rtrn = 0
     cmd = splitcommand(env['exe']['Mserver'][1])
     cmd.append('--dbpath=%s' % os.path.join(env['GDK_DBFARM'], TSTPREF))
     if procdebug:
         print 'GetBitsAndOIDsAndModsAndStaticAndThreads: starting process "%s" (inpipe, outpipe, errpipe)\n' % '" "'.join(cmd)
-    global setpgrp
     setpgrp = True
     proc = process.Popen(cmd, stdin = process.PIPE, stdout = process.PIPE,
                          stderr = process.PIPE, universal_newlines = True)
@@ -1694,6 +1694,7 @@ def CategorizeResult(TST, SockTime):
     return o, e
 
 def RunTest(env, TST, BusyPorts, COND, oktests, length) :
+    global setpgrp
     Failed = F_SKIP
     FailedOut = F_SKIP
     FailedErr = F_SKIP
@@ -2199,7 +2200,6 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
                         '%s.out.diff.html' % TST])
             if procdebug:
                 print 'RunTest: starting process "%s"\n' % '" "'.join(cmd)
-            global setpgrp
             setpgrp = True
             proc = process.Popen(cmd, stdout = process.PIPE,
                                  stderr = process.PIPE)
@@ -2271,7 +2271,6 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
                         '%s.err.diff.html' % TST])
             if procdebug:
                 print 'RunTest: starting process "%s"\n' % '" "'.join(cmd)
-            global setpgrp
             setpgrp = True
             proc = process.Popen(cmd, stdout = process.PIPE,
                                  stderr = process.PIPE)
@@ -2534,6 +2533,7 @@ def killProc(proc, outfile = None, cmd = None):
         pass
 
 def LaunchIt(cmd, TestInput, TestOut, TestErr, TimeOut, SrvrOut = None) :
+    global setpgrp
     if not SrvrOut:
         SrvrOut = process.PIPE
 
@@ -2544,7 +2544,6 @@ def LaunchIt(cmd, TestInput, TestOut, TestErr, TimeOut, SrvrOut = None) :
 
     if procdebug:
         print 'LaunchIt: starting process "%s" (inpipe)\n' % '" "'.join(cmd)
-    global setpgrp
     setpgrp = True
     proc = process.Popen(cmd, stdin = process.PIPE, stdout = SrvrOut,
                          stderr = TestErr, universal_newlines = True)
@@ -2577,6 +2576,7 @@ def CollectIt(pOut, TestOut) :
 ### CollectIt(pOut, pErr, TestOut, TestErr) #
 
 def RunIt(cmd, TestIn, TestOut, TestErr, TimeOut) :
+    global setpgrp
     if type(TestIn) is type(''):
         TestInput = TestIn
         TestIn = process.PIPE
@@ -2588,7 +2588,6 @@ def RunIt(cmd, TestIn, TestOut, TestErr, TimeOut) :
     TestErr.flush()
     if procdebug:
         print 'RunIt: starting process "%s"\n' % '" "'.join(cmd)
-    global setpgrp
     setpgrp = True
     proc = process.Popen(cmd, stdin = TestIn, stdout = TestOut, stderr = TestErr, universal_newlines = True)
     proc.killed = False
@@ -2965,9 +2964,9 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
 ### DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOut, TestErr, STIMEOUT, CTIMEOUT, TIMEOUT, ME, MAPIsockets) #
 
 def Check(command, input) :
+    global setpgrp
     if procdebug:
         print 'Check: starting process "%s" (inpipe,outpipe,errpipe)\n' % '" "'.join(command)
-    global setpgrp
     setpgrp = True
     proc = process.Popen(command, stdin = process.PIPE, stdout = process.PIPE,
                          stderr = process.PIPE, universal_newlines = True)
