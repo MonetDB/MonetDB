@@ -1,0 +1,18 @@
+function tst();
+	i:= 1;
+	b:= bat.new(:oid,:int);
+	a:= bat.new(:oid,:int);
+	i:= 2;
+	b:= bat.new(:oid,:int);
+	c:= bat.new(:oid,:int);
+	a:= bat.new(:oid,:int);
+	c:= bat.new(:oid,:int);
+	a:= bat.new(:oid,:int);
+	d:= bat.new(:oid,:int);
+	io.print(a);
+	io.print(d);
+end tst;
+mdb.list("user","tst");
+optimizer.dataflow("user","tst");
+mdb.list("user","tst");
+

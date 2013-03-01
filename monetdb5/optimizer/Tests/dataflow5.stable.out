@@ -1,0 +1,50 @@
+stdout of test 'dataflow5` in directory 'monetdb5/optimizer` itself:
+
+
+# 16:07:31 >  
+# 16:07:31 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=34474" "--set" "mapi_usock=/var/tmp/mtest-29300/.s.monetdb.34474" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/current//Linux/var/MonetDB/mTests_monetdb5_optimizer" "dataflow5.mal"
+# 16:07:31 >  
+
+# MonetDB 5 server v11.16.0
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_optimizer', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.629 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2013 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:34474/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-29300/.s.monetdb.34474
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+# MonetDB/DataCell loaded
+function user.tst():void;
+    b := bat.new(:oid,:int);
+    bat.insert(b,0@0,1);
+    bat.insert(b,1@0,2);
+    bat.insert(b,2@0,3);
+    io.print(b);
+end tst;
+function user.main():void;
+# updates on BATs may not run in parallel 
+    mdb.list("user","tst");
+    mdb.list("user","tst");
+end main;
+function user.tst():void;
+    b := bat.new(:oid,:int);
+    bat.insert(b,0@0,1);
+    bat.insert(b,1@0,2);
+    bat.insert(b,2@0,3);
+    io.print(b);
+function user.tst():void;
+    b := bat.new(:oid,:int);
+    bat.insert(b,0@0,1);
+    bat.insert(b,1@0,2);
+    bat.insert(b,2@0,3);
+    io.print(b);
+
+# 16:07:31 >  
+# 16:07:31 >  "Done."
+# 16:07:31 >  
+
