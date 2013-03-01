@@ -2114,9 +2114,9 @@ BKCshrinkBAT(int *ret, int *bid, int *did)
 		throw(MAL, "bat.shrink", MAL_MALLOC_FAIL );
 	}
 	bs = BATmirror(BATsort(BATmirror(d)));
+	BBPreleaseref(d->batCacheid);
 	if (bs == NULL) {
 		BBPreleaseref(b->batCacheid);
-		BBPreleaseref(d->batCacheid);
 		BBPreleaseref(bn->batCacheid);
 		throw(MAL, "bat.shrink", MAL_MALLOC_FAIL );
 	}
@@ -2171,7 +2171,7 @@ BKCshrinkBAT(int *ret, int *bid, int *did)
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
 
 	BBPreleaseref(b->batCacheid);
-	BBPreleaseref(d->batCacheid);
+	BBPreleaseref(bs->batCacheid);
 	BBPkeepref(*ret= bn->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -2206,9 +2206,9 @@ BKCshrinkBATmap(int *ret, int *bid, int *did)
 		throw(MAL, "bat.shrinkMap", MAL_MALLOC_FAIL );
 	}
 	bs = BATmirror(BATsort(BATmirror(d)));
+	BBPreleaseref(d->batCacheid);
 	if (bs == NULL) {
 		BBPreleaseref(b->batCacheid);
-		BBPreleaseref(d->batCacheid);
 		BBPreleaseref(bn->batCacheid);
 		throw(MAL, "bat.shrinkMap", MAL_MALLOC_FAIL );
 	}
@@ -2227,7 +2227,7 @@ BKCshrinkBATmap(int *ret, int *bid, int *did)
 		}
 	}
 
-    BATsetcount(bn, BATcount(b)-BATcount(d));
+    BATsetcount(bn, BATcount(b)-BATcount(bs));
 	BATseqbase(bn, b->hseqbase);
     bn->tsorted = 0;
     bn->trevsorted = 0;
@@ -2236,7 +2236,7 @@ BKCshrinkBATmap(int *ret, int *bid, int *did)
     if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
 
 	BBPreleaseref(b->batCacheid);
-	BBPreleaseref(d->batCacheid);
+	BBPreleaseref(bs->batCacheid);
 	BBPkeepref(*ret= bn->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -2284,9 +2284,9 @@ BKCreuseBAT(int *ret, int *bid, int *did)
 		throw(MAL, "bat.reuse", MAL_MALLOC_FAIL );
 	}
 	bs = BATmirror(BATsort(BATmirror(d)));
+	BBPreleaseref(d->batCacheid);
 	if (bs == NULL) {
 		BBPreleaseref(b->batCacheid);
-		BBPreleaseref(d->batCacheid);
 		BBPreleaseref(bn->batCacheid);
 		throw(MAL, "bat.reuse", MAL_MALLOC_FAIL );
 	}
@@ -2334,7 +2334,7 @@ BKCreuseBAT(int *ret, int *bid, int *did)
 		}
 	}
 
-    BATsetcount(bn, BATcount(b) - BATcount(d));
+    BATsetcount(bn, BATcount(b) - BATcount(bs));
 	BATseqbase(bn, b->hseqbase);
     bn->tsorted = 0;
     bn->trevsorted = 0;
@@ -2344,7 +2344,7 @@ BKCreuseBAT(int *ret, int *bid, int *did)
     if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
 
 	BBPreleaseref(b->batCacheid);
-	BBPreleaseref(d->batCacheid);
+	BBPreleaseref(bs->batCacheid);
 	BBPkeepref(*ret= bn->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -2373,16 +2373,16 @@ BKCreuseBATmap(int *ret, int *bid, int *did)
 		throw(MAL, "bat.shrinkMap", MAL_MALLOC_FAIL );
 	}
 	bs = BATmirror(BATsort(BATmirror(d)));
+	BBPreleaseref(d->batCacheid);
 	if (bs == NULL) {
 		BBPreleaseref(b->batCacheid);
-		BBPreleaseref(d->batCacheid);
 		BBPreleaseref(bn->batCacheid);
 		throw(MAL, "bat.shrinkMap", MAL_MALLOC_FAIL );
 	}
 
 	bidx= BUNlast(b)-1;
-    o = (oid*)Tloc(d, BUNfirst(d));
-    ol= (oid*)Tloc(d, BUNlast(d));
+    o = (oid*)Tloc(bs, BUNfirst(bs));
+    ol= (oid*)Tloc(bs, BUNlast(bs));
     r = (oid*)Tloc(bn, BUNfirst(bn));
 
 	for (;oidx<bidx; oidx++) {
@@ -2397,7 +2397,7 @@ BKCreuseBATmap(int *ret, int *bid, int *did)
 			*r++ = oidx; 
 	}
 
-    BATsetcount(bn, BATcount(b)-BATcount(d));
+    BATsetcount(bn, BATcount(b)-BATcount(bs));
 	BATseqbase(bn, b->hseqbase);
     bn->tsorted = 0;
     bn->trevsorted = 0;
@@ -2406,7 +2406,7 @@ BKCreuseBATmap(int *ret, int *bid, int *did)
     if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
 
 	BBPreleaseref(b->batCacheid);
-	BBPreleaseref(d->batCacheid);
+	BBPreleaseref(bs->batCacheid);
 	BBPkeepref(*ret= bn->batCacheid);
 	return MAL_SUCCEED;
 }
