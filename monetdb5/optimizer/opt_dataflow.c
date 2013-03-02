@@ -243,7 +243,7 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 				for( j=start ; j<i; j++){
 					q = old[j];
 					// initialize variables used beyond the dataflow block
-					for( k=0; k<p->retc; k++)
+					for( k=0; k<q->retc; k++)
 						if( eolife[getArg(q,k)] >= i && init[getArg(q,k)]==0){
 							InstrPtr r= newAssignment(mb);
 							getArg(r,0)= getArg(q,k);
