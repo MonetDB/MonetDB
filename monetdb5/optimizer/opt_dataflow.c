@@ -244,21 +244,21 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 					q = old[j];
 					// initialize variables used beyond the dataflow block
 					for( k=0; k<p->retc; k++)
-					if( eolife[getArg(q,k)] >= i && init[getArg(q,k)]==0){
-						InstrPtr r= newAssignment(mb);
-						getArg(r,0)= getArg(q,k);
-						pushNil(mb,r,getArgType(mb,q,k));
-						init[getArg(r,0)]=1;
-					}
+						if( eolife[getArg(q,k)] >= i && init[getArg(q,k)]==0){
+							InstrPtr r= newAssignment(mb);
+							getArg(r,0)= getArg(q,k);
+							pushNil(mb,r,getArgType(mb,q,k));
+							init[getArg(r,0)]=1;
+						}
 					// collect BAT variables garbage collected within the block 
 					for( k=q->retc; k<q->argc; k++)
-					if ( isaBatType(getVarType(mb,getArg(q,k))) ){
-						if( eolife[getArg(q,k)] == j && used[getArg(q,k)]>=1 )
-							top = dflowGarbagesink(mb, getArg(q,k), sink, top);
-						else
-						if( eolife[getArg(q,k)] < i )
-							used[getArg(q,k)]++;
-					}
+						if ( isaBatType(getVarType(mb,getArg(q,k))) ){
+							if( eolife[getArg(q,k)] == j && used[getArg(q,k)]>=1 )
+								top = dflowGarbagesink(mb, getArg(q,k), sink, top);
+							else
+							if( eolife[getArg(q,k)] < i )
+								used[getArg(q,k)]++;
+						}
 				}
 				flowblock = newTmpVariable(mb,TYPE_bit);
 				q= newFcnCall(mb,languageRef,dataflowRef);\
