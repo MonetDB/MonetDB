@@ -6840,7 +6840,7 @@ vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			bids[i+1]=0;
 		}
 	}
-	if ( i == 2048 ) {
+	if ( i >= 2048 ) {
 		for( i--; i>=0; i--)
 			BBPdecref(bids[i], TRUE);
 		store_unlock();
