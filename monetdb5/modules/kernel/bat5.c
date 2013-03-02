@@ -97,7 +97,7 @@ local_utoa(size_t i)
 	return buf;
 }
 
-#define COLLISION 64 
+#define COLLISION 64
 
 static void
 HASHinfo(BAT *bk, BAT *bv, Hash *h, str s)
@@ -1702,7 +1702,7 @@ BKCgetStorageSize_str(lng *tot, str batname)
 {
 	int bid = BBPindex(batname);
 
-	if (bid == 0) 
+	if (bid == 0)
 		throw(MAL, "bat.getStorageSize", RUNTIME_OBJECT_MISSING);
 	return BKCgetStorageSize(tot, &bid);
 }
@@ -2070,18 +2070,21 @@ BKCgetSequenceBase(oid *r, int *bid)
 /*
  * Shrinking a void-headed BAT using a list of oids to ignore.
  */
-#define shrinkloop(Type) {\
-	Type *p = (Type*)Tloc(b, BUNfirst(b));\
-	Type *q = (Type*)Tloc(b, BUNlast(b));\
-	Type *r = (Type*)Tloc(bn, BUNfirst(bn));\
-	cnt=0;\
-	for (;p<q; oidx++, p++) {\
-		if ( o < ol && *o == oidx ){\
-			o++;\
-		} else {\
-			cnt++;\
-			*r++ = *p;\
-	} } }
+#define shrinkloop(Type)							\
+	do {											\
+		Type *p = (Type*)Tloc(b, BUNfirst(b));		\
+		Type *q = (Type*)Tloc(b, BUNlast(b));		\
+		Type *r = (Type*)Tloc(bn, BUNfirst(bn));	\
+		cnt=0;										\
+		for (;p<q; oidx++, p++) {					\
+			if ( o < ol && *o == oidx ){			\
+				o++;								\
+			} else {								\
+				cnt++;								\
+				*r++ = *p;							\
+			}										\
+		}											\
+	} while (0)
 
 str
 BKCshrinkBAT(int *ret, int *bid, int *did)
@@ -2108,24 +2111,24 @@ BKCshrinkBAT(int *ret, int *bid, int *did)
 		throw(MAL, "bat.shrink", MAL_MALLOC_FAIL );
 	}
 	bs = BATmirror(BATsort(BATmirror(d)));
+	BBPreleaseref(d->batCacheid);
 	if (bs == NULL) {
 		BBPreleaseref(b->batCacheid);
-		BBPreleaseref(d->batCacheid);
 		BBPreleaseref(bn->batCacheid);
 		throw(MAL, "bat.shrink", MAL_MALLOC_FAIL );
 	}
 
-    	o = (oid*)Tloc(bs, BUNfirst(bs));
-    	ol= (oid*)Tloc(bs, BUNlast(bs));
+	o = (oid*)Tloc(bs, BUNfirst(bs));
+	ol= (oid*)Tloc(bs, BUNlast(bs));
 
 	switch(ATOMstorage(b->ttype) ){
-	case TYPE_bte: shrinkloop(bte) break;
-	case TYPE_sht: shrinkloop(sht) break;
-	case TYPE_int: shrinkloop(int) break;
-	case TYPE_lng: shrinkloop(lng) break;
-	case TYPE_flt: shrinkloop(flt) break;
-	case TYPE_dbl: shrinkloop(dbl) break;
-	case TYPE_oid: shrinkloop(oid) break;
+	case TYPE_bte: shrinkloop(bte); break;
+	case TYPE_sht: shrinkloop(sht); break;
+	case TYPE_int: shrinkloop(int); break;
+	case TYPE_lng: shrinkloop(lng); break;
+	case TYPE_flt: shrinkloop(flt); break;
+	case TYPE_dbl: shrinkloop(dbl); break;
+	case TYPE_oid: shrinkloop(oid); break;
 	default:
 		if (ATOMvarsized(bn->ttype)) {
 			BUN p = BUNfirst(b);
@@ -2143,10 +2146,10 @@ BKCshrinkBAT(int *ret, int *bid, int *did)
 			}
 		} else {
 			switch( b->T->width){
-			case 1:shrinkloop(bte) break;
-			case 2:shrinkloop(sht) break;
-			case 4:shrinkloop(int) break;
-			case 8:shrinkloop(lng) break;
+			case 1:shrinkloop(bte); break;
+			case 2:shrinkloop(sht); break;
+			case 4:shrinkloop(int); break;
+			case 8:shrinkloop(lng); break;
 			default:
 				throw(MAL, "bat.shrink", "Illegal argument type");
 			}
@@ -2165,7 +2168,7 @@ BKCshrinkBAT(int *ret, int *bid, int *did)
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
 
 	BBPreleaseref(b->batCacheid);
-	BBPreleaseref(d->batCacheid);
+	BBPreleaseref(bs->batCacheid);
 	BBPkeepref(*ret= bn->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -2200,16 +2203,16 @@ BKCshrinkBATmap(int *ret, int *bid, int *did)
 		throw(MAL, "bat.shrinkMap", MAL_MALLOC_FAIL );
 	}
 	bs = BATmirror(BATsort(BATmirror(d)));
+	BBPreleaseref(d->batCacheid);
 	if (bs == NULL) {
 		BBPreleaseref(b->batCacheid);
-		BBPreleaseref(d->batCacheid);
 		BBPreleaseref(bn->batCacheid);
 		throw(MAL, "bat.shrinkMap", MAL_MALLOC_FAIL );
 	}
 
-    	o = (oid*)Tloc(bs, BUNfirst(bs));
-    	ol= (oid*)Tloc(bs, BUNlast(bs));
-    	r = (oid*)Tloc(bn, BUNfirst(bn));
+	o = (oid*)Tloc(bs, BUNfirst(bs));
+	ol= (oid*)Tloc(bs, BUNlast(bs));
+	r = (oid*)Tloc(bn, BUNfirst(bn));
 
 	lim = BATcount(b);
 
@@ -2221,7 +2224,7 @@ BKCshrinkBATmap(int *ret, int *bid, int *did)
 		}
 	}
 
-    BATsetcount(bn, BATcount(b)-BATcount(d));
+    BATsetcount(bn, BATcount(b)-BATcount(bs));
 	BATseqbase(bn, b->hseqbase);
     bn->tsorted = 0;
     bn->trevsorted = 0;
@@ -2230,29 +2233,31 @@ BKCshrinkBATmap(int *ret, int *bid, int *did)
     if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
 
 	BBPreleaseref(b->batCacheid);
-	BBPreleaseref(d->batCacheid);
+	BBPreleaseref(bs->batCacheid);
 	BBPkeepref(*ret= bn->batCacheid);
 	return MAL_SUCCEED;
 }
 /*
  * Shrinking a void-headed BAT using a list of oids to ignore.
  */
-#define reuseloop(Type) {\
-	Type *p = (Type*)Tloc(b, BUNfirst(b));\
-	Type *q = (Type*)Tloc(b, BUNlast(b));\
-	Type *r = (Type*)Tloc(bn, BUNfirst(bn));\
-	for (;p<q; oidx++, p++) {\
-		if ( *o == oidx ){\
-			while ( *ol == bidx && ol>o) {\
-				bidx--;\
-				ol--;q--;\
-			}\
-			*r++ = *(--q);\
-			o += (o < ol);\
-			bidx--;\
-		} else\
-			*r++ = *p; \
-} }
+#define reuseloop(Type)								\
+	do {											\
+		Type *p = (Type*)Tloc(b, BUNfirst(b));		\
+		Type *q = (Type*)Tloc(b, BUNlast(b));		\
+		Type *r = (Type*)Tloc(bn, BUNfirst(bn));	\
+		for (;p<q; oidx++, p++) {					\
+			if ( *o == oidx ){						\
+				while ( *ol == bidx && ol>o) {		\
+					bidx--;							\
+					ol--;q--;						\
+				}									\
+				*r++ = *(--q);						\
+				o += (o < ol);						\
+				bidx--;								\
+			} else									\
+				*r++ = *p;							\
+		}											\
+	} while (0)
 
 str
 BKCreuseBAT(int *ret, int *bid, int *did)
@@ -2278,32 +2283,32 @@ BKCreuseBAT(int *ret, int *bid, int *did)
 		throw(MAL, "bat.reuse", MAL_MALLOC_FAIL );
 	}
 	bs = BATmirror(BATsort(BATmirror(d)));
+	BBPreleaseref(d->batCacheid);
 	if (bs == NULL) {
 		BBPreleaseref(b->batCacheid);
-		BBPreleaseref(d->batCacheid);
 		BBPreleaseref(bn->batCacheid);
 		throw(MAL, "bat.reuse", MAL_MALLOC_FAIL );
 	}
 
 	bidx= BUNlast(b)-1;
-    	o = (oid*)Tloc(bs, BUNfirst(bs));
-    	ol= (oid*)Tloc(bs, BUNlast(bs))-1;
+	o = (oid*)Tloc(bs, BUNfirst(bs));
+	ol= (oid*)Tloc(bs, BUNlast(bs))-1;
 
 	switch(ATOMstorage(b->ttype) ){
-	case TYPE_bte: reuseloop(bte) break;
-	case TYPE_sht: reuseloop(sht) break;
-	case TYPE_int: reuseloop(int) break;
-	case TYPE_lng: reuseloop(lng) break;
-	case TYPE_flt: reuseloop(flt) break;
-	case TYPE_dbl: reuseloop(dbl) break;
-	case TYPE_oid: reuseloop(oid) break;
+	case TYPE_bte: reuseloop(bte); break;
+	case TYPE_sht: reuseloop(sht); break;
+	case TYPE_int: reuseloop(int); break;
+	case TYPE_lng: reuseloop(lng); break;
+	case TYPE_flt: reuseloop(flt); break;
+	case TYPE_dbl: reuseloop(dbl); break;
+	case TYPE_oid: reuseloop(oid); break;
 	case TYPE_str: /* to be done based on its index width */
 	default:
 		if (ATOMvarsized(bn->ttype)) {
 			BUN p = BUNfirst(b);
 			BUN q = BUNlast(b);
 			BATiter bi = bat_iterator(b);
-		
+
 			for (;p<q; oidx++, p++) {
 				if ( *o == oidx ){
 					while ( *ol == bidx && ol>o) {
@@ -2318,17 +2323,17 @@ BKCreuseBAT(int *ret, int *bid, int *did)
 			}
 		} else {
 			switch( b->T->width){
-			case 1:reuseloop(bte) break;
-			case 2:reuseloop(sht) break;
-			case 4:reuseloop(int) break;
-			case 8:reuseloop(lng) break;
+			case 1:reuseloop(bte); break;
+			case 2:reuseloop(sht); break;
+			case 4:reuseloop(int); break;
+			case 8:reuseloop(lng); break;
 			default:
 				throw(MAL, "bat.shrink", "Illegal argument type");
 			}
 		}
 	}
 
-    BATsetcount(bn, BATcount(b) - BATcount(d));
+    BATsetcount(bn, BATcount(b) - BATcount(bs));
 	BATseqbase(bn, b->hseqbase);
     bn->tsorted = 0;
     bn->trevsorted = 0;
@@ -2338,7 +2343,7 @@ BKCreuseBAT(int *ret, int *bid, int *did)
     if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
 
 	BBPreleaseref(b->batCacheid);
-	BBPreleaseref(d->batCacheid);
+	BBPreleaseref(bs->batCacheid);
 	BBPkeepref(*ret= bn->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -2367,16 +2372,16 @@ BKCreuseBATmap(int *ret, int *bid, int *did)
 		throw(MAL, "bat.shrinkMap", MAL_MALLOC_FAIL );
 	}
 	bs = BATmirror(BATsort(BATmirror(d)));
+	BBPreleaseref(d->batCacheid);
 	if (bs == NULL) {
 		BBPreleaseref(b->batCacheid);
-		BBPreleaseref(d->batCacheid);
 		BBPreleaseref(bn->batCacheid);
 		throw(MAL, "bat.shrinkMap", MAL_MALLOC_FAIL );
 	}
 
 	bidx= BUNlast(b)-1;
-    o = (oid*)Tloc(d, BUNfirst(d));
-    ol= (oid*)Tloc(d, BUNlast(d));
+    o = (oid*)Tloc(bs, BUNfirst(bs));
+    ol= (oid*)Tloc(bs, BUNlast(bs));
     r = (oid*)Tloc(bn, BUNfirst(bn));
 
 	for (;oidx<bidx; oidx++) {
@@ -2388,10 +2393,10 @@ BKCreuseBATmap(int *ret, int *bid, int *did)
 			o += (o < ol);
 			bidx--;
 		} else
-			*r++ = oidx; 
+			*r++ = oidx;
 	}
 
-    BATsetcount(bn, BATcount(b)-BATcount(d));
+    BATsetcount(bn, BATcount(b)-BATcount(bs));
 	BATseqbase(bn, b->hseqbase);
     bn->tsorted = 0;
     bn->trevsorted = 0;
@@ -2400,7 +2405,7 @@ BKCreuseBATmap(int *ret, int *bid, int *did)
     if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
 
 	BBPreleaseref(b->batCacheid);
-	BBPreleaseref(d->batCacheid);
+	BBPreleaseref(bs->batCacheid);
 	BBPkeepref(*ret= bn->batCacheid);
 	return MAL_SUCCEED;
 }

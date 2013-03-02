@@ -6659,8 +6659,11 @@ str SQLcluster1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 			BBPreleaseref(map->batCacheid);
 			return msg;
 		}
-		BBPdecref(b->batCacheid, TRUE);
 		d = c->data;
+		if (d->bid)
+			BBPdecref(d->bid, TRUE);
+		if (d->ibid)
+			BBPdecref(d->ibid, TRUE);
 		d->bid = 0;
 		d->ibase = 0;
 		d->ibid = bid; /* use the insert bat */
@@ -6732,11 +6735,12 @@ SQLcluster2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			BBPreleaseref(bid);
 			return msg;
 		}
-		BBPdecref(b->batCacheid, TRUE);
 
 		d = c->data;
-		/* its probably an empty bat which we shouldn't free 
-		BBPdecref(d->ibid, TRUE);*/
+		if (d->bid)
+			BBPdecref(d->bid, TRUE);
+		if (d->ibid)
+			BBPdecref(d->ibid, TRUE);
 		d->bid = 0;	
 		d->ibase = 0;
 		d->ibid = bid; /* use the insert bat */
@@ -6821,7 +6825,10 @@ vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		if (b == NULL ||
 		    (msg = (*func)(&bid, &(b->batCacheid), &(del->batCacheid))) != NULL) {
 			for( i--; i>=0; i--)
-				BBPreleaseref(bids[i]);
+				BBPdecref(bids[i], TRUE);
+			if (b)
+				BBPreleaseref(b->batCacheid);
+			BBPreleaseref(del->batCacheid);
 			store_unlock();
 			if (!msg)
 				throw(SQL,name,"Can not access descriptor");
@@ -6833,9 +6840,9 @@ vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			bids[i+1]=0;
 		}
 	}
-	if ( i == 2048 ) {
+	if ( i >= 2048 ) {
 		for( i--; i>=0; i--)
-			BBPreleaseref(bids[i]);
+			BBPdecref(bids[i], TRUE);
 		store_unlock();
 		throw(SQL,name,"Too many columns to handle, use copy instead");
 	}
@@ -6844,7 +6851,10 @@ vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		sql_column *c = o->data;
 		sql_delta *d = c->data;
 
-		BBPdecref(d->bid, TRUE);
+		if (d->bid)
+			BBPdecref(d->bid, TRUE);
+		if (d->ibid)
+			BBPdecref(d->ibid, TRUE);
 		d->bid = 0;
 		d->ibase = 0;
 		d->cnt -= dbat->cnt;
@@ -6919,9 +6929,6 @@ SQLvacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	tr = m->session->tr;
 
-	/* get the deletions BAT*/
-	del = mvc_bind_dbat(m, *sch, *tbl, RD_INS);
-
 	for (o = t->columns.set->h; o && ordered == 0; o = o->next) {
 		c = o->data;
 		b = store_funcs.bind_col(tr, c, 0);
@@ -6930,12 +6937,11 @@ SQLvacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		ordered |= BATtordered(b);
 		cnt = BATcount(b);
 		BBPreleaseref(b->batCacheid);
-		if (msg){
-			BBPreleaseref(b->batCacheid);
-			return msg;
-		}
-		BBPdecref(b->batCacheid, TRUE);
 	}
+
+	/* get the deletions BAT*/
+	del = mvc_bind_dbat(m, *sch, *tbl, RD_INS);
+
 	/* now decide on the algorithm */
 	if ( ordered ){
 		if( BATcount(del) > cnt/20 )
@@ -6943,7 +6949,7 @@ SQLvacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	} else
 		SQLreuse(cntxt,mb,stk,pci);
 
-	BBPdecref(del->batCacheid, TRUE);
+	BBPreleaseref(del->batCacheid);
 	return MAL_SUCCEED;
 }
 /*
@@ -7027,6 +7033,10 @@ compression(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int compr)
 		}
 		BATsetaccess(e, BAT_READ);
 		d = c->data;
+		if (d->bid)
+			BBPdecref(d->bid, TRUE);
+		if (d->ibid)
+			BBPdecref(d->ibid, TRUE);
 		d->bid = 0;
 		d->ibase = 0;
 		d->ibid = e->batCacheid; /* use the insert bat */
@@ -7039,7 +7049,6 @@ compression(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int compr)
 			msg = DICTdecompress(&ret, &nme);
 		BBPkeepref(e->batCacheid);
 		BBPreleaseref(b->batCacheid);
-		BBPdecref(b->batCacheid, TRUE);
 	}
 	/* bat was cleared */
 	t->cleared = 1;

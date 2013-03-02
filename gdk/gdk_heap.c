@@ -174,43 +174,17 @@ HEAPcacheFind(size_t *maxsz, char *fn, storage_t mode)
 			}
 			if (e != NULL && e->maxsz < *maxsz) {
 				/* resize file ? */
-				FILE *fp;
 				long_str fn;
 
 				GDKfilepath(fn, HCDIR, e->fn, NULL);
-
-				if ((fp = fopen(fn, "rb+")) != NULL &&
-#ifdef _WIN64
-				    _fseeki64(fp, (ssize_t) *maxsz - 1, SEEK_SET) >= 0 &&
-#else
-#ifdef HAVE_FSEEKO
-				    fseeko(fp, (off_t) *maxsz - 1, SEEK_SET) >= 0 &&
-#else
-				    fseek(fp, (long) *maxsz - 1, SEEK_SET) >= 0 &&
-#endif
-#endif
-				    fputc('\n', fp) >= 0 &&
-				    fflush(fp) >= 0) {
-					if (fclose(fp) >= 0) {
-						void *base = GDKload(fn, NULL, *maxsz, *maxsz, STORE_MMAP);
-						GDKmunmap(e->base, e->maxsz);
-						e->base = base;
-						e->maxsz = *maxsz;
-					} else {
-						/* extending may have
-						 * failed since fclose
-						 * failed */
-						e = NULL;
-					}
-					/* after fclose, successful or
-					 * not, we can't call fclose
-					 * again */
-					fp = NULL;
-				}
-				if (fp) {
-					/* if set, extending the file
+				if (GDKextend(fn, *maxsz) == 0) {
+					void *base = GDKload(fn, NULL, *maxsz, *maxsz, STORE_MMAP);
+					GDKmunmap(e->base, e->maxsz);
+					e->base = base;
+					e->maxsz = *maxsz;
+				} else {
+					/* extending may have
 					 * failed */
-					fclose(fp);
 					e = NULL;
 				}
 			}
