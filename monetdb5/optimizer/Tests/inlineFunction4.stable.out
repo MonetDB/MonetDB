@@ -50,12 +50,12 @@ end main;
 #result of inline
 function user.tst():void;
     X_5 := false:bit;
-    X_7:int  := 0:int;
+    X_7:int  := 0;
     X_12 := false:bit;
     X_18 := -1:int;
     X_19 := -1:int;
     X_7:int  := -1:int;
-    z := -1:int;
+    z := X_7;
 end tst;
 
 # 05:29:17 >  
