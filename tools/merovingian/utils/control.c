@@ -56,6 +56,7 @@ char* control_send(
 		char* pass)
 {
 	char sbuf[8096];
+	char rbuf[8096];
 	char *buf;
 	int sock = -1;
 	ssize_t len;
@@ -108,9 +109,9 @@ char* control_send(
 		}
 
 		/* try reading length */
-		len = recv(sock, sbuf, 2, 0);
+		len = recv(sock, rbuf, 2, 0);
 		if (len == 2)
-			len += recv(sock, sbuf + len, sizeof(sbuf) - len, 0);
+			len += recv(sock, rbuf + len, sizeof(rbuf) - len, 0);
 		/* perform login ritual */
 		if (len <= 0) {
 			snprintf(sbuf, sizeof(sbuf), "no response from monetdbd");
@@ -119,22 +120,22 @@ char* control_send(
 		}
 		/* we only understand merovingian:1 and :2 (backwards compat
 		 * <=Aug2011) and mapi v9 on merovingian */
-		if (strncmp(sbuf, "merovingian:1:", strlen("merovingian:1:")) == 0) {
-			buf = sbuf + strlen("merovingian:1:");
+		if (strncmp(rbuf, "merovingian:1:", strlen("merovingian:1:")) == 0) {
+			buf = rbuf + strlen("merovingian:1:");
 			ver = 1;
-		} else if (strncmp(sbuf, "merovingian:2:", strlen("merovingian:2:")) == 0) {
-			buf = sbuf + strlen("merovingian:2:");
+		} else if (strncmp(rbuf, "merovingian:2:", strlen("merovingian:2:")) == 0) {
+			buf = rbuf + strlen("merovingian:2:");
 			ver = 2;
-		} else if (strstr(sbuf + 2, ":merovingian:9:") != NULL) {
-			buf = sbuf + 2;
+		} else if (strstr(rbuf + 2, ":merovingian:9:") != NULL) {
+			buf = rbuf + 2;
 			ver = 9;
 
 			fdin = block_stream(socket_rastream(sock, "client in"));
 			fdout = block_stream(socket_wastream(sock, "client out"));
 		} else {
 			if (len > 2 &&
-					(strstr(sbuf + 2, ":BIG:") != NULL ||
-					 strstr(sbuf + 2, ":LIT:") != NULL))
+					(strstr(rbuf + 2, ":BIG:") != NULL ||
+					 strstr(rbuf + 2, ":LIT:") != NULL))
 			{
 				snprintf(sbuf, sizeof(sbuf), "cannot connect: "
 						"server looks like a mapi server, "
@@ -294,23 +295,23 @@ char* control_send(
 
 		if (fdin != NULL) {
 			/* stream.h is sooo broken :( */
-			memset(sbuf, '\0', sizeof(sbuf));
-			if (mnstr_read_block(fdin, sbuf, sizeof(sbuf) - 1, 1) < 0) {
+			memset(rbuf, '\0', sizeof(rbuf));
+			if (mnstr_read_block(fdin, rbuf, sizeof(rbuf) - 1, 1) < 0) {
 				close_stream(fdout);
 				close_stream(fdin);
 				return(strdup("no response from monetdbd after login"));
 			}
-			sbuf[strlen(sbuf) - 1] = '\0';
+			rbuf[strlen(rbuf) - 1] = '\0';
 		} else {
-			if ((len = recv(sock, sbuf, sizeof(sbuf), 0)) <= 0) {
+			if ((len = recv(sock, rbuf, sizeof(rbuf), 0)) <= 0) {
 				close(sock);
 				return(strdup("no response from monetdbd after login"));
 			}
-			sbuf[len - 1] = '\0';
+			rbuf[len - 1] = '\0';
 		}
 
-		if (strcmp(sbuf, "=OK") != 0 && strcmp(sbuf, "OK") != 0) {
-			buf = sbuf;
+		if (strcmp(rbuf, "=OK") != 0 && strcmp(rbuf, "OK") != 0) {
+			buf = rbuf;
 			if (*buf == '!')
 				buf++;
 			if (fdin != NULL) {
@@ -397,20 +398,20 @@ char* control_send(
 		*ret = buf;
 	} else {
 		if (fdin != NULL) {
-			if (mnstr_read_block(fdin, sbuf, sizeof(sbuf) - 1, 1) < 0) {
+			if (mnstr_read_block(fdin, rbuf, sizeof(rbuf) - 1, 1) < 0) {
 				close_stream(fdin);
 				close_stream(fdout);
 				return(strdup("incomplete response from monetdbd"));
 			}
-			sbuf[strlen(sbuf) - 1] = '\0';
-			*ret = strdup(sbuf + 1);
+			rbuf[strlen(rbuf) - 1] = '\0';
+			*ret = strdup(rbuf + 1);
 		} else {
-			if ((len = recv(sock, sbuf, sizeof(sbuf), 0)) <= 0) {
+			if ((len = recv(sock, rbuf, sizeof(rbuf), 0)) <= 0) {
 				close(sock);
 				return(strdup("incomplete response from monetdbd"));
 			}
-			sbuf[len - 1] = '\0';
-			*ret = strdup(sbuf);
+			rbuf[len - 1] = '\0';
+			*ret = strdup(rbuf);
 		}
 	}
 
