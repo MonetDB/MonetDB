@@ -39,19 +39,13 @@ end tst;
 function user.main():void;
     io.printf("#result of inline\n");
     mdb.list("user","tst");
-    io.printf("#result of all optimizers\n");
-    mdb.list("user","tst");
 end main;
 #result of inline
 function user.tst():void;
-barrier X_1 := true:bit;
-exit X_1;
-end tst;
-#result of all optimizers
-function user.tst():void;
-barrier X_1 := true:bit;
-exit X_1;
-end tst;
+    X_5 := true:bit;
+    X_6:int  := 0:int;
+    X_9 := 100:int;
+    X_6:int  := 100:int;
 
 # 01:05:28 >  
 # 01:05:28 >  Done.
