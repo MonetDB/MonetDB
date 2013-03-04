@@ -1535,6 +1535,8 @@ def GetBitsAndOIDsAndModsAndStaticAndThreads(env) :
         raise
     returncode = returnCode(proc)
     if returncode is not None:
+        print qOut
+        print qErr
         ErrExit('GetBitsAndOIDsAndModsAndStaticAndThreads: subcommand failed: %s' % returncode)
     env['TST_MODS'] = []
     env['TST_BITS'] = ""
