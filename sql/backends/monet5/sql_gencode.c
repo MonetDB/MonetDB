@@ -2285,6 +2285,10 @@ add_materialise_stmt(MalBlkPtr mb, sql_rel *rel, list *processed)
 						found = 1;
 				}
 				if (!found) {
+					/* newStmt(): if both 'module' and 'name' are string constants;
+					 * newStmt1(): if 'module' is a reference and 'name' is a string const;
+					 * newStmt2(): if both 'module' and 'name' are references
+					 */
 					InstrPtr q = newStmt1(mb, sciqlRef, "materialise");
 					q = pushSchema(mb, q, t);
 					(void) pushStr(mb, q, t->base.name);
