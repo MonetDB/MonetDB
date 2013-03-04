@@ -33,7 +33,10 @@ cst02
 
 remap
 inlineFunction
+inlineFunction1
 inlineFunction2
+inlineFunction3
+inlineFunction4
 
 reorder00
 # reorder01 -- uses group.new/group.derive
