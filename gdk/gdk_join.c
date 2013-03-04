@@ -30,7 +30,11 @@ joinparamcheck(BAT *l, BAT *r, BAT *sl, BAT *sr, const char *func)
 		GDKerror("%s: inputs must have dense head.\n", func);
 		return GDK_FAIL;
 	}
-	if (ATOMtype(l->ttype) != ATOMtype(r->ttype)) {
+	if (l->ttype == TYPE_void || r->ttype == TYPE_void) {
+		GDKerror("%s: tail type must not be VOID.\n", func);
+		return GDK_FAIL;
+	}
+	if (l->ttype != r->ttype) {
 		GDKerror("%s: inputs not compatible.\n", func);
 		return GDK_FAIL;
 	}
@@ -157,6 +161,8 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, i
 
 	assert(BAThdense(l));
 	assert(BAThdense(r));
+	assert(l->ttype != TYPE_void);
+	assert(r->ttype != TYPE_void);
 	assert(l->ttype == r->ttype);
 	assert(r->tsorted || r->trevsorted);
 	assert(sl == NULL || sl->tsorted);
@@ -178,14 +184,6 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, i
 	}
 	lwidth = l->T->width;
 	rwidth = r->T->width;
-	/* equal_order is set if we can scan both BATs in the same
-	 * order, so when both are sorted or both are reverse
-	 * sorted */
-	equal_order = l->tsorted == r->tsorted || l->trevsorted == r->trevsorted;
-	/* [lr]reverse is either 1 or -1 depending on the order of
-	 * l/r: it determines the comparison function used */
-	lreverse = l->tsorted ? 1 : -1;
-	rreverse = r->tsorted ? 1 : -1;
 
 	/* set basic properties, they will be adjusted if necessary
 	 * later on */
@@ -213,12 +211,23 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, i
 		     nl > 0;
 		     rscan++)
 			nl >>= 1;
+
+		/* equal_order is set if we can scan both BATs in the
+		 * same order, so when both are sorted or both are
+		 * reverse sorted */
+		equal_order = l->tsorted == r->tsorted || l->trevsorted == r->trevsorted;
+		/* [lr]reverse is either 1 or -1 depending on the
+		 * order of l/r: it determines the comparison function
+		 * used */
+		lreverse = l->tsorted ? 1 : -1;
 	} else {
 		/* if l not sorted, we will always use binary search
 		 * on r */
 		lscan = rscan = 0;
 		equal_order = 1;
+		lreverse = 1;
 	}
+	rreverse = r->tsorted ? 1 : -1;
 
 	while (lcand ? lcand < lcandend : lstart < lend) {
 		if (!nil_on_miss && lscan > 0) {
@@ -358,7 +367,8 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, i
 		if (nr == 0) {
 			/* no entries in r found */
 			if (!nil_on_miss) {
-				if (rcand ? rcand == rcandend : rstart == rend) {
+				if (lscan > 0 &&
+				    (rcand ? rcand == rcandend : rstart == rend)) {
 					/* nothing more left to match
 					 * in r */
 					break;
@@ -533,6 +543,8 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, in
 
 	assert(BAThdense(l));
 	assert(BAThdense(r));
+	assert(l->ttype != TYPE_void);
+	assert(r->ttype != TYPE_void);
 	assert(l->ttype == r->ttype);
 	assert(sl == NULL || sl->tsorted);
 	assert(sr == NULL || sr->tsorted);
@@ -760,6 +772,8 @@ thetajoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, const char *op)
 
 	assert(BAThdense(l));
 	assert(BAThdense(r));
+	assert(l->ttype != TYPE_void);
+	assert(r->ttype != TYPE_void);
 	assert(l->ttype == r->ttype);
 	assert(sl == NULL || sl->tsorted);
 	assert(sr == NULL || sr->tsorted);
@@ -1024,7 +1038,7 @@ BATproject(BAT *l, BAT *r)
 	const oid *o;
 	const void *nil = ATOMnilptr(r->ttype);
 	const void *v, *prev;
-	BATiter ri;
+	BATiter ri, bni;
 	oid lo, hi;
 	BUN n;
 	int (*cmp)(const void *, const void *) = BATatoms[r->ttype].atomCmp;
@@ -1054,12 +1068,13 @@ BATproject(BAT *l, BAT *r)
 		return bn;
 	}
 	assert(l->ttype == TYPE_oid);
-	bn = BATnew(TYPE_void, r->ttype, BATcount(l));
+	bn = BATnew(TYPE_void, ATOMtype(r->ttype), BATcount(l));
 	if (bn == NULL)
 		return NULL;
 	o = (const oid *) Tloc(l, BUNfirst(l));
 	n = BUNfirst(bn);
 	ri = bat_iterator(r);
+	bni = bat_iterator(bn);
 	/* be optimistic, we'll change this as needed */
 	bn->T->nonil = 1;
 	bn->T->nil = 0;
@@ -1092,16 +1107,15 @@ BATproject(BAT *l, BAT *r)
 					bn->trevsorted = 0;
 					if (!bn->tsorted)
 						bn->tkey = 0; /* can't be sure */
-				}
-				if (c > 0) {
+				} else if (c > 0) {
 					bn->tsorted = 0;
 					if (!bn->trevsorted)
 						bn->tkey = 0; /* can't be sure */
-				}
-				if (c == 0)
+				} else {
 					bn->tkey = 0; /* definitely */
+				}
 			}
-			prev = v;
+			prev = BUNtail(bni, n);
 		}
 	}
 	assert(n == BATcount(l));
