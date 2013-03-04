@@ -107,6 +107,7 @@ usage(char *prog, int xit)
 #endif
 	fprintf(stderr, "     --performance\n");
 	fprintf(stderr, "     --optimizers\n");
+	fprintf(stderr, "     --trace\n");
 	fprintf(stderr, "     --forcemito\n");
 	fprintf(stderr, "     --debug=<bitmask>\n");
 
@@ -230,6 +231,7 @@ main(int argc, char **av)
 		{ "properties", 0, 0, 0 },
 		{ "io", 0, 0, 0 },
 		{ "transactions", 0, 0, 0 },
+		{ "trace", 0, 0, 0 },
 		{ "modules", 0, 0, 0 },
 		{ "algorithms", 0, 0, 0 },
 		{ "optimizers", 0, 0, 0 },
@@ -367,6 +369,10 @@ main(int argc, char **av)
 			}
 			if (strcmp(long_options[option_index].name, "threads") == 0) {
 				grpdebug |= GRPthreads;
+				break;
+			}
+			if (strcmp(long_options[option_index].name, "trace") == 0) {
+				mal_trace =1;
 				break;
 			}
 			if (strcmp(long_options[option_index].name, "heaps") == 0) {

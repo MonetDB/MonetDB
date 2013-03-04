@@ -18,7 +18,7 @@
  */
 
 /*
- * @+ Monet Basic Definitions
+ * @+ MonetDB Basic Definitions
  * Definitions that need to included in every file of the Monet system,
  * as well as in user defined module implementations.
  */
@@ -38,11 +38,10 @@
 #endif
 
 /*
- * @+ Monet Calling Options
+ * @+ MonetDB Calling Options
  * The number of invocation arguments is kept to a minimum.
  * See `man mserver5` or tools/mserver/mserver5.1
  * for additional system variable settings.
- * @
  */
 #define MAXSCRIPT 64
 #define MEMORY_THRESHOLD  0.8
@@ -51,6 +50,7 @@ mal_export char     monet_cwd[PATHLENGTH];
 mal_export size_t	monet_memory;
 mal_export lng 		memorypool;      /* memory claimed by concurrent threads */
 mal_export int 		memoryclaims;    /* number of threads active with expensive operations */
+mal_export int		mal_trace;		/* enable profile events on console */
 
 /*
    See gdk/gdk.mx for the definition of all debug masks.
@@ -65,7 +65,6 @@ mal_export int 		memoryclaims;    /* number of threads active with expensive ope
 #define GRPtransactions (TMMASK | DELTAMASK | TEMMASK)
 #define GRPmodules (LOADMASK)
 #define GRPalgorithms (ALGOMASK | ESTIMASK)
-#define GRPxproperties 0 /* (XPROPMASK) */
 #define GRPperformance (JOINPROPMASK | DEADBEEFMASK)
 #define GRPoptimizers  (OPTMASK)
 #define GRPforcemito (FORCEMITOMASK)

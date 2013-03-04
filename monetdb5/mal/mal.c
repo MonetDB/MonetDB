@@ -177,6 +177,7 @@
 
 char monet_cwd[PATHLENGTH] = { 0 };
 size_t monet_memory;
+int		mal_trace;		/* enable profile events on console */
 
 #include "mal_stack.h"
 #include "mal_linker.h"
@@ -189,6 +190,7 @@ size_t monet_memory;
 #include "mal_sabaoth.h"
 #include "mal_recycle.h"
 #include "mal_dataflow.h"
+#include "mal_profiler.h"
 
 MT_Lock     mal_contextLock MT_LOCK_INITIALIZER("mal_contextLock");
 MT_Lock     mal_namespaceLock MT_LOCK_INITIALIZER("mal_namespaceLock");
@@ -254,6 +256,19 @@ int mal_init(void){
 	RECYCLEinit();
 	if( malBootstrap() == 0)
 		return -1;
+	/* set up the profiler if needed, output sent to console */
+	if ( mal_trace) {
+		setFilterAll();
+		openProfilerStream(mal_clients[0].fdout);
+		activateCounter("thread");
+		activateCounter("start");
+		activateCounter("ticks");
+		activateCounter("time");
+		activateCounter("event");
+		activateCounter("pc");
+		activateCounter("stmt");
+		startProfiling();
+	}
 	return 0;
 }
 /*
