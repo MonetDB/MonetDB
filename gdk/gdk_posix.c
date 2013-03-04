@@ -789,7 +789,7 @@ win_rmdir(const char *pathname)
 	char buf[128], *p = reduce_dir_name(pathname, buf, sizeof(buf));
 	int ret = _rmdir(p);
 
-	if (ret < 0) {
+	if (ret < 0 && errno != ENOENT) {
 		/* it could be the <expletive deleted> indexing
 		 * service which prevents us from doing what we have a
 		 * right to do, so try again (once) */
@@ -814,7 +814,7 @@ win_unlink(const char *pathname)
 		(void) SetFileAttributes(pathname, FILE_ATTRIBUTE_NORMAL);
 		ret = _unlink(pathname);
 	}
-	if (ret < 0) {
+	if (ret < 0 && errno != ENOENT) {
 		/* it could be the <expletive deleted> indexing
 		 * service which prevents us from doing what we have a
 		 * right to do, so try again (once) */
@@ -831,7 +831,7 @@ win_rename(const char *old, const char *new)
 {
 	int ret = rename(old, new);
 
-	if (ret < 0) {
+	if (ret < 0 && errno != ENOENT) {
 		/* it could be the <expletive deleted> indexing
 		 * service which prevents us from doing what we have a
 		 * right to do, so try again (once) */

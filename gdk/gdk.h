@@ -1449,8 +1449,6 @@ bat_iterator(BAT *b)
  * @item void
  * @tab BATsetcount (BAT *b, BUN cnt)
  * @item BUN
- * @tab BATbuncount (BAT *b)
- * @item str
  * @tab BATrename (BAT *b, str nme)
  * @item BAT *
  * @tab BATkey (BAT *b, int onoff)
@@ -1468,10 +1466,6 @@ bat_iterator(BAT *b)
  *
  * The function BATcount returns the number of associations stored in
  * the BAT.
- *
- * The function BATbuncount returns the space that is occupied in
- * associations in the BAT. This is not the same as BATcount, since
- * the first N associations may be unused or delta data.
  *
  * The BAT is given a new logical name using BATrename.
  *
@@ -1861,7 +1855,7 @@ typedef struct {
 	BAT *cache[2];		/* if loaded: BAT* handle + reverse */
 	str logical[2];		/* logical name + reverse */
 	str bak[2];		/* logical name + reverse backups */
-	bat next[2];		/* next BBP slot in link list */
+	bat next[2];		/* next BBP slot in linked list */
 	BATstore *desc;		/* the BAT descriptor */
 	str physical;		/* dir + basename for storage */
 	str options;		/* A string list of options */
@@ -2266,8 +2260,6 @@ gdk_export str GDKstrdup(const char *s);
  * @tab
  *  GDKmessage
  * @item bit
- * @tab GDKsilent
- * @item int
  * @tab
  *  GDKfatal(str msg)
  * @item int
@@ -2293,9 +2285,8 @@ gdk_export str GDKstrdup(const char *s);
  * should show if this mechanism is sufficient.  Most routines return
  * a pointer with zero to indicate an error.
  *
- * The error messages are also copied to standard output unless
- * GDKsilent is set to a non-zero value.  The last error message is
- * kept around in a global variable.
+ * The error messages are also copied to standard output.  The last
+ * error message is kept around in a global variable.
  *
  * Error messages can also be collected in a user-provided buffer,
  * instead of being echoed to a stream. This is a thread-specific

@@ -48,7 +48,7 @@ shtCmp(const sht *l, const sht *r)
 	return simple_CMP(l, r, sht);
 }
 
-int
+static int
 intCmp(const int *l, const int *r)
 {
 	return simple_CMP(l, r, int);
@@ -60,7 +60,7 @@ fltCmp(const flt *l, const flt *r)
 	return simple_CMP(l, r, flt);
 }
 
-int
+static int
 lngCmp(const lng *l, const lng *r)
 {
 	return simple_CMP(l, r, lng);
@@ -1049,7 +1049,7 @@ strCmpNoNil(const unsigned char *l, const unsigned char *r)
 	return (*l < *r) ? -1 : 1;
 }
 
-void
+static void
 strHeap(Heap *d, size_t cap)
 {
 	size_t size;
@@ -1120,7 +1120,7 @@ strLocate(Heap *h, const char *v)
 	return 0;
 }
 
-var_t
+static var_t
 strPut(Heap *h, var_t *dst, const char *v)
 {
 	size_t elimbase = GDK_ELIMBASE(h->free);
@@ -1627,7 +1627,7 @@ OIDbase(oid o)
 	return o;
 }
 
-oid
+static oid
 OIDseed(oid o)
 {
 	oid t, p = GDKoid;

@@ -7,8 +7,8 @@ function tst();
 	b:= bat.new(:oid,:int);
 	z:bat[:oid,:int]:= mal.multiplex("user","my",b,1);
 end tst;
+optimizer.multiplex("user","tst");
 optimizer.inline("user","tst");
 io.printf("#result of inline\n");
 mdb.list("user","tst");
-mdb.list("user","my");
 

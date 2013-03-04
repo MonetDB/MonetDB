@@ -41,11 +41,31 @@ OPTallConstant(Client cntxt, MalBlkPtr mb, InstrPtr p)
 	return p->argc != p->retc;
 }
 
+static int OPTsimpleflow(MalBlkPtr mb, int pc)
+{
+	int i, block =0, simple= TRUE;
+	InstrPtr p;
+
+	for ( i= pc; i< mb->stop; i++){
+		p =getInstrPtr(mb,i);
+		if (blockStart(p))
+			block++;
+		if ( blockExit(p))
+			block--;
+		if ( blockCntrl(p))
+			simple= FALSE;
+		if ( block == 0){
+			return simple;
+		}
+	}
+	return FALSE;
+}
+/* barrier blocks can only be dropped when they are fully excluded.  */
 static int
 OPTremoveUnusedBlocks(Client cntxt, MalBlkPtr mb)
 {
 	/* catch and remove constant bounded blocks */
-	int i, j = 0, action = 0, block = 0, skip = 0;
+	int i, j = 0, action = 0, block = 0, skip = 0, top =0, skiplist[10];
 	InstrPtr p;
 
 	for (i = 0; i < mb->stop; i++) {
@@ -60,21 +80,36 @@ OPTremoveUnusedBlocks(Client cntxt, MalBlkPtr mb)
 					skip = block;
 				action++;
 			}
+			// Try to remove the barrier statement itself (when true).
+			if (p->argc == 2 && isVarConstant(mb, getArg(p, 1)) &&
+					getArgType(mb, p, 1) == TYPE_bit &&
+					getVarConstant(mb, getArg(p, 1)).val.btval == 1 && 
+					top <10 && OPTsimpleflow(mb,i))
+			{
+				skiplist[top++]= getArg(p,0);
+				freeInstruction(p);
+				continue;
+			}
 		}
 		if (blockExit(p)) {
-			if (skip)
+			if (top > 0 && skiplist[top-1] == getArg(p,0) ){
+				top--;
+				freeInstruction(p);
+				continue;
+			} 
+			if (skip )
 				freeInstruction(p);
 			else
 				mb->stmt[j++] = p;
 			if (skip == block)
 				skip = 0;
 			block--;
+			if (block == 0)
+				skip = 0;
 		} else if (skip)
 			freeInstruction(p);
 		else
 			mb->stmt[j++] = p;
-		if (block == 0)
-			skip = 0;
 	}
 	mb->stop = j;
 	for (; j < i; j++)
@@ -95,7 +130,7 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	int profiler;
 	str msg;
 	int debugstate = cntxt->itrace, actions = 0, constantblock = 0;
-	int *assigned, use; 
+	int *assigned, setonce; 
 
 	cntxt->itrace = 0;
 	(void)stk;
@@ -111,27 +146,38 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	if (assigned == NULL)
 		return 0;
 
+	alias = (int*)GDKzalloc(mb->vsize * sizeof(int) * 2); /* we introduce more */
+	if (alias == NULL){
+		GDKfree(assigned);
+		return 0;
+	}
+
+	// arguments are implicitly assigned by context
+	p = getInstrPtr(mb, 0);
+	for ( k =p->retc;  k < p->argc; k++)
+		assigned[getArg(p,k)]++;
 	limit = mb->stop;
 	for (i = 1; i < limit; i++) {
 		p = getInstrPtr(mb, i);
+		// The double count emerging from a barrier exit is ignored.
+		if (! blockExit(p) || (blockExit(p) && p->retc != p->argc))
 		for ( k =0;  k < p->retc; k++)
 			assigned[getArg(p,k)]++;
 	}
 
-	alias = (int*)GDKzalloc(mb->vsize * sizeof(int) * 2); /* we introduce more */
-	if (alias == NULL)
-		return 0;
-
 	for (i = 1; i < limit; i++) {
 		p = getInstrPtr(mb, i);
-		use = assigned[getArg(p,0)] == 1;
 		for (k = p->retc; k < p->argc; k++)
 			if (alias[getArg(p, k)])
 				getArg(p, k) = alias[getArg(p, k)];
+		// to avoid management of duplicate assignments over multiple blocks
+		// we limit ourselfs to evaluation of the first assignment only.
+		setonce = assigned[getArg(p,0)] == 1;
 		OPTDEBUGevaluate printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_ALL);
+		constantblock +=  blockStart(p) && OPTallConstant(cntxt,mb,p);
+
 		/* be aware that you only assign once to a variable */
-		if (use && p->retc == 1 && OPTallConstant(cntxt, mb, p) && !isUnsafeFunction(p)) {
-			constantblock += p->barrier > 0;
+		if (setonce && p->retc == 1 && OPTallConstant(cntxt, mb, p) && !isUnsafeFunction(p)) {
 			barrier = p->barrier;
 			p->barrier = 0;
 			profiler = malProfileMode;	/* we don't trace it */
@@ -165,6 +211,7 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 				p->argc = 2;
 				p->token = ASSIGNsymbol;
 				clrFunction(p);
+				p->barrier = barrier;
 				/* freeze the type */
 				setVarFixed(mb,getArg(p,1));
 				setVarUDFtype(mb,getArg(p,1));
@@ -181,7 +228,7 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			}
 		}
 	}
-	if ( constantblock)
+	if ( constantblock )
 		actions += OPTremoveUnusedBlocks(cntxt, mb);
 	GDKfree(assigned);
 	GDKfree(alias);

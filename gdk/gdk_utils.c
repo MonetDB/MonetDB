@@ -888,8 +888,6 @@ GDKmunmap(void *addr, size_t size)
  * Their value is turned into a blanc space.
  */
 
-int GDKrecovery = 0;
-
 #define CATNAP		50	/* time to sleep in ms for catnaps */
 
 static MT_Id GDKvmtrim_id;
@@ -931,6 +929,7 @@ GDKvmtrim(void *limit)
 }
 
 static int THRinit(void);
+static void GDKlockHome(void);
 
 int
 GDKinit(opt *set, int setlen)
@@ -1180,7 +1179,7 @@ MT_Lock GDKtmLock MT_LOCK_INITIALIZER("GDKtmLock");
  * normal routines yet. So we have a local fatal here instead of
  * GDKfatal.
  */
-void
+static void
 GDKlockHome(void)
 {
 	char *p = 0, buf[1024], host[PATHLENGTH];
@@ -1199,9 +1198,6 @@ GDKlockHome(void)
 		if (chdir(GDKdbpathStr) < 0)
 			GDKfatal("GDKlockHome: could not move to %s\n", GDKdbpathStr);
 		IODEBUG THRprintf(GDKstdout, "#GDKlockHome: created directory %s\n", GDKdbpathStr);
-	}
-	if (GDKrecovery && unlink(GDKLOCK) < 0) {
-		GDKfatal("GDKlockHome: unlock DB failed\n");
 	}
 	if (MT_lockf(GDKLOCK, F_TLOCK, 4, 1) < 0) {
 		GDKlockFile = 0;
@@ -1283,7 +1279,6 @@ GDKgetHome(void)
  * GDKerrorCount(); Furthermore, threads may have set their private
  * error buffer.
  */
-int GDKsilent = 0;
 static int THRerrorcount[THREADDATA];
 
 /* do the real work for GDKaddbuf below. */
@@ -1322,7 +1317,7 @@ doGDKaddbuf(const char *prefix, const char *message, size_t messagelen, const ch
 			dst += sufflen;
 		}
 		*dst = '\0';
-	} else if (!GDKsilent) {
+	} else {
 		/* construct format string because the format string
 		 * must start with ! */
 		char format[32];
@@ -1497,7 +1492,6 @@ GDKfatal(const char *format, ...)
 	char message[GDKERRLEN];
 	size_t len = strlen(GDKFATAL);
 	va_list ap;
-	FILE *fd = stderr;
 
 	GDKdebug |= IOMASK;
 #ifndef NATIVE_WIN32
@@ -1512,11 +1506,10 @@ GDKfatal(const char *format, ...)
 	vsnprintf(message + len, sizeof(message) - (len + 2), format, ap);
 	va_end(ap);
 
-	if (GDKsilent == 0) {
-		fputs(message, fd);
-		fputs("\n", fd);
-		fflush(fd);
-	}
+	fputs(message, stderr);
+	fputs("\n", stderr);
+	fflush(stderr);
+
 	/*
 	 * Real errors should be saved in the lock file for post-crash
 	 * inspection.

@@ -14,7 +14,7 @@ sub unquote
 {
   my ($class, $v) = @_;
 
-  return undef if !$v || $v eq 'NULL' || $v eq 'nil';
+  return undef if !defined($v) || $v eq 'NULL' || $v eq 'nil';
 
   if ( $v =~ /^["']/) {
     $v =~ s/^["']//;

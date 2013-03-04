@@ -562,7 +562,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 
 		//Ensure we spread system resources over multiple users as well.
 		//if ( cntxt->idx > 1 )
-			//MALresourceFairness(cntxt,mb,0);
+			//MALresourceFairness(cntxt,mb,GDKusec()- mb->starttime);
 		runtimeProfileBegin(cntxt, mb, stk, stkpc, &runtimeProfile, 1);
 		if (pci->recycle > 0)
 			stk->clk = GDKusec();
@@ -1154,7 +1154,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 						cntxt->timer = oldtimer;
 				} 
 			}
-			stkpc = mb->stop-1;
+			stkpc = mb->stop;
 			continue;
 		default:
 			stkpc++;

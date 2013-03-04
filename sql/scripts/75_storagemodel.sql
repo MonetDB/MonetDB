@@ -22,20 +22,20 @@
 -- By chancing the storagemodelinput table directly, the footprint for
 -- yet to be loaded databases can be assessed.
 
--- The actual storage footprint of an existing database can be 
+-- The actual storage footprint of an existing database can be
 -- obtained by the table procuding function storage()
 -- It represents the actual state of affairs, i.e. storage on disk
 -- of columns and foreign key indices, and possible temporary hash indices.
 -- For strings we take a sample to determine their average length.
 
-create function storage()
+create function sys.storage()
 returns table ("schema" string, "table" string, "column" string, "type" string, location string, "count" bigint, typewidth int, columnsize bigint, heapsize bigint, indices bigint, sorted boolean)
 external name sql.storage;
 
 -- To determine the footprint of an arbitrary database, we first have
 -- to define its schema, followed by an indication of the properties of each column.
 -- A storage model input table for the size prediction is shown below:
-create table storagemodelinput(
+create table sys.storagemodelinput(
 	"schema" string,
 	"table" string,
 	"column" string,
@@ -47,21 +47,21 @@ create table storagemodelinput(
 	"reference" boolean,-- used as foreign key reference
 	"sorted" boolean 	-- if set there is no need for an index
 );
-update _tables
+update sys._tables
 	set system = true
 	where name = 'storagemodelinput'
-		and schema_id = (select id from schemas where name = 'sys');
+		and schema_id = (select id from sys.schemas where name = 'sys');
 -- this table can be adjusted to reflect the anticipated final database size
 
 -- The model input can be derived from the current database using
-create procedure storagemodelinit()
+create procedure sys.storagemodelinit()
 begin
-	delete from storagemodelinput;
+	delete from sys.storagemodelinput;
 
-	insert into storagemodelinput 
-	select X."schema", X."table", X."column", X."type", X.typewidth, X.count, 0, X.typewidth, false, X.sorted from storage() X;
+	insert into sys.storagemodelinput
+	select X."schema", X."table", X."column", X."type", X.typewidth, X.count, 0, X.typewidth, false, X.sorted from sys.storage() X;
 
-	update storagemodelinput
+	update sys.storagemodelinput
 	set reference = true
 	where concat(concat("schema","table"), "column") in (
 		SELECT concat( concat("fkschema"."name", "fktable"."name"), "fkkeycol"."name" )
@@ -74,17 +74,17 @@ begin
 			AND "fkschema"."id" = "fktable"."schema_id"
 			AND "fkkey"."rkey" > -1);
 
-	update storagemodelinput
+	update sys.storagemodelinput
 	set "distinct" = "count" -- assume all distinct
 	where "type" = 'varchar' or "type"='clob';
 end;
 
--- The predicted storage footprint of the complete database 
+-- The predicted storage footprint of the complete database
 -- determines the amount of diskspace needed for persistent storage
 -- and the upperbound when all possible index structures are created.
 -- The storage requirement for foreign key joins is split amongst the participants.
 
-create function columnsize(nme string, i bigint, d bigint)
+create function sys.columnsize(nme string, i bigint, d bigint)
 returns bigint
 begin
 	case
@@ -94,7 +94,7 @@ begin
 	when nme = 'int'	 then return 4 * i;
 	when nme = 'bigint'	 then return 8 * i;
 	when nme = 'timestamp' then return 8 * i;
-	when  nme = 'varchar' then 
+	when  nme = 'varchar' then
 		case
 		when cast(d as bigint) << 8 then return i;
 		when cast(d as bigint) << 16 then return 2 * i;
@@ -105,7 +105,7 @@ begin
 	end case;
 end;
 
-create function heapsize(tpe string, i bigint, w int)
+create function sys.heapsize(tpe string, i bigint, w int)
 returns bigint
 begin
 	if  tpe <> 'varchar' and tpe <> 'clob'
@@ -115,7 +115,7 @@ begin
 	return 10240 + i * w;
 end;
 
-create function indexsize(b boolean, i bigint)
+create function sys.indexsize(b boolean, i bigint)
 returns bigint
 begin
 	-- assume non-compound keys
@@ -126,37 +126,37 @@ begin
 	return 0;
 end;
 
-create function storagemodel()
+create function sys.storagemodel()
 returns table (
 	"schema" string,
 	"table" string,
 	"column" string,
 	"type" string,
-	"count"	bigint,		
+	"count"	bigint,
 	columnsize bigint,
 	heapsize bigint,
 	indices bigint,
 	sorted boolean)
 begin
 	return select I."schema", I."table", I."column", I."type", I."count",
-	columnsize(I."type", I.count, I."distinct"), 
-	heapsize(I."type", I."distinct", I."atomwidth"), 
+	columnsize(I."type", I.count, I."distinct"),
+	heapsize(I."type", I."distinct", I."atomwidth"),
 	indexsize(I."reference", I."count"),
 	I.sorted
-	from storagemodelinput I;
+	from sys.storagemodelinput I;
 end;
 
 -- A summary of the table storage requirement is is available as a table view.
 -- The auxillary column denotes the maximum space if all non-sorted columns
 -- would be augmented with a hash (rare situation)
-create view tablestoragemodel
+create view sys.tablestoragemodel
 as select "schema","table",max(count) as "count",
 	sum(columnsize) as columnsize,
 	sum(heapsize) as heapsize,
 	sum(indices) as indices,
 	sum(case when sorted = false then 8 * count else 0 end) as auxillary
-from storagemodel() group by "schema","table";
-update _tables
+from sys.storagemodel() group by "schema","table";
+update sys._tables
 	set system = true
 	where name = 'tablestoragemodel'
-		and schema_id = (select id from schemas where name = 'sys');
+		and schema_id = (select id from sys.schemas where name = 'sys');

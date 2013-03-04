@@ -24,18 +24,11 @@ function user.welcome(lim:int):void;
     return welcome := w;
 # should produce a type error 
 end welcome;
-#
-#function welcome0(lim:int):str;
-#    i:= 2;
-#    w:="hello";
-#    return (w,i);   # should produce a type error
-#   # should produce a type error
-#end welcome0;
-!SyntaxException:user.welcome0[3]:invalid return target!
+!TypeException:user.welcome0[3]:Multiple assignment mismatch
 function user.welcome0(lim:int):str;
     i := 2;
     w := "hello";
-    return (welcome0,lim) := (w,i);
+    return welcome0 := (w,i);
 # should produce a type error 
 end welcome0;
 #

@@ -2086,17 +2086,6 @@ BATsetcount(BAT *b, BUN cnt)
 	assert(b->batCapacity >= cnt);
 }
 
-/*
- * The alternative routine is BATbuncount, which calculates the total
- * buns in use.
- */
-BUN
-BATbuncount(BAT *b)
-{
-	BATcheck(b, "BATbuncount");
-	return BUNlast(b);
-}
-
 size_t
 BATvmsize(BAT *b, int dirty)
 {
@@ -2276,20 +2265,6 @@ BATroles(BAT *b, const char *hnme, const char *tnme)
 		b->tident = BATstring_t;
 	return b;
 }
-
-BAT *
-BATcol_name(BAT *b, const char *tnme)
-{
-	BATcheck(b, "BATcol_name");
-	if (b->tident && !default_ident(b->tident))
-		GDKfree(b->tident);
-	if (tnme)
-		b->tident = GDKstrdup(tnme);
-	else
-		b->tident = BATstring_t;
-	return b;
-}
-
 
 /*
  * @- BATmmap
