@@ -44,6 +44,9 @@
 	  list_length(((list*)((sql_exp*)(e))->f)->h->next->next->data) )
 
 
+static sql_rel *
+rel_compare_exp_(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *rs2, int type, int anti );
+
 sql_rel *
 rel_dup(sql_rel *r)
 {
@@ -613,7 +616,7 @@ rel_arrayslice(mvc *sql, sql_table *t, char *tname, symbol *dimref)
 	dnode *idx_exp = NULL, *idx_term = NULL;
 	/* initial a new rel_select with selection expressions to be added later*/
 	sql_rel *rel = rel_select(sql->sa, rel_basetable(sql, t, tname), NULL);
-	sql_exp *slc_val = NULL, *exp = NULL, *ce = NULL;
+	sql_exp *ro = NULL, *ro2 = NULL, *slc_val = NULL, *exp = NULL, *ce = NULL;
 	sql_column *col = NULL;
 	sql_subfunc *sf = NULL;
 	exp_kind ek = {type_value, card_value, FALSE};
@@ -631,11 +634,12 @@ rel_arrayslice(mvc *sql, sql_table *t, char *tname, symbol *dimref)
 	for (cn = t->columns.set->h, idx_exp = dimref->data.lval->h->next->data.lval->h;
 			cn && idx_exp; cn = cn->next, idx_exp = idx_exp->next) {
 		list *args = new_exp_list(sql->sa),
-			 *rng_exps = new_exp_list(sql->sa),
 			 *srng_exps = new_exp_list(sql->sa);
+		sql_exp *col_strt = NULL, *col_step = NULL, *col_stop = NULL;
 		int skip = 1;
 
-		assert(args != NULL && rng_exps != NULL && srng_exps != NULL);
+		if (args == NULL || srng_exps == NULL)
+			return sql_error(sql, 02, "ARRAY SLICE: failed to allocate space");
 
 		col = (sql_column *) cn->data;
 		while(!col->dim) { /* skip the non-dimensional attributes in the table columns */
@@ -648,56 +652,92 @@ rel_arrayslice(mvc *sql, sql_table *t, char *tname, symbol *dimref)
 			if (idx_term->data.sym) skip = 0;
 		if (skip) continue;
 
-		append(rng_exps, rel_check_type(sql, &col->type, exp_atom_lng(sql->sa, col->dim->strt), type_cast));
-		append(rng_exps, rel_check_type(sql, &col->type, exp_atom_lng(sql->sa, col->dim->step), type_cast));
-		append(rng_exps, rel_check_type(sql, &col->type, exp_atom_lng(sql->sa, col->dim->stop), type_cast));
+		if (col->dim->strt == lng_nil || col->dim->step == lng_nil || col->dim->stop == lng_nil)
+			return sql_error(sql, 02, "TODO: slicing over unbounded dimension");
 
-		/* build the slc_val expression, which is going to compute a list of to be sliced dimensional values. */
-		/* FIXME: some expressions of rng_exps and the slc_val are reused, because exp_column makes a complete copy of its input drngs? */
+		col_strt = rel_check_type(sql, &col->type, exp_atom_lng(sql->sa, col->dim->strt), type_cast);
+		col_step = rel_check_type(sql, &col->type, exp_atom_lng(sql->sa, col->dim->step), type_cast);
+		col_stop = rel_check_type(sql, &col->type, exp_atom_lng(sql->sa, col->dim->stop), type_cast);
+
+		/* Translate a slice expression into:
+		 *   a equal comparison, if the slicing expression is '[' range_term ']'; or
+		 *   a range selection,  if the slicing expression is '[' range_term ':' range_term ']'; or
+		 *   a join between the sliced column and the list of to be sliced dimensional values in slc_val,
+		 *                       if the slicing expression is '[' range_term ':' range_term ':' range_term ']'.
+		 */
+		/* If the value of start/step/stop is omitted, we get its value from the dimension definition. */
 		idx_term = idx_exp->data.lval->h;
 		if (idx_exp->data.lval->cnt == 1) {
-			slc_val = rel_check_type(sql, &col->type, rel_value_exp(sql, &rel, idx_term->data.sym, sql_where, ek), type_cast);
-			append(srng_exps, slc_val); /* sliced start */
-			append(srng_exps, rng_exps->h->next->data); /* sliced step == original step */
+			ro = rel_check_type(sql, &col->type, rel_value_exp(sql, &rel, idx_term->data.sym, sql_where, ek), type_cast);
+			append(srng_exps, ro); /* sliced start */
+			append(srng_exps, col_step); /* sliced step == original step */
 			append(srng_exps, exp_binop( /* sliced stop = sliced start + original step */
-						sql->sa, exp_copy(sql->sa, slc_val), exp_copy(sql->sa, rng_exps->h->next->data),
+						sql->sa, exp_copy(sql->sa, ro), exp_copy(sql->sa, col_step),
 						sql_bind_func(sql->sa, sql->session->schema, "sql_add", &col->type, &col->type, F_FUNC)));
+
 			if (!(ce = _slicing2basetable(sql, rel, tname, col->base.name, srng_exps)))
 				return NULL;
-		} else {
-			/* If the value of start/step/stop is omitted, we get its value from the dimension definition.
-			 */
-			if (col->dim->strt == lng_nil || col->dim->step == lng_nil || col->dim->stop == lng_nil)
-				return sql_error(sql, 02, "TODO: slicing over unbounded dimension");
+			exp = exp_column(sql->sa, tname, col->base.name, &col->type, CARD_MULTI, 0, 0, ce->f);
 
-			/* the first <exp> is always the start */
-			slc_val = idx_term->data.sym ? /* check for '*' */
+			/* [<ro>]: <(column) exp> '=' <ro> */
+			rel = rel_compare_exp_(sql, rel, exp, ro, NULL, cmp_equal, 0);
+			if (rel == NULL)
+				return NULL;
+		} else if (idx_exp->data.lval->cnt == 2) {
+			/* sliced start */
+			ro = idx_term->data.sym ? /* check for '*' */
 					rel_check_type(sql, &col->type, rel_value_exp(sql, &rel, idx_term->data.sym, sql_where, ek), type_cast) :
-					rel_check_type(sql, &col->type, exp_atom_lng(sql->sa, col->dim->strt), type_cast);
+					col_strt;
+			append(srng_exps, ro);
+
+			/* sliced step == original step */
+			append(srng_exps, col_step);
+
+			/* sliced stop */
+			idx_term = idx_term->next;
+			ro2 = idx_term->data.sym ?
+					rel_check_type(sql, &col->type, rel_value_exp(sql, &rel, idx_term->data.sym, sql_where, ek), type_cast) :
+					col_stop;
+			append(srng_exps, ro2);
+
+			if (!(ce = _slicing2basetable(sql, rel, tname, col->base.name, srng_exps)))
+				return NULL;
+			exp = exp_column(sql->sa, tname, col->base.name, &col->type, CARD_MULTI, 0, 0, ce->f);
+
+			/* [<ro>:<ro2>]: <ro> '<=' <(column) exp> '<' <ro2> */
+			rel = rel_compare_exp_(sql, rel, exp, ro,  NULL, cmp_gte, 0);
+			if (rel == NULL)
+				return NULL;
+			rel = rel_compare_exp_(sql, rel, exp, ro2, NULL, cmp_lt,  0);
+			if (rel == NULL)
+				return NULL;
+		} else { /* idx_exp->data.lval->cnt == 3 */
+			/* sliced start */
+			slc_val = idx_term->data.sym ? /* check for '*' */
+				rel_check_type(sql, &col->type, rel_value_exp(sql, &rel, idx_term->data.sym, sql_where, ek), type_cast) :
+				col_strt;
 			append(args, slc_val);
 			append(srng_exps, slc_val);
 
-			if (idx_exp->data.lval->cnt == 2) {
-				slc_val = rel_check_type(sql, &col->type, exp_atom_lng(sql->sa, col->dim->step), type_cast);
-				append(args, slc_val);
-				append(srng_exps, slc_val);
-			} else {
-				idx_term = idx_term->next;
-				slc_val = idx_term->data.sym ?
-					rel_check_type(sql, &col->type, rel_value_exp(sql, &rel, idx_term->data.sym, sql_where, ek), type_cast) :
-					rel_check_type(sql, &col->type, exp_atom_lng(sql->sa, col->dim->step), type_cast);
-				append(args, slc_val);
-				append(srng_exps, slc_val);
-			}
-
+			/* sliced step */
 			idx_term = idx_term->next;
 			slc_val = idx_term->data.sym ?
-					rel_check_type(sql, &col->type, rel_value_exp(sql, &rel, idx_term->data.sym, sql_where, ek), type_cast) :
-					rel_check_type(sql, &col->type, exp_atom_lng(sql->sa, col->dim->stop), type_cast);
+				rel_check_type(sql, &col->type, rel_value_exp(sql, &rel, idx_term->data.sym, sql_where, ek), type_cast) :
+				col_step;
 			append(args, slc_val);
 			append(srng_exps, slc_val);
+
+			/* sliced stop */
+			idx_term = idx_term->next;
+			slc_val = idx_term->data.sym ?
+				rel_check_type(sql, &col->type, rel_value_exp(sql, &rel, idx_term->data.sym, sql_where, ek), type_cast) :
+				col_stop;
+			append(args, slc_val);
+			append(srng_exps, slc_val);
+
 			if (!(ce = _slicing2basetable(sql, rel, tname, col->base.name, srng_exps)))
 				return NULL;
+			exp = exp_column(sql->sa, tname, col->base.name, &col->type, CARD_MULTI, 0, 0, ce->f);
 
 			/* Only create 1 group and repeat the numbers once */
 			append(args, exp_atom_int(sql->sa, 1));
@@ -706,13 +746,14 @@ rel_arrayslice(mvc *sql, sql_table *t, char *tname, symbol *dimref)
 			if (!sf)
 				return sql_error(sql, 02, "failed to bind to the SQL function \"array_series1\"");
 			slc_val = exp_op(sql->sa, args, sf);
+			/* <(column) exp> IN '(' <slc_val> ')' */
+			exp_label(sql->sa, slc_val, ++sql->label);
+			exp = exp_in(sql->sa, exp, append(new_exp_list(sql->sa), slc_val), cmp_in);
+			rel_select_add_exp(rel, exp);
+			/* TODO: if the sliced step can be detected to be the same as this
+			 * 	column's step, translate this slice into a range selection instead
+			 */
 		}
-
-		/* <(column) exp> IN '(' <slc_val> ')' */
-		exp = exp_column(sql->sa, tname, col->base.name, &col->type, CARD_MULTI, 0, 0, ce->f);
-		exp_label(sql->sa, slc_val, ++sql->label);
-		exp = exp_in(sql->sa, exp, append(new_exp_list(sql->sa), slc_val), cmp_in);
-		rel_select_add_exp(rel, exp);
 	}
 	
 	/* the number of sliced dimensions must be smaller than or equal to the number of dimensions */
