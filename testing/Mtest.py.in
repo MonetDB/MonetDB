@@ -3276,6 +3276,8 @@ if SYST == "Linux":
     if not LINUX_DIST:
         LINUX_DIST = SYST+':'+re.match('^([0-9\.]*)([^0-9\.].*)$', RELEASE).group(1)
     DIST,VERSION = LINUX_DIST.split(':', 1)
+elif SYST == "SunOS" and os.path.isfile('/etc/release'):
+    (DIST,VERSION,rest) = open('/etc/release').readline().strip().split(' ',2)
 else:
     DIST = SYST
     VERSION = RELEASE
