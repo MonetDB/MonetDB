@@ -704,13 +704,23 @@ rel_arrayslice(mvc *sql, sql_table *t, char *tname, symbol *dimref)
 				return NULL;
 			exp = exp_column(sql->sa, tname, col->base.name, &col->type, CARD_MULTI, 0, 0, ce->f);
 
-			/* [<ro>:<ro2>]: <ro> '<=' <(column) exp> '<' <ro2> */
-			rel = rel_compare_exp_(sql, rel, exp, ro,  NULL, cmp_gte, 0);
-			if (rel == NULL)
-				return NULL;
-			rel = rel_compare_exp_(sql, rel, exp, ro2, NULL, cmp_lt,  0);
-			if (rel == NULL)
-				return NULL;
+			if (col->dim->step > 0) {
+				/* [<ro>:<ro2>]: <ro> '<=' <(column) exp> '<' <ro2> */
+				rel = rel_compare_exp_(sql, rel, exp, ro,  NULL, cmp_gte, 0);
+				if (rel == NULL)
+					return NULL;
+				rel = rel_compare_exp_(sql, rel, exp, ro2, NULL, cmp_lt,  0);
+				if (rel == NULL)
+					return NULL;
+			} else { /* col->dim->step < 0 */
+				/* [<ro>:<ro2>]: <ro> '>=' <(column) exp> '>' <ro2> */
+				rel = rel_compare_exp_(sql, rel, exp, ro,  NULL, cmp_lte, 0);
+				if (rel == NULL)
+					return NULL;
+				rel = rel_compare_exp_(sql, rel, exp, ro2, NULL, cmp_gt,  0);
+				if (rel == NULL)
+					return NULL;
+			}
 		} else { /* idx_exp->data.lval->cnt == 3 */
 			/* sliced start */
 			slc_val = idx_term->data.sym ? /* check for '*' */
