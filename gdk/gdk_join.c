@@ -90,7 +90,9 @@ joininitresults(BAT **r1p, BAT **r2p, BUN size, const char *func)
 	return GDK_SUCCEED;
 }
 
-#define VALUE(side, x)		(side##vars ? side##vars + VarHeapVal(side##vals, (x), side##width) : side##vals + ((x) * side##width))
+#define VALUE(s, x)	(s##vars ? \
+			 s##vars + VarHeapVal(s##vals, (x), s##width) : \
+			 s##vals + ((x) * s##width))
 
 /* Do a binary search for the first/last occurrence of v between lo and hi
  * (lo inclusive, hi not inclusive) in rvals/rvars.
@@ -142,9 +144,9 @@ static gdk_return
 mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, int nil_on_miss, int semi)
 {
 	BUN lstart, lend, lcnt;
-	const oid *lcand = NULL, *lcandend = NULL;
+	const oid *lcand, *lcandend;
 	BUN rstart, rend, rcnt, rstartorig;
-	const oid *rcand = NULL, *rcandend = NULL, *rcandorig;
+	const oid *rcand, *rcandend, *rcandorig;
 	BUN lscan, rscan;
 	const char *lvals, *rvals;
 	const char *lvars, *rvars;
@@ -158,6 +160,24 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, i
 	int lreverse, rreverse;
 	oid lv;
 	BUN i;
+
+	ALGODEBUG fprintf(stderr, "#mergejoin(l=%s#" BUNFMT "[%s]%s%s,"
+			  "r=%s#" BUNFMT "[%s]%s%s,sl=%s#" BUNFMT "%s%s,"
+			  "sr=%s#" BUNFMT "%s%s,nil_matches=%d,"
+			  "nil_on_miss=%d,semi=%d)\n",
+			  BATgetId(l), BATcount(l), ATOMname(l->ttype),
+			  l->tsorted ? "-sorted" : "",
+			  l->trevsorted ? "-revsorted" : "",
+			  BATgetId(r), BATcount(r), ATOMname(r->ttype),
+			  r->tsorted ? "-sorted" : "",
+			  r->trevsorted ? "-revsorted" : "",
+			  sl ? BATgetId(sl) : "NULL", sl ? BATcount(sl) : 0,
+			  sl && sl->tsorted ? "-sorted" : "",
+			  sl && sl->trevsorted ? "-revsorted" : "",
+			  sr ? BATgetId(sr) : "NULL", sr ? BATcount(sr) : 0,
+			  sr && sr->tsorted ? "-sorted" : "",
+			  sr && sr->trevsorted ? "-revsorted" : "",
+			  nil_matches, nil_on_miss, semi);
 
 	assert(BAThdense(l));
 	assert(BAThdense(r));
@@ -540,6 +560,24 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, in
 	const void *nil = ATOMnilptr(l->ttype);
 	int (*cmp)(const void *, const void *) = BATatoms[l->ttype].atomCmp;
 	const char *v;
+
+	ALGODEBUG fprintf(stderr, "#hashjoin(l=%s#" BUNFMT "[%s]%s%s,"
+			  "r=%s#" BUNFMT "[%s]%s%s,sl=%s#" BUNFMT "%s%s,"
+			  "sr=%s#" BUNFMT "%s%s,nil_matches=%d,"
+			  "nil_on_miss=%d,semi=%d)\n",
+			  BATgetId(l), BATcount(l), ATOMname(l->ttype),
+			  l->tsorted ? "-sorted" : "",
+			  l->trevsorted ? "-revsorted" : "",
+			  BATgetId(r), BATcount(r), ATOMname(r->ttype),
+			  r->tsorted ? "-sorted" : "",
+			  r->trevsorted ? "-revsorted" : "",
+			  sl ? BATgetId(sl) : "NULL", sl ? BATcount(sl) : 0,
+			  sl && sl->tsorted ? "-sorted" : "",
+			  sl && sl->trevsorted ? "-revsorted" : "",
+			  sr ? BATgetId(sr) : "NULL", sr ? BATcount(sr) : 0,
+			  sr && sr->tsorted ? "-sorted" : "",
+			  sr && sr->trevsorted ? "-revsorted" : "",
+			  nil_matches, nil_on_miss, semi);
 
 	assert(BAThdense(l));
 	assert(BAThdense(r));
@@ -1066,9 +1104,18 @@ BATproject(BAT *l, BAT *r)
 	int (*cmp)(const void *, const void *) = BATatoms[r->ttype].atomCmp;
 	int c;
 
+	ALGODEBUG fprintf(stderr, "#BATproject(l=%s#" BUNFMT "%s%s,"
+			  "r=%s#" BUNFMT "[%s]%s%s)\n",
+			  BATgetId(l), BATcount(l),
+			  l->tsorted ? "-sorted" : "",
+			  l->trevsorted ? "-revsorted" : "",
+			  BATgetId(r), BATcount(r), ATOMname(r->ttype),
+			  r->tsorted ? "-sorted" : "",
+			  r->trevsorted ? "-revsorted" : "");
+
 	assert(BAThdense(l));
 	assert(BAThdense(r));
-	assert(l->ttype == TYPE_void || l->ttype == TYPE_oid);
+	assert(ATOMtype(l->ttype) == TYPE_oid);
 
 	if (BATtdense(l) && BATcount(l) > 0) {
 		lo = l->tseqbase;

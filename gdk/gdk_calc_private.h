@@ -46,6 +46,7 @@ typedef unsigned __int64 ulng;
 	do {								\
 		start = 0;						\
 		end = cnt = BATcount(b);				\
+		cand = candend = NULL;					\
 		if (s) {						\
 			assert(BATttype(s) == TYPE_oid);		\
 			if (BATcount(s) == 0) {				\
