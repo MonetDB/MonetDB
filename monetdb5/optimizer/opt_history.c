@@ -70,7 +70,7 @@ OPThistoryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	/* run the keepQuery operation once only */
 	pushInstruction(mb, q = copyInstruction(keepQuery));
 	q->token = ASSIGNsymbol;
-	(void) newStmt1(mb, sqlRef, "forgetPrevious");
+	// (void) newStmt1(mb, sqlRef, "forgetPrevious");
 
 	/* collect the statistics */
 	q = newStmt(mb, "mtime", "current_timestamp");

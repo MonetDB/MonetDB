@@ -75,21 +75,28 @@ update _tables
 		and schema_id = (select id from schemas where name = 'sys');
 
 -- the signature is used in the kernel, don't change it
+-- make the call visible in the query log as soon as it is started
 create procedure keepQuery(
 	i wrd,
-	query string,
+	q string,
 	parse bigint,
 	optimize bigint) 
 begin
-	insert into queryHistory
-	values(i, now(), user, query, parse, optimize);
+	declare b boolean;
+	set b = (select count(*) = 0 from queryHistory qh where qh.query = q);
+	if (b)
+	then
+		insert into queryHistory values(i, now(), user, q, parse, optimize);
+	end if;
+	insert into callHistory
+	values( i, now(), null, null, null, null, null, null, null, null );
 end;
 
 -- the signature is used in the kernel, don't change it
 create procedure keepCall(
-	id wrd, 			-- references query plan
-	ctime timestamp,	-- time the first statement was executed
-	arguments string,
+	idx wrd, 			-- references query plan
+	ctx timestamp,		-- time the first statement was executed
+	arg string,
 	xtime bigint,		-- time from the first statement until result export
 	rtime bigint,		-- time to ship the result to the client
 	foot bigint, 		-- footprint for all bats in the plan
@@ -99,9 +106,14 @@ create procedure keepCall(
 	oublock bigint		-- number of physical blocks written
 )
 begin
+	declare b boolean;
+	set b = (select count(*) > 0 from callHistory where id = idx and arguments is null);
+	if (b)
+	then
+		delete from callHistory where id = idx and arguments is null;
+	end if;
 	insert into callHistory
-	values( id, ctime, arguments, xtime, rtime, 
-		foot, memory, tuples, inblock, oublock );
+	values( idx, ctx, arg, xtime, rtime, foot, memory, tuples, inblock, oublock );
 end;
 
 create procedure resetHistory()
