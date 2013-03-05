@@ -177,6 +177,7 @@
 
 char monet_cwd[PATHLENGTH] = { 0 };
 size_t monet_memory;
+char *mal_trace;		/* enable profile events on console */
 
 #include "mal_stack.h"
 #include "mal_linker.h"
@@ -189,6 +190,7 @@ size_t monet_memory;
 #include "mal_sabaoth.h"
 #include "mal_recycle.h"
 #include "mal_dataflow.h"
+#include "mal_profiler.h"
 
 MT_Lock     mal_contextLock MT_LOCK_INITIALIZER("mal_contextLock");
 MT_Lock     mal_namespaceLock MT_LOCK_INITIALIZER("mal_namespaceLock");
@@ -254,6 +256,36 @@ int mal_init(void){
 	RECYCLEinit();
 	if( malBootstrap() == 0)
 		return -1;
+	/* set up the profiler if needed, output sent to console */
+	/* Use the same shortcuts as stethoscope */
+	if ( mal_trace && *mal_trace) {
+		char *s;
+		setFilterAll();
+		openProfilerStream(mal_clients[0].fdout);
+		for ( s= mal_trace; *s; s++)
+		switch(*s){
+		case 'a': activateCounter("aggregate");break;
+		case 'b': activateCounter("rbytes");
+				activateCounter("wbytes");break;
+		case 'c': activateCounter("cpu");break;
+		case 'e': activateCounter("event");break;
+		case 'f': activateCounter("function");break;
+		case 'i': activateCounter("pc");break;
+		case 'm': activateCounter("memory");break;
+		case 'p': activateCounter("process");break;
+		case 'r': activateCounter("reads");break;
+		case 's': activateCounter("stmt");break;
+		case 't': activateCounter("ticks");break;
+		case 'u': activateCounter("user");break;
+		case 'w': activateCounter("writes");break;
+		case 'y': activateCounter("type");break;
+		case 'D': activateCounter("dot");break;
+		case 'I': activateCounter("thread");break; 
+		case 'T': activateCounter("time");break;
+		case 'S': activateCounter("start");
+		}
+		startProfiling();
+	} else mal_trace =0;
 	return 0;
 }
 /*

@@ -634,9 +634,15 @@ MPresetProfiler(stream *fdout)
 {
 	if (fdout != eventstream)
 		return;
+	if (mal_trace)
+		return;
 	MT_lock_set(&mal_profileLock, "profileLock");
 	eventstream = 0;
 	MT_lock_unset(&mal_profileLock, "profileLock");
+}
+
+void setFilterAll(void){
+	profileAll = 1;
 }
 
 /*
