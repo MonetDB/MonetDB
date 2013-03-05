@@ -1210,7 +1210,7 @@ logger_new(int debug, char *fn, char *logdir, int version, preversionfix_fptr pr
 
 		lg->catalog_bid = logbat_new(TYPE_void, TYPE_int, BATSIZE);
 		lg->catalog_nme = logbat_new(TYPE_void, TYPE_str, BATSIZE);
-		if (debug)
+		if (debug & 1)
 			fprintf(stderr, "create %s catalog\n", fn);
 
 		/* Make persistent */
@@ -1748,7 +1748,7 @@ log_delta(logger *lg, BAT *b, char *name)
 			ok = (ok == GDK_FAIL) ? ok : wt(t, lg->log, 1);
 		}
 
-		if (lg->debug)
+		if (lg->debug & 1)
 			fprintf(stderr, "Logged %s %d inserts\n", name, l.nr);
 	}
 	return (ok == GDK_SUCCEED) ? LOG_OK : LOG_ERR;
@@ -1796,7 +1796,7 @@ log_bat(logger *lg, BAT *b, char *name)
 			}
 		}
 
-		if (lg->debug)
+		if (lg->debug & 1)
 			fprintf(stderr, "Logged %s %d inserts\n", name, l.nr);
 	}
 	l.nr = (int) (b->batFirst - b->batDeleted);
@@ -1820,7 +1820,7 @@ log_bat(logger *lg, BAT *b, char *name)
 			ok = (ok == GDK_FAIL) ? ok : wt(t, lg->log, 1);
 		}
 
-		if (lg->debug)
+		if (lg->debug & 1)
 			fprintf(stderr, "Logged %s %d deletes\n", name, l.nr);
 	}
 	return (ok == GDK_SUCCEED) ? LOG_OK : LOG_ERR;
@@ -1846,7 +1846,7 @@ log_bat_clear(logger *lg, char *name)
 	    log_write_string(lg, name) == LOG_ERR)
 		return LOG_ERR;
 
-	if (lg->debug)
+	if (lg->debug & 1)
 		fprintf(stderr, "Logged clear %s\n", name);
 
 	return (ok == GDK_SUCCEED) ? LOG_OK : LOG_ERR;
@@ -1861,7 +1861,7 @@ log_tstart(logger *lg)
 	l.tid = ++lg->tid;
 	l.nr = lg->tid;
 
-	if (lg->debug)
+	if (lg->debug & 1)
 		fprintf(stderr, "log_tstart %d\n", lg->tid);
 
 	return log_write_format(lg, &l);
@@ -1904,7 +1904,7 @@ log_tend(logger *lg)
 	logformat l;
 	int res = 0;
 
-	if (lg->debug)
+	if (lg->debug & 1)
 		fprintf(stderr, "log_tend %d\n", lg->tid);
 
 	if (DELTAdirty(lg->snapshots_bid)) {
@@ -1935,7 +1935,7 @@ log_abort(logger *lg)
 {
 	logformat l;
 
-	if (lg->debug)
+	if (lg->debug & 1)
 		fprintf(stderr, "log_abort %d\n", lg->tid);
 
 	l.flag = LOG_END;
@@ -1959,7 +1959,7 @@ log_sequence(logger *lg, int seq, lng val)
 	l.tid = lg->tid;
 	l.nr = seq;
 
-	if (lg->debug)
+	if (lg->debug & 1)
 		fprintf(stderr, "log_sequence (%d," LLFMT ")\n", seq, val);
 
 	if ((p = BUNfndT(lg->seqs_id, &seq)) != BUN_NONE) {
@@ -2056,7 +2056,7 @@ logger_add_bat(logger *lg, BAT *b, char *name)
 		}
 	}
 	bid = b->batCacheid;
-	if (lg->debug)
+	if (lg->debug & 1)
 		fprintf(stderr, "create %s\n", name);
 	lg->changes += BATcount(b) + 1;
 	BUNappend(lg->catalog_bid, &bid, FALSE);
