@@ -142,6 +142,7 @@ one or more of these debug flags as well:
   --performance   (JOINPROPMASK | DEADBEEFMASK)
   --optimizers    (OPTMASK)
   --forcemito     (FORCEMITOMASK)
+  --trace[=<stethoscope argument>]
 .EE
 
 Default: 0
@@ -222,33 +223,20 @@ The following are possible pipes to use:
 The minimal pipeline necessary by the server to operate correctly.
 minimal_pipe=inline,remap,deadcode,multiplex,garbageCollector
 .IP "default_pipe"
-The default pipe line contains as of Feb2010
-mitosis-mergetable-reorder, aimed at large tables and improved
-access locality.
-default_pipe=inline,remap,evaluate,costModel,coercions,emptySet,aliases,mitosis,mergetable,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,dataflow,history,multiplex,garbageCollector
+The default pipe line contains the mitosis-mergetable-reorder optimizers, aimed at large tables and improved access locality.
+default_pipe=inline,remap,costModel,coercions, evaluate,emptySet,aliases,mitosis,mergetable,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,matpack,dataflow,history,multiplex,garbageCollector
 .IP "no_mitosis_pipe"
 The no_mitosis pipe line is identical to the default pipeline, except
 that optimizer mitosis is omitted.  It is used mainly to make some tests
 work deterministically, and to check/debug whether "unexpected" problems
 are related to mitosis (and/or mergetable).
-no_mitosis_pipe=inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,dataflow,history,multiplex,garbageCollector
+no_mitosis_pipe=inline,remap,costModel,coercions, evaluate,emptySet,aliases,mergetable,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,matpack,dataflow,history,multiplex,garbageCollector
 .IP "sequential_pipe"
 The sequential pipe line is identical to the default pipeline, except
 that optimizers mitosis & dataflow are omitted.  It is use mainly to
 make some tests work deterministically, i.e., avoid ambigious output, by
 avoiding parallelism.
-sequential_pipe=inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,history,multiplex,garbageCollector
-.IP "nov2009_pipe"
-The default pipeline used in the November 2009 release.
-nov2009_pipe=inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,reduce,dataflow,history,multiplex,garbageCollector
-.P
-Debugging the optimizer pipeline The best way is to use mdb and inspect
-the information gathered during the optimization phase.  Several
-optimizers produce more intermediate information, which may shed light
-on the details.  The opt_debug bitvector controls their output. It can
-be set to a pipeline or a comma separated list of optimizers you would
-like to trace. It is a server wide property and can not be set
-dynamically, as it is intended for internal use.
+sequential_pipe=inline,remap,costModel,coercions, evaluate,emptySet,aliases,mergetable,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,matpack,history,multiplex,garbageCollector
 
 .SH "CONFIG FILE FORMAT"
 The conf-file readable by mserver5 consists of parameters of the form
