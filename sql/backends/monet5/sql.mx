@@ -2158,7 +2158,7 @@ drop_table(mvc *sql, char *sname, char *tname, int drop_action)
 	}
 	if (!t) { 
 		return sql_message("42S02!DROP TABLE: no such table '%s'", tname);
-	} else if (!isTable(t) && !isStream(t) && !isRemote(t)) {
+	} else if (isView(t)) {
 		return sql_message("42000!DROP TABLE: cannot drop VIEW '%s'", tname);
 	} else if (t->system) {
 		return sql_message("42000!DROP TABLE: cannot drop system table '%s'", tname);
