@@ -107,7 +107,7 @@ usage(char *prog, int xit)
 #endif
 	fprintf(stderr, "     --performance\n");
 	fprintf(stderr, "     --optimizers\n");
-	fprintf(stderr, "     --trace\n");
+	fprintf(stderr, "     --trace[=<stethoscope flags>]\n");
 	fprintf(stderr, "     --forcemito\n");
 	fprintf(stderr, "     --debug=<bitmask>\n");
 
@@ -231,7 +231,7 @@ main(int argc, char **av)
 		{ "properties", 0, 0, 0 },
 		{ "io", 0, 0, 0 },
 		{ "transactions", 0, 0, 0 },
-		{ "trace", 0, 0, 0 },
+		{ "trace", 2, 0, 't' },
 		{ "modules", 0, 0, 0 },
 		{ "algorithms", 0, 0, 0 },
 		{ "optimizers", 0, 0, 0 },
@@ -285,7 +285,7 @@ main(int argc, char **av)
 	for (;;) {
 		int option_index = 0;
 
-		int c = getopt_long(argc, av, "c:d::rs:?",
+		int c = getopt_long(argc, av, "c:::d?:r:s:::::t:::::",
 				long_options, &option_index);
 
 		if (c == -1)
@@ -372,7 +372,7 @@ main(int argc, char **av)
 				break;
 			}
 			if (strcmp(long_options[option_index].name, "trace") == 0) {
-				mal_trace =1;
+				mal_trace = optarg? optarg:"ISTest";
 				break;
 			}
 			if (strcmp(long_options[option_index].name, "heaps") == 0) {
@@ -401,11 +401,14 @@ main(int argc, char **av)
 			if (tmp) {
 				*tmp = '\0';
 				setlen = mo_add_option(&set, setlen, opt_cmdline, optarg, tmp + 1);
-			} else {
+			} else
 				fprintf(stderr, "ERROR: wrong format %s\n", optarg);
 			}
-		}
-		break;
+			break;
+		case 't':
+			if (strcmp(long_options[option_index].name, "trace") == 0)
+				mal_trace = optarg? optarg:"ISTest";
+			break;
 		case '?':
 			/* a bit of a hack: look at the option that the
 			   current `c' is based on and see if we recognize

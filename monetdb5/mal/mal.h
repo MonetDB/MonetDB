@@ -50,7 +50,7 @@ mal_export char     monet_cwd[PATHLENGTH];
 mal_export size_t	monet_memory;
 mal_export lng 		memorypool;      /* memory claimed by concurrent threads */
 mal_export int 		memoryclaims;    /* number of threads active with expensive operations */
-mal_export int		mal_trace;		/* enable profile events on console */
+mal_export char		*mal_trace;		/* enable profile events on console */
 
 /*
    See gdk/gdk.mx for the definition of all debug masks.
