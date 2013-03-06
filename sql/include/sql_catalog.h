@@ -440,6 +440,7 @@ typedef enum table_types {
 #define isStream(x)  	  (x->type==tt_stream)
 #define isRemote(x)  	  (x->type==tt_remote)
 #define isReplicaTable(x) (x->type==tt_replica_table)
+#define isKindOfTable(x)  (isTable(x) || isMergeTable(x) || isRemote(x) || isReplicaTable(x))
 
 typedef struct sql_table {
 	sql_base base;
