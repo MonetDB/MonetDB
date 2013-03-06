@@ -4290,25 +4290,18 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	for (i = pci->retc + 2, n = t->columns.set->h; i<pci->argc && n; i++, n = n->next) {
 		sql_column *col = n->data;
 		BAT *c= NULL;
+		int tpe = col->type.type->localtype;
 
 		/* handle the various cases */
-		switch(col->type.type->localtype){
-		case TYPE_bte:
-		case TYPE_bit:
-		case TYPE_oid:
-		case TYPE_sht:
-		case TYPE_int:
-		case TYPE_lng:
-		case TYPE_wrd:
-		case TYPE_flt:
-		case TYPE_dbl:
+		if (tpe < TYPE_str || tpe == TYPE_date ||
+		    tpe == TYPE_daytime || tpe == TYPE_timestamp) {
 			c = BATattach(col->type.type->localtype, *(str*)getArgReference(stk, pci, i));
 			if (c == NULL) 
 				throw(SQL, "sql", "failed to attach file %s", *(str*)getArgReference(stk, pci, i));
 			BATsetaccess(c, BAT_READ);
 			BATderiveProps(c, 1);
 			break;
-		case TYPE_str:
+		} else if (tpe == TYPE_str) {
 			/* get the BAT and fill it with the strings */
 			c = BATnew(TYPE_void,TYPE_str,0); 
 			BATseqbase(c,0);
@@ -4326,7 +4319,7 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			fclose(f);
 			GDKfree(buf);
 			break;
-		default:
+		} else {
 			throw(SQL, "sql", "failed to attach file %s", *(str*)getArgReference(stk, pci, i));
 		}
 		if (i!=(pci->retc + 2) && cnt != BATcount(c)) 
