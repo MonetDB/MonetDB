@@ -691,6 +691,8 @@ sql_bind_member(sql_allocator *sa, sql_schema *s, char *sqlfname, sql_subtype *t
 				if (tp && f->fix_scale == INOUT)
 					digits = tp->digits;
 				sql_init_subtype(&fres->res, f->res.type, digits, scale);
+				if (f->res.comp_type) 
+					fres->res.comp_type = f->res.comp_type;
 				return fres;
 			}
 		}
@@ -712,6 +714,37 @@ sql_bind_member(sql_allocator *sa, sql_schema *s, char *sqlfname, sql_subtype *t
 					fres->func = f;
 					digits = f->res.digits;
 					sql_init_subtype(&fres->res, f->res.type, digits, scale);
+					if (f->res.comp_type) 
+						fres->res.comp_type = f->res.comp_type;
+					return fres;
+				}
+			}
+		}
+	}
+	if (s) {
+		node *n;
+
+		if (s->funcs.set) for (n=s->funcs.set->h; n; n = n->next) {
+			sql_func *f = n->data;
+
+			if (!f->res.type)
+				continue;
+			if (strcmp(f->base.name, sqlfname) == 0) {
+				if (list_length(f->ops) == nrargs && is_subtype(tp, &((sql_arg *) f->ops->h->data)->type)) {
+
+					unsigned int scale = 0, digits;
+					sql_subfunc *fres = SA_ZNEW(sa, sql_subfunc);
+
+					fres->func = f;
+					/* same scale as the input */
+					if (tp && tp->scale > scale)
+						scale = tp->scale;
+					digits = f->res.digits;
+					if (tp && f->fix_scale == INOUT)
+						digits = tp->digits;
+					sql_init_subtype(&fres->res, f->res.type, digits, scale);
+					if (f->res.comp_type) 
+						fres->res.comp_type = f->res.comp_type;
 					return fres;
 				}
 			}
