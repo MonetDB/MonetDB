@@ -18,12 +18,12 @@
 -- The query history mechanism of MonetDB/SQL relies on a few hooks 
 -- inside the kernel. The most important one is the SQL global 
 -- variable 'history', which is used by all sessions.
--- It is set automatically at the end of this script.
+-- It is initialized automatically at the end of this script.
 
 -- Whenever a query is compiled and added to the cache, it is also entered
 -- into the 'queryHistory' table using a hardwired call to 'keepQuery'.
 
-create table queryHistory(
+create table sys.queryHistory(
 	id wrd primary key,
 	defined timestamp,	-- when entered into the cache
 	name string,		-- database user name
@@ -49,7 +49,7 @@ update _tables
 -- The 'inblock' and 'oublock' indicate the physical IOs during.
 -- All timing in usec and all storage in bytes.
 
-create table callHistory(
+create table sys.callHistory(
 	id wrd references queryHistory(id), -- references query plan
 	ctime timestamp,	-- time the first statement was executed
 	arguments string,
@@ -66,7 +66,7 @@ update _tables
 	where name = 'callhistory'
 		and schema_id = (select id from schemas where name = 'sys');
 
-create view queryLog as
+create view sys.queryLog as
 select qd.*, ql.ctime, ql.arguments, ql.exec, ql.result, ql.foot, ql.memory, ql.tuples, ql.inblock, ql.oublock from queryHistory qd, callHistory ql
 where qd.id = ql.id;
 update _tables
