@@ -1397,19 +1397,29 @@ tr_update_delta( sql_trans *tr, sql_delta *obat, sql_delta *cbat, BUN snapshot_m
 	/* any inserts */
 	if (BUNlast(ins) > BUNfirst(ins) || cleared) {
 		if (BUNlast(ins) > ins->batInserted && (store_nr_active > 1)) { 
+			int done = 0;
 			BAT *ci = temp_descriptor(obat->ibid);
 			BUN nr;
 
-			if (isEbat(ci)) {
+			if (isEbat(ci) || !BATcount(ci)) {
+
 				temp_destroy(obat->ibid);
-				obat->ibid = temp_copy(ci->batCacheid, FALSE);
+				if (!ins->batInserted) {
+					obat->ibid = temp_create(ins);
+					done = 1;
+					nr = BATcount(ins);
+				} else {
+					obat->ibid = temp_copy(ci->batCacheid, FALSE);
+				}
 				bat_destroy(ci);
 				ci = temp_descriptor(obat->ibid);
 				BATseqbase(ci, cbat->ibase);
 			}
-			assert(BATcount(cur) == cbat->ibase);
-			assert(obat->ibase == cbat->ibase);
-			nr = append_inserted(ci, ins);
+			if (!done) {
+				assert(BATcount(cur) == cbat->ibase);
+				assert(obat->ibase == cbat->ibase);
+				nr = append_inserted(ci, ins);
+			}
 			obat->cnt += nr;
 			assert(obat->cnt == cbat->cnt);
 			assert(BATcount(ci) == BATcount(ins));

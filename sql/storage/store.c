@@ -477,6 +477,7 @@ load_column(sql_trans *tr, sql_table *t, oid rid)
 	c->t = t;
 	if (isTable(c->t))
 		store_funcs.create_col(tr, c);
+	c->sorted = sql_trans_is_sorted(tr, c);
 	if (bs_debug)
 		fprintf(stderr, "#\t\tload column %s\n", c->base.name);
 	return c;
@@ -1155,7 +1156,7 @@ dup_sql_column(sql_allocator *sa, sql_table *t, sql_column *c)
 	col->storage_type = NULL;
 	if (c->storage_type)
 		col->storage_type = sa_strdup(sa, c->storage_type);
-	col->sorted = sql_trans_is_sorted(NULL, c);
+	col->sorted = c->sorted;
 	cs_add(&t->columns, col, TR_NEW);
 	return col;
 }
@@ -4209,7 +4210,7 @@ sql_trans_alter_default(sql_trans *tr, sql_column *col, char *val)
 int
 sql_trans_is_sorted( sql_trans *tr, sql_column *col )
 {
-	if (col && store_funcs.sorted_col(tr, col))
+	if (col && isTable(col->t) && store_funcs.sorted_col && store_funcs.sorted_col(tr, col))
 		return 1;
 	return 0;
 }
