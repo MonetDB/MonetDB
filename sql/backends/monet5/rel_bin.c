@@ -3304,6 +3304,8 @@ update_check_ukey(mvc *sql, stmt **updates, sql_key *k, stmt *tids, stmt *idx_up
 				if ((k->type == ukey) && stmt_has_null(upd)) {
 					stmt *nn = stmt_selectnonil(sql, upd, NULL);
 					upd = stmt_reorder_project(sql->sa, nn, upd);
+					if (grp)
+						grp = stmt_reorder_project(sql->sa, nn, grp);
 				}
 
 				g = stmt_group(sql->sa, upd, grp, ext, Cnt);

@@ -385,7 +385,7 @@ exp_count(int *cnt, int seqnr, sql_exp *e)
 		default:
 			return 0;
 		}
-	case e_column:
+	case e_column: 
 		*cnt += 20;
 		return 20;
 	case e_atom:
@@ -3762,11 +3762,9 @@ rel_groupby_order(int *changes, mvc *sql, sql_rel *rel)
 		node *n;
 		int i, *scores = calloc(list_length(gbe), sizeof(int));
 
-		for (i = 0, n = gbe->h; n; i++, n = n->next) {
+		for (i = 0, n = gbe->h; n; i++, n = n->next) 
 			scores[i] = score_gbe(sql, rel, n->data);
-		}
 		rel->r = list_keysort(gbe, scores, (fdup)NULL);
-
 		free(scores);
 	}
 	return rel;
@@ -4853,17 +4851,30 @@ exp_merge(list *exps)
 }
 #endif
 
+static int
+score_se( mvc *sql, sql_rel *rel, sql_exp *e)
+{
+	int score = 0;
+	if (e->type == e_cmp && !is_complex_exp(e->flag)) {
+		score += score_gbe(sql, rel, e->l);
+	}
+	score += exp_keyvalue(e);
+	return score;
+}
+
 static sql_rel *
 rel_select_order(int *changes, mvc *sql, sql_rel *rel) 
 {
 	(void)changes;
 	(void)sql;
 	if (is_select(rel->op) && rel->exps && list_length(rel->exps)>1) {
-		list *exps = NULL;
-			
-		exps = list_sort(rel->exps, (fkeyvalue)&exp_keyvalue, (fdup)NULL);
-		/*rel->exps = exp_merge(exps);*/
-		rel->exps = exps;
+		int i, *scores = calloc(list_length(rel->exps), sizeof(int));
+		node *n;
+
+		for (i = 0, n = rel->exps->h; n; i++, n = n->next) 
+			scores[i] = score_se(sql, rel, n->data);
+		rel->exps = list_keysort(rel->exps, scores, (fdup)NULL);
+		free(scores);
 	}
 	return rel;
 }
