@@ -2460,12 +2460,13 @@ rollforward_add_table(sql_trans *tr, sql_table *t, int mode)
 	return t;
 }
 
-static sql_table *
+static int
 rollforward_del_table(sql_trans *tr, sql_table *t, int mode)
 {
 	(void) tr;
+	(void) t;
 	(void) mode;
-	return t;
+	return LOG_OK;
 }
 
 static sql_table *
