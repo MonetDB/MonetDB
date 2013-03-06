@@ -5428,7 +5428,9 @@ rel_merge_table_rewrite(int *changes, mvc *sql, sql_rel *rel)
 					}
 				}
 			}
-			if (nrel)
+			if (nrel && list_length(t->tables.set) == 1) {
+				nrel = rel_project(sql->sa, nrel, rel->exps);
+			} else if (nrel)
 				nrel->exps = rel->exps;
 			rel_destroy(rel);
 			return nrel;
