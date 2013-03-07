@@ -39,8 +39,8 @@ Ready.
 % val # name
 % int # type
 % 1 # length
-4
 2
+4
 #copy select val from bug2722 where fk=2 order by time into stdout using delimiters ' ' , '\n';
 [ 2	]
 #drop table bug2722;

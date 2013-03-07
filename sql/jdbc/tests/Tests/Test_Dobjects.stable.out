@@ -89,10 +89,10 @@ mTests_sql_jdbc_tests	tmp	keys	SYSTEM TABLE	null	null	null	null	rowid	SYSTEM
 mTests_sql_jdbc_tests	tmp	objects	SYSTEM TABLE	null	null	null	null	rowid	SYSTEM	
 mTests_sql_jdbc_tests	tmp	triggers	SYSTEM TABLE	null	null	null	null	rowid	SYSTEM	
 mTests_sql_jdbc_tests	sys	columns	SYSTEM VIEW	SELECT * FROM (SELECT p.* FROM "sys"."_columns" AS p UNION ALL SELECT t.* FROM "tmp"."_columns" AS t) AS columns;	null	null	null	rowid	SYSTEM	
-mTests_sql_jdbc_tests	sys	querylog	SYSTEM VIEW	create view querylog as
+mTests_sql_jdbc_tests	sys	querylog	SYSTEM VIEW	create view sys.querylog as
 select qd.*, ql.ctime, ql.arguments, ql.exec, ql.result, ql.foot, ql.memory, ql.tuples, ql.inblock, ql.oublock from queryhistory qd, callhistory ql
 where qd.id = ql.id;	null	null	null	rowid	SYSTEM	
-mTests_sql_jdbc_tests	sys	tables	SYSTEM VIEW	SELECT * FROM (SELECT p.*, 0 AS "temporary" FROM "sys"."_tables" AS p UNION ALL SELECT t.*, 1 AS "temporary" FROM "tmp"."_tables" AS t) AS tables where tables.type < 2;	null	null	null	rowid	SYSTEM	
+mTests_sql_jdbc_tests	sys	tables	SYSTEM VIEW	SELECT * FROM (SELECT p.*, 0 AS "temporary" FROM "sys"."_tables" AS p UNION ALL SELECT t.*, 1 AS "temporary" FROM "tmp"."_tables" AS t) AS tables where tables.type <> 2;	null	null	null	rowid	SYSTEM	
 mTests_sql_jdbc_tests	sys	tablestoragemodel	SYSTEM VIEW	-- A summary of the table storage requirement is is available as a table view.
 -- The auxillary column denotes the maximum space if all non-sorted columns
 -- would be augmented with a hash (rare situation)
