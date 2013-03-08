@@ -1162,11 +1162,15 @@ batfetchjoin(BAT *l, BAT *r, BUN estimate, bit swap, bit hitalways)
 			ret = NULL;
 			goto ready;
 		}
-		bn->hsorted = l->hsorted;
-		bn->hrevsorted = l->hrevsorted;
+		bn->hsorted = (BATcount(bn) <= 1) || l->hsorted;
+		bn->hrevsorted = (BATcount(bn) <= 1) || l->hrevsorted;
 	}
-	bn->tsorted = BATtordered(l) & BATtordered(r);
-	bn->trevsorted = BATcount(bn) <= 1;
+	bn->tsorted = (BATcount(bn) <= 1) || \
+	              (BATtordered(l) & BATtordered(r)) || \
+	              (BATtrevordered(l) & BATtrevordered(r));
+	bn->trevsorted = (BATcount(bn) <= 1) || \
+	                 (BATtordered(l) & BATtrevordered(r)) || \
+	                 (BATtrevordered(l) & BATtordered(r));
 	if (BATtkey(l)) {
 		/* if BATtkey(l) elements of r match at most once */
 		if (BATtordered(l) && BATcount(bn) == rcount) {
