@@ -1,39 +1,82 @@
 
 from monetdb import mapi
+from monetdb.exceptions import OperationalError, InterfaceError
+
 
 def parse_statusline(line):
-    split = line.split(',')
+    """
+    parses a sabdb format status line. Support v1 and v2.
+
+    """
+    if not line.startswith('=sabdb:'):
+        raise OperationalError('wrong result recieved')
+
+    prot_version, rest = line.split(":", 2)[1:]
+
+    if prot_version not in ["1", "2"]:
+        raise InterfaceError("unsupported sabdb protocol")
+    else:
+        prot_version = int(prot_version)
+
+    subparts = rest.split(',')
+    sub_iter = iter(subparts)
     info = {}
-    info['path'] = split[0]
-    info['name'] = info['path'].split("/")[-1]
-    info['locked'] = split[1] == ("1")
-    info['state'] = int(split[2])
-    info['scenarios'] = split[3].split("'")
-    info['connections'] = split[4].split("'")
-    info['start_counter'] = int(split[5])
-    info['stop_counter'] = int(split[6])
-    info['crash_counter'] = int(split[7])
-    info['avg_uptime'] = int(split[8])
-    info['max_uptime'] = int(split[9])
-    info['min_uptime'] = int(split[10])
-    info['last_crash'] = int(split[11])
-    info['lastStart'] = int(split[12])
-    info['crash_avg1'] = split[13] == ("1")
-    info['crash_avg10'] = float(split[14])
-    info['crash_avg30'] = float(split[15])
+
+    info['name'] = sub_iter.next()
+    info['path'] = sub_iter.next()
+    info['locked'] = sub_iter.next() == "1"
+    info['state'] = int(sub_iter.next())
+    info['scenarios'] = sub_iter.next().split("'")
+    if prot_version == 1:
+        sub_iter.next()
+    info['start_counter'] = int(sub_iter.next())
+    info['stop_counter'] = int(sub_iter.next())
+    info['crash_counter'] = int(sub_iter.next())
+    info['avg_uptime'] = int(sub_iter.next())
+    info['max_uptime'] = int(sub_iter.next())
+    info['min_uptime'] = int(sub_iter.next())
+    info['last_crash'] = int(sub_iter.next())
+    info['last_start'] = int(sub_iter.next())
+    if prot_version > 1:
+        info['last_stop'] = int(sub_iter.next())
+    info['crash_avg1'] = sub_iter.next() == "1"
+    info['crash_avg10'] = float(sub_iter.next())
+    info['crash_avg30'] = float(sub_iter.next())
+
     return info
+
+def isempty(result):
+    """ raises an exception if the result is not empty"""
+    if result != "":
+        raise OperationalError(result)
+    else:
+        return True
+
 
 class Control:
     """
-    Use this module to manage your MonetDB databases. You can create, start, stop,
-    lock, unlock, destroy your databases and request status information.
+    Use this module to manage your MonetDB databases. You can create, start,
+    stop, lock, unlock, destroy your databases and request status information.
     """
     def __init__(self, hostname, port, passphrase):
         self.server = mapi.Connection()
-        self.server.connect(hostname, port, 'monetdb', passphrase, 'merovingian', 'control')
+        self.hostname = hostname
+        self.port = port
+        self.passphrase = passphrase
+
+        # check connection
+        self.server.connect(hostname, port, 'monetdb', passphrase,
+                            'merovingian', 'control')
+        self.server.disconnect()
 
     def _send_command(self, database_name, command):
-        return self.server.cmd("%s %s\n" % (database_name, command))
+        self.server.connect(self.hostname, self.port, 'monetdb',
+                            self.passphrase, 'merovingian', 'control')
+        try:
+            return self.server.cmd("%s %s\n" % (database_name, command))
+        finally:
+            # always close connection
+            self.server.disconnect()
 
     def create(self, database_name):
         """
@@ -41,7 +84,7 @@ class Control:
         A database created with this command makes it available  for use,
         however in maintenance mode (see monetdb lock).
         """
-        return self._send_command(database_name, "create")
+        return isempty(self._send_command(database_name, "create"))
 
     def destroy(self, database_name):
         """
@@ -49,7 +92,7 @@ class Control:
         logfiles.  Once destroy has completed, all data is lost.
         Be careful when using this command.
         """
-        return self._send_command(database_name, "destroy")
+        return isempty(self._send_command(database_name, "destroy"))
 
     def lock(self, database_name):
         """
@@ -59,7 +102,7 @@ class Control:
         automatically.  Use the "release" command to bring
         the database back for normal usage.
         """
-        return self._send_command(database_name, "lock")
+        return isempty(self._send_command(database_name, "lock"))
 
     def release(self, database_name):
         """
@@ -67,7 +110,7 @@ class Control:
         database is available again for normal use.  Use the
         "lock" command to take a database under maintenance.
         """
-        return self._send_command(database_name, "release")
+        return isempty(self._send_command(database_name, "release"))
 
     def status(self, database_name=False):
         """
@@ -87,14 +130,14 @@ class Control:
         Starts the given database, if the MonetDB Database Server
         is running.
         """
-        return self._send_command(database_name, "start")
+        return isempty(self._send_command(database_name, "start"))
 
     def stop(self, database_name):
         """
         Stops the given database, if the MonetDB Database Server
         is running.
         """
-        return self._send_command(database_name, "stop")
+        return isempty(self._send_command(database_name, "stop"))
 
     def kill(self, database_name):
         """
@@ -103,14 +146,15 @@ class Control:
         as last resort to stop a database.  A database being
         killed may end up with data loss.
         """
-        return self._send_command(database_name, "kill")
+        return isempty(self._send_command(database_name, "kill"))
 
     def set(self, database_name, property_, value):
         """
         sets property to value for the given database
         for a list of properties, use `monetdb get all`
         """
-        return self._send_command(database_name, "%s=%s" % (property_, value))
+        return isempty(self._send_command(database_name, "%s=%s" % (property_,
+                                                                    value)))
 
     def get(self, database_name):
         """
@@ -132,7 +176,7 @@ class Control:
         unsets property, reverting to its inherited value from
         the default configuration for the given database
         """
-        return self._send_command(database_name, property_ + "=")
+        return isempty(self._send_command(database_name, property_ + "="))
 
     def rename(self, old, new):
         return self.set(old, "name", new)
