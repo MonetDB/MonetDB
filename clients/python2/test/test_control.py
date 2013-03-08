@@ -79,11 +79,8 @@ class TestManage(unittest.TestCase):
         self.assertRaises(OperationalError, self.control.release, database_name)
 
     def testStatus(self):
-        status1 = database_prefix + "status1"
-        do_without_fail(lambda: self.control.destroy(status1))
-        self.control.create(status1)
-        status = self.control.status(status1)
-        self.assertEqual(status["name"], status1)
+        status = self.control.status(database_name)
+        self.assertEqual(status["name"], database_name)
 
     def testStatuses(self):
         status1 = database_prefix + "status1"
@@ -142,7 +139,6 @@ class TestManage(unittest.TestCase):
 
     def testNeighbours(self):
         neighbours = self.control.neighbours()
-        neighbours
 
 if __name__ == '__main__':
     unittest.main()
