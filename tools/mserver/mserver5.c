@@ -285,7 +285,7 @@ main(int argc, char **av)
 	for (;;) {
 		int option_index = 0;
 
-		int c = getopt_long(argc, av, "c:::d?:r:s:::::t:::::",
+		int c = getopt_long(argc, av, "c:d::rs:t::?",
 				long_options, &option_index);
 
 		if (c == -1)
@@ -406,8 +406,7 @@ main(int argc, char **av)
 			}
 			break;
 		case 't':
-			if (strcmp(long_options[option_index].name, "trace") == 0)
-				mal_trace = optarg? optarg:"ISTest";
+			mal_trace = optarg? optarg:"ISTest";
 			break;
 		case '?':
 			/* a bit of a hack: look at the option that the
