@@ -37,9 +37,9 @@ It is the privilige of the console user.";
 
 # @-
 # Administrator operations
-command getLogins( ):bat[:oid,:str] 
+command getLogins( )(user:bat[:oid,:oid],start:bat[:oid,:str] )
 address CLTLogin
-comment "Pseudo bat of client login time.";
+comment "Pseudo bat of client id and login time.";
 
 command getLastCommand( ):bat[:oid,:str] 
 address CLTLastCommand
@@ -55,7 +55,7 @@ comment "Pseudo bat of client's total time usage(in usec).";
 
 command getUsers( ):bat[:oid,:str] 
 address CLTusers
-comment "Pseudo bat of users logged in.";
+comment "Pseudo bat of users id and name.";
 
 pattern stop(id:int)
 address CLTstop
