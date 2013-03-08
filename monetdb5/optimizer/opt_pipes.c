@@ -59,7 +59,12 @@ struct PIPELINES {
 	 "stable", NULL, NULL, 1},
 /* The default pipe line contains as of Feb2010
  * mitosis-mergetable-reorder, aimed at large tables and improved
- * access locality
+ * access locality.
+ *
+ * NOTE:
+ * If you change the default pipe, please also update the no_mitosis pipe
+ * and sequential pipe (see below, as well as the man page (see
+ * tools/mserver/mserver5.1) accordingly!
  */
 	{"default_pipe",
 	 "optimizer.inline();"
@@ -108,6 +113,7 @@ struct PIPELINES {
 	 "optimizer.reorder();"
 	 "optimizer.deadcode();"
 	 "optimizer.reduce();"
+	 "optimizer.matpack();"
 	 "optimizer.dataflow();"
 	 "optimizer.history();"
 	 "optimizer.multiplex();"
@@ -136,6 +142,7 @@ struct PIPELINES {
 	 "optimizer.reorder();"
 	 "optimizer.deadcode();"
 	 "optimizer.reduce();"
+	 "optimizer.matpack();"
 	 "optimizer.history();"
 	 "optimizer.multiplex();"
 	 "optimizer.garbageCollector();",
