@@ -16,23 +16,55 @@ stdout of test 'use_order_column_first.SF-2686008` in directory 'sql/test/BugTra
 # MonetDB/SQL module v2.34.0 loaded
 
 Ready.
-#function user.main():void;
-#    clients.quit();
-#end main;
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_history.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_compress.sql
+# loading sql script: 18_dictionary.sql
+# loading sql script: 19_cluster.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 24_zorder.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 99_system.sql
 
+# 08:36:35 >  
+# 08:36:35 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-22906" "--port=34413"
+# 08:36:35 >  
 
-# 13:59:55 >  
-# 13:59:55 >  mclient -lsql -i --host=alf --port=37694 
-# 13:59:55 >  
-
+#create table unsorted (a int,b int);
+#insert into unsorted values (2, 3);
 [ 1	]
+#insert into unsorted values (1, 2);
 [ 1	]
+#insert into unsorted values (4, 1);
 [ 1	]
+#insert into unsorted values (3, 2);
 [ 1	]
+#insert into unsorted values (2, 3);
 [ 1	]
+#insert into unsorted values (3, 3);
 [ 1	]
+#insert into unsorted values (3, 1);
 [ 1	]
+#insert into unsorted values (4, 3);
 [ 1	]
+#create table sorted (a int, b int);
+#insert into sorted
+#select * from unsorted
+#order by a,b;
 [ 8	]
 % sys.sorted,	sys.sorted # table_name
 % a,	b # name
@@ -53,7 +85,7 @@ Ready.
 project (
 | group by (
 | | table(sys.sorted) [ sorted.a, sorted.b, sorted.%TID% NOT NULL ] COUNT 
-| ) [ sorted.b, sorted.a ] [ sorted.a, sorted.b ]
+| ) [ sorted.a, sorted.b ] [ sorted.a, sorted.b ]
 ) [ sorted.a, sorted.b ]
 % .plan # table_name
 % rel # name
