@@ -546,7 +546,7 @@ AUTHgetUsername(str *username, Client *c) {
 		GDKfatal("Internal error: user id that doesn't exist: " OIDFMT, id);
 
 	useri = bat_iterator(user);
-	*username = BUNtail(useri, p);
+	*username = GDKstrdup( BUNtail(useri, p));
 	return(MAL_SUCCEED);
 }
 
