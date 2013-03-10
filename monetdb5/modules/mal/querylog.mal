@@ -1,0 +1,29 @@
+module querylog;
+
+command init(threshold:int)
+address QLOGinitThreshold
+comment "Turn on the query logger";
+
+command init()
+address QLOGinit
+comment "Turn on the query logger";
+
+command done()
+address QLOGdone
+comment "Turn off the query logger";
+
+command isset():int
+address QLOGissetFcn
+comment "Return status of query logger";
+
+command reset()
+address QLOGreset
+comment "Clear the query log tables";
+
+command define(id:oid, q:str, pipe:str, optimize:lng, usr:str, tick:timestamp):oid
+address QLOGdefine
+comment "Add a new query call to the query log";
+
+command call(idx:oid, tick1:timestamp, tick2:timestamp, arg:str, tuples:wrd, xtime:lng, rtime:lng, cpu:int, iowait:int,space:lng)
+address QLOGcall
+comment "Add a new query call to the query log";

@@ -182,6 +182,7 @@ opt_export  str pqueueRef;
 opt_export  str profilerRef;
 opt_export  str projectRef;
 opt_export  str putRef;
+opt_export  str querylogRef;
 opt_export  str queryRef;
 opt_export  str rankRef;
 opt_export  str rank_grpRef;

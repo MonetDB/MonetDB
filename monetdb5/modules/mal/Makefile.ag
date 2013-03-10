@@ -51,6 +51,7 @@ lib_mal = {
 		pcre.c \
 		pqueue.c pqueue.h \
 		profiler.c profiler.h \
+		querylog.c querylog.h \
 		recycle.c recycle.h \
 		remote.c remote.h \
 		sabaoth.c sabaoth.h \
@@ -78,7 +79,7 @@ headers_mal = {
 		txtsim.mal recycle.mal \
 		cluster.mal trader.mal \
 		tokenizer.mal zorder.mal sample.mal \
-		calc.mal batcalc.mal batmtime.mal
+		calc.mal batcalc.mal batmtime.mal querylog.mal
 }
 
 EXTRA_DIST = batExtensions.mal iterator.mal constraints.mal \
@@ -86,6 +87,6 @@ EXTRA_DIST = batExtensions.mal iterator.mal constraints.mal \
 	profiler.mal recycle.mal remote.mal sabaoth.mal trader.mal \
 	transaction.mal txtsim.mal tablet.mal tablet.h sample.mal \
 	mal_mapi.mal mat.mal tokenizer.mal pqueue.mal calc.mal \
-	batcalc.mal batmtime.mal
+	batcalc.mal batmtime.mal querylog.mal
 
 EXTRA_DIST_DIR = Tests

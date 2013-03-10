@@ -92,15 +92,8 @@ sql_update_var(mvc *m, char *name)
 		assert((lng) GDK_int_min <= sgn && sgn <= (lng) GDK_int_max);
 		m->cache = (int) sgn;
 	} else if (strcmp(name, "history") == 0) {
-		sql_schema *sys = mvc_bind_schema(m, "sys");
-
 		sgn = stack_get_number(m, "history");
 		assert((lng) GDK_int_min <= sgn && sgn <= (lng) GDK_int_max);
-		if (!m->sa)
-			m->sa = sa_create();
-		if (!sql_find_func(m->sa, sys, "keepquery", NR_KEEPQUERY_ARGS, F_PROC) ||
-		    !sql_find_func(m->sa, sys, "keepcall", NR_KEEPCALL_ARGS, F_PROC))
-			return sql_message( "Cannot activate history because the keepQuery and keepCall procedures are not available\n" ); 
 		m->history = (int) (sgn)?1:0;
 	} 
 	return NULL;

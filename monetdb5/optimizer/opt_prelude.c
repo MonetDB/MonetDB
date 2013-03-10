@@ -184,6 +184,7 @@ str pqueueRef;
 str profilerRef;
 str projectRef;
 str putRef;
+str querylogRef;
 str queryRef;
 str rankRef;
 str rank_grpRef;
@@ -442,6 +443,7 @@ void optimizerInit(void){
 		pqueueRef = putName("pqueue",6);
 		projectRef = putName("project",7);
 		putRef = putName("put",3);
+		querylogRef = putName("querylog",8);
 		queryRef = putName("query",5);
 		rankRef = putName("rank", 4);
 		rank_grpRef = putName("rank_grp", 8);

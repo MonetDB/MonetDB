@@ -72,3 +72,5 @@ clients-hashes
 # shows different output if the password backend is different (or
 # monetdb password has been changed)
 clients-getpasswd
+
+#cpustat too system dependent to always run.

@@ -82,4 +82,6 @@ profiler_export str CMDsetMemoryFlag( Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 profiler_export str CMDgetMemory( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 profiler_export str CMDgetFootprint( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 profiler_export str CMDtomograph(int *ret);
+profiler_export str CMDcpustats(lng *user, lng *nice, lng *sys, lng *idle, lng *iowait);
+profiler_export str CMDcpuloadPercentage(int *cycles, int *io, lng *user, lng *nice, lng *sys, lng *idle, lng *iowait);
 #endif  /* _PROFILER_*/

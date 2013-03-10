@@ -45,6 +45,7 @@
 #include "sql_scenario.h"
 #include "mal_namespace.h"
 #include "opt_prelude.h"
+#include "querylog.h"
 #include "mal_builder.h"
 
 #include <rel_select.h>
@@ -2347,22 +2348,11 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 	int argc = 0;
 	char arg[SMALLBUFSIZ];
 	node *n;
-	lng Toptimize = 0, Tparse = 0;
+	lng Toptimize = 0; //, Tparse = 0;
+	str pipe;
 
 	backup = c->curprg;
 
-	if (m->history == 1) {
-		sql_schema *sys = mvc_bind_schema(m, "sys");
-		sql_subfunc *kq = sql_find_func(m->sa, sys, "keepquery", NR_KEEPQUERY_ARGS, F_PROC);
-		sql_subfunc *cq = sql_find_func(m->sa, sys, "keepcall", NR_KEEPCALL_ARGS, F_PROC);
-
-		assert(kq && cq);
-		if (backend_create_func(be, kq->func) < 0 ||
-		    backend_create_func(be, cq->func) < 0)
-			return NULL;
-		/* only needed once */
-		m->history = 2;
-	}
 	/* later we change this to a factory ? */
 	if (cq)
 		c->curprg = newFunction(userRef,putName(cq->name,strlen(cq->name)), FUNCTIONsymbol);
@@ -2408,9 +2398,9 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 	if (backend_dumpstmt(be, mb, s) < 0)
 		return NULL;
 	Toptimize = GDKusec();
-	Tparse = Toptimize - m->Tparse;
+	//Tparse = Toptimize - m->Tparse;
 
-	if (m->history) {
+	if (m->history || QLOGisset()) {
 		char *t;
 		oid queryid = OIDnew(1);
 		InstrPtr q;
@@ -2422,13 +2412,15 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 		} else
 			t = GDKstrdup("-- no query");
 
-		q = newStmt1(mb, userRef, "keepquery");
-		q->token = REMsymbol;
-		q = pushWrd(mb, q, queryid);
+		q = newStmt1(mb, "querylog", "define");
+		q->token = REMsymbol;	// will be patched
+		q = pushOid(mb, q, queryid);
 		q = pushStr(mb, q, t);
-		q = pushLng(mb, q, Tparse );
+		q = pushStr(mb, q, pipe= initSQLoptimizer());
+		//q = pushLng(mb, q, Tparse );
 		(void) pushLng(mb, q, Toptimize);
 		m->Tparse = 0;
+		GDKfree(pipe);
 	}
 	if (cq)
 		addQueryToCache(c);

@@ -86,7 +86,7 @@ struct PIPELINES {
 	 "optimizer.reduce();"
 	 "optimizer.matpack();"
 	 "optimizer.dataflow();"
-	 "optimizer.history();"
+	 "optimizer.querylog();"
 	 "optimizer.multiplex();"
 	 "optimizer.garbageCollector();",
 	 "stable", NULL, NULL, 1},
@@ -115,7 +115,7 @@ struct PIPELINES {
 	 "optimizer.reduce();"
 	 "optimizer.matpack();"
 	 "optimizer.dataflow();"
-	 "optimizer.history();"
+	 "optimizer.querylog();"
 	 "optimizer.multiplex();"
 	 "optimizer.garbageCollector();",
 	 "stable", NULL, NULL, 1},
@@ -143,7 +143,7 @@ struct PIPELINES {
 	 "optimizer.deadcode();"
 	 "optimizer.reduce();"
 	 "optimizer.matpack();"
-	 "optimizer.history();"
+	 "optimizer.querylog();"
 	 "optimizer.multiplex();"
 	 "optimizer.garbageCollector();",
 	 "stable", NULL, NULL, 1},
@@ -167,7 +167,7 @@ struct PIPELINES {
 	 "optimizer.deadcode();"
 	 "optimizer.recycle();"
 	 "optimizer.reduce();"
-	 "optimizer.history();"
+	 "optimizer.querylog();"
 	 "optimizer.multiplex();"
 	 "optimizer.garbageCollector();",
 	 "experimental", NULL, NULL, 1},
@@ -196,7 +196,7 @@ struct PIPELINES {
 	 "optimizer.octopus();"
 	 "optimizer.reduce();"
 	 "optimizer.dataflow();"
-	 "optimizer.history();"
+	 "optimizer.querylog();"
 	 "optimizer.multiplex();"
 	 "optimizer.garbageCollector();",
 	 "experimental", "OPToctopus", NULL, 1},
@@ -222,7 +222,7 @@ struct PIPELINES {
 	 "optimizer.deadcode();"
 	 "optimizer.reduce();"
 	 "optimizer.dataflow();"
-	 "optimizer.history();"
+	 "optimizer.querylog();"
 	 "optimizer.multiplex();"
 	 "optimizer.garbageCollector();",
 	 "experimental", NULL, NULL, 1},
@@ -246,7 +246,7 @@ struct PIPELINES {
 	 "optimizer.deadcode();"
 	 "optimizer.reduce();"
 	 "optimizer.dataflow();"
-	 "optimizer.history();"
+	 "optimizer.querylog();"
 	 "optimizer.multiplex();"
 	 "optimizer.garbageCollector();",
 	 "experimental", "OPTdictionary", NULL, 1},
@@ -270,7 +270,7 @@ struct PIPELINES {
 	 "optimizer.dataflow();"
 	 "optimizer.compression();"
 	 "optimizer.dataflow();"
-	 "optimizer.history();"
+	 "optimizer.querylog();"
 	 "optimizer.multiplex();"
 	 "optimizer.garbageCollector();",
 	 "experimental", "OPTcompress", NULL, 1},

@@ -54,7 +54,6 @@ All Rights Reserved.
 #include "opt_factorize.h"
 #include "opt_garbageCollector.h"
 #include "opt_groups.h"
-#include "opt_history.h"
 #include "opt_inline.h"
 #include "opt_joinpath.h"
 #include "opt_mapreduce.h"
@@ -66,6 +65,7 @@ All Rights Reserved.
 #include "opt_octopus.h"
 #include "opt_prejoin.h"
 #include "opt_pushranges.h"
+#include "opt_querylog.h"
 #include "opt_qep.h"
 #include "opt_recycler.h"
 #include "opt_reduce.h"
@@ -96,7 +96,6 @@ struct{
 	{"factorize", &OPTfactorizeImplementation},
 	{"groups", &OPTgroupsImplementation},
 	{"garbageCollector", &OPTgarbageCollectorImplementation},
-	{"history", &OPThistoryImplementation},
 	{"inline", &OPTinlineImplementation},
 	{"joinPath", &OPTjoinPathImplementation},
 	{"mapreduce", &OPTmapreduceImplementation},
@@ -108,6 +107,7 @@ struct{
 	{"origin", &OPToriginImplementation},
 	{"prejoin", &OPTprejoinImplementation},
 	{"pushranges", &OPTpushrangesImplementation},
+	{"querylog", &OPTquerylogImplementation},
 	{"dumpQEP", &OPTdumpQEPImplementation},
 	{"recycle", &OPTrecyclerImplementation},
 	{"reduce", &OPTreduceImplementation},

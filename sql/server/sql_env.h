@@ -31,6 +31,6 @@ extern str sql_update_var(mvc *sql, char *name);
 extern int sql_create_env(mvc *sql, sql_schema *s);
 
 #define NR_KEEPQUERY_ARGS 4
-#define NR_KEEPCALL_ARGS 10
+#define NR_KEEPCALL_ARGS 9
 
 #endif /* _SQL_ENV_H_ */
