@@ -41,6 +41,7 @@ typedef struct MALSTK {
 	int calldepth;		/* to protect against runtime stack overflow */
 	short keepAlive;	/* do not garbage collect when set */
 	short garbageCollect; /* stack needs garbage collection */
+	lng tmpspace;		/* amount of temporary space produced */
 	/*
 	 * @-
 	 * Parallel processing is mostly driven by dataflow, but within this context
