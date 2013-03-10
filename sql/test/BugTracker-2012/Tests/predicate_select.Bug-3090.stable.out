@@ -54,13 +54,11 @@ Ready.
 [ 5104,	"user_role",	2000,	NULL,	0,	true,	0,	false,	0	]
 [ 5107,	"auths",	2000,	NULL,	0,	true,	0,	false,	0	]
 [ 5111,	"privileges",	2000,	NULL,	0,	true,	0,	false,	0	]
-[ 5264,	"queryhistory",	2000,	NULL,	0,	true,	0,	false,	0	]
-[ 5278,	"callhistory",	2000,	NULL,	0,	true,	0,	false,	0	]
-[ 5295,	"querylog",	2000,	"create view sys.querylog as\nselect qd.*, ql.ctime, ql.arguments, ql.exec, ql.result, ql.foot, ql.memory, ql.tuples, ql.inblock, ql.oublock from queryhistory qd, callhistory ql\nwhere qd.id = ql.id;",	1,	true,	0,	false,	0	]
-[ 6036,	"storagemodelinput",	2000,	NULL,	0,	true,	0,	false,	0	]
-[ 6077,	"tablestoragemodel",	2000,	"-- A summary of the table storage requirement is is available as a table view.\n-- The auxillary column denotes the maximum space if all non-sorted columns\n-- would be augmented with a hash (rare situation)\ncreate view sys.tablestoragemodel\nas select \"schema\",\"table\",max(count) as \"count\",\n\tsum(columnsize) as columnsize,\n\tsum(heapsize) as heapsize,\n\tsum(indices) as indices,\n\tsum(case when sorted = false then 8 * count else 0 end) as auxillary\nfrom sys.storagemodel() group by \"schema\",\"table\";",	1,	true,	0,	false,	0	]
-[ 6099,	"systemfunctions",	2000,	NULL,	0,	true,	0,	false,	0	]
-[ 6208,	"r",	2000,	NULL,	0,	false,	0,	false,	0	]
+[ 5296,	"history",	5255,	"create view querylog.history as\nselect qd.*, ql.\"start\",ql.\"stop\", ql.arguments, ql.tuples, ql.run, ql.ship, ql.cpu, ql.space, ql.io \nfrom querylog.catalog() qd, querylog.calls() ql\nwhere qd.id = ql.id and qd.owner = user;",	1,	false,	0,	false,	0	]
+[ 6026,	"storagemodelinput",	2000,	NULL,	0,	true,	0,	false,	0	]
+[ 6067,	"tablestoragemodel",	2000,	"-- A summary of the table storage requirement is is available as a table view.\n-- The auxillary column denotes the maximum space if all non-sorted columns\n-- would be augmented with a hash (rare situation)\ncreate view sys.tablestoragemodel\nas select \"schema\",\"table\",max(count) as \"count\",\n\tsum(columnsize) as columnsize,\n\tsum(heapsize) as heapsize,\n\tsum(indices) as indices,\n\tsum(case when sorted = false then 8 * count else 0 end) as auxillary\nfrom sys.storagemodel() group by \"schema\",\"table\";",	1,	true,	0,	false,	0	]
+[ 6089,	"systemfunctions",	2000,	NULL,	0,	true,	0,	false,	0	]
+[ 6198,	"r",	2000,	NULL,	0,	false,	0,	false,	0	]
 
 # 18:53:13 >  
 # 18:53:13 >  "Done."

@@ -26,6 +26,12 @@ Ready.
 # 16:17:36 >  
 
 START TRANSACTION;
+CREATE SCHEMA "querylog" AUTHORIZATION "monetdb";
+SET SCHEMA "querylog";
+create view querylog.history as
+select qd.*, ql."start",ql."stop", ql.arguments, ql.tuples, ql.run, ql.ship, ql.cpu, ql.space, ql.io 
+from querylog.catalog() qd, querylog.calls() ql
+where qd.id = ql.id and qd.owner = user;
 SET SCHEMA "sys";
 CREATE TABLE "sys"."test_property" (
 	"subject" INTEGER,

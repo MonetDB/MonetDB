@@ -17,6 +17,13 @@ stdout of test 'interrupted-initialization.Bug-2875` in directory 'sql/test/BugT
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 START TRANSACTION;
+CREATE SCHEMA "querylog" AUTHORIZATION "monetdb";
+SET SCHEMA "querylog";
+create view querylog.history as
+select qd.*, ql."start",ql."stop", ql.arguments, ql.tuples, ql.run, ql.ship, ql.cpu, ql.space, ql.io 
+from querylog.catalog() qd, querylog.calls() ql
+where qd.id = ql.id and qd.owner = user;
+SET SCHEMA "sys";
 COMMIT;
 # MonetDB 5 server v11.5.8
 # This is an unreleased version

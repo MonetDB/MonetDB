@@ -28,13 +28,13 @@ Ready.
 % L2,	L1 # name
 % tinyint,	wrd # type
 % 1,	2 # length
-[ 1,	33	]
+[ 1,	31	]
 #SELECT (SELECT count(*) FROM tables), 1;
 % .tables,	. # table_name
 % L1,	single_value # name
 % wrd,	tinyint # type
 % 2,	1 # length
-[ 33,	1	]
+[ 31,	1	]
 
 # 21:48:51 >  
 # 21:48:51 >  "Done."

@@ -91,16 +91,15 @@ Dependencies between database objects
 % sys.a,	sys.s,	. # table_name
 % name,	name,	single_value # name
 % varchar,	varchar,	char # type
-% 7,	4,	10 # length
+% 7,	8,	10 # length
 [ "monetdb",	"sys",	"DEP_SCHEMA"	]
 [ "monetdb",	"tmp",	"DEP_SCHEMA"	]
+[ "monetdb",	"querylog",	"DEP_SCHEMA"	]
 [ "monetdb",	"test",	"DEP_SCHEMA"	]
 % .t,	.v,	. # table_name
 % name,	name,	single_value # name
 % varchar,	varchar,	char # type
-% 12,	8,	8 # length
-[ "queryhistory",	"querylog",	"DEP_VIEW"	]
-[ "callhistory",	"querylog",	"DEP_VIEW"	]
+% 2,	2,	8 # length
 [ "t1",	"v1",	"DEP_VIEW"	]
 [ "v1",	"v2",	"DEP_VIEW"	]
 #SELECT t.name, i.name, 'DEP_INDEX' from tables as t, idxs as i where i.table_id = t.id and i.name not in (select name from keys) and t.type = 0;
@@ -122,8 +121,7 @@ Dependencies between database objects
 % .t,	.fk,	.L1 # table_name
 % name,	name,	L1 # name
 % varchar,	varchar,	char # type
-% 12,	19,	8 # length
-[ "queryhistory",	"callhistory_id_fkey",	"DEP_FKEY"	]
+% 2,	13,	8 # length
 [ "t1",	"t2_id_t1_fkey",	"DEP_FKEY"	]
 #SELECT t.name, f.name, 'DEP_FUNC' from functions as f, tables as t, dependencies as dep where t.id = dep.id AND f.id = dep.depend_id AND dep.depend_type = 7 AND t.type = 0 ORDER BY t.name, f.name;
 % .t,	.f,	. # table_name
@@ -166,23 +164,7 @@ Dependencies between database objects
 % .c,	.v,	. # table_name
 % name,	name,	single_value # name
 % varchar,	varchar,	char # type
-% 9,	8,	8 # length
-[ "id",	"querylog",	"DEP_VIEW"	]
-[ "defined",	"querylog",	"DEP_VIEW"	]
-[ "name",	"querylog",	"DEP_VIEW"	]
-[ "query",	"querylog",	"DEP_VIEW"	]
-[ "parse",	"querylog",	"DEP_VIEW"	]
-[ "optimize",	"querylog",	"DEP_VIEW"	]
-[ "id",	"querylog",	"DEP_VIEW"	]
-[ "ctime",	"querylog",	"DEP_VIEW"	]
-[ "arguments",	"querylog",	"DEP_VIEW"	]
-[ "execute",	"querylog",	"DEP_VIEW"	]
-[ "result",	"querylog",	"DEP_VIEW"	]
-[ "foot",	"querylog",	"DEP_VIEW"	]
-[ "memory",	"querylog",	"DEP_VIEW"	]
-[ "tuples",	"querylog",	"DEP_VIEW"	]
-[ "inblock",	"querylog",	"DEP_VIEW"	]
-[ "oublock",	"querylog",	"DEP_VIEW"	]
+% 4,	2,	8 # length
 [ "id",	"v1",	"DEP_VIEW"	]
 [ "name",	"v1",	"DEP_VIEW"	]
 [ "age",	"v1",	"DEP_VIEW"	]
@@ -190,8 +172,7 @@ Dependencies between database objects
 % .c,	.k,	.L1 # table_name
 % name,	name,	L1 # name
 % varchar,	varchar,	char # type
-% 2,	20,	7 # length
-[ "id",	"queryhistory_id_pkey",	"DEP_KEY"	]
+% 2,	10,	7 # length
 [ "id",	"t1_id_pkey",	"DEP_KEY"	]
 #SELECT c.name, i.name, 'DEP_INDEX' from columns as c, objects as kc, idxs as i where kc."name" = c.name AND kc.id = i.id AND c.table_id = i.table_id AND i.name not in (select name from keys);
 % .c,	.i,	. # table_name
@@ -422,8 +403,7 @@ Dependencies between database objects
 % sys.k,	sys.fk,	. # table_name
 % name,	name,	single_value # name
 % varchar,	varchar,	char # type
-% 20,	19,	8 # length
-[ "queryhistory_id_pkey",	"callhistory_id_fkey",	"DEP_FKEY"	]
+% 10,	13,	8 # length
 [ "t1_id_pkey",	"t2_id_t1_fkey",	"DEP_FKEY"	]
 done
 Dependencies between functions with same name
@@ -604,15 +584,15 @@ Cleanup
 % sys.a,	sys.s,	. # table_name
 % name,	name,	single_value # name
 % varchar,	varchar,	char # type
-% 7,	3,	10 # length
+% 7,	8,	10 # length
 [ "monetdb",	"sys",	"DEP_SCHEMA"	]
 [ "monetdb",	"tmp",	"DEP_SCHEMA"	]
+[ "monetdb",	"querylog",	"DEP_SCHEMA"	]
+#SELECT t.name, v.name, 'DEP_VIEW' from tables as t, tables as v, dependencies as dep where t.id = dep.id AND v.id = dep.depend_id AND dep.depend_type = 5 AND v.type = 1;
 % .t,	.v,	. # table_name
 % name,	name,	single_value # name
 % varchar,	varchar,	char # type
-% 12,	8,	8 # length
-[ "queryhistory",	"querylog",	"DEP_VIEW"	]
-[ "callhistory",	"querylog",	"DEP_VIEW"	]
+% 0,	0,	8 # length
 #SELECT t.name, i.name, 'DEP_INDEX' from tables as t, idxs as i where i.table_id = t.id and i.name not in (select name from keys) and t.type = 0;
 % .t,	.i,	. # table_name
 % name,	name,	single_value # name
@@ -627,8 +607,7 @@ Cleanup
 % .t,	.fk,	.L1 # table_name
 % name,	name,	L1 # name
 % varchar,	varchar,	char # type
-% 12,	19,	8 # length
-[ "queryhistory",	"callhistory_id_fkey",	"DEP_FKEY"	]
+% 0,	0,	8 # length
 #SELECT t.name, f.name, 'DEP_FUNC' from functions as f, tables as t, dependencies as dep where t.id = dep.id AND f.id = dep.depend_id AND dep.depend_type = 7 AND t.type = 0 ORDER BY t.name, f.name;
 % .t,	.f,	. # table_name
 % name,	name,	single_value # name
@@ -670,29 +649,12 @@ Cleanup
 % .c,	.v,	. # table_name
 % name,	name,	single_value # name
 % varchar,	varchar,	char # type
-% 9,	8,	8 # length
-[ "id",	"querylog",	"DEP_VIEW"	]
-[ "id",	"querylog",	"DEP_VIEW"	]
-[ "defined",	"querylog",	"DEP_VIEW"	]
-[ "name",	"querylog",	"DEP_VIEW"	]
-[ "query",	"querylog",	"DEP_VIEW"	]
-[ "parse",	"querylog",	"DEP_VIEW"	]
-[ "optimize",	"querylog",	"DEP_VIEW"	]
-[ "ctime",	"querylog",	"DEP_VIEW"	]
-[ "arguments",	"querylog",	"DEP_VIEW"	]
-[ "execute",	"querylog",	"DEP_VIEW"	]
-[ "result",	"querylog",	"DEP_VIEW"	]
-[ "foot",	"querylog",	"DEP_VIEW"	]
-[ "memory",	"querylog",	"DEP_VIEW"	]
-[ "tuples",	"querylog",	"DEP_VIEW"	]
-[ "inblock",	"querylog",	"DEP_VIEW"	]
-[ "oublock",	"querylog",	"DEP_VIEW"	]
+% 0,	0,	8 # length
 #SELECT c.name, k.name, 'DEP_KEY' from columns as c, objects as kc, keys as k where kc."name" = c.name AND kc.id = k.id AND k.table_id = c.table_id AND k.rkey = -1;
 % .c,	.k,	.L1 # table_name
 % name,	name,	L1 # name
 % varchar,	varchar,	char # type
-% 2,	20,	7 # length
-[ "id",	"queryhistory_id_pkey",	"DEP_KEY"	]
+% 0,	0,	7 # length
 #SELECT c.name, i.name, 'DEP_INDEX' from columns as c, objects as kc, idxs as i where kc."name" = c.name AND kc.id = i.id AND c.table_id = i.table_id AND i.name not in (select name from keys);
 % .c,	.i,	. # table_name
 % name,	name,	single_value # name
@@ -907,8 +869,7 @@ Cleanup
 % sys.k,	sys.fk,	. # table_name
 % name,	name,	single_value # name
 % varchar,	varchar,	char # type
-% 20,	19,	8 # length
-[ "queryhistory_id_pkey",	"callhistory_id_fkey",	"DEP_FKEY"	]
+% 0,	0,	8 # length
 done
 
 # 20:37:54 >  
