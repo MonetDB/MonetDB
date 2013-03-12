@@ -365,4 +365,3 @@ class DatabaseTest(unittest.TestCase):
                             (table1, table2))
         result = self.cursor.fetchall()
         self.assertEqual(result, [(50, 50)])
-
