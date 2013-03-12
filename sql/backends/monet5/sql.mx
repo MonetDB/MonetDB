@@ -6456,7 +6456,7 @@ str
 sql_querylog_catalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i;
-	BAT *t[6];
+	BAT *t[7];
 
 	(void)cntxt; (void)mb;
 	QLOGcatalog(t);
