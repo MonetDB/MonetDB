@@ -45,6 +45,7 @@ def parse_statusline(line):
 
     return info
 
+
 def isempty(result):
     """ raises an exception if the result is not empty"""
     if result != "":

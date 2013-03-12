@@ -1,3 +1,6 @@
 # ChangeLog file for MonetDB5
 # This file is updated with Maddlog
 
+* Tue Mar 12 2013 Sjoerd Mullender <sjoerd@acm.org>
+- Fixed argument parsing of mapi.reconnect() with 5 arguments.
+

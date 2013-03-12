@@ -84,7 +84,7 @@ struct{
 	{"aliases", &OPTaliasesImplementation},
 	{"centipede", &OPTcentipedeImplementation},
 	{"cluster", &OPTclusterImplementation},
-	{"coercion", &OPTcoercionImplementation},
+	{"coercions", &OPTcoercionImplementation},
 	{"commonTerms", &OPTcommonTermsImplementation},
 	{"compression", &OPTcompressionImplementation},
 	{"costModel", &OPTcostModelImplementation},

@@ -144,7 +144,7 @@ struct OPTcatalog {
 {"groups",		0,	0,	0,	DEBUG_OPT_GROUPS},
 {"aliases",		0,	0,	0,	DEBUG_OPT_ALIASES},
 {"cluster",		0,	0,	0,	DEBUG_OPT_CLUSTER},
-{"coercion",	0,	0,	0,	DEBUG_OPT_COERCION},
+{"coercions",	0,	0,	0,	DEBUG_OPT_COERCION},
 {"commonTerms",	0,	0,	0,	DEBUG_OPT_COMMONTERMS},
 {"compress",	0,	0,	0,	DEBUG_OPT_COMPRESS},
 {"constants",	0,	0,	0,	DEBUG_OPT_CONSTANTS},

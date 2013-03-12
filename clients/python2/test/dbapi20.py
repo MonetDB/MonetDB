@@ -900,7 +900,6 @@ class DatabaseAPI20Test(unittest.TestCase):
         try:
             cur = con.cursor()
             self.executeDDL1(cur)
-
             args = {'beer': unicode('\N{latin small letter a with acute}', 'unicode-escape')}
             encoded = args['beer']
 
