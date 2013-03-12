@@ -354,7 +354,7 @@ class DatabaseTest(unittest.TestCase):
         self.db_module.monetize.mapping[list] = str
         self.assertEqual(self.db_module.monetize.convert(t), "['list', 'test']")
 
-    def multiple_queries(self):
+    def test_multiple_queries(self):
         table1 = self.new_table_name()
         table2 = table1[:-1] + 'bla"'
         self.cursor.execute("create table %s (a int)" % table1)
@@ -365,3 +365,4 @@ class DatabaseTest(unittest.TestCase):
                             (table1, table2))
         result = self.cursor.fetchall()
         self.assertEqual(result, [(50, 50)])
+
