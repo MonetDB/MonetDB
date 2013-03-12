@@ -851,9 +851,9 @@ SERVERreconnectWithoutAlias(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	int *key =(int*) getArgReference(stk,pci,0);
 	str *host = (str*) getArgReference(stk,pci,1);
 	int *port = (int*) getArgReference(stk,pci,2);
-	str *username = (str*) getArgReference(stk,pci,4);
-	str *password= (str*) getArgReference(stk,pci,5);
-	str *lang = (str*) getArgReference(stk,pci,6);
+	str *username = (str*) getArgReference(stk,pci,3);
+	str *password= (str*) getArgReference(stk,pci,4);
+	str *lang = (str*) getArgReference(stk,pci,5);
 	int i;
 	str msg=MAL_SUCCEED, nme= "anonymous";
 
