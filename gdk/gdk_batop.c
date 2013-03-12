@@ -752,6 +752,7 @@ BATslice(BAT *b, BUN l, BUN h)
 	BUN low = l;
 	BAT *bn;
 	BATiter bni, bi = bat_iterator(b);
+	oid foid;		/* first oid value if oid column */
 
 	BATcheck(b, "BATslice");
 	if (h > BATcount(b))
@@ -807,7 +808,9 @@ BATslice(BAT *b, BUN l, BUN h)
 		if (BATcount(bn) == 0) {
 			bn->hdense = TRUE;
 			BATseqbase(bn, 0);
-		} else if (bn->hsorted && *(oid *) BUNhloc(bni, BUNfirst(bn)) + BATcount(bn) - 1 == *(oid *) BUNhloc(bni, BUNlast(bn) - 1)) {
+		} else if (bn->hsorted &&
+			   (foid = *(oid *) BUNhloc(bni, BUNfirst(bn))) != oid_nil &&
+			   foid + BATcount(bn) - 1 == *(oid *) BUNhloc(bni, BUNlast(bn) - 1)) {
 			bn->hdense = TRUE;
 			BATseqbase(bn, *(oid *) BUNhloc(bni, BUNfirst(bn)));
 		}
@@ -819,7 +822,9 @@ BATslice(BAT *b, BUN l, BUN h)
 		if (BATcount(bn) == 0) {
 			bn->tdense = TRUE;
 			BATseqbase(BATmirror(bn), 0);
-		} else if (bn->tsorted && *(oid *) BUNtloc(bni, BUNfirst(bn)) + BATcount(bn) - 1 == *(oid *) BUNtloc(bni, BUNlast(bn) - 1)) {
+		} else if (bn->tsorted &&
+			   (foid = *(oid *) BUNtloc(bni, BUNfirst(bn))) != oid_nil &&
+			   foid + BATcount(bn) - 1 == *(oid *) BUNtloc(bni, BUNlast(bn) - 1)) {
 			bn->tdense = TRUE;
 			BATseqbase(BATmirror(bn), *(oid *) BUNtloc(bni, BUNfirst(bn)));
 		}
