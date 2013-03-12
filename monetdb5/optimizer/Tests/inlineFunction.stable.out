@@ -44,8 +44,7 @@ end main;
 function user.tst():void;
     X_5 := true:bit;
     X_6:int  := 0;
-    X_9 := 100:int;
-    X_6:int  := 100:int;
+    X_6:int  := 100;
 
 # 01:05:28 >  
 # 01:05:28 >  Done.
