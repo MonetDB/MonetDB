@@ -63,6 +63,7 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	q = newStmt(mb, "mtime", "current_timestamp");
 	start= getArg(q,0)= newVariable(mb,GDKstrdup("start"),TYPE_any);
 	defineQuery = pushArgument(mb,defineQuery,start);
+	defineQuery = pushInt(mb,defineQuery,limit + 17 /* what we add here */);
 	pushInstruction(mb, defineQuery);
 
 	q = newStmt1(mb, sqlRef, "argRecord");
@@ -107,11 +108,13 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			q = newStmt(mb, "alarm", "usec");
 			rtime= getArg(q,0)= newVariable(mb,GDKstrdup("rtime"),TYPE_lng);
 			pushInstruction(mb,p);
-			if (idcmp(getFunctionId(p),"resultSet")==0 ){
-				q = newStmt(mb, "aggr", "count");
-				getArg(q,0) = tuples;
-				(void) pushArgument(mb,q, getArg(p,3));
-			}
+			continue;
+		}
+		if ( getModuleId(p) == sqlRef && idcmp(getFunctionId(p),"resultSet")==0 ){
+			q = newStmt(mb, "aggr", "count");
+			getArg(q,0) = tuples;
+			(void) pushArgument(mb,q, getArg(p,3));
+			pushInstruction(mb,p);
 			continue;
 		}	
 		if ( p->token== ENDsymbol || p->barrier == RETURNsymbol || p->barrier == YIELDsymbol){

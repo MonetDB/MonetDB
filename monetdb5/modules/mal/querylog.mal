@@ -20,7 +20,7 @@ command reset()
 address QLOGreset
 comment "Clear the query log tables";
 
-command define(id:oid, q:str, pipe:str, optimize:lng, usr:str, tick:timestamp):oid
+command define(id:oid, q:str, pipe:str, optimize:lng, usr:str, tick:timestamp, size:int):oid
 address QLOGdefine
 comment "Add a new query call to the query log";
 

@@ -547,6 +547,7 @@ user:bat[:oid,:str],
 defined:bat[:oid,:timestamp],
 query:bat[:oid,:str],
 pipe:bat[:oid,:str],
+mal:bat[:oid,:int],
 optimize:bat[:oid,:lng]
 )
 address sql_querylog_catalog
@@ -6459,7 +6460,7 @@ sql_querylog_catalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void)cntxt; (void)mb;
 	QLOGcatalog(t);
-	for (i = 0; i < 6; i++) {
+	for (i = 0; i < 7; i++) {
 		int id = t[i]->batCacheid;
 
 		*(int *) getArgReference(stk, pci, i) = id;

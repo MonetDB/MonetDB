@@ -28,6 +28,7 @@ returns table(
 	defined timestamp,
 	query string,
 	pipe string,
+	mal int,			-- size of MAL plan
 	optimize bigint 	-- time in usec
 )
 external name sql.querylog_catalog;

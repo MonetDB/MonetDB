@@ -75,6 +75,7 @@ static BAT *QLOG_cat_user = 0;
 static BAT *QLOG_cat_defined = 0;
 static BAT *QLOG_cat_query = 0;
 static BAT *QLOG_cat_pipe = 0;
+static BAT *QLOG_cat_mal = 0;
 static BAT *QLOG_cat_optimize = 0;
 
 static BAT *QLOG_calls_id = 0;
@@ -92,7 +93,7 @@ void
 QLOGcatalog(BAT **r)
 {
 	int i;
-	for ( i=0;i < 6; i++)
+	for ( i=0;i < 7; i++)
 		r[i]=0;
     if (initQlog())
         return ;
@@ -102,7 +103,8 @@ QLOGcatalog(BAT **r)
 	r[2] = BATcopy(QLOG_cat_defined, TYPE_oid, QLOG_cat_defined->ttype,0);
 	r[3] = BATcopy(QLOG_cat_query, TYPE_oid, QLOG_cat_query->ttype,0);
 	r[4] = BATcopy(QLOG_cat_pipe, TYPE_oid, QLOG_cat_pipe->ttype,0);
-	r[5] = BATcopy(QLOG_cat_optimize, TYPE_oid, QLOG_cat_optimize->ttype,0);
+	r[5] = BATcopy(QLOG_cat_mal, TYPE_oid, QLOG_cat_mal->ttype,0);
+	r[6] = BATcopy(QLOG_cat_optimize, TYPE_oid, QLOG_cat_optimize->ttype,0);
     MT_lock_unset(&mal_profileLock, "querylogLock");
 }
 
@@ -155,7 +157,7 @@ QLOGcreate(str hnme, str tnme, int tt)
     return b;
 }
 
-#define cleanup(X)  if (X) { BBPdecref((X)->batCacheid, TRUE); (X)->batPersistence = TRANSIENT; } (X) = NULL;
+#define cleanup(X)  if (X) { (X)->batPersistence = TRANSIENT; BBPdecref((X)->batCacheid, TRUE); } (X) = NULL;
 
 static void
 _QLOGcleanup(void)
@@ -165,6 +167,7 @@ _QLOGcleanup(void)
 	cleanup(QLOG_cat_defined);
 	cleanup(QLOG_cat_query);
 	cleanup(QLOG_cat_pipe);
+	cleanup(QLOG_cat_mal);
 	cleanup(QLOG_cat_optimize);
 	
 	cleanup(QLOG_calls_id);
@@ -187,6 +190,7 @@ _initQlog(void)
 	QLOG_cat_defined = QLOGcreate("cat","defined",TYPE_lng);
 	QLOG_cat_query = QLOGcreate("cat","query",TYPE_str);
 	QLOG_cat_pipe = QLOGcreate("cat","pipe",TYPE_str);
+	QLOG_cat_mal = QLOGcreate("cat","mal",TYPE_int);
 	QLOG_cat_optimize = QLOGcreate("cat","optimize",TYPE_lng);
 	
 	QLOG_calls_id = QLOGcreate("calls","id",TYPE_oid);
@@ -254,6 +258,13 @@ QLOGissetFcn(int *ret)
 	return MAL_SUCCEED;
 }
 
+/*static void 
+QLOGreclaim(BAT *b){
+    BATmode(b, TRANSIENT);
+	BBPreleaseref(b->batCacheid);
+}
+
+*/
 str
 QLOGreset(int *ret)
 {
@@ -261,31 +272,17 @@ QLOGreset(int *ret)
 	initQlog();
     MT_lock_set(&mal_profileLock, "querylog.reset");
     /* drop all querylog tables */
-	BBPclear(QLOG_cat_id->batCacheid);
-	BBPclear(QLOG_cat_user->batCacheid);
-	BBPclear(QLOG_cat_defined->batCacheid);
-	BBPclear(QLOG_cat_query->batCacheid);
-	BBPclear(QLOG_cat_pipe->batCacheid);
-	BBPclear(QLOG_cat_optimize->batCacheid);
-	
-	BBPclear(QLOG_calls_id->batCacheid);
-	BBPclear(QLOG_calls_start->batCacheid);
-	BBPclear(QLOG_calls_stop->batCacheid);
-	BBPclear(QLOG_calls_arguments->batCacheid);
-	BBPclear(QLOG_calls_tuples->batCacheid);
-	BBPclear(QLOG_calls_exec->batCacheid);
-	BBPclear(QLOG_calls_result->batCacheid);
-	BBPclear(QLOG_calls_cpuload->batCacheid);
-	BBPclear(QLOG_calls_iowait->batCacheid);
-	BBPclear(QLOG_calls_space->batCacheid);
+
+	_QLOGcleanup();
     QLOG_init = 0;
-    MT_lock_unset(&mal_profileLock, "querylog.reset");
+
 	TMsubcommit_list(commitlist, committop);
+    MT_lock_unset(&mal_profileLock, "querylog.reset");
 	return MAL_SUCCEED;
 }
 
 str
-QLOGdefine(oid *ret, oid *idx, str *q, str *pipe, lng *optimize, str  *usr, lng *tick)
+QLOGdefine(oid *ret, oid *idx, str *q, str *pipe, lng *optimize, str  *usr, lng *tick, int *mal)
 {
 	oid o;
 	initQlog();
@@ -296,6 +293,7 @@ QLOGdefine(oid *ret, oid *idx, str *q, str *pipe, lng *optimize, str  *usr, lng 
 		QLOG_cat_id = BUNappend(QLOG_cat_id,idx,FALSE);
 		QLOG_cat_query = BUNappend(QLOG_cat_query,*q,FALSE);
 		QLOG_cat_pipe = BUNappend(QLOG_cat_pipe,*pipe,FALSE);
+		QLOG_cat_mal = BUNappend(QLOG_cat_mal,mal,FALSE);
 		QLOG_cat_optimize = BUNappend(QLOG_cat_optimize,optimize,FALSE);
 		QLOG_cat_user = BUNappend(QLOG_cat_user,*usr,FALSE);
 		QLOG_cat_defined = BUNappend(QLOG_cat_defined,tick,FALSE);

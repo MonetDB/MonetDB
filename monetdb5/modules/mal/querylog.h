@@ -40,7 +40,7 @@ qlog_export str QLOGdone(int *ret);
 qlog_export int QLOGisset(void);
 qlog_export str QLOGissetFcn(int *ret);
 qlog_export str QLOGreset(int *ret);
-qlog_export str QLOGdefine(oid *ret, oid *idx, str *q, str *pipe, lng *optimize, str  *usr, lng *tick);
+qlog_export str QLOGdefine(oid *ret, oid *idx, str *q, str *pipe, lng *optimize, str  *usr, lng *tick, int *mal);
 qlog_export str QLOGcall(int *ret, oid *idx, lng *tick1, lng *tick2, str *arg, wrd *tuples, lng *xtime, lng *rtime, int *cpu, int *iowait, lng *space);
 
 #endif /* _QLOG_H */
