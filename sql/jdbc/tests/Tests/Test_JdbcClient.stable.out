@@ -179,6 +179,14 @@ CREATE INDEX "triples_subject_object_idx" ON "triples" ("subject", "object");
 CREATE INDEX "triples_subject_predicate_idx" ON "triples" ("subject", "predicate");
 
 
+CREATE SCHEMA "querylog";
+
+SET SCHEMA "querylog";
+
+CREATE VIEW "history" AS select qd.*, ql."start",ql."stop", ql.arguments, ql.tuples, ql.run, ql.ship, ql.cpu, ql.space, ql.io 
+from querylog.catalog() qd, querylog.calls() ql
+where qd.id = ql.id and qd.owner = user;
+
 COMMIT;
 
 # 20:01:25 >  
