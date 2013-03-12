@@ -98,12 +98,13 @@ test_closecur (__main__.Test_Capabilities) ... ok
 test_customtype (__main__.Test_Capabilities) ... ok
 test_description (__main__.Test_Capabilities) ... ok
 test_fractional_TIMESTAMP (__main__.Test_Capabilities) ... ok
+test_multiple_queries (__main__.Test_Capabilities) ... ok
 test_small_CHAR (__main__.Test_Capabilities) ... ok
 test_transactions (__main__.Test_Capabilities) ... ok
 test_truncation (__main__.Test_Capabilities) ... ok
 
 ----------------------------------------------------------------------
-Ran 22 tests
+Ran 23 tests
 
 OK
 test_BINARY (__main__.Test_DBAPI20) ... ok
