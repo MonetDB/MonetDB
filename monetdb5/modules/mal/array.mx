@@ -74,6 +74,10 @@ function filler_(cnt:lng, v:any_1)(id:bat[:oid,:lng], cellval:bat[:oid,:any_1]);
 	return (b4,b2);
 end filler_;
 
+pattern slice(dim_strt:lng, dim_step:lng, dim_stop:lng, slc_strt:lng, slc_step:lng, slc_stop:lng...):bat[:oid,:oid]
+address ARRAYslice
+comment "Compute the OIDs of all cells selected by an array slicing"
+
 @= tilesAggrDecl
 module array;
 
@@ -161,6 +165,8 @@ comment "Construct the count over all tiles";
 
 array_export str ARRAYfiller_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 array_export str ARRAYfiller(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+
+array_export str ARRAYslice(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
 @= array_defs
 array_export str ARRAYseries_@1(int *ret, @1 *start, @1 *step, @1 *stop, int *grp, int *series);
@@ -288,6 +294,17 @@ ARRAYfiller_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bn->tsorted = b->trevsorted = 1;
 	(void) cntxt;
 	BBPkeepref(*ret = bn->batCacheid);
+	return MAL_SUCCEED;
+}
+
+str
+ARRAYslice(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	(void) mb;
+	(void) stk;
+	(void) pci;
+
 	return MAL_SUCCEED;
 }
 
