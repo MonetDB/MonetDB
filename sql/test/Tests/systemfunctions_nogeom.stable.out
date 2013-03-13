@@ -48,7 +48,10 @@ Ready.
 % sys.s,	sys.f,	sys.a,	sys.a,	sys. # table_name
 % schema,	function,	argno,	argtype,	definition # name
 % varchar,	varchar,	int,	varchar,	varchar # type
-% 3,	35,	1,	9,	1582 # length
+% 8,	35,	1,	9,	1582 # length
+[ "querylog",	"calls",	0,	"table",	"-- Each query call is stored in the table calls\n-- At regular intervals the query history table should be cleaned.\n-- This can be done manually on the SQL console, or be integrated\n-- in the keepQuery and keepCall upon need.\n-- The parameters are geared at understanding the resource claims\n-- They reflect the effect of the total workload mix during execution.\n-- The 'cpu' gives the average cpu load percentage over all cores on the \n-- server during execution phase. \n-- increasing cpu load indicates better use of multi-cores.\n-- The 'io' indicate IOs during complete query run.\n-- The 'space' is the total amount of intermediates created in MB.\n-- Reducing the space component improves performance/\n-- All timing in usec and all storage in bytes.\n\ncreate function querylog.calls()\nreturns table(\n\tid oid,\t\t\t\t -- references query plan\n\t\"start\" timestamp,\t-- time the statement was started\n\t\"stop\" timestamp,\t-- time the statement was completely finished\n\targuments string,\t-- actual call structure\n\ttuples wrd,\t\t\t-- number of tuples in the result set\n\trun bigint,\t\t-- time spent (in usec)  until the result export\n\tship bigint,\t\t-- time spent (in usec)  to ship the result set\n\tcpu int,  \t\t-- average cpu load percentage during execution\n\tio int,\t\t\t-- percentage time waiting for IO to finish \n\tspace bigint\t\t-- total storage size of intermediates created (in MB)\n)\nexternal name sql.querylog_calls;"	]
+[ "querylog",	"catalog",	0,	"table",	"create function querylog.catalog()\nreturns table(\n\tid oid,\n\towner string,\n\tdefined timestamp,\n\tquery string,\n\tpipe string,\n\tmal int,\t\t\t-- size of MAL plan\n\toptimize bigint \t-- time in usec\n)\nexternal name sql.querylog_catalog;"	]
+[ "querylog",	"init",	0,	"smallint",	"create procedure querylog.init(threshold smallint)\nexternal name sql.querylog_init_threshold;"	]
 [ "sys",	"abbrev",	0,	"clob",	"create function \"abbrev\" (p inet) returns clob\n\texternal name inet.\"abbrev\";"	]
 [ "sys",	"abbrev",	1,	"inet",	""	]
 [ "sys",	"alpha",	0,	"double",	"create function alpha(pdec double, pradius double)\nreturns double external name sql.alpha;"	]
@@ -172,20 +175,6 @@ Ready.
 [ "sys",	"indexsize",	2,	"bigint",	""	]
 [ "sys",	"isaurl",	0,	"boolean",	"create function isaurl(theurl url) returns bool\n\texternal name url.\"isaURL\";"	]
 [ "sys",	"isaurl",	1,	"url",	""	]
-[ "sys",	"keepcall",	0,	"wrd",	"-- the signature is used in the kernel, don't change it\ncreate procedure keepcall(\n\tid wrd, \t\t\t-- references query plan\n\tctime timestamp,\t-- time the first statement was executed\n\targuments string,\n\txtime bigint,\t\t-- time from the first statement until result export\n\trtime bigint,\t\t-- time to ship the result to the client\n\tfoot bigint, \t\t-- footprint for all bats in the plan\n\tmemory bigint,\t\t-- storage size of intermediates created\n\ttuples wrd,\t\t\t-- number of tuples in the result set\n\tinblock bigint,\t\t-- number of physical blocks read\n\toublock bigint\t\t-- number of physical blocks written\n)\nbegin\n\tinsert into callhistory\n\tvalues( id, ctime, arguments, xtime, rtime, \n\t\tfoot, memory, tuples, inblock, oublock );\nend;"	]
-[ "sys",	"keepcall",	1,	"timestamp",	""	]
-[ "sys",	"keepcall",	2,	"clob",	""	]
-[ "sys",	"keepcall",	3,	"bigint",	""	]
-[ "sys",	"keepcall",	4,	"bigint",	""	]
-[ "sys",	"keepcall",	5,	"bigint",	""	]
-[ "sys",	"keepcall",	6,	"bigint",	""	]
-[ "sys",	"keepcall",	7,	"wrd",	""	]
-[ "sys",	"keepcall",	8,	"bigint",	""	]
-[ "sys",	"keepcall",	9,	"bigint",	""	]
-[ "sys",	"keepquery",	0,	"wrd",	"-- the signature is used in the kernel, don't change it\ncreate procedure keepquery(\n\ti wrd,\n\tquery string,\n\tparse bigint,\n\toptimize bigint) \nbegin\n\tinsert into queryhistory\n\tvalues(i, now(), user, query, parse, optimize);\nend;"	]
-[ "sys",	"keepquery",	1,	"clob",	""	]
-[ "sys",	"keepquery",	2,	"bigint",	""	]
-[ "sys",	"keepquery",	3,	"bigint",	""	]
 [ "sys",	"like",	0,	"clob",	"create filter function \"like\"(val string, pat string, esc string) external name algebra.likesubselect;"	]
 [ "sys",	"like",	1,	"clob",	""	]
 [ "sys",	"like",	2,	"clob",	""	]

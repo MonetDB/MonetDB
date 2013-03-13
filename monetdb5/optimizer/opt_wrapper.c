@@ -155,9 +155,7 @@ str OPTwrapper (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 		s= findSymbol(cntxt->nspace, putName(modnme,strlen(modnme)),putName(fcnnme,strlen(fcnnme)));
 
 		if( s == NULL) {
-			char buf[1024];
-			snprintf(buf,1024, "%s.%s",modnme,fcnnme);
-			throw(MAL, optimizer, RUNTIME_OBJECT_UNDEFINED ":%s", buf);
+			throw(MAL, optimizer, RUNTIME_OBJECT_UNDEFINED ":%s.%s", modnme, fcnnme);
 		}
 		mb = s->def;
 		stk= 0;
