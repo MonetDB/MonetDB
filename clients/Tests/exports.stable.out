@@ -2019,7 +2019,7 @@ str PropertyOperatorString(prop_op_t op);
 str QLOGcall(int *ret, oid *idx, lng *tick1, lng *tick2, str *arg, wrd *tuples, lng *xtime, lng *rtime, int *cpu, int *iowait, lng *space);
 void QLOGcalls(BAT **r);
 void QLOGcatalog(BAT **r);
-str QLOGdefine(oid *ret, oid *idx, str *q, str *pipe, lng *optimize, str *usr, lng *tick);
+str QLOGdefine(oid *ret, oid *idx, str *q, str *pipe, lng *optimize, str *usr, lng *tick, int *mal);
 str QLOGdone(int *ret);
 str QLOGinit(int *ret);
 str QLOGinitThreshold(int *ret, int *threshold);

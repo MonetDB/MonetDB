@@ -86,12 +86,12 @@ id	name	schema_id	query	type	system	commit_action	readonly	temporary
 5104	user_role	2000		0	true	0	false	0	
 5107	auths	2000		0	true	0	false	0	
 5111	privileges	2000		0	true	0	false	0	
-5296	history	5255	create view querylog.history asnselect qd.*, ql."start",ql."stop", ql.arguments, ql.tuples, ql.run, ql.ship, ql.cpu, ql.space, ql.io nfrom querylog.catalog() qd, querylog.calls() qlnwhere qd.id = ql.id and qd.owner = user;	1	false	0	false	0	
-6026	storagemodelinput	2000		0	true	0	false	0	
-6067	tablestoragemodel	2000	-- A summary of the table storage requirement is is available as a table view.n-- The auxillary column denotes the maximum space if all non-sorted columnsn-- would be augmented with a hash (rare situation)ncreate view sys.tablestoragemodelnas select "schema","table",max(count) as "count",ntsum(columnsize) as columnsize,ntsum(heapsize) as heapsize,ntsum(indices) as indices,ntsum(case when sorted = false then 8 * count else 0 end) as auxillarynfrom sys.storagemodel() group by "schema","table";	1	true	0	false	0	
-6089	systemfunctions	2000		0	true	0	false	0	
+5298	history	5255	create view querylog.history asnselect qd.*, ql."start",ql."stop", ql.arguments, ql.tuples, ql.run, ql.ship, ql.cpu, ql.space, ql.io nfrom querylog.catalog() qd, querylog.calls() qlnwhere qd.id = ql.id and qd.owner = user;	1	false	0	false	0	
+6028	storagemodelinput	2000		0	true	0	false	0	
+6069	tablestoragemodel	2000	-- A summary of the table storage requirement is is available as a table view.n-- The auxillary column denotes the maximum space if all non-sorted columnsn-- would be augmented with a hash (rare situation)ncreate view sys.tablestoragemodelnas select "schema","table",max(count) as "count",ntsum(columnsize) as columnsize,ntsum(heapsize) as heapsize,ntsum(indices) as indices,ntsum(case when sorted = false then 8 * count else 0 end) as auxillarynfrom sys.storagemodel() group by "schema","table";	1	true	0	false	0	
+6091	systemfunctions	2000		0	true	0	false	0	
 
-# 18:07:34 >  
-# 18:07:34 >  "Done."
-# 18:07:34 >  
+# 01:21:10 >  
+# 01:21:10 >  "Done."
+# 01:21:10 >  
 
