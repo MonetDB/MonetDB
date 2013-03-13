@@ -157,7 +157,7 @@ QLOGcreate(str hnme, str tnme, int tt)
     return b;
 }
 
-#define cleanup(X)  if (X) { (X)->batPersistence = TRANSIENT; BBPdecref((X)->batCacheid, TRUE); } (X) = NULL;
+#define cleanup(X)  if (X) { (X)->batPersistence = TRANSIENT; BBPrename((X)->batCacheid,"_"); BBPreleaseref((X)->batCacheid); } (X) = NULL;
 
 static void
 _QLOGcleanup(void)
@@ -258,13 +258,6 @@ QLOGissetFcn(int *ret)
 	return MAL_SUCCEED;
 }
 
-/*static void 
-QLOGreclaim(BAT *b){
-    BATmode(b, TRANSIENT);
-	BBPreleaseref(b->batCacheid);
-}
-
-*/
 str
 QLOGreset(int *ret)
 {
