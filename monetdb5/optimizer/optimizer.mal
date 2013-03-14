@@ -215,27 +215,10 @@ pattern group.multicolumns(l:bat[:oid,:any]...)(ref:bat[:oid,:oid],grp:bat[:oid,
 address GRPmulticolumngroup
 comment "Derive a group index over multiple columns.";
 
-#opt_history.mal
-
-module sql;
-function keepquery{unsafe}(qid:int,qry:str,parse:lng,optimize:lng):void;
-	raise SQLexception:= "SQL history script should be run first";
-end keepquery;
-
-#function keepcall{unsafe}(qid:int, call:timestamp,arg:str,elap:lng,inblock:lng,oublock:lng):void;
-#	raise SQLexception:= "SQL history script should be run first";
-#end keepcall;
-
-function queryId{unsafe}(qid:int):void;
-end queryId;
-
-pattern forgetPrevious():void
-address OPTforgetPrevious
-comment "invalidate the previous instruction from future execution";
-
-pattern optimizer.history():str
+#opt_querylog
+pattern optimizer.querylog():str
 address OPTwrapper;
-pattern optimizer.history(mod:str, fcn:str):str
+pattern optimizer.querylog(mod:str, fcn:str):str
 address OPTwrapper
 comment "Collect SQL query statistics";
 

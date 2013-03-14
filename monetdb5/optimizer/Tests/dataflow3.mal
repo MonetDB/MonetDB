@@ -56,7 +56,7 @@ end s1_0;
     optimizer.deadcode("user","s1_0");
     optimizer.reduce("user","s1_0");
     optimizer.dataflow("user","s1_0");
-    optimizer.history("user","s1_0");
+    optimizer.querylog("user","s1_0");
     optimizer.multiplex("user","s1_0");
     optimizer.garbageCollector("user","s1_0");
 mdb.list("user","s1_0");

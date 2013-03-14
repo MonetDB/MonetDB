@@ -3629,8 +3629,8 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_E13B077DCC48449BBB7679B67C003143"
             {
-            "SourcePath" = "8:lib\\monetdb5\\createdb\\15_history.sql"
-            "TargetName" = "8:15_history.sql"
+            "SourcePath" = "8:lib\\monetdb5\\createdb\\15_querylog.sql"
+            "TargetName" = "8:15_querylog.sql"
             "Tag" = "8:"
             "Folder" = "8:_7F962DDBDF894636B6CAFE6FE4887567"
             "Condition" = "8:"

@@ -457,6 +457,7 @@ typedef enum table_types {
 #define isTableOrArray(x)(x->type==tt_array || x->type==tt_table)
 #define isFixedArray(a) (a->type == tt_array && a->fixed)
 #define isFixedDim(d)   (d->strt != lng_nil && d->step != lng_nil && d->stop != lng_nil)
+#define isKindOfTable(x)  (isTable(x) || isArray(x) || isMergeTable(x) || isRemote(x) || isReplicaTable(x))
 
 typedef struct sql_table {
 	sql_base base;

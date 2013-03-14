@@ -464,7 +464,8 @@ end sql_environment;
 function clients{inline}()( user:bat[:oid,:str], login:bat[:oid,:str], lastcommand:bat[:oid,:str], actions:bat[:oid,:int], seconds:bat[:oid,:lng]);
 	U:= clients.getUsers();
 	u:= algebra.markH(U);
-	L:= clients.getLogins();
+	(Z,L):= clients.getLogins();
+	U1:= algebra.join(Z,U);
 	l:= algebra.markH(L);
 	C:= clients.getLastCommand();
 	c:= algebra.markH(C);
@@ -472,7 +473,7 @@ function clients{inline}()( user:bat[:oid,:str], login:bat[:oid,:str], lastcomma
 	a:= algebra.markH(A);
 	T:= clients.getTime();
 	t:= algebra.markH(T);
-	return (u,l,c,a,t);
+	return (U1,l,c,a,t);
 end clients;
 
 function bbp{inline}()( id:bat[:oid,:int], name:bat[:oid,:str], htype:bat[:oid,:str], ttype:bat[:oid,:str], count:bat[:oid,:lng], refcnt:bat[:oid,:int], lrefcnt:bat[:oid,:int], location:bat[:oid,:str], heat:bat[:oid,:int], dirty:bat[:oid,:str], status:bat[:oid,:str], kind:bat[:oid,:str]);
@@ -544,6 +545,43 @@ pattern storage()(
 	sorted:bat[:oid,:bit])
 address sql_storage
 comment "return a table with storage information ";
+
+pattern querylog_catalog()(
+id:bat[:oid,:oid],
+user:bat[:oid,:str],
+defined:bat[:oid,:timestamp],
+query:bat[:oid,:str],
+pipe:bat[:oid,:str],
+optimize:bat[:oid,:lng]
+)
+address sql_querylog_catalog
+comment "Obtain the query log catalog";
+
+pattern querylog_calls()(
+id:bat[:oid,:oid],
+start:bat[:oid,:timestamp],
+stop:bat[:oid,:timestamp],
+arguments:bat[:oid,:str],
+tuples:bat[:oid,:wrd],
+exec:bat[:oid,:lng],
+result:bat[:oid,:lng],
+cpuload:bat[:oid,:int],
+iowait:bat[:oid,:int],
+space:bat[:oid,:lng]
+)
+address sql_querylog_calls
+comment "Obtain the query log calls";
+
+pattern querylog_reset()
+address sql_querylog_reset;
+
+command querylog_init()
+address QLOGinit;
+command querylog_init(thres:int)
+address QLOGinitThreshold;
+command querylog_done()
+address QLOGdone;
+
 
 # @- SQL function aliases
 # The code generate should identify the precise module
@@ -1276,6 +1314,7 @@ sql.prelude();
 #include "sql_qc.h"
 #include "sql_env.h"
 #include "sql_statement.h"
+#include "querylog.h"
 
 #include <bat/bat_storage.h>
 #include <bat/bat_utils.h>
@@ -1394,6 +1433,9 @@ sql5_export str dump_cache(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 sql5_export str dump_opt_stats(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str dump_trace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str sql_querylog_catalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str sql_querylog_calls(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str sql_querylog_reset(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str sql_rowid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str sql_rank_grp(bat *rid, bat *bid, bat *gid, bat *gpe);
 sql5_export str sql_rank(bat *rid, bat *bid);
@@ -2164,7 +2206,7 @@ drop_table(mvc *sql, char *sname, char *tname, int drop_action, int tt)
 	}
 	if (!t) { 
 		return sql_message("42S02!DROP %s: no such %s '%s'", (tt==tt_table)?"TABLE":"ARRAY", (tt==tt_table)?"table":"array", tname);
-	} else if (!isTableOrArray(t) && !isStream(t) && !isRemote(t)) {
+	} else if (isView(t)) {
 		return sql_message("42000!DROP %s: cannot drop VIEW '%s'", (tt==tt_table)?"TABLE":"ARRAY", tname);
 	} else if (t->system) {
 		return sql_message("42000!DROP %s: cannot drop system %s '%s'", (tt==tt_table)?"TABLE":"ARRAY", (tt==tt_table)?"table":"array", tname);
@@ -4333,25 +4375,18 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	for (i = pci->retc + 2, n = t->columns.set->h; i<pci->argc && n; i++, n = n->next) {
 		sql_column *col = n->data;
 		BAT *c= NULL;
+		int tpe = col->type.type->localtype;
 
 		/* handle the various cases */
-		switch(col->type.type->localtype){
-		case TYPE_bte:
-		case TYPE_bit:
-		case TYPE_oid:
-		case TYPE_sht:
-		case TYPE_int:
-		case TYPE_lng:
-		case TYPE_wrd:
-		case TYPE_flt:
-		case TYPE_dbl:
+		if (tpe < TYPE_str || tpe == TYPE_date ||
+		    tpe == TYPE_daytime || tpe == TYPE_timestamp) {
 			c = BATattach(col->type.type->localtype, *(str*)getArgReference(stk, pci, i));
 			if (c == NULL) 
 				throw(SQL, "sql", "failed to attach file %s", *(str*)getArgReference(stk, pci, i));
 			BATsetaccess(c, BAT_READ);
 			BATderiveProps(c, 1);
 			break;
-		case TYPE_str:
+		} else if (tpe == TYPE_str) {
 			/* get the BAT and fill it with the strings */
 			c = BATnew(TYPE_void,TYPE_str,0); 
 			BATseqbase(c,0);
@@ -4369,7 +4404,7 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			fclose(f);
 			GDKfree(buf);
 			break;
-		default:
+		} else {
 			throw(SQL, "sql", "failed to attach file %s", *(str*)getArgReference(stk, pci, i));
 		}
 		if (i!=(pci->retc + 2) && cnt != BATcount(c)) 
@@ -6459,6 +6494,51 @@ dump_trace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
+str
+sql_querylog_catalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int i;
+	BAT *t[6];
+
+	(void)cntxt; (void)mb;
+	QLOGcatalog(t);
+	for (i = 0; i < 6; i++) {
+		int id = t[i]->batCacheid;
+
+		*(int *) getArgReference(stk, pci, i) = id;
+		BBPkeepref(id);
+	}
+	return MAL_SUCCEED;
+}
+
+str
+sql_querylog_calls(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int i;
+	BAT *t[10];
+
+	(void)cntxt; (void)mb;
+	QLOGcalls(t);
+	for (i = 0; i < 10; i++) {
+		int id = t[i]->batCacheid;
+
+		*(int *) getArgReference(stk, pci, i) = id;
+		BBPkeepref(id);
+	}
+	return MAL_SUCCEED;
+}
+str
+sql_querylog_reset(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int *ret= (int*) getArgReference(stk,pci,0);
+	(void) cntxt;
+	(void) mb;
+	(void) stk;
+	(void) pci;
+	QLOGreset(ret);
+	return MAL_SUCCEED;
+}
+
 
 /* str sql_rowid(oid *rid, ptr v, str *sname, str *tname); */
 str 
@@ -6632,7 +6712,7 @@ str SQLargRecord(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 
 	(void) cntxt;
 	ret= (str *) getArgReference(stk,pci,0);
-	s = instruction2str(mb,stk,getInstrPtr(mb,0),LIST_MAL_VALUE | LIST_MAPI);
+	s = instruction2str(mb,stk,getInstrPtr(mb,0),LIST_MAL_DEBUG);
 	t= strchr(s,' ');
 	*ret = GDKstrdup(t ? t+1: s);
 	GDKfree(s);

@@ -35,11 +35,10 @@ typedef struct{
 	struct Mallinfo memory;
 } *RuntimeProfile, RuntimeProfileRecord;
 
-void runtimeProfileInit(MalBlkPtr mb, RuntimeProfile prof, int initmemory);
-void runtimeProfileBegin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int stkpc, RuntimeProfile prof, int start);
-void runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, RuntimeProfile prof);
-void runtimeTiming(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int tid, MT_Lock *lock, RuntimeProfile prof);
-lng getVolume(MalStkPtr stk, InstrPtr pci, int rd);
-void displayVolume(Client cntxt, lng vol);
-lng getFootPrint(MalBlkPtr mb, MalStkPtr stk);
+mal_export void runtimeProfileInit(MalBlkPtr mb, RuntimeProfile prof, int initmemory);
+mal_export void runtimeProfileBegin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int stkpc, RuntimeProfile prof, int start);
+mal_export void runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, RuntimeProfile prof);
+mal_export lng getVolume(MalStkPtr stk, InstrPtr pci, int rd);
+mal_export void displayVolume(Client cntxt, lng vol);
+mal_export void updateFootPrint(MalBlkPtr mb, MalStkPtr stk, int varid);
 #endif

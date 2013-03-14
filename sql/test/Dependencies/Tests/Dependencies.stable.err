@@ -12,8 +12,8 @@ stderr of test 'Dependencies` in directory 'sql/test/Dependencies` itself:
 
 MAPI  = (monetdb) /var/tmp/mtest-14847/.s.monetdb.33526
 QUERY = DROP USER monetdb;
-ERROR = !DROP USER: 'monetdb' owns a schema
-MAPI  = (monetdb) /var/tmp/mtest-14847/.s.monetdb.33526
+ERROR = !DROP USER: cannot remove yourself
+MAPI  = (monetdb) /var/tmp/mtest-950/.s.monetdb.37058
 QUERY = DROP SCHEMA test;
 ERROR = !DROP SCHEMA: unable to drop schema 'test' (there are database objects which depend on it
 MAPI  = (monet_test) /var/tmp/mtest-14847/.s.monetdb.33526
@@ -21,8 +21,8 @@ QUERY = CREATE SCHEMA "test_2" AUTHORIZATION "public";
 ERROR = !CREATE SCHEMA: insufficient privileges for user 'monet_test'
 MAPI  = (monet_test) /var/tmp/mtest-14847/.s.monetdb.33526
 QUERY = DROP USER monetdb;
-ERROR = !DROP USER: 'monetdb' owns a schema
-MAPI  = (monetdb) /var/tmp/mtest-14847/.s.monetdb.33526
+ERROR = !DROP USER: access denied for user 'monet_test'
+MAPI  = (monetdb) /var/tmp/mtest-950/.s.monetdb.37058
 QUERY = CREATE INDEX id_age_index ON v1(id,age);
 ERROR = !CREATE INDEX: cannot create index on view 'v1'
 MAPI  = (monetdb) /var/tmp/mtest-14847/.s.monetdb.33526

@@ -1194,7 +1194,7 @@ mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 			if (cntxt != mal_clients)
 				/* help mclients with fake prompt */
 				mnstr_printf(out, "mdb>");
-			printTraceCall(out, mb, stk, pc, cntxt->flags);
+			printTraceCall(out, mb, stk, pc, LIST_MAL_DEBUG);
 		} else if (ch)
 			mdbCommand(cntxt, mb, stk, p, pc);
 		break;
@@ -1203,7 +1203,7 @@ mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 		mdbCommand(cntxt, mb, stk, p, pc);
 		break;
 	case 't':
-		printTraceCall(out, mb, stk, pc, cntxt->flags);
+		printTraceCall(out, mb, stk, pc, LIST_MAL_DEBUG);
 		break;
 	case 'C':
 		mdbSessionActive = 0; /* for name completion */

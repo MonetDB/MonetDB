@@ -181,25 +181,34 @@ CLTInfo(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-CLTLogin(int *ret)
+CLTLogin(int *nme, int *ret)
 {
 	BAT *b = BATnew(TYPE_void, TYPE_str, 12);
+	BAT *u = BATnew(TYPE_void, TYPE_oid, 12);
 	int i;
 	char s[26];
 
 	if (b == 0)
 		throw(MAL, "clients.getLogins", MAL_MALLOC_FAIL);
+	if ( u==0){
+		BBPreleaseref(b->batCacheid);
+		throw(MAL, "clients.getLogins", MAL_MALLOC_FAIL);
+	}
 	BATseqbase(b,0);
+	BATseqbase(u,0);
 
 	for (i = 0; i < MAL_MAXCLIENTS; i++) {
 		Client c = mal_clients+i;
 		if (c->mode >= CLAIMED && c->user != oid_nil) {
 			CLTtimeConvert((time_t) c->login,s);
 			BUNappend(b, s, FALSE);
+			BUNappend(u, &c->user, FALSE);
 		}
 	}
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
+	if (!(u->batDirty&2)) u = BATsetaccess(u, BAT_READ);
 	pseudo(ret,b,"client","login");
+	pseudo(nme,u,"client","name");
 	return MAL_SUCCEED;
 }
 

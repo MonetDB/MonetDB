@@ -27,10 +27,11 @@ Ready.
 % .ftf # table_name
 % sch # name
 % varchar # type
-% 3 # length
+% 8 # length
 [ "sys"	]
 [ "tmp"	]
 [ "rs"	]
+[ "querylog"	]
 [ "ft"	]
 #drop function ft.func;
 #drop schema ft;

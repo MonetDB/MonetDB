@@ -44,7 +44,7 @@ clients_export str CLTsetScenario(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 clients_export str CLTusers(int *ret);
 clients_export str CLTsetHistory(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 clients_export str CLTquit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-clients_export str CLTLogin(int *ret);
+clients_export str CLTLogin(int *ret, int *nme);
 clients_export str CLTLastCommand(int *ret);
 clients_export str CLTActions(int *ret);
 clients_export str CLTTime(int *ret);

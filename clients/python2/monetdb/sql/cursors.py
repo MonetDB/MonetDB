@@ -380,133 +380,99 @@ class Cursor(object):
         if not block:
             block = ""
 
-        lines = block.split("\n")
-        firstline = lines[0]
+        for line in block.split("\n"):
+            if line.startswith(mapi.MSG_INFO):
+                logger.info(line[1:])
+                self.messages.append((Warning, line[1:]))
 
-        while firstline.startswith(mapi.MSG_INFO):
-            logger.info(firstline[1:])
-            self.messages.append((Warning, firstline[1:]))
-            lines = lines[1:]
-            firstline = lines[0]
+            elif line.startswith(mapi.MSG_QTABLE):
+                (self.__query_id, rowcount, columns, tuples) = line[2:].split()
 
-        if firstline.startswith(mapi.MSG_QTABLE):
-            (id, rowcount, columns, tuples) = firstline[2:].split()
-            columns = int(columns)   # number of columns in result
-            rowcount = int(rowcount) # total number of rows
-            tuples = int(tuples)     # number of rows in this set
-            rows = []
-
-            # set up fields for description
-            table_name = [None]*columns
-            column_name = [None]*columns
-            type_ = [None]*columns
-            display_size = [None]*columns
-            internal_size = [None]*columns
-            precision = [None]*columns
-            scale = [None]*columns
-            null_ok = [None]*columns
-
-            typesizes = [(0,0)]*columns
-
-            for line in lines[1:]:
-                if line.startswith(mapi.MSG_HEADER):
-                    (data, identity) = line[1:].split("#")
-                    values = [x.strip() for x in data.split(",")]
-                    identity = identity.strip()
-
-                    if identity == "table_name":
-                        table_name = values   # not used
-                    elif identity == "name":
-                        column_name = values
-                    elif identity == "type":
-                        type_ = values
-                    elif identity == "length":
-                        pass # not used
-                    elif identity == "typesizes":
-                        typesizes = [[int(j) for j in i.split()] for i in values]
-                        internal_size = [x[0] for x in typesizes]
-                        for num, typeelem in enumerate(type_):
-                            if typeelem in ['decimal']:
-                                precision[num] = typesizes[num][0]
-                                scale[num] = typesizes[num][1]
-                    else:
-                        self.messages.append((InterfaceError,
-                            "unknown header field"))
-                        self.__exception_handler(InterfaceError,
-                                "unknown header field")
-
-                    self.description = list(zip(column_name, type_,
-                        display_size, internal_size, precision, scale, null_ok))
-
-                if line.startswith(mapi.MSG_TUPLE):
-                    values = self.__parse_tuple(line)
-                    rows.append(values)
-
-                elif line == mapi.MSG_PROMPT:
-                    self.__query_id = id
-                    self.__rows = rows
-                    self.__offset = 0
-
-                    self.rowcount = rowcount
-                    self.lastrowid = None
-                    logger.debug("II store result finished")
-                    return
-
-        elif firstline.startswith(mapi.MSG_QBLOCK):
-            rows = []
-            for line in lines[1:]:
-                if line.startswith(mapi.MSG_TUPLE):
-                    values = self.__parse_tuple(line)
-                    rows.append(values)
-                elif line == mapi.MSG_PROMPT:
-                    logger.debug("II store result finished")
-                    self.__rows = rows
-                    return
-
-        elif firstline.startswith(mapi.MSG_QSCHEMA):
-           if lines[1] == mapi.MSG_PROMPT:
+                columns = int(columns)   # number of columns in result
+                self.rowcount = int(rowcount)  # total number of rows
+                tuples = int(tuples)     # number of rows in this set
                 self.__rows = []
+
+                # set up fields for description
+                table_name = [None] * columns
+                column_name = [None] * columns
+                type_ = [None] * columns
+                display_size = [None] * columns
+                internal_size = [None] * columns
+                precision = [None] * columns
+                scale = [None] * columns
+                null_ok = [None] * columns
+                typesizes = [(0, 0)] * columns
                 self.__offset = 0
+                self.lastrowid = None
+
+            elif line.startswith(mapi.MSG_HEADER):
+                (data, identity) = line[1:].split("#")
+                values = [x.strip() for x in data.split(",")]
+                identity = identity.strip()
+
+                if identity == "table_name":
+                    table_name = values
+                elif identity == "name":
+                    column_name = values
+                elif identity == "type":
+                    type_ = values
+                elif identity == "length":
+                    length = values
+                elif identity == "typesizes":
+                    typesizes = [[int(j) for j in i.split()] for i in values]
+                    internal_size = [x[0] for x in typesizes]
+                    for num, typeelem in enumerate(type_):
+                        if typeelem in ['decimal']:
+                            precision[num] = typesizes[num][0]
+                            scale[num] = typesizes[num][1]
+                else:
+                    msg = "unknown header field"
+                    self.messages.append((InterfaceError, msg))
+                    self.__exception_handler(InterfaceError, msg)
+
+                self.description = list(zip(column_name, type_, display_size,
+                                            internal_size, precision, scale,
+                                            null_ok))
+                self.__offset = 0
+                self.lastrowid = None
+
+
+            elif line.startswith(mapi.MSG_TUPLE):
+                values = self.__parse_tuple(line)
+                self.__rows .append(values)
+
+            elif line.startswith(mapi.MSG_QBLOCK):
+                self.__rows = []
+
+            elif line.startswith(mapi.MSG_QSCHEMA):
+                self.__offset = 0
+                self.lastrowid = None
+                self.__rows = []
                 self.description = None
                 self.rowcount = -1
-                self.lastrowid = None
-                logger.debug("II schema finished")
-                return
 
-        elif firstline.startswith(mapi.MSG_QUPDATE):
-           if lines[1] == mapi.MSG_PROMPT:
-                (affected, identity) = firstline[2:].split()
-                self.__rows = []
+            elif line.startswith(mapi.MSG_QUPDATE):
+                (affected, identity) = line[2:].split()
                 self.__offset = 0
+                self.__rows = []
                 self.description = None
                 self.rowcount = int(affected)
                 self.lastrowid = int(identity)
                 self.__query_id = -1
-                logger.debug("II update finished")
-                return
 
-        elif firstline.startswith(mapi.MSG_ERROR):
-            self.__exception_handler(ProgrammingError, firstline[1:])
-
-        elif firstline.startswith(mapi.MSG_QTRANS):
-           if lines[1] == mapi.MSG_PROMPT:
-                self.__rows = []
+            elif line.startswith(mapi.MSG_QTRANS):
                 self.__offset = 0
+                self.lastrowid = None
+                self.__rows = []
                 self.description = None
                 self.rowcount = -1
-                self.lastrowid = None
-                logger.debug("II transaction finished")
+
+            elif line.startswith(mapi.MSG_PROMPT):
                 return
 
-        elif firstline.startswith(mapi.MSG_PROMPT):
-            self.__query_id = -1
-            self.__rows = []
-            self.__offset = 0
-
-            self.rowcount = 0
-            self.lastrowid = None
-            logger.debug("II empty response, assuming everything is ok")
-            return
+            elif line.startswith(mapi.MSG_ERROR):
+                self.__exception_handler(ProgrammingError, line[1:])
 
         # you are not supposed to be here
         self.__exception_handler(InterfaceError, "Unknown state, %s" % block)

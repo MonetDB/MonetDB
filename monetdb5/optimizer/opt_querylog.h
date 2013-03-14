@@ -16,8 +16,8 @@
  * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
 */
-#ifndef _OPT_QUERYHISTORY_
-#define _OPT_QUERYHISTORY_
+#ifndef _OPT_QUERYLOG_
+#define _OPT_QUERYLOG_
 
 #include "opt_prelude.h"
 #include "opt_support.h"
@@ -25,9 +25,7 @@
 #include "mal_instruction.h"
 #include "mal_function.h"
 
-opt_export str OPTforgetPrevious(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+opt_export int OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-opt_export int OPThistoryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-
-#define OPTDEBUGhistory  if ( optDebug & ((lng)1 <<DEBUG_OPT_HISTORY) )
+#define OPTDEBUGquerylog  if ( optDebug & ((lng)1 <<DEBUG_OPT_HISTORY) )
 #endif

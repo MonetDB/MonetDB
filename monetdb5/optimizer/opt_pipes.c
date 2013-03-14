@@ -59,7 +59,12 @@ struct PIPELINES {
 	 "stable", NULL, NULL, 1},
 /* The default pipe line contains as of Feb2010
  * mitosis-mergetable-reorder, aimed at large tables and improved
- * access locality
+ * access locality.
+ *
+ * NOTE:
+ * If you change the default pipe, please also update the no_mitosis pipe
+ * and sequential pipe (see below, as well as the man page (see
+ * tools/mserver/mserver5.1) accordingly!
  */
 	{"default_pipe",
 	 "optimizer.inline();"
@@ -81,7 +86,7 @@ struct PIPELINES {
 	 "optimizer.reduce();"
 	 "optimizer.matpack();"
 	 "optimizer.dataflow();"
-	 "optimizer.history();"
+	 "optimizer.querylog();"
 	 "optimizer.multiplex();"
 	 "optimizer.garbageCollector();",
 	 "stable", NULL, NULL, 1},
@@ -108,8 +113,9 @@ struct PIPELINES {
 	 "optimizer.reorder();"
 	 "optimizer.deadcode();"
 	 "optimizer.reduce();"
+	 "optimizer.matpack();"
 	 "optimizer.dataflow();"
-	 "optimizer.history();"
+	 "optimizer.querylog();"
 	 "optimizer.multiplex();"
 	 "optimizer.garbageCollector();",
 	 "stable", NULL, NULL, 1},
@@ -136,7 +142,8 @@ struct PIPELINES {
 	 "optimizer.reorder();"
 	 "optimizer.deadcode();"
 	 "optimizer.reduce();"
-	 "optimizer.history();"
+	 "optimizer.matpack();"
+	 "optimizer.querylog();"
 	 "optimizer.multiplex();"
 	 "optimizer.garbageCollector();",
 	 "stable", NULL, NULL, 1},
@@ -160,7 +167,7 @@ struct PIPELINES {
 	 "optimizer.deadcode();"
 	 "optimizer.recycle();"
 	 "optimizer.reduce();"
-	 "optimizer.history();"
+	 "optimizer.querylog();"
 	 "optimizer.multiplex();"
 	 "optimizer.garbageCollector();",
 	 "experimental", NULL, NULL, 1},
@@ -189,7 +196,7 @@ struct PIPELINES {
 	 "optimizer.octopus();"
 	 "optimizer.reduce();"
 	 "optimizer.dataflow();"
-	 "optimizer.history();"
+	 "optimizer.querylog();"
 	 "optimizer.multiplex();"
 	 "optimizer.garbageCollector();",
 	 "experimental", "OPToctopus", NULL, 1},
@@ -215,7 +222,7 @@ struct PIPELINES {
 	 "optimizer.deadcode();"
 	 "optimizer.reduce();"
 	 "optimizer.dataflow();"
-	 "optimizer.history();"
+	 "optimizer.querylog();"
 	 "optimizer.multiplex();"
 	 "optimizer.garbageCollector();",
 	 "experimental", NULL, NULL, 1},
@@ -239,7 +246,7 @@ struct PIPELINES {
 	 "optimizer.deadcode();"
 	 "optimizer.reduce();"
 	 "optimizer.dataflow();"
-	 "optimizer.history();"
+	 "optimizer.querylog();"
 	 "optimizer.multiplex();"
 	 "optimizer.garbageCollector();",
 	 "experimental", "OPTdictionary", NULL, 1},
@@ -263,7 +270,7 @@ struct PIPELINES {
 	 "optimizer.dataflow();"
 	 "optimizer.compression();"
 	 "optimizer.dataflow();"
-	 "optimizer.history();"
+	 "optimizer.querylog();"
 	 "optimizer.multiplex();"
 	 "optimizer.garbageCollector();",
 	 "experimental", "OPTcompress", NULL, 1},

@@ -417,7 +417,7 @@ offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc, int start)
 */
 	}
 	if (profileCounter[PROFfootprint].status) {
-		logadd(LLFMT",\t", getFootPrint(mb,stk)/1024/1024);
+		logadd(LLFMT",\t", stk->tmpspace);
 	}
 #ifdef HAVE_SYS_RESOURCE_H
 	if ((profileCounter[PROFreads].status ||
@@ -864,22 +864,17 @@ TRACEcreate(str hnme, str tnme, int tt)
 
 	snprintf(buf, 128, "trace_%s_%s", hnme, tnme);
 	b = BATdescriptor(BBPindex(buf));
-	if (b) {
-		if (b->htype == TYPE_int)
-			/* old code */
-			BBPreclaim(b);
-		else
-			return b;
-	}
+	if (b) 
+		return b;
 
 	b = BATnew(TYPE_void, tt, 1 << 16);
 	if (b == NULL)
 		return NULL;
 
+	BATmode(b, PERSISTENT);
 	BATseqbase(b, 0);
 	BATkey(b, TRUE);
 	BBPrename(b->batCacheid, buf);
-	BATmode(b, PERSISTENT);
 	BATcommit(b);
 	return b;
 }
@@ -1275,9 +1270,9 @@ static int getCPULoad(char cpuload[BUFSIZ]){
 			s +=3;
 			if ( *s == ' ') {
 				s++;
-				goto skip;
-			} 
-			cpu = atoi(s);
+				cpu = 255; // the cpu totals stored here
+			}  else 
+				cpu = atoi(s);
 			s= strchr(s,' ');
 			if ( s== 0) goto skip;
 			
@@ -1287,7 +1282,7 @@ static int getCPULoad(char cpuload[BUFSIZ]){
 				goto skip;
 			newload = (user - corestat[cpu].user + nice - corestat[cpu].nice + system - corestat[cpu].system);
 			if (  newload)
-				corestat[cpu].load = (double) newload / (newload + idle - corestat[cpu].idle);
+				corestat[cpu].load = (double) newload / (newload + idle - corestat[cpu].idle + iowait - corestat[cpu].iowait);
 			corestat[cpu].user = user;
 			corestat[cpu].nice = nice;
 			corestat[cpu].system = system;
@@ -1299,12 +1294,23 @@ static int getCPULoad(char cpuload[BUFSIZ]){
 
 	s= cpuload;
 	len = BUFSIZ;
-	for ( cpu = 0; cpu < 256 && corestat[cpu].user; cpu++) {
+	// identify core processing
+	for ( cpu = 0; cpuload && cpu < 255 && corestat[cpu].user; cpu++) {
 		snprintf(s, len, " %.2f ",corestat[cpu].load);
 		len -= (int)strlen(s);
 		s += (int) strlen(s);
 	}
 	return 0;
+}
+
+void profilerGetCPUStat(lng *user, lng *nice, lng *sys, lng *idle, lng *iowait)
+{
+	(void) getCPULoad(0);
+	*user = corestat[255].user;
+	*nice = corestat[255].nice;
+	*sys = corestat[255].system;
+	*idle = corestat[255].idle;
+	*iowait = corestat[255].iowait;
 }
 
 void profilerHeartbeatEvent(str msg)
@@ -1398,9 +1404,8 @@ void profilerHeartbeatEvent(str msg)
 		logadd("%ld,\t", infoUsage.ru_oublock - prevUsage.ru_oublock);
 		prevUsage = infoUsage;
 	}
-	if (profileCounter[PROFfootprint].status) {
-		logadd(LLFMT",\t", getFootPrint(0,0)/1024/1024);
-	}
+	if (profileCounter[PROFfootprint].status)
+		logadd("0,\t");
 	if (profileCounter[PROFprocess].status && delayswitch < 0) {
 		logadd("%ld,\t", infoUsage.ru_minflt - prevUsage.ru_minflt);
 		logadd("%ld,\t", infoUsage.ru_majflt - prevUsage.ru_majflt);

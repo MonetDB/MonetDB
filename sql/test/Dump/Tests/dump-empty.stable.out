@@ -28,6 +28,13 @@ Ready.
 #msqldump tables Wed Sep  8 10:50:27 2010
 
 START TRANSACTION;
+CREATE SCHEMA "querylog" AUTHORIZATION "monetdb";
+SET SCHEMA "querylog";
+create view querylog.history as
+select qd.*, ql."start",ql."stop", ql.arguments, ql.tuples, ql.run, ql.ship, ql.cpu, ql.space, ql.io 
+from querylog.catalog() qd, querylog.calls() ql
+where qd.id = ql.id and qd.owner = user;
+SET SCHEMA "sys";
 COMMIT;
 
 # 10:50:28 >  

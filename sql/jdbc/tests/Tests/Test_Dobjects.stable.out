@@ -55,6 +55,7 @@ mTests_sql_jdbc_tests
 Resultset with 3 columns
 TABLE_SCHEM	TABLE_CATALOG	TABLE_CAT	
 rs	mTests_sql_jdbc_tests	mTests_sql_jdbc_tests	
+querylog	mTests_sql_jdbc_tests	mTests_sql_jdbc_tests	
 sys	mTests_sql_jdbc_tests	mTests_sql_jdbc_tests	
 tmp	mTests_sql_jdbc_tests	mTests_sql_jdbc_tests	
 Resultset with 3 columns
@@ -68,7 +69,6 @@ mTests_sql_jdbc_tests	sys	_dimensions	SYSTEM TABLE	null	null	null	null	rowid	SYS
 mTests_sql_jdbc_tests	sys	_tables	SYSTEM TABLE	null	null	null	null	rowid	SYSTEM	
 mTests_sql_jdbc_tests	sys	args	SYSTEM TABLE	null	null	null	null	rowid	SYSTEM	
 mTests_sql_jdbc_tests	sys	auths	SYSTEM TABLE	null	null	null	null	rowid	SYSTEM	
-mTests_sql_jdbc_tests	sys	callhistory	SYSTEM TABLE	null	null	null	null	rowid	SYSTEM	
 mTests_sql_jdbc_tests	sys	connections	SYSTEM TABLE	null	null	null	null	rowid	SYSTEM	
 mTests_sql_jdbc_tests	sys	db_user_info	SYSTEM TABLE	null	null	null	null	rowid	SYSTEM	
 mTests_sql_jdbc_tests	sys	dependencies	SYSTEM TABLE	null	null	null	null	rowid	SYSTEM	
@@ -77,7 +77,6 @@ mTests_sql_jdbc_tests	sys	idxs	SYSTEM TABLE	null	null	null	null	rowid	SYSTEM
 mTests_sql_jdbc_tests	sys	keys	SYSTEM TABLE	null	null	null	null	rowid	SYSTEM	
 mTests_sql_jdbc_tests	sys	objects	SYSTEM TABLE	null	null	null	null	rowid	SYSTEM	
 mTests_sql_jdbc_tests	sys	privileges	SYSTEM TABLE	null	null	null	null	rowid	SYSTEM	
-mTests_sql_jdbc_tests	sys	queryhistory	SYSTEM TABLE	null	null	null	null	rowid	SYSTEM	
 mTests_sql_jdbc_tests	sys	schemas	SYSTEM TABLE	null	null	null	null	rowid	SYSTEM	
 mTests_sql_jdbc_tests	sys	sequences	SYSTEM TABLE	null	null	null	null	rowid	SYSTEM	
 mTests_sql_jdbc_tests	sys	storagemodelinput	SYSTEM TABLE	null	null	null	null	rowid	SYSTEM	
@@ -113,8 +112,12 @@ from sys.storagemodel() group by "schema","table";	null	null	null	rowid	SYSTEM
 mTests_sql_jdbc_tests	sys	users	SYSTEM VIEW	SELECT u."name" AS "name", ui."fullname", ui."default_schema" FROM db_users() AS u LEFT JOIN "sys"."db_user_info" AS ui ON u."name" = ui."name" ;	null	null	null	rowid	SYSTEM	
 mTests_sql_jdbc_tests	rs	catalog	TABLE	null	null	null	null	rowid	SYSTEM	
 mTests_sql_jdbc_tests	rs	files	TABLE	null	null	null	null	rowid	SYSTEM	
+mTests_sql_jdbc_tests	querylog	history	VIEW	create view querylog.history as
+select qd.*, ql."start",ql."stop", ql.arguments, ql.tuples, ql.run, ql.ship, ql.cpu, ql.space, ql.io 
+from querylog.catalog() qd, querylog.calls() ql
+where qd.id = ql.id and qd.owner = user;	null	null	null	rowid	SYSTEM	
 
-# 20:09:14 >  
-# 20:09:14 >  "Done."
-# 20:09:14 >  
+# 09:57:01 >  
+# 09:57:01 >  "Done."
+# 09:57:01 >  
 

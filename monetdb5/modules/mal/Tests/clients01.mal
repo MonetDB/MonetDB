@@ -8,7 +8,7 @@ io.print(d);
 #u:= clients.getUsers();
 #io.print(u);
 
-#l:= clients.getLogins();
-#io.print(l);
+#(u,l):= clients.getLogins();
+#io.print(u,l);
 
 

@@ -16,9 +16,21 @@
 # All Rights Reserved.
 
 import unittest
+import logging
+
+try:
+    import monetdb
+except ImportError:
+    logging.warning("monetdb python API not found, using local monetdb python API")
+    import sys, os
+    here = os.path.dirname(__file__)
+    parent = os.path.join(here, os.pardir)
+    sys.path.append(parent)
+    import monetdb
+
 from monetdb.control import Control
 from monetdb.exceptions import OperationalError
-#import logging
+
 #logging.basicConfig(level=logging.DEBUG)
 
 database_prefix = 'controltest_'
@@ -67,11 +79,8 @@ class TestManage(unittest.TestCase):
         self.assertRaises(OperationalError, self.control.release, database_name)
 
     def testStatus(self):
-        status1 = database_prefix + "status1"
-        do_without_fail(lambda: self.control.destroy(status1))
-        self.control.create(status1)
-        status = self.control.status(status1)
-        self.assertEquals(status["name"], status1)
+        status = self.control.status(database_name)
+        self.assertEqual(status["name"], database_name)
 
     def testStatuses(self):
         status1 = database_prefix + "status1"
@@ -130,7 +139,6 @@ class TestManage(unittest.TestCase):
 
     def testNeighbours(self):
         neighbours = self.control.neighbours()
-        neighbours
 
 if __name__ == '__main__':
     unittest.main()

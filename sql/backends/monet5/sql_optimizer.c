@@ -130,7 +130,8 @@ SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 				size_t cnt;
 				sql_idx *i = mvc_bind_idx(m, s, cname);
 
-				if (i && !isRemote(i->t)) { /* skip alter and remote statements */
+				/* skip alter on remote statements */
+				if (i && (!isRemote(i->t) && !isMergeTable(i->t))) {
 					cnt = store_funcs.count_idx(i, 1);
 					assert(cnt <= (size_t) GDK_oid_max);
 					b = store_funcs.bind_idx(m->session->tr,i,0);
@@ -148,7 +149,7 @@ SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 				sql_table *t = mvc_bind_table(m, s, tname);
 				sql_column *c = mvc_bind_column(m, t, cname);
 
-				if (c && !isRemote(c->t)) {
+				if (c && (!isRemote(c->t) && !isMergeTable(c->t))) {
 					not_null = !c->null;
 
 					cnt = store_funcs.count_col(c, 1);
