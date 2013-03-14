@@ -18,6 +18,7 @@
 */
 #include "monetdb_config.h"
 #include "opt_querylog.h"
+#include "querylog.h"
 
 int 
 OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -29,6 +30,9 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	InstrPtr defineQuery = NULL;
 
 
+	// query log needed?
+	if ( !QLOGisset() )
+		return 0;
 	(void) pci;
 	(void) stk;		/* to fool compilers */
 	(void) cntxt;
