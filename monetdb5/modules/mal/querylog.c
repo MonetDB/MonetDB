@@ -266,8 +266,24 @@ QLOGreset(int *ret)
     MT_lock_set(&mal_profileLock, "querylog.reset");
     /* drop all querylog tables */
 
-	_QLOGcleanup();
-    QLOG_init = 0;
+	BATclear(QLOG_cat_id,TRUE);
+	BATclear(QLOG_cat_user,TRUE);
+	BATclear(QLOG_cat_defined,TRUE);
+	BATclear(QLOG_cat_query,TRUE);
+	BATclear(QLOG_cat_pipe,TRUE);
+	BATclear(QLOG_cat_mal,TRUE);
+	BATclear(QLOG_cat_optimize,TRUE);
+	
+	BATclear(QLOG_calls_id,TRUE);
+	BATclear(QLOG_calls_start,TRUE);
+	BATclear(QLOG_calls_stop,TRUE);
+	BATclear(QLOG_calls_arguments,TRUE);
+	BATclear(QLOG_calls_tuples,TRUE);
+	BATclear(QLOG_calls_exec,TRUE);
+	BATclear(QLOG_calls_result,TRUE);
+	BATclear(QLOG_calls_cpuload,TRUE);
+	BATclear(QLOG_calls_iowait,TRUE);
+	BATclear(QLOG_calls_space,TRUE);
 
 	TMsubcommit_list(commitlist, committop);
     MT_lock_unset(&mal_profileLock, "querylog.reset");
