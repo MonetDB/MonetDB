@@ -110,7 +110,7 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			pushInstruction(mb,p);
 			continue;
 		}
-		if ( getModuleId(p) == sqlRef && idcmp(getFunctionId(p),"resultSet")==0 ){
+		if ( getModuleId(p) == sqlRef && idcmp(getFunctionId(p),"resultSet")==0  && isaBatType(getVarType(mb,getArg(p,3)))){
 			q = newStmt(mb, "aggr", "count");
 			getArg(q,0) = tuples;
 			(void) pushArgument(mb,q, getArg(p,3));
