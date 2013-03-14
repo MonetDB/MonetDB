@@ -175,9 +175,7 @@ str OPTwrapper (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 		break;	
 	}
 	if ( codes[i].nme == 0){
-		char buf[1024];
-		snprintf(buf,1024, "%s.%s",modnme,fcnnme);
-		throw(MAL, optimizer, RUNTIME_OBJECT_UNDEFINED ":%s", buf);
+		throw(MAL, optimizer, RUNTIME_OBJECT_UNDEFINED ":%s.%s", modnme, fcnnme);
 	}
 
 	msg= optimizerCheck(cntxt, mb, optimizer, actions, t=(GDKusec() - clk),OPT_CHECK_ALL);
