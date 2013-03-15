@@ -2354,7 +2354,7 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 	int argc = 0;
 	char arg[SMALLBUFSIZ];
 	node *n;
-	lng Toptimize = 0; //, Tparse = 0;
+	lng Toptimize = 0; 
 	str pipe;
 
 	backup = c->curprg;
@@ -2404,9 +2404,10 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 	if (backend_dumpstmt(be, mb, s) < 0)
 		return NULL;
 	Toptimize = GDKusec();
-	//Tparse = Toptimize - m->Tparse;
 
-	if (m->history || QLOGisset()) {
+	// Always keep the SQL query around for monitoring
+	// if (m->history || QLOGisset()) {
+	{
 		char *t;
 		oid queryid = OIDnew(1);
 		InstrPtr q;
@@ -2423,7 +2424,6 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 		q = pushOid(mb, q, queryid);
 		q = pushStr(mb, q, t);
 		q = pushStr(mb, q, pipe= initSQLoptimizer());
-		//q = pushLng(mb, q, Tparse );
 		(void) pushLng(mb, q, Toptimize);
 		m->Tparse = 0;
 		GDKfree(pipe);

@@ -579,6 +579,9 @@ command querylog_done()
 address QLOGdone;
 
 
+pattern sysmon_queue()(tag:bat[:oid,:lng], user:bat[:oid,:str],started:bat[:oid,:timestamp],estimate:bat[:oid,:timestamp],progress:bat[:oid,:int], status:bat[:oid,:str], query:bat[:oid,:str])
+address runtimeSQLqueue;
+
 # @- SQL function aliases
 # The code generate should identify the precise module
 # target for all functions. This creates quite some

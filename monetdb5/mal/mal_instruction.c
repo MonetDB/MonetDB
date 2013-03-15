@@ -130,7 +130,8 @@ newMalBlk(int maxvars, int maxstmts)
 	mb->recycle = 0;
 	mb->recid = 0;
 	mb->trap = 0;
-	mb->starttime = 0;
+	mb->runtime = 0;
+	mb->calls = 0;
 	if (newMalBlkStmt(mb, maxstmts) < 0)
 		return NULL;
 	return mb;
@@ -242,6 +243,8 @@ copyMalBlk(MalBlkPtr old)
 	mb->recycle = old->recycle;
 	mb->recid = old->recid;
 	mb->trap = old->trap;
+	mb->runtime = old->runtime;
+	mb->calls = old->calls;
 	mb->replica = old->replica;
 	mb->maxarg = old->maxarg;
 	mb->profiler = NULL;

@@ -143,7 +143,8 @@ typedef struct MALBLK {
 	lng recid;					/* ID given by recycler optimizer */
 	lng legid;
 	sht trap;					/* call debugger when called */
-	lng starttime;				/* track when the query started, for resource management */
+	lng runtime;					/* average execution time of block in ticks */
+	int calls;					/* number of calls */
 } *MalBlkPtr, MalBlkRecord;
 
 /* Allocation of space assumes a rather exotic number of

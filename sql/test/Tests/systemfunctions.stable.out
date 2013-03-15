@@ -444,6 +444,10 @@ Ready.
 [ "sys",	"zorder_encode",	0,	"oid",	"-- The contents of this file are subject to the MonetDB Public License\n-- Version 1.1 (the \"License\"); you may not use this file except in\n-- compliance with the License. You may obtain a copy of the License at\n-- http://www.monetdb.org/Legal/MonetDBLicense\n--\n-- Software distributed under the License is distributed on an \"AS IS\"\n-- basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the\n-- License for the specific language governing rights and limitations\n-- under the License.\n--\n-- The Original Code is the MonetDB Database System.\n--\n-- The Initial Developer of the Original Code is CWI.\n-- Copyright August 2008-2013 MonetDB B.V.\n-- All Rights Reserved.\n\ncreate function zorder_encode(x integer, y integer) returns oid\n    external name zorder.encode;"	]
 [ "sys",	"zorder_encode",	1,	"int",	""	]
 [ "sys",	"zorder_encode",	2,	"int",	""	]
+[ "sysmon",	"pause",	0,	"bigint",	"-- operations to manipulate the state of havoc queries\ncreate procedure sysmon.pause(tag bigint)\nexternal name sql.sysmon_pause;"	]
+[ "sysmon",	"queue",	0,	"table",	"-- show status of all active SQL queries.\ncreate function sysmon.queue()\nreturns table(\n\ttag bigint,\n\t\"user\" string,\n\tstarted timestamp,\n\testimate timestamp,\n\tprogress int,\n\tstatus string,\n\tquery string\n)\nexternal name sql.sysmon_queue;"	]
+[ "sysmon",	"resume",	0,	"bigint",	"create procedure sysmon.resume(tag bigint)\nexternal name sql.sysmon_resume;"	]
+[ "sysmon",	"stop",	0,	"bigint",	"create procedure sysmon.stop(tag bigint)\nexternal name sql.sysmon_stop;"	]
 
 # 16:39:08 >  
 # 16:39:08 >  "Done."

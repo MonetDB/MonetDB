@@ -280,7 +280,7 @@ str malCommandCall(MalStkPtr stk, InstrPtr pci)
 			lhs->val.pval = 0;\
 			lhs->len = 0;\
 		}\
-	}\
+	} 
 
 int
 isNotUsedIn(InstrPtr p, int start, int a)
@@ -319,7 +319,7 @@ str runMAL(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr env)
 	RuntimeProfileRecord runtimeProfile;
 	(void) mbcaller;
 
-	runtimeProfileInit(mb, &runtimeProfile, cntxt->flags & memoryFlag);
+	runtimeProfileInit(cntxt, mb, &runtimeProfile, cntxt->flags & memoryFlag);
 	if (mb->errors) {
 		if (cntxt->itrace == 0) /* permit debugger analysis */
 			throw( MAL, "mal.interpreter", "Syntax error in script");
@@ -383,8 +383,10 @@ str runMAL(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr env)
 		env->cmd = stk->cmd;
 	if (!stk->keepAlive && garbageControl(getInstrPtr(mb, 0)))
 		garbageCollector(cntxt, mb, stk, env != stk);
-	if (stk && stk != env)
+	if (stk && stk != env) {
+		runtimeProfileFinish(cntxt, mb, &runtimeProfile);
 		GDKfree(stk);
+	}
 	if (cntxt->qtimeout && time(NULL) - stk->clock.tv_usec > cntxt->qtimeout)
 		throw(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
 	return ret;
@@ -439,7 +441,7 @@ callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[], char debug)
  * number of cores, which may be too coarse.
  */
 	MT_sema_down(&mal_parallelism,"callMAL");
-	runtimeProfileInit(mb, &runtimeProfile, cntxt->flags & memoryFlag);
+	runtimeProfileInit(cntxt, mb, &runtimeProfile, cntxt->flags & memoryFlag);
 #ifdef DEBUG_CALLMAL
 	mnstr_printf(cntxt->fdout, "callMAL\n");
 	printInstruction(cntxt->fdout, mb, 0, pci, LIST_MAL_ALL);
@@ -483,6 +485,7 @@ callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[], char debug)
 	MT_sema_up(&mal_parallelism,"callMAL");
 	if (cntxt->qtimeout && time(NULL) - stk->clock.tv_usec > cntxt->qtimeout)
 		throw(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
+	runtimeProfileFinish(cntxt, mb, &runtimeProfile);
 	return ret;
 }
 
@@ -511,7 +514,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 	//int tid = 0;
 	RuntimeProfileRecord runtimeProfile, runtimeProfileFunction;
 
-	runtimeProfileInit(mb, &runtimeProfile, cntxt->flags & memoryFlag);
+	runtimeProfileInit(cntxt, mb, &runtimeProfile, cntxt->flags & memoryFlag);
 	if (stk == NULL)
 		throw(MAL, "mal.interpreter", MAL_STACK_FAIL);
 	if (cntxt->flags & timerFlag)
@@ -528,10 +531,8 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 	}
 
 	/* also produce event record for start of function */
-	if ( startpc == 1 ) {
-		runtimeProfileInit(mb, &runtimeProfileFunction, cntxt->flags & memoryFlag);
-		mb->starttime = GDKusec();
-	}
+	if ( startpc == 1 )
+		runtimeProfileInit(cntxt, mb, &runtimeProfileFunction, cntxt->flags & memoryFlag);
 	stkpc = startpc;
 	exceptionVar = -1;
 
@@ -560,9 +561,6 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			}
 		}
 
-		//Ensure we spread system resources over multiple users as well.
-		//if ( cntxt->idx > 1 )
-			//MALresourceFairness(cntxt,mb,GDKusec()- mb->starttime);
 		runtimeProfileBegin(cntxt, mb, stk, stkpc, &runtimeProfile, 1);
 		if (pci->recycle > 0)
 			stk->clk = GDKusec();
@@ -730,6 +728,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				if (oldtimer)
 					cntxt->timer = oldtimer;
 				runtimeProfileExit(cntxt, mb, stk, pci, &runtimeProfile);
+				runtimeProfileFinish(cntxt, mb, &runtimeProfile);
 				if (pcicaller && garbageControl(getInstrPtr(mb, 0)))
 					garbageCollector(cntxt, mb, stk, TRUE);
 				runtimeProfile.ppc = 0; /* also finalize function call event */
@@ -883,6 +882,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				/* unknown exceptions lead to propagation */
 				if (exceptionVar == -1) {
 					runtimeProfileExit(cntxt, mb, stk, pci, &runtimeProfile);
+					runtimeProfileFinish(cntxt, mb, &runtimeProfile);
 					if (cntxt->qtimeout && time(NULL) - stk->clock.tv_usec > cntxt->qtimeout)
 						ret= createException(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
 					stkpc = mb->stop;
@@ -1117,6 +1117,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			if (stkpc == mb->stop) {
 				runtimeProfile.ppc = 0; /* also finalize function call event */
 				runtimeProfileExit(cntxt, mb, stk, pci, &runtimeProfile);
+				runtimeProfileFinish(cntxt, mb, &runtimeProfile);
 				break;
 			}
 			if (stkpc == mb->stop)
@@ -1152,6 +1153,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 					/* reset the clock */
 					if (oldtimer)
 						cntxt->timer = oldtimer;
+					runtimeProfileFinish(cntxt, mb, &runtimeProfile);
 				} 
 			}
 			stkpc = mb->stop;
