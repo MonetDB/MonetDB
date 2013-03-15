@@ -1317,7 +1317,7 @@ str GRPvar_@1(int *ret, int *bid, int *eid)
 	}
 
 	/* postprocess by dividing sumsquares and sum by counts and
-	   substracting square of the averages from the average sum of
+	   subtracting square of the averages from the average sum of
 	   squares */
 	idx = 0;
 	BATloop(e, p, q) {

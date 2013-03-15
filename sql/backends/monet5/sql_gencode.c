@@ -942,7 +942,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 				/* since both arguments of algebra.slice are
 				   inclusive correct the LIMIT value by
-				   substracting 1 */
+				   subtracting 1 */
 				if (s->op2->op4.aval->data.val.wval) {
 					assert(0);
 					q = newStmt1(mb, calcRef, "-");
@@ -964,7 +964,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 				/* since both arguments of algebra.subslice are
 				   inclusive correct the LIMIT value by
-				   substracting 1 */
+				   subtracting 1 */
 				q = newStmt1(mb, calcRef, "-");
 				q = pushArgument(mb, q, len);
 				q = pushInt(mb, q, 1);
@@ -1258,7 +1258,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				break;
 			}
 			/* if st_join2 try to convert to bandjoin */
-			/* ie check if we substract/add a constant, to the
+			/* ie check if we subtract/add a constant, to the
 			   same column */
 			if (s->type == st_join2 &&
 			    range_join_convertable(s, &base, &low, &high)) {
