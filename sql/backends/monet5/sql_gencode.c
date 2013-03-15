@@ -1804,6 +1804,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			char aggrF[64];
 			int restype = s->op4.aggrval->res.type->localtype;
 			int sum_or_prod = 0;
+			int abort_on_error;
 
 			if (backend_create_func(sql, s->op4.aggrval->aggr) < 0)
 				return -1;
@@ -1813,6 +1814,11 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			if (strcmp(aggrfunc, "sum") == 0 ||
 			    strcmp(aggrfunc, "prod") == 0)
 				sum_or_prod = 1;
+			/* some "sub" aggregates have an extra
+			 * argument "abort_on_error" */
+			abort_on_error = sum_or_prod ||
+				strncmp(aggrfunc, "stdev", 5) == 0 ||
+				strncmp(aggrfunc, "variance", 8) == 0;
 
 			if (s->op3) {
 				snprintf(aggrF, 64, "sub%s", aggrfunc);
@@ -1859,7 +1865,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				q = pushArgument(mb, q, e);
 				g = getDestVar(q);
 				q = pushBit(mb, q, no_nil);
-				if (sum_or_prod)
+				if (abort_on_error)
 					q = pushBit(mb, q, TRUE);
 			}
 			s->nr = getDestVar(q);
