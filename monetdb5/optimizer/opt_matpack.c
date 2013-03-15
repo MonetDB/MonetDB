@@ -27,7 +27,7 @@
 int 
 OPTmatpackImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int v, i, j, limit;
+	int v, i, j, limit, slimit;
 	InstrPtr p,q;
 	int actions = 0;
 	InstrPtr *old;
@@ -38,6 +38,7 @@ OPTmatpackImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	(void) stk;		/* to fool compilers */
 	old= mb->stmt;
 	limit= mb->stop;
+	slimit = mb->ssize;
 	if ( newMalBlkStmt(mb,mb->stop) < 0)
 		return 0;
 	for (i = 0; i < limit; i++) {
@@ -62,6 +63,9 @@ OPTmatpackImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 		}
 		pushInstruction(mb,p);
 	} 
+	for(; i<slimit; i++)
+		if (old[i]) 
+			freeInstruction(old[i]);
 	GDKfree(old);
 	return actions;
 }
