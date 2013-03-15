@@ -5,3 +5,4 @@ subtract-one-year.Bug-3215
 perl-undef-0.Bug-3235
 crash-from-optimizer.Bug-3241
 select-view-view.Bug-3245
+stddev-group.Bug-3257
