@@ -297,14 +297,166 @@ ARRAYfiller_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
+# define SLICE_CLEANUP() \
+{ \
+	if (dim_strt) GDKfree(dim_strt); \
+	if (dim_step) GDKfree(dim_step); \
+	if (dim_stop) GDKfree(dim_stop); \
+	if (dim_size) GDKfree(dim_size); \
+	if (dim_rept) GDKfree(dim_rept); \
+\
+	if (slc_strt) GDKfree(slc_strt); \
+	if (slc_step) GDKfree(slc_step); \
+	if (slc_stop) GDKfree(slc_stop); \
+	if (slc_size) GDKfree(slc_size); \
+	if (slc_rept) GDKfree(slc_rept); \
+	if (slc_indx) GDKfree(slc_indx); \
+}
+
+/*            Dim 1                     Dim 2                      Dim 3
+ *               size repeat               size repeat                size repeat
+ * dim: [1:2:10],  5,   12         [3:1:6],  3,    4         [0:4:13],  4,    1
+ * slc: [3:4: 8],  2,    4         [4:1:6],  2,    2         [0:4: 5],  2,    1
+ *
+ *      (3 + 0 * 4 - 1) / 2 * 12 + (4 + 0 * 1 - 3) / 1 * 4 + (0 + 0 * 4 - 0) / 4 * 1 = 16
+ *      (3 + 0 * 4 - 1) / 2 * 12 + (4 + 0 * 1 - 3) / 1 * 4 + (0 + 1 * 4 - 0) / 4 * 1 = 17
+ *
+ *      (3 + 0 * 4 - 1) / 2 * 12 + (4 + 1 * 1 - 3) / 1 * 4 + (0 + 0 * 4 - 0) / 4 * 1 = 20
+ *      (3 + 0 * 4 - 1) / 2 * 12 + (4 + 1 * 1 - 3) / 1 * 4 + (0 + 1 * 4 - 0) / 4 * 1 = 21
+ *
+ *      (3 + 1 * 4 - 1) / 2 * 12 + (4 + 0 * 1 - 3) / 1 * 4 + (0 + 0 * 4 - 0) / 4 * 1 = 40
+ *      (3 + 1 * 4 - 1) / 2 * 12 + (4 + 0 * 1 - 3) / 1 * 4 + (0 + 1 * 4 - 0) / 4 * 1 = 41
+ *
+ *      (3 + 1 * 4 - 1) / 2 * 12 + (4 + 1 * 1 - 3) / 1 * 4 + (0 + 0 * 4 - 0) / 4 * 1 = 44
+ *      (3 + 1 * 4 - 1) / 2 * 12 + (4 + 1 * 1 - 3) / 1 * 4 + (0 + 1 * 4 - 0) / 4 * 1 = 45
+ *
+ * The formula for each dimention (0 <= j < valence) in each iteration:
+ *  (slc_strt[j] + slc_indx[j] * slc_step[j] - dim_strt[j]) / dim_step[j] * dim_rept[j]
+ * To get the index of an iteration, compute the sum of the formula for all dimensions.
+ * The key is to compute on the fly the correct value for each slc_indx[j] for
+ *  each dimension in each iteration.
+ * The formula to compute slc_indx[j] for each dimension in each iteratino:
+ *  slc_indx[j] = (((i + 1) % slc_rept[j]) == 0)? ((slc_indx[j] + 1) % slc_size[j]) : slc_indx[j];
+ * The slc_indx[j] should be increased with 1 for the next iteration, if it has
+ *  been repeated enough times for this dimention, i.e., check if the next
+ *  iteration number is a multiple of slc_rept[j].
+ * Additionally, slc_indx[j] must be reset to 0 if we have iterated over all
+ *  slicing elements of this dimension, i.e., check after increasing if the
+ *  value of slc_indx[j] is a multiple of slc_size[j].
+ *
+ * a := array.slice(1:lng,2:lng,10:lng, 3:lng,4:lng,8:lng, 3:lng,1:lng,6:lng, 4:lng,1:lng,6:lng, 0:lng,4:lng,13:lng, 0:lng,4:lng,5:lng); */
 str
 ARRAYslice(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	int *ret = (int*) getArgReference(stk,pci,0);
+	lng *dim_strt = NULL, *dim_step = NULL, *dim_stop = NULL, *dim_size = NULL, *dim_rept = NULL,
+		*slc_strt = NULL, *slc_step = NULL, *slc_stop = NULL, *slc_size = NULL, *slc_rept = NULL, *slc_indx = NULL;
+	BUN i = 0, j = 0;
+	BUN rescnt = 1, valence = (pci->argc - pci->retc) / 6;
+	BAT *res = NULL;
+	oid *resT = NULL;
+
 	(void) cntxt;
 	(void) mb;
-	(void) stk;
-	(void) pci;
 
+	if ( (pci->argc - pci->retc) % 6 != 0)
+		throw(MAL, "array.slice", "Unbalanced argument sets");
+
+	dim_strt = (lng*) GDKmalloc(sizeof(lng) * valence);
+	dim_step = (lng*) GDKmalloc(sizeof(lng) * valence);
+	dim_stop = (lng*) GDKmalloc(sizeof(lng) * valence);
+	dim_size = (lng*) GDKmalloc(sizeof(lng) * valence);
+	dim_rept = (lng*) GDKmalloc(sizeof(lng) * valence);
+
+	slc_strt = (lng*) GDKmalloc(sizeof(lng) * valence);
+	slc_step = (lng*) GDKmalloc(sizeof(lng) * valence);
+	slc_stop = (lng*) GDKmalloc(sizeof(lng) * valence);
+	slc_size = (lng*) GDKmalloc(sizeof(lng) * valence);
+	slc_rept = (lng*) GDKmalloc(sizeof(lng) * valence);
+	slc_indx = (lng*) GDKzalloc(sizeof(lng) * valence);
+	
+	if (dim_strt == NULL || dim_step == NULL || dim_stop == NULL || dim_size == NULL || dim_rept == NULL ||
+		slc_strt == NULL || slc_step == NULL || slc_stop == NULL || slc_size == NULL || slc_rept == NULL || slc_indx == NULL)
+	{
+		SLICE_CLEANUP();
+		throw(MAL, "array.slice", MAL_MALLOC_FAIL);
+	}
+
+	for (i = 0; i < valence; i++) {
+		dim_strt[i] = *(lng*)getArgReference(stk,pci,1+6*i);
+		dim_step[i] = *(lng*)getArgReference(stk,pci,1+6*i+1);
+		dim_stop[i] = *(lng*)getArgReference(stk,pci,1+6*i+2);
+		dim_size[i] = (dim_stop[i] - dim_strt[i] + dim_step[i] -1) / dim_step[i];
+		dim_rept[i] = 1;
+
+		slc_strt[i] = *(lng*)getArgReference(stk,pci,1+6*i+3);
+		slc_step[i] = *(lng*)getArgReference(stk,pci,1+6*i+4);
+		slc_stop[i] = *(lng*)getArgReference(stk,pci,1+6*i+5);
+		slc_size[i] = (slc_stop[i] - slc_strt[i] + slc_step[i] - 1) / slc_step[i];
+		slc_rept[i] = 1;
+		slc_indx[i] = 0;
+
+		rescnt *= slc_size[i];
+
+		if ( (slc_step[i] > 0 && (slc_strt[i] < dim_strt[i] || slc_stop[i] > dim_stop[i])) || 
+			 (slc_step[i] < 0 && (slc_strt[i] > dim_strt[i] || slc_stop[i] < dim_stop[i])) ) {
+			SLICE_CLEANUP();
+			throw(MAL, "array.slice", "Slice range [%lld:%lld:%lld] of the " BUNFMT "-th dimension out of bound ([%lld:%lld:%lld])",
+					slc_strt[i], slc_step[i], slc_stop[i], i, dim_strt[i], dim_step[i], dim_stop[i]);
+		}
+
+		if ((slc_strt[i] - dim_strt[i]) % dim_step[i] != 0) {
+			SLICE_CLEANUP();
+			throw(MAL, "array.slice", "Invalid slice range of the " BUNFMT "-th dimension: the slicing start value '%lld' is not a valid value of this dimension",
+					i, slc_strt[i]);
+		}
+
+		if ((slc_strt[i] - dim_strt[i]) % dim_step[i] != 0) {
+			SLICE_CLEANUP();
+			throw(MAL, "array.slice", "Invalid slice range of the " BUNFMT "-th dimension: the slicing step size '%lld' is not a multiple of the step size '%lld' of this dimension",
+					i, slc_step[i], dim_step[i]);
+		}
+	}
+
+	/* The number of time the values of a dimension is repeated is the produce
+	 * of the lengths of all its following dimensions */
+	for (i = 0; i < valence; i++) {
+		for (j = i+1; j < valence; j++) {
+			dim_rept[i] *= dim_size[j];
+			slc_rept[i] *= slc_size[j];
+		}
+	}
+
+	res = BATnew(TYPE_void, TYPE_oid, rescnt);
+	if(res == NULL) {
+		SLICE_CLEANUP();
+		throw(MAL, "array.filler", MAL_MALLOC_FAIL);
+	}
+
+	resT = (oid *) Tloc(res, BUNfirst(res));
+	/* the main loop: compute the index of each cell selected by the slicing */
+	for (i = 0; i < rescnt; i++) {
+		resT[i] = 0;
+		/* compute the formula for each dimension, then sum them up to get the index */
+		for (j = 0; j < valence; j++) {
+			resT[i] += (slc_strt[j] + slc_indx[j] * slc_step[j] - dim_strt[j]) / dim_step[j] * dim_rept[j];
+			/* only increase the index into the slicing elements if the current
+			 * element has been repeated slc_rept[j] times.
+			 * reset the index into the slicing elements if all elements have
+			 * already been processed once.
+			 */
+			slc_indx[j] = (((i + 1) % slc_rept[j]) == 0)? ((slc_indx[j] + 1) % slc_size[j]) : slc_indx[j];
+		}
+	}
+
+	BATsetcount(res, rescnt);
+	BATseqbase(res, 0);
+	res->hdense = TRUE;
+	BATkey(res, TRUE);
+	res->hsorted = res->hrevsorted = 1;
+	res->tsorted = res->trevsorted = 1;
+	res->T->nonil = TRUE;
+	BBPkeepref(*ret = res->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -333,8 +485,7 @@ ARRAYfiller(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BATseqbase(bn, 0);
 	bn->hdense = TRUE;
 	BATkey(bn, TRUE);
-	bn->hsorted = 1;
-	bn->hrevsorted = (cnt <= 1);
+	bn->hsorted = bn->hrevsorted = 1;
 	bn->tsorted = bn->trevsorted = 1;
 	switch(type){
 		case TYPE_bit:
