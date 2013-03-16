@@ -80,7 +80,7 @@ headers_mal = {
 		txtsim.mal recycle.mal \
 		cluster.mal trader.mal \
 		tokenizer.mal zorder.mal sample.mal \
-		calc.mal batcalc.mal batmtime.mal querylog.mal
+		calc.mal batcalc.mal batmtime.mal querylog.mal \
 		array.mx
 }
 
