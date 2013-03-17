@@ -26,7 +26,6 @@ Ready.
 
 START TRANSACTION;
 CREATE SCHEMA "querylog" AUTHORIZATION "monetdb";
-CREATE SCHEMA "sysmon" AUTHORIZATION "monetdb";
 CREATE SEQUENCE "sys"."test_seq" AS INTEGER;
 SET SCHEMA "querylog";
 create view querylog.history as

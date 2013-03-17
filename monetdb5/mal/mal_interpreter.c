@@ -319,7 +319,6 @@ str runMAL(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr env)
 	RuntimeProfileRecord runtimeProfile;
 	(void) mbcaller;
 
-	runtimeProfileInit(cntxt, mb, &runtimeProfile, cntxt->flags & memoryFlag);
 	if (mb->errors) {
 		if (cntxt->itrace == 0) /* permit debugger analysis */
 			throw( MAL, "mal.interpreter", "Syntax error in script");
@@ -370,6 +369,7 @@ str runMAL(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr env)
  * observed due the small size of the function).
  */
 	}
+	runtimeProfileInit(cntxt, mb, stk, &runtimeProfile, cntxt->flags & memoryFlag);
 
 	if (stk->cmd && env && stk->cmd != 'f')
 		stk->cmd = env->cmd;
@@ -441,7 +441,6 @@ callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[], char debug)
  * number of cores, which may be too coarse.
  */
 	MT_sema_down(&mal_parallelism,"callMAL");
-	runtimeProfileInit(cntxt, mb, &runtimeProfile, cntxt->flags & memoryFlag);
 #ifdef DEBUG_CALLMAL
 	mnstr_printf(cntxt->fdout, "callMAL\n");
 	printInstruction(cntxt->fdout, mb, 0, pci, LIST_MAL_ALL);
@@ -514,11 +513,11 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 	//int tid = 0;
 	RuntimeProfileRecord runtimeProfile, runtimeProfileFunction;
 
-	runtimeProfileInit(cntxt, mb, &runtimeProfile, cntxt->flags & memoryFlag);
 	if (stk == NULL)
 		throw(MAL, "mal.interpreter", MAL_STACK_FAIL);
 	if (cntxt->flags & timerFlag)
 		oldtimer = cntxt->timer = GDKusec();
+	runtimeProfileInit(cntxt, mb, stk, &runtimeProfile, cntxt->flags & memoryFlag);
 
 	/* prepare extended backup and garbage structures */
 	if ( mb->maxarg > 16 ){
@@ -532,21 +531,28 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 
 	/* also produce event record for start of function */
 	if ( startpc == 1 )
-		runtimeProfileInit(cntxt, mb, &runtimeProfileFunction, cntxt->flags & memoryFlag);
+		runtimeProfileInit(cntxt, mb, stk, &runtimeProfileFunction, cntxt->flags & memoryFlag);
 	stkpc = startpc;
 	exceptionVar = -1;
 
 	while (stkpc < mb->stop && stkpc != stoppc) {
 		pci = getInstrPtr(mb, stkpc);
-		if (cntxt->itrace || mb->trap) {
+		if (cntxt->itrace || mb->trap || stk->status) {
 			lng t = 0;
+
+			if (stk->status == 'p'){
+				// execution is paused
+				while ( stk->status == 'p')
+					MT_sleep_ms(50);
+				continue;
+			}
+			if ( stk->status == 'q')
+				stk->cmd = 'q';
 
 			if (stk->cmd == 0)
 				stk->cmd = cntxt->itrace;
 			if (oldtimer)
 				t = GDKusec();
-			if (cntxt->flags & bbpFlag)
-				BBPTraceCall(cntxt, mb, stk, prevpc);
 			prevpc = stkpc;
 			mdbStep(cntxt, mb, stk, stkpc);
 			if (stk->cmd == 'x' || cntxt->mode == FINISHING) {

@@ -35,17 +35,9 @@
 #define hashinfo(X) (((X) && (X)->mask)? ((X)->mask + (X)->lim + 1) * sizeof(int) + sizeof(*(X)) + cnt * sizeof(int):  0)
 
 // Keep a queue of running queries
-struct RUN {
-	Client cntxt;
-	MalBlkPtr mb;
-	lng tag;
-	str query;
-	str status;
-	lng start;
-	lng runtime;
-} *running;
+QueryQueue QRYqueue;
 static int qtop, qsize;
-static int qtag;
+static int qtag= 1;
 
 
 static str isaSQLquery(MalBlkPtr mb){
@@ -57,7 +49,7 @@ static str isaSQLquery(MalBlkPtr mb){
 		if ( p->token == ENDsymbol)
 			break;
 		if ( getModuleId(p) && idcmp(getModuleId(p), "querylog") == 0 && idcmp(getFunctionId(p),"define")==0)
-			return getVarConstant(mb,getArg(p,2)).val.sval;
+			return getVarConstant(mb,getArg(p,1)).val.sval;
 	}
 	return 0;
 }
@@ -66,21 +58,23 @@ static str isaSQLquery(MalBlkPtr mb){
  * Manage the runtime profiling information
  */
 void
-runtimeProfileInit(Client cntxt, MalBlkPtr mb, RuntimeProfile prof, int initmemory)
+runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, RuntimeProfile prof, int initmemory)
 {
 	int i;
 	str q;
 
 	MT_lock_set(&mal_delayLock, "sysmon");
-	if ( running == 0)
-		running = (struct RUN *) GDKzalloc( sizeof (struct RUN) * (qsize= 256));
+	if ( QRYqueue == 0)
+		QRYqueue = (QueryQueue) GDKzalloc( sizeof (struct QRYQUEUE) * (qsize= 256));
 	else
 	if ( qtop +1 == qsize )
-		running = (struct RUN *) GDKrealloc( running, sizeof (struct RUN) * (qsize +=256));
+		QRYqueue = (QueryQueue) GDKrealloc( QRYqueue, sizeof (struct QRYQUEUE) * (qsize +=256));
 	for( i = 0; i < qtop; i++)
-		if ( running[i].mb == mb)
+		if ( QRYqueue[i].mb == mb)
 			break;
 
+	if ( mb->tag == 0)
+		mb->tag = OIDnew(1);
 	prof->newclk = 0;
 	prof->ppc = -2;
 	prof->tcs = 0;
@@ -88,14 +82,15 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, RuntimeProfile prof, int initmemo
 	prof->oublock = 0;
 
 	if ( i == qtop ) {
-		running[i].mb = mb;	// for detecting duplicates
-		running[i].tag = qtag++;
-		running[i].start = GDKusec();
-		running[i].runtime = mb->runtime;
+		QRYqueue[i].mb = mb;	// for detecting duplicates
+		QRYqueue[i].stk = stk;	// for status pause 'p'/running '0'/ quiting 'q'
+		QRYqueue[i].tag = qtag++;
+		QRYqueue[i].start = (lng)time(0);
+		QRYqueue[i].runtime = mb->runtime;
 		q = isaSQLquery(mb);
-		running[i].query = q? GDKstrdup(q):0;
-		running[i].status = "running";
-		running[i].cntxt = cntxt;
+		QRYqueue[i].query = q? GDKstrdup(q):0;
+		QRYqueue[i].status = "running";
+		QRYqueue[i].cntxt = cntxt;
 	}
 	if (initmemory)
 		prof->memory = MT_mallinfo();
@@ -122,17 +117,21 @@ runtimeProfileFinish(Client cntxt, MalBlkPtr mb, RuntimeProfile prof)
 
 	MT_lock_set(&mal_delayLock, "sysmon");
 	for( i=j=0; i< qtop; i++)
-	if ( running[i].mb != mb)
-		running[j++] = running[i];
+	if ( QRYqueue[i].mb != mb)
+		QRYqueue[j++] = QRYqueue[i];
 	else  {
-		if (running[i].query)
-			GDKfree(running[i].query);
-		running[i].cntxt = 0;
-		running[i].tag = 0;
-		running[i].query = 0;
-		running[i].status =0;
-		mb->calls++;
-		mb->runtime += ((GDKusec() - running[i].start)- running[i].runtime)/mb->calls;
+		QRYqueue[i].mb->calls++;
+		QRYqueue[i].mb->runtime += ((lng)time(0) - QRYqueue[i].start) * 1000.0/QRYqueue[i].mb->calls;
+
+		// reset entry
+		if (QRYqueue[i].query)
+			GDKfree(QRYqueue[i].query);
+		QRYqueue[i].cntxt = 0;
+		QRYqueue[i].tag = 0;
+		QRYqueue[i].query = 0;
+		QRYqueue[i].status =0;
+		QRYqueue[i].stk =0;
+		QRYqueue[i].mb =0;
 	}
 
 	qtop = j;
@@ -283,140 +282,4 @@ updateFootPrint(MalBlkPtr mb, MalStkPtr stk, int varid)
 		// no concurrency protection (yet)
 		stk->tmpspace += total/1024/1024; // keep it in MBs
     }
-}
-
-str
-runtimeSQLqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	BAT *tag, *user, *query, *estimate, *started, *progress, *activity;
-	int *t = (int*) getArgReference(stk,pci,0);
-	int *u = (int*) getArgReference(stk,pci,1);
-	int *s = (int*) getArgReference(stk,pci,2);
-	int *e = (int*) getArgReference(stk,pci,3);
-	int *p = (int*) getArgReference(stk,pci,4);
-	int *a = (int*) getArgReference(stk,pci,5);
-	int *q = (int*) getArgReference(stk,pci,6);
-	lng now;
-	int i, prog;
-	str usr;
-	
-	(void) cntxt;
-	(void) mb;
-	tag = BATnew(TYPE_void, TYPE_lng, qsize);
-	user = BATnew(TYPE_void, TYPE_str, qsize);
-	started = BATnew(TYPE_void, TYPE_lng, qsize);
-	estimate = BATnew(TYPE_void, TYPE_lng, qsize);
-	progress = BATnew(TYPE_void, TYPE_int, qsize);
-	activity = BATnew(TYPE_void, TYPE_str, qsize);
-	query = BATnew(TYPE_void, TYPE_str, qsize);
-	if ( tag == NULL || query == NULL || started == NULL || estimate == NULL || progress == NULL || activity == NULL){
-		if (tag) BBPreleaseref(tag->batCacheid);
-		if (user) BBPreleaseref(user->batCacheid);
-		if (query) BBPreleaseref(query->batCacheid);
-		if (activity) BBPreleaseref(activity->batCacheid);
-		if (started) BBPreleaseref(started->batCacheid);
-		if (estimate) BBPreleaseref(estimate->batCacheid);
-		if (progress) BBPreleaseref(progress->batCacheid);
-		throw(MAL, "runtimeSQLqueue", MAL_MALLOC_FAIL);
-	}
-	BATseqbase(tag, 0);
-    BATkey(tag, TRUE);
-
-	BATseqbase(user, 0);
-    BATkey(user, TRUE);
-
-	BATseqbase(query, 0);
-    BATkey(query, TRUE);
-
-	BATseqbase(activity, 0);
-    BATkey(activity, TRUE);
-
-	BATseqbase(estimate, 0);
-    BATkey(estimate, TRUE);
-
-	BATseqbase(started, 0);
-    BATkey(started, TRUE);
-
-	BATseqbase(progress, 0);
-    BATkey(progress, TRUE);
-
-	MT_lock_set(&mal_delayLock, "sysmon");
-	for ( i = 0; i< qtop; i++)
-	if( running[i].query) {
-		now= GDKusec();
-		if ( (now-running[i].start) > running[i].runtime)
-			prog =running[i].runtime > 0 ? 100: 0;
-		else
-			// calculate progress based on past observations
-			prog = (int) ((now- running[i].start) / (running[i].runtime/100.0));
-		
-		BUNappend(tag, &running[i].tag, FALSE);
-		AUTHgetUsername(&usr, &cntxt);
-
-		BUNappend(user, usr, FALSE);
-		BUNappend(query, running[i].query, FALSE);
-		BUNappend(activity, running[i].status, FALSE);
-		BUNappend(started, &running[i].start, FALSE);
-		now = running[i].start + running[i].runtime;
-		BUNappend(estimate, &now, FALSE);
-		BUNappend(progress, &prog, FALSE);
-	}
-	MT_lock_unset(&mal_delayLock, "sysmon");
-	BBPkeepref( *t =tag->batCacheid);
-	BBPkeepref( *u =user->batCacheid);
-	BBPkeepref( *q =query->batCacheid);
-	BBPkeepref( *a =activity->batCacheid);
-	BBPkeepref( *e = estimate->batCacheid);
-	BBPkeepref( *s =started->batCacheid);
-	BBPkeepref( *p =progress->batCacheid);
-	return MAL_SUCCEED;
-}
-
-str
-runtimeSQLpause(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{	int i;
-	(void) mb;
-	(void) stk;
-	(void) pci;
-	
-	MT_lock_set(&mal_delayLock, "sysmon");
-	for ( i = 0; i < qtop; i++)
-	if( running[i].cntxt == cntxt || cntxt->idx == 0 ){
-		running[i].cntxt->itrace = 'x';
-		running[i].status = "paused";
-	}
-	MT_lock_unset(&mal_delayLock, "sysmon");
-	return MAL_SUCCEED;
-}
-str
-runtimeSQLresume(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{	int i;
-	(void) mb;
-	(void) stk;
-	(void) pci;
-	
-	MT_lock_set(&mal_delayLock, "sysmon");
-	for ( i = 0; i < qtop; i++)
-	if( running[i].cntxt == cntxt || cntxt->idx ==0){
-		running[i].cntxt->itrace = 0;
-		running[i].status = "running";
-	}
-	MT_lock_unset(&mal_delayLock, "sysmon");
-	return MAL_SUCCEED;
-}
-str
-runtimeSQLstop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{	int i;
-	(void) mb;
-	(void) stk;
-	(void) pci;
-	
-	MT_lock_set(&mal_delayLock, "sysmon");
-	for ( i = 0; i < qtop; i++)
-	if( running[i].cntxt == cntxt || cntxt->idx == 0){
-		running[i].cntxt->itrace = 'Q';
-		running[i].status = "stopping";
-	}
-	MT_lock_unset(&mal_delayLock, "sysmon");
-	return MAL_SUCCEED;
 }

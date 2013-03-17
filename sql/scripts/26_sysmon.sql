@@ -16,27 +16,33 @@
 
 -- System monitoring
 
-create schema sysmon;
-
 -- show status of all active SQL queries.
-create function sysmon.queue()
+create function sys.queue()
 returns table(
-	tag bigint,
+	qtag bigint,
 	"user" string,
 	started timestamp,
 	estimate timestamp,
 	progress int,
 	status string,
+	tag oid,
 	query string
 )
 external name sql.sysmon_queue;
 
 -- operations to manipulate the state of havoc queries
-create procedure sysmon.pause(tag bigint)
+create procedure sys.pause(tag int)
 external name sql.sysmon_pause;
-create procedure sysmon.resume(tag bigint)
+create procedure sys.resume(tag int)
 external name sql.sysmon_resume;
-create procedure sysmon.stop(tag bigint)
+create procedure sys.stop(tag int)
+external name sql.sysmon_stop;
+
+create procedure sys.pause(tag bigint)
+external name sql.sysmon_pause;
+create procedure sys.resume(tag bigint)
+external name sql.sysmon_resume;
+create procedure sys.stop(tag bigint)
 external name sql.sysmon_stop;
 
 --create function sysmon.connections()

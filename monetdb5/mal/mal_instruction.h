@@ -119,6 +119,7 @@ typedef struct PERF {
 typedef struct MALBLK {
 	str binding;				/* related C-function */
 	str help;					/* supportive commentary */
+	oid tag;					/* unique block tag */
 	struct MALBLK *alternative;
 	int vtop;					/* next free slot */
 	int vsize;					/* size of variable arena */

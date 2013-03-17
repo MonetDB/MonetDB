@@ -1,16 +1,28 @@
 module sysmon;
 
-command pause(id:oid)
-address runtimeSQLpause
+command pause(id:sht)
+address SYSMONpause;
+command pause(id:int)
+address SYSMONpause;
+command pause(id:lng)
+address SYSMONpause
 comment "Temporary suspend a single query";
 
-command resume(id:oid)
-address runtimeSQLresume
+command resume(id:sht)
+address SYSMONresume;
+command resume(id:int)
+address SYSMONresume;
+command resume(id:lng)
+address SYSMONresume
 comment "Resume processing ";
 
-command stop(id:oid)
-address runtimeSQLstop
+command stop(id:sht)
+address SYSMONstop;
+command stop(id:int)
+address SYSMONstop;
+command stop(id:lng)
+address SYSMONstop
 comment "Stop a single query a.s.a.p.";
 
-pattern queue()(tag:bat[:oid,:lng], user:bat[:oid,:str],started:bat[:oid,:timestamp],estimate:bat[:oid,:timestamp],progress:bat[:oid,:int], status:bat[:oid,:str], query:bat[:oid,:str])
-address runtimeSQLqueue;
+pattern queue()(tag:bat[:oid,:lng], user:bat[:oid,:str],started:bat[:oid,:timestamp],estimate:bat[:oid,:timestamp],progress:bat[:oid,:int], status:bat[:oid,:str], qrytag:bat[:oid,:oid],query:bat[:oid,:str])
+address SYSMONqueue;

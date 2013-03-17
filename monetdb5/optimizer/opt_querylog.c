@@ -25,7 +25,7 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 {
 	int i, limit, slimit;
 	InstrPtr p = 0, *old= mb->stmt, q,r;
-	int argc, idx, io, user,nice,sys,idle,iowait,load, arg, start,finish, name;
+	int argc, io, user,nice,sys,idle,iowait,load, arg, start,finish, name;
 	int xtime=0, rtime = 0, space =0, tuples=0;
 	InstrPtr defineQuery = NULL;
 
@@ -41,7 +41,7 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		p = getInstrPtr(mb,i);
 		if ( getModuleId(p) && idcmp(getModuleId(p), "querylog") == 0 && idcmp(getFunctionId(p),"define")==0){
 			defineQuery= p;
-			getVarConstant(mb,getArg(p,4)).val.lval = GDKusec()-getVarConstant(mb,getArg(p,4)).val.lval ;
+			getVarConstant(mb,getArg(p,3)).val.lval = GDKusec()-getVarConstant(mb,getArg(p,3)).val.lval ;
 		}
 	}
 	if ( defineQuery == NULL)
@@ -58,7 +58,6 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	defineQuery = copyInstruction(defineQuery);
 	defineQuery->token = ASSIGNsymbol;
 	setModuleId(defineQuery,querylogRef);
-	idx= getArg(defineQuery,0)= newVariable(mb,GDKstrdup("idx"),TYPE_oid);
 
 	/* collect the initial statistics */
 	q = newStmt(mb, "clients", "getUsername");
@@ -67,7 +66,6 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	q = newStmt(mb, "mtime", "current_timestamp");
 	start= getArg(q,0)= newVariable(mb,GDKstrdup("start"),TYPE_any);
 	defineQuery = pushArgument(mb,defineQuery,start);
-	defineQuery = pushInt(mb,defineQuery,limit + 17 /* what we add here */);
 	pushInstruction(mb, defineQuery);
 
 	q = newStmt1(mb, sqlRef, "argRecord");
@@ -156,7 +154,6 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			q = pushArgument(mb,q,iowait);
 
 			q = newStmt(mb, querylogRef, "call");
-			q = pushArgument(mb, q, idx); 
 			q = pushArgument(mb, q, start);
 			q = pushArgument(mb, q, finish); 
 			q = pushArgument(mb, q, arg);

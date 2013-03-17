@@ -44,6 +44,10 @@ static void printStackHdr(stream *f, MalBlkPtr mb, ValPtr v, int index);
 
 static mdbStateRecord *mdbTable;
 
+/*
+ * The debugger flags overview
+ */
+
 void
 mdbInit(void)
 {
@@ -468,10 +472,6 @@ retryRead:
 			if (strncmp("catch", b, 3) == 0) {
 				/* catch the next exception */
 				stk->cmd = 'C';
-				break;
-			}
-			if (strncmp("call", b, 3) == 0) {
-				showException(cntxt->fdout, MAL, "mdb.command", "call instruction not yet implemented");
 				break;
 			}
 			stk->cmd = 'c';

@@ -43,7 +43,6 @@ typedef struct MALSTK {
 	short garbageCollect; /* stack needs garbage collection */
 	lng tmpspace;		/* amount of temporary space produced */
 	/*
-	 * @-
 	 * Parallel processing is mostly driven by dataflow, but within this context
 	 * there may be different schemes to take instructions into execution.
 	 * The admission scheme (and wrapup) are the necessary scheduler hooks.
@@ -61,7 +60,8 @@ typedef struct MALSTK {
 #endif
 	struct timeval clock;		/* seconds + microsecs since epoch */
 	lng clk;			/* micro seconds */
-	char cmd;		/* debugger communication */
+	char cmd;		/* debugger and runtime communication */
+	char status;	/* srunning 'R' uspended 'S', quiting 'Q' */
 	int pcup;		/* saved pc upon a recursive all */
 	struct MALSTK *up;	/* stack trace list */
 	struct MALBLK *blk;	/* associated definition */

@@ -291,18 +291,26 @@ QLOGreset(int *ret)
 }
 
 str
-QLOGdefine(oid *ret, oid *idx, str *q, str *pipe, lng *optimize, str  *usr, lng *tick, int *mal)
+QLOGdefine(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	oid *ret = (oid*) getArgReference(stk,pci,0);
+	str *q = (str*) getArgReference(stk,pci,1);
+	str *pipe = (str*) getArgReference(stk,pci,2);
+	lng *optimize = (lng*) getArgReference(stk,pci,3);
+	str  *usr = (str*) getArgReference(stk,pci,4);
+	lng *tick = (lng*) getArgReference(stk,pci,5);
 	oid o;
+
+	(void) cntxt;
 	initQlog();
     MT_lock_set(&mal_profileLock, "querylog.define");
-	o = BUNfnd( BATmirror(QLOG_cat_id), idx);
+	o = BUNfnd( BATmirror(QLOG_cat_id), &mb->tag);
 	if ( o == BUN_NONE){
-		*ret = *idx;
-		QLOG_cat_id = BUNappend(QLOG_cat_id,idx,FALSE);
+		*ret = mb->tag;
+		QLOG_cat_id = BUNappend(QLOG_cat_id,&mb->tag,FALSE);
 		QLOG_cat_query = BUNappend(QLOG_cat_query,*q,FALSE);
 		QLOG_cat_pipe = BUNappend(QLOG_cat_pipe,*pipe,FALSE);
-		QLOG_cat_mal = BUNappend(QLOG_cat_mal,mal,FALSE);
+		QLOG_cat_mal = BUNappend(QLOG_cat_mal,&mb->stop,FALSE);
 		QLOG_cat_optimize = BUNappend(QLOG_cat_optimize,optimize,FALSE);
 		QLOG_cat_user = BUNappend(QLOG_cat_user,*usr,FALSE);
 		QLOG_cat_defined = BUNappend(QLOG_cat_defined,tick,FALSE);
@@ -313,14 +321,24 @@ QLOGdefine(oid *ret, oid *idx, str *q, str *pipe, lng *optimize, str  *usr, lng 
 }
 
 str
-QLOGcall(int *ret, oid *idx, lng *tick1, lng *tick2, str *arg, wrd *tuples, lng *xtime, lng *rtime, int *cpu, int *iowait, lng *space)
+QLOGcall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	(void) ret;
+	lng *tick1  = (lng*) getArgReference(stk,pci,1);
+	lng *tick2  = (lng*) getArgReference(stk,pci,2);
+	str *arg    = (str*) getArgReference(stk,pci,3);
+	wrd *tuples = (wrd*) getArgReference(stk,pci,4);
+	lng *xtime  = (lng*) getArgReference(stk,pci,5);
+	lng *rtime  = (lng*) getArgReference(stk,pci,6);
+	int *cpu    = (int*) getArgReference(stk,pci,7);
+	int *iowait = (int*) getArgReference(stk,pci,8);
+	lng *space  = (lng*) getArgReference(stk,pci,9);
+	(void) cntxt;
+
 	initQlog();
 	if ( *xtime + *rtime < QLOGthreshold)
 		return MAL_SUCCEED;
     MT_lock_set(&mal_profileLock, "querylog.call");
-	QLOG_calls_id = BUNappend(QLOG_calls_id,idx,FALSE);
+	QLOG_calls_id = BUNappend(QLOG_calls_id,&mb->tag,FALSE);
 	QLOG_calls_start = BUNappend(QLOG_calls_start,tick1,FALSE);
 	QLOG_calls_stop = BUNappend(QLOG_calls_stop,tick2,FALSE);
 	QLOG_calls_arguments = BUNappend(QLOG_calls_arguments,*arg,FALSE);

@@ -55,6 +55,7 @@ lib_mal = {
 		recycle.c recycle.h \
 		remote.c remote.h \
 		sabaoth.c sabaoth.h \
+		sysmon.c sysmon.h \
 		tablet.c tablet.h \
 		tokenizer.c tokenizer.h \
 		trader.c trader.h \

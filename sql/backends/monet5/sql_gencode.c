@@ -2409,7 +2409,6 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 	// if (m->history || QLOGisset()) {
 	{
 		char *t;
-		oid queryid = OIDnew(1);
 		InstrPtr q;
 
 		if ( be->q && be->q->codestring) {
@@ -2421,7 +2420,6 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 
 		q = newStmt1(mb, "querylog", "define");
 		q->token = REMsymbol;	// will be patched
-		q = pushOid(mb, q, queryid);
 		q = pushStr(mb, q, t);
 		q = pushStr(mb, q, pipe= initSQLoptimizer());
 		(void) pushLng(mb, q, Toptimize);

@@ -579,8 +579,29 @@ command querylog_done()
 address QLOGdone;
 
 
-pattern sysmon_queue()(tag:bat[:oid,:lng], user:bat[:oid,:str],started:bat[:oid,:timestamp],estimate:bat[:oid,:timestamp],progress:bat[:oid,:int], status:bat[:oid,:str], query:bat[:oid,:str])
-address runtimeSQLqueue;
+pattern sysmon_queue()(qtag:bat[:oid,:lng], user:bat[:oid,:str],started:bat[:oid,:timestamp],estimate:bat[:oid,:timestamp],progress:bat[:oid,:int], status:bat[:oid,:str], tag:bat[:oid,:oid], query:bat[:oid,:str])
+address SYSMONqueue;
+
+pattern sysmon_pause(tag:sht)
+address SYSMONpause;
+pattern sysmon_pause(tag:int)
+address SYSMONpause;
+pattern sysmon_pause(tag:lng)
+address SYSMONpause;
+
+pattern sysmon_resume(tag:sht)
+address SYSMONresume;
+pattern sysmon_resume(tag:int)
+address SYSMONresume;
+pattern sysmon_resume(tag:lng)
+address SYSMONresume;
+
+pattern sysmon_stop(tag:sht)
+address SYSMONstop;
+pattern sysmon_stop(tag:int)
+address SYSMONstop;
+pattern sysmon_stop(tag:lng)
+address SYSMONstop;
 
 # @- SQL function aliases
 # The code generate should identify the precise module

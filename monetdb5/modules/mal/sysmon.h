@@ -16,31 +16,24 @@
  * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
 */
-#ifndef _QLOG_H
-#define _QLOG_H
+#ifndef _SYSMON_H
+#define _SYSMON_H
 #include "mal.h"
 #include "mal_interpreter.h"
 
 #ifdef WIN32
 #if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5)
-#define qlog_export extern __declspec(dllimport)
+#define sysmon_export extern __declspec(dllimport)
 #else
-#define qlog_export extern __declspec(dllexport)
+#define sysmon_export extern __declspec(dllexport)
 #endif
 #else
-#define qlog_export extern
+#define sysmon_export extern
 #endif
 
-qlog_export int initQlog(void);
-qlog_export void QLOGcatalog(BAT **r);
-qlog_export void QLOGcalls(BAT **r);
-qlog_export str QLOGinit(int *ret);
-qlog_export str QLOGinitThreshold(int *ret, int *threshold);
-qlog_export str QLOGdone(int *ret);
-qlog_export int QLOGisset(void);
-qlog_export str QLOGissetFcn(int *ret);
-qlog_export str QLOGreset(int *ret);
-qlog_export str QLOGdefine(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-qlog_export str QLOGcall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sysmon_export str SYSMONpause(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sysmon_export str SYSMONresume(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sysmon_export str SYSMONstop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sysmon_export str SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-#endif /* _QLOG_H */
+#endif /* _SYSMON_H */
