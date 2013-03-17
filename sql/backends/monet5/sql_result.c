@@ -1171,8 +1171,10 @@ static int
 export_length( stream *s, int mtype, int eclass, int digits, int scale, int tz, bat bid, ptr p) 
 {
 	int ok = 1;
-	size_t count = 0;
+	size_t count = 0, incr =0;;
 
+	if (mtype == TYPE_oid) 
+		incr =2;
 	mtype = ATOMstorage(mtype);
 	if (mtype == TYPE_str) {
 		if (eclass == EC_CHAR) {
@@ -1219,6 +1221,7 @@ export_length( stream *s, int mtype, int eclass, int digits, int scale, int tz, 
 				} else { /* TYPE_lng */
 					count = bat_max_lnglength(b);
 				}
+				count += incr;
 				BBPunfix(b->batCacheid);
 			} else {
 				assert(b);
@@ -1246,6 +1249,7 @@ export_length( stream *s, int mtype, int eclass, int digits, int scale, int tz, 
 				if (val < 0) count++;
 				while (val /= 10) count++;
 				count++;
+				count += incr;
 			} else {
 				count = 0;
 			}
