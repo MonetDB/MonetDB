@@ -46,7 +46,6 @@ mal_export void garbageElement(Client cntxt, ValPtr v);
 mal_export void garbageCollector(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int flag);
 mal_export void releaseBAT(MalBlkPtr mb, MalStkPtr stk, int bid);
 mal_export str malCommandCall(MalStkPtr stk, InstrPtr pci);
-mal_export void updateBigFoot(Client cntxt, int bid, int add);
 mal_export int isNotUsedIn(InstrPtr p, int start, int a);
 mal_export str safeguardStack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str catchKernelException(Client cntxt, str ret);

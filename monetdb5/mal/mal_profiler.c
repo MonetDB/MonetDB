@@ -822,6 +822,7 @@ clrFilterVariable(MalBlkPtr mb, int arg)
  * for easy integration with SQL.
  */
 static int TRACE_event = 0;
+static BAT *TRACE_id_tag = 0;
 static BAT *TRACE_id_event = 0;
 static BAT *TRACE_id_time = 0;
 static BAT *TRACE_id_ticks = 0;
@@ -841,6 +842,7 @@ TRACEtable(BAT **r)
 	if (initTrace())
 		return ;
 	MT_lock_set(&mal_profileLock, "profileLock");
+	r[0] = BATcopy(TRACE_id_tag, TRACE_id_tag->htype, TRACE_id_tag->ttype, 0);
 	r[0] = BATcopy(TRACE_id_event, TRACE_id_event->htype, TRACE_id_event->ttype, 0);
 	r[1] = BATcopy(TRACE_id_time, TRACE_id_time->htype, TRACE_id_time->ttype, 0);
 	r[2] = BATcopy(TRACE_id_pc, TRACE_id_pc->htype, TRACE_id_pc->ttype, 0);
@@ -885,6 +887,7 @@ TRACEcreate(str hnme, str tnme, int tt)
 static void
 _cleanupProfiler(void)
 {
+	CLEANUPprofile(TRACE_id_tag);
 	CLEANUPprofile(TRACE_id_event);
 	CLEANUPprofile(TRACE_id_time);
 	CLEANUPprofile(TRACE_id_pc);
@@ -902,6 +905,7 @@ _cleanupProfiler(void)
 void
 _initTrace(void)
 {
+	TRACE_id_tag = TRACEcreate("id", "tag", TYPE_int);
 	TRACE_id_event = TRACEcreate("id", "event", TYPE_int);
 	TRACE_id_time = TRACEcreate("id", "time", TYPE_str);
 	TRACE_id_ticks = TRACEcreate("id", "ticks", TYPE_lng);
@@ -915,6 +919,7 @@ _initTrace(void)
 	TRACE_id_thread = TRACEcreate("id", "thread", TYPE_int);
 	TRACE_id_user = TRACEcreate("id", "user", TYPE_int);
 	if (TRACE_id_event == NULL ||
+		TRACE_id_tag == NULL ||
 		TRACE_id_time == NULL ||
 		TRACE_id_ticks == NULL ||
 		TRACE_id_pc == NULL ||
@@ -960,6 +965,7 @@ clearTrace(void)
 		return;     /* not initialized */
 	MT_lock_set(&mal_contextLock, "cleanup");
 	/* drop all trace tables */
+	BBPclear(TRACE_id_tag->batCacheid);
 	BBPclear(TRACE_id_event->batCacheid);
 	BBPclear(TRACE_id_time->batCacheid);
 	BBPclear(TRACE_id_ticks->batCacheid);
@@ -980,6 +986,8 @@ getTrace(str nme)
 {
 	if (TRACE_init == 0)
 		return NULL;
+	if (strcmp(nme, "tag") == 0)
+		return BATcopy(TRACE_id_tag, TRACE_id_tag->htype, TRACE_id_tag->ttype, 0);
 	if (strcmp(nme, "event") == 0)
 		return BATcopy(TRACE_id_event, TRACE_id_event->htype, TRACE_id_event->ttype, 0);
 	if (strcmp(nme, "time") == 0)
@@ -1083,6 +1091,7 @@ cachedProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc)
 
 	TRACE_id_user = BUNappend(TRACE_id_user, &idx, FALSE);
 
+	TRACE_id_tag = BUNappend(TRACE_id_tag, &mb->tag, FALSE);
 	TRACE_id_event = BUNappend(TRACE_id_event, &TRACE_event, FALSE);
 	TRACE_event++;
 

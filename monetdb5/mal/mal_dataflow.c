@@ -522,9 +522,6 @@ DFLOWscheduler(DataFlow flow)
 	/* initialize the eligible statements */
 	fe = flow->status;
 
-	if (fe[0].flow->cntxt->flags & timerFlag)
-		fe[0].flow->cntxt->timer = GDKusec();
-
 	MT_lock_set(&flow->flowlock, "MALworker");
 	for (i = 0; i < actions; i++)
 		if (fe[i].blocks == 0) {

@@ -66,7 +66,6 @@ mal_export void printBatDetails(stream *f, int bid);
 mal_export void printBatInfo(stream *f, VarPtr n, ValPtr v);
 mal_export void printBatProperties(stream *f, VarPtr n, ValPtr v, str props);
 mal_export void printTraceCall(stream *out, MalBlkPtr mb, MalStkPtr stk, int pc, int flags);
-mal_export char BBPTraceCall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc);
 
 mal_export str runMALDebugger(Client cntxt, Symbol s);
 mal_export void printBBPinfo(stream *out);

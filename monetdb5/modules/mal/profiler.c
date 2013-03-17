@@ -378,26 +378,6 @@ CMDgetFootprint( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 }
 
 str
-CMDsetMemoryFlag( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	(void) mb;
-	(void) stk;
-	(void) pci;
-	cntxt->flags |= memoryFlag;
-	return MAL_SUCCEED;
-}
-
-str
-CMDgetMemory( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	lng *l= getArgReference(stk,pci,0);
-
-	(void) mb;
-	*l = cntxt->memory;
-	cntxt->flags &= ~memoryFlag; //clear it as well
-	cntxt->memory= 0;
-	return MAL_SUCCEED;
-}
-
-str
 CMDtomograph(int *ret)
 {
 	(void) ret;

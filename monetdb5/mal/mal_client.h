@@ -94,14 +94,7 @@ typedef struct CLIENT {
 	lng memory;	/* memory claimed for keeping BATs */
 	BUN	cnt;	/* bat count */
 
-#define timerFlag	1
-#define memoryFlag	2
-#define ioFlag		4
-#define flowFlag	8
 #define footprintFlag	16
-#define cntFlag		32
-#define threadFlag	64
-#define bbpFlag		128
 	time_t      login;  
 	time_t      lastcmd;	/* set when input is received */
 	int 	    qtimeout;	/* query abort after x seconds */

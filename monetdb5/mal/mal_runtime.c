@@ -58,7 +58,7 @@ static str isaSQLquery(MalBlkPtr mb){
  * Manage the runtime profiling information
  */
 void
-runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, RuntimeProfile prof, int initmemory)
+runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, RuntimeProfile prof)
 {
 	int i;
 	str q;
@@ -92,10 +92,7 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, RuntimeProfile pro
 		QRYqueue[i].status = "running";
 		QRYqueue[i].cntxt = cntxt;
 	}
-	if (initmemory)
-		prof->memory = MT_mallinfo();
-	else
-		memset(&prof->memory, 0, sizeof(prof->memory));
+	prof->memory = MT_mallinfo();
 	if (malProfileMode) {
 		setFilterOnBlock(mb, 0, 0);
 		prof->ppc = -1;

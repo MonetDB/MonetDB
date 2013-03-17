@@ -369,7 +369,7 @@ str runMAL(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr env)
  * observed due the small size of the function).
  */
 	}
-	runtimeProfileInit(cntxt, mb, stk, &runtimeProfile, cntxt->flags & memoryFlag);
+	runtimeProfileInit(cntxt, mb, stk, &runtimeProfile);
 
 	if (stk->cmd && env && stk->cmd != 'f')
 		stk->cmd = env->cmd;
@@ -501,7 +501,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 	ValPtr lhs, rhs, v;
 	int i, k;
 	InstrPtr pci = 0;
-	int exceptionVar, prevpc = 0;
+	int exceptionVar;
 	str ret = 0, localGDKerrbuf= GDKerrbuf;
 	int stamp = -1;
 	ValRecord backups[16];
@@ -515,9 +515,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 
 	if (stk == NULL)
 		throw(MAL, "mal.interpreter", MAL_STACK_FAIL);
-	if (cntxt->flags & timerFlag)
-		oldtimer = cntxt->timer = GDKusec();
-	runtimeProfileInit(cntxt, mb, stk, &runtimeProfile, cntxt->flags & memoryFlag);
+	runtimeProfileInit(cntxt, mb, stk, &runtimeProfile);
 
 	/* prepare extended backup and garbage structures */
 	if ( mb->maxarg > 16 ){
@@ -531,7 +529,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 
 	/* also produce event record for start of function */
 	if ( startpc == 1 )
-		runtimeProfileInit(cntxt, mb, stk, &runtimeProfileFunction, cntxt->flags & memoryFlag);
+		runtimeProfileInit(cntxt, mb, stk, &runtimeProfileFunction);
 	stkpc = startpc;
 	exceptionVar = -1;
 
@@ -553,7 +551,6 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				stk->cmd = cntxt->itrace;
 			if (oldtimer)
 				t = GDKusec();
-			prevpc = stkpc;
 			mdbStep(cntxt, mb, stk, stkpc);
 			if (stk->cmd == 'x' || cntxt->mode == FINISHING) {
 				stk->cmd = 0;
@@ -914,9 +911,6 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				/* skipToCatch(exceptionVar,@2,@3) */
 				if (stk->cmd == 'C' || mb->trap) {
 					stk->cmd = 'n';
-					if (cntxt->flags & bbpFlag)
-						BBPTraceCall(cntxt, mb, stk, prevpc);
-					prevpc = stkpc;
 					mdbStep(cntxt, mb, stk, stkpc);
 					if (stk->cmd == 'x' || cntxt->mode == FINISHING) {
 						stkpc = mb->stop;
@@ -1096,9 +1090,6 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			/* skipToCatch(exceptionVar, @2, stk) */
 			if (stk->cmd == 'C' || mb->trap) {
 				stk->cmd = 'n';
-				if (cntxt->flags & bbpFlag)
-					BBPTraceCall(cntxt, mb, stk, prevpc);
-				prevpc = stkpc;
 				mdbStep(cntxt, mb, stk, stkpc);
 				if (stk->cmd == 'x' || cntxt->mode == FINISHING) {
 					stkpc = mb->stop;

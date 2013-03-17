@@ -46,16 +46,3 @@ comment "Cheap instruction to disgard storage while retaining the dataflow depen
 pattern register(m:str,f:str,code:str,help:str):void
 address CMDregisterFunction
 comment"Compile the code string to MAL and register it as a function.";
-
-pattern setMemoryTrace(flg:bit):void
-address CMDsetMemoryTrace
-comment "Set the flag to trace the memory footprint";
-pattern setThreadTrace(flg:bit):void
-address CMDsetThreadTrace
-comment "Set the flag to trace the interpreter threads";
-pattern setTimerTrace(flg:bit):void
-address CMDsetTimerTrace
-comment "Set the flag to trace the execution time";
-pattern setIOTrace(flg:bit):void
-address CMDsetIOTrace
-comment "Set the flag to trace the IO";
