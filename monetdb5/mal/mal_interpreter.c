@@ -316,7 +316,6 @@ str runMAL(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr env)
 	int i;
 	ValPtr lhs, rhs;
 	str ret;
-	RuntimeProfileRecord runtimeProfile;
 	(void) mbcaller;
 
 	if (mb->errors) {
@@ -369,14 +368,9 @@ str runMAL(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr env)
  * observed due the small size of the function).
  */
 	}
-	runtimeProfileInit(cntxt, mb, stk, &runtimeProfile);
-
 	if (stk->cmd && env && stk->cmd != 'f')
 		stk->cmd = env->cmd;
-	runtimeProfileBegin(cntxt, mb, stk, 0, &runtimeProfile, 1);
 	ret = runMALsequence(cntxt, mb, 1, 0, stk, env, 0);
-	runtimeProfile.ppc = 0; /* also finalize function call event */
-	runtimeProfileExit(cntxt, mb, stk, 0, &runtimeProfile);
 
 	/* pass the new debug mode to the caller */
 	if (stk->cmd && env && stk->cmd != 'f')
@@ -384,7 +378,6 @@ str runMAL(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr env)
 	if (!stk->keepAlive && garbageControl(getInstrPtr(mb, 0)))
 		garbageCollector(cntxt, mb, stk, env != stk);
 	if (stk && stk != env) {
-		runtimeProfileFinish(cntxt, mb, &runtimeProfile);
 		GDKfree(stk);
 	}
 	if (cntxt->qtimeout && time(NULL) - stk->clock.tv_usec > cntxt->qtimeout)
@@ -433,7 +426,6 @@ callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[], char debug)
 	int i;
 	ValPtr lhs;
 	InstrPtr pci = getInstrPtr(mb, 0);
-	RuntimeProfileRecord runtimeProfile;
  
 /*
  * Control the level of parallelism. The maximum number of concurrent MAL plans
@@ -466,10 +458,7 @@ callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[], char debug)
 				BBPincref(lhs->val.bval, TRUE);
 		}
 		stk->cmd = debug;
-		runtimeProfileBegin(cntxt, mb, stk, 0, &runtimeProfile, 1);
 		ret = runMALsequence(cntxt, mb, 1, 0, stk, 0, 0);
-		runtimeProfile.ppc = 0; /* also finalize function call event */
-		runtimeProfileExit(cntxt, mb, stk, pci, &runtimeProfile);
 		break;
 	case FACTORYsymbol:
 	case FACcall:
@@ -484,7 +473,6 @@ callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[], char debug)
 	MT_sema_up(&mal_parallelism,"callMAL");
 	if (cntxt->qtimeout && time(NULL) - stk->clock.tv_usec > cntxt->qtimeout)
 		throw(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
-	runtimeProfileFinish(cntxt, mb, &runtimeProfile);
 	return ret;
 }
 
@@ -528,8 +516,10 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 	}
 
 	/* also produce event record for start of function */
-	if ( startpc == 1 )
+	if ( startpc == 1 ){
 		runtimeProfileInit(cntxt, mb, stk, &runtimeProfileFunction);
+		runtimeProfileBegin(cntxt, mb, stk, 0, &runtimeProfileFunction, 1);
+	}
 	stkpc = startpc;
 	exceptionVar = -1;
 
@@ -732,6 +722,8 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 					cntxt->timer = oldtimer;
 				runtimeProfileExit(cntxt, mb, stk, pci, &runtimeProfile);
 				runtimeProfileFinish(cntxt, mb, &runtimeProfile);
+				runtimeProfileExit(cntxt, mb, stk, getInstrPtr(mb,0), &runtimeProfileFunction);
+				runtimeProfileFinish(cntxt, mb, &runtimeProfileFunction);
 				if (pcicaller && garbageControl(getInstrPtr(mb, 0)))
 					garbageCollector(cntxt, mb, stk, TRUE);
 				runtimeProfile.ppc = 0; /* also finalize function call event */
@@ -739,7 +731,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 					ret= createException(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
 					break;
 				}
-				stkpc = mb->stop;
+				stkpc = mb->stop;	// force end of loop
 				continue;
 			default: {
 				str w;
@@ -1150,7 +1142,10 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 					/* reset the clock */
 					if (oldtimer)
 						cntxt->timer = oldtimer;
+					runtimeProfileExit(cntxt, mb, stk, pp, &runtimeProfile);
 					runtimeProfileFinish(cntxt, mb, &runtimeProfile);
+					runtimeProfileExit(cntxt, mb, stk, getInstrPtr(mb,0), &runtimeProfileFunction);
+					runtimeProfileFinish(cntxt, mb, &runtimeProfileFunction);
 				} 
 			}
 			stkpc = mb->stop;
