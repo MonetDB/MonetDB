@@ -545,7 +545,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				continue;
 			}
 			if ( stk->status == 'q')
-				stk->cmd = 'q';
+				stk->cmd = 'x';
 
 			if (stk->cmd == 0)
 				stk->cmd = cntxt->itrace;

@@ -90,7 +90,7 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	MT_lock_set(&mal_delayLock, "sysmon");
 	for ( i = 0; i< QRYqueue[i].tag; i++)
-	if( QRYqueue[i].query && (QRYqueue[i].cntxt->idx == 0 || QRYqueue[i].cntxt == cntxt)) {
+	if( QRYqueue[i].query && (QRYqueue[i].cntxt->idx == 0 || QRYqueue[i].cntxt->user == cntxt->user)) {
 		now= (lng) time(0);
 		if ( (now-QRYqueue[i].start) > QRYqueue[i].runtime)
 			prog =QRYqueue[i].runtime > 0 ? 100: int_nil;
@@ -148,7 +148,7 @@ SYSMONpause(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	MT_lock_set(&mal_delayLock, "sysmon");
 	for ( i = 0; QRYqueue[i].tag; i++)
-	if( QRYqueue[i].tag == tag && (QRYqueue[i].cntxt == cntxt || cntxt->idx ==0)){
+	if( QRYqueue[i].tag == tag && (QRYqueue[i].cntxt->user == cntxt->user || cntxt->idx ==0)){
 		QRYqueue[i].stk->status = 'p';
 		QRYqueue[i].status = "paused";
 	}
@@ -170,7 +170,7 @@ SYSMONresume(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	MT_lock_set(&mal_delayLock, "sysmon");
 	for ( i = 0; QRYqueue[i].tag; i++)
-	if( QRYqueue[i].tag == tag && (QRYqueue[i].cntxt == cntxt || cntxt->idx ==0)){
+	if( QRYqueue[i].tag == tag && (QRYqueue[i].cntxt->user == cntxt->user || cntxt->idx ==0)){
 		QRYqueue[i].stk->status = 0;
 		QRYqueue[i].status = "QRYqueue";
 	}
@@ -192,7 +192,7 @@ SYSMONstop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	MT_lock_set(&mal_delayLock, "sysmon");
 	for ( i = 0; QRYqueue[i].tag; i++)
-	if( QRYqueue[i].tag == tag && (QRYqueue[i].cntxt == cntxt || cntxt->idx ==0)){
+	if( QRYqueue[i].tag == tag && (QRYqueue[i].cntxt->user == cntxt->user || cntxt->idx ==0)){
 		QRYqueue[i].stk->status = 'q';
 		QRYqueue[i].status = "stopping";
 	}
