@@ -148,11 +148,9 @@ static void
 MDBtraceFlag(Client cntxt, MalStkPtr stk, int b)
 {
 	if (b) {
-		cntxt->timer = GDKusec();
 		stk->cmd = b;
 		cntxt->itrace = b;
 	} else {
-		cntxt->timer = 0;
 		stk->cmd = 0;
 		cntxt->itrace = 0;
 	}
