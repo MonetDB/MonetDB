@@ -198,7 +198,6 @@ MALresourceFairness(lng usec)
 	if ( usec > 0 && ( (usec = GDKusec()-usec)) <= TIMESLICE )
 		return;
 	threads = GDKnr_threads > 0 ? GDKnr_threads : 1;
-	ATOMIC_CAS_int(running, 0, threads, runningLock, "MALresourceFairness");
 
 	/* use GDKmem_cursize as MT_getrss(); is to expensive */
 	rss = GDKmem_cursize();
@@ -210,15 +209,13 @@ MALresourceFairness(lng usec)
 	clk =  usec / 1000;
 
 	if ( clk > DELAYUNIT ) {
+		ATOMIC_CAS_int(running, 0, threads, runningLock, "MALresourceFairness");
 		PARDEBUG mnstr_printf(GDKstdout, "#delay initial "LLFMT"n", clk);
 		ATOMIC_DEC_int(running, runningLock, "MALresourceFairness");
-		while (clk > 0) {
+		/* always keep one running to avoid all waiting  */
+		while (clk > 0 && running >= 2) {
 			/* speed up wake up when we have memory */
 			if (rss < MEMORY_THRESHOLD * monet_memory)
-				break;
-			/* always keep one running to avoid all waiting  */
-			if ( running < 2) /* dirty read of shared variable is safe  here */
-			//if ( (r =ATOMIC_GET_int(running, runningLock, "MALresourceFairness")) < 2)
 				break;
 			delay = (unsigned int) ( ((double)DELAYUNIT * running) / threads);
 			if (delay) {
