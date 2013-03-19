@@ -382,8 +382,6 @@ runFactory(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr stk, InstrP
 		pl->stk->stkbot= mb->vtop;	/* stack already initialized */
 		msg = runMAL(cntxt, mb, 0, pl->stk);
 	 } else {
-		if( cmd && cntxt->timer == 0)
-			mdbStep(cntxt,mb,pl->stk,pl->pc);
 		msg = reenterMAL(cntxt, mb, pl->pc, -1, pl->stk);
 	}
 	/* propagate change in debugging status */
@@ -457,8 +455,6 @@ callFactory(Client cntxt, MalBlkPtr mb, ValPtr argv[], char flag){
 		if( lhs->vtype == TYPE_bat )
 			BBPincref(lhs->val.bval, TRUE);
 	}
-	if( flag && cntxt->timer == 0)
-		mdbStep(cntxt,mb,pl->stk,pl->pc);
 	ret=  reenterMAL(cntxt, mb, pl->pc, -1, pl->stk);
 	/* garbage collect the string arguments, these positions
 	   will simply be overwritten the next time.

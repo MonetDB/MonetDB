@@ -90,7 +90,6 @@ typedef struct CLIENT {
 	 * usage patterns.
 	 */
 	sht	flags;	 /* resource tracing flags */
-	lng     timer;   /* trace time in usec */
 	lng memory;	/* memory claimed for keeping BATs */
 	BUN	cnt;	/* bat count */
 

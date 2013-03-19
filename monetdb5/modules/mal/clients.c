@@ -159,9 +159,6 @@ CLTInfo(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BUNappend(b, "scenario", FALSE);
 	BUNappend(bn, cntxt->scenario, FALSE);
 
-	BUNappend(b, "timer", FALSE);
-	BUNappend(bn, local_itoa((int) cntxt->timer), FALSE);
-
 	BUNappend(b, "trace", FALSE);
 	BUNappend(bn, local_itoa(cntxt->itrace), FALSE);
 

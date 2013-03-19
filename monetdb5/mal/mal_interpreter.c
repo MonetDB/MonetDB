@@ -495,7 +495,6 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 	ValRecord backups[16];
 	ValPtr backup;
 	int garbages[16], *garbage;
-	lng oldtimer = 0;
 	int stkpc = 0;
 	//MT_Lock *lock = NULL;
 	//int tid = 0;
@@ -526,8 +525,6 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 	while (stkpc < mb->stop && stkpc != stoppc) {
 		pci = getInstrPtr(mb, stkpc);
 		if (cntxt->itrace || mb->trap || stk->status) {
-			lng t = 0;
-
 			if (stk->status == 'p'){
 				// execution is paused
 				while ( stk->status == 'p')
@@ -539,18 +536,11 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 
 			if (stk->cmd == 0)
 				stk->cmd = cntxt->itrace;
-			if (oldtimer)
-				t = GDKusec();
 			mdbStep(cntxt, mb, stk, stkpc);
 			if (stk->cmd == 'x' || cntxt->mode == FINISHING) {
 				stk->cmd = 0;
 				stkpc = mb->stop;
 				continue;
-			}
-			if (oldtimer) {
-				/* ignore debugger waiting time*/
-				t = GDKusec() - t;
-				oldtimer += t;
 			}
 		}
 
@@ -647,21 +637,12 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				else {
 					/* show call before entering the factory */
 					if (cntxt->itrace || mb->trap) {
-						lng t = 0;
-
 						if (stk->cmd == 0)
 							stk->cmd = cntxt->itrace;
-						if (oldtimer)
-							t = GDKusec();
 						mdbStep(cntxt, pci->blk, stk, 0);
 						if (stk->cmd == 'x' || cntxt->mode == FINISHING) {
 							stk->cmd = 0;
 							stkpc = mb->stop;
-						}
-						if (oldtimer) {
-							/* ignore debugger waiting time*/
-							t = GDKusec() - t;
-							oldtimer += t;
 						}
 					}
 					ret = runFactory(cntxt, pci->blk, mb, stk, pci);
@@ -718,8 +699,6 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			case ENDsymbol:
 				if (getInstrPtr(mb, 0)->token == FACTORYsymbol)
 					ret = shutdownFactory(cntxt, mb);
-				if (oldtimer)
-					cntxt->timer = oldtimer;
 				runtimeProfileExit(cntxt, mb, stk, pci, &runtimeProfile);
 				runtimeProfileFinish(cntxt, mb, &runtimeProfile);
 				runtimeProfileExit(cntxt, mb, stk, getInstrPtr(mb,0), &runtimeProfileFunction);
@@ -1114,8 +1093,6 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 					"Exception raised");
 			break;
 		case YIELDsymbol:     /* to be defined */
-			if (oldtimer)
-				cntxt->timer = oldtimer;
 			if ( backup != backups) GDKfree(backup);
 			if ( garbage != garbages) GDKfree(garbage);
 			return yieldFactory(mb, pci, stkpc);
@@ -1140,8 +1117,6 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 					if (garbageControl(getInstrPtr(mb, 0)))
 						garbageCollector(cntxt, mb, stk, TRUE);
 					/* reset the clock */
-					if (oldtimer)
-						cntxt->timer = oldtimer;
 					runtimeProfileExit(cntxt, mb, stk, pp, &runtimeProfile);
 					runtimeProfileFinish(cntxt, mb, &runtimeProfile);
 					runtimeProfileExit(cntxt, mb, stk, getInstrPtr(mb,0), &runtimeProfileFunction);
