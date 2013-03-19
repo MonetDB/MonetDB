@@ -480,8 +480,7 @@ dictionary[] = {
 };
 
 #define NUM_COLORS ((int) (sizeof(dictionary) / sizeof(RGB)))
-#define MAX_LEGEND 30	/* max. size of colormap / legend */
-#define MAX_LEGEND_SHORT 27
+#define MAX_LEGEND_SHORT 27 /* max. size of colormap / legend */
 #define PERCENTAGE 0.01 /* threshold for time filter */
 
 
@@ -873,7 +872,7 @@ static void showmemory(void)
 	fprintf(gnudata, "set bmarg 1\n");
 	fprintf(gnudata, "set lmarg 10\n");
 	fprintf(gnudata, "set rmarg 10\n");
-	fprintf(gnudata, "set size 1,%s\n", fixedmap ? "0.07" : "0.1");
+	fprintf(gnudata, "set size 1,%s\n", "0.1");
 	fprintf(gnudata, "set origin 0.0,0.87\n");
 
 	fprintf(gnudata, "set xrange ["LLFMT".0:"LLFMT".0]\n", startrange, lastclktick - starttime);
@@ -902,15 +901,13 @@ static void showcpu(void)
 	fprintf(gnudata, "set bmarg 0\n");
 	fprintf(gnudata, "set lmarg 10\n");
 	fprintf(gnudata, "set rmarg 10\n");
-	fprintf(gnudata, "set size 1,%s\n", fixedmap ? "0.08" : "0.16");
-	fprintf(gnudata, "set origin 0.0,%s\n", fixedmap ? "0.8" : "0.72");
+	fprintf(gnudata, "set size 1,%s\n", "0.16");
+	fprintf(gnudata, "set origin 0.0,%s\n", "0.72");
 	fprintf(gnudata, "set ylabel \"CPU\"\n");
 	fprintf(gnudata, "unset ytics\n");
-	if (!fixedmap) {
-		fprintf(gnudata, "set ytics 0, 1.1\n");
-		fprintf(gnudata, "set grid ytics\n");
-		fprintf(gnudata, "set format y ''\n");
-	}
+	fprintf(gnudata, "set ytics 0, 1.1\n");
+	fprintf(gnudata, "set grid ytics\n");
+	fprintf(gnudata, "set format y ''\n");
 	fprintf(gnudata, "unset border\n");
 
 	fprintf(gnudata, "set xrange ["LLFMT".0:"LLFMT".0]\n", startrange, lastclktick - starttime);
@@ -919,12 +916,10 @@ static void showcpu(void)
 		fprintf(gnudata, "plot ");
 	for (i = 0; i < cpus; i++)
 		fprintf(gnudata, "\"%s_cpu.dat\" using 1:($%d+(%d*1.1)) notitle with lines linecolor rgb \"%s\"%s",
-				(tracefile ? "scratch" : filename), i + 2, i, (i % 2 == 0 ? (fixedmap ? "black" : "blue") : "red"), (i < cpus - 1 ? ",\\\n" : "\n"));
+				(tracefile ? "scratch" : filename), i + 2, i, (i % 2 == 0 ? "blue" : "red"), (i < cpus - 1 ? ",\\\n" : "\n"));
 	fprintf(gnudata, "unset yrange\n");
-	if (!fixedmap) {
-		fprintf(gnudata, "unset ytics\n");
-		fprintf(gnudata, "unset grid\n");
-	}
+	fprintf(gnudata, "unset ytics\n");
+	fprintf(gnudata, "unset grid\n");
 }
 
 /* produce memory thread trace */
@@ -947,7 +942,7 @@ static void showio(void)
 	fprintf(gnudata, "set bmarg 1\n");
 	fprintf(gnudata, "set lmarg 10\n");
 	fprintf(gnudata, "set rmarg 10\n");
-	fprintf(gnudata, "set size 1,%s\n", fixedmap ? "0.07" : "0.1");
+	fprintf(gnudata, "set size 1,%s\n", "0.1");
 	fprintf(gnudata, "set origin 0.0,0.87\n");
 	fprintf(gnudata, "set xrange ["LLFMT".0:"LLFMT".0]\n", startrange, lastclktick - starttime);
 	fprintf(gnudata, "set yrange [0:"LLFMT".0]\n", max / beat);
@@ -1130,7 +1125,7 @@ static void showcolormap(char *filename, int all)
 		fprintf(f, "set lmarg 10\n");
 		fprintf(f, "set rmarg 10\n");
 		fprintf(f, "set size 1,0.4\n");
-		fprintf(f, "set origin 0.0,%s\n", fixedmap ? "0.0" : "-0.05");
+		fprintf(f, "set origin 0.0,%s\n", "-0.05");
 		fprintf(f, "set xrange [0:1800]\n");
 		fprintf(f, "set yrange [0:600]\n");
 		fprintf(f, "unset xtics\n");
@@ -1182,9 +1177,9 @@ static void showcolormap(char *filename, int all)
 		}
 	} else {
 		/* use a heuristic fixed map to highlight the important operations */
-		/* limit the legend to the most important ones <MAX_LEGEND and > 1% */
-		int	map[MAX_LEGEND], n, m=0, j;
-		for (i = 0; i < MAX_LEGEND; i++)
+		/* limit the legend to the most important ones <MAX_LEGEND_SHORT and > 1% */
+		int	map[MAX_LEGEND_SHORT], n, m=0, j;
+		for (i = 0; i < MAX_LEGEND_SHORT; i++)
 			map[i] = -1;
 		for (i = 0; i < NUM_COLORS - 1; i++) {
 			tottime += clrs[i].timeused;
@@ -1192,12 +1187,12 @@ static void showcolormap(char *filename, int all)
 		}
 		/* filter out the top N interesting elements */
 		for (i = 0; i < NUM_COLORS - 1; i++)
-		if (clrs[i].col && clrs[i].mod  && clrs[i].freq > 0)
+		if (clrs[i].col && clrs[i].mod  && (clrs[i].freq > 0 || all))
 		{
 			if (clrs[i].timeused > PERCENTAGE * duration || clrs[i].freq > PERCENTAGE *  totfreq) {
 				for ( j = 0; j < m && clrs[map[j]].timeused > clrs[i].timeused; j++)
 					;
-				if ( m < MAX_LEGEND){
+				if ( m < MAX_LEGEND_SHORT){
 					for( n = m-1; n > j; n--)
 						map[n] = map[n-1];
 					map[j] = i;
@@ -1235,8 +1230,7 @@ static void showcolormap(char *filename, int all)
 	fprintf(f, "set label %d \" "LLFMT" MAL instructions executed; total CPU core time: ",
 			object++, totfreq);
 	fprintf_time(f, tottime);
-	if (!fixedmap)
-		fprintf(f, "; parallelism usage %.1f %%", totalclkticks / (totalticks / 100.0));
+	fprintf(f, "; parallelism usage %.1f %%", totalclkticks / (totalticks / 100.0));
 	fprintf(f, "\" at %d,%d\n",
 			(int) (0.2 * w), h - 35);
 	fprintf(f, "plot 0 notitle with lines linecolor rgb \"white\"\n");
@@ -1424,7 +1418,7 @@ static void createTomogram(void)
 	fprintf(gnudata, "set lmarg 10\n");
 	fprintf(gnudata, "set rmarg 10\n");
 	fprintf(gnudata, "set size 1,0.4\n");
-	fprintf(gnudata, "set origin 0.0,%s\n", fixedmap ? "0.4" : "0.32");
+	fprintf(gnudata, "set origin 0.0,%s\n", "0.32");
 	fprintf(gnudata, "set xrange ["LLFMT".0:"LLFMT".0]\n", startrange, lastclktick - starttime);
 
 	/* detect all different threads and assign them a row */
@@ -1514,8 +1508,6 @@ static void createTomogram(void)
 	totalticks = 0;
 	for (i = 0; i < top; i++)
 		totalticks += lastclk[rows[i]];
-	if (fixedmap)
-		fprintf(gnudata, "set xlabel \"%s, parallelism usage %.1f %%\"\n", scalename+3, totalclkticks / (totalticks / 100.0));
 
 	h = 10; /* unit height of bars */
 	fprintf(gnudata, "set ytics (");
@@ -1526,7 +1518,7 @@ static void createTomogram(void)
 	/* mark duration of each thread */
 	for (i = 0; i < top; i++)
 		fprintf(gnudata, "set object %d rectangle from %d, %d to "LLFMT".0, %d\n",
-				object++, 0, i * 2 * h + (1-fixedmap)*h/3, lastclk[rows[i]], i * 2 * h + h - (1-fixedmap)*h/3);
+				object++, 0, i * 2 * h + h/3, lastclk[rows[i]], i * 2 * h + h - h/3);
 
 	/* fill the duration of each instruction encountered that fit our range constraint */
 	for (i = 0; i < topbox; i++)
@@ -1535,14 +1527,14 @@ static void createTomogram(void)
 		default:
 			if (debug)
 				dumpbox(i);
-			fprintf(gnudata, "set object %d rectangle from "LLFMT".0, %d to "LLFMT".0, %d fillcolor rgb \"%s\" fillstyle solid 0.6\n",
+			fprintf(gnudata, "set object %d rectangle from "LLFMT".0, %d to "LLFMT".0, %d fillcolor rgb \"%s\" fillstyle solid 0.5\n",
 					object++, box[i].clkstart, box[i].row * 2 * h, box[i].clkend, box[i].row * 2 * h + h, colors[box[i].color].col);
 			break;
 		case PING:
 			break;
 		case WAIT:
 			fprintf(gnudata, "set object %d rectangle from "LLFMT".0, %d to %f,%f front fillcolor rgb \"red\" fillstyle solid 1.0\n",
-					object++, box[i].clkstart, box[i].row * 2 * h+h, box[i].clkstart + w /50.0, box[i].row *2 *h + 1.3 * h);
+					object++, box[i].clkstart, box[i].row * 2 * h+h-h/3, box[i].clkstart + w /50.0, box[i].row *2 *h + 1.3 * h);
 		}
 
 
