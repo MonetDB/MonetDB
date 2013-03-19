@@ -1213,7 +1213,7 @@ static void showcolormap(char *filename, int all)
 		if ( clrs[map[i]].col){
 				if (k % 3 == 0)
 					h -= 45;
-				fprintf(f, "set object %d rectangle from %f, %f to %f, %f fillcolor rgb \"%s\" fillstyle solid 0.6\n",
+				fprintf(f, "set object %d rectangle from %f, %f to %f, %f fillcolor rgb \"%s\" fillstyle solid 1.0\n",
 						object++, (double) (k % 3) * w, (double) h - 40, (double) ((k % 3) * w + 0.15 * w), (double) h - 5, clrs[map[i]].col);
 				fprintf(f, "set label %d \"%s.%s \" at %d,%d\n",
 						object++, clrs[map[i]].mod, clrs[map[i]].fcn, (int) ((k % 3) * w + 0.2 * w), h - 15);
@@ -1527,7 +1527,7 @@ static void createTomogram(void)
 		default:
 			if (debug)
 				dumpbox(i);
-			fprintf(gnudata, "set object %d rectangle from "LLFMT".0, %d to "LLFMT".0, %d fillcolor rgb \"%s\" fillstyle solid 0.5\n",
+			fprintf(gnudata, "set object %d rectangle from "LLFMT".0, %d to "LLFMT".0, %d fillcolor rgb \"%s\" fillstyle solid 1.0\n",
 					object++, box[i].clkstart, box[i].row * 2 * h, box[i].clkend, box[i].row * 2 * h + h, colors[box[i].color].col);
 			break;
 		case PING:
