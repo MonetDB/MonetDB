@@ -139,13 +139,12 @@ runtimeProfileBegin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int stkpc, Runtim
 		mb->profiler[stkpc].ticks = 0;
 		mb->profiler[stkpc].clock = stk->clock;
 		/* emit the instruction upon start as well */
-		if (malProfileMode)
-			profilerEvent(cntxt->idx, mb, stk, stkpc, start);
+		profilerEvent(cntxt->idx, mb, stk, stkpc, start);
 #ifdef HAVE_TIMES
 		times(&stk->timer);
 		mb->profiler[stkpc].timer = stk->timer;
 #endif
-		mb->profiler[stkpc].clk = stk->clk;
+		mb->profiler[stkpc].clk = prof->newclk;
 		MT_lock_unset(&mal_delayLock, "sysmon");
 	}
 }
