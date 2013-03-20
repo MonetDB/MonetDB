@@ -497,6 +497,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 	int garbages[16], *garbage;
 	int stkpc = 0;
 	RuntimeProfileRecord runtimeProfile, runtimeProfileFunction;
+	runtimeProfile.stkpc = runtimeProfileFunction.stkpc = 0;
 
 	if (stk == NULL)
 		throw(MAL, "mal.interpreter", MAL_STACK_FAIL);
