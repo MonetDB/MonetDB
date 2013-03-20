@@ -131,9 +131,9 @@ runtimeProfileBegin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int stkpc, Runtim
 		return; /* mostly true */
 	
 	if (stk && mb->profiler != NULL && mb->profiler[stkpc].trace) {
+		MT_lock_set(&mal_delayLock, "sysmon");
 		prof->newclk = stk->clk = GDKusec();
 		prof->stkpc = stkpc;
-		MT_lock_set(&mal_delayLock, "sysmon");
 		gettimeofday(&stk->clock, NULL);
 		mb->profiler[stkpc].clk = 0;
 		mb->profiler[stkpc].ticks = 0;
