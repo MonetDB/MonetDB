@@ -58,10 +58,13 @@ static str isaSQLquery(MalBlkPtr mb){
  * Manage the runtime profiling information
  */
 void
-runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, RuntimeProfile prof)
+runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 {
 	int i;
 	str q;
+
+	if (malProfileMode)
+		setFilterOnBlock(mb, 0, 0);
 
 	MT_lock_set(&mal_delayLock, "sysmon");
 	if ( QRYqueue == 0)
@@ -75,12 +78,6 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, RuntimeProfile pro
 
 	if ( mb->tag == 0)
 		mb->tag = OIDnew(1);
-	prof->newclk = 0;
-	prof->ppc = -2;
-	prof->tcs = 0;
-	prof->inblock = 0;
-	prof->oublock = 0;
-
 	if ( i == qtop ) {
 		QRYqueue[i].mb = mb;	// for detecting duplicates
 		QRYqueue[i].stk = stk;	// for status pause 'p'/running '0'/ quiting 'q'
@@ -92,25 +89,17 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, RuntimeProfile pro
 		QRYqueue[i].status = "running";
 		QRYqueue[i].cntxt = cntxt;
 	}
-	prof->memory = MT_mallinfo();
-	if (malProfileMode) {
-		setFilterOnBlock(mb, 0, 0);
-		prof->ppc = -1;
-	}
 
 	qtop += i == qtop;
 	MT_lock_unset(&mal_delayLock, "sysmon");
-	
 }
 
 void
-runtimeProfileFinish(Client cntxt, MalBlkPtr mb, RuntimeProfile prof)
+runtimeProfileFinish(Client cntxt, MalBlkPtr mb)
 {
 	int i,j;
 
 	(void) cntxt;
-	(void) prof;
-
 
 	MT_lock_set(&mal_delayLock, "sysmon");
 	for( i=j=0; i< qtop; i++)
@@ -141,25 +130,23 @@ runtimeProfileBegin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int stkpc, Runtim
 	if (malProfileMode == 0)
 		return; /* mostly true */
 	
-	if (stk && mb->profiler != NULL) {
+	if (stk && mb->profiler != NULL && mb->profiler[stkpc].trace) {
 		prof->newclk = stk->clk = GDKusec();
-		if (mb->profiler[stkpc].trace) {
-			MT_lock_set(&mal_delayLock, "sysmon");
-			gettimeofday(&stk->clock, NULL);
-			prof->ppc = stkpc;
-			mb->profiler[stkpc].clk = 0;
-			mb->profiler[stkpc].ticks = 0;
-			mb->profiler[stkpc].clock = stk->clock;
-			/* emit the instruction upon start as well */
-			if (malProfileMode)
-				profilerEvent(cntxt->idx, mb, stk, stkpc, start);
+		prof->stkpc = stkpc;
+		MT_lock_set(&mal_delayLock, "sysmon");
+		gettimeofday(&stk->clock, NULL);
+		mb->profiler[stkpc].clk = 0;
+		mb->profiler[stkpc].ticks = 0;
+		mb->profiler[stkpc].clock = stk->clock;
+		/* emit the instruction upon start as well */
+		if (malProfileMode)
+			profilerEvent(cntxt->idx, mb, stk, stkpc, start);
 #ifdef HAVE_TIMES
-			times(&stk->timer);
-			mb->profiler[stkpc].timer = stk->timer;
+		times(&stk->timer);
+		mb->profiler[stkpc].timer = stk->timer;
 #endif
-			mb->profiler[stkpc].clk = stk->clk;
-			MT_lock_unset(&mal_delayLock, "sysmon");
-		}
+		mb->profiler[stkpc].clk = stk->clk;
+		MT_lock_unset(&mal_delayLock, "sysmon");
 	}
 }
 
@@ -167,7 +154,7 @@ runtimeProfileBegin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int stkpc, Runtim
 void
 runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, RuntimeProfile prof)
 {
-	int i,j,fnd, stkpc = prof->ppc;
+	int i,j,fnd, stkpc = prof->stkpc;
 
 	if (cntxt->flags & footprintFlag && pci){
 		for (i = 0; i < pci->retc; i++)
@@ -184,7 +171,8 @@ runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Runt
 
 	if (malProfileMode == 0)
 		return; /* mostly true */
-	if (stk != NULL && prof->ppc >= 0 && mb->profiler != NULL && mb->profiler[stkpc].trace && mb->profiler[stkpc].clk)
+
+	if (stk != NULL && prof->stkpc >= 0 && mb->profiler != NULL && mb->profiler[stkpc].trace && mb->profiler[stkpc].clk)
 	{
 		MT_lock_set(&mal_contextLock, "sysmon");
 		gettimeofday(&mb->profiler[stkpc].clock, NULL);
@@ -197,7 +185,6 @@ runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Runt
 			mb->profiler[stkpc].wbytes = getVolume(stk, pci, 1);
 		}
 		profilerEvent(cntxt->idx, mb, stk, stkpc, 0);
-		prof->ppc = -1;
 		MT_lock_unset(&mal_contextLock, "sysmon");
 	}
 }

@@ -496,13 +496,10 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 	ValPtr backup;
 	int garbages[16], *garbage;
 	int stkpc = 0;
-	//MT_Lock *lock = NULL;
-	//int tid = 0;
 	RuntimeProfileRecord runtimeProfile, runtimeProfileFunction;
 
 	if (stk == NULL)
 		throw(MAL, "mal.interpreter", MAL_STACK_FAIL);
-	runtimeProfileInit(cntxt, mb, stk, &runtimeProfile);
 
 	/* prepare extended backup and garbage structures */
 	if ( mb->maxarg > 16 ){
@@ -516,9 +513,9 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 
 	/* also produce event record for start of function */
 	if ( startpc == 1 ){
-		runtimeProfileInit(cntxt, mb, stk, &runtimeProfileFunction);
+		runtimeProfileInit(cntxt, mb, stk);
 		runtimeProfileBegin(cntxt, mb, stk, 0, &runtimeProfileFunction, 1);
-	}
+	} 
 	stkpc = startpc;
 	exceptionVar = -1;
 
@@ -700,12 +697,10 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				if (getInstrPtr(mb, 0)->token == FACTORYsymbol)
 					ret = shutdownFactory(cntxt, mb);
 				runtimeProfileExit(cntxt, mb, stk, pci, &runtimeProfile);
-				runtimeProfileFinish(cntxt, mb, &runtimeProfile);
 				runtimeProfileExit(cntxt, mb, stk, getInstrPtr(mb,0), &runtimeProfileFunction);
-				runtimeProfileFinish(cntxt, mb, &runtimeProfileFunction);
+				runtimeProfileFinish(cntxt, mb);
 				if (pcicaller && garbageControl(getInstrPtr(mb, 0)))
 					garbageCollector(cntxt, mb, stk, TRUE);
-				runtimeProfile.ppc = 0; /* also finalize function call event */
 				if (cntxt->qtimeout && time(NULL) - stk->clock.tv_usec > cntxt->qtimeout){
 					ret= createException(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
 					break;
@@ -732,7 +727,6 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			/* monitoring information should reflect the input arguments,
 			   which may be removed by garbage collection  */
 			runtimeProfileExit(cntxt, mb, stk, pci, &runtimeProfile);
-			//runtimeTiming(cntxt, mb, stk, pci, tid, lock, &runtimeProfile);
 			/* check for strong debugging after each MAL statement */
 			if ( pci->token != FACcall && ret== MAL_SUCCEED) {
 				if (GDKdebug & (CHECKMASK|PROPMASK) && exceptionVar < 0) {
@@ -856,7 +850,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				/* unknown exceptions lead to propagation */
 				if (exceptionVar == -1) {
 					runtimeProfileExit(cntxt, mb, stk, pci, &runtimeProfile);
-					runtimeProfileFinish(cntxt, mb, &runtimeProfile);
+					runtimeProfileFinish(cntxt, mb);
 					if (cntxt->qtimeout && time(NULL) - stk->clock.tv_usec > cntxt->qtimeout)
 						ret= createException(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
 					stkpc = mb->stop;
@@ -1083,9 +1077,9 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				}
 			}
 			if (stkpc == mb->stop) {
-				runtimeProfile.ppc = 0; /* also finalize function call event */
 				runtimeProfileExit(cntxt, mb, stk, pci, &runtimeProfile);
-				runtimeProfileFinish(cntxt, mb, &runtimeProfile);
+				runtimeProfileExit(cntxt, mb, stk, getInstrPtr(mb,0), &runtimeProfileFunction);
+				runtimeProfileFinish(cntxt, mb);
 				break;
 			}
 			if (stkpc == mb->stop)
@@ -1118,9 +1112,8 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 						garbageCollector(cntxt, mb, stk, TRUE);
 					/* reset the clock */
 					runtimeProfileExit(cntxt, mb, stk, pp, &runtimeProfile);
-					runtimeProfileFinish(cntxt, mb, &runtimeProfile);
 					runtimeProfileExit(cntxt, mb, stk, getInstrPtr(mb,0), &runtimeProfileFunction);
-					runtimeProfileFinish(cntxt, mb, &runtimeProfileFunction);
+					runtimeProfileFinish(cntxt, mb);
 				} 
 			}
 			stkpc = mb->stop;
