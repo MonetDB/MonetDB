@@ -172,8 +172,8 @@ runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Runt
 	if (malProfileMode == 0)
 		return; /* mostly true */
 
-	if (stk != NULL && prof->stkpc >= 0 && mb->profiler != NULL && mb->profiler[stkpc].trace && mb->profiler[stkpc].clk)
-	{
+	if (stk != NULL && prof->stkpc >= 0 && mb->profiler != NULL && 
+		mb->profiler[stkpc].trace && mb->profiler[stkpc].clk) {
 		MT_lock_set(&mal_contextLock, "sysmon");
 		gettimeofday(&mb->profiler[stkpc].clock, NULL);
 		mb->profiler[stkpc].counter++;
