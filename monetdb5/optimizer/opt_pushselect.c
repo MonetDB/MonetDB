@@ -287,7 +287,9 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 					q = copyInstruction(q);
 					setFunctionId(q, projectdeltaRef);
 					getArg(q, 0) = getArg(p, 0); 
-					p = PushArgument(mb, q, getArg(p, 1), 1);
+					q = PushArgument(mb, q, getArg(p, 1), 1);
+					freeInstruction(p);
+					p = q;
 					actions++;
 				}
 			}
