@@ -222,7 +222,7 @@ initQlog(void)
 }
 
 str
-QLOGinit(int *ret)
+QLOGenable(int *ret)
 {
 	(void) ret;
 	QLOGtrace = TRUE;
@@ -230,7 +230,7 @@ QLOGinit(int *ret)
 }
 
 str
-QLOGinitThreshold(int *ret, int *threshold)
+QLOGenableThreshold(int *ret, int *threshold)
 {
 	(void) ret;
 	QLOGthreshold = *threshold;
@@ -238,7 +238,7 @@ QLOGinitThreshold(int *ret, int *threshold)
 }
 
 str
-QLOGdone(int *ret)
+QLOGdisable(int *ret)
 {
 	(void) ret;
 	QLOGtrace = FALSE;
@@ -259,7 +259,7 @@ QLOGissetFcn(int *ret)
 }
 
 str
-QLOGreset(int *ret)
+QLOGempty(int *ret)
 {
 	(void) ret;
 	initQlog();

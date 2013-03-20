@@ -70,13 +70,13 @@ update sys._tables
 		and schema_id = (select id from sys.schemas where name = 'sys');
 
 -- reset history for a particular user
-create procedure sys.querylog_reset()
-external name sql.querylog_reset;
+create procedure sys.querylog_empty()
+external name sql.querylog_empty;
 
 -- manipulate the query logger
-create procedure sys.querylog_init()
-external name sql.querylog_init;
-create procedure sys.querylog_init(threshold smallint)
-external name sql.querylog_init_threshold;
-create procedure sys.querylog_done()
-external name sql.querylog_done;
+create procedure sys.querylog_enable()
+external name sql.querylog_enable;
+create procedure sys.querylog_enable(threshold smallint)
+external name sql.querylog_enable_threshold;
+create procedure sys.querylog_disable()
+external name sql.querylog_disable;

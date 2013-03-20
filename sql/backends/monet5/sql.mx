@@ -568,15 +568,15 @@ space:bat[:oid,:lng]
 address sql_querylog_calls
 comment "Obtain the query log calls";
 
-pattern querylog_reset()
-address sql_querylog_reset;
+pattern querylog_empty()
+address sql_querylog_empty;
 
-command querylog_init()
-address QLOGinit;
-command querylog_init(thres:int)
-address QLOGinitThreshold;
-command querylog_done()
-address QLOGdone;
+command querylog_enable()
+address QLOGenable;
+command querylog_enable(thres:int)
+address QLOGenablehreshold;
+command querylog_disable()
+address QLOGdisable;
 
 
 pattern sysmon_queue()(qtag:bat[:oid,:lng], user:bat[:oid,:str],started:bat[:oid,:timestamp],estimate:bat[:oid,:timestamp],progress:bat[:oid,:int], status:bat[:oid,:str], tag:bat[:oid,:oid], query:bat[:oid,:str])
@@ -1455,7 +1455,7 @@ sql5_export str dump_trace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 sql5_export str sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str sql_querylog_catalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str sql_querylog_calls(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str sql_querylog_reset(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str sql_querylog_empty(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str sql_rowid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str sql_rank_grp(bat *rid, bat *bid, bat *gid, bat *gpe);
 sql5_export str sql_rank(bat *rid, bat *bid);
@@ -6510,14 +6510,14 @@ sql_querylog_calls(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 str
-sql_querylog_reset(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+sql_querylog_empty(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int *ret= (int*) getArgReference(stk,pci,0);
 	(void) cntxt;
 	(void) mb;
 	(void) stk;
 	(void) pci;
-	QLOGreset(ret);
+	QLOGempty(ret);
 	return MAL_SUCCEED;
 }
 

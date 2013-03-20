@@ -1,23 +1,23 @@
 module querylog;
 
-command init(threshold:int)
-address QLOGinitThreshold
+command enable(threshold:int)
+address QLOGenableThreshold
 comment "Turn on the query logger";
 
-command init()
-address QLOGinit
+command enable()
+address QLOGenable
 comment "Turn on the query logger";
 
-command done()
-address QLOGdone
+command disable()
+address QLOGdisable
 comment "Turn off the query logger";
 
 command isset():int
 address QLOGissetFcn
 comment "Return status of query logger";
 
-command reset()
-address QLOGreset
+command empty()
+address QLOGempty
 comment "Clear the query log tables";
 
 pattern define(q:str, pipe:str, optimize:lng, usr:str, tick:timestamp):oid
