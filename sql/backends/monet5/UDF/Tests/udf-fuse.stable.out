@@ -44,7 +44,7 @@ end s0_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 73 # length
+% 67 # length
 function user.s1_1{autoCommit=true}(A0:sht,A1:sht):void;
     X_4 := udf.fuse(A0,A1);
     sql.exportValue(1,".","fuse_single_value","int",32,0,6,X_4,"");
@@ -59,7 +59,7 @@ end s1_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 79 # length
+% 73 # length
 function user.s2_1{autoCommit=true}(A0:int,A1:int):void;
     X_4 := udf.fuse(A0,A1);
     sql.exportValue(1,".","fuse_single_value","bigint",64,0,6,X_4,"");
@@ -92,7 +92,7 @@ end s2_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 81 # length
+% 75 # length
 function user.s5_1{autoCommit=true}():void;
     X_2 := sql.mvc();
     X_3:bat[:oid,:oid]  := sql.tid(X_2,"sys","udf_fuse");
@@ -116,7 +116,7 @@ end s5_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 81 # length
+% 75 # length
 function user.s6_1{autoCommit=true}():void;
     X_2 := sql.mvc();
     X_3:bat[:oid,:oid]  := sql.tid(X_2,"sys","udf_fuse");
@@ -140,7 +140,7 @@ end s6_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 81 # length
+% 75 # length
 function user.s7_1{autoCommit=true}():void;
     X_2 := sql.mvc();
     X_3:bat[:oid,:oid]  := sql.tid(X_2,"sys","udf_fuse");

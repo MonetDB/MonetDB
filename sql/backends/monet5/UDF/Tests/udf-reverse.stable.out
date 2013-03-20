@@ -48,7 +48,7 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 80 # length
+% 74 # length
 function user.s0_1{autoCommit=true}(A0:str):void;
     X_3 := udf.reverse(A0);
     sql.exportValue(1,".","reverse_single_value","clob",0,0,4,X_3,"");
@@ -81,7 +81,7 @@ end s0_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 85 # length
+% 79 # length
 function user.s3_1{autoCommit=true}():void;
     X_2 := sql.mvc();
     X_3:bat[:oid,:oid]  := sql.tid(X_2,"sys","udf_reverse");
