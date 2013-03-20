@@ -60,7 +60,7 @@ returns table(
 )
 external name sql.querylog_calls;
 
-create view sys.querylog.history as
+create view sys.history as
 select qd.*, ql."start",ql."stop", ql.arguments, ql.tuples, ql.run, ql.ship, ql.cpu, ql.space, ql.io 
 from sys.querylog_catalog() qd, sys.querylog_calls() ql
 where qd.id = ql.id and qd.owner = user;
