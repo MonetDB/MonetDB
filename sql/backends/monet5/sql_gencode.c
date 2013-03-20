@@ -2408,7 +2408,6 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 	{
 		char *t;
 		InstrPtr q;
-		lng Toptimize = 0;
 
 		if ( be->q && be->q->codestring) {
 			t = GDKstrdup(  be->q->codestring);
@@ -2421,7 +2420,6 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 		q->token = REMsymbol;	// will be patched
 		q = pushStr(mb, q, t);
 		q = pushStr(mb, q, pipe= initSQLoptimizer());
-		(void) pushLng(mb, q, Toptimize);
 		m->Tparse = 0;
 		GDKfree(pipe);
 	}

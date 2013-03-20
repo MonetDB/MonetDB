@@ -20,7 +20,7 @@ command empty()
 address QLOGempty
 comment "Clear the query log tables";
 
-pattern define(q:str, pipe:str, optimize:lng, usr:str, tick:timestamp):oid
+pattern define(q:str, pipe:str, usr:str, tick:timestamp):oid
 address QLOGdefine
 comment "Add a new query call to the query log";
 

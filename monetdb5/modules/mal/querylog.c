@@ -296,9 +296,8 @@ QLOGdefine(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	oid *ret = (oid*) getArgReference(stk,pci,0);
 	str *q = (str*) getArgReference(stk,pci,1);
 	str *pipe = (str*) getArgReference(stk,pci,2);
-	lng *optimize = (lng*) getArgReference(stk,pci,3);
-	str  *usr = (str*) getArgReference(stk,pci,4);
-	lng *tick = (lng*) getArgReference(stk,pci,5);
+	str  *usr = (str*) getArgReference(stk,pci,3);
+	lng *tick = (lng*) getArgReference(stk,pci,4);
 	oid o;
 
 	(void) cntxt;
@@ -311,7 +310,7 @@ QLOGdefine(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		QLOG_cat_query = BUNappend(QLOG_cat_query,*q,FALSE);
 		QLOG_cat_pipe = BUNappend(QLOG_cat_pipe,*pipe,FALSE);
 		QLOG_cat_mal = BUNappend(QLOG_cat_mal,&mb->stop,FALSE);
-		QLOG_cat_optimize = BUNappend(QLOG_cat_optimize,optimize,FALSE);
+		QLOG_cat_optimize = BUNappend(QLOG_cat_optimize,&mb->optimize,FALSE);
 		QLOG_cat_user = BUNappend(QLOG_cat_user,*usr,FALSE);
 		QLOG_cat_defined = BUNappend(QLOG_cat_defined,tick,FALSE);
 	}

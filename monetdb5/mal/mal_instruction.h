@@ -146,6 +146,7 @@ typedef struct MALBLK {
 	sht trap;					/* call debugger when called */
 	lng runtime;					/* average execution time of block in ticks */
 	int calls;					/* number of calls */
+	lng optimize;				/* total optimizer time */
 } *MalBlkPtr, MalBlkRecord;
 
 /* Allocation of space assumes a rather exotic number of

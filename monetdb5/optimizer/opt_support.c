@@ -268,6 +268,7 @@ optimizeMALBlock(Client cntxt, MalBlkPtr mb)
 	int qot = 0;
 	str msg = MAL_SUCCEED;
 	int cnt = 0;
+	lng clk = GDKusec();
 
 	optimizerInit();
 	/* assume the type and flow have been checked already */
@@ -300,6 +301,7 @@ optimizeMALBlock(Client cntxt, MalBlkPtr mb)
 			}
 		}
 	} while (qot && cnt++ < mb->stop);
+	mb->optimize= GDKusec() - clk;
 	if (cnt >= mb->stop)
 		throw(MAL, "optimizer.MALoptimizer", OPTIMIZER_CYCLE);
 	return 0;
