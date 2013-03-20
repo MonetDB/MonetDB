@@ -2340,13 +2340,20 @@ rel2bin_select( mvc *sql, sql_rel *rel, list *refs)
 		if (!sub) 
 			return NULL;	
 		sub = row2cols(sql, sub);
-	} else {
-		predicate = rel2bin_predicate(sql);
 	}
+	if (!sub && !predicate) 
+		predicate = rel2bin_predicate(sql);
+	else if (!predicate)
+		predicate = stmt_const(sql->sa, bin_first_column(sql->sa, sub), stmt_bool(sql->sa, 1));
 	if (!rel->exps->h) {
 		if (sub)
 			return sub;
 		return predicate;
+	}
+	if (!sub && predicate) {
+		list *l = sa_list(sql->sa);
+		append(l, predicate);
+		sub = stmt_list(sql->sa, l);
 	}
 	/* handle possible index lookups */
 	/* expressions are in index order ! */
@@ -2368,10 +2375,8 @@ rel2bin_select( mvc *sql, sql_rel *rel, list *refs)
 			assert(0);
 			return NULL;
 		}
-		if (s->nrcols == 0){ 
-			if (!predicate) 
-				predicate = rel2bin_predicate(sql);
-			predicate = stmt_uselect(sql->sa, predicate, s, cmp_equal, NULL);
+		if (s->nrcols == 0){
+			sel = stmt_uselect(sql->sa, predicate, s, cmp_equal, sel);
 		} else if (e->type != e_cmp) {
 			sel = stmt_uselect(sql->sa, s, stmt_bool(sql->sa, 1), cmp_equal, NULL);
 		} else {
@@ -2379,14 +2384,6 @@ rel2bin_select( mvc *sql, sql_rel *rel, list *refs)
 		}
 	}
 
-	if (predicate && sel) {
-		sel = stmt_reverse(sql->sa, sel);
-		sel = stmt_join(sql->sa, sel, predicate, cmp_all);
-		sel = stmt_result(sql->sa, sel, 0);
-		predicate = NULL;
-		if (!sub)
-			predicate = sel;
-	}
 	/* construct relation */
 	l = sa_list(sql->sa);
 	if (sub && sel) {
@@ -2399,22 +2396,6 @@ rel2bin_select( mvc *sql, sql_rel *rel, list *refs)
 				col = stmt_project(sql->sa, sel, col);
 			list_append(l, col);
 		}
-	} else if (sub && predicate) {
-		stmt *h = NULL;
-		n = sub->op4.lval->h;
-		h = stmt_join(sql->sa,  column(sql->sa, n->data), predicate, cmp_all);
-		h = stmt_result(sql->sa, h, 0);
-		for( n = sub->op4.lval->h; n; n = n->next ) {
-			stmt *col = n->data;
-	
-			if (col->nrcols == 0) /* constant */
-				col = stmt_const(sql->sa, h, col);
-			else
-				col = stmt_project(sql->sa, h, col);
-			list_append(l, col);
-		}
-	} else if (predicate) {
-		list_append(l, predicate);
 	}
 	return stmt_list(sql->sa, l);
 }

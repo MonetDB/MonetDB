@@ -29,17 +29,17 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 117 # length
+% 111 # length
 function user.s0_1(A0:str):void;
     X_2 := sql.mvc();
     X_6 := sql.bind(X_2,"sys","functions","name",0);
     X_3:bat[:oid,:oid]  := sql.tid(X_2,"sys","functions");
-    X_49 := algebra.likesubselect(X_6,X_3,A0,"",false);
+    X_48 := algebra.likesubselect(X_6,X_3,A0,"",false);
     (X_9,r1_9) := sql.bind(X_2,"sys","functions","name",2);
-    X_50 := algebra.likesubselect(r1_9,A0,"",false);
+    X_49 := algebra.likesubselect(r1_9,A0,"",false);
     X_12 := sql.bind(X_2,"sys","functions","name",1);
-    X_51 := algebra.likesubselect(X_12,X_3,A0,"",false);
-    X_15 := sql.subdelta(X_49,X_9,X_50,X_51);
+    X_50 := algebra.likesubselect(X_12,X_3,A0,"",false);
+    X_15 := sql.subdelta(X_48,X_9,X_49,X_50);
     X_17 := sql.projectdelta(X_15,X_6,X_9,r1_9,X_12);
     X_18 := sql.bind(X_2,"sys","functions","func",0);
     (X_20,r1_28) := sql.bind(X_2,"sys","functions","func",2);
@@ -55,17 +55,17 @@ end s0_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 121 # length
+% 115 # length
 function user.s1_1(A0:str):void;
     X_2 := sql.mvc();
     X_6 := sql.bind(X_2,"sys","functions","name",0);
     X_3:bat[:oid,:oid]  := sql.tid(X_2,"sys","functions");
-    X_49 := algebra.likesubselect(X_6,X_3,A0,"",true);
+    X_48 := algebra.likesubselect(X_6,X_3,A0,"",true);
     (X_9,r1_9) := sql.bind(X_2,"sys","functions","name",2);
-    X_50 := algebra.likesubselect(r1_9,A0,"",true);
+    X_49 := algebra.likesubselect(r1_9,A0,"",true);
     X_12 := sql.bind(X_2,"sys","functions","name",1);
-    X_51 := algebra.likesubselect(X_12,X_3,A0,"",true);
-    X_15 := sql.subdelta(X_49,X_9,X_50,X_51);
+    X_50 := algebra.likesubselect(X_12,X_3,A0,"",true);
+    X_15 := sql.subdelta(X_48,X_9,X_49,X_50);
     X_17 := sql.projectdelta(X_15,X_6,X_9,r1_9,X_12);
     X_18 := sql.bind(X_2,"sys","functions","func",0);
     (X_20,r1_28) := sql.bind(X_2,"sys","functions","func",2);
@@ -81,17 +81,17 @@ end s1_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 118 # length
+% 112 # length
 function user.s2_1(A0:str):void;
     X_2 := sql.mvc();
     X_6 := sql.bind(X_2,"sys","functions","name",0);
     X_3:bat[:oid,:oid]  := sql.tid(X_2,"sys","functions");
-    X_49 := algebra.ilikesubselect(X_6,X_3,A0,"",false);
+    X_48 := algebra.ilikesubselect(X_6,X_3,A0,"",false);
     (X_9,r1_9) := sql.bind(X_2,"sys","functions","name",2);
-    X_50 := algebra.ilikesubselect(r1_9,A0,"",false);
+    X_49 := algebra.ilikesubselect(r1_9,A0,"",false);
     X_12 := sql.bind(X_2,"sys","functions","name",1);
-    X_51 := algebra.ilikesubselect(X_12,X_3,A0,"",false);
-    X_15 := sql.subdelta(X_49,X_9,X_50,X_51);
+    X_50 := algebra.ilikesubselect(X_12,X_3,A0,"",false);
+    X_15 := sql.subdelta(X_48,X_9,X_49,X_50);
     X_17 := sql.projectdelta(X_15,X_6,X_9,r1_9,X_12);
     X_18 := sql.bind(X_2,"sys","functions","func",0);
     (X_20,r1_28) := sql.bind(X_2,"sys","functions","func",2);
@@ -107,17 +107,17 @@ end s2_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 122 # length
+% 116 # length
 function user.s3_1(A0:str):void;
     X_2 := sql.mvc();
     X_6 := sql.bind(X_2,"sys","functions","name",0);
     X_3:bat[:oid,:oid]  := sql.tid(X_2,"sys","functions");
-    X_49 := algebra.ilikesubselect(X_6,X_3,A0,"",true);
+    X_48 := algebra.ilikesubselect(X_6,X_3,A0,"",true);
     (X_9,r1_9) := sql.bind(X_2,"sys","functions","name",2);
-    X_50 := algebra.ilikesubselect(r1_9,A0,"",true);
+    X_49 := algebra.ilikesubselect(r1_9,A0,"",true);
     X_12 := sql.bind(X_2,"sys","functions","name",1);
-    X_51 := algebra.ilikesubselect(X_12,X_3,A0,"",true);
-    X_15 := sql.subdelta(X_49,X_9,X_50,X_51);
+    X_50 := algebra.ilikesubselect(X_12,X_3,A0,"",true);
+    X_15 := sql.subdelta(X_48,X_9,X_49,X_50);
     X_17 := sql.projectdelta(X_15,X_6,X_9,r1_9,X_12);
     X_18 := sql.bind(X_2,"sys","functions","func",0);
     (X_20,r1_28) := sql.bind(X_2,"sys","functions","func",2);
@@ -153,19 +153,19 @@ end s3_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 121 # length
+% 115 # length
 function user.s4_1(A0:str):void;
     X_2 := sql.mvc();
     X_6 := sql.bind(X_2,"sys","functions","name",0);
     X_3:bat[:oid,:oid]  := sql.tid(X_2,"sys","functions");
-    X_52 := calc.+("%",A0);
-    X_53 := calc.+(X_52,"%");
-    X_56 := algebra.likesubselect(X_6,X_3,X_53,"",false,false);
+    X_51 := calc.+("%",A0);
+    X_52 := calc.+(X_51,"%");
+    X_55 := algebra.likesubselect(X_6,X_3,X_52,"",false,false);
     (X_9,r1_9) := sql.bind(X_2,"sys","functions","name",2);
-    X_57 := algebra.likesubselect(r1_9,X_53,"",false,false);
+    X_56 := algebra.likesubselect(r1_9,X_52,"",false,false);
     X_12 := sql.bind(X_2,"sys","functions","name",1);
-    X_58 := algebra.likesubselect(X_12,X_3,X_53,"",false,false);
-    X_14 := sql.subdelta(X_56,X_9,X_57,X_58);
+    X_57 := algebra.likesubselect(X_12,X_3,X_52,"",false,false);
+    X_14 := sql.subdelta(X_55,X_9,X_56,X_57);
     X_15 := sql.projectdelta(X_14,X_6,X_9,r1_9,X_12);
     X_16 := sql.bind(X_2,"sys","functions","func",0);
     (X_18,r1_35) := sql.bind(X_2,"sys","functions","func",2);
@@ -181,19 +181,19 @@ end s4_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 125 # length
+% 119 # length
 function user.s5_1(A0:str):void;
     X_2 := sql.mvc();
     X_6 := sql.bind(X_2,"sys","functions","name",0);
     X_3:bat[:oid,:oid]  := sql.tid(X_2,"sys","functions");
-    X_52 := calc.+("%",A0);
-    X_53 := calc.+(X_52,"%");
-    X_57 := algebra.likesubselect(X_6,X_3,X_53,"",false,true);
+    X_51 := calc.+("%",A0);
+    X_52 := calc.+(X_51,"%");
+    X_56 := algebra.likesubselect(X_6,X_3,X_52,"",false,true);
     (X_9,r1_9) := sql.bind(X_2,"sys","functions","name",2);
-    X_58 := algebra.likesubselect(r1_9,X_53,"",false,true);
+    X_57 := algebra.likesubselect(r1_9,X_52,"",false,true);
     X_12 := sql.bind(X_2,"sys","functions","name",1);
-    X_59 := algebra.likesubselect(X_12,X_3,X_53,"",false,true);
-    X_14 := sql.subdelta(X_57,X_9,X_58,X_59);
+    X_58 := algebra.likesubselect(X_12,X_3,X_52,"",false,true);
+    X_14 := sql.subdelta(X_56,X_9,X_57,X_58);
     X_15 := sql.projectdelta(X_14,X_6,X_9,r1_9,X_12);
     X_16 := sql.bind(X_2,"sys","functions","func",0);
     (X_18,r1_35) := sql.bind(X_2,"sys","functions","func",2);
@@ -209,19 +209,19 @@ end s5_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 122 # length
+% 116 # length
 function user.s6_1(A0:str):void;
     X_2 := sql.mvc();
     X_6 := sql.bind(X_2,"sys","functions","name",0);
     X_3:bat[:oid,:oid]  := sql.tid(X_2,"sys","functions");
-    X_52 := calc.+("%",A0);
-    X_53 := calc.+(X_52,"%");
-    X_57 := algebra.likesubselect(X_6,X_3,X_53,"",true,false);
+    X_51 := calc.+("%",A0);
+    X_52 := calc.+(X_51,"%");
+    X_56 := algebra.likesubselect(X_6,X_3,X_52,"",true,false);
     (X_9,r1_9) := sql.bind(X_2,"sys","functions","name",2);
-    X_58 := algebra.likesubselect(r1_9,X_53,"",true,false);
+    X_57 := algebra.likesubselect(r1_9,X_52,"",true,false);
     X_12 := sql.bind(X_2,"sys","functions","name",1);
-    X_59 := algebra.likesubselect(X_12,X_3,X_53,"",true,false);
-    X_14 := sql.subdelta(X_57,X_9,X_58,X_59);
+    X_58 := algebra.likesubselect(X_12,X_3,X_52,"",true,false);
+    X_14 := sql.subdelta(X_56,X_9,X_57,X_58);
     X_15 := sql.projectdelta(X_14,X_6,X_9,r1_9,X_12);
     X_16 := sql.bind(X_2,"sys","functions","func",0);
     (X_18,r1_35) := sql.bind(X_2,"sys","functions","func",2);
@@ -237,19 +237,19 @@ end s6_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 126 # length
+% 120 # length
 function user.s7_1(A0:str):void;
     X_2 := sql.mvc();
     X_6 := sql.bind(X_2,"sys","functions","name",0);
     X_3:bat[:oid,:oid]  := sql.tid(X_2,"sys","functions");
-    X_52 := calc.+("%",A0);
-    X_53 := calc.+(X_52,"%");
-    X_56 := algebra.likesubselect(X_6,X_3,X_53,"",true,true);
+    X_51 := calc.+("%",A0);
+    X_52 := calc.+(X_51,"%");
+    X_55 := algebra.likesubselect(X_6,X_3,X_52,"",true,true);
     (X_9,r1_9) := sql.bind(X_2,"sys","functions","name",2);
-    X_57 := algebra.likesubselect(r1_9,X_53,"",true,true);
+    X_56 := algebra.likesubselect(r1_9,X_52,"",true,true);
     X_12 := sql.bind(X_2,"sys","functions","name",1);
-    X_58 := algebra.likesubselect(X_12,X_3,X_53,"",true,true);
-    X_14 := sql.subdelta(X_56,X_9,X_57,X_58);
+    X_57 := algebra.likesubselect(X_12,X_3,X_52,"",true,true);
+    X_14 := sql.subdelta(X_55,X_9,X_56,X_57);
     X_15 := sql.projectdelta(X_14,X_6,X_9,r1_9,X_12);
     X_16 := sql.bind(X_2,"sys","functions","func",0);
     (X_18,r1_35) := sql.bind(X_2,"sys","functions","func",2);
