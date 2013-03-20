@@ -170,7 +170,7 @@ end s2_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 78 # length
+% 77 # length
 function user.s3_1{autoCommit=true}():void;
     X_2 := sql.mvc();
     X_3:bat[:oid,:oid]  := sql.tid(X_2,"sys","oblo");
@@ -242,7 +242,7 @@ end s5_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 81 # length
+% 80 # length
 function user.s6_1{autoCommit=true}():void;
     X_2 := sql.mvc();
     X_3:bat[:oid,:oid]  := sql.tid(X_2,"sys","oblo");
@@ -262,7 +262,7 @@ end s6_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 90 # length
+% 89 # length
 function user.s7_1{autoCommit=true}():void;
     X_2 := sql.mvc();
     X_3:bat[:oid,:oid]  := sql.tid(X_2,"sys","oblo");
@@ -321,7 +321,7 @@ end s8_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 98 # length
+% 97 # length
 function user.s9_1{autoCommit=true}():void;
     X_2 := sql.mvc();
     X_3:bat[:oid,:oid]  := sql.tid(X_2,"sys","oblo");
