@@ -99,6 +99,9 @@ atom_int( sql_allocator *sa, sql_subtype *tpe, lng val)
 		case TYPE_wrd:
 			a->data.val.wval = (wrd) val;
 			break;
+		case TYPE_oid:
+			a->data.val.oval = (oid) val;
+			break;
 		case TYPE_lng:
 			a->data.val.lval = val;
 			break;
@@ -129,6 +132,9 @@ atom_get_int(atom *a)
 			break;
 		case TYPE_int:
 			r = a->data.val.ival;
+			break;
+		case TYPE_oid:
+			r = a->data.val.oval;
 			break;
 		case TYPE_wrd:
 			r = a->data.val.wval;
@@ -270,6 +276,9 @@ atom2string(sql_allocator *sa, atom *a)
 		break;
 	case TYPE_wrd:
 		sprintf(buf, SSZFMT, a->data.val.wval);
+		break;
+	case TYPE_oid:
+		sprintf(buf, SSZFMT "@0", a->data.val.oval);
 		break;
 	case TYPE_int:
 		sprintf(buf, "%d", a->data.val.ival);
@@ -544,6 +553,7 @@ atom_cast(atom *a, sql_subtype *tp)
 				break;
 			case TYPE_int:
 #if SIZEOF_WRD == SIZEOF_INT
+			case TYPE_oid:
 			case TYPE_wrd:
 #endif
 				if (at->type->localtype == TYPE_bte) 
@@ -555,6 +565,7 @@ atom_cast(atom *a, sql_subtype *tp)
 				break;
 			case TYPE_lng:
 #if SIZEOF_WRD == SIZEOF_LNG
+			case TYPE_oid:
 			case TYPE_wrd:
 #endif
 				if (at->type->localtype == TYPE_bte) 
@@ -592,6 +603,7 @@ atom_cast(atom *a, sql_subtype *tp)
 				break;
 			case TYPE_int:
 #if SIZEOF_WRD == SIZEOF_INT
+			case TYPE_oid:
 			case TYPE_wrd:
 #endif
 				if (at->type->localtype == TYPE_bte) 
@@ -603,6 +615,7 @@ atom_cast(atom *a, sql_subtype *tp)
 				break;
 			case TYPE_lng:
 #if SIZEOF_WRD == SIZEOF_LNG
+			case TYPE_oid:
 			case TYPE_wrd:
 #endif
 				if (at->type->localtype == TYPE_bte) 
@@ -719,6 +732,7 @@ atom_cast(atom *a, sql_subtype *tp)
 				break;
 			case TYPE_int:
 #if SIZEOF_WRD == SIZEOF_INT
+			case TYPE_oid:
 			case TYPE_wrd:
 #endif
 				if (at->type->localtype == TYPE_bte) 
@@ -730,6 +744,7 @@ atom_cast(atom *a, sql_subtype *tp)
 				break;
 			case TYPE_lng:
 #if SIZEOF_WRD == SIZEOF_LNG
+			case TYPE_oid:
 			case TYPE_wrd:
 #endif
 				if (at->type->localtype == TYPE_bte) 

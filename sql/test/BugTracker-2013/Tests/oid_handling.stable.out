@@ -26,11 +26,18 @@ Ready.
 # 20:25:02 >  
 
 #create table oidtable( o oid);
+#insert into oidtable values( 123@0);
+[ 1	]
 #insert into oidtable values (234);
 [ 1	]
+#select * from oidtable where o in (123@0,234);
+% sys.oidtable # table_name
+% o # name
+% oid # type
+% 5 # length
+[ 123@0	]
+[ 234@0	]
 #drop table oidtable;
-#
-THIS NEEDS A PROPER TEST
 
 # 20:25:02 >  
 # 20:25:02 >  "Done."

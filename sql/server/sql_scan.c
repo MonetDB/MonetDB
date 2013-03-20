@@ -721,6 +721,13 @@ number(mvc * c, int cur)
 		if (isdigit(cur))
 			while ((cur = scanner_getc(lc)) != EOF && isdigit(cur)) 
 				;
+		if (cur == '@') {
+			token = OIDNUM;
+			cur = scanner_getc(lc);
+			if (cur == '0')
+				cur = scanner_getc(lc);
+		}
+
 		if (cur == '.') {
 			token = INTNUM;
 	
@@ -1053,7 +1060,7 @@ sqllex(YYSTYPE * yylval, void *parm)
 		mnstr_write(lc->log, lc->rs->buf+pos, lc->rs->pos + lc->yycur - pos, 1);
 
 	/* Don't include literals in the calculation of the key */
-	if (token != STRING && token != sqlINT && token != INTNUM && token != APPROXNUM && token != sqlNULL)
+	if (token != STRING && token != sqlINT && token != OIDNUM && token != INTNUM && token != APPROXNUM && token != sqlNULL)
 		lc->key ^= token;
 	lc->started += (token != EOF);
 	return token;

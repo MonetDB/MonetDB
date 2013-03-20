@@ -460,7 +460,7 @@ int yydebug=1;
 
 /* sql prefixes to avoid name clashes on various architectures */
 %token <sval>
-	IDENT aTYPE ALIAS AGGR AGGR2 RANK sqlINT HEXADECIMAL INTNUM APPROXNUM 
+	IDENT aTYPE ALIAS AGGR AGGR2 RANK sqlINT OIDNUM HEXADECIMAL INTNUM APPROXNUM 
 	USING 
 	GLOBAL CAST CONVERT
 	CHARACTER VARYING LARGE OBJECT VARCHAR CLOB sqlTEXT BINARY sqlBLOB
@@ -3994,6 +3994,37 @@ literal:
 			YYABORT;
 		  } else {
 			$$ = _newAtomNode( atom_int(SA, &t, res));
+		  }
+		}
+ |  OIDNUM
+		{ int err = 0, len = sizeof(lng);
+		  lng value, *p = &value;
+		  sql_subtype t;
+
+		  lngFromStr($1, &len, &p);
+		  if (value == lng_nil)
+		  	err = 2;
+
+		  if (!err) {
+		    if ((value > GDK_lng_min && value <= GDK_lng_max))
+#if SIZEOF_OID == SIZEOF_INT
+		  	  sql_find_subtype(&t, "oid", 31, 0 );
+#else
+		  	  sql_find_subtype(&t, "oid", 63, 0 );
+#endif
+		    else
+			  err = 1;
+		  }
+
+		  if (err) {
+			char *msg = sql_message("\b22003!OID value too large or not a number (%s)", $1);
+
+			yyerror(m, msg);
+			_DELETE(msg);
+			$$ = NULL;
+			YYABORT;
+		  } else {
+		  	$$ = _newAtomNode( atom_int(SA, &t, value));
 		  }
 		}
  |  sqlINT

@@ -28,14 +28,8 @@ stderr of test 'oid_handling` in directory 'sql/test/BugTracker-2013` itself:
 # 20:25:02 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-26643" "--port=34073"
 # 20:25:02 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-26643/.s.monetdb.34073
-QUERY = insert into oidtable values( 123@0);
 
-MAPI  = (monetdb) /var/tmp/mtest-26643/.s.monetdb.34073
-QUERY = select * from oidtable where o in (123@0,234);
-
-
-# 20:25:02 >  
-# 20:25:02 >  "Done."
-# 20:25:02 >  
+# 17:15:17 >  
+# 17:15:17 >  "Done."
+# 17:15:17 >  
 
