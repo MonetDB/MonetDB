@@ -29,7 +29,7 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 123 # length
+% 122 # length
 function user.s0_1(A0:str):void;
     X_2 := sql.mvc();
     X_6 := sql.bind(X_2,"sys","functions","name",0);
@@ -55,7 +55,7 @@ end s0_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 127 # length
+% 126 # length
 function user.s1_1(A0:str):void;
     X_2 := sql.mvc();
     X_6 := sql.bind(X_2,"sys","functions","name",0);
@@ -81,7 +81,7 @@ end s1_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 124 # length
+% 123 # length
 function user.s2_1(A0:str):void;
     X_2 := sql.mvc();
     X_6 := sql.bind(X_2,"sys","functions","name",0);
@@ -107,7 +107,7 @@ end s2_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 128 # length
+% 127 # length
 function user.s3_1(A0:str):void;
     X_2 := sql.mvc();
     X_6 := sql.bind(X_2,"sys","functions","name",0);
@@ -153,7 +153,7 @@ end s3_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 127 # length
+% 126 # length
 function user.s4_1(A0:str):void;
     X_2 := sql.mvc();
     X_6 := sql.bind(X_2,"sys","functions","name",0);
@@ -181,7 +181,7 @@ end s4_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 131 # length
+% 130 # length
 function user.s5_1(A0:str):void;
     X_2 := sql.mvc();
     X_6 := sql.bind(X_2,"sys","functions","name",0);
@@ -209,7 +209,7 @@ end s5_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 128 # length
+% 127 # length
 function user.s6_1(A0:str):void;
     X_2 := sql.mvc();
     X_6 := sql.bind(X_2,"sys","functions","name",0);
@@ -237,7 +237,7 @@ end s6_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 132 # length
+% 131 # length
 function user.s7_1(A0:str):void;
     X_2 := sql.mvc();
     X_6 := sql.bind(X_2,"sys","functions","name",0);

@@ -31,10 +31,9 @@ Ready.
 % .ftf # table_name
 % sch # name
 % varchar # type
-% 8 # length
+% 3 # length
 [ "sys"	]
 [ "tmp"	]
-[ "querylog"	]
 [ "ft"	]
 
 # 15:58:57 >  

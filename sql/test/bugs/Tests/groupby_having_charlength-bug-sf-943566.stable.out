@@ -26,11 +26,9 @@ Ready.
 % sys.s,	sys.,	sys.s # table_name
 % name,	char_length_name,	L1 # name
 % varchar,	int,	wrd # type
-% 8,	1,	2 # length
+% 3,	1,	2 # length
 [ "sys",	3,	10	]
 [ "tmp",	3,	10	]
-[ "querylog",	8,	10	]
-[ "sysmon",	6,	10	]
 
 # 12:48:35 >  
 # 12:48:35 >  Done.
