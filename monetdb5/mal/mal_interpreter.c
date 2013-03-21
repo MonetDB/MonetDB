@@ -380,7 +380,7 @@ str runMAL(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr env)
 	if (stk && stk != env) {
 		GDKfree(stk);
 	}
-	if (cntxt->qtimeout && time(NULL) - stk->clock.tv_usec > cntxt->qtimeout)
+	if (cntxt->qtimeout && GDKms() > cntxt->qtimeout)
 		throw(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
 	return ret;
 }
@@ -471,7 +471,7 @@ callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[], char debug)
 		throw(MAL, "mal.interpreter", RUNTIME_UNKNOWN_INSTRUCTION);
 	}
 	MT_sema_up(&mal_parallelism,"callMAL");
-	if (cntxt->qtimeout && time(NULL) - stk->clock.tv_usec > cntxt->qtimeout)
+	if (cntxt->qtimeout && GDKms() > cntxt->qtimeout)
 		throw(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
 	return ret;
 }
@@ -544,7 +544,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 
 		runtimeProfileBegin(cntxt, mb, stk, stkpc, &runtimeProfile, 1);
 		if (pci->recycle > 0)
-			stk->clk = GDKusec();
+			stk->clk = GDKms();
 		if (!RECYCLEentry(cntxt, mb, stk, pci)){
 /* The interpreter loop
  * The interpreter is geared towards execution a MAL procedure together
@@ -702,7 +702,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				runtimeProfileFinish(cntxt, mb);
 				if (pcicaller && garbageControl(getInstrPtr(mb, 0)))
 					garbageCollector(cntxt, mb, stk, TRUE);
-				if (cntxt->qtimeout && time(NULL) - stk->clock.tv_usec > cntxt->qtimeout){
+				if (cntxt->qtimeout && GDKms() > cntxt->qtimeout){
 					ret= createException(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
 					break;
 				}
@@ -717,7 +717,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				w= instruction2str(mb, 0, pci, FALSE);
 				ret = createScriptException(mb, stkpc, MAL, NULL, "unkown operation:%s",w);
 				GDKfree(w);
-				if (cntxt->qtimeout && time(NULL) - stk->clock.tv_usec > cntxt->qtimeout){
+				if (cntxt->qtimeout && GDKms() > cntxt->qtimeout){
 					ret= createException(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
 					break;
 				}
@@ -852,7 +852,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				if (exceptionVar == -1) {
 					runtimeProfileExit(cntxt, mb, stk, pci, &runtimeProfile);
 					runtimeProfileFinish(cntxt, mb);
-					if (cntxt->qtimeout && time(NULL) - stk->clock.tv_usec > cntxt->qtimeout)
+					if (cntxt->qtimeout && GDKms() > cntxt->qtimeout)
 						ret= createException(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
 					stkpc = mb->stop;
 					continue;
@@ -899,7 +899,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 					}
 				}
 				if (stkpc == mb->stop) {
-					if (cntxt->qtimeout && time(NULL) - stk->clock.tv_usec > cntxt->qtimeout){
+					if (cntxt->qtimeout && GDKms() > cntxt->qtimeout){
 						ret= createException(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
 						stkpc = mb->stop;
 					}
@@ -1122,7 +1122,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 		default:
 			stkpc++;
 		}
-		if (cntxt->qtimeout && time(NULL) - stk->clock.tv_usec > cntxt->qtimeout){
+		if (cntxt->qtimeout && GDKms() > cntxt->qtimeout){
 			ret= createException(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
 			stkpc= mb->stop;
 		}

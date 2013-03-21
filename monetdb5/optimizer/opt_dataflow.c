@@ -139,8 +139,10 @@ dflowAssignConflict(InstrPtr p, int pc, int *assigned, int *eolife)
 	for(j=0; j<p->retc; j++)
 		if ( assigned[getArg(p,j)] )
 			return 1;
-	if ( isUpdateInstruction(p) && eolife[getArg(p,p->retc)] != pc )
-		return 1;
+	/* first argument of updates collect side-effects */
+	if ( isUpdateInstruction(p) ){
+		return eolife[getArg(p,p->retc)] != pc;
+	}
 	return 0;
 }
 

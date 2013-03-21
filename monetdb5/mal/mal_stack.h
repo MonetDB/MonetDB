@@ -58,8 +58,8 @@ typedef struct MALSTK {
 #ifdef HAVE_TIMES
     struct tms timer;   /* timing information */
 #endif
-	struct timeval clock;		/* seconds + microsecs since epoch */
-	lng clk;			/* micro seconds */
+	struct timeval clock;		/* time this stack was created */
+	lng clk;			/* micro seconds, used by ? */
 	char cmd;		/* debugger and runtime communication */
 	char status;	/* srunning 'R' uspended 'S', quiting 'Q' */
 	int pcup;		/* saved pc upon a recursive all */

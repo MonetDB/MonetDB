@@ -1333,7 +1333,6 @@ void profilerHeartbeatEvent(str msg)
 #endif
 	struct timeval tv;
 	time_t clock;
-	//time_t prevclock=0;
 #ifdef HAVE_TIMES
 	struct tms newTms;
 	struct tms prevtimer;
@@ -1346,7 +1345,6 @@ void profilerHeartbeatEvent(str msg)
 		getrusage(RUSAGE_SELF, &prevUsage);
 #endif
 	gettimeofday(&tv,NULL);
-	//prevclock = (time_t) tv.tv_sec;
 
 	/* without this cast, compilation on Windows fails with
 	 * argument of type "long *" is incompatible with parameter of type "const time_t={__time64_t={__int64}} *"

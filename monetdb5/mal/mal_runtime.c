@@ -132,12 +132,10 @@ runtimeProfileBegin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int stkpc, Runtim
 	
 	prof->stkpc = stkpc;
 	if (stk && mb->profiler != NULL && mb->profiler[stkpc].trace) {
-		MT_lock_set(&mal_delayLock, "sysmon");
 		prof->newclk = stk->clk = GDKusec();
-		gettimeofday(&stk->clock, NULL);
 		mb->profiler[stkpc].clk = 0;
 		mb->profiler[stkpc].ticks = 0;
-		mb->profiler[stkpc].clock = stk->clock;
+		gettimeofday(&mb->profiler[stkpc].clock, NULL);
 		/* emit the instruction upon start as well */
 		profilerEvent(cntxt->idx, mb, stk, stkpc, start);
 #ifdef HAVE_TIMES
@@ -145,7 +143,6 @@ runtimeProfileBegin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int stkpc, Runtim
 		mb->profiler[stkpc].timer = stk->timer;
 #endif
 		mb->profiler[stkpc].clk = prof->newclk;
-		MT_lock_unset(&mal_delayLock, "sysmon");
 	}
 }
 
@@ -173,7 +170,6 @@ runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Runt
 
 	if (stk != NULL && prof->stkpc >= 0 && mb->profiler != NULL && 
 		mb->profiler[stkpc].trace && mb->profiler[stkpc].clk) {
-		MT_lock_set(&mal_contextLock, "sysmon");
 		gettimeofday(&mb->profiler[stkpc].clock, NULL);
 		mb->profiler[stkpc].counter++;
 		mb->profiler[stkpc].ticks = GDKusec() - prof->newclk;
@@ -184,7 +180,6 @@ runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Runt
 			mb->profiler[stkpc].wbytes = getVolume(stk, pci, 1);
 		}
 		profilerEvent(cntxt->idx, mb, stk, stkpc, 0);
-		MT_lock_unset(&mal_contextLock, "sysmon");
 	}
 }
 
