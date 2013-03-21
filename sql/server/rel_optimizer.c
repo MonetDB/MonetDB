@@ -1325,11 +1325,11 @@ can_push_func(sql_exp *e, sql_rel *rel, int *must)
 
 		if (e->flag == cmp_or || e->flag == cmp_in || e->flag == cmp_notin || get_cmp(e) == cmp_filter) 
 			return 0;
-		return (l->type != e_column && can_push_func(l, rel, &mustl) && (*must = mustl)) || 
-	               (!f && r->type != e_column && can_push_func(r, rel, &mustr) && (*must = mustr)) || 
+		return ((l->type == e_column || can_push_func(l, rel, &mustl)) && (*must = mustl)) || 
+	               (!f && (r->type == e_column || can_push_func(r, rel, &mustr)) && (*must = mustr)) || 
 		       (f && 
-	                r->type != e_column && can_push_func(r, rel, &mustr) && 
-			f->type != e_column && can_push_func(f, rel, &mustf) && (*must = (mustr || mustf)));
+	               (r->type == e_column || can_push_func(r, rel, &mustr)) && 
+		       (f->type == e_column || can_push_func(f, rel, &mustf)) && (*must = (mustr || mustf)));
 	}
 	case e_convert:
 		return can_push_func(e->l, rel, must);
@@ -1447,7 +1447,7 @@ rel_push_func_down(int *changes, mvc *sql, sql_rel *rel)
 								append(r->exps, ne);
 							else
 								append(l->exps, ne);
-							ne = exp_column(sql->sa, exp_relname(ne), exp_name(ne), exp_subtype(ne), ne->card, has_nil(ne), is_intern(ne));
+							ne = exp_column(sql->sa, NULL, exp_name(ne), exp_subtype(ne), ne->card, has_nil(ne), is_intern(ne));
 							(*changes)++;
 						}
 						e->l = ne;
@@ -1461,7 +1461,7 @@ rel_push_func_down(int *changes, mvc *sql, sql_rel *rel)
 								append(r->exps, ne);
 							else
 								append(l->exps, ne);
-							ne = exp_column(sql->sa, exp_relname(ne), exp_name(ne), exp_subtype(ne), ne->card, has_nil(ne), is_intern(ne));
+							ne = exp_column(sql->sa, NULL, exp_name(ne), exp_subtype(ne), ne->card, has_nil(ne), is_intern(ne));
 							(*changes)++;
 						}
 						e->r = ne;
@@ -1476,7 +1476,7 @@ rel_push_func_down(int *changes, mvc *sql, sql_rel *rel)
 									append(r->exps, ne);
 								else
 									append(l->exps, ne);
-								ne = exp_column(sql->sa, exp_relname(ne), exp_name(ne), exp_subtype(ne), ne->card, has_nil(ne), is_intern(ne));
+								ne = exp_column(sql->sa, NULL, exp_name(ne), exp_subtype(ne), ne->card, has_nil(ne), is_intern(ne));
 								(*changes)++;
 							}
 							e->f = ne;
