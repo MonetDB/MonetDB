@@ -7,3 +7,4 @@ crash-from-optimizer.Bug-3241
 select-view-view.Bug-3245
 stddev-group.Bug-3257
 between.Bug-3259
+correlated_select.Bug-3250
