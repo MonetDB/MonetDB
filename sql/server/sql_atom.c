@@ -278,7 +278,7 @@ atom2string(sql_allocator *sa, atom *a)
 		sprintf(buf, SSZFMT, a->data.val.wval);
 		break;
 	case TYPE_oid:
-		sprintf(buf, SSZFMT "@0", a->data.val.oval);
+		sprintf(buf, OIDFMT "@0", a->data.val.oval);
 		break;
 	case TYPE_int:
 		sprintf(buf, "%d", a->data.val.ival);
