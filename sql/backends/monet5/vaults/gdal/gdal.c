@@ -136,7 +136,7 @@ finish:
 }
 
 
-#define MALLOC_CHECK(tpe, sz) \
+#define MALLOC_CHECK(tpe) \
 { \
 	resI = BATnew(TYPE_void, TYPE_##tpe, pixels); \
 	if (resI == NULL) { \
@@ -154,6 +154,8 @@ GDALloadGreyscaleImage(bat *x, bat *y, bat *intensity, str *fname)
 	int  bidx = 0, bidy = 0, strt = 0, step = 1, rep1 = 1, wid = 0, len = 0;
 	BUN pixels = BUN_NONE;
 	sht bps;
+	int i, j;
+	void *linebuf = NULL;
 	BAT *resX = NULL, *resY = NULL, *resI = NULL;
 	char *errbuf = NULL;
 
@@ -173,31 +175,38 @@ GDALloadGreyscaleImage(bat *x, bat *y, bat *intensity, str *fname)
 	pixels = (BUN)wid * (BUN)len;
 
 	/* Read the pixel intensities from the GDAL file and fill in the BAT */
-	switch (bps/8){ /* sacrifice some storage to avoid values become signed */
+	switch (bps/8){ 
 	case sizeof(bte):
 	{
-		sht *data_sht = NULL;
+		bte *data_bte = NULL;
 
-		MALLOC_CHECK(sht, wid);
-		data_sht = (sht *)Tloc(resI, BUNfirst(resI));
-		
-		GDALRasterIO(hBand, GF_Read, 0, 0, wid, len, data_sht, wid, len, GDT_Byte, 0, 0);
-		break;
-	}
-	case sizeof(sht):
-	{
-		int *data_int = NULL;
+		resI = BATnew(TYPE_void, TYPE_bte, pixels); 
+		linebuf = GDKmalloc(wid); /* buffer for one line of image */
+		if (resI == NULL || linebuf == NULL) { 
+			GDALClose(hDataset); 
+			if (resI) BBPunfix(resI->batCacheid);
+			if (linebuf) GDKfree(linebuf); 
+			return createException(MAL, "gdal.loadimage", MAL_MALLOC_FAIL); 
+		}
+		data_bte = (bte *)Tloc(resI, BUNfirst(resI));
 
-		MALLOC_CHECK(int, wid*2);
-		data_int = (int *)Tloc(resI, BUNfirst(resI));
-		GDALRasterIO(hBand, GF_Read, 0, 0, wid, len, data_int, wid, len, GDT_UInt16, 0, 0);
+		for(i = 0; i < len; i++) {
+			if (GDALRasterIO(hBand, GF_Read, 0, i, wid, 1, linebuf, wid, 1, GDT_Byte, 0, 0) != CE_Failure) {
+				printf("Read line %d\n", i);
+                                for (j = 0; j < wid; j++) 
+                                        data_bte[j*len+i] = ((unsigned char*)linebuf)[j];
+                        }
+                }
 		break;
 	}
 	default:
 		GDALClose(hDataset);
-		return createException(MAL, "gdal.loadimage", "Unexpected BitsPerSample: %d not in {8,16}", bps);
+		return createException(MAL, "gdal.loadimage", "Unexpected BitsPerSample: %d not in {8}", bps);
 	}
 	GDALClose(hDataset);
+	GDKfree(linebuf);
+
+	printf("Constructing bat after reading image.\n");
 
 	BATsetcount(resI, pixels);
 	BATseqbase(resI, 0);
