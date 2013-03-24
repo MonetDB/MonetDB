@@ -2413,12 +2413,14 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 			t = GDKstrdup(  be->q->codestring);
 			while( t && isspace((int) *t) )
 				t++;
-		} else
+		} else {
 			t = GDKstrdup("-- no query");
+		}
 
 		q = newStmt1(mb, "querylog", "define");
 		q->token = REMsymbol;	// will be patched
 		q = pushStr(mb, q, t);
+		GDKfree(t);
 		q = pushStr(mb, q, pipe= initSQLoptimizer());
 		m->Tparse = 0;
 		GDKfree(pipe);
