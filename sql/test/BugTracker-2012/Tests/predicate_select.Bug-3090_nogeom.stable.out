@@ -54,11 +54,11 @@ Ready.
 [ 5104,	"user_role",	2000,	NULL,	0,	true,	0,	false,	0	]
 [ 5107,	"auths",	2000,	NULL,	0,	true,	0,	false,	0	]
 [ 5111,	"privileges",	2000,	NULL,	0,	true,	0,	false,	0	]
-[ 5298,	"history",	5255,	"create view querylog.history as\nselect qd.*, ql.\"start\",ql.\"stop\", ql.arguments, ql.tuples, ql.run, ql.ship, ql.cpu, ql.space, ql.io \nfrom querylog.catalog() qd, querylog.calls() ql\nwhere qd.id = ql.id and qd.owner = user;",	1,	false,	0,	false,	0	]
-[ 5828,	"storagemodelinput",	2000,	NULL,	0,	true,	0,	false,	0	]
-[ 5869,	"tablestoragemodel",	2000,	"-- A summary of the table storage requirement is is available as a table view.\n-- The auxillary column denotes the maximum space if all non-sorted columns\n-- would be augmented with a hash (rare situation)\ncreate view sys.tablestoragemodel\nas select \"schema\",\"table\",max(count) as \"count\",\n\tsum(columnsize) as columnsize,\n\tsum(heapsize) as heapsize,\n\tsum(indices) as indices,\n\tsum(case when sorted = false then 8 * count else 0 end) as auxillary\nfrom sys.storagemodel() group by \"schema\",\"table\";",	1,	true,	0,	false,	0	]
-[ 5891,	"systemfunctions",	2000,	NULL,	0,	true,	0,	false,	0	]
-[ 6000,	"r",	2000,	NULL,	0,	false,	0,	false,	0	]
+[ 5297,	"querylog_history",	2000,	"create view sys.querylog_history as\nselect qd.*, ql.\"start\",ql.\"stop\", ql.arguments, ql.tuples, ql.run, ql.ship, ql.cpu, ql.space, ql.io \nfrom sys.querylog_catalog() qd, sys.querylog_calls() ql\nwhere qd.id = ql.id and qd.owner = user;",	1,	true,	0,	false,	0	]
+[ 5857,	"storagemodelinput",	2000,	NULL,	0,	true,	0,	false,	0	]
+[ 5898,	"tablestoragemodel",	2000,	"-- A summary of the table storage requirement is is available as a table view.\n-- The auxillary column denotes the maximum space if all non-sorted columns\n-- would be augmented with a hash (rare situation)\ncreate view sys.tablestoragemodel\nas select \"schema\",\"table\",max(count) as \"count\",\n\tsum(columnsize) as columnsize,\n\tsum(heapsize) as heapsize,\n\tsum(indices) as indices,\n\tsum(case when sorted = false then 8 * count else 0 end) as auxillary\nfrom sys.storagemodel() group by \"schema\",\"table\";",	1,	true,	0,	false,	0	]
+[ 5920,	"systemfunctions",	2000,	NULL,	0,	true,	0,	false,	0	]
+[ 6029,	"r",	2000,	NULL,	0,	false,	0,	false,	0	]
 
 # 18:53:13 >  
 # 18:53:13 >  "Done."

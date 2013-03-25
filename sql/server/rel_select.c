@@ -4920,6 +4920,8 @@ rel_select_exp(mvc *sql, sql_rel *rel, sql_rel *outer, SelectNode *sn, exp_kind 
 	}
 
 	if (rel) {
+		sql_rel *join = NULL;
+
 		if (rel && sn->groupby) {
 			list *gbe = rel_group_by(sql, rel, sn->groupby, sn->selection, sql_sel );
 
@@ -4935,12 +4937,15 @@ rel_select_exp(mvc *sql, sql_rel *rel, sql_rel *outer, SelectNode *sn, exp_kind 
 
 		/* TODO if ek.card == card_set (IN/EXISTS etc), we could do
 			something less expensive as group by's ! */
-		if (outer && rel->op == op_join && rel->l == outer && ek.card != card_set) {
+		join = rel;
+		if (outer && rel->op == op_select)
+			join = rel->l;
+		if (outer && join->op == op_join && join->l == outer && ek.card != card_set) {
 			node *n;
 			/* correlation expressions */
-			list *ce = list_select(rel->exps, rel, (fcmp) &exp_is_correlation, (fdup)NULL);
+			list *ce = list_select(join->exps, join, (fcmp) &exp_is_correlation, (fdup)NULL);
 
-			if (!ce || list_length(ce) == 0 || check_correlation_exps(ce) != 0) {
+			if (!ce || list_length(ce) == 0 || check_correlation_exps(ce) != 0 || join != rel) {
 				if (ek.card != card_set) {
 					node *n;
 					/* group by on identity */
@@ -4948,7 +4953,7 @@ rel_select_exp(mvc *sql, sql_rel *rel, sql_rel *outer, SelectNode *sn, exp_kind 
 
 					outer_gbexps = rel_projections(sql, outer, NULL, 1, 1);
 					if (!is_project(outer->op))
-						rel->l = outer = rel_project(sql->sa, outer, rel_projections(sql, outer, NULL, 1, 1));
+						join->l = outer = rel_project(sql->sa, outer, rel_projections(sql, outer, NULL, 1, 1));
 					/* find or create identity column */
 					if (find_identity(outer->exps, outer) == NULL) {
 						e = rel_unop_(sql, outer->exps->h->data, NULL, "identity", card_value);
