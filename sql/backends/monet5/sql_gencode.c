@@ -2406,21 +2406,21 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 	// Always keep the SQL query around for monitoring
 	// if (m->history || QLOGisset()) {
 	{
-		char *t;
+		char *t, *tt;
 		InstrPtr q;
 
 		if ( be->q && be->q->codestring) {
-			t = GDKstrdup(  be->q->codestring);
+			tt = t = GDKstrdup(  be->q->codestring);
 			while( t && isspace((int) *t) )
 				t++;
 		} else {
-			t = GDKstrdup("-- no query");
+			tt = t = GDKstrdup("-- no query");
 		}
 
 		q = newStmt1(mb, "querylog", "define");
 		q->token = REMsymbol;	// will be patched
 		q = pushStr(mb, q, t);
-		GDKfree(t);
+		GDKfree(tt);
 		q = pushStr(mb, q, pipe= initSQLoptimizer());
 		m->Tparse = 0;
 		GDKfree(pipe);
