@@ -1690,7 +1690,11 @@ SQLparser(Client c)
 				mb = c->curprg->def;
 				chkProgram(c->fdout, c->nspace, mb);
 				addOptimizerPipe(c, mb, "minimal_pipe");
-				optimizeMALBlock(c, mb);
+				msg = optimizeMALBlock(c, mb);
+				if (msg != MAL_SUCCEED) {
+					sqlcleanup(m, err);
+					goto finalize;
+				}
 				c->curprg->def = mb;
 			} else {
 				err = 1;

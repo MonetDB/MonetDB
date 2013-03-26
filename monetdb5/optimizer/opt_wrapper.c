@@ -39,12 +39,12 @@ All Rights Reserved.
 */
 #include "opt_accumulators.h"
 #include "opt_aliases.h"
-#include "opt_cluster.h"
-#include "opt_coercion.h"
 #include "opt_centipede.h"
 #include "opt_cluster.h"
+#include "opt_coercion.h"
 #include "opt_commonTerms.h"
 #include "opt_compression.h"
+#include "opt_constants.h"
 #include "opt_costModel.h"
 #include "opt_dataflow.h"
 #include "opt_deadcode.h"
@@ -61,12 +61,13 @@ All Rights Reserved.
 #include "opt_mergetable.h"
 #include "opt_mitosis.h"
 #include "opt_multiplex.h"
-#include "opt_origin.h"
 #include "opt_octopus.h"
+#include "opt_origin.h"
 #include "opt_prejoin.h"
 #include "opt_pushranges.h"
-#include "opt_querylog.h"
+#include "opt_pushselect.h"
 #include "opt_qep.h"
+#include "opt_querylog.h"
 #include "opt_recycler.h"
 #include "opt_reduce.h"
 #include "opt_remap.h"
@@ -74,7 +75,6 @@ All Rights Reserved.
 #include "opt_reorder.h"
 #include "opt_statistics.h"
 #include "opt_strengthReduction.h"
-#include "opt_pushselect.h"
 
 struct{
 	str nme;
@@ -87,15 +87,17 @@ struct{
 	{"coercions", &OPTcoercionImplementation},
 	{"commonTerms", &OPTcommonTermsImplementation},
 	{"compression", &OPTcompressionImplementation},
+	{"constants", &OPTconstantsImplementation},
 	{"costModel", &OPTcostModelImplementation},
 	{"dataflow", &OPTdataflowImplementation},
 	{"deadcode", &OPTdeadcodeImplementation},
 	{"dictionary", &OPTdictionaryImplementation},
+	{"dumpQEP", &OPTdumpQEPImplementation},
 	{"emptySet", &OPTemptySetImplementation},
 	{"evaluate", &OPTevaluateImplementation},
 	{"factorize", &OPTfactorizeImplementation},
-	{"groups", &OPTgroupsImplementation},
 	{"garbageCollector", &OPTgarbageCollectorImplementation},
+	{"groups", &OPTgroupsImplementation},
 	{"inline", &OPTinlineImplementation},
 	{"joinPath", &OPTjoinPathImplementation},
 	{"mapreduce", &OPTmapreduceImplementation},
@@ -107,15 +109,14 @@ struct{
 	{"origin", &OPToriginImplementation},
 	{"prejoin", &OPTprejoinImplementation},
 	{"pushranges", &OPTpushrangesImplementation},
+	{"pushselect", &OPTpushselectImplementation},
 	{"querylog", &OPTquerylogImplementation},
-	{"dumpQEP", &OPTdumpQEPImplementation},
 	{"recycle", &OPTrecyclerImplementation},
 	{"reduce", &OPTreduceImplementation},
 	{"remap", &OPTremapImplementation},
 	{"remoteQueries", &OPTremoteQueriesImplementation},
 	{"reorder", &OPTreorderImplementation},
 	{"strengthReduction", &OPTstrengthReductionImplementation},
-	{"pushselect", &OPTpushselectImplementation},
 	{0,0}
 };
 opt_export str OPTwrapper(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
