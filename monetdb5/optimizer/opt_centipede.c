@@ -57,6 +57,7 @@ OPTexecController(Client cntxt, MalBlkPtr mb, MalBlkPtr pmb, Slices *slices, oid
 	char nme[BUFSIZ], *plan, *stub;
 	int barrier, x, i, j, k, *alias, nrpack;
 	InstrPtr ret, p, q, *pack;
+	str msg = 0;
 
 	/* define the query controller */
 	snprintf(nme, BUFSIZ, "%s_plan"OIDFMT, getFunctionId( getInstrPtr(mb,0)), plantag);
@@ -244,7 +245,14 @@ OPTexecController(Client cntxt, MalBlkPtr mb, MalBlkPtr pmb, Slices *slices, oid
 
 	pushEndInstruction(cmb);
 
-	optimizeMALBlock(cntxt, cmb);
+	msg = optimizeMALBlock(cntxt, cmb);
+	if (msg != MAL_SUCCEED) {
+		showScriptException(cntxt->fdout, cmb, 0, MAL, "%s", msg);
+		GDKfree(alias);
+		GDKfree(pack);
+		return 0;
+	}
+
 	chkProgram(cntxt->fdout, cntxt->nspace, cmb);
 	GDKfree(alias);
 	GDKfree(pack);

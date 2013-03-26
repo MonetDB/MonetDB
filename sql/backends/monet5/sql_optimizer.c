@@ -261,6 +261,7 @@ addQueryToCache(Client c)
 	mvc *m;
 	ValRecord *val;
 	backend *be;
+	str msg = 0;
 
 	be = (backend *) c->sqlcontext;
 	assert( be && be->mvc ); 	/* SQL clients should always have their state set */
@@ -294,7 +295,12 @@ addQueryToCache(Client c)
 	SQLgetStatistics(c,m,mb);
 	if ( m->emod & mod_debug )
 		addtoMalBlkHistory(mb,"getStatistics");
-	optimizeMALBlock(c,mb);
+
+	msg = optimizeMALBlock(c,mb);
+	if (msg != MAL_SUCCEED) {
+		showScriptException(c->fdout, mb, 0, MAL, "%s", msg);
+		return;
+	}
 
 	/* time to execute the optimizers */
 	if( c->debug)
