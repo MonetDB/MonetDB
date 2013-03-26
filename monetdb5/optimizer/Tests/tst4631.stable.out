@@ -149,17 +149,17 @@ function user.qry1():void;              #  0 qry1:void := user.qry1() {G}
     V40 := algebra.sort(V39);           # 20 V40:bat[:oid,:bit] := ALGhsort(V39:bat[:oid,:bit]) {G}
     V48 := algebra.join(V34,V31);       # 21 V48:bat[:oid,:bit] := ALGjoin(V34:bat[:oid,:oid], V31:bat[:oid,:bit]) {G}
     V49 := group.refine(V40,V48);       # 22 V49:bat[:oid,:oid] := GRPrefine(V40:bat[:oid,:bit], V48:bat[:oid,:bit]) {G}
-    V50:bat[:oid,:int]  := user.bind("sys","lineitem","l_quantity",0);# 23 V50:bat[:oid,:int] := user.bind(_40:str, _41:str, _49:str, _42:int) {G}
+    V50:bat[:oid,:int]  := user.bind("sys","lineitem","l_quantity",0);# 23 V50:bat[:oid,:int] := user.bind(_2:str, _3:str, _49:str, _5:int) {G}
     V54 := algebra.kdifference(V50,V9); # 24 V54:bat[:oid,:int] := ALGkdiff(V50:bat[:oid,:int], V9:bat[:oid,:oid]) {G}
     V55 := algebra.join(V18,V54);       # 25 V55:bat[:oid,:int] := ALGjoin(V18:bat[:oid,:oid], V54:bat[:oid,:int]) {G}
     V56 := aggr.sum(V55,V32,V34);       # 26 V56:bat[:oid,:lng] := AGGRsum3_lng(V55:bat[:oid,:int], V32:bat[:oid,:oid], V34:bat[:oid,:oid]) {G}
-    V57:bat[:oid,:flt]  := user.bind("sys","lineitem","l_extendedprice",0);# 27 V57:bat[:oid,:flt] := user.bind(_40:str, _41:str, _56:str, _42:int) {G}
+    V57:bat[:oid,:flt]  := user.bind("sys","lineitem","l_extendedprice",0);# 27 V57:bat[:oid,:flt] := user.bind(_2:str, _3:str, _56:str, _5:int) {G}
     V61 := algebra.kdifference(V57,V9); # 28 V61:bat[:oid,:flt] := ALGkdiff(V57:bat[:oid,:flt], V9:bat[:oid,:oid]) {G}
     V62 := algebra.join(V18,V61);       # 29 V62:bat[:oid,:flt] := ALGjoin(V18:bat[:oid,:oid], V61:bat[:oid,:flt]) {G}
     V63 := aggr.sum(V62,V32,V34);       # 30 V63:bat[:oid,:dbl] := AGGRsum3_dbl(V62:bat[:oid,:flt], V32:bat[:oid,:oid], V34:bat[:oid,:oid]) {G}
     V69 := calc.lng(1);                 # 31 V69:lng := CMDvarCONVERT(_67:int) 
     V71 := calc.*(V69,100);             # 32 V71:lng := CMDvarMULsignal(V69:lng, _69:int) 
-    V72:bat[:oid,:flt]  := user.bind("sys","lineitem","l_discount",0);# 33 V72:bat[:oid,:flt] := user.bind(_40:str, _41:str, _71:str, _42:int) {G}
+    V72:bat[:oid,:flt]  := user.bind("sys","lineitem","l_discount",0);# 33 V72:bat[:oid,:flt] := user.bind(_2:str, _3:str, _71:str, _5:int) {G}
     V79 := algebra.kdifference(V72,V9); # 34 V79:bat[:oid,:flt] := ALGkdiff(V72:bat[:oid,:flt], V9:bat[:oid,:oid]) {G}
     V80 := algebra.join(V18,V79);       # 35 V80:bat[:oid,:flt] := ALGjoin(V18:bat[:oid,:oid], V79:bat[:oid,:flt]) {G}
     V81:bat[:oid,:flt]  := mal.multiplex("calc","-",V71,V80);# 36 V81:bat[:oid,:flt] := OPTremapMultiplex(_80:str, _81:str, V71:lng, V80:bat[:oid,:flt]) {G}
@@ -167,7 +167,7 @@ function user.qry1():void;              #  0 qry1:void := user.qry1() {G}
     V85 := aggr.sum(V83,V32,V34);       # 38 V85:bat[:oid,:dbl] := AGGRsum3_dbl(V83:bat[:oid,:flt], V32:bat[:oid,:oid], V34:bat[:oid,:oid]) {G}
     V96:bat[:oid,:flt]  := mal.multiplex("calc","-",V71,V80);# 39 V96:bat[:oid,:flt] := OPTremapMultiplex(_80:str, _81:str, V71:lng, V80:bat[:oid,:flt]) {G}
     V97 := batcalc.*(V62,V96);          # 40 V97:bat[:oid,:flt] := CMDbatMULsignal(V62:bat[:oid,:flt], V96:bat[:oid,:flt]) {G}
-    V100:bat[:oid,:flt]  := user.bind("sys","lineitem","l_tax",0);# 41 V100:bat[:oid,:flt] := user.bind(_73:str, _74:str, _99:str, _75:int) {G}
+    V100:bat[:oid,:flt]  := user.bind("sys","lineitem","l_tax",0);# 41 V100:bat[:oid,:flt] := user.bind(_2:str, _3:str, _99:str, _5:int) {G}
     V104 := algebra.kdifference(V100,V9);# 42 V104:bat[:oid,:flt] := ALGkdiff(V100:bat[:oid,:flt], V9:bat[:oid,:oid]) {G}
     V105 := algebra.join(V18,V104);     # 43 V105:bat[:oid,:flt] := ALGjoin(V18:bat[:oid,:oid], V104:bat[:oid,:flt]) {G}
     V106:bat[:oid,:flt]  := mal.multiplex("calc","+",V71,V105);# 44 V106:bat[:oid,:flt] := OPTremapMultiplex(_80:str, _105:str, V71:lng, V105:bat[:oid,:flt]) {G}
@@ -175,9 +175,9 @@ function user.qry1():void;              #  0 qry1:void := user.qry1() {G}
     V109 := aggr.sum(V108,V32,V34);     # 46 V109:bat[:oid,:dbl] := AGGRsum3_dbl(V108:bat[:oid,:flt], V32:bat[:oid,:oid], V34:bat[:oid,:oid]) {G}
     V117 := aggr.avg(V55,V32,V34);      # 47 V117:bat[:oid,:dbl] := AGGRavg3_dbl(V55:bat[:oid,:int], V32:bat[:oid,:oid], V34:bat[:oid,:oid]) {G}
     V122 := aggr.avg(V62,V32,V34);      # 48 V122:bat[:oid,:dbl] := AGGRavg3_dbl(V62:bat[:oid,:flt], V32:bat[:oid,:oid], V34:bat[:oid,:oid]) {G}
-    V124:bat[:oid,:int]  := mal.multiplex("calc","round",V122,100);# 49 V124:bat[:oid,:int] := OPTremapMultiplex(_122:str, _123:str, V122:bat[:oid,:dbl], _124:int) {G}
+    V124:bat[:oid,:int]  := mal.multiplex("calc","round",V122,100);# 49 V124:bat[:oid,:int] := OPTremapMultiplex(_80:str, _123:str, V122:bat[:oid,:dbl], _69:int) {G}
     V130 := aggr.avg(V80,V32,V34);      # 50 V130:bat[:oid,:dbl] := AGGRavg3_dbl(V80:bat[:oid,:flt], V32:bat[:oid,:oid], V34:bat[:oid,:oid]) {G}
-    V131 := mal.multiplex("calc","round",V130,100);# 51 V131:any := OPTremapMultiplex(_122:str, _123:str, V130:bat[:oid,:dbl], _124:int) {G}
+    V131 := mal.multiplex("calc","round",V130,100);# 51 V131:any := OPTremapMultiplex(_80:str, _123:str, V130:bat[:oid,:dbl], _69:int) {G}
     V132 := aggr.count(V32,V32,V34);    # 52 V132:bat[:oid,:wrd] := AGGRcount3nils(V32:bat[:oid,:oid], V32:bat[:oid,:oid], V34:bat[:oid,:oid]) {G}
 end qry1;                               # 53  
 #optimizer.aliases    actions= 0 time=18 usec 

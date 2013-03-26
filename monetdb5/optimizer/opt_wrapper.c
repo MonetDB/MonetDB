@@ -44,6 +44,7 @@ All Rights Reserved.
 #include "opt_coercion.h"
 #include "opt_commonTerms.h"
 #include "opt_compression.h"
+#include "opt_constants.h"
 #include "opt_costModel.h"
 #include "opt_dataflow.h"
 #include "opt_deadcode.h"
@@ -86,6 +87,7 @@ struct{
 	{"coercions", &OPTcoercionImplementation},
 	{"commonTerms", &OPTcommonTermsImplementation},
 	{"compression", &OPTcompressionImplementation},
+	{"constants", &OPTconstantsImplementation},
 	{"costModel", &OPTcostModelImplementation},
 	{"dataflow", &OPTdataflowImplementation},
 	{"deadcode", &OPTdeadcodeImplementation},
