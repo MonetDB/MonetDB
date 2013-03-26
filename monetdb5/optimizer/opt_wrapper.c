@@ -123,7 +123,7 @@ opt_export str OPTwrapper(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 #define OPTIMIZERDEBUG if (0) 
 
 str OPTwrapper (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
-	str modnme = 0;
+	str modnme = "(NONE)";
 	str fcnnme = 0;
 	str msg= MAL_SUCCEED;
 	Symbol s= NULL;
