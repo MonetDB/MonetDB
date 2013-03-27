@@ -245,7 +245,7 @@ JAQLparser(Client c)
 		if (prg->def->errors) {
 			/* this is bad already, so let's try to make it debuggable */
 			mnstr_printf(out, "!jaqlgencode: generated program contains errors\n");
-			printFunction(out, c->curprg->def, 0, LIST_MAPI);
+			printFunction(out, prg->def, 0, LIST_MAPI);
 			
 			/* restore the state */
 			MSresetInstructions(prg->def, oldstop);
