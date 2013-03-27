@@ -194,6 +194,7 @@ JAQLparser(Client c)
 	j->scanstreameof = 0;
 	j->pos = 0;
 	j->p = NULL;
+	j->time = 0;
 	j->timing.parse = j->timing.optimise = j->timing.gencode = 0L;
 
 	j->timing.parse = GDKusec();
