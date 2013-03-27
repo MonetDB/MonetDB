@@ -53,9 +53,7 @@ GDALtest(int *wid, int *len, str *fname)
 		return createException(MAL, "gdal.test", "Missing GDAL file %s", *fname);
 
 	*len = GDALGetRasterYSize(hDataset);
-        printf("ysize = %d\n", *len);
         *wid = GDALGetRasterXSize(hDataset);
-        printf("xsize = %d\n", *wid);
 
 	GDALClose(hDataset);
 	return msg;
@@ -116,12 +114,9 @@ GDALattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	col = mvc_bind_column(m, cat, "imageid");
 	imid = store_funcs.count_col(col, 1) + 1;
 	len = GDALGetRasterYSize(hDataset);
-        printf("len = %d\n", len);
         wid = GDALGetRasterXSize(hDataset);
-        printf("wid = %d\n", wid);
 	hBand = GDALGetRasterBand(hDataset, 1);
 	bps = GDALGetDataTypeSize(GDALGetRasterDataType(hBand));
-	printf("bps = %d\n", bps);
 
 	snprintf(buf, BUFSIZ, INSCAT, (int)imid, (int)fid, wid, len, bps);
 	msg = SQLstatementIntern(cntxt,&s,"gdal.attach",TRUE,FALSE);
@@ -133,17 +128,6 @@ finish:
 	   }*/
 	GDALClose(hDataset);
 	return msg;
-}
-
-
-#define MALLOC_CHECK(tpe) \
-{ \
-	resI = BATnew(TYPE_void, TYPE_##tpe, pixels); \
-	if (resI == NULL) { \
-		GDALClose(hDataset); \
-		if (resI) BBPunfix(resI->batCacheid); \
-		return createException(MAL, "gdal.loadimage", MAL_MALLOC_FAIL); \
-	} \
 }
 
 str
@@ -165,12 +149,9 @@ GDALloadGreyscaleImage(bat *x, bat *y, bat *intensity, str *fname)
 		return createException(MAL, "gdal.loadimage", "Missing GDAL file %s\n", *fname);
 
 	len = GDALGetRasterYSize(hDataset);
-        printf("len = %d\n", len);
         wid = GDALGetRasterXSize(hDataset);
-        printf("wid = %d\n", wid);
 	hBand = GDALGetRasterBand(hDataset, 1);
         bps = GDALGetDataTypeSize(GDALGetRasterDataType(hBand));
-        printf("bps = %d\n", bps);
 
 	pixels = (BUN)wid * (BUN)len;
 
@@ -178,9 +159,9 @@ GDALloadGreyscaleImage(bat *x, bat *y, bat *intensity, str *fname)
 	switch (bps/8){ 
 	case sizeof(bte):
 	{
-		bte *data_bte = NULL;
+		sht *data_sht = NULL;
 
-		resI = BATnew(TYPE_void, TYPE_bte, pixels); 
+		resI = BATnew(TYPE_void, TYPE_sht, pixels); 
 		linebuf = GDKmalloc(wid); /* buffer for one line of image */
 		if (resI == NULL || linebuf == NULL) { 
 			GDALClose(hDataset); 
@@ -188,13 +169,12 @@ GDALloadGreyscaleImage(bat *x, bat *y, bat *intensity, str *fname)
 			if (linebuf) GDKfree(linebuf); 
 			return createException(MAL, "gdal.loadimage", MAL_MALLOC_FAIL); 
 		}
-		data_bte = (bte *)Tloc(resI, BUNfirst(resI));
+		data_sht = (sht *)Tloc(resI, BUNfirst(resI));
 
 		for(i = 0; i < len; i++) {
 			if (GDALRasterIO(hBand, GF_Read, 0, i, wid, 1, linebuf, wid, 1, GDT_Byte, 0, 0) != CE_Failure) {
-				printf("Read line %d\n", i);
                                 for (j = 0; j < wid; j++) 
-                                        data_bte[j*len+i] = ((unsigned char*)linebuf)[j];
+                                        data_sht[i*wid + j] = ((unsigned char*)linebuf)[j];
                         }
                 }
 		break;
@@ -205,8 +185,6 @@ GDALloadGreyscaleImage(bat *x, bat *y, bat *intensity, str *fname)
 	}
 	GDALClose(hDataset);
 	GDKfree(linebuf);
-
-	printf("Constructing bat after reading image.\n");
 
 	BATsetcount(resI, pixels);
 	BATseqbase(resI, 0);
@@ -219,7 +197,8 @@ GDALloadGreyscaleImage(bat *x, bat *y, bat *intensity, str *fname)
 	/* Manually compute values for the X-dimension, since we know that its
 	 * range is [strt:step:wid] and each of its value must be repeated 'len'
 	 * times with 1 #repeats */
-	errbuf = ARRAYseries_int(&bidx, &strt, &step, &wid, &len, &rep1);
+        /* printf("[GDALloadGreyscaleImage] Building x-dimension with start=%d, step=%d, stop=%d, group=%d, series=%d\n", strt, step, wid, rep1, len); */
+	errbuf = ARRAYseries_int(&bidx, &strt, &step, &wid, &rep1, &len);
 	if (errbuf != MAL_SUCCEED) {
 		BBPdecref(resI->batCacheid, 1); /* undo the BBPkeepref(resI->batCacheid) above */
 		return createException(MAL, "gdal.loadimage", "Failed to create the X-dimension of %s", *fname);
@@ -227,7 +206,8 @@ GDALloadGreyscaleImage(bat *x, bat *y, bat *intensity, str *fname)
 	/* Manually compute values for the Y-dimension, since we know that its
 	 * range is [strt:step:len] and each of its value must be repeated 1 times
 	 * with 'wid' #repeats */
-	errbuf = ARRAYseries_int(&bidy, &strt, &step, &len, &rep1, &wid);
+        /* printf("[GDALloadGreyscaleImage] Building y-dimension with start=%d, step=%d, stop=%d, group=%d, series=%d\n", strt, step, len, wid, rep1); */
+	errbuf = ARRAYseries_int(&bidy, &strt, &step, &len, &wid, &rep1);
 	if (errbuf != MAL_SUCCEED) {
 		BBPdecref(resI->batCacheid, 1); /* undo the BBPkeepref(resI->batCacheid) above */
 		BBPdecref(resX->batCacheid, 1); /* undo the BBPkeepref(resX->batCacheid) by ARRAYseries_int() */
@@ -248,6 +228,7 @@ GDALloadGreyscaleImage(bat *x, bat *y, bat *intensity, str *fname)
 	*x = resX->batCacheid;
 	*y = resY->batCacheid;
 	*intensity = resI->batCacheid;
+
 	return MAL_SUCCEED;
 }
 
@@ -339,7 +320,7 @@ GDALimportImage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	msg = GDALloadGreyscaleImage(&x, &y, &intensity, &fname);
 	if (msg != MAL_SUCCEED)
 		return msg;
-
+	
 	/* associate columns of the image array with the loaded image data */
 	img = mvc_bind_table(m, sch, aname);
 	if (img == NULL)
@@ -359,8 +340,7 @@ GDALimportImage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (col == NULL)
 		return createException(MAL, "gdal.import", "Could not find \"%s\".\"intensity\"\n", aname);
 	store_funcs.append_col(m->session->tr, col, BATdescriptor(intensity), TYPE_bat);
-
-	/* update the GeoTIFF catalog to set status to 1 (loaded) */
+	/* update the GDAL catalog to set status to 1 (loaded) */
 	stat = 1;
 	col = mvc_bind_column(m, fls, "status");
 	if (col == NULL)
