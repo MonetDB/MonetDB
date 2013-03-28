@@ -194,6 +194,7 @@ JAQLparser(Client c)
 	j->scanstreameof = 0;
 	j->pos = 0;
 	j->p = NULL;
+	j->time = 0;
 	j->timing.parse = j->timing.optimise = j->timing.gencode = 0L;
 
 	j->timing.parse = GDKusec();
@@ -244,7 +245,7 @@ JAQLparser(Client c)
 		if (prg->def->errors) {
 			/* this is bad already, so let's try to make it debuggable */
 			mnstr_printf(out, "!jaqlgencode: generated program contains errors\n");
-			printFunction(out, c->curprg->def, 0, LIST_MAPI);
+			printFunction(out, prg->def, 0, LIST_MAPI);
 			
 			/* restore the state */
 			MSresetInstructions(prg->def, oldstop);
