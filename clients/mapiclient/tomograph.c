@@ -1155,7 +1155,7 @@ static void showcolormap(char *filename, int all)
 
 					if (k % 3 == 0)
 						h -= 45;
-					fprintf(f, "set object %d rectangle from %f, %f to %f, %f fillcolor rgb \"%s\" fillstyle solid 0.6\n",
+					fprintf(f, "set object %d rectangle from %f, %f to %f, %f fillcolor rgb \"%s\" fillstyle solid 1.0\n",
 							object++, (double) (k % 3) * w, (double) h - 40, (double) ((k % 3) * w + 0.15 * w), (double) h - 5, clrs[i].col);
 					fprintf(f, "set label %d \"%s.%s \" at %d,%d\n",
 							object++, clrs[i].mod, clrs[i].fcn, (int) ((k % 3) * w + 0.2 * w), h - 15);
