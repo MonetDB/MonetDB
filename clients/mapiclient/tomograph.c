@@ -674,6 +674,8 @@ base_colors[] = {
 /*     1 */	{ 0, 0, "algebra", "project", 0 },
 /*     1 */	{ 0, 0, "algebra", "fetch", 0 },
 /*     1 */	{ 0, 0, "aggr", "max", 0 },
+/*     ? */	{ 0, 0, "aggr", "avg", 0 },
+/*     ? */	{ 0, 0, "aggr", "subavg", 0 },
 /*     0 */	{ 0, 0, 0, 0, 0 }
 };
 
