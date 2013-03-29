@@ -8,3 +8,4 @@ select-view-view.Bug-3245
 stddev-group.Bug-3257
 between.Bug-3259
 correlated_select.Bug-3250
+groupby_on_value_view.Bug-3264
