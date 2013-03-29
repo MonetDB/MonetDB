@@ -456,21 +456,6 @@ function sql_environment{inline}()(name:bat[:oid,:str],value:bat[:oid,:str]);
 	return (name,value) := (name,value);
 end sql_environment;
 
-function clients{inline}()( user:bat[:oid,:str], login:bat[:oid,:str], lastcommand:bat[:oid,:str], actions:bat[:oid,:int], seconds:bat[:oid,:lng]);
-	U:= clients.getUsers();
-	u:= algebra.markH(U);
-	(Z,L):= clients.getLogins();
-	U1:= algebra.join(Z,U);
-	l:= algebra.markH(L);
-	C:= clients.getLastCommand();
-	c:= algebra.markH(C);
-	A:= clients.getActions();
-	a:= algebra.markH(A);
-	T:= clients.getTime();
-	t:= algebra.markH(T);
-	return (U1,l,c,a,t);
-end clients;
-
 function bbp{inline}()( id:bat[:oid,:int], name:bat[:oid,:str], htype:bat[:oid,:str], ttype:bat[:oid,:str], count:bat[:oid,:lng], refcnt:bat[:oid,:int], lrefcnt:bat[:oid,:int], location:bat[:oid,:str], heat:bat[:oid,:int], dirty:bat[:oid,:str], status:bat[:oid,:str], kind:bat[:oid,:str]);
 
 	(ns,iht,itt,icnt,irefcnt,ilrefcnt,ilocation,iheat,idirty,istatus,ikind) := bbp.get();

@@ -26,6 +26,8 @@ Ready.
 
 START TRANSACTION;
 SET SCHEMA "sys";
+create view sys.storage as select * from sys.storage();
+create view sys.storagemodel as select * from sys.storagemodel();
 CREATE TABLE "sys"."tf" (
 	"a" INTEGER
 );

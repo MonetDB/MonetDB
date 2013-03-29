@@ -60,6 +60,21 @@ returns table(
 )
 external name sql.querylog_calls;
 
+-- create table views for convenience
+create view sys.querylog_catalog as select * from sys.querylog_catalog();
+
+update sys._tables
+    set system = true
+    where name = 'querylog_catalog'
+        and schema_id = (select id from sys.schemas where name = 'sys');
+
+create view sys.querylog_calls as select * from sys.querylog_calls();
+
+update sys._tables
+    set system = true
+    where name = 'querylog_calls'
+        and schema_id = (select id from sys.schemas where name = 'sys');
+
 create view sys.querylog_history as
 select qd.*, ql."start",ql."stop", ql.arguments, ql.tuples, ql.run, ql.ship, ql.cpu, ql.space, ql.io 
 from sys.querylog_catalog() qd, sys.querylog_calls() ql
@@ -68,6 +83,11 @@ update sys._tables
 	set system = true
 	where name = 'querylog_history'
 		and schema_id = (select id from sys.schemas where name = 'sys');
+
+update sys._tables
+    set system = true
+    where name = 'querylog_history'
+        and schema_id = (select id from sys.schemas where name = 'sys');
 
 -- reset history for a particular user
 create procedure sys.querylog_empty()

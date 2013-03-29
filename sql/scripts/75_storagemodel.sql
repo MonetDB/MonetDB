@@ -32,6 +32,8 @@ create function sys.storage()
 returns table ("schema" string, "table" string, "column" string, "type" string, location string, "count" bigint, typewidth int, columnsize bigint, heapsize bigint, indices bigint, sorted boolean)
 external name sql.storage;
 
+create view sys.storage as select * from sys.storage();
+
 -- To determine the footprint of an arbitrary database, we first have
 -- to define its schema, followed by an indication of the properties of each column.
 -- A storage model input table for the size prediction is shown below:
@@ -145,7 +147,7 @@ begin
 	I.sorted
 	from sys.storagemodelinput I;
 end;
-
+create view sys.storagemodel as select * from sys.storagemodel();
 -- A summary of the table storage requirement is is available as a table view.
 -- The auxillary column denotes the maximum space if all non-sorted columns
 -- would be augmented with a hash (rare situation)

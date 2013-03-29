@@ -14,11 +14,6 @@
 -- Copyright August 2008-2013 MonetDB B.V.
 -- All Rights Reserved.
 
-create function clients () 
-	returns table ("user" string, login string, lastcommand string,
-		 actions int, seconds BIGINT) 
-	external name sql.clients;
-
 create function password_hash (username string) 
 	returns string 
 	external name sql.password;

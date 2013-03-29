@@ -27,13 +27,15 @@ Ready.
 # 10:06:13 >  
 
 
-# 10:06:13 >  
-# 10:06:13 >  Mtimeout -timeout 60 mclient -lsql -ftest -i -e --host=volund --port=31159  -e -i < /net/volund.ins.cwi.nl/export/scratch1/fabian/monetdb/Aug2011/hgrepo/sql/test/BugTracker-2011/Tests/../mclient-lsql-d.Bug-2861.sql
-# 10:06:13 >  
-
+VIEW  sys.storage
+VIEW  sys.storagemodel
 #create table bug2861 (id int);
 TABLE       sys.bug2861
+VIEW   sys.storage
+VIEW   sys.storagemodel
 #drop table bug2861;
+VIEW  sys.storage
+VIEW  sys.storagemodel
 
 # 10:06:13 >  
 # 10:06:13 >  Done.

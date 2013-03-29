@@ -15,7 +15,7 @@
 -- All Rights Reserved.
 
 -- show the optimizer statistics maintained by the SQL frontend
-create function optimizer_stats () 
+create function sys.optimizer_stats () 
 	returns table (rewrite string, count int) 
 	external name sql.dump_opt_stats;
 
@@ -23,32 +23,44 @@ create function optimizer_stats ()
 -- SQL QUERY CACHE
 -- The SQL query cache returns a table with the query plans kept
 
-create function queryCache() 
+create function sys.queryCache() 
 	returns table (query string, count int) 
 	external name sql.dump_cache;
 
 -- Trace the SQL input
-create procedure querylog(filename string) 
+create procedure sys.querylog(filename string) 
 	external name sql.logfile;
 
 -- MONETDB KERNEL SECTION
 -- optimizer pipe catalog
-create function optimizers () 
+create function sys.optimizers () 
 	returns table (name string, def string, status string)
 	external name sql.optimizers;
+create view sys.optimizers as select * from sys.optimizers();
+
+update sys._tables
+    set system = true
+    where name = 'optimizers'
+        and schema_id = (select id from sys.schemas where name = 'sys');
 
 -- The environment table
-create function environment()
+create function sys.environment()
 	returns table ("name" string, value string)
 	external name sql.sql_environment;
+create view sys.environment as select * from sys.environment();
+
+update sys._tables
+    set system = true
+    where name = 'environment'
+        and schema_id = (select id from sys.schemas where name = 'sys');
 
 -- The BAT buffer pool overview
-create function bbp () 
+create function sys.bbp () 
 	returns table (id int, name string, htype string, 
 		ttype string, count BIGINT, refcnt int, lrefcnt int, 
 		location string, heat int, dirty string, 
 		status string, kind string) 
 	external name sql.bbp;
 
-create procedure evalAlgebra( ra_stmt string, opt bool)
+create procedure sys.evalAlgebra( ra_stmt string, opt bool)
 	external name sql."evalAlgebra";

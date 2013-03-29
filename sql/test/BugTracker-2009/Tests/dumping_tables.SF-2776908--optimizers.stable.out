@@ -24,6 +24,8 @@ Ready.
 # 12:59:51 >  mclient -lsql -umonetdb -Pmonetdb --host=rig --port=33577 
 # 12:59:51 >  
 
+VIEW  sys.storage
+VIEW  sys.storagemodel
 CREATE TABLE "sys"."triggers" (
 	"id"          INTEGER,
 	"name"        VARCHAR(1024),
