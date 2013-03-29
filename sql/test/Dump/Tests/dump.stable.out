@@ -27,8 +27,6 @@ Ready.
 START TRANSACTION;
 CREATE SEQUENCE "sys"."test_seq" AS INTEGER;
 SET SCHEMA "sys";
-create view sys.storage as select * from sys.storage();
-create view sys.storagemodel as select * from sys.storagemodel();
 CREATE TABLE "sys"."test" (
 	"id" INTEGER,
 	"i"  SMALLINT      DEFAULT next value for "sys"."test_seq"

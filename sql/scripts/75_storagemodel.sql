@@ -158,7 +158,8 @@ as select "schema","table",max(count) as "count",
 	sum(indices) as indices,
 	sum(case when sorted = false then 8 * count else 0 end) as auxillary
 from sys.storagemodel() group by "schema","table";
+
 update sys._tables
 	set system = true
-	where name = 'tablestoragemodel'
+	where name in ('tablestoragemodel', 'storagemodel', 'storage')
 		and schema_id = (select id from sys.schemas where name = 'sys');

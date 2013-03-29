@@ -24,8 +24,6 @@ Ready.
 # 20:57:34 >  mclient -lsql -ftest -i -e --host=alf --port=32448 
 # 20:57:34 >  
 
-VIEW  sys.storage
-VIEW  sys.storagemodel
 CREATE TABLE "sys"."triggers" (
 	"id"          INTEGER,
 	"name"        VARCHAR(1024),

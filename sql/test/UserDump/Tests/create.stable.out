@@ -31,9 +31,6 @@ CREATE SCHEMA "test" AUTHORIZATION "test";
 CREATE SCHEMA "voc" AUTHORIZATION "voc";
 ALTER USER "test" SET SCHEMA "test";
 ALTER USER "voc" SET SCHEMA "voc";
-SET SCHEMA "sys";
-create view sys.storage as select * from sys.storage();
-create view sys.storagemodel as select * from sys.storagemodel();
 SET SCHEMA "voc";
 CREATE TABLE "voc"."foo" (
 	"id" INTEGER       NOT NULL,

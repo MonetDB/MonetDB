@@ -37,8 +37,8 @@ Ready.
 % query_id,	quser_id,	query_text,	is_example,	is_refused,	aborted,	returned_error,	num_results,	header,	result_set # name
 % int,	int,	varchar,	int,	boolean,	boolean,	varchar,	int,	blob,	blob # type
 % 1,	1,	0,	1,	5,	5,	0,	1,	0,	0 # length
-#select * from queue;
-% sys.queue,	sys.queue,	sys.queue,	sys.queue,	sys.queue,	sys.queue,	sys.queue,	sys.queue # table_name
+#select * from ssqq_queue;
+% sys.ssqq_queue,	sys.ssqq_queue,	sys.ssqq_queue,	sys.ssqq_queue,	sys.ssqq_queue,	sys.ssqq_queue,	sys.ssqq_queue,	sys.ssqq_queue # table_name
 % queue_id,	query_id,	queue_add,	queue_number,	os_version,	monetdb_version,	start_query,	query_ready # name
 % int,	int,	timestamp,	int,	varchar,	varchar,	timestamp,	timestamp # type
 % 1,	1,	26,	1,	0,	0,	26,	26 # length
@@ -101,8 +101,8 @@ Ready.
 [ 1,	NULL,	"select * from example",	0,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ 2,	1,	"select * from example",	0,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ 3,	NULL,	"select * from example",	0,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
-#select * from queue;
-% sys.queue,	sys.queue,	sys.queue,	sys.queue,	sys.queue,	sys.queue,	sys.queue,	sys.queue # table_name
+#select * from ssqq_queue;
+% sys.ssqq_queue,	sys.ssqq_queue,	sys.ssqq_queue,	sys.ssqq_queue,	sys.ssqq_queue,	sys.ssqq_queue,	sys.ssqq_queue,	sys.ssqq_queue # table_name
 % queue_id,	query_id,	queue_add,	queue_number,	os_version,	monetdb_version,	start_query,	query_ready # name
 % int,	int,	timestamp,	int,	varchar,	varchar,	timestamp,	timestamp # type
 % 1,	1,	26,	1,	0,	0,	26,	26 # length

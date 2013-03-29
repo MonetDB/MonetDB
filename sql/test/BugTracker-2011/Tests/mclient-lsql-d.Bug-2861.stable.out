@@ -27,15 +27,9 @@ Ready.
 # 10:06:13 >  
 
 
-VIEW  sys.storage
-VIEW  sys.storagemodel
 #create table bug2861 (id int);
 TABLE       sys.bug2861
-VIEW   sys.storage
-VIEW   sys.storagemodel
 #drop table bug2861;
-VIEW  sys.storage
-VIEW  sys.storagemodel
 
 # 10:06:13 >  
 # 10:06:13 >  Done.

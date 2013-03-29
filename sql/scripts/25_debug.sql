@@ -38,11 +38,6 @@ create function sys.optimizers ()
 	external name sql.optimizers;
 create view sys.optimizers as select * from sys.optimizers();
 
-update sys._tables
-    set system = true
-    where name = 'optimizers'
-        and schema_id = (select id from sys.schemas where name = 'sys');
-
 -- The environment table
 create function sys.environment()
 	returns table ("name" string, value string)
@@ -51,7 +46,7 @@ create view sys.environment as select * from sys.environment();
 
 update sys._tables
     set system = true
-    where name = 'environment'
+    where name in ( 'environment', 'optimizers')
         and schema_id = (select id from sys.schemas where name = 'sys');
 
 -- The BAT buffer pool overview

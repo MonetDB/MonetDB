@@ -29,19 +29,19 @@ Ready.
 % L1 # name
 % wrd # type
 % 2 # length
-[ 30	]
+[ 38	]
 #select count(distinct name) from tables;
 % .tables # table_name
 % L1 # name
 % wrd # type
 % 2 # length
-[ 24	]
+[ 32	]
 #select count(name) , count(distinct name) from tables;
 % .tables,	.tables # table_name
 % L1,	L2 # name
 % wrd,	wrd # type
 % 2,	2 # length
-[ 30,	24	]
+[ 38,	32	]
 
 # 10:05:42 >  
 # 10:05:42 >  Done.

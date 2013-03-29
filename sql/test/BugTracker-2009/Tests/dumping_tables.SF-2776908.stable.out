@@ -29,8 +29,6 @@ Ready.
 # 20:57:34 >  Mtimeout -timeout 60 mclient -lsql -ftest -i -e --host=alf --port=32448  -i < /net/alf.ins.cwi.nl/export/scratch1/niels/rc/MonetDB/sql/src/test/BugTracker-2009/Tests/../dumping_tables.SF-2776908.sql
 # 20:57:34 >  
 
-VIEW  sys.storage
-VIEW  sys.storagemodel
 CREATE TABLE "sys"."triggers" (
 	"id"          INTEGER,
 	"name"        VARCHAR(1024),
