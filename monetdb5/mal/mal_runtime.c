@@ -63,7 +63,7 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 	int i;
 	str q;
 
-	if (malProfileMode)
+	if ( malProfileMode )
 		setFilterOnBlock(mb, 0, 0);
 
 	MT_lock_set(&mal_delayLock, "sysmon");
@@ -127,14 +127,15 @@ runtimeProfileFinish(Client cntxt, MalBlkPtr mb)
 void
 runtimeProfileBegin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int stkpc, RuntimeProfile prof, int start)
 {
+	/* always collect the MAL instruction execution time */
+	if ( mb->profiler)
+		mb->profiler[stkpc].ticks = GDKusec();
+
 	if (malProfileMode == 0)
 		return; /* mostly true */
 	
 	prof->stkpc = stkpc;
 	if (stk && mb->profiler != NULL && mb->profiler[stkpc].trace) {
-		prof->newclk = stk->clk = GDKusec();
-		mb->profiler[stkpc].clk = 0;
-		mb->profiler[stkpc].ticks = 0;
 		gettimeofday(&mb->profiler[stkpc].clock, NULL);
 		/* emit the instruction upon start as well */
 		profilerEvent(cntxt->idx, mb, stk, stkpc, start);
@@ -142,7 +143,7 @@ runtimeProfileBegin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int stkpc, Runtim
 		times(&stk->timer);
 		mb->profiler[stkpc].timer = stk->timer;
 #endif
-		mb->profiler[stkpc].clk = prof->newclk;
+		mb->profiler[stkpc].clk = mb->profiler[stkpc].ticks;
 	}
 }
 
@@ -165,16 +166,18 @@ runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Runt
 			}
 	}
 
+	/* always collect the MAL instruction execution time */
+	if ( mb->profiler)
+		mb->profiler[stkpc].ticks = GDKusec() - mb->profiler[stkpc].ticks;
+
 	if (malProfileMode == 0)
 		return; /* mostly true */
 
-	if (stk != NULL && prof->stkpc >= 0 && mb->profiler != NULL && 
-		mb->profiler[stkpc].trace && mb->profiler[stkpc].clk) {
+	if (stk != NULL && prof->stkpc >= 0 && mb->profiler != NULL && mb->profiler[stkpc].trace ) {
 		gettimeofday(&mb->profiler[stkpc].clock, NULL);
 		mb->profiler[stkpc].counter++;
-		mb->profiler[stkpc].ticks = GDKusec() - prof->newclk;
 		mb->profiler[stkpc].totalticks += mb->profiler[stkpc].ticks;
-		mb->profiler[stkpc].clk += mb->profiler[stkpc].clk;
+		mb->profiler[stkpc].clk += mb->profiler[stkpc].ticks;
 		if (pci) {
 			mb->profiler[stkpc].rbytes = getVolume(stk, pci, 0);
 			mb->profiler[stkpc].wbytes = getVolume(stk, pci, 1);

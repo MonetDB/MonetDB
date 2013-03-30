@@ -389,7 +389,7 @@ offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc, int start)
 		logadd("%d,\t", getPC(mb, pci));
 	}
 	if (profileCounter[PROFticks].status) {
-		logadd(LLFMT ",\t", mb->profiler[pc].ticks);
+		logadd(LLFMT ",\t", start? 0: mb->profiler[pc].ticks);
 	}
 #ifdef HAVE_TIMES
 	if (profileCounter[PROFcpu].status && delayswitch < 0) {
@@ -690,13 +690,16 @@ setFilterOnBlock(MalBlkPtr mb, str mod, str fcn)
 	InstrPtr p;
 
 	initProfiler(mb);
+	if ( profileAll )
+		for (k = 0; k < mb->stop; k++)
+			mb->profiler[k].trace = 1;
+	else
 	for (k = 0; k < mb->stop; k++) {
 		p = getInstrPtr(mb, k);
 		cnt = 0;
 		for (i = 0; i < topFilter; i++)
 			cnt += instrFilter(p, modFilter[i], fcnFilter[i]);
-		mb->profiler[k].trace = profileAll || cnt ||
-								(mod && fcn && instrFilter(p, mod, fcn));
+		mb->profiler[k].trace = cnt || (mod && fcn && instrFilter(p, mod, fcn));
 	}
 }
 

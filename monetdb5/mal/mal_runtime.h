@@ -29,7 +29,6 @@
  * We need to maintain some state from ProfileBegin
 */
 typedef struct{
-	lng newclk;
 	int stkpc;	
 } *RuntimeProfile, RuntimeProfileRecord;
 
