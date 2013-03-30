@@ -48,7 +48,6 @@ lib__sql = {
 	LIBS = ../../server/libsqlserver \
 		   ../../storage/libstore \
 		   ../../storage/bat/libbatstore \
-		   ../../storage/restrict/librestrictstore \
 		   ../../common/libsqlcommon \
 		   HAVE_RAPTOR?../../../monetdb5/extras/rdf/librdf \
 		   ../../../monetdb5/tools/libmonetdb5 \
