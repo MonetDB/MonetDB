@@ -34,7 +34,7 @@
 static int mvc_debug = 0;
 
 int
-mvc_init(int debug, store_type store, backend_stack stk)
+mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 {
 	int first = 0;
 	char *logdir = "sql_logs";
@@ -45,7 +45,7 @@ mvc_init(int debug, store_type store, backend_stack stk)
 	keyword_init();
 	scanner_init_keywords();
 
-	if ((first = store_init(debug, store, logdir, stk)) < 0) {
+	if ((first = store_init(debug, store, ro, su, logdir, stk)) < 0) {
 		fprintf(stderr, "!mvc_init: unable to create system tables\n");
 		return -1;
 	}
@@ -201,7 +201,7 @@ int
 mvc_commit(mvc *m, int chain, char *name)
 {
 	sql_trans *cur, *tr = m->session->tr;
-	int ok = SQL_OK;
+	int ok = SQL_OK;//, wait = 0;
 
 	assert(tr);
 	assert(m->session->active);	/* only commit an active transaction */
@@ -263,7 +263,19 @@ build up the hash (not copyied in the trans dup)) */
 		return 0;
 	}
 
-	/* validation phase */
+	/* validation phase 
+	while (tr->schema_updates && store_nr_active > 1) {
+		store_unlock();
+		MT_sleep_ms(100);
+		wait += 100;
+		if (wait > 1000) {
+			(void)sql_error(m, 010, "40000!COMMIT: transaction is aborted because of DDL concurency conflicts, will ROLLBACK instead");
+			mvc_rollback(m, chain, name);
+			return -1;
+		}
+		store_lock();
+	}
+	 * */
 	if (sql_trans_validate(tr)) {
 		if ((ok = sql_trans_commit(tr)) != SQL_OK) {
 			char *msg = sql_message("40000!COMMIT: transation commit failed (perhaps your disk is full?) exiting (kernel error: %s)", GDKerrbuf);

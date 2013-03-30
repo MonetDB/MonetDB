@@ -2000,7 +2000,7 @@ create_table_or_view( mvc *sql, char *sname, sql_table *t, int temp)
 	sql_table *nt = NULL;
 	node *n;
 
-	if (STORE_READONLY(active_store_type)) 
+	if (STORE_READONLY) 
 		return sql_error(sql, 06, "25006!schema statements cannot be executed on a readonly database.");
 
 	if (!s) 
@@ -2601,7 +2601,7 @@ SQLcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (msg)
 		return msg;
 
-	if (STORE_READONLY(active_store_type)) 
+	if (STORE_READONLY) 
 		return sql_message("25006!schema statements cannot be executed on a readonly database.");
 
 	switch (type) {
@@ -3731,12 +3731,12 @@ SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL,"sql.tid","42S02!Table missing");
 	c = t->columns.set->h->data;
 
-	nr = store_funcs.count_col(c, 1);
+	nr = store_funcs.count_col(tr, c, 1);
 
 	if (isTable(t) && !readonly &&
 	   (t->base.flag != TR_NEW /* alter */) &&
 	    t->persistence == SQL_PERSIST && !t->commit_action) 
-		inr = store_funcs.count_col(c, 0);
+		inr = store_funcs.count_col(tr, c, 0);
 	nr -= inr;
 	if ( pci->argc == 6){ /* partitioned version */
 		size_t cnt = nr;
@@ -3761,7 +3761,7 @@ SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	tids->H->revsorted = 0;
 	tids->T->revsorted = 0;
 	
-	if (store_funcs.count_del(t)) {
+	if (store_funcs.count_del(tr, t)) {
 		BAT *d = store_funcs.bind_del(tr, t, RD_INS);
 		BAT *diff = BATkdiff(tids, BATmirror(d));
 
@@ -6856,7 +6856,6 @@ vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	sql_schema	*s;
 	sql_table 	*t;
 	sql_column	*c;
-	sql_dbat *dbat;
 	mvc *m = NULL;
 	str msg = getSQLContext(cntxt,mb, &m, NULL);
 	bat bid;
@@ -6882,31 +6881,11 @@ vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	if (!m->session->auto_commit)
 		throw(SQL,name, "%s only allowed in auto commit mode", name + 4);
 
-	/* lock the store, for single user/transaction */
-	store_lock();
-	while (store_nr_active > 1) {
-		store_unlock();
-		MT_sleep_ms(100);
-		store_lock();
-
-		/* flush old changes to disk */
-		sql_trans_end(m->session);
-		store_apply_deltas();
-		sql_trans_begin(m->session);
-	}
-
 	tr = m->session->tr;
-	t->base.wtime = s->base.wtime = tr->wtime = tr->wstime;
-	t->base.rtime = s->base.rtime = tr->rtime = tr->stime;
 
 	/* get the deletions BAT*/
 	del = mvc_bind_dbat(m, *sch, *tbl, RD_INS);
-	dbat=t->data;
 
-	/* this code is insecure, because something may
-	   go wrong while we compress the columns.
-	   A two-phase action reduces the risks, but not all.
-	   e.g. a crash during update of the catalog. */
 	i=0;
 	bids[i]=0;
 	for (o = t->columns.set->h; o; o = o->next,i++) {
@@ -6919,7 +6898,6 @@ vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			if (b)
 				BBPreleaseref(b->batCacheid);
 			BBPreleaseref(del->batCacheid);
-			store_unlock();
 			if (!msg)
 				throw(SQL,name,"Can not access descriptor");
 			return msg;
@@ -6933,38 +6911,19 @@ vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	if ( i >= 2048 ) {
 		for( i--; i>=0; i--)
 			BBPdecref(bids[i], TRUE);
-		store_unlock();
 		throw(SQL,name,"Too many columns to handle, use copy instead");
 	}
 
+	mvc_clear_table(m, t);
 	for (o = t->columns.set->h, i=0; o; o = o->next, i++) {
 		sql_column *c = o->data;
-		sql_delta *d = c->data;
+		BAT *ins = BATdescriptor(bids[i]); /* use the insert bat */
 
-		if (d->bid)
-			BBPdecref(d->bid, TRUE);
-		if (d->ibid)
-			BBPdecref(d->ibid, TRUE);
-		d->bid = 0;
-		d->ibase = 0;
-		d->cnt -= dbat->cnt;
-		d->ibid = bids[i]; /* use the insert bat */
-		c->base.wtime = tr->wstime;
-		c->base.rtime = tr->stime;
+		store_funcs.append_col(tr, c, ins, TYPE_bat);
+		BBPreleaseref(ins->batCacheid);
+		BBPdecref(bids[i], TRUE);
 	}
-	BATclear(del, TRUE);
-	BBPreleaseref(del->batCacheid);
-	dbat->cnt = 0;
-	/* bat was cleared */
-	t->cleared = 1;
-
-	sql_trans_commit(m->session->tr);
-	/* write changes to disk */
-	sql_trans_end(m->session);
-	store_apply_deltas();
-	sql_trans_begin(m->session);
-	store_unlock();
-
+	/* TODO indices */
 	return MAL_SUCCEED;
 }
 
@@ -7285,7 +7244,7 @@ SQLrdfShred(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (rid != oid_nil)
 		throw(SQL, "sql.rdfShred", "graph name already exists in rdf.graph");
 
-	id = (int) store_funcs.count_col(gname, 1);
+	id = (int) store_funcs.count_col(m->session->tr, gname, 1);
 	store_funcs.append_col(m->session->tr, gname, *name, TYPE_str);
 	store_funcs.append_col(m->session->tr, gid, &id, TYPE_int);
 

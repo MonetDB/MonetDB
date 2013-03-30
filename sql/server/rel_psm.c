@@ -698,7 +698,7 @@ rel_create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_n
 	char *F = is_aggr?"AGGREGATE":(is_func?"FUNCTION":"PROCEDURE");
 	char *KF = type==F_FILT?"FILTER ": type==F_UNION?"UNION ": "";
 
-	if (STORE_READONLY(active_store_type) && create) 
+	if (STORE_READONLY && create) 
 		return sql_error(sql, 06, "schema statements cannot be executed on a readonly database.");
 			
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
@@ -1079,7 +1079,7 @@ rel_psm(mvc *sql, symbol *s)
 		dlist *l = s->data.lval;
 		int type = l->h->next->next->next->next->data.i_val;
 
-		if (STORE_READONLY(active_store_type)) 
+		if (STORE_READONLY) 
 			return sql_error(sql, 06, "schema statements cannot be executed on a readonly database.");
 			
 		assert(l->h->next->type == type_int);

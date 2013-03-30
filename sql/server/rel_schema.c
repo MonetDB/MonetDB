@@ -1548,7 +1548,7 @@ rel_schemas(mvc *sql, symbol *s)
 {
 	sql_rel *ret = NULL;
 
-	if (s->token != SQL_CREATE_TABLE && s->token != SQL_CREATE_VIEW && STORE_READONLY(active_store_type)) 
+	if (s->token != SQL_CREATE_TABLE && s->token != SQL_CREATE_VIEW && STORE_READONLY) 
 		return sql_error(sql, 06, "25006!schema statements cannot be executed on a readonly database.");
 
 	switch (s->token) {

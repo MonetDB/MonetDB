@@ -224,10 +224,7 @@ SQLinit(void)
 		SQLdebug |= 64;
 	if (readonly)
 		SQLdebug |= 32;
-	if (((SQLdebug&96)==96 && (SQLnewcatalog = mvc_init(FALSE, store_suro, 0)) < 0) ||
-			((SQLdebug&96)==64 && (SQLnewcatalog = mvc_init(FALSE, store_su, 0)) < 0) ||
-			((SQLdebug&96)==32 && (SQLnewcatalog = mvc_init(FALSE, store_ro, 0)) < 0) ||
-			((SQLdebug&112)==0 && (SQLnewcatalog = mvc_init(FALSE, store_bat, 0)) < 0))
+	if ((SQLnewcatalog = mvc_init(FALSE, store_bat, readonly, single_user, 0)) < 0)
 		throw(SQL, "SQLinit", "Catalogue initialization failed");
 	SQLinitialized = TRUE;
 	MT_lock_unset(&sql_contextLock, "SQL init");

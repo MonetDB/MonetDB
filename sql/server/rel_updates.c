@@ -335,7 +335,7 @@ insert_into(mvc *sql, dlist *qname, dlist *columns, symbol *val_or_q)
 	} else if (t->readonly) {
 		return sql_error(sql, 02, "INSERT INTO: cannot insert into read only table '%s'", tname);
 	}
-	if (t && !isTempTable(t) && STORE_READONLY(active_store_type))
+	if (t && !isTempTable(t) && STORE_READONLY)
 		return sql_error(sql, 02, "INSERT INTO: insert into table '%s' not allowed in readonly mode", tname);
 
 	if (!table_privs(sql, t, PRIV_INSERT)) {
@@ -815,7 +815,7 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_where)
 		list *exps = new_exp_list(sql->sa), *pexps;
 		dnode *n;
 
-		if (t && !isTempTable(t) && STORE_READONLY(active_store_type))
+		if (t && !isTempTable(t) && STORE_READONLY)
 			return sql_error(sql, 02, "UPDATE: update table '%s' not allowed in readonly mode", tname);
 
 		if (opt_where) {
@@ -964,7 +964,7 @@ delete_table(mvc *sql, dlist *qname, symbol *opt_where)
 	} else if (t->readonly) {
 		return sql_error(sql, 02, "DELETE FROM: cannot delete from read only table '%s'", tname);
 	}
-	if (t && !isTempTable(t) && STORE_READONLY(active_store_type))
+	if (t && !isTempTable(t) && STORE_READONLY)
 		return sql_error(sql, 02, "DELETE FROM: delete from table '%s' not allowed in readonly mode", tname);
 	if (!table_privs(sql, t, PRIV_DELETE)) {
 		return sql_error(sql, 02, "DELETE FROM: insufficient privileges for user '%s' to delete from table '%s'", stack_get_string(sql, "current_user"), tname);
@@ -1079,7 +1079,7 @@ copyfrom(mvc *sql, dlist *qname, dlist *files, dlist *seps, dlist *nr_offset, st
 		return sql_error(sql, 02, "42S02!COPY INTO: no such table '%s'", tname);
 	if (t->readonly) 
 		return sql_error(sql, 02, "COPY INTO: cannot copy into read only table '%s'", tname);
-	if (t && !isTempTable(t) && STORE_READONLY(active_store_type))
+	if (t && !isTempTable(t) && STORE_READONLY)
 		return sql_error(sql, 02, "COPY INTO: copy into table '%s' not allowed in readonly mode", tname);
 
 	/* Only the MONETDB user is allowed copy into with 
@@ -1190,7 +1190,7 @@ bincopyfrom(mvc *sql, dlist *qname, dlist *files)
 		return sql_error(sql, 02, "42S02!COPY INTO: no such table '%s'", tname);
 	if (t->readonly) 
 		return sql_error(sql, 02, "COPY INTO: cannot copy into read only table '%s'", tname);
-	if (t && !isTempTable(t) && STORE_READONLY(active_store_type))
+	if (t && !isTempTable(t) && STORE_READONLY)
 		return sql_error(sql, 02, "COPY INTO: copy into table '%s' not allowed in readonly mode", tname);
 	if (files == NULL)
 		return sql_error(sql, 02, "COPY INTO: must specify files");

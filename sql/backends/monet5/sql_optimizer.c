@@ -89,6 +89,7 @@ SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 	InstrPtr *old = NULL;
 	int oldtop, i, actions = 0, size = 0;
 	lng clk = GDKusec();
+	sql_trans *tr = m->session->tr;
 
 	old = mb->stmt;
 	oldtop= mb->stop;
@@ -132,7 +133,7 @@ SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 
 				/* skip alter on remote statements */
 				if (i && (!isRemote(i->t) && !isMergeTable(i->t))) {
-					cnt = store_funcs.count_idx(i, 1);
+					cnt = store_funcs.count_idx(tr, i, 1);
 					assert(cnt <= (size_t) GDK_oid_max);
 					b = store_funcs.bind_idx(m->session->tr,i,0);
 					if ( b ) {
@@ -152,7 +153,7 @@ SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 				if (c && (!isRemote(c->t) && !isMergeTable(c->t))) {
 					not_null = !c->null;
 
-					cnt = store_funcs.count_col(c, 1);
+					cnt = store_funcs.count_col(tr, c, 1);
 					assert(cnt <= (size_t) GDK_oid_max);
 					b = store_funcs.bind_col(m->session->tr,c,0);
 					if ( b ){
@@ -172,7 +173,7 @@ SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 				if (t->columns.set->h) {
 					c = t->columns.set->h->data;
 
-					cnt = store_funcs.count_col(c, 1);
+					cnt = store_funcs.count_col(tr, c, 1);
 					rows = (wrd) cnt;
 				}
 			}
