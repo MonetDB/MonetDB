@@ -130,11 +130,11 @@ runtimeProfileBegin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int stkpc, Runtim
 	/* always collect the MAL instruction execution time */
 	if ( mb->profiler)
 		mb->profiler[stkpc].ticks = GDKusec();
+	prof->stkpc = stkpc;
 
 	if (malProfileMode == 0)
 		return; /* mostly true */
 	
-	prof->stkpc = stkpc;
 	if (stk && mb->profiler != NULL && mb->profiler[stkpc].trace) {
 		gettimeofday(&mb->profiler[stkpc].clock, NULL);
 		/* emit the instruction upon start as well */
