@@ -22,6 +22,8 @@ qgram
 #statistics01
 
 call00
+callstring
+callfunction
 
 #radix
 

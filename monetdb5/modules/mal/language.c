@@ -121,6 +121,22 @@ CMDcallString(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
+CMDcallFunction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	str mod = *(str*) getArgReference(stk,pci,1);
+	str fcn = *(str*) getArgReference(stk,pci,2);
+	char buf[BUFSIZ];
+
+	(void) mb;		/* fool compiler */
+	if (strlen(mod) == 0 || strlen(fcn) ==0)
+		return MAL_SUCCEED;
+	// lazy implementation of the call
+	snprintf(buf,BUFSIZ,"%s.%s();",mod,fcn);
+	callString(cntxt, buf, FALSE);
+	return MAL_SUCCEED;
+}
+
+str
 MALstartDataflow( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str msg= MAL_SUCCEED;

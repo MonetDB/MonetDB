@@ -3,6 +3,8 @@ module language;
 pattern call(s:str):void
 address CMDcallString
 comment "Evaluate a MAL string program.";
+pattern call(m:str,f:str):void
+address CMDcallFunction;
 pattern call(s:bat[:oid,:str]):void
 address CMDcallBAT
 comment "Evaluate a program stored in a BAT.";
