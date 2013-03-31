@@ -209,7 +209,7 @@ OPTjoinPathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 					}
 					r = 0;
 				}
-				OPTDEBUGjoinPath {
+				OPTDEBUGjoinPath if (r) {
 					mnstr_printf(cntxt->fdout,"#expand list \n");
 					printInstruction(cntxt->fdout,mb, 0, p, LIST_MAL_ALL);
 					printInstruction(cntxt->fdout,mb, 0, q, LIST_MAL_ALL);

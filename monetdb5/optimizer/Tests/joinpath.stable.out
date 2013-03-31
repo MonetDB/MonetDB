@@ -9,53 +9,65 @@ stdout of test 'joinpath` in directory 'monetdb5/optimizer` itself:
 # Serving database 'mTests_src_optimizer', using 4 threads
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008- MonetDB B.V., all rights reserved
-# Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:38534/
+# Copyright (c) August 2008-2013 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:33706/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-633/.s.monetdb.33706
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+function user.tst0():void;
+    a := bat.new(:oid,:oid);
+    b := bat.new(:oid,:oid);
+    c := bat.new(:oid,:oid);
+    j1 := algebra.leftfetchjoin(a,b);
+    j2 := algebra.leftfetchjoin(c,j1);
+    io.print(j2);
+end tst0;
 function user.tst1():void;
     a := bat.new(:oid,:oid);
     b := bat.new(:oid,:oid);
     c := bat.new(:oid,:oid);
-    j1 := algebra.join(a,b);
-    j2 := algebra.join(c,j1);
-    j3 := algebra.join(a,c);
-    j4 := algebra.join(c,j3);
-    io.print(j2);
+    j3 := algebra.leftfetchjoin(a,c);
+    j4 := algebra.leftfetchjoin(b,j3);
     io.print(j4);
 end tst1;
 function user.tst2():void;
-    a := bat.new(:oid,:oid);
-    b := bat.new(:oid,:oid);
+    a := bat.new(:oid,:str);
+    br := bat.new(:oid,:str);
+    b := bat.reverse(br);
     c := bat.new(:oid,:oid);
     j1 := algebra.join(a,b);
     j2 := algebra.join(j1,c);
-    j3 := algebra.join(j1,a);
     io.print(j2);
-    io.print(j3);
 end tst2;
 function user.main():void;
+# The JAQL test case 
+    mdb.list("user","tst0");
     mdb.list("user","tst1");
     mdb.list("user","tst2");
 end main;
+function user.tst0():void;
+    a := bat.new(:oid,:oid);
+    b := bat.new(:oid,:oid);
+    c := bat.new(:oid,:oid);
+    j2:bat[:oid,:oid]  := algebra.leftfetchjoinPath(c,a,b);
+    io.print(j2);
+end tst0;
 function user.tst1():void;
     a := bat.new(:oid,:oid);
     b := bat.new(:oid,:oid);
     c := bat.new(:oid,:oid);
-    X_11 := algebra.join(c,a);
-    j2:bat[:oid,:oid]  := algebra.join(X_11,b);
-    j4:bat[:oid,:oid]  := algebra.join(X_11,c);
-    io.print(j2);
+    j4:bat[:oid,:oid]  := algebra.leftfetchjoinPath(b,a,c);
     io.print(j4);
 end tst1;
 function user.tst2():void;
-    a := bat.new(:oid,:oid);
-    b := bat.new(:oid,:oid);
+    a := bat.new(:oid,:str);
+    br := bat.new(:oid,:str);
+    b := bat.reverse(br);
     c := bat.new(:oid,:oid);
-    j1 := algebra.join(a,b);
-    j2 := algebra.join(j1,c);
-    j3 := algebra.join(j1,a);
+    j2:bat[:oid,:oid]  := algebra.joinPath(a,b,c);
     io.print(j2);
-    io.print(j3);
 end tst2;
 
 # 08:48:38 >  
