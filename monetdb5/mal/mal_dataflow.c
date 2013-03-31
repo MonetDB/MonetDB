@@ -115,7 +115,7 @@ q_create(int sz, const char *name)
 		return NULL;
 	q->size = ((sz << 1) >> 1); /* we want a multiple of 2 */
 	q->last = 0;
-	q->data = (void*)GDKmalloc(sizeof(FlowEvent) * q->size);
+	q->data = (FlowEvent*) GDKmalloc(sizeof(FlowEvent) * q->size);
 	if (q->data == NULL) {
 		GDKfree(q);
 		return NULL;
@@ -143,7 +143,7 @@ q_enqueue_(queue *q, FlowEvent d)
 	assert(d);
 	if (q->last == q->size) {
 		q->size <<= 1;
-		q->data = GDKrealloc(q->data, sizeof(FlowEvent) * q->size);
+		q->data = (FlowEvent*) GDKrealloc(q->data, sizeof(FlowEvent) * q->size);
 	}
 	q->data[q->last++] = d;
 }
@@ -172,11 +172,11 @@ q_requeue_(queue *q, FlowEvent d)
 	if (q->last == q->size) {
 		/* enlarge buffer */
 		q->size <<= 1;
-		q->data = GDKrealloc(q->data, sizeof(void*) * q->size);
+		q->data = (FlowEvent*) GDKrealloc(q->data, sizeof(FlowEvent) * q->size);
 	}
 	for (i = q->last; i > 0; i--)
 		q->data[i] = q->data[i - 1];
-	q->data[0] = (void*)d;
+	q->data[0] = d;
 	q->last++;
 }
 static void
@@ -202,7 +202,7 @@ q_dequeue(queue *q)
 	assert(q->last);
 	if (q->last > 0) {
 		/* LIFO favors garbage collection */
-		r = q->data[--q->last];
+		r = (void*) q->data[--q->last];
 		q->data[q->last] = 0;
 	}
 	/* else: terminating */
