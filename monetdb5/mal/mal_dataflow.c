@@ -386,18 +386,28 @@ DFLOWinitialize(void)
  * For each instruction we keep a list of instructions whose
  * blocking counter should be decremented upon finishing it.
  */
-static void
+static str
 DFLOWinitBlk(DataFlow flow, MalBlkPtr mb, int size)
 {
 	int pc, i, j, k, l, n, etop = 0;
 	int *assign;
 	InstrPtr p;
 
+	if (flow == NULL)
+		throw(MAL, "dataflow", "DFLOWinitBlk(): Called with flow == NULL");
+	if (mb == NULL)
+		throw(MAL, "dataflow", "DFLOWinitBlk(): Called with mb == NULL");
 	PARDEBUG printf("Initialize dflow block\n");
 	assign = (int *) GDKzalloc(mb->vtop * sizeof(int));
+	if (assign == NULL)
+		throw(MAL, "dataflow", "DFLOWinitBlk(): Failed to allocate assign");
 	etop = flow->stop - flow->start;
 	for (n = 0, pc = flow->start; pc < flow->stop; pc++, n++) {
 		p = getInstrPtr(mb, pc);
+		if (p == NULL) {
+			GDKfree(assign);
+			throw(MAL, "dataflow", "DFLOWinitBlk(): getInstrPtr() returned NULL");
+		}
 
 		/* initial state, ie everything can run */
 		flow->status[n].flow = flow;
@@ -478,6 +488,7 @@ DFLOWinitBlk(DataFlow flow, MalBlkPtr mb, int size)
 #ifdef USE_MAL_ADMISSION
 	memorypool = memoryclaims = 0;
 #endif
+	return MAL_SUCCEED;
 }
 
 /*
@@ -620,9 +631,10 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr st
 	size += stoppc - startpc;
 	flow->nodes = (int*)GDKzalloc(sizeof(int) * size);
 	flow->edges = (int*)GDKzalloc(sizeof(int) * size);
-	DFLOWinitBlk(flow, mb, size);
+	ret = DFLOWinitBlk(flow, mb, size);
 
-	ret = DFLOWscheduler(flow);
+	if (ret == MAL_SUCCEED)
+		ret = DFLOWscheduler(flow);
 
 	GDKfree(flow->status);
 	GDKfree(flow->edges);
