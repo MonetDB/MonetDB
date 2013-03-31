@@ -140,16 +140,18 @@ q_destroy(queue *q)
 static void
 q_enqueue_(queue *q, FlowEvent d)
 {
-	assert(d);
 	if (q->last == q->size) {
 		q->size <<= 1;
 		q->data = (FlowEvent*) GDKrealloc(q->data, sizeof(FlowEvent) * q->size);
+		assert(q->data);
 	}
 	q->data[q->last++] = d;
 }
 static void
 q_enqueue(queue *q, FlowEvent d)
 {
+	assert(q);
+	assert(d);
 	MT_lock_set(&q->l, "q_enqueue");
 	q_enqueue_(q, d);
 	MT_lock_unset(&q->l, "q_enqueue");
@@ -168,11 +170,11 @@ q_requeue_(queue *q, FlowEvent d)
 {
 	int i;
 
-	assert(d);
 	if (q->last == q->size) {
 		/* enlarge buffer */
 		q->size <<= 1;
 		q->data = (FlowEvent*) GDKrealloc(q->data, sizeof(FlowEvent) * q->size);
+		assert(q->data);
 	}
 	for (i = q->last; i > 0; i--)
 		q->data[i] = q->data[i - 1];
@@ -182,6 +184,7 @@ q_requeue_(queue *q, FlowEvent d)
 static void
 q_requeue(queue *q, FlowEvent d)
 {
+	assert(q);
 	assert(d);
 	MT_lock_set(&q->l, "q_requeue");
 	q_requeue_(q, d);
@@ -195,6 +198,7 @@ q_dequeue(queue *q)
 {
 	void *r = NULL;
 
+	assert(q);
 	MT_sema_down(&q->s, "q_dequeue");
 	if (exiting)
 		return NULL;
@@ -267,6 +271,7 @@ DFLOWworker(void *t)
 		fnxt = 0;
 		assert(fe);
 		flow = fe->flow;
+		assert(flow);
 
 		/* whenever we have a (concurrent) error, skip it */
 		if (flow->error) {
@@ -280,6 +285,7 @@ DFLOWworker(void *t)
 #ifdef USE_MAL_ADMISSION
 			if (MALadmission(fe->argclaim, fe->hotclaim)) {
 				fe->hotclaim = 0;   /* don't assume priority anymore */
+				assert(todo);
 				if (todo->last == 0)
 					MT_sleep_ms(DELAYUNIT);
 				q_requeue(todo, fe);
@@ -317,6 +323,7 @@ DFLOWworker(void *t)
 #ifdef USE_MAL_ADMISSION
 		{
 		InstrPtr p = getInstrPtr(flow->mb, fe->pc);
+		assert(p);
 		fe->hotclaim = 0;
 		for (i = 0; i < p->retc; i++)
 			fe->hotclaim += getMemoryClaim(flow->mb, flow->stk, fe->pc, i, FALSE);
@@ -338,6 +345,7 @@ DFLOWworker(void *t)
 
 		q_enqueue(flow->done, fe);
 		if ( fnxt == 0) {
+			assert(todo);
 			if (todo->last == 0)
 				profilerHeartbeatEvent("wait");
 			else
