@@ -198,8 +198,8 @@ q_dequeue(queue *q)
 	MT_sema_down(&q->s, "q_dequeue");
 	if (exiting)
 		return NULL;
-	assert(q->last);
 	MT_lock_set(&q->l, "q_dequeue");
+	assert(q->last);
 	if (q->last > 0) {
 		/* LIFO favors garbage collection */
 		r = q->data[--q->last];
