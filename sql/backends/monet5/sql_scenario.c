@@ -1966,7 +1966,7 @@ cleanup_engine:
 		/* qc_delete(be->q) */
 	}
 	be->q = NULL;
-	sqlcleanup(be->mvc, 0);
+	sqlcleanup(be->mvc, (!msg)?0:-1);
 	MSresetInstructions(c->curprg->def, 1);
 	freeVariables(c,c->curprg->def, c->glb, be->vtop);
 	be->language = oldlang;
