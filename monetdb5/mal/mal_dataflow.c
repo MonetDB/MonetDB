@@ -369,6 +369,10 @@ DFLOWinitialize(void)
 		return MAL_SUCCEED;
 	}
 	todo = q_create(2048, "todo");
+	if (todo == NULL) {
+		MT_lock_unset(&mal_contextLock, "DFLOWinitialize");
+		throw(MAL, "dataflow", "DFLOWinitialize(): Failed to create todo queue");
+	}
 	limit = GDKnr_threads ? GDKnr_threads : 1;
 	for (i = 0; i < limit && i < THREADS; i++) {
 		if (MT_create_thread(&workers[i], DFLOWworker, (void *) &workers[i], MT_THR_JOINABLE) < 0) {
@@ -524,10 +528,13 @@ DFLOWscheduler(DataFlow flow)
 	int j;
 	InstrPtr p;
 #endif
-	int tasks=0, actions = flow->stop - flow->start;
+	int tasks=0, actions;
 	str ret = MAL_SUCCEED;
 	FlowEvent fe, f = 0;
 
+	if (flow == NULL)
+		throw(MAL, "dataflow", "DFLOWscheduler(): Called with flow == NULL");
+	actions = flow->stop - flow->start;
 	if (actions == 0)
 		throw(MAL, "dataflow", "Empty dataflow block");
 	/* initialize the eligible statements */
@@ -538,6 +545,10 @@ DFLOWscheduler(DataFlow flow)
 		if (fe[i].blocks == 0) {
 #ifdef USE_MAL_ADMISSION
 			p = getInstrPtr(flow->mb,fe[i].pc);
+			if (p == NULL) {
+				MT_lock_unset(&flow->flowlock, "MALworker");
+				throw(MAL, "dataflow", "DFLOWscheduler(): getInstrPtr(flow->mb,fe[i].pc) returned NULL");
+			}
 			for (j = p->retc; j < p->argc; j++)
 				fe[i].argclaim = getMemoryClaim(fe[0].flow->mb, fe[0].flow->stk, fe[i].pc, j, FALSE);
 #endif
@@ -553,6 +564,8 @@ DFLOWscheduler(DataFlow flow)
 		f = q_dequeue(flow->done);
 		if (exiting)
 			break;
+		if (f == NULL)
+			throw(MAL, "dataflow", "DFLOWscheduler(): q_dequeue(flow->done) returned NULL");
 
 		/*
 		 * When an instruction is finished we have to reduce the blocked
@@ -599,6 +612,8 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr st
 #endif
 
 	/* in debugging mode we should not start multiple threads */
+	if (stk == NULL)
+		throw(MAL, "dataflow", "runMALdataflow(): Called with stk == NULL");
 	if (stk->cmd)
 		return MAL_SUCCEED;
 
@@ -613,6 +628,8 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr st
 	assert(todo);
 
 	flow = (DataFlow)GDKzalloc(sizeof(DataFlowRec));
+	if (flow == NULL)
+		throw(MAL, "dataflow", "runMALdataflow(): Failed to allocate flow");
 
 	flow->cntxt = cntxt;
 	flow->mb = mb;
@@ -625,12 +642,38 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr st
 
 	MT_lock_init(&flow->flowlock, "DFLOWworker");
 	flow->done = q_create(stoppc- startpc+1, "flow->done");
+	if (flow->done == NULL) {
+		MT_lock_destroy(&flow->flowlock);
+		GDKfree(flow);
+		throw(MAL, "dataflow", "runMALdataflow(): Failed to create flow->done queue");
+	}
 
 	flow->status = (FlowEvent)GDKzalloc((stoppc - startpc + 1) * sizeof(FlowEventRec));
+	if (flow->status == NULL) {
+		q_destroy(flow->done);
+		MT_lock_destroy(&flow->flowlock);
+		GDKfree(flow);
+		throw(MAL, "dataflow", "runMALdataflow(): Failed to allocate flow->status");
+	}
 	size = DFLOWgraphSize(mb, startpc, stoppc);
 	size += stoppc - startpc;
 	flow->nodes = (int*)GDKzalloc(sizeof(int) * size);
+	if (flow->nodes == NULL) {
+		GDKfree(flow->status);
+		q_destroy(flow->done);
+		MT_lock_destroy(&flow->flowlock);
+		GDKfree(flow);
+		throw(MAL, "dataflow", "runMALdataflow(): Failed to allocate flow->nodes");
+	}
 	flow->edges = (int*)GDKzalloc(sizeof(int) * size);
+	if (flow->edges == NULL) {
+		GDKfree(flow->nodes);
+		GDKfree(flow->status);
+		q_destroy(flow->done);
+		MT_lock_destroy(&flow->flowlock);
+		GDKfree(flow);
+		throw(MAL, "dataflow", "runMALdataflow(): Failed to allocate flow->edges");
+	}
 	ret = DFLOWinitBlk(flow, mb, size);
 
 	if (ret == MAL_SUCCEED)
