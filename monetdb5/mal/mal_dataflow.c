@@ -284,13 +284,9 @@ DFLOWworker(void *t)
 		if (flow->error == 0) {
 #ifdef USE_MAL_ADMISSION
 			if (MALadmission(fe->argclaim, fe->hotclaim)) {
-				int todo_last = 0;
 				fe->hotclaim = 0;   /* don't assume priority anymore */
 				assert(todo);
-				MT_lock_set(&todo->l, "DFLOWworker-1");
-				todo_last = todo->last;
-				MT_lock_unset(&todo->l, "DFLOWworker-1");
-				if (todo_last == 0)
+				if (todo->last == 0)
 					MT_sleep_ms(DELAYUNIT);
 				q_requeue(todo, fe);
 				continue;
@@ -349,12 +345,8 @@ DFLOWworker(void *t)
 
 		q_enqueue(flow->done, fe);
 		if ( fnxt == 0) {
-			int todo_last = 0;
 			assert(todo);
-			MT_lock_set(&todo->l, "DFLOWworker-2");
-			todo_last = todo->last;
-			MT_lock_unset(&todo->l, "DFLOWworker-2");
-			if (todo_last == 0)
+			if (todo->last == 0)
 				profilerHeartbeatEvent("wait");
 			else
 				MALresourceFairness(usec);
@@ -538,7 +530,6 @@ static void showFlowEvent(DataFlow flow, int pc)
 static str
 DFLOWscheduler(DataFlow flow)
 {
-	int flow_done_last = 0;
 	int last;
 	int i;
 #ifdef USE_MAL_ADMISSION
@@ -608,10 +599,7 @@ DFLOWscheduler(DataFlow flow)
 		MT_lock_unset(&flow->flowlock, "MALworker");
 	}
 	/* wrap up errors */
-	MT_lock_set(&flow->done->l, "DFLOWscheduler");
-	flow_done_last = flow->done->last;
-	MT_lock_unset(&flow->done->l, "DFLOWscheduler");
-	assert(flow_done_last == 0);
+	assert(flow->done->last == 0);
 	if (flow->error ) {
 		PARDEBUG mnstr_printf(GDKstdout, "#errors encountered %s ", flow->error ? flow->error : "unknown");
 		ret = flow->error;
