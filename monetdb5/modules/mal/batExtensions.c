@@ -268,6 +268,6 @@ CMDbatpartition2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	ret= (int *) getArgReference(stk,pci,0);
 	BBPkeepref(*ret = bn->batCacheid);
-	BBPreleasref(b->batCacheid);
+	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
