@@ -203,7 +203,7 @@ q_dequeue(queue *q)
 	if (exiting)
 		return NULL;
 	MT_lock_set(&q->l, "q_dequeue");
-	assert(q->last);
+	assert(q->last > 0);
 	if (q->last > 0) {
 		/* LIFO favors garbage collection */
 		r = (void*) q->data[--q->last];
