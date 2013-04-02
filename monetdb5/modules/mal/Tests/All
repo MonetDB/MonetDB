@@ -54,6 +54,7 @@ remote10
 sabaoth01
 
 partition
+batpartition
 printf
 #some remote related tests
 mapi04

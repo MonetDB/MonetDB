@@ -253,7 +253,7 @@ CMDbatpartition2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ((b = BATdescriptor(bid)) == NULL) {
 		throw(MAL, "bat.partition", INTERNAL_BAT_ACCESS);
 	}
-	step = BATcount(b) / pieces + 1;
+	step = BATcount(b) / pieces;
 
 	lval = idx * step;
 	if ( idx == pieces-1)
@@ -266,9 +266,8 @@ CMDbatpartition2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.partition",  INTERNAL_OBJ_CREATE);
 	}
-	stk->stk[getArg(pci,0)].val.bval = bn->batCacheid;
 	ret= (int *) getArgReference(stk,pci,0);
 	BBPkeepref(*ret = bn->batCacheid);
-	BBPunfix(b->batCacheid);
+	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
