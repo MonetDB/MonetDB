@@ -101,8 +101,8 @@ BATsample(BAT *b, BUN n)
 		BATkey(BATmirror(bn), BATtkey(b));
 		bn->H->seq = b->H->seq;
 		bn->T->seq = b->T->seq;
-		bn->H->nil = b->H->nonil;
-		bn->T->nil = b->T->nonil;
+		bn->H->nil = b->H->nil;
+		bn->T->nil = b->T->nil;
 		bn->H->nonil = b->H->nonil;
 		bn->T->nonil = b->T->nonil;
 		BATsetcount(bn, n);
