@@ -169,7 +169,7 @@ TABLETadt_toStr(void *extra, char **buf, int *len, int type, ptr a)
 		}
 		l = (int) strlen(src);
 		if (l + 3 > *len) {
-			GDKfree(buf);
+			GDKfree(*buf);
 			*len = 2 * l + 3;
 			*buf = GDKzalloc(*len);
 		}
