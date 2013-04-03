@@ -487,6 +487,7 @@ GDKupgradevarheap(COLrec *c, var_t v, int copyall)
 	var_t *pv;
 #endif
 	size_t i, n;
+	size_t savefree;
 
 	assert(c->heap.parentid == 0);
 	assert(width != 0);
@@ -503,8 +504,13 @@ GDKupgradevarheap(COLrec *c, var_t v, int copyall)
 	 * free value at the end; otherwise only copy the area
 	 * indicated by the "free" pointer */
 	n = (copyall ? c->heap.size : c->heap.free) >> c->shift;
+	savefree = c->heap.free;
+	if (copyall)
+		c->heap.free = c->heap.size;
 	if (HEAPextend(&c->heap, (c->heap.size >> c->shift) << shift) < 0)
 		return GDK_FAIL;
+	if (copyall)
+		c->heap.free = savefree;
 	/* note, cast binds more closely than addition */
 	pc = (unsigned char *) c->heap.base + n;
 	ps = (unsigned short *) c->heap.base + n;
