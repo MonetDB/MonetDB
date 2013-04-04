@@ -28,7 +28,7 @@ DECIMAL = 'decimal'                # (P,S)
 SMALLINT = 'smallint'              # 16 bit integer
 INT = 'int'                        # 32 bit integer
 BIGINT = 'bigint'                  # 64 bit integer
-SERIAL = 'serial'                  # special 64 bit integer (sequence generator)
+SERIAL = 'serial'                  # special 64 bit integer sequence generator
 REAL = 'real'                      # 32 bit floating point
 DOUBLE = 'double'                  # 64 bit floating point
 BOOLEAN = 'boolean'
@@ -57,4 +57,3 @@ CHARACHTER_LARGE_OBJECT = CLOB
 BINARY_LARGE_OBJECT = BLOB
 NUMERIC = DECIMAL
 DOUBLE_PRECISION = DOUBLE
-

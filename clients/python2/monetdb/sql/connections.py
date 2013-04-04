@@ -15,22 +15,22 @@
 # Copyright August 2008-2013 MonetDB B.V.
 # All Rights Reserved.
 
-import sys
 import logging
 
 from monetdb.sql import cursors
-from monetdb.exceptions import *
+from monetdb import exceptions
 from monetdb import mapi
 
 logger = logging.getLogger("monetdb")
 
+
 class Connection(object):
-    """This represents a MonetDB SQL database connection"""
+    """A MonetDB SQL database connection"""
     default_cursor = cursors.Cursor
 
     def __init__(self, username="monetdb", password="monetdb",
-                 hostname="localhost", port=50000, database="demo", autocommit=False,
-                 user=None, host=None):
+                 hostname="localhost", port=50000, database="demo",
+                 autocommit=False, user=None, host=None):
         """ Set up a connection to a MonetDB SQL database.
 
         username   -- username for connection (default: monetdb)
@@ -46,7 +46,7 @@ class Connection(object):
             hostname = host
         self.mapi = mapi.Connection()
         self.mapi.connect(hostname=hostname, port=int(port), username=username,
-            password=password, database=database, language="sql")
+                          password=password, database=database, language="sql")
         self.set_autocommit(autocommit)
         self.set_sizeheader(True)
         self.set_replysize(100)
@@ -65,7 +65,7 @@ class Connection(object):
             self.mapi.disconnect()
             self.mapi = None
         else:
-            raise Error("already closed")
+            raise exceptions.Error("already closed")
 
     def set_autocommit(self, autocommit):
         """
@@ -134,10 +134,10 @@ class Connection(object):
     def __mapi_check(self):
         """ check if there is a connection with a server """
         if not self.mapi:
-            raise Error("connection closed")
+            raise exceptions.Error("connection closed")
         return True
 
-    def settimeout(self,timeout):
+    def settimeout(self, timeout):
         """ set the amount of time before a connection times out """
         self.mapi.socket.settimeout(timeout)
 
@@ -146,14 +146,13 @@ class Connection(object):
         return self.mapi.socket.gettimeout()
 
     # these are required by the python DBAPI
-    Warning = Warning
-    Error = Error
-    InterfaceError = InterfaceError
-    DatabaseError = DatabaseError
-    DataError = DataError
-    OperationalError = OperationalError
-    IntegrityError = IntegrityError
-    InternalError = InternalError
-    ProgrammingError = ProgrammingError
-    NotSupportedError = NotSupportedError
-
+    Warning = exceptions.Warning
+    Error = exceptions.Error
+    InterfaceError = exceptions.InterfaceError
+    DatabaseError = exceptions.DatabaseError
+    DataError = exceptions.DataError
+    OperationalError = exceptions.OperationalError
+    IntegrityError = exceptions.IntegrityError
+    InternalError = exceptions.InternalError
+    ProgrammingError = exceptions.ProgrammingError
+    NotSupportedError = exceptions.NotSupportedError
