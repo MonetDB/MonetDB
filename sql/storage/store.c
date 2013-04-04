@@ -2572,7 +2572,7 @@ rollforward_create_table(sql_trans *tr, sql_table *t, int mode)
 		/* only register columns without commit action tables */
 		ok = rollforward_changeset_creates(tr, &t->columns, (rfcfunc) &rollforward_create_column, mode);
 
-		if (isTable(t)) {
+		if (isTableOrArray(t)) {
 			if (p && mode == R_SNAPSHOT)
 				store_funcs.snapshot_create_del(tr, t);
 			else if (p && mode == R_LOG)
@@ -2752,7 +2752,7 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt, int mode)
 	if (ok != LOG_OK) 
 		return LOG_ERR;
 
-	if (isTable(ft)) {
+	if (isTableOrArray(ft)) {
 		if (p && mode == R_SNAPSHOT) {
 			ok = store_funcs.snapshot_table(tr, ft, tt);
 		} else if (p && mode == R_LOG) {
@@ -4353,7 +4353,7 @@ sql_trans_alter_default(sql_trans *tr, sql_column *col, char *val)
 int
 sql_trans_is_sorted( sql_trans *tr, sql_column *col )
 {
-	if (col && isTable(col->t) && store_funcs.sorted_col && store_funcs.sorted_col(tr, col))
+	if (col && isTableOrArray(col->t) && store_funcs.sorted_col && store_funcs.sorted_col(tr, col))
 		return 1;
 	return 0;
 }
