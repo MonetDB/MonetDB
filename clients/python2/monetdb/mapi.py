@@ -24,13 +24,14 @@ import logging
 import struct
 import hashlib
 from cStringIO import StringIO
-import time
 
-from monetdb.exceptions import OperationalError, DatabaseError, ProgrammingError, NotSupportedError
+
+from monetdb.exceptions import OperationalError, DatabaseError,\
+    ProgrammingError, NotSupportedError
 
 logger = logging.getLogger("monetdb")
 
-MAX_PACKAGE_LENGTH = (1024*8)-2
+MAX_PACKAGE_LENGTH = (1024 * 8) - 2
 
 MSG_PROMPT = ""
 MSG_MORE = "\1\2\n"
@@ -52,6 +53,7 @@ STATE_INIT = 0
 STATE_READY = 1
 
 
+# noinspection PyExceptionInherit
 class Connection(object):
     """
     MAPI (low level MonetDB API) connection
@@ -87,7 +89,6 @@ class Connection(object):
         self.socket.connect((hostname, port))
         self.__login()
 
-
     def __login(self, iteration=0):
         """ Reads challenge from line, generate response and check if
         everything is okay """
@@ -97,13 +98,13 @@ class Connection(object):
         self.__putblock(response)
         prompt = self.__getblock().strip()
 
-        if len(prompt) == 0 :
+        if len(prompt) == 0:
             # Empty response, server is happy
             pass
         elif prompt == MSG_OK:
             pass
         elif prompt.startswith(MSG_INFO):
-            logger.info("II %s" % prompt[1:])
+            logger.info("%s" % prompt[1:])
 
         elif prompt.startswith(MSG_ERROR):
             logger.error(prompt[1:])
@@ -114,23 +115,22 @@ class Connection(object):
             # the first
             redirect = prompt.split()[0][1:].split(':')
             if redirect[1] == "merovingian":
-                logger.debug("II: merovingian proxy, restarting " +
-                        "authenticatiton")
+                logger.debug("restarting authentication")
                 if iteration <= 10:
-                    self.__login(iteration=iteration+1)
+                    self.__login(iteration=iteration + 1)
                 else:
-                    raise OperationalError("maximal number of redirects " +
-                    "reached (10)")
+                    raise OperationalError("maximal number of redirects "
+                                           "reached (10)")
 
             elif redirect[1] == "monetdb":
                 self.hostname = redirect[2][2:]
                 self.port, self.database = redirect[3].split('/')
                 self.port = int(self.port)
-                logger.info("II: merovingian redirect to monetdb://%s:%s/%s" %
-                        (self.hostname, self.port, self.database))
+                logger.info("redirect to monetdb://%s:%s/%s" %
+                            (self.hostname, self.port, self.database))
                 self.socket.close()
                 self.connect(self.hostname, self.port, self.username,
-                        self.password, self.database, self.language)
+                             self.password, self.database, self.language)
 
             else:
                 raise ProgrammingError("unknown redirect: %s" % prompt)
@@ -141,16 +141,14 @@ class Connection(object):
         self.state = STATE_READY
         return True
 
-
     def disconnect(self):
         """ disconnect from the monetdb server """
         self.state = STATE_INIT
         self.socket.close()
 
-
     def cmd(self, operation):
         """ put a mapi command on the line"""
-        logger.debug("II: executing command %s" % operation)
+        logger.debug("executing command %s" % operation)
 
         if self.state != STATE_READY:
             raise(ProgrammingError, "Not connected")
@@ -170,7 +168,6 @@ class Connection(object):
             raise OperationalError(response[1:])
         else:
             raise ProgrammingError("unknown state: %s" % response)
-
 
     def __challenge_response(self, challenge):
         """ generate a response to a mapi login challenge """
@@ -201,11 +198,11 @@ class Connection(object):
             m.update(salt.encode())
             pwhash = "{MD5}" + m.hexdigest()
         else:
-            raise NotSupportedError("Unsupported hash algorithms required for login: %s" % (hashes));
+            raise NotSupportedError("Unsupported hash algorithms required"
+                                    " for login: %s" % hashes)
 
         return ":".join(["BIG", self.username, pwhash, self.language,
-            self.database]) + ":"
-
+                         self.database]) + ":"
 
     def __getblock(self):
         """ read one mapi encoded block """
@@ -213,45 +210,37 @@ class Connection(object):
         last = 0
         while not last:
             flag = self.__getbytes(2)
-            unpacked = struct.unpack('<H', flag)[0] # unpack little endian short
+            unpacked = struct.unpack('<H', flag)[0]  # little endian short
             length = unpacked >> 1
             last = unpacked & 1
-            #logger.debug("II: reading %i bytes, last: %s" % (length, bool(last)))
             result.write(self.__getbytes(length))
-        #logger.debug("RX: %s" % result.getvalue())
         return result.getvalue()
 
-
-    def __getbytes(self, bytes):
+    def __getbytes(self, bytes_):
         """Read an amount of bytes from the socket"""
         result = StringIO()
-        count = bytes
+        count = bytes_
         while count > 0:
             recv = self.socket.recv(count)
             if len(recv) == 0:
                 raise OperationalError("Server closed connection")
-            #logger.debug("II: package size: %i payload: %s" % (len(recv), recv))
             count -= len(recv)
             result.write(recv)
         return result.getvalue()
-
 
     def __putblock(self, block):
         """ wrap the line in mapi format and put it into the socket """
         pos = 0
         last = 0
         while not last:
-            data = block[pos:pos+MAX_PACKAGE_LENGTH]
+            data = block[pos:pos + MAX_PACKAGE_LENGTH]
             length = len(data)
             if length < MAX_PACKAGE_LENGTH:
                 last = 1
-            flag = struct.pack( '<H', ( length << 1 ) + last )
-            #logger.debug("II: sending %i bytes, last: %s" % (length, bool(last)))
-            #logger.debug("TX: %s" % data)
+            flag = struct.pack('<H', (length << 1) + last)
             self.socket.send(flag)
             self.socket.send(data)
             pos += length
-
 
     def __del__(self):
         if self.socket:
@@ -259,4 +248,3 @@ class Connection(object):
 
 #backwards compatiblity
 Server = Connection
-

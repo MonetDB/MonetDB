@@ -78,7 +78,7 @@ extern void sql_destroy_args(mvc *sql);		/* used in backend */
 
 extern void sql_add_param(mvc *sql, char *name, sql_subtype *st);	
 extern sql_arg *sql_bind_param(mvc *sql, char *name);
-/* once the type of the '?' parameters is known its set using the set_type
+/* once the type of the '?' parameters is known it's set using the set_type
  * function */
 extern int set_type_param(mvc *sql, sql_subtype *type, int nr);
 extern void sql_destroy_params(mvc *sql);	/* used in backend */

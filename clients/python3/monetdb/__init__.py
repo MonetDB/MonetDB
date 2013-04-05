@@ -32,4 +32,3 @@ __all__ = ["sql", "mapi"]
 
 # for backwards compatability
 monetdb_exceptions = exceptions
-

@@ -20,6 +20,7 @@ def parse_statusline(line):
 
     subparts = rest.split(',')
     sub_iter = iter(subparts)
+
     info = {}
 
     info['name'] = sub_iter.__next__()

@@ -59,7 +59,7 @@ typedef struct queue {
 	int size;	/* size of queue */
 	int last;	/* last element in the queue */
 	FlowEvent *data;
-	MT_Lock l;	/* its a shared resource, ie we need locks */
+	MT_Lock l;	/* it's a shared resource, ie we need locks */
 	MT_Sema s;	/* threads wait on empty queues */
 } queue;
 

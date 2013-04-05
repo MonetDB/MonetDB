@@ -1091,7 +1091,7 @@ BBPexit(void)
 						skipped = 1;
 						continue;
 					}
-					/* NIELS ?? Why reduce share count, its done in VIEWdestroy !! */
+					/* NIELS ?? Why reduce share count, it's done in VIEWdestroy !! */
 					if (isVIEW(b)) {
 						bat hp = VIEWhparent(b), tp = VIEWtparent(b);
 						bat vhp = VIEWvhparent(b), vtp = VIEWvtparent(b);
@@ -2152,7 +2152,7 @@ decref(bat i, int logical, int releaseShare, int lock)
 			BBP_lastused(i) = sec;
 	} else if (b || (BBP_status(i) & BBPTMP)) {
 		/* bat will be unloaded now. set the UNLOADING bit
-		 * while locked so no other thread thinks its
+		 * while locked so no other thread thinks it's
 		 * available anymore */
 		assert((BBP_status(i) & BBPUNLOADING) == 0);
 		BATDEBUG {

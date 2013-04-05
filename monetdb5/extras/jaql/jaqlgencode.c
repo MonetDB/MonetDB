@@ -1181,9 +1181,9 @@ dumpcomp(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems)
 	} else {  /* var <cmp> var */
 		int lv[4] = {j->j2, j->j3, j->j4, 0}, *lp = lv;
 		/* FIXME: we need to check that a and b have at most one value
-		 * per elem here, further code assumes that, because its
+		 * per elem here, further code assumes that, because it's
 		 * semantically unclear what one should do with multiple values
-		 * per element (e.g. $.reviews[*].rating), in fact I believe its
+		 * per element (e.g. $.reviews[*].rating), in fact I believe it's
 		 * impossible to say something useful about it */
 
 		q = newInstruction(mb, ASSIGNsymbol);
