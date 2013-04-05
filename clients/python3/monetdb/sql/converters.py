@@ -22,6 +22,7 @@ Backwards compatible converterts
 from monetdb.sql import monetize
 from monetdb.sql import pythonize
 
+
 class Pythonizer:
     """
     backwards compatible class, was used for convertion from
