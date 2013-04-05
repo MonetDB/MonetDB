@@ -39,7 +39,7 @@ typedef struct MRQUEUE {
 static MRqueue *mrqueue;
 static int mrqsize = -1;	/* size of queue */
 static int mrqlast = -1;
-static MT_Lock mrqlock;		/* its a shared resource, ie we need locks */
+static MT_Lock mrqlock;		/* it's a shared resource, ie we need locks */
 static MT_Sema mrqsema;		/* threads wait on empty queues */
 
 

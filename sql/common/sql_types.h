@@ -67,7 +67,7 @@ extern list *funcs;
 extern int bits2digits(int b);
 extern int digits2bits(int d);
 
-extern int sql_type_convert(int form, int to); /* return 1, convert possible but its a down cast, 2 convert possible can be done savely */
+extern int sql_type_convert(int form, int to); /* return 1, convert possible but it's a down cast, 2 convert possible can be done savely */
 extern int is_commutative(char *fnm); 	/* return 1, if commutative */
 
 extern char *sql_bind_alias(char *alias);

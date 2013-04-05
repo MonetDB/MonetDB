@@ -857,7 +857,7 @@ GDKmmap(const char *path, int mode, size_t len)
 	}
 	ALLOCDEBUG fprintf(stderr, "#GDKmmap " SZFMT " " PTRFMT "\n", len, PTRFMTCAST ret);
 	if (ret != (void *) -1L) {
-		/* since mmap directly have content we say its zero-ed
+		/* since mmap directly have content we say it's zero-ed
 		 * memory */
 		VALGRIND_MALLOCLIKE_BLOCK(ret, len, 0, 1);
 		meminc(len, "GDKmmap");

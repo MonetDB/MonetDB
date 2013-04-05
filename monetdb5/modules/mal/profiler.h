@@ -22,7 +22,7 @@
  * @+ Implementation
  * The commands merely encapsulate the functionality provided by
  * mal_profiler, which should be explicitly compiled with the kernel, because
- * its generates a noticable overhead.
+ * it generates a noticable overhead.
  */
 
 #ifndef _PROFILER_

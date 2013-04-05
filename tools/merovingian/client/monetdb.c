@@ -25,7 +25,7 @@
  * A group of MonetDB servers in a dbfarm can be under control of
  * Merovingian, a daemon which by itself does not allow any user
  * interaction.  The monetdb utility is designed to be the interface for
- * the DBA to the dbfarm and its vincinity.  Creating or deleting
+ * the DBA to the dbfarm and its vicinity.  Creating or deleting
  * databases next to retrieving status information about them are the
  * primary goals of this tool.
  */
