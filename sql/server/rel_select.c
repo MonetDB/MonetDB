@@ -5668,10 +5668,6 @@ rel_selects(mvc *sql, symbol *s)
 	default:
 		return NULL;
 	}
-	if (mvc_debug_on(sql,32768)) {
-		rel_print(sql, ret, 0);
-		printf("\n");
-	}
 	if (!ret && sql->errstr[0] == 0)
 		(void) sql_error(sql, 02, "relational query without result");
 	return ret;
