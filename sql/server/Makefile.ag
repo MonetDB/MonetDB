@@ -49,6 +49,7 @@ lib_sqlserver = {
 		rel_prop.c \
 		rel_exp.c \
 		rel_optimizer.c \
+		rel_planner.c \
 		rel_distribute.c \
 		rel_psm.c \
 		rel_xml.c \

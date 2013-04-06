@@ -27,6 +27,7 @@
 #include "rel_dump.h"
 #include "rel_select.h"
 #include "rel_updates.h"
+#include "rel_planner.h"
 #include "sql_env.h"
 
 #define new_func_list(sa) sa_list(sa)
@@ -415,14 +416,6 @@ exp_keyvalue(sql_exp *e)
 	return cnt;
 }
 
-static int
-rel_has_exp(sql_rel *rel, sql_exp *e) 
-{
-	if (rel_find_exp(rel, e) != NULL) 
-		return 0;
-	return -1;
-}
-
 static sql_rel *
 find_rel(list *rels, sql_exp *e)
 {
@@ -430,22 +423,6 @@ find_rel(list *rels, sql_exp *e)
 	if (n) 
 		return n->data;
 	return NULL;
-}
-
-static sql_rel *
-find_one_rel(list *rels, sql_exp *e)
-{
-	node *n;
-	sql_rel *fnd = NULL;
-
-	for(n = rels->h; n; n = n->next) {
-		if (rel_has_exp(n->data, e) == 0) {
-			if (fnd)
-				return NULL;
-			fnd = n->data;
-		}
-	}
-	return fnd;
 }
 
 static int
@@ -510,7 +487,7 @@ table_colexp(sql_exp *e, sql_rel *r)
 	return NULL;
 }
 
-static int
+int
 exp_joins_rels(sql_exp *e, list *rels)
 {
 	sql_rel *l = NULL, *r = NULL;
@@ -668,7 +645,7 @@ rel_find_column( sql_allocator *sa, sql_rel *rel, char *tname, char *cname )
 }
 
 static list *
-find_fk( sql_allocator *sa, list *rels, list *exps) 
+find_fk( mvc *sql, list *rels, list *exps) 
 {
 	node *djn;
 	list *sdje, *aje, *dje;
@@ -685,7 +662,7 @@ find_fk( sql_allocator *sa, list *rels, list *exps)
 			break;
 		if (!find_prop(je->p, PROP_JOINIDX)) {
 			int swapped = 0;
-			list *aaje = matching_joins(sa, rels, aje, je);
+			list *aaje = matching_joins(sql->sa, rels, aje, je);
 			list *eje = list_select(aaje, (void*)1, (fcmp) &exp_is_eqjoin, (fdup)NULL);
 			sql_rel *lr = find_rel(rels, le), *olr = lr;
 			sql_rel *rr = find_rel(rels, re), *orr = rr;
@@ -717,7 +694,7 @@ find_fk( sql_allocator *sa, list *rels, list *exps)
 				swapped = 1;
 			} 
 
-			if (idx && (iname = sa_strconcat( sa, "%", idx->base.name)) != NULL &&
+			if (idx && (iname = sa_strconcat( sql->sa, "%", idx->base.name)) != NULL &&
 				   ((!swapped && name_find_column(olr, NULL, iname, -2, &bt) == NULL) ||
 			            ( swapped && name_find_column(orr, NULL, iname, -2, &bt) == NULL))) 
 				idx = NULL;
@@ -727,28 +704,39 @@ find_fk( sql_allocator *sa, list *rels, list *exps)
 				node *n;
 				sql_exp *t = NULL, *i = NULL;
 	
-				/* Add join between idx and TID */
-				if (swapped) {
-					sql_exp *s = je->l, *l = je->r;
+				if (list_length(lcols) > 1 || !mvc_debug_on(sql, 512)) { 
 
-					t = rel_find_column(sa, lr, s->l, TID);
-					i = rel_find_column(sa, rr, l->l, iname);
-					assert(t && i);
-					je = exp_compare(sa, i, t, cmp_equal);
-				} else {
-					sql_exp *s = je->r, *l = je->l;
+					/* Add join between idx and TID */
+					if (swapped) {
+						sql_exp *s = je->l, *l = je->r;
 
-					t = rel_find_column(sa, rr, s->l, TID);
-					i = rel_find_column(sa, lr, l->l, iname);
-					assert(t && i);
-					je = exp_compare(sa, i, t, cmp_equal);
+						t = rel_find_column(sql->sa, lr, s->l, TID);
+						i = rel_find_column(sql->sa, rr, l->l, iname);
+						assert(t && i);
+						je = exp_compare(sql->sa, i, t, cmp_equal);
+					} else {
+						sql_exp *s = je->r, *l = je->l;
+
+						t = rel_find_column(sql->sa, rr, s->l, TID);
+						i = rel_find_column(sql->sa, lr, l->l, iname);
+						assert(t && i);
+						je = exp_compare(sql->sa, i, t, cmp_equal);
+					}
+
+					/* Remove all join expressions */
+					for (n = eje->h; n; n = n->next) 
+						list_remove_data(exps, n->data);
+					append(exps, je);
+					djn->data = je;
+				} else if (swapped) { /* else keep je for single column expressions */
+					je = exp_compare(sql->sa, je->r, je->l, cmp_equal);
+					/* Remove all join expressions */
+					for (n = eje->h; n; n = n->next) 
+						list_remove_data(exps, n->data);
+					append(exps, je);
+					djn->data = je;
 				}
-				/* Remove all join expressions */
-				for (n = eje->h; n; n = n->next) 
-					list_remove_data(exps, n->data);
-				append(exps, je);
-				djn->data = je;
-				je->p = p = prop_create(sa, PROP_JOINIDX, je->p);
+				je->p = p = prop_create(sql->sa, PROP_JOINIDX, je->p);
 				p->value = idx;
 			}
 			lcols->destroy = NULL;
@@ -757,7 +745,7 @@ find_fk( sql_allocator *sa, list *rels, list *exps)
 	}
 
 	/* sort expressions on weighted number of reducing operators */
-	sdje = order_join_expressions(sa, dje, rels);
+	sdje = order_join_expressions(sql->sa, dje, rels);
 	return sdje;
 }
 
@@ -771,7 +759,10 @@ order_joins(mvc *sql, list *rels, list *exps)
 	int fnd = 0;
 
 	/* find foreign keys and reorder the expressions on reducing quality */
-	sdje = find_fk(sql->sa, rels, exps);
+	sdje = find_fk(sql, rels, exps);
+
+	if (list_length(rels) > 2 && mvc_debug_on(sql, 256))
+		return rel_planner(sql, rels, sdje);
 
 	/* open problem, some expressions use more than 2 relations */
 	/* For example a.x = b.y * c.z; */
@@ -990,7 +981,7 @@ reorder_join(mvc *sql, sql_rel *rel)
 		list_append(rels, rel->l);
 		list_append(rels, rel->r);
 		cnt = list_length(exps);
-		rel->exps = find_fk(sql->sa, rels, exps);
+		rel->exps = find_fk(sql, rels, exps);
 		if (list_length(rel->exps) != cnt) 
 			rel->exps = order_join_expressions(sql->sa, exps, rels);
 	} else { 
@@ -5323,7 +5314,7 @@ rel_semijoin_use_fk(int *changes, mvc *sql, sql_rel *rel)
 		append(rels, rel->l);
 		append(rels, rel->r);
 
-		(void) find_fk( sql->sa, rels, exps);
+		(void) find_fk( sql, rels, exps);
 		rel->exps = exps;
 	}
 	return rel;

@@ -17,14 +17,14 @@
  * All Rights Reserved.
  */
 
-#ifndef _REL_OPTIMIZER_H_
-#define _REL_OPTIMIZER_H_
+#ifndef _REL_PLANNER_H_
+#define _REL_PLANNER_H_
 
 #include "rel_semantic.h"
 
-extern sql_rel * rel_optimizer(mvc *sql, sql_rel *rel);
+extern sql_rel * rel_planner(mvc *sql, list *rels, list *jes);
 
-extern int exp_joins_rels(sql_exp *e, list *rels);
+extern int rel_has_exp(sql_rel *rel, sql_exp *e);
+extern sql_rel *find_one_rel(list *rels, sql_exp *e);
 
-
-#endif /*_REL_OPTIMIZER_H_*/
+#endif /*_REL_PLANNER_H_ */
