@@ -714,10 +714,9 @@ static stmt *check_types(mvc *sql, sql_subtype *ct, stmt *s, check_type tpe);
 static stmt *
 stmt_col( mvc *sql, sql_column *c, stmt *del) 
 { 
-	int readonly = (mvc_debug_on(sql, 32) || mvc_debug_on(sql, 64) || mvc_debug_on(sql, 8192));
 	stmt *sc = stmt_bat(sql->sa, c, RDONLY);
 
-	if (isTable(c->t) && !c->t->readonly && !readonly &&
+	if (isTable(c->t) && !c->t->readonly &&
 	   (c->base.flag != TR_NEW || c->t->base.flag != TR_NEW /* alter */) &&
 	   (c->t->persistence == SQL_PERSIST || c->t->persistence == SQL_DECLARED_TABLE) && !c->t->commit_action) {
 		stmt *i = stmt_bat(sql->sa, c, RD_INS);
@@ -733,10 +732,9 @@ stmt_col( mvc *sql, sql_column *c, stmt *del)
 static stmt *
 stmt_idx( mvc *sql, sql_idx *i, stmt *del) 
 { 
-	int readonly = (mvc_debug_on(sql, 32) || mvc_debug_on(sql, 64) || mvc_debug_on(sql, 8192));
 	stmt *sc = stmt_idxbat(sql->sa, i, RDONLY);
 
-	if (isTable(i->t) && !i->t->readonly && !readonly &&
+	if (isTable(i->t) && !i->t->readonly &&
 	   (i->base.flag != TR_NEW || i->t->base.flag != TR_NEW /* alter */) &&
 	   (i->t->persistence == SQL_PERSIST || i->t->persistence == SQL_DECLARED_TABLE) && !i->t->commit_action) {
 		stmt *ic = stmt_idxbat(sql->sa, i, RD_INS);

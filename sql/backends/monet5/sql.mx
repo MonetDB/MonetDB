@@ -3717,12 +3717,10 @@ SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_column *c;
 	BAT *tids;
 	size_t nr, sb = 0, inr = 0;
-	int readonly = 0;
 
 	*res = 0;
 	if (msg)
 		return msg;
-	readonly = (mvc_debug_on(m, 32) || mvc_debug_on(m, 64) || mvc_debug_on(m, 8192));
 	s = mvc_bind_schema(m, sname);
 	if ( s == NULL)
 		throw(SQL,"sql.tid","3F000!Schema missing");
@@ -3733,7 +3731,7 @@ SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	nr = store_funcs.count_col(tr, c, 1);
 
-	if (isTable(t) && !readonly &&
+	if (isTable(t) && !t->readonly &&
 	   (t->base.flag != TR_NEW /* alter */) &&
 	    t->persistence == SQL_PERSIST && !t->commit_action) 
 		inr = store_funcs.count_col(tr, c, 0);
