@@ -1684,7 +1684,7 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 				p = b;
 				b = b->next;
 			}
-			if (b && p) {
+			if (b && b->wtime > oldest->stime && p) {
 				p->next = NULL;
 				destroy_dbat(b);
 			}
@@ -1712,7 +1712,7 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 				p = b;
 				b = b->next;
 			}
-			if (b && p) {
+			if (b && b->wtime > oldest->stime && p) {
 				p->next = NULL;
 				destroy_bat(tr, b);
 			}
@@ -1749,7 +1749,7 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 					p = b;
 					b = b->next;
 				}
-				if (b && p) {
+				if (b && b->wtime > oldest->stime && p) {
 					p->next = NULL;
 					destroy_bat(tr, b);
 				}
