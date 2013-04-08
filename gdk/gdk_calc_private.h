@@ -61,12 +61,17 @@ typedef unsigned __int64 ulng;
 					start = *cand;			\
 					end = candend[-1] + 1;		\
 				}					\
-				if (start < (b)->H->seq)		\
+				assert(start <= end);			\
+				if (start <= (b)->H->seq)		\
 					start = 0;			\
+				else if (start >= (b)->H->seq + cnt)	\
+					start = cnt;			\
 				else					\
 					start -= (b)->H->seq;		\
-				if (end > (b)->H->seq + cnt)		\
+				if (end >= (b)->H->seq + cnt)		\
 					end = cnt;			\
+				else if (end <= (b)->H->seq)		\
+					end = 0;			\
 				else					\
 					end -= (b)->H->seq;		\
 			}						\

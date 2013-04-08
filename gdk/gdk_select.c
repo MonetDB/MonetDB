@@ -962,7 +962,10 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 		return NULL;
 	}
 
-	if (b->U->count == 0 || (s && s->U->count == 0)) {
+	if (b->U->count == 0 || (s && s->U->count == 0) ||
+	    (BATtdense(s) &&
+	     (s->tseqbase >= b->hseqbase + BATcount(b) ||
+	      s->tseqbase + BATcount(s) <= b->hseqbase))) {
 		/* trivially empty result */
 		ALGODEBUG fprintf(stderr, "#BATsubselect(b=%s#" BUNFMT
 				  ",s=%s,anti=%d): trivially empty\n",
