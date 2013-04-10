@@ -2937,12 +2937,8 @@ reset_idx(sql_trans *tr, sql_idx *fi, sql_idx *pfi)
 {
 	/* did we make changes or is the global changed after we started */
 	if (fi->base.rtime || fi->base.wtime || tr->stime < pfi->base.wtime) {
-		if (isTable(fi->t)) {
-			if (fi->base.allocated)
-				store_funcs.destroy_idx(NULL, fi);
-			fi->data = NULL;
-			fi->base.allocated = 0;
-		}
+		if (isTable(fi->t)) 
+			store_funcs.destroy_idx(NULL, fi);
 		fi->base.wtime = fi->base.rtime = 0;
 	}
 	return LOG_OK;
@@ -2954,12 +2950,8 @@ reset_column(sql_trans *tr, sql_column *fc, sql_column *pfc)
 	/* did we make changes or is the global changed after we started */
 	if (fc->base.rtime || fc->base.wtime || tr->stime < pfc->base.wtime) {
 
-		if (isTable(fc->t)) {
-			if (fc->base.allocated)
-				store_funcs.destroy_col(NULL, fc);
-			fc->data = NULL;
-			fc->base.allocated = 0;
-		}
+		if (isTable(fc->t)) 
+			store_funcs.destroy_col(NULL, fc);
 
 		fc->null = pfc->null;
 		fc->unique = pfc->unique;
@@ -3000,12 +2992,8 @@ reset_table(sql_trans *tr, sql_table *ft, sql_table *pft)
 	if (ft->base.rtime || ft->base.wtime || tr->stime < pft->base.wtime) {
 		int ok = LOG_OK;
 
-		if (isTable(ft)) {
-			if (ft->base.allocated)
-				store_funcs.destroy_del(NULL, ft);
-			ft->data = NULL;
-			ft->base.allocated = 0;
-		}
+		if (isTable(ft)) 
+			store_funcs.destroy_del(NULL, ft);
 
 		ft->base.wtime = ft->base.rtime = 0;
 		ok = reset_changeset( tr, &ft->columns, &pft->columns, &ft->base, (resetf) &reset_column, (dupfunc) &column_dup);

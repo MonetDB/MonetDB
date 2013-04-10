@@ -515,6 +515,7 @@ dup_del(sql_trans *tr, sql_table *ot, sql_table *t)
 {
 	sql_dbat *bat = t->data = ZNEW(sql_dbat), *obat = ot->data;
 	int ok = dup_dbat( tr, obat, bat, isNew(t), isTempTable(t));
+	assert(t->base.allocated == 0);
 	t->base.allocated = 1;
 	return ok;
 }
@@ -615,12 +616,9 @@ delete_tab(sql_trans *tr, sql_table * t, void *ib, int tpe)
 		sql_column *c = n->data;
 		sql_delta *bat;
 
-		if (!c->data || !c->base.allocated) {
-			int type = c->type.type->localtype;
+		if (!c->data) {
 			sql_column *oc = tr_find_column(tr->parent, c);
-			sql_delta *bat = c->data = ZNEW(sql_delta), *obat = timestamp_delta(oc->data, tr->stime);
-			(void)dup_bat(tr, c->t, obat, bat, type, isNew(oc), c->base.flag == TR_NEW); 
-			c->base.allocated = 1;
+			c->data = timestamp_delta(oc->data, tr->stime);
 		}
        		bat = c->data;
 		if (bat->cached) {
@@ -633,12 +631,9 @@ delete_tab(sql_trans *tr, sql_table * t, void *ib, int tpe)
 			sql_idx *i = n->data;
 			sql_delta *bat;
 
-			if (!i->data || !i->base.allocated) {
-				int type = (i->type==join_idx)?TYPE_oid:TYPE_wrd;
+			if (!i->data) {
 				sql_idx *oi = tr_find_idx(tr->parent, i);
-				sql_delta *bat = i->data = ZNEW(sql_delta), *obat = timestamp_delta(oi->data, tr->stime);
-				(void)dup_bat(tr, i->t, obat, bat, type, isNew(i), i->base.flag == TR_NEW); 
-				i->base.allocated = 1;
+				i->data = timestamp_delta(oi->data, tr->stime);
 			}
        			bat = i->data;
 			if (bat && bat->cached) {
@@ -846,7 +841,7 @@ new_persistent_bat(sql_trans *tr, sql_delta *bat, int sz)
 	return new_persistent_delta(bat, sz);
 }
 
-void
+static void
 create_delta( sql_delta *d, BAT *b, BAT *i, bat u)
 {
 	d->cnt = BATcount(i);
@@ -1130,7 +1125,7 @@ log_destroy_delta(sql_trans *tr, sql_delta *b)
 	return ok;
 }
 
-int
+static int
 destroy_delta(sql_delta *b)
 {
 	if (b->name)
@@ -1206,8 +1201,8 @@ log_destroy_idx(sql_trans *tr, sql_idx *i)
 	return LOG_OK;
 }
 
-int
-destroy_dbat(sql_dbat *bat)
+static int
+destroy_dbat(sql_trans *tr, sql_dbat *bat)
 {
 	sql_dbat *n = bat->next;
 
@@ -1217,24 +1212,20 @@ destroy_dbat(sql_dbat *bat)
 		temp_destroy(bat->dbid);
 	bat->dbid = 0;
 	bat->dname = NULL;
+	_DELETE(bat);
 	if (n)
-		return destroy_dbat(n);
+		return destroy_dbat(tr, n);
 	return LOG_OK;
 }
 
 static int
 destroy_del(sql_trans *tr, sql_table *t)
 {
-	int ok = 0;
-	sql_dbat *bat = t->data;
+	int ok = LOG_OK;
 
-	(void)tr;
-	if (!bat)
-		return LOG_OK;
-	if (bat && t->base.allocated) {
+	if (t->data && t->base.allocated) {
 		t->base.allocated = 0;
-		ok = destroy_dbat(bat);
-		_DELETE(bat);
+		ok = destroy_dbat(tr, t->data);
 	}
 	t->data = NULL;
 	return ok;
@@ -1265,7 +1256,7 @@ log_destroy_del(sql_trans *tr, sql_table *t)
 	return LOG_OK;
 }
 
-BUN
+static BUN
 clear_delta(sql_trans *tr, sql_delta *bat)
 {
 	BAT *b;
@@ -1334,7 +1325,7 @@ clear_idx(sql_trans *tr, sql_idx *i)
 	return 0;
 }
 
-BUN
+static BUN
 clear_dbat(sql_trans *tr, sql_dbat *bat)
 {
 	BUN sz = 0;
@@ -1631,7 +1622,6 @@ tr_update_dbat(sql_trans *tr, sql_dbat *tdb, sql_dbat *fdb, int cleared)
 
 	if (!fdb)
 		return ok;
-	(void)tr;
 	assert(store_nr_active==1);
 	db = temp_descriptor(fdb->dbid);
 	if (BUNlast(db) > db->batInserted || cleared) {
@@ -1650,7 +1640,7 @@ tr_update_dbat(sql_trans *tr, sql_dbat *tdb, sql_dbat *fdb, int cleared)
 	}
 	bat_destroy(db);
 	if (tdb->next) {
-		ok = destroy_dbat(tdb->next);
+		ok = destroy_dbat(tr, tdb->next);
 		tdb->next = NULL;
 	}
 	return ok;
@@ -1686,9 +1676,10 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 			}
 			if (b && b->wtime > oldest->stime && p) {
 				p->next = NULL;
-				destroy_dbat(b);
+				destroy_dbat(tr, b);
 			}
 		} else {
+			assert(tt->base.allocated);
 			tr_update_dbat(tr, tt->data, ft->data, ft->cleared);
 		}
 	}
@@ -1717,6 +1708,7 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 				destroy_bat(tr, b);
 			}
 		} else {
+			assert(oc->base.allocated);
 			tr_update_delta(tr, oc->data, cc->data, SNAPSHOT_MINSIZE);
 		}
 
@@ -1754,6 +1746,7 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 					destroy_bat(tr, b);
 				}
 			} else {
+				assert(oi->base.allocated);
 				tr_update_delta(tr, oi->data, ci->data, SNAPSHOT_MINSIZE);
 			}
 
