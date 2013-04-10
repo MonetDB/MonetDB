@@ -160,6 +160,20 @@ doChallenge(stream *in, stream *out) {
 #endif
 	bs = bstream_create(fdin, 128 * BLOCK);
 
+	if (bs == NULL){
+		if (fdin) {
+			mnstr_close(fdin);
+			mnstr_destroy(fdin);
+		}
+		if (fdout) {
+			mnstr_close(fdout);
+			mnstr_destroy(fdout);
+		}
+		if (buf)
+			GDKfree(buf);
+		GDKsyserror("SERVERlisten:"MAL_MALLOC_FAIL);
+		return;
+	}
 	bs->eof = 1;
 	MSscheduleClient(buf, challenge, bs, fdout);
 }
