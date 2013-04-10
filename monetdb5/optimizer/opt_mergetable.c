@@ -633,7 +633,7 @@ mat_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m)
 		pushInstruction(mb, u);
 
 	/* Filter empty partitions */
-	if (getModuleId(p) == aggrRef) {
+	if (getModuleId(p) == aggrRef && !isAvg) {
 		s = newInstruction(mb,ASSIGNsymbol);
 		setModuleId(s, algebraRef);
 		setFunctionId(s, selectNotNilRef);
@@ -710,6 +710,15 @@ mat_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m)
 		pushInstruction(mb, w);
 
 		r = w;
+
+		/* filter nils */
+		s = newInstruction(mb,ASSIGNsymbol);
+		setModuleId(s, algebraRef);
+		setFunctionId(s, selectNotNilRef);
+		getArg(s,0) = newTmpVariable(mb, battp);
+		s = pushArgument(mb, s, getArg(r,0));
+		pushInstruction(mb, s);
+		r = s;
 	}
 
 	s = newInstruction(mb,ASSIGNsymbol);
