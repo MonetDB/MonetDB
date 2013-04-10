@@ -152,14 +152,14 @@ resizeMalBlk(MalBlkPtr mb, int maxstmt, int maxvar)
 	if ( mb->ssize > maxstmt && mb->vsize > maxvar)
 		return ;
 
-	(void) GDKrealloc(mb->stmt, maxstmt * sizeof(InstrPtr));
+	mb->stmt = (InstrPtr *) GDKrealloc(mb->stmt, maxstmt * sizeof(InstrPtr));
 	if ( mb->stmt == NULL)
 		GDKerror("resizeMalBlk:" MAL_MALLOC_FAIL);
 	for ( i = mb->ssize; i < maxstmt; i++)
 		mb->stmt[i] = 0;
 	mb->ssize = maxstmt;
 
-	(void) GDKrealloc(mb->var, maxvar * sizeof (VarPtr));
+	mb->var = (VarPtr*) GDKrealloc(mb->var, maxvar * sizeof (VarPtr));
 	if ( mb->var == NULL)
 		GDKerror("resizeMalBlk:" MAL_MALLOC_FAIL);
 	for( i = mb->vsize; i < maxvar; i++)
@@ -167,7 +167,7 @@ resizeMalBlk(MalBlkPtr mb, int maxstmt, int maxvar)
 	mb->vsize = maxvar;
 
 	if ( mb->profiler){
-		(void) GDKrealloc(mb->profiler, maxstmt * sizeof(ProfRecord));
+		mb->profiler = (ProfRecord *) GDKrealloc(mb->profiler, maxstmt * sizeof(ProfRecord));
 		if (mb->profiler == NULL)
 			GDKerror("resizeMalBlk:" MAL_MALLOC_FAIL);
 	}
