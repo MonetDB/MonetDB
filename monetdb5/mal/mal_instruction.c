@@ -98,6 +98,10 @@ newMalBlk(int maxvars, int maxstmts)
 	MalBlkPtr mb;
 	VarPtr *v;
 
+	/* each MAL instruction implies at least on variable */
+	if ( maxvars < maxstmts)
+		maxvars = maxvars;
+
 	v = (VarPtr *) GDKzalloc(sizeof(VarPtr) * maxvars);
 	if (v == NULL) {
 		GDKerror("newMalBlk:" MAL_MALLOC_FAIL);
@@ -110,7 +114,6 @@ newMalBlk(int maxvars, int maxstmts)
 	}
 
 	mb->var = v;
-
 	mb->vtop = 0;
 	mb->vsize = maxvars;
 	mb->help = mb->binding = NULL;
@@ -139,6 +142,36 @@ newMalBlk(int maxvars, int maxstmts)
 	return mb;
 }
 
+void
+resizeMalBlk(MalBlkPtr mb, int maxstmt, int maxvar)
+{
+	int i;
+
+	if ( maxvar < maxstmt)
+		maxvar = maxstmt;
+	if ( mb->ssize > maxstmt && mb->vsize > maxvar)
+		return ;
+
+	(void) GDKrealloc(mb->stmt, maxstmt * sizeof(InstrPtr));
+	if ( mb->stmt == NULL)
+		GDKerror("resizeMalBlk:" MAL_MALLOC_FAIL);
+	for ( i = mb->ssize; i < maxstmt; i++)
+		mb->stmt[i] = 0;
+	mb->ssize = maxstmt;
+
+	(void) GDKrealloc(mb->var, maxvar * sizeof (VarPtr));
+	if ( mb->var == NULL)
+		GDKerror("resizeMalBlk:" MAL_MALLOC_FAIL);
+	for( i = mb->vsize; i < maxvar; i++)
+		mb->var[i] = 0;
+	mb->vsize = maxvar;
+
+	if ( mb->profiler){
+		(void) GDKrealloc(mb->profiler, maxstmt * sizeof(ProfRecord));
+		if (mb->profiler == NULL)
+			GDKerror("resizeMalBlk:" MAL_MALLOC_FAIL);
+	}
+}
 /* The resetMalBlk code removes instructions, but without freeing the
  * space. This way the structure is prepared for re-use */
 void

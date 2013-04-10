@@ -237,6 +237,7 @@ mal_export void printSignature(stream *fd, Symbol s, int flg);
 mal_export MalBlkPtr newMalBlk(int maxvars, int maxstmts);
 mal_export void resetMalBlk(MalBlkPtr mb, int stop);
 mal_export int newMalBlkStmt(MalBlkPtr mb, int maxstmts);
+mal_export void resizeMalBlk(MalBlkPtr mb, int maxstmt, int maxvar);
 mal_export void prepareMalBlk(MalBlkPtr mb, str s);
 mal_export void freeMalBlk(MalBlkPtr mb);
 mal_export MalBlkPtr copyMalBlk(MalBlkPtr mb);
