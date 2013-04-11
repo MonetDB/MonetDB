@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -123,14 +123,13 @@ typedef struct mvc {
 
 	int result_id;
 	res_table *results;
-	sql_column *last; 	/* last accessed column */
 #ifdef HAVE_TIMES
 	struct tms times;
 #endif	
 	lng Tparse;
 } mvc;
 
-extern int mvc_init(char *dbname, int debug, store_type store, backend_stack stk);
+extern int mvc_init(int debug, store_type store, int ro, int su, backend_stack stk);
 extern void mvc_exit(void);
 extern void mvc_logmanager(void);
 extern void mvc_minmaxmanager(void);

@@ -3,6 +3,8 @@ iterator02
 iterator03
 clients01
 
+bigsum
+
 compress
 
 inspect00
@@ -20,6 +22,8 @@ qgram
 #statistics01
 
 call00
+callstring
+callfunction
 
 #radix
 
@@ -45,14 +49,12 @@ remote99
 
 remote10
 
-# unlikely to work
-#attach00
-
 # this will always return something else
 #sabaoth00
 sabaoth01
 
 partition
+batpartition
 printf
 #some remote related tests
 mapi04
@@ -73,3 +75,5 @@ clients-hashes
 # shows different output if the password backend is different (or
 # monetdb password has been changed)
 clients-getpasswd
+
+#cpustat too system dependent to always run.

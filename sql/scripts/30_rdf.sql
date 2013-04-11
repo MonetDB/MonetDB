@@ -11,7 +11,7 @@
 -- The Original Code is the MonetDB Database System.
 --
 -- The Initial Developer of the Original Code is CWI.
--- Copyright August 2008-2012 MonetDB B.V.
+-- Copyright August 2008-2013 MonetDB B.V.
 -- All Rights Reserved.
 
 -- SQL statements to make the RDF Relational Storage Schema query-able from
@@ -26,7 +26,7 @@ create schema rdf;
 create table rdf.graph (gname string, gid int);
 
 -- create a procudure to load an RDF document
--- the chema string should be removed in the future and auto-fill it from
+-- the schema string should be removed in the future and auto-fill it from
 -- the backend
 create procedure rdf_shred(location string, gname string, sch string)
 	external name sql.rdfshred;

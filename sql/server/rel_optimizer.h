@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -23,5 +23,8 @@
 #include "rel_semantic.h"
 
 extern sql_rel * rel_optimizer(mvc *sql, sql_rel *rel);
+
+extern int exp_joins_rels(sql_exp *e, list *rels);
+
 
 #endif /*_REL_OPTIMIZER_H_*/

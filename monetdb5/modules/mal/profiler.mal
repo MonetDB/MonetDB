@@ -12,7 +12,7 @@
 #
 # The Initial Developer of the Original Code is CWI.
 # Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-# Copyright August 2008-2012 MonetDB B.V.
+# Copyright August 2008-2013 MonetDB B.V.
 # All Rights Reserved.
 
 module profiler;
@@ -132,3 +132,15 @@ comment "Get the memory footprint and reset the flag";
 pattern getMemory():lng
 address CMDgetMemory
 comment "Get the amount of memory claimed and reset the flag";
+
+command tomograph()
+address CMDtomograph
+comment "No-op operation, merely a signal to the tomograph package";
+
+command cpustats()(user:lng, nice:lng, sys:lng,idle:lng,iowait:lng)
+address CMDcpustats
+comment "Extract cpu statistics from the kernel";
+
+command cpuload(user:lng, nice:lng, sys:lng,idle:lng,iowait:lng)(cycles:int,io:int)
+address CMDcpuloadPercentage
+comment "Calculate the average cpu load percentage and io waiting times";

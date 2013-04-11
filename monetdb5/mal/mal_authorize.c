@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -546,7 +546,7 @@ AUTHgetUsername(str *username, Client *c) {
 		GDKfatal("Internal error: user id that doesn't exist: " OIDFMT, id);
 
 	useri = bat_iterator(user);
-	*username = BUNtail(useri, p);
+	*username = GDKstrdup( BUNtail(useri, p));
 	return(MAL_SUCCEED);
 }
 

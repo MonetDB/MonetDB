@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -24,7 +24,8 @@
 #include <stdarg.h>
 #include <sql_list.h>
 #include "sql_symbol.h"
-#include "sql_statement.h"
+#include "sql_mvc.h"
+#include <sql_relation.h>
 
 #define is_updateble(rel) \
 	(rel->op == op_basetable || \

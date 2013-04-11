@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -343,6 +343,9 @@ VIEWcreate_(BAT *h, BAT *t, int slice_view)
 		bn->T->hash = NULL;
 	else
 		bn->T->hash = t->T->hash;
+	/* imprints can and must be shared */
+	bn->H->imprints = h->H->imprints;
+	bn->T->imprints = t->T->imprints;
 	BBPcacheit(bs, 1);	/* enter in BBP */
 	/* View of VIEW combine, ie we need to fix the head of the mirror */
 	if (vc) {
@@ -462,6 +465,7 @@ BATmaterializeh(BAT *b)
 
 	/* cleanup possible ACC's */
 	HASHdestroy(b);
+	IMPSdestroy(b);
 
 	b->H->heap.filename = NULL;
 	if (HEAPalloc(&b->H->heap, cnt, sizeof(oid)) < 0) {
@@ -515,7 +519,7 @@ BATmaterialize(BAT *b)
  * The @#VIEWunlink@ routine cuts a reference to the parent. Part of the view
  * destroy sequence.
  */
-void
+static void
 VIEWunlink(BAT *b)
 {
 	if (b) {
@@ -721,8 +725,16 @@ VIEWreset(BAT *b)
 		/* reset capacity */
 		n->U->capacity = cnt;
 
+		/* swap n and v in case the original input was reversed, because
+		 * BATins demands (v)oid-headed input */
+		if (b->batCacheid < 0) {
+			n = m;
+			m = BATmirror(v);
+		} else {
+			m = v;
+		}
 		/* insert all of v in n, and quit */
-		BATins(n, v, FALSE);
+		BATins(n, m, FALSE);
 		BBPreclaim(v);
 		BBPunfix(n->batCacheid);
 	}
@@ -782,6 +794,7 @@ VIEWdestroy(BAT *b)
 		HASHremove(b);
 	if (b->T->hash)
 		HASHremove(BATmirror(b));
+	IMPSdestroy(b);
 	VIEWunlink(b);
 
 	if (b->htype && !b->H->heap.parentid) {

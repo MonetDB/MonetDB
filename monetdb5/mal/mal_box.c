@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -170,7 +170,7 @@
  * system administrator. It will contain global client data, e.g.,
  * user, language, database, port, and any other session parameter.
  * The boxes are all collected in the context of the database directory,
- * i.e. the directory <dbfarm>/box
+ * i.e. the directory <dbpath>/box
  *
  * @- Garbage Collection
  * The key objects managed by MonetDB are the persistent BATs, which
@@ -342,7 +342,6 @@ closeBox(str name, int flag)
 
 	if ((box = findBox(name))) {
 		saveBox(box, flag);
-		MT_lock_destroy(&box->lock);
 		return 0;
 	}
 	return -1;
@@ -356,18 +355,27 @@ destroyBox(str name)
 
 	MT_lock_set(&mal_contextLock, "destroyBox");
 	for (i = j = 0; i < topbox; i++) {
-		if (idcmp(malbox[j]->name, name) == 0) {
-			free(malbox[i]->name);
+		if (idcmp(malbox[i]->name, name) == 0) {
 			freeMalBlk(malbox[i]->sym);
+			malbox[i]->sym = NULL;
 			if ( malbox[i]->val)
 				freeStack(malbox[i]->val);
+			malbox[i]->val = NULL;
 			boxfile = boxFileName(malbox[i], 0);
 			unlink(boxfile);
 			GDKfree(boxfile);
+			GDKfree(malbox[i]->name);
+			malbox[i]->name = NULL;
 			MT_lock_destroy(&malbox[i]->lock);
-		} else
-			malbox[i] = malbox[j++];
+		} else {
+			if (j < i)
+				malbox[j] = malbox[i];
+			j++;
+		}
 	}
+	for (i = j; i < topbox; i++)
+		malbox[i] = NULL;
+	topbox = j;
 	MT_lock_unset(&mal_contextLock, "destroyBox");
 }
 
@@ -599,7 +607,7 @@ boxFileName(Box box, str backup)
 	char boxfile[PATHLENGTH];
 	size_t i = 0;
 
-	snprintf(boxfile, PATHLENGTH, "%s%c%s%cbox", GDKgetenv("gdk_dbfarm"), DIR_SEP, GDKgetenv("gdk_dbname"), DIR_SEP);
+	snprintf(boxfile, PATHLENGTH, "%s%cbox", GDKgetenv("gdk_dbpath"), DIR_SEP);
 	if (mkdir(boxfile, 0755) < 0 && errno != EEXIST) {
 		showException(GDKout, MAL,"box.fileName", "can not create box directory");
 		return NULL;
@@ -724,7 +732,7 @@ loadBox(str name)
 	char boxfile[PATHLENGTH];
 	size_t i = 0;
 
-	snprintf(boxfile, PATHLENGTH, "%s%c%s%cbox", GDKgetenv("gdk_dbfarm"), DIR_SEP, GDKgetenv("gdk_dbname"), DIR_SEP);
+	snprintf(boxfile, PATHLENGTH, "%s%cbox", GDKgetenv("gdk_dbpath"), DIR_SEP);
 	mkdir(boxfile,0755); /* ignore errors */
 	i = strlen(boxfile);
 	snprintf(boxfile + i, PATHLENGTH - i, "%c%s.box", DIR_SEP, name);

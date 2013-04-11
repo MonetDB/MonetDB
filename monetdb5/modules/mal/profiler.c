@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -70,54 +70,10 @@
  * emptied explicitly upon need.
  */
 /*
- * @-
  * Using the Monet Performance Profiler is constrained by the mal_profiler.
  */
 #include "monetdb_config.h"
 #include "profiler.h"
-#include "mal_client.h"
-
-#ifdef WIN32
-#if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5)
-#define profiler_export extern __declspec(dllimport)
-#else
-#define profiler_export extern __declspec(dllexport)
-#endif
-#else
-#define profiler_export extern
-#endif
-
-profiler_export str CMDactivateProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-profiler_export str CMDdeactivateProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-profiler_export str CMDsetFilterProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-profiler_export str CMDsetAllProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc);
-profiler_export str CMDsetFilterVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc);
-profiler_export str CMDclrFilterVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc);
-profiler_export str CMDclrFilterProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-profiler_export str CMDsetNoneProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-profiler_export str CMDsetProfilerFile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-profiler_export str CMDsetProfilerStream (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-profiler_export str CMDstartPointProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-profiler_export str CMDendPointProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-profiler_export str CMDstopProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-profiler_export str CMDstartProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-profiler_export str CMDnoopProfiler(int *res);
-profiler_export str CMDclearTrace(int *res);
-profiler_export str CMDdumpTrace(int *res);
-profiler_export str CMDgetTrace(int *res, str *ev);
-profiler_export str CMDopenProfilerStream(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-profiler_export str CMDcloseProfilerStream(int *res);
-profiler_export str CMDcleanup(int *ret);
-profiler_export str CMDgetEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-profiler_export str CMDclearEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-profiler_export str CMDgetDiskReads(lng *ret);
-profiler_export str CMDgetDiskWrites(lng *ret);
-profiler_export str CMDgetUserTime(lng *ret);
-profiler_export str CMDgetSystemTime(lng *ret);
-profiler_export str CMDsetFootprintFlag( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-profiler_export str CMDsetMemoryFlag( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-profiler_export str CMDgetMemory( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-profiler_export str CMDgetFootprint( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #define checkProfiler(X) \
 	if( ! profilerAvailable()) \
@@ -406,7 +362,7 @@ CMDsetFootprintFlag( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	(void) mb;
 	(void) stk;
 	(void) pci;
-	cntxt->flags |= bigfootFlag;
+	cntxt->flags |= footprintFlag;
 	return MAL_SUCCEED;
 }
 
@@ -414,30 +370,38 @@ str
 CMDgetFootprint( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	lng *l= getArgReference(stk,pci,0);
 
+	(void) cntxt;
 	(void) mb;
-	*l = cntxt->bigfoot;
-	cntxt->flags &= ~bigfootFlag;
-	cntxt->bigfoot= 0;
-	cntxt->vmfoot= 0;
+	*l = stk->tmpspace;
+	cntxt->flags &= ~footprintFlag;	// clear it as well
 	return MAL_SUCCEED;
 }
 
 str
-CMDsetMemoryFlag( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	(void) mb;
-	(void) stk;
-	(void) pci;
-	cntxt->flags |= memoryFlag;
+CMDtomograph(int *ret)
+{
+	(void) ret;
 	return MAL_SUCCEED;
 }
 
 str
-CMDgetMemory( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	lng *l= getArgReference(stk,pci,0);
+CMDcpustats(lng *user, lng *nice, lng *sys, lng *idle, lng *iowait)
+{
+	profilerGetCPUStat(user,nice,sys,idle,iowait);
+	return MAL_SUCCEED;
+}
 
-	(void) mb;
-	*l = cntxt->memory;
-	cntxt->flags &= ~memoryFlag;
-	cntxt->memory= 0;
+str
+CMDcpuloadPercentage(int *cycles, int *io, lng *user, lng *nice, lng *sys, lng *idle, lng *iowait)
+{
+	lng userN, niceN, sysN, idleN, iowaitN, N;
+	*cycles = 0;
+	*io = 0;
+	profilerGetCPUStat(&userN,&niceN,&sysN,&idleN,&iowaitN);
+	N = (userN - *user + niceN - *nice + sysN - *sys);
+	if ( N){
+		*cycles = (int) ( ((double) N) / (N + idleN - *idle + iowaitN - *iowait) *100);
+		*io = (int) ( ((double) iowaitN- *iowait) / (N + idleN - *idle + iowaitN - *iowait) *100);
+	}
 	return MAL_SUCCEED;
 }

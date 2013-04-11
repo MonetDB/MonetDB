@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -146,31 +146,31 @@ BATcreatedesc(int ht, int tt, int heapnames)
 	bn->batMaphheap = 0;
 	bn->batMaptheap = 0;
 	if (heapnames) {
-		str nme = BBP_physical(bn->batCacheid);
+		const char *nme = BBP_physical(bn->batCacheid);
 
 		if (ht) {
-			bn->H->heap.filename = (str) GDKmalloc(strlen(nme) + 12);
+			bn->H->heap.filename = GDKmalloc(strlen(nme) + 12);
 			if (bn->H->heap.filename == NULL)
 				goto bailout;
 			GDKfilepath(bn->H->heap.filename, NULL, nme, "head");
 		}
 
 		if (tt) {
-			bn->T->heap.filename = (str) GDKmalloc(strlen(nme) + 12);
+			bn->T->heap.filename = GDKmalloc(strlen(nme) + 12);
 			if (bn->T->heap.filename == NULL)
 				goto bailout;
 			GDKfilepath(bn->T->heap.filename, NULL, nme, "tail");
 		}
 
 		if (ATOMneedheap(ht)) {
-			if ((bn->H->vheap = (Heap *) GDKzalloc(sizeof(Heap))) == NULL || (bn->H->vheap->filename = (str) GDKmalloc(strlen(nme) + 12)) == NULL)
+			if ((bn->H->vheap = (Heap *) GDKzalloc(sizeof(Heap))) == NULL || (bn->H->vheap->filename = GDKmalloc(strlen(nme) + 12)) == NULL)
 				goto bailout;
 			GDKfilepath(bn->H->vheap->filename, NULL, nme, "hheap");
 			bn->H->vheap->parentid = bn->batCacheid;
 		}
 
 		if (ATOMneedheap(tt)) {
-			if ((bn->T->vheap = (Heap *) GDKzalloc(sizeof(Heap))) == NULL || (bn->T->vheap->filename = (str) GDKmalloc(strlen(nme) + 12)) == NULL)
+			if ((bn->T->vheap = (Heap *) GDKzalloc(sizeof(Heap))) == NULL || (bn->T->vheap->filename = GDKmalloc(strlen(nme) + 12)) == NULL)
 				goto bailout;
 			GDKfilepath(bn->T->vheap->filename, NULL, nme, "theap");
 			bn->T->vheap->parentid = bn->batCacheid;
@@ -487,6 +487,7 @@ BATextend(BAT *b, BUN newcap)
 	if (b->T->heap.base && HEAPextend(&b->T->heap, theap_size) < 0)
 		return NULL;
 	HASHdestroy(b);
+	IMPSdestroy(b);
 	return b;
 }
 
@@ -536,6 +537,7 @@ BATclear(BAT *b, int force)
 	if (b->T->hash) {
 		HASHremove(bm);
 	}
+	IMPSdestroy(b);
 
 	/* we must dispose of all inserted atoms */
 	if (b->batDeleted == b->batInserted &&
@@ -628,6 +630,7 @@ BATfree(BAT *b)
 		PROPdestroy(b->T->props);
 	b->T->props = NULL;
 	HASHdestroy(b);
+	IMPSdestroy(b);
 	if (b->htype)
 		HEAPfree(&b->H->heap);
 	else
@@ -710,9 +713,9 @@ static int
 heapcopy(BAT *bn, char *ext, Heap *dst, Heap *src)
 {
 	if (src->filename && src->newstorage != STORE_MEM) {
-		str nme = BBP_physical(bn->batCacheid);
+		const char *nme = BBP_physical(bn->batCacheid);
 
-		if ((dst->filename = (str) GDKmalloc(strlen(nme) + 12)) == NULL)
+		if ((dst->filename = GDKmalloc(strlen(nme) + 12)) == NULL)
 			return -1;
 		GDKfilepath(dst->filename, NULL, nme, ext);
 	}
@@ -720,14 +723,14 @@ heapcopy(BAT *bn, char *ext, Heap *dst, Heap *src)
 }
 
 static void
-heapfree(Heap *src, Heap *dst)
+heapfree(Heap *dst, Heap *src)
 {
-	if (dst->filename == NULL) {
-		dst->filename = src->filename;
-		src->filename = NULL;
+	if (src->filename == NULL) {
+		src->filename = dst->filename;
+		dst->filename = NULL;
 	}
-	HEAPfree(src);
-	*src = *dst;
+	HEAPfree(dst);
+	*dst = *src;
 }
 
 static int
@@ -1242,6 +1245,7 @@ BUNins(BAT *b, const void *h, const void *t, bit force)
 				HEAPwarm(b->T->vheap);
 		}
 	}
+	IMPSdestroy(b); /* no support for inserts in imprints yet */
 	return b;
       bunins_failed:
 	return NULL;
@@ -1326,6 +1330,9 @@ BUNappend(BAT *b, const void *t, bit force)
 	} else {
 		BATsetcount(b, b->batCount + 1);
 	}
+
+
+	IMPSdestroy(b); /* no support for inserts in imprints yet */
 
 	/* first adapt the hashes; then the user-defined accelerators.
 	 * REASON: some accelerator updates (qsignature) use the hashes!
@@ -1514,6 +1521,7 @@ BUNdelete_(BAT *b, BUN p, bit force)
 	}
 	b->batCount--;
 	b->batDirty = 1;	/* bat is dirty */
+	IMPSdestroy(b); /* no support for inserts in imprints yet */
 	return p;
 }
 
@@ -1907,9 +1915,9 @@ BUNlocate(BAT *b, const void *x, const void *y)
 				BUN i;
 
 				for (i = 0; i <= v->H->hash->mask; i++)
-					hcnt += (v->H->hash->hash[i] != BUN_NONE);
+					hcnt += HASHget(v->H->hash,i) != HASHnil(v->H->hash);
 				for (i = 0; i <= v->T->hash->mask; i++)
-					tcnt += (v->T->hash->hash[i] != BUN_NONE);
+					tcnt += HASHget(v->T->hash,i) != HASHnil(v->T->hash);
 				if (hcnt < tcnt) {
 					usemirror();
 					v = BATmirror(v);
@@ -2076,17 +2084,6 @@ BATsetcount(BAT *b, BUN cnt)
 	if (b->H->type == TYPE_void && b->T->type == TYPE_void)
 		b->batCapacity = cnt;
 	assert(b->batCapacity >= cnt);
-}
-
-/*
- * The alternative routine is BATbuncount, which calculates the total
- * buns in use.
- */
-BUN
-BATbuncount(BAT *b)
-{
-	BATcheck(b, "BATbuncount");
-	return BUNlast(b);
 }
 
 size_t
@@ -2268,20 +2265,6 @@ BATroles(BAT *b, const char *hnme, const char *tnme)
 		b->tident = BATstring_t;
 	return b;
 }
-
-BAT *
-BATcol_name(BAT *b, const char *tnme)
-{
-	BATcheck(b, "BATcol_name");
-	if (b->tident && !default_ident(b->tident))
-		GDKfree(b->tident);
-	if (tnme)
-		b->tident = GDKstrdup(tnme);
-	else
-		b->tident = BATstring_t;
-	return b;
-}
-
 
 /*
  * @- BATmmap
@@ -2657,8 +2640,7 @@ BATsetaccess(BAT *b, int newmode)
 		storage_t b0, b1, b2 = STORE_MEM, b3 = STORE_MEM;
 
 		if (b->batSharecnt && newmode != BAT_READ) {
-
-			PROPDEBUG THRprintf(GDKout, "#BATsetaccess: %s has %d views; deliver a copy.\n", BATgetId(b), b->batSharecnt);
+			BATDEBUG THRprintf(GDKout, "#BATsetaccess: %s has %d views; creating a copy\n", BATgetId(b), b->batSharecnt);
 			b = BATsetaccess(BATcopy(b, b->htype, b->ttype, TRUE), newmode);
 			if (b && b->batStamp > 0)
 				b->batStamp = -b->batStamp;	/* prevent MIL setaccess */
@@ -2765,13 +2747,6 @@ BATmode(BAT *b, int mode)
 		}
 		BBPdirty(1);
 
-		/* a SESSION bat is a TRANSIENT with one logical
-		 * reference added */
-		if (mode == SESSION) {
-			BBPincref(bid, TRUE);
-		} else if (b->batPersistence == SESSION) {
-			BBPdecref(bid, TRUE);
-		}
 		if (mode == PERSISTENT && isVIEW(b)) {
 			VIEWreset(b);
 		}
@@ -2785,6 +2760,8 @@ BATmode(BAT *b, int mode)
 		if (mode == PERSISTENT) {
 			if (!(BBP_status(bid) & BBPDELETED))
 				BBP_status_on(bid, BBPNEW, "BATmode");
+			else
+				BBP_status_on(bid, BBPEXISTING, "BATmode");
 			BBP_status_off(bid, BBPDELETED, "BATmode");
 		} else if (b->batPersistence == PERSISTENT) {
 			if (!(BBP_status(bid) & BBPNEW))
@@ -2974,13 +2951,13 @@ BATassertHeadProps(BAT *b)
 				BUN prb;
 				valp = BUNhead(bi, p);
 				prb = HASHprobe(hs, valp);
-				for (hb = hs->hash[prb];
-				     hb != BUN_NONE;
-				     hb = hs->link[hb])
+				for (hb = HASHget(hs,prb);
+				     hb != HASHnil(hs);
+				     hb = HASHgetlink(hs,hb))
 					if (cmpf(valp, BUNhead(bi, hb)) == 0)
 						assert(!b->hkey);
-				hs->link[p] = hs->hash[prb];
-				hs->hash[prb] = p;
+				HASHputlink(hs,p, HASHget(hs,prb));
+				HASHput(hs,prb,p);
 				cmp = cmpf(valp, nilp);
 				assert(!b->H->nonil || cmp != 0);
 				if (cmp == 0)
@@ -3045,6 +3022,7 @@ BATassertProps(BAT *b)
 {
 #ifndef NDEBUG
 	BAT *bm;
+	int bbpstatus;
 
 	/* general BAT sanity */
 	assert(b != NULL);
@@ -3058,6 +3036,12 @@ BATassertProps(BAT *b)
 	assert(b->batFirst >= b->batDeleted);
 	assert(b->batInserted >= b->batFirst);
 	assert(b->batFirst + b->batCount >= b->batInserted);
+	assert(b->U->first == 0);
+	bbpstatus = BBP_status(b->batCacheid);
+	/* only at most one of BBPDELETED, BBPEXISTING, BBPNEW may be set */
+	assert(((bbpstatus & BBPDELETED) != 0) +
+	       ((bbpstatus & BBPEXISTING) != 0) +
+	       ((bbpstatus & BBPNEW) != 0) <= 1);
 
 	BATassertHeadProps(b);
 	if (b->H != bm->H)
@@ -3233,9 +3217,9 @@ BATderiveHeadProps(BAT *b, int expensive)
 		prev = valp;
 		if (key && hs) {
 			prb = HASHprobe(hs, valp);
-			for (hb = hs->hash[prb];
-			     hb != BUN_NONE;
-			     hb = hs->link[hb]) {
+			for (hb = HASHget(hs,prb);
+			     hb != HASHnil(hs);
+			     hb = HASHgetlink(hs,hb)) {
 				if (cmpf(valp, BUNhead(bi, hb)) == 0) {
 					key = 0;
 					b->H->nokey[0] = hb;
@@ -3243,8 +3227,8 @@ BATderiveHeadProps(BAT *b, int expensive)
 					break;
 				}
 			}
-			hs->link[p] = hs->hash[prb];
-			hs->hash[prb] = p;
+			HASHputlink(hs,p, HASHget(hs,prb));
+			HASHput(hs,prb,p);
 		}
 	}
 	if (hs) {

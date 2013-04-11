@@ -2,9 +2,9 @@
 
 NAME="$1"
 
-Mlog   "$MSERVER --dbname=$TSTDB $TSTSRCDIR/$NAME.mal"
-eval    $MSERVER --dbname=$TSTDB $TSTSRCDIR/$NAME.mal
+Mlog   "$MSERVER --dbpath=$GDK_DBFARM/$TSTDB $TSTSRCDIR/$NAME.mal"
+eval    $MSERVER --dbpath=$GDK_DBFARM/$TSTDB $TSTSRCDIR/$NAME.mal
 
-Mlog   "$MSERVER --dbname=$TSTDB < $TSTSRCDIR/$NAME.mal"
-eval    $MSERVER --dbname=$TSTDB < $TSTSRCDIR/$NAME.mal
+Mlog   "$MSERVER --dbpath=$GDK_DBFARM/$TSTDB < $TSTSRCDIR/$NAME.mal"
+eval    $MSERVER --dbpath=$GDK_DBFARM/$TSTDB < $TSTSRCDIR/$NAME.mal
 

@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -133,7 +133,7 @@ GDKremovedir(const char *dirname)
 #define _FWRTHR         0x080000
 #define _FRDSEQ         0x100000
 
-static int
+int
 GDKfdlocate(const char *nme, const char *mode, const char *extension)
 {
 	char buf[PATHLENGTH], *path = buf;
@@ -229,6 +229,39 @@ GDKmove(const char *dir1, const char *nme1, const char *ext1, const char *dir2, 
 	IODEBUG THRprintf(GDKstdout, "#move %s %s = %d (%dms)\n", path1, path2, ret, GDKms() - t0);
 
 	return ret;
+}
+
+int
+GDKextend(const char *fn, size_t size)
+{
+	FILE *fp;
+	int t0 = 0;
+
+	IODEBUG t0 = GDKms();
+	if ((fp = fopen(fn, "rb+")) == NULL)
+		return -1;
+#if defined(_WIN64)
+	if (_fseeki64(fp, (ssize_t) size - 1, SEEK_SET) < 0)
+		goto bailout;
+#elif defined(HAVE_FSEEKO)
+	if (fseeko(fp, (off_t) size - 1, SEEK_SET) < 0)
+		goto bailout;
+#else
+	if (fseek(fp, size - 1, SEEK_SET) < 0)
+		goto bailout;
+#endif
+	if (fputc('\n', fp) < 0)
+		goto bailout;
+	if (fflush(fp) < 0)
+		goto bailout;
+	if (fclose(fp) < 0)
+		return -1;
+	IODEBUG fprintf(stderr, "#GDKextend %s " SZFMT " %dms\n", fn, size, GDKms() - t0);
+	return 0;
+  bailout:
+	fclose(fp);
+	IODEBUG fprintf(stderr, "#GDKextend %s failed " SZFMT " %dms\n", fn, size, GDKms() - t0);
+	return -1;
 }
 
 /*
@@ -354,41 +387,22 @@ GDKload(const char *nme, const char *ext, size_t size, size_t maxsize, storage_t
 	} else {
 		char path[PATHLENGTH];
 		struct stat st;
-		FILE *fp = NULL;
 
 		GDKfilepath(path, BATDIR, nme, ext);
 		if (stat(path, &st) >= 0 &&
 		    (maxsize < (size_t) st.st_size ||
 		     /* mmap storage is auto-extended here */
-		     ((fp = fopen(path, "rb+")) != NULL &&
-#ifdef _WIN64
-		      _fseeki64(fp, (ssize_t) maxsize-1, SEEK_SET) >= 0 &&
-#else
-#ifdef HAVE_FSEEKO
-		      fseeko(fp, (off_t) maxsize-1, SEEK_SET) >= 0 &&
-#else
-		      fseek(fp, (long) maxsize-1, SEEK_SET) >= 0 &&
-#endif
-#endif
-		      fputc('\n', fp) >= 0 &&
-		      fflush(fp) >= 0))) {
-			if (fp == NULL || fclose(fp) >= 0) {
-				int mod = MMAP_READ | MMAP_WRITE | MMAP_SEQUENTIAL | MMAP_SYNC;
+		     GDKextend(path, maxsize) == 0)) {
+			int mod = MMAP_READ | MMAP_WRITE | MMAP_SEQUENTIAL | MMAP_SYNC;
 
-				if (mode == STORE_PRIV)
-					mod |= MMAP_COPY;
-				ret = (char *) GDKmmap(path, mod, (off_t) 0, maxsize);
-				if (ret == (char *) -1L) {
-					ret = NULL;
-				}
-				IODEBUG THRprintf(GDKstdout, "#mmap(NULL, 0, maxsize " SZFMT ", mod %d, path %s, 0) = " PTRFMT "\n", maxsize, mod, path, PTRFMTCAST(void *)ret);
+			if (mode == STORE_PRIV)
+				mod |= MMAP_COPY;
+			ret = (char *) GDKmmap(path, mod, maxsize);
+			if (ret == (char *) -1L) {
+				ret = NULL;
 			}
-			/* after fclose, successful or not, the file
-			 * is done with */
-			fp = NULL;
+			IODEBUG THRprintf(GDKstdout, "#mmap(NULL, 0, maxsize " SZFMT ", mod %d, path %s, 0) = " PTRFMT "\n", maxsize, mod, path, PTRFMTCAST(void *)ret);
 		}
-		if (fp != NULL)
-			fclose(fp);
 	}
 	return ret;
 }
@@ -418,7 +432,7 @@ DESCload(int i)
 	int ht, tt;
 
 	IODEBUG {
-		THRprintf(GDKstdout, "#DESCload %s\n", nme);
+		THRprintf(GDKstdout, "#DESCload %s\n", nme ? nme : "<noname>");
 	}
 	bs = BBP_desc(i);
 
@@ -442,7 +456,7 @@ DESCload(int i)
 
 	/* reconstruct mode from BBP status (BATmode doesn't flush
 	 * descriptor, so loaded mode may be stale) */
-	b->batPersistence = (BBP_status(b->batCacheid) & BBPTMP) ? TRANSIENT : (BBP_status(b->batCacheid) & (BBPNEW | BBPPERSISTENT)) ? PERSISTENT : SESSION;
+	b->batPersistence = (BBP_status(b->batCacheid) & BBPPERSISTENT) ? PERSISTENT : TRANSIENT;
 	b->batCopiedtodisk = 1;
 	DESCclean(b);
 	return bs;
@@ -718,6 +732,7 @@ BATdelete(BAT *b)
 	if (loaded) {
 		b = loaded;
 		HASHdestroy(b);
+		IMPSdestroy(b);
 	}
 	assert(!b->H->heap.base || !b->T->heap.base || b->H->heap.base != b->T->heap.base);
 	if (b->batCopiedtodisk || (b->H->heap.storage != STORE_MEM)) {

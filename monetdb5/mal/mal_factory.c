@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -345,7 +345,8 @@ runFactory(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr stk, InstrP
 	pl->inuse = 1;
 	/* inherit debugging */
 	cmd = stk->cmd;
-	assert(pl->stk != NULL); /* we should have a stack to run against */
+	if ( pl->stk == NULL)
+			throw(MAL, "factory.new", "internal error, stack frame missing");
 
 	/* copy the calling arguments onto the stack
 	   of the factory */
@@ -379,11 +380,9 @@ runFactory(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr stk, InstrP
 			}
 		}
 		pl->stk->stkbot= mb->vtop;	/* stack already initialized */
-		msg = runMAL(cntxt, mb, 1, 0, pl->stk, 0);
+		msg = runMAL(cntxt, mb, 0, pl->stk);
 	 } else {
-		if( cmd && cntxt->timer == 0)
-			mdbStep(cntxt,mb,pl->stk,pl->pc);
-		msg = reenterMAL(cntxt, mb, pl->pc, -1, pl->stk, 0, 0);
+		msg = reenterMAL(cntxt, mb, pl->pc, -1, pl->stk);
 	}
 	/* propagate change in debugging status */
 	if (cmd && pl->stk && pl->stk->cmd != cmd && cmd != 'x')
@@ -456,9 +455,7 @@ callFactory(Client cntxt, MalBlkPtr mb, ValPtr argv[], char flag){
 		if( lhs->vtype == TYPE_bat )
 			BBPincref(lhs->val.bval, TRUE);
 	}
-	if( flag && cntxt->timer == 0)
-		mdbStep(cntxt,mb,pl->stk,pl->pc);
-	ret=  reenterMAL(cntxt, mb, pl->pc, -1, pl->stk, 0, 0);
+	ret=  reenterMAL(cntxt, mb, pl->pc, -1, pl->stk);
 	/* garbage collect the string arguments, these positions
 	   will simply be overwritten the next time.
 	for (i = psig->retc; i < psig->argc; i++)

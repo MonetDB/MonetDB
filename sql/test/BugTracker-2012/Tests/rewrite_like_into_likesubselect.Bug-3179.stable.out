@@ -1,0 +1,269 @@
+stdout of test 'rewrite_like_into_likesubselect.Bug-3179` in directory 'sql/test/BugTracker-2012` itself:
+
+
+# 13:28:50 >  
+# 13:28:50 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=4" "--set" "mapi_open=true" "--set" "mapi_port=31819" "--set" "monet_prompt=" "--trace" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/niels/scratch/monetdb/Linux-x86_64/var/MonetDB/mTests_test_BugTracker-2012" "--set" "mal_listing=0"
+# 13:28:50 >  
+
+# MonetDB 5 server v11.14.0
+# This is an unreleased version
+# Serving database 'mTests_test_BugTracker-2012', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 3.778 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2013 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://niels.nesco.mine.nu:31819/
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 13:28:50 >  
+# 13:28:50 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=niels" "--port=31819"
+# 13:28:50 >  
+
+#start transaction;
+#explain select name,func from functions where name like '%optimizers%';
+% .explain # table_name
+% mal # name
+% clob # type
+% 111 # length
+function user.s0_1(A0:str):void;
+    X_2 := sql.mvc();
+    X_6 := sql.bind(X_2,"sys","functions","name",0);
+    X_3:bat[:oid,:oid]  := sql.tid(X_2,"sys","functions");
+    X_48 := algebra.likesubselect(X_6,X_3,A0,"",false);
+    (X_9,r1_9) := sql.bind(X_2,"sys","functions","name",2);
+    X_49 := algebra.likesubselect(r1_9,A0,"",false);
+    X_12 := sql.bind(X_2,"sys","functions","name",1);
+    X_50 := algebra.likesubselect(X_12,X_3,A0,"",false);
+    X_15 := sql.subdelta(X_48,X_9,X_49,X_50);
+    X_17 := sql.projectdelta(X_15,X_6,X_9,r1_9,X_12);
+    X_18 := sql.bind(X_2,"sys","functions","func",0);
+    (X_20,r1_28) := sql.bind(X_2,"sys","functions","func",2);
+    X_22 := sql.bind(X_2,"sys","functions","func",1);
+    X_23 := sql.projectdelta(X_15,X_18,X_20,r1_28,X_22);
+    X_24 := sql.resultSet(2,1,X_17);
+    sql.rsColumn(X_24,"sys.functions","name","varchar",256,0,X_17);
+    sql.rsColumn(X_24,"sys.functions","func","varchar",8196,0,X_23);
+    X_33 := io.stdout();
+    sql.exportResult(X_33,X_24);
+end s0_1;
+#explain select name,func from functions where name not like '%optimizers%';
+% .explain # table_name
+% mal # name
+% clob # type
+% 115 # length
+function user.s1_1(A0:str):void;
+    X_2 := sql.mvc();
+    X_6 := sql.bind(X_2,"sys","functions","name",0);
+    X_3:bat[:oid,:oid]  := sql.tid(X_2,"sys","functions");
+    X_48 := algebra.likesubselect(X_6,X_3,A0,"",true);
+    (X_9,r1_9) := sql.bind(X_2,"sys","functions","name",2);
+    X_49 := algebra.likesubselect(r1_9,A0,"",true);
+    X_12 := sql.bind(X_2,"sys","functions","name",1);
+    X_50 := algebra.likesubselect(X_12,X_3,A0,"",true);
+    X_15 := sql.subdelta(X_48,X_9,X_49,X_50);
+    X_17 := sql.projectdelta(X_15,X_6,X_9,r1_9,X_12);
+    X_18 := sql.bind(X_2,"sys","functions","func",0);
+    (X_20,r1_28) := sql.bind(X_2,"sys","functions","func",2);
+    X_22 := sql.bind(X_2,"sys","functions","func",1);
+    X_23 := sql.projectdelta(X_15,X_18,X_20,r1_28,X_22);
+    X_24 := sql.resultSet(2,1,X_17);
+    sql.rsColumn(X_24,"sys.functions","name","varchar",256,0,X_17);
+    sql.rsColumn(X_24,"sys.functions","func","varchar",8196,0,X_23);
+    X_33 := io.stdout();
+    sql.exportResult(X_33,X_24);
+end s1_1;
+#explain select name,func from functions where name ilike '%optimizers%';
+% .explain # table_name
+% mal # name
+% clob # type
+% 112 # length
+function user.s2_1(A0:str):void;
+    X_2 := sql.mvc();
+    X_6 := sql.bind(X_2,"sys","functions","name",0);
+    X_3:bat[:oid,:oid]  := sql.tid(X_2,"sys","functions");
+    X_48 := algebra.ilikesubselect(X_6,X_3,A0,"",false);
+    (X_9,r1_9) := sql.bind(X_2,"sys","functions","name",2);
+    X_49 := algebra.ilikesubselect(r1_9,A0,"",false);
+    X_12 := sql.bind(X_2,"sys","functions","name",1);
+    X_50 := algebra.ilikesubselect(X_12,X_3,A0,"",false);
+    X_15 := sql.subdelta(X_48,X_9,X_49,X_50);
+    X_17 := sql.projectdelta(X_15,X_6,X_9,r1_9,X_12);
+    X_18 := sql.bind(X_2,"sys","functions","func",0);
+    (X_20,r1_28) := sql.bind(X_2,"sys","functions","func",2);
+    X_22 := sql.bind(X_2,"sys","functions","func",1);
+    X_23 := sql.projectdelta(X_15,X_18,X_20,r1_28,X_22);
+    X_24 := sql.resultSet(2,1,X_17);
+    sql.rsColumn(X_24,"sys.functions","name","varchar",256,0,X_17);
+    sql.rsColumn(X_24,"sys.functions","func","varchar",8196,0,X_23);
+    X_33 := io.stdout();
+    sql.exportResult(X_33,X_24);
+end s2_1;
+#explain select name,func from functions where name not ilike '%optimizers%';
+% .explain # table_name
+% mal # name
+% clob # type
+% 116 # length
+function user.s3_1(A0:str):void;
+    X_2 := sql.mvc();
+    X_6 := sql.bind(X_2,"sys","functions","name",0);
+    X_3:bat[:oid,:oid]  := sql.tid(X_2,"sys","functions");
+    X_48 := algebra.ilikesubselect(X_6,X_3,A0,"",true);
+    (X_9,r1_9) := sql.bind(X_2,"sys","functions","name",2);
+    X_49 := algebra.ilikesubselect(r1_9,A0,"",true);
+    X_12 := sql.bind(X_2,"sys","functions","name",1);
+    X_50 := algebra.ilikesubselect(X_12,X_3,A0,"",true);
+    X_15 := sql.subdelta(X_48,X_9,X_49,X_50);
+    X_17 := sql.projectdelta(X_15,X_6,X_9,r1_9,X_12);
+    X_18 := sql.bind(X_2,"sys","functions","func",0);
+    (X_20,r1_28) := sql.bind(X_2,"sys","functions","func",2);
+    X_22 := sql.bind(X_2,"sys","functions","func",1);
+    X_23 := sql.projectdelta(X_15,X_18,X_20,r1_28,X_22);
+    X_24 := sql.resultSet(2,1,X_17);
+    sql.rsColumn(X_24,"sys.functions","name","varchar",256,0,X_17);
+    sql.rsColumn(X_24,"sys.functions","func","varchar",8196,0,X_23);
+    X_33 := io.stdout();
+    sql.exportResult(X_33,X_24);
+end s3_1;
+#create function contains(str string, substr string)
+#returns boolean
+#begin
+#	  return str like '%'||substr||'%';
+#end; 
+#create function not_contains(str string, substr string)
+#returns boolean
+#begin
+#	  return str not like '%'||substr||'%';
+#end; 
+#create function icontains(str string, substr string)
+#returns boolean
+#begin
+#	  return str ilike '%'||substr||'%';
+#end; 
+#create function not_icontains(str string, substr string)
+#returns boolean
+#begin
+#	  return str not ilike '%'||substr||'%';
+#end; 
+#explain select name,func from functions where contains(name, 'optimizers');
+% .explain # table_name
+% mal # name
+% clob # type
+% 115 # length
+function user.s4_1(A0:str):void;
+    X_2 := sql.mvc();
+    X_6 := sql.bind(X_2,"sys","functions","name",0);
+    X_3:bat[:oid,:oid]  := sql.tid(X_2,"sys","functions");
+    X_51 := calc.+("%",A0);
+    X_52 := calc.+(X_51,"%");
+    X_55 := algebra.likesubselect(X_6,X_3,X_52,"",false,false);
+    (X_9,r1_9) := sql.bind(X_2,"sys","functions","name",2);
+    X_56 := algebra.likesubselect(r1_9,X_52,"",false,false);
+    X_12 := sql.bind(X_2,"sys","functions","name",1);
+    X_57 := algebra.likesubselect(X_12,X_3,X_52,"",false,false);
+    X_14 := sql.subdelta(X_55,X_9,X_56,X_57);
+    X_15 := sql.projectdelta(X_14,X_6,X_9,r1_9,X_12);
+    X_16 := sql.bind(X_2,"sys","functions","func",0);
+    (X_18,r1_35) := sql.bind(X_2,"sys","functions","func",2);
+    X_22 := sql.bind(X_2,"sys","functions","func",1);
+    X_23 := sql.projectdelta(X_14,X_16,X_18,r1_35,X_22);
+    X_24 := sql.resultSet(2,1,X_15);
+    sql.rsColumn(X_24,"sys.functions","name","varchar",256,0,X_15);
+    sql.rsColumn(X_24,"sys.functions","func","varchar",8196,0,X_23);
+    X_35 := io.stdout();
+    sql.exportResult(X_35,X_24);
+end s4_1;
+#explain select name,func from functions where not_contains(name, 'optimizers');
+% .explain # table_name
+% mal # name
+% clob # type
+% 119 # length
+function user.s5_1(A0:str):void;
+    X_2 := sql.mvc();
+    X_6 := sql.bind(X_2,"sys","functions","name",0);
+    X_3:bat[:oid,:oid]  := sql.tid(X_2,"sys","functions");
+    X_51 := calc.+("%",A0);
+    X_52 := calc.+(X_51,"%");
+    X_56 := algebra.likesubselect(X_6,X_3,X_52,"",false,true);
+    (X_9,r1_9) := sql.bind(X_2,"sys","functions","name",2);
+    X_57 := algebra.likesubselect(r1_9,X_52,"",false,true);
+    X_12 := sql.bind(X_2,"sys","functions","name",1);
+    X_58 := algebra.likesubselect(X_12,X_3,X_52,"",false,true);
+    X_14 := sql.subdelta(X_56,X_9,X_57,X_58);
+    X_15 := sql.projectdelta(X_14,X_6,X_9,r1_9,X_12);
+    X_16 := sql.bind(X_2,"sys","functions","func",0);
+    (X_18,r1_35) := sql.bind(X_2,"sys","functions","func",2);
+    X_22 := sql.bind(X_2,"sys","functions","func",1);
+    X_23 := sql.projectdelta(X_14,X_16,X_18,r1_35,X_22);
+    X_24 := sql.resultSet(2,1,X_15);
+    sql.rsColumn(X_24,"sys.functions","name","varchar",256,0,X_15);
+    sql.rsColumn(X_24,"sys.functions","func","varchar",8196,0,X_23);
+    X_35 := io.stdout();
+    sql.exportResult(X_35,X_24);
+end s5_1;
+#explain select name,func from functions where icontains(name, 'optimizers');
+% .explain # table_name
+% mal # name
+% clob # type
+% 116 # length
+function user.s6_1(A0:str):void;
+    X_2 := sql.mvc();
+    X_6 := sql.bind(X_2,"sys","functions","name",0);
+    X_3:bat[:oid,:oid]  := sql.tid(X_2,"sys","functions");
+    X_51 := calc.+("%",A0);
+    X_52 := calc.+(X_51,"%");
+    X_56 := algebra.likesubselect(X_6,X_3,X_52,"",true,false);
+    (X_9,r1_9) := sql.bind(X_2,"sys","functions","name",2);
+    X_57 := algebra.likesubselect(r1_9,X_52,"",true,false);
+    X_12 := sql.bind(X_2,"sys","functions","name",1);
+    X_58 := algebra.likesubselect(X_12,X_3,X_52,"",true,false);
+    X_14 := sql.subdelta(X_56,X_9,X_57,X_58);
+    X_15 := sql.projectdelta(X_14,X_6,X_9,r1_9,X_12);
+    X_16 := sql.bind(X_2,"sys","functions","func",0);
+    (X_18,r1_35) := sql.bind(X_2,"sys","functions","func",2);
+    X_22 := sql.bind(X_2,"sys","functions","func",1);
+    X_23 := sql.projectdelta(X_14,X_16,X_18,r1_35,X_22);
+    X_24 := sql.resultSet(2,1,X_15);
+    sql.rsColumn(X_24,"sys.functions","name","varchar",256,0,X_15);
+    sql.rsColumn(X_24,"sys.functions","func","varchar",8196,0,X_23);
+    X_35 := io.stdout();
+    sql.exportResult(X_35,X_24);
+end s6_1;
+#explain select name,func from functions where not_icontains(name, 'optimizers');
+% .explain # table_name
+% mal # name
+% clob # type
+% 120 # length
+function user.s7_1(A0:str):void;
+    X_2 := sql.mvc();
+    X_6 := sql.bind(X_2,"sys","functions","name",0);
+    X_3:bat[:oid,:oid]  := sql.tid(X_2,"sys","functions");
+    X_51 := calc.+("%",A0);
+    X_52 := calc.+(X_51,"%");
+    X_55 := algebra.likesubselect(X_6,X_3,X_52,"",true,true);
+    (X_9,r1_9) := sql.bind(X_2,"sys","functions","name",2);
+    X_56 := algebra.likesubselect(r1_9,X_52,"",true,true);
+    X_12 := sql.bind(X_2,"sys","functions","name",1);
+    X_57 := algebra.likesubselect(X_12,X_3,X_52,"",true,true);
+    X_14 := sql.subdelta(X_55,X_9,X_56,X_57);
+    X_15 := sql.projectdelta(X_14,X_6,X_9,r1_9,X_12);
+    X_16 := sql.bind(X_2,"sys","functions","func",0);
+    (X_18,r1_35) := sql.bind(X_2,"sys","functions","func",2);
+    X_22 := sql.bind(X_2,"sys","functions","func",1);
+    X_23 := sql.projectdelta(X_14,X_16,X_18,r1_35,X_22);
+    X_24 := sql.resultSet(2,1,X_15);
+    sql.rsColumn(X_24,"sys.functions","name","varchar",256,0,X_15);
+    sql.rsColumn(X_24,"sys.functions","func","varchar",8196,0,X_23);
+    X_35 := io.stdout();
+    sql.exportResult(X_35,X_24);
+end s7_1;
+#rollback;
+
+# 13:28:51 >  
+# 13:28:51 >  "Done."
+# 13:28:51 >  
+

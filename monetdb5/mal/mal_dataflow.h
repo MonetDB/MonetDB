@@ -13,7 +13,7 @@
  * 
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
 */
 
@@ -22,13 +22,9 @@
 
 #include "mal_interpreter.h"
 #include "mal_runtime.h"
+#include "mal_resource.h"
 
-#define USE_DFLOW_ADMISSION
-#ifdef USE_DFLOW_ADMISSION
-mal_export int DFLOWadmission(lng argclaim, lng hotclaim);
-#endif
-
-mal_export str runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr stk, MalStkPtr env, InstrPtr pcicaller);
-mal_export lng getMemoryClaim(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int i, int flag);
+mal_export str runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr stk);
+mal_export void stopMALdataflow(void);
 
 #endif /*  _MAL_DATAFLOW_H*/

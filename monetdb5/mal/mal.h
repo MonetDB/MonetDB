@@ -13,12 +13,12 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
  */
 
 /*
- * @+ Monet Basic Definitions
+ * @+ MonetDB Basic Definitions
  * Definitions that need to included in every file of the Monet system,
  * as well as in user defined module implementations.
  */
@@ -38,20 +38,19 @@
 #endif
 
 /*
- * @+ Monet Calling Options
+ * @+ MonetDB Calling Options
  * The number of invocation arguments is kept to a minimum.
  * See `man mserver5` or tools/mserver/mserver5.1
  * for additional system variable settings.
- * @
  */
 #define MAXSCRIPT 64
 #define MEMORY_THRESHOLD  0.8
-#define DELAYUNIT 100 /* ms delay in parallel processing decissions */
 
 mal_export char     monet_cwd[PATHLENGTH];
 mal_export size_t	monet_memory;
 mal_export lng 		memorypool;      /* memory claimed by concurrent threads */
 mal_export int 		memoryclaims;    /* number of threads active with expensive operations */
+mal_export char		*mal_trace;		/* enable profile events on console */
 
 /*
    See gdk/gdk.mx for the definition of all debug masks.
@@ -66,7 +65,6 @@ mal_export int 		memoryclaims;    /* number of threads active with expensive ope
 #define GRPtransactions (TMMASK | DELTAMASK | TEMMASK)
 #define GRPmodules (LOADMASK)
 #define GRPalgorithms (ALGOMASK | ESTIMASK)
-#define GRPxproperties 0 /* (XPROPMASK) */
 #define GRPperformance (JOINPROPMASK | DEADBEEFMASK)
 #define GRPoptimizers  (OPTMASK)
 #define GRPforcemito (FORCEMITOMASK)
@@ -114,10 +112,12 @@ mal_export int 		memoryclaims;    /* number of threads active with expensive ope
 
 
 mal_export MT_Lock  mal_contextLock;
+mal_export MT_Lock  mal_namespaceLock;
 mal_export MT_Lock  mal_remoteLock;
 mal_export MT_Lock  mal_profileLock ;
 mal_export MT_Lock  mal_copyLock ;
 mal_export MT_Lock  mal_delayLock ;
+mal_export MT_Sema	mal_parallelism;
 
 
 mal_export int mal_init(void);

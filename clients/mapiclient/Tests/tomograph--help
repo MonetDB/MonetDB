@@ -1,0 +1,3 @@
+#!/bin/sh
+
+Mlog -x $MTIMEOUT tomograph --help

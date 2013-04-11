@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -76,7 +76,6 @@ void
 MCinit(void)
 {
 	char *max_clients = GDKgetenv("max_clients");
-	int threads = GDKnr_threads;
 	int maxclients = 0;
 
 	if (max_clients != NULL)
@@ -88,8 +87,7 @@ MCinit(void)
 
 	MAL_MAXCLIENTS =
 		/* console */ 1 +
-		/* client connections */ maxclients +
-		/* workers per client */ (maxclients * threads);
+		/* client connections */ maxclients;
 	mal_clients = GDKzalloc(sizeof(ClientRec) * MAL_MAXCLIENTS);
 }
 
@@ -200,13 +198,9 @@ MCexitClient(Client c)
 }
 
 Client
-MCinitClient(oid user, bstream *fin, stream *fout)
+MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 {
-	Client c = NULL;
 	str prompt;
-
-	if ((c = MCnewClient()) == NULL)
-		return NULL;
 
 	c->user = user;
 	c->scenario = NULL;
@@ -239,10 +233,6 @@ MCinitClient(oid user, bstream *fin, stream *fout)
 	c->itrace = 0;
 	c->debugOptimizer = c->debugScheduler = 0;
 	c->flags = MCdefault;
-	c->timer = 0;
-	c->bigfoot = 0;
-	c->vmfoot = 0;
-	c->memory = 0;
 	c->errbuf = 0;
 
 	prompt = !fin ? GDKgetenv("monet_prompt") : PROMPT1;
@@ -254,8 +244,18 @@ MCinitClient(oid user, bstream *fin, stream *fout)
 	c->rcc = (RecPtr) GDKzalloc(sizeof(RecStat));
 	c->rcc->curQ = -1;
 	c->exception_buf_initialized = 0;
-	MT_sema_init(&c->s, 0, "MCinitClient");
+	MT_sema_init(&c->s, 0, "Client->s");
 	return c;
+}
+
+Client
+MCinitClient(oid user, bstream *fin, stream *fout)
+{
+	Client c = NULL;
+
+	if ((c = MCnewClient()) == NULL)
+		return NULL;
+	return MCinitClientRecord(c, user, fin,fout);
 }
 
 /*
@@ -379,6 +379,7 @@ freeClient(Client c)
 	c->glb = NULL;
 	if (t)
 		THRdel(t);  /* you may perform suicide */
+	MT_sema_destroy(&c->s);
 }
 
 /*

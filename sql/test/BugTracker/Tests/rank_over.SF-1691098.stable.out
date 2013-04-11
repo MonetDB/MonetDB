@@ -1,4 +1,4 @@
-stdout of test 'rank_over.SF-1691098` in directory 'test/BugTracker` itself:
+stdout of test 'rank_over.SF-1691098` in directory 'sql/test/BugTracker` itself:
 
 
 # 10:05:10 >  
@@ -58,8 +58,16 @@ Ready.
 [ 28	]
 [ 29	]
 [ 30	]
+[ 31	]
+[ 32	]
+[ 33	]
+[ 34	]
+[ 35	]
+[ 36	]
+[ 37	]
+[ 38	]
 
-# 11:15:39 >  
-# 11:15:39 >  Done.
-# 11:15:39 >  
+# 17:29:50 >  
+# 17:29:50 >  "Done."
+# 17:29:50 >  
 

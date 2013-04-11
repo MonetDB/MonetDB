@@ -1,4 +1,4 @@
-stdout of test 'jdbc_no_debug.SF-1739356` in directory 'test/BugTracker` itself:
+stdout of test 'jdbc_no_debug.SF-1739356` in directory 'sql/test/BugTracker` itself:
 
 
 # 13:44:44 >  
@@ -19,107 +19,71 @@ Ready.
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# 18:23:35 >  
-# 18:23:35 >  "./jdbc_no_debug.SF-1739356.SQL.sh" "jdbc_no_debug.SF-1739356"
-# 18:23:35 >  
-
-
-# 18:23:35 >  
-# 18:23:35 >  Mtimeout -timeout 60  java nl.cwi.monetdb.client.JdbcClient -h niels -p 32617 -d mTests_test_BugTracker -f "../../../../../..//data/MonetDB/sql/test/BugTracker/Tests/jdbc_no_debug.SF-1739356-data.sql"
-# 18:23:35 >  
-
-+-------------------------------------------------------------------------------------------------------------------------+
++--------------------------------------------------------------------------------------+
 | rel                                                                                                                                                                                                                                                                       |
-+=========================================================================================================================+
++======================================================================================+
 | project (                                                                                                                                                                                                                                                                 |
 | | group by (                                                                                                                                                                                                                                                              |
 | | | union (                                                                                                      |
 | | | | group by (                                                                                                 |
 | | | | | project (                                                                                                                                                                                                                                                         |
 | | | | | | select (                                                                                                                                                                                                                                                        |
-| | | | | | | table(sys._tables) [ _tables.id as p.id, _tables.type as p.type, _tables.%TID% NOT NULL as p.%TID% ] COUNT  |
-| | | | | | ) [ p.type < smallint[tinyint "2"] ]                                                                   |
+| | | | | | | table(sys._tables) [ _tables.id as p.id, _tables.type as p.type ] COUNT  |
+| | | | | | ) [ p.type != smallint[tinyint "2"] ]                                      |
 | | | | | ) [ p.id as tables.id ]                                                                                  |
 | | | | ) [  ] [ sys.count() NOT NULL as L1 ],                                                                     |
 | | | | group by (                                                                                                 |
 | | | | | project (                                                                                                                                                                                                                                                         |
 | | | | | | select (                                                                                                                                                                                                                                                        |
-| | | | | | | table(tmp._tables) [ _tables.id as t.id, _tables.type as t.type, _tables.%TID% NOT NULL as t.%TID% ] COUNT  |
-| | | | | | ) [ t.type < smallint[tinyint "2"] ]                                                                   |
+| | | | | | | table(tmp._tables) [ _tables.id as t.id, _tables.type as t.type ] COUNT  |
+| | | | | | ) [ t.type != smallint[tinyint "2"] ]                                      |
 | | | | | ) [ t.id as tables.id ]                                                                                  |
 | | | | ) [  ] [ sys.count() NOT NULL as L1 ]                                                                      |
 | | | ) [ L1 ]                                                                                                     |
 | | ) [  ] [ sys.sum no nil (L1) as L1 ]                                                                           |
 | ) [ L1 NOT NULL ]                                                                                                                                                                                                                                                         |
-+-------------------------------------------------------------------------------------------------------------------------+
++--------------------------------------------------------------------------------------+
 20 rows
 
 Operation successful
 
-+---------------------------------------------------------------------+
++--------------------------------------------------------------------------+
 | mal                                                                 |
-+=====================================================================+
-| function user.s2_1{autoCommit=true}():void;                         |
++==========================================================================+
+| function user.s1_1{autoCommit=true}():void;                         |
 |     X_3:bat[:oid,:wrd]  := bat.new(nil:oid,nil:wrd);                |
 |     X_2 := sql.mvc();                                               |
-|     X_6:bat[:oid,:sht]  := sql.bind(X_2,"sys","_tables","type",0);  |
-|     X_11 := algebra.thetauselect(X_6,2:sht,"<");                    |
-|     X_13:bat[:oid,:sht]  := sql.bind(X_2,"sys","_tables","type",2); |
-|     X_15 := algebra.kdifference(X_11,X_13);                         |
-|     X_16 := algebra.thetauselect(X_13,2:sht,"<");                   |
-|     X_17 := algebra.kunion(X_15,X_16);                              |
-|     X_18:bat[:oid,:sht]  := sql.bind(X_2,"sys","_tables","type",1); |
-|     X_20 := algebra.thetauselect(X_18,2:sht,"<");                   |
-|     X_21 := algebra.kunion(X_17,X_20);                              |
-|     X_22:bat[:oid,:oid]  := sql.bind_dbat(X_2,"sys","_tables",1);   |
-|     X_23 := bat.reverse(X_22);                                      |
-|     X_24 := algebra.kdifference(X_21,X_23);                         |
-|     X_25 := algebra.markT(X_24,0@0:oid);                            |
-|     X_26 := bat.reverse(X_25);                                      |
-|     X_27:bat[:oid,:int]  := sql.bind(X_2,"sys","_tables","id",0);   |
-|     X_29:bat[:oid,:int]  := sql.bind(X_2,"sys","_tables","id",2);   |
-|     X_30 := algebra.kdifference(X_27,X_29);                         |
-|     X_31 := algebra.kunion(X_30,X_29);                              |
-|     X_32:bat[:oid,:int]  := sql.bind(X_2,"sys","_tables","id",1);   |
-|     X_35 := algebra.kunion(X_31,X_32);                              |
-|     X_36 := algebra.leftjoin(X_26,X_35);                            |
-|     X_37 := aggr.count(X_36);                                       |
-|     X_38 := sql.single(X_37);                                       |
-|     X_39 := bat.append(X_3,X_38,true);                              |
-|     X_41:bat[:oid,:sht]  := sql.bind(X_2,"tmp","_tables","type",0); |
-|     X_45 := algebra.thetauselect(X_41,2:sht,"<");                   |
-|     X_47:bat[:oid,:oid]  := sql.bind_dbat(X_2,"tmp","_tables",1);   |
-|     X_49 := bat.reverse(X_47);                                      |
-|     X_50 := algebra.kdifference(X_45,X_49);                         |
-|     X_51 := algebra.markT(X_50,0@0:oid);                            |
-|     X_52 := bat.reverse(X_51);                                      |
-|     X_53:bat[:oid,:int]  := sql.bind(X_2,"tmp","_tables","id",0);   |
-|     X_56 := algebra.leftjoin(X_52,X_53);                            |
-|     X_57 := aggr.count(X_56);                                       |
-|     X_59 := bat.append(X_39,X_57,true);                             |
-|     X_61 := algebra.selectNotNil(X_59);                             |
-|     X_62:wrd  := aggr.sum(X_61);                                    |
-|     sql.exportValue(1,".tables","L1","wrd",64,0,6,X_62,"");         |
-| end s2_1;                                                           |
-+---------------------------------------------------------------------+
-42 rows
+|     X_9 := sql.bind(X_2,"sys","_tables","type",0);          |
+|     X_6:bat[:oid,:oid]  := sql.tid(X_2,"sys","_tables");    |
+|     X_67 := algebra.subselect(X_9,X_6,2:sht,2:sht,true,true,true);       |
+|     (X_12,r1_12) := sql.bind(X_2,"sys","_tables","type",2); |
+|     X_68 := algebra.subselect(r1_12,2:sht,2:sht,true,true,true);         |
+|     X_15 := sql.bind(X_2,"sys","_tables","type",1);         |
+|     X_69 := algebra.subselect(X_15,X_6,2:sht,2:sht,true,true,true);      |
+|     X_17 := sql.subdelta(X_67,X_12,X_68,X_69);                           |
+|     X_18 := sql.bind(X_2,"sys","_tables","id",0);                    |
+|     (X_20,r1_28) := sql.bind(X_2,"sys","_tables","id",2);            |
+|     X_22 := sql.bind(X_2,"sys","_tables","id",1);                    |
+|     X_23 := sql.projectdelta(X_17,X_18,X_20,r1_28,X_22);             |
+|     X_24 := aggr.count(X_23);                                        |
+|     X_25 := sql.single(X_24);                                        |
+|     X_26 := bat.append(X_3,X_25,true);                               |
+|     X_31 := sql.bind(X_2,"tmp","_tables","type",0);                  |
+|     X_34 := X_31;                                                    |
+|     X_28:bat[:oid,:oid]  := sql.tid(X_2,"tmp","_tables");            |
+|     X_35 := algebra.subselect(X_34,X_28,2:sht,2:sht,true,true,true); |
+|     X_36 := sql.bind(X_2,"tmp","_tables","id",0);                    |
+|     X_38 := X_36;                                                    |
+|     X_39 := algebra.leftfetchjoin(X_35,X_38);                        |
+|     X_40 := aggr.count(X_39);                                        |
+|     X_41 := bat.append(X_26,X_40,true);                              |
+|     X_43 := algebra.selectNotNil(X_41);                              |
+|     X_44:wrd  := aggr.sum(X_43);                                     |
+|     sql.exportValue(1,".tables","L1","wrd",64,0,6,X_44,"");          |
+| end s1_1;                                                           |
+| # querylog.define("explain select count(*) from tables;","default_pipe") |
++--------------------------------------------------------------------------+
+32 rows
 
 
 # 19:39:11 >  

@@ -13,7 +13,7 @@
  * 
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
 */
 
@@ -41,6 +41,7 @@
 #include "mal_function.h"
 #include "mal_listing.h"
 #include "mal_profiler.h"
+#include "mal_runtime.h"
 #include "mal_debugger.h"
 
 stream *eventstream = 0;
@@ -58,12 +59,11 @@ static void offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc, i
 static void cachedProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc);
 static int initTrace(void);
 static void startHeartbeat(int delay);
-static void stopHeartbeat(void);
 
 int malProfileMode = 0;     /* global flag to indicate profiling mode */
 static int profileAll = 0;  /* all instructions should be profiled */
 static int delayswitch = 0; /* to wait before sending the profile info */
-static int eventcounter;
+static int eventcounter = 0;
 
 #define PROFevent   0
 #define PROFtime    1
@@ -86,6 +86,7 @@ static int eventcounter;
 #define PROFdot     18
 #define PROFflow   19
 #define PROFping   20	/* heartbeat ping messages */
+#define PROFfootprint 21
 
 static struct {
 	str name;		/* which logical counter is needed */
@@ -112,6 +113,7 @@ static struct {
 	/*  18 */  { "dot", 0},
 	/*  19 */  { "flow", 0},
 	/*  20 */  { "ping", 0},
+	/*  21 */  { "footprint", 0},
 	/*  21 */  { 0, 0}
 };
 
@@ -126,11 +128,12 @@ activateCounter(str name)
 		if (strcmp(profileCounter[i].name, name) == 0) {
 			profileCounter[i].status = 1;
 			return 0;
-		} else
-		if ( strncmp("ping",name,4) == 0){
-			startHeartbeat(atoi(name+4));
-			return 0;
-		}
+		} 
+	if ( strncmp("ping",name,4) == 0){
+		startHeartbeat(atoi(name+4));
+		profileCounter[PROFping].status = 1;
+		return 0;
+	}
 	throw(MAL, "activateCounter", RUNTIME_OBJECT_UNDEFINED ":%s", name);
 }
 
@@ -144,7 +147,7 @@ deactivateCounter(str name)
 			return 0;
 		} else
 		if ( strncmp("ping",name,4) == 0){
-			stopHeartbeat();
+			startHeartbeat(0);
 			return 0;
 		}
 	throw(MAL, "deactivateCounter", RUNTIME_OBJECT_UNDEFINED ":%s", name);
@@ -154,14 +157,34 @@ deactivateCounter(str name)
  * Offline processing
  * The offline processing structure is the easiest. We merely have to
  * produce a correct tuple format for the front-end.
+ * To avoid unnecessary locks we first built the event as a string
+ * It uses a local logbuffer[LOGLEN] and logbase, logtop, loglen
  */
-#define log(...)												\
+#define LOGLEN 8192
+#define lognew()  loglen = 0; logbase = logbuffer; *logbase = 0;
+#define logadd(...) 											\
 	do {														\
-		if (eventstream)										\
-			if (mnstr_printf(eventstream, __VA_ARGS__) < 0) {	\
-				closeProfilerStream();							\
-			}													\
+		(void) snprintf(logbase+loglen, LOGLEN -1 - loglen, __VA_ARGS__);					\
+		loglen += (int) strlen(logbase+loglen);					\
 	} while (0)
+
+static void logsent(int header, char *logbuffer)
+{
+	MT_lock_set(&mal_profileLock, "profileLock");
+	if (eventstream) {
+		if ( header)
+			mnstr_printf(eventstream,"%s\n", logbuffer);
+		else
+		if (profileCounter[PROFevent].status && eventcounter)
+			mnstr_printf(eventstream,"[ %d,\t%s ]\n", eventcounter, logbuffer);
+		else
+			mnstr_printf(eventstream,"[ %s ]\n", logbuffer);
+		mnstr_flush(eventstream);
+	}
+	eventcounter++;
+	MT_lock_unset(&mal_profileLock, "profileLock");
+}
+
 #define flushLog() if (eventstream) mnstr_flush(eventstream);
 
 /*
@@ -172,6 +195,7 @@ deactivateCounter(str name)
 void
 profilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc, int start)
 {
+	InstrPtr p;
 	if (mb->profiler == NULL) return;
 	if (profileCounter[PROFdot].status == 1 && start && pc == 0){
 		if (mb->dotfile == 0){
@@ -182,96 +206,105 @@ profilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc, int start)
 	}
 	if (profileCounter[PROFstart].status == 0 && start)
 		return;
+	p = getInstrPtr(mb,pc);
+	if ( !start && p && p->token == ENDsymbol)
+		profilerHeartbeatEvent("ping");
 	if (myname == 0)
 		myname = putName("profiler", 8);
 	if (getModuleId(getInstrPtr(mb, pc)) == myname)
 		return;
 	if (offlineProfiling)
 		offlineProfilerEvent(idx, mb, stk, pc,start);
-	if (cachedProfiling)
+	if (cachedProfiling && !start)
 		cachedProfilerEvent(idx, mb, stk, pc);
 }
 
 static void
 offlineProfilerHeader(void)
 {
-	MT_lock_set(&mal_profileLock, "profileLock");
+	char logbuffer[LOGLEN], *logbase;
+	int loglen;
+
 	if (eventstream == NULL) {
-		MT_lock_unset(&mal_profileLock, "profileLock");
 		return ;
 	}
-	log("# ");
+	lognew();
+	logadd("# ");
 	if (profileCounter[PROFevent].status) {
-		log("event,\tstatus,\t");
+		logadd("event,\tstatus,\t");
 	}
 	if (profileCounter[PROFtime].status) {
-		log("time,\t");
+		logadd("time,\t");
 	}
 	if (profileCounter[PROFthread].status) {
-		log("thread,\t");
+		logadd("thread,\t");
 	}
 	if (profileCounter[PROFflow].status)
-		log("claim,\tmemory,\t");
+		logadd("claim,\tmemory,\t");
 	if (profileCounter[PROFfunc].status) {
-		log("function,\t");
+		logadd("function,\t");
 	}
 	if (profileCounter[PROFpc].status) {
-		log("pc,\t");
+		logadd("pc,\t");
 	}
 	if (profileCounter[PROFticks].status) {
-		log("usec,\t");
+		logadd("usec,\t");
 	}
 	if (profileCounter[PROFcpu].status) {
-		log("utime,\t");
-		log("cutime,\t");
-		log("stime,\t");
-		log("cstime,\t");
+		logadd("utime,\t");
+		logadd("cutime,\t");
+		logadd("stime,\t");
+		logadd("cstime,\t");
 	}
 
 	if (profileCounter[PROFmemory].status) {
-		log("rss,\t");
+		logadd("rss,\t");
 /*
-		log("maxrss,\t");
-		log("arena,\t");
-		log("ordblks,\t");
-		log("smblks,\t");
-		log("hblkhd,\t");
-		log("hblks,\t");
-		log("fsmblks,\t");
-		log("uordblks,\t");
+		logadd("maxrss,\t");
+		logadd("arena,\t");
+		logadd("ordblks,\t");
+		logadd("smblks,\t");
+		logadd("hblkhd,\t");
+		logadd("hblks,\t");
+		logadd("fsmblks,\t");
+		logadd("uordblks,\t");
 */
 	}
+	if (profileCounter[PROFfootprint].status) {
+		logadd("footprint,\t");
+	}
 	if (profileCounter[PROFreads].status)
-		log("blk reads,\t");
+		logadd("blk reads,\t");
 	if (profileCounter[PROFwrites].status)
-		log("blk writes,\t");
+		logadd("blk writes,\t");
 	if (profileCounter[PROFprocess].status) {
-		log("pg reclaim,\t");
-		log("pg faults,\t");
-		log("swaps,\t");
-		log("ctxt switch,\t");
-		log("inv switch,\t");
+		logadd("pg reclaim,\t");
+		logadd("pg faults,\t");
+		logadd("swaps,\t");
+		logadd("ctxt switch,\t");
+		logadd("inv switch,\t");
 	}
 	if (profileCounter[PROFrbytes].status)
-		log("rbytes,\t");
+		logadd("rbytes,\t");
 	if (profileCounter[PROFwbytes].status)
-		log("wbytes,\t");
+		logadd("wbytes,\t");
 	if (profileCounter[PROFaggr].status)
-		log("count,\t totalticks,\t");
+		logadd("count,\t totalticks,\t");
 	if (profileCounter[PROFstmt].status)
-		log("stmt,\t");
+		logadd("stmt,\t");
 	if (profileCounter[PROFtype].status)
-		log("types,\t");
+		logadd("types,\t");
 	if (profileCounter[PROFuser].status)
-		log("user,\t");
-	log("# name\n");
-	flushLog();
-	MT_lock_unset(&mal_profileLock, "profileLock");
+		logadd("user,\t");
+	logadd("# name");
+	logsent(1, logbuffer);
 }
 
 void
 offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc, int start)
 {
+	char logbuffer[LOGLEN], *logbase;
+	int loglen;
 	/*static struct Mallinfo prevMalloc;*/
 	InstrPtr pci = getInstrPtr(mb, pc);
 
@@ -292,16 +325,13 @@ offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc, int start)
 		offlineProfilerHeader();
 		delayswitch--;
 	}
-	MT_lock_set(&mal_profileLock, "profileLock");
 	if (eventstream == NULL) {
-		MT_lock_unset(&mal_profileLock, "profileLock");
 		return ;
 	}
 	if (delayswitch == 0) {
 		delayswitch = -1;
 	}
 	if (!profileAll && mb->profiler[pc].trace == FALSE) {
-		MT_lock_unset(&mal_profileLock, "profileLock");
 		return;
 	}
 #ifdef HAVE_TIMES
@@ -315,15 +345,12 @@ offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc, int start)
 #endif
 
 	/* make basic profile event tuple  */
-	log("[ ");
-	if (profileCounter[PROFevent].status) {
-		log("%d,\t", eventcounter);
-	}
+	lognew();
 	if (profileCounter[PROFstart].status) {
 		if ( start) {
-			log("\"start\",\t");
+			logadd("\"start\",\t");
 		} else {
-			log("\"done\" ,\t");
+			logadd("\"done\" ,\t");
 		}
 	}
 	if (profileCounter[PROFtime].status) {
@@ -340,78 +367,81 @@ offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc, int start)
 				c[-5] = 0;
 			}
 			tbuf[10] = '"';
-			log("%s", tbuf + 10);
-			log(".%06d\",\t", (int)mb->profiler[pc].clock.tv_usec);
+			logadd("%s", tbuf + 10);
+			logadd(".%06d\",\t", (int)mb->profiler[pc].clock.tv_usec);
 		} else
-			log("%s,\t", "nil");
+			logadd("%s,\t", "nil");
 	}
 	if (profileCounter[PROFthread].status) {
-		log(" %d,\t", THRgettid());
+		logadd(" %d,\t", THRgettid());
 	}
 	if (profileCounter[PROFflow].status) {
-		log("%d,\t", memoryclaims);
-		log(LLFMT",\t", memoryclaims?((lng)(MEMORY_THRESHOLD * monet_memory)-memorypool)/1024/1024:0);
+		logadd("%d,\t", memoryclaims);
+		logadd(LLFMT",\t", memoryclaims?((lng)(MEMORY_THRESHOLD * monet_memory)-memorypool)/1024/1024:0);
 	}
 	if (profileCounter[PROFfunc].status) {
 		if (getModuleId(getInstrPtr(mb,0)) && getFunctionId(getInstrPtr(mb,0))) {
-			log("\"%s.%s\",\t", getModuleId(getInstrPtr(mb,0)), getFunctionId(getInstrPtr(mb,0)));
+			logadd("\"%s.%s\",\t", getModuleId(getInstrPtr(mb,0)), getFunctionId(getInstrPtr(mb,0)));
 		} else
-			log("\"%s\",\t", operatorName(pci->token));
+			logadd("\"%s\",\t", operatorName(pci->token));
 	}
 	if (profileCounter[PROFpc].status) {
-		log("%d,\t", getPC(mb, pci));
+		logadd("%d,\t", getPC(mb, pci));
 	}
 	if (profileCounter[PROFticks].status) {
-		log(LLFMT ",\t", mb->profiler[pc].ticks);
+		logadd(LLFMT ",\t", start? 0: mb->profiler[pc].ticks);
 	}
 #ifdef HAVE_TIMES
 	if (profileCounter[PROFcpu].status && delayswitch < 0) {
-		log("%ld,\t", (long) (newTms.tms_utime - mb->profiler[pc].timer.tms_utime));
-		log("%ld,\t", (long) (newTms.tms_cutime - mb->profiler[pc].timer.tms_cutime));
-		log("%ld,\t", (long) (newTms.tms_stime - mb->profiler[pc].timer.tms_stime));
-		log("%ld,\t", (long) (newTms.tms_cstime - mb->profiler[pc].timer.tms_cstime));
+		logadd(LLFMT",\t", (lng) (newTms.tms_utime - mb->profiler[pc].timer.tms_utime));
+		logadd(LLFMT",\t", (lng) (newTms.tms_cutime - mb->profiler[pc].timer.tms_cutime));
+		logadd(LLFMT",\t", (lng) (newTms.tms_stime - mb->profiler[pc].timer.tms_stime));
+		logadd(LLFMT",\t", (lng) (newTms.tms_cstime - mb->profiler[pc].timer.tms_cstime));
 	}
 #endif
 
 	if (profileCounter[PROFmemory].status && delayswitch < 0) {
-		log(SZFMT ",\t", MT_getrss()/1024/1024);
+		logadd(SZFMT ",\t", MT_getrss()/1024/1024);
 /*
 #ifdef HAVE_SYS_RESOURCE_H
-		log("%ld,\t", infoUsage.ru_maxrss);
+		logadd("%ld,\t", infoUsage.ru_maxrss);
 #endif
-		log(SZFMT ",\t", (size_t)(infoMalloc.arena - prevMalloc.arena));
-		log(SZFMT ",\t", (size_t)(infoMalloc.ordblks - prevMalloc.ordblks));
-		log(SZFMT ",\t", (size_t)(infoMalloc.smblks - prevMalloc.smblks));
-		log(SZFMT ",\t", (size_t)(infoMalloc.hblkhd - prevMalloc.hblkhd));
-		log(SZFMT ",\t", (size_t)(infoMalloc.hblks - prevMalloc.hblks));
-		log(SZFMT ",\t", (size_t)(infoMalloc.fsmblks - prevMalloc.fsmblks));
-		log(SZFMT ",\t", (size_t)(infoMalloc.uordblks - prevMalloc.uordblks));
+		logadd(SZFMT ",\t", (size_t)(infoMalloc.arena - prevMalloc.arena));
+		logadd(SZFMT ",\t", (size_t)(infoMalloc.ordblks - prevMalloc.ordblks));
+		logadd(SZFMT ",\t", (size_t)(infoMalloc.smblks - prevMalloc.smblks));
+		logadd(SZFMT ",\t", (size_t)(infoMalloc.hblkhd - prevMalloc.hblkhd));
+		logadd(SZFMT ",\t", (size_t)(infoMalloc.hblks - prevMalloc.hblks));
+		logadd(SZFMT ",\t", (size_t)(infoMalloc.fsmblks - prevMalloc.fsmblks));
+		logadd(SZFMT ",\t", (size_t)(infoMalloc.uordblks - prevMalloc.uordblks));
 		prevMalloc = infoMalloc;
 */
+	}
+	if (profileCounter[PROFfootprint].status) {
+		logadd(LLFMT",\t", stk->tmpspace);
 	}
 #ifdef HAVE_SYS_RESOURCE_H
 	if ((profileCounter[PROFreads].status ||
 		 profileCounter[PROFwrites].status) && delayswitch < 0) {
-		log("%ld,\t", infoUsage.ru_inblock - prevUsage.ru_inblock);
-		log("%ld,\t", infoUsage.ru_oublock - prevUsage.ru_oublock);
+		logadd("%ld,\t", infoUsage.ru_inblock - prevUsage.ru_inblock);
+		logadd("%ld,\t", infoUsage.ru_oublock - prevUsage.ru_oublock);
 		prevUsage = infoUsage;
 	}
 	if (profileCounter[PROFprocess].status && delayswitch < 0) {
-		log("%ld,\t", infoUsage.ru_minflt - prevUsage.ru_minflt);
-		log("%ld,\t", infoUsage.ru_majflt - prevUsage.ru_majflt);
-		log("%ld,\t", infoUsage.ru_nswap - prevUsage.ru_nswap);
-		log("%ld,\t", infoUsage.ru_nvcsw - prevUsage.ru_nvcsw);
-		log("%ld,\t", infoUsage.ru_nivcsw - prevUsage.ru_nivcsw);
+		logadd("%ld,\t", infoUsage.ru_minflt - prevUsage.ru_minflt);
+		logadd("%ld,\t", infoUsage.ru_majflt - prevUsage.ru_majflt);
+		logadd("%ld,\t", infoUsage.ru_nswap - prevUsage.ru_nswap);
+		logadd("%ld,\t", infoUsage.ru_nvcsw - prevUsage.ru_nvcsw);
+		logadd("%ld,\t", infoUsage.ru_nivcsw - prevUsage.ru_nivcsw);
 		prevUsage = infoUsage;
 	}
 #endif
 	if (profileCounter[PROFrbytes].status)
-		log(LLFMT ",\t", mb->profiler[pc].rbytes);
+		logadd(LLFMT ",\t", mb->profiler[pc].rbytes);
 	if (profileCounter[PROFwbytes].status)
-		log(LLFMT ",\t", mb->profiler[pc].wbytes);
+		logadd(LLFMT ",\t", mb->profiler[pc].wbytes);
 
 	if (profileCounter[PROFaggr].status)
-		log("%d,\t" LLFMT ",\t", mb->profiler[pc].counter, mb->profiler[pc].totalticks);
+		logadd("%d,\t" LLFMT ",\t", mb->profiler[pc].counter, mb->profiler[pc].totalticks);
 
 	if (profileCounter[PROFstmt].status) {
 		/* generate actual call statement */
@@ -423,9 +453,9 @@ offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc, int start)
 			c++;
 		stmtq = mal_quote(c, strlen(c));
 		if (stmtq != NULL) {
-			log(" \"%s\",\t", stmtq);
+			logadd(" \"%s\",\t", stmtq);
 			GDKfree(stmtq);
-		} else log(" ,\t");
+		} else logadd(" ,\t");
 		GDKfree(stmt);
 	}
 	if (profileCounter[PROFtype].status) {
@@ -439,21 +469,20 @@ offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc, int start)
 				snprintf(abuf + j, BUFSIZ - j, "%s:%s%s", getVarName(mb, getArg(pci, i)), tpe, (i < pci->retc - 1 ? ", " : ""));
 				GDKfree(tpe);
 			}
-		log("\"%s\",\t", abuf);
+		logadd("\"%s\",\t", abuf);
 	}
 	if (profileCounter[PROFuser].status) {
-		log(" %d", idx);
+		logadd(" %d", idx);
 	}
-	log(" ]\n");
-	eventcounter++;
-	flushLog();
-	MT_lock_unset(&mal_profileLock, "profileLock");
+	logsent(0, logbuffer);
 }
 /*
  * Postprocessing events
  * The events may be sent for offline processing through a
  * stream, including "stdout".
  */
+
+
 str
 setLogFile(stream *fd, Module mod, str fname)
 {
@@ -517,6 +546,7 @@ openProfilerStream(stream *fd)
 str
 closeProfilerStream(void)
 {
+	profilerHeartbeatEvent("ping");
 	if (eventstream) {
 		(void)mnstr_close(eventstream);
 		(void)mnstr_destroy(eventstream);
@@ -578,6 +608,7 @@ startProfiling(void)
 	if (TRACE_init == 0)
 		_initTrace();
 	malProfileMode = TRUE;
+	eventcounter = 0;
 	MT_lock_unset(&mal_profileLock, "profileLock");
 	return MAL_SUCCEED;
 }
@@ -585,10 +616,12 @@ startProfiling(void)
 str
 stopProfiling(void)
 {
+	MT_lock_set(&mal_profileLock, "profileLock");
 	malProfileMode = FALSE;
 	offlineProfiling = FALSE;
 	cachedProfiling = FALSE;
 	closeProfilerStream();
+	MT_lock_unset(&mal_profileLock, "profileLock");
 	return MAL_SUCCEED;
 }
 
@@ -601,9 +634,15 @@ MPresetProfiler(stream *fdout)
 {
 	if (fdout != eventstream)
 		return;
+	if (mal_trace)
+		return;
 	MT_lock_set(&mal_profileLock, "profileLock");
 	eventstream = 0;
 	MT_lock_unset(&mal_profileLock, "profileLock");
+}
+
+void setFilterAll(void){
+	profileAll = 1;
 }
 
 /*
@@ -651,13 +690,16 @@ setFilterOnBlock(MalBlkPtr mb, str mod, str fcn)
 	InstrPtr p;
 
 	initProfiler(mb);
+	if ( profileAll )
+		for (k = 0; k < mb->stop; k++)
+			mb->profiler[k].trace = 1;
+	else
 	for (k = 0; k < mb->stop; k++) {
 		p = getInstrPtr(mb, k);
 		cnt = 0;
 		for (i = 0; i < topFilter; i++)
 			cnt += instrFilter(p, modFilter[i], fcnFilter[i]);
-		mb->profiler[k].trace = profileAll || cnt ||
-								(mod && fcn && instrFilter(p, mod, fcn));
+		mb->profiler[k].trace = cnt || (mod && fcn && instrFilter(p, mod, fcn));
 	}
 }
 
@@ -783,6 +825,7 @@ clrFilterVariable(MalBlkPtr mb, int arg)
  * for easy integration with SQL.
  */
 static int TRACE_event = 0;
+static BAT *TRACE_id_tag = 0;
 static BAT *TRACE_id_event = 0;
 static BAT *TRACE_id_time = 0;
 static BAT *TRACE_id_ticks = 0;
@@ -802,6 +845,7 @@ TRACEtable(BAT **r)
 	if (initTrace())
 		return ;
 	MT_lock_set(&mal_profileLock, "profileLock");
+	r[0] = BATcopy(TRACE_id_tag, TRACE_id_tag->htype, TRACE_id_tag->ttype, 0);
 	r[0] = BATcopy(TRACE_id_event, TRACE_id_event->htype, TRACE_id_event->ttype, 0);
 	r[1] = BATcopy(TRACE_id_time, TRACE_id_time->htype, TRACE_id_time->ttype, 0);
 	r[2] = BATcopy(TRACE_id_pc, TRACE_id_pc->htype, TRACE_id_pc->ttype, 0);
@@ -825,22 +869,17 @@ TRACEcreate(str hnme, str tnme, int tt)
 
 	snprintf(buf, 128, "trace_%s_%s", hnme, tnme);
 	b = BATdescriptor(BBPindex(buf));
-	if (b) {
-		if (b->htype == TYPE_int)
-			/* old code */
-			BBPreclaim(b);
-		else
-			return b;
-	}
+	if (b) 
+		return b;
 
 	b = BATnew(TYPE_void, tt, 1 << 16);
 	if (b == NULL)
 		return NULL;
 
+	BATmode(b, PERSISTENT);
 	BATseqbase(b, 0);
 	BATkey(b, TRUE);
 	BBPrename(b->batCacheid, buf);
-	BATmode(b, PERSISTENT);
 	BATcommit(b);
 	return b;
 }
@@ -851,6 +890,7 @@ TRACEcreate(str hnme, str tnme, int tt)
 static void
 _cleanupProfiler(void)
 {
+	CLEANUPprofile(TRACE_id_tag);
 	CLEANUPprofile(TRACE_id_event);
 	CLEANUPprofile(TRACE_id_time);
 	CLEANUPprofile(TRACE_id_pc);
@@ -868,6 +908,7 @@ _cleanupProfiler(void)
 void
 _initTrace(void)
 {
+	TRACE_id_tag = TRACEcreate("id", "tag", TYPE_int);
 	TRACE_id_event = TRACEcreate("id", "event", TYPE_int);
 	TRACE_id_time = TRACEcreate("id", "time", TYPE_str);
 	TRACE_id_ticks = TRACEcreate("id", "ticks", TYPE_lng);
@@ -881,6 +922,7 @@ _initTrace(void)
 	TRACE_id_thread = TRACEcreate("id", "thread", TYPE_int);
 	TRACE_id_user = TRACEcreate("id", "user", TYPE_int);
 	if (TRACE_id_event == NULL ||
+		TRACE_id_tag == NULL ||
 		TRACE_id_time == NULL ||
 		TRACE_id_ticks == NULL ||
 		TRACE_id_pc == NULL ||
@@ -926,6 +968,7 @@ clearTrace(void)
 		return;     /* not initialized */
 	MT_lock_set(&mal_contextLock, "cleanup");
 	/* drop all trace tables */
+	BBPclear(TRACE_id_tag->batCacheid);
 	BBPclear(TRACE_id_event->batCacheid);
 	BBPclear(TRACE_id_time->batCacheid);
 	BBPclear(TRACE_id_ticks->batCacheid);
@@ -946,6 +989,8 @@ getTrace(str nme)
 {
 	if (TRACE_init == 0)
 		return NULL;
+	if (strcmp(nme, "tag") == 0)
+		return BATcopy(TRACE_id_tag, TRACE_id_tag->htype, TRACE_id_tag->ttype, 0);
 	if (strcmp(nme, "event") == 0)
 		return BATcopy(TRACE_id_event, TRACE_id_event->htype, TRACE_id_event->ttype, 0);
 	if (strcmp(nme, "time") == 0)
@@ -1034,22 +1079,22 @@ cachedProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc)
 #ifdef HAVE_SYS_RESOURCE_H
 	getrusage(RUSAGE_SELF, &infoUsage);
 #endif
-	MT_lock_set(&mal_profileLock, "profileLock");
-	if (initTrace() || TRACE_init == 0) {
-		MT_lock_unset(&mal_profileLock, "profileLock");
+	if (initTrace() || TRACE_init == 0)
 		return;
-	}
 
 	/* update the Trace tables */
 	snprintf(buf, 1024, "%s.%s[%d]",
 		getModuleId(getInstrPtr(mb, 0)),
 		getFunctionId(getInstrPtr(mb, 0)), getPC(mb, pci));
+
+	MT_lock_set(&mal_profileLock, "profileLock");
 	TRACE_id_pc = BUNappend(TRACE_id_pc, buf, FALSE);
 
 	TRACE_id_thread = BUNappend(TRACE_id_thread, &tid, FALSE);
 
 	TRACE_id_user = BUNappend(TRACE_id_user, &idx, FALSE);
 
+	TRACE_id_tag = BUNappend(TRACE_id_tag, &mb->tag, FALSE);
 	TRACE_id_event = BUNappend(TRACE_id_event, &TRACE_event, FALSE);
 	TRACE_event++;
 
@@ -1092,30 +1137,6 @@ cachedProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc)
 	}
 	if (stmt) GDKfree(stmt);
 
-/* The remainder requires their own BATs
- #ifdef HAVE_TIMES
-	if( profileCounter[PROFcpu].status ){
-		log("%d,\t", newTms.tms_utime - mb->profiler[pc].timer.tms_utime);
-		log("%d,\t", newTms.tms_cutime - mb->profiler[pc].timer.tms_cutime);
-		log("%d,\t", newTms.tms_stime - mb->profiler[pc].timer.tms_stime);
-		log("%d,\t", newTms.tms_cstime - mb->profiler[pc].timer.tms_cstime);
-	}
- #endif
-
-	if( profileCounter[PROFmemory].status ){
- #ifdef HAVE_SYS_RESOURCE_H
-		log("%d,\t",infoUsage.ru_maxrss);
- #endif
-		log("%d,\t", infoMalloc.arena-prevMalloc.arena);
-		log("%d,\t", infoMalloc.ordblks-prevMalloc.ordblks);
-		log("%d,\t", infoMalloc.smblks-prevMalloc.smblks);
-		log("%d,\t", infoMalloc.hblkhd-prevMalloc.hblkhd);
-		log("%d,\t", infoMalloc.hblks-prevMalloc.hblks);
-		log("%d,\t", infoMalloc.fsmblks-prevMalloc.fsmblks);
-		log("%d,\t", infoMalloc.uordblks-prevMalloc.uordblks);
-		prevMalloc = infoMalloc;
-	}
- */
 #ifdef HAVE_SYS_RESOURCE_H
 	v = infoUsage.ru_inblock - prevUsage.ru_inblock;
 	TRACE_id_reads = BUNappend(TRACE_id_reads, &v, FALSE);
@@ -1127,22 +1148,10 @@ cachedProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc)
 	TRACE_id_writes = BUNappend(TRACE_id_writes, &v, FALSE);
 #endif
 
-/*
-	if( profileCounter[PROFprocess].status ){
-		log("%d,\t", infoUsage.ru_minflt- prevUsage.ru_minflt);
-		log("%d,\t", infoUsage.ru_majflt- prevUsage.ru_majflt);
-		log("%d,\t", infoUsage.ru_nswap- prevUsage.ru_nswap);
-		log("%d,\t", infoUsage.ru_nvcsw- prevUsage.ru_nvcsw);
-		log("%d,\t", infoUsage.ru_nivcsw- prevUsage.ru_nivcsw);
-		prevUsage = infoUsage;
-	}
- #endif
- */
 	TRACE_id_rbytes = BUNappend(TRACE_id_rbytes, &mb->profiler[pc].rbytes, FALSE);
 	TRACE_id_wbytes = BUNappend(TRACE_id_wbytes, &mb->profiler[pc].wbytes, FALSE);
 
 	eventcounter++;
-	flushLog();
 	MT_lock_unset(&mal_profileLock, "profileLock");
 }
 /*
@@ -1244,200 +1253,240 @@ static int hbdelay = 0;
  * Given the parsing involved, it should be used sparingly */
 
 static struct{
-	long user, nice, system, idle, iowait;
+	lng user, nice, system, idle, iowait;
 	double load;
 } corestat[256];
 
-static char cpuload[BUFSIZ];
-static FILE *proc;
+static int getCPULoad(char cpuload[BUFSIZ]){
+    int cpu, len, i;
+	lng user, nice, system, idle, iowait;
+	size_t n;
+    char buf[BUFSIZ+1],*s;
+	static FILE *proc= NULL;
+	lng newload;
 
-static void gatherCPULoad(void){
-    int cpu, len;
-	long user, nice, system, idle, iowait;
-    char buf[BUFSIZ],*s;
-
-    if ( proc == 0)
-        return;
-	rewind(proc);
-	while (fgets(buf, BUFSIZ,proc) != NULL)
-	if ( strncmp(buf,"cpu",3)== 0){
-		s= buf+3;
-		if ( *s == ' ') {
-			s++;
-			cpu = 0;
-		} else{
-			cpu = atoi(s);
-			s= strchr(buf,' ');
-			if ( s== 0) break;
-		}
-		while( *s && isspace((int)*s)) s++;
-		(void) sscanf(s,"%ld %ld %ld %ld %ld",  &user, &nice, &system, &idle, &iowait);
-		corestat[cpu].load = (user - corestat[cpu].user + nice - corestat[cpu].nice + system - corestat[cpu].system);
-		if ( corestat[cpu].load )
-			corestat[cpu].load = corestat[cpu].load / (corestat[cpu].load + idle - corestat[cpu].idle);
-		corestat[cpu].user = user;
-		corestat[cpu].nice = nice;
-		corestat[cpu].system = system;
-		corestat[cpu].idle = idle;
-		corestat[cpu].iowait = iowait;
-	} else break;
+	if ( proc == NULL || ferror(proc))
+		proc = fopen("/proc/stat","r");
+	else rewind(proc);
+	if ( proc == NULL) {
+		/* unexpected */
+		return -1;
+	}
+	/* read complete file to avoid concurrent write issues */
+	if ((n = fread(buf, 1, BUFSIZ,proc)) == 0 )
+		return -1;
+	buf[n] = 0;
+	for ( s= buf; *s; s++)
+	{
+		if ( strncmp(s,"cpu",3)== 0){
+			s +=3;
+			if ( *s == ' ') {
+				s++;
+				cpu = 255; // the cpu totals stored here
+			}  else 
+				cpu = atoi(s);
+			s= strchr(s,' ');
+			if ( s== 0) goto skip;
+			
+			while( *s && isspace((int)*s)) s++;
+			i= sscanf(s,LLFMT" "LLFMT" "LLFMT" "LLFMT" "LLFMT,  &user, &nice, &system, &idle, &iowait);
+			if ( i != 5 )
+				goto skip;
+			newload = (user - corestat[cpu].user + nice - corestat[cpu].nice + system - corestat[cpu].system);
+			if (  newload)
+				corestat[cpu].load = (double) newload / (newload + idle - corestat[cpu].idle + iowait - corestat[cpu].iowait);
+			corestat[cpu].user = user;
+			corestat[cpu].nice = nice;
+			corestat[cpu].system = system;
+			corestat[cpu].idle = idle;
+			corestat[cpu].iowait = iowait;
+		} 
+		skip: while( *s && *s != '\n') s++;
+	}
 
 	s= cpuload;
 	len = BUFSIZ;
-	for ( cpu = 0; cpu < 256 && corestat[cpu].user; cpu++) {
+	// identify core processing
+	for ( cpu = 0; cpuload && cpu < 255 && corestat[cpu].user; cpu++) {
 		snprintf(s, len, " %.2f ",corestat[cpu].load);
 		len -= (int)strlen(s);
 		s += (int) strlen(s);
 	}
+	return 0;
 }
 
-static void profilerHeartbeat(void *dummy){
-	Thread thr = THRnew("profilerHeartbeat");
+void profilerGetCPUStat(lng *user, lng *nice, lng *sys, lng *idle, lng *iowait)
+{
+	(void) getCPULoad(0);
+	*user = corestat[255].user;
+	*nice = corestat[255].nice;
+	*sys = corestat[255].system;
+	*idle = corestat[255].idle;
+	*iowait = corestat[255].iowait;
+}
+
+void profilerHeartbeatEvent(str msg)
+{
+	char logbuffer[LOGLEN], *logbase;
+	char cpuload[BUFSIZ];
+	int loglen;
 #ifdef HAVE_SYS_RESOURCE_H
 	static struct rusage prevUsage;
 	struct rusage infoUsage;
 #endif
-	static int eventcounter;
 	struct timeval tv;
-	time_t clock, prevclock=0;
+	time_t clock;
 #ifdef HAVE_TIMES
 	struct tms newTms;
 	struct tms prevtimer;
+
+	if( hbdelay ==0 || eventstream  == NULL ) 
+		return;
 	times(&prevtimer);
 #endif
 #ifdef HAVE_SYS_RESOURCE_H
 		getrusage(RUSAGE_SELF, &prevUsage);
 #endif
-	(void) dummy;
-    proc = fopen("/proc/stat","r");
-	gatherCPULoad();
 	gettimeofday(&tv,NULL);
-	prevclock = (time_t) tv.tv_sec;
 
-	while (hbdelay && eventstream){
-		MT_sleep_ms(hbdelay);
+	/* without this cast, compilation on Windows fails with
+	 * argument of type "long *" is incompatible with parameter of type "const time_t={__time64_t={__int64}} *"
+	 */
 
-		if (delayswitch > 0) {
-			/* first call to profiled */
-			offlineProfilerHeader();
-			delayswitch--;
-		}
-		if (eventstream == NULL)
-			continue;
+	gettimeofday(&tv,NULL);
+	clock = (time_t) tv.tv_sec;
 
-		/* without this cast, compilation on Windows fails with
-		 * argument of type "long *" is incompatible with parameter of type "const time_t={__time64_t={__int64}} *"
-		 */
-
-		gettimeofday(&tv,NULL);
-		clock = (time_t) tv.tv_sec;
-
-		/* get CPU load on second boundaries only */
-		if ( clock - prevclock >= 0 ) {
-			gatherCPULoad();
-			prevclock = clock;
-		}
-		MT_lock_set(&mal_profileLock, "profileLock");
+	/* get CPU load on second boundaries only */
+	if ( getCPULoad(cpuload) )
+		return;
+	lognew();
 #ifdef HAVE_TIMES
-		times(&newTms);
+	times(&newTms);
 #endif
 #ifdef HAVE_SYS_RESOURCE_H
-		getrusage(RUSAGE_SELF, &infoUsage);
+	getrusage(RUSAGE_SELF, &infoUsage);
 #endif
 
-		/* make ping profile event tuple  */
-		log("[ ");
-		if (profileCounter[PROFevent].status) {
-			log("%d,\t", eventcounter);
-		}
-		if (profileCounter[PROFstart].status) 
-			log("\"ping\",\t");
-		if (profileCounter[PROFtime].status) {
-			char *tbuf, *c;
-			tbuf = ctime(&clock);
-			if (tbuf) {
-				c = strchr(tbuf, '\n');
-				if (c) {
-					c[-5] = 0;
-				}
-				tbuf[10] = '"';
-				log("%s", tbuf + 10);
-				log(".%06d\",\t", (int)tv.tv_usec);
-			} else
-				log("%s,\t", "nil");
-		}
-		if (profileCounter[PROFthread].status)
-			log(" %d,\t", THRgettid());
-		if (profileCounter[PROFflow].status) {
-			log("%d,\t", memoryclaims);
-			log(LLFMT",\t", memoryclaims?((lng)(MEMORY_THRESHOLD * monet_memory)-memorypool)/1024/1024:0);
-		}
-		if (profileCounter[PROFfunc].status) 
-				log("\"ping\",\t");
-		if (profileCounter[PROFpc].status) 
-			log("0,\t");
-		if (profileCounter[PROFticks].status) 
-			log("0,\t");
-#ifdef HAVE_TIMES
-		if (profileCounter[PROFcpu].status && delayswitch < 0) {
-			log("%ld,\t", (long) (newTms.tms_utime - prevtimer.tms_utime));
-			log("%ld,\t", (long) (newTms.tms_cutime -prevtimer.tms_cutime));
-			log("%ld,\t", (long) (newTms.tms_stime - prevtimer.tms_stime));
-			log("%ld,\t", (long) (newTms.tms_cstime -prevtimer.tms_cstime));
-			prevtimer = newTms;
-		}
-#endif
-		if (profileCounter[PROFmemory].status && delayswitch < 0)
-			log(SZFMT ",\t", MT_getrss()/1024/1024);
-#ifdef HAVE_SYS_RESOURCE_H
-		if ((profileCounter[PROFreads].status ||
-			 profileCounter[PROFwrites].status) && delayswitch < 0) {
-			log("%ld,\t", infoUsage.ru_inblock - prevUsage.ru_inblock);
-			log("%ld,\t", infoUsage.ru_oublock - prevUsage.ru_oublock);
-			prevUsage = infoUsage;
-		}
-		if (profileCounter[PROFprocess].status && delayswitch < 0) {
-			log("%ld,\t", infoUsage.ru_minflt - prevUsage.ru_minflt);
-			log("%ld,\t", infoUsage.ru_majflt - prevUsage.ru_majflt);
-			log("%ld,\t", infoUsage.ru_nswap - prevUsage.ru_nswap);
-			log("%ld,\t", infoUsage.ru_nvcsw - prevUsage.ru_nvcsw);
-			log("%ld,\t", infoUsage.ru_nivcsw - prevUsage.ru_nivcsw);
-			prevUsage = infoUsage;
-		}
-#endif
-		if (profileCounter[PROFrbytes].status)
-			log("0,\t");
-		if (profileCounter[PROFwbytes].status)
-			log("0,\t");
-
-		if (profileCounter[PROFaggr].status)
-			log("0,\t0,\t");
-
-		if (profileCounter[PROFstmt].status)
-				log(" %s", cpuload);
-		//if (profileCounter[PROFtype].status)
-			//log("\"\",\t");
-		//if (profileCounter[PROFuser].status)
-			//log(" 0");
-		log(" ]\n");
-		eventcounter++;
-		flushLog();
-		MT_lock_unset(&mal_profileLock, "profileLock");
+	/* make ping profile event tuple  */
+	if (profileCounter[PROFstart].status) 
+		logadd("\"%s\",\t",msg);
+	if (profileCounter[PROFtime].status) {
+		char *tbuf, *c;
+		tbuf = ctime(&clock);
+		if (tbuf) {
+			c = strchr(tbuf, '\n');
+			if (c) {
+				c[-5] = 0;
+			}
+			tbuf[10] = '"';
+			logadd("%s", tbuf + 10);
+			logadd(".%06d\",\t", (int)tv.tv_usec);
+		} else
+			logadd("%s,\t", "nil");
 	}
-	if ( proc)
-		(void) fclose(proc);
-	THRdel(thr);
+	if (profileCounter[PROFthread].status)
+		logadd(" %d,\t", THRgettid());
+	if (profileCounter[PROFflow].status) {
+		logadd("%d,\t", memoryclaims);
+		logadd(LLFMT",\t", memoryclaims?((lng)(MEMORY_THRESHOLD * monet_memory)-memorypool)/1024/1024:0);
+	}
+	if (profileCounter[PROFfunc].status) 
+			logadd("\"ping\",\t");
+	if (profileCounter[PROFpc].status) 
+		logadd("0,\t");
+	if (profileCounter[PROFticks].status) 
+		logadd("0,\t");
+#ifdef HAVE_TIMES
+	if (profileCounter[PROFcpu].status && delayswitch < 0) {
+		logadd(LLFMT",\t", (lng) (newTms.tms_utime - prevtimer.tms_utime));
+		logadd(LLFMT",\t", (lng) (newTms.tms_cutime -prevtimer.tms_cutime));
+		logadd(LLFMT",\t", (lng) (newTms.tms_stime - prevtimer.tms_stime));
+		logadd(LLFMT",\t", (lng) (newTms.tms_cstime -prevtimer.tms_cstime));
+		prevtimer = newTms;
+	}
+#endif
+	if (profileCounter[PROFmemory].status && delayswitch < 0)
+		logadd(SZFMT ",\t", MT_getrss()/1024/1024);
+#ifdef HAVE_SYS_RESOURCE_H
+	if ((profileCounter[PROFreads].status ||
+		 profileCounter[PROFwrites].status) && delayswitch < 0) {
+		logadd("%ld,\t", infoUsage.ru_inblock - prevUsage.ru_inblock);
+		logadd("%ld,\t", infoUsage.ru_oublock - prevUsage.ru_oublock);
+		prevUsage = infoUsage;
+	}
+	if (profileCounter[PROFfootprint].status)
+		logadd("0,\t");
+	if (profileCounter[PROFprocess].status && delayswitch < 0) {
+		logadd("%ld,\t", infoUsage.ru_minflt - prevUsage.ru_minflt);
+		logadd("%ld,\t", infoUsage.ru_majflt - prevUsage.ru_majflt);
+		logadd("%ld,\t", infoUsage.ru_nswap - prevUsage.ru_nswap);
+		logadd("%ld,\t", infoUsage.ru_nvcsw - prevUsage.ru_nvcsw);
+		logadd("%ld,\t", infoUsage.ru_nivcsw - prevUsage.ru_nivcsw);
+		prevUsage = infoUsage;
+	}
+#endif
+	if (profileCounter[PROFrbytes].status)
+		logadd("0,\t");
+	if (profileCounter[PROFwbytes].status)
+		logadd("0,\t");
+
+	if (profileCounter[PROFaggr].status)
+		logadd("0,\t0,\t");
+
+	if (profileCounter[PROFstmt].status)
+			logadd(" %s", cpuload);
+	//if (profileCounter[PROFtype].status)
+		//logadd("\"\",\t");
+	//if (profileCounter[PROFuser].status)
+		//logadd(" 0");
+	logsent(0, logbuffer);
+}
+
+static MT_Id hbthread;
+static int volatile hbrunning;
+
+static void profilerHeartbeat(void *dummy)
+{
+	int t;
+
+	(void) dummy;
+	while (hbrunning) {
+		/* wait until you need this info */
+		while( hbdelay ==0 || eventstream  == NULL ) {
+			for (t = 1000; t > 0; t -= 50) {
+				MT_sleep_ms(50);
+				if (!hbrunning)
+					return;
+			}
+		}
+		for (t = hbdelay; t > 0; t -= 50) {
+			MT_sleep_ms(t > 50 ? 50 : t);
+			if (!hbrunning)
+				return;
+		}
+		profilerHeartbeatEvent("ping");
+	}
+	hbdelay = 0;
 }
 
 void startHeartbeat(int delay){
-	MT_Id p;
-
 	if ( delay < 0 )
 		return;
 	hbdelay = delay;
-	MT_create_thread(&p, profilerHeartbeat, (void *) 0, MT_THR_JOINABLE);
 }
 
 void stopHeartbeat(void){
-	hbdelay = 0;
+	hbrunning = 0;
+	if (hbthread)
+		MT_join_thread(hbthread);
+}
+
+void initHeartbeat(void)
+{
+	hbrunning = 1;
+	if (MT_create_thread(&hbthread, profilerHeartbeat, NULL, MT_THR_JOINABLE) < 0) {
+		/* it didn't happen */
+		hbthread = 0;
+		hbrunning = 0;
+	}
 }

@@ -13,7 +13,7 @@ The Original Code is the MonetDB Database System.
 
 The Initial Developer of the Original Code is CWI.
 Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-Copyright August 2008-2012 MonetDB B.V.
+Copyright August 2008-2013 MonetDB B.V.
 All Rights Reserved.
 @
 
@@ -72,12 +72,12 @@ All Rights Reserved.
 #include "gdk_private.h"
 #include "gdk_search.h"
 
-#define HITk(t1,t2)             TRUE
-#define HITs(t1,t2)             ((*cmp)(t1,t2) == 0)
-#define EQUALs(t1,t2)           ((*cmp)(t1,t2) == 0 && (*cmp)(t1,tnil))
-#define EQUALk(t1,t2)           TRUE
-#define FLIPs(l,r)              TRUE
-#define FLIPk(l,r)              FALSE
+#define HITk(t1,t2)		TRUE
+#define HITs(t1,t2)		((*cmp)(t1,t2) == 0)
+#define EQUALs(t1,t2)		((*cmp)(t1,t2) == 0 && (*cmp)(t1,tnil))
+#define EQUALk(t1,t2)		TRUE
+#define FLIPs			TRUE
+#define FLIPk			FALSE
 
 #define HITintersect(h,t)       bunfastins(bn,h,t)
 #define HITdiff(h,t)
@@ -330,7 +330,6 @@ BATkunique(BAT *b)
 	if (b->halign == 0) {
 		b->halign = OIDnew(1);
 	}
-	BATkey(bn, TRUE);	/* this we accomplished */
 	BATkey(BATmirror(bn), BATtkey(b));
 	bn->hsorted = BAThordered(b);
 	bn->hrevsorted = BAThrevordered(b);
@@ -341,6 +340,7 @@ BATkunique(BAT *b)
 	if (BATcount(bn) == BATcount(b)) {
 		ALIGNset(bn, b);
 	}
+	BATkey(bn, TRUE);	/* this we accomplished */
 	return bn;
 }
 
@@ -376,7 +376,6 @@ BATsunique(BAT *b)
 	}
 
 	/* property management */
-	BATset(bn, TRUE);	/* this we accomplished */
 	BATkey(bn, BAThkey(b));
 	BATkey(BATmirror(bn), BATtkey(b));
 	bn->hsorted = BAThordered(b);
@@ -388,6 +387,7 @@ BATsunique(BAT *b)
 	if (BATcount(bn) == BATcount(b)) {
 		ALIGNset(bn, b);
 	}
+	BATset(bn, TRUE);	/* this we accomplished */
 	return bn;
 }
 
@@ -622,7 +622,9 @@ BATins_@1@2(BAT *bn, BAT *l, BAT *r)
 	/* determine how to do the intersect */
 	if (BAThordered(l) & BAThordered(r)) {
 		hash = FALSE;
-	} else if (FLIP@1(l, r)) {
+	}
+#if FLIP@1
+	else {
 		int flip = BATtordered(l) & BATtordered(r);
 
 		if (flip) {
@@ -636,6 +638,7 @@ BATins_@1@2(BAT *bn, BAT *l, BAT *r)
 			bn = BATmirror(bn);
 		}
 	}
+#endif
 	merge = BATatoms[l->htype].atomCmp;
 	cmp = BATatoms[l->ttype].atomCmp;
 	hnil = ATOMnilptr(l->htype);

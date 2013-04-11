@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -25,7 +25,6 @@ mal_export void finishNamespace(void);
 mal_export str putName(str nme, size_t len);
 mal_export str getName(str nme, size_t len);
 mal_export void delName(str nme, size_t len);
-mal_export void dumpNamespaceStatistics(stream *f, int details);
 
 #define MAXIDENTLEN    1024
 

@@ -1,4 +1,4 @@
-stdout of test 'insert_delete-bug-sf-904025` in directory 'test/bugs` itself:
+stdout of test 'insert_delete-bug-sf-904025` in directory 'sql/test/bugs` itself:
 
 
 # 16:28:05 >  
@@ -20,15 +20,15 @@ Ready.
 
 #create table tmp(name string, id int);
 #insert into tmp select name, id from tables where "type" = 0;
-[ 27	]
+[ 26	]
 #select count(*) from tmp;
 % sys.tmp # table_name
 % L1 # name
 % wrd # type
 % 2 # length
-[ 27	]
+[ 26	]
 #delete from tmp;
-[ 27	]
+[ 26	]
 #select count(*) from tmp;
 % sys.tmp # table_name
 % L1 # name
@@ -36,15 +36,15 @@ Ready.
 % 1 # length
 [ 0	]
 #insert into tmp select name, id from tables where "type" = 0;
-[ 27	]
+[ 26	]
 #select count(*) from tmp;
 % sys.tmp # table_name
 % L1 # name
 % wrd # type
 % 2 # length
-[ 27	]
+[ 26	]
 #delete from tmp;
-[ 27	]
+[ 26	]
 #select count(*) from tmp;
 % sys.tmp # table_name
 % L1 # name

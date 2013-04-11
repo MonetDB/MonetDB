@@ -1,4 +1,4 @@
-stdout of test 'insert_quser` in directory 'test/ssqq` itself:
+stdout of test 'insert_quser` in directory 'sql/test/ssqq` itself:
 
 
 # 16:29:57 >  
@@ -11,7 +11,7 @@ stdout of test 'insert_quser` in directory 'test/ssqq` itself:
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Found 7.751 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2012 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008-2013 MonetDB B.V., all rights reserved
 # Visit http://monetdb.cwi.nl/ for further information
 #WARNING: LoaderException:loadLibrary:Loading error 'libmseed.so.2: cannot open shared object file: No such file or directory' from within file 'vault'
 # Listening for connection requests on mapi:monetdb://yngling.ins.cwi.nl:31832/
@@ -35,8 +35,8 @@ Ready.
 % query_id,	quser_id,	query_text,	is_example,	is_refused,	aborted,	returned_error,	num_results,	header,	result_set # name
 % int,	int,	varchar,	int,	boolean,	boolean,	varchar,	int,	blob,	blob # type
 % 1,	1,	0,	1,	5,	5,	0,	1,	0,	0 # length
-#select * from queue;
-% sys.queue,	sys.queue,	sys.queue,	sys.queue,	sys.queue,	sys.queue,	sys.queue,	sys.queue # table_name
+#select * from ssqq_queue;
+% sys.ssqq_queue,	sys.ssqq_queue,	sys.ssqq_queue,	sys.ssqq_queue,	sys.ssqq_queue,	sys.ssqq_queue,	sys.ssqq_queue,	sys.ssqq_queue # table_name
 % queue_id,	query_id,	queue_add,	queue_number,	os_version,	monetdb_version,	start_query,	query_ready # name
 % int,	int,	timestamp,	int,	varchar,	varchar,	timestamp,	timestamp # type
 % 1,	1,	26,	1,	0,	0,	26,	26 # length
@@ -94,8 +94,8 @@ Ready.
 % query_id,	quser_id,	query_text,	is_example,	is_refused,	aborted,	returned_error,	num_results,	header,	result_set # name
 % int,	int,	varchar,	int,	boolean,	boolean,	varchar,	int,	blob,	blob # type
 % 1,	1,	0,	1,	5,	5,	0,	1,	0,	0 # length
-#select * from queue;
-% sys.queue,	sys.queue,	sys.queue,	sys.queue,	sys.queue,	sys.queue,	sys.queue,	sys.queue # table_name
+#select * from ssqq_queue;
+% sys.ssqq_queue,	sys.ssqq_queue,	sys.ssqq_queue,	sys.ssqq_queue,	sys.ssqq_queue,	sys.ssqq_queue,	sys.ssqq_queue,	sys.ssqq_queue # table_name
 % queue_id,	query_id,	queue_add,	queue_number,	os_version,	monetdb_version,	start_query,	query_ready # name
 % int,	int,	timestamp,	int,	varchar,	varchar,	timestamp,	timestamp # type
 % 1,	1,	26,	1,	0,	0,	26,	26 # length

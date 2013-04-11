@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -97,7 +97,7 @@ local_utoa(size_t i)
 	return buf;
 }
 
-#define COLLISION 64 
+#define COLLISION 64
 
 static void
 HASHinfo(BAT *bk, BAT *bv, Hash *h, str s)
@@ -116,16 +116,10 @@ HASHinfo(BAT *bk, BAT *bv, Hash *h, str s)
 		cnt[i] = 0;
 	}
 	for (i = 0; i <= h->mask; i++) {
-		if (h->hash[i] == BUN_NONE) {
-			cnt[0]++;
-		} else if (h->hash[i] > h->lim) {
-			GDKerror("HASHinfo: hash consistency problem " BUNFMT "\n", i);
-		} else {
-			j = HASHlist(h, h->hash[i]);
-			for (k = 0; j; k++)
-				j >>= 1;
-			cnt[k]++;
-		}
+		j = HASHlist(h, i);
+		for (k = 0; j; k++)
+			j >>= 1;
+		cnt[k]++;
 	}
 
 	for (i = 0; i <= COLLISION + 1; i++)
@@ -192,8 +186,6 @@ CMDinfo(BAT **ret1, BAT **ret2, BAT *b)
 
 	if (b->batPersistence == PERSISTENT) {
 		mode = "persistent";
-	} else if (b->batPersistence == SESSION) {
-		mode = "session";
 	} else if (b->batPersistence == TRANSIENT) {
 		mode = "transient";
 	} else {
@@ -467,8 +459,6 @@ CMDunload(bit *res, str input)
 		BBPfix(bid);
 		b = BBP_cache(bid);
 		if (b) {
-			if (b->batPersistence == SESSION)
-				BATmode(b, TRANSIENT);
 			BBPcold(bid);	/* will trigger unload of also persistent bats */
 		}
 		*res = BBPunfix(bid) == 0;
@@ -1115,13 +1105,17 @@ BKCappend_force_wrap(int *r, int *bid, int *uid, bit *force)
 
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "bat.append", RUNTIME_OBJECT_MISSING);
-	if ((b = setaccess(b, BAT_WRITE)) == NULL)
-		throw(MAL, "bat.append", OPERATION_FAILED);
 	if ((u = BATdescriptor(*uid)) == NULL) {
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "bat.append", RUNTIME_OBJECT_MISSING);
 	}
-	bn = BATappend(b, u, *force);
+	if (BATcount(u) == 0) {
+		bn = b;
+	} else {
+		if ((b = setaccess(b, BAT_WRITE)) == NULL)
+			throw(MAL, "bat.append", OPERATION_FAILED);
+		bn = BATappend(b, u, *force);
+	}
 	if (b != bn)
 		BBPreleaseref(b->batCacheid);
 	BBPreleaseref(u->batCacheid);
@@ -1429,7 +1423,7 @@ BKCpersists(int *r, int *bid, bit *flg)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.setPersistence", RUNTIME_OBJECT_MISSING);
 	}
-	BATmode(b, (*flg == TRUE) ? PERSISTENT : (*flg ==FALSE) ? TRANSIENT : SESSION);
+	BATmode(b, (*flg == TRUE) ? PERSISTENT : TRANSIENT);
 	BBPreleaseref(b->batCacheid);
 	*r = 0;
 	return MAL_SUCCEED;
@@ -1439,7 +1433,7 @@ str
 BKCsetPersistent(int *r, int *bid)
 {
 	bit flag= TRUE;
-	return BKCpersists(r,bid, &flag);
+	return BKCpersists(r, bid, &flag);
 }
 
 str
@@ -1458,15 +1452,8 @@ BKCisPersistent(bit *res, int *bid)
 str
 BKCsetTransient(int *r, int *bid)
 {
-	BAT *b;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "bat.setTransient", RUNTIME_OBJECT_MISSING);
-	}
-	BATmode(b, TRANSIENT);
-	*r = 0;
-	BBPreleaseref(b->batCacheid);
-	return MAL_SUCCEED;
+	bit flag = FALSE;
+	return BKCpersists(r, bid, &flag);
 }
 
 str
@@ -1715,7 +1702,7 @@ BKCgetStorageSize_str(lng *tot, str batname)
 {
 	int bid = BBPindex(batname);
 
-	if (bid == 0) 
+	if (bid == 0)
 		throw(MAL, "bat.getStorageSize", RUNTIME_OBJECT_MISSING);
 	return BKCgetStorageSize(tot, &bid);
 }
@@ -2083,18 +2070,21 @@ BKCgetSequenceBase(oid *r, int *bid)
 /*
  * Shrinking a void-headed BAT using a list of oids to ignore.
  */
-#define shrinkloop(Type) {\
-	Type *p = (Type*)Tloc(b, BUNfirst(b));\
-	Type *q = (Type*)Tloc(b, BUNlast(b));\
-	Type *r = (Type*)Tloc(bn, BUNfirst(bn));\
-	cnt=0;\
-	for (;p<q; oidx++, p++) {\
-		if ( o < ol && *o == oidx ){\
-			o++;\
-		} else {\
-			cnt++;\
-			*r++ = *p;\
-	} } }
+#define shrinkloop(Type)							\
+	do {											\
+		Type *p = (Type*)Tloc(b, BUNfirst(b));		\
+		Type *q = (Type*)Tloc(b, BUNlast(b));		\
+		Type *r = (Type*)Tloc(bn, BUNfirst(bn));	\
+		cnt=0;										\
+		for (;p<q; oidx++, p++) {					\
+			if ( o < ol && *o == oidx ){			\
+				o++;								\
+			} else {								\
+				cnt++;								\
+				*r++ = *p;							\
+			}										\
+		}											\
+	} while (0)
 
 str
 BKCshrinkBAT(int *ret, int *bid, int *did)
@@ -2121,24 +2111,24 @@ BKCshrinkBAT(int *ret, int *bid, int *did)
 		throw(MAL, "bat.shrink", MAL_MALLOC_FAIL );
 	}
 	bs = BATmirror(BATsort(BATmirror(d)));
+	BBPreleaseref(d->batCacheid);
 	if (bs == NULL) {
 		BBPreleaseref(b->batCacheid);
-		BBPreleaseref(d->batCacheid);
 		BBPreleaseref(bn->batCacheid);
 		throw(MAL, "bat.shrink", MAL_MALLOC_FAIL );
 	}
 
-    	o = (oid*)Tloc(bs, BUNfirst(bs));
-    	ol= (oid*)Tloc(bs, BUNlast(bs));
+	o = (oid*)Tloc(bs, BUNfirst(bs));
+	ol= (oid*)Tloc(bs, BUNlast(bs));
 
 	switch(ATOMstorage(b->ttype) ){
-	case TYPE_bte: shrinkloop(bte) break;
-	case TYPE_sht: shrinkloop(sht) break;
-	case TYPE_int: shrinkloop(int) break;
-	case TYPE_lng: shrinkloop(lng) break;
-	case TYPE_flt: shrinkloop(flt) break;
-	case TYPE_dbl: shrinkloop(dbl) break;
-	case TYPE_oid: shrinkloop(oid) break;
+	case TYPE_bte: shrinkloop(bte); break;
+	case TYPE_sht: shrinkloop(sht); break;
+	case TYPE_int: shrinkloop(int); break;
+	case TYPE_lng: shrinkloop(lng); break;
+	case TYPE_flt: shrinkloop(flt); break;
+	case TYPE_dbl: shrinkloop(dbl); break;
+	case TYPE_oid: shrinkloop(oid); break;
 	default:
 		if (ATOMvarsized(bn->ttype)) {
 			BUN p = BUNfirst(b);
@@ -2156,10 +2146,10 @@ BKCshrinkBAT(int *ret, int *bid, int *did)
 			}
 		} else {
 			switch( b->T->width){
-			case 1:shrinkloop(bte) break;
-			case 2:shrinkloop(sht) break;
-			case 4:shrinkloop(int) break;
-			case 8:shrinkloop(lng) break;
+			case 1:shrinkloop(bte); break;
+			case 2:shrinkloop(sht); break;
+			case 4:shrinkloop(int); break;
+			case 8:shrinkloop(lng); break;
 			default:
 				throw(MAL, "bat.shrink", "Illegal argument type");
 			}
@@ -2178,7 +2168,7 @@ BKCshrinkBAT(int *ret, int *bid, int *did)
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
 
 	BBPreleaseref(b->batCacheid);
-	BBPreleaseref(d->batCacheid);
+	BBPreleaseref(bs->batCacheid);
 	BBPkeepref(*ret= bn->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -2213,16 +2203,16 @@ BKCshrinkBATmap(int *ret, int *bid, int *did)
 		throw(MAL, "bat.shrinkMap", MAL_MALLOC_FAIL );
 	}
 	bs = BATmirror(BATsort(BATmirror(d)));
+	BBPreleaseref(d->batCacheid);
 	if (bs == NULL) {
 		BBPreleaseref(b->batCacheid);
-		BBPreleaseref(d->batCacheid);
 		BBPreleaseref(bn->batCacheid);
 		throw(MAL, "bat.shrinkMap", MAL_MALLOC_FAIL );
 	}
 
-    	o = (oid*)Tloc(bs, BUNfirst(bs));
-    	ol= (oid*)Tloc(bs, BUNlast(bs));
-    	r = (oid*)Tloc(bn, BUNfirst(bn));
+	o = (oid*)Tloc(bs, BUNfirst(bs));
+	ol= (oid*)Tloc(bs, BUNlast(bs));
+	r = (oid*)Tloc(bn, BUNfirst(bn));
 
 	lim = BATcount(b);
 
@@ -2234,7 +2224,7 @@ BKCshrinkBATmap(int *ret, int *bid, int *did)
 		}
 	}
 
-    BATsetcount(bn, BATcount(b)-BATcount(d));
+    BATsetcount(bn, BATcount(b)-BATcount(bs));
 	BATseqbase(bn, b->hseqbase);
     bn->tsorted = 0;
     bn->trevsorted = 0;
@@ -2243,29 +2233,31 @@ BKCshrinkBATmap(int *ret, int *bid, int *did)
     if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
 
 	BBPreleaseref(b->batCacheid);
-	BBPreleaseref(d->batCacheid);
+	BBPreleaseref(bs->batCacheid);
 	BBPkeepref(*ret= bn->batCacheid);
 	return MAL_SUCCEED;
 }
 /*
  * Shrinking a void-headed BAT using a list of oids to ignore.
  */
-#define reuseloop(Type) {\
-	Type *p = (Type*)Tloc(b, BUNfirst(b));\
-	Type *q = (Type*)Tloc(b, BUNlast(b));\
-	Type *r = (Type*)Tloc(bn, BUNfirst(bn));\
-	for (;p<q; oidx++, p++) {\
-		if ( *o == oidx ){\
-			while ( *ol == bidx && ol>o) {\
-				bidx--;\
-				ol--;q--;\
-			}\
-			*r++ = *(--q);\
-			o += (o < ol);\
-			bidx--;\
-		} else\
-			*r++ = *p; \
-} }
+#define reuseloop(Type)								\
+	do {											\
+		Type *p = (Type*)Tloc(b, BUNfirst(b));		\
+		Type *q = (Type*)Tloc(b, BUNlast(b));		\
+		Type *r = (Type*)Tloc(bn, BUNfirst(bn));	\
+		for (;p<q; oidx++, p++) {					\
+			if ( *o == oidx ){						\
+				while ( *ol == bidx && ol>o) {		\
+					bidx--;							\
+					ol--;q--;						\
+				}									\
+				*r++ = *(--q);						\
+				o += (o < ol);						\
+				bidx--;								\
+			} else									\
+				*r++ = *p;							\
+		}											\
+	} while (0)
 
 str
 BKCreuseBAT(int *ret, int *bid, int *did)
@@ -2291,32 +2283,32 @@ BKCreuseBAT(int *ret, int *bid, int *did)
 		throw(MAL, "bat.reuse", MAL_MALLOC_FAIL );
 	}
 	bs = BATmirror(BATsort(BATmirror(d)));
+	BBPreleaseref(d->batCacheid);
 	if (bs == NULL) {
 		BBPreleaseref(b->batCacheid);
-		BBPreleaseref(d->batCacheid);
 		BBPreleaseref(bn->batCacheid);
 		throw(MAL, "bat.reuse", MAL_MALLOC_FAIL );
 	}
 
 	bidx= BUNlast(b)-1;
-    	o = (oid*)Tloc(bs, BUNfirst(bs));
-    	ol= (oid*)Tloc(bs, BUNlast(bs))-1;
+	o = (oid*)Tloc(bs, BUNfirst(bs));
+	ol= (oid*)Tloc(bs, BUNlast(bs))-1;
 
 	switch(ATOMstorage(b->ttype) ){
-	case TYPE_bte: reuseloop(bte) break;
-	case TYPE_sht: reuseloop(sht) break;
-	case TYPE_int: reuseloop(int) break;
-	case TYPE_lng: reuseloop(lng) break;
-	case TYPE_flt: reuseloop(flt) break;
-	case TYPE_dbl: reuseloop(dbl) break;
-	case TYPE_oid: reuseloop(oid) break;
+	case TYPE_bte: reuseloop(bte); break;
+	case TYPE_sht: reuseloop(sht); break;
+	case TYPE_int: reuseloop(int); break;
+	case TYPE_lng: reuseloop(lng); break;
+	case TYPE_flt: reuseloop(flt); break;
+	case TYPE_dbl: reuseloop(dbl); break;
+	case TYPE_oid: reuseloop(oid); break;
 	case TYPE_str: /* to be done based on its index width */
 	default:
 		if (ATOMvarsized(bn->ttype)) {
 			BUN p = BUNfirst(b);
 			BUN q = BUNlast(b);
 			BATiter bi = bat_iterator(b);
-		
+
 			for (;p<q; oidx++, p++) {
 				if ( *o == oidx ){
 					while ( *ol == bidx && ol>o) {
@@ -2331,17 +2323,17 @@ BKCreuseBAT(int *ret, int *bid, int *did)
 			}
 		} else {
 			switch( b->T->width){
-			case 1:reuseloop(bte) break;
-			case 2:reuseloop(sht) break;
-			case 4:reuseloop(int) break;
-			case 8:reuseloop(lng) break;
+			case 1:reuseloop(bte); break;
+			case 2:reuseloop(sht); break;
+			case 4:reuseloop(int); break;
+			case 8:reuseloop(lng); break;
 			default:
 				throw(MAL, "bat.shrink", "Illegal argument type");
 			}
 		}
 	}
 
-    BATsetcount(bn, BATcount(b) - BATcount(d));
+    BATsetcount(bn, BATcount(b) - BATcount(bs));
 	BATseqbase(bn, b->hseqbase);
     bn->tsorted = 0;
     bn->trevsorted = 0;
@@ -2351,7 +2343,7 @@ BKCreuseBAT(int *ret, int *bid, int *did)
     if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
 
 	BBPreleaseref(b->batCacheid);
-	BBPreleaseref(d->batCacheid);
+	BBPreleaseref(bs->batCacheid);
 	BBPkeepref(*ret= bn->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -2380,16 +2372,16 @@ BKCreuseBATmap(int *ret, int *bid, int *did)
 		throw(MAL, "bat.shrinkMap", MAL_MALLOC_FAIL );
 	}
 	bs = BATmirror(BATsort(BATmirror(d)));
+	BBPreleaseref(d->batCacheid);
 	if (bs == NULL) {
 		BBPreleaseref(b->batCacheid);
-		BBPreleaseref(d->batCacheid);
 		BBPreleaseref(bn->batCacheid);
 		throw(MAL, "bat.shrinkMap", MAL_MALLOC_FAIL );
 	}
 
 	bidx= BUNlast(b)-1;
-    o = (oid*)Tloc(d, BUNfirst(d));
-    ol= (oid*)Tloc(d, BUNlast(d));
+    o = (oid*)Tloc(bs, BUNfirst(bs));
+    ol= (oid*)Tloc(bs, BUNlast(bs));
     r = (oid*)Tloc(bn, BUNfirst(bn));
 
 	for (;oidx<bidx; oidx++) {
@@ -2401,10 +2393,10 @@ BKCreuseBATmap(int *ret, int *bid, int *did)
 			o += (o < ol);
 			bidx--;
 		} else
-			*r++ = oidx; 
+			*r++ = oidx;
 	}
 
-    BATsetcount(bn, BATcount(b)-BATcount(d));
+    BATsetcount(bn, BATcount(b)-BATcount(bs));
 	BATseqbase(bn, b->hseqbase);
     bn->tsorted = 0;
     bn->trevsorted = 0;
@@ -2413,8 +2405,51 @@ BKCreuseBATmap(int *ret, int *bid, int *did)
     if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
 
 	BBPreleaseref(b->batCacheid);
-	BBPreleaseref(d->batCacheid);
+	BBPreleaseref(bs->batCacheid);
 	BBPkeepref(*ret= bn->batCacheid);
 	return MAL_SUCCEED;
 }
 
+str
+BKCmergecand(bat *ret, bat *aid, bat *bid)
+{
+	BAT *a, *b, *bn;
+
+	if ((a = BATdescriptor(*aid)) == NULL) {
+		throw(MAL, "bat.mergecand", RUNTIME_OBJECT_MISSING);
+	}
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		BBPreleaseref(a->batCacheid);
+		throw(MAL, "bat.mergecand", RUNTIME_OBJECT_MISSING);
+	}
+	bn = BATmergecand(a, b);
+	BBPreleaseref(a->batCacheid);
+	BBPreleaseref(b->batCacheid);
+	if (bn == NULL)
+		throw(MAL, "bat.mergecand", OPERATION_FAILED);
+	*ret = bn->batCacheid;
+	BBPkeepref(*ret);
+	return MAL_SUCCEED;
+}
+
+str
+BKCintersectcand(bat *ret, bat *aid, bat *bid)
+{
+	BAT *a, *b, *bn;
+
+	if ((a = BATdescriptor(*aid)) == NULL) {
+		throw(MAL, "bat.intersectcand", RUNTIME_OBJECT_MISSING);
+	}
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		BBPreleaseref(a->batCacheid);
+		throw(MAL, "bat.intersectcand", RUNTIME_OBJECT_MISSING);
+	}
+	bn = BATintersectcand(a, b);
+	BBPreleaseref(a->batCacheid);
+	BBPreleaseref(b->batCacheid);
+	if (bn == NULL)
+		throw(MAL, "bat.intersectcand", OPERATION_FAILED);
+	*ret = bn->batCacheid;
+	BBPkeepref(*ret);
+	return MAL_SUCCEED;
+}

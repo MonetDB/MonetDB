@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -729,6 +729,7 @@ logger_open(logger *lg)
 	snprintf(filename, BUFSIZ, "%s%s." LLFMT, lg->dir, LOGFILE, lg->id);
 
 	lg->log = open_wstream(filename);
+	lg->end = 0;
 	if (mnstr_errnr(lg->log))
 		return LOG_ERR;
 
@@ -947,7 +948,7 @@ check_version(logger *lg, FILE *fp)
 		    (*lg->prefuncp)(version, lg->version) != 0) {
 			GDKerror("Incompatible database version %06d, "
 				 "this server supports version %06d\n"
-				 "Please move away %s and its corresponding dbfarm.",
+				 "Please move away %s.",
 				 version, lg->version, lg->dir);
 
 			return -1;
@@ -1019,7 +1020,7 @@ logger_fatal(const char *format, const char *arg1, const char *arg2, const char 
 {
 	char *buf;
 
-	GDKerror(format, arg1, arg2, arg3);
+	GDKfatal(format, arg1, arg2, arg3);
 	GDKlog(format, arg1, arg2, arg3);
 	if ((buf = GDKerrbuf) != NULL) {
 		fprintf(stderr, "%s", buf);
@@ -1029,7 +1030,7 @@ logger_fatal(const char *format, const char *arg1, const char *arg2, const char 
 }
 
 static logger *
-logger_new(int debug, char *fn, char *logdir, char *dbname, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp)
+logger_new(int debug, char *fn, char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp)
 {
 	int id = LOG_SID;
 	logger *lg = (struct logger *) GDKmalloc(sizeof(struct logger));
@@ -1057,8 +1058,8 @@ logger_new(int debug, char *fn, char *logdir, char *dbname, int version, prevers
 	 * logger_create/logger_new "manually" */
 	assert(!MT_path_absolute(logdir));
 
-	snprintf(filename, BUFSIZ, "%s%c%s%c%s%c%s%c",
-		 GDKgetenv("gdk_dbfarm"), DIR_SEP, dbname, DIR_SEP,
+	snprintf(filename, BUFSIZ, "%s%c%s%c%s%c",
+		 GDKgetenv("gdk_dbpath"), DIR_SEP,
 		 logdir, DIR_SEP, fn, DIR_SEP);
 	lg->fn = GDKstrdup(fn);
 	lg->dir = GDKstrdup(filename);
@@ -1096,6 +1097,8 @@ logger_new(int debug, char *fn, char *logdir, char *dbname, int version, prevers
 		BAT *b = BATdescriptor(bid);
 		BAT *v;
 
+		if ( b == 0)
+			logger_fatal("Logger_new: inconsistent database, '%s' does not exist",bak,0,0);
 		lg->catalog_bid = logbat_new(TYPE_void, TYPE_int, BATSIZE);
 		lg->catalog_nme = logbat_new(TYPE_void, TYPE_str, BATSIZE);
 
@@ -1125,6 +1128,8 @@ logger_new(int debug, char *fn, char *logdir, char *dbname, int version, prevers
 		/* split snapshots -> snapshots_bid, snapshots_tid */
 		bid = logger_find_bat(lg, "snapshots");
 		b = BATdescriptor(bid);
+		if ( b == 0)
+			logger_fatal("Logger_new: inconsistent database, '%s' snapshots does not exist",bak,0,0);
 
 		lg->snapshots_bid = logbat_new(TYPE_void, TYPE_int, 1);
 		v = BATmark(b, 0);
@@ -1149,6 +1154,8 @@ logger_new(int debug, char *fn, char *logdir, char *dbname, int version, prevers
 		/* split seqs -> seqs_id, seqs_val */
 		bid = logger_find_bat(lg, "seqs");
 		b = BATdescriptor(bid);
+		if ( b == 0)
+			logger_fatal("Logger_new: inconsistent database, '%s' seqs does not exist",bak,0,0);
 
 		lg->seqs_id = logbat_new(TYPE_void, TYPE_int, 1);
 		v = BATmark(b, 0);
@@ -1196,14 +1203,14 @@ logger_new(int debug, char *fn, char *logdir, char *dbname, int version, prevers
 		if (fp != NULL) {
 			logger_fatal("logger_new: there is no logger catalog, but there is a log file.\n"
 				     "Are you sure you are using the correct combination of database\n"
-				     "(--dbfarm / --dbname) and log directory (--set %s_logdir)?\n",
+				     "(--dbpath) and log directory (--set %s_logdir)?\n",
 				     fn, 0, 0);
 			goto error;
 		}
 
 		lg->catalog_bid = logbat_new(TYPE_void, TYPE_int, BATSIZE);
 		lg->catalog_nme = logbat_new(TYPE_void, TYPE_str, BATSIZE);
-		if (debug)
+		if (debug & 1)
 			fprintf(stderr, "create %s catalog\n", fn);
 
 		/* Make persistent */
@@ -1247,16 +1254,20 @@ logger_new(int debug, char *fn, char *logdir, char *dbname, int version, prevers
 		 * reference for the persistent bats */
 		BUN p, q;
 		BAT *b = BATdescriptor(catalog_bid), *n;
+		if ( b == 0)
+			logger_fatal("Logger_new: inconsistent database, catalog does not exist",0,0,0);
 
 		snprintf(bak, BUFSIZ, "%s_catalog_nme", fn);
 		catalog_nme = BBPindex(bak);
 		n = BATdescriptor(catalog_nme);
+		if ( n == 0)
+			logger_fatal("Logger_new: inconsistent database, catalog_nme does not exist",0,0,0);
 
 		/* the catalog exists, and so should the log file */
 		if (fp == NULL) {
 			logger_fatal("logger_new: there is a logger catalog, but no log file.\n"
 				     "Are you sure you are using the correct combination of database\n"
-				     "(--dbfarm / --dbname) and log directory (--set %s_logdir)?\n"
+				     "(--dbpath) and log directory (--set %s_logdir)?\n"
 				     "If you have done a recent update of the server, it may be that your\n"
 				     "logs are in an old location.  You should then either use\n"
 				     "--set %s_logdir=<path to old log directory> or move the old log\n"
@@ -1308,7 +1319,11 @@ logger_new(int debug, char *fn, char *logdir, char *dbname, int version, prevers
 		bat snapshots_tid = logger_find_bat(lg, "snapshots_tid");
 
 		lg->seqs_id = BATdescriptor(seqs_id);
+		if ( lg->seqs_id == 0)
+			logger_fatal("Logger_new: inconsistent database, seqs_id does not exist",0,0,0);
 		lg->seqs_val = BATdescriptor(seqs_val);
+		if ( lg->seqs_val == 0)
+			logger_fatal("Logger_new: inconsistent database, seqs_val does not exist",0,0,0);
 		if (BATcount(lg->seqs_id)) {
 			BUN p = BUNfndT(lg->seqs_id, &id);
 			lg->id = *(lng *) Tloc(lg->seqs_val, p);
@@ -1317,7 +1332,11 @@ logger_new(int debug, char *fn, char *logdir, char *dbname, int version, prevers
 			BUNappend(lg->seqs_val, &lg->id, FALSE);
 		}
 		lg->snapshots_bid = BATdescriptor(snapshots_bid);
+		if ( lg->snapshots_bid == 0)
+			logger_fatal("Logger_new: inconsistent database, snapshots_bid does not exist",0,0,0);
 		lg->snapshots_tid = BATdescriptor(snapshots_tid);
+		if ( lg->snapshots_tid == 0)
+			logger_fatal("Logger_new: inconsistent database, snapshots_tid does not exist",0,0,0);
 	}
 	lg->freed = BATnew(TYPE_void, TYPE_int, 1);
 	BATseqbase(lg->freed, 0);
@@ -1334,7 +1353,7 @@ logger_new(int debug, char *fn, char *logdir, char *dbname, int version, prevers
 		}
 
 #if SIZEOF_OID == 8
-		/* When a file *_32-64-convert exists in the dbfarm,
+		/* When a file *_32-64-convert exists in the database,
 		 * it was left there by the BBP initialization code
 		 * when it did a conversion of 32-bit OIDs to 64 bits
 		 * (see the comment above fixoidheapcolumn and
@@ -1342,18 +1361,18 @@ logger_new(int debug, char *fn, char *logdir, char *dbname, int version, prevers
 		 * first create a file called convert-32-64 in the log
 		 * directory and we write the current log ID into that
 		 * file.  After this file is created, we delete the
-		 * *_32-64-convert file in the dbfarm.  We then know
+		 * *_32-64-convert file in the database.  We then know
 		 * that while reading the logs, we have to read OID
 		 * values as 32 bits (this is indicated by setting the
 		 * read32bitoid flag).  When we're done reading the
 		 * logs, we remove the file (and reset the flag).  If
 		 * we get interrupted before we have written this
-		 * file, the file in the dbfarm will still exist, so
+		 * file, the file in the database will still exist, so
 		 * the next time we're started, BBPinit will not
 		 * convert OIDs (that was done before we got
 		 * interrupted), but we will still know to convert the
 		 * OIDs ourselves.  If we get interrupted after we
-		 * have deleted the file from the dbfarm, we check
+		 * have deleted the file from the database, we check
 		 * whether the file convert-32-64 exists and if it
 		 * contains the expected ID.  If it does, we again
 		 * know that we have to convert.  If the ID is not
@@ -1361,8 +1380,8 @@ logger_new(int debug, char *fn, char *logdir, char *dbname, int version, prevers
 		 * already, and so we can delete the file. */
 
 		snprintf(cvfile, sizeof(cvfile),
-			 "%s%c%s%c%s%c%s%cconvert-32-64",
-			 GDKgetenv("gdk_dbfarm"), DIR_SEP, dbname,
+			 "%s%c%s%c%s%cconvert-32-64",
+			 GDKgetenv("gdk_dbpath"),
 			 DIR_SEP, logdir, DIR_SEP, fn, DIR_SEP);
 		snprintf(bak, sizeof(bak), "%s_32-64-convert", fn);
 		{
@@ -1441,9 +1460,9 @@ logger_new(int debug, char *fn, char *logdir, char *dbname, int version, prevers
 }
 
 logger *
-logger_create(int debug, char *fn, char *logdir, char *dbname, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp)
+logger_create(int debug, char *fn, char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp)
 {
-	logger *lg = logger_new(debug, fn, logdir, dbname, version, prefuncp, postfuncp);
+	logger *lg = logger_new(debug, fn, logdir, version, prefuncp, postfuncp);
 
 	if (!lg)
 		return NULL;
@@ -1729,7 +1748,7 @@ log_delta(logger *lg, BAT *b, char *name)
 			ok = (ok == GDK_FAIL) ? ok : wt(t, lg->log, 1);
 		}
 
-		if (lg->debug)
+		if (lg->debug & 1)
 			fprintf(stderr, "Logged %s %d inserts\n", name, l.nr);
 	}
 	return (ok == GDK_SUCCEED) ? LOG_OK : LOG_ERR;
@@ -1777,7 +1796,7 @@ log_bat(logger *lg, BAT *b, char *name)
 			}
 		}
 
-		if (lg->debug)
+		if (lg->debug & 1)
 			fprintf(stderr, "Logged %s %d inserts\n", name, l.nr);
 	}
 	l.nr = (int) (b->batFirst - b->batDeleted);
@@ -1801,7 +1820,7 @@ log_bat(logger *lg, BAT *b, char *name)
 			ok = (ok == GDK_FAIL) ? ok : wt(t, lg->log, 1);
 		}
 
-		if (lg->debug)
+		if (lg->debug & 1)
 			fprintf(stderr, "Logged %s %d deletes\n", name, l.nr);
 	}
 	return (ok == GDK_SUCCEED) ? LOG_OK : LOG_ERR;
@@ -1827,7 +1846,7 @@ log_bat_clear(logger *lg, char *name)
 	    log_write_string(lg, name) == LOG_ERR)
 		return LOG_ERR;
 
-	if (lg->debug)
+	if (lg->debug & 1)
 		fprintf(stderr, "Logged clear %s\n", name);
 
 	return (ok == GDK_SUCCEED) ? LOG_OK : LOG_ERR;
@@ -1842,7 +1861,7 @@ log_tstart(logger *lg)
 	l.tid = ++lg->tid;
 	l.nr = lg->tid;
 
-	if (lg->debug)
+	if (lg->debug & 1)
 		fprintf(stderr, "log_tstart %d\n", lg->tid);
 
 	return log_write_format(lg, &l);
@@ -1850,7 +1869,7 @@ log_tstart(logger *lg)
 
 #define DBLKSZ 8192
 #define DBLKMASK 8191
-#define SEGSZ 16*DBLKSZ
+#define SEGSZ 64*DBLKSZ
 static char zeros[DBLKSZ] = { 0 };
 
 static void
@@ -1863,7 +1882,7 @@ pre_allocate(logger *lg)
 		lng s = p;
 
 		if (p > lg->end) {
-			lg->end = p & ~DBLKMASK;
+			lg->end = (p & ~DBLKMASK);
 			if (p > DBLKSZ)
 				p -= DBLKSZ;
 		}
@@ -1873,7 +1892,7 @@ pre_allocate(logger *lg)
 			lg->end += p;
 			p = 0;
 		}
-		for (; p < SEGSZ; p += DBLKSZ, lg->end += DBLKSZ)
+		for (; p < SEGSZ; p += DBLKSZ, lg->end += DBLKSZ) 
 			mnstr_write(lg->log, zeros, DBLKSZ, 1);
 		mnstr_fsetpos(lg->log, s);
 	}
@@ -1885,7 +1904,7 @@ log_tend(logger *lg)
 	logformat l;
 	int res = 0;
 
-	if (lg->debug)
+	if (lg->debug & 1)
 		fprintf(stderr, "log_tend %d\n", lg->tid);
 
 	if (DELTAdirty(lg->snapshots_bid)) {
@@ -1916,7 +1935,7 @@ log_abort(logger *lg)
 {
 	logformat l;
 
-	if (lg->debug)
+	if (lg->debug & 1)
 		fprintf(stderr, "log_abort %d\n", lg->tid);
 
 	l.flag = LOG_END;
@@ -1940,7 +1959,7 @@ log_sequence(logger *lg, int seq, lng val)
 	l.tid = lg->tid;
 	l.nr = seq;
 
-	if (lg->debug)
+	if (lg->debug & 1)
 		fprintf(stderr, "log_sequence (%d," LLFMT ")\n", seq, val);
 
 	if ((p = BUNfndT(lg->seqs_id, &seq)) != BUN_NONE) {
@@ -2037,7 +2056,7 @@ logger_add_bat(logger *lg, BAT *b, char *name)
 		}
 	}
 	bid = b->batCacheid;
-	if (lg->debug)
+	if (lg->debug & 1)
 		fprintf(stderr, "create %s\n", name);
 	lg->changes += BATcount(b) + 1;
 	BUNappend(lg->catalog_bid, &bid, FALSE);

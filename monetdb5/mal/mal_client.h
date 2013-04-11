@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -90,24 +90,13 @@ typedef struct CLIENT {
 	 * usage patterns.
 	 */
 	sht	flags;	 /* resource tracing flags */
-	lng     timer;   /* trace time in usec */
-	lng	bigfoot; /* maximum virtual memory use */
-	lng	vmfoot;  /* virtual memory use */
-	lng memory;	/* memory claimed for keeping BATs */
 	BUN	cnt;	/* bat count */
 
-#define timerFlag	1
-#define memoryFlag	2
-#define ioFlag		4
-#define flowFlag	8
-#define bigfootFlag	16
-#define cntFlag		32
-#define threadFlag	64
-#define bbpFlag		128
+#define footprintFlag	16
 	time_t      login;  
 	time_t      lastcmd;	/* set when input is received */
-	int 	    qtimeout;	/* query abort after x seconds */
-	int	    stimeout;	/* session abort after x seconds */
+	lng 	    qtimeout;	/* query abort after x milliseconds */
+	lng	        stimeout;	/* session abort after x milliseconds */
 	/*
 	 * Communication channels for the interconnect are stored here.
 	 * It is perfectly legal to have a client without input stream.
@@ -178,9 +167,6 @@ typedef struct CLIENT {
 	int		actions;
 	lng		totaltime;	/* sum of elapsed processing times */
 	struct RECSTAT *rcc;	/* recycling stat */
-#ifdef HAVE_TIMES
-	struct tms	workload;
-#endif
 	jmp_buf	exception_buf;
 	int exception_buf_initialized;
 
@@ -202,6 +188,7 @@ mal_export int MCdefault;
 
 mal_export Client  MCgetClient(int id);
 mal_export Client  MCinitClient(oid user, bstream *fin, stream *fout);
+mal_export Client  MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout);
 mal_export int     MCinitClientThread(Client c);
 mal_export void    MCcloseClient(Client c);
 mal_export Client  MCforkClient(Client c);

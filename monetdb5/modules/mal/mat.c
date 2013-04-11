@@ -13,7 +13,7 @@
  * 
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
 */
 
@@ -89,7 +89,7 @@ MATpackInternal(MalStkPtr stk, InstrPtr p)
 	int i, *ret = (int*) getArgReference(stk,p,0);
 	BAT *b, *bn;
 	BUN cap = 0;
-	int ht = TYPE_any, tt = TYPE_any;
+	int tt = TYPE_any;
 
 	for (i = 1; i < p->argc; i++) {
 		int bid = stk->stk[getArg(p,i)].val.ival;
@@ -97,36 +97,94 @@ MATpackInternal(MalStkPtr stk, InstrPtr p)
 		if (b && bid < 0)
 			b = BATmirror(b);
 		if( b ){
-			if (ht == TYPE_any){
-				ht = b->htype;
+			assert(BAThdense(b));
+			if (tt == TYPE_any){
 				tt = b->ttype;
 			}
+			if (!tt && tt != b->ttype)
+				tt = b->ttype;
 			cap += BATcount(b);
 		}
 	}
-	if (ht == TYPE_any){
+	if (tt == TYPE_any){
 		*ret = 0;
 		return MAL_SUCCEED;
 	}
 
-	bn = BATnew(ht, tt, cap);
+	bn = BATnew(TYPE_void, tt, cap);
 	if (bn == NULL)
 		throw(MAL, "mat.pack", MAL_MALLOC_FAIL);
-	/* must set seqbase or else BATins will not materialize column */
-	if (ht == TYPE_void)
-		BATseqbase(bn, 0);
-	if (tt == TYPE_void)
-		BATseqbase(BATmirror(bn), 0);
+	BATsettrivprop(bn);
 
 	for (i = 1; i < p->argc; i++) {
 		b = BATdescriptor(stk->stk[getArg(p,i)].val.ival);
 		if( b ){
-			/* use the right oid ranges, don't change the input */
-			BATins(bn,b,FALSE);
+			if (BATcount(bn) == 0)
+				BATseqbase(bn, b->H->seq);
+			if (BATcount(bn) == 0)
+				BATseqbase(BATmirror(bn), b->T->seq);
+			BATappend(bn,b,FALSE);
 			BBPunfix(b->batCacheid);
 		}
 	}
+	assert(!bn->H->nil || !bn->H->nonil);
+	assert(!bn->T->nil || !bn->T->nonil);
 	BBPkeepref(*ret = bn->batCacheid);
+	return MAL_SUCCEED;
+}
+
+/*
+ * Enable incremental packing. The SQL front-end requires
+ * fixed oid sequences.
+ */
+str
+MATpackIncrement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
+	int *ret = (int*) getArgReference(stk,p,0);
+	int	pieces;
+	BAT *b, *bb, *bn;
+	size_t newsize;
+
+	(void) cntxt;
+	b = BATdescriptor( stk->stk[getArg(p,1)].val.ival);
+	if ( b == NULL)
+		throw(MAL, "mat.pack", RUNTIME_OBJECT_MISSING);
+
+	if ( getArgType(mb,p,2) == TYPE_int){
+		/* first step, estimate with some slack */
+		pieces = stk->stk[getArg(p,2)].val.ival;
+		bn = BATnew(TYPE_void, b->ttype?b->ttype:TYPE_oid, (BUN)(1.2 * BATcount(b) * pieces));
+		if (bn == NULL)
+			throw(MAL, "mat.pack", MAL_MALLOC_FAIL);
+		/* allocate enough space for the strings */
+		if ( b->T->vheap && bn->T->vheap ){
+			newsize =  b->T->vheap->size * pieces;
+			if (HEAPextend(bn->T->vheap, newsize) < 0) 
+				throw(MAL, "mat.pack", MAL_MALLOC_FAIL);
+		}
+		BATsettrivprop(bn);
+		BATseqbase(bn, b->H->seq);
+		BATseqbase(BATmirror(bn), b->T->seq);
+		BATappend(bn,b,FALSE);
+		assert(!bn->H->nil || !bn->H->nonil);
+		assert(!bn->T->nil || !bn->T->nonil);
+		BBPkeepref(*ret = bn->batCacheid);
+		BBPreleaseref(b->batCacheid);
+	} else {
+		/* remaining steps */
+		bb = BATdescriptor(stk->stk[getArg(p,2)].val.ival);
+		if ( bb ){
+			if (BATcount(b) == 0)
+				BATseqbase(b, bb->H->seq);
+			if (BATcount(b) == 0)
+				BATseqbase(BATmirror(b), bb->T->seq);
+			BATappend(b,bb,FALSE);
+		}
+		assert(!b->H->nil || !b->H->nonil);
+		assert(!b->T->nil || !b->T->nonil);
+		BBPkeepref(*ret = b->batCacheid);
+		BBPreleaseref(bb->batCacheid);
+	}
 	return MAL_SUCCEED;
 }
 
@@ -1505,79 +1563,5 @@ str
 MATsortReverseTail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	return MATsort( cntxt, mb, stk, pci, 1);
-}
-
-static str
-MATrefine_(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int rev)
-{
-	bat *rval_id = (bat*) getArgReference(stk,pci,0); /* result sorted */
-	bat *rmap_id = (bat*) getArgReference(stk,pci,1); /* result map */
-	bat val_id = *(bat*) getArgReference(stk,pci,2); /* sorted */
-	bat map_id = *(bat*) getArgReference(stk,pci,3); /* map */
-	BAT *res = NULL, *val = NULL, *map = NULL, *rmap = NULL, *r = NULL;
-	/* rest of the args are sorted parts, (excluding sorted and map) */
-	BAT **bats = GDKzalloc(sizeof(BAT*) * pci->argc - 4);
-	BUN pcnt = 0; 
-	int i, len = pci->argc-4;
-
-	(void) cntxt; (void) mb; (void) stk; 
-	map = BATdescriptor(map_id);
-	val = BATdescriptor(val_id);
-	if (!map || !val)
-		goto error;
-	for (i=4; i<pci->argc; i++) {
-		bat id = *(bat*) getArgReference(stk,pci,i);
-		bats[i-4] = BATdescriptor(id);
-		if (!bats[i-4])
-			goto error;
-		pcnt += BATcount(bats[i-4]);
-	}
-
-	res = MATproject_( map, bats, len); 
-	/* rmap = leftjoin(nres=refine(val, res), map); */
-	if (rev) {
-		rev = CTrefine_rev(&r, val, res); 
-	} else {
-		rev = CTrefine(&r, val, res); 
-	}
-	if (rev == GDK_SUCCEED) {
-		BAT *ores = res;
-		BAT *rr = BATmark(r, 0);
-		rmap = BATleftjoin(BATmirror(rr), map, BATcount(map));
-		res = BATmirror(BATmark(BATmirror(r), 0));
-		BBPunfix(ores->batCacheid);
-		BBPunfix(r->batCacheid);
-		BBPunfix(rr->batCacheid);
-	}
-error:
-	if (map)
-		BBPunfix(map->batCacheid);
-	if (val)
-		BBPunfix(val->batCacheid);
-	if (bats) {
-		for (i=0; i<len && bats[i]; i++)
-			BBPunfix(bats[i]->batCacheid);
-		GDKfree(bats);
-	}
-	if (rmap && res) {
-		BBPkeepref( *rmap_id = rmap->batCacheid);
-		BBPkeepref( *rval_id = res->batCacheid);
-		return MAL_SUCCEED;
-	}
-	if (rmap) BBPunfix(rmap->batCacheid);
-	if (res) BBPunfix(res->batCacheid);
-	throw(SQL, "mat.refine","Cannot access descriptor");
-}
-
-str
-MATrefine(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	return MATrefine_( cntxt, mb, stk, pci, 0);
-}
-
-str
-MATrefineReverse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	return MATrefine_( cntxt, mb, stk, pci, 1);
 }
 

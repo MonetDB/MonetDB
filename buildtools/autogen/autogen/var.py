@@ -12,7 +12,7 @@
 #
 # The Initial Developer of the Original Code is CWI.
 # Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-# Copyright August 2008-2012 MonetDB B.V.
+# Copyright August 2008-2013 MonetDB B.V.
 # All Rights Reserved.
 
 class var:
@@ -44,8 +44,8 @@ class groupvar(var):
     def items(self):
         return self._values.items()
 
-    def has_key(self,key):
-        return self._values.has_key(key)
+    def __contains__(self,key):
+        return key in self._values
 
     def __getitem__(self,key):
         return self._values[key]

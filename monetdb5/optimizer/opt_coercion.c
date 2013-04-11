@@ -13,7 +13,7 @@
  * 
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
 */
 
@@ -68,7 +68,5 @@ OPTcoercionImplementation(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	 * This optimizer affects the flow, but not the type and declaration
 	 * structure. A cheaper optimizer is sufficient.
 	 */
-	DEBUGoptimizers
-		mnstr_printf(cntxt->fdout,"#opt_coercion: %d coersions applied\n",actions);
 	return actions;
 }

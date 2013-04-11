@@ -1,4 +1,4 @@
-stdout of test 'explain.SF-1739353` in directory 'test/BugTracker` itself:
+stdout of test 'explain.SF-1739353` in directory 'sql/test/BugTracker` itself:
 
 
 # 15:15:36 >  
@@ -23,51 +23,41 @@ Ready.
 
 Operation successful
 
-+---------------------------------------------------------------------+
++------------------------------------------------------------------------------+
 | mal    |
-+=====================================================================+
++==============================================================================+
 | function user.s0_1{autoCommit=true}():void;                         |
 |     X_3:bat[:oid,:str]  := bat.new(nil:oid,nil:str);                |
 |     X_2 := sql.mvc(); |
-|     X_6:bat[:oid,:sht]  := sql.bind(X_2,"sys","_tables","type",0);  |
-|     X_11 := algebra.thetauselect(X_6,2:sht,"<");                    |
-|     X_13:bat[:oid,:sht]  := sql.bind(X_2,"sys","_tables","type",2); |
-|     X_15 := algebra.kdifference(X_11,X_13);                         |
-|     X_16 := algebra.thetauselect(X_13,2:sht,"<");                   |
-|     X_17 := algebra.kunion(X_15,X_16);                              |
-|     X_18:bat[:oid,:sht]  := sql.bind(X_2,"sys","_tables","type",1); |
-|     X_20 := algebra.thetauselect(X_18,2:sht,"<");                   |
-|     X_21 := algebra.kunion(X_17,X_20);                              |
-|     X_22:bat[:oid,:oid]  := sql.bind_dbat(X_2,"sys","_tables",1);   |
-|     X_23 := bat.reverse(X_22);                                      |
-|     X_24 := algebra.kdifference(X_21,X_23);                         |
-|     X_25 := algebra.markT(X_24,0@0:oid);                            |
-|     X_26 := bat.reverse(X_25);                                      |
-|     X_27:bat[:oid,:str]  := sql.bind(X_2,"sys","_tables","name",0); |
-|     X_29:bat[:oid,:str]  := sql.bind(X_2,"sys","_tables","name",2); |
-|     X_30 := algebra.kdifference(X_27,X_29);                         |
-|     X_31 := algebra.kunion(X_30,X_29);                              |
-|     X_32:bat[:oid,:str]  := sql.bind(X_2,"sys","_tables","name",1); |
-|     X_35 := algebra.kunion(X_31,X_32);                              |
-|     X_36 := algebra.leftjoin(X_26,X_35);                            |
-|     X_37 := bat.append(X_3,X_36,true);                              |
-|     X_39:bat[:oid,:sht]  := sql.bind(X_2,"tmp","_tables","type",0); |
-|     X_43 := algebra.thetauselect(X_39,2:sht,"<");                   |
-|     X_45:bat[:oid,:oid]  := sql.bind_dbat(X_2,"tmp","_tables",1);   |
-|     X_47 := bat.reverse(X_45);                                      |
-|     X_48 := algebra.kdifference(X_43,X_47);                         |
-|     X_49 := algebra.markT(X_48,0@0:oid);                            |
-|     X_50 := bat.reverse(X_49);                                      |
-|     X_51:bat[:oid,:str]  := sql.bind(X_2,"tmp","_tables","name",0); |
-|     X_53 := algebra.leftjoin(X_50,X_51);                            |
-|     X_54 := bat.append(X_37,X_53,true);                             |
-|     X_55 := sql.resultSet(1,1,X_54);                                |
-|     sql.rsColumn(X_55,".tables","name","varchar",1024,0,X_54);      |
-|     X_61 := io.stdout();                                            |
-|     sql.exportResult(X_61,X_55);                                    |
+|     X_9 := sql.bind(X_2,"sys","_tables","type",0);             |
+|     X_6:bat[:oid,:oid]  := sql.tid(X_2,"sys","_tables");       |
+|     X_61 := algebra.subselect(X_9,X_6,2:sht,2:sht,true,true,true);           |
+|     (X_12,r1_12) := sql.bind(X_2,"sys","_tables","type",2);    |
+|     X_62 := algebra.subselect(r1_12,2:sht,2:sht,true,true,true);             |
+|     X_15 := sql.bind(X_2,"sys","_tables","type",1);            |
+|     X_63 := algebra.subselect(X_15,X_6,2:sht,2:sht,true,true,true);          |
+|     X_17 := sql.subdelta(X_61,X_12,X_62,X_63);                               |
+|     X_18 := sql.bind(X_2,"sys","_tables","name",0);                  |
+|     (X_20,r1_28) := sql.bind(X_2,"sys","_tables","name",2);          |
+|     X_22 := sql.bind(X_2,"sys","_tables","name",1);                  |
+|     X_23 := sql.projectdelta(X_17,X_18,X_20,r1_28,X_22);             |
+|     X_24 := bat.append(X_3,X_23,true);                               |
+|     X_29 := sql.bind(X_2,"tmp","_tables","type",0);                  |
+|     X_32 := X_29;                                                    |
+|     X_26:bat[:oid,:oid]  := sql.tid(X_2,"tmp","_tables");            |
+|     X_33 := algebra.subselect(X_32,X_26,2:sht,2:sht,true,true,true); |
+|     X_34 := sql.bind(X_2,"tmp","_tables","name",0);                  |
+|     X_35 := X_34;                                                    |
+|     X_36 := algebra.leftfetchjoin(X_33,X_35);                        |
+|     X_38 := bat.append(X_24,X_36,true);                              |
+|     X_39 := sql.resultSet(1,1,X_38);                                 |
+|     sql.rsColumn(X_39,".tables","name","varchar",1024,0,X_38);       |
+|     X_45 := io.stdout();                                             |
+|     sql.exportResult(X_45,X_39);                                     |
 | end s0_1;                                                           |
-+---------------------------------------------------------------------+
-40 rows
+| # querylog.define("explain select \"name\" from \"tables\";","default_pipe") |
++------------------------------------------------------------------------------+
+30 rows
 
 
 # 15:15:37 >  

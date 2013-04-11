@@ -1,4 +1,4 @@
-stdout of test 'mclient-lsql-d.Bug-2861` in directory 'test/BugTracker-2011` itself:
+stdout of test 'mclient-lsql-d.Bug-2861` in directory 'sql/test/BugTracker-2011` itself:
 
 
 # 10:06:13 >  
@@ -10,7 +10,7 @@ stdout of test 'mclient-lsql-d.Bug-2861` in directory 'test/BugTracker-2011` its
 # Compiled for x86_64-pc-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Found 7.749 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2012 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008-2013 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://volund.ins.cwi.nl:31159/
 # MonetDB/GIS module loaded
@@ -26,10 +26,6 @@ Ready.
 # 10:06:13 >  ./mclient-lsql-d.Bug-2861.SQL.sh mclient-lsql-d.Bug-2861 
 # 10:06:13 >  
 
-
-# 10:06:13 >  
-# 10:06:13 >  Mtimeout -timeout 60 mclient -lsql -ftest -i -e --host=volund --port=31159  -e -i < /net/volund.ins.cwi.nl/export/scratch1/fabian/monetdb/Aug2011/hgrepo/sql/test/BugTracker-2011/Tests/../mclient-lsql-d.Bug-2861.sql
-# 10:06:13 >  
 
 #create table bug2861 (id int);
 TABLE       sys.bug2861

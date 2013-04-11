@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -52,20 +52,20 @@
 # endif
 #endif
 
-static long
+static mapi_int64
 gettime(void)
 {
 #ifdef HAVE_GETTIMEOFDAY
 	struct timeval tp;
 
 	gettimeofday(&tp, NULL);
-	return (long) tp.tv_sec * 1000000 + (long) tp.tv_usec;
+	return (mapi_int64) tp.tv_sec * 1000000 + (mapi_int64) tp.tv_usec;
 #else
 #ifdef HAVE_FTIME
 	struct timeb tb;
 
 	ftime(&tb);
-	return (long) tb.time * 1000000 + (long) tb.millitm * 1000;
+	return (mapi_int64) tb.time * 1000000 + (mapi_int64) tb.millitm * 1000;
 #endif
 #endif
 }
@@ -78,8 +78,7 @@ usage(char *prog)
 	fprintf(stderr, " -c <config_file>    | --config=<config_file>       \n");
 	fprintf(stderr, " -d<debug_level>     | --debug=<debug_level>        \n");
 	fprintf(stderr, " -t                  | --time                       \n");
-	fprintf(stderr, "                       --dbname=<database_name>     \n");
-	fprintf(stderr, "                       --dbfarm=<database_directory>\n");
+	fprintf(stderr, "                       --dbpath=<database_directory>\n");
 	fprintf(stderr, " -s <option>=<value> | --set <option>=<value>       \n");
 	fprintf(stderr, " -?                  | --help                       \n");
 	exit(-1);
@@ -93,7 +92,7 @@ main(int argc, char **av)
 	char *prog = *av;
 	opt *set = NULL;
 	int setlen = 0, timeflag = 0;
-	long t0 = 0;
+	mapi_int64 t0 = 0;
 	Mapi mid;
 	MapiHdl hdl;
 	char *buf, *line;
@@ -101,8 +100,7 @@ main(int argc, char **av)
 
 	static struct option long_options[] = {
 		{"config", 1, 0, 'c'},
-		{"dbname", 1, 0, 0},
-		{"dbfarm", 1, 0, 0},
+		{"dbpath", 1, 0, 0},
 		{"debug", 2, 0, 'd'},
 		{"time", 0, 0, 't'},
 		{"set", 1, 0, 's'},
@@ -124,12 +122,8 @@ main(int argc, char **av)
 
 		switch (c) {
 		case 0:
-			if (strcmp(long_options[option_index].name, "dbname") == 0) {
-				setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_dbname", optarg);
-				break;
-			}
-			if (strcmp(long_options[option_index].name, "dbfarm") == 0) {
-				setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_dbfarm", optarg);
+			if (strcmp(long_options[option_index].name, "dbpath") == 0) {
+				setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_dbpath", optarg);
 				break;
 			}
 			usage(prog);
@@ -214,7 +208,7 @@ main(int argc, char **av)
 		} while (mapi_next_result(hdl) == 1);
 		mapi_close_handle(hdl);
 		if (timeflag)
-			printf("Timer: %ld (usec)\n", gettime() - t0);
+			printf("Timer: "LLFMT" (usec)\n", gettime() - t0);
 	}
 	free(buf);
 	mapi_destroy(mid);

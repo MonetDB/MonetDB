@@ -13,7 +13,7 @@
  * 
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
 */
 #include "monetdb_config.h"
@@ -188,10 +188,5 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	GDKfree(vars);
 	GDKfree(old);
 	GDKfree(alias);
-	DEBUGoptimizers
-		mnstr_printf(cntxt->fdout,"#opt_commonTerms: %d statements catched\n",actions);
-#ifdef DEBUG_OPT_COMMONTERMS_MORE
-		mnstr_printf(cntxt->fdout,"#opt_commonTerms: %d statements catched\n",actions);
-#endif
 	return actions;
 }

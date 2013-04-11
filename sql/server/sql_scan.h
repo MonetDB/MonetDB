@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -38,7 +38,7 @@ struct scanner {
 	int yysval;		/* start of current token */
 	int yyval;		/* current token */
 	int yycur;		/* next char in the queue */
-	char yybak;		/* sometimes its needed to write an EOS marker */
+	char yybak;		/* sometimes it's needed to write an EOS marker */
 	int as;			/* start of query part of view's etc */
 	int key;		/* query hash */
 	int started;		/* found at least one token */

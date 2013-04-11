@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -120,9 +120,27 @@ gdk_export int BATcalcavg(BAT *b, BAT *s, dbl *avg, BUN *vals);
 
 gdk_export BAT *BATgroupsum(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_error);
 gdk_export BAT *BATgroupprod(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_error);
-gdk_export BAT *BATgroupavg(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_error);
+gdk_export gdk_return BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_error);
 gdk_export BAT *BATgroupcount(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_error);
 gdk_export BAT *BATgroupsize(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_error);
 gdk_export BAT *BATgroupmin(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_error);
 gdk_export BAT *BATgroupmax(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_error);
 gdk_export BAT *BATgroupmedian(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_error);
+/* helper function for grouped aggregates */
+gdk_export const char *BATgroupaggrinit(
+	const BAT *b, const BAT *g, const BAT *e, const BAT *s,
+	/* outputs: */
+	oid *minp, oid *maxp, BUN *ngrpp, BUN *startp, BUN *endp, BUN *cntp,
+	const oid **candp, const oid **candendp);
+
+gdk_export gdk_return BATsum(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, int nil_if_empty);
+gdk_export gdk_return BATprod(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, int nil_if_empty);
+
+gdk_export dbl BATcalcstdev_population(dbl *avgp, BAT *b);
+gdk_export dbl BATcalcstdev_sample(dbl *avgp, BAT *b);
+gdk_export BAT *BATgroupstdev_sample(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_error);
+gdk_export BAT *BATgroupstdev_population(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_error);
+gdk_export dbl BATcalcvariance_population(dbl *avgp, BAT *b);
+gdk_export dbl BATcalcvariance_sample(dbl *avgp, BAT *b);
+gdk_export BAT *BATgroupvariance_sample(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_error);
+gdk_export BAT *BATgroupvariance_population(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_error);

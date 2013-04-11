@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -28,6 +28,7 @@
 #include "mal_scenario.h"
 #include "mal_instruction.h"
 #include "optimizer.h"
+#include "opt_pipes.h"
 
 extern int jaqlparse(jc *j);
 extern int jaqllex_init_extra(jc *user_defined, void **scanner);
@@ -145,14 +146,19 @@ freeVariables(Client c, MalBlkPtr mb, MalStkPtr glb, int start)
 str
 JAQLreader(Client c)
 {
-	if (MCreadClient(c) > 0)
-		return MAL_SUCCEED;
+	/* dummy stub, the scanner reads for us
+	 * TODO: pre-fill the buf if we have single line mode */
 
-	c->mode = FINISHING;
-	if (c->fdin) {
-		c->fdin->buf[c->fdin->pos] = 0;
-	} else {
+	if (c->fdin == NULL)
 		throw(MAL, "jaql.reader", RUNTIME_IO_EOF);
+
+	/* "activate" the stream by sending a prompt (client sync) */
+	if (c->fdin->eof != 0) {
+		if (mnstr_flush(c->fdout) < 0) {
+			c->mode = FINISHING;
+		} else {
+			c->fdin->eof = 0;
+		}
 	}
 
 	return MAL_SUCCEED;
@@ -183,37 +189,40 @@ JAQLparser(Client c)
 	oldstop = c->curprg->def->stop;
 	j->vtop = oldvtop;
 	j->explain = j->plan = j->planf = j->debug = j->trace = j->mapimode = 0;
-	j->buf = in->buf + in->pos;
+	j->buf = NULL;
+	j->scanstreamin = in;
+	j->scanstreamout = out;
+	j->scanstreameof = 0;
 	j->pos = 0;
 	j->p = NULL;
+	j->time = 0;
+	j->timing.parse = j->timing.optimise = j->timing.gencode = 0L;
 
+	j->timing.parse = GDKusec();
 	jaqlparse(j);
-	
-	/* now the parsing is done we should advance the stream */
-	in->pos = in->len;
+	j->timing.parse = GDKusec() - j->timing.parse;
+
+	/* stop if it seems nothing is going to come any more */
+	if (j->scanstreameof == 1) {
+		c->mode = FINISHING;
+		freetree(j->p);
+		j->p = NULL;
+		return MAL_SUCCEED;
+	}
+
+	/* parsing is done */
+	in->pos = j->pos;
 	c->yycur = 0;
 
 	if (j->err[0] != '\0') {
 		/* tell the client */
 		mnstr_printf(out, "!%s\n", j->err);
-		/* read away anything left */
-		while (j->buf[j->pos + (j->tokstart - j->scanbuf)] != '\0') {
-			freetree(j->p);
-			jaqlparse(j);
-		}
 		j->err[0] = '\0';
 		return MAL_SUCCEED;
 	}
 
-	if (j->p == NULL) { /* there was nothing to parse, EOF */
-		/* read away anything left */
-		while (j->buf[j->pos + (j->tokstart - j->scanbuf)] != '\0') {
-			freetree(j->p);
-			jaqlparse(j);
-		}
-		j->err[0] = '\0';
+	if (j->p == NULL)  /* there was nothing to parse, EOF */
 		return MAL_SUCCEED;
-	}
 
 	if (!j->plan && !j->planf) {
 		Symbol prg = c->curprg;
@@ -231,11 +240,23 @@ JAQLparser(Client c)
 			throw(PARSE, "JAQLparse", "%s", j->err);
 		}
 
+		j->timing.optimise = GDKusec();
 		chkTypes(out, c->nspace, prg->def, FALSE);
+		/* TODO: use a configured pipe */
+		addOptimizerPipe(c, prg->def, "minimal_pipe");
+		if ((errmsg = optimizeMALBlock(c, prg->def)) != MAL_SUCCEED) {
+			MSresetInstructions(prg->def, oldstop);
+			freeVariables(c, prg->def, c->glb, oldvtop);
+			prg->def->errors = 0;
+			mnstr_printf(out, "!%s\n", errmsg);
+			freetree(j->p);
+			return errmsg;
+		}
+		j->timing.optimise = GDKusec() - j->timing.optimise;
 		if (prg->def->errors) {
 			/* this is bad already, so let's try to make it debuggable */
 			mnstr_printf(out, "!jaqlgencode: generated program contains errors\n");
-			printFunction(out, c->curprg->def, 0, LIST_MAPI);
+			printFunction(out, prg->def, 0, LIST_MAPI);
 			
 			/* restore the state */
 			MSresetInstructions(prg->def, oldstop);
@@ -246,12 +267,6 @@ JAQLparser(Client c)
 		}
 	}
 
-	/* read away anything left */
-	while (j->buf[j->pos + (j->tokstart - j->scanbuf)] != '\0') {
-		freetree(j->p);
-		jaqlparse(j);
-	}
-	j->err[0] = '\0';
 	return MAL_SUCCEED;
 }
 
@@ -267,7 +282,7 @@ JAQLengine(Client c)
 
 	/* FIXME: if we don't run this, any barrier will cause an endless loop
 	 * (program jumps back to first frame), so this is kind of a
-	 * workaround that maybe can go once we run the optimiser stack */
+	 * workaround */
 	chkProgram(c->fdout, c->nspace, c->curprg->def);
 
 	c->glb = 0;
@@ -284,7 +299,7 @@ JAQLengine(Client c)
 	} else if (MALcommentsOnly(c->curprg->def)) {
 		msg = MAL_SUCCEED;
 	} else {
-		msg = runMAL(c, c->curprg->def, 1, 0, 0, 0);
+		msg = runMAL(c, c->curprg->def, 0, 0);
 	}
 
 	if (msg) {

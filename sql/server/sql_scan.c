@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -25,7 +25,6 @@
 #include "sql_symbol.h"
 #include "sql_mvc.h"
 #include "sql_parser.tab.h"
-#include "sql_statement.h"
 #include "sql_semantic.h"
 #include "sql_parser.h"		/* for sql_error() */
 
@@ -722,6 +721,13 @@ number(mvc * c, int cur)
 		if (isdigit(cur))
 			while ((cur = scanner_getc(lc)) != EOF && isdigit(cur)) 
 				;
+		if (cur == '@') {
+			token = OIDNUM;
+			cur = scanner_getc(lc);
+			if (cur == '0')
+				cur = scanner_getc(lc);
+		}
+
 		if (cur == '.') {
 			token = INTNUM;
 	
@@ -802,12 +808,13 @@ int scanner_symbol(mvc * c, int cur)
 		lc->started = 1;
 		utf8_putchar(lc, next); 
 		return scanner_token(lc, cur);
+	case '~': /* binary not */
+	case '^': /* binary xor */
+	case '&': /* binary and */
 	case '*':
 	case '?':
 	case '%':
-	case '^':
 	case '+':
-	case '&':
 	case '(':
 	case ')':
 	case ',':
@@ -857,7 +864,7 @@ int scanner_symbol(mvc * c, int cur)
 			cur = '.';
 			return number(c, cur);
 		}
-	case '|':
+	case '|': /* binary or or string concat */
 		lc->started = 1;
 		cur = scanner_getc(lc);
 		if (cur == '|') {
@@ -1053,7 +1060,7 @@ sqllex(YYSTYPE * yylval, void *parm)
 		mnstr_write(lc->log, lc->rs->buf+pos, lc->rs->pos + lc->yycur - pos, 1);
 
 	/* Don't include literals in the calculation of the key */
-	if (token != STRING && token != sqlINT && token != INTNUM && token != APPROXNUM && token != sqlNULL)
+	if (token != STRING && token != sqlINT && token != OIDNUM && token != INTNUM && token != APPROXNUM && token != sqlNULL)
 		lc->key ^= token;
 	lc->started += (token != EOF);
 	return token;

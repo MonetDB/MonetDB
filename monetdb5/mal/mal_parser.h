@@ -44,7 +44,7 @@ mal_export str operatorCopy(Client cntxt, int length);
 mal_export int MALkeyword(Client cntxt, str kw, int length);
 mal_export int MALlookahead(Client cntxt, str kw, int length);
 mal_export str lastline(Client cntxt);
-mal_export long position(Client cntxt);
+mal_export ssize_t position(Client cntxt);
 
 #endif /* _MAL_PARSER_H */
 

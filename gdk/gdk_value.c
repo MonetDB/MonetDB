@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -174,19 +174,6 @@ VALinit(ValPtr d, int tpe, const void *s)
 	}
 	return d;
 }
-
-/*
- * VALprint shows the contents of a value record, but without
- * expanding the BAT contents.
- */
-int
-VALprint(stream *s, const ValRecord *res)
-{
-	int t = ATOMstorage(res->vtype);
-
-	return ATOMprint(t, VALptr(res), s);
-}
-
 
 int
 VALformat(char **buf, const ValRecord *res)

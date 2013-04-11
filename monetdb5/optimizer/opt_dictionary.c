@@ -13,7 +13,7 @@
  * 
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
 */
 #include "monetdb_config.h"
@@ -388,8 +388,7 @@ OPTdictionaryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			 */
 			if (  getModuleId(q) == groupRef ){
 				if (q->argc == 3 &&
-			           (getFunctionId(q) == newRef ||
-				    getFunctionId(q) == doneRef) && 
+					getFunctionId(q) == subgroupdoneRef &&
 				    isDiction(getArg(q,2))) {
 					j = getArg(q,0);
 					qq = newStmt(mb,dictionaryRef,groupRef);
@@ -406,8 +405,7 @@ OPTdictionaryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 					continue;
 				}
 				if (q->argc == 5 &&
-				   (getFunctionId(q) == deriveRef ||
-				    getFunctionId(q) == doneRef) && 
+					getFunctionId(q) == subgroupdoneRef &&
 				    isDiction(getArg(q,4))) {
 					j = getArg(q,0);
 					getArg(q,4) = idx[getArg(q,4)];
@@ -883,7 +881,7 @@ str DICTdecompress(int *ret, str *nme)
 	return MAL_SUCCEED;
 }
 
-opt_export str DICTgroupid(int *ret, int *idx, int *val)
+str DICTgroupid(int *ret, int *idx, int *val)
 {
 	BAT *bi, *bv, *b;
 	BATiter bii,bvi;

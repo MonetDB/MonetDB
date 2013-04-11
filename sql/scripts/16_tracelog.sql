@@ -11,11 +11,11 @@
 -- The Original Code is the MonetDB Database System.
 --
 -- The Initial Developer of the Original Code is CWI.
--- Copyright August 2008-2012 MonetDB B.V.
+-- Copyright August 2008-2013 MonetDB B.V.
 -- All Rights Reserved.
 
 -- make the offline tracing table available for inspection
-create function tracelog() 
+create function sys.tracelog() 
 	returns table (
 		event integer,		-- event counter
 		clk varchar(20), 	-- wallclock, no mtime in kernel
@@ -32,3 +32,8 @@ create function tracelog()
 	)
 	external name sql.dump_trace;
 
+create view sys.tracelog as select * from sys.tracelog();
+update sys._tables
+    set system = true
+    where name = 'tracelog'
+        and schema_id = (select id from sys.schemas where name = 'sys');

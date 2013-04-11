@@ -1,0 +1,41 @@
+stderr of test 'Test_Rsqldata` in directory 'sql/jdbc/tests` itself:
+
+
+# 14:41:56 >  
+# 14:41:56 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "gdk_dbfarm=/net/sofia.ins.cwi.nl/export/scratch1/fabian/tmp/mtest-Oct2012-sofia.ins.cwi.nl/sql/dbfarm" "--set" "mapi_open=true" "--set" "mapi_port=35448" "--set" "monet_prompt=" "--trace" "--forcemito" "--set" "mal_listing=2" "--dbname=mTests_jdbc_tests" "--set" "mal_listing=0"
+# 14:41:56 >  
+
+# builtin opt 	gdk_dbname = demo
+# builtin opt 	gdk_dbfarm = /ufs/fabian/scratch/ssd/monetdb/Oct2012/program-x86_64/var/lib/monetdb5/dbfarm
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = yes
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	gdk_dbfarm = /net/sofia.ins.cwi.nl/export/scratch1/fabian/tmp/mtest-Oct2012-sofia.ins.cwi.nl/sql/dbfarm
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 35448
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbname = mTests_jdbc_tests
+# cmdline opt 	mal_listing = 0
+
+# 14:41:56 >  
+# 14:41:56 >  "./Test_Rsqldata.SQL.sh" "Test_Rsqldata"
+# 14:41:56 >  
+
+
+# 14:41:56 >  
+# 14:41:56 >  java Test_Rsqldata "jdbc:monetdb://sofia:35448/mTests_jdbc_tests?user=monetdb&password=monetdb"
+# 14:41:56 >  
+
+
+# 14:41:56 >  
+# 14:41:56 >  "Done."
+# 14:41:56 >  
+

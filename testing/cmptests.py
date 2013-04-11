@@ -23,8 +23,8 @@ def cmptests(dir1, dir2, timing = True, regressions = False):
     new2 = []
     for line in open(lst1):
         line = line.strip().split('\t')
-        if res1.has_key(line[0]):
-            print >> sys.stderr, '%s: duplicate key %s' % (lst1, line[0])
+        if line[0] in res1:
+            sys.stderr.write('%s: duplicate key %s\n' % (lst1, line[0]))
             sys.exit(1)
         if len(line) != 4:
             continue
@@ -38,7 +38,7 @@ def cmptests(dir1, dir2, timing = True, regressions = False):
             continue
         if line[0][-2:] == '/:':
             continue
-        if not res1.has_key(line[0]):
+        if line[0] not in res1:
             new2.append(line[0])
             continue
         tm1, out1, err1 = res1[line[0]]
@@ -47,9 +47,9 @@ def cmptests(dir1, dir2, timing = True, regressions = False):
                (err1 != err2 and err2 != 'F_OK') or \
                not regressions:
             if out1 != out2:
-                print '%s output differs: %s %s' % (line[0], out1, out2)
+                sys.stdout.write('%s output differs: %s %s\n' % (line[0], out1, out2))
             elif err1 != err2:
-                print '%s errout differs: %s %s' % (line[0], err1, err2)
+                sys.stdout.write('%s errout differs: %s %s\n' % (line[0], err1, err2))
         if timing and out1 == 'F_OK' and out2 == 'F_OK' and err1 == 'F_OK' and err2 == 'F_OK':
             ftm1 = float(tm1)
             ftm2 = float(tm2)
@@ -58,17 +58,17 @@ def cmptests(dir1, dir2, timing = True, regressions = False):
                     slowdown.append((line[0], tm1, tm2))
         del res1[line[0]]
     if res1:
-        print '\nRemoved tests in %s:' % lst1
+        sys.stdout.write('\nRemoved tests in %s:\n' % lst1)
         for tst in sorted(res1.keys()):
-            print tst.rstrip(':')
+            sys.stdout.write(tst.rstrip(':') + '\n')
     if new2:
-        print '\nNew tests in %s:' % lst2
+        sys.stdout.write('\nNew tests in %s:\n' % lst2)
         for tst in sorted(new2):
-            print tst.rstrip(':')
+            sys.stdout.write(tst.rstrip(':') + '\n')
     if slowdown:
-        print '\nSignificant slowdown in tests:'
+        sys.stdout.write('\nSignificant slowdown in tests:\n')
         for tst, tm1, tm2 in sorted(slowdown):
-            print '%s %s %s' % (tst, tm1, tm2)
+            sys.stdout.write('%s %s %s\n' % (tst, tm1, tm2))
 
 if __name__ == '__main__':
     import getopt, sys
@@ -77,10 +77,10 @@ if __name__ == '__main__':
     regressions = False
 
     def usage(ext):
-        print >> sys.stderr, 'Usage: %s [-t] [-r] dir1 dir2' % sys.argv[0]
-        print >> sys.stderr, 'Compare test outputs in dir1 and dir2.'
-        print >> sys.stderr, 'If -t option given, report significant slow down.'
-        print >> sys.stderr, 'If -r option given, report regressions only.'
+        sys.stderr.write('Usage: %s [-t] [-r] dir1 dir2\n' % sys.argv[0])
+        sys.stderr.write('Compare test outputs in dir1 and dir2.\n')
+        sys.stderr.write('If -t option given, report significant slow down.\n')
+        sys.stderr.write('If -r option given, report regressions only.\n')
         sys.exit(ext)
 
     try:

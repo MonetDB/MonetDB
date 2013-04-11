@@ -13,7 +13,7 @@
  * 
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
 */
 
@@ -121,7 +121,7 @@ str CMDscience_bat_cst_##X1##_##X2(int *ret, int *bid, X2 *d)\
 
 #define scienceImpl(Operator)\
 scienceFcnImpl(Operator,dbl,)\
-scienceFcnImpl(Operator,flt,)
+scienceFcnImpl(Operator,flt,f)
 
 scienceImpl(asin)
 scienceImpl(acos)

@@ -11,13 +11,8 @@
 -- The Original Code is the MonetDB Database System.
 --
 -- The Initial Developer of the Original Code is CWI.
--- Copyright August 2008-2012 MonetDB B.V.
+-- Copyright August 2008-2013 MonetDB B.V.
 -- All Rights Reserved.
-
-create function clients () 
-	returns table ("user" string, login string, lastcommand string,
-		 actions int, seconds BIGINT) 
-	external name sql.clients;
 
 create function password_hash (username string) 
 	returns string 

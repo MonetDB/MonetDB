@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -140,7 +140,7 @@ void
 MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
 {
 	char *user = command, *algo = NULL, *passwd = NULL, *lang = NULL;
-	char *database = NULL, *s;
+	char *database = NULL, *s, *dbname;
 	Client c;
 	MT_Id p;
 
@@ -211,13 +211,14 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
 			*s = 0;
 	}
 
+	dbname = GDKgetenv("gdk_dbname");
 	if (database != NULL && database[0] != '\0' &&
-		strcmp(database, GDKgetenv("gdk_dbname")) != 0)
+		strcmp(database, dbname) != 0)
 	{
 		mnstr_printf(fout, "!request for database '%s', "
 						   "but this is database '%s', "
 						   "did you mean to connect to monetdbd instead?\n",
-				database, GDKgetenv("gdk_dbname"));
+				database, dbname);
 		/* flush the error to the client, and abort further execution */
 		mnstr_flush(fout);
 		GDKfree(command);
@@ -434,6 +435,10 @@ MSserveClient(void *dummy)
 			} while (c->scenario && !GDKexiting());
 		} while (c->scenario && c->mode != FINISHING && !GDKexiting());
 	}
+	/* pre announce our exiting: cleaning up may take a while and we
+	 * don't want to get killed during that time for fear of
+	 * deadlocks */
+	MT_exiting_thread();
 	/*
 	 * At this stage we should clean out the MAL block
 	 */
@@ -616,7 +621,7 @@ MALengine(Client c)
 		c->glb->keepAlive = TRUE; /* no garbage collection */
 	}
 	if (prg->def->errors == 0)
-		msg = (str) runMAL(c, prg->def, 1, 0, c->glb, 0);
+		msg = (str) runMAL(c, prg->def, 0, c->glb);
 	if (msg) {
 		/* ignore "internal" exceptions */
 		str fcn = getExceptionPlace(msg); /* retrieves from "first" exception */

@@ -15,5 +15,8 @@ c:= bat.new(:oid,:int);
 g:= algebra.join(a,br);
 h:= algebra.join(g,c);
 
-r:= algebra.joinPath(a,br,c);
+ao := batcalc.oid(a);
+bo := batcalc.oid(b);
+bor := bat.reverse(bo);
+r:= algebra.joinPath(ao,bor,c);
 mdb.List();

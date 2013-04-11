@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -38,17 +38,17 @@ extern int catalog_version;
 
 typedef enum store_type {
 	store_bat,	/* delta bats, ie multi user read/write */
-	store_su,	/* single user, read/write */
-	store_ro,	/* multi user, read only */
-	store_suro,	/* single user, read only */
 	store_tst
 } store_type;
 
-#define STORE_READONLY(st) ((st) == store_ro || (st) == store_suro)
+#define STORE_READONLY (store_readonly)
 
 extern sql_trans *gtrans;
+extern list *active_transactions;
 extern int store_nr_active;
 extern store_type active_store_type;
+extern int store_readonly;
+extern int store_singleuser;
 
 /* relational interface */
 typedef oid (*column_find_row_fptr)(sql_trans *tr, sql_column *c, void *value, ...);
@@ -104,16 +104,17 @@ typedef void *(*bind_del_fptr) (sql_trans *tr, sql_table *t, int access);
 */
 typedef void (*append_col_fptr) (sql_trans *tr, sql_column *c, void *d, int t);
 typedef void (*append_idx_fptr) (sql_trans *tr, sql_idx *i, void *d, int t);
-typedef void (*update_col_fptr) (sql_trans *tr, sql_column *c, void *d, int t, oid rid);
-typedef void (*update_idx_fptr) (sql_trans *tr, sql_idx *i, void *d, int t);
+typedef void (*update_col_fptr) (sql_trans *tr, sql_column *c, void *tids, void *d, int t);
+typedef void (*update_idx_fptr) (sql_trans *tr, sql_idx *i, void *tids, void *d, int t);
 typedef void (*delete_tab_fptr) (sql_trans *tr, sql_table *t, void *d, int tpe);
 
 /*
 -- count number of rows in column (excluding the deletes)
 -- check for sortedness
  */
-typedef size_t (*count_col_fptr) (sql_column *c);
-typedef size_t (*count_idx_fptr) (sql_idx *i);
+typedef size_t (*count_del_fptr) (sql_trans *tr, sql_table *t);
+typedef size_t (*count_col_fptr) (sql_trans *tr, sql_column *c, int all /* all or new only */);
+typedef size_t (*count_idx_fptr) (sql_trans *tr, sql_idx *i, int all /* all or new only */);
 typedef int (*sorted_col_fptr) (sql_trans *tr, sql_column *c);
 
 /*
@@ -187,6 +188,7 @@ typedef struct store_functions {
 	update_idx_fptr update_idx;
 	delete_tab_fptr delete_tab;
 
+	count_del_fptr count_del;
 	count_col_fptr count_col;
 	count_idx_fptr count_idx;
 	sorted_col_fptr sorted_col;
@@ -243,7 +245,7 @@ typedef struct store_functions {
 
 extern store_functions store_funcs;
 
-typedef int (*logger_create_fptr) (char *logdir, char *dbname, int catalog_version);
+typedef int (*logger_create_fptr) (char *logdir, int catalog_version);
 
 typedef void (*logger_destroy_fptr) (void);
 typedef int (*logger_restart_fptr) (void);
@@ -286,7 +288,7 @@ extern void res_tables_destroy(res_table *results);
 extern res_table *res_tables_find(res_table *results, int res_id);
 
 extern int
- store_init(int debug, store_type store, char *logdir, char *dbname, backend_stack stk);
+ store_init(int debug, store_type store, int readonly, int singleuser, char *logdir, backend_stack stk);
 extern void store_exit(void);
 
 extern void store_apply_deltas(void);

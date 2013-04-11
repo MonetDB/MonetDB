@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -128,7 +128,7 @@ column_update_value(sql_trans *tr, sql_column *c, oid rid, void *value)
 {
 	assert(rid != oid_nil);
 
-	store_funcs.update_col(tr, c, value, c->type.type->localtype, rid);
+	store_funcs.update_col(tr, c, &rid, value, c->type.type->localtype);
 	return 0;
 }
 

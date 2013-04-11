@@ -1,4 +1,4 @@
-stdout of test 'group02` in directory 'extras/jaql` itself:
+stdout of test 'group02` in directory 'monetdb5/extras/jaql` itself:
 
 
 # 21:11:05 >  
@@ -10,7 +10,7 @@ stdout of test 'group02` in directory 'extras/jaql` itself:
 # Compiled for x86_64-pc-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Found 15.629 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2012 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008-2013 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://sofia.ins.cwi.nl:33103/
 # MonetDB/GIS module loaded
@@ -24,17 +24,20 @@ function user.main():void;
     jaql.x("[]->group into count($);");
 # only works when the groupkey exists for all elements 
     jaql.x("[{\"a\": 1}, {\"a\": 2}]->group by d = $.a into count($);");
-#jaql.x("explain [{\"a\": 1}, {\"a\": 2}, {\"b\": 1}]->group by d = $.a into count($);"); 
-# should return 0 for groups with no matching values 
-#jaql.x("[{\"a\": 1, \"b\": 5}, {\"a\": 2}]->group by d = $.a into {d, \"s\":sum($[*].b)};"); 
-#jaql.x("[{\"a\": 1}, {\"a\": 2}, {\"b\": 1}]->group by d = $.a into {d, \"c\":count($[*].a)};"); 
-#jaql.x("[{\"a\": 1}, {\"a\": 2}, {\"b\": 1}]->group by d = $.a into {d, \"c\":count($[*].b)};"); 
+    jaql.x("[{\"a\": 1}, {\"a\": 2}, {\"b\": 1}]->group by d = $.a into count($);");
+    jaql.x("[{\"a\": 1, \"b\": 5}, {\"a\": 2}]->group by d = $.a into {d, \"s\":sum($[*].b)};");
+    jaql.x("[{\"a\": 1}, {\"a\": 2}, {\"b\": 1}]->group by d = $.a into {d, \"c\":count($[*].a)};");
+    jaql.x("[{\"a\": 1}, {\"a\": 2}, {\"b\": 1}]->group by d = $.a into {d, \"c\":count($[*].b)};");
     jaql.x("[[],[1,2]] -> transform {\"cnt\": count($)};");
     jaql.x("[[],[1,2]] -> transform {\"sum\": sum($)};");
     jaql.x("[[],[1,2]] -> transform {\"avg\": avg($)};");
 end main;
 [ 0 ]
 [ 1, 1 ]
+[ 1, 1 ]
+[ { "d": 1, "s": 5 }, { "d": 2, "s": null } ]
+[ { "d": 1, "c": 1 }, { "d": 2, "c": 1 } ]
+[ { "d": 1, "c": 0 }, { "d": 2, "c": 0 } ]
 [ { "cnt": 0 }, { "cnt": 2 } ]
 [ { "sum": null }, { "sum": 3 } ]
 [ { "avg": null }, { "avg": 1.500000 } ]

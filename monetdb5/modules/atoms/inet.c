@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -53,7 +53,9 @@ INETfromString(str src, int *len, inet **retval)
 	if (*len < (int)sizeof(inet)) {
 		if (*retval != NULL)
 			GDKfree(*retval);
-		*retval = GDKmalloc(sizeof(inet));
+		*retval = GDKzalloc(sizeof(inet));
+	} else {
+		memset(*retval, 0, sizeof(inet));
 	}
 
 	/* handle the nil string */

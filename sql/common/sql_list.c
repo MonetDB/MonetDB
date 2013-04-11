@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -279,9 +279,16 @@ list_find(list *l, void *key, fcmp cmp)
 	node *n = NULL;
 
 	if (key) {
-		for (n = l->h; n; n = n->next) {
-			if (cmp(n->data, key) == 0) {
-				return n;
+		if (cmp) {
+			for (n = l->h; n; n = n->next) {
+				if (cmp(n->data, key) == 0) {
+					return n;
+				}
+			}
+		} else {
+			for (n = l->h; n; n = n->next) {
+				if (n->data == key) 
+					return n;
 			}
 		}
 	}

@@ -13,7 +13,7 @@
  * 
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
 */
 /*
@@ -112,7 +112,5 @@ OPTaccumulatorsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 			freeInstruction(old[i]);
 	GDKfree(old);
 	GDKfree(span);
-	DEBUGoptimizers
-		mnstr_printf(cntxt->fdout,"#opt_accumulators:%d accumulations\n",actions);
 	return actions;
 }

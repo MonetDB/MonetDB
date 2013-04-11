@@ -77,7 +77,7 @@ It returns the name of the file, if it still exists.";
 command export(b:bat[:oid,:any_2], filepath:str):bit  
 address IOexport
 comment "Export a BAT as ASCII to a file. If the 'filepath' is not absolute, it
- is put into the .../dbfarm/$DB directory. Success of failure is indicated.";
+ is put into the $DBPATH directory. Success of failure is indicated.";
 
 command import(b:bat[:oid,:any_2], filepath:str) :bat[:oid,:any_2] 
 address IOimport

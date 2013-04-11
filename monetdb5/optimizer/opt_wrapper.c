@@ -39,12 +39,12 @@ All Rights Reserved.
 */
 #include "opt_accumulators.h"
 #include "opt_aliases.h"
-#include "opt_cluster.h"
-#include "opt_coercion.h"
 #include "opt_centipede.h"
 #include "opt_cluster.h"
+#include "opt_coercion.h"
 #include "opt_commonTerms.h"
 #include "opt_compression.h"
+#include "opt_constants.h"
 #include "opt_costModel.h"
 #include "opt_dataflow.h"
 #include "opt_deadcode.h"
@@ -54,18 +54,20 @@ All Rights Reserved.
 #include "opt_factorize.h"
 #include "opt_garbageCollector.h"
 #include "opt_groups.h"
-#include "opt_history.h"
 #include "opt_inline.h"
 #include "opt_joinpath.h"
 #include "opt_mapreduce.h"
+#include "opt_matpack.h"
 #include "opt_mergetable.h"
 #include "opt_mitosis.h"
 #include "opt_multiplex.h"
-#include "opt_origin.h"
 #include "opt_octopus.h"
+#include "opt_origin.h"
 #include "opt_prejoin.h"
 #include "opt_pushranges.h"
+#include "opt_pushselect.h"
 #include "opt_qep.h"
+#include "opt_querylog.h"
 #include "opt_recycler.h"
 #include "opt_reduce.h"
 #include "opt_remap.h"
@@ -82,22 +84,24 @@ struct{
 	{"aliases", &OPTaliasesImplementation},
 	{"centipede", &OPTcentipedeImplementation},
 	{"cluster", &OPTclusterImplementation},
-	{"coercion", &OPTcoercionImplementation},
+	{"coercions", &OPTcoercionImplementation},
 	{"commonTerms", &OPTcommonTermsImplementation},
 	{"compression", &OPTcompressionImplementation},
+	{"constants", &OPTconstantsImplementation},
 	{"costModel", &OPTcostModelImplementation},
 	{"dataflow", &OPTdataflowImplementation},
 	{"deadcode", &OPTdeadcodeImplementation},
 	{"dictionary", &OPTdictionaryImplementation},
+	{"dumpQEP", &OPTdumpQEPImplementation},
 	{"emptySet", &OPTemptySetImplementation},
 	{"evaluate", &OPTevaluateImplementation},
 	{"factorize", &OPTfactorizeImplementation},
-	{"groups", &OPTgroupsImplementation},
 	{"garbageCollector", &OPTgarbageCollectorImplementation},
-	{"history", &OPThistoryImplementation},
+	{"groups", &OPTgroupsImplementation},
 	{"inline", &OPTinlineImplementation},
 	{"joinPath", &OPTjoinPathImplementation},
 	{"mapreduce", &OPTmapreduceImplementation},
+	{"matpack", &OPTmatpackImplementation},
 	{"mergetable", &OPTmergetableImplementation},
 	{"mitosis", &OPTmitosisImplementation},
 	{"multiplex", &OPTmultiplexImplementation},
@@ -105,7 +109,8 @@ struct{
 	{"origin", &OPToriginImplementation},
 	{"prejoin", &OPTprejoinImplementation},
 	{"pushranges", &OPTpushrangesImplementation},
-	{"dumpQEP", &OPTdumpQEPImplementation},
+	{"pushselect", &OPTpushselectImplementation},
+	{"querylog", &OPTquerylogImplementation},
 	{"recycle", &OPTrecyclerImplementation},
 	{"reduce", &OPTreduceImplementation},
 	{"remap", &OPTremapImplementation},
@@ -119,8 +124,8 @@ opt_export str OPTwrapper(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 #define OPTIMIZERDEBUG if (0) 
 
 str OPTwrapper (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
-	str modnme;
-	str fcnnme;
+	str modnme = "(NONE)";
+	str fcnnme = 0;
 	str msg= MAL_SUCCEED;
 	Symbol s= NULL;
 	lng t,clk= GDKusec();
@@ -129,8 +134,9 @@ str OPTwrapper (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	InstrPtr q= copyInstruction(p);
 
 	optimizerInit();
-	snprintf(optimizer,256,"%s",getFunctionId(p));
-	OPTIMIZERDEBUG mnstr_printf(cntxt->fdout,"=APPLY OPTIMIZER %s\n",getModuleId(p));
+	snprintf(optimizer,256,"%s", fcnnme = getFunctionId(p));
+	OPTIMIZERDEBUG 
+		mnstr_printf(cntxt->fdout,"=APPLY OPTIMIZER %s\n",fcnnme);
 	if( p && p->argc > 1 ){
 		if( getArgType(mb,p,1) != TYPE_str ||
 			getArgType(mb,p,2) != TYPE_str ||
@@ -150,9 +156,7 @@ str OPTwrapper (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 		s= findSymbol(cntxt->nspace, putName(modnme,strlen(modnme)),putName(fcnnme,strlen(fcnnme)));
 
 		if( s == NULL) {
-			char buf[1024];
-			snprintf(buf,1024, "%s.%s",modnme,fcnnme);
-			throw(MAL, optimizer, RUNTIME_OBJECT_UNDEFINED ":%s", buf);
+			throw(MAL, optimizer, RUNTIME_OBJECT_UNDEFINED ":%s.%s", modnme, fcnnme);
 		}
 		mb = s->def;
 		stk= 0;
@@ -171,6 +175,9 @@ str OPTwrapper (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 		actions = (int)(*(codes[i].fcn))(cntxt, mb, stk,0);
 		break;	
 	}
+	if ( codes[i].nme == 0){
+		throw(MAL, optimizer, RUNTIME_OBJECT_UNDEFINED ":%s.%s", modnme, fcnnme);
+	}
 
 	msg= optimizerCheck(cntxt, mb, optimizer, actions, t=(GDKusec() - clk),OPT_CHECK_ALL);
 	OPTIMIZERDEBUG {
@@ -178,7 +185,9 @@ str OPTwrapper (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 		printFunction(cntxt->fdout,mb,0,LIST_MAL_STMT | LIST_MAPI);
 	}
 	DEBUGoptimizers
-		mnstr_printf(cntxt->fdout,"#opt_reduce: " LLFMT " ms\n",t);
+		mnstr_printf(cntxt->fdout,"#optimizer %-11s %3d actions %5d MAL instructions ("SZFMT" K) " LLFMT" usec\n", optimizer, actions, mb->stop, 
+		((sizeof( MalBlkRecord) +mb->ssize * sizeof(InstrRecord)+ mb->vtop * sizeof(int) /* argv estimate */ +mb->vtop* sizeof(VarRecord) + mb->vsize*sizeof(VarPtr)+1023)/1024),
+		t);
 	QOTupdateStatistics(getModuleId(q),actions,t);
 	addtoMalBlkHistory(mb,getModuleId(q));
 	freeInstruction(q);

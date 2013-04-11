@@ -13,14 +13,30 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
  */
 
 %{
+/* copied from Windows' monetdb_config.h because we cannot include it
+ * here, but need it on windows for stream.h */
+#if defined(_MSC_VER) || defined(__CYGWIN__) || defined(__MINGW32__)
+/* Define to `int' if <sys/types.h> does not define. */
+#ifdef _WIN64
+#define ssize_t __int64
+#else
+#define ssize_t int
+#endif
+#endif
+
 #include <stdio.h>
+#include <stream.h>
 #include "jaqltree.h"
 #include "jaql.tab.h"
+
+/* prompt: more data needed (stolen from mapi.h to avoid conflicts) */
+#define PROMPT2  "\001\002\n"
+
 #ifdef _MSC_VER
 #define snprintf _snprintf
 #define fileno _fileno
@@ -48,7 +64,7 @@ extern void jaqlerror(jc* j, char const *msg);
 /* set line numbers each time a token is recognised */
 #define YY_USER_ACTION yyextra->tokstart = yytext;
 
-#define YY_INPUT(buf, res, max_size) readinput(yyextra, buf, &res, max_size)
+#define YY_INPUT(buf, res, max_size) res = readinput(yyextra, buf, res, max_size)
 #define YY_NO_INPUT
 
 /* ugly as hell, but needed to prevent flex from assigning stdin to yyin */
@@ -61,18 +77,53 @@ extern void jaqlerror(jc* j, char const *msg);
 #endif
 #define stdout (FILE *)0
 
-static void readinput(jc *j, char *buf, int *res, size_t max_size) {
-	if (j->buf[j->pos] != '\0') {
-		*res = (int)strlen(j->buf + j->pos);
-		if ((size_t)*res > max_size)
-			*res = (int)max_size;
-		memcpy(buf, j->buf + j->pos, *res);
+static size_t readinput(jc *j, char *buf, size_t res, size_t max_size) {
+	if (j->buf != NULL && j->buf[j->pos] != '\0') {
+		res = (int)strlen(j->buf + j->pos);  /* FIXME: cache this */
+		if (res > max_size)
+			res = max_size;
+		memcpy(buf, j->buf + j->pos, res);
 		j->start = j->pos;
-		j->pos += *res;
+		j->pos += res;
 		j->scanbuf = buf;
 	} else {
-		*res = YY_NULL;
+		if (j->expect_json != ';' && j->scanstreamin != NULL) {
+			bstream *bs = (bstream *)j->scanstreamin;
+
+			/* try and read some more data */
+			if (bstream_next(bs) < 0) {
+				/* read failed, force shutdown next iteration */
+				j->scanstreameof = 1;
+				res = YY_NULL;
+				return res;
+			}
+
+			/* request more if we appear to be at the end of current
+			 * block */
+			if (j->buf != NULL && bs->eof == 1) {
+				stream *s = (stream *)j->scanstreamout;
+				if (mnstr_write(s, PROMPT2, sizeof(PROMPT2) - 1, 1) == 1) {
+					mnstr_flush(s);
+					bs->eof = 0;
+				}
+				if (bstream_next(bs) < 0) {
+					/* read failed, force shutdown next iteration */
+					j->scanstreameof = 1;
+					res = YY_NULL;
+					return res;
+				}
+			}
+
+			/* did we get some query text */
+			if (bs->eof == 0) {
+				j->buf = bs->buf;
+				res = readinput(j, buf, res, max_size);
+				return res;
+			}
+		}
+		res = YY_NULL;
 	}
+	return res;
 }
 %}
 
@@ -82,12 +133,14 @@ static void readinput(jc *j, char *buf, int *res, size_t max_size) {
 %%
 	/* if the parser expects a JSON bit, give it */
 	if (yyextra->expect_json == '[') {
-		yyextra->esc_depth = 1;
+		yyextra->esc_depth = 0;
 		yyextra->expect_json = 0;
+		unput('[');
 		BEGIN(ARR);
 	} else if (yyextra->expect_json == '{') {
-		yyextra->esc_depth = 1;
+		yyextra->esc_depth = 0;
 		yyextra->expect_json = 0;
+		unput('{');
 		BEGIN(OBJ);
 	}
 
@@ -116,6 +169,7 @@ plan       return PLAN;
 planf      return PLANF;
 debug      return DEBUG;
 trace      return TRACE;
+time       return TIME;
 
  /* language constructs */
 "->"       return ARROW;
@@ -150,7 +204,7 @@ null       return NIL;
 <ARR>{
 	"]"   {
 		if (--yyextra->esc_depth == 0) {
-			yylval->j_json = GDKstrdup(yytext - 1);
+			yylval->j_json = GDKstrdup(yytext);
 			BEGIN(INITIAL);
 			return ARRAY;
 		} else {
@@ -174,7 +228,7 @@ null       return NIL;
 <OBJ>{
 	"}"   {
 		if (--yyextra->esc_depth == 0) {
-			yylval->j_json = GDKstrdup(yytext - 1);
+			yylval->j_json = GDKstrdup(yytext);
 			BEGIN(INITIAL);
 			return OBJECT;
 		} else {
@@ -195,13 +249,12 @@ null       return NIL;
 }
 "}"        return '}';
 "{"        return '{';
-";"        BEGIN(SCOLON);
+";"        { yyextra->expect_json = ';'; BEGIN(SCOLON); }
 <SCOLON>{
 	";" /* ignore superfluous semi-colons */;
 	[ \t\r\n]+ /* ignore whitespace */;
-	("#"|"//").*\n /* ignore comments */;
-	<<EOF>> { BEGIN(INITIAL); return ';'; }
-	.  { unput(yytext[0]); BEGIN(INITIAL); return ';'; }
+	<<EOF>> { yyextra->expect_json = 0; BEGIN(INITIAL); return ';'; }
+	.  { unput(yytext[0]); yyextra->expect_json = 0; BEGIN(INITIAL); return ';'; }
 }
 [ \t\r\n]+ /* ignore whitespace */;
 ("#"|"//").*\n /* ignore comments */;

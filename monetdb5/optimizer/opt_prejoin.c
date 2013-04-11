@@ -13,7 +13,7 @@
  * 
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
 */
 #include "monetdb_config.h"
@@ -67,6 +67,7 @@ OPTprejoinImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	InstrPtr q, p=0, *old= mb->stmt;
 	int actions = 0;
 
+	(void) cntxt;
 	(void) pci;
 	(void) stk;		/* to fool compilers */
 
@@ -92,8 +93,6 @@ OPTprejoinImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 		pushInstruction(mb,p);
 	}
 	/* we may have uncovered new use-less operations */
-	DEBUGoptimizers
-		mnstr_printf(cntxt->fdout,"#opt_prejoin: %d statements removed\n", actions);
 	/*chkProgram(cntxtx->fdout, cntxt->nspace,mb);*/
 	GDKfree(old);
 	return actions;

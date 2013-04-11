@@ -14,7 +14,7 @@
 #
 # The Initial Developer of the Original Code is CWI.
 # Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-# Copyright August 2008-2012 MonetDB B.V.
+# Copyright August 2008-2013 MonetDB B.V.
 # All Rights Reserved.
 
 """ Script to test database capabilities and the DB-API interface
@@ -353,3 +353,15 @@ class DatabaseTest(unittest.TestCase):
         self.assertRaises(ProgrammingError, self.db_module.monetize.convert, t)
         self.db_module.monetize.mapping[list] = str
         self.assertEqual(self.db_module.monetize.convert(t), "['list', 'test']")
+
+    def test_multiple_queries(self):
+        table1 = self.new_table_name()
+        table2 = table1[:-1] + 'bla"'
+        self.cursor.execute("create table %s (a int)" % table1)
+        self.cursor.execute("create table %s (a int, b int)" % table2)
+        self.cursor.execute("insert into %s VALUES (100)" % table1)
+        self.cursor.execute("insert into %s VALUES (50, 50)" % table2)
+        self.cursor.execute('select * from %s; select * from %s;' %
+                            (table1, table2))
+        result = self.cursor.fetchall()
+        self.assertEqual(result, [(50, 50)])

@@ -5,4 +5,5 @@ select s1.framenumber, avg(c.zanger_c)
   and s2.video_id = v.video_id
   and v.media_uri = '20050407_mocky.mpg'
   and s2.framenumber between s1.framenumber and (s1.framenumber + 124)
- group by s1.framenumber;
+ group by s1.framenumber
+ order by s1.framenumber;

@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -26,7 +26,5 @@
 
 /* initialize bat storage call back functions interface */
 extern int bat_table_init( table_functions *tf );
-
-extern BAT* delta_full_bat( sql_column *c, sql_delta *bat, int temp, BAT *d, BAT *s);
 
 #endif /*BAT_TABLE_H*/

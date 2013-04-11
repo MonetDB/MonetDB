@@ -1,4 +1,4 @@
-stdout of test 'unicode_varchar-bug-sf-1041324_MapiClient` in directory 'test/bugs` itself:
+stdout of test 'unicode_varchar-bug-sf-1041324_MapiClient` in directory 'sql/test/bugs` itself:
 
 
 # 15:13:44 >  
@@ -33,7 +33,7 @@ Ready.
 % . # table_name
 % single_value # name
 % char # type
-% 22 # length
+% 128 # length
 [ "SAVE 25¢ ON ICE CREAM"	]
 
 # 12:55:03 >  

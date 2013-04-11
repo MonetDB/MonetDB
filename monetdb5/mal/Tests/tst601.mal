@@ -10,3 +10,6 @@ p2:flt := const.take("pi");
 io.print(p2);
 const.close();	# save the content on persistent store
 io.print(p2);
+
+# don't leave any residues
+const.destroy();

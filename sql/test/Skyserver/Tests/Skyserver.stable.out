@@ -1,4 +1,4 @@
-stdout of test 'Skyserver` in directory 'test/Skyserver` itself:
+stdout of test 'Skyserver` in directory 'sql/test/Skyserver` itself:
 
 
 # 16:04:15 >  
@@ -117,7 +117,7 @@ tables
 % . # table_name
 % single_value # name
 % char # type
-% 8 # length
+% 14 # length
 [ "ALL DONE"	]
 views
 functions

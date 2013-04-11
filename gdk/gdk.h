@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -437,7 +437,7 @@
  * @- GDK session handling
  * @multitable @columnfractions 0.08 0.7
  * @item int
- * @tab GDKinit (char *db, char *dbfarm, int allocmap)
+ * @tab GDKinit (char *db, char *dbpath, int allocmap)
  * @item int
  * @tab GDKexit (int status)
  * @end multitable
@@ -552,6 +552,26 @@ typedef size_t BUN;
 #endif
 #define BUN_MAX (BUN_NONE - 1)	/* maximum allowed size of a BAT */
 
+#define BUN1 1
+#define BUN2 2
+#define BUN4 4
+#if SIZEOF_BUN > 4
+#define BUN8 8
+#endif
+typedef uint8_t  BUN1type;
+typedef uint16_t BUN2type;
+typedef uint32_t BUN4type;
+#if SIZEOF_BUN > 4
+typedef uint64_t BUN8type;
+#endif
+#define BUN1_NONE ((BUN1type) 0xFF)
+#define BUN2_NONE ((BUN2type) 0xFFFF)
+#define BUN4_NONE ((BUN4type) 0xFFFFFFFF)
+#if SIZEOF_BUN > 4
+#define BUN8_NONE ((BUN8type) LL_CONSTANT(0xFFFFFFFFFFFFFFFF))
+#endif
+
+
 /*
  * @- Checking and Error definitions:
  */
@@ -634,12 +654,24 @@ typedef struct {
 
 typedef struct {
 	int type;		/* type of index entity */
+	int width;		/* width of hash entries */
+	BUN nil;		/* nil representation */
 	BUN lim;		/* collision list size */
 	BUN mask;		/* number of hash buckets-1 (power of 2) */
-	BUN *hash;		/* hash table */
-	BUN *link;		/* collision list */
+	void *Hash;		/* hash table */
+	void *Link;		/* collision list */
 	Heap *heap;		/* heap where the hash is stored */
 } Hash;
+
+typedef struct {
+	bte bits;        /* how many bits in imprints */
+	Heap *bins;      /* ranges of bins */
+	Heap *imps;      /* heap of imprints */
+	BUN impcnt;      /* counter for imprints*/
+	Heap *dict;      /* cache dictionary for compressing imprints */
+	BUN dictcnt;     /* counter for cache dictionary */
+} Imprints;
+
 
 /*
  * @+ Binary Association Tables
@@ -762,6 +794,7 @@ gdk_export int VALisnil(const ValRecord *v);
  *           int    hloc;             // byte-offset in BUN for head elements
  *           Heap   *hheap;           // heap for varsized head values
  *           Hash   *hhash;           // linear chained hash table on head
+ *           Imprints *himprints;     // column imprints index on head
  *           // Tail properties
  *           int    ttype;            // Tail type number
  *           str    tident;           // name for tail column
@@ -772,8 +805,9 @@ gdk_export int VALisnil(const ValRecord *v);
  *           oid    talign;           // alignment OID for head.
  *           // Tail storage
  *           int    tloc;             // byte-offset in BUN for tail elements
- *           Heap   theap;            // heap for varsized tail values
- *           Hash   thash;            // linear chained hash table on tail
+ *           Heap   *theap;           // heap for varsized tail values
+ *           Hash   *thash;           // linear chained hash table on tail
+ *           Imprints *timprints;     // column imprints index on tail
  *  } BAT;
  * @end verbatim
  *
@@ -807,8 +841,8 @@ typedef struct {
 	 descdirty:1,		/* bat descriptor dirty marker */
 	 set:1,			/* real set semantics */
 	 restricted:2,		/* access priviliges */
-	 persistence:2,		/* should the BAT persist on disk? */
-	 unused:21;		/* value=0 for now */
+	 persistence:1,		/* should the BAT persist on disk? */
+	 unused:23;		/* value=0 for now */
 	int sharecnt;		/* incoming view count */
 	char map_head;		/* mmap mode for head bun heap */
 	char map_tail;		/* mmap mode for tail bun heap */
@@ -834,29 +868,30 @@ typedef struct PROPrec {
 /* see also comment near BATassertProps() for more information about
  * the properties */
 typedef struct {
-	str id;			/* label for head/tail column */
+	str id;				/* label for head/tail column */
 
 	unsigned short width;	/* byte-width of the atom array */
-	bte type;		/* type id. */
-	bte shift;		/* log2 of bunwidth */
+	bte type;			/* type id. */
+	bte shift;			/* log2 of bunwidth */
 	unsigned int
 	 varsized:1,		/* varsized (1) or fixedsized (0) */
-	 key:2,			/* duplicates allowed? */
-	 dense:1,		/* OID only: only consecutive values */
-	 nonil:1,		/* nonil isn't propchecked yet */
-	 nil:1,			/* there is a nil in the column */
-	 sorted:1,		/* column is sorted in ascending order */
+	 key:2,				/* duplicates allowed? */
+	 dense:1,			/* OID only: only consecutive values */
+	 nonil:1,			/* nonil isn't propchecked yet */
+	 nil:1,				/* there is a nil in the column */
+	 sorted:1,			/* column is sorted in ascending order */
 	 revsorted:1;		/* column is sorted in descending order */
-	oid align;		/* OID for sync alignment */
+	oid align;			/* OID for sync alignment */
 	BUN nokey[2];		/* positions that prove key ==FALSE */
 	BUN nosorted;		/* position that proves sorted==FALSE */
 	BUN norevsorted;	/* position that proves revsorted==FALSE */
 	BUN nodense;		/* position that proves dense==FALSE */
-	oid seq;		/* start of dense head sequence */
+	oid seq;			/* start of dense head sequence */
 
-	Heap heap;		/* space for the column. */
+	Heap heap;			/* space for the column. */
 	Heap *vheap;		/* space for the varsized data. */
-	Hash *hash;		/* hash table */
+	Hash *hash;			/* hash table */
+	Imprints *imprints;	/* column imprints index */
 
 	PROPrec *props;		/* list of dynamic properties stored in the bat descriptor */
 } COLrec;
@@ -1414,8 +1449,6 @@ bat_iterator(BAT *b)
  * @item void
  * @tab BATsetcount (BAT *b, BUN cnt)
  * @item BUN
- * @tab BATbuncount (BAT *b)
- * @item str
  * @tab BATrename (BAT *b, str nme)
  * @item BAT *
  * @tab BATkey (BAT *b, int onoff)
@@ -1434,10 +1467,6 @@ bat_iterator(BAT *b)
  * The function BATcount returns the number of associations stored in
  * the BAT.
  *
- * The function BATbuncount returns the space that is occupied in
- * associations in the BAT. This is not the same as BATcount, since
- * the first N associations may be unused or delta data.
- *
  * The BAT is given a new logical name using BATrename.
  *
  * The integrity properties to be maintained for the BAT are
@@ -1449,13 +1478,11 @@ bat_iterator(BAT *b)
  * dimensions.
  *
  * The persistency indicator tells the retention period of BATs.  The
- * system support three modes: PERSISTENT, TRANSIENT, and SESSION.
+ * system support three modes: PERSISTENT and TRANSIENT.
  * The PERSISTENT BATs are automatically saved upon session boundary
  * or transaction commit.  TRANSIENT BATs are removed upon transaction
- * boundary.  SESSION BATs are removed at the end of a session.  They
- * are normally used to maintain temporary results.  All BATs are
- * initially TRANSIENT unless their mode is changed using the routine
- * BATmode.
+ * boundary.  All BATs are initially TRANSIENT unless their mode is
+ * changed using the routine BATmode.
  *
  * The BAT properties may be changed at any time using BATkey, BATset,
  * and BATmode.
@@ -1491,8 +1518,7 @@ gdk_export int BATgetaccess(BAT *b);
 			 ((b)->H->vheap?(b)->H->vheap->dirty:0) ||	\
 			 ((b)->T->vheap?(b)->T->vheap->dirty:0))
 
-#define PERSISTENT		3
-#define SESSION			2
+#define PERSISTENT		0
 #define TRANSIENT		1
 
 #define BAT_WRITE		0	/* all kinds of access allowed */
@@ -1829,7 +1855,7 @@ typedef struct {
 	BAT *cache[2];		/* if loaded: BAT* handle + reverse */
 	str logical[2];		/* logical name + reverse */
 	str bak[2];		/* logical name + reverse backups */
-	bat next[2];		/* next BBP slot in link list */
+	bat next[2];		/* next BBP slot in linked list */
 	BATstore *desc;		/* the BAT descriptor */
 	str physical;		/* dir + basename for storage */
 	str options;		/* A string list of options */
@@ -1841,11 +1867,11 @@ typedef struct {
 } BBPrec;
 
 gdk_export bat BBPlimit;
-#define N_BBPINIT	100
+#define N_BBPINIT	1000
 #if SIZEOF_VOID_P == 4
 #define BBPINITLOG	11
 #else
-#define BBPINITLOG	13
+#define BBPINITLOG	14
 #endif
 #define BBPINIT		(1 << BBPINITLOG)
 /* absolute maximum number of BATs is N_BBPINIT * BBPINIT */
@@ -2153,6 +2179,23 @@ gdk_export BAT *BAThashjoin(BAT *l, BAT *r, BUN estimate);
 /* low level functions */
 
 #define BATprepareHash(X) (((X)->H->hash == NULL) && !BAThash(X, 0))
+
+/*
+ * @- Column Imprints Functions
+ *
+ * @multitable @columnfractions 0.08 0.7
+ * @item BAT*
+ * @tab
+ *  BATimprints (BAT *b)
+ * @end multitable
+ *
+ * The column imprints index structure.
+ *
+ */
+
+gdk_export void IMPSdestroy(BAT *b);
+gdk_export BAT *BATimprints(BAT *b);
+
 /*
  * @- Multilevel Storage Modes
  *
@@ -2193,7 +2236,7 @@ gdk_export BAT *BAThashjoin(BAT *l, BAT *r, BUN estimate);
 #define GDK_HISTO_MAX_BIT	((int) (sizeof(size_t)<<3))
 
 /* we prefer to use vm_alloc routines on size > GDKmmap */
-gdk_export void *GDKmmap(const char *path, int mode, off_t off, size_t len);
+gdk_export void *GDKmmap(const char *path, int mode, size_t len);
 
 gdk_export size_t GDK_mem_bigsize;	/* size after which we use anonymous VM rather than malloc */
 gdk_export size_t GDK_mem_maxsize;	/* max allowed size of committed memory */
@@ -2217,8 +2260,6 @@ gdk_export str GDKstrdup(const char *s);
  * @tab
  *  GDKmessage
  * @item bit
- * @tab GDKsilent
- * @item int
  * @tab
  *  GDKfatal(str msg)
  * @item int
@@ -2244,9 +2285,8 @@ gdk_export str GDKstrdup(const char *s);
  * should show if this mechanism is sufficient.  Most routines return
  * a pointer with zero to indicate an error.
  *
- * The error messages are also copied to standard output unless
- * GDKsilent is set to a non-zero value.  The last error message is
- * kept around in a global variable.
+ * The error messages are also copied to standard output.  The last
+ * error message is kept around in a global variable.
  *
  * Error messages can also be collected in a user-provided buffer,
  * instead of being echoed to a stream. This is a thread-specific
@@ -2876,19 +2916,19 @@ gdk_export int ALIGNsetH(BAT *b1, BAT *b2);
 #define GDK_STREQ(l,r) (*(char*) (l) == *(char*) (r) && !strcmp(l,r))
 
 #define HASHloop(bi, h, hb, v)					\
-	for (hb = (h)->hash[HASHprobe((h), v)];			\
-	     hb != BUN_NONE;					\
-	     hb = (h)->link[hb])				\
+	for (hb = HASHget(h, HASHprobe((h), v));			\
+	     hb != HASHnil(h);					\
+	     hb = HASHgetlink(h,hb))				\
 		if (ATOMcmp(h->type, v, BUNhead(bi, hb)) == 0)
 #define HASHloop_str_hv(bi, h, hb, v)				\
-	for (hb = (h)->hash[((BUN *) (v))[-1]&(h)->mask];	\
-	     hb != BUN_NONE;					\
-	     hb = (h)->link[hb])				\
+	for (hb = HASHget((h),((BUN *) (v))[-1]&(h)->mask);	\
+	     hb != HASHnil(h);					\
+	     hb = HASHgetlink(h,hb))				\
 		if (GDK_STREQ(v, BUNhvar(bi, hb)))
 #define HASHloop_str(bi, h, hb, v)			\
-	for (hb = (h)->hash[strHash(v)&(h)->mask];	\
-	     hb != BUN_NONE;				\
-	     hb = (h)->link[hb])			\
+	for (hb = HASHget((h),strHash(v)&(h)->mask);	\
+	     hb != HASHnil(h);				\
+	     hb = HASHgetlink(h,hb))			\
 		if (GDK_STREQ(v, BUNhvar(bi, hb)))
 
 /*
@@ -2899,8 +2939,8 @@ gdk_export int ALIGNsetH(BAT *b1, BAT *b2);
  * numbers instead of strings:
  */
 #define HASHloop_fstr(bi, h, hb, idx, v)				\
-	for (hb = h->hash[strHash(v)&h->mask], idx = strLocate((bi.b)->H->vheap,v); \
-	     hb != BUN_NONE; hb = h->link[hb])				\
+	for (hb = HASHget(h, strHash(v)&h->mask), idx = strLocate((bi.b)->H->vheap,v); \
+	     hb != HASHnil(h); hb = HASHgetlink(h,hb))				\
 		if (VarHeapValRaw((bi).b->H->heap.base, hb, (bi).b->H->width) == idx)
 /*
  * The following example shows how the hashloop is used:
@@ -2930,20 +2970,20 @@ gdk_export int ALIGNsetH(BAT *b1, BAT *b2);
  * (HASHlooploc) or variable-sized (HASHloopvar).
  */
 #define HASHlooploc(bi, h, hb, v)				\
-	for (hb = (h)->hash[HASHprobe(h, v)];			\
-	     hb != BUN_NONE;					\
-	     hb = (h)->link[hb])				\
+	for (hb = HASHget(h, HASHprobe(h, v));			\
+	     hb != HASHnil(h);					\
+	     hb = HASHgetlink(h,hb))				\
 		if (ATOMcmp(h->type, v, BUNhloc(bi, hb)) == 0)
 #define HASHloopvar(bi, h, hb, v)				\
-	for (hb = (h)->hash[HASHprobe(h, v)];			\
-	     hb != BUN_NONE;					\
-	     hb = (h)->link[hb])				\
+	for (hb = HASHget(h,HASHprobe(h, v));			\
+	     hb != HASHnil(h);					\
+	     hb = HASHgetlink(h,hb))				\
 		if (ATOMcmp(h->type, v, BUNhvar(bi, hb)) == 0)
 
 #define HASHloop_TYPE(bi, h, hb, v, TYPE)			\
-	for (hb = (h)->hash[hash_##TYPE(h, v)];			\
-	     hb != BUN_NONE;					\
-	     hb = (h)->link[hb])				\
+	for (hb = HASHget(h, hash_##TYPE(h, v));			\
+	     hb != HASHnil(h);					\
+	     hb = HASHgetlink(h,hb))				\
 		if (simple_EQ(v, BUNhloc(bi, hb), TYPE))
 
 #define HASHloop_bit(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, bte)
@@ -2959,9 +2999,9 @@ gdk_export int ALIGNsetH(BAT *b1, BAT *b2);
 #define HASHloop_ptr(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, ptr)
 
 #define HASHloop_any(bi, h, hb, v)				\
-	for (hb = (h)->hash[hash_any(h, v)];			\
-	     hb != BUN_NONE;					\
-	     hb = (h)->link[hb])				\
+	for (hb = HASHget(h, hash_any(h, v));			\
+	     hb != HASHnil(h);					\
+	     hb = HASHgetlink(h,hb))				\
 		if (atom_EQ(v, BUNhead(bi, hb), (bi).b->htype))
 
 /*
@@ -3137,6 +3177,13 @@ gdk_export BAT *BATleftjoin(BAT *l, BAT *r, BUN estimate);
 gdk_export BAT *BATouterjoin(BAT *l, BAT *r, BUN estimate);
 gdk_export BAT *BATcross(BAT *l, BAT *r);
 
+gdk_export gdk_return BATsubleftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, BUN estimate);
+gdk_export gdk_return BATsubouterjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, BUN estimate);
+gdk_export gdk_return BATsubthetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, const char *op, BUN estimate);
+gdk_export gdk_return BATsubsemijoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, BUN estimate);
+gdk_export gdk_return BATsubjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, BUN estimate);
+gdk_export BAT *BATproject(BAT *l, BAT *r);
+
 gdk_export BAT *BATslice(BAT *b, BUN low, BUN high);
 gdk_export BAT *BATfetch(BAT *b, BAT *s);
 gdk_export BAT *BATfetchjoin(BAT *b, BAT *s, BUN estimate);
@@ -3150,6 +3197,9 @@ gdk_export BAT *BATsunion(BAT *b, BAT *c);
 gdk_export BAT *BATkunion(BAT *b, BAT *c);
 gdk_export BAT *BATsdiff(BAT *b, BAT *c);
 gdk_export BAT *BATkdiff(BAT *b, BAT *c);
+
+gdk_export BAT *BATmergecand(BAT *a, BAT *b);
+gdk_export BAT *BATintersectcand(BAT *a, BAT *b);
 
 #include "gdk_calc.h"
 
@@ -3165,6 +3215,7 @@ gdk_export BAT *BATkdiff(BAT *b, BAT *c);
  *
  */
 gdk_export BAT *BATsample(BAT *b, BUN n);
+gdk_export BAT *BATsample_(BAT *b, BUN n); /* version that expects void head and returns oids */
 
 /* generic n-ary multijoin beast, with defines to interpret retval */
 #define MULTIJOIN_SORTED(r)	((char*) &r)[0]

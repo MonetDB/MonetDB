@@ -13,7 +13,7 @@
  * 
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
 */
 #include "monetdb_config.h"
@@ -26,25 +26,46 @@ OPTallConstant(Client cntxt, MalBlkPtr mb, InstrPtr p)
 	int i;
 	(void)cntxt;
 
-	if (p->argc == p->retc)
+	if ( !( p->token == ASSIGNsymbol ||
+			getModuleId(p) == calcRef ||
+		   getModuleId(p) == strRef ||
+		   getModuleId(p) == mmathRef ))
 		return FALSE;
+
 	for (i = p->retc; i < p->argc; i++)
 		if (isVarConstant(mb, getArg(p, i)) == FALSE)
 			return FALSE;
 	for (i = 0; i < p->retc; i++)
 		if (isaBatType(getArgType(mb, p, i)))
 			return FALSE;
-	return(getModuleId(p) == calcRef ||
-		   getModuleId(p) == strRef ||
-		   getModuleId(p) == mmathRef ||
-		   p->token == ASSIGNsymbol);
+	return p->argc != p->retc;
 }
 
+static int OPTsimpleflow(MalBlkPtr mb, int pc)
+{
+	int i, block =0, simple= TRUE;
+	InstrPtr p;
+
+	for ( i= pc; i< mb->stop; i++){
+		p =getInstrPtr(mb,i);
+		if (blockStart(p))
+			block++;
+		if ( blockExit(p))
+			block--;
+		if ( blockCntrl(p))
+			simple= FALSE;
+		if ( block == 0){
+			return simple;
+		}
+	}
+	return FALSE;
+}
+/* barrier blocks can only be dropped when they are fully excluded.  */
 static int
 OPTremoveUnusedBlocks(Client cntxt, MalBlkPtr mb)
 {
-	/* catch constant bounded blocks */
-	int i, j = 0, action = 0, block = 0, skip = 0;
+	/* catch and remove constant bounded blocks */
+	int i, j = 0, action = 0, block = 0, skip = 0, top =0, skiplist[10];
 	InstrPtr p;
 
 	for (i = 0; i < mb->stop; i++) {
@@ -59,21 +80,36 @@ OPTremoveUnusedBlocks(Client cntxt, MalBlkPtr mb)
 					skip = block;
 				action++;
 			}
+			// Try to remove the barrier statement itself (when true).
+			if (p->argc == 2 && isVarConstant(mb, getArg(p, 1)) &&
+					getArgType(mb, p, 1) == TYPE_bit &&
+					getVarConstant(mb, getArg(p, 1)).val.btval == 1 && 
+					top <10 && OPTsimpleflow(mb,i))
+			{
+				skiplist[top++]= getArg(p,0);
+				freeInstruction(p);
+				continue;
+			}
 		}
 		if (blockExit(p)) {
-			if (skip)
+			if (top > 0 && skiplist[top-1] == getArg(p,0) ){
+				top--;
+				freeInstruction(p);
+				continue;
+			} 
+			if (skip )
 				freeInstruction(p);
 			else
 				mb->stmt[j++] = p;
 			if (skip == block)
 				skip = 0;
 			block--;
+			if (block == 0)
+				skip = 0;
 		} else if (skip)
 			freeInstruction(p);
 		else
 			mb->stmt[j++] = p;
-		if (block == 0)
-			skip = 0;
 	}
 	mb->stop = j;
 	for (; j < i; j++)
@@ -85,17 +121,6 @@ OPTremoveUnusedBlocks(Client cntxt, MalBlkPtr mb)
 	return action;
 }
 
-static int
-assignedOnce(MalBlkPtr mb, Lifespan span, int varid)
-{
-	int i, cnt = 0;
-	for (i = getBeginLifespan(span, varid); i <= getLastUpdate(span, varid); i++)
-		cnt += getArg(getInstrPtr(mb, i), 0) == varid;
-	if (getInstrPtr(mb, getLastUpdate(span, varid))->barrier == EXITsymbol)
-		cnt--;
-	return cnt == 1;
-}
-
 int
 OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -104,8 +129,8 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	MalStkPtr env = NULL;
 	int profiler;
 	str msg;
-	int debugstate = cntxt->itrace, actions = 0;
-	Lifespan span;
+	int debugstate = cntxt->itrace, actions = 0, constantblock = 0;
+	int *assigned, setonce; 
 
 	cntxt->itrace = 0;
 	(void)stk;
@@ -117,33 +142,51 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	(void)cntxt;
 	OPTDEBUGevaluate mnstr_printf(cntxt->fdout, "Constant expression optimizer started\n");
 
-	span = setLifespan(mb);
-	if (span == NULL)
+	assigned = (int*) GDKzalloc(sizeof(int) * mb->vtop);
+	if (assigned == NULL)
 		return 0;
 
-	env = prepareMALstack(mb, 2 * mb->vsize);
-	env->keepAlive = TRUE;
 	alias = (int*)GDKzalloc(mb->vsize * sizeof(int) * 2); /* we introduce more */
-	if (alias == NULL)
+	if (alias == NULL){
+		GDKfree(assigned);
 		return 0;
+	}
 
+	// arguments are implicitly assigned by context
+	p = getInstrPtr(mb, 0);
+	for ( k =p->retc;  k < p->argc; k++)
+		assigned[getArg(p,k)]++;
 	limit = mb->stop;
+	for (i = 1; i < limit; i++) {
+		p = getInstrPtr(mb, i);
+		// The double count emerging from a barrier exit is ignored.
+		if (! blockExit(p) || (blockExit(p) && p->retc != p->argc))
+		for ( k =0;  k < p->retc; k++)
+			assigned[getArg(p,k)]++;
+	}
+
 	for (i = 1; i < limit; i++) {
 		p = getInstrPtr(mb, i);
 		for (k = p->retc; k < p->argc; k++)
 			if (alias[getArg(p, k)])
 				getArg(p, k) = alias[getArg(p, k)];
+		// to avoid management of duplicate assignments over multiple blocks
+		// we limit ourselfs to evaluation of the first assignment only.
+		setonce = assigned[getArg(p,0)] == 1;
 		OPTDEBUGevaluate printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_ALL);
+		constantblock +=  blockStart(p) && OPTallConstant(cntxt,mb,p);
+
 		/* be aware that you only assign once to a variable */
-		if (p->retc == 1 && OPTallConstant(cntxt, mb, p) && !isUnsafeFunction(p)) {
-			if (assignedOnce(mb, span, getArg(p, 0)) == FALSE)
-				continue;
-			actions++;
+		if (setonce && p->retc == 1 && OPTallConstant(cntxt, mb, p) && !isUnsafeFunction(p)) {
 			barrier = p->barrier;
 			p->barrier = 0;
 			profiler = malProfileMode;	/* we don't trace it */
 			malProfileMode = 0;
-			msg = reenterMAL(cntxt, mb, i, i + 1, env, 0, 0);
+			if ( env == NULL) {
+				env = prepareMALstack(mb,  2 * mb->vsize );
+				env->keepAlive = TRUE;
+			}
+			msg = reenterMAL(cntxt, mb, i, i + 1, env);
 			malProfileMode= profiler;
 			p->barrier = barrier;
 			OPTDEBUGevaluate {
@@ -154,6 +197,7 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 				int nvar;
 				ValRecord cst;
 
+				actions++;
 				cst.vtype = 0;
 				VALcopy(&cst, &env->stk[getArg(p, 0)]);
 				/* You may not overwrite constants.  They may be used by
@@ -167,6 +211,7 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 				p->argc = 2;
 				p->token = ASSIGNsymbol;
 				clrFunction(p);
+				p->barrier = barrier;
 				/* freeze the type */
 				setVarFixed(mb,getArg(p,1));
 				setVarUDFtype(mb,getArg(p,1));
@@ -183,12 +228,12 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			}
 		}
 	}
-	actions += OPTremoveUnusedBlocks(cntxt, mb);
-	DEBUGoptimizers
-		mnstr_printf(cntxt->fdout, "#opt_evaluate: %d constant expressions\n", actions);
-	GDKfree(span);
+	if ( constantblock )
+		actions += OPTremoveUnusedBlocks(cntxt, mb);
+	GDKfree(assigned);
 	GDKfree(alias);
-	freeStack(env);
+	if ( env) 
+		freeStack(env);
 	cntxt->itrace = debugstate;
 	return actions;
 }

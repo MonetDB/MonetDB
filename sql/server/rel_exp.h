@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -25,8 +25,8 @@
 
 extern sql_exp *exp_compare(sql_allocator *sa, sql_exp *l, sql_exp *r, int cmptype);
 extern sql_exp *exp_compare2(sql_allocator *sa, sql_exp *l, sql_exp *r, sql_exp *h, int cmptype);
-extern sql_exp *exp_filter(sql_allocator *sa, sql_exp *l, list *r, sql_subfunc *f);
-extern sql_exp *exp_filter2(sql_allocator *sa, sql_exp *l, sql_exp *r, sql_exp *h, sql_subfunc *f);
+extern sql_exp *exp_filter(sql_allocator *sa, sql_exp *l, list *r, sql_subfunc *f, int anti);
+extern sql_exp *exp_filter2(sql_allocator *sa, sql_exp *l, sql_exp *r, sql_exp *h, sql_subfunc *f, int anti);
 extern sql_exp *exp_or(sql_allocator *sa, list *l, list *r);
 extern sql_exp *exp_in(sql_allocator *sa, sql_exp *l, list *r, int cmptype);
 
@@ -105,6 +105,7 @@ extern int exp_is_eqjoin(sql_exp *e);
 extern int exp_is_correlation(sql_exp *e, sql_rel *r );
 extern int exp_is_join_exp(sql_exp *e);
 extern int exp_is_atom(sql_exp *e);
+extern int exp_has_func(sql_exp *e);
 
 extern sql_exp *exps_bind_column( list *exps, char *cname, int *ambiguous);
 extern sql_exp *exps_bind_column2( list *exps, char *rname, char *cname);

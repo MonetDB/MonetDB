@@ -1,0 +1,52 @@
+stdout of test 'inlineFunction3` in directory 'monetdb5/optimizer` itself:
+
+
+# 05:29:16 >  
+# 05:29:16 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=31620" "--set" "mapi_usock=/var/tmp/mtest-22766/.s.monetdb.31620" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/current//Linux/var/MonetDB/mTests_monetdb5_optimizer" "inlineFunction3.mal"
+# 05:29:16 >  
+
+# MonetDB 5 server v11.16.0
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_optimizer', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.629 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2013 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:31620/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-22766/.s.monetdb.31620
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+# MonetDB/DataCell loaded
+function user.my_case{inline}(Av:int):int;
+    X3 := calc.==(Av,1);
+barrier X4 := X3;
+    X6 := calc.int(100);
+exit X4;
+barrier X7 := calc.not(X3);
+    X9 := calc.==(Av,2);
+barrier X10 := X9;
+    X12 := calc.int(200:sht);
+exit X10;
+exit X7;
+    return my_case := 1;
+end my_case;
+function user.tst():void;
+    z := user.my_case(0);
+end tst;
+function user.main():void;
+    io.printf("#result of inline\n");
+    mdb.list("user","tst");
+end main;
+#result of inline
+function user.tst():void;
+    X_5 := false:bit;
+    X_11 := false:bit;
+    z := 1:int;
+end tst;
+
+# 05:29:17 >  
+# 05:29:17 >  "Done."
+# 05:29:17 >  
+

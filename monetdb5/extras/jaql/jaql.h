@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -42,6 +42,8 @@ jaql_export str JAQLexecute(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 jaql_export str JAQLgetVar(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 jaql_export str JAQLsetVar(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 jaql_export str JAQLcast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+jaql_export str JAQLbatconcat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+jaql_export str JAQLprintTimings(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #endif
 

@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -25,7 +25,6 @@
 
 #include "sql_mvc.h"
 #include "sql_qc.h"
-#include "sql_statement.h"
 #include "sql_types.h"
 #include "sql_env.h"
 #include "sql_semantic.h"
@@ -35,20 +34,18 @@
 static int mvc_debug = 0;
 
 int
-mvc_init(char *dbname, int debug, store_type store, backend_stack stk)
+mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 {
 	int first = 0;
 	char *logdir = "sql_logs";
 
-	assert(dbname);
-
 	mvc_debug = debug;
 	if (mvc_debug)
-		fprintf(stderr, "#mvc_init logdir %s%c%s\n", logdir, DIR_SEP, dbname);
+		fprintf(stderr, "#mvc_init logdir %s\n", logdir);
 	keyword_init();
 	scanner_init_keywords();
 
-	if ((first = store_init(debug, store, logdir, dbname, stk)) < 0) {
+	if ((first = store_init(debug, store, ro, su, logdir, stk)) < 0) {
 		fprintf(stderr, "!mvc_init: unable to create system tables\n");
 		return -1;
 	}
@@ -74,7 +71,7 @@ mvc_init(char *dbname, int debug, store_type store, backend_stack stk)
 			mvc_drop_table(m, s, t, 0);
 		}
 
-		t = mvc_create_view(m, s, "tables", SQL_PERSIST, "SELECT * FROM (SELECT p.*, 0 AS \"temporary\" FROM \"sys\".\"_tables\" AS p UNION ALL SELECT t.*, 1 AS \"temporary\" FROM \"tmp\".\"_tables\" AS t) AS tables where tables.type < 2;", 1);
+		t = mvc_create_view(m, s, "tables", SQL_PERSIST, "SELECT * FROM (SELECT p.*, 0 AS \"temporary\" FROM \"sys\".\"_tables\" AS p UNION ALL SELECT t.*, 1 AS \"temporary\" FROM \"tmp\".\"_tables\" AS t) AS tables where tables.type <> 2;", 1);
 		mvc_create_column_(m, t, "id", "int", 32);
 		mvc_create_column_(m, t, "name", "varchar", 1024);
 		mvc_create_column_(m, t, "schema_id", "int", 32);
@@ -103,9 +100,10 @@ mvc_init(char *dbname, int debug, store_type store, backend_stack stk)
 		mvc_create_column_(m, t, "default", "varchar", 2048);
 		mvc_create_column_(m, t, "null", "boolean", 1);
 		mvc_create_column_(m, t, "number", "int", 32);
-		/* TODO: the code below is out-of-date.  Should be changed into the
-		 * following with the next major catalogue change:
-		 * mvc_create_column(m, t, "storage", "varchar", 2048);
+		/* TODO: the code below is out-of-date, should be
+		 * 		mvc_create_column_(m, t, "storage", "varchar", 2048);
+		 * This has been corrected in the sciql branch (changeset
+		 * c77e81db6fe6).
 		 */
 		mvc_create_column_(m, t, "storage_type", "int", 32);
 
@@ -186,7 +184,7 @@ mvc_trans(mvc *m)
 
 	store_lock();
 	schema_changed = sql_trans_begin(m->session);
-	if (m->qc && (schema_changed || m->qc->nr > 20000 || err)){
+	if (m->qc && (schema_changed || m->qc->nr > m->cache || err)){
 		if (schema_changed || err) {
 			int seqnr = m->qc->id;
 			if (m->qc)
@@ -196,8 +194,6 @@ mvc_trans(mvc *m)
 			qc_clean(m->qc);
 		}
 	}
-	if (m->session->active) 
-		m->type = Q_TRANS;
 	store_unlock();
 }
 
@@ -205,7 +201,7 @@ int
 mvc_commit(mvc *m, int chain, char *name)
 {
 	sql_trans *cur, *tr = m->session->tr;
-	int ok = SQL_OK;
+	int ok = SQL_OK;//, wait = 0;
 
 	assert(tr);
 	assert(m->session->active);	/* only commit an active transaction */
@@ -232,7 +228,6 @@ mvc_commit(mvc *m, int chain, char *name)
 build up the hash (not copyied in the trans dup)) */ 
 			qc_clean(m->qc);
 		m->session->schema = find_sql_schema(m->session->tr, m->session->schema_name);
-		m->last = NULL;
 		if (mvc_debug)
 			fprintf(stderr, "#mvc_commit %s done\n", (name) ? name : "");
 		return 0;
@@ -264,12 +259,23 @@ build up the hash (not copyied in the trans dup)) */
 		m->type = Q_TRANS;
 		if (mvc_debug)
 			fprintf(stderr, "#mvc_commit %s done\n", (name) ? name : "");
-		m->last = NULL;
 		store_unlock();
 		return 0;
 	}
 
-	/* validation phase */
+	/* validation phase 
+	while (tr->schema_updates && store_nr_active > 1) {
+		store_unlock();
+		MT_sleep_ms(100);
+		wait += 100;
+		if (wait > 1000) {
+			(void)sql_error(m, 010, "40000!COMMIT: transaction is aborted because of DDL concurency conflicts, will ROLLBACK instead");
+			mvc_rollback(m, chain, name);
+			return -1;
+		}
+		store_lock();
+	}
+	 * */
 	if (sql_trans_validate(tr)) {
 		if ((ok = sql_trans_commit(tr)) != SQL_OK) {
 			char *msg = sql_message("40000!COMMIT: transation commit failed (perhaps your disk is full?) exiting (kernel error: %s)", GDKerrbuf);
@@ -287,7 +293,6 @@ build up the hash (not copyied in the trans dup)) */
 		sql_trans_begin(m->session);
 	store_unlock();
 	m->type = Q_TRANS;
-	m->last = NULL;
 	if (mvc_debug)
 		fprintf(stderr, "#mvc_commit %s done\n", (name) ? name : "");
 	return ok;
@@ -344,7 +349,6 @@ mvc_rollback(mvc *m, int chain, char *name)
 	}
 	store_unlock();
 	m->type = Q_TRANS;
-	m->last = NULL;
 	if (mvc_debug)
 		fprintf(stderr, "#mvc_rollback %s done\n", (name) ? name : "");
 	return res;
@@ -387,7 +391,6 @@ mvc_release(mvc *m, char *name)
 	cur -> parent = tr;
 
 	m->type = res;
-	m->last = NULL;
 	return res;
 }
 
@@ -427,7 +430,7 @@ mvc_create(int clientid, backend_stack stk, int debug, bstream *rs, stream *ws)
 	m->emod = mod_none;
 	m->reply_size = 100;
 	m->debug = debug;
-	m->cache = 1;
+	m->cache = DEFAULT_CACHESIZE;
 	m->caching = m->cache;
 	m->history = 0;
 
@@ -444,7 +447,6 @@ mvc_create(int clientid, backend_stack stk, int debug, bstream *rs, stream *ws)
 
 	m->result_id = 0;
 	m->results = NULL;
-	m->last = NULL;
 
 	scanner_init(&m->scanner, rs, ws);
 	return m;
@@ -495,9 +497,9 @@ mvc_reset(mvc *m, bstream *rs, stream *ws, int debug, int globalvars)
 	if (m->debug != debug)
 		stack_set_number(m, "debug", debug);
 	m->debug = debug;
-	if (m->cache != 1)
-		stack_set_number(m, "cache", 1);
-	m->cache = 1;
+	if (m->cache != DEFAULT_CACHESIZE)
+		stack_set_number(m, "cache", DEFAULT_CACHESIZE);
+	m->cache = DEFAULT_CACHESIZE;
 	m->caching = m->cache;
 	if (m->history != 0)
 		stack_set_number(m, "history", 0);
@@ -512,7 +514,6 @@ mvc_reset(mvc *m, bstream *rs, stream *ws, int debug, int globalvars)
 
 	m->result_id = 0;
 	m->results = NULL;
-	m->last = NULL;
 
 	scanner_init(&m->scanner, rs, ws);
 }
@@ -603,7 +604,6 @@ schema_bind_func(mvc *sql, sql_schema * s, char *name, int type)
 sql_schema *
 mvc_bind_schema(mvc *m, char *sname)
 {
-	sql_column *l = m->last;
 	sql_trans *tr = m->session->tr;
 	sql_schema *s;
 
@@ -613,11 +613,7 @@ mvc_bind_schema(mvc *m, char *sname)
 	/* declared tables */
 	if (strcmp(sname, str_nil) == 0)
 		sname = dt_schema;
-	if (l && l->t->s &&
-		strcmp(l->t->s->base.name, sname) == 0)
-		s = l->t->s;
-	else 
- 		s = find_sql_schema(tr, sname);
+ 	s = find_sql_schema(tr, sname);
 	if (!s)
 		return NULL;
 
@@ -629,7 +625,6 @@ mvc_bind_schema(mvc *m, char *sname)
 sql_table *
 mvc_bind_table(mvc *m, sql_schema *s, char *tname)
 {
-	sql_column *l = m->last;
 	sql_table *t = NULL;
 
 	if (!s) { /* Declared tables during query compilation have no schema */
@@ -640,9 +635,6 @@ mvc_bind_table(mvc *m, sql_schema *s, char *tname)
 			s = mvc_bind_schema(m, dt_schema);
 			return mvc_bind_table(m, s, tname);
 		}
-	} else if (l && l->t->s == s &&
-		strcmp(l->t->base.name, tname) == 0) {
-		t = l->t;
 	} else {
  		t = find_sql_table(s, tname);
 	}
@@ -657,20 +649,14 @@ mvc_bind_table(mvc *m, sql_schema *s, char *tname)
 sql_column *
 mvc_bind_column(mvc *m, sql_table *t, char *cname)
 {
-	sql_column *l = m->last;
 	sql_column *c;
 
-	if (l && l->t == t && strcmp(l->base.name, cname) == 0)
-		c = l;
-	else 
-		c = find_sql_column(t, cname);
+	(void)m;
+	c = find_sql_column(t, cname);
 	if (!c)
 		return NULL;
 	if (mvc_debug)
 		fprintf(stderr, "#mvc_bind_column %s.%s\n", t->base.name, cname);
-
-	if (c->t->s && !isTempSchema(c->t->s) && !isDeclaredSchema(c->t->s))
-		m->last = c;
 	return c;
 }
 
@@ -850,7 +836,6 @@ mvc_drop_schema(mvc *m, sql_schema * s, int drop_action)
 	if (mvc_debug)
 		fprintf(stderr, "#mvc_drop_schema %s\n", s->base.name);
 	sql_trans_drop_schema(m->session->tr, s->base.id, drop_action ? DROP_CASCADE_START : DROP_RESTRICT);
-	m->last = NULL;
 }
 
 sql_ukey *
@@ -1056,7 +1041,6 @@ mvc_drop_table(mvc *m, sql_schema *s, sql_table *t, int drop_action)
 		fprintf(stderr, "#mvc_drop_table %s %s\n", s->base.name, t->base.name);
 
 	sql_trans_drop_table(m->session->tr, s, t->base.id, drop_action ? DROP_CASCADE_START : DROP_RESTRICT);
-	m->last = NULL;
 }
 
 BUN
@@ -1097,7 +1081,6 @@ mvc_drop_column(mvc *m, sql_table *t, sql_column *col, int drop_action)
 		drop_sql_column(t, col->base.id, drop_action);
 	else
 		sql_trans_drop_column(m->session->tr, t, col->base.id,  drop_action ? DROP_CASCADE_START : DROP_RESTRICT);
-	m->last = NULL;
 }
 
 void

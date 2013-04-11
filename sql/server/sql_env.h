@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -22,7 +22,6 @@
 
 #include "sql_parser.h"
 #include "sql_symbol.h"
-#include "sql_statement.h"
 #include "sql_mvc.h"
 
 extern int mvc_debug_on(mvc *m, int flag);
@@ -32,6 +31,6 @@ extern str sql_update_var(mvc *sql, char *name);
 extern int sql_create_env(mvc *sql, sql_schema *s);
 
 #define NR_KEEPQUERY_ARGS 4
-#define NR_KEEPCALL_ARGS 10
+#define NR_KEEPCALL_ARGS 9
 
 #endif /* _SQL_ENV_H_ */

@@ -13,7 +13,7 @@
  * 
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
 */
 
@@ -119,6 +119,7 @@ typedef struct PERF {
 typedef struct MALBLK {
 	str binding;				/* related C-function */
 	str help;					/* supportive commentary */
+	oid tag;					/* unique block tag */
 	struct MALBLK *alternative;
 	int vtop;					/* next free slot */
 	int vsize;					/* size of variable arena */
@@ -143,6 +144,9 @@ typedef struct MALBLK {
 	lng recid;					/* ID given by recycler optimizer */
 	lng legid;
 	sht trap;					/* call debugger when called */
+	lng runtime;					/* average execution time of block in ticks */
+	int calls;					/* number of calls */
+	lng optimize;				/* total optimizer time */
 } *MalBlkPtr, MalBlkRecord;
 
 /* Allocation of space assumes a rather exotic number of
@@ -170,6 +174,7 @@ typedef struct MALBLK {
 #define getVarType(M,I)		((M)->var[I]->type)
 #define getVarGDKType(M,I)	getGDKType((M)->var[I]->type)
 #define ignoreVar(M,I)		((M)->var[I]->type == TYPE_ptr? 1: 0)
+#define getGDKType(T) 		( T <= TYPE_str ? T : (T == TYPE_any ? TYPE_void : findGDKtype(T)))
 
 #define clrVarFixed(M,I)		((M)->var[I]->flags &= ~VAR_FIXTYPE)
 #define setVarFixed(M,I)		((M)->var[I]->flags |= VAR_FIXTYPE)
@@ -228,11 +233,11 @@ mal_export Symbol newSymbol(str nme, int kind);
 mal_export void freeSymbol(Symbol s);
 mal_export void freeSymbolList(Symbol s);
 mal_export void printSignature(stream *fd, Symbol s, int flg);
-mal_export int getGDKType(int tpe);
 
 mal_export MalBlkPtr newMalBlk(int maxvars, int maxstmts);
 mal_export void resetMalBlk(MalBlkPtr mb, int stop);
 mal_export int newMalBlkStmt(MalBlkPtr mb, int maxstmts);
+mal_export void resizeMalBlk(MalBlkPtr mb, int maxstmt, int maxvar);
 mal_export void prepareMalBlk(MalBlkPtr mb, str s);
 mal_export void freeMalBlk(MalBlkPtr mb);
 mal_export MalBlkPtr copyMalBlk(MalBlkPtr mb);
@@ -305,11 +310,11 @@ mal_export void pushEndInstruction(MalBlkPtr mb);	/* used in src/mal/mal_parser.
 
 #define blockStart(X)   ((X)->barrier && (((X)->barrier == BARRIERsymbol || \
              (X)->barrier == CATCHsymbol )))
-#define blockExit(X) (X)->barrier == EXITsymbol
+#define blockExit(X) ((X)->barrier == EXITsymbol)
 #define blockCntrl(X) ( (X)->barrier== LEAVEsymbol ||  \
              (X)->barrier== REDOsymbol || (X)->barrier== RETURNsymbol )
-#define isLinearFlow(X)  !(blockStart(X) || blockExit(X) || \
-				(X)->barrier== LEAVEsymbol ||  (X)->barrier== REDOsymbol )
+#define isLinearFlow(X)  (!(blockStart(X) || blockExit(X) || \
+				(X)->barrier== LEAVEsymbol ||  (X)->barrier== REDOsymbol ))
 
 mal_export void strBeforeCall(ValPtr v, ValPtr bak);
 mal_export void strAfterCall(ValPtr v, ValPtr bak);

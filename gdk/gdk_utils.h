@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -30,6 +30,8 @@ gdk_export char *GDKgetenv(const char *name);
 gdk_export int GDKgetenv_isyes(const char *name);
 
 gdk_export int GDKgetenv_istrue(const char *name);
+
+gdk_export int GDKgetenv_int(const char *name, int def);
 
 gdk_export void GDKsetenv(str name, str value);
 

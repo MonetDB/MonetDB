@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -69,7 +69,7 @@ exp_compare2(sql_allocator *sa, sql_exp *l, sql_exp *r, sql_exp *h, int cmptype)
 }
 
 sql_exp *
-exp_filter(sql_allocator *sa, sql_exp *l, list *r, sql_subfunc *f) 
+exp_filter(sql_allocator *sa, sql_exp *l, list *r, sql_subfunc *f, int anti) 
 {
 	sql_exp *e = exp_create(sa, e_cmp);
 
@@ -78,18 +78,20 @@ exp_filter(sql_allocator *sa, sql_exp *l, list *r, sql_subfunc *f)
 	e->r = r;
 	e->f = f;
 	e->flag = cmp_filter;
+	if (anti)
+		set_anti(e);
 	return e;
 }
 
 sql_exp *
-exp_filter2(sql_allocator *sa, sql_exp *l, sql_exp *r1, sql_exp *r2, sql_subfunc *f) 
+exp_filter2(sql_allocator *sa, sql_exp *l, sql_exp *r1, sql_exp *r2, sql_subfunc *f, int anti) 
 {
 	list *r = sa_list(sa);
 
 	append(r, r1);
 	if (r2)
 		append(r, r2);
-	return exp_filter(sa, l, r, f);
+	return exp_filter(sa, l, r, f, anti);
 }
 
 sql_exp *
@@ -880,7 +882,7 @@ exp_is_join(sql_exp *e)
 	 */
 	if (e->type == e_cmp && !is_complex_exp(e->flag) && e->l && e->r && !e->f && e->card >= CARD_AGGR && !complex_select(e))
 		return 0;
-	if (e->type == e_cmp && e->flag == cmp_filter && e->l && e->r && e->card >= CARD_AGGR)
+	if (e->type == e_cmp && get_cmp(e) == cmp_filter && e->l && e->r && e->card >= CARD_AGGR)
 		return 0;
 	/* range expression */
 	if (e->type == e_cmp && !is_complex_exp(e->flag) && e->l && e->r && e->f && e->card >= CARD_AGGR && !complex_select(e)) 
@@ -1025,6 +1027,44 @@ exp_is_atom( sql_exp *e )
 	}
 	case e_column:
 	case e_cmp:
+	case e_psm:
+		return 0;
+	}
+	return 0;
+}
+
+static int
+exps_has_func( list *exps)
+{
+	node *n;
+	int has_func = 0;
+
+	for(n=exps->h; n && !has_func; n=n->next) 
+		has_func |= exp_has_func(n->data);
+	return has_func;
+}
+
+int
+exp_has_func( sql_exp *e )
+{
+	switch (e->type) {
+	case e_atom:
+		return 0;
+	case e_convert:
+		return exp_has_func(e->l);
+	case e_func:
+	case e_aggr:
+		return 1;
+	case e_cmp:
+		if (e->flag == cmp_or) {
+			return (exps_has_func(e->l) || exps_has_func(e->r));
+		} else if (e->flag == cmp_in || e->flag == cmp_notin || get_cmp(e) == cmp_filter) {
+			return (exp_has_func(e->l) || exps_has_func(e->r));
+		} else {
+			return (exp_has_func(e->l) || exp_has_func(e->r) || 
+					(e->f && exp_has_func(e->f)));
+		}
+	case e_column:
 	case e_psm:
 		return 0;
 	}
@@ -1260,13 +1300,13 @@ exp_copy( sql_allocator *sa, sql_exp * e)
 			list *r = exps_copy(sa, e->r);
 			if (l && r)
 				ne = exp_or(sa, l,r);
-		} else if (e->flag == cmp_in || e->flag == cmp_notin || e->flag == cmp_filter) {
+		} else if (e->flag == cmp_in || e->flag == cmp_notin || get_cmp(e) == cmp_filter) {
 			sql_exp *l = exp_copy(sa, e->l);
 			list *r = exps_copy(sa, e->r);
 
 			if (l && r) {
-				if (e->flag == cmp_filter)
-					ne = exp_filter(sa, l, r, e->f);
+				if (get_cmp(e) == cmp_filter)
+					ne = exp_filter(sa, l, r, e->f, is_anti(e));
 				else
 					ne = exp_in(sa, l, r, e->flag);
 			}

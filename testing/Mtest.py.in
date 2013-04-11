@@ -1,4 +1,4 @@
-#!@PYTHON@
+#!@PYTHON2@
 
 # The contents of this file are subject to the MonetDB Public License
 # Version 1.1 (the "License"); you may not use this file except in
@@ -14,7 +14,7 @@
 #
 # The Initial Developer of the Original Code is CWI.
 # Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-# Copyright August 2008-2012 MonetDB B.V.
+# Copyright August 2008-2013 MonetDB B.V.
 # All Rights Reserved.
 
 #TODO:
@@ -30,12 +30,7 @@
 #   contains(<file>,<string>)
 # - do multi-level prompting?
 # - normalize all path's used
-
-try:
-    True
-except NameError:
-    # provide values for old Python versions
-    False, True = 0, 1
+# - Python 3? (or do a full rewrite?)
 
 import os
 import sys
@@ -58,14 +53,18 @@ quiet = False
 
 releaserun = False
 
-# Python 2.3 doesn't know about os.devnull...
-try:
-    os.devnull
-except AttributeError:
-    if os.name == 'nt':
-        os.devnull = 'nul'
-    else:
-        os.devnull = '/dev/null'
+# whether output goes to a tty
+isatty = os.isatty(sys.stdout.fileno())
+
+if os.name != 'nt' and isatty:
+    # color output a little
+    RED = '\033[1;31m'
+    GREEN = '\033[0;32m'
+    PURPLE = '\033[1;35m'       # actually magenta
+    BLACK = '\033[0;0m'
+else:
+    # no coloring if not to a tty
+    RED = GREEN = PURPLE = BLACK = ''
 
 def ErrExit(msg):
     print >> sys.stderr, msg
@@ -74,7 +73,7 @@ def ErrExit(msg):
 def _configure(str):
     # expand configure variables in str and return result
     config = [
-        ('${source}', '@QXSOURCE@'),
+        ('{source}', '@QXSOURCE@'),
         ('${build}', '@QXBUILD@'),
 
         ('${bindir}', '@QXbindir@'),
@@ -124,32 +123,80 @@ def _configure(str):
             str = nstr
     return str
 
+# use our own process module because it has _BufferedPipe
 try:
-    import subprocess26 as subprocess
+    import process
 except ImportError:
     try:
-        import MonetDBtesting.subprocess26 as subprocess
+        import MonetDBtesting.process as process
     except ImportError:
-        import distutils.sysconfig
-        if os.name != "nt" and os.uname()[0] + os.uname()[2][:1] == "Darwin9" and sys.version[:5] == "2.5.1":
-            p = _configure(os.path.join('@QXprefix@',distutils.sysconfig.get_python_lib(0,1,""),'site-packages'))
-        else:
-            p = distutils.sysconfig.get_python_lib(0, 0, '')
-            if p.endswith('dist-packages'):
-                # Ubuntu
-                p = p.replace('dist-packages', 'site-packages')
-                _configure(os.path.join('@QXprefix@', p))
-                sys.path.insert(0, p)
-                if os.environ.has_key('PYTHONPATH'):
-                    p += os.pathsep + os.environ['PYTHONPATH']
-                os.environ['PYTHONPATH'] = p
-                p = distutils.sysconfig.get_python_lib(0, 0, '')
-            p = _configure(os.path.join('@QXprefix@', p))
+        p = _configure(os.path.join('@QXprefix@', '@PYTHON2_LIBDIR@'))
         sys.path.insert(0, p)
-        import MonetDBtesting.subprocess26 as subprocess
+        import MonetDBtesting.process as process
         if os.environ.has_key('PYTHONPATH'):
             p += os.pathsep + os.environ['PYTHONPATH']
         os.environ['PYTHONPATH'] = p
+
+# Replace os.fork by a version that forks but also sets the process
+# group in the child.  This is done so that we can easily kill a
+# subprocess and its children in case of a timeout.
+# To use this, set the global variable setpgrp to True before calling
+# subprocess.Popen.  It is reset automatically to False so that
+# subprocess of our child don't get their own process group.
+try:
+    os.setpgrp
+except AttributeError:
+    try:
+        os.setpgid
+    except AttributeError:
+        # no function to set process group, so don't replace
+        pass
+    else:
+        # use os.setpgid to set process group
+        def myfork(osfork = os.fork):
+            global setpgrp
+            _setpgrp = setpgrp
+            setpgrp = False
+            pid = osfork()
+            if pid == 0 and _setpgrp:
+                os.setpgrp()
+            return pid
+        os.fork = myfork
+else:
+    # use os.setpgrp to set process group
+    def myfork(osfork = os.fork):
+        global setpgrp
+        _setpgrp = setpgrp
+        setpgrp = False
+        pid = osfork()
+        if pid == 0 and _setpgrp:
+            os.setpgid(0, 0)
+        return pid
+    os.fork = myfork
+setpgrp = False
+
+ttywidth = 0
+if isatty and os.isatty(sys.stdin.fileno()):
+    if os.name != 'nt':
+        ttywidth = 80
+    else:
+        try:
+            proc = process.Popen(['stty', '-a'], stdout = process.PIPE,
+                                 stderr = process.PIPE)
+        except OSError:
+            pass
+        else:
+            out, err = proc.communicate()
+            res = re.search('columns ([0-9]+)', out)
+            if res is not None:
+                ttywidth = int(res.group(1))
+            else:
+                res = re.search(' ([0-9]+) columns', out)
+                if res is not None:
+                    ttywidth = int(res.group(1))
+            if ttywidth < 60:
+                # rediculously narrow tty, ignore value
+                ttywidth = 0
 
 import string                   # for whitespace
 def splitcommand(cmd):
@@ -217,11 +264,7 @@ except ImportError:
     try:
         from MonetDBtesting import monet_options
     except ImportError:
-        import distutils.sysconfig
-        if os.name != "nt" and os.uname()[0] + os.uname()[2][:1] == "Darwin9" and sys.version[:5] == "2.5.1":
-            p = _configure(os.path.join('@QXprefix@',distutils.sysconfig.get_python_lib(0,1,""),'site-packages'))
-        else:
-            p = _configure(os.path.join('@QXprefix@',distutils.sysconfig.get_python_lib(0,0,"")))
+        p = _configure(os.path.join('@QXprefix@', '@PYTHON2_LIBDIR@'))
         sys.path.insert(0, p)
         from MonetDBtesting import monet_options
         if os.environ.has_key('PYTHONPATH'):
@@ -282,6 +325,8 @@ CONDITIONALS = {
     'HAVE_PCRE'            : "@HAVE_PCRE_FALSE@",
     'HAVE_PERL'            : "@HAVE_PERL_FALSE@",
     'HAVE_PYTHON'          : "@HAVE_PYTHON_FALSE@",
+    'HAVE_PYTHON2'         : "@HAVE_PYTHON2_FALSE@",
+    'HAVE_PYTHON3'         : "@HAVE_PYTHON3_FALSE@",
     'HAVE_RAPTOR'          : "@HAVE_RAPTOR_FALSE@",
     'HAVE_RUBYGEM'         : "@HAVE_RUBYGEM_FALSE@",
     'HAVE_SPHINXCLIENT'    : "@HAVE_SPHINXCLIENT_FALSE@",
@@ -1019,7 +1064,17 @@ def SkipTest(env, TST, EXT, REASON, length) :
             REASON = REASON[3:]
         if REASON.endswith('.'):
             REASON = REASON[:-1]
-        STDOUT.write('%s%-*s skipped (%s)\n' % (prompt(), length, TST, REASON))
+        if length + 10 + len(REASON) + 11 > ttywidth:
+            # 10 - length of prompt()
+            # 11 - length of " skipped ()"
+            l = ttywidth - 10 - 11 - len(REASON)
+            if len(TST) <= l:
+                s = '%-*s' % (l, TST)
+            else:
+                s = '%s...%s' % (TST[:l/2 - 2], TST[-(l/2 - 1):])
+        else:
+            s = '%-*s' % (length, TST)
+        STDOUT.write('%s%s skipped (%s)\n' % (prompt(), s, REASON))
 
     if testweb:
         return None
@@ -1114,6 +1169,13 @@ def PerformDir(env, testdir, testlist, BusyPorts) :
     os.environ['TSTSRCDIR'] = TSTSRCDIR
     os.environ['TSTTRGDIR'] = TSTTRGDIR
     os.environ['RELSRCDIR'] = env['RELSRCDIR']
+    os.environ['PYTHON2']   = '@PYTHON2@'
+    os.environ['PYTHON2PATH'] = _configure(os.path.join('@QXprefix@', '@PYTHON2_LIBDIR@'))
+    os.environ['PYTHON3']   = '@PYTHON3@'
+    os.environ['PYTHON3PATH'] = _configure(os.path.join('@QXprefix@', '@PYTHON3_LIBDIR@'))
+    if os.name == 'nt':
+        os.environ['PYTHON2PATH'] += os.path.pathsep + _configure(os.path.join('@QXprefix@', 'lib', 'python2'))
+        os.environ['PYTHON3PATH'] += os.path.pathsep + _configure(os.path.join('@QXprefix@', 'lib', 'python3'))
 
     #STDERR.flush()
     #for v in 'RELSRCDIR':
@@ -1268,9 +1330,9 @@ def ApproveOutput (env, TST) :
                 patch = os.path.join(os.sep, 'tmp')
             patch = os.path.join(patch, "%s.patch-%s" % (os.path.basename(stableOUTPUT), str(os.getpid())))
             f = open(patch + '.0', 'w')
-            proc = subprocess.Popen(['diff', '-Bb', '-I^[#=]', '-U0',
-                                     stableOUTPUT, testOUTPUT],
-                                    stdout = f)
+            proc = process.Popen(['diff', '-Bb', '-I^[#=]', '-U0',
+                                  stableOUTPUT, testOUTPUT],
+                                 stdout = f)
             proc.wait()
             f.close()
             if os.path.getsize(patch + ".0"):
@@ -1297,10 +1359,12 @@ def ApproveOutput (env, TST) :
                 f.flush()
                 f.close()
                 shutil.copy(stableOUTPUT, stableOUTPUT + ".ORG")
-                proc = subprocess.Popen(['patch', stableOUTPUT, patch + '.1'])
+                proc = process.Popen(['patch', stableOUTPUT, patch + '.1'])
                 proc.wait()
                 f = open(patch, 'w')
-                proc = subprocess.Popen(['diff', '-u', stableOUTPUT + '.ORG', stableOUTPUT], stdout = f)
+                proc = process.Popen(['diff', '-u', stableOUTPUT + '.ORG',
+                                      stableOUTPUT],
+                                     stdout = f)
                 proc.wait()
                 f.close()
                 remove(stableOUTPUT + ".ORG")
@@ -1428,12 +1492,15 @@ def returnCode(proc, f = None):
     return None                 # no error
 
 def GetBitsAndOIDsAndModsAndStaticAndThreads(env) :
+    global setpgrp
     rtrn = 0
     cmd = splitcommand(env['exe']['Mserver'][1])
-    cmd.append('--dbname=%s' % TSTPREF)
+    cmd.append('--dbpath=%s' % os.path.join(env['GDK_DBFARM'], TSTPREF))
     if procdebug:
         print 'GetBitsAndOIDsAndModsAndStaticAndThreads: starting process "%s" (inpipe, outpipe, errpipe)\n' % '" "'.join(cmd)
-    proc = subprocess.Popen(cmd, stdin = subprocess.PIPE, stdout = subprocess.PIPE, stderr = subprocess.PIPE, universal_newlines = True)
+    setpgrp = True
+    proc = process.Popen(cmd, stdin = process.PIPE, stdout = process.PIPE,
+                         stderr = process.PIPE, universal_newlines = True)
     proc.killed = False
     t = Timer(float(par['TIMEOUT']), killProc, args = [proc, proc.stderr, cmd])
     try:
@@ -1468,6 +1535,8 @@ def GetBitsAndOIDsAndModsAndStaticAndThreads(env) :
         raise
     returncode = returnCode(proc)
     if returncode is not None:
+        print qOut
+        print qErr
         ErrExit('GetBitsAndOIDsAndModsAndStaticAndThreads: subcommand failed: %s' % returncode)
     env['TST_MODS'] = []
     env['TST_BITS'] = ""
@@ -1627,6 +1696,7 @@ def CategorizeResult(TST, SockTime):
     return o, e
 
 def RunTest(env, TST, BusyPorts, COND, oktests, length) :
+    global setpgrp
     Failed = F_SKIP
     FailedOut = F_SKIP
     FailedErr = F_SKIP
@@ -1715,6 +1785,11 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
         EXT = CALL = SERVER = ""
         if COND:
             for cond in COND.split('&'):
+                if cond[:1] == '!':
+                    negate = True
+                    cond = cond[1:]
+                else:
+                    negate = False
                 if cond == 'PREVREL':
                     if not os.path.exists(os.path.join(env['GDK_DBFARM'], 'prevrel.zip')):
                         reason = "as previous release database is not available"
@@ -1729,8 +1804,11 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
                     reason = "as conditional '%s' is unknown." % cond
                     elem = SkipTest(env, TST, EXT, reason, length)
                     break
-                elif not CONDITIONALS[cond]:
-                    reason = "as conditional '%s' does not hold." % cond
+                elif (not CONDITIONALS[cond]) != negate:
+                    if negate:
+                        reason = "as conditional '%s' holds." % cond
+                    else:
+                        reason = "as conditional '%s' does not hold." % cond
                     elem = SkipTest(env, TST, EXT, reason, length)
                     break
         if reason:
@@ -1743,16 +1821,18 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
             ErrMsg("test missing: '"+os.path.join(TSTSRCDIR,TST)+"[.py|.mal|.malC|.sql|.jaql]`")
         return TX,Failed,Failed,elem,reason,links
 
-    if par['PACKAGE'] not in ('common', 'clients', 'gdk', 'java'):
-        MissingMods = CheckMods(env, TST, SERVER, CALL)
-    else:
-        MissingMods = []
+    MissingMods = CheckMods(env, TST, SERVER, CALL)
     MissingTests = CheckTests(env, TST, oktests)
 
     os.chdir(TSTTRGDIR)
 
     if COND:
         for cond in COND.split('&'):
+            if cond[:1] == '!':
+                negate = True
+                cond = cond[1:]
+            else:
+                negate = False
             if cond == 'PREVREL':
                 if not os.path.exists(os.path.join(env['GDK_DBFARM'], 'prevrel.zip')):
                     reason = "as previous release database is not available"
@@ -1767,8 +1847,11 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
                 reason = "as conditional '%s' is unknown." % cond
                 elem = SkipTest(env, TST, EXT, reason, length)
                 break
-            elif not CONDITIONALS[cond]:
-                reason = "as conditional '%s' does not hold." % cond
+            elif (not CONDITIONALS[cond]) != negate:
+                if negate:
+                    reason = "as conditional '%s' holds." % cond
+                else:
+                    reason = "as conditional '%s' does not hold." % cond
                 elem = SkipTest(env, TST, EXT, reason, length)
                 break
     if reason:
@@ -2068,8 +2151,18 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
             else:
                 f = '%s/%s%s' % (d, TST, EXT)
             if testweb:
-                titlefmt = '-tTest %s%s (id <a href="%s">%s</a>) (<a href="%s.%%s.diff.html">%%s</a>)' % (TST, EXT, f, REV, TST)
+                # splice in a link to the bug report if we recognize a
+                # reference
+                res = bugre.search(TST)
+                if res is not None:
+                    bugno = res.group('bugno')
+                    tst = '%s<a target="_blank" href="http://bugs.monetdb.org/%s">%s</a>%s' % (TST[:res.start(0)+1], bugno, res.group(0)[1:], TST[res.end(0):])
+                else:
+                    tst = TST
+                titlefmt = '-tTest %s%s (id <a href="%s">%s</a>) (<a href="%s.%%s.diff.html">%%s</a>)' % (tst, EXT, f, REV, TST)
             else:
+                # no need (and no space) to add link to bug report:
+                # it's done already elsewhere
                 titlefmt = '-tTest <a href="%s%s">%s%s</a> (id <a href="%s">%s</a>) (<a href="%s.%%s.diff.html">%%s</a>)' % (TST, EXT, TST, EXT, f, REV, TST)
         elif testweb:
             titlefmt = '-tTest %s%s (<a href="%s.%%s.diff.html">%%s</a>)' % (TST, EXT, TST)
@@ -2109,7 +2202,9 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
                         '%s.out.diff.html' % TST])
             if procdebug:
                 print 'RunTest: starting process "%s"\n' % '" "'.join(cmd)
-            proc = subprocess.Popen(cmd, stdout = subprocess.PIPE, stderr = subprocess.PIPE)
+            setpgrp = True
+            proc = process.Popen(cmd, stdout = process.PIPE,
+                                 stderr = process.PIPE)
             proc.killed = False
             t = Timer(float(par['TIMEOUT']), killProc, args = [proc])
             try:
@@ -2142,7 +2237,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
                         '-U%s' % par['CONTEXT'],
                         '%s%s.FILTERED' % (TST, STABLEout),
                         '%s.test.out.FILTERED' % TST])
-            proc = subprocess.Popen(cmd)
+            proc = process.Popen(cmd)
             proc.wait()
 
         diff_html = open('%s.err.diff.html' % TST,"w")
@@ -2178,7 +2273,9 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
                         '%s.err.diff.html' % TST])
             if procdebug:
                 print 'RunTest: starting process "%s"\n' % '" "'.join(cmd)
-            proc = subprocess.Popen(cmd, stdout = subprocess.PIPE, stderr = subprocess.PIPE)
+            setpgrp = True
+            proc = process.Popen(cmd, stdout = process.PIPE,
+                                 stderr = process.PIPE)
             proc.killed = False
             t = Timer(float(par['TIMEOUT']), killProc, args = [proc])
             try:
@@ -2211,7 +2308,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
                         '-U%s' % par['CONTEXT'],
                         '%s%s.FILTERED' % (TST, STABLEerr),
                         '%s.test.err.FILTERED' % TST])
-            proc = subprocess.Popen(cmd)
+            proc = process.Popen(cmd)
             proc.wait()
 
         FailedOut, FailedErr = CategorizeResult(TST, max(sockerr, errcode))
@@ -2232,29 +2329,29 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
 
         if not verbose and not quiet:
             if tres == 'timeout':
-                STDOUT.write("TIMEOUT")
+                STDOUT.write("%sTIMEOUT%s" % (PURPLE, BLACK))
             elif tres == 'recursion':
-                STDOUT.write("RECURSION")
+                STDOUT.write("%sRECURSION%s" % (PURPLE, BLACK))
             elif tres == 'segfault':
-                STDOUT.write("CRASHED")
+                STDOUT.write("%sCRASHED%s" % (PURPLE, BLACK))
             elif tres == 'abort':
-                STDOUT.write('ABORTED')
+                STDOUT.write('%sABORTED%s' % (PURPLE, BLACK))
             elif tres == 'signal':
-                STDOUT.write('SIGNALED')
+                STDOUT.write('%sSIGNALED%s' % (PURPLE, BLACK))
             else:
                 if FailedOut == F_OK:
-                    STDOUT.write('OK   ')
+                    STDOUT.write('%sOK%s   ' % (GREEN, BLACK))
                 elif FailedOut == F_WARN:
-                    STDOUT.write('minor')
+                    STDOUT.write('%sminor%s' % (GREEN, BLACK))
                 else:
-                    STDOUT.write('MAJOR')
+                    STDOUT.write('%sMAJOR%s' % (RED, BLACK))
                 STDOUT.write(' ')
                 if FailedErr == F_OK:
-                    STDOUT.write('OK')
+                    STDOUT.write('%sOK%s' % (GREEN, BLACK))
                 elif FailedErr == F_WARN:
-                    STDOUT.write('minor')
+                    STDOUT.write('%sminor%s' % (GREEN, BLACK))
                 else:
-                    STDOUT.write('MAJOR')
+                    STDOUT.write('%sMAJOR%s' % (RED, BLACK))
             STDOUT.write('\n')
 
     return TX,FailedOut,FailedErr,elem,reason,links
@@ -2406,15 +2503,15 @@ def killProc(proc, outfile = None, cmd = None):
         else:
             cdb = None
         if cdb:
-            p = subprocess.Popen([cdb, '-pv', '-p', str(proc.pid),
-                                  '-y', '%scache*;srv*http://msdl.microsoft.com/download/symbols' % sym, '-lines', '-c', '~*kP;!locks;q'],
-                                 stdout = subprocess.PIPE)
+            p = process.Popen([cdb, '-pv', '-p', str(proc.pid),
+                               '-y', '%scache*;srv*http://msdl.microsoft.com/download/symbols' % sym, '-lines', '-c', '~*kP;!locks;q'],
+                              stdout = process.PIPE)
             out, err = p.communicate()
         else:
             out = ''
     else:
         try:
-            p = subprocess.Popen(['pstack', str(proc.pid)], stdout = subprocess.PIPE)
+            p = process.Popen(['pstack', str(proc.pid)], stdout = process.PIPE)
             out, err = p.communicate()
         except:
             out = ''
@@ -2429,8 +2526,8 @@ def killProc(proc, outfile = None, cmd = None):
     except AttributeError:
         if procdebug:
             print 'killProc: starting process "taskkill" "/F" "/T" "/PID" "%s"\n' % str(proc.pid)
-        p = subprocess.Popen(['taskkill','/F','/T','/PID',str(proc.pid)],
-                             stdout = subprocess.PIPE, stderr = subprocess.PIPE)
+        p = process.Popen(['taskkill','/F','/T','/PID',str(proc.pid)],
+                          stdout = process.PIPE, stderr = process.PIPE)
         out, err = p.communicate()
         if procdebug:
             print 'killProc: process exited "taskkill" "/F" "/T" "/PID" "%s" (%s)\n' % (str(proc.pid), proc.returncode)
@@ -2438,8 +2535,9 @@ def killProc(proc, outfile = None, cmd = None):
         pass
 
 def LaunchIt(cmd, TestInput, TestOut, TestErr, TimeOut, SrvrOut = None) :
+    global setpgrp
     if not SrvrOut:
-        SrvrOut = subprocess.PIPE
+        SrvrOut = process.PIPE
 
     TestOut.write(Prompt(cmd))
     TestOut.flush()
@@ -2448,7 +2546,14 @@ def LaunchIt(cmd, TestInput, TestOut, TestErr, TimeOut, SrvrOut = None) :
 
     if procdebug:
         print 'LaunchIt: starting process "%s" (inpipe)\n' % '" "'.join(cmd)
-    proc = subprocess.Popen(cmd, stdin = subprocess.PIPE, stdout = SrvrOut, stderr = TestErr, universal_newlines = True)
+    setpgrp = True
+    proc = process.Popen(cmd, stdin = process.PIPE, stdout = SrvrOut,
+                         stderr = TestErr, universal_newlines = True)
+    # maybe buffer output as it comes to avoid deadlock
+    if SrvrOut == process.PIPE:
+        proc.stdout = process._BufferedPipe(proc.stdout)
+    if TestErr == process.PIPE:
+        proc.stderr = process._BufferedPipe(proc.stderr)
     proc.killed = False
     t = Timer(TimeOut, killProc, args = [proc, TestErr, cmd])
     t.start()
@@ -2473,9 +2578,10 @@ def CollectIt(pOut, TestOut) :
 ### CollectIt(pOut, pErr, TestOut, TestErr) #
 
 def RunIt(cmd, TestIn, TestOut, TestErr, TimeOut) :
+    global setpgrp
     if type(TestIn) is type(''):
         TestInput = TestIn
-        TestIn = subprocess.PIPE
+        TestIn = process.PIPE
     else:
         TestInput = None
     TestOut.write(Prompt(cmd))
@@ -2484,7 +2590,8 @@ def RunIt(cmd, TestIn, TestOut, TestErr, TimeOut) :
     TestErr.flush()
     if procdebug:
         print 'RunIt: starting process "%s"\n' % '" "'.join(cmd)
-    proc = subprocess.Popen(cmd, stdin = TestIn, stdout = TestOut, stderr = TestErr, universal_newlines = True)
+    setpgrp = True
+    proc = process.Popen(cmd, stdin = TestIn, stdout = TestOut, stderr = TestErr, universal_newlines = True)
     proc.killed = False
     t = Timer(TimeOut, killProc, args = [proc, TestErr, cmd])
     try:
@@ -2542,8 +2649,18 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                      (prompt(), os.path.join(env['TSTDIR'], TST + EXT),
                       PRELUDE and PRELUDE[0] or '', TIMEOUT, CTIMEOUT, STIMEOUT))
     else:
-        STDOUT.write('%s%-*s ' % (prompt(), length, TST))
-        if os.isatty(STDOUT.fileno()):
+        if ttywidth > 0 and length + 10 + 21 > ttywidth:
+            # 10 - length of prompt()
+            # 21 - length of time plus result
+            l = ttywidth - 10 - 21 - 1
+            if len(TST) <= l:
+                s = '%-*s ' % (l, TST)
+            else:
+                s = '%s...%s ' % (TST[:l/2 - 2], TST[-(l/2-1):])
+        else:
+            s = '%-*s ' % (length, TST)
+        STDOUT.write('%s%s' % (prompt(), s))
+        if isatty:
             s = '(<=%d,%d,%d)' % (TIMEOUT, CTIMEOUT, STIMEOUT)
             STDOUT.write(s + '\b' * len(s))
 
@@ -2589,7 +2706,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                 if dbinit:
                     DBINIT = ['--dbinit=%s' % dbinit]
 
-            Srvr = splitcommand(exe['Mserver'][1]) + LOCAL_CONF + ['--dbname=%s' % TSTDB]
+            Srvr = splitcommand(exe['Mserver'][1]) + LOCAL_CONF + ['--dbpath=%s' % os.path.join(env['GDK_DBFARM'], TSTDB)]
             lang=""
 
             if SERVER == "MAL":
@@ -2613,11 +2730,44 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                 SrvrOut.write(ln)
                 SrvrOut.flush()
             if ln[:6] != 'Ready.':
-                ServerReady = False
+                # If not ready, it may be that there are far too many
+                # network connections in use, all in TIME_WAIT status.
+                # We'll just wait a while for that to clear and try
+                # again.
+                pSrvr.stdin.close()
+                CollectIt(pSrvr.stdout, SrvrOut)
+                pSrvr.wait()
+                time.sleep(120)
+                pSrvr, pSrvrTimer = LaunchIt(Srvr, '\nio.printf("\\nReady.\\n");\n', SrvrOut, SrvrErr, TIMEOUT)
+                ln="dummy"
+                while 0 < len(ln) and ln[:6] != 'Ready.':
+                    ln=pSrvr.stdout.readline()
+                    SrvrOut.write(ln)
+                    SrvrOut.flush()
+                if ln[:6] != 'Ready.':
+                    ServerReady = False
 
             if ServerReady:
                 port = int(env['MAPIPORT'])
                 ServerReady = mapi_ping(port, lang)
+                if not ServerReady:
+                    pSrvr.stdin.close()
+                    CollectIt(pSrvr.stdout, SrvrOut)
+                    pSrvr.wait()
+                    time.sleep(120)
+                    ServerReady = True
+                    pSrvr, pSrvrTimer = LaunchIt(Srvr, '\nio.printf("\\nReady.\\n");\n', SrvrOut, SrvrErr, TIMEOUT)
+                    ln="dummy"
+                    while 0 < len(ln) and ln[:6] != 'Ready.':
+                        ln=pSrvr.stdout.readline()
+                        SrvrOut.write(ln)
+                        SrvrOut.flush()
+                    if ln[:6] != 'Ready.':
+                        ServerReady = False
+
+                    if ServerReady:
+                        port = int(env['MAPIPORT'])
+                        ServerReady = mapi_ping(port, lang)
 
         else:
             ClntOut = open(TestOutFile, 'a')
@@ -2631,7 +2781,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                 cmd = splitcommand(exe['python'][1]) + [TST + EXT, TST] + PRELUDE
                 returncode = RunIt(cmd, "", ClntOut, ClntErr, CTIMEOUT)
             elif CALL in ["mal", "malXs"]:
-                cmd = splitcommand(exe['Mserver'][1]) + LOCAL_CONF + ['--dbname=%s' % TSTDB] + PRELUDE
+                cmd = splitcommand(exe['Mserver'][1]) + LOCAL_CONF + ['--dbpath=%s' % os.path.join(env['GDK_DBFARM'], TSTDB)] + PRELUDE
                 if CALL == "mal":
                     X=""
                 else:
@@ -2816,9 +2966,12 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
 ### DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOut, TestErr, STIMEOUT, CTIMEOUT, TIMEOUT, ME, MAPIsockets) #
 
 def Check(command, input) :
+    global setpgrp
     if procdebug:
         print 'Check: starting process "%s" (inpipe,outpipe,errpipe)\n' % '" "'.join(command)
-    proc = subprocess.Popen(command, stdin = subprocess.PIPE, stdout = subprocess.PIPE, stderr = subprocess.PIPE, universal_newlines = True)
+    setpgrp = True
+    proc = process.Popen(command, stdin = process.PIPE, stdout = process.PIPE,
+                         stderr = process.PIPE, universal_newlines = True)
     proc.killed = False
     t = Timer(float(par['TIMEOUT']), killProc, args = [proc])
     try:
@@ -2859,7 +3012,10 @@ def Check(command, input) :
                 STDERR.flush()
                 #sys.exit(1)
                 if sys.platform == 'linux2':
-                    proc = subprocess.Popen(['netstat', '-ap'], stdout = subprocess.PIPE, stderr = subprocess.PIPE, universal_newlines = True)
+                    proc = process.Popen(['netstat', '-ap'],
+                                         stdout = process.PIPE,
+                                         stderr = process.PIPE,
+                                         universal_newlines = True)
                     out, err = proc.communicate()
                     STDERR.write(err)
                     STDOUT.write(out)
@@ -2878,7 +3034,7 @@ def CheckClassPath() :
         cp = ''
         cpx = ''
     JARS = {
-        'HAVE_MONETDBJDBC_JAR' : re.compile('^monetdb-jdbc-[0-9]\.[0-9]+\.jar$'),
+        'HAVE_MONETDBJDBC_JAR' : re.compile('^monetdb-jdbc-[0-9]\.[0-9]+(-[a-f0-9]{12})?\.jar$'),
         'HAVE_JDBCCLIENT_JAR'  : re.compile('^jdbcclient\.jar$'),
         'HAVE_JDBCTESTS_JAR'   : re.compile('^jdbctests\.jar$'),
     }
@@ -2981,7 +3137,8 @@ TSTSUFF = "Tests"
 if hasattr(os,"symlink"):
     SymlinkOrCopy = os.symlink
 else:
-    SymlinkOrCopy = shutil.copy
+    def SymlinkOrCopy(src, dst):
+        shutil.copy(os.path.normpath(os.path.join(os.getcwd(), src)), dst)
 
 os.environ['CYGPATH_W'] = '@CYGPATH_W@'
 os.environ['CYGPATH_WP'] = '@CYGPATH_WP@'
@@ -3012,7 +3169,9 @@ if os.name == "nt":
     r = re.compile('^Microsoft Windows (.*)\[Version ([0-9]+\.[0-9]+)([^\[0-9].*)\]$')
     if procdebug:
         print 'starting process "cmd" "/c" "ver" (inpipe,outpipe)\n'
-    proc = subprocess.Popen('cmd /c ver', stdin = subprocess.PIPE, stdout = subprocess.PIPE, stderr = subprocess.PIPE, universal_newlines = True)
+    proc = process.Popen('cmd /c ver', stdin = process.PIPE,
+                         stdout = process.PIPE, stderr = process.PIPE,
+                         universal_newlines = True)
     qOut, qErr = proc.communicate()
     if procdebug:
         print 'process exited "cmd" "/c" "ver" (%s)\n' % proc.returncode
@@ -3036,30 +3195,48 @@ if sys.platform == 'linux2' and CONDITIONALS['CROSS_COMPILING']:
     HOST = "WINE"
     RELEASE = "5.2"
 
+# see if we can use UNIX sockets
+try:
+    server = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
+except (socket.error, AttributeError):
+    # apparently not
+    SOCK = False
+else:
+    SOCK = True
+
 if SYST == "Linux":
     #  Please keep this aligned / in sync with configure.ag !
     LINUX_DIST=''
-    if os.path.isfile('/etc/fedora-release'):
+    if os.path.isfile('/etc/os-release'):
+        l = open('/etc/os-release').read()
+        x0 = re.search('^NAME=[\'"]?([^\'"\n]*)[\'"]?$', l, re.MULTILINE)
+        if x0:
+            x0 = x0.group(1)
+        x1 = re.search('^VERSION_ID=[\'"]?([^\'"\n]*)[\'"]?$', l, re.MULTILINE)
+        if x1:
+            x1 = x1.group(1)
+        LINUX_DIST = '%s:%s' % (x0 or 'Linux', x1 or '')
+    elif os.path.isfile('/etc/fedora-release'):
         l = open('/etc/fedora-release').readline()
-        x = re.compile('^.*(Fedora).* release ([0-9][^ \n]*)( .*)*$').match(l)
+        x = re.match('^.*(Fedora).* release ([0-9][^ \n]*)( .*)*$', l)
         if x:
             LINUX_DIST = '%s:%s' % (x.group(1),x.group(2))
     elif os.path.isfile('/etc/centos-release'):
         l = open('/etc/centos-release').readline()
-        x = re.compile('^(CentOS).* release ([0-9][^ \n]*)( .*)*$').match(l)
+        x = re.match('^(CentOS).* release ([0-9][^ \n]*)( .*)*$', l)
         if x:
             LINUX_DIST = '%s:%s' % (x.group(1),x.group(2))
     elif os.path.isfile('/etc/yellowdog-release'):
         l = open('/etc/yellowdog-release').readline()
-        x = re.compile('^(Yellow) Dog Linux release ([0-9][^ \n]*)( .*)*$').match(l)
+        x = re.match('^(Yellow) Dog Linux release ([0-9][^ \n]*)( .*)*$', l)
         if x:
             LINUX_DIST = '%s:%s' % (x.group(1),x.group(2))
     elif os.path.isfile('/etc/redhat-release'):
         l = open('/etc/redhat-release').readline()
-        x0 = re.compile('^.*(Red) (Hat).* Linux *([A-Z]*) release ([0-9][^ \n]*)( .*)*$').match(l)
-        x1 = re.compile('^Red Hat Enterprise Linux ([AW]S) release ([0-9][^ \n]*)( .*)*$').match(l)
-        x2 = re.compile('^(CentOS).* release ([0-9][^ \n]*)( .*)*$').match(l)
-        x3 = re.compile('^(Scientific) Linux SL release ([0-9][^ \n]*)( .*)*$').match(l)
+        x0 = re.match('^.*(Red) (Hat).* Linux *([A-Z]*) release ([0-9][^ \n]*)( .*)*$', l)
+        x1 = re.match('^Red Hat Enterprise Linux ([AW]S) release ([0-9][^ \n]*)( .*)*$', l)
+        x2 = re.match('^(CentOS).* release ([0-9][^ \n]*)( .*)*$', l)
+        x3 = re.match('^(Scientific) Linux SL release ([0-9][^ \n]*)( .*)*$', l)
         if x0:
             LINUX_DIST = '%s%s:%s%s' % (x0.group(1),x0.group(2),x0.group(4),x0.group(3))
         elif x1:
@@ -3070,10 +3247,10 @@ if SYST == "Linux":
             LINUX_DIST = '%s:%s' % (x3.group(1),x3.group(2))
     elif os.path.isfile('/etc/SuSE-release'):
         l = open('/etc/SuSE-release').readline()
-        x0 = re.compile('^.*(S[Uu]SE) LINUX Enterprise ([SD])[ervsktop]* ([0-9][^ \n]*)( .*)*$').match(l)
-        x1 = re.compile('^S[Uu]SE LINUX Enterprise ([SD])[ervsktop]* ([0-9][^ \n]*)( .*)*$').match(l)
-        x2 = re.compile('^.*(S[Uu]SE) [Ll][Ii][Nn][Uu][Xx].* ([0-9][^ \n]*)( .*)*$').match(l)
-        x3 = re.compile('^open(S[Uu]SE) ([0-9][^ \n]*)( .*)*$').match(l)
+        x0 = re.match('^.*(S[Uu]SE) LINUX Enterprise ([SD])[ervsktop]* ([0-9][^ \n]*)( .*)*$', l)
+        x1 = re.match('^S[Uu]SE LINUX Enterprise ([SD])[ervsktop]* ([0-9][^ \n]*)( .*)*$', l)
+        x2 = re.match('^.*(S[Uu]SE) [Ll][Ii][Nn][Uu][Xx].* ([0-9][^ \n]*)( .*)*$', l)
+        x3 = re.match('^open(S[Uu]SE) ([0-9][^ \n]*)( .*)*$', l)
         if x0:
             LINUX_DIST = '%s:%sE%s' % (x0.group(1),x0.group(3),x0.group(2))
         elif x1:
@@ -3084,23 +3261,25 @@ if SYST == "Linux":
             LINUX_DIST = '%s:%s' % (x3.group(1),x3.group(2))
     elif os.path.isfile('/etc/gentoo-release'):
         l = open('/etc/gentoo-release').readline()
-        x = re.compile('^.*(Gentoo) Base System.* [versionrelease]* ([0-9][^ \n]*)( .*)*$').match(l)
+        x = re.match('^.*(Gentoo) Base System.* [versionrelease]* ([0-9][^ \n]*)( .*)*$', l)
         if x:
             LINUX_DIST = '%s:%s' % (x.group(1),x.group(2))
     elif os.path.isfile('/etc/lsb-release'):
         x0 = x1 = None
         for l in open('/etc/lsb-release'):
             if not x0:
-                x0 = re.compile('^DISTRIB_ID=([^ \n]*)( .*)*$').match(l)
+                x0 = re.match('^DISTRIB_ID=([^ \n]*)( .*)*$', l)
             if not x1:
-                x1 = re.compile('^DISTRIB_RELEASE=([^ \n]*)( .*)*$').match(l)
+                x1 = re.match('^DISTRIB_RELEASE=([^ \n]*)( .*)*$', l)
         if x0 and x1:
             LINUX_DIST = '%s:%s' % (x0.group(1),x1.group(1))
     elif os.path.isfile('/etc/debian_version'):
         LINUX_DIST = "Debian:"+open('/etc/debian_version').readline().strip()
     if not LINUX_DIST:
-        LINUX_DIST = SYST+':'+re.compile('^([0-9\.]*)([^0-9\.].*)$').match(RELEASE).group(1)
+        LINUX_DIST = SYST+':'+re.match('^([0-9\.]*)([^0-9\.].*)$', RELEASE).group(1)
     DIST,VERSION = LINUX_DIST.split(':', 1)
+elif SYST == "SunOS" and os.path.isfile('/etc/release'):
+    (DIST,VERSION,rest) = open('/etc/release').readline().strip().split(' ',2)
 else:
     DIST = SYST
     VERSION = RELEASE
@@ -3130,36 +3309,6 @@ else:
 URLPREFIX = 'http://dev.monetdb.org/hg/MonetDB/file/'
 
 par = {}
-# the default; only used for usage information in case -p/--package has not been given
-par['PACKAGE'] = 'none'
-# try to be "smart"
-repo = ''
-try:
-    if procdebug:
-        print 'starting process "hg" "root" (inpipe,outpipe)\n'
-    proc = subprocess.Popen(['hg','root'], stdin = subprocess.PIPE, stdout = subprocess.PIPE, stderr = subprocess.PIPE, universal_newlines = True)
-    out,err = proc.communicate()
-    if procdebug:
-        print 'process exited "hg" "root" (%s)\n' % proc.returncode
-    if out:
-        hgr = os.path.normcase(os.path.normpath(os.path.realpath(out.strip())))
-        cwd = os.path.normcase(os.path.normpath(os.path.realpath(os.getcwd())))
-        if hgr == cwd[:len(hgr)]:
-            repo = cwd[len(hgr+os.sep):].split(os.sep)[0]
-except:
-    pass
-if not repo:
-    src = os.path.normcase(os.path.normpath(os.path.realpath(_configure('@QXSOURCE@'))))
-    cwd = os.path.normcase(os.path.normpath(os.path.realpath(os.getcwd())))
-    if src == cwd[:len(src)]:
-        repo = cwd[len(src+os.sep):].split(os.sep)[0]
-if not repo:
-    repo = os.getcwd().split(os.sep)[-1]
-if repo:
-    if repo == '.':
-        repo = 'none'
-    par['PACKAGE'] = repo
-
 dft = {}
 
 def main(argv) :
@@ -3174,14 +3323,13 @@ def main(argv) :
     env['DIRSEP'] = os.sep
 
     # most intuitive (?) default settings
-    dft['TSTSRCBASE']     = "os.path.join(_configure('@QXSOURCE@'),par['PACKAGE'])"
+    dft['TSTSRCBASE']     = "_configure('@QXSOURCE@')"
     dft['TSTTRGBASE']     = "_configure('@QXprefix@')"   # or os.getcwd() ?
     if THISFILE == "Mtest.py":
         dft['GDK_DEBUG']      = "TSTDBG"
         dft['GDK_NR_THREADS'] = "TSTTHREADS"
         dft['MONETDB_MOD_PATH'] = "''"
         dft['setMONETDB_MOD_PATH'] = "'--set \"monet_mod_path='+env['MONETDB_MOD_PATH']+'\"'"
-        dft['setGDK_DBFARM']     = "'--set \"gdk_dbfarm='+env['GDK_DBFARM']+'\"'"
         dft['MAPIPORT']       = "str(randomPort(30000,39999)[0])"
         dft['MALCLIENT']      = "'mclient -lmal -ftest -Eutf-8'"
         dft['SQLCLIENT']      = "'mclient -lsql -ftest -Eutf-8'"
@@ -3200,16 +3348,12 @@ def main(argv) :
     # commandline options overrule environment
     cmd_options = [
         # long name, short name, GDK option, argument, comment
-        ('package', 'p', 'package', '<package>',
-         "package to be tested, e.g.:\nmonetdb5, (java|clients|template|sql|geom);\ndefault: %s" % par['PACKAGE']),
-        ('monetdb5', '5', 'monetdb5', None,
-         "use mserver5 of MonetDB Version 5 (default)"),
         ('recursive', 'r', 'recursive', None,
          "recurse into subdirectories (implies 'All')"),
         ('revision', None, 'revision', '<hgid>',
          'use given revision as the HG short hash'),
         ('TSTSRCBASE', None, 'TSTSRCBASE', '<path>',
-         'default: "%s"' % os.path.join(_configure('@QXSOURCE@'),par['PACKAGE'])),
+         'default: "%s"' % _configure('@QXSOURCE@')),
         ('TSTTRGBASE', None, 'TSTTRGBASE', '<path>',
          'default: "%s"' % _configure('@QXprefix@')),
         ('quiet', 'q', 'quiet', None,
@@ -3217,7 +3361,7 @@ def main(argv) :
         ('verbose', 'v', 'verbose', None,
          "more verbose test output"),
         ('procdebug', None, 'procdebug', None,
-         'process debugging (Mtest developers only'),
+         'process debugging (Mtest developers only)'),
         ]
 
     if THISFILE == "Mtest.py":
@@ -3298,11 +3442,6 @@ def main(argv) :
         head, tst = os.path.split(head)
         if tst != 'Tests':
             ErrXit("%s: not a valid test name" % args[0])
-        if not opts.get('package'):
-            for d in ('common', 'clients', 'gdk', 'java', 'monetdb5', 'sql'):
-                if head.startswith(d + os.sep):
-                    setattr(opts, 'package', d)
-                    head = head[len(d + os.sep):]
         args = [head]
         if tail != 'All':
             for ext in ('_s00.malC', '_p00.malC', '_s00.mal', '_s00.sql',
@@ -3316,20 +3455,6 @@ def main(argv) :
                     break
             else:
                 ErrXit("%s: not a valid test name" % args[0])
-
-    m5 = opts.get('monetdb5', False)
-
-    pkg = opts.get('package')
-    if pkg is None:
-        if par['PACKAGE'] == 'none':
-            if m5:
-                par['PACKAGE'] = 'monetdb5'
-            Warn('No -p/--package specified. Using default package="%s". Please use -p/--package to overrule.' % par['PACKAGE'])
-    else:
-        par['PACKAGE'] = pkg
-
-    if not m5 and par['PACKAGE'] not in ('common', 'clients', 'gdk', 'java'):
-        m5 = True
 
     config = opts.get('config', '')
     if config:
@@ -3423,10 +3548,6 @@ def main(argv) :
         CONDITIONALS['HAVE_PHP'] = '#'
 #     else:
 #         CONDITIONALS['HAVE_PHP'] = ''
-    if m5:
-        CONDITIONALS['HAVE_MONETDB5'] = '#'
-    else:
-        CONDITIONALS['HAVE_MONETDB5'] = ''
     CheckClassPath()
 
     # tidy-up and fall-back to defaults where necessary
@@ -3446,10 +3567,6 @@ def main(argv) :
             env['setMONETDB_MOD_PATH'] = eval(dft['setMONETDB_MOD_PATH'])
         else:
             env['setMONETDB_MOD_PATH'] = ''
-        if env.has_key('GDK_DBFARM'):
-            env['setGDK_DBFARM'] = eval(dft['setGDK_DBFARM'])
-        else:
-            env['setGDK_DBFARM'] = ''
         if env.has_key('DBG'):
             env['setDBG'] = env['DBG']
         else:
@@ -3535,7 +3652,7 @@ def main(argv) :
     # inject vars that tell various languages where to find their libs
     env['PERL5LIB'] = _configure(os.path.join('@QXprefix@', '@PERL_LIBDIR@'))
 # set dynamically for python test lib
-#    env['PYTHONPATH'] = _configure(os.path.join('@QXprefix@', '@PYTHON_LIBDIR@'))
+#    env['PYTHONPATH'] = _configure(os.path.join('@QXprefix@', '@PYTHON2_LIBDIR@'))
     env['PHP_INCPATH'] = _configure(os.path.join('@datadir@', 'php'))
     env['BINDIR'] = _configure('@bindir@')
     vars_ = vars_ + ['PERL5LIB', 'PHP_INCPATH', 'BINDIR']
@@ -3544,7 +3661,7 @@ def main(argv) :
     STDERR.flush()
     if THISFILE == "Mtest.py":
         vars_ = vars_ + ['GDK_DBFARM']
-        vars_ = vars_ + ['setGDK_DBFARM','setMONETDB_MOD_PATH']
+        vars_ = vars_ + ['setMONETDB_MOD_PATH']
     else: # THISFILE == "Mapprove.py"
         vars_ = vars_
     for v in vars_:
@@ -3600,7 +3717,7 @@ def main(argv) :
     REV = opts.get('revision')
     if REV is None:             # no --revision option: try to find out
         try:
-            proc = subprocess.Popen(['hg', 'id', '-i'], stdout = subprocess.PIPE)
+            proc = process.Popen(['hg', 'id', '-i'], stdout = process.PIPE)
             out, err = proc.communicate()
             if proc.returncode == 0:
                 REV = out.strip()
@@ -3609,18 +3726,34 @@ def main(argv) :
             pass
     # fix up URLPREFIX
     if REV:
-        URLPREFIX += '%s/%s/' % (REV.split()[0].rstrip('+'), par['PACKAGE'])
+        URLPREFIX += '%s/' % REV.split()[0].rstrip('+')
         os.environ['REVISION'] = REV
     else:
         # if no revision known, can't refer to repository
         URLPREFIX = None
 
+    global SOCK, HOST
+    if SOCK:
+        # we cannot put the UNIX socket in the mtest root, because that
+        # makes the UNIX socket too long on most platforms, so use
+        # /var/tmp/mtest and try not to forget to clean that up
+        sockdir = "/var/tmp/mtest-%d" % os.getpid()
+        try:
+            os.mkdir(sockdir);
+            SOCK = "--set mapi_usock=%s/.s.monetdb.%s" % \
+                    (sockdir, env['MAPIPORT'])
+            HOST = sockdir
+        except:
+            SOCK = ""
+    else:
+        SOCK = ""
+
     # check for executables, set their standard options and export them
     if THISFILE == "Mtest.py":
         exe = {}
         exe['Mtimeout']      = CheckExec('Mtimeout')     , 'Mtimeout -timeout %d ' % par['TIMEOUT']
-        exe['Mserver']       = CheckExec('mserver5')     , '%s mserver5 %s --debug=%s --set gdk_nr_threads=%s %s %s --set mapi_open=true --set mapi_port=%s --set monet_prompt= --trace --forcemito --set mal_listing=2 %s' % \
-                                                               (env['setDBG'], config, env['GDK_DEBUG'], env['GDK_NR_THREADS'], env['setMONETDB_MOD_PATH'], env['setGDK_DBFARM'], env['MAPIPORT'], env['MSERVER_SET'])
+        exe['Mserver']       = CheckExec('mserver5')     , '%s mserver5 %s --debug=%s --set gdk_nr_threads=%s %s --set mapi_open=true --set mapi_port=%s %s --set monet_prompt= --forcemito --set mal_listing=2 %s' % \
+                                                               (env['setDBG'], config, env['GDK_DEBUG'], env['GDK_NR_THREADS'], env['setMONETDB_MOD_PATH'], env['MAPIPORT'], SOCK, env['MSERVER_SET'])
         exe['Mdiff']         = CheckExec('Mdiff')        , 'Mdiff'
         exe['python']        = CheckExec(sys.executable) , sys.executable
         exe['MAL_Client']    = CheckExec(env['MALCLIENT'].split(None, 1)[0])  , '%s -i -e --host=%s --port=%s' % (env['MALCLIENT'], HOST, env['MAPIPORT'])
@@ -3763,40 +3896,16 @@ def main(argv) :
         env['TST_OIDS'] = ""
         env['TST_SINGLE'] = ""
         env['TST_STATIC'] = ""
-        if par['PACKAGE'] in ('common', 'clients', 'gdk', 'java'):
-            if   CONDITIONALS.has_key('BITS32') and CONDITIONALS['BITS32']:
-                env['TST_BITS'] = "32bit"
-            elif CONDITIONALS.has_key('BITS64') and CONDITIONALS['BITS64']:
-                env['TST_BITS'] = "64bit"
-        else:
-            if Check(splitcommand(env['exe']['Mserver'][1]) + ['--dbname=%s' % TSTPREF], 'clients.quit();\n'):
-                sys.exit(1)
-            if GetBitsAndOIDsAndModsAndStaticAndThreads(env):
-                sys.exit(1)
+        if Check(splitcommand(env['exe']['Mserver'][1]) + ['--dbpath=%s' % os.path.join(env['GDK_DBFARM'], TSTPREF)], 'clients.quit();\n'):
+            sys.exit(1)
+        if GetBitsAndOIDsAndModsAndStaticAndThreads(env):
+            sys.exit(1)
         STDERR.flush()
         if not quiet:
             print "Bits: ", env['TST_BITS']
             print "OIDs: ", env['TST_OIDS']
             print "Modules: ", env['TST_MODS']
         STDOUT.flush()
-
-        is_sql = par['PACKAGE'] == 'sql'
-        if is_sql:
-            MissingMods = CheckMods(env, '', 'SQL', '')
-            if MissingMods:
-                ErrXit('Stopping SQL testing as modules "%s" are missing!' % str(MissingMods))
-
-        if par['PACKAGE'] == 'geom':
-            MissingMods = CheckMods(env, '', 'SQL', '')
-            if 'geom' not in env['TST_MODS']:
-                MissingMods.append('geom')
-            if MissingMods:
-                ErrXit('Stopping Geom testing as modules "%s" are missing!' % str(MissingMods))
-            mod_name = 'geom'
-
-        if par['PACKAGE'] in ('sql','geom'):
-            if not env['exe']['SQL_Client'][0]:
-                ErrXit('Stopping %s testing as "%s" is not available!' % (par['PACKAGE'], env['SQLCLIENT'].split(None, 1)[0]))
 
         port = int(env['MAPIPORT'])
         busy, host, Serrno, Serrstr, S = CheckPort(port)
@@ -3950,6 +4059,13 @@ VALUES (%s, '%s', '%s', '%s',
         env['TSTTRGDIR'] = os.path.join(TSTTRGBASE, TSTPREF)
         if not testweb:
             CreateHtmlIndex(env, *body)
+
+        # cleanup the place where we put our UNIX sockets
+        if SOCK:
+            try:
+                shutil.rmtree(sockdir);
+            except:
+                pass
 
         Failed = 0
         for f in Failure[1:-1]:

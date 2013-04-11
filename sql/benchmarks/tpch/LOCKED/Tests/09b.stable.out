@@ -1,4 +1,4 @@
-stdout of test '09b` in directory 'benchmarks/tpch/LOCKED` itself:
+stdout of test '09b` in directory 'sql/benchmarks/tpch/LOCKED` itself:
 
 
 # 02:57:59 >  
@@ -16,7 +16,7 @@ Ready.
 # 02:58:00 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=db1 --port=54772 --trace < 09b.sql
 # 02:58:00 >  
 
-SQL  connected to database mTests_src_benchmarks_tpch using schema sys
+SQL  connected to database mTests_sql_src_benchmarks_tpch using schema sys
 #     1: 0 
 #     2: 0 
 #     3: 0 select

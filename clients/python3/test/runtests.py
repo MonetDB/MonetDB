@@ -14,7 +14,7 @@
 #
 # The Initial Developer of the Original Code is CWI.
 # Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-# Copyright August 2008-2012 MonetDB B.V.
+# Copyright August 2008-2013 MonetDB B.V.
 # All Rights Reserved.
 
 import unittest
@@ -36,6 +36,7 @@ except ImportError:
 
 import capabilities
 import dbapi20
+import test_pythonize
 
 warnings.filterwarnings('error')
 
@@ -93,13 +94,9 @@ if __name__ == '__main__':
     suites = [
         Test_Capabilities,
         Test_DBAPI20,
+        test_pythonize.TestPythonize,
     ]
 
     for suite in suites:
         tests = unittest.TestLoader().loadTestsFromTestCase(suite)
         TextTestRunnerNoTime(verbosity=3).run(tests)
-
-
-
-
-

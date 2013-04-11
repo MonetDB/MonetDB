@@ -1,4 +1,4 @@
-stderr of test 'coalesce` in directory 'test` itself:
+stderr of test 'coalesce` in directory 'sql/test` itself:
 
 
 # 20:30:43 >  
@@ -84,7 +84,7 @@ QUERY = select id, coalesce(age,'age unknown') from coalescetest;
 ERROR = !conversion of string 'age unknown' to type int failed.
 MAPI  = monetdb@madrid:34599
 QUERY = select id, coalesce(name, age, 'unknown') from coalescetest;
-ERROR = !conversion from string to type int failed.
+ERROR = !conversion of string 'a' to type int failed.
 
 # 20:30:44 >  
 # 20:30:44 >  Done.

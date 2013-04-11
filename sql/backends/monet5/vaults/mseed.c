@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -88,7 +88,7 @@
  * Following, a limited number of files are loaded into the vault and analysed.
  * The information extracted ends up in the catalog, and remains there forever.
  * The underlying mseed file is not decrypted directly, it will be done as soon
- * as a query requests its.
+ * as a query requests it.
  *
  * A test sequence (after the vault directory has been populated)
  * to populate the mseedcatalog.

@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
  */
 #include "monetdb_config.h"
@@ -242,11 +242,6 @@ OPTmultiplexImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 		if( old[i])
 			freeInstruction(old[i]);
 	GDKfree(old);
-	DEBUGoptimizers {
-		mnstr_printf(cntxt->fdout,"#opt_multiplex: %d expansions\n", actions);
-		mnstr_printf(cntxt->fdout,"#mal program: %d MAL instr %d vars (" SZFMT " K)\n",mb->stop,mb->vtop,
-		((sizeof( MalBlkRecord) +mb->ssize * sizeof(InstrRecord)+ mb->vtop* sizeof(VarRecord) + mb->vsize*sizeof(VarPtr)+1023)/1024));
-	}
 	if (mb->errors){
 		/* rollback */
 	}

@@ -13,7 +13,7 @@
  * 
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
 */
 /*
@@ -98,6 +98,10 @@ newMalBlk(int maxvars, int maxstmts)
 	MalBlkPtr mb;
 	VarPtr *v;
 
+	/* each MAL instruction implies at least on variable */
+	if ( maxvars < maxstmts)
+		maxvars = maxvars;
+
 	v = (VarPtr *) GDKzalloc(sizeof(VarPtr) * maxvars);
 	if (v == NULL) {
 		GDKerror("newMalBlk:" MAL_MALLOC_FAIL);
@@ -110,10 +114,10 @@ newMalBlk(int maxvars, int maxstmts)
 	}
 
 	mb->var = v;
-
 	mb->vtop = 0;
 	mb->vsize = maxvars;
 	mb->help = mb->binding = NULL;
+	mb->tag = 0;
 	mb->errors = 0;
 	mb->alternative = NULL;
 	mb->history = NULL;
@@ -130,11 +134,44 @@ newMalBlk(int maxvars, int maxstmts)
 	mb->recycle = 0;
 	mb->recid = 0;
 	mb->trap = 0;
+	mb->runtime = 0;
+	mb->calls = 0;
+	mb->optimize = 0;
 	if (newMalBlkStmt(mb, maxstmts) < 0)
 		return NULL;
 	return mb;
 }
 
+void
+resizeMalBlk(MalBlkPtr mb, int maxstmt, int maxvar)
+{
+	int i;
+
+	if ( maxvar < maxstmt)
+		maxvar = maxstmt;
+	if ( mb->ssize > maxstmt && mb->vsize > maxvar)
+		return ;
+
+	mb->stmt = (InstrPtr *) GDKrealloc(mb->stmt, maxstmt * sizeof(InstrPtr));
+	if ( mb->stmt == NULL)
+		GDKerror("resizeMalBlk:" MAL_MALLOC_FAIL);
+	for ( i = mb->ssize; i < maxstmt; i++)
+		mb->stmt[i] = 0;
+	mb->ssize = maxstmt;
+
+	mb->var = (VarPtr*) GDKrealloc(mb->var, maxvar * sizeof (VarPtr));
+	if ( mb->var == NULL)
+		GDKerror("resizeMalBlk:" MAL_MALLOC_FAIL);
+	for( i = mb->vsize; i < maxvar; i++)
+		mb->var[i] = 0;
+	mb->vsize = maxvar;
+
+	if ( mb->profiler){
+		mb->profiler = (ProfRecord *) GDKrealloc(mb->profiler, maxstmt * sizeof(ProfRecord));
+		if (mb->profiler == NULL)
+			GDKerror("resizeMalBlk:" MAL_MALLOC_FAIL);
+	}
+}
 /* The resetMalBlk code removes instructions, but without freeing the
  * space. This way the structure is prepared for re-use */
 void
@@ -176,6 +213,7 @@ freeMalBlk(MalBlkPtr mb)
 	if (mb->binding)
 		GDKfree(mb->binding);
 	mb->binding = 0;
+	mb->tag = 0;
 	if (mb->help)
 		GDKfree(mb->help);
 	mb->help = 0;
@@ -236,11 +274,15 @@ copyMalBlk(MalBlkPtr old)
 	mb->help = old->help ? GDKstrdup(old->help) : NULL;
 	mb->binding = old->binding ? GDKstrdup(old->binding) : NULL;
 	mb->errors = old->errors;
+	mb->tag = old->tag;
 	mb->typefixed = old->typefixed;
 	mb->flowfixed = old->flowfixed;
 	mb->recycle = old->recycle;
 	mb->recid = old->recid;
 	mb->trap = old->trap;
+	mb->runtime = old->runtime;
+	mb->calls = old->calls;
+	mb->optimize = old->optimize;
 	mb->replica = old->replica;
 	mb->maxarg = old->maxarg;
 	mb->profiler = NULL;
@@ -1489,6 +1531,7 @@ defConstant(MalBlkPtr mb, int type, ValPtr cst)
 InstrPtr
 pushArgument(MalBlkPtr mb, InstrPtr p, int varid)
 {
+	assert(varid >= 0);
 	if (p->argc + 1 == p->maxarg) {
 		InstrPtr pn;
 		int pc = 0, pclimit;
@@ -1586,12 +1629,6 @@ delArgument(InstrPtr p, int idx)
 	p->argc--;
 	if (idx < p->retc)
 		p->retc--;
-}
-
-int
-getGDKType(int tpe)
-{
-	return tpe <= TYPE_str ? tpe : (tpe == TYPE_any ? TYPE_void : findGDKtype(tpe));
 }
 
 void

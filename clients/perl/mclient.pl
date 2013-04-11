@@ -14,15 +14,16 @@
 #
 # The Initial Developer of the Original Code is CWI.
 # Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-# Copyright August 2008-2012 MonetDB B.V.
+# Copyright August 2008-2013 MonetDB B.V.
 # All Rights Reserved.
 
 use Mapi;
 
 my $db = shift || '';
+my $port = shift || 50000;
 
 my ($monet, $line);
-$monet = new Mapi('localhost', 50000, 'monetdb', 'monetdb', 'sql', $db, 0);
+$monet = new Mapi('localhost', $port, 'monetdb', 'monetdb', 'sql', $db, 0);
 
 print "> ";
 while ( !(($line=<>) =~ /\q/) ){

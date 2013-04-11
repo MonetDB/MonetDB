@@ -1,4 +1,4 @@
-stderr of test 'no.089` in directory 'tests/BugReports` itself:
+stderr of test 'no.089` in directory 'monetdb5/tests/BugReports` itself:
 
 #> Mtest:	other no.089
 #> Mtest:	./no.089 no.089

@@ -24,7 +24,7 @@ create table query (
     constraint query_quser_id_fk foreign key ( quser_id ) references quser ( quser_id )
 );
 
-create table queue (
+create table ssqq_queue (
     queue_id int not null auto_increment,
     query_id int not null,
     queue_add timestamp not null default current_timestamp(),
@@ -93,7 +93,7 @@ begin
     declare id_queue integer;
     set id_queue = -1;
 
-    insert into queue (
+    insert into ssqq_queue (
         query_id,
         os_version,
         monetdb_version )
@@ -103,7 +103,7 @@ begin
         version_monetdb );
 
     set id_queue = (select max(queue_id)
-                    from queue);
+                    from ssqq_queue);
 
     return id_queue;
 end;
@@ -120,7 +120,7 @@ begin
 
     set id_query = ( select min(t1.query_id)
                      from   query as t1 
-                       left outer join queue as t2
+                       left outer join ssqq_queue as t2
                          on t1.query_id = t2.query_id
                      where  t1.is_refused = false
                      and    t2.queue_id is null
@@ -142,11 +142,11 @@ begin
     set id_queue = null;
 
     set id_queue = ( select min(queue_id)
-                     from   queue
+                     from   ssqq_queue
                      where  start_query is null );
 
     if id_queue is not null then 
-        update queue
+        update ssqq_queue
             set start_query = current_timestamp()
         where  queue_id = id_queue;
     end if;
@@ -161,7 +161,7 @@ begin
     return table ( select t1.query_id,
                           t1.query_text
                    from   query as t1,
-                          queue as t2
+                          ssqq_queue as t2
                    where  t1.query_id = t2.query_id
                    and    t2.queue_id = id_queue1
     );
@@ -179,7 +179,7 @@ begin
     declare id_query integer;
     set return_value = false;
     set id_query = ( select query_id
-                     from   queue
+                     from   ssqq_queue
                      where  queue_id = id_queue2 );
 
     update query
@@ -190,7 +190,7 @@ begin
             result_set = set_result
     where query_id = id_query;
 
-    update queue
+    update ssqq_queue
         set query_ready = current_timestamp()
     where queue_id = id_queue2;
  
@@ -208,7 +208,7 @@ returns table (
 begin
     return
         select min(queue_id)
-        from   queue
+        from   ssqq_queue
         where  start_query is null;
 end;
 
@@ -220,7 +220,7 @@ begin
     set id_next = ( select id_queue from next_queue_id() );
 
     if id_next is not null then 
-        update queue
+        update ssqq_queue
             set start_query = current_timestamp()
         where  queue_id = id_next;
     end if;
@@ -249,7 +249,7 @@ begin
                    e.queue_number,
                    e.start_query,
                    e.query_ready
-            from   queue as e,
+            from   ssqq_queue as e,
                    query as q
                    left join quser as u 
                      on q.quser_id = u.quser_id
@@ -311,7 +311,7 @@ return (
     from   query as q
     left join quser as u
       on q.quser_id = u.quser_id
-    left join queue as e
+    left join ssqq_queue as e
       on q.query_id = e.query_id
     where  q.query_id = id_query
 );

@@ -611,8 +611,16 @@
 /* Define to 1 if the system has the type `_Bool'. */
 #define HAVE__BOOL 1
 
+#ifdef _WIN64
+/* Define to 1 if you have the `_mul128' function. */
+#define HAVE__MUL128 1
+#endif
+
 /* Define if you have _sys_siglist */
 /* #undef HAVE__SYS_SIGLIST */
+
+/* Define to 1 if the system has the type `__int128'. */
+/* #undef HAVE___INT128 */
 
 /* Define to 1 if the system has the type `__int64'. */
 #define HAVE___INT64 1
@@ -689,13 +697,13 @@
 #define PACKAGE_NAME "MonetDB"
 
 /* Define to the full name and version of this package. */
-#define PACKAGE_STRING "MonetDB 11.14.0"
+#define PACKAGE_STRING "MonetDB 11.16.0"
 
 /* Define to the one symbol short name of this package. */
 #define PACKAGE_TARNAME "MonetDB"
 
 /* Define to the version of this package. */
-#define PACKAGE_VERSION "11.14.0"
+#define PACKAGE_VERSION "11.16.0"
 
 /* Path separator */
 #define PATH_SEP ';'
@@ -904,6 +912,9 @@
 #define va_copy(x,y) ((x) = (y))
 
 typedef unsigned char uint8_t;
+typedef unsigned short uint16_t;
+typedef unsigned int uint32_t;
+typedef unsigned __int64 uint64_t;
 
 #if _MSC_VER < 1500
 #ifndef vsnprintf

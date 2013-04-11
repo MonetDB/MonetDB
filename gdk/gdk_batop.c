@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -147,6 +147,10 @@ insert_string_bat(BAT *b, BAT *n, int append)
 	BATloop(n, p, q) {
 		if (!append)
 			hp = b->H->type ? BUNhloc(ni, p) : NULL;
+		if (!append && b->H->type && !n->H->type) {
+			o = n->H->seq;
+			hp = &o;
+		}
 
 		tp = b->T->type ? BUNtail(ni, p) : NULL;
 		if (toff != ~ (size_t) 0) {
@@ -492,6 +496,7 @@ BATappend(BAT *b, BAT *n, bit force)
 			return NULL;
 	}
 
+	IMPSdestroy(b); /* imprints do not support updates yet */
 	/* a hash is useless for void bats */
 	if (b->H->hash)
 		HASHremove(b);
@@ -748,6 +753,7 @@ BATslice(BAT *b, BUN l, BUN h)
 	BUN low = l;
 	BAT *bn;
 	BATiter bni, bi = bat_iterator(b);
+	oid foid;		/* first oid value if oid column */
 
 	BATcheck(b, "BATslice");
 	if (h > BATcount(b))
@@ -803,7 +809,9 @@ BATslice(BAT *b, BUN l, BUN h)
 		if (BATcount(bn) == 0) {
 			bn->hdense = TRUE;
 			BATseqbase(bn, 0);
-		} else if (bn->hsorted && *(oid *) BUNhloc(bni, BUNfirst(bn)) + BATcount(bn) - 1 == *(oid *) BUNhloc(bni, BUNlast(bn) - 1)) {
+		} else if (bn->hsorted &&
+			   (foid = *(oid *) BUNhloc(bni, BUNfirst(bn))) != oid_nil &&
+			   foid + BATcount(bn) - 1 == *(oid *) BUNhloc(bni, BUNlast(bn) - 1)) {
 			bn->hdense = TRUE;
 			BATseqbase(bn, *(oid *) BUNhloc(bni, BUNfirst(bn)));
 		}
@@ -815,7 +823,9 @@ BATslice(BAT *b, BUN l, BUN h)
 		if (BATcount(bn) == 0) {
 			bn->tdense = TRUE;
 			BATseqbase(BATmirror(bn), 0);
-		} else if (bn->tsorted && *(oid *) BUNtloc(bni, BUNfirst(bn)) + BATcount(bn) - 1 == *(oid *) BUNtloc(bni, BUNlast(bn) - 1)) {
+		} else if (bn->tsorted &&
+			   (foid = *(oid *) BUNtloc(bni, BUNfirst(bn))) != oid_nil &&
+			   foid + BATcount(bn) - 1 == *(oid *) BUNtloc(bni, BUNlast(bn) - 1)) {
 			bn->tdense = TRUE;
 			BATseqbase(BATmirror(bn), *(oid *) BUNtloc(bni, BUNfirst(bn)));
 		}
@@ -858,6 +868,7 @@ BATtopN(BAT *b, BUN topN)
 		HASHremove(b);
 		BATsetcount(b, topN);
 	}
+	IMPSdestroy(b);
 	/* we no longer know if there are NILs */
 	b->H->nil = b->htype == TYPE_void && b->hseqbase == oid_nil && topN >= 1;
 	b->T->nil = b->ttype == TYPE_void && b->tseqbase == oid_nil && topN >= 1;
@@ -1166,6 +1177,7 @@ BATorder_internal(BAT *b, int stable, int reverse, int copy, const char *func)
 	}
 	b->tsorted = b->trevsorted = 0;
 	HASHdestroy(b);
+	IMPSdestroy(b);
 	ALIGNdel(b, func, FALSE);
 	b->hdense = 0;
 	b->tdense = 0;
@@ -1184,18 +1196,6 @@ BAT *
 BATorder_rev(BAT *b)
 {
 	return BATorder_internal(b, 0, 1, 0, "BATorder_rev");
-}
-
-BAT *
-BATsorder(BAT *b)
-{
-	return BATorder_internal(b, 1, 0, 0, "BATsorder");
-}
-
-BAT *
-BATsorder_rev(BAT *b)
-{
-	return BATorder_internal(b, 1, 1, 0, "BATsorder_rev");
 }
 
 BAT *
@@ -1500,6 +1500,7 @@ BATrevert(BAT *b)
 		GDKfree(t);
 	}
 	HASHdestroy(b);
+	IMPSdestroy(b);
 	/* interchange sorted and revsorted */
 	x = b->hrevsorted;
 	b->hrevsorted = b->hsorted;
@@ -1972,6 +1973,7 @@ BATpropagate(BAT *dst, BAT *src, int idx)
 			(* (int *) BUNtloc(bni, r))++;			\
 		}							\
 		HASHdestroy(bn);					\
+		IMPSdestroy(bn);					\
 	} while (0)
 
 BAT *
@@ -2191,4 +2193,195 @@ BATcount_no_nil(BAT *b)
 		b->T->nil = 0;
 	}
 	return cnt;
+}
+
+/* merge two candidate lists and produce a new one
+ *
+ * candidate lists are VOID-headed BATs with an OID tail which is
+ * sorted and unique.
+ */
+BAT *
+BATmergecand(BAT *a, BAT *b)
+{
+	BAT *bn;
+	const oid *ap, *bp, *ape, *bpe;
+	oid *p, i;
+
+	BATcheck(a, "BATmergecand");
+	BATcheck(b, "BATmergecand");
+	assert(a->htype == TYPE_void);
+	assert(b->htype == TYPE_void);
+	assert(ATOMtype(a->htype) == TYPE_oid);
+	assert(ATOMtype(b->htype) == TYPE_oid);
+	assert(a->tsorted);
+	assert(b->tsorted);
+	assert(a->tkey);
+	assert(b->tkey);
+	assert(a->T->nonil);
+	assert(b->T->nonil);
+
+	/* XXX we could return a if b is empty (and v.v.) */
+
+	bn = BATnew(TYPE_void, TYPE_oid, BATcount(a) + BATcount(b));
+	if (bn == NULL)
+		return NULL;
+	p = (oid *) Tloc(bn, BUNfirst(bn));
+	if (a->ttype == TYPE_void && b->ttype == TYPE_void) {
+		/* both lists are VOID */
+		if (a->tseqbase > b->tseqbase) {
+			BAT *t = a;
+			a = b;
+			b = t;
+		}
+		/* a->tseqbase <= b->tseqbase */
+		for (i = a->tseqbase; i < a->tseqbase + BATcount(a); i++)
+			*p++ = i;
+		for (i = MAX(b->tseqbase, i);
+		     i < b->tseqbase + BATcount(b);
+		     i++)
+			*p++ = i;
+	} else if (a->ttype == TYPE_void || b->ttype == TYPE_void) {
+		if (b->ttype == TYPE_void) {
+			BAT *t = a;
+			a = b;
+			b = t;
+		}
+		/* a->ttype == TYPE_void, b->ttype == TYPE_oid */
+		bp = (const oid *) Tloc(b, BUNfirst(b));
+		bpe = bp + BATcount(b);
+		while (bp < bpe && *bp < a->tseqbase)
+			*p++ = *bp++;
+		for (i = a->tseqbase; i < a->tseqbase + BATcount(a); i++)
+			*p++ = i;
+		while (bp < bpe && *bp < i)
+			bp++;
+		while (bp < bpe)
+			*p++ = *bp++;
+	} else {
+		/* a->ttype == TYPE_oid, b->ttype == TYPE_oid */
+		ap = (const oid *) Tloc(a, BUNfirst(a));
+		ape = ap + BATcount(a);
+		bp = (const oid *) Tloc(b, BUNfirst(b));
+		bpe = bp + BATcount(b);
+		while (ap < ape && bp < bpe) {
+			if (*ap < *bp)
+				*p++ = *ap++;
+			else if (*ap > *bp)
+				*p++ = *bp++;
+			else {
+				*p++ = *ap++;
+				bp++;
+			}
+		}
+		while (ap < ape)
+			*p++ = *ap++;
+		while (bp < bpe)
+			*p++ = *bp++;
+	}
+
+	/* properties */
+	BATsetcount(bn, (BUN) (p - (oid *) Tloc(bn, BUNfirst(bn))));
+	BATseqbase(bn, 0);
+	bn->trevsorted = 0;
+	bn->tsorted = 1;
+	bn->tkey = 1;
+	bn->T->nil = 0;
+	bn->T->nonil = 1;
+	return bn;
+}
+
+/* intersect two candidate lists and produce a new one
+ *
+ * candidate lists are VOID-headed BATs with an OID tail which is
+ * sorted and unique.
+ */
+BAT *
+BATintersectcand(BAT *a, BAT *b)
+{
+	BAT *bn;
+	const oid *ap, *bp, *ape, *bpe;
+	oid *p, i;
+
+	BATcheck(a, "BATintersectcand");
+	BATcheck(b, "BATintersectcand");
+	assert(a->htype == TYPE_void);
+	assert(b->htype == TYPE_void);
+	assert(ATOMtype(a->htype) == TYPE_oid);
+	assert(ATOMtype(b->htype) == TYPE_oid);
+	assert(a->tsorted);
+	assert(b->tsorted);
+	assert(a->tkey);
+	assert(b->tkey);
+	assert(a->T->nonil);
+	assert(b->T->nonil);
+
+	if (BATcount(a) == 0 || BATcount(b) == 0) {
+		bn = BATnew(TYPE_void, TYPE_void, 0);
+		BATseqbase(bn, 0);
+		BATseqbase(BATmirror(bn), 0);
+		return bn;
+	}
+
+	if (a->ttype == TYPE_void && b->ttype == TYPE_void) {
+		/* both lists are VOID */
+		bn = BATnew(TYPE_void, TYPE_void, 0);
+		if (bn == NULL)
+			return NULL;
+		i = MAX(a->tseqbase, b->tseqbase);
+		if (a->tseqbase + BATcount(a) <= b->tseqbase ||
+		    b->tseqbase + BATcount(b) <= a->tseqbase) {
+			/* no overlap */
+			BATsetcount(bn, 0);
+		} else {
+			BATsetcount(bn, MIN(a->tseqbase + BATcount(a) - i,
+					    b->tseqbase + BATcount(b) - i));
+		}
+		BATseqbase(BATmirror(bn), i);
+		return bn;
+	}
+
+	bn = BATnew(TYPE_void, TYPE_oid, MIN(BATcount(a), BATcount(b)));
+	if (bn == NULL)
+		return NULL;
+	p = (oid *) Tloc(bn, BUNfirst(bn));
+	if (a->ttype == TYPE_void || b->ttype == TYPE_void) {
+		if (b->ttype == TYPE_void) {
+			BAT *t = a;
+			a = b;
+			b = t;
+		}
+		/* a->ttype == TYPE_void, b->ttype == TYPE_oid */
+		bp = (const oid *) Tloc(b, BUNfirst(b));
+		bpe = bp + BATcount(b);
+		while (bp < bpe && *bp < a->tseqbase)
+			bp++;
+		while (bp < bpe && *bp < a->tseqbase + BATcount(a))
+			*p++ = *bp++;
+	} else {
+		/* a->ttype == TYPE_oid, b->ttype == TYPE_oid */
+		ap = (const oid *) Tloc(a, BUNfirst(a));
+		ape = ap + BATcount(a);
+		bp = (const oid *) Tloc(b, BUNfirst(b));
+		bpe = bp + BATcount(b);
+		while (ap < ape && bp < bpe) {
+			if (*ap < *bp)
+				ap++;
+			else if (*ap > *bp)
+				bp++;
+			else {
+				*p++ = *ap++;
+				bp++;
+			}
+		}
+	}
+
+	/* properties */
+	BATsetcount(bn, (BUN) (p - (oid *) Tloc(bn, BUNfirst(bn))));
+	BATseqbase(bn, 0);
+	bn->trevsorted = 0;
+	bn->tsorted = 1;
+	bn->tkey = 1;
+	bn->T->nil = 0;
+	bn->T->nonil = 1;
+	return bn;
 }

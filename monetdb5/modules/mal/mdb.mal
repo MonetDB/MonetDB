@@ -42,34 +42,6 @@ pattern setCatch(b:bit):void
 address MDBsetCatch
 comment "Turn on/off catching exceptions";
 
-pattern setThread(b:bit):void
-address MDBsetThread
-comment "Turn on/off thread identity for debugger";
-
-pattern setTimer(b:bit):void
-address MDBsetTimer
-comment "Turn on/off performance timer for debugger";
-
-pattern setMemoryTrace(b:bit):void
-address MDBsetBigfoot
-comment "Turn on/off memory foot print tracer for debugger";
-
-pattern setFlow(b:bit):void
-address MDBsetFlow
-comment "Turn on/off memory flow debugger";
-
-pattern setMemory(b:bit):void
-address MDBsetMemory
-comment "Turn on/off memory statistics tracing.";
-
-pattern setIO(b:bit):void
-address MDBsetIO
-comment "Turn on/off io statistics tracing";
-
-pattern setCount(b:bit):void
-address MDBsetCount
-comment "Turn on/off bat count statistics tracing";
-
 command getDebug():int
 address MDBgetDebug
 comment "Get the kernel debugging bit-set.

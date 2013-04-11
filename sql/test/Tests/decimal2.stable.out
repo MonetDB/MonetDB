@@ -1,4 +1,4 @@
-stdout of test 'decimal2` in directory 'test` itself:
+stdout of test 'decimal2` in directory 'sql/test` itself:
 
 
 # 18:28:16 >  
@@ -65,7 +65,7 @@ Ready.
 % . # table_name
 % single_value # name
 % decimal # type
-% 2 # length
+% 3 # length
 [ 0	]
 
 # 20:26:51 >  

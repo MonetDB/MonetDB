@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -232,7 +232,7 @@ rel_insert_join_idx(mvc *sql, sql_idx *i, sql_rel *inserts)
 	nnlls->exps = join_exps;
 	nnlls = rel_project(sql->sa, nnlls, pexps);
 	/* add row numbers */
-	e = exp_column(sql->sa, rel_name(rt), "%TID%", sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
+	e = exp_column(sql->sa, rel_name(rt), TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
 	exp_setname(sql->sa, e, i->t->base.name, iname);
 	append(nnlls->exps, e);
 
@@ -335,7 +335,7 @@ insert_into(mvc *sql, dlist *qname, dlist *columns, symbol *val_or_q)
 	} else if (t->readonly) {
 		return sql_error(sql, 02, "INSERT INTO: cannot insert into read only table '%s'", tname);
 	}
-	if (t && !isTempTable(t) && STORE_READONLY(active_store_type))
+	if (t && !isTempTable(t) && STORE_READONLY)
 		return sql_error(sql, 02, "INSERT INTO: insert into table '%s' not allowed in readonly mode", tname);
 
 	if (!table_privs(sql, t, PRIV_INSERT)) {
@@ -673,7 +673,7 @@ rel_update_join_idx(mvc *sql, sql_idx *i, sql_rel *updates)
 	nnlls->exps = join_exps;
 	nnlls = rel_project(sql->sa, nnlls, pexps);
 	/* add row numbers */
-	e = exp_column(sql->sa, rel_name(rt), "%TID%", sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
+	e = exp_column(sql->sa, rel_name(rt), TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
 	exp_setname(sql->sa, e, i->t->base.name, iname);
 	append(nnlls->exps, e);
 
@@ -815,7 +815,7 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_where)
 		list *exps = new_exp_list(sql->sa), *pexps;
 		dnode *n;
 
-		if (t && !isTempTable(t) && STORE_READONLY(active_store_type))
+		if (t && !isTempTable(t) && STORE_READONLY)
 			return sql_error(sql, 02, "UPDATE: update table '%s' not allowed in readonly mode", tname);
 
 		if (opt_where) {
@@ -842,12 +842,12 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_where)
 		}
 	
 		pexps = rel_projections(sql, r, NULL, 1, 0);
-		/* We simply create a relation %TID%, updates */
+		/* We simply create a relation TID, updates */
 
 		/* first create the project */
-		e = exp_column(sql->sa, rel_name(r), "%TID%", sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
+		e = exp_column(sql->sa, rel_name(r), TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
 		r = rel_project(sql->sa, r, append(new_exp_list(sql->sa),e));
-		e = exp_column(sql->sa, rel_name(r), "%TID%", sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
+		e = exp_column(sql->sa, rel_name(r), TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
 		append(exps, e);
 		updates = table_update_array(sql, t);
 		for (n = assignmentlist->h; n; n = n->next) {
@@ -861,6 +861,8 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_where)
 				rel_destroy(r);
 				return sql_error(sql, 02, "42S22!UPDATE: no such column '%s.%s'", t->base.name, cname);
 			}
+			if (!table_privs(sql, t, PRIV_UPDATE) && !sql_privilege(sql, sql->user_id, c->base.id, PRIV_UPDATE, 0)) 
+				return sql_error(sql, 02, "UPDATE: insufficient privileges for user '%s' to update table '%s' on column '%s'", stack_get_string(sql, "current_user"), tname, c->base.name);
 			a = assignment->h->data.sym;
 			if (a) {
 				int status = sql->session->status;
@@ -962,7 +964,7 @@ delete_table(mvc *sql, dlist *qname, symbol *opt_where)
 	} else if (t->readonly) {
 		return sql_error(sql, 02, "DELETE FROM: cannot delete from read only table '%s'", tname);
 	}
-	if (t && !isTempTable(t) && STORE_READONLY(active_store_type))
+	if (t && !isTempTable(t) && STORE_READONLY)
 		return sql_error(sql, 02, "DELETE FROM: delete from table '%s' not allowed in readonly mode", tname);
 	if (!table_privs(sql, t, PRIV_DELETE)) {
 		return sql_error(sql, 02, "DELETE FROM: insufficient privileges for user '%s' to delete from table '%s'", stack_get_string(sql, "current_user"), tname);
@@ -986,7 +988,7 @@ delete_table(mvc *sql, dlist *qname, symbol *opt_where)
 			if (!r) {
 				return NULL;
 			} else {
-				sql_exp *e = exp_column(sql->sa, rel_name(r), "%TID%", sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
+				sql_exp *e = exp_column(sql->sa, rel_name(r), TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
 
 				r = rel_project(sql->sa, r, append(new_exp_list(sql->sa), e));
 
@@ -1077,7 +1079,7 @@ copyfrom(mvc *sql, dlist *qname, dlist *files, dlist *seps, dlist *nr_offset, st
 		return sql_error(sql, 02, "42S02!COPY INTO: no such table '%s'", tname);
 	if (t->readonly) 
 		return sql_error(sql, 02, "COPY INTO: cannot copy into read only table '%s'", tname);
-	if (t && !isTempTable(t) && STORE_READONLY(active_store_type))
+	if (t && !isTempTable(t) && STORE_READONLY)
 		return sql_error(sql, 02, "COPY INTO: copy into table '%s' not allowed in readonly mode", tname);
 
 	/* Only the MONETDB user is allowed copy into with 
@@ -1188,7 +1190,7 @@ bincopyfrom(mvc *sql, dlist *qname, dlist *files)
 		return sql_error(sql, 02, "42S02!COPY INTO: no such table '%s'", tname);
 	if (t->readonly) 
 		return sql_error(sql, 02, "COPY INTO: cannot copy into read only table '%s'", tname);
-	if (t && !isTempTable(t) && STORE_READONLY(active_store_type))
+	if (t && !isTempTable(t) && STORE_READONLY)
 		return sql_error(sql, 02, "COPY INTO: copy into table '%s' not allowed in readonly mode", tname);
 	if (files == NULL)
 		return sql_error(sql, 02, "COPY INTO: must specify files");

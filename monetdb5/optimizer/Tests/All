@@ -14,10 +14,10 @@ tst4610
 tst4611
 tst4620
 tst4630
-tst4631
+# tst4631 -- uses group.refine
 tst4700
 tst4701
-tst4730
+# tst4730 -- uses group.refine
 tst4800
 tst4801
 tst4820
@@ -33,10 +33,13 @@ cst02
 
 remap
 inlineFunction
+inlineFunction1
 inlineFunction2
+inlineFunction3
+inlineFunction4
 
 reorder00
-reorder01
+# reorder01 -- uses group.new/group.derive
 
 #mapreduce00   has no output, won't run this way
 
@@ -95,6 +98,8 @@ SRexample
 
 dataflow
 dataflow3
-common
+dataflow4
+dataflow5
+# common -- uses group.new/group.derive
 common01
 garbage

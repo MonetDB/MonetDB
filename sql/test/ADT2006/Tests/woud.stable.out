@@ -1,4 +1,4 @@
-stdout of test 'woud` in directory 'test/ADT2006` itself:
+stdout of test 'woud` in directory 'sql/test/ADT2006` itself:
 
 
 # 18:31:50 >  
@@ -65,7 +65,7 @@ Ready.
 % bigint # type
 % 1 # length
 % . # table_name
-% L4 # name
+% L5 # name
 % double # type
 % 24 # length
 [ NULL	]

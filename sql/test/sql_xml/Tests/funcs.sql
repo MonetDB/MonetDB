@@ -11,4 +11,4 @@ CREATE FUNCTION "element" (nme STRING, ns xml, attr xml, s xml) RETURNS xml exte
 CREATE FUNCTION concat (val1 xml, val2 xml) RETURNS xml external name xml.concat;
 CREATE FUNCTION forest (val1 xml, val2 xml) RETURNS xml external name xml.forest;
 CREATE FUNCTION isdocument (val STRING) RETURNS xml external name xml.isdocument;
-CREATE AGGREGATE "xmlagg"( x xml ) RETURNS xml external name xml.agg;
+CREATE AGGREGATE "xmlagg"( x xml ) RETURNS xml external name xml.aggr;

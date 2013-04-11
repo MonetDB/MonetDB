@@ -13,7 +13,7 @@
  * 
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
 */
 /*
@@ -283,8 +283,6 @@ terminateMX:
 		mnstr_printf(cntxt->fdout,"#INLINED RESULT\n");
 		printFunction(cntxt->fdout,mb, 0, LIST_MAL_ALL);
 	}
-	DEBUGoptimizers
-		mnstr_printf(cntxt->fdout,"#opt_remap: %d mappings\n",actions);
 	freeMalBlk(mq);
 	GDKfree(upgrade);
 	return 1;

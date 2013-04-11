@@ -13,7 +13,7 @@
  * 
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
 */
 /*
@@ -760,7 +760,7 @@ IOimport(int *ret, int *bid, str *fnme)
 			throw(MAL, "io.imports", OPERATION_FAILED "File too large");
 		}
 #endif
-		base = cur = (char *) MT_mmap(*fnme, MMAP_SEQUENTIAL, 0, (size_t) st.st_size);
+		base = cur = (char *) MT_mmap(*fnme, MMAP_SEQUENTIAL, (size_t) st.st_size);
 		if (cur == (char *) -1) {
 			BBPunfix(b->batCacheid);
 			throw(MAL, "io.mport", OPERATION_FAILED "MT_mmap()");

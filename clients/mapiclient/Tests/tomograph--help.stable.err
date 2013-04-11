@@ -1,0 +1,34 @@
+stderr of test 'tomograph--help` in directory 'clients/mapiclient` itself:
+
+
+# 11:43:47 >  
+# 11:43:47 >  Mtimeout -timeout 120 ./tomograph--help tomograph--help 
+# 11:43:47 >  
+
+
+# 10:36:09 >  
+# 10:36:09 >  Mtimeout -timeout 60 tomograph --help
+# 10:36:09 >  
+
+tomograph [options]
+  -d | --dbname=<database_name>
+  -u | --user=<user>
+  -P | --password=<password>
+  -p | --port=<portnr>
+  -h | --host=<hostname>
+  -T | --title=<plot title>
+  -s | --sql=<single sql expression>
+  -t | --trace=<tomograph trace filename>
+  -r | --range=<starttime>-<endtime>[ms,s] 
+  -o | --output=<file prefix > (default 'tomograph'
+  -b | --beat=<delay> in milliseconds (default 50)
+  -B | --batch=<number> of combined queries
+  -a | --adaptive colormap 
+  -m | --colormap=<userdefined colormap>
+  -D | --debug
+  -? | --help
+
+# 23:54:13 >  
+# 23:54:13 >  "Done."
+# 23:54:13 >  
+

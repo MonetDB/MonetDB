@@ -20,14 +20,14 @@ select xmlelement(name "CustomerProj",
 	xmlforest(c.CustId, c.Name AS CustName, p.ProjId, p.Name AS ProjName))
 from Customers c, Projects p
 where c.CustId = p.CustId
-order by c.CustId;
+order by c.CustId, p.ProjId;
 
 select xmlelement(name project, 
 	xmlattributes(p.ProjId as "id"),
 	xmlforest(c.CustId, c.Name AS CustName, p.ProjId, p.Name AS ProjName))
 from Customers c, Projects p
 where c.CustId = p.CustId
-order by c.CustId;
+order by c.CustId, p.ProjId;
 
 
 select 

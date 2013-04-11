@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -23,46 +23,37 @@ int ALIGNcommit(BAT *b);
 int ALIGNundo(BAT *b);
 int ATOMheap(int id, Heap *hp, size_t cap);
 int ATOMisdescendant(int id, int parentid);
-int ATOMunknown_add(str nme);
+int ATOMunknown_add(const char *nme);
 int ATOMunknown_del(int a);
-int ATOMunknown_find(str nme);
+int ATOMunknown_find(const char *nme);
 str ATOMunknown_name(int a);
-BUN BATbuncount(BAT *b);
 int BATcheckmodes(BAT *b, int persistent);
 BAT *BATclone(BAT *b, BUN capacity);
-BAT *BATcol_name(BAT *b, const char *tnme);
 BATstore *BATcreatedesc(int ht, int tt, int heapnames);
 void BATdestroy(BATstore *bs);
 int BATfree(BAT *b);
 gdk_return BATgroup_internal(BAT **groups, BAT **extents, BAT **histo, BAT *b, BAT *g, BAT *e, BAT *h, int subsorted);
 BUN BATguess(BAT *b);
 void BATinit_idents(BAT *bn);
-BAT *BATleftmergejoin(BAT *l, BAT *r, BUN estimate);
-BAT *BATleftthetajoin(BAT *l, BAT *r, int mode, BUN estimate);
 BAT *BATload_intern(bat bid, int lock);
 BAT *BATmaterializet(BAT *b);
 int BATmultijoin(int argc, BAT *argv[], RowFcn tuple_fcn, ptr tuple_data, ColFcn value_fcn[], ptr value_data[], int orderspec);
-BAT *BATnlthetajoin(BAT *l, BAT *r, int mode, BUN estimate);
 void BATpropagate(BAT *dst, BAT *src, int idx);
 str BATrename(BAT *b, const char *nme);
 void BATsetdims(BAT *b);
-BAT *BATsorder(BAT *b);
-BAT *BATsorder_rev(BAT *b);
 size_t BATvmsize(BAT *b, int dirty);
 void BBPcacheit(BATstore *bs, int lock);
-void BBPdumpcache(void);	/* never called: for debugging only */
 void BBPdump(void);		/* never called: for debugging only */
 void BBPexit(void);
 void BBPinit(void);
 bat BBPinsert(BATstore *bs);
-int BBPrecover(void);
-void BBPreleaselref(bat i);
 void BBPtrim(size_t delta);
 void BBPunshare(bat b);
 void GDKclrerr(void);
+int GDKextend(const char *fn, size_t size);
+int GDKfdlocate(const char *nme, const char *mode, const char *ext);
 FILE *GDKfilelocate(const char *nme, const char *mode, const char *ext);
 char *GDKload(const char *nme, const char *ext, size_t size, size_t chunk, storage_t mode);
-void GDKlockHome(void);
 void GDKlog(_In_z_ _Printf_format_string_ const char *format, ...)
 	__attribute__((__format__(__printf__, 1, 2)));
 void *GDKmallocmax(size_t size, size_t *maxsize, int emergency);
@@ -77,6 +68,7 @@ int GDKunlink(const char *dir, const char *nme, const char *extension);
 int HASHgonebad(BAT *b, const void *v);
 BUN HASHmask(BUN cnt);
 Hash *HASHnew(Heap *hp, int tpe, BUN size, BUN mask);
+void HASHremove(BAT *b);
 int HEAPalloc(Heap *h, size_t nitems, size_t itemsize);
 void HEAPcacheInit(void);
 int HEAP_check(Heap *h, HeapRepair *hr);
@@ -86,33 +78,24 @@ int HEAPload(Heap *h, const char *nme, const char *ext, int trunc);
 int HEAP_mmappable(Heap *heap);
 int HEAPsave(Heap *h, const char *nme, const char *ext);
 int HEAPwarm(Heap *h);
-int intCmp(const int *r, const int *l);
-int lngCmp(const lng *r, const lng *l);
 oid MAXoid(BAT *i);
 void MT_global_exit(int status)
 	__attribute__((__noreturn__));
 void MT_init_posix(void);
 int MT_msync(void *p, size_t off, size_t len, int mode);
-void *MT_vmalloc(size_t size, size_t *maxsize);
-void MT_vmfree(void *p, size_t size);
-void *MT_vmrealloc(void *voidptr, size_t oldsize, size_t newsize, size_t oldmaxsize, size_t *newmaxsize);
 int OIDdirty(void);
 int OIDinit(void);
-oid *oidRead(oid *a, stream *s, size_t cnt);
 oid OIDread(str buf);
-oid OIDseed(oid seed);
-int oidWrite(oid *a, stream *s, size_t cnt);
 int OIDwrite(stream *fp);
 void strCleanHash(Heap *hp, int rebuild);
 int strCmpNoNil(const unsigned char *l, const unsigned char *r);
 int strElimDoubles(Heap *h);
-void strHeap(Heap *d, size_t cap);
 var_t strLocate(Heap *h, const char *v);
-var_t strPut(Heap *b, var_t *off, const char *src);
-int VALprint(stream *fd, const ValRecord *res);
 void VIEWdestroy(BAT *b);
 BAT *VIEWreset(BAT *b);
-void VIEWunlink(BAT *b);
+int IMPSgetbin(int tpe, bte bits, char *bins, const void *v);
+void IMPSremove(BAT *b);
+void IMPSprint(BAT *b);
 
 #define BBP_BATMASK	511
 #define BBP_THREADMASK	63
@@ -120,6 +103,7 @@ void VIEWunlink(BAT *b);
 typedef struct {
 	MT_Lock swap;
 	MT_Lock hash;
+	MT_Lock imprints;
 } batlock_t;
 
 typedef struct {
@@ -133,12 +117,8 @@ extern batlock_t GDKbatLock[BBP_BATMASK + 1];
 extern bbplock_t GDKbbpLock[BBP_THREADMASK + 1];
 extern size_t GDK_mmap_minsize;	/* size after which we use memory mapped files */
 extern MT_Lock GDKnameLock;
-extern int GDKrecovery;
-extern int GDKsilent;	/* should GDK shut up? */
 extern MT_Lock GDKthreadLock;
 extern MT_Lock GDKtmLock;
-extern MT_Cond GDKunloadCond;
-extern MT_Lock GDKunloadLock;
 extern MT_Lock MT_system_lock;
 
 #define ATOMappendpriv(t, h)						\
@@ -149,6 +129,7 @@ extern MT_Lock MT_system_lock;
 
 #define GDKswapLock(x)  GDKbatLock[(x)&BBP_BATMASK].swap
 #define GDKhashLock(x)  GDKbatLock[(x)&BBP_BATMASK].hash
+#define GDKimprintsLock(x)  GDKbatLock[(x)&BBP_BATMASK].imprints
 #define GDKtrimLock(y)  GDKbbpLock[(y)&BBP_THREADMASK].trim
 #define GDKcacheLock(y) GDKbbpLock[(y)&BBP_THREADMASK].alloc
 #define BBP_free(y)	GDKbbpLock[(y)&BBP_THREADMASK].free

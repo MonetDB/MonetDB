@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -25,6 +25,7 @@
 #include <sql_symbol.h>
 #include <sql_backend.h>
 
+#define DEFAULT_CACHESIZE 100
 typedef struct cq {
 	struct cq *next;	/* link them into a queue */
 	int type;		/* sql_query_t: Q_PARSE,Q_SCHEMA,.. */

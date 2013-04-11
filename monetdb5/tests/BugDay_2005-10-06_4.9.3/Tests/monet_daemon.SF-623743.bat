@@ -3,6 +3,6 @@
 
 @set NAME=%1
 
-echo "%MSERVER% --dbname=$TSTDB --set monet_daemon=yes"
-%MSERVER% --dbname=%TSTDB% --set monet_daemon=yes"
+echo "%MSERVER% --dbpath=%GDK_DBFARM%\$TSTDB --set monet_daemon=yes"
+%MSERVER% --dbpath=%GDK_DBFARM%\%TSTDB% --set monet_daemon=yes"
 

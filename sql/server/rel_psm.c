@@ -13,14 +13,13 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
  */
 
 
 #include "monetdb_config.h"
 #include "rel_psm.h"
-#include "rel_bin.h"
 #include "rel_semantic.h"
 #include "rel_schema.h"
 #include "rel_select.h"
@@ -227,8 +226,11 @@ psm_if_then_else( mvc *sql, sql_subtype *res, dnode *elseif, int is_func)
 		n = n->next;
 		elsestmts = psm_if_then_else( sql, res, n, is_func);
 
-		if (sql->session->status || !cond || !ifstmts || rel) 
+		if (sql->session->status || !cond || !ifstmts || rel) {
+			if (rel)
+				return sql_error(sql, 02, "IF THEN: No SELECT statements allowed within the IF condition");
 			return NULL;
+		}
 		return append(sa_list(sql->sa), exp_if( sql->sa, cond, ifstmts, elsestmts));
 	} else { /* else */
 		symbol *e = elseif->data.sym;
@@ -255,8 +257,11 @@ rel_psm_if_then_else( mvc *sql, sql_subtype *res, dnode *elseif, int is_func)
 		ifstmts = sequential_block(sql, res, n->data.lval, NULL, is_func);
 		n = n->next;
 		elsestmts = psm_if_then_else( sql, res, n, is_func);
-		if (sql->session->status || !cond || !ifstmts || rel) 
+		if (sql->session->status || !cond || !ifstmts || rel) {
+			if (rel)
+				return sql_error(sql, 02, "IF THEN ELSE: No SELECT statements allowed within the IF condition");
 			return NULL;
+		}
 		return exp_if( sql->sa, cond, ifstmts, elsestmts);
 	}
 	return NULL;
@@ -295,8 +300,10 @@ rel_psm_case( mvc *sql, sql_subtype *res, dnode *case_when, int is_func )
 		exp_kind ek = {type_value, card_value, FALSE};
 		sql_exp *v = rel_value_exp(sql, &rel, case_value, sql_sel, ek);
 
-		if (!v || rel)
+		if (!v)
 			return NULL;
+		if (rel)
+			return sql_error(sql, 02, "CASE: No SELECT statements allowed within the CASE condition");
 		if (else_statements) {
 			else_stmt = sequential_block( sql, res, else_statements, NULL, is_func);
 			if (!else_stmt) 
@@ -311,8 +318,11 @@ rel_psm_case( mvc *sql, sql_subtype *res, dnode *case_when, int is_func )
 
 			if (!when_value || rel ||
 			   (cond = rel_binop_(sql, v, when_value, NULL, "=", card_value)) == NULL || 
-			   (if_stmts = sequential_block( sql, res, m->next->data.lval, NULL, is_func)) == NULL ) 
+			   (if_stmts = sequential_block( sql, res, m->next->data.lval, NULL, is_func)) == NULL ) {
+				if (rel)
+					return sql_error(sql, 02, "CASE: No SELECT statements allowed within the CASE condition");
 				return NULL;
+			}
 			case_stmt = exp_if(sql->sa, cond, if_stmts, NULL);
 			list_append(case_stmts, case_stmt);
 			n = n->next;
@@ -341,8 +351,11 @@ rel_psm_case( mvc *sql, sql_subtype *res, dnode *case_when, int is_func )
 			sql_exp *case_stmt = NULL;
 
 			if (!cond || rel ||
-			   (if_stmts = sequential_block( sql, res, m->next->data.lval, NULL, is_func)) == NULL ) 
+			   (if_stmts = sequential_block( sql, res, m->next->data.lval, NULL, is_func)) == NULL ) {
+				if (rel)
+					return sql_error(sql, 02, "CASE: No SELECT statements allowed within the CASE condition");
 				return NULL;
+			}
 			case_stmt = exp_if(sql->sa, cond, if_stmts, NULL);
 			list_append(case_stmts, case_stmt);
 			n = n->next;
@@ -504,7 +517,6 @@ sequential_block (mvc *sql, sql_subtype *restype, dlist *blk, char *opt_label, i
 {
 	list *l=0;
 	dnode *n;
-	int i;
 
  	if (THRhighwater())
 		return sql_error(sql, 10, "SELECT: too many nested operators");
@@ -581,16 +593,6 @@ sequential_block (mvc *sql, sql_subtype *restype, dlist *blk, char *opt_label, i
 			list_append(l, res);
 		else
 			list_merge(l, reslist, NULL);
-	}
-	/* drop the declared tables of this frame */
-	if (l && l->t && !has_return(l)) {
-		i = sql->topvars;
-		while(sql->vars[--i].s) {
-			sql_var *v = &sql->vars[i];
-
-			if (v->type.comp_type && !v->view) 
-				list_append(l, stmt_assign(sql->sa, v->name, NULL, sql->frame));
-		}
 	}
 	stack_pop_frame(sql);
 	return l;
@@ -696,7 +698,7 @@ rel_create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_n
 	char *F = is_aggr?"AGGREGATE":(is_func?"FUNCTION":"PROCEDURE");
 	char *KF = type==F_FILT?"FILTER ": type==F_UNION?"UNION ": "";
 
-	if (STORE_READONLY(active_store_type) && create) 
+	if (STORE_READONLY && create) 
 		return sql_error(sql, 06, "schema statements cannot be executed on a readonly database.");
 			
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
@@ -891,7 +893,7 @@ rel_drop_func(mvc *sql, dlist *qname, dlist *typelist, int drop_action, int type
 		} else {
 			return sql_error(sql, 02, "DROP %s%s: no such %s%s '%s'", KF, F, kf, f, name);
 		}
-	} else if ((is_func && !func->res.type) || 
+	} else if (((is_func && type != F_FILT) && !func->res.type) || 
 		   (!is_func && func->res.type)) {
 		if (list_func)
 			list_destroy(list_func);
@@ -1077,7 +1079,7 @@ rel_psm(mvc *sql, symbol *s)
 		dlist *l = s->data.lval;
 		int type = l->h->next->next->next->next->data.i_val;
 
-		if (STORE_READONLY(active_store_type)) 
+		if (STORE_READONLY) 
 			return sql_error(sql, 06, "schema statements cannot be executed on a readonly database.");
 			
 		assert(l->h->next->type == type_int);

@@ -1,1 +1,1 @@
-eval "$MSERVER --dbname=$TSTDB"
+eval "$MSERVER --dbpath=$GDK_DBFARM/$TSTDB"

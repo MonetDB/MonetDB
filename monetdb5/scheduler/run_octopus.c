@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -438,7 +438,7 @@ OCTOPUSdiscoverRegister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ( !octopusLocal ){	/*skip registration for local execution*/
 		stk->admit = &admitSerialConn;
 		stk->wrapup = &wrapupSerialConn;
-		msg = runMALdataflow(cntxt,mb,start,stop,stk,0,pci);
+		msg = runMALdataflow(cntxt,mb,start,stop,stk);
 		stk->admit = NULL;
 		stk->wrapup = NULL;
 	}
@@ -523,7 +523,7 @@ OCTOPUSbidding(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
     else { 	/* distributed execution */
 		stk->admit = &admitSerialConn;
 		stk->wrapup = &wrapupSerialConn;
-		msg = runMALdataflow(cntxt,mb,start,j,stk,0,pci);
+		msg = runMALdataflow(cntxt,mb,start,j,stk);
 		stk->admit = NULL;
 		stk->wrapup = NULL;
 	}
@@ -677,7 +677,7 @@ OCTOPUSrun(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	stk->admit = &admitSerialConn;
 	stk->wrapup = &wrapupSerialConn;
-	msg = runMALdataflow(cntxt,mb,start,j,stk,0,pci);
+	msg = runMALdataflow(cntxt,mb,start,j,stk);
 	stk->admit = NULL;
 	stk->wrapup = NULL;
 

@@ -13,7 +13,7 @@
  * 
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
 */
 
@@ -43,6 +43,10 @@ static void printStackElm(stream *f, MalBlkPtr mb, ValPtr v, int index, BUN cnt,
 static void printStackHdr(stream *f, MalBlkPtr mb, ValPtr v, int index);
 
 static mdbStateRecord *mdbTable;
+
+/*
+ * The debugger flags overview
+ */
 
 void
 mdbInit(void)
@@ -276,54 +280,6 @@ mdbBacktrace(Client cntxt, MalStkPtr stk, int pci)
 			pci = stk->up->pcup;
 	}
 }
-/*
- * Sometimes we may want to trace the changes applied to the
- * BAT buffer pool and report them together with the MAL
- * instruction where it happened.
- */
-static int BBPtraceEnabled = 0;
-static str BBPtracePattern = NULL;
-char
-BBPTraceCall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
-{
-	static int *BBPmirror = NULL;
-	static int bbpsize;
-	char lbuf[1024], pbuf[1024];
-	int i, action;
-	(void) mb;
-
-	if (BBPmirror == NULL) {
-		bbpsize = BBPsize;
-		BBPmirror = (int *) GDKzalloc(sizeof(int) * BBPsize);
-	}
-	if (BBPsize > bbpsize) {
-		int *old = BBPmirror;
-		BBPmirror = (int *) GDKzalloc(sizeof(int) * BBPsize);
-		memcpy((char *) BBPmirror, (char *) old, sizeof(int) * bbpsize);
-		bbpsize = BBPsize;
-		GDKfree(old);
-	}
-	/* no growing BBP yet */
-	action = 0;
-	for (i = 0; i < bbpsize; i++) {
-		/* what happened to this BAT */
-		if (BBPmirror[i] != BBP_lrefs(i)) {
-			BAT *b = BBPquickdesc(ABS(i), TRUE);
-			BBPlogical(i, lbuf);
-			if (BBPtracePattern && strstr(lbuf, BBPtracePattern) != NULL)
-				continue;
-			BBPphysical(i, pbuf);
-			if (BBPmirror[i])
-				mnstr_printf(cntxt->fdout, "#BBP [%d] state change of %s %s refs %d rows " BUNFMT "\n",
-						i, lbuf, pbuf, BBP_lrefs(i), BATcount(b));
-			action = 1;
-		}
-		BBPmirror[i] = BBP_lrefs(i);
-	}
-	if (action)
-		mdbBacktrace(cntxt, stk, pc);
-	return 's';
-}
 
 static void
 printBATproperties(stream *f, BAT *b)
@@ -470,10 +426,6 @@ retryRead:
 				stk->cmd = 'C';
 				break;
 			}
-			if (strncmp("call", b, 3) == 0) {
-				showException(cntxt->fdout, MAL, "mdb.command", "call instruction not yet implemented");
-				break;
-			}
 			stk->cmd = 'c';
 			skipWord(cntxt, b);
 			m = 0;
@@ -524,61 +476,7 @@ retryRead:
 				/* used to inspect the identifier distribution */
 				showModuleStatistics(out, cntxt->nspace);
 				continue;
-			} else if (strncmp("set", b, 3) == 0) {
-				skipWord(cntxt, b);
-				skipBlanc(cntxt, b);
-				if (strncmp("flow", b, 1) == 0)
-					cntxt->flags |= flowFlag;
-				if (strncmp("memory", b, 1) == 0) {
-					struct Mallinfo memory;
-					cntxt->flags |= memoryFlag;
-					memory = MT_mallinfo();
-					mnstr_printf(out, "arena " SZFMT " ordblks " SZFMT " smblks " SZFMT " "
-																						" hblkhd " SZFMT " hblks " SZFMT " fsmblks " SZFMT " uordblks " SZFMT "\n",
-							(size_t) memory.arena,
-							(size_t) memory.ordblks,
-							(size_t) memory.smblks,
-							(size_t) memory.hblkhd,
-							(size_t) memory.hblks,
-							(size_t) memory.fsmblks,
-							(size_t) memory.uordblks
-							);
-				}
-				if (strncmp("bbp", b, 1) == 0) {
-					cntxt->flags |= bbpFlag;
-					stk->cmd = 0;
-				}
-				if (strncmp("thread", b, 1) == 0) {
-					cntxt->flags |= threadFlag;
-					stk->cmd = 0;
-				}
-				if (strncmp("timer", b, 1) == 0) {
-					cntxt->flags |= timerFlag;
-					cntxt->timer = GDKusec();
-					stk->cmd = 0;
-				}
-				if (strncmp("io", b, 1) == 0) {
-#ifdef HAVE_SYS_RESOURCE_H
-					struct  rusage resource;
-#endif
-					cntxt->flags |= ioFlag;
-#ifdef HAVE_SYS_RESOURCE_H
-					getrusage(RUSAGE_SELF, &resource);
-					mnstr_printf(out, "#maxrss %ld ixrss=%ld idrss=%ld isrss=%ld"
-									  " minflt=%ld majflt=%ld nswap=%ld inblock=%ld oublock=%ld\n",
-							resource.ru_maxrss, resource.ru_ixrss,
-							resource.ru_idrss, resource.ru_isrss,
-							resource.ru_minflt, resource.ru_majflt,
-							resource.ru_nswap, resource.ru_inblock,
-							resource.ru_oublock);
-#endif
-				}
-				if (strncmp("bigfoot", b, 7) == 0) {
-					/* calculate the virtual memory footprint */
-					cntxt->flags |= bigfootFlag;
-				}
-				continue;
-			}
+			} 
 			stk->cmd = *b;
 			m = 0;
 			break;
@@ -702,16 +600,6 @@ retryRead:
 				int i, limit, inuse = 0;
 
 				skipWord(cntxt, b);
-				/* bbp change tracing enabling */
-				if (strncmp(b, "trace", 5) == 0) {
-					skipWord(cntxt, b);
-					BBPtraceEnabled = !BBPtraceEnabled;
-					if (BBPtraceEnabled && *b)
-						BBPtracePattern = GDKstrdup(b);
-					mnstr_printf(out, "#bbp trace enabled %d\n", BBPtraceEnabled);
-					stk->cmd = 'c';
-					break;
-				}
 				i = BBPindex(b);
 				if (i)
 					limit = i + 1;
@@ -913,25 +801,7 @@ retryRead:
 				printStackElm(out, mb, stk->stk + i, i, size, first);
 			continue;
 		}
-		case 'S':
-			dumpNamespaceStatistics(out, 1);
-			break;
 		case 'u':
-			if (strncmp("unset", b, 5)) {
-				skipWord(cntxt, b);
-				skipBlanc(cntxt, b);
-				if (strncmp("flow", b, 4) == 0)
-					cntxt->flags &= ~flowFlag;
-				if (strncmp("memory", b, 6) == 0)
-					cntxt->flags &= ~memoryFlag;
-				if (strncmp("timer", b, 5) == 0)
-					cntxt->flags &= ~timerFlag;
-				if (strncmp("bigfoot", b, 7) == 0)
-					cntxt->flags &= ~bigfootFlag;
-				if (strncmp("io", b, 2) == 0)
-					cntxt->flags &= ~ioFlag;
-				continue;
-			}
 			if (stk->up == NULL)
 				break;
 			mnstr_printf(out, "%s go up the stack\n", "#mdb ");
@@ -1197,7 +1067,7 @@ mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 			if (cntxt != mal_clients)
 				/* help mclients with fake prompt */
 				mnstr_printf(out, "mdb>");
-			printTraceCall(out, mb, stk, pc, cntxt->flags);
+			printTraceCall(out, mb, stk, pc, LIST_MAL_DEBUG);
 		} else if (ch)
 			mdbCommand(cntxt, mb, stk, p, pc);
 		break;
@@ -1206,7 +1076,7 @@ mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 		mdbCommand(cntxt, mb, stk, p, pc);
 		break;
 	case 't':
-		printTraceCall(out, mb, stk, pc, cntxt->flags);
+		printTraceCall(out, mb, stk, pc, LIST_MAL_DEBUG);
 		break;
 	case 'C':
 		mdbSessionActive = 0; /* for name completion */
@@ -1222,8 +1092,6 @@ mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 	}
 	if (mdbSessionActive == 0)
 		return;
-	if (cntxt->flags & timerFlag)
-		cntxt->timer = GDKusec();
 	mdbSessionActive = 0; /* for name completion */
 }
 
@@ -1296,7 +1164,7 @@ str
 runMALDebugger(Client cntxt, Symbol s)
 {
 	cntxt->itrace = 'n';
-	runMAL(cntxt, s->def, 1, 0, 0, 0);
+	runMAL(cntxt, s->def, 0, 0);
 	return MAL_SUCCEED;
 }
 
@@ -1571,13 +1439,13 @@ memProfileVector(stream *out, int cells)
 			h = b->H->hash;
 			if (h && h->mask) {
 				mnstr_printf(out, "\thhash=" PTRFMT " size=" SZFMT "\n", PTRFMTCAST h, sizeof(*h));
-				mnstr_printf(out, "\thhashlink=" PTRFMT " size=" SZFMT "\n", PTRFMTCAST h->link,
+				mnstr_printf(out, "\thhashlink=" PTRFMT " size=" SZFMT "\n", PTRFMTCAST h->Link,
 						(h->mask + h->lim + 1) * sizeof(int));
 			}
 			h = b->T->hash;
 			if (h && h->mask) {
 				mnstr_printf(out, "\tthash=" PTRFMT " size=" SZFMT "\n", PTRFMTCAST h, sizeof(*h));
-				mnstr_printf(out, "\tthashlink=" PTRFMT " size=" SZFMT "\n", PTRFMTCAST h->link,
+				mnstr_printf(out, "\tthashlink=" PTRFMT " size=" SZFMT "\n", PTRFMTCAST h->Link,
 						(h->mask + h->lim + 1) * sizeof(int));
 			}
 			BBPunfix(b->batCacheid);
@@ -1636,8 +1504,6 @@ mdbHelp(stream *f)
 	mnstr_printf(f, "up               -- go up the stack\n");
 	mnstr_printf(f, "trace <var>      -- trace assignment to variables\n");
 	mnstr_printf(f, "trap <mod>.<fcn> -- catch MAL function call in console\n");
-	mnstr_printf(f, "set {timer,thread,flow,io,memory,bbp} -- set trace switches\n");
-	mnstr_printf(f, "unset            -- turn off switches\n");
 	mnstr_printf(f, "help             -- this message\n");
 }
 

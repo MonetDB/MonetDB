@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -21,7 +21,6 @@
 #define _REL_SEQUENCE_H_
 
 #include "sql_symbol.h"
-#include <sql_statement.h>
 #include <store_sequence.h>
 
 extern sql_rel *rel_sequences(mvc *sql, symbol *s);

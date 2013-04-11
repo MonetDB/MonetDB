@@ -1,4 +1,4 @@
-stdout of test 'constants-optimizer.Bug-2317` in directory 'test/BugTracker-2010` itself:
+stdout of test 'constants-optimizer.Bug-2317` in directory 'sql/test/BugTracker-2010` itself:
 
 
 # 00:10:51 >  
@@ -11,7 +11,7 @@ stdout of test 'constants-optimizer.Bug-2317` in directory 'test/BugTracker-2010
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Found 7.749 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2012 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008-2013 MonetDB B.V., all rights reserved
 # Visit http://monetdb.cwi.nl/ for further information
 # Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:37160/
 # MonetDB/GIS module loaded
@@ -19,11 +19,17 @@ stdout of test 'constants-optimizer.Bug-2317` in directory 'test/BugTracker-2010
 
 Ready.
 
+# 16:29:22 >  
+# 16:29:22 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=vienna" "--port=37979"
+# 16:29:22 >  
 
-# 00:10:51 >  
-# 00:10:51 >  mclient -lsql -ftest -i -e --host=eir --port=37160 
-# 00:10:51 >  
-
+#set optimizer='dictionary_pipe';
+#select optimizer;
+% . # table_name
+% single_value # name
+% varchar # type
+% 15 # length
+[ "dictionary_pipe"	]
 #create table x( id serial, a varchar(1000));
 #drop table x;
 

@@ -1,3 +1,82 @@
+create aggregate stddev_samp(val TINYINT) returns DOUBLE
+	external name "aggr"."stdev";
+create aggregate stddev_samp(val SMALLINT) returns DOUBLE
+	external name "aggr"."stdev";
+create aggregate stddev_samp(val INTEGER) returns DOUBLE
+	external name "aggr"."stdev";
+create aggregate stddev_samp(val BIGINT) returns DOUBLE
+	external name "aggr"."stdev";
+create aggregate stddev_samp(val REAL) returns DOUBLE
+	external name "aggr"."stdev";
+create aggregate stddev_samp(val DOUBLE) returns DOUBLE
+	external name "aggr"."stdev";
+
+create aggregate stddev_samp(val DATE) returns DOUBLE
+	external name "aggr"."stdev";
+create aggregate stddev_samp(val TIME) returns DOUBLE
+	external name "aggr"."stdev";
+create aggregate stddev_samp(val TIMESTAMP) returns DOUBLE
+	external name "aggr"."stdev";
+
+create aggregate stddev_pop(val TINYINT) returns DOUBLE
+	external name "aggr"."stdevp";
+create aggregate stddev_pop(val SMALLINT) returns DOUBLE
+	external name "aggr"."stdevp";
+create aggregate stddev_pop(val INTEGER) returns DOUBLE
+	external name "aggr"."stdevp";
+create aggregate stddev_pop(val BIGINT) returns DOUBLE
+	external name "aggr"."stdevp";
+create aggregate stddev_pop(val REAL) returns DOUBLE
+	external name "aggr"."stdevp";
+create aggregate stddev_pop(val DOUBLE) returns DOUBLE
+	external name "aggr"."stdevp";
+
+create aggregate stddev_pop(val DATE) returns DOUBLE
+	external name "aggr"."stdevp";
+create aggregate stddev_pop(val TIME) returns DOUBLE
+	external name "aggr"."stdevp";
+create aggregate stddev_pop(val TIMESTAMP) returns DOUBLE
+	external name "aggr"."stdevp";
+
+create aggregate var_samp(val TINYINT) returns DOUBLE
+	external name "aggr"."variance";
+create aggregate var_samp(val SMALLINT) returns DOUBLE
+	external name "aggr"."variance";
+create aggregate var_samp(val INTEGER) returns DOUBLE
+	external name "aggr"."variance";
+create aggregate var_samp(val BIGINT) returns DOUBLE
+	external name "aggr"."variance";
+create aggregate var_samp(val REAL) returns DOUBLE
+	external name "aggr"."variance";
+create aggregate var_samp(val DOUBLE) returns DOUBLE
+	external name "aggr"."variance";
+
+create aggregate var_samp(val DATE) returns DOUBLE
+	external name "aggr"."variance";
+create aggregate var_samp(val TIME) returns DOUBLE
+	external name "aggr"."variance";
+create aggregate var_samp(val TIMESTAMP) returns DOUBLE
+	external name "aggr"."variance";
+
+create aggregate var_pop(val TINYINT) returns DOUBLE
+	external name "aggr"."variancep";
+create aggregate var_pop(val SMALLINT) returns DOUBLE
+	external name "aggr"."variancep";
+create aggregate var_pop(val INTEGER) returns DOUBLE
+	external name "aggr"."variancep";
+create aggregate var_pop(val BIGINT) returns DOUBLE
+	external name "aggr"."variancep";
+create aggregate var_pop(val REAL) returns DOUBLE
+	external name "aggr"."variancep";
+create aggregate var_pop(val DOUBLE) returns DOUBLE
+	external name "aggr"."variancep";
+
+create aggregate var_pop(val DATE) returns DOUBLE
+	external name "aggr"."variancep";
+create aggregate var_pop(val TIME) returns DOUBLE
+	external name "aggr"."variancep";
+create aggregate var_pop(val TIMESTAMP) returns DOUBLE
+	external name "aggr"."variancep";
 
 create aggregate median(val TINYINT) returns TINYINT
 	external name "aggr"."median";

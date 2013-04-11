@@ -1,4 +1,4 @@
-stdout of test 'dependency_loop` in directory 'test/Dependencies` itself:
+stdout of test 'dependency_loop` in directory 'sql/test/Dependencies` itself:
 
 
 # 10:37:18 >  
@@ -27,7 +27,7 @@ Ready.
 % L1 # name
 % wrd # type
 % 2 # length
-[ 90	]
+[ 89	]
 
 # 10:37:19 >  
 # 10:37:19 >  Done.

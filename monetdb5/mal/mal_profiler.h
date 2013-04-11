@@ -13,7 +13,7 @@
  * 
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
 */
 
@@ -64,6 +64,7 @@ mal_export str closeProfilerStream(void);
 
 mal_export void initProfiler(MalBlkPtr mb);
 mal_export void profilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc, int start);
+mal_export void profilerHeartbeatEvent(str msg);
 mal_export str setLogFile(stream *fd, Module cntxt, str fname);
 mal_export str setLogStream(Module cntxt, str host, int port);
 mal_export str setLogStreamStream(Module cntxt, stream *s);
@@ -74,6 +75,8 @@ mal_export int profilerAvailable(void);
 mal_export str startProfiling(void);
 mal_export str stopProfiling(void);
 mal_export str cleanupProfiler(void);
+mal_export void initHeartbeat(void);
+mal_export void stopHeartbeat(void);
 
 mal_export int instrFilter(InstrPtr pci, str mod, str fcn);
 mal_export void setFilter(Module cntxt, str mod, str fcn);
@@ -82,6 +85,7 @@ mal_export void clrFilter(Module cntxt, str mod, str fcn);
 mal_export void setFilterVariable(MalBlkPtr mb, int i);
 mal_export void clrFilterVariable(MalBlkPtr mb, int i);
 mal_export stream *getProfilerStream(void);
+mal_export void setFilterAll(void);
 
 mal_export void MPresetProfiler(stream *fdout);
 
@@ -97,6 +101,7 @@ mal_export lng getDiskReads(void);
 mal_export lng getDiskWrites(void);
 mal_export lng getUserTime(void);
 mal_export lng getSystemTime(void);
+mal_export void profilerGetCPUStat(lng *user, lng *nice, lng *sys, lng *idle, lng *iowait);
 mal_export void _initTrace(void);
 
 #endif

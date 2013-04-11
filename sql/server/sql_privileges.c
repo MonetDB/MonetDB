@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -31,7 +31,6 @@
 
 #include "monetdb_config.h"
 #include "sql_privileges.h"
-#include "sql_statement.h"
 #include "sql_semantic.h"
 #include <sql_parser.h>
 

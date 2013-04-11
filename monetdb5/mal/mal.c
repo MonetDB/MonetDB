@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -177,6 +177,7 @@
 
 char monet_cwd[PATHLENGTH] = { 0 };
 size_t monet_memory;
+char *mal_trace;		/* enable profile events on console */
 
 #include "mal_stack.h"
 #include "mal_linker.h"
@@ -188,14 +189,17 @@ size_t monet_memory;
 #include "mal_client.h"
 #include "mal_sabaoth.h"
 #include "mal_recycle.h"
+#include "mal_dataflow.h"
+#include "mal_profiler.h"
 
-MT_Lock     mal_contextLock;
-MT_Lock     mal_remoteLock;
-MT_Lock  	mal_profileLock ;
-MT_Lock     mal_copyLock;
-MT_Lock     mal_delayLock;
+MT_Lock     mal_contextLock MT_LOCK_INITIALIZER("mal_contextLock");
+MT_Lock     mal_namespaceLock MT_LOCK_INITIALIZER("mal_namespaceLock");
+MT_Lock     mal_remoteLock MT_LOCK_INITIALIZER("mal_remoteLock");
+MT_Lock  	mal_profileLock MT_LOCK_INITIALIZER("mal_profileLock");
+MT_Lock     mal_copyLock MT_LOCK_INITIALIZER("mal_copyLock");
+MT_Lock     mal_delayLock MT_LOCK_INITIALIZER("mal_delayLock");
+MT_Sema		mal_parallelism;
 /*
- * @-
  * Initialization of the MAL context
  * The compiler directive STRUCT_ALIGNED tells that the
  * fields in the VALrecord all start at the same offset.
@@ -227,11 +231,19 @@ void tstAligned(void)
 #endif
 }
 int mal_init(void){
+#ifdef NEED_MT_LOCK_INIT
 	MT_lock_init( &mal_contextLock, "mal_contextLock");
+	MT_lock_init( &mal_namespaceLock, "mal_namespaceLock");
 	MT_lock_init( &mal_remoteLock, "mal_remoteLock");
 	MT_lock_init( &mal_profileLock, "mal_profileLock");
 	MT_lock_init( &mal_copyLock, "mal_copyLock");
 	MT_lock_init( &mal_delayLock, "mal_delayLock");
+#endif
+	/* "/2" is arbitrarily used / chosen, as on systems with
+	 * hyper-threading enabled, using all hardware threads rather than
+	 * "only" all physical cores does not necessarily yield a linear
+	 * performance benefit */
+	MT_sema_init( &mal_parallelism, (GDKnr_threads > 1 ? GDKnr_threads/2: 1), "mal_parallelism");
 
 	tstAligned();
 	MCinit();
@@ -240,9 +252,40 @@ int mal_init(void){
 		monet_memory = MT_npages() * MT_pagesize();
 	initNamespace();
 	initParser();
+	initHeartbeat();
 	RECYCLEinit();
 	if( malBootstrap() == 0)
 		return -1;
+	/* set up the profiler if needed, output sent to console */
+	/* Use the same shortcuts as stethoscope */
+	if ( mal_trace && *mal_trace) {
+		char *s;
+		setFilterAll();
+		openProfilerStream(mal_clients[0].fdout);
+		for ( s= mal_trace; *s; s++)
+		switch(*s){
+		case 'a': activateCounter("aggregate");break;
+		case 'b': activateCounter("rbytes");
+				activateCounter("wbytes");break;
+		case 'c': activateCounter("cpu");break;
+		case 'e': activateCounter("event");break;
+		case 'f': activateCounter("function");break;
+		case 'i': activateCounter("pc");break;
+		case 'm': activateCounter("memory");break;
+		case 'p': activateCounter("process");break;
+		case 'r': activateCounter("reads");break;
+		case 's': activateCounter("stmt");break;
+		case 't': activateCounter("ticks");break;
+		case 'u': activateCounter("user");break;
+		case 'w': activateCounter("writes");break;
+		case 'y': activateCounter("type");break;
+		case 'D': activateCounter("dot");break;
+		case 'I': activateCounter("thread");break; 
+		case 'T': activateCounter("time");break;
+		case 'S': activateCounter("start");
+		}
+		startProfiling();
+	} else mal_trace =0;
 	return 0;
 }
 /*
@@ -283,6 +326,9 @@ void mal_exit(void){
 	 */
 	RECYCLEshutdown(mal_clients); /* remove any left over intermediates */
 	stopProfiling();
+	stopHeartbeat();
+	stopMALdataflow();
+
 #if 0
 {
 	int reruns=0, goon;

@@ -13,7 +13,7 @@
  * 
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
  *
 */
@@ -38,6 +38,7 @@ OPToriginImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	ValRecord val;
 	VarPtr h, t;
 
+	(void) cntxt;
 	(void) pci;
 	(void) stk;		/* to fool compilers */
 
@@ -88,18 +89,6 @@ OPToriginImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				}
 			}
 		}
-		if ( getModuleId(p) == groupRef) {
-			if ( getFunctionId(p) == newRef ||
-				 getFunctionId(p) == doneRef ) {
-				h= varGetProp(mb, getArg(p,1), horiginProp);
-				if ( h ){
-					VALset(&val, TYPE_str, GDKstrdup(h->value.val.sval));
-					varSetProp(mb, getArg(p,0), horiginProp, op_eq, &val);
-					VALset(&val, TYPE_str, GDKstrdup(h->value.val.sval));
-					varSetProp(mb, getArg(p,1), horiginProp, op_eq, &val);
-				}
-			}
-		}
 		if ( getModuleId(p) == batRef) {
 			if ( getFunctionId(p) == mirrorRef) {
 				h= varGetProp(mb, getArg(p,1), horiginProp);
@@ -124,7 +113,5 @@ OPToriginImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		}
 	}
-	DEBUGoptimizers
-		mnstr_printf(cntxt->fdout,"#opt_origin: %d statements marked\n", actions);
 	return actions;
 }

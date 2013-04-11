@@ -1,4 +1,4 @@
-stdout of test 'connections` in directory 'test/Connections` itself:
+stdout of test 'connections` in directory 'sql/test/Connections` itself:
 
 
 # 12:08:28 >  
@@ -51,7 +51,7 @@ server 12, client 2
 % server,	db,	db_alias,	language # name
 % char,	char,	char,	char # type
 % 1024,	64,	1024,	1024 # length
-[ "localhost",	"mTests_src_test_Connections_test1",	"test_db",	"sql"	]
+[ "localhost",	"mTests_sql_src_test_Connections_test1",	"test_db",	"sql"	]
 % sys.connections,	sys.connections,	sys.connections,	sys.connections # table_name
 % server,	db,	db_alias,	language # name
 % char,	char,	char,	char # type
@@ -60,12 +60,12 @@ server 12, client 2
 % server,	db,	db_alias,	language # name
 % char,	char,	char,	char # type
 % 1024,	64,	1024,	1024 # length
-[ "localhost",	"mTests_src_test_Connections_test1",	"test_db",	"sql"	]
+[ "localhost",	"mTests_sql_src_test_Connections_test1",	"test_db",	"sql"	]
 % sys.connections,	sys.connections,	sys.connections,	sys.connections # table_name
 % server,	db,	db_alias,	language # name
 % char,	char,	char,	char # type
 % 1024,	64,	1024,	1024 # length
-[ "localhost",	"mTests_src_test_Connections_test1",	"test_db",	"sql"	]
+[ "localhost",	"mTests_sql_src_test_Connections_test1",	"test_db",	"sql"	]
 % sys.connections,	sys.connections,	sys.connections,	sys.connections # table_name
 % server,	db,	db_alias,	language # name
 % char,	char,	char,	char # type
@@ -76,7 +76,7 @@ server 12, client 3
 % server,	db,	db_alias,	language # name
 % char,	char,	char,	char # type
 % 1024,	64,	1024,	1024 # length
-[ "localhost",	"mTests_src_test_Connections_test1",	"localhost_mTests_src_test_Connections_test1_monetdb",	"sql"	]
+[ "localhost",	"mTests_sql_src_test_Connections_test1",	"localhost_mTests_sql_src_test_Connections_test1_monetdb",	"sql"	]
 % sys.connections,	sys.connections,	sys.connections,	sys.connections # table_name
 % server,	db,	db_alias,	language # name
 % char,	char,	char,	char # type

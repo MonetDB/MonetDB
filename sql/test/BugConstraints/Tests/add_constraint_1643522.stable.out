@@ -1,4 +1,4 @@
-stdout of test 'add_constraint_1643522` in directory 'test/BugConstraints` itself:
+stdout of test 'add_constraint_1643522` in directory 'sql/test/BugConstraints` itself:
 
 
 # 12:55:03 >  
@@ -21,16 +21,12 @@ Ready.
 % sys.keys # table_name
 % name # name
 % varchar # type
-% 20 # length
-[ "queryhistory_id_pkey"	]
-[ "callhistory_id_fkey"	]
+% 4 # length
 [ "id_p"	]
 % sys.keys # table_name
 % name # name
 % varchar # type
-% 20 # length
-[ "queryhistory_id_pkey"	]
-[ "callhistory_id_fkey"	]
+% 0 # length
 
 # 11:09:09 >  
 # 11:09:09 >  Done.

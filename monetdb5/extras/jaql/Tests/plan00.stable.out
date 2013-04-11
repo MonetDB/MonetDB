@@ -1,4 +1,4 @@
-stdout of test 'plan00` in directory 'extras/jaql` itself:
+stdout of test 'plan00` in directory 'monetdb5/extras/jaql` itself:
 
 
 # 21:19:49 >  
@@ -10,7 +10,7 @@ stdout of test 'plan00` in directory 'extras/jaql` itself:
 # Compiled for x86_64-pc-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Found 15.662 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2012 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008-2013 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://sofia.ins.cwi.nl:33566/
 # MonetDB/GIS module loaded
@@ -58,10 +58,10 @@ A as $ -> expand: $.ids => <result>
 [1,2,3] as $ -> transform: { "value": $ } 
 [1,2,3] => <result> 
 [1,2,3] as $ -> transform: ( $ * 2 ) 
-[1,2,3] as $ -> transform: ( $ * 2 ) 
+[1,2,3] as $ -> transform: ( 2 * $ ) 
 [1,2,3] as $ -> transform: 4 
-[1,2,3] as $ -> transform: ( ( $ * 2 ) * 2 ) 
-[1,2,3] as $ -> transform: ( ( $ * 2.000000 ) * 2 ) 
+[1,2,3] as $ -> transform: ( 2 * ( $ * 2 ) ) 
+[1,2,3] as $ -> transform: ( 2 * ( 2.000000 * $ ) ) 
 [1,2,3] as $ -> transform: ( ( $ * 2.000000 ) / 4 ) 
 as users in users , pages in pages -> join: where ( ( users.id == pages.userid ) ) into { "name": users.name , "url": pages.url } 
 as u in users , p in pages -> join: where ( ( u.id == p.userid ) ) into { "name": u.name , "url": p.url } 

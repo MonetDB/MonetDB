@@ -21,3 +21,4 @@ select * from datacell.receptors(); select * from datacell.emitters(); select * 
 drop table datacell.bsktin;
 drop table datacell.bsktout;
 
+-- sensor --host=localhost --port=50501 --events=100 --columns=3 --delay=1 --protocol=udp

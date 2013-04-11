@@ -13,7 +13,7 @@
  * 
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
 */
 
@@ -159,9 +159,6 @@ CLTInfo(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BUNappend(b, "scenario", FALSE);
 	BUNappend(bn, cntxt->scenario, FALSE);
 
-	BUNappend(b, "timer", FALSE);
-	BUNappend(bn, local_itoa((int) cntxt->timer), FALSE);
-
 	BUNappend(b, "trace", FALSE);
 	BUNappend(bn, local_itoa(cntxt->itrace), FALSE);
 
@@ -181,25 +178,34 @@ CLTInfo(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-CLTLogin(int *ret)
+CLTLogin(int *nme, int *ret)
 {
 	BAT *b = BATnew(TYPE_void, TYPE_str, 12);
+	BAT *u = BATnew(TYPE_void, TYPE_oid, 12);
 	int i;
 	char s[26];
 
 	if (b == 0)
 		throw(MAL, "clients.getLogins", MAL_MALLOC_FAIL);
+	if ( u==0){
+		BBPreleaseref(b->batCacheid);
+		throw(MAL, "clients.getLogins", MAL_MALLOC_FAIL);
+	}
 	BATseqbase(b,0);
+	BATseqbase(u,0);
 
 	for (i = 0; i < MAL_MAXCLIENTS; i++) {
 		Client c = mal_clients+i;
 		if (c->mode >= CLAIMED && c->user != oid_nil) {
 			CLTtimeConvert((time_t) c->login,s);
 			BUNappend(b, s, FALSE);
+			BUNappend(u, &c->user, FALSE);
 		}
 	}
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
+	if (!(u->batDirty&2)) u = BATsetaccess(u, BAT_READ);
 	pseudo(ret,b,"client","login");
+	pseudo(nme,u,"client","name");
 	return MAL_SUCCEED;
 }
 
@@ -356,8 +362,8 @@ CLTsuspend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 CLTsetTimeout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int qto=  *(int *) getArgReference(stk,pci,1);
-	int sto=  *(int *) getArgReference(stk,pci,2);
+	lng qto=  *(lng *) getArgReference(stk,pci,1);
+	lng sto=  *(lng *) getArgReference(stk,pci,2);
 	(void) mb;
 	cntxt->qtimeout = qto;
 	cntxt->stimeout = sto;
@@ -366,8 +372,8 @@ CLTsetTimeout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 CLTgetTimeout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int *qto=  (int *) getArgReference(stk,pci,0);
-	int *sto=  (int *) getArgReference(stk,pci,1);
+	lng *qto=  (lng *) getArgReference(stk,pci,0);
+	lng *sto=  (lng *) getArgReference(stk,pci,1);
 	(void) mb;
 	*qto = cntxt->qtimeout;
 	*sto = cntxt->stimeout;

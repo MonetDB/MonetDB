@@ -13,7 +13,7 @@
  * 
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
 */
 #include "monetdb_config.h"
@@ -80,8 +80,6 @@ OPTdeadcodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	for(; i<slimit; i++)
 		if( old[i])
 			freeInstruction(old[i]);
-	DEBUGoptimizers
-		mnstr_printf(cntxt->fdout,"#opt_deadcode: %d statements removed\n", actions);
 	GDKfree(old);
 	/* we may have uncovered new use-less operations */
 	if (actions) 

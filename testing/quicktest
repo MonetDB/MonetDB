@@ -211,8 +211,7 @@ start_server() {
 		local port=$(find_free_port)
 		local args=(
 			${mserver}
-			--dbfarm="${p}"/dbfarm
-			--dbname="mTests_${dir}"
+			--dbpath="${p}/dbfarm/mTests_${dir}"
 			--set mapi_port=${port}
 			--set monet_daemon=yes
 		)

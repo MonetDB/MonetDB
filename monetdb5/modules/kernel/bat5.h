@@ -13,7 +13,7 @@
  * 
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
 */
 #ifndef _BAT_H_
@@ -131,4 +131,7 @@ bat5_export str BKCsetReadMode(int *res, int *bid) ;
 bat5_export str BKChasReadMode(bit *res, int *bid);
 bat5_export str BKCsetAppendMode(int *res, int *bid) ;
 bat5_export str BKChasAppendMode(bit *res, int *bid);
+
+bat5_export str BKCmergecand(bat *ret, bat *aid, bat *bid);
+bat5_export str BKCintersectcand(bat *ret, bat *aid, bat *bid);
 #endif /*_BAT_H_*/

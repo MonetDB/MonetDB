@@ -1,4 +1,4 @@
-stderr of test 'stethoscope--help` in directory 'mapiclient` itself:
+stderr of test 'stethoscope--help` in directory 'clients/mapiclient` itself:
 
 
 # 11:43:47 >  
@@ -10,12 +10,12 @@ stderr of test 'stethoscope--help` in directory 'mapiclient` itself:
 # 10:36:09 >  Mtimeout -timeout 60 stethoscope --help
 # 10:36:09 >  
 
-stethoscope [options] +[trace options] {<mod>.<fcn>}
+stethoscope [options] [dbname] +[trace options] {<mod>.<fcn>}
   -d | --dbname=<database_name>
   -u | --user=<user>
-  -P | --password=<password>
   -p | --port=<portnr>
   -h | --host=<hostname>
+  -? | --help
 
 The trace options (default 'ISTest'):
   S = monitor start of instruction profiling
@@ -28,6 +28,7 @@ The trace options (default 'ISTest'):
   t = ticks in microseconds
   c = cpu statistics (utime,ctime,stime,cstime)
   m = rss memory as provided by OS (in MB)
+  M = memory footprint of non-persistent objects
   r = block reads
   w = block writes
   b = bytes read/written

@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -111,6 +111,9 @@
 #define dt_schema 	"%dt%"
 #define isDeclaredSchema(s) 	(strcmp(s->base.name, dt_schema) == 0)
 
+
+extern char *TID;
+
 typedef enum temp_t { 
 	SQL_PERSIST,
 	SQL_LOCAL_TEMP,
@@ -121,6 +124,31 @@ typedef enum temp_t {
 	SQL_REMOTE,
 	SQL_REPLICA_TABLE
 } temp_t;
+
+typedef enum comp_type {
+	cmp_gt = 0,
+	cmp_gte = 1,
+	cmp_lte = 2,
+	cmp_lt = 3,
+	cmp_equal = 4,
+	cmp_notequal = 5,
+
+	cmp_filter = 6,
+	cmp_or = 7,
+	cmp_in = 8,
+	cmp_notin = 9,
+
+	/* cmp_all and cmp_project are only used within stmt (not sql_exp) */
+	cmp_all = 10,		/* special case for crossproducts */
+	cmp_project = 11,	/* special case for projection joins */
+	cmp_reorder_project = 12,	/* special case for (reordering) projection joins */
+	cmp_joined = 13 	/* special case already joined */
+} comp_type;
+
+#define is_theta_exp(e) ((e) == cmp_gt || (e) == cmp_gte || (e) == cmp_lte ||\
+		         (e) == cmp_lt || (e) == cmp_equal || (e) == cmp_notequal)
+
+#define is_complex_exp(e) ((e) == cmp_or || (e) == cmp_in || (e) == cmp_notin || (e&CMPMASK) == cmp_filter)
 
 typedef enum commit_action_t { 
 	CA_COMMIT, 	/* commit rows, only for persistent tables */
@@ -135,6 +163,7 @@ typedef int sqlid;
 typedef struct sql_base {
 	int wtime;
 	int rtime;
+	int allocated;
 	int flag;
 	sqlid id;
 	char *name;
@@ -168,7 +197,8 @@ typedef size_t backend_stack;
 
 typedef struct sql_trans {
 	char *name;
-	int stime;		/* transaction time stamp (aka start time) */
+	int stime;		/* read transaction time stamp */
+	int wstime;		/* write transaction time stamp */
 	int rtime;
 	int wtime;
 	int schema_number;	/* schema timestamp */
@@ -414,6 +444,7 @@ typedef enum table_types {
 #define isStream(x)  	  (x->type==tt_stream)
 #define isRemote(x)  	  (x->type==tt_remote)
 #define isReplicaTable(x) (x->type==tt_replica_table)
+#define isKindOfTable(x)  (isTable(x) || isMergeTable(x) || isRemote(x) || isReplicaTable(x))
 
 typedef struct sql_table {
 	sql_base base;
@@ -488,6 +519,7 @@ extern void kc_destroy(sql_kc *kc);
 extern void key_destroy(sql_key *k);
 extern void idx_destroy(sql_idx * i);
 
+extern int base_key(sql_base *b);
 extern node *list_find_name(list *l, char *name);
 extern node *list_find_id(list *l, int id);
 extern node *list_find_base_id(list *l, int id);
@@ -500,10 +532,13 @@ extern sql_column *find_sql_column(sql_table *t, char *cname);
 
 extern sql_table *find_sql_table(sql_schema *s, char *tname);
 extern sql_table *find_sql_table_id(sql_schema *s, int id);
+extern node *find_sql_table_node(sql_schema *s, int id);
 
 extern sql_sequence *find_sql_sequence(sql_schema *s, char *sname);
 
 extern sql_schema *find_sql_schema(sql_trans *t, char *sname);
+extern sql_schema *find_sql_schema_id(sql_trans *t, int id);
+extern node *find_sql_schema_node(sql_trans *t, int id);
 
 extern sql_type *find_sql_type(sql_schema * s, char *tname);
 extern sql_type *sql_trans_bind_type(sql_trans *tr, sql_schema *s, char *name);
@@ -511,13 +546,6 @@ extern sql_type *sql_trans_bind_type(sql_trans *tr, sql_schema *s, char *name);
 extern sql_func *find_sql_func(sql_schema * s, char *tname);
 extern list *find_all_sql_func(sql_schema * s, char *tname, int type);
 extern sql_func *sql_trans_bind_func(sql_trans *tr, char *name);
+extern node *find_sql_func_node(sql_schema *s, int id);
 
-extern node *find_sql_key_node(sql_table *t, char *kname, int id);
-extern node *find_sql_idx_node(sql_table *t, char *kname, int id);
-extern node *find_sql_column_node(sql_table *t, char *cname, int id);
-extern node *find_sql_table_node(sql_schema *s, char *tname, int id);
-extern node *find_sql_sequence_node(sql_schema *s, char *sname, int id);
-extern node *find_sql_schema_node(sql_trans *t, char *sname, int id);
-extern node *find_sql_type_node(sql_schema * s, char *tname, int id);
-extern node *find_sql_func_node(sql_schema * s, char *fname, int id);
 #endif /* SQL_CATALOG_H */

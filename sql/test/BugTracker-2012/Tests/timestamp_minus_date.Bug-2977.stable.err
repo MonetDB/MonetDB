@@ -1,0 +1,39 @@
+stderr of test 'timestamp_minus_date.Bug-2977` in directory 'sql/test/BugTracker-2012` itself:
+
+
+# 13:51:42 >  
+# 13:51:42 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "gdk_dbfarm=/export/scratch2/sellam/projects/bug_day/install/var/MonetDB" "--set" "mapi_open=true" "--set" "mapi_port=39949" "--set" "monet_prompt=" "--trace" "--forcemito" "--set" "mal_listing=2" "--dbname=mTests_test_BugTracker-2012" "--set" "mal_listing=0"
+# 13:51:42 >  
+
+# builtin opt 	gdk_dbname = demo
+# builtin opt 	gdk_dbfarm = /export/scratch2/sellam/projects/bug_day/install/var/monetdb5/dbfarm
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = yes
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	gdk_dbfarm = /export/scratch2/sellam/projects/bug_day/install/var/MonetDB
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 39949
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbname = mTests_test_BugTracker-2012
+# cmdline opt 	mal_listing = 0
+
+# 13:51:42 >  
+# 13:51:42 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=warsaw" "--port=39949"
+# 13:51:42 >  
+
+MAPI  = monetdb@niels:34679
+QUERY = select (cast('1970-01-01 0:00' as timestamp) - cast('1970-01-01' as date));
+ERROR = !SELECT: no such binary operator 'sql_sub(timestamp,date)'
+
+# 13:51:43 >  
+# 13:51:43 >  "Done."
+# 13:51:43 >  
+

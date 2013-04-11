@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -52,8 +52,7 @@ rel_table(mvc *sql, int cat_type, char *sname, sql_table *t, int nr)
 
 	append(exps, exp_atom_int(sql->sa, nr));
 	append(exps, exp_atom_str(sql->sa, sname, sql_bind_localtype("str") ));
-	if (t)
-		append(exps, exp_atom_ptr(sql->sa, t));
+	append(exps, exp_atom_ptr(sql->sa, t));
 	rel->l = rel_basetable(sql, t, t->base.name);
 	rel->r = NULL;
 	rel->op = op_ddl;
@@ -438,6 +437,9 @@ table_foreign_key(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table *t)
 	char *rtname = qname_table(n->data.lval);
 	sql_table *ft = mvc_bind_table(sql, ss, rtname);
 
+	/* self referenced table */
+	if (!ft && t->s == ss && strcmp(t->base.name, rtname) == 0)
+		ft = t;
 	if (!ft) {
 		sql_error(sql, 02, "42S02!CONSTRAINT FOREIGN KEY: no such table '%s'\n", rtname);
 		return SQL_ERR;
@@ -1546,7 +1548,7 @@ rel_schemas(mvc *sql, symbol *s)
 {
 	sql_rel *ret = NULL;
 
-	if (s->token != SQL_CREATE_TABLE && s->token != SQL_CREATE_VIEW && STORE_READONLY(active_store_type)) 
+	if (s->token != SQL_CREATE_TABLE && s->token != SQL_CREATE_VIEW && STORE_READONLY) 
 		return sql_error(sql, 06, "25006!schema statements cannot be executed on a readonly database.");
 
 	switch (s->token) {
@@ -1731,7 +1733,6 @@ rel_schemas(mvc *sql, symbol *s)
 		return sql_error(sql, 01, "M0M03!schema statement unknown symbol(" PTRFMT ")->token = %s", PTRFMTCAST s, token2string(s->token));
 	}
 
-	sql->last = NULL;
 	sql->type = Q_SCHEMA;
 	return ret;
 }

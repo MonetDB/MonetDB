@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -49,6 +49,16 @@
 #endif
 
 #ifdef NATIVE_WIN32
+
+/* Some definitions that we need to compile on Windows.
+ * Note that Windows only runs on little endian architectures. */
+typedef unsigned int u_int32_t;
+typedef int int32_t;
+#define BIG_ENDIAN	4321
+#define LITTLE_ENDIAN	1234
+#define BYTE_ORDER	LITTLE_ENDIAN
+
+#include "s_nextafterf.c"
 
 #include <stdio.h>
 

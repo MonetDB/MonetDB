@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -194,7 +194,7 @@ gdk_export char *MT_heapcur(void);
 
 gdk_export size_t MT_getrss(void);
 
-gdk_export void *MT_mmap(const char *path, int mode, off_t off, size_t len);
+gdk_export void *MT_mmap(const char *path, int mode, size_t len);
 gdk_export int MT_munmap(void *p, size_t len);
 
 gdk_export int MT_path_absolute(const char *path);

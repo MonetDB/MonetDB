@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -160,6 +160,20 @@ doChallenge(stream *in, stream *out) {
 #endif
 	bs = bstream_create(fdin, 128 * BLOCK);
 
+	if (bs == NULL){
+		if (fdin) {
+			mnstr_close(fdin);
+			mnstr_destroy(fdin);
+		}
+		if (fdout) {
+			mnstr_close(fdout);
+			mnstr_destroy(fdout);
+		}
+		if (buf)
+			GDKfree(buf);
+		GDKsyserror("SERVERlisten:"MAL_MALLOC_FAIL);
+		return;
+	}
 	bs->eof = 1;
 	MSscheduleClient(buf, challenge, bs, fdout);
 }
@@ -851,9 +865,9 @@ SERVERreconnectWithoutAlias(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	int *key =(int*) getArgReference(stk,pci,0);
 	str *host = (str*) getArgReference(stk,pci,1);
 	int *port = (int*) getArgReference(stk,pci,2);
-	str *username = (str*) getArgReference(stk,pci,4);
-	str *password= (str*) getArgReference(stk,pci,5);
-	str *lang = (str*) getArgReference(stk,pci,6);
+	str *username = (str*) getArgReference(stk,pci,3);
+	str *password= (str*) getArgReference(stk,pci,4);
+	str *lang = (str*) getArgReference(stk,pci,5);
 	int i;
 	str msg=MAL_SUCCEED, nme= "anonymous";
 

@@ -13,7 +13,7 @@
  * 
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
 */
 #ifndef sql_result_H
@@ -21,6 +21,7 @@
 
 #include "mal_client.h"
 #include <stream.h>
+#include <sql.h>
 #include <sql_mvc.h>
 #include <sql_catalog.h>
 #include <sql_qc.h>

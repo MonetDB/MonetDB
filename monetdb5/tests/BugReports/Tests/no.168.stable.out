@@ -1,4 +1,4 @@
-stdout of test 'no.168` in directory 'tests/BugReports` itself:
+stdout of test 'no.168` in directory 'monetdb5/tests/BugReports` itself:
 
 #> Mtest:	milS no.168 milS
 #> Mtest:	Mtimeout -timeout 210 Mserver -modulesilent -yaccsilent -d8 -db tests_BugReports -single no.168.milS

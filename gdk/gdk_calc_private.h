@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -42,28 +42,38 @@ typedef unsigned __int64 ulng;
 
 #define GT(a, b)	((bit) ((a) > (b)))
 
-#define CANDINIT(b, s)							\
+#define CANDINIT(b, s, start, end, cnt, cand, candend)			\
 	do {								\
 		start = 0;						\
 		end = cnt = BATcount(b);				\
+		cand = candend = NULL;					\
 		if (s) {						\
 			assert(BATttype(s) == TYPE_oid);		\
 			if (BATcount(s) == 0) {				\
 				start = end = 0;			\
-			} else if (BATtdense(s)) {			\
-				start = (s)->T->seq;			\
-				end = start + BATcount(s);		\
-				if (start < (b)->H->seq)		\
+			} else {					\
+				if (BATtdense(s)) {			\
+					start = (s)->T->seq;		\
+					end = start + BATcount(s);	\
+				} else {				\
+					cand = (const oid *) Tloc((s), BUNfirst(s)); \
+					candend = cand + BATcount(s);	\
+					start = *cand;			\
+					end = candend[-1] + 1;		\
+				}					\
+				assert(start <= end);			\
+				if (start <= (b)->H->seq)		\
 					start = 0;			\
+				else if (start >= (b)->H->seq + cnt)	\
+					start = cnt;			\
 				else					\
 					start -= (b)->H->seq;		\
-				if (end > (b)->H->seq + cnt)		\
+				if (end >= (b)->H->seq + cnt)		\
 					end = cnt;			\
+				else if (end <= (b)->H->seq)		\
+					end = 0;			\
 				else					\
 					end -= (b)->H->seq;		\
-			} else {					\
-				cand = (const oid *) Tloc((s), BUNfirst(s)); \
-				candend = cand + BATcount(s);		\
 			}						\
 		}							\
 	} while (0)
@@ -135,65 +145,5 @@ typedef unsigned __int64 ulng;
 				on_overflow;				\
 			(dst) = lng_nil;				\
 			nils++;						\
-		}							\
-	} while (0)
-
-#define AVERAGE_ITER(TYPE, x, a, r, n)					\
-	do {								\
-		TYPE an, xn, z1;					\
-		BUN z2;							\
-		(n)++;							\
-		/* calculate z1 = (x - a) / n, rounded down (towards */	\
-		/* negative infinity), and calculate z2 = remainder */	\
-		/* of the division (i.e. 0 <= z2 < n); do this */	\
-		/* without causing overflow */				\
-		an = (TYPE) ((a) / (SBUN) (n));				\
-		xn = (TYPE) ((x) / (SBUN) (n));				\
-		/* z1 will be (x - a) / n rounded towards -INF */	\
-		z1 = xn - an;						\
-		xn = (x) - (TYPE) (xn * (SBUN) (n));			\
-		an = (a) - (TYPE) (an * (SBUN) (n));			\
-		/* z2 will be remainder of above division */		\
-		if (xn >= an) {						\
-			z2 = (BUN) (xn - an);				\
-			/* loop invariant: */				\
-			/* (x - a) - z1 * n == z2 */			\
-			while (z2 >= (n)) {				\
-				z2 -= (n);				\
-				z1++;					\
-			}						\
-		} else {						\
-			z2 = (BUN) (an - xn);				\
-			/* loop invariant (until we break): */		\
-			/* (x - a) - z1 * n == -z2 */			\
-			for (;;) {					\
-				z1--;					\
-				if (z2 < (n)) {				\
-					/* proper remainder */		\
-					z2 = (n) - z2;			\
-					break;				\
-				}					\
-				z2 -= (n);				\
-			}						\
-		}							\
-		(a) += z1;						\
-		(r) += z2;						\
-		if ((r) >= (n)) {					\
-			(r) -= (n);					\
-			(a)++;						\
-		}							\
-	} while (0)
-
-#define AVERAGE_ITER_FLOAT(TYPE, x, a, n)				\
-	do {								\
-		(n)++;							\
-		if (((a) > 0) == ((x) > 0)) {				\
-			/* same sign */					\
-			(a) += ((x) - (a)) / (SBUN) (n);		\
-		} else {						\
-			/* no overflow at the cost of an */		\
-			/* extra division and slight loss of */		\
-			/* precision */					\
-			(a) = (a) - (a) / (SBUN) (n) + (x) / (SBUN) (n); \
 		}							\
 	} while (0)

@@ -1,4 +1,4 @@
-stdout of test 'arithmetic-small-values-null.SF-2921310` in directory 'test/BugTracker-2009` itself:
+stdout of test 'arithmetic-small-values-null.SF-2921310` in directory 'sql/test/BugTracker-2009` itself:
 
 
 # 15:12:22 >  
@@ -11,7 +11,7 @@ stdout of test 'arithmetic-small-values-null.SF-2921310` in directory 'test/BugT
 # Compiled for x86_64-pc-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Found 7.750 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2012 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008-2013 MonetDB B.V., all rights reserved
 # Visit http://monetdb.cwi.nl/ for further information
 # MonetDB/SQL module v11.0.0 loaded
 # MonetDB/GIS module v11.0.0 loaded
@@ -27,15 +27,15 @@ Ready.
 #select (4.4054292 - 4.40572025343667)^2 + (52.0903881 - 52.091375762174)^2;
 % . # table_name
 % sql_sub_single_value # name
-% double # type
-% 24 # length
-[ 1.060188673e-06	]
+% decimal # type
+% 21 # length
+[ -3.99941117029739	]
 #select cast((4.4054292 - 4.40572025343667)^2 as double) + cast((52.0903881 - 52.091375762174)^2 as double);
 % . # table_name
 % sql_sub_single_value # name
 % double # type
 % 24 # length
-[ 1.060188673e-06	]
+[ -3.99941117	]
 
 # 15:12:22 >  
 # 15:12:22 >  Done.

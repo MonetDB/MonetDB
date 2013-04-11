@@ -1,4 +1,4 @@
-stdout of test 'with_only_once.SF-1720293` in directory 'test/BugTracker` itself:
+stdout of test 'with_only_once.SF-1720293` in directory 'sql/test/BugTracker` itself:
 
 
 # 16:03:14 >  
@@ -28,13 +28,13 @@ Ready.
 % L1 # name
 % wrd # type
 % 2 # length
-[ 30	]
+[ 38	]
 #WITH t AS ( SELECT count(*) FROM tables ) SELECT * FROM t;
 % .t # table_name
 % L1 # name
 % wrd # type
 % 2 # length
-[ 30	]
+[ 38	]
 
 # 22:41:45 >  
 # 22:41:45 >  Done.

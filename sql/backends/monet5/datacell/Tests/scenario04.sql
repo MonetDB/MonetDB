@@ -23,7 +23,8 @@ call datacell.resume();
 call datacell.dump();
 
 -- externally, activate the sensor 
---sensor --host=localhost --port=504444--events=100 --columns=3 --delay=1
+-- sensor --host=localhost --port=50504 --events=100 --columns=3 --delay=1
+-- nc -l -u 50604
 -- externally, activate the actuator server to listen
 -- actuator 
 

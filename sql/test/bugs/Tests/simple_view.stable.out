@@ -1,4 +1,4 @@
-stdout of test 'simple_view` in directory 'test/bugs` itself:
+stdout of test 'simple_view` in directory 'sql/test/bugs` itself:
 
 
 # 20:29:05 >  
@@ -27,7 +27,7 @@ Ready.
 % .tt,	.tv,	.tv # table_name
 % name,	s,	i # name
 % varchar,	char,	tinyint # type
-% 15,	3,	1 # length
+% 17,	3,	1 # length
 [ "schemas",	"str",	1	]
 [ "types",	"str",	1	]
 [ "functions",	"str",	1	]
@@ -54,9 +54,17 @@ Ready.
 [ "user_role",	"str",	1	]
 [ "auths",	"str",	1	]
 [ "privileges",	"str",	1	]
-[ "queryhistory",	"str",	1	]
-[ "callhistory",	"str",	1	]
-[ "querylog",	"str",	1	]
+[ "querylog_catalog",	"str",	1	]
+[ "querylog_calls",	"str",	1	]
+[ "querylog_history",	"str",	1	]
+[ "tracelog",	"str",	1	]
+[ "optimizers",	"str",	1	]
+[ "environment",	"str",	1	]
+[ "queue",	"str",	1	]
+[ "storage",	"str",	1	]
+[ "storagemodelinput",	"str",	1	]
+[ "storagemodel",	"str",	1	]
+[ "tablestoragemodel",	"str",	1	]
 [ "systemfunctions",	"str",	1	]
 [ "test_update",	"str",	1	]
 [ " ",	"str",	1	]

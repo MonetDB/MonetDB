@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -48,7 +48,7 @@ shtCmp(const sht *l, const sht *r)
 	return simple_CMP(l, r, sht);
 }
 
-int
+static int
 intCmp(const int *l, const int *r)
 {
 	return simple_CMP(l, r, int);
@@ -60,7 +60,7 @@ fltCmp(const flt *l, const flt *r)
 	return simple_CMP(l, r, flt);
 }
 
-int
+static int
 lngCmp(const lng *l, const lng *r)
 {
 	return simple_CMP(l, r, lng);
@@ -1049,7 +1049,7 @@ strCmpNoNil(const unsigned char *l, const unsigned char *r)
 	return (*l < *r) ? -1 : 1;
 }
 
-void
+static void
 strHeap(Heap *d, size_t cap)
 {
 	size_t size;
@@ -1120,7 +1120,7 @@ strLocate(Heap *h, const char *v)
 	return 0;
 }
 
-var_t
+static var_t
 strPut(Heap *h, var_t *dst, const char *v)
 {
 	size_t elimbase = GDK_ELIMBASE(h->free);
@@ -1627,7 +1627,7 @@ OIDbase(oid o)
 	return o;
 }
 
-oid
+static oid
 OIDseed(oid o)
 {
 	oid t, p = GDKoid;
@@ -1925,7 +1925,7 @@ int GDKatomcnt = TYPE_str + 1;
  * unknown atoms is kept.  These can be accessed via the ATOMunknown
  * interface. Adding atoms to this set is done via the ATOMunknown_add
  * function. Finding an (negative) atom index can be done via
- * ATOMunknown_find, which simply adds the atom if its not in the
+ * ATOMunknown_find, which simply adds the atom if it's not in the
  * unknown set. The index van be used to find the name of an unknown
  * ATOM via ATOMunknown_name. Once an atom becomes known, ie the
  * module defining it is loaded, it should be removed from the unknown
@@ -1934,7 +1934,7 @@ int GDKatomcnt = TYPE_str + 1;
 static str unknown[MAXATOMS] = { NULL };
 
 int
-ATOMunknown_add(str nme)
+ATOMunknown_add(const char *nme)
 {
 	int i = 1;
 
@@ -1958,7 +1958,7 @@ ATOMunknown_del(int i)
 }
 
 int
-ATOMunknown_find(str nme)
+ATOMunknown_find(const char *nme)
 {
 	int i = 1;
 

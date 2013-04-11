@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -29,22 +29,21 @@
 #include <bat/bat_table.h>
 #include <bat/bat_logger.h>
 
-#include <restrict/restrict_storage.h>
-#include <restrict/restrict_table.h>
-#include <restrict/restrict_logger.h>
-
 /* version 05.20.01 of catalog */
 #define CATALOG_VERSION 52001
 int catalog_version = 0;
 
-static MT_Lock bs_lock;
+static MT_Lock bs_lock MT_LOCK_INITIALIZER("bs_lock");
 static int store_oid = 0;
 static int prev_oid = 0;
 static int nr_sessions = 0;
 static int transactions = 0;
 sql_trans *gtrans = NULL;
+list *active_transactions = NULL;
 int store_nr_active = 0;
 store_type active_store_type = store_bat;
+int store_readonly = 0;
+int store_singleuser = 0;
 
 store_functions store_funcs;
 table_functions table_funcs;
@@ -477,6 +476,7 @@ load_column(sql_trans *tr, sql_table *t, oid rid)
 	c->t = t;
 	if (isTable(c->t))
 		store_funcs.create_col(tr, c);
+	c->sorted = sql_trans_is_sorted(tr, c);
 	if (bs_debug)
 		fprintf(stderr, "#\t\tload column %s\n", c->base.name);
 	return c;
@@ -564,6 +564,7 @@ load_table(sql_trans *tr, sql_schema *s, oid rid)
 	t->cleared = 0;
 	v = table_funcs.column_find_value(tr, find_sql_column(tables, "readonly"),rid);
 	t->readonly = *(bit *)v;	_DELETE(v);
+	t->readonly &= store_readonly;
 
 	t->pkey = NULL;
 	t->s = s;
@@ -595,7 +596,7 @@ load_table(sql_trans *tr, sql_schema *s, oid rid)
 		cs_add(&t->columns, load_column(tr, t, rid), TR_OLD);
 	table_funcs.rids_destroy(rs);
 
-	if (!isTable(t) && !isMergeTable(t) && !isReplicaTable(t) && !isRemote(t)) 
+	if (!isKindOfTable(t))
 		return t;
 
 	/* load idx's first as the may be needed by the keys */
@@ -825,19 +826,18 @@ load_schema(sql_trans *tr, sqlid id, oid rid)
 	v = table_funcs.column_find_value(tr, find_sql_column(ss, "id"), rid);
 	sid = *(sqlid *)v; 	_DELETE(v);
 	if (sid < id) {
-		node *n = find_sql_schema_node(tr, NULL, sid);
+		s = find_sql_schema_id(tr, sid);
 
-		if (n==NULL) {
+		if (s==NULL) {
 			char *name;
 
 			v = table_funcs.column_find_value(tr, find_sql_column(ss, "name"), rid);
 			name = (char*)v;
-			n = find_sql_schema_node(tr, name, -1);
+			s = find_sql_schema(tr, name);
 			_DELETE(v);
-			if (n == NULL) 
+			if (s == NULL) 
 				GDKfatal("SQL schema missing or incompatible, rebuild from archive");
 		}
-		s = n->data;
 		s->base.id = sid;
 	} else {
 		s = SA_ZNEW(tr->sa, sql_schema);
@@ -904,7 +904,8 @@ create_trans(sql_allocator *sa, backend_stack stk)
 	t->sa = sa;
 	t->name = NULL;
 	t->wtime = t->rtime = 0;
-	t->stime = timestamp ();
+	t->stime = 0;
+	t->wstime = timestamp ();
 	t->schema_updates = 0;
 	t->status = 0;
 
@@ -1141,7 +1142,7 @@ dup_sql_column(sql_allocator *sa, sql_table *t, sql_column *c)
 {
 	sql_column *col = SA_ZNEW(sa, sql_column);
 
-	base_init(sa, &col->base, c->base.id, TR_NEW, c->base.name);
+	base_init(sa, &col->base, c->base.id, c->base.flag, c->base.name);
 	col->type = c->type;
 	col->def = NULL;
 	if (c->def)
@@ -1153,7 +1154,7 @@ dup_sql_column(sql_allocator *sa, sql_table *t, sql_column *c)
 	col->storage_type = NULL;
 	if (c->storage_type)
 		col->storage_type = sa_strdup(sa, c->storage_type);
-	col->sorted = sql_trans_is_sorted(NULL, c);
+	col->sorted = c->sorted;
 	cs_add(&t->columns, col, TR_NEW);
 	return col;
 }
@@ -1164,6 +1165,7 @@ dup_sql_table(sql_allocator *sa, sql_table *t)
 	node *n;
 	sql_table *nt = create_sql_table(sa, t->base.name, t->type, t->system, SQL_DECLARED_TABLE, t->commit_action);
 
+	nt->base.flag = t->base.flag;
 	for (n = t->columns.set->h; n; n = n->next) 
 		dup_sql_column(sa, nt, n->data);
 	nt->columns.dset = NULL;
@@ -1244,7 +1246,7 @@ store_schema_number(void)
 }
 
 int
-store_init(int debug, store_type store, char *logdir, char *dbname, backend_stack stk)
+store_init(int debug, store_type store, int readonly, int singleuser, char *logdir, backend_stack stk)
 {
 	sqlid id = 0;
 	lng lng_store_oid;
@@ -1257,36 +1259,28 @@ store_init(int debug, store_type store, char *logdir, char *dbname, backend_stac
 
 	bs_debug = debug;
 
+#ifdef NEED_MT_LOCK_INIT
+	MT_lock_init(&bs_lock, "SQL_bs_lock");
+#endif
+	MT_lock_set(&bs_lock, "store_init");
+
 	/* initialize empty bats */
-	if (store == store_bat ||
-	    store == store_su ||
-	    store == store_ro ||
-	    store == store_suro) 
+	if (store == store_bat) 
 		bat_utils_init();
 	if (store == store_bat) {
 		bat_storage_init(&store_funcs);
 		bat_table_init(&table_funcs);
 		bat_logger_init(&logger_funcs);
-	} else if (store == store_su) {
-		su_storage_init(&store_funcs);
-		su_table_init(&table_funcs);
-		su_logger_init(&logger_funcs);
-	} else if (store == store_ro) {
-		ro_storage_init(&store_funcs);
-		ro_table_init(&table_funcs);
-		ro_logger_init(&logger_funcs);
-	} else if (store == store_suro) {
-		suro_storage_init(&store_funcs);
-		suro_table_init(&table_funcs);
-		suro_logger_init(&logger_funcs);
 	}
 	active_store_type = store;
 	if (!logger_funcs.create ||
-	    logger_funcs.create(logdir, dbname, CATALOG_VERSION*v) == LOG_ERR)
+	    logger_funcs.create(logdir, CATALOG_VERSION*v) == LOG_ERR) {
+		MT_lock_unset(&bs_lock, "store_init");
 		return -1;
+	}
 
-	MT_lock_init(&bs_lock, "SQL_bs_lock");
 	sa = sa_create();
+	MT_lock_unset(&bs_lock, "store_init");
 	types_init(sa, debug);
 
 #define FUNC_OIDS 2000
@@ -1296,10 +1290,14 @@ store_init(int debug, store_type store, char *logdir, char *dbname, backend_stac
 
 	sequences_init();
 	gtrans = tr = create_trans(sa, stk);
+	active_transactions = sa_list(sa); 
+
+	store_readonly = readonly;
+	store_singleuser = singleuser;
 
 	if (logger_funcs.log_isnew()) {
 		/* cannot initialize database in readonly mode */
-		if (store == store_ro)
+		if (readonly)
 			return -1;
 		tr = sql_trans_create(stk, NULL, NULL);
 	} else {
@@ -1510,7 +1508,7 @@ store_apply_deltas(void)
 
 	logging = 1;
 	/* make sure we reset all transactions on re-activation */
-	gtrans->stime++;
+	gtrans->wstime = timestamp();
 	if (store_funcs.gtrans_update)
 		store_funcs.gtrans_update(gtrans);
 	res = logger_funcs.restart();
@@ -1539,7 +1537,7 @@ store_manager(void)
 		}
 		logging = 1;
 		/* make sure we reset all transactions on re-activation */
-		gtrans->stime++;
+		gtrans->wstime = timestamp();
 		if (store_funcs.gtrans_update)
 			store_funcs.gtrans_update(gtrans);
 		res = logger_funcs.restart();
@@ -1742,7 +1740,7 @@ sql_trans_copy_key( sql_trans *tr, sql_table *t, sql_key *k )
 		}
 	}
 
-	syskey->base.wtime = syskey->s->base.wtime = t->base.wtime = t->s->base.wtime = tr->wtime = tr->stime;
+	syskey->base.wtime = syskey->s->base.wtime = t->base.wtime = t->s->base.wtime = tr->wtime = tr->wstime;
 	if (isGlobal(t)) 
 		tr->schema_updates ++;
 	return nk;
@@ -1762,8 +1760,14 @@ idx_dup(sql_trans *tr, int flag, sql_idx * i, sql_table *t)
 	ni->type = i->type;
 	ni->key = NULL;
 
-	if (isTable(ni->t))
-		store_funcs.dup_idx(tr, i, ni);
+	assert(flag == TR_OLD || tr->parent == gtrans);
+
+	/* Needs copy when committing (ie from tr to gtrans) and 
+	 * on savepoints from tr->parent to new tr (flag == TR_OLD) */
+	if ((isNew(i) && flag == TR_NEW && tr->parent == gtrans) ||
+	    (i->base.allocated && flag == TR_OLD && tr->parent != gtrans))
+		if (isTable(ni->t)) 
+			store_funcs.dup_idx(tr, i, ni);
 	if (isNew(i) && flag == TR_NEW && tr->parent == gtrans) 
 		i->base.flag = TR_OLD;
 
@@ -1799,16 +1803,17 @@ sql_trans_copy_idx( sql_trans *tr, sql_table *t, sql_idx *i )
 		list_append(ni->columns, ic = kc_dup_(tr, TR_NEW, okc, t, 1));
 
 		table_funcs.table_insert(tr, sysic, &ni->base.id, ic->c->base.name, &nr);
-		sysic->base.wtime = sysic->s->base.wtime = tr->wtime = tr->stime;
+		sysic->base.wtime = sysic->s->base.wtime = tr->wtime = tr->wstime;
 	}
 	list_append(t->s->idxs, ni);
 	cs_add(&t->idxs, ni, TR_NEW);
 
+	if (isDeclaredTable(i->t)) 
 	if (!isDeclaredTable(t) && isTable(ni->t) && idx_has_column(ni->type))
 		store_funcs.create_idx(tr, ni);
 	if (!isDeclaredTable(t))
 		table_funcs.table_insert(tr, sysidx, &ni->base.id, &t->base.id, &ni->type, ni->base.name);
-	ni->base.wtime = t->base.wtime = t->s->base.wtime = tr->wtime = tr->stime;
+	ni->base.wtime = t->base.wtime = t->s->base.wtime = tr->wtime = tr->wstime;
 	if (isGlobal(t)) 
 		tr->schema_updates ++;
 	return ni;
@@ -1867,8 +1872,12 @@ column_dup(sql_trans *tr, int flag, sql_column *oc, sql_table *t)
 	if (oc->storage_type)
 		c->storage_type = sa_strdup(sa, oc->storage_type);
 
-	if (isTable(c->t))
-		store_funcs.dup_col(tr, oc, c);
+	/* Needs copy when committing (ie from tr to gtrans) and 
+	 * on savepoints from tr->parent to new tr (flag == TR_OLD) */
+	if ((isNew(oc) && flag == TR_NEW && tr->parent == gtrans) ||
+	    (oc->base.allocated && flag == TR_OLD && tr->parent != gtrans))
+		if (isTable(c->t)) 
+			store_funcs.dup_col(tr, oc, c);
 	if (isNew(oc) && flag == TR_NEW && tr->parent == gtrans) 
 		oc->base.flag = TR_OLD;
 	return c;
@@ -1896,11 +1905,12 @@ sql_trans_copy_column( sql_trans *tr, sql_table *t, sql_column *c )
 
 	cs_add(&t->columns, col, TR_NEW);
 
+	if (isDeclaredTable(c->t)) 
 	if (isTable(t))
 		store_funcs.create_col(tr, col);
 	if (!isDeclaredTable(t))
 		table_funcs.table_insert(tr, syscolumn, &col->base.id, col->base.name, col->type.type->sqlname, &col->type.digits, &col->type.scale, &t->base.id, (col->def) ? col->def : ATOMnilptr(TYPE_str), &col->null, &col->colnr, (col->storage_type) ? col->storage_type : ATOMnilptr(TYPE_str));
-	col->base.wtime = t->base.wtime = t->s->base.wtime = tr->wtime = tr->stime;
+	col->base.wtime = t->base.wtime = t->s->base.wtime = tr->wtime = tr->wstime;
 	if (isGlobal(t)) 
 		tr->schema_updates ++;
 	return col;
@@ -1961,8 +1971,12 @@ table_dup(sql_trans *tr, int flag, sql_table *ot, sql_schema *s)
 
 	t->pkey = NULL;
 
-	if (isTable(ot)) 
-		store_funcs.dup_del(tr, ot, t);
+	/* Needs copy when committing (ie from tr to gtrans) and 
+	 * on savepoints from tr->parent to new tr (flag == TR_OLD) */
+	if ((isNew(ot) && flag == TR_NEW && tr->parent == gtrans) ||
+	    (ot->base.allocated && flag == TR_OLD && tr->parent != gtrans))
+		if (isTable(t)) 
+			store_funcs.dup_del(tr, ot, t);
 
 	t->s = s;
 	t->sz = ot->sz;
@@ -2012,7 +2026,7 @@ table_dup(sql_trans *tr, int flag, sql_table *ot, sql_schema *s)
 		}
 		ot->triggers.nelm = NULL;
 	}
-	if (flag == TR_NEW && tr->parent == gtrans) 
+	if (isNew(ot) && flag == TR_NEW && tr->parent == gtrans) 
 		ot->base.flag = TR_OLD;
 	return t;
 }
@@ -2169,7 +2183,8 @@ static sql_trans *
 trans_init(sql_trans *t, backend_stack stk, sql_trans *ot)
 {
 	t->wtime = t->rtime = 0;
-	t->stime = timestamp ();
+	t->stime = ot->wtime;
+	t->wstime = timestamp ();
 	t->schema_updates = 0;
 	t->dropped = NULL;
 	t->status = 0;
@@ -2182,8 +2197,8 @@ trans_init(sql_trans *t, backend_stack stk, sql_trans *ot)
 
 	t->name = NULL;
 	if (bs_debug) 
-		fprintf(stderr, "#trans (%p) init (%d,%d)\n", 
-			t, t->stime, t->schema_number ); 
+		fprintf(stderr, "#trans (%p) init (%d,%d,%d)\n", 
+			t, t->wstime, t->stime, t->schema_number ); 
 	return t;
 }
 
@@ -2238,23 +2253,34 @@ rollforward_changeset_updates(sql_trans *tr, changeset * fs, changeset * ts, sql
 			if (tbn) {
 				sql_base *tb = tbn->data;
 
-				if (rollforward_deletes)
+				if (!apply && rollforward_deletes)
 					ok = rollforward_deletes(tr, tb, mode);
 				if (apply) {
 					if (ts->nelm == tbn)
 						ts->nelm = tbn->next;
-					if (tr->parent != gtrans) {
+					//if (tr->parent != gtrans) {
 						if (!ts->dset)
 							ts->dset = list_new(tr->sa, ts->destroy);
 						list_move_data(ts->set, ts->dset, tb);
-					} else {
-						list_remove_node(ts->set, tbn);
-					}
+					//} else {
+						//list_remove_node(ts->set, tbn);
+					//}
 				}
 			}
 		}
 		if (apply) {
 			list_destroy(fs->dset);
+			fs->dset = NULL;
+		}
+		/* only cleanup when alone */
+		if (apply && ts->dset && store_nr_active == 1) {
+			for (n = ts->dset->h; ok == LOG_OK && n; n = n->next) {
+				sql_base *tb = n->data;
+
+				if (rollforward_deletes)
+					ok = rollforward_deletes(tr, tb, mode);
+			}
+			list_destroy(ts->dset);
 			fs->dset = NULL;
 		}
 	}
@@ -2271,17 +2297,15 @@ rollforward_changeset_updates(sql_trans *tr, changeset * fs, changeset * ts, sql
 					if (tbn) {
 						sql_base *tb = tbn->data;
 
-						/* update timestamps */
-						if (apply && fb->rtime && tr->stime > tb->rtime)
-							tb->rtime = tr->stime;
-						if (apply && fb->wtime && tr->stime > tb->wtime)
-							tb->wtime = tr->stime;
-
 						ok = rollforward_updates(tr, fb, tb, mode);
+
+						/* update timestamps */
+						if (apply && fb->rtime && fb->rtime > tb->rtime)
+							tb->rtime = fb->rtime;
+						if (apply && fb->wtime && fb->wtime > tb->wtime)
+							tb->wtime = fb->wtime;
 					}
 				}
-				if (apply)
-					fb->rtime = fb->wtime = 0;
 			}
 		}
 		/* add the new bases */
@@ -2289,7 +2313,6 @@ rollforward_changeset_updates(sql_trans *tr, changeset * fs, changeset * ts, sql
 			for (n = fs->nelm; ok == LOG_OK && n; ) {
 				node *nxt = n->next;
 				sql_base *fb = n->data;
-
 
 				if (apply) {
 					sql_base *tb = fd(tr, TR_NEW, fb, b);
@@ -2302,7 +2325,6 @@ rollforward_changeset_updates(sql_trans *tr, changeset * fs, changeset * ts, sql
 							cs_add(ts, r, TR_NEW);
 						else
 							ok = LOG_ERR;
-						fb->rtime = fb->wtime = 0;
 						fb->flag = TR_OLD;
 					}
 				} else if (!rollforward_creates(tr, fb, mode)) {
@@ -2331,10 +2353,8 @@ rollforward_changeset_creates(sql_trans *tr, changeset * cs, rfcfunc rf, int mod
 			if (!rf(tr, b, mode))
 				return LOG_ERR;
 
-			if (apply) {
-				b->rtime = b->wtime = 0;
+			if (apply) 
 				b->flag = TR_OLD;
-			}
 		}
 		if (apply) 
 			cs->nelm = NULL;
@@ -2453,12 +2473,13 @@ rollforward_add_table(sql_trans *tr, sql_table *t, int mode)
 	return t;
 }
 
-static sql_table *
+static int
 rollforward_del_table(sql_trans *tr, sql_table *t, int mode)
 {
 	(void) tr;
+	(void) t;
 	(void) mode;
-	return t;
+	return LOG_OK;
 }
 
 static sql_table *
@@ -2469,18 +2490,20 @@ rollforward_create_table(sql_trans *tr, sql_table *t, int mode)
 	if (bs_debug) 
 		fprintf(stderr, "#create table %s\n", t->base.name);
 
-	if (isTable(t) && isGlobal(t)) {
+	if (isKindOfTable(t) && isGlobal(t)) {
 		int p = (tr->parent == gtrans && !isTempTable(t));
 
 		/* only register columns without commit action tables */
 		ok = rollforward_changeset_creates(tr, &t->columns, (rfcfunc) &rollforward_create_column, mode);
 
-		if (p && mode == R_SNAPSHOT)
-			store_funcs.snapshot_create_del(tr, t);
-		else if (p && mode == R_LOG)
-			store_funcs.log_create_del(tr, t);
-		else if (mode == R_APPLY)
-			store_funcs.create_del(tr, t);
+		if (isTable(t)) {
+			if (p && mode == R_SNAPSHOT)
+				store_funcs.snapshot_create_del(tr, t);
+			else if (p && mode == R_LOG)
+				store_funcs.log_create_del(tr, t);
+			else if (mode == R_APPLY)
+				store_funcs.create_del(tr, t);
+		}
 	
 		if (ok == LOG_OK)
 			ok = rollforward_changeset_creates(tr, &t->tables, (rfcfunc) &rollforward_add_table, mode);
@@ -2601,7 +2624,7 @@ rollforward_drop_table(sql_trans *tr, sql_table *t, int mode)
 	if (ok == LOG_OK)
 		ok = rollforward_changeset_deletes(tr, &t->columns, (rfdfunc) &rollforward_drop_column, mode);
  	if (ok == LOG_OK)
-		ok = rollforward_changeset_deletes(tr, &t->tables, (rfdfunc) NULL, mode);
+		ok = rollforward_changeset_deletes(tr, &t->tables, (rfdfunc) &rollforward_del_table, mode);
 	if (ok == LOG_OK)
 		ok = rollforward_changeset_deletes(tr, &t->idxs, (rfdfunc) &rollforward_drop_idx, mode);
 	if (ok == LOG_OK)
@@ -2637,7 +2660,7 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt, int mode)
 	int ok = LOG_OK;
 
 	/* cannot update views and temporary tables */
-	if (!isTable(ft) || isTempTable(ft))
+	if (isView(ft) || isTempTable(ft))
 		return ok;
 
 	ok = rollforward_changeset_updates(tr, &ft->columns, &tt->columns, &tt->base, (rfufunc) NULL, (rfcfunc) &rollforward_create_column, (rfdfunc) &rollforward_drop_column, (dupfunc) &column_dup, mode);
@@ -2653,20 +2676,18 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt, int mode)
 	if (ok != LOG_OK) 
 		return LOG_ERR;
 
-	if (p && mode == R_SNAPSHOT) {
-		ok = store_funcs.snapshot_table(tr, ft, tt);
-	} else if (p && mode == R_LOG) {
-		ok = store_funcs.log_table(tr, ft, tt);
-	} else if (mode == R_APPLY) {
-		assert(cs_size(&tt->columns) == cs_size(&ft->columns));
-		if (ft->base.rtime)
-			tt->base.rtime = tr->stime;
-		tt->base.wtime = tr->stime;
-		if (bs_debug) 
-			fprintf(stderr, "#update table %s\n", tt->base.name);
-		ok = store_funcs.update_table(tr, ft, tt);
-		ft->cleared = 0;
-		ft->base.rtime = ft->base.wtime = 0;
+	if (isTable(ft)) {
+		if (p && mode == R_SNAPSHOT) {
+			ok = store_funcs.snapshot_table(tr, ft, tt);
+		} else if (p && mode == R_LOG) {
+			ok = store_funcs.log_table(tr, ft, tt);
+		} else if (mode == R_APPLY) {
+			assert(cs_size(&tt->columns) == cs_size(&ft->columns));
+			if (bs_debug) 
+				fprintf(stderr, "#update table %s\n", tt->base.name);
+			ok = store_funcs.update_table(tr, ft, tt);
+			ft->cleared = 0;
+		}
 	}
 	return ok;
 }
@@ -2714,6 +2735,7 @@ rollforward_update_schema(sql_trans *tr, sql_schema *fs, sql_schema *ts, int mod
 	int ok = LOG_OK;
 
 	if (apply && isTempSchema(fs)) {
+		fs->tables.nelm = NULL;
 		if (fs->tables.set) {
 			node *n;
 			for (n = fs->tables.set->h; n; ) {
@@ -2762,12 +2784,16 @@ rollforward_trans(sql_trans *tr, int mode)
 		ok = rollforward_changeset_updates(tr, &tr->schemas, &tr->parent->schemas, (sql_base *) tr->parent, (rfufunc) &rollforward_update_schema, (rfcfunc) &rollforward_create_schema, (rfdfunc) &rollforward_drop_schema, (dupfunc) &schema_dup, mode);
 	if (mode == R_APPLY) {
 		if (tr->parent == gtrans) {
-			gtrans->stime = tr->stime;
+			if (gtrans->stime < tr->stime)
+				gtrans->stime = tr->stime;
+			if (gtrans->wstime < tr->wstime)
+				gtrans->wstime = tr->wstime;
 			
 			if (tr->schema_updates) 
 				schema_number++;
 		}
-		tr->wtime = tr->rtime = 0;
+		//tr->wtime = tr->rtime = 0;
+		assert(gtrans->wstime == gtrans->wtime);
 	}
 	return ok;
 }
@@ -2786,29 +2812,25 @@ validate_tables(sql_schema *s, sql_schema *os)
 				continue;
 
  			ot = find_sql_table(os, t->base.name);
-			if (ot && isTable(ot) && isTable(t)) {
-				if ((t->base.wtime && (t->base.wtime > ot->base.rtime && (t->base.wtime > ot->base.wtime))) &&
-				    (t->base.rtime && t->base.rtime > ot->base.wtime)) 
-					continue;
-				if ((t->base.wtime && (t->base.wtime < ot->base.rtime || (t->base.wtime < ot->base.wtime && t->base.rtime))) ||
-				    (t->base.rtime && t->base.rtime < ot->base.wtime)) 
+			if (ot && isKindOfTable(ot) && isKindOfTable(t)) {
+				if ((t->base.wtime && (t->base.wtime < ot->base.rtime || t->base.wtime < ot->base.wtime)) ||
+				    (t->base.rtime && (t->base.rtime < ot->base.wtime))) 
+					return 0;
 				for (o = t->columns.set->h, p = ot->columns.set->h; o && p; o = o->next, p = p->next) {
 					sql_column *c = o->data;
 					sql_column *oc = p->data;
 
+					if (!c->base.wtime && !c->base.rtime)
+						continue;
+
 					/* t wrote, ie. check read and write time */
 					/* read or write after t's write */
 					if (c->base.wtime && (c->base.wtime < oc->base.rtime
-							      /* allow for late appends, ie 
-							       * wtime but no rtime 
-							       */
-							      || (c->base.wtime < oc->base.wtime && c->base.rtime))) {
+							  ||  c->base.wtime < oc->base.wtime)) 
 						return 0;
-					}
 					/* commited write before t's read */
-					if (c->base.rtime && c->base.rtime < oc->base.wtime) {
+					if (c->base.rtime && c->base.rtime < oc->base.wtime) 
 						return 0;
-					}
 				}
 			}
 		}
@@ -2830,6 +2852,8 @@ reset_changeset(sql_trans *tr, changeset * fs, changeset * pfs, sql_base *b, res
 		for (n = fs->nelm; n; ) {
 			node *nxt = n->next;
 			list_remove_node(fs->set, n);
+			if(fs->set->ht)
+				hash_del(fs->set->ht, base_key(n->data), n->data);
 			n = nxt;
 		}
 		fs->nelm = NULL;
@@ -2854,16 +2878,16 @@ reset_changeset(sql_trans *tr, changeset * fs, changeset * pfs, sql_base *b, res
 				n = n->next;
 				m = m->next;
 				if (bs_debug) 
-					fprintf(stderr, "#reset_cs %s\n",
-						(fb->name)?fb->name:"help");
+					fprintf(stderr, "#reset_cs %s\n", (fb->name)?fb->name:"help");
 			} else if (fb->id < pfb->id) {  
 				node *t = n->next;
 				if (bs_debug) {
 					sql_base *b = n->data;
-					fprintf(stderr, "#reset_cs free %s\n",
-						(b->name)?b->name:"help");
+					fprintf(stderr, "#reset_cs free %s\n", (b->name)?b->name:"help");
 				}
 				list_remove_node(fs->set, n);
+				if(fs->set->ht)
+					hash_del(fs->set->ht, base_key(n->data), n->data);
 				n = t;
 			} else { /* a new id */
 				sql_base *r = fd(tr, TR_OLD, pfb,  b);
@@ -2871,10 +2895,8 @@ reset_changeset(sql_trans *tr, changeset * fs, changeset * pfs, sql_base *b, res
 				cs_add_before(fs, n, r);
 				r->rtime = r->wtime = 0;
 				m = m->next;
-				if (bs_debug) {
-					fprintf(stderr, "#reset_cs new %s\n",
-						(r->name)?r->name:"help");
-				}
+				if (bs_debug) 
+					fprintf(stderr, "#reset_cs new %s\n", (r->name)?r->name:"help");
 			}
 		}
 		/* add new bases */
@@ -2896,6 +2918,8 @@ reset_changeset(sql_trans *tr, changeset * fs, changeset * pfs, sql_base *b, res
 					(b->name)?b->name:"help");
 			}
 			list_remove_node(fs->set, n);
+			if(fs->set->ht)
+				hash_del(fs->set->ht, base_key(n->data), n->data);
 			n = t;
 		}
 	}
@@ -2910,11 +2934,9 @@ static int
 reset_idx(sql_trans *tr, sql_idx *fi, sql_idx *pfi)
 {
 	/* did we make changes or is the global changed after we started */
-	if (fi->base.wtime || tr->stime < pfi->base.wtime) {
-		if (isTable(fi->t)) {
+	if (fi->base.rtime || fi->base.wtime || tr->stime < pfi->base.wtime) {
+		if (isTable(fi->t)) 
 			store_funcs.destroy_idx(NULL, fi);
-			store_funcs.dup_idx(tr, pfi, fi);
-		}
 		fi->base.wtime = fi->base.rtime = 0;
 	}
 	return LOG_OK;
@@ -2924,22 +2946,21 @@ static int
 reset_column(sql_trans *tr, sql_column *fc, sql_column *pfc)
 {
 	/* did we make changes or is the global changed after we started */
-	if (fc->base.wtime || tr->stime < pfc->base.wtime) {
-		if (isTable(fc->t)) {
-			store_funcs.destroy_col(NULL, fc);
-			store_funcs.dup_col(tr, pfc, fc);
+	if (fc->base.rtime || fc->base.wtime || tr->stime < pfc->base.wtime) {
 
-			fc->null = pfc->null;
-			fc->unique = pfc->unique;
-			fc->storage_type = NULL;
-			if (pfc->storage_type)
-				fc->storage_type = sa_strdup(tr->sa, pfc->storage_type);
-			if (fc->def) 
-				sa_strdup(tr->sa, fc->def);
-			fc->def = NULL;
-			if (pfc->def)
-				fc->def = sa_strdup(tr->sa, pfc->def);
-		}
+		if (isTable(fc->t)) 
+			store_funcs.destroy_col(NULL, fc);
+
+		fc->null = pfc->null;
+		fc->unique = pfc->unique;
+		fc->storage_type = NULL;
+		if (pfc->storage_type)
+			fc->storage_type = sa_strdup(tr->sa, pfc->storage_type);
+		if (fc->def) 
+			sa_strdup(tr->sa, fc->def);
+		fc->def = NULL;
+		if (pfc->def)
+			fc->def = sa_strdup(tr->sa, pfc->def);
 		fc->base.wtime = fc->base.rtime = 0;
 	}
 	return LOG_OK;
@@ -2962,20 +2983,20 @@ reset_seq(sql_trans *tr, sql_sequence *ft, sql_sequence *pft)
 static int
 reset_table(sql_trans *tr, sql_table *ft, sql_table *pft)
 {
-	if (!isTable(ft) || isTempTable(ft))
+	if (isView(ft) || isTempTable(ft))
 		return LOG_OK;
 
 	/* did we make changes or is the global changed after we started */
-	if (ft->base.wtime || tr->stime < pft->base.wtime) {
+	if (ft->base.rtime || ft->base.wtime || tr->stime < pft->base.wtime) {
 		int ok = LOG_OK;
 
-		if (isTable(ft)) {
+		if (isTable(ft)) 
 			store_funcs.destroy_del(NULL, ft);
-			store_funcs.dup_del(tr, pft, ft);
-		}
 
 		ft->base.wtime = ft->base.rtime = 0;
 		ok = reset_changeset( tr, &ft->columns, &pft->columns, &ft->base, (resetf) &reset_column, (dupfunc) &column_dup);
+		if (ok == LOG_OK)
+			ok = reset_changeset( tr, &ft->tables, &pft->tables, &ft->base, (resetf) NULL, (dupfunc) &table_find);
 		if (ok == LOG_OK)
 			ok = reset_changeset( tr, &ft->idxs, &pft->idxs, &ft->base, (resetf) &reset_idx, (dupfunc) &idx_dup);
 		if (ok == LOG_OK)
@@ -2987,29 +3008,40 @@ reset_table(sql_trans *tr, sql_table *ft, sql_table *pft)
 	return LOG_OK;
 }
 
+static void
+reset_table_of_tables_dup(sql_table *omt, sql_schema *s, int flag) 
+{
+	node *n;
+	sql_table *mt = schema_table_find(s, omt);
+	
+	if (omt->tables.set && !mt->tables.set) {
+		for (n = omt->tables.set->h; n; n = n->next) {
+			sql_table *pt = n->data;
+			sql_table *npt = schema_table_find(s, pt);
+			cs_add(&mt->tables, npt, tr_flag(&pt->base, flag));
+			npt->p = mt;
+		}
+		mt->tables.nelm = NULL;
+	}
+}
+
 static int
 reset_schema(sql_trans *tr, sql_schema *fs, sql_schema *pfs)
 {
 	int ok = LOG_OK;
 
-	/* did we make changes or is the global changed after we started */
-	if (fs->base.wtime || tr->stime < pfs->base.wtime) {
-		fs->base.wtime = fs->base.rtime = 0;
-
-		ok = reset_changeset(tr, &fs->types, &pfs->types, &fs->base, (resetf) NULL, (dupfunc) &type_dup);
-		if (ok == LOG_OK)
-			ok = reset_changeset(tr, &fs->funcs, &pfs->funcs, &fs->base, (resetf) NULL, (dupfunc) &func_dup);
-
-		if (ok == LOG_OK)
-			ok = reset_changeset(tr, &fs->seqs, &pfs->seqs, &fs->base, (resetf) &reset_seq, (dupfunc) &seq_dup);
-
-		if (ok == LOG_OK)
-			return reset_changeset(tr, &fs->tables, &pfs->tables, &fs->base, (resetf) &reset_table, (dupfunc) &table_dup);
-	}
-
 	if (isTempSchema(fs)) {
 		if (fs->tables.set) {
 			node *n;
+			for (n = fs->tables.nelm; n; ) {
+				node *nxt = n->next;
+
+				list_remove_node(fs->tables.set, n);
+				if(fs->tables.set->ht)
+					hash_del(fs->tables.set->ht, base_key(n->data), n->data);
+				n = nxt;
+			}
+			fs->tables.nelm = NULL;
 			for (n = fs->tables.set->h; n; ) {
 				node *nxt = n->next;
 				sql_table *t = n->data;
@@ -3024,7 +3056,32 @@ reset_schema(sql_trans *tr, sql_schema *fs, sql_schema *pfs)
 				n = nxt;
 			}
 		}
+		fs->base.wtime = fs->base.rtime = 0;
 		return ok;
+	}
+
+	/* did we make changes or is the global changed after we started */
+	if (fs->base.wtime || tr->stime < pfs->base.wtime) {
+		fs->base.wtime = fs->base.rtime = 0;
+
+		ok = reset_changeset(tr, &fs->types, &pfs->types, &fs->base, (resetf) NULL, (dupfunc) &type_dup);
+		if (ok == LOG_OK)
+			ok = reset_changeset(tr, &fs->funcs, &pfs->funcs, &fs->base, (resetf) NULL, (dupfunc) &func_dup);
+
+		if (ok == LOG_OK)
+			ok = reset_changeset(tr, &fs->seqs, &pfs->seqs, &fs->base, (resetf) &reset_seq, (dupfunc) &seq_dup);
+
+		if (ok == LOG_OK)
+			return reset_changeset(tr, &fs->tables, &pfs->tables, &fs->base, (resetf) &reset_table, (dupfunc) &table_dup);
+		if (ok == LOG_OK) {
+			node *n;
+			for (n = pfs->tables.set->h; n; n = n->next) {
+				sql_table *ot = n->data;
+
+				if (ot->persistence != SQL_LOCAL_TEMP && (isMergeTable(ot) || isReplicaTable(ot)))
+					reset_table_of_tables_dup(ot, fs, ot->base.flag);
+			}
+		}
 	}
 	return ok;
 }
@@ -3126,10 +3183,9 @@ sql_trans_commit(sql_trans *tr)
 
 	/* write phase */
 	if (bs_debug)
-		fprintf(stderr, "#forwarding changes %d,%d\n", gtrans->stime, tr->stime);
+		fprintf(stderr, "#forwarding changes %d,%d %d,%d\n", gtrans->stime, tr->stime, gtrans->wstime, tr->wstime);
 	/* snap shots should be saved first */
 	if (tr->parent == gtrans) {
-		tr->stime = timestamp ();
 		ok = rollforward_trans(tr, R_SNAPSHOT);
 
 		if (ok == LOG_OK) 
@@ -3149,7 +3205,7 @@ sql_trans_commit(sql_trans *tr)
 		ok = rollforward_trans(tr, R_APPLY);
 	}
 	if (bs_debug)
-		fprintf(stderr, "#done forwarding changes %d\n", gtrans->stime);
+		fprintf(stderr, "#done forwarding changes %d,%d\n", gtrans->stime, gtrans->wstime);
 	return (ok==LOG_OK)?SQL_OK:SQL_ERR;
 }
 
@@ -3162,8 +3218,7 @@ sql_trans_drop_all_dependencies(sql_trans *tr, sql_schema *s, int id, short type
 	sql_table *t = NULL;
 
 	list *dep = sql_trans_get_dependencies(tr, id, type, NULL);
-	node *n = dep->h, *t_n = NULL;
-
+	node *n = dep->h;
 
 	while (n) {
 		dep_id = *(int*) n->data;
@@ -3180,10 +3235,8 @@ sql_trans_drop_all_dependencies(sql_trans *tr, sql_schema *s, int id, short type
 							break;
 				case COLUMN_DEPENDENCY :
 							t_id = sql_trans_get_dependency_type(tr, dep_id, TABLE_DEPENDENCY);
-							t_n = find_sql_table_node(s, NULL, t_id);
-							t = t_n->data;
+							t = find_sql_table_id(s, t_id);
 							sql_trans_drop_column(tr, t, dep_id, DROP_CASCADE);
-							t_n = NULL;
 							t = NULL;
 							break;
 				case VIEW_DEPENDENCY :
@@ -3389,7 +3442,7 @@ sys_drop_column(sql_trans *tr, sql_column *col, int drop_action)
 		seq = find_sql_sequence(syss, seq_name);
 		if (seq && sql_trans_get_dependency_type(tr, seq->base.id, BEDROPPED_DEPENDENCY)) {
 			sys_drop_sequence(tr, seq, drop_action);		
-			seq->base.wtime = syss->base.wtime = tr->wtime = tr->stime;
+			seq->base.wtime = syss->base.wtime = tr->wtime = tr->wstime;
 			cs_del(&syss->seqs, n, seq->base.flag);
 		}
 		_DELETE(seq_name);
@@ -3456,14 +3509,14 @@ sys_drop_table(sql_trans *tr, sql_table *t, int drop_action)
 
 	sql_trans_drop_dependencies(tr, t->base.id);
 
-	if (isTable(t))
+	if (isKindOfTable(t))
 		sys_drop_columns(tr, t, drop_action);
 
 	if (isGlobal(t)) 
 		tr->schema_updates ++;
 
 	if (drop_action) 
-		sql_trans_drop_all_dependencies(tr, t->s, t->base.id, isTable(t) ? TABLE_DEPENDENCY : VIEW_DEPENDENCY);
+		sql_trans_drop_all_dependencies(tr, t->s, t->base.id, !isView(t) ? TABLE_DEPENDENCY : VIEW_DEPENDENCY);
 }
 
 static void
@@ -3589,7 +3642,7 @@ sql_trans_create_type(sql_trans *tr, sql_schema * s, char *sqlname, int digits, 
 	cs_add(&s->types, t, TR_NEW);
 	table_funcs.table_insert(tr, systype, &t->base.id, t->base.name, t->sqlname, &t->digits, &t->scale, &radix, &eclass, &s->base.id);
 
-	t->base.wtime = s->base.wtime = tr->wtime = tr->stime;
+	t->base.wtime = s->base.wtime = tr->wtime = tr->wstime;
 	tr->schema_updates ++;
 	return t;
 }
@@ -3661,7 +3714,7 @@ sql_trans_create_func(sql_trans *tr, sql_schema * s, char *func, list *args, sql
 		table_funcs.table_insert(tr, sysarg, &id, &t->base.id, a->name, a->type.type->sqlname, &a->type.digits, &a->type.scale, &number);
 	}
 
-	t->base.wtime = s->base.wtime = tr->wtime = tr->stime;
+	t->base.wtime = s->base.wtime = tr->wtime = tr->wstime;
 	tr->schema_updates ++;
 	return t;
 }
@@ -3669,7 +3722,7 @@ sql_trans_create_func(sql_trans *tr, sql_schema * s, char *func, list *args, sql
 void
 sql_trans_drop_func(sql_trans *tr, sql_schema *s, int id, int drop_action)
 {
-	node *n = find_sql_func_node(s, NULL, id);
+	node *n = find_sql_func_node(s, id);
 	sql_func *func = n->data;
 
 	if (drop_action == DROP_CASCADE_START || drop_action == DROP_CASCADE) {
@@ -3683,7 +3736,7 @@ sql_trans_drop_func(sql_trans *tr, sql_schema *s, int id, int drop_action)
 
 	sys_drop_func(tr, func, DROP_CASCADE);
 
-	func->base.wtime = s->base.wtime = tr->wtime = tr->stime;
+	func->base.wtime = s->base.wtime = tr->wtime = tr->wstime;
 	tr->schema_updates ++;
 	cs_del(&s->funcs, n, func->base.flag);
 	
@@ -3741,7 +3794,7 @@ sql_trans_create_schema(sql_trans *tr, char *name, int auth_id, int owner)
 
 	cs_add(&tr->schemas, s, TR_NEW);
 	table_funcs.table_insert(tr, sysschema, &s->base.id, s->base.name, &s->auth_id, &s->owner);
-	s->base.wtime = tr->wtime = tr->stime;
+	s->base.wtime = tr->wtime = tr->wstime;
 	tr->schema_updates ++;
 	return s;
 }
@@ -3749,7 +3802,7 @@ sql_trans_create_schema(sql_trans *tr, char *name, int auth_id, int owner)
 void
 sql_trans_drop_schema(sql_trans *tr, int id, int drop_action)
 {
-	node *n = find_sql_schema_node(tr, NULL, id);
+	node *n = find_sql_schema_node(tr, id);
 	sql_schema *s = n->data;
 	sql_table *sysschema = find_sql_table(find_sql_schema(tr, "sys"), "schemas");
 	oid rid = table_funcs.column_find_row(tr, find_sql_column(sysschema, "id"), &s->base.id, NULL);
@@ -3770,7 +3823,7 @@ sql_trans_drop_schema(sql_trans *tr, int id, int drop_action)
 	sys_drop_types(tr, s, drop_action);
 	sys_drop_sequences(tr, s, drop_action);
 
-	s->base.wtime = tr->wtime = tr->stime;
+	s->base.wtime = tr->wtime = tr->wstime;
 	tr->schema_updates ++;
 	cs_del(&tr->schemas, n, s->base.flag);
 	
@@ -3791,7 +3844,7 @@ sql_trans_add_table(sql_trans *tr, sql_table *mt, sql_table *pt)
 	/* TODO add dependency betweem mt/pt */
 	cs_add(&mt->tables, pt, TR_NEW);
 	pt->p = mt;
-	mt->s->base.wtime = mt->base.wtime = tr->wtime = tr->stime;
+	mt->s->base.wtime = mt->base.wtime = tr->wtime = tr->wstime;
 	table_funcs.table_insert(tr, sysobj, &mt->base.id, pt->base.name, &nr);
 	return mt;
 }
@@ -3806,7 +3859,7 @@ sql_trans_del_table(sql_trans *tr, sql_table *mt, sql_table *pt, int drop_action
 
 	/* TODO drop dependency betweem mt/pt */
 	cs_del(&mt->tables, n, pt->base.flag);
-	mt->s->base.wtime = mt->base.wtime = tr->wtime = tr->stime;
+	mt->s->base.wtime = mt->base.wtime = tr->wtime = tr->wstime;
 	table_funcs.table_delete(tr, sysobj, rid);
 	if (drop_action == DROP_CASCADE)
 		sql_trans_drop_table(tr, pt->s, pt->base.id, drop_action);
@@ -3851,7 +3904,7 @@ sql_trans_create_table(sql_trans *tr, sql_schema *s, char *name, char *sql, int 
 			(t->query) ? t->query : ATOMnilptr(TYPE_str), &t->type,
 			&t->system, &ca, &t->readonly);
 
-	t->base.wtime = s->base.wtime = tr->wtime = tr->stime;
+	t->base.wtime = s->base.wtime = tr->wtime = tr->wstime;
 	if (isGlobal(t)) 
 		tr->schema_updates ++;
 	return t;
@@ -3940,10 +3993,10 @@ create_sql_ic(sql_allocator *sa, sql_idx *i, sql_column *c)
 	}
 
 	/* should we switch to oph_idx ? */
-	if (i->type == hash_idx && list_length(i->columns) == 1 && ic->c->sorted) 
+	if (i->type == hash_idx && list_length(i->columns) == 1 && ic->c->sorted) {
 		/*i->type = oph_idx;*/
 		i->type = no_idx;
-
+	}
 	return i;
 }
 
@@ -3982,7 +4035,7 @@ create_sql_column(sql_allocator *sa, sql_table *t, char *name, sql_subtype *tpe)
 void
 sql_trans_drop_table(sql_trans *tr, sql_schema *s, int id, int drop_action)
 {
-	node *n = find_sql_table_node(s, NULL, id);
+	node *n = find_sql_table_node(s, id);
 	sql_table *t = n->data;
 
 	if (drop_action == DROP_CASCADE_START || drop_action == DROP_CASCADE) {
@@ -3997,7 +4050,7 @@ sql_trans_drop_table(sql_trans *tr, sql_schema *s, int id, int drop_action)
 	if (!isDeclaredTable(t))
 		sys_drop_table(tr, t, drop_action);
 
-	t->base.wtime = s->base.wtime = tr->wtime = tr->stime;
+	t->base.wtime = s->base.wtime = tr->wtime = tr->wstime;
 	if (isGlobal(t) || (t->commit_action != CA_DROP)) 
 		tr->schema_updates ++;
 	cs_del(&s->tables, n, t->base.flag);
@@ -4016,15 +4069,15 @@ sql_trans_clear_table(sql_trans *tr, sql_table *t)
 	BUN sz = 0;
 
 	t->cleared = 1;
-	t->base.wtime = t->s->base.wtime = tr->wtime = tr->stime;
-	c->base.wtime = tr->stime;
+	t->base.wtime = t->s->base.wtime = tr->wtime = tr->wstime;
+	c->base.wtime = tr->wstime;
 
 	sz += store_funcs.clear_col(tr, c);
 	sz -= store_funcs.clear_del(tr, t);
 
 	for (n = n->next; n; n = n->next) {
 		c = n->data;
-		c->base.wtime = tr->stime;
+		c->base.wtime = tr->wstime;
 
 		(void)store_funcs.clear_col(tr, c);
 	}
@@ -4032,7 +4085,7 @@ sql_trans_clear_table(sql_trans *tr, sql_table *t)
 		for (n = t->idxs.set->h; n; n = n->next) {
 			sql_idx *ci = n->data;
 
-			ci->base.wtime = tr->stime;
+			ci->base.wtime = tr->wstime;
 			(void)store_funcs.clear_idx(tr, ci);
 		}
 	}
@@ -4056,7 +4109,7 @@ sql_trans_create_column(sql_trans *tr, sql_table *t, char *name, sql_subtype *tp
 	if (!isDeclaredTable(t))
 		table_funcs.table_insert(tr, syscolumn, &col->base.id, col->base.name, col->type.type->sqlname, &col->type.digits, &col->type.scale, &t->base.id, (col->def) ? col->def : ATOMnilptr(TYPE_str), &col->null, &col->colnr, (col->storage_type) ? col->storage_type : ATOMnilptr(TYPE_str));
 
-	col->base.wtime = t->base.wtime = t->s->base.wtime = tr->wtime = tr->stime;
+	col->base.wtime = t->base.wtime = t->s->base.wtime = tr->wtime = tr->wstime;
 	if (isGlobal(t)) 
 		tr->schema_updates ++;
 	return col;
@@ -4107,10 +4160,10 @@ sql_trans_drop_column(sql_trans *tr, sql_table *t, int id, int drop_action)
 		list_append(tr->dropped, local_id);
 	}
 	
-	if (isTable(t))
+	if (isKindOfTable(t))
 		sys_drop_column(tr, col, drop_action);
 
-	col->base.wtime = t->base.wtime = t->s->base.wtime = tr->wtime = tr->stime;
+	col->base.wtime = t->base.wtime = t->s->base.wtime = tr->wtime = tr->wstime;
 	cs_del(&t->columns, n, col->base.flag);
 	if (isGlobal(t)) 
 		tr->schema_updates ++;
@@ -4133,7 +4186,7 @@ sql_trans_alter_null(sql_trans *tr, sql_column *col, int isnull)
 		assert(rid != oid_nil);
 		table_funcs.column_update_value(tr, find_sql_column(syscolumn, "null"), rid, &isnull);
 		col->null = isnull;
-		col->base.wtime = col->t->base.wtime = col->t->s->base.wtime = tr->wtime = tr->stime;
+		col->base.wtime = col->t->base.wtime = col->t->s->base.wtime = tr->wtime = tr->wstime;
 		if (isGlobal(col->t)) 
 			tr->schema_updates ++;
 	}
@@ -4153,7 +4206,7 @@ sql_trans_alter_readonly(sql_trans *tr, sql_table *t, int readonly)
 		assert(rid != oid_nil);
 		table_funcs.column_update_value(tr, find_sql_column(systable, "readonly"), rid, &readonly);
 		t->readonly = readonly;
-		t->base.wtime = t->s->base.wtime = tr->wtime = tr->stime;
+		t->base.wtime = t->s->base.wtime = tr->wtime = tr->wstime;
 		if (isGlobal(t)) 
 			tr->schema_updates ++;
 	}
@@ -4179,7 +4232,7 @@ sql_trans_alter_default(sql_trans *tr, sql_column *col, char *val)
 		col->def = NULL;
 		if (val)
 			col->def = sa_strdup(tr->sa, val);
-		col->base.wtime = col->t->base.wtime = col->t->s->base.wtime = tr->wtime = tr->stime;
+		col->base.wtime = col->t->base.wtime = col->t->s->base.wtime = tr->wtime = tr->wstime;
 		if (isGlobal(col->t)) 
 			tr->schema_updates ++;
 	}
@@ -4189,7 +4242,7 @@ sql_trans_alter_default(sql_trans *tr, sql_column *col, char *val)
 int
 sql_trans_is_sorted( sql_trans *tr, sql_column *col )
 {
-	if (col && store_funcs.sorted_col(tr, col))
+	if (col && isTable(col->t) && store_funcs.sorted_col && store_funcs.sorted_col(tr, col))
 		return 1;
 	return 0;
 }
@@ -4230,7 +4283,7 @@ sql_trans_create_ukey(sql_trans *tr, sql_table *t, char *name, key_type kt)
 
 	table_funcs.table_insert(tr, syskey, &nk->base.id, &t->base.id, &nk->type, nk->base.name, (nk->type == fkey) ? &((sql_fkey *) nk)->rkey->k.base.id : &neg, &action );
 
-	syskey->base.wtime = syskey->s->base.wtime = t->base.wtime = t->s->base.wtime = tr->wtime = tr->stime;
+	syskey->base.wtime = syskey->s->base.wtime = t->base.wtime = t->s->base.wtime = tr->wtime = tr->wstime;
 	if (isGlobal(t)) 
 		tr->schema_updates ++;
 	return nk;
@@ -4279,7 +4332,7 @@ sql_trans_create_fkey(sql_trans *tr, sql_table *t, char *name, key_type kt, sql_
 
 	sql_trans_create_dependency(tr, ((sql_fkey *) nk)->rkey->k.base.id, nk->base.id, FKEY_DEPENDENCY);
 
-	syskey->base.wtime = syskey->s->base.wtime = t->base.wtime = t->s->base.wtime = tr->wtime = tr->stime;
+	syskey->base.wtime = syskey->s->base.wtime = t->base.wtime = t->s->base.wtime = tr->wtime = tr->wstime;
 	if (isGlobal(t)) 
 		tr->schema_updates ++;
 	return (sql_fkey*) nk;
@@ -4307,7 +4360,7 @@ sql_trans_create_kc(sql_trans *tr, sql_key *k, sql_column *c )
 
 	table_funcs.table_insert(tr, syskc, &k->base.id, kc->c->base.name, &nr);
 
-	syskc->base.wtime = tr->wtime = tr->stime;
+	syskc->base.wtime = tr->wtime = tr->wstime;
 	if (isGlobal(k->t)) 
 		tr->schema_updates ++;
 	return k;
@@ -4333,7 +4386,7 @@ sql_trans_create_fkc(sql_trans *tr, sql_fkey *fk, sql_column *c )
 
 	table_funcs.table_insert(tr, syskc, &k->base.id, kc->c->base.name, &nr);
 
-	syskc->base.wtime = tr->wtime = tr->stime;
+	syskc->base.wtime = tr->wtime = tr->wstime;
 	if (isGlobal(k->t)) 
 		tr->schema_updates ++;
 	return (sql_fkey*)k;
@@ -4466,7 +4519,7 @@ sql_trans_drop_key(sql_trans *tr, sql_schema *s, int id, int drop_action)
 	if (!isTempTable(k->t)) 
 		sys_drop_key(tr, k, drop_action);
 
-	k->base.wtime = k->t->base.wtime = s->base.wtime = tr->wtime = tr->stime;
+	k->base.wtime = k->t->base.wtime = s->base.wtime = tr->wtime = tr->wstime;
 	if (isGlobal(k->t)) 
 		tr->schema_updates ++;
 
@@ -4499,7 +4552,7 @@ sql_trans_create_idx(sql_trans *tr, sql_table *t, char *name, idx_type it)
 		store_funcs.create_idx(tr, ni);
 	if (!isDeclaredTable(t))
 		table_funcs.table_insert(tr, sysidx, &ni->base.id, &t->base.id, &ni->type, ni->base.name);
-	ni->base.wtime = t->base.wtime = t->s->base.wtime = tr->wtime = tr->stime;
+	ni->base.wtime = t->base.wtime = t->s->base.wtime = tr->wtime = tr->wstime;
 	if (isGlobal(t)) 
 		tr->schema_updates ++;
 	return ni;
@@ -4529,7 +4582,7 @@ sql_trans_create_ic(sql_trans *tr, sql_idx * i, sql_column *c)
 	/* should we switch to oph_idx ? */
 #if 0
 	if (i->type == hash_idx && list_length(i->columns) == 1 &&
-	    store_funcs.count_col(ic->c) && store_funcs.sorted_col(tr, ic->c)) {
+	    store_funcs.count_col(tr, ic->c) && store_funcs.sorted_col(tr, ic->c)) {
 		sql_table *sysidx = find_sql_table(syss, "idxs");
 		sql_column *sysidxid = find_sql_column(sysidx, "id");
 		sql_column *sysidxtype = find_sql_column(sysidx, "type");
@@ -4542,7 +4595,7 @@ sql_trans_create_ic(sql_trans *tr, sql_idx * i, sql_column *c)
 #endif
 
 	table_funcs.table_insert(tr, sysic, &i->base.id, ic->c->base.name, &nr);
-	sysic->base.wtime = sysic->s->base.wtime = tr->wtime = tr->stime;
+	sysic->base.wtime = sysic->s->base.wtime = tr->wtime = tr->wstime;
 	if (isGlobal(i->t)) 
 		tr->schema_updates ++;
 	return i;
@@ -4567,7 +4620,7 @@ sql_trans_drop_idx(sql_trans *tr, sql_schema *s, int id, int drop_action)
 	if (!isTempTable(i->t))
 		sys_drop_idx(tr, i, drop_action);
 
-	i->base.wtime = i->t->base.wtime = s->base.wtime = tr->wtime = tr->stime;
+	i->base.wtime = i->t->base.wtime = s->base.wtime = tr->wtime = tr->wstime;
 	if (isGlobal(i->t)) 
 		tr->schema_updates ++;
 	n = cs_find_name(&i->t->idxs, i->base.name);
@@ -4611,7 +4664,7 @@ sql_trans_create_trigger(sql_trans *tr, sql_table *t, char *name,
 
 	table_funcs.table_insert(tr, systrigger, &ni->base.id, ni->base.name, &t->base.id, &ni->time, &ni->orientation, &ni->event, (ni->old_name)?ni->old_name:nilptr, (ni->new_name)?ni->new_name:nilptr, (ni->condition)?ni->condition:nilptr, ni->statement);
 
-	t->base.wtime = t->s->base.wtime = tr->wtime = tr->stime;
+	t->base.wtime = t->s->base.wtime = tr->wtime = tr->wstime;
 	if (isGlobal(t)) 
 		tr->schema_updates ++;
 	return ni;
@@ -4629,7 +4682,7 @@ sql_trans_create_tc(sql_trans *tr, sql_trigger * i, sql_column *c )
 	ic->c = c;
 	list_append(i->columns, ic);
 	table_funcs.table_insert(tr, systc, &i->base.id, ic->c->base.name, &nr);
-	systc->base.wtime = systc->s->base.wtime = tr->wtime = tr->stime;
+	systc->base.wtime = systc->s->base.wtime = tr->wtime = tr->wstime;
 	if (isGlobal(i->t)) 
 		tr->schema_updates ++;
 	return i;
@@ -4651,7 +4704,7 @@ sql_trans_drop_trigger(sql_trans *tr, sql_schema *s, int id, int drop_action)
 	}
 	
 	sys_drop_trigger(tr, i);
-	i->base.wtime = i->t->base.wtime = s->base.wtime = tr->wtime = tr->stime;
+	i->base.wtime = i->t->base.wtime = s->base.wtime = tr->wtime = tr->wstime;
 	if (isGlobal(i->t)) 
 		tr->schema_updates ++;
 	n = cs_find_name(&i->t->triggers, i->base.name);
@@ -4691,7 +4744,7 @@ sql_trans_create_sequence(sql_trans *tr, sql_schema *s, char *name, lng start, l
 
 	cs_add(&s->seqs, seq, TR_NEW);
 	table_funcs.table_insert(tr, sysseqs, &seq->base.id, &s->base.id, seq->base.name, &seq->start, &seq->minvalue, &seq->maxvalue, &seq->increment, &seq->cacheinc, &seq->cycle);
-	s->base.wtime = tr->wtime = tr->stime;
+	s->base.wtime = tr->wtime = tr->wstime;
 
 	/*Create a BEDROPPED dependency for a SERIAL COLUMN*/
 	if (bedropped)
@@ -4705,7 +4758,7 @@ sql_trans_drop_sequence(sql_trans *tr, sql_schema *s, sql_sequence *seq, int dro
 {
 	node *n = cs_find_name(&s->seqs, seq->base.name);
 	sys_drop_sequence(tr, seq, drop_action);
-	seq->base.wtime = s->base.wtime = tr->wtime = tr->stime;
+	seq->base.wtime = s->base.wtime = tr->wtime = tr->wstime;
 	cs_del(&s->seqs, n, seq->base.flag);
 }
 
@@ -4750,7 +4803,7 @@ sql_trans_alter_sequence(sql_trans *tr, sql_sequence *seq, lng min, lng max, lng
 	}
 
 	if (changed) {
-		seq->base.wtime = seq->s->base.wtime = tr->wtime = tr->stime;
+		seq->base.wtime = seq->s->base.wtime = tr->wtime = tr->wstime;
 		tr->schema_updates ++;
 	}
 	return seq;
@@ -4770,7 +4823,7 @@ sql_trans_sequence_restart(sql_trans *tr, sql_sequence *seq, lng start)
 		seq->start = start; 
 		table_funcs.column_update_value(tr, c, rid, &seq->start);
 
-		seq->base.wtime = seq->s->base.wtime = tr->wtime = tr->stime;
+		seq->base.wtime = seq->s->base.wtime = tr->wtime = tr->wstime;
 		tr->schema_updates ++;
 	}
 	seq_restart(seq, seq->start);
@@ -4780,8 +4833,12 @@ sql_trans_sequence_restart(sql_trans *tr, sql_sequence *seq, lng start)
 sql_session *
 sql_session_create(backend_stack stk, int ac )
 {
-	sql_session *s = ZNEW(sql_session);
+	sql_session *s;
+       
+	if (store_singleuser && nr_sessions)
+		return NULL;
 
+	s = ZNEW(sql_session);
 	if (!s)
 		return NULL;
 	s->tr = sql_trans_create(s->stk, NULL, NULL);
@@ -4820,7 +4877,7 @@ sql_session_reset(sql_session *s, int ac)
 		for (n = tmp->tables.set->h; n; n = n->next) {
 			sql_table *t = n->data;
 
-			if (isGlobal(t) && isTable(t))
+			if (isGlobal(t) && isKindOfTable(t))
 				sql_trans_clear_table(s->tr, t);
 		}
 	}
@@ -4843,7 +4900,7 @@ sql_trans_begin(sql_session *s)
 #ifdef STORE_DEBUG
 	fprintf(stderr,"#sql trans begin %d\n", snr);
 #endif
-	if (tr->stime < gtrans->stime || tr->wtime || 
+	if (tr->stime < gtrans->wstime || tr->wtime || 
 			store_schema_number() != snr) 
 		reset_trans(tr, gtrans);
 	tr = trans_init(tr, tr->stk, tr->parent);
@@ -4851,6 +4908,7 @@ sql_trans_begin(sql_session *s)
 	s->schema = find_sql_schema(tr, s->schema_name);
 	s->tr = tr;
 	store_nr_active ++;
+	list_append(active_transactions, tr); 
 	s->status = 0;
 #ifdef STORE_DEBUG
 	fprintf(stderr,"#sql trans begin (%d)\n", tr->schema_number);
@@ -4866,5 +4924,6 @@ sql_trans_end(sql_session *s)
 #endif
 	s->active = 0;
 	s->auto_commit = s->ac_on_commit;
+	list_remove_data(active_transactions, s->tr);
 	store_nr_active --;
 }

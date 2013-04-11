@@ -1,5 +1,5 @@
 %define name MonetDB
-%define version 11.14.0
+%define version 11.16.0
 %{!?buildno: %define buildno %(date +%Y%m%d)}
 
 # groups of related archs
@@ -27,14 +27,14 @@ Vendor: MonetDB BV <info@monetdb.org>
 Group: Applications/Databases
 License: MPL - http://www.monetdb.org/Legal/MonetDBLicense
 URL: http://www.monetdb.org/
-Source: http://dev.monetdb.org/downloads/sources/Jul2012-SP2/%{name}-%{version}.tar.bz2
+Source: http://dev.monetdb.org/downloads/sources/Feb2013-SP1/%{name}-%{version}.tar.bz2
 
 BuildRequires: bison
 BuildRequires: bzip2-devel
 # BuildRequires: cfitsio-devel
 BuildRequires: flex
-%if %{?centos:0}%{!?centos:1}
-# no geos library on CentOS
+%if %{?rhel:0}%{!?rhel:1}
+# no geos library on RedHat Enterprise Linux and derivatives
 BuildRequires: geos-devel >= 2.2.0
 %endif
 BuildRequires: libcurl-devel
@@ -44,12 +44,14 @@ BuildRequires: openssl-devel
 BuildRequires: pcre-devel >= 4.5
 BuildRequires: perl
 BuildRequires: python-devel
+%if %{?rhel:0}%{!?rhel:1}
 BuildRequires: python3-devel
+%endif
 # BuildRequires: raptor-devel >= 1.4.16
 BuildRequires: readline-devel
 BuildRequires: ruby
 BuildRequires: rubygems
-%if %{?centos:0}%{!?centos:1}
+%if %{?rhel:0}%{!?rhel:1}
 BuildRequires: rubygems-devel
 %endif
 BuildRequires: unixODBC-devel
@@ -140,12 +142,28 @@ MonetDB, you will very likely need this package.
 %files client
 %defattr(-,root,root)
 %{_bindir}/mclient
-%{_bindir}/mnc
 %{_bindir}/msqldump
-%{_bindir}/stethoscope
 %{_libdir}/libmapi.so.*
 %doc %{_mandir}/man1/mclient.1.gz
 %doc %{_mandir}/man1/msqldump.1.gz
+
+%package client-tools
+Summary: MonetDB - Monet Database Management System Client Programs
+Group: Applications/Databases
+Requires: %{name}-client = %{version}-%{release}
+
+%description client-tools
+MonetDB is a database management system that is developed from a
+main-memory perspective with use of a fully decomposed storage model,
+automatic index management, extensibility of data types and search
+accelerators.  It also has an SQL frontend.
+
+This package contains stethoscope and tomograph.
+
+%files client-tools
+%defattr(-,root,root)
+%{_bindir}/stethoscope
+%{_bindir}/tomograph
 
 %package client-devel
 Summary: MonetDB - Monet Database Management System Client Programs
@@ -335,9 +353,8 @@ developer.
 %{_bindir}/malsample.pl
 %{_bindir}/sqlsample.php
 %{_bindir}/sqlsample.pl
-%{_bindir}/sqlsample.py
 
-%if %{?centos:0}%{!?centos:1}
+%if %{?rhel:0}%{!?rhel:1}
 %package geom-MonetDB5
 Summary: MonetDB5 SQL GIS support module
 Group: Applications/Databases
@@ -431,7 +448,7 @@ fi
 %{_libdir}/libmonetdb5.so.*
 %dir %{_libdir}/monetdb5
 %dir %{_libdir}/monetdb5/autoload
-%if %{?centos:0}%{!?centos:1}
+%if %{?rhel:0}%{!?rhel:1}
 %exclude %{_libdir}/monetdb5/geom.mal
 %endif
 # %exclude %{_libdir}/monetdb5/rdf.mal
@@ -444,7 +461,7 @@ fi
 %{_libdir}/monetdb5/autoload/*_opt_sql_append.mal
 %{_libdir}/monetdb5/autoload/*_udf.mal
 %{_libdir}/monetdb5/autoload/*_vault.mal
-%if %{?centos:0}%{!?centos:1}
+%if %{?rhel:0}%{!?rhel:1}
 %exclude %{_libdir}/monetdb5/lib_geom.so
 %endif
 # %exclude %{_libdir}/monetdb5/lib_rdf.so
@@ -478,8 +495,10 @@ fi
 Summary: MonetDB5 SQL server modules
 Group: Applications/Databases
 Requires: MonetDB5-server = %{version}-%{release}
+%if %{?rhel:0}%{!?rhel:1}
 # for systemd-tmpfiles
 Requires: systemd-units
+%endif
 Obsoletes: MonetDB-SQL-devel
 Obsoletes: %{name}-SQL
 
@@ -492,22 +511,30 @@ accelerators.  It also has an SQL frontend.
 This package contains the SQL frontend for MonetDB5.  If you want to
 use SQL with MonetDB, you will need to install this package.
 
+%if %{?rhel:0}%{!?rhel:1}
 %post SQL-server5
 systemd-tmpfiles --create %{_sysconfdir}/tmpfiles.d/monetdbd.conf
+%endif
 
 %files SQL-server5
 %defattr(-,root,root)
 %{_bindir}/monetdb
 %{_bindir}/monetdbd
 %dir %attr(775,monetdb,monetdb) %{_localstatedir}/log/monetdb
+%if %{?rhel:0}%{!?rhel:1}
 # Fedora 15 and newer
 %{_sysconfdir}/tmpfiles.d/monetdbd.conf
+%else
+# RedHat Enterprise Linux
+%dir %attr(775,monetdb,monetdb) %{_localstatedir}/run/monetdb
+%exclude %{_sysconfdir}/tmpfiles.d/monetdbd.conf
+%endif
 %config(noreplace) %{_localstatedir}/monetdb5/dbfarm/.merovingian_properties
 %{_libdir}/monetdb5/autoload/*_sql.mal
 %{_libdir}/monetdb5/lib_sql.so
 %{_libdir}/monetdb5/*.sql
 %dir %{_libdir}/monetdb5/createdb
-%if %{?centos:0}%{!?centos:1}
+%if %{?rhel:0}%{!?rhel:1}
 %exclude %{_libdir}/monetdb5/createdb/*_geom.sql
 %endif
 # %exclude %{_libdir}/monetdb5/createdb/*_rdf.sql
@@ -539,8 +566,9 @@ program.
 %dir %{python_sitelib}/monetdb
 %{python_sitelib}/monetdb/*
 %{python_sitelib}/python_monetdb-*.egg-info
-%doc clients/python/README.rst
+%doc clients/python2/README.rst
 
+%if %{?rhel:0}%{!?rhel:1}
 %package -n python3-monetdb
 Summary: Native MonetDB client Python3 API
 Group: Applications/Databases
@@ -562,6 +590,7 @@ program.
 %{python3_sitelib}/monetdb/*
 %{python3_sitelib}/python_monetdb-*.egg-info
 %doc clients/python3/README.rst
+%endif
 
 %package testing
 Summary: MonetDB - Monet Database Management System
@@ -628,13 +657,12 @@ developer, but if you do want to test, this is the package you need.
 	--enable-developer=no \
 	--enable-fits=no \
 	--enable-gdk=yes \
-	--enable-geom=%{?centos:no}%{!?centos:yes} \
+	--enable-geom=%{?rhel:no}%{!?rhel:yes} \
 	--enable-instrument=no \
 	--enable-jaql=yes \
 	--enable-jdbc=no \
 	--enable-merocontrol=no \
 	--enable-monetdb5=yes \
-	--enable-noexpand=no \
 	--enable-odbc=yes \
 	--enable-oid32=%{?oid32:yes}%{!?oid32:no} \
 	--enable-optimize=yes \
@@ -645,14 +673,14 @@ developer, but if you do want to test, this is the package you need.
 	--enable-testing=yes \
 	--with-ant=no \
 	--with-bz2=yes \
-	--with-geos=%{?centos:no}%{!?centos:yes} \
+	--with-geos=%{?rhel:no}%{!?rhel:yes} \
 	--with-hwcounters=no \
 	--with-java=no \
 	--with-mseed=no \
 	--with-perl=yes \
 	--with-pthread=yes \
-	--with-python=yes \
-	--with-python3=yes \
+	--with-python2=yes \
+	--with-python3=%{?rhel:no}%{!?rhel:yes} \
 	--with-readline=yes \
 	--with-rubygem=yes \
 	--with-rubygem-dir="%{gem_dir}" \
@@ -677,7 +705,6 @@ mkdir -p $RPM_BUILD_ROOT%{_localstatedir}/run/monetdb
 # .la files
 rm -f $RPM_BUILD_ROOT%{_libdir}/monetdb5/*.la
 # internal development stuff
-rm -f $RPM_BUILD_ROOT%{_bindir}/calibrator
 rm -f $RPM_BUILD_ROOT%{_bindir}/Maddlog
 rm -f $RPM_BUILD_ROOT%{_libdir}/libbat.la
 rm -f $RPM_BUILD_ROOT%{_libdir}/libbat.so
@@ -695,6 +722,141 @@ rm -f $RPM_BUILD_ROOT%{_libdir}/libmonetdb5.so
 rm -fr $RPM_BUILD_ROOT
 
 %changelog
+* Wed Feb 27 2013 Sjoerd Mullender <sjoerd@acm.org> - 11.15.3-20130227
+- Rebuilt.
+
+* Tue Feb 12 2013 Sjoerd Mullender <sjoerd@acm.org> - 11.15.1-20130212
+- Rebuilt.
+
+* Thu Jan 17 2013 Stefan Manegold <Stefan.Manegold@cwi.nl> - 11.15.1-20130212
+- testing:
+enabled "top-level" Mtest.py
+So far, while Mtest.py could be called in any subdirectory of the MonetDB
+source tree (and could then run all tests in the entire sub-tree),
+it was not possible to call Mtest.py in the top-level MonetDB source
+directory to run all tests.  Instead, to run all tests, Mtest.py had to
+be called at least 4 times, once in each of these directories: "clients",
+"monetdb5", "sql", "geom".
+Now, it is possible to call Mtest.py once in the top-level MonetDB source
+directory to run all tests in one go.
+The behaviour of calling Mtest.py in any subdirectory, including the
+four mentioned above, did not changed, other than that now obsolete
+command line options "-p / --package <package>" and "-5 / --monetdb5"
+have been removed.
+
+* Tue Jan 15 2013 Fabian Groffen <fabian@monetdb.org> - 11.15.1-20130212
+- clients: Mapi protocol v8 support was removed from all client drivers.  Protocol
+  v8 has not been used by the servers any more since Apr2012 release
+- clients: The tool mnc was removed from installations
+
+* Tue Jan 15 2013 Fabian Groffen <fabian@monetdb.org> - 11.15.1-20130212
+- java: merocontrol was changed to return server URIs, and lastStop time.
+  Connections and dbpath were removed.
+- java: Mapi protocol v8 support was removed from MapiSocket.  Protocol
+  v8 has not been used by the servers any more since Apr2012 release
+
+* Tue Jan 15 2013 Fabian Groffen <fabian@monetdb.org> - 11.15.1-20130212
+- merovingian: Upgrade support for dbfarms from Mar2011 and Aug2011 was dropped
+
+* Tue Jan 15 2013 Fabian Groffen <fabian@monetdb.org> - 11.15.1-20130212
+- merovingian: monetdb status now uses a more condensed output, to cater for the uris
+  being shown, and prints how long a database is stopped, or how long
+  ago it crashed
+
+* Tue Jan 15 2013 Fabian Groffen <fabian@monetdb.org> - 11.15.1-20130212
+- merovingian: monetdb status now prints the connection uri for each database,
+  when available.  The connections and database path properties have
+  been dropped.
+
+* Tue Jan 15 2013 Fabian Groffen <fabian@cwi.nl> - 11.15.1-20130212
+- merovingian: monetdb status now prints last crash date only if the database has
+  not been started since.
+
+* Tue Jan 15 2013 Sjoerd Mullender <sjoerd@acm.org> - 11.15.1-20130212
+- monetdb5: mserver5: The --dbname and --dbfarm options have been replaced by the
+  single --dbpath option.
+
+* Tue Jan 15 2013 Sjoerd Mullender <sjoerd@acm.org> - 11.15.1-20130212
+- clients: msqldump: Implmented an option (--table/-t) to dump a single table.
+- clients: Changed msqdump's trace option to be in line with mclient.  In both
+  cases, the long option is --Xdebug and the short option is -X.
+
+* Tue Jan 15 2013 Martin Kersten <mk@cwi.nl> - 11.15.1-20130212
+- monetdb5: The scheduler of mserver5 was changed to use a fixed set of workers to
+  perform the work for all connected clients.  Previously, each client
+  connection had its own set of workers, easily causing resource problems
+  upon multiple connections to the server.
+
+* Tue Jan 15 2013 Sjoerd Mullender <sjoerd@acm.org> - 11.13.9-20130115
+- Rebuilt.
+
+* Wed Dec 12 2012 Sjoerd Mullender <sjoerd@acm.org> - 11.13.7-20121212
+- Rebuilt.
+
+* Fri Nov 23 2012 Fabian Groffen <fabian@monetdb.org> - 11.13.7-20121212
+- java: Implemented type map support of Connection to allow custom mapping
+  of UDTs to Java classes.  By default the INET and URL UDTs are
+  now mapped to nl.cwi.monetdb.jdbc.types.{INET,URL}.  Most notably,
+  ResultSet.getObject() and PreparedStatement.setObject() deal with the
+  type map.
+
+* Thu Nov 22 2012 Fabian Groffen <fabian@monetdb.org> - 11.13.7-20121212
+- java: Fixed a problem in PreparedStatement where the prepared statement's
+  ResultSetMetaData (on its columns to be produced) incorrectly threw
+  exceptions about non existing columns.  Bug #3192
+
+* Wed Nov 21 2012 Fabian Groffen <fabian@monetdb.org> - 11.13.7-20121212
+- sql: Fixed crash when performing an INSERT on a table with string-like column
+  defaulting to NULL and omitting that column from VALUES, bug #3168
+
+* Fri Nov 16 2012 Sjoerd Mullender <sjoerd@acm.org> - 11.13.5-20121116
+- Rebuilt.
+
+* Tue Oct 16 2012 Fabian Groffen <fabian@monetdb.org> - 11.13.3-20121016
+- Rebuilt.
+
+* Wed Oct 10 2012 Fabian Groffen <fabian@cwi.nl> - 11.13.3-20121016
+- java: Fixed problem with PreparedStatements and setXXX() methods using column
+  numbers instead of names, bug #3158
+
+* Wed Oct 10 2012 Fabian Groffen <fabian@monetdb.org> - 11.13.1-20121010
+- Rebuilt.
+
+* Tue Oct  9 2012 Fabian Groffen <fabian@cwi.nl> - 11.13.1-20121010
+- merovingian: Fixed problem where monetdbd would refuse to startup when discovery
+  was set to false, bug #3155
+
+* Tue Sep 25 2012 Sjoerd Mullender <sjoerd@acm.org> - 11.13.1-20121010
+- monetdb5: Removed module attach since it wasn't used or even tested.
+
+* Mon Sep 17 2012 Fabian Groffen <fabian@cwi.nl> - 11.13.1-20121010
+- clients: mclient now accepts URIs as database to connect to.
+
+* Mon Sep 17 2012 Fabian Groffen <fabian@cwi.nl> - 11.13.1-20121010
+- monetdb5: The MAL-to-C Compiler (mcc) was removed.  The code wasn't tested and
+  most likely non-functional.
+
+* Mon Sep 17 2012 Sjoerd Mullender <sjoerd@acm.org> - 11.13.1-20121010
+- gdk: Removed the gdk_embedded (and embedded) option.  The code wasn't tested
+  and most likely non-functional.
+
+* Mon Sep 17 2012 Gijs Molenaar <g.j.molenaar@uva.nl> - 11.13.1-20121010
+- clients: all strings returned by python2 are unicode, removed use_unicode option
+- clients: python2 and 3 type convertion speed improvements
+- clients: python2 uses new styl objects now (bug #3104)
+- clients: split python2 and python3
+
+* Mon Sep 17 2012 Sjoerd Mullender <sjoerd@acm.org> - 11.13.1-20121010
+- gdk: BAT-of-BATs is no longer allowed.  It was already not allowed to
+  make these types of BATs persistent, but now they can't be created at
+  all anymore.
+
+* Mon Sep 17 2012 Sjoerd Mullender <sjoerd@acm.org> - 11.13.1-20121010
+- buildtools: Removed --enable-noexpand configure option.
+
+* Mon Sep 17 2012 Sjoerd Mullender <sjoerd@acm.org> - 11.11.11-20120917
+- Rebuilt.
+
 * Tue Sep 11 2012 Sjoerd Mullender <sjoerd@acm.org> - 11.11.9-20120911
 - Rebuilt.
 

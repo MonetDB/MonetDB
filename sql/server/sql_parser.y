@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -460,9 +460,9 @@ int yydebug=1;
 
 /* sql prefixes to avoid name clashes on various architectures */
 %token <sval>
-	IDENT aTYPE ALIAS AGGR AGGR2 RANK sqlINT HEXADECIMAL INTNUM APPROXNUM 
+	IDENT aTYPE ALIAS AGGR AGGR2 RANK sqlINT OIDNUM HEXADECIMAL INTNUM APPROXNUM 
 	USING 
-	ALL ANY SOME GLOBAL CAST CONVERT
+	GLOBAL CAST CONVERT
 	CHARACTER VARYING LARGE OBJECT VARCHAR CLOB sqlTEXT BINARY sqlBLOB
 	sqlDECIMAL sqlFLOAT
 	TINYINT SMALLINT BIGINT sqlINTEGER
@@ -480,8 +480,7 @@ int yydebug=1;
 %token  UNCOMMITTED COMMITTED sqlREPEATABLE SERIALIZABLE DIAGNOSTICS sqlSIZE
 
 %token <sval> ASYMMETRIC SYMMETRIC ORDER BY
-%token <sval> LIKE ILIKE BETWEEN
-%token <operation> sqlIN EXISTS ESCAPE HAVING sqlGROUP sqlNULL
+%token <operation> EXISTS ESCAPE HAVING sqlGROUP sqlNULL
 %token <operation> FROM FOR MATCH
 
 %token <operation> EXTRACT
@@ -508,20 +507,20 @@ int yydebug=1;
 /* operators */
 %left UNION EXCEPT INTERSECT CORRESPONDING UNIONJOIN
 %left JOIN CROSS LEFT FULL RIGHT INNER NATURAL
-%left LIKE BETWEEN sqlIN WITH DATA
-%left <operation> OR
+%left WITH DATA
+%left <operation> '(' ')'
+%left <sval> FILTER_FUNC 
+
+%left <operation> '='
+%left <operation> ALL ANY BETWEEN sqlIN LIKE ILIKE OR SOME
 %left <operation> AND
 %left <operation> NOT
-%left <operation> '(' ')'
 %left <sval> COMPARISON /* <> < > <= >= */
-%left <sval> FILTER_FUNC 
-%left <operation> '='
-%left <operation> '&' '|' '^' LEFT_SHIFT RIGHT_SHIFT
-%left <operation> '+' '-'
-%left <operation> '*'
-%left <operation> '/' '%' 
-%left <operation> SUBSTRING CONCATSTRING POSITION
+%left <operation> '+' '-' '&' '|' '^' LEFT_SHIFT RIGHT_SHIFT CONCATSTRING SUBSTRING POSITION
 %right UMINUS
+%left <operation> '*' 
+%left <operation> '/' '%'
+%left <operation> '~'
 
 	/* literal keyword tokens */
 /*
@@ -2813,6 +2812,8 @@ with_list_element:
  ;
 
 sql:
+    select_statement_single_row
+|
     select_no_parens_orderby
  ;
 
@@ -3196,24 +3197,28 @@ like_predicate:
 		  append_symbol(l, $1);
 		  append_symbol(l, $4);
 		  append_int(l, FALSE);  /* case sensitive */
-		  $$ = _symbol_create_symbol(SQL_NOT, _symbol_create_list( SQL_LIKE, l )); }
+		  append_int(l, TRUE);  /* anti */
+		  $$ = _symbol_create_list( SQL_LIKE, l ); }
  |  pred_exp NOT ILIKE like_exp
 		{ dlist *l = L();
 		  append_symbol(l, $1);
 		  append_symbol(l, $4);
 		  append_int(l, TRUE);  /* case insensitive */
-		  $$ = _symbol_create_symbol(SQL_NOT, _symbol_create_list( SQL_LIKE, l )); }
+		  append_int(l, TRUE);  /* anti */
+		  $$ = _symbol_create_list( SQL_LIKE, l ); }
  |  pred_exp LIKE like_exp
 		{ dlist *l = L();
 		  append_symbol(l, $1);
 		  append_symbol(l, $3);
 		  append_int(l, FALSE);  /* case sensitive */
+		  append_int(l, FALSE);  /* anti */
 		  $$ = _symbol_create_list( SQL_LIKE, l ); }
  |  pred_exp ILIKE like_exp
 		{ dlist *l = L();
 		  append_symbol(l, $1);
 		  append_symbol(l, $3);
 		  append_int(l, TRUE);  /* case insensitive */
+		  append_int(l, FALSE);  /* anti */
 		  $$ = _symbol_create_list( SQL_LIKE, l ); }
  ;
 
@@ -3344,7 +3349,7 @@ simple_scalar_exp:
  |  scalar_exp '^' scalar_exp
 			{ dlist *l = L();
 			  append_list(l, 
-			  	append_string(L(), sa_strdup(SA, "power")));
+			  	append_string(L(), sa_strdup(SA, "bit_xor")));
 	  		  append_symbol(l, $1);
 	  		  append_symbol(l, $3);
 	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
@@ -3361,6 +3366,12 @@ simple_scalar_exp:
 			  	append_string(L(), sa_strdup(SA, "bit_or")));
 	  		  append_symbol(l, $1);
 	  		  append_symbol(l, $3);
+	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
+ |  '~' scalar_exp
+			{ dlist *l = L();
+			  append_list(l, 
+			  	append_string(L(), sa_strdup(SA, "bit_not")));
+	  		  append_symbol(l, $2);
 	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
  |  scalar_exp LEFT_SHIFT scalar_exp
 			{ dlist *l = L();
@@ -3752,7 +3763,7 @@ opt_alias_name:
 atom:
     literal
 	{ 
-	  if (m->emode == m_normal && m->caching && m->argc < 100) { 
+	  if (m->emode == m_normal && m->caching) { 
 	  	/* replace by argument */
 	  	AtomNode *an = (AtomNode*)$1;
 	
@@ -3983,6 +3994,37 @@ literal:
 			YYABORT;
 		  } else {
 			$$ = _newAtomNode( atom_int(SA, &t, res));
+		  }
+		}
+ |  OIDNUM
+		{ int err = 0, len = sizeof(lng);
+		  lng value, *p = &value;
+		  sql_subtype t;
+
+		  lngFromStr($1, &len, &p);
+		  if (value == lng_nil)
+		  	err = 2;
+
+		  if (!err) {
+		    if ((value > GDK_lng_min && value <= GDK_lng_max))
+#if SIZEOF_OID == SIZEOF_INT
+		  	  sql_find_subtype(&t, "oid", 31, 0 );
+#else
+		  	  sql_find_subtype(&t, "oid", 63, 0 );
+#endif
+		    else
+			  err = 1;
+		  }
+
+		  if (err) {
+			char *msg = sql_message("\b22003!OID value too large or not a number (%s)", $1);
+
+			yyerror(m, msg);
+			_DELETE(msg);
+			$$ = NULL;
+			YYABORT;
+		  } else {
+		  	$$ = _newAtomNode( atom_int(SA, &t, value));
 		  }
 		}
  |  sqlINT

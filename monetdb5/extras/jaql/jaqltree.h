@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -40,14 +40,28 @@ typedef struct _jc {
 	size_t start;
 	size_t pos;
 	char *scanbuf;
+	void *scanstreamin;
+	void *scanstreamout;
 	char *tokstart;
 	char err[1024];
 	void *scanner;
-	char explain:1, debug:2, trace:3, plan:4, planf:5, mapimode:6;
+	char explain:1,
+		 debug:2,
+		 trace:3,
+		 plan:4,
+		 planf:5,
+		 time:6,
+		 mapimode:7,
+		 scanstreameof:8;
 	jvar *vars;
 	int j1, j2, j3, j4, j5, j6, j7, startoid;
 	char ro1:1, ro2:2, ro3:3, ro4:4, ro5:5, ro6:6, ro7:7;
 	int vtop;
+	struct {
+		long long int parse;
+		long long int gencode;
+		long long int optimise;
+	} timing;
 } jc;
 
 /* the order here does matter for filter */

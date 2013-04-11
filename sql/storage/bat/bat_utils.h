@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -36,7 +36,6 @@ extern log_bid temp_copy(log_bid b, int temp);
 extern void bat_destroy(BAT *b);
 extern BAT *bat_new(int ht, int tt, BUN size);
 
-extern void update_table_bat(BAT *b, BAT *ub);
 extern BUN append_inserted(BAT *b, BAT *i );
 extern BUN copy_inserted(BAT *b, BAT *i );
 
@@ -53,5 +52,11 @@ extern log_bid e_ubat(int type);
 extern log_bid ebat_copy(log_bid b, oid ibase, int temp);
 extern log_bid eubat_copy(log_bid b, int temp);
 extern void bat_utils_init(void);
+
+extern sql_schema * tr_find_schema( sql_trans *tr, sql_schema *s);
+extern sql_table * tr_find_table( sql_trans *tr, sql_table *t);
+extern sql_column * tr_find_column( sql_trans *tr, sql_column *c);
+extern sql_idx * tr_find_idx( sql_trans *tr, sql_idx *i);
+
 
 #endif /* BAT_UTILS_H */

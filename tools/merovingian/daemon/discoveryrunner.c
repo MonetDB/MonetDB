@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -205,6 +205,7 @@ getRemoteDB(char *database)
 			walk->conns = malloc(sizeof(sablist));
 			walk->conns->val = strdup(rdb->conn);
 			walk->conns->next = NULL;
+			walk->uri = NULL;
 			walk->next = NULL;
 			walk->uplog = NULL;
 

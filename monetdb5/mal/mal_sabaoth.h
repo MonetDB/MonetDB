@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -24,7 +24,6 @@
 #include <mal.h>
 #include <mal_exception.h>
 #include <msabaoth.h>
-mal_export void SABAOTHinit(str dbfarm, str dbname);
 mal_export str SABAOTHgetDBfarm(str *ret);
 mal_export str SABAOTHgetDBname(str *ret);
 mal_export str SABAOTHmarchScenario(int *ret, str *lang);

@@ -1,4 +1,4 @@
-stdout of test 'inspect05` in directory 'modules/mal` itself:
+stdout of test 'inspect05` in directory 'monetdb5/modules/mal` itself:
 
 
 # 18:15:32 >  
@@ -11,7 +11,7 @@ stdout of test 'inspect05` in directory 'modules/mal` itself:
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Found 3.861 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2012 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008-2013 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://koolmees.mullender.nl:37682/
 # MonetDB/GIS module loaded
@@ -74,6 +74,7 @@ end main;
 [ "insert",			  "command",	  "bat",	  "(b:bat[:any_1,:any_2],h:any_1,t:any_2):bat[:any_1,:any_2] ",										  "BKCinsert_bun;"					  ]
 [ "insert",			  "command",	  "bat",	  "(b:bat[:any_1,:any_2],src:bat[:any_1,:any_2],force:bit):bat[:any_1,:any_2] ",							  "BKCinsert_bat_force;"				  ]
 [ "insert",			  "command",	  "bat",	  "(b:bat[:any_1,:any_2],src:bat[:any_1,:any_2]):bat[:any_1,:any_2] ",									  "BKCinsert_bat;"					  ]
+[ "intersectcand",		  "command",	  "bat",  "(a:bat[:oid,:oid],b:bat[:oid,:oid]):bat[:oid,:oid] ",						  "BKCintersectcand;"			  ]
 [ "isCached",			  "command",	  "bat",	  "(b:bat[:any_1,:any_2]):bit ",						  "BKCisCached;"			  ]
 [ "isPersistent",		  "command",	  "bat",	  "(b:bat[:any_1,:any_2]):bit ",						  "BKCisPersistent;"			  ]
 [ "isSorted",			  "command",	  "bat",	  "(b:bat[:any_1,:any_2]):bit ",													  "BKCisSorted;"					  ]
@@ -83,6 +84,7 @@ end main;
 [ "isaKey",			  "command",	  "bat",	  "(b:bat[:any_1,:any_2]):bit ",													  "BKCgetKey;"						  ]
 [ "isaSet",			  "command",	  "bat",	  "(b:bat[:any_1,:any_1]):bit ",						  "BKCisaSet;"				  ]
 [ "load",			  "command",	  "bat",	  "(name:str):bat[:any_1,:any_2] ",													  "BKCload;"						  ]
+[ "mergecand",			  "command",	  "bat",  "(a:bat[:oid,:oid],b:bat[:oid,:oid]):bat[:oid,:oid] ",						  "BKCmergecand;"			  ]
 [ "mirror",			  "command",	  "bat",	  "(b:bat[:any_1,:any_2]):bat[:any_1,:any_1] ",												  "BKCmirror;"						  ]
 [ "new",		  "command",	  "bat",  "(nme:str):bat[:oid,:any_1] ",								  "CMDBATderivedByName;"	  ]
 [ "new",		  "pattern",	  "bat",  "(b:bat[:oid,:any_1],size:lng):bat[:oid,:any_1] ",						  "CMDBATnewDerived;"		  ]

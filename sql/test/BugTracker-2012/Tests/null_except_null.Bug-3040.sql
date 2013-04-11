@@ -1,0 +1,1 @@
+SELECT null EXCEPT SELECT null;

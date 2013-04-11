@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2012 MonetDB B.V.
+ * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -31,6 +31,8 @@
 #ifdef WIN32
 #include "winsock2.h"
 #endif
+#include "mal_builder.h"
+#include "opt_prelude.h"
 
 str schema_default = "datacell";
 str statusname[6] = { "<unknown>", "init", "paused", "running", "stop", "error" };
@@ -39,10 +41,6 @@ str protocolname[4] = { "<unknown>", "TCP", "UDP", "CSV" };
 
 BSKTbasketRec *baskets;   /* the datacell catalog */
 int bsktTop = 0, bsktLimit = 0;
-static MT_Lock bsktLock;
-
-#define lockBSKTbasketCatalog() MT_lock_set(&bsktLock, "basket");
-#define unlockBSKTbasketCatalog() MT_lock_unset(&bsktLock, "basket");
 
 /* We have to obtain the precise wall-clock time
  * This is not produced by GDKusec, which returns microseconds
@@ -88,7 +86,6 @@ static int BSKTnewEntry(void)
 	if (bsktLimit == 0) {
 		bsktLimit = MAXBSK;
 		baskets = (BSKTbasketRec *) GDKzalloc(bsktLimit * sizeof(BSKTbasketRec));
-		MT_lock_init(&bsktLock, "basket");
 		bsktTop = 1; /* entry 0 is used as non-initialized */
 	} else if (bsktTop == bsktLimit) {
 		bsktLimit += MAXBSK;
