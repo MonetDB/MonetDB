@@ -233,7 +233,7 @@ OPTdvfImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, in
 						/* create group.done instruction */
 						q = newInstruction(mb, ASSIGNsymbol);
 						setModuleId(q, groupRef);
-						setFunctionId(q, doneRef);
+						setFunctionId(q, subgroupRef);
 						q = pushReturn(mb, q, newTmpVariable(mb, TYPE_bat));
 						q = pushReturn(mb, q, newTmpVariable(mb, TYPE_bat));
 						q = pushArgument(mb, q, getArg(old[i2], 0));
@@ -351,7 +351,7 @@ OPTdvfImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, in
 						/* create group.done instruction */
 						r = newInstruction(mb, ASSIGNsymbol);
 						setModuleId(r, groupRef);
-						setFunctionId(r, doneRef);
+						setFunctionId(r, subgroupRef);
 						r = pushReturn(mb, r, newTmpVariable(mb, TYPE_bat));
 						r = pushReturn(mb, r, newTmpVariable(mb, TYPE_bat));
 						r = pushArgument(mb, r, getArg(old[i2], 0));
