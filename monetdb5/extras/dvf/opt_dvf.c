@@ -115,7 +115,7 @@ OPTdvfImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, in
 	//state variables (instruction index) numbered with state
 	int i1 = 0, i2 = 0;
 
-	InstrPtr *old = NULL, q = NULL, r = NULL, s = NULL, t = NULL, b = NULL, m = NULL, e = NULL, *ps_iter = NULL;
+	InstrPtr *old = NULL, q = NULL, r = NULL, t = NULL, b = NULL, m = NULL, e = NULL, *ps_iter = NULL;
 	int i, limit, which_column, actions = 0;
 
 	stk = stk; //to escape 'unused' parameter error.
@@ -146,6 +146,7 @@ OPTdvfImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, in
 			strcmp(getVarConstant(mb, getArg(p, 2)).val.sval, sys_schema_name) != 0 &&
 			strstr(getVarConstant(mb, getArg(p, 3)).val.sval, data_table_identifier) == NULL &&
 			strcmp(getVarConstant(mb, getArg(p, 4)).val.sval, file_location_identifier) == 0 &&
+			getVarConstant(mb, getArg(p, 5)).val.ival == 0 &&
 			state <= 3)
 		{
 			i1 = i;
@@ -156,10 +157,13 @@ OPTdvfImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, in
 		 */
 		else if((state == 1 || state == 2) &&
 			getModuleId(p) == algebraRef &&
-			getFunctionId(p) == leftjoinRef &&
+			getFunctionId(p) == leftfetchjoinRef &&
 			p->argc == 3 &&
 			p->retc == 1 &&
-			getArg(p, 2) == getArg(old[i1], 0))
+			getModuleId(old[i-1]) == sqlRef &&
+			getFunctionId(old[i-1]) == projectdeltaRef &&
+			getArg(p, 2) == getArg(old[i-1], 0) &&
+			getArg(old[i-1], 2) == getArg(old[i1], 0))
 		{
 			i2 = i;
 			state = 2;
@@ -168,24 +172,24 @@ OPTdvfImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, in
 			 * v6 := algebra.leftjoin(v5, v4);
 			 * or series thereof.
 			 */
-			for(i = i+1; i < limit; i++)
-			{
-				p = old[i];
-
-				if(getModuleId(p) == algebraRef &&
-					getFunctionId(p) == leftjoinRef &&
-					p->argc == 3 &&
-					p->retc == 1 &&
-					getArg(p, 2) == getArg(old[i2], 0))
-				{
-					i2 = i;
-				}
-				else
-				{
-					i = i-1;
-					break;
-				}
-			}
+// 			for(i = i+1; i < limit; i++)
+// 			{
+// 				p = old[i];
+// 
+// 				if(getModuleId(p) == algebraRef &&
+// 					getFunctionId(p) == leftjoinRef &&
+// 					p->argc == 3 &&
+// 					p->retc == 1 &&
+// 					getArg(p, 2) == getArg(old[i2], 0))
+// 				{
+// 					i2 = i;
+// 				}
+// 				else
+// 				{
+// 					i = i-1;
+// 					break;
+// 				}
+// 			}
 		}
 		/* check for
 		 * v7 := sql.bind(..., schema_name, data_table_name, ..., ...);
@@ -196,13 +200,14 @@ OPTdvfImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, in
 			p->argc == 6 &&
 			p->retc == 1 &&
 			strcmp(getVarConstant(mb, getArg(p, 2)).val.sval, getVarConstant(mb, getArg(old[i1], 2)).val.sval) == 0 &&
-			strstr(getVarConstant(mb, getArg(p, 3)).val.sval, data_table_identifier) != NULL)
+			strstr(getVarConstant(mb, getArg(p, 3)).val.sval, data_table_identifier) != NULL &&
+			getVarConstant(mb, getArg(p, 5)).val.ival == 0)
 		{
 
 			switch(state)
 			{
 				case 1:
-					/* Error! What to do */
+					/* Error! What to do? This shouldn't happen! */
 					return -1;
 					//throw(MAL,"optimizer.DVframework", "Schema of %s vault is not well-organized.\n", getVarConstant(mb, getArg(p, 2)).val.sval);
 				case 2:
@@ -236,22 +241,23 @@ OPTdvfImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, in
 						setFunctionId(q, subgroupRef);
 						q = pushReturn(mb, q, newTmpVariable(mb, TYPE_bat));
 						q = pushReturn(mb, q, newTmpVariable(mb, TYPE_bat));
+						q = pushReturn(mb, q, newTmpVariable(mb, TYPE_bat));
 						q = pushArgument(mb, q, getArg(old[i2], 0));
 						
 						
 						/* create bat.mirror instruction */
-						s = newInstruction(mb, ASSIGNsymbol);
-						setModuleId(s, batRef);
-						setFunctionId(s, mirrorRef);
-						s = pushReturn(mb, s, newTmpVariable(mb, TYPE_bat));
-						s = pushArgument(mb, s, getArg(q, 0));
+// 						s = newInstruction(mb, ASSIGNsymbol);
+// 						setModuleId(s, batRef);
+// 						setFunctionId(s, mirrorRef);
+// 						s = pushReturn(mb, s, newTmpVariable(mb, TYPE_bat));
+// 						s = pushArgument(mb, s, getArg(q, 0));
 						
 						/* create algebra.leftjoin instruction */
 						t = newInstruction(mb, ASSIGNsymbol);
 						setModuleId(t, algebraRef);
-						setFunctionId(t, leftjoinRef);
+						setFunctionId(t, leftfetchjoinRef);
 						t = pushReturn(mb, t, newTmpVariable(mb, TYPE_bat));
-						t = pushArgument(mb, t, getArg(s, 0));
+						t = pushArgument(mb, t, getArg(q, 1));
 						t = pushArgument(mb, t, getArg(old[i2], 0));
 						
 						/* create barrier instruction */
@@ -328,7 +334,7 @@ OPTdvfImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, in
 						insertInstruction(mb, b, i2+1);
 						
 						insertInstruction(mb, t, i2+1);
-						insertInstruction(mb, s, i2+1);
+// 						insertInstruction(mb, s, i2+1);
 						insertInstruction(mb, q, i2+1);
 						
 						for(a = NUM_RET_MOUNT-1; a >= 0; a--)
@@ -354,22 +360,23 @@ OPTdvfImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, in
 						setFunctionId(r, subgroupRef);
 						r = pushReturn(mb, r, newTmpVariable(mb, TYPE_bat));
 						r = pushReturn(mb, r, newTmpVariable(mb, TYPE_bat));
+						r = pushReturn(mb, r, newTmpVariable(mb, TYPE_bat));
 						r = pushArgument(mb, r, getArg(old[i2], 0));
 
 
 						/* create bat.mirror instruction */
-						s = newInstruction(mb, ASSIGNsymbol);
-						setModuleId(s, batRef);
-						setFunctionId(s, mirrorRef);
-						s = pushReturn(mb, s, newTmpVariable(mb, TYPE_bat));
-						s = pushArgument(mb, s, getArg(r, 0));
+// 						s = newInstruction(mb, ASSIGNsymbol);
+// 						setModuleId(s, batRef);
+// 						setFunctionId(s, mirrorRef);
+// 						s = pushReturn(mb, s, newTmpVariable(mb, TYPE_bat));
+// 						s = pushArgument(mb, s, getArg(r, 0));
 
 						/* create algebra.leftjoin instruction */
 						t = newInstruction(mb, ASSIGNsymbol);
 						setModuleId(t, algebraRef);
-						setFunctionId(t, leftjoinRef);
+						setFunctionId(t, leftfetchjoinRef);
 						t = pushReturn(mb, t, newTmpVariable(mb, TYPE_bat));
-						t = pushArgument(mb, t, getArg(s, 0));
+						t = pushArgument(mb, t, getArg(r, 1));
 						t = pushArgument(mb, t, getArg(old[i2], 0));
 
 						/* create dvf.plan_modifier instruction */
@@ -387,7 +394,7 @@ OPTdvfImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, in
 						/* insert the new instructions in pc i2+1 */
 						insertInstruction(mb, q, i2+1);
 						insertInstruction(mb, t, i2+1);
-						insertInstruction(mb, s, i2+1);
+// 						insertInstruction(mb, s, i2+1);
 						insertInstruction(mb, r, i2+1);
 
 						actions += 4;
