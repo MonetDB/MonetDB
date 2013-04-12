@@ -77,8 +77,10 @@ Symbol newFunction(str mod, str nme,int kind){
 	if (s == NULL)
 		return NULL;
 	p = newInstruction(NULL,kind);
-	if (p == NULL)
+	if (p == NULL) {
+		freeSymbol(s);
 		return NULL;
+	}
 	setModuleId(p, mod);
 	setFunctionId(p, nme);
 	setDestVar(p, newVariable(s->def,GDKstrdup(nme),TYPE_any));

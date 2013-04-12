@@ -1303,6 +1303,10 @@ fcnHeader(Client cntxt, int kind)
 	} else { /* default */
 		setVarType(curBlk, 0, TYPE_void);
 	}
+	if (curInstr != getInstrPtr(curBlk, 0)) {
+		freeInstruction(getInstrPtr(curBlk, 0));
+		getInstrPtr(curBlk, 0) = curInstr;
+	}
 	return curBlk;
 }
 

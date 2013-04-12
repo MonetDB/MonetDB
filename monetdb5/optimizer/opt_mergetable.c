@@ -904,7 +904,6 @@ mat_group_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int b, int g, int e)
 /* The mat_group_{new,derive} keep an ext,attr1..attrn table.
  * This is the input for the final second phase group by.
  */
-
 static void
 mat_pack_group(MalBlkPtr mb, mat_t *mat, int mtop, int g)
 {

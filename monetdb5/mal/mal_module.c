@@ -195,13 +195,14 @@ void freeModule(Module m)
 			int ret = 0;
 
 			assert(pci->fcn != NULL);
-printf("epiloque!!!\n");
 			(*pci->fcn)(&ret);
 			(void)ret;
 		}
 	}
 	freeSubScope(m);
 	clrModuleJump(m->name, m);
+	if (m->help)
+		GDKfree(m->help);
 	GDKfree(m);
 }
 
