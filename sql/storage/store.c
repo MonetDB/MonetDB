@@ -545,9 +545,8 @@ load_table(sql_trans *tr, sql_schema *s, oid rid)
 	t->query = NULL;
 	query = (char *)v;
 	if (ATOMcmp(TYPE_str, ATOMnilptr(TYPE_str), query) != 0)
-		t->query = query;
-	else
-		_DELETE(query);
+		t->query = sa_strdup(tr->sa, query);
+	_DELETE(query);
 	v = table_funcs.column_find_value(tr, find_sql_column(tables, "type"), rid);
 	t->type = *(sht *)v;			_DELETE(v);
 	v = table_funcs.column_find_value(tr, find_sql_column(tables, "system"), rid);
@@ -645,7 +644,8 @@ load_type(sql_trans *tr, sql_schema *s, oid rid)
 	tid = *(sqlid *)v;			_DELETE(v);
 	v = table_funcs.column_find_value(tr, find_sql_column(types, "systemname"), rid);
 	base_init(tr->sa, &t->base, tid, TR_OLD, v);	_DELETE(v);
-	t->sqlname = table_funcs.column_find_value(tr, find_sql_column(types, "sqlname"), rid);
+	v = table_funcs.column_find_value(tr, find_sql_column(types, "sqlname"), rid);
+	t->sqlname = (v)?sa_strdup(tr->sa, v):NULL; 	_DELETE(v);
 	v = table_funcs.column_find_value(tr, find_sql_column(types, "digits"), rid);
 	t->digits = *(int *)v; 			_DELETE(v); 
 	v = table_funcs.column_find_value(tr, find_sql_column(types, "scale"), rid);
@@ -686,12 +686,14 @@ load_arg(sql_trans *tr, sql_func * f, oid rid)
 	sql_table *args = find_sql_table(syss, "args");
 
 	(void)f;
-	a->name = table_funcs.column_find_value(tr, find_sql_column(args, "name"), rid);
-	tpe = table_funcs.column_find_value(tr, find_sql_column(args, "type"), rid);
+	v = table_funcs.column_find_value(tr, find_sql_column(args, "name"), rid);
+	a->name = sa_strdup(tr->sa, v);	_DELETE(v);
 	v = table_funcs.column_find_value(tr, find_sql_column(args, "type_digits"), rid);
 	digits = *(int *)v;	_DELETE(v);
 	v = table_funcs.column_find_value(tr, find_sql_column(args, "type_scale"), rid);
 	scale = *(int *)v;	_DELETE(v);
+
+	tpe = table_funcs.column_find_value(tr, find_sql_column(args, "type"), rid);
 	if (!sql_find_subtype(&a->type, tpe, digits, scale))
 		sql_init_subtype(&a->type, sql_trans_bind_type(tr, f->s, tpe), digits, scale);
 	_DELETE(tpe);
@@ -719,8 +721,10 @@ load_func(sql_trans *tr, sql_schema *s, oid rid)
 	fid = *(sqlid *)v;			_DELETE(v);
 	v = table_funcs.column_find_value(tr, find_sql_column(funcs, "name"), rid);
 	base_init(tr->sa, &t->base, fid, TR_OLD, v); 	_DELETE(v);
-	t->imp = table_funcs.column_find_value(tr, find_sql_column(funcs, "func"), rid);
-	t->mod = table_funcs.column_find_value(tr, find_sql_column(funcs, "mod"), rid);
+	v = table_funcs.column_find_value(tr, find_sql_column(funcs, "func"), rid);
+	t->imp = (v)?sa_strdup(tr->sa, v):NULL;	_DELETE(v);
+	v = table_funcs.column_find_value(tr, find_sql_column(funcs, "mod"), rid);
+	t->mod = (v)?sa_strdup(tr->sa, v):NULL;	_DELETE(v);
 	v = table_funcs.column_find_value(tr, find_sql_column(funcs, "sql"), rid);
 	t->sql = *(bit *)v;			_DELETE(v);
 	v = table_funcs.column_find_value(tr, find_sql_column(funcs, "type"), rid);
