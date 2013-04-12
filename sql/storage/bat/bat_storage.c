@@ -365,7 +365,11 @@ dup_bat(sql_trans *tr, sql_table *t, sql_delta *obat, sql_delta *bat, int type, 
 static void
 update_col(sql_trans *tr, sql_column *c, void *tids, void *upd, int tpe)
 {
+	BAT *b = tids;
 	sql_delta *bat;
+
+	if (tpe == TYPE_bat && !BATcount(b)) 
+		return;
 
 	if (!c->data || !c->base.allocated) {
 		int type = c->type.type->localtype;
@@ -386,7 +390,11 @@ update_col(sql_trans *tr, sql_column *c, void *tids, void *upd, int tpe)
 static void 
 update_idx(sql_trans *tr, sql_idx * i, void *tids, void *upd, int tpe)
 {
+	BAT *b = tids;
 	sql_delta *bat;
+
+	if (tpe == TYPE_bat && !BATcount(b)) 
+		return;
 
 	if (!i->data || !i->base.allocated) {
 		int type = (i->type==join_idx)?TYPE_oid:TYPE_wrd;
@@ -523,7 +531,11 @@ dup_del(sql_trans *tr, sql_table *ot, sql_table *t)
 static void 
 append_col(sql_trans *tr, sql_column *c, void *i, int tpe)
 {
+	BAT *b = i;
 	sql_delta *bat;
+
+	if (tpe == TYPE_bat && !BATcount(b)) 
+		return;
 
 	if (!c->data || !c->base.allocated) {
 		int type = c->type.type->localtype;
@@ -544,7 +556,11 @@ append_col(sql_trans *tr, sql_column *c, void *i, int tpe)
 static void
 append_idx(sql_trans *tr, sql_idx * i, void *ib, int tpe)
 {
+	BAT *b = ib;
 	sql_delta *bat;
+
+	if (tpe == TYPE_bat && !BATcount(b)) 
+		return;
 
 	if (!i->data || !i->base.allocated) {
 		int type = (i->type==join_idx)?TYPE_oid:TYPE_wrd;
@@ -601,13 +617,17 @@ delta_delete_val( sql_dbat *bat, oid rid )
 static void
 delete_tab(sql_trans *tr, sql_table * t, void *ib, int tpe)
 {
+	BAT *b = ib;
 	sql_dbat *bat;
 	node *n;
+
+	if (tpe == TYPE_bat && !BATcount(b)) 
+		return;
 
 	if (!t->data || !t->base.allocated) {
 		sql_table *ot = tr_find_table(tr->parent, t);
 		sql_dbat *bat = t->data = ZNEW(sql_dbat), *obat = timestamp_dbat(ot->data, tr->stime);
-		dup_dbat(tr, obat, bat, isNew(ot), t->base.flag == TR_NEW); 
+		dup_dbat(tr, obat, bat, isNew(ot), isTempTable(t)); 
 		t->base.allocated = 1;
 	}
        	bat = t->data;
@@ -1350,7 +1370,7 @@ clear_del(sql_trans *tr, sql_table *t)
 	if (!t->data || !t->base.allocated) {
 		sql_table *ot = tr_find_table(tr->parent, t);
 		sql_dbat *bat = t->data = ZNEW(sql_dbat), *obat = timestamp_dbat(ot->data, tr->stime);
-		dup_dbat(tr, obat, bat, isNew(ot), t->base.flag == TR_NEW); 
+		dup_dbat(tr, obat, bat, isNew(ot), isTempTable(t)); 
 		t->base.allocated = 1;
 	}
 	return clear_dbat(tr, t->data);
@@ -1653,7 +1673,7 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 	int ok = LOG_OK;
 	node *n, *m;
 
-	if (ft->cleared) {
+	if (ft->cleared && store_nr_active == 1) {
 		(void)store_funcs.clear_del(tr->parent, tt);
 		for (n = tt->columns.set->h; n; n = n->next) 
 			(void)store_funcs.clear_col(tr->parent, n->data);

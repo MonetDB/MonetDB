@@ -1724,7 +1724,7 @@ void_inplace(BAT *b, oid id, const void *val, bit force)
 	b->batInserted = 0;
 	BUNfndVOID(p, bi, (ptr) &id);
 
-	assert(p >= b->batInserted);	/* we don't want delete/ins */
+	assert(force || p >= b->batInserted);	/* we don't want delete/ins */
 	assert(force || !b->batRestricted);
 	if (!BUNinplace(b, p, (ptr) &id, val, force))
 		 res = GDK_FAIL;
