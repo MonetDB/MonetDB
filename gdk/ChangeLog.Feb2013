@@ -1,7 +1,3 @@
 # ChangeLog file for MonetDB
 # This file is updated with Maddlog
 
-* Mon Apr  8 2013 Sjoerd Mullender <sjoerd@acm.org>
-- Fixed a bug in case the candidate list is dense and completely
-  outside the range of the bat being worked upon.
-

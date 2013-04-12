@@ -1,3 +1,29 @@
+monetdb (11.15.5-20130412) unstable; urgency=low
+
+  * Rebuilt.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 12 Apr 2013 09:33:06 +0200
+
+monetdb (11.15.5-20130412) unstable; urgency=low
+
+  * java: The pre-compiled .jar files are now created using Java 7 instead of
+    Java 6.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 11 Apr 2013 09:33:05 +0200
+
+monetdb (11.15.5-20130412) unstable; urgency=low
+
+  * gdk: Fixed a bug in case the candidate list is dense and completely
+    outside the range of the bat being worked upon.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 8 Apr 2013 09:33:05 +0200
+
+monetdb (11.15.5-20130412) unstable; urgency=low
+
+  * monetdb5: Fixed argument parsing of mapi.reconnect() with 5 arguments.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 12 Mar 2013 09:33:05 +0200
+
 monetdb (11.15.3-20130227) unstable; urgency=low
 
   * Rebuilt.
