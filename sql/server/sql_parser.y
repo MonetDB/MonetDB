@@ -4721,6 +4721,7 @@ non_reserved_word:
 |  ACCORDING	{ $$ = sa_strdup(SA, "according"); }
 |  URI		{ $$ = sa_strdup(SA, "uri"); }
 |  FILTER	{ $$ = sa_strdup(SA, "filter"); }
+|  TEMPORARY	{ $$ = sa_strdup(SA, "temporary"); }
 ;
 
 name_commalist:
