@@ -4185,13 +4185,13 @@ positional_exps_mark_used( sql_rel *rel, sql_rel *subrel )
 }
 
 static void
-exps_mark_used(sql_rel *rel, sql_rel *subrel)
+exps_mark_used(sql_allocator *sa, sql_rel *rel, sql_rel *subrel)
 {
 	int nr = 0;
 	if (rel->exps) {
 		node *n;
 		int len = list_length(rel->exps), i;
-		sql_exp **exps = NEW_ARRAY(sql_exp*, len);
+		sql_exp **exps = SA_NEW_ARRAY(sa, sql_exp*, len);
 
 		for (n=rel->exps->h, i = 0; n; n = n->next, i++) 
 			exps[i] = n->data;
@@ -4205,7 +4205,6 @@ exps_mark_used(sql_rel *rel, sql_rel *subrel)
 				nr += exp_mark_used(subrel, e);
 			}
 		}
-		_DELETE(exps);
 	}
 	/* for count/rank we need atleast one column */
 	if (!nr && (is_project(subrel->op) || is_base(subrel->op)) && subrel->exps->h) {
@@ -4283,7 +4282,7 @@ rel_mark_used(mvc *sql, sql_rel *rel, int proj)
 	case op_project:
 	case op_groupby: 
 		if (proj && rel->l) {
-			exps_mark_used(rel, rel->l);
+			exps_mark_used(sql->sa, rel, rel->l);
 			rel_mark_used(sql, rel->l, 0);
 		}
 		break;
@@ -4295,7 +4294,7 @@ rel_mark_used(mvc *sql, sql_rel *rel, int proj)
 
 	case op_select:
 		if (rel->l) {
-			exps_mark_used(rel, rel->l);
+			exps_mark_used(sql->sa, rel, rel->l);
 			rel_mark_used(sql, rel->l, 0);
 		}
 		break;
@@ -4337,8 +4336,8 @@ rel_mark_used(mvc *sql, sql_rel *rel, int proj)
 	case op_full: 
 	case op_semi: 
 	case op_anti: 
-		exps_mark_used(rel, rel->l);
-		exps_mark_used(rel, rel->r);
+		exps_mark_used(sql->sa, rel, rel->l);
+		exps_mark_used(sql->sa, rel, rel->r);
 		rel_mark_used(sql, rel->l, 0);
 		rel_mark_used(sql, rel->r, 0);
 		break;

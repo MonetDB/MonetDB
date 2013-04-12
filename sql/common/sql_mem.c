@@ -105,6 +105,7 @@ char *sa_alloc( sql_allocator *sa, size_t sz )
 		sa->blks[sa->nr-1] = r;
 		sa->blks[sa->nr] = t;
 		sa->nr ++;
+		sa->usedmem += sz;
 		return r;
 	}
 	if (sz > (SA_BLOCK-sa->used)) {
@@ -116,11 +117,11 @@ char *sa_alloc( sql_allocator *sa, size_t sz )
 		sa->blks[sa->nr] = r;
 		sa->nr ++;
 		sa->used = sz;
+		sa->usedmem += SA_BLOCK;
 		return r;
 	}
 	r = sa->blks[sa->nr-1] + sa->used;
 	sa->used += sz;
-	sa->usedmem += sz;
 	return r;
 }
 

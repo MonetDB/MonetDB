@@ -1169,8 +1169,6 @@ sql_create_sqlfunc(sql_allocator *sa, char *name, char *imp, list *ops, sql_subt
 	return t;
 }
 
-static sql_allocator *sa = NULL;
-
 /* SQL service initialization
 This C-code version initializes the
 parser catalogs with typing information. Although, in principle,
@@ -1608,16 +1606,15 @@ sqltypeinit( sql_allocator *sa)
 }
 
 void
-types_init(sql_allocator *nsa, int debug)
+types_init(sql_allocator *sa, int debug)
 {
 	(void)debug;
-	sa = nsa;
 	aliases = sa_list(sa);
 	types = sa_list(sa);
 	localtypes = sa_list(sa);
 	aggrs = sa_list(sa);
 	funcs = sa_list(sa);
 	funcs->ht = hash_new(sa, 1024, (fkeyvalue)&base_key);
-	sqltypeinit( nsa );
+	sqltypeinit( sa );
 }
 
