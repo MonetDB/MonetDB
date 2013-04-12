@@ -27,7 +27,7 @@ Vendor: MonetDB BV <info@monetdb.org>
 Group: Applications/Databases
 License: MPL - http://www.monetdb.org/Legal/MonetDBLicense
 URL: http://www.monetdb.org/
-Source: http://dev.monetdb.org/downloads/sources/Feb2013-SP1/%{name}-%{version}.tar.bz2
+Source: http://dev.monetdb.org/downloads/sources/Feb2013-SP2/%{name}-%{version}.tar.bz2
 
 BuildRequires: bison
 BuildRequires: bzip2-devel
@@ -722,6 +722,20 @@ rm -f $RPM_BUILD_ROOT%{_libdir}/libmonetdb5.so
 rm -fr $RPM_BUILD_ROOT
 
 %changelog
+* Fri Apr 12 2013 Sjoerd Mullender <sjoerd@acm.org> - 11.15.5-20130412
+- Rebuilt.
+
+* Thu Apr 11 2013 Sjoerd Mullender <sjoerd@acm.org> - 11.15.5-20130412
+- java: The pre-compiled .jar files are now created using Java 7 instead of
+  Java 6.
+
+* Mon Apr  8 2013 Sjoerd Mullender <sjoerd@acm.org> - 11.15.5-20130412
+- gdk: Fixed a bug in case the candidate list is dense and completely
+  outside the range of the bat being worked upon.
+
+* Tue Mar 12 2013 Sjoerd Mullender <sjoerd@acm.org> - 11.15.5-20130412
+- monetdb5: Fixed argument parsing of mapi.reconnect() with 5 arguments.
+
 * Wed Feb 27 2013 Sjoerd Mullender <sjoerd@acm.org> - 11.15.3-20130227
 - Rebuilt.
 
