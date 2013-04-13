@@ -52,7 +52,7 @@ str plan_modifier(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str dvfRef = putName("dvf", 3);
 	str planmodifierRef = putName("plan_modifier", 13);
 
-	InstrPtr *old = NULL, *mounts = NULL, q = NULL, r = NULL, s = NULL, o = NULL;
+	InstrPtr *old = NULL, *mounts = NULL, q = NULL, r = NULL, o = NULL;
 	int i, j, k, limit, slimit, actions = 0;
 	int num_fl = 0;
 	BUN b1 = 0, b2 = 0;
@@ -207,7 +207,7 @@ str plan_modifier(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			r = newInstruction(mb, ASSIGNsymbol);
 			setModuleId(r, matRef);
 			setFunctionId(r, newRef);
-			r = pushReturn(mb, r, newTmpVariable(mb, TYPE_any)); /* push tmp var to pass to markH. */
+			r = pushReturn(mb, r, getArg(p, 0)); /* push the ret of sql.bind as ret of mat.new */
 			which_column = get_column_num(*schema_name, getVarConstant(mb, getArg(p, 3)).val.sval,
 						      getVarConstant(mb, getArg(p, 4)).val.sval);
 			if(which_column < 0)
@@ -225,16 +225,16 @@ str plan_modifier(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			actions++;
 
 			/* arrange oids of return val of mat.new */
-			s = newInstruction(mb, ASSIGNsymbol);
-			setModuleId(s, algebraRef);
-			setFunctionId(s, markHRef);
-			s = pushReturn(mb, s, getArg(p, 0)); /* push the ret of sql.bind as ret of (mat.new + algebra.markH) */
-			s = pushArgument(mb, s, getArg(r, 0));
-			s = pushOid(mb, s, 0);
+// 			s = newInstruction(mb, ASSIGNsymbol);
+// 			setModuleId(s, algebraRef);
+// 			setFunctionId(s, markHRef);
+// 			s = pushReturn(mb, s, getArg(p, 0)); /* push the ret of sql.bind as ret of (mat.new + algebra.markH) */
+// 			s = pushArgument(mb, s, getArg(r, 0));
+// 			s = pushOid(mb, s, 0);
 
 			/* push the new instruction */
-			pushInstruction(mb, s);
-			actions++;
+// 			pushInstruction(mb, s);
+// 			actions++;
 /* 			s = s; */
 
 			/* comment out in the old for reusing the old */
@@ -335,7 +335,7 @@ str plan_modifier(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* adjust variable lifetimes */
 	malGarbageCollector(mb);
 
-/* 	chkProgram(cntxt->fdout, cntxt->nspace, mb);
+ 	/* chkProgram(cntxt->fdout, cntxt->nspace, mb);
 	printFunction(cntxt->fdout,mb, 0, LIST_MAL_EXPLAIN); */
 
 	/* relocate the startpc, the instruction to proceed with the execution. Because it might be changed by the optimizers. */
