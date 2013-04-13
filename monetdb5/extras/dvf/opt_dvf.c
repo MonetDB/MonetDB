@@ -117,6 +117,7 @@ OPTdvfImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, in
 
 	InstrPtr *old = NULL, q = NULL, r = NULL, t = NULL, b = NULL, m = NULL, e = NULL, *ps_iter = NULL;
 	int i, limit, which_column, actions = 0;
+	int last_bind_return_var_id = -1;
 
 	stk = stk; //to escape 'unused' parameter error.
 	pci = pci; //to escape 'unused' parameter error.
@@ -342,6 +343,7 @@ OPTdvfImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, in
 							insertInstruction(mb, ps_iter[a], i2+1);
 						}
 						
+						i += 6 + NUM_RET_MOUNT * 2 - 1; /* -1 because this bind should be reconsidered with state=3 in the next iteration. */
 						actions += 7 + NUM_RET_MOUNT * 2;
 						state = 3;
 						
@@ -398,36 +400,84 @@ OPTdvfImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, in
 						insertInstruction(mb, r, i2+1);
 
 						actions += 4;
-						goto finish;
+						state = 3;
 					}
 					
 					break;
 				case 3:
-					/* injection is done. Now it is time to replace return bats of sql.binds for data table with appended bats */
-					/* mode should be 1 */
+					/* injection is done.*/
+					last_bind_return_var_id = getArg(p, 0);
 					
-					which_column = get_column_num(schema_name, getVarConstant(mb, getArg(p, 3)).val.sval, 
-									  getVarConstant(mb, getArg(p, 4)).val.sval);
-					if(which_column < 0)
+					if(mode == 1)
 					{
-						printf("dvf.get_column_num is not defined yet for schema: %s and table: %s and column: %s.",
-						      schema_name, getVarConstant(mb, getArg(p, 3)).val.sval, getVarConstant(mb, getArg(p, 4)).val.sval);
-						return -1;
+						/* Now it is time to replace return bats of sql.binds for data table with appended bats */
+						which_column = get_column_num(schema_name, getVarConstant(mb, getArg(p, 3)).val.sval, 
+										getVarConstant(mb, getArg(p, 4)).val.sval);
+						if(which_column < 0)
+						{
+							printf("dvf.get_column_num is not defined yet for schema: %s and table: %s and column: %s.",
+							schema_name, getVarConstant(mb, getArg(p, 3)).val.sval, getVarConstant(mb, getArg(p, 4)).val.sval);
+							return -1;
+						}
+						
+						r = newInstruction(mb, ASSIGNsymbol);
+						r = pushReturn(mb, r, getArg(p, 0));
+						r = pushArgument(mb, r, getArg(ps_iter[which_column+NUM_RET_MOUNT], 0));
+						
+						insertInstruction(mb, r, i+1);
+						removeInstruction(mb, p);
+						
+						actions += 2;
 					}
 					
-					r = newInstruction(mb, ASSIGNsymbol);
-					r = pushReturn(mb, r, getArg(p, 0));
-					r = pushArgument(mb, r, getArg(ps_iter[which_column+NUM_RET_MOUNT], 0));
 					
-					insertInstruction(mb, r, i+1);
-					removeInstruction(mb, p);
-					
-					actions += 2;
 			}
 		}
+		else if((state == 2 || state == 3) &&
+			((getModuleId(p) == sqlRef &&
+			getFunctionId(p) == tidRef &&
+			p->argc == 4 &&
+			p->retc == 1 &&
+			strcmp(getVarConstant(mb, getArg(p, 2)).val.sval, getVarConstant(mb, getArg(old[i1], 2)).val.sval) == 0 &&
+			strstr(getVarConstant(mb, getArg(p, 3)).val.sval, data_table_identifier) != NULL) || 
+			(getModuleId(p) == sqlRef &&
+			getFunctionId(p) == bindRef &&
+			p->argc == 7 &&
+			p->retc == 2 &&
+			strcmp(getVarConstant(mb, getArg(p, 3)).val.sval, getVarConstant(mb, getArg(old[i1], 2)).val.sval) == 0 &&
+			strstr(getVarConstant(mb, getArg(p, 4)).val.sval, data_table_identifier) != NULL &&
+			getVarConstant(mb, getArg(p, 6)).val.ival == 2) ||
+			(getModuleId(p) == sqlRef &&
+			getFunctionId(p) == bindRef &&
+			p->argc == 6 &&
+			p->retc == 1 &&
+			strcmp(getVarConstant(mb, getArg(p, 2)).val.sval, getVarConstant(mb, getArg(old[i1], 2)).val.sval) == 0 &&
+			strstr(getVarConstant(mb, getArg(p, 3)).val.sval, data_table_identifier) != NULL &&
+			getVarConstant(mb, getArg(p, 5)).val.ival == 1)))
+		{
+			removeInstruction(mb, p);
+			i--;
+			actions++;
+		}
+		else if((state == 3) &&
+			getModuleId(p) == sqlRef &&
+			getFunctionId(p) == projectdeltaRef &&
+			p->argc == 6 &&
+			p->retc == 1 &&
+			last_bind_return_var_id == getArg(p, 2))
+		{
+			r = newInstruction(mb, ASSIGNsymbol);
+			r = pushReturn(mb, r, getArg(p, 0));
+			r = pushArgument(mb, r, last_bind_return_var_id);
+			
+			insertInstruction(mb, r, i+1);
+			removeInstruction(mb, p);
+			
+			actions += 2;
+		}
+		
 	}
 
-finish:
 	return actions;
 
 }
