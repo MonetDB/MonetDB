@@ -17,4 +17,4 @@ doc_dir=$current_dir/$2
 
 title="MonetDB5 PHP API"
 
-phpdoc -ti $title -o "HTML:frames:phpedit" -f $source_code -t $doc_dir 
+phpdoc -ti $title -o "HTML:frames:phpedit" -f $source_code -t $doc_dir

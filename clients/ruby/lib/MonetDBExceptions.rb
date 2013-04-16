@@ -51,5 +51,5 @@ end
 class MonetDBProtocolError < StandardError
    def initialize(e)
      $stderr.puts e
-   end  
+   end
 end
