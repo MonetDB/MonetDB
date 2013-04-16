@@ -563,7 +563,7 @@ load_table(sql_trans *tr, sql_schema *s, oid rid)
 	t->cleared = 0;
 	v = table_funcs.column_find_value(tr, find_sql_column(tables, "readonly"),rid);
 	t->readonly = *(bit *)v;	_DELETE(v);
-	t->readonly &= store_readonly;
+	t->readonly |= store_readonly;
 
 	t->pkey = NULL;
 	t->s = s;
