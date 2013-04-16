@@ -1567,7 +1567,12 @@ tr_update_delta( sql_trans *tr, sql_delta *obat, sql_delta *cbat, BUN snapshot_m
 	(void)tr;
 	assert(store_nr_active==1);
 
+	
 	/* for cleared tables the bid is reset */
+	if (obat->bid == 0) {
+		int type = BBPquickdesc(cbat->ibid, 0)->ttype; 
+		obat->bid = e_bat(type);
+	}
 	if (cbat->bid == 0) {
 		cleared = 1;
 		cbat->bid = obat->bid;
