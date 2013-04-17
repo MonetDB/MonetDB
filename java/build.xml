@@ -29,6 +29,7 @@ All Rights Reserved.
 
 <project name="MonetDB_Java_Drivers" default="default" basedir=".">
 
+
   <!-- set global properties for this build -->
   <property name="srcdir"               value="src" />
   <property name="libdir"               value="lib" />
@@ -55,6 +56,17 @@ All Rights Reserved.
 
   <property name="mero-control-jar"
     value="${jardir}/merocontrol.jar" />
+
+  <!-- 
+
+  Cross-compile for JVM 1.5 ("Java 5"). This allows the driver to work with older java installations.
+  see also https://blogs.oracle.com/darcy/entry/bootclasspath_older_source for details on the error message w.r.t rt.jar 
+  to get around this issue, the -Xlint:-options compiler option has also been addded.
+  2013-04-17, hannes@cwi.nl 
+
+  -->
+  <property name="jvm.version"               value="1.5" />
+  <property name="javac.flags"               value="-Xlint:-options" />
 
   <!-- full target -->
   <target name="all">
@@ -172,10 +184,13 @@ All Rights Reserved.
       debug="${debug}"
       optimize="${optimize}"
       includeantruntime="false"
+      source="${jvm.version}"
+      target="${jvm.version}"
       >
       <src path="${srcdir}" />
       <src path="${builddir}/src" />
       <include name="${jdbc-package}/**/*.java" />
+      <compilerarg line="${javac.flags}" />
     </javac>
   </target>
 
@@ -188,8 +203,11 @@ All Rights Reserved.
       debug="${debug}"
       optimize="${optimize}"
       includeantruntime="false"
+      source="${jvm.version}"
+      target="${jvm.version}"
       >
       <include name="${mcl-package}/**/*.java" />
+      <compilerarg line="${javac.flags}" />
     </javac>
   </target>
 
@@ -202,8 +220,11 @@ All Rights Reserved.
       debug="${debug}"
       optimize="${optimize}"
       includeantruntime="false"
+      source="${jvm.version}"
+      target="${jvm.version}"
       >
       <include name="${client-package}/**/*.java" />
+      <compilerarg line="${javac.flags}" />
     </javac>
   </target>
 
@@ -216,8 +237,11 @@ All Rights Reserved.
       debug="${debug}"
       optimize="${optimize}"
       includeantruntime="false"
+      source="${jvm.version}"
+      target="${jvm.version}"
       >
       <include name="${util-package}/**/*.java" />
+      <compilerarg line="${javac.flags}" />
     </javac>
   </target>
 
@@ -230,8 +254,11 @@ All Rights Reserved.
       debug="${debug}"
       optimize="${optimize}"
       includeantruntime="false"
+      source="${jvm.version}"
+      target="${jvm.version}"
       >
       <include name="${mero-control-package}/**/*.java" />
+      <compilerarg line="${javac.flags}" />
     </javac>
   </target>
 
