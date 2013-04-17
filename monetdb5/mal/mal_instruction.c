@@ -84,11 +84,8 @@ newMalBlkStmt(MalBlkPtr mb, int maxstmts)
 	mb->stmt = p;
 	mb->stop = 0;
 	mb->ssize = maxstmts;
-	if (mb->profiler) {
-		GDKfree(mb->profiler);
-		mb->profiler = (ProfPtr) GDKzalloc((mb->ssize + STMT_INCREMENT) * sizeof(ProfRecord));
-		assert(mb->profiler);
-	}
+    if (mb->profiler)
+        mb->profiler = (ProfPtr) GDKrealloc(mb->profiler, (mb->ssize ) * sizeof(ProfRecord));
 	return 0;
 }
 
