@@ -309,13 +309,13 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, stm
 			/* handle table returning functions */
 			if (l->type == e_psm && l->flag & PSM_REL) {
 				stmt *lst = r->op1;
-                		if (r->type == st_table && lst->nrcols == 0 && lst->key) {
-                        		node *n;
-                        		list *l = sa_list(sql->sa);
-	
-                        		for(n=lst->op4.lval->h; n; n = n->next)
-                                		list_append(l, const_column(sql->sa, (stmt*)n->data));
-                        		r = stmt_list(sql->sa, l);
+				if (r->type == st_table && lst->nrcols == 0 && lst->key) {
+					node *n;
+					list *l = sa_list(sql->sa);
+
+					for(n=lst->op4.lval->h; n; n = n->next)
+						list_append(l, const_column(sql->sa, (stmt*)n->data));
+					r = stmt_list(sql->sa, l);
 				}
 				if (r->type == st_list)
 					r = stmt_table(sql->sa, r, 1);
@@ -337,14 +337,14 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, stm
 			stmt *r = rel_bin(sql, rel);
 
 #if 0
-                	if (r->type == st_list && r->nrcols == 0 && r->key) {
-                        	/* row to columns */
-                        	node *n;
-                        	list *l = sa_list(sql->sa);
-	
-                        	for(n=r->op4.lval->h; n; n = n->next)
-                               		list_append(l, const_column(sql->sa, (stmt*)n->data));
-                        	r = stmt_list(sql->sa, l);
+			if (r->type == st_list && r->nrcols == 0 && r->key) {
+				/* row to columns */
+				node *n;
+				list *l = sa_list(sql->sa);
+
+				for(n=r->op4.lval->h; n; n = n->next)
+					list_append(l, const_column(sql->sa, (stmt*)n->data));
+				r = stmt_list(sql->sa, l);
 			}
 #endif
 			if (is_modify(rel->op) || is_ddl(rel->op)) 
@@ -630,23 +630,23 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, stm
 			if (l->nrcols == 0)
 				l = stmt_const(sql->sa, bin_first_column(sql->sa, swapped?right:left), l); 
 
-                        if (left && right && re->card > CARD_ATOM && !is_select) {
+			if (left && right && re->card > CARD_ATOM && !is_select) {
 				/* find predicate function */
-                                sql_subfunc *f = e->f;
+				sql_subfunc *f = e->f;
 				stmt *j = stmt_joinN(sql->sa, l, r, r2, f);
 
-                                if (j && is_anti(e))
-                                        j->flag |= ANTI;
-                                return j;
-                        }
+				if (j && is_anti(e))
+					j->flag |= ANTI;
+				return j;
+			}
 			ops = sa_list(sql->sa);
 			append(ops, r);
 			append(ops, r2);
 			r = stmt_list(sql->sa, ops);
 			s = stmt_genselect(sql->sa, l, r, e->f, sel);
-                        if (s && is_anti(e))
-                        	s->flag |= ANTI;
-                        return s;
+			if (s && is_anti(e))
+				s->flag |= ANTI;
+			return s;
 		}
 		if (left && right && !is_select &&
 		   ((l->nrcols && (r->nrcols || (r2 && r2->nrcols))) || 
@@ -900,7 +900,7 @@ check_types(mvc *sql, sql_subtype *ct, stmt *s, check_type tpe)
 	if ((!st || !st->type) && stmt_set_type_param(sql, ct, s) == 0) {
 		return s;
 	} else if (!st) {
-                return sql_error(sql, 02, "statement has no type information");
+		return sql_error(sql, 02, "statement has no type information");
 	}
 
 	/* first try cheap internal (inplace) convertions ! */
@@ -1248,7 +1248,7 @@ rel2bin_table( mvc *sql, sql_rel *rel, list *refs)
 		sql_exp *exp = en->data;
 		char *rnme = exp->rname?exp->rname:exp->l;
 		stmt *s;
-	       
+
 		/* no relation names */
 		if (exp->l)
 			exp->l = NULL;
@@ -1353,7 +1353,7 @@ join_hash_key( mvc *sql, list *l )
 		if (h) {
 			sql_subfunc *xor = sql_bind_func_result3(sql->sa, sql->session->schema, "rotate_xor_hash", wrd, it, tail_type(s), wrd);
 
-			h = stmt_Nop(sql->sa, stmt_list(sql->sa,  list_append( list_append( list_append(sa_list(sql->sa), h), bits), s )), xor);
+			h = stmt_Nop(sql->sa, stmt_list(sql->sa, list_append( list_append( list_append(sa_list(sql->sa), h), bits), s )), xor);
 		} else {
 			sql_subfunc *hf = sql_bind_func_result(sql->sa, sql->session->schema, "hash", tail_type(s), NULL, wrd);
 			h = stmt_unop(sql->sa, s, hf);
@@ -1425,7 +1425,7 @@ rel2bin_join( mvc *sql, sql_rel *rel, list *refs)
  	 * split in 2 steps, 
  	 * 	first cheap join(s) (equality or idx) 
  	 * 	second selects/filters 
-         */
+	 */
 	if (rel->exps) {
 		int used_hash = 0;
 		int idx = 0;
@@ -1639,7 +1639,7 @@ rel2bin_semijoin( mvc *sql, sql_rel *rel, list *refs)
  	 * split in 2 steps, 
  	 * 	first cheap join(s) (equality or idx) 
  	 * 	second selects/filters 
-         */
+	 */
 	if (rel->exps) {
 		int idx = 0;
 		list *lje = sa_list(sql->sa);
@@ -1914,9 +1914,9 @@ rel2bin_except( mvc *sql, sql_rel *rel, list *refs)
 
 	/* now find the matching groups */
 	/* There is a bug (#3040) in the scheme, ie the join removes the nil's
-         * as during joining nil != nil. But for except's nil aren't distinct.
-         * We would need a bat.join operator which has both semantics.
-         */
+	 * as during joining nil != nil. But for except's nil aren't distinct.
+	 * We would need a bat.join operator which has both semantics.
+	 */
 	/* TODO change to leftjoin semantics to keep those in A not in B */
 	/* would need outerjoin eqjoin and outer project code, cleans up following mess */
 	for (n = left->op4.lval->h, m = right->op4.lval->h; n && m; n = n->next, m = m->next) {
@@ -2228,7 +2228,7 @@ rel2bin_project( mvc *sql, sql_rel *rel, list *refs, sql_rel *topn)
 	/* In case of a topn 
 		if both order by and distinct: then get first order by col 
 		do topn on it. Project all again! Then rest
-         */
+		*/
 	if (topn && rel->r) {
 		list *oexps = rel->r, *npl = sa_list(sql->sa);
 		/* distinct, topn returns atleast N (unique) */
@@ -2697,7 +2697,7 @@ stmt_selectnonil( mvc *sql, stmt *col, stmt *s )
 	sql_subtype *t = tail_type(col);
 	stmt *n = stmt_atom(sql->sa, atom_general(sql->sa, t, NULL));
 	stmt *nn = stmt_uselect2(sql->sa, col, n, n, 3, s);
-        nn->flag |= ANTI; 
+	nn->flag |= ANTI; 
 	return nn;
 }
 
@@ -2769,7 +2769,7 @@ insert_check_ukey(mvc *sql, list *inserts, sql_key *k, stmt *idx_inserts)
 				sql_kc *c = m->data;
 				stmt *orderby;
 
-				if (orderby_grp)  
+				if (orderby_grp)
 					orderby = stmt_reorder(sql->sa, nth(inserts, c->c->colnr)->op1, 1, orderby_ids, orderby_grp);
 				else
 					orderby = stmt_order(sql->sa, nth(inserts, c->c->colnr)->op1, 1);
@@ -2999,7 +2999,7 @@ rel2bin_insert( mvc *sql, sql_rel *rel, list *refs)
 	if (rel->r) /* first construct the inserts relation */
 		inserts = subrel_bin(sql, rel->r, refs);
 
-	if (!inserts)  
+	if (!inserts)
 		return NULL;	
 
 	if (idx_ins)
@@ -4031,18 +4031,18 @@ sql_delete_ukey(mvc *sql, stmt *deletes, sql_key *k, list *l)
 				case ACT_SET_NULL: 
 				case ACT_SET_DEFAULT: 
 					s = sql_delete_set_Fkeys(sql, fk, s, ((sql_fkey*)fk)->on_delete);
-            			        list_prepend(l, s);
+					list_prepend(l, s);
 					break;
 				case ACT_CASCADE: 
 					s = sql_delete_cascade_Fkeys(sql, fk, s);
-            			        list_prepend(l, s);
+					list_prepend(l, s);
 					break;
 				default:	/*RESTRICT*/
 					/* The overlap between deleted primaries and foreign should be empty */
-		                        s = stmt_binop(sql->sa, stmt_aggr(sql->sa, s, NULL, NULL, cnt, 1, 0), stmt_atom_wrd(sql->sa, 0), ne);
+					s = stmt_binop(sql->sa, stmt_aggr(sql->sa, s, NULL, NULL, cnt, 1, 0), stmt_atom_wrd(sql->sa, 0), ne);
 					msg = sa_message(sql->sa, "DELETE: FOREIGN KEY constraint '%s.%s' violated", fk->t->base.name, fk->base.name);
-		                        s = stmt_exception(sql->sa, s, msg, 00001);
-            			        list_prepend(l, s);
+					s = stmt_exception(sql->sa, s, msg, 00001);
+					list_prepend(l, s);
 			}
 		}
 	}
