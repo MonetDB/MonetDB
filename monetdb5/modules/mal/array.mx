@@ -453,8 +453,8 @@ ARRAYslice(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BATseqbase(res, 0);
 	res->hdense = TRUE;
 	BATkey(res, TRUE);
-	res->hsorted = res->hrevsorted = 1;
-	res->tsorted = res->trevsorted = 1;
+	res->hsorted = res->tsorted = 1;
+	res->hrevsorted = res->trevsorted = 0;
 	res->T->nonil = TRUE;
 	BBPkeepref(*ret = res->batCacheid);
 	return MAL_SUCCEED;
@@ -485,7 +485,8 @@ ARRAYfiller(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BATseqbase(bn, 0);
 	bn->hdense = TRUE;
 	BATkey(bn, TRUE);
-	bn->hsorted = bn->hrevsorted = 1;
+	bn->hsorted = 1;
+	bn->hrevsorted = 0;
 	bn->tsorted = bn->trevsorted = 1;
 	switch(type){
 		case TYPE_bit:
