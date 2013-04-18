@@ -732,10 +732,10 @@ rel_arrayslice(mvc *sql, sql_table *t, char *tname, symbol *dimref)
 			}
 		}
 	} else {
-		list *slc_args = new_exp_list(sql->sa), *dims = new_exp_list(sql->sa);
+		list *slc_args = new_exp_list(sql->sa), *cols = new_exp_list(sql->sa);
 		sql_subtype *lng_tpe = sql_bind_localtype("lng");
 
-		if (slc_args == NULL || dims == NULL)
+		if (slc_args == NULL || cols == NULL)
 			return sql_error(sql, 02, "ARRAY SLICE: failed to allocate space");
 
 		for (cn = t->columns.set->h, idx_exp = dimref->data.lval->h->next->data.lval->h;
@@ -749,6 +749,8 @@ rel_arrayslice(mvc *sql, sql_table *t, char *tname, symbol *dimref)
 
 			col = (sql_column *) cn->data;
 			while(!col->dim) { /* skip the non-dimensional attributes in the table columns */
+				append(cols, exp_column(sql->sa, tname, col->base.name, &col->type, CARD_MULTI, 0, 0, NULL));
+
 				cn = cn->next;
 				col = (sql_column*)cn->data;
 			}
@@ -801,16 +803,21 @@ rel_arrayslice(mvc *sql, sql_table *t, char *tname, symbol *dimref)
 			append(srng_exps, exp_copy(sql->sa, slc_stop));
 			if (!(ce = _slicing2basetable(sql, rel, tname, col->base.name, srng_exps)))
 				return NULL;
-			append(dims, exp_column(sql->sa, tname, col->base.name, &col->type, CARD_MULTI, 0, 0, ce->f));
+			append(cols, exp_column(sql->sa, tname, col->base.name, &col->type, CARD_MULTI, 0, 0, ce->f));
 		}
 
-		sf = sql_bind_func_(sql->sa, mvc_bind_schema(sql, "sys"), "array_slice", exps_subtype(slc_args), F_FUNC);
+		sf = sql_bind_func_(sql->sa, mvc_bind_schema(sql, "sys"), "array_slice", exps_subtype(slc_args), F_FILT);
 		if (!sf)
 			return sql_error(sql, 02, "failed to bind to the SQL function \"array_slice\"");
-		/* add the array.slicing op to the rel_select to select the slicing candidates */
-		rel_select_add_exp(rel, exp_op(sql->sa, slc_args, sf));
-		/* then project the selection on all dimensions */
-		rel = rel_project(sql->sa, rel, dims);
+
+		/* apply our array_slice filter function on all columns of the sliced array */
+		for (cn = cols->h; cn; cn = cn->next) {
+			/* give the to be sliced column cn->data as the left side exp of
+			 * the filter exp, the function args slc_args as the right side exp
+			 * of the filter exp */
+			ce = exp_filter(sql->sa, cn->data, slc_args, sf, 0);
+			rel = rel_push_select(sql->sa, rel, cn->data, ce);
+		}
 	}
 	return rel;
 }

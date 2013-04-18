@@ -99,8 +99,11 @@ e_convert
 	-> r	list of from and to subtypes
 
 e_cmp
-	-> l	left sub expression
-	-> r	right sub expression (f second arg for range expressions)
+	-> l	left sub expression, or 
+			the to be filtered dimension in case of an array slcing
+	-> r	right sub expression (f second arg for range expressions), or
+			the (>= 6) parameters to the array_slice filter function in case of an array slicing
+	-> f	the compare/filter function
 	-> flag compare type		
 		(       cmp_gt = 0,
         		cmp_gte = 1,

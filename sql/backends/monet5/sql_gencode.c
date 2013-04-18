@@ -1126,23 +1126,37 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				if (get_cmp(s) == cmp_filter) {
 					node *n;
 					char *mod, *fimp;
+					int isArraySlice = 0;
 
 					if (backend_create_func(sql, s->op4.funcval->func) < 0)
 						return -1;
 					mod  = sql_func_mod(s->op4.funcval->func);
 					fimp = sql_func_imp(s->op4.funcval->func);
+					isArraySlice = (strcmp(mod, "array") == 0 && strcmp(fimp, "slice") == 0);
 
 					q = newStmt(mb, mod, convertOperator(fimp));
-					q = pushArgument(mb, q, l);
-					if (sub > 0)
-						q = pushArgument(mb, q, sub);
+					/* NB: this is a HACK to make the array_slice filter work.
+					 * The array_slice function computes the selected OIDs only
+					 *  based on its scalar parameters.
+					 * It doens't need a left-side column 'l', nor does it
+					 *  use/reduce any previous results 'sub'.
+					 */
+					if (!isArraySlice) {
+						q = pushArgument(mb, q, l);
+						if (sub > 0)
+							q = pushArgument(mb, q, sub);
+					}
 
 					for (n = s->op2->op4.lval->h; n; n = n->next) {
 						stmt *op = n->data;
 
 						q = pushArgument(mb, q, op->nr);
 					}
-					q = pushBit(mb, q, anti);
+					/* We don't have any 'anti' comparison in array slicing
+					 *  (yet). */
+					if (!isArraySlice) {
+						q = pushBit(mb, q, anti);
+					}
 					s->nr = getDestVar(q);
 					break;
 				}

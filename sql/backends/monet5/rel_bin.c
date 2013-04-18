@@ -640,8 +640,24 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, stm
                                 return j;
                         }
 			ops = sa_list(sql->sa);
-			append(ops, r);
-			append(ops, r2);
+			if (list_length(e->r) > 2) {
+				/* NB: this is a HACK to make the array_slice filter work.
+				 * Unlike the normal filters, the array_slice doesn't have
+				 *  right-side comparison value.
+				 * Instead, it has a list of dimension and slicing ranges,
+				 *  contained in e->r, that need to be passed to the filter
+				 *  function.
+				 * Here we create a stmt for each of them and add it to the ops
+				 *  list.
+				 */
+				node *n;
+				for (n = ((list*)e->r)->h; n; n = n->next) {
+					append(ops, exp_bin(sql, n->data, NULL, NULL, NULL, NULL, NULL, NULL));
+				}
+			} else { /* the normal/original filter case */
+				append(ops, r);
+				append(ops, r2);
+			}
 			r = stmt_list(sql->sa, ops);
 			s = stmt_genselect(sql->sa, l, r, e->f, sel);
                         if (s && is_anti(e))
