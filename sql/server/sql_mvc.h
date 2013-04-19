@@ -129,7 +129,7 @@ typedef struct mvc {
 	lng Tparse;
 } mvc;
 
-extern int mvc_init(int debug, store_type store, backend_stack stk);
+extern int mvc_init(int debug, store_type store, int ro, int su, backend_stack stk);
 extern void mvc_exit(void);
 extern void mvc_logmanager(void);
 extern void mvc_minmaxmanager(void);

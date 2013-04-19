@@ -92,7 +92,7 @@
 
 #define ATOMIC_INIT(lck, fcn)	((void) 0)
 
-#elif defined(__GNUC__) || defined(__INTEL_COMPILER)
+#elif (defined(__GNUC__) || defined(__INTEL_COMPILER)) && !(defined(__sun__) && SIZEOF_SIZE_T == SIZEOF_LNG)
 
 #define ATOMIC_GET_sht(var, lck, fcn)		var
 #define ATOMIC_SET_sht(var, val, lck, fcn)	(var = (val))

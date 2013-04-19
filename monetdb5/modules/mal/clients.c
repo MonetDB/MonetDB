@@ -159,9 +159,6 @@ CLTInfo(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BUNappend(b, "scenario", FALSE);
 	BUNappend(bn, cntxt->scenario, FALSE);
 
-	BUNappend(b, "timer", FALSE);
-	BUNappend(bn, local_itoa((int) cntxt->timer), FALSE);
-
 	BUNappend(b, "trace", FALSE);
 	BUNappend(bn, local_itoa(cntxt->itrace), FALSE);
 
@@ -365,8 +362,8 @@ CLTsuspend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 CLTsetTimeout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int qto=  *(int *) getArgReference(stk,pci,1);
-	int sto=  *(int *) getArgReference(stk,pci,2);
+	lng qto=  *(lng *) getArgReference(stk,pci,1);
+	lng sto=  *(lng *) getArgReference(stk,pci,2);
 	(void) mb;
 	cntxt->qtimeout = qto;
 	cntxt->stimeout = sto;
@@ -375,8 +372,8 @@ CLTsetTimeout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 CLTgetTimeout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int *qto=  (int *) getArgReference(stk,pci,0);
-	int *sto=  (int *) getArgReference(stk,pci,1);
+	lng *qto=  (lng *) getArgReference(stk,pci,0);
+	lng *sto=  (lng *) getArgReference(stk,pci,1);
 	(void) mb;
 	*qto = cntxt->qtimeout;
 	*sto = cntxt->stimeout;

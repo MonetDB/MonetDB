@@ -119,6 +119,7 @@ typedef struct PERF {
 typedef struct MALBLK {
 	str binding;				/* related C-function */
 	str help;					/* supportive commentary */
+	oid tag;					/* unique block tag */
 	struct MALBLK *alternative;
 	int vtop;					/* next free slot */
 	int vsize;					/* size of variable arena */
@@ -143,7 +144,9 @@ typedef struct MALBLK {
 	lng recid;					/* ID given by recycler optimizer */
 	lng legid;
 	sht trap;					/* call debugger when called */
-	lng starttime;				/* track when the query started, for resource management */
+	lng runtime;					/* average execution time of block in ticks */
+	int calls;					/* number of calls */
+	lng optimize;				/* total optimizer time */
 } *MalBlkPtr, MalBlkRecord;
 
 /* Allocation of space assumes a rather exotic number of
@@ -234,6 +237,7 @@ mal_export void printSignature(stream *fd, Symbol s, int flg);
 mal_export MalBlkPtr newMalBlk(int maxvars, int maxstmts);
 mal_export void resetMalBlk(MalBlkPtr mb, int stop);
 mal_export int newMalBlkStmt(MalBlkPtr mb, int maxstmts);
+mal_export void resizeMalBlk(MalBlkPtr mb, int maxstmt, int maxvar);
 mal_export void prepareMalBlk(MalBlkPtr mb, str s);
 mal_export void freeMalBlk(MalBlkPtr mb);
 mal_export MalBlkPtr copyMalBlk(MalBlkPtr mb);

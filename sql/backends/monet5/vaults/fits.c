@@ -201,6 +201,7 @@ str FITSexportTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg = MAL_SUCCEED;
 	str tname = *(str*) getArgReference(stk, pci, 1);
 	mvc *m = NULL;
+	sql_trans *tr;
 	sql_schema *sch;
 	sql_table *tbl, *column, *tables = NULL;
 	sql_column *col;
@@ -230,6 +231,7 @@ str FITSexportTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (msg)
 		return msg;
 
+	tr = m->session->tr;
 	sch = mvc_bind_schema(m, "sys");
 
 	/* First step: look if the table exists in the database. If the table is not in the database, the export function cannot continue */
@@ -290,7 +292,7 @@ str FITSexportTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	col = mvc_bind_column(m, tbl, colname[0]);
 
-	nrows = store_funcs.count_col(col, 1);
+	nrows = store_funcs.count_col(tr, col, 1);
 
 	snprintf(filename,BUFSIZ,"\n%s.fit",tname);
 	mnstr_printf(GDKout, "Filename: %s\n", filename);
@@ -662,6 +664,7 @@ FITStest(int *res, str *fname)
 str FITSattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	mvc *m = NULL;
+	sql_trans *tr;
 	sql_schema *sch;
 	sql_table *fits_tp, *fits_fl, *fits_tbl, *fits_col, *tbl = NULL;
 	sql_column *col;
@@ -686,6 +689,7 @@ str FITSattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	}
 
+	tr = m->session->tr;
 	sch = mvc_bind_schema(m, "sys");
 
 	fits_fl = mvc_bind_table(m, sch, "fits_files");
@@ -708,14 +712,14 @@ str FITSattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	/* add row in the fits_files catalog table */
 	col = mvc_bind_column(m, fits_fl, "id");
-	fid = store_funcs.count_col(col, 1) + 1;
+	fid = store_funcs.count_col(tr, col, 1) + 1;
 	store_funcs.append_col(m->session->tr,
 		mvc_bind_column(m, fits_fl, "id"), &fid, TYPE_int);
 	store_funcs.append_col(m->session->tr,
 		mvc_bind_column(m, fits_fl, "name"), fname, TYPE_str);
 
 	col = mvc_bind_column(m, fits_tbl, "id");
-	tid = store_funcs.count_col(col, 1) + 1;
+	tid = store_funcs.count_col(tr, col, 1) + 1;
 
 	if ((s = strrchr(fname, DIR_SEP)) == NULL)
 		s = fname;
@@ -811,7 +815,7 @@ str FITSattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		/* read columns description */
 		s = stmt;
 		col = mvc_bind_column(m, fits_col, "id");
-		cid = store_funcs.count_col(col, 1) + 1;
+		cid = store_funcs.count_col(tr, col, 1) + 1;
 		for (j = 1; j <= cnum; j++, cid++) {
 			fits_get_acolparms(fptr, j, cname, &tbcol, tunit, tform, &tscal, &tzero, tnull, tdisp, &status);
 			snprintf(stmt, BUFSIZ, FITS_INS_COL, (int)cid, cname, tform, tunit, j, (int)tid);

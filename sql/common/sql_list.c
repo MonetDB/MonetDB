@@ -279,9 +279,16 @@ list_find(list *l, void *key, fcmp cmp)
 	node *n = NULL;
 
 	if (key) {
-		for (n = l->h; n; n = n->next) {
-			if (cmp(n->data, key) == 0) {
-				return n;
+		if (cmp) {
+			for (n = l->h; n; n = n->next) {
+				if (cmp(n->data, key) == 0) {
+					return n;
+				}
+			}
+		} else {
+			for (n = l->h; n; n = n->next) {
+				if (n->data == key) 
+					return n;
 			}
 		}
 	}

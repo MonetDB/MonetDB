@@ -14,7 +14,7 @@ insert into t1 values(8);
 insert into t1 values(9);
 insert into t1 values(0);
 select * from t1;
-drop table t1;
+--drop table t1;
 '''
 
 class Client(threading.Thread):

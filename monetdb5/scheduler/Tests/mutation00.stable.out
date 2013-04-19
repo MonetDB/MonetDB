@@ -1,0 +1,76 @@
+stdout of test 'mutation00` in directory 'monetdb5/scheduler` itself:
+
+
+# 09:42:41 >  
+# 09:42:41 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=36461" "--set" "mapi_usock=/var/tmp/mtest-32243/.s.monetdb.36461" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/current//Linux/var/MonetDB/mTests_monetdb5_scheduler" "mutation00.mal"
+# 09:42:41 >  
+
+# MonetDB 5 server v11.16.0
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_scheduler', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.629 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2013 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:36461/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-32243/.s.monetdb.36461
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+function scheduler.mutation(m:str,f:str) (mn:str,fn:str);
+    mn := m;
+    fn := f;
+    return (mn,fn) := (mn,fn);
+end mutation;
+function user.initialize():bat[:oid,:lng];
+    b := bat.new(:oid,:lng);
+    INT_MAX := 2147483647;
+    dbgmsk_restore := mdb.getDebug();
+    dbgmsk_unset := calc.+(8,8388608);
+    dbgmsk_keep := calc.xor(INT_MAX,dbgmsk_unset);
+    dbgmsk_set := calc.and(dbgmsk_restore,dbgmsk_keep);
+    mdb.setDebug(dbgmsk_set);
+    r := mmath.srand(0);
+barrier i := 0:lng;
+    k := mmath.rand();
+    l := calc.lng(k);
+    bat.append(b,l);
+    redo i := iterator.next(1:lng,1000000:lng);
+exit i;
+    mdb.setDebug(dbgmsk_restore);
+    return initialize := b;
+end initialize;
+function user.query():void;
+    t0 := alarm.usec();
+    b := user.initialize();
+    t1 := alarm.usec();
+    t := calc.-(t1,t0);
+    io.printf("#%d\n",t);
+    sum := aggr.sum(b);
+    t0 := alarm.usec();
+    t := calc.-(t0,t1);
+    io.printf("#%d\n",t);
+    cnt := aggr.count(b);
+    t1 := alarm.usec();
+    t := calc.-(t1,t0);
+    io.printf("#%d\n",t);
+end query;
+function user.evolution(mod:str,fcn:str):void;
+    (m,f) := scheduler.mutation(mod,fcn);
+    language.call(m,f);
+end evolution;
+function user.main():void;
+# example framework for a mutation based execution stack 
+# The mutation scheduler picks a plan from a specific pool 
+# possibly after performing introspection and plan mutation 
+    user.evolution("user","query");
+end main;
+function user.main():void;
+    user.query();
+end main;
+
+# 09:42:41 >  
+# 09:42:41 >  "Done."
+# 09:42:41 >  
+

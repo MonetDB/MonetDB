@@ -19,15 +19,14 @@
 -- The most important one is a global system variable which controls
 --  monitoring of all sessions. 
 
-create schema querylog;
-
-create function querylog.catalog()
+create function sys.querylog_catalog()
 returns table(
 	id oid,
 	owner string,
 	defined timestamp,
 	query string,
 	pipe string,
+	mal int,			-- size of MAL plan
 	optimize bigint 	-- time in usec
 )
 external name sql.querylog_catalog;
@@ -46,7 +45,7 @@ external name sql.querylog_catalog;
 -- Reducing the space component improves performance/
 -- All timing in usec and all storage in bytes.
 
-create function querylog.calls()
+create function sys.querylog_calls()
 returns table(
 	id oid,				 -- references query plan
 	"start" timestamp,	-- time the statement was started
@@ -61,19 +60,27 @@ returns table(
 )
 external name sql.querylog_calls;
 
-create view querylog.history as
+-- create table views for convenience
+create view sys.querylog_catalog as select * from sys.querylog_catalog();
+create view sys.querylog_calls as select * from sys.querylog_calls();
+create view sys.querylog_history as
 select qd.*, ql."start",ql."stop", ql.arguments, ql.tuples, ql.run, ql.ship, ql.cpu, ql.space, ql.io 
-from querylog.catalog() qd, querylog.calls() ql
+from sys.querylog_catalog() qd, sys.querylog_calls() ql
 where qd.id = ql.id and qd.owner = user;
 
+update sys._tables
+    set system = true
+    where name in ('querylog_history', 'querylog_calls', 'querylog_catalog')
+        and schema_id = (select id from sys.schemas where name = 'sys');
+
 -- reset history for a particular user
-create procedure querylog.reset()
-external name sql.querylog_reset;
+create procedure sys.querylog_empty()
+external name sql.querylog_empty;
 
 -- manipulate the query logger
-create procedure querylog.init()
-external name sql.querylog_init;
-create procedure querylog.init(threshold smallint)
-external name sql.querylog_init_threshold;
-create procedure querylog.done()
-external name sql.querylog_done;
+create procedure sys.querylog_enable()
+external name sql.querylog_enable;
+create procedure sys.querylog_enable(threshold smallint)
+external name sql.querylog_enable_threshold;
+create procedure sys.querylog_disable()
+external name sql.querylog_disable;

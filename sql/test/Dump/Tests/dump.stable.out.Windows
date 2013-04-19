@@ -26,7 +26,6 @@ Ready.
 
 START TRANSACTION;
 CREATE SCHEMA "rs" AUTHORIZATION "monetdb";
-CREATE SCHEMA "querylog" AUTHORIZATION "monetdb";
 CREATE SEQUENCE "sys"."test_seq" AS INTEGER;
 SET SCHEMA "rs";
 CREATE TABLE "rs"."files" (
@@ -42,11 +41,6 @@ CREATE TABLE "rs"."catalog" (
 	"length"  INTEGER,
 	"bps"     SMALLINT
 );
-SET SCHEMA "querylog";
-create view querylog.history as
-select qd.*, ql."start",ql."stop", ql.arguments, ql.tuples, ql.run, ql.ship, ql.cpu, ql.space, ql.io 
-from querylog.catalog() qd, querylog.calls() ql
-where qd.id = ql.id and qd.owner = user;
 SET SCHEMA "sys";
 CREATE TABLE "sys"."test" (
 	"id" INTEGER,

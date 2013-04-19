@@ -226,7 +226,7 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
 	} else {
 		str err;
 		oid uid;
-		sabdb *stats;
+		sabdb *stats = NULL;
 		Client root = &mal_clients[0];
 
 		/* access control: verify the credentials supplied by the user,

@@ -2,7 +2,7 @@
  * The contents of this file are subject to the MonetDB Public License
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * http://www.monetdbuorg/Legal/MonetDBtxtLicense
  *
  * Software distributed under the License is distributed on an "AS IS"
  * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
@@ -25,58 +25,125 @@
 #include "monetdb_config.h"
 #include "mal_utils.h"
 #include "mal_runtime.h"
+#include "mal_interpreter.h"
 #include "mal_function.h"
 #include "mal_profiler.h"
 #include "mal_listing.h"
+#include "mal_authorize.h"
 
 #define heapinfo(X) ((X) && (X)->base ? (X)->free: 0)
 #define hashinfo(X) (((X) && (X)->mask)? ((X)->mask + (X)->lim + 1) * sizeof(int) + sizeof(*(X)) + cnt * sizeof(int):  0)
+
+// Keep a queue of running queries
+QueryQueue QRYqueue;
+static int qtop, qsize;
+static int qtag= 1;
+
+
+static str isaSQLquery(MalBlkPtr mb){
+	int i;
+	InstrPtr p;
+	if (mb)
+	for ( i = mb->stop-1 ; i > 0; i--){
+		p = getInstrPtr(mb,i);
+		if ( p->token == ENDsymbol)
+			break;
+		if ( getModuleId(p) && idcmp(getModuleId(p), "querylog") == 0 && idcmp(getFunctionId(p),"define")==0)
+			return getVarConstant(mb,getArg(p,1)).val.sval;
+	}
+	return 0;
+}
+
 /*
  * Manage the runtime profiling information
  */
 void
-runtimeProfileInit(MalBlkPtr mb, RuntimeProfile prof, int initmemory)
+runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 {
-	prof->newclk = 0;
-	prof->ppc = -2;
-	prof->tcs = 0;
-	prof->inblock = 0;
-	prof->oublock = 0;
-	if (initmemory)
-		prof->memory = MT_mallinfo();
-	else
-		memset(&prof->memory, 0, sizeof(prof->memory));
-	if (malProfileMode) {
+	int i;
+	str q;
+
+	if ( malProfileMode )
 		setFilterOnBlock(mb, 0, 0);
-		prof->ppc = -1;
+
+	MT_lock_set(&mal_delayLock, "sysmon");
+	if ( QRYqueue == 0)
+		QRYqueue = (QueryQueue) GDKzalloc( sizeof (struct QRYQUEUE) * (qsize= 256));
+	else
+	if ( qtop +1 == qsize )
+		QRYqueue = (QueryQueue) GDKrealloc( QRYqueue, sizeof (struct QRYQUEUE) * (qsize +=256));
+	for( i = 0; i < qtop; i++)
+		if ( QRYqueue[i].mb == mb)
+			break;
+
+	if ( mb->tag == 0)
+		mb->tag = OIDnew(1);
+	if ( i == qtop ) {
+		QRYqueue[i].mb = mb;	// for detecting duplicates
+		QRYqueue[i].stk = stk;	// for status pause 'p'/running '0'/ quiting 'q'
+		QRYqueue[i].tag = qtag++;
+		QRYqueue[i].start = (lng)time(0);
+		QRYqueue[i].runtime = mb->runtime;
+		q = isaSQLquery(mb);
+		QRYqueue[i].query = q? GDKstrdup(q):0;
+		QRYqueue[i].status = "running";
+		QRYqueue[i].cntxt = cntxt;
 	}
+
+	qtop += i == qtop;
+	MT_lock_unset(&mal_delayLock, "sysmon");
+}
+
+void
+runtimeProfileFinish(Client cntxt, MalBlkPtr mb)
+{
+	int i,j;
+
+	(void) cntxt;
+
+	MT_lock_set(&mal_delayLock, "sysmon");
+	for( i=j=0; i< qtop; i++)
+	if ( QRYqueue[i].mb != mb)
+		QRYqueue[j++] = QRYqueue[i];
+	else  {
+		QRYqueue[i].mb->calls++;
+		QRYqueue[i].mb->runtime += ((lng)time(0) - QRYqueue[i].start) * 1000.0/QRYqueue[i].mb->calls;
+
+		// reset entry
+		if (QRYqueue[i].query)
+			GDKfree(QRYqueue[i].query);
+		QRYqueue[i].cntxt = 0;
+		QRYqueue[i].tag = 0;
+		QRYqueue[i].query = 0;
+		QRYqueue[i].status =0;
+		QRYqueue[i].stk =0;
+		QRYqueue[i].mb =0;
+	}
+
+	qtop = j;
+	MT_lock_unset(&mal_delayLock, "sysmon");
 }
 
 void
 runtimeProfileBegin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int stkpc, RuntimeProfile prof, int start)
 {
+	/* always collect the MAL instruction execution time */
+	if ( mb->profiler)
+		mb->profiler[stkpc].ticks = GDKusec();
+	prof->stkpc = stkpc;
+
 	if (malProfileMode == 0)
 		return; /* mostly true */
 	
-	if (stk && mb->profiler != NULL) {
-		prof->newclk = stk->clk = GDKusec();
-		if (mb->profiler[stkpc].trace) {
-			MT_lock_set(&mal_delayLock, "DFLOWdelay");
-			gettimeofday(&stk->clock, NULL);
-			prof->ppc = stkpc;
-			mb->profiler[stkpc].clk = 0;
-			mb->profiler[stkpc].ticks = 0;
-			mb->profiler[stkpc].clock = stk->clock;
-			/* emit the instruction upon start as well */
-			if (malProfileMode)
-				profilerEvent(cntxt->idx, mb, stk, stkpc, start);
+	if (stk && mb->profiler != NULL && mb->profiler[stkpc].trace) {
+		gettimeofday(&mb->profiler[stkpc].clock, NULL);
+		/* emit the instruction upon start as well */
+		profilerEvent(cntxt->idx, mb, stk, stkpc, start);
 #ifdef HAVE_TIMES
-			times(&stk->timer);
-			mb->profiler[stkpc].timer = stk->timer;
+		times(&stk->timer);
+		mb->profiler[stkpc].timer = stk->timer;
 #endif
-			mb->profiler[stkpc].clk = stk->clk;
-			MT_lock_unset(&mal_delayLock, "DFLOWdelay");
-		}
+		mb->profiler[stkpc].clk = mb->profiler[stkpc].ticks;
 	}
 }
 
@@ -84,7 +151,7 @@ runtimeProfileBegin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int stkpc, Runtim
 void
 runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, RuntimeProfile prof)
 {
-	int i,j,fnd, stkpc = prof->ppc;
+	int i,j,fnd, stkpc = prof->stkpc;
 
 	if (cntxt->flags & footprintFlag && pci){
 		for (i = 0; i < pci->retc; i++)
@@ -99,23 +166,23 @@ runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Runt
 			}
 	}
 
+	/* always collect the MAL instruction execution time */
+	if ( mb->profiler)
+		mb->profiler[stkpc].ticks = GDKusec() - mb->profiler[stkpc].ticks;
+
 	if (malProfileMode == 0)
 		return; /* mostly true */
-	if (stk != NULL && prof->ppc >= 0 && mb->profiler != NULL && mb->profiler[stkpc].trace && mb->profiler[stkpc].clk)
-	{
-		MT_lock_set(&mal_contextLock, "DFLOWdelay");
+
+	if (stk != NULL && prof->stkpc >= 0 && mb->profiler != NULL && mb->profiler[stkpc].trace ) {
 		gettimeofday(&mb->profiler[stkpc].clock, NULL);
 		mb->profiler[stkpc].counter++;
-		mb->profiler[stkpc].ticks = GDKusec() - prof->newclk;
 		mb->profiler[stkpc].totalticks += mb->profiler[stkpc].ticks;
-		mb->profiler[stkpc].clk += mb->profiler[stkpc].clk;
+		mb->profiler[stkpc].clk += mb->profiler[stkpc].ticks;
 		if (pci) {
 			mb->profiler[stkpc].rbytes = getVolume(stk, pci, 0);
 			mb->profiler[stkpc].wbytes = getVolume(stk, pci, 1);
 		}
 		profilerEvent(cntxt->idx, mb, stk, stkpc, 0);
-		prof->ppc = -1;
-		MT_lock_unset(&mal_contextLock, "DFLOWdelay");
 	}
 }
 

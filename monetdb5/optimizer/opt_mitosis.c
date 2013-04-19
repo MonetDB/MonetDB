@@ -67,7 +67,13 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		    getFunctionId(p) == mark_grpRef || getFunctionId(p) == dense_rank_grpRef)) 
 			return 0;
 
-		if (getModuleId(p) == aggrRef && getFunctionId(p) == submedianRef) 
+		if (p->argc > 2 && getModuleId(p) == aggrRef && 
+		        getFunctionId(p) != subcountRef &&
+		    	getFunctionId(p) != subminRef &&
+		    	getFunctionId(p) != submaxRef &&
+		    	getFunctionId(p) != subavgRef &&
+		    	getFunctionId(p) != subsumRef &&
+		    	getFunctionId(p) != subprodRef)
 			return 0;
 		/* Mergetable cannot handle intersect/except's for now */
 		if (getModuleId(p) == algebraRef && getFunctionId(p) == groupbyRef) 
@@ -237,5 +243,9 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		if (upd)
 			pushInstruction(mb, matr);
 	}
+	for (; i<limit; i++) 
+		if (old[i])
+			pushInstruction(mb,old[i]);
+	GDKfree(old);
 	return 1;
 }

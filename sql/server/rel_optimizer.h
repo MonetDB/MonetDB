@@ -24,4 +24,7 @@
 
 extern sql_rel * rel_optimizer(mvc *sql, sql_rel *rel);
 
+extern int exp_joins_rels(sql_exp *e, list *rels);
+
+
 #endif /*_REL_OPTIMIZER_H_*/

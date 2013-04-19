@@ -26,19 +26,33 @@
 
 /* During MAL interpretation we collect performance event data.
  * Their management is orchestrated from here.
+ * We need to maintain some state from ProfileBegin
 */
 typedef struct{
-	lng newclk;
-	int ppc;
-	lng tcs;
-	lng oublock, inblock;
-	struct Mallinfo memory;
+	int stkpc;	
 } *RuntimeProfile, RuntimeProfileRecord;
 
-mal_export void runtimeProfileInit(MalBlkPtr mb, RuntimeProfile prof, int initmemory);
+/* The actual running queries are assembled in a queue
+ * for external inspection and manipulation
+ */
+typedef struct QRYQUEUE{
+	Client cntxt;
+	MalBlkPtr mb;
+	MalStkPtr stk;
+	lng tag;
+	str query;
+	str status;
+	lng start;
+	lng runtime;
+} *QueryQueue;
+
+mal_export void runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk);
+mal_export void runtimeProfileFinish(Client cntxt, MalBlkPtr mb);
 mal_export void runtimeProfileBegin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int stkpc, RuntimeProfile prof, int start);
 mal_export void runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, RuntimeProfile prof);
 mal_export lng getVolume(MalStkPtr stk, InstrPtr pci, int rd);
 mal_export void displayVolume(Client cntxt, lng vol);
 mal_export void updateFootPrint(MalBlkPtr mb, MalStkPtr stk, int varid);
+
+mal_export QueryQueue QRYqueue;
 #endif

@@ -22,7 +22,7 @@
  * @+ Implementation
  * The commands merely encapsulate the functionality provided by
  * mal_profiler, which should be explicitly compiled with the kernel, because
- * its generates a noticable overhead.
+ * it generates a noticable overhead.
  */
 
 #ifndef _PROFILER_
@@ -78,8 +78,6 @@ profiler_export str CMDgetDiskWrites(lng *ret);
 profiler_export str CMDgetUserTime(lng *ret);
 profiler_export str CMDgetSystemTime(lng *ret);
 profiler_export str CMDsetFootprintFlag( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-profiler_export str CMDsetMemoryFlag( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-profiler_export str CMDgetMemory( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 profiler_export str CMDgetFootprint( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 profiler_export str CMDtomograph(int *ret);
 profiler_export str CMDcpustats(lng *user, lng *nice, lng *sys, lng *idle, lng *iowait);

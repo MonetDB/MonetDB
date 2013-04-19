@@ -26,11 +26,13 @@ import decimal
 
 from monetdb.exceptions import ProgrammingError
 
+
 def monet_none(data):
     """
     returns a NULL string
     """
     return "NULL"
+
 
 def monet_bool(data):
     """
@@ -38,13 +40,15 @@ def monet_bool(data):
     """
     return ["false", "true"][bool(data)]
 
+
 def monet_escape(data):
     """
     returns an escaped string
     """
-    data = str(data).replace( "\\", "\\\\")
-    data = data.replace( "\'", "\\\'")
+    data = str(data).replace("\\", "\\\\")
+    data = data.replace("\'", "\\\'")
     return "'%s'" % str(data)
+
 
 def monet_bytes(data):
     """
@@ -52,13 +56,13 @@ def monet_bytes(data):
     """
     return monet_escape(data)
 
+
 def monet_unicode(data):
     return monet_escape(data.encode('utf-8'))
 
 mapping = {
     type(None): monet_none,
     bool: monet_bool,
-    int: str,
     float: str,
     complex: str,
     int: str,
@@ -71,6 +75,7 @@ mapping = {
     bytes: monet_bytes,
     unicode: monet_unicode,
 }
+
 
 def convert(data):
     """

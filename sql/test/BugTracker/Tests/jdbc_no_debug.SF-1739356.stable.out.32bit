@@ -29,14 +29,14 @@ Ready.
 | | | | | project (                                                                                                                                                                                                                                                         |
 | | | | | | select (                                                                                                                                                                                                                                                        |
 | | | | | | | table(sys._tables) [ _tables.id as p.id, _tables.type as p.type ] COUNT  |
-| | | | | | ) [ p.type != smallint[tinyint "2"] ]                                                                                                                                                                                                                                                                   |
+| | | | | | ) [ p.type != smallint[tinyint "2"] ]                                      |
 | | | | | ) [ p.id as tables.id ]                                                                                  |
 | | | | ) [  ] [ sys.count() NOT NULL as L1 ],                                                                     |
 | | | | group by (                                                                                                 |
 | | | | | project (                                                                                                                                                                                                                                                         |
 | | | | | | select (                                                                                                                                                                                                                                                        |
 | | | | | | | table(tmp._tables) [ _tables.id as t.id, _tables.type as t.type ] COUNT  |
-| | | | | | ) [ t.type != smallint[tinyint "2"] ]                                                                                                                                                                                                                                                                   |
+| | | | | | ) [ t.type != smallint[tinyint "2"] ]                                      |
 | | | | | ) [ t.id as tables.id ]                                                                                  |
 | | | | ) [  ] [ sys.count() NOT NULL as L1 ]                                                                      |
 | | | ) [ L1 ]                                                                                                     |
@@ -47,20 +47,20 @@ Ready.
 
 Operation successful
 
-+----------------------------------------------------------------------+
++--------------------------------------------------------------------------+
 | mal                                                                 |
-+======================================================================+
++==========================================================================+
 | function user.s1_1{autoCommit=true}():void;                         |
 |     X_3:bat[:oid,:wrd]  := bat.new(nil:oid,nil:wrd);                |
 |     X_2 := sql.mvc();                                               |
 |     X_9 := sql.bind(X_2,"sys","_tables","type",0);          |
 |     X_6:bat[:oid,:oid]  := sql.tid(X_2,"sys","_tables");    |
-|     X_64 := algebra.subselect(X_9,X_6,2:sht,2:sht,true,true,true);   |
+|     X_67 := algebra.subselect(X_9,X_6,2:sht,2:sht,true,true,true);       |
 |     (X_12,r1_12) := sql.bind(X_2,"sys","_tables","type",2); |
-|     X_65 := algebra.subselect(r1_12,2:sht,2:sht,true,true,true);     |
+|     X_68 := algebra.subselect(r1_12,2:sht,2:sht,true,true,true);         |
 |     X_15 := sql.bind(X_2,"sys","_tables","type",1);         |
-|     X_66 := algebra.subselect(X_15,X_6,2:sht,2:sht,true,true,true);  |
-|     X_17 := sql.subdelta(X_64,X_12,X_65,X_66);                       |
+|     X_69 := algebra.subselect(X_15,X_6,2:sht,2:sht,true,true,true);      |
+|     X_17 := sql.subdelta(X_67,X_12,X_68,X_69);                           |
 |     X_18 := sql.bind(X_2,"sys","_tables","id",0);                    |
 |     (X_20,r1_28) := sql.bind(X_2,"sys","_tables","id",2);            |
 |     X_22 := sql.bind(X_2,"sys","_tables","id",1);                    |
@@ -81,8 +81,9 @@ Operation successful
 |     X_44:wrd  := aggr.sum(X_43);                                     |
 |     sql.exportValue(1,".tables","L1","wrd",32,0,6,X_44,"");          |
 | end s1_1;                                                           |
-+----------------------------------------------------------------------+
-31 rows
+| # querylog.define("explain select count(*) from tables;","default_pipe") |
++--------------------------------------------------------------------------+
+32 rows
 
 
 # 19:39:11 >  

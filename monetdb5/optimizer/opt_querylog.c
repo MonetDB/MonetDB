@@ -18,17 +18,21 @@
 */
 #include "monetdb_config.h"
 #include "opt_querylog.h"
+#include "querylog.h"
 
 int 
 OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i, limit, slimit;
 	InstrPtr p = 0, *old= mb->stmt, q,r;
-	int argc, idx, io, user,nice,sys,idle,iowait,load, arg, start,finish, name;
+	int argc, io, user,nice,sys,idle,iowait,load, arg, start,finish, name;
 	int xtime=0, rtime = 0, space =0, tuples=0;
 	InstrPtr defineQuery = NULL;
 
 
+	// query log needed?
+	if ( !QLOGisset() )
+		return 0;
 	(void) pci;
 	(void) stk;		/* to fool compilers */
 	(void) cntxt;
@@ -37,7 +41,7 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		p = getInstrPtr(mb,i);
 		if ( getModuleId(p) && idcmp(getModuleId(p), "querylog") == 0 && idcmp(getFunctionId(p),"define")==0){
 			defineQuery= p;
-			getVarConstant(mb,getArg(p,4)).val.lval = GDKusec()-getVarConstant(mb,getArg(p,4)).val.lval ;
+			getVarConstant(mb,getArg(p,3)).val.lval = GDKusec()-getVarConstant(mb,getArg(p,3)).val.lval ;
 		}
 	}
 	if ( defineQuery == NULL)
@@ -54,7 +58,6 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	defineQuery = copyInstruction(defineQuery);
 	defineQuery->token = ASSIGNsymbol;
 	setModuleId(defineQuery,querylogRef);
-	idx= getArg(defineQuery,0)= newVariable(mb,GDKstrdup("idx"),TYPE_oid);
 
 	/* collect the initial statistics */
 	q = newStmt(mb, "clients", "getUsername");
@@ -107,11 +110,13 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			q = newStmt(mb, "alarm", "usec");
 			rtime= getArg(q,0)= newVariable(mb,GDKstrdup("rtime"),TYPE_lng);
 			pushInstruction(mb,p);
-			if (idcmp(getFunctionId(p),"resultSet")==0 ){
-				q = newStmt(mb, "aggr", "count");
-				getArg(q,0) = tuples;
-				(void) pushArgument(mb,q, getArg(p,3));
-			}
+			continue;
+		}
+		if ( getModuleId(p) == sqlRef && idcmp(getFunctionId(p),"resultSet")==0  && isaBatType(getVarType(mb,getArg(p,3)))){
+			q = newStmt(mb, "aggr", "count");
+			getArg(q,0) = tuples;
+			(void) pushArgument(mb,q, getArg(p,3));
+			pushInstruction(mb,p);
 			continue;
 		}	
 		if ( p->token== ENDsymbol || p->barrier == RETURNsymbol || p->barrier == YIELDsymbol){
@@ -149,7 +154,6 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			q = pushArgument(mb,q,iowait);
 
 			q = newStmt(mb, querylogRef, "call");
-			q = pushArgument(mb, q, idx); 
 			q = pushArgument(mb, q, start);
 			q = pushArgument(mb, q, finish); 
 			q = pushArgument(mb, q, arg);

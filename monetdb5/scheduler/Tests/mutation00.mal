@@ -1,0 +1,54 @@
+# example framework for a mutation based execution stack
+
+# The mutation scheduler picks a plan from a specific pool
+# possibly after performing introspection and plan mutation
+function scheduler.mutation(m:str,f:str)(mn:str,fn:str);
+	mn := m;
+	fn := f;
+	return (mn,fn);
+end mutation;
+
+function initialize():bat[:oid,:lng];
+	b:= bat.new(:oid,:lng);
+
+	INT_MAX := 2147483647;
+	dbgmsk_restore := mdb.getDebug();
+	dbgmsk_unset := 8+8388608;
+	dbgmsk_keep := calc.xor(INT_MAX,dbgmsk_unset);
+	dbgmsk_set := calc.and(dbgmsk_restore,dbgmsk_keep);
+	mdb.setDebug(dbgmsk_set);
+
+	r:= mmath.srand(0);
+	barrier i:= 0:lng;
+		k:= mmath.rand();
+		l:= calc.lng(k);
+		bat.append(b,l);
+		redo i:= iterator.next(1:lng,1000000:lng);
+	exit i;
+	mdb.setDebug(dbgmsk_restore);
+
+	return b;
+end initialize;
+
+function query();
+	t0:= alarm.usec();
+	b:= initialize();
+	t1:= alarm.usec();
+	t := t1-t0;
+	io.printf("#%d\n",t);
+	sum := aggr.sum(b);
+	t0:= alarm.usec();
+	t := t0-t1;
+	io.printf("#%d\n",t);
+	cnt := aggr.count(b);
+	t1:= alarm.usec();
+	t := t1-t0;
+	io.printf("#%d\n",t);
+end query;
+
+function evolution(mod:str,fcn:str);
+	(m,f):= scheduler.mutation(mod,fcn);
+	language.call(m,f);
+end evolution;
+
+evolution("user","query");

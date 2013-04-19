@@ -271,7 +271,7 @@ msab_retreatScenario(const char *lang)
 					written = 1;
 				} else {
 					*p = '\n';
-					tmp = p;
+					tmp = p+1;
 				}
 			}
 			if (written != 0) {

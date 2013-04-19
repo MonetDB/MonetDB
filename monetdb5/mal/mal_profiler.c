@@ -389,7 +389,7 @@ offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc, int start)
 		logadd("%d,\t", getPC(mb, pci));
 	}
 	if (profileCounter[PROFticks].status) {
-		logadd(LLFMT ",\t", mb->profiler[pc].ticks);
+		logadd(LLFMT ",\t", start? 0: mb->profiler[pc].ticks);
 	}
 #ifdef HAVE_TIMES
 	if (profileCounter[PROFcpu].status && delayswitch < 0) {
@@ -690,13 +690,16 @@ setFilterOnBlock(MalBlkPtr mb, str mod, str fcn)
 	InstrPtr p;
 
 	initProfiler(mb);
+	if ( profileAll )
+		for (k = 0; k < mb->stop; k++)
+			mb->profiler[k].trace = 1;
+	else
 	for (k = 0; k < mb->stop; k++) {
 		p = getInstrPtr(mb, k);
 		cnt = 0;
 		for (i = 0; i < topFilter; i++)
 			cnt += instrFilter(p, modFilter[i], fcnFilter[i]);
-		mb->profiler[k].trace = profileAll || cnt ||
-								(mod && fcn && instrFilter(p, mod, fcn));
+		mb->profiler[k].trace = cnt || (mod && fcn && instrFilter(p, mod, fcn));
 	}
 }
 
@@ -822,6 +825,7 @@ clrFilterVariable(MalBlkPtr mb, int arg)
  * for easy integration with SQL.
  */
 static int TRACE_event = 0;
+static BAT *TRACE_id_tag = 0;
 static BAT *TRACE_id_event = 0;
 static BAT *TRACE_id_time = 0;
 static BAT *TRACE_id_ticks = 0;
@@ -841,6 +845,7 @@ TRACEtable(BAT **r)
 	if (initTrace())
 		return ;
 	MT_lock_set(&mal_profileLock, "profileLock");
+	r[0] = BATcopy(TRACE_id_tag, TRACE_id_tag->htype, TRACE_id_tag->ttype, 0);
 	r[0] = BATcopy(TRACE_id_event, TRACE_id_event->htype, TRACE_id_event->ttype, 0);
 	r[1] = BATcopy(TRACE_id_time, TRACE_id_time->htype, TRACE_id_time->ttype, 0);
 	r[2] = BATcopy(TRACE_id_pc, TRACE_id_pc->htype, TRACE_id_pc->ttype, 0);
@@ -885,6 +890,7 @@ TRACEcreate(str hnme, str tnme, int tt)
 static void
 _cleanupProfiler(void)
 {
+	CLEANUPprofile(TRACE_id_tag);
 	CLEANUPprofile(TRACE_id_event);
 	CLEANUPprofile(TRACE_id_time);
 	CLEANUPprofile(TRACE_id_pc);
@@ -902,6 +908,7 @@ _cleanupProfiler(void)
 void
 _initTrace(void)
 {
+	TRACE_id_tag = TRACEcreate("id", "tag", TYPE_int);
 	TRACE_id_event = TRACEcreate("id", "event", TYPE_int);
 	TRACE_id_time = TRACEcreate("id", "time", TYPE_str);
 	TRACE_id_ticks = TRACEcreate("id", "ticks", TYPE_lng);
@@ -915,6 +922,7 @@ _initTrace(void)
 	TRACE_id_thread = TRACEcreate("id", "thread", TYPE_int);
 	TRACE_id_user = TRACEcreate("id", "user", TYPE_int);
 	if (TRACE_id_event == NULL ||
+		TRACE_id_tag == NULL ||
 		TRACE_id_time == NULL ||
 		TRACE_id_ticks == NULL ||
 		TRACE_id_pc == NULL ||
@@ -960,6 +968,7 @@ clearTrace(void)
 		return;     /* not initialized */
 	MT_lock_set(&mal_contextLock, "cleanup");
 	/* drop all trace tables */
+	BBPclear(TRACE_id_tag->batCacheid);
 	BBPclear(TRACE_id_event->batCacheid);
 	BBPclear(TRACE_id_time->batCacheid);
 	BBPclear(TRACE_id_ticks->batCacheid);
@@ -980,6 +989,8 @@ getTrace(str nme)
 {
 	if (TRACE_init == 0)
 		return NULL;
+	if (strcmp(nme, "tag") == 0)
+		return BATcopy(TRACE_id_tag, TRACE_id_tag->htype, TRACE_id_tag->ttype, 0);
 	if (strcmp(nme, "event") == 0)
 		return BATcopy(TRACE_id_event, TRACE_id_event->htype, TRACE_id_event->ttype, 0);
 	if (strcmp(nme, "time") == 0)
@@ -1083,6 +1094,7 @@ cachedProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc)
 
 	TRACE_id_user = BUNappend(TRACE_id_user, &idx, FALSE);
 
+	TRACE_id_tag = BUNappend(TRACE_id_tag, &mb->tag, FALSE);
 	TRACE_id_event = BUNappend(TRACE_id_event, &TRACE_event, FALSE);
 	TRACE_event++;
 
@@ -1324,7 +1336,6 @@ void profilerHeartbeatEvent(str msg)
 #endif
 	struct timeval tv;
 	time_t clock;
-	//time_t prevclock=0;
 #ifdef HAVE_TIMES
 	struct tms newTms;
 	struct tms prevtimer;
@@ -1337,7 +1348,6 @@ void profilerHeartbeatEvent(str msg)
 		getrusage(RUSAGE_SELF, &prevUsage);
 #endif
 	gettimeofday(&tv,NULL);
-	//prevclock = (time_t) tv.tv_sec;
 
 	/* without this cast, compilation on Windows fails with
 	 * argument of type "long *" is incompatible with parameter of type "const time_t={__time64_t={__int64}} *"

@@ -496,12 +496,8 @@ compileOptimizer(Client cntxt, str name)
 						continue;
 					MSinitClientPrg(&c, "user", pipes[j].name);
 					msg = compileString(&sym, &c, pipes[j].def);
-					if (msg != MAL_SUCCEED) {
-						c.errbuf = NULL;
-						c.mythread = 0;
-						MCcloseClient(&c);
-						return msg;
-					}
+					if (msg != MAL_SUCCEED) 
+						break;
 					pipes[j].mb = copyMalBlk(sym->def);
 				}
 			}
@@ -509,9 +505,17 @@ compileOptimizer(Client cntxt, str name)
 			 * exist, just this client record is closed */
 			c.errbuf = NULL;
 			c.mythread = 0;
+			/* destroy bstream using free */
+			free(c.fdin->buf);
+			free(c.fdin);
+			/* remove garbage from previous connection */
+			if (c.nspace) {
+				freeModule(c.nspace);
+				c.nspace = 0;
+			}
 			MCcloseClient(&c);
-			msg = validateOptimizerPipes();
-			if (msg != MAL_SUCCEED)
+			if (msg != MAL_SUCCEED || 
+			   (msg = validateOptimizerPipes()) != MAL_SUCCEED)
 				return msg;
 		}
 	}

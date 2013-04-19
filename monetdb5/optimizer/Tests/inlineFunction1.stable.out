@@ -39,7 +39,6 @@ end main;
 #result of inline
 function user.tst():void;
     X_5 := true:bit;
-    100:int;
     z := 0:int;
 end tst;
 

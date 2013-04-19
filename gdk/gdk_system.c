@@ -531,6 +531,7 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d)
 	int ret;
 	struct posthread *p = NULL;
 
+	join_threads();
 #ifdef HAVE_PTHREAD_SIGMASK
 	(void) sigfillset(&new_mask);
 	MT_thread_sigmask(&new_mask, &orig_mask);

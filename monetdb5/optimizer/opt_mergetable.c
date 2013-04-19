@@ -37,6 +37,7 @@ typedef struct mat {
 	int pm;			/* parent mat, for sub relations */
 	mat_type_t type;	/* type of operation */
 	int packed;
+	int pushed;		 
 } mat_t;
 
 static mat_type_t
@@ -86,6 +87,7 @@ mat_add(mat_t *mat, int mtop, InstrPtr q, mat_type_t type, char *func)
 	mat[mtop].type = type;
 	mat[mtop].pm = -1;
 	mat[mtop].packed = 0;
+	mat[mtop].pushed = 0;
 	(void)func;
 	//printf (" mtop %d %s\n", mtop, func);
 	return mtop+1;
@@ -103,6 +105,7 @@ mat_add_var(mat_t *mat, int mtop, InstrPtr q, InstrPtr p, int var, mat_type_t ty
 	mat[mtop].im = inputmat;
 	mat[mtop].pm = parentmat;
 	mat[mtop].packed = 0;
+	mat[mtop].pushed = 1;
 	return mtop+1;
 }
 
@@ -633,7 +636,7 @@ mat_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m)
 		pushInstruction(mb, u);
 
 	/* Filter empty partitions */
-	if (getModuleId(p) == aggrRef) {
+	if (getModuleId(p) == aggrRef && !isAvg) {
 		s = newInstruction(mb,ASSIGNsymbol);
 		setModuleId(s, algebraRef);
 		setFunctionId(s, selectNotNilRef);
@@ -710,6 +713,15 @@ mat_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m)
 		pushInstruction(mb, w);
 
 		r = w;
+
+		/* filter nils */
+		s = newInstruction(mb,ASSIGNsymbol);
+		setModuleId(s, algebraRef);
+		setFunctionId(s, selectNotNilRef);
+		getArg(s,0) = newTmpVariable(mb, battp);
+		s = pushArgument(mb, s, getArg(r,0));
+		pushInstruction(mb, s);
+		r = s;
 	}
 
 	s = newInstruction(mb,ASSIGNsymbol);
@@ -892,7 +904,6 @@ mat_group_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int b, int g, int e)
 /* The mat_group_{new,derive} keep an ext,attr1..attrn table.
  * This is the input for the final second phase group by.
  */
-
 static void
 mat_pack_group(MalBlkPtr mb, mat_t *mat, int mtop, int g)
 {
@@ -967,6 +978,7 @@ mat_group_attr(MalBlkPtr mb, mat_t *mat, int mtop, int g, InstrPtr cext, int pus
 		if (push)
 			pushInstruction(mb,attr);
 		mtop = mat_add_var(mat, mtop, attr, NULL, getArg(attr, 0), mat_ext,  -1, -1);
+		mat[mtop-1].pushed = push;
 		/* keep new attribute with the group extend */
 		mat[aext].im = mtop-1;
 	}	
@@ -1039,6 +1051,7 @@ mat_group_new(MalBlkPtr mb, InstrPtr p, mat_t *mat, int mtop, int b)
 
 	/* create mat's for the intermediates */
 	a = mtop = mat_add_var(mat, mtop, attr, NULL, getArg(attr, 0), mat_ext,  -1, -1);
+	mat[mtop-1].pushed = push;
 	g = mtop = mat_add_var(mat, mtop, r0, p, getArg(p, 0), mat_grp, b, -1);
 	mtop = mat_add_var(mat, mtop, r1, p, getArg(p, 1), mat_ext, a-1, mtop-1); /* point back at group */
 	mtop = mat_add_var(mat, mtop, r2, p, getArg(p, 2), mat_cnt, -1, mtop-1); /* point back at ext */
@@ -1123,6 +1136,7 @@ mat_group_derive(MalBlkPtr mb, InstrPtr p, mat_t *mat, int mtop, int b, int g)
 
 	/* create mat's for the intermediates */
 	a = mtop = mat_add_var(mat, mtop, attr, NULL, getArg(attr, 0), mat_ext,  -1, -1);
+	mat[mtop-1].pushed = push;
 	g = mtop = mat_add_var(mat, mtop, r0, p, getArg(p, 0), mat_grp, b, g);
 	mtop = mat_add_var(mat, mtop, r1, p, getArg(p, 1), mat_ext, a-1, mtop-1); /* point back at group */
 	mtop = mat_add_var(mat, mtop, r2, p, getArg(p, 2), mat_cnt, -1, mtop-1); /* point back at ext */
@@ -1256,6 +1270,7 @@ mat_topn(MalBlkPtr mb, InstrPtr p, mat_t *mat, int mtop, int m, int n)
 	}
 
 	mtop = mat_add_var(mat, mtop, pck, p, getArg(p,0), is_slice?mat_slc:mat_tpn, (n>=0)?n:m, (n>=0)?m:-1);
+	mat[mtop-1].pushed = 0;
 
 	if (is_slice) {
 		/* real instruction */
@@ -1343,6 +1358,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		   (getFunctionId(p) == newRef || getFunctionId(p) == packRef)){
 			mat_set_prop(mb, p);
 			mtop = mat_add(mat, mtop, p, mat_none, getFunctionId(p));
+			mat[mtop-1].pushed = 1;
 			continue;
 		}
 
@@ -1594,7 +1610,10 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				freeInstruction(old[i]);
 		GDKfree(old);
 	}
-
+	for (i=0; i<mtop; i++) {
+		if (mat[i].mi && !mat[i].pushed)
+			freeInstruction(mat[i].mi);
+	}
 	GDKfree(mat);
 	return actions;
 }

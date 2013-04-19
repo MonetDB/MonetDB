@@ -99,6 +99,7 @@ include mal_mapi;
 
 include profiler;
 include querylog;
+include sysmon;
 include sample;
 
 include optimizer;
@@ -121,7 +122,6 @@ include run_memo;
 include run_octopus;
 include srvpool;
 
-# @-
 # Any extensions (MAL scripts) that should be automatically loaded upon
 # startup can be placed in the autoload directory.  One typically finds
 # the SQL module in here, but it can also be used to load custom scripts.

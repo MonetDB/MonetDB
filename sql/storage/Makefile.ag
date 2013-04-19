@@ -19,7 +19,7 @@
 
 #EXTRA_HEADERS = sql_storage.h
 
-SUBDIRS = bat restrict
+SUBDIRS = bat 
 
 INCLUDES = ../include ../common \
 		   ../../common/options \

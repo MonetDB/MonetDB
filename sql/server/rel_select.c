@@ -36,7 +36,7 @@
 #define ERR_AMBIGUOUS		050000
 
 #define is_addition(fname) (strcmp(fname, "sql_add") == 0)
-#define is_substraction(fname) (strcmp(fname, "sql_sub") == 0)
+#define is_subtraction(fname) (strcmp(fname, "sql_sub") == 0)
 
 #define has_tiling_range(e) 								\
 	( ((sql_exp*)(e))->type == e_column && 					\
@@ -187,7 +187,7 @@ exp_alias_or_copy( mvc *sql, char *tname, char *cname, sql_rel *orel, sql_exp *o
 		tname = old->l;
 
 	if (!cname && exp_name(old) && exp_name(old)[0] == 'L') {
-		ne = exp_column(sql->sa, exp_relname(old), exp_name(old), exp_subtype(old), orel->card, has_nil(old), is_intern(old), old->type == e_column && old->f ? old->f : NULL);
+		ne = exp_column(sql->sa, exp_relname(old), exp_name(old), exp_subtype(old), orel?orel->card:CARD_ATOM, has_nil(old), is_intern(old), old->type == e_column && old->f ? old->f : NULL);
 		ne->p = prop_copy(sql->sa, old->p);
 		return ne;
 	} else if (!cname) {
@@ -195,13 +195,13 @@ exp_alias_or_copy( mvc *sql, char *tname, char *cname, sql_rel *orel, sql_exp *o
 		nme = number2name(name, 16, ++sql->label);
 
 		exp_setname(sql->sa, old, nme, nme);
-		ne = exp_column(sql->sa, nme, nme, exp_subtype(old), orel->card, has_nil(old), is_intern(old), old->type == e_column && old->f ? old->f : NULL);
+		ne = exp_column(sql->sa, nme, nme, exp_subtype(old), orel?orel->card:CARD_ATOM, has_nil(old), is_intern(old), old->type == e_column && old->f ? old->f : NULL);
 		ne->p = prop_copy(sql->sa, old->p);
 		return ne;
 	} else if (cname && !old->name) {
 		exp_setname(sql->sa, old, tname, cname);
 	}
-	ne = exp_column(sql->sa, tname, cname, exp_subtype(old), orel->card, has_nil(old), is_intern(old), old->type == e_column && old->f ? old->f : NULL);
+	ne = exp_column(sql->sa, tname, cname, exp_subtype(old), orel?orel->card:CARD_ATOM, has_nil(old), is_intern(old), old->type == e_column && old->f ? old->f : NULL);
 	ne->p = prop_copy(sql->sa, old->p);
 	return ne;
 }
@@ -2340,7 +2340,7 @@ rel_arraytiling(mvc *sql, sql_rel **rel, symbol *tile_def, int f)
 
 					if (is_addition(opnm)) {
 						exp_os_sta = rel_check_type(sql, st, rel_value_exp(sql, rel, opr, sql_where, ek), type_cast);
-					} else if (is_substraction(opnm)){
+					} else if (is_subtraction(opnm)){
 						exp_os_sta = exp_unop(sql->sa,
 								rel_check_type(sql, st, rel_value_exp(sql, rel, opr, sql_where, ek), type_cast),
 								sql_bind_func(sql->sa, sql->session->schema, "sql_neg", st, NULL, F_FUNC));
@@ -2398,7 +2398,7 @@ rel_arraytiling(mvc *sql, sql_rel **rel, symbol *tile_def, int f)
 							return NULL;
 						if (is_addition(opnm)) {
 							exp_os_sto = rel_check_type(sql, st, rel_value_exp(sql, rel, opr, sql_where, ek), type_cast);
-						} else if (is_substraction(opnm)){
+						} else if (is_subtraction(opnm)){
 							exp_os_sto = exp_unop(sql->sa,
 									rel_check_type(sql, st, rel_value_exp(sql, rel, opr, sql_where, ek), type_cast),
 									sql_bind_func(sql->sa, sql->session->schema, "sql_neg", st, NULL, F_FUNC));
@@ -4054,7 +4054,7 @@ rel_binop_(mvc *sql, sql_exp *l, sql_exp *r, sql_schema *s,
 	if (!t1 || !t2)
 		return sql_error(sql, 01, "Cannot have a parameter (?) on both sides of an expression");
 
-	if ((is_addition(fname) || is_substraction(fname)) && t1->type->eclass == EC_NUM && t2->type->eclass == EC_NUM) {
+	if ((is_addition(fname) || is_subtraction(fname)) && t1->type->eclass == EC_NUM && t2->type->eclass == EC_NUM) {
 		sql_subtype ntp;
 
 		sql_find_numeric(&ntp, t1->type->localtype, t1->digits+1);
@@ -5880,6 +5880,8 @@ rel_select_exp(mvc *sql, sql_rel *rel, sql_rel *outer, SelectNode *sn, exp_kind 
 	}
 
 	if (rel) {
+		sql_rel *join = NULL;
+
 		if (rel && sn->groupby) {
 			node *n = NULL;
 			list *gbe = rel_group_by(sql, rel, sn->groupby, sn->selection, sql_sel );
@@ -5901,12 +5903,15 @@ rel_select_exp(mvc *sql, sql_rel *rel, sql_rel *outer, SelectNode *sn, exp_kind 
 
 		/* TODO if ek.card == card_set (IN/EXISTS etc), we could do
 			something less expensive as group by's ! */
-		if (outer && rel->op == op_join && rel->l == outer && ek.card != card_set) {
+		join = rel;
+		if (outer && rel->op == op_select)
+			join = rel->l;
+		if (outer && join->op == op_join && join->l == outer && ek.card != card_set) {
 			node *n;
 			/* correlation expressions */
-			list *ce = list_select(rel->exps, rel, (fcmp) &exp_is_correlation, (fdup)NULL);
+			list *ce = list_select(join->exps, join, (fcmp) &exp_is_correlation, (fdup)NULL);
 
-			if (!ce || list_length(ce) == 0 || check_correlation_exps(ce) != 0) {
+			if (!ce || list_length(ce) == 0 || check_correlation_exps(ce) != 0 || join != rel) {
 				if (ek.card != card_set) {
 					node *n;
 					/* group by on identity */
@@ -5914,7 +5919,7 @@ rel_select_exp(mvc *sql, sql_rel *rel, sql_rel *outer, SelectNode *sn, exp_kind 
 
 					outer_gbexps = rel_projections(sql, outer, NULL, 1, 1);
 					if (!is_project(outer->op))
-						rel->l = outer = rel_project(sql->sa, outer, rel_projections(sql, outer, NULL, 1, 1));
+						join->l = outer = rel_project(sql->sa, outer, rel_projections(sql, outer, NULL, 1, 1));
 					/* find or create identity column */
 					if (find_identity(outer->exps, outer) == NULL) {
 						e = rel_unop_(sql, outer->exps->h->data, NULL, "identity", card_value);
@@ -6639,10 +6644,6 @@ rel_selects(mvc *sql, symbol *s)
 		break;
 	default:
 		return NULL;
-	}
-	if (mvc_debug_on(sql,32768)) {
-		rel_print(sql, ret, 0);
-		printf("\n");
 	}
 	if (!ret && sql->errstr[0] == 0)
 		(void) sql_error(sql, 02, "relational query without result");

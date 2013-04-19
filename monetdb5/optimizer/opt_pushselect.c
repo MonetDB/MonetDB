@@ -190,7 +190,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		}
 	}
 
-	if ((!subselects.nr && !nr_topn && !nr_likes)  || newMalBlkStmt(mb, mb->ssize+20) <0 ) {
+	if ((!subselects.nr && !nr_topn && !nr_likes) || newMalBlkStmt(mb, mb->ssize+20) <0 ) {
 		GDKfree(vars);
 		return 0;
 	}
@@ -287,7 +287,9 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 					q = copyInstruction(q);
 					setFunctionId(q, projectdeltaRef);
 					getArg(q, 0) = getArg(p, 0); 
-					p = PushArgument(mb, q, getArg(p, 1), 1);
+					q = PushArgument(mb, q, getArg(p, 1), 1);
+					freeInstruction(p);
+					p = q;
 					actions++;
 				}
 			}
@@ -382,5 +384,6 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		if (old[i])
 			pushInstruction(mb,old[i]);
 	GDKfree(vars);
+	GDKfree(old);
 	return actions;
 }

@@ -141,7 +141,7 @@ str SABAOTHmarchConnection(int *ret, str *host, int *port) {
  */
 str SABAOTHgetLocalConnection(str *ret) {
 	char data[8096];
-	sabdb *stats;
+	sabdb *stats = NULL;
 	str err;
 
 	err = msab_getMyStatus(&stats);

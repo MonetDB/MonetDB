@@ -61,7 +61,7 @@
  * in errors and possibly undefined behaviour.
  *
  * The resolve() function can be used to query Merovingian.  It returns one
- * or more databases discovered in its vincinity matching the given pattern.
+ * or more databases discovered in its vicinity matching the given pattern.
  *
  */
 #include "monetdb_config.h"

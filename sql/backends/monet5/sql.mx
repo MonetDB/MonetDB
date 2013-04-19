@@ -461,21 +461,6 @@ function sql_environment{inline}()(name:bat[:oid,:str],value:bat[:oid,:str]);
 	return (name,value) := (name,value);
 end sql_environment;
 
-function clients{inline}()( user:bat[:oid,:str], login:bat[:oid,:str], lastcommand:bat[:oid,:str], actions:bat[:oid,:int], seconds:bat[:oid,:lng]);
-	U:= clients.getUsers();
-	u:= algebra.markH(U);
-	(Z,L):= clients.getLogins();
-	U1:= algebra.join(Z,U);
-	l:= algebra.markH(L);
-	C:= clients.getLastCommand();
-	c:= algebra.markH(C);
-	A:= clients.getActions();
-	a:= algebra.markH(A);
-	T:= clients.getTime();
-	t:= algebra.markH(T);
-	return (U1,l,c,a,t);
-end clients;
-
 function bbp{inline}()( id:bat[:oid,:int], name:bat[:oid,:str], htype:bat[:oid,:str], ttype:bat[:oid,:str], count:bat[:oid,:lng], refcnt:bat[:oid,:int], lrefcnt:bat[:oid,:int], location:bat[:oid,:str], heat:bat[:oid,:int], dirty:bat[:oid,:str], status:bat[:oid,:str], kind:bat[:oid,:str]);
 
 	(ns,iht,itt,icnt,irefcnt,ilrefcnt,ilocation,iheat,idirty,istatus,ikind) := bbp.get();
@@ -552,6 +537,7 @@ user:bat[:oid,:str],
 defined:bat[:oid,:timestamp],
 query:bat[:oid,:str],
 pipe:bat[:oid,:str],
+mal:bat[:oid,:int],
 optimize:bat[:oid,:lng]
 )
 address sql_querylog_catalog
@@ -572,16 +558,40 @@ space:bat[:oid,:lng]
 address sql_querylog_calls
 comment "Obtain the query log calls";
 
-pattern querylog_reset()
-address sql_querylog_reset;
+pattern querylog_empty()
+address sql_querylog_empty;
 
-command querylog_init()
-address QLOGinit;
-command querylog_init(thres:int)
-address QLOGinitThreshold;
-command querylog_done()
-address QLOGdone;
+command querylog_enable()
+address QLOGenable;
+command querylog_enable(thres:int)
+address QLOGenablehreshold;
+command querylog_disable()
+address QLOGdisable;
 
+
+pattern sysmon_queue()(qtag:bat[:oid,:lng], user:bat[:oid,:str],started:bat[:oid,:timestamp],estimate:bat[:oid,:timestamp],progress:bat[:oid,:int], status:bat[:oid,:str], tag:bat[:oid,:oid], query:bat[:oid,:str])
+address SYSMONqueue;
+
+pattern sysmon_pause(tag:sht)
+address SYSMONpause;
+pattern sysmon_pause(tag:int)
+address SYSMONpause;
+pattern sysmon_pause(tag:lng)
+address SYSMONpause;
+
+pattern sysmon_resume(tag:sht)
+address SYSMONresume;
+pattern sysmon_resume(tag:int)
+address SYSMONresume;
+pattern sysmon_resume(tag:lng)
+address SYSMONresume;
+
+pattern sysmon_stop(tag:sht)
+address SYSMONstop;
+pattern sysmon_stop(tag:int)
+address SYSMONstop;
+pattern sysmon_stop(tag:lng)
+address SYSMONstop;
 
 # @- SQL function aliases
 # The code generate should identify the precise module
@@ -1435,7 +1445,7 @@ sql5_export str dump_trace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 sql5_export str sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str sql_querylog_catalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str sql_querylog_calls(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str sql_querylog_reset(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str sql_querylog_empty(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str sql_rowid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str sql_rank_grp(bat *rid, bat *bid, bat *gid, bat *gpe);
 sql5_export str sql_rank(bat *rid, bat *bid);
@@ -1996,7 +2006,7 @@ create_table_or_view( mvc *sql, char *sname, sql_table *t, int temp)
 	sql_table *nt = NULL;
 	node *n;
 
-	if (STORE_READONLY(active_store_type)) 
+	if (STORE_READONLY) 
 		return sql_error(sql, 06, "25006!schema statements cannot be executed on a readonly database.");
 
 	if (!s) 
@@ -2597,7 +2607,7 @@ SQLcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (msg)
 		return msg;
 
-	if (STORE_READONLY(active_store_type)) 
+	if (STORE_READONLY) 
 		return sql_message("25006!schema statements cannot be executed on a readonly database.");
 
 	switch (type) {
@@ -3750,12 +3760,10 @@ SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_column *c;
 	BAT *tids;
 	size_t nr, sb = 0, inr = 0;
-	int readonly = 0;
 
 	*res = 0;
 	if (msg)
 		return msg;
-	readonly = (mvc_debug_on(m, 32) || mvc_debug_on(m, 64) || mvc_debug_on(m, 8192));
 	s = mvc_bind_schema(m, sname);
 	if ( s == NULL)
 		throw(SQL,"sql.tid","3F000!Schema missing");
@@ -3764,12 +3772,12 @@ SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL,"sql.tid","42S02!Table missing");
 	c = t->columns.set->h->data;
 
-	nr = store_funcs.count_col(c, 1);
+	nr = store_funcs.count_col(tr, c, 1);
 
-	if (isTableOrArray(t) && !readonly &&
+	if (isTableOrArray(t) && !t->readonly &&
 	   (t->base.flag != TR_NEW /* alter */) &&
 	    t->persistence == SQL_PERSIST && !t->commit_action) 
-		inr = store_funcs.count_col(c, 0);
+		inr = store_funcs.count_col(tr, c, 0);
 	nr -= inr;
 	if ( pci->argc == 6){ /* partitioned version */
 		size_t cnt = nr;
@@ -3794,7 +3802,7 @@ SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	tids->H->revsorted = 0;
 	tids->T->revsorted = 0;
 	
-	if (store_funcs.count_del(t)) {
+	if (store_funcs.count_del(tr, t)) {
 		BAT *d = store_funcs.bind_del(tr, t, RD_INS);
 		BAT *diff = BATkdiff(tids, BATmirror(d));
 
@@ -4385,7 +4393,6 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 				throw(SQL, "sql", "failed to attach file %s", *(str*)getArgReference(stk, pci, i));
 			BATsetaccess(c, BAT_READ);
 			BATderiveProps(c, 1);
-			break;
 		} else if (tpe == TYPE_str) {
 			/* get the BAT and fill it with the strings */
 			c = BATnew(TYPE_void,TYPE_str,0); 
@@ -4403,7 +4410,6 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			}
 			fclose(f);
 			GDKfree(buf);
-			break;
 		} else {
 			throw(SQL, "sql", "failed to attach file %s", *(str*)getArgReference(stk, pci, i));
 		}
@@ -6498,11 +6504,11 @@ str
 sql_querylog_catalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i;
-	BAT *t[6];
+	BAT *t[7];
 
 	(void)cntxt; (void)mb;
 	QLOGcatalog(t);
-	for (i = 0; i < 6; i++) {
+	for (i = 0; i < 7; i++) {
 		int id = t[i]->batCacheid;
 
 		*(int *) getArgReference(stk, pci, i) = id;
@@ -6528,14 +6534,14 @@ sql_querylog_calls(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 str
-sql_querylog_reset(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+sql_querylog_empty(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int *ret= (int*) getArgReference(stk,pci,0);
 	(void) cntxt;
 	(void) mb;
 	(void) stk;
 	(void) pci;
-	QLOGreset(ret);
+	QLOGempty(ret);
 	return MAL_SUCCEED;
 }
 
@@ -6889,7 +6895,6 @@ vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	sql_schema	*s;
 	sql_table 	*t;
 	sql_column	*c;
-	sql_dbat *dbat;
 	mvc *m = NULL;
 	str msg = getSQLContext(cntxt,mb, &m, NULL);
 	bat bid;
@@ -6915,31 +6920,11 @@ vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	if (!m->session->auto_commit)
 		throw(SQL,name, "%s only allowed in auto commit mode", name + 4);
 
-	/* lock the store, for single user/transaction */
-	store_lock();
-	while (store_nr_active > 1) {
-		store_unlock();
-		MT_sleep_ms(100);
-		store_lock();
-
-		/* flush old changes to disk */
-		sql_trans_end(m->session);
-		store_apply_deltas();
-		sql_trans_begin(m->session);
-	}
-
 	tr = m->session->tr;
-	t->base.wtime = s->base.wtime = tr->wtime = tr->wstime;
-	t->base.rtime = s->base.rtime = tr->rtime = tr->stime;
 
 	/* get the deletions BAT*/
 	del = mvc_bind_dbat(m, *sch, *tbl, RD_INS);
-	dbat=t->data;
 
-	/* this code is insecure, because something may
-	   go wrong while we compress the columns.
-	   A two-phase action reduces the risks, but not all.
-	   e.g. a crash during update of the catalog. */
 	i=0;
 	bids[i]=0;
 	for (o = t->columns.set->h; o; o = o->next,i++) {
@@ -6952,7 +6937,6 @@ vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			if (b)
 				BBPreleaseref(b->batCacheid);
 			BBPreleaseref(del->batCacheid);
-			store_unlock();
 			if (!msg)
 				throw(SQL,name,"Can not access descriptor");
 			return msg;
@@ -6966,38 +6950,19 @@ vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	if ( i >= 2048 ) {
 		for( i--; i>=0; i--)
 			BBPdecref(bids[i], TRUE);
-		store_unlock();
 		throw(SQL,name,"Too many columns to handle, use copy instead");
 	}
 
+	mvc_clear_table(m, t);
 	for (o = t->columns.set->h, i=0; o; o = o->next, i++) {
 		sql_column *c = o->data;
-		sql_delta *d = c->data;
+		BAT *ins = BATdescriptor(bids[i]); /* use the insert bat */
 
-		if (d->bid)
-			BBPdecref(d->bid, TRUE);
-		if (d->ibid)
-			BBPdecref(d->ibid, TRUE);
-		d->bid = 0;
-		d->ibase = 0;
-		d->cnt -= dbat->cnt;
-		d->ibid = bids[i]; /* use the insert bat */
-		c->base.wtime = tr->wstime;
-		c->base.rtime = tr->stime;
+		store_funcs.append_col(tr, c, ins, TYPE_bat);
+		BBPreleaseref(ins->batCacheid);
+		BBPdecref(bids[i], TRUE);
 	}
-	BATclear(del, TRUE);
-	BBPreleaseref(del->batCacheid);
-	dbat->cnt = 0;
-	/* bat was cleared */
-	t->cleared = 1;
-
-	sql_trans_commit(m->session->tr);
-	/* write changes to disk */
-	sql_trans_end(m->session);
-	store_apply_deltas();
-	sql_trans_begin(m->session);
-	store_unlock();
-
+	/* TODO indices */
 	return MAL_SUCCEED;
 }
 
@@ -7318,7 +7283,7 @@ SQLrdfShred(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (rid != oid_nil)
 		throw(SQL, "sql.rdfShred", "graph name already exists in rdf.graph");
 
-	id = (int) store_funcs.count_col(gname, 1);
+	id = (int) store_funcs.count_col(m->session->tr, gname, 1);
 	store_funcs.append_col(m->session->tr, gname, *name, TYPE_str);
 	store_funcs.append_col(m->session->tr, gid, &id, TYPE_int);
 

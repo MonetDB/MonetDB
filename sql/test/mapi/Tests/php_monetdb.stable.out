@@ -61,10 +61,10 @@ users
 user_role
 auths
 privileges
-history
 files
 catalog
 storagemodelinput
+storagemodel
 tablestoragemodel
 systemfunctions
 id	name	schema_id	query	type	system	commit_action	readonly	temporary 	

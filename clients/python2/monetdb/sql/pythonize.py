@@ -25,24 +25,29 @@ from decimal import Decimal
 from monetdb.sql import types
 from monetdb.exceptions import ProgrammingError
 
+
 def strip(data):
     """ returns a python string, with chopped off quotes,
     and replaced escape characters"""
     return data[1:-1].decode('string_escape').decode('utf-8')
 
+
 def py_bool(data):
     """ return python boolean """
-    return (data == "true")
+    return data == "true"
+
 
 def py_time(data):
     """ returns a python Time
     """
     return Time(*[int(float(x)) for x in data.split(':')])
 
+
 def py_date(data):
     """ Returns a python Date
     """
     return Date(*[int(float(x)) for x in data.split('-')])
+
 
 def py_timestamp(data):
     """ Returns a python Timestamp
@@ -50,19 +55,20 @@ def py_timestamp(data):
     splitted = data.split(" ")
     date = [int(float(x)) for x in splitted[0].split('-')]
     time = [int(float(x)) for x in splitted[1].split(':')]
-    return Timestamp(*date+time)
+    return Timestamp(*(date + time))
+
 
 def py_timestamptz(data):
     """ Returns a python Timestamp where data contains a tz code
     """
-    if data.find('+')!= -1:
+    if data.find('+') != -1:
         (dt, tz) = data.split("+")
         (tzhour, tzmin) = [int(x) for x in tz.split(':')]
-    elif data.find('-')!= -1:
+    elif data.find('-') != -1:
         (dt, tz) = data.split("-")
         (tzhour, tzmin) = [int(x) for x in tz.split(':')]
-        tzhour = tzhour * -1
-        tzmin = tzmin * -1
+        tzhour *= -1
+        tzmin *= -1
     else:
         raise ProgrammingError("no + or - in %s" % data)
 
@@ -71,7 +77,7 @@ def py_timestamptz(data):
     time = [int(float(x)) for x in timestr.split(':')]
     year, month, day = date
     hour, minute, second = time
-    return Timestamp(year, month, day, hour+tzhour, minute+tzmin, second)
+    return Timestamp(year, month, day, hour + tzhour, minute + tzmin, second)
 
 mapping = {
     types.CHAR: strip,
@@ -101,6 +107,7 @@ mapping = {
     types.FLOAT: float,
 }
 
+
 def convert(data, type_code):
     """
     Calls the appropriate convertion function based upon the python type
@@ -121,13 +128,16 @@ def Binary(data):
     """returns binary encoding of data"""
     return ''.join(["%02X" % ord(i) for i in data])
 
+
 def DateFromTicks(ticks):
     """Convert ticks to python Date"""
     return Date(*time.localtime(ticks)[:3])
 
+
 def TimeFromTicks(ticks):
     """Convert ticks to python Time"""
     return Time(*time.localtime(ticks)[3:6])
+
 
 def TimestampFromTicks(ticks):
     """Convert ticks to python Timestamp"""
@@ -136,10 +146,10 @@ def TimestampFromTicks(ticks):
 Date = datetime.date
 Time = datetime.time
 Timestamp = datetime.datetime
-STRING    = types.VARCHAR
-BINARY    = types.BLOB
-NUMBER    = types.DECIMAL
-DATE      = types.DATE
-TIME      = types.TIME
-DATETIME  = types.TIMESTAMP
-ROWID     = types.INT
+STRING = types.VARCHAR
+BINARY = types.BLOB
+NUMBER = types.DECIMAL
+DATE = types.DATE
+TIME = types.TIME
+DATETIME = types.TIMESTAMP
+ROWID = types.INT

@@ -943,7 +943,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 				/* since both arguments of algebra.slice are
 				   inclusive correct the LIMIT value by
-				   substracting 1 */
+				   subtracting 1 */
 				if (s->op2->op4.aval->data.val.wval) {
 					assert(0);
 					q = newStmt1(mb, calcRef, "-");
@@ -965,7 +965,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 				/* since both arguments of algebra.subslice are
 				   inclusive correct the LIMIT value by
-				   substracting 1 */
+				   subtracting 1 */
 				q = newStmt1(mb, calcRef, "-");
 				q = pushArgument(mb, q, len);
 				q = pushInt(mb, q, 1);
@@ -1273,7 +1273,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				break;
 			}
 			/* if st_join2 try to convert to bandjoin */
-			/* ie check if we substract/add a constant, to the
+			/* ie check if we subtract/add a constant, to the
 			   same column */
 			if (s->type == st_join2 &&
 			    range_join_convertable(s, &base, &low, &high)) {
@@ -1819,6 +1819,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			char aggrF[64];
 			int restype = s->op4.aggrval->res.type->localtype;
 			int complex_aggr = 0;
+			int abort_on_error;
 
 			if (backend_create_func(sql, s->op4.aggrval->aggr) < 0)
 				return -1;
@@ -1829,6 +1830,11 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			    strcmp(aggrfunc, "sum") == 0 ||
 			    strcmp(aggrfunc, "prod") == 0)
 				complex_aggr = 1;
+			/* some "sub" aggregates have an extra
+			 * argument "abort_on_error" */
+			abort_on_error = complex_aggr ||
+				strncmp(aggrfunc, "stdev", 5) == 0 ||
+				strncmp(aggrfunc, "variance", 8) == 0;
 
 			if (s->op3) {
 				snprintf(aggrF, 64, "sub%s", aggrfunc);
@@ -1875,7 +1881,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				q = pushArgument(mb, q, e);
 				g = getDestVar(q);
 				q = pushBit(mb, q, no_nil);
-				if (complex_aggr)
+				if (abort_on_error)
 					q = pushBit(mb, q, TRUE);
 			}
 			s->nr = getDestVar(q);
@@ -2446,7 +2452,6 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s, sql_rel *rel)
 	int argc = 0;
 	char arg[SMALLBUFSIZ];
 	node *n;
-	lng Toptimize = 0; //, Tparse = 0;
 	str pipe;
 
 	backup = c->curprg;
@@ -2495,34 +2500,31 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s, sql_rel *rel)
 
 	if (backend_dumpstmt(be, mb, s, rel) < 0)
 		return NULL;
-	Toptimize = GDKusec();
-	//Tparse = Toptimize - m->Tparse;
 
-	if (m->history || QLOGisset()) {
-		char *t;
-		oid queryid = OIDnew(1);
+	// Always keep the SQL query around for monitoring
+	// if (m->history || QLOGisset()) {
+	{
+		char *t, *tt;
 		InstrPtr q;
 
 		if ( be->q && be->q->codestring) {
-			t = GDKstrdup(  be->q->codestring);
+			tt = t = GDKstrdup(  be->q->codestring);
 			while( t && isspace((int) *t) )
 				t++;
-		} else
-			t = GDKstrdup("-- no query");
+		} else {
+			tt = t = GDKstrdup("-- no query");
+		}
 
 		q = newStmt1(mb, "querylog", "define");
 		q->token = REMsymbol;	// will be patched
-		q = pushOid(mb, q, queryid);
 		q = pushStr(mb, q, t);
+		GDKfree(tt);
 		q = pushStr(mb, q, pipe= initSQLoptimizer());
-		//q = pushLng(mb, q, Tparse );
-		(void) pushLng(mb, q, Toptimize);
 		m->Tparse = 0;
 		GDKfree(pipe);
 	}
 	if (cq)
 		addQueryToCache(c);
-	Toptimize = GDKusec() - Toptimize;
 
 	curPrg = c->curprg;
 	if (backup)

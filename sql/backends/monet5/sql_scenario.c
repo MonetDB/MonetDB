@@ -175,17 +175,19 @@ SQLprelude(void)
 str
 SQLepilogue(void)
 {
-	char *s = "sql";
+	char *s = "sql", *m = "msql";
+	str res;
 
 	if( SQLinitialized){
-		/*
 		mvc_exit();
 		SQLinitialized= FALSE;
-		*/
 	}
 	/* this function is never called, but for the style of it, we clean
 	 * up our own mess */
-	return msab_retreatScenario(s);
+	res = msab_retreatScenario(m);
+	if (!res)
+		return msab_retreatScenario(s);
+	return res;
 }
 
 MT_Id sqllogthread, minmaxthread;
@@ -224,10 +226,7 @@ SQLinit(void)
 		SQLdebug |= 64;
 	if (readonly)
 		SQLdebug |= 32;
-	if (((SQLdebug&96)==96 && (SQLnewcatalog = mvc_init(FALSE, store_suro, 0)) < 0) ||
-			((SQLdebug&96)==64 && (SQLnewcatalog = mvc_init(FALSE, store_su, 0)) < 0) ||
-			((SQLdebug&96)==32 && (SQLnewcatalog = mvc_init(FALSE, store_ro, 0)) < 0) ||
-			((SQLdebug&112)==0 && (SQLnewcatalog = mvc_init(FALSE, store_bat, 0)) < 0))
+	if ((SQLnewcatalog = mvc_init(FALSE, store_bat, readonly, single_user, 0)) < 0)
 		throw(SQL, "SQLinit", "Catalogue initialization failed");
 	SQLinitialized = TRUE;
 	MT_lock_unset(&sql_contextLock, "SQL init");
@@ -1690,7 +1689,11 @@ SQLparser(Client c)
 				mb = c->curprg->def;
 				chkProgram(c->fdout, c->nspace, mb);
 				addOptimizerPipe(c, mb, "minimal_pipe");
-				optimizeMALBlock(c, mb);
+				msg = optimizeMALBlock(c, mb);
+				if (msg != MAL_SUCCEED) {
+					sqlcleanup(m, err);
+					goto finalize;
+				}
 				c->curprg->def = mb;
 			} else {
 				err = 1;
@@ -1964,7 +1967,7 @@ cleanup_engine:
 		/* qc_delete(be->q) */
 	}
 	be->q = NULL;
-	sqlcleanup(be->mvc, 0);
+	sqlcleanup(be->mvc, (!msg)?0:-1);
 	MSresetInstructions(c->curprg->def, 1);
 	freeVariables(c,c->curprg->def, c->glb, be->vtop);
 	be->language = oldlang;

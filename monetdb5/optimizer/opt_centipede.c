@@ -255,7 +255,6 @@ OPTexecController(Client cntxt, MalBlkPtr mb, MalBlkPtr pmb, Slices *slices, oid
 	//printFunction(cntxt->fdout, cmb, 0, LIST_MAL_STMT);
 #endif
 
-	//optimizeMALBlock(cntxt, cmb);
 	chkProgram(cntxt->fdout, cntxt->nspace, cmb);
 #ifdef _DEBUG_OPT_CENTIPEDE_
 	mnstr_printf(cntxt->fdout,"#rough cntrl plan %d \n", cmb->errors);

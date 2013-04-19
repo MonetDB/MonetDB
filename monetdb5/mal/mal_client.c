@@ -233,8 +233,6 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	c->itrace = 0;
 	c->debugOptimizer = c->debugScheduler = 0;
 	c->flags = MCdefault;
-	c->timer = 0;
-	c->memory = 0;
 	c->errbuf = 0;
 
 	prompt = !fin ? GDKgetenv("monet_prompt") : PROMPT1;

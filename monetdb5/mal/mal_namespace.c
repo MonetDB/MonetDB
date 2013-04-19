@@ -96,8 +96,10 @@ void finishNamespace(void) {
 	for ( i =0; i < HASHMASK; i++){
 		n = hash[i];
 		hash[i] = ehash[i] = 0;
-		for( n= hash[i]; n; n = m){
+		for( ; n; n = m){
 			m = n->next;
+			if (n->nme)
+				GDKfree(n->nme);
 			GDKfree(n);
 		}
 	}

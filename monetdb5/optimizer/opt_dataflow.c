@@ -130,7 +130,7 @@ static void setAssigned(InstrPtr p, int k, int *assigned){
 }
 
 static int
-dflowAssignConflict(InstrPtr p, int *assigned)
+dflowAssignConflict(InstrPtr p, int pc, int *assigned, int *eolife)
 {
 	int j;
 	/* flow blocks should be closed when we reach a point
@@ -139,8 +139,10 @@ dflowAssignConflict(InstrPtr p, int *assigned)
 	for(j=0; j<p->retc; j++)
 		if ( assigned[getArg(p,j)] )
 			return 1;
-	if ( isUpdateInstruction(p) && assigned[getArg(p,p->retc)] )
-		return 1;
+	/* first argument of updates collect side-effects */
+	if ( isUpdateInstruction(p) ){
+		return eolife[getArg(p,p->retc)] != pc;
+	}
 	return 0;
 }
 
@@ -237,7 +239,7 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		assert(p);
 		conflict = 0;
 
-		if ( dflowConflict(p) || (conflict = dflowAssignConflict(p,assigned)) )  {
+		if ( dflowConflict(p) || (conflict = dflowAssignConflict(p,i,assigned,eolife)) )  {
 			/* close previous flow block */
 			if ( !(simple = simpleFlow(old,start,i))){
 				for( j=start ; j<i; j++){

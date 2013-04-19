@@ -107,6 +107,17 @@ cs_find_id(changeset * cs, int id)
 				return n;
 			}
 		}
+	if (cs->dset) {
+		l = cs->dset;
+		for (n = l->h; n; n = n->next) {
+			sql_base *b = n->data;
+
+			/* check if names match */
+			if (b->id == id) {
+				return n;
+			}
+		}
+	}
 	return NULL;
 }
 

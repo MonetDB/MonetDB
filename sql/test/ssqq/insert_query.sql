@@ -2,7 +2,7 @@ select * from quser;
 
 select * from query;
 
-select * from queue;
+select * from ssqq_queue;
 
 declare id_result int;
 
@@ -40,4 +40,4 @@ select * from quser;
 
 select * from query;
 
-select * from queue;
+select * from ssqq_queue;

@@ -75,6 +75,7 @@ static BAT *QLOG_cat_user = 0;
 static BAT *QLOG_cat_defined = 0;
 static BAT *QLOG_cat_query = 0;
 static BAT *QLOG_cat_pipe = 0;
+static BAT *QLOG_cat_mal = 0;
 static BAT *QLOG_cat_optimize = 0;
 
 static BAT *QLOG_calls_id = 0;
@@ -92,7 +93,7 @@ void
 QLOGcatalog(BAT **r)
 {
 	int i;
-	for ( i=0;i < 6; i++)
+	for ( i=0;i < 7; i++)
 		r[i]=0;
     if (initQlog())
         return ;
@@ -102,7 +103,8 @@ QLOGcatalog(BAT **r)
 	r[2] = BATcopy(QLOG_cat_defined, TYPE_oid, QLOG_cat_defined->ttype,0);
 	r[3] = BATcopy(QLOG_cat_query, TYPE_oid, QLOG_cat_query->ttype,0);
 	r[4] = BATcopy(QLOG_cat_pipe, TYPE_oid, QLOG_cat_pipe->ttype,0);
-	r[5] = BATcopy(QLOG_cat_optimize, TYPE_oid, QLOG_cat_optimize->ttype,0);
+	r[5] = BATcopy(QLOG_cat_mal, TYPE_oid, QLOG_cat_mal->ttype,0);
+	r[6] = BATcopy(QLOG_cat_optimize, TYPE_oid, QLOG_cat_optimize->ttype,0);
     MT_lock_unset(&mal_profileLock, "querylogLock");
 }
 
@@ -155,7 +157,7 @@ QLOGcreate(str hnme, str tnme, int tt)
     return b;
 }
 
-#define cleanup(X)  if (X) { BBPdecref((X)->batCacheid, TRUE); (X)->batPersistence = TRANSIENT; } (X) = NULL;
+#define cleanup(X)  if (X) { (X)->batPersistence = TRANSIENT; BBPrename((X)->batCacheid,"_"); BBPreleaseref((X)->batCacheid); } (X) = NULL;
 
 static void
 _QLOGcleanup(void)
@@ -165,6 +167,7 @@ _QLOGcleanup(void)
 	cleanup(QLOG_cat_defined);
 	cleanup(QLOG_cat_query);
 	cleanup(QLOG_cat_pipe);
+	cleanup(QLOG_cat_mal);
 	cleanup(QLOG_cat_optimize);
 	
 	cleanup(QLOG_calls_id);
@@ -187,6 +190,7 @@ _initQlog(void)
 	QLOG_cat_defined = QLOGcreate("cat","defined",TYPE_lng);
 	QLOG_cat_query = QLOGcreate("cat","query",TYPE_str);
 	QLOG_cat_pipe = QLOGcreate("cat","pipe",TYPE_str);
+	QLOG_cat_mal = QLOGcreate("cat","mal",TYPE_int);
 	QLOG_cat_optimize = QLOGcreate("cat","optimize",TYPE_lng);
 	
 	QLOG_calls_id = QLOGcreate("calls","id",TYPE_oid);
@@ -218,7 +222,7 @@ initQlog(void)
 }
 
 str
-QLOGinit(int *ret)
+QLOGenable(int *ret)
 {
 	(void) ret;
 	QLOGtrace = TRUE;
@@ -226,7 +230,7 @@ QLOGinit(int *ret)
 }
 
 str
-QLOGinitThreshold(int *ret, int *threshold)
+QLOGenableThreshold(int *ret, int *threshold)
 {
 	(void) ret;
 	QLOGthreshold = *threshold;
@@ -234,7 +238,7 @@ QLOGinitThreshold(int *ret, int *threshold)
 }
 
 str
-QLOGdone(int *ret)
+QLOGdisable(int *ret)
 {
 	(void) ret;
 	QLOGtrace = FALSE;
@@ -255,48 +259,58 @@ QLOGissetFcn(int *ret)
 }
 
 str
-QLOGreset(int *ret)
+QLOGempty(int *ret)
 {
 	(void) ret;
 	initQlog();
     MT_lock_set(&mal_profileLock, "querylog.reset");
     /* drop all querylog tables */
-	BBPclear(QLOG_cat_id->batCacheid);
-	BBPclear(QLOG_cat_user->batCacheid);
-	BBPclear(QLOG_cat_defined->batCacheid);
-	BBPclear(QLOG_cat_query->batCacheid);
-	BBPclear(QLOG_cat_pipe->batCacheid);
-	BBPclear(QLOG_cat_optimize->batCacheid);
+
+	BATclear(QLOG_cat_id,TRUE);
+	BATclear(QLOG_cat_user,TRUE);
+	BATclear(QLOG_cat_defined,TRUE);
+	BATclear(QLOG_cat_query,TRUE);
+	BATclear(QLOG_cat_pipe,TRUE);
+	BATclear(QLOG_cat_mal,TRUE);
+	BATclear(QLOG_cat_optimize,TRUE);
 	
-	BBPclear(QLOG_calls_id->batCacheid);
-	BBPclear(QLOG_calls_start->batCacheid);
-	BBPclear(QLOG_calls_stop->batCacheid);
-	BBPclear(QLOG_calls_arguments->batCacheid);
-	BBPclear(QLOG_calls_tuples->batCacheid);
-	BBPclear(QLOG_calls_exec->batCacheid);
-	BBPclear(QLOG_calls_result->batCacheid);
-	BBPclear(QLOG_calls_cpuload->batCacheid);
-	BBPclear(QLOG_calls_iowait->batCacheid);
-	BBPclear(QLOG_calls_space->batCacheid);
-    QLOG_init = 0;
-    MT_lock_unset(&mal_profileLock, "querylog.reset");
+	BATclear(QLOG_calls_id,TRUE);
+	BATclear(QLOG_calls_start,TRUE);
+	BATclear(QLOG_calls_stop,TRUE);
+	BATclear(QLOG_calls_arguments,TRUE);
+	BATclear(QLOG_calls_tuples,TRUE);
+	BATclear(QLOG_calls_exec,TRUE);
+	BATclear(QLOG_calls_result,TRUE);
+	BATclear(QLOG_calls_cpuload,TRUE);
+	BATclear(QLOG_calls_iowait,TRUE);
+	BATclear(QLOG_calls_space,TRUE);
+
 	TMsubcommit_list(commitlist, committop);
+    MT_lock_unset(&mal_profileLock, "querylog.reset");
 	return MAL_SUCCEED;
 }
 
 str
-QLOGdefine(oid *ret, oid *idx, str *q, str *pipe, lng *optimize, str  *usr, lng *tick)
+QLOGdefine(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	oid *ret = (oid*) getArgReference(stk,pci,0);
+	str *q = (str*) getArgReference(stk,pci,1);
+	str *pipe = (str*) getArgReference(stk,pci,2);
+	str  *usr = (str*) getArgReference(stk,pci,3);
+	lng *tick = (lng*) getArgReference(stk,pci,4);
 	oid o;
+
+	(void) cntxt;
 	initQlog();
     MT_lock_set(&mal_profileLock, "querylog.define");
-	o = BUNfnd( BATmirror(QLOG_cat_id), idx);
+	o = BUNfnd( BATmirror(QLOG_cat_id), &mb->tag);
 	if ( o == BUN_NONE){
-		*ret = *idx;
-		QLOG_cat_id = BUNappend(QLOG_cat_id,idx,FALSE);
+		*ret = mb->tag;
+		QLOG_cat_id = BUNappend(QLOG_cat_id,&mb->tag,FALSE);
 		QLOG_cat_query = BUNappend(QLOG_cat_query,*q,FALSE);
 		QLOG_cat_pipe = BUNappend(QLOG_cat_pipe,*pipe,FALSE);
-		QLOG_cat_optimize = BUNappend(QLOG_cat_optimize,optimize,FALSE);
+		QLOG_cat_mal = BUNappend(QLOG_cat_mal,&mb->stop,FALSE);
+		QLOG_cat_optimize = BUNappend(QLOG_cat_optimize,&mb->optimize,FALSE);
 		QLOG_cat_user = BUNappend(QLOG_cat_user,*usr,FALSE);
 		QLOG_cat_defined = BUNappend(QLOG_cat_defined,tick,FALSE);
 	}
@@ -306,14 +320,24 @@ QLOGdefine(oid *ret, oid *idx, str *q, str *pipe, lng *optimize, str  *usr, lng 
 }
 
 str
-QLOGcall(int *ret, oid *idx, lng *tick1, lng *tick2, str *arg, wrd *tuples, lng *xtime, lng *rtime, int *cpu, int *iowait, lng *space)
+QLOGcall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	(void) ret;
+	lng *tick1  = (lng*) getArgReference(stk,pci,1);
+	lng *tick2  = (lng*) getArgReference(stk,pci,2);
+	str *arg    = (str*) getArgReference(stk,pci,3);
+	wrd *tuples = (wrd*) getArgReference(stk,pci,4);
+	lng *xtime  = (lng*) getArgReference(stk,pci,5);
+	lng *rtime  = (lng*) getArgReference(stk,pci,6);
+	int *cpu    = (int*) getArgReference(stk,pci,7);
+	int *iowait = (int*) getArgReference(stk,pci,8);
+	lng *space  = (lng*) getArgReference(stk,pci,9);
+	(void) cntxt;
+
 	initQlog();
 	if ( *xtime + *rtime < QLOGthreshold)
 		return MAL_SUCCEED;
     MT_lock_set(&mal_profileLock, "querylog.call");
-	QLOG_calls_id = BUNappend(QLOG_calls_id,idx,FALSE);
+	QLOG_calls_id = BUNappend(QLOG_calls_id,&mb->tag,FALSE);
 	QLOG_calls_start = BUNappend(QLOG_calls_start,tick1,FALSE);
 	QLOG_calls_stop = BUNappend(QLOG_calls_stop,tick2,FALSE);
 	QLOG_calls_arguments = BUNappend(QLOG_calls_arguments,*arg,FALSE);

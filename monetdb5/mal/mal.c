@@ -343,7 +343,6 @@ void mal_exit(void){
 	unloadLibraries();
 #if 0
 	/* skip this to solve random crashes, needs work */
-	freeBoxes(mal_clients);
 	freeModuleList(mal_clients->nspace);
 
 	finishNamespace();
@@ -356,7 +355,6 @@ void mal_exit(void){
 	if( mal_clients->fdin){
 		/* missing protection against closing stdin stream */
 		(void) mnstr_close(mal_clients->fdin->s);
-		(void) mnstr_destroy(mal_clients->fdin->s);
 		(void) bstream_destroy(mal_clients->fdin);
 	}
 	if( mal_clients->fdout && mal_clients->fdout != GDKstdout) {

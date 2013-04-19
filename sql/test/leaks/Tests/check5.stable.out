@@ -27,7 +27,7 @@ Ready.
 % .bbp,	.bbp,	.bbp # table_name
 % htype,	ttype,	count # name
 % clob,	clob,	bigint # type
-% 3,	9,	4 # length
+% 3,	3,	4 # length
 [ "oid",	"bit",	0	]
 [ "oid",	"bit",	0	]
 [ "oid",	"bit",	0	]
@@ -77,8 +77,6 @@ Ready.
 [ "oid",	"int",	3	]
 [ "oid",	"int",	3	]
 [ "oid",	"int",	3	]
-[ "oid",	"int",	4	]
-[ "oid",	"int",	4	]
 [ "oid",	"int",	19	]
 [ "oid",	"int",	19	]
 [ "oid",	"int",	19	]
@@ -191,7 +189,6 @@ Ready.
 [ "oid",	"str",	2	]
 [ "oid",	"str",	3	]
 [ "oid",	"str",	3	]
-[ "oid",	"str",	4	]
 [ "oid",	"str",	42	]
 [ "oid",	"str",	42	]
 [ "oid",	"str",	96	]

@@ -1216,3 +1216,18 @@ tst400e		0.613/0.524/0.013
 
 tst901a		1.315/0.651/0.595
 tst901b		1.313/1.222/0.016
+======================== 20 mar 2013 ===================
+Vienna Fedora 18
+Default release
+The compilation mode for is --enable-optimize --disable-debug
+compilation took ?
+command: time mserver5 TST </dev/null >/dev/null
+base		0.212/0.046/0.016.
+tst400a		0.211/0.079/0.014
+tst400bHuge	0.263/0.109/0.020
+tst400cHuge	0.264/0.120/0.023
+tst400d		0.511/0.319/0.020
+tst400e		0.613/0.470/0.012
+
+tst901a		0.655/0.409/0.038
+tst901b		1.417/1.100/0.038

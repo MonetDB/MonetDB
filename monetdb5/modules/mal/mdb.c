@@ -148,11 +148,9 @@ static void
 MDBtraceFlag(Client cntxt, MalStkPtr stk, int b)
 {
 	if (b) {
-		cntxt->timer = GDKusec();
 		stk->cmd = b;
 		cntxt->itrace = b;
 	} else {
-		cntxt->timer = 0;
 		stk->cmd = 0;
 		cntxt->itrace = 0;
 	}
@@ -236,100 +234,6 @@ MDBsetCatch(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	(void) mb;		/* still unused */
 	b = *(bit *) getArgReference(stk, p, 1);
 	stk->cmd = cntxt->itrace = (b? (int) 'C':0);
-	return MAL_SUCCEED;
-}
-
-str
-MDBsetTimer(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	bit *flag= (bit*) getArgReference(stk,pci,1);
-
-	(void) mb;
-	if( *flag)
-		cntxt->flags |= timerFlag;
-	else
-		cntxt->flags &= ~timerFlag;
-	cntxt->timer= GDKusec();
-	return MAL_SUCCEED;
-}
-
-str
-MDBsetThread(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	bit *flag= (bit*) getArgReference(stk,pci,1);
-
-	(void) mb;
-	if( *flag)
-		cntxt->flags |= threadFlag;
-	else
-		cntxt->flags &= ~threadFlag;
-	return MAL_SUCCEED;
-}
-
-str
-MDBsetBigfoot(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	bit *flag= (bit*) getArgReference(stk,pci,1);
-
-	(void) mb;
-	if( *flag)
-		cntxt->flags |= footprintFlag;
-	else
-		cntxt->flags &= ~footprintFlag;
-	return MAL_SUCCEED;
-}
-
-str
-MDBsetFlow(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	bit *flag= (bit*) getArgReference(stk,pci,1);
-
-	(void) mb;
-	if( *flag)
-		cntxt->flags |= flowFlag;
-	else
-		cntxt->flags &= ~flowFlag;
-	return MAL_SUCCEED;
-}
-
-str
-MDBsetMemory(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	bit *flag= (bit*) getArgReference(stk,pci,1);
-
-	(void) mb;
-
-	if( *flag)
-		cntxt->flags |= memoryFlag;
-	else
-		cntxt->flags &= ~memoryFlag;
-	return MAL_SUCCEED;
-}
-
-str
-MDBsetIO(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	bit *flag= (bit*) getArgReference(stk,pci,1);
-
-	(void) mb;
-
-	if( *flag)
-		cntxt->flags |= ioFlag;
-	else
-		cntxt->flags &= ~ioFlag;
-	return MAL_SUCCEED;
-}
-
-str
-MDBsetCount(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	bit *flag= (bit*) getArgReference(stk,pci,1);
-
-	(void) mb;
-	if( *flag)
-		cntxt->flags |= cntFlag;
-	else
-		cntxt->flags &= ~cntFlag;
 	return MAL_SUCCEED;
 }
 

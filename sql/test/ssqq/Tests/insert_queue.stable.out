@@ -40,8 +40,8 @@ Ready.
 [ 1,	NULL,	"select * from example",	0,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ 2,	1,	"select * from example",	0,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ 3,	NULL,	"select * from example",	0,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
-#select queue_id, query_id, queue_number, os_version, monetdb_version, start_query, query_ready from queue;
-% sys.queue,	sys.queue,	sys.queue,	sys.queue,	sys.queue,	sys.queue,	sys.queue # table_name
+#select queue_id, query_id, queue_number, os_version, monetdb_version, start_query, query_ready from ssqq_queue;
+% sys.ssqq_queue,	sys.ssqq_queue,	sys.ssqq_queue,	sys.ssqq_queue,	sys.ssqq_queue,	sys.ssqq_queue,	sys.ssqq_queue # table_name
 % queue_id,	query_id,	queue_number,	os_version,	monetdb_version,	start_query,	query_ready # name
 % int,	int,	int,	varchar,	varchar,	timestamp,	timestamp # type
 % 1,	1,	1,	0,	0,	26,	26 # length
@@ -51,8 +51,8 @@ Ready.
 % int # type
 % 1 # length
 [ 1	]
-#select queue_id, query_id, queue_number, os_version, monetdb_version, start_query, query_ready from queue;
-% sys.queue,	sys.queue,	sys.queue,	sys.queue,	sys.queue,	sys.queue,	sys.queue # table_name
+#select queue_id, query_id, queue_number, os_version, monetdb_version, start_query, query_ready from ssqq_queue;
+% sys.ssqq_queue,	sys.ssqq_queue,	sys.ssqq_queue,	sys.ssqq_queue,	sys.ssqq_queue,	sys.ssqq_queue,	sys.ssqq_queue # table_name
 % queue_id,	query_id,	queue_number,	os_version,	monetdb_version,	start_query,	query_ready # name
 % int,	int,	int,	varchar,	varchar,	timestamp,	timestamp # type
 % 1,	1,	1,	5,	5,	26,	26 # length
@@ -63,8 +63,8 @@ Ready.
 % int # type
 % 2 # length
 [ -1	]
-#select queue_id, query_id, queue_number, os_version, monetdb_version, start_query, query_ready from queue;
-% sys.queue,	sys.queue,	sys.queue,	sys.queue,	sys.queue,	sys.queue,	sys.queue # table_name
+#select queue_id, query_id, queue_number, os_version, monetdb_version, start_query, query_ready from ssqq_queue;
+% sys.ssqq_queue,	sys.ssqq_queue,	sys.ssqq_queue,	sys.ssqq_queue,	sys.ssqq_queue,	sys.ssqq_queue,	sys.ssqq_queue # table_name
 % queue_id,	query_id,	queue_number,	os_version,	monetdb_version,	start_query,	query_ready # name
 % int,	int,	int,	varchar,	varchar,	timestamp,	timestamp # type
 % 1,	1,	1,	5,	5,	26,	26 # length
@@ -75,8 +75,8 @@ Ready.
 % int # type
 % 1 # length
 [ 3	]
-#select queue_id, query_id, queue_number, os_version, monetdb_version, start_query, query_ready from queue;
-% sys.queue,	sys.queue,	sys.queue,	sys.queue,	sys.queue,	sys.queue,	sys.queue # table_name
+#select queue_id, query_id, queue_number, os_version, monetdb_version, start_query, query_ready from ssqq_queue;
+% sys.ssqq_queue,	sys.ssqq_queue,	sys.ssqq_queue,	sys.ssqq_queue,	sys.ssqq_queue,	sys.ssqq_queue,	sys.ssqq_queue # table_name
 % queue_id,	query_id,	queue_number,	os_version,	monetdb_version,	start_query,	query_ready # name
 % int,	int,	int,	varchar,	varchar,	timestamp,	timestamp # type
 % 1,	1,	1,	5,	5,	26,	26 # length
@@ -103,8 +103,8 @@ Ready.
 [ 1,	NULL,	"select * from example",	0,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ 2,	1,	"select * from example",	0,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ 3,	NULL,	"select * from example",	0,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
-#select queue_id, query_id, queue_number, os_version, monetdb_version, start_query, query_ready from queue;
-% sys.queue,	sys.queue,	sys.queue,	sys.queue,	sys.queue,	sys.queue,	sys.queue # table_name
+#select queue_id, query_id, queue_number, os_version, monetdb_version, start_query, query_ready from ssqq_queue;
+% sys.ssqq_queue,	sys.ssqq_queue,	sys.ssqq_queue,	sys.ssqq_queue,	sys.ssqq_queue,	sys.ssqq_queue,	sys.ssqq_queue # table_name
 % queue_id,	query_id,	queue_number,	os_version,	monetdb_version,	start_query,	query_ready # name
 % int,	int,	int,	varchar,	varchar,	timestamp,	timestamp # type
 % 1,	1,	1,	5,	5,	26,	26 # length

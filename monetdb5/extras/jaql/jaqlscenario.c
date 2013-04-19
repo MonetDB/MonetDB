@@ -28,6 +28,7 @@
 #include "mal_scenario.h"
 #include "mal_instruction.h"
 #include "optimizer.h"
+#include "opt_pipes.h"
 
 extern int jaqlparse(jc *j);
 extern int jaqllex_init_extra(jc *user_defined, void **scanner);
@@ -194,6 +195,7 @@ JAQLparser(Client c)
 	j->scanstreameof = 0;
 	j->pos = 0;
 	j->p = NULL;
+	j->time = 0;
 	j->timing.parse = j->timing.optimise = j->timing.gencode = 0L;
 
 	j->timing.parse = GDKusec();
@@ -240,11 +242,21 @@ JAQLparser(Client c)
 
 		j->timing.optimise = GDKusec();
 		chkTypes(out, c->nspace, prg->def, FALSE);
+		/* TODO: use a configured pipe */
+		addOptimizerPipe(c, prg->def, "minimal_pipe");
+		if ((errmsg = optimizeMALBlock(c, prg->def)) != MAL_SUCCEED) {
+			MSresetInstructions(prg->def, oldstop);
+			freeVariables(c, prg->def, c->glb, oldvtop);
+			prg->def->errors = 0;
+			mnstr_printf(out, "!%s\n", errmsg);
+			freetree(j->p);
+			return errmsg;
+		}
 		j->timing.optimise = GDKusec() - j->timing.optimise;
 		if (prg->def->errors) {
 			/* this is bad already, so let's try to make it debuggable */
 			mnstr_printf(out, "!jaqlgencode: generated program contains errors\n");
-			printFunction(out, c->curprg->def, 0, LIST_MAPI);
+			printFunction(out, prg->def, 0, LIST_MAPI);
 			
 			/* restore the state */
 			MSresetInstructions(prg->def, oldstop);
@@ -270,7 +282,7 @@ JAQLengine(Client c)
 
 	/* FIXME: if we don't run this, any barrier will cause an endless loop
 	 * (program jumps back to first frame), so this is kind of a
-	 * workaround that maybe can go once we run the optimiser stack */
+	 * workaround */
 	chkProgram(c->fdout, c->nspace, c->curprg->def);
 
 	c->glb = 0;

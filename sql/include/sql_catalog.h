@@ -164,6 +164,7 @@ typedef int sqlid;
 typedef struct sql_base {
 	int wtime;
 	int rtime;
+	int allocated;
 	int flag;
 	sqlid id;
 	char *name;

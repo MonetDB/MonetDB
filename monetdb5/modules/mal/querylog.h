@@ -34,13 +34,13 @@
 qlog_export int initQlog(void);
 qlog_export void QLOGcatalog(BAT **r);
 qlog_export void QLOGcalls(BAT **r);
-qlog_export str QLOGinit(int *ret);
-qlog_export str QLOGinitThreshold(int *ret, int *threshold);
-qlog_export str QLOGdone(int *ret);
+qlog_export str QLOGenable(int *ret);
+qlog_export str QLOGenableThreshold(int *ret, int *threshold);
+qlog_export str QLOGdisable(int *ret);
 qlog_export int QLOGisset(void);
 qlog_export str QLOGissetFcn(int *ret);
-qlog_export str QLOGreset(int *ret);
-qlog_export str QLOGdefine(oid *ret, oid *idx, str *q, str *pipe, lng *optimize, str  *usr, lng *tick);
-qlog_export str QLOGcall(int *ret, oid *idx, lng *tick1, lng *tick2, str *arg, wrd *tuples, lng *xtime, lng *rtime, int *cpu, int *iowait, lng *space);
+qlog_export str QLOGempty(int *ret);
+qlog_export str QLOGdefine(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+qlog_export str QLOGcall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #endif /* _QLOG_H */

@@ -50,13 +50,10 @@ language_export str MALstartDataflow( Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 language_export str MALpass( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 language_export str MALgarbagesink( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 language_export str CMDregisterFunction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-language_export str CMDsetMemoryTrace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-language_export str CMDsetThreadTrace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-language_export str CMDsetIOTrace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-language_export str CMDsetTimerTrace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 language_export str CMDcallString(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-language_export str CMDevalFile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+language_export str CMDcallFunction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 language_export str CMDcallBAT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+language_export str CMDevalFile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 language_export str CMDincludeFile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 language_export str CMDdebug(int *ret, int *flg);
 language_export str MALassertTriple(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);

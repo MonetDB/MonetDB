@@ -84,11 +84,8 @@ newMalBlkStmt(MalBlkPtr mb, int maxstmts)
 	mb->stmt = p;
 	mb->stop = 0;
 	mb->ssize = maxstmts;
-	if (mb->profiler) {
-		GDKfree(mb->profiler);
-		mb->profiler = (ProfPtr) GDKzalloc((mb->ssize + STMT_INCREMENT) * sizeof(ProfRecord));
-		assert(mb->profiler);
-	}
+    if (mb->profiler)
+        mb->profiler = (ProfPtr) GDKrealloc(mb->profiler, (mb->ssize ) * sizeof(ProfRecord));
 	return 0;
 }
 
@@ -97,6 +94,10 @@ newMalBlk(int maxvars, int maxstmts)
 {
 	MalBlkPtr mb;
 	VarPtr *v;
+
+	/* each MAL instruction implies at least on variable */
+	if ( maxvars < maxstmts)
+		maxvars = maxvars;
 
 	v = (VarPtr *) GDKzalloc(sizeof(VarPtr) * maxvars);
 	if (v == NULL) {
@@ -110,10 +111,10 @@ newMalBlk(int maxvars, int maxstmts)
 	}
 
 	mb->var = v;
-
 	mb->vtop = 0;
 	mb->vsize = maxvars;
 	mb->help = mb->binding = NULL;
+	mb->tag = 0;
 	mb->errors = 0;
 	mb->alternative = NULL;
 	mb->history = NULL;
@@ -130,12 +131,44 @@ newMalBlk(int maxvars, int maxstmts)
 	mb->recycle = 0;
 	mb->recid = 0;
 	mb->trap = 0;
-	mb->starttime = 0;
+	mb->runtime = 0;
+	mb->calls = 0;
+	mb->optimize = 0;
 	if (newMalBlkStmt(mb, maxstmts) < 0)
 		return NULL;
 	return mb;
 }
 
+void
+resizeMalBlk(MalBlkPtr mb, int maxstmt, int maxvar)
+{
+	int i;
+
+	if ( maxvar < maxstmt)
+		maxvar = maxstmt;
+	if ( mb->ssize > maxstmt && mb->vsize > maxvar)
+		return ;
+
+	mb->stmt = (InstrPtr *) GDKrealloc(mb->stmt, maxstmt * sizeof(InstrPtr));
+	if ( mb->stmt == NULL)
+		GDKerror("resizeMalBlk:" MAL_MALLOC_FAIL);
+	for ( i = mb->ssize; i < maxstmt; i++)
+		mb->stmt[i] = 0;
+	mb->ssize = maxstmt;
+
+	mb->var = (VarPtr*) GDKrealloc(mb->var, maxvar * sizeof (VarPtr));
+	if ( mb->var == NULL)
+		GDKerror("resizeMalBlk:" MAL_MALLOC_FAIL);
+	for( i = mb->vsize; i < maxvar; i++)
+		mb->var[i] = 0;
+	mb->vsize = maxvar;
+
+	if ( mb->profiler){
+		mb->profiler = (ProfRecord *) GDKrealloc(mb->profiler, maxstmt * sizeof(ProfRecord));
+		if (mb->profiler == NULL)
+			GDKerror("resizeMalBlk:" MAL_MALLOC_FAIL);
+	}
+}
 /* The resetMalBlk code removes instructions, but without freeing the
  * space. This way the structure is prepared for re-use */
 void
@@ -177,6 +210,7 @@ freeMalBlk(MalBlkPtr mb)
 	if (mb->binding)
 		GDKfree(mb->binding);
 	mb->binding = 0;
+	mb->tag = 0;
 	if (mb->help)
 		GDKfree(mb->help);
 	mb->help = 0;
@@ -237,11 +271,15 @@ copyMalBlk(MalBlkPtr old)
 	mb->help = old->help ? GDKstrdup(old->help) : NULL;
 	mb->binding = old->binding ? GDKstrdup(old->binding) : NULL;
 	mb->errors = old->errors;
+	mb->tag = old->tag;
 	mb->typefixed = old->typefixed;
 	mb->flowfixed = old->flowfixed;
 	mb->recycle = old->recycle;
 	mb->recid = old->recid;
 	mb->trap = old->trap;
+	mb->runtime = old->runtime;
+	mb->calls = old->calls;
+	mb->optimize = old->optimize;
 	mb->replica = old->replica;
 	mb->maxarg = old->maxarg;
 	mb->profiler = NULL;
