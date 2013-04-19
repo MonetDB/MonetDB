@@ -124,6 +124,8 @@ str
 activateCounter(str name)
 {
 	int i;
+	char *s;
+
 	for (i = 0; profileCounter[i].name; i++)
 		if (strcmp(profileCounter[i].name, name) == 0) {
 			profileCounter[i].status = 1;
@@ -134,7 +136,69 @@ activateCounter(str name)
 		profileCounter[PROFping].status = 1;
 		return 0;
 	}
-	throw(MAL, "activateCounter", RUNTIME_OBJECT_UNDEFINED ":%s", name);
+	/* interpret the string equivalent to the tomograph command line argument */
+	for ( s= name; *s; s++)
+	switch(*s){
+	case 'a':
+		profileCounter[PROFaggr].status = 1;
+		break;
+	case 'b':
+		profileCounter[PROFrbytes].status = 1;
+		profileCounter[PROFwbytes].status = 1;
+		break;
+	case 'c':
+		profileCounter[PROFcpu].status = 1;
+		break;
+	case 'e':
+		profileCounter[PROFevent].status = 1;
+		break;
+	case 'f':
+		profileCounter[PROFfunc].status = 1;
+		break;
+	case 'i':
+		profileCounter[PROFpc].status = 1;
+		break;
+	case 'I':
+		profileCounter[PROFthread].status = 1;
+		break;
+	case 'm':
+		profileCounter[PROFmemory].status = 1;
+		break;
+	case 'p':
+		profileCounter[PROFprocess].status = 1;
+		break;
+	case 'r':
+		profileCounter[PROFreads].status = 1;
+		break;
+	case 's':
+		profileCounter[PROFstmt].status = 1;
+		break;
+	case 'S':
+		profileCounter[PROFstart].status = 1;
+		break;
+	case 't':
+		profileCounter[PROFticks].status = 1;
+		break;
+	case 'T':
+		profileCounter[PROFtime].status = 1;
+		break;
+	case 'u':
+		profileCounter[PROFuser].status = 1;
+		break;
+	case 'w':
+		profileCounter[PROFwrites].status = 1;
+		break;
+	case 'x':
+		startHeartbeat(atoi(s+1));
+		profileCounter[PROFping].status = 1;
+		break;
+	case 'y':
+		profileCounter[PROFtype].status = 1;
+		break;
+	default:
+		throw(MAL, "activateCounter", RUNTIME_OBJECT_UNDEFINED ":%s", name);
+	}
+	return MAL_SUCCEED;
 }
 
 str
