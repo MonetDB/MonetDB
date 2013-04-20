@@ -225,28 +225,31 @@ deactivateCounter(str name)
  * It uses a local logbuffer[LOGLEN] and logbase, logtop, loglen
  */
 #define LOGLEN 8192
-#define lognew()  loglen = 0; logbase = logbuffer; *logbase = 0;
+#define lognew()  do{ int e; loglen = 0; logbase = logbuffer; *logbase = 0;\
+		MT_lock_set(&mal_profileLock, "profileLock"); \
+		eventcounter++; e= eventcounter; \
+		MT_lock_unset(&mal_profileLock, "profileLock"); \
+		if (profileCounter[PROFevent].status && e) \
+			(void) snprintf(logbase+loglen, LOGLEN -1 - loglen, "[ %d,\t",e);					\
+		else \
+			(void) snprintf(logbase+loglen, LOGLEN -1 - loglen, "[ ");				\
+		loglen += (int) strlen(logbase+loglen);					\
+	} while (0)
+
 #define logadd(...) 											\
 	do {														\
 		(void) snprintf(logbase+loglen, LOGLEN -1 - loglen, __VA_ARGS__);					\
 		loglen += (int) strlen(logbase+loglen);					\
 	} while (0)
 
-static void logsent(int header, char *logbuffer)
+static void logsent(char *logbuffer, int loglen)
 {
-	MT_lock_set(&mal_profileLock, "profileLock");
 	if (eventstream) {
-		if ( header)
-			mnstr_printf(eventstream,"%s\n", logbuffer);
-		else
-		if (profileCounter[PROFevent].status && eventcounter)
-			mnstr_printf(eventstream,"[ %d,\t%s ]\n", eventcounter, logbuffer);
-		else
-			mnstr_printf(eventstream,"[ %s ]\n", logbuffer);
+		MT_lock_set(&mal_profileLock, "profileLock"); \
+		mnstr_write(eventstream, logbuffer, loglen,1);
 		mnstr_flush(eventstream);
+		MT_lock_unset(&mal_profileLock, "profileLock"); \
 	}
-	eventcounter++;
-	MT_lock_unset(&mal_profileLock, "profileLock");
 }
 
 #define flushLog() if (eventstream) mnstr_flush(eventstream);
@@ -360,8 +363,8 @@ offlineProfilerHeader(void)
 		logadd("types,\t");
 	if (profileCounter[PROFuser].status)
 		logadd("user,\t");
-	logadd("# name");
-	logsent(1, logbuffer);
+	logadd("# name \n");
+	logsent(logbuffer, loglen);
 }
 
 void
@@ -538,7 +541,8 @@ offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc, int start)
 	if (profileCounter[PROFuser].status) {
 		logadd(" %d", idx);
 	}
-	logsent(0, logbuffer);
+	logadd("]\n");
+	logsent(logbuffer, loglen);
 }
 /*
  * Postprocessing events
@@ -1503,7 +1507,8 @@ void profilerHeartbeatEvent(str msg)
 		//logadd("\"\",\t");
 	//if (profileCounter[PROFuser].status)
 		//logadd(" 0");
-	logsent(0, logbuffer);
+	logadd("]\n");
+	logsent(logbuffer, loglen);
 }
 
 static MT_Id hbthread;
