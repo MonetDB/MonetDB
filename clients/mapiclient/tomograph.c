@@ -139,6 +139,7 @@ static char hostname[128];
 static char *filename = "tomograph";
 static char *tracefile = 0;
 static lng startrange = 0, endrange = 0;
+static char *inputfile = NULL;
 static char *title = 0;
 static int debug = 0;
 static int colormap = 0;
@@ -164,6 +165,7 @@ usage(void)
 	fprintf(stderr, "  -s | --sql=<single sql expression>\n");
 	fprintf(stderr, "  -t | --trace=<tomograph trace filename>\n");
 	fprintf(stderr, "  -r | --range=<starttime>-<endtime>[ms,s] \n");
+	fprintf(stderr, "  -i | --input=<profiler event file > \n");
 	fprintf(stderr, "  -o | --output=<file prefix > (default 'tomograph'\n");
 	fprintf(stderr, "  -b | --beat=<delay> in milliseconds (default 50)\n");
 	fprintf(stderr, "  -B | --batch=<number> of combined queries\n");
@@ -1574,8 +1576,8 @@ static void update(int state, int thread, lng clkticks, lng ticks, lng memory, l
 	if (fcn && strncmp(fcn, "end ", 4) == 0)
 		return;
 	if (starttime == 0) {
-		/* ignore all instructions up to the first function call */
-		if (state >= PING || fcn == 0 || strncmp(fcn, "function", 8) != 0)
+		/* ignore all instructions up to the first function call, unless input comes from a file */
+		if ( inputfile == NULL && (state >= PING || fcn == 0 || strncmp(fcn, "function", 8) != 0))
 			return;
 		assert(clkticks >= 0);
 		starttime = clkticks;
@@ -1585,7 +1587,7 @@ static void update(int state, int thread, lng clkticks, lng ticks, lng memory, l
 	if (state == DONE && fcn && (strncmp(fcn, "function", 8) == 0 || strncmp(fcn, "profiler.tomograph", 18) == 0)) {
 		if (debug)
 			fprintf(stderr, "Batch %d\n", batch);
-		if (strncmp(fcn, "function", 8) == 0 && batch-- > 1)
+		if ( (strncmp(fcn, "function", 8) == 0 && batch-- > 1)  || inputfile )
 			return;
 		deactivateBeat();
 		createTomogram();
@@ -1813,6 +1815,43 @@ wrapup:
 	(void) row;
 #endif
 	return 0;
+}
+
+static void processFile(char *fname)
+{
+	size_t len;
+	ssize_t n;
+	int i;
+	char buf[BUFSIZ + 1];
+	char *e, *response;
+	stream *s;
+	
+	s = open_rstream(fname);
+	if ( s == NULL || mnstr_errnr(s)){
+		fprintf(stderr,"ERROR Can not access '%s'\n",fname);
+		return;
+	}
+	len = 0;
+	while (s && (n = mnstr_read(s, buf, 1, BUFSIZ - len)) > 0) {
+		buf[n] = 0;
+		response = buf;
+		while ((e = strchr(response, '\n')) != NULL) {
+			*e = 0;
+			i = parser(response);
+			if (debug )
+				fprintf(stderr, "ERROR %d:%s\n", i, response);
+			response = e + 1;
+		}
+		/* handle last line in buffer */
+		if (*response) {
+			if (debug)
+				printf("LASTLINE:%s", response);
+			len = strlen(response);
+			strncpy(buf, response, len + 1);
+		} else
+			len = 0;
+	}
+	mnstr_close(s);
 }
 
 static void
@@ -2073,13 +2112,14 @@ main(int argc, char **argv)
 
 	wthread *walk;
 
-	static struct option long_options[16] = {
+	static struct option long_options[17] = {
 		{ "dbname", 1, 0, 'd' },
 		{ "user", 1, 0, 'u' },
 		{ "port", 1, 0, 'p' },
 		{ "host", 1, 0, 'h' },
 		{ "help", 0, 0, '?' },
 		{ "title", 1, 0, 'T' },
+		{ "input", 1, 0, 'i' },
 		{ "trace", 1, 0, 't' },
 		{ "range", 1, 0, 'r' },
 		{ "output", 1, 0, 'o' },
@@ -2098,7 +2138,7 @@ main(int argc, char **argv)
 
 	while (1) {
 		int option_index = 0;
-		int c = getopt_long(argc, argv, "d:u:p:h:?T:t:r:o:Db:B:s:m:a",
+		int c = getopt_long(argc, argv, "d:u:p:h:?T:i:t:r:o:Db:B:s:m:a",
 				long_options, &option_index);
 		if (c == -1)
 			break;
@@ -2117,6 +2157,9 @@ main(int argc, char **argv)
 			break;
 		case 'd':
 			dbname = optarg;
+			break;
+		case 'i':
+			inputfile = optarg;
 			break;
 		case 'u':
 			if (user)
@@ -2224,6 +2267,11 @@ main(int argc, char **argv)
 	} else
 		k = setCounter(COUNTERSDEFAULT);
 
+	if (inputfile){
+		processFile(inputfile);
+		createTomogram();
+		exit(0);
+	}
 	if (tracefile) {
 		/* reload existing tomogram */
 		scandata(tracefile);
