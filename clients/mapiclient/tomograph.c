@@ -1723,6 +1723,8 @@ static int parser(char *row)
 	} else {
 		state = 0;
 		c = strchr(c + 1, (int) '"');
+		if ( c == 0)
+			return -2;
 	}
 
 	c = strchr(c + 1, (int) '"');
