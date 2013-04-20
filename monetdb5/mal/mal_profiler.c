@@ -611,7 +611,7 @@ str
 closeProfilerStream(void)
 {
 	profilerHeartbeatEvent("ping");
-	if (eventstream) {
+	if (eventstream && eventstream != GDKout && eventstream != GDKerr) {
 		(void)mnstr_close(eventstream);
 		(void)mnstr_destroy(eventstream);
 	}
