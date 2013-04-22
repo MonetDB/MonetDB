@@ -20,6 +20,7 @@ tomograph [options]
   -s | --sql=<single sql expression>
   -t | --trace=<tomograph trace filename>
   -r | --range=<starttime>-<endtime>[ms,s] 
+  -i | --input=<profiler event file > 
   -o | --output=<file prefix > (default 'tomograph'
   -b | --beat=<delay> in milliseconds (default 50)
   -B | --batch=<number> of combined queries
