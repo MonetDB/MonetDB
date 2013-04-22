@@ -1565,7 +1565,12 @@ static void createTomogram(void)
  * that the tomograph start can appear while the
  * system is already processing. This leads to
  * receiving 'done' events without matching 'start'
+ *
+ * A secondary issue is to properly count the functions
+ * being monitored. 
  */
+char *currentfunction= 0;
+
 static void update(int state, int thread, lng clkticks, lng ticks, lng memory, lng footprint, lng reads, lng writes, char *fcn, char *stmt)
 {
 	int idx;
@@ -1581,20 +1586,41 @@ static void update(int state, int thread, lng clkticks, lng ticks, lng memory, l
 			return;
 		assert(clkticks >= 0);
 		starttime = clkticks;
-		return;
 	}
 
-	if (state == DONE && fcn && (strncmp(fcn, "function", 8) == 0 || strncmp(fcn, "profiler.tomograph", 18) == 0)) {
-		if (debug)
-			fprintf(stderr, "Batch %d\n", batch);
-		if ( (strncmp(fcn, "function", 8) == 0 && batch-- > 1)  || inputfile )
-			return;
+	/* monitor top level function brackets */
+	if (state == START && fcn && strncmp(fcn, "function", 8) == 0 ){
+		if ( currentfunction == 0) {
+			currentfunction = strdup(fcn+9);
+			if (debug)
+				fprintf(stderr, "Enter function %s batch %d\n", currentfunction, batch);
+		}
+		return;
+	}
+	if (state == DONE && fcn && strncmp(fcn, "function", 8) == 0 ){
+		if ( currentfunction  && strcmp(currentfunction, fcn+9) == 0){
+			if (debug)
+				fprintf(stderr, "Leave function %s batch %d\n", currentfunction, batch);
+			free(currentfunction);
+			currentfunction = 0;
+		} else return;
+		if ( batch -- > 1)  return;
 		deactivateBeat();
 		createTomogram();
 		totalclkticks = 0; /* number of clock ticks reported */
 		totalexecticks = 0; /* number of ticks reported for processing */
 		if (fcn && title == 0)
 			title = strdup(fcn + 9);
+		return;
+	}
+
+	if (state == DONE && strncmp(fcn, "profiler.tomograph", 18) == 0) {
+		if (debug)
+			fprintf(stderr, "Profiler.tomograph ends  %d\n", batch);
+		deactivateBeat();
+		createTomogram();
+		totalclkticks = 0; /* number of clock ticks reported */
+		totalexecticks = 0; /* number of ticks reported for processing */
 		return;
 	}
 
@@ -2103,7 +2129,7 @@ main(int argc, char **argv)
 {
 	int a = 1;
 	int k = 0;
-	char *host = NULL;
+	char *host = "localhost";
 	int portnr = 0;
 	char *dbname = NULL;
 	char *uri = NULL;
