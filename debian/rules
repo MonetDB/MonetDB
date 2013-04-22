@@ -58,3 +58,5 @@ override_dh_clean:
 	cd clients/python2 && python setup.py clean
 	cd clients/python3 && python3 setup.py clean
 
+override_dh_python3:
+	dh_python3 clients/python3
