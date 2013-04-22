@@ -2167,17 +2167,18 @@ decref(bat i, int logical, int releaseShare, int lock)
 	if (lock)
 		MT_lock_unset(&GDKswapLock(i), "BBPdecref");
 
-	if (swap) {
-		int destroy = BBP_lrefs(i) == 0 && (BBP_status(i) & BBPDELETED) == 0;
-
-		if (b && destroy) {
-			BBPdestroy(b);	/* free memory (if loaded) and delete from disk (if transient but saved) */
-		} else if (b) {
+	if (swap && b != NULL) {
+		if (BBP_lrefs(i) == 0 && (BBP_status(i) & BBPDELETED) == 0) {
+			/* free memory (if loaded) and delete from
+			 * disk (if transient but saved) */
+			BBPdestroy(b);
+		} else {
 			BATDEBUG {
 				mnstr_printf(GDKstdout, "#BBPdecref unload and free bat %d\n", i);
 			}
 			BBP_unload_inc(i, "BBPdecref");
-			if (BBPfree(b, "BBPdecref"))	/* free memory of transient */
+			/* free memory of transient */
+			if (BBPfree(b, "BBPdecref"))
 				return -1;	/* indicate failure */
 		}
 	}
