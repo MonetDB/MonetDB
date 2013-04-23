@@ -250,7 +250,7 @@ command projectdelta( subselect:bat[:oid,:oid], col:bat[:oid,:any_3], uid:bat[:o
 address DELTAproject
 comment "Return column bat with delta's applied.";
 
-command subdelta ( col:bat[:oid,:oid], uid:bat[:oid,:oid], uval:bat[:oid,:oid], ins:bat[:oid,:oid] ) :bat[:oid,:oid]
+command subdelta ( col:bat[:oid,:oid], cand:bat[:oid,:oid], uid:bat[:oid,:oid], uval:bat[:oid,:oid], ins:bat[:oid,:oid] ) :bat[:oid,:oid]
 address DELTAsub
 comment "Return a single bat of subselected delta.";
 
@@ -262,7 +262,7 @@ command projectdelta( subselect:bat[:oid,:oid], col:bat[:oid,:any_3], uid:bat[:o
 address DELTAproject2
 comment "Return column bat with delta's applied.";
 
-command subdelta ( col:bat[:oid,:oid], uid:bat[:oid,:oid], uval:bat[:oid,:oid]) :bat[:oid,:oid]
+command subdelta ( col:bat[:oid,:oid], cand:bat[:oid,:oid], uid:bat[:oid,:oid], uval:bat[:oid,:oid]) :bat[:oid,:oid]
 address DELTAsub2
 comment "Return a single bat of subselected delta.";
 
@@ -1329,10 +1329,10 @@ sql5_export str mvc_clear_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, 
 sql5_export str mvc_delete_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str TID(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str DELTAbat(bat *result, bat *col, bat *uid, bat *uval, bat *ins);
-sql5_export str DELTAsub(bat *result, bat *col, bat *uid, bat *uval, bat *ins);
+sql5_export str DELTAsub(bat *result, bat *col, bat *cid, bat *uid, bat *uval, bat *ins);
 sql5_export str DELTAproject(bat *result, bat *subselect, bat *col, bat *uid, bat *uval, bat *ins);
 sql5_export str DELTAbat2(bat *result, bat *col, bat *uid, bat *uval);
-sql5_export str DELTAsub2(bat *result, bat *col, bat *uid, bat *uval);
+sql5_export str DELTAsub2(bat *result, bat *col, bat *cid, bat *uid, bat *uval);
 sql5_export str DELTAproject2(bat *result, bat *subselect, bat *col, bat *uid, bat *uval);
 sql5_export str mvc_result_row_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str mvc_result_file_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -3451,9 +3451,9 @@ DELTAbat2(bat *result, bat *col, bat *uid, bat *uval)
 }
 
 str 
-DELTAsub2(bat *result, bat *col, bat *uid, bat *uval)
+DELTAsub2(bat *result, bat *col, bat *cid, bat *uid, bat *uval)
 {
-	return DELTAsub(result, col, uid, uval, NULL);
+	return DELTAsub(result, col, cid, uid, uval, NULL);
 }
 
 str 
@@ -3513,7 +3513,7 @@ DELTAbat(bat *result, bat *col, bat *uid, bat *uval, bat *ins)
 }
 
 str 
-DELTAsub(bat *result, bat *col, bat *uid, bat *uval, bat *ins)
+DELTAsub(bat *result, bat *col, bat *cid, bat *uid, bat *uval, bat *ins)
 {
 	BAT *c, *cminu, *u_id, *u_val, *u, *i = NULL, *res;
 
@@ -3543,7 +3543,7 @@ DELTAsub(bat *result, bat *col, bat *uid, bat *uval, bat *ins)
 		u_id = BATdescriptor(*uid);
 		cminu = BATkdiff(BATmirror(c), BATmirror(u_id));
 		BBPunfix(c->batCacheid);
-		c = BATmirror(BATmark(cminu, 0));
+		res = c = BATmirror(BATmark(cminu, 0));
 		BBPunfix(cminu->batCacheid);
 
 		if ((u_val = BATdescriptor(*uval)) == NULL) {
@@ -3552,17 +3552,44 @@ DELTAsub(bat *result, bat *col, bat *uid, bat *uval, bat *ins)
 			throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
 		}
 		u = BATleftfetchjoin(u_val, u_id, BATcount(u_val));
-		BBPunfix(u_id->batCacheid);
 		BBPunfix(u_val->batCacheid);
+		BBPunfix(u_id->batCacheid);
+		if (BATcount(u)) { /* check selected updated values against candidates */
+			BAT *c_ids = BATdescriptor(*cid);
+
+			cminu = BATsemijoin(BATmirror(u), BATmirror(c_ids));
+			BBPunfix(c_ids->batCacheid);
+			BBPunfix(u->batCacheid);
+			u = BATmirror(cminu);
+		}
 		res = BATappend(c, u, TRUE);
+		BBPunfix(u->batCacheid);
+
+		u = BATsort(BATmirror(res));
+		BBPunfix(res->batCacheid);
+		res = BATmirror(BATmark(u, 0));
 		BBPunfix(u->batCacheid);
 	}
 
 	if (i) {
 		i = BATdescriptor(*ins);
+		if (BATcount(u_id)) {
+			u_id = BATdescriptor(*uid);
+			cminu = BATkdiff(BATmirror(i), BATmirror(u_id));
+			BBPunfix(i->batCacheid);
+			BBPunfix(u_id->batCacheid);
+			i = BATmirror(BATmark(cminu, 0));
+			BBPunfix(cminu->batCacheid);
+		}
 		res = BATappend(res, i, TRUE);
 		BBPunfix(i->batCacheid);
+
+		u = BATsort(BATmirror(res));
+		BBPunfix(res->batCacheid);
+		res = BATmirror(BATmark(u, 0));
+		BBPunfix(u->batCacheid);
 	}
+	BATkey(BATmirror(res),TRUE);
 	BBPkeepref(*result = res->batCacheid);
 	return MAL_SUCCEED;
 }
