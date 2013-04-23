@@ -44,3 +44,11 @@ headers_geotiff = {
 	DIR = libdir/monetdb5/createdb
 	SOURCES = 31_geotiff_schema.sql
 }
+
+headers_gdal = {
+	COND = HAVE_GDAL
+	HEADERS = sql
+	DIR = libdir/monetdb5/createdb
+	SOURCES = 32_gdal_schema.sql
+}
+
