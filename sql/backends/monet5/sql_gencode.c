@@ -618,38 +618,6 @@ multiplex2(MalBlkPtr mb, char *mod, char *name /* should be eaten */, int o1, in
 	return q;
 }
 
-#if 0
-static InstrPtr
-dump_crossproduct(MalBlkPtr mb, int l, int r)
-{
-	int z;
-	InstrPtr q;
-
-	q = newStmt1(mb, calcRef, "int");
-	q = pushInt(mb, q, 0);
-	z = getDestVar(q);
-
-	q = newStmt2(mb, algebraRef, projectRef);
-	q = pushArgument(mb, q, r);
-	q = pushArgument(mb, q, z);
-	r = getDestVar(q);
-
-	q = newStmt2(mb, batRef, reverseRef);
-	q = pushArgument(mb, q, r);
-	r = getDestVar(q);
-
-	q = newStmt2(mb, algebraRef, projectRef);
-	q = pushArgument(mb, q, l);
-	q = pushArgument(mb, q, z);
-	l = getDestVar(q);
-
-	q = newStmt2(mb, algebraRef, crossRef);
-	q = pushArgument(mb, q, l);
-	q = pushArgument(mb, q, r);
-	return q;
-}
-#endif
-
 static InstrPtr
 multiplexN(MalBlkPtr mb, char *mod, char *name)
 {
