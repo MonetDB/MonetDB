@@ -2812,6 +2812,7 @@ BATassertHeadProps(BAT *b)
 	q = BUNlast(b);
 
 	assert(b->H->heap.size <= b->H->heap.maxsize);
+	assert(b->H->heap.free >= headsize(b, BUNlast(b)));
 	if (b->htype != TYPE_void) {
 		assert(b->batCount <= b->batCapacity);
 		assert(b->H->heap.size >= b->H->heap.free);
