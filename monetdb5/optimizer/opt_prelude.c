@@ -284,6 +284,9 @@ int horiginProp;		/* original oid source */
 int toriginProp;		/* original oid source */
 
 void optimizerInit(void){
+	if (batRef)
+		return;
+	MT_lock_set(&mal_remoteLock, "optimizerInit");
 	if(batRef == NULL){
 		abortRef = putName("abort",5);
 		affectedRowsRef = putName("affectedRows",12);
@@ -297,7 +300,6 @@ void optimizerInit(void){
 		avgRef = putName("avg",3);
 		batcalcRef = putName("batcalc",7);
 		basketRef = putName("basket",6);
-		batRef = putName("bat",3);
 		boxRef = putName("box",3);
 		batstrRef = putName("batstr",6);
 		batmtimeRef = putName("batmtime",8);
@@ -553,5 +555,8 @@ void optimizerInit(void){
 			if ( ref)
 				OPTsetDebugStr(&ret,&ref);
 		}
+
+		batRef = putName("bat",3); /* should be last */
 	}
+	MT_lock_unset(&mal_remoteLock, "optimizerInit");
 }
