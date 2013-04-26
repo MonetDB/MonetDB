@@ -1,0 +1,102 @@
+CREATE TABLE mtcars ( rownames VARCHAR(255) , mpg DOUBLE PRECISION , cyl DOUBLE PRECISION , disp DOUBLE PRECISION , hp DOUBLE PRECISION , drat DOUBLE PRECISION , wt DOUBLE PRECISION , qsec DOUBLE PRECISION , vs DOUBLE PRECISION , am DOUBLE PRECISION , gear DOUBLE PRECISION , carb DOUBLE PRECISION ) ;
+
+COPY 33 offset 2 records into mtcars from '$TSTSRCDIR/aggregates-typing-issues.Bug-3277.csv' USING DELIMITERS ',','\n','\"' NULL as '' ;
+select * from mtcars;
+
+
+-- plain count()
+create table mtcars2 as select carb , count( distinct case when gear in ( 3 , 4 ) then mpg end ) as prob1 from mtcars group by carb with data ;
+select * from mtcars2;
+
+--THESE WORK;
+select median( prob1 )  from mtcars2;
+select prod( prob1 ) from mtcars2;
+
+--THESE BREAK;
+select stddev_pop( prob1 ) from mtcars2;
+select stddev_samp( prob1 ) from mtcars2;
+select sign( prob1 ) from mtcars2;
+
+-- stddev() has been replaced by stddev_pop() & stddev_samp()
+select stddev( prob1 ) from mtcars2;
+
+drop table mtcars2;
+
+
+-- cast(count() as tinyint)
+create table mtcars2 as select carb , cast(count( distinct case when gear in ( 3 , 4 ) then mpg end ) as tinyint) as prob1 from mtcars group by carb with data ;
+select * from mtcars2;
+
+--THESE WORK;
+select median( prob1 )  from mtcars2;
+select prod( prob1 ) from mtcars2;
+select stddev_pop( prob1 ) from mtcars2;
+
+--THESE BREAK;
+select stddev_samp( prob1 ) from mtcars2;
+select sign( prob1 ) from mtcars2;
+
+-- stddev() has been replaced by stddev_pop() & stddev_samp()
+select stddev( prob1 ) from mtcars2;
+
+drop table mtcars2;
+
+
+-- cast(count() as smallint)
+create table mtcars2 as select carb , cast(count( distinct case when gear in ( 3 , 4 ) then mpg end ) as smallint) as prob1 from mtcars group by carb with data ;
+select * from mtcars2;
+
+--THESE WORK;
+select median( prob1 )  from mtcars2;
+select prod( prob1 ) from mtcars2;
+select stddev_pop( prob1 ) from mtcars2;
+
+--THESE BREAK;
+select stddev_samp( prob1 ) from mtcars2;
+select sign( prob1 ) from mtcars2;
+
+-- stddev() has been replaced by stddev_pop() & stddev_samp()
+select stddev( prob1 ) from mtcars2;
+
+drop table mtcars2;
+
+
+-- cast(count() as integer)
+create table mtcars2 as select carb , cast(count( distinct case when gear in ( 3 , 4 ) then mpg end ) as integer) as prob1 from mtcars group by carb with data ;
+select * from mtcars2;
+
+--THESE WORK;
+select median( prob1 )  from mtcars2;
+select prod( prob1 ) from mtcars2;
+select stddev_pop( prob1 ) from mtcars2;
+
+--THESE BREAK;
+select stddev_samp( prob1 ) from mtcars2;
+select sign( prob1 ) from mtcars2;
+
+-- stddev() has been replaced by stddev_pop() & stddev_samp()
+select stddev( prob1 ) from mtcars2;
+
+drop table mtcars2;
+
+
+-- cast(count() as bigint)
+create table mtcars2 as select carb , cast(count( distinct case when gear in ( 3 , 4 ) then mpg end ) as bigint) as prob1 from mtcars group by carb with data ;
+select * from mtcars2;
+
+--THESE WORK;
+select median( prob1 )  from mtcars2;
+select prod( prob1 ) from mtcars2;
+select stddev_pop( prob1 ) from mtcars2;
+
+--THESE BREAK;
+select stddev_samp( prob1 ) from mtcars2;
+select sign( prob1 ) from mtcars2;
+
+-- stddev() has been replaced by stddev_pop() & stddev_samp()
+select stddev( prob1 ) from mtcars2;
+
+drop table mtcars2;
+
+
+drop table mtcars;
