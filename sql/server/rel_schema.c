@@ -594,7 +594,7 @@ create_column(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 	(void)ss;
 
 	if (alter && !isTableOrArray(t)) {
-		sql_error(sql, 02, "42000!ALTER %s: cannot add column to VIEW '%s'\n", isTable(t)?"TABLE":(isArray(t)?"ARRAY":"TABLE/ARRAY"), t->base.name);
+		sql_error(sql, 02, "42000!ALTER %s: cannot add column to VIEW '%s'\n", isArray(t)?"ARRAY":"TABLE", t->base.name);
 		return SQL_ERR;
 	}
 	if (l->h->next->next)
