@@ -1,7 +1,3 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
-* Sat Apr 13 2013 Niels Nes <niels@cwi.nl>
-- Added TEMPORARY to the non-reserved keywords, ie no need for double
-  quotes when used as identifier.
-
