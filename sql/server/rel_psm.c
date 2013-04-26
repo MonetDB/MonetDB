@@ -418,7 +418,6 @@ rel_psm_return( mvc *sql, sql_subtype *restype, symbol *return_sym )
 			if (!cname)
 				cname = number2name(name, 16, ++sql->label);
 			if (!isproject) 
-				/* FIXME: should we retrieve the dimension range from ce? */
 				e = exp_column(sql->sa, exp_relname(e), cname, exp_subtype(e), exp_card(e), has_nil(e), is_intern(e), e->type == e_column?e->f:NULL);
 			e = rel_check_type(sql, &ce->type, e, type_equal);
 			if (!e)
