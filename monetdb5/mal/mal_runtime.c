@@ -175,7 +175,7 @@ runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Runt
 
 	if (stk != NULL && prof->stkpc >= 0 && mb->profiler != NULL && mb->profiler[stkpc].trace ) {
 		gettimeofday(&mb->profiler[stkpc].clock, NULL);
-		mb->profiler[stkpc].counter++;
+		mb->profiler[stkpc].calls++;
 		mb->profiler[stkpc].totalticks += mb->profiler[stkpc].ticks;
 		mb->profiler[stkpc].clk += mb->profiler[stkpc].ticks;
 		if (pci) {

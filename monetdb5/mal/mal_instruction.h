@@ -108,9 +108,9 @@ typedef struct PERF {
 #endif
 	struct timeval clock;		/* clock */
 	lng clk;					/* microseconds clock */
-	lng ticks;					/* micro seconds spent */
-	int counter;				/* accumulate statistics */
-	lng totalticks;
+	lng ticks;					/* micro seconds spent on last call */
+	lng totalticks;				/* accumulate micro seconds send on this call */
+	int calls;					/* number of calls seen */
 	bit trace;					/* facilitate filter-based profiling */
 	lng rbytes;					/* bytes read by an instruction */
 	lng wbytes;					/* bytes written by an instruction */

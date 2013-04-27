@@ -138,7 +138,7 @@ RECYCLEdump(stream *s)
 		else mnstr_printf(s,"#     ");
 		mnstr_printf(s,"%4d\t"LLFMT"\t%d\t"LLFMT"\t"LLFMT"\t"LLFMT"\t%s\n", i,
 			recycleBlk->profiler[i].clk,
-			recycleBlk->profiler[i].counter,
+			recycleBlk->profiler[i].calls,
 			recycleBlk->profiler[i].ticks,
 			recycleBlk->profiler[i].rbytes,
 			recycleBlk->profiler[i].wbytes,
@@ -266,7 +266,7 @@ RECYCLErunningStat(Client cntxt, MalBlkPtr mb)
 #ifdef _DEBUG_CACHE_
 		if ( getInstrPtr(recycleBlk,i)->token != NOOPsymbol )
 #endif
-		if ( recycleBlk->profiler[i].counter >1)
+		if ( recycleBlk->profiler[i].calls >1)
 			reusedmem += recycleBlk->profiler[i].wbytes;
 
 	mnstr_printf(s,"%d\t %7.2f\t ", ++q, (GDKusec()-cntxt->rcc->time0)/1000.0);

@@ -239,9 +239,9 @@ static void logsent(char *logbuffer)
 		MT_lock_set(&mal_profileLock, "profileLock");
 		eventcounter++;
 		if (profileCounter[PROFevent].status && eventcounter)
-			mnstr_printf(eventstream,"[ %d,\t%s ]\n", eventcounter, logbuffer);
+			mnstr_printf(eventstream,"[ %d,\t%s", eventcounter, logbuffer);
 		else
-			mnstr_printf(eventstream,"[ %s ]\n", logbuffer);
+			mnstr_printf(eventstream,"[ %s", logbuffer);
 		mnstr_flush(eventstream);
 		MT_lock_unset(&mal_profileLock, "profileLock");
 	}
