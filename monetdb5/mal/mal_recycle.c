@@ -179,14 +179,14 @@ double recycleAlpha = 0.5;
 
 /*
 #define recycleCost(X) recycleAlpha * recycleBlk->profiler[X].ticks/10.0 + (1-recycleAlpha)* (recycleBlk->profiler[X].rbytes+recycleBlk->profiler[X].wbytes)/1000.0
-#define recycleW(X)  ((recycleBlk->profiler[X].counter + 2) * (0.05 + (sht)recycleBlk->profiler[X].trace) / 3.0)
+#define recycleW(X)  ((recycleBlk->profiler[X].calls + 2) * (0.05 + (sht)recycleBlk->profiler[X].trace) / 3.0)
 */
 
 /*#define recycleCost(X) (recycleBlk->profiler[X].ticks)*/
 /* ticks are not correct for octopus.bind, use wbytes insteead */
 #define recycleCost(X) (recycleBlk->profiler[X].wbytes)
-#define recycleW(X)  ((recycleBlk->profiler[X].trace && (recycleBlk->profiler[X].counter >1 )) ? \
-						(recycleBlk->profiler[X].counter -1) : 0.1 )
+#define recycleW(X)  ((recycleBlk->profiler[X].trace && (recycleBlk->profiler[X].calls >1 )) ? \
+						(recycleBlk->profiler[X].calls -1) : 0.1 )
 
 #define recycleBen(X) (recycleCost(X)) * (recycleW(X))
 #define recycleLife(X) ((GDKusec() - recycleBlk->profiler[X].rbytes)/ 1000.0)
@@ -631,7 +631,7 @@ newpass:
 	                recycleBlk->profiler[lvs[l]].ticks,
         	        recycleLife(lvs[l]),
                 	recycleBlk->profiler[lvs[l]].wbytes,
-	                recycleBlk->profiler[lvs[l]].counter,
+	                recycleBlk->profiler[lvs[l]].calls,
         	        recycleW(lvs[l]),
                 	recycleBen(lvs[l]),recycleProfit(lvs[l]));
 
@@ -747,7 +747,7 @@ newpass:
          p->token = NOOPsymbol;
 			cntxt->rcc->recycleRem ++;
 			cntxt->rcc->ccInstr++;
-			if ( recycleBlk->profiler[i].counter >1)
+			if ( recycleBlk->profiler[i].calls >1)
 				returnCrd(p);
 		}
 	}
@@ -772,7 +772,7 @@ newpass:
 		if( dmask[i] ) {
 			RECYCLEgarbagecollect(recycleBlk,p,used);
 			recyclerUsedMemory -= recycleBlk->profiler[i].wbytes;
-			if ( recycleBlk->profiler[i].counter >1)
+			if ( recycleBlk->profiler[i].calls >1)
 				returnCrd(p);
 			freeInstruction(p);
 			cntxt->rcc->ccInstr++;
@@ -1021,7 +1021,7 @@ RECYCLEnew(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p, lng rd, lng wr, 
 	i = recycleBlk->stop-1;
 /*	recycleBlk->profiler[i].rbytes = recycleBlk->profiler[i].clk = GDKusec(); */
 	recycleBlk->profiler[i].clk = GDKusec();
-	recycleBlk->profiler[i].counter =1;
+	recycleBlk->profiler[i].calls =1;
 	recycleBlk->profiler[i].ticks = ticks;
 	recycleBlk->profiler[i].rbytes = rd;
 	recycleBlk->profiler[i].wbytes = wr;
@@ -2003,7 +2003,7 @@ RECYCLEdataTransfer(Client cntxt, MalStkPtr s, InstrPtr p)
                 if (s->stk[getArg(p,j)].vtype == TYPE_bat)
                     BBPincref( s->stk[getArg(p,j)].val.bval, TRUE);
             }
-            recycleBlk->profiler[i].counter++;
+            recycleBlk->profiler[i].calls++;
             if ( recycleBlk->profiler[i].clk < cntxt->rcc->time0 )
                     gluse = recycleBlk->profiler[i].trace = TRUE;
             else { /*local use - return the credit */
@@ -2047,7 +2047,7 @@ RECYCLEdataTransfer(Client cntxt, MalStkPtr s, InstrPtr p)
 		VALset(&s->stk[getArg(p,0)], TYPE_bat, &bn->batCacheid);
 		BBPkeepref( bn->batCacheid);
 
-		recycleBlk->profiler[pc].counter++;
+		recycleBlk->profiler[pc].calls++;
 		recycleBlk->profiler[pc].clk = GDKusec();
 		recycleQPat->ptrn[cntxt->rcc->curQ]->dtreuse +=
 			(lng) scnt?(psz * recycleBlk->profiler[pc].wbytes / scnt):0;
@@ -2178,7 +2178,7 @@ RECYCLEreuse(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p)
                 if (s->stk[getArg(p,j)].vtype == TYPE_bat)
                     BBPincref( s->stk[getArg(p,j)].val.bval , TRUE);
             }
-            recycleBlk->profiler[i].counter++;
+            recycleBlk->profiler[i].calls++;
             if ( recycleBlk->profiler[i].clk < cntxt->rcc->time0 )
                         gluse = recycleBlk->profiler[i].trace = TRUE;
             else { /*local use - return the credit */
@@ -2230,7 +2230,7 @@ RECYCLEreuse(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p)
         s->stk[getArg(p,1)].val.bval = nbid;
         BBPdecref(bid, TRUE);
         cntxt->rcc->recycled0++;
-        recycleBlk->profiler[pc].counter++;
+        recycleBlk->profiler[pc].calls++;
         if ( recycleBlk->profiler[pc].clk < cntxt->rcc->time0 )
 			gluse = recycleBlk->profiler[pc].trace = TRUE;
         qidx = *(int*)getVarValue(recycleBlk,q->argv[q->argc-1]);
@@ -2514,7 +2514,7 @@ RECYCLEevict(Client cntxt, bat *bats, int btop){
         if( dmask[i] ) {
            RECYCLEgarbagecollect(recycleBlk,p,used);
            recyclerUsedMemory -= recycleBlk->profiler[i].wbytes;
-           if ( recycleBlk->profiler[i].counter >1)
+           if ( recycleBlk->profiler[i].calls >1)
                returnCrd(p);
            freeInstruction(p);
            cntxt->rcc->RPreset0++;
@@ -2530,7 +2530,7 @@ RECYCLEevict(Client cntxt, bat *bats, int btop){
                         	recyclerUsedMemory -= recycleBlk->profiler[i].wbytes;
 	                        p->token = NOOPsymbol;
 				cntxt->rcc->recycleRem ++;
-				if ( recycleBlk->profiler[i].counter >1) {
+				if ( recycleBlk->profiler[i].calls >1) {
 		                	returnCrd(p);
 				}
 */

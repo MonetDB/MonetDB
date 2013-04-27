@@ -506,7 +506,7 @@ offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc, int start)
 		logadd(LLFMT ",\t", mb->profiler[pc].wbytes);
 
 	if (profileCounter[PROFaggr].status)
-		logadd("%d,\t" LLFMT ",\t", mb->profiler[pc].counter, mb->profiler[pc].totalticks);
+		logadd("%d,\t" LLFMT ",\t", mb->profiler[pc].calls, mb->profiler[pc].totalticks);
 
 	if (profileCounter[PROFstmt].status) {
 		/* generate actual call statement */
