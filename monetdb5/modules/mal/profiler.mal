@@ -119,20 +119,6 @@ command getSystemTime():lng
 address CMDgetSystemTime
 comment "Obtain the user timing information.";
 
-pattern setFootprintFlag{unsafe}():void
-address CMDsetFootprintFlag
-comment "Trace memory footprint of BATs during query";
-pattern setMemoryFlag{unsafe}():void
-address CMDsetMemoryFlag
-comment "Trace memory accress";
-
-pattern getFootprint():lng
-address CMDgetFootprint
-comment "Get the memory footprint and reset the flag";
-pattern getMemory():lng
-address CMDgetMemory
-comment "Get the amount of memory claimed and reset the flag";
-
 command tomograph()
 address CMDtomograph
 comment "No-op operation, merely a signal to the tomograph package";

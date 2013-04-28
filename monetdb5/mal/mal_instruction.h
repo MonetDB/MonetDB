@@ -107,9 +107,9 @@ typedef struct PERF {
 	struct tms timer;			/* timing information */
 #endif
 	struct timeval clock;		/* clock */
-	lng clk;					/* microseconds clock */
+	lng clk;					/* time when instruction started */
 	lng ticks;					/* micro seconds spent on last call */
-	lng totalticks;				/* accumulate micro seconds send on this call */
+	lng totalticks;				/* accumulate micro seconds send on this instruction */
 	int calls;					/* number of calls seen */
 	bit trace;					/* facilitate filter-based profiling */
 	lng rbytes;					/* bytes read by an instruction */

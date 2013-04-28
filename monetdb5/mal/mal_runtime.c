@@ -127,33 +127,42 @@ runtimeProfileFinish(Client cntxt, MalBlkPtr mb)
 void
 runtimeProfileBegin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int stkpc, RuntimeProfile prof, int start)
 {
+	if ( mb->profiler == NULL)
+		return;
+
 	/* always collect the MAL instruction execution time */
-	if ( mb->profiler)
-		mb->profiler[stkpc].ticks = GDKusec();
 	prof->stkpc = stkpc;
+	mb->profiler[stkpc].clk = GDKusec();
 
 	if (malProfileMode == 0)
 		return; /* mostly true */
 	
-	if (stk && mb->profiler != NULL && mb->profiler[stkpc].trace) {
+	if (stk && mb->profiler[stkpc].trace) {
 		gettimeofday(&mb->profiler[stkpc].clock, NULL);
 		/* emit the instruction upon start as well */
 		profilerEvent(cntxt->idx, mb, stk, stkpc, start);
 #ifdef HAVE_TIMES
-		times(&stk->timer);
-		mb->profiler[stkpc].timer = stk->timer;
+		times(&mb->profiler[stkpc].timer);
 #endif
-		mb->profiler[stkpc].clk = mb->profiler[stkpc].ticks;
 	}
 }
-
 
 void
 runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, RuntimeProfile prof)
 {
-	int i,j,fnd, stkpc = prof->stkpc;
+	int i,j,fnd, stkpc;
 
-	if (cntxt->flags & footprintFlag && pci){
+	if ( mb->profiler == NULL)
+		return;
+
+	/* always collect the MAL instruction execution time */
+	stkpc= prof->stkpc;
+	mb->profiler[stkpc].ticks = GDKusec() - mb->profiler[stkpc].clk;
+
+	if (malProfileMode == 0)
+		return; /* mostly true */
+
+	if (getProfileCounter(PROFfootprint) && pci){
 		for (i = 0; i < pci->retc; i++)
 			if ( isaBatType(getArgType(mb,pci,i)) && stk->stk[getArg(pci,i)].val.bval){
 				/* avoid simple alias operations */
@@ -166,21 +175,16 @@ runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Runt
 			}
 	}
 
-	/* always collect the MAL instruction execution time */
-	if ( mb->profiler)
-		mb->profiler[stkpc].ticks = GDKusec() - mb->profiler[stkpc].ticks;
-
-	if (malProfileMode == 0)
-		return; /* mostly true */
-
-	if (stk != NULL && prof->stkpc >= 0 && mb->profiler != NULL && mb->profiler[stkpc].trace ) {
+	if (stk != NULL && stkpc >= 0 && mb->profiler[stkpc].trace ) {
 		gettimeofday(&mb->profiler[stkpc].clock, NULL);
 		mb->profiler[stkpc].calls++;
 		mb->profiler[stkpc].totalticks += mb->profiler[stkpc].ticks;
-		mb->profiler[stkpc].clk += mb->profiler[stkpc].ticks;
 		if (pci) {
-			mb->profiler[stkpc].rbytes = getVolume(stk, pci, 0);
-			mb->profiler[stkpc].wbytes = getVolume(stk, pci, 1);
+			// it is a potential expensive operation
+			if (getProfileCounter(PROFrbytes))
+				mb->profiler[stkpc].rbytes = getVolume(stk, pci, 0);
+			if (getProfileCounter(PROFwbytes))
+				mb->profiler[stkpc].wbytes = getVolume(stk, pci, 1);
 		}
 		profilerEvent(cntxt->idx, mb, stk, stkpc, 0);
 	}

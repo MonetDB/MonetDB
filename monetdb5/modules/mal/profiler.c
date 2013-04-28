@@ -358,26 +358,6 @@ CMDgetSystemTime(lng *ret)
 }
 
 str
-CMDsetFootprintFlag( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	(void) mb;
-	(void) stk;
-	(void) pci;
-	cntxt->flags |= footprintFlag;
-	return MAL_SUCCEED;
-}
-
-str
-CMDgetFootprint( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	lng *l= getArgReference(stk,pci,0);
-
-	(void) cntxt;
-	(void) mb;
-	*l = stk->tmpspace;
-	cntxt->flags &= ~footprintFlag;	// clear it as well
-	return MAL_SUCCEED;
-}
-
-str
 CMDtomograph(int *ret)
 {
 	(void) ret;
