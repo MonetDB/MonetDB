@@ -85,6 +85,7 @@ str tdiffRef;
 str tinterRef;
 str mergecandRef;
 str intersectcandRef;
+str divRef;
 str disconnectRef;
 str evalRef;
 str execRef;
