@@ -40,9 +40,7 @@ import random
 import time
 import socket
 import struct
-import select
-#import signal
-#import getpass
+import signal
 import Mfilter
 import fnmatch
 import glob
@@ -271,7 +269,7 @@ except ImportError:
             p += os.pathsep + os.environ['PYTHONPATH']
         os.environ['PYTHONPATH'] = p
 
-import threading, signal
+import threading
 
 randomPortRepeat = 9
 
