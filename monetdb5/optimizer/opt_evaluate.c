@@ -38,7 +38,7 @@ OPTallConstant(Client cntxt, MalBlkPtr mb, InstrPtr p)
 	for (i = 0; i < p->retc; i++)
 		if (isaBatType(getArgType(mb, p, i)))
 			return FALSE;
-	return p->argc != p->retc;
+	return TRUE;
 }
 
 static int OPTsimpleflow(MalBlkPtr mb, int pc)
