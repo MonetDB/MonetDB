@@ -305,6 +305,8 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, i
 							   lwidth, lscan,
 							   lcandend - lcand, v,
 							   cmp, lordering, 0);
+					if (lcand == lcandend)
+						break;
 					lskipped = BATcount(r1) > 0;
 				}
 			} else {
@@ -317,6 +319,8 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, i
 							   lstart + lscan,
 							   lend, v,
 							   cmp, lordering, 0);
+					if (lstart == lend)
+						break;
 					lskipped = BATcount(r1) > 0;
 				}
 			}
