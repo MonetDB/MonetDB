@@ -435,9 +435,14 @@ rel_psm_return( mvc *sql, sql_subtype *restype, symbol *return_sym )
 		sql_table *t = rel_ddl_table_get(rel);
 		node *n, *m;
 		char *tname = t->base.name;
+		/* in case of an array, the dimension info. is contained from the
+		 * fourth exp in rel->exps, see also rel_table() */
+		node *d = rel->exps->h->next->next->next;
 
 		if (cs_size(&t->columns) != cs_size(&restype->comp_type->columns))
 			return sql_error(sql, 02, "RETURN: number of columns do not match");
+		if (t->valence != restype->comp_type->valence)
+			return sql_error(sql, 02, "RETURN: number of dimensions do not match (%d != %d)", t->valence, restype->comp_type->valence);
 		for (n = t->columns.set->h, m = restype->comp_type->columns.set->h; n && m; n = n->next, m = m->next) {
 			sql_column *c = n->data;
 			sql_column *ce = m->data;
@@ -445,15 +450,26 @@ rel_psm_return( mvc *sql, sql_subtype *restype, symbol *return_sym )
 
 			if (c->dim) {
 				list *rng_exps = new_exp_list(sql->sa), *drngs = sa_list(sql->sa);
-				assert(rng_exps && drngs);
+				if (rng_exps == NULL || drngs == NULL)
+					return sql_error(sql, 02, "RETURN: failed to allocate space");
 
-				append(rng_exps, rel_check_type(sql, &c->type, exp_atom_lng(sql->sa, c->dim->strt), type_cast));
-				append(rng_exps, rel_check_type(sql, &c->type, exp_atom_lng(sql->sa, c->dim->step), type_cast));
-				append(rng_exps, rel_check_type(sql, &c->type, exp_atom_lng(sql->sa, c->dim->stop), type_cast));
+				if (d == NULL)
+					return sql_error(sql, 02, "RETURN: missing info of dimension \"%s.%s\"", tname, c->base.name);
+
+				/* d->data is the exp containing the dim->ord */
+				if (((sql_exp*)d->data)->type != e_atom)
+					return sql_error(sql, 02, "RETURN: invalid type of the order of dimension \"%s.%s\", %d expected, got %d", tname, c->base.name, e_atom, ((sql_exp*)d->data)->type);
+
+				append(rng_exps, d->next->data);
+				append(rng_exps, d->next->next->data);
+				append(rng_exps, d->next->next->next->data);
 				append(drngs, rng_exps);
 				append(drngs, new_exp_list(sql->sa)); /* empty lists for slicing and */
 				append(drngs, new_exp_list(sql->sa)); /* tiling ranges */
 				e = exp_alias(sql->sa, tname, c->base.name, tname, c->base.name, &c->type, CARD_MULTI, c->null, 0, drngs);
+
+				/* info for the next dimension */
+				d = d->next->next->next->next;
 			} else {
 				e = exp_alias(sql->sa, tname, c->base.name, tname, c->base.name, &c->type, CARD_MULTI, c->null, 0, NULL);
 			}

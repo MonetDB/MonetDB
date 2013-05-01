@@ -2601,7 +2601,7 @@ rel2bin_sample( mvc *sql, sql_rel *rel, list *refs)
 }
 
 stmt *
-sql_parse(mvc *m, sql_allocator *sa, char *query, char mode)
+_sql_parse(mvc *m, sql_allocator *sa, char *query, char mode, sql_rel **ret)
 {
 	mvc *o = NULL;
 	stmt *sq = NULL;
@@ -2655,6 +2655,8 @@ sql_parse(mvc *m, sql_allocator *sa, char *query, char mode)
 		if (r) {
 			r = rel_optimizer(m, r);
 			sq = rel_bin(m, r);
+			if (ret != NULL)
+				*ret = r;
 		}
 	}
 
@@ -2693,6 +2695,12 @@ sql_parse(mvc *m, sql_allocator *sa, char *query, char mode)
 	}
 	_DELETE(o);
 	return sq;
+}
+
+stmt *
+sql_parse(mvc *m, sql_allocator *sa, char *query, char mode)
+{ 
+	return _sql_parse(m, sa, query, mode, NULL);
 }
 
 static stmt *
