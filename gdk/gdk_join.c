@@ -1338,7 +1338,7 @@ BATsubjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, BUN estimate)
 	} else if (r->tsorted || r->trevsorted) {
 		/* right is sorted, don't swap */
 		return mergejoin(r1, r2, l, r, sl, sr, 0, 0, 0);
-	} else if (BATcount(r1) < BATcount(r2)) {
+	} else if (lcount < rcount) {
 		/* no hashes, not sorted, create hash on smallest BAT */
 		swap = 1;
 	}
