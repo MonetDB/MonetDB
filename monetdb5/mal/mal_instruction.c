@@ -972,16 +972,20 @@ cloneVariable(MalBlkPtr tm, MalBlkPtr mb, int x)
 	return res;
 }
 
+/* generate a new variable name based on a patter with 1 %d argument*/
 void
-renameVariable(MalBlkPtr mb, int id, str name)
+renameVariable(MalBlkPtr mb, int id, str pattern, int newid)
 {
 	VarPtr v;
+	str nme;
 	assert(id >=0 && id <mb->vtop);
 	v = getVar(mb, id);
 
 	if (v->name)
 		GDKfree(v->name);
-	v->name = name;
+	nme= GDKmalloc(SMALLBUFSIZ);
+	snprintf(nme,SMALLBUFSIZ,pattern,newid);
+	v->name = nme;
 	v->tmpindex = 0;
 }
 

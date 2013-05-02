@@ -632,7 +632,7 @@ multiplexN(MalBlkPtr mb, char *mod, char *name)
 static int
 dump_joinN(backend *sql, MalBlkPtr mb, stmt *s)
 {
-	char *mod, *fimp, *nme; 
+	char *mod, *fimp; 
 	InstrPtr q;
 	int op1, op2, op3 = 0;
 
@@ -657,9 +657,7 @@ dump_joinN(backend *sql, MalBlkPtr mb, stmt *s)
 	s->nr = getDestVar(q);
 
 	/* rename second result */
-	nme = GDKmalloc(SMALLBUFSIZ);
-	snprintf(nme, SMALLBUFSIZ, "r1_%d", s->nr);
-	renameVariable(mb, getArg(q,1), nme);
+	renameVariable(mb, getArg(q,1), "r1_%d",s->nr);
 	return s->nr;
 }
 
@@ -789,9 +787,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 			if (s->flag == RD_UPD) {
 				/* rename second result */
-				char *nme = GDKmalloc(SMALLBUFSIZ);
-				snprintf(nme, SMALLBUFSIZ, "r1_%d", s->nr);
-				renameVariable(mb, getArg(q,1), nme);
+				renameVariable(mb, getArg(q,1), "r1_%d",s->nr);
 			}
 		}
 			break;
@@ -827,9 +823,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 			if (s->flag == RD_UPD) {
 				/* rename second result */
-				char *nme = GDKmalloc(SMALLBUFSIZ);
-				snprintf(nme, SMALLBUFSIZ, "r1_%d", s->nr);
-				renameVariable(mb, getArg(q,1), nme);
+				renameVariable(mb, getArg(q,1), "r1_%d",s->nr);
 			}
 		}
 			break;
@@ -963,7 +957,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			s->nr = getDestVar(q);
 		} break;
 		case st_order:{
-			char *nme = GDKmalloc(SMALLBUFSIZ);
 			int l = _dumpstmt(sql, mb, s->op1);
 			int reverse = (s->flag > 0)?0:1;
 
@@ -976,16 +969,10 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			q = pushBit(mb, q, FALSE);
 			s->nr = getDestVar(q);
 
-			snprintf(nme, SMALLBUFSIZ, "r1_%d", s->nr);
-			renameVariable(mb, getArg(q,1), nme);
-
-			nme = GDKmalloc(SMALLBUFSIZ);
-			snprintf(nme, SMALLBUFSIZ, "r2_%d", s->nr);
-			renameVariable(mb, getArg(q,2), nme);
+			renameVariable(mb, getArg(q,1), "r1_%d",s->nr);
+			renameVariable(mb, getArg(q,2), "r2_%d",s->nr);
 		} break;
 		case st_reorder:{
-			char *nme = GDKmalloc(SMALLBUFSIZ);
-			
 			int l = _dumpstmt(sql, mb, s->op1);
 			int oids = _dumpstmt(sql, mb, s->op2);
 			int ogrp = _dumpstmt(sql, mb, s->op3);
@@ -1002,12 +989,8 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			q = pushBit(mb, q, FALSE);
 			s->nr = getDestVar(q);
 
-			snprintf(nme, SMALLBUFSIZ, "r1_%d", s->nr);
-			renameVariable(mb, getArg(q,1), nme);
-
-			nme = GDKmalloc(SMALLBUFSIZ);
-			snprintf(nme, SMALLBUFSIZ, "r2_%d", s->nr);
-			renameVariable(mb, getArg(q,2), nme);
+			renameVariable(mb, getArg(q,1), "r1_%d",s->nr);
+			renameVariable(mb, getArg(q,2), "r2_%d",s->nr);
 		} 	break;
 		case st_uselect: {
 			bit need_not = FALSE;
@@ -1189,7 +1172,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			int r1 = -1, r2 = -1, rs = 0;
 			bit anti = (s->flag&ANTI)?TRUE:FALSE;
 			bit swapped = (s->flag&SWAPPED)?TRUE:FALSE;
-			char *cmd = (s->type == st_uselect2) ?  "subselect": "join", *nme;
+			char *cmd = (s->type == st_uselect2) ?  "subselect": "join";
 			int sub = -1;
 
 			if (s->op4.stval)
@@ -1301,14 +1284,10 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				pushInstruction(mb, r);
 
 				/* rename second result */
-				nme = GDKmalloc(SMALLBUFSIZ);
-				snprintf(nme, SMALLBUFSIZ, "r1_%d", s->nr);
-				renameVariable(mb, getArg(r,0), nme);
+				renameVariable(mb, getArg(r,0), "r1_%d",s->nr);
 			} else {
 				/* rename second result */
-				nme = GDKmalloc(SMALLBUFSIZ);
-				snprintf(nme, SMALLBUFSIZ, "r1_%d", s->nr);
-				renameVariable(mb, getArg(q,1), nme);
+				renameVariable(mb, getArg(q,1), "r1_%d",s->nr);
 			}
 			break;
 		}
@@ -1338,7 +1317,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 		case st_join:{
 			int l = _dumpstmt(sql, mb, s->op1);
 			int r = _dumpstmt(sql, mb, s->op2);
-			char *jt = "join", *nme;
+			char *jt = "join";
 
 			assert(l >= 0 && r >= 0);
 
@@ -1436,13 +1415,10 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			s->nr = getDestVar(q);
 
 			/* rename second result */
-			nme = GDKmalloc(SMALLBUFSIZ);
-			snprintf(nme, SMALLBUFSIZ, "r1_%d", s->nr);
-			renameVariable(mb, getArg(q,1), nme);
+			renameVariable(mb, getArg(q,1), "r1_%d",s->nr);
 			break;
 		}
 		case st_group:{
-			char *nme = GDKmalloc(SMALLBUFSIZ);
 			int cnt = 0, ext = 0, grp = 0, o1 = _dumpstmt(sql, mb, s->op1);
 			
 			if (s->op2) {
@@ -1463,16 +1439,12 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
                         s->nr = getDestVar(q);
 
 			/* rename second result */
-			nme = GDKmalloc(SMALLBUFSIZ);
-			snprintf(nme, SMALLBUFSIZ, "r1_%d", s->nr);
 			ext = getArg(q,1);
-			renameVariable(mb, ext, nme);
+			renameVariable(mb, ext, "r1_%d", s->nr);
 
 			/* rename 3rd result */
-			nme = GDKmalloc(SMALLBUFSIZ);
-			snprintf(nme, SMALLBUFSIZ, "r2_%d", s->nr);
 			cnt = getArg(q,2);
-			renameVariable(mb, cnt, nme);
+			renameVariable(mb, cnt, "r2_%d",s->nr);
 
 		} 	break;
 		case st_result:{
@@ -2283,7 +2255,6 @@ backend_callinline(backend *be, Client c, stmt *s )
 
 	if (m->argc) { /* we shouldn't come here as we aren't caching statements */
 		int argc=0;
-		char arg[SMALLBUFSIZ];
 
 		for (; argc < m->argc; argc++) {
 			atom *a = m->args[argc];
@@ -2291,9 +2262,8 @@ backend_callinline(backend *be, Client c, stmt *s )
 			int varid = 0;
 
 			curInstr = newAssignment(curBlk);
-			snprintf(arg, SMALLBUFSIZ, "A%d", argc);
 			varid = getDestVar(curInstr);
-			renameVariable(curBlk, varid, _STRDUP(arg));
+			renameVariable(curBlk, varid, "A%d",argc);
 			setVarType(curBlk, varid, type);
 			setVarUDFtype(curBlk,varid);
 
