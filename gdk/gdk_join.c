@@ -171,9 +171,20 @@ binsearch(const oid *rcand, oid offset,
  * optional candidate lists, or join using binary search on r if l is
  * not sorted.  The return BATs have already been created by the
  * caller.
+ *
+ * If nil_matches is set, nil values are treated as ordinary values
+ * that can match; otherwise nil values never match.
+ *
+ * If nil_on_miss is set, a nil value is returned in r2 if there is no
+ * match in r for a particular value in l (left outer join).
+ *
+ * If semi is set, only a single set of values in t1/r2 is returned if
+ * there is a match of l in r, no matter how many matches there are in
+ * r; otherwise all matches are returned.
  */
 static gdk_return
-mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, int nil_on_miss, int semi)
+mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
+	  int nil_matches, int nil_on_miss, int semi)
 {
 	BUN lstart, lend, lcnt;
 	const oid *lcand, *lcandend;
@@ -697,7 +708,7 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, i
 }
 
 /* binary search in a candidate list, return 1 if found, 0 if not */
-static int
+static inline int
 binsearchcand(const oid *cand, BUN lo, BUN hi, oid v)
 {
 	BUN mid;
@@ -776,7 +787,7 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, in
 	}
 	/* offset to convert BUN for value in right tail column to OID
 	 * in right head column */
-	rbun2oid = r->hseqbase - BUNfirst(r);
+	rbun2oid = (wrd) r->hseqbase - (wrd) BUNfirst(r);
 
 	/* basic properties will be adjusted if necessary later on,
 	 * they were initially set by joininitresults() */
