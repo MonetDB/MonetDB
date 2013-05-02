@@ -2988,7 +2988,7 @@ void removeInstruction(MalBlkPtr mb, InstrPtr p);
 void removeInstructionBlock(MalBlkPtr mb, int pc, int cnt);
 int removeProp;
 void removeVariable(MalBlkPtr mb, int varid);
-void renameVariable(MalBlkPtr mb, int i, str name);
+void renameVariable(MalBlkPtr mb, int i, str pattern, int newid);
 str replaceRef;
 str replicatorRef;
 void resetMalBlk(MalBlkPtr mb, int stop);
