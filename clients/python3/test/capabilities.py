@@ -241,6 +241,14 @@ class DatabaseTest(unittest.TestCase):
                  ('col1 TIME',),
                  generator)
 
+    def test_TIME(self):
+        ticks = time()
+        def generator(row,col):
+            return self.db_module.TimeFromTicks(ticks+row*86400-col*1313)
+        self.check_data_integrity(
+                 ('col1 TIMETZ',),
+                 generator)
+
     def test_DATETIME(self):
         ticks = time()
         def generator(row,col):
@@ -318,6 +326,20 @@ class DatabaseTest(unittest.TestCase):
         self.check_data_integrity(
             ('col1 BOOL',),
             generator)
+
+    def test_URL(self):
+        def generator(row,col):
+            return "http://example.org/something"
+        self.check_data_integrity(
+                 ('col1 URL',),
+                 generator)
+
+    def test_INET(self):
+        def generator(row,col):
+            return "192.168.254.101"
+        self.check_data_integrity(
+                 ('col1 INET',),
+                 generator)
 
     def test_description(self):
         self.table = self.new_table_name()

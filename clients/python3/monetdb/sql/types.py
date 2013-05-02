@@ -42,12 +42,16 @@ SEC_INTERVAL = 'sec_interval'
 WRD = 'wrd'
 TINYINT = 'tinyint'
 
+URL = 'url'
+INET = 'inet'
+
 # Not on the website:
 SHORTINT = 'shortint'
 MEDIUMINT = 'mediumint'
 LONGINT = 'longint'
 FLOAT = 'float'
 TIMESTAMPTZ = 'timestamptz'
+TIMETZ = 'timetz'
 
 
 # full names and aliases, spaces are replaced with underscores
