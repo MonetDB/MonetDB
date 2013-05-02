@@ -347,10 +347,12 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			/* if next value in r too far away (more than
 			 * lscan from current position in l), use
 			 * binary search on l to skip over
-			 * non-matching values
+			 * non-matching values, but only if l is
+			 * sorted (lscan > 0) and we don't have to
+			 * insert nils (outer join)
 			 *
-			 * next value to match is first if equal_order
-			 * is set, last otherwise */
+			 * next value to match in r is first if
+			 * equal_order is set, last otherwise */
 			if (rcand) {
 				v = VALUE(r, (equal_order ? rcand[0] : rcandend[-1]) - r->hseqbase);
 			} else if (rvals) {
@@ -359,7 +361,7 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 					rval = oid_nil;
 					v = (const char *) &rval;
 				} else if (roff != 0) {
-					rval = * (const oid *) v + roff;
+					rval = *(const oid *)v + roff;
 					v = (const char *) &rval;
 				}
 			} else {
