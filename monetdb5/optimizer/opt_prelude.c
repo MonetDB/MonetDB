@@ -85,8 +85,6 @@ str tinterRef;
 str mergecandRef;
 str intersectcandRef;
 str eqRef;
-str divRef;
-str mulRef;
 str disconnectRef;
 str evalRef;
 str execRef;
@@ -172,9 +170,11 @@ str passRef;
 str partitionRef;
 str pcreRef;
 str pinRef;
-str plusRef;
 str singleRef;
-str sqlplusRef;
+str plusRef;
+str minusRef;
+str mulRef;
+str divRef;
 str printRef;
 str preludeRef;
 str prodRef;
@@ -284,6 +284,9 @@ int horiginProp;		/* original oid source */
 int toriginProp;		/* original oid source */
 
 void optimizerInit(void){
+	if (batRef)
+		return;
+	MT_lock_set(&mal_remoteLock, "optimizerInit");
 	if(batRef == NULL){
 		abortRef = putName("abort",5);
 		affectedRowsRef = putName("affectedRows",12);
@@ -297,7 +300,6 @@ void optimizerInit(void){
 		avgRef = putName("avg",3);
 		batcalcRef = putName("batcalc",7);
 		basketRef = putName("basket",6);
-		batRef = putName("bat",3);
 		boxRef = putName("box",3);
 		batstrRef = putName("batstr",6);
 		batmtimeRef = putName("batmtime",8);
@@ -345,8 +347,6 @@ void optimizerInit(void){
 		mergecandRef= putName("mergecand",9);
 		intersectcandRef= putName("intersectcand",13);
 		eqRef = putName("==",2);
-		divRef = putName("/",1);
-		mulRef = putName("*",1);
 		disconnectRef= putName("disconnect",10);
 		evalRef = putName("eval",4);
 		execRef = putName("exec",4);
@@ -433,7 +433,9 @@ void optimizerInit(void){
 		pcreRef = putName("pcre",4);
 		pinRef = putName("pin",3);
 		plusRef = putName("+",1);
-		sqlplusRef = putName("sqladd",6);
+		minusRef = putName("-",1);
+		mulRef = putName("*",1);
+		divRef = putName("/",1);
 		printRef = putName("print",5);
 		preludeRef = putName("prelude",7);
 		prodRef = putName("prod",4);
@@ -553,5 +555,8 @@ void optimizerInit(void){
 			if ( ref)
 				OPTsetDebugStr(&ret,&ref);
 		}
+
+		batRef = putName("bat",3); /* should be last */
 	}
+	MT_lock_unset(&mal_remoteLock, "optimizerInit");
 }

@@ -111,7 +111,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		return 0;
 
 	OPTDEBUGpushselect
-		mnstr_printf(cntxt->fdout,"#Range select optimizer started\n");
+		mnstr_printf(cntxt->fdout,"#Push select optimizer started\n");
 	(void) stk;
 	(void) pci;
         vars= (int*) GDKmalloc(sizeof(int)* mb->vtop);
@@ -370,9 +370,10 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				setFunctionId(u, subdeltaRef);
 				getArg(u, 0) = getArg(p,0);
 				getArg(u, 1) = getArg(r,0);
-				getArg(u, 2) = getArg(q,2); /* update ids */
-				getArg(u, 3) = getArg(s,0);
-				getArg(u, 4) = getArg(t,0);
+				getArg(u, 2) = getArg(p,2); /* pre-cands */
+				getArg(u, 3) = getArg(q,2); /* update ids */
+				getArg(u, 4) = getArg(s,0);
+				u = pushArgument(mb, u, getArg(t,0));
 				pushInstruction(mb,u);	
 				freeInstruction(p);
 				continue;

@@ -722,6 +722,13 @@ rm -f $RPM_BUILD_ROOT%{_libdir}/libmonetdb5.so
 rm -fr $RPM_BUILD_ROOT
 
 %changelog
+* Fri Apr 26 2013 Sjoerd Mullender <sjoerd@acm.org> - 11.15.7-20130426
+- Rebuilt.
+
+* Sat Apr 13 2013 Niels Nes <niels@cwi.nl> - 11.15.7-20130426
+- sql: Added TEMPORARY to the non-reserved keywords, ie no need for double
+  quotes when used as identifier.
+
 * Fri Apr 12 2013 Sjoerd Mullender <sjoerd@acm.org> - 11.15.5-20130412
 - Rebuilt.
 

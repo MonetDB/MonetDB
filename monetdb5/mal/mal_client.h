@@ -89,10 +89,9 @@ typedef struct CLIENT {
 	 * For program debugging we need information on the timer and memory
 	 * usage patterns.
 	 */
-	sht	flags;	 /* resource tracing flags */
+	sht	flags;	 /* resource tracing flags, should be done using profiler */
 	BUN	cnt;	/* bat count */
 
-#define footprintFlag	16
 	time_t      login;  
 	time_t      lastcmd;	/* set when input is received */
 	lng 	    qtimeout;	/* query abort after x milliseconds */

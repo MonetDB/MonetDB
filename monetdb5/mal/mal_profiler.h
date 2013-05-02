@@ -57,8 +57,32 @@ typedef struct RECSTAT {
 	int RPreset0;     /* Number of instructions evicted from RP by reset() due to updates*/
 } *RecPtr, RecStat;
 
+#define PROFevent   0
+#define PROFtime    1
+#define PROFthread  2
+#define PROFpc      3
+#define PROFfunc    4
+#define PROFticks   5
+#define PROFcpu     6
+#define PROFmemory  7
+#define PROFreads   8
+#define PROFwrites  9
+#define PROFrbytes  10
+#define PROFwbytes  11
+#define PROFstmt    12
+#define PROFaggr    13
+#define PROFprocess 14
+#define PROFuser    15
+#define PROFstart   16
+#define PROFtype    17
+#define PROFdot     18
+#define PROFflow   19
+#define PROFping   20	/* heartbeat ping messages */
+#define PROFfootprint 21
+
 mal_export str activateCounter(str name);
 mal_export str deactivateCounter(str name);
+mal_export int getProfileCounter(int idx);
 mal_export str openProfilerStream(stream *fd);
 mal_export str closeProfilerStream(void);
 

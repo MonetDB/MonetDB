@@ -54,13 +54,15 @@ quick_descriptor(log_bid b)
 void
 temp_destroy(log_bid b)
 {
-	BBPdecref(b, TRUE);
+	if (b)
+		BBPdecref(b, TRUE);
 }
 
 void
 temp_dup(log_bid b)
 {
-	BBPincref(b, TRUE);
+	if (b)
+		BBPincref(b, TRUE);
 }
 
 log_bid
