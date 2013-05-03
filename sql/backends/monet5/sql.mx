@@ -7809,6 +7809,15 @@ function aggr.corr(e1:bat[:oid,:@1], e2:bat[:oid,:@1], g:bat[:oid,:oid],e:bat[:o
 	return res;
 end aggr.corr;
 
+@mal
+@:analytic(bte)@
+@:analytic(sht)@
+@:analytic(int)@
+@:analytic(wrd)@
+@:analytic(lng)@
+@:analytic(flt)@
+@:analytic(dbl)@
+
 function sql.sortTail( b:bat[:oid,:any_1]) :bat[:oid,:oid];
 	s := algebra.sortTail(b);
 	m := algebra.markT(s, 0:oid);
@@ -7820,12 +7829,3 @@ function sql.sortReverseTail( b:bat[:oid,:any_1]) :bat[:oid,:oid];
 	m := algebra.markT(s, 0:oid);
 	return bat.reverse(m);
 end sql.sortReverseTail;
-
-@mal
-@:analytic(bte)@
-@:analytic(sht)@
-@:analytic(int)@
-@:analytic(lng)@
-@:analytic(flt)@
-@:analytic(dbl)@
-

@@ -1,3 +1,20 @@
+start transaction;
+
+CREATE TABLE mtcars (
+	rownames VARCHAR(255),
+	mpg DOUBLE PRECISION,
+	cyl DOUBLE PRECISION,
+	disp DOUBLE PRECISION,
+	hp DOUBLE PRECISION,
+	drat DOUBLE PRECISION,
+	wt DOUBLE PRECISION,
+	qsec DOUBLE PRECISION,
+	vs DOUBLE PRECISION,
+	am DOUBLE PRECISION,
+	gear DOUBLE PRECISION,
+	carb DOUBLE PRECISION
+);
+COPY 32 offset 2 records into mtcars from stdin USING DELIMITERS ',','\n','\"' NULL as '';
 "","mpg","cyl","disp","hp","drat","wt","qsec","vs","am","gear","carb"
 "Mazda RX4",21,6,160,110,3.9,2.62,16.46,0,1,4,4
 "Mazda RX4 Wag",21,6,160,110,3.9,2.875,17.02,0,1,4,4
@@ -31,3 +48,11 @@
 "Ferrari Dino",19.7,6,145,175,3.62,2.77,15.5,0,1,5,6
 "Maserati Bora",15,8,301,335,3.54,3.57,14.6,0,1,5,8
 "Volvo 142E",21.4,4,121,109,4.11,2.78,18.6,1,1,4,2
+
+UPDATE mtcars SET mpg = NULL WHERE cyl = 6;
+
+select avg(mpg) from mtcars;
+select sum(mpg), min(mpg), max(mpg) from mtcars;
+select median(mpg) from mtcars;
+
+rollback;

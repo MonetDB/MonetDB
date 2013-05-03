@@ -1383,7 +1383,7 @@ sqltypeinit( sql_allocator *sa)
 		}
 		sql_create_func(sa, "sql_neg", "calc", "-", *t, NULL, *t, INOUT);
 		sql_create_func(sa, "abs", "calc", "abs", *t, NULL, *t, SCALE_FIX);
-		sql_create_func(sa, "sign", "calc", "sign", *t, NULL, INT, SCALE_NONE);
+		sql_create_func(sa, "sign", "calc", "sign", *t, NULL, BTE, SCALE_NONE);
 		/* scale fixing for all numbers */
 		sql_create_func(sa, "scale_up", "calc", "*", *t, lt->type, *t, SCALE_NONE);
 		sql_create_func(sa, "scale_down", "sql", "dec_round", *t, lt->type, *t, SCALE_NONE);

@@ -635,6 +635,13 @@ AGGRsubgrouped(bat *retval1, bat *retval2, bat *bid, bat *gid, bat *eid, bat *si
 			throw(MAL, malfunc, RUNTIME_OBJECT_MISSING);
 		}
 	} else {
+		if (!BAThdense(b)) {
+			/* XXX backward compatibility code: ignore non-dense head, but
+			 * only if no candidate list */
+			s = BATmirror(BATmark(BATmirror(b), 0));
+			BBPreleaseref(b->batCacheid);
+			b = s;
+		}
 		s = NULL;
 	}
 	if (grpfunc1)
