@@ -295,6 +295,7 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	} else {
 		/* if l not sorted, we will always use binary search
 		 * on r */
+		assert(l->ttype != TYPE_void); /* void is always sorted */
 		lscan = 0;
 		equal_order = 1;
 		lordering = 1;
@@ -436,9 +437,23 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				nl++;
 		} else if (lvals) {
 			v = VALUE(l, lstart);
-			while (++lstart < lend &&
-			       cmp(v, VALUE(l, lstart)) == 0)
-				nl++;
+			if (loff == wrd_nil) {
+				/* all values are nil */
+				lval = oid_nil;
+				nl = lend - lstart;
+				lstart = lend;
+				v = (const char *) &lval;
+			} else {
+				/* compare values without offset */
+				while (++lstart < lend &&
+				       cmp(v, VALUE(l, lstart)) == 0)
+					nl++;
+				/* now fix offset */
+				if (loff != 0) {
+					lval = *(const oid *)v + loff;
+					v = (const char *) &lval;
+				}
+			}
 		} else {
 			if (loff == wrd_nil) {
 				lval = oid_nil;
@@ -765,6 +780,7 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		if (lscan == 0) {
 			/* deduce relative positions of r matches for
 			 * this and previous value in v */
+			assert(prev != v);
 			if (prev) {
 				if (rordering * cmp(prev, v) < 0) {
 					/* previous value in l was
@@ -1227,12 +1243,29 @@ thetajoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, const char *op)
 	oid lo, ro;
 	int c;
 	int lskipped = 0;	/* whether we skipped values in l */
+	wrd loff = 0, roff = 0;
+	oid lval = oid_nil, rval = oid_nil;
+
+	ALGODEBUG fprintf(stderr, "#thetajoin(l=%s#" BUNFMT "[%s]%s%s,"
+			  "r=%s#" BUNFMT "[%s]%s%s,sl=%s#" BUNFMT "%s%s,"
+			  "sr=%s#" BUNFMT "%s%s,op=%s)\n",
+			  BATgetId(l), BATcount(l), ATOMname(l->ttype),
+			  l->tsorted ? "-sorted" : "",
+			  l->trevsorted ? "-revsorted" : "",
+			  BATgetId(r), BATcount(r), ATOMname(r->ttype),
+			  r->tsorted ? "-sorted" : "",
+			  r->trevsorted ? "-revsorted" : "",
+			  sl ? BATgetId(sl) : "NULL", sl ? BATcount(sl) : 0,
+			  sl && sl->tsorted ? "-sorted" : "",
+			  sl && sl->trevsorted ? "-revsorted" : "",
+			  sr ? BATgetId(sr) : "NULL", sr ? BATcount(sr) : 0,
+			  sr && sr->tsorted ? "-sorted" : "",
+			  sr && sr->trevsorted ? "-revsorted" : "",
+			  op);
 
 	assert(BAThdense(l));
 	assert(BAThdense(r));
-	assert(l->ttype != TYPE_void);
-	assert(r->ttype != TYPE_void);
-	assert(l->ttype == r->ttype);
+	assert(ATOMtype(l->ttype) == ATOMtype(r->ttype));
 	assert(sl == NULL || sl->tsorted);
 	assert(sr == NULL || sr->tsorted);
 
@@ -1264,15 +1297,15 @@ thetajoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, const char *op)
 		}
 	}
 	if (opcode == 0) {
-		GDKerror("BATthetasubjoin: unknown operator.\n");
+		GDKerror("BATthetasubjoin: unknown operator \"%s\".\n", op);
 		return GDK_FAIL;
 	}
 
 	CANDINIT(l, sl, lstart, lend, lcnt, lcand, lcandend);
 	CANDINIT(r, sr, rstart, rend, rcnt, rcand, rcandend);
 
-	lvals = (const char *) Tloc(l, BUNfirst(l));
-	rvals = (const char *) Tloc(r, BUNfirst(r));
+	lvals = l->ttype == TYPE_void ? NULL : (const char *) Tloc(l, BUNfirst(l));
+	rvals = r->ttype == TYPE_void ? NULL : (const char *) Tloc(r, BUNfirst(r));
 	if (l->tvarsized && l->ttype) {
 		assert(r->tvarsized && r->ttype);
 		lvars = l->T->vheap->base;
@@ -1283,6 +1316,37 @@ thetajoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, const char *op)
 	}
 	lwidth = l->T->width;
 	rwidth = r->T->width;
+
+	if (l->ttype == TYPE_void) {
+		if (l->tseqbase == oid_nil) {
+			/* trivial: nils don't match anything */
+			return GDK_SUCCEED;
+		}
+		if (lcand) {
+			lstart = 0;
+			lend = lcandend - lcand;
+			lvals = (const char *) lcand;
+			lcand = NULL;
+			lwidth = SIZEOF_OID;
+		}
+		loff = (wrd) l->tseqbase - (wrd) l->hseqbase;
+	}
+	if (r->ttype == TYPE_void) {
+		if (r->tseqbase == oid_nil) {
+			/* trivial: nils don't match anything */
+			return GDK_SUCCEED;
+		}
+		if (rcand) {
+			rstart = 0;
+			rend = rcandend - rcand;
+			rvals = (const char *) rcand;
+			rcand = NULL;
+			rwidth = SIZEOF_OID;
+		}
+		roff = (wrd) r->tseqbase - (wrd) r->hseqbase;
+	}
+	assert(lvals != NULL || lcand == NULL);
+	assert(rvals != NULL || rcand == NULL);
 
 	r1->tkey = 1;
 	r1->tsorted = 1;
@@ -1301,7 +1365,16 @@ thetajoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, const char *op)
 		} else {
 			if (lstart == lend)
 				break;
-			vl = VALUE(l, lstart);
+			if (lvals) {
+				vl = VALUE(l, lstart);
+				if (loff != 0) {
+					lval = *(const oid *)vl + loff;
+					vl = (const char *) &lval;
+				}
+			} else {
+				lval = lstart + l->tseqbase;
+				vl = (const char *) &lval;
+			}
 			lo = lstart++ + l->hseqbase;
 		}
 		if (cmp(vl, nil) == 0)
@@ -1318,7 +1391,16 @@ thetajoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, const char *op)
 			} else {
 				if (n == rend)
 					break;
-				vr = VALUE(r, n);
+				if (rvals) {
+					vr = VALUE(r, n);
+					if (roff != 0) {
+						rval = *(const oid *)vr + roff;
+						vr = (const char *) &rval;
+					}
+				} else {
+					rval = n + r->tseqbase;
+					vr = (const char *) &rval;
+				}
 				ro = n++ + r->hseqbase;
 			}
 			if (cmp(vr, nil) == 0)
@@ -1346,9 +1428,10 @@ thetajoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, const char *op)
 					if (lastr > ro) {
 						r2->tsorted = 0;
 						r2->tkey = 0;
-						r2->tdense = 0;
 					} else if (lastr < ro) {
 						r2->trevsorted = 0;
+					} else {
+						r2->tkey = 0;
 					}
 				}
 			}
