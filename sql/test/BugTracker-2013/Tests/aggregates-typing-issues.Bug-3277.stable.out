@@ -78,9 +78,9 @@ Ready.
 [ 6,	0	]
 [ 8,	0	]
 #select median( prob1 )  from mtcars2;
-% sys. # table_name
+% sys.mtcars2 # table_name
 % L1 # name
-% tinyint # type
+% wrd # type
 % 1 # length
 [ 3	]
 #select prod( prob1 ) from mtcars2;
@@ -102,11 +102,16 @@ Ready.
 % 24 # length
 [ 3.656045222	]
 #select sign( prob1 ) from mtcars2;
-% sys.? # table_name
-% L1 # name
-% ? # type
-% ? # length
-[ ?	]
+% sys. # table_name
+% sign_prob1 # name
+% tinyint # type
+% 1 # length
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 0	]
+[ 0	]
 #drop table mtcars2;
 #create table mtcars2 as select carb , cast(count( distinct case when gear in ( 3 , 4 ) then mpg end ) as tinyint) as prob1 from mtcars group by carb with data ;
 #select * from mtcars2;
@@ -145,11 +150,16 @@ Ready.
 % 24 # length
 [ 3.656045222	]
 #select sign( prob1 ) from mtcars2;
-% sys.? # table_name
-% L1 # name
-% ? # type
-% ? # length
-[ ?	]
+% sys. # table_name
+% sign_prob1 # name
+% tinyint # type
+% 1 # length
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 0	]
+[ 0	]
 #drop table mtcars2;
 #create table mtcars2 as select carb , cast(count( distinct case when gear in ( 3 , 4 ) then mpg end ) as smallint) as prob1 from mtcars group by carb with data ;
 #select * from mtcars2;
@@ -188,11 +198,16 @@ Ready.
 % 24 # length
 [ 3.656045222	]
 #select sign( prob1 ) from mtcars2;
-% sys.? # table_name
-% L1 # name
-% ? # type
-% ? # length
-[ ?	]
+% sys. # table_name
+% sign_prob1 # name
+% tinyint # type
+% 1 # length
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 0	]
+[ 0	]
 #drop table mtcars2;
 #create table mtcars2 as select carb , cast(count( distinct case when gear in ( 3 , 4 ) then mpg end ) as integer) as prob1 from mtcars group by carb with data ;
 #select * from mtcars2;
@@ -231,11 +246,16 @@ Ready.
 % 24 # length
 [ 3.656045222	]
 #select sign( prob1 ) from mtcars2;
-% sys.? # table_name
-% L1 # name
-% ? # type
-% ? # length
-[ ?	]
+% sys. # table_name
+% sign_prob1 # name
+% tinyint # type
+% 1 # length
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 0	]
+[ 0	]
 #drop table mtcars2;
 #create table mtcars2 as select carb , cast(count( distinct case when gear in ( 3 , 4 ) then mpg end ) as bigint) as prob1 from mtcars group by carb with data ;
 #select * from mtcars2;
@@ -274,11 +294,16 @@ Ready.
 % 24 # length
 [ 3.656045222	]
 #select sign( prob1 ) from mtcars2;
-% sys.? # table_name
-% L1 # name
-% ? # type
-% ? # length
-[ ?	]
+% sys. # table_name
+% sign_prob1 # name
+% tinyint # type
+% 1 # length
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 0	]
+[ 0	]
 #drop table mtcars2;
 #drop table mtcars;
 

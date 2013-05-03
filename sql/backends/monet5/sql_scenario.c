@@ -617,6 +617,31 @@ sql_update_feb2013_sp1(Client c)
 	return err;		/* usually MAL_SUCCEED */
 }
 
+static str
+sql_update_feb2013_sp3(Client c)
+{
+	char *buf = GDKmalloc(4096), *err = NULL;
+	size_t bufsize = 4096, pos = 0;
+
+	/* aggregates on type WRD */
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate sys.stddev_samp(val WRD) returns DOUBLE external name \"aggr\".\"stdev\";\n");
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate sys.stddev_pop(val WRD) returns DOUBLE external name \"aggr\".\"stdevp\";\n");
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate sys.var_samp(val WRD) returns DOUBLE external name \"aggr\".\"variance\";\n");
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate sys.var_pop(val WRD) returns DOUBLE external name \"aggr\".\"variancep\";\n");
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate sys.median(val WRD) returns WRD external name \"aggr\".\"median\";\n");
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate sys.corr(e1 WRD, e2 WRD) returns WRD external name \"aggr\".\"corr\";\n");
+
+	pos += snprintf(buf + pos, bufsize-pos, "insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('stddev_samp', 'stddev_pop', 'var_samp', 'var_pop', 'median', 'corr') and f.type = %d and f.schema_id = s.id and s.name = 'sys');\n", F_AGGR);
+
+	assert(pos < 4096);
+
+	printf("Running database upgrade commands:\n%s\n", buf);
+	err = SQLstatementIntern(c, &buf, "update", 1, 0);
+	GDKfree(buf);
+	return err;		/* usually MAL_SUCCEED */
+}
+
+
 str
 SQLinitClient(Client c)
 {
@@ -809,6 +834,15 @@ SQLinitClient(Client c)
 		 * need to update */
 		if (!sql_bind_func(m->sa, mvc_bind_schema(m,"sys"), "storagemodel", NULL, NULL, F_FUNC )) {
 			if ((err = sql_update_feb2013_sp1(c)) != NULL) {
+				fprintf(stderr, "!%s\n", err);
+				GDKfree(err);
+			}
+		}
+		/* if aggregate function sys.stddev_samp(wrd) does not
+		 * exist, we need to update */
+        	sql_find_subtype(&tp, "wrd", 0, 0);
+		if (!sql_bind_func(m->sa, mvc_bind_schema(m,"sys"), "stddev_samp", &tp, NULL, F_AGGR )) {
+			if ((err = sql_update_feb2013_sp3(c)) != NULL) {
 				fprintf(stderr, "!%s\n", err);
 				GDKfree(err);
 			}
