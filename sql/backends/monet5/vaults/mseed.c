@@ -116,7 +116,7 @@ str SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output);
 
 #define QRYinsertI "INSERT INTO mseedCatalog(mseed, seqno, dataquality, network, \
 	 station, location, channel, starttime , samplerate, sampleindex, samplecnt, sampletype, minval,maxval) \
-	 VALUES(%d, %d,'%c','%s', '%s','%s','%s','%s',%f,%d,%d,'%s',%d,%d);"
+	 VALUES(%d, %d,'%c','%s', '%s','%s','%s','%s',%f,%d,"LLFMT",'%s',%d,%d);"
 
 str
 MseedImport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -174,7 +174,7 @@ MseedImport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 		t= MS_HPTIME2EPOCH(msr->starttime);
 		tm = gmtime(&t);
-		snprintf(starttime,BUFSIZ,"%d-%02d-%02d %02d:%02d:%02d.%06ld", tm->tm_year +(tm->tm_year > 80?1900:2000), tm->tm_mon+1,tm->tm_mday, tm->tm_hour, tm->tm_min,tm->tm_sec, msr->starttime % HPTMODULUS);
+		snprintf(starttime,BUFSIZ,"%d-%02d-%02d %02d:%02d:%02d.%06d", tm->tm_year +(tm->tm_year > 80?1900:2000), tm->tm_mon+1,tm->tm_mday, tm->tm_hour, tm->tm_min,tm->tm_sec, (int) (msr->starttime % HPTMODULUS));
 		/* collect the statistics */
 		switch(msr->sampletype){
 		case 'i':
@@ -185,7 +185,7 @@ MseedImport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					if ( imax < ((int*) msr->datasamples)[j]) imax = ((int*) msr->datasamples)[j];
 			}
 			snprintf(buf,BUFSIZ,QRYinsertI, *vid, msr->sequence_number,msr->dataquality,msr->network, msr->station, msr->location, msr->channel,
-			starttime,msr->samprate, sampleindex,msr->samplecnt,"int",imin,imax);
+			starttime,msr->samprate, sampleindex,(lng)msr->samplecnt,"int",imin,imax);
 			break;
 		case 'a': case 'f': case 'd':
 		default:
