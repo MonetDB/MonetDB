@@ -356,11 +356,13 @@ bat_max_lnglength(BAT *b)
 		neg = 0; \
 		s++; \
 	} \
-	for (i = 0; i < (t->digits-t->scale) && *s != '.' && *s; i++, s++) { \
+	for (i = 0; *s && *s != '.' && ((res == 0 && *s == '0') || i < t->digits - t->scale); s++) { \
 		if (!*s || *s < '0' || *s > '9')  \
 			return NULL; \
 		res *= 10; \
 		res += (*s-'0'); \
+		if (res) \
+			i++; \
 	} \
 	if (!*s && t->scale) { \
 		for( i = 0; i < t->scale; i++) { \
