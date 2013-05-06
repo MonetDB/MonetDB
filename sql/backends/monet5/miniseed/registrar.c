@@ -693,7 +693,7 @@ str mseed_register_and_mount(str file_path, temp_container* ret_tc)
 	timestamp start_timestamp;
 	int seq_no_fake = 1;
 	lng st;
-	long i;
+	lng i;
 	str ch = (str) GDKmalloc(2*sizeof(char));
 	ch[1] = '\0';
 
@@ -789,9 +789,9 @@ str mseed_register_and_mount(str file_path, temp_container* ret_tc)
 		{
 			int seq_no = seq_no_fake;
 			double sample_interval = HPTMODULUS / msr->samprate; /* calculate sampling interval from frequency */
-			long sampling_time = msr->starttime;
+			lng sampling_time = msr->starttime;
 
-			long num_samples = msr->samplecnt;
+			lng num_samples = msr->samplecnt;
 			int *data_samples = msr->datasamples;
 
 			if ((bfile = BATdescriptor(ret_tc->tables_columns[2].column_bats[0])) == NULL)
@@ -807,7 +807,7 @@ str mseed_register_and_mount(str file_path, temp_container* ret_tc)
 			{
 
 				timestamp sampling_timestamp;
-				lng st = (lng) sampling_time / 1000;
+				lng st = sampling_time / 1000;
 				MTIMEtimestamp_lng(&sampling_timestamp, &st);
 
 				/* For each sample add one row to the table */

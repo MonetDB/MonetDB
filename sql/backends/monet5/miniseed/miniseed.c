@@ -11,7 +11,7 @@ str MiniseedMount(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str *targetfile = (str*) getArgReference(stk,pci,4); /* arg 1: string containing the input file path. */
 	BAT *btime, *bdata, *bfile, *bseqno; /* BATs to return, representing columns of a table. */
 
-	wrd num_rows = 0;
+	lng num_rows = 0;
 
 	MSRecord *msr = NULL;
 	MSFileParam *msfp = NULL;
@@ -71,16 +71,16 @@ str MiniseedMount(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	{
 		int seq_no = seq_no_fake;
 		double sample_interval = HPTMODULUS / msr->samprate; /* calculate sampling interval from frequency */
-		long sampling_time = msr->starttime;
+		lng sampling_time = msr->starttime;
 
-		long num_samples = msr->numsamples;
+		lng num_samples = msr->numsamples;
 		int *data_samples = msr->datasamples;
 
-		int i = 0;
+		lng i = 0;
 		for(;i<num_samples;i++)
 		{
 			timestamp sampling_timestamp;
-			lng st = (lng) sampling_time / 1000;
+			lng st = sampling_time / 1000;
 			MTIMEtimestamp_lng(&sampling_timestamp, &st);
 
 			/* For each sample add one row to the table */
@@ -102,7 +102,7 @@ str MiniseedMount(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* cleanup memory and close file */
 	ms_readmsr_r (&msfp, &msr, NULL, 0, NULL, NULL, 0, 0, 0);
 
-	printf("num_rows: %ld\n", num_rows);
+	printf("num_rows: "LLFMT"\n", num_rows);
 
 	BBPkeepref(*ret[0] = bfile->batCacheid); /* return BAT. */
 	BBPkeepref(*ret[1] = bseqno->batCacheid); /* return BAT. */
