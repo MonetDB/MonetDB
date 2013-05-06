@@ -842,7 +842,7 @@ void *register_files(void *args)
 	temp_container *tc;
 	long i;
 	str err = NULL;
-	long start, finish;
+	int start, finish;
 	
 	thread_argv targv = *((thread_argv*)args);
 	
@@ -885,7 +885,7 @@ void *register_files(void *args)
 		}
 	}
 	finish = GDKms();
-	printf("# In thread %d, time for extraction and transformation of (meta-)data: %ld milliseconds\n", targv.tid, finish - start);
+	printf("# In thread %d, time for extraction and transformation of (meta-)data: %d milliseconds\n", targv.tid, finish - start);
 	
 	pthread_mutex_lock(&create_lock);
 	if(*targv.function_created == 0)
@@ -909,7 +909,7 @@ void *register_files(void *args)
 		throw(MAL,"registrar.register_repo", "Inserting the temp_container into one of the tables failed in thread %d: %s\n", targv.tid, err);
 	}
 	finish = GDKms();
-	printf("# In thread %d, time for loading of (meta-)data: %ld milliseconds\n", targv.tid, finish - start);
+	printf("# In thread %d, time for loading of (meta-)data: %d milliseconds\n", targv.tid, finish - start);
 	pthread_mutex_unlock(&insert_lock);
 	
 	err = register_clean_up(tc);
@@ -942,7 +942,7 @@ str register_repo(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	temp_container *tc;
 	long i;
 	str err = NULL;
-	long start, finish;
+	int start, finish;
 	int function_created = 0;
 	mvc *m = NULL;
 
@@ -1038,7 +1038,7 @@ str register_repo(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		}
 		finish = GDKms();
-		printf("# Time for extraction and transformation of (meta-)data: %ld milliseconds\n", finish - start);
+		printf("# Time for extraction and transformation of (meta-)data: %d milliseconds\n", finish - start);
 
 		start = GDKms();
 		/* prepare sql functions for inserting temp_container into tables_to_be_filled */
@@ -1055,7 +1055,7 @@ str register_repo(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			throw(MAL,"registrar.register_repo", "Inserting the temp_container into one of the tables failed: %s\n", err);
 		}
 		finish = GDKms();
-		printf("# Time for loading of (meta-)data: %ld milliseconds\n", finish - start);
+		printf("# Time for loading of (meta-)data: %d milliseconds\n", finish - start);
 
 		err = register_clean_up(tc);
 		if(err != MAL_SUCCEED)
