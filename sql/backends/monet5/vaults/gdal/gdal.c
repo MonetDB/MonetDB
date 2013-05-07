@@ -104,7 +104,7 @@ GDALattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	/* add row in the rs.files catalog table */
 	col = mvc_bind_column(m, fls, "fileid");
-	fid = store_funcs.count_col(col, 1) + 1;
+	fid = store_funcs.count_col(m->session->tr, col, 1) + 1;
 
 	snprintf(buf, BUFSIZ, INSFILE, (int)fid, fname, 0);
 	if ( ( msg = SQLstatementIntern(cntxt,&s,"gdal.attach",TRUE,FALSE)) != MAL_SUCCEED)
@@ -112,7 +112,7 @@ GDALattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	/* add row in the rs.catalog catalog table */
 	col = mvc_bind_column(m, cat, "imageid");
-	imid = store_funcs.count_col(col, 1) + 1;
+	imid = store_funcs.count_col(m->session->tr, col, 1) + 1;
 	len = GDALGetRasterYSize(hDataset);
         wid = GDALGetRasterXSize(hDataset);
 	hBand = GDALGetRasterBand(hDataset, 1);
@@ -197,7 +197,6 @@ GDALloadGreyscaleImage(bat *x, bat *y, bat *intensity, str *fname)
 	/* Manually compute values for the X-dimension, since we know that its
 	 * range is [strt:step:wid] and each of its value must be repeated 'len'
 	 * times with 1 #repeats */
-        /* printf("[GDALloadGreyscaleImage] Building x-dimension with start=%d, step=%d, stop=%d, group=%d, series=%d\n", strt, step, wid, rep1, len); */
 	errbuf = ARRAYseries_int(&bidx, &strt, &step, &wid, &rep1, &len);
 	if (errbuf != MAL_SUCCEED) {
 		BBPdecref(resI->batCacheid, 1); /* undo the BBPkeepref(resI->batCacheid) above */
@@ -206,7 +205,6 @@ GDALloadGreyscaleImage(bat *x, bat *y, bat *intensity, str *fname)
 	/* Manually compute values for the Y-dimension, since we know that its
 	 * range is [strt:step:len] and each of its value must be repeated 1 times
 	 * with 'wid' #repeats */
-        /* printf("[GDALloadGreyscaleImage] Building y-dimension with start=%d, step=%d, stop=%d, group=%d, series=%d\n", strt, step, len, wid, rep1); */
 	errbuf = ARRAYseries_int(&bidy, &strt, &step, &len, &wid, &rep1);
 	if (errbuf != MAL_SUCCEED) {
 		BBPdecref(resI->batCacheid, 1); /* undo the BBPkeepref(resI->batCacheid) above */
