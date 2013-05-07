@@ -486,13 +486,13 @@ str insert_into_vault(Client cntxt, temp_container* tc)
 /* INSERT INTO mseed.files SELECT * FROM mseed_files_reg(ticket, table_idx); */
 
 	int t;
-	long ticket = (long) tc;
+	lng ticket = (lng) (size_t) tc;
 	str msg;
 
 	for(t = 0; t < tc->num_tables; t++)
 	{
 		str q = (str)GDKmalloc(512*sizeof(char));
-		sprintf(q, "INSERT INTO %s.%s SELECT * FROM %s_%s_reg(%ld, %d);\n", tc->schema_name, tc->table_names[t], tc->schema_name, tc->table_names[t], ticket, t);
+		sprintf(q, "INSERT INTO %s.%s SELECT * FROM %s_%s_reg("LLFMT", %d);\n", tc->schema_name, tc->table_names[t], tc->schema_name, tc->table_names[t], ticket, t);
 
 		if((msg =SQLstatementIntern(cntxt,&q,"registrar.insert",TRUE,FALSE))!= MAL_SUCCEED)
 		{/* insert into query not succeeded, what to do */
@@ -1095,7 +1095,7 @@ str register_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	lng ticket = *(lng*) getArgReference(stk,pci,pci->retc); /* arg 1: ticket to the temp_container */
 	int table_idx = *(int*) getArgReference(stk,pci,pci->retc+1); /* arg 2: index of the table to be registered in the temp_container */
 
-	temp_container *tc = (temp_container*) ticket; /* filled temp_container taken */
+	temp_container *tc = (temp_container*) (size_t) ticket; /* filled temp_container taken */
 
 	cntxt = cntxt; /* to escape 'unused' parameter error. */
 	mb = mb; /* to escape 'unused' parameter error. */
