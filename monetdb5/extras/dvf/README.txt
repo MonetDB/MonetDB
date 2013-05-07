@@ -1,14 +1,16 @@
 ==How to use mSEED data vault==
 
 - libmseed library is needed.
-	- Download it from http://www.iris.edu/pub/programs/libmseed-2.7.tar.gz
-	- Install under LIBMSEED_LOCATION of your choice by referring to the file named 'INSTALL'. A simple 'make' on most Unix-like systems should build the library.
-	- Create 'lib' and 'include' directories under LIBMSEED_LOCATION both pointing to the directory that contains 'libmseed.h'.
+	- Download the library under the title "libmseed -- The Mini–SEED library" from http://www.iris.edu/software/libraries/
+	- Create a directory $HOME/mseed and define LIBMSEED_LOCATION as $HOME/mseed
+	- Unpack the download libmseed package in $LIBMSEED_LOCATION. You should now have the directory $LIBMSEED_LOCATION/libmseed
+	- Install under LIBMSEED_LOCATION/libmseed of your choice by referring to the file named 'INSTALL'. A simple 'make' on most Unix-like systems should build the library.
+	- Create two symbolic links $LIBMSEED_LOCATION/lib and $LIBMSEED_LOCATION/include, so that they both point to the directory $LIBMSEED_LOCATION/libmseed
 
 - MonetDB 'DVframework' branch is needed.
 	- Refer to 'Building from Mercurial (HG) Sources' section of the wiki page http://www.monetdb.org/wiki/MonetDB:Building_from_sources
 	- Check out the 'DVframework' branch by running "hg clone -u DVframework http://dev.monetdb.org/hg/MonetDB/"
-	- Follow the steps on the wiki page and note that 'configure' should be run with this additional option: '--with-mseed=LIBMSEED_LOCATION'
+	- Follow the steps on the wiki page and note that 'configure' should be run with this additional option: '--with-mseed=$LIBMSEED_LOCATION'
 
 - How to run an example
 	- Go and Refer to .sql and .py files in the Tests/ directory under monetdb5/extras/dvf/.
