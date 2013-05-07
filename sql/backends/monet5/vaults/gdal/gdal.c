@@ -37,7 +37,7 @@
 	 VALUES(%d, '%s', %d, CURRENT_TIMESTAMP());"
 #define INSCAT "INSERT INTO rs.catalog(imageid,fileid,width,length,bps) \
 	 VALUES(%d, %d, %d, %d, %d);"
-#define CRT_GREYSCALE_IMAGE "CREATE ARRAY %s (x INT DIMENSION[%d], \
+#define CRT_GREYSCALE_IMAGE "CREATE ARRAY %s.%s (x INT DIMENSION[%d], \
 	y INT DIMENSION[%d], intensity %s);"
 
 str
@@ -305,7 +305,7 @@ GDALimportImage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bps = *(sht*)table_funcs.column_find_value(m->session->tr, col, irid);
 
 	snprintf(aname, 20, "image%d", imageid);
-	snprintf(buf, BUFSIZ, CRT_GREYSCALE_IMAGE, aname, wid, len, (bps == 8)? "SMALLINT" : "INT");
+	snprintf(buf, BUFSIZ, CRT_GREYSCALE_IMAGE, sch->base.name, aname, wid, len, (bps == 8)? "SMALLINT" : "INT");
 	msg = SQLstatementIntern(cntxt,&s,"gdal.import",TRUE,FALSE);
 	if (msg != MAL_SUCCEED)
 		return msg;
