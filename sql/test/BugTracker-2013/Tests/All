@@ -9,7 +9,9 @@ stddev-group.Bug-3257
 oid_handling
 between.Bug-3259
 correlated_select.Bug-3250
+empty-strings.Bug-3261
 groupby_on_value_view.Bug-3264
+copy-into-decimal.Bug-3265
 aggregates-typing-issues.Bug-3277
 numeric-column-orderby.Bug-3278
 numeric-column-alias.Bug-3279

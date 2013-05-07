@@ -981,7 +981,8 @@ GDKinit(opt *set, int setlen)
 	if ((p = mo_find_option(set, setlen, "gdk_mem_pagebits")))
 		GDK_mem_pagebits = (int) strtol(p, NULL, 10);
 
-	mnstr_init();
+	if (mnstr_init() < 0)
+		return 0;
 	MT_init_posix();
 	THRinit();
 #ifndef NATIVE_WIN32

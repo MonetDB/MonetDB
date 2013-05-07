@@ -1036,8 +1036,8 @@ static int mapi_initialized = 0;
 	do {								\
 		if ((s) == NULL || mnstr_errnr(s)) {			\
 			mapi_log_record(mid,msg);			\
-			mapi_log_record(mid,f);			\
-			close_connection(mid);			\
+			mapi_log_record(mid,f);				\
+			close_connection(mid);				\
 			mapi_setError((mid), (msg), (f), MTIMEOUT);	\
 			return (e);					\
 		}							\
@@ -3290,12 +3290,12 @@ read_line(Mapi mid)
 		if (mid->trace == MAPI_TRACE)
 			printf("fetch next block: start at:%d\n", mid->blk.end);
 		len = mnstr_read(mid->from, mid->blk.buf + mid->blk.end, 1, BLOCK);
+		check_stream(mid, mid->from, "Connection terminated", "read_line", (mid->blk.eos = 1, (char *) 0));
 		if (mid->tracelog) {
 			mapi_log_header(mid, "R");
 			mnstr_write(mid->tracelog, mid->blk.buf + mid->blk.end, 1, len);
 			mnstr_flush(mid->tracelog);
 		}
-		check_stream(mid, mid->from, "Connection terminated", "read_line", (mid->blk.eos = 1, (char *) 0));
 		mid->blk.buf[mid->blk.end + len] = 0;
 		if (mid->trace == MAPI_TRACE) {
 			printf("got next block: length:" SSZFMT "\n", len);

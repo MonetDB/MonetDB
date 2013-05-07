@@ -185,11 +185,10 @@ blob_write(blob *a, stream *s, size_t cnt)
 
 	(void) cnt;
 	assert(cnt == 1);
-	if (mnstr_writeInt(s, (int) len)) { /* 64bit: check for overflow */
-		mnstr_write(s, (char *) a, len, 1);
-		return GDK_SUCCEED;
-	}
-	return GDK_FAIL;
+	if (!mnstr_writeInt(s, (int) len) /* 64bit: check for overflow */ ||
+		mnstr_write(s, (char *) a, len, 1) < 0)
+		return GDK_FAIL;
+	return GDK_SUCCEED;
 }
 
 #if SIZEOF_SIZE_T == SIZEOF_INT
