@@ -145,24 +145,19 @@ logbat_new(int ht, int tt, BUN size)
 static int
 log_read_format(logger *l, logformat *data)
 {
-	int res = 1;
-
-	if (mnstr_read(l->log, &data->flag, 1, 1) != 1)
-		return 0;
-	res = mnstr_readInt(l->log, &data->nr);
-	if (res)
-		res = mnstr_readInt(l->log, &data->tid);
-	return res;
+	return mnstr_read(l->log, &data->flag, 1, 1) == 1 &&
+		mnstr_readInt(l->log, &data->nr) &&
+		mnstr_readInt(l->log, &data->tid);
 }
 
 static int
 log_write_format(logger *l, logformat *data)
 {
-	if (mnstr_write(l->log, &data->flag, 1, 1) != 1 ||
-	    !mnstr_writeInt(l->log, data->nr) ||
-	    !mnstr_writeInt(l->log, data->tid))
-		return LOG_ERR;
-	return LOG_OK;
+	if (mnstr_write(l->log, &data->flag, 1, 1) == 1 &&
+	    mnstr_writeInt(l->log, data->nr) &&
+	    mnstr_writeInt(l->log, data->tid))
+		return LOG_OK;
+	return LOG_ERR;
 }
 
 static char *
@@ -780,9 +775,10 @@ logger_readlog(logger *lg, char *filename)
 		if (t1 - t0 > 10) {
 			t0 = t1;
 			/* not more than once every 10 seconds */
-			mnstr_fgetpos(lg->log, &fpos);
-			printf("# still reading write-ahead log \"%s\" (%d%% done)\n", filename, (int) (((off_t) fpos * 100 + 50) / sb.st_size));
-			fflush(stdout);
+			if (mnstr_fgetpos(lg->log, &fpos) == 0){
+				printf("# still reading write-ahead log \"%s\" (%d%% done)\n", filename, (int) (((off_t) fpos * 100 + 50) / sb.st_size));
+				fflush(stdout);
+			}
 		}
 		if (l.flag != LOG_START && l.flag != LOG_END && l.flag != LOG_SEQ) {
 			name = log_read_string(lg);
@@ -1872,12 +1868,13 @@ log_tstart(logger *lg)
 #define SEGSZ 64*DBLKSZ
 static char zeros[DBLKSZ] = { 0 };
 
-static void
+static int
 pre_allocate(logger *lg)
 {
 	lng p;
 
-	mnstr_fgetpos(lg->log, &p);
+	if (mnstr_fgetpos(lg->log, &p) != 0)
+		return -1;
 	if (p + DBLKSZ > lg->end) {
 		lng s = p;
 
@@ -1888,14 +1885,19 @@ pre_allocate(logger *lg)
 		}
 		if (p < lg->end) {
 			p = (lg->end - p);
-			mnstr_write(lg->log, zeros, (size_t) p, 1);
+			if (mnstr_write(lg->log, zeros, (size_t) p, 1) < 0)
+				return -1;
 			lg->end += p;
 			p = 0;
 		}
-		for (; p < SEGSZ; p += DBLKSZ, lg->end += DBLKSZ) 
-			mnstr_write(lg->log, zeros, DBLKSZ, 1);
-		mnstr_fsetpos(lg->log, s);
+		for (; p < SEGSZ; p += DBLKSZ, lg->end += DBLKSZ) {
+			if (mnstr_write(lg->log, zeros, DBLKSZ, 1) < 0)
+				return -1;
+		}
+		if (mnstr_fsetpos(lg->log, s) < 0)
+			return -1;
 	}
+	return 0;
 }
 
 int
@@ -1924,9 +1926,9 @@ log_tend(logger *lg)
 	if (res ||
 	    log_write_format(lg, &l) == LOG_ERR ||
 	    mnstr_flush(lg->log) ||
-	    mnstr_fsync(lg->log))
+	    mnstr_fsync(lg->log) ||
+	    pre_allocate(lg) < 0)
 		return LOG_ERR;
-	pre_allocate(lg);
 	return LOG_OK;
 }
 
@@ -1972,10 +1974,10 @@ log_sequence(logger *lg, int seq, lng val)
 	if (log_write_format(lg, &l) == LOG_ERR ||
 	    !mnstr_writeLng(lg->log, val) ||
 	    mnstr_flush(lg->log) ||
-	    mnstr_fsync(lg->log))
+	    mnstr_fsync(lg->log) ||
+	    pre_allocate(lg) < 0)
 		 return LOG_ERR;
 
-	pre_allocate(lg);
 	return LOG_OK;
 }
 

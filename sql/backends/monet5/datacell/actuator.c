@@ -142,7 +142,7 @@ static lng totallatency = 0;
 static lng sendFirst = 0;
 static lng receivedLast = 0;
 static lng receivedFirst = 0;
-static int characters = 0;
+static size_t characters = 0;
 
 /* control the display and auto terminate the actuator */
 static int events = -1;
@@ -172,7 +172,7 @@ static void showStatistics(void)
 	/*mnstr_printf(ACout, "receivedLast-sendFirst %d microsec\n", receivedLast-sendFirst);*/
 	mnstr_printf(ACout, "Elapsed per batch %5.2f microsec\n", elaps);
 	mnstr_printf(ACout, "Throughput %8.2f tpl/sec\n", 1000000.0 / elaps * tuplesIntheBuffer);
-	mnstr_printf(ACout, "Bandwidth %zu bytes\n", characters * sizeof(char));
+	mnstr_printf(ACout, "Bandwidth " SZFMT " bytes\n", characters * sizeof(char));
 
 
 	/* send a short tuple to stderr for gnuplot datafile*/
@@ -433,13 +433,13 @@ consumeStream(Actuator ac)
 	lng clk;
 	char *endptr;
 	lng l = 0;
-	int m = 0;
+	ssize_t m = 0;
 
 #ifdef _DEBUG_ACTUATOR_
 	mnstr_printf(ACout, "Consume stream\n");
 #endif
 	buf[0] = 0;
-	while (tuples != events && (m = (int) mnstr_readline(ac->fromServer, buf, MYBUFSIZ))) {
+	while (tuples != events && (m = mnstr_readline(ac->fromServer, buf, MYBUFSIZ)) > 0) {
 		buf[m] = 0;
 		characters += m;
 		received++;

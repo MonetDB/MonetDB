@@ -415,8 +415,7 @@ ATOMprint(int t, const void *p, stream *s)
 			char buf[dblStrlen], *addr = buf;	/* use memory from stack */
 			int sz = dblStrlen, l = (*tostr) (&addr, &sz, p);
 
-			mnstr_write(s, buf, l, 1);
-			return l;
+			return (int) mnstr_write(s, buf, l, 1);
 		} else {
 			str buf = 0;
 			int sz = 0, l = (*tostr) (&buf, &sz, p);
@@ -664,8 +663,8 @@ batToStr(char **dst, int *len, const bat *src)
 static bat *
 batRead(bat *a, stream *s, size_t cnt)
 {
-	mnstr_readIntArray(s, (int *) a, cnt);	/* bat==int */
-	return mnstr_errnr(s) ? NULL : a;
+	/* bat==int */
+	return mnstr_readIntArray(s, (int *) a, cnt) ? a : NULL;
 }
 
 static int
