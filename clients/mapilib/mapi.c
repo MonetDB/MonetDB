@@ -1036,8 +1036,8 @@ static int mapi_initialized = 0;
 	do {								\
 		if ((s) == NULL || mnstr_errnr(s)) {			\
 			mapi_log_record(mid,msg);			\
-			mapi_log_record(mid,f);			\
-			close_connection(mid);			\
+			mapi_log_record(mid,f);				\
+			close_connection(mid);				\
 			mapi_setError((mid), (msg), (f), MTIMEOUT);	\
 			return (e);					\
 		}							\

@@ -410,7 +410,7 @@ ATOMprint(int t, const void *p, stream *s)
 {
 	int (*tostr) (str *, int *, const void *);
 
-	if (p && (t >= 0) && (t < GDKatomcnt) && (tostr = BATatoms[t].atomToStr)) {
+	if (p && t >= 0 && t < GDKatomcnt && (tostr = BATatoms[t].atomToStr)) {
 		if (t != TYPE_bat && t < TYPE_str) {
 			char buf[dblStrlen], *addr = buf;	/* use memory from stack */
 			int sz = dblStrlen, l = (*tostr) (&addr, &sz, p);
