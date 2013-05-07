@@ -1218,8 +1218,9 @@ new_bbpentry(stream *s, bat i)
 			  (int) BBP_desc(i)->T.vheap->newstorage) < 0)
 		return -1;
 
-	if (BBP_options(i))
-		mnstr_printf(s, " %s", BBP_options(i));
+	if (BBP_options(i) &&
+	    mnstr_printf(s, " %s", BBP_options(i)) < 0)
+		return -1;
 
 	return mnstr_printf(s, "\n");
 }
@@ -1314,12 +1315,16 @@ BBPdir_subcommit(int cnt, bat *subcommit)
 			while (j < cnt && subcommit[j] == i);
 		} else {
 			i = n;
-			mnstr_printf(s, "%s", buf);
+			if (mnstr_printf(s, "%s", buf) < 0)
+				goto bailout;
 			IODEBUG mnstr_printf(GDKstdout, "%s", buf);
 			n = 0;
 		}
 	}
 
+	if (mnstr_flush(s) != 0 ||
+	    mnstr_fsync(s) != 0)
+		goto bailout;
 	mnstr_close(s);
 	mnstr_destroy(s);
 
@@ -1342,7 +1347,7 @@ int
 BBPdir(int cnt, bat *subcommit)
 {
 	FILE *fp;
-	stream *s;
+	stream *s = NULL;
 	bat i;
 
 	if (subcommit)
@@ -1370,13 +1375,17 @@ BBPdir(int cnt, bat *subcommit)
 		 * BBP.dir consists of all persistent bats */
 		if (BBP_status(i) & BBPPERSISTENT) {
 			if (new_bbpentry(s, i) < 0)
-				break;
+				goto bailout;
 			IODEBUG new_bbpentry(GDKstdout, i);
 		}
 	}
 
+	if (mnstr_flush(s) != 0 ||
+	    mnstr_fsync(s) != 0)
+		goto bailout;
 	mnstr_close(s);
 	mnstr_destroy(s);
+	s = NULL;
 
 	IODEBUG THRprintf(GDKstdout, "#BBPdir end\n");
 
@@ -1386,6 +1395,10 @@ BBPdir(int cnt, bat *subcommit)
 	return 0;
 
       bailout:
+	if (s != NULL) {
+		mnstr_close(s);
+		mnstr_destroy(s);
+	}
 	GDKsyserror("BBPdir failed:\n");
 	return -1;
 }
