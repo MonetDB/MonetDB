@@ -185,7 +185,7 @@ AUTHinitTables(void) {
 			return msg;
 		if (uid != 0)
 			throw(MAL, "initTables", INTERNAL_AUTHORIZATION " while they were just created!");
-		AUTHcommit();
+		/* normally, we'd commit here, but it's done already in AUTHaddUser */
 	}
 
 	return(MAL_SUCCEED);
