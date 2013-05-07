@@ -315,7 +315,8 @@ _create_relational_function(mvc *m, char *name, sql_rel *rel, stmt *call)
 		}
 	}
 
-	if (backend_dumpstmt(be, curBlk, s, NULL) < 0)
+	/* FIXME: do we really need to pass 'r' here? When is this function called to handle what? */
+	if (backend_dumpstmt(be, curBlk, s, r) < 0)
 		return -1;
 	/* SQL function definitions meant for inlineing should not be optimized before */
 	varSetProp(curBlk, getArg(curInstr, 0), sqlfunctionProp, op_eq, NULL);
@@ -2352,6 +2353,13 @@ add_materialise_stmt(MalBlkPtr mb, sql_rel *rel, list *processed)
 		add_materialise_stmt(mb, rel->l, processed);
 		add_materialise_stmt(mb, rel->r, processed);
 		break;
+	case op_ddl:
+		if (rel->exps) {
+			node *n = NULL;
+			for (n = rel->exps->h; n; n = n->next) {
+				/* TODO: search for op_ddl for arrays declared in a UDF */
+			}
+		}
 	default:
 		break;
 	}
@@ -2629,6 +2637,7 @@ backend_create_func(backend *be, sql_func *f)
 	stmt *s;
 	int i, retseen =0, sideeffects =0;
 	sql_allocator *sa, *osa = m->sa;
+	sql_rel *rel = NULL;
 
 	/* nothing to do for internal and ready (not recompiling) functions */
 	if (!f->sql || f->sql > 1)
@@ -2636,7 +2645,7 @@ backend_create_func(backend *be, sql_func *f)
 	f->sql++;
  	sa = sa_create();
 	m->session->schema = f->s;
-	s = sql_parse(m, sa, f->query, m_instantiate);
+	s = _sql_parse(m, sa, f->query, m_instantiate, &rel);
 	m->sa = osa;
 	m->session->schema = schema;
 	if (s && !f->sql) { /* native function */
@@ -2690,7 +2699,7 @@ backend_create_func(backend *be, sql_func *f)
 	if ( m->session->auto_commit)
 		setCommitProperty(curBlk);
 
-	if (backend_dumpstmt(be, curBlk, s, NULL) < 0)
+	if (backend_dumpstmt(be, curBlk, s, rel) < 0)
 		return -1;
 	/* selectively make functions available for inlineing */
 	/* for the time being we only inline scalar functions */
