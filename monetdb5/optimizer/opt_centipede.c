@@ -32,6 +32,13 @@
 #define DEBUG_OPT_DETAIL
 #define _DEBUG_OPT_CENTIPEDE_ 
 
+#define BLOCKED 1
+#define PARTITION 2	 // phase 1 result
+#define PIVOT    3	// Instruction requires care at next level
+#define SUPPORTIVE 4	// phase 2 result
+#define EXPORTED 5
+#define KEEPLOCAL 6
+
 /*
  * The columns are broken using fixed OID ranges.
  * Currently, we assume that all slices are of equal length.
@@ -61,8 +68,9 @@ OPTexecController(Client cntxt, MalBlkPtr mb, MalBlkPtr pmb, Slices *slices, oid
 	InstrPtr ret, p, q, *pack;
 
 	/* define the query controller */
-	snprintf(nme, BUFSIZ, "%s_plan"OIDFMT, getFunctionId( getInstrPtr(mb,0)), plantag);
-	plan = putName(nme, strlen(nme));
+	//snprintf(nme, BUFSIZ, "%s_plan"OIDFMT, getFunctionId( getInstrPtr(mb,0)), plantag);
+	//putName(nme, strlen(nme));
+	plan = getFunctionId(getInstrPtr(pmb,0));
 	snprintf(nme, BUFSIZ, "%s_stub"OIDFMT, getFunctionId( getInstrPtr(mb,0)), plantag);
 	stub = putName(nme, strlen(nme));
 	(void) stub;				/* only used if REMOTE_EXECUTION defined */
@@ -114,12 +122,17 @@ OPTexecController(Client cntxt, MalBlkPtr mb, MalBlkPtr pmb, Slices *slices, oid
 	/* pack[i] := mat.pack(x1,...xn) */
 	if ( slices->column) {
 		p = getInstrPtr(pmb,0);
+#ifdef _DEBUG_OPT_CENTIPEDE_
+	//mnstr_printf(cntxt->fdout,"#matpack plan \n");
+	//printInstruction(cntxt->fdout, pmb,0,p,LIST_MAL_STMT);
+	//printInstruction(cntxt->fdout, cmb,0,getInstrPtr(cmb,0),LIST_MAL_STMT);
+#endif
 		for ( k=0  ;k < nrpack ; k++)
 		{
 			pack[k] = newInstruction(cmb,ASSIGNsymbol);
 			getModuleId(pack[k]) = matRef;
 			getFunctionId(pack[k]) = packRef;
-			getArg(pack[k],0) = newTmpVariable(cmb, newBatType(TYPE_oid, getTailType(getArgType(cmb,p,k))) );
+			getArg(pack[k],0) = getArg(p,k); //newTmpVariable(cmb, newBatType(TYPE_oid, getTailType(getArgType(cmb,p,k))) );
 		}
 	}
 
@@ -184,44 +197,8 @@ OPTexecController(Client cntxt, MalBlkPtr mb, MalBlkPtr pmb, Slices *slices, oid
 	if ( slices->column) {
 		for ( k=0 ; k < nrpack; k++) {
 			/* after packing we may have to re-do groupings*/
-			if (sscanf(getVarName(pmb, getArg(p,k)),"ext%d",&j) == 1){
-				/* x:= mat.pack(...);  */
-				getArg(pack[k],0) = newTmpVariable(cmb,TYPE_any);
-				pushInstruction(cmb, pack[k]);
-
-				/* (ext,grp) := group.new(pack[k]) */
-				q= newStmt(cmb, groupRef, newRef);
-				q->retc = q->argc = 0;
-				q= pushReturn(pmb,q, newTmpVariable(cmb,newBatType(TYPE_oid, TYPE_wrd)));
-				q= pushReturn(pmb,q, newTmpVariable(cmb,newBatType(TYPE_oid, TYPE_oid)));
-				q= pushArgument(pmb,q, getArg(pack[k],0));
-				j = getArg(q,0);
-
-				/* sum the group counts */
-
-				/* j := newresult */
-				q= newAssignment(cmb);
-				getArg(q,0) = getArg(p,k);
-				q= pushArgument(cmb,q, j);
-			} else
-			if (sscanf(getVarName(pmb, getArg(p,k)),"grp%dvalues",&j) == 1){
-				char buf[BUFSIZ];
-				/* x:= mat.pack(...);  */
-				pushInstruction(cmb, pack[k]);
-
-				/* (ext,grp) := group.new(pack[k]) */
-				q= newStmt(cmb, groupRef, newRef);
-				q->retc = q->argc = 0;
-				q= pushReturn(cmb,q, newTmpVariable(cmb,newBatType(TYPE_oid, TYPE_wrd)));
-				q= pushReturn(cmb,q, getArg(p,k));
-				q= pushArgument(cmb,q, getArg(pack[k],0));
-				snprintf(buf,BUFSIZ,"grp%d",k);
-				setVarName(cmb, getArg(p,k), GDKstrdup(buf));
-				setVarType(cmb, getArg(p,k), newBatType(TYPE_oid, TYPE_oid));
-			} else {
-				pushInstruction(cmb, pack[k]);
-				setVarUsed(cmb,getArg(pack[k],0));
-			}
+			pushInstruction(cmb, pack[k]);
+			setVarUsed(cmb,getArg(pack[k],0));
 		}
 	}
 
@@ -229,6 +206,37 @@ OPTexecController(Client cntxt, MalBlkPtr mb, MalBlkPtr pmb, Slices *slices, oid
 	q= newAssignment(cmb);
 	q->barrier = EXITsymbol;
 	getArg(q,0) = barrier;
+
+	/* look for pivot functions */
+	for ( i=1; i < pmb->stop; i++){
+		InstrPtr pq= getInstrPtr(pmb,0);
+		q= getInstrPtr(pmb,i);
+		for( k = 0; k < pq->retc; k++)
+			if ( getArg(pq,k) == getArg(q,0))
+				break;
+		if (getModuleId(q) == groupRef && (getFunctionId(q) == subgroupdoneRef)){
+			pushInstruction(cmb,q);
+			pq= getInstrPtr(cmb,0);
+			for ( k = 0; k< pq->retc; k++)
+			if (getArg(pq,k) == getArg(q, q->retc)){
+				delArgument(pq,k);
+				break;
+			}
+		} else
+		if (getModuleId(q) == aggrRef && getFunctionId(q) == subcountRef ){
+			q= copyInstruction(q);
+			getFunctionId(q) = subsumRef;
+			getArg(q,1)= getArg(q,0);
+			q= pushBit(cmb,q,1);
+			pushInstruction(cmb,q);
+		} else
+		if (getModuleId(q) == aggrRef && (getFunctionId(q)==subsumRef || getFunctionId(q) == subminRef ||
+			getFunctionId(q) == submaxRef || getFunctionId(q) == subavgRef)){
+			q= copyInstruction(q);
+			getArg(q,1)= getArg(q,0);
+			pushInstruction(cmb,q);
+		}
+	}
 
 	/* consolidate the result */
 	ret = copyInstruction(getInstrPtr(cmb,0));
@@ -249,14 +257,14 @@ OPTexecController(Client cntxt, MalBlkPtr mb, MalBlkPtr pmb, Slices *slices, oid
 
 	pushEndInstruction(cmb);
 #ifdef _DEBUG_OPT_CENTIPEDE_
-	//mnstr_printf(cntxt->fdout,"#rough cntrl plan %d \n", cmb->errors);
-	//printFunction(cntxt->fdout, cmb, 0, LIST_MAL_STMT);
+	mnstr_printf(cntxt->fdout,"#rough cntrl plan %d \n", cmb->errors);
+	printFunction(cntxt->fdout, cmb, 0, LIST_MAL_STMT);
 #endif
 
 	chkProgram(cntxt->fdout, cntxt->nspace, cmb);
 #ifdef _DEBUG_OPT_CENTIPEDE_
-	//mnstr_printf(cntxt->fdout,"#rough cntrl plan %d \n", cmb->errors);
-	//printFunction(cntxt->fdout, cmb, 0, LIST_MAL_STMT);
+	mnstr_printf(cntxt->fdout,"#cntrl plan %d \n", cmb->errors);
+	printFunction(cntxt->fdout, cmb, 0, LIST_MAL_STMT);
 #endif
 	GDKfree(alias);
 	GDKfree(pack);
@@ -430,12 +438,6 @@ OPTsliceColumn(Client cntxt, MalBlkPtr nmb, MalBlkPtr mb, InstrPtr p, Slices *sl
  * All plans should be uniquely tagged, because we have to avoid potential conflicts
  * when a connection is re-used by different client sessions.
 */
-#define BLOCKED 1
-#define PARTITION 2	 // phase 1 result
-#define PIVOT    3	// phase 2 result
-#define SUPPORTIVE 4	// phase 2 result
-#define EXPORTED 5
-#define KEEPLOCAL 6
 
 #ifdef _DEBUG_OPT_CENTIPEDE_ 
 static char *statusname[7]= {"", "blocked   ", "partition ", "pivot     ", "support   ", "exported ", "keeplocal "};
@@ -546,6 +548,13 @@ OPTbakePlans(Client cntxt, MalBlkPtr mb, Slices *slices)
 				vars[getArg(p,0)] = PARTITION;
 			}
 		} else
+		if ( getModuleId(p) == aggrRef && (getFunctionId(p) == subcountRef || getFunctionId(p) == subsumRef ||
+			getFunctionId(p) == subminRef || getFunctionId(p) == submaxRef || getFunctionId(p) == subavgRef)){
+			if (vars[getArg(p,p->retc)] ){
+				status[i] = PIVOT;
+				vars[getArg(p,0)] = PARTITION;
+			}
+		} else
 		if ( getModuleId(p) == groupRef && ( getFunctionId(p) == subgroupRef || getFunctionId(p) == subgroupdoneRef) && p->retc== 3){
 			if ( vars[getArg(p,p->retc)] ){
 				status[i] = PIVOT;
@@ -574,8 +583,8 @@ OPTbakePlans(Client cntxt, MalBlkPtr mb, Slices *slices)
 
 		if ( status[i] != BLOCKED)
 		for( j = p->retc; j < p->argc; j++)
-		if (vars[getArg(p,j)] == PARTITION ) 
-			status[i]= PARTITION;
+		if (vars[getArg(p,j)] == PARTITION && status[i] != PIVOT)
+				status[i]= PARTITION;
 
 		for ( j= 0; j< p->retc; j++)
 		if (vars[getArg(p,j)] == 0)
@@ -587,6 +596,7 @@ OPTbakePlans(Client cntxt, MalBlkPtr mb, Slices *slices)
 			vars[getArg(p,j)] = SUPPORTIVE;
 	}
 #ifdef _DEBUG_OPT_CENTIPEDE_ 
+/*
 	mnstr_printf(cntxt->fdout,"\n#phase 1 show partition keys\n");
 	for( i= 0; i< limit; i++)
 	if (status[i] && old[i] ) {
@@ -597,6 +607,7 @@ OPTbakePlans(Client cntxt, MalBlkPtr mb, Slices *slices)
 		}
 		printInstruction(cntxt->fdout, mb,0,old[i],LIST_MAL_STMT);
 	}
+*/
 #endif
 
 	/* Phase 2: extend the set with supportive instructions.
@@ -690,35 +701,18 @@ OPTbakePlans(Client cntxt, MalBlkPtr mb, Slices *slices)
 
 	/* keep the original variable list for the caller, but ignore local names */
 	orig = copyInstruction(ret);
+#ifdef _DEBUG_OPT_CENTIPEDE_ 
 	mnstr_printf(cntxt->fdout,"\n#return stmt\n");
 	printInstruction(cntxt->fdout, mb,0,ret,LIST_MAL_STMT);
 	mnstr_printf(cntxt->fdout,"\n#call stmt\n");
 	printInstruction(cntxt->fdout, plan,0,planargs,LIST_MAL_STMT);
+#endif
 
 	for ( i = 1; i < limit ; i++) 
-	if( status[i] == PARTITION || status[i] == SUPPORTIVE ) {
+		if( status[i] == PARTITION || status[i] == PIVOT || status[i] == SUPPORTIVE ) {
 		p = copyInstruction(getInstrPtr(mb, i));
 		if ( old[i]->token == ENDsymbol) {
-			int retc = ret->retc;
 			getFunctionId(plan->stmt[0]) = putName(nme,strlen(nme));
-			/* fix the return statement to become a complete assignment */
-			for( j= 0; j< retc; j++) {
-				if (sscanf(getVarName(plan, getArg(ret,j)),"grp%d",&k) == 1){
-					char buf[BUFSIZ];
-					/* grp := algebra.join(ret,src) */
-					q = newStmt(plan, algebraRef, joinRef);
-					snprintf(buf,BUFSIZ,"grp%dvalues",k);
-					setVarName(plan, getArg(q,0), GDKstrdup(buf));
-					setVarUDFtype(plan,getArg(q,0));
-					q = pushArgument(plan, q, getArg(ret,j));
-					snprintf(buf,BUFSIZ,"src%d",k);
-					k = findVariable(plan, buf);
-					q = pushArgument(plan,q,k);
-					setVarType(plan, getArg(q,0), newBatType(TYPE_oid, getTailType(getVarType(plan,k))));
-					getArg(ret,j) = getArg(q,0);
-				} 
-				//ret= pushArgument(plan,ret,getArg(ret,j));
-			}
 			pushInstruction(plan,planargs);
 			pushEndInstruction(plan);
 		} else
@@ -726,20 +720,46 @@ OPTbakePlans(Client cntxt, MalBlkPtr mb, Slices *slices)
 			OPTsliceColumn(cntxt, plan, mb, p, slices);
 		else
 		if (getModuleId(p) == algebraRef && getFunctionId(p) == leftfetchjoinRef ) {  
-			getFunctionId(p)= leftjoinRef;
+			/* check for aggregate versions */
+			if (sscanf(getVarName(plan,getArg(p,1)),"r1_%d",&k) == 1) {
+				char nme[BUFSIZ];
+				snprintf(nme,BUFSIZ,"%C_d",k);
+				k= findVariable(plan,nme);
+				if ( k >= 0)
+					getArg(p,0)= findVariable(plan,nme);
+			} else 
+				getFunctionId(p)= leftjoinRef;
+			pushInstruction(plan,p);
+		} else
+		if (getModuleId(p) == aggrRef && (getFunctionId(p) == subcountRef || getFunctionId(p) == subsumRef ||
+			getFunctionId(p) == subminRef || getFunctionId(p) == submaxRef || getFunctionId(p) == subavgRef)){
+			if (sscanf(getVarName(plan,getArg(p,2)),"E_%d",&k) == 1) {
+				renameVariable(plan, getArg(p,0),"C_%d",k);
+				for( k = planargs->retc; k < planargs->argc; k++)
+				if ( getArg(planargs,k) == getArg(p,0)){
+					getArg(planargs, k - planargs->retc) = getArg(p,0);
+				}
+			} 
+			//setVarFixed(plan,getArg(p,0));
+			//setVarUsed(plan,getArg(p,0)); 
 			pushInstruction(plan,p);
 		} else
 		if (getModuleId(p) == groupRef && (getFunctionId(p) == subgroupRef || getFunctionId(p) == subgroupdoneRef )) {
-			int w;
+			int w = getArg(p,p->retc);
 			pushInstruction(plan,p);
-			q= newStmt(plan,algebraRef,joinRef);
+			q= newStmt(plan,algebraRef,leftfetchjoinRef);
 			getArg(q,0) = newTmpVariable(plan, newBatType(TYPE_oid, getTailType(getArgType(plan,p,p->retc))));
 			q= pushArgument(plan, q,getArg(p,1));
 			q= pushArgument(plan, q,getArg(p,p->retc));
+			w= getArg(p,p->retc);
 
-			w = newTmpVariable(plan, getArgType(plan,q,0));
-			setVarUsed(plan,w); 
+			renameVariable(plan, getArg(p,0),"E_%d",w);
+			renameVariable(plan, getArg(p,1),"r1_%d",w);
+			renameVariable(plan, getArg(p,2),"r2_%d",w);
+			setVarFixed(plan,getArg(q,0));
+			setVarUsed(plan,getArg(q,0)); 
 			ret= pushReturn(plan,ret, getArg(q,0));
+			renameVariable(plan, getArg(ret,ret->retc-1),"V_%d",w);
 			planargs = pushReturn(plan,planargs , w);
 			planargs = pushArgument(plan,planargs , getArg(q,0));
 		} else
@@ -755,18 +775,19 @@ OPTbakePlans(Client cntxt, MalBlkPtr mb, Slices *slices)
 
 	insertSymbol(cntxt->nspace,s);
 #ifdef _DEBUG_OPT_CENTIPEDE_
+	chkProgram(cntxt->fdout, cntxt->nspace, plan);
 	mnstr_printf(cntxt->fdout,"#rough plan errors %d \n", plan->errors);
 	printFunction(cntxt->fdout, plan, 0, LIST_MAL_STMT);
 #endif
 
 	/* construct the control plan for local/remote execution */
-	cntrl = OPTexecController(cntxt,mb,plan, slices, plantag);
+	cntrl = OPTexecController(cntxt, mb, plan, slices, plantag);
 	if ( cntrl)  {
 		msg= optimizeMALBlock(cntxt, cntrl);
 		chkProgram(cntxt->fdout, cntxt->nspace, cntrl);
 	}
 #ifdef _DEBUG_OPT_CENTIPEDE_
-	mnstr_printf(cntxt->fdout,"#control plan errors %d %s \n",cntrl->errors,msg?msg:"");
+	mnstr_printf(cntxt->fdout,"#optimized control plan errors %d %s \n",cntrl->errors,msg?msg:"");
 	printFunction(cntxt->fdout, cntrl, 0, LIST_MAL_STMT);
 #endif
 
@@ -796,14 +817,21 @@ OPTbakePlans(Client cntxt, MalBlkPtr mb, Slices *slices)
 	printFunction(cntxt->fdout, mb, 0, LIST_MAL_STMT);
 #endif
 #ifdef _DEBUG_OPT_CENTIPEDE_
-	msg= optimizeMALBlock(cntxt, plan);
 	chkProgram(cntxt->fdout, cntxt->nspace, plan);
 	mnstr_printf(cntxt->fdout,"#optimized remote plan error %d %s\n", plan->errors, msg?msg:"");
 	printFunction(cntxt->fdout, plan, 0, LIST_MAL_STMT);
 #endif
 
+#ifdef _DEBUG_OPT_CENTIPEDE_
+	mnstr_printf(cntxt->fdout,"#final 1 cntrl plan %d \n", cntrl->errors);
+	printFunction(cntxt->fdout, cntrl, 0, LIST_MAL_STMT);
+#endif
 	/* construct the remote stub plan */
 	stub = OPTplanStub(cntxt, mb, plan, plantag);
+#ifdef _DEBUG_OPT_CENTIPEDE_
+	mnstr_printf(cntxt->fdout,"#final 1 cntrl plan %d \n", cntrl->errors);
+	printFunction(cntxt->fdout, cntrl, 0, LIST_MAL_STMT);
+#endif
 	if ( stub)  {
 		msg= optimizeMALBlock(cntxt, stub);
 		chkProgram(cntxt->fdout, cntxt->nspace, stub);
