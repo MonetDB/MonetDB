@@ -991,16 +991,17 @@ AGGRsubmin_val(bat *retval, bat *bid, bat *gid, bat *eid, bit *skip_nils)
 {
 	BAT *a, *b, *r;
 	str res;
+	int ret;
 
-	if ((res = AGGRsubgrouped(retval, bid, gid, eid, NULL, *skip_nils,
+	if ((res = AGGRsubgrouped(&ret, bid, gid, eid, NULL, *skip_nils,
 						  0, TYPE_oid, BATgroupmin, "aggr.submin")) != MAL_SUCCEED)
 		return res;
 	b = BATdescriptor(*bid);
-	a = BATdescriptor(*retval);
+	a = BATdescriptor(ret);
 	r = BATouterjoin(a, b, BATcount(a));
 	BBPreleaseref(b->batCacheid);
 	BBPreleaseref(a->batCacheid);
-	BBPdecref(*retval, TRUE);
+	BBPdecref(ret, TRUE);
 	BBPkeepref(*retval = r->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -1011,16 +1012,17 @@ AGGRsubmincand_val(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, bit *ski
 {
 	BAT *a, *b, *r;
 	str res;
+	int ret;
 
-	if ((res = AGGRsubgrouped(retval, bid, gid, eid, sid, *skip_nils,
+	if ((res = AGGRsubgrouped(&ret, bid, gid, eid, sid, *skip_nils,
 						  0, TYPE_oid, BATgroupmin, "aggr.submin")) != MAL_SUCCEED)
 		return res;
 	b = BATdescriptor(*bid);
-	a = BATdescriptor(*retval);
+	a = BATdescriptor(ret);
 	r = BATouterjoin(a, b, BATcount(a));
 	BBPreleaseref(b->batCacheid);
 	BBPreleaseref(a->batCacheid);
-	BBPdecref(*retval, TRUE);
+	BBPdecref(ret, TRUE);
 	BBPkeepref(*retval = r->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -1031,16 +1033,17 @@ AGGRsubmax_val(bat *retval, bat *bid, bat *gid, bat *eid, bit *skip_nils)
 {
 	BAT *a, *b, *r;
 	str res;
+	int ret;
 
-	if ((res = AGGRsubgrouped(retval, bid, gid, eid, NULL, *skip_nils,
+	if ((res = AGGRsubgrouped(&ret, bid, gid, eid, NULL, *skip_nils,
 						  0, TYPE_oid, BATgroupmax, "aggr.submax")) != MAL_SUCCEED)
 		return res;
 	b = BATdescriptor(*bid);
-	a = BATdescriptor(*retval);
+	a = BATdescriptor(ret);
 	r = BATouterjoin(a, b, BATcount(a));
 	BBPreleaseref(b->batCacheid);
 	BBPreleaseref(a->batCacheid);
-	BBPdecref(*retval, TRUE);
+	BBPdecref(ret, TRUE);
 	BBPkeepref(*retval = r->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -1051,16 +1054,17 @@ AGGRsubmaxcand_val(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, bit *ski
 {
 	BAT *a, *b, *r;
 	str res;
+	int ret;
 
-	if ((res = AGGRsubgrouped(retval, bid, gid, eid, sid, *skip_nils,
+	if ((res = AGGRsubgrouped(&ret, bid, gid, eid, sid, *skip_nils,
 						  0, TYPE_oid, BATgroupmax, "aggr.submax")) != MAL_SUCCEED)
 		return res;
 	b = BATdescriptor(*bid);
-	a = BATdescriptor(*retval);
+	a = BATdescriptor(ret);
 	r = BATouterjoin(a, b, BATcount(a));
 	BBPreleaseref(b->batCacheid);
 	BBPreleaseref(a->batCacheid);
-	BBPdecref(*retval, TRUE);
+	BBPdecref(ret, TRUE);
 	BBPkeepref(*retval = r->batCacheid);
 	return MAL_SUCCEED;
 }
