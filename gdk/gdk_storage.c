@@ -324,6 +324,24 @@ GDKsave(const char *nme, const char *ext, void *buf, size_t size, storage_t mode
 		}
 	}
 	if (fd >= 0) {
+		if (
+#ifdef NATIVE_WIN32
+			_commit(fd) < 0
+#else
+#ifdef HAVE_FDATASYNC
+			fdatasync(fd) < 0
+#else
+#ifdef HAVE_FSYNC
+			fsync(fd) < 0
+#else
+			0
+#endif
+#endif
+#endif
+			) {
+			GDKsyserror("GDKsave: error on: name=%s, ext=%s, mode=%d\n", nme, ext ? ext : "", (int) mode);
+			err = -1;
+		}
 		err |= close(fd);
 		if (err && GDKunlink(BATDIR, nme, ext)) {
 			/* do not tolerate corrupt heap images

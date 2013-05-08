@@ -3,14 +3,14 @@
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  * http://www.monetdb.org/Legal/MonetDBLicense
- * 
+ *
  * Software distributed under the License is distributed on an "AS IS"
  * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
  * License for the specific language governing rights and limitations
  * under the License.
- * 
+ *
  * The Original Code is the MonetDB Database System.
- * 
+ *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
  * Copyright August 2008-2013 MonetDB B.V.
@@ -84,7 +84,7 @@ void showErrors(Client cntxt)
 str malCommandCall(MalStkPtr stk, InstrPtr pci)
 {
 	str ret= MAL_SUCCEED;
-	
+
 	switch (pci->argc) {
 	case 0: ret = (str)(*pci->fcn)();
 		break;
@@ -322,20 +322,21 @@ str runMAL(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr env)
 		if (cntxt->itrace == 0) /* permit debugger analysis */
 			throw( MAL, "mal.interpreter", "Syntax error in script");
 	}
-/*
- * Prepare a new interpreter call. This involves two steps, (1) allocate
- * the minimum amount of stack space needed, some slack resources
- * are included to permit code optimizers to add a few variables at run time,
- * (2) copying the arguments into the new stack frame.
- *
- * The env stackframe is set when a MAL function is called recursively.
- * Alternatively, there is no caller but a stk to be re-used for interpretation.
- * We assume here that it aligns with the variable table of the routine
- * being called.
- *
- * allocate space for value stack
- * the global stack should be large enough
-*/
+
+	/* Prepare a new interpreter call. This involves two steps, (1)
+	 * allocate the minimum amount of stack space needed, some slack
+	 * resources are included to permit code optimizers to add a few
+	 * variables at run time, (2) copying the arguments into the new
+	 * stack frame.
+	 *
+	 * The env stackframe is set when a MAL function is called
+	 * recursively.  Alternatively, there is no caller but a stk to be
+	 * re-used for interpretation.  We assume here that it aligns with
+	 * the variable table of the routine being called.
+	 *
+	 * allocate space for value stack the global stack should be large
+	 * enough
+	 */
 	if (env != NULL) {
 		stk = env;
 		if (mb != stk->blk)
@@ -360,13 +361,14 @@ str runMAL(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr env)
 				/* we are running low on stack space */
 				throw(MAL, "mal.interpreter", MAL_STACK_FAIL);
 		}
-/*
- * An optimization is to copy all constant variables used in functions immediately
- * onto the value stack. Then we do not have to check for their location
- * later on any more. At some point, the effect is optimal, if at least several
- * constants are referenced in a function (a gain on tst400a of 20% has been
- * observed due the small size of the function).
- */
+		/*
+		 * An optimization is to copy all constant variables used in
+		 * functions immediately onto the value stack. Then we do not
+		 * have to check for their location later on any more. At some
+		 * point, the effect is optimal, if at least several constants
+		 * are referenced in a function (a gain on tst400a of 20% has
+		 * been observed due the small size of the function).
+		 */
 	}
 	if (stk->cmd && env && stk->cmd != 'f')
 		stk->cmd = env->cmd;
@@ -427,11 +429,12 @@ callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[], char debug)
 	ValPtr lhs;
 	InstrPtr pci = getInstrPtr(mb, 0);
  
-/*
- * Control the level of parallelism. The maximum number of concurrent MAL plans
- * is determined by an environment variable. It is initially set equal to the
- * number of cores, which may be too coarse.
- */
+	/*
+	 * Control the level of parallelism. The maximum number of
+	 * concurrent MAL plans is determined by an environment
+	 * variable. It is initially set equal to the number of cores,
+	 * which may be too coarse.
+	 */
 	MT_sema_down(&mal_parallelism,"callMAL");
 #ifdef DEBUG_CALLMAL
 	mnstr_printf(cntxt->fdout, "callMAL\n");
@@ -477,11 +480,11 @@ callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[], char debug)
 }
 
 /*
- * The core of the interpreter is presented next. It takes the context information
- * and starts the interpretation at the designated instruction.
- * Note that the stack frame is aligned and initialized in the enclosing routine.
- * When we start executing the first instruction, we take the wall-clock time for
- * resource management.
+ * The core of the interpreter is presented next. It takes the context
+ * information and starts the interpretation at the designated
+ * instruction.  Note that the stack frame is aligned and initialized
+ * in the enclosing routine.  When we start executing the first
+ * instruction, we take the wall-clock time for resource management.
  */
 str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				   int stoppc, MalStkPtr stk, MalStkPtr env, InstrPtr pcicaller)
@@ -547,23 +550,26 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 		if (pci->recycle > 0)
 			clk = GDKms();
 		if (!RECYCLEentry(cntxt, mb, stk, pci)){
-/* The interpreter loop
- * The interpreter is geared towards execution a MAL procedure together
- * with all its decendant invocations. As such, it provides the
- * MAL abtract machine processor.
- *
- * The value-stack frame of the surrounding scope is needed to resolve
- * binding values.  Getting (putting) a value from (into) a surrounding
- * scope should be guarded with the exclusive access lock.
- * This situation is encapsulated by a bind() function call, whose parameters
- * contain the access mode required.
- *
- * The formal procedure arguments are assumed to always occupy the first
- * elements in the value stack.
- *
- * Before we execute an instruction the variables to be garbage collected
- * are identified. In the post-execution phase they are removed.
- */
+			/* The interpreter loop
+			 * The interpreter is geared towards execution a MAL
+			 * procedure together with all its decendant
+			 * invocations. As such, it provides the MAL abtract
+			 * machine processor.
+			 *
+			 * The value-stack frame of the surrounding scope is
+			 * needed to resolve binding values.  Getting (putting) a
+			 * value from (into) a surrounding scope should be guarded
+			 * with the exclusive access lock.  This situation is
+			 * encapsulated by a bind() function call, whose
+			 * parameters contain the access mode required.
+			 *
+			 * The formal procedure arguments are assumed to always
+			 * occupy the first elements in the value stack.
+			 *
+			 * Before we execute an instruction the variables to be
+			 * garbage collected are identified. In the post-execution
+			 * phase they are removed.
+			 */
 			if (garbageControl(pci)) {
 				for (i = 0; i < pci->argc; i++) {
 					int a = getArg(pci, i);
@@ -591,19 +597,21 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			ret = 0;
 			switch (pci->token) {
 			case ASSIGNsymbol:
-/* Assignment command
- * The assignment statement copies values around on the stack frame,
- * including multiple assignments.
- *
- * Pushing constants/initial values onto the stack is a separate operation.
- * It takes the constant value discovered at compile time and stored in the
- * symbol table and moves it to the stackframe location. This activity
- * is made part of the start-up procedure.
- *
- * The before after calls should be reconsidered here, because
- * their. They seem superflous and the way they are used will
- * cause errors in multi-assignment statements.
- */
+				/* Assignment command
+				 * The assignment statement copies values around on
+				 * the stack frame, including multiple assignments.
+				 *
+				 * Pushing constants/initial values onto the stack is
+				 * a separate operation.  It takes the constant value
+				 * discovered at compile time and stored in the symbol
+				 * table and moves it to the stackframe location. This
+				 * activity is made part of the start-up procedure.
+				 *
+				 * The before after calls should be reconsidered here,
+				 * because their. They seem superflous and the way
+				 * they are used will cause errors in multi-assignment
+				 * statements.
+				 */
 				for (k = 0, i = pci->retc; k < pci->retc && i < pci->argc; i++, k++) {
 					lhs = &stk->stk[pci->argv[k]];
 					rhs = &stk->stk[pci->argv[i]];
@@ -625,11 +633,12 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				ret =malCommandCall(stk, pci);
 				break;
 			case FACcall:
-/*
- * Factory calls are more involved. At this stage it is a synchrononous
- * call to the factory manager.
- * Factory calls should deal with the reference counting.
- */
+				/*
+				 * Factory calls are more involved. At this stage it
+				 * is a synchrononous call to the factory manager.
+				 * Factory calls should deal with the reference
+				 * counting.
+				 */
 				if (pci->blk == NULL)
 					ret = createScriptException(mb, stkpc, MAL, NULL,
 						"reference to MAL function missing");
@@ -648,11 +657,12 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				}
 				break;
 			case FCNcall:
-/*
- * MAL function calls are relatively expensive, because they have to assemble
- * a new stack frame and do housekeeping, such as garbagecollection of all
- * non-returned values.
- */
+				/*
+				 * MAL function calls are relatively expensive,
+				 * because they have to assemble a new stack frame and
+				 * do housekeeping, such as garbagecollection of all
+				 * non-returned values.
+				 */
 				{	MalStkPtr nstk;
 					InstrPtr q;
 					int ii, arg;
@@ -910,10 +920,10 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			}
 		}
 
-/*
- * After the expression has been evaluated we should check for a
- * possible change in the control flow.
- */
+		/*
+		 * After the expression has been evaluated we should check for
+		 * a possible change in the control flow.
+		 */
 		switch (pci->barrier) {
 		case BARRIERsymbol:
 			v = &stk->stk[getDestVar(pci)];
@@ -1352,8 +1362,8 @@ void garbageElement(Client cntxt, ValPtr v)
 		v->len = 0;
 	}
 }
+
 /*
- *
  * Before we return from the interpreter, we should free all
  * dynamically allocated objects and adjust the BAT reference counts.
  * Early experience shows that for small stack frames the overhead
@@ -1392,6 +1402,7 @@ void garbageCollector(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int flag)
 	(void)cntxt;
 #endif
 }
+
 /*
  * Sometimes it helps to release a BAT when it won;t be used anymore.
  * In this case, we have to assure that all references are cleared
