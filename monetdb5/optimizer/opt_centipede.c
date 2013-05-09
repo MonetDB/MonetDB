@@ -453,7 +453,6 @@ OPTbakePlans(Client cntxt, MalBlkPtr mb, Slices *slices)
 	MalBlkPtr plan, cntrl, stub;
 	str msg= MAL_SUCCEED;
 	char nme[BUFSIZ];
-	char *head, *tail; /* oid reference to target table*/
 	oid plantag;
 
 	status = GDKzalloc(mb->ssize * sizeof(int));
@@ -478,8 +477,6 @@ OPTbakePlans(Client cntxt, MalBlkPtr mb, Slices *slices)
 	old = plan->stmt;
 	if ( newMalBlkStmt(plan,plan->ssize) < 0 )
 		return;
-	head = GDKzalloc(mb->vsize);
-	tail = GDKzalloc(mb->vsize);
 
 #ifdef _DEBUG_OPT_CENTIPEDE_
 	mnstr_printf(cntxt->fdout,"#Remote plan framework\n");
@@ -603,7 +600,7 @@ OPTbakePlans(Client cntxt, MalBlkPtr mb, Slices *slices)
 		mnstr_printf(cntxt->fdout,"%s ",statusname[status[i]]);
 		for (j=0; j< old[i]->retc; j++){
 			int x = old[i]->argv[j];
-			mnstr_printf(cntxt->fdout,"[%d]%d %c%c ",x,vars[x], head[x]+'0', tail[x]+'0');
+			mnstr_printf(cntxt->fdout,"[%d]%d ",x,vars[x]);
 		}
 		printInstruction(cntxt->fdout, mb,0,old[i],LIST_MAL_STMT);
 	}
@@ -652,7 +649,7 @@ OPTbakePlans(Client cntxt, MalBlkPtr mb, Slices *slices)
 		mnstr_printf(cntxt->fdout,"%s ",statusname[status[i]]);
 		for (j=0; j< old[i]->retc; j++){
 			int x = old[i]->argv[j];
-			mnstr_printf(cntxt->fdout,"[%d]%d %c%c ",x,vars[x], head[x]+'0', tail[x]+'0');
+			mnstr_printf(cntxt->fdout,"[%d]%d ",x,vars[x]);
 		}
 		printInstruction(cntxt->fdout, mb,0,old[i],LIST_MAL_STMT);
 	}
@@ -723,7 +720,7 @@ OPTbakePlans(Client cntxt, MalBlkPtr mb, Slices *slices)
 			/* check for aggregate versions */
 			if (sscanf(getVarName(plan,getArg(p,1)),"r1_%d",&k) == 1) {
 				char nme[BUFSIZ];
-				snprintf(nme,BUFSIZ,"%C_d",k);
+				snprintf(nme,BUFSIZ,"C_%d",k);
 				k= findVariable(plan,nme);
 				if ( k >= 0)
 					getArg(p,0)= findVariable(plan,nme);
@@ -866,7 +863,7 @@ OPTcentipedeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 
 	msg = GDKgetenv("gdk_readonly");
 	if( msg == 0 || strcmp(msg,"yes")) {
-		mnstr_printf(cntxt->fdout,"#WARNING centipede only works for readonly databases\n");
+		//mnstr_printf(cntxt->fdout,"#WARNING centipede only works for readonly databases\n");
 		//return 0;
 	}
 	if ( nrservers == 0)
