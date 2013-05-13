@@ -1,0 +1,32 @@
+stdout of test 'pqueue` in directory 'monetdb5/modules/mal` itself:
+
+
+# 21:06:19 >  
+# 21:06:19 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=31375" "--set" "mapi_usock=/var/tmp/mtest-9036/.s.monetdb.31375" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/current//Linux/var/MonetDB/mTests_monetdb5_modules_mal" "pqueue.mal"
+# 21:06:19 >  
+
+# MonetDB 5 server v11.16.0
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_modules_mal', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.629 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2013 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:31375/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-9036/.s.monetdb.31375
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+function user.main():void;
+# init pqueue 
+    X_buffer_type:bat[:oid,:int]  := bat.new(:oid,:int,1);
+    X_buffer := pqueue.init(X_buffer_type,5:wrd);
+# enqueue something  
+    pqueue.enqueue_max(X_buffer,5@0:oid,5:int);
+end main;
+
+# 21:06:19 >  
+# 21:06:19 >  "Done."
+# 21:06:19 >  
+

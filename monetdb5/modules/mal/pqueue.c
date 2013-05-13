@@ -1262,7 +1262,7 @@ PQenqueue_anymin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	ptr el;
 	(void) cntxt;
 
-	if (p->argc != 4 || getArgType(mb, p, 1) != TYPE_bat || getArgType(mb, p, 2) != TYPE_oid)
+	if (p->argc != 4 || !isaBatType(getArgType(mb, p, 1)) || getArgType(mb, p, 2) != TYPE_oid)
 		throw(MAL, "enqueue_min", SEMANTIC_TYPE_MISMATCH);
 	tpe = getArgType(mb, p, 3);
 
@@ -1287,7 +1287,7 @@ PQtopreplace_anymin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 	(void) cntxt;
 
-	if (p->argc != 4 || getArgType(mb, p, 1) != TYPE_bat || getArgType(mb, p, 2) != TYPE_oid)
+	if (p->argc != 4 || !isaBatType(getArgType(mb, p, 1)) || getArgType(mb, p, 2) != TYPE_oid)
 		throw(MAL, "topreplace_min", SEMANTIC_TYPE_MISMATCH);
 	tpe = getArgType(mb, p, 3);
 
@@ -1311,7 +1311,7 @@ PQenqueue_anymax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	ptr el;
 	(void) cntxt;
 
-	if (p->argc != 4 || getArgType(mb, p, 1) != TYPE_bat || getArgType(mb, p, 2) != TYPE_oid)
+	if (p->argc != 4 || !isaBatType(getArgType(mb, p, 1)) || getArgType(mb, p, 2) != TYPE_oid)
 		throw(MAL, "enqueue_max", SEMANTIC_TYPE_MISMATCH);
 	tpe = getArgType(mb, p, 3);
 
@@ -1336,7 +1336,7 @@ PQtopreplace_anymax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 	(void) cntxt;
 
-	if (p->argc != 4 || getArgType(mb, p, 1) != TYPE_bat || getArgType(mb, p, 2) != TYPE_oid)
+	if (p->argc != 4 || !isaBatType(getArgType(mb, p, 1)) || getArgType(mb, p, 2) != TYPE_oid)
 		throw(MAL, "topreplace_max", SEMANTIC_TYPE_MISMATCH);
 	tpe = getArgType(mb, p, 3);
 
