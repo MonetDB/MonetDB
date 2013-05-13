@@ -21,8 +21,6 @@
 	- In the mclient sql interface,
 		- run 'mseed_schema.sql' script to create the normalized schema of mSEED.
 		- run "CALL register_repo('TESTDIR/example_mseed_file_list.txt', 0, 1);" where TESTDIR is the relative or absolute path of the aforementioned Tests/ directory. This will employ the registrar module to load (only) metadata of mSEED files. The last argument specifies the number threads to use.
-	- Leave mclient and stop mserver5. Then run "mserver5 --readonly" to restart in readonly mode. The current incomplete version works only in readonly mode.
-	- Run "mclient" again and in the mclient sql interface,
 		- run 'initializer.sql' script to modify MonetDB optimizer pipeline in order to include DVframework optimizer in the pipeline. This is need to me done after every restart of mclient, unfortunately.
 		- run example queries like "SELECT AVG(sample_value) FROM mseed.dataview WHERE network = 'FR';". You may also prefix the queries with 'EXPLAIN ' to see the query plan after the DVframework optimizer runs.
 	- You may always refer to man pages of commands beginning with 'm' or 'M' for more information about them.
