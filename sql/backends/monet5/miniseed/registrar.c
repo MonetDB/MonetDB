@@ -117,7 +117,7 @@ lng get_file_paths(str repo_path, str** ret_file_paths)
 
 			FILE *file;
 			num_file_paths = get_line_num(repo_path);
-			printf("num_file_paths: %ld\n", num_file_paths);
+			printf("num_file_paths: "LLFMT"\n", num_file_paths);
 
 			*ret_file_paths = file_paths = (str*) GDKmalloc(num_file_paths * sizeof(str));
 			assert(file_paths != NULL);
