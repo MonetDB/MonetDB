@@ -36,8 +36,8 @@ typedef struct {
 typedef struct {
 	int tid; /* thread id */
 	str *file_paths; /* array of file paths to loop on in the thread */
-	long loop_start;
-	long loop_end;
+	lng loop_start;
+	lng loop_end;
 	int mode; /* carries to the thread */
 	Client cntxt; /* carries to the thread */
 	int *function_created;
@@ -69,7 +69,7 @@ lng get_line_num(str filename)
 {
 	FILE *f;
 	char c;
-	long lines = 0;
+	lng lines = 0;
 
 	f = fopen(filename, "r");
 
@@ -100,7 +100,7 @@ lng get_line_num(str filename)
  */
 lng get_file_paths(str repo_path, str** ret_file_paths)
 {
-	long num_file_paths = 0;
+	lng num_file_paths = 0;
 	struct stat s;
 	str* file_paths = NULL;
 	if( stat(repo_path,&s) == 0 )
@@ -127,7 +127,7 @@ lng get_file_paths(str repo_path, str** ret_file_paths)
 			if ( file != NULL )
 			{
 				char line [255]; /* or other suitable maximum line size */
-				long i = 0;
+				lng i = 0;
 				while ( fgets ( line, sizeof(line), file ) != NULL ) /* read a line */
 				{
 					int len_line = strlen(line);
@@ -840,7 +840,7 @@ str mseed_register_and_mount(str file_path, temp_container* ret_tc)
 void *register_files(void *args)
 {
 	temp_container *tc;
-	long i;
+	lng i;
 	str err = NULL;
 	int start, finish;
 	
@@ -938,9 +938,9 @@ str register_repo(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int mode = *(int*) getArgReference(stk,pci,pci->retc+1); /* arg 2: mode 0:register only, mode 1: register+mount */
 	int num_threads = *(int*) getArgReference(stk,pci,pci->retc+2); /* arg 3: 1: no threads, >1: multi-threaded */
 	str *file_paths = NULL;
-	long num_file_paths;
+	lng num_file_paths;
 	temp_container *tc;
-	long i;
+	lng i;
 	str err = NULL;
 	int start, finish;
 	int function_created = 0;
@@ -957,8 +957,8 @@ str register_repo(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	{
 		
 		/* multi-threaded */
-		long loop_start = 0;
-		long num_file_paths_per_thread = num_file_paths / num_threads;
+		lng loop_start = 0;
+		lng num_file_paths_per_thread = num_file_paths / num_threads;
 		pthread_t *threads = (pthread_t*)GDKmalloc(num_threads*sizeof(pthread_t));
 		thread_argv *targvs = (thread_argv*)GDKmalloc(num_threads*sizeof(thread_argv));
 		int j;
@@ -1084,7 +1084,7 @@ str register_repo(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
  * because SQL does not allow functions to return arbitrary tables without predefining
  * them. prepare_insertion functions predefines them and this function does the mapping.
  *
- * takes temp_container pointer as a long int (ticket), since it is only called from
+ * takes temp_container pointer as a lng (ticket), since it is only called from
  * SQL level. table_idx specifies for which of the tables it is called for.
  *
  * returns error or MAL_SUCCEED.
