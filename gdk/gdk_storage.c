@@ -408,7 +408,7 @@ GDKload(const char *nme, const char *ext, size_t size, size_t maxsize, storage_t
 
 		GDKfilepath(path, BATDIR, nme, ext);
 		if (stat(path, &st) >= 0 &&
-		    (maxsize < (size_t) st.st_size ||
+		    (maxsize <= (size_t) st.st_size ||
 		     /* mmap storage is auto-extended here */
 		     GDKextend(path, maxsize) == 0)) {
 			int mod = MMAP_READ | MMAP_WRITE | MMAP_SEQUENTIAL | MMAP_SYNC;
