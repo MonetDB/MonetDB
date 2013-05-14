@@ -1315,7 +1315,7 @@ BBPdir_subcommit(int cnt, bat *subcommit)
 	}
 
 	if (mnstr_flush(s) != 0 ||
-	    mnstr_fsync(s) != 0)
+	    (!(GDKdebug & FORCEMITOMASK) && mnstr_fsync(s) != 0))
 		goto bailout;
 	mnstr_close(s);
 	mnstr_destroy(s);
