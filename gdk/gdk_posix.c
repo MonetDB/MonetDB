@@ -398,17 +398,18 @@ MT_munmap(void *p, size_t len)
 int
 MT_msync(void *p, size_t off, size_t len, int mode)
 {
-	int ret = msync(((char *) p) + off, len, (mode & MMAP_SYNC) ? MS_SYNC : ((mode & MMAP_ASYNC) ? MS_ASYNC : MS_INVALIDATE));
+	int ret = msync(((char *) p) + off, len,
+			(mode & MMAP_SYNC) ? MS_SYNC :
+			((mode & MMAP_ASYNC) ? MS_ASYNC : MS_INVALIDATE));
 
 #ifdef MMAP_DEBUG
 	mnstr_printf(GDKstdout,
-		      "#msync(" LLFMT "," LLFMT ",%s) = %d\n",
-		      (long long) p, (long long) len,
-		      (mode & MMAP_SYNC) ? "MS_SYNC" : ((mode & MMAP_ASYNC) ? "MS_ASYNC" : "MS_INVALIDATE"),
-		      ret);
+		     "#msync(" LLFMT "," LLFMT ",%s) = %d\n",
+		     (long long) p, (long long) len,
+		     (mode & MMAP_SYNC) ? "MS_SYNC" :
+		     ((mode & MMAP_ASYNC) ? "MS_ASYNC" : "MS_INVALIDATE"),
+		     ret);
 #endif
-	if (ret < 0)
-		return errno;
 	return ret;
 }
 
