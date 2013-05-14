@@ -1721,86 +1721,57 @@ gdk_export void GDKqsort_rev(void *h, void *t, const void *base, size_t n, int h
 	do {								\
 		if ((col)->type == TYPE_void) {				\
 			if ((col)->seq == oid_nil) {			\
-				if (!(col)->nil && (b)->batCount >= 1) { \
-					(col)->nil = 1;			\
-					(b)->batDirtydesc = 1;		\
-				}					\
-				if (!(col)->revsorted) {		\
-					(col)->revsorted = 1;		\
-					(b)->batDirtydesc = 1;		\
-				}					\
+				(col)->nonil = (b)->batCount == 0;	\
+				(col)->nil = !(col)->nonil;		\
+				(col)->revsorted = 1;			\
+				(col)->key = (b)->batCount <= 1;	\
+				(col)->dense = 0;			\
 			} else {					\
-				if (!(col)->dense) {			\
-					(col)->dense = 1;		\
-					(b)->batDirtydesc = 1;		\
-				}					\
-				if (!(col)->nonil) {			\
-					(col)->nonil = 1;		\
-					(b)->batDirtydesc = 1;		\
-				}					\
-				if (!(col)->key) {			\
-					(col)->key = 1;			\
-					(b)->batDirtydesc = 1;		\
-				}					\
-				if ((col)->revsorted && (b)->batCount > 1) { \
-					(col)->revsorted = 0;		\
-					(b)->batDirtydesc = 1;		\
-				}					\
-			}						\
-			if (!(col)->sorted) {				\
-				(col)->sorted = 1;			\
-				(b)->batDirtydesc = 1;			\
-			}						\
-		} else if ((b)->batCount <= 1) {			\
-			oid sqbs;					\
-			if (BATatoms[(col)->type].linear) {		\
-				if (!(col)->sorted) {			\
-					(col)->sorted = 1;		\
-					(b)->batDirtydesc = 1;		\
-				}					\
-				if (!(col)->revsorted) {		\
-					(col)->revsorted = 1;		\
-					(b)->batDirtydesc = 1;		\
-				}					\
-			}						\
-			if (!(col)->key) {				\
+				(col)->dense = 1;			\
+				(col)->nonil = 1;			\
+				(col)->nil = 0;				\
 				(col)->key = 1;				\
-				(b)->batDirtydesc = 1;			\
+				(col)->revsorted = (b)->batCount <= 1;	\
 			}						\
+			(col)->sorted = 1;				\
+		} else if ((b)->batCount <= 1) {			\
+			if (BATatoms[(col)->type].linear) {		\
+				(col)->sorted = 1;			\
+				(col)->revsorted = 1;			\
+			}						\
+			(col)->key = 1;					\
 			if ((b)->batCount == 0) {			\
 				(col)->nonil = 1;			\
 				(col)->nil = 0;				\
-				if (!(col)->dense &&			\
-				    (col)->type == TYPE_oid) {		\
+				if ((col)->type == TYPE_oid) {		\
 					(col)->dense = 1;		\
 					(col)->seq = 0;			\
-					(b)->batDirtydesc = 1;		\
 				}					\
-			} else if (!(col)->dense &&			\
-				   (col)->type == TYPE_oid &&		\
-				   (sqbs = ((oid *) (col)->heap.base)[(b)->batFirst]) != oid_nil) { \
-				(col)->dense = 1;			\
+			} else if ((col)->type == TYPE_oid) {		\
+				/* b->batCount == 1 */			\
+				oid sqbs;				\
+				if ((sqbs = ((oid *) (col)->heap.base)[(b)->batFirst]) == oid_nil) { \
+					(col)->dense = 0;		\
+					(col)->nonil = 0;		\
+					(col)->nil = 1;			\
+				} else {				\
+					(col)->dense = 1;		\
+					(col)->nonil = 1;		\
+					(col)->nil = 0;			\
+				}					\
 				(col)->seq = sqbs;			\
-				(col)->nonil = 1;			\
-				(col)->nil = 0;				\
-				(b)->batDirtydesc = 1;			\
 			}						\
 		}							\
 		if (!BATatoms[(col)->type].linear) {			\
-			if ((col)->sorted) {				\
-				(col)->sorted = 0;			\
-				(b)->batDirtydesc = 1;			\
-			}						\
-			if ((col)->revsorted) {				\
-				(col)->revsorted = 0;			\
-				(b)->batDirtydesc = 1;			\
-			}						\
+			(col)->sorted = 0;				\
+			(col)->revsorted = 0;				\
 		}							\
 	} while (0)
-#define BATsettrivprop(b)			\
-	do {					\
-		COLsettrivprop((b), (b)->H);	\
-		COLsettrivprop((b), (b)->T);	\
+#define BATsettrivprop(b)						\
+	do {								\
+		(b)->batDirtydesc = 1;	/* likely already set */	\
+		COLsettrivprop((b), (b)->H);				\
+		COLsettrivprop((b), (b)->T);				\
 	} while (0)
 
 /*

@@ -324,7 +324,7 @@ GDKsave(const char *nme, const char *ext, void *buf, size_t size, storage_t mode
 		}
 	}
 	if (fd >= 0) {
-		if (
+		if (!(GDKdebug & FORCEMITOMASK) &&
 #ifdef NATIVE_WIN32
 			_commit(fd) < 0
 #else

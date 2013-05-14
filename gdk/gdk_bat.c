@@ -2189,6 +2189,8 @@ BATseqbase(BAT *b, oid o)
 				b->halign = 0;
 		}
 		b->hseqbase = o;
+		if (b->htype == TYPE_oid && o == oid_nil)
+			b->hdense = 0;
 
 		/* adapt keyness */
 		if (BAThvoid(b)) {
