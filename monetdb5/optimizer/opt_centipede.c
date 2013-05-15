@@ -211,16 +211,17 @@ OPTexecController(Client cntxt, MalBlkPtr mb, MalBlkPtr pmb, InstrPtr ret, Slice
 	for ( i=1; i < pmb->stop; i++){
 		InstrPtr pq= getInstrPtr(pmb,0);
 		q= getInstrPtr(pmb,i);
-		if (getModuleId(q) == groupRef && (getFunctionId(q) == subgroupdoneRef)){
-			char nme[BUFSIZ], v;
+		if (getModuleId(q) == groupRef && (getFunctionId(q) == subgroupRef || getFunctionId(q) == subgroupdoneRef)){
+			char nme[BUFSIZ];
+			int idx;
 
 			q= copyInstruction(q);
 
 			for( j= q->retc; j<q->argc; j++){
 				snprintf(nme,BUFSIZ,"C_%d",getArg(q,j));
-				v= findVariable(cmb,nme);
-				if ( v >= 0)
-					getArg(q,j) = v;
+				idx= findVariable(pmb,nme);
+				if ( idx >= 0)
+					getArg(q,j) = idx;
 
 				pq= getInstrPtr(cmb,0);
 				for ( k = 0; k< pq->retc; k++)
@@ -230,7 +231,6 @@ OPTexecController(Client cntxt, MalBlkPtr mb, MalBlkPtr pmb, InstrPtr ret, Slice
 				}
 			}
 			pushInstruction(cmb,q);
-
 		} else
 		if (getModuleId(q) == aggrRef && getFunctionId(q) == subcountRef ){
 			q= copyInstruction(q);
@@ -753,7 +753,9 @@ OPTbakePlans(Client cntxt, MalBlkPtr mb, Slices *slices)
 				snprintf(nme,BUFSIZ,"C_%d",k);
 				k= findVariable(plan,nme);
 				if ( k >= 0)
-					getArg(p,0)= findVariable(plan,nme);
+					getArg(p,0)= k;
+				//planargs = pushReturn(plan,planargs , getArg(p,0));
+				//planargs = pushArgument(plan,planargs , getArg(p,0));
 			} else 
 				getFunctionId(p)= leftjoinRef;
 			pushInstruction(plan,p);
