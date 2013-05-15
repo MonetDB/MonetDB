@@ -288,9 +288,10 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		     nl > 0;
 		     lscan++)
 			nl >>= 1;
-		equal_order = l->tsorted == r->tsorted ||
-			l->trevsorted == r->trevsorted;
-		lordering = l->tsorted && (r->tsorted|| !equal_order) ? 1 : -1;
+		equal_order = (l->tsorted && r->tsorted) ||
+			(l->trevsorted && r->trevsorted &&
+			 l->ttype != TYPE_void && r->ttype != TYPE_void);
+		lordering = l->tsorted && (r->tsorted || !equal_order) ? 1 : -1;
 		rordering = equal_order ? lordering : -lordering;
 	} else {
 		/* if l not sorted, we will always use binary search
