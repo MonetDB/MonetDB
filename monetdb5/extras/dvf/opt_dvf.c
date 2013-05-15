@@ -118,6 +118,7 @@ OPTdvfImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, in
 	InstrPtr *old = NULL, q = NULL, r = NULL, t = NULL, b = NULL, m = NULL, e = NULL, *ps_iter = NULL;
 	int i, limit, which_column, actions = 0;
 	int last_bind_return_var_id = -1;
+	int last_data_tid_return_var_id = -1;
 
 	stk = stk; //to escape 'unused' parameter error.
 	pci = pci; //to escape 'unused' parameter error.
@@ -161,10 +162,14 @@ OPTdvfImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, in
 			getFunctionId(p) == leftfetchjoinRef &&
 			p->argc == 3 &&
 			p->retc == 1 &&
-			getModuleId(old[i-1]) == sqlRef &&
+			((getModuleId(old[i-1]) == sqlRef &&
 			getFunctionId(old[i-1]) == projectdeltaRef &&
 			getArg(p, 2) == getArg(old[i-1], 0) &&
-			getArg(old[i-1], 2) == getArg(old[i1], 0))
+			getArg(old[i-1], 2) == getArg(old[i1], 0)) ||
+			(getModuleId(old[i-1]) == sqlRef &&
+			getFunctionId(old[i-1]) == deltaRef &&
+			getArg(p, 2) == getArg(old[i-1], 0) &&
+			getArg(old[i-1], 1) == getArg(old[i1], 0))))
 		{
 			i2 = i;
 			state = 2;
@@ -173,24 +178,24 @@ OPTdvfImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, in
 			 * v6 := algebra.leftjoin(v5, v4);
 			 * or series thereof.
 			 */
-// 			for(i = i+1; i < limit; i++)
-// 			{
-// 				p = old[i];
-// 
-// 				if(getModuleId(p) == algebraRef &&
-// 					getFunctionId(p) == leftjoinRef &&
-// 					p->argc == 3 &&
-// 					p->retc == 1 &&
-// 					getArg(p, 2) == getArg(old[i2], 0))
-// 				{
-// 					i2 = i;
-// 				}
-// 				else
-// 				{
-// 					i = i-1;
-// 					break;
-// 				}
-// 			}
+			for(i = i+1; i < limit; i++)
+			{
+				p = old[i];
+
+				if(getModuleId(p) == algebraRef &&
+					getFunctionId(p) == leftfetchjoinRef &&
+					p->argc == 3 &&
+					p->retc == 1 &&
+					getArg(p, 2) == getArg(old[i-1], 0))
+				{
+					i2 = i;
+				}
+				else
+				{
+					i = i-1;
+					break;
+				}
+			}
 		}
 		/* check for
 		 * v7 := sql.bind(..., schema_name, data_table_name, ..., ...);
@@ -434,13 +439,20 @@ OPTdvfImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, in
 			}
 		}
 		else if((state == 2 || state == 3) &&
-			((getModuleId(p) == sqlRef &&
+			getModuleId(p) == sqlRef &&
 			getFunctionId(p) == tidRef &&
 			p->argc == 4 &&
 			p->retc == 1 &&
 			strcmp(getVarConstant(mb, getArg(p, 2)).val.sval, getVarConstant(mb, getArg(old[i1], 2)).val.sval) == 0 &&
-			strstr(getVarConstant(mb, getArg(p, 3)).val.sval, data_table_identifier) != NULL) || 
-			(getModuleId(p) == sqlRef &&
+			strstr(getVarConstant(mb, getArg(p, 3)).val.sval, data_table_identifier) != NULL)
+		{
+			last_data_tid_return_var_id = getArg(p, 0);
+			removeInstruction(mb, p);
+			i--;
+			actions++;
+		}
+		else if((state == 2 || state == 3) &&
+			((getModuleId(p) == sqlRef &&
 			getFunctionId(p) == bindRef &&
 			p->argc == 7 &&
 			p->retc == 2 &&
@@ -460,11 +472,11 @@ OPTdvfImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, in
 			actions++;
 		}
 		else if((state == 3) &&
-			getModuleId(p) == sqlRef &&
+			(getModuleId(p) == sqlRef &&
 			getFunctionId(p) == projectdeltaRef &&
 			p->argc == 6 &&
 			p->retc == 1 &&
-			last_bind_return_var_id == getArg(p, 2))
+			last_bind_return_var_id == getArg(p, 2)))
 		{
 			r = newInstruction(mb, ASSIGNsymbol);
 			r = pushReturn(mb, r, getArg(p, 0));
@@ -474,6 +486,28 @@ OPTdvfImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, in
 			removeInstruction(mb, p);
 			
 			actions += 2;
+		}
+		else if(getModuleId(p) == algebraRef &&
+			getFunctionId(p) == leftfetchjoinRef &&
+			p->argc == 3 &&
+			p->retc == 1 &&
+			last_data_tid_return_var_id == getArg(p, 1) &&
+			getModuleId(old[i-1]) == sqlRef &&
+			getFunctionId(old[i-1]) == deltaRef &&
+			old[i-1]->argc == 5 &&
+			old[i-1]->retc == 1 &&
+			last_bind_return_var_id == getArg(old[i-1], 1) &&
+			getArg(p, 2) == getArg(old[i-1], 0))
+		{
+			r = newInstruction(mb, ASSIGNsymbol);
+			r = pushReturn(mb, r, getArg(p, 0));
+			r = pushArgument(mb, r, last_bind_return_var_id);
+			
+			insertInstruction(mb, r, i+1);
+			removeInstruction(mb, p);
+			removeInstruction(mb, old[i-1]);
+			
+			actions += 3;
 		}
 		
 	}
