@@ -59,13 +59,14 @@ static int nrservers;
  * geared at parallel execution 
 */
 static MalBlkPtr
-OPTexecController(Client cntxt, MalBlkPtr mb, MalBlkPtr pmb, InstrPtr ret, Slices *slices, oid plantag)
+OPTexecController(Client cntxt, MalBlkPtr mb, MalBlkPtr pmb, InstrPtr ret, Slices *slices, oid plantag, int *status)
 {
 	MalBlkPtr cmb;
 	Symbol s;
 	char nme[BUFSIZ], *plan, *stub;
 	int barrier, x, i, j, k, *alias, nrpack;
 	InstrPtr p, q, *pack;
+	int idx;
 
 	/* define the query controller */
 	//snprintf(nme, BUFSIZ, "%s_plan"OIDFMT, getFunctionId( getInstrPtr(mb,0)), plantag);
@@ -207,16 +208,18 @@ OPTexecController(Client cntxt, MalBlkPtr mb, MalBlkPtr pmb, InstrPtr ret, Slice
 	q->barrier = EXITsymbol;
 	getArg(q,0) = barrier;
 
-	/* look for pivot functions */
-	for ( i=1; i < pmb->stop; i++){
-		InstrPtr pq= getInstrPtr(pmb,0);
-		q= getInstrPtr(pmb,i);
-		if (getModuleId(q) == groupRef && (getFunctionId(q) == subgroupRef || getFunctionId(q) == subgroupdoneRef)){
-			char nme[BUFSIZ];
-			int idx;
-
-			q= copyInstruction(q);
-
+	(void) status;
+	/* look for pivot operations in original plan */
+	for ( i=1; i < mb->stop; i++)
+	if (status[i] == PIVOT){
+		InstrPtr pq;
+		q= copyInstruction(getInstrPtr(mb,i));
+#ifdef _DEBUG_OPT_CENTIPEDE_
+	if ( status[i]){
+		mnstr_printf(cntxt->fdout,"\n#cmb include stmt %d status %d\n",i,status[i]);
+		printInstruction(cntxt->fdout, mb, 0, q,LIST_MAL_STMT);
+	}
+#endif
 			for( j= q->retc; j<q->argc; j++){
 				snprintf(nme,BUFSIZ,"C_%d",getArg(q,j));
 				idx= findVariable(pmb,nme);
@@ -230,6 +233,9 @@ OPTexecController(Client cntxt, MalBlkPtr mb, MalBlkPtr pmb, InstrPtr ret, Slice
 					break;
 				}
 			}
+		if (getModuleId(q) == groupRef && (getFunctionId(q) == subgroupRef || getFunctionId(q) == subgroupdoneRef)){
+			q= copyInstruction(q);
+
 			pushInstruction(cmb,q);
 		} else
 		if (getModuleId(q) == aggrRef && getFunctionId(q) == subcountRef ){
@@ -244,7 +250,8 @@ OPTexecController(Client cntxt, MalBlkPtr mb, MalBlkPtr pmb, InstrPtr ret, Slice
 			q= copyInstruction(q);
 			getArg(q,1) = getArg(q,0);
 			pushInstruction(cmb,q);
-		}
+		} else
+			pushInstruction(cmb,q);
 	}
 
 	/* consolidate the result of the control function */
@@ -756,6 +763,10 @@ OPTbakePlans(Client cntxt, MalBlkPtr mb, Slices *slices)
 					getArg(p,0)= k;
 				//planargs = pushReturn(plan,planargs , getArg(p,0));
 				//planargs = pushArgument(plan,planargs , getArg(p,0));
+#ifdef _DEBUG_OPT_CENTIPEDE_
+			mnstr_printf(cntxt->fdout,"\n#pmb include stmt %d  %d\n",i, plan->stop);
+			printInstruction(cntxt->fdout, mb, 0, p,LIST_MAL_STMT);
+#endif
 			} else 
 				getFunctionId(p)= leftjoinRef;
 			pushInstruction(plan,p);
@@ -766,9 +777,17 @@ OPTbakePlans(Client cntxt, MalBlkPtr mb, Slices *slices)
 			planargs = pushArgument(plan,planargs , getArg(p,p->retc));
 			setVarFixed(plan,getArg(p,0));
 			setVarUsed(plan,getArg(p,0)); 
+#ifdef _DEBUG_OPT_CENTIPEDE_
+			mnstr_printf(cntxt->fdout,"\n#pmb include stmt %d  %d\n",i, plan->stop);
+			printInstruction(cntxt->fdout, mb, 0, p,LIST_MAL_STMT);
+#endif
 			pushInstruction(plan,p);
 		} else
 		if (getModuleId(p) == groupRef && (getFunctionId(p) == subgroupRef || getFunctionId(p) == subgroupdoneRef )) {
+#ifdef _DEBUG_OPT_CENTIPEDE_
+			mnstr_printf(cntxt->fdout,"\n#pmb include stmt %d  %d\n",i, plan->stop);
+			printInstruction(cntxt->fdout, mb, 0, p,LIST_MAL_STMT);
+#endif
 			pushInstruction(plan,p);
 			// also pass the group values
 			for( j = p->retc; j<p->argc; j++){
@@ -782,8 +801,9 @@ OPTbakePlans(Client cntxt, MalBlkPtr mb, Slices *slices)
 			}
 			planargs = pushReturn(plan,planargs , getArg(p,0));
 			planargs = pushArgument(plan,planargs , getArg(p,0));
-		} else
+		} else {
 			pushInstruction(plan,p);
+		}
 	}
 
 	/* fix the signature and modify the underlying plan */
@@ -801,7 +821,7 @@ OPTbakePlans(Client cntxt, MalBlkPtr mb, Slices *slices)
 #endif
 
 	/* construct the control plan for local/remote execution */
-	cntrl = OPTexecController(cntxt, mb, plan, ret, slices, plantag);
+	cntrl = OPTexecController(cntxt, mb, plan, ret, slices, plantag, status);
 	if ( cntrl)  {
 		msg= optimizeMALBlock(cntxt, cntrl);
 		chkProgram(cntxt->fdout, cntxt->nspace, cntrl);
@@ -938,9 +958,9 @@ OPTcentipedeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	/* derive a local plan based on forward flow reasoning */
 	OPTbakePlans(cntxt, mb, &slices);
 #ifdef _DEBUG_OPT_CENTIPEDE_
-	mnstr_printf(cntxt->fdout,"non-optimized final main plan: %d errors\n",mb->errors);
-	chkProgram(cntxt->fdout, cntxt->nspace, mb);
-	printFunction(cntxt->fdout, mb, 0, LIST_MAL_STMT);
+	//mnstr_printf(cntxt->fdout,"non-optimized final main plan: %d errors\n",mb->errors);
+	//chkProgram(cntxt->fdout, cntxt->nspace, mb);
+	//printFunction(cntxt->fdout, mb, 0, LIST_MAL_STMT);
 #endif
 	msg= optimizeMALBlock(cntxt, mb);
 	chkProgram(cntxt->fdout, cntxt->nspace, mb);
