@@ -1720,11 +1720,17 @@ BATsubthetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, const ch
 {
 	BAT *r1, *r2;
 
+	if (op[0] == '=' && ((op[1] == '=' && op[2] == 0) || op[2] == 0))
+		return BATsubjoin(r1p, r2p, l, r, sl, sr, estimate);
+
 	*r1p = NULL;
 	*r2p = NULL;
 	if (joinparamcheck(l, r, sl, sr, "BATsubthetajoin") == GDK_FAIL)
 		return GDK_FAIL;
-	if (joininitresults(&r1, &r2, estimate != BUN_NONE ? estimate : sl ? BATcount(sl) : BATcount(l), "BATsubthetajoin") == GDK_FAIL)
+	if (joininitresults(&r1, &r2,
+			    estimate != BUN_NONE ? estimate :
+			    (sl ? BATcount(sl) : BATcount(l)) * (sr ? BATcount(sr) : BATcount(r)),
+			    "BATsubthetajoin") == GDK_FAIL)
 		return GDK_FAIL;
 	*r1p = r1;
 	*r2p = r2;
