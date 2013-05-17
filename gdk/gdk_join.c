@@ -1848,8 +1848,10 @@ BATproject(BAT *l, BAT *r)
 		bn = BATconstant(r->ttype, nil, BATcount(l));
 		if (bn != NULL) {
 			bn = BATseqbase(bn, l->hseqbase);
-			if (bn->ttype == TYPE_void && BATcount(bn) == 0)
+			if (ATOMtype(bn->ttype) == TYPE_oid && BATcount(bn) == 0) {
+				bn->tdense = 1;
 				BATseqbase(BATmirror(bn), 0);
+			}
 		}
 		ALGODEBUG fprintf(stderr, "#BATproject(l=%s,r=%s)=%s#"BUNFMT"%s%s\n",
 			  BATgetId(l), BATgetId(r), BATgetId(bn), BATcount(bn),
