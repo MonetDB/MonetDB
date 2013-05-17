@@ -383,15 +383,22 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	rstartorig = rstart;
 	while (lcand ? lcand < lcandend : lstart < lend) {
 		if (!nil_on_miss && !must_match && lscan > 0) {
-			/* if next value in r too far away (more than
-			 * lscan from current position in l), use
-			 * binary search on l to skip over
-			 * non-matching values, but only if l is
-			 * sorted (lscan > 0) and we don't have to
-			 * insert nils (outer join)
-			 *
-			 * next value to match in r is first if
-			 * equal_order is set, last otherwise */
+			/* If l is sorted (lscan > 0), we look at the
+			 * next value in r to see whether we can jump
+			 * over a large section of l using binary
+			 * search.  We do this by looking ahead in l
+			 * (lscan far, to be precise) and seeing if
+			 * the value there is still too "small"
+			 * (definition depends on sort order of l).
+			 * If it is, we use binary search on l,
+			 * otherwise we scan l for the next position
+			 * with a value greater than or equal to the
+			 * value in r.  Obviously, we can only do this
+			 * if we're not inserting NILs for missing
+			 * values in r (nil_on_miss set, i.e., outer
+			 * join).
+			 * The next value to in r is the first if
+			 * equal_order is set, the last otherwise. */
 			if (rcand) {
 				v = VALUE(r, (equal_order ? rcand[0] : rcandend[-1]) - r->hseqbase);
 			} else if (rvals) {
@@ -412,6 +419,7 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 					rval = rend - 1 + r->tseqbase;
 				v = (const char *) &rval;
 			}
+			/* here, v points to next value in r */
 			if (lcand) {
 				if (lscan < (BUN) (lcandend - lcand) &&
 				    lordering * cmp(VALUE(l, lcand[lscan] - l->hseqbase),
@@ -464,15 +472,33 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			rcand = rcandorig;
 			rstart = rstartorig;
 		}
-		/* v is the value we're going to work with in this
-		 * iteration; count number of equal values in left */
+		/* Here we determine the next value in l that we are
+		 * going to try to match in r.  We will also count the
+		 * number of occurrences in l of that value.
+		 * Afterwards, v points to the value and nl is the
+		 * number of times it occurs.  Also, lstart/lcand will
+		 * point to the next value to be considered (ready for
+		 * the next iteration).
+		 * If there are many equal values in l (more than
+		 * lscan), we will use binary search to find the end
+		 * of the sequence.  Obviously, we can do this only if
+		 * l is actually sorted (lscan > 0). */
 		nl = 1;		/* we'll match (at least) one in l */
 		nr = 0;		/* maybe we won't match anything in r */
 		if (lcand) {
 			v = VALUE(l, lcand[0] - l->hseqbase);
-			while (++lcand < lcandend &&
-			       cmp(v, VALUE(l, lcand[0] - l->hseqbase)) == 0)
-				nl++;
+			if (lscan > 0 &&
+			    lscan < (BUN) (lcandend - lcand) &&
+			    cmp(v, VALUE(l, lcand[lscan] - l->hseqbase)) == 0) {
+				/* lots of equal values: use binary
+				 * search to find end */
+				nl = binsearch(lcand, l->hseqbase, lvals, lvars, lwidth, lscan, lcandend - lcand, v, cmp, lordering, 1);
+				lcand += nl;
+			} else {
+				while (++lcand < lcandend &&
+				       cmp(v, VALUE(l, lcand[0] - l->hseqbase)) == 0)
+					nl++;
+			}
 		} else if (lvals) {
 			v = VALUE(l, lstart);
 			if (loff == wrd_nil) {
@@ -483,9 +509,23 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				v = (const char *) &lval;
 			} else {
 				/* compare values without offset */
-				while (++lstart < lend &&
-				       cmp(v, VALUE(l, lstart)) == 0)
-					nl++;
+				if (lscan > 0 &&
+				    lscan < lend - lstart &&
+				    cmp(v, VALUE(l, lstart + lscan)) == 0) {
+					/* lots of equal values: use
+					 * binary search to find
+					 * end */
+					nl = binsearch(NULL, 0, lvals, lvars,
+						       lwidth, lstart + lscan,
+						       lend, v, cmp, lordering,
+						       1);
+					nl -= lstart;
+					lstart += nl;
+				} else {
+					while (++lstart < lend &&
+					       cmp(v, VALUE(l, lstart)) == 0)
+						nl++;
+				}
 				/* now fix offset */
 				if (loff != 0) {
 					lval = *(const oid *)v + loff;
@@ -504,7 +544,7 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			v = (const char *) &lval;
 		}
 		/* lcand/lstart points one beyond the value we're
-		 * going to match: ready for the next */
+		 * going to match: ready for the next iteration. */
 		if (!nil_matches && cmp(v, nil) == 0) {
 			/* v is nil and nils don't match anything */
 			if (must_match) {
@@ -513,10 +553,20 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			}
 			continue;
 		}
-		/* first we find the first value in r that is at least
-		 * as large as v, then we find the first value in r
-		 * that is larger than v, counting the number of
-		 * values equal to v in nr */
+		/* First we find the "first" value in r that is "at
+		 * least as large" as v, then we find the "first"
+		 * value in r that is "larger" than v.  The difference
+		 * is the number of values equal to v and is stored in
+		 * nr.  The definitions of "larger" and "first" depend
+		 * on the orderings of l and r.  If equal_order is
+		 * set, we go through r from low to high, changing
+		 * rstart/rcand (this includes the case that l is not
+		 * sorted); otherwise we go through r from high to
+		 * low, changing rend/rcandend.
+		 * In either case, we will use binary search on r to
+		 * find both ends of the sequence of values that are
+		 * equal to v in case the position is "too far" (more
+		 * than rscan away). */
 		if (equal_order) {
 			if (rcand) {
 				/* first find the location of the
@@ -527,16 +577,16 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				 * equal v */
 				/* look ahead a little (rscan) in r to
 				 * see whether we're better off doing
-				 * a binary search, but if l is not
-				 * sorted (lscan == 0) we'll always do
 				 * a binary search */
-				if (lscan == 0 ||
-				    (rscan < (BUN) (rcandend - rcand) &&
-				     rordering * cmp(v, VALUE(r, rcand[rscan] - r->hseqbase)) > 0)) {
-					/* value too far away in r or
-					 * l not sorted: use binary
-					 * search */
-					rcand += binsearch(rcand, r->hseqbase, rvals, rvars, rwidth, lscan == 0 ? 0 : rscan, rcandend - rcand, v, cmp, rordering, 0);
+				if (rscan < (BUN) (rcandend - rcand) &&
+				    rordering * cmp(v, VALUE(r, rcand[rscan] - r->hseqbase)) > 0) {
+					/* value too far away in r:
+					 * use binary search */
+					rcand += binsearch(rcand, r->hseqbase,
+							   rvals, rvars,
+							   rwidth, rscan,
+							   rcandend - rcand, v,
+							   cmp, rordering, 0);
 				} else {
 					/* scan r for v */
 					while (rcand < rcandend &&
@@ -550,7 +600,10 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				    cmp(v, VALUE(r, rcand[rscan] - r->hseqbase)) == 0) {
 					/* range too large: use binary
 					 * search */
-					nr = binsearch(rcand, r->hseqbase, rvals, rvars, rwidth, rscan, rcandend - rcand, v, cmp, rordering, 1);
+					nr = binsearch(rcand, r->hseqbase,
+						       rvals, rvars, rwidth,
+						       rscan, rcandend - rcand,
+						       v, cmp, rordering, 1);
 					rcand += nr;
 				} else {
 					/* scan r for end of range */
@@ -569,16 +622,16 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				 * equal v */
 				/* look ahead a little (rscan) in r to
 				 * see whether we're better off doing
-				 * a binary search, but if l is not
-				 * sorted (lscan == 0) we'll always do
 				 * a binary search */
-				if (lscan == 0 ||
-				    (rscan < rend - rstart &&
-				     rordering * cmp(v, VALUE(r, rstart + rscan)) > 0)) {
-					/* value too far away in r or
-					 * l not sorted: use binary
-					 * search */
-					rstart = binsearch(NULL, 0, rvals, rvars, rwidth, rstart + (lscan == 0 ? 0 : rscan), rend, v, cmp, rordering, 0);
+				if (rscan < rend - rstart &&
+				    rordering * cmp(v, VALUE(r, rstart + rscan)) > 0) {
+					/* value too far away in r:
+					 * use binary search */
+					rstart = binsearch(NULL, 0, rvals,
+							   rvars, rwidth,
+							   rstart + rscan,
+							   rend, v, cmp,
+							   rordering, 0);
 				} else {
 					/* scan r for v */
 					while (rstart < rend &&
@@ -592,7 +645,10 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				    cmp(v, VALUE(r, rstart + rscan)) == 0) {
 					/* range too large: use binary
 					 * search */
-					nr = binsearch(NULL, 0, rvals, rvars, rwidth, rstart + rscan, rend, v, cmp, rordering, 1);
+					nr = binsearch(NULL, 0, rvals, rvars,
+						       rwidth, rstart + rscan,
+						       rend, v, cmp,
+						       rordering, 1);
 					nr -= rstart;
 					rstart += nr;
 				} else {
@@ -607,7 +663,7 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				/* r is dense or void-nil, so we don't
 				 * need to search, we know there is
 				 * either zero or one match, or
-				 * everything matches */
+				 * everything matches (nil) */
 				if (r->tseqbase == oid_nil) {
 					if (*(const oid *)v == oid_nil) {
 						/* both sides are nil:
@@ -641,15 +697,20 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				 * equal v */
 				/* look ahead a little (rscan) in r to
 				 * see whether we're better off doing
-				 * a binary search, but if l is not
-				 * sorted (lscan == 0) we'll always do
 				 * a binary search */
 				if (rscan < (BUN) (rcandend - rcand) &&
 				    rordering * cmp(v, VALUE(r, rcandend[-rscan - 1] - r->hseqbase)) < 0) {
-					/* value too far away in r or
-					 * l not sorted: use binary
-					 * search */
-					rcandend = rcand + binsearch(rcand, r->hseqbase, rvals, rvars, rwidth, 0, (BUN) (rcandend - rcand) - (lscan == 0 ? 0 : rscan), v, cmp, rordering, 1);
+					/* value too far away in r:
+					 * use binary search */
+					rcandend = rcand + binsearch(rcand,
+								     r->hseqbase,
+								     rvals,
+								     rvars,
+								     rwidth, 0,
+								     (BUN) (rcandend - rcand) - rscan,
+								     v, cmp,
+								     rordering,
+								     1);
 				} else {
 					/* scan r for v */
 					while (rcand < rcandend &&
@@ -661,7 +722,10 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				 * a binary search */
 				if (rscan < (BUN) (rcandend - rcand) &&
 				    cmp(v, VALUE(r, rcandend[-rscan - 1] - r->hseqbase)) == 0) {
-					nr = binsearch(rcand, r->hseqbase, rvals, rvars, rwidth, 0, (BUN) (rcandend - rcand) - rscan, v, cmp, rordering, 0);
+					nr = binsearch(rcand, r->hseqbase,
+						       rvals, rvars, rwidth, 0,
+						       (BUN) (rcandend - rcand) - rscan,
+						       v, cmp, rordering, 0);
 					nr = (BUN) (rcandend - rcand) - nr;
 					rcandend -= nr;
 				} else {
@@ -681,15 +745,15 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				 * equal v */
 				/* look ahead a little (rscan) in r to
 				 * see whether we're better off doing
-				 * a binary search, but if l is not
-				 * sorted (lscan == 0) we'll always do
 				 * a binary search */
 				if (rscan < rend - rstart &&
 				    rordering * cmp(v, VALUE(r, rend - rscan - 1)) < 0) {
-					/* value too far away in r or
-					 * l not sorted: use binary
-					 * search */
-					rend = binsearch(NULL, 0, rvals, rvars, rwidth, rstart, rend - (lscan == 0 ? 0 : rscan), v, cmp, rordering, 1);
+					/* value too far away in r:
+					 * use binary search */
+					rend = binsearch(NULL, 0, rvals, rvars,
+							 rwidth, rstart,
+							 rend - rscan, v, cmp,
+							 rordering, 1);
 				} else {
 					/* scan r for v */
 					while (rstart < rend &&
@@ -716,7 +780,7 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				/* r is dense or void-nil, so we don't
 				 * need to search, we know there is
 				 * either zero or one match, or
-				 * everything matches */
+				 * everything matches (nil) */
 				if (r->tseqbase == oid_nil) {
 					if (*(const oid *)v == oid_nil) {
 						/* both sides are nil:
