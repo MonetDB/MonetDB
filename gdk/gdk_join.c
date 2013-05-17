@@ -180,7 +180,7 @@ binsearch(const oid *rcand, oid offset,
  */
 static gdk_return
 mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
-	  int nil_matches, int nil_on_miss, int semi)
+	  int nil_matches, int nil_on_miss, int semi, int must_match)
 {
 	BUN lstart, lend, lcnt;
 	const oid *lcand, *lcandend;
@@ -213,7 +213,7 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	ALGODEBUG fprintf(stderr, "#mergejoin(l=%s#" BUNFMT "[%s]%s%s,"
 			  "r=%s#" BUNFMT "[%s]%s%s,sl=%s#" BUNFMT "%s%s,"
 			  "sr=%s#" BUNFMT "%s%s,nil_matches=%d,"
-			  "nil_on_miss=%d,semi=%d)\n",
+			  "nil_on_miss=%d,semi=%d,must_match=%d)\n",
 			  BATgetId(l), BATcount(l), ATOMname(l->ttype),
 			  l->tsorted ? "-sorted" : "",
 			  l->trevsorted ? "-revsorted" : "",
@@ -226,7 +226,7 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			  sr ? BATgetId(sr) : "NULL", sr ? BATcount(sr) : 0,
 			  sr && sr->tsorted ? "-sorted" : "",
 			  sr && sr->trevsorted ? "-revsorted" : "",
-			  nil_matches, nil_on_miss, semi);
+			  nil_matches, nil_on_miss, semi, must_match);
 
 	assert(BAThdense(l));
 	assert(BAThdense(r));
@@ -234,6 +234,7 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	assert(r->tsorted || r->trevsorted);
 	assert(sl == NULL || sl->tsorted);
 	assert(sr == NULL || sr->tsorted);
+	assert(!nil_on_miss || !must_match); /* can't have both */
 
 	CANDINIT(l, sl, lstart, lend, lcnt, lcand, lcandend);
 	CANDINIT(r, sr, rstart, rend, rcnt, rcand, rcandend);
@@ -255,6 +256,18 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 
 	if (lstart == lend || (!nil_on_miss && rstart == rend)) {
 		/* nothing to do: there are no matches */
+		if (must_match && lstart < lend) {
+			GDKerror("mergejoin(%s,%s) does not hit always => can't use fetchjoin.\n", BATgetId(l), BATgetId(r));
+			goto bailout;
+		}
+		ALGODEBUG fprintf(stderr, "#mergejoin(l=%s,r=%s)=(%s#"BUNFMT"%s%s,%s#"BUNFMT"%s%s\n",
+			  BATgetId(l), BATgetId(r),
+			  BATgetId(r1), BATcount(r1),
+			  r1->tsorted ? "-sorted" : "",
+			  r1->trevsorted ? "-revsorted" : "",
+			  BATgetId(r2), BATcount(r2),
+			  r2->tsorted ? "-sorted" : "",
+			  r2->trevsorted ? "-revsorted" : "");
 		return GDK_SUCCEED;
 	}
 	if (!nil_on_miss) {
@@ -266,6 +279,18 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			/* nothing to do: all values in either l or r
 			 * (or both) are nil, and we don't have to
 			 * match nil values */
+			if (must_match) {
+				GDKerror("mergejoin(%s,%s) does not hit always => can't use fetchjoin.\n", BATgetId(l), BATgetId(r));
+				goto bailout;
+			}
+			ALGODEBUG fprintf(stderr, "#mergejoin(l=%s,r=%s)=(%s#"BUNFMT"%s%s,%s#"BUNFMT"%s%s\n",
+				  BATgetId(l), BATgetId(r),
+				  BATgetId(r1), BATcount(r1),
+				  r1->tsorted ? "-sorted" : "",
+				  r1->trevsorted ? "-revsorted" : "",
+				  BATgetId(r2), BATcount(r2),
+				  r2->tsorted ? "-sorted" : "",
+				  r2->trevsorted ? "-revsorted" : "");
 			return GDK_SUCCEED;
 		}
 		if ((l->ttype == TYPE_void && l->tseqbase == oid_nil &&
@@ -277,6 +302,18 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			/* nothing to do: all values in l are nil, and
 			 * we can guarantee there are no nil values in
 			 * r, or vice versa */
+			if (must_match) {
+				GDKerror("mergejoin(%s,%s) does not hit always => can't use fetchjoin.\n", BATgetId(l), BATgetId(r));
+				goto bailout;
+			}
+			ALGODEBUG fprintf(stderr, "#mergejoin(l=%s,r=%s)=(%s#"BUNFMT"%s%s,%s#"BUNFMT"%s%s\n",
+				  BATgetId(l), BATgetId(r),
+				  BATgetId(r1), BATcount(r1),
+				  r1->tsorted ? "-sorted" : "",
+				  r1->trevsorted ? "-revsorted" : "",
+				  BATgetId(r2), BATcount(r2),
+				  r2->tsorted ? "-sorted" : "",
+				  r2->trevsorted ? "-revsorted" : "");
 			return GDK_SUCCEED;
 		}
 	}
@@ -345,7 +382,7 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	rcandorig = rcand;
 	rstartorig = rstart;
 	while (lcand ? lcand < lcandend : lstart < lend) {
-		if (!nil_on_miss && lscan > 0) {
+		if (!nil_on_miss && !must_match && lscan > 0) {
 			/* if next value in r too far away (more than
 			 * lscan from current position in l), use
 			 * binary search on l to skip over
@@ -470,6 +507,10 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		 * going to match: ready for the next */
 		if (!nil_matches && cmp(v, nil) == 0) {
 			/* v is nil and nils don't match anything */
+			if (must_match) {
+				GDKerror("mergejoin(%s,%s) does not hit always => can't use fetchjoin.\n", BATgetId(l), BATgetId(r));
+				goto bailout;
+			}
 			continue;
 		}
 		/* first we find the first value in r that is at least
@@ -702,6 +743,10 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		}
 		if (nr == 0) {
 			/* no entries in r found */
+			if (must_match) {
+				GDKerror("mergejoin(%s,%s) does not hit always => can't use fetchjoin.\n", BATgetId(l), BATgetId(r));
+				goto bailout;
+			}
 			if (!nil_on_miss) {
 				if (lscan > 0 &&
 				    (rcand ? rcand == rcandend : rstart == rend)) {
@@ -739,11 +784,7 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			r1 = BATextend(r1, newcap);
 			r2 = BATextend(r2, newcap);
 			if (r1 == NULL || r2 == NULL) {
-				if (r1)
-					BBPreclaim(r1);
-				if (r2)
-					BBPreclaim(r2);
-				return GDK_FAIL;
+				goto bailout;
 			}
 			assert(BATcapacity(r1) == BATcapacity(r2));
 		}
@@ -884,7 +925,22 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		if (r2->tdense)
 			r2->tseqbase = ((oid *) r2->T->heap.base)[r2->batFirst];
 	}
+	ALGODEBUG fprintf(stderr, "#mergejoin(l=%s,r=%s)=(%s#"BUNFMT"%s%s,%s#"BUNFMT"%s%s\n",
+		  BATgetId(l), BATgetId(r),
+		  BATgetId(r1), BATcount(r1),
+		  r1->tsorted ? "-sorted" : "",
+		  r1->trevsorted ? "-revsorted" : "",
+		  BATgetId(r2), BATcount(r2),
+		  r2->tsorted ? "-sorted" : "",
+		  r2->trevsorted ? "-revsorted" : "");
 	return GDK_SUCCEED;
+
+  bailout:
+	if (r1)
+		BBPreclaim(r1);
+	if (r2)
+		BBPreclaim(r2);
+	return GDK_FAIL;
 }
 
 /* binary search in a candidate list, return 1 if found, 0 if not */
@@ -909,7 +965,7 @@ binsearchcand(const oid *cand, BUN lo, BUN hi, oid v)
 }
 
 static gdk_return
-hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, int nil_on_miss, int semi)
+hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, int nil_on_miss, int semi, int must_match)
 {
 	BUN lstart, lend, lcnt;
 	const oid *lcand = NULL, *lcandend = NULL;
@@ -932,7 +988,7 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, in
 	ALGODEBUG fprintf(stderr, "#hashjoin(l=%s#" BUNFMT "[%s]%s%s,"
 			  "r=%s#" BUNFMT "[%s]%s%s,sl=%s#" BUNFMT "%s%s,"
 			  "sr=%s#" BUNFMT "%s%s,nil_matches=%d,"
-			  "nil_on_miss=%d,semi=%d)\n",
+			  "nil_on_miss=%d,semi=%d,must_match=%d)\n",
 			  BATgetId(l), BATcount(l), ATOMname(l->ttype),
 			  l->tsorted ? "-sorted" : "",
 			  l->trevsorted ? "-revsorted" : "",
@@ -945,7 +1001,7 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, in
 			  sr ? BATgetId(sr) : "NULL", sr ? BATcount(sr) : 0,
 			  sr && sr->tsorted ? "-sorted" : "",
 			  sr && sr->trevsorted ? "-revsorted" : "",
-			  nil_matches, nil_on_miss, semi);
+			  nil_matches, nil_on_miss, semi, must_match);
 
 	assert(BAThdense(l));
 	assert(BAThdense(r));
@@ -953,6 +1009,7 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, in
 	assert(ATOMtype(l->ttype) == ATOMtype(r->ttype));
 	assert(sl == NULL || sl->tsorted);
 	assert(sr == NULL || sr->tsorted);
+	assert(!nil_on_miss || !must_match); /* can't have both */
 
 	CANDINIT(l, sl, lstart, lend, lcnt, lcand, lcandend);
 	CANDINIT(r, sr, rstart, rend, rcnt, rcand, rcandend);
@@ -984,6 +1041,18 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, in
 
 	if (lstart == lend || (!nil_on_miss && rstart == rend)) {
 		/* nothing to do: there are no matches */
+		if (must_match && lstart < lend) {
+			GDKerror("hashjoin(%s,%s) does not hit always => can't use fetchjoin.\n", BATgetId(l), BATgetId(r));
+			goto bailout;
+		}
+		ALGODEBUG fprintf(stderr, "#hashjoin(l=%s,r=%s)=(%s#"BUNFMT"%s%s,%s#"BUNFMT"%s%s\n",
+			  BATgetId(l), BATgetId(r),
+			  BATgetId(r1), BATcount(r1),
+			  r1->tsorted ? "-sorted" : "",
+			  r1->trevsorted ? "-revsorted" : "",
+			  BATgetId(r2), BATcount(r2),
+			  r2->tsorted ? "-sorted" : "",
+			  r2->trevsorted ? "-revsorted" : "");
 		return GDK_SUCCEED;
 	}
 
@@ -1070,6 +1139,9 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, in
 					}
 					APPEND(r1, lo);
 					APPEND(r2, oid_nil);
+				} else if (must_match) {
+					GDKerror("hashjoin(%s,%s) does not hit always => can't use fetchjoin.\n", BATgetId(l), BATgetId(r));
+					goto bailout;
 				} else {
 					lskipped = BATcount(r1) > 0;
 				}
@@ -1165,6 +1237,9 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, in
 					}
 					APPEND(r1, lo);
 					APPEND(r2, oid_nil);
+				} else if (must_match) {
+					GDKerror("hashjoin(%s,%s) does not hit always => can't use fetchjoin.\n", BATgetId(l), BATgetId(r));
+					goto bailout;
 				} else {
 					lskipped = BATcount(r1) > 0;
 				}
@@ -1206,6 +1281,14 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, in
 		if (r2->tdense)
 			r2->tseqbase = ((oid *) r2->T->heap.base)[r2->batFirst];
 	}
+	ALGODEBUG fprintf(stderr, "#hashjoin(l=%s,r=%s)=(%s#"BUNFMT"%s%s,%s#"BUNFMT"%s%s\n",
+		  BATgetId(l), BATgetId(r),
+		  BATgetId(r1), BATcount(r1),
+		  r1->tsorted ? "-sorted" : "",
+		  r1->trevsorted ? "-revsorted" : "",
+		  BATgetId(r2), BATcount(r2),
+		  r2->tsorted ? "-sorted" : "",
+		  r2->trevsorted ? "-revsorted" : "");
 	return GDK_SUCCEED;
 
   bailout:
@@ -1461,6 +1544,14 @@ thetajoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, const char *op)
 		if (r2->tdense)
 			r2->tseqbase = ((oid *) r2->T->heap.base)[r2->batFirst];
 	}
+	ALGODEBUG fprintf(stderr, "#thetajoin(l=%s,r=%s)=(%s#"BUNFMT"%s%s,%s#"BUNFMT"%s%s\n",
+		  BATgetId(l), BATgetId(r),
+		  BATgetId(r1), BATcount(r1),
+		  r1->tsorted ? "-sorted" : "",
+		  r1->trevsorted ? "-revsorted" : "",
+		  BATgetId(r2), BATcount(r2),
+		  r2->tsorted ? "-sorted" : "",
+		  r2->trevsorted ? "-revsorted" : "");
 	return GDK_SUCCEED;
 
   bailout:
@@ -1489,8 +1580,30 @@ BATsubleftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, BUN estim
 	*r1p = r1;
 	*r2p = r2;
 	if (r->tsorted || r->trevsorted)
-		return mergejoin(r1, r2, l, r, sl, sr, 0, 0, 0);
-	return hashjoin(r1, r2, l, r, sl, sr, 0, 0, 0);
+		return mergejoin(r1, r2, l, r, sl, sr, 0, 0, 0, 0);
+	return hashjoin(r1, r2, l, r, sl, sr, 0, 0, 0, 0);
+}
+
+/* Perform an equi-join over l and r.  Returns two new, aligned,
+ * dense-headed bats with in the tail the oids (head column values) of
+ * matching tuples.  The result is in the same order as l (i.e. r1 is
+ * sorted).  All values in l must match at least one value in r. */
+gdk_return
+BATsubleftfetchjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, BUN estimate)
+{
+	BAT *r1, *r2;
+
+	*r1p = NULL;
+	*r2p = NULL;
+	if (joinparamcheck(l, r, sl, sr, "BATsubleftjoin") == GDK_FAIL)
+		return GDK_FAIL;
+	if (joininitresults(&r1, &r2, estimate != BUN_NONE ? estimate : sl ? BATcount(sl) : BATcount(l), "BATsubleftjoin") == GDK_FAIL)
+		return GDK_FAIL;
+	*r1p = r1;
+	*r2p = r2;
+	if (r->tsorted || r->trevsorted)
+		return mergejoin(r1, r2, l, r, sl, sr, 0, 0, 0, 1);
+	return hashjoin(r1, r2, l, r, sl, sr, 0, 0, 0, 1);
 }
 
 /* Performs a left outer join over l and r.  Returns two new, aligned,
@@ -1512,8 +1625,8 @@ BATsubouterjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, BUN esti
 	*r1p = r1;
 	*r2p = r2;
 	if (r->tsorted || r->trevsorted)
-		return mergejoin(r1, r2, l, r, sl, sr, 0, 1, 0);
-	return hashjoin(r1, r2, l, r, sl, sr, 0, 1, 0);
+		return mergejoin(r1, r2, l, r, sl, sr, 0, 1, 0, 0);
+	return hashjoin(r1, r2, l, r, sl, sr, 0, 1, 0, 0);
 }
 
 /* Perform a semi-join over l and r.  Returns two new, aligned,
@@ -1534,8 +1647,8 @@ BATsubsemijoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, BUN estim
 	*r1p = r1;
 	*r2p = r2;
 	if (r->tsorted || r->trevsorted)
-		return mergejoin(r1, r2, l, r, sl, sr, 0, 0, 1);
-	return hashjoin(r1, r2, l, r, sl, sr, 0, 0, 1);
+		return mergejoin(r1, r2, l, r, sl, sr, 0, 0, 1, 0);
+	return hashjoin(r1, r2, l, r, sl, sr, 0, 0, 1, 0);
 }
 
 gdk_return
@@ -1589,7 +1702,7 @@ BATsubjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, BUN estimate)
 	swap = 0;
 	if ((l->tsorted || l->trevsorted) && (r->tsorted || r->trevsorted)) {
 		/* both sorted, don't swap */
-		return mergejoin(r1, r2, l, r, sl, sr, 0, 0, 0);
+		return mergejoin(r1, r2, l, r, sl, sr, 0, 0, 0, 0);
 	} else if (l->T->hash && r->T->hash) {
 		/* both have hash, smallest on right */
 		if (lcount < rcount)
@@ -1602,18 +1715,18 @@ BATsubjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, BUN estimate)
 		swap = 0;
 	} else if (l->tsorted || l->trevsorted) {
 		/* left is sorted, swap */
-		return mergejoin(r2, r1, r, l, sr, sl, 0, 0, 0);
+		return mergejoin(r2, r1, r, l, sr, sl, 0, 0, 0, 0);
 	} else if (r->tsorted || r->trevsorted) {
 		/* right is sorted, don't swap */
-		return mergejoin(r1, r2, l, r, sl, sr, 0, 0, 0);
+		return mergejoin(r1, r2, l, r, sl, sr, 0, 0, 0, 0);
 	} else if (BATcount(l) < BATcount(r)) {
 		/* no hashes, not sorted, create hash on smallest BAT */
 		swap = 1;
 	}
 	if (swap) {
-		return hashjoin(r2, r1, r, l, sr, sl, 0, 0, 0);
+		return hashjoin(r2, r1, r, l, sr, sl, 0, 0, 0, 0);
 	} else {
-		return hashjoin(r1, r2, l, r, sl, sr, 0, 0, 0);
+		return hashjoin(r1, r2, l, r, sl, sr, 0, 0, 0, 0);
 	}
 }
 
@@ -1653,7 +1766,12 @@ BATproject(BAT *l, BAT *r)
 		bn = BATslice(r, lo - r->hseqbase, hi - r->hseqbase);
 		if (bn == NULL)
 			return NULL;
-		return BATseqbase(bn, l->hseqbase + (lo - l->tseqbase));
+		bn = BATseqbase(bn, l->hseqbase + (lo - l->tseqbase));
+		ALGODEBUG fprintf(stderr, "#BATproject(l=%s,r=%s)=%s#"BUNFMT"%s%s\n",
+			  BATgetId(l), BATgetId(r), BATgetId(bn), BATcount(bn),
+			  bn->tsorted ? "-sorted" : "",
+			  bn->trevsorted ? "-revsorted" : "");
+		return bn;
 	}
 	if (l->ttype == TYPE_void || BATcount(l) == 0) {
 		assert(BATcount(l) == 0 || l->tseqbase == oid_nil);
@@ -1663,6 +1781,10 @@ BATproject(BAT *l, BAT *r)
 			if (bn->ttype == TYPE_void && BATcount(bn) == 0)
 				BATseqbase(BATmirror(bn), 0);
 		}
+		ALGODEBUG fprintf(stderr, "#BATproject(l=%s,r=%s)=%s#"BUNFMT"%s%s\n",
+			  BATgetId(l), BATgetId(r), BATgetId(bn), BATcount(bn),
+			  bn->tsorted ? "-sorted" : "",
+			  bn->trevsorted ? "-revsorted" : "");
 		return bn;
 	}
 	assert(l->ttype == TYPE_oid);
@@ -1719,6 +1841,10 @@ BATproject(BAT *l, BAT *r)
 	assert(n == BATcount(l));
 	BATsetcount(bn, n);
 	BATseqbase(bn, l->hseqbase);
+	ALGODEBUG fprintf(stderr, "#BATproject(l=%s,r=%s)=%s#"BUNFMT"%s%s\n",
+		  BATgetId(l), BATgetId(r), BATgetId(bn), BATcount(bn),
+		  bn->tsorted ? "-sorted" : "",
+		  bn->trevsorted ? "-revsorted" : "");
 	return bn;
 
   bunins_failed:
