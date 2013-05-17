@@ -162,7 +162,6 @@ MATpackIncrement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			if (HEAPextend(bn->T->vheap, newsize) < 0) 
 				throw(MAL, "mat.pack", MAL_MALLOC_FAIL);
 		}
-		BATsettrivprop(bn);
 		BATseqbase(bn, b->H->seq);
 		BATseqbase(BATmirror(bn), b->T->seq);
 		BATappend(bn,b,FALSE);

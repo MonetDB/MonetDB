@@ -1319,7 +1319,7 @@ BATsubsort(BAT **sorted, BAT **order, BAT **groups,
 		return GDK_SUCCEED;
 	}
 	if (o) {
-		bn = BATleftfetchjoin(o, b, BATcount(b));
+		bn = BATproject(o, b);
 		if (bn == NULL)
 			goto error;
 		if (bn->ttype == TYPE_void || isVIEW(bn)) {

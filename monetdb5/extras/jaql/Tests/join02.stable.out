@@ -36,12 +36,12 @@ function user.main():void;
 # we, as real database connect those two despite the indirection 
     jaql.x("join preserve users, pages, preserve temps where users.id == pages.userid and pages.userid == temps.uid into {users.name, pages.url, temps.temp};");
 end main;
+[ { "name": "Jon Doe", "url": "code.google.com/p/jaql/", "temp": 1 }, { "name": "Jane Doe", "url": "www.cnn.com", "temp": 2 }, { "name": "Jon Doe", "url": "java.sun.com/javase/6/docs/api/", "temp": 1 } ]
+[ { "name": "Jon Doe", "url": "code.google.com/p/jaql/", "temp": 1 }, { "name": "Jane Doe", "url": "www.cnn.com", "temp": 2 }, { "name": "Jon Doe", "url": "java.sun.com/javase/6/docs/api/", "temp": 1 } ]
+[ { "name": "Jon Doe", "url": "java.sun.com/javase/6/docs/api/", "temp": 1 }, { "name": "Jon Doe", "url": "code.google.com/p/jaql/", "temp": 1 }, { "name": "Jane Doe", "url": "www.cnn.com", "temp": 2 }, { "name": "Max Mustermann", "temp": 3 } ]
 [ { "name": "Jon Doe", "url": "java.sun.com/javase/6/docs/api/", "temp": 1 }, { "name": "Jon Doe", "url": "code.google.com/p/jaql/", "temp": 1 }, { "name": "Jane Doe", "url": "www.cnn.com", "temp": 2 } ]
-[ { "name": "Jon Doe", "url": "java.sun.com/javase/6/docs/api/", "temp": 1 }, { "name": "Jon Doe", "url": "code.google.com/p/jaql/", "temp": 1 }, { "name": "Jane Doe", "url": "www.cnn.com", "temp": 2 } ]
 [ { "name": "Jon Doe", "url": "java.sun.com/javase/6/docs/api/", "temp": 1 }, { "name": "Jon Doe", "url": "code.google.com/p/jaql/", "temp": 1 }, { "name": "Jane Doe", "url": "www.cnn.com", "temp": 2 }, { "name": "Max Mustermann", "temp": 3 } ]
-[ { "name": "Jon Doe", "url": "java.sun.com/javase/6/docs/api/", "temp": 1 }, { "name": "Jon Doe", "url": "code.google.com/p/jaql/", "temp": 1 }, { "name": "Jane Doe", "url": "www.cnn.com", "temp": 2 }, { "name": "Max Mustermann" } ]
-[ { "name": "Jon Doe", "url": "java.sun.com/javase/6/docs/api/", "temp": 1 }, { "name": "Jon Doe", "url": "code.google.com/p/jaql/", "temp": 1 }, { "name": "Jane Doe", "url": "www.cnn.com", "temp": 2 }, { "name": "Max Mustermann", "temp": 3 } ]
-[ { "name": "Jon Doe", "url": "java.sun.com/javase/6/docs/api/", "temp": 1 }, { "name": "Jon Doe", "url": "code.google.com/p/jaql/", "temp": 1 }, { "name": "Jane Doe", "url": "www.cnn.com", "temp": 2 }, { "name": "Max Mustermann", "temp": 3 } ]
+[ { "pages": 1, "temps": { "uid": 3, "temp": 3 }, "name": "Jon Doe", "url": "java.sun.com/javase/6/docs/api/", "temp": 1 }, { "name": "Jon Doe", "url": "code.google.com/p/jaql/", "temp": 1 }, { "name": "Jane Doe", "url": "www.cnn.com", "temp": 2 } ]
 
 # 22:41:51 >  
 # 22:41:51 >  "Done."
