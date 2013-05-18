@@ -1452,14 +1452,14 @@ BAT_select_(BAT *b, const void *tl, const void *th,
 	if (tail) {
 		/* we want to return a [any_1,any_2] subset of b */
 		if (map) {
-			bn1 = BATleftfetchjoin(bn, map, BATcount(bn));
+			bn1 = BATproject(bn, map);
 			if (bn1 == NULL)
 				goto error;
 			/* bn1 is [dense,any_1] */
 			BBPunfix(map->batCacheid);
 			map = BATmirror(bn1);
 			/* map is [any_1,dense] */
-			bn1 = BATleftfetchjoin(bn, b1, BATcount(bn));
+			bn1 = BATproject(bn, b1);
 			if (bn1 == NULL)
 				goto error;
 			/* bn1 is [dense,any_2] */
@@ -1499,7 +1499,7 @@ BAT_select_(BAT *b, const void *tl, const void *th,
 		if (map) {
 			BBPunfix(b1->batCacheid);
 			b1 = NULL;
-			bn1 = BATleftfetchjoin(bn, map, BATcount(bn));
+			bn1 = BATproject(bn, map);
 			if (bn1 == NULL)
 				goto error;
 			/* bn1 is [dense,any_1] */

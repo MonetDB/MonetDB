@@ -24,8 +24,8 @@ function user.main():void;
     jaql.x("join u in users, p in pages where u.id == p.userid into {u.name, p.*};");
     jaql.x("join preserve u in users, p in pages where u.id == p.userid into {u.name, p.*};");
 end main;
-[ { "name": "Jon Doe", "userid": 1, "url": "java.sun.com/javase/6/docs/api/" }, { "name": "Jon Doe", "userid": 1, "url": "code.google.com/p/jaql/" }, { "name": "Jane Doe", "userid": 2, "url": "www.cnn.com" } ]
-[ { "name": "Jon Doe", "userid": 1, "url": "java.sun.com/javase/6/docs/api/" }, { "name": "Jon Doe", "userid": 1, "url": "code.google.com/p/jaql/" }, { "name": "Jane Doe", "userid": 2, "url": "www.cnn.com" } ]
+[ { "name": "Jon Doe", "userid": 1, "url": "code.google.com/p/jaql/" }, { "name": "Jane Doe", "userid": 2, "url": "www.cnn.com" }, { "name": "Jon Doe", "userid": 1, "url": "java.sun.com/javase/6/docs/api/" } ]
+[ { "name": "Jon Doe", "userid": 1, "url": "code.google.com/p/jaql/" }, { "name": "Jane Doe", "userid": 2, "url": "www.cnn.com" }, { "name": "Jon Doe", "userid": 1, "url": "java.sun.com/javase/6/docs/api/" } ]
 [ { "name": "Jon Doe", "userid": 1, "url": "java.sun.com/javase/6/docs/api/" }, { "name": "Jon Doe", "userid": 1, "url": "code.google.com/p/jaql/" }, { "name": "Jane Doe", "userid": 2, "url": "www.cnn.com" }, { "name": "Max Mustermann" } ]
 
 # 17:36:52 >  

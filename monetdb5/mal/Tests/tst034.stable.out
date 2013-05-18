@@ -65,14 +65,14 @@ start of selections 5 [1]
 [ 1@0,	  1	  ]
 [ 2@0,	  2	  ]
 z select 1 [1]
-select 6 [1]
+select 5 [1]
 #-----------------#
 # h	t	  # name
 # int	int	  # type
 #-----------------#
 [ 0@0,	  0	  ]
 [ 1@0,	  1	  ]
-select 6 [1]
+select 5 [1]
 #-----------------#
 # h	t	  # name
 # int	int	  # type

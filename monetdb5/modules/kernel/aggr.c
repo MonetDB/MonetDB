@@ -115,7 +115,7 @@ AGGRgrouped(bat *retval1, bat *retval2, BAT *b, BAT *g, BAT *e, int tp,
 	else if ((*grpfunc2)(&bn, retval2 ? &cnts : NULL, b, g, e, NULL, tp, skip_nils, 1) == GDK_FAIL)
 		bn = NULL;
 	if (bn != NULL && (grpfunc1 == BATgroupmin || grpfunc1 == BATgroupmax)) {
-		t = BATouterjoin(bn, b, BATcount(bn));
+		t = BATproject(bn, b);
 		BBPreleaseref(bn->batCacheid);
 		bn = t;
 	}
@@ -1065,7 +1065,7 @@ AGGRsubmin_val(bat *retval, bat *bid, bat *gid, bat *eid, bit *skip_nils)
 		return res;
 	b = BATdescriptor(*bid);
 	a = BATdescriptor(ret);
-	r = BATouterjoin(a, b, BATcount(a));
+	r = BATproject(a, b);
 	BBPreleaseref(b->batCacheid);
 	BBPreleaseref(a->batCacheid);
 	BBPdecref(ret, TRUE);
@@ -1086,7 +1086,7 @@ AGGRsubmincand_val(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, bit *ski
 		return res;
 	b = BATdescriptor(*bid);
 	a = BATdescriptor(ret);
-	r = BATouterjoin(a, b, BATcount(a));
+	r = BATproject(a, b);
 	BBPreleaseref(b->batCacheid);
 	BBPreleaseref(a->batCacheid);
 	BBPdecref(ret, TRUE);
@@ -1107,7 +1107,7 @@ AGGRsubmax_val(bat *retval, bat *bid, bat *gid, bat *eid, bit *skip_nils)
 		return res;
 	b = BATdescriptor(*bid);
 	a = BATdescriptor(ret);
-	r = BATouterjoin(a, b, BATcount(a));
+	r = BATproject(a, b);
 	BBPreleaseref(b->batCacheid);
 	BBPreleaseref(a->batCacheid);
 	BBPdecref(ret, TRUE);
@@ -1128,7 +1128,7 @@ AGGRsubmaxcand_val(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, bit *ski
 		return res;
 	b = BATdescriptor(*bid);
 	a = BATdescriptor(ret);
-	r = BATouterjoin(a, b, BATcount(a));
+	r = BATproject(a, b);
 	BBPreleaseref(b->batCacheid);
 	BBPreleaseref(a->batCacheid);
 	BBPdecref(ret, TRUE);
