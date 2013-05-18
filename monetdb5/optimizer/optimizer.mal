@@ -16,6 +16,7 @@
 # All Rights Reserved.
 
 module optimizer;
+
 pattern optimizer.accumulators():str
 address OPTwrapper;
 pattern optimizer.accumulators(mod:str, fcn:str):str
