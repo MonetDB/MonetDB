@@ -24,6 +24,8 @@
 #include "monetdb_config.h"
 #include "opt_centipede.h"
 #include "opt_deadcode.h"
+#include "opt_aliases.h"
+#include "opt_garbageCollector.h"
 #include "mal_builder.h"
 #include "mal_recycle.h"
 #include "mal_interpreter.h"
@@ -36,8 +38,6 @@
 #define PARTITION 2	 // phase 1 result
 #define PIVOT    3	// Instruction requires care at next level
 #define SUPPORTIVE 4	// phase 2 result
-#define EXPORTED 5
-#define KEEPLOCAL 6
 
 /*
  * The columns are broken using fixed OID ranges.
@@ -598,10 +598,25 @@ OPTbakePlans(Client cntxt, MalBlkPtr mb, Slices *slices)
 				vars[getArg(p,0)] = BLOCKED;
 			}
 		} else
+		if ( getModuleId(p) == pqueueRef && getFunctionId(p) == utopn_minRef ){
+			if ( vars[getArg(p,1)] == PARTITION || vars[getArg(p,1)] == PIVOT){
+				status[i] = BLOCKED;
+				vars[getArg(p,0)] = BLOCKED;
+			}
+		} else
 		if ( getModuleId(p) == algebraRef && (getFunctionId(p) == subsortRef || getFunctionId(p) == sortRef || getFunctionId(p)== tinterRef) ) {
-			status[i] = BLOCKED;
-			for(j=0; j < p->retc; j++)
-				vars[getArg(p,j)] = BLOCKED;
+			int parts=0;
+			for ( j= p->retc; j<p->argc; j++)
+				parts += vars[getArg(p,j)] ==PARTITION;
+			if (parts == 1){
+				status[i] = PARTITION;
+				for(j=0; j < p->retc; j++)
+					vars[getArg(p,j)] = PARTITION;
+			} else {
+				status[i] = BLOCKED;
+				for(j=0; j < p->retc; j++)
+					vars[getArg(p,j)] = PARTITION;
+			}
 		} else
 		if (    getModuleId(p) == batRef && getFunctionId(p)==appendRef )  {
 			if ( vars[getArg(p,p->retc)] == PARTITION)
@@ -887,12 +902,39 @@ OPTbakePlans(Client cntxt, MalBlkPtr mb, Slices *slices)
 }
 
 /*
+ * The first step is to reduce the query to the persistent (readonly) part of the database
  * The general tactic is to identify instructions that are blocked in a distributed setting.
  * For those instruction we inject a multi-assignment to map is arguments to new variables
  * and the aliases are propagated thru the plan.
  * The next step is to derived a distribution consolidation plan for all arguments whose
  * portions are needed.
 */
+static int
+OPTreadonlyQuery(Client cntxt, MalBlkPtr mb)
+{
+	InstrPtr p, *old;
+	int i,limit;
+	limit = mb->stop;
+	old = mb->stmt;
+	if ( newMalBlkStmt(mb,mb->ssize) < 0 )
+		return -1;
+
+	for( i = 0; i < limit; i++){
+		p = old[i];
+		if ( getModuleId(p) == sqlRef){
+			if( getFunctionId(p) == deltaRef){
+				clrFunction(p);
+				p->argc = 2;
+			}
+		}
+		pushInstruction(mb,p);
+	}
+	GDKfree(old);
+	(void) OPTdeadcodeImplementation(cntxt,mb,0,0);
+	(void) OPTaliasesImplementation(cntxt,mb,0,0);
+	(void) OPTgarbageCollectorImplementation(cntxt,mb,0,0);
+	return 0;
+}
 int
 OPTcentipedeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -916,7 +958,12 @@ OPTcentipedeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 		nrservers = 2; /* to ease debugging now */
 
 #ifdef _DEBUG_OPT_CENTIPEDE_
-	mnstr_printf(cntxt->fdout,"#original plan \n");
+	//mnstr_printf(cntxt->fdout,"#original plan \n");
+	//printFunction(cntxt->fdout, mb, 0, LIST_MAL_STMT);
+#endif
+	OPTreadonlyQuery(cntxt,mb);
+#ifdef _DEBUG_OPT_CENTIPEDE_
+	mnstr_printf(cntxt->fdout,"#readonly part of original plan \n");
 	printFunction(cntxt->fdout, mb, 0, LIST_MAL_STMT);
 #endif
 	/* modify the block as we go */

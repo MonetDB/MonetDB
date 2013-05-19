@@ -397,6 +397,8 @@ comment "Push constant range selections through the program";
 #opt_qep.mal
 
 pattern optimizer.dumpQEP()
+address OPTwrapper;
+pattern optimizer.dumpQEP(mod:str, fcn:str):str
 address OPTwrapper
 comment "Produce an indented tree visualisation";
 
