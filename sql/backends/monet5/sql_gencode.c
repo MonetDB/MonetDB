@@ -55,7 +55,7 @@
 #include <rel_bin.h>
 
 static int _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s);
-static int backend_dumpstmt(backend *be, MalBlkPtr mb, stmt *s);
+static int backend_dumpstmt(backend *be, MalBlkPtr mb, stmt *s, int top);
 
 /*
  * @+ MAL code support
@@ -315,7 +315,7 @@ _create_relational_function(mvc *m, char *name, sql_rel *rel, stmt *call)
 		}
 	}
 
-	if (backend_dumpstmt(be, curBlk, s) < 0)
+	if (backend_dumpstmt(be, curBlk, s, 0) < 0)
 		return -1;
 	/* SQL function definitions meant for inlineing should not be optimized before */
 	varSetProp(curBlk, getArg(curInstr, 0), sqlfunctionProp, op_eq, NULL);
@@ -2205,7 +2205,7 @@ static void setCommitProperty(MalBlkPtr mb){
 }
 
 static int 
-backend_dumpstmt(backend *be, MalBlkPtr mb, stmt *s)
+backend_dumpstmt(backend *be, MalBlkPtr mb, stmt *s, int top)
 {
 	mvc *c = be->mvc;
 	stmt **stmts = stmt_array(c->sa, s);
@@ -2213,7 +2213,7 @@ backend_dumpstmt(backend *be, MalBlkPtr mb, stmt *s)
 	int old_mv = be->mvc_var, nr = 0;
 
 	/* announce the transaction mode */
-	if ( c->session->auto_commit)
+	if (top && c->session->auto_commit)
 		setCommitProperty(mb);
 	q = newStmt1(mb, sqlRef, "mvc");
 	be->mvc_var = getDestVar(q);
@@ -2229,7 +2229,7 @@ backend_dumpstmt(backend *be, MalBlkPtr mb, stmt *s)
 		return -1;
 
 	be->mvc_var = old_mv;
-	if (c->caching && (c->type == Q_SCHEMA || c->type == Q_TRANS)) {
+	if (top && c->caching && (c->type == Q_SCHEMA || c->type == Q_TRANS)) {
 		q = newStmt2(mb, sqlRef, exportOperationRef);
 		(void) pushStr(mb, q, ""); /* warning */
 	}
@@ -2276,7 +2276,7 @@ backend_callinline(backend *be, Client c, stmt *s )
 			}
 		}
 	}
-	if (backend_dumpstmt(be, curBlk, s) < 0)
+	if (backend_dumpstmt(be, curBlk, s, 1) < 0)
 		return -1;
 	c->curprg->def = curBlk;
 	return 0;
@@ -2338,7 +2338,7 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 		}
 	}
 
-	if (backend_dumpstmt(be, mb, s) < 0)
+	if (backend_dumpstmt(be, mb, s, 1) < 0)
 		return NULL;
 
 	// Always keep the SQL query around for monitoring
@@ -2530,7 +2530,7 @@ backend_create_func(backend *be, sql_func *f)
 	if ( m->session->auto_commit)
 		setCommitProperty(curBlk);
 
-	if (backend_dumpstmt(be, curBlk, s) < 0)
+	if (backend_dumpstmt(be, curBlk, s, 0) < 0)
 		return -1;
 	/* selectively make functions available for inlineing */
 	/* for the time being we only inline scalar functions */
