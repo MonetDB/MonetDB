@@ -951,14 +951,25 @@ public class MonetPreparedStatement
 	 * The driver converts this to an SQL NUMERIC value when it sends it to the
 	 * database.
 	 *
-	 * @param parameterIndex the first parameter is 1, the second is 2, ...
+	 * @param i the first parameter is 1, the second is 2, ...
 	 * @param x the parameter value
 	 * @throws SQLException if a database access error occurs
 	 */
-	public void setBigDecimal(int parameterIndex, BigDecimal x)
+	public void setBigDecimal(int i, BigDecimal x)
 		throws SQLException
 	{
-		setValue(parameterIndex, x.toString());
+		// if we don't give the server the exact digits/scale thing, it
+		// barfs at us that we don't give it a correct value, so...
+		String ps = x.toPlainString();
+		// chop off excess "precision"
+		int di = ps.indexOf(".");
+		if (di >= 0 && ps.length() - di - 1 > scale[i])
+			ps = ps.substring(0, di + scale[i] + (scale[i] == 0 ? 0 : 1));
+		if (di < 0)
+			di = ps.length();
+		if (di > (digits[i] - scale[i]))
+			throw new SQLDataException("DECIMAL value exceeds allowed digits/scale: " + ps + " (" + digits[i] + "/" + scale[i] + ")", "22003");
+		setValue(i, ps);
 	}
 
 	/**

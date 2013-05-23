@@ -2,6 +2,8 @@
 # This file is updated with Maddlog
 
 * Thu May 23 2013 Fabian Groffen <fabian@monetdb.org>
+- Fixed bug where PreparedStatement.setBigDecimal() wouldn't format its
+  input well enough for the server causing odd errors.
 - Allow PreparedStatement.setXXX() methods to be called with null
   arguments, bug #3288
 
