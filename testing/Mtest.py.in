@@ -311,6 +311,7 @@ CONDITIONALS = {
     'ENABLE_DATACELL'      : "@ENABLE_DATACELL_FALSE@",
     'HAVE_CFITSIO'         : "@HAVE_CFITSIO_FALSE@",
     'HAVE_DEVELOPER'       : "@HAVE_DEVELOPER_FALSE@",
+    'HAVE_GDAL'            : "@HAVE_GDAL_FALSE@",
     'HAVE_GDK'             : "@HAVE_GDK_FALSE@",
     'HAVE_GEOM'            : "@HAVE_GEOM_FALSE@",
     'HAVE_GEOTIFF'         : "@HAVE_GEOTIFF_FALSE@",

@@ -304,6 +304,11 @@ create_winconfig_conds_new_py:
 !ELSE
 	$(ECHO) HAVE_DEVELOPER_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
+!IFDEF HAVE_GDAL
+	$(ECHO) "HAVE_GDAL_FALSE='#'" >> "$(TOPDIR)\winconfig_conds_new.py"
+!ELSE
+	$(ECHO) "HAVE_GDAL_FALSE=''" >> "$(TOPDIR)\winconfig_conds_new.py"
+!ENDIF
 !IFDEF HAVE_GDK
 	$(ECHO) HAVE_GDK_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
