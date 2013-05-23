@@ -1155,6 +1155,11 @@ public class MonetPreparedStatement
 		int length)
 		throws SQLException
 	{
+		if (reader == null) {
+			setNull(parameterIndex, -1);
+			return;
+		}
+
 		CharBuffer tmp = CharBuffer.allocate(length);
 		try {
 			reader.read(tmp);
@@ -1223,6 +1228,11 @@ public class MonetPreparedStatement
 	 * @throws SQLException if a database access error occurs
 	 */
 	public void setClob(int i, Clob x) throws SQLException {
+		if (x == null) {
+			setNull(i, -1);
+			return;
+		}
+
 		// simply serialise the CLOB into a variable for now... far from
 		// efficient, but might work for a few cases...
 		// be on your marks: we have to cast the length down!
@@ -1262,6 +1272,11 @@ public class MonetPreparedStatement
 	 * @throws SQLException if a database access error occurs
 	 */
 	public void setClob(int i, Reader reader, long length) throws SQLException {
+		if (reader == null) {
+			setNull(i, -1);
+			return;
+		}
+
 		// simply serialise the CLOB into a variable for now... far from
 		// efficient, but might work for a few cases...
 		CharBuffer buf = CharBuffer.allocate((int)length); // have to down cast :(
@@ -1306,6 +1321,11 @@ public class MonetPreparedStatement
 	public void setDate(int parameterIndex, java.sql.Date x, Calendar cal)
 		throws SQLException
 	{
+		if (x == null) {
+			setNull(parameterIndex, -1);
+			return;
+		}
+
 		if (cal == null) {
 			setValue(parameterIndex, "date '" + x.toString() + "'");
 		} else {
@@ -2098,6 +2118,11 @@ public class MonetPreparedStatement
 	 * @throws SQLException if a database access error occurs
 	 */
 	public void setString(int parameterIndex, String x) throws SQLException {
+		if (x == null) {
+			setNull(parameterIndex, -1);
+			return;
+		}
+
 		setValue(
 			parameterIndex,
 			"'" + x.replaceAll("\\\\", "\\\\\\\\").replaceAll("'", "\\\\'") + "'"
@@ -2150,6 +2175,11 @@ public class MonetPreparedStatement
 	public void setTime(int index, Time x, Calendar cal)
 		throws SQLException
 	{
+		if (x == null) {
+			setNull(index, -1);
+			return;
+		}
+
 		boolean hasTimeZone = monetdbType[getParamIdx(index)].endsWith("tz");
 		if (hasTimeZone) {
 			// timezone shouldn't matter, since the server is timezone
@@ -2205,6 +2235,11 @@ public class MonetPreparedStatement
 	public void setTimestamp(int index, Timestamp x, Calendar cal)
 		throws SQLException
 	{
+		if (x == null) {
+			setNull(index, -1);
+			return;
+		}
+
 		boolean hasTimeZone = monetdbType[getParamIdx(index)].endsWith("tz");
 		if (hasTimeZone) {
 			// timezone shouldn't matter, since the server is timezone

@@ -1,3 +1,7 @@
 # ChangeLog file for java
 # This file is updated with Maddlog
 
+* Thu May 23 2013 Fabian Groffen <fabian@monetdb.org>
+- Allow PreparedStatement.setXXX() methods to be called with null
+  arguments, bug #3288
+
