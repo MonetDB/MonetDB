@@ -1418,7 +1418,7 @@ thetajoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, const char *op)
 	assert(sr == NULL || sr->tsorted);
 
 	/* encode operator as a bit mask into opcode */
-	if (op[0] == '=' && ((op[1] == '=' && op[2] == 0) || op[2] == 0)) {
+	if (op[0] == '=' && ((op[1] == '=' && op[2] == 0) || op[1] == 0)) {
 		/* "=" or "==" */
 		opcode |= MASK_EQ;
 	} else if (op[0] == '!' && op[1] == '=' && op[2] == 0) {
@@ -1720,7 +1720,7 @@ BATsubthetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, const ch
 {
 	BAT *r1, *r2;
 
-	if (op[0] == '=' && ((op[1] == '=' && op[2] == 0) || op[2] == 0))
+	if (op[0] == '=' && ((op[1] == '=' && op[2] == 0) || op[1] == 0))
 		return BATsubjoin(r1p, r2p, l, r, sl, sr, estimate);
 
 	*r1p = NULL;

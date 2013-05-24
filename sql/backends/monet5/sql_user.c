@@ -164,9 +164,11 @@ db_users_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bat *r = (bat *)getArgReference(stk, pci, 0);
 	BAT *b = db_users(cntxt);
+	BAT *bm = BATmirror(BATmark(BATmirror(b), 0));
 
 	(void)mb;
-	*r = b->batCacheid;
+	BBPunfix(b->batCacheid);
+	*r = bm->batCacheid;
 	BBPkeepref(*r);
 	return MAL_SUCCEED;
 }

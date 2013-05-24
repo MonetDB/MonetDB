@@ -60,7 +60,7 @@ Operation successful
 |     X_68 := algebra.subselect(r1_12,2:sht,2:sht,true,true,true);         |
 |     X_15 := sql.bind(X_2,"sys","_tables","type",1);         |
 |     X_69 := algebra.subselect(X_15,X_6,2:sht,2:sht,true,true,true);      |
-|     X_17 := sql.subdelta(X_67,X_12,X_68,X_69);                           |
+|     X_17 := sql.subdelta(X_67,X_6,X_12,X_68,X_69);                           |
 |     X_18 := sql.bind(X_2,"sys","_tables","id",0);                    |
 |     (X_20,r1_28) := sql.bind(X_2,"sys","_tables","id",2);            |
 |     X_22 := sql.bind(X_2,"sys","_tables","id",1);                    |
