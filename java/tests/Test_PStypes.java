@@ -76,12 +76,13 @@ public class Test_PStypes {
 
 			// try an update like bug #1757923
 			pstmt = con.prepareStatement(
-"UPDATE HTMTEST set COMMENT=? WHERE HTMID=?"
+"UPDATE HTMTEST set COMMENT=?, TYPE=? WHERE HTMID=?"
 );
 			System.out.print("2. updating record...");
 
 			pstmt.setString(1, "some update");
-			pstmt.setLong(2, 1L);
+			pstmt.setObject(2, (float)3.2);
+			pstmt.setLong(3, 1L);
 			pstmt.executeUpdate();
 
 			System.out.println("success :)");

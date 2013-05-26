@@ -951,14 +951,25 @@ public class MonetPreparedStatement
 	 * The driver converts this to an SQL NUMERIC value when it sends it to the
 	 * database.
 	 *
-	 * @param parameterIndex the first parameter is 1, the second is 2, ...
+	 * @param i the first parameter is 1, the second is 2, ...
 	 * @param x the parameter value
 	 * @throws SQLException if a database access error occurs
 	 */
-	public void setBigDecimal(int parameterIndex, BigDecimal x)
+	public void setBigDecimal(int i, BigDecimal x)
 		throws SQLException
 	{
-		setValue(parameterIndex, x.toString());
+		// if we don't give the server the exact digits/scale thing, it
+		// barfs at us that we don't give it a correct value, so...
+		String ps = x.toPlainString();
+		// chop off excess "precision"
+		int di = ps.indexOf(".");
+		if (di >= 0 && ps.length() - di - 1 > scale[i])
+			ps = ps.substring(0, di + scale[i] + (scale[i] == 0 ? 0 : 1));
+		if (di < 0)
+			di = ps.length();
+		if (di > (digits[i] - scale[i]))
+			throw new SQLDataException("DECIMAL value exceeds allowed digits/scale: " + ps + " (" + digits[i] + "/" + scale[i] + ")", "22003");
+		setValue(i, ps);
 	}
 
 	/**
@@ -1155,6 +1166,11 @@ public class MonetPreparedStatement
 		int length)
 		throws SQLException
 	{
+		if (reader == null) {
+			setNull(parameterIndex, -1);
+			return;
+		}
+
 		CharBuffer tmp = CharBuffer.allocate(length);
 		try {
 			reader.read(tmp);
@@ -1223,6 +1239,11 @@ public class MonetPreparedStatement
 	 * @throws SQLException if a database access error occurs
 	 */
 	public void setClob(int i, Clob x) throws SQLException {
+		if (x == null) {
+			setNull(i, -1);
+			return;
+		}
+
 		// simply serialise the CLOB into a variable for now... far from
 		// efficient, but might work for a few cases...
 		// be on your marks: we have to cast the length down!
@@ -1262,6 +1283,11 @@ public class MonetPreparedStatement
 	 * @throws SQLException if a database access error occurs
 	 */
 	public void setClob(int i, Reader reader, long length) throws SQLException {
+		if (reader == null) {
+			setNull(i, -1);
+			return;
+		}
+
 		// simply serialise the CLOB into a variable for now... far from
 		// efficient, but might work for a few cases...
 		CharBuffer buf = CharBuffer.allocate((int)length); // have to down cast :(
@@ -1306,6 +1332,11 @@ public class MonetPreparedStatement
 	public void setDate(int parameterIndex, java.sql.Date x, Calendar cal)
 		throws SQLException
 	{
+		if (x == null) {
+			setNull(parameterIndex, -1);
+			return;
+		}
+
 		if (cal == null) {
 			setValue(parameterIndex, "date '" + x.toString() + "'");
 		} else {
@@ -2098,6 +2129,11 @@ public class MonetPreparedStatement
 	 * @throws SQLException if a database access error occurs
 	 */
 	public void setString(int parameterIndex, String x) throws SQLException {
+		if (x == null) {
+			setNull(parameterIndex, -1);
+			return;
+		}
+
 		setValue(
 			parameterIndex,
 			"'" + x.replaceAll("\\\\", "\\\\\\\\").replaceAll("'", "\\\\'") + "'"
@@ -2150,6 +2186,11 @@ public class MonetPreparedStatement
 	public void setTime(int index, Time x, Calendar cal)
 		throws SQLException
 	{
+		if (x == null) {
+			setNull(index, -1);
+			return;
+		}
+
 		boolean hasTimeZone = monetdbType[getParamIdx(index)].endsWith("tz");
 		if (hasTimeZone) {
 			// timezone shouldn't matter, since the server is timezone
@@ -2205,6 +2246,11 @@ public class MonetPreparedStatement
 	public void setTimestamp(int index, Timestamp x, Calendar cal)
 		throws SQLException
 	{
+		if (x == null) {
+			setNull(index, -1);
+			return;
+		}
+
 		boolean hasTimeZone = monetdbType[getParamIdx(index)].endsWith("tz");
 		if (hasTimeZone) {
 			// timezone shouldn't matter, since the server is timezone
