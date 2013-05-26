@@ -33,7 +33,6 @@ INCLUDES = .. \
 
 lib__miniseed = {
 	MODULE
-	COND = HAVE_MSEED
 	DIR = libdir/monetdb5
 	SOURCES = miniseed.c miniseed.h
 	LIBS = ../../../../monetdb5/tools/libmonetdb5 \
@@ -43,7 +42,6 @@ lib__miniseed = {
 
 lib__registrar = {
 	MODULE
-	COND = HAVE_MSEED
 	DIR = libdir/monetdb5
 	SOURCES = registrar.c registrar.h
 	LIBS = ../../../../monetdb5/tools/libmonetdb5 \
@@ -52,7 +50,6 @@ lib__registrar = {
 }
 
 headers_mal = {
-	COND = HAVE_MSEED
 	HEADERS = mal
 	DIR = libdir/monetdb5
 	SOURCES = miniseed.mal registrar.mal
