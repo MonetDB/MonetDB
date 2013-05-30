@@ -73,8 +73,8 @@ memo_find(list *memo, char *name)
 static char *
 merge_names( sql_allocator *sa, char *lname, char *rname)
 {
-	int llen = strlen(lname);
-	int rlen = strlen(rname);
+	size_t llen = strlen(lname);
+	size_t rlen = strlen(rname);
 	char *n = SA_NEW_ARRAY(sa, char, llen+rlen+2), *p = n;
 	char *c = lname;
 
