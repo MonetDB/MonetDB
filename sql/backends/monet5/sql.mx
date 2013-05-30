@@ -3732,7 +3732,7 @@ TID(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	tids = BATnew(TYPE_void, TYPE_void, 0);
 	tids->H->seq = sb;
 	tids->T->seq = sb;
-	BATsetcount(tids, nr);
+	BATsetcount(tids, (BUN) nr);
 	tids->H->revsorted = 0;
 	tids->T->revsorted = 0;
 	
