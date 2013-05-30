@@ -566,7 +566,7 @@ mvc_import_table(Client cntxt, mvc *m, bstream *bs, char *sname, char *tname, ch
 	node *n;
 	Tablet as;
 	Column *fmt;
-	size_t cnt = 0;
+	BUN cnt = 0;
 	BAT **bats = NULL;
 
 	if (!t) {
