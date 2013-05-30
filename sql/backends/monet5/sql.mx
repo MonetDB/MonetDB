@@ -3691,7 +3691,8 @@ TID(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_table *t;
 	sql_column *c;
 	BAT *tids;
-	size_t nr, sb = 0, inr = 0;
+	size_t nr, inr = 0;
+	oid sb = 0;
 	int readonly = 0;
 
 	*res = 0;
@@ -3719,7 +3720,7 @@ TID(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		int nr_parts = *(int *)getArgReference(stk, pci, 5);
 
 		nr /= nr_parts;
-		sb = part_nr*nr;
+		sb = (oid) (part_nr*nr);
 		if (nr_parts == (part_nr+1)){ /* last part gets the inserts */
 			nr = cnt - (part_nr*nr); /* keep rest */
 			nr += inr;
