@@ -178,7 +178,7 @@ rel_exp_selectivity(mvc *sql, sql_rel *r, sql_exp *e)
 			break;
 		case cmp_notequal:
 			if (key) {
-				dbl cnt = rel_getcount(sql,r);
+				dbl cnt = (dbl) rel_getcount(sql,r);
 				sel = (cnt-1)/cnt;
 			} else 	/* TODO: need estimates for number of distinct values here */
 				sel = 1.0; 
@@ -199,7 +199,7 @@ rel_exp_selectivity(mvc *sql, sql_rel *r, sql_exp *e)
 		case cmp_notin: {
 			list *l = e->r;
 			if (key) 
-				sel = list_length(l)/rel_getcount(sql, r);
+				sel = (dbl) list_length(l) / rel_getcount(sql, r);
 			else 	/* TODO: need estimates for number of distinct values here */
 				sel = list_length(l)/100; 
 			break;
@@ -217,7 +217,7 @@ rel_exp_selectivity(mvc *sql, sql_rel *r, sql_exp *e)
 	return sel;
 }
 
-static int
+static dbl
 rel_exps_selectivity(mvc *sql, sql_rel *rel, list *exps) 
 {
 	node *n;
@@ -266,7 +266,7 @@ memo_create(mvc *sql, list *rels )
 		mi->count = rel_getcount(sql, r);
 		mi->sel = rel_getsel(sql, r);
 		if (mi->sel != 1.0) 
-			mi->count = MAX( mi->count*mi->sel, 1);
+			mi->count = MAX( (lng) (mi->count*mi->sel), 1);
 		mi->cost = mi->count;
 		mi->data = r;
 		append(mi->rels, r);
@@ -605,7 +605,7 @@ memo_compute_cost(list *memo)
 				if (!mj->prop)
 					ocnt = maxcnt = maxcnt*mincnt;
 				if (mj->prop && nsel != 1.0)
-					ocnt = MAX(maxcnt*nsel, 1);
+					ocnt = MAX((lng) (maxcnt*nsel), 1);
 				if (mj->prop)
 					ncost = mj->l->count + mj->r->count + mj->l->cost + mj->r->cost; 
 				else
