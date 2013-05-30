@@ -222,7 +222,7 @@ BAT *
 BAThash(BAT *b, BUN masksize)
 {
 	BAT *o = NULL;
-	lng t0,t1;
+	lng t0 = 0, t1 = 0;
 	(void) t0; 
 	(void) t1;
 
