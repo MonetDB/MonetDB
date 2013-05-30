@@ -1060,7 +1060,7 @@ BATprod(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, in
 			/* loop invariant: */				\
 			/* (x - a) - z1 * n == z2 */			\
 			while (z2 >= (BUN) (n)) {			\
-				z2 -= (n);				\
+				z2 -= (BUN) (n);			\
 				z1++;					\
 			}						\
 		} else {						\
@@ -1071,10 +1071,10 @@ BATprod(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, in
 				z1--;					\
 				if (z2 < (BUN) (n)) {			\
 					/* proper remainder */		\
-					z2 = (n) - z2;			\
+					z2 = (BUN) ((n) - z2);		\
 					break;				\
 				}					\
-				z2 -= (n);				\
+				z2 -= (BUN) (n);			\
 			}						\
 		}							\
 		(a) += z1;						\

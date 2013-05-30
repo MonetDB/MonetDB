@@ -279,12 +279,12 @@ do {									    \
 									    \
 	if (BATcapacity(bn) < maximum) {				    \
 		impsloop(CAND, TEST,					    \
-			 buninsfix(bn, T, dst, cnt, oid, o + off,	    \
+			 buninsfix(bn, T, dst, cnt, oid, (oid)(o + off),    \
 			           (BUN) ((dbl) cnt / (dbl) (p-r)	    \
 			                  * (dbl) (q-p) * 1.1 + 1024),	    \
 			           BATcapacity(bn) + q - p, BUN_NONE));	    \
 	} else {							    \
-		impsloop(CAND, TEST, dst[cnt] = o + off);		    \
+		impsloop(CAND, TEST, dst[cnt] = (oid)(o + off));	    \
 	}								    \
 } while (0)
 
@@ -318,7 +318,7 @@ do {									\
 		while (p < q) {						\
 			CAND;						\
 			v = src[o];					\
-			buninsfix(bn, T, dst, cnt, oid, o + off,	\
+			buninsfix(bn, T, dst, cnt, oid, (oid)(o + off),	\
 			          (BUN) ((dbl) cnt / (dbl) (p-r)	\
 			                 * (dbl) (q-p) * 1.1 + 1024),	\
 			          BATcapacity(bn) + q - p, BUN_NONE);	\
@@ -329,7 +329,7 @@ do {									\
 		while (p < q) {						\
 			CAND;						\
 			v = src[o];					\
-			dst[cnt] = o + off;				\
+			dst[cnt] = (oid)(o + off);			\
 			cnt += (TEST);					\
 			p++;						\
 		}							\
@@ -407,8 +407,8 @@ NAME##_##TYPE (BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,	     \
 	if (use_imprints && VIEWtparent(b)) {				     \
 		BAT *parent = BATmirror(BATdescriptor(VIEWtparent(b)));	     \
 		imprints = parent->T->imprints;				     \
-		pr_off = (TYPE *)Tloc(b,0) -				     \
-		         (TYPE *)Tloc(parent,0)+BUNfirst(parent);	     \
+		pr_off = (BUN) ((TYPE *)Tloc(b,0) -			     \
+		         (TYPE *)Tloc(parent,0)+BUNfirst(parent));	     \
 		BBPunfix(parent->batCacheid);				     \
 	} else {							     \
 		imprints= b->T->imprints;				     \
@@ -598,7 +598,7 @@ fullscan_any(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 	scanfunc(NAME, lng, CAND, END)
 
 /* scan/imprints select with candidates */
-scan_sel ( candscan , o = *candlist++ - off, w = (*(oid *)Tloc(s,q-1)) + 1 - off)
+scan_sel ( candscan , o = (oid) (*candlist++ - off), w = (BUN) ((*(oid *)Tloc(s,q-1)) + 1 - off))
 /* scan/imprints select without candidates */
 scan_sel ( fullscan , o = p , w = q )
 

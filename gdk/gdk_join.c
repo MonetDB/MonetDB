@@ -353,7 +353,7 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	if (l->ttype == TYPE_void) {
 		if (lcand) {
 			lstart = 0;
-			lend = lcandend - lcand;
+			lend = (BUN) (lcandend - lcand);
 			lvals = (const char *) lcand;
 			lcand = NULL;
 			lwidth = SIZEOF_OID;
@@ -366,7 +366,7 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	if (r->ttype == TYPE_void) {
 		if (rcand) {
 			rstart = 0;
-			rend = rcandend - rcand;
+			rend = (BUN) (rcandend - rcand);
 			rvals = (const char *) rcand;
 			rcand = NULL;
 			rwidth = SIZEOF_OID;
@@ -407,7 +407,7 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 					rval = oid_nil;
 					v = (const char *) &rval;
 				} else if (roff != 0) {
-					rval = *(const oid *)v + roff;
+					rval = (oid) (*(const oid *)v + roff);
 					v = (const char *) &rval;
 				}
 			} else {
@@ -427,7 +427,7 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 					lcand += binsearch(lcand, l->hseqbase,
 							   lvals, lvars,
 							   lwidth, lscan,
-							   lcandend - lcand, v,
+							   (BUN) (lcandend - lcand), v,
 							   cmp, lordering, 0);
 					if (lcand == lcandend)
 						break;
@@ -492,7 +492,7 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			    cmp(v, VALUE(l, lcand[lscan] - l->hseqbase)) == 0) {
 				/* lots of equal values: use binary
 				 * search to find end */
-				nl = binsearch(lcand, l->hseqbase, lvals, lvars, lwidth, lscan, lcandend - lcand, v, cmp, lordering, 1);
+				nl = binsearch(lcand, l->hseqbase, lvals, lvars, lwidth, lscan, (BUN) (lcandend - lcand), v, cmp, lordering, 1);
 				lcand += nl;
 			} else {
 				while (++lcand < lcandend &&
@@ -528,7 +528,7 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				}
 				/* now fix offset */
 				if (loff != 0) {
-					lval = *(const oid *)v + loff;
+					lval = (oid) (*(const oid *)v + loff);
 					v = (const char *) &lval;
 				}
 			}
@@ -585,7 +585,7 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 					rcand += binsearch(rcand, r->hseqbase,
 							   rvals, rvars,
 							   rwidth, rscan,
-							   rcandend - rcand, v,
+							   (BUN) (rcandend - rcand), v,
 							   cmp, rordering, 0);
 				} else {
 					/* scan r for v */
@@ -602,7 +602,7 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 					 * search */
 					nr = binsearch(rcand, r->hseqbase,
 						       rvals, rvars, rwidth,
-						       rscan, rcandend - rcand,
+						       rscan, (BUN) (rcandend - rcand),
 						       v, cmp, rordering, 1);
 					rcand += nr;
 				} else {
@@ -699,7 +699,7 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				 * see whether we're better off doing
 				 * a binary search */
 				if (rscan < (BUN) (rcandend - rcand) &&
-				    rordering * cmp(v, VALUE(r, rcandend[-rscan - 1] - r->hseqbase)) < 0) {
+				    rordering * cmp(v, VALUE(r, rcandend[-(ssize_t)rscan - 1] - r->hseqbase)) < 0) {
 					/* value too far away in r:
 					 * use binary search */
 					rcandend = rcand + binsearch(rcand,
@@ -721,7 +721,7 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				 * see whether we're better off doing
 				 * a binary search */
 				if (rscan < (BUN) (rcandend - rcand) &&
-				    cmp(v, VALUE(r, rcandend[-rscan - 1] - r->hseqbase)) == 0) {
+				    cmp(v, VALUE(r, rcandend[-(ssize_t)rscan - 1] - r->hseqbase)) == 0) {
 					nr = binsearch(rcand, r->hseqbase,
 						       rvals, rvars, rwidth, 0,
 						       (BUN) (rcandend - rcand) - rscan,
@@ -1143,7 +1143,7 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, in
 			nr = 0;
 			if (rcand) {
 				HASHloop(ri, r->H->hash, rb, v) {
-					ro = (oid) rb + rbun2oid;
+					ro = (oid) (rb + rbun2oid);
 					if (!binsearchcand(rcand, 0, nrcand, ro))
 						continue;
 					if (BUNlast(r1) == BATcapacity(r1)) {
@@ -1177,7 +1177,7 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, in
 							goto bailout;
 						assert(BATcapacity(r1) == BATcapacity(r2));
 					}
-					ro = (oid) rb + rbun2oid;
+					ro = (oid) (rb + rbun2oid);
 					APPEND(r1, lo);
 					APPEND(r2, ro);
 					nr++;
@@ -1242,7 +1242,7 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, in
 			nr = 0;
 			if (rcand) {
 				HASHloop(ri, r->H->hash, rb, v) {
-					ro = (oid) rb + rbun2oid;
+					ro = (oid) (rb + rbun2oid);
 					if (!binsearchcand(rcand, 0, nrcand, ro))
 						continue;
 					if (BUNlast(r1) == BATcapacity(r1)) {
@@ -1276,7 +1276,7 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, in
 							goto bailout;
 						assert(BATcapacity(r1) == BATcapacity(r2));
 					}
-					ro = (oid) rb + rbun2oid;
+					ro = (oid) (rb + rbun2oid);
 					APPEND(r1, lo);
 					APPEND(r2, ro);
 					nr++;
@@ -1472,7 +1472,7 @@ thetajoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, const char *op)
 		}
 		if (lcand) {
 			lstart = 0;
-			lend = lcandend - lcand;
+			lend = (BUN) (lcandend - lcand);
 			lvals = (const char *) lcand;
 			lcand = NULL;
 			lwidth = SIZEOF_OID;
@@ -1486,7 +1486,7 @@ thetajoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, const char *op)
 		}
 		if (rcand) {
 			rstart = 0;
-			rend = rcandend - rcand;
+			rend = (BUN) (rcandend - rcand);
 			rvals = (const char *) rcand;
 			rcand = NULL;
 			rwidth = SIZEOF_OID;
@@ -1516,7 +1516,7 @@ thetajoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, const char *op)
 			if (lvals) {
 				vl = VALUE(l, lstart);
 				if (loff != 0) {
-					lval = *(const oid *)vl + loff;
+					lval = (oid) (*(const oid *)vl + loff);
 					vl = (const char *) &lval;
 				}
 			} else {
@@ -1542,7 +1542,7 @@ thetajoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, const char *op)
 				if (rvals) {
 					vr = VALUE(r, n);
 					if (roff != 0) {
-						rval = *(const oid *)vr + roff;
+						rval = (oid) (*(const oid *)vr + roff);
 						vr = (const char *) &rval;
 					}
 				} else {
