@@ -107,7 +107,7 @@ runtimeProfileFinish(Client cntxt, MalBlkPtr mb)
 		QRYqueue[j++] = QRYqueue[i];
 	else  {
 		QRYqueue[i].mb->calls++;
-		QRYqueue[i].mb->runtime += ((lng)time(0) - QRYqueue[i].start) * 1000.0/QRYqueue[i].mb->calls;
+		QRYqueue[i].mb->runtime += (lng) (((lng)time(0) - QRYqueue[i].start) * 1000.0/QRYqueue[i].mb->calls);
 
 		// reset entry
 		if (QRYqueue[i].query)
