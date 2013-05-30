@@ -407,6 +407,9 @@ cstToken(Client cntxt, ValPtr cst)
 	cst->vtype = TYPE_int;
 	cst->val.lval = 0;
 	switch (*s) {
+	case '{': case '[':
+		/* JSON Literal */
+		break;
 	case '"':
 		cst->vtype = TYPE_str;
 		i = stringLength(cntxt);

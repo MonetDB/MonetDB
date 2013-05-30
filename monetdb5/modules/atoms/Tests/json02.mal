@@ -1,0 +1,54 @@
+#validity tests
+b:= json.new("{\"f1\":1}");
+f:= json.names(b);
+io.print(f);
+f:= json.values(b);
+io.print(f);
+
+b:= json.new("{\"f1\":1,\"f2\":2}");
+f:= json.names(b);
+io.print(f);
+f:= json.values(b);
+io.print(f);
+
+b:= json.new("{\"f1\":1,\"f2\":2,\"f1\":3}");
+f:= json.names(b);
+io.print(f);
+f:= json.values(b);
+io.print(f);
+
+b:= json.new("{\"f1\":{\"f12\":3},\"f2\":[2,3,4]}");
+f:= json.names(b);
+io.print(f);
+f:= json.values(b);
+io.print(f);
+i:= json.length(b);
+io.print(i);
+
+b:= json.new("[]");
+z:= json.isvalidarray(b);
+io.print(z);
+f:= json.values(b);
+io.print(f);
+i:= json.length(b);
+io.print(i);
+
+b:= json.new("[1,\"f2\", 2]");
+z:= json.isvalidarray(b);
+io.print(z);
+f:= json.values(b);
+io.print(f);
+
+b:= json.new("[1,2,null,true,false ]");
+z:= json.isvalidarray(b);
+io.print(z);
+f:= json.values(b);
+io.print(f);
+i:= json.length(b);
+io.print(i);
+
+b:= json.new("[\"\\/\" , 2 ]");
+z:= json.isvalidarray(b);
+io.print(z);
+f:= json.values(b);
+io.print(f);

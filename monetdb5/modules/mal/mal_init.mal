@@ -61,6 +61,7 @@ include blob;
 include color;
 include str;
 include url;
+include json_atom;
 include mtime;
 include inet;
 include identifier;
