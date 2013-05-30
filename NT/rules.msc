@@ -58,6 +58,10 @@ DEBUGLIB=
 # warnings about casts which results in the code being uncompilable
 W_CFLAGS =
 !ENDIF
+!IFDEF ENABLE_STRICT
+# strict mode: treat warnings as errors
+W_CFLAGS = -WX
+!ENDIF
 
 # This is the location of pthreads for Win32, 
 # see http://sources.redhat.com/pthreads-win32/
