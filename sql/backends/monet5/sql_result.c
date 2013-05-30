@@ -566,7 +566,7 @@ mvc_import_table(Client cntxt, mvc *m, bstream *bs, char *sname, char *tname, ch
 	node *n;
 	Tablet as;
 	Column *fmt;
-	size_t cnt = 0;
+	BUN cnt = 0;
 	BAT **bats = NULL;
 
 	if (!t) {
@@ -694,7 +694,7 @@ mvc_import_table(Client cntxt, mvc *m, bstream *bs, char *sname, char *tname, ch
 				sql_delta *d = c->data;
 
 				c->base.wtime = t->base.wtime = t->s->base.wtime = m->session->tr->wtime = m->session->tr->wstime;
-				d->ibase = d->cnt = BATcount(b);
+				d->ibase = (oid) (d->cnt = BATcount(b));
 				BBPunfix(b->batCacheid);
 			}
 		}

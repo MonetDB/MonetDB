@@ -144,7 +144,7 @@ BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl, BUN maximum)
 		assert(s->tsorted);
 		s = BATmirror(s); /* SORTfnd works on HEAD column */
 		HASHloop(bi, b->H->hash, i, tl) {
-			o = (oid) i + off;
+			o = (oid) (i + off);
 			if (SORTfnd(s, &o) != BUN_NONE) {
 				buninsfix(bn, T, dst, cnt, oid, o,
 				          maximum - BATcapacity(bn),
@@ -154,7 +154,7 @@ BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl, BUN maximum)
 		}
 	} else {
 		HASHloop(bi, b->H->hash, i, tl) {
-			o = (oid) i + off;
+			o = (oid) (i + off);
 			buninsfix(bn, T, dst, cnt, oid, o,
 				  maximum - BATcapacity(bn),
 				  maximum, NULL);
@@ -455,7 +455,7 @@ candscan_any (BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 				  BATgetId(s), anti);
 		while (p < q) {
 			o = *candlist++;
-			v = BUNtail(bi,o-off);
+			v = BUNtail(bi,(BUN)(o-off));
 			buninsfix(bn, T, dst, cnt, oid, o,
 			          (BUN) ((dbl) cnt / (dbl) (p-r)
 			                 * (dbl) (q-p) * 1.1 + 1024),
@@ -470,7 +470,7 @@ candscan_any (BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 				  BATgetId(s), anti);
 		while (p < q) {
 			o = *candlist++;
-			v = BUNtail(bi,o-off);
+			v = BUNtail(bi,(BUN)(o-off));
 			buninsfix(bn, T, dst, cnt, oid, o,
 			          (BUN) ((dbl) cnt / (dbl) (p-r)
 			                 * (dbl) (q-p) * 1.1 + 1024),
@@ -491,7 +491,7 @@ candscan_any (BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 				  BATgetId(s), anti);
 		while (p < q) {
 			o = *candlist++;
-			v = BUNtail(bi,o-off);
+			v = BUNtail(bi,(BUN)(o-off));
 			buninsfix(bn, T, dst, cnt, oid, o,
 			          (BUN) ((dbl) cnt / (dbl) (p-r)
 			                 * (dbl) (q-p) * 1.1 + 1024),
@@ -533,8 +533,8 @@ fullscan_any(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 				  "scanselect equi\n", BATgetId(b), BATcount(b),
 				  s ? BATgetId(s) : "NULL", anti);
 		while (p < q) {
-			o = p + off;
-			v = BUNtail(bi,o-off);
+			o = (oid)(p + off);
+			v = BUNtail(bi,(BUN)(o-off));
 			buninsfix(bn, T, dst, cnt, oid, o,
 			          (BUN) ((dbl) cnt / (dbl) (p-r)
 			                 * (dbl) (q-p) * 1.1 + 1024),
@@ -548,8 +548,8 @@ fullscan_any(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 				  "scanselect anti\n", BATgetId(b), BATcount(b),
 				  s ? BATgetId(s) : "NULL", anti);
 		while (p < q) {
-			o = p + off;
-			v = BUNtail(bi,o-off);
+			o = (oid)(p + off);
+			v = BUNtail(bi,(BUN)(o-off));
 			buninsfix(bn, T, dst, cnt, oid, o,
 			          (BUN) ((dbl) cnt / (dbl) (p-r)
 			                 * (dbl) (q-p) * 1.1 + 1024),
@@ -569,8 +569,8 @@ fullscan_any(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 				  "scanselect range\n", BATgetId(b), BATcount(b),
 				  s ? BATgetId(s) : "NULL", anti);
 		while (p < q) {
-			o = p + off;
-			v = BUNtail(bi,o-off);
+			o = (oid)(p + off);
+			v = BUNtail(bi,(BUN)(o-off));
 			buninsfix(bn, T, dst, cnt, oid, o,
 			          (BUN) ((dbl) cnt / (dbl) (p-r)
 			                 * (dbl) (q-p) * 1.1 + 1024),
@@ -693,8 +693,8 @@ BAT_scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 				p = (BUN) b->hseqbase;
 			if ((oid) q > b->hseqbase + BATcount(b))
 				q = (BUN) b->hseqbase + BATcount(b);
-			p -= off;
-			q -= off;
+			p = (BUN)(p - off);
+			q = (BUN)(q - off);
 		} else {
 			p = BUNfirst(b);
 			q = BUNlast(b);

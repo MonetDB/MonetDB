@@ -27,6 +27,7 @@ AM_LFLAGS = -ojaql.yy.c --header-file=jaql.yy.h -P jaql
 
 # flex' and bison's output aren't up to the strictness of our flags
 X_CFLAGS = #$(X_CFLAGS:-Werror=) <- recursive
+W_CFLAGS =
 
 lib_jaqlp = {
 	NOINST
