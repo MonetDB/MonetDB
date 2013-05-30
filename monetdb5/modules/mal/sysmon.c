@@ -136,7 +136,7 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 str
 SYSMONpause(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{	int i, tag = 0;
+{	lng i, tag = 0;
 	(void) mb;
 	(void) stk;
 	(void) pci;
@@ -158,7 +158,7 @@ SYSMONpause(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 str
 SYSMONresume(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{	int i,tag = 0;
+{	lng i,tag = 0;
 	(void) mb;
 	(void) stk;
 	(void) pci;
@@ -180,7 +180,7 @@ SYSMONresume(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 str
 SYSMONstop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{	int i,tag = 0;
+{	lng i,tag = 0;
 	(void) mb;
 	(void) stk;
 	(void) pci;
