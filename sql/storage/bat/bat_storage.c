@@ -320,7 +320,7 @@ dup_delta(sql_trans *tr, sql_delta *obat, sql_delta *bat, int type, int oc_isnew
 			b = bat_new(TYPE_void, type, sz);
 			bat_set_access(b, BAT_READ);
 			obat->ibid = temp_create(b);
-			obat->ibase = bat->ibase = obat->cnt;
+			obat->ibase = bat->ibase = (oid) obat->cnt;
 			BATseqbase(b, obat->ibase);
 			bat_destroy(b);
 			if (c_isnew && tr->parent == gtrans) { 
