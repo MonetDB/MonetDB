@@ -72,4 +72,10 @@ comment "Expands the outermost JSON values.";
 command prelude()
 address JSONprelude;
 
+pattern renderobject(val:any...):json
+address JSONrenderobject;
+
+pattern renderarray(val:any...):json
+address JSONrenderobject;
+
 json.prelude();
