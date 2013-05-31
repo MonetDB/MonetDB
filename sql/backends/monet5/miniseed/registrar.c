@@ -1,7 +1,8 @@
+#include "monetdb_config.h"
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
-#include "monetdb_config.h"
 
 #include "registrar.h"
 #include "mtime.h"
