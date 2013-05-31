@@ -18,3 +18,4 @@ median-null.Bug-3280
 corrupt-after-restart.Bug-3282
 db_users.Bug-3287
 create_table_with_func.Bug-3286
+add_boolean.Bug-3289
