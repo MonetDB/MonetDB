@@ -76,6 +76,6 @@ pattern renderobject(val:any...):json
 address JSONrenderobject;
 
 pattern renderarray(val:any...):json
-address JSONrenderobject;
+address JSONrenderarray;
 
 json.prelude();

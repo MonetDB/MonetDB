@@ -112,7 +112,7 @@ str JSONisvalid(int *ret, json *j)
 	*ret = 1;
 	if ( msg){
 		*ret = 0;
-		return msg;
+		GDKfree(msg);
 	}
 	return MAL_SUCCEED;
 }
@@ -745,62 +745,176 @@ wrapup:;
 
 static 
 BAT **JSONargumentlist(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	int i, error = 0, error2=0;
+	int i, error = 0, error2=0, bats=0;
 	BUN cnt = 0;
 	BAT **bl;
 
 	bl = (BAT**) GDKzalloc(sizeof(*bl) * pci->argc);
 	for( i = pci->retc; i<pci->argc; i++)
 	if (isaBatType(getArgType(mb,pci,i))){
+		bats++;
 		bl[i] = BATdescriptor(stk->stk[getArg(pci,i)].val.bval);
 		if ( bl[i] == 0)
 			error++;
 		error2 |= (cnt > 0 &&BATcount(bl[i]) != cnt);
 		cnt = BATcount(bl[i]);
 	}
-	if ( error + error2){
+	if ( error + error2 || bats== 0){
 		GDKfree(bl);
 		bl = 0;
 	}
 	return bl;
 }
 
+static 
+str JSONrenderRowObject(BAT **bl, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, BUN idx)
+{
+	int i,tpe;
+	char *row,*name=0,*val=0;
+	int len,lim,l;
+	void *p;
+	BATiter bi;
+
+	row = (char *) GDKmalloc( lim = BUFSIZ);
+	row[0]='{';
+	row[1]=0;
+	len =1;
+	val = (char *) GDKmalloc( BUFSIZ);
+	for( i = pci->retc; i < pci->argc; i+=2){
+		name = stk->stk[getArg(pci,i)].val.sval;
+		bi = bat_iterator(bl[i+1]);
+		p = BUNtail(bi, BUNfirst(bl[i+1])+idx);
+		tpe= getTailType(getArgType(mb,pci,i+1));
+		ATOMformat( tpe, p, &val); 
+		if( strncmp(val,"nil",3) == 0)
+			strcpy(val,"null");
+		l = strlen(name) + strlen(val);
+		if (l > lim-len)
+				row= (char*) GDKrealloc(row, lim += BUFSIZ);
+		snprintf(row+len,lim-len,"\"%s\":%s,", name, val);
+		len += l+4;
+	}
+	if ( row[1])
+		row[len-1]='}';
+	else{
+		row[1]='}';
+		row[2]=0;
+	}
+	GDKfree(val);
+	return row;
+}
+
 str
 JSONrenderobject(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT **bl;
-	char *result;
-	int i;
+	char *result, *row;
+	int i,len,lim,l;
 	str *ret;
+	BUN j,cnt;
 
 	(void ) cntxt;
 	bl = JSONargumentlist(mb,stk,pci);
 	if ( bl == 0)
-			throw(MAL,"json.objectrender","non-aligned BAT sizes");
+		throw(MAL,"json.renderobject","Non-aligned BAT sizes");
 	for( i = pci->retc; i < pci->argc; i+=2)
 	if ( getArgType(mb,pci,i) != TYPE_str)
-		throw(MAL,"json.renderobject","keys missing");
+		throw(MAL,"json.renderobject","Keys missing");
 
-	result = (char *) GDKmalloc(BUFSIZ);
-	for( i = pci->retc; i < pci->argc; i++)
-	if ( getArgType(mb,pci,i) == TYPE_str){
-	} else {
+	cnt = BATcount(bl[pci->retc+1]);
+	result = (char *) GDKmalloc( lim = BUFSIZ);
+	result[0]='[';
+	result[1]=0;
+	len =1;
+
+	for( j =0; j< cnt; j++){
+		row = JSONrenderRowObject(bl,mb,stk,pci,j);
+		l =strlen(row);
+		if (l +2 > lim-len)
+				row= (char*) GDKrealloc(row, lim = ((int)cnt * l) <= lim? (int)cnt*l: lim+BUFSIZ);
+		strncpy(result+len,row, l+1);
+		GDKfree(row);
+		len +=l;
+		result[len++]=',';
+		result[len]=0;
 	}
+	result[len-1]=']';
 	ret = (str *)  getArgReference(stk,pci,0);
 	*ret = result;
 	return MAL_SUCCEED;
+}
+
+static 
+str JSONrenderRowArray(BAT **bl, MalBlkPtr mb, InstrPtr pci, BUN idx)
+{
+	int i,tpe;
+	char *row,*val=0;
+	int len,lim,l;
+	void *p;
+	BATiter bi;
+
+	row = (char *) GDKmalloc( lim = BUFSIZ);
+	row[0]='[';
+	row[1]=0;
+	len =1;
+	val = (char *) GDKmalloc( BUFSIZ);
+	for( i = pci->retc; i < pci->argc; i++){
+		bi = bat_iterator(bl[i]);
+		p = BUNtail(bi, BUNfirst(bl[i])+idx);
+		tpe= getTailType(getArgType(mb,pci,i));
+		ATOMformat( tpe, p, &val); 
+		if( strncmp(val,"nil",3) == 0)
+			strcpy(val,"null");
+		l = strlen(val);
+		if (l > lim-len)
+				row= (char*) GDKrealloc(row, lim += BUFSIZ);
+		snprintf(row+len,lim-len,"%s,", val);
+		len += l+1;
+	}
+	if ( row[1])
+		row[len-1]=']';
+	else{
+		row[1]='}';
+		row[2]=0;
+	}
+	GDKfree(val);
+	return row;
 }
 
 str
 JSONrenderarray(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT **bl;
+	char *result, *row;
+	int len,lim,l;
+	str *ret;
+	BUN j,cnt;
 
 	(void ) cntxt;
 	bl = JSONargumentlist(mb,stk,pci);
 	if ( bl == 0)
-			throw(MAL,"json.arrayrender","non-aligned BAT sizes");
-	(void) mb;
+			throw(MAL,"json.renderrray","Non-aligned BAT sizes");
+
+	cnt = BATcount(bl[pci->retc+1]);
+	result = (char *) GDKmalloc( lim = BUFSIZ);
+	result[0]='[';
+	result[1]=0;
+	len =1;
+
+	for( j =0; j< cnt; j++){
+		row = JSONrenderRowArray(bl,mb,pci,j);
+		l =strlen(row);
+		if (l +2 > lim-len)
+				row= (char*) GDKrealloc(row, lim = ((int)cnt * l) <= lim? (int)cnt*l: lim+BUFSIZ);
+		strncpy(result+len,row, l+1);
+		GDKfree(row);
+		len +=l;
+		result[len++]=',';
+		result[len]=0;
+	}
+	result[len-1]=']';
+	ret = (str *)  getArgReference(stk,pci,0);
+	*ret = result;
 	return MAL_SUCCEED;
 }
 
