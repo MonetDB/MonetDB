@@ -40,10 +40,10 @@ returns integer external name json.length;
 
 -- unnesting the JSON structure
 create function json_names(js json)
-returns table ( name string) external json.names;
+returns table ( nme string) external name json.names;
 
 create function json_values(js json)
-returns table ( val string) external json.values;
+returns table ( val string) external name json."values";
 
 -- rendering functions
 create function json_object(*)
