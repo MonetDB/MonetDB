@@ -22,7 +22,9 @@
  */
 #include "monetdb_config.h"
 #include "json_atom.h"
-#include "mal_interpreter.h"
+#include "mal.h"
+#include <mal_instruction.h>
+#include <mal_interpreter.h>
 
 // just validate the string according to www.json.org
 // A straightforward recursive solution
@@ -740,3 +742,65 @@ wrapup:;
 	GDKfree(result);
 	return msg;
 }
+
+static 
+BAT **JSONargumentlist(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	int i, error = 0, error2=0;
+	BUN cnt = 0;
+	BAT **bl;
+
+	bl = (BAT**) GDKzalloc(sizeof(*bl) * pci->argc);
+	for( i = pci->retc; i<pci->argc; i++)
+	if (isaBatType(getArgType(mb,pci,i))){
+		bl[i] = BATdescriptor(stk->stk[getArg(pci,i)].val.bval);
+		if ( bl[i] == 0)
+			error++;
+		error2 |= (cnt > 0 &&BATcount(bl[i]) != cnt);
+		cnt = BATcount(bl[i]);
+	}
+	if ( error + error2){
+		GDKfree(bl);
+		bl = 0;
+	}
+	return bl;
+}
+
+str
+JSONrenderobject(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	BAT **bl;
+	char *result;
+	int i;
+	str *ret;
+
+	(void ) cntxt;
+	bl = JSONargumentlist(mb,stk,pci);
+	if ( bl == 0)
+			throw(MAL,"json.objectrender","non-aligned BAT sizes");
+	for( i = pci->retc; i < pci->argc; i+=2)
+	if ( getArgType(mb,pci,i) != TYPE_str)
+		throw(MAL,"json.renderobject","keys missing");
+
+	result = (char *) GDKmalloc(BUFSIZ);
+	for( i = pci->retc; i < pci->argc; i++)
+	if ( getArgType(mb,pci,i) == TYPE_str){
+	} else {
+	}
+	ret = (str *)  getArgReference(stk,pci,0);
+	*ret = result;
+	return MAL_SUCCEED;
+}
+
+str
+JSONrenderarray(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	BAT **bl;
+
+	(void ) cntxt;
+	bl = JSONargumentlist(mb,stk,pci);
+	if ( bl == 0)
+			throw(MAL,"json.arrayrender","non-aligned BAT sizes");
+	(void) mb;
+	return MAL_SUCCEED;
+}
+
