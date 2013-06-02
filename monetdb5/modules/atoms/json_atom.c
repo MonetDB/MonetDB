@@ -421,7 +421,7 @@ JSONfilterObject(json *ret, json *js, str *pat)
 	char  *namebegin,*nameend;
 	char *valuebegin,*valueend, *msg= MAL_SUCCEED;
 	char *result = NULL;
-	int l,lim,len;
+	size_t l,lim,len;
 	char *j = *js;
 
 	if ( *j != '{' )
@@ -496,7 +496,8 @@ str
 JSONfilterArray(json *ret, json *js, int *index){
 	char *valuebegin,*valueend, *msg= MAL_SUCCEED;
 	char *result = NULL, *j =*js;
-	int l,len,lim, idx = *index;
+	size_t l,len,lim;
+	int idx = *index;
 
 	if ( *j != '[' )
 		throw(MAL,"json.filter","JSON object expected");
@@ -558,7 +559,7 @@ JSONnames(int *ret, json *js)
 	char  *namebegin,*nameend;
 	char *msg= MAL_SUCCEED;
 	char *result = NULL;
-	int l,lim;
+	size_t l,lim;
 	char *j = *js;
 
 	bn = BATnew(TYPE_void,TYPE_str,64);
@@ -626,7 +627,7 @@ str JSONarrayvalues(int *ret, BAT *bn, char *j)
 {
 	char *valuebegin,*valueend, *msg= MAL_SUCCEED;
 	char *result = NULL;
-	int l,lim;
+	size_t l,lim;
 
 	if ( *j != '[' )
 		throw(MAL,"json.value","JSON object expected");
@@ -676,7 +677,7 @@ JSONvalues(int *ret, json *js)
 	char  *valuebegin,*valueend;
 	char *msg= MAL_SUCCEED;
 	char *result = NULL;
-	int l,lim;
+	size_t l,lim;
 	char *j = *js;
 
 	bn = BATnew(TYPE_void,TYPE_str,64);
@@ -771,7 +772,7 @@ str JSONrenderRowObject(BAT **bl, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, BUN
 {
 	int i,tpe;
 	char *row,*name=0,*val=0;
-	int len,lim,l;
+	size_t len,lim,l;
 	void *p;
 	BATiter bi;
 
@@ -809,7 +810,8 @@ JSONrenderobject(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT **bl;
 	char *result, *row;
-	int i,len,lim,l;
+	int i;
+	size_t len,lim,l;
 	str *ret;
 	BUN j,cnt;
 
@@ -849,7 +851,7 @@ str JSONrenderRowArray(BAT **bl, MalBlkPtr mb, InstrPtr pci, BUN idx)
 {
 	int i,tpe;
 	char *row,*val=0;
-	int len,lim,l;
+	size_t len,lim,l;
 	void *p;
 	BATiter bi;
 
@@ -886,7 +888,7 @@ JSONrenderarray(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT **bl;
 	char *result, *row;
-	int len,lim,l;
+	size_t len,lim,l;
 	str *ret;
 	BUN j,cnt;
 
