@@ -833,7 +833,7 @@ JSONrenderobject(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		row = JSONrenderRowObject(bl,mb,stk,pci,j);
 		l =strlen(row);
 		if (l +2 > lim-len)
-				row= (char*) GDKrealloc(row, lim = ((int)cnt * l) <= lim? (int)cnt*l: lim+BUFSIZ);
+				row= (char*) GDKrealloc(row, lim = cnt * l <= lim? cnt*l: lim+BUFSIZ);
 		strncpy(result+len,row, l+1);
 		GDKfree(row);
 		len +=l;
@@ -907,7 +907,7 @@ JSONrenderarray(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		row = JSONrenderRowArray(bl,mb,pci,j);
 		l =strlen(row);
 		if (l +2 > lim-len)
-				row= (char*) GDKrealloc(row, lim = ((int)cnt * l) <= lim? (int)cnt*l: lim+BUFSIZ);
+				row= (char*) GDKrealloc(row, lim = cnt * l <= lim? cnt*l: lim+BUFSIZ);
 		strncpy(result+len,row, l+1);
 		GDKfree(row);
 		len +=l;
