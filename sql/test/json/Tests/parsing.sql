@@ -1,4 +1,4 @@
---create type json external name json;
+create type json external name json;
 
 create table jsonparse(j json);
 

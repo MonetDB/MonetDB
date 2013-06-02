@@ -56,6 +56,7 @@ json_export str JSONisarray(int *ret, json *j);
 
 json_export str JSONlength(int *ret, json *j);
 json_export str JSONpairs(int *key, int *val, json *j);
+json_export str JSONpairsGrouped(int *grp, int *key, int *val, json *j);
 json_export str JSONnames(int *ret, json *j);
 json_export str JSONvalues(int *ret, json *j);
 json_export str JSONprelude(int *ret);

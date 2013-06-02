@@ -65,6 +65,14 @@ command length(val:json):int
 address JSONlength
 comment "Returns the number of elements in the outermost JSON object.";
 
+command pairs(val:json)(o:bat[:oid,:oid],k:bat[:oid,:str],v:bat[:oid,:str])
+address JSONpairsGrouped
+comment "Expands the outermost JSON object into key-value pairs.";
+
+command pairs(val:json)(k:bat[:oid,:str],v:bat[:oid,:str])
+address JSONpairs
+comment "Expands the outermost JSON object into key-value pairs.";
+
 command names(val:json):bat[:oid,:str]
 address JSONnames
 comment "Expands the outermost JSON object names.";
