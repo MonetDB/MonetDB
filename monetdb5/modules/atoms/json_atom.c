@@ -788,7 +788,7 @@ str JSONrenderRowObject(BAT **bl, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, BUN
 		ATOMformat( tpe, p, &val); 
 		if( strncmp(val,"nil",3) == 0)
 			strcpy(val,"null");
-		l = (int)strlen(name) + (int)strlen(val);
+		l = strlen(name) + strlen(val);
 		if (l > lim-len)
 				row= (char*) GDKrealloc(row, lim += BUFSIZ);
 		snprintf(row+len,lim-len,"\"%s\":%s,", name, val);
@@ -829,7 +829,7 @@ JSONrenderobject(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	for( j =0; j< cnt; j++){
 		row = JSONrenderRowObject(bl,mb,stk,pci,j);
-		l =(int)strlen(row);
+		l =strlen(row);
 		if (l +2 > lim-len)
 				row= (char*) GDKrealloc(row, lim = ((int)cnt * l) <= lim? (int)cnt*l: lim+BUFSIZ);
 		strncpy(result+len,row, l+1);
@@ -865,7 +865,7 @@ str JSONrenderRowArray(BAT **bl, MalBlkPtr mb, InstrPtr pci, BUN idx)
 		ATOMformat( tpe, p, &val); 
 		if( strncmp(val,"nil",3) == 0)
 			strcpy(val,"null");
-		l = (int) strlen(val);
+		l = strlen(val);
 		if (l > lim-len)
 				row= (char*) GDKrealloc(row, lim += BUFSIZ);
 		snprintf(row+len,lim-len,"%s,", val);
@@ -903,7 +903,7 @@ JSONrenderarray(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	for( j =0; j< cnt; j++){
 		row = JSONrenderRowArray(bl,mb,pci,j);
-		l = (int)strlen(row);
+		l =strlen(row);
 		if (l +2 > lim-len)
 				row= (char*) GDKrealloc(row, lim = ((int)cnt * l) <= lim? (int)cnt*l: lim+BUFSIZ);
 		strncpy(result+len,row, l+1);
