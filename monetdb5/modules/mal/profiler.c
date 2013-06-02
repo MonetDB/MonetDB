@@ -385,3 +385,15 @@ CMDcpuloadPercentage(int *cycles, int *io, lng *user, lng *nice, lng *sys, lng *
 	}
 	return MAL_SUCCEED;
 }
+
+str
+CMDgetFootprint( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	lng *l= getArgReference(stk,pci,0);
+
+	(void) cntxt;
+	(void) mb;
+	(void) pci;
+	*l = stk->tmpspace;
+	stk->tmpspace = 0;
+	return MAL_SUCCEED;
+}

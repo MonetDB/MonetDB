@@ -130,3 +130,7 @@ comment "Extract cpu statistics from the kernel";
 command cpuload(user:lng, nice:lng, sys:lng,idle:lng,iowait:lng)(cycles:int,io:int)
 address CMDcpuloadPercentage
 comment "Calculate the average cpu load percentage and io waiting times";
+
+pattern getFootprint():lng
+address CMDgetFootprint
+comment "Get the amount of memory claimed and reset the flag";

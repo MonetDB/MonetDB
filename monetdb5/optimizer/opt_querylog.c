@@ -75,7 +75,6 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	arg= getArg(q,0)= newVariable(mb,GDKstrdup("args"),TYPE_str);
 
 
-	newFcnCall(mb,"profiler","setFootprintFlag");
 	q = newStmt(mb, "alarm", "usec");
 	xtime = getArg(q,0)= newVariable(mb,GDKstrdup("xtime"),TYPE_lng);
 	user = newVariable(mb,GDKstrdup("user"),TYPE_lng);
@@ -181,7 +180,6 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			q = newAssignment(mb);
 			q = pushWrd(mb,q,0);
 			tuples= getArg(q,0)= newVariable(mb,GDKstrdup("tuples"),TYPE_wrd);
-			newFcnCall(mb,"profiler","setFootprintFlag");
 			newFcnCall(mb,"profiler","setMemoryFlag");
 			q->argc--;
 			pushWrd(mb,q,1);
