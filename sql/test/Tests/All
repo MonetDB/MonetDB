@@ -81,6 +81,7 @@ coalesce
 round
 rank
 function_syntax
+table_functions
 procedure_syntax
 order_by_simple_exp
 order_by_complex_exp
