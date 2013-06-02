@@ -24,6 +24,9 @@ create type json external name json;
 create function json_filter(js json, name string)
 returns json external name json.filter;
 
+create function json_filter_all(js json, name string)
+returns json external name json.filterall;
+
 -- test string for JSON compliancy
 create function json_isvalid(js string)
 returns bool external name json.isvalid;

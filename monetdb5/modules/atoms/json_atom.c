@@ -412,17 +412,25 @@ str JSONlength(int *ret, json *js)
 	throw(MAL,"json.length","Invalid JSON");
 }
 
-//the access functions assume a valid json object
+//the access functions assume a valid json object or 
+//single nested array of objects ([[[{object},..]]]
 //any structure violation leads to an early abort
 //The keys should be unique in an object
-str
-JSONfilterObject(json *ret, json *js, str *pat)
+static str
+JSONfilterObjectInternal(json *ret, json *js, str *pat, int flag)
 {
 	char  *namebegin,*nameend;
 	char *valuebegin,*valueend, *msg= MAL_SUCCEED;
 	char *result = NULL;
-	size_t l,lim,len;
+	int l,lim,len,nesting=0;
 	char *j = *js;
+
+	skipblancs;
+	while( *j == '['){
+		nesting++;
+		j++;
+		skipblancs;
+	}
 
 	if ( *j != '{' )
 		throw(MAL,"json.filter","JSON object expected");
@@ -436,9 +444,13 @@ JSONfilterObject(json *ret, json *js, str *pat)
 	len = 1;
 	lim = BUFSIZ;
 
-	for( j++; *j != '}'; j++){
+	for( j++; *j && *j != '}'; j++){
 		skipblancs;
-		if (*j == '}')
+		if (*j == ']' && nesting ){
+			nesting--;
+			continue;
+		}
+		if (*j == '}' || *j ==0)
 			break;
 		if (*j != '"'){
 			msg = createException(MAL,"json.filter","Name expected");
@@ -467,21 +479,30 @@ JSONfilterObject(json *ret, json *js, str *pat)
 			if ( l+2 > lim )
 				result = GDKrealloc(result, lim += BUFSIZ);
 			if ( strcmp("null",result) == 0){
-				strncpy(result+1,"nil",3);
+				strncpy(result+len,"nil",3);
 				len+=3;
 			}else{
-				strncpy(result+1,valuebegin,valueend-valuebegin);
+				strncpy(result+len,valuebegin,valueend-valuebegin);
 				len += valueend-valuebegin;
 			}
 			result[len++] =',';
 			result[len] =0;
+			if (flag == 0)
+				goto found;
 		}
 		skipblancs;
-		if (*j == '}')
-			break;
+		if (*j == '}' ){
+			if(nesting ){
+				while (*j && *j != '{' && *j != ']') j++;
+				if ( *j != '{') j--;
+			} 
+			continue;
+		}
+		
 		if (*j != ',')
 			msg = createException(MAL,"json.filter","',' expected");
 	}
+found:
 	if ( result[1] == 0){
 		result[1]= ']';
 		result[2]= 0;
@@ -493,12 +514,24 @@ wrapup:;
 }
 
 str
+JSONfilterObject(json *ret, json *js, str *pat)
+{
+	return JSONfilterObjectInternal(ret,js,pat,0);
+}
+
+str
+JSONfilterObjectAll(json *ret, json *js, str *pat)
+{
+	return JSONfilterObjectInternal(ret,js,pat,1);
+}
+
+str
 JSONfilterArray(json *ret, json *js, int *index){
 	char *valuebegin,*valueend, *msg= MAL_SUCCEED;
 	char *result = NULL, *j =*js;
-	size_t l,len,lim;
-	int idx = *index;
+	int l,len,lim, idx = *index;
 
+	skipblancs;
 	if ( *j != '[' )
 		throw(MAL,"json.filter","JSON object expected");
 	
@@ -510,7 +543,7 @@ JSONfilterArray(json *ret, json *js, int *index){
 	len = 1;
 	lim = BUFSIZ;
 
-	for( j++; *j != ']'; j++){
+	for( j++; *j && *j != ']'; j++){
 		skipblancs;
 		if (*j == ']'){
 			break;
@@ -559,7 +592,7 @@ JSONnames(int *ret, json *js)
 	char  *namebegin,*nameend;
 	char *msg= MAL_SUCCEED;
 	char *result = NULL;
-	size_t l,lim;
+	int l,lim;
 	char *j = *js;
 
 	bn = BATnew(TYPE_void,TYPE_str,64);
@@ -571,6 +604,7 @@ JSONnames(int *ret, json *js)
 	bn->trevsorted = 0;
 	bn->T->nonil = 1;
 
+	skipblancs;
 	if ( *j != '{' )
 		throw(MAL,"json.filter","JSON object expected");
 	
@@ -580,7 +614,7 @@ JSONnames(int *ret, json *js)
 		throw(MAL,"json.names",MAL_MALLOC_FAIL);
 	lim = BUFSIZ;
 
-	for( j++; *j != '}'; j++){
+	for( j++; *j && *j != '}'; j++){
 		skipblancs;
 		if (*j == '}')
 			break;
@@ -627,8 +661,9 @@ str JSONarrayvalues(int *ret, BAT *bn, char *j)
 {
 	char *valuebegin,*valueend, *msg= MAL_SUCCEED;
 	char *result = NULL;
-	size_t l,lim;
+	int l,lim;
 
+	skipblancs;
 	if ( *j != '[' )
 		throw(MAL,"json.value","JSON object expected");
 	
@@ -637,7 +672,7 @@ str JSONarrayvalues(int *ret, BAT *bn, char *j)
 		throw(MAL,"json.value",MAL_MALLOC_FAIL);
 	lim = BUFSIZ;
 
-	for( j++; *j != ']'; j++){
+	for( j++; *j && *j != ']'; j++){
 		skipblancs;
 		if (*j == ']'){
 			break;
@@ -677,7 +712,7 @@ JSONvalues(int *ret, json *js)
 	char  *valuebegin,*valueend;
 	char *msg= MAL_SUCCEED;
 	char *result = NULL;
-	size_t l,lim;
+	int l,lim;
 	char *j = *js;
 
 	bn = BATnew(TYPE_void,TYPE_str,64);
@@ -689,6 +724,7 @@ JSONvalues(int *ret, json *js)
 	bn->trevsorted = 0;
 	bn->T->nonil = 1;
 
+	skipblancs;
 	if ( *j == '[' )
 		return JSONarrayvalues(ret, bn, j);
 	if ( *j != '{' )
@@ -700,7 +736,7 @@ JSONvalues(int *ret, json *js)
 		throw(MAL,"json.values",MAL_MALLOC_FAIL);
 	lim = BUFSIZ;
 
-	for( j++; *j != '}'; j++){
+	for( j++; *j && *j != '}'; j++){
 		skipblancs;
 		if (*j == '}')
 			break;
@@ -772,7 +808,7 @@ str JSONrenderRowObject(BAT **bl, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, BUN
 {
 	int i,tpe;
 	char *row,*name=0,*val=0;
-	size_t len,lim,l;
+	int len,lim,l;
 	void *p;
 	BATiter bi;
 
@@ -789,7 +825,7 @@ str JSONrenderRowObject(BAT **bl, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, BUN
 		ATOMformat( tpe, p, &val); 
 		if( strncmp(val,"nil",3) == 0)
 			strcpy(val,"null");
-		l = strlen(name) + strlen(val);
+		l = (int)strlen(name) + (int)strlen(val);
 		if (l > lim-len)
 				row= (char*) GDKrealloc(row, lim += BUFSIZ);
 		snprintf(row+len,lim-len,"\"%s\":%s,", name, val);
@@ -810,8 +846,7 @@ JSONrenderobject(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT **bl;
 	char *result, *row;
-	int i;
-	size_t len,lim,l;
+	int i,len,lim,l;
 	str *ret;
 	BUN j,cnt;
 
@@ -831,9 +866,9 @@ JSONrenderobject(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	for( j =0; j< cnt; j++){
 		row = JSONrenderRowObject(bl,mb,stk,pci,j);
-		l =strlen(row);
+		l =(int)strlen(row);
 		if (l +2 > lim-len)
-				row= (char*) GDKrealloc(row, lim = cnt * l <= lim? cnt*l: lim+BUFSIZ);
+				row= (char*) GDKrealloc(row, lim = ((int)cnt * l) <= lim? (int)cnt*l: lim+BUFSIZ);
 		strncpy(result+len,row, l+1);
 		GDKfree(row);
 		len +=l;
@@ -851,7 +886,7 @@ str JSONrenderRowArray(BAT **bl, MalBlkPtr mb, InstrPtr pci, BUN idx)
 {
 	int i,tpe;
 	char *row,*val=0;
-	size_t len,lim,l;
+	int len,lim,l;
 	void *p;
 	BATiter bi;
 
@@ -867,7 +902,7 @@ str JSONrenderRowArray(BAT **bl, MalBlkPtr mb, InstrPtr pci, BUN idx)
 		ATOMformat( tpe, p, &val); 
 		if( strncmp(val,"nil",3) == 0)
 			strcpy(val,"null");
-		l = strlen(val);
+		l = (int) strlen(val);
 		if (l > lim-len)
 				row= (char*) GDKrealloc(row, lim += BUFSIZ);
 		snprintf(row+len,lim-len,"%s,", val);
@@ -888,7 +923,7 @@ JSONrenderarray(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT **bl;
 	char *result, *row;
-	size_t len,lim,l;
+	int len,lim,l;
 	str *ret;
 	BUN j,cnt;
 
@@ -905,9 +940,9 @@ JSONrenderarray(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	for( j =0; j< cnt; j++){
 		row = JSONrenderRowArray(bl,mb,pci,j);
-		l =strlen(row);
+		l = (int)strlen(row);
 		if (l +2 > lim-len)
-				row= (char*) GDKrealloc(row, lim = cnt * l <= lim? cnt*l: lim+BUFSIZ);
+				row= (char*) GDKrealloc(row, lim = ((int)cnt * l) <= lim? (int)cnt*l: lim+BUFSIZ);
 		strncpy(result+len,row, l+1);
 		GDKfree(row);
 		len +=l;

@@ -41,6 +41,10 @@ command filter(name:json, s:str) :json
 address JSONfilterObject
 comment "Filter the members of an object by name";
 
+command filterall(name:json, s:str) :json
+address JSONfilterObjectAll
+comment "Filter the members of an object by name";
+
 command filter(name:json, i:int) :json
 address JSONfilterArray
 comment "Extract a single element from an array";

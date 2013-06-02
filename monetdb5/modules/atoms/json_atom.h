@@ -47,6 +47,7 @@ json_export str JSONstr2json(json *ret, str *j);
 json_export str JSONjson2str(str *ret, json *j);
 
 json_export str JSONfilterObject(json *ret, json *j, str *pat);
+json_export str JSONfilterObjectAll(json *ret, json *j, str *pat);
 json_export str JSONfilterArray(json *ret, json *j, int *index);
 
 json_export str JSONisvalid(int *ret, json *j);
