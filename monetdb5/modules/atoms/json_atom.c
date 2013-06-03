@@ -1199,7 +1199,7 @@ str JSONnestKeyValue(str *ret, int *id, int *key, int *values)
 	size_t i, len, lim, l;
 	void *p;
 	BUN cnt;
-	oid o;
+	oid o=0;;
 
 	if ( key){
 		bk = BATdescriptor(*key);
