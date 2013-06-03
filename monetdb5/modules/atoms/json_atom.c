@@ -1196,9 +1196,9 @@ str JSONnestKeyValue(str *ret, int *id, int *key, int *values)
 	BATiter boi,bki,bvi;
 	int tpe;
 	char *row, *val=0, *nme =0;
-	size_t i, len, lim, l;
+	BUN i, cnt;
+	size_t len, lim, l;
 	void *p;
-	BUN cnt;
 	oid o=0;;
 
 	if ( key){
