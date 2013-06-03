@@ -578,7 +578,7 @@ wrapup:;
 	return msg;
 }
 
-str JSONpairs(int *key, int *val, json *js)
+str JSONunnest(int *key, int *val, json *js)
 {
 	BAT *bk, *bv;
 	char  *namebegin,*nameend;
@@ -590,7 +590,7 @@ str JSONpairs(int *key, int *val, json *js)
 
 	bk = BATnew(TYPE_void,TYPE_str,64);
 	if ( bk == NULL)
-		throw(MAL,"json.names",MAL_MALLOC_FAIL);
+		throw(MAL,"json.unnest",MAL_MALLOC_FAIL);
 	BATseqbase(bk,0);
 	bk->hsorted = 1;
 	bk->hrevsorted = 0;
@@ -602,7 +602,7 @@ str JSONpairs(int *key, int *val, json *js)
 	bv = BATnew(TYPE_void,TYPE_json,64);
 	if ( bv == NULL){
 		BBPreleaseref(bk->batCacheid);
-		throw(MAL,"json.names",MAL_MALLOC_FAIL);
+		throw(MAL,"json.unnest",MAL_MALLOC_FAIL);
 	}
 	BATseqbase(bv,0);
 	bv->hsorted = 1;
@@ -618,14 +618,14 @@ str JSONpairs(int *key, int *val, json *js)
 		j++;
 	}
 	if ( *j != '{' )
-		throw(MAL,"json.filter","JSON object expected");
+		throw(MAL,"json.unnest","JSON object expected");
 	
 	// the result is an array of values
 	result = (char *) GDKmalloc(BUFSIZ);
 	if ( result == 0){
 		BBPreleaseref(bk->batCacheid);
 		BBPreleaseref(bv->batCacheid);
-		throw(MAL,"json.names",MAL_MALLOC_FAIL);
+		throw(MAL,"json.unnest",MAL_MALLOC_FAIL);
 	}
 	lim = BUFSIZ;
 
@@ -637,7 +637,7 @@ str JSONpairs(int *key, int *val, json *js)
 		if (*j == '}')
 			break;
 		if (*j != '"'){
-			msg = createException(MAL,"json.names","Name expected");
+			msg = createException(MAL,"json.unnest","Name expected");
 			goto wrapup;
 		}
 		namebegin = j+1;
@@ -654,7 +654,7 @@ str JSONpairs(int *key, int *val, json *js)
 
 		skipblancs;
 		if ( *j != ':'){
-			msg = createException(MAL,"json.names","Value expected");
+			msg = createException(MAL,"json.unnest","Value expected");
 			goto wrapup;
 		}
 		j++;
@@ -680,7 +680,7 @@ str JSONpairs(int *key, int *val, json *js)
 			continue;
 		}
 		if (*j != ',')
-			msg = createException(MAL,"json.names","',' expected");
+			msg = createException(MAL,"json.unnest","',' expected");
 	}
 wrapup:;
 	BBPkeepref(*key= bk->batCacheid);
@@ -689,7 +689,7 @@ wrapup:;
 	return msg;
 }
 
-str JSONpairsGrouped(int *grp, int *key, int *val, json *js)
+str JSONunnestGrouped(int *grp, int *key, int *val, json *js)
 {
 	BAT *bk, *bv, *bg;
 	char  *namebegin,*nameend;
@@ -702,7 +702,7 @@ str JSONpairsGrouped(int *grp, int *key, int *val, json *js)
 
 	bk = BATnew(TYPE_void,TYPE_str,64);
 	if ( bk == NULL)
-		throw(MAL,"json.names",MAL_MALLOC_FAIL);
+		throw(MAL,"json.unnest",MAL_MALLOC_FAIL);
 	BATseqbase(bk,0);
 	bk->hsorted = 1;
 	bk->hrevsorted = 0;
@@ -714,7 +714,7 @@ str JSONpairsGrouped(int *grp, int *key, int *val, json *js)
 	bv = BATnew(TYPE_void,TYPE_json,64);
 	if ( bv == NULL){
 		BBPreleaseref(bk->batCacheid);
-		throw(MAL,"json.names",MAL_MALLOC_FAIL);
+		throw(MAL,"json.unnest",MAL_MALLOC_FAIL);
 	}
 	BATseqbase(bv,0);
 	bv->hsorted = 1;
@@ -728,7 +728,7 @@ str JSONpairsGrouped(int *grp, int *key, int *val, json *js)
 	if ( bg == NULL){
 		BBPreleaseref(bk->batCacheid);
 		BBPreleaseref(bv->batCacheid);
-		throw(MAL,"json.names",MAL_MALLOC_FAIL);
+		throw(MAL,"json.unnest",MAL_MALLOC_FAIL);
 	}
 	BATseqbase(bg,0);
 	bg->hsorted = 1;
@@ -744,14 +744,14 @@ str JSONpairsGrouped(int *grp, int *key, int *val, json *js)
 		j++;
 	}
 	if ( *j != '{' )
-		throw(MAL,"json.filter","JSON object expected");
+		throw(MAL,"json.unnest","JSON object expected");
 	
 	// the result is an array of values
 	result = (char *) GDKmalloc(BUFSIZ);
 	if ( result == 0){
 		BBPreleaseref(bk->batCacheid);
 		BBPreleaseref(bv->batCacheid);
-		throw(MAL,"json.names",MAL_MALLOC_FAIL);
+		throw(MAL,"json.unnest",MAL_MALLOC_FAIL);
 	}
 	lim = BUFSIZ;
 
@@ -763,7 +763,7 @@ str JSONpairsGrouped(int *grp, int *key, int *val, json *js)
 		if (*j == '}')
 			break;
 		if (*j != '"'){
-			msg = createException(MAL,"json.names","Name expected");
+			msg = createException(MAL,"json.unnest","Name expected");
 			goto wrapup;
 		}
 		namebegin = j+1;
@@ -780,7 +780,7 @@ str JSONpairsGrouped(int *grp, int *key, int *val, json *js)
 
 		skipblancs;
 		if ( *j != ':'){
-			msg = createException(MAL,"json.names","Value expected");
+			msg = createException(MAL,"json.unnest","Value expected");
 			goto wrapup;
 		}
 		j++;
@@ -810,7 +810,7 @@ str JSONpairsGrouped(int *grp, int *key, int *val, json *js)
 			continue;
 		}
 		if (*j != ',')
-			msg = createException(MAL,"json.names","',' expected");
+			msg = createException(MAL,"json.unnest","',' expected");
 	}
 wrapup:;
 	BBPkeepref(*key= bk->batCacheid);
@@ -819,7 +819,6 @@ wrapup:;
 	GDKfree(result);
 	return msg;
 }
-
 str
 JSONnames(int *ret, json *js)
 {
@@ -1188,5 +1187,147 @@ JSONrenderarray(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	ret = (str *)  getArgReference(stk,pci,0);
 	*ret = result;
 	return MAL_SUCCEED;
+}
+
+static 
+str JSONnestKeyValue(str *ret, int *id, int *key, int *values)
+{
+	BAT *bo=0, *bk=0, *bv;
+	BATiter boi,bki,bvi;
+	int tpe;
+	char *row, *val=0, *nme =0;
+	size_t i, len, lim, l;
+	void *p;
+	BUN cnt;
+	oid o;
+
+	if ( key){
+		bk = BATdescriptor(*key);
+		if ( bk == NULL)
+			throw(MAL,"json.nest", RUNTIME_OBJECT_MISSING);
+	}
+
+	bv = BATdescriptor(*values);
+	if ( bv == NULL){
+		if(bk) BBPreleaseref(bk->batCacheid);
+		throw(MAL,"json.nest", RUNTIME_OBJECT_MISSING);
+	}
+	tpe = bv->ttype;
+	cnt = BATcount(bv);
+
+	if ( id){
+		bo = BATdescriptor(*id);
+		if ( bo == NULL){
+			if(bk) BBPreleaseref(bk->batCacheid);
+			BBPreleaseref(bv->batCacheid);
+			throw(MAL,"json.nest", RUNTIME_OBJECT_MISSING);
+		}
+	}
+
+	row = (char *) GDKmalloc( lim = BUFSIZ);
+	row[0]='[';
+	row[1]=0;
+	len =1;
+	val = (char *) GDKmalloc( BUFSIZ);
+	if ( id){
+		boi = bat_iterator(bo);
+		o = *(oid*) BUNtail(boi, BUNfirst(bo));
+	}
+	if(bk)
+		bki = bat_iterator(bk);
+	bvi = bat_iterator(bv);
+
+	if ( cnt && bk){
+		row[1]='{';
+		row[2]=0;
+		len =2;
+	}
+
+	for( i = 0; i < cnt; i++){
+		if( id && bk){
+			p = BUNtail(boi, BUNfirst(bo)+i);
+			if (*(oid*)p != o){
+				snprintf(row+len-1,lim -len,"},{");
+				len +=2;
+				o = *(oid*)p;
+			}
+		}
+
+		if( bk) {
+			nme = (str) BUNtail(bki, BUNfirst(bk)+i);
+			l = (int) strlen(nme);
+			if (l+3 > lim-len)
+					row= (char*) GDKrealloc(row, lim = (lim/(i+1)) * cnt + BUFSIZ+l+3);
+			snprintf(row+len,lim-len,"\"%s\":", nme);
+			len += l+3;
+		}
+
+		bvi = bat_iterator(bv);
+		p = BUNtail(bvi, BUNfirst(bv)+i);
+		ATOMformat( tpe, p, &val); 
+		if( strncmp(val,"nil",3) == 0)
+			strcpy(val,"null");
+		l = (int) strlen(val);
+		if (l > lim-len)
+				row= (char*) GDKrealloc(row, lim = (lim/(i+1)) * cnt + BUFSIZ+l+3);
+		if( tpe == TYPE_json && *val =='"'){
+			l-= 5;
+			strncpy(row+len,val+2,l);	// remove the json brackets
+			row[len+l++]='"';
+			row[len+l]=0;
+			len += l;
+			row[len++]=',';
+			row[len]=0;
+		} else{
+			strncpy(row+len,val,l);
+			len += l;
+			row[len++]=',';
+			row[len]=0;
+		}
+	}
+	if ( row[1] ){
+		if(bk){
+			row[len-1]='}';
+			row[len]=']';
+			row[len+1]=0;
+		} else{
+			row[len-1]=']';
+			row[len]=0;
+		}
+	} else {
+		row[1]=']';
+		row[2]=0;
+	}
+	GDKfree(val);
+	if(bo) BBPreleaseref(bo->batCacheid);
+	if(bk) BBPreleaseref(bk->batCacheid);
+	BBPreleaseref(bv->batCacheid);
+	*ret = row;
+	return MAL_SUCCEED;
+}
+
+str 
+JSONnest(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int *id = 0, *key=0, *val;
+	str *ret;
+
+	(void)cntxt;
+	(void) mb;
+
+	if ( pci->argc- pci->retc == 1){
+		val = (int*) getArgReference(stk,pci,1);
+	} else
+	if ( pci->argc- pci->retc == 2){
+		id = 0;
+		key = (int*) getArgReference(stk,pci,1);
+		val = (int*) getArgReference(stk,pci,2);
+	} else if (pci->argc - pci->retc == 3){
+		id = (int*) getArgReference(stk,pci,1);
+		key = (int*) getArgReference(stk,pci,2);
+		val = (int*) getArgReference(stk,pci,3);
+	}
+	ret = (str*) getArgReference(stk,pci,0);
+	return JSONnestKeyValue(ret, id, key, val);
 }
 
