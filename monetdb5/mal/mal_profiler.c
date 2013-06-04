@@ -1363,6 +1363,11 @@ static int getCPULoad(char cpuload[BUFSIZ]){
 	return 0;
 }
 
+// Give users the option to check for the system load between two heart beats
+double HeartbeatCPUload(void)
+{
+	return corestat[255].load;
+}
 void profilerGetCPUStat(lng *user, lng *nice, lng *sys, lng *idle, lng *iowait)
 {
 	(void) getCPULoad(0);
