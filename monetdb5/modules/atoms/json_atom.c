@@ -902,7 +902,7 @@ str JSONarrayvalues(int *ret, BAT *bn, char *j)
 {
 	char *valuebegin,*valueend, *msg= MAL_SUCCEED;
 	char *result = NULL;
-	int l,lim;
+	size_t l,lim;
 
 	skipblancs;
 	if ( *j != '[' )
@@ -953,7 +953,7 @@ JSONvalues(int *ret, json *js)
 	char  *valuebegin,*valueend;
 	char *msg= MAL_SUCCEED;
 	char *result = NULL;
-	int l,lim;
+	size_t l,lim;
 	char *j = *js;
 
 	bn = BATnew(TYPE_void,TYPE_str,64);

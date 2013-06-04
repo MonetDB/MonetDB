@@ -79,7 +79,7 @@ comment "Nest the key-value pairs with object identity into a list of JSON objec
 
 pattern nest(k:bat[:oid,:str],v:bat[:oid,:any]):json
 address JSONnest
-comment "Combine the key-value pairs into a single json object.";
+comment "Combine the key-value pairs into a single json object list.";
 
 pattern nest(k:bat[:oid,:str]):json
 address JSONnest;
