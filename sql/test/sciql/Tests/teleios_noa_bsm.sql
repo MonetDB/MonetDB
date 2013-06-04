@@ -2,7 +2,7 @@ DECLARE size_x INT, size_y INT;
 SET size_x = $img_len;
 SET size_y = $img_hei;
 
--- Import the TIFF images
+-- Assuming the TIFF images have been imported as the following:
 --   the b3, b4 and b7 of the 1st image as rs.image1, rs.image2 and rs.image3
 --   the b3, b4 and b7 of the 2nd image as rs.image4, rs.image5 and rs.image6
 -- Then, put the three bands of each image into one array:
