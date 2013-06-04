@@ -52,7 +52,7 @@ mal_export str catchKernelException(Client cntxt, str ret);
 
 mal_export ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k);
 
-mal_export int mal_concurreny_level;
+mal_export int mal_concurrency_level;
 
 #define FREE_EXCEPTION(p) do { if (p && p != M5OutOfMemory) GDKfree(p); } while (0)
 #endif /*  _MAL_INTERPRET_H*/
