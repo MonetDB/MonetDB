@@ -62,6 +62,7 @@ include color;
 include str;
 include url;
 include json_atom;
+include uuid;
 include mtime;
 include inet;
 include identifier;
