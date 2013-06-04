@@ -1309,7 +1309,7 @@ str JSONnestKeyValue(str *ret, int *id, int *key, int *values)
 str 
 JSONnest(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int *id = 0, *key=0, *val;
+	int *id = 0, *key=0, *val = 0;
 	str *ret;
 
 	(void)cntxt;
