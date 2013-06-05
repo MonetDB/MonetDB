@@ -421,7 +421,8 @@ JSONfilterObjectInternal(json *ret, json *js, str *pat, int flag)
 	char  *namebegin,*nameend;
 	char *valuebegin,*valueend, *msg= MAL_SUCCEED;
 	char *result = NULL;
-	int l,lim,len,nesting=0;
+	size_t l,lim,len;
+	int nesting=0;
 	char *j = *js;
 
 	skipblancs;
@@ -528,7 +529,8 @@ str
 JSONfilterArray(json *ret, json *js, int *index){
 	char *valuebegin,*valueend, *msg= MAL_SUCCEED;
 	char *result = NULL, *j =*js;
-	int l,len,lim, idx = *index;
+	size_t l,len,lim;
+	int idx = *index;
 
 	skipblancs;
 	if ( *j != '[' )
@@ -592,7 +594,8 @@ str JSONunnest(int *key, int *val, json *js)
 	char  *valuebegin,*valueend;
 	char *msg= MAL_SUCCEED;
 	char *result = NULL;
-	int l,lim, nesting=0;
+	size_t l,lim;
+	int nesting=0;
 	char *j = *js;
 
 	bk = BATnew(TYPE_void,TYPE_str,64);
@@ -703,7 +706,8 @@ str JSONunnestGrouped(int *grp, int *key, int *val, json *js)
 	char  *valuebegin,*valueend;
 	char *msg= MAL_SUCCEED;
 	char *result = NULL;
-	int l,lim, nesting=0;
+	size_t l,lim;
+	int nesting=0;
 	char *j = *js;
 	oid o = 0;
 
@@ -833,7 +837,7 @@ JSONnames(int *ret, json *js)
 	char  *namebegin,*nameend;
 	char *msg= MAL_SUCCEED;
 	char *result = NULL;
-	int l,lim;
+	size_t l,lim;
 	char *j = *js;
 
 	bn = BATnew(TYPE_void,TYPE_str,64);
