@@ -175,11 +175,11 @@ def mFilter (FILE, IGNORE) :
                 i+=1
             oline += '\n'
             xline = norm_hint + iline
-	elif table_name.match(iline):
-		# normalize ".L[0-9]*" to "." in "table_name" line of SQL table header
-		oline = re.sub(r'([ \t]\.)L[0-9]*([, ])', r'\1\2', iline)
-		# keep original line for reference as comment (i.e., ignore diffs, if any)
-		xline = iline.replace('%','#',1)
+        elif table_name.match(iline):
+            # normalize ".L[0-9]*" to "." in "table_name" line of SQL table header
+            oline = re.sub(r'([ \t]\.)L[0-9]*([, ])', r'\1\2', iline)
+            # keep original line for reference as comment (i.e., ignore diffs, if any)
+            xline = iline.replace('%','#',1)
         else:
             oline = iline
         if iline == "#~EndVariableOutput~#\n":
