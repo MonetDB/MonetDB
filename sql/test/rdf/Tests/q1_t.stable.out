@@ -25,7 +25,16 @@ Ready.
 # 23:32:51 >  mclient -lsql -i -umonetdb -Pmonetdb --host=alviss --port=33231 
 # 23:32:51 >  
 
-% sys.a,	sys.a # table_name
+# 12:08:38 >  
+# 12:08:38 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-23209" "--port=33225"
+# 12:08:38 >  
+
+#SELECT A.obj, count(*)
+#	FROM triples_pso AS A
+#	WHERE A.prop = 17582582
+#--	WHERE A.prop = '<type>'
+#	GROUP BY A.obj;
+% sys.a,	sys.L1 # table_name
 % obj,	L1 # name
 % int,	wrd # type
 % 1,	1 # length

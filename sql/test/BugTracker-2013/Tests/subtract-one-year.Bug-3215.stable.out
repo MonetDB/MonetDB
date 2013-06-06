@@ -48,7 +48,7 @@ Ready.
 # 10:20:45 >  
 
 #select cast ('2013-01-01' as date) + interval '-1' year;
-% . # table_name
+% .L # table_name
 % sql_add_single_value # name
 % date # type
 % 10 # length

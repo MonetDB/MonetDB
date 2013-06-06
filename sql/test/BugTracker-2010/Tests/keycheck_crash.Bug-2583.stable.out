@@ -23,7 +23,15 @@ Ready.
 # 09:16:38 >  
 
 #SELECT
-% . # table_name
+#        (1) AS "a"
+#FROM
+#        "test"."tbl1"
+#WHERE
+#        "tbl1"."name" =  'some text'  AND
+#        "tbl1"."id1"   = 1  AND NOT
+#        ("tbl1"."id2" =  295)
+#;
+% .L # table_name
 % a # name
 % tinyint # type
 % 1 # length

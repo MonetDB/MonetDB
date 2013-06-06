@@ -25,19 +25,19 @@ Ready.
 # 11:21:04 >  
 
 #﻿SELECT 1;
-% . # table_name
+% .L # table_name
 % single_value # name
 % tinyint # type
 % 1 # length
 [ 1	]
 #SEL﻿ECT 1;
-% . # table_name
+% .L # table_name
 % single_value # name
 % tinyint # type
 % 1 # length
 [ 1	]
 #SE﻿LE﻿CT﻿ 1﻿;﻿
-% . # table_name
+% .L # table_name
 % single_value # name
 % tinyint # type
 % 1 # length

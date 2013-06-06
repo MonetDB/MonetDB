@@ -393,7 +393,7 @@ rel_psm_return( mvc *sql, sql_subtype *restype, symbol *return_sym )
 	else if (rel) {
 		list *exps = sa_list(sql->sa);
 		node *n, *m;
-		int isproject = is_project(rel->op);
+		int isproject = (rel->op == op_project);
 		list *oexps = rel->exps;
 		sql_rel *l = rel->l;
 

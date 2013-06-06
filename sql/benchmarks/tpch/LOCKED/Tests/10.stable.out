@@ -24,7 +24,43 @@ Ready.
 # 11:48:00 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < 10.sql
 # 11:48:00 >  
 
-% sys.customer,	sys.customer,	sys.,	sys.customer,	sys.nation,	sys.customer,	sys.customer,	sys.customer # table_name
+# 15:21:33 >  
+# 15:21:33 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-17397" "--port=38268"
+# 15:21:33 >  
+
+#select
+#	c_custkey,
+#	c_name,
+#	sum(l_extendedprice * (1 - l_discount)) as revenue,
+#	c_acctbal,
+#	n_name,
+#	c_address,
+#	c_phone,
+#	c_comment
+#from
+#	customer,
+#	orders,
+#	lineitem,
+#	nation
+#where
+#	c_custkey = o_custkey
+#	and l_orderkey = o_orderkey
+#	and o_orderdate >= date '1993-10-01'
+#	and o_orderdate < date '1993-10-01' + interval '3' month
+#	and l_returnflag = 'R'
+#	and c_nationkey = n_nationkey
+#group by
+#	c_custkey,
+#	c_name,
+#	c_acctbal,
+#	c_phone,
+#	n_name,
+#	c_address,
+#	c_comment
+#order by
+#	revenue desc
+#limit 20;
+% sys.customer,	sys.customer,	sys.L1,	sys.customer,	sys.nation,	sys.customer,	sys.customer,	sys.customer # table_name
 % c_custkey,	c_name,	revenue,	c_acctbal,	n_name,	c_address,	c_phone,	c_comment # name
 % int,	varchar,	decimal,	decimal,	varchar,	varchar,	varchar,	varchar # type
 % 4,	18,	21,	17,	14,	40,	15,	104 # length

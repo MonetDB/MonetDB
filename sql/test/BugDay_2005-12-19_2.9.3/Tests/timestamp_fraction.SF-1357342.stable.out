@@ -26,7 +26,11 @@ Ready.
 # 20:55:30 >  
 
 [ 1	]
-% sys.,	sys.,	sys. # table_name
+#select length(cast(t1 as varchar(200))),
+#	length(cast(t2 as varchar(200))),
+#	length(cast(t3 as varchar(200)))
+#from t;
+% sys.L,	sys.L,	sys.L # table_name
 % length_t1,	length_t2,	length_t3 # name
 % int,	int,	int # type
 % 2,	2,	2 # length

@@ -24,7 +24,13 @@ Ready.
 # 11:50:36 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < reserved_words.SF-939112.sql
 # 11:50:36 >  
 
-% . # table_name
+# 11:43:52 >  
+# 11:43:52 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-23209" "--port=33225"
+# 11:43:52 >  
+
+#SELECT (count(columns.number) > 1)
+#FROM columns;
+% .L1 # table_name
 % >_L1 # name
 % boolean # type
 % 5 # length

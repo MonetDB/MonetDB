@@ -28,7 +28,19 @@ Ready.
 [ 1	]
 [ 1	]
 [ 1	]
-% .sub,	. # table_name
+#select x
+#, case when x<=12 then 1 else 0 end as log 
+#from (
+#  select 10 as x 
+#  union 
+#  select 11 as x 
+#  union 
+#  select 12 as x 
+#  union 
+#  select 13 as x
+#) sub
+#;
+% .sub,	.L # table_name
 % x,	log # name
 % tinyint,	tinyint # type
 % 2,	1 # length

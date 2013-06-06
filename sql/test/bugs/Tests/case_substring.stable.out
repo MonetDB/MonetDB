@@ -29,7 +29,9 @@ Ready.
 [ 1	]
 [ 1	]
 [ 1	]
-% sys.test456,	sys.,	sys.,	sys. # table_name
+#SELECT col1, SUBSTRING(col1,1,4), SUBSTRING(col1 ,5,2), SUBSTRING(col1 ,7,2)
+#FROM   test456  ;
+% sys.test456,	sys.L,	sys.L,	sys.L # table_name
 % col1,	substring_col1,	substring_col1,	substring_col1 # name
 % int,	clob,	clob,	clob # type
 % 8,	4,	2,	2 # length
@@ -38,7 +40,13 @@ Ready.
 [ 20080215,	"2008",	"02",	"15"	]
 [ NULL,	NULL,	NULL,	NULL	]
 [ NULL,	NULL,	NULL,	NULL	]
-% sys. # table_name
+#SELECT CASE
+#         WHEN col1 IS NOT NULL
+#           THEN CAST(SUBSTRING(col1 ,1,4)||'-'||SUBSTRING(col1
+#,5,2)||'-'||SUBSTRING(col1 ,7,2) AS DATE)
+#       END
+#FROM   test456 ;
+% sys.L # table_name
 % isnull_not_isnull_col1 # name
 % date # type
 % 10 # length
@@ -47,7 +55,11 @@ Ready.
 [ 2008-02-15	]
 [ NULL	]
 [ NULL	]
-% sys. # table_name
+#SELECT CAST(SUBSTRING(col1 ,1,4)||'-'||SUBSTRING(col1
+#,5,2)||'-'||SUBSTRING(col1 ,7,2) AS DATE)
+#FROM   test456
+#WHERE  col1 IS NOT NULL ;
+% sys.L # table_name
 % concat_substring_col1 # name
 % date # type
 % 10 # length

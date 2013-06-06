@@ -26,17 +26,20 @@ Ready.
 % boolean # type
 % 5 # length
 [ false	]
-% sys. # table_name
+#select not n.alive from nntest n;
+% sys.L # table_name
 % not_alive # name
 % boolean # type
 % 5 # length
 [ true	]
-% sys. # table_name
+#select not not n.alive from nntest n;
+% sys.L # table_name
 % not_not_alive # name
 % boolean # type
 % 5 # length
 [ false	]
-% sys. # table_name
+#select not not not n.alive from nntest n;
+% sys.L # table_name
 % not_not_not_alive # name
 % boolean # type
 % 5 # length

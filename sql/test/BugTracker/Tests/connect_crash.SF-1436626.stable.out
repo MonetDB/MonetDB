@@ -5,11 +5,8 @@ stdout of test 'connect_crash.SF-1436626` in directory 'sql/test/BugTracker` its
 # 14:42:35 >  Mtimeout -timeout 180 /ufs/sjoerd/bin/x86_64/python connect_crash.SF-1436626.py connect_crash.SF-1436626 
 # 14:42:35 >  
 
-# Monet Database Server V4.11.3
-# Copyright (c) 1993-2006, CWI. All rights reserved.
-# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
-# Visit http://monetdb.cwi.nl/ for further information.
-% . # table_name
+#select 1;
+% .L # table_name
 % single_value # name
 % tinyint # type
 % 1 # length

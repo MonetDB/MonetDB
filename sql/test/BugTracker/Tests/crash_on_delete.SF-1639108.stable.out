@@ -24,7 +24,8 @@ Ready.
 # 07:57:59 >  
 
 [ 1	]
-% . # table_name
+#select 'the following query causes the message "missing head type 2: var" in the server. i don''t know if that matters.';
+% .L # table_name
 % single_value # name
 % char # type
 % 110 # length
@@ -37,13 +38,15 @@ Ready.
 [ 32	]
 [ 64	]
 [ 1	]
-% . # table_name
+#select 'the following query causes the server to crash printing "sql_optimize.mx:1011: set2pivot: Assertion `n'' failed."';
+% .L # table_name
 % single_value # name
 % char # type
 % 112 # length
 [ "the following query causes the server to crash printing \"sql_optimize.mx:1011: set2pivot: Assertion `n' failed.\""	]
 [ 96	]
-% sys.number # table_name
+#select count(*) from number;
+% sys.L1 # table_name
 % L1 # name
 % wrd # type
 % 2 # length

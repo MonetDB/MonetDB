@@ -24,22 +24,26 @@ Ready.
 # 11:55:48 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35185  < extract_interval_bug-sf-1274088.sql
 # 11:55:48 >  
 
-% . # table_name
+#select extract( year from interval '1' year);
+% .L # table_name
 % year_single_value # name
 % int # type
 % 1 # length
 [ 1	]
-% . # table_name
+#select extract( day from interval '1' day );
+% .L # table_name
 % day_single_value # name
 % bigint # type
 % 1 # length
 [ 1	]
-% . # table_name
+#select extract( day from interval '1 01' day to hour);
+% .L # table_name
 % day_single_value # name
 % bigint # type
 % 1 # length
 [ 1	]
-% . # table_name
+#select extract( hour from interval '1 01' day to hour);
+% .L # table_name
 % hour_single_value # name
 % int # type
 % 1 # length

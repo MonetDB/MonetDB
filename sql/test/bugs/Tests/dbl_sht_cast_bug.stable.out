@@ -24,7 +24,10 @@ Ready.
 # 19:47:27 >  
 
 [ 1	]
-% sys.dbl_sht_cast_bug # table_name
+#SELECT count(g)
+#FROM dbl_sht_cast_bug
+#WHERE ( r - i < (0.08 + 0.42 * (g - r - 0.96)) or g - r > 2.26 );
+% sys.L1 # table_name
 % L1 # name
 % wrd # type
 % 1 # length

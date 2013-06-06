@@ -28,7 +28,11 @@ Ready.
 [ 1	]
 [ 1	]
 [ 1	]
-% .a # table_name
+#select count (*) from 
+#	(select rand() as r, nr from nr) a,
+#	(select rand() as r, nr from nr) b
+#	where a.r = b.r;
+% .L1 # table_name
 % L1 # name
 % wrd # type
 % 1 # length

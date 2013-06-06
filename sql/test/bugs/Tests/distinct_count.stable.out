@@ -26,7 +26,8 @@ Ready.
 [ 1	]
 [ 1	]
 [ 1	]
-% sys.tabool # table_name
+#select distinct count(*) from tabool;
+% sys.L1 # table_name
 % L1 # name
 % wrd # type
 % 1 # length

@@ -79,11 +79,11 @@ stderr of test 'string_truncate.SF-919542` in directory 'sql/test/BugDay_2005-10
 # 19:21:07 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=33392 
 # 19:21:07 >  
 
-MAPI  = monetdb@sofia:39182
+MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
 QUERY = create table z(w varchar(0));
 ERROR = !Positive value greater than 0 expected in: "create table z(w varchar(0"
         !syntax error, unexpected ')' in: ")"
-MAPI  = monetdb@sofia:39182
+MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
 QUERY = insert into z values('wrong');
 ERROR = !value too long for type (var)char(1)
 

@@ -29,7 +29,8 @@ Ready.
 % char # type
 % 10 # length
 [ " 54."	]
-% sys. # table_name
+#select CAST (a as NUMERIC (5, 2)) from A;
+% sys.a # table_name
 % a # name
 % decimal # type
 % 7 # length

@@ -29,7 +29,14 @@ Ready.
 # 17:30:19 >  mclient -lsql -umonetdb -Pmonetdb --host=alviss --port=32323  -G
 # 17:30:19 >  
 
-% . # table_name
+# 11:46:22 >  
+# 11:46:22 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-23209" "--port=33225"
+# 11:46:22 >  
+
+#create table s ( snr int, sname varchar(30) );
+#create table sp ( snr int, pnr varchar(30) );
+#select 24;
+% .L # table_name
 % single_value # name
 % tinyint # type
 % 2 # length

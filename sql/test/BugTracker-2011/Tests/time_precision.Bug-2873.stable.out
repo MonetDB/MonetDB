@@ -35,25 +35,25 @@ Ready.
 % 8 # length
 [ 20:04:04	]
 #select tm + interval '0' second from t;
-% sys. # table_name
+% sys.L # table_name
 % sql_add_tm # name
 % time # type
 % 15 # length
 [ 20:04:04.000000	]
 #select tm + interval '0.333' second(5) from t;
-% sys. # table_name
+% sys.L # table_name
 % sql_add_tm # name
 % time # type
 % 15 # length
 [ 20:04:04.333000	]
 #select time '20:04:04.847' - time '20:04:04.947';
-% . # table_name
+% .L # table_name
 % sql_sub_single_value # name
 % time # type
 % 15 # length
 [ 00:00:00.000000	]
 #select time(5) '20:04:04.947' - time(5) '20:04:04.847';
-% . # table_name
+% .L # table_name
 % sql_sub_single_value # name
 % time # type
 % 15 # length

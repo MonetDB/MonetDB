@@ -13,12 +13,20 @@ stdout of test '06` in directory 'sql/benchmarks/tpch/LOCKED` itself:
 
 Ready.
 
+# 15:21:31 >  
+# 15:21:31 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-17397" "--port=38268"
+# 15:21:31 >  
 
-# 11:47:57 >  
-# 11:47:57 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < 06.sql
-# 11:47:57 >  
-
-% sys. # table_name
+#select
+#	sum(l_extendedprice * l_discount) as revenue
+#from
+#	lineitem
+#where
+#	l_shipdate >= date '1994-01-01'
+#	and l_shipdate < date '1994-01-01' + interval '1' year
+#	and l_discount between 0.06 - 0.01 and 0.06 + 0.01
+#	and l_quantity < 24;
+% sys.L1 # table_name
 % revenue # name
 % decimal # type
 % 21 # length

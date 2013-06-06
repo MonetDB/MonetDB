@@ -30,7 +30,7 @@ stderr of test 'user_create_temp_table.Bug-2916` in directory 'sql/test/BugTrack
 # 12:25:25 >  "/usr/bin/python" "user_create_temp_table.Bug-2916.SQL.py" "user_create_temp_table.Bug-2916"
 # 12:25:25 >  
 
-MAPI  = testuser@niels:31187
+MAPI  = (testuser) /var/tmp/mtest-23209/.s.monetdb.33225
 QUERY = CREATE GLOBAL TEMPORARY TABLE TempTable (i int);
 ERROR = !CREATE TABLE: insufficient privileges for user 'testuser' in schema 'tmp'
 

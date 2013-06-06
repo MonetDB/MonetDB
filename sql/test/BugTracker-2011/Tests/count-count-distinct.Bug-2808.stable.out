@@ -25,19 +25,19 @@ Ready.
 # 10:05:42 >  
 
 #select count(name) from tables;
-% .tables # table_name
+% .L1 # table_name
 % L1 # name
 % wrd # type
 % 2 # length
 [ 32	]
 #select count(distinct name) from tables;
-% .tables # table_name
+% .L1 # table_name
 % L1 # name
 % wrd # type
 % 2 # length
 [ 26	]
 #select count(name) , count(distinct name) from tables;
-% .tables,	.tables # table_name
+% .L1,	.L2 # table_name
 % L1,	L2 # name
 % wrd,	wrd # type
 % 2,	2 # length

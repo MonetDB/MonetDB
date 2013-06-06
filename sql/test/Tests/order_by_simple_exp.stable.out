@@ -44,7 +44,11 @@ Ready.
 [ "ABD"	]
 [ "ABE"	]
 [ "ABF"	]
-% sys.test01 # table_name
+#select col1 as c0
+#from test01
+#group by col1
+#order by c0;
+% sys.L # table_name
 % c0 # name
 % varchar # type
 % 3 # length
@@ -52,7 +56,11 @@ Ready.
 [ "ABD"	]
 [ "ABE"	]
 [ "ABF"	]
-% sys.test01 # table_name
+#select col1 as c0
+#from test01
+#group by col1
+#order by col1;
+% sys.L # table_name
 % c0 # name
 % varchar # type
 % 3 # length

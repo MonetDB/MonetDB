@@ -20,17 +20,21 @@ Ready.
 #end main;
 
 
-# 08:23:41 >  
-# 08:23:41 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=34095 
-# 08:23:41 >  
+# 11:43:45 >  
+# 11:43:45 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-23209" "--port=33225"
+# 11:43:45 >  
 
-% . # table_name
+#set debug = 1;
+#set debug = true;
+#set current_timezone = 60;
+#select current_timezone;
+% .L # table_name
 % single_value # name
 % sec_interval # type
 % 0 # length
 [ 60.000	]
 #select current_timezone;
-% . # table_name
+% .L # table_name
 % single_value # name
 % sec_interval # type
 % 0 # length

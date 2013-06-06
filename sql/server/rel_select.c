@@ -337,6 +337,7 @@ rel_bind_path(sql_allocator *sa, sql_rel *rel, sql_exp *e )
 list *
 rel_projections(mvc *sql, sql_rel *rel, char *tname, int settname, int intern )
 {
+	int label = sql->label;
 	list *rexps, *exps ;
 
 	if (is_subquery(rel) && is_project(rel->op))
@@ -366,8 +367,12 @@ rel_projections(mvc *sql, sql_rel *rel, char *tname, int settname, int intern )
 			exps = new_exp_list(sql->sa);
 			for (en = rel->exps->h; en; en = en->next) {
 				sql_exp *e = en->data;
-				if (intern || !is_intern(e))
-					append(exps, exp_alias_or_copy(sql, tname, exp_name(e), rel, e, settname));
+				if (intern || !is_intern(e)) {
+					append(exps, e = exp_alias_or_copy(sql, tname, exp_name(e), rel, e, settname));
+					if (!settname) /* noname use alias */
+						exp_setrelname(sql->sa, e, label);
+
+				}
 			}
 			return exps;
 		}
@@ -378,6 +383,8 @@ rel_projections(mvc *sql, sql_rel *rel, char *tname, int settname, int intern )
 			for (en = exps->h; en; en = en->next) {
 				sql_exp *e = en->data;
 				e->card = rel->card;
+				if (!settname) /* noname use alias */
+					exp_setrelname(sql->sa, e, label);
 			}
 		}
 		return exps;
@@ -756,6 +763,8 @@ rel_project_add_exp( mvc *sql, sql_rel *rel, sql_exp *e)
 {
 	assert(is_project(rel->op));
 
+	if (!e->rname) 
+		exp_setrelname(sql->sa, e, sql->label);
 	if (rel->op == op_project) {
 		if (!rel->exps)
 			rel->exps = new_exp_list(sql->sa);
@@ -4388,8 +4397,15 @@ rel_order_by(mvc *sql, sql_rel **R, symbol *orderby, int f )
 			int direction = order->data.lval->h->next->data.i_val;
 			sql_exp *e = NULL;
 
-			if (col->token == SQL_COLUMN) {
-				e = rel_column_ref(sql, &rel, col, f);
+			if (col->token == SQL_COLUMN || col->token == SQL_ATOM) {
+				int is_last = 0;
+				exp_kind ek = {type_value, card_column, FALSE};
+
+				//e = rel_column_ref(sql, &rel, col, f);
+				e = rel_value_exp2(sql, &rel, col, f, ek, &is_last);
+
+				/* do not cache this query */
+				scanner_reset_key(&sql->scanner);
 				if (e && e->card <= CARD_ATOM) {
 					sql_subtype *tpe = &e->tpe;
 					/* integer atom on the stack */
@@ -4401,7 +4417,8 @@ rel_order_by(mvc *sql, sql_rel **R, symbol *orderby, int f )
 						e = exps_get_exp(rel->exps, nr);
 						if (!e)
 							return NULL;
-						e = exp_column(sql->sa, e->rname, e->r, exp_subtype(e), rel->card, has_nil(e), is_intern(e));
+						//e = exp_column(sql->sa, e->rname, e->r, exp_subtype(e), rel->card, has_nil(e), is_intern(e));
+						e = exp_column(sql->sa, e->rname, exp_name(e), exp_subtype(e), exp_card(e), has_nil(e), is_intern(e));
 					} else if (e->type == e_atom) {
 						return sql_error(sql, 02, "order not of type SQL_COLUMN\n");
 					}

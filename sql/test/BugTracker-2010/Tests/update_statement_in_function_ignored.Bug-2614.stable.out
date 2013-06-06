@@ -32,7 +32,7 @@ Ready.
 % 1,	1 # length
 [ 1,	NULL	]
 #select next_b();
-% . # table_name
+% .L # table_name
 % next_b # name
 % int # type
 % 1 # length

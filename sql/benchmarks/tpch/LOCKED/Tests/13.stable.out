@@ -23,7 +23,31 @@ Ready.
 # 11:48:01 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < 13.sql
 # 11:48:01 >  
 
-% .c_orders,	.c_orders # table_name
+# 15:21:35 >  
+# 15:21:35 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-17397" "--port=38268"
+# 15:21:35 >  
+
+#select
+#	c_count,
+#	count(*) as custdist
+#from
+#	(
+#		select
+#			c_custkey,
+#			count(o_orderkey)
+#		from
+#			customer left outer join orders on
+#				c_custkey = o_custkey
+#				and o_comment not like '%special%requests%'
+#		group by
+#			c_custkey
+#	) as c_orders (c_custkey, c_count)
+#group by
+#	c_count
+#order by
+#	custdist desc,
+#	c_count desc;
+% .c_orders,	.L2 # table_name
 % c_count,	custdist # name
 % wrd,	wrd # type
 % 2,	3 # length

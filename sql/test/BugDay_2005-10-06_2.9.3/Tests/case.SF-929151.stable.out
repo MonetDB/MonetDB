@@ -29,7 +29,15 @@ Ready.
 [ 1	]
 [ 1	]
 [ 1	]
-% sys. # table_name
+#select case i
+#when 0 then 'base table'
+#when 1 then 'system table'
+#when 2 then 'view'
+#when 3 then 'session temporary table'
+#when 4 then 'temporary table'
+#end
+#from t;
+% sys.L # table_name
 % ifthenelse_isnull_=_i # name
 % char # type
 % 23 # length

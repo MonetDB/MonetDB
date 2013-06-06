@@ -14,11 +14,8 @@ stdout of test 'convert_dec2varchar.SF-1774312` in directory 'sql/test/BugTracke
 Ready.
 
 
-# 23:35:37 >  
-# 23:35:37 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=koala --port=33233 
-# 23:35:37 >  
-
-% .foo,	. # table_name
+#select tr, cast(tr as varchar(10)) from (select 11.34555 as tr) as foo;
+% .foo,	.foo # table_name
 % tr,	tr # name
 % decimal,	varchar # type
 % 9,	8 # length

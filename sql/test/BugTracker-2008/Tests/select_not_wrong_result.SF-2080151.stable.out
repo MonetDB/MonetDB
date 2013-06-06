@@ -34,7 +34,13 @@ Ready.
 [ 1	]
 [ 1	]
 [ 1	]
-% sys.a # table_name
+#SELECT COUNT(*)
+#FROM A
+#WHERE NOT (A.a =
+#(SELECT B.a
+#FROM B
+#WHERE a > 'a4' ));
+% sys.L2 # table_name
 % L2 # name
 % wrd # type
 % 1 # length

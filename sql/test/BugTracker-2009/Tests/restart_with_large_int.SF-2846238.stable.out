@@ -24,12 +24,20 @@ Ready.
 # 22:41:12 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=39531 
 # 22:41:12 >  
 
-% . # table_name
+# 11:55:20 >  
+# 11:55:20 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-23209" "--port=33225"
+# 11:55:20 >  
+
+#CREATE SEQUENCE "test_seq" as bigint;
+#select next value for test_seq;
+% .L # table_name
 % next_value_for_sys # name
 % bigint # type
 % 1 # length
 [ 1	]
-% . # table_name
+#alter sequence test_seq restart with 3000000000;
+#select next value for test_seq;
+% .L # table_name
 % next_value_for_sys # name
 % bigint # type
 % 10 # length

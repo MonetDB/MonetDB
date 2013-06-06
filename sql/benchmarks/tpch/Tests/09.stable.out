@@ -13,12 +13,37 @@ stdout of test '09` in directory 'sql/benchmarks/tpch` itself:
 
 Ready.
 
+# 14:36:21 >  
+# 14:36:21 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-4866" "--port=32517"
+# 14:36:21 >  
 
-# 11:48:00 >  
-# 11:48:00 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < 09.sql
-# 11:48:00 >  
-
-% sys.profit,	sys.profit,	sys.profit # table_name
+#select
+#	nation,
+#	o_year,
+#	sum(amount) as sum_profit
+#from
+#	(
+#		select
+#			n_name as nation,
+#			extract(year from o_orderdate) as o_year,
+#			l_extendedprice * (1 - l_discount) - ps_supplycost * l_quantity as amount
+#		from
+#			part,
+#			supplier,
+#			lineitem,
+#			partsupp,
+#			orders,
+#			nation
+#		where
+#			s_suppkey = l_suppkey
+#			and ps_suppkey = l_suppkey
+#			and ps_partkey = l_partkey
+#			and p_partkey = l_partkey
+#			and o_orderkey = l_orderkey
+#			and s_nationkey = n_nationkey
+#			and p_name like '%green%'
+#	) as profit
+% sys.profit,	sys.profit,	sys.L1 # table_name
 % nation,	o_year,	sum_profit # name
 % varchar,	int,	decimal # type
 % 14,	4,	21 # length

@@ -372,8 +372,8 @@ Ready.
 #UNION ALL
 #(select 4 AS mon, count(v.name) AS murders from victim v where extract(month from v.date) = 4)
 #UNION ALL
-#(select 5 AS mon, count(v.name) AS murders from victim v where extract(month from v.date) = 
-% .,	.v # table_name
+#(select 5 AS mon, count(v.name) AS murders from victim v where extract(month from v.date) = 5)
+% .L14,	.L14 # table_name
 % mon,	murders # name
 % tinyint,	wrd # type
 % 2,	1 # length
@@ -399,8 +399,8 @@ Ready.
 #UNION ALL
 #(select 5 AS mon, v.name AS victim from victim v where extract(month from v.date) = 5)
 #UNION ALL
-#(select 6 AS mon, v.name AS
-% .,	.v # table_name
+#(select 6 AS mon, v.name AS victim from victim v where extract(month from v.date) = 6)
+% .L,	.L # table_name
 % mon,	victim # name
 % tinyint,	varchar # type
 % 2,	42 # length
@@ -424,7 +424,7 @@ Ready.
 [ 12,	"Rose Mylett"	]
 #select v.name, count(w.name) as witness_count from victim v JOIN witness w ON (w.victim = v.name)
 #GROUP BY v.name HAVING count(w.name) >= 2;
-% sys.v,	sys.w # table_name
+% sys.v,	sys.L1 # table_name
 % name,	witness_count # name
 % varchar,	wrd # type
 % 17,	1 # length
@@ -436,7 +436,7 @@ Ready.
 [ "Frances Coles",	2	]
 #select i.name, count(v.victim) AS cases from inspector i JOIN inspector_victim v ON (v.inspector = i.name)
 #GROUP BY i.name HAVING count(v.victim) > 1 order by i.name;
-% sys.i,	sys.v # table_name
+% sys.i,	sys.L1 # table_name
 % name,	cases # name
 % varchar,	wrd # type
 % 23,	1 # length
@@ -455,8 +455,8 @@ Ready.
 #(SELECT 'Inspector' AS grade, count(name) AS inspectors FROM inspector
 #    WHERE name LIKE '%Inspector%')
 #    UNION ALL
-#(SELECT 'Major' AS grade, count(na
-% .,	.inspector # table_name
+#(SELECT 'Major' AS grade, count(name) AS inspectors FROM inspector
+% .L5,	.L5 # table_name
 % grade,	inspectors # name
 % char,	wrd # type
 % 9,	1 # length
@@ -473,14 +473,14 @@ Ready.
 #UNION ALL
 #(select name, (12*cast(substring(length from 0 for (position('\'' in length) - 1)) AS integer)
 #    + cast(substring(length from (position('\'' in length) + 1) for (position('"' in length) + 1)) AS integer)) as height from victim v
-% .L1,	. # table_name
+% .L6,	.L6 # table_name
 % L1,	average_height # name
 % char,	char # type
 % 6,	4 # length
 [ "blonde",	"5'7\""	]
 [ "brown",	"5'5\""	]
 #SELECT name as victim FROM victim WHERE date_of_birth is null or date_of_birth = 'unknown';
-% sys.victim # table_name
+% sys.L # table_name
 % victim # name
 % varchar # type
 % 42 # length
@@ -504,7 +504,7 @@ Ready.
 [ "Carrie Brown"	]
 #select d.name as doctor, d.victim, v.date from doctor d JOIN victim v ON (d.victim = v.name)
 #WHERE not exists (select doc.name from doctor doc where doc.victim = v.name and doc.name <> d.name);
-% sys.d,	sys.d,	sys.v # table_name
+% sys.L2,	sys.d,	sys.v # table_name
 % doctor,	victim,	date # name
 % varchar,	varchar,	date # type
 % 0,	0,	10 # length

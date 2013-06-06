@@ -14,11 +14,8 @@ stdout of test 'interval_parse_bug-sf-1263967` in directory 'sql/test/bugs` itse
 Ready.
 
 
-# 11:55:47 >  
-# 11:55:47 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35185  < interval_parse_bug-sf-1263967.sql
-# 11:55:47 >  
-
-% . # table_name
+#select interval '-1-2' year to month;
+% .L # table_name
 % single_value # name
 % month_interval # type
 % 0 # length

@@ -31,7 +31,8 @@ Ready.
 % 4 # length
 1123
 [ 1	]
-% sys.t # table_name
+#copy select count(*) from t into stdout using delimiters ',', '\n';
+% sys.L1 # table_name
 % L1 # name
 % wrd # type
 % 1 # length

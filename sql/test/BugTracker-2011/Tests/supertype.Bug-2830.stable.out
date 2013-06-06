@@ -25,7 +25,7 @@ Ready.
 # 22:35:24 >  
 
 #select 30. - 0.025;
-% . # table_name
+% .L # table_name
 % sql_sub_single_value # name
 % decimal # type
 % 11 # length

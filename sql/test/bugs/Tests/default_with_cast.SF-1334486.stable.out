@@ -19,7 +19,8 @@ Ready.
 # 12:59:30 >  
 
 [ 1	]
-% . # table_name
+#select cast(now() as date) - d from t;
+% .L # table_name
 % current_timestamp # name
 % int # type
 % 1 # length

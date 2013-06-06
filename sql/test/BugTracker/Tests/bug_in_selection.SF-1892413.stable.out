@@ -33,7 +33,8 @@ Ready.
 [ 19251231	]
 [ 19260102	]
 [ 19260104	]
-% .t1892413a,	.test_subquery # table_name
+#SELECT date, (SELECT max(date) from test_subquery where date > t1892413a.date) as dtNext from test_subquery t1892413a;
+% .t1892413a,	.L2 # table_name
 % date,	dtnext # name
 % int,	int # type
 % 8,	8 # length

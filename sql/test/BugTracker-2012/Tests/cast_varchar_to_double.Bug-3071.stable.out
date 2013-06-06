@@ -50,7 +50,7 @@ Ready.
 #insert into t values ('42.42');
 [ 1	]
 #select avg ( cast (s as double)) from t;
-% sys. # table_name
+% sys.L1 # table_name
 % L1 # name
 % double # type
 % 24 # length

@@ -29,13 +29,27 @@ Ready.
 [ 1	]
 [ 1	]
 [ 1	]
-% sys.h,	sys.h,	sys.h # table_name
+#SELECT h.a, h.b, COUNT(*) 
+#FROM   h
+#INNER JOIN d
+#ON    (h.a <= d.x AND d.x < h.b)
+#GROUP BY h.a, h.b
+#ORDER BY a, b
+#;
+% sys.h,	sys.h,	sys.L1 # table_name
 % a,	b,	L1 # name
 % int,	int,	wrd # type
 % 2,	2,	1 # length
 [ 0,	10,	2	]
 [ 10,	20,	1	]
-% sys.h,	sys.h,	sys.h # table_name
+#SELECT h.a, h.b, COUNT(*) 
+#FROM   h
+#INNER JOIN d
+#ON    (d.x BETWEEN h.a AND h.b)
+#GROUP BY h.a, h.b
+#ORDER BY a, b
+#;
+% sys.h,	sys.h,	sys.L1 # table_name
 % a,	b,	L1 # name
 % int,	int,	wrd # type
 % 2,	2,	1 # length

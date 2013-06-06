@@ -28,17 +28,20 @@ Ready.
 # 12:49:10 >  
 
 [ 1	]
-% sys. # table_name
+#select f/f from x;
+% sys.L # table_name
 % sql_div_f # name
 % double # type
 % 24 # length
 [ 1	]
-% . # table_name
+#select cast(3.14/3.14 as integer);
+% .L # table_name
 % sql_div_single_value # name
 % int # type
 % 1 # length
 [ 1	]
-% sys. # table_name
+#select cast(f/f as integer) from x;
+% sys.L # table_name
 % sql_div_f # name
 % int # type
 % 1 # length

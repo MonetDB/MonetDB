@@ -24,27 +24,32 @@ Ready.
 # 15:17:09 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=30070  < round.sql
 # 15:17:09 >  
 
-% .,	.,	.,	. # table_name
+#SELECT ROUND(748.58, -1),ROUND(748.58, -2),ROUND(748.58, -3),ROUND(748.58, -4);
+% .L,	.L,	.L,	.L # table_name
 % round_single_value,	round_single_value,	round_single_value,	round_single_value # name
 % decimal,	decimal,	decimal,	decimal # type
 % 10,	10,	10,	10 # length
 [ 750.00,	700.00,	1000.00,	0.00	]
-% .,	. # table_name
+#SELECT ROUND(123.9994, 3),ROUND(123.9995, 3);
+% .L,	.L # table_name
 % round_single_value,	round_single_value # name
 % decimal,	decimal # type
 % 10,	10 # length
 [ 123.9990,	124.0000	]
-% . # table_name
+#SELECT ROUND(123.4545, 2);
+% .L # table_name
 % round_single_value # name
 % decimal # type
 % 10 # length
 [ 123.4500	]
-% . # table_name
+#SELECT ROUND(123.45, -2);
+% .L # table_name
 % round_single_value # name
 % decimal # type
 % 10 # length
 [ 100.00	]
-% . # table_name
+#SELECT ROUND(150.75, 0);
+% .L # table_name
 % round_single_value # name
 % decimal # type
 % 10 # length

@@ -77,7 +77,7 @@ Ready.
 #      rank1.component_ref = component1.id AND
 #      rank1.node_ref = node1.id AND
 #      rank1.pre = rank2.parent AND
-% sys.solutions # table_name
+% sys.L1 # table_name
 % L1 # name
 % wrd # type
 % 1 # length

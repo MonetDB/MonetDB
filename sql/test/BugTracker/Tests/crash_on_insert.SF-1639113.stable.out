@@ -20,7 +20,8 @@ Ready.
 
 [ 1	]
 [ 1	]
-% . # table_name
+#select 'the following query causes mserver5 to segfault';
+% .L # table_name
 % single_value # name
 % char # type
 % 47 # length

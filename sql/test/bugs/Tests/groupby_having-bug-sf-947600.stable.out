@@ -30,8 +30,8 @@ Ready.
 #         a.name IN ('args', 'columns', 'functions', 'idxs',
 #             'objects', 'keys', 'modules', 'sequences') AND
 #         b.name IN ('args', 'columns', 'functions', 'idxs',
-#             'objects', 'keys', 'modules', 'sequences'
-% .a,	.b,	.a # table_name
+#             'objects', 'keys', 'modules', 'sequences')
+% .a,	.b,	.L1 # table_name
 % name,	name,	L1 # name
 % varchar,	varchar,	wrd # type
 % 9,	9,	2 # length

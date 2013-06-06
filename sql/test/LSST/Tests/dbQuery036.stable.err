@@ -73,7 +73,7 @@ stderr of test 'dbQuery036` in directory 'sql/test/LSST` itself:
 # 05:57:35 >  mclient -lsql -ftest -i -e --host=eir --port=39691 
 # 05:57:35 >  
 
-MAPI  = monetdb@ottar:39647
+MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
 QUERY = SELECT  ROUND(uMag-gMag,0) AS UG, 
                 ROUND(gMag-rMag,0) AS GR, 
                 ROUND(rMag-iMag,0) AS RI, 

@@ -209,7 +209,7 @@ Ready.
 #	'', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '',
 [ 1	]
 #select count(*) from wide;
-% sys.wide # table_name
+% sys.L1 # table_name
 % L1 # name
 % wrd # type
 % 1 # length

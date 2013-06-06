@@ -24,7 +24,8 @@ Ready.
 # 22:31:14 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=36767 
 # 22:31:14 >  
 
-% . # table_name
+#select bit_and(3749090034127126942, 0xffffffffffffffff);
+% .L # table_name
 % bit_and_single_value # name
 % bigint # type
 % 19 # length

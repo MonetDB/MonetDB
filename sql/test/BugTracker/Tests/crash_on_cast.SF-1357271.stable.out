@@ -14,11 +14,8 @@ stdout of test 'crash_on_cast.SF-1357271` in directory 'sql/test/BugTracker` its
 Ready.
 
 
-# 11:53:58 >  
-# 11:53:58 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < crash_on_cast.SF-1357271.sql
-# 11:53:58 >  
-
-% . # table_name
+#select cast( 1 as varchar(10));
+% .L # table_name
 % single_value # name
 % varchar # type
 % 1 # length

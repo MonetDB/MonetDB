@@ -24,7 +24,8 @@ Ready.
 # 11:50:20 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < CrashMe_SQL_server_crash-1.SF-921673.sql
 # 11:50:20 >  
 
-% . # table_name
+#select 2 in (3,2,5,9,5,1) ;
+% .L2 # table_name
 % or_=_single_value # name
 % boolean # type
 % 5 # length

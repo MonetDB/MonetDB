@@ -60,11 +60,25 @@ Ready.
 % name,	name # name
 % varchar,	varchar # type
 % 0,	0 # length
-% sys. # table_name
+#SELECT CAST(substring(murderdate,1,4) AS integer) - CAST(substring(dateofbirth,1,4) AS integer) 
+#    FROM victim 
+#    WHERE murderdate LIKE '1___%' 
+#        AND dateofbirth LIKE '1___%';
+% sys.L # table_name
 % substring_murderdate # name
 % bigint # type
 % 1 # length
-% . # table_name
+#SELECT AVG(num) 
+#    FROM (SELECT COUNT(victim) AS num 
+#            FROM sceneinspectors 
+#            GROUP BY victim 
+#          UNION ALL
+#          SELECT 0 AS num 
+#            FROM victim 
+#            WHERE name NOT IN 
+#                (SELECT victim FROM sceneinspectors)
+#         ) AS numbers;
+% .L5 # table_name
 % L5 # name
 % double # type
 % 24 # length
@@ -73,7 +87,10 @@ Ready.
 % name,	features # name
 % varchar,	varchar # type
 % 0,	0 # length
-% sys.victim,	sys.victim # table_name
+#SELECT MIN(murderdate),MAX(murderdate) 
+#    FROM victim 
+#    WHERE murderdate LIKE '1%';
+% sys.L1,	sys.L2 # table_name
 % L1,	L2 # name
 % varchar,	varchar # type
 % 0,	0 # length

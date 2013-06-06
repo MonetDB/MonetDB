@@ -78,31 +78,31 @@ Ready.
 [ 6,	0	]
 [ 8,	0	]
 #select median( prob1 )  from mtcars2;
-% sys.mtcars2 # table_name
+% sys.L1 # table_name
 % L1 # name
 % wrd # type
 % 1 # length
 [ 3	]
 #select prod( prob1 ) from mtcars2;
-% sys. # table_name
+% sys.L1 # table_name
 % L1 # name
 % bigint # type
 % 1 # length
 [ 0	]
 #select stddev_pop( prob1 ) from mtcars2;
-% sys.mtcars2 # table_name
+% sys.L1 # table_name
 % L1 # name
 % double # type
 % 24 # length
 [ 3.337497399	]
 #select stddev_samp( prob1 ) from mtcars2;
-% sys.mtcars2 # table_name
+% sys.L1 # table_name
 % L1 # name
 % double # type
 % 24 # length
 [ 3.656045222	]
 #select sign( prob1 ) from mtcars2;
-% sys. # table_name
+% sys.L # table_name
 % sign_prob1 # name
 % tinyint # type
 % 1 # length
@@ -126,31 +126,31 @@ Ready.
 [ 6,	0	]
 [ 8,	0	]
 #select median( prob1 )  from mtcars2;
-% sys.mtcars2 # table_name
+% sys.L1 # table_name
 % L1 # name
 % tinyint # type
 % 1 # length
 [ 3	]
 #select prod( prob1 ) from mtcars2;
-% sys.mtcars2 # table_name
+% sys.L1 # table_name
 % L1 # name
 % bigint # type
 % 1 # length
 [ 0	]
 #select stddev_pop( prob1 ) from mtcars2;
-% sys.mtcars2 # table_name
+% sys.L1 # table_name
 % L1 # name
 % double # type
 % 24 # length
 [ 3.337497399	]
 #select stddev_samp( prob1 ) from mtcars2;
-% sys.mtcars2 # table_name
+% sys.L1 # table_name
 % L1 # name
 % double # type
 % 24 # length
 [ 3.656045222	]
 #select sign( prob1 ) from mtcars2;
-% sys. # table_name
+% sys.L # table_name
 % sign_prob1 # name
 % tinyint # type
 % 1 # length
@@ -174,31 +174,31 @@ Ready.
 [ 6,	0	]
 [ 8,	0	]
 #select median( prob1 )  from mtcars2;
-% sys.mtcars2 # table_name
+% sys.L1 # table_name
 % L1 # name
 % smallint # type
 % 1 # length
 [ 3	]
 #select prod( prob1 ) from mtcars2;
-% sys.mtcars2 # table_name
+% sys.L1 # table_name
 % L1 # name
 % bigint # type
 % 1 # length
 [ 0	]
 #select stddev_pop( prob1 ) from mtcars2;
-% sys.mtcars2 # table_name
+% sys.L1 # table_name
 % L1 # name
 % double # type
 % 24 # length
 [ 3.337497399	]
 #select stddev_samp( prob1 ) from mtcars2;
-% sys.mtcars2 # table_name
+% sys.L1 # table_name
 % L1 # name
 % double # type
 % 24 # length
 [ 3.656045222	]
 #select sign( prob1 ) from mtcars2;
-% sys. # table_name
+% sys.L # table_name
 % sign_prob1 # name
 % tinyint # type
 % 1 # length
@@ -222,31 +222,31 @@ Ready.
 [ 6,	0	]
 [ 8,	0	]
 #select median( prob1 )  from mtcars2;
-% sys.mtcars2 # table_name
+% sys.L1 # table_name
 % L1 # name
 % int # type
 % 1 # length
 [ 3	]
 #select prod( prob1 ) from mtcars2;
-% sys.mtcars2 # table_name
+% sys.L1 # table_name
 % L1 # name
 % bigint # type
 % 1 # length
 [ 0	]
 #select stddev_pop( prob1 ) from mtcars2;
-% sys.mtcars2 # table_name
+% sys.L1 # table_name
 % L1 # name
 % double # type
 % 24 # length
 [ 3.337497399	]
 #select stddev_samp( prob1 ) from mtcars2;
-% sys.mtcars2 # table_name
+% sys.L1 # table_name
 % L1 # name
 % double # type
 % 24 # length
 [ 3.656045222	]
 #select sign( prob1 ) from mtcars2;
-% sys. # table_name
+% sys.L # table_name
 % sign_prob1 # name
 % tinyint # type
 % 1 # length
@@ -270,31 +270,31 @@ Ready.
 [ 6,	0	]
 [ 8,	0	]
 #select median( prob1 )  from mtcars2;
-% sys.mtcars2 # table_name
+% sys.L1 # table_name
 % L1 # name
 % bigint # type
 % 1 # length
 [ 3	]
 #select prod( prob1 ) from mtcars2;
-% sys.mtcars2 # table_name
+% sys.L1 # table_name
 % L1 # name
 % bigint # type
 % 1 # length
 [ 0	]
 #select stddev_pop( prob1 ) from mtcars2;
-% sys.mtcars2 # table_name
+% sys.L1 # table_name
 % L1 # name
 % double # type
 % 24 # length
 [ 3.337497399	]
 #select stddev_samp( prob1 ) from mtcars2;
-% sys.mtcars2 # table_name
+% sys.L1 # table_name
 % L1 # name
 % double # type
 % 24 # length
 [ 3.656045222	]
 #select sign( prob1 ) from mtcars2;
-% sys. # table_name
+% sys.L # table_name
 % sign_prob1 # name
 % tinyint # type
 % 1 # length

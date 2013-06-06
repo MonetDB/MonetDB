@@ -24,7 +24,8 @@ Ready.
 # 20:57:23 >  
 
 [ 32605	]
-% sys.tradedate # table_name
+#SELECT COUNT(*) AS cnt from tradeDate;
+% sys.L1 # table_name
 % cnt # name
 % wrd # type
 % 5 # length

@@ -19,12 +19,22 @@ Ready.
 # 19:05:32 >  
 
 [ 1	]
-% . # table_name
+#create function gen_insert(i int) returns int
+#begin
+#	while i > 0 do 
+#		set i = i - 1;
+#		insert into slow_count select * from slow_count;
+#	end while;
+#	return 0;
+#end;
+#select gen_insert(17);	-- previous call was 25
+% .L # table_name
 % gen_insert_single_value # name
 % int # type
 % 1 # length
 [ 0	]
-% sys.slow_count # table_name
+#select count(*) from slow_count;
+% sys.L1 # table_name
 % L1 # name
 % wrd # type
 % 6 # length

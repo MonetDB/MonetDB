@@ -24,7 +24,8 @@ Ready.
 # 11:55:36 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35185  < subselect_single_value-bug-sf-962099.sql
 # 11:55:36 >  
 
-% .,	. # table_name
+#SELECT 1, 2;
+% .L,	.L # table_name
 % single_value,	single_value # name
 % tinyint,	tinyint # type
 % 1,	1 # length

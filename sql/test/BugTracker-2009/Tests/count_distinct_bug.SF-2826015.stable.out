@@ -41,12 +41,14 @@ Ready.
 % 5 # length
 [ "test"	]
 [ "other"	]
-% sys.testdistinct # table_name
+#select count(distinct(testcol)) from testdistinct ;
+% sys.L1 # table_name
 % L1 # name
 % wrd # type
 % 1 # length
 [ 2	]
-% sys.testdistinct # table_name
+#select count(distinct testcol ) from testdistinct ;
+% sys.L1 # table_name
 % L1 # name
 % wrd # type
 % 1 # length

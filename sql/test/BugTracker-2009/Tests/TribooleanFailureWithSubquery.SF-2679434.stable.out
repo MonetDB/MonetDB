@@ -20,28 +20,64 @@ Ready.
 #end main;
 
 
-# 11:12:19 >  
-# 11:12:19 >  mclient -lsql -umonetdb -Pmonetdb --host=rig --port=33716 
-# 11:12:19 >  
+# 11:47:36 >  
+# 11:47:36 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-23209" "--port=33225"
+# 11:47:36 >  
 
-% .sub2 # table_name
+#SELECT SUM(a) AS suma
+#FROM ( 
+#  SELECT *
+#  FROM ( 
+#    SELECT 1 AS a, 'x' AS b
+#    ) sub
+#  WHERE b IN ('y')
+#) sub2
+#;
+% .L1 # table_name
 % suma # name
 % bigint # type
 % 20 # length
 [ NULL	]
-
-% .sub2 # table_name
+#SELECT SUM(a) AS suma
+#FROM ( 
+#  SELECT *
+#  FROM ( 
+#    SELECT 1 AS a, 'x' AS b
+#    ) sub
+#  WHERE b IN ('y')
+#) sub2
+#HAVING SUM(a) IS NULL
+#;
+% .L1 # table_name
 % suma # name
 % bigint # type
 % 1 # length
 [ NULL	]
-
-% .sub2 # table_name
+#SELECT SUM(a) AS suma
+#FROM ( 
+#  SELECT *
+#  FROM ( 
+#    SELECT 1 AS a, 'x' AS b
+#    ) sub
+#  WHERE b IN ('y')
+#) sub2
+#HAVING SUM(a) IS NOT NULL
+#;
+% .L1 # table_name
 % suma # name
 % bigint # type
 % 1 # length
-
-% .sub2 # table_name
+#SELECT SUM(a) AS suma
+#FROM ( 
+#  SELECT *
+#  FROM ( 
+#    SELECT 1 AS a, 'x' AS b
+#    ) sub
+#  WHERE b IN ('y')
+#) sub2
+#HAVING SUM(a) > 0
+#;
+% .L1 # table_name
 % suma # name
 % bigint # type
 % 1 # length
@@ -101,8 +137,21 @@ Ready.
 [ 1	]
 [ 1	]
 [ 1	]
-
-% sys.dummy,	sys.dummy,	sys.,	sys.,	sys.,	sys.,	sys.,	sys.,	sys.,	sys.,	sys. # table_name
+#SELECT 
+#  a
+#, b
+#, NOT a   AS "NOT_a"
+#, a=b     AS "a_EQ_b"
+#, a<>b    AS "a_NE_b"
+#, a<b     AS "a_LT_b"
+#, a<=b    AS "a_LE_b"
+#, a>b     AS "a_GT_b"
+#, a>=b    AS "a_GE_b"
+#, a OR b  AS "a_OR_b"
+#, a AND b AS "a_AND_b"
+#FROM dummy
+#;
+% sys.dummy,	sys.dummy,	sys.L,	sys.L,	sys.L,	sys.L,	sys.L,	sys.L,	sys.L,	sys.L,	sys.L # table_name
 % a,	b,	NOT_a,	a_EQ_b,	a_NE_b,	a_LT_b,	a_LE_b,	a_GT_b,	a_GE_b,	a_OR_b,	a_AND_b # name
 % boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean # type
 % 5,	5,	5,	5,	5,	5,	5,	5,	5,	5,	5 # length

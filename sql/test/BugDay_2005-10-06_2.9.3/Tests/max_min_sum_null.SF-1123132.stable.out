@@ -24,7 +24,8 @@ Ready.
 # 12:43:28 >  
 
 [ 3	]
-% sys.t1123132,	sys.t1123132,	sys.t1123132 # table_name
+#SELECT MIN(aap),MAX(aap),SUM(aap) FROM t1123132;
+% sys.L1,	sys.L2,	sys.L3 # table_name
 % L1,	L2,	L3 # name
 % int,	int,	bigint # type
 % 1,	1,	1 # length

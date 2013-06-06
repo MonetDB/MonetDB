@@ -13,12 +13,24 @@ stdout of test '14` in directory 'sql/benchmarks/tpch` itself:
 
 Ready.
 
+# 14:36:23 >  
+# 14:36:23 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-4866" "--port=32517"
+# 14:36:23 >  
 
-# 11:48:02 >  
-# 11:48:02 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < 14.sql
-# 11:48:02 >  
-
-% . # table_name
+#select
+#	100.00 * sum(case
+#		when p_type like 'PROMO%'
+#			then l_extendedprice * (1 - l_discount)
+#		else 0
+#	end) / sum(l_extendedprice * (1 - l_discount)) as promo_revenue
+#from
+#	lineitem,
+#	part
+#where
+#	l_partkey = p_partkey
+#	and l_shipdate >= date '1995-09-01'
+#	and l_shipdate < date '1995-09-01' + interval '1' month;
+% .L2 # table_name
 % promo_revenue # name
 % decimal # type
 % 21 # length

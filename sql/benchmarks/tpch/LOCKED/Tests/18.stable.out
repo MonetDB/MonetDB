@@ -23,7 +23,44 @@ Ready.
 # 11:48:03 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < 18.sql
 # 11:48:03 >  
 
-% sys.customer,	sys.customer,	sys.orders,	sys.orders,	sys.orders,	sys.lineitem # table_name
+# 15:21:38 >  
+# 15:21:38 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-17397" "--port=38268"
+# 15:21:38 >  
+
+#select
+#	c_name,
+#	c_custkey,
+#	o_orderkey,
+#	o_orderdate,
+#	o_totalprice,
+#	sum(l_quantity)
+#from
+#	customer,
+#	orders,
+#	lineitem
+#where
+#	o_orderkey in (
+#		select
+#			l_orderkey
+#		from
+#			lineitem
+#		group by
+#			l_orderkey having
+#				sum(l_quantity) > 300
+#	)
+#	and c_custkey = o_custkey
+#	and o_orderkey = l_orderkey
+#group by
+#	c_name,
+#	c_custkey,
+#	o_orderkey,
+#	o_orderdate,
+#	o_totalprice
+#order by
+#	o_totalprice desc,
+#	o_orderdate
+#limit 100;
+% sys.customer,	sys.customer,	sys.orders,	sys.orders,	sys.orders,	sys.L6 # table_name
 % c_name,	c_custkey,	o_orderkey,	o_orderdate,	o_totalprice,	L6 # name
 % varchar,	int,	int,	date,	decimal,	bigint # type
 % 18,	3,	5,	10,	17,	3 # length

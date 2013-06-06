@@ -24,7 +24,8 @@ Ready.
 % varchar # type
 % 8 # length
 [ " Volkers"	]
-% sys. # table_name
+#select trim(master) from trimtest;
+% sys.L # table_name
 % trim_master # name
 % varchar # type
 % 7 # length

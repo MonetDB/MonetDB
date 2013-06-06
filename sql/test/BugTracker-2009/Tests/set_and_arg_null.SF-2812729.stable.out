@@ -24,12 +24,26 @@ Ready.
 # 22:37:37 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=34046 
 # 22:37:37 >  
 
-% . # table_name
+# 11:55:12 >  
+# 11:55:12 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-23209" "--port=33225"
+# 11:55:12 >  
+
+#declare a int;
+#set a = null;
+#select a;
+% .L # table_name
 % single_value # name
 % int # type
 % 11 # length
 [ NULL	]
-% . # table_name
+#create function call_function( aa int ) RETURNS int
+#begin
+#	declare b int;
+#	set b = aa;
+#	return b;
+#end;
+#select call_function(NULL);
+% .L # table_name
 % call_function_single_value # name
 % int # type
 % 11 # length

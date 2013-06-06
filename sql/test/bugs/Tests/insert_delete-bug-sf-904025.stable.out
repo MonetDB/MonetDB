@@ -22,7 +22,7 @@ Ready.
 #insert into tmp select name, id from tables where "type" = 0;
 [ 28	]
 #select count(*) from tmp;
-% sys.tmp # table_name
+% sys.L1 # table_name
 % L1 # name
 % wrd # type
 % 2 # length
@@ -30,7 +30,7 @@ Ready.
 #delete from tmp;
 [ 28	]
 #select count(*) from tmp;
-% sys.tmp # table_name
+% sys.L1 # table_name
 % L1 # name
 % wrd # type
 % 1 # length
@@ -38,7 +38,7 @@ Ready.
 #insert into tmp select name, id from tables where "type" = 0;
 [ 28	]
 #select count(*) from tmp;
-% sys.tmp # table_name
+% sys.L1 # table_name
 % L1 # name
 % wrd # type
 % 2 # length
@@ -46,7 +46,7 @@ Ready.
 #delete from tmp;
 [ 28	]
 #select count(*) from tmp;
-% sys.tmp # table_name
+% sys.L1 # table_name
 % L1 # name
 % wrd # type
 % 1 # length

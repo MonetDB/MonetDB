@@ -28,11 +28,38 @@ Ready.
 #end main;
 
 
-# 11:54:18 >  
-# 11:54:18 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35185  < case_in_aggr_bug.SF-1506545.sql
-# 11:54:18 >  
+# 11:45:03 >  
+# 11:45:03 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-23209" "--port=33225"
+# 11:45:03 >  
 
-% sys. # table_name
+#CREATE TABLE system (
+#        id integer PRIMARY KEY AUTO_INCREMENT,
+#        name varchar(20) UNIQUE,
+#        hardware_platform varchar(30),
+#        RAM varchar(10),
+#        disk_type varchar(10),
+#        disk_size varchar(10)
+#);
+#CREATE TABLE target (
+#        id integer PRIMARY KEY AUTO_INCREMENT,
+#        name varchar(20) UNIQUE,
+#        measure1 integer,
+#        measure2 integer,
+#        measure3 integer
+#);
+#CREATE SEQUENCE conf_id_seq AS int
+#        START WITH 1
+#        INCREMENT BY 1
+#        NO CYCLE;
+#CREATE TABLE configuration (
+#        id integer PRIMARY KEY DEFAULT NEXT VALUE FOR conf_id_seq,
+#        name varchar(20),
+#        system_id integer references system(id),
+#        target_id integer references target(id)
+#);
+#select avg(target_id / case (system_id - 1) WHEN 0 THEN cast(null as int)
+#ELSE system_id - 1 END) from configuration;
+% sys.L1 # table_name
 % L1 # name
 % double # type
 % 24 # length

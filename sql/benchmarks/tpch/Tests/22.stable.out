@@ -23,7 +23,39 @@ Ready.
 # 11:48:05 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < 22.sql
 # 11:48:05 >  
 
-% sys.custsale,	sys.custsale,	sys.custsale # table_name
+# 14:36:28 >  
+# 14:36:28 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-4866" "--port=32517"
+# 14:36:28 >  
+
+#select
+#	cntrycode,
+#	count(*) as numcust,
+#	sum(c_acctbal) as totacctbal
+#from
+#	(
+#		select
+#			substring(c_phone from 1 for 2) as cntrycode,
+#			c_acctbal
+#		from
+#			customer
+#		where
+#			substring(c_phone from 1 for 2) in
+#				('13', '31', '23', '29', '30', '18', '17')
+#			and c_acctbal > (
+#				select
+#					avg(c_acctbal)
+#				from
+#					customer
+#				where
+#					c_acctbal > 0.00
+#					and substring(c_phone from 1 for 2) in
+#						('13', '31', '23', '29', '30', '18', '17')
+#			)
+#			and not exists (
+#				select
+#					*
+#				from
+% sys.custsale,	sys.L4,	sys.L5 # table_name
 % cntrycode,	numcust,	totacctbal # name
 % varchar,	wrd,	decimal # type
 % 2,	2,	17 # length

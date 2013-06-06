@@ -31,43 +31,51 @@ Ready.
 [ 8000	]
 [ 15000	]
 [ 60175	]
-
-% sys.customer # table_name
+#COMMIT;
+#select count(*) from customer;
+% sys.L1 # table_name
 % L1 # name
 % wrd # type
 % 4 # length
 [ 1500	]
-% sys.nation # table_name
+#select count(*) from nation;
+% sys.L1 # table_name
 % L1 # name
 % wrd # type
 % 2 # length
 [ 25	]
-% sys.orders # table_name
+#select count(*) from orders;
+% sys.L1 # table_name
 % L1 # name
 % wrd # type
 % 5 # length
 [ 15000	]
-% sys.partsupp # table_name
+#select count(*) from partsupp;
+% sys.L1 # table_name
 % L1 # name
 % wrd # type
 % 4 # length
 [ 8000	]
-% sys.part # table_name
+#select count(*) from part;
+% sys.L1 # table_name
 % L1 # name
 % wrd # type
 % 4 # length
 [ 2000	]
-% sys.region # table_name
+#select count(*) from region;
+% sys.L1 # table_name
 % L1 # name
 % wrd # type
 % 1 # length
 [ 5	]
-% sys.supplier # table_name
+#select count(*) from supplier;
+% sys.L1 # table_name
 % L1 # name
 % wrd # type
 % 3 # length
 [ 100	]
-% sys.lineitem # table_name
+#select count(*) from lineitem;
+% sys.L1 # table_name
 % L1 # name
 % wrd # type
 % 5 # length

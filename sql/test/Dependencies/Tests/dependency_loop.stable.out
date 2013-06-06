@@ -23,7 +23,99 @@ Ready.
 # 10:37:19 >  mclient -lsql -umonetdb -Pmonetdb --host=koala --port=30726 
 # 10:37:19 >  
 
-% sys.dependencies # table_name
+# 12:01:55 >  
+# 12:01:55 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-23209" "--port=33225"
+# 12:01:55 >  
+
+#CREATE TABLE Dictionary (ID INTEGER,val VARCHAR(20000),PRIMARY KEY (ID));
+#CREATE TABLE
+#bench_booktitle 
+#	(subject INTEGER,object INTEGER,FOREIGN KEY (subject) REFERENCES Dictionary(ID),FOREIGN KEY (object) REFERENCES Dictionary(ID));
+#CREATE TABLE
+#bench_cdrom 
+#	(subject INTEGER,object INTEGER,FOREIGN KEY (subject) REFERENCES Dictionary(ID),FOREIGN KEY (object) REFERENCES Dictionary(ID));
+#CREATE TABLE
+#swrc_pages 
+#	(subject INTEGER,object INTEGER,FOREIGN KEY (subject) REFERENCES Dictionary(ID),FOREIGN KEY (object) REFERENCES Dictionary(ID));
+#CREATE TABLE
+#foaf_homepage 
+#	(subject INTEGER,object INTEGER,FOREIGN KEY (subject) REFERENCES Dictionary(ID),FOREIGN KEY (object) REFERENCES Dictionary(ID));
+#CREATE TABLE
+#swrc_editor 
+#	(subject INTEGER,object INTEGER,FOREIGN KEY (subject) REFERENCES Dictionary(ID),FOREIGN KEY (object) REFERENCES Dictionary(ID));
+#CREATE TABLE
+#swrc_number 
+#	(subject INTEGER,object INTEGER,FOREIGN KEY (subject) REFERENCES Dictionary(ID),FOREIGN KEY (object) REFERENCES Dictionary(ID));
+#CREATE TABLE
+#dc_creator 
+#	(subject INTEGER,object INTEGER,FOREIGN KEY (subject) REFERENCES Dictionary(ID),FOREIGN KEY (object) REFERENCES Dictionary(ID));
+#CREATE TABLE
+#rdfs_seeAlso 
+#	(subject INTEGER,object INTEGER,FOREIGN KEY (subject) REFERENCES Dictionary(ID),FOREIGN KEY (object) REFERENCES Dictionary(ID));
+#CREATE TABLE
+#dcterms_partOf 
+#	(subject INTEGER,object INTEGER,FOREIGN KEY (subject) REFERENCES Dictionary(ID),FOREIGN KEY (object) REFERENCES Dictionary(ID));
+#CREATE TABLE
+#dcterms_references 
+#	(subject INTEGER,object INTEGER,FOREIGN KEY (subject) REFERENCES Dictionary(ID),FOREIGN KEY (object) REFERENCES Dictionary(ID));
+#CREATE TABLE
+#dcterms_issued 
+#	(subject INTEGER,object INTEGER,FOREIGN KEY (subject) REFERENCES Dictionary(ID),FOREIGN KEY (object) REFERENCES Dictionary(ID));
+#CREATE TABLE
+#swrc_volume 
+#	(subject INTEGER,object INTEGER,FOREIGN KEY (subject) REFERENCES Dictionary(ID),FOREIGN KEY (object) REFERENCES Dictionary(ID));
+#CREATE TABLE
+#dc_publisher 
+#	(subject INTEGER,object INTEGER,FOREIGN KEY (subject) REFERENCES Dictionary(ID),FOREIGN KEY (object) REFERENCES Dictionary(ID));
+#CREATE TABLE
+#swrc_note 
+#	(subject INTEGER,object INTEGER,FOREIGN KEY (subject) REFERENCES Dictionary(ID),FOREIGN KEY (object) REFERENCES Dictionary(ID));
+#CREATE TABLE
+#swrc_chapter 
+#	(subject INTEGER,object INTEGER,FOREIGN KEY (subject) REFERENCES Dictionary(ID),FOREIGN KEY (object) REFERENCES Dictionary(ID));
+#CREATE TABLE
+#swrc_address 
+#	(subject INTEGER,object INTEGER,FOREIGN KEY (subject) REFERENCES Dictionary(ID),FOREIGN KEY (object) REFERENCES Dictionary(ID));
+#CREATE TABLE
+#swrc_series 
+#	(subject INTEGER,object INTEGER,FOREIGN KEY (subject) REFERENCES Dictionary(ID),FOREIGN KEY (object) REFERENCES Dictionary(ID));
+#CREATE TABLE
+#swrc_month 
+#	(subject INTEGER,object INTEGER,FOREIGN KEY (subject) REFERENCES Dictionary(ID),FOREIGN KEY (object) REFERENCES Dictionary(ID));
+#CREATE TABLE
+#foaf_name 
+#	(subject INTEGER,object INTEGER,FOREIGN KEY (subject) REFERENCES Dictionary(ID),FOREIGN KEY (object) REFERENCES Dictionary(ID));
+#CREATE TABLE
+#rdf_type 
+#	(subject INTEGER,object INTEGER,FOREIGN KEY (subject) REFERENCES Dictionary(ID),FOREIGN KEY (object) REFERENCES Dictionary(ID));
+#CREATE TABLE
+#dc_title 
+#	(subject INTEGER,object INTEGER,FOREIGN KEY (subject) REFERENCES Dictionary(ID),FOREIGN KEY (object) REFERENCES Dictionary(ID));
+#CREATE TABLE
+#swrc_journal 
+#	(subject INTEGER,object INTEGER,FOREIGN KEY (subject) REFERENCES Dictionary(ID),FOREIGN KEY (object) REFERENCES Dictionary(ID));
+#CREATE TABLE
+#bench_abstract 
+#	(subject INTEGER,object INTEGER,FOREIGN KEY (subject) REFERENCES Dictionary(ID),FOREIGN KEY (object) REFERENCES Dictionary(ID));
+#CREATE TABLE
+#swrc_isbn 
+#	(subject INTEGER,object INTEGER,FOREIGN KEY (subject) REFERENCES Dictionary(ID),FOREIGN KEY (object) REFERENCES Dictionary(ID));
+#CREATE VIEW Triples AS
+#( SELECT subject,'bench:booktitle' AS predicate,object FROM bench_booktitle )
+#UNION
+#( SELECT subject,'bench:cdrom' AS predicate,object FROM bench_cdrom )
+#UNION
+#( SELECT subject,'swrc:pages' AS predicate,object FROM swrc_pages )
+#UNION
+#( SELECT subject,'foaf:homepage' AS predicate,object FROM foaf_homepage )
+#UNION
+#( SELECT subject,'swrc:editor' AS predicate,object FROM swrc_editor )
+#UNION
+#( SELECT subject,'swrc:number' AS predicate,object FROM swrc_number )
+#UNION
+#( SELECT subject,'dc:creator' AS predicate,object FROM dc_creator )
+#select count(*) from dependencies where depend_type = 5;
+% sys.L1 # table_name
 % L1 # name
 % wrd # type
 % 2 # length

@@ -24,32 +24,38 @@ Ready.
 # 11:50:59 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < NULL_in_CASE.SF-1211335.sql
 # 11:50:59 >  
 
-% . # table_name
+#select CASE WHEN 1=1 THEN 1 ELSE NULL END;
+% .L # table_name
 % isnull_=_single_value # name
 % tinyint # type
 % 1 # length
 [ 1	]
-% . # table_name
+#select CASE WHEN 1=0 THEN 1 ELSE NULL END;
+% .L # table_name
 % isnull_=_single_value # name
 % tinyint # type
 % 4 # length
 [ NULL	]
-% . # table_name
+#select CASE WHEN 2=2 THEN 2 else cast(null as char) end;
+% .L # table_name
 % isnull_=_single_value # name
 % tinyint # type
 % 1 # length
 [ 2	]
-% . # table_name
+#select CASE WHEN 2=0 THEN 2 else cast(null as char) end;
+% .L # table_name
 % isnull_=_single_value # name
 % tinyint # type
 % 4 # length
 [ NULL	]
-% . # table_name
+#select CASE WHEN 3=3 THEN 3 else cast(null as int) end;
+% .L # table_name
 % isnull_=_single_value # name
 % int # type
 % 1 # length
 [ 3	]
-% . # table_name
+#select CASE WHEN 3=0 THEN 3 else cast(null as int) end;
+% .L # table_name
 % isnull_=_single_value # name
 % int # type
 % 11 # length

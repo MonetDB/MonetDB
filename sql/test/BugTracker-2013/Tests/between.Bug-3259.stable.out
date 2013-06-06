@@ -48,7 +48,7 @@ Ready.
 function user.s0_1():void;
     X_22 := nil:bat[:oid,:int];
     X_24 := nil:bat[:oid,:int];
-barrier X_44 := language.dataflow();
+barrier X_43 := language.dataflow();
     X_1 := sql.mvc();
     X_2:bat[:oid,:oid]  := sql.tid(X_1,"sys","treeitems");
     X_5 := sql.bind(X_1,"sys","treeitems","pre",0);
@@ -65,12 +65,12 @@ barrier X_44 := language.dataflow();
     language.pass(X_8);
     language.pass(X_2);
     language.pass(X_21);
-exit X_44;
+exit X_43;
     X_26 := sql.resultSet(2,1,X_22);
-    sql.rsColumn(X_26,"sys.t1","id1","int",32,0,X_22);
-    sql.rsColumn(X_26,"sys.t2","id2","int",32,0,X_24);
-    X_36 := io.stdout();
-    sql.exportResult(X_36,X_26);
+    sql.rsColumn(X_26,"sys.L","id1","int",32,0,X_22);
+    sql.rsColumn(X_26,"sys.L","id2","int",32,0,X_24);
+    X_35 := io.stdout();
+    sql.exportResult(X_35,X_26);
 end s0_1;
 #ROLLBACK;
 
