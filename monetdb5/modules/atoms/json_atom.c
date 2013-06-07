@@ -96,7 +96,13 @@ int JSONtoString(str *s, int *len, json src)
 
 str JSONjson2str(str *ret, json *j)
 {
-	*ret = GDKstrdup(*j);
+	char *s = *j;
+	if (*s == '"')
+		s++;
+	s = GDKstrdup(s);
+	if ( s[strlen(s)-1] == '"')
+		s[strlen(s)-1] =0;
+	*ret = s;
 	return MAL_SUCCEED;
 }
 
