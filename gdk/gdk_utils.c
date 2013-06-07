@@ -919,8 +919,6 @@ GDKvmtrim(void *limit)
 		MEMDEBUG THRprintf(GDKstdout, "alloc = " SZFMT " %+zd rss = " SZFMT " %+zd\n", cursize, memdiff, rss, rssdiff);
 		prevmem = cursize;
 		prevrss = rss;
-		(void) rssdiff;
-		(void) memdiff;
 		//OLD:if (memdiff >= 0 && rssdiff < -32 * (ssize_t) MT_pagesize()) {
 		// Using a small fixed sized highwatermark on a 256G RAM machine
 		// turns out to call BBPtrim too often/unnecessary
