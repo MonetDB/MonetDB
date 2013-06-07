@@ -877,8 +877,11 @@ defaultfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 	    (BATtrevordered(l) & BATtrevordered(r))) {
 		/* will be set correctly once we're done */
 		bn->tsorted = bn->trevsorted = 0;
-	} else if (tpe != r->ttype && ATOMstorage(r->ttype) == TYPE_str) {
-		/* "string trick" => cannot compare on the fly */
+	} else if (ATOMstorage(r->ttype) == TYPE_str) {
+		/* either: "string trick" => cannot compare on the fly
+		 * or: "real string" => cannot (yet?) cope with 
+		 *     heap extend or index width extend
+		 */
 		bn->tsorted = bn->trevsorted = 0;
 		derive_tail_properties = TRUE;
 	} else if (r->ttype == TYPE_void) {
@@ -1069,8 +1072,11 @@ batfetchjoin(BAT *l, BAT *r, BUN estimate, bit swap, bit hitalways)
 		    (BATtrevordered(l) & BATtrevordered(r))) {
 			/* will be set correctly once we're done */
 			bn->tsorted = bn->trevsorted = 0;
-		} else if (rtt != r->ttype && ATOMstorage(r->ttype) == TYPE_str) {
-			/* "string trick" => cannot compare on the fly */
+		} else if (ATOMstorage(r->ttype) == TYPE_str) {
+			/* either: "string trick" => cannot compare on the fly
+			 * or: "real string" => cannot (yet?) cope with 
+			 *     heap extend or index width extend
+			 */
 			bn->tsorted = bn->trevsorted = 0;
 			derive_tail_properties = TRUE;
 		} else if (r->ttype == TYPE_void) {
