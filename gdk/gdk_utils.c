@@ -926,7 +926,7 @@ GDKvmtrim(void *limit)
 		// worrying after 80% of the memory is claimed
 		// At that stage we try to reduce the minimum needed to get back on safe grounds.
 		if (rss > 0.8 * MT_npages() * MT_pagesize()) {
-			BBPtrim(rss - 0.8 * MT_npages() * MT_pagesize()); 
+			BBPtrim((size_t)(rss - 0.8 * MT_npages() * MT_pagesize()));
 			//BBPtrim(rss);
 			highload = 1;
 		} else {
