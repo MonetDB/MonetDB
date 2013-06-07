@@ -925,8 +925,8 @@ GDKvmtrim(void *limit)
 		// The new decision is aligned with MAL-Admission, where we start
 		// worrying after 80% of the memory is claimed
 		// At that stage we try to reduce the minimum needed to get back on safe grounds.
-		if (rss > 0.8 * (ssize_t) MT_npages() * MT_pagesize()) {
-			BBPtrim( rss - 0.8 * (ssize_t) MT_npages() * MT_pagesize()); 
+		if (rss > 0.8 * MT_npages() * MT_pagesize()) {
+			BBPtrim(rss - 0.8 * MT_npages() * MT_pagesize()); 
 			//BBPtrim(rss);
 			highload = 1;
 		} else {
