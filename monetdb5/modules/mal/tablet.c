@@ -1513,7 +1513,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 		 * the middle of the record separator).  If this is too
 		 * costly, we have to rethink the matter. */
 		e = s;
-		while (s < end && (maxrow < 0 || cnt < (BUN) maxrow)) {
+		while (s < end && task->next < task->limit && (maxrow < 0 || cnt < (BUN) maxrow)) {
 			char q = 0;
 			/* tokenize the record completely the format of the input
 			 * should comply to the following grammar rule [
