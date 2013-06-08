@@ -17,3 +17,10 @@ io.print(j);
 io.print(s);
 redo (i,j) := iterator.next(w);
 exit (i,j);
+
+js := calc.json("[1,true, [2,false]]");
+io.print(js);
+(l1,l2) := json.unnest(js);
+io.print(l2);
+l3 := json.unnest(js);
+io.print(l3);

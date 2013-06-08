@@ -418,7 +418,7 @@ str JSONlength(int *ret, json *js)
 }
 
 //the access functions assume a valid json object or 
-//single nested array of objects ([[[{object},..]]]
+//single nested array of objects ([{object},..]
 //any structure violation leads to an early abort
 //The keys should be unique in an object
 static str
@@ -601,7 +601,7 @@ str JSONunnest(int *key, int *val, json *js)
 	char *msg= MAL_SUCCEED;
 	char *result = NULL;
 	size_t l,lim;
-	int nesting=0;
+	int nesting=0, valuelist=0;
 	char *j = *js;
 
 	bk = BATnew(TYPE_void,TYPE_str,64);
@@ -629,12 +629,14 @@ str JSONunnest(int *key, int *val, json *js)
 	bv->T->nonil = 1;
 
 	skipblancs;
-	while( *j == '['){
+	// unnest {} or [{},...] or [val,...]
+	// in the latter case the name table remains empty
+	if( *j == '['){
 		nesting++;
 		j++;
+		skipblancs;
 	}
-	if ( *j != '{' )
-		throw(MAL,"json.unnest","JSON object expected");
+	valuelist = *j != '{';
 	
 	// the result is an array of values
 	result = (char *) GDKmalloc(BUFSIZ);
@@ -645,36 +647,38 @@ str JSONunnest(int *key, int *val, json *js)
 	}
 	lim = BUFSIZ;
 
-	for( j++; *j && *j != '}'; j++){
+	for( (valuelist?j: j++); *j && *j != '}'; j++){
 		skipblancs;
 		if (*j == ']'){
 			break;
 		}
 		if (*j == '}')
 			break;
-		if (*j != '"'){
-			msg = createException(MAL,"json.unnest","Name expected");
-			goto wrapup;
-		}
-		namebegin = j+1;
-		msg = JSONstringParser(j+1, &j);
-		if ( msg)
-			goto wrapup;
-		nameend = j-1;
-		l = nameend - namebegin;
-		if ( l + 2 > lim )
-			result = GDKrealloc(result, lim += BUFSIZ);
-		strncpy(result,namebegin,nameend-namebegin);
-		result[l] = 0;
-		BUNappend(bk, result, FALSE);
+		if ( !valuelist){
+			if (*j != '"'){
+				msg = createException(MAL,"json.unnest","Name expected");
+				goto wrapup;
+			}
+			namebegin = j+1;
+			msg = JSONstringParser(j+1, &j);
+			if ( msg)
+				goto wrapup;
+			nameend = j-1;
+			l = nameend - namebegin;
+			if ( l + 2 > lim )
+				result = GDKrealloc(result, lim += BUFSIZ);
+			strncpy(result,namebegin,nameend-namebegin);
+			result[l] = 0;
+			BUNappend(bk, result, FALSE);
 
-		skipblancs;
-		if ( *j != ':'){
-			msg = createException(MAL,"json.unnest","Value expected");
-			goto wrapup;
+			skipblancs;
+			if ( *j != ':'){
+				msg = createException(MAL,"json.unnest","Value expected");
+				goto wrapup;
+			}
+			j++;
+			skipblancs;
 		}
-		j++;
-		skipblancs;
 		valuebegin = j;
 		msg = JSONvalueParser(j,&j);
 		if ( msg)
@@ -689,17 +693,80 @@ str JSONunnest(int *key, int *val, json *js)
 
 		skipblancs;
 		if (*j == '}'){
-			if(nesting ){
-				while (*j && *j != '{' && *j != ']') j++;
+			if(!valuelist ){
+				while (*j && *j != '{' ) j++;
 				if ( *j != '{') j--;
 			} 
 			continue;
 		}
-		if (*j != ',')
+		if (*j != ',' && !(valuelist && *j == ']'))
 			msg = createException(MAL,"json.unnest","',' expected");
 	}
 wrapup:;
 	BBPkeepref(*key= bk->batCacheid);
+	BBPkeepref(*val= bv->batCacheid);
+	GDKfree(result);
+	return msg;
+}
+
+str JSONunnestOne(int *val, json *js)
+{
+	BAT *bv;
+	char  *valuebegin,*valueend;
+	char *msg= MAL_SUCCEED;
+	char *result = NULL;
+	size_t l,lim;
+	char *j = *js;
+
+	bv = BATnew(TYPE_void,TYPE_json,64);
+	if ( bv == NULL){
+		throw(MAL,"json.unnest",MAL_MALLOC_FAIL);
+	}
+	BATseqbase(bv,0);
+	bv->hsorted = 1;
+	bv->hrevsorted = 0;
+	bv->H->nonil =1;
+	bv->tsorted = 1;
+	bv->trevsorted = 0;
+	bv->T->nonil = 1;
+
+	skipblancs;
+	// unnest a list
+	if( *j != '[')
+		throw(MAL,"json.unnest","JSON list expected");
+	
+	// the result is an array of values
+	result = (char *) GDKmalloc(BUFSIZ);
+	if ( result == 0){
+		BBPreleaseref(bv->batCacheid);
+		throw(MAL,"json.unnest",MAL_MALLOC_FAIL);
+	}
+	lim = BUFSIZ;
+
+	for( j++; *j && *j != ']'; j++){
+		skipblancs;
+		if (*j == ']'){
+			break;
+		}
+		valuebegin = j;
+		msg = JSONvalueParser(j,&j);
+		if ( msg)
+			goto wrapup;
+		valueend = j;
+		l= valueend - valuebegin;
+		if ( l + 2 > lim )
+			result = GDKrealloc(result, lim += BUFSIZ);
+		strncpy(result,valuebegin,l);
+		result[l] = 0;
+		BUNappend(bv, result, FALSE);
+
+		skipblancs;
+		if (*j == ']')
+			continue;
+		if ( *j && *j != ',' )
+			msg = createException(MAL,"json.unnest","',' expected");
+	}
+wrapup:;
 	BBPkeepref(*val= bv->batCacheid);
 	GDKfree(result);
 	return msg;
