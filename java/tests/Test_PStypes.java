@@ -81,7 +81,7 @@ public class Test_PStypes {
 			System.out.print("2. updating record...");
 
 			pstmt.setString(1, "some update");
-			pstmt.setObject(2, (float)3.2);
+			pstmt.setObject(2, "3.2");
 			pstmt.setLong(3, 1L);
 			pstmt.executeUpdate();
 
