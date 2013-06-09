@@ -1862,10 +1862,16 @@ exp_fix_scale(mvc *sql, sql_subtype *ct, sql_exp *e, int both, int always)
 }
 
 static int
-rel_set_type_param(mvc *sql, sql_subtype *type, sql_exp *param)
+rel_set_type_param(mvc *sql, sql_subtype *type, sql_exp *param, int upcast)
 {
 	if (!type || !param || param->type != e_atom)
 		return -1;
+
+	/* use largest numeric types */
+	if (upcast && type->type->eclass == EC_NUM) 
+		type = sql_bind_localtype("lng");
+	if (upcast && type->type->eclass == EC_FLT) 
+		type = sql_bind_localtype("dbl");
 
 	if (set_type_param(sql, type, param->flag) == 0) {
 		param->tpe = *type;
@@ -1928,7 +1934,7 @@ rel_check_type(mvc *sql, sql_subtype *t, sql_exp *exp, int tpe)
 	sql_exp* nexp = NULL;
 	sql_subtype *fromtype = exp_subtype(exp);
 	
-	if ((!fromtype || !fromtype->type) && rel_set_type_param(sql, t, exp) == 0)
+	if ((!fromtype || !fromtype->type) && rel_set_type_param(sql, t, exp, 0) == 0)
 		return exp;
 
 	/* first try cheap internal (in-place) conversions ! */
@@ -2052,9 +2058,9 @@ rel_convert_types(mvc *sql, sql_exp **L, sql_exp **R, int scale_fixing, int tpe)
 		return -1;
 	}
 	if (rt && (!lt || !lt->type))
-		 return rel_set_type_param(sql, rt, ls);
+		 return rel_set_type_param(sql, rt, ls, 0);
 	if (lt && (!rt || !rt->type))
-		 return rel_set_type_param(sql, lt, rs);
+		 return rel_set_type_param(sql, lt, rs, 0);
 
 	if (rt && lt) {
 		sql_subtype *i = lt;
@@ -2653,7 +2659,7 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 		if (!re)
 			return NULL;
 		if (!exp_subtype(re)) {
-			if (rel_set_type_param(sql, st, re) == -1) 
+			if (rel_set_type_param(sql, st, re, 0) == -1) 
 				return sql_error(sql, 02, "LIKE: wrong type, should be string");
 		} else if ((re = rel_check_type(sql, st, re, type_equal)) == NULL) {
 			return sql_error(sql, 02, "LIKE: wrong type, should be string");
@@ -3195,7 +3201,7 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 		if (!re)
 			return NULL;
 		if (!exp_subtype(re)) {
-			if (rel_set_type_param(sql, st, re) == -1) 
+			if (rel_set_type_param(sql, st, re, 0) == -1) 
 				return sql_error(sql, 02, "LIKE: wrong type, should be string");
 		} else if ((re = rel_check_type(sql, st, re, type_equal)) == NULL) {
 			return sql_error(sql, 02, "LIKE: wrong type, should be string");
@@ -3434,10 +3440,15 @@ rel_binop_(mvc *sql, sql_exp *l, sql_exp *r, sql_schema *s,
 		s = sql->session->schema;
 
 	/* handle param's early */
-	if ((!t1 || !t2) && rel_convert_types(sql, &l, &r, 1/*fix scale*/, type_equal) >= 0) {
+	if (!t1 || !t2) {
+		if (t2 && !t1 && rel_set_type_param(sql, t2, l, 1) < 0)
+			return NULL;
+		if (t1 && !t2 && rel_set_type_param(sql, t1, r, 1) < 0)
+			return NULL;
 		t1 = exp_subtype(l);
 		t2 = exp_subtype(r);
 	}
+
 	if (!t1 || !t2)
 		return sql_error(sql, 01, "Cannot have a parameter (?) on both sides of an expression");
 
