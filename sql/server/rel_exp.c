@@ -494,6 +494,7 @@ exp_label(sql_allocator *sa, sql_exp *e, int nr)
 
 	nme = number2name(name, 16, nr);
 	e->name = sa_strdup(sa, nme);
+	e->rname = sa_strdup(sa, nme);
 	return e;
 }
 

@@ -163,14 +163,14 @@ rel_label( mvc *sql, sql_rel *r)
 }
 
 static sql_exp *
-exp_alias_or_copy( mvc *sql, char *tname, char *cname, sql_rel *orel, sql_exp *old, int settname)
+exp_alias_or_copy( mvc *sql, char *tname, char *cname, sql_rel *orel, sql_exp *old)
 {
 	sql_exp *ne = NULL;
 
-	if (settname && !tname)
+	if (!tname)
 		tname = old->rname;
 
-	if (settname && !tname && old->type == e_column)
+	if (!tname && old->type == e_column)
 		tname = old->l;
 
 	if (!cname && exp_name(old) && exp_name(old)[0] == 'L') {
@@ -242,9 +242,9 @@ rel_table_projections( mvc *sql, sql_rel *rel, char *tname )
 				sql_exp *e = en->data;
 				/* first check alias */
 				if (!is_intern(e) && e->rname && strcmp(e->rname, tname) == 0)
-					append(exps, exp_alias_or_copy(sql, tname, exp_name(e), rel, e, 1));
+					append(exps, exp_alias_or_copy(sql, tname, exp_name(e), rel, e));
 				if (!is_intern(e) && !e->rname && e->l && strcmp(e->l, tname) == 0)
-					append(exps, exp_alias_or_copy(sql, tname, exp_name(e), rel, e, 1));
+					append(exps, exp_alias_or_copy(sql, tname, exp_name(e), rel, e));
 			}
 			if (exps && list_length(exps))
 				return exps;
@@ -368,7 +368,7 @@ rel_projections(mvc *sql, sql_rel *rel, char *tname, int settname, int intern )
 			for (en = rel->exps->h; en; en = en->next) {
 				sql_exp *e = en->data;
 				if (intern || !is_intern(e)) {
-					append(exps, e = exp_alias_or_copy(sql, tname, exp_name(e), rel, e, settname));
+					append(exps, e = exp_alias_or_copy(sql, tname, exp_name(e), rel, e));
 					if (!settname) /* noname use alias */
 						exp_setrelname(sql->sa, e, label);
 
@@ -796,7 +796,7 @@ rel_lastexp(mvc *sql, sql_rel *rel )
 		rel = rel_parent(rel);
 	assert(list_length(rel->exps));
 	if (rel->op == op_project)
-		return exp_alias_or_copy(sql, NULL, NULL, rel, rel->exps->t->data, 1);
+		return exp_alias_or_copy(sql, NULL, NULL, rel, rel->exps->t->data);
 	assert(is_project(rel->op));
 	e = rel->exps->t->data;
 	return exp_column(sql->sa, e->rname, e->name, exp_subtype(e), e->card, has_nil(e), is_intern(e));
@@ -1403,7 +1403,7 @@ rel_bind_column( mvc *sql, sql_rel *rel, char *cname, int f )
 	if ((is_project(rel->op) || is_base(rel->op)) && rel->exps) {
 		sql_exp *e = exps_bind_column(rel->exps, cname, NULL);
 		if (e)
-			return exp_alias_or_copy(sql, e->rname, cname, rel, e, 1);
+			return exp_alias_or_copy(sql, e->rname, cname, rel, e);
 	}
 	return NULL;
 }
@@ -1420,7 +1420,7 @@ rel_bind_column2( mvc *sql, sql_rel *rel, char *tname, char *cname, int f )
 	if (rel->exps && (is_project(rel->op) || is_base(rel->op))) {
 		sql_exp *e = exps_bind_column2(rel->exps, tname, cname);
 		if (e)
-			return exp_alias_or_copy(sql, tname, cname, rel, e, 1);
+			return exp_alias_or_copy(sql, tname, cname, rel, e);
 	}
 	if (is_project(rel->op) && rel->l) {
 		if (!is_processed(rel))
@@ -2837,12 +2837,28 @@ rel_find_identity(mvc *sql, sql_rel *r, sql_exp *e )
 
 		ne = rel_find_identity(sql, r->l, e);
 		if (ne && r->exps) { /* find exp pointing to ne */
+			/* first find in group by list */
+			if (is_groupby(r->op) && r->r) {
+				list *l = r->r;
+				for (n = l->h; n; n = n->next) {
+					sql_exp *re = n->data;
+			
+					if (ne->rname && re->l && strcmp(ne->rname, re->l) == 0 && strcmp(ne->name, re->r) == 0) {
+						ne = re;
+						break;
+					}
+					if (!ne->rname && !re->l && strcmp(ne->name, re->r) == 0) {
+						ne = re;
+						break;
+					}
+				}
+			}
 			for (n = r->exps->h; n; n = n->next) {
 				sql_exp *re = n->data;
 			
-				if (e->rname && re->l && strcmp(e->rname, re->l) == 0 && strcmp(e->name, re->r) == 0) 
+				if (ne->rname && re->l && strcmp(ne->rname, re->l) == 0 && strcmp(ne->name, re->r) == 0) 
 					return re;
-				if (!e->rname && !re->l && strcmp(e->name, re->r) == 0) 
+				if (!ne->rname && !re->l && strcmp(ne->name, re->r) == 0) 
 					return re;
 			}
 		} else if (r->exps) {
@@ -3130,6 +3146,7 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 
 			/* find expression back */
 			re = rel_find_identity(sql, r, le );
+			re = exp_alias_or_copy(sql, NULL, NULL, r, re);
 
 			if (!le || !re)
 				return NULL;
@@ -3779,7 +3796,7 @@ _rel_aggr(mvc *sql, sql_rel **rel, int distinct, char *aggrstr, dnode *args, int
 
 		if (gr && e && is_project(gr->op) && !is_set(gr->op) && e->type != e_column) {
 			rel_project_add_exp(sql, gr, e);
-			e = exp_alias_or_copy(sql, exp_relname(e), exp_name(e), gr->l, e, 0);
+			e = exp_alias_or_copy(sql, exp_relname(e), exp_name(e), gr->l, e);
 		}
 		if (!e)
 			return NULL;
