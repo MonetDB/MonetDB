@@ -1492,7 +1492,7 @@ str JSONpath( json *ret, json *js, str *expr)
 	str j,msg = MAL_SUCCEED;
 	char  *namebegin,*nameend;
 	char  *valuebegin,*valueend;
-	json result,old=0;
+	json result=0,old=0;
 	int copying = -1, t=0, idx=0;
 	size_t lim,l, len=0;
 
