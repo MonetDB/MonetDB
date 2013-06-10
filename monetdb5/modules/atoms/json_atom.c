@@ -1541,7 +1541,7 @@ str JSONpath( json *ret, json *js, str *expr)
 
 				switch( terms[t].token){
 				case INDEX:
-					copying = terms[t].name && ((l > 0 && strncmp(terms[t].name, namebegin,l) == 0) || terms[t].name[0]=='*');
+					copying = (terms[t].name && l > 0 && strncmp(terms[t].name, namebegin,l) == 0) || terms[t].name == 0 || terms[t].name[0]=='*';
 					if ( copying){
 						if (idx == INT_MIN)
 							idx = terms[t].index;

@@ -27,6 +27,10 @@ returns json external name json.filter;
 create function json_filter_all(js json, name string)
 returns json external name json.filterall;
 
+-- a simple path extractor
+create function json_path(js json, e string)
+returns json external name json.path;
+
 -- test string for JSON compliancy
 create function json_isvalid(js string)
 returns bool external name json.isvalid;
