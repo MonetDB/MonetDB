@@ -1759,28 +1759,30 @@ SQLparser(Client c)
 				m->emode = m_inplace;
 		}
 	}
-	if (be->q) {
-		if (m->emode == m_prepare)
-			err = mvc_export_prepare(m, c->fdout, be->q, "");
-		else if (m->emode == m_inplace) {
-			/* everything ready for a fast call */
-		} else { /* call procedure generation (only in cache mode) */
-			backend_call(be, c, be->q);
-		}
-	}
-
-	/* In the final phase we add any debugging control */
-	if (m->emod & mod_trace)
-		SQLsetTrace(be, c, FALSE);
-	if (m->emod & mod_debug)
-		SQLsetDebugger(c, m, FALSE);
-
-	/*
-	 * During the execution of the query exceptions can be raised.
-	 * The default action is to print them out at the end of the
-	 * query block.
-	 */
+	if (err) 
+		m->session->status = -10;
 	if (err == 0) {
+		if (be->q) {
+			if (m->emode == m_prepare)
+				err = mvc_export_prepare(m, c->fdout, be->q, "");
+			else if (m->emode == m_inplace) {
+				/* everything ready for a fast call */
+			} else { /* call procedure generation (only in cache mode) */
+				backend_call(be, c, be->q);
+			}
+		}
+	
+		/* In the final phase we add any debugging control */
+		if (m->emod & mod_trace)
+			SQLsetTrace(be, c, FALSE);
+		if (m->emod & mod_debug)
+			SQLsetDebugger(c, m, FALSE);
+
+		/*
+	 	 * During the execution of the query exceptions can be raised.
+	 	 * The default action is to print them out at the end of the
+	 	 * query block.
+	 	 */
 		if (be->q)
 			pushEndInstruction(c->curprg->def);
 
@@ -1910,26 +1912,22 @@ SQLengineIntern(Client c, backend *be)
 	}
 
 	if (m->emod & mod_explain) {
-		if (be->q && be->q->code)
+		if (be->q && be->q->code) 
 			printFunction(c->fdout, ((Symbol) (be->q->code))->def, 0, LIST_MAL_STMT | LIST_MAL_UDF | LIST_MAPI);
-		else if (c->curprg && c->curprg->def)
+		else if (be->q) 
+			msg = createException(PARSE, "SQLparser", "%s", (*m->errstr)?m->errstr:"39000!program contains errors");
+		else if (c->curprg && c->curprg->def) 
 			printFunction(c->fdout, c->curprg->def, 0, LIST_MAL_STMT | LIST_MAL_UDF | LIST_MAPI);
-	}
-	if (m->emod & mod_dot) {
-		if (be->q && be->q->code)
-			showFlowGraph(((Symbol) (be->q->code))->def, 0, "stdout-mapi");
-		else if (c->curprg && c->curprg->def)
-			showFlowGraph(c->curprg->def, 0, "stdout-mapi");
-	}
-	if (m->emod & (mod_explain | mod_dot)) {
-		sqlcleanup(be->mvc, 0);
 		goto cleanup_engine;
 	}
-
-	if (c->curprg->def->errors){
-		assert(0);
-		sqlcleanup(be->mvc, 0);
-		throw(SQL, "SQLengine", "39000!program contains errors");
+	if (m->emod & mod_dot) {
+		if (be->q && be->q->code) 
+			showFlowGraph(((Symbol) (be->q->code))->def, 0, "stdout-mapi");
+		else if (be->q)
+			msg = createException(PARSE, "SQLparser", "%s", (*m->errstr)?m->errstr:"39000!program contains errors");
+		else if (c->curprg && c->curprg->def)
+			showFlowGraph(c->curprg->def, 0, "stdout-mapi");
+		goto cleanup_engine;
 	}
 
 #ifdef SQL_SCENARIO_DEBUG
@@ -1991,7 +1989,9 @@ cleanup_engine:
 	}
 
 	mb= c->curprg->def;
-	if (be->q && mb &&
+	if (be->q && msg) {
+		qc_delete(m->qc, be->q); 
+	} else if (be->q && mb &&
 	    varGetProp(mb, getArg(p = getInstrPtr(mb,0), 0), runonceProp)){
 		SQLCacheRemove(c, getFunctionId(p));
 		/* this should invalidate any match */

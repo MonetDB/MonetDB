@@ -2526,6 +2526,7 @@ backend_create_func(backend *be, sql_func *f)
 	}
 
 	if (!s) {
+		f->sql--;
 		sa_destroy(sa);
 		return -1;
 	}
