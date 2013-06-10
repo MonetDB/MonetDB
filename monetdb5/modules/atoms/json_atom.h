@@ -65,4 +65,5 @@ json_export str JSONprelude(int *ret);
 
 json_export str JSONrenderobject(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 json_export str JSONrenderarray(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+json_export str JSONpath( json *ret, json *js, str *expr);
 #endif /* JSON_H */

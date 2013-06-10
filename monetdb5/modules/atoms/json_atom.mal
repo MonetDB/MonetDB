@@ -116,4 +116,7 @@ address JSONrenderobject;
 pattern renderarray(val:any...):json
 address JSONrenderarray;
 
+command path(js:json,e:str):json
+address JSONpath
+comment "Simple JSON path accessor";
 json.prelude();
