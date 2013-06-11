@@ -447,8 +447,8 @@ do {                                                                          \
 				prvmask=mask;                                 \
 				im[icnt] = mask;                              \
 				icnt++;                                       \
-				if ((dcnt > 0) && !(d[dcnt - 1].repeat) &&    \
-				    (d[dcnt].cnt < (IMPS_MAX_CNT-1))) {       \
+				if ((dcnt > 0) && !(d[dcnt-1].repeat) &&      \
+				    (d[dcnt-1].cnt < (IMPS_MAX_CNT-1))) {     \
 					d[dcnt-1].cnt++;                      \
 				} else {                                      \
 					d[dcnt].cnt = 1;                      \
@@ -477,8 +477,8 @@ do {                                                                          \
 	} else {                                                              \
 		im[icnt] = mask;                                              \
 		icnt++;                                                       \
-		if ((dcnt > 0) && !(d[dcnt - 1].repeat) &&                    \
-		    (d[dcnt].cnt < (IMPS_MAX_CNT-1))) {                       \
+		if ((dcnt > 0) && !(d[dcnt-1].repeat) &&                      \
+		    (d[dcnt-1].cnt < (IMPS_MAX_CNT-1))) {                     \
 			d[dcnt-1].cnt++;                                      \
 		} else {                                                      \
 			d[dcnt].cnt = 1;                                      \

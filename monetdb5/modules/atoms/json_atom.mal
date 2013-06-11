@@ -73,13 +73,17 @@ command unnest(val:json)(k:bat[:oid,:str],v:bat[:oid,:json])
 address JSONunnest
 comment "Expands the outermost JSON object into key-value pairs.";
 
+command unnest(val:json):bat[:oid,:json]
+address JSONunnestOne
+comment "Expands a JSON list to its elements.";
+
 pattern nest(o:bat[:oid,:oid],k:bat[:oid,:str],v:bat[:oid,:any]):json
 address JSONnest
 comment "Nest the key-value pairs with object identity into a list of JSON objects ";
 
 pattern nest(k:bat[:oid,:str],v:bat[:oid,:any]):json
 address JSONnest
-comment "Combine the key-value pairs into a single json object.";
+comment "Combine the key-value pairs into a single json object list.";
 
 pattern nest(k:bat[:oid,:str]):json
 address JSONnest;
@@ -112,4 +116,7 @@ address JSONrenderobject;
 pattern renderarray(val:any...):json
 address JSONrenderarray;
 
+command path(js:json,e:str):json
+address JSONpath
+comment "Simple JSON path accessor";
 json.prelude();

@@ -3163,6 +3163,7 @@ update_check_ukey(mvc *sql, stmt **updates, sql_key *k, stmt *tids, stmt *idx_up
 			sql_subaggr *sum;
 			stmt *count_sum = NULL, *ssum;
 			stmt *g = NULL, *grp = NULL, *ext = NULL, *Cnt = NULL;
+			stmt *cand = NULL;
 			stmt *ss;
 			sql_subfunc *or = sql_bind_func_result(sql->sa, sql->session->schema, "or", bt, bt, bt);
 
@@ -3173,7 +3174,20 @@ update_check_ukey(mvc *sql, stmt **updates, sql_key *k, stmt *tids, stmt *idx_up
 				grp = stmt_result(sql->sa, g, 0);
 				ext = stmt_result(sql->sa, g, 1);
 				Cnt = stmt_result(sql->sa, g, 2);
+
+				/* choose only groups with cnt > 1 */
+				cand = stmt_uselect(sql->sa, Cnt, stmt_atom_wrd(sql->sa, 1), cmp_gt, NULL);
+				 /* project cand on ext and Cnt */
+				Cnt = stmt_project(sql->sa, cand, Cnt);
+				ext = stmt_project(sql->sa, cand, ext);
+
+				/* join ext with group to retrieve all oid's of the original
+				 * bat that belong to a group with Cnt >1 */
+				g = stmt_join(sql->sa, ext, grp, cmp_equal);
+				cand = stmt_result(sql->sa, g, 1);
+				grp = stmt_project(sql->sa, cand, grp);
 			}
+
 			for (m = k->columns->h; m; m = m->next) {
 				sql_kc *c = m->data;
 				stmt *upd;
@@ -3194,6 +3208,9 @@ update_check_ukey(mvc *sql, stmt **updates, sql_key *k, stmt *tids, stmt *idx_up
 						grp = stmt_reorder_project(sql->sa, nn, grp);
 				}
 
+				/* apply cand list first */
+				upd = stmt_project(sql->sa, cand, upd);
+				/* apply group by on groups with Cnt > 1 */
 				g = stmt_group(sql->sa, upd, grp, ext, Cnt);
 				grp = stmt_result(sql->sa, g, 0);
 				ext = stmt_result(sql->sa, g, 1);

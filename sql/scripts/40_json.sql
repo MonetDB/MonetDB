@@ -27,6 +27,10 @@ returns json external name json.filter;
 create function json_filter_all(js json, name string)
 returns json external name json.filterall;
 
+-- a simple path extractor
+create function json_path(js json, e string)
+returns json external name json.path;
+
 -- test string for JSON compliancy
 create function json_isvalid(js string)
 returns bool external name json.isvalid;
@@ -41,15 +45,31 @@ returns bool external name json.isvalidarray;
 create function json_length(js json)
 returns integer external name json.length;
 
--- unnesting the JSON structure
-create function json_names(js json)
-returns table ( nme string) external name json.names;
+-- The remainder awaits the implementation of
+-- proper functions with table type arguments.
 
-create function json_values(js json)
-returns table ( val string) external name json."values";
+-- unnesting the JSON structure
+
+-- create function json_unnest(js json)
+-- returns table( id integer, k string, v string) external name json.unnest;
+
+-- create function json_unnest(js json)
+-- returns table( k string, v string) external name json.unnest;
+
+-- create function json_unnest(js json)
+-- returns table( v string) external name json.unnest;
+
+-- create function json_nest table( id integer, k string, v string) 
+-- returns json external name json.nest;
+
+-- create function json_names(js json)
+-- returns table ( nme string) external name json.names;
+
+-- create function json_values(js json)
+-- returns table ( val string) external name json."values";
 
 -- rendering functions
-create function json_object(*)
-returns json external name json.objectrender;
-create function json_array(*)
-returns json external name json.arrayrender;
+-- create function json_object(*)
+-- returns json external name json.objectrender;
+-- create function json_array(*)
+-- returns json external name json.arrayrender;

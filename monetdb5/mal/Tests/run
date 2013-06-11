@@ -4,19 +4,20 @@
 DBFARM=/ufs/mk/monet5/Linux/var/MonetDB/dbfarm
 DBNAME=test
 #MSERVER="Mtimeout -timeout 123 mserver --dbpath=$DBFARM/$DBNAME -c All.conf --set monet_prompt="
-MSERVER="valgrind  --leak-check=full --show-reachable=yes --num-callers=20 mserver5 --dbpath=$DBFARM/$DBNAME --set monet_prompt="
+MSERVER="valgrind  --leak-check=full --show-reachable=yes --num-callers=20 mserver5 --dbpath=$DBFARM/$DBNAME "
 
 echo "Initialize database"
 rm -rf $DBFARM/$DBNAME
 #echo 'clients.quit();' | $MSERVER
 
 mkdir -p valgrind
-for f in  `ls tst*.mal`
+for f in  `cat  All`
 do
+	echo $f
 	b=`basename $f .mal`
 	s=$b.stable
 	t=valgrind/$b.test
-	echo "----" $f $b $s $t
+	echo `date` "----" $f $b $s $t
 	echo "stdout of test '$b\` in directory 'src/mal\` itself:" > $t.out
 	echo "stderr of test '$b\` in directory 'src/mal\` itself:" > $t.err
 	echo `date` $MSERVER $f

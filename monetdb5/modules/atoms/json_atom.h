@@ -56,6 +56,7 @@ json_export str JSONisarray(int *ret, json *j);
 
 json_export str JSONlength(int *ret, json *j);
 json_export str JSONunnest(int *key, int *val, json *j);
+json_export str JSONunnestOne(int *val, json *j);
 json_export str JSONunnestGrouped(int *grp, int *key, int *val, json *j);
 json_export str JSONnest(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 json_export str JSONnames(int *ret, json *j);
@@ -64,4 +65,5 @@ json_export str JSONprelude(int *ret);
 
 json_export str JSONrenderobject(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 json_export str JSONrenderarray(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+json_export str JSONpath( json *ret, json *js, str *expr);
 #endif /* JSON_H */

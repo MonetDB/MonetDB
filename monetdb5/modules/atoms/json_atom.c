@@ -96,7 +96,13 @@ int JSONtoString(str *s, int *len, json src)
 
 str JSONjson2str(str *ret, json *j)
 {
-	*ret = GDKstrdup(*j);
+	char *s = *j;
+	if (*s == '"')
+		s++;
+	s = GDKstrdup(s);
+	if ( s[strlen(s)-1] == '"')
+		s[strlen(s)-1] =0;
+	*ret = s;
 	return MAL_SUCCEED;
 }
 
@@ -412,7 +418,7 @@ str JSONlength(int *ret, json *js)
 }
 
 //the access functions assume a valid json object or 
-//single nested array of objects ([[[{object},..]]]
+//single nested array of objects ([{object},..]
 //any structure violation leads to an early abort
 //The keys should be unique in an object
 static str
@@ -421,7 +427,8 @@ JSONfilterObjectInternal(json *ret, json *js, str *pat, int flag)
 	char  *namebegin,*nameend;
 	char *valuebegin,*valueend, *msg= MAL_SUCCEED;
 	char *result = NULL;
-	int l,lim,len,nesting=0;
+	size_t l,lim,len;
+	int nesting=0;
 	char *j = *js;
 
 	skipblancs;
@@ -528,7 +535,8 @@ str
 JSONfilterArray(json *ret, json *js, int *index){
 	char *valuebegin,*valueend, *msg= MAL_SUCCEED;
 	char *result = NULL, *j =*js;
-	int l,len,lim, idx = *index;
+	size_t l,len,lim;
+	int idx = *index;
 
 	skipblancs;
 	if ( *j != '[' )
@@ -592,7 +600,8 @@ str JSONunnest(int *key, int *val, json *js)
 	char  *valuebegin,*valueend;
 	char *msg= MAL_SUCCEED;
 	char *result = NULL;
-	int l,lim, nesting=0;
+	size_t l,lim;
+	int nesting=0, valuelist=0;
 	char *j = *js;
 
 	bk = BATnew(TYPE_void,TYPE_str,64);
@@ -620,12 +629,14 @@ str JSONunnest(int *key, int *val, json *js)
 	bv->T->nonil = 1;
 
 	skipblancs;
-	while( *j == '['){
+	// unnest {} or [{},...] or [val,...]
+	// in the latter case the name table remains empty
+	if( *j == '['){
 		nesting++;
 		j++;
+		skipblancs;
 	}
-	if ( *j != '{' )
-		throw(MAL,"json.unnest","JSON object expected");
+	valuelist = *j != '{';
 	
 	// the result is an array of values
 	result = (char *) GDKmalloc(BUFSIZ);
@@ -636,36 +647,38 @@ str JSONunnest(int *key, int *val, json *js)
 	}
 	lim = BUFSIZ;
 
-	for( j++; *j && *j != '}'; j++){
+	for( (valuelist?j: j++); *j && *j != '}'; j++){
 		skipblancs;
 		if (*j == ']'){
 			break;
 		}
 		if (*j == '}')
 			break;
-		if (*j != '"'){
-			msg = createException(MAL,"json.unnest","Name expected");
-			goto wrapup;
-		}
-		namebegin = j+1;
-		msg = JSONstringParser(j+1, &j);
-		if ( msg)
-			goto wrapup;
-		nameend = j-1;
-		l = nameend - namebegin;
-		if ( l + 2 > lim )
-			result = GDKrealloc(result, lim += BUFSIZ);
-		strncpy(result,namebegin,nameend-namebegin);
-		result[l] = 0;
-		BUNappend(bk, result, FALSE);
+		if ( !valuelist){
+			if (*j != '"'){
+				msg = createException(MAL,"json.unnest","Name expected");
+				goto wrapup;
+			}
+			namebegin = j+1;
+			msg = JSONstringParser(j+1, &j);
+			if ( msg)
+				goto wrapup;
+			nameend = j-1;
+			l = nameend - namebegin;
+			if ( l + 2 > lim )
+				result = GDKrealloc(result, lim += BUFSIZ);
+			strncpy(result,namebegin,nameend-namebegin);
+			result[l] = 0;
+			BUNappend(bk, result, FALSE);
 
-		skipblancs;
-		if ( *j != ':'){
-			msg = createException(MAL,"json.unnest","Value expected");
-			goto wrapup;
+			skipblancs;
+			if ( *j != ':'){
+				msg = createException(MAL,"json.unnest","Value expected");
+				goto wrapup;
+			}
+			j++;
+			skipblancs;
 		}
-		j++;
-		skipblancs;
 		valuebegin = j;
 		msg = JSONvalueParser(j,&j);
 		if ( msg)
@@ -680,17 +693,80 @@ str JSONunnest(int *key, int *val, json *js)
 
 		skipblancs;
 		if (*j == '}'){
-			if(nesting ){
-				while (*j && *j != '{' && *j != ']') j++;
+			if(!valuelist ){
+				while (*j && *j != '{' ) j++;
 				if ( *j != '{') j--;
 			} 
 			continue;
 		}
-		if (*j != ',')
+		if (*j != ',' && !(valuelist && *j == ']'))
 			msg = createException(MAL,"json.unnest","',' expected");
 	}
 wrapup:;
 	BBPkeepref(*key= bk->batCacheid);
+	BBPkeepref(*val= bv->batCacheid);
+	GDKfree(result);
+	return msg;
+}
+
+str JSONunnestOne(int *val, json *js)
+{
+	BAT *bv;
+	char  *valuebegin,*valueend;
+	char *msg= MAL_SUCCEED;
+	char *result = NULL;
+	size_t l,lim;
+	char *j = *js;
+
+	bv = BATnew(TYPE_void,TYPE_json,64);
+	if ( bv == NULL){
+		throw(MAL,"json.unnest",MAL_MALLOC_FAIL);
+	}
+	BATseqbase(bv,0);
+	bv->hsorted = 1;
+	bv->hrevsorted = 0;
+	bv->H->nonil =1;
+	bv->tsorted = 1;
+	bv->trevsorted = 0;
+	bv->T->nonil = 1;
+
+	skipblancs;
+	// unnest a list
+	if( *j != '[')
+		throw(MAL,"json.unnest","JSON list expected");
+	
+	// the result is an array of values
+	result = (char *) GDKmalloc(BUFSIZ);
+	if ( result == 0){
+		BBPreleaseref(bv->batCacheid);
+		throw(MAL,"json.unnest",MAL_MALLOC_FAIL);
+	}
+	lim = BUFSIZ;
+
+	for( j++; *j && *j != ']'; j++){
+		skipblancs;
+		if (*j == ']'){
+			break;
+		}
+		valuebegin = j;
+		msg = JSONvalueParser(j,&j);
+		if ( msg)
+			goto wrapup;
+		valueend = j;
+		l= valueend - valuebegin;
+		if ( l + 2 > lim )
+			result = GDKrealloc(result, lim += BUFSIZ);
+		strncpy(result,valuebegin,l);
+		result[l] = 0;
+		BUNappend(bv, result, FALSE);
+
+		skipblancs;
+		if (*j == ']')
+			continue;
+		if ( *j && *j != ',' )
+			msg = createException(MAL,"json.unnest","',' expected");
+	}
+wrapup:;
 	BBPkeepref(*val= bv->batCacheid);
 	GDKfree(result);
 	return msg;
@@ -703,7 +779,8 @@ str JSONunnestGrouped(int *grp, int *key, int *val, json *js)
 	char  *valuebegin,*valueend;
 	char *msg= MAL_SUCCEED;
 	char *result = NULL;
-	int l,lim, nesting=0;
+	size_t l,lim;
+	int nesting=0;
 	char *j = *js;
 	oid o = 0;
 
@@ -833,7 +910,7 @@ JSONnames(int *ret, json *js)
 	char  *namebegin,*nameend;
 	char *msg= MAL_SUCCEED;
 	char *result = NULL;
-	int l,lim;
+	size_t l,lim;
 	char *j = *js;
 
 	bn = BATnew(TYPE_void,TYPE_str,64);
@@ -902,7 +979,7 @@ str JSONarrayvalues(int *ret, BAT *bn, char *j)
 {
 	char *valuebegin,*valueend, *msg= MAL_SUCCEED;
 	char *result = NULL;
-	int l,lim;
+	size_t l,lim;
 
 	skipblancs;
 	if ( *j != '[' )
@@ -953,7 +1030,7 @@ JSONvalues(int *ret, json *js)
 	char  *valuebegin,*valueend;
 	char *msg= MAL_SUCCEED;
 	char *result = NULL;
-	int l,lim;
+	size_t l,lim;
 	char *j = *js;
 
 	bn = BATnew(TYPE_void,TYPE_str,64);
@@ -1339,3 +1416,188 @@ JSONnest(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return JSONnestKeyValue(ret, id, key, val);
 }
 
+
+/*
+ * The JSON path expression is purposely kept simple,
+ * Only portions are extracted, leaving their analysis
+ * to the SQL runtime environment.
+ * A pseudo type component can be appended to a value
+ * to force conversion, returning null for all missed ones.
+ * samples:
+ * .store.book
+ * .store.book[0]
+ * .store.book.author
+ * ..author
+ * The path syntax is given by
+ * .id[index] or ..id[index]
+ * where id may be a wildcard *
+ */
+#define MAXTERMS 256
+#define DONE 0
+#define CHILD 1
+#define INDEX 2
+#define CHILDANY 3
+
+typedef struct{
+	int token;
+	char *name;
+	int  index;
+}pathterm;
+
+static str
+JSONpathValidation( char *expr, pathterm terms[])
+{
+	int t =0;
+	char *s, *beg;
+
+	terms[0].token = CHILD;
+	for ( s= expr; *s; s++){
+		terms[t].token = CHILD;
+		terms[t].index = INT_MIN;
+		if( *s == '.' &&  *(s+1) == '.'){
+			terms[t].token = CHILDANY;
+			s+=2;
+		} else
+		if (*s == '.') 
+			s++;
+
+		if (*s != '['){
+			for(beg =s ; *s; s++)
+			if ( *s == '.' || *s == '[')
+				break;
+			terms[t].name = GDKzalloc(s-beg+1);
+			strncpy(terms[t].name, beg, s-beg);
+			if ( *s == 0) 
+				break;
+		}
+		if ( *s == '['){
+			terms[t].index = atoi(s+1);
+			terms[t].token = INDEX;
+			for(s++; *s; s++)
+				if ( *s == ']') break;
+			if ( *s == 0) 
+				break;
+			if ( *s != ']') 
+				throw(MAL,"json.path","] expected");
+		}
+		if( ++t == MAXTERMS)
+			throw(MAL,"json.path","too many terms");
+	}
+	return MAL_SUCCEED;
+}
+
+str JSONpath( json *ret, json *js, str *expr)
+{
+	pathterm terms[MAXTERMS];
+	str j,msg = MAL_SUCCEED;
+	char  *namebegin,*nameend;
+	char  *valuebegin,*valueend;
+	json result=0,old=0;
+	int copying = -1, t=0, idx=0;
+	size_t lim,l, len=0;
+
+	memset((char*) terms, 0, MAXTERMS * sizeof(pathterm));
+	msg = JSONpathValidation(*expr, terms);
+	if (msg)
+		return msg;
+
+	j = *js;
+	for( t=0; terms[t].token != 0; t++) {
+		result = (char *) GDKmalloc(BUFSIZ);
+		if( result == NULL)
+			throw(MAL,"json.names",MAL_MALLOC_FAIL);
+		result[0]='[';
+		result[1]=0;
+		len =1;
+		lim = BUFSIZ;
+		idx = INT_MIN;
+
+		skipblancs;
+		for( j++; *j; j++){
+			skipblancs;
+			if ( terms[t].token == CHILDANY){
+				if ( *j == '[')
+				continue;
+			}
+			if (*j == '}' || *j ==']' || *j == ',')
+				continue;
+			if ( *j == '{')
+				j++;
+			skipblancs;
+			if (*j == 0) break;
+			namebegin = j+1;
+			msg = JSONstringParser(j+1, &j);
+			if ( msg) {	// json string should be correct, name may be missing
+				GDKfree(msg);
+				msg = MAL_SUCCEED;
+			}
+			nameend = j-1;
+			l = nameend - namebegin;
+
+			skipblancs;
+			if ( *j == ':'){
+				j++;
+				skipblancs;
+
+				switch( terms[t].token){
+				case INDEX:
+					copying = (terms[t].name && l > 0 && strncmp(terms[t].name, namebegin,l) == 0) || terms[t].name == 0 || terms[t].name[0]=='*';
+					if ( copying){
+						if (idx == INT_MIN)
+							idx = terms[t].index;
+						else idx--;
+					}
+					if ( idx != 0)
+						copying = 0;
+					break;
+				case CHILD:
+					copying = terms[t].name && ((l > 0 && strncmp(terms[t].name, namebegin,l) == 0) || terms[t].name[0]=='*');
+					break;
+				case CHILDANY:
+					copying = terms[t].name && ((l > 0 && strncmp(terms[t].name, namebegin,l) == 0) || terms[t].name[0]=='*');
+					if ( copying ==0){
+						for(; *j ; j++)
+							if(*j == '{' || *j == ',' || *j == ']') break;
+						j--;
+						continue;
+					}
+					break;
+				default:
+					msg = createException(MAL,"json.path","Unexpected token");
+					goto wrapup;
+				}
+				valuebegin=j;
+				msg = JSONvalueParser(j,&j);
+				if ( msg)
+					goto wrapup;
+				if ( copying == 1) {
+					valueend = j;
+					l = valueend - valuebegin;
+					if ( len + l + 3 > lim )
+						result = GDKrealloc(result, lim += BUFSIZ);
+					strncpy(result+ len,valuebegin,valueend-valuebegin);
+					len += l;
+					strncpy(result+len,",",2);
+					len++;
+				}
+				skipblancs;
+			}
+		}
+		if( result[1])
+			result[len-1]=']';
+		else {
+			result[1]=']';
+			result[2]=0;
+		}
+		if (old)
+			GDKfree(old);
+		old = result;
+		j= result;
+	}
+wrapup:;
+	for(t=0; terms[t].token; t++)
+		if ( terms[t].name)
+			GDKfree(terms[t].name);
+	*ret = result;
+	return msg;
+}
