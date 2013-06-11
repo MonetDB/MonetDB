@@ -1,0 +1,2 @@
+b:= uuid.generateUuid();
+io.print(b);

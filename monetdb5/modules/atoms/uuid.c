@@ -28,4 +28,25 @@
 #include "uuid.h"
 #include "mal.h"
 #include "mal_exception.h"
-#include "uuid/uuid.h"
+#include "muuid.h"
+
+static str
+uuid_GenerateUuid(str *retval) {
+  str d;
+  char * s;
+
+  s = generateUUID();
+  d = GDKstrdup(s);
+
+  if (d == NULL)
+    throw(MAL, "uuid.generateUuid", "Allocation failed");
+
+  *retval = d;
+  free(s);
+  return MAL_SUCCEED;
+}
+
+str
+UUIDgenerateUuid(str *retval) {
+  return uuid_GenerateUuid(retval);
+}

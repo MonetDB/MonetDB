@@ -18,6 +18,7 @@
 INCLUDES = ../../mal \
 		   ../../../common/options \
 		   ../../../common/stream \
+		   ../../../common/utils \
 		   ../../../gdk \
 		   $(libxml2_CFLAGS)
 MTSAFE

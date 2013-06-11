@@ -1,4 +1,7 @@
-module url;
+module uuid;
 
 atom uuid:str;
 
+command generateUuid() :uuid
+address UUIDgenerateUuid
+comment "generate uuid";

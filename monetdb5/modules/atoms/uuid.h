@@ -20,8 +20,8 @@
  * @-
  * Wrapper around uuid library
  */
-#ifndef UUID_H
-#define UUID_H
+#ifndef AUUID_H
+#define AUUID_H
 
 #include <gdk.h>
 #include <ctype.h>
@@ -38,5 +38,6 @@ typedef str uuid;
 #define uuid_export extern
 #endif
 
+uuid_export str UUIDgenerateUuid(str *retval);
 
-#endif /* UUID_H */
+#endif /* AUUID_H */
