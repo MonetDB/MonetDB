@@ -39,7 +39,7 @@ INSERT INTO fire1 (
 -- BSM classification (landsatFirePredicate()) using two images
 CREATE ARRAY fire2 (x INT DIMENSION[size_x], y INT DIMENSION[size_y], f INT DEFAULT 0);
 INSERT INTO fire2 (
-  SELECT img1.x, img1.y, 1
+  SELECT img1_b3.x, img1_b3.y, 1
   FROM rs.image1 AS img1_b3, rs.image2 AS img1_b4, rs.image3 AS img1_b7,
        rs.image4 AS img2_b3, rs.image5 AS img2_b4
   WHERE img1_b3.intensity <> 0 AND img1_b4.intensity <> 0 AND img1_b7.intensity <> 0
@@ -72,10 +72,6 @@ INSERT INTO fire_majority (
     AND neighbour_cnt > half_wsize
 );
 
--------------------------------------------------------------------------------
--- above queries are tested
--------------------------------------------------------------------------------
-
 -- BSM clump&eliminate filter
 CREATE ARRAY fire_eliminated (x INT DIMENSION[size_x], y INT DIMENSION[size_y], gid INT);
 
@@ -88,7 +84,7 @@ BEGIN
 
   INSERT INTO fire_eliminated (
     SELECT x, y, x * size_y + y FROM fire_majority
-    WHERE v = 1);
+    WHERE f = 1);
 
   WHILE moreupdates > 0 DO
     INSERT INTO fire_eliminated (
@@ -104,10 +100,11 @@ BEGIN
   END WHILE;
 
 ---- Eliminate any groups that have few members (<10 pixels)
-  CREATE TABLE to_eliminate (gid INT) AS
+  DECLARE TABLE to_eliminate (gid INT);
+  INSERT INTO to_eliminate (
     SELECT gid FROM fire_eliminated
     WHERE gid > 0
-    GROUP BY gid HAVING COUNT(gid) < 10;
+    GROUP BY gid HAVING COUNT(gid) < 10);
 
   UPDATE fire_eliminated SET gid = NULL WHERE gid IN (SELECT * FROM to_eliminate);
 END;
@@ -121,7 +118,7 @@ BEGIN
 
   INSERT INTO fire_eliminated (
     SELECT x, y, x * size_y + y FROM fire_majority
-    WHERE v = 1
+    WHERE f = 1
   );
 
   WHILE moreupdates > 0 DO
@@ -138,10 +135,11 @@ BEGIN
   END WHILE;
 
 ---- Eliminate any groups that have few members (<10 pixels)
-  CREATE TABLE to_eliminate (gid INT) AS
+  DECLARE TABLE to_eliminate (gid INT);
+  INSERT INTO to_eliminate (
     SELECT gid FROM fire_eliminated
     WHERE gid > 0
-    GROUP BY gid HAVING COUNT(gid) < 10;
+    GROUP BY gid HAVING COUNT(gid) < 10);
 
   UPDATE fire_eliminated SET gid = NULL WHERE gid IN (SELECT * FROM to_eliminate);
 END;
@@ -164,7 +162,7 @@ BEGIN
 
   -- This process needs to be repeated, because it can happen that one pixel is
   --   the _only_ connecting point for >2 fire groups
-  WHILE merge_more > 0
+  WHILE merge_more > 0 DO
 	-- Find pairs of nearby fire groups by checking all 8 neighbours of each
 	--   non-fire pixel to see if the neighbours denoting more than one fire
 	--   groups.
@@ -182,7 +180,7 @@ BEGIN
 	--   the gid of the other group
 	-- This process needs to be repeated to deal with recursive merging, e.g.,
 	--   (gid_from, gid_into) = {(2, 4), (4, 5)}
-    WHILE update_more > 0
+    WHILE update_more > 0 DO
       INSERT INTO fire_eliminated (
         SELECT [x], [y], gid_into FROM fire_eliminated, nearby_groups
         WHERE gid = gid_from);
@@ -191,7 +189,7 @@ BEGIN
       WHERE gid = gid_from;
     END WHILE;
 
-    DELETE FROM nearby_groups WHERE gid_from IS NOT NULL; 
+    Dare testedELETE FROM nearby_groups WHERE gid_from IS NOT NULL; 
   END WHILE;
 
   -- TODO: add bridge!
