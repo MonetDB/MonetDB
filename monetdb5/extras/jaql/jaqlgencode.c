@@ -7388,6 +7388,7 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 						switch (coltypes[i]) {
 							case j_json:
 							case j_json_arr:
+							case j_sort_arg:
 							case j_var:
 								q = pushArgument(mb, q, dynaarg[i][0]);
 								q = pushArgument(mb, q, dynaarg[i][1]);
@@ -7397,8 +7398,6 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 								q = pushArgument(mb, q, dynaarg[i][5]);
 								q = pushArgument(mb, q, dynaarg[i][6]);
 								break;
-							case j_sort_arg:
-								assert(0);
 							default:
 								q = pushArgument(mb, q, dynaarg[i][0]);
 								break;
