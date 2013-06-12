@@ -1633,9 +1633,8 @@ BKCinfo(int *ret1, int *ret2, int *bid)
 str
 BKCbatdisksize(lng *tot, int *bid){
 	BAT *b;
-	if ((b = BATdescriptor(*bid)) == NULL) {
+	if ((b = BATdescriptor(ABS(*bid))) == NULL)
 		throw(MAL, "bat.getDiskSize", RUNTIME_OBJECT_MISSING);
-	}
 	CMDbatdisksize(tot,b);
 	BBPreleaseref(*bid);
 	return MAL_SUCCEED;
