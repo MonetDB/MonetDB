@@ -208,7 +208,7 @@ function list()(kind:bat[:oid,:bte],string:bat[:oid,:str],integer:bat[:oid,:lng]
 end list;
 
 # retrieve/calculate and return info about a stored document
-function info(docname:str)(kind:bat[:oid,:bte],string:bat[:oid,:str],integer:bat[:oid,:lng],double:bat[:oid,:dbl],array:bat[:oid,:oid],object:bat[:oid,:oid],name:bat[:oid,:str]);
+function info(d1:bat[:oid,:bte],d2:bat[:oid,:str],d3:bat[:oid,:lng],d4:bat[:oid,:dbl],d5:bat[:oid,:oid],d6:bat[:oid,:oid],d7:bat[:oid,:str])(kind:bat[:oid,:bte],string:bat[:oid,:str],integer:bat[:oid,:lng],double:bat[:oid,:dbl],array:bat[:oid,:oid],object:bat[:oid,:oid],name:bat[:oid,:str]);
 	# what we return:
 	# - number of bytes on disk
 	# - number of elements in top array
@@ -217,7 +217,6 @@ function info(docname:str)(kind:bat[:oid,:bte],string:bat[:oid,:str],integer:bat
 	# - ?
 	# [ {"size": 444, "elems": 444, ...} ]
 
-	(d1,d2,d3,d4,d5,d6,d7) := json.load(docname);
 
 	s1 := bat.getDiskSize(d1);
 	s2 := bat.getDiskSize(d2);
@@ -289,6 +288,11 @@ function info(docname:str)(kind:bat[:oid,:bte],string:bat[:oid,:str],integer:bat
 	doc := doc + "}]";
 
 	(r1,r2,r3,r4,r5,r6,r7) := json.shred(doc);
+	return (r1,r2,r3,r4,r5,r6,r7);
+end info;
+function info(docname:str)(kind:bat[:oid,:bte],string:bat[:oid,:str],integer:bat[:oid,:lng],double:bat[:oid,:dbl],array:bat[:oid,:oid],object:bat[:oid,:oid],name:bat[:oid,:str]);
+	(d1,d2,d3,d4,d5,d6,d7) := json.load(docname);
+	(r1,r2,r3,r4,r5,r6,r7) := jaqlfunc.info(d1,d2,d3,d4,d5,d6,d7);
 	return (r1,r2,r3,r4,r5,r6,r7);
 end info;
 
