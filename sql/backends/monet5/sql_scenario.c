@@ -1771,7 +1771,7 @@ SQLparser(Client c)
 				backend_call(be, c, be->q);
 			}
 		}
-	
+
 		/* In the final phase we add any debugging control */
 		if (m->emod & mod_trace)
 			SQLsetTrace(be, c, FALSE);
@@ -1912,16 +1912,16 @@ SQLengineIntern(Client c, backend *be)
 	}
 
 	if (m->emod & mod_explain) {
-		if (be->q && be->q->code) 
+		if (be->q && be->q->code)
 			printFunction(c->fdout, ((Symbol) (be->q->code))->def, 0, LIST_MAL_STMT | LIST_MAL_UDF | LIST_MAPI);
 		else if (be->q) 
 			msg = createException(PARSE, "SQLparser", "%s", (*m->errstr)?m->errstr:"39000!program contains errors");
-		else if (c->curprg && c->curprg->def) 
+		else if (c->curprg && c->curprg->def)
 			printFunction(c->fdout, c->curprg->def, 0, LIST_MAL_STMT | LIST_MAL_UDF | LIST_MAPI);
 		goto cleanup_engine;
 	}
 	if (m->emod & mod_dot) {
-		if (be->q && be->q->code) 
+		if (be->q && be->q->code)
 			showFlowGraph(((Symbol) (be->q->code))->def, 0, "stdout-mapi");
 		else if (be->q)
 			msg = createException(PARSE, "SQLparser", "%s", (*m->errstr)?m->errstr:"39000!program contains errors");
@@ -1988,7 +1988,7 @@ cleanup_engine:
 		m->session->status = -10;
 	}
 
-	mb= c->curprg->def;
+	mb = c->curprg->def;
 	if (be->q && msg) {
 		qc_delete(m->qc, be->q); 
 	} else if (be->q && mb &&
