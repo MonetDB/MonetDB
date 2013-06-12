@@ -3128,6 +3128,11 @@ ALGsubsort33(bat *result, bat *norder, bat *ngroup, bat *bid, bat *order, bat *g
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "algebra.subsort", OPERATION_FAILED);
 	}
+	BBPreleaseref(b->batCacheid);
+	if (o)
+		BBPreleaseref(o->batCacheid);
+	if (g)
+		BBPreleaseref(g->batCacheid);
 	if (result)
 		BBPkeepref(*result = bn->batCacheid);
 	if (norder)
