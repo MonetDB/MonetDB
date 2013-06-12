@@ -187,9 +187,6 @@ function list()(kind:bat[:oid,:bte],string:bat[:oid,:str],integer:bat[:oid,:lng]
 	offs := algebra.project(lens, 6);
 	docs := batstr.substring(docs, offs, lens);
 
-	# in the future we could try to list some info about the document
-	# here, like size
-
 	r1 := bat.new(:oid,:bte);
 	#r2 := bat.new(:oid,:str);
 	r3 := bat.new(:oid,:lng);
@@ -208,7 +205,92 @@ function list()(kind:bat[:oid,:bte],string:bat[:oid,:str],integer:bat[:oid,:lng]
 	r5 := bat.reverse(t2);
 
 	return (r1,r2,r3,r4,r5,r6,r7);
-end list();
+end list;
+
+# retrieve/calculate and return info about a stored document
+function info(docname:str)(kind:bat[:oid,:bte],string:bat[:oid,:str],integer:bat[:oid,:lng],double:bat[:oid,:dbl],array:bat[:oid,:oid],object:bat[:oid,:oid],name:bat[:oid,:str]);
+	# what we return:
+	# - number of bytes on disk
+	# - number of elements in top array
+	# - number of components (kind)
+	# - number of strings, ints, double, bool, arrays, objs?
+	# - ?
+	# [ {"size": 444, "elems": 444, ...} ]
+
+	(d1,d2,d3,d4,d5,d6,d7) := json.load(docname);
+
+	s1 := bat.getDiskSize(d1);
+	s2 := bat.getDiskSize(d2);
+	s3 := bat.getDiskSize(d3);
+	s4 := bat.getDiskSize(d4);
+	s5 := bat.getDiskSize(d5);
+	s6 := bat.getDiskSize(d6);
+	s7 := bat.getDiskSize(d7);
+	space := s1 + s2;
+	space := space + s3;
+	space := space + s4;
+	space := space + s5;
+	space := space + s6;
+	space := space + s7;
+
+	t1 := algebra.selectH(d1, 0@0);
+	t2 := bat.mirror(t1);
+	t3 := bat.reverse(d5);
+	t4 := algebra.leftjoin(t3,t2);
+	elems := aggr.count(t4);
+
+	# quick and dirty, but much easier than constructing a document
+	doc := "[{";
+	doc := doc + "\"space\":";
+	spaces := calc.str(space);
+	doc := doc + spaces;
+
+	doc := doc + ",\"elems\":";
+	elemss := calc.str(elems);
+	doc := doc + elemss;
+
+	doc := doc + ",\"objs\":";
+	elems := aggr.count(d1);
+	elemss := calc.str(elems);
+	doc := doc + elemss;
+
+	doc := doc + ",\"strings\":";
+	elems := aggr.count(d2);
+	elemss := calc.str(elems);
+	doc := doc + elemss;
+
+	doc := doc + ",\"integers\":";
+	elems := aggr.count(d3);
+	elemss := calc.str(elems);
+	doc := doc + elemss;
+
+	doc := doc + ",\"doubles\":";
+	elems := aggr.count(d4);
+	elemss := calc.str(elems);
+	doc := doc + elemss;
+
+	doc := doc + ",\"arrays\":";
+	u5 := algebra.kunique(d5);
+	elems := aggr.count(u5);
+	elemss := calc.str(elems);
+	doc := doc + elemss;
+
+	doc := doc + ",\"objects\":";
+	u6 := algebra.kunique(d6);
+	elems := aggr.count(u6);
+	elemss := calc.str(elems);
+	doc := doc + elemss;
+
+	doc := doc + ",\"keys\":";
+	elems := aggr.count(d7);
+	elemss := calc.str(elems);
+	doc := doc + elemss;
+
+	doc := doc + "}]";
+
+	(r1,r2,r3,r4,r5,r6,r7) := json.shred(doc);
+	return (r1,r2,r3,r4,r5,r6,r7);
+end info;
 
 # produce a JSON document with trace information
 function gettrace()(kind:bat[:oid,:bte],string:bat[:oid,:str],integer:bat[:oid,:lng],double:bat[:oid,:dbl],array:bat[:oid,:oid],object:bat[:oid,:oid],name:bat[:oid,:str]);
