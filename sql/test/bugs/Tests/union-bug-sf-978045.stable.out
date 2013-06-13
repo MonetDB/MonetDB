@@ -24,14 +24,16 @@ Ready.
 # 12:51:49 >  
 
 [ 3	]
-% .t978045 # table_name
+#select name from t978045 union select name from t978045;
+% .L # table_name
 % name # name
 % varchar # type
 % 6 # length
 [ "niels"	]
 [ "fabian"	]
 [ "martin"	]
-% .t978045 # table_name
+#select name from t978045 union all select name from t978045;
+% .L # table_name
 % name # name
 % varchar # type
 % 6 # length

@@ -24,7 +24,14 @@ Ready.
 # 15:57:14 >  
 
 [ 1	]
-% . # table_name
+#create function test5 () returns int
+#begin
+#    declare i int;
+#    select j into i from select_into_t;
+#    return i;
+#end;
+#select test5();
+% .L # table_name
 % test5 # name
 % int # type
 % 1 # length

@@ -19,7 +19,8 @@ Ready.
 # 12:37:35 >  
 
 [ 5	]
-% . # table_name
+#SELECT SUBSTRING('hallo' FROM i FOR 3) FROM N WHERE i <= CHAR_LENGTH('hallo') + 2;
+% .L # table_name
 % substring_single_value # name
 % char # type
 % 5 # length

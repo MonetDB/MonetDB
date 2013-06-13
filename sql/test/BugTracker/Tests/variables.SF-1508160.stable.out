@@ -14,16 +14,14 @@ stdout of test 'variables.SF-1508160` in directory 'sql/test/BugTracker` itself:
 Ready.
 
 
-# 11:54:19 >  
-# 11:54:19 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35185  < variables.SF-1508160.sql
-# 11:54:19 >  
-
-% . # table_name
+#select debug;
+% .L # table_name
 % single_value # name
 % int # type
 % 1 # length
 [ 0	]
-% . # table_name
+#select @debug;
+% .L # table_name
 % single_value # name
 % int # type
 % 1 # length

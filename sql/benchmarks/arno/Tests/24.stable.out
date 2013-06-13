@@ -23,7 +23,8 @@ Ready.
 # 11:47:10 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < 24.sql
 # 11:47:10 >  
 
-% sys.model162,	sys.model162,	sys.model162 # table_name
+#SELECT MODEL162.is_mutagen,MODEL162.logp, count(distinct MODEL162.model_id ) FROM MODEL MODEL162  WHERE MODEL162.is_mutagen='T' group by MODEL162.logp , MODEL162.is_mutagen;
+% sys.model162,	sys.model162,	sys.L1 # table_name
 % is_mutagen,	logp,	L1 # name
 % char,	int,	wrd # type
 % 3,	1,	2 # length

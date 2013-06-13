@@ -32,62 +32,129 @@ Ready.
 # 11:50:11 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < psm.sql
 # 11:50:11 >  
 
-% . # table_name
+# 11:42:50 >  
+# 11:42:50 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-23209" "--port=33225"
+# 11:42:50 >  
+
+#create function my_abs(v int) returns int 
+#begin
+#	if v < 0 then 
+#		return -v;
+#	else
+#		return v;
+#	end if;
+#end;
+#create function my_abs1(v int) returns int 
+#begin
+#	if v < 0 then 
+#		return -v;
+#	end if;
+#	return v;
+#end;
+#select my_abs(-1);
+% .L # table_name
 % my_abs_single_value # name
 % int # type
 % 1 # length
 [ 1	]
-% . # table_name
+#select my_abs(1);
+% .L # table_name
 % my_abs_single_value # name
 % int # type
 % 1 # length
 [ 1	]
-% . # table_name
+#select my_abs1(1);
+% .L # table_name
 % my_abs1_single_value # name
 % int # type
 % 1 # length
 [ 1	]
-% . # table_name
+#create function my_while(v int) returns int 
+#begin
+#	while v > 0 do 
+#		set v = v - 10;
+#	end while;
+#	return v;
+#end;
+#select my_while(105);
+% .L # table_name
 % my_while_single_value # name
 % int # type
 % 2 # length
 [ -5	]
-% . # table_name
+#create function my_declare(v int) returns int 
+#begin
+#	declare x int;
+#	set x = v;
+#	return x;
+#end;
+#select my_declare(105);
+% .L # table_name
 % my_declare_single_value # name
 % int # type
 % 3 # length
 [ 105	]
-% . # table_name
+#create function my_complex_declare(v int) returns int 
+#begin
+#	declare x, y, z int;
+#	declare a int, b, c varchar(10);
+#	set x = v;
+#	return x;
+#end;
+#select my_complex_declare(1);
+% .L # table_name
 % my_complex_declare_single_value # name
 % int # type
 % 1 # length
 [ 1	]
-% . # table_name
+#create function my_case(v int) returns int 
+#begin
+#	case v
+#	when 1 then return 100;
+#	when 2 then return 200;
+#	else return -1;
+#	end case;
+#end;
+#select my_case(1);
+% .L # table_name
 % my_case_single_value # name
 % int # type
 % 3 # length
 [ 100	]
-% . # table_name
+#select my_case(2);
+% .L # table_name
 % my_case_single_value # name
 % int # type
 % 3 # length
 [ 200	]
-% . # table_name
+#select my_case(3);
+% .L # table_name
 % my_case_single_value # name
 % int # type
 % 2 # length
 [ -1	]
-% . # table_name
+#create function my_searchcase(v int) returns int 
+#begin
+#	case 
+#	when v=1 then return 100;
+#	when v=2 then return 200;
+#	else return -1;
+#	end case;
+#end;
+#select my_searchcase(1);
+% .L # table_name
 % my_searchcase_single_value # name
 % int # type
 % 3 # length
 [ 100	]
-% . # table_name
+#select my_searchcase(2);
+% .L # table_name
 % my_searchcase_single_value # name
 % int # type
 % 3 # length
 [ 200	]
-% . # table_name
+#select my_searchcase(3);
+% .L # table_name
 % my_searchcase_single_value # name
 % int # type
 % 2 # length

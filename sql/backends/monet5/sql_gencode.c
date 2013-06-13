@@ -2381,7 +2381,7 @@ backend_call(backend *be, Client c, cq *cq)
 
 	q = newStmt1(mb, userRef, cq->name);
 	/* cached (factorized queries return bit??) */
-	if (getInstrPtr(((Symbol)cq->code)->def, 0)->token == FACTORYsymbol ) {
+	if (cq->code && getInstrPtr(((Symbol)cq->code)->def, 0)->token == FACTORYsymbol ) {
 		setVarType(mb, getArg(q, 0), TYPE_bit);
 		setVarUDFtype(mb,getArg(q,0));
 	} else {
@@ -2485,6 +2485,7 @@ backend_create_func(backend *be, sql_func *f)
 	}
 
 	if (!s) {
+		f->sql--;
 		sa_destroy(sa);
 		return -1;
 	}

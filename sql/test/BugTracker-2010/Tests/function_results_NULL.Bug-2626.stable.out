@@ -26,7 +26,7 @@ Ready.
 
 [ 17	]
 #select getBand(300000000.0);
-% . # table_name
+% .L # table_name
 % getband_single_value # name
 % int # type
 % 2 # length

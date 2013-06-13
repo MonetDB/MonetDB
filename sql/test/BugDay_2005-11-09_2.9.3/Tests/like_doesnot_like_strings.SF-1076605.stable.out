@@ -26,7 +26,8 @@ Ready.
 # 11:50:53 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < like_doesnot_like_strings.SF-1076605.sql
 # 11:50:53 >  
 
-% . # table_name
+#select 'test' like 'test';
+% .L # table_name
 % like_single_value # name
 % boolean # type
 % 5 # length

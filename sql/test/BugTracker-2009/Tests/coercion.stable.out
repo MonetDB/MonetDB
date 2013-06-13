@@ -25,7 +25,8 @@ Ready.
 # 10:51:19 >  
 
 [ 2	]
-% sys. # table_name
+#select f(i) from t;
+% sys.L # table_name
 % f_i # name
 % boolean # type
 % 5 # length

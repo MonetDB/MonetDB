@@ -44,7 +44,7 @@ Ready.
 #         AND    ancestor.pre < span2.pre
 #         AND    span2.pre < ancestor.post)
 #AND    span1.pre <> span2.pre;
-% sys.span1,	sys.span2 # table_name
+% sys.L2,	sys.L2 # table_name
 % pre1,	pre2 # name
 % int,	int # type
 % 1,	1 # length

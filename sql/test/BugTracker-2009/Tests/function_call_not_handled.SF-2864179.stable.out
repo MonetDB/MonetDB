@@ -25,7 +25,50 @@ Ready.
 # 15:06:14 >  mclient -lsql -i -umonetdb -Pmonetdb --host=yngling --port=39569 
 # 15:06:14 >  
 
-% . # table_name
+# 11:55:32 >  
+# 11:55:32 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-23209" "--port=33225"
+# 11:55:32 >  
+
+#create table table_a1 (
+#    table_a1_id integer not null auto_increment,
+#    column_a1 integer
+#);
+#create function insert_table_a1 (value_a1 integer)
+#returns integer
+#begin
+#    declare id_table_a1 integer;
+#
+#    insert into table_a1 (
+#        column_a1 )
+#    values (
+#        value_a1
+#    );
+#
+#    set id_table_a1 = (select max(table_a1_id)
+#                      from table_a1);
+#
+#  return id_table_a1;
+#end;
+#create function insert_table_error ()
+#returns integer
+#begin
+#  declare id_table_a1 integer;
+#
+#  set id_table_a1 = insert_table_a1 ( 1 );
+#
+#  return 0;
+#end;
+#create function insert_table_correct ()
+#returns integer
+#begin
+#  declare id_table_a1 integer;
+#
+#  set id_table_a1 = insert_table_a1 ( 1 );
+#
+#  return id_table_a1;
+#end;
+#select insert_table_error();
+% .L # table_name
 % insert_table_error # name
 % int # type
 % 1 # length
@@ -35,7 +78,8 @@ Ready.
 % int,	int # type
 % 1,	1 # length
 [ 1,	1	]
-% . # table_name
+#select insert_table_correct();
+% .L # table_name
 % insert_table_correct # name
 % int # type
 % 1 # length

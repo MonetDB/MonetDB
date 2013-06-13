@@ -26,7 +26,8 @@ Ready.
 [ 1	]
 [ 1	]
 [ 1	]
-% . # table_name
+#select count(1000) from count_crash;
+% .L1 # table_name
 % L1 # name
 % wrd # type
 % 1 # length

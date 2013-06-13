@@ -24,12 +24,14 @@ Ready.
 # 11:50:45 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < select_not_true.SF-1314945.sql
 # 11:50:45 >  
 
-% . # table_name
+#select false;
+% .L # table_name
 % single_value # name
 % boolean # type
 % 5 # length
 [ false	]
-% . # table_name
+#select not true;
+% .L # table_name
 % not_single_value # name
 % boolean # type
 % 5 # length

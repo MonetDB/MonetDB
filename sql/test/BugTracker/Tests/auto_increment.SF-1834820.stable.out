@@ -49,12 +49,15 @@ Ready.
 % 1,	5,	15 # length
 [ 1,	"wendy",	"Wendy\nWones"	]
 [ 2,	"fred",	"Fred Flintstone"	]
-% sys.sequences # table_name
+#select count(*) from sequences;
+% sys.L1 # table_name
 % L1 # name
 % wrd # type
 % 1 # length
 [ 1	]
-% sys.sequences # table_name
+#drop table testusers;
+#select count(*) from sequences;
+% sys.L1 # table_name
 % L1 # name
 % wrd # type
 % 1 # length

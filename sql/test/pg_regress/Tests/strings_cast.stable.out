@@ -38,7 +38,7 @@ Ready.
 #-- E021-10 implicit casting among the character data types
 #--
 #SELECT CAST(f1 AS text) AS "text(char)" FROM CHAR_TBL;
-% sys. # table_name
+% sys.L # table_name
 % text(char) # name
 % clob # type
 % 4 # length
@@ -46,7 +46,7 @@ Ready.
 [ "ab"	]
 [ "abcd"	]
 #SELECT CAST(f1 AS text) AS "text(varchar)" FROM VARCHAR_TBL;
-% sys. # table_name
+% sys.L # table_name
 % text(varchar) # name
 % clob # type
 % 4 # length
@@ -56,7 +56,7 @@ Ready.
 #SELECT CAST(name 'namefield' AS text) AS "text(name)";
 #-- since this is an explicit cast, it should truncate w/o error:
 #SELECT CAST(f1 AS char(10)) AS "char(text)" FROM TEXT_TBL;
-% sys. # table_name
+% sys.L # table_name
 % char(text) # name
 % char # type
 % 10 # length
@@ -64,14 +64,14 @@ Ready.
 [ "hi de ho n"	]
 #-- note: implicit-cast case is tested in char.sql
 #SELECT CAST(f1 AS char(20)) AS "char(text)" FROM TEXT_TBL;
-% sys. # table_name
+% sys.L # table_name
 % char(text) # name
 % char # type
 % 20 # length
 [ "doh!"	]
 [ "hi de ho neighbor"	]
 #SELECT CAST(f1 AS char(10)) AS "char(varchar)" FROM VARCHAR_TBL;
-% sys. # table_name
+% sys.L # table_name
 % char(varchar) # name
 % char # type
 % 10 # length

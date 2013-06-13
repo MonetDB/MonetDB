@@ -33,7 +33,7 @@ insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s
 # 16:00:08 >  
 
 #select count(*) from testschema.smallstring;
-% testschema.smallstring # table_name
+% testschema.L1 # table_name
 % L1 # name
 % wrd # type
 % 2 # length

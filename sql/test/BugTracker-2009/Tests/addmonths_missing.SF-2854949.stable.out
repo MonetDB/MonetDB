@@ -24,7 +24,8 @@ Ready.
 # 08:44:54 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=37502 
 # 08:44:54 >  
 
-% . # table_name
+#select timestamp '2000-01-01' + interval '1' year;
+% .L # table_name
 % sql_add_single_value # name
 % timestamp # type
 % 26 # length

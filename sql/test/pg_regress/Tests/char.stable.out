@@ -51,7 +51,7 @@ Ready.
 #INSERT INTO CHAR_TBL (f1) VALUES ('cd');
 #INSERT INTO CHAR_TBL (f1) VALUES ('c     ');
 #SELECT '' AS seven, CHAR_TBL.* FROM CHAR_TBL;
-% .,	sys.char_tbl # table_name
+% .L,	sys.char_tbl # table_name
 % seven,	f1 # name
 % char,	char # type
 % 0,	1 # length
@@ -62,7 +62,9 @@ Ready.
 [ "",	"3"	]
 [ "",	""	]
 #SELECT '' AS six, c.*
-% .,	sys.c # table_name
+#   FROM CHAR_TBL c
+#   WHERE c.f1 <> 'a';
+% .L,	sys.c # table_name
 % six,	f1 # name
 % char,	char # type
 % 0,	1 # length
@@ -72,13 +74,17 @@ Ready.
 [ "",	"3"	]
 [ "",	""	]
 #SELECT '' AS one, c.*
-% .,	sys.c # table_name
+#   FROM CHAR_TBL c
+#   WHERE c.f1 = 'a';
+% .L,	sys.c # table_name
 % one,	f1 # name
 % char,	char # type
 % 0,	1 # length
 [ "",	"a"	]
 #SELECT '' AS five, c.*
-% .,	sys.c # table_name
+#   FROM CHAR_TBL c
+#   WHERE c.f1 < 'a';
+% .L,	sys.c # table_name
 % five,	f1 # name
 % char,	char # type
 % 0,	1 # length
@@ -88,7 +94,9 @@ Ready.
 [ "",	"3"	]
 [ "",	""	]
 #SELECT '' AS six, c.*
-% .,	sys.c # table_name
+#   FROM CHAR_TBL c
+#   WHERE c.f1 <= 'a';
+% .L,	sys.c # table_name
 % six,	f1 # name
 % char,	char # type
 % 0,	1 # length
@@ -99,12 +107,16 @@ Ready.
 [ "",	"3"	]
 [ "",	""	]
 #SELECT '' AS one, c.*
-% .,	sys.c # table_name
+#   FROM CHAR_TBL c
+#   WHERE c.f1 > 'a';
+% .L,	sys.c # table_name
 % one,	f1 # name
 % char,	char # type
 % 0,	1 # length
 #SELECT '' AS two, c.*
-% .,	sys.c # table_name
+#   FROM CHAR_TBL c
+#   WHERE c.f1 >= 'a';
+% .L,	sys.c # table_name
 % two,	f1 # name
 % char,	char # type
 % 0,	1 # length
@@ -120,7 +132,7 @@ Ready.
 #INSERT INTO CHAR_TBL (f1) VALUES ('abcde');
 #INSERT INTO CHAR_TBL (f1) VALUES ('abcd    ');
 #SELECT '' AS four, CHAR_TBL.* FROM CHAR_TBL;
-% .,	sys.char_tbl # table_name
+% .L,	sys.char_tbl # table_name
 % four,	f1 # name
 % char,	char # type
 % 0,	4 # length

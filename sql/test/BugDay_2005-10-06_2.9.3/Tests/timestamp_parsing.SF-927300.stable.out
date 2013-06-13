@@ -14,11 +14,8 @@ stdout of test 'timestamp_parsing.SF-927300` in directory 'sql/test/BugDay_2005-
 Ready.
 
 
-# 11:50:28 >  
-# 11:50:28 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < timestamp_parsing.SF-927300.sql
-# 11:50:28 >  
-
-% . # table_name
+#select timestamp '2004-04-01 08:57';
+% .L # table_name
 % single_value # name
 % timestamp # type
 % 26 # length

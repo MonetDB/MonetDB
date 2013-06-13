@@ -26,17 +26,20 @@ Ready.
 # 22:40:46 >  mclient -lsql -umonetdb -Pmonetdb --host=koala --port=37931 
 # 22:40:46 >  
 
-% . # table_name
+#select epoch (1087488000);
+% .L # table_name
 % epoch_single_value # name
 % timestamp # type
 % 26 # length
 [ 2004-06-17 16:00:00.000000	]
-% . # table_name
+#select epoch (timestamp '2004-06-17 16:00:00.000000');
+% .L # table_name
 % epoch_single_value # name
 % int # type
 % 10 # length
 [ 1087488000	]
-% . # table_name
+#select abs(epoch(timestamp '2008-02-16 14:00:00'));
+% .L # table_name
 % epoch_single_value # name
 % int # type
 % 10 # length
@@ -47,17 +50,20 @@ Ready.
 % int,	timestamp # type
 % 10,	26 # length
 [ 1202900916,	2008-02-13 11:08:06.000000	]
-% . # table_name
+#select epoch(1203170400);
+% .L # table_name
 % epoch_single_value # name
 % timestamp # type
 % 26 # length
 [ 2008-02-16 14:00:00.000000	]
-% sys. # table_name
+#select epoch(time1) from t10;
+% sys.L # table_name
 % epoch_time1 # name
 % timestamp # type
 % 26 # length
 [ 2008-02-13 11:08:36.000000	]
-% sys. # table_name
+#select epoch(time2) from t10;
+% sys.L # table_name
 % epoch_time2 # name
 % int # type
 % 10 # length

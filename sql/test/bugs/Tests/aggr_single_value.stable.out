@@ -23,57 +23,68 @@ Ready.
 # 19:26:22 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=35679 
 # 19:26:22 >  
 
-% . # table_name
+#SELECT count(*);
+% .L1 # table_name
 % L1 # name
 % wrd # type
 % 1 # length
 [ 1	]
-% . # table_name
+#SELECT count(1);
+% .L1 # table_name
 % L1 # name
 % wrd # type
 % 1 # length
 [ 1	]
-% . # table_name
+#SELECT count(NULL);
+% .L1 # table_name
 % L1 # name
 % wrd # type
 % 1 # length
 [ 0	]
-% . # table_name
+#SELECT avg(1);
+% .L1 # table_name
 % L1 # name
 % double # type
 % 24 # length
 [ 1	]
-% . # table_name
+#SELECT avg(cast (NULL as int));
+% .L1 # table_name
 % L1 # name
 % double # type
 % 24 # length
 [ NULL	]
-% . # table_name
+#SELECT sum(1);
+% .L1 # table_name
 % L1 # name
 % bigint # type
 % 1 # length
 [ 1	]
-% . # table_name
+#SELECT sum(cast (NULL as int));
+% .L1 # table_name
 % L1 # name
 % bigint # type
 % 20 # length
 [ NULL	]
-% . # table_name
+#SELECT max(1);
+% .L1 # table_name
 % L1 # name
 % tinyint # type
 % 1 # length
 [ 1	]
-% . # table_name
+#SELECT max(cast (NULL as int));
+% .L1 # table_name
 % L1 # name
 % int # type
 % 11 # length
 [ NULL	]
-% . # table_name
+#SELECT min(1);
+% .L1 # table_name
 % L1 # name
 % tinyint # type
 % 1 # length
 [ 1	]
-% . # table_name
+#SELECT min(cast (NULL as int));
+% .L1 # table_name
 % L1 # name
 % int # type
 % 11 # length

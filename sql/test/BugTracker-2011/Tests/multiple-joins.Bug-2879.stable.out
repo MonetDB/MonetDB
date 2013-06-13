@@ -75,8 +75,8 @@ Ready.
 #          Triples AS T_3
 #        ON ( T_2.p = '<http://example/q1>'
 #         AND T_3.p = '<http://example/q2>'
-#         AND T_2.s = T_3.s
-% .m_1,	.m_1,	.m_1,	.m_1 # table_name
+#         AND T_2.s = T_3.s )
+% .L,	.L,	.L,	.L # table_name
 % v_1,	v_2,	v_3,	v_4 # name
 % varchar,	varchar,	varchar,	varchar # type
 % 18,	18,	20,	20 # length

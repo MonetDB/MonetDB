@@ -14,11 +14,8 @@ stdout of test 'cast_to_interval.SF-1019079` in directory 'sql/test/BugDay_2005-
 Ready.
 
 
-# 11:50:40 >  
-# 11:50:40 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < cast_to_interval.SF-1019079.sql
-# 11:50:40 >  
-
-% . # table_name
+#select cast('0' as interval year);
+% .L # table_name
 % single_value # name
 % month_interval # type
 % 0 # length

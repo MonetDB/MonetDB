@@ -104,25 +104,27 @@ Ready.
 % 1,	1 # length
 [ 0,	1	]
 #SELECT count(*) FROM
-#( SELECT count(*) AS mat       FROM GetTrace() WHERE stmt LIKE '% := mat.%'       ) as m,
-#( SELECT count(*) AS mat_slice FROM GetTrace() WHERE stmt LIKE '% := mat.slice(%' ) as ms
-#WHERE ( mat = 0 AND mat_slice = 0 ) OR ( mat > 0 AND mat_slice > 0 );
-% .m # table_name
+#( SELECT count(*) AS mat       FROM TheTrace WHERE stmt LIKE '% := mat.%'       ) as m,
+#( SELECT count(*) AS mat_slice FROM TheTrace WHERE stmt LIKE '% := mat.slice(%' ) as ms,
+#( SELECT count(*) AS mat_pack  FROM TheTrace WHERE stmt LIKE '% := mat.pack%(%' ) as mp
+#WHERE ( mat = 0 AND mat_slice+mat_pack = 0 ) OR ( mat > 0 AND mat_slice+mat_pack > 0 );
+% .L4 # table_name
 % L4 # name
 % wrd # type
 % 1 # length
 [ 1	]
 #TRACE select cast(x as string)||'-bla-'||cast(y as string) from slice_test limit 1;
-% sys. # table_name
+% sys.L # table_name
 % concat_concat_x # name
 % varchar # type
 % 7 # length
 [ "0-bla-1"	]
 #SELECT count(*) FROM
-#( SELECT count(*) AS mat       FROM GetTrace() WHERE stmt LIKE '% := mat.%'       ) as m,
-#( SELECT count(*) AS mat_slice FROM GetTrace() WHERE stmt LIKE '% := mat.slice(%' ) as ms
-#WHERE ( mat = 0 AND mat_slice = 0 ) OR ( mat > 0 AND mat_slice > 0 );
-% .m # table_name
+#( SELECT count(*) AS mat       FROM TheTrace WHERE stmt LIKE '% := mat.%'       ) as m,
+#( SELECT count(*) AS mat_slice FROM TheTrace WHERE stmt LIKE '% := mat.slice(%' ) as ms,
+#( SELECT count(*) AS mat_pack  FROM TheTrace WHERE stmt LIKE '% := mat.pack%(%' ) as mp
+#WHERE ( mat = 0 AND mat_slice+mat_pack = 0 ) OR ( mat > 0 AND mat_slice+mat_pack > 0 );
+% .L4 # table_name
 % L4 # name
 % wrd # type
 % 1 # length

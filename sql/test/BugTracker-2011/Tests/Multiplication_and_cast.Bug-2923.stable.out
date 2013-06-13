@@ -27,7 +27,7 @@ Ready.
 #insert into test234 (t) values (-1.21);
 [ 1	]
 #select cast((t * 100) as integer) from test234;
-% sys. # table_name
+% sys.L # table_name
 % sql_mul_t # name
 % int # type
 % 4 # length

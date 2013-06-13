@@ -33,72 +33,93 @@ Ready.
 # 11:50:12 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < session_vars.sql
 # 11:50:12 >  
 
-% . # table_name
+#select debug;
+% .L # table_name
 % single_value # name
 % int # type
 % 1 # length
 [ 0	]
-% . # table_name
+#select current_schema;
+% .L # table_name
 % single_value # name
 % varchar # type
 % 3 # length
 [ "sys"	]
-% . # table_name
+#select current_user;
+% .L # table_name
 % single_value # name
 % varchar # type
 % 7 # length
 [ "monetdb"	]
-% . # table_name
+#select current_role;
+% .L # table_name
 % single_value # name
 % varchar # type
 % 7 # length
 [ "monetdb"	]
-% . # table_name
+#declare test_nr int;
+#declare test_str varchar(1024);
+#declare test_boolean boolean;
+#set test_nr = 1;
+#set test_str = 'help';
+#set test_boolean = true;
+#select test_nr;
+% .L # table_name
 % single_value # name
 % int # type
 % 1 # length
 [ 1	]
-% . # table_name
+#select test_str;
+% .L # table_name
 % single_value # name
 % varchar # type
 % 4 # length
 [ "help"	]
-% . # table_name
+#select test_boolean;
+% .L # table_name
 % single_value # name
 % boolean # type
 % 5 # length
 [ true	]
-% . # table_name
+#select @debug;
+% .L # table_name
 % single_value # name
 % int # type
 % 1 # length
 [ 0	]
-% . # table_name
+#select @current_schema;
+% .L # table_name
 % single_value # name
 % varchar # type
 % 3 # length
 [ "sys"	]
-% . # table_name
+#select @"current_user";
+% .L # table_name
 % single_value # name
 % varchar # type
 % 7 # length
 [ "monetdb"	]
-% . # table_name
+#select @"current_role";
+% .L # table_name
 % single_value # name
 % varchar # type
 % 7 # length
 [ "monetdb"	]
-% . # table_name
+#set test_str = 1;
+#select @test_nr;
+% .L # table_name
 % single_value # name
 % int # type
 % 1 # length
 [ 1	]
-% . # table_name
+#select @test_str;
+% .L # table_name
 % single_value # name
 % varchar # type
 % 1 # length
 [ "1"	]
-% . # table_name
+#select @test_boolean;
+% .L # table_name
 % single_value # name
 % boolean # type
 % 5 # length

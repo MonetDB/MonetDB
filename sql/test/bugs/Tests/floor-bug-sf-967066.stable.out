@@ -24,7 +24,8 @@ Ready.
 # 11:55:37 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35185  < floor-bug-sf-967066.sql
 # 11:55:37 >  
 
-% . # table_name
+#select floor(3.5);
+% .L # table_name
 % floor_single_value # name
 % real # type
 % 15 # length

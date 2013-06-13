@@ -10,13 +10,13 @@ stderr of test 'drop_column_alter_table.SF-1114557` in directory 'sql/test/BugDa
 # 14:21:46 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=40415  < drop_column_alter_table.SF-1114557.sql
 # 14:21:46 >  
 
-MAPI  = monetdb@sofia:39182
+MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
 QUERY = ALTER TABLE t1114557 DROP garbage;
 ERROR = !ALTER TABLE: no such column 'garbage'
-MAPI  = monetdb@sofia:39182
+MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
 QUERY = ALTER TABLE t1114557 DROP id;
 ERROR = !ALTER TABLE: cannot drop column 'id': table needs at least one column
-MAPI  = monetdb@sofia:39182
+MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
 QUERY = ALTER TABLE t1114557 DROP name;
 ERROR = !ALTER TABLE: no such column 'name'
 

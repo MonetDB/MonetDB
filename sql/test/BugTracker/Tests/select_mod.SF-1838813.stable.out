@@ -23,12 +23,14 @@ Ready.
 # 00:15:33 >  mclient -lsql -umonetdb -Pmonetdb --host=koala --port=31634 
 # 00:15:33 >  
 
-% . # table_name
+#select 5 % 3;
+% .L # table_name
 % mod_single_value # name
 % tinyint # type
 % 1 # length
 [ 2	]
-% . # table_name
+#select 5.0 % 3;
+% .L # table_name
 % mod_single_value # name
 % decimal # type
 % 6 # length

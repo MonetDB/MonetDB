@@ -24,31 +24,31 @@ Ready.
 # 17:32:49 >  
 
 #select count(*) from DWDATE;
-% sys.dwdate # table_name
+% sys.L1 # table_name
 % L1 # name
 % wrd # type
 % 4 # length
 [ 2556	]
 #select count(*) from SUPPLIER;
-% sys.supplier # table_name
+% sys.L1 # table_name
 % L1 # name
 % wrd # type
 % 3 # length
 [ 100	]
 #select count(*) from CUSTOMER;
-% sys.customer # table_name
+% sys.L1 # table_name
 % L1 # name
 % wrd # type
 % 3 # length
 [ 300	]
 #select count(*) from PART;
-% sys.part # table_name
+% sys.L1 # table_name
 % L1 # name
 % wrd # type
 % 4 # length
 [ 2000	]
 #select count(*) from LINEORDER;
-% sys.lineorder # table_name
+% sys.L1 # table_name
 % L1 # name
 % wrd # type
 % 5 # length

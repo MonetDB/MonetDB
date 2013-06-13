@@ -79,7 +79,7 @@ stderr of test 'insert_values.SF-1578838` in directory 'sql/test/BugTracker` its
 # 19:33:23 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=33470 
 # 19:33:23 >  
 
-MAPI  = monetdb@sofia:39182
+MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
 QUERY = INSERT INTO "examines" ("docID", "vicID") VALUES
         (
         (
@@ -94,7 +94,7 @@ QUERY = INSERT INTO "examines" ("docID", "vicID") VALUES
         )
         );
 ERROR = !cardinality violation (2>1)
-MAPI  = monetdb@sofia:39182
+MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
 QUERY = INSERT INTO "timelines" ("vicID", "time", "event") VALUES
         (
         (

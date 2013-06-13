@@ -14,17 +14,14 @@ stdout of test 'cast_interval2time.SF-1488247` in directory 'sql/test/BugTracker
 Ready.
 
 
-# 11:54:14 >  
-# 11:54:14 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35185  < cast_interval2time.SF-1488247.sql
-# 11:54:14 >  
-
-% . # table_name
+#select interval '60' second;
+% .L # table_name
 % single_value # name
 % sec_interval # type
 % 0 # length
 [ 60.000	]
 #select cast(interval '60' second as time);
-% . # table_name
+% .L # table_name
 % single_value # name
 % time # type
 % 8 # length

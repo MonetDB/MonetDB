@@ -27,7 +27,8 @@ Ready.
 
 [ 2	]
 [ 2	]
-% sys.a1,	sys.b1 # table_name
+#SELECT a1.name as x, b1.name as y FROM a1,b1 WHERE a1.name LIKE b1.name;
+% sys.L,	sys.L # table_name
 % x,    y # name
 % varchar,      varchar # type
 % 1,    1 # length

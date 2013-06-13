@@ -24,12 +24,14 @@ Ready.
 # 11:55:35 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35185  < date_parsing-bug-sf-960166.sql
 # 11:55:35 >  
 
-% . # table_name
+#select current_date = date '2004-05-25';
+% .L # table_name
 % =_current_date # name
 % boolean # type
 % 5 # length
 [ false	]
-% . # table_name
+#select current_date = '2004-05-25';
+% .L # table_name
 % =_current_date # name
 % boolean # type
 % 5 # length

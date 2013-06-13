@@ -24,7 +24,16 @@ Ready.
 # 17:59:18 >  mclient -lsql -umonetdb -Pmonetdb --host=ottar --port=33546 
 # 17:59:18 >  
 
-% . # table_name
+# 12:13:11 >  
+# 12:13:11 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-23209" "--port=33225"
+# 12:13:11 >  
+
+#start transaction;
+#create table test (
+#x varchar(64)
+#);
+#select xmlelement(name a, xmlagg(xmlelement(name b, x))) from test;
+% .L1 # table_name
 % element_a # name
 % xml # type
 % 5 # length

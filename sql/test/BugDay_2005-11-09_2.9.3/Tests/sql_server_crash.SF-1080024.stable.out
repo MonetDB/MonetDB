@@ -24,7 +24,8 @@ Ready.
 # 11:50:54 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < sql_server_crash.SF-1080024.sql
 # 11:50:54 >  
 
-% . # table_name
+#select NULLIF(NULLIF('first', 'second'), 'first');
+% .L # table_name
 % isnull_=_single_value # name
 % char # type
 % 5 # length

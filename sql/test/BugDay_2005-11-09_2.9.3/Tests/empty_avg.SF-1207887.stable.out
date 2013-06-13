@@ -25,7 +25,13 @@ Ready.
 # 11:50:58 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < empty_avg.SF-1207887.sql
 # 11:50:58 >  
 
-% sys. # table_name
+# 11:44:26 >  
+# 11:44:26 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-23209" "--port=33225"
+# 11:44:26 >  
+
+#create table sf1207887 (field decimal(3,1));
+#select avg(field) from sf1207887;
+% sys.L1 # table_name
 % L1 # name
 % double # type
 % 24 # length

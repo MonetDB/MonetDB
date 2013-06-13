@@ -53,7 +53,7 @@ Ready.
 #	p_brand,
 #	p_type,
 #	p_size;
-% sys.part,	sys.part,	sys.part,	sys.partsupp # table_name
+% sys.part,	sys.part,	sys.part,	sys.L4 # table_name
 % p_brand,	p_type,	p_size,	supplier_cnt # name
 % varchar,	varchar,	int,	wrd # type
 % 8,	25,	2,	1 # length

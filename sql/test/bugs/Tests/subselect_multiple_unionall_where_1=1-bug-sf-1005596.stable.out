@@ -24,7 +24,8 @@ Ready.
 # 11:55:40 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35185  < subselect_multiple_unionall_where_1=1-bug-sf-1005596.sql
 # 11:55:40 >  
 
-% . # table_name
+#SELECT 1 AS number;
+% .L # table_name
 % number # name
 % tinyint # type
 % 1 # length
@@ -52,7 +53,7 @@ Ready.
 % char,	varchar,	varchar,	char,	char,	char,	char,	char,	char,	char # type
 % 4,	0,	0,	12,	0,	0,	0,	0,	5,	6 # length
 #SELECT 2 AS number;
-% . # table_name
+% .L # table_name
 % number # name
 % tinyint # type
 % 1 # length
@@ -62,7 +63,7 @@ Ready.
 % char,	varchar,	varchar,	char,	char,	char,	char,	char,	char,	char # type
 % 4,	0,	0,	20,	0,	0,	0,	0,	5,	6 # length
 #SELECT 3 AS number;
-% . # table_name
+% .L # table_name
 % number # name
 % tinyint # type
 % 1 # length

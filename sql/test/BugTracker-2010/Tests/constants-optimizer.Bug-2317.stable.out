@@ -25,7 +25,7 @@ Ready.
 
 #set optimizer='dictionary_pipe';
 #select optimizer;
-% . # table_name
+% .L # table_name
 % single_value # name
 % varchar # type
 % 15 # length

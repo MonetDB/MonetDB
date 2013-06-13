@@ -14,16 +14,14 @@ stdout of test 'string_quotes.SF-919539` in directory 'sql/test/BugDay_2005-10-0
 Ready.
 
 
-# 11:50:17 >  
-# 11:50:17 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < string_quotes.SF-919539.sql
-# 11:50:17 >  
-
-% . # table_name
+#select 'a' 'a';
+% .L # table_name
 % single_value # name
 % char # type
 % 2 # length
 [ "aa"	]
-% . # table_name
+#select 'a''a';
+% .L # table_name
 % single_value # name
 % char # type
 % 3 # length

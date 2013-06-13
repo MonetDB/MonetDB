@@ -1235,7 +1235,8 @@ Ready.
 [ 1139,	399,	1,	3,	9,	19,	39,	139,	1139,	1139,	1139,	78,	79,	"VRAAAA",	"JPAAAA",	"VVVVxx"	]
 [ 2293,	400,	1,	1,	3,	13,	93,	293,	293,	2293,	2293,	186,	187,	"FKAAAA",	"KPAAAA",	"AAAAxx"	]
 [ 6125,	401,	1,	1,	5,	5,	25,	125,	125,	1125,	6125,	50,	51,	"PBAAAA",	"LPAAAA",	"HHHHxx"	]
-% sys.t1,	sys.t1,	sys.t1,	sys.t1,	sys.t1,	sys.t1,	sys.t1,	sys.t1,	sys.t1,	sys.t1,	sys.t1,	sys.t1,	sys.t1,	sys.t1,	sys.t1,	sys.t1,	sys.t2,	sys.t2,	sys.t2,	sys.t2,	sys.t2,	sys.t2,	sys.t2,	sys.t2,	sys.t2,	sys.t2,	sys.t2,	sys.t2,	sys.t2,	sys.t2,	sys.t2,	sys.t2 # table_name
+#select t1.*, t2.unique1 AS t2unique1, t2.unique2 AS t2unique2, t2.two AS t2two, t2.four AS t2four, t2.ten AS t2ten, t2.twenty AS t2twenty, t2.hundred AS t2hundred, t2.thousand AS t2thousand, t2.twothousand AS t2twothousand, t2.fivethous AS t2fivethous, t2.tenthous AS t2tenthous, t2.odd AS t2odd, t2.even AS t2even, t2.stringu1 AS t2stringu1, t2.stringu2 AS t2stringu2, t2.string4 AS t2string4  from tenk1 t1, tenk1 t2 where (t1.unique2 = t2.unique2) and (t2.unique2 < 1000);
+% sys.t1,	sys.t1,	sys.t1,	sys.t1,	sys.t1,	sys.t1,	sys.t1,	sys.t1,	sys.t1,	sys.t1,	sys.t1,	sys.t1,	sys.t1,	sys.t1,	sys.t1,	sys.t1,	sys.L,	sys.L,	sys.L,	sys.L,	sys.L,	sys.L,	sys.L,	sys.L,	sys.L,	sys.L,	sys.L,	sys.L,	sys.L,	sys.L,	sys.L,	sys.L # table_name
 % unique1,	unique2,	two,	four,	ten,	twenty,	hundred,	thousand,	twothousand,	fivethous,	tenthous,	odd,	even,	stringu1,	stringu2,	string4,	t2unique1,	t2unique2,	t2two,	t2four,	t2ten,	t2twenty,	t2hundred,	t2thousand,	t2twothousand,	t2fivethous,	t2tenthous,	t2odd,	t2even,	t2stringu1,	t2stringu2,	t2string4 # name
 % int,	int,	int,	int,	int,	int,	int,	int,	int,	int,	int,	int,	int,	char,	char,	char,	int,	int,	int,	int,	int,	int,	int,	int,	int,	int,	int,	int,	int,	char,	char,	char # type
 % 4,	3,	1,	1,	1,	2,	2,	3,	4,	4,	4,	3,	3,	16,	16,	16,	4,	3,	1,	1,	1,	2,	2,	3,	4,	4,	4,	3,	3,	16,	16,	16 # length
@@ -2239,7 +2240,8 @@ Ready.
 [ 1582,	997,	0,	2,	2,	2,	82,	582,	1582,	1582,	1582,	164,	165,	"WIAAAA",	"JMBAAA",	"HHHHxx",	1582,	997,	0,	2,	2,	2,	82,	582,	1582,	1582,	1582,	164,	165,	"WIAAAA",	"JMBAAA",	"HHHHxx"	]
 [ 6643,	998,	1,	3,	3,	3,	43,	643,	643,	1643,	6643,	86,	87,	"NVAAAA",	"KMBAAA",	"OOOOxx",	6643,	998,	1,	3,	3,	3,	43,	643,	643,	1643,	6643,	86,	87,	"NVAAAA",	"KMBAAA",	"OOOOxx"	]
 [ 2238,	999,	0,	2,	8,	18,	38,	238,	238,	2238,	2238,	76,	77,	"CIAAAA",	"LMBAAA",	"VVVVxx",	2238,	999,	0,	2,	8,	18,	38,	238,	238,	2238,	2238,	76,	77,	"CIAAAA",	"LMBAAA",	"VVVVxx"	]
-% sys.t,	sys.t,	sys.t,	sys.t,	sys.t,	sys.t,	sys.t,	sys.t,	sys.t,	sys.t,	sys.t,	sys.t,	sys.t,	sys.t,	sys.t,	sys.t,	sys.b,	sys.b,	sys.b,	sys.b,	sys.b,	sys.b,	sys.b,	sys.b,	sys.b,	sys.b,	sys.b,	sys.b,	sys.b,	sys.b,	sys.b,	sys.b # table_name
+#select t.*,B.unique1 AS Bunique1,B.unique2 AS Bunique2,B.two AS Btwo,B.four AS Bfour,B.ten AS Bten,B.twenty AS Btwenty,B.hundred AS Bhundred,B.thousand AS Bthousand,B.twothousand AS Btwothousand,B.fivethous AS Bfivethous,B.tenthous AS Btenthous,B.odd AS Bodd,B.even AS Beven,B.stringu1 AS Bstringu1,B.stringu2 AS Bstringu2,B.string4 AS Bstring4  from tenk1 t, Bprime B where t.unique2 = B.unique2;
+% sys.t,	sys.t,	sys.t,	sys.t,	sys.t,	sys.t,	sys.t,	sys.t,	sys.t,	sys.t,	sys.t,	sys.t,	sys.t,	sys.t,	sys.t,	sys.t,	sys.L,	sys.L,	sys.L,	sys.L,	sys.L,	sys.L,	sys.L,	sys.L,	sys.L,	sys.L,	sys.L,	sys.L,	sys.L,	sys.L,	sys.L,	sys.L # table_name
 % unique1,	unique2,	two,	four,	ten,	twenty,	hundred,	thousand,	twothousand,	fivethous,	tenthous,	odd,	even,	stringu1,	stringu2,	string4,	bunique1,	bunique2,	btwo,	bfour,	bten,	btwenty,	bhundred,	bthousand,	btwothousand,	bfivethous,	btenthous,	bodd,	beven,	bstringu1,	bstringu2,	bstring4 # name
 % int,	int,	int,	int,	int,	int,	int,	int,	int,	int,	int,	int,	int,	char,	char,	char,	int,	int,	int,	int,	int,	int,	int,	int,	int,	int,	int,	int,	int,	char,	char,	char # type
 % 4,	3,	1,	1,	1,	2,	2,	3,	4,	4,	4,	3,	3,	16,	16,	16,	4,	3,	1,	1,	1,	2,	2,	3,	4,	4,	4,	3,	3,	16,	16,	16 # length
@@ -3243,7 +3245,8 @@ Ready.
 [ 1582,	997,	0,	2,	2,	2,	82,	582,	1582,	1582,	1582,	164,	165,	"WIAAAA",	"JMBAAA",	"HHHHxx",	1582,	997,	0,	2,	2,	2,	82,	582,	1582,	1582,	1582,	164,	165,	"WIAAAA",	"JMBAAA",	"HHHHxx"	]
 [ 6643,	998,	1,	3,	3,	3,	43,	643,	643,	1643,	6643,	86,	87,	"NVAAAA",	"KMBAAA",	"OOOOxx",	6643,	998,	1,	3,	3,	3,	43,	643,	643,	1643,	6643,	86,	87,	"NVAAAA",	"KMBAAA",	"OOOOxx"	]
 [ 2238,	999,	0,	2,	8,	18,	38,	238,	238,	2238,	2238,	76,	77,	"CIAAAA",	"LMBAAA",	"VVVVxx",	2238,	999,	0,	2,	8,	18,	38,	238,	238,	2238,	2238,	76,	77,	"CIAAAA",	"LMBAAA",	"VVVVxx"	]
-% sys.t1,	sys.t1,	sys.t1,	sys.t1,	sys.t1,	sys.t1,	sys.t1,	sys.t1,	sys.t1,	sys.t1,	sys.t1,	sys.t1,	sys.t1,	sys.t1,	sys.t1,	sys.t1,	sys.o,	sys.o,	sys.o,	sys.o,	sys.o,	sys.o,	sys.o,	sys.o,	sys.o,	sys.o,	sys.o,	sys.o,	sys.o,	sys.o,	sys.o,	sys.o # table_name
+#select t1.*,o.unique1 AS ounique1,o.unique2 AS ounique2,o.two AS otwo,o.four AS ofour,o.ten AS oten,o.twenty AS otwenty,o.hundred AS ohundred,o.thousand AS othousand,o.twothousand AS otwothousand,o.fivethous AS ofivethous,o.tenthous AS otenthous,o.odd AS oodd, o.even AS oeven,o.stringu1 AS ostringu1,o.stringu2 AS ostringu2,o.string4 AS ostring4  from onek o, tenk1 t1, tenk1 t2 where (o.unique2 = t1.unique2) and (t1.unique2 = t2.unique2) and (t1.unique2 < 1000) and (t2.unique2 < 1000);
+% sys.t1,	sys.t1,	sys.t1,	sys.t1,	sys.t1,	sys.t1,	sys.t1,	sys.t1,	sys.t1,	sys.t1,	sys.t1,	sys.t1,	sys.t1,	sys.t1,	sys.t1,	sys.t1,	sys.L,	sys.L,	sys.L,	sys.L,	sys.L,	sys.L,	sys.L,	sys.L,	sys.L,	sys.L,	sys.L,	sys.L,	sys.L,	sys.L,	sys.L,	sys.L # table_name
 % unique1,	unique2,	two,	four,	ten,	twenty,	hundred,	thousand,	twothousand,	fivethous,	tenthous,	odd,	even,	stringu1,	stringu2,	string4,	ounique1,	ounique2,	otwo,	ofour,	oten,	otwenty,	ohundred,	othousand,	otwothousand,	ofivethous,	otenthous,	oodd,	oeven,	ostringu1,	ostringu2,	ostring4 # name
 % int,	int,	int,	int,	int,	int,	int,	int,	int,	int,	int,	int,	int,	char,	char,	char,	int,	int,	int,	int,	int,	int,	int,	int,	int,	int,	int,	int,	int,	char,	char,	char # type
 % 4,	3,	1,	1,	1,	2,	2,	3,	4,	4,	4,	3,	3,	16,	16,	16,	3,	3,	1,	1,	1,	2,	1,	2,	3,	3,	3,	2,	2,	16,	16,	16 # length
@@ -15255,7 +15258,8 @@ Ready.
 [ 744,	997,	0,	0,	4,	4,	4,	44,	144,	244,	744,	8,	9,	"QCAAAA",	"JMBAAA",	"HHHHxx"	]
 [ 0,	998,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	1,	"AAAAAA",	"KMBAAA",	"OOOOxx"	]
 [ 278,	999,	0,	2,	8,	18,	8,	78,	78,	278,	278,	16,	17,	"SKAAAA",	"LMBAAA",	"VVVVxx"	]
-% sys.tenk1 # table_name
+#select MIN(unique2) as x  from tenk1;
+% sys.L1 # table_name
 % x # name
 % int # type
 % 1 # length

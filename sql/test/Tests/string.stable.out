@@ -37,7 +37,8 @@ Ready.
 [ "test",	""	]
 [ "",	""	]
 [ " Test ",	""	]
-% sys.,	sys.stringtest # table_name
+#select length(str), str from stringtest;
+% sys.L,	sys.stringtest # table_name
 % length_str,	str # name
 % int,	varchar # type
 % 1,	6 # length
@@ -45,7 +46,8 @@ Ready.
 [ 4,	"test"	]
 [ 0,	""	]
 [ 5,	" Test "	]
-% sys.,	sys.stringtest # table_name
+#select substring(str from 2 for 8), str2 from stringtest;
+% sys.L,	sys.stringtest # table_name
 % substring_str,	str2 # name
 % varchar,	varchar # type
 % 5,	4 # length
@@ -53,7 +55,8 @@ Ready.
 [ "est",	""	]
 [ "",	""	]
 [ "Test ",	""	]
-% sys.,	sys.stringtest # table_name
+#select substring(str, 2, 8), str2 from stringtest;
+% sys.L,	sys.stringtest # table_name
 % substring_str,	str2 # name
 % varchar,	varchar # type
 % 5,	4 # length
@@ -61,7 +64,8 @@ Ready.
 [ "est",	""	]
 [ "",	""	]
 [ "Test ",	""	]
-% sys.,	sys.stringtest # table_name
+#select substring(str from 2 for 1), str2 from stringtest;
+% sys.L,	sys.stringtest # table_name
 % substring_str,	str2 # name
 % varchar,	varchar # type
 % 1,	4 # length
@@ -69,7 +73,8 @@ Ready.
 [ "e",	""	]
 [ "",	""	]
 [ "T",	""	]
-% sys.,	sys.stringtest # table_name
+#select substring(str, 2, 1), str2 from stringtest;
+% sys.L,	sys.stringtest # table_name
 % substring_str,	str2 # name
 % varchar,	varchar # type
 % 1,	4 # length
@@ -77,7 +82,8 @@ Ready.
 [ "e",	""	]
 [ "",	""	]
 [ "T",	""	]
-% sys.,	sys.stringtest # table_name
+#select substring(str from 2), str2 from stringtest;
+% sys.L,	sys.stringtest # table_name
 % substring_str,	str2 # name
 % varchar,	varchar # type
 % 5,	4 # length
@@ -85,7 +91,8 @@ Ready.
 [ "est",	""	]
 [ "",	""	]
 [ "Test ",	""	]
-% sys.,	sys.stringtest # table_name
+#select substring(str, 2), str2 from stringtest;
+% sys.L,	sys.stringtest # table_name
 % substring_str,	str2 # name
 % varchar,	varchar # type
 % 5,	4 # length
@@ -93,7 +100,8 @@ Ready.
 [ "est",	""	]
 [ "",	""	]
 [ "Test ",	""	]
-% sys.,	sys.stringtest,	sys.stringtest # table_name
+#select position(str in str2), str, str2 from stringtest;
+% sys.L,	sys.stringtest,	sys.stringtest # table_name
 % locate_str,	str,	str2 # name
 % int,	varchar,	varchar # type
 % 1,	6,	4 # length
@@ -101,7 +109,8 @@ Ready.
 [ 0,	"test",	""	]
 [ 1,	"",	""	]
 [ 0,	" Test ",	""	]
-% sys.,	sys.stringtest,	sys.stringtest # table_name
+#select locate(str,str2), str, str2 from stringtest;
+% sys.L,	sys.stringtest,	sys.stringtest # table_name
 % locate_str,	str,	str2 # name
 % int,	varchar,	varchar # type
 % 1,	6,	4 # length
@@ -109,7 +118,8 @@ Ready.
 [ 0,	"test",	""	]
 [ 1,	"",	""	]
 [ 0,	" Test ",	""	]
-% sys.,	sys.stringtest # table_name
+#select ascii(str), str from stringtest;
+% sys.L,	sys.stringtest # table_name
 % ascii_str,	str # name
 % int,	varchar # type
 % 3,	6 # length
@@ -117,7 +127,8 @@ Ready.
 [ 116,	"test"	]
 [ NULL,	""	]
 [ 32,	" Test "	]
-% sys.,	sys.stringtest # table_name
+#select code(ascii(str)), str from stringtest;
+% sys.L,	sys.stringtest # table_name
 % code_ascii_str,	str # name
 % char,	varchar # type
 % 0,	6 # length
@@ -125,7 +136,8 @@ Ready.
 [ "t",	"test"	]
 [ NULL,	""	]
 [ " ",	" Test "	]
-% sys.,	sys.stringtest # table_name
+#select left(str,3), str from stringtest;
+% sys.L,	sys.stringtest # table_name
 % left_str,	str # name
 % varchar,	varchar # type
 % 3,	6 # length
@@ -133,7 +145,8 @@ Ready.
 [ "tes",	"test"	]
 [ "",	""	]
 [ " Te",	" Test "	]
-% sys.,	sys.stringtest # table_name
+#select right(str,3), str from stringtest;
+% sys.L,	sys.stringtest # table_name
 % right_str,	str # name
 % varchar,	varchar # type
 % 3,	6 # length
@@ -141,7 +154,8 @@ Ready.
 [ "est",	"test"	]
 [ "",	""	]
 [ "st ",	" Test "	]
-% sys.,	sys.stringtest # table_name
+#select lower(str), str from stringtest;
+% sys.L,	sys.stringtest # table_name
 % lower_str,	str # name
 % varchar,	varchar # type
 % 6,	6 # length
@@ -149,7 +163,8 @@ Ready.
 [ "test",	"test"	]
 [ "",	""	]
 [ " test ",	" Test "	]
-% sys.,	sys.stringtest # table_name
+#select lcase(str), str from stringtest;
+% sys.L,	sys.stringtest # table_name
 % lcase_str,	str # name
 % varchar,	varchar # type
 % 6,	6 # length
@@ -157,7 +172,8 @@ Ready.
 [ "test",	"test"	]
 [ "",	""	]
 [ " test ",	" Test "	]
-% sys.,	sys.stringtest # table_name
+#select upper(str), str from stringtest;
+% sys.L,	sys.stringtest # table_name
 % upper_str,	str # name
 % varchar,	varchar # type
 % 6,	6 # length
@@ -165,7 +181,8 @@ Ready.
 [ "TEST",	"test"	]
 [ "",	""	]
 [ " TEST ",	" Test "	]
-% sys.,	sys.stringtest # table_name
+#select ucase(str), str from stringtest;
+% sys.L,	sys.stringtest # table_name
 % ucase_str,	str # name
 % varchar,	varchar # type
 % 6,	6 # length
@@ -173,7 +190,8 @@ Ready.
 [ "TEST",	"test"	]
 [ "",	""	]
 [ " TEST ",	" Test "	]
-% sys.,	sys.stringtest # table_name
+#select trim(str), str from stringtest;
+% sys.L,	sys.stringtest # table_name
 % trim_str,	str # name
 % varchar,	varchar # type
 % 4,	6 # length
@@ -181,7 +199,8 @@ Ready.
 [ "test",	"test"	]
 [ "",	""	]
 [ "Test",	" Test "	]
-% sys.,	sys.stringtest # table_name
+#select ltrim(str), str from stringtest;
+% sys.L,	sys.stringtest # table_name
 % ltrim_str,	str # name
 % varchar,	varchar # type
 % 5,	6 # length
@@ -189,7 +208,8 @@ Ready.
 [ "test",	"test"	]
 [ "",	""	]
 [ "Test ",	" Test "	]
-% sys.,	sys.stringtest # table_name
+#select rtrim(str), str from stringtest;
+% sys.L,	sys.stringtest # table_name
 % rtrim_str,	str # name
 % varchar,	varchar # type
 % 5,	6 # length
@@ -197,7 +217,8 @@ Ready.
 [ "test",	"test"	]
 [ "",	""	]
 [ " Test",	" Test "	]
-% sys.,	sys.stringtest,	sys.stringtest # table_name
+#select insert(str,2,4,str2), str, str2 from stringtest;
+% sys.L,	sys.stringtest,	sys.stringtest # table_name
 % insert_str,	str,	str2 # name
 % varchar,	varchar,	varchar # type
 % 4,	6,	4 # length
@@ -205,7 +226,8 @@ Ready.
 [ "te",	"test",	""	]
 [ "",	"",	""	]
 [ " T",	" Test ",	""	]
-% sys.,	sys.stringtest,	sys.stringtest # table_name
+#select replace(str,'t',str), str, str2 from stringtest;
+% sys.L,	sys.stringtest,	sys.stringtest # table_name
 % replace_str,	str,	str2 # name
 % varchar,	varchar,	varchar # type
 % 11,	6,	4 # length
@@ -213,7 +235,8 @@ Ready.
 [ "testestest",	"test",	""	]
 [ "",	"",	""	]
 [ " Tes Test  ",	" Test ",	""	]
-% sys.,	sys.stringtest # table_name
+#select repeat(str,4), str from stringtest;
+% sys.L,	sys.stringtest # table_name
 % repeat_str,	str # name
 % varchar,	varchar # type
 % 24,	6 # length
@@ -221,7 +244,8 @@ Ready.
 [ "testtesttesttest",	"test"	]
 [ "",	""	]
 [ " Test  Test  Test  Test ",	" Test "	]
-% .,	sys.stringtest # table_name
+#select ascii(4), str from stringtest;
+% .L,	sys.stringtest # table_name
 % ascii_single_value,	str # name
 % int,	varchar # type
 % 2,	6 # length
@@ -229,7 +253,8 @@ Ready.
 [ 52,	"test"	]
 [ 52,	""	]
 [ 52,	" Test "	]
-% sys.stringtest,	sys.stringtest,	sys.,	sys.,	sys.,	sys.,	sys. # table_name
+#select str,str2,soundex(str),soundex(str2), editdistance2(soundex(str),soundex(str2)), editdistance(soundex(str),soundex(str2)), difference(str,str2) from stringtest;
+% sys.stringtest,	sys.stringtest,	sys.L,	sys.L,	sys.L,	sys.L,	sys.L # table_name
 % str,	str2,	soundex_str,	soundex_str2,	editdistance2_soundex_str,	editdistance_soundex_str,	difference_str # name
 % varchar,	varchar,	varchar,	varchar,	int,	int,	int # type
 % 6,	4,	4,	4,	1,	1,	1 # length
@@ -238,7 +263,8 @@ Ready.
 [ "",	"",	"",	"",	0,	0,	0	]
 [ " Test ",	"",	" 323",	"",	4,	4,	4	]
 [ 1	]
-% sys.,	sys.stringtest,	sys.stringtest # table_name
+#select levenshtein(str,str2, 1, 2, 3), str, str2 from stringtest;
+% sys.L,	sys.stringtest,	sys.stringtest # table_name
 % levenshtein_str,	str,	str2 # name
 % int,	varchar,	varchar # type
 % 2,	13,	13 # length
@@ -248,7 +274,8 @@ Ready.
 [ 6,	" Test ",	""	]
 [ 12,	"monetdbiscool",	"coolismonetdb"	]
 [ 1	]
-% sys.,	sys.,	sys.stringtest,	sys.stringtest # table_name
+#select qgramnormalize(str) , qgramnormalize(str2), str, str2 from stringtest;
+% sys.L,	sys.L,	sys.stringtest,	sys.stringtest # table_name
 % qgramnormalize_str,	qgramnormalize_str2,	str,	str2 # name
 % varchar,	varchar,	varchar,	varchar # type
 % 16,	13,	17,	18 # length

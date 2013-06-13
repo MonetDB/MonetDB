@@ -24,19 +24,25 @@ Ready.
 # 12:25:51 >  
 
 [ 1	]
-% . # table_name
+#SELECT 2 * q1 AS q FROM A;
+% .L # table_name
 % q # name
 % bigint # type
 % 16 # length
 [ 9135780246913578	]
 [ 1	]
-% . # table_name
+#SELECT SUM(2 * COL1 * COL2)
+#FROM A2;
+% .L1 # table_name
 % L1 # name
 % bigint # type
 % 6 # length
 [ 246864	]
 [ 1	]
-% sys. # table_name
+#SELECT (-COL2+COL1)
+#FROM A
+#WHERE COL3 IS NULL;
+% sys.L # table_name
 % sql_add_sql_neg_col2 # name
 % bigint # type
 % 4 # length

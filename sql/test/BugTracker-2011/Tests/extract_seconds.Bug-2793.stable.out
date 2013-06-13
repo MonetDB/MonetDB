@@ -25,7 +25,7 @@ Ready.
 # 11:57:21 >  
 
 #select extract(second from timestamp '2011-3-10 9:30:42.246');
-% . # table_name
+% .L # table_name
 % second_single_value # name
 % decimal # type
 % 11 # length

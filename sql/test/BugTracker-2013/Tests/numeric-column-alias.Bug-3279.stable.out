@@ -58,7 +58,7 @@ Ready.
 #      D1.c3 as c4,
 #      D1.c4 as c5
 #from SAWITH0 D1;
-% .,	.d1,	.d1,	.d1,	.d1 # table_name
+% .L,	.L,	.L,	.L,	.L # table_name
 % c1,	c2,	c3,	c4,	c5 # name
 % tinyint,	char,	char,	char,	tinyint # type
 % 1,	1,	1,	1,	1 # length
@@ -74,9 +74,9 @@ Ready.
 #      D1.c4 as c5
 #from SAWITH0 D1
 #order by 5, 4, 3, 2;
-% .,	.d1,	.d1,	.d1,	.d1 # table_name
+% .L,	.L,	.L,	.L,	.L # table_name
 % c1,	c2,	c3,	c4,	c5 # name
-% tinyint,	char,	char,	char,	char # type
+% tinyint,	char,	char,	char,	tinyint # type
 % 1,	1,	1,	1,	1 # length
 [ 0,	"a",	"b",	"c",	1	]
 #WITH SAWITH0 AS ( select 'a' as c1,
@@ -90,7 +90,7 @@ Ready.
 #      D1.c4 as a5
 #from SAWITH0 D1
 #order by 5, 4, 3, 2;
-% .,	.d1,	.d1,	.d1,	.d1 # table_name
+% .L,	.L,	.L,	.L,	.L # table_name
 % c1,	a2,	a3,	a4,	a5 # name
 % tinyint,	char,	char,	char,	tinyint # type
 % 1,	1,	1,	1,	1 # length
@@ -107,8 +107,8 @@ Ready.
 #select
 #      D1.c4 as c2,
 #      D1.c2 as c7
-#from  SAWITH1 D1 );
-% .sawith1,	.sawith0 # table_name
+#    from  SAWITH1 D1 );
+% .L,	.L # table_name
 % c2,	c7 # name
 % varchar,	tinyint # type
 % 1,	1 # length
@@ -128,7 +128,7 @@ Ready.
 #      D1.c4 as c200000,
 #      D1.c2 as c7
 #from  SAWITH1 D1 );
-% .sawith1,	.sawith0 # table_name
+% .L,	.L # table_name
 % c200000,	c7 # name
 % varchar,	tinyint # type
 % 1,	1 # length
@@ -143,7 +143,7 @@ Ready.
 #      cast(NULL as  VARCHAR ( 1 ) ) as c2,
 #      D1.c2 as c7
 #from  SAWITH0 D1;
-% .,	.d1 # table_name
+% .L,	.L # table_name
 % c2,	c7 # name
 % varchar,	tinyint # type
 % 0,	1 # length
@@ -157,7 +157,7 @@ Ready.
 #      D1.c2 as c7
 #from  SAWITH0 D1
 #ORDER BY 1;
-% .,	.d1 # table_name
+% .L,	.L # table_name
 % c2,	c7 # name
 % varchar,	tinyint # type
 % 0,	1 # length

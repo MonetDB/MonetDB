@@ -25,11 +25,10 @@ Ready.
 #end main;
 
 
-# 16:07:26 >  
-# 16:07:26 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=36831  -G
-# 16:07:26 >  
-
-% . # table_name
+#create table s ( snr int, sname varchar(30) );
+#create table sp ( snr int, pnr varchar(30) );
+#select 1;
+% .L # table_name
 % single_value # name
 % tinyint # type
 % 1 # length
@@ -38,7 +37,8 @@ Ready.
 % sname # name
 % varchar # type
 % 0 # length
-% . # table_name
+#select 2; 
+% .L # table_name
 % single_value # name
 % tinyint # type
 % 1 # length
@@ -47,7 +47,8 @@ Ready.
 % sname # name
 % varchar # type
 % 0 # length
-% . # table_name
+#select 10;
+% .L # table_name
 % single_value # name
 % tinyint # type
 % 2 # length
@@ -56,7 +57,8 @@ Ready.
 % sname # name
 % varchar # type
 % 0 # length
-% . # table_name
+#select 11;
+% .L # table_name
 % single_value # name
 % tinyint # type
 % 2 # length
@@ -65,7 +67,8 @@ Ready.
 % sname # name
 % varchar # type
 % 0 # length
-% . # table_name
+#select 12;
+% .L # table_name
 % single_value # name
 % tinyint # type
 % 2 # length
@@ -74,7 +77,8 @@ Ready.
 % sname # name
 % varchar # type
 % 0 # length
-% . # table_name
+#select 21;
+% .L # table_name
 % single_value # name
 % tinyint # type
 % 2 # length
@@ -83,7 +87,8 @@ Ready.
 % sname # name
 % varchar # type
 % 0 # length
-% . # table_name
+#select 22;
+% .L # table_name
 % single_value # name
 % tinyint # type
 % 2 # length
@@ -92,7 +97,8 @@ Ready.
 % sname # name
 % varchar # type
 % 0 # length
-% . # table_name
+#select 23;
+% .L # table_name
 % single_value # name
 % tinyint # type
 % 2 # length
@@ -101,7 +107,8 @@ Ready.
 % sname # name
 % varchar # type
 % 0 # length
-% . # table_name
+#select 24;
+% .L # table_name
 % single_value # name
 % tinyint # type
 % 2 # length
@@ -110,7 +117,8 @@ Ready.
 % sname # name
 % varchar # type
 % 0 # length
-% . # table_name
+#select 25;
+% .L # table_name
 % single_value # name
 % tinyint # type
 % 2 # length
@@ -119,7 +127,8 @@ Ready.
 % sname # name
 % varchar # type
 % 0 # length
-% . # table_name
+#select 26;
+% .L # table_name
 % single_value # name
 % tinyint # type
 % 2 # length
@@ -128,7 +137,8 @@ Ready.
 % sname # name
 % varchar # type
 % 0 # length
-% . # table_name
+#select 27;
+% .L # table_name
 % single_value # name
 % tinyint # type
 % 2 # length
@@ -137,7 +147,8 @@ Ready.
 % sname # name
 % varchar # type
 % 0 # length
-% . # table_name
+#select 28;
+% .L # table_name
 % single_value # name
 % tinyint # type
 % 2 # length
@@ -146,7 +157,8 @@ Ready.
 % sname # name
 % varchar # type
 % 0 # length
-% . # table_name
+#select 29;
+% .L # table_name
 % single_value # name
 % tinyint # type
 % 2 # length
@@ -155,7 +167,8 @@ Ready.
 % sname # name
 % varchar # type
 % 0 # length
-% . # table_name
+#select 30;
+% .L # table_name
 % single_value # name
 % tinyint # type
 % 2 # length
@@ -164,7 +177,8 @@ Ready.
 % sname # name
 % varchar # type
 % 0 # length
-% . # table_name
+#select 31;
+% .L # table_name
 % single_value # name
 % tinyint # type
 % 2 # length
@@ -173,7 +187,8 @@ Ready.
 % sname # name
 % varchar # type
 % 0 # length
-% . # table_name
+#select 32;
+% .L # table_name
 % single_value # name
 % tinyint # type
 % 2 # length
@@ -182,7 +197,8 @@ Ready.
 % sname # name
 % varchar # type
 % 0 # length
-% . # table_name
+#select 33;
+% .L # table_name
 % single_value # name
 % tinyint # type
 % 2 # length
@@ -191,7 +207,8 @@ Ready.
 % sname # name
 % varchar # type
 % 0 # length
-% . # table_name
+#select 34;
+% .L # table_name
 % single_value # name
 % tinyint # type
 % 2 # length
@@ -200,7 +217,8 @@ Ready.
 % sname # name
 % varchar # type
 % 0 # length
-% . # table_name
+#select 35;
+% .L # table_name
 % single_value # name
 % tinyint # type
 % 2 # length
@@ -209,7 +227,8 @@ Ready.
 % sname # name
 % varchar # type
 % 0 # length
-% . # table_name
+#select 36;
+% .L # table_name
 % single_value # name
 % tinyint # type
 % 2 # length
@@ -218,7 +237,8 @@ Ready.
 % sname # name
 % varchar # type
 % 0 # length
-% . # table_name
+#select 37;
+% .L # table_name
 % single_value # name
 % tinyint # type
 % 2 # length
@@ -227,7 +247,8 @@ Ready.
 % sname # name
 % varchar # type
 % 0 # length
-% . # table_name
+#select 38;
+% .L # table_name
 % single_value # name
 % tinyint # type
 % 2 # length
@@ -236,7 +257,8 @@ Ready.
 % sname # name
 % varchar # type
 % 0 # length
-% . # table_name
+#select 39;
+% .L # table_name
 % single_value # name
 % tinyint # type
 % 2 # length
@@ -245,7 +267,8 @@ Ready.
 % sname # name
 % varchar # type
 % 0 # length
-% . # table_name
+#select 41;
+% .L # table_name
 % single_value # name
 % tinyint # type
 % 2 # length
@@ -254,7 +277,8 @@ Ready.
 % sname # name
 % varchar # type
 % 0 # length
-% . # table_name
+#select 42;
+% .L # table_name
 % single_value # name
 % tinyint # type
 % 2 # length
@@ -263,7 +287,8 @@ Ready.
 % sname # name
 % varchar # type
 % 0 # length
-% . # table_name
+#select 44;
+% .L # table_name
 % single_value # name
 % tinyint # type
 % 2 # length
@@ -272,7 +297,8 @@ Ready.
 % sname # name
 % varchar # type
 % 0 # length
-% . # table_name
+#select 45;
+% .L # table_name
 % single_value # name
 % tinyint # type
 % 2 # length
@@ -281,7 +307,8 @@ Ready.
 % sname # name
 % varchar # type
 % 0 # length
-% . # table_name
+#select 47;
+% .L # table_name
 % single_value # name
 % tinyint # type
 % 2 # length
@@ -290,7 +317,8 @@ Ready.
 % sname # name
 % varchar # type
 % 0 # length
-% . # table_name
+#select 48;
+% .L # table_name
 % single_value # name
 % tinyint # type
 % 2 # length
@@ -299,7 +327,8 @@ Ready.
 % sname # name
 % varchar # type
 % 0 # length
-% . # table_name
+#select 50;
+% .L # table_name
 % single_value # name
 % tinyint # type
 % 2 # length
@@ -308,12 +337,14 @@ Ready.
 % sname # name
 % varchar # type
 % 0 # length
-% . # table_name
+#select 51;
+% .L # table_name
 % single_value # name
 % tinyint # type
 % 2 # length
 [ 51	]
-% . # table_name
+#select 52;
+% .L # table_name
 % single_value # name
 % tinyint # type
 % 2 # length

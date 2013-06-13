@@ -19,7 +19,8 @@ Ready.
 # 09:59:58 >  
 
 [ 1	]
-% . # table_name
+#select 'the next query causes a "sql_mem.mx:50: sql_ref_dec: Assertion `r->refcnt > 0'' failed."';
+% .L # table_name
 % single_value # name
 % char # type
 % 87 # length

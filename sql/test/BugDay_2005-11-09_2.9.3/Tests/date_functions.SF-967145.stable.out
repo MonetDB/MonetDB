@@ -24,12 +24,14 @@ Ready.
 # 11:50:50 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < date_functions.SF-967145.sql
 # 11:50:50 >  
 
-% . # table_name
+#select current_date - current_date;
+% .L # table_name
 % sql_sub_current_date # name
 % int # type
 % 1 # length
 [ 0	]
-% . # table_name
+#select current_date() - current_date();
+% .L # table_name
 % sql_sub_current_date # name
 % int # type
 % 1 # length

@@ -25,7 +25,17 @@ Ready.
 # 23:48:26 >  
 
 [ 113	]
-% sys.test,	sys.,	sys.,	sys.,	sys.,	sys.,	sys.,	sys.,	sys.,	sys.,	sys.,	sys.,	sys.,	sys.,	sys. # table_name
+#select rhs,
+#(lhs like 'A%' OR lhs like 'B%' OR lhs like 'C%' OR lhs like 'D%' OR lhs
+#like 'E%' OR lhs like 'F%' OR lhs like 'G%' OR lhs like 'H%' OR lhs like
+#'I%' OR lhs like 'J%' OR lhs like 'K%' OR lhs like 'L%' OR lhs like 'M%' OR
+#lhs like 'N%' OR lhs like 'O%' OR lhs like 'P%' OR lhs like 'Q%' OR lhs
+#like 'R%' OR lhs like 'S%' OR lhs like 'T%' OR lhs like 'U%' OR lhs like
+#'V%' OR lhs like 'W%' OR lhs like 'X%' OR lhs like 'Y%' OR lhs like 'Z%'),
+#(lower(lhs) like 'a%'),
+#(lower(lhs) like 'in%'),
+#(lower(lhs) like 'un%'),
+% sys.test,	sys.L,	sys.L,	sys.L,	sys.L,	sys.L,	sys.L,	sys.L,	sys.L,	sys.L,	sys.L,	sys.L,	sys.L,	sys.L,	sys.L # table_name
 % rhs,	or_like_lhs,	like_lower_lhs,	like_lower_lhs,	like_lower_lhs,	like_lower_lhs,	or_like_lower_lhs,	like_lower_lhs,	like_lower_lhs,	like_lower_lhs,	like_lower_lhs,	like_lower_lhs,	like_lower_lhs,	like_lower_lhs,	like_lower_lhs # name
 % varchar,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean # type
 % 5,	5,	5,	5,	5,	5,	5,	5,	5,	5,	5,	5,	5,	5,	5 # length
@@ -83,7 +93,18 @@ Ready.
 [ "VBZ",	false,	false,	false,	false,	false,	false,	false,	true,	false,	false,	false,	false,	false,	false	]
 [ "NNP",	true,	false,	false,	false,	false,	false,	false,	false,	false,	false,	false,	false,	false,	false	]
 [ ".",	false,	false,	false,	false,	false,	false,	false,	false,	false,	false,	false,	false,	true,	true	]
-% sys.test,	sys.,	sys.,	sys.,	sys.,	sys.,	sys.,	sys.,	sys.,	sys.,	sys.,	sys.,	sys.,	sys.,	sys. # table_name
+#select rhs,
+#(lhs like 'A%' OR lhs like 'B%' OR lhs like 'C%' OR lhs like 'D%' OR
+#lhs like 'E%' OR lhs like 'F%' OR lhs like 'G%' OR lhs like 'H%' OR lhs
+#like 'I%' OR lhs like 'J%' OR lhs like 'K%' OR lhs like 'L%' OR lhs like
+#'M%' OR lhs like 'N%' OR lhs like 'O%' OR lhs like 'P%' OR lhs like 'Q%' OR
+#lhs like 'R%' OR lhs like 'S%' OR lhs like 'T%' OR lhs like 'U%' OR lhs
+#like 'V%' OR lhs like 'W%' OR lhs like 'X%' OR lhs like 'Y%' OR lhs like
+#'Z%'),
+#(lower(lhs) like 'a%'),
+#(lower(lhs) like 'in%'),
+#(lower(lhs) like 'un%'),
+% sys.test,	sys.L,	sys.L,	sys.L,	sys.L,	sys.L,	sys.L,	sys.L,	sys.L,	sys.L,	sys.L,	sys.L,	sys.L,	sys.L,	sys.L # table_name
 % rhs,	or_like_lhs,	like_lower_lhs,	like_lower_lhs,	like_lower_lhs,	like_lower_lhs,	or_like_lower_lhs,	like_lower_lhs,	like_lower_lhs,	like_lower_lhs,	like_lower_lhs,	like_lower_lhs,	like_lower_lhs,	like_lower_lhs,	like_lower_lhs # name
 % varchar,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean # type
 % 5,	5,	5,	5,	5,	5,	5,	5,	5,	5,	5,	5,	5,	5,	5 # length
