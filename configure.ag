@@ -2221,33 +2221,34 @@ if test "x$have_geotiff" != xno; then
 	case "$have_geotiff" in
 	auto|yes)
 		PKG_CHECK_MODULES([GEOTIFF], [libgeotiff], [have_geotiff="pkgconf"], [have_geotiff="$have_geotiff"])
-	    ;;
+		;;
 	*)
-	    GEOTIFF_CFLAGS="-I$have_geotiff/include"
-	    GEOTIFF_LIBS="-L$have_geotiff/lib"
-	    ;;
+		GEOTIFF_CFLAGS="-I$have_geotiff/include"
+		GEOTIFF_LIBS="-L$have_geotiff/lib"
+		;;
 	esac
 fi
 # try to detect it manually like upstream provides it
 if test "x$have_geotiff" != xno && test "x$have_geotiff" != xpkgconf; then
 	save_CPPFLAGS="$CPPFLAGS"
 	save_LDFLAGS="$LDFLAGS"
-    save_LIBS="$LIBS"
+	save_LIBS="$LIBS"
 	CPPFLAGS="$CPPFLAGS $GEOTIFF_CFLAGS"
 	LDFLAGS="$LDFLAGS $GEOTIFF_LIBS"
-    LIBS=""
-    AC_CHECK_HEADER(tiffio.h, AC_CHECK_LIB(tiff, TIFFOpen))
+	LIBS=""
+	AC_CHECK_HEADER(tiffio.h, AC_CHECK_LIB(tiff, TIFFOpen))
 	AC_CHECK_HEADER(xtiffio.h,
 		AC_CHECK_LIB(geotiff, XTIFFOpen,
 			[AC_DEFINE(HAVE_GEOTIFF, 1, [Define if you have the geotiff library])
-            have_geotiff=yes
-            LIBS="$LIBS -lgeotiff"],
-			[ if test "x$have_geotiff" != xauto; then AC_MSG_ERROR([-lgeotiff library not found]); fi; have_geotiff=no ], [$MATH_LIBS]),
+			 have_geotiff=yes
+			 LIBS="$LIBS -lgeotiff"],
+			[ if test "x$have_geotiff" != xauto; then AC_MSG_ERROR([-lgeotiff library not found]); fi; have_geotiff=no ],
+			[$MATH_LIBS]),
 		[ if test "x$have_geotiff" != xauto; then AC_MSG_ERROR([xtiffio.h header not found]); fi; have_geotiff=no ])
-    GEOTIFF_LIBS="$GEOTIFF_LIBS $LIBS"
+	GEOTIFF_LIBS="$GEOTIFF_LIBS $LIBS"
 	LDFLAGS="$save_LDFLAGS"
 	CPPFLAGS="$save_CPPFLAGS"
-    LIBS="$save_LIBS"
+	LIBS="$save_LIBS"
 	if test "x$have_geotiff" != "xyes"; then
 		GEOTIFF_CFLAGS=""
 		GEOTIFF_LIBS=""
@@ -2268,11 +2269,11 @@ if test "x$have_gdal" != xno; then
 	case "$have_gdal" in
 	auto|yes)
 		PKG_CHECK_MODULES([GDAL], [libgdal], [have_gdal="pkgconf"], [have_gdal="$have_gdal"])
-	    ;;
+		;;
 	*)
-	    GDAL_CFLAGS="-I$have_gdal/include"
-	    GDAL_LIBS="-L$have_gdal/lib"
-	    ;;
+		GDAL_CFLAGS="-I$have_gdal/include"
+		GDAL_LIBS="-L$have_gdal/lib"
+		;;
 	esac
 fi
 # try to detect it manually like upstream provides it
@@ -2282,18 +2283,19 @@ if test "x$have_gdal" != xno && test "x$have_gdal" != xpkgconf; then
 	save_LIBS="$LIBS"
 	CPPFLAGS="$CPPFLAGS $GDAL_CFLAGS"
 	LDFLAGS="$LDFLAGS $GDAL_LIBS"
-    LIBS=""
+	LIBS=""
 	AC_CHECK_HEADER(gdal.h,
 		AC_CHECK_LIB(gdal, GDALAllRegister,
 			[AC_DEFINE(HAVE_GDAL, 1, [Define if you have the gdal library])
-            have_gdal=yes
-            LIBS="$LIBS -lgdal"],
-			[ if test "x$have_gdal" != xauto; then AC_MSG_ERROR([-lgdal library not found]); fi; have_gdal=no ], [$MATH_LIBS]),
+			 have_gdal=yes
+			 LIBS="$LIBS -lgdal"],
+			[ if test "x$have_gdal" != xauto; then AC_MSG_ERROR([-lgdal library not found]); fi; have_gdal=no ],
+			[$MATH_LIBS]),
 		[ if test "x$have_gdal" != xauto; then AC_MSG_ERROR([gdal.h header not found]); fi; have_gdal=no ])
-    GDAL_LIBS="$GDAL_LIBS $LIBS"
+	GDAL_LIBS="$GDAL_LIBS $LIBS"
 	LDFLAGS="$save_LDFLAGS"
 	CPPFLAGS="$save_CPPFLAGS"
-    LIBS="$save_LIBS"
+	LIBS="$save_LIBS"
 	if test "x$have_gdal" != "xyes"; then
 		GDAL_CFLAGS=""
 		GDAL_LIBS=""
