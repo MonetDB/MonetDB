@@ -48,7 +48,7 @@ test = (
         # potential differences, which we want to ignore
         re.compile('(?:'+')|(?:'.join([
                 # MAPI port numbers
-                    r"^MAPI  = (.*@.*:\d*|\((monetdb|testuser|(monet|user)_test|my_user2)\) /.*\.s\.monetdb\.\d+)$",
+                    r"^MAPI  = (.*@.*:\d*|\((monetdb|testuser|(monet|user)_test|my_user2|psm)\) /.*\.s\.monetdb\.\d+)$",
                 # SPHINX is optional in monetdb5/modules/mal/inspec05
                     r'\[\s+"[^"]*",\s+"(?:command|function|pattern)",\s+"sphinx",\s+"[^"]*",\s+"[^"]*"\s+\]',
                  ])+')',  re.MULTILINE),
