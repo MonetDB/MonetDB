@@ -13,9 +13,9 @@ CALL rs.attach2('/tmp/img2_b7.tif');
 CALL rs.import2(1);
 CALL rs.import2(2);
 CALL rs.import2(3);
-CALL rs.import2(1);
-CALL rs.import2(2);
-CALL rs.import2(3);
+CALL rs.import2(4);
+CALL rs.import2(5);
+CALL rs.import2(6);
 -- Now the TIF images have been imported as the following:
 --   the b3, b4 and b7 of the 1st image as rs.image1, rs.image2 and rs.image3
 --   the b3, b4 and b7 of the 2nd image as rs.image4, rs.image5 and rs.image6
