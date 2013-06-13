@@ -33,7 +33,7 @@ INSERT INTO fire1 (
 	AND b3.x = b4.x AND b3.y = b4.y AND b3.x = b7.x AND b3.y = b3.y -- join the images
     AND FLOOR(CAST(b3.intensity+b4.intensity AS DOUBLE)/2.0) <= 50.0 -- indexALBEDO
     AND b4.intensity + b7.intensity <> 0.0
-    AND (CAST(b4.intensity-b7.intensity AS DOUBLE)/(b4.intensity + b7.intensity) + 1.0) * 127.0 <= 126.0 -- indexNBR, 255.0/2.0=127.0
+    AND (CAST(b4.intensity-b7.intensity AS DOUBLE)/(b4.intensity + b7.intensity) + 1.0) * 127.5 <= 126.0 -- indexNBR, 255.0/2.0=127.5
 );
 
 -- BSM classification (landsatFirePredicate()) using two images
@@ -47,7 +47,7 @@ INSERT INTO fire2 (
 	AND img1_b3.x = img1_b4.x AND img1_b3.y = img1_b4.y AND img1_b3.x = img1_b7.x AND img1_b3.y = img1_b3.y -- join the images
     AND FLOOR(CAST(img1_b3.intensity+img1_b4.intensity AS DOUBLE)/2.0) <= 50.0 -- indexALBEDO_img1
     AND img1_b4.intensity + img1_b7.intensity <> 0.0
-    AND (CAST(img1_b4.intensity-img1_b7.intensity AS DOUBLE)/(img1_b4.intensity + img1_b7.intensity) + 1.0) * 127.0 <= 126.0 -- indexNBR_img1
+    AND (CAST(img1_b4.intensity-img1_b7.intensity AS DOUBLE)/(img1_b4.intensity + img1_b7.intensity) + 1.0) * 127.5 <= 126.0 -- indexNBR_img1
 	AND img1_b3.x = img2_b3.x AND img1_b3.y = img2_b3.y AND img1_b3.x = img2_b4.x AND img1_b3.y = img2_b4.y -- join the images
     AND img1_b4.intensity + img1_b3.intensity <> 0.0 AND img2_b4.intensity + img2_b3.intensity <> 0.0
     AND ABS( CAST(img1_b4.intensity-img1_b3.intensity AS DOUBLE)/(img1_b4.intensity + img1_b3.intensity) -
