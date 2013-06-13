@@ -188,10 +188,11 @@ GDALloadGreyscaleImage(bat *x, bat *y, bat *intensity, str *fname)
 
 	BATsetcount(resI, pixels);
 	BATseqbase(resI, 0);
-	BATkey(resI, TRUE);
 	resI->T->nonil = TRUE;
 	resI->T->nil = FALSE;
 	resI->tsorted = FALSE;
+	resI->trevsorted = FALSE;
+	BATkey(BATmirror(resI), FALSE);
 	BBPkeepref(resI->batCacheid);
 
 	/* Manually compute values for the X-dimension, since we know that its
