@@ -35,7 +35,7 @@
 
 int TYPE_json;
 
-str JSONparse(char *j);
+static str JSONparse(char *j);
 
 int JSONfromString(str src, int *len, json *j)
 {
@@ -322,7 +322,7 @@ JSONobjectParser(char *j, char **next)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 JSONparse(char *j)
 {  str msg;
 
