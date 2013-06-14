@@ -63,11 +63,12 @@ int JSONtoString(str *s, int *len, json src)
         return 0;
     }
 	for (c =src; *c; c++)
-	switch(*c){
-	case '"':
-	case '\\':
-		cnt++;
-	}
+		switch(*c){
+		case '"':
+		case '\\':
+		case '\n':
+			cnt++;
+		}
     ll = strlen(src);
     assert(ll <= (size_t) INT_MAX);
     l = (int) ll + cnt+3;
@@ -81,13 +82,18 @@ int JSONtoString(str *s, int *len, json src)
 	dst = *s;
 	*dst++ = '"';
 	for (c =src; *c; c++)
-	switch(*c){
-	case '"':
-	case '\\':
-		*dst++ = '\\';
-	default:
-		*dst++ = *c;
-	}
+		switch(*c){
+		case '"':
+		case '\\':
+			*dst++ = '\\';
+		default:
+			*dst++ = *c;
+			break;
+		case '\n':
+			*dst++ = '\\';
+			*dst++ = 'n';
+			break;
+		}
 	*dst++ = '"';
 	*dst = 0;
     *len = l-1;
