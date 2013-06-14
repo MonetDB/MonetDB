@@ -919,15 +919,8 @@ GDKvmtrim(void *limit)
 		MEMDEBUG THRprintf(GDKstdout, "alloc = " SZFMT " %+zd rss = " SZFMT " %+zd\n", cursize, memdiff, rss, rssdiff);
 		prevmem = cursize;
 		prevrss = rss;
-		//OLD:if (memdiff >= 0 && rssdiff < -32 * (ssize_t) MT_pagesize()) {
-		// Using a small fixed sized highwatermark on a 256G RAM machine
-		// turns out to call BBPtrim too often/unnecessary
-		// The new decision is aligned with MAL-Admission, where we start
-		// worrying after 80% of the memory is claimed
-		// At that stage we try to reduce the minimum needed to get back on safe grounds.
-		if (rss > 0.8 * MT_npages() * MT_pagesize()) {
-			BBPtrim((size_t)(rss - 0.8 * MT_npages() * MT_pagesize()));
-			//BBPtrim(rss);
+		if (memdiff >= 0 && rssdiff < -32 * (ssize_t) MT_pagesize()) {
+			BBPtrim(rss);
 			highload = 1;
 		} else {
 			highload = 0;
