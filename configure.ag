@@ -2237,14 +2237,33 @@ if test "x$have_geotiff" != xno && test "x$have_geotiff" != xpkgconf; then
 	LDFLAGS="$LDFLAGS $GEOTIFF_LIBS"
 	LIBS=""
 	AC_CHECK_HEADER(tiffio.h, AC_CHECK_LIB(tiff, TIFFOpen))
-	AC_CHECK_HEADER(xtiffio.h,
+	found_xtiffio_h=yes
+	AC_CHECK_HEADER(xtiffio.h,,
+		AC_CHECK_HEADER(geotiff/xtiffio.h,
+			[if test "x$GEOTIFF_CFLAGS" = x; then
+				GEOTIFF_CFLAGS="-I/usr/include/geotiff"
+			 else
+				GEOTIFF_CFLAGS="$GEOTIFF_CFLAGS/geotiff"
+			 fi
+			 CPPFLAGS="$save_CPPFLAGS $GEOTIFF_CFLAGS"],
+			AC_CHECK_HEADER(libgeotiff/xtiffio.h,
+				[if test "x$GEOTIFF_CFLAGS" = x; then
+					GEOTIFF_CFLAGS="-I/usr/include/libgeotiff"
+				 else
+					GEOTIFF_CFLAGS="$GEOTIFF_CFLAGS/libgeotiff"
+				 fi
+				 CPPFLAGS="$save_CPPFLAGS $GEOTIFF_CFLAGS"],
+				[found_xtiffio_h=no])))
+	if test "x$found_xtiffio_h" = xyes; then
 		AC_CHECK_LIB(geotiff, XTIFFOpen,
 			[AC_DEFINE(HAVE_GEOTIFF, 1, [Define if you have the geotiff library])
 			 have_geotiff=yes
 			 LIBS="$LIBS -lgeotiff"],
 			[ if test "x$have_geotiff" != xauto; then AC_MSG_ERROR([-lgeotiff library not found]); fi; have_geotiff=no ],
-			[$MATH_LIBS]),
-		[ if test "x$have_geotiff" != xauto; then AC_MSG_ERROR([xtiffio.h header not found]); fi; have_geotiff=no ])
+			[$MATH_LIBS])
+	else
+		if test "x$have_geotiff" != xauto; then AC_MSG_ERROR([xtiffio.h header not found]); fi; have_geotiff=no
+	fi
 	GEOTIFF_LIBS="$GEOTIFF_LIBS $LIBS"
 	LDFLAGS="$save_LDFLAGS"
 	CPPFLAGS="$save_CPPFLAGS"
