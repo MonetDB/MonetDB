@@ -30,7 +30,6 @@
 #include "mal_recycle.h"
 #include "mal_type.h"
 
-int mal_concurrency_level=0;
 /*
  * The struct alignment leads to 40% gain in simple instructions when set.
  */
@@ -371,9 +370,6 @@ str runMAL(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr env)
 		 * been observed due the small size of the function).
 		 */
 	}
-	MT_lock_set(&mal_delayLock, "concurrency level counter");
-	mal_concurrency_level++;
-	MT_lock_unset(&mal_delayLock, "concurrency level counter");
 	if (stk->cmd && env && stk->cmd != 'f')
 		stk->cmd = env->cmd;
 	ret = runMALsequence(cntxt, mb, 1, 0, stk, env, 0);
@@ -386,9 +382,6 @@ str runMAL(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr env)
 	if (stk && stk != env) {
 		GDKfree(stk);
 	}
-	MT_lock_set(&mal_delayLock, "concurrency level counter");
-	mal_concurrency_level--;
-	MT_lock_unset(&mal_delayLock, "concurrency level counter");
 	if (cntxt->qtimeout && GDKms() > cntxt->qtimeout)
 		throw(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
 	return ret;
