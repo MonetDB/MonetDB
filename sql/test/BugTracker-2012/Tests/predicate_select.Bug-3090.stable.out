@@ -60,7 +60,6 @@ Ready.
 [ 6059,	"storagemodelinput",	2000,	NULL,	0,	true,	0,	false,	0	]
 [ 6100,	"tablestoragemodel",	2000,	"-- A summary of the table storage requirement is is available as a table view.\n-- The auxillary column denotes the maximum space if all non-sorted columns\n-- would be augmented with a hash (rare situation)\ncreate view sys.tablestoragemodel\nas select \"schema\",\"table\",max(count) as \"count\",\n\tsum(columnsize) as columnsize,\n\tsum(heapsize) as heapsize,\n\tsum(indices) as indices,\n\tsum(case when sorted = false then 8 * count else 0 end) as auxillary\nfrom sys.storagemodel() group by \"schema\",\"table\";",	1,	true,	0,	false,	0	]
 [ 6122,	"systemfunctions",	2000,	NULL,	0,	true,	0,	false,	0	]
-[ 6231,	"r",	2000,	NULL,	0,	false,	0,	false,	0	]
 
 # 18:53:13 >  
 # 18:53:13 >  "Done."

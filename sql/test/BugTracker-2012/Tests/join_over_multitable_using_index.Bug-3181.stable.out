@@ -61,8 +61,12 @@ Ready.
 #	ON (TR.rxy = s AND TR.ryz = t);
 % sys.tr,	sys.tr,	sys.trans # table_name
 % x,	z,	comp # name
-% int,	varchar,	int # type
-% 1,	0,	1 # length
+% int,	int,	int # type
+% 1,	1,	3 # length
+[ 0,	2,	255	]
+[ 0,	3,	31	]
+[ 0,	4,	31	]
+[ 3,	4,	255	]
 #Drop index trans_st_idx;
 #Drop table trans;
 #Drop table rx;

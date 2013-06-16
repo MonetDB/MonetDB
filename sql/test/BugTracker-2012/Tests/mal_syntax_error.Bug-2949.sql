@@ -15,3 +15,4 @@ END;
 select * from refine();
 
 drop function refine;
+drop table r;
