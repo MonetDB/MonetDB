@@ -4727,7 +4727,7 @@ rel_use_index(int *changes, mvc *sql, sql_rel *rel)
 				 	((left && !rel_find_exp(rel->l, e->l)) ||
 				 	(!left && !rel_find_exp(rel->r, e->l)))) 
 					nre = e->l;
-				single_table = (!re || strcmp(exp_relname(nre), exp_relname(re)) == 0);
+				single_table = (!re || (exp_relname(nre) && exp_relname(re) && strcmp(exp_relname(nre), exp_relname(re)) == 0));
 				re = nre;
 			}
 			if (single_table) { /* add PROP_HASHCOL to all column exps */
