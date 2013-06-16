@@ -7697,6 +7697,8 @@ RAstatement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_rel *rel;
 	list *refs;
 
+	if (msg)
+		return msg;
 	if (!m->sa)
 		m->sa = sa_create();
  	refs = sa_list(m->sa);

@@ -33,7 +33,7 @@ SELECT TR.x, TR.z, comp
 FROM 
 (SELECT TR1.u as x, TR1.v as y, TR2.v as z, TR1.r as rxy, TR2.r as ryz
 	    FROM
-	        RX as TR1 JOIN R as TR2 
+	        RX as TR1 JOIN RX as TR2 
 		    ON (TR1.v = TR2.u AND TR1.u <> TR2.v)
 	) as TR                         
 	    JOIN 

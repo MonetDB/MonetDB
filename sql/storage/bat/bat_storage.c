@@ -547,6 +547,9 @@ append_col(sql_trans *tr, sql_column *c, void *i, int tpe)
        	bat = c->data;
 	/* appends only write */
 	bat->wtime = c->base.wtime = c->t->base.wtime = c->t->s->base.wtime = tr->wtime = tr->wstime;
+	/* inserts are ordered with the current delta implementation */
+	/* therefor mark appends as reads */
+	c->t->s->base.rtime = c->t->base.rtime = tr->stime;
 	if (tpe == TYPE_bat)
 		delta_append_bat(bat, i);
 	else
