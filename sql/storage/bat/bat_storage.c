@@ -790,16 +790,6 @@ snapshot_create_idx(sql_trans *tr, sql_idx *ni)
 }
 
 int
-new_persistent_dbat( sql_dbat *bat)
-{
-	BAT *b = temp_descriptor(bat->dbid);
-
-	bat->dbid = temp_create(b);
-	bat_destroy(b);
-	return LOG_OK;
-}
-
-int
 load_dbat(sql_dbat *bat, int bid)
 {
 	BAT *b = quick_descriptor(bid);
@@ -829,7 +819,7 @@ create_del(sql_trans *tr, sql_table *t)
 			return load_dbat(bat, bid);
 		ok = LOG_ERR;
 	} else if (bat->dbid && !isTempTable(t)) {
-		return new_persistent_dbat(bat);
+		return ok;
 	} else if (!bat->dbid) {
 		b = bat_new(TYPE_void, TYPE_oid, t->sz);
 		bat_set_access(b, BAT_READ);
