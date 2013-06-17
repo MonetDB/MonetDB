@@ -799,8 +799,7 @@ OPTbakePlans(Client cntxt, MalBlkPtr mb, Slices *slices)
 				pushInstruction(plan,p);
 			} else
 			if (getModuleId(p) == aggrRef && getFunctionId(p) == countRef){
-				//packs= pushReturn(plan,packs, getArg(p,1));
-				addvartolist(plan,&packs,getArg(p,0));
+				addvartolist(plan,&packs,getArg(p,1));
 				addvartolist(plan,&planreturn,getArg(p,0));
 				pushInstruction(plan,p);
 			} else
@@ -808,15 +807,6 @@ OPTbakePlans(Client cntxt, MalBlkPtr mb, Slices *slices)
 				char buf[BUFSIZ];
 				int id= getArg(p,p->retc);
 				/* produce all code to get a reduced table across */
-/*
-				addvartolist(plan,&packs,getArg(p,0));
-				addvartolist(plan,&planreturn,getArg(p,0));
-				addvartolist(plan,&packs,getArg(p,1));
-				addvartolist(plan,&planreturn,getArg(p,1));
-				addvartolist(plan,&packs,getArg(p,2));
-				addvartolist(plan,&planreturn,getArg(p,2));
-*/
-
 	#ifdef _DEBUG_OPT_CENTIPEDE_
 				mnstr_printf(cntxt->fdout,"\n#pmb include stmt %d  %d\n",i, plan->stop);
 				printInstruction(cntxt->fdout, mb, 0, p,LIST_MAL_STMT);
@@ -889,8 +879,8 @@ OPTbakePlans(Client cntxt, MalBlkPtr mb, Slices *slices)
 	/* fix the signature and modify the underlying plan */
 	while ( plan->stmt[0]->retc )
 		delArgument(plan->stmt[0],0);
-	for( i =0; i< packs->retc; i++)
-		plan->stmt[0]= pushReturn(plan, plan->stmt[0], getArg(packs,i));
+	for( i =0; i< planreturn->retc; i++)
+		plan->stmt[0]= pushReturn(plan, plan->stmt[0], getArg(planreturn,i));
 
 	insertSymbol(cntxt->nspace,s);
 #ifdef _DEBUG_OPT_CENTIPEDE_
