@@ -973,12 +973,15 @@ public class MonetPreparedStatement
 
 		// Reduction is possible via rounding; do it and we're good to go.
 		x = x.round(new MathContext(targetScale, RoundingMode.HALF_UP));
-		x = x.stripTrailingZeros();
 
 		// MonetDB doesn't like leading 0's, since it counts them as part of
 		// the precision, so let's strip them off. (But be careful not to do
-		// this to the exact number "0".)
+		// this to the exact number "0".)  Also strip off trailing
+		// numbers that are inherent to the double representation.
 		String xStr = x.toPlainString();
+		int dot = xStr.indexOf(".");
+		if (dot != 0)
+			xStr = xStr.substring(0, Math.min(xStr.length(), dot + 1 + scale[i]));
 		while (xStr.startsWith("0") && xStr.length() > 1)
 			xStr = xStr.substring(1);
 		setValue(idx, xStr);
