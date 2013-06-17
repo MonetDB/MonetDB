@@ -31,8 +31,8 @@
 #include "mal_interpreter.h"
 #include "algebra.h"
 
-#define DEBUG_OPT_DETAIL
-#define _DEBUG_OPT_CENTIPEDE_ 
+//#define DEBUG_OPT_DETAIL
+//#define _DEBUG_OPT_CENTIPEDE_ 
 
 #define BLOCKED 1	// Instruction should remain in main routine
 #define PARTITION 2	// Instruction is part of the fragment routine
@@ -231,7 +231,7 @@ OPTexecController(Client cntxt, MalBlkPtr mb, MalBlkPtr pmb, InstrPtr ret, Instr
 		if (getModuleId(q) == aggrRef && (getFunctionId(q)==subsumRef || getFunctionId(q) == subminRef ||
 			getFunctionId(q) == submaxRef || getFunctionId(q) == subavgRef)){
 			q= copyInstruction(q);
-			//getArg(q,1) = getArg(q,0);
+			getArg(q,1) = getArg(q,0);
 			pushInstruction(cmb,q);
 		} else
 		if (getModuleId(q) == algebraRef && getFunctionId(q) == leftfetchjoinRef ){
@@ -736,8 +736,11 @@ OPTbakePlans(Client cntxt, MalBlkPtr mb, Slices *slices)
 		p = old[i];
 		if ( p )
 		for( j = p->retc; j < p->argc; j++)
-		if ( isaBatType(getArgType(plan,p,j)) && vars[getArg(p,j)]== PIVOT)
+		if ( isaBatType(getArgType(plan,p,j)) && (vars[getArg(p,j)]== PIVOT || vars[getArg(p,j)] == PARTITION)){
 			addvartolist(plan,&cntrlreturn,getArg(p,j));
+			addvartolist(plan,&planreturn,getArg(p,j));
+			addvartolist(plan,&packs,getArg(p,j));
+		}
 	}
 
 	/* Phase 4: Bake a new function that produces them */
