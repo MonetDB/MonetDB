@@ -39,17 +39,17 @@ static str JSONparse(char *j);
 
 int JSONfromString(str src, int *len, json *j)
 {
-    size_t ll;
-
-    if (*j !=0)
-        GDKfree(*j);
-
-    ll = strlen(src);
-    assert(ll <= (size_t) INT_MAX);
-    *len = (int) ll;
-    *j = GDKstrdup(src);
-
-    return *len;
+	ssize_t slen = (ssize_t) strlen(src);
+	if ((ssize_t) *len < slen)
+		*j = GDKrealloc(*j, slen + 1);
+	*len = (int) slen;
+	if (GDKstrFromStr((unsigned char *) *j, (const unsigned char *) src, slen) < 0) {
+		GDKfree(*j);
+		*j = GDKstrdup(str_nil);
+		*len = 2;
+		return 0;
+	}
+	return *len;
 }
 
 int JSONtoString(str *s, int *len, json src)

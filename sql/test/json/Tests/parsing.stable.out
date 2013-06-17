@@ -70,13 +70,13 @@ Ready.
 % j # name
 % json # type
 % 21 # length
-[ {}	]
+[ "{}"	]
 [ "{}  "	]
-[ []	]
-[ {"null": null}	]
+[ "[]"	]
+[ "{\"null\": null}"	]
 [ "{\"f1\":1,\"f2\":2} "	]
-[ [1,2,null,true,false]	]
-[ [1,"hello",2]	]
+[ "[1,2,null,true,false]"	]
+[ "[1,\"hello\",2]"	]
 #drop table jsonparse;
 
 # 19:12:47 >  
