@@ -38,7 +38,8 @@ FROM
 	) as TR                         
 	    JOIN 
 	 trans
-	ON (TR.rxy = s AND TR.ryz = t);
+	ON (TR.rxy = s AND TR.ryz = t)
+ order by TR.x, TR.z;
 
 Drop index trans_st_idx;
 Drop table trans;
