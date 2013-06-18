@@ -5496,7 +5496,7 @@ str @2_dec2_@1( @1 *res, int *s1, @2 *v )
 	   always fit */
 	r = (@1)*v;
 	if (scale) 
-		r = (@1) ((r + h) / scales[scale]);
+		r = (@1) ((r + h * scales[scale - 1]) / scales[scale]);
 	*res = r;
 	return(MAL_SUCCEED);
 }
@@ -5532,7 +5532,7 @@ str
 	if (s2 > s1) 
 		r *= (@1) scales[s2 - s1];
 	else if (s2 != s1) 
-		r = (@1) ((r + h) / scales[s1 - s2]);
+		r = (@1) ((r + h * scales[s1 - s2 - 1]) / scales[s1 - s2]);
 	*res = r;
 	return(MAL_SUCCEED);
 }
@@ -5570,7 +5570,7 @@ str bat@2_dec2_@1( int *res, int *s1, int *bid )
 	if ( b->T->nonil){
 		if (scale)
 			for (; p<q; p++, o++)
-				*o = (@1) ((*p +  ((*p<0)?-5:5)) / scales[scale]);
+				*o = (@1) ((*p +  (*p<0?-5:5) * scales[scale-1]) / scales[scale]);
 		else
 			for (; p<q; p++, o++)
 				*o = (@1) (*p);
@@ -5580,7 +5580,7 @@ str bat@2_dec2_@1( int *res, int *s1, int *bid )
 				*o = @1_nil;
 				bn->T->nonil= FALSE;
 			} else if (scale) {
-				*o = (@1) ((*p +  ((*p<0)?-5:5)) / scales[scale]);
+				*o = (@1) ((*p +  (*p<0?-5:5) * scales[scale-1]) / scales[scale]);
 			} else {
 				*o = (@1) (*p);
 			}
@@ -5977,7 +5977,7 @@ str
 	}
 	
 	if (scale) 
-		val = (val+h)/scales[scale];
+		val = (val + h * scales[scale - 1]) / scales[scale];
 	/* see if the number fits in the data type */
 	if (val > GDK_@1_min && val <= GDK_@1_max)	{
 		*res = (@1)val;
@@ -6014,7 +6014,7 @@ str
 	if(s2 > s1) 
 		val *= scales[s2-s1];
 	else if (s2 != s1) 
-		val = (val+h)/scales[s1-s2];
+		val = (val+h*scales[s1-s2-1])/scales[s1-s2];
 
 	/* see if the number fits in the data type */
 	if (val > GDK_@1_min && val <= GDK_@1_max)	{
@@ -6060,7 +6060,7 @@ str bat@2_dec2_@1( int *res, int *s1, int *bid )
 	if ( b->T->nonil){
 		for (; p<q; p++, o++) {
 			if (scale) 
-				val = (@2) ((*p+ ((*p<0)?-5:5))/scales[scale]);
+				val = (@2) ((*p+ (*p<0?-5:5)*scales[scale-1])/scales[scale]);
 			else
 				val = (@2) (*p);
 			/* see if the number fits in the data type */
@@ -6079,7 +6079,7 @@ str bat@2_dec2_@1( int *res, int *s1, int *bid )
 				bn->T->nonil= FALSE;
 			} else {
 				if (scale)
-					val = (@2) (( *p + (( *p<0)?-5:5))/scales[scale]);
+					val = (@2) (( *p + (*p<0?-5:5)*scales[scale-1])/scales[scale]);
 				else
 					val = (@2) (*p);
 				/* see if the number fits in the data type */

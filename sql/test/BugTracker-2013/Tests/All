@@ -21,3 +21,4 @@ create_table_with_func.Bug-3286
 add_boolean.Bug-3289
 prepare-smallint.Bug-3297
 psm_functions_and_accessrights.Bug-3300
+decimal-cast.Bug-3310
