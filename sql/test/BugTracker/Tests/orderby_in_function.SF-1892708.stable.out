@@ -26,7 +26,20 @@ Ready.
 # 13:30:03 >  mclient -lsql -umonetdb -Pmonetdb --host=koala --port=35371 
 # 13:30:03 >  
 
-% . # table_name
+# 11:45:52 >  
+# 11:45:52 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-23209" "--port=33225"
+# 11:45:52 >  
+
+#CREATE FUNCTION CHECK_VIDEO()
+#RETURNS VARCHAR(24)
+#BEGIN
+#RETURN
+#  SELECT NAME
+#  FROM   tables
+#  LIMIT 1;
+#END;
+#select CHECK_VIDEO();
+% .L # table_name
 % check_video # name
 % varchar # type
 % 7 # length

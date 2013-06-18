@@ -26,7 +26,8 @@ Ready.
 
 [ 1	]
 [ 1	]
-% sys.a,	sys.a # table_name
+#select b, count(distinct c) from a group by b having count(distinct c) > 1;
+% sys.a,	sys.L1 # table_name
 % b,	L1 # name
 % int,	wrd # type
 % 2,	1 # length

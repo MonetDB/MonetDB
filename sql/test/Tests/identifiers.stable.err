@@ -10,7 +10,7 @@ stderr of test 'identifiers` in directory 'sql/test` itself:
 # 22:26:32 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45449  < identifiers.sql
 # 22:26:32 >  
 
-MAPI  = monetdb@alf:37993
+MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
 QUERY = SELECT 1 AS "\"Bla\""; -- should fail
 ERROR = !Invalid identifier '\"Bla\"'
 

@@ -49,6 +49,8 @@ exp_compare(sql_allocator *sa, sql_exp *l, sql_exp *r, int cmptype)
 {
 	sql_exp *e = exp_create(sa, e_cmp);
 	e->card = l->card;
+	if (e->card == CARD_ATOM && !exp_is_atom(l))
+		e->card = CARD_AGGR;
 	e->l = l;
 	e->r = r;
 	e->flag = cmptype;
@@ -60,6 +62,8 @@ exp_compare2(sql_allocator *sa, sql_exp *l, sql_exp *r, sql_exp *h, int cmptype)
 {
 	sql_exp *e = exp_create(sa, e_cmp);
 	e->card = l->card;
+	if (e->card == CARD_ATOM && !exp_is_atom(l))
+		e->card = CARD_AGGR;
 	e->l = l;
 	e->r = r;
 	if (h)
@@ -74,6 +78,8 @@ exp_filter(sql_allocator *sa, sql_exp *l, list *r, sql_subfunc *f, int anti)
 	sql_exp *e = exp_create(sa, e_cmp);
 
 	e->card = l->card;
+	if (e->card == CARD_ATOM && !exp_is_atom(l))
+		e->card = CARD_AGGR;
 	e->l = l;
 	e->r = r;
 	e->f = f;
@@ -182,6 +188,7 @@ exp_atom(sql_allocator *sa, atom *a)
 {
 	sql_exp *e = exp_create(sa, e_atom);
 	e->card = CARD_ATOM;
+	e->tpe = a->tpe;
 	e->l = a;
 	return e;
 }
@@ -364,8 +371,9 @@ exp_column(sql_allocator *sa, char *rname, char *cname, sql_subtype *t, int card
 	assert(cname);
 	e->card = card;
 	e->name = sa_strdup(sa, cname);
-	e->l = (rname)?sa_strdup(sa, rname):NULL;
+	e->rname = (rname)?sa_strdup(sa, rname):NULL;
 	e->r = sa_strdup(sa, cname);
+	e->l = (rname)?sa_strdup(sa, rname):NULL;
 	if (t)
 		e->tpe = *t;
 	if (!has_nils)
@@ -470,6 +478,15 @@ number2name(str s, int len, int i)
 	return s + len;
 }
 
+void 
+exp_setrelname(sql_allocator *sa, sql_exp *e, int nr)
+{
+	char name[16], *nme;
+
+	nme = number2name(name, 16, nr);
+	e->rname = sa_strdup(sa, nme);
+}
+
 sql_exp*
 exp_label(sql_allocator *sa, sql_exp *e, int nr)
 {
@@ -477,6 +494,7 @@ exp_label(sql_allocator *sa, sql_exp *e, int nr)
 
 	nme = number2name(name, 16, nr);
 	e->name = sa_strdup(sa, nme);
+	e->rname = sa_strdup(sa, nme);
 	return e;
 }
 

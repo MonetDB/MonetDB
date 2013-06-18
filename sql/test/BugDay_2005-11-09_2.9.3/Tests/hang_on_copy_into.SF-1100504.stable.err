@@ -76,7 +76,7 @@ stderr of test 'hang_on_copy_into.SF-1100504` in directory 'sql/test/BugDay_2005
 # 23:26:36 >  mclient -lsql -i --host=eir --port=38510 
 # 23:26:36 >  
 
-MAPI  = monetdb@niels:39769
+MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
 QUERY = COPY 1 RECORDS INTO "news" FROM stdin USING DELIMITERS '\t', '\n', '''';
         1	'dwerg.net word volwassen, er is eindelijk content
         en het voicemail archief begint al aardig vol te lopen.

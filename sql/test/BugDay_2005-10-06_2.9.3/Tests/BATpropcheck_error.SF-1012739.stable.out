@@ -44,8 +44,8 @@ Ready.
 #    "schemas"."name" LIKE 'sys' 
 #AND 
 #    "tables"."name" LIKE 'voyages'
-#ORDER BY "COLUMN_N
-% .,	.schemas,	.tables,	.objects,	.keys,	.keys # table_name
+#ORDER BY "COLUMN_NAME";
+% .L,	.L,	.L,	.L,	.L,	.L # table_name
 % TABLE_CAT,	TABLE_SCHEM,	TABLE_NAME,	COLUMN_NAME,	KEY_SEQ,	PK_NAME # name
 % char,	varchar,	varchar,	varchar,	int,	varchar # type
 % 0,	0,	0,	0,	1,	0 # length

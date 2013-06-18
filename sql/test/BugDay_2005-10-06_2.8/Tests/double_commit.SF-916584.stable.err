@@ -10,7 +10,7 @@ stderr of test 'double_commit.SF-916584` in directory 'sql/test/BugDay_2005-10-0
 # 14:14:57 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=42862  < double_commit.SF-916584.sql
 # 14:14:57 >  
 
-MAPI  = monetdb@sofia:39182
+MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
 QUERY = COMMIT;
 ERROR = !COMMIT: not allowed in auto commit mode
 

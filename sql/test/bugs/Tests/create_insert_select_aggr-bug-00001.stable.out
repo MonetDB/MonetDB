@@ -46,14 +46,17 @@ Ready.
 # 12:47:55 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < create_insert_select_aggr-bug-00001.sql
 # 12:47:55 >  
 
-% . # table_name
+#select 1;
+% .L # table_name
 % single_value # name
 % tinyint # type
 % 1 # length
 [ 1	]
 [ 1	]
 [ 1	]
-% . # table_name
+#drop table foo;
+#select 1;
+% .L # table_name
 % single_value # name
 % tinyint # type
 % 1 # length
@@ -66,7 +69,9 @@ Ready.
 % 1,	6 # length
 [ 1,	"Tim"	]
 [ 2,	"Jochem"	]
-% . # table_name
+#drop table ff;
+#select (4-1)*5;
+% .L # table_name
 % sql_sub_single_value # name
 % int # type
 % 2 # length
@@ -121,7 +126,10 @@ Ready.
 % 1 # length
 [ 1	]
 [ 1	]
-% sys._tables,	.,	.,	. # table_name
+#drop table r;
+#select name, 1, 2, 3  from _tables
+#	where name in ('s4', 'r', 'foo', 'ff');
+% sys._tables,	.L,	.L,	.L # table_name
 % name,	single_value,	single_value,	single_value # name
 % varchar,	tinyint,	tinyint,	tinyint # type
 % 0,	1,	1,	1 # length

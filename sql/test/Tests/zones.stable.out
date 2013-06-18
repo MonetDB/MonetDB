@@ -43,7 +43,7 @@ Ready.
 #select abs(expected - computed) as err
 #from alphatest 
 #where abs(expected - computed)>epsilon;
-% sys. # table_name
+% sys.L # table_name
 % err # name
 % double # type
 % 24 # length
@@ -94,7 +94,22 @@ Ready.
 [ 5	]
 [ 5	]
 [ 0	]
-% .s # table_name
+#create function GetNearbyObjects(
+#                       pra double, pdec double, -- in degrees
+#                       ptheta double)           -- radius in degrees
+#returns Table (objID bigint, distance double) 
+#begin
+#    declare zoneHeight float, alpha1 float,
+#            x1 float, y1 float, z1 float;
+#
+#    -- compute “alpha” expansion and cartesian coordinates.
+#    set alpha1 = Alpha(ptheta, pdec);
+#    set x1 = cos(radians(pdec))*cos(radians(pra));
+#    set y1 = cos(radians(pdec))*sin(radians(pra));
+#    set z1 = sin(radians(pdec));
+#select count(S.objID) 
+#from GetNearbyObjects(193.75, 1.48, 0.1) as S;
+% .L1 # table_name
 % L1 # name
 % wrd # type
 % 1 # length
@@ -127,7 +142,7 @@ Ready.
 #        return ob;
 #end;
 #select fGetNearestObjIdAllEq(193.75,1.48,0.1) - nearest;
-% . # table_name
+% .L # table_name
 % fgetnearestobjidalleq_single_value # name
 % bigint # type
 % 1 # length

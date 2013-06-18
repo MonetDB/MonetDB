@@ -27,7 +27,8 @@ Ready.
 # 11:55:41 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35185  < escape_quote-bug-sf-1006469.sql
 # 11:55:41 >  
 
-% . # table_name
+#select char_length('\'');
+% .L # table_name
 % char_length_single_value # name
 % int # type
 % 1 # length

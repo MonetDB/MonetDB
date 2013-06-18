@@ -145,7 +145,8 @@ Ready.
 #	38
 #);
 [ 1	]
-% sys.mytable # table_name
+#select count(*) from mytable;
+% sys.L1 # table_name
 % L1 # name
 % wrd # type
 % 1 # length

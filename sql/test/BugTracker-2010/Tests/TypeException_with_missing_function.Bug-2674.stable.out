@@ -34,13 +34,13 @@ Ready.
 #	RETURN (left_shift(nx1 - 1.0,2));
 #END;
 #select f2674();
-% . # table_name
+% .L # table_name
 % f2674 # name
 % double # type
 % 24 # length
 [ 0	]
 #select f2674();
-% . # table_name
+% .L # table_name
 % f2674 # name
 % double # type
 % 24 # length

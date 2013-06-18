@@ -547,6 +547,9 @@ append_col(sql_trans *tr, sql_column *c, void *i, int tpe)
        	bat = c->data;
 	/* appends only write */
 	bat->wtime = c->base.wtime = c->t->base.wtime = c->t->s->base.wtime = tr->wtime = tr->wstime;
+	/* inserts are ordered with the current delta implementation */
+	/* therefor mark appends as reads */
+	c->t->s->base.rtime = c->t->base.rtime = tr->stime;
 	if (tpe == TYPE_bat)
 		delta_append_bat(bat, i);
 	else
@@ -1038,16 +1041,6 @@ snapshot_create_idx(sql_trans *tr, sql_idx *ni)
 }
 
 static int
-new_persistent_dbat( sql_dbat *bat)
-{
-	BAT *b = temp_descriptor(bat->dbid);
-
-	bat->dbid = temp_create(b);
-	bat_destroy(b);
-	return LOG_OK;
-}
-
-static int
 load_dbat(sql_dbat *bat, int bid)
 {
 	BAT *b = quick_descriptor(bid);
@@ -1080,7 +1073,7 @@ create_del(sql_trans *tr, sql_table *t)
 			return load_dbat(bat, bid);
 		ok = LOG_ERR;
 	} else if (bat->dbid && !isTempTable(t)) {
-		return new_persistent_dbat(bat);
+		return ok;
 	} else if (!bat->dbid) {
 		b = bat_new(TYPE_void, TYPE_oid, t->sz);
 		bat_set_access(b, BAT_READ);

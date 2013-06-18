@@ -24,7 +24,25 @@ Ready.
 # 14:06:51 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=35987 
 # 14:06:51 >  
 
-% .ways # table_name
+# 12:08:15 >  
+# 12:08:15 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-23209" "--port=33225"
+# 12:08:15 >  
+
+#CREATE TABLE "sys"."ways" (
+#        "id" int NOT NULL,
+#        "username" varchar(255),
+#        "timestamp" timestamptz(7),
+#        CONSTRAINT "ways_id_pkey" PRIMARY KEY ("id")
+#);
+#CREATE TABLE way_tags2 (way integer, k varchar(255), v varchar(1024),
+#primary key (way, k), foreign key(way) references ways);
+#SELECT count(*) FROM ways
+#LEFT JOIN way_tags2 ON
+#        ways.id = way_tags2.way
+#WHERE
+#        k = 'highway' AND
+#        v = 'secondary';
+% .L1 # table_name
 % L1 # name
 % wrd # type
 % 1 # length

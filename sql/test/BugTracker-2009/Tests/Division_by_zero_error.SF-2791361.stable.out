@@ -27,28 +27,47 @@ Ready.
 [ 1	]
 [ 1	]
 [ 1	]
-% sys. # table_name
+#select case when (bla1 - bla2) > 0 then 1/(bla1 - bla2) else 0 end from test2;
+% sys.L # table_name
 % isnull_>_sql_sub_bla1 # name
 % double # type
 % 24 # length
 [ 0	]
 [ 0	]
 [ 0	]
-% sys. # table_name
+#select case when (bla1 - bla2) > 0 then 1/(bla1 - bla2) else 0 end from test2;
+% sys.L # table_name
 % isnull_>_sql_sub_bla1 # name
 % double # type
 % 24 # length
 [ 0	]
 [ 0	]
 [ 0	]
-% sys.n1,	sys.n1,	sys.n2,	sys.n2,	sys. # table_name
+#drop table test2;
+#CREATE TABLE "sys"."nodes_legacy" (
+#"id" int,
+#"long" double,
+#"lat" double,
+#"uid" int,
+#"timestamp" timestamptz(7)
+#);
+#CREATE TABLE "sys"."segments" (
+#"way" int,
+#"node1" int,
+#"node2" int
+#);
+#select n1.lat, n1.long, n2.lat, n2.long, case when (n2.lat - n1.lat) > 0
+#then (n2.long - n1.long)/(n2.lat - n1.lat) else 0 end from nodes_legacy as
+#n1, nodes_legacy as n2, segments where node1 = n1.id and node2 = n2.id
+#limit 10;
+% sys.n1,	sys.n1,	sys.n2,	sys.n2,	sys.L # table_name
 % lat,	long,	lat,	long,	isnull_>_sql_sub_lat # name
 % double,	double,	double,	double,	double # type
 % 24,	24,	24,	24,	24 # length
 #drop table "sys"."segments";
 #drop table "sys"."nodes_legacy";
 #select case when (2 - 2) > 0 then (3 - 2)/(2 - 2) else 0 end as "test";
-% . # table_name
+% .L # table_name
 % test # name
 % smallint # type
 % 1 # length

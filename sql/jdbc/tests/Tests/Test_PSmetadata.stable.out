@@ -62,7 +62,7 @@ Ready.
 	precision     8
 	scale         0
 	schemaname    
-	tablename     
+	tablename     L
 	autoincrement false
 	casesensitive false
 	currency      false

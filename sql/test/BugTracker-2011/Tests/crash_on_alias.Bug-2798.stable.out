@@ -28,13 +28,14 @@ Ready.
 #INSERT INTO dbg (a,b) VALUES (10,10);
 [ 1	]
 #SELECT a as d, SUM(b), (2 * (SUM(b) / (SELECT 2))) as f FROM dbg GROUP BY d;
-% sys.dbg,	sys.dbg,	. # table_name
+% sys.dbg,	sys.L1,	.L3 # table_name
 % d,	L1,	f # name
 % int,	bigint,	bigint # type
 % 2,	2,	2 # length
 [ 10,	10,	10	]
-#SELECT a as d, SUM(b) as e, (2 * (SUM(b) / (SELECT 2))) as f FROM dbg GROUP BY d;
-% sys.dbg,	sys.dbg,	. # table_name
+#SELECT a as d, SUM(b) as e, (2 * (SUM(b) / (SELECT 2))) as f FROM dbg GROUP
+#BY d;
+% sys.dbg,	sys.L1,	.L3 # table_name
 % d,	e,	f # name
 % int,	bigint,	bigint # type
 % 2,	2,	2 # length

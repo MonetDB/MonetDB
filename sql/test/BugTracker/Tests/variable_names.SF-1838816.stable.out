@@ -24,7 +24,13 @@ Ready.
 # 00:15:33 >  mclient -lsql -umonetdb -Pmonetdb --host=koala --port=31634 
 # 00:15:33 >  
 
-% . # table_name
+# 11:45:42 >  
+# 11:45:42 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-23209" "--port=33225"
+# 11:45:42 >  
+
+#create function foo(_2foo int) returns int begin return _2foo; end;
+#select foo(2);
+% .L # table_name
 % foo_single_value # name
 % int # type
 % 1 # length

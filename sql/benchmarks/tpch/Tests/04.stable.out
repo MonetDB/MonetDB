@@ -23,7 +23,32 @@ Ready.
 # 11:47:56 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < 04.sql
 # 11:47:56 >  
 
-% sys.orders,	sys.orders # table_name
+# 14:36:18 >  
+# 14:36:18 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-4866" "--port=32517"
+# 14:36:18 >  
+
+#select
+#	o_orderpriority,
+#	count(*) as order_count
+#from
+#	orders
+#where
+#	o_orderdate >= date '1993-07-01'
+#	and o_orderdate < date '1993-07-01' + interval '3' month
+#	and exists (
+#		select
+#			*
+#		from
+#			lineitem
+#		where
+#			l_orderkey = o_orderkey
+#			and l_commitdate < l_receiptdate
+#	)
+#group by
+#	o_orderpriority
+#order by
+#	o_orderpriority;
+% sys.orders,	sys.L3 # table_name
 % o_orderpriority,	order_count # name
 % varchar,	wrd # type
 % 15,	3 # length

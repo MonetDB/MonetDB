@@ -50,6 +50,7 @@ struct scanner {
 #define QUERY(scanner) (scanner.rs->buf+scanner.rs->pos)
 
 extern void scanner_init(struct scanner *s, bstream *rs, stream *ws);
+extern void scanner_reset_key(struct scanner *s);
 extern void scanner_query_processed(struct scanner *s);
 
 extern void scanner_init_keywords(void);

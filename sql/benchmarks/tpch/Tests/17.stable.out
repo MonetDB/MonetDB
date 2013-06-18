@@ -23,7 +23,28 @@ Ready.
 # 11:48:03 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < 17.sql
 # 11:48:03 >  
 
-% sys. # table_name
+# 14:36:25 >  
+# 14:36:25 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-4866" "--port=32517"
+# 14:36:25 >  
+
+#select
+#	sum(l_extendedprice) / 7.0 as avg_yearly
+#from
+#	lineitem,
+#	part
+#where
+#	p_partkey = l_partkey
+#	and p_brand = 'Brand#23'
+#	and p_container = 'MED BOX'
+#	and l_quantity < (
+#		select
+#			0.2 * avg(l_quantity)
+#		from
+#			lineitem
+#		where
+#			l_partkey = p_partkey
+#	);
+% sys.L3 # table_name
 % avg_yearly # name
 % decimal # type
 % 20 # length

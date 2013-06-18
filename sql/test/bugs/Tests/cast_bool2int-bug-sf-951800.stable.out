@@ -14,24 +14,23 @@ stdout of test 'cast_bool2int-bug-sf-951800` in directory 'sql/test/bugs` itself
 Ready.
 
 
-# 13:27:21 >  
-# 13:27:21 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=39189  < cast_bool2int-bug-sf-951800.sql
-# 13:27:21 >  
-
-% . # table_name
+#select cast(true as integer);
+% .L # table_name
 % single_value # name
 % int # type
 % 1 # length
 [ 1	]
 [ 1	]
 [ 1	]
-% sys. # table_name
+#select i<2 from a;
+% sys.L # table_name
 % <_i # name
 % boolean # type
 % 5 # length
 [ true	]
 [ false	]
-% sys. # table_name
+#select cast(i<2 as integer)+1 from a;
+% sys.L # table_name
 % sql_add_<_i # name
 % bigint # type
 % 1 # length

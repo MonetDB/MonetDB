@@ -24,7 +24,33 @@ Ready.
 # 11:55:47 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35185  < selectlist_subquery-sf-1208599.sql
 # 11:55:47 >  
 
-% sys.o,	sys.,	sys. # table_name
+# 12:06:43 >  
+# 12:06:43 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-23209" "--port=33225"
+# 12:06:43 >  
+
+#CREATE TABLE "sys"."pwprijs" (
+#        "id"              int           NOT NULL,
+#        "pid"       int           NOT NULL,
+#        "lid"   int           NOT NULL,
+#        "prijs"           real          NOT NULL,
+#        "Time"            bigint        NOT NULL,
+#        "recordtimestamp" bigint        NOT NULL,
+#        CONSTRAINT "pwprijs_id_recordtimestamp_pkey"
+#PRIMARY KEY ("id", "recordtimestamp")
+#);
+#SELECT lid,
+#        AVG(Prijs) as avg_prijs,
+#        AVG(CASE WHEN RecordTimestamp =
+#            (SELECT MAX(i.RecordTimestamp)
+#            	FROM pwprijs i
+#               WHERE i.pid = 117097
+#                 AND i.lid = o.lid)
+#            THEN Prijs END) as current_prijs
+#FROM pwprijs o
+#WHERE pid = 117097
+#GROUP BY lid
+#;
+% sys.o,	sys.L1,	sys.L5 # table_name
 % lid,	avg_prijs,	current_prijs # name
 % int,	double,	double # type
 % 1,	24,	24 # length

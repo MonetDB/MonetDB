@@ -13,12 +13,39 @@ stdout of test '08` in directory 'sql/benchmarks/tpch/LOCKED` itself:
 
 Ready.
 
+# 15:21:32 >  
+# 15:21:32 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-17397" "--port=38268"
+# 15:21:32 >  
 
-# 11:47:59 >  
-# 11:47:59 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < 08.sql
-# 11:47:59 >  
-
-% sys.all_nations,	sys. # table_name
+#select
+#	o_year,
+#	sum(case
+#		when nation = 'BRAZIL' then volume
+#		else 0
+#	end) / sum(volume) as mkt_share
+#from
+#	(
+#		select
+#			extract(year from o_orderdate) as o_year,
+#			l_extendedprice * (1 - l_discount) as volume,
+#			n2.n_name as nation
+#		from
+#			part,
+#			supplier,
+#			lineitem,
+#			orders,
+#			customer,
+#			nation n1,
+#			nation n2,
+#			region
+#		where
+#			p_partkey = l_partkey
+#			and s_suppkey = l_suppkey
+#			and l_orderkey = o_orderkey
+#			and o_custkey = c_custkey
+#			and c_nationkey = n1.n_nationkey
+#			and n1.n_regionkey = r_regionkey
+% sys.all_nations,	sys.L3 # table_name
 % o_year,	mkt_share # name
 % int,	decimal # type
 % 4,	21 # length

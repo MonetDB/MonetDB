@@ -24,7 +24,8 @@ Ready.
 # 17:07:23 >  mclient -lsql -umonetdb -Pmonetdb --host=ottar --port=35738 
 # 17:07:23 >  
 
-% . # table_name
+#select 1;
+% .L # table_name
 % single_value # name
 % tinyint # type
 % 1 # length

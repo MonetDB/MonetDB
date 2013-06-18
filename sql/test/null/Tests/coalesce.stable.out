@@ -37,7 +37,15 @@ Ready.
 [ 1	]
 [ 1	]
 [ 1	]
-% . # table_name
+#SELECT CASE WHEN COALESCE(x.col1,'$CS$') = '$CS$' THEN 0
+#            WHEN COAlesce(X.Col1,'$CS$') = x.col1 THEN (SELECT y.col2
+#FROM my_table2 y WHERE y.col1 = x.col1)
+#       END AS col1
+#FROM (
+#      SELECT * FROM my_table1
+#     ) x
+#;
+% .L2 # table_name
 % col1 # name
 % int # type
 % 1 # length

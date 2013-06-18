@@ -23,12 +23,21 @@ Ready.
 # 11:54:01 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < insert_not_exists.SF-1380287.sql
 # 11:54:01 >  
 
-% . # table_name
+#START TRANSACTION;
+#SELECT 'creating tables';
+% .L # table_name
 % single_value # name
 % char # type
 % 15 # length
 [ "creating tables"	]
-% . # table_name
+#CREATE TABLE s4_kwm(urlid int,kwid int);
+#CREATE TABLE s4_keywords(id int, kw string);
+#CREATE TABLE kwTemp (id int, kw text);
+#CREATE TABLE kwmTemp (urlid int, kwid int);
+#COMMIT;
+#START TRANSACTION;
+#SELECT 'filling kwTemp';
+% .L # table_name
 % single_value # name
 % char # type
 % 14 # length
@@ -53,7 +62,10 @@ Ready.
 [ 1	]
 [ 1	]
 [ 1	]
-% . # table_name
+#COMMIT;
+#START TRANSACTION;
+#SELECT 'filling kwmTemp';
+% .L # table_name
 % single_value # name
 % char # type
 % 15 # length
@@ -78,34 +90,45 @@ Ready.
 [ 1	]
 [ 1	]
 [ 1	]
-% sys.kwtemp # table_name
+#COMMIT;
+#START TRANSACTION;
+#SELECT count(*) FROM kwTemp;
+% sys.L1 # table_name
 % L1 # name
 % wrd # type
 % 2 # length
 [ 20	]
-% . # table_name
+#SELECT 'filling s4_keywords from kwTemp';
+% .L # table_name
 % single_value # name
 % char # type
 % 31 # length
 [ "filling s4_keywords from kwTemp"	]
 [ 20	]
-% . # table_name
+#SELECT 'dropping kwTemp';
+% .L # table_name
 % single_value # name
 % char # type
 % 31 # length
 [ "dropping kwTemp"	]
-% sys.kwmtemp # table_name
+#DROP TABLE kwTemp;
+#COMMIT;
+#START TRANSACTION;
+#SELECT count(*) FROM kwmtemp;
+% sys.L1 # table_name
 % L1 # name
 % wrd # type
 % 2 # length
 [ 20	]
-% . # table_name
+#SELECT 'filling s4_kwm from kwmTemp';
+% .L # table_name
 % single_value # name
 % char # type
 % 27 # length
 [ "filling s4_kwm from kwmTemp"	]
 [ 20	]
-% . # table_name
+#SELECT 'dropping kwmTemp';
+% .L # table_name
 % single_value # name
 % char # type
 % 27 # length
@@ -114,18 +137,21 @@ Ready.
 #COMMIT;
 #START TRANSACTION;
 #SELECT 'expect 20', COUNT(*) FROM s4_keywords;
-% .L1,	sys.s4_keywords # table_name
+% .L1,	sys.L2 # table_name
 % L1,	L2 # name
 % char,	wrd # type
 % 9,	2 # length
 [ "expect 20",	20	]
 #SELECT 'expect 20', COUNT(*) FROM s4_kwm;
-% .L1,	sys.s4_kwm # table_name
+% .L1,	sys.L2 # table_name
 % L1,	L2 # name
 % char,	wrd # type
 % 9,	2 # length
 [ "expect 20",	20	]
-% . # table_name
+#COMMIT;
+#START TRANSACTION;
+#SELECT 'dropping s4_kwm and s4_keywords';
+% .L # table_name
 % single_value # name
 % char # type
 % 31 # length

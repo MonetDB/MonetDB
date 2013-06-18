@@ -5,20 +5,44 @@ stdout of test 'mdb_starts_with_sql_debug_64.SF-1999354` in directory 'sql/test/
 # 22:28:20 >  /usr/bin/python mdb_starts_with_sql_debug_64.SF-1999354.py mdb_starts_with_sql_debug_64.SF-1999354 
 # 22:28:20 >  
 
-# MonetDB server v5.6.0, based on kernel v1.24.0
-# Serving database 'mTests_src_test_BugTracker'
-# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
-# Copyright (c) 1993-2008 CWI, all rights reserved
-# Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:34243/
-# MonetDB/SQL module v2.24.0 loaded
-% . # table_name
+#create table t1999354a(ra float, "dec" int);
+#CREATE FUNCTION f2(deg float, truncat int , precision int)
+#RETURNS varchar(32)
+#BEGIN
+#DECLARE
+#d float,
+#nd int,
+#np int,
+#q varchar(10),
+#t varchar(16);
+#--
+#SET t = '00:00:00.0';
+#IF (precision < 1)
+#THEN SET precision = 1;
+#END IF;
+#IF (precision > 10)
+#THEN SET precision = 10;
+#END IF;
+#SET np = 0;
+#WHILE (np < precision-1) DO
+#SET t = t||'0';
+#SET np = np + 1;
+#END WHILE;
+#SET d = ABS(deg/15.0);
+#-- degrees
+#SET nd = FLOOR(d);
+#SET q = LTRIM(CAST(nd as varchar(2)));
+#SET t = MS_STUFF(t,3-LENGTH(q),LENGTH(q), q);
+#-- minutes
+#SET d = 60.0 * (d-nd);
+#SELECT f2(1,2,3);
+% .L # table_name
 % f2_single_value # name
 % varchar # type
 % 12 # length
 [ "00:04:00.004"	]
 #SELECT f2(p.ra,8,p."dec") FROM t1999354a as p;
-% sys. # table_name
+% sys.L # table_name
 % f2_ra # name
 % varchar # type
 % 0 # length

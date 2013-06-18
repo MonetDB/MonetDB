@@ -48,7 +48,7 @@ test = (
         # potential differences, which we want to ignore
         re.compile('(?:'+')|(?:'.join([
                 # MAPI port numbers
-                    r"^MAPI  = (.*@.*:\d*|\((monetdb|testuser|(monet|user)_test|my_user2)\) /.*\.s\.monetdb\.\d+)$",
+                    r"^MAPI  = (.*@.*:\d*|\((monetdb|testuser|(monet|user)_test|my_user2|psm)\) /.*\.s\.monetdb\.\d+)$",
                 # SPHINX is optional in monetdb5/modules/mal/inspec05
                     r'\[\s+"[^"]*",\s+"(?:command|function|pattern)",\s+"sphinx",\s+"[^"]*",\s+"[^"]*"\s+\]',
                  ])+')',  re.MULTILINE),
@@ -82,10 +82,10 @@ bbp_dir = re.compile(r'^(-?\d+) (-?\d+) ([^ ]+) ([^ ]+) ([^ ]+) (-?\d+) (-?\d+) 
                      r'( (-?\d+) (-?\d+) (-?\d+))?'
                      r'( (-?\d+) (-?\d+) (-?\d+))?$')
 
-        # "normalize" differences in error messages caused by flex/bison:
-        # matched groups from "norm_in" are replaced by the respective
-        # element of "norm_out", unless the latter is "None" (then, the
-        # respective match is kept as-is).
+# "normalize" differences. e.g., in error messages caused by flex/bison:
+# matched groups from "norm_in" are replaced by the respective
+# element of "norm_out", unless the latter is "None" (then, the
+# respective match is kept as-is).
 norm_in  = re.compile('(?:'+')|(?:'.join([
                                                                                                                                                 # id: #groups
 ### r'^(ERROR = !| *!|)(syntax|parse|parse error: syntax)( error, )(unexpected .* on line |unexpected .* in: )?(.*)\n',                         # 1: 5
@@ -113,6 +113,8 @@ norm_out = (
     None, '1.1', None,                                                                                  # 9: 3
 )
 
+# match "table_name" SQL table header line to normalize "(sys)?.L[0-9]*" to "(sys)?."
+table_name = re.compile(r'^%.*[\t ](|sys)\.L[0-9]*[, ].*# table_name$')
 
 attrre = re.compile(r'\b[-:a-zA-Z_0-9]+\s*=\s*(?:\'[^\']*\'|"[^"]*")')
 elemre = re.compile(r'<[-:a-zA-Z_0-9]+(?P<attrs>(\s+' + attrre.pattern + r')+)\s*/?>')
@@ -173,6 +175,11 @@ def mFilter (FILE, IGNORE) :
                 i+=1
             oline += '\n'
             xline = norm_hint + iline
+        elif table_name.match(iline):
+            # normalize "(sys)?.L[0-9]*" to "(sys)?." in "table_name" line of SQL table header
+            oline = re.sub(r'([ \t])(|sys)(\.)L[0-9]*([, ])', r'\1\2\3\4', iline)
+            # keep original line for reference as comment (i.e., ignore diffs, if any)
+            xline = iline.replace('%','#',1)
         else:
             oline = iline
         if iline == "#~EndVariableOutput~#\n":

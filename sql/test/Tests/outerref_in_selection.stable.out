@@ -23,7 +23,20 @@ Ready.
 # 11:50:11 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < outerref_in_selection.sql
 # 11:50:11 >  
 
-% .b,	.a # table_name
+# 11:42:51 >  
+# 11:42:51 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-23209" "--port=33225"
+# 11:42:51 >  
+
+#create table capediff (
+#        cape_date date,
+#        num_at_cape integer
+#);
+#SELECT cape_date,(
+#    SELECT sum(a.num_at_cape)
+#        FROM capediff AS a
+#        WHERE a.cape_date <= b.cape_date) AS numppl
+#    FROM capediff AS b;
+% .b,	.L2 # table_name
 % cape_date,	numppl # name
 % date,	bigint # type
 % 10,	1 # length

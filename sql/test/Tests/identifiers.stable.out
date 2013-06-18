@@ -25,32 +25,39 @@ Ready.
 # 11:50:07 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < identifiers.sql
 # 11:50:07 >  
 
-% . # table_name
+#SELECT 1 AS bla; -- gives bla
+% .L # table_name
 % bla # name
 % tinyint # type
 % 1 # length
 [ 1	]
-% . # table_name
+#SELECT 1 AS BLA; -- gives bla
+% .L # table_name
 % bla # name
 % tinyint # type
 % 1 # length
 [ 1	]
-% . # table_name
+#SELECT 1 AS "bla"; -- gives bla
+% .L # table_name
 % bla # name
 % tinyint # type
 % 1 # length
 [ 1	]
-% . # table_name
+#SELECT 1 AS "Bla"; -- gives Bla
+% .L # table_name
 % Bla # name
 % tinyint # type
 % 1 # length
 [ 1	]
-% . # table_name
+#SELECT 1 AS "BLA"; -- gives BLA
+% .L # table_name
 % BLA # name
 % tinyint # type
 % 1 # length
 [ 1	]
-% . # table_name
+#CREATE TABLE "B\"la\"" (id int); -- succeeds
+#SELECT 1 AS "B\"la\""; -- should succeed, gives B"la"
+% .L # table_name
 % B"la" # name
 % tinyint # type
 % 1 # length

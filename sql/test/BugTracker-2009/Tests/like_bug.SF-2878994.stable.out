@@ -36,7 +36,8 @@ Ready.
 [ "aaa"	]
 [ 2	]
 [ 2	]
-% sys.a2,	sys.b2 # table_name
+#SELECT a2.name as x, b2.name as y FROM a2,b2 WHERE a2.name LIKE b2.name;
+% sys.L,	sys.L # table_name
 % x,	y # name
 % varchar,	varchar # type
 % 1,	1 # length

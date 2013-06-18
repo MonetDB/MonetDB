@@ -37,31 +37,36 @@ Ready.
 [ 1	]
 [ 2	]
 [ 3	]
-% . # table_name
+#select 1<2;
+% .L # table_name
 % <_single_value # name
 % boolean # type
 % 5 # length
 [ true	]
-% . # table_name
+#select 'A'='a';
+% .L # table_name
 % =_single_value # name
 % boolean # type
 % 5 # length
 [ false	]
-% . # table_name
+#select 1 from my_table where 1<2;
+% .L # table_name
 % single_value # name
 % tinyint # type
 % 1 # length
 [ 1	]
 [ 1	]
 [ 1	]
-% . # table_name
+#select 1 from my_table where true;
+% .L # table_name
 % single_value # name
 % tinyint # type
 % 1 # length
 [ 1	]
 [ 1	]
 [ 1	]
-% . # table_name
+#select '1' where 1 = 0;
+% .L # table_name
 % single_value # name
 % char # type
 % 1 # length

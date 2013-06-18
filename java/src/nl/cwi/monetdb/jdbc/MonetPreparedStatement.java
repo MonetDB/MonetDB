@@ -951,25 +951,40 @@ public class MonetPreparedStatement
 	 * The driver converts this to an SQL NUMERIC value when it sends it to the
 	 * database.
 	 *
-	 * @param i the first parameter is 1, the second is 2, ...
+	 * @param idx the first parameter is 1, the second is 2, ...
 	 * @param x the parameter value
 	 * @throws SQLException if a database access error occurs
 	 */
-	public void setBigDecimal(int i, BigDecimal x)
+	public void setBigDecimal(int idx, BigDecimal x)
 		throws SQLException
 	{
-		// if we don't give the server the exact digits/scale thing, it
-		// barfs at us that we don't give it a correct value, so...
-		String ps = x.toPlainString();
-		// chop off excess "precision"
-		int di = ps.indexOf(".");
-		if (di >= 0 && ps.length() - di - 1 > scale[i])
-			ps = ps.substring(0, di + scale[i] + (scale[i] == 0 ? 0 : 1));
-		if (di < 0)
-			di = ps.length();
-		if (di > (digits[i] - scale[i]))
-			throw new SQLDataException("DECIMAL value exceeds allowed digits/scale: " + ps + " (" + digits[i] + "/" + scale[i] + ")", "22003");
-		setValue(i, ps);
+		// get array position
+		int i = getParamIdx(idx);
+
+		// We need to shave off enough digits to bring ourselves to an
+		// acceptable precision if we currently have too many digits.
+		int digitsToShave = Math.max(0, x.precision() - digits[i]);
+		int targetScale = Math.min(scale[i], x.scale() - digitsToShave);
+
+		// However, if we need to shave off more digits than we have available
+		// to the right of the decimal point, then this is impossible.
+		if (targetScale < 0)
+			throw new SQLDataException("DECIMAL value exceeds allowed digits/scale: " + x.toPlainString() + " (" + digits[i] + "/" + scale[i] + ")", "22003");
+
+		// Reduction is possible via rounding; do it and we're good to go.
+		x = x.round(new MathContext(targetScale, RoundingMode.HALF_UP));
+
+		// MonetDB doesn't like leading 0's, since it counts them as part of
+		// the precision, so let's strip them off. (But be careful not to do
+		// this to the exact number "0".)  Also strip off trailing
+		// numbers that are inherent to the double representation.
+		String xStr = x.toPlainString();
+		int dot = xStr.indexOf(".");
+		if (dot != 0)
+			xStr = xStr.substring(0, Math.min(xStr.length(), dot + 1 + scale[i]));
+		while (xStr.startsWith("0") && xStr.length() > 1)
+			xStr = xStr.substring(1);
+		setValue(idx, xStr);
 	}
 
 	/**

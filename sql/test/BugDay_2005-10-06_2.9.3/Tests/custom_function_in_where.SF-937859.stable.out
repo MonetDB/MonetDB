@@ -19,7 +19,11 @@ Ready.
 # 12:40:51 >  
 
 [ 4	]
-% sys. # table_name
+#select char_length(a.s)-char_length(b.s) 
+#from   t937859 a, t937859 b 
+#where  a.id < b.id 
+#and    char_length(a.s)-char_length(b.s)=0;
+% sys.L # table_name
 % sql_sub_char_length_s # name
 % bigint # type
 % 1 # length

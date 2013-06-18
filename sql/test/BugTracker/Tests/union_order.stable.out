@@ -23,11 +23,26 @@ Ready.
 # 15:51:29 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=36178 
 # 15:51:29 >  
 
-% .tmp_one # table_name
+# 11:45:16 >  
+# 11:45:16 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-23209" "--port=33225"
+# 11:45:16 >  
+
+#create table tmp_one (data numeric(5));
+#create table tmp_two (data numeric(5));
+#select data from tmp_one
+#union
+#select data from tmp_two
+#;
+% .L # table_name
 % data # name
 % decimal # type
 % 6 # length
-% .tmp_one # table_name
+#select data from tmp_one
+#union
+#select data from tmp_two
+#order by data
+#;
+% .L # table_name
 % data # name
 % decimal # type
 % 6 # length

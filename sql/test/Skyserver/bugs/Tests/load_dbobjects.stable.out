@@ -39,7 +39,8 @@ Ready.
 [ "DBColumns",	"U",	"U",	" Every column of every table has a description in this table ",	"none",	0	]
 [ "DBObjects",	"U",	"U",	" Every SkyServer database object has a one line description in this table ",	"none",	0	]
 [ "DBViewCols",	"U",	"U",	" The columns of each view are stored for the auto-documentation ",	" * means that every column from the  parent is propagated. ",	0	]
-% sys.dbobjects # table_name
+#select count(*) from DBObjects;
+% sys.L1 # table_name
 % L1 # name
 % wrd # type
 % 1 # length

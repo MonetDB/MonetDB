@@ -24,7 +24,23 @@ Ready.
 # 00:03:21 >  mclient -lsql -umonetdb -Pmonetdb --host=rig --port=32164 
 # 00:03:21 >  
 
-% .sub,	. # table_name
+# 11:47:13 >  
+# 11:47:13 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-23209" "--port=33225"
+# 11:47:13 >  
+
+#select x
+#, case when x < 12 then 1 else 0 end as log
+#from (
+#select 10 as x
+#union
+#select 11 as x
+#union
+#select 12 as x
+#union
+#select 13 as x
+#) sub
+#;
+% .sub,	.L # table_name
 % x,	log # name
 % tinyint,	tinyint # type
 % 2,	1 # length
@@ -32,7 +48,19 @@ Ready.
 [ 11,	1	]
 [ 12,	0	]
 [ 13,	0	]
-% .sub,	. # table_name
+#select x
+#, case when x <= 12 then 1 else 0 end as log
+#from (
+#select 10 as x
+#union
+#select 11 as x
+#union
+#select 12 as x
+#union
+#select 13 as x
+#) sub
+#;
+% .sub,	.L # table_name
 % x,	log # name
 % tinyint,	tinyint # type
 % 2,	1 # length
@@ -40,7 +68,19 @@ Ready.
 [ 11,	1	]
 [ 12,	1	]
 [ 13,	0	]
-% .sub,	. # table_name
+#select x
+#, case when x = 12 then 1 else 0 end as log
+#from (
+#select 10 as x
+#union
+#select 11 as x
+#union
+#select 12 as x
+#union
+#select 13 as x
+#) sub
+#;
+% .sub,	.L # table_name
 % x,	log # name
 % tinyint,	tinyint # type
 % 2,	1 # length
@@ -48,7 +88,19 @@ Ready.
 [ 11,	0	]
 [ 12,	1	]
 [ 13,	0	]
-% .sub,	. # table_name
+#select x
+#, case when x >= 12 then 1 else 0 end as log
+#from (
+#select 10 as x
+#union
+#select 11 as x
+#union
+#select 12 as x
+#union
+#select 13 as x
+#) sub
+#;
+% .sub,	.L # table_name
 % x,	log # name
 % tinyint,	tinyint # type
 % 2,	1 # length
@@ -56,7 +108,19 @@ Ready.
 [ 11,	0	]
 [ 12,	1	]
 [ 13,	1	]
-% .sub,	. # table_name
+#select x
+#, case when x > 12 then 1 else 0 end as log
+#from (
+#select 10 as x
+#union
+#select 11 as x
+#union
+#select 12 as x
+#union
+#select 13 as x
+#) sub
+#;
+% .sub,	.L # table_name
 % x,	log # name
 % tinyint,	tinyint # type
 % 2,	1 # length

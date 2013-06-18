@@ -47,7 +47,7 @@ Ready.
 #    FROM
 #      t2852
 #  ;
-% sys. # table_name
+% sys.L # table_name
 % not_isnull_sql_div_c # name
 % bigint # type
 % 1 # length

@@ -56,7 +56,8 @@ Ready.
 # 20:13:23 >  Mtimeout -timeout 60 mclient -lsql -umonetdb -Pmonetdb --host=pegasus --port=31872  -s 'select count(*) from aggtest;'
 # 20:13:23 >  
 
-% sys.aggtest # table_name
+#select count(*) from aggtest;
+% sys.L1 # table_name
 % L1 # name
 % wrd # type
 % 1 # length

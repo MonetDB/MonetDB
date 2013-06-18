@@ -1,7 +1,5 @@
 # various bugs in the group(functions) code
 
-#disabled: works in progress
-
 # should return 0
 jaql.x("[]->group into count($);");
 # only works when the groupkey exists for all elements

@@ -23,17 +23,25 @@ Ready.
 # 11:27:48 >  mclient -lsql -umonetdb -Pmonetdb --host=koala --port=34688 
 # 11:27:48 >  
 
-% sys.casebug # table_name
+# 11:45:53 >  
+# 11:45:53 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-23209" "--port=33225"
+# 11:45:53 >  
+
+#CREATE TABLE casebug(a int);
+#SELECT SUM(a) FROM casebug;
+% sys.L1 # table_name
 % L1 # name
 % bigint # type
 % 20 # length
 [ NULL	]
-% sys.casebug # table_name
+#SELECT MIN(a) FROM casebug;
+% sys.L1 # table_name
 % L1 # name
 % int # type
 % 11 # length
 [ NULL	]
-% sys. # table_name
+#SELECT COALESCE(MIN(a), 0) FROM casebug;
+% sys.L1 # table_name
 % isnull_not_isnull_L1 # name
 % int # type
 % 1 # length

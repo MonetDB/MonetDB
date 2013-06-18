@@ -36,7 +36,10 @@ Ready.
 #-- SQL92 string continuation syntax
 #-- E021-03 character string literals
 #SELECT 'first line'
-% . # table_name
+#' - next line'
+#	' - third line'
+#	AS "Three lines to one";
+% .L # table_name
 % Three lines to one # name
 % char # type
 % 35 # length

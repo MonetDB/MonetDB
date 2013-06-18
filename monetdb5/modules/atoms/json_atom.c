@@ -35,21 +35,21 @@
 
 int TYPE_json;
 
-str JSONparse(char *j);
+static str JSONparse(char *j);
 
 int JSONfromString(str src, int *len, json *j)
 {
-    size_t ll;
-
-    if (*j !=0)
-        GDKfree(*j);
-
-    ll = strlen(src);
-    assert(ll <= (size_t) INT_MAX);
-    *len = (int) ll;
-    *j = GDKstrdup(src);
-
-    return *len;
+	ssize_t slen = (ssize_t) strlen(src);
+	if ((ssize_t) *len < slen)
+		*j = GDKrealloc(*j, slen + 1);
+	*len = (int) slen;
+	if (GDKstrFromStr((unsigned char *) *j, (const unsigned char *) src, slen) < 0) {
+		GDKfree(*j);
+		*j = GDKstrdup(str_nil);
+		*len = 2;
+		return 0;
+	}
+	return *len;
 }
 
 int JSONtoString(str *s, int *len, json src)
@@ -63,11 +63,12 @@ int JSONtoString(str *s, int *len, json src)
         return 0;
     }
 	for (c =src; *c; c++)
-	switch(*c){
-	case '"':
-	case '\\':
-		cnt++;
-	}
+		switch(*c){
+		case '"':
+		case '\\':
+		case '\n':
+			cnt++;
+		}
     ll = strlen(src);
     assert(ll <= (size_t) INT_MAX);
     l = (int) ll + cnt+3;
@@ -81,13 +82,18 @@ int JSONtoString(str *s, int *len, json src)
 	dst = *s;
 	*dst++ = '"';
 	for (c =src; *c; c++)
-	switch(*c){
-	case '"':
-	case '\\':
-		*dst++ = '\\';
-	default:
-		*dst++ = *c;
-	}
+		switch(*c){
+		case '"':
+		case '\\':
+			*dst++ = '\\';
+		default:
+			*dst++ = *c;
+			break;
+		case '\n':
+			*dst++ = '\\';
+			*dst++ = 'n';
+			break;
+		}
 	*dst++ = '"';
 	*dst = 0;
     *len = l-1;
@@ -322,7 +328,7 @@ JSONobjectParser(char *j, char **next)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 JSONparse(char *j)
 {  str msg;
 

@@ -14,16 +14,14 @@ stdout of test 'multiple_select_cast.SF-938419` in directory 'sql/test/BugDay_20
 Ready.
 
 
-# 11:50:35 >  
-# 11:50:35 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < multiple_select_cast.SF-938419.sql
-# 11:50:35 >  
-
-% . # table_name
+#select cast(0 as integer);
+% .L # table_name
 % single_value # name
 % int # type
 % 1 # length
 [ 0	]
-% . # table_name
+#select cast(0 as integer);
+% .L # table_name
 % single_value # name
 % int # type
 % 1 # length

@@ -12,18 +12,43 @@ stdout of test 'select_null` in directory 'sql/test/BugDay_2005-10-06_2.8` itsel
 
 
 Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_history.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_compress.sql
+# loading sql script: 18_dictionary.sql
+# loading sql script: 19_cluster.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 24_zorder.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 99_system.sql
 
+# 11:43:22 >  
+# 11:43:22 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-23209" "--port=33225"
+# 11:43:22 >  
 
-# 11:50:14 >  
-# 11:50:14 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < select_null.sql
-# 11:50:14 >  
-
-% . # table_name
+#START TRANSACTION;
+#select null;
+% .L # table_name
 % single_value # name
 % char # type
 % 0 # length
 [ NULL	]
-% . # table_name
+#select null as v;
+% .L # table_name
 % v # name
 % char # type
 % 0 # length

@@ -24,7 +24,7 @@ Ready.
 # 10:17:27 >  
 
 #select decimal_function(10);
-% . # table_name
+% .L # table_name
 % decimal_function_single_value # name
 % decimal # type
 % 12 # length

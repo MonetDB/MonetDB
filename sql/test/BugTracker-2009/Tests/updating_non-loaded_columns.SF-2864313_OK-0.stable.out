@@ -25,13 +25,15 @@ Ready.
 # 15:32:36 >  
 
 [ 1024	]
-% sys.t0 # table_name
+#select count(*) from t0;
+% sys.L1 # table_name
 % L1 # name
 % wrd # type
 % 4 # length
 [ 1024	]
 [ 1024	]
-% sys.t1 # table_name
+#select count(*) from t1;
+% sys.L1 # table_name
 % L1 # name
 % wrd # type
 % 4 # length

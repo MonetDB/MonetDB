@@ -40,7 +40,13 @@ Ready.
 % 1 # length
 [ 1	]
 #select kvk from kvk except (
-% sys.kvk # table_name
+#	select kvk from kvk_nieuw
+#	union
+#	select kvk from	kvk_extra
+#	union
+#	select kvk from kvk_extra_nieuw
+#);
+% sys.L # table_name
 % kvk # name
 % bigint # type
 % 1 # length

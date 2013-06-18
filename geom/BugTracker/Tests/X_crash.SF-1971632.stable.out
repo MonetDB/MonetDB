@@ -28,7 +28,8 @@ Ready.
 [ 1	]
 [ 1	]
 [ 1	]
-% sys.geoms # table_name
+#select count(*) from geoms;
+% sys.L1 # table_name
 % L1 # name
 % wrd # type
 % 1 # length

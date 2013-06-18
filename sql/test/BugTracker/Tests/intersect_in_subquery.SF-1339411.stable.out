@@ -30,7 +30,10 @@ Ready.
 % int # type
 % 1 # length
 [ 1	]
-% sys.urls # table_name
+#((select urlid from urls where a < 100 and b <200)
+#intersect
+#(select urlid from urls where a < 100 and b <300));
+% sys.L # table_name
 % urlid # name
 % int # type
 % 1 # length

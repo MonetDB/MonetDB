@@ -62,7 +62,7 @@ Ready.
 #        (CASE WHEN station136 is NULL THEN 0 ELSE station136 END) +
 #        (CASE WHEN station136 is NULL THEN 0 ELSE station136 END) +
 #        (CASE WHEN station136 is NULL THEN 0 ELSE station136 END) +
-% sys.t2239,	sys. # table_name
+% sys.t2239,	sys.L # table_name
 % station136,	isnull_station136 # name
 % smallint,	bigint # type
 % 4,	5 # length

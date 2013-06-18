@@ -24,13 +24,13 @@ Ready.
 # 09:50:32 >  
 
 #select (select count(*) from _tables) > 5;
-% sys. # table_name
+% sys.L1 # table_name
 % >_L1 # name
 % boolean # type
 % 5 # length
 [ true	]
 #select 5 < (select count(*) from _tables);
-% . # table_name
+% .L1 # table_name
 % <_single_value # name
 % boolean # type
 % 5 # length

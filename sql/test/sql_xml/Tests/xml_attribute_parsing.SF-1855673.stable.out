@@ -23,7 +23,8 @@ Ready.
 # 17:54:53 >  mclient -lsql -umonetdb -Pmonetdb --host=koala --port=35176 
 # 17:54:53 >  
 
-% . # table_name
+#SELECT xmlelement(name element,xmlattributes ('unnamed and wrong'));
+% .L # table_name
 % element_element # name
 % xml # type
 % 44 # length

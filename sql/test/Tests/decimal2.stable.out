@@ -24,45 +24,50 @@ Ready.
 # 20:26:51 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=39101  < decimal2.sql
 # 20:26:51 >  
 
-% . # table_name
+#select 0.01;
+% .L # table_name
 % single_value # name
 % decimal # type
 % 5 # length
 [ 0.01	]
-% . # table_name
+#select .01;
+% .L # table_name
 % single_value # name
 % decimal # type
 % 4 # length
 [ 0.01	]
-% . # table_name
+#select .1;
+% .L # table_name
 % single_value # name
 % decimal # type
 % 3 # length
 [ 0.1	]
-% . # table_name
+#select .10;
+% .L # table_name
 % single_value # name
 % decimal # type
 % 4 # length
 [ 0.10	]
 #select 01.0;
-% . # table_name
+% .L # table_name
 % single_value # name
 % decimal # type
 % 5 # length
 [ 1.0	]
 #select 10.0;
-% . # table_name
+% .L # table_name
 % single_value # name
 % decimal # type
 % 5 # length
 [ 10.0	]
 #select 10.;
-% . # table_name
+% .L # table_name
 % single_value # name
 % decimal # type
 % 3 # length
 [ 10	]
-% . # table_name
+#select 0.;
+% .L # table_name
 % single_value # name
 % decimal # type
 % 3 # length

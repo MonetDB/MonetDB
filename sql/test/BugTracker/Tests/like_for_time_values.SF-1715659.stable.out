@@ -24,7 +24,8 @@ Ready.
 # 10:35:46 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=36465 
 # 10:35:46 >  
 
-% . # table_name
+#select now() LIKE '12:14';
+% .L # table_name
 % current_timestamp # name
 % boolean # type
 % 5 # length

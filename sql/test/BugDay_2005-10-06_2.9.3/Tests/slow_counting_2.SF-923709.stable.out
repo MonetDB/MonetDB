@@ -14,11 +14,8 @@ stdout of test 'slow_counting_2.SF-923709` in directory 'sql/test/BugDay_2005-10
 Ready.
 
 
-# 19:06:11 >  
-# 19:06:11 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=37689  < slow_counting_2.SF-923709.sql
-# 19:06:11 >  
-
-% sys.slow_count # table_name
+#select count(*) from slow_count;
+% sys.L1 # table_name
 % L1 # name
 % wrd # type
 % 6 # length

@@ -35,7 +35,8 @@ Ready.
 [ 1	]
 [ 1	]
 [ 1	]
-% sys. # table_name
+#select distinct concat("dir", "test") as a from lim_prob order by a limit 10;
+% sys.L # table_name
 % a # name
 % varchar # type
 % 14 # length
@@ -46,7 +47,8 @@ Ready.
 [ "mydir2/mytest1"	]
 [ "mydir2/mytest2"	]
 [ "mydir2/mytest3"	]
-% sys. # table_name
+#select distinct concat("dir", "test") as a from lim_prob order by a;
+% sys.L # table_name
 % a # name
 % varchar # type
 % 14 # length

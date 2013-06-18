@@ -24,17 +24,17 @@ Ready.
 # 21:48:51 >  
 
 #SELECT 1, (SELECT count(*) FROM tables);
-% .L2,	.tables # table_name
+% .L2,	.L1 # table_name
 % L2,	L1 # name
 % tinyint,	wrd # type
 % 1,	2 # length
-[ 1,	39	]
+[ 1,	38	]
 #SELECT (SELECT count(*) FROM tables), 1;
-% .tables,	. # table_name
+% .L1,	.L1 # table_name
 % L1,	single_value # name
 % wrd,	tinyint # type
 % 2,	1 # length
-[ 39,	1	]
+[ 38,	1	]
 
 # 21:48:51 >  
 # 21:48:51 >  "Done."

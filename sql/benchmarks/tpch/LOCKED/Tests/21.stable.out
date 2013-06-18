@@ -23,7 +23,42 @@ Ready.
 # 11:48:04 >  Mtimeout -timeout 600 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < 21.sql
 # 11:48:04 >  
 
-% sys.supplier,	sys.supplier # table_name
+# 15:21:39 >  
+# 15:21:39 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-17397" "--port=38268"
+# 15:21:39 >  
+
+#select
+#	s_name,
+#	count(*) as numwait
+#from
+#	supplier,
+#	lineitem l1,
+#	orders,
+#	nation
+#where
+#	s_suppkey = l1.l_suppkey
+#	and o_orderkey = l1.l_orderkey
+#	and o_orderstatus = 'F'
+#	and l1.l_receiptdate > l1.l_commitdate
+#	and exists (
+#		select
+#			*
+#		from
+#			lineitem l2
+#		where
+#			l2.l_orderkey = l1.l_orderkey
+#			and l2.l_suppkey <> l1.l_suppkey
+#	)
+#	and not exists (
+#		select
+#			*
+#		from
+#			lineitem l3
+#		where
+#			l3.l_orderkey = l1.l_orderkey
+#			and l3.l_suppkey <> l1.l_suppkey
+#			and l3.l_receiptdate > l3.l_commitdate
+% sys.supplier,	sys.L5 # table_name
 % s_name,	numwait # name
 % varchar,	wrd # type
 % 18,	1 # length
