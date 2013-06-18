@@ -1363,15 +1363,15 @@ typedef var_t stridx_t; /* TODO: should also be unsigned short, but kept at var_
 
 #if SIZEOF_VAR_T == 8
 #define VarHeapValRaw(b,p,w)						\
-	((w)==1 ? (var_t)*((unsigned char *)(b)+(p))+GDK_VAROFFSET :	\
-	 ((w)==2 ? (var_t)*((unsigned short *)(b)+(p))+GDK_VAROFFSET :	\
-	  ((w)==4 ? (var_t)*((unsigned int *)(b)+(p)) :			\
-	   *((var_t *)(b)+(p)))))
+	((w) == 1 ? (var_t) ((unsigned char *) (b))[p] + GDK_VAROFFSET : \
+	 (w) == 2 ? (var_t) ((unsigned short *) (b))[p] + GDK_VAROFFSET : \
+	 (w) == 4 ? (var_t) ((unsigned int *) (b))[p] :			\
+	 ((var_t *) (b))[p])
 #else
 #define VarHeapValRaw(b,p,w)						\
-	((w)==1 ? (var_t)*((unsigned char *)(b)+(p))+GDK_VAROFFSET :	\
-	 ((w)==2 ? (var_t)*((unsigned short *)(b)+(p))+GDK_VAROFFSET :	\
-	  *((var_t *)(b)+(p))))
+	((w) == 1 ? (var_t) ((unsigned char *) (b))[p] + GDK_VAROFFSET : \
+	 (w) == 2 ? (var_t) ((unsigned short *) (b))[p] + GDK_VAROFFSET : \
+	 ((var_t *) (b))[p])
 #endif
 #define VarHeapVal(b,p,w) ((size_t) VarHeapValRaw(b,p,w)  << GDK_VARSHIFT)
 #define BUNhvaroff(bi,p) VarHeapVal((bi).b->H->heap.base, (p), (bi).b->H->width)
