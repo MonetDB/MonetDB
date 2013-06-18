@@ -31,8 +31,8 @@
 #include "mal_interpreter.h"
 #include "algebra.h"
 
-//#define DEBUG_OPT_DETAIL
-//#define _DEBUG_OPT_CENTIPEDE_ 
+#define DEBUG_OPT_DETAIL
+#define _DEBUG_OPT_CENTIPEDE_ 
 
 #define BLOCKED 1	// Instruction should remain in main routine
 #define PARTITION 2	// Instruction is part of the fragment routine
@@ -203,15 +203,15 @@ OPTexecController(Client cntxt, MalBlkPtr mb, MalBlkPtr pmb, InstrPtr ret, Instr
 		char buf[BUFSIZ];
 		q= copyInstruction(getInstrPtr(mb,i));
 #ifdef _DEBUG_OPT_CENTIPEDE_
-		if ( status[i]){
-			mnstr_printf(cntxt->fdout,"\n#cmb include stmt %d status %d\n",i,status[i]);
-			printInstruction(cntxt->fdout, mb, 0, q,LIST_MAL_STMT);
-		}
+		mnstr_printf(cntxt->fdout,"\n#cmb include stmt %d status %d\n",i,status[i]);
+		printInstruction(cntxt->fdout, mb, 0, q,LIST_MAL_STMT);
 #endif
 		if (getModuleId(q) == groupRef && (getFunctionId(q) == subgroupRef || getFunctionId(q) == subgroupdoneRef)){
 			snprintf(buf,BUFSIZ,"Y_%d",getArg(q,q->retc));
 			q= copyInstruction(q);
 			getArg(q,q->retc) = findVariable(cmb,buf);
+			if ( getArg(q,q->retc) == -1)
+				getArg(q,q->retc) = newVariable(cmb,GDKstrdup(buf),TYPE_any);
 			pushInstruction(cmb,q);
 		} else
 		if (getModuleId(q) == aggrRef && getFunctionId(q) == countRef ){
@@ -559,7 +559,7 @@ OPTbakePlans(Client cntxt, MalBlkPtr mb, Slices *slices)
 				vars[getArg(p,0)] = PIVOT;
 			} 
 		} else
-		if ( getModuleId(p) == algebraRef && (getFunctionId(p)== thetaselectRef  || getFunctionId(p) == selectRef || getFunctionId(p) == subselectRef)){
+		if ( getModuleId(p) == algebraRef && (getFunctionId(p)== thetaselectRef  || getFunctionId(p) == selectRef || getFunctionId(p) == subselectRef ||getFunctionId(p) == thetasubselectRef || getFunctionId(p) == likesubselectRef)){
 			if ( vars[getArg(p,p->retc)] == PARTITION ){
 				status[i] = PARTITION;
 				vars[getArg(p,0)] = PARTITION;
@@ -621,18 +621,9 @@ OPTbakePlans(Client cntxt, MalBlkPtr mb, Slices *slices)
 			}
 		} else
 		if ( getModuleId(p) == algebraRef && (getFunctionId(p) == subsortRef || getFunctionId(p) == sortRef || getFunctionId(p)== tinterRef) ) {
-			int parts=0;
-			for ( j= p->retc; j<p->argc; j++)
-				parts += vars[getArg(p,j)] ==PARTITION;
-			if (parts == 1){
-				status[i] = PARTITION;
-				for(j=0; j < p->retc; j++)
-					vars[getArg(p,j)] = PARTITION;
-			} else {
-				status[i] = BLOCKED;
-				for(j=0; j < p->retc; j++)
-					vars[getArg(p,j)] = PARTITION;
-			}
+			status[i] = BLOCKED;
+			for(j=0; j < p->retc; j++)
+				vars[getArg(p,j)] = BLOCKED;
 		} else
 		if (    getModuleId(p) == batRef && getFunctionId(p)==appendRef )  {
 			if ( vars[getArg(p,p->retc)] == PARTITION){
@@ -736,7 +727,7 @@ OPTbakePlans(Client cntxt, MalBlkPtr mb, Slices *slices)
 		p = old[i];
 		if ( p )
 		for( j = p->retc; j < p->argc; j++)
-		if ( isaBatType(getArgType(plan,p,j)) && (vars[getArg(p,j)]== PIVOT || vars[getArg(p,j)] == PARTITION)){
+		if ( isaBatType(getArgType(plan,p,j)) && (vars[getArg(p,j)]== PIVOT || vars[getArg(p,j)] == PARTITION ||vars[getArg(p,j)] == SUPPORTIVE)){
 			addvartolist(plan,&cntrlreturn,getArg(p,j));
 			addvartolist(plan,&planreturn,getArg(p,j));
 			addvartolist(plan,&packs,getArg(p,j));
@@ -806,7 +797,7 @@ OPTbakePlans(Client cntxt, MalBlkPtr mb, Slices *slices)
 				addvartolist(plan,&planreturn,getArg(p,0));
 				pushInstruction(plan,p);
 			} else
-			if (getModuleId(p) == groupRef && getFunctionId(p) == subgroupdoneRef ) {
+			if (getModuleId(p) == groupRef && (getFunctionId(p) == subgroupdoneRef || getFunctionId(p) == subgroupRef) ) {
 				char buf[BUFSIZ];
 				int id= getArg(p,p->retc);
 				/* produce all code to get a reduced table across */
