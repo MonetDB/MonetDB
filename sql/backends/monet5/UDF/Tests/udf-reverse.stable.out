@@ -49,10 +49,11 @@ Ready.
 % mal # name
 % clob # type
 % 74 # length
-function user.s0_1{autoCommit=true}(A0:str):void;
+function user.s2_1{autoCommit=true}(A0:str):void;
     X_3 := udf.reverse(A0);
     sql.exportValue(1,".L","reverse_single_value","clob",0,0,4,X_3,"");
-end s0_1;
+end s2_1;
+# querylog.define("explain select reverse(\\'MonetDB\\');","default_pipe")
 #select reverse('MonetDB');
 % .L # table_name
 % reverse_single_value # name
@@ -82,7 +83,7 @@ end s0_1;
 % mal # name
 % clob # type
 % 79 # length
-function user.s3_1{autoCommit=true}():void;
+function user.s6_1{autoCommit=true}():void;
     X_2 := sql.mvc();
     X_3:bat[:oid,:oid]  := sql.tid(X_2,"sys","udf_reverse");
     X_6 := sql.bind(X_2,"sys","udf_reverse","x",0);
@@ -95,7 +96,8 @@ function user.s3_1{autoCommit=true}():void;
     sql.rsColumn(X_18,"sys.L","reverse_x","clob",0,0,X_16);
     X_22 := io.stdout();
     sql.exportResult(X_22,X_18);
-end s3_1;
+end s6_1;
+# querylog.define("explain select reverse(x) from udf_reverse;","default_pipe")
 #select reverse(x) from udf_reverse;
 % sys.L # table_name
 % reverse_x # name

@@ -45,7 +45,7 @@ Ready.
 % mal # name
 % clob # type
 % 173 # length
-function user.s0_1():void;
+function user.s2_1():void;
 barrier X_50 := language.dataflow();
     X_1 := sql.mvc();
     X_2:bat[:oid,:oid]  := sql.tid(X_1,"sys","treeitems");
@@ -69,7 +69,8 @@ exit X_50;
     sql.rsColumn(X_26,"sys.L","id2","int",32,0,X_24);
     X_35 := io.stdout();
     sql.exportResult(X_35,X_26);
-end s0_1;
+end s2_1;
+# querylog.define("explain\nselect t1.subject as id1, t2.subject as id2\nfrom  treeitems t1, treeitems t2\nwhere t2.pre between t1.pre and t1.pre + t1.size;","default_pipe")
 #ROLLBACK;
 
 # 20:18:31 >  
