@@ -1,3 +1,9 @@
+monetdb (11.15.11-20130619) unstable; urgency=low
+
+  * Rebuilt.
+
+ -- Hannes Muehleisen <hannes@cwi.nl>  Wed, 19 Jun 2013 17:06:18 +0200
+
 monetdb (11.15.9-20130619) unstable; urgency=low
 
   * Rebuilt.
