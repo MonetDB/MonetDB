@@ -2976,11 +2976,13 @@ rel2bin_insert( mvc *sql, sql_rel *rel, list *refs)
 {
 	list *newl, *l;
 	stmt *inserts = NULL, *insert = NULL, *s, *ddl = NULL, *pin = NULL;
-	int idx_ins = 0;
+	int idx_ins = 0, constraint = 1;
 	node *n, *m;
 	sql_rel *tr = rel->l, *prel = rel->r;
 	sql_table *t = NULL;
 
+	if ((rel->flag&UPD_NO_CONSTRAINT)) 
+		constraint = 0;
 	if ((rel->flag&UPD_COMP)) {  /* special case ! */
 		idx_ins = 1;
 		prel = rel->l;
@@ -3027,7 +3029,7 @@ rel2bin_insert( mvc *sql, sql_rel *rel, list *refs)
 		if ((hash_index(i->type) && list_length(i->columns) <= 1) ||
 		    i->type == no_idx)
 			is = NULL;
-		if (i->key) {
+		if (i->key && constraint) {
 			stmt *ckeys = sql_insert_key(sql, newl, i->key, is, pin);
 
 			list_prepend(l, ckeys);
@@ -3045,7 +3047,8 @@ rel2bin_insert( mvc *sql, sql_rel *rel, list *refs)
 		return NULL;
 
 	l = list_append(l, stmt_list(sql->sa, newl));
-	sql_insert_check_null(sql, t, newl, l);
+	if (constraint)
+		sql_insert_check_null(sql, t, newl, l);
 	if (!sql_insert_triggers(sql, t, l)) 
 		return sql_error(sql, 02, "INSERT INTO: triggers failed for table '%s'", t->base.name);
 	if (insert->op1->nrcols == 0) {
