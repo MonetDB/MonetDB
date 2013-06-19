@@ -134,6 +134,7 @@ OPTexecController(Client cntxt, MalBlkPtr mb, MalBlkPtr pmb, InstrPtr ret, Instr
 			getModuleId(pack[k]) = matRef;
 			getFunctionId(pack[k]) = packRef;
 			getArg(pack[k],0) = getArg(packs,k); 
+			assert(packs->argv[k] >=0);
 		}
 	}
 
@@ -195,6 +196,10 @@ OPTexecController(Client cntxt, MalBlkPtr mb, MalBlkPtr pmb, InstrPtr ret, Instr
 			//setVarType(cmb,z, newBatType(TYPE_oid,getTailType(getVarType(cmb,z))) );
 		}
 	}
+#ifdef _DEBUG_OPT_CENTIPEDE_
+	mnstr_printf(cntxt->fdout,"\n#cmb structure\n");
+	printFunction(cntxt->fdout, cmb, 0, LIST_MAL_STMT);
+#endif
 
 	(void) status;
 	/* look for pivot operations in original plan */
@@ -203,13 +208,16 @@ OPTexecController(Client cntxt, MalBlkPtr mb, MalBlkPtr pmb, InstrPtr ret, Instr
 		char buf[BUFSIZ];
 		q= copyInstruction(getInstrPtr(mb,i));
 #ifdef _DEBUG_OPT_CENTIPEDE_
-		mnstr_printf(cntxt->fdout,"\n#cmb include stmt %d status %d\n",i,status[i]);
+		mnstr_printf(cntxt->fdout,"#cmb include stmt %d status %d:",i,status[i]);
 		printInstruction(cntxt->fdout, mb, 0, q,LIST_MAL_STMT);
+		for(k=0; k<q->argc;k++)
+			assert(getArg(q,k) >=0);
 #endif
 		if (getModuleId(q) == groupRef && (getFunctionId(q) == subgroupRef || getFunctionId(q) == subgroupdoneRef)){
 			snprintf(buf,BUFSIZ,"Y_%d",getArg(q,q->retc));
 			q= copyInstruction(q);
 			getArg(q,q->retc) = findVariable(cmb,buf);
+			assert(getArg(q,q->retc) >=0);
 			if ( getArg(q,q->retc) == -1)
 				getArg(q,q->retc) = newVariable(cmb,GDKstrdup(buf),TYPE_any);
 			pushInstruction(cmb,q);
@@ -237,7 +245,9 @@ OPTexecController(Client cntxt, MalBlkPtr mb, MalBlkPtr pmb, InstrPtr ret, Instr
 		if (getModuleId(q) == algebraRef && getFunctionId(q) == leftfetchjoinRef ){
 			snprintf(buf,BUFSIZ,"Y_%d",getArg(q,q->argc-1));
 			q= copyInstruction(q);
-			getArg(q,q->argc-1) = findVariable(cmb,buf);
+			k = findVariable(cmb,buf);
+			if ( k >=0)
+				getArg(q,q->argc-1) = k;
 			pushInstruction(cmb,q);
 		} else{
 			q= copyInstruction(q);
@@ -266,7 +276,7 @@ OPTexecController(Client cntxt, MalBlkPtr mb, MalBlkPtr pmb, InstrPtr ret, Instr
 		cmb->stmt[0]= pushReturn(cmb, cmb->stmt[0], getArg(ret,i));
 	pushEndInstruction(cmb);
 #ifdef _DEBUG_OPT_CENTIPEDE_
-	mnstr_printf(cntxt->fdout,"\n#pmb stmt\n");
+	mnstr_printf(cntxt->fdout,"#pmb stmt ");
 	printInstruction(cntxt->fdout, pmb, 0, getInstrPtr(pmb,0),LIST_MAL_STMT);
 	mnstr_printf(cntxt->fdout,"\n#cmb stmt\n");
 	printInstruction(cntxt->fdout,cmb, 0, getInstrPtr(cmb,0),LIST_MAL_STMT);
@@ -753,7 +763,9 @@ OPTbakePlans(Client cntxt, MalBlkPtr mb, Slices *slices)
 			else
 			if ( getModuleId(p) == algebraRef && getFunctionId(p) == leftfetchjoinPathRef && p->argc-p->retc == 2){
 				if ( vars[getArg(p,p->retc)] == PARTITION || vars[getArg(p,p->retc)]== PIVOT){
-					//getFunctionId(p)= leftjoinRef;
+					getFunctionId(p) = leftjoinPathRef;
+					addvartolist(plan,&packs,getArg(p,0));
+					addvartolist(plan,&planreturn,getArg(p,0));
 				}
 				pushInstruction(plan,p);
 			} else
@@ -762,9 +774,11 @@ OPTbakePlans(Client cntxt, MalBlkPtr mb, Slices *slices)
 				q = getInstrPtr(plan,plan->stop-1);
 				 if( getFunctionId(q) == sliceRef && getArg(p,p->argc-1) == getArg(q,0))
 					getFunctionId(p) = leftjoinRef;
-				if ( vars[getArg(p,0)] == PIVOT){
+				if ( vars[getArg(p,p->retc)] == PIVOT){
 					addvartolist(plan,&packs,getArg(p,0));
 					addvartolist(plan,&planreturn,getArg(p,0));
+					addvartolist(plan,&packs,getArg(p,p->argc-1));
+					addvartolist(plan,&planreturn,getArg(p,p->argc-1));
 				}
 				pushInstruction(plan,p);
 	#ifdef _DEBUG_OPT_CENTIPEDE_
