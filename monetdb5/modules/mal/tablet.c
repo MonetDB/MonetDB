@@ -1341,6 +1341,8 @@ SQLloader(void *p)
 	}
 }
 
+#define MAXWORKERS	64
+
 BUN
 SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char *rsep, char quote, lng skip, lng maxrow)
 {
@@ -1351,13 +1353,13 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 	BUN i;
 	size_t rseplen;
 	READERtask *task = (READERtask *) GDKzalloc(sizeof(READERtask));
-	READERtask ptask[16];
-	int threads = (!maxrow || maxrow > (1 << 16)) ? (GDKnr_threads < 16 ? GDKnr_threads : 16) : 1;
+	READERtask ptask[MAXWORKERS];
+	int threads = (!maxrow || maxrow > (1 << 16)) ? (GDKnr_threads < MAXWORKERS ? GDKnr_threads : MAXWORKERS) : 1;
 	lng lio = 0, tio, t1 = 0, total = 0, iototal = 0;
 	int vmtrim = GDK_vm_trim;
 	str msg = MAL_SUCCEED;
 
-	for (i = 0; i < 16; i++)
+	for (i = 0; i < MAXWORKERS; i++)
 		ptask[i].cols = 0;
 
 	if (task == 0) {
@@ -1524,7 +1526,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 			 * In the first phase we simply break the lines at the
 			 * record boundary. */
 			if (quote == 0) {
-				if (rseplen == 1)
+				if (rseplen == 1) {
 					for (; *e; e++) {
 						if (*e == '\\') {
 							e++;
@@ -1532,7 +1534,17 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 						}
 						if (*e == *rsep)
 							break;
-				} else
+					}
+				} else if (rseplen == 2) {
+					for (; *e; e++) {
+						if (*e == '\\') {
+							e++;
+							continue;
+						}
+						if (*e == *rsep && e[1] == rsep[1])
+							break;
+					}
+				} else {
 					for (; *e; e++) {
 						if (*e == '\\') {
 							e++;
@@ -1541,6 +1553,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 						if (*e == *rsep && strncmp(e, rsep, rseplen) == 0)
 							break;
 					}
+				}
 				if (*e == 0)
 					e = 0;		/* nonterminated record, we need more */
 			} else if (rseplen == 1) {
@@ -1553,6 +1566,20 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 						if (e[1])
 							e++;
 					} else if (!q && *e == *rsep)
+						break;
+				}
+				if (*e == 0)
+					e = 0;		/* nonterminated record, we need more */
+			} else if (rseplen == 2) {
+				for (; *e; e++) {
+					if (*e == q)
+						q = 0;
+					else if (*e == quote)
+						q = *e;
+					else if (*e == '\\') {
+						if (e[1])
+							e++;
+					} else if (!q && e[0] == rsep[0] && e[1] == rsep[1])
 						break;
 				}
 				if (*e == 0)
@@ -1728,7 +1755,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 			GDKfree(task->base);
 		GDKfree(task);
 	}
-	for (i = 0; i < 16; i++)
+	for (i = 0; i < MAXWORKERS; i++)
 		if (ptask[i].cols)
 			GDKfree(ptask[i].cols);
 #ifdef MLOCK_TST
