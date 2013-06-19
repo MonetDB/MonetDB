@@ -31,8 +31,8 @@
 #include "mal_interpreter.h"
 #include "algebra.h"
 
-//#define DEBUG_OPT_DETAIL
-//#define _DEBUG_OPT_CENTIPEDE_ 
+#define DEBUG_OPT_DETAIL
+#define _DEBUG_OPT_CENTIPEDE_ 
 
 #define BLOCKED 1	// Instruction should remain in main routine
 #define PARTITION 2	// Instruction is part of the fragment routine
@@ -65,7 +65,7 @@ OPTexecController(Client cntxt, MalBlkPtr mb, MalBlkPtr pmb, InstrPtr ret, Instr
 	Symbol s;
 	char nme[BUFSIZ], *plan, *stub;
 	int barrier, x, i, j, k, *alias, nrpack;
-	InstrPtr p, q, *pack;
+	InstrPtr p=0, q, *pack;
 
 	(void) p;
 	/* define the query controller */
@@ -190,10 +190,8 @@ OPTexecController(Client cntxt, MalBlkPtr mb, MalBlkPtr pmb, InstrPtr ret, Instr
 	if ( slices->column) {
 		for ( k=0 ; k < nrpack; k++) {
 			/* after packing we may have to re-do groupings*/
-			int z;
 			pushInstruction(cmb, pack[k]);
-			setVarUsed(cmb, z = getArg(pack[k],0));
-			//setVarType(cmb,z, newBatType(TYPE_oid,getTailType(getVarType(cmb,z))) );
+			setVarUsed(cmb, getArg(pack[k],0));
 		}
 	}
 #ifdef _DEBUG_OPT_CENTIPEDE_
