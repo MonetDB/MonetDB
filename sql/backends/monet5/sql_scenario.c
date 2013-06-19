@@ -1501,7 +1501,7 @@ cachable( mvc *m, stmt *s )
 {
 	if (m->emode == m_plan ||
 	   !m->caching ||
-            m->type == Q_TRANS || m->type == Q_SCHEMA || 
+            m->type == Q_TRANS || /*m->type == Q_SCHEMA || cachable to make sure we have trace on alter statements  */
 	    (s && s->type == st_none) || 
 	    sa_size(m->sa) > MAX_QUERY)
 		return 0;
@@ -1990,15 +1990,16 @@ cleanup_engine:
 	}
 
 	mb = c->curprg->def;
-	if (be->q && msg) {
+	if (m->type != Q_SCHEMA && be->q && msg) {
 		qc_delete(m->qc, be->q); 
-	} else if (be->q && mb &&
+	} else if (m->type != Q_SCHEMA && be->q && mb &&
 	    varGetProp(mb, getArg(p = getInstrPtr(mb,0), 0), runonceProp)){
 		SQLCacheRemove(c, getFunctionId(p));
-		/* this should invalidate any match */
-		be->q->key= -1;
-		be->q->paramlen = -1;
-		/* qc_delete(be->q) */
+		qc_delete(be->mvc->qc, be->q);
+		///* this should invalidate any match */
+		//be->q->key= -1;
+		//be->q->paramlen = -1;
+		///* qc_delete(be->q) */
 	}
 	be->q = NULL;
 	sqlcleanup(be->mvc, (!msg)?0:-1);

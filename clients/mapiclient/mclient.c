@@ -906,6 +906,7 @@ TESTrenderer(MapiHdl hdl)
 				 strcmp(tp, "char") == 0 ||
 				 strcmp(tp, "clob") == 0 ||
 				 strcmp(tp, "str") == 0 ||
+				 strcmp(tp, "json") == 0 ||
 				 /* NULL byte in string? */
 				 strlen(s) < l ||
 				 /* start or end with white space? */
@@ -1121,7 +1122,8 @@ SQLrenderer(MapiHdl hdl, char singleinstr)
 		     (strcmp(s, "varchar") != 0 &&
 		      strcmp(s, "clob") != 0 &&
 		      strcmp(s, "char") != 0 &&
-		      strcmp(s, "str") != 0))) {
+		      strcmp(s, "str") != 0 &&
+		      strcmp(s, "json") != 0))) {
 			/* no table width known, use maximum, rely on
 			 * squeezing later on to fix it to whatever is
 			 * available; note that for a column type of
