@@ -722,6 +722,9 @@ rm -f $RPM_BUILD_ROOT%{_libdir}/libmonetdb5.so
 rm -fr $RPM_BUILD_ROOT
 
 %changelog
+* Wed Jun 19 2013 Hannes Muehleisen <hannes@cwi.nl> - 11.15.11-20130619
+- Rebuilt.
+
 * Wed Jun 19 2013 Hannes Muehleisen <hannes@cwi.nl> - 11.15.9-20130619
 - Rebuilt.
 
