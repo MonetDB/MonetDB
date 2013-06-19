@@ -216,10 +216,11 @@ OPTexecController(Client cntxt, MalBlkPtr mb, MalBlkPtr pmb, InstrPtr ret, Instr
 		if (getModuleId(q) == groupRef && (getFunctionId(q) == subgroupRef || getFunctionId(q) == subgroupdoneRef)){
 			snprintf(buf,BUFSIZ,"Y_%d",getArg(q,q->retc));
 			q= copyInstruction(q);
-			getArg(q,q->retc) = findVariable(cmb,buf);
-			assert(getArg(q,q->retc) >=0);
-			if ( getArg(q,q->retc) == -1)
+			k = findVariable(cmb,buf);
+			assert(k >=0);
+			if ( k == -1)
 				getArg(q,q->retc) = newVariable(cmb,GDKstrdup(buf),TYPE_any);
+			else getArg(q,q->retc) = k;
 			pushInstruction(cmb,q);
 		} else
 		if (getModuleId(q) == aggrRef && getFunctionId(q) == countRef ){
@@ -824,15 +825,6 @@ OPTbakePlans(Client cntxt, MalBlkPtr mb, Slices *slices)
 				printInstruction(cntxt->fdout, plan,0,planreturn,LIST_MAL_STMT);
 	#endif
 				pushInstruction(plan,p);
-				// pass the group values for this instruction
-/*
-				for( j = p->argc-1; j>=p->retc; j--){
-					q = newStmt(plan,algebraRef,leftfetchjoinRef);
-					getArg(q,0) = newTmpVariable(plan, getArgType(plan,p,j));
-					q= pushArgument(plan,q,getArg(p,1));
-					q= pushArgument(plan,q,getArg(p,j));
-				}
-*/
 				// expand the group table through all group.subgroup operations
 				q = newInstruction(plan,ASSIGNsymbol);
 				getModuleId(q) = algebraRef;
@@ -849,18 +841,14 @@ OPTbakePlans(Client cntxt, MalBlkPtr mb, Slices *slices)
 					InstrPtr qq= getInstrPtr(plan,j);
 					if( getModuleId(qq) != groupRef )
 						continue;
-					if ( getFunctionId(qq) == subgroupRef &&
-						 getArg(qq,0) == getArg(p,p->argc-1)){
+					if ( getFunctionId(qq) == subgroupRef && getArg(qq,0) == getArg(p,p->argc-1)){
 						InstrPtr pq;
-
-						pq = newStmt(plan,algebraRef,leftjoinRef);
-						getArg(pq,0) = newTmpVariable(plan,getArgType(plan,qq,1));
-						//renameVariable(plan,getArg(pq,0),"C_%d",getArg(qq,1));
+						pq = newStmt(plan,algebraRef,leftfetchjoinRef);
+						getArg(pq,0) = newTmpVariable(plan,getArgType(plan,qq,qq->argc-1));
 						pq= pushArgument(plan,pq,getArg(qq,1));
 						pq= pushArgument(plan,pq,getArg(qq,qq->argc-1));
-
-						p= pushArgument(plan,p,getArg(qq,1));
-						p= pushArgument(plan,p,getArg(qq,qq->argc-1));
+						addvartolist(plan,&planreturn,getArg(pq,0));
+						addvartolist(plan,&packs,getArg(pq,0));
 					}
 				}
 				pushInstruction(plan,q);
