@@ -27,7 +27,7 @@ Vendor: MonetDB BV <info@monetdb.org>
 Group: Applications/Databases
 License: MPL - http://www.monetdb.org/Legal/MonetDBLicense
 URL: http://www.monetdb.org/
-Source: http://dev.monetdb.org/downloads/sources/Feb2013-SP2/%{name}-%{version}.tar.bz2
+Source: http://dev.monetdb.org/downloads/sources/Feb2013-SP3/%{name}-%{version}.tar.bz2
 
 BuildRequires: bison
 BuildRequires: bzip2-devel
@@ -722,6 +722,24 @@ rm -f $RPM_BUILD_ROOT%{_libdir}/libmonetdb5.so
 rm -fr $RPM_BUILD_ROOT
 
 %changelog
+* Wed Jun 19 2013 Hannes Muehleisen <hannes@cwi.nl> - 11.15.9-20130619
+- Rebuilt.
+
+* Sun Jun  9 2013 Fabian Groffen <fabian@monetdb.org> - 11.15.9-20130619
+- java: Further improved setBigDecimal() method, based on patch by Ben Reilly
+  in bug #3290
+
+* Thu May 23 2013 Fabian Groffen <fabian@monetdb.org> - 11.15.9-20130619
+- java: Fixed bug where PreparedStatement.setBigDecimal() wouldn't format its
+  input well enough for the server causing odd errors.
+- java: Allow PreparedStatement.setXXX() methods to be called with null
+  arguments, bug #3288
+
+* Tue May  7 2013 Sjoerd Mullender <sjoerd@acm.org> - 11.15.9-20130619
+- gdk: System calls to flush files to disks were added.  This may cause
+  some slowdown, but it should provide better durability, especially
+  in the face of power failures.
+
 * Fri Apr 26 2013 Sjoerd Mullender <sjoerd@acm.org> - 11.15.7-20130426
 - Rebuilt.
 

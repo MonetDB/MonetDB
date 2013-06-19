@@ -1,13 +1,3 @@
 # ChangeLog file for java
 # This file is updated with Maddlog
 
-* Sun Jun  9 2013 Fabian Groffen <fabian@monetdb.org>
-- Further improved setBigDecimal() method, based on patch by Ben Reilly
-  in bug #3290
-
-* Thu May 23 2013 Fabian Groffen <fabian@monetdb.org>
-- Fixed bug where PreparedStatement.setBigDecimal() wouldn't format its
-  input well enough for the server causing odd errors.
-- Allow PreparedStatement.setXXX() methods to be called with null
-  arguments, bug #3288
-
