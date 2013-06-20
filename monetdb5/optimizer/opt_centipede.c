@@ -34,10 +34,10 @@
 #define DEBUG_OPT_DETAIL
 #define _DEBUG_OPT_CENTIPEDE_ 
 
-#define BLOCKED 1
-#define PARTITION 2	 // phase 1 result
-#define PIVOT    3	// Instruction requires care at next level
-#define SUPPORTIVE 4	// phase 2 result
+#define BLOCKED 1	// Instruction should remain in main routine
+#define PARTITION 2	// Instruction is part of the fragment routine
+#define PIVOT    3	// Instruction is part of the consolidation routine
+#define SUPPORTIVE 4// Instruction is part of fragment routine
 
 /*
  * The columns are broken using fixed OID ranges.
@@ -59,14 +59,15 @@ static int nrservers;
  * geared at parallel execution 
 */
 static MalBlkPtr
-OPTexecController(Client cntxt, MalBlkPtr mb, MalBlkPtr pmb, InstrPtr ret, Slices *slices, oid plantag, int *status)
+OPTexecController(Client cntxt, MalBlkPtr mb, MalBlkPtr pmb, InstrPtr ret, InstrPtr packs, Slices *slices, oid plantag, int *status)
 {
 	MalBlkPtr cmb;
 	Symbol s;
 	char nme[BUFSIZ], *plan, *stub;
 	int barrier, x, i, j, k, *alias, nrpack;
-	InstrPtr p, q, *pack;
+	InstrPtr p=0, q, *pack;
 
+	(void) p;
 	/* define the query controller */
 	//snprintf(nme, BUFSIZ, "%s_plan"OIDFMT, getFunctionId( getInstrPtr(mb,0)), plantag);
 	//putName(nme, strlen(nme));
@@ -132,17 +133,9 @@ OPTexecController(Client cntxt, MalBlkPtr mb, MalBlkPtr pmb, InstrPtr ret, Slice
 			pack[k] = newInstruction(cmb,ASSIGNsymbol);
 			getModuleId(pack[k]) = matRef;
 			getFunctionId(pack[k]) = packRef;
-			getArg(pack[k],0) = getArg(p,k); 
+			getArg(pack[k],0) = getArg(packs,k); 
+			assert(packs->argv[k] >=0);
 		}
-	}
-
-	/* under dataflow control, initialize the variables 
-	   Arguments are considered defined already */
-	for ( k=0 ; k < nrpack ; k++){
-		q = newInstruction(cmb,ASSIGNsymbol);
-		getArg(q,0) = getArg(pack[k],0);
-		pushNil(cmb,q, getArgType(cmb,pack[k],0));
-		pushInstruction(cmb,q);
 	}
 
 #ifdef REMOTE_EXECUTION
@@ -198,45 +191,41 @@ OPTexecController(Client cntxt, MalBlkPtr mb, MalBlkPtr pmb, InstrPtr ret, Slice
 		for ( k=0 ; k < nrpack; k++) {
 			/* after packing we may have to re-do groupings*/
 			pushInstruction(cmb, pack[k]);
-			setVarUsed(cmb,getArg(pack[k],0));
+			setVarUsed(cmb, getArg(pack[k],0));
 		}
 	}
-
-	/* finalize the dataflow block */
-	q= newAssignment(cmb);
-	q->barrier = EXITsymbol;
-	getArg(q,0) = barrier;
+#ifdef _DEBUG_OPT_CENTIPEDE_
+	mnstr_printf(cntxt->fdout,"\n#cmb structure\n");
+	printFunction(cntxt->fdout, cmb, 0, LIST_MAL_STMT);
+#endif
 
 	(void) status;
 	/* look for pivot operations in original plan */
 	for ( i=1; i < mb->stop; i++)
 	if (status[i] == PIVOT){
+		char buf[BUFSIZ];
 		q= copyInstruction(getInstrPtr(mb,i));
 #ifdef _DEBUG_OPT_CENTIPEDE_
-	if ( status[i]){
-		mnstr_printf(cntxt->fdout,"\n#cmb include stmt %d status %d\n",i,status[i]);
+		mnstr_printf(cntxt->fdout,"#cmb include stmt %d status %d:",i,status[i]);
 		printInstruction(cntxt->fdout, mb, 0, q,LIST_MAL_STMT);
-	}
+		for(k=0; k<q->argc;k++)
+			assert(getArg(q,k) >=0);
 #endif
-/*
-			for( j= q->retc; j<q->argc; j++){
-				int idx;
-				InstrPtr pq;
-				snprintf(nme,BUFSIZ,"C_%d",getArg(q,j));
-				idx= findVariable(pmb,nme);
-				if ( idx >= 0)
-					getArg(q,j) = idx;
-
-				pq= getInstrPtr(cmb,0);
-				for ( k = 0; k< pq->retc; k++)
-				if (getArg(pq,k) == getArg(q, q->retc)){
-					delArgument(pq,k);
-					break;
-				}
-			}
-*/
 		if (getModuleId(q) == groupRef && (getFunctionId(q) == subgroupRef || getFunctionId(q) == subgroupdoneRef)){
+			snprintf(buf,BUFSIZ,"Y_%d",getArg(q,q->retc));
 			q= copyInstruction(q);
+			k = findVariable(cmb,buf);
+			assert(k >=0);
+			if ( k == -1)
+				getArg(q,q->retc) = newVariable(cmb,GDKstrdup(buf),TYPE_any);
+			else getArg(q,q->retc) = k;
+			pushInstruction(cmb,q);
+		} else
+		if (getModuleId(q) == aggrRef && getFunctionId(q) == countRef ){
+			q= copyInstruction(q);
+			getFunctionId(q) = sumRef;
+			// correct the return statement
+			setVarType(cmb, getArg(q,1), newBatType(TYPE_oid, TYPE_wrd));
 			pushInstruction(cmb,q);
 		} else
 		if (getModuleId(q) == aggrRef && getFunctionId(q) == subcountRef ){
@@ -251,11 +240,24 @@ OPTexecController(Client cntxt, MalBlkPtr mb, MalBlkPtr pmb, InstrPtr ret, Slice
 			q= copyInstruction(q);
 			getArg(q,1) = getArg(q,0);
 			pushInstruction(cmb,q);
+		} else
+		if (getModuleId(q) == algebraRef && getFunctionId(q) == leftfetchjoinRef ){
+			snprintf(buf,BUFSIZ,"Y_%d",getArg(q,q->argc-1));
+			q= copyInstruction(q);
+			k = findVariable(cmb,buf);
+			if ( k >=0)
+				getArg(q,q->argc-1) = k;
+			pushInstruction(cmb,q);
 		} else{
 			q= copyInstruction(q);
 			pushInstruction(cmb,q);
 		}
 	}
+	/* finalize the dataflow block */
+	q= newAssignment(cmb);
+	q->barrier = EXITsymbol;
+	getArg(q,0) = barrier;
+
 
 	/* consolidate the result of the control function */
 	ret = copyInstruction(ret);
@@ -273,7 +275,7 @@ OPTexecController(Client cntxt, MalBlkPtr mb, MalBlkPtr pmb, InstrPtr ret, Slice
 		cmb->stmt[0]= pushReturn(cmb, cmb->stmt[0], getArg(ret,i));
 	pushEndInstruction(cmb);
 #ifdef _DEBUG_OPT_CENTIPEDE_
-	mnstr_printf(cntxt->fdout,"\n#pmb stmt\n");
+	mnstr_printf(cntxt->fdout,"#pmb stmt ");
 	printInstruction(cntxt->fdout, pmb, 0, getInstrPtr(pmb,0),LIST_MAL_STMT);
 	mnstr_printf(cntxt->fdout,"\n#cmb stmt\n");
 	printInstruction(cntxt->fdout,cmb, 0, getInstrPtr(cmb,0),LIST_MAL_STMT);
@@ -459,6 +461,21 @@ OPTsliceColumn(Client cntxt, MalBlkPtr nmb, MalBlkPtr mb, InstrPtr p, Slices *sl
  * when a connection is re-used by different client sessions.
 */
 
+static void addvartolist(MalBlkPtr mb, InstrPtr *pq, int arg)
+{
+	int k;
+	InstrPtr p = *pq;
+
+	for ( k = 0; k < p->retc; k++)
+	if (getArg(p,k) == arg)
+		break;
+	if ( k == p->retc){
+		p = pushReturn(mb, p, arg);
+		//p = pushArgument(mb, p, arg);
+	}
+	*pq = p;
+}
+
 #ifdef _DEBUG_OPT_CENTIPEDE_ 
 static char *statusname[7]= {"", "blocked   ", "partition ", "pivot     ", "support   ", "exported ", "keeplocal "};
 #endif
@@ -468,7 +485,7 @@ OPTbakePlans(Client cntxt, MalBlkPtr mb, Slices *slices)
 {
 	int *status,*vars;
 	int i, j, k, limit, last;
-	InstrPtr ret, orig, planargs= 0, call, q = NULL, p = NULL, *old;
+	InstrPtr cntrlreturn, planreturn, orig, packs= 0, call, q = NULL, p = NULL, *old;
 	Symbol s;
 	MalBlkPtr plan, cntrl, stub;
 	str msg= MAL_SUCCEED;
@@ -534,11 +551,7 @@ OPTbakePlans(Client cntxt, MalBlkPtr mb, Slices *slices)
 				vars[getArg(p,0)] = PARTITION;
 		} else
 		if ( getModuleId(p) == sqlRef && getFunctionId(p) == deltaRef ){
-			// Use a readonly view on the database TO BE FIXED
-			//clrFunction(p);
-			//p->argc =2;
-			//p->token = ASSIGNsymbol;
-			if ( vars[getArg(p,1)] ){
+			if ( vars[getArg(p,1)] == PARTITION ){
 				status[i] = PARTITION;
 				vars[getArg(p,0)] = PARTITION;
 			}
@@ -546,118 +559,104 @@ OPTbakePlans(Client cntxt, MalBlkPtr mb, Slices *slices)
 
 		/* blocking instructions are those that require data exchange, aggregation or total view */
 		if ( getModuleId(p) == algebraRef && (getFunctionId(p) == joinRef || getFunctionId(p) == leftjoinRef || getFunctionId(p) == leftfetchjoinRef) ) {
-			if ( vars[getArg(p,p->retc)] || vars[getArg(p,p->retc+1)] ){
+			if ( vars[getArg(p,p->retc)] == PARTITION ){
 				status[i] = PARTITION;
 				vars[getArg(p,0)] = PARTITION;
 			} 
+			if ( vars[getArg(p,p->retc)] == PIVOT ){
+				status[i] = PIVOT;
+				vars[getArg(p,0)] = PIVOT;
+			} 
 		} else
-		if ( getModuleId(p) == algebraRef && (getFunctionId(p)== thetaselectRef  || getFunctionId(p) == selectRef || getFunctionId(p) == subselectRef)){
-			if ( vars[getArg(p,p->retc)] ){
+		if ( getModuleId(p) == algebraRef && (getFunctionId(p)== thetaselectRef  || getFunctionId(p) == selectRef || getFunctionId(p) == subselectRef ||getFunctionId(p) == thetasubselectRef || getFunctionId(p) == likesubselectRef)){
+			if ( vars[getArg(p,p->retc)] == PARTITION ){
 				status[i] = PARTITION;
 				vars[getArg(p,0)] = PARTITION;
 			}
 		} else
 		if (    getModuleId(p) == batRef && getFunctionId(p) == mirrorRef )  {
-			if ( vars[getArg(p,p->retc)] ){
+			if ( vars[getArg(p,p->retc)] == PARTITION ){
 				status[i] = PARTITION;
 				vars[getArg(p,0)] = PARTITION;
 			}
 		} else
 		if (    getModuleId(p) == batRef && getFunctionId(p)==reverseRef )  {
-			if ( vars[getArg(p,p->retc)] ){
+			if ( vars[getArg(p,p->retc)] == PARTITION ){
 				status[i] = PARTITION;
 				vars[getArg(p,0)] = PARTITION;
 			}
 		} else
+		if ( getModuleId(p) == aggrRef  && getFunctionId(p) == countRef) {
+			if( vars[getArg(p,p->retc)] == PARTITION ) {
+				vars[getArg(p,0)] = PIVOT;
+				status[i]= PIVOT;
+			}
+		} else
 		if ( getModuleId(p) == aggrRef && (getFunctionId(p) == subcountRef || getFunctionId(p) == subsumRef ||
 			getFunctionId(p) == subminRef || getFunctionId(p) == submaxRef || getFunctionId(p) == subavgRef )){
-			if (vars[getArg(p,p->retc)] ){
+			if (vars[getArg(p,p->retc)] == PARTITION || vars[getArg(p,p->retc)] == PIVOT ){
 				status[i] = PIVOT;
 				for(j = 0; j < p->argc; j++)
-				if ( vars[getArg(p,j)] ==0)
 					vars[getArg(p,j)] = PIVOT;
 			}
 		} else
 		if ( getModuleId(p) == groupRef && ( getFunctionId(p) == subgroupRef || getFunctionId(p) == subgroupdoneRef) && p->retc== 3){
-			if ( vars[getArg(p,p->retc)] ){
+			if ( vars[getArg(p,p->retc)]== PARTITION ){
 				status[i] = PIVOT;
-				for(j = 0; j < p->argc; j++)
-				if ( vars[getArg(p,j)] ==0)
+				for(j = 0; j < p->retc; j++)
 					vars[getArg(p,j)] = PIVOT;
 			}
 		} else
-		if ((getModuleId(p) == sqlRef && (getFunctionId(p) == resultSetRef || getFunctionId(p) == putName("exportValue",11))) || getModuleId(p) == ioRef )
+		if ((getModuleId(p) == sqlRef && (getFunctionId(p) == resultSetRef || getFunctionId(p) == putName("exportValue",11))) || getModuleId(p) == ioRef ){
 			status[i] = BLOCKED;
-		else 
+			vars[getArg(p,0)] = BLOCKED;
+		} else 
 		if ( getModuleId(p) == batcalcRef ){
-			if ( vars[getArg(p,p->retc)] || vars[getArg(p,p->retc+1)] ){
+			if ( vars[getArg(p,p->retc)] == PARTITION || vars[getArg(p,p->retc+1)] == PARTITION ){
 				status[i] = PARTITION;
 				vars[getArg(p,0)] = PARTITION;
 			}
 		} else 
 		if ( getModuleId(p) == algebraRef && getFunctionId(p) == subsliceRef ){
-			if ( vars[getArg(p,1)] == PARTITION || vars[getArg(p,1)] == PIVOT){
+			if ( vars[getArg(p,1)] == PARTITION ){
 				status[i] = BLOCKED;
 				vars[getArg(p,0)] = BLOCKED;
 			}
 		} else
 		if ( getModuleId(p) == pqueueRef && getFunctionId(p) == utopn_minRef ){
-			if ( vars[getArg(p,1)] == PARTITION || vars[getArg(p,1)] == PIVOT){
-				status[i] = BLOCKED;
-				vars[getArg(p,0)] = BLOCKED;
+			if ( vars[getArg(p,1)] == PARTITION ){
+				status[i] = PIVOT;
+				vars[getArg(p,0)] = PIVOT;
 			}
 		} else
 		if ( getModuleId(p) == algebraRef && (getFunctionId(p) == subsortRef || getFunctionId(p) == sortRef || getFunctionId(p)== tinterRef) ) {
-			int parts=0;
-			for ( j= p->retc; j<p->argc; j++)
-				parts += vars[getArg(p,j)] ==PARTITION;
-			if (parts == 1){
-				status[i] = PARTITION;
-				for(j=0; j < p->retc; j++)
-					vars[getArg(p,j)] = PARTITION;
-			} else {
-				status[i] = BLOCKED;
-				for(j=0; j < p->retc; j++)
-					vars[getArg(p,j)] = PARTITION;
-			}
-		} else
-		if (    getModuleId(p) == batRef && getFunctionId(p)==appendRef )  {
-			if ( vars[getArg(p,p->retc)] == PARTITION)
-				status[i] = BLOCKED;
-			for(j=0; status[i] == BLOCKED &&  j < p->retc; j++)
-				vars[getArg(p,j)] = BLOCKED;
-		} else
-		if ( getModuleId(p) == aggrRef ) {
 			status[i] = BLOCKED;
 			for(j=0; j < p->retc; j++)
 				vars[getArg(p,j)] = BLOCKED;
-		}
+		} else
+		if (    getModuleId(p) == batRef && getFunctionId(p)==appendRef )  {
+			if ( vars[getArg(p,p->retc)] == PARTITION){
+				status[i] = BLOCKED;
+				for(j=0; j < p->retc; j++)
+					vars[getArg(p,j)] = BLOCKED;
+			}
+		} 
 
+		/* An instruction based on PARTITION and PIVOT arguments is PIVOTAL */
 		for( j = p->retc; j < p->argc; j++)
 		if (vars[getArg(p,j)] == BLOCKED ) 
 			break;
 		if ( j != p->argc && p->argc - p->retc > 0 )
 			status[i]= BLOCKED;
 
-		if ( status[i] != BLOCKED)
-		for( j = p->retc; j < p->argc; j++)
-		if (vars[getArg(p,j)] == PARTITION && status[i] != PIVOT)
-				status[i]= PARTITION;
-
 		for ( j= 0; j< p->retc; j++)
-		//if (vars[getArg(p,j)] == 0)
+		if (vars[getArg(p,j)] == 0)
 			vars[getArg(p,j)] = status[i];
 
 		if ( status[i] == PARTITION)
 		for( j = p->retc; j < p->argc; j++)
-		if (vars[getArg(p,j)] == 0)
-			vars[getArg(p,j)] = SUPPORTIVE;
-		else
-		if (vars[getArg(p,j)] == PIVOT){
-			status[i] = PIVOT;
-			for( k = 0; k< p->retc; k++)
-				vars[getArg(p,k)] = PIVOT;
-		}
+			if (vars[getArg(p,j)] == 0)
+				vars[getArg(p,j)] = SUPPORTIVE;
 	}
 #ifdef _DEBUG_OPT_CENTIPEDE_ 
 /*
@@ -724,142 +723,167 @@ OPTbakePlans(Client cntxt, MalBlkPtr mb, Slices *slices)
 	/* Phase 3: determine all variables to be exported  to the cntrl and main program
 	   this is limited to all variables produced and consumed by a blocked instruction
 	*/
-	ret= newInstruction(0,ASSIGNsymbol);
-	ret->barrier = RETURNsymbol;
-	ret->argc= ret->retc = 0;
-	planargs = copyInstruction(ret);
+	cntrlreturn= newInstruction(0,ASSIGNsymbol);
+	cntrlreturn->barrier = RETURNsymbol;
+	cntrlreturn->argc= cntrlreturn->retc = 0;
+	planreturn = copyInstruction(cntrlreturn);
+	packs = copyInstruction(cntrlreturn);
+
 
 	for ( i = 0; i< limit; i++)
-	if ( status[i] == BLOCKED  )
+	if ( status[i]== BLOCKED  )
 	{
 		p = old[i];
 		if ( p )
 		for( j = p->retc; j < p->argc; j++)
-		if ( (vars[getArg(p,j)] == PARTITION || vars[getArg(p,j)] == SUPPORTIVE || vars[getArg(p,j)]== PIVOT)  && isaBatType(getArgType(plan,p,j)) ){
-			/* don't return the same variable twice */
-			for ( k = 0; k < ret->retc; k++)
-			if (getArg(ret,k) == getArg(p,j))
-				break;
-			if ( k == ret->retc)  {
-				ret= pushReturn(plan,ret, getArg(p,j));
-				planargs = pushReturn(plan,planargs , getArg(p,j));
-				planargs = pushArgument(plan,planargs , getArg(p,j));
-			}
+		if ( isaBatType(getArgType(plan,p,j)) && (vars[getArg(p,j)]== PIVOT || vars[getArg(p,j)] == PARTITION ||vars[getArg(p,j)] == SUPPORTIVE)){
+			addvartolist(plan,&cntrlreturn,getArg(p,j));
+			addvartolist(plan,&planreturn,getArg(p,j));
+			addvartolist(plan,&packs,getArg(p,j));
 		}
-	} else
-	if ( status[i] == 0){
-		mnstr_printf(cntxt->fdout,"\n#phase 4 non-determined action\n");
-		printInstruction(cntxt->fdout, mb,0,p,LIST_MAL_STMT);
 	}
 
-#ifdef _DEBUG_OPT_CENTIPEDE_ 
-	mnstr_printf(cntxt->fdout,"\n#phase 3 return stmt\n");
-	printInstruction(cntxt->fdout, mb,0,ret,LIST_MAL_STMT);
-	mnstr_printf(cntxt->fdout,"\n#plane args stmt\n");
-	printInstruction(cntxt->fdout, plan,0,planargs,LIST_MAL_STMT);
-#endif
 	/* Phase 4: Bake a new function that produces them */
 
 	p = copyInstruction(getInstrPtr(mb, 0));
 	pushInstruction(plan,p);
 
 	/* keep the original variable list for the caller, but ignore local names */
-	orig = copyInstruction(ret);
+	orig = copyInstruction(cntrlreturn);
 
 	for ( i = 1; i < limit ; i++) 
-		if( status[i] == PARTITION || status[i] == PIVOT || status[i] == SUPPORTIVE ) {
-		p = copyInstruction(getInstrPtr(mb, i));
-		if ( old[i]->token == ENDsymbol) {
-			getFunctionId(plan->stmt[0]) = putName(nme,strlen(nme));
-			pushInstruction(plan,planargs);
-			pushEndInstruction(plan);
-		} else
-		if (getModuleId(p) == sqlRef && (getFunctionId(p) == bindRef || getFunctionId(p) == bindidxRef))  
-			OPTsliceColumn(cntxt, plan, mb, p, slices);
-		else
-		if (getModuleId(p) == aggrRef && (getFunctionId(p) == subcountRef || getFunctionId(p) == subsumRef ||
-			getFunctionId(p) == subminRef || getFunctionId(p) == submaxRef || getFunctionId(p) == subavgRef )){
-			planargs = pushReturn(plan,planargs , getArg(p,p->retc));
-			planargs = pushArgument(plan,planargs , getArg(p,p->retc));
-			setVarFixed(plan,getArg(p,0));
-			setVarUsed(plan,getArg(p,0)); 
-#ifdef _DEBUG_OPT_CENTIPEDE_
-			mnstr_printf(cntxt->fdout,"\n#pmb include stmt %d  %d\n",i, plan->stop);
-			printInstruction(cntxt->fdout, mb, 0, p,LIST_MAL_STMT);
-#endif
-			pushInstruction(plan,p);
-		} else
-		if (getModuleId(p) == groupRef && getFunctionId(p) == subgroupdoneRef ) {
-			/* produce all code to get a reduced table across */
-#ifdef _DEBUG_OPT_CENTIPEDE_
-			mnstr_printf(cntxt->fdout,"\n#pmb include stmt %d  %d\n",i, plan->stop);
-			printInstruction(cntxt->fdout, mb, 0, p,LIST_MAL_STMT);
-#endif
-			pushInstruction(plan,p);
-			// pass the group values for this instruction
-			for( j = p->argc-1; j>p->retc; j--){
-				q = newStmt(plan,algebraRef,leftfetchjoinRef);
-				getArg(q,0) = newTmpVariable(plan,getArgType(plan,p,j));
-				q= pushArgument(plan,q,getArg(p,1));
-				q= pushArgument(plan,q,getArg(p,j));
-				//planargs = pushReturn(plan,planargs , getArg(q,0));
-				//planargs = pushArgument(plan,planargs , getArg(q,0));
-			}
-			planargs = pushReturn(plan,planargs , getArg(p,p->retc));
-			planargs = pushArgument(plan,planargs , getArg(q,0));
-			// expand the group table through all group.subgroup operations
-			p = newInstruction(plan,ASSIGNsymbol);
-			getModuleId(p) = algebraRef;
-			getFunctionId(p) = leftfetchjoinPathRef;
-			p= pushArgument(plan,p,getArg(q,0));
-			p= pushArgument(plan,p,getArg(q,q->argc-1));
-			// locate the related instructions
-			for(j = plan->stop-1; j>0; j--){
-				q= getInstrPtr(plan,j);
-				if( getModuleId(q) != groupRef )
-					continue;
-				if ( getFunctionId(q) == subgroupRef &&
-					 getArg(q,0) == getArg(p,p->argc-1)){
-					InstrPtr pq;
-
-					pq = newStmt(plan,algebraRef,leftfetchjoinRef);
-					getArg(pq,0) = newTmpVariable(plan,getArgType(plan,q,1));
-					//renameVariable(plan,getArg(pq,0),"C_%d",getArg(q,1));
-					pq= pushArgument(plan,pq,getArg(q,1));
-					pq= pushArgument(plan,pq,getArg(q,q->argc-1));
-					planargs = pushReturn(plan,planargs , getArg(pq,0));
-					planargs = pushArgument(plan,planargs , getArg(pq,0));
-
-					p= pushArgument(plan,p,getArg(q,1));
-					p= pushArgument(plan,p,getArg(q,q->argc-1));
+		if( status[i] != BLOCKED ){
+			p = copyInstruction(getInstrPtr(mb, i));
+			if ( old[i]->token == ENDsymbol) {
+				break;
+			} else
+			if (getModuleId(p) == sqlRef && (getFunctionId(p) == bindRef || getFunctionId(p) == bindidxRef))  
+				OPTsliceColumn(cntxt, plan, mb, p, slices);
+			else
+			if ( getModuleId(p) == algebraRef && getFunctionId(p) == leftfetchjoinPathRef && p->argc-p->retc == 2){
+				if ( vars[getArg(p,p->retc)] == PARTITION || vars[getArg(p,p->retc)]== PIVOT){
+					getFunctionId(p) = leftjoinPathRef;
+					addvartolist(plan,&packs,getArg(p,0));
+					addvartolist(plan,&planreturn,getArg(p,0));
 				}
-				getArg(p,0) = getArg(q,q->retc);
+				pushInstruction(plan,p);
+			} else
+			if ( getModuleId(p) == algebraRef && getFunctionId(p) == leftfetchjoinRef ){
+				// overrule the leftfetchjoin when slicing
+				q = getInstrPtr(plan,plan->stop-1);
+				 if( getFunctionId(q) == sliceRef && getArg(p,p->argc-1) == getArg(q,0))
+					getFunctionId(p) = leftjoinRef;
+				if ( vars[getArg(p,p->retc)] == PIVOT){
+					addvartolist(plan,&packs,getArg(p,0));
+					addvartolist(plan,&planreturn,getArg(p,0));
+					addvartolist(plan,&packs,getArg(p,p->argc-1));
+					addvartolist(plan,&planreturn,getArg(p,p->argc-1));
+				}
+				pushInstruction(plan,p);
+	#ifdef _DEBUG_OPT_CENTIPEDE_
+				mnstr_printf(cntxt->fdout,"\n#pmb include stmt %d  %d\n",i, plan->stop);
+				printInstruction(cntxt->fdout, mb, 0, p,LIST_MAL_STMT);
+				mnstr_printf(cntxt->fdout,"#plan packs stmt\n");
+				printInstruction(cntxt->fdout, plan,0,packs,LIST_MAL_STMT);
+				mnstr_printf(cntxt->fdout,"#plan return stmt\n");
+				printInstruction(cntxt->fdout, plan,0,planreturn,LIST_MAL_STMT);
+	#endif
+			} else
+			if (getModuleId(p) == aggrRef && (getFunctionId(p) == subcountRef || getFunctionId(p) == subsumRef ||
+				getFunctionId(p) == subminRef || getFunctionId(p) == submaxRef || getFunctionId(p) == subavgRef )){
+				addvartolist(plan,&packs,getArg(p,0));
+				addvartolist(plan,&planreturn,getArg(p,0));
+				//addvartolist(plan,&packs,getArg(p,p->retc));
+				//addvartolist(plan,&planreturn,getArg(p,p->retc));
+	#ifdef _DEBUG_OPT_CENTIPEDE_
+				mnstr_printf(cntxt->fdout,"\n#pmb include stmt %d  %d\n",i, plan->stop);
+				printInstruction(cntxt->fdout, mb, 0, p,LIST_MAL_STMT);
+				mnstr_printf(cntxt->fdout,"#plan packs stmt\n");
+				printInstruction(cntxt->fdout, plan,0,packs,LIST_MAL_STMT);
+				mnstr_printf(cntxt->fdout,"#plan return stmt\n");
+				printInstruction(cntxt->fdout, plan,0,planreturn,LIST_MAL_STMT);
+	#endif
+				pushInstruction(plan,p);
+			} else
+			if (getModuleId(p) == aggrRef && getFunctionId(p) == countRef){
+				addvartolist(plan,&packs,getArg(p,1));
+				addvartolist(plan,&planreturn,getArg(p,0));
+				pushInstruction(plan,p);
+			} else
+			if (getModuleId(p) == groupRef && (getFunctionId(p) == subgroupdoneRef || getFunctionId(p) == subgroupRef) ) {
+				char buf[BUFSIZ];
+				int id= getArg(p,p->retc);
+				/* produce all code to get a reduced table across */
+	#ifdef _DEBUG_OPT_CENTIPEDE_
+				mnstr_printf(cntxt->fdout,"\n#pmb include stmt %d  %d\n",i, plan->stop);
+				printInstruction(cntxt->fdout, mb, 0, p,LIST_MAL_STMT);
+				mnstr_printf(cntxt->fdout,"#plan packs stmt\n");
+				printInstruction(cntxt->fdout, plan,0,packs,LIST_MAL_STMT);
+				mnstr_printf(cntxt->fdout,"#plan return stmt\n");
+				printInstruction(cntxt->fdout, plan,0,planreturn,LIST_MAL_STMT);
+	#endif
+				pushInstruction(plan,p);
+				// expand the group table through all group.subgroup operations
+				q = newInstruction(plan,ASSIGNsymbol);
+				getModuleId(q) = algebraRef;
+				getFunctionId(q) = leftfetchjoinPathRef;
+				q= pushArgument(plan,q,getArg(p,1));
+				q= pushArgument(plan,q,getArg(p,p->argc-1));
+				snprintf(buf,BUFSIZ,"Y_%d",id);
+				getArg(q,0) = newVariable(plan, GDKstrdup(buf), newBatType(TYPE_oid, getTailType(getVarType(plan,id))));
+				addvartolist(plan,&planreturn,getArg(q,0));
+				addvartolist(plan,&packs,getArg(q,0));
+				setVarUsed(plan,getArg(q,0)); 
+				// locate the related instructions
+				for(j = plan->stop-1; j>0; j--){
+					InstrPtr qq= getInstrPtr(plan,j);
+					if( getModuleId(qq) != groupRef )
+						continue;
+					if ( getFunctionId(qq) == subgroupRef && getArg(qq,0) == getArg(p,p->argc-1)){
+						InstrPtr pq;
+						pq = newStmt(plan,algebraRef,leftfetchjoinRef);
+						getArg(pq,0) = newTmpVariable(plan,getArgType(plan,qq,qq->argc-1));
+						pq= pushArgument(plan,pq,getArg(qq,1));
+						pq= pushArgument(plan,pq,getArg(qq,qq->argc-1));
+						addvartolist(plan,&planreturn,getArg(pq,0));
+						addvartolist(plan,&packs,getArg(pq,0));
+					}
+				}
+				pushInstruction(plan,q);
+			} else {
+				pushInstruction(plan,p);
 			}
-			getArg(p,0) = newTmpVariable(plan,TYPE_any);
-			planargs = pushReturn(plan,planargs , getArg(q,0));
-			planargs = pushArgument(plan,planargs , getArg(q,0));
-			pushInstruction(plan,p);
-		} else {
-			pushInstruction(plan,p);
 		}
-	}
+	k = planreturn->retc;
+	for( i =0; i< k; i++) 
+		planreturn= pushArgument(plan,planreturn, getArg(planreturn,i));
+	getFunctionId(plan->stmt[0]) = putName(nme,strlen(nme));
+	pushInstruction(plan,planreturn);
+	pushEndInstruction(plan);
+#ifdef _DEBUG_OPT_CENTIPEDE_ 
+	mnstr_printf(cntxt->fdout,"\n#phase 3 return stmt\n");
+	mnstr_printf(cntxt->fdout,"#cntrl return stmt\n");
+	printInstruction(cntxt->fdout, mb,0,cntrlreturn,LIST_MAL_STMT);
+	mnstr_printf(cntxt->fdout,"#plan return stmt\n");
+	printInstruction(cntxt->fdout, plan,0,planreturn,LIST_MAL_STMT);
+	mnstr_printf(cntxt->fdout,"#plan packs stmt\n");
+	printInstruction(cntxt->fdout, plan,0,packs,LIST_MAL_STMT);
+#endif
 
 	/* fix the signature and modify the underlying plan */
 	while ( plan->stmt[0]->retc )
 		delArgument(plan->stmt[0],0);
-	for( i =0; i< planargs->retc; i++) {
-		plan->stmt[0]= pushReturn(plan, plan->stmt[0], getArg(planargs,i));
-	}
+	for( i =0; i< planreturn->retc; i++)
+		plan->stmt[0]= pushReturn(plan, plan->stmt[0], getArg(planreturn,i));
 
 	insertSymbol(cntxt->nspace,s);
 #ifdef _DEBUG_OPT_CENTIPEDE_
-	//chkProgram(cntxt->fdout, cntxt->nspace, plan);
 	//mnstr_printf(cntxt->fdout,"#rough scnd plan errors %d \n", plan->errors);
 	//printFunction(cntxt->fdout, plan, 0, LIST_MAL_STMT);
 #endif
 
 	/* construct the control plan for local/remote execution */
-	cntrl = OPTexecController(cntxt, mb, plan, ret, slices, plantag, status);
+	cntrl = OPTexecController(cntxt, mb, plan, cntrlreturn, packs, slices, plantag, status);
 	if ( cntrl)  {
 		msg= optimizeMALBlock(cntxt, cntrl);
 		chkProgram(cntxt->fdout, cntxt->nspace, cntrl);
@@ -894,8 +918,8 @@ OPTbakePlans(Client cntxt, MalBlkPtr mb, Slices *slices)
 	mnstr_printf(cntxt->fdout,"#non-optimized main error %d %s\n", mb->errors, msg?msg:"");
 	printFunction(cntxt->fdout, mb, 0, LIST_MAL_STMT);
 #endif
-#ifdef _DEBUG_OPT_CENTIPEDE_
 	chkProgram(cntxt->fdout, cntxt->nspace, plan);
+#ifdef _DEBUG_OPT_CENTIPEDE_
 	mnstr_printf(cntxt->fdout,"#optimized remote plan error %d %s\n", plan->errors, msg?msg:"");
 	printFunction(cntxt->fdout, plan, 0, LIST_MAL_STMT);
 #endif
