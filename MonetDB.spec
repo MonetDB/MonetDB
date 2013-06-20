@@ -57,8 +57,6 @@ BuildRequires: rubygems-devel
 BuildRequires: unixODBC-devel
 BuildRequires: zlib-devel
 
-Obsoletes: %{name}-devel
-
 %define perl_libdir %(perl -MConfig -e '$x=$Config{installvendorarch}; $x =~ s|$Config{vendorprefix}/||; print $x;')
 # need to define python_sitelib on RHEL 5 and older
 # no need to define python3_sitelib: it's defined by python3-devel
@@ -80,6 +78,28 @@ need this package, but you will also need one of the server packages.
 %files
 %defattr(-,root,root)
 %{_libdir}/libbat.so.*
+
+%package devel
+Summary: MonetDB development files
+Group: Applications/Databases
+Requires: %{name} = %{version}-%{release}
+
+%description devel
+MonetDB is a database management system that is developed from a
+main-memory perspective with use of a fully decomposed storage model,
+automatic index management, extensibility of data types and search
+accelerators.  It also has an SQL frontend.
+
+This package contains files needed to develop extensions to the core
+functionality of MonetDB.
+
+%files devel
+%defattr(-,root,root)
+%dir %{_includedir}/monetdb
+%{_includedir}/monetdb/gdk*.h
+%{_includedir}/monetdb/monet*.h
+%{_libdir}/libbat.so
+%{_libdir}/pkgconfig/monetdb-gdk.pc
 
 %package stream
 Summary: MonetDB stream library
@@ -404,7 +424,6 @@ Summary: MonetDB - Monet Database Management System
 Group: Applications/Databases
 Requires(pre): shadow-utils
 Requires: %{name}-client = %{version}-%{release}
-Obsoletes: MonetDB5-server-devel
 Obsoletes: MonetDB5-server-rdf
 
 %description -n MonetDB5-server
@@ -468,6 +487,27 @@ fi
 %exclude %{_libdir}/monetdb5/lib_json.so
 %{_libdir}/monetdb5/*.so
 %doc %{_mandir}/man1/mserver5.1.gz
+
+%package -n MonetDB5-server-devel
+Summary: MonetDB development files
+Group: Applications/Databases
+Requires: MonetDB5-server = %{version}-%{release}
+
+%description -n MonetDB5-server-devel
+MonetDB is a database management system that is developed from a
+main-memory perspective with use of a fully decomposed storage model,
+automatic index management, extensibility of data types and search
+accelerators.  It also has an SQL frontend.
+
+This package contains files needed to develop extensions that can be
+used from the MAL level.
+
+%files -n MonetDB5-server-devel
+%defattr(-,root,root)
+%dir %{_includedir}/monetdb
+%{_includedir}/monetdb/mal*.h
+%{_libdir}/libmonetdb5.so
+%{_libdir}/pkgconfig/monetdb5.pc
 
 # %package -n MonetDB5-server-rdf
 # Summary: MonetDB RDF interface
@@ -705,9 +745,6 @@ rm -f $RPM_BUILD_ROOT%{_libdir}/*.la
 rm -f $RPM_BUILD_ROOT%{_libdir}/monetdb5/*.la
 # internal development stuff
 rm -f $RPM_BUILD_ROOT%{_bindir}/Maddlog
-rm -f $RPM_BUILD_ROOT%{_libdir}/libbat.so
-rm -f $RPM_BUILD_ROOT%{_libdir}/libmonet.so
-rm -f $RPM_BUILD_ROOT%{_libdir}/libmonetdb5.so
 
 %post -p /sbin/ldconfig
 

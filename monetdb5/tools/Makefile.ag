@@ -40,4 +40,11 @@ lib_monetdb5 = {
 		$(LTLIBICONV) $(zlib_LIBS) $(libxml2_LIBS)
 }
 
+headers_pc = {
+	COND = NOT_WIN32
+	HEADERS = pc
+	DIR = libdir/pkgconfig
+	SOURCES = monetdb5.pc.in
+}
+
 EXTRA_DIST_DIR = Tests

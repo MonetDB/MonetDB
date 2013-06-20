@@ -47,3 +47,26 @@ lib_gdk = {
 		$(MATH_LIBS) $(SOCKET_LIBS) $(zlib_LIBS) $(BZ_LIBS) \
 		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) $(PSAPILIB) $(KVM_LIBS)
 }
+
+headers_h = {
+	DIR = includedir/monetdb
+	HEADERS = h
+	SOURCES = \
+		gdk.h \
+		gdk_atomic.h \
+		gdk_atoms.h \
+		gdk_bbp.h \
+		gdk_calc.h \
+		gdk_delta.h \
+		gdk_posix.h \
+		gdk_search.h \
+		gdk_system.h \
+		gdk_utils.h
+}
+
+headers_pc = {
+	COND = NOT_WIN32
+	HEADERS = pc
+	DIR = libdir/pkgconfig
+	SOURCES = monetdb-gdk.pc.in
+}
