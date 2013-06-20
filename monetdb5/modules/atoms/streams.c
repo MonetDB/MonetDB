@@ -26,6 +26,7 @@
  * encapsulates the corresponding library managed in common/stream.
  */
 
+#include "monetdb_config.h"
 #include "streams.h"
 #include "mal_exception.h"
 

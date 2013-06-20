@@ -46,6 +46,7 @@
  * information may fail due to an inconsistent state or insufficient resources.
  */
 
+#include "monetdb_config.h"
 #include "mdb.h"
 
 #define MDBstatus(X) \

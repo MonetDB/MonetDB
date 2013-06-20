@@ -45,6 +45,7 @@
  *
  */
 
+#include "monetdb_config.h"
 #include "iterator.h"
 
 /*

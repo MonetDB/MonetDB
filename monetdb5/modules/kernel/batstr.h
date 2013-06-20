@@ -19,7 +19,6 @@
 
 #ifndef _BATSTR_H_
 #define _BATSTR_H_
-#include "monetdb_config.h"
 #include <gdk.h>
 #include "ctype.h"
 #include <string.h>

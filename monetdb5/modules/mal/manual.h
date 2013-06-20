@@ -19,7 +19,6 @@
 
 #ifndef _MANUAL_H
 #define _MANUAL_H
-#include "monetdb_config.h"
 #include "gdk.h"
 #include <stdarg.h>
 #include <time.h>

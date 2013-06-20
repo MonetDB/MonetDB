@@ -31,6 +31,7 @@
  * Another example concerns the (un)pack operations, which direct
  * access the runtime stack to (push)pull the values needed.
  */
+#include "monetdb_config.h"
 #include "batExtensions.h"
 
 /*

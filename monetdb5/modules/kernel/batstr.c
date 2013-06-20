@@ -30,6 +30,7 @@
  * are limited to :void, which can be cheaply realized using
  * the GRPsplit operation.
  */
+#include "monetdb_config.h"
 #include "batstr.h"
 
 #define prepareOperand(X,Y,Z) \

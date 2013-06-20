@@ -20,7 +20,6 @@
 #ifndef _ITERATOR_
 #define _ITERATOR_
 
-#include "monetdb_config.h"
 #include "mal.h"
 #include "mal_interpreter.h"
 
