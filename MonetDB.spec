@@ -119,7 +119,6 @@ library.
 %defattr(-,root,root)
 %dir %{_includedir}/monetdb
 %{_libdir}/libstream.so
-%{_libdir}/libstream.la
 %{_includedir}/monetdb/stream.h
 %{_includedir}/monetdb/stream_socket.h
 %{_libdir}/pkgconfig/monetdb-stream.pc
@@ -185,7 +184,6 @@ This package contains the files needed to develop with the
 %defattr(-,root,root)
 %dir %{_includedir}/monetdb
 %{_libdir}/libmapi.so
-%{_libdir}/libmapi.la
 %{_includedir}/monetdb/mapi.h
 %{_libdir}/pkgconfig/monetdb-mapi.pc
 
@@ -703,15 +701,12 @@ mkdir -p $RPM_BUILD_ROOT%{_localstatedir}/run/monetdb
 
 # remove unwanted stuff
 # .la files
+rm -f $RPM_BUILD_ROOT%{_libdir}/*.la
 rm -f $RPM_BUILD_ROOT%{_libdir}/monetdb5/*.la
 # internal development stuff
 rm -f $RPM_BUILD_ROOT%{_bindir}/Maddlog
-rm -f $RPM_BUILD_ROOT%{_libdir}/libbat.la
 rm -f $RPM_BUILD_ROOT%{_libdir}/libbat.so
-rm -f $RPM_BUILD_ROOT%{_libdir}/libMonetODBC*.la
-rm -f $RPM_BUILD_ROOT%{_libdir}/libmonet.la
 rm -f $RPM_BUILD_ROOT%{_libdir}/libmonet.so
-rm -f $RPM_BUILD_ROOT%{_libdir}/libmonetdb5.la
 rm -f $RPM_BUILD_ROOT%{_libdir}/libmonetdb5.so
 
 %post -p /sbin/ldconfig
