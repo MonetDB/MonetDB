@@ -214,21 +214,10 @@ typedef struct MT_Lock {
 
 gdk_export void GDKlockstatistics(int);
 gdk_export MT_Lock * volatile GDKlocklist;
+gdk_export int volatile GDKlocklistlock;
 gdk_export ATOMIC_TYPE volatile GDKlockcnt;
 gdk_export ATOMIC_TYPE volatile GDKlockcontentioncnt;
 gdk_export ATOMIC_TYPE volatile GDKlocksleepcnt;
-#ifdef _MSC_VER
-#if SIZEOF_SIZE_T == 8
-#define ATOMIC_XCG_ptr(var, val)	_InterlockedExchangePointer(&(var), (val))
-#define ATOMIC_CAS_ptr(var, old, new)	_InterlockedCompareExchangePointer(&(var), (new), (old))
-#else
-#define ATOMIC_XCG_ptr(var, val)	((void *) _InterlockedExchange((volatile long *) &(var), (long) (val)))
-#define ATOMIC_CAS_ptr(var, old, new)	((void *) _InterlockedCompareExchange((volatile long *) &(var), (long) (new), (long) (old)))
-#endif
-#else
-#define ATOMIC_XCG_ptr(var, val)	__sync_lock_test_and_set(&(var), (val))
-#define ATOMIC_CAS_ptr(var, old, new)	__sync_val_compare_and_swap(&(var), (old), (new))
-#endif
 #define _DBG_LOCK_COUNT_0(l, n)		ATOMIC_INC(GDKlockcnt, dummy, n)
 #define _DBG_LOCK_CONTENTION(l, n)					\
 	do {								\
@@ -248,32 +237,40 @@ gdk_export ATOMIC_TYPE volatile GDKlocksleepcnt;
 #define _DBG_LOCK_COUNT_2(l)						\
 	do {								\
 		(l)->count++;						\
-		if ((l)->next == (struct MT_Lock *) -1)			\
-			(l)->next = ATOMIC_XCG_ptr(GDKlocklist, (l));	\
+		if ((l)->next == (struct MT_Lock *) -1) {		\
+			while (ATOMIC_CAS_int(GDKlocklistlock, 0, 1, dummy, "") != 0) \
+				;					\
+			(l)->next = GDKlocklist;			\
+			GDKlocklist = (l);				\
+			GDKlocklistlock = 0;				\
+		}							\
 	} while (0)
-#define _DBG_LOCK_INIT(l, n)					\
-	do {							\
-		(l)->count = (l)->contention = (l)->sleep = 0;	\
-		(l)->name = n;					\
-		(l)->next = ATOMIC_XCG_ptr(GDKlocklist, (l));	\
+#define _DBG_LOCK_INIT(l, n)						\
+	do {								\
+		(l)->count = (l)->contention = (l)->sleep = 0;		\
+		(l)->name = n;						\
+		while (ATOMIC_CAS_int(GDKlocklistlock, 0, 1, dummy, "") != 0) \
+			;						\
+		(l)->next = GDKlocklist;				\
+		GDKlocklist = (l);					\
+		GDKlocklistlock = 0;					\
 	} while (0)
 #define _DBG_LOCK_DESTROY(l)						\
 	do {								\
 		MT_Lock * volatile _p;					\
-		int _done = 0;						\
 		/* save a copy for statistical purposes */		\
 		_p = GDKmalloc(sizeof(MT_Lock));			\
 		memcpy(_p, l, sizeof(MT_Lock));				\
-		_p->next = ATOMIC_XCG_ptr(GDKlocklist, _p);		\
-		do {							\
-			if (ATOMIC_CAS_ptr(GDKlocklist, (l), (l)->next) == (l)) \
+		while (ATOMIC_CAS_int(GDKlocklistlock, 0, 1, dummy, "") != 0) \
+			;						\
+		_p->next = GDKlocklist;					\
+		GDKlocklist = _p;					\
+		for (_p = GDKlocklist; _p; _p = _p->next)		\
+			if (_p->next == (l)) {				\
+				_p->next = (l)->next;			\
 				break;					\
-			for (_p = GDKlocklist; _p; _p = _p->next)	\
-				if (ATOMIC_CAS_ptr(_p->next, (l), (l)->next) == (l)) { \
-					_done = 1;			\
-					break;				\
-				}					\
-		} while (!_done);					\
+			}						\
+		GDKlocklistlock = 0;					\
 	} while (0)
 
 #else
