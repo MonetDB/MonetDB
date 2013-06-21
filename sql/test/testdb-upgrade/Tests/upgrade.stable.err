@@ -26,12 +26,13 @@ stderr of test 'upgrade` in directory 'sql/test/testdb-upgrade` itself:
 # cmdline opt 	gdk_dbname = mTests_test_testdb-upgrade
 # cmdline opt 	mal_listing = 0
 
-# 14:40:54 >  
-# 14:40:54 >  "/usr/bin/python" "upgrade.SQL.py" "upgrade"
-# 14:40:54 >  
+
+# 11:12:55 >  
+# 11:12:55 >  "/usr/bin/python2" "upgrade.SQL.py" "upgrade"
+# 11:12:55 >  
 
 
-# 14:40:54 >  
-# 14:40:54 >  "Done."
-# 14:40:54 >  
+# 11:12:55 >  
+# 11:12:55 >  "Done."
+# 11:12:55 >  
 

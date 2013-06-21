@@ -642,6 +642,91 @@ sql_update_feb2013_sp3(Client c)
 	return err;		/* usually MAL_SUCCEED */
 }
 
+static str
+sql_update_oct2013(Client c)
+{
+	char *buf = GDKmalloc(10240), *err = NULL;
+	size_t bufsize = 10240, pos = 0;
+	char *fullname;
+	FILE *fp1 = NULL, *fp2 = NULL, *fp3 = NULL;
+	ValRecord *schvar = stack_get_var(((backend *) c->sqlcontext)->mvc, "current_schema");
+	char *schema = NULL;
+
+	if (schvar)
+		schema = strdup(schvar->val.sval);
+
+	snprintf(buf, bufsize, "createdb%c15_querylog", DIR_SEP);
+ 	if ((fullname = MSP_locate_sqlscript(buf, 1)) != NULL) {
+		fp1 = fopen(fullname, "r");
+		GDKfree(fullname);
+	}
+	snprintf(buf, bufsize, "createdb%c26_sysmon", DIR_SEP);
+ 	if ((fullname = MSP_locate_sqlscript(buf, 1)) != NULL) {
+		fp2 = fopen(fullname, "r");
+		GDKfree(fullname);
+	}
+	snprintf(buf, bufsize, "createdb%c40_json", DIR_SEP);
+ 	if ((fullname = MSP_locate_sqlscript(buf, 1)) != NULL) {
+		fp3 = fopen(fullname, "r");
+		GDKfree(fullname);
+	}
+
+	pos += snprintf(buf+pos, bufsize-pos, "set schema \"sys\";\n");
+
+	/* new entry in 16_tracelog.sql */
+	pos += snprintf(buf+pos, bufsize-pos, "create view sys.tracelog as select * from sys.tracelog();\n");
+
+	/* deleted entry from 22_clients.sql */
+	pos += snprintf(buf+pos, bufsize-pos, "drop function sys.clients;\n");
+
+	/* added entry in 25_debug.sql */
+	pos += snprintf(buf+pos, bufsize-pos, "create view sys.optimizers as select * from sys.optimizers();\n");
+	pos += snprintf(buf+pos, bufsize-pos, "create view sys.environment as select * from sys.environment();\n");
+
+	/* added entry in 75_storagemodel.sql */
+	pos += snprintf(buf+pos, bufsize-pos, "create view sys.storage as select * from sys.storage();\n");
+	pos += snprintf(buf+pos, bufsize-pos, "create view sys.storagemodel as select * from sys.storagemodel();\n");
+
+	/* replaced 15_history.sql by 15_querylog.sql */
+	pos += snprintf(buf+pos, bufsize-pos, "drop procedure sys.resetHistory;\n");
+	pos += snprintf(buf+pos, bufsize-pos, "drop procedure sys.keepCall;\n");
+	pos += snprintf(buf+pos, bufsize-pos, "drop procedure sys.keepQuery;\n");
+	pos += snprintf(buf+pos, bufsize-pos, "drop view sys.queryLog;\n");
+	pos += snprintf(buf+pos, bufsize-pos, "drop table sys.callHistory;\n");
+	pos += snprintf(buf+pos, bufsize-pos, "drop table sys.queryHistory;\n");
+	if (fp1) {
+		pos += fread(buf+pos, 1, bufsize-pos, fp1);
+		fclose(fp1);
+	}
+
+	/* new file 26_sysmon.sql */
+	if (fp2) {
+		pos += fread(buf+pos, 1, bufsize-pos, fp2);
+		fclose(fp2);
+	}
+
+	/* new file 40_json.sql */
+	if (fp3) {
+		pos += fread(buf+pos, 1, bufsize-pos, fp3);
+		fclose(fp3);
+	}
+
+	pos += snprintf(buf+pos, bufsize-pos, "insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('querylog_catalog', 'querylog_calls', 'queue', 'json_filter', 'json_filter_all', 'json_path', 'json_isvalid', 'json_isvalidobject', 'json_isvalidarray', 'json_length') and f.type = %d and f.schema_id = s.id and s.name = 'sys');\n", F_FUNC);
+	pos += snprintf(buf+pos, bufsize-pos, "insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('querylog_empty', 'querylog_enable', 'querylog_disable', 'pause', 'resume', 'sysmon_resume', 'stop') and f.type = %d and f.schema_id = s.id and s.name = 'sys');\n", F_PROC);
+	pos += snprintf(buf+pos, bufsize-pos, "update sys._tables set system = true where name in ('tracelog', 'optimizers', 'environment', 'storage', 'storagemodel') and schema_id = (select id from sys.schemas where name = 'sys');\n");
+
+	if (schema) {
+		pos += snprintf(buf+pos, bufsize-pos, "set schema \"%s\";\n", schema);
+		free(schema);
+	}
+
+	assert(pos < 10240);
+
+	printf("Running database upgrade commands:\n%s\n", buf);
+	err = SQLstatementIntern(c, &buf, "update", 1, 0);
+	GDKfree(buf);
+	return err;		/* usually MAL_SUCCEED */
+}
 
 str
 SQLinitClient(Client c)
@@ -844,6 +929,14 @@ SQLinitClient(Client c)
         	sql_find_subtype(&tp, "wrd", 0, 0);
 		if (!sql_bind_func(m->sa, mvc_bind_schema(m,"sys"), "stddev_samp", &tp, NULL, F_AGGR )) {
 			if ((err = sql_update_feb2013_sp3(c)) != NULL) {
+				fprintf(stderr, "!%s\n", err);
+				GDKfree(err);
+			}
+		}
+		/* if function sys.querylog_catalog() does not exist, we
+		 * need to update */
+		if (!sql_bind_func(m->sa, mvc_bind_schema(m,"sys"), "querylog_catalog", NULL, NULL, F_FUNC )) {
+			if ((err = sql_update_oct2013(c)) != NULL) {
 				fprintf(stderr, "!%s\n", err);
 				GDKfree(err);
 			}
