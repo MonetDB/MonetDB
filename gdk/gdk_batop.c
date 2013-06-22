@@ -71,12 +71,12 @@ insert_string_bat(BAT *b, BAT *n, int append)
 	BUN p, q;		/* loop variables */
 	oid o = 0;		/* in case we're appending */
 	ptr hp, tp;		/* head and tail value pointers */
-	unsigned char tbv, *tbp;	/* tail value-as-bte */
-	unsigned short tsv, *tsp;	/* tail value-as-sht */
+	unsigned char tbv, *tbp = NULL;		/* tail value-as-bte */
+	unsigned short tsv, *tsp = NULL;	/* tail value-as-sht */
 #if SIZEOF_VAR_T == 8
-	unsigned int tiv, *tip;		/* tail value-as-int */
+	unsigned int tiv, *tip = NULL;		/* tail value-as-int */
 #endif
-	var_t v, *tvp;		/* value */
+	var_t v, *tvp = NULL;		/* value */
 	int ntw, btw;		/* shortcuts for {b,n}->t->width */
 
 	assert(b->H->type == TYPE_void || b->H->type == TYPE_oid);
