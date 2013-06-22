@@ -141,7 +141,9 @@ insert_string_bat(BAT *b, BAT *n, int append)
 		}
 		tbp = (unsigned char*)Tloc(n,BUNfirst(n)); 
 		tsp = (unsigned short*)Tloc(n,BUNfirst(n)); 
+#if SIZEOF_VAR_T == 8
 		tip = (unsigned int*)Tloc(n,BUNfirst(n)); 
+#endif
 		tvp = (var_t*)Tloc(n,BUNfirst(n)); 
 		b->T->varsized = 0;
 		b->T->type = tt;
@@ -172,7 +174,7 @@ insert_string_bat(BAT *b, BAT *n, int append)
 				break;
 #endif
 			default:
-				v = * (var_t *) *tvp;
+				v = *tvp;
 				tvp++;
 				break;
 			}

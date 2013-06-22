@@ -3689,7 +3689,7 @@ DELTAproject(bat *result, bat *sub, bat *col, bat *uid, bat *uval, bat *ins)
 	}
 	if (i) BBPunfix(i->batCacheid);
 
-	tres = BATleftfetchjoin(s, res, BATcount(res));
+	tres = BATleftfetchjoin(s, res, BATcount(s));
 	assert(tres);
 	BBPunfix(res->batCacheid);
 	res = tres;
