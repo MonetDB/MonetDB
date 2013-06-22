@@ -718,6 +718,7 @@ str STRbatConcat(int *ret, int *l, int *r)
 		str tr = (str) BUNtail(righti,p);
 		STRConcat(vp, &tl, &tr);
 		bunfastins(bn, h, v);
+		GDKfree(v);
 	}
 	bn->T->nonil = 0;
 	BBPreleaseref(right->batCacheid);
@@ -748,6 +749,7 @@ str STRbatConcatcst(int *ret, int *l, str *cst)
 		str tl = (str) BUNtail(lefti,p);
 		STRConcat(vp, &tl, cst);
 		bunfastins(bn, h, v);
+		GDKfree(v);
 	}
 	bn->T->nonil = 0;
 	finalizeResult(ret,bn,left);
@@ -776,6 +778,7 @@ str STRcstConcatbat(int *ret, str *cst, int *r)
 		str tr = (str) BUNtail(righti,p);
 		STRConcat(vp, cst, &tr);
 		bunfastins(bn, h, v);
+		GDKfree(v);
 	}
 	bn->T->nonil = 0;
 	finalizeResult(ret,bn,right);
