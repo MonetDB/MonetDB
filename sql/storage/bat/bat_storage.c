@@ -23,7 +23,7 @@
 #include <sql_string.h>
 #include <algebra.h>
 
-#define SNAPSHOT_MINSIZE ((BUN) 1024)
+#define SNAPSHOT_MINSIZE ((BUN) 1024*128)
 
 sql_delta *
 timestamp_delta( sql_delta *d, int ts)
