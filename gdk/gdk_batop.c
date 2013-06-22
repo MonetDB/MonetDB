@@ -71,12 +71,12 @@ insert_string_bat(BAT *b, BAT *n, int append)
 	BUN p, q;		/* loop variables */
 	oid o = 0;		/* in case we're appending */
 	ptr hp, tp;		/* head and tail value pointers */
-	unsigned char tbv;	/* tail value-as-bte */
-	unsigned short tsv;	/* tail value-as-sht */
+	unsigned char tbv, *tbp = NULL;		/* tail value-as-bte */
+	unsigned short tsv, *tsp = NULL;	/* tail value-as-sht */
 #if SIZEOF_VAR_T == 8
-	unsigned int tiv;	/* tail value-as-int */
+	unsigned int tiv, *tip = NULL;		/* tail value-as-int */
 #endif
-	var_t v;		/* value */
+	var_t v, *tvp = NULL;		/* value */
 	int ntw, btw;		/* shortcuts for {b,n}->t->width */
 
 	assert(b->H->type == TYPE_void || b->H->type == TYPE_oid);
@@ -139,8 +139,11 @@ insert_string_bat(BAT *b, BAT *n, int append)
 			tt = TYPE_var;
 			break;
 		}
+		tbp = (unsigned char*)Tloc(n,BUNfirst(n)); 
+		tsp = (unsigned short*)Tloc(n,BUNfirst(n)); 
+		tip = (unsigned int*)Tloc(n,BUNfirst(n)); 
+		tvp = (var_t*)Tloc(n,BUNfirst(n)); 
 		b->T->varsized = 0;
-		n->T->varsized = 0;
 		b->T->type = tt;
 	}
 
@@ -152,23 +155,25 @@ insert_string_bat(BAT *b, BAT *n, int append)
 			hp = &o;
 		}
 
-		tp = b->T->type ? BUNtail(ni, p) : NULL;
 		if (toff != ~ (size_t) 0) {
-			assert(tp != NULL);
 			switch (ntw) {
 			case 1:
-				v = (var_t) * (unsigned char *) tp + GDK_VAROFFSET;
+				v = (var_t) *tbp + GDK_VAROFFSET;
+				tbp++;
 				break;
 			case 2:
-				v = (var_t) * (unsigned short *) tp + GDK_VAROFFSET;
+				v = (var_t) *tsp + GDK_VAROFFSET;
+				tsp++;
 				break;
 #if SIZEOF_VAR_T == 8
 			case 4:
-				v = (var_t) * (unsigned int *) tp;
+				v = (var_t) *tip;
+				tip++;
 				break;
 #endif
 			default:
-				v = * (var_t *) tp;
+				v = * (var_t *) *tvp;
+				tvp++;
 				break;
 			}
 			v = (var_t) ((((size_t) v << GDK_VARSHIFT) + toff) >> GDK_VARSHIFT);
@@ -196,6 +201,9 @@ insert_string_bat(BAT *b, BAT *n, int append)
 				tp = (ptr) &v;
 				break;
 			}
+		} else {
+			tp = b->T->type ? BUNtail(ni, p) : NULL;
+			assert(tp != NULL);
 		}
 		bunfastins(b, hp, tp);
 		if (append)
@@ -203,14 +211,12 @@ insert_string_bat(BAT *b, BAT *n, int append)
 	}
 	if (toff != ~(size_t) 0) {
 		b->T->varsized = 1;
-		n->T->varsized = 1;
 		b->T->type = TYPE_str;
 	}
 	return b;
       bunins_failed:
 	if (toff != ~(size_t) 0) {
 		b->T->varsized = 1;
-		n->T->varsized = 1;
 		b->T->type = TYPE_str;
 	}
 	return NULL;
