@@ -795,8 +795,10 @@ rel_lastexp(mvc *sql, sql_rel *rel )
 	if (!is_processed(rel))
 		rel = rel_parent(rel);
 	assert(list_length(rel->exps));
-	if (rel->op == op_project)
+	if (rel->op == op_project) {
+		rel->exps->ht = NULL;
 		return exp_alias_or_copy(sql, NULL, NULL, rel, rel->exps->t->data);
+	}
 	assert(is_project(rel->op));
 	e = rel->exps->t->data;
 	return exp_column(sql->sa, e->rname, e->name, exp_subtype(e), e->card, has_nil(e), is_intern(e));
