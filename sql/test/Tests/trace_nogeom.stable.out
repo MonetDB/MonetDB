@@ -25,13 +25,20 @@ Ready.
 # 11:14:41 >  mclient -lsql -i -umonetdb -Pmonetdb --host=loki --port=30924 
 # 11:14:41 >  
 
-% sys.types # table_name
+# 11:43:05 >  
+# 11:43:05 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-23209" "--port=33225"
+# 11:43:05 >  
+
+#set optimizer='sequential_pipe';
+#set trace = 'none'; -- non-documented feature to not get any trace output
+#TRACE SELECT count(*) FROM types;
+% sys.L1 # table_name
 % L1 # name
 % wrd # type
 % 2 # length
 [ 29	]
 #SELECT COUNT(*) FROM tracelog();
-% . # table_name
+% .L1 # table_name
 % L1 # name
 % wrd # type
 % 2 # length
