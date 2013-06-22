@@ -74,7 +74,7 @@ insert_string_bat(BAT *b, BAT *n, int append)
 	unsigned char tbv, *tbp;	/* tail value-as-bte */
 	unsigned short tsv, *tsp;	/* tail value-as-sht */
 #if SIZEOF_VAR_T == 8
-	unsigned int tiv, *tip;	/* tail value-as-int */
+	unsigned int tiv, *tip;		/* tail value-as-int */
 #endif
 	var_t v, *tvp;		/* value */
 	int ntw, btw;		/* shortcuts for {b,n}->t->width */
@@ -126,23 +126,23 @@ insert_string_bat(BAT *b, BAT *n, int append)
 		switch (btw) {
 		case 1:
 			tt = TYPE_bte;
-			tbp = (unsigned char*)Tloc(n,BUNfirst(n)); 
 			break;
 		case 2:
 			tt = TYPE_sht;
-			tsp = (unsigned short*)Tloc(n,BUNfirst(n)); 
 			break;
 #if SIZEOF_VAR_T == 8
 		case 4:
 			tt = TYPE_int;
-			tip = (unsigned int*)Tloc(n,BUNfirst(n)); 
 			break;
 #endif
 		default:
 			tt = TYPE_var;
-			tvp = (var_t*)Tloc(n,BUNfirst(n)); 
 			break;
 		}
+		tbp = (unsigned char*)Tloc(n,BUNfirst(n)); 
+		tsp = (unsigned short*)Tloc(n,BUNfirst(n)); 
+		tip = (unsigned int*)Tloc(n,BUNfirst(n)); 
+		tvp = (var_t*)Tloc(n,BUNfirst(n)); 
 		b->T->varsized = 0;
 		b->T->type = tt;
 	}
