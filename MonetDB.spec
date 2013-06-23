@@ -27,7 +27,7 @@ Vendor: MonetDB BV <info@monetdb.org>
 Group: Applications/Databases
 License: MPL - http://www.monetdb.org/Legal/MonetDBLicense
 URL: http://www.monetdb.org/
-Source: http://dev.monetdb.org/downloads/sources/Feb2013-SP2/%{name}-%{version}.tar.bz2
+Source: http://dev.monetdb.org/downloads/sources/Feb2013-SP3/%{name}-%{version}.tar.bz2
 
 BuildRequires: bison
 BuildRequires: bzip2-devel
@@ -57,8 +57,6 @@ BuildRequires: rubygems-devel
 BuildRequires: unixODBC-devel
 BuildRequires: zlib-devel
 
-Obsoletes: %{name}-devel
-
 %define perl_libdir %(perl -MConfig -e '$x=$Config{installvendorarch}; $x =~ s|$Config{vendorprefix}/||; print $x;')
 # need to define python_sitelib on RHEL 5 and older
 # no need to define python3_sitelib: it's defined by python3-devel
@@ -80,6 +78,28 @@ need this package, but you will also need one of the server packages.
 %files
 %defattr(-,root,root)
 %{_libdir}/libbat.so.*
+
+%package devel
+Summary: MonetDB development files
+Group: Applications/Databases
+Requires: %{name} = %{version}-%{release}
+
+%description devel
+MonetDB is a database management system that is developed from a
+main-memory perspective with use of a fully decomposed storage model,
+automatic index management, extensibility of data types and search
+accelerators.  It also has an SQL frontend.
+
+This package contains files needed to develop extensions to the core
+functionality of MonetDB.
+
+%files devel
+%defattr(-,root,root)
+%dir %{_includedir}/monetdb
+%{_includedir}/monetdb/gdk*.h
+%{_includedir}/monetdb/monet*.h
+%{_libdir}/libbat.so
+%{_libdir}/pkgconfig/monetdb-gdk.pc
 
 %package stream
 Summary: MonetDB stream library
@@ -119,7 +139,6 @@ library.
 %defattr(-,root,root)
 %dir %{_includedir}/monetdb
 %{_libdir}/libstream.so
-%{_libdir}/libstream.la
 %{_includedir}/monetdb/stream.h
 %{_includedir}/monetdb/stream_socket.h
 %{_libdir}/pkgconfig/monetdb-stream.pc
@@ -185,7 +204,6 @@ This package contains the files needed to develop with the
 %defattr(-,root,root)
 %dir %{_includedir}/monetdb
 %{_libdir}/libmapi.so
-%{_libdir}/libmapi.la
 %{_includedir}/monetdb/mapi.h
 %{_libdir}/pkgconfig/monetdb-mapi.pc
 
@@ -406,7 +424,6 @@ Summary: MonetDB - Monet Database Management System
 Group: Applications/Databases
 Requires(pre): shadow-utils
 Requires: %{name}-client = %{version}-%{release}
-Obsoletes: MonetDB5-server-devel
 Obsoletes: MonetDB5-server-rdf
 
 %description -n MonetDB5-server
@@ -470,6 +487,27 @@ fi
 %exclude %{_libdir}/monetdb5/lib_json.so
 %{_libdir}/monetdb5/*.so
 %doc %{_mandir}/man1/mserver5.1.gz
+
+%package -n MonetDB5-server-devel
+Summary: MonetDB development files
+Group: Applications/Databases
+Requires: MonetDB5-server = %{version}-%{release}
+
+%description -n MonetDB5-server-devel
+MonetDB is a database management system that is developed from a
+main-memory perspective with use of a fully decomposed storage model,
+automatic index management, extensibility of data types and search
+accelerators.  It also has an SQL frontend.
+
+This package contains files needed to develop extensions that can be
+used from the MAL level.
+
+%files -n MonetDB5-server-devel
+%defattr(-,root,root)
+%dir %{_includedir}/monetdb
+%{_includedir}/monetdb/mal*.h
+%{_libdir}/libmonetdb5.so
+%{_libdir}/pkgconfig/monetdb5.pc
 
 # %package -n MonetDB5-server-rdf
 # Summary: MonetDB RDF interface
@@ -703,16 +741,10 @@ mkdir -p $RPM_BUILD_ROOT%{_localstatedir}/run/monetdb
 
 # remove unwanted stuff
 # .la files
+rm -f $RPM_BUILD_ROOT%{_libdir}/*.la
 rm -f $RPM_BUILD_ROOT%{_libdir}/monetdb5/*.la
 # internal development stuff
 rm -f $RPM_BUILD_ROOT%{_bindir}/Maddlog
-rm -f $RPM_BUILD_ROOT%{_libdir}/libbat.la
-rm -f $RPM_BUILD_ROOT%{_libdir}/libbat.so
-rm -f $RPM_BUILD_ROOT%{_libdir}/libMonetODBC*.la
-rm -f $RPM_BUILD_ROOT%{_libdir}/libmonet.la
-rm -f $RPM_BUILD_ROOT%{_libdir}/libmonet.so
-rm -f $RPM_BUILD_ROOT%{_libdir}/libmonetdb5.la
-rm -f $RPM_BUILD_ROOT%{_libdir}/libmonetdb5.so
 
 %post -p /sbin/ldconfig
 
@@ -722,6 +754,27 @@ rm -f $RPM_BUILD_ROOT%{_libdir}/libmonetdb5.so
 rm -fr $RPM_BUILD_ROOT
 
 %changelog
+* Wed Jun 19 2013 Hannes Muehleisen <hannes@cwi.nl> - 11.15.11-20130619
+- Rebuilt.
+
+* Wed Jun 19 2013 Hannes Muehleisen <hannes@cwi.nl> - 11.15.9-20130619
+- Rebuilt.
+
+* Sun Jun  9 2013 Fabian Groffen <fabian@monetdb.org> - 11.15.9-20130619
+- java: Further improved setBigDecimal() method, based on patch by Ben Reilly
+  in bug #3290
+
+* Thu May 23 2013 Fabian Groffen <fabian@monetdb.org> - 11.15.9-20130619
+- java: Fixed bug where PreparedStatement.setBigDecimal() wouldn't format its
+  input well enough for the server causing odd errors.
+- java: Allow PreparedStatement.setXXX() methods to be called with null
+  arguments, bug #3288
+
+* Tue May  7 2013 Sjoerd Mullender <sjoerd@acm.org> - 11.15.9-20130619
+- gdk: System calls to flush files to disks were added.  This may cause
+  some slowdown, but it should provide better durability, especially
+  in the face of power failures.
+
 * Fri Apr 26 2013 Sjoerd Mullender <sjoerd@acm.org> - 11.15.7-20130426
 - Rebuilt.
 
@@ -750,20 +803,19 @@ rm -fr $RPM_BUILD_ROOT
 - Rebuilt.
 
 * Thu Jan 17 2013 Stefan Manegold <Stefan.Manegold@cwi.nl> - 11.15.1-20130212
-- testing:
-enabled "top-level" Mtest.py
-So far, while Mtest.py could be called in any subdirectory of the MonetDB
-source tree (and could then run all tests in the entire sub-tree),
-it was not possible to call Mtest.py in the top-level MonetDB source
-directory to run all tests.  Instead, to run all tests, Mtest.py had to
-be called at least 4 times, once in each of these directories: "clients",
-"monetdb5", "sql", "geom".
-Now, it is possible to call Mtest.py once in the top-level MonetDB source
-directory to run all tests in one go.
-The behaviour of calling Mtest.py in any subdirectory, including the
-four mentioned above, did not changed, other than that now obsolete
-command line options "-p / --package <package>" and "-5 / --monetdb5"
-have been removed.
+- testing: enabled "top-level" Mtest.py
+  So far, while Mtest.py could be called in any subdirectory of the MonetDB
+  source tree (and could then run all tests in the entire sub-tree),
+  it was not possible to call Mtest.py in the top-level MonetDB source
+  directory to run all tests.  Instead, to run all tests, Mtest.py had to
+  be called at least 4 times, once in each of these directories: "clients",
+  "monetdb5", "sql", "geom".
+  Now, it is possible to call Mtest.py once in the top-level MonetDB source
+  directory to run all tests in one go.
+  The behaviour of calling Mtest.py in any subdirectory, including the
+  four mentioned above, did not changed, other than that now obsolete
+  command line options "-p / --package <package>" and "-5 / --monetdb5"
+  have been removed.
 
 * Tue Jan 15 2013 Fabian Groffen <fabian@monetdb.org> - 11.15.1-20130212
 - clients: Mapi protocol v8 support was removed from all client drivers.  Protocol

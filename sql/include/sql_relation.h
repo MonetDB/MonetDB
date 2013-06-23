@@ -70,8 +70,9 @@ typedef struct expression {
 #define HAS_NO_NIL	64
 #define EXP_INTERN	128
 
-#define UPD_COMP	1
-#define UPD_LOCKED	2
+#define UPD_COMP		1
+#define UPD_LOCKED		2
+#define UPD_NO_CONSTRAINT	4
  
 /* todo make enum */
 #define DDL_OUTPUT	1

@@ -33,6 +33,7 @@
  *
  */
 
+#include "monetdb_config.h"
 #include "pqueue.h"
 
 /* returns the parent of a pqueue position */

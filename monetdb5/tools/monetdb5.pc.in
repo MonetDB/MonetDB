@@ -1,0 +1,12 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+
+Name: monetdb5
+Description: MonetDB5
+Version: @PACKAGE_VERSION@
+Requires: monetdb-gdk
+
+Libs: -L${libdir} -lmonetdb5 -lbat
+Cflags: -I${includedir}/monetdb

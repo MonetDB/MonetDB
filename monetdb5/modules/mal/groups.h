@@ -18,7 +18,6 @@
 */
 #ifndef _OPT_GROUPS_
 #define _OPT_GROUPS_
-#include "monetdb_config.h"
 #include "mal_interpreter.h"
 
 #ifdef WIN32

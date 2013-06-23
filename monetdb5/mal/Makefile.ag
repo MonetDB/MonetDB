@@ -62,4 +62,18 @@ lib_mal = {
 		mal_xml.c mal_xml.h
 }
 
+headers_h = {
+	DIR = includedir/monetdb
+	HEADERS = h
+	SOURCES = \
+		mal.h \
+		mal_errors.h \
+		mal_exception.h \
+		mal_instruction.h \
+		mal_namespace.h \
+		mal_properties.h \
+		mal_stack.h \
+		mal_type.h
+}
+
 EXTRA_DIST_DIR = Tests

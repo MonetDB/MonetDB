@@ -1043,7 +1043,7 @@ rel_import(mvc *sql, sql_table *t, char *tsep, char *rsep, char *ssep, char *ns,
 }
 
 static sql_rel *
-copyfrom(mvc *sql, dlist *qname, dlist *files, dlist *seps, dlist *nr_offset, str null_string, int locked)
+copyfrom(mvc *sql, dlist *qname, dlist *files, dlist *seps, dlist *nr_offset, str null_string, int locked, int constraint)
 {
 	sql_rel *rel = NULL;
 	char *sname = qname_schema(qname);
@@ -1144,11 +1144,13 @@ copyfrom(mvc *sql, dlist *qname, dlist *files, dlist *seps, dlist *nr_offset, st
 	rel = rel_insert_table(sql, t, t->base.name, rel);
 	if (rel && locked)
 		rel->flag |= UPD_LOCKED;
+	if (rel && !constraint)
+		rel->flag |= UPD_NO_CONSTRAINT;
 	return rel;
 }
 
 static sql_rel *
-bincopyfrom(mvc *sql, dlist *qname, dlist *files)
+bincopyfrom(mvc *sql, dlist *qname, dlist *files, int constraint)
 {
 	char *sname = qname_schema(qname);
 	char *tname = qname_table(qname);
@@ -1215,7 +1217,10 @@ bincopyfrom(mvc *sql, dlist *qname, dlist *files)
 		append(exps, exp_column(sql->sa, t->base.name, c->base.name, &c->type, CARD_MULTI, c->null, 0));
 	}
 	res = rel_table_func(sql->sa, NULL, import, exps);
-	return rel_insert_table(sql, t, t->base.name, res);
+	res = rel_insert_table(sql, t, t->base.name, res);
+	if (res && !constraint)
+		res->flag |= UPD_NO_CONSTRAINT;
+	return res;
 }
 
 static sql_rel *
@@ -1357,7 +1362,7 @@ rel_updates(mvc *sql, symbol *s)
 	{
 		dlist *l = s->data.lval;
 
-		ret = copyfrom(sql, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.lval, l->h->next->next->next->data.lval, l->h->next->next->next->next->data.sval, l->h->next->next->next->next->next->data.i_val);
+		ret = copyfrom(sql, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.lval, l->h->next->next->next->data.lval, l->h->next->next->next->next->data.sval, l->h->next->next->next->next->next->data.i_val, l->h->next->next->next->next->next->next->data.i_val);
 		sql->type = Q_UPDATE;
 	}
 		break;
@@ -1365,7 +1370,7 @@ rel_updates(mvc *sql, symbol *s)
 	{
 		dlist *l = s->data.lval;
 
-		ret = bincopyfrom(sql, l->h->data.lval, l->h->next->data.lval);
+		ret = bincopyfrom(sql, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.i_val);
 		sql->type = Q_UPDATE;
 	}
 		break;

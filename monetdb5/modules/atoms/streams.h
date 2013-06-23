@@ -19,7 +19,6 @@
 #ifndef _STREAMS_H_
 #define _STREAMS_H_
 
-#include "monetdb_config.h"
 #include <mal.h>
 #include <stdio.h>
 #include <stream_socket.h>

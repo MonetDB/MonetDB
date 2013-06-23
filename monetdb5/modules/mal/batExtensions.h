@@ -20,7 +20,6 @@
 #ifndef _BAT_EXTENSIONS_
 #define _BAT_EXTENSIONS_
 
-#include "monetdb_config.h"
 #include "mal_client.h"
 #include "mal_interpreter.h"
 #include "bat5.h"

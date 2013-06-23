@@ -31,6 +31,7 @@
  * the GRPsplit operation.
  */
 
+#include "monetdb_config.h"
 #include "batcolor.h"
 
 #define prepareOperand(X,Y,Z) \

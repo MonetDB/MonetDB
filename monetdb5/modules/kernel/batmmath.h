@@ -18,7 +18,6 @@
 */
 #ifndef _BATMATH_H
 #define _BATMATH_H
-#include "monetdb_config.h"
 #include "gdk.h"
 #include "math.h"
 #include "mal_exception.h"

@@ -18,7 +18,6 @@
 */
 #ifndef _MDB_H
 #define _MDB_H
-#include "monetdb_config.h"
 #include "gdk.h"
 #include "mutils.h"
 #include <stdarg.h>

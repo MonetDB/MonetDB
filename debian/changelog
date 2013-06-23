@@ -1,3 +1,39 @@
+monetdb (11.15.11-20130619) unstable; urgency=low
+
+  * Rebuilt.
+
+ -- Hannes Muehleisen <hannes@cwi.nl>  Wed, 19 Jun 2013 17:06:18 +0200
+
+monetdb (11.15.9-20130619) unstable; urgency=low
+
+  * Rebuilt.
+
+ -- Hannes Muehleisen <hannes@cwi.nl>  Wed, 19 Jun 2013 15:21:39 +0200
+
+monetdb (11.15.9-20130619) unstable; urgency=low
+
+  * java: Further improved setBigDecimal() method, based on patch by Ben Reilly
+    in bug #3290
+
+ -- Fabian Groffen <fabian@monetdb.org>  Sun, 9 Jun 2013 15:21:38 +0200
+
+monetdb (11.15.9-20130619) unstable; urgency=low
+
+  * java: Fixed bug where PreparedStatement.setBigDecimal() wouldn't format its
+    input well enough for the server causing odd errors.
+  * java: Allow PreparedStatement.setXXX() methods to be called with null
+    arguments, bug #3288
+
+ -- Fabian Groffen <fabian@monetdb.org>  Thu, 23 May 2013 15:21:38 +0200
+
+monetdb (11.15.9-20130619) unstable; urgency=low
+
+  * gdk: System calls to flush files to disks were added.  This may cause
+    some slowdown, but it should provide better durability, especially
+    in the face of power failures.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 7 May 2013 15:21:38 +0200
+
 monetdb (11.15.7-20130426) unstable; urgency=low
 
   * Rebuilt.

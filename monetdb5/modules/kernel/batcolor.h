@@ -19,7 +19,6 @@
 #ifndef _BATCOLOR_H_
 #define _BATCOLOR_H_
 
-#include "monetdb_config.h"
 #include <gdk.h>
 #include <string.h>
 #include <mal.h>

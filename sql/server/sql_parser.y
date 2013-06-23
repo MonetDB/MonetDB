@@ -445,6 +445,7 @@ int yydebug=1;
 	opt_chain
 	opt_distinct
 	opt_locked
+	opt_constraint
 	set_distinct
 	opt_with_check_option
 
@@ -2434,7 +2435,7 @@ opt_to_savepoint:
  ;
 
 copyfrom_stmt:
-    COPY opt_nr INTO qname FROM string_commalist opt_seps opt_null_string opt_locked
+    COPY opt_nr INTO qname FROM string_commalist opt_seps opt_null_string opt_locked opt_constraint
 	{ dlist *l = L();
 	  append_list(l, $4);
 	  append_list(l, $6);
@@ -2442,8 +2443,9 @@ copyfrom_stmt:
 	  append_list(l, $2);
 	  append_string(l, $8);
 	  append_int(l, $9);
+	  append_int(l, $10);
 	  $$ = _symbol_create_list( SQL_COPYFROM, l ); }
-  | COPY opt_nr INTO qname FROM STDIN opt_seps opt_null_string opt_locked
+  | COPY opt_nr INTO qname FROM STDIN opt_seps opt_null_string opt_locked opt_constraint
 	{ dlist *l = L();
 	  append_list(l, $4);
 	  append_list(l, NULL);
@@ -2451,8 +2453,9 @@ copyfrom_stmt:
 	  append_list(l, $2);
 	  append_string(l, $8);
 	  append_int(l, $9);
+	  append_int(l, $10);
 	  $$ = _symbol_create_list( SQL_COPYFROM, l ); }
-   | COPY opt_nr BINARY INTO qname FROM string_commalist /* binary copy from */
+   | COPY opt_nr BINARY INTO qname FROM string_commalist /* binary copy from */ opt_constraint
 	{ dlist *l = L();
 	  if ($2 != NULL) {
 	  	yyerror(m, "COPY INTO: cannot pass number of records when using binary COPY INTO");
@@ -2460,8 +2463,9 @@ copyfrom_stmt:
 	  }
 	  append_list(l, $5);
 	  append_list(l, $7);
+	  append_int(l, $8);
 	  $$ = _symbol_create_list( SQL_BINCOPYFROM, l ); }
-  | COPY select_no_parens_orderby INTO string opt_seps opt_null_string
+  | COPY select_no_parens_orderby INTO string opt_seps opt_null_string 
 	{ dlist *l = L();
 	  append_symbol(l, $2);
 	  append_string(l, $4);
@@ -2520,6 +2524,11 @@ opt_null_string:
 opt_locked:
 	/* empty */	{ $$ = FALSE; }
  |  	LOCKED		{ $$ = TRUE; }
+ ;
+
+opt_constraint:
+	/* empty */	{ $$ = TRUE; }
+ |  	NO CONSTRAINT	{ $$ = FALSE; }
  ;
 
 string_commalist:

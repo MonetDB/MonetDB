@@ -18,7 +18,6 @@
 */
 #ifndef _PQUEUE_
 #define _PQUEUE_
-#include "monetdb_config.h"
 #include "mal.h"
 #include "mal_exception.h"
 #include "mal_interpreter.h"

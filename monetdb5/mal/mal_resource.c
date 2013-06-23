@@ -17,6 +17,7 @@
  * All Rights Reserved.
 */
 
+#include "monetdb_config.h"
 #include "mal_resource.h"
 
 #define heapinfo(X) if ((X) && (X)->base) vol = (X)->free; else vol = 0;

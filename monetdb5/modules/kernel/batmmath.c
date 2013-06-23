@@ -27,6 +27,7 @@
  * the fast execution of expanded code blocks.
  * The common set of math functions is supported.
  */
+#include "monetdb_config.h"
 #include "batmmath.h"
 
 #define voidresultBAT(X1,X2)\

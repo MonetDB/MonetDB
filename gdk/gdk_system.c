@@ -71,10 +71,10 @@ MT_Lock MT_system_lock MT_LOCK_INITIALIZER("MT_system_lock");
 ATOMIC_TYPE volatile GDKlockcnt;
 ATOMIC_TYPE volatile GDKlockcontentioncnt;
 ATOMIC_TYPE volatile GDKlocksleepcnt;
-MT_Lock * volatile GDKlocklist;
+MT_Lock * volatile GDKlocklist = 0;
+int volatile GDKlocklistlock;
 
-/* merge sort of linked list
- * these two functions are nearly identical */
+/* merge sort of linked list */
 static MT_Lock *
 sortlocklist(MT_Lock *l)
 {
@@ -137,6 +137,10 @@ GDKlockstatistics(int what)
 {
 	MT_Lock *l;
 
+	if (ATOMIC_CAS_int(GDKlocklistlock, 0, 1, dummy, "") != 0) {
+		fprintf(stderr, "#WARNING: GDKlocklistlock is set, so cannot access lock list\n");
+		return;
+	}
 	GDKlocklist = sortlocklist(GDKlocklist);
 	for (l = GDKlocklist; l; l = l->next)
 		if (what == 0 ||
@@ -150,6 +154,7 @@ GDKlockstatistics(int what)
 	fprintf(stderr, "#total lock count " SZFMT "\n", (size_t) GDKlockcnt);
 	fprintf(stderr, "#lock contention  " SZFMT "\n", (size_t) GDKlockcontentioncnt);
 	fprintf(stderr, "#lock sleep count " SZFMT "\n", (size_t) GDKlocksleepcnt);
+	GDKlocklistlock = 0;
 }
 #endif
 

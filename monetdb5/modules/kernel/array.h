@@ -18,7 +18,6 @@
 */
 #ifndef _ARRAY_H_
 #define _ARRAY_H_
-#include "monetdb_config.h"
 #include "gdk.h"
 #include "mal.h"
 #include "algebra.h"

@@ -53,7 +53,7 @@ INSERT INTO time( data_id, header_id, data_item, opr_date, opr_hr, opr_min, yyyy
 select t1.opr_date, t1.opr_hr, t1.svalue,  t1.yyyymmddhh - t2.avg_yyyymmddhh
 from time t1
 left join -- works
-(select extract(year from opr_date) as y, extract(month from opr_date) as m, svalue, avg(yyyymmddhh) as avg_yyyymmddhh from time group by y, m, svalue) as t2
+(select extract(year from opr_date) as y, extract(month from opr_date) as m, svalue, cast(cast(avg(yyyymmddhh) as decimal(14,4)) as double) as avg_yyyymmddhh from time group by y, m, svalue) as t2
 on extract(year from t1.opr_date) = t2.y
 and extract(month from t1.opr_date) = t2.m
 and t1.svalue = t2.svalue
@@ -62,7 +62,7 @@ order by t1.opr_hr;
 select t1.opr_date, t1.opr_hr, t1.svalue,  t1.yyyymmddhh - t2.avg_yyyymmddhh
 from time t1
 join      -- crashes (assertion fails)
-(select extract(year from opr_date) as y, extract(month from opr_date) as m, svalue, avg(yyyymmddhh) as avg_yyyymmddhh from time group by y, m, svalue) as t2
+(select extract(year from opr_date) as y, extract(month from opr_date) as m, svalue, cast(cast(avg(yyyymmddhh) as decimal(14,4)) as double) as avg_yyyymmddhh from time group by y, m, svalue) as t2
 on extract(year from t1.opr_date) = t2.y
 and extract(month from t1.opr_date) = t2.m
 and t1.svalue = t2.svalue

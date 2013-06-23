@@ -28,7 +28,6 @@
 #ifndef _PROFILER_
 #define _PROFILER_
 
-#include "monetdb_config.h"
 #include "gdk.h"
 #include <stdarg.h>
 #include <time.h>

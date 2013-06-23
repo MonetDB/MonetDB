@@ -19,7 +19,6 @@
 
 #ifndef _MAL_EXCEPTION_H
 #define _MAL_EXCEPTION_H
-#include "monetdb_config.h"
 #include "mal_instruction.h"
 
 /* #define _DEBUG_EXCEPTION_		trace the exception handling */

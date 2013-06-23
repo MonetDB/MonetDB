@@ -35,6 +35,7 @@
  * The flow graphs should be organized such that parallel threads can
  * access it mostly without expensive locking.
  */
+#include "monetdb_config.h"
 #include "mal_dataflow.h"
 
 #define DFLOWpending 0		/* runnable */

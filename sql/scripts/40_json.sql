@@ -21,28 +21,28 @@
 create type json external name json;
 
 -- access the top level key by name, return its value
-create function json_filter(js json, name string)
+create function sys.json_filter(js json, name string)
 returns json external name json.filter;
 
-create function json_filter_all(js json, name string)
+create function sys.json_filter_all(js json, name string)
 returns json external name json.filterall;
 
 -- a simple path extractor
-create function json_path(js json, e string)
+create function sys.json_path(js json, e string)
 returns json external name json.path;
 
 -- test string for JSON compliancy
-create function json_isvalid(js string)
+create function sys.json_isvalid(js string)
 returns bool external name json.isvalid;
 
-create function json_isvalidobject(js string)
+create function sys.json_isvalidobject(js string)
 returns bool external name json.isvalidobject;
 
-create function json_isvalidarray(js string)
+create function sys.json_isvalidarray(js string)
 returns bool external name json.isvalidarray;
 
 -- return the number of primary components
-create function json_length(js json)
+create function sys.json_length(js json)
 returns integer external name json.length;
 
 -- The remainder awaits the implementation of
@@ -50,26 +50,26 @@ returns integer external name json.length;
 
 -- unnesting the JSON structure
 
--- create function json_unnest(js json)
+-- create function sys.json_unnest(js json)
 -- returns table( id integer, k string, v string) external name json.unnest;
 
--- create function json_unnest(js json)
+-- create function sys.json_unnest(js json)
 -- returns table( k string, v string) external name json.unnest;
 
--- create function json_unnest(js json)
+-- create function sys.json_unnest(js json)
 -- returns table( v string) external name json.unnest;
 
--- create function json_nest table( id integer, k string, v string) 
+-- create function sys.json_nest table( id integer, k string, v string)
 -- returns json external name json.nest;
 
--- create function json_names(js json)
+-- create function sys.json_names(js json)
 -- returns table ( nme string) external name json.names;
 
--- create function json_values(js json)
+-- create function sys.json_values(js json)
 -- returns table ( val string) external name json."values";
 
 -- rendering functions
--- create function json_object(*)
+-- create function sys.json_object(*)
 -- returns json external name json.objectrender;
--- create function json_array(*)
+-- create function sys.json_array(*)
 -- returns json external name json.arrayrender;

@@ -30,6 +30,7 @@
  * The optimization is captured in a contraction macro.
  */
 
+#include "monetdb_config.h"
 #include "array.h"
 
 #define new_bat(b, s, TYPE)										\
