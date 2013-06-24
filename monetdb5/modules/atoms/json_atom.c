@@ -130,7 +130,7 @@ JSONstr2json(str *ret, json *j)
 }
 
 str
-JSONisvalid(int *ret, json *j)
+JSONisvalid(bit *ret, json *j)
 {
 	str msg = JSONparse(*j);
 
@@ -143,7 +143,7 @@ JSONisvalid(int *ret, json *j)
 }
 
 str
-JSONisobject(int *ret, json *j)
+JSONisobject(bit *ret, json *j)
 {
 	char *s;
 	for (s = *j; *s; s++)
@@ -155,7 +155,7 @@ JSONisobject(int *ret, json *j)
 }
 
 str
-JSONisarray(int *ret, json *j)
+JSONisarray(bit *ret, json *j)
 {
 	char *s;
 	for (s = *j; *s; s++)
