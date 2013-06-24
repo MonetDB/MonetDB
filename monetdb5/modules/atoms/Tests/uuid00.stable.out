@@ -19,10 +19,19 @@ stdout of test 'uuid00` in directory 'monetdb5/modules/atoms` itself:
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
 function user.main():void;
-    b := uuid.generateUuid();
-    io.print(b);
+    b := uuid.new();
+#io.print(b); 
+    x := uuid.isaUUID(b);
+    io.print(x);
+    s:str  := uuid.str(b);
+#io.print(s); 
+    z:uuid  := uuid.uuid(s);
+#io.print(z); 
+    t := calc.==(z,b);
+    io.print(t);
 end main;
-[ "43652065-902a-4914-95e5-434bc52fbe6b" ]
+[ true ]
+[ true ]
 
 # 13:19:57 >  
 # 13:19:57 >  "Done."

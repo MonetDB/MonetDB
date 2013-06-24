@@ -2,6 +2,30 @@ module uuid;
 
 atom uuid:str;
 
-command generateUuid() :uuid
+command new() :uuid
 address UUIDgenerateUuid
-comment "generate uuid";
+comment "Generate uuid";
+
+command uuid(s:str):uuid
+address UUIDstr2uuid
+comment "Coerce a string to a uuid, validating its format";
+
+command calc.uuid(s:str):uuid
+address UUIDstr2uuid
+comment "Coerce a string to a uuid, validating its format";
+
+command str(u:uuid):str
+address UUIDuuid2str
+comment "Coerce a uuid to its string type";
+
+command calc.uuid(s:uuid):str
+address UUIDuuid2str
+comment "Coerce a uuid to a string type";
+
+command isaUUID(u:uuid):bit
+address UUIDisaUUID
+comment "Test a string for a UUID format";
+
+command calc.==(l:uuid,r:uuid):bit
+address UUIDequal
+comment "Compare two UUID values for equality";

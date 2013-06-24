@@ -1,2 +1,14 @@
-b:= uuid.generateUuid();
-io.print(b);
+b:= uuid.new();
+#io.print(b);
+
+x:= uuid.isaUUID(b);
+io.print(x);
+
+s:str:= uuid.str(b);
+#io.print(s);
+
+z:uuid:= uuid.uuid(s);
+#io.print(z);
+
+t:= z == b;
+io.print(t);

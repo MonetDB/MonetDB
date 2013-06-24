@@ -39,5 +39,9 @@ typedef str uuid;
 #endif
 
 uuid_export str UUIDgenerateUuid(str *retval);
+uuid_export str UUIDstr2uuid(str *retval, str *s);
+uuid_export str UUIDuuid2str(str *retval, str *s);
+uuid_export str UUIDisaUUID(bit *retval, str *s);
+uuid_export str UUIDequal(bit *retval, str *l, str *r);
 
 #endif /* AUUID_H */

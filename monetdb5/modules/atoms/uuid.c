@@ -36,6 +36,8 @@ uuid_GenerateUuid(str *retval) {
   char * s;
 
   s = generateUUID();
+  if ( s == NULL)
+    throw(MAL, "uuid.generateUuid", "Allocation failed");
   d = GDKstrdup(s);
 
   if (d == NULL)
@@ -49,4 +51,37 @@ uuid_GenerateUuid(str *retval) {
 str
 UUIDgenerateUuid(str *retval) {
   return uuid_GenerateUuid(retval);
+}
+
+str
+UUIDisaUUID(bit *retval, str *s) {
+  *retval = strlen(*s) == 36;
+  return MAL_SUCCEED;
+}
+
+str
+UUIDstr2uuid(str *retval, str *s) {
+  bit b=0;
+  str msg = UUIDisaUUID(&b, s);
+  if ( msg != MAL_SUCCEED)
+	return msg;
+  if ( b== 0)
+	throw(MAL,"uuid.uuid","Inconsistent UUID length");
+  *retval = GDKstrdup(*s);
+  return MAL_SUCCEED;
+}
+
+str
+UUIDuuid2str(str *retval, str *s) {
+  *retval = GDKstrdup(*s);
+  return MAL_SUCCEED;
+}
+
+str
+UUIDequal(bit *retval, str *l, str *r)
+{
+	if (*l == str_nil || *r == str_nil)
+		*retval = bit_nil;
+	*retval = strcmp(*l,*r) == 0;
+	return MAL_SUCCEED;
 }
