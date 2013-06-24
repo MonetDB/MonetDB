@@ -580,7 +580,7 @@ BATimprints(BAT *b) {
 		if (imprints->bins == NULL ||
 				(imprints->bins->filename =
 				GDKmalloc(strlen(nme) + 12)) == NULL ) {
-			if (imprints->imps != NULL) {
+			if (imprints->bins != NULL) {
 				GDKfree(imprints->bins);
 			}
 			GDKerror("#BATimprints: memory allocation error.\n");
