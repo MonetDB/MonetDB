@@ -3203,6 +3203,10 @@ update_check_ukey(mvc *sql, stmt **updates, sql_key *k, stmt *tids, stmt *idx_up
 				} else {
 					upd = stmt_col(sql, c->c, dels);
 				}
+
+				/* apply cand list first */
+				upd = stmt_project(sql->sa, cand, upd);
+
 				/* remove nulls */
 				if ((k->type == ukey) && stmt_has_null(upd)) {
 					stmt *nn = stmt_selectnonil(sql, upd, NULL);
@@ -3211,8 +3215,6 @@ update_check_ukey(mvc *sql, stmt **updates, sql_key *k, stmt *tids, stmt *idx_up
 						grp = stmt_reorder_project(sql->sa, nn, grp);
 				}
 
-				/* apply cand list first */
-				upd = stmt_project(sql->sa, cand, upd);
 				/* apply group by on groups with Cnt > 1 */
 				g = stmt_group(sql->sa, upd, grp, ext, Cnt);
 				grp = stmt_result(sql->sa, g, 0);
