@@ -82,6 +82,7 @@ extern sql_exp* exp_label(sql_allocator *sa, sql_exp *e, int nr);
 
 extern sql_exp * exp_copy( sql_allocator *sa, sql_exp *e);
 extern list * exps_copy( sql_allocator *sa, list *exps);
+extern list * exps_alias( sql_allocator *sa, list *exps);
 
 
 extern void exp_swap( sql_exp *e );

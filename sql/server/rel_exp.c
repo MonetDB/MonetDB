@@ -1286,6 +1286,22 @@ is_identity( sql_exp *e, sql_rel *r)
 }
 
 list *
+exps_alias( sql_allocator *sa, list *exps)
+{
+	node *n;
+	list *nl = new_exp_list(sa);
+
+	for (n = exps->h; n; n = n->next) {
+		sql_exp *e = n->data, *ne;
+
+		assert(exp_name(e));
+		ne = exp_column(sa, exp_relname(e), exp_name(e), exp_subtype(e), exp_card(e), has_nil(e), 0);
+		append(nl, ne);
+	}
+	return nl;
+}
+
+list *
 exps_copy( sql_allocator *sa, list *exps)
 {
 	node *n;

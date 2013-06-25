@@ -26,7 +26,7 @@ Operation successful
 +------------------------------------------------------------------------------+
 | mal    |
 +==============================================================================+
-| function user.s0_1{autoCommit=true}():void;                         |
+| function user.s2_1{autoCommit=true}():void;                                  |
 |     X_3:bat[:oid,:str]  := bat.new(nil:oid,nil:str);                |
 |     X_2 := sql.mvc(); |
 |     X_9 := sql.bind(X_2,"sys","_tables","type",0);             |
@@ -54,7 +54,7 @@ Operation successful
 |     sql.rsColumn(X_39,".tables","name","varchar",1024,0,X_38);       |
 |     X_45 := io.stdout();                                             |
 |     sql.exportResult(X_45,X_39);                                     |
-| end s0_1;                                                           |
+| end s2_1;                                                                    |
 | # querylog.define("explain select \"name\" from \"tables\";","default_pipe") |
 +------------------------------------------------------------------------------+
 30 rows

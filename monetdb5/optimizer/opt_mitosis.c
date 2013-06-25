@@ -33,7 +33,8 @@ eligible(MalBlkPtr mb)
 			p->argc > 2 && getArgType(mb, p, 2) == TYPE_str &&
 			isVarConstant(mb, getArg(p, 2)) &&
 			getVarConstant(mb, getArg(p, 2)).val.sval != NULL &&
-			strstr(getVarConstant(mb, getArg(p, 2)).val.sval, "PRIMARY KEY constraint"))
+			(strstr(getVarConstant(mb, getArg(p, 2)).val.sval, "PRIMARY KEY constraint") ||
+			 strstr(getVarConstant(mb, getArg(p, 2)).val.sval, "UNIQUE constraint")))
 			return 0;
 	}
 	return 1;

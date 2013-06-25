@@ -64,12 +64,12 @@ Ready.
 % 43 # length
 project (
 | distinct union (
-| | distinct project (
+| | group by (
 | | | table(sys.t2606a) [ t2606a.a ] COUNT 
-| | ) [ t2606a.a ],
-| | distinct project (
+| | ) [ t2606a.a ] [ t2606a.a ],
+| | group by (
 | | | table(sys.t2606b) [ t2606b.a ] COUNT 
-| | ) [ t2606b.a ]
+| | ) [ t2606b.a ] [ t2606b.a ]
 | ) [ t2606a.a as L.a ]
 ) [ L.a ] [ L.a ASC ]
 #select * from t2606a   union   select * from t2606b   order by a;
@@ -93,12 +93,12 @@ project (
 % 43 # length
 project (
 | distinct union (
-| | distinct project (
+| | group by (
 | | | table(sys.t2606a) [ t2606a.a ] COUNT 
-| | ) [ t2606a.a ],
-| | distinct project (
+| | ) [ t2606a.a ] [ t2606a.a ],
+| | group by (
 | | | table(sys.t2606b) [ t2606b.a ] COUNT 
-| | ) [ t2606b.a ]
+| | ) [ t2606b.a ] [ t2606b.a ]
 | ) [ t2606a.a as L.a ]
 ) [ L.a ] [ L.a ASC ]
 #( select * from t2606a   union   select * from t2606b ) order by a;
@@ -122,12 +122,12 @@ project (
 % 43 # length
 project (
 | distinct union (
-| | distinct project (
+| | group by (
 | | | table(sys.t2606a) [ t2606a.a ] COUNT 
-| | ) [ t2606a.a ],
-| | distinct project (
+| | ) [ t2606a.a ] [ t2606a.a ],
+| | group by (
 | | | table(sys.t2606b) [ t2606b.a ] COUNT 
-| | ) [ t2606b.a ]
+| | ) [ t2606b.a ] [ t2606b.a ]
 | ) [ t2606a.a as L.a ]
 ) [ L.a ] [ L.a ASC ]
 #( select * from t2606a ) union ( select * from t2606b ) order by a;
@@ -151,9 +151,9 @@ project (
 % 43 # length
 project (
 | except (
-| | distinct project (
+| | group by (
 | | | table(sys.t2606a) [ t2606a.a ] COUNT 
-| | ) [ t2606a.a ],
+| | ) [ t2606a.a ] [ t2606a.a ],
 | | project (
 | | | table(sys.t2606b) [ t2606b.a ] COUNT 
 | | ) [ t2606b.a ]
@@ -174,9 +174,9 @@ project (
 % 43 # length
 project (
 | except (
-| | distinct project (
+| | group by (
 | | | table(sys.t2606a) [ t2606a.a ] COUNT 
-| | ) [ t2606a.a ],
+| | ) [ t2606a.a ] [ t2606a.a ],
 | | project (
 | | | table(sys.t2606b) [ t2606b.a ] COUNT 
 | | ) [ t2606b.a ]
@@ -197,9 +197,9 @@ project (
 % 43 # length
 project (
 | except (
-| | distinct project (
+| | group by (
 | | | table(sys.t2606a) [ t2606a.a ] COUNT 
-| | ) [ t2606a.a ],
+| | ) [ t2606a.a ] [ t2606a.a ],
 | | project (
 | | | table(sys.t2606b) [ t2606b.a ] COUNT 
 | | ) [ t2606b.a ]
@@ -220,9 +220,9 @@ project (
 % 43 # length
 project (
 | intersect (
-| | distinct project (
+| | group by (
 | | | table(sys.t2606a) [ t2606a.a ] COUNT 
-| | ) [ t2606a.a ],
+| | ) [ t2606a.a ] [ t2606a.a ],
 | | project (
 | | | table(sys.t2606b) [ t2606b.a ] COUNT 
 | | ) [ t2606b.a ]
@@ -243,9 +243,9 @@ project (
 % 43 # length
 project (
 | intersect (
-| | distinct project (
+| | group by (
 | | | table(sys.t2606a) [ t2606a.a ] COUNT 
-| | ) [ t2606a.a ],
+| | ) [ t2606a.a ] [ t2606a.a ],
 | | project (
 | | | table(sys.t2606b) [ t2606b.a ] COUNT 
 | | ) [ t2606b.a ]
@@ -266,9 +266,9 @@ project (
 % 43 # length
 project (
 | intersect (
-| | distinct project (
+| | group by (
 | | | table(sys.t2606a) [ t2606a.a ] COUNT 
-| | ) [ t2606a.a ],
+| | ) [ t2606a.a ] [ t2606a.a ],
 | | project (
 | | | table(sys.t2606b) [ t2606b.a ] COUNT 
 | | ) [ t2606b.a ]
@@ -289,12 +289,12 @@ project (
 % 43 # length
 project (
 | distinct union (
-| | distinct project (
+| | group by (
 | | | table(sys.t2606a) [ t2606a.a ] COUNT 
-| | ) [ t2606a.a ],
-| | distinct project (
+| | ) [ t2606a.a ] [ t2606a.a ],
+| | group by (
 | | | table(sys.t2606b) [ t2606b.a ] COUNT 
-| | ) [ t2606b.a ]
+| | ) [ t2606b.a ] [ t2606b.a ]
 | ) [ t2606a.a as t.a ]
 ) [ t.a ] [ t.a ASC ]
 #select * from (select * from t2606a union select * from t2606b) as t order by a;
@@ -318,9 +318,9 @@ project (
 % 43 # length
 project (
 | except (
-| | distinct project (
+| | group by (
 | | | table(sys.t2606a) [ t2606a.a ] COUNT 
-| | ) [ t2606a.a ],
+| | ) [ t2606a.a ] [ t2606a.a ],
 | | project (
 | | | table(sys.t2606b) [ t2606b.a ] COUNT 
 | | ) [ t2606b.a ]
@@ -341,9 +341,9 @@ project (
 % 43 # length
 project (
 | intersect (
-| | distinct project (
+| | group by (
 | | | table(sys.t2606a) [ t2606a.a ] COUNT 
-| | ) [ t2606a.a ],
+| | ) [ t2606a.a ] [ t2606a.a ],
 | | project (
 | | | table(sys.t2606b) [ t2606b.a ] COUNT 
 | | ) [ t2606b.a ]

@@ -144,8 +144,8 @@ Dependencies between database objects
 [ "t1",	"v1",	"DEP_VIEW"	]
 [ "v1",	"v2",	"DEP_VIEW"	]
 #SELECT t.name, i.name, 'DEP_INDEX' from tables as t, idxs as i where i.table_id = t.id and i.name not in (select name from keys) and t.type = 0;
-% .t,	.i,	.L3 # table_name
-% name,	name,	single_value # name
+% .t,	.i,	.L4 # table_name
+% name,	name,	L4 # name
 % varchar,	varchar,	char # type
 % 2,	8,	9 # length
 [ "t1",	"id_index",	"DEP_INDEX"	]
@@ -217,8 +217,8 @@ Dependencies between database objects
 % 2,	10,	7 # length
 [ "id",	"t1_id_pkey",	"DEP_KEY"	]
 #SELECT c.name, i.name, 'DEP_INDEX' from columns as c, objects as kc, idxs as i where kc."name" = c.name AND kc.id = i.id AND c.table_id = i.table_id AND i.name not in (select name from keys);
-% .c,	.i,	.L3 # table_name
-% name,	name,	single_value # name
+% .c,	.i,	.L4 # table_name
+% name,	name,	L4 # name
 % varchar,	varchar,	char # type
 % 2,	8,	9 # length
 [ "id",	"id_index",	"DEP_INDEX"	]
@@ -346,8 +346,8 @@ Dependencies between database objects
 [ "users",	"dependencies_schemas_on_users",	"DEP_FUNC"	]
 [ "v1",	"f2",	"DEP_FUNC"	]
 #SELECT v.name, i.name, 'DEP_INDEX' from tables as v, idxs as i where i.table_id = v.id and i.name not in (select name from keys) and v.type = 1;
-% .v,	.i,	.L3 # table_name
-% name,	name,	single_value # name
+% .v,	.i,	.L4 # table_name
+% name,	name,	L4 # name
 % varchar,	varchar,	char # type
 % 0,	0,	9 # length
 #SELECT v.name, tri.name, 'DEP_TRIGGER' from tables as v, triggers as tri, dependencies as dep where dep.id = v.id AND dep.depend_id =tri.id AND dep.depend_type = 8 AND v.type = 1;
@@ -674,8 +674,8 @@ Cleanup
 % varchar,	varchar,	char # type
 % 0,	0,	8 # length
 #SELECT t.name, i.name, 'DEP_INDEX' from tables as t, idxs as i where i.table_id = t.id and i.name not in (select name from keys) and t.type = 0;
-% .t,	.i,	.L3 # table_name
-% name,	name,	single_value # name
+% .t,	.i,	.L4 # table_name
+% name,	name,	L4 # name
 % varchar,	varchar,	char # type
 % 0,	0,	9 # length
 #(SELECT t.name, tri.name, 'DEP_TRIGGER' from tables as t, triggers as tri where tri.table_id = t.id) UNION (SELECT t.name, tri.name, 'DEP_TRIGGER' from triggers tri, tables t, dependencies dep where dep.id = t.id AND dep.depend_id =tri.id AND dep.depend_type = 8);
@@ -736,8 +736,8 @@ Cleanup
 % varchar,	varchar,	char # type
 % 0,	0,	7 # length
 #SELECT c.name, i.name, 'DEP_INDEX' from columns as c, objects as kc, idxs as i where kc."name" = c.name AND kc.id = i.id AND c.table_id = i.table_id AND i.name not in (select name from keys);
-% .c,	.i,	.L3 # table_name
-% name,	name,	single_value # name
+% .c,	.i,	.L4 # table_name
+% name,	name,	L4 # name
 % varchar,	varchar,	char # type
 % 0,	0,	9 # length
 #SELECT c.name, f.name, 'DEP_FUNC' from functions as f, columns as c, dependencies as dep where c.id = dep.id AND f.id = dep.depend_id AND dep.depend_type = 7 ORDER BY c.name, f.name;
@@ -857,8 +857,8 @@ Cleanup
 [ "tables",	"dependencies_views_on_triggers",	"DEP_FUNC"	]
 [ "users",	"dependencies_schemas_on_users",	"DEP_FUNC"	]
 #SELECT v.name, i.name, 'DEP_INDEX' from tables as v, idxs as i where i.table_id = v.id and i.name not in (select name from keys) and v.type = 1;
-% .v,	.i,	.L3 # table_name
-% name,	name,	single_value # name
+% .v,	.i,	.L4 # table_name
+% name,	name,	L4 # name
 % varchar,	varchar,	char # type
 % 0,	0,	9 # length
 #SELECT v.name, tri.name, 'DEP_TRIGGER' from tables as v, triggers as tri, dependencies as dep where dep.id = v.id AND dep.depend_id =tri.id AND dep.depend_type = 8 AND v.type = 1;
