@@ -812,6 +812,9 @@ IMPSremove(BAT *b) {
 	else
 		HEAPfree(imprints->bins);
 
+	GDKfree(imprints->imps);
+	GDKfree(imprints->dict);
+	GDKfree(imprints->bins);
 	GDKfree(imprints);
 
 	MT_lock_unset(&GDKimprintsLock(ABS(b->batCacheid)),
