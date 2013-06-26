@@ -451,13 +451,8 @@ OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		printFunction(cntxt->fdout, mb, 0,  LIST_MAL_ALL);
 	}
 
-	if (doit) {
+	if (doit) 
 		chkTypes(cntxt->fdout, cntxt->nspace,mb,TRUE);
-		/* clean out on errors by resetting the block */
-		if ( mb->errors)
-		for( i=1;i<slimit; i++){
-		}
-	}
 	return mb->errors? 0: doit;
 }
 
