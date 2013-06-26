@@ -1038,20 +1038,15 @@ BATmultiprintf(stream *s,	/* output stream */
 	       int printorder	/* boolean: print the orderby column? */
     )
 {
-	col_format_t *c = (col_format_t *) GDKzalloc((unsigned) (argc * sizeof(col_format_t)));
-	col_format_t **cp = (col_format_t **) GDKmalloc((unsigned) ((argc + 1) * sizeof(void *)));
-	ColFcn *value_fcn = (ColFcn *) GDKmalloc((unsigned) (argc * sizeof(ColFcn)));
+	col_format_t *c = GDKzalloc(argc * sizeof(col_format_t));
+	col_format_t **cp = GDKmalloc((argc + 1) * sizeof(void *));
+	ColFcn *value_fcn = GDKmalloc(argc * sizeof(ColFcn));
 	int ret = 0, j, total = 0;
 
-	if (c == NULL)
-		return -1;
-	if (cp == NULL) {
-		GDKfree(c);
-		return -1;
-	}
-	if (value_fcn == NULL) {
+	if (c == NULL || cp == NULL || value_fcn == NULL) {
 		GDKfree(c);
 		GDKfree(cp);
+		GDKfree(value_fcn);
 		return -1;
 	}
 
