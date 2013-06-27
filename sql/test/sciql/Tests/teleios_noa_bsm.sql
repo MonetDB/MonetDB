@@ -23,6 +23,7 @@ CALL rs.import2(6);
 DECLARE size_x INT, size_y INT;
 SET size_x = (SELECT MAX(x) + 1 FROM rs.image1);
 SET size_y = (SELECT MAX(y) + 1 FROM rs.image1);
+
 -- BSM classification (landsatFirePredicate()) using one image
 CREATE ARRAY fire1 (x INT DIMENSION[size_x], y INT DIMENSION[size_y], f INT DEFAULT 0);
 INSERT INTO fire1 (
@@ -237,3 +238,21 @@ BEGIN
 
   -- TODO: add bridge!
 END;
+
+
+-- ALTERNATIVE: create single array with 3 cell values (one per band) --
+
+-- option 1:
+CREATE ARRAY image123 (x INT DIMENSION[size_x], y INT DIMENSION[size_y], b3 INT DEFAULT 0, b4 INT DEFAULT 0, b7 INT DEFAULT 0);
+INSERT INTO image123 (
+  SELECT b3.x, b3.y, b3.intensity, b4.intensity, b7.intensity
+  FROM rs.image1 AS b3, rs.image2 AS b4, rs.image3 AS b7
+  WHERE b3.x = b4.x AND b3.y = b4.y AND b3.x = b7.x AND b3.y = b7.y
+);
+
+-- option 2:
+CREATE ARRAY image347 (x INT DIMENSION[size_x], y INT DIMENSION[size_y], b3 INT DEFAULT 0, b4 INT DEFAULT 0, b7 INT DEFAULT 0);
+UPDATE image347 SET b3 = ( SELECT intensity FROM rs.image1 as i WHERE image347.x = i.x and image347.y = i.y );
+UPDATE image347 SET b4 = ( SELECT intensity FROM rs.image2 as i WHERE image347.x = i.x and image347.y = i.y );
+UPDATE image347 SET b7 = ( SELECT intensity FROM rs.image3 as i WHERE image347.x = i.x and image347.y = i.y );
+
