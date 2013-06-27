@@ -400,24 +400,30 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			 * The next value to in r is the first if
 			 * equal_order is set, the last otherwise. */
 			if (rcand) {
+				if (rcand == rcandend)
+					break;
 				v = VALUE(r, (equal_order ? rcand[0] : rcandend[-1]) - r->hseqbase);
-			} else if (rvals) {
-				v = VALUE(r, equal_order ? rstart : rend - 1);
-				if (roff == wrd_nil) {
-					rval = oid_nil;
-					v = (const char *) &rval;
-				} else if (roff != 0) {
-					rval = (oid) (*(const oid *)v + roff);
+			} else {
+				if (rstart == rend)
+					break;
+				if (rvals) {
+					v = VALUE(r, equal_order ? rstart : rend - 1);
+					if (roff == wrd_nil) {
+						rval = oid_nil;
+						v = (const char *) &rval;
+					} else if (roff != 0) {
+						rval = (oid) (*(const oid *)v + roff);
+						v = (const char *) &rval;
+					}
+				} else {
+					if (roff == wrd_nil)
+						rval = oid_nil;
+					else if (equal_order)
+						rval = rstart + r->tseqbase;
+					else
+						rval = rend - 1 + r->tseqbase;
 					v = (const char *) &rval;
 				}
-			} else {
-				if (roff == wrd_nil)
-					rval = oid_nil;
-				else if (equal_order)
-					rval = rstart + r->tseqbase;
-				else
-					rval = rend - 1 + r->tseqbase;
-				v = (const char *) &rval;
 			}
 			/* here, v points to next value in r */
 			if (lcand) {
