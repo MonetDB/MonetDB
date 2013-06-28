@@ -763,7 +763,7 @@ msab_getUplogInfo(sabuplog *ret, const sabdb *db)
 
 	/* early bailout if cached */
 	if (db->uplog != NULL) {
-		memcpy(ret, db->uplog, sizeof(sabuplog));
+		*ret = *db->uplog;
 		return(NULL);
 	}
 		
