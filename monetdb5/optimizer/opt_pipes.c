@@ -529,8 +529,6 @@ addOptimizerPipe(Client cntxt, MalBlkPtr mb, str name)
 	InstrPtr p;
 	str msg = MAL_SUCCEED;
 
-	(void) cntxt;
-
 	for (i = 0; i < MAXOPTPIPES && pipes[i].name; i++)
 		if (strcmp(pipes[i].name, name) == 0)
 			break;
