@@ -791,340 +791,179 @@ BATdelete(BAT *b)
 	return 0;
 }
 
-/*
- * @+ Printing and debugging
- * Printing BATs is based on the multi-join on heads. The multijoin
- * exploits all possible Monet properties and accelerators. Due to
- * this property, the n-ary table printing is quite fast and can be
- * used for producing ASCII dumps of large tables.
- *
- * It all works with hooks.  The multijoin routine finds matching
- * ranges of rows. For each found match in a column it first calls a
- * value-routine hook. This routine we use to format a substring.  For
- * each found match-tuple (the Cartesian product of all matches across
- * columns) a match routine hook is called. We use this routine to
- * print a line.  Due to this setup, we only format each value once,
- * though it might participate in many lines (due to the Cartesian
- * product).
- *
- * The multijoin is quite complex, and we use a @%col_format_t@ struct
- * to keep track of column specific data.  The multiprint can indicate
- * arbitrary orderings. This is done by passing a pattern-string that
- * matches the following regexp:
- *
- * @verbatim
- *	"[X:] Y0 {,Yi}"
- * @end verbatim
- *
- * where X and Yi are column numbers, @strong{starting at 1} for the
- * first BAT parameter.
- *
- * The table ordering has two aspects:
- * @enumerate
- * @item (1)
- *	the order in which the matches appear (a.k.a. the major
- *	ordering).  This is equivalent to the order of the head values
- *	of the BATs (as we match=multijoin on head value).
- * @item (2)
- *	within each match, the order in which the Cartesian product is
- *	produced. This is used to sub-order on the tail values of the
- *	BATs = the columns in the table.
- * @end enumerate
- *
- * Concerning (1), the multijoin limits itself to *respecting* the
- * order one one elected BAT, that can be identified with X.  Using
- * this, a major ordering on tail value can be enforced, by first
- * passing "Bx.reverse.sort.reverse" (BAT ordered on tail).  As the
- * multijoin will respect the order of X, its tail values will be
- * printed in sorted order.
- *
- * Concerning sub-ordering on other columns (2), the multijoin itself
- * employs qsort() to order the Cartesian product on the matched tail
- * values.
- */
-#define LINE(s,	X)	do {						\
-				int n=X-1;				\
-				if (mnstr_write(s, "#", 1, 1) != 1)	\
-					break;				\
-				while(n-->0)				\
-					if (mnstr_write(s, "-", 1, 1) != 1) \
-						break;			\
-				if (!mnstr_errnr(s))			\
-					mnstr_write(s, "#\n", 2, 1);	\
-			} while (0)
-#define TABS(s,	X)	do {						\
-				int n=X;				\
-				while (n-->0)				\
-					if (mnstr_write(s, "\t", 1, 1) != 1) \
-						break;			\
-			} while (0)
-
-typedef int (*strFcn) (str *s, int *len, const void *val);
-
-typedef struct {
-	int tabs;		/* tab width of output */
-	strFcn format;		/* tostr function */
-	/* dynamic fields, set by print_format */
-	str buf;		/* tail value as string */
-	str tpe;		/* type of this column as string */
-	int size;		/* size of buf */
-	int len;		/* strlen(buf) */
-} col_format_t;
-
-static int
-print_nil(char **dst, int *len, const void *dummy)
+gdk_return
+BATprintcols(stream *s, int argc, BAT *argv[])
 {
-	(void) dummy;
-	if (*len < 3) {
-		if (*dst)
-			GDKfree(*dst);
-		*dst = (char *) GDKmalloc(*len = 40);
-	}
-	strcpy(*dst, "nil");
-	return 3;
-}
-
-#define printfcn(b)	((b->ttype==TYPE_void && b->tseqbase==oid_nil)?\
-			          print_nil:BATatoms[b->ttype].atomToStr)
-
-static int
-print_tabwidth(BAT *b, str title, col_format_t *c)
-{
-	strFcn tostr = printfcn(b);
-	BUN cnt = BATcount(b);
-	int max, t = BATttype(b);
-
-	c->tpe = ATOMname(b->ttype);
-	c->buf = (char *) GDKmalloc(c->size = strLen(title));
-	max = (int) MAX((2 + strlen(c->tpe)), strlen(title));
-
-	if (t >= 0 && t < GDKatomcnt && tostr) {
-		BATiter bi = bat_iterator(b);
-		BUN off = BUNfirst(b);
-		int k;
-		BUN j, i, probe = MIN(cnt, MAX(200, MIN(1024, cnt / 100)));
-
-		for (i = 0; i < probe; i++) {
-			j = off + ((probe == cnt) ? i : (rand() % MIN(16384, cnt)));
-			k = (*tostr) (&c->buf, &c->size, BUNtail(bi, j));
-			if (k > max)
-				max = k;
-		}
-	}
-	strcpy(c->buf, title);
-	max += 2;		/* account for ", " separator */
-	/* if (max > 60) max = 60; */
-	return 1 + (max - 1) / 8;
-}
-
-static void
-print_line(stream *s, col_format_t **l)
-{
-	col_format_t *c = *(l++);
-
-	if (mnstr_write(s, "[ ", 2, 1) != 1)
-		return;
-	if (c->format) {
-		if (mnstr_write(s, c->buf, c->len, 1) != 1)
-			return;
-		if (mnstr_write(s, ",", 1, 1) != 1)
-			return;
-		TABS(s, c->tabs - ((c->len + 3) / 8));
-		if (mnstr_errnr(s))
-			return;
-		if (c->tabs * 8 >= c->len + 3 && mnstr_write(s, " ", 1, 1) != 1)
-			return;
-		if (mnstr_write(s, " ", 1, 1) != 1)
-			return;
-	}
-	for (c = *l; *(++l); c = *l) {
-		if (!c->format)
-			continue;
-		if (mnstr_write(s, c->buf, c->len, 1) != 1)
-			return;
-		if (mnstr_write(s, ",", 1, 1) != 1)
-			return;
-		TABS(s, c->tabs - ((c->len + 3) / 8));
-		if (mnstr_errnr(s))
-			return;
-		if (c->tabs * 8 >= c->len + 3 && mnstr_write(s, " ", 1, 1) != 1)
-			return;
-		if (mnstr_write(s, " ", 1, 1) != 1)
-			return;
-	}
-	if (mnstr_write(s, c->buf, c->len, 1) != 1)
-		return;
-	TABS(s, c->tabs - ((c->len + 2) / 8));
-	if (mnstr_errnr(s))
-		return;
-	mnstr_printf(s, "  ]\n");
-}
-
-static void
-print_format(col_format_t *c, const void *v)
-{
-	if (c->format)
-		c->len = (*c->format) (&c->buf, &c->size, v);
-}
-
-static int
-print_header(int argc, col_format_t *argv, stream *s)
-{
-	int k;
-	str buf;
+	int i;
+	BUN n, cnt;
+	struct colinfo {
+		int (*s) (str *, int *, const void *);
+		BATiter i;
+	} *colinfo;
+	char *buf;
+	int buflen = 0;
 	int len;
 
-	if (mnstr_write(s, "# ", 2, 1) != 1)
-		return -1;
-	for (k = argv[0].format ? 0 : 1; k <= argc; k++) {
-		buf = argv[k].buf; /* contains column title */
-		len = (int) strlen(buf);
-
-		if (mnstr_write(s, buf, len, 1) != 1)
-			return -1;
-		TABS(s, argv[k].tabs - ((0 + len - 1) / 8));
-		if (mnstr_errnr(s))
-			return -1;
+	/* error checking */
+	for (i = 0; i < argc; i++) {
+		if (argv[i] == NULL) {
+			GDKerror("BAT missing\n");
+			return GDK_FAIL;
+		}
+		if (!BAThdense(argv[i])) {
+			GDKerror("BATs must be dense headed\n");
+			return GDK_FAIL;
+		}
+		if (BATcount(argv[0]) != BATcount(argv[i])) {
+			GDKerror("BATs must be the same size\n");
+			return GDK_FAIL;
+		}
+		if (argv[0]->hseqbase != argv[i]->hseqbase) {
+			GDKerror("BATs must be aligned\n");
+			return GDK_FAIL;
+		}
 	}
-	if (mnstr_printf(s, "  # name\n") < 0)
-		return -1;
-	if (mnstr_write(s, "# ", 2, 1) != 1)
-		return -1;
-	for (k = argv[0].format ? 0 : 1; k <= argc; k++) {
-		buf = argv[k].tpe; /* contains column title */
-		len = (int) strlen(buf);
 
-		if (mnstr_write(s, buf, len, 1) != 1)
-			return -1;
-		TABS(s, argv[k].tabs - ((2 + len - 1) / 8));
-		if (mnstr_errnr(s))
-			return -1;
+	if ((colinfo = GDKmalloc(argc * sizeof(*colinfo))) == NULL) {
+		GDKerror("Cannot allocate memory\n");
+		return GDK_FAIL;
 	}
-	if (mnstr_printf(s, "  # type\n") < 0)
-		return -1;
-	return 0;
+
+	for (i = 0; i < argc; i++) {
+		colinfo[i].i = bat_iterator(argv[i]);
+		colinfo[i].s = BATatoms[argv[i]->ttype].atomToStr;
+	}
+
+	mnstr_write(s, "#--------------------------#\n", 1, 29);
+	mnstr_write(s, "# ", 1, 2);
+	for (i = 0; i < argc; i++) {
+		if (i > 0)
+			mnstr_write(s, "\t", 1, 1);
+		buf = argv[i]->tident;
+		mnstr_write(s, buf, 1, strlen(buf));
+	}
+	mnstr_write(s, "  # name\n", 1, 9);
+	mnstr_write(s, "# ", 1, 2);
+	for (i = 0; i < argc; i++) {
+		if (i > 0)
+			mnstr_write(s, "\t", 1, 1);
+		buf = ATOMname(argv[i]->ttype);
+		mnstr_write(s, buf, 1, strlen(buf));
+	}
+	mnstr_write(s, "  # type\n", 1, 9);
+	mnstr_write(s, "#--------------------------#\n", 1, 29);
+	buf = NULL;
+
+	for (n = 0, cnt = BATcount(argv[0]); n < cnt; n++) {
+		mnstr_write(s, "[ ", 1, 2);
+		for (i = 0; i < argc; i++) {
+			len = colinfo[i].s(&buf, &buflen, BUNtail(colinfo[i].i, BUNfirst(argv[i]) + n));
+			if (i > 0)
+				mnstr_write(s, ",\t", 1, 2);
+			mnstr_write(s, buf, 1, len);
+		}
+		mnstr_write(s, "  ]\n", 1, 4);
+	}
+
+	GDKfree(colinfo);
+
+	return GDK_SUCCEED;
 }
 
-/*
- * The simple BAT printing routines make use of the complex case.
- */
-int
-BATprint(BAT *b)
-{
-	ERRORcheck(b == NULL, "BATprint: BAT expected");
-	return BATmultiprintf(GDKstdout, 2, &b, TRUE, 0, 1);
-}
-
-int
+gdk_return
 BATprintf(stream *s, BAT *b)
 {
-	ERRORcheck(b == NULL, "BATprintf: BAT expected");
-	return BATmultiprintf(s, 2, &b, TRUE, 0, 1);
-}
+	BAT *argv[2];
+	gdk_return ret = GDK_FAIL;
 
-/*
- * @+ Multi-Bat Printing
- * This routines uses the multi-join operation to print
- * an n-ary table. Such a table is the reconstruction of
- * the relational model from Monet's BATs, and consists of
- * all tail values of matching head-values in n-ary equijoin.
- */
-
-int
-BATmultiprintf(stream *s,	/* output stream */
-	       int argc,	/* #ncolumns = #nbats +  */
-	       BAT *argv[],	/* the bats 2b printed */
-	       int printhead,	/* boolean: print the head column? */
-	       int order,	/* respect order of bat X (X=0 is none) */
-	       int printorder	/* boolean: print the orderby column? */
-    )
-{
-	col_format_t *c = (col_format_t *) GDKzalloc((unsigned) (argc * sizeof(col_format_t)));
-	col_format_t **cp = (col_format_t **) GDKmalloc((unsigned) ((argc + 1) * sizeof(void *)));
-	ColFcn *value_fcn = (ColFcn *) GDKmalloc((unsigned) (argc * sizeof(ColFcn)));
-	int ret = 0, j, total = 0;
-
-	if (c == NULL)
-		return -1;
-	if (cp == NULL) {
-		GDKfree(c);
-		return -1;
+	argv[0] = BATmirror(BATmark(b, 0));
+	argv[1] = BATmirror(BATmark(BATmirror(b), 0));
+	if (argv[0] && argv[1]) {
+		BATroles(argv[0], NULL, b->hident);
+		BATroles(argv[1], NULL, b->tident);
+		ret = BATprintcols(s, 2, argv);
 	}
-	if (value_fcn == NULL) {
-		GDKfree(c);
-		GDKfree(cp);
-		return -1;
-	}
-
-	/*
-	 * Init the column descriptor of the head column.
-	 */
-	cp[argc] = NULL;	/* terminator */
-	cp[0] = c;
-	argc--;
-
-	/*
-	 * Init the column descriptors of the tail columns.
-	 */
-	value_fcn[0] = (ColFcn) print_format;
-	if (printhead) {
-		BAT *b = BATmirror(argv[0]);
-
-		total = c[0].tabs = print_tabwidth(b, b->tident, c + 0);
-		c[0].format = printfcn(b);
-	}
-	for (j = 0; j < argc; j++, total += c[j].tabs) {
-		cp[j + 1] = c + (j + 1);
-		if (!printorder && order == j + 1)
-			c[j + 1].format = NULL;
-		else
-			c[j + 1].format = printfcn(argv[j]);
-		c[j + 1].tabs = print_tabwidth(argv[j], argv[j]->tident, c + (j + 1));
-		value_fcn[j + 1] = (ColFcn) print_format;
-	}
-	total = 2 + (total * 8);
-	/*
-	 * Print the table header and then the multijoin.
-	 */
-	ret = -1;
-	LINE(s, total);
-	if (mnstr_errnr(s))
-		goto cleanup;
-	if (print_header(argc, c, s) < 0)
-		goto cleanup;
-	LINE(s, total);
-	if (mnstr_errnr(s))
-		goto cleanup;
-	else if (argc == 1) {
-		BAT *b = argv[0];
-		BUN p, q;
-		BATiter bi = bat_iterator(b);
-
-		BATloop(b, p, q) {
-			print_format(cp[0], BUNhead(bi, p));
-			print_format(cp[1], BUNtail(bi, p));
-			print_line(s, cp);
-			if (mnstr_errnr(s))
-				goto cleanup;
-		}
-		MULTIJOIN_LEAD(ret) = 1;
-		MULTIJOIN_SORTED(ret) = BAThordered(b);
-		MULTIJOIN_KEY(ret) = BAThkey(b);
-		MULTIJOIN_SYNCED(ret) = 1;
-	} else {
-		ret = BATmultijoin(argc, argv, (RowFcn) print_line, (void *) s, value_fcn, (void **) cp, order);
-	}
-      /*
-       * Cleanup.
-       */
-cleanup:
-	for (j = 0; j <= argc; j++) {
-		if (c[j].buf)
-			GDKfree(c[j].buf);
-	}
-	GDKfree(c);
-	GDKfree(cp);
-	GDKfree(value_fcn);
+	if (argv[0])
+		BBPunfix(argv[0]->batCacheid);
+	if (argv[1])
+		BBPunfix(argv[1]->batCacheid);
 	return ret;
 }
 
+gdk_return
+BATprint(BAT *b)
+{
+	return BATprintf(GDKstdout, b);
+}
+
+gdk_return
+BATmultiprintf(stream *s, int argc, BAT *argv[], int printhead, int order, int printorder)
+{
+	BAT **bats;
+	gdk_return ret;
+	int i;
+
+	(void) printorder;
+	assert(argc >= 2);
+	assert(order < argc);
+	assert(order >= 0);
+	argc--;
+	if ((bats = GDKzalloc((argc + 1) * sizeof(BAT *))) == NULL)
+		return GDK_FAIL;
+	if ((bats[0] = BATmirror(BATmark(argv[order > 0 ? order - 1 : 0], 0))) == NULL)
+		goto bailout;
+	if ((bats[1] = BATmirror(BATmark(BATmirror(argv[0]), 0))) == NULL)
+		goto bailout;
+	for (i = 1; i < argc; i++) {
+		BAT *a, *b, *r, *t;
+		int j;
+
+		if ((r = BATmirror(BATmark(argv[i], 0))) == NULL)
+			goto bailout;
+		ret = BATsubleftjoin(&a, &b, bats[0], r, NULL, NULL, BUN_NONE);
+		BBPunfix(r->batCacheid);
+		if (ret == GDK_FAIL)
+			goto bailout;
+		if ((t = BATproject(a, bats[0])) == NULL) {
+			BBPunfix(a->batCacheid);
+			BBPunfix(b->batCacheid);
+			goto bailout;
+		}
+		BBPunfix(bats[0]->batCacheid);
+		bats[0] = t;
+		for (j = 1; j <= i; j++) {
+			if ((t = BATproject(a, bats[j])) == NULL) {
+				BBPunfix(a->batCacheid);
+				BBPunfix(b->batCacheid);
+				goto bailout;
+			}
+			BBPunfix(bats[j]->batCacheid);
+			bats[j] = t;
+		}
+		BBPunfix(a->batCacheid);
+		if ((r = BATmirror(BATmark(BATmirror(argv[i]), 0))) == NULL) {
+			BBPunfix(b->batCacheid);
+			goto bailout;
+		}
+		t = BATproject(b, r);
+		BBPunfix(b->batCacheid);
+		BBPunfix(r->batCacheid);
+		if (t == NULL)
+			goto bailout;
+		bats[i + 1] = t;
+	}
+	BATroles(bats[0], NULL, argv[order > 0 ? order - 1 : 0]->hident);
+	for (i = 1; i <= argc; i++)
+		BATroles(bats[i], NULL, argv[i - 1]->tident);
+	ret = BATprintcols(s, argc + printhead, bats + !printhead);
+	for (i = 0; i <= argc; i++)
+		BBPunfix(bats[i]->batCacheid);
+	return ret;
+
+  bailout:
+	for (i = 0; i <= argc; i++) {
+		if (bats[i])
+			BBPunfix(bats[i]->batCacheid);
+	}
+	return GDK_FAIL;
+}

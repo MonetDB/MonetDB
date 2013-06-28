@@ -37,7 +37,6 @@ BUN BATguess(BAT *b);
 void BATinit_idents(BAT *bn);
 BAT *BATload_intern(bat bid, int lock);
 BAT *BATmaterializet(BAT *b);
-int BATmultijoin(int argc, BAT *argv[], RowFcn tuple_fcn, ptr tuple_data, ColFcn value_fcn[], ptr value_data[], int orderspec);
 void BATpropagate(BAT *dst, BAT *src, int idx);
 str BATrename(BAT *b, const char *nme);
 void BATsetdims(BAT *b);

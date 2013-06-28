@@ -1650,9 +1650,10 @@ gdk_export int GDKcreatedir(const char *nme);
  * oid-s in the head columns. It performs the multijoin over them, and
  * prints the multi-column result on the file.
  */
-gdk_export int BATprint(BAT *b);
-gdk_export int BATprintf(stream *f, BAT *b);
-gdk_export int BATmultiprintf(stream *f, int argc, BAT *argv[], int printoid, int order, int printorderby);
+gdk_export gdk_return BATprintcols(stream *s, int argc, BAT *argv[]);
+gdk_export gdk_return BATprint(BAT *b);
+gdk_export gdk_return BATprintf(stream *f, BAT *b);
+gdk_export gdk_return BATmultiprintf(stream *f, int argc, BAT *argv[], int printoid, int order, int printorderby);
 
 /*
  * @- BAT clustering
@@ -3191,14 +3192,6 @@ gdk_export BAT *BATintersectcand(BAT *a, BAT *b);
 gdk_export BAT *BATsample(BAT *b, BUN n);
 gdk_export BAT *BATsample_(BAT *b, BUN n); /* version that expects void head and returns oids */
 
-/* generic n-ary multijoin beast, with defines to interpret retval */
-#define MULTIJOIN_SORTED(r)	((char*) &r)[0]
-#define MULTIJOIN_KEY(r)	((char*) &r)[1]
-#define MULTIJOIN_SYNCED(r)	((char*) &r)[2]
-#define MULTIJOIN_LEAD(r)	((char*) &r)[3]
-
-typedef void (*ColFcn) (ptr, const void *);
-typedef void (*RowFcn) (ptr, ptr *);
 /*
  *
  */
