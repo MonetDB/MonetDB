@@ -106,6 +106,7 @@ newMalBlk(int maxvars, int maxstmts)
 	}
 	mb = (MalBlkPtr) GDKmalloc(sizeof(MalBlkRecord));
 	if (mb == NULL) {
+		GDKfree(v);
 		GDKerror("newMalBlk:" MAL_MALLOC_FAIL);
 		return NULL;
 	}

@@ -2309,7 +2309,7 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 	/* we do not return anything */
 	setVarType(mb, 0, TYPE_void);
 	setVarUDFtype(mb,0);
-	setModuleId(curInstr, putName("user",4));
+	setModuleId(curInstr, userRef);
 
 	if (m->argc) {
 		for (argc = 0; argc < m->argc; argc++) {
