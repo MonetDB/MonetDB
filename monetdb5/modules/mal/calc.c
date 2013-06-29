@@ -119,7 +119,7 @@ CMDvarADDstr(str *ret, str *s1, str *s2)
 		*ret= GDKstrdup(str_nil);
 		return MAL_SUCCEED;
 	}
-	s = GDKmalloc((l1 = strlen(*s1)) + strlen(*s2) + 1);
+	s = GDKzalloc((l1 = strlen(*s1)) + strlen(*s2) + 1);
 	if (s == NULL)
 		return mythrow(MAL, "calc.+", MAL_MALLOC_FAIL);
 	strcpy(s, *s1);
