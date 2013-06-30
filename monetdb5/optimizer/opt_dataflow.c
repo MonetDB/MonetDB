@@ -34,15 +34,16 @@
  * garbage collected outside the parallel block.
  */
 
-#define isSimple(p) (getModuleId(p) == calcRef || getModuleId(p) == mtimeRef || getModuleId(p) == strRef || getModuleId(p)== mmathRef || \
-	 p->token == ENDsymbol || getFunctionId(p) == multiplexRef || blockCntrl(p) || blockStart(p) || blockExit(p))
 static int
 simpleFlow(InstrPtr *old, int start, int last)
 {
 	int i, j, k, simple = TRUE;
 	InstrPtr p = NULL, q;
 
-	/* skip simple first */
+	/* ignore trivial blocks */
+	if ( last - start == 1)
+		return TRUE;
+	/* skip sequence of simple arithmetic first */
 	for( ; simple && start < last; start++)  
 	if ( old[start] ) {
 		p= old[start];
@@ -53,7 +54,7 @@ simpleFlow(InstrPtr *old, int start, int last)
 		q= old[i];
 		simple = getModuleId(q) == calcRef || getModuleId(q) == mtimeRef || getModuleId(q) == strRef || getModuleId(q)== mmathRef;
 		if( !simple)  {
-			simple = FALSE;
+			/* if not arithmetic than we should consume the previous result directly */
 			for( j= q->retc; j < q->argc; j++)
 				for( k =0; k < p->retc; k++)
 					if( getArg(p,k) == getArg(q,j))
@@ -63,7 +64,7 @@ simpleFlow(InstrPtr *old, int start, int last)
 		}
 		p = q;
 	}
-	return 1;
+	return simple;
 }
 
 /* optimizers may remove the dataflow hints first */
