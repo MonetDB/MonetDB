@@ -180,7 +180,9 @@ static str JSONarrayParser(char *j, char **next);
 static str
 JSONstringParser(char *j, char **next)
 {
-	for (j++; *j; j++)
+	if (*j == '"')
+		j++;
+	for (; *j; j++)
 		switch (*j) {
 		case '\\':
 			// parse all escapes
@@ -217,6 +219,7 @@ JSONstringParser(char *j, char **next)
 static str
 JSONnumberParser(char *j, char **next)
 {
+	char *backup= j;
 	if (*j == '-')
 		j++;
 	skipblancs;
@@ -227,6 +230,7 @@ JSONnumberParser(char *j, char **next)
 	for (; *j; j++)
 		if (*j < '0' || *j > '9')
 			break;
+	backup = j;
 	skipblancs;
 	if (*j == '.') {
 		j++;
@@ -234,8 +238,9 @@ JSONnumberParser(char *j, char **next)
 		for (; *j; j++)
 			if (*j < '0' || *j > '9')
 				break;
-		skipblancs;
-	}
+		backup = j;
+	} else j = backup;
+	skipblancs;
 	if (*j == 'e' || *j == 'E') {
 		j++;
 		skipblancs;
@@ -245,7 +250,8 @@ JSONnumberParser(char *j, char **next)
 		for (; *j; j++)
 			if (*j < '0' || *j > '9')
 				break;
-	}
+	} else j = backup;
+
 	*next = j;
 	return MAL_SUCCEED;
 }
@@ -331,7 +337,7 @@ JSONobjectParser(char *j, char **next)
 			break;
 		if (*j != '"')
 			throw(MAL, "json.parser", "Name expected");
-		msg = JSONstringParser(j + 1, &j);
+		msg = JSONstringParser(j, &j);
 		if (msg)
 			return msg;
 		skipblancs;
