@@ -1546,8 +1546,42 @@ JSONpathValidation(char *expr, pathterm terms[])
 	return MAL_SUCCEED;
 }
 
-str
-JSONpath(json *ret, json *js, str *expr)
+static void
+JSONtextInternal(char *result, char *valuebegin, char *valueend)
+{
+	char *s;
+	for ( s= valuebegin; *s && s != valueend; s++){
+		if ( *s =='[' || *s ==']' ||  *s == '{' || *s == '}' || *s == ',')
+			continue;
+		if ( *s == '"'){
+			*result++ = ' ';
+			for(s++; *s && *s != '"'; s++)
+				if ( *s == '\\')
+					switch (*++s){
+					case '\\':
+						*result++ = '\\';break;
+					case 'r':
+						*result++ = '\r';break;
+					case 'f':
+						*result++ = '\f';break;
+					case 't':
+						*result++ = '\t';break;
+					case 'n':
+						*result++ = '\n';break;
+					default:
+						*result++ = *s;
+					}
+				else
+					*result++ = *s;
+			*result++ = ' ';
+		} else 
+			*result++ = *s;
+	} 
+	*result = 0;
+}
+
+static str
+JSONpathInternal(json *ret, json *js, str *expr,int flag)
 {
 	pathterm terms[MAXTERMS];
 	str j, msg = MAL_SUCCEED;
@@ -1567,9 +1601,14 @@ JSONpath(json *ret, json *js, str *expr)
 		result = (char *) GDKmalloc(BUFSIZ);
 		if (result == NULL)
 			throw(MAL, "json.names", MAL_MALLOC_FAIL);
-		result[0] = '[';
-		result[1] = 0;
-		len = 1;
+		if ( !flag){
+			result[0] = '[';
+			result[1] = 0;
+			len = 1;
+		} else {
+			result[0] = 0;
+			len = 0;
+		}
 		lim = BUFSIZ;
 		idx = INT_MIN;
 
@@ -1639,19 +1678,30 @@ JSONpath(json *ret, json *js, str *expr)
 					l = valueend - valuebegin;
 					if (len + l + 3 > lim)
 						result = GDKrealloc(result, lim += BUFSIZ);
-					strncpy(result + len, valuebegin, valueend - valuebegin);
-					len += l;
-					strncpy(result + len, ",", 2);
-					len++;
+					if ( !flag ){
+						strncpy(result + len, valuebegin, valueend - valuebegin);
+						len += l;
+						strncpy(result + len, ",", 2);
+						len++;
+					} else {
+						JSONtextInternal(result + len, valuebegin, valueend);
+						len += strlen(result+len);
+					}
 				}
 				skipblancs;
 			}
 		}
-		if (result[1])
-			result[len - 1] = ']';
-		else {
-			result[1] = ']';
-			result[2] = 0;
+		if (result[1]){
+			if ( !flag )
+				result[len - 1] = ']';
+			else result[len] = 0;
+		}else {
+			if ( flag )
+				result[0] = 0;
+			else {
+				result[1] = ']';
+				result[2] = 0;
+			}
 		}
 		if (old)
 			GDKfree(old);
@@ -1664,4 +1714,14 @@ JSONpath(json *ret, json *js, str *expr)
 			GDKfree(terms[t].name);
 	*ret = result;
 	return msg;
+}
+str
+JSONpath(json *ret, json *js, str *expr)
+{
+	return JSONpathInternal(ret,js,expr,FALSE);
+}
+str
+JSONtext(json *ret, json *js, str *expr)
+{
+	return JSONpathInternal(ret,js,expr,TRUE);
 }

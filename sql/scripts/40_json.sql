@@ -31,6 +31,10 @@ returns json external name json.filterall;
 create function sys.json_path(js json, e string)
 returns json external name json.path;
 
+-- a simple path extractor as plain text
+create function sys.json_text(js json, e string)
+returns string external name json.text;
+
 -- test string for JSON compliancy
 create function sys.json_isvalid(js string)
 returns bool external name json.isvalid;

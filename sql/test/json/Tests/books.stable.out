@@ -88,8 +88,8 @@ Ready.
 % sys.L # table_name
 % json_path_j # name
 % json # type
-% 12 # length
-[ "[19.95\n    ]"	]
+% 7 # length
+[ "[19.95]"	]
 #SELECT json_path(j,'store.book.author[1]') FROM books;
 % sys.L # table_name
 % json_path_j # name

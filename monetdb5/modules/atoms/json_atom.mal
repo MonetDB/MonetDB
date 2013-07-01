@@ -119,4 +119,9 @@ address JSONrenderarray;
 command path(js:json,e:str):json
 address JSONpath
 comment "Simple JSON path accessor";
+
+command text(js:json,e:str):str
+address JSONtext
+comment "Simple JSON path accessor, returning the concatenated string";
+
 json.prelude();
