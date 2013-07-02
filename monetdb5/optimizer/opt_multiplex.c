@@ -67,13 +67,13 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (isAnyExpression(getArgType(mb, pci, 0)))
 		throw(MAL, "optimizer.multiplex", "Target type is missing");
 
-	mod = VALget(&getVar(mb, getArg(pci, 1))->value);
+	mod = VALget(&getVar(mb, getArg(pci, pci->retc))->value);
 	mod = putName(mod,strlen(mod));
-	fcn = VALget(&getVar(mb, getArg(pci, 2))->value);
+	fcn = VALget(&getVar(mb, getArg(pci, pci->retc+1))->value);
 	fcn = putName(fcn,strlen(fcn));
 
 	/* search the iterator bat */
-	for (i = 3; i < pci->argc; i++)
+	for (i = pci->retc+2; i < pci->argc; i++)
 		if (isaBatType(getArgType(mb, pci, i))) {
 			iter = getArg(pci, i);
 			if (getHeadType(getVarType(mb,iter)) != TYPE_oid)
@@ -138,7 +138,7 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	q = newFcnCall(mb, mod, fcn);
 	cr = getArg(q, 0) = newTmpVariable(mb, TYPE_any);
 
-	for (i = 3; i < pci->argc; i++)
+	for (i = pci->retc+2; i < pci->argc; i++)
 		if (isaBatType(getArgType(mb, pci, i))) {
 			q= pushArgument(mb, q, alias[i]);
 		} else {

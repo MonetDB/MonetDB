@@ -458,10 +458,9 @@ OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 str
 OPTremapMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+	char buf[BUFSIZ];
 	(void) mb;
-	(void)stk;
-	(void) p;
-	OPTDEBUGremap
-		printInstruction(cntxt->fdout,mb,0,p,LIST_MAL_ALL);
-	throw(MAL, "opt.remap", PROGRAM_NYI);
+	(void) cntxt;
+	snprintf(buf,BUFSIZ,"Function '%s.%s' not defined", (char *)getArgReference(stk,p,p->retc), (char *)getArgReference(stk,p,p->retc+1));
+	throw(MAL, "opt.remap", "%s",buf);
 }

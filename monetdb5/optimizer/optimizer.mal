@@ -428,6 +428,8 @@ address OPTwrapper
 comment "Remapping function calls to a their multiplex variant";
 
 module mal;
+pattern mal.multiplex(a:any...):any...
+address OPTremapMultiplex;
 pattern mal.multiplex(a:any...):any
 address OPTremapMultiplex;
 
