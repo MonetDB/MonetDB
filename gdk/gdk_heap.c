@@ -366,16 +366,24 @@ HEAPextend(Heap *h, size_t size)
 	if (size <= h->size)
 		return 0;
 
-	if (h->storage != STORE_MEM) {
-		HEAPDEBUG fprintf(stderr, "#HEAPextend: extending %s mmapped heap\n", h->storage == STORE_MMAP ? "shared" : "privately");
-		/* memory mapped files extend: save and remap */
-		if (HEAPsave_intern(h, nme, ext, ".tmp") < 0)
-			return -1;
-		HEAPfree(h);
-		h->maxsize = h->size = size;
-		if (HEAPload_intern(h, nme, ext, ".tmp", FALSE) >= 0) {
-			return 0;
-		}
+ 	if (h->storage != STORE_MEM) {
+		char *p;
+		long_str path;
+
+		HEAPDEBUG fprintf(stderr, "#HEAPextend: extending %s mmapped heap (%s)\n", h->storage == STORE_MMAP ? "shared" : "privately", h->filename);
+		/* extend memory mapped file */
+		GDKfilepath(path, BATDIR, nme, ext);
+		size = (1 + ((size - 1) >> REMAP_PAGE_MAXBITS)) << REMAP_PAGE_MAXBITS;
+		p = MT_mremap(path,
+			      h->storage == STORE_PRIV ?
+				MMAP_COPY | MMAP_READ | MMAP_WRITE :
+				MMAP_READ | MMAP_WRITE,
+			      h->base, h->size, size);
+		if (p) {
+			h->maxsize = h->size = size;
+			h->base = p;
+ 			return 0;
+ 		}
 	} else {
 		/* extend a malloced heap, possibly switching over to
 		 * file-mapped storage */
