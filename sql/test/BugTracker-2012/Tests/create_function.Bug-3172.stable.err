@@ -25,16 +25,17 @@ stderr of test 'create_function.Bug-3172` in directory 'sql/test/BugTracker-2012
 # cmdline opt 	gdk_dbname = mTests_test_BugTracker-2012
 # cmdline opt 	mal_listing = 0
 
+# 23:33:41 >  
+# 23:33:41 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-19060" "--port=33352"
+# 23:33:41 >  
 
+MAPI  = (monetdb) /var/tmp/mtest-19060/.s.monetdb.33352
+QUERY = select * from x((select id from _tables), (select schema_id from _tables));
 
+        !TypeException:user.s2_1[117]:'bat.insert' undefined in: _219:any := bat.insert(_207:bat[:oid,:int], _217:oid, _216:any)
+        !program contains errors
 
-# 13:24:28 >  
-# 13:24:28 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=lodz" "--port=38620"
-# 13:24:28 >  
-
-Needs a proper error message!
-
-# 13:24:29 >  
-# 13:24:29 >  "Done."
-# 13:24:29 >  
+# 23:33:42 >  
+# 23:33:42 >  "Done."
+# 23:33:42 >  
 
