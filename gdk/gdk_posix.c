@@ -57,10 +57,6 @@ extern char *sbrk(int);
 # include <sys/user.h>
 #endif
 
-#if defined(DEBUG_ALLOC) && SIZEOF_VOID_P > 4
-#undef DEBUG_ALLOC
-#endif
-
 #ifdef WIN32
 int GDK_mem_pagebits = 16;	/* on windows, the mmap addresses can be set by the 64KB */
 #else
@@ -393,7 +389,7 @@ MT_munmap(void *p, size_t len)
 	int ret = munmap(p, len);
 
 #ifdef MMAP_DEBUG
-	mnstr_printf(GDKstdout, "#munmap(" LLFMT "," LLFMT ",%d) = %d\n", (long long) p, (long long) len, ret);
+	fprintf(stderr, "#munmap(" PTRFMT "," SZFMT ",%d) = %d\n", PTRFMTCAST p, len, ret);
 #endif
 	return ret;
 }
@@ -583,9 +579,9 @@ MT_msync(void *p, size_t off, size_t len, int mode)
 			((mode & MMAP_ASYNC) ? MS_ASYNC : MS_INVALIDATE));
 
 #ifdef MMAP_DEBUG
-	mnstr_printf(GDKstdout,
-		     "#msync(" LLFMT "," LLFMT ",%s) = %d\n",
-		     (long long) p, (long long) len,
+	fprintf(stderr,
+		     "#msync(" PTRFMT "," SZFMT ",%s) = %d\n",
+		     PTRFMTCAST p, len,
 		     (mode & MMAP_SYNC) ? "MS_SYNC" :
 		     ((mode & MMAP_ASYNC) ? "MS_ASYNC" : "MS_INVALIDATE"),
 		     ret);
@@ -844,7 +840,7 @@ MT_mallinfo(void)
 	}
 	if (heapstatus == _HEAPBADPTR || heapstatus == _HEAPBADBEGIN || heapstatus == _HEAPBADNODE) {
 
-		mnstr_printf(GDKstdout, "#mallinfo(): heap is corrupt.");
+		fprintf(stderr, "#mallinfo(): heap is corrupt.");
 	}
 	_heapmin();
 	return _ret;
