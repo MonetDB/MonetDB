@@ -61,6 +61,9 @@ test = (
                     r'^\+[=-]+\+$',
                 # varying error message
                     r"^ERROR = !conversion of string '.*' to type [^ ]* failed\.$",
+                # table_function_with_column_subselects.Bug-3172 & create_function.Bug-3172:
+                # id in error message depends on #threads
+                    r"^.*!TypeException:user.s2_1\[[0-9]+\]:'.*$",
                  ])+')',  re.MULTILINE),
         # warnings and messages that should be treated as errors:
         re.compile('(?:'+')|(?:'.join([
