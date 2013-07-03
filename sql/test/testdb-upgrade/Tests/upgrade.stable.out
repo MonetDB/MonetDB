@@ -19,14 +19,6 @@ stdout of test 'upgrade` in directory 'sql/test/testdb-upgrade` itself:
 # MonetDB/SQL module loaded
 
 Ready.
-Running database upgrade commands:
-create aggregate sys.stddev_samp(val WRD) returns DOUBLE external name "aggr"."stdev";
-create aggregate sys.stddev_pop(val WRD) returns DOUBLE external name "aggr"."stdevp";
-create aggregate sys.var_samp(val WRD) returns DOUBLE external name "aggr"."variance";
-create aggregate sys.var_pop(val WRD) returns DOUBLE external name "aggr"."variancep";
-create aggregate sys.median(val WRD) returns WRD external name "aggr"."median";
-create aggregate sys.corr(e1 WRD, e2 WRD) returns WRD external name "aggr"."corr";
-insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('stddev_samp', 'stddev_pop', 'var_samp', 'var_pop', 'median', 'corr') and f.type = 3 and f.schema_id = s.id and s.name = 'sys');
 
 Running database upgrade commands:
 set schema "sys";
