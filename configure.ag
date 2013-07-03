@@ -2564,6 +2564,7 @@ AC_CHECK_FUNCS([\
 				localtime_r \
 				lockf \
 				madvise \
+				mremap \
 				nl_langinfo \
 				_NSGetExecutablePath \
 				pipe \

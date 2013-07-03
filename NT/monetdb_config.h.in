@@ -301,6 +301,9 @@
 /* Define to 1 if you have the <memory.h> header file. */
 #define HAVE_MEMORY_H 1
 
+/* Define to 1 if you have the `mremap' function. */
+/* #undef HAVE_MREMAP */
+
 /* Define if you have the mseed library */
 /* #undef HAVE_MSEED */
 
