@@ -66,7 +66,7 @@ exit MALException:str ;
     remote.disconnect(conn);
 end main;
 [ "Received first error from the remote site" ]
-
+!SyntaxException:remote.exec:(mapi:monetdb://monetdb@rome.ins.cwi.nl/mTests_monetdb5_modules_mal) rmt0__8_void := io.print.bla();
 SyntaxException:parseError:                    ^'(' expected
 
 [ "rmt1_bn_bat_oid_str" ]
