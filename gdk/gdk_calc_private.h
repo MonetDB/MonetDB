@@ -102,6 +102,30 @@ typedef unsigned __int64 ulng;
 		}							\
 	} while (0)
 
+/* dst = lft - rgt with overflow check */
+#define SUB_WITH_CHECK(TYPE1, lft, TYPE2, rgt, TYPE3, dst, on_overflow)	\
+	do {								\
+		if ((rgt) < 1) {					\
+			if (GDK_##TYPE3##_max + (rgt) < (lft)) {	\
+				if (abort_on_error)			\
+					on_overflow;			\
+				(dst) = TYPE3##_nil;			\
+				nils++;					\
+			} else {					\
+				(dst) = (TYPE3) (lft) - (rgt);		\
+			}						\
+		} else {						\
+			if (GDK_##TYPE3##_min + (rgt) >= (lft)) {	\
+				if (abort_on_error)			\
+					on_overflow;			\
+				(dst) = TYPE3##_nil;			\
+				nils++;					\
+			} else {					\
+				(dst) = (TYPE3) (lft) - (rgt);		\
+			}						\
+		}							\
+	} while (0)
+
 #define MUL4_WITH_CHECK(TYPE1, lft, TYPE2, rgt, TYPE3, dst, TYPE4, on_overflow) \
 	do {								\
 		TYPE4 c = (TYPE4) (lft) * (rgt);			\

@@ -2125,24 +2125,11 @@ sub_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 		if (lft[i] == TYPE1##_nil || rgt[j] == TYPE2##_nil) {	\
 			dst[k] = TYPE3##_nil;				\
 			nils++;						\
-		} else if (rgt[j] < 1) {				\
-			if (GDK_##TYPE3##_max + rgt[j] < lft[i]) {	\
-				if (abort_on_error)			\
-					ON_OVERFLOW(TYPE1, TYPE2, "-");	\
-				dst[k] = TYPE3##_nil;			\
-				nils++;					\
-			} else {					\
-				dst[k] = (TYPE3) lft[i] - rgt[j];	\
-			}						\
 		} else {						\
-			if (GDK_##TYPE3##_min + rgt[j] >= lft[i]) {	\
-				if (abort_on_error)			\
-					ON_OVERFLOW(TYPE1, TYPE2, "-");	\
-				dst[k] = TYPE3##_nil;			\
-				nils++;					\
-			} else {					\
-				dst[k] = (TYPE3) lft[i] - rgt[j];	\
-			}						\
+			SUB_WITH_CHECK(TYPE1, lft[i],			\
+				       TYPE2, rgt[j],			\
+				       TYPE3, dst[k],			\
+				       ON_OVERFLOW(TYPE1, TYPE2, "-"));	\
 		}							\
 	}								\
 	CANDLOOP(dst, k, TYPE3##_nil, end, cnt);			\
