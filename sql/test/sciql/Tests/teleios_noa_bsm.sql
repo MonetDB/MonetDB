@@ -64,7 +64,7 @@ CREATE VIEW neighbours AS
   SELECT [x], [y], SUM(f)-f AS neighbour_cnt
   FROM fire1
   GROUP BY fire1[x-1:x+2][y-1:y+2]; -- using a 3x3 window
---  GROUP BY fire1[x-2:x+3][y-2:y+23; -- using a 5x5 window
+--  GROUP BY fire1[x-2:x+3][y-2:y+3]; -- using a 5x5 window
 
 INSERT INTO fire_majority (
   SELECT [f.x], [f.y], 1
