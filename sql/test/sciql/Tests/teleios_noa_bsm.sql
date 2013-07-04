@@ -68,9 +68,11 @@ INSERT INTO fire2 (
 -- BSM majority filter
 INSERT INTO fire1 (
   SELECT [x], [y], 1    
-  FROM fire1
-  GROUP BY fire1[x-d1:x+d2][y-d1:y+d2]
-  HAVING SUM(f)-f > majority
+  FROM [
+    SELECT [x], [y], f, SUM(f) as n
+    FROM fire1 
+    GROUP BY fire1[x-d1:x+d2][y-d1:y+d2]
+  ] as x where f = 0 and n > majority
 );
 
 -- BSM clump&eliminate filter
