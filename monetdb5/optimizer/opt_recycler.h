@@ -16,10 +16,6 @@
  * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
 */
-/*
- * @-
- * The number of overloaded instructions is kept to a minimum.
- */
 #ifndef _OPT_RECYCLER_
 #define _OPT_RECYCLER_
 #include "opt_prelude.h"

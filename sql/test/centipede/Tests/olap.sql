@@ -1,16 +1,16 @@
 create table Rc(i int, j int);
 create table Sc(a int, b int);
+create table Tc(x int, y int, z int);
 
 insert into Rc values (1,1), (2,3), (2,4), (2,5), (3,3);
 insert into Sc values (1,1), (1,3);
+insert into Tc values (1,1,1), (2,2,3), (2,2,4), (2,2,5), (3,3,3);
 
 select * from Rc;
 select * from Sc;
+select * from Tc;
 
 set optimizer='centipede_pipe';
--- next needs work
---select * from Rc;
---select * from Sc;
 
 select i,count(*) from Rc group by i;
 select j,count(*) from Rc group by j;
@@ -37,5 +37,10 @@ select j,max(i) from Rc group by j;
 select a,max(b) from Sc group by a;
 select b,max(a) from Sc group by b;
 
+select x,y,count(*) from Tc group by x,y;
+select x,y,max(z) from Tc group by x,y;
+select x,y,sum(z) from Tc group by x,y;
+
 drop table Rc;
 drop table Sc;
+drop table Tc;

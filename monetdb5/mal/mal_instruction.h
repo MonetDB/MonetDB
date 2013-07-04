@@ -142,8 +142,8 @@ typedef struct MALBLK {
 	int maxarg;					/* keep track on the maximal arguments used */
 	ptr replica;				/* for the replicator tests */
 	sht recycle;				/* execution subject to recycler control */
-	lng recid;					/* ID given by recycler optimizer */
-	lng legid;
+	lng recid;					/* Recycler identifier */
+	lng legid;					/* Octopus control */
 	sht trap;					/* call debugger when called */
 	lng runtime;					/* average execution time of block in ticks */
 	int calls;					/* number of calls */
