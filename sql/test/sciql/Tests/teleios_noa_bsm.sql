@@ -58,15 +58,13 @@ INSERT INTO fire2 (
 -- BSM majority filter
 ---- DECLARE half_wsize INT;
 ---- SET half_wsize = $WINDOW_SIZE/2; -- using a 3x3 or 5x5 window
-CREATE ARRAY fire_majority (x INT DIMENSION[size_x], y INT DIMENSION[size_y], f INT DEFAULT 0);
-
 CREATE VIEW neighbours AS
   SELECT [x], [y], SUM(f)-f AS neighbour_cnt
   FROM fire1
   GROUP BY fire1[x-1:x+2][y-1:y+2]; -- using a 3x3 window
 --  GROUP BY fire1[x-2:x+3][y-2:y+3]; -- using a 5x5 window
 
-INSERT INTO fire_majority (
+INSERT INTO fire1 (
   SELECT [f.x], [f.y], 1
   FROM fire1 AS f, neighbours AS n
   WHERE f.x = n.x AND f.y = n.y
@@ -86,7 +84,7 @@ BEGIN
   SET moreupdates = 1;
 
   INSERT INTO fire_eliminated (
-    SELECT x, y, x * size_y + y FROM fire_majority
+    SELECT x, y, x * size_y + y FROM fire1
     WHERE f = 1);
 
   WHILE moreupdates > 0 DO
@@ -120,7 +118,7 @@ BEGIN
   SET moreupdates = 1;
 
   INSERT INTO fire_eliminated (
-    SELECT x, y, x * size_y + y FROM fire_majority
+    SELECT x, y, x * size_y + y FROM fire1
     WHERE f = 1
   );
 
