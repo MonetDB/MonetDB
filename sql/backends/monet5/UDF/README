@@ -1,3 +1,3 @@
 This directory is a template for extending SQL with a new scalar type.
 For further documentation, see the MonetDB website at
-http://www.monetdb.org/Documentation/Cookbooks/SQLrecipies/UserDefinedFunction
+http://www.monetdb.org/Documentation/Cookbooks/SQLrecipes/UserDefinedFunction
