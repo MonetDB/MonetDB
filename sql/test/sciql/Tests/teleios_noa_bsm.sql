@@ -1,5 +1,15 @@
 SET SCHEMA rs;
 
+DECLARE window_size INT;
+SET window_size = 3;	-- using a 3x3 window
+--SET window_size = 5;	-- using a 5x5 window
+
+
+DECLARE d1 INT, d2 INT, majority INT;
+SET d1 = window_size / 2;
+SET d2 = d1 + 1;
+SET majority = (window_size * window_size) / 2;
+
 -- Assuming these example TIF images are stored in /tmp
 -- The orthorectified images need the GDAL functions attach2() and import2()
 CALL rs.attach2('/tmp/img1_b3.tif');
@@ -56,15 +66,11 @@ INSERT INTO fire2 (
 );
 
 -- BSM majority filter
----- DECLARE half_wsize INT;
----- SET half_wsize = $WINDOW_SIZE/2; -- using a 3x3 or 5x5 window
 INSERT INTO fire1 (
   SELECT [x], [y], 1    
   FROM fire1
-  GROUP BY fire1[x-1:x+2][y-1:y+2] -- using a 3x3 window
-  HAVING SUM(f)-f > 4 -- using a 3x3 window
---  GROUP BY fire1[x-2:x+3][y-2:y+3] -- using a 5x5 window
---  HAVING SUM(f)-f > 12 -- using a 5x5 window
+  GROUP BY fire1[x-d1:x+d2][y-d1:y+d2]
+  HAVING SUM(f)-f > majority
 );
 
 -- BSM clump&eliminate filter
