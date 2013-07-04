@@ -67,12 +67,12 @@ CREATE VIEW neighbours AS
 --  GROUP BY fire1[x-2:x+3][y-2:y+23; -- using a 5x5 window
 
 INSERT INTO fire_majority (
-  SELECT [f.x], [f.y], 0
+  SELECT [f.x], [f.y], 1
   FROM fire1 AS f, neighbours AS n
   WHERE f.x = n.x AND f.y = n.y
     AND f.f = 0
-    AND neighbour_cnt > 1 -- using a 3x3 window
---    AND neighbour_cnt > 2 -- using a 5x5 window
+    AND neighbour_cnt > 4 -- using a 3x3 window
+--    AND neighbour_cnt > 12 -- using a 5x5 window
 );
 
 -- BSM clump&eliminate filter
