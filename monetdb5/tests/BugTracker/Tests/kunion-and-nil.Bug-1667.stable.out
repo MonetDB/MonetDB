@@ -28,18 +28,6 @@ function user.main():void;
     info := algebra.join(infoattrreverse,infoval);
     io.print(info);
 end main;
-#-----------------#
-# t	h	  # name
-# oid	oid	  # type
-#-----------------#
-[ 0@0,	  nil	  ]
-[ 1@0,	  1@0	  ]
-! [ 0@0,	  nil	  ] would be okay to appear here if the tkey value (see below) was 0
-#-----------------#
-# h	t	  # name
-# str	str	  # type
-#-----------------#
-[ "tkey", "0"	  ]
 
 # 16:48:27 >  
 # 16:48:27 >  "Done."
