@@ -29,9 +29,9 @@ CREATE ARRAY fire1 (x INT DIMENSION[size_x], y INT DIMENSION[size_y], f INT DEFA
 INSERT INTO fire1 (
   SELECT b3.x, b3.y, 1
   FROM rs.image1 AS b3, rs.image2 AS b4, rs.image3 AS b7
-  WHERE b3.intensity <> 0 AND b4.intensity <> 0 AND b7.intensity <> 0
+  WHERE b3.x = b4.x AND b3.y = b4.y AND b3.x = b7.x AND b3.y = b7.y -- join the images
+    and b3.intensity <> 0 AND b4.intensity <> 0 AND b7.intensity <> 0
     AND b4.intensity <= 60 -- indexNIR
-	AND b3.x = b4.x AND b3.y = b4.y AND b3.x = b7.x AND b3.y = b7.y -- join the images
     AND FLOOR(CAST(b3.intensity+b4.intensity AS DOUBLE)/2.0) <= 50.0 -- indexALBEDO
     AND b4.intensity + b7.intensity <> 0.0
     AND (CAST(b4.intensity-b7.intensity AS DOUBLE)/(b4.intensity + b7.intensity) + 1.0) * 127.5 <= 126.0 -- indexNBR, 255.0/2.0=127.5
