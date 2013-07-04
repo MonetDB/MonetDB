@@ -1377,7 +1377,7 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, in
 #define MASK_NE		(MASK_LT | MASK_GT)
 
 static gdk_return
-thetajoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, const char *op)
+thetajoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int opcode)
 {
 	BUN lstart, lend, lcnt;
 	const oid *lcand = NULL, *lcandend = NULL;
@@ -1393,7 +1393,6 @@ thetajoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, const char *op)
 	oid lastr = 0;		/* last value inserted into r2 */
 	BUN n, nr;
 	BUN newcap;
-	int opcode = 0;
 	oid lo, ro;
 	int c;
 	int lskipped = 0;	/* whether we skipped values in l */
@@ -1402,7 +1401,7 @@ thetajoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, const char *op)
 
 	ALGODEBUG fprintf(stderr, "#thetajoin(l=%s#" BUNFMT "[%s]%s%s,"
 			  "r=%s#" BUNFMT "[%s]%s%s,sl=%s#" BUNFMT "%s%s,"
-			  "sr=%s#" BUNFMT "%s%s,op=%s)\n",
+			  "sr=%s#" BUNFMT "%s%s,op=%s%s%s)\n",
 			  BATgetId(l), BATcount(l), ATOMname(l->ttype),
 			  l->tsorted ? "-sorted" : "",
 			  l->trevsorted ? "-revsorted" : "",
@@ -1415,45 +1414,16 @@ thetajoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, const char *op)
 			  sr ? BATgetId(sr) : "NULL", sr ? BATcount(sr) : 0,
 			  sr && sr->tsorted ? "-sorted" : "",
 			  sr && sr->trevsorted ? "-revsorted" : "",
-			  op);
+			  opcode & MASK_LT ? "<" : "",
+			  opcode & MASK_GT ? ">" : "",
+			  opcode & MASK_EQ ? "=" : "");
 
 	assert(BAThdense(l));
 	assert(BAThdense(r));
 	assert(ATOMtype(l->ttype) == ATOMtype(r->ttype));
 	assert(sl == NULL || sl->tsorted);
 	assert(sr == NULL || sr->tsorted);
-
-	/* encode operator as a bit mask into opcode */
-	if (op[0] == '=' && ((op[1] == '=' && op[2] == 0) || op[1] == 0)) {
-		/* "=" or "==" */
-		opcode |= MASK_EQ;
-	} else if (op[0] == '!' && op[1] == '=' && op[2] == 0) {
-		/* "!=" (equivalent to "<>") */
-		opcode |= MASK_NE;
-	} else 	if (op[0] == '<') {
-		if (op[1] == 0) {
-			/* "<" */
-			opcode |= MASK_LT;
-		} else if (op[1] == '=' && op[2] == 0) {
-			/* "<=" */
-			opcode |= MASK_LE;
-		} else if (op[1] == '>' && op[2] == 0) {
-			/* "<>" (equivalent to "!=") */
-			opcode |= MASK_NE;
-		}
-	} else if (op[0] == '>') {
-		if (op[1] == 0) {
-			/* ">" */
-			opcode |= MASK_GT;
-		} else if (op[1] == '=' && op[2] == 0) {
-			/* ">=" */
-			opcode |= MASK_GE;
-		}
-	}
-	if (opcode == 0) {
-		GDKerror("BATthetasubjoin: unknown operator \"%s\".\n", op);
-		return GDK_FAIL;
-	}
+	assert((opcode & (MASK_EQ | MASK_LT | MASK_GT)) != 0);
 
 	CANDINIT(l, sl, lstart, lend, lcnt, lcand, lcandend);
 	CANDINIT(r, sr, rstart, rend, rcnt, rcand, rcandend);
@@ -1725,6 +1695,7 @@ gdk_return
 BATsubthetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, const char *op, BUN estimate)
 {
 	BAT *r1, *r2;
+	int opcode = 0;
 
 	if (op[0] == '=' && ((op[1] == '=' && op[2] == 0) || op[1] == 0))
 		return BATsubjoin(r1p, r2p, l, r, sl, sr, estimate);
@@ -1740,7 +1711,40 @@ BATsubthetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, const ch
 		return GDK_FAIL;
 	*r1p = r1;
 	*r2p = r2;
-	return thetajoin(r1, r2, l, r, sl, sr, op);
+
+	/* encode operator as a bit mask into opcode */
+	if (op[0] == '=' && ((op[1] == '=' && op[2] == 0) || op[1] == 0)) {
+		/* "=" or "==" */
+		opcode |= MASK_EQ;
+	} else if (op[0] == '!' && op[1] == '=' && op[2] == 0) {
+		/* "!=" (equivalent to "<>") */
+		opcode |= MASK_NE;
+	} else 	if (op[0] == '<') {
+		if (op[1] == 0) {
+			/* "<" */
+			opcode |= MASK_LT;
+		} else if (op[1] == '=' && op[2] == 0) {
+			/* "<=" */
+			opcode |= MASK_LE;
+		} else if (op[1] == '>' && op[2] == 0) {
+			/* "<>" (equivalent to "!=") */
+			opcode |= MASK_NE;
+		}
+	} else if (op[0] == '>') {
+		if (op[1] == 0) {
+			/* ">" */
+			opcode |= MASK_GT;
+		} else if (op[1] == '=' && op[2] == 0) {
+			/* ">=" */
+			opcode |= MASK_GE;
+		}
+	}
+	if (opcode == 0) {
+		GDKerror("BATsubthetajoin: unknown operator \"%s\".\n", op);
+		return GDK_FAIL;
+	}
+
+	return thetajoin(r1, r2, l, r, sl, sr, opcode);
 }
 
 gdk_return
