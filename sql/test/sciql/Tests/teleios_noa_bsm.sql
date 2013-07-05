@@ -103,28 +103,6 @@ INSERT INTO fire_2 (
 UPDATE fire_1 SET f = x * size_y + y WHERE f IS NOT NULL;
 UPDATE fire_2 SET f = x * size_y + y WHERE f IS NOT NULL;
 
----- Use 4-connected, i.e., each pixel has 4 neighboring pixels,
-----   namely North, East, South, West.
-        GROUP BY fe[x][y], fe[x+1][y], fe[x][y+1], fe[x-1][y], fe[x][y-1]);
-
-    SELECT SUM(res) INTO moreupdates
-      FROM (
-        SELECT MAX(gid) - MIN(gid) AS res
-          FROM fire_eliminated AS fe
-          GROUP BY fe[x][y], fe[x+1][y], fe[x][y+1], fe[x-1][y], fe[x][y-1]
-      ) AS updates;
-  END WHILE;
-
----- Eliminate any groups that have few members (<10 pixels)
-  DECLARE TABLE to_eliminate (gid INT);
-  INSERT INTO to_eliminate (
-    SELECT gid FROM fire_eliminated
-    WHERE gid > 0
-    GROUP BY gid HAVING COUNT(gid) < 10);
-
-  UPDATE fire_eliminated SET gid = NULL WHERE gid IN (SELECT * FROM to_eliminate);
-END;
-
 ---- Clump adjacent pixels using 4-connected, i.e., each pixel has 8 neighbors,
 ----   namely N, NE, E, SE, S, SW, W, NW.
 CREATE FUNCTION clump_4connected_1()
