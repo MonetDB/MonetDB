@@ -1,9 +1,16 @@
 SET SCHEMA rs;
 
-DECLARE window_size INT;
-SET window_size = 3;	-- using a 3x3 window
---SET window_size = 5;	-- using a 5x5 window
 
+-- configuration parameters --
+
+DECLARE window_size INT;
+SET window_size = 3; -- 3 for 3x3 window, 5 for 5x5 window
+
+DECLARE ndviThreshold DOUBLE;
+SET ndviThreshold = 0; -- what is the correct value ?
+
+
+-- implementation --
 
 DECLARE d1 INT, d2 INT, majority INT;
 SET d1 = window_size / 2;
@@ -23,6 +30,7 @@ CALL rs.attach2('/tmp/img2_b7.tif');
 CALL rs.import2(1);
 CALL rs.import2(2);
 CALL rs.import2(3);
+
 CALL rs.import2(4);
 CALL rs.import2(5);
 CALL rs.import2(6);
@@ -35,69 +43,74 @@ SET size_x = (SELECT MAX(x) + 1 FROM rs.image1);
 SET size_y = (SELECT MAX(y) + 1 FROM rs.image1);
 
 -- BSM classification (landsatFirePredicate()) using one image
-CREATE ARRAY fire1 (x INT DIMENSION[size_x], y INT DIMENSION[size_y], f INT DEFAULT 0);
-INSERT INTO fire1 (
+CREATE ARRAY fire_1 (x INT DIMENSION[size_x], y INT DIMENSION[size_y], f INT);
+INSERT INTO fire_1 (
   SELECT b3.x, b3.y, 1
   FROM rs.image1 AS b3, rs.image2 AS b4, rs.image3 AS b7
   WHERE b3.x = b4.x AND b3.y = b4.y AND b3.x = b7.x AND b3.y = b7.y -- join the images
     and b3.intensity <> 0 AND b4.intensity <> 0 AND b7.intensity <> 0
     AND b4.intensity <= 60 -- indexNIR
     AND FLOOR(CAST(b3.intensity+b4.intensity AS DOUBLE)/2.0) <= 50.0 -- indexALBEDO
-    AND b4.intensity + b7.intensity <> 0.0
+    AND b4.intensity + b7.intensity <> 0
     AND (CAST(b4.intensity-b7.intensity AS DOUBLE)/(b4.intensity + b7.intensity) + 1.0) * 127.5 <= 126.0 -- indexNBR, 255.0/2.0=127.5
 );
 
 -- BSM classification (landsatFirePredicate()) using two images
-CREATE ARRAY fire2 (x INT DIMENSION[size_x], y INT DIMENSION[size_y], f INT DEFAULT 0);
-INSERT INTO fire2 (
+CREATE ARRAY fire_2 (x INT DIMENSION[size_x], y INT DIMENSION[size_y], f INT);
+INSERT INTO fire_2 (
   SELECT img1_b3.x, img1_b3.y, 1
   FROM rs.image1 AS img1_b3, rs.image2 AS img1_b4, rs.image3 AS img1_b7,
        rs.image4 AS img2_b3, rs.image5 AS img2_b4
-  WHERE img1_b3.intensity <> 0 AND img1_b4.intensity <> 0 AND img1_b7.intensity <> 0
+  WHERE img1_b3.x = img1_b4.x AND img1_b3.y = img1_b4.y AND img1_b3.x = img1_b7.x AND img1_b3.y = img1_b7.y -- join the images
+    AND img1_b3.x = img2_b3.x AND img1_b3.y = img2_b3.y AND img1_b3.x = img2_b4.x AND img1_b3.y = img2_b4.y -- join the images
+    AND img1_b3.intensity <> 0 AND img1_b4.intensity <> 0 AND img1_b7.intensity <> 0
+    AND img2_b3.intensity <> 0 AND img2_b4.intensity <> 0
     AND img1_b4.intensity <= 60 -- indexNIR_img1
-	AND img1_b3.x = img1_b4.x AND img1_b3.y = img1_b4.y AND img1_b3.x = img1_b7.x AND img1_b3.y = img1_b7.y -- join the images
     AND FLOOR(CAST(img1_b3.intensity+img1_b4.intensity AS DOUBLE)/2.0) <= 50.0 -- indexALBEDO_img1
-    AND img1_b4.intensity + img1_b7.intensity <> 0.0
+    AND img1_b4.intensity + img1_b7.intensity <> 0
     AND (CAST(img1_b4.intensity-img1_b7.intensity AS DOUBLE)/(img1_b4.intensity + img1_b7.intensity) + 1.0) * 127.5 <= 126.0 -- indexNBR_img1
-	AND img1_b3.x = img2_b3.x AND img1_b3.y = img2_b3.y AND img1_b3.x = img2_b4.x AND img1_b3.y = img2_b4.y -- join the images
-    AND img1_b4.intensity + img1_b3.intensity <> 0.0 AND img2_b4.intensity + img2_b3.intensity <> 0.0
+    AND img1_b4.intensity + img1_b3.intensity <> 0
+    AND img2_b4.intensity + img2_b3.intensity <> 0
     AND ABS( CAST(img1_b4.intensity-img1_b3.intensity AS DOUBLE)/(img1_b4.intensity + img1_b3.intensity) -
-             CAST(img2_b4.intensity-img2_b3.intensity AS DOUBLE)/(img2_b4.intensity + img2_b3.intensity) ) > $__ndviThreshold
+             CAST(img2_b4.intensity-img2_b3.intensity AS DOUBLE)/(img2_b4.intensity + img2_b3.intensity) ) > ndviThreshold
 );
 
 -- BSM majority filter
-INSERT INTO fire1 (
-  SELECT [x], [y], 1    
+INSERT INTO fire_1 (
+  SELECT [x], [y], 1
   FROM [
-    SELECT [x], [y], f, SUM(f) as n
-    FROM fire1 
-    GROUP BY fire1[x-d1:x+d2][y-d1:y+d2]
-  ] as x where f = 0 and n > majority
+    SELECT [x], [y], f
+    FROM fire_1
+    GROUP BY fire_1[x-d1:x+d2][y-d1:y+d2]
+    HAVING SUM(f) > majority
+  ] AS tmp
+  WHERE f IS NULL
+);
+
+INSERT INTO fire_2 (
+  SELECT [x], [y], 1
+  FROM [
+    SELECT [x], [y], f
+    FROM fire_2
+    GROUP BY fire_2[x-d1:x+d2][y-d1:y+d2]
+    HAVING SUM(f) > majority
+  ] AS tmp
+  WHERE f IS NULL
 );
 
 -- BSM clump&eliminate filter
-CREATE ARRAY fire_eliminated (x INT DIMENSION[size_x], y INT DIMENSION[size_y], gid INT);
+---- initialize with distinct group ID per pixel
+UPDATE fire_1 SET f = x * size_y + y WHERE f IS NOT NULL;
+UPDATE fire_2 SET f = x * size_y + y WHERE f IS NOT NULL;
 
 ---- Use 4-connected, i.e., each pixel has 4 neighboring pixels,
 ----   namely North, East, South, West.
-CREATE PROCEDURE count_groups_4connected()
-BEGIN
-  DECLARE moreupdates INT;
-  SET moreupdates = 1;
-
-  INSERT INTO fire_eliminated (
-    SELECT x, y, x * size_y + y FROM fire1
-    WHERE f = 1);
-
-  WHILE moreupdates > 0 DO
-    INSERT INTO fire_eliminated (
-      SELECT [x], [y], MAX(gid) FROM fire_eliminated AS fe
         GROUP BY fe[x][y], fe[x+1][y], fe[x][y+1], fe[x-1][y], fe[x][y-1]);
 
     SELECT SUM(res) INTO moreupdates
       FROM (
         SELECT MAX(gid) - MIN(gid) AS res
-          FROM fire_eliminated
+          FROM fire_eliminated AS fe
           GROUP BY fe[x][y], fe[x+1][y], fe[x][y+1], fe[x-1][y], fe[x][y-1]
       ) AS updates;
   END WHILE;
@@ -112,40 +125,148 @@ BEGIN
   UPDATE fire_eliminated SET gid = NULL WHERE gid IN (SELECT * FROM to_eliminate);
 END;
 
----- Use 8-connected, i.e., each pixel has 8 neighbors, 
+---- Clump adjacent pixels using 4-connected, i.e., each pixel has 8 neighbors,
 ----   namely N, NE, E, SE, S, SW, W, NW.
-CREATE PROCEDURE count_groups_8connected()
+CREATE FUNCTION clump_4connected_1()
+RETURNS INT
 BEGIN
+  DECLARE iterations INT;
+  SET iterations = 0;
   DECLARE moreupdates INT;
   SET moreupdates = 1;
 
-  INSERT INTO fire_eliminated (
-    SELECT x, y, x * size_y + y FROM fire1
-    WHERE f = 1
-  );
-
   WHILE moreupdates > 0 DO
-    INSERT INTO fire_eliminated (
-      SELECT [x], [y], MAX(gid) FROM fire_eliminated
-        GROUP BY fire_eliminated[x-1:x+2][y-1:y+2]);
-
-    SELECT SUM(res) INTO moreupdates
-      FROM (
-        SELECT MAX(gid) - MIN(gid) AS res
-          FROM fire_eliminated
-          GROUP BY fire_eliminated[x-1:x+2][y-1:y+2]
-      ) AS updates;
+    SET iterations = iterations + 1;
+    INSERT INTO fire_1 (
+      SELECT [x], [y], MAX(f)
+      FROM fire_1 AS a
+      -- the SciQL implementation does not seem to support this GROUP BY (yet?) !?
+      GROUP BY a[x][y], a[x+1][y], a[x][y+1], a[x-1][y], a[x][y-1]
+      HAVING f IS NOT NULL
+    );
+    SELECT SUM(res) into moreupdates
+    FROM (
+      SELECT MAX(f) - MIN(f) AS res
+      FROM fire_1 AS a
+      -- the SciQL implementation does not seem to support this GROUP BY (yet?) !?
+      GROUP BY a[x][y], a[x+1][y], a[x][y+1], a[x-1][y], a[x][y-1]
+      HAVING f IS NOT NULL
+    ) AS updates;
   END WHILE;
 
----- Eliminate any groups that have few members (<10 pixels)
-  DECLARE TABLE to_eliminate (gid INT);
-  INSERT INTO to_eliminate (
-    SELECT gid FROM fire_eliminated
-    WHERE gid > 0
-    GROUP BY gid HAVING COUNT(gid) < 10);
-
-  UPDATE fire_eliminated SET gid = NULL WHERE gid IN (SELECT * FROM to_eliminate);
+  RETURN iterations;
 END;
+
+CREATE FUNCTION clump_4connected_2()
+RETURNS INT
+BEGIN
+  DECLARE iterations INT;
+  SET iterations = 0;
+  DECLARE moreupdates INT;
+  SET moreupdates = 1;
+
+  WHILE moreupdates > 0 DO
+    SET iterations = iterations + 1;
+    INSERT INTO fire_2 (
+      SELECT [x], [y], MAX(f)
+      FROM fire_2 AS a
+      -- the SciQL implementation does not seem to support this GROUP BY (yet?) !?
+      GROUP BY a[x][y], a[x+1][y], a[x][y+1], a[x-1][y], a[x][y-1]
+      HAVING f IS NOT NULL
+    );
+    SELECT SUM(res) into moreupdates
+    FROM (
+      SELECT MAX(f) - MIN(f) AS res
+      FROM fire_2 AS a
+      -- the SciQL implementation does not seem to support this GROUP BY (yet?) !?
+      GROUP BY a[x][y], a[x+1][y], a[x][y+1], a[x-1][y], a[x][y-1]
+      HAVING f IS NOT NULL
+    ) AS updates;
+  END WHILE;
+
+  RETURN iterations;
+END;
+
+select clump_4connected_1();
+select clump_4connected_2();
+
+---- Clump adjacent pixels using 8-connected, i.e., each pixel has 8 neighbors,
+----   namely N, NE, E, SE, S, SW, W, NW.
+CREATE FUNCTION clump_8connected_1()
+RETURNS INT
+BEGIN
+  DECLARE iterations INT;
+  SET iterations = 0;
+  DECLARE moreupdates INT;
+  SET moreupdates = 1;
+
+  WHILE moreupdates > 0 DO
+    SET iterations = iterations + 1;
+    INSERT INTO fire_1 (
+      SELECT [x], [y], MAX(f)
+      FROM fire_1
+      GROUP BY fire_1[x-1:x+2][y-1:y+2]
+      HAVING f IS NOT NULL
+    );
+    SELECT SUM(res) into moreupdates
+    FROM (
+      SELECT MAX(f) - MIN(f) AS res
+      FROM fire_1
+      GROUP BY fire_1[x-1:x+2][y-1:y+2]
+      HAVING f IS NOT NULL
+    ) AS updates;
+  END WHILE;
+
+  RETURN iterations;
+END;
+
+CREATE FUNCTION clump_8connected_2()
+RETURNS INT
+BEGIN
+  DECLARE iterations INT;
+  SET iterations = 0;
+  DECLARE moreupdates INT;
+  SET moreupdates = 1;
+
+  WHILE moreupdates > 0 DO
+    SET iterations = iterations + 1;
+    INSERT INTO fire_2 (
+      SELECT [x], [y], MAX(f)
+      FROM fire_2
+      GROUP BY fire_2[x-1:x+2][y-1:y+2]
+      HAVING f IS NOT NULL
+    );
+    SELECT SUM(res) into moreupdates
+    FROM (
+      SELECT MAX(f) - MIN(f) AS res
+      FROM fire_2
+      GROUP BY fire_2[x-1:x+2][y-1:y+2]
+      HAVING f IS NOT NULL
+    ) AS updates;
+  END WHILE;
+
+  RETURN iterations;
+END;
+
+select clump_8connected_1();
+select clump_8connected_2();
+
+---- Eliminate any groups that have few members (<10 pixels)
+UPDATE fire_1 SET f = NULL WHERE f IN (
+  SELECT f
+  FROM fire_1
+  WHERE f IS NOT NULL
+  GROUP BY f
+  HAVING COUNT(f) < 10
+);
+
+UPDATE fire_2 SET f = NULL WHERE f IN (
+  SELECT f
+  FROM fire_2
+  WHERE f IS NOT NULL
+  GROUP BY f
+  HAVING COUNT(f) < 10
+);
 
 -- BSM connect nearby fires filter
 ---- Union fires which are less that 3 pixels apart (using 8-CONNECTED)
