@@ -76,6 +76,24 @@ INSERT INTO fire_2 (
 );
 
 -- BSM majority filter
+---- should be:
+INSERT INTO fire_1 (
+  SELECT [x], [y], 1
+  FROM fire_1
+  GROUP BY fire_1[x-d1:x+d2][y-d1:y+d2]
+  HAVING f IS NULL AND SUM(f) > majority
+);
+
+INSERT INTO fire_2 (
+  SELECT [x], [y], 1
+  FROM fire_2
+  GROUP BY fire_2[x-d1:x+d2][y-d1:y+d2]
+  HAVING f IS NULL AND SUM(f) > majority
+);
+
+---- however, the conjunctive HAVING clause yields wrong results;
+---- hence:
+
 INSERT INTO fire_1 (
   SELECT [x], [y], 1
   FROM [
