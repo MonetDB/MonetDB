@@ -38,7 +38,7 @@
 
 /* fuse two (shift-byte) in values into one (2*shift-byte) out value */
 /* actual implementation */
-static str
+static char *
 UF(UDFfuse_,UI,UO,_) ( UO *ret , UI one , UI two )
 {
         int shift = sizeof(UI) * 8;
@@ -56,8 +56,8 @@ UF(UDFfuse_,UI,UO,_) ( UO *ret , UI one , UI two )
 	return MAL_SUCCEED;
 }
 /* MAL wrapper */
-str
-UF(UDFfuse_,UI,UO,) ( UO *ret , UI *one , UI *two )
+char *
+UF(UDFfuse_,UI,UO,) ( UO *ret , const UI *one , const UI *two )
 {
 	/* assert calling sanity */
 	assert(ret != NULL && one != NULL && two != NULL);
@@ -72,8 +72,8 @@ UF(UDFfuse_,UI,UO,) ( UO *ret , UI *one , UI *two )
  */
 
 /* type-specific core algorithm */
-static str
-UF(UDFBATfuse_,UI,UO,)  ( BAT *bres, BAT *bone, BAT *btwo, BUN n,
+static char *
+UF(UDFBATfuse_,UI,UO,)  ( const BAT *bres, const BAT *bone, const BAT *btwo, BUN n,
                        bit *two_tail_sorted_unsigned,
                        bit *two_tail_revsorted_unsigned )
 {

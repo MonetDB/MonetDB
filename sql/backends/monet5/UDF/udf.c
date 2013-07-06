@@ -25,11 +25,11 @@
 
 /* actual implementation */
 /* all non-exported functions must be declared static */
-static str
-UDFreverse_(str *ret, str src)
+static char *
+UDFreverse_(char **ret, const char *src)
 {
 	size_t len = 0;
-	str dst = NULL;
+	char *dst = NULL;
 
 	/* assert calling sanity */
 	assert(ret != NULL);
@@ -60,8 +60,8 @@ UDFreverse_(str *ret, str src)
 }
 
 /* MAL wrapper */
-str
-UDFreverse(str *ret, str *arg)
+char *
+UDFreverse(char **ret, const char **arg)
 {
 	/* assert calling sanity */
 	assert(ret != NULL && arg != NULL);
@@ -77,8 +77,8 @@ UDFreverse(str *ret, str *arg)
  */
 
 /* actual implementation */
-static str
-UDFBATreverse_(BAT **ret, BAT *left)
+static char *
+UDFBATreverse_(BAT **ret, BAT *src)
 {
 	BATiter li;
 	BAT *bn = NULL;
@@ -88,32 +88,32 @@ UDFBATreverse_(BAT **ret, BAT *left)
 	assert(ret != NULL);
 
 	/* handle NULL pointer */
-	if (left == NULL)
+	if (src == NULL)
 		throw(MAL, "batudf.reverse", RUNTIME_OBJECT_MISSING);
 
 	/* check tail type */
-	if (left->ttype != TYPE_str) {
+	if (src->ttype != TYPE_str) {
 		throw(MAL, "batudf.reverse",
 		      "tail-type of input BAT must be TYPE_str");
 	}
 
 	/* allocate result BAT */
-	bn = BATnew(left->htype, TYPE_str, BATcount(left));
+	bn = BATnew(src->htype, TYPE_str, BATcount(src));
 	if (bn == NULL) {
 		throw(MAL, "batudf.reverse", MAL_MALLOC_FAIL);
 	}
-	BATseqbase(bn, left->hseqbase);
+	BATseqbase(bn, src->hseqbase);
 
 	/* create BAT iterator */
-	li = bat_iterator(left);
+	li = bat_iterator(src);
 
 	/* the core of the algorithm, expensive due to malloc/frees */
-	BATloop(left, p, q) {
-		str tr = NULL, err = NULL;
+	BATloop(src, p, q) {
+		char *tr = NULL, *err = NULL;
 
 		/* get original head & tail value */
 		ptr h = BUNhead(li, p);
-		str t = (str) BUNtail(li, p);
+		const char *t = (const char *) BUNtail(li, p);
 
 		/* revert tail value */
 		err = UDFreverse_(&tr, t);
@@ -140,24 +140,24 @@ UDFBATreverse_(BAT **ret, BAT *left)
 }
 
 /* MAL wrapper */
-str
-UDFBATreverse(bat *ret, bat *bid)
+char *
+UDFBATreverse(bat *ret, const bat *arg)
 {
-	BAT *res = NULL, *left = NULL;
-	str msg = NULL;
+	BAT *res = NULL, *src = NULL;
+	char *msg = NULL;
 
 	/* assert calling sanity */
-	assert(ret != NULL && bid != NULL);
+	assert(ret != NULL && arg != NULL);
 
 	/* bat-id -> BAT-descriptor */
-	if ((left = BATdescriptor(*bid)) == NULL)
+	if ((src = BATdescriptor(*arg)) == NULL)
 		throw(MAL, "batudf.reverse", RUNTIME_OBJECT_MISSING);
 
 	/* do the work */
-	msg = UDFBATreverse_ ( &res, left );
+	msg = UDFBATreverse_ ( &res, src );
 
 	/* release input BAT-descriptor */
-	BBPreleaseref(left->batCacheid);
+	BBPreleaseref(src->batCacheid);
 
 	if (msg == MAL_SUCCEED) {
 		/* register result BAT in buffer pool */
@@ -200,14 +200,14 @@ UDFBATreverse(bat *ret, bat *bid)
 /* BAT fuse */
 
 /* actual implementation */
-static str
-UDFBATfuse_(BAT **ret, BAT *bone, BAT *btwo)
+static char *
+UDFBATfuse_(BAT **ret, const BAT *bone, const BAT *btwo)
 {
 	BAT *bres = NULL;
 	bit two_tail_sorted_unsigned = FALSE;
 	bit two_tail_revsorted_unsigned = FALSE;
 	BUN n;
-	str msg = NULL;
+	char *msg = NULL;
 
 	/* assert calling sanity */
 	assert(ret != NULL);
@@ -309,11 +309,11 @@ UDFBATfuse_(BAT **ret, BAT *bone, BAT *btwo)
 }
 
 /* MAL wrapper */
-str
-UDFBATfuse(bat *ires, bat *ione, bat *itwo)
+char *
+UDFBATfuse(bat *ires, const bat *ione, const bat *itwo)
 {
 	BAT *bres = NULL, *bone = NULL, *btwo = NULL;
-	str msg = NULL;
+	char *msg = NULL;
 
 	/* assert calling sanity */
 	assert(ires != NULL && ione != NULL && itwo != NULL);
