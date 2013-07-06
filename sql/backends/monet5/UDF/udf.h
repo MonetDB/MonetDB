@@ -41,7 +41,7 @@
 /* export MAL wrapper functions */
 
 udf_export str UDFreverse(str *ret, str *src);
-udf_export str UDFBATreverse(int *ret, int *bid);
+udf_export str UDFBATreverse(bat *ret, bat *bid);
 
 /* using C macro for convenient type-expansion */
 #define UDFfuse_scalar_decl(in,out) \
