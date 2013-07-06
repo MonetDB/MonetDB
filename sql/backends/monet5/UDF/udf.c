@@ -141,7 +141,7 @@ UDFBATreverse_(BAT **ret, BAT *src)
 
 /* MAL wrapper */
 str
-UDFBATreverse(bat *ret, bat *arg)
+UDFBATreverse(bat *ret, const bat *arg)
 {
 	BAT *res = NULL, *src = NULL;
 	str msg = NULL;
@@ -201,7 +201,7 @@ UDFBATreverse(bat *ret, bat *arg)
 
 /* actual implementation */
 static str
-UDFBATfuse_(BAT **ret, BAT *bone, BAT *btwo)
+UDFBATfuse_(BAT **ret, const BAT *bone, const BAT *btwo)
 {
 	BAT *bres = NULL;
 	bit two_tail_sorted_unsigned = FALSE;
@@ -310,7 +310,7 @@ UDFBATfuse_(BAT **ret, BAT *bone, BAT *btwo)
 
 /* MAL wrapper */
 str
-UDFBATfuse(bat *ires, bat *ione, bat *itwo)
+UDFBATfuse(bat *ires, const bat *ione, const bat *itwo)
 {
 	BAT *bres = NULL, *bone = NULL, *btwo = NULL;
 	str msg = NULL;
