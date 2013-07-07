@@ -65,29 +65,6 @@ static int profileAll = 0;  /* all instructions should be profiled */
 static int delayswitch = 0; /* to wait before sending the profile info */
 static int eventcounter = 0;
 
-#define PROFevent   0
-#define PROFtime    1
-#define PROFthread  2
-#define PROFpc      3
-#define PROFfunc    4
-#define PROFticks   5
-#define PROFcpu     6
-#define PROFmemory  7
-#define PROFreads   8
-#define PROFwrites  9
-#define PROFrbytes  10
-#define PROFwbytes  11
-#define PROFstmt    12
-#define PROFaggr    13
-#define PROFprocess 14
-#define PROFuser    15
-#define PROFstart   16
-#define PROFtype    17
-#define PROFdot     18
-#define PROFflow   19
-#define PROFping   20	/* heartbeat ping messages */
-#define PROFfootprint 21
-
 static struct {
 	str name;		/* which logical counter is needed */
 	int status;		/* trace it or not */
@@ -117,6 +94,11 @@ static struct {
 	/*  21 */  { 0, 0}
 };
 
+int
+getProfileCounter(int idx){
+	return profileCounter[idx].status ==1;
+}
+
 /*
  * The counters can be set individually.
  */
@@ -124,6 +106,8 @@ str
 activateCounter(str name)
 {
 	int i;
+	char *s;
+
 	for (i = 0; profileCounter[i].name; i++)
 		if (strcmp(profileCounter[i].name, name) == 0) {
 			profileCounter[i].status = 1;
@@ -134,7 +118,69 @@ activateCounter(str name)
 		profileCounter[PROFping].status = 1;
 		return 0;
 	}
-	throw(MAL, "activateCounter", RUNTIME_OBJECT_UNDEFINED ":%s", name);
+	/* interpret the string equivalent to the tomograph command line argument */
+	for ( s= name; *s; s++)
+	switch(*s){
+	case 'a':
+		profileCounter[PROFaggr].status = 1;
+		break;
+	case 'b':
+		profileCounter[PROFrbytes].status = 1;
+		profileCounter[PROFwbytes].status = 1;
+		break;
+	case 'c':
+		profileCounter[PROFcpu].status = 1;
+		break;
+	case 'e':
+		profileCounter[PROFevent].status = 1;
+		break;
+	case 'f':
+		profileCounter[PROFfunc].status = 1;
+		break;
+	case 'i':
+		profileCounter[PROFpc].status = 1;
+		break;
+	case 'I':
+		profileCounter[PROFthread].status = 1;
+		break;
+	case 'm':
+		profileCounter[PROFmemory].status = 1;
+		break;
+	case 'p':
+		profileCounter[PROFprocess].status = 1;
+		break;
+	case 'r':
+		profileCounter[PROFreads].status = 1;
+		break;
+	case 's':
+		profileCounter[PROFstmt].status = 1;
+		break;
+	case 'S':
+		profileCounter[PROFstart].status = 1;
+		break;
+	case 't':
+		profileCounter[PROFticks].status = 1;
+		break;
+	case 'T':
+		profileCounter[PROFtime].status = 1;
+		break;
+	case 'u':
+		profileCounter[PROFuser].status = 1;
+		break;
+	case 'w':
+		profileCounter[PROFwrites].status = 1;
+		break;
+	case 'x':
+		startHeartbeat(atoi(s+1));
+		profileCounter[PROFping].status = 1;
+		break;
+	case 'y':
+		profileCounter[PROFtype].status = 1;
+		break;
+	default:
+		throw(MAL, "activateCounter", RUNTIME_OBJECT_UNDEFINED ":%s", name);
+	}
+	return MAL_SUCCEED;
 }
 
 str
@@ -161,28 +207,26 @@ deactivateCounter(str name)
  * It uses a local logbuffer[LOGLEN] and logbase, logtop, loglen
  */
 #define LOGLEN 8192
-#define lognew()  loglen = 0; logbase = logbuffer; *logbase = 0;
+#define lognew()  loglen = 0; logbase = logbuffer; *logbase = 0;\
+
 #define logadd(...) 											\
 	do {														\
 		(void) snprintf(logbase+loglen, LOGLEN -1 - loglen, __VA_ARGS__);					\
 		loglen += (int) strlen(logbase+loglen);					\
 	} while (0)
 
-static void logsent(int header, char *logbuffer)
+static void logsent(char *logbuffer)
 {
-	MT_lock_set(&mal_profileLock, "profileLock");
 	if (eventstream) {
-		if ( header)
-			mnstr_printf(eventstream,"%s\n", logbuffer);
-		else
+		MT_lock_set(&mal_profileLock, "profileLock");
+		eventcounter++;
 		if (profileCounter[PROFevent].status && eventcounter)
-			mnstr_printf(eventstream,"[ %d,\t%s ]\n", eventcounter, logbuffer);
+			mnstr_printf(eventstream,"[ %d,\t%s", eventcounter, logbuffer);
 		else
-			mnstr_printf(eventstream,"[ %s ]\n", logbuffer);
+			mnstr_printf(eventstream,"[ %s", logbuffer);
 		mnstr_flush(eventstream);
+		MT_lock_unset(&mal_profileLock, "profileLock");
 	}
-	eventcounter++;
-	MT_lock_unset(&mal_profileLock, "profileLock");
 }
 
 #define flushLog() if (eventstream) mnstr_flush(eventstream);
@@ -296,8 +340,11 @@ offlineProfilerHeader(void)
 		logadd("types,\t");
 	if (profileCounter[PROFuser].status)
 		logadd("user,\t");
-	logadd("# name");
-	logsent(1, logbuffer);
+	logadd("# name \n");
+	if (eventstream){
+		mnstr_printf(eventstream,"%s\n", logbuffer);
+		mnstr_flush(eventstream);
+	}
 }
 
 void
@@ -441,7 +488,7 @@ offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc, int start)
 		logadd(LLFMT ",\t", mb->profiler[pc].wbytes);
 
 	if (profileCounter[PROFaggr].status)
-		logadd("%d,\t" LLFMT ",\t", mb->profiler[pc].counter, mb->profiler[pc].totalticks);
+		logadd("%d,\t" LLFMT ",\t", mb->profiler[pc].calls, mb->profiler[pc].totalticks);
 
 	if (profileCounter[PROFstmt].status) {
 		/* generate actual call statement */
@@ -474,7 +521,8 @@ offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc, int start)
 	if (profileCounter[PROFuser].status) {
 		logadd(" %d", idx);
 	}
-	logsent(0, logbuffer);
+	logadd("]\n");
+	logsent(logbuffer);
 }
 /*
  * Postprocessing events
@@ -547,7 +595,7 @@ str
 closeProfilerStream(void)
 {
 	profilerHeartbeatEvent("ping");
-	if (eventstream) {
+	if (eventstream && eventstream != GDKout && eventstream != GDKerr) {
 		(void)mnstr_close(eventstream);
 		(void)mnstr_destroy(eventstream);
 	}
@@ -1439,7 +1487,8 @@ void profilerHeartbeatEvent(str msg)
 		//logadd("\"\",\t");
 	//if (profileCounter[PROFuser].status)
 		//logadd(" 0");
-	logsent(0, logbuffer);
+	logadd("]\n");
+	logsent(logbuffer);
 }
 
 static MT_Id hbthread;

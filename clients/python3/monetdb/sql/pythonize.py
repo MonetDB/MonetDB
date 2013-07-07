@@ -27,6 +27,21 @@ from monetdb.sql import types
 from monetdb.exceptions import ProgrammingError
 
 
+def _extract_timezone(data):
+    if data.find('+') != -1:
+        (dt, tz) = data.split("+")
+        (tzhour, tzmin) = [int(x) for x in tz.split(':')]
+    elif data.find('-') != -1:
+        (dt, tz) = data.split("-")
+        (tzhour, tzmin) = [int(x) for x in tz.split(':')]
+        tzhour *= -1
+        tzmin *= -1
+    else:
+        raise ProgrammingError("no + or - in %s" % data)
+
+    return dt, tzhour, tzmin
+
+
 def strip(data):
     """ returns a python string, with chopped off quotes,
     and replaced escape characters"""
@@ -47,6 +62,14 @@ def py_time(data):
     return Time(*[int(float(x)) for x in data.split(':')])
 
 
+def py_timetz(data):
+    """ returns a python Time where data contains a tz code
+    """
+    dt, tzhour, tzmin = _extract_timezone(data)
+    hour, minute, second = [int(float(x)) for x in dt.split(':')]
+    return Time(hour + tzhour, minute + tzmin, second)
+
+
 def py_date(data):
     """ Returns a python Date
     """
@@ -65,23 +88,14 @@ def py_timestamp(data):
 def py_timestamptz(data):
     """ Returns a python Timestamp where data contains a tz code
     """
-    if data.find('+') != -1:
-        (dt, tz) = data.split("+")
-        (tzhour, tzmin) = [int(x) for x in tz.split(':')]
-    elif data.find('-') != -1:
-        (dt, tz) = data.split("-")
-        (tzhour, tzmin) = [int(x) for x in tz.split(':')]
-        tzhour *= -1
-        tzmin *= -1
-    else:
-        raise ProgrammingError("no + or - in %s" % data)
-
+    dt, tzhour, tzmin = _extract_timezone(data)
     (datestr, timestr) = dt.split(" ")
     date = [int(float(x)) for x in datestr.split('-')]
     time = [int(float(x)) for x in timestr.split(':')]
     year, month, day = date
     hour, minute, second = time
     return Timestamp(year, month, day, hour + tzhour, minute + tzmin, second)
+
 
 mapping = {
     types.CHAR: strip,
@@ -101,6 +115,7 @@ mapping = {
     types.TIME: py_time,
     types.TIMESTAMP: py_timestamp,
     types.TIMESTAMPTZ: py_timestamptz,
+    types.TIMETZ: py_timetz,
     types.INTERVAL: strip,
     types.MONTH_INTERVAL: strip,
     types.SEC_INTERVAL: strip,
@@ -109,6 +124,8 @@ mapping = {
     types.MEDIUMINT: int,
     types.LONGINT: int,
     types.FLOAT: float,
+    types.URL: strip,
+    types.INET: str,
 }
 
 

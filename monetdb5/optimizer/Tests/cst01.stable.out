@@ -5,27 +5,34 @@ stdout of test 'cst01` in directory 'monetdb5/optimizer` itself:
 # 21:32:15 >  Mtimeout -timeout 60 mserver5 "--config=/ufs/mk/monet5/Linux/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5//Linux/lib/MonetDB5:/ufs/mk/monet5//Linux/lib/MonetDB5/lib:/ufs/mk/monet5//Linux/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/mk/monet5//Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/sql_logs" --set "xquery_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/xquery_logs" --set mapi_port=33397 --set xrpc_port=44306 --set monet_prompt= --trace --dbname=mTests_src_optimizer  cst01.mal < /dev/null
 # 21:32:15 >  
 
-# MonetDB Server v5.0.0_beta2_1
-# Copyright (c) 1993-2007 CWI, all rights reserved
-# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
-# dbname:mTests_src_optimizer
-# Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:32348/
+# MonetDB 5 server v11.16.0
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_optimizer', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.629 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2013 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:33947/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-26757/.s.monetdb.33947
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+function user.tst():void;
+    X2 := calc.dbl(1);
+    X14 := calc.dbl(180);
+    X15 := calc.*(X2,X14);
+    X16 := mmath.pi();
+    X17 := calc./(X15,X16);
+    io.print(X17);
+end tst;
 function user.main():void;
 # test constant expressions 
-    X16 := mmath.pi();
-    X17 := calc./(180:dbl,X16);
-    io.print(X17);
-    mdb.List();
+    mdb.List("user","tst");
 end main;
-[ 57.295779513082323 ]
-function user.main():void;              #  0 main:void := user.main() {G}
-# test constant expressions 
-    X16 := mmath.pi();                  #  2 X16:dbl := MATHpi() 
-    X17 := calc./(180:dbl,X16);         #  3 X17:dbl := CMDvarDIVsignal(_14:dbl, X16:dbl) 
-    io.print(X17);                      #  4 _9:void := IOprint_val(X17:dbl) 
-    mdb.List();                         #  5 _12:void := MDBlistDetail() 
-end main;                               #  6  
+function user.tst():void;               #  0 tst:void := user.tst() 
+    io.print(57.295779513082323:dbl);   #  1 _8:void := IOprint_val(_12:dbl) 
+end tst;                                #  2  
 
 # 21:32:15 >  
 # 21:32:15 >  Done.

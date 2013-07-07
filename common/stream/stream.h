@@ -92,9 +92,9 @@ typedef struct stream stream;
 /* some os specific initialization */
 stream_export int mnstr_init(void);
 
-/* all mnstr_readX/mnstr_writeX return 
-    0 on error 
-   !0 on success
+/* all mnstr_readX/mnstr_writeX return
+ *  0 on error
+ * !0 on success
  */
 stream_export int mnstr_readBte(stream *s, signed char *val);
 stream_export int mnstr_writeBte(stream *s, signed char val);
@@ -194,24 +194,24 @@ stream_export stream *buffer_wastream(buffer *b, const char *name);
 stream_export buffer *mnstr_get_buffer(stream *s);
 
 /* note, the size is fixed to 8K, you cannot simply change it to any
-   value */
+ * value */
 #define BLOCK (8 * 1024 - 2)
-/*
-   Block stream is a stream which sends data in blocks of a known
-   size (BLOCK size or dynamically changed using CHANGE_BLOCK_SIZE msg).
 
-   A block is written once more than BLOCK size data has been written using
-   the write commands or when the flush command is sent.
-
-   All full blocks together with a single not full block form a major
-   block. Major blocks can be used to synchronize the communication.
-   Example server sends some reply, ie a major block consisting of
-   various minor blocks. The header of the major block can contain
-   special info which the client can interpret.
-
-   Each read attempt tries to return the number of bytes. Once a lower number
-   of bytes can be read the end of the major block is found. The next
-   read will then start with a new major block.
+/* Block stream is a stream which sends data in blocks of a known size
+ * (BLOCK size or dynamically changed using CHANGE_BLOCK_SIZE msg).
+ *
+ * A block is written once more than BLOCK size data has been written
+ * using the write commands or when the flush command is sent.
+ *
+ * All full blocks together with a single not full block form a major
+ * block. Major blocks can be used to synchronize the communication.
+ * Example server sends some reply, ie a major block consisting of
+ * various minor blocks. The header of the major block can contain
+ * special info which the client can interpret.
+ *
+ * Each read attempt tries to return the number of bytes. Once a lower
+ * number of bytes can be read the end of the major block is
+ * found. The next read will then start with a new major block.
  */
 stream_export stream *wbstream(stream *s, size_t buflen);
 stream_export stream *block_stream(stream *s);

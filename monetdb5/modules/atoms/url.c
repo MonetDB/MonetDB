@@ -832,7 +832,7 @@ URLgetContent(str *retval, str *Str1)
 	str retbuf = NULL;
 	str oldbuf = NULL;
 	char *buf[8096];
-	size_t len;
+	ssize_t len;
 	size_t rlen;
 
 	if ((f = open_urlstream(*Str1)) == NULL)
@@ -847,7 +847,7 @@ URLgetContent(str *retval, str *Str1)
 	}
 
 	rlen = 0;
-	while ((len = mnstr_read(f, buf, 1, sizeof(buf))) != 0) {
+	while ((len = mnstr_read(f, buf, 1, sizeof(buf))) > 0) {
 		if (retbuf != NULL) {
 			oldbuf = retbuf;
 			retbuf = GDKrealloc(retbuf, rlen + len + 1);
@@ -864,6 +864,8 @@ URLgetContent(str *retval, str *Str1)
 		(void)memcpy(retbuf + rlen, buf, len);
 		rlen += len;
 	}
+	if (len < 0)
+		throw(MAL, "url.getContent", "read error");
 	retbuf[rlen] = '\0';
 
 	*retval = retbuf;

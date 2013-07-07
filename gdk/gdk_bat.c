@@ -2189,6 +2189,8 @@ BATseqbase(BAT *b, oid o)
 				b->halign = 0;
 		}
 		b->hseqbase = o;
+		if (b->htype == TYPE_oid && o == oid_nil)
+			b->hdense = 0;
 
 		/* adapt keyness */
 		if (BAThvoid(b)) {
@@ -2812,6 +2814,7 @@ BATassertHeadProps(BAT *b)
 	q = BUNlast(b);
 
 	assert(b->H->heap.size <= b->H->heap.maxsize);
+	assert(b->H->heap.free >= headsize(b, BUNlast(b)));
 	if (b->htype != TYPE_void) {
 		assert(b->batCount <= b->batCapacity);
 		assert(b->H->heap.size >= b->H->heap.free);

@@ -35,10 +35,13 @@ OPTallConstant(Client cntxt, MalBlkPtr mb, InstrPtr p)
 	for (i = p->retc; i < p->argc; i++)
 		if (isVarConstant(mb, getArg(p, i)) == FALSE)
 			return FALSE;
-	for (i = 0; i < p->retc; i++)
+	for (i = 0; i < p->retc; i++) {
 		if (isaBatType(getArgType(mb, p, i)))
 			return FALSE;
-	return p->argc != p->retc;
+		if ( varGetProp(mb, getArg(p,i), unsafeProp) != NULL )
+			return FALSE;
+	}
+	return TRUE;
 }
 
 static int OPTsimpleflow(MalBlkPtr mb, int pc)

@@ -261,7 +261,7 @@ CMDbatpartition2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	else
 		hval = lval+step;
 	bn =  BATslice(b, lval,hval);
-	BATseqbase(bn, lval);
+	BATseqbase(bn, lval + b->hseqbase) ;
 	if (bn== NULL){
 		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.partition",  INTERNAL_OBJ_CREATE);

@@ -324,6 +324,24 @@ GDKsave(const char *nme, const char *ext, void *buf, size_t size, storage_t mode
 		}
 	}
 	if (fd >= 0) {
+		if (!(GDKdebug & FORCEMITOMASK) &&
+#ifdef NATIVE_WIN32
+			_commit(fd) < 0
+#else
+#ifdef HAVE_FDATASYNC
+			fdatasync(fd) < 0
+#else
+#ifdef HAVE_FSYNC
+			fsync(fd) < 0
+#else
+			0
+#endif
+#endif
+#endif
+			) {
+			GDKsyserror("GDKsave: error on: name=%s, ext=%s, mode=%d\n", nme, ext ? ext : "", (int) mode);
+			err = -1;
+		}
 		err |= close(fd);
 		if (err && GDKunlink(BATDIR, nme, ext)) {
 			/* do not tolerate corrupt heap images
@@ -390,7 +408,7 @@ GDKload(const char *nme, const char *ext, size_t size, size_t maxsize, storage_t
 
 		GDKfilepath(path, BATDIR, nme, ext);
 		if (stat(path, &st) >= 0 &&
-		    (maxsize < (size_t) st.st_size ||
+		    (maxsize <= (size_t) st.st_size ||
 		     /* mmap storage is auto-extended here */
 		     GDKextend(path, maxsize) == 0)) {
 			int mod = MMAP_READ | MMAP_WRITE | MMAP_SEQUENTIAL | MMAP_SYNC;

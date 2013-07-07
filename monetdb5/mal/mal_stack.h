@@ -55,11 +55,7 @@ typedef struct MALSTK {
  * It is handy to administer the timing in the stack frame
  * for use in profiling and recylcing instructions.
  */
-#ifdef HAVE_TIMES
-    struct tms timer;   /* timing information */
-#endif
 	struct timeval clock;		/* time this stack was created */
-	lng clk;			/* micro seconds, used by ? */
 	char cmd;		/* debugger and runtime communication */
 	char status;	/* srunning 'R' uspended 'S', quiting 'Q' */
 	int pcup;		/* saved pc upon a recursive all */

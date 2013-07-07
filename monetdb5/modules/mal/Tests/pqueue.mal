@@ -1,0 +1,6 @@
+# init pqueue
+X_buffer_type:bat[:oid,:int] := bat.new(:oid,:int,1);
+X_buffer := pqueue.init(X_buffer_type,5:wrd);
+
+# enqueue something 
+pqueue.enqueue_max(X_buffer,5:oid,5:int);

@@ -326,7 +326,8 @@ RCbody(Receptor rc)
 	size_t j;
 	str e, he;
 	str line = "\0";
-	int i, k, n;
+	int i, k;
+	ssize_t n;
 	SOCKET newsockfd = rc->newsockfd;
 	stream *receptor;
 #ifdef _DEBUG_RECEPTOR_
@@ -418,10 +419,10 @@ bodyRestart:
 		  Factories/Queries that are waiting for these data are able to
 		  read it*/
 
-		if ((n = (int) mnstr_readline(receptor, buf, MYBUFSIZ)) > 0) {
+		if ((n = mnstr_readline(receptor, buf, MYBUFSIZ)) > 0) {
 			buf[n + 1] = 0;
 #ifdef _DEBUG_RECEPTOR_
-			mnstr_printf(RCout, "#Receptor buf [%d]:%s \n", n, buf);
+			mnstr_printf(RCout, "#Receptor buf [" SSZFMT "]:%s \n", n, buf);
 			m = 0;
 #endif
 			/* use trivial concurrency measure */
@@ -446,10 +447,10 @@ bodyRestart:
 
 			/* this code should be optimized for block-based reads */
 			while (cnt < counter) {
-				if ((n = (int) mnstr_readline(receptor, buf, MYBUFSIZ)) > 0) {
+				if ((n = mnstr_readline(receptor, buf, MYBUFSIZ)) > 0) {
 					buf[n + 1] = 0;
 #ifdef _DEBUG_RECEPTOR_
-					mnstr_printf(RCout, "#Receptor buf [%d]:%s \n", n, buf);
+					mnstr_printf(RCout, "#Receptor buf [" SSZFMT "]:%s \n", n, buf);
 #endif
 parse:
 					do {

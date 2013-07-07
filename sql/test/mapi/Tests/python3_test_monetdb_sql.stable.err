@@ -86,6 +86,7 @@ test_DATE (__main__.Test_Capabilities) ... ok
 test_DATETIME (__main__.Test_Capabilities) ... ok
 test_DECIMAL (__main__.Test_Capabilities) ... ok
 test_DOUBLE (__main__.Test_Capabilities) ... ok
+test_INET (__main__.Test_Capabilities) ... ok
 test_INT (__main__.Test_Capabilities) ... ok
 test_REAL (__main__.Test_Capabilities) ... ok
 test_TEXT (__main__.Test_Capabilities) ... ok
@@ -93,6 +94,7 @@ test_TIME (__main__.Test_Capabilities) ... ok
 test_TIMESTAMP (__main__.Test_Capabilities) ... ok
 test_TIMESTAMPTZ (__main__.Test_Capabilities) ... ok
 test_TINYINT (__main__.Test_Capabilities) ... ok
+test_URL (__main__.Test_Capabilities) ... ok
 test_bigresult (__main__.Test_Capabilities) ... ok
 test_closecur (__main__.Test_Capabilities) ... ok
 test_customtype (__main__.Test_Capabilities) ... ok
@@ -104,7 +106,7 @@ test_transactions (__main__.Test_Capabilities) ... ok
 test_truncation (__main__.Test_Capabilities) ... ok
 
 ----------------------------------------------------------------------
-Ran 23 tests
+Ran 25 tests
 
 OK
 test_BINARY (__main__.Test_DBAPI20) ... ok

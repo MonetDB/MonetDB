@@ -1221,18 +1221,22 @@ RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in)
 	}
 
 	if (bb.headsize > 0) {
-		HEAPextend(&b->H->heap, bb.headsize); /* cheap if already done */
-		mnstr_read(in, b->H->heap.base, bb.headsize, 1);
+		/* HEAPextend is cheap if already done */
+		if (HEAPextend(&b->H->heap, bb.headsize) < 0 ||
+			mnstr_read(in, b->H->heap.base, bb.headsize, 1) < 0)
+			goto bailout;
 		b->H->heap.dirty = TRUE;
 	}
 	if (bb.tailsize > 0) {
-		HEAPextend(&b->T->heap, bb.tailsize);
-		mnstr_read(in, b->T->heap.base, bb.tailsize, 1);
+		if (HEAPextend(&b->T->heap, bb.tailsize) < 0 ||
+			mnstr_read(in, b->T->heap.base, bb.tailsize, 1) < 0)
+			goto bailout;
 		b->T->heap.dirty = TRUE;
 	}
 	if (bb.theapsize > 0) {
-		HEAPextend(b->T->vheap, bb.theapsize);
-		mnstr_read(in, b->T->vheap->base, bb.theapsize, 1);
+		if (HEAPextend(b->T->vheap, bb.theapsize) < 0 ||
+			mnstr_read(in, b->T->vheap->base, bb.theapsize, 1) < 0)
+			goto bailout;
 		b->T->vheap->free = bb.theapsize;
 		b->T->vheap->dirty = TRUE;
 	}
@@ -1265,6 +1269,10 @@ RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in)
 
 	*ret = b;
 	return(MAL_SUCCEED);
+
+  bailout:
+	BBPreclaim(b);
+	throw(MAL, "remote.bincopyfrom", "reading failed");
 }
 
 /**

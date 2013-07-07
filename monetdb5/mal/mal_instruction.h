@@ -37,6 +37,7 @@
 #define MAL_VAR_WINDOW  32
 #define MAXVARS 32
 #define MAXLISTING 64*1024
+#define SMALLBUFSIZ 64
 
 typedef struct SYMDEF {
 	struct SYMDEF *peer;		/* where to look next */
@@ -107,10 +108,10 @@ typedef struct PERF {
 	struct tms timer;			/* timing information */
 #endif
 	struct timeval clock;		/* clock */
-	lng clk;					/* microseconds clock */
-	lng ticks;					/* micro seconds spent */
-	int counter;				/* accumulate statistics */
-	lng totalticks;
+	lng clk;					/* time when instruction started */
+	lng ticks;					/* micro seconds spent on last call */
+	lng totalticks;				/* accumulate micro seconds send on this instruction */
+	int calls;					/* number of calls seen */
 	bit trace;					/* facilitate filter-based profiling */
 	lng rbytes;					/* bytes read by an instruction */
 	lng wbytes;					/* bytes written by an instruction */
@@ -265,7 +266,7 @@ mal_export void setVarName(MalBlkPtr mb, int i, str nme);
 mal_export str getRefName(MalBlkPtr mb, int i);
 mal_export int newVariable(MalBlkPtr mb, str name, malType type);
 mal_export int cloneVariable(MalBlkPtr dst, MalBlkPtr src, int varid);
-mal_export void renameVariable(MalBlkPtr mb, int i, str name);
+mal_export void renameVariable(MalBlkPtr mb, int i, str pattern, int newid);
 mal_export void resetVarName(MalBlkPtr mb, int i);
 mal_export void copyVariable(MalBlkPtr dst, VarPtr v);
 mal_export void copyProperties(MalBlkPtr mb, int src, int dst);
