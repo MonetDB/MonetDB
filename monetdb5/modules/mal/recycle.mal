@@ -79,11 +79,11 @@ command getCachePolicy():int
 address RECYCLEgetCache;
 
 pattern reset(bid:bat):void
-address RECYCLEresetCMD
+address RECYCLEreset
 comment "Reset a recycled bat variable";
 
 pattern reset(delta:int,sname:str...):void
-address RECYCLEresetCMD
+address RECYCLEreset
 comment "Reset off all recycled variables matching the arguments:
 delta:0 only the main bat, 2 including delta bats
 sname: schema name,
@@ -102,10 +102,10 @@ command log(nm:str):void
 address RECYCLElog
 comment "Set the name of recycle log file";
 
-pattern prelude():void
-address RECYCLEprelude
+pattern prologue():void
+address RECYCLEprologueWrap
 comment "Called at the start of a recycle controlled function";
 
 pattern epilogue():void
-address RECYCLEepilogue
-comment "Called at the start of a recycle controlled function";
+address RECYCLEepilogueWrap
+comment "To be called when recycler is not needed anymore";

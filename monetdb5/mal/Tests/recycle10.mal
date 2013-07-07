@@ -1,7 +1,22 @@
 #test the basics of the recycler
 # testing reuse-cover with different selection instructions
 
-function user.bind(s:str,t:str,c:str,i:int):bat[:oid,:int];
+
+module sql;
+function sql.mvc():int;
+    return mvc:=1;
+end mvc;
+
+function sql.tid(mvc:int,s:str,t:str):bat[:oid,:oid];
+b:= bat.new(:oid,:oid);
+barrier i:= 0:oid;
+    bat.append(b,i);
+    redo i:= iterator.next(1:oid,11:oid);
+exit i;
+    return tid:= b;
+end tid;
+
+function sql.bind(m:int,s:str,t:str,c:str,i:int):bat[:oid,:int];
 	b:= bat.new(:oid,:int);
 	bat.insert(b,0@0,0);
 	bat.insert(b,1@0,1);
@@ -19,14 +34,17 @@ function user.bind(s:str,t:str,c:str,i:int):bat[:oid,:int];
 end bind;
 
 function qry(low:int, hgh:int);
-    b:= user.bind("schema","table","column",0);
+    m:= sql.mvc();
+    x:bat[:oid,:oid]  := sql.tid(m,"sys","tbl");
+    b:bat[:oid,:int]:= sql.bind(m,"sys","tbl","col",0);
+    s1:= algebra.subselect(b,x,low,hgh,true,true,false);
     s1:= algebra.select(b,low,hgh);
     v:= low + hgh;
     v1:= v/2;
     v2:= calc.int(v1);
-    s2:= algebra.select(b,v2);
-    s3:= algebra.select(b,low,v2);
-    s4:= algebra.select(b,low,hgh,false,true);
+    s2:= algebra.subselect(b,v2,true,true,false);
+    s3:= algebra.subselect(b,low,v2,true,true,false);
+    s4:= algebra.subselect(b,low,hgh,false,true,false);
     io.print(s1);
     io.print(s2);
     io.print(s3);
@@ -35,7 +53,7 @@ end qry;
 
 recycle.setAdmPolicy(1);
 recycle.setReusePolicy(1);
-optimizer.recycle("user","qry");
+optimizer.recycler("user","qry");
 
 qry(2,8);
 

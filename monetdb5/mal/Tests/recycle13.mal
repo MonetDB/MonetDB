@@ -1,43 +1,60 @@
 #test the basics of the recycler
 # testing toll-based retention
 
-function user.bind(s:str,t:str,c:str,i:int):bat[:oid,:int];
-	b:= bat.new(:oid,:int);
-	bat.insert(b,0@0,0);
-	bat.insert(b,1@0,1);
-	bat.insert(b,2@0,2);
-	bat.insert(b,3@0,3);
-	bat.insert(b,4@0,4);
-	bat.insert(b,5@0,5);
-	bat.insert(b,6@0,6);
-	bat.insert(b,7@0,7);
-	bat.insert(b,8@0,8);
-	bat.insert(b,9@0,9);
-	bat.insert(b,10@0,10);
-	bat.insert(b,11@0,11);
-	return bind:=b;
+module sql;
+function sql.mvc():int;
+    return mvc:=1;
+end mvc;
+
+function sql.tid(mvc:int,s:str,t:str):bat[:oid,:oid];
+b:= bat.new(:oid,:oid);
+barrier i:= 0:oid;
+    bat.append(b,i);
+    redo i:= iterator.next(1:oid,11:oid);
+exit i;
+    return tid:= b;
+end tid;
+
+function sql.bind(mvc:int, s:str,t:str,c:str,i:int):bat[:oid,:int];
+    b:= bat.new(:oid,:int);
+    bat.insert(b,0@0,0);
+    bat.insert(b,1@0,1);
+    bat.insert(b,2@0,2);
+    bat.insert(b,3@0,3);
+    bat.insert(b,4@0,4);
+    bat.insert(b,5@0,5);
+    bat.insert(b,6@0,6);
+    bat.insert(b,7@0,7);
+    bat.insert(b,8@0,8);
+    bat.insert(b,9@0,9);
+    bat.insert(b,10@0,10);
+    bat.insert(b,11@0,11);
+    return bind:=b;
 end bind;
 
 function qry(low:int, hgh:int);
-    b:= user.bind("schema","table","column",0);
-    s1:= algebra.select(b,low,hgh);
-    m0:= algebra.markT(s1, 0@0);
-    mr:= bat.reverse(m0);
-    j:= algebra.join(mr,s1);
+    m:= sql.mvc();
+    x:bat[:oid,:oid]  := sql.tid(m,"sys","tbl");
+    b:bat[:oid,:int]:= user.bind(m,"sys","tbl","col",0);
+    s:= algebra.subselect(b,x,low,hgh,true,true,false);
+	(j1,j2):= algebra.join(s,b);
 end qry;
-                        
+
 #inter-query commonality
 function qry1(val:int);
-    b:= user.bind("schema","table","column1",0);
-    s1:= algebra.select(b,val);
-    io.print(s1);
+    m:= sql.mvc();
+    x:bat[:oid,:oid]  := sql.tid(m,"sys","tbl");
+    b:bat[:oid,:int]:= user.bind(m,"sys","tbl","col",0);
+    s:= algebra.subselect(b,x,val,val,true,true,false);
+	j1:= algebra.join(s,b);
+    io.print(j1);
 end qry1;
 
 recycle.setAdmPolicy(3);
 recycle.setReusePolicy(1);
 recycle.setCachePolicy(1,5);
-optimizer.recycle("user","qry");
-optimizer.recycle("user","qry1");
+optimizer.recycler("user","qry");
+optimizer.recycler("user","qry1");
 
 qry1(2);
 qry1(5);

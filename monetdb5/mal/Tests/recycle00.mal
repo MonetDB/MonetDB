@@ -6,8 +6,9 @@ function qry();
 	io.print(j);
 end qry;
 
+optimizer.recycler("user","qry");
+mdb.List("user","qry");
 recycle.setAdmPolicy(1);
-optimizer.recycle("user","qry");
 io.print("start");
 qry();
 io.print("next");

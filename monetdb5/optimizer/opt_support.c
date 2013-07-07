@@ -770,6 +770,8 @@ hasSideEffects(InstrPtr p, int strict)
 	}
 	if ( getModuleId(p) == remoteRef)
 		return TRUE;
+	if ( getModuleId(p) == recycleRef)
+		return TRUE;
 	return FALSE;
 }
 /*

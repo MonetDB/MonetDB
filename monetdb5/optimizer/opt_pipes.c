@@ -151,7 +151,6 @@ struct PIPELINES {
  * development.  Do not use any of these pipelines in production
  * settings!
  */
-/* The recycler needs a patch to align with the new select implementation
 	{"recycler_pipe",
 	 "optimizer.inline();"
 	 "optimizer.remap();"
@@ -160,18 +159,23 @@ struct PIPELINES {
 	 "optimizer.evaluate();"
 	 "optimizer.emptySet();"
 	 "optimizer.aliases();"
+	 "optimizer.pushselect();"
+	 "optimizer.mitosis();"
+	 "optimizer.mergetable();"
 	 "optimizer.deadcode();"
 	 "optimizer.commonTerms();"
-	 "optimizer.groups();"
+	 //"optimizer.groups();"
 	 "optimizer.joinPath();"
+	 "optimizer.reorder();"
 	 "optimizer.deadcode();"
-	 "optimizer.recycle();"
 	 "optimizer.reduce();"
+	 "optimizer.matpack();"
+	 "optimizer.dataflow();"
+	 "optimizer.recycler();"
 	 "optimizer.querylog();"
 	 "optimizer.multiplex();"
 	 "optimizer.garbageCollector();",
-	 "experimental", NULL, NULL, 1},
-*/
+	 "stable", NULL, NULL, 1},
 /*
  * The Octopus pipeline for distributed processing (Merovingian enabled platforms only)
  */

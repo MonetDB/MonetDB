@@ -1,19 +1,34 @@
 # Test of Retain_ADAPT policy 5, 10usec time limit
 
-function user.bind(s:str,t:str,c:str,i:int):bat[:oid,:int];
+
+module sql;
+function sql.mvc():int;
+    return mvc:=1;
+end mvc;
+
+function sql.tid(mvc:int,s:str,t:str):bat[:oid,:oid];
+b:= bat.new(:oid,:oid);
+barrier i:= 0:oid;
+    bat.append(b,i);
+    redo i:= iterator.next(1:oid,1000:oid);
+exit i;
+    return tid:= b;
+end tid;
+
+function sql.bind(m:int, s:str,t:str,c:str,i:int):bat[:oid,:int];
 b:= bat.new(:oid,:int);
-barrier (go,i):= language.newRange(0:int);
-	bat.append(b,i);
-	redo (go,i):= language.nextElement(1:int,1000:int);
-exit (go,i);
+barrier i:= 0:int;
+    bat.append(b,i);
+    redo i:= iterator.next(1:int,1000:int);
+exit i;
 return bind:=b;
 end bind;
 
 function qry(low:int, hgh:int);
-	b:= user.bind("schema","table","column",0);
-	s1:= algebra.select(b,low,hgh);
-	m0:= algebra.markT(s1, 0@0);
-	mr:= bat.reverse(m0);
+    m:= sql.mvc();
+    x:bat[:oid,:oid]  := sql.tid(m,"sys","tbl");
+    b:bat[:oid,:int]:= sql.bind(m,"sys","tbl","col",0);
+    s1:= algebra.subselect(b,x,low,hgh,true,true,false);
 end qry;
 
 function user.batch(n:int);
@@ -31,7 +46,7 @@ end batch;
 recycle.setRetainPolicy(5, 2);
 recycle.setReusePolicy(1);
 recycle.setCachePolicy(1);
-optimizer.recycle("user","qry");
+optimizer.recycler("user","qry");
 
 io.print("start");
 user.batch(30);

@@ -155,8 +155,8 @@ dflowAssignConflict(InstrPtr p, int pc, int *assigned, int *eolife)
 */
 
 /* a limited set of MAL instructions may appear in the dataflow block*/
-static int
-dflowConflict(InstrPtr p) {
+int
+dataflowConflict(InstrPtr p) {
 	if ( p->token == ENDsymbol || getFunctionId(p) == multiplexRef || blockCntrl(p) || blockStart(p) || blockExit(p))	
 		return TRUE;
 	switch(p->token){
@@ -165,7 +165,7 @@ dflowConflict(InstrPtr p) {
 	case CMDcall:
 	case FACcall:
 	case FCNcall:
-		return (	hasSideEffects(p,FALSE) || isUnsafeFunction(p) );
+		return (hasSideEffects(p,FALSE) || isUnsafeFunction(p) );
 	}
 	return TRUE;
 }
@@ -240,7 +240,7 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		assert(p);
 		conflict = 0;
 
-		if ( dflowConflict(p) || (conflict = dflowAssignConflict(p,i,assigned,eolife)) )  {
+		if ( dataflowConflict(p) || (conflict = dflowAssignConflict(p,i,assigned,eolife)) )  {
 			/* close previous flow block */
 			if ( !(simple = simpleFlow(old,start,i))){
 				for( j=start ; j<i; j++){

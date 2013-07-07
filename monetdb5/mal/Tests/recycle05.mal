@@ -1,6 +1,19 @@
 # Test of LRU cache policy in limited memory (12 RU)
+module sql;
+function sql.mvc():int;
+    return mvc:=1;
+end mvc;
 
-function user.bind(s:str,t:str,c:str,i:int):bat[:oid,:int];
+function sql.tid(mvc:int,s:str,t:str):bat[:oid,:oid];
+b:= bat.new(:oid,:oid);
+barrier i:= 0:oid;
+    bat.append(b,i);
+    redo i:= iterator.next(1:oid,1000:oid);
+exit i;
+    return tid:= b;
+end tid;
+
+function sql.bind(s:str,t:str,c:str,i:int):bat[:oid,:int];
 b:= bat.new(:oid,:int);
 barrier i:= 0:int;
 	bat.append(b,i);
@@ -10,16 +23,17 @@ return bind:=b;
 end bind;
 
 function qry(low:int, hgh:int);
-	b:= user.bind("schema","table","column",0);
+    m:= sql.mvc();
+    x:bat[:oid,:oid]  := sql.tid(m,"sys","tbl");
+    b:bat[:oid,:int]:= sql.bind(m,"sys","tbl","col",0);
+    s1:= algebra.subselect(b,x,low,hgh,true,true,false);
 	s1:= algebra.select(b,low,hgh);
-	m0:= algebra.markT(s1, 0@0);
-	mr:= bat.reverse(m0);
 end qry;
 
 recycle.setAdmPolicy(1);
 recycle.setReusePolicy(1);
 recycle.setCachePolicy(1,10,12);
-optimizer.recycle("user","qry");
+optimizer.recycle.("user","qry");
 
 io.print("start");
 qry(100,120);

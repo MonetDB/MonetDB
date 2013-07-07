@@ -75,6 +75,7 @@ int
 newMalBlkStmt(MalBlkPtr mb, int maxstmts)
 {
 	InstrPtr *p;
+	static lng recycleSeq=0;
 
 	p = (InstrPtr *) GDKzalloc(sizeof(InstrPtr) * maxstmts);
 	if (p == NULL) {
@@ -86,6 +87,7 @@ newMalBlkStmt(MalBlkPtr mb, int maxstmts)
 	mb->ssize = maxstmts;
     if (mb->profiler)
         mb->profiler = (ProfPtr) GDKrealloc(mb->profiler, (mb->ssize ) * sizeof(ProfRecord));
+	mb->recid = recycleSeq++;
 	return 0;
 }
 

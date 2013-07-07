@@ -405,9 +405,9 @@ comment "Produce an indented tree visualisation";
 
 #opt_recycler.mal
 
-pattern optimizer.recycle():str
+pattern optimizer.recycler():str
 address OPTwrapper;
-pattern optimizer.recycle(mod:str, fcn:str):str
+pattern optimizer.recycler(mod:str, fcn:str):str
 address OPTwrapper
 comment "Recycler marking and code injection";
 

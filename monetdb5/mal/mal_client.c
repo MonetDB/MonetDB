@@ -241,6 +241,7 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 
 	c->actions = 0;
 	c->totaltime = 0;
+	/* create a recycler cache */
 	c->rcc = (RecPtr) GDKzalloc(sizeof(RecStat));
 	c->rcc->curQ = -1;
 	c->exception_buf_initialized = 0;
