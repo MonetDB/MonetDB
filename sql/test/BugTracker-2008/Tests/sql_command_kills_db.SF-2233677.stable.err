@@ -84,7 +84,7 @@ stderr of test 'sql_command_kills_db.SF-2233677` in directory 'sql/test/BugTrack
 
 MAPI  = (monetdb) /var/tmp/mtest-2016/.s.monetdb.32311
 QUERY = insert into t1 values ((select id from tables));
-ERROR = !cardinality violation (41>1)
+ERROR = !cardinality violation (47>1)
 
 # 16:15:09 >  
 # 16:15:09 >  Done.
