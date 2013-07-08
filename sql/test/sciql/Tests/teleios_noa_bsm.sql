@@ -47,6 +47,12 @@ SET size_y = (SELECT MAX(y) + 1 FROM rs.image1);
 
 CREATE ARRAY fire (x INT DIMENSION[size_x], y INT DIMENSION[size_y], f INT);
 
+---- These two tables SHOULD be DECLARED inside the function(s),
+---- but that does not seem to work (correctly) yet !??
+---- Hence, we create them globally, for now ...
+CREATE TABLE bridges (x INT, y INT, i INT, a INT);
+CREATE TABLE trans (i INT UNIQUE, a INT, x INT);
+
 
 -- BSM classification (landsatFirePredicate()) --
 
@@ -197,11 +203,6 @@ UPDATE fire SET f = NULL WHERE f IN (
 
 ---- Union fires which are less that 3 pixels apart (using 8-CONNECTED)
 ---- Add fire bridge between them
----- These two tables SHOULD be DECLARED inside the function,
----- but that does not seem to work (correctly) yet !??
----- Hence, we create them globally, for now ...
-CREATE TABLE bridges (x INT, y INT, i INT, a INT);
-CREATE TABLE trans (i INT UNIQUE, a INT, x INT);
 CREATE FUNCTION connect_neighbors()
 RETURNS TABLE (i1 INT, i2 INT)
 BEGIN
@@ -219,7 +220,7 @@ BEGIN
     DELETE FROM bridges;
     -- SHOULD be:
     --INSERT INTO bridges (
-    --  -- 3x3 window is to small and 5x5 is to large; hence,
+    --  -- 3x3 window is too small and 5x5 is too large; hence,
     --  -- we need to union the four possible 4x4 windows ...
     --  SELECT x, y, MIN(f) AS i, MAX(f) AS a
     --  FROM fire
@@ -254,7 +255,7 @@ BEGIN
     INSERT INTO bridges (
       SELECT *
       FROM (
-        -- 3x3 window is to small and 5x5 is to large; hence,
+        -- 3x3 window is too small and 5x5 is too large; hence,
         -- we need to union the four possible 4x4 windows ...
         SELECT x, y, MIN(f) AS i, MAX(f) AS a
         FROM fire
