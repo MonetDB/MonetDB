@@ -42,11 +42,7 @@
 #define HARDLIMIT_MEM 8 * (GIGA/RU)     /* avoid memory overflow */
 
 mal_export int admissionPolicy;
-#define ADM_NONE	0
 #define ADM_ALL 	1
-#define ADM_CAT	2
-#define ADM_INTEREST	3
-#define ADM_ADAPT	4
 
 #define NO_RECYCLING -1
 #define REC_NO_INTEREST 0
@@ -57,18 +53,11 @@ mal_export lng recycleTime;
 mal_export lng recycleSearchTime;
 mal_export lng msFindTime;
 mal_export lng msComputeTime;
-/*mal_export lng recycleVolume; */
 
 mal_export int reusePolicy;
-#define REUSE_NONE	0
 #define REUSE_COVER	1
-#define REUSE_EXACT	2
-#define REUSE_MULTI	3
 
 mal_export int rcachePolicy;
-#define RCACHE_ALL		0
-#define RCACHE_LRU		1
-#define RCACHE_BENEFIT 	2
 #define RCACHE_PROFIT 	3
 
 mal_export int recycleCacheLimit;
@@ -106,9 +95,6 @@ typedef str (*aggrFun) (ptr, int *);
 
 mal_export RecyclePool recyclePool;
 mal_export RecPtr recycleCache;
-mal_export aggrFun minAggr;
-mal_export aggrFun maxAggr;
-mal_export str recycleLog;
 
 mal_export void RECYCLEinit(void);
 mal_export int  RECYCLEentry(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc);
@@ -125,7 +111,7 @@ mal_export str RECYCLEstart(Client cntxt, MalBlkPtr mb);
 mal_export str RECYCLEstop(Client cntxt, MalBlkPtr mb);
 
 mal_export void RECYCLEdump(stream *s);
-mal_export void RECYCLEdumpQPat(stream *s);
+mal_export void RECYCLEdumpRecyclerPool(stream *s);
 mal_export void RECYCLEdumpDataTrans(stream *s);
 mal_export str  RECYCLErunningStat(Client cntxt, MalBlkPtr mb);
 #endif

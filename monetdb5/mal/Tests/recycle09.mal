@@ -43,9 +43,8 @@ barrier (go,i):= language.newRange(0:int);
 exit (go,i);
 end batch;
 
-recycle.setRetainPolicy(5, 2);
-recycle.setReusePolicy(1);
-recycle.setCachePolicy(1);
+recycle.setRetainPolicy(2);
+recycle.setCachePolicy(2,10,0.5);
 optimizer.recycler("user","qry");
 
 io.print("start");

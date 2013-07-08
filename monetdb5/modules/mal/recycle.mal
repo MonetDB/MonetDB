@@ -36,47 +36,9 @@ comment "Dump summary of recycler structures:
 2: statistics of query patterns;
 3: statistics of data transfer.";
 
-pattern dump(tp: int, nm:str):void
-address RECYCLEdumpWrap
-comment "Dump summary of recycler structures into a file:
-1: recycle table;
-2: statistics of query patterns;
-3: statistics of data transfer.";
-
-pattern setAdmPolicy(p:int...):void
-address RECYCLEsetAdmission
-comment "Set recycler admission policy:
-0- ADM_NONE: baseline, keeps stat, no admission, no reuse
-1- ADM_ALL: infinite case, admit all
-2- ADM_CAT: use query category
-3- ADM_INTEREST: use credits
-4- ADM_ADAPT: adaptive credits for globally reused templates";
-
-command getAdmPolicy():int
-address RECYCLEgetAdmission;
-
-pattern setReusePolicy(p:int...):void
-address RECYCLEsetReuse
-comment "Set recycler reuse policy";
-
-command getReusePolicy():int
-address RECYCLEgetReuse;
-
-pattern setCachePolicy(p:int...):void
-address RECYCLEsetCache
-comment "Set recycler cache policy:
-0- RCACHE_ALL: baseline, do nothing
-1- RCACHE_LRU: throw LRU by setting the limit
-2- RCACHE_CREDIT: credit-based LRU scheme
-3- RCACHE_CAT: use semantics of query patterns
-optional arguments are [ instruction-, [memory -]] limit";
-
-pattern setCachePolicy(p:int,cl:int,mem:int,alpha:flt):void
-address RECYCLEsetCache
-comment "Set recycler cache policy with alpha parameter"
-
-command getCachePolicy():int
-address RECYCLEgetCache;
+pattern setCacheProperties(cl:int,mem:int,alpha:flt):void
+address RECYCLEsetProperties
+comment "Set recycler cache policy parameters with alpha parameter"
 
 pattern reset(bid:bat):void
 address RECYCLEreset
@@ -97,10 +59,6 @@ comment "Clear the recycle cache";
 command monitor(f:int):void
 address RECYCLEmonitor
 comment "start/stop the monitoring (printing) of the recycler info (storage size used and number of statements admitted)";
-
-command log(nm:str):void
-address RECYCLElog
-comment "Set the name of recycle log file";
 
 pattern prologue():void
 address RECYCLEprologueWrap

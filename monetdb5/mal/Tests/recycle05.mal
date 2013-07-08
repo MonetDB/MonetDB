@@ -30,9 +30,7 @@ function qry(low:int, hgh:int);
 	s1:= algebra.select(b,low,hgh);
 end qry;
 
-recycle.setAdmPolicy(1);
-recycle.setReusePolicy(1);
-recycle.setCachePolicy(1,10,12);
+recycle.setCachePolicy(10,12,0.5);
 optimizer.recycle.("user","qry");
 
 io.print("start");

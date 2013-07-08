@@ -51,8 +51,6 @@ function qry(low:int, hgh:int);
     io.print(s4);
 end qry;
 
-recycle.setAdmPolicy(1);
-recycle.setReusePolicy(1);
 optimizer.recycler("user","qry");
 
 qry(1,9);

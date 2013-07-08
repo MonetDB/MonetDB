@@ -40,8 +40,6 @@ function qry(low:int, hgh:int);
 	io.print(j);
 end qry;
 
-recycle.setAdmPolicy(3,1);
-recycle.setReusePolicy(1);
 optimizer.recycler("user","qry");
 mdb.list("user","qry");
 io.print("start");

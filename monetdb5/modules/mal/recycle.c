@@ -51,19 +51,8 @@ RECYCLEdumpWrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		tp = * (int*) getArgReference(stk, pci,1);
 	else tp = 1;
 
-	if (pci->argc >2){
-		fname = * (str*) getArgReference(stk, pci,2);
-		s = open_wastream(fname);
-		if (s == NULL )
-			throw(MAL,"recycle.dumpQ", RUNTIME_FILE_NOT_FOUND" %s", fname);
-		if (mnstr_errnr(s)){
-			mnstr_close(s);
-			throw(MAL,"recycle.dumpQ", RUNTIME_FILE_NOT_FOUND" %s", fname);
-		}
-	}
-
 	switch(tp){
-		case 2:	RECYCLEdumpQPat(s);
+		case 2:	RECYCLEdumpRecyclerPool(s);
 				break;
 		case 3: RECYCLEdumpDataTrans(s);
 				break;
@@ -82,63 +71,16 @@ RECYCLEdumpWrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
  */
 
 str
-RECYCLEsetAdmission(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
-{
-	int crd;
-	(void) cntxt;
-	(void) mb;
-
-	admissionPolicy = * (int*) getArgReference(stk,p,1);
-	if( p->argc > 2 && admissionPolicy >= ADM_INTEREST ){
-		crd = * (int*) getArgReference(stk,p,2);
-		if ( crd > 0 )
-			recycleMaxInterest = crd + REC_MIN_INTEREST;
-	}
-	return MAL_SUCCEED;
-}
-
-str
-RECYCLEsetReuse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
-{
-	(void) cntxt;
-	(void) mb;
-	reusePolicy = * (int*) getArgReference(stk, p,1);
-	return MAL_SUCCEED;
-}
-
-str
 RECYCLEsetCache(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	(void) cntxt;
 	(void) mb;
-	rcachePolicy = * (int*) getArgReference(stk, p, 1);
 	if( rcachePolicy && p->argc > 2)
-		recycleCacheLimit = * (int*) getArgReference(stk, p, 2);
+		recycleCacheLimit = * (int*) getArgReference(stk, p, 1);
 	if( rcachePolicy && p->argc > 3)
-		recycleMemory= * (int*) getArgReference(stk, p, 3);
+		recycleMemory= * (int*) getArgReference(stk, p, 2);
 	if( rcachePolicy && p->argc > 4)
-		recycleAlpha = * (flt*) getArgReference(stk, p, 4);
-	return MAL_SUCCEED;
-}
-
-str
-RECYCLEgetAdmission(int *p)
-{
-	*p = admissionPolicy;
-	return MAL_SUCCEED;
-}
-
-str
-RECYCLEgetReuse(int *p)
-{
-	*p = reusePolicy;
-	return MAL_SUCCEED;
-}
-
-str
-RECYCLEgetCache(int *p)
-{
-	*p = rcachePolicy;
+		recycleAlpha = * (flt*) getArgReference(stk, p, 3);
 	return MAL_SUCCEED;
 }
 
@@ -162,50 +104,12 @@ RECYCLEmonitor(int *ret, int *p)
 	return MAL_SUCCEED;
 }
 
-str
-RECYCLElog(int *ret, str *nm)
-{
-	stream *s;
-	(void) ret;
-	recycleLog = GDKstrdup(*nm);
-	s = open_wastream(recycleLog);
-    if (s){
-
-		mnstr_printf(s,"# Q\t TimeQ(ms)\t");
-		if ( monitorRecycler & 2) { /* Current query stat */
-			mnstr_printf(s,"InstrQ\t PotRecQ NonBind ");
-			mnstr_printf(s,"RecQ\t TotRec\t ");
-			mnstr_printf(s,"|| RPadded  RPreset RPtotal ResetTime(ms) RPMem(KB)");
-		}
-
-		if ( monitorRecycler & 1) { /* RP stat */
-			mnstr_printf(s,"| TotExec\tTotCL\tMem(KB)\tReused\t ");
-#ifdef _DEBUG_CACHE_
-			mnstr_printf(s,"RPRem\tRPMiss\t ");
-#endif
-		}
-
-		if ( monitorRecycler & 4) { /* Data transfer stat */
-			mnstr_printf(s,"| Trans#\t Trans(KB)\t RecTrans#\t RecTrans(KB)\t ");
-		}
-
-		if ( reusePolicy == REUSE_MULTI )
-			mnstr_printf(s, "MSFind\t MSCompute\n");
-		else mnstr_printf(s,"\n");
-
-		close_stream(s);
-	}
-
-	return MAL_SUCCEED;
-}
 
 str
 RECYCLEstartWrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	(void) stk;
 	(void) p;
-	minAggr = ALGminany;
-	maxAggr = ALGmaxany;
 	return RECYCLEstart(cntxt,mb);
 }
 

@@ -8,7 +8,6 @@ end qry;
 
 optimizer.recycler("user","qry");
 mdb.List("user","qry");
-recycle.setAdmPolicy(1);
 io.print("start");
 qry();
 io.print("next");

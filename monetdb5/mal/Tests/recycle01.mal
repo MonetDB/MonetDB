@@ -39,8 +39,6 @@ function qry(low:int, hgh:int);
 	s:= algebra.subselect(b,x,low,hgh,true,true,false);
 end qry;
 
-recycle.setAdmPolicy(1);
-recycle.setReusePolicy(1);
 optimizer.recycler("user","qry");
 mdb.list("user","qry");
 io.print("start");
