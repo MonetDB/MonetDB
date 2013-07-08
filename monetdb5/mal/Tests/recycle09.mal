@@ -44,7 +44,7 @@ exit (go,i);
 end batch;
 
 recycle.setRetainPolicy(2);
-recycle.setCachePolicy(2,10,0.5);
+recycle.setCachePolicy(2,10);
 optimizer.recycler("user","qry");
 
 io.print("start");

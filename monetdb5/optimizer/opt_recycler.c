@@ -100,10 +100,6 @@ OPTrecyclerImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			}
 			continue;
 		}
-		if ( p->token == ASSIGNsymbol){
-			pushInstruction(mb, p);
-			continue;
-		}
 
 		/* general rule: all arguments should be constants or recycled*/
 		cnt = 0;

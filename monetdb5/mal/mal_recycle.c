@@ -90,7 +90,6 @@ int recycleMaxInterest = REC_MAX_INTEREST;
 int reusePolicy = REUSE_COVER;	
 
 /*	evict items with smallest profit= weight * cost / lifetime adds aging to the benefit policy */
-int rcachePolicy = RCACHE_PROFIT;  
 
 int recycleCacheLimit=0; /* No limit by default */
 lng recycleMemory=0;	/* Units of memory permitted */
@@ -120,8 +119,6 @@ int monitorRecycler = 0;
  * The cost function is a weighted balance between cpu and
  * storage cost. Often there is a direct relationship,
  */
-double recycleAlpha = 0.5;
-str recycleLog= NULL;
 
 #define recycleCost(X) (recycleBlk->profiler[X].wbytes)
 #define recycleW(X)  ((recycleBlk->profiler[X].trace && (recycleBlk->profiler[X].calls >1 )) ? \
@@ -522,8 +519,8 @@ newpass:
 
 
 #ifdef _DEBUG_CACHE_
-        mnstr_printf(cntxt->fdout,"\n#RECYCLEcleanCache: policy=%d mem="LLFMT" usedmem="LLFMT"\n",
-                rcachePolicy,recycleMemory,recyclerMemoryUsed);
+        mnstr_printf(cntxt->fdout,"\n#RECYCLEcleanCache: policy=PROFIT mem="LLFMT" usedmem="LLFMT"\n",
+                recycleMemory,recyclerMemoryUsed);
 		mnstr_printf(cntxt->fdout,"#Target memory "LLFMT"KB Available "LLFMT"KB\n", wr,memLimit-recyclerMemoryUsed);
         mnstr_printf(cntxt->fdout,"#Candidates for eviction\n#(# LRU\t\tTicks\tLife\tSZ\tCnt\tWgt\tBen\tProf)\n");
 		for (l = 0; l < ltop; l++)
@@ -542,38 +539,28 @@ newpass:
 	vtop = 0;
 
 	if (!mem){	 /* evict 1 entry */
-		switch(rcachePolicy){
-			case RCACHE_PROFIT:
-				minben = recycleProfit(lvs[0]);
-				idx = 0;
-				for (l = 1; l < ltop; l++){
-					ben = recycleProfit(lvs[l]);
-					if( ben < minben) {
-						minben = ben;
-						idx = l;
-					}
-				}
-				vm[vtop++] = lvs[idx];
+		minben = recycleProfit(lvs[0]);
+		idx = 0;
+		for (l = 1; l < ltop; l++){
+			ben = recycleProfit(lvs[l]);
+			if( ben < minben) {
+				minben = ben;
+				idx = l;
+			}
 		}
-	}		/* evict 1 entry */
-
-	else {	/* evict several to get enough memory */
-		switch(rcachePolicy){
-
-			case RCACHE_PROFIT:
-				k = 0;	/* exclude binds that don't free memory */
-				for (l = 0; l < ltop; l++)
-					if ( recycleBlk->profiler[lvs[l]].wbytes > 0 )
-						lvs[k++] = lvs[l];
+		vm[vtop++] = lvs[idx];
+	} else {	/* evict several to get enough memory */
+		k = 0;	/* exclude binds that don't free memory */
+		for (l = 0; l < ltop; l++)
+			if ( recycleBlk->profiler[lvs[l]].wbytes > 0 )
+				lvs[k++] = lvs[l];
 /*				mnstr_printf(cntxt->fdout,"ltop %d k %d\n",ltop, k); */
-				if ( k > 0 )
-					ltop = k;
-				vtop = chooseVictims(cntxt,lvs, ltop, recyclerMemoryUsed + wr - memLimit);
-				for (v = 0; v < vtop; v++){
-					vm[v] = lvs[v];
-					wr -= recycleBlk->profiler[lvs[v]].wbytes;
-				}
-				break;
+		if ( k > 0 )
+			ltop = k;
+		vtop = chooseVictims(cntxt,lvs, ltop, recyclerMemoryUsed + wr - memLimit);
+		for (v = 0; v < vtop; v++){
+			vm[v] = lvs[v];
+			wr -= recycleBlk->profiler[lvs[v]].wbytes;
 		}
 	}
 
@@ -1872,9 +1859,8 @@ RECYCLEdump(stream *s)
     if (!recycleBlk) return;
 
     mnstr_printf(s,"#Recycler  catalog\n");
-    mnstr_printf(s,"#admission ADM_ALL time ="LLFMT" alpha= %4.3f\n", recycleTime, recycleAlpha);
-    mnstr_printf(s,"#reuse= %d\n", reusePolicy);
-    mnstr_printf(s,"#rcache= %d limit= %d memlimit="LLFMT"\n", rcachePolicy, recycleCacheLimit, recycleMemory);
+    mnstr_printf(s,"#admission ADM_ALL time ="LLFMT"\n", recycleTime);
+    mnstr_printf(s,"#rcache= PROFIT limit= %d memlimit="LLFMT"\n", recycleCacheLimit, recycleMemory);
     mnstr_printf(s,"#hard stmt = %d hard var = %d hard mem="LLFMT"\n",
                  HARDLIMIT_STMT, HARDLIMIT_VAR, HARDLIMIT_MEM);
 
@@ -1976,21 +1962,9 @@ str
 RECYCLErunningStat(Client cntxt, MalBlkPtr mb)
 {
     static int q=0;
-    stream *s;
     InstrPtr p;
     int potrec=0, nonbind=0, i, trans=0;
     lng reusedmem=0;
-
-    if (recycleLog == NULL)
-        s = cntxt->fdout;
-    else {
-        s = append_wastream(recycleLog);
-        if (s == NULL || mnstr_errnr(s)) {
-            if (s)
-                mnstr_destroy(s);
-            throw(MAL,"recycle", RUNTIME_FILE_NOT_FOUND ":%s", recycleLog);
-        }
-    }
 
     for(i=0; i< mb->stop; i++){
         p = mb->stmt[i];
@@ -2008,30 +1982,27 @@ RECYCLErunningStat(Client cntxt, MalBlkPtr mb)
         if ( recycleBlk->profiler[i].calls >1)
             reusedmem += recycleBlk->profiler[i].wbytes;
 
-    mnstr_printf(s,"%d\t %7.2f\t ", ++q, (GDKusec()-cntxt->rcc->time0)/1000.0);
+    mnstr_printf(cntxt->fdout,"%d\t %7.2f\t ", ++q, (GDKusec()-cntxt->rcc->time0)/1000.0);
     if ( monitorRecycler & 2) { /* Current query stat */
-        mnstr_printf(s,"%3d\t %3d\t %3d\t ", mb->stop, potrec, nonbind);
-        mnstr_printf(s,"%3d\t %3d\t ", cntxt->rcc->recycled0, cntxt->rcc->recycled);
-        mnstr_printf(s,"|| %3d\t %3d\t ", cntxt->rcc->RPadded0, cntxt->rcc->RPreset0);
-        mnstr_printf(s,"%3d\t%5.2f\t"LLFMT"\t"LLFMT"\t", recycleBlk?recycleBlk->stop:0, recycleTime/1000.0,recyclerMemoryUsed,reusedmem);
+        mnstr_printf(cntxt->fdout,"%3d\t %3d\t %3d\t ", mb->stop, potrec, nonbind);
+        mnstr_printf(cntxt->fdout,"%3d\t %3d\t ", cntxt->rcc->recycled0, cntxt->rcc->recycled);
+        mnstr_printf(cntxt->fdout,"|| %3d\t %3d\t ", cntxt->rcc->RPadded0, cntxt->rcc->RPreset0);
+        mnstr_printf(cntxt->fdout,"%3d\t%5.2f\t"LLFMT"\t"LLFMT"\t", recycleBlk?recycleBlk->stop:0, recycleTime/1000.0,recyclerMemoryUsed,reusedmem);
     }
 
     if ( monitorRecycler & 1) { /* RecyclerPool stat */
-        mnstr_printf(s,"| %4d\t %4d\t ",cntxt->rcc->statements,recycleBlk?recycleBlk->stop:0);
-        mnstr_printf(s, LLFMT "\t" LLFMT "\t ", recyclerMemoryUsed, reusedmem);
+        mnstr_printf(cntxt->fdout,"| %4d\t %4d\t ",cntxt->rcc->statements,recycleBlk?recycleBlk->stop:0);
+        mnstr_printf(cntxt->fdout, LLFMT "\t" LLFMT "\t ", recyclerMemoryUsed, reusedmem);
 #ifdef _DEBUG_CACHE_
-        mnstr_printf(s,"%d\t %d\t ",cntxt->rcc->recycleRem,cntxt->rcc->recycleMiss);
+        mnstr_printf(cntxt->fdout,"%d\t %d\t ",cntxt->rcc->recycleRem,cntxt->rcc->recycleMiss);
 #endif
     }
 
     if ( monitorRecycler & 4) { /* Data transfer stat */
-        mnstr_printf(s,"| %2d\t "LLFMT"\t ",cntxt->rcc->trans, cntxt->rcc->transKB);
-        mnstr_printf(s,"%2d\t "LLFMT"\t ",cntxt->rcc->recTrans, cntxt->rcc->recTransKB);
+        mnstr_printf(cntxt->fdout,"| %2d\t "LLFMT"\t ",cntxt->rcc->trans, cntxt->rcc->transKB);
+        mnstr_printf(cntxt->fdout,"%2d\t "LLFMT"\t ",cntxt->rcc->recTrans, cntxt->rcc->recTransKB);
     }
 
-    mnstr_printf(s,"\n");
-
-    if( s != cntxt->fdout )
-        close_stream(s);
+    mnstr_printf(cntxt->fdout,"\n");
     return MAL_SUCCEED;
 }

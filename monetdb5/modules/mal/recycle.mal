@@ -36,9 +36,9 @@ comment "Dump summary of recycler structures:
 2: statistics of query patterns;
 3: statistics of data transfer.";
 
-pattern setCacheProperties(cl:int,mem:int,alpha:flt):void
+pattern setCacheProperties(clines:int,memory:int):void
 address RECYCLEsetProperties
-comment "Set recycler cache policy parameters with alpha parameter"
+comment "Set recycler cache policy parameters";
 
 pattern reset(bid:bat):void
 address RECYCLEreset

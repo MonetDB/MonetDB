@@ -29,7 +29,7 @@ function qry(low:int, hgh:int);
     s1:= algebra.subselect(b,x,low,hgh,true,true,false);
 end qry;
 
-recycle.setCachePolicy(9,10,0.5);
+recycle.setCachePolicy(9,10);
 optimizer.recycler("user","qry");
 
 io.print("start");
