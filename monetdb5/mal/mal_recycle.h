@@ -90,11 +90,7 @@ typedef struct QRYPATTERN {
 	QryStatPtr *ptrn; /* patterns */
 } *RecyclePool, RecyclePoolRec;
 
-
 typedef str (*aggrFun) (ptr, int *);
-
-mal_export RecyclePool recyclePool;
-mal_export RecPtr recycleCache;
 
 mal_export void RECYCLEinit(void);
 mal_export int  RECYCLEentry(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc);
@@ -104,7 +100,6 @@ mal_export void RECYCLEshutdown(Client cntxt);
 mal_export int  RECYCLEinterest(InstrPtr p);
 mal_export int  RECYCLEnewQryStat(MalBlkPtr mb);
 mal_export void RECYCLEinitRecyclePool(int sz);
-mal_export bte  RECYCLEgetQryCat(int qidx);
 mal_export bit  isBindInstr(InstrPtr p);
 
 mal_export str RECYCLEstart(Client cntxt, MalBlkPtr mb);

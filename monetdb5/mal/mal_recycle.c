@@ -76,19 +76,6 @@ MalBlkPtr recycleBlk = NULL;
 #define getbit(x,i) ( x & ((lng)1 << i) )
 #define neg(x) ( (x)?FALSE:TRUE)
 
-typedef struct {
-	ValRecord low, hgh; 	/* range */
-	bit li, hi;	 /* inclusive? */
-} range, *rngPtr;
-
-typedef struct {
-	int bid;
-	range rng;		/* range */
-	size_t cnt;
-	size_t ovhd;         /* estimated overhead */
-	lng comp;            /* bit vector for participating components */
-} piece;
-
 static void RECYCLEexitImpl(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc, lng ticks);
 
 /* ADM_ALL: infinite case, admission of all instructions subject to cache limits*/
@@ -113,7 +100,7 @@ lng recycleMemory=0;	/* Units of memory permitted */
  */
 lng recyclerMemoryUsed = 0;
 int monitorRecycler = 0;
-	/*	 1: print statistics for RP only
+	/*	 1: print statistics for RecyclerPool only
 		 2: print stat at the end of each query
 		 4: print data transfer stat for octopus */
 
@@ -878,7 +865,7 @@ RECYCLEkeep(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p, int pc, lng rd,
 		VALcopy(&cst,v);
 		c = fndConstant(recycleBlk, &cst, recycleBlk->vtop);
 #ifdef _DEBUG_RECYCLE_
-		printf("CONSTANT %s %d\n", getVarName(mb,j), c);
+		printf("#CONSTANT %s %d\n", getVarName(mb,j), c);
 #endif
 		if (c<0)
 			c = defConstant(recycleBlk, v->vtype, &cst);
@@ -985,7 +972,7 @@ RECYCLEfind(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 
 
 #define boundcheck(flag,a) ((flag)?a<=0:a<0)
-/* check if instruction p at the stack is a subset selection of the RP instruction q */
+/* check if instruction p at the stack is a subset selection of the RecyclerPool instruction q */
 
 static bit
 selectSubsume(InstrPtr p, InstrPtr q, MalStkPtr s)
@@ -1495,7 +1482,7 @@ RECYCLEentry(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 	cntxt->rcc->statements++;
 	if ( recycleBlk == NULL )
 		return 0;
-	if ( !RECYCLEinterest(p) )  /* don't scan RP for non-monitored instructions */
+	if ( !RECYCLEinterest(p) )  /* don't scan RecyclerPool for non-monitored instructions */
 		return 0;
 	if ( cntxt->rcc->curQ < 0 )	/* don't use recycling before initialization
 				by prelude() */
@@ -1880,12 +1867,12 @@ RECYCLEdump(stream *s)
     ValPtr v;
     Client c;
     lng statements=0, recycled=0, recycleMiss=0, recycleRem=0;
-    lng ccCalls=0, ccInstr=0, crdInstr=0;
+    lng ccCalls=0, ccInstr=0;
 
     if (!recycleBlk) return;
 
     mnstr_printf(s,"#Recycler  catalog\n");
-    mnstr_printf(s,"#admission= ADM_ALL time ="LLFMT" alpha= %4.3f\n", recycleTime, recycleAlpha);
+    mnstr_printf(s,"#admission ADM_ALL time ="LLFMT" alpha= %4.3f\n", recycleTime, recycleAlpha);
     mnstr_printf(s,"#reuse= %d\n", reusePolicy);
     mnstr_printf(s,"#rcache= %d limit= %d memlimit="LLFMT"\n", rcachePolicy, recycleCacheLimit, recycleMemory);
     mnstr_printf(s,"#hard stmt = %d hard var = %d hard mem="LLFMT"\n",
@@ -1914,7 +1901,6 @@ RECYCLEdump(stream *s)
             recycleRem += c->rcc->recycleRem;
             ccCalls += c->rcc->ccCalls;
             ccInstr += c->rcc->ccInstr;
-            crdInstr += c->rcc->crdInstr;
         };
 
     incache = recycleBlk->stop;
@@ -1924,7 +1910,7 @@ RECYCLEdump(stream *s)
     mnstr_printf(s,"#RPremoved = "LLFMT" RPactive= "LLFMT" RPmisses = "LLFMT"\n",
                  recycleRem, incache-recycleRem, recycleMiss);
 #endif
-    mnstr_printf(s,"#Cache search time= "LLFMT"(usec) cleanCache: "LLFMT" calls evicted "LLFMT" instructions \t Discarded by CRD "LLFMT"\n",recycleSearchTime, ccCalls,ccInstr, crdInstr);
+    mnstr_printf(s,"#Cache search time= "LLFMT"(usec) cleanCache: "LLFMT" calls evicted "LLFMT" instructions\n",recycleSearchTime, ccCalls,ccInstr);
 
     /* and dump the statistics per instruction*/
         mnstr_printf(s,"# CL\t   lru\t\tcnt\t ticks\t rd\t wr\t Instr\n");
@@ -1979,7 +1965,7 @@ RECYCLEdumpDataTrans(stream *s)
     for( i=0; i < n; i++){
         rdt = recyclePool->ptrn[i]->dtreuse;
         dt = recyclePool->ptrn[i]->dt;
-        mnstr_printf(s,"# %d \t\t "LLFMT"\t\t"LLFMT"\n", i, dt, rdt);
+        mnstr_printf(s," %d \t\t "LLFMT"\t\t"LLFMT"\n", i, dt, rdt);
         sum += dt;
         rsum += rdt;
     }
@@ -2030,7 +2016,7 @@ RECYCLErunningStat(Client cntxt, MalBlkPtr mb)
         mnstr_printf(s,"%3d\t%5.2f\t"LLFMT"\t"LLFMT"\t", recycleBlk?recycleBlk->stop:0, recycleTime/1000.0,recyclerMemoryUsed,reusedmem);
     }
 
-    if ( monitorRecycler & 1) { /* RP stat */
+    if ( monitorRecycler & 1) { /* RecyclerPool stat */
         mnstr_printf(s,"| %4d\t %4d\t ",cntxt->rcc->statements,recycleBlk?recycleBlk->stop:0);
         mnstr_printf(s, LLFMT "\t" LLFMT "\t ", recyclerMemoryUsed, reusedmem);
 #ifdef _DEBUG_CACHE_

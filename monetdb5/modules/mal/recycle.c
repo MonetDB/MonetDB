@@ -41,27 +41,20 @@
 str
 RECYCLEdumpWrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	stream *s = cntxt->fdout;
-	str fname;
 	int tp;
 
 	(void) mb;
-
 	if (pci->argc >1)
 		tp = * (int*) getArgReference(stk, pci,1);
 	else tp = 1;
 
 	switch(tp){
-		case 2:	RECYCLEdumpRecyclerPool(s);
+		case 2:	RECYCLEdumpRecyclerPool(cntxt->fdout);
 				break;
-		case 3: RECYCLEdumpDataTrans(s);
+		case 3: RECYCLEdumpDataTrans(cntxt->fdout);
 				break;
-		case 1:
-		default:RECYCLEdump(s);
+		default:RECYCLEdump(cntxt->fdout);
 	}
-
-	if( s != cntxt->fdout)
-		close_stream(s);
 	return MAL_SUCCEED;
 }
 
@@ -75,11 +68,11 @@ RECYCLEsetCache(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	(void) cntxt;
 	(void) mb;
-	if( rcachePolicy && p->argc > 2)
+	if( rcachePolicy && p->argc > 1)
 		recycleCacheLimit = * (int*) getArgReference(stk, p, 1);
-	if( rcachePolicy && p->argc > 3)
+	if( rcachePolicy && p->argc > 2)
 		recycleMemory= * (int*) getArgReference(stk, p, 2);
-	if( rcachePolicy && p->argc > 4)
+	if( rcachePolicy && p->argc > 3)
 		recycleAlpha = * (flt*) getArgReference(stk, p, 3);
 	return MAL_SUCCEED;
 }
