@@ -39,10 +39,11 @@
 
 #define HARDLIMIT_VAR 100000		/* maximum variables to watch */
 #define HARDLIMIT_STMT 20000		/* roughly 5/line needed */
-#define HARDLIMIT_MEM 8 * (GIGA/RU)     /* avoid memory overflow */
 
-mal_export int admissionPolicy;
+// retained recycle policies
 #define ADM_ALL 	1
+#define REUSE_COVER	1
+#define RCACHE_PROFIT 	3
 
 #define NO_RECYCLING -1
 #define REC_NO_INTEREST 0
@@ -54,14 +55,8 @@ mal_export lng recycleSearchTime;
 mal_export lng msFindTime;
 mal_export lng msComputeTime;
 
-mal_export int reusePolicy;
-#define REUSE_COVER	1
-
-mal_export int rcachePolicy;
-#define RCACHE_PROFIT 	3
 
 mal_export int recycleCacheLimit;
-mal_export lng recycleMemory;	/* Units of memory permitted */
 mal_export lng recyclerUsedMemory;
 mal_export MalBlkPtr recycleBlk;
 mal_export double recycleAlpha;
@@ -93,7 +88,7 @@ typedef struct QRYPATTERN {
 typedef str (*aggrFun) (ptr, int *);
 
 mal_export void RECYCLEinit(void);
-mal_export int  RECYCLEentry(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc);
+mal_export lng  RECYCLEentry(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc);
 mal_export void RECYCLEexit(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc, lng ticks);
 mal_export str  RECYCLEreset(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc);
 mal_export void RECYCLEshutdown(Client cntxt);

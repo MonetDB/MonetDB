@@ -68,7 +68,6 @@ RECYCLEsetCache(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	(void) cntxt;
 	(void) mb;
 	recycleCacheLimit = * (int*) getArgReference(stk, p, 1);
-	recycleMemory= * (int*) getArgReference(stk, p, 2);
 	return MAL_SUCCEED;
 }
 

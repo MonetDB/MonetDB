@@ -68,7 +68,7 @@ static lng estimateSavings(MalBlkPtr mb, sht bidtype)
 	if (bindidxRef == 0)
 		bindidxRef = putName("bind_idxbat",11);
 
-	if( recycleBlk == 0 || reusePolicy == 0)
+	if( recycleBlk == 0 )
 		return 0;
 
 	/* Create a phony exec. stack */

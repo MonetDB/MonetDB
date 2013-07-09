@@ -547,9 +547,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 		}
 
 		runtimeProfileBegin(cntxt, mb, stk, stkpc, &runtimeProfile, 1);
-		if (pci->recycle > 0)
-			clk = GDKms();
-		if (!RECYCLEentry(cntxt, mb, stk, pci, stkpc)){
+		if ( (clk =RECYCLEentry(cntxt, mb, stk, pci, stkpc)) ){
 			/* The interpreter loop
 			 * The interpreter is geared towards execution a MAL
 			 * procedure together with all its decendant
@@ -769,7 +767,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 
 				/* If needed recycle intermediate result */
 				if (pci->recycle > 0) {
-					RECYCLEexit(cntxt, mb, stk, pci, stkpc, clk);
+					RECYCLEexit(cntxt, mb, stk, pci, stkpc, GDKms()- clk);
 				}
 
 				/* general garbage collection */

@@ -43,18 +43,14 @@ typedef struct RECSTAT {
 	int recycled0;    /* recycled statements per query */
 	lng time0;        /* time per query */
 	int curQ;         /* index of current query in Qry Patterns array*/
-	int recent;       /* the most recent entry in RP touched by current query */
+	int recent;       /* the most recent entry in Recycler Pool touched by current query */
 	int recycleMiss;  /* DBG:count of misses due to cache eviction */
 	int recycleRem;   /* DBG:count of removed entries */
 	lng ccCalls;      /* Number of calls to cleanCache */
 	lng ccInstr;      /* Number of instructions evicted by eviction policy*/
 	lng crdInstr;     /* Number of instructions not admited in RP by CRD */
-	int trans;        /* Number of data transfer instructions */
-	lng transKB;      /* Size in KB of transferred data */
-	int recTrans;     /* Number of recycled data transfer instructions */
-	lng recTransKB;   /* Size in KB of recycled transferred data */
-	int RPadded0;     /* Number of instructions added to RP per query */
-	int RPreset0;     /* Number of instructions evicted from RP by reset() due to updates*/
+	int RPadded0;     /* Number of instructions added to Recycler Pool per query */
+	int RPreset0;     /* Number of instructions evicted from Recycler Pool by reset() due to updates*/
 } *RecPtr, RecStat;
 
 #define PROFevent   0

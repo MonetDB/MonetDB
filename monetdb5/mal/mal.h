@@ -68,6 +68,7 @@ mal_export char		*mal_trace;		/* enable profile events on console */
 #define GRPperformance (JOINPROPMASK | DEADBEEFMASK)
 #define GRPoptimizers  (OPTMASK)
 #define GRPforcemito (FORCEMITOMASK)
+#define GRPrecycler (1<<30)
 /*
  * @-
  * @node Execution Engine, Session Scenarios, MAL Synopsis , Design  Overview

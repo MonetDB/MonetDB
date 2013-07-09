@@ -113,7 +113,7 @@ OPTrecyclerImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		if (cnt == p->argc - p->retc && cand == p->retc) {
 			//OPTDEBUGrecycle {
 				mnstr_printf(cntxt->fdout, "#recycle instruction: ");
-				printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_ALL);
+				printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_DEBUG);
 			//}
 			marks++;
 			p->recycle = recycleMaxInterest; /* this instruction is to be monitored */
