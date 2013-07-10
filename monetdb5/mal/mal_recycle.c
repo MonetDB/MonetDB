@@ -1221,7 +1221,7 @@ RECYCLEdataTransfer(Client cntxt, MalStkPtr s, InstrPtr p)
 static int
 RECYCLEreuse(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p, int pci)
 {
-    int i, j, ridx, idx, evicted=0, pc=0;
+    int i, j, ridx, idx, evicted=0, pc= -1;
 	//int qidx;
     bat bid= -1, nbid= -1;
     InstrPtr q;
@@ -1380,7 +1380,7 @@ RECYCLEreuse(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p, int pci)
 #endif
 
     MT_lock_unset(&recycleLock, "recycle");
-	if ( pc == 0 ) 		/* successful multi-subsumption */
+	if ( pc >= 0 ) 		/* successful multi-subsumption */
 		RECYCLEexit(cntxt,mb,s,p, pci,ticks);
     return pc;
 }
@@ -1402,7 +1402,7 @@ RECYCLEentry(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 		return 0;
 	i = RECYCLEreuse(cntxt,mb,stk,p,pc) >= 0;
 #ifdef _DEBUG_RECYCLE_
-	if ( i > 0) {
+	if ( i ){
 		mnstr_printf(cntxt->fdout,"#REUSE   [%3d]   ",i);
 		printInstruction(cntxt->fdout,mb,0,p, LIST_MAL_STMT);
 	}
