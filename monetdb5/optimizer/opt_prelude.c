@@ -109,6 +109,7 @@ str ioRef;
 str iteratorRef;
 str joinRef;
 str joinPathRef;
+str jsonRef;
 str bandjoinRef;
 str thetajoinRef;
 str thetauselectRef;
@@ -375,6 +376,7 @@ void optimizerInit(void){
 		thetajoinRef = putName("thetajoin",9);
 		thetauselectRef = putName("thetauselect",12);
 		thetaselectRef = putName("thetaselect",11);
+		jsonRef = putName("json",4);
 		kdifferenceRef= putName("kdifference",11);
 		kunionRef= putName("kunion",6);
 		kuniqueRef= putName("kunique",7);
