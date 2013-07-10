@@ -646,7 +646,7 @@ newpass:
  */
 int
 RECYCLEinterest(InstrPtr p){
-	if (p->recycle <= REC_NO_INTEREST || p->token== ASSIGNsymbol )
+	if (p->recycle <= REC_NO_INTEREST )
 		return 0;
 	return getFunctionId(p) != NULL;
 }
@@ -1392,14 +1392,14 @@ RECYCLEentry(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 
 	cntxt->rcc->statements++;
 	if ( p->recycle == NO_RECYCLING )
-		return 1;       /* don't count subsumption instructions */
+		return 0;       /* don't count subsumption instructions */
 	if ( recycleBlk == NULL )
-		return 1;
+		return 0;
 	if ( !RECYCLEinterest(p) )  /* don't scan RecyclerPool for non-monitored instructions */
-		return 1;
+		return 0;
 	if ( cntxt->rcc->curQ < 0 )	/* don't use recycling before initialization
 				by prelude() */
-		return 1;
+		return 0;
 	i = RECYCLEreuse(cntxt,mb,stk,p,pc) >= 0;
 #ifdef _DEBUG_RECYCLE_
 	if ( i > 0) {
@@ -1407,7 +1407,7 @@ RECYCLEentry(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 		printInstruction(cntxt->fdout,mb,0,p, LIST_MAL_STMT);
 	}
 #endif
-	return i >= 0 ? 0: GDKusec();
+	return i;
 }
 
 /*
@@ -1747,7 +1747,7 @@ RECYCLEdump(stream *s)
 {
     int i, incache;
     str msg= MAL_SUCCEED;
-    lng sz, persmem=0;
+    lng sz=0, persmem=0;
     ValPtr v;
     Client c;
     lng statements=0, recycled=0, recycleMiss=0, recycleRem=0;
