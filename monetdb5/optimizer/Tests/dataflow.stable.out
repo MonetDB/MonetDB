@@ -48,7 +48,7 @@ function user.main():void;
 end main;
 function user.tst():void;               #  0 tst:void := user.tst() {G}
     s:bat[:oid,:int]  := microbenchmark.uniform(0@0:oid,10000000,10000000);#  1 s:bat[:oid,:int] := MBMuniform(_2:oid, _3:int, _3:int) {G}
-    l := aggr.min(s);                   #  2 l:int := ALGmin_int(s:bat[:oid,:int]) {G}
+    l := aggr.min(s);                   #  2 l:int := ALGminany(s:bat[:oid,:int]) {G}
     h := l;                             #  3 h:int := l:int 
 #mdb.setTimer(true); 
 #mdb.setThread(true); 

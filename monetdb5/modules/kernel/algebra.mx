@@ -875,23 +875,6 @@ comment "Gives the variance of all tail values";
 @:stdev_definition(flt)@
 @:stdev_definition(dbl)@
 
-@= aggregate_definition
-command @1 ( b:bat[:any_1,:@2] ) :@2 
-address ALG@1_@2 comment @3;
-@= aggregate
-@:aggregate_definition(@1,bte,@2)@
-@:aggregate_definition(@1,sht,@2)@
-@:aggregate_definition(@1,int,@2)@
-@:aggregate_definition(@1,wrd,@2)@
-@:aggregate_definition(@1,flt,@2)@
-@:aggregate_definition(@1,dbl,@2)@
-@:aggregate_definition(@1,lng,@2)@
-
-@
-@mal
-@:aggregate(max,"Give the highest tail value.")@
-@:aggregate(min,"Give the lowest tail value. ")@
-
 # @+ Exented selection predicates
 # For SQL convenience we provide a serie of interval selectors.
 module algebra;
@@ -984,19 +967,6 @@ algebra_export str ALGstdev(dbl *res, int *bid);
 algebra_export str ALGstdevp(dbl *res, int *bid);
 algebra_export str ALGvariance(dbl *res, int *bid);
 algebra_export str ALGvariancep(dbl *res, int *bid);
-
-@= ALGaggregate_export
-algebra_export str ALGmin_@1(@1* res, int *bid) ;
-algebra_export str ALGmax_@1(@1* res, int *bid) ;
-@
-@h
-@:ALGaggregate_export(bte)@
-@:ALGaggregate_export(sht)@
-@:ALGaggregate_export(int)@
-@:ALGaggregate_export(wrd)@
-@:ALGaggregate_export(lng)@
-@:ALGaggregate_export(flt)@
-@:ALGaggregate_export(dbl)@
 
 algebra_export str ALGminany(ptr result, int *bid);
 algebra_export str ALGmaxany(ptr result, int *bid);
@@ -1161,17 +1131,6 @@ algebra_export str ALGreuse(int *ret, int *bid);
  * the user. They are not maintained continuously, because we expect
  * them to be used sparsely.
  */
-@= aggregate_implementation
-static int
-CMDmin_@1(@1* result, BAT *b)
-{
-	return BATmin(b, result)?GDK_SUCCEED:GDK_FAIL;
-}
-static int
-CMDmax_@1(@1* result, BAT *b)
-{
-	return BATmax(b, result)?GDK_SUCCEED:GDK_FAIL;
-}
 @= atomaggr
 	if (s > 0 && !BATtordered(b)) {
 		char* nil = BATatoms[t].atomNull;
@@ -1272,42 +1231,6 @@ BAT@1(BAT *b, ptr aggr)
 @c
 @:BATaggr(min)@
 @:BATaggr(max)@
-
-@:aggregate_implementation(bte)@
-@:aggregate_implementation(sht)@
-@:aggregate_implementation(int)@
-@:aggregate_implementation(wrd)@
-@:aggregate_implementation(flt)@
-@:aggregate_implementation(dbl)@
-@:aggregate_implementation(lng)@
-
-static int
-CMDminany(ptr result, BAT *b)
-{
-	if (!ATOMlinear(b->ttype))
-		return GDKerror("CMDminANY: atom '%s' cannot be ordered linearly\n", ATOMname(b->ttype));
-	if (ATOMvarsized(b->ttype)) {
-		return (*(ptr *) result = BATmin(b, NULL)) ? GDK_SUCCEED : GDK_FAIL;
-	}
-	if (BATmin(b, result)) {
-		return GDK_SUCCEED;
-	}
-	return GDK_FAIL;
-}
-
-static int
-CMDmaxany(ptr result, BAT *b)
-{
-	if (!ATOMlinear(b->ttype))
-		return GDKerror("CMDmaxANY: atom '%s' cannot be ordered linearly\n", ATOMname(b->ttype));
-	if (ATOMvarsized(b->ttype)) {
-		return (*(ptr *) result = BATmax(b, NULL)) ? GDK_SUCCEED : GDK_FAIL;
-	}
-	if (BATmax(b, result)) {
-		return GDK_SUCCEED;
-	}
-	return GDK_FAIL;
-}
 
 /*
  * @* Command Implementations in C
@@ -1621,72 +1544,58 @@ bunins_failed:
  * is large enough to prevent overflow.
  */
 
-@= ALGaggregate_implementation
-str ALGmin_@1(@1* res, int *bid) {
-	BAT *b;
-	if( (b= BATdescriptor(*bid)) == NULL ){
-		 throw(MAL, "algebra.min", RUNTIME_OBJECT_MISSING);
-	}
-	if( CMDmin_@1(res,b)) {
-		BBPreleaseref(b->batCacheid);
-		return MAL_SUCCEED;
-	}
-	BBPreleaseref(b->batCacheid);
-	throw(MAL, "algebra.min", GDK_EXCEPTION);
-}
-str ALGmax_@1(@1* res, int *bid) {
-	BAT *b;
-	if( (b= BATdescriptor(*bid)) == NULL ){
-		 throw(MAL, "algebra.min", RUNTIME_OBJECT_MISSING);
-	}
-	if( CMDmax_@1(res,b)) {
-		BBPreleaseref(b->batCacheid);
-		return MAL_SUCCEED;
-	}
-	BBPreleaseref(b->batCacheid);
-	throw(MAL, "algebra.max", GDK_EXCEPTION);
-}
-@
-@c
-@:ALGaggregate_implementation(bte)@
-@:ALGaggregate_implementation(sht)@
-@:ALGaggregate_implementation(int)@
-@:ALGaggregate_implementation(wrd)@
-@:ALGaggregate_implementation(lng)@
-@:ALGaggregate_implementation(flt)@
-@:ALGaggregate_implementation(dbl)@
-
-
 str
 ALGminany(ptr result, int *bid)
 {
 	BAT *b;
+	ptr p;
+	str msg = MAL_SUCCEED;
 
-	if ((b = BATdescriptor(*bid)) == NULL) {
+	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "algebra.min", RUNTIME_OBJECT_MISSING);
-	}
-	if (CMDminany(result, b) == GDK_SUCCEED) {
-		BBPreleaseref(b->batCacheid);
-		return MAL_SUCCEED;
+
+	if (!ATOMlinear(b->ttype)) {
+		msg = createException(MAL, "algebra.min",
+							  "atom '%s' cannot be ordered linearly",
+							  ATOMname(b->ttype));
+	} else {
+		if (ATOMvarsized(b->ttype)) {
+			* (ptr *) result = p = BATmin(b, NULL);
+		} else {
+			p = BATmin(b, result);
+		}
+		if (p == NULL)
+			msg = createException(MAL, "algebra.min", GDK_EXCEPTION);
 	}
 	BBPreleaseref(b->batCacheid);
-	throw(MAL, "algebra.min", GDK_EXCEPTION);
+	return msg;
 }
 
 str
 ALGmaxany(ptr result, int *bid)
 {
 	BAT *b;
+	ptr p;
+	str msg = MAL_SUCCEED;
 
-	if ((b = BATdescriptor(*bid)) == NULL) {
+	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "algebra.max", RUNTIME_OBJECT_MISSING);
-	}
-	if (CMDmaxany(result, b) == GDK_SUCCEED) {
-		BBPreleaseref(b->batCacheid);
-		return MAL_SUCCEED;
+
+	if (!ATOMlinear(b->ttype)) {
+		msg = createException(MAL, "algebra.max",
+							  "atom '%s' cannot be ordered linearly",
+							  ATOMname(b->ttype));
+	} else {
+		if (ATOMvarsized(b->ttype)) {
+			* (ptr *) result = p = BATmax(b, NULL);
+		} else {
+			p = BATmax(b, result);
+		}
+		if (p == NULL)
+			msg = createException(MAL, "algebra.max", GDK_EXCEPTION);
 	}
 	BBPreleaseref(b->batCacheid);
-	throw(MAL, "algebra.max", GDK_EXCEPTION);
+	return msg;
 }
 
 str
