@@ -728,8 +728,6 @@ str ALARMsleep(int *res, int *secs);
 str ALARMtime(int *res);
 str ALARMtimers(int *res);
 str ALARMusec(lng *ret);
-str ALGBATmaximum(ptr *result, int *bid);
-str ALGBATminimum(ptr *result, int *bid);
 str ALGantijoin(int *result, int *lid, int *rid);
 str ALGantijoin2(int *l, int *r, int *lid, int *rid);
 str ALGantiuselect1(int *result, int *bid, ptr value);

@@ -1003,8 +1003,6 @@ algebra_export str ALGmaxany(ptr result, int *bid);
 algebra_export str ALGtopN(int *res, int *bid, lng *top);
 algebra_export str ALGgroupby(int *res, int *gids, int *cnts);
 algebra_export str ALGcard(lng *result, int *bid);
-algebra_export str ALGBATminimum(ptr *result, int *bid);
-algebra_export str ALGBATmaximum(ptr *result, int *bid);
 algebra_export str ALGsubselect1(bat *result, bat *bid, const void *low, const void *high, const bit *li, const bit *hi, const bit *anti);
 algebra_export str ALGsubselect2(bat *result, bat *bid, bat *sid, const void *low, const void *high, const bit *li, const bit *hi, const bit *anti);
 algebra_export str ALGthetasubselect1(bat *result, bat *bid, const void *val, const char **op);
@@ -1750,32 +1748,6 @@ ALGcard(lng *result, int *bid)
 	}
 	*result = BATcount(bn);
 	BBPunfix(bn->batCacheid);
-	BBPreleaseref(b->batCacheid);
-	return MAL_SUCCEED;
-}
-
-str
-ALGBATminimum(ptr *result, int *bid)
-{
-	BAT *b;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "algebra.min", RUNTIME_OBJECT_MISSING);
-	}
-	BATmin(b, result);
-	BBPreleaseref(b->batCacheid);
-	return MAL_SUCCEED;
-}
-
-str
-ALGBATmaximum(ptr *result, int *bid)
-{
-	BAT *b;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "algebra.max", RUNTIME_OBJECT_MISSING);
-	}
-	BATmax(b, result);
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
