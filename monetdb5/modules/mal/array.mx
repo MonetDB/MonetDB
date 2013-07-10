@@ -548,7 +548,7 @@ ARRAYtiles@4_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *bVal = NULL, *bRes = NULL, **bDims = NULL, **bOffsets = NULL;
 	int *ret = (int*) getArgReference(stk,pci,0), i = 0, ndims = 0;
-	bit skip = FALSE;
+	bit skip = FALSE, nils = FALSE;
 	@1 *bValT = NULL, elm = 0;
 	@3 *bResT = NULL;
 	int **bDimsT = NULL, **bOffsetsT = NULL;
@@ -673,6 +673,7 @@ ARRAYtiles@4_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		}
 		bResT[p] = (cnt ? @6 : @3_nil);
+		nils |= !cnt;
 	}
 	AGGR_CLEANUP();
 	BATsetcount(bRes, arrcnt);
@@ -683,6 +684,8 @@ ARRAYtiles@4_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bRes->hrevsorted = (arrcnt <= 1);
 	bRes->tsorted = (arrcnt <= 1);
 	bRes->trevsorted = (arrcnt <= 1);
+	bRes->T->nil = nils;
+	bRes->T->nonil = !nils;
 	BATkey(BATmirror(bRes), FALSE);
 	BBPkeepref(*ret = bRes->batCacheid);
 	return MAL_SUCCEED;
@@ -719,7 +722,7 @@ ARRAYtiles@2_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *bVal = NULL, *bRes = NULL, **bDims = NULL, **bOffsets = NULL;
 	int *ret = (int*) getArgReference(stk,pci,0), i = 0, ndims = 0;
-	bit skip = FALSE;
+	bit skip = FALSE, nils = FALSE;
 	@1 *bValT = NULL, elm = 0;
 	@1 *bResT = NULL;
 	int **bDimsT = NULL, **bOffsetsT = NULL;
@@ -850,6 +853,7 @@ ARRAYtiles@2_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		}
 		bResT[p] = minmax;
+		nils |= minmax == @1_nil;
 	}
 	AGGR_CLEANUP();
 	BATsetcount(bRes, arrcnt);
@@ -860,6 +864,8 @@ ARRAYtiles@2_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bRes->hrevsorted = (arrcnt <= 1);
 	bRes->tsorted = (arrcnt <= 1);
 	bRes->trevsorted = (arrcnt <= 1);
+	bRes->T->nil = nils;
+	bRes->T->nonil = !nils;
 	BATkey(BATmirror(bRes), FALSE);
 	BBPkeepref(*ret = bRes->batCacheid);
 	return MAL_SUCCEED;
