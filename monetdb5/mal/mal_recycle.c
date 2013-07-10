@@ -1219,9 +1219,9 @@ RECYCLEdataTransfer(Client cntxt, MalStkPtr s, InstrPtr p)
 
 
 static int
-RECYCLEreuse(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p, int pci)
+RECYCLEreuse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pci)
 {
-    int i, j, ridx, idx, evicted=0, pc= -1;
+    int i, j, evicted=0, pc= -1;
 	//int qidx;
     bat bid= -1, nbid= -1;
     InstrPtr q;
@@ -1232,7 +1232,7 @@ RECYCLEreuse(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p, int pci)
 	/* separate matching of data transfer instructions: octopus.bind(), octopus.bind_idxbat() */
 	if ( getModuleId(p) == octopusRef &&
 		( getFunctionId(p) == bindRef || getFunctionId(p) == bind_idxRef ))
-		return RECYCLEdataTransfer(cntxt, s, p);
+		return RECYCLEdataTransfer(cntxt, stk, p);
 
     MT_lock_set(&recycleLock, "recycle");
 
@@ -1242,25 +1242,24 @@ RECYCLEreuse(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p, int pci)
         if ((getFunctionId(p) != getFunctionId(q)) ||
             (getModuleId(p) != getModuleId(q)))
             continue;
+		if (p->argc != q->argc || p->retc != q->retc) 
+			continue;
 
-		/* 1: reuse smallest range covering */
-		ridx= getArg(q,1);
-		idx= getArg(p,1);
-		if (q->argc-1 > 3 &&
-			( getFunctionId(p) == subselectRef ||
+		/* 1: reuse smallest range covering in select operations */
+		if (q->argc > 3 &&
+			( 	getFunctionId(p) == subselectRef ||
 				getFunctionId(p) == like_subselectRef ||
 				getFunctionId(p) == thetasubselectRef ) &&
-			getVarConstant(recycleBlk, ridx).val.bval == s->stk[idx].val.bval &&
+				getVarConstant(recycleBlk, getArg(q,1)).val.bval == stk->stk[getArg(p,1)].val.bval &&
 			BATatoms[getArgType(recycleBlk,q,2)].linear )
-
 		{	bit subsmp = 0;
 				/* Time to check for the inclusion constraint */
 				if ( getFunctionId(p) == subselectRef )
-					subsmp = selectSubsume(p,q,s);
+					subsmp = selectSubsume(p,q,stk);
 				else if ( getFunctionId(p) == like_subselectRef )
-					subsmp = likeSubsume(p,q,s);
+					subsmp = likeSubsume(p,q,stk);
 				else if ( getFunctionId(p) == thetasubselectRef )
-					subsmp = thetaselectSubsume(p,q,s);
+					subsmp = thetaselectSubsume(p,q,stk);
 
 			if (subsmp){
 				BAT *b1, *b2;
@@ -1293,25 +1292,22 @@ RECYCLEreuse(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p, int pci)
 			}
 		}
 		/* 2: exact covering */
-		if (p->argc != q->argc || p->retc != q->retc) continue;
 		for (j = p->retc; j < p->argc; j++)
-			if (VALcmp(&s->stk[getArg(p,j)], &getVarConstant(recycleBlk,    getArg(q,j))))
+			if (VALcmp(&stk->stk[getArg(p,j)], &getVarConstant(recycleBlk,    getArg(q,j))))
 				goto notfound;
 #ifdef _DEBUG_CACHE_
 			if ( q->token == NOOPsymbol ){
-					evicted = 1;
-			mnstr_printf(cntxt->fdout,"#Miss of evicted instruction %d\n",  i);
-					goto notfound;
+				evicted = 1;
+				mnstr_printf(cntxt->fdout,"#Miss of evicted instruction %d\n",  i);
+				goto notfound;
 			}
 #endif
 
-		/* found an exact match */
-		/* get the results on the stack */
+		/* found an exact match, get the results on the stack */
 		for( j=0; j<p->retc; j++){
-			VALcopy(&s->stk[getArg(p,j)],
-				&getVarConstant(recycleBlk,getArg(q,j)) );
-			if (s->stk[getArg(p,j)].vtype == TYPE_bat)
-				BBPincref( s->stk[getArg(p,j)].val.bval , TRUE);
+			VALcopy(&stk->stk[getArg(p,j)], &getVarConstant(recycleBlk,getArg(q,j)) );
+			if (stk->stk[getArg(p,j)].vtype == TYPE_bat)
+				BBPincref( stk->stk[getArg(p,j)].val.bval , TRUE);
 		}
 		recycleBlk->profiler[i].calls++;
 		if ( recycleBlk->profiler[i].clk < cntxt->rcc->time0 )
@@ -1345,21 +1341,21 @@ RECYCLEreuse(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p, int pci)
 		printInstruction(cntxt->fdout, recycleBlk, 0,getInstrPtr(recycleBlk,pc),    LIST_MAL_STMT);
 
 		mnstr_printf(cntxt->fdout,">>>");
-		printTraceCall(cntxt->fdout, mb, s,i, LIST_MAL_STMT);
+		printTraceCall(cntxt->fdout, mb, stk,i, LIST_MAL_STMT);
 		mnstr_printf(cntxt->fdout,"\n");
 #endif
-            nbid = s->stk[getArg(p,1)].val.bval;
-        s->stk[getArg(p,1)].val.bval = bid;
+		nbid = stk->stk[getArg(p,1)].val.bval;
+        stk->stk[getArg(p,1)].val.bval = bid;
         BBPincref(bid, TRUE);
         /* make sure the garbage collector is not called */
-        j = s->keepAlive ;
-        s->keepAlive = TRUE;
+        j = stk->keepAlive ;
+        stk->keepAlive = TRUE;
         k = p->recycle;
         p->recycle = NO_RECYCLING; /* No recycling for instructions with        subsumption */
-        (void) reenterMAL(cntxt,mb,i,i+1,s);
+        (void) reenterMAL(cntxt,mb,i,i+1,stk);
         p->recycle= k;
-        s->keepAlive= j;
-        s->stk[getArg(p,1)].val.bval = nbid;
+        stk->keepAlive= j;
+        stk->stk[getArg(p,1)].val.bval = nbid;
         BBPdecref(bid, TRUE);
         cntxt->rcc->recycled0++;
         recycleBlk->profiler[pc].calls++;
@@ -1369,7 +1365,7 @@ RECYCLEreuse(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p, int pci)
         //updateQryStat(getInstrPtr(recycleBlk,pc)->recycle,gluse,qidx);
         recycleBlk->profiler[pc].clk = GDKusec();
         MT_lock_unset(&recycleLock, "recycle");
-        RECYCLEexit(cntxt, mb, s, p, pc, ticks);
+        RECYCLEexit(cntxt, mb, stk, p, pc, ticks);
         return pc;
     }
 
@@ -1381,7 +1377,7 @@ RECYCLEreuse(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p, int pci)
 
     MT_lock_unset(&recycleLock, "recycle");
 	if ( pc >= 0 ) 		/* successful multi-subsumption */
-		RECYCLEexit(cntxt,mb,s,p, pci,ticks);
+		RECYCLEexit(cntxt,mb,stk,p, pci,ticks);
     return pc;
 }
 
@@ -1397,8 +1393,7 @@ RECYCLEentry(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 		return 0;
 	if ( !RECYCLEinterest(p) )  /* don't scan RecyclerPool for non-monitored instructions */
 		return 0;
-	if ( cntxt->rcc->curQ < 0 )	/* don't use recycling before initialization
-				by prelude() */
+	if ( cntxt->rcc->curQ < 0 )	/* don't use recycling before initialization by prelude() */
 		return 0;
 	i = RECYCLEreuse(cntxt,mb,stk,p,pc) >= 0;
 #ifdef _DEBUG_RECYCLE_
