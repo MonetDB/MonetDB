@@ -55,7 +55,7 @@ done
 echo
 
 for func in nil notnil; do
-    for tp in void $alltypes; do
+    for tp in void $alltypes bat; do
 	cat <<EOF
 pattern is$func(v:$tp) :bit
 address CMDvarIS${func^^}

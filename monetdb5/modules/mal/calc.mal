@@ -92,6 +92,10 @@ pattern isnil(v:str) :bit
 address CMDvarISNIL
 comment "Unary check for nil of V";
 
+pattern isnil(v:bat) :bit
+address CMDvarISNIL
+comment "Unary check for nil of V";
+
 
 pattern isnotnil(v:void) :bit
 address CMDvarISNOTNIL
@@ -134,6 +138,10 @@ address CMDvarISNOTNIL
 comment "Unary check for notnil of V";
 
 pattern isnotnil(v:str) :bit
+address CMDvarISNOTNIL
+comment "Unary check for notnil of V";
+
+pattern isnotnil(v:bat) :bit
 address CMDvarISNOTNIL
 comment "Unary check for notnil of V";
 
