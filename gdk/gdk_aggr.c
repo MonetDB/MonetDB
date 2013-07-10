@@ -1732,32 +1732,55 @@ BATgroupsize(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on
 #define AGGR_CMP(TYPE, OP)						\
 	do {								\
 		const TYPE *vals = (const TYPE *) Tloc(b, BUNfirst(b)); \
-		for (;;) {						\
+		if (g && BATtdense(g)) {				\
+			/* single element groups */			\
 			if (cand) {					\
-				if (cand == candend)			\
-					break;				\
-				i = *cand++ - b->hseqbase;		\
-				if (i >= end)				\
-					break;				\
-			} else {					\
-				i = start++;				\
-				if (i == end)				\
-					break;				\
-			}						\
-			if (gids == NULL ||				\
-			    (gids[i] >= min && gids[i] <= max)) {	\
-				if (gids)				\
-					gid = gids[i] - min;		\
-				else					\
-					gid = (oid) i;			\
-				if (!skip_nils || vals[i] != TYPE##_nil) { \
-					if (oids[gid] == oid_nil) {	\
-						oids[gid] = i + b->hseqbase; \
+				while (cand < candend) {		\
+					i = *cand++ - b->hseqbase;	\
+					if (i >= end)			\
+						break;			\
+					if (!skip_nils ||		\
+					    vals[i] != TYPE##_nil) {	\
+						oids[i] = i + b->hseqbase; \
 						nils--;			\
-					} else if (vals[oids[gid] - b->hseqbase] != TYPE##_nil && \
-						   (vals[i] == TYPE##_nil || \
-						    OP(vals[i], vals[oids[gid] - b->hseqbase]))) \
-						oids[gid] = i + b->hseqbase; \
+					}				\
+				}					\
+			} else {					\
+				for (i = start; i < end; i++) {		\
+					if (!skip_nils ||		\
+					    vals[i] != TYPE##_nil) {	\
+						oids[i] = i + b->hseqbase; \
+						nils--;			\
+					}				\
+				}					\
+			}						\
+		} else {						\
+			gid = 0; /* in case gids == NULL */		\
+			for (;;) {					\
+				if (cand) {				\
+					if (cand == candend)		\
+						break;			\
+					i = *cand++ - b->hseqbase;	\
+					if (i >= end)			\
+						break;			\
+				} else {				\
+					i = start++;			\
+					if (i == end)			\
+						break;			\
+				}					\
+				if (gids == NULL ||			\
+				    (gids[i] >= min && gids[i] <= max)) { \
+					if (gids)			\
+						gid = gids[i] - min;	\
+					if (!skip_nils || vals[i] != TYPE##_nil) { \
+						if (oids[gid] == oid_nil) { \
+							oids[gid] = i + b->hseqbase; \
+							nils--;		\
+						} else if (vals[oids[gid] - b->hseqbase] != TYPE##_nil && \
+							   (vals[i] == TYPE##_nil || \
+							    OP(vals[i], vals[oids[gid] - b->hseqbase]))) \
+							oids[gid] = i + b->hseqbase; \
+					}				\
 				}					\
 			}						\
 		}							\
@@ -1800,13 +1823,9 @@ BATgroupmin(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_
 		GDKerror("BATgroupmin: %s\n", err);
 		return NULL;
 	}
-	if (g == NULL) {
-		GDKerror("BATgroupmin: b and g must be aligned\n");
-		return NULL;
-	}
 
 	if (BATcount(b) == 0 || ngrp == 0) {
-		/* trivial: no products, so return bat aligned with g
+		/* trivial: no minimums, so return bat aligned with g
 		 * with nil in the tail */
 		bn = BATconstant(TYPE_oid, &oid_nil, ngrp);
 		BATseqbase(bn, ngrp == 0 ? 0 : min);
@@ -1821,7 +1840,7 @@ BATgroupmin(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_
 	for (i = 0; i < ngrp; i++)
 		oids[i] = oid_nil;
 
-	if (BATtdense(g))
+	if (g == NULL || BATtdense(g))
 		gids = NULL;
 	else
 		gids = (const oid *) Tloc(g, BUNfirst(g) + start);
@@ -1858,35 +1877,59 @@ BATgroupmin(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_
 	default:
 		bi = bat_iterator(b);
 
-		for (;;) {
+		if (g && BATtdense(g)) {
+			/* single element groups */
 			if (cand) {
-				if (cand == candend)
-					break;
-				i = *cand++ - b->hseqbase;
-				if (i >= end)
-					break;
-			} else {
-				i = start++;
-				if (i == end)
-					break;
-			}
-			if (gids == NULL ||
-			    (gids[i] >= min && gids[i] <= max)) {
-				const void *v = BUNtail(bi, i + BUNfirst(b));
-				if (gids)
-					gid = gids[i] - min;
-				else
-					gid = (oid) i;
-				if (!skip_nils || (*atomcmp)(v, nil) != 0) {
-					if (oids[gid] == oid_nil) {
-						oids[gid] = i + b->hseqbase;
+				while (cand < candend) {
+					i = *cand++ - b->hseqbase;
+					if (i >= end)
+						break;
+					if (!skip_nils ||
+					    (*atomcmp)(BUNtail(bi, i + BUNfirst(b)), nil) != 0) {
+						oids[i] = i + b->hseqbase;
 						nils--;
-					} else {
-						const void *g = BUNtail(bi, (BUN) (oids[gid] - b->hseqbase) + BUNfirst(b));
-						if ((*atomcmp)(g, nil) != 0 &&
-						   ((*atomcmp)(v, nil) == 0 ||
-						    LT((*atomcmp)(v, g), 0)))
+					}
+				}
+			} else {
+				for (i = start; i < end; i++) {
+					if (!skip_nils ||
+					    (*atomcmp)(BUNtail(bi, i + BUNfirst(b)), nil) != 0) {
+						oids[i] = i + b->hseqbase;
+						nils--;
+					}
+				}
+			}
+		} else {
+			gid = 0; /* in case gids == NULL */
+			for (;;) {
+				if (cand) {
+					if (cand == candend)
+						break;
+					i = *cand++ - b->hseqbase;
+					if (i >= end)
+						break;
+				} else {
+					i = start++;
+					if (i == end)
+						break;
+				}
+				if (gids == NULL ||
+				    (gids[i] >= min && gids[i] <= max)) {
+					const void *v = BUNtail(bi, i + BUNfirst(b));
+					if (gids)
+						gid = gids[i] - min;
+					if (!skip_nils ||
+					    (*atomcmp)(v, nil) != 0) {
+						if (oids[gid] == oid_nil) {
 							oids[gid] = i + b->hseqbase;
+							nils--;
+						} else {
+							const void *g = BUNtail(bi, (BUN) (oids[gid] - b->hseqbase) + BUNfirst(b));
+							if ((*atomcmp)(g, nil) != 0 &&
+							    ((*atomcmp)(v, nil) == 0 ||
+							     LT((*atomcmp)(v, g), 0)))
+								oids[gid] = i + b->hseqbase;
+						}
 					}
 				}
 			}
@@ -1941,13 +1984,9 @@ BATgroupmax(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_
 		GDKerror("BATgroupmax: %s\n", err);
 		return NULL;
 	}
-	if (g == NULL) {
-		GDKerror("BATgroupmax: b and g must be aligned\n");
-		return NULL;
-	}
 
 	if (BATcount(b) == 0 || ngrp == 0) {
-		/* trivial: no products, so return bat aligned with g
+		/* trivial: no maximums, so return bat aligned with g
 		 * with nil in the tail */
 		bn = BATconstant(TYPE_oid, &oid_nil, ngrp);
 		BATseqbase(bn, ngrp == 0 ? 0 : min);
@@ -1962,7 +2001,7 @@ BATgroupmax(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_
 	for (i = 0; i < ngrp; i++)
 		oids[i] = oid_nil;
 
-	if (BATtdense(g))
+	if (g == NULL || BATtdense(g))
 		gids = NULL;
 	else
 		gids = (const oid *) Tloc(g, BUNfirst(g) + start);
@@ -1999,35 +2038,59 @@ BATgroupmax(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_
 	default:
 		bi = bat_iterator(b);
 
-		for (;;) {
+		if (g && BATtdense(g)) {
+			/* single element groups */
 			if (cand) {
-				if (cand == candend)
-					break;
-				i = *cand++ - b->hseqbase;
-				if (i >= end)
-					break;
-			} else {
-				i = start++;
-				if (i == end)
-					break;
-			}
-			if (gids == NULL ||
-			    (gids[i] >= min && gids[i] <= max)) {
-				const void *v = BUNtail(bi, i + BUNfirst(b));
-				if (gids)
-					gid = gids[i] - min;
-				else
-					gid = (oid) i;
-				if (!skip_nils || (*atomcmp)(v, nil) != 0) {
-					if (oids[gid] == oid_nil) {
-						oids[gid] = i + b->hseqbase;
+				while (cand < candend) {
+					i = *cand++ - b->hseqbase;
+					if (i >= end)
+						break;
+					if (!skip_nils ||
+					    (*atomcmp)(BUNtail(bi, i + BUNfirst(b)), nil) != 0) {
+						oids[i] = i + b->hseqbase;
 						nils--;
-					} else {
-						const void *g = BUNtail(bi, (BUN) (oids[gid] - b->hseqbase) + BUNfirst(b));
-						if ((*atomcmp)(g, nil) != 0 &&
-						   ((*atomcmp)(v, nil) == 0 ||
-						    GT((*atomcmp)(v, g), 0)))
+					}
+				}
+			} else {
+				for (i = start; i < end; i++) {
+					if (!skip_nils ||
+					    (*atomcmp)(BUNtail(bi, i + BUNfirst(b)), nil) != 0) {
+						oids[i] = i + b->hseqbase;
+						nils--;
+					}
+				}
+			}
+		} else {
+			gid = 0; /* in case gids == NULL */
+			for (;;) {
+				if (cand) {
+					if (cand == candend)
+						break;
+					i = *cand++ - b->hseqbase;
+					if (i >= end)
+						break;
+				} else {
+					i = start++;
+					if (i == end)
+						break;
+				}
+				if (gids == NULL ||
+				    (gids[i] >= min && gids[i] <= max)) {
+					const void *v = BUNtail(bi, i + BUNfirst(b));
+					if (gids)
+						gid = gids[i] - min;
+					if (!skip_nils ||
+					    (*atomcmp)(v, nil) != 0) {
+						if (oids[gid] == oid_nil) {
 							oids[gid] = i + b->hseqbase;
+							nils--;
+						} else {
+							const void *g = BUNtail(bi, (BUN) (oids[gid] - b->hseqbase) + BUNfirst(b));
+							if ((*atomcmp)(g, nil) != 0 &&
+							    ((*atomcmp)(v, nil) == 0 ||
+							     GT((*atomcmp)(v, g), 0)))
+								oids[gid] = i + b->hseqbase;
+						}
 					}
 				}
 			}
