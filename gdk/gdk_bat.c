@@ -974,7 +974,7 @@ BATcopy(BAT *b, int ht, int tt, int writable)
 	} else if (ATOMtype(ATOMstorage(ht)) == ATOMtype(ATOMstorage(b->htype))) {
 		bn->hsorted = b->hsorted || (cnt <= 1 && BATatoms[b->htype].linear);
 		bn->hrevsorted = b->hrevsorted || (cnt <= 1 && BATatoms[b->htype].linear);
-		bn->hdense = b->hdense;
+		bn->hdense = b->hdense && ATOMtype(bn->htype) == TYPE_oid;
 		if (b->hkey)
 			BATkey(bn, TRUE);
 		bn->H->nonil = b->H->nonil;
@@ -987,7 +987,7 @@ BATcopy(BAT *b, int ht, int tt, int writable)
 	} else if (ATOMtype(ATOMstorage(tt)) == ATOMtype(ATOMstorage(b->ttype))) {
 		bn->tsorted = b->tsorted || (cnt <= 1 && BATatoms[b->ttype].linear);
 		bn->trevsorted = b->trevsorted || (cnt <= 1 && BATatoms[b->ttype].linear);
-		bn->tdense = b->tdense;
+		bn->tdense = b->tdense && ATOMtype(bn->ttype) == TYPE_oid;
 		if (b->tkey)
 			BATkey(BATmirror(bn), TRUE);
 		bn->T->nonil = b->T->nonil;
