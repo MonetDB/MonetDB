@@ -41,12 +41,16 @@ All Rights Reserved.
  * and we have to de-reference them before entering the gdk library.
  * This calls for knowlegde on the underlying BAT typs`s
  */
-@= derefStr
-{int _tpe= ATOMstorage(@1->@2type);
- if( _tpe >= TYPE_str )
- { if(@3== 0 || *(str*)@3==0) @3 = (str)str_nil;
-   else @3 = *(str *)@3;
-}}
+#define derefStr(b, s, v)							\
+		do {										\
+			int _tpe= ATOMstorage((b)->s##type);	\
+			if (_tpe >= TYPE_str) {					\
+				if ((v) == 0 || *(str*) (v) == 0)	\
+					(v) = (str) str_nil;			\
+				else								\
+					(v) = *(str *) (v);				\
+			}										\
+		} while (0)
 
 @
 @mal
@@ -829,46 +833,129 @@ command max(b:bat[:any_1,:any_2]):any_2
 address ALGmaxany
 comment "Return the highest tail value or nil.";
 
-@= avg_definition
-command avg (b:bat[:any_1,:@1] ) :dbl
+command avg (b:bat[:any_1,:bte] ) :dbl
 address ALGavg
 comment "Gives the avg of all tail values";
-@
-@mal
-@:avg_definition(bte)@
-@:avg_definition(sht)@
-@:avg_definition(int)@
-@:avg_definition(wrd)@
-@:avg_definition(lng)@
-@:avg_definition(flt)@
-@:avg_definition(dbl)@
+
+command avg (b:bat[:any_1,:sht] ) :dbl
+address ALGavg
+comment "Gives the avg of all tail values";
+
+command avg (b:bat[:any_1,:int] ) :dbl
+address ALGavg
+comment "Gives the avg of all tail values";
+
+command avg (b:bat[:any_1,:wrd] ) :dbl
+address ALGavg
+comment "Gives the avg of all tail values";
+
+command avg (b:bat[:any_1,:lng] ) :dbl
+address ALGavg
+comment "Gives the avg of all tail values";
+
+command avg (b:bat[:any_1,:flt] ) :dbl
+address ALGavg
+comment "Gives the avg of all tail values";
+
+command avg (b:bat[:any_1,:dbl] ) :dbl
+address ALGavg
+comment "Gives the avg of all tail values";
 
 # @- Standard deviation
 # The standard deviation of a set is the square root of its variance.
 # The variance is the sum of squares of the deviation of each value in the set
 # from the mean (average) value, divided by the population of the set.
-@= stdev_definition
-command stdev (b:bat[:any_1,:@1] ) :dbl
+command stdev(b:bat[:any_1,:bte]) :dbl
 address ALGstdev
 comment "Gives the standard deviation of all tail values";
-command stdevp (b:bat[:any_1,:@1] ) :dbl
+command stdevp(b:bat[:any_1,:bte]) :dbl
 address ALGstdevp
 comment "Gives the standard deviation of all tail values";
-command variance (b:bat[:any_1,:@1] ) :dbl
+command variance(b:bat[:any_1,:bte]) :dbl
 address ALGvariance
 comment "Gives the variance of all tail values";
-command variancep (b:bat[:any_1,:@1] ) :dbl
+command variancep(b:bat[:any_1,:bte]) :dbl
 address ALGvariancep
 comment "Gives the variance of all tail values";
-@
-@mal
-@:stdev_definition(bte)@
-@:stdev_definition(sht)@
-@:stdev_definition(int)@
-@:stdev_definition(wrd)@
-@:stdev_definition(lng)@
-@:stdev_definition(flt)@
-@:stdev_definition(dbl)@
+
+command stdev(b:bat[:any_1,:sht]) :dbl
+address ALGstdev
+comment "Gives the standard deviation of all tail values";
+command stdevp(b:bat[:any_1,:sht]) :dbl
+address ALGstdevp
+comment "Gives the standard deviation of all tail values";
+command variance(b:bat[:any_1,:sht]) :dbl
+address ALGvariance
+comment "Gives the variance of all tail values";
+command variancep(b:bat[:any_1,:sht]) :dbl
+address ALGvariancep
+comment "Gives the variance of all tail values";
+
+command stdev(b:bat[:any_1,:int]) :dbl
+address ALGstdev
+comment "Gives the standard deviation of all tail values";
+command stdevp(b:bat[:any_1,:int]) :dbl
+address ALGstdevp
+comment "Gives the standard deviation of all tail values";
+command variance(b:bat[:any_1,:int]) :dbl
+address ALGvariance
+comment "Gives the variance of all tail values";
+command variancep(b:bat[:any_1,:int]) :dbl
+address ALGvariancep
+comment "Gives the variance of all tail values";
+
+command stdev(b:bat[:any_1,:wrd]) :dbl
+address ALGstdev
+comment "Gives the standard deviation of all tail values";
+command stdevp(b:bat[:any_1,:wrd]) :dbl
+address ALGstdevp
+comment "Gives the standard deviation of all tail values";
+command variance(b:bat[:any_1,:wrd]) :dbl
+address ALGvariance
+comment "Gives the variance of all tail values";
+command variancep(b:bat[:any_1,:wrd]) :dbl
+address ALGvariancep
+comment "Gives the variance of all tail values";
+
+command stdev(b:bat[:any_1,:lng]) :dbl
+address ALGstdev
+comment "Gives the standard deviation of all tail values";
+command stdevp(b:bat[:any_1,:lng]) :dbl
+address ALGstdevp
+comment "Gives the standard deviation of all tail values";
+command variance(b:bat[:any_1,:lng]) :dbl
+address ALGvariance
+comment "Gives the variance of all tail values";
+command variancep(b:bat[:any_1,:lng]) :dbl
+address ALGvariancep
+comment "Gives the variance of all tail values";
+
+command stdev(b:bat[:any_1,:flt]) :dbl
+address ALGstdev
+comment "Gives the standard deviation of all tail values";
+command stdevp(b:bat[:any_1,:flt]) :dbl
+address ALGstdevp
+comment "Gives the standard deviation of all tail values";
+command variance(b:bat[:any_1,:flt]) :dbl
+address ALGvariance
+comment "Gives the variance of all tail values";
+command variancep(b:bat[:any_1,:flt]) :dbl
+address ALGvariancep
+comment "Gives the variance of all tail values";
+
+command stdev(b:bat[:any_1,:dbl]) :dbl
+address ALGstdev
+comment "Gives the standard deviation of all tail values";
+command stdevp(b:bat[:any_1,:dbl]) :dbl
+address ALGstdevp
+comment "Gives the standard deviation of all tail values";
+command variance(b:bat[:any_1,:dbl]) :dbl
+address ALGvariance
+comment "Gives the variance of all tail values";
+command variancep(b:bat[:any_1,:dbl]) :dbl
+address ALGvariancep
+comment "Gives the variance of all tail values";
+
 
 # @+ Exented selection predicates
 # For SQL convenience we provide a serie of interval selectors.
@@ -1004,45 +1091,36 @@ algebra_export str ALGsubleftjoin(bat *r1, bat *r2, bat *l, bat *r, bat *sl, bat
 algebra_export str ALGsubouterjoin(bat *r1, bat *r2, bat *l, bat *r, bat *sl, bat *sr, lng *estimate);
 algebra_export str ALGsubthetajoin(bat *r1, bat *r2, bat *l, bat *r, bat *sl, bat *sr, str *op, lng *estimate);
 
-@= ALGunaryExport
-algebra_export str ALG@1(int *result, int *bid);
-@= ALGunaryintExport
-algebra_export str ALG@1(int *result, int *bid);
-@= ALGbinaryExport
-algebra_export str ALG@1(int *result, int *lid, int *rid) ;
-@= ALGbinaryintExport
-algebra_export str ALG@1(int *result, int* bid, int *param) ;
-@= ALGbinaryestimateExport
-algebra_export str ALG@1estimate(int *result, int *lid, int *rid, lng *estimate);
-algebra_export str ALG@1(int *result, int* lid, int *rid);
-@
-@h
-@:ALGunaryExport(histogram)@
-@:ALGunaryExport(merge)@
-@:ALGunaryExport(split)@
-@:ALGunaryExport(copy)@
-@:ALGunaryExport(kunique)@
-@:ALGunaryExport(sunique)@
-@:ALGunaryExport(tunique)@
-@:ALGbinaryExport(cross)@
-@:ALGbinaryExport(antijoin)@
-@:ALGbinaryestimateExport(join)@
-@:ALGbinaryestimateExport(leftjoin)@
-@:ALGbinaryestimateExport(leftfetchjoin)@
-@:ALGbinaryestimateExport(outerjoin)@
-@:ALGbinaryExport(semijoin)@
-@:ALGbinaryExport(sunion)@
-@:ALGbinaryExport(kunion)@
-@:ALGbinaryExport(tunion)@
-@:ALGbinaryExport(sintersect)@
-@:ALGbinaryExport(tintersect)@
-@:ALGbinaryExport(tinter)@
-@:ALGbinaryExport(sdiff)@
-@:ALGbinaryExport(kdiff)@
-@:ALGbinaryExport(tdifference)@
-@:ALGbinaryExport(tdiff)@
-@:ALGbinaryintExport(sample)@
-@:ALGbinaryintExport(subsample)@
+algebra_export str ALGhistogram(int *result, int *bid);
+algebra_export str ALGmerge(int *result, int *bid);
+algebra_export str ALGsplit(int *result, int *bid);
+algebra_export str ALGcopy(int *result, int *bid);
+algebra_export str ALGkunique(int *result, int *bid);
+algebra_export str ALGsunique(int *result, int *bid);
+algebra_export str ALGtunique(int *result, int *bid);
+algebra_export str ALGcross(int *result, int *lid, int *rid);
+algebra_export str ALGantijoin(int *result, int *lid, int *rid);
+algebra_export str ALGjoinestimate(int *result, int *lid, int *rid, lng *estimate);
+algebra_export str ALGjoin(int *result, int* lid, int *rid);
+algebra_export str ALGleftjoinestimate(int *result, int *lid, int *rid, lng *estimate);
+algebra_export str ALGleftjoin(int *result, int* lid, int *rid);
+algebra_export str ALGleftfetchjoinestimate(int *result, int *lid, int *rid, lng *estimate);
+algebra_export str ALGleftfetchjoin(int *result, int* lid, int *rid);
+algebra_export str ALGouterjoinestimate(int *result, int *lid, int *rid, lng *estimate);
+algebra_export str ALGouterjoin(int *result, int* lid, int *rid);
+algebra_export str ALGsemijoin(int *result, int *lid, int *rid);
+algebra_export str ALGsunion(int *result, int *lid, int *rid);
+algebra_export str ALGkunion(int *result, int *lid, int *rid);
+algebra_export str ALGtunion(int *result, int *lid, int *rid);
+algebra_export str ALGsintersect(int *result, int *lid, int *rid);
+algebra_export str ALGtintersect(int *result, int *lid, int *rid);
+algebra_export str ALGtinter(int *result, int *lid, int *rid);
+algebra_export str ALGsdiff(int *result, int *lid, int *rid);
+algebra_export str ALGkdiff(int *result, int *lid, int *rid);
+algebra_export str ALGtdifference(int *result, int *lid, int *rid);
+algebra_export str ALGtdiff(int *result, int *lid, int *rid);
+algebra_export str ALGsample(int *result, int* bid, int *param);
+algebra_export str ALGsubsample(int *result, int* bid, int *param);
 
 algebra_export str ALGtunique(int *result, int *bid);
 algebra_export str ALGtsort(int *result, int *bid);
@@ -1672,8 +1750,8 @@ ALGsubselect2(bat *result, bat *bid, bat *sid, const void *low, const void *high
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "algebra.select", RUNTIME_OBJECT_MISSING);
 	}
-	@:derefStr(b,t,low)@
-	@:derefStr(b,t,high)@
+	derefStr(b, t, low);
+	derefStr(b, t, high);
 	nilptr = ATOMnilptr(b->ttype);
 	if (*li == 1 && *hi == 1 && 
 		ATOMcmp(b->ttype, low, nilptr) == 0 &&
@@ -1710,7 +1788,7 @@ ALGthetasubselect2(bat *result, bat *bid, bat *sid, const void *val, const char 
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "algebra.select", RUNTIME_OBJECT_MISSING);
 	}
-	@:derefStr(b,t,val)@
+	derefStr(b, t, val);
 	bn = BATthetasubselect(b, s, val, *op);
 	BBPreleaseref(b->batCacheid);
 	if (s)
@@ -1736,7 +1814,7 @@ ALGselect1(int *result, int *bid, ptr value)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "algebra.select", RUNTIME_OBJECT_MISSING);
 	}
-	@:derefStr(b,t,value)@
+	derefStr(b, t, value);
 	bn = BATselect(b, value, 0);
 	BBPreleaseref(b->batCacheid);
 	if (bn) {
@@ -1757,7 +1835,7 @@ ALGselect1Head(int *result, int *bid, ptr value)
 		throw(MAL, "algebra.select", RUNTIME_OBJECT_MISSING);
 	}
 	b = BATmirror(b);
-	@:derefStr(b,t,value)@
+	derefStr(b, t, value);
 	bn = BATselect(b, value, 0);
 	bn = BATmirror(bn);
 	BBPreleaseref(b->batCacheid);
@@ -1778,7 +1856,7 @@ ALGuselect1(int *result, int *bid, ptr value)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "algebra.uselect", RUNTIME_OBJECT_MISSING);
 	}
-	@:derefStr(b,t,value)@
+	derefStr(b, t, value);
 	bn = BATuselect(b, value, NULL);
 	BBPreleaseref(b->batCacheid);
 	if (bn) {
@@ -1799,7 +1877,7 @@ ALGantiuselect1(int *result, int *bid, ptr value)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "algebra.antiuselect", RUNTIME_OBJECT_MISSING);
 	}
-	@:derefStr(b,t,value)@
+	derefStr(b, t, value);
 	bn = BATantiuselect_(b, value, NULL, TRUE, TRUE);
 	BBPreleaseref(b->batCacheid);
 	if (bn) {
@@ -1819,8 +1897,8 @@ ALGselect(int *result, int *bid, ptr low, ptr high)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "algebra.select", RUNTIME_OBJECT_MISSING);
 	}
-	@:derefStr(b,t,low)@
-	@:derefStr(b,t,high)@
+	derefStr(b, t, low);
+	derefStr(b, t, high);
 	bn = BATselect(b, low, high);
 	BBPreleaseref(b->batCacheid);
 	if (bn) {
@@ -1842,7 +1920,7 @@ ALGthetaselect(int *result, int *bid, ptr val, str *OP)
 		throw(MAL, "algebra.thetaselect", RUNTIME_OBJECT_MISSING);
 	}
 	nilptr = ATOMnilptr(b->ttype);
-	@:derefStr(b,t,val);@
+	derefStr(b, t, val);
 	if (ATOMcmp(b->ttype, val, nilptr) == 0) {
 		bn = BATnew(b->htype,b->ttype, 0);
 	} else {
@@ -1914,8 +1992,8 @@ ALGselectHead(int *result, int *bid, ptr low, ptr high)
 		throw(MAL, "algebra.select", RUNTIME_OBJECT_MISSING);
 	}
 	b = BATmirror(b);
-	@:derefStr(b,t,low)@
-	@:derefStr(b,t,high)@
+	derefStr(b, t, low);
+	derefStr(b, t, high);
 	bn = BATselect(b, low, high);
 	bn = BATmirror(bn);
 	if (bn) {
@@ -1937,8 +2015,8 @@ ALGuselect(int *result, int *bid, ptr low, ptr high)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "algebra.uselect", RUNTIME_OBJECT_MISSING);
 	}
-	@:derefStr(b,t,low);@
-	@:derefStr(b,t,high);@
+	derefStr(b, t, low);
+	derefStr(b, t, high);
 	bn = BATuselect(b, low, high);
 	if (bn) {
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
@@ -1961,7 +2039,7 @@ ALGthetauselect(int *result, int *bid, ptr val, str *OP)
 		throw(MAL, "algebra.thetauselect", RUNTIME_OBJECT_MISSING);
 	}
 	nilptr = ATOMnilptr(b->ttype);
-	@:derefStr(b,t,val);@
+	derefStr(b, t, val);
 	if (ATOMcmp(b->ttype, val, nilptr) == 0) {
 		bn = BATnew(b->htype,TYPE_void, 0);
 	} else {
@@ -2003,8 +2081,8 @@ ALGselectInclusive(int *result, int *bid, ptr low, ptr high, bit *lin, bit *rin)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "algebra.select", RUNTIME_OBJECT_MISSING);
 	}
-	@:derefStr(b,t,low)@
-	@:derefStr(b,t,high)@
+	derefStr(b, t, low);
+	derefStr(b, t, high);
 	CMDselect_(&bn, b, low, high, lin, rin);
 	if (bn) {
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
@@ -2026,8 +2104,8 @@ ALGselectInclusiveHead(int *result, int *bid, ptr low, ptr high, bit *lin, bit *
 		throw(MAL, "algebra.select", RUNTIME_OBJECT_MISSING);
 	}
 	b = BATmirror(b);
-	@:derefStr(b,t,low)@
-	@:derefStr(b,t,high)@
+	derefStr(b, t, low);
+	derefStr(b, t, high);
 	CMDselect_(&bn, b, low, high, lin, rin);
 	bn = BATmirror(bn);
 	if (bn) {
@@ -2049,8 +2127,8 @@ ALGuselectInclusive(int *result, int *bid, ptr low, ptr high, bit *lin, bit *rin
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "algebra.select", RUNTIME_OBJECT_MISSING);
 	}
-	@:derefStr(b,t,low);@
-	@:derefStr(b,t,high);@
+	derefStr(b, t, low);
+	derefStr(b, t, high);
 	CMDuselect_(&bn, b, low, high, lin, rin);
 	if (bn) {
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
@@ -2071,8 +2149,8 @@ ALGantiuselectInclusive(int *result, int *bid, ptr low, ptr high, bit *lin, bit 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "algebra.select", RUNTIME_OBJECT_MISSING);
 	}
-	@:derefStr(b,t,low);@
-	@:derefStr(b,t,high);@
+	derefStr(b, t, low);
+	derefStr(b, t, high);
 	CMDantiuselect_(&bn, b, low, high, lin, rin);
 	if (bn) {
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
@@ -2093,10 +2171,10 @@ ALGfragment(int *result, int *bid, ptr hlow, ptr hhigh, ptr tlow, ptr thigh)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "algebra.fragment", RUNTIME_OBJECT_MISSING);
 	}
-	@:derefStr(b,h,hlow);@
-	@:derefStr(b,h,hhigh);@
-	@:derefStr(b,t,tlow);@
-	@:derefStr(b,t,thigh);@
+	derefStr(b, h, hlow);
+	derefStr(b, h, hhigh);
+	derefStr(b, t, tlow);
+	derefStr(b, t, thigh);
 	bn = BATrestrict(b, hlow, hhigh, tlow, thigh);
 	if (bn) {
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
@@ -3505,7 +3583,7 @@ ALGposition(wrd *retval, int *bid, ptr val)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "algebra.position", RUNTIME_OBJECT_MISSING);
 	}
-	@:derefStr(b,h,val)@
+	derefStr(b, h, val);
 	if (CMDposition(retval, b, val) == GDK_FAIL){
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "algebra.position", GDK_EXCEPTION "Item not found");
@@ -3522,8 +3600,8 @@ ALGpositionBUN(wrd *retval, int *bid, ptr val, ptr tval)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "algebra.position", RUNTIME_OBJECT_MISSING);
 	}
-	@:derefStr(b,h,val)@
-	@:derefStr(b,t,tval)@
+	derefStr(b, h, val);
+	derefStr(b, t, tval);
 	if( (CMDpositionBUN(retval, b, val, tval) == GDK_FAIL) ){
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "algebra.position", GDK_EXCEPTION "Item not found");
@@ -3607,7 +3685,7 @@ ALGexist(bit *ret, int *bid, ptr val)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "algebra.exist", RUNTIME_OBJECT_MISSING);
 	}
-	@:derefStr(b,h,val)@
+	derefStr(b, h, val);
 	CMDexist(ret, b, val);
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
@@ -3621,8 +3699,8 @@ ALGexistBUN(bit *ret, int *bid, ptr val, ptr tval)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "algebra.exist", RUNTIME_OBJECT_MISSING);
 	}
-	@:derefStr(b,h,val)@
-	@:derefStr(b,t,tval)@
+	derefStr(b, h, val);
+	derefStr(b, t, tval);
 	CMDexistBUN(ret, b, val, tval);
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
@@ -3638,7 +3716,7 @@ ALGfind(ptr ret, int *bid, ptr val)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "algebra.find", RUNTIME_OBJECT_MISSING);
 	}
-	@:derefStr(b,h,val)@
+	derefStr(b, h, val);
 	q = BUNfnd(b, val);
 
 	if (q == BUN_NONE){
