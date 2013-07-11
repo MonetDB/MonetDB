@@ -1,27 +1,24 @@
-@/
-The contents of this file are subject to the MonetDB Public License
-Version 1.1 (the "License"); you may not use this file except in
-compliance with the License. You may obtain a copy of the License at
-http://www.monetdb.org/Legal/MonetDBLicense
-
-Software distributed under the License is distributed on an "AS IS"
-basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
-License for the specific language governing rights and limitations
-under the License.
-
-The Original Code is the MonetDB Database System.
-
-The Initial Developer of the Original Code is CWI.
-Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-Copyright August 2008-2013 MonetDB B.V.
-All Rights Reserved.
-@
-
-@f algebra
-
-@c
 /*
- * @a Peter Boncz, Martin Kersten, Niels Nes
+ * The contents of this file are subject to the MonetDB Public License
+ * Version 1.1 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ * http://www.monetdb.org/Legal/MonetDBLicense
+ *
+ * Software distributed under the License is distributed on an "AS IS"
+ * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+ * License for the specific language governing rights and limitations
+ * under the License.
+ *
+ * The Original Code is the MonetDB Database System.
+ *
+ * The Initial Developer of the Original Code is CWI.
+ * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+ * Copyright August 2008-2012 MonetDB B.V.
+ * All Rights Reserved.
+ */
+
+/*
+ * @a Peter Boncz, Martin Kersten, Niels Nes, Sjoerd Mullender
  * @v 2.0
  * @+ BAT Algebra
  * This modules contains the most common algebraic BAT manipulation
@@ -52,1130 +49,6 @@ All Rights Reserved.
 			}										\
 		} while (0)
 
-@
-@mal
-# We split between selections that return one value, and selections
-# that return a BAT.
-# @+ Value Selections
-module algebra;
-
-command exist(b:bat[:any_1,:any_2], h:any_1):bit 
-address ALGexist
-comment "Returns whether 'h' occurs as a head value in b.";
-
-command exist(b:bat[:any_1,:any_2], h:any_1, t:any_2):bit 
-address ALGexistBUN
-comment "Returns true when 'h,t' occurs as a bun in b.";
-
-command find(b:bat[:any_1,:any_2], h:any_1):any_2 
-address ALGfind
-comment "Returns the tail value 't' for which some [h,t] BUN 
-	exists in b.  If no such BUN exists, an error occurs." ;
-
-command position(b:bat[:any_1,:any_2], v:any_1):wrd
-address ALGposition
-comment "Returns BAT position [0.. b.count] of 'v' in the head 
-	column of b. It Return an error if 'v' does not exist.";
-
-command position(b:bat[:any_1,:any_2], val:any_1, tval:any_2) :wrd 
-address ALGpositionBUN
-comment "Returns the position of the value pair It returns an 
-	error if 'val' does not exist.";
-
-command fetch(b:bat[:any_2,:any_1], x:oid) :any_1 
-address ALGfetchoid;
-command fetch(b:bat[:any_2,:any_1], x:lng) :any_1 
-address ALGfetch;
-command fetch(b:bat[:any_2,:any_1], x:int) :any_1 
-address ALGfetchint
-comment "Returns the tail value of the BUN at x-th position 
-	with 0 <= x < b.count";
-
-# @+ BAT Selections
-# A simple sampling operation is also provided.
-# @- Range selection
-# The range selections are targeted at the tail of the BAT.
-command subselect(b:bat[:oid,:any_1], low:any_1, high:any_1, li:bit, hi:bit, anti:bit) :bat[:oid,:oid]
-address ALGsubselect1
-comment "Select all head values for which the tail value is in range.
-	Input is a dense-headed BAT, output is a dense-headed BAT with in
-	the tail the head value of the input BAT for which the tail value
-	is between the values low and high (inclusive if li respectively
-	hi is set).  The output BAT is sorted on the tail value.  If low
-	or high is nil, the boundary is not considered (effectively - and
-	+ infinity).  If anti is set, the result is the complement.  Nil
-	values in the tail are never matched, unless low=nil, high=nil,
-	li=1, hi=1, anti=0.  All non-nil values are returned if low=nil,
-	high=nil, and li, hi are not both 1, or anti=1.
-	Note that the output is suitable as second input for the other
-	version of this function.";
-
-command subselect(b:bat[:oid,:any_1], s:bat[:oid,:oid], low:any_1, high:any_1, li:bit, hi:bit, anti:bit) :bat[:oid,:oid]
-address ALGsubselect2
-comment "Select all head values of the first input BAT for which the tail value
-	is in range and for which the head value occurs in the tail of the
-	second input BAT.
-	The first input is a dense-headed BAT, the second input is a
-	dense-headed BAT with sorted tail, output is a dense-headed BAT
-	with in the tail the head value of the input BAT for which the
-	tail value is between the values low and high (inclusive if li
-	respectively hi is set).  The output BAT is sorted on the tail
-	value.  If low or high is nil, the boundary is not considered
-	(effectively - and + infinity).  If anti is set, the result is the
-	complement.  Nil values in the tail are never matched, unless
-	low=nil, high=nil, li=1, hi=1, anti=0.  All non-nil values are
-	returned if low=nil, high=nil, and li, hi are not both 1, or anti=1.
-	Note that the output is suitable as second input for this
-	function.";
-
-command thetasubselect(b:bat[:oid,:any_1], val:any_1, op:str) :bat[:oid,:oid]
-address ALGthetasubselect1
-comment "Select all head values for which the tail value obeys the relation
-	value OP VAL.
-	Input is a dense-headed BAT, output is a dense-headed BAT with in
-	the tail the head value of the input BAT for which the
-	relationship holds.  The output BAT is sorted on the tail value.";
-
-command thetasubselect(b:bat[:oid,:any_1], s:bat[:oid,:oid], val:any_1, op:str) :bat[:oid,:oid]
-address ALGthetasubselect2
-comment "Select all head values of the first input BAT for which the tail value
-	obeys the relation value OP VAL and for which the head value occurs in
-	the tail of the second input BAT.
-	Input is a dense-headed BAT, output is a dense-headed BAT with in
-	the tail the head value of the input BAT for which the
-	relationship holds.  The output BAT is sorted on the tail value.";
-
-command select(b:bat[:any_1,:any_2], low:any_2, high:any_2) 
-		:bat[:any_1,:any_2] 
-address ALGselect
-comment "Select all BUNs that have tail values: {v| low <= v <= high}.
-	NIL boundary values have a special meaning.
-		+ low  == nil means: no lower bound
-		+ high == nil means: no upper bound.
-		NOTE 1: you should cast the nil to the appropriate type, 
-				e.g. int(nil) in order to circumvent type clashes.
-		NOTE 2: as the 'nil' element has no clear place in the 
-				ordered domain of values, tuples with 'nil' values 
-				are NEVER returned by the range select.";
-
-command thetaselect(b:bat[:any_1,:any_2], val:any_2, op:str) :bat[:any_1,:any_2]
-address ALGthetaselect
-comment "The theta (<=,<,=,>,>=) select()";
-
-command select(b:bat[:any_1,:any_2], low:any_2, 
-	high:any_2, li:bit, hi:bit) :bat[:any_1,:any_2] 
-address ALGselectInclusive
-comment "Select all BUNs that have tail values: {v| low <{=} v <{=} high}.
-	Boundary inclusion is indicated separately.
-	NIL boundary values have a special meaning.
-	+ low  == nil means: no lower bound
-	+ high == nil means: no upper bound.";
-
-command select(b:bat[:any_1,:any_2],value:any_2) :bat[:any_1,:any_2] 
-address ALGselect1
-comment "Select all BUNs of a BAT with a certain 
-	tail value. Selection on NIL is also 
-	possible (it should be properly casted, 
-	e.g.:int(nil)).";
-
-command selectNotNil(b:bat[:any_1,:any_2]):bat[:any_1,:any_2]
-address ALGselectNotNil
-comment "Select all not-nil values";
-
-# The second group uses the head to perform the range selection.
-command selectH(b:bat[:any_1,:any_2], low:any_1, high:any_1) 
-			:bat[:any_1,:any_2] 
-address ALGselectHead;
-
-command selectH(b:bat[:any_1,:any_2], low:any_1, 
-	high:any_1, li:bit, hi:bit) :bat[:any_1,:any_2] 
-address ALGselectInclusiveHead;
-
-command selectH(b:bat[:any_1,:any_2],value:any_1) :bat[:any_1,:any_2] 
-address ALGselect1Head;
-
-# A special case for this set are the void tailed bats.
-command select(b:bat[:any_2,:void], low:any_2) 
-		:bat[:any_2,:void] 
-address ALGselect1Head;
-
-command select(b:bat[:any_2,:void], low:any_2, high:any_2) 
-		:bat[:any_2,:void] 
-address ALGselectHead;
-command select(b:bat[:any_2,:void], low:any_2, high:any_2,li:bit, hi:bit) 
-		:bat[:any_2,:void] 
-address ALGselectInclusiveHead;
-
-# The second group uses the head to perform the range selection
-
-command fragment ( b:bat[:any_1,:any_2], hlow:any_1, hhigh:any_1,
-		tlow:any_2, thigh:any_2 ) :bat[:any_1,:any_2] 
-address ALGfragment
-comment "Select both on head and tail range.";
-
-command slice(b:bat[:any_1,:any_2], x:oid, y:oid) :bat[:any_1,:any_2] 
-address ALGslice_oid
-comment "Return the slice based on head oid x till y (exclusive).";
-
-command slice(b:bat[:any_1,:any_2], x:lng, y:lng) :bat[:any_1,:any_2] 
-address ALGslice
-comment "Return the slice with the BUNs at position x till y.";
-
-command slice(b:bat[:any_1,:any_2], x:int, y:int) :bat[:any_1,:any_2] 
-address ALGslice_int
-comment "Return the slice with the BUNs at position x till y.";
-
-command slice(b:bat[:any_1,:any_2], x:wrd, y:wrd) :bat[:any_1,:any_2] 
-address ALGslice_wrd
-comment "Return the slice with the BUNs at position x till y.";
-
-command subslice(b:bat[:oid,:any_1], x:wrd, y:wrd) :bat[:oid,:oid] 
-address ALGsubslice_wrd
-comment "Return the oids of the slice with the BUNs at position x till y.";
-
-command topN( b:bat[:any_1,:any_2], top:lng ) :bat[:any_1,:any_2]
-address ALGtopN
-comment "Trim all but the top N tuples.";
-
-command groupby(gids:bat[:oid,:oid], cnts:bat[:oid,:wrd]) :bat[:oid,:oid] 
-address ALGgroupby
-comment "Produces a new BAT with groups identified by the head column. The result contains tail times the head value, ie the tail contains the result group sizes.";
-
-command uselect(b:bat[:any_1,:any_2], low:any_2, high:any_2, 
-		li:bit, hi:bit) :bat[:any_1,:void] 
-address ALGuselectInclusive
-comment "See select() but limited to head values";
-
-command thetauselect(b:bat[:any_1,:any_2], val:any_2, op:str) :bat[:any_1,:void] 
-address ALGthetauselect
-comment "The theta (<=,<,=,>,>=) select() limited to head values";
-
-command uselect(b:bat[:any_1,:any_2], low:any_2, high:any_2):bat[:any_1,:void] 
-address ALGuselect;
-command uselect(b:bat[:any_1,:any_2], value:any_2) :bat[:any_1,:void] 
-address ALGuselect1
-comment "Value select, but returning only the 
-	head values. SEE ALSO:select(bat,val)";
-
-command antiuselect(b:bat[:any_1,:any_2], value:any_2) :bat[:any_1,:void] 
-address ALGantiuselect1
-comment "Value select, but returning only the 
-	head values. SEE ALSO:select(bat,val)";
-
-command antiuselect(b:bat[:any_1,:any_2], low:any_2, high:any_2, 
-		li:bit, hi:bit) :bat[:any_1,:void] 
-address ALGantiuselectInclusive
-comment "See select() but limited to head values";
-# @- Pattern matching
-command like(b:bat[:any_1,:str], substr:str) :bat[:any_1,:str]
-address ALGlike
-comment "Selects all elements that have 'substr' as in the tail.";
-
-# @- Sampling
-command sample ( b:bat[:oid,:any_2], num:int ) :bat[:oid,:any_2] 
-address ALGsample
-comment "Produce a random selection of size 'num' from the input BAT.";
-
-command subsample(b:bat[:oid,:any_1], num:int ) :bat[:oid,:oid] 
-address ALGsubsample
-comment "Return the oids of a random selection of size 'num' from the input BAT.";
-
-# @+ BAT copying
-command copy( b:bat[:any_1,:any_2]) :bat[:any_1,:any_2] 
-address ALGcopy
-comment "Returns physical copy of a BAT.";
-# @- Sorted copy
-command sort( b:bat[:any_1,:any_2]) :bat[:any_1,:any_2] 
-address ALGhsort
-comment "Returns a BAT copy sorted on the head column.";
-command sortReverse( b:bat[:any_1,:any_2]) :bat[:any_1,:any_2] 
-address ALGhsort_rev
-comment "Returns a BAT copy reversely sorted on the head column.";
-
-command sortTail( b:bat[:any_1,:any_2]) :bat[:any_1,:any_2] 
-address ALGtsort
-comment "Returns a BAT copy sorted on the tail column.";
-command sortReverseTail( b:bat[:any_1,:any_2]) :bat[:any_1,:any_2] 
-address ALGtsort_rev
-comment "Returns a BAT copy reversely sorted on the tail column.";
-
-command sortHT( b:bat[:any_1,:any_2]) :bat[:any_1,:any_2] 
-address ALGhtsort
-comment "Returns a lexicographically sorted copy on head,tail.";
-command sortTH( b:bat[:any_1,:any_2]) :bat[:any_1,:any_2] 
-address ALGthsort
-comment "Returns a lexicographically sorted copy on tail,head.";
-
-command ssort( b:bat[:any_1,:any_2]) :bat[:any_1,:any_2]
-address ALGssort
-comment "Returns copy of a BAT with the BUNs sorted on ascending head values.
-         This is a stable sort.";
-command ssort_rev( b:bat[:any_1,:any_2]) :bat[:any_1,:any_2]
-address ALGssort_rev
-comment "Returns copy of a BAT with the BUNs sorted on descending head values.
-         This is a stable sort.";
-
-command subsort(b:bat[:oid,:any_1], reverse:bit, stable:bit) :bat[:oid,:any_1]
-address ALGsubsort11
-comment "Returns a copy of the BAT sorted on tail values.
-         The input and output are (must be) dense headed.
-         The order is descending if the reverse bit is set.
-		 This is a stable sort if the stable bit is set.";
-command subsort(b:bat[:oid,:any_1], reverse:bit, stable:bit) (:bat[:oid,:any_1], :bat[:oid,:oid])
-address ALGsubsort12
-comment "Returns a copy of the BAT sorted on tail values and a BAT that
-         specifies how the input was reordered.
-         The input and output are (must be) dense headed.
-         The order is descending if the reverse bit is set.
-		 This is a stable sort if the stable bit is set.";
-command subsort(b:bat[:oid,:any_1], reverse:bit, stable:bit) (:bat[:oid,:any_1], :bat[:oid,:oid], :bat[:oid,:oid])
-address ALGsubsort13
-comment "Returns a copy of the BAT sorted on tail values, a BAT that specifies
-         how the input was reordered, and a BAT with group information.
-         The input and output are (must be) dense headed.
-         The order is descending if the reverse bit is set.
-		 This is a stable sort if the stable bit is set.";
-command subsort(b:bat[:oid,:any_1], o:bat[:oid,:oid], reverse:bit, stable:bit) :bat[:oid,:any_1]
-address ALGsubsort21
-comment "Returns a copy of the BAT sorted on tail values.
-         The input and output are (must be) dense headed.
-         The order is descending if the reverse bit is set.
-		 This is a stable sort if the stable bit is set.";
-command subsort(b:bat[:oid,:any_1], o:bat[:oid,:oid], reverse:bit, stable:bit) (:bat[:oid,:any_1], :bat[:oid,:oid])
-address ALGsubsort22
-comment "Returns a copy of the BAT sorted on tail values and a BAT that
-         specifies how the input was reordered.
-         The input and output are (must be) dense headed.
-         The order is descending if the reverse bit is set.
-		 This is a stable sort if the stable bit is set.";
-command subsort(b:bat[:oid,:any_1], o:bat[:oid,:oid], reverse:bit, stable:bit) (:bat[:oid,:any_1], :bat[:oid,:oid], :bat[:oid,:oid])
-address ALGsubsort23
-comment "Returns a copy of the BAT sorted on tail values, a BAT that specifies
-         how the input was reordered, and a BAT with group information.
-         The input and output are (must be) dense headed.
-         The order is descending if the reverse bit is set.
-		 This is a stable sort if the stable bit is set.";
-command subsort(b:bat[:oid,:any_1], o:bat[:oid,:oid], g:bat[:oid,:oid], reverse:bit, stable:bit) :bat[:oid,:any_1]
-address ALGsubsort31
-comment "Returns a copy of the BAT sorted on tail values.
-         The input and output are (must be) dense headed.
-         The order is descending if the reverse bit is set.
-		 This is a stable sort if the stable bit is set.";
-command subsort(b:bat[:oid,:any_1], o:bat[:oid,:oid], g:bat[:oid,:oid], reverse:bit, stable:bit) (:bat[:oid,:any_1], :bat[:oid,:oid])
-address ALGsubsort32
-comment "Returns a copy of the BAT sorted on tail values and a BAT that
-         specifies how the input was reordered.
-         The input and output are (must be) dense headed.
-         The order is descending if the reverse bit is set.
-		 This is a stable sort if the stable bit is set.";
-command subsort(b:bat[:oid,:any_1], o:bat[:oid,:oid], g:bat[:oid,:oid], reverse:bit, stable:bit) (:bat[:oid,:any_1], :bat[:oid,:oid], :bat[:oid,:oid])
-address ALGsubsort33
-comment "Returns a copy of the BAT sorted on tail values, a BAT that specifies
-         how the input was reordered, and a BAT with group information.
-         The input and output are (must be) dense headed.
-         The order is descending if the reverse bit is set.
-		 This is a stable sort if the stable bit is set.";
-
-command revert( b:bat[:any_1,:any_2]) :bat[:any_1,:any_2]
-address ALGrevert
-comment "Returns a BAT copy with buns in reverse order";
-
-# @+ Set operations
-# Sets in Monet can be viewed in two ways:
-# @itemize
-# @item
-# by looking at both columns of a BAT together (Set-, or s-operators).
-# @item
-# by looking at the head column only (Key- or k-operators).
-# by looking at the tail column only (Tail key- or t-operators).
-# @end itemize
-# For this reason, all standard set operations come in three flavors:
-# k-@emph{operand} series, which look only at the head column,
-# t-@emph{operand} series, which look only at the tail column, and
-# s-@emph{operand} series, that look at the whole BUN.
-#
-# @noindent Operands provided are:
-# @itemize
-# @item [s,k,t]unique(bat[:any_1,:any_2]) :bat[:any_1,:any_2]
-# produces a copy of the bat, with double elimination
-# @item [s,k,t]union(bat[:any_1,:any_2],bat[:any_1,:any_2]) :bat[:any_1,:any_2]
-# bat union.
-# @item [s,k,t]difference(bat[:any_1,:any_2],bat[:any_1,:any_2]) :bat[:any_1,:any_2]
-# bat difference.
-# @item [s,k,t]intersection(bat[:any_1,:any_2],bat[:any_1,:any_2]) :bat[:any_1,:any_2]
-# bat intersection.
-# @end itemize
-# Implementations typically take two forms: if the input relation(s) is/are
-# ordered, a merge-algorithm is used. Otherwise, hash-indices are produced
-# on demand for the hash-based algorithms.
-# The [k,s]intersect(l,r) operations result in all BUNs of @emph{l} that
-# are also in @emph{r}. They do not do double-elimination over the @emph{l} BUNs.
-# The [k,s]difference(l,r) operations result in all BUNs of @emph{l} that are
-# not in @emph{r}. They do not do double-elimination over the @emph{l} BUNs.
-# The [k,s]union(l,r) operations result in all BUNs of l, plus all BUNs
-# of @emph{r} that are not in @emph{l}. They do not do double-elimination
-# over the @emph{l} nor @emph{r} BUNs.
-# Operations with double-elimination can be formed by performing
-# [k,s]unique(l) on their operands.
-# The kintersect(l,r) is used also as implementation for the
-# @emph{semijoin()}.
-#
-# The t-@emph{operand} series are cast into a k-@emph{operand}
-# expression enclosing it with a BATmirror.
-# @- Bun-unique elements
-command unique (b:bat[:any_1,:any_2] ) :bat[:any_1,:any_2] 
-address ALGsunique;
-command sunique (b:bat[:any_1,:any_2] ) :bat[:any_1,:any_2] 
-address ALGsunique
-comment "Select unique tuples from the input BAT. Double elimination is 
-		done over BUNs as a whole (head and tail).  Result is a BAT 
-	with real set() semantics.";
-# @- Head-unique elements
-command kunique ( b:bat[:any_1,:any_2] ) :bat[:any_1,:any_2] 
-address ALGkunique
-comment "Select unique tuples from the input BAT.  Double elimination is 
-		done only looking at the head column. The result is a BAT with
-		property hkeyed() == true.";
-
-command tunique (b:bat[:any_1,:any_2] ) :bat[:any_1,:any_2] 
-address ALGtunique
-comment "Select unique tuples from the input BAT. Double elimination is 
-		done over the BUNs tail. The result is a BAT with property
-		tkeyd()== true";
-
-# @- Bun-intersecting elements
-command intersect ( left:bat[:any_1,:any_2], right:bat[:any_1,:any_2]) 
-		:bat[:any_1,:any_2] 
-address ALGsintersect;
-command sintersect ( left:bat[:any_1,:any_2], right:bat[:any_1,:any_2]) 
-		:bat[:any_1,:any_2] 
-address ALGsintersect
-comment "Returns the intersection taken over *both* columns of two BATs. 
-		Results in all BUNs of 'left' that are also in 'right'. Does *not* 
-		do double-elimination over the 'left' BUNs, If you want this, use:
-	 'sintersect(sunique(left),sunique(right))' 
-	or: 'sunique(sintersect(left,right))'.";
-
-# @- Head-intersecting elements (a.k.a. semijoin)
-command semijoin( left:bat[:any_1,:any_2], right:bat[:any_1,:any] ) 
-		:bat[:any_1,:any_2] 
-address ALGsemijoin
-comment "Returns the intersection taken over only the *head* columns of 
-		two BATs.  Results in all BUNs of 'left' that are also in 'right'. 
-		Does *not* do double-elimination over the 'left' BUNs. 
-		If you want this, use: 'kintersect(kunique(left),kunique(right))' 
-	or: 'kunique(kintersect(left,right))'.";
-
-command kintersect( left:bat[:any_1,:any_2], right:bat[:any_1,:any] ) 
-		:bat[:any_1,:any_2] 
-address ALGsemijoin
-comment "Returns the intersection taken over only the *head* columns of two BATs. 
-	Results in all BUNs of 'left' that are also in 'right'. 
-		Does *not* do double- elimination over the 'left' BUNs.
-		If you want this, use: 'kintersect(kunique(left),kunique(right))' 
-	or: 'kunique(kintersect(left,right))'.";
-command tintersect( left:bat[:any_1,:any_2], right:bat[:any_1,:any] ) 
-		:bat[:any_1,:any_2] 
-address ALGtintersect;
-command tinter( left:bat[:oid,:oid], right:bat[:oid,:oid] ) :bat[:oid,:oid] 
-address ALGtinter;
-
-# @- Bun-differing elements
-command difference( left:bat[:any_1,:any_2], right:bat[:any_1,:any_2] ) 
-		:bat[:any_1,:any_2] 
-address ALGsdiff;
-command sdifference( left:bat[:any_1,:any_2], right:bat[:any_1,:any_2] ) 
-		:bat[:any_1,:any_2] 
-address ALGsdiff
-comment "Returns the difference taken over *both* columns of two BATs. 
-		Results in all BUNs of 'left' that are *not* in 'right'. 
-		Does *not* do double-elimination over the 'left' BUNs. 
-		If you want this, use:
-		 'sdifference(left.sunique,right.sunique)' 
-	or: 'sdifference(left,right).sunique'.";
-# @- Head-differing elements
-command kdifference ( left:bat[:any_1,:any_2], right:bat[:any_1,:any] ) 
-		:bat[:any_1,:any_2] 
-address ALGkdiff
-comment "Returns the difference taken over only the *head* columns of two BATs. 
-		Results in all BUNs of 'left' that are *not* in 'right'. 
-		It does *not* do double-elimination over the 'left' BUNs. 
-		If you want this, use:
-	 'kdifference(left.kunique,right.kunique)' 
-	or: 'kdifference(left,right).kunique'.";
-command tdifference ( left:bat[:any_1,:any_2], right:bat[:any_1,:any] ) 
-		:bat[:any_1,:any_2] 
-address ALGtdifference;
-command tdiff( left:bat[:oid,:oid], right:bat[:oid,:oid] ) :bat[:oid,:oid] 
-address ALGtdiff;
-# @- Unions on bun
-command union ( left:bat[:any_1,:any_2], right:bat[:any_1,:any_2]) 
-		:bat[:any_1,:any_2] 
-address ALGsunion;
-command sunion ( left:bat[:any_1,:any_2], right:bat[:any_1,:any_2]) 
-		:bat[:any_1,:any_2] 
-address ALGsunion
-comment "Returns the union of two BATs; looking at both columns of both BATs.
-		Results in all BUNs of 'left' that are  not in 'right', plus all 
-		BUNs of 'right'.  *no* double-elimination is done. 
-		If you want this, do:
-	 'sunion(left.sunique,right.sunique)' 
-	or: 'sunion(left,right).sunique'.";
-# @- Union on head
-command kunion ( left:bat[:any_1,:any_2], right:bat[:any_1,:any_2])
-		:bat[:any_1,:any_2] 
-address ALGkunion
-comment "Returns the union of two BATs; looking at head-columns only. 
-		Results in all BUNs of 'left' that are  not in 'right', plus 
-	all BUNs of 'right'.  *no* double-elimination is done. 
-		If you want this, do:
-	'kunion(left.kunique,right.kunique)' 
-	or: 'sunion(left,right).kunique'.";
-command tunion ( left:bat[:any_1,:any_2], right:bat[:any_1,:any_2])
-		:bat[:any_1,:any_2] 
-address ALGtunion;
-
-
-# @+ Join operations
-# The core of every relational engine.
-# The join collection provided by the GDK kernel.
-command antijoin( left:bat[:oid,:any_1], right:bat[:oid,:any_1])
-		(l:bat[:oid,:oid],r:bat[:oid,:oid])
-address ALGantijoin2
-comment "Returns 2 columns with all BUNs, consisting of the head-oids 
-	  from 'left' and 'right' for which there are BUNs in 'left' 
-	  and 'right' with equal tails";
-
-command join( left:bat[:oid,:any_1], right:bat[:oid,:any_1])
-		(l:bat[:oid,:oid],r:bat[:oid,:oid])
-address ALGjoin2
-comment "Returns 2 columns with all BUNs, consisting of the head-oids 
-	  from 'left' and 'right' for which there are BUNs in 'left' 
-	  and 'right' with equal tails";
-
-# @- Theta Join
-command thetajoin( left:bat[:oid,:any_1], right:bat[:oid,:any_1], opname:int)
-		(l:bat[:oid,:oid],r:bat[:oid,:oid])
-address ALGthetajoin2
-comment "Returns 2 columns with all BUNs, consisting of the head-oids 
-	  from 'left' and 'right' for which there are BUNs in 'left' 
-	  and 'right' with equal tails";
-
-command crossproduct( left:bat[:oid,:any_1], right:bat[:oid,:any_2])
-		(l:bat[:oid,:oid],r:bat[:oid,:oid])
-address ALGcrossproduct2
-comment "Returns 2 columns with all BUNs, consisting of the head-oids 
-	  from 'left' and 'right' for which there are BUNs in 'left' 
-	  and 'right' with equal tails";
-
-command bandjoin( outer:bat[:oid,:any_2], inner:bat[:oid,:any_2], minus:any_2 , plus:any_2, li:bit, hi:bit ) 
-		(l:bat[:oid,:oid],r:bat[:oid,:oid])
-address ALGbandjoin2
-comment "This is a join() for which the predicate is that two BUNs match 
-		if the left-tail value is within the range [right-head - minus, 
-		right-head + plus], depending on (l_in/h_in), the bounds 
-		are included. Works only for the builtin numerical types, 
-		and their derivates.";
-
-command join(left:bat[:oid,:any_2], rl:bat[:oid,:any_2], rh:bat[:oid,:any_2], li:bit, hi:bit) 
-		(l:bat[:oid,:oid],r:bat[:oid,:oid])
-address ALGrangejoin2;
-
-# Note that joins over void columns are handled as if they are oids.
-command crossproduct(left:bat[:any_1,:any_2], right:bat[:any_3,:any_4])
-	:bat[:any_1,:any_4]
-address ALGcross
-comment "Returns the cross product";
-
-command antijoin(left:bat[:any_1,:any_2], right:bat[:any_2,:any_4])
-	:bat[:any_1,:any_4]
-address ALGantijoin
-comment "Returns the antijoin";
-
-command join( left:bat[:any_1,:any_2], right:bat[:any_2,:any_3])
-		:bat[:any_1,:any_3] 
-address ALGjoin
-comment "Returns all BUNs, consisting of a head-value from 'left' and 
-		a tail-value from 'right' for which there are BUNs in 'left' 
-		and 'right' with equal tail- resp. head-value (i.e. the join
-	columns are projected out).";
-
-command join( left:bat[:any_1,:any_2], right:bat[:any_2,:any_3])
-		:bat[:any_1,:any_3] 
-address ALGjoin;
-command leftjoin( left:bat[:any_1,:any_2], right:bat[:any_2,:any_3])
-		:bat[:any_1,:any_3] 
-address ALGleftjoin;
-
-command leftjoin( left:bat[:any_1,:any_2], right:bat[:any_2,:any_3],
-		estimate:lng) :bat[:any_1,:any_3] 
-address ALGleftjoinestimate;
-
-command join( left:bat[:any_1,:any_2], right:bat[:any_2,:any_3],
-		estimate:lng) :bat[:any_1,:any_3] 
-address ALGjoinestimate;
-
-command leftfetchjoin ( left:bat[:any_1,:oid], right:bat[:oid,:any_3] )
-		:bat[:any_1,:any_3] 
-address ALGleftfetchjoin
-comment "Hook directly into the left fetch join implementation.";
-
-command indexjoin ( left:bat[:any_1,:any_2], right:bat[:any_2,:any_3])
-		:bat[:any_1,:any_3] 
-address ALGindexjoin
-comment "Hook directly into the index implementation of the join.";
-
-# @- Outer Join
-command outerjoin( outer:bat[:any_1,:any_2], inner:bat[:any_2,:any_3]) 
-		:bat[:any_1,:any_3] 
-address ALGouterjoin
-comment "Returns all the result of a join, plus the BUNS formed NIL in 
-		the tail and the head-values of 'outer' whose tail-value does 
-		not match an head-value in 'inner'.";
-command outerjoin( outer:bat[:any_1,:oid], inner:bat[:oid,:any_3]) 
-		:bat[:any_1,:any_3] 
-address ALGouterjoin
-comment "Returns all the result of a join, plus the BUNS formed NIL in 
-		the tail and the head-values of 'outer' whose tail-value does 
-		not match an head-value in 'inner'.";
-command outerjoin( outer:bat[:any_1,:oid], inner:bat[:oid,:any_3]) 
-		:bat[:any_1,:any_3] 
-address ALGouterjoin
-comment "Returns all the result of a join, plus the BUNS formed NIL in 
-		the tail and the head-values of 'outer' whose tail-value does 
-		not match an head-value in 'inner'.";
-
-command outerjoin( outer:bat[:any_1,:any_2], inner:bat[:any_2,:any_3],
-		estimate:lng) :bat[:any_1,:any_3] 
-address ALGouterjoinestimate;
-
-# @- Theta Join
-command thetajoin( left:bat[:any_1,:any_2], right:bat[:any_2,:any_3],
-		opname:int) :bat[:any_1,:any_3] 
-address ALGthetajoin
-comment "Theta join on for 'mode' in { LE, LT, EQ, GT, GE }.  JOIN_EQ is 
-		just the same as join(). All other options do merge algorithms. 
-		Either using the fact that they are ordered() already (left on tail, 
-	right on head), or by using/creating binary search trees on the 
-		join columns. ";
-
-command thetajoin( left:bat[:any_1,:any_2], right:bat[:any_2,:any_3],
-		opname:int,estimate:lng) :bat[:any_1,:any_3] 
-address ALGthetajoinEstimate;
-# @- Band Join (approximate match)
-command bandjoin( outer:bat[:any_1,:any_2], inner:bat[:any_2,:any_3],
-		   minus:any_2 , plus:any_2 ) :bat[:any_1,:any_3] 
-address ALGbandjoin_default
-comment "This is a join() for which the predicate is that two BUNs match 
-		if the left-tail value is within the range [right-head - minus, 
-		right-head + plus]. Works only for the builtin numerical types, 
-		and their derivates.";
-
-command bandjoin( outer:bat[:any_1,:any_2], inner:bat[:any_2,:any_3],
-		   minus:any_2 , plus:any_2, li:bit, hi:bit ) :bat[:any_1,:any_3] 
-address ALGbandjoin
-comment "This is a join() for which the predicate is that two BUNs match 
-		if the left-tail value is within the range [right-head - minus, 
-		right-head + plus], depending on (l_in/h_in), the bounds 
-		are included. Works only for the builtin numerical types, 
-		and their derivates.";
-
-command join(l:bat[:any_1,:any_2], rl:bat[:any_3,:any_2], rh:bat[:any_3,:any_2], li:bit, hi:bit) :bat[:any_1,:any_3] 
-address ALGrangejoin;
-
-command subjoin(l:bat[:oid,:any_1],r:bat[:oid,:any_1],sl:bat[:oid,:oid],sr:bat[:oid,:oid],estimate:lng) (:bat[:oid,:oid],:bat[:oid,:oid])
-address ALGsubjoin
-comment "Join";
-
-command subleftjoin(l:bat[:oid,:any_1],r:bat[:oid,:any_1],sl:bat[:oid,:oid],sr:bat[:oid,:oid],estimate:lng) (:bat[:oid,:oid],:bat[:oid,:oid])
-address ALGsubleftjoin
-comment "Left join with candidate lists";
-
-command subouterjoin(l:bat[:oid,:any_1],r:bat[:oid,:any_1],sl:bat[:oid,:oid],sr:bat[:oid,:oid],estimate:lng) (:bat[:oid,:oid],:bat[:oid,:oid])
-address ALGsubouterjoin
-comment "Left outer join with candidate lists";
-
-command subthetajoin(l:bat[:oid,:any_1],r:bat[:oid,:any_1],sl:bat[:oid,:oid],sr:bat[:oid,:oid],op:str,estimate:lng) (:bat[:oid,:oid],:bat[:oid,:oid])
-address ALGsubthetajoin
-comment "Theta join with candidate lists";
-
-# @+ Projection operations
-command project(b:bat[:any_1,:any_2]) :bat[:any_1,:void]
-address ALGprojectNIL
-comment "Extract the head of a BAT.";
-
-pattern project(v:any_3,b:bat[:any_2,:any_1]) :bat[:any_3,:any_1]
-address ALGprojecthead
-comment "Fill the head with a constant, e.g. [0~b]";
-pattern project(b:bat[:any_2,:any_1],v:any_3) :bat[:any_2,:any_3]
-address ALGprojecttail
-comment "Fill the tail with a constant, e.g. [0~b]";
-
-# @+ OID Introducing Commands
-# For relational processing, some operators are necessary to produce newly
-# initiated OID columns, for representing n-ary (intermediary) relations.
-command markT( b:bat[:any_1,:any_2], base:oid ) :bat[:any_1,:oid] 
-address ALGtmark
-comment "Produces a BAT with fresh unique dense sequense of OIDs in 
-		the tail that starts at base (i.e. [base,..base+b.count()-1] ).";
-
-command markT( b:bat[:any_1,:any_2] ) :bat[:any_1,:oid] 
-address ALGtmark_default
-comment "Produces a BAT with fresh unique OIDs in the tail starting at 0@0.";
-
-command markT( b:bat[:any_1,:any_2], nr_parts:int, part_nr:int ) :bat[:any_1,:oid] 
-address ALGtmarkp
-comment "Produces a BAT with fresh unique dense sequense of OIDs in 
-	the tail that starts at base (i.e. [base,..base+b.count()-1] ).
-	The base is uniquely defined by the part_nr (ie we set the highest
-	bits based on the part_nr/nr_parts) ";
-
-
-command markH( b:bat[:any_1,:any_2] ) :bat[:oid,:any_2] 
-address ALGmarkHead_default
-comment "Produces a BAT with fresh OIDs in the head starting at 0@0.";
-
-command markH( b:bat[:any_1,:any_2], base:oid ) :bat[:oid,:any_2] 
-address ALGmarkHead
-comment "Produces a new BAT with fresh unique dense sequense of OIDs in 
-		the head that starts at base (i.e. [base,..base+b.count()-1] ).";
-
-command markH( b:bat[:any_1,:any_2], nr_parts:int, part_nr:int ) :bat[:oid,:any_2] 
-address ALGhmarkp
-comment "Produces a BAT with fresh unique dense sequense of OIDs in 
-	the head that starts at base (i.e. [base,..base+b.count()-1] ).
-	The base is uniquely defined by the part_nr (ie we set the highest
-	bits based on the part_nr/nr_parts) ";
-
-
-command mark_grp( b:bat[:any_1,:oid], g:bat[:oid,:oid]) :bat[:any_1,:oid]
-address ALGmark_grp_1
-comment "\"grouped mark\": Produces a new BAT with per group a locally unique dense
- ascending sequence of OIDs in the tail. The tail of the first BAT (b)
- identifies the group that each BUN of b belongs to. The second BAT (g)
- represents the group extent, i.e., the head is the unique list of group IDs
- from b's tail. The tail of g gives for each group the base value for the new
- OID sequence.";
-
-command mark_grp(b:bat[:any_1,:oid], g:bat[:oid,:any_2], s:oid) :bat[:any_1,:oid]
-address ALGmark_grp_2
-comment "\"grouped mark\": Produces a new BAT with per group a locally unique dense
- ascending sequense of OIDs in the tail. The tail of the first BAT (b)
- identifies the group that each BUN of b belongs to. The second BAT (g)
- represents the group extent, i.e., the head is the unique list of group IDs
- from b's tail. The third argument (s) gives the base value for the new
- OID sequence of each group.";
-
-command merge(b:bat[:oid,:oid]):bat[:lng,:oid]
-address ALGmerge
-comment "Merge head and tail into a single value";
-
-command split(b:bat[:lng,:oid]):bat[:oid,:oid]
-address ALGsplit
-comment "Split head into two values";
-
-# @+ BAT fragmentation commands
-# Various operations for splitting BATs into useful fragments.
-#
-# @- Variable management
-# It is sometimes needed to cast a type at runtime
-command materialize(b:bat[:oid,:any_1]):bat[:oid,:any_1]
-address ALGmaterialize
-comment "Materialize the void column";
-
-command reuse(b:bat[:any_1,:any_2]):bat[:any_1,:any_2]
-address ALGreuse
-comment "Reuse a temporary BAT if you can. Otherwise,
-	allocate enough storage to accept result of an
- 	operation (not involving the heap)";
-
-# @+ Common BAT Aggregates
-# These operations examine a BAT, and compute some simple aggregate result
-# over it.
-# @- BAT size
-module aggr;
-
-command count( b:bat[:any_1,:any] ) :wrd 
-address ALGcount_bat
-comment "Return the current size (in number of elements) in a BAT.";
-command count ( b:bat[:any_1,:any], ignore_nils:bit ) :wrd 
-address ALGcount_nil
-comment "Return the number of elements currently in a BAT ignores 
-		BUNs with nil-tail iff ignore_nils==TRUE.";
-command count_no_nil ( b:bat[:any_1,:any_2]) :wrd
-address ALGcount_no_nil
-comment "Return the number of elements currently 
-	in a BAT ignoring BUNs with nil-tail";
-# @- Histogram on Tail
-command histogram ( b:bat[:any_1,:any_2]) :bat[:any_2,:int] 
-address ALGhistogram
-comment "Produce a BAT containing the histogram over the tail values.";
-
-# @- Default Min and Max
-# Implementations a generic Min and Max routines get declared first. The
-# @emph{min()} and @emph{max()} routines below catch any tail-type.
-# The type-specific routines defined later are faster, and will
-# override these any implementations.
-command cardinality( b:bat[:any_1,:any_2] ) :lng 
-address ALGcard
-comment "Return the cardinality of the BAT tail values.";
-
-# Implementations a generic Min and Max routines get declared first. The
-# @emph{ min()} and @emph{ max()} routines below catch any tail-type.
-# The type-specific routines defined later are faster, and will
-# override these any implementations.
-
-command min(b:bat[:any_1,:any_2]):any_2 
-address ALGminany
-comment "Return the lowest tail value or nil.";
-
-command max(b:bat[:any_1,:any_2]):any_2 
-address ALGmaxany
-comment "Return the highest tail value or nil.";
-
-command avg (b:bat[:any_1,:bte] ) :dbl
-address ALGavg
-comment "Gives the avg of all tail values";
-
-command avg (b:bat[:any_1,:sht] ) :dbl
-address ALGavg
-comment "Gives the avg of all tail values";
-
-command avg (b:bat[:any_1,:int] ) :dbl
-address ALGavg
-comment "Gives the avg of all tail values";
-
-command avg (b:bat[:any_1,:wrd] ) :dbl
-address ALGavg
-comment "Gives the avg of all tail values";
-
-command avg (b:bat[:any_1,:lng] ) :dbl
-address ALGavg
-comment "Gives the avg of all tail values";
-
-command avg (b:bat[:any_1,:flt] ) :dbl
-address ALGavg
-comment "Gives the avg of all tail values";
-
-command avg (b:bat[:any_1,:dbl] ) :dbl
-address ALGavg
-comment "Gives the avg of all tail values";
-
-# @- Standard deviation
-# The standard deviation of a set is the square root of its variance.
-# The variance is the sum of squares of the deviation of each value in the set
-# from the mean (average) value, divided by the population of the set.
-command stdev(b:bat[:any_1,:bte]) :dbl
-address ALGstdev
-comment "Gives the standard deviation of all tail values";
-command stdevp(b:bat[:any_1,:bte]) :dbl
-address ALGstdevp
-comment "Gives the standard deviation of all tail values";
-command variance(b:bat[:any_1,:bte]) :dbl
-address ALGvariance
-comment "Gives the variance of all tail values";
-command variancep(b:bat[:any_1,:bte]) :dbl
-address ALGvariancep
-comment "Gives the variance of all tail values";
-
-command stdev(b:bat[:any_1,:sht]) :dbl
-address ALGstdev
-comment "Gives the standard deviation of all tail values";
-command stdevp(b:bat[:any_1,:sht]) :dbl
-address ALGstdevp
-comment "Gives the standard deviation of all tail values";
-command variance(b:bat[:any_1,:sht]) :dbl
-address ALGvariance
-comment "Gives the variance of all tail values";
-command variancep(b:bat[:any_1,:sht]) :dbl
-address ALGvariancep
-comment "Gives the variance of all tail values";
-
-command stdev(b:bat[:any_1,:int]) :dbl
-address ALGstdev
-comment "Gives the standard deviation of all tail values";
-command stdevp(b:bat[:any_1,:int]) :dbl
-address ALGstdevp
-comment "Gives the standard deviation of all tail values";
-command variance(b:bat[:any_1,:int]) :dbl
-address ALGvariance
-comment "Gives the variance of all tail values";
-command variancep(b:bat[:any_1,:int]) :dbl
-address ALGvariancep
-comment "Gives the variance of all tail values";
-
-command stdev(b:bat[:any_1,:wrd]) :dbl
-address ALGstdev
-comment "Gives the standard deviation of all tail values";
-command stdevp(b:bat[:any_1,:wrd]) :dbl
-address ALGstdevp
-comment "Gives the standard deviation of all tail values";
-command variance(b:bat[:any_1,:wrd]) :dbl
-address ALGvariance
-comment "Gives the variance of all tail values";
-command variancep(b:bat[:any_1,:wrd]) :dbl
-address ALGvariancep
-comment "Gives the variance of all tail values";
-
-command stdev(b:bat[:any_1,:lng]) :dbl
-address ALGstdev
-comment "Gives the standard deviation of all tail values";
-command stdevp(b:bat[:any_1,:lng]) :dbl
-address ALGstdevp
-comment "Gives the standard deviation of all tail values";
-command variance(b:bat[:any_1,:lng]) :dbl
-address ALGvariance
-comment "Gives the variance of all tail values";
-command variancep(b:bat[:any_1,:lng]) :dbl
-address ALGvariancep
-comment "Gives the variance of all tail values";
-
-command stdev(b:bat[:any_1,:flt]) :dbl
-address ALGstdev
-comment "Gives the standard deviation of all tail values";
-command stdevp(b:bat[:any_1,:flt]) :dbl
-address ALGstdevp
-comment "Gives the standard deviation of all tail values";
-command variance(b:bat[:any_1,:flt]) :dbl
-address ALGvariance
-comment "Gives the variance of all tail values";
-command variancep(b:bat[:any_1,:flt]) :dbl
-address ALGvariancep
-comment "Gives the variance of all tail values";
-
-command stdev(b:bat[:any_1,:dbl]) :dbl
-address ALGstdev
-comment "Gives the standard deviation of all tail values";
-command stdevp(b:bat[:any_1,:dbl]) :dbl
-address ALGstdevp
-comment "Gives the standard deviation of all tail values";
-command variance(b:bat[:any_1,:dbl]) :dbl
-address ALGvariance
-comment "Gives the variance of all tail values";
-command variancep(b:bat[:any_1,:dbl]) :dbl
-address ALGvariancep
-comment "Gives the variance of all tail values";
-
-
-# @+ Exented selection predicates
-# For SQL convenience we provide a serie of interval selectors.
-module algebra;
-# @+ Modeling With Properties
-# The Monet kernel performs run-time optimizations. To choose between
-# alternative algorithms in a sensible way, it maintains knowledge about
-# each BAT, sometimes as a BAT property, sometimes as two
-# column properties for each column (head and tail)
-# of a BAT. An example of the former is size(bat):int
-# (which gives the number of BUNs in a BAT), an example
-# of the latter is ordered(column) :bit, indicating
-# whether the column contains its valued stored in ascending order.
-# The convention is to use a BAT as operand also for the column
-# properties; which then is supposed to be valid for the head
-# column (ordered(BAT)). Tail columns can be described by
-# using the mirror BAT with the minus operator (ordered(-BAT)).
-#
-# @- Column Properties
-# @table @code
-# @item [ordered(BAT) :bit]
-# 	TRUE if the head column is stored in ascending order, else FALSE.
-# @item [keyed(BAT) :bit]
-# 	TRUE if no duplicates are present in the head column, else FALSE.
-# @item [idx(BAT) :bit]
-# 	TRUE if a binary index tree search accelerator is present on
-# 	the head column of the BAT, else FALSE.
-# @item [hashtab(BAT) :bit]
-# 	presence of hash table on the head column of
-# 	a BAT. TRUE if a bucket-chained hash table search accelerator is
-# 	present on the head column of the BAT, else FALSE.
-# @item [subcol(BAT, BAT) :bit]
-# 	TRUE if the bag of all values in the head column of the left BAT is
-# 	a bag-subset of the bag of all values in the head column of the
-# 	right BAT, else FALSE.
-# @item [sync(BAT) :oid]
-# 	Sync-OID on the head column of a BAT. A sync-OID denotes some unique
-# 	sequence of values. If two columns have the same sync-OID, then they
-# 	are guaranteed to contain the same values, in the same sequence.
-#
-# @item [size(BAT) :int]
-# 	The (estimated) length of a column.
-# @item [unique(BAT) :int]
-# 	The (estimated) number of distinct values in one column.
-# @item [subset(BAT, BAT) :bit]
-# 	TRUE if the left BAT is a subset of the BUNs of the right BAT,
-# 	else FALSE.
-# @item [setunique(BAT) :bit]
-# 	TRUE if the BAT contains no duplicate BUNs, else FALSE.
-# @end table
-#
-# @- Property Propagation Rules
-# At database creation time, the properties of the BATs in the database
-# can be derived directly from the database schema.
-#
-# When queries are executed, they will produce @emph{intermediate results},
-# which in terms are operands for further execution. Hence it is necessary
-# to @emph{propagate properties} from the operands of an algebraic operator,
-# to its result.
-#
-# This process can be captured by having a series of @emph{propagation rules}
-# for each algebraic operand. Since each algebraic operands may apply
-# different strategies, according to different status in its operand properties,
-# each algebraic operator may have different propagation rules with these
-# different situations as conditions.
-
-@h
-#ifndef ALGEBRA_H
-#define ALGEBRA_H
-
-#include <gdk.h>
-#include "mal_exception.h"
-#include "mal_interpreter.h"
-
-#ifdef WIN32
-#if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5)
-#define algebra_export extern __declspec(dllimport)
-#else
-#define algebra_export extern __declspec(dllexport)
-#endif
-#else
-#define algebra_export extern
-#endif
-
-algebra_export str ALGavg(dbl *res, int *bid);
-
-algebra_export str ALGstdev(dbl *res, int *bid);
-algebra_export str ALGstdevp(dbl *res, int *bid);
-algebra_export str ALGvariance(dbl *res, int *bid);
-algebra_export str ALGvariancep(dbl *res, int *bid);
-
-algebra_export str ALGminany(ptr result, int *bid);
-algebra_export str ALGmaxany(ptr result, int *bid);
-algebra_export str ALGtopN(int *res, int *bid, lng *top);
-algebra_export str ALGgroupby(int *res, int *gids, int *cnts);
-algebra_export str ALGcard(lng *result, int *bid);
-algebra_export str ALGsubselect1(bat *result, bat *bid, const void *low, const void *high, const bit *li, const bit *hi, const bit *anti);
-algebra_export str ALGsubselect2(bat *result, bat *bid, bat *sid, const void *low, const void *high, const bit *li, const bit *hi, const bit *anti);
-algebra_export str ALGthetasubselect1(bat *result, bat *bid, const void *val, const char **op);
-algebra_export str ALGthetasubselect2(bat *result, bat *bid, bat *sid, const void *val, const char **op);
-algebra_export str ALGselect1(int *result, int *bid, ptr value);
-algebra_export str ALGselect1Head(int *result, int *bid, ptr value);
-algebra_export str ALGuselect1(int *result, int *bid, ptr value);
-algebra_export str ALGthetauselect(int *result, int *bid, ptr value, str *op);
-algebra_export str ALGantiuselect1(int *result, int *bid, ptr value);
-algebra_export str ALGselect(int *result, int *bid, ptr low, ptr high);
-algebra_export str ALGthetaselect(int *result, int *bid, ptr low, str *op);
-algebra_export str ALGselectHead(int *result, int *bid, ptr low, ptr high);
-algebra_export str ALGuselect(int *result, int *bid, ptr low, ptr high);
-algebra_export str ALGselectInclusive(int *result, int *bid, ptr low, ptr high, bit *lin, bit *rin);
-algebra_export str ALGselectInclusiveHead(int *result, int *bid, ptr low, ptr high, bit *lin, bit *rin);
-algebra_export str ALGuselectInclusive(int *result, int *bid, ptr low, ptr high, bit *lin, bit *rin);
-algebra_export str ALGantiuselectInclusive(int *result, int *bid, ptr low, ptr high, bit *lin, bit *rin);
-algebra_export str ALGfragment(int *result, int *bid, ptr hlow, ptr hhigh, ptr tlow, ptr thigh);
-
-algebra_export str ALGantijoin2(int *l, int *r, int *lid, int *rid);
-algebra_export str ALGjoin2(int *l, int *r, int *lid, int *rid);
-algebra_export str ALGthetajoin2(int *l, int *r, int *lid, int *rid, int *opc);
-algebra_export str ALGcrossproduct2(int *l, int *r, int *lid, int *rid);
-algebra_export str ALGbandjoin2(int *l, int *r, int *lid, int *rid, ptr *minus, ptr *plus, bit *li, bit *hi);
-algebra_export str ALGrangejoin2(int *l, int *r, int *lid, int *rlid, int *rhid, bit *li, bit *hi);
-
-algebra_export str ALGthetajoinEstimate(int *result, int *lid, int *rid, int *opc, lng *estimate);
-algebra_export str ALGthetajoin(int *result, int *lid, int *rid, int *opc);
-algebra_export str ALGbandjoin_default(int *result, int *lid, int *rid, ptr *minus, ptr *plus);
-algebra_export str ALGbandjoin(int *result, int *lid, int *rid, ptr *minus, ptr *plus, bit *li, bit *hi);
-algebra_export str ALGrangejoin(int *result, int *lid, int *rlid, int *rhid, bit *li, bit *hi);
-algebra_export str ALGsubjoin(bat *r1, bat *r2, bat *l, bat *r, bat *sl, bat *sr, lng *estimate);
-algebra_export str ALGsubleftjoin(bat *r1, bat *r2, bat *l, bat *r, bat *sl, bat *sr, lng *estimate);
-algebra_export str ALGsubouterjoin(bat *r1, bat *r2, bat *l, bat *r, bat *sl, bat *sr, lng *estimate);
-algebra_export str ALGsubthetajoin(bat *r1, bat *r2, bat *l, bat *r, bat *sl, bat *sr, str *op, lng *estimate);
-
-algebra_export str ALGhistogram(int *result, int *bid);
-algebra_export str ALGmerge(int *result, int *bid);
-algebra_export str ALGsplit(int *result, int *bid);
-algebra_export str ALGcopy(int *result, int *bid);
-algebra_export str ALGkunique(int *result, int *bid);
-algebra_export str ALGsunique(int *result, int *bid);
-algebra_export str ALGtunique(int *result, int *bid);
-algebra_export str ALGcross(int *result, int *lid, int *rid);
-algebra_export str ALGantijoin(int *result, int *lid, int *rid);
-algebra_export str ALGjoinestimate(int *result, int *lid, int *rid, lng *estimate);
-algebra_export str ALGjoin(int *result, int* lid, int *rid);
-algebra_export str ALGleftjoinestimate(int *result, int *lid, int *rid, lng *estimate);
-algebra_export str ALGleftjoin(int *result, int* lid, int *rid);
-algebra_export str ALGleftfetchjoinestimate(int *result, int *lid, int *rid, lng *estimate);
-algebra_export str ALGleftfetchjoin(int *result, int* lid, int *rid);
-algebra_export str ALGouterjoinestimate(int *result, int *lid, int *rid, lng *estimate);
-algebra_export str ALGouterjoin(int *result, int* lid, int *rid);
-algebra_export str ALGsemijoin(int *result, int *lid, int *rid);
-algebra_export str ALGsunion(int *result, int *lid, int *rid);
-algebra_export str ALGkunion(int *result, int *lid, int *rid);
-algebra_export str ALGtunion(int *result, int *lid, int *rid);
-algebra_export str ALGsintersect(int *result, int *lid, int *rid);
-algebra_export str ALGtintersect(int *result, int *lid, int *rid);
-algebra_export str ALGtinter(int *result, int *lid, int *rid);
-algebra_export str ALGsdiff(int *result, int *lid, int *rid);
-algebra_export str ALGkdiff(int *result, int *lid, int *rid);
-algebra_export str ALGtdifference(int *result, int *lid, int *rid);
-algebra_export str ALGtdiff(int *result, int *lid, int *rid);
-algebra_export str ALGsample(int *result, int* bid, int *param);
-algebra_export str ALGsubsample(int *result, int* bid, int *param);
-
-algebra_export str ALGtunique(int *result, int *bid);
-algebra_export str ALGtsort(int *result, int *bid);
-algebra_export str ALGtsort_rev(int *result, int *bid);
-algebra_export str ALGhsort(int *result, int *bid);
-algebra_export str ALGhsort_rev(int *result, int *bid);
-algebra_export str ALGhtsort(int *result, int *lid);
-algebra_export str ALGthsort(int *result, int *lid);
-algebra_export str ALGssort(int *result, int *bid);
-algebra_export str ALGssort_rev(int *result, int *bid);
-algebra_export str ALGsubsort11(bat *result, bat *bid, bit *reverse, bit *stable);
-algebra_export str ALGsubsort12(bat *result, bat *norder, bat *bid, bit *reverse, bit *stable);
-algebra_export str ALGsubsort13(bat *result, bat *norder, bat *ngroup, bat *bid, bit *reverse, bit *stable);
-algebra_export str ALGsubsort21(bat *result, bat *bid, bat *order, bit *reverse, bit *stable);
-algebra_export str ALGsubsort22(bat *result, bat *norder, bat *bid, bat *order, bit *reverse, bit *stable);
-algebra_export str ALGsubsort23(bat *result, bat *norder, bat *ngroup, bat *bid, bat *order, bit *reverse, bit *stable);
-algebra_export str ALGsubsort31(bat *result, bat *bid, bat *order, bat *group, bit *reverse, bit *stable);
-algebra_export str ALGsubsort32(bat *result, bat *norder, bat *bid, bat *order, bat *group, bit *reverse, bit *stable);
-algebra_export str ALGsubsort33(bat *result, bat *norder, bat *ngroup, bat *bid, bat *order, bat *group, bit *reverse, bit *stable);
-algebra_export str ALGrevert(int *result, int *bid);
-algebra_export str ALGcount_bat(wrd *result, int *bid);
-algebra_export str ALGcount_nil(wrd *result, int *bid, bit *ignore_nils);
-algebra_export str ALGcount_no_nil(wrd *result, int *bid);
-algebra_export str ALGtmark(int *result, int *bid, oid *base);
-algebra_export str ALGtmark_default(int *result, int *bid);
-algebra_export str ALGtmarkp(int *result, int *bid, int *nr_parts, int *part_nr);
-algebra_export str ALGmarkHead(int *result, int *bid, oid *base);
-algebra_export str ALGmarkHead_default(int *result, int *bid);
-algebra_export str ALGhmarkp(int *result, int *bid, int *nr_parts, int *part_nr);
-algebra_export str ALGmark_grp_1(int *result, int *bid, int *gid);
-algebra_export str ALGmark_grp_2(int *result, int *bid, int *gid, oid *base);
-algebra_export str ALGhistogram_rev(int *result, int *bid);
-algebra_export str ALGlike(int *ret, int *bid, str *k);
-algebra_export str ALGslice(int *ret, bat *bid, lng *start, lng *end);
-algebra_export str ALGslice_int(int *ret, bat *bid, int *start, int *end);
-algebra_export str ALGslice_wrd(int *ret, bat *bid, wrd *start, wrd *end);
-algebra_export str ALGslice_oid(int *ret, bat *bid, oid *start, oid *end);
-algebra_export str ALGsubslice_wrd(int *ret, bat *bid, wrd *start, wrd *end);
-algebra_export str ALGposition(wrd *retval, int *bid, ptr val);
-algebra_export str ALGpositionBUN(wrd *retval, int *bid, ptr val, ptr tval);
-algebra_export str ALGfetch(ptr ret, int *bid, lng *pos);
-algebra_export str ALGfetchoid(int *ret, int *bid, oid *pos);
-algebra_export str ALGfetchint(int *ret, int *bid, int *pos);
-algebra_export str ALGexist(bit *ret, int *bid, ptr val);
-algebra_export str ALGexistBUN(bit *ret, int *bid, ptr val, ptr tval);
-algebra_export str ALGfind(ptr ret, int *bid, ptr val);
-algebra_export str ALGindexjoin(int *result, int *lid, int *rid);
-algebra_export str ALGprojectNIL(int *ret, int *bid);
-algebra_export str ALGselectNotNil(int *result, int *bid);
-
-algebra_export str ALGprojecthead(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-algebra_export str ALGprojecttail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-
-algebra_export str ALGidentity(int *ret, int *bid);
-algebra_export str ALGmaterialize(int *ret, int *bid);
-algebra_export str ALGreuse(int *ret, int *bid);
-#endif
-@c
 #include "monetdb_config.h"
 #include "algebra.h"
 #include "gdk_rangejoin.h"
@@ -1192,11 +65,6 @@ algebra_export str ALGreuse(int *ret, int *bid);
  * is large enough to prevent overflow.
  */
 
-/*
- * @* Command Implementations in C
- * This module contains just a wrapper implementations; since all described
- * operations are part of the GDK kernel.
- */
 static int
 CMDselect_(BAT **result, BAT *b, ptr low, ptr high, bit *l_in, bit *h_in)
 {
@@ -1377,7 +245,7 @@ slice(BAT **retval, BAT *b, lng start, lng end)
 		GDKerror("CMDslice: start position of slice should >= 0\n");
 		return GDK_FAIL;
 	}
-	if (end == lng_nil) 
+	if (end == lng_nil)
 		end = BATcount(b);
 	if (start > (lng) BUN_MAX || end >= (lng) BUN_MAX) {
 		GDKerror("CMDslice: argument out of range\n");
@@ -1642,7 +510,7 @@ ALGsubselect2(bat *result, bat *bid, bat *sid, const void *low, const void *high
 	derefStr(b, t, low);
 	derefStr(b, t, high);
 	nilptr = ATOMnilptr(b->ttype);
-	if (*li == 1 && *hi == 1 && 
+	if (*li == 1 && *hi == 1 &&
 		ATOMcmp(b->ttype, low, nilptr) == 0 &&
 		ATOMcmp(b->ttype, high, nilptr) == 0) {
 		/* special case: equi-select for NIL */
@@ -1813,12 +681,12 @@ ALGthetaselect(int *result, int *bid, ptr val, str *OP)
 	if (ATOMcmp(b->ttype, val, nilptr) == 0) {
 		bn = BATnew(b->htype,b->ttype, 0);
 	} else {
-		char *op = *OP; 
+		char *op = *OP;
 		bit lin = TRUE, rin = TRUE;
 		ptr low = nilptr, high = nilptr;
-	
+
 		if (op[0] == '=') {
-			low = val; 
+			low = val;
 			high = val;
 		} else if (op[0] == '<') {
 			high = val;
@@ -1850,7 +718,7 @@ ALGselectNotNil(int *result, int *bid)
 	ptr low,high;
 	bit bound=FALSE;
 
-	if ((b = BATdescriptor(*bid)) == NULL) 
+	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "algebra.selectNotNil", RUNTIME_OBJECT_MISSING);
 
 	if( BATcount_no_nil(b) != BATcount(b) ){
@@ -1932,12 +800,12 @@ ALGthetauselect(int *result, int *bid, ptr val, str *OP)
 	if (ATOMcmp(b->ttype, val, nilptr) == 0) {
 		bn = BATnew(b->htype,TYPE_void, 0);
 	} else {
-		char *op = *OP; 
+		char *op = *OP;
 		bit lin = TRUE, rin = TRUE;
 		ptr low = nilptr, high = nilptr;
-	
+
 		if (op[0] == '=') {
-			low = val; 
+			low = val;
 			high = val;
 		} else if (op[0] == '<') {
 			high = val;
@@ -2148,7 +1016,7 @@ ALGbandjoin_default(int *result, int *lid, int *rid, ptr *minus, ptr *plus)
 	return ALGbandjoin(result, lid, rid, minus, plus, &li, &hi);
 }
 
-str 
+str
 ALGrangejoin(int *result, int *lid, int *rlid, int *rhid, bit *li, bit *hi)
 {
 	BAT *left, *rightl, *righth, *bn = NULL;
@@ -2278,7 +1146,7 @@ ALGunary(int *result, int *bid, BAT *(*func)(BAT *), const char *name)
 	bn = (*func)(b);
 	BBPreleaseref(b->batCacheid);
 	if (bn == NULL)
-		throw(MAL, "algebra.@1", GDK_EXCEPTION);
+		throw(MAL, name, GDK_EXCEPTION);
 	if (!(bn->batDirty&2))
 		bn = BATsetaccess(bn, BAT_READ);
 	*result = bn->batCacheid;
@@ -2584,7 +1452,7 @@ ALGbandjoin2(bat *l, bat *r, bat *left, bat *right, ptr *minus, ptr *plus, bit *
 	return MAL_SUCCEED;
 }
 
-str 
+str
 ALGrangejoin2(int *l, int *r, int *left, int *rightl, int *righth, bit *li, bit *hi)
 {
 	BAT *L, *R, *RL, *RH, *j;
@@ -2749,7 +1617,7 @@ ALGtunion(int *result, int *bid, int *bid2)
 		BBPreleaseref(*bid2);
 		throw(MAL, "algebra.tunion", RUNTIME_OBJECT_MISSING);
 	}
-	
+
 	bn = BATkunion(BATmirror(b),BATmirror(b2));
 	if (bn) {
 		bn = BATmirror(bn);
@@ -2776,7 +1644,7 @@ ALGtdifference(int *result, int *bid, int *bid2)
 		BBPreleaseref(*bid2);
 		throw(MAL, "algebra.tdifference", RUNTIME_OBJECT_MISSING);
 	}
-	
+
 	bn = BATkdiff(BATmirror(b),BATmirror(b2));
 	if (bn) {
 		bn = BATmirror(bn);
@@ -2803,13 +1671,13 @@ ALGtdiff(int *result, int *bid, int *bid2)
 		BBPreleaseref(*bid2);
 		throw(MAL, "algebra.tdiff", RUNTIME_OBJECT_MISSING);
 	}
-	
+
 	bn = BATkdiff(BATmirror(b),BATmirror(b2));
 	BBPreleaseref(b->batCacheid);
 	BBPreleaseref(b2->batCacheid);
 	if (bn) {
 		BAT *r = BATmirror(BATmark(bn,0));
-		
+
 		BBPreleaseref(bn->batCacheid);
 		bn = r;
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
@@ -2831,7 +1699,7 @@ ALGtintersect(int *result, int *bid, int *bid2)
 		BBPreleaseref(*bid2);
 		throw(MAL, "algebra.tintersect", RUNTIME_OBJECT_MISSING);
 	}
-	
+
 	bn = BATsemijoin(BATmirror(b),BATmirror(b2));
 	BBPreleaseref(b->batCacheid);
 	BBPreleaseref(b2->batCacheid);
@@ -2856,7 +1724,7 @@ ALGtinter(int *result, int *bid, int *bid2)
 		BBPreleaseref(*bid2);
 		throw(MAL, "algebra.tinter", RUNTIME_OBJECT_MISSING);
 	}
-	
+
 	bn = BATsemijoin(BATmirror(b),BATmirror(b2));
 	BBPreleaseref(b->batCacheid);
 	BBPreleaseref(b2->batCacheid);
@@ -3223,7 +2091,7 @@ ALGtmark_default(int *result, int *bid)
 	return ALGtmark(result, bid, &o);
 }
 
-str 
+str
 ALGtmarkp(int *result, int *bid, int *nr_parts, int *part_nr)
 {
 #if SIZEOF_OID == 4
@@ -3232,7 +2100,7 @@ ALGtmarkp(int *result, int *bid, int *nr_parts, int *part_nr)
 	int bits = 63;
 #endif
 	oid base = 0;
-	
+
 	assert(*part_nr < *nr_parts);
 	base = ((oid)1)<<bits;
 	base /= *nr_parts;
@@ -3270,7 +2138,7 @@ ALGmarkHead_default(int *result, int *bid)
 	return ALGmarkHead(result, bid, &o);
 }
 
-str 
+str
 ALGhmarkp(int *result, int *bid, int *nr_parts, int *part_nr)
 {
 #if SIZEOF_OID == 4
@@ -3279,7 +2147,7 @@ ALGhmarkp(int *result, int *bid, int *nr_parts, int *part_nr)
 	int bits = 63;
 #endif
 	oid base = 0;
-	
+
 	assert(*part_nr < *nr_parts);
 	base = ((oid)1)<<bits;
 	base /= *nr_parts;
@@ -3287,7 +2155,7 @@ ALGhmarkp(int *result, int *bid, int *nr_parts, int *part_nr)
 	return ALGmarkHead(result, bid, &base);
 }
 
-str 
+str
 ALGmark_grp_1(int *result, int *bid, int *gid)
 {
 	BAT *g, *b, *bn = NULL;
@@ -3313,7 +2181,7 @@ ALGmark_grp_1(int *result, int *bid, int *gid)
 	throw(MAL, "algebra.mark_grp", GDK_EXCEPTION);
 }
 
-str 
+str
 ALGmark_grp_2(int *result, int *bid, int *gid, oid *base)
 {
 	BAT *g, *b, *bn = NULL;
@@ -3424,9 +2292,9 @@ ALGslice_oid(int *ret, bat *bid, oid *start, oid *end)
 {
 	BAT *b, *bv;
 
-	if ((b = BATdescriptor(*bid)) == NULL) 
+	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "algebra.slice", RUNTIME_OBJECT_MISSING);
-	
+
 	bv  = BATmirror( b);
 	if ( bv == NULL)
 		throw(MAL, "algebra.slice", MAL_MALLOC_FAIL);
@@ -3436,7 +2304,7 @@ ALGslice_oid(int *ret, bat *bid, oid *start, oid *end)
 	bv  = BATmirror( bv);
 	if ( bv == NULL)
 		throw(MAL, "algebra.slice", MAL_MALLOC_FAIL);
-		
+
 	*ret = bv->batCacheid;
 	BBPkeepref(*ret);
 	BBPreleaseref(b->batCacheid);
@@ -3453,8 +2321,8 @@ ALGsubslice_wrd(int *ret, bat *bid, wrd *start, wrd *end)
 
 	if ((msg = ALGslice(&slc, bid, &s, &e)) == MAL_SUCCEED) {
 		if ((msg = ALGtmark_default(ret, &slc)) == MAL_SUCCEED) {
-			BBPdecref(slc, TRUE); 
-			*ret = -*ret; /* ugly reverse */ 
+			BBPdecref(slc, TRUE);
+			*ret = -*ret; /* ugly reverse */
 			return MAL_SUCCEED;
 		}
 	}
@@ -3747,7 +2615,7 @@ ALGmaterialize(int *ret, int *bid)
 			throw(MAL, "batcalc.materialize", MAL_MALLOC_FAIL);
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
 		BBPkeepref(*ret= bn->batCacheid);
-	} else 
+	} else
 		BBPkeepref(*ret = b->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -3772,7 +2640,7 @@ str ALGreuse(int *ret, int *bid)
 		}
 		BBPkeepref(*ret= bn->batCacheid);
 		BBPreleaseref(b->batCacheid);
-	} else 
+	} else
 		BBPkeepref(*ret = *bid);
 	return MAL_SUCCEED;
 }

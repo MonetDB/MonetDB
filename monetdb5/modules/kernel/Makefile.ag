@@ -29,7 +29,7 @@ lib_kernel = {
 	SOURCES = \
 		aggr.c \
 		alarm.c alarm.h \
-		algebra.mx \
+		algebra.c algebra.h \
 		array.c array.h \
 		bat5.c bat5.h \
 		batcolor.c batcolor.h \
@@ -49,13 +49,13 @@ lib_kernel = {
 headers_mal = {
 	HEADERS = mal
 	DIR = libdir/monetdb5
-	SOURCES = bat5.mal algebra.mx status.mal unix.mal \
+	SOURCES = bat5.mal algebra.mal status.mal unix.mal \
 		mmath.mal lock.mal sema.mal alarm.mal batstr.mal \
 		batcolor.mal batmmath.mal \
 		group.mal aggr.mal array.mal \
 		counters.mal logger.mal microbenchmark.mal
 }
 
-EXTRA_DIST = alarm.mal counters.mal lock.mal logger.mal microbenchmark.mal sema.mal unix.mal aggr.mal group.mal
+EXTRA_DIST = alarm.mal counters.mal lock.mal logger.mal microbenchmark.mal sema.mal unix.mal aggr.mal group.mal algebra.mal
 
 EXTRA_DIST_DIR = Tests
