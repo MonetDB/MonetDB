@@ -769,7 +769,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 
 				/* If needed recycle intermediate result */
 				if (pci->recycle > 0) {
-					RECYCLEexit(cntxt, mb, stk, pci, stkpc, GDKms()- clk);
+					RECYCLEexit(cntxt, mb, stk, pci, stkpc, clk);
 				}
 
 				/* general garbage collection */

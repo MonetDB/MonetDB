@@ -10,7 +10,7 @@ function sql.tid(mvc:int,s:str,t:str):bat[:oid,:oid];
 b:= bat.new(:oid,:oid);
 barrier i:= 0:oid;
     bat.append(b,i);
-    redo i:= iterator.next(1:oid,11:oid);
+    redo i:= iterator.next(1:oid,12:oid);
 exit i;
     return tid:= b;
 end tid;

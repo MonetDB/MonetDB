@@ -10,9 +10,8 @@ function sql.tid(mvc:int,s:str,t:str):bat[:oid,:oid];
 b:= bat.new(:oid,:oid);
 barrier i:= 0:oid;
     bat.append(b,i);
-    redo i:= iterator.next(1:oid,11:oid);
+    redo i:= iterator.next(1:oid,12:oid);
 exit i;
-	io.print(tid);
     return tid:= b;
 end tid;
 
@@ -30,16 +29,13 @@ function sql.bind(mvc:int, s:str,t:str,c:str,i:int):bat[:oid,:int];
 	bat.insert(b,9@0,9);
 	bat.insert(b,10@0,10);
 	bat.insert(b,11@0,11);
-	io.print(b);
 	return bind:=b;
 end bind;
 
 function qry(low:int, hgh:int);
 	m:= sql.mvc();
 	x:bat[:oid,:oid]  := sql.tid(m,"sys","tbl");
-	io.print(x);
 	b:bat[:oid,:int]:= sql.bind(m,"sys","tbl","col",0);
-	io.print(b);
 	s:= algebra.subselect(b,x,low,hgh,true,true,false);
 	io.print(s);
 end qry;

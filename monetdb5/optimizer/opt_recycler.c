@@ -91,10 +91,8 @@ OPTrecyclerImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 					actions++;
 				}
 				if (getModuleId(p) == sqlRef) {
-					q = newFcnCall(mb, "recycle", "reset");
-					pushArgument(mb, q, getArg(p, 0));// to keep dataflow dependency
-					pushArgument(mb, q, getArg(p, 2));
-					pushArgument(mb, q, getArg(p, 3));
+					q= copyInstruction(p);
+					getModuleId(q) = recycleRef;
 					actions++;
 				}
 			}

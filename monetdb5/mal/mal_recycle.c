@@ -124,7 +124,7 @@ int monitorRecycler = 0;
 #define recycleProfit(X) (recycleCost(X) * recycleW(X) / recycleLife(X))
 
 static str octopusRef = 0, bindRef = 0, bind_idxRef = 0, sqlRef = 0;
-static str subselectRef = 0, thetasubselectRef = 0, like_subselectRef = 0;
+static str subselectRef = 0, thetasubselectRef = 0, likesubselectRef = 0;
 /*
  * The recycler keeps a catalog of query templates
  * with statistics about number of calls, global/local reuses,
@@ -164,7 +164,7 @@ void RECYCLEinitRecyclePool(int sz)
 		bind_idxRef = putName("bind_idxbat",11);
 		subselectRef = putName("subselect",9);
 		thetasubselectRef = putName("thetasubselect",14);
-        like_subselectRef= putName("like_subselect",14);
+        likesubselectRef= putName("likesubselect",14);
 		recycleCacheLimit=HARDLIMIT_STMT;
 		RECYCLEspace();
 		MT_lock_unset(&recycleLock, "recycle");
@@ -1190,9 +1190,10 @@ RECYCLEdataTransfer(Client cntxt, MalStkPtr s, InstrPtr p)
 		int part_nr = *(int *)getArgReference(s, p, 6);
 		int nr_parts = *(int *)getArgReference(s, p, 7);
 
-		b = BBPquickdesc(sbid, FALSE);
+		b = BBPquickdesc(ABS(sbid), FALSE);
 		scnt = BATcount(b);
 		psz = scnt?(scnt/nr_parts):0;
+		/* use the real BAT */
 		bn =  BATslice(b, part_nr*psz, (part_nr+1==nr_parts)?scnt:((part_nr+1)*psz));
 		BATseqbase(bn, part_nr*psz);
 
@@ -1223,7 +1224,7 @@ RECYCLEreuse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pci)
 {
     int i, j, evicted=0, pc= -1;
 	//int qidx;
-    bat bid= -1, nbid= -1;
+    bat bid= 0, nbid= 0;
     InstrPtr q;
     //bit gluse = FALSE;
 	lng ticks = GDKusec();
@@ -1248,47 +1249,35 @@ RECYCLEreuse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pci)
 		/* 1: reuse smallest range covering in select operations */
 		if (q->argc > 3 &&
 			( 	getFunctionId(p) == subselectRef ||
-				getFunctionId(p) == like_subselectRef ||
+				getFunctionId(p) == likesubselectRef ||
 				getFunctionId(p) == thetasubselectRef ) &&
 				getVarConstant(recycleBlk, getArg(q,1)).val.bval == stk->stk[getArg(p,1)].val.bval &&
-			BATatoms[getArgType(recycleBlk,q,2)].linear )
-		{	bit subsmp = 0;
-				/* Time to check for the inclusion constraint */
-				if ( getFunctionId(p) == subselectRef )
-					subsmp = selectSubsume(p,q,stk);
-				else if ( getFunctionId(p) == like_subselectRef )
-					subsmp = likeSubsume(p,q,stk);
-				else if ( getFunctionId(p) == thetasubselectRef )
-					subsmp = thetaselectSubsume(p,q,stk);
+				BATatoms[getArgType(recycleBlk,q,2)].linear )
+		{ 	bit	subsmp = 0;
+			/* Time to check for the inclusion constraint */
+			if ( getFunctionId(p) == subselectRef )
+				subsmp = selectSubsume(p,q,stk);
+			else if ( getFunctionId(p) == likesubselectRef )
+				subsmp = likeSubsume(p,q,stk);
+			else if ( getFunctionId(p) == thetasubselectRef )
+				subsmp = thetaselectSubsume(p,q,stk);
 
+			/* select the smallest candidate list */
 			if (subsmp){
 				BAT *b1, *b2;
 				nbid = getVarConstant(recycleBlk, getArg(q,0)).val.bval;
-				if( bid == -1){
+				if( bid == 0){
 					bid = nbid;
 					pc = i;
-
-#ifdef _DEBUG_RECYCLE_
-					b1 = BBPquickdesc(bid, FALSE);
-					mnstr_printf(cntxt->fdout,"#counts A %d -> " BUNFMT " \n", bid, (b1?BATcount(b1):0));
-#endif
+					b1 = BBPquickdesc(ABS(bid), FALSE);
 				} else {
-					b1 = BBPquickdesc(bid, FALSE);
-					b2 = BBPquickdesc(nbid, FALSE);
-
-#ifdef _DEBUG_RECYCLE_
-					mnstr_printf(cntxt->fdout,"#counts B %d -> " BUNFMT " %d -> " BUNFMT "\n",
-						bid, (b1?BATcount(b1):0), nbid, (b2?BATcount(b2):0));
-#endif
+					b1 = BBPquickdesc(ABS(bid), FALSE);
+					b2 = BBPquickdesc(ABS(nbid), FALSE);
 					if (b1 && b2 && BATcount(b1) > BATcount(b2)){
 						bid = nbid;
 						pc = i;
 					}
 				}
-#ifdef _DEBUG_RECYCLE_
-			mnstr_printf(cntxt->fdout,"#Inclusive range bid=%d ", bid);
-			printInstruction(cntxt->fdout,recycleBlk,0,q, LIST_MAL_STMT);
-#endif
 			}
 		}
 		/* 2: exact covering */
@@ -1296,11 +1285,11 @@ RECYCLEreuse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pci)
 			if (VALcmp(&stk->stk[getArg(p,j)], &getVarConstant(recycleBlk,    getArg(q,j))))
 				goto notfound;
 #ifdef _DEBUG_CACHE_
-			if ( q->token == NOOPsymbol ){
-				evicted = 1;
-				mnstr_printf(cntxt->fdout,"#Miss of evicted instruction %d\n",  i);
-				goto notfound;
-			}
+		if ( q->token == NOOPsymbol ){
+			evicted = 1;
+			mnstr_printf(cntxt->fdout,"#Miss of evicted instruction %d\n",  i);
+			goto notfound;
+		}
 #endif
 
 		/* found an exact match, get the results on the stack */
@@ -1328,26 +1317,21 @@ RECYCLEreuse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pci)
 			continue;
     }
     /*
-     * We have a candidate table from which we can draw a subsection.
-     * We execute it in place and safe the result upon need.
+     * We have a candidate table 
      */
-    if (bid >=0) {
+    if (bid ) {
         int k;
 
         ticks = GDKusec();
         i= getPC(mb,p);
 #ifdef _DEBUG_RECYCLE_REUSE
-		mnstr_printf(cntxt->fdout,"#RECYCLEreuse subselect ");
+		mnstr_printf(cntxt->fdout,"#RECYCLEreuse subselect using candidate list");
 		printInstruction(cntxt->fdout, recycleBlk, 0,getInstrPtr(recycleBlk,pc),    LIST_MAL_STMT);
-
-		mnstr_printf(cntxt->fdout,">>>");
-		printTraceCall(cntxt->fdout, mb, stk,i, LIST_MAL_STMT);
-		mnstr_printf(cntxt->fdout,"\n");
 #endif
-		nbid = stk->stk[getArg(p,1)].val.bval;
-        stk->stk[getArg(p,1)].val.bval = bid;
-        BBPincref(bid, TRUE);
-        /* make sure the garbage collector is not called */
+		nbid = stk->stk[getArg(p,2)].val.bval;
+        stk->stk[getArg(p,2)].val.bval = bid;
+        BBPincref(ABS(bid), TRUE);
+        /* make sure the garbage collector is not called, it is taken care of by the current call */
         j = stk->keepAlive ;
         stk->keepAlive = TRUE;
         k = p->recycle;
@@ -1355,14 +1339,10 @@ RECYCLEreuse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pci)
         (void) reenterMAL(cntxt,mb,i,i+1,stk);
         p->recycle= k;
         stk->keepAlive= j;
-        stk->stk[getArg(p,1)].val.bval = nbid;
+        stk->stk[getArg(p,2)].val.bval = nbid;
         BBPdecref(bid, TRUE);
         cntxt->rcc->recycled0++;
         recycleBlk->profiler[pc].calls++;
-        //if ( recycleBlk->profiler[pc].clk < cntxt->rcc->time0 )
-			//gluse = recycleBlk->profiler[pc].trace = TRUE;
-        //qidx = *(int*)getVarValue(recycleBlk,q->argv[q->argc-1]);
-        //updateQryStat(getInstrPtr(recycleBlk,pc)->recycle,gluse,qidx);
         recycleBlk->profiler[pc].clk = GDKusec();
         MT_lock_unset(&recycleLock, "recycle");
         RECYCLEexit(cntxt, mb, stk, p, pc, ticks);
@@ -1395,14 +1375,14 @@ RECYCLEentry(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 		return 0;
 	if ( cntxt->rcc->curQ < 0 )	/* don't use recycling before initialization by prelude() */
 		return 0;
-	i = RECYCLEreuse(cntxt,mb,stk,p,pc) >= 0;
+	i = RECYCLEreuse(cntxt,mb,stk,p,pc);
 #ifdef _DEBUG_RECYCLE_
-	if ( i ){
-		mnstr_printf(cntxt->fdout,"#REUSE   [%3d]   ",i);
+	if ( i>=0 ){
+		mnstr_printf(cntxt->fdout,"#REUSED  [%3d]   ",i);
 		printInstruction(cntxt->fdout,mb,0,p, LIST_MAL_STMT);
 	}
 #endif
-	return i;
+	return i>=0;
 }
 
 /*
@@ -1673,7 +1653,7 @@ str RECYCLEreset(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 			if ( isBindInstr(q) ){
 #ifdef _DEBUG_RESET_
 				bid = getVarConstant(recycleBlk, getArg(q,0)).val.bval;
-				if ( (bref = BBPquickdesc(bid, FALSE)) )
+				if ( (bref = BBPquickdesc(ABS(bid), FALSE)) )
 					mnstr_printf(cntxt->fdout,"#Bid %d, count "BUNFMT"\n", bid, BATcount(bref));
 				else mnstr_printf(cntxt->fdout,"#Bid %d, NULL bat ref\n", bid);
 #endif
@@ -1750,11 +1730,9 @@ RECYCLEdump(stream *s)
 
     if (!recycleBlk) return;
 
-    mnstr_printf(s,"#Recycler  catalog\n");
-    mnstr_printf(s,"#admission ADM_ALL time ="LLFMT"\n", recycleTime);
-    mnstr_printf(s,"#rcache= PROFIT limit= %d \n", recycleCacheLimit);
-    mnstr_printf(s,"#hard stmt = %d hard var = %d hard mem="SZFMT"\n",
-                 HARDLIMIT_STMT, HARDLIMIT_VAR, monet_memory);
+    mnstr_printf(s,"#RECYCLER  CATALOG admission ADM_ALL time ="LLFMT"\n", recycleTime);
+    mnstr_printf(s,"#CACHE= policy PROFIT limit= %d \n", recycleCacheLimit);
+    mnstr_printf(s,"#RESOURCES hard stmt = %d hard var = %d hard mem="SZFMT"\n", HARDLIMIT_STMT, HARDLIMIT_VAR, monet_memory);
 
     for(i=0; i< recycleBlk->stop; i++){
 #ifdef _DEBUG_CACHE_
