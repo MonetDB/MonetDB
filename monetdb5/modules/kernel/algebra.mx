@@ -1040,9 +1040,6 @@ module algebra;
 #define algebra_export extern
 #endif
 
-algebra_export ptr BATmax(BAT *b, ptr aggr);
-algebra_export ptr BATmin(BAT *b, ptr aggr);
-
 algebra_export str ALGavg(dbl *res, int *bid);
 
 algebra_export str ALGstdev(dbl *res, int *bid);
@@ -1194,114 +1191,6 @@ algebra_export str ALGreuse(int *ret, int *bid);
  * The routines below assumes that the caller knows what type
  * is large enough to prevent overflow.
  */
-
-/* @+ Minimum and Maximum
- * The routines @`BATmin@5(b) and @`BATmax@5(b) compute the minimum and
- * maximum value of the tail column of a BAT.
- * Aggregate values are calculated just before they are requested by
- * the user. They are not maintained continuously, because we expect
- * them to be used sparsely.
- */
-@= atomaggr
-	if (s > 0 && !BATtordered(b)) {
-		char* nil = BATatoms[t].atomNull;
-		BUN p,q;
-
-		if (b->T->nonil) {
-			BATloop(b, p, q) {
-				x = (ptr) BUNt@2(bi, p);
-				if (@3_@5(x, v, @4)) {
-					v = x;
-				}
-			}
-		} else {
-			BATloop(b, p, q) {
-				x = (ptr) BUNt@2(bi, p);
-				if (@3_CMP(x, nil, @4) == 0) {
-					v = nil;
-					break;
-				}
-				if (@3_@5(x, v, @4)) {
-					v = x;
-				}
-			}
-		}
-	}
-	if (aggr) {
-		memcpy(aggr, x=v, ATOMsize(t));
-	} else {
-		/* alloc new space and copy the atom into it */
-		s = ATOMlen(t, v);
-		x = GDKmalloc(s);
-		if (x)
-			memcpy(x, v, s);
-	}
-@= voidaggr
-	if (aggr) {
-		*(oid *) aggr = *(oid *) (x=v);
-	} else {
-		/* alloc new space and copy the atom into it */
-		x = GDKmalloc(sizeof(oid));
-		if (x)
-			memcpy(x, v, s);
-	}
-@= aggrmin
-	v = (s == 0)?ATOMnilptr(t):BUNtail(bi, BUNfirst(b));
-	@:@5aggr(@1,@2,@3,@4,LT)@
-@= aggrmax
-	v = (s == 0)?ATOMnilptr(t):BUNtail(bi, BUNlast(b)-1);
-	@:@5aggr(@1,@2,@3,@4,GT)@
-
-@= BATaggr
-ptr
-BAT@1(BAT *b, ptr aggr)
-{
-	BATiter bi = bat_iterator(b);
-	int t;
-	BUN s;
-	ptr v, x;
-
-	BATcheck(b, "BAT@1");
-	s = BATcount(b);
-	t = b->ttype;
-	if (BATtvoid(b)) {
-		@:aggr@1(bte,loc,simple,bte,void)@
-	} else {
-		switch(ATOMstorage(t)) {
-		case TYPE_bte:
-			@:aggr@1(bte,loc,simple,bte,atom)@
-			break;
-		case TYPE_sht:
-			@:aggr@1(sht,loc,simple,sht,atom)@
-			break;
-		case TYPE_int:
-			@:aggr@1(int,loc,simple,int,atom)@
-			break;
-		case TYPE_flt:
-			@:aggr@1(flt,loc,simple,flt,atom)@
-			break;
-		case TYPE_dbl:
-			@:aggr@1(dbl,loc,simple,dbl,atom)@
-			break;
-		case TYPE_lng:
-			@:aggr@1(lng,loc,simple,lng,atom)@
-			break;
-		default:
-			if (b->tvarsized) {
-				@:aggr@1(bte,var,atom,t,atom)@
-				break;
-			} else {
-				@:aggr@1(bte,loc,atom,t,atom)@
-				break;
-			}
-		}
-	}
-	return x;
-}
-@
-@c
-@:BATaggr(min)@
-@:BATaggr(max)@
 
 /*
  * @* Command Implementations in C
