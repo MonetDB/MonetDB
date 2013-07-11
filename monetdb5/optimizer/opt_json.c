@@ -30,7 +30,7 @@ int
 OPTjsonImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i, j, limit, slimit;
-	int bu,br,bj;
+	int bu = 0, br = 0, bj = 0;
 	str nme;
 	InstrPtr p,q;
 	int actions = 0;
