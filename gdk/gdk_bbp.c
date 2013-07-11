@@ -2229,7 +2229,8 @@ BBPkeepref(bat i)
 
 		if ((b = BBPdescriptor(i)) != NULL) {
 			BATsettrivprop(b);
-			BATassertProps(b);
+			if (GDKdebug & (CHECKMASK | PROPMASK))
+				BATassertProps(b);
 		}
 
 		incref(i, TRUE, lock);

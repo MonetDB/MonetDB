@@ -2792,7 +2792,12 @@ BATmode(BAT *b, int mode)
  * "set" property is not checked.  Also note that the "nil" property
  * is not actually used anywhere, but it is checked. */
 
-#ifndef NDEBUG
+#ifdef NDEBUG
+/* assertions are disabled, turn failing tests into a message */
+#undef assert
+#define assert(test)	((void) ((test) || fprintf(stderr, "WARNING: %s:%d: assertion `%s' failed\n", __FILE__, __LINE__, #test)))
+#endif
+
 static void
 BATassertHeadProps(BAT *b)
 {
@@ -2978,7 +2983,6 @@ BATassertHeadProps(BAT *b)
 		assert(!b->H->nil || seennil);
 	}
 }
-#endif
 
 /* Assert that properties are set correctly.
  *
@@ -3023,7 +3027,6 @@ BATassertHeadProps(BAT *b)
 void
 BATassertProps(BAT *b)
 {
-#ifndef NDEBUG
 	BAT *bm;
 	int bbpstatus;
 
@@ -3049,9 +3052,6 @@ BATassertProps(BAT *b)
 	BATassertHeadProps(b);
 	if (b->H != bm->H)
 		BATassertHeadProps(bm);
-#else
-	(void) b;
-#endif
 }
 
 /* derive properties that can be derived with a simple scan: sorted,
