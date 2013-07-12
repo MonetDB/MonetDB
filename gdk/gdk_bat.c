@@ -2795,7 +2795,7 @@ BATmode(BAT *b, int mode)
 #ifdef NDEBUG
 /* assertions are disabled, turn failing tests into a message */
 #undef assert
-#define assert(test)	((void) ((test) || fprintf(stderr, "WARNING: %s:%d: assertion `%s' failed\n", __FILE__, __LINE__, #test)))
+#define assert(test)	((void) ((test) || fprintf(stderr, "!WARNING: %s:%d: assertion `%s' failed\n", __FILE__, __LINE__, #test)))
 #endif
 
 static void
