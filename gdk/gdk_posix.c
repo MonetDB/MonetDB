@@ -849,13 +849,11 @@ MT_mallinfo(void)
 int
 MT_path_absolute(const char *pathname)
 {
-	char *drive_end = strchr(pathname, ':');
-	char *path_start = strchr(pathname, '\\');
-
-	if (path_start == NULL) {
-		return 0;
-	}
-	return (path_start == pathname || drive_end == (path_start - 1));
+	/* drive letter, colon, directory separator */
+	return ((('a' <= pathname[0] && pathname[0] <= 'z') ||
+		 ('A' <= pathname[0] && pathname[0] <= 'Z')) &&
+		pathname[1] == ':' &&
+		(pathname[2] == '/' || pathname[2] == '\\'));
 }
 
 
