@@ -96,8 +96,7 @@ int recycleCacheLimit=0; /* No limit by default */
 lng recyclerMemoryUsed = 0;
 int monitorRecycler = 0;
 	/*	 1: print statistics for RecyclerPool only
-		 2: print stat at the end of each query
-		 4: print data transfer stat for octopus */
+		 2: print stat at the end of each query */
 
 #ifdef _DEBUG_CACHE_
 #define recycleSize recycleBlk->stop - cntxt->rcc->recycleRem
@@ -849,10 +848,6 @@ RECYCLEkeep(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p, RuntimeProfile 
 			recyclerMemoryUsed, recycleBlk->stop,
 			cntxt->rcc->recycled0, cntxt->rcc->statements);
 
-	if ( getModuleId(p) == octopusRef &&
-			 (getFunctionId(p) == bindRef || getFunctionId(p) == bind_idxRef) )
-		recyclePool->ptrn[cntxt->rcc->curQ]->dt += wr;
-
 	cntxt->rcc->recent = i;
 	cntxt->rcc->RPadded0++;
 	setSelectProp(q);
@@ -1107,121 +1102,6 @@ thetaselectSubsume(InstrPtr p, InstrPtr q, MalStkPtr s)
 }
 
 static int
-RECYCLEdataTransfer(Client cntxt, MalStkPtr s, InstrPtr p)
-{
-	int i, j, lcomp, rcomp, pc = -1;
-	/*	bat bid; */
-	bat sbid = -1;
-	InstrPtr q;
-	//int gidx;
-	//bit gluse = FALSE;
-	BUN scnt = 0;
-	BAT *b, *bn;
-	/*	oid lval = 0, hval = 0; dbl ratio; */
-
-	MT_lock_set(&recycleLock, "recycle");
-	for (i = 0; i < recycleBlk->stop; i++){
-    	q = getInstrPtr(recycleBlk,i);
-		if ( getModuleId(q) != octopusRef ||
-			 (getFunctionId(q) != bindRef && getFunctionId(q) != bind_idxRef) ||
-			 (getFunctionId(q) != getFunctionId(p)) )
-		continue;
-
-		if (p->argc < q->argc-1) continue;
-		/* sub-range instructions can be subsumed from entire table */
-
-		for (j = p->retc + 1; j < 6; j++)
-			if ( VALcmp(&s->stk[getArg(p,j)],
-				&getVarConstant(recycleBlk, getArg(q,j))) )
-				goto notfound;
-
-		if ( q->argc-1 == 7 )	/* q is entire bat */
-			if ( p->argc == 7 )
-				goto exactmatch;
-			else goto subsumption;
-
-		else {		/* q is bat partition */
-
-			lcomp = VALcmp(&getVar(recycleBlk,getArg(q,6))->value,
-					&s->stk[getArg(p,6)]);
-			rcomp = VALcmp( &s->stk[getArg(p,7)],
-					&getVar(recycleBlk,getArg(q,7))->value);
-
-			if ( lcomp == 0 && rcomp == 0 )            /* found an exact match */
-				goto exactmatch;
-/*			else if ( lcomp <= 0 && rcomp <= 0 )
-				goto subsumption;*/
-			else
-				continue;
-		}
-
-		exactmatch:
-            /* get the results on the stack */
-            for( j=0; j<p->retc; j++){
-                VALcopy(&s->stk[getArg(p,j)],
-                    &getVarConstant(recycleBlk,getArg(q,j)) );
-                if (s->stk[getArg(p,j)].vtype == TYPE_bat)
-                    BBPincref( s->stk[getArg(p,j)].val.bval, TRUE);
-            }
-            recycleBlk->profiler[i].calls++;
-            if ( recycleBlk->profiler[i].clk < cntxt->rcc->time0 )
-                    ;//gluse = recycleBlk->profiler[i].trace = TRUE;
-            else { /*local use - return the credit */
-			    returnCredit(q);
-            }
-            recycleBlk->profiler[i].clk = GDKusec();
-            recyclePool->ptrn[cntxt->rcc->curQ]->dtreuse += recycleBlk->profiler[i].wbytes;
-            //qidx = *(int*)getVarValue(recycleBlk,q->argv[q->argc-1]);
-            //updateQryStat(q->recycle,gluse,qidx);
-            cntxt->rcc->recycled0++;
-            cntxt->rcc->recent = i;
-            MT_lock_unset(&recycleLock, "recycle");
-            return i;
-
-    	subsumption:
-			sbid = getVarConstant(recycleBlk, getArg(q,0)).val.bval;
-			pc = i;
-			break;
-
-		notfound:
-			continue;
-	}
-
-	if ( sbid >= 0 ) {	/* subsumption of octopus.bind */
-		BUN psz;
-		int part_nr = *(int *)getArgReference(s, p, 6);
-		int nr_parts = *(int *)getArgReference(s, p, 7);
-
-		b = BBPquickdesc(ABS(sbid), FALSE);
-		scnt = BATcount(b);
-		psz = scnt?(scnt/nr_parts):0;
-		/* use the real BAT */
-		bn =  BATslice(b, part_nr*psz, (part_nr+1==nr_parts)?scnt:((part_nr+1)*psz));
-		BATseqbase(bn, part_nr*psz);
-
-		/*		lval = *(oid *)getArgReference(s, p, 6);
-		hval = *(oid *)getArgReference(s, p, 7);
-		bn = BATslice(b, lval, hval);
-		BATseqbase(bn, lval);
-		ratio = (dbl)BATcount(bn)/(dbl)scnt; */
-
-		VALset(&s->stk[getArg(p,0)], TYPE_bat, &bn->batCacheid);
-		BBPkeepref( bn->batCacheid);
-
-		recycleBlk->profiler[pc].calls++;
-		recycleBlk->profiler[pc].clk = GDKusec();
-		recyclePool->ptrn[cntxt->rcc->curQ]->dtreuse +=
-			(lng) scnt?(psz * recycleBlk->profiler[pc].wbytes / scnt):0;
-		cntxt->rcc->recycled0++;
-		cntxt->rcc->recent = i;
-	}
-
-	MT_lock_unset(&recycleLock, "recycle");
-	return pc;
-}
-
-
-static int
 RECYCLEreuse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, RuntimeProfile outerprof)
 {
     int i, j, evicted=0, pc= -1;
@@ -1229,11 +1109,6 @@ RECYCLEreuse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, RuntimeProfi
     bat bid= 0, nbid= 0;
     InstrPtr q;
     //bit gluse = FALSE;
-
-	/* separate matching of data transfer instructions: octopus.bind(), octopus.bind_idxbat() */
-	if ( getModuleId(p) == octopusRef &&
-		( getFunctionId(p) == bindRef || getFunctionId(p) == bind_idxRef ))
-		return RECYCLEdataTransfer(cntxt, stk, p);
 
     MT_lock_set(&recycleLock, "recycle");
 
@@ -1801,35 +1676,12 @@ RECYCLEdumpRecyclerPool(stream *s)
     }
 }
 
-void
-RECYCLEdumpDataTrans(stream *s)
-{
-    int i, n;
-    lng dt, sum = 0, rdt, rsum = 0;
-
-    if (!recycleBlk || !recyclePool)
-        return;
-
-    n = recyclePool->cnt;
-
-    mnstr_printf(s,"#Query  \t Data   \t DT Reused\n");
-    mnstr_printf(s,"#pattern\t transf.\t from others\n");
-    for( i=0; i < n; i++){
-        rdt = recyclePool->ptrn[i]->dtreuse;
-        dt = recyclePool->ptrn[i]->dt;
-        mnstr_printf(s," %d \t\t "LLFMT"\t\t"LLFMT"\n", i, dt, rdt);
-        sum += dt;
-        rsum += rdt;
-    }
-    mnstr_printf(s,"#########\n# Total transfer "LLFMT" Total reused "LLFMT"\n", sum, rsum);
-}
-
 str
 RECYCLErunningStat(Client cntxt, MalBlkPtr mb)
 {
     static int q=0;
     InstrPtr p;
-    int potrec=0, nonbind=0, i, trans=0;
+    int potrec=0, nonbind=0, i;
     lng reusedmem=0;
 
     for(i=0; i< mb->stop; i++){
@@ -1837,7 +1689,6 @@ RECYCLErunningStat(Client cntxt, MalBlkPtr mb)
         if ( RECYCLEinterest(p) ){
             potrec++;
             if ( !isBindInstr(p) ) nonbind++;
-            else if ( getModuleId(p) == octopusRef) trans++;
         }
     }
 

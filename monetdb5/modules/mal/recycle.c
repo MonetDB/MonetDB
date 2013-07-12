@@ -50,8 +50,6 @@ RECYCLEdumpWrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	switch(tp){
 		case 2:	RECYCLEdumpRecyclerPool(cntxt->fdout);
 				break;
-		case 3: RECYCLEdumpDataTrans(cntxt->fdout);
-				break;
 		default:RECYCLEdump(cntxt->fdout);
 	}
 	return MAL_SUCCEED;

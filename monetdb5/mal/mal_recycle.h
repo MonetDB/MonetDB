@@ -72,8 +72,6 @@ typedef struct QRYSTAT {
 	int calls; 	/* number of calls */
 	int greuse; /* number of global reuse */
 	int lreuse; /* number of local reuse in current execution only */
-	lng dt;		/* data transfer (RU) by this query */
-	lng dtreuse;/* data transfer (RU) that query reuses from others */
 	int *crd;   /* instructions credits */
 	int stop;
 	int wl;		/* waterline of globally reused instructions*/
@@ -103,6 +101,5 @@ mal_export str RECYCLEstop(Client cntxt, MalBlkPtr mb);
 
 mal_export void RECYCLEdump(stream *s);
 mal_export void RECYCLEdumpRecyclerPool(stream *s);
-mal_export void RECYCLEdumpDataTrans(stream *s);
 mal_export str  RECYCLErunningStat(Client cntxt, MalBlkPtr mb);
 #endif
