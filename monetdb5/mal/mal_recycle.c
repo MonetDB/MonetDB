@@ -125,6 +125,7 @@ int monitorRecycler = 0;
 
 static str octopusRef = 0, bindRef = 0, bind_idxRef = 0, sqlRef = 0;
 static str subselectRef = 0, thetasubselectRef = 0, likesubselectRef = 0;
+static void RECYCLEexitImpl(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, RuntimeProfile prof);
 /*
  * The recycler keeps a catalog of query templates
  * with statistics about number of calls, global/local reuses,
@@ -786,15 +787,16 @@ setSelectProp(InstrPtr q)
 }
 
 static void
-RECYCLEkeep(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p, int pc, lng rd, lng wr, lng clk)
+RECYCLEkeep(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p, RuntimeProfile prof)
 {
 	int i, j, c;
 	ValRecord *v;
 	ValRecord cst;
 	InstrPtr q;
-
-	(void) mb;
-	(void) pc;
+	int pc= prof->stkpc;
+	lng rd= mb->profiler[pc].rbytes;
+	lng wr= mb->profiler[pc].wbytes;
+	lng clk= mb->profiler[pc].clk;
 
 	RECYCLEspace();
 	if ( recycleSize >= recycleCacheLimit)
@@ -1220,15 +1222,13 @@ RECYCLEdataTransfer(Client cntxt, MalStkPtr s, InstrPtr p)
 
 
 static int
-RECYCLEreuse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pci)
+RECYCLEreuse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, RuntimeProfile outerprof)
 {
     int i, j, evicted=0, pc= -1;
 	//int qidx;
     bat bid= 0, nbid= 0;
     InstrPtr q;
     //bit gluse = FALSE;
-	lng ticks = GDKusec();
-
 
 	/* separate matching of data transfer instructions: octopus.bind(), octopus.bind_idxbat() */
 	if ( getModuleId(p) == octopusRef &&
@@ -1321,8 +1321,8 @@ RECYCLEreuse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pci)
      */
     if (bid ) {
         int k;
+		RuntimeProfileRecord prof;
 
-        ticks = GDKusec();
         i= getPC(mb,p);
 #ifdef _DEBUG_RECYCLE_REUSE
 		mnstr_printf(cntxt->fdout,"#RECYCLEreuse subselect using candidate list");
@@ -1335,8 +1335,11 @@ RECYCLEreuse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pci)
         j = stk->keepAlive ;
         stk->keepAlive = TRUE;
         k = p->recycle;
-        p->recycle = NO_RECYCLING; /* No recycling for instructions with        subsumption */
+        p->recycle = NO_RECYCLING; /* No recycling for instructions with subsumption */
+		runtimeProfileInit(cntxt, mb, stk);
+        runtimeProfileBegin(cntxt, mb, stk, i, &prof, 1);
         (void) reenterMAL(cntxt,mb,i,i+1,stk);
+		runtimeProfileExit(cntxt, mb, stk, p, &prof);
         p->recycle= k;
         stk->keepAlive= j;
         BBPdecref(bid, TRUE);
@@ -1344,7 +1347,7 @@ RECYCLEreuse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pci)
         recycleBlk->profiler[pc].calls++;
         recycleBlk->profiler[pc].clk = GDKusec();
         MT_lock_unset(&recycleLock, "recycle");
-        RECYCLEexit(cntxt, mb, stk, p, pc, ticks);
+        RECYCLEexitImpl(cntxt, mb, stk, p, &prof);
         stk->stk[getArg(p,2)].val.bval = nbid;
         return pc;
     }
@@ -1357,12 +1360,12 @@ RECYCLEreuse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pci)
 
     MT_lock_unset(&recycleLock, "recycle");
 	if ( pc >= 0 ) 		/* successful multi-subsumption */
-		RECYCLEexit(cntxt,mb,stk,p, pci,ticks);
+		RECYCLEexitImpl(cntxt,mb,stk,p, outerprof);
     return pc;
 }
 
 lng
-RECYCLEentry(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
+RECYCLEentry(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, RuntimeProfile prof)
 {
 	int i=0;
 
@@ -1375,7 +1378,7 @@ RECYCLEentry(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 		return 0;
 	if ( cntxt->rcc->curQ < 0 )	/* don't use recycling before initialization by prelude() */
 		return 0;
-	i = RECYCLEreuse(cntxt,mb,stk,p,pc);
+	i = RECYCLEreuse(cntxt,mb,stk,p,prof);
 #ifdef _DEBUG_RECYCLE_
 	if ( i>=0 ){
 		mnstr_printf(cntxt->fdout,"#REUSED  [%3d]   ",i);
@@ -1392,20 +1395,14 @@ RECYCLEentry(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
  * It can use the timing information gathered from the previous call,
  * which is stored in the stack frame to avoid concurrency problems.
  */
-static void
-RECYCLEexitImpl(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc, lng ticks){
-	lng rd=0;
-	lng wr= 0;
-	ValRecord *v;
+void
+RECYCLEexitImpl(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, RuntimeProfile prof)
+{
+	size_t wr;
 
-	v = &stk->stk[getArg(p,0)]; /* don't count memory for persistent bats */
-	if ((v->vtype == TYPE_bat) && !(BBP_status( *(const int*)VALptr(v)) & BBPPERSISTENT)) {
-		wr = getVolume(stk,p, 0)/ RU +1;
-		if ( (size_t)wr > monet_memory)
-			return;
-		rd = getVolume(stk,p, 1)/ RU +1;
-	}
-
+	if ( (wr = (size_t)mb->profiler[prof->stkpc].wbytes) > monet_memory)
+		goto finishexit;
+	MT_lock_set(&recycleLock, "recycle");
 	if (recycleBlk){
 		if ( (size_t)(recyclerMemoryUsed +  wr) > monet_memory ||
 	    		recycleSize >= recycleCacheLimit )
@@ -1419,25 +1416,24 @@ RECYCLEexitImpl(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc, l
 
 	if ( cntxt->rcc->curQ < 0 ) {
 		mnstr_printf(cntxt->fdout,"#The query pattern should exist before adding its instruction to the cache\n");
-		return;
+		goto finishexit;
 	}
 
 	if ( RECYCLEinterest(p)){
 		/* ADM_ALL: infinite case, admit all new instructions */
 		if (RECYCLEfind(cntxt,mb,stk,p)<0 )
-			(void) RECYCLEkeep(cntxt,mb, stk, p, pc, rd, wr, ticks);
+			(void) RECYCLEkeep(cntxt,mb, stk, p, prof);
 	}
+finishexit:
+	MT_lock_unset(&recycleLock, "recycle");
 }
 
 void
-RECYCLEexit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc, lng clk)
+RECYCLEexit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, RuntimeProfile prof)
 {
-	if ( cntxt->rcc->curQ < 0 ) /* don't use recycling before initialization
-				by prelude() */
+	if ( cntxt->rcc->curQ < 0  ||  mb->profiler == 0) /* don't use recycling before initialization by prelude() */
 		return;
-	MT_lock_set(&recycleLock, "recycle");
-	RECYCLEexitImpl(cntxt,mb,stk,p, pc, clk);
-	MT_lock_unset(&recycleLock, "recycle");
+	RECYCLEexitImpl(cntxt,mb,stk,p,prof);
 }
 
 /*

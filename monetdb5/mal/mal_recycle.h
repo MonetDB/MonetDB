@@ -23,6 +23,7 @@
 #include "mal.h"
 #include "mal_exception.h"
 #include "mal_instruction.h"
+#include "mal_runtime.h"
 #include "mal_client.h"
 
 #define _DEBUG_RECYCLE_
@@ -88,8 +89,8 @@ typedef struct QRYPATTERN {
 typedef str (*aggrFun) (ptr, int *);
 
 mal_export void RECYCLEinit(void);
-mal_export lng  RECYCLEentry(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc);
-mal_export void RECYCLEexit(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc, lng ticks);
+mal_export lng  RECYCLEentry(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, RuntimeProfile prof);
+mal_export void RECYCLEexit(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, RuntimeProfile prof);
 mal_export str  RECYCLEreset(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc);
 mal_export void RECYCLEshutdown(Client cntxt);
 mal_export int  RECYCLEinterest(InstrPtr p);

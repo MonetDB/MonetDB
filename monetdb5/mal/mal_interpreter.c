@@ -495,7 +495,6 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 	int exceptionVar;
 	str ret = 0, localGDKerrbuf= GDKerrbuf;
 	int stamp = -1;
-	lng clk=0;
 	ValRecord backups[16];
 	ValPtr backup;
 	int garbages[16], *garbage;
@@ -547,9 +546,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 		}
 
 		runtimeProfileBegin(cntxt, mb, stk, stkpc, &runtimeProfile, 1);
-        if (pci->recycle > 0)
-            clk = GDKusec();
-        if (!RECYCLEentry(cntxt, mb, stk, pci,stkpc)){
+        if (!RECYCLEentry(cntxt, mb, stk, pci,&runtimeProfile)){
 			/* The interpreter loop
 			 * The interpreter is geared towards execution a MAL
 			 * procedure together with all its decendant
@@ -769,7 +766,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 
 				/* If needed recycle intermediate result */
 				if (pci->recycle > 0) {
-					RECYCLEexit(cntxt, mb, stk, pci, stkpc, clk);
+					RECYCLEexit(cntxt, mb, stk, pci, &runtimeProfile);
 				}
 
 				/* general garbage collection */

@@ -63,7 +63,7 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 	int i;
 	str q;
 
-	if ( malProfileMode )
+	if ( malProfileMode || mb->recycle )
 		setFilterOnBlock(mb, 0, 0);
 
 	MT_lock_set(&mal_delayLock, "sysmon");
@@ -134,13 +134,14 @@ runtimeProfileBegin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int stkpc, Runtim
 	prof->stkpc = stkpc;
 	mb->profiler[stkpc].clk = GDKusec();
 
-	if (malProfileMode == 0)
+	if (malProfileMode == 0 && mb->stmt[stkpc]->recycle == 0)
 		return; /* mostly true */
 	
 	if (stk && mb->profiler[stkpc].trace) {
 		gettimeofday(&mb->profiler[stkpc].clock, NULL);
 		/* emit the instruction upon start as well */
-		profilerEvent(cntxt->idx, mb, stk, stkpc, start);
+		if(malProfileMode)
+			profilerEvent(cntxt->idx, mb, stk, stkpc, start);
 #ifdef HAVE_TIMES
 		times(&mb->profiler[stkpc].timer);
 #endif
@@ -159,7 +160,7 @@ runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Runt
 	stkpc= prof->stkpc;
 	mb->profiler[stkpc].ticks = GDKusec() - mb->profiler[stkpc].clk;
 
-	if (malProfileMode == 0)
+	if (malProfileMode == 0 && pci->recycle == 0)
 		return; /* mostly true */
 
 	if (getProfileCounter(PROFfootprint) && pci){
@@ -175,18 +176,19 @@ runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Runt
 			}
 	}
 
-	if (stk != NULL && stkpc >= 0 && mb->profiler[stkpc].trace ) {
+	if (stk != NULL && stkpc >= 0 && (mb->profiler[stkpc].trace || pci->recycle) ) {
 		gettimeofday(&mb->profiler[stkpc].clock, NULL);
 		mb->profiler[stkpc].calls++;
 		mb->profiler[stkpc].totalticks += mb->profiler[stkpc].ticks;
 		if (pci) {
 			// it is a potential expensive operation
-			if (getProfileCounter(PROFrbytes))
+			if (getProfileCounter(PROFrbytes) || pci->recycle)
 				mb->profiler[stkpc].rbytes = getVolume(stk, pci, 0);
-			if (getProfileCounter(PROFwbytes))
+			if (getProfileCounter(PROFwbytes) || pci->recycle)
 				mb->profiler[stkpc].wbytes = getVolume(stk, pci, 1);
 		}
-		profilerEvent(cntxt->idx, mb, stk, stkpc, 0);
+		if(malProfileMode)
+			profilerEvent(cntxt->idx, mb, stk, stkpc, 0);
 	}
 }
 
