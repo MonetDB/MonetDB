@@ -1339,13 +1339,13 @@ RECYCLEreuse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pci)
         (void) reenterMAL(cntxt,mb,i,i+1,stk);
         p->recycle= k;
         stk->keepAlive= j;
-        stk->stk[getArg(p,2)].val.bval = nbid;
         BBPdecref(bid, TRUE);
         cntxt->rcc->recycled0++;
         recycleBlk->profiler[pc].calls++;
         recycleBlk->profiler[pc].clk = GDKusec();
         MT_lock_unset(&recycleLock, "recycle");
         RECYCLEexit(cntxt, mb, stk, p, pc, ticks);
+        stk->stk[getArg(p,2)].val.bval = nbid;
         return pc;
     }
 
