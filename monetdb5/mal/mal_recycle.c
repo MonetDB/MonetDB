@@ -1056,7 +1056,7 @@ RECYCLEshutdown(Client cntxt){
 str 
 RECYCLEcolumn(Client cntxt,str sch,str tbl, str col)
 {
-	int sid,tid,cid,i,j;
+	int sid= 0,tid= 0,cid =0,i,j;
 	char *release;
 	InstrPtr *old,p;
 	int limit;
