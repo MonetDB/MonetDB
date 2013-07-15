@@ -1,3 +1,9 @@
+-- For now(?), the mitosis/mergetable optimizers are not up to handling the
+-- SciQL used here, in particular conjunctive HAVING predicates, correctly
+-- (or vice versa).
+set optimizer='no_mitosis_pipe';
+
+
 SET SCHEMA rs;
 
 
@@ -92,25 +98,11 @@ INSERT INTO fire (
 
 -- BSM majority filter --
 
----- SHOULD be:
---INSERT INTO fire (
---  SELECT [x], [y], 1
---  FROM fire
---  GROUP BY fire[x-d1:x+d2][y-d1:y+d2]
---  HAVING f IS NULL AND SUM(f) > majority
---);
----- HOWEVER, conjunctive HAVING clauses appear to YIELD WRONG RESULTS !??
-
----- hence, we need to avoid conjunctive HAVING clauses (for now?)
 INSERT INTO fire (
   SELECT [x], [y], 1
-  FROM [
-    SELECT [x], [y], f
-    FROM fire
-    GROUP BY fire[x-d1:x+d2][y-d1:y+d2]
-    HAVING SUM(f) > majority
-  ] AS tmp
-  WHERE f IS NULL
+  FROM fire
+  GROUP BY fire[x-d1:x+d2][y-d1:y+d2]
+  HAVING f IS NULL AND SUM(f) > majority
 );
 
 
@@ -199,7 +191,7 @@ UPDATE fire SET f = NULL WHERE f IN (
 
 -- BSM connect nearby fires filter --
 
---- CAVEAT: this takes more than 15 minutes to execute !
+--- CAVEAT: this takes more than 10 minutes to execute !
 
 ---- Union fires which are less that 3 pixels apart (using 8-CONNECTED)
 ---- Add fire bridge between them
@@ -218,67 +210,36 @@ BEGIN
 
     -- find neighboring fire clumps
     DELETE FROM bridges;
-    -- SHOULD be:
-    --INSERT INTO bridges (
-    --  -- 3x3 window is too small and 5x5 is too large; hence,
-    --  -- we need to union the four possible 4x4 windows ...
-    --  SELECT x, y, MIN(f) AS i, MAX(f) AS a
-    --  FROM fire
-    --  GROUP BY fire[x-2:x+2][y-2:y+2]
-    --  HAVING f IS NULL
-    --     AND MIN(f) IS NOT NULL
-    --     AND MIN(f) <> MAX(f)
-    --  UNION ALL
-    --  SELECT x, y, MIN(f) AS i, MAX(f) AS a
-    --  FROM fire
-    --  GROUP BY fire[x-1:x+3][y-2:y+2]
-    --  HAVING f IS NULL
-    --     AND MIN(f) IS NOT NULL
-    --     AND MIN(f) <> MAX(f)
-    --  UNION ALL
-    --  SELECT x, y, MIN(f) AS i, MAX(f) AS a
-    --  FROM fire
-    --  GROUP BY fire[x-2:x+2][y-1:y+3]
-    --  HAVING f IS NULL
-    --     AND MIN(f) IS NOT NULL
-    --     AND MIN(f) <> MAX(f)
-    --  UNION ALL
-    --  SELECT x, y, MIN(f) AS i, MAX(f) AS a
-    --  FROM fire
-    --  GROUP BY fire[x-1:x+3][y-1:y+3]
-    --  HAVING f IS NULL
-    --     AND MIN(f) IS NOT NULL
-    --     AND MIN(f) <> MAX(f)
-    --);
-    ---- HOWEVER, conjunctive HAVING clauses appear to YIELD WRONG RESULTS !??
-    ---- hence, we need to avoid conjunctive HAVING clauses (for now?)
     INSERT INTO bridges (
-      SELECT *
-      FROM (
-        -- 3x3 window is too small and 5x5 is too large; hence,
-        -- we need to union the four possible 4x4 windows ...
-        SELECT x, y, MIN(f) AS i, MAX(f) AS a
-        FROM fire
-        GROUP BY fire[x-2:x+2][y-2:y+2]
-        HAVING f IS NULL
-        UNION ALL
-        SELECT x, y, MIN(f) AS i, MAX(f) AS a
-        FROM fire
-        GROUP BY fire[x-1:x+3][y-2:y+2]
-        HAVING f IS NULL
-        UNION ALL
-        SELECT x, y, MIN(f) AS i, MAX(f) AS a
-        FROM fire
-        GROUP BY fire[x-2:x+2][y-1:y+3]
-        HAVING f IS NULL
-        UNION ALL
-        SELECT x, y, MIN(f) AS i, MAX(f) AS a
-        FROM fire
-        GROUP BY fire[x-1:x+3][y-1:y+3]
-        HAVING f IS NULL
-      ) AS t
-      WHERE i IS NOT NULL
-        AND i <> a
+      -- 3x3 window is too small and 5x5 is too large; hence,
+      -- we need to union the four possible 4x4 windows ...
+      SELECT x, y, MIN(f) AS i, MAX(f) AS a
+      FROM fire
+      GROUP BY fire[x-2:x+2][y-2:y+2]
+      HAVING f IS NULL
+         AND MIN(f) IS NOT NULL
+         AND MIN(f) <> MAX(f)
+      UNION ALL
+      SELECT x, y, MIN(f) AS i, MAX(f) AS a
+      FROM fire
+      GROUP BY fire[x-1:x+3][y-2:y+2]
+      HAVING f IS NULL
+         AND MIN(f) IS NOT NULL
+         AND MIN(f) <> MAX(f)
+      UNION ALL
+      SELECT x, y, MIN(f) AS i, MAX(f) AS a
+      FROM fire
+      GROUP BY fire[x-2:x+2][y-1:y+3]
+      HAVING f IS NULL
+         AND MIN(f) IS NOT NULL
+         AND MIN(f) <> MAX(f)
+      UNION ALL
+      SELECT x, y, MIN(f) AS i, MAX(f) AS a
+      FROM fire
+      GROUP BY fire[x-1:x+3][y-1:y+3]
+      HAVING f IS NULL
+         AND MIN(f) IS NOT NULL
+         AND MIN(f) <> MAX(f)
     );
 
     SELECT COUNT(*) INTO merge_more FROM bridges;
