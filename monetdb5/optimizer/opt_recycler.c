@@ -86,7 +86,6 @@ OPTrecyclerImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 				if (getModuleId(p) == batRef && isaBatType(getArgType(mb, p, 1))) {
 					recycled[getArg(p, 1)] = 0;
 					q = newFcnCall(mb, "recycle", "reset");
-					pushArgument(mb, q, getArg(p, 0));// to keep dataflow dependency
 					pushArgument(mb, q, getArg(p, 1));
 					actions++;
 				}

@@ -27,7 +27,6 @@
 #include "mal_client.h"
 
 #define _DEBUG_RECYCLE_
-#define _DEBUG_RECYCLE_REUSE
 #define _DEBUG_CACHE_
 #define _DEBUG_RESET_
 
@@ -64,42 +63,19 @@ mal_export double recycleAlpha;
 mal_export int recycleMaxInterest;
 mal_export int monitorRecycler;
 
-/*
- * Statistics about query patterns
- */
-typedef struct QRYSTAT {
-	lng recid;	/* unique id given by the recycle optimizer */
-	int calls; 	/* number of calls */
-	int greuse; /* number of global reuse */
-	int lreuse; /* number of local reuse in current execution only */
-	int *crd;   /* instructions credits */
-	int stop;
-	int wl;		/* waterline of globally reused instructions*/
-	bte *gl;	/* mask for globally reused instructions */
-} QryStat, *QryStatPtr,QryStatRec;
-
-typedef struct QRYPATTERN {
-	int cnt; /* number of query patterns */
-	int sz;  /* storage capacity */
-	QryStatPtr *ptrn; /* patterns */
-} *RecyclePool, RecyclePoolRec;
-
-typedef str (*aggrFun) (ptr, int *);
-
 mal_export void RECYCLEinit(void);
 mal_export lng  RECYCLEentry(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, RuntimeProfile prof);
 mal_export void RECYCLEexit(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, RuntimeProfile prof);
 mal_export str  RECYCLEreset(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc);
 mal_export void RECYCLEshutdown(Client cntxt);
 mal_export int  RECYCLEinterest(InstrPtr p);
-mal_export int  RECYCLEnewQryStat(MalBlkPtr mb);
 mal_export void RECYCLEinitRecyclePool(int sz);
-mal_export bit  isBindInstr(InstrPtr p);
 
-mal_export str RECYCLEstart(Client cntxt, MalBlkPtr mb);
-mal_export str RECYCLEstop(Client cntxt, MalBlkPtr mb);
+mal_export str RECYCLEstart(Client cntxt);
+mal_export str RECYCLEstop(Client cntxt);
+mal_export str RECYCLEcolumn(Client cntxt, str sch,str tbl, str col);
+mal_export str RECYCLEresetBAT(Client cntxt, int bid);
 
 mal_export void RECYCLEdump(stream *s);
 mal_export void RECYCLEdumpRecyclerPool(stream *s);
-mal_export str  RECYCLErunningStat(Client cntxt, MalBlkPtr mb);
 #endif

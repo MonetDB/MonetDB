@@ -79,7 +79,6 @@ MalBlkPtr recycleBlk = NULL;
 
 /* ADM_ALL: infinite case, admission of all instructions subject to cache limits*/
 
-lng recycleTime = 0;
 lng recycleSearchTime = 0;	/* cache search time in ms*/
 int recycleMaxInterest = REC_MAX_INTEREST;
 
@@ -90,6 +89,7 @@ int reusePolicy = REUSE_COVER;
 
 int recycleCacheLimit=0; /* No limit by default */
 
+
 /*
  * Monitoring the Recycler
  */
@@ -97,6 +97,8 @@ lng recyclerMemoryUsed = 0;
 int monitorRecycler = 0;
 	/*	 1: print statistics for RecyclerPool only
 		 2: print stat at the end of each query */
+
+static lng recycled=0;
 
 #ifdef _DEBUG_CACHE_
 #define recycleSize recycleBlk->stop - cntxt->rcc->recycleRem
@@ -126,14 +128,6 @@ static str bindRef = 0, bind_idxRef = 0, sqlRef = 0;
 static str subselectRef = 0, thetasubselectRef = 0, likesubselectRef = 0;
 static void RECYCLEexitImpl(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, RuntimeProfile prof);
 /*
- * The recycler keeps a catalog of query templates
- * with statistics about number of calls, global/local reuses,
- * and credits per instruction.
- *
- */
-RecyclePool recyclePool = NULL;
-
-/*
  * The Recycle catalog is a global structure, which should be
  * protected with locks when updated.
  * The recycle statistics can be kept in the performance table
@@ -149,146 +143,17 @@ static void RECYCLEspace(void)
 	}
 }
 
-void RECYCLEinitRecyclePool(int sz)
-{
-	if (recyclePool == NULL) {
-		MT_lock_set(&recycleLock, "recycle");
-		if (recyclePool == NULL) {
-			recyclePool = (RecyclePool) GDKzalloc(sizeof(RecyclePoolRec));
-			recyclePool->ptrn = (QryStatPtr *) GDKzalloc(sz * sizeof(QryStatPtr));
-			recyclePool->sz = sz;
-		}
-		sqlRef = putName("sql",3);
-		bindRef = putName("bind",4);
-		bind_idxRef = putName("bind_idxbat",11);
-		subselectRef = putName("subselect",9);
-		thetasubselectRef = putName("thetasubselect",14);
-        likesubselectRef= putName("likesubselect",14);
-		recycleCacheLimit=HARDLIMIT_STMT;
-		RECYCLEspace();
-		MT_lock_unset(&recycleLock, "recycle");
-	}
-}
-
-static void extendRecyclePool(void)
-{
-	int s, i;
-	QryStatPtr *old;
-
-	if (recyclePool == NULL)
-		RECYCLEinitRecyclePool(1024);
-	if (recyclePool->cnt < recyclePool->sz)
-		return;
-	MT_lock_set(&recycleLock, "recycle");
-	old = recyclePool->ptrn;
-	s = recyclePool->sz +1024;	/* lineare growth is enough */
-	recyclePool->ptrn = (QryStatPtr *) GDKzalloc(s * sizeof(QryStatPtr));
-	for( i=0; i< recyclePool->cnt; i++)
-		 recyclePool->ptrn[i] = old[i];
-	recyclePool->sz = s;
-	MT_lock_unset(&recycleLock, "recycle");
-	GDKfree(old);
-}
-
-static int findQryStat(lng recid)
-{
-	int i;
-
-	if (recyclePool == NULL)
-		return -1;
-	// needs hash
-	for(i = 0; i< recyclePool->cnt; i++)
-		if ( recyclePool->ptrn[i]->recid == recid)
-			return i;
-	return -1;
-}
-
-int RECYCLEnewQryStat(MalBlkPtr mb)
-{
-	int idx, i;
-	QryStatPtr qstat;
-
-	/* no need to keep statistics for statements without instructions
-	marked for recycling, for instance DML */
-	if ( !mb->recycle )
-		return -1;
-
-    /* the pattern exists */
-	if ((idx = findQryStat(mb->recid)) >= 0){
-		qstat = recyclePool->ptrn[idx];
-		qstat->calls++;
-		return idx;
-	}
-    /* add new query pattern */
-	qstat = (QryStatPtr) GDKzalloc(sizeof(QryStat));
-	qstat->recid = mb->recid;
-	qstat->calls = 1;
-	qstat->stop = mb->stop;
-	qstat->crd = (int *) GDKzalloc(sizeof(int)* qstat->stop);
-	for (i=0; i<mb->stop; i++)
-		qstat->crd[i] = mb->stmt[i]->recycle;
-	qstat->gl = (bte *) GDKzalloc(sizeof(bte)* qstat->stop);
-	extendRecyclePool();
-	idx = recyclePool->cnt++;
-	recyclePool->ptrn[idx] = qstat;
-
-	return idx;
-}
-
-/*
-static void updateQryStat(int qidx, bit gluse, int i)
-{
-	QryStatPtr qs;
-
-	if ( qidx < 0 || qidx >= recyclePool->cnt){
-		return;
-	}
-	qs = recyclePool->ptrn[qidx];
-	if (gluse) {
-		qs->greuse++;
-		qs->gl[i] = 1;
-		if ( qs->wl < i ) qs->wl = i;
-	}
-	else qs->lreuse++;
-}
-*/
-
-static void emptyRecyclePool(RecyclePool q)
-{
-    int i;
-    QryStatPtr qstat;
-
-    for( i = 0; i < q->cnt; i++){
-        qstat = q->ptrn[i];
-        GDKfree(qstat->crd);
-		GDKfree(qstat->gl);
-        GDKfree(qstat);
-    }
-    GDKfree(q->ptrn);
-    GDKfree(q);
-}
-
-/* the source of a recycled instruction q receives its credit back */
-static void returnCredit(InstrPtr q)
-{
-	int i, pc;
-	QryStatPtr qs;
-
-	i = q->argv[q->argc-1];
-	pc = *(int*)getVarValue(recycleBlk,i);
-	if ((q->recycle >= 0) && (q->recycle <recyclePool->cnt)){
-		qs = recyclePool->ptrn[q->recycle];
-		if (pc < qs->stop)
-			if ( qs->crd[pc] < recycleMaxInterest )
-				qs->crd[pc]++;
-	}
-}
-
 void RECYCLEinit(void){
 #ifdef NEED_MT_LOCK_INIT
 	MT_lock_init(&recycleLock,"recycleLock");
 #endif
-	RECYCLEinitRecyclePool(20);
+	sqlRef = putName("sql",3);
+	bindRef = putName("bind",4);
+	bind_idxRef = putName("bind_idxbat",11);
+	subselectRef = putName("subselect",9);
+	thetasubselectRef = putName("thetasubselect",14);
+	likesubselectRef= putName("likesubselect",14);
+	recycleCacheLimit=HARDLIMIT_STMT;
 }
 
 /*
@@ -431,7 +296,6 @@ static void RECYCLEcleanCache(Client cntxt, lng wr0){
 	if (!recycleBlk)
 		return;
 
-	cntxt->rcc->ccCalls++;
 newpass:
 	cont = 0;
 	wr = wr0;
@@ -441,7 +305,7 @@ newpass:
 	for (i = 0; i < recycleBlk->stop; i++){
 		p = recycleBlk->stmt[i];
 #ifdef _DEBUG_CACHE_
-                if ( p->token != NOOPsymbol )
+		if ( p->token != NOOPsymbol )
 #endif
 		for( j = p->retc ; j< p->argc; j++)
 			if (used[getArg(p,j)]<2)  used[getArg(p,j)]++;
@@ -454,7 +318,7 @@ newpass:
 	for (i = 0; i < recycleBlk->stop; i++){
 		p = recycleBlk->stmt[i];
 #ifdef _DEBUG_CACHE_
-                if ( p->token == NOOPsymbol ) continue;
+		if ( p->token == NOOPsymbol ) continue;
 #endif
 		for( j = 0; j < p->retc ; j++)
 			if (used[getArg(p,j)]) goto skip;
@@ -472,8 +336,8 @@ newpass:
 		if (reserve){
 			lmask[reserve] = 1;
 			ltop++;
-		}
-		else {	GDKfree(lmask);
+		} else {	
+			GDKfree(lmask);
 			return;
 		}
 	}
@@ -579,29 +443,10 @@ newpass:
 	for (v = 0; v < vtop; v++)
 		dmask[vm[v]] = 1;
 	GDKfree(vm);
-
-#ifdef _DEBUG_CACHE_
-	/* instructions are marked with NOOPsymbol in debug mode */
-	(void) old;
-	(void) limit;
-	for (i = 0; i < recycleBlk->stop ; i++){
-		p = getInstrPtr(recycleBlk,i);
-		if( dmask[i] ) {
-			recyclerMemoryUsed -= recycleBlk->profiler[i].wbytes;
-         p->token = NOOPsymbol;
-			cntxt->rcc->recycleRem ++;
-			cntxt->rcc->ccInstr++;
-			if ( recycleBlk->profiler[i].calls >1)
-				returnCredit(p);
-		}
-	}
 	(void) newstmt;
 
-#else
 	old = recycleBlk->stmt;
 	limit = recycleBlk->stop;
-/*	newMalBlkStmt(recycleBlk,recycleBlk->ssize);
-	we want to keep the profiler records and get only new stmt*/
 
     newstmt = (InstrPtr *) GDKzalloc(sizeof(InstrPtr) * recycleBlk->ssize);
     if (newstmt == NULL){
@@ -617,10 +462,7 @@ newpass:
 		if( dmask[i] ) {
 			RECYCLEgarbagecollect(recycleBlk,p,used);
 			recyclerMemoryUsed -= recycleBlk->profiler[i].wbytes;
-			if ( recycleBlk->profiler[i].calls >1)
-				returnCredit(p);
 			freeInstruction(p);
-			cntxt->rcc->ccInstr++;
 		}
 		else {
 			pushInstruction(recycleBlk,p);
@@ -632,7 +474,7 @@ newpass:
 	GDKfree(used);
 	/* remove all un-used variables as well */
 	trimMalVariables(recycleBlk);
-#endif
+
 	GDKfree(dmask);
 	if (cont) goto newpass;
 
@@ -651,13 +493,6 @@ RECYCLEinterest(InstrPtr p){
 }
 
 
-bit
-isBindInstr(InstrPtr p)
-{
-	if ( getModuleId(p) != sqlRef ) return 0;
-	return ( bindRef == getFunctionId(p) || bind_idxRef == getFunctionId(p));
-}
-
 #ifdef _DEBUG_CACHE_
 static void
 RECYCLEsync(InstrPtr p)
@@ -668,7 +503,6 @@ RECYCLEsync(InstrPtr p)
 
 	for (i=0; i<recycleBlk->stop; i++) {
 		q = getInstrPtr(recycleBlk,i);
-		if ( q->token != NOOPsymbol ) continue;
 		if ((getFunctionId(p) != getFunctionId(q)) ||
 			(p->argc != q->argc) ||
 			(getModuleId(p) != getModuleId(q)))
@@ -692,98 +526,6 @@ RECYCLEsync(InstrPtr p)
 }
 #endif
 
-/* algebra.subselect(r:bat[:oid,:any],low,hgh,true,true,false) */
-static void
-setSelectProp(InstrPtr q)
-{
-	ValPtr lb = NULL, ub = NULL;
-	ValRecord lbval, ubval, nilval;
-	int bid=0, tpe = 0;
-	ptr nilptr = NULL;
-	int (*cmp) (const void *, const void *) = NULL;
-
-	int tlbProp = PropertyIndex("tlb");
-	int tubProp = PropertyIndex("tub");
-
-
-
-	if ( ((getFunctionId(q) == subselectRef ) || (getFunctionId(q) == thetasubselectRef )) &&
-		BATatoms[getArgType(recycleBlk,q,3)].linear ){
-
-		if ( getFunctionId(q) == subselectRef ) {
-			lb = &getVar(recycleBlk,getArg(q,3))->value;
-			if (q->argc == 6)
-				ub = &getVar(recycleBlk,getArg(q,3))->value;
-			else ub = &getVar(recycleBlk,getArg(q,4))->value;
-			tpe = lb->vtype;
-			nilptr = ATOMnilptr(tpe);
-			cmp = BATatoms[tpe].atomCmp;
-		}
-
-		if ( getFunctionId(q) == thetasubselectRef ) {
-			ValPtr qval;
-			str qop;
-
-			if (q->argc == 6){
-				qop = (str)getVarValue(recycleBlk,getArg(q,3));
-				qval = &getVar(recycleBlk,getArg(q,2))->value;
-			} else {
-				qop = (str)getVarValue(recycleBlk,getArg(q,3));
-				qval = &getVar(recycleBlk,getArg(q,2))->value;
-			}
-			tpe = qval->vtype;
-			nilptr = ATOMnilptr(tpe);
- 			cmp = BATatoms[tpe].atomCmp;
-
-			VALset(&nilval, tpe, ATOMnil(tpe));
-			lb = &nilval;
-			ub = &nilval;
-			if ( qop[0] == '=') {
-				lb = qval;
-				ub = qval;
-			}
-			if ( qop[0] == '<')
-				ub = qval;
-			else if (qop[0] == '>')
-				lb = qval;
-        }
-
-		bid = getVarConstant(recycleBlk, getArg(q,0)).val.bval;
-		(void) bid;
-
-		if ( (*cmp)(VALptr(lb), nilptr) == 0 ) {
-			/* try to propagate from base relation */
-			if ( varGetProp(recycleBlk, getArg(q,1), tlbProp) != NULL )
-				lb = &varGetProp(recycleBlk, getArg(q,1), tlbProp)->value;
-			else {
-				lb = &lbval;
-/*				msg = ALGminany(lb, &bid); */
-				//(*minAggr)(lb, &bid);
-				assert(0);
-				lb->vtype = tpe;
-				/* first computation - propagate to base relation  */
-				varSetProp(recycleBlk, getArg(q,1), tlbProp, op_gte, lb);
-			}
-		}
-		if ( (*cmp)(VALptr(ub), nilptr) == 0 ){
-			if ( varGetProp(recycleBlk, getArg(q,1), tubProp) != NULL )
-				ub = &varGetProp(recycleBlk, getArg(q,1), tubProp)->value;
-			else {
-				ub = &ubval;
-				/*	msg = ALGmaxany(ub, &bid); */
-				//(*maxAggr)(ub, &bid);
-				assert(0);
-				ub->vtype = tpe;
-				/* propagate to base relation */
-				varSetProp(recycleBlk, getArg(q,1), tubProp, op_lte, ub);
-			}
-		}
-		varSetProp(recycleBlk, getArg(q,0), tlbProp, op_gte, lb);
-		varSetProp(recycleBlk, getArg(q,0), tubProp, op_lte, ub);
-	}
-
-}
-
 static void
 RECYCLEkeep(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p, RuntimeProfile prof)
 {
@@ -796,7 +538,6 @@ RECYCLEkeep(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p, RuntimeProfile 
 	lng wr= mb->profiler[pc].wbytes;
 	lng clk= mb->profiler[pc].clk;
 
-	RECYCLEspace();
 	if ( recycleSize >= recycleCacheLimit)
 		return ; /* no more caching */
 	if ( (size_t)(recyclerMemoryUsed + wr) > monet_memory)
@@ -831,8 +572,6 @@ RECYCLEkeep(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p, RuntimeProfile 
 	(void) cntxt;
 #endif
 
-	q->recycle = cntxt->rcc->curQ;
-		/* use the field to refer to the query-owner index in the query pattern table */
 	pushInstruction(recycleBlk,q);
 	i = recycleBlk->stop-1;
 	recycleBlk->profiler[i].clk = clk; // used for LRU scheme
@@ -841,15 +580,8 @@ RECYCLEkeep(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p, RuntimeProfile 
 	recycleBlk->profiler[i].rbytes = rd;
 	recycleBlk->profiler[i].wbytes = wr;
 	recyclerMemoryUsed += wr;
-	if (monitorRecycler == 1 )
-		fprintf(stderr,
-			"#memory="LLFMT", stop=%d, recycled=%d, executed=%d \n",
-			recyclerMemoryUsed, recycleBlk->stop,
-			cntxt->rcc->recycled0, cntxt->rcc->statements);
-
 	cntxt->rcc->recent = i;
 	cntxt->rcc->RPadded0++;
-	setSelectProp(q);
 
 #ifdef _DEBUG_CACHE_
 	RECYCLEsync(q);
@@ -1103,11 +835,9 @@ thetaselectSubsume(InstrPtr p, InstrPtr q, MalStkPtr s)
 static int
 RECYCLEreuse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, RuntimeProfile outerprof)
 {
-    int i, j, evicted=0, pc= -1;
-	//int qidx;
+    int i, j, pc= -1;
     bat bid= 0, nbid= 0;
     InstrPtr q;
-    //bit gluse = FALSE;
 
     MT_lock_set(&recycleLock, "recycle");
 
@@ -1158,13 +888,6 @@ RECYCLEreuse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, RuntimeProfi
 		for (j = p->retc; j < p->argc; j++)
 			if (VALcmp(&stk->stk[getArg(p,j)], &getVarConstant(recycleBlk,    getArg(q,j))))
 				goto notfound;
-#ifdef _DEBUG_CACHE_
-		if ( q->token == NOOPsymbol ){
-			evicted = 1;
-			mnstr_printf(cntxt->fdout,"#Miss of evicted instruction %d\n",  i);
-			goto notfound;
-		}
-#endif
 
 		/* found an exact match, get the results on the stack */
 		for( j=0; j<p->retc; j++){
@@ -1173,17 +896,9 @@ RECYCLEreuse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, RuntimeProfi
 				BBPincref( stk->stk[getArg(p,j)].val.bval , TRUE);
 		}
 		recycleBlk->profiler[i].calls++;
-		if ( recycleBlk->profiler[i].clk < cntxt->rcc->time0 )
-					;//gluse = recycleBlk->profiler[i].trace = TRUE;
-		else { /*local use - return the credit */
-			returnCredit(q);
-		}
 		recycleBlk->profiler[i].clk = GDKusec();
-		if (!isBindInstr(q)){
-			cntxt->rcc->recycled0++;
-			//qidx = *(int*)getVarValue(recycleBlk,q->argv[q->argc-1]);
-			//updateQryStat(q->recycle,gluse,qidx);
-		}
+		if ( !( getModuleId(p) == sqlRef && ( bindRef == getFunctionId(p) || bind_idxRef == getFunctionId(p))))
+			recycled++;
 		cntxt->rcc->recent = i;
 		MT_lock_unset(&recycleLock, "recycle");
 		return i;
@@ -1198,7 +913,7 @@ RECYCLEreuse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, RuntimeProfi
 		RuntimeProfileRecord prof;
 
         i= getPC(mb,p);
-#ifdef _DEBUG_RECYCLE_REUSE
+#ifdef _DEBUG_RECYCLE_
 		mnstr_printf(cntxt->fdout,"#RECYCLEreuse subselect using candidate list");
 		printInstruction(cntxt->fdout, recycleBlk, 0,getInstrPtr(recycleBlk,pc),    LIST_MAL_STMT);
 #endif
@@ -1217,7 +932,7 @@ RECYCLEreuse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, RuntimeProfi
         p->recycle= k;
         stk->keepAlive= j;
         BBPdecref(bid, TRUE);
-        cntxt->rcc->recycled0++;
+		recycled++;
         recycleBlk->profiler[pc].calls++;
         recycleBlk->profiler[pc].clk = GDKusec();
         MT_lock_unset(&recycleLock, "recycle");
@@ -1225,12 +940,6 @@ RECYCLEreuse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, RuntimeProfi
         stk->stk[getArg(p,2)].val.bval = nbid;
         return pc;
     }
-
-#ifdef _DEBUG_CACHE_
-    if ( evicted ) cntxt->rcc->recycleMiss++;
-#else
-    (void) evicted;
-#endif
 
     MT_lock_unset(&recycleLock, "recycle");
 	if ( pc >= 0 ) 		/* successful multi-subsumption */
@@ -1246,12 +955,13 @@ RECYCLEentry(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, RuntimeProfi
 	cntxt->rcc->statements++;
 	if ( p->recycle == NO_RECYCLING )
 		return 0;       /* don't count subsumption instructions */
-	if ( recycleBlk == NULL )
-		return 0;
 	if ( !RECYCLEinterest(p) )  /* don't scan RecyclerPool for non-monitored instructions */
 		return 0;
-	if ( cntxt->rcc->curQ < 0 )	/* don't use recycling before initialization by prelude() */
-		return 0;
+	if ( recycleBlk == NULL ){
+		RECYCLEspace();
+		if ( recycleBlk == NULL )
+			return 0;
+	}
 	i = RECYCLEreuse(cntxt,mb,stk,p,prof);
 #ifdef _DEBUG_RECYCLE_
 	if ( i>=0 ){
@@ -1283,16 +993,6 @@ RECYCLEexitImpl(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, RuntimePr
 			RECYCLEcleanCache(cntxt, wr);
 	}
 
-	/* ensure the right mal block is pointed in the context */
-	if ( cntxt->rcc->curQ < 0 ||
-		(cntxt->rcc->curQ >=0 && recyclePool->ptrn[cntxt->rcc->curQ]->recid != mb->recid ) )
-		cntxt->rcc->curQ = findQryStat(mb->recid);
-
-	if ( cntxt->rcc->curQ < 0 ) {
-		mnstr_printf(cntxt->fdout,"#The query pattern should exist before adding its instruction to the cache\n");
-		goto finishexit;
-	}
-
 	if ( RECYCLEinterest(p)){
 		/* ADM_ALL: infinite case, admit all new instructions */
 		if (RECYCLEfind(cntxt,mb,stk,p)<0 )
@@ -1305,7 +1005,7 @@ finishexit:
 void
 RECYCLEexit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, RuntimeProfile prof)
 {
-	if ( cntxt->rcc->curQ < 0  ||  mb->profiler == 0) /* don't use recycling before initialization by prelude() */
+	if ( mb->profiler == 0) /* don't use recycling before initialization by prelude() */
 		return;
 	RECYCLEexitImpl(cntxt,mb,stk,p,prof);
 }
@@ -1340,10 +1040,7 @@ RECYCLEshutdown(Client cntxt){
 	for(c = mal_clients; c < mal_clients+MAL_MAXCLIENTS; c++)
 		if (c->mode != FREECLIENT) {
 			memset((char *)c->rcc, 0, sizeof(RecStat));
-			c->rcc->curQ = -1;
     }
-	emptyRecyclePool(recyclePool);
-	recyclePool = NULL;
 	MT_lock_unset(&recycleLock, "recycle");
 	for (i=mb->stop-1; i>=0; i--)
 		RECYCLEgarbagecollect(mb, getInstrPtr(mb,i),used);
@@ -1352,238 +1049,170 @@ RECYCLEshutdown(Client cntxt){
 }
 
 /*
- * Evict a bat from recycle cache, for instance if an update on it
- * has been detected.
- */
-static void
-RECYCLEevict(Client cntxt, bat *bats, int btop){
-	int i,j,k,top = 0, rbid;
-	int action = 1, limit;
-	int *dropped;
-	InstrPtr p;
-	InstrPtr *old, *newstmt;
-	bte *used;
-	bte *dmask;
-
-	if( recycleBlk == NULL)
-		return;
-
-#ifdef _DEBUG_RECYCLE_
-	mnstr_printf(cntxt->fdout,"#RECYCLE evict\n");
-	printFunction(cntxt->fdout, recycleBlk, 0,0);
-#else
-	(void) cntxt;
-#endif
-
-	dropped = (int *) GDKzalloc(sizeof(int)*recycleBlk->vtop);
-	used = (bte*)GDKzalloc(recycleBlk->vtop);
-    dmask = (bte *)GDKzalloc(recycleBlk->stop);
-
-	for( i=0; i<btop; i++)
-		dropped[top++] = bats[i];
-	for (i = 0; i < recycleBlk->stop; i++){
-		p = recycleBlk->stmt[i];
-#ifdef _DEBUG_CACHE_
-                if ( p->token != NOOPsymbol )
-#endif
-		for( j = 0 ; j< p->argc; j++)
-			if (used[getArg(p,j)]<2)  used[getArg(p,j)]++;
-	}
-	action= 0;
-	for (i=0; i<recycleBlk->stop; i++){
-		p = getInstrPtr(recycleBlk,i);
-#ifdef _DEBUG_CACHE_
-        if ( p->token == NOOPsymbol ) continue;
-#endif
-		for (j=0; j<p->argc; j++)
-			if(getArgType(recycleBlk,p,j)==TYPE_bat ||
-				isaBatType(getArgType(recycleBlk, p,j)) ){
-				int nbid = getVarConstant(recycleBlk, getArg(p,j)).val.bval;
-				if (nbid == 0) continue;
-				for (k=0; k<top; k++)
-					if (dropped[k]== nbid)
-						break;
-				if (k < top) break;
-		}
-		if ( j < p->argc ){  /* instruction argument or result is updated bat */
-
-			if ( j >= p->retc ){ 			/* if some argument bat is updated */
-				for (j=0;j<p->retc; j++)	/* mark result bats as dropped */
-				if(getArgType(recycleBlk,p,j)==TYPE_bat ||
-					isaBatType(getArgType(recycleBlk, p,j)) ){
-						rbid = getVarConstant(recycleBlk, getArg(p,j)).val.bval;
-						for (k=0; k<top; k++)
-							if ( dropped[k] == rbid ) break;
-						if ( k == top )
-							dropped[top++]= rbid;
-				}
-			}
-            dmask[i] = 1;
-            action++;
-        }
-    }   /* for i */
-
-        /* delete all marked instructions in 1 pass */
-    old = recycleBlk->stmt;
-    limit = recycleBlk->stop;
-    newstmt = (InstrPtr *) GDKzalloc(sizeof(InstrPtr) * recycleBlk->ssize);
-    if (newstmt == NULL){
-        RECYCLEshutdown(cntxt);
-        goto cln;
-    }
-    recycleBlk->stmt = newstmt;
-    recycleBlk->stop = 0;
-
-    k = 0;
-    for (i = 0; i < limit ; i++){
-        p = old[i];
-        if( dmask[i] ) {
-           RECYCLEgarbagecollect(recycleBlk,p,used);
-           recyclerMemoryUsed -= recycleBlk->profiler[i].wbytes;
-           if ( recycleBlk->profiler[i].calls >1)
-               returnCredit(p);
-           freeInstruction(p);
-           cntxt->rcc->RPreset0++;
-        }
-        else {
-           pushInstruction(recycleBlk,p);
-           recycleBlk->profiler[k++]= recycleBlk->profiler[i];
-        }
-    }
-
-#ifdef _DEBUG_CACHE_
-		        /* instructions are marked with NOOPsymbol in debug mode
-                        	recyclerMemoryUsed -= recycleBlk->profiler[i].wbytes;
-	                        p->token = NOOPsymbol;
-				cntxt->rcc->recycleRem ++;
-				if ( recycleBlk->profiler[i].calls >1) {
-		                	returnCredit(p);
-				}
-*/
-#endif
-
-    /*
-     * we assume that the variables defined are only used later on in the recycle
-     * cache. This can be enforced by never re-sorting it. Under this condition
-     * we only have to make one pass.
-     */
-    cln:
-	GDKfree(dropped);
-	GDKfree(used);
-    GDKfree(dmask);
-	if (action){
-#ifndef _DEBUG_CACHE_
-		trimMalVariables(recycleBlk);
-#endif
-	}
-}
-
-/*
  * Once we encounter an update we check and clean the recycle cache from
  * instructions dependent on the updated bat.
  */
-str RECYCLEreset(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
+
+str 
+RECYCLEcolumn(Client cntxt,str sch,str tbl, str col)
 {
-	int i,j, btop=0, k;
-	int *b;
-	ValRecord *v;
-	InstrPtr q;
-	int bid;
-	BAT *bref = NULL;
-	lng t0 = GDKusec();
-	(void) pc;
-
+	int sid,tid,cid,i,j;
+	char *release;
+	InstrPtr *old,p;
+	int limit;
+	ValRecord *v,vr;
+	
 #ifdef _DEBUG_RESET_
-	mnstr_printf(cntxt->fdout,"#RECYCLE reset\n");
-#else
-	(void) cntxt;
-	(void) bref;
+	mnstr_printf(cntxt->fdout,"#POOL BEFORE CLEANUP\n");
+	RECYCLEdump(cntxt->fdout);
 #endif
-	if( recycleBlk == NULL)
-		return MAL_SUCCEED;
-	b = (int *)GDKzalloc(sizeof(int)*recycleBlk->stop);
-
-	if (p->argc == 2){
-		if(getArgType(mb,p,1)==TYPE_bat ||
-			isaBatType(getArgType(mb, p,1)) ){
- 			v = &stk->stk[getArg(p,1)];
-			if(v->vtype == TYPE_bat && v->val.bval )
-				b[btop++] = v->val.bval;
-		}
-
-	} else if (p->argc > 2) {
-		for (i=0; i<recycleBlk->stop; i++) {
-			q = getInstrPtr(recycleBlk,i);
-
-#ifdef _DEBUG_CACHE_
-                        if ( q->token == NOOPsymbol ) continue;
-#endif
-
-			if ( getModuleId(q) != sqlRef ) continue;
-			if ( isBindInstr(q) ){
-#ifdef _DEBUG_RESET_
-				bid = getVarConstant(recycleBlk, getArg(q,0)).val.bval;
-				if ( (bref = BBPquickdesc(ABS(bid), FALSE)) )
-					mnstr_printf(cntxt->fdout,"#Bid %d, count "BUNFMT"\n", bid, BATcount(bref));
-				else mnstr_printf(cntxt->fdout,"#Bid %d, NULL bat ref\n", bid);
-#endif
-				if ( ((getFunctionId(q) == bindRef ||
-					getFunctionId(q) == bind_idxRef ) &&
-					( getVarConstant(recycleBlk, getArg(q,5)).val.ival <=
-						getVarConstant(mb, getArg(p,1)).val.ival )) ){
-					for (j=p->retc+1; j<p->argc; j++)
-						if( VALcmp( &stk->stk[getArg(p,j)], &getVarConstant(recycleBlk,getArg(q,j))))
-						break;
-					if (j == p->argc){
-						v = &getVarConstant(recycleBlk,getArg(q,0));
-						bid = v->val.bval;
-						if( bid ){
-							for (k=0; k<btop; k++)
-								if ( b[k] == bid ) break;
-							if ( k == btop ) {
-								b[btop++] = bid;
-#ifdef _DEBUG_RESET_
-							mnstr_printf(cntxt->fdout,"#Marked for eviction due to update\n ");
-							printInstruction(cntxt->fdout,recycleBlk,0,q, LIST_MAL_ALL);
-							mnstr_printf(cntxt->fdout," Bid %d\n ", b[btop-1]);
-#endif
-							}
-						}
-					}
-				}
-			}
-		} /* loop on recycleBlk */
+	MT_lock_set(&recycleLock, "recycle");
+	release= (char*) GDKzalloc(recycleBlk->vtop);
+	vr.vtype = TYPE_str;
+	vr.len  = strlen(sch);
+	vr.val.sval = sch;
+	sid = fndConstant(recycleBlk,&vr, recycleBlk->vtop);
+	vr.val.sval = tbl;
+	vr.len  = strlen(tbl);
+	tid = fndConstant(recycleBlk,&vr, recycleBlk->vtop);
+	if ( col){
+		vr.val.sval = col;
+		vr.len  = strlen(col);
+		cid = fndConstant(recycleBlk,&vr,recycleBlk->vtop);
 	}
-	if (btop){
-		MT_lock_set(&recycleLock, "recycle");
-	        RECYCLEevict(cntxt,b,btop);
+#ifdef _DEBUG_RESET_
+		mnstr_printf(cntxt->fdout,"#RECYCLEcolumn %d %d %d\n",sid,tid,cid);
+#endif
+
+	limit= recycleBlk->stop;
+	old= recycleBlk->stmt;
+	// locate the bind instruction to drop
+	for(j= i= 0; i < limit; i++){
+		p= old[i];
+		if ( getModuleId(p)== sqlRef &&
+			 (getFunctionId(p) == bindRef || getFunctionId(p) == bind_idxRef) &&
+			getArg(p,2) == sid && getArg(p,3)==tid && (col== 0 ||getArg(p,4)==cid))
+		j= release[getArg(p,0)]= 1;
+	}
+	if ( j ==0){ // Nothing found
 		MT_lock_unset(&recycleLock, "recycle");
+		GDKfree(release);
+		return MAL_SUCCEED;
 	}
-	GDKfree(b);
-	recycleTime = GDKusec() - t0;
+
+	if( newMalBlkStmt(recycleBlk,recycleBlk->ssize) < 0){
+		MT_lock_unset(&recycleLock, "recycle");
+		GDKfree(release);
+		throw(MAL,"recycler.reset",MAL_MALLOC_FAIL);
+	}
+
+	for(i= 0; i < limit; i++){
+		p= old[i];
+		for(j=0;j<p->argc;j++)
+			if( release[getArg(p,j)] ) break;
+
+		if ( j == p->argc) {
+			pushInstruction(recycleBlk,p);
+			continue;
+		}
+#ifdef _DEBUG_RESET_
+		mnstr_printf(cntxt->fdout,"#Marked for eviction [%d]",i);
+		printInstruction(cntxt->fdout,recycleBlk,0,p, LIST_MAL_DEBUG);
+#endif
+		for(j=0;j<p->argc;j++) {
+			release[getArg(p,j)]=1;//propagate the removal request
+			if (j < p->retc && isaBatType(getArgType(recycleBlk,p,j)) ){
+				v = &getVarConstant(recycleBlk,getArg(p,j));
+				BBPdecref(ABS(v->val.bval), TRUE);
+			}
+		}
+		freeInstruction(p);
+	}
+	MT_lock_unset(&recycleLock, "recycle");
+	GDKfree(release);
+	GDKfree(old);
+#ifdef _DEBUG_RESET_
+	mnstr_printf(cntxt->fdout,"#POOL AFTER CLEANUP\n");
+	RECYCLEdump(cntxt->fdout);
+#endif
+	return MAL_SUCCEED;
+}
+
+str 
+RECYCLEresetBAT(Client cntxt, int bid)
+{
+	int i,j;
+	char *release;
+	InstrPtr *old,p;
+	int limit;
+	ValRecord *v;
+	
+#ifdef _DEBUG_RESET_
+	mnstr_printf(cntxt->fdout,"#POOL BEFORE CLEANUP\n");
+	RECYCLEdump(cntxt->fdout);
+#endif
+	MT_lock_set(&recycleLock, "recycle");
+	release= (char*) GDKzalloc(recycleBlk->vtop);
+	limit= recycleBlk->stop;
+	old= recycleBlk->stmt;
+	if( newMalBlkStmt(recycleBlk,recycleBlk->ssize) < 0){
+		MT_lock_unset(&recycleLock, "recycle");
+		GDKfree(release);
+		throw(MAL,"recycler.reset",MAL_MALLOC_FAIL);
+	}
+
+	for(i= 0; i < limit; i++){
+		p= old[i];
+		
+		for(j=0;j<p->argc;j++)
+			if( isaBatType(getArgType(recycleBlk,p,j)) && 
+				getVarConstant(recycleBlk, getArg(p,j)).val.bval == bid)
+			release[getArg(p,j)]= 1;
+		
+		for(j=0;j<p->argc;j++)
+			if( release[getArg(p,j)] ) break;
+
+		if ( j == p->argc) {
+			pushInstruction(recycleBlk,p);
+			continue;
+		}
+#ifdef _DEBUG_RESET_
+		mnstr_printf(cntxt->fdout,"#Marked for eviction [%d]",i);
+		printInstruction(cntxt->fdout,recycleBlk,0,p, LIST_MAL_DEBUG);
+#endif
+		for(j=0;j<p->argc;j++) {
+			release[getArg(p,j)]=1;//propagate the removal request
+			if (j < p->retc && isaBatType(getArgType(recycleBlk,p,j)) ){
+				v = &getVarConstant(recycleBlk,getArg(p,j));
+				BBPdecref(ABS(v->val.bval), TRUE);
+			}
+		}
+		freeInstruction(p);
+	}
+	MT_lock_unset(&recycleLock, "recycle");
+	GDKfree(release);
+	GDKfree(old);
+#ifdef _DEBUG_RESET_
+	mnstr_printf(cntxt->fdout,"#POOL AFTER CLEANUP\n");
+	RECYCLEdump(cntxt->fdout);
+#endif
 	return MAL_SUCCEED;
 }
 
 str
-RECYCLEstart(Client cntxt, MalBlkPtr mb)
+RECYCLEstart(Client cntxt)
 {
     cntxt->rcc->recent = -1;
-    cntxt->rcc->recycled0 = 0;
     cntxt->rcc->time0 = GDKusec();
-    cntxt->rcc->curQ = RECYCLEnewQryStat(mb);
-    recycleTime = 0;
     cntxt->rcc->RPadded0 = 0;
     cntxt->rcc->RPreset0 = 0;
 	return MAL_SUCCEED;
 }
 
 str
-RECYCLEstop(Client cntxt, MalBlkPtr mb)
+RECYCLEstop(Client cntxt)
 {
-    cntxt->rcc->curQ = -1;
-    cntxt->rcc->recycled += cntxt->rcc->recycled0;
-    if ( monitorRecycler )
-        return RECYCLErunningStat(cntxt,mb);
+	(void)cntxt;
 	return MAL_SUCCEED;
 }
 
@@ -1595,19 +1224,15 @@ RECYCLEdump(stream *s)
     lng sz=0, persmem=0;
     ValPtr v;
     Client c;
-    lng statements=0, recycled=0, recycleMiss=0, recycleRem=0;
-    lng ccCalls=0, ccInstr=0;
+    lng statements=0, recycleMiss=0, recycleRem=0;
 
     if (!recycleBlk) return;
 
-    mnstr_printf(s,"#RECYCLER  CATALOG admission ADM_ALL time ="LLFMT"\n", recycleTime);
+    mnstr_printf(s,"#RECYCLER  CATALOG admission ADM_ALL\n");
     mnstr_printf(s,"#CACHE= policy PROFIT limit= %d \n", recycleCacheLimit);
     mnstr_printf(s,"#RESOURCES hard stmt = %d hard var = %d hard mem="SZFMT"\n", HARDLIMIT_STMT, HARDLIMIT_VAR, monet_memory);
 
     for(i=0; i< recycleBlk->stop; i++){
-#ifdef _DEBUG_CACHE_
-                if ( getInstrPtr(recycleBlk,i)->token == NOOPsymbol ) continue;
-#endif
         v = &getVarConstant(recycleBlk,getArg(recycleBlk->stmt[i],0));
         if ((v->vtype == TYPE_bat) &&
              (BBP_status( *(const int*)VALptr(v)) & BBPPERSISTENT)) {
@@ -1621,25 +1246,22 @@ RECYCLEdump(stream *s)
 
     for(c = mal_clients; c < mal_clients+MAL_MAXCLIENTS; c++)
         if (c->mode != FREECLIENT) {
-            recycled += c->rcc->recycled;
             statements += c->rcc->statements;
             recycleMiss += c->rcc->recycleMiss;
             recycleRem += c->rcc->recycleRem;
-            ccCalls += c->rcc->ccCalls;
-            ccInstr += c->rcc->ccInstr;
         };
 
     incache = recycleBlk->stop;
     mnstr_printf(s,"#recycled = "LLFMT" incache= %d executed = "LLFMT" memory(KB)= "LLFMT" PersBat memory="LLFMT"\n",
-         recycled, incache,statements, recyclerMemoryUsed, persmem);
+         recycled, incache, statements, recyclerMemoryUsed, persmem);
 #ifdef _DEBUG_CACHE_
     mnstr_printf(s,"#RPremoved = "LLFMT" RPactive= "LLFMT" RPmisses = "LLFMT"\n",
                  recycleRem, incache-recycleRem, recycleMiss);
 #endif
-    mnstr_printf(s,"#Cache search time= "LLFMT"(usec) cleanCache: "LLFMT" calls evicted "LLFMT" instructions\n",recycleSearchTime, ccCalls,ccInstr);
+    mnstr_printf(s,"#Cache search time= "LLFMT"(usec)\n",recycleSearchTime);
 
     /* and dump the statistics per instruction*/
-        mnstr_printf(s,"# CL\t   lru\t\tcnt\t ticks\t rd\t wr\t Instr\n");
+	mnstr_printf(s,"# CL\t   lru\t\tcnt\t ticks\t rd\t wr\t Instr\n");
     for(i=0; i< recycleBlk->stop; i++){
         if (getInstrPtr(recycleBlk,i)->token == NOOPsymbol)
             mnstr_printf(s,"#NOOP ");
@@ -1653,67 +1275,4 @@ RECYCLEdump(stream *s)
             instruction2str(recycleBlk,0,getInstrPtr(recycleBlk,i),LIST_MAL_DEBUG));
     }
 
-}
-
-void
-RECYCLEdumpRecyclerPool(stream *s)
-{
-    int i;
-    QryStatPtr qs;
-
-    if (!recyclePool) {
-        mnstr_printf(s,"#No query patterns\n");
-        return;
-    }
-
-    mnstr_printf(s,"#Query patterns %d\n",  recyclePool->cnt);
-    mnstr_printf(s,"#RecID\tcalls\tglobRec\tlocRec\tCreditWL\n");
-    for(i=0; i< recyclePool->cnt; i++){
-        qs = recyclePool->ptrn[i];
-        mnstr_printf(s,"# "LLFMT"\t%2d\t%2d\t%2d\t%2d\n",
-            qs->recid, qs->calls, qs->greuse, qs->lreuse, qs->wl);
-    }
-}
-
-str
-RECYCLErunningStat(Client cntxt, MalBlkPtr mb)
-{
-    static int q=0;
-    InstrPtr p;
-    int potrec=0, nonbind=0, i;
-    lng reusedmem=0;
-
-    for(i=0; i< mb->stop; i++){
-        p = mb->stmt[i];
-        if ( RECYCLEinterest(p) ){
-            potrec++;
-            if ( !isBindInstr(p) ) nonbind++;
-        }
-    }
-
-    for(i=0; i < recycleBlk->stop; i++)
-#ifdef _DEBUG_CACHE_
-        if ( getInstrPtr(recycleBlk,i)->token != NOOPsymbol )
-#endif
-        if ( recycleBlk->profiler[i].calls >1)
-            reusedmem += recycleBlk->profiler[i].wbytes;
-
-    mnstr_printf(cntxt->fdout,"%d\t %7.2f\t ", ++q, (GDKusec()-cntxt->rcc->time0)/1000.0);
-    if ( monitorRecycler & 2) { /* Current query stat */
-        mnstr_printf(cntxt->fdout,"%3d\t %3d\t %3d\t ", mb->stop, potrec, nonbind);
-        mnstr_printf(cntxt->fdout,"%3d\t %3d\t ", cntxt->rcc->recycled0, cntxt->rcc->recycled);
-        mnstr_printf(cntxt->fdout,"|| %3d\t %3d\t ", cntxt->rcc->RPadded0, cntxt->rcc->RPreset0);
-        mnstr_printf(cntxt->fdout,"%3d\t%5.2f\t"LLFMT"\t"LLFMT"\t", recycleBlk?recycleBlk->stop:0, recycleTime/1000.0,recyclerMemoryUsed,reusedmem);
-    }
-
-    if ( monitorRecycler & 1) { /* RecyclerPool stat */
-        mnstr_printf(cntxt->fdout,"| %4d\t %4d\t ",cntxt->rcc->statements,recycleBlk?recycleBlk->stop:0);
-        mnstr_printf(cntxt->fdout, LLFMT "\t" LLFMT "\t ", recyclerMemoryUsed, reusedmem);
-#ifdef _DEBUG_CACHE_
-        mnstr_printf(cntxt->fdout,"%d\t %d\t ",cntxt->rcc->recycleRem,cntxt->rcc->recycleMiss);
-#endif
-    }
-
-    mnstr_printf(cntxt->fdout,"\n");
-    return MAL_SUCCEED;
 }

@@ -928,6 +928,24 @@ OCTnewExec(Client cntxt, MalBlkPtr mb, MalBlkPtr t, int tno)
 	}
 }
 
+static bit
+isBindInstr(InstrPtr p)
+{
+    static str sqlRef = 0, bindRef = 0, binddbatRef = 0, bindidxRef = 0;
+
+    if (sqlRef == 0) {
+        sqlRef = putName("sql",3);
+        bindRef = putName("bind",4);
+        binddbatRef = putName("bind_dbat",9);
+        bindidxRef = putName("bind_idxbat",11);
+    }
+
+    if ( getModuleId(p) != sqlRef ) return 0;
+    return ( bindRef == getFunctionId(p) ||
+         binddbatRef == getFunctionId(p) ||
+         bindidxRef == getFunctionId(p));
+}
+
 int
 OPToctopusImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {

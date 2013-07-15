@@ -1,0 +1,228 @@
+stdout of test 'recycle04` in directory 'monetdb5/mal` itself:
+
+
+# 21:45:34 >  
+# 21:45:34 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=36101" "--set" "mapi_usock=/var/tmp/mtest-1426/.s.monetdb.36101" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/current//Linux/var/MonetDB/mTests_monetdb5_mal" "recycle04.mal"
+# 21:45:34 >  
+
+# MonetDB 5 server v11.16.0
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_mal', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.591 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2013 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:36101/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-1426/.s.monetdb.36101
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+function sql.mvc():int;
+    return mvc := 1;
+end mvc;
+function sql.tid(mvc:int,s:str,t:str):bat[:oid,:oid];
+    b := bat.new(:oid,:oid);
+barrier i := 0@0:oid;
+    bat.append(b,i);
+    redo i := iterator.next(1@0:oid,11@0:oid);
+exit i;
+    return tid := b;
+end tid;
+function sql.bind(m:int,s:str,t:str,c:str,i:int):bat[:oid,:int];
+    b := bat.new(:oid,:int);
+    bat.insert(b,0@0,0);
+    bat.insert(b,1@0,1);
+    bat.insert(b,2@0,2);
+    bat.insert(b,3@0,3);
+    bat.insert(b,4@0,4);
+    bat.insert(b,5@0,5);
+    bat.insert(b,6@0,6);
+    bat.insert(b,7@0,7);
+    bat.insert(b,8@0,8);
+    bat.insert(b,9@0,9);
+    bat.insert(b,10@0,10);
+    bat.insert(b,11@0,11);
+    return bind := b;
+end bind;
+function sql.qry(low:int,hgh:int):void;
+    m := sql.mvc();
+    x:bat[:oid,:oid]  := sql.tid(m,"sys","tbl");
+    b:bat[:oid,:int]  := sql.bind(m,"sys","tbl","col",0);
+    s1 := algebra.subselect(b,x,low,hgh,true,true,false);
+    j := algebra.join(s1,b);
+    io.print(j);
+end qry;
+#recycle instruction:     m := sql.mvc();
+#recycle instruction:     x:bat[:oid,:oid]  := sql.tid(m,"sys","tbl");
+#recycle instruction:     b:bat[:oid,:int]  := sql.bind(m,"sys","tbl","col",0);
+#recycle instruction:     s1 := algebra.subselect(b,x,low,hgh,true,true,false);
+#recycle instruction:     j := algebra.join(s1,b);
+function user.main():void;
+#test the basics of the recycler 
+# re-use joins size constrainted 
+    mdb.list("user","qry");
+    io.print("start");
+    user.qry(1,10);
+    io.print("zoom in");
+    user.qry(1,5);
+    io.print("next step");
+    recycle.append(1,"sys","tbl","col",9);
+    user.qry(2,3);
+    io.print("last");
+    user.qry(1,11);
+    recycle.dump();
+end main;
+function sql.qry(low:int,hgh:int):void;
+    recycle.start();
+    m := sql.mvc();
+    x:bat[:oid,:oid]  := sql.tid(m,"sys","tbl");
+    b:bat[:oid,:int]  := sql.bind(m,"sys","tbl","col",0);
+    s1 := algebra.subselect(b,x,low,hgh,true,true,false);
+    j := algebra.join(s1,b);
+    io.print(j);
+    recycle.stop();
+end qry;
+[ "start" ]
+#RECYCLE [  0]     X_0 := sql.mvc();
+#RECYCLE [  1]     X_1 := sql.tid(1,"sys","tbl");
+#RECYCLE [  2]     X_4 := sql.bind(1,"sys","tbl","col",0);
+#RECYCLE [  3]     X_7 := algebra.subselect(<tmp_1156>,<tmp_1155>,1,10,true,true,false);
+#RECYCLE [  4]     X_11 := algebra.join(<tmpr_1160>,<tmp_1156>);
+#--------------------------#
+# h	t  # name
+# void	int  # type
+#--------------------------#
+[ 0@0,	1  ]
+[ 1@0,	2  ]
+[ 2@0,	3  ]
+[ 3@0,	4  ]
+[ 4@0,	5  ]
+[ 5@0,	6  ]
+[ 6@0,	7  ]
+[ 7@0,	8  ]
+[ 8@0,	9  ]
+[ 9@0,	10  ]
+[ "zoom in" ]
+#REUSED  [  0]       m := sql.mvc();
+#REUSED  [  1]       x:bat[:oid,:oid]  := sql.tid(m,"sys","tbl");
+#REUSED  [  2]       b:bat[:oid,:int]  := sql.bind(m,"sys","tbl","col",0);
+#RECYCLEreuse subselect using candidate list    X_7 := algebra.subselect(<tmp_1156>,<tmp_1155>,1,10,true,true,false);
+#RECYCLE [  5]     X_12 := algebra.subselect(<tmp_1156>,<tmpr_1160>,1,5,true,true,false);
+#REUSED  [  3]       s1 := algebra.subselect(b,x,low,hgh,true,true,false);
+#RECYCLE [  6]     X_14 := algebra.join(<tmpr_1166>,<tmp_1156>);
+#--------------------------#
+# h	t  # name
+# void	int  # type
+#--------------------------#
+[ 0@0,	1  ]
+[ 1@0,	2  ]
+[ 2@0,	3  ]
+[ 3@0,	4  ]
+[ 4@0,	5  ]
+[ "next step" ]
+#POOL BEFORE CLEANUP
+#RECYCLER  CATALOG admission ADM_ALL
+#CACHE= policy PROFIT limit= 20000 
+#RESOURCES hard stmt = 20000 hard var = 100000 hard mem=16741163008
+#recycled = 3 incache= 7 executed = 1538 memory(KB)= 480 PersBat memory=0
+#RPremoved = 0 RPactive= 7 RPmisses = 0
+#Cache search time= 0(usec)
+# CL	   lru		cnt	 ticks	 rd	 wr	 Instr
+#        0	426684	2	44	0	0	    X_0 := sql.mvc();
+#        1	426694	2	57	88	0	    X_1 := sql.tid(1,"sys","tbl");
+#        2	426706	2	41	48	0	    X_4 := sql.bind(1,"sys","tbl","col",0);
+#        3	426740	2	36	80	136	    X_7 := algebra.subselect(<tmp_1156>,<tmp_1155>,1,10,true,true,false);
+#        4	426598	1	60	0	128	    X_11 := algebra.join(<tmpr_1160>,<tmp_1156>);
+#        5	426730	1	26	40	128	    X_12 := algebra.subselect(<tmp_1156>,<tmpr_1160>,1,5,true,true,false);
+#        6	426768	1	49	0	88	    X_14 := algebra.join(<tmpr_1166>,<tmp_1156>);
+#RECYCLEcolumn 2 3 5
+#Marked for eviction [2]    X_4 := sql.bind(1,"sys","tbl","col",0);
+#Marked for eviction [3]    X_7 := algebra.subselect(<tmp_1156>,<tmp_1155>,1,10,true,true,false);
+#Marked for eviction [4]    X_11 := algebra.join(<tmpr_1160>,<tmp_1156>);
+#Marked for eviction [5]    X_12 := algebra.subselect(<tmp_1156>,<tmpr_1160>,1,5,true,true,false);
+#Marked for eviction [6]    X_14 := algebra.join(<tmpr_1166>,<tmp_1156>);
+#POOL AFTER CLEANUP
+#RECYCLER  CATALOG admission ADM_ALL
+#CACHE= policy PROFIT limit= 20000 
+#RESOURCES hard stmt = 20000 hard var = 100000 hard mem=16741163008
+#recycled = 3 incache= 2 executed = 1538 memory(KB)= 480 PersBat memory=0
+#RPremoved = 0 RPactive= 2 RPmisses = 0
+#Cache search time= 0(usec)
+# CL	   lru		cnt	 ticks	 rd	 wr	 Instr
+#        0	426684	2	44	0	0	    X_0 := sql.mvc();
+#        1	426694	2	57	88	0	    X_1 := sql.tid(1,"sys","tbl");
+#REUSED  [  0]       m := sql.mvc();
+#REUSED  [  1]       x:bat[:oid,:oid]  := sql.tid(m,"sys","tbl");
+#RECYCLE [  2]     X_15 := sql.bind(1,"sys","tbl","col",0);
+#RECYCLE [  3]     X_16 := algebra.subselect(<tmp_1165>,<tmp_1155>,2,3,true,true,false);
+#RECYCLE [  4]     X_19 := algebra.join(<tmpr_1167>,<tmp_1165>);
+#--------------------------#
+# h	t  # name
+# void	int  # type
+#--------------------------#
+[ 0@0,	2  ]
+[ 1@0,	3  ]
+[ "last" ]
+#REUSED  [  0]       m := sql.mvc();
+#REUSED  [  1]       x:bat[:oid,:oid]  := sql.tid(m,"sys","tbl");
+#REUSED  [  2]       b:bat[:oid,:int]  := sql.bind(m,"sys","tbl","col",0);
+#RECYCLE [  5]     X_20 := algebra.subselect(<tmp_1165>,<tmp_1155>,1,11,true,true,false);
+#RECYCLE [  6]     X_22 := algebra.join(<tmpr_1175>,<tmp_1165>);
+#--------------------------#
+# h	t  # name
+# void	int  # type
+#--------------------------#
+[ 0@0,	1  ]
+[ 1@0,	2  ]
+[ 2@0,	3  ]
+[ 3@0,	4  ]
+[ 4@0,	5  ]
+[ 5@0,	6  ]
+[ 6@0,	7  ]
+[ 7@0,	8  ]
+[ 8@0,	9  ]
+[ 9@0,	10  ]
+#RECYCLER  CATALOG admission ADM_ALL
+#CACHE= policy PROFIT limit= 20000 
+#RESOURCES hard stmt = 20000 hard var = 100000 hard mem=16741163008
+#recycled = 7 incache= 7 executed = 1574 memory(KB)= 944 PersBat memory=0
+#RPremoved = 0 RPactive= 7 RPmisses = 0
+#Cache search time= 0(usec)
+# CL	   lru		cnt	 ticks	 rd	 wr	 Instr
+#        0	427369	4	44	0	0	    X_0 := sql.mvc();
+#        1	427380	4	57	88	0	    X_1 := sql.tid(1,"sys","tbl");
+#        2	427391	2	41	48	0	    X_15 := sql.bind(1,"sys","tbl","col",0);
+#        3	427261	1	28	16	136	    X_16 := algebra.subselect(<tmp_1165>,<tmp_1155>,2,3,true,true,false);
+#        4	427290	1	52	0	64	    X_19 := algebra.join(<tmpr_1167>,<tmp_1165>);
+#        5	427402	1	28	80	136	    X_20 := algebra.subselect(<tmp_1165>,<tmp_1155>,1,11,true,true,false);
+#        6	427431	1	49	0	128	    X_22 := algebra.join(<tmpr_1175>,<tmp_1165>);
+#RECYCLE shutdown
+#[0]    _0 = 1 :int  constant 
+#[1]    _1 = <tmp_1155> :BAT  constant 
+#[2]    _2 = "sys" :str  constant 
+#[3]    _3 = "tbl" :str  constant 
+#[4]    _4 = <tmp_1156> :BAT  constant 
+#[5]    _5 = "col" :str  constant 
+#[6]    _6 = 0 :int  constant 
+#[7]    _7 = <tmpr_1160> :BAT  constant 
+#[8]    _8 = 10 :int  constant 
+#[9]    _9 = true :bit  constant 
+#[10]   _10 = false :bit  constant 
+#[11]   _11 = <tmp_1163> :BAT  constant 
+#[12]   _12 = <tmpr_1166> :BAT  constant 
+#[13]   _13 = 5 :int  constant 
+#[14]   _14 = <tmp_1157> :BAT  constant 
+#[15]   _15 = <tmp_1165> :BAT  constant 
+#[16]   _16 = <tmpr_1167> :BAT  constant 
+#[17]   _17 = 2 :int  constant 
+#[18]   _18 = 3 :int  constant 
+#[19]   _19 = <tmp_1172> :BAT  constant 
+#[20]   _20 = <tmpr_1175> :BAT  constant 
+#[21]   _21 = 11 :int  constant 
+#[22]   _22 = <tmp_1171> :BAT  constant 
+
+# 21:45:34 >  
+# 21:45:34 >  "Done."
+# 21:45:34 >  
+

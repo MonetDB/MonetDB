@@ -29,28 +29,21 @@ pattern dump():void
 address RECYCLEdumpWrap
 comment "Dump summary of recycle table";
 
-pattern dump(tp: int):void
-address RECYCLEdumpWrap
-comment "Dump summary of recycler structures:
-1: recycle table;
-2: statistics of query patterns;
-3: statistics of data transfer.";
+pattern setCache(clines:int):void
+address RECYCLEsetCache
+comment "Set recycler cache line parameter";
 
-pattern setCacheProperties(clines:int,memory:int):void
-address RECYCLEsetProperties
-comment "Set recycler cache policy parameters";
-
-pattern reset(bid:bat):void
-address RECYCLEreset
+pattern reset(bid:bat[:oid,:any]):void
+address RECYCLEresetBATwrap
 comment "Reset a recycled bat variable";
 
-pattern reset(delta:int,sname:str...):void
-address RECYCLEreset
-comment "Reset off all recycled variables matching the arguments:
-delta:0 only the main bat, 2 including delta bats
-sname: schema name,
-tname: table name (optional)
-cname: column name (optional)";
+pattern append(delta:int,sname:str,tbl:str,col:str,val:any):void
+address RECYCLEappendSQL
+comment "Correct recycle pool for SQL append statement";
+
+pattern delete(delta:int,sname:str,tbl:str,col:str):void
+address RECYCLEdeleteSQL
+comment "Correct recycle pool for SQL delete statement";
 
 pattern shutdown():void
 address RECYCLEshutdownWrap

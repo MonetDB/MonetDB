@@ -42,4 +42,8 @@ recycle_export str RECYCLEstartWrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, I
 recycle_export str RECYCLEstopWrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 recycle_export str RECYCLEdumpQPatWrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
+// SQL updates should trigger recycler cleanup operations
+recycle_export str RECYCLEresetBATwrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+recycle_export str RECYCLEappendSQL(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+recycle_export str RECYCLEdeleteSQL(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 #endif

@@ -13,7 +13,7 @@ exit i;
     return tid:= b;
 end tid;
 
-function sql.bind(s:str,t:str,c:str,i:int):bat[:oid,:int];
+function sql.bind(m:int,s:str,t:str,c:str,i:int):bat[:oid,:int];
 b:= bat.new(:oid,:int);
 barrier i:= 0:int;
 	bat.append(b,i);
@@ -27,11 +27,10 @@ function qry(low:int, hgh:int);
     x:bat[:oid,:oid]  := sql.tid(m,"sys","tbl");
     b:bat[:oid,:int]:= sql.bind(m,"sys","tbl","col",0);
     s1:= algebra.subselect(b,x,low,hgh,true,true,false);
-	s1:= algebra.select(b,low,hgh);
 end qry;
 
-recycle.setCachePolicy(10,12);
-optimizer.recycle.("user","qry");
+recycle.setCache(4);
+optimizer.recycler("user","qry");
 
 io.print("start");
 qry(100,120);

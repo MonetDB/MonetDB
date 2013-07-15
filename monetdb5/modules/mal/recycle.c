@@ -41,17 +41,10 @@
 str
 RECYCLEdumpWrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int tp=1;
-
 	(void) mb;
-	if (pci->argc >1)
-		tp = * (int*) getArgReference(stk, pci,1);
-
-	switch(tp){
-		case 2:	RECYCLEdumpRecyclerPool(cntxt->fdout);
-				break;
-		default:RECYCLEdump(cntxt->fdout);
-	}
+	(void) stk;
+	(void) pci;
+	RECYCLEdump(cntxt->fdout);
 	return MAL_SUCCEED;
 }
 
@@ -95,12 +88,37 @@ RECYCLEstartWrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	(void) stk;
 	(void) p;
-	return RECYCLEstart(cntxt,mb);
+	(void) mb;
+	return RECYCLEstart(cntxt);
 }
 
 str
 RECYCLEstopWrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	(void) stk;
 	(void) p;
-	return RECYCLEstop(cntxt,mb);
+	(void) mb;
+	return RECYCLEstop(cntxt);
+}
+
+str RECYCLEappendSQL(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
+	str sch = *(str*) getArgReference(stk, p, 2);
+	str tbl = *(str*) getArgReference(stk, p, 3);
+	str col = *(str*) getArgReference(stk, p, 4);
+	(void) mb;
+	return RECYCLEcolumn(cntxt,sch,tbl,col);
+}
+
+str RECYCLEdeleteSQL(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
+	str sch = *(str*) getArgReference(stk, p, 2);
+	str tbl = *(str*) getArgReference(stk, p, 3);
+	(void) mb;
+	return RECYCLEcolumn(cntxt,sch,tbl,0);
+}
+
+str RECYCLEresetBATwrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
+	(void) mb;
+	return RECYCLEresetBAT(cntxt,*(int*) getArgReference(stk,p,1));
 }
