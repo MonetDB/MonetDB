@@ -112,7 +112,6 @@ INSERT INTO fire (
 UPDATE fire SET f = x * size_y + y WHERE f IS NOT NULL;
 
 --- two versions; please choose one:
---- CAVEAT: these take more than 30 minutes to execute !
 
 ---- version 1:
 ---- Clump adjacent pixels using 4-connected,
@@ -121,63 +120,110 @@ UPDATE fire SET f = x * size_y + y WHERE f IS NOT NULL;
 ---- not support structural grouping (tiling) with non-rectangular windows
 ---- (tiles) (yet?) !??
 --CREATE FUNCTION clump_4connected()
---RETURNS INT
+--RETURNS TABLE (i1 INT, i2 INT)
 --BEGIN
---  DECLARE iterations INT;
---  SET iterations = 0;
---  DECLARE moreupdates INT;
+--  --DECLARE TABLE trans (i INT UNIQUE, a INT, x INT);
+--  DECLARE iter_0 INT, iter_1 INT;
+--  SET iter_0 = 0;
+--  SET iter_1 = 0;
+--  DECLARE moreupdates INT, recurse INT;
 --  SET moreupdates = 1;
 --  WHILE moreupdates > 0 DO
---    SET iterations = iterations + 1;
---    INSERT INTO fire (
---      SELECT [x], [y], MAX(f)
---      FROM fire AS a
---      -- the SciQL implementation does not support this GROUP BY (yet?) !??
---      GROUP BY a[x][y], a[x+1][y], a[x][y+1], a[x-1][y], a[x][y-1]
---      HAVING f IS NOT NULL
+--    SET iter_0 = iter_0 + 1;
+--
+--    DELETE FROM trans;
+--    INSERT INTO trans (i,a) (
+--      SELECT i, MAX(a)
+--      FROM (
+--        SELECT f AS i, MAX(f) AS a
+--        FROM fire
+--        -- the SciQL implementation does not support this GROUP BY (yet?) !??
+--        GROUP BY fire[x][y], fire[x+1][y], fire[x][y+1], fire[x-1][y], fire[x][y-1]
+--        HAVING f IS NOT NULL and f <> MAX(f)
+--      ) AS t
+--      GROUP BY i
 --    );
---    SELECT SUM(res) INTO moreupdates
---    FROM (
---      SELECT MAX(f) - MIN(f) AS res
---      FROM fire AS a
---      -- the SciQL implementation does not support this GROUP BY (yet?) !??
---      GROUP BY a[x][y], a[x+1][y], a[x][y+1], a[x-1][y], a[x][y-1]
---      HAVING f IS NOT NULL
---    ) AS updates;
+--
+--    SELECT COUNT(*) INTO moreupdates FROM trans;
+--    IF moreupdates > 0 THEN
+--
+--      -- calculate transitive closure
+--      SET recurse = 1;
+--      WHILE recurse > 0 DO
+--        SET iter_1 = iter_1 + 1;
+--        UPDATE trans SET x = (SELECT step.a FROM trans AS step WHERE trans.a = step.i);
+--        UPDATE trans SET a = x WHERE x IS NOT NULL;
+--        SELECT COUNT(x) INTO recurse FROM trans;
+--      END WHILE;
+--
+--      -- connect neigboring pixels
+--      INSERT INTO fire (
+--        SELECT [fire.x], [fire.y], trans.a
+--        FROM fire JOIN trans
+--          ON fire.f = trans.i
+--      );
+--      DELETE FROM trans;
+--
+--    END IF;
+--
 --  END WHILE;
---  RETURN iterations;
+--  RETURN SELECT iter_0, iter_1;
 --END;
---SELECT clump_4connected();
+--SELECT * FROM clump_4connected();
 
 ---- version 2:
 ---- Clump adjacent pixels using 8-connected,
 ---- i.e., each pixel has 8 neighbors: N, NE, E, SE, S, SW, W, NW
 CREATE FUNCTION clump_8connected()
-RETURNS INT
+RETURNS TABLE (i1 INT, i2 INT)
 BEGIN
-  DECLARE iterations INT;
-  SET iterations = 0;
-  DECLARE moreupdates INT;
+  --DECLARE TABLE trans (i INT UNIQUE, a INT, x INT);
+  DECLARE iter_0 INT, iter_1 INT;
+  SET iter_0 = 0;
+  SET iter_1 = 0;
+  DECLARE moreupdates INT, recurse INT;
   SET moreupdates = 1;
   WHILE moreupdates > 0 DO
-    SET iterations = iterations + 1;
-    INSERT INTO fire (
-      SELECT [x], [y], MAX(f)
-      FROM fire
-      GROUP BY fire[x-1:x+2][y-1:y+2]
-      HAVING f IS NOT NULL
+    SET iter_0 = iter_0 + 1;
+
+    DELETE FROM trans;
+    INSERT INTO trans (i,a) (
+      SELECT i, MAX(a)
+      FROM (
+        SELECT f AS i, MAX(f) AS a
+        FROM fire
+        GROUP BY fire[x-1:x+2][y-1:y+2]
+        HAVING f IS NOT NULL and f <> MAX(f)
+      ) AS t
+      GROUP BY i
     );
-    SELECT SUM(res) INTO moreupdates
-    FROM (
-      SELECT MAX(f) - MIN(f) AS res
-      FROM fire
-      GROUP BY fire[x-1:x+2][y-1:y+2]
-      HAVING f IS NOT NULL
-    ) AS updates;
+
+    SELECT COUNT(*) INTO moreupdates FROM trans;
+    IF moreupdates > 0 THEN
+
+      -- calculate transitive closure
+      SET recurse = 1;
+      WHILE recurse > 0 DO
+        SET iter_1 = iter_1 + 1;
+        UPDATE trans SET x = (SELECT step.a FROM trans AS step WHERE trans.a = step.i);
+        UPDATE trans SET a = x WHERE x IS NOT NULL;
+        SELECT COUNT(x) INTO recurse FROM trans;
+      END WHILE;
+
+      -- connect neigboring pixels
+      INSERT INTO fire (
+        SELECT [fire.x], [fire.y], trans.a
+        FROM fire JOIN trans
+          ON fire.f = trans.i
+      );
+      DELETE FROM trans;
+
+    END IF;
+
   END WHILE;
-  RETURN iterations;
+  RETURN SELECT iter_0, iter_1;
 END;
-SELECT clump_8connected();
+SELECT * FROM clump_8connected();
 
 ---- Eliminate any groups that have few members (<10 pixels)
 UPDATE fire SET f = NULL WHERE f IN (
