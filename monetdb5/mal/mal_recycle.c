@@ -122,7 +122,7 @@ int monitorRecycler = 0;
 #define recycleLife(X) ((GDKusec() - recycleBlk->profiler[X].rbytes)/ 1000.0)
 #define recycleProfit(X) (recycleCost(X) * recycleW(X) / recycleLife(X))
 
-static str octopusRef = 0, bindRef = 0, bind_idxRef = 0, sqlRef = 0;
+static str bindRef = 0, bind_idxRef = 0, sqlRef = 0;
 static str subselectRef = 0, thetasubselectRef = 0, likesubselectRef = 0;
 static void RECYCLEexitImpl(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, RuntimeProfile prof);
 /*
@@ -158,7 +158,6 @@ void RECYCLEinitRecyclePool(int sz)
 			recyclePool->ptrn = (QryStatPtr *) GDKzalloc(sz * sizeof(QryStatPtr));
 			recyclePool->sz = sz;
 		}
-		octopusRef = putName("octopus",7);
 		sqlRef = putName("sql",3);
 		bindRef = putName("bind",4);
 		bind_idxRef = putName("bind_idxbat",11);
