@@ -239,7 +239,7 @@ UPDATE fire SET f = NULL WHERE f IN (
 
 -- BSM connect nearby fires filter --
 
---- CAVEAT: this takes more than 10 minutes to execute !
+--- CAVEAT: this takes more than 7 minutes to execute !
 
 ---- Union fires which are less that 3 pixels apart (using 8-CONNECTED)
 ---- Add fire bridge between them
@@ -264,30 +264,22 @@ BEGIN
       SELECT x, y, MIN(f) AS i, MAX(f) AS a
       FROM fire
       GROUP BY fire[x-2:x+2][y-2:y+2]
-      HAVING f IS NULL
-         AND MIN(f) IS NOT NULL
-         AND MIN(f) <> MAX(f)
+      HAVING f IS NULL AND MIN(f) <> MAX(f)
       UNION ALL
       SELECT x, y, MIN(f) AS i, MAX(f) AS a
       FROM fire
       GROUP BY fire[x-1:x+3][y-2:y+2]
-      HAVING f IS NULL
-         AND MIN(f) IS NOT NULL
-         AND MIN(f) <> MAX(f)
+      HAVING f IS NULL AND MIN(f) <> MAX(f)
       UNION ALL
       SELECT x, y, MIN(f) AS i, MAX(f) AS a
       FROM fire
       GROUP BY fire[x-2:x+2][y-1:y+3]
-      HAVING f IS NULL
-         AND MIN(f) IS NOT NULL
-         AND MIN(f) <> MAX(f)
+      HAVING f IS NULL AND MIN(f) <> MAX(f)
       UNION ALL
       SELECT x, y, MIN(f) AS i, MAX(f) AS a
       FROM fire
       GROUP BY fire[x-1:x+3][y-1:y+3]
-      HAVING f IS NULL
-         AND MIN(f) IS NOT NULL
-         AND MIN(f) <> MAX(f)
+      HAVING f IS NULL AND MIN(f) <> MAX(f)
     );
 
     SELECT COUNT(*) INTO merge_more FROM bridges;
