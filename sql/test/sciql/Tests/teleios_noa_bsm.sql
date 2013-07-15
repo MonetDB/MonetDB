@@ -131,6 +131,7 @@ UPDATE fire SET f = x * size_y + y WHERE f IS NOT NULL;
 --  WHILE moreupdates > 0 DO
 --    SET iter_0 = iter_0 + 1;
 --
+--    -- create transition map for adjacent pixels
 --    DELETE FROM trans;
 --    INSERT INTO trans (i,a) (
 --      SELECT i, MAX(a)
@@ -156,7 +157,7 @@ UPDATE fire SET f = x * size_y + y WHERE f IS NOT NULL;
 --        SELECT COUNT(x) INTO recurse FROM trans;
 --      END WHILE;
 --
---      -- connect neigboring pixels
+--      -- connect adjacent pixels
 --      INSERT INTO fire (
 --        SELECT [fire.x], [fire.y], trans.a
 --        FROM fire JOIN trans
@@ -186,6 +187,7 @@ BEGIN
   WHILE moreupdates > 0 DO
     SET iter_0 = iter_0 + 1;
 
+    -- create transition map for adjacent pixels
     DELETE FROM trans;
     INSERT INTO trans (i,a) (
       SELECT i, MAX(a)
@@ -210,7 +212,7 @@ BEGIN
         SELECT COUNT(x) INTO recurse FROM trans;
       END WHILE;
 
-      -- connect neigboring pixels
+      -- connect adjacent pixels
       INSERT INTO fire (
         SELECT [fire.x], [fire.y], trans.a
         FROM fire JOIN trans
