@@ -48,7 +48,7 @@
 #ifndef _GDK_ATOMIC_H_
 #define _GDK_ATOMIC_H_
 
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) && !defined(__INTEL_COMPILER)
 
 #include <intrin.h>
 
@@ -92,7 +92,7 @@
 
 #define ATOMIC_INIT(lck, fcn)	((void) 0)
 
-#elif (defined(__GNUC__) || defined(__INTEL_COMPILER)) && !(defined(__sun__) && SIZEOF_SIZE_T == SIZEOF_LNG)
+#elif (defined(__GNUC__) || defined(__INTEL_COMPILER)) && !(defined(__sun__) && SIZEOF_SIZE_T == SIZEOF_LNG) && !defined(_MSC_VER)
 
 #define ATOMIC_GET_sht(var, lck, fcn)		var
 #define ATOMIC_SET_sht(var, val, lck, fcn)	(var = (val))
