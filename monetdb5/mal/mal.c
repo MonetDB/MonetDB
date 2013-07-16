@@ -253,6 +253,7 @@ int mal_init(void){
 	initNamespace();
 	initParser();
 	initHeartbeat();
+	initResource();
 	RECYCLEinit();
 	if( malBootstrap() == 0)
 		return -1;

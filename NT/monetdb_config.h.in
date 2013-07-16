@@ -210,6 +210,9 @@
 /* Define to 1 if you have the <langinfo.h> header file. */
 /* #undef HAVE_LANGINFO_H */
 
+/* Define if you have the atomic_ops library */
+/* #undef HAVE_LIBATOMIC_OPS */
+
 /* Define if you have the bz2 library */
 /* #undef HAVE_LIBBZ2 */
 

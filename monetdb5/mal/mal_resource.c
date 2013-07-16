@@ -175,7 +175,7 @@ MALadmission(lng argclaim, lng hotclaim)
  * them when resource stress occurs.
  */
 #include "gdk_atomic.h"
-static volatile int running;
+static volatile ATOMIC_TYPE running;
 #ifdef ATOMIC_LOCK
 static MT_Lock runningLock MT_LOCK_INITIALIZER("runningLock");
 #endif
@@ -188,13 +188,6 @@ MALresourceFairness(lng usec)
 	lng clk;
 	int threads;
 	int delayed= 0;
-#ifdef ATOMIC_LOCK
-#ifdef NEED_MT_LOCK_INIT
-	static int initialized = 0;
-	if (initialized++ == 0)
-		ATOMIC_INIT(runningLock, "runningLock");
-#endif
-#endif
 
 	/* use GDKmem_cursize as MT_getrss() is too expensive */
 	rss = GDKmem_cursize();
@@ -207,9 +200,8 @@ MALresourceFairness(lng usec)
 	clk =  usec / 1000;
 
 	if ( clk > DELAYUNIT ) {
-		ATOMIC_CAS_int(running, 0, threads, runningLock, "MALresourceFairness");
 		PARDEBUG mnstr_printf(GDKstdout, "#delay initial "LLFMT"n", clk);
-		ATOMIC_DEC_int(running, runningLock, "MALresourceFairness");
+		ATOMIC_DEC(running, runningLock, "MALresourceFairness");
 		/* always keep one running to avoid all waiting  */
 		while (clk > 0 && running >= 2) {
 			/* speed up wake up when we have memory */
@@ -226,6 +218,17 @@ MALresourceFairness(lng usec)
 			} else break;
 			clk -= DELAYUNIT;
 		}
-		ATOMIC_INC_int(running, runningLock, "MALresourceFairness");
+		ATOMIC_INC(running, runningLock, "MALresourceFairness");
 	}
+}
+
+void
+initResource(void)
+{
+#ifdef ATOMIC_LOCK
+#ifdef NEED_MT_LOCK_INIT
+	ATOMIC_INIT(runningLock, "runningLock");
+#endif
+#endif
+	running = (ATOMIC_TYPE) GDKnr_threads;
 }
