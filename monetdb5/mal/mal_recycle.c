@@ -1049,15 +1049,15 @@ RECYCLEcolumn(Client cntxt,str sch,str tbl, str col)
 	MT_lock_set(&recycleLock, "recycle");
 	release= (char*) GDKzalloc(recycleBlk->vtop);
 	vr.vtype = TYPE_str;
-	vr.len  = strlen(sch);
+	vr.len  = (int) strlen(sch);
 	vr.val.sval = sch;
 	sid = fndConstant(recycleBlk,&vr, recycleBlk->vtop);
 	vr.val.sval = tbl;
-	vr.len  = strlen(tbl);
+	vr.len  = (int) strlen(tbl);
 	tid = fndConstant(recycleBlk,&vr, recycleBlk->vtop);
 	if ( col){
 		vr.val.sval = col;
-		vr.len  = strlen(col);
+		vr.len  = (int) strlen(col);
 		cid = fndConstant(recycleBlk,&vr,recycleBlk->vtop);
 	}
 #ifdef _DEBUG_RESET_
