@@ -242,8 +242,6 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	c->actions = 0;
 	c->totaltime = 0;
 	/* create a recycler cache */
-	c->rcc = (RecPtr) GDKzalloc(sizeof(RecStat));
-	c->rcc->curQ = -1;
 	c->exception_buf_initialized = 0;
 	MT_sema_init(&c->s, 0, "Client->s");
 	return c;
@@ -369,10 +367,6 @@ freeClient(Client c)
 	c->login = c->lastcmd = 0;
 	c->qtimeout = 0;
 	c->stimeout = 0;
-	if (c->rcc) {
-		GDKfree(c->rcc);
-		c->rcc = NULL;
-	}
 	c->user = oid_nil;
 	c->mythread = 0;
 	c->mode = FREECLIENT;

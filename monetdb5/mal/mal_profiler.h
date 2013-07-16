@@ -34,25 +34,6 @@ typedef struct rusage Rusage;
 typedef struct tms Tms;
 typedef struct Mallinfo Mallinfo;
 
-/*
- * Recycler statistics per client
- */
-typedef struct RECSTAT {
-	int statements;   /* total number of statements executed */
-	int recycled;     /* total number of statements recycled */
-	int recycled0;    /* recycled statements per query */
-	lng time0;        /* time per query */
-	int curQ;         /* index of current query in Qry Patterns array*/
-	int recent;       /* the most recent entry in Recycler Pool touched by current query */
-	int recycleMiss;  /* DBG:count of misses due to cache eviction */
-	int recycleRem;   /* DBG:count of removed entries */
-	lng ccCalls;      /* Number of calls to cleanCache */
-	lng ccInstr;      /* Number of instructions evicted by eviction policy*/
-	lng crdInstr;     /* Number of instructions not admited in RP by CRD */
-	int RPadded0;     /* Number of instructions added to Recycler Pool per query */
-	int RPreset0;     /* Number of instructions evicted from Recycler Pool by reset() due to updates*/
-} *RecPtr, RecStat;
-
 #define PROFevent   0
 #define PROFtime    1
 #define PROFthread  2

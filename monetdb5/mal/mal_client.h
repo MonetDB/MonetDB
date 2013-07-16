@@ -165,7 +165,10 @@ typedef struct CLIENT {
 	 */
 	int		actions;
 	lng		totaltime;	/* sum of elapsed processing times */
-	struct RECSTAT *rcc;	/* recycling stat */
+	/* recycler administration */
+	lng		time0;	/* last query start */
+	int		recent;	/* last MAL instruction */
+
 	jmp_buf	exception_buf;
 	int exception_buf_initialized;
 
