@@ -541,9 +541,6 @@ RECYCLEkeep(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p, RuntimeProfile 
 		v = &s->stk[j];
 		VALcopy(&cst,v);
 		c = fndConstant(recycleBlk, &cst, recycleBlk->vtop);
-#ifdef _DEBUG_RECYCLE_
-		//printf("#CONSTANT %s %d\n", getVarName(mb,j), c);
-#endif
 		if (c<0)
 			c = defConstant(recycleBlk, v->vtype, &cst);
 		if (v->vtype == TYPE_bat)
@@ -553,7 +550,7 @@ RECYCLEkeep(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p, RuntimeProfile 
 	}
 #ifdef _DEBUG_RECYCLE_
 	mnstr_printf(cntxt->fdout,"#RECYCLE [%3d] ",recycleBlk->stop);
-	printInstruction( cntxt->fdout,recycleBlk, 0, q,LIST_MAL_STMT);
+	printInstruction( cntxt->fdout,recycleBlk, 0, q,LIST_MAL_DEBUG);
 #else
 	(void) cntxt;
 #endif

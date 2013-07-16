@@ -79,6 +79,10 @@ OPTrecyclerImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			break;
 		}
 
+		if ( getModuleId(p) == languageRef){
+			pushInstruction(mb,p);
+			continue;
+		}
 		if ( isUpdateInstruction(p) || hasSideEffects(p,TRUE)){
 			/*  update instructions are not recycled but monitored*/
 			pushInstruction(mb, p);
@@ -108,10 +112,10 @@ OPTrecyclerImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			if (recycled[getArg(p, j)] ==0)
 				cand++;
 		if (cnt == p->argc - p->retc && cand == p->retc) {
-			//OPTDEBUGrecycle {
+			OPTDEBUGrecycle {
 				mnstr_printf(cntxt->fdout, "#recycle instruction: ");
 				printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_DEBUG);
-			//}
+			}
 			marks++;
 			p->recycle = recycleMaxInterest; /* this instruction is to be monitored */
 			for (j = 0; j < p->retc; j++)

@@ -501,6 +501,9 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 				} else
 					VALformat(&cv, &stk->stk[getArg(p, i)]);
 			} else {
+				if ( p->recycle && flg & LIST_MAL_ARG)
+					snprintf(t,(len-(t-base)),"%s%s=", (*getArgName(mb,p,i)== TMPMARKER?"X":""), getArgName(mb, p, i));
+				advance(t,base,len);
 				if( getTailType(getArgType(mb,p,i)) > TYPE_str )
 				{ char *ct=cv;
 					VALformat(&cv, &getVar(mb, getArg(p, i))->value);
