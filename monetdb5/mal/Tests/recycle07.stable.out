@@ -93,13 +93,12 @@ end main;
 #RECYCLEcleanCache: policy=PROFIT usedmem=24000
 #Target memory 12000KB Available 16741139008KB
 #Candidates for eviction
-#(# LRU		Ticks	Life	SZ	Cnt	Wgt	Ben	Prof)
-  3 612312	59	 611.41	 12000	  2	  0.1
-  4 612363	28	 612.53	 12000	  2	  0.1
+#LRU		Ticks	Life	SZ	Cnt	Wgt	Ben	Prof)
+#  3 902532	51	 901.62	 12000	  2	  0.1
+#  4 902575	28	 902.75	 12000	  2	  0.1
 #Evicted 1 instruction(s) 
- 4	=#  4     X_12:BAT  := algebra.subselect(<tmp_455>,<tmp_535>,700,710,true,true,false);#  4 _12:BAT := ALGsubselect2(_4:BAT, _1:BAT, _13:int, _14:int, _10:bit, _10:bit, _11:bit) {GR}
-
-#RECYCLE [  4]     X_12 := algebra.subselect(<tmp_455>,<tmp_535>,400,700,true,true,false);
+#4	=#  4     X_12:BAT  := algebra.subselect(<tmp_1034>,<tmp_1033>,700,710,true,true,false);#  4 _12:BAT := ALGsubselect2(_4:BAT, _1:BAT, _13:int, _14:int, _10:bit, _10:bit, _11:bit) {GR}
+#RECYCLE [  4]     X_12 := algebra.subselect(<tmp_1034>,<tmp_1033>,400,700,true,true,false);
 #RECYCLER  CATALOG admission ADM_ALL
 #CACHE= policy PROFIT limit= 5 
 #RESOURCES hard stmt = 20000 hard var = 100000 hard mem=16741163008

@@ -369,9 +369,9 @@ newpass:
 #ifdef _DEBUG_CACHE_
         mnstr_printf(cntxt->fdout,"#RECYCLEcleanCache: policy=PROFIT usedmem="LLFMT"\n", recyclerMemoryUsed);
 		mnstr_printf(cntxt->fdout,"#Target memory "LLFMT"KB Available "LLFMT"KB\n", wr,monet_memory -recyclerMemoryUsed);
-        mnstr_printf(cntxt->fdout,"#Candidates for eviction\n#(# LRU\t\tTicks\tLife\tSZ\tCnt\tWgt\tBen\tProf)\n");
+        mnstr_printf(cntxt->fdout,"#Candidates for eviction\n#LRU\t\tTicks\tLife\tSZ\tCnt\tWgt\tBen\tProf)\n");
 		for (l = 0; l < ltop; l++)
-        	mnstr_printf(cntxt->fdout,"%3d "LLFMT"\t"LLFMT"\t %5.2f\t "LLFMT"\t%3d\t%5.1f\n",
+        	mnstr_printf(cntxt->fdout,"#%3d "LLFMT"\t"LLFMT"\t %5.2f\t "LLFMT"\t%3d\t%5.1f\n",
                 	leaves[l],recycleBlk->profiler[leaves[l]].clk,
 	                recycleBlk->profiler[leaves[l]].ticks,
         	        recycleLife(leaves[l]),
@@ -416,11 +416,10 @@ newpass:
 		cont = 1;
 
 #ifdef _DEBUG_CACHE_
-	mnstr_printf(cntxt->fdout,"#Evicted %d instruction(s) \n ",vtop);
+	mnstr_printf(cntxt->fdout,"#Evicted %d instruction(s) \n",vtop);
 	for(v=0; v<vtop;v++){
-		mnstr_printf(cntxt->fdout,"%d\t",vm[v]);
+		mnstr_printf(cntxt->fdout,"#%d\t",vm[v]);
 		printInstruction(cntxt->fdout,recycleBlk,0,recycleBlk->stmt[vm[v]], LIST_MAL_ALL);
-		mnstr_printf(cntxt->fdout,"\n");
 	}
 #endif
 

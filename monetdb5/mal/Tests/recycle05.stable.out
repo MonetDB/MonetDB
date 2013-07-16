@@ -81,11 +81,10 @@ end main;
 #RECYCLEcleanCache: policy=PROFIT usedmem=12000
 #Target memory 12000KB Available 16741151008KB
 #Candidates for eviction
-#(# LRU		Ticks	Life	SZ	Cnt	Wgt	Ben	Prof)
-  3 898472	38	 898.40	 12000	  1	  0.1
+#LRU		Ticks	Life	SZ	Cnt	Wgt	Ben	Prof)
+#  3 257359	56	 257.30	 12000	  1	  0.1
 #Evicted 1 instruction(s) 
- 3	=#  3     X_7:BAT  := algebra.subselect(<tmp_1034>,<tmp_1033>,100,120,true,true,false);#  3 _7:BAT := ALGsubselect2(_4:BAT, _1:BAT, _8:int, _9:int, _10:bit, _10:bit, _11:bit) {GR}
-
+#3	=#  3     X_7:BAT  := algebra.subselect(<tmp_1034>,<tmp_1033>,100,120,true,true,false);#  3 _7:BAT := ALGsubselect2(_4:BAT, _1:BAT, _8:int, _9:int, _10:bit, _10:bit, _11:bit) {GR}
 #RECYCLE [  3]     X_7 := algebra.subselect(<tmp_1034>,<tmp_1033>,700,710,true,true,false);
 #RECYCLER  CATALOG admission ADM_ALL
 #CACHE= policy PROFIT limit= 4 
@@ -104,11 +103,10 @@ end main;
 #RECYCLEcleanCache: policy=PROFIT usedmem=12000
 #Target memory 12000KB Available 16741151008KB
 #Candidates for eviction
-#(# LRU		Ticks	Life	SZ	Cnt	Wgt	Ben	Prof)
-  3 898547	61	 898.72	 12000	  1	  0.1
+#LRU		Ticks	Life	SZ	Cnt	Wgt	Ben	Prof)
+#  3 257452	62	 257.64	 12000	  1	  0.1
 #Evicted 1 instruction(s) 
- 3	=#  3     X_7:BAT  := algebra.subselect(<tmp_1034>,<tmp_1033>,700,710,true,true,false);#  3 _7:BAT := ALGsubselect2(_4:BAT, _1:BAT, _8:int, _9:int, _10:bit, _10:bit, _11:bit) {GR}
-
+#3	=#  3     X_7:BAT  := algebra.subselect(<tmp_1034>,<tmp_1033>,700,710,true,true,false);#  3 _7:BAT := ALGsubselect2(_4:BAT, _1:BAT, _8:int, _9:int, _10:bit, _10:bit, _11:bit) {GR}
 #RECYCLE [  3]     X_7 := algebra.subselect(<tmp_1034>,<tmp_1033>,400,700,true,true,false);
 #RECYCLER  CATALOG admission ADM_ALL
 #CACHE= policy PROFIT limit= 4 
