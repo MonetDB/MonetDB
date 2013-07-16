@@ -15,7 +15,7 @@ exit i;
     return tid:= b;
 end tid;
 
-function sql.bind(s:str,t:str,c:str,i:int):bat[:oid,:int];
+function sql.bind(m:int,s:str,t:str,c:str,i:int):bat[:oid,:int];
 b:= bat.new(:oid,:int);
 barrier i:= 0:int;
     bat.append(b,i);
@@ -31,7 +31,7 @@ function qry(low:int, hgh:int);
     s1:= algebra.subselect(b,x,low,hgh,true,true,false);
 end qry;
 
-recycle.setCachePolicy(6,10);
+recycle.setCache(6);
 optimizer.recycler("user","qry");
 
 io.print("start");

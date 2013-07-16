@@ -51,7 +51,7 @@ function qry1(val:int);
     s:= algebra.subselect(b,x,val,val,true,true,false);
 end qry1;
 
-recycle.setCachePolicy(2,10);
+recycle.setCache(10);
 optimizer.recycler("user","qry");
 optimizer.recycler("user","qry1");
 
