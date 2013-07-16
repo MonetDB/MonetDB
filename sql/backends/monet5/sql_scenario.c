@@ -711,7 +711,7 @@ sql_update_oct2013(Client c)
 		fclose(fp3);
 	}
 
-	pos += snprintf(buf+pos, bufsize-pos, "insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('querylog_catalog', 'querylog_calls', 'queue', 'json_filter', 'json_filter_all', 'json_path', 'json_isvalid', 'json_isvalidobject', 'json_isvalidarray', 'json_length') and f.type = %d and f.schema_id = s.id and s.name = 'sys');\n", F_FUNC);
+	pos += snprintf(buf+pos, bufsize-pos, "insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('querylog_catalog', 'querylog_calls', 'queue', 'json_filter', 'json_filter_all', 'json_path', 'json_text', 'json_isvalid', 'json_isvalidobject', 'json_isvalidarray', 'json_length') and f.type = %d and f.schema_id = s.id and s.name = 'sys');\n", F_FUNC);
 	pos += snprintf(buf+pos, bufsize-pos, "insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('querylog_empty', 'querylog_enable', 'querylog_disable', 'pause', 'resume', 'sysmon_resume', 'stop') and f.type = %d and f.schema_id = s.id and s.name = 'sys');\n", F_PROC);
 	pos += snprintf(buf+pos, bufsize-pos, "update sys._tables set system = true where name in ('tracelog', 'optimizers', 'environment', 'storage', 'storagemodel') and schema_id = (select id from sys.schemas where name = 'sys');\n");
 

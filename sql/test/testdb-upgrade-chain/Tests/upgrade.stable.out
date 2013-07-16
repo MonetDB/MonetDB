@@ -210,6 +210,10 @@ returns json external name json.filterall;
 create function sys.json_path(js json, e string)
 returns json external name json.path;
 
+-- a simple path extractor as plain text
+create function sys.json_text(js json, e string)
+returns string external name json.text;
+
 -- test string for JSON compliancy
 create function sys.json_isvalid(js string)
 returns bool external name json.isvalid;
@@ -252,7 +256,7 @@ returns integer external name json.length;
 -- returns json external name json.objectrender;
 -- create function sys.json_array(*)
 -- returns json external name json.arrayrender;
-insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('querylog_catalog', 'querylog_calls', 'queue', 'json_filter', 'json_filter_all', 'json_path', 'json_isvalid', 'json_isvalidobject', 'json_isvalidarray', 'json_length') and f.type = 1 and f.schema_id = s.id and s.name = 'sys');
+insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('querylog_catalog', 'querylog_calls', 'queue', 'json_filter', 'json_filter_all', 'json_path', 'json_text', 'json_isvalid', 'json_isvalidobject', 'json_isvalidarray', 'json_length') and f.type = 1 and f.schema_id = s.id and s.name = 'sys');
 insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('querylog_empty', 'querylog_enable', 'querylog_disable', 'pause', 'resume', 'sysmon_resume', 'stop') and f.type = 2 and f.schema_id = s.id and s.name = 'sys');
 update sys._tables set system = true where name in ('tracelog', 'optimizers', 'environment', 'storage', 'storagemodel') and schema_id = (select id from sys.schemas where name = 'sys');
 set schema "testschema";
