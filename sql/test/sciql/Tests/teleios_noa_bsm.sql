@@ -1,9 +1,3 @@
--- For now(?), the mitosis/mergetable optimizers are not up to handling the
--- SciQL used here, in particular conjunctive HAVING predicates, correctly
--- (or vice versa).
-set optimizer='no_mitosis_pipe';
-
-
 SET SCHEMA rs;
 
 
@@ -98,12 +92,17 @@ INSERT INTO fire (
 
 -- BSM majority filter --
 
+-- For now(?), the mitosis/mergetable optimizers are not up to handling the
+-- SciQL used here, in particular conjunctive HAVING predicates, correctly
+-- (or vice versa).
+set optimizer='no_mitosis_pipe';
 INSERT INTO fire (
   SELECT [x], [y], 1
   FROM fire
   GROUP BY fire[x-d1:x+d2][y-d1:y+d2]
   HAVING f IS NULL AND SUM(f) > majority
 );
+set optimizer='default_pipe';
 
 
 -- BSM clump&eliminate filter --
@@ -170,7 +169,12 @@ UPDATE fire SET f = x * size_y + y WHERE f IS NOT NULL;
 --  END WHILE;
 --  RETURN SELECT iter_0, iter_1;
 --END;
+---- For now(?), the mitosis/mergetable optimizers are not up to handling the
+---- SciQL used here, in particular conjunctive HAVING predicates, correctly
+---- (or vice versa).
+--set optimizer='no_mitosis_pipe';
 --SELECT * FROM clump_4connected();
+--set optimizer='default_pipe';
 
 ---- version 2:
 ---- Clump adjacent pixels using 8-connected,
@@ -225,7 +229,12 @@ BEGIN
   END WHILE;
   RETURN SELECT iter_0, iter_1;
 END;
+-- For now(?), the mitosis/mergetable optimizers are not up to handling the
+-- SciQL used here, in particular conjunctive HAVING predicates, correctly
+-- (or vice versa).
+set optimizer='no_mitosis_pipe';
 SELECT * FROM clump_8connected();
+set optimizer='default_pipe';
 
 ---- Eliminate any groups that have few members (<10 pixels)
 UPDATE fire SET f = NULL WHERE f IN (
@@ -324,7 +333,12 @@ BEGIN
   END WHILE;
   RETURN SELECT iter_0, iter_1;
 END;
+-- For now(?), the mitosis/mergetable optimizers are not up to handling the
+-- SciQL used here, in particular conjunctive HAVING predicates, correctly
+-- (or vice versa).
+set optimizer='no_mitosis_pipe';
 SELECT * FROM connect_neighbors();
+set optimizer='default_pipe';
 
 
 
