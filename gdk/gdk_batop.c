@@ -71,12 +71,16 @@ insert_string_bat(BAT *b, BAT *n, int append)
 	BUN p, q;		/* loop variables */
 	oid o = 0;		/* in case we're appending */
 	ptr hp, tp;		/* head and tail value pointers */
-	unsigned char tbv, *tbp = NULL;		/* tail value-as-bte */
-	unsigned short tsv, *tsp = NULL;	/* tail value-as-sht */
+	unsigned char tbv;	/* tail value-as-bte */
+	const unsigned char *tbp = NULL;	/* tail value-as-bte */
+	unsigned short tsv;	/* tail value-as-sht */
+	const unsigned short *tsp = NULL;	/* tail value-as-sht */
 #if SIZEOF_VAR_T == 8
-	unsigned int tiv, *tip = NULL;		/* tail value-as-int */
+	unsigned int tiv;	/* tail value-as-int */
+	const unsigned int *tip = NULL;	/* tail value-as-int */
 #endif
-	var_t v, *tvp = NULL;		/* value */
+	var_t v;		/* value */
+	const var_t *tvp = NULL;	/* value */
 	int ntw, btw;		/* shortcuts for {b,n}->t->width */
 
 	assert(b->H->type == TYPE_void || b->H->type == TYPE_oid);
@@ -139,12 +143,12 @@ insert_string_bat(BAT *b, BAT *n, int append)
 			tt = TYPE_var;
 			break;
 		}
-		tbp = (unsigned char*)Tloc(n,BUNfirst(n)); 
-		tsp = (unsigned short*)Tloc(n,BUNfirst(n)); 
+		tbp = (const unsigned char *) Tloc(n, BUNfirst(n));
+		tsp = (const unsigned short *) Tloc(n, BUNfirst(n));
 #if SIZEOF_VAR_T == 8
-		tip = (unsigned int*)Tloc(n,BUNfirst(n)); 
+		tip = (const unsigned int *) Tloc(n, BUNfirst(n));
 #endif
-		tvp = (var_t*)Tloc(n,BUNfirst(n)); 
+		tvp = (const var_t *) Tloc(n, BUNfirst(n));
 		b->T->varsized = 0;
 		b->T->type = tt;
 	}
