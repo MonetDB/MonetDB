@@ -268,7 +268,6 @@ static void RECYCLEcleanCache(Client cntxt, lng clk){
 	int k, *leaves, *vm;
 	int limit, idx;
 	size_t mem;
-	int cont;
 	lng oldclk,wr;
 	dbl minben, ben;
 	bte *used;
@@ -277,12 +276,8 @@ static void RECYCLEcleanCache(Client cntxt, lng clk){
 newpass:
 	if (recycleBlk->stop == 0)
 		return;
-	cont = 0;
-	wr = GDKmem_cursize() -  MEMORY_THRESHOLD * monet_memory;
-	if ( wr < 0 && recycleBlk->stop < recycleCacheLimit)
+	if ( GDKmem_cursize() <  MEMORY_THRESHOLD * monet_memory && recycleBlk->stop < recycleCacheLimit)
 		return;
-	if ( wr < 0)
-		wr=0;
 
 	used = (bte*)GDKzalloc(recycleBlk->vtop);
 
@@ -338,6 +333,7 @@ newpass:
 
 
 #ifdef _DEBUG_CACHE_
+		wr = recyclerMemoryUsed - MEMORY_THRESHOLD * monet_memory;
         mnstr_printf(cntxt->fdout,"#RECYCLEcleanCache: usedmem="LLFMT" target memory freed "LLFMT"\n", recyclerMemoryUsed, wr);
         mnstr_printf(cntxt->fdout,"#Candidates for eviction\n#LRU\t\tTicks\tLife\tSZ\tCnt\tWgt\tBen\tProf)\n");
 		for (l = 0; l < ltop; l++)
@@ -367,6 +363,7 @@ newpass:
 		}
 		vm[vtop++] = leaves[idx];
 	} else {	/* evict several to get enough memory */
+		wr = recyclerMemoryUsed - MEMORY_THRESHOLD * monet_memory;
 		k = 0;	/* exclude binds that don't free memory */
 		for (l = 0; l < ltop; l++) {
 			// also discard leaves that are more expensive to find then compute
@@ -377,17 +374,13 @@ newpass:
 		}
 		if ( k > 0 )
 			ltop = k;
-		vtop = chooseVictims(cntxt,leaves, ltop, (wr<0?0:wr) );
+		vtop = chooseVictims(cntxt,leaves, ltop, wr);
 		wr=0;
 		for (v = 0; v < vtop; v++){
 			vm[v] = leaves[v];
 			wr += recycleBlk->profiler[leaves[v]].wbytes;
 		}
 	}
-
-	/* check if a new pass of cache cleaning is needed */
-	if ( (size_t)(recyclerMemoryUsed - wr) > MEMORY_THRESHOLD * monet_memory )
-		cont = 1;
 
 #ifdef _DEBUG_CACHE_
 	mnstr_printf(cntxt->fdout,"#Evicted %d instruction(s) \n",vtop);
@@ -430,13 +423,16 @@ newpass:
 		}
 	}
 
+
 	GDKfree(old);
 	GDKfree(used);
 	/* remove all un-used variables as well */
 	trimMalVariables(recycleBlk);
 
 	GDKfree(dmask);
-	if (cont) goto newpass;
+	/* check if a new pass of cache cleaning is needed */
+	if ( (size_t)recyclerMemoryUsed > MEMORY_THRESHOLD * monet_memory )
+	goto newpass;
 }
 
 #ifdef _DEBUG_CACHE_
@@ -925,7 +921,8 @@ RECYCLEexitImpl(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, RuntimePr
 		return;
 
 	MT_lock_set(&recycleLock, "recycle");
-	RECYCLEcleanCache(cntxt, mb->profiler[0].clk);
+	if ( (GDKmem_cursize() >  MEMORY_THRESHOLD * monet_memory  && recyclerMemoryUsed > MEMORY_THRESHOLD * monet_memory) || recycleBlk->stop == recycleCacheLimit)
+		RECYCLEcleanCache(cntxt, mb->profiler[0].clk);
 
 	if ( RECYCLEinterest(p)){
 		/* infinite case, admit all new instructions */
@@ -1134,8 +1131,8 @@ RECYCLEdumpInternal(stream *s)
 
     if (!recycleBlk) return;
 
-    mnstr_printf(s,"#RECYCLER CATALOG cache limit= %d cached %d memory "SZFMT" \n", recycleCacheLimit, recycleBlk->stop,monet_memory);
-    mnstr_printf(s,"#MAL recycled = "LLFMT" savings= "LLFMT"(usec) total MAL executed = "LLFMT" memory(KB)= "LLFMT" searchtime="LLFMT"(usec)\n",
+    mnstr_printf(s,"#RECYCLER CATALOG cached %d memory ", recycleBlk->stop);
+    mnstr_printf(s,"MAL recycled = "LLFMT" savings= "LLFMT"(usec) total MAL executed = "LLFMT" memory(KB)= "LLFMT" searchtime="LLFMT"(usec)\n",
          recycled, recyclerSavings, statements, recyclerMemoryUsed,recycleSearchTime);
 
 #ifdef _DEBUG_CACHE_
