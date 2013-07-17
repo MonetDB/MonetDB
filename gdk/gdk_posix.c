@@ -427,7 +427,6 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 
 	if (!(mode & MMAP_COPY) && path != NULL) {
 		/* "normal" memory map */
-		struct stat stb;
 
 		if ((fd = open(path, O_RDWR)) < 0)
 			return NULL;
