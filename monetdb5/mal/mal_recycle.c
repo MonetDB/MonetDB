@@ -82,6 +82,7 @@ int recycleCacheLimit=0; /* No limit by default */
  * Monitoring the Recycler
  */
 static lng recyclerMemoryUsed = 0;
+static lng recyclerSavings = 0;
 static lng recycled=0;
 static lng statements =0;
 static lng recycleSearchTime =0;	/* cache search time in ms*/
@@ -827,8 +828,8 @@ RECYCLEreuse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, RuntimeProfi
 		}
 		recycleBlk->profiler[i].calls++;
 		recycleBlk->profiler[i].clk = GDKusec();
-		if ( !( getModuleId(p) == sqlRef && ( bindRef == getFunctionId(p) || bind_idxRef == getFunctionId(p))))
-			recycled++;
+		recycled++;
+		recyclerSavings += recycleBlk->profiler[i].ticks;
 		MT_lock_unset(&recycleLock, "recycle");
 		return i;
 		notfound:
@@ -1128,10 +1129,11 @@ RECYCLEdumpInternal(stream *s)
 
     if (!recycleBlk) return;
 
-    mnstr_printf(s,"#RECYCLER CATALOG cache limit= %d memory"SZFMT" \n", recycleCacheLimit,monet_memory);
-    mnstr_printf(s,"#recycled = "LLFMT" cached= %d executed = "LLFMT" memory(KB)= "LLFMT" searchtime="LLFMT"(usec)\n",
-         recycled, recycleBlk->stop, statements, recyclerMemoryUsed,recycleSearchTime);
+    mnstr_printf(s,"#RECYCLER CATALOG cache limit= %d cached %d memory "SZFMT" \n", recycleCacheLimit, recycleBlk->stop,monet_memory);
+    mnstr_printf(s,"#MAL recycled = "LLFMT" savings= "LLFMT"(usec) total MAL executed = "LLFMT" memory(KB)= "LLFMT" searchtime="LLFMT"(usec)\n",
+         recycled, recyclerSavings, statements, recyclerMemoryUsed,recycleSearchTime);
 
+#ifdef _DEBUG_CACHE_
     /* and dump the statistics per instruction*/
 	mnstr_printf(s,"# CL\t   lru\t\tcnt\t ticks\t rd\t wr\t Instr\n");
     for(i=0; i< recycleBlk->stop; i++){
@@ -1143,6 +1145,9 @@ RECYCLEdumpInternal(stream *s)
             recycleBlk->profiler[i].wbytes,
             instruction2str(recycleBlk,0,getInstrPtr(recycleBlk,i),LIST_MAL_DEBUG));
     }
+#else
+	(void) i;
+#endif
 }
 
 void 
