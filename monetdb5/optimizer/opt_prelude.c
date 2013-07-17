@@ -35,6 +35,7 @@ str appendRef;
 str assertRef;
 str attachRef;
 str avgRef;
+str arrayRef;
 str basketRef;
 str batcalcRef;
 str batRef;
@@ -299,6 +300,7 @@ void optimizerInit(void){
 		assertRef = putName("assert",6);
 		attachRef = putName("attach",6);
 		avgRef = putName("avg",3);
+		arrayRef = putName("array",4);
 		batcalcRef = putName("batcalc",7);
 		basketRef = putName("basket",6);
 		boxRef = putName("box",3);

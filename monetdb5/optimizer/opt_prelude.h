@@ -34,6 +34,7 @@ opt_export  str appendRef;
 opt_export  str assertRef;
 opt_export  str attachRef;
 opt_export  str avgRef;
+opt_export  str arrayRef;
 opt_export  str basketRef;
 opt_export  str batcalcRef;
 opt_export  str batRef;
