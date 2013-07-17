@@ -17,14 +17,6 @@
 
 module recycle;
 
-pattern start():void
-address RECYCLEstart
-comment "Initialize recycler for the current block";
-
-pattern stop():void
-address RECYCLEstop
-comment "Cleans recycler bookkeeping";
-
 pattern dump():void
 address RECYCLEdumpWrap
 comment "Dump summary of recycle table";
@@ -45,13 +37,9 @@ pattern delete(delta:int,sname:str,tbl:str,col:str):void
 address RECYCLEdeleteSQL
 comment "Correct recycle pool for SQL delete statement";
 
-pattern shutdown():void
-address RECYCLEshutdownWrap
-comment "Clear the recycle cache";
-
-command monitor(f:int):void
-address RECYCLEmonitor
-comment "start/stop the monitoring (printing) of the recycler info (storage size used and number of statements admitted)";
+pattern drop():void
+address RECYCLEdropWrap
+comment "Remove the recycle cache";
 
 pattern prologue():void
 address RECYCLEprologueWrap

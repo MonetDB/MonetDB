@@ -66,38 +66,13 @@ RECYCLEsetCache(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
  * At the end of the session we have to cleanup the recycle cache.
  */
 str
-RECYCLEshutdownWrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+RECYCLEdropWrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 
 	(void) mb;
 	(void) stk;
 	(void) p;
-	RECYCLEshutdown(cntxt);
+	RECYCLEdrop(cntxt);
 	return MAL_SUCCEED;
-}
-str
-RECYCLEmonitor(int *ret, int *p)
-{
-	(void) ret;
-	monitorRecycler = *p;
-	return MAL_SUCCEED;
-}
-
-
-str
-RECYCLEstartWrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
-{
-	(void) stk;
-	(void) p;
-	(void) mb;
-	return RECYCLEstart(cntxt);
-}
-
-str
-RECYCLEstopWrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
-	(void) stk;
-	(void) p;
-	(void) mb;
-	return RECYCLEstop(cntxt);
 }
 
 str RECYCLEappendSQL(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
