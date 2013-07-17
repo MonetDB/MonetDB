@@ -172,25 +172,25 @@ HASHnew(Heap *hp, int tpe, BUN size, BUN mask)
 
 #define starthash(TYPE)							\
 	do {								\
-		TYPE *v = (TYPE*)BUNhloc(bi, 0);			\
+		TYPE *v = (TYPE *) BUNhloc(bi, 0);			\
 		for (; r < p; r++) {					\
-			BUN c = (BUN) hash_##TYPE(h, v+r);			\
+			BUN c = (BUN) hash_##TYPE(h, v+r);		\
 									\
-			if ( HASHget(h,c) == HASHnil(h) && nslots-- == 0)	\
+			if (HASHget(h, c) == HASHnil(h) && nslots-- == 0) \
 				break; /* mask too full */		\
-			HASHputlink(h, r, HASHget(h,c));	\
-			HASHput(h, c, r);	\
+			HASHputlink(h, r, HASHget(h, c));		\
+			HASHput(h, c, r);				\
 		}							\
 	} while (0)
-#define finishhash(TYPE)				\
-	do {						\
-		TYPE *v = (TYPE*)BUNhloc(bi, 0);	\
-		for (; p < q; p++) {			\
-			BUN c = (BUN) hash_##TYPE(h, v+p);	\
-							\
-			HASHputlink(h,p, HASHget(h,c));\
-			HASHput(h,c,p);\
-		}					\
+#define finishhash(TYPE)					\
+	do {							\
+		TYPE *v = (TYPE *) BUNhloc(bi, 0);		\
+		for (; p < q; p++) {				\
+			BUN c = (BUN) hash_##TYPE(h, v + p);	\
+								\
+			HASHputlink(h, p, HASHget(h, c));	\
+			HASHput(h, c, p);			\
+		}						\
 	} while (0)
 
 /* collect HASH statistics for analysis */
@@ -340,7 +340,7 @@ BAThash(BAT *b, BUN masksize)
 					ptr v = BUNhead(bi, r);
 					BUN c = (BUN) heap_hash_any(b->H->vheap, h, v);
 
-					if ( HASHget(h,c) == HASHnil(h) &&
+					if (HASHget(h, c) == HASHnil(h) &&
 					    nslots-- == 0)
 						break;	/* mask too full */
 					HASHputlink(h, r, HASHget(h, c));
