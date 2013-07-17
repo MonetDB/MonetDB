@@ -2,7 +2,9 @@ create table ttt (a int, b int, c int);
 select optimizer;
 select def from optimizers() where name = optimizer;
 
-explain copy into ttt from '/:\tmp/xyz';
+explain copy into ttt from '/tmp/xyz';
+explain copy into ttt from '\tmp/xyz';
+explain copy into ttt from 'a:\tmp/xyz';
 
 declare opt_pipe_name string;
 set opt_pipe_name = ( select optimizer );
@@ -14,5 +16,7 @@ set optimizer = substring(opt_pipe_def,0,length(opt_pipe_def)-length('optimizer.
 select optimizer;
 
 select def from optimizers() where name = optimizer;
-explain copy into ttt from '/:\tmp/xyz';
+explain copy into ttt from '/tmp/xyz';
+explain copy into ttt from '\tmp/xyz';
+explain copy into ttt from 'Z:/tmp/xyz';
 drop table ttt;
