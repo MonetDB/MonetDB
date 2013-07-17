@@ -231,6 +231,7 @@ GDKmove(const char *dir1, const char *nme1, const char *ext1, const char *dir2, 
 	return ret;
 }
 
+#ifndef NATIVE_WIN32
 int
 GDKextendf(int fd, off_t size)
 {
@@ -248,6 +249,7 @@ GDKextendf(int fd, off_t size)
 	}
 	return 0;
 }
+#endif
 
 int
 GDKextend(const char *fn, size_t size)
