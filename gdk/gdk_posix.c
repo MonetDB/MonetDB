@@ -777,6 +777,8 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 
 	if (old_size >= new_size)
 		return old_address;	/* don't bother shrinking */
+	if (GDKextend(path, new_size) < 0)
+		return NULL;
 	if (path && !(mode & MMAP_COPY))
 		MT_munmap(old_address, old_size);
 	p = MT_mmap(path, mode, new_size);
