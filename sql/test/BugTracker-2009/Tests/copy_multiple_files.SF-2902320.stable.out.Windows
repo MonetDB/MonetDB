@@ -32,8 +32,8 @@ Ready.
 insert(
 | table(sys.cm_tmp) [ cm_tmp.i, cm_tmp.%TID% NOT NULL ]
 | union (
-| | table sys.copyfrom(varchar "sys", varchar "cm_tmp", varchar "|", varchar "\n", varchar "NULL", varchar "null", varchar "\file1", bigint "-1", bigint "0", int "0"),  [ cm_tmp.i ] COUNT ,
-| | table sys.copyfrom(varchar "sys", varchar "cm_tmp", varchar "|", varchar "\n", varchar "NULL", varchar "null", varchar "\file2", bigint "-1", bigint "0", int "0"),  [ cm_tmp.i ] COUNT 
+| | table sys.copyfrom(varchar "sys", varchar "cm_tmp", varchar "|", varchar "\n", varchar "NULL", varchar "null", varchar "a:\file1", bigint "-1", bigint "0", int "0"),  [ cm_tmp.i ] COUNT ,
+| | table sys.copyfrom(varchar "sys", varchar "cm_tmp", varchar "|", varchar "\n", varchar "NULL", varchar "null", varchar "Z:/file2", bigint "-1", bigint "0", int "0"),  [ cm_tmp.i ] COUNT 
 | ) [  ]
 )
 
