@@ -431,15 +431,7 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 
 		if ((fd = open(path, O_RDWR)) < 0)
 			return NULL;
-		if (fstat(fd, &stb) < 0) {
-			/* shouldn't happen */
-			close(fd);
-			return NULL;
-		}
-		/* if necessary, extend the underlying file */
-		if (stb.st_size < (off_t) new_size &&
-		    (lseek(fd, new_size - 1, SEEK_SET) < 0 ||
-		     write(fd, "\0", 1) < 0)) {
+		if (GDKextendf(fd, new_size) < 0) {
 			close(fd);
 			return NULL;
 		}
@@ -524,6 +516,7 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 					/* size not too big yet or
 					 * anonymous, try to make new
 					 * anonymous mmap and copy
+
 					 * data over */
 					p = mmap(NULL, new_size, prot, flags,
 						 fd, 0);

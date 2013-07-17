@@ -232,6 +232,24 @@ GDKmove(const char *dir1, const char *nme1, const char *ext1, const char *dir2, 
 }
 
 int
+GDKextendf(int fd, off_t size)
+{
+	struct stat stb;
+
+	if (fstat(fd, &stb) < 0) {
+		/* shouldn't happen */
+		return -1;
+	}
+	/* if necessary, extend the underlying file */
+	if (stb.st_size < size &&
+	    (lseek(fd, size - 1, SEEK_SET) < 0 ||
+	     write(fd, "\0", 1) < 0)) {
+		return -1;
+	}
+	return 0;
+}
+
+int
 GDKextend(const char *fn, size_t size)
 {
 	FILE *fp;
