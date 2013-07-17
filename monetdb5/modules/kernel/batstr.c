@@ -3,14 +3,14 @@
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  * http://www.monetdb.org/Legal/MonetDBLicense
- * 
+ *
  * Software distributed under the License is distributed on an "AS IS"
  * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
  * License for the specific language governing rights and limitations
  * under the License.
- * 
+ *
  * The Original Code is the MonetDB Database System.
- * 
+ *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
  * Copyright August 2008-2013 MonetDB B.V.
@@ -33,49 +33,49 @@
 #include "monetdb_config.h"
 #include "batstr.h"
 
-#define prepareOperand(X,Y,Z) \
-	if( (X= BATdescriptor(*Y)) == NULL ) \
+#define prepareOperand(X,Y,Z)								\
+	if( (X= BATdescriptor(*Y)) == NULL )					\
 		throw(MAL, "batstr." Z, RUNTIME_OBJECT_MISSING);
-#define prepareOperand2(X,Y,A,B,Z) \
-	if( (X= BATdescriptor(*Y)) == NULL ) \
-		throw(MAL, "batstr." Z, RUNTIME_OBJECT_MISSING); \
-	if( (A= BATdescriptor(*B)) == NULL ){\
-		BBPreleaseref(X->batCacheid); \
-		throw(MAL, "batstr."Z, RUNTIME_OBJECT_MISSING); \
+#define prepareOperand2(X,Y,A,B,Z)							\
+	if( (X= BATdescriptor(*Y)) == NULL )					\
+		throw(MAL, "batstr." Z, RUNTIME_OBJECT_MISSING);	\
+	if( (A= BATdescriptor(*B)) == NULL ){					\
+		BBPreleaseref(X->batCacheid);						\
+		throw(MAL, "batstr."Z, RUNTIME_OBJECT_MISSING);		\
 	}
-#define prepareResult(X,Y,T,Z) \
-	X= BATnew(Y->htype,T,BATcount(Y)); \
-	if( X == NULL){ \
-		BBPreleaseref(Y->batCacheid); \
-		throw(MAL, "batstr." Z, MAL_MALLOC_FAIL); \
-	} \
-	if( Y->htype== TYPE_void) \
-		BATseqbase(X, Y->hseqbase); \
-	X->hsorted=Y->hsorted; \
-	X->hrevsorted=Y->hrevsorted; \
-	X->tsorted=0; \
-	X->trevsorted=0; 
-#define prepareResult2(X,Y,A,T,Z) \
-	X= BATnew(Y->htype,T,BATcount(Y)); \
-	if( Y->htype== TYPE_void) \
-		BATseqbase(X, Y->hseqbase); \
-	if( X == NULL){ \
-		BBPreleaseref(Y->batCacheid); \
-		BBPreleaseref(A->batCacheid); \
-		throw(MAL, "batstr." Z, MAL_MALLOC_FAIL); \
-	} \
-	X->hsorted=Y->hsorted; \
-	X->hrevsorted=Y->hrevsorted; \
-	X->tsorted=0; \
-	X->trevsorted=0; 
-#define finalizeResult(X,Y,Z) \
-	if (!((Y)->batDirty&2)) (Y) = BATsetaccess((Y), BAT_READ); \
-	*X = (Y)->batCacheid; \
-	BBPkeepref(*(X));\
+#define prepareResult(X,Y,T,Z)						\
+	X= BATnew(Y->htype,T,BATcount(Y));				\
+	if( X == NULL){									\
+		BBPreleaseref(Y->batCacheid);				\
+		throw(MAL, "batstr." Z, MAL_MALLOC_FAIL);	\
+	}												\
+	if( Y->htype== TYPE_void)						\
+		BATseqbase(X, Y->hseqbase);					\
+	X->hsorted=Y->hsorted;							\
+	X->hrevsorted=Y->hrevsorted;					\
+	X->tsorted=0;									\
+	X->trevsorted=0;
+#define prepareResult2(X,Y,A,T,Z)					\
+	X= BATnew(Y->htype,T,BATcount(Y));				\
+	if( Y->htype== TYPE_void)						\
+		BATseqbase(X, Y->hseqbase);					\
+	if( X == NULL){									\
+		BBPreleaseref(Y->batCacheid);				\
+		BBPreleaseref(A->batCacheid);				\
+		throw(MAL, "batstr." Z, MAL_MALLOC_FAIL);	\
+	}												\
+	X->hsorted=Y->hsorted;							\
+	X->hrevsorted=Y->hrevsorted;					\
+	X->tsorted=0;									\
+	X->trevsorted=0;
+#define finalizeResult(X,Y,Z)									\
+	if (!((Y)->batDirty&2)) (Y) = BATsetaccess((Y), BAT_READ);	\
+	*X = (Y)->batCacheid;										\
+	BBPkeepref(*(X));											\
 	BBPreleaseref(Z->batCacheid);
 
 str STRbatLength(int *ret, int *l)
-{   
+{
 	BATiter bi;
 	BAT *bn, *b;
 	BUN p,q;
@@ -93,7 +93,7 @@ str STRbatLength(int *ret, int *l)
 		if (x== 0 || strcmp(x,str_nil)== 0) {
 			y= int_nil;
 			bn->T->nonil = 0;
-		} else 
+		} else
 			strLength(yp,x);
 		bunfastins(bn, h, yp);
 	}
@@ -106,7 +106,7 @@ bunins_failed:
 }
 
 str STRbatstringLength(int *ret, int *l)
-{   
+{
 	BATiter bi;
 	BAT *bn, *b;
 	BUN p,q;
@@ -124,7 +124,7 @@ str STRbatstringLength(int *ret, int *l)
 		if (x== 0 || strcmp(x,str_nil)== 0) {
 			y= int_nil;
 			bn->T->nonil = 0;
-		} else 
+		} else
 			strSQLLength(yp,x);
 		bunfastins(bn, h, yp);
 	}
@@ -137,7 +137,7 @@ bunins_failed:
 }
 
 str STRbatBytes(int *ret, int *l)
-{   
+{
 	BATiter bi;
 	BAT *bn, *b;
 	BUN p,q;
@@ -155,7 +155,7 @@ str STRbatBytes(int *ret, int *l)
 		if (x== 0 || strcmp(x,str_nil)== 0) {
 			y= int_nil;
 			bn->T->nonil = 0;
-		} else 
+		} else
 			strBytes(yp,x);
 		bunfastins(bn, h, yp);
 	}
@@ -168,7 +168,7 @@ bunins_failed:
 }
 
 str STRbatLower(int *ret, int *l)
-{   
+{
 	BATiter bi;
 	BAT *bn, *b;
 	BUN p,q;
@@ -184,7 +184,7 @@ str STRbatLower(int *ret, int *l)
 		str y = (str)str_nil, *yp = &y;
 
 		x = (str) BUNtail(bi,p);
-		if (x != 0 && strcmp(x,str_nil) != 0) 
+		if (x != 0 && strcmp(x,str_nil) != 0)
 			strLower(yp,x);
 		bunfastins(bn, h, y);
 		if (y != str_nil)
@@ -200,7 +200,7 @@ bunins_failed:
 }
 
 str STRbatUpper(int *ret, int *l)
-{   
+{
 	BATiter bi;
 	BAT *bn, *b;
 	BUN p,q;
@@ -216,7 +216,7 @@ str STRbatUpper(int *ret, int *l)
 		str y = (str)str_nil, *yp = &y;
 
 		x = (str) BUNtail(bi,p);
-		if (x != 0 && strcmp(x,str_nil) != 0) 
+		if (x != 0 && strcmp(x,str_nil) != 0)
 			strUpper(yp,x);
 		bunfastins(bn, h, y);
 		if (y != str_nil)
@@ -232,7 +232,7 @@ bunins_failed:
 }
 
 str STRbatStrip(int *ret, int *l)
-{   
+{
 	BATiter bi;
 	BAT *bn, *b;
 	BUN p,q;
@@ -248,7 +248,7 @@ str STRbatStrip(int *ret, int *l)
 		str y = (str)str_nil, *yp = &y;
 
 		x = (str) BUNtail(bi,p);
-		if (x != 0 && strcmp(x,str_nil) != 0) 
+		if (x != 0 && strcmp(x,str_nil) != 0)
 			strStrip(yp,x);
 		bunfastins(bn, h, y);
 		if (y != str_nil)
@@ -264,7 +264,7 @@ bunins_failed:
 }
 
 str STRbatLtrim(int *ret, int *l)
-{   
+{
 	BATiter bi;
 	BAT *bn, *b;
 	BUN p,q;
@@ -280,7 +280,7 @@ str STRbatLtrim(int *ret, int *l)
 		str y = (str)str_nil, *yp = &y;
 
 		x = (str) BUNtail(bi,p);
-		if (x != 0 && strcmp(x,str_nil) != 0) 
+		if (x != 0 && strcmp(x,str_nil) != 0)
 			strLtrim(yp,x);
 		bunfastins(bn, h, y);
 		if (y != str_nil)
@@ -296,7 +296,7 @@ bunins_failed:
 }
 
 str STRbatRtrim(int *ret, int *l)
-{   
+{
 	BATiter bi;
 	BAT *bn, *b;
 	BUN p,q;
@@ -312,7 +312,7 @@ str STRbatRtrim(int *ret, int *l)
 		str y = (str)str_nil, *yp = &y;
 
 		x = (str) BUNtail(bi,p);
-		if (x != 0 && strcmp(x,str_nil) != 0) 
+		if (x != 0 && strcmp(x,str_nil) != 0)
 			strRtrim(yp,x);
 		bunfastins(bn, h, y);
 		if (y != str_nil)
@@ -334,7 +334,7 @@ bunins_failed:
  */
 
 str STRbatPrefix(int *ret, int *l, int *r)
-{   
+{
 	BATiter lefti, righti;
 	BAT *bn, *left, *right;
 	BUN p,q;
@@ -342,7 +342,7 @@ str STRbatPrefix(int *ret, int *l, int *r)
 
 	prepareOperand2(left,l,right,r,"prefix");
 	if( BATcount(left) != BATcount(right) )
-		throw(MAL, "batstr.compare##X3", ILLEGAL_ARGUMENT " Requires bats of identical size");
+		throw(MAL, "batstr.startsWith", ILLEGAL_ARGUMENT " Requires bats of identical size");
 	prepareResult2(bn,left,right,TYPE_bit,"prefix");
 
 	lefti = bat_iterator(left);
@@ -369,7 +369,7 @@ bunins_failed:
 }
 
 str STRbatPrefixcst(int *ret, int *l, str *cst)
-{   
+{
 	BATiter lefti;
 	BAT *bn, *left;
 	BUN p,q;
@@ -398,7 +398,7 @@ bunins_failed:
 }
 
 str STRcstPrefixbat(int *ret, str *cst, int *r)
-{   
+{
 	BATiter righti;
 	BAT *bn, *right;
 	BUN p,q;
@@ -426,7 +426,7 @@ bunins_failed:
 }
 
 str STRbatSuffix(int *ret, int *l, int *r)
-{   
+{
 	BATiter lefti, righti;
 	BAT *bn, *left, *right;
 	BUN p,q;
@@ -434,7 +434,7 @@ str STRbatSuffix(int *ret, int *l, int *r)
 
 	prepareOperand2(left,l,right,r,"suffix");
 	if( BATcount(left) != BATcount(right) )
-		throw(MAL, "batstr.compare##X3", ILLEGAL_ARGUMENT " Requires bats of identical size");
+		throw(MAL, "batstr.endsWith", ILLEGAL_ARGUMENT " Requires bats of identical size");
 	prepareResult2(bn,left,right,TYPE_bit,"suffix");
 
 	lefti = bat_iterator(left);
@@ -461,7 +461,7 @@ bunins_failed:
 }
 
 str STRbatSuffixcst(int *ret, int *l, str *cst)
-{   
+{
 	BATiter lefti;
 	BAT *bn, *left;
 	BUN p,q;
@@ -489,7 +489,7 @@ bunins_failed:
 }
 
 str STRcstSuffixbat(int *ret, str *cst, int *r)
-{   
+{
 	BATiter righti;
 	BAT *bn, *right;
 	BUN p,q;
@@ -517,7 +517,7 @@ bunins_failed:
 }
 
 str STRbatstrSearch(int *ret, int *l, int *r)
-{   
+{
 	BATiter lefti, righti;
 	BAT *bn, *left, *right;
 	BUN p,q;
@@ -525,7 +525,7 @@ str STRbatstrSearch(int *ret, int *l, int *r)
 
 	prepareOperand2(left,l,right,r,"search");
 	if( BATcount(left) != BATcount(right) )
-		throw(MAL, "batstr.compare##X3", ILLEGAL_ARGUMENT " Requires bats of identical size");
+		throw(MAL, "batstr.search", ILLEGAL_ARGUMENT " Requires bats of identical size");
 	prepareResult2(bn,left,right,TYPE_int,"search");
 
 	lefti = bat_iterator(left);
@@ -551,7 +551,7 @@ bunins_failed:
 }
 
 str STRbatstrSearchcst(int *ret, int *l, str *cst)
-{   
+{
 	BATiter lefti;
 	BAT *bn, *left;
 	BUN p,q;
@@ -579,7 +579,7 @@ bunins_failed:
 }
 
 str STRcststrSearchbat(int *ret, str *cst, int *r)
-{   
+{
 	BATiter righti;
 	BAT *bn, *right;
 	BUN p,q;
@@ -607,7 +607,7 @@ bunins_failed:
 }
 
 str STRbatRstrSearch(int *ret, int *l, int *r)
-{   
+{
 	BATiter lefti, righti;
 	BAT *bn, *left, *right;
 	BUN p,q;
@@ -615,7 +615,7 @@ str STRbatRstrSearch(int *ret, int *l, int *r)
 
 	prepareOperand2(left,l,right,r,"r_search");
 	if( BATcount(left) != BATcount(right) )
-		throw(MAL, "batstr.compare##X3", ILLEGAL_ARGUMENT " Requires bats of identical size");
+		throw(MAL, "batstr.r_search", ILLEGAL_ARGUMENT " Requires bats of identical size");
 	prepareResult2(bn,left,right,TYPE_bit,"r_search");
 
 	lefti = bat_iterator(left);
@@ -642,7 +642,7 @@ bunins_failed:
 }
 
 str STRbatRstrSearchcst(int *ret, int *l, str *cst)
-{   
+{
 	BATiter lefti;
 	BAT *bn, *left;
 	BUN p,q;
@@ -671,7 +671,7 @@ bunins_failed:
 }
 
 str STRcstRstrSearchbat(int *ret, str *cst, int *r)
-{   
+{
 	BATiter righti;
 	BAT *bn, *right;
 	BUN p,q;
@@ -699,7 +699,7 @@ bunins_failed:
 }
 
 str STRbatConcat(int *ret, int *l, int *r)
-{   
+{
 	BATiter lefti, righti;
 	BAT *bn, *left, *right;
 	BUN p,q;
@@ -707,7 +707,7 @@ str STRbatConcat(int *ret, int *l, int *r)
 
 	prepareOperand2(left,l,right,r,"+");
 	if( BATcount(left) != BATcount(right) )
-		throw(MAL, "batstr.compare##X3", ILLEGAL_ARGUMENT " Requires bats of identical size");
+		throw(MAL, "batstr.+", ILLEGAL_ARGUMENT " Requires bats of identical size");
 	prepareResult2(bn,left,right,TYPE_str,"+");
 
 	lefti = bat_iterator(left);
@@ -734,7 +734,7 @@ bunins_failed:
 }
 
 str STRbatConcatcst(int *ret, int *l, str *cst)
-{   
+{
 	BATiter lefti;
 	BAT *bn, *left;
 	BUN p,q;
@@ -763,7 +763,7 @@ bunins_failed:
 }
 
 str STRcstConcatbat(int *ret, str *cst, int *r)
-{   
+{
 	BATiter righti;
 	BAT *bn, *right;
 	BUN p,q;
@@ -792,7 +792,7 @@ bunins_failed:
 }
 
 str STRbatTail(int *ret, int *l, int *r)
-{   
+{
 	BATiter lefti, righti;
 	BAT *bn, *left, *right;
 	BUN p,q;
@@ -800,7 +800,7 @@ str STRbatTail(int *ret, int *l, int *r)
 
 	prepareOperand2(left,l,right,r,);
 	if( BATcount(left) != BATcount(right) )
-		throw(MAL, "batstr.compare##X1", ILLEGAL_ARGUMENT " Requires bats of identical size");
+		throw(MAL, "batstr.string", ILLEGAL_ARGUMENT " Requires bats of identical size");
 	prepareResult2(bn,left,right,TYPE_str,);
 
 	lefti = bat_iterator(left);
@@ -827,7 +827,7 @@ bunins_failed:
 }
 
 str STRbatTailcst(int *ret, int *l, int *cst)
-{   
+{
 	BATiter lefti;
 	BAT *bn, *left;
 	BUN p,q;
@@ -856,7 +856,7 @@ bunins_failed:
 }
 
 str STRbatWChrAt(int *ret, int *l, int *r)
-{   
+{
 	BATiter lefti, righti;
 	BAT *bn, *left, *right;
 	BUN p,q;
@@ -864,7 +864,7 @@ str STRbatWChrAt(int *ret, int *l, int *r)
 
 	prepareOperand2(left,l,right,r,"+");
 	if( BATcount(left) != BATcount(right) )
-		throw(MAL, "batstr.compare##X1", ILLEGAL_ARGUMENT " Requires bats of identical size");
+		throw(MAL, "batstr.unicodeAt", ILLEGAL_ARGUMENT " Requires bats of identical size");
 	prepareResult2(bn,left,right,TYPE_bit,"+");
 
 	lefti = bat_iterator(left);
@@ -891,7 +891,7 @@ bunins_failed:
 }
 
 str STRbatWChrAtcst(int *ret, int *l, int *cst)
-{   
+{
 	BATiter lefti;
 	BAT *bn, *left;
 	BUN p,q;
@@ -980,12 +980,12 @@ STRbatlike_uselect(int *ret, int *bid, str *pat, str *esc)
 		ptr h = BUNhead(bi, p);
 		ptr t = BUNtail(bi, p);
 
-		if (STRlike((str) t, *pat, *esc)) 
+		if (STRlike((str) t, *pat, *esc))
 			bunfastins(bn, h, &o);
 	}
 	bn->T->nonil = 0;
 bunins_failed:
-	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); 
+	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
 	*ret = bn->batCacheid;
 	BBPkeepref(bn->batCacheid);
 	BBPreleaseref(b->batCacheid);
@@ -1024,7 +1024,7 @@ STRbatsubstringcst(int *ret, int *bid, int *start, int *length)
 	BATloop(b, p, q) {
 		str t =  (str) BUNtail(bi, p);
 
-		if ((msg=STRsubstring(&res, &t, start, length))) 
+		if ((msg=STRsubstring(&res, &t, start, length)))
 			goto bunins_failed;
 		BUNappend(bn, (ptr)res, FALSE);
 		GDKfree(res);
@@ -1039,7 +1039,7 @@ STRbatsubstringcst(int *ret, int *bid, int *start, int *length)
 
 	bn->T->nonil = 0;
 bunins_failed:
-	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); 
+	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
 	*ret = bn->batCacheid;
 	BBPkeepref(bn->batCacheid);
 	BBPreleaseref(b->batCacheid);
@@ -1048,21 +1048,21 @@ bunins_failed:
 
 batstr_export str STRbatsubstring(int *ret, int *l, int *r, int *t);
 str STRbatsubstring(int *ret, int *l, int *r, int *t)
-{   
+{
 	BATiter lefti, starti, lengthi;
 	BAT *bn, *left, *start, *length;
 	BUN p,q;
 	str v, *vp= &v;
 
-	if( (left= BATdescriptor(*l)) == NULL ) 
-		throw(MAL, "batstr.substring" , RUNTIME_OBJECT_MISSING); 
+	if( (left= BATdescriptor(*l)) == NULL )
+		throw(MAL, "batstr.substring" , RUNTIME_OBJECT_MISSING);
 	if( (start= BATdescriptor(*r)) == NULL ){
-		BBPreleaseref(left->batCacheid); 
+		BBPreleaseref(left->batCacheid);
 		throw(MAL, "batstr.substring", RUNTIME_OBJECT_MISSING);
 	}
 	if( (length= BATdescriptor(*t)) == NULL ){
-		BBPreleaseref(left->batCacheid); 
-		BBPreleaseref(start->batCacheid); 
+		BBPreleaseref(left->batCacheid);
+		BBPreleaseref(start->batCacheid);
 		throw(MAL, "batstr.substring", RUNTIME_OBJECT_MISSING);
 	}
 	if( BATcount(left) != BATcount(start) )
@@ -1070,8 +1070,8 @@ str STRbatsubstring(int *ret, int *l, int *r, int *t)
 	if( BATcount(left) != BATcount(length) )
 		throw(MAL, "batstr.substring", ILLEGAL_ARGUMENT " Requires bats of identical size");
 
-	bn= BATnew(TYPE_void, TYPE_str,BATcount(left)); 
-	BATseqbase(bn, 0); 
+	bn= BATnew(TYPE_void, TYPE_str,BATcount(left));
+	BATseqbase(bn, 0);
 	if( bn == NULL){
 		BBPreleaseref(left->batCacheid);
 		BBPreleaseref(start->batCacheid);
@@ -1079,10 +1079,10 @@ str STRbatsubstring(int *ret, int *l, int *r, int *t)
 		throw(MAL, "batstr.substring", MAL_MALLOC_FAIL);
 	}
 
-	bn->hsorted= left->hsorted; 
-	bn->hrevsorted= left->hrevsorted; 
-	bn->tsorted=0; 
-	bn->trevsorted=0; 
+	bn->hsorted= left->hsorted;
+	bn->hrevsorted= left->hrevsorted;
+	bn->tsorted=0;
+	bn->trevsorted=0;
 
 	lefti = bat_iterator(left);
 	starti = bat_iterator(start);
@@ -1110,24 +1110,24 @@ str STRbatsubstring(int *ret, int *l, int *r, int *t)
 
 batstr_export str STRbatreplace(int *ret, int *l, str *pat, str *s2);
 str STRbatreplace(int *ret, int *l, str *pat, str *s2)
-{   
+{
 	BATiter li;
 	BAT *bn, *left;
 	BUN p,q;
 	str v, *vp= &v;
 
-	if( (left= BATdescriptor(*l)) == NULL ) 
-		throw(MAL, "batstr.replace" , RUNTIME_OBJECT_MISSING); 
-	bn= BATnew(TYPE_void, TYPE_str,BATcount(left)); 
-	BATseqbase(bn, 0); 
+	if( (left= BATdescriptor(*l)) == NULL )
+		throw(MAL, "batstr.replace" , RUNTIME_OBJECT_MISSING);
+	bn= BATnew(TYPE_void, TYPE_str,BATcount(left));
+	BATseqbase(bn, 0);
 	if (bn == NULL){
 		BBPreleaseref(left->batCacheid);
 		throw(MAL, "batstr.replace", MAL_MALLOC_FAIL);
 	}
-	bn->hsorted= left->hsorted; 
-	bn->hrevsorted= left->hrevsorted; 
-	bn->tsorted=0; 
-	bn->trevsorted=0; 
+	bn->hsorted= left->hsorted;
+	bn->hrevsorted= left->hrevsorted;
+	bn->tsorted=0;
+	bn->trevsorted=0;
 
 	li = bat_iterator(left);
 	BATloop(left, p, q) {

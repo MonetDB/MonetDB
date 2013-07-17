@@ -3,14 +3,14 @@
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  * http://www.monetdb.org/Legal/MonetDBLicense
- * 
+ *
  * Software distributed under the License is distributed on an "AS IS"
  * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
  * License for the specific language governing rights and limitations
  * under the License.
- * 
+ *
  * The Original Code is the MonetDB Database System.
- * 
+ *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
  * Copyright August 2008-2013 MonetDB B.V.
@@ -44,85 +44,85 @@
 	bn->T->nonil = b->T->nonil;
 
 
-#define scienceFcnImpl(X1,X2,X3)\
-str CMDscience_bat_##X2##_##X1(int *ret, int *bid)\
-{\
-	BAT *b,*bn;\
-	X2 *o, *p, *q;\
-	if ((b = BATdescriptor(*bid)) == NULL) {\
-		throw(MAL, "##X2", RUNTIME_OBJECT_MISSING);\
-	}\
-	voidresultBAT(TYPE_##X2,"batcalc.##X1"); \
-	o = (X2*) Tloc(bn, BUNfirst(bn));\
-	p = (X2*) Tloc(b, BUNfirst(b));\
-	q = (X2*) Tloc(b, BUNlast(b));\
-\
-	if (b->T->nonil){\
-		for(;p<q; o++, p++)\
-			*o = X1##X3(*p);\
-	} else\
-		for(;p<q; o++, p++){\
-			*o = *p == X2##_nil? X2##_nil: X1##X3(*p);\
-		}\
-	BATsetcount(bn, BATcount(b));\
-	bn->tsorted = 0;\
-	bn->trevsorted = 0;\
-	BATkey(BATmirror(bn),0);           \
+#define scienceFcnImpl(X1,X2,X3)							\
+str CMDscience_bat_##X2##_##X1(int *ret, int *bid)			\
+{															\
+	BAT *b,*bn;												\
+	X2 *o, *p, *q;											\
+	if ((b = BATdescriptor(*bid)) == NULL) {				\
+		throw(MAL, #X2, RUNTIME_OBJECT_MISSING);			\
+	}														\
+	voidresultBAT(TYPE_##X2,"batcalc." #X1);				\
+	o = (X2*) Tloc(bn, BUNfirst(bn));						\
+	p = (X2*) Tloc(b, BUNfirst(b));							\
+	q = (X2*) Tloc(b, BUNlast(b));							\
+															\
+	if (b->T->nonil){										\
+		for(;p<q; o++, p++)									\
+			*o = X1##X3(*p);								\
+	} else													\
+		for(;p<q; o++, p++){								\
+			*o = *p == X2##_nil? X2##_nil: X1##X3(*p);		\
+		}													\
+	BATsetcount(bn, BATcount(b));							\
+	bn->tsorted = 0;										\
+	bn->trevsorted = 0;										\
+	BATkey(BATmirror(bn),0);								\
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \
-	if (b->htype != bn->htype) {\
-		BAT *r = VIEWcreate(b,bn);\
-\
-		BBPreleaseref(bn->batCacheid);\
-		bn = r;\
-	}\
-	BBPkeepref(*ret = bn->batCacheid);\
-	BBPreleaseref(b->batCacheid);\
-	return MAL_SUCCEED;\
+	if (b->htype != bn->htype) {							\
+		BAT *r = VIEWcreate(b,bn);							\
+															\
+		BBPreleaseref(bn->batCacheid);						\
+		bn = r;												\
+	}														\
+	BBPkeepref(*ret = bn->batCacheid);						\
+	BBPreleaseref(b->batCacheid);							\
+	return MAL_SUCCEED;										\
 }
 
-#define scienceBinaryImpl(X1,X2,X3)\
-str CMDscience_bat_cst_##X1##_##X2(int *ret, int *bid, X2 *d)\
-{\
-	BAT *b,*bn;\
-	X2 *o, *p, *q;\
-\
-	if ((b = BATdescriptor(*bid)) == NULL) {\
-		throw(MAL, "##X2", RUNTIME_OBJECT_MISSING);\
-	}\
-	voidresultBAT(TYPE_##X2,"batcalc.##X1")\
-	o = (X2*) Tloc(bn, BUNfirst(bn));\
-	p = (X2*) Tloc(b, BUNfirst(b));\
-	q = (X2*) Tloc(b, BUNlast(b));\
-\
-	if (b->T->nonil){\
-		for(;p<q; o++, p++)\
-			*o = X1##X3(*p,*d);\
-	} else\
-		for(;p<q; o++, p++){\
-			*o = *p == X2##_nil? X2##_nil: X1##X3(*p,*d);\
-		}\
-\
-	BATsetcount(bn, BATcount(b));\
-	bn->tsorted = 0;\
-	bn->trevsorted = 0;\
-	BATkey(BATmirror(bn),0);           \
-\
-	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \
-\
-	if (b->htype != bn->htype) {\
-		BAT *r = VIEWcreate(b,bn);\
-\
-		BBPreleaseref(bn->batCacheid);\
-		bn = r;\
-	}\
-	BBPkeepref(*ret = bn->batCacheid);\
-	BBPreleaseref(b->batCacheid);\
-	return MAL_SUCCEED;\
+#define scienceBinaryImpl(X1,X2,X3)								\
+str CMDscience_bat_cst_##X1##_##X2(int *ret, int *bid, X2 *d)	\
+{																\
+	BAT *b,*bn;													\
+	X2 *o, *p, *q;												\
+																\
+	if ((b = BATdescriptor(*bid)) == NULL) {					\
+		throw(MAL, #X2, RUNTIME_OBJECT_MISSING);				\
+	}															\
+	voidresultBAT(TYPE_##X2,"batcalc." #X1)						\
+	o = (X2*) Tloc(bn, BUNfirst(bn));							\
+	p = (X2*) Tloc(b, BUNfirst(b));								\
+	q = (X2*) Tloc(b, BUNlast(b));								\
+																\
+	if (b->T->nonil){											\
+		for(;p<q; o++, p++)										\
+			*o = X1##X3(*p,*d);									\
+	} else														\
+		for(;p<q; o++, p++){									\
+			*o = *p == X2##_nil? X2##_nil: X1##X3(*p,*d);		\
+		}														\
+																\
+	BATsetcount(bn, BATcount(b));								\
+	bn->tsorted = 0;											\
+	bn->trevsorted = 0;											\
+	BATkey(BATmirror(bn),0);									\
+																\
+	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);		\
+																\
+	if (b->htype != bn->htype) {								\
+		BAT *r = VIEWcreate(b,bn);								\
+																\
+		BBPreleaseref(bn->batCacheid);							\
+		bn = r;													\
+	}															\
+	BBPkeepref(*ret = bn->batCacheid);							\
+	BBPreleaseref(b->batCacheid);								\
+	return MAL_SUCCEED;											\
 }
 
-#define scienceImpl(Operator)\
-scienceFcnImpl(Operator,dbl,)\
-scienceFcnImpl(Operator,flt,f)
+#define scienceImpl(Operator)					\
+	scienceFcnImpl(Operator,dbl,)				\
+	scienceFcnImpl(Operator,flt,f)
 
 scienceImpl(asin)
 scienceImpl(acos)
