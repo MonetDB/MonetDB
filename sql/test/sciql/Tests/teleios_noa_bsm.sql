@@ -248,7 +248,7 @@ UPDATE fire SET f = NULL WHERE f IN (
 
 -- BSM connect nearby fires filter --
 
---- CAVEAT: this takes more than 7 minutes to execute !
+--- CAVEAT: this takes more than 8 minutes to execute !
 
 ---- Union fires which are less that 3 pixels apart (using 8-CONNECTED)
 ---- Add fire bridge between them
@@ -268,27 +268,37 @@ BEGIN
     -- find neighboring fire clumps
     DELETE FROM bridges;
     INSERT INTO bridges (
-      -- 3x3 window is too small and 5x5 is too large; hence,
-      -- we need to union the four possible 4x4 windows ...
-      SELECT x, y, MIN(f) AS i, MAX(f) AS a
-      FROM fire
-      GROUP BY fire[x-2:x+2][y-2:y+2]
-      HAVING f IS NULL AND MIN(f) <> MAX(f)
-      UNION ALL
-      SELECT x, y, MIN(f) AS i, MAX(f) AS a
-      FROM fire
-      GROUP BY fire[x-1:x+3][y-2:y+2]
-      HAVING f IS NULL AND MIN(f) <> MAX(f)
-      UNION ALL
-      SELECT x, y, MIN(f) AS i, MAX(f) AS a
-      FROM fire
-      GROUP BY fire[x-2:x+2][y-1:y+3]
-      HAVING f IS NULL AND MIN(f) <> MAX(f)
-      UNION ALL
-      SELECT x, y, MIN(f) AS i, MAX(f) AS a
-      FROM fire
-      GROUP BY fire[x-1:x+3][y-1:y+3]
-      HAVING f IS NULL AND MIN(f) <> MAX(f)
+      SELECT t1.x, t1.y, i, a
+      FROM (
+        -- 3x3 window is too small and 5x5 is too large; hence,
+        -- we need to union the four possible 4x4 windows ...
+        SELECT x, y, MIN(f) AS i, MAX(f) AS a
+        FROM fire
+        GROUP BY fire[x-2:x+2][y-2:y+2]
+        HAVING f IS NULL AND MIN(f) <> MAX(f)
+        UNION ALL
+        SELECT x, y, MIN(f) AS i, MAX(f) AS a
+        FROM fire
+        GROUP BY fire[x-1:x+3][y-2:y+2]
+        HAVING f IS NULL AND MIN(f) <> MAX(f)
+        UNION ALL
+        SELECT x, y, MIN(f) AS i, MAX(f) AS a
+        FROM fire
+        GROUP BY fire[x-2:x+2][y-1:y+3]
+        HAVING f IS NULL AND MIN(f) <> MAX(f)
+        UNION ALL
+        SELECT x, y, MIN(f) AS i, MAX(f) AS a
+        FROM fire
+        GROUP BY fire[x-1:x+3][y-1:y+3]
+        HAVING f IS NULL AND MIN(f) <> MAX(f)
+      ) AS t1 JOIN (
+        -- avoid (some) incorrect cases
+        SELECT x, y
+        FROM fire
+        GROUP BY fire[x-1:x+2][y-1:y+2]
+        HAVING f IS NULL AND SUM(f) IS NOT NULL
+      ) AS t2
+      ON t1.x = t2.x AND t1.y = t2.y
     );
 
     SELECT COUNT(*) INTO merge_more FROM bridges;
