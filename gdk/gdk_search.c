@@ -93,7 +93,8 @@
 #include "gdk_private.h"
 
 static int
-HASHwidth(BUN hashsize){
+HASHwidth(BUN hashsize)
+{
 	if (hashsize <= (BUN) BUN1_NONE)
 		return BUN1;
 	if (hashsize <= (BUN) BUN2_NONE)
@@ -123,8 +124,8 @@ static void
 HASHclear(Hash *h)
 {
 	BUN i, j, nil = (BUN) HASHnil(h);
-	for (i = 0, j = h->mask; i <= j; i++) 
-		(void) HASHput(h,i,nil);
+	for (i = 0, j = h->mask; i <= j; i++)
+		(void) HASHput(h, i, nil);
 }
 
 Hash *
@@ -165,7 +166,7 @@ HASHnew(Heap *hp, int tpe, BUN size, BUN mask)
 	h->type = tpe;
 	h->heap = hp;
 	HASHclear(h);		/* zero the mask */
-	ALGODEBUG fprintf(stderr, "#HASHnew: create hash(size " BUNFMT ", mask " BUNFMT ",width %d, nil "BUNFMT ", total "BUNFMT " bytes);\n", size, mask, width, h->nil, (size+mask) * width);
+	ALGODEBUG fprintf(stderr, "#HASHnew: create hash(size " BUNFMT ", mask " BUNFMT ",width %d, nil " BUNFMT ", total " BUNFMT " bytes);\n", size, mask, width, h->nil, (size + mask) * width);
 	return h;
 }
 
@@ -193,24 +194,26 @@ HASHnew(Heap *hp, int tpe, BUN size, BUN mask)
 	} while (0)
 
 /* collect HASH statistics for analysis */
-static void HASHcollisions(BAT *b, Hash *h)
+static void
+HASHcollisions(BAT *b, Hash *h)
 {
-	lng cnt, entries=0, max =0;
-	double total=0;
+	lng cnt, entries = 0, max = 0;
+	double total = 0;
 	BUN p, i, j, nil = HASHnil(h);
-	
-	if ( b == 0 || h == 0 )
+
+	if (b == 0 || h == 0)
 		return;
-	for (i = 0, j = h->mask; i <= j; i++) 
-	if ( (p = HASHget(h,i)) != nil){
-		entries++;
-		cnt = 0;
-		for ( ; p != nil; p = HASHgetlink(h,p))
-			cnt++;
-		if ( cnt > max ) max = cnt;
-		total += cnt;
-	}
-	fprintf(stderr, "#BAThash: statistics (" BUNFMT ", entries " LLFMT", mask " BUNFMT", max " LLFMT ", avg %2.6f);\n", BATcount(b), entries, h->mask, max, total/entries);
+	for (i = 0, j = h->mask; i <= j; i++)
+		if ((p = HASHget(h, i)) != nil) {
+			entries++;
+			cnt = 0;
+			for (; p != nil; p = HASHgetlink(h, p))
+				cnt++;
+			if (cnt > max)
+				max = cnt;
+			total += cnt;
+		}
+	fprintf(stderr, "#BAThash: statistics (" BUNFMT ", entries " LLFMT ", mask " BUNFMT ", max " LLFMT ", avg %2.6f);\n", BATcount(b), entries, h->mask, max, total / entries);
 }
 
 /*
@@ -223,7 +226,7 @@ BAThash(BAT *b, BUN masksize)
 {
 	BAT *o = NULL;
 	lng t0 = 0, t1 = 0;
-	(void) t0; 
+	(void) t0;
 	(void) t1;
 
 	if (VIEWhparent(b)) {
@@ -340,8 +343,8 @@ BAThash(BAT *b, BUN masksize)
 					if ( HASHget(h,c) == HASHnil(h) &&
 					    nslots-- == 0)
 						break;	/* mask too full */
-					HASHputlink(h,r, HASHget(h,c));
-					HASHput(h,c, r);
+					HASHputlink(h, r, HASHget(h, c));
+					HASHput(h, c, r);
 				}
 				break;
 			}
@@ -369,16 +372,15 @@ BAThash(BAT *b, BUN masksize)
 				ptr v = BUNhead(bi, p);
 				BUN c = (BUN) heap_hash_any(b->H->vheap, h, v);
 
-				HASHputlink(h,p, HASHget(h,c));
-				HASHput(h,c,p);
+				HASHputlink(h, p, HASHget(h, c));
+				HASHput(h, c, p);
 			}
 			break;
 		}
 		b->H->hash = h;
 		t1 = GDKusec();
-		ALGODEBUG 
-				fprintf(stderr, "#BAThash: hash construction "LLFMT" usec\n", t1-t0);
-		ALGODEBUG HASHcollisions(b,b->H->hash);
+		ALGODEBUG fprintf(stderr, "#BAThash: hash construction " LLFMT " usec\n", t1 - t0);
+		ALGODEBUG HASHcollisions(b, b->H->hash);
 	}
 	MT_lock_unset(&GDKhashLock(ABS(b->batCacheid)), "BAThash");
 	if (o != NULL) {
@@ -416,10 +418,14 @@ BUN
 HASHlist(Hash *h, BUN i)
 {
 	BUN c = 1;
- 	BUN j = HASHget(h,i), nil= HASHnil(h); 
+	BUN j = HASHget(h, i), nil = HASHnil(h);
 
-	if ( j == nil) return 1;
-	while ((j = HASHgetlink(h,i)) != nil) { c++; i = j; }
+	if (j == nil)
+		return 1;
+	while ((j = HASHgetlink(h, i)) != nil) {
+		c++;
+		i = j;
+	}
 	return c;
 }
 
@@ -468,9 +474,9 @@ HASHgonebad(BAT *b, const void *v)
 
 	if (h->mask * 2 < BATcount(b)) {
 		int (*cmp) (const void *, const void *) = BATatoms[b->htype].atomCmp;
-		BUN i = HASHget(h, (BUN)HASHprobe(h, v)), nil= HASHnil(h);
-		for (cnt = hit = 1; i != nil; i = HASHgetlink(h,i), cnt++)
-			hit += ((*cmp) (v, BUNhead(bi, (BUN)i)) == 0);
+		BUN i = HASHget(h, (BUN) HASHprobe(h, v)), nil = HASHnil(h);
+		for (cnt = hit = 1; i != nil; i = HASHgetlink(h, i), cnt++)
+			hit += ((*cmp) (v, BUNhead(bi, (BUN) i)) == 0);
 
 		if (cnt / hit > 4)
 			return 1;	/* linked list too long */
@@ -522,11 +528,11 @@ SORTfndwhich(BAT *b, const void *v, int which)
 
 	if (BATtdense(b)) {
 		/* no need for binary search on dense column */
-		if (* (const oid *) v < b->tseqbase)
+		if (*(const oid *) v < b->tseqbase)
 			return which == 0 ? BUN_NONE : lo;
-		if (* (const oid *) v >= b->tseqbase + BATcount(b))
+		if (*(const oid *) v >= b->tseqbase + BATcount(b))
 			return which == 0 ? BUN_NONE : hi;
-		cur = (BUN) (* (const oid *) v - b->tseqbase) + lo;
+		cur = (BUN) (*(const oid *) v - b->tseqbase) + lo;
 		if (which > 0)
 			cur++;
 		return cur;

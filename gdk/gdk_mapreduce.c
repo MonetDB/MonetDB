@@ -58,14 +58,14 @@ MRqueueCreate(int sz)
 #endif
 	MT_lock_set(&mrqlock, "MRqueueCreate");
 	MT_sema_init(&mrqsema, 0, "mrqsema");
-	if ( mrqueue ) {
+	if (mrqueue) {
 		MT_lock_unset(&mrqlock, "MRqueueCreate");
 		GDKerror("One map-reduce queue allowed");
 		return;
 	}
 	sz *= 2;
 	mrqueue = (MRqueue *) GDKzalloc(sizeof(MRqueue) * sz);
-	if ( mrqueue == 0) {
+	if (mrqueue == 0) {
 		MT_lock_unset(&mrqlock, "MRqueueCreate");
 		GDKerror("Could not create the map-reduce queue");
 		return;
@@ -86,7 +86,7 @@ MRenqueue(int taskcnt, MRtask ** tasks)
 	if (mrqlast == mrqsize) {
 		mrqsize <<= 1;
 		mrqueue = (MRqueue *) GDKrealloc(mrqueue, sizeof(MRqueue) * mrqsize);
-		if ( mrqueue == 0) {
+		if (mrqueue == 0) {
 			MT_lock_unset(&mrqlock, "MRenqueue");
 			GDKerror("Could not enlarge the map-reduce queue");
 			return;

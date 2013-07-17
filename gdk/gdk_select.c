@@ -138,11 +138,11 @@ BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl, BUN maximum)
 		return NULL;
 	}
 	bi = bat_iterator(b);
-	dst = (oid*) Tloc(bn, BUNfirst(bn));
+	dst = (oid *) Tloc(bn, BUNfirst(bn));
 	cnt = 0;
 	if (s) {
 		assert(s->tsorted);
-		s = BATmirror(s); /* SORTfnd works on HEAD column */
+		s = BATmirror(s);	/* SORTfnd works on HEAD column */
 		HASHloop(bi, b->H->hash, i, tl) {
 			o = (oid) (i + off);
 			if (SORTfnd(s, &o) != BUN_NONE) {
@@ -165,7 +165,7 @@ BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl, BUN maximum)
 	bn->tkey = 1;
 	bn->tdense = bn->tsorted = bn->trevsorted = bn->U->count <= 1;
 	if (bn->U->count == 1)
-		bn->tseqbase =  * (oid *) Tloc(bn, BUNfirst(bn));
+		bn->tseqbase = *(oid *) Tloc(bn, BUNfirst(bn));
 	/* temporarily set head to nil so that BATorder doesn't materialize */
 	bn->hseqbase = oid_nil;
 	bn->hkey = 0;
@@ -598,9 +598,9 @@ fullscan_any(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 	scanfunc(NAME, lng, CAND, END)
 
 /* scan/imprints select with candidates */
-scan_sel ( candscan , o = (oid) (*candlist++ - off), w = (BUN) ((*(oid *)Tloc(s,q-1)) + 1 - off))
+scan_sel(candscan, o = (oid) (*candlist++ - off), w = (BUN) ((*(oid *) Tloc(s, q - 1)) + 1 - off))
 /* scan/imprints select without candidates */
-scan_sel ( fullscan , o = p , w = q )
+    scan_sel(fullscan, o = p, w = q)
 
 
 static BAT *
@@ -644,7 +644,7 @@ BAT_scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 	}
 
 	off = b->hseqbase - BUNfirst(b);
-	dst = (oid*) Tloc(bn, BUNfirst(bn));
+	dst = (oid *) Tloc(bn, BUNfirst(bn));
 	cnt = 0;
 
 	if (s && !BATtdense(s)) {
@@ -693,8 +693,8 @@ BAT_scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 				p = (BUN) b->hseqbase;
 			if ((oid) q > b->hseqbase + BATcount(b))
 				q = (BUN) b->hseqbase + BATcount(b);
-			p = (BUN)(p - off);
-			q = (BUN)(q - off);
+			p = (BUN) (p - off);
+			q = (BUN) (q - off);
 		} else {
 			p = BUNfirst(b);
 			q = BUNlast(b);
@@ -732,7 +732,7 @@ BAT_scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 	bn->tkey = 1;
 	bn->tdense = bn->U->count <= 1;
 	if (bn->U->count == 1)
-		bn->tseqbase =  * (oid *) Tloc(bn, BUNfirst(bn));
+		bn->tseqbase = *(oid *) Tloc(bn, BUNfirst(bn));
 	bn->hsorted = 1;
 	bn->hdense = 1;
 	bn->hseqbase = 0;
@@ -1136,7 +1136,7 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 			if ((BUN) h < high)
 				high = (BUN) h;
 
-			l = * (oid *) tl + !li;
+			l = *(oid *) tl + !li;
 			if (l > b->tseqbase)
 				l -= b->tseqbase;
 			else
@@ -1201,7 +1201,7 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 				high = SORTfndfirst(s, &o) - BUNfirst(s);
 				v = VIEWhead(BATmirror(s));
 			} else {
-				v = VIEWhead(b); /* [oid,nil] */
+				v = VIEWhead(b);	/* [oid,nil] */
 			}
 			bn = BATslice2(v, first, low, high, BATcount(v));
 		} else {
@@ -1213,7 +1213,7 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 				high = SORTfndfirst(s, &o) - BUNfirst(s);
 				v = VIEWhead(BATmirror(s));
 			} else {
-				v = VIEWhead(b); /* [oid,nil] */
+				v = VIEWhead(b);	/* [oid,nil] */
 			}
 			bn = BATslice(v, low, high);
 		}
@@ -1253,16 +1253,16 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 		} else if (!anti && lval && hval) {
 			switch (ATOMstorage(b->ttype)) {
 			case TYPE_bte:
-				estimate = (BUN) (*(bte*) th - *(bte*) tl);
+				estimate = (BUN) (*(bte *) th - *(bte *) tl);
 				break;
 			case TYPE_sht:
-				estimate = (BUN) (*(sht*) th - *(sht*) tl);
+				estimate = (BUN) (*(sht *) th - *(sht *) tl);
 				break;
 			case TYPE_int:
-				estimate = (BUN) (*(int*) th - *(int*) tl);
+				estimate = (BUN) (*(int *) th - *(int *) tl);
 				break;
 			case TYPE_lng:
-				estimate = (BUN) (*(lng*) th - *(lng*) tl);
+				estimate = (BUN) (*(lng *) th - *(lng *) tl);
 				break;
 			}
 			if (estimate != BUN_NONE)
@@ -1308,7 +1308,7 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 				                  * (dbl) BATcount(b) * 1.1);
 			} else if (smpl_cnt > 0 && slct_cnt == 0) {
 				/* estimate low enough to trigger hash select */
-				estimate = (BATcount(b)/100) -1;
+				estimate = (BATcount(b) / 100) - 1;
 			}
 		}
 		hash = hash && estimate < BATcount(b) / 100;
@@ -1340,10 +1340,10 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 		   && !equi
 		   && !ATOMvarsized(b->ttype)) {
 			/* use imprints if
-			*   i) bat is persistent, or parent is persistent
-			*  ii) it is not an equi-select, and
-			* iii) is not var-sized.
-			*/
+			 *   i) bat is persistent, or parent is persistent
+			 *  ii) it is not an equi-select, and
+			 * iii) is not var-sized.
+			 */
 			use_imprints = 1;
 		}
 		bn = BAT_scanselect(b, s, bn, tl, th, li, hi, equi, anti,
