@@ -31,51 +31,28 @@
 #define _DEBUG_RESET_
 
 /*
- * We need some hard limits to not run out of datastructure
- * spaces.
+ * We need some hard limits to not run out of datastructure spaces.
  */
-#define RU 1024 /* recycle unit in bytes */
-#define GIGA (lng)(1024*1024*1024)
-
-#define HARDLIMIT_VAR 100000		/* maximum variables to watch */
-#define HARDLIMIT_STMT 20000		/* roughly 5/line needed */
-
-// retained recycle policies
-#define ADM_ALL 	1
-#define REUSE_COVER	1
-#define RCACHE_PROFIT 	3
+#define HARDLIMIT_STMT 5000		/* roughly 5/line needed */
 
 #define NO_RECYCLING -1
-#define REC_NO_INTEREST 0
-#define REC_MAX_INTEREST 3
-#define REC_MIN_INTEREST 1
-
-mal_export lng recycleTime;
-mal_export lng recycleSearchTime;
-mal_export lng msFindTime;
-mal_export lng msComputeTime;
-
+#define RECYCLING 1
+/*
+ * To avoid a polution of the recycle cache, we do not store any
+ * intruction for which there is no function/command/pattern implementation.
+ */
+#define RECYCLEinterest(p) ( p->recycle == RECYCLING && getFunctionId(p) != NULL)
 
 mal_export int recycleCacheLimit;
-mal_export lng recyclerUsedMemory;
 mal_export MalBlkPtr recycleBlk;
-mal_export double recycleAlpha;
-mal_export int recycleMaxInterest;
-mal_export int monitorRecycler;
 
 mal_export void RECYCLEinit(void);
 mal_export lng  RECYCLEentry(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, RuntimeProfile prof);
 mal_export void RECYCLEexit(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, RuntimeProfile prof);
-mal_export str  RECYCLEreset(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc);
-mal_export void RECYCLEshutdown(Client cntxt);
-mal_export int  RECYCLEinterest(InstrPtr p);
-mal_export void RECYCLEinitRecyclePool(int sz);
+mal_export void RECYCLEdrop(Client cntxt);
 
-mal_export str RECYCLEstart(Client cntxt);
-mal_export str RECYCLEstop(Client cntxt);
 mal_export str RECYCLEcolumn(Client cntxt, str sch,str tbl, str col);
 mal_export str RECYCLEresetBAT(Client cntxt, int bid);
 
 mal_export void RECYCLEdump(stream *s);
-mal_export void RECYCLEdumpRecyclerPool(stream *s);
 #endif

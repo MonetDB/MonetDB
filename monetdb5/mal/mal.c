@@ -324,7 +324,7 @@ void mal_exit(void){
 	 * Before continuing we should make sure that all clients
 	 * (except the console) have left the scene.
 	 */
-	RECYCLEshutdown(mal_clients); /* remove any left over intermediates */
+	RECYCLEdrop(mal_clients); /* remove any left over intermediates */
 	stopProfiling();
 	stopHeartbeat();
 	stopMALdataflow();
