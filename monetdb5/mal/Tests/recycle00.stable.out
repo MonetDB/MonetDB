@@ -46,12 +46,10 @@ function user.main():void;
     recycle.dump();
 end main;
 function user.qry():void;               #  0 qry:void := user.qry() 
-    recycle.start();                    #  1 _5:void := RECYCLEstart() 
-    i := 23;                            #  2 i:int := _2:int {R}
-    j := calc.*(i,i);                   #  3 j:int := CMDvarMULsignal(i:int, i:int) {R}
-    io.print(j);                        #  4 _4:void := IOprint_val(j:int) 
-    recycle.stop();                     #  5 _6:void := RECYCLEstop() 
-end qry;                                #  6  
+    i := 23;                            #  1 i:int := _2:int 
+    j := calc.*(i,i);                   #  2 j:int := CMDvarMULsignal(i:int, i:int) 
+    io.print(j);                        #  3 _4:void := IOprint_val(j:int) 
+end qry;                                #  4  
 [ "start" ]
 [ 529 ]
 [ "next" ]

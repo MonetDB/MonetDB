@@ -35,7 +35,7 @@ end bind;
 function qry(low:int, hgh:int);
     m:= sql.mvc();
     x:bat[:oid,:oid]  := sql.tid(m,"sys","tbl");
-    b:bat[:oid,:int]:= user.bind(m,"sys","tbl","col",0);
+    b:bat[:oid,:int]:= sql.bind(m,"sys","tbl","col",0);
     s1:= algebra.subselect(b,x,low,hgh,true,true,false);
     v:= low + hgh;
     v1:= v/2;

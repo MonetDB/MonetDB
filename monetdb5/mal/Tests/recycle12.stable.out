@@ -8,29 +8,27 @@ stdout of test 'recycle12` in directory 'monetdb5/mal` itself:
 # MonetDB server v5.7.0, based on kernel v1.25.0
 # Serving database 'mTests_src_mal', using 4 threads
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
-# Copyright (c) 1993-2008 CWI, all rights reserved
-# Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:33756/
-##test the basics of the recycler
-## testing query categories statistics
-#
-#function user.bind(s:str,t:str,c:str,i:int):bat[:oid,:int];
-#	b:= bat.new(:oid,:int);
-#	bat.insert(b,0@0,0);
-#	bat.insert(b,1@0,1);
-#	bat.insert(b,2@0,2);
-#	bat.insert(b,3@0,3);
-#	bat.insert(b,4@0,4);
-#	bat.insert(b,5@0,5);
-#	bat.insert(b,6@0,6);
-#	bat.insert(b,7@0,7);
-#	bat.insert(b,8@0,8);
-#	bat.insert(b,9@0,9);
-#	bat.insert(b,10@0,10);
-#	bat.insert(b,11@0,11);
-#	return bind:=b;
-#end bind;
-function user.bind(s:str,t:str,c:str,i:int):bat[:oid,:int];
+# Found 15.591 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2013 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:35047/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-28287/.s.monetdb.35047
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+function sql.mvc():int;
+    return mvc := 1;
+end mvc;
+function sql.tid(mvc:int,s:str,t:str):bat[:oid,:oid];
+    b := bat.new(:oid,:oid);
+barrier i := 0@0:oid;
+    bat.append(b,i);
+    redo i := iterator.next(1@0:oid,11@0:oid);
+exit i;
+    return tid := b;
+end tid;
+function sql.bind(mvc:int,s:str,t:str,c:str,i:int):bat[:oid,:int];
     b := bat.new(:oid,:int);
     bat.insert(b,0@0,0);
     bat.insert(b,1@0,1);
@@ -46,31 +44,20 @@ function user.bind(s:str,t:str,c:str,i:int):bat[:oid,:int];
     bat.insert(b,11@0,11);
     return bind := b;
 end bind;
-#
-##intra-query commonality
-#function qry(low:int, hgh:int);
-#    b:= user.bind("schema","table","column",0);
-#    s1:= algebra.select(b,low,hgh);
-#    l1:= low + 1;
-#    h1:= hgh - 1 ;
-#    s2:= algebra.select(b,l1,h1);
-#end qry;
-function user.qry(low:int,hgh:int):void;
-    b := user.bind("schema","table","column",0);
-    s1 := algebra.select(b,low,hgh);
+function sql.qry(low:int,hgh:int):void;
+    m := sql.mvc();
+    x:bat[:oid,:oid]  := sql.tid(m,"sys","tbl");
+    b:bat[:oid,:int]  := sql.bind(m,"sys","tbl","col",0);
+    s := algebra.subselect(b,x,low,hgh,true,true,false);
     l1 := calc.+(low,1);
     h1 := calc.-(hgh,1);
-    s2 := algebra.select(b,l1,h1);
+    s2 := algebra.subselect(b,l1,h1,true,true,false);
 end qry;
-#
-##inter-query commonality
-#function qry1(val:int);
-#    b:= user.bind("schema","table","column1",0);
-#    s1:= algebra.select(b,val);
-#end qry1;
-function user.qry1(val:int):void;
-    b := user.bind("schema","table","column1",0);
-    s1 := algebra.select(b,val);
+function sql.qry1(val:int):void;
+    m := sql.mvc();
+    x:bat[:oid,:oid]  := sql.tid(m,"sys","tbl");
+    b:bat[:oid,:int]  := sql.bind(m,"sys","tbl","col",0);
+    s := algebra.subselect(b,x,val,val,true,true,false);
 end qry1;
 #
 #recycle.setRetainPolicy(1);
@@ -92,9 +79,7 @@ function user.main():void;
 # testing query categories statistics 
 #intra-query commonality 
 #inter-query commonality 
-    recycle.setAdmPolicy(1);
-    recycle.setReusePolicy(1);
-    recycle.setCachePolicy(1);
+    recycle.setCache(10);
     user.qry(2,8);
     user.qry1(10);
     user.qry1(10);

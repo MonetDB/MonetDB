@@ -61,7 +61,7 @@ end qry;
 function user.main():void;
 # Test of CREDIT cache policy in limited cache (6 lines) 
 # Evicts the leaf instruction with smallest credit= cnt * cost 
-    recycle.setCache(5);
+    recycle.setCache(4);
     io.print("start");
     user.qry(100,250);
     user.qry(700,710);

@@ -1,4 +1,4 @@
-# Test of LRU cache policy in limited memory (12 RU)
+# Test of LRU cache policy in limited cache size
 module sql;
 function sql.mvc():int;
     return mvc:=1;

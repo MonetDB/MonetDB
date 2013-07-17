@@ -95,10 +95,10 @@ OPTrecyclerImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		if ( ! (getModuleId(p) == sqlRef || getModuleId(p)== batRef || 
 				getModuleId(p) == algebraRef || getModuleId(p)==batcalcRef ||
 				getModuleId(p)== aggrRef || getModuleId(p)== groupRef ||
-				getModuleId(p)== arrayRef || getModuleId(p)== batmtimeRef ||
 				getModuleId(p)== batstrRef || getModuleId(p)== batmmathRef ||
+				getModuleId(p)== arrayRef || getModuleId(p)== batmtimeRef ||
 				getModuleId(p)== batcalcRef || getModuleId(p)== pcreRef ||
-				getModuleId(p)== matRef )
+				getModuleId(p)== matRef || getModuleId(p) == calcRef )
 			){
 			pushInstruction(mb,p);
 			continue;

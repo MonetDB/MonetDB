@@ -1,11 +1,11 @@
-# Test of CREDIT cache policy in limited cache (6 lines)
+# Test of cache policy in limited cache (6 lines)
 # Evicts the leaf instruction with smallest credit= cnt * cost
 
 module sql;
 function sql.mvc():int;
     return mvc:=1;
-end mvc; 
-    
+end mvc;
+
 function sql.tid(mvc:int,s:str,t:str):bat[:oid,:oid];
 b:= bat.new(:oid,:oid);
 barrier i:= 0:oid;
@@ -24,14 +24,14 @@ exit i;
 return bind:=b;
 end bind;
 
-function qry(low:int, hgh:int); 
+function qry(low:int, hgh:int);
     m:= sql.mvc();
     x:bat[:oid,:oid]  := sql.tid(m,"sys","tbl");
     b:bat[:oid,:int]:= sql.bind(m,"sys","tbl","col",0);
     s1:= algebra.subselect(b,x,low,hgh,true,true,false);
 end qry;
 
-recycle.setCache(5);
+recycle.setCache(4);
 optimizer.recycler("user","qry");
 
 io.print("start");
@@ -40,6 +40,6 @@ qry(700,710);
 qry(100,250);
 qry(700,710);
 recycle.dump();
-# The next query should evict the cheapest, although more recently used markT leaf ( #4)
+# The next query should evict the cheapest, although more recently used leaf ( #4)
 qry(400,700);
 recycle.dump();
