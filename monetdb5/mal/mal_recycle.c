@@ -333,7 +333,7 @@ newpass:
 
 
 #ifdef _DEBUG_CACHE_
-		wr = recyclerMemoryUsed - MEMORY_THRESHOLD * monet_memory;
+	wr = recyclerMemoryUsed - (lng) (MEMORY_THRESHOLD * monet_memory);
         mnstr_printf(cntxt->fdout,"#RECYCLEcleanCache: usedmem="LLFMT" target memory freed "LLFMT"\n", recyclerMemoryUsed, wr);
         mnstr_printf(cntxt->fdout,"#Candidates for eviction\n#LRU\t\tTicks\tLife\tSZ\tCnt\tWgt\tBen\tProf)\n");
 		for (l = 0; l < ltop; l++)
@@ -363,7 +363,7 @@ newpass:
 		}
 		vm[vtop++] = leaves[idx];
 	} else {	/* evict several to get enough memory */
-		wr = recyclerMemoryUsed - MEMORY_THRESHOLD * monet_memory;
+		wr = recyclerMemoryUsed - (lng) (MEMORY_THRESHOLD * monet_memory);
 		k = 0;	/* exclude binds that don't free memory */
 		for (l = 0; l < ltop; l++) {
 			// also discard leaves that are more expensive to find then compute
