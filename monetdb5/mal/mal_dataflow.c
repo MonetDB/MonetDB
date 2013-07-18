@@ -255,7 +255,6 @@ DFLOWworker(void *t)
 	str error = 0;
 
 	int i;
-	lng usec = 0;
 
 	thr = THRnew("DFLOWworker");
 
@@ -280,7 +279,6 @@ DFLOWworker(void *t)
 			continue;
 		}
 
-		usec = GDKusec();
 		/* skip all instructions when we have encontered an error */
 		if (flow->error == 0) {
 #ifdef USE_MAL_ADMISSION
@@ -350,7 +348,8 @@ DFLOWworker(void *t)
 			if (todo->last == 0)
 				profilerHeartbeatEvent("wait");
 			else
-				MALresourceFairness(usec);
+			if ( flow->cntxt->idx > 1 )
+					MALresourceFairness(GDKusec()- flow->mb->starttime);
 		}
 	}
 	GDKfree(GDKerrbuf);

@@ -196,15 +196,12 @@ MALresourceFairness(lng usec)
 #endif
 #endif
 
-	if ( usec > 0 && ( (usec = GDKusec()-usec)) <= TIMESLICE )
-		return;
-	threads = GDKnr_threads > 0 ? GDKnr_threads : 1;
-
 	/* use GDKmem_cursize as MT_getrss(); is to expensive */
 	rss = GDKmem_cursize();
 	/* ample of memory available*/
-	if ( rss < MEMORY_THRESHOLD * monet_memory)
+	if ( rss < MEMORY_THRESHOLD * monet_memory && usec <= TIMESLICE)
 		return;
+	threads = GDKnr_threads > 0 ? GDKnr_threads : 1;
 
 	/* worker reporting time spent  in usec! */
 	clk =  usec / 1000;
@@ -226,7 +223,7 @@ MALresourceFairness(lng usec)
 				}
 				MT_sleep_ms(delay);
 				rss = GDKmem_cursize();
-			}
+			} else break;
 			clk -= DELAYUNIT;
 		}
 		ATOMIC_INC_int(running, runningLock, "MALresourceFairness");

@@ -922,7 +922,7 @@ RECYCLEexitImpl(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, RuntimePr
 
 	MT_lock_set(&recycleLock, "recycle");
 	if ( (GDKmem_cursize() >  MEMORY_THRESHOLD * monet_memory  && recyclerMemoryUsed > MEMORY_THRESHOLD * monet_memory) || recycleBlk->stop == recycleCacheLimit)
-		RECYCLEcleanCache(cntxt, mb->profiler[0].clk);
+		RECYCLEcleanCache(cntxt, mb->starttime);
 
 	if ( RECYCLEinterest(p)){
 		/* infinite case, admit all new instructions */
