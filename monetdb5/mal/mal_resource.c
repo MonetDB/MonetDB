@@ -207,7 +207,7 @@ MALresourceFairness(Client cntxt, MalBlkPtr mb, lng usec)
 	threads = GDKnr_threads > 0 ? GDKnr_threads : 1;
 	ATOMIC_CAS_int(running, 0, threads, runningLock, "MALresourceFairness");
 
-	/* use GDKmem_cursize as MT_getrss(); is to expensive */
+	/* use GDKmem_cursize as MT_getrss() is too expensive */
 	rss = GDKmem_cursize();
 	/* ample of memory available*/
 	if ( rss < MEMORY_THRESHOLD * monet_memory)
