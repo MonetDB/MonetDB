@@ -196,7 +196,7 @@ MALresourceFairness(lng usec)
 #endif
 #endif
 
-	/* use GDKmem_cursize as MT_getrss(); is to expensive */
+	/* use GDKmem_cursize as MT_getrss() is too expensive */
 	rss = GDKmem_cursize();
 	/* ample of memory available*/
 	if ( rss < MEMORY_THRESHOLD * monet_memory && usec <= TIMESLICE)
