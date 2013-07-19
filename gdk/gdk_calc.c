@@ -2117,8 +2117,13 @@ VARcalcadd(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
 	return GDK_SUCCEED;
 }
 
-BAT *
-BATcalcincr(BAT *b, BAT *s, int abort_on_error)
+static BAT *
+BATcaclincrdecr(BAT *b, BAT *s, int abort_on_error,
+		BUN (*typeswitchloop)(const void *, int, int, const void *,
+				      int, int, void *, int, BUN, BUN, BUN,
+				      const oid *, const oid *, oid, int,
+				      const char *),
+		const char *func)
 {
 	BAT *bn;
 	BUN nils= 0;
@@ -2126,8 +2131,8 @@ BATcalcincr(BAT *b, BAT *s, int abort_on_error)
 	const oid *cand = NULL, *candend = NULL;
 	bte one = 1;
 
-	BATcheck(b, "BATcalcincr");
-	if (checkbats(b, NULL, "BATcalcincr") == GDK_FAIL)
+	BATcheck(b, func);
+	if (checkbats(b, NULL, func) == GDK_FAIL)
 		return NULL;
 
 	CANDINIT(b, s, start, end, cnt, cand, candend);
@@ -2136,12 +2141,12 @@ BATcalcincr(BAT *b, BAT *s, int abort_on_error)
 	if (bn == NULL)
 		return NULL;
 
-	nils = add_typeswitchloop(Tloc(b, b->U->first), b->T->type, 1,
-				  &one, TYPE_bte, 0,
-				  Tloc(bn, bn->U->first), bn->T->type,
-				  cnt, start, end,
-				  cand, candend, b->H->seq,
-				  abort_on_error, "BATcalcincr");
+	nils = (*typeswitchloop)(Tloc(b, b->U->first), b->T->type, 1,
+				 &one, TYPE_bte, 0,
+				 Tloc(bn, bn->U->first), bn->T->type,
+				 cnt, start, end,
+				 cand, candend, b->H->seq,
+				 abort_on_error, func);
 
 	if (nils == BUN_NONE) {
 		BBPunfix(bn->batCacheid);
@@ -2172,6 +2177,13 @@ BATcalcincr(BAT *b, BAT *s, int abort_on_error)
 	}
 
 	return bn;
+}
+
+BAT *
+BATcalcincr(BAT *b, BAT *s, int abort_on_error)
+{
+	return BATcaclincrdecr(b, s, abort_on_error, add_typeswitchloop,
+			       "BATcalcincr");
 }
 
 int
@@ -3326,58 +3338,8 @@ VARcalcsub(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
 BAT *
 BATcalcdecr(BAT *b, BAT *s, int abort_on_error)
 {
-	BAT *bn;
-	BUN nils= 0;
-	BUN start, end, cnt;
-	const oid *cand = NULL, *candend = NULL;
-	bte one = 1;
-
-	BATcheck(b, "BATcalcdecr");
-	if (checkbats(b, NULL, "BATcalcdecr") == GDK_FAIL)
-		return NULL;
-
-	CANDINIT(b, s, start, end, cnt, cand, candend);
-
-	bn = BATnew(TYPE_void, b->T->type, cnt);
-	if (bn == NULL)
-		return NULL;
-
-	nils = sub_typeswitchloop(Tloc(b, b->U->first), b->T->type, 1,
-				  &one, TYPE_bte, 0,
-				  Tloc(bn, bn->U->first), bn->T->type,
-				  cnt, start, end,
-				  cand, candend, b->H->seq,
-				  abort_on_error, "BATcalcdecr");
-
-	if (nils == BUN_NONE) {
-		BBPunfix(bn->batCacheid);
-		return NULL;
-	}
-
-	BATsetcount(bn, cnt);
-	bn = BATseqbase(bn, b->H->seq);
-
-	/* if the input is sorted, and no overflow occurred (we only
-	 * know for sure if abort_on_error is set), the result is also
-	 * sorted */
-	bn->T->sorted = (abort_on_error && b->T->sorted) ||
-		cnt <= 1 || nils == cnt;
-	bn->T->revsorted = (abort_on_error && b->T->revsorted) ||
-		cnt <= 1 || nils == cnt;
-	bn->T->key = cnt <= 1;
-	bn->T->nil = nils != 0;
-	bn->T->nonil = nils == 0;
-
-	if (nils && !b->T->nil) {
-		b->T->nil = 1;
-		b->P->descdirty = 1;
-	}
-	if (nils == 0 && !b->T->nonil) {
-		b->T->nonil = 1;
-		b->P->descdirty = 1;
-	}
-
-	return bn;
+	return BATcaclincrdecr(b, s, abort_on_error, sub_typeswitchloop,
+			       "BATcalcdecr");
 }
 
 int
@@ -4515,18 +4477,23 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 	return BUN_NONE;
 }
 
-BAT *
-BATcalcmul(BAT *b1, BAT *b2, BAT *s, int tp, int abort_on_error)
+static BAT *
+BATcalcmuldivmod(BAT *b1, BAT *b2, BAT *s, int tp, int abort_on_error,
+		 BUN (*typeswitchloop)(const void *, int, int, const void *,
+				       int, int, void *, int, BUN, BUN, BUN,
+				       const oid *, const oid *, oid, int,
+				       const char *),
+		 const char *func)
 {
 	BAT *bn;
 	BUN nils;
 	BUN start, end, cnt;
 	const oid *cand = NULL, *candend = NULL;
 
-	BATcheck(b1, "BATcalcmul");
-	BATcheck(b2, "BATcalcmul");
+	BATcheck(b1, func);
+	BATcheck(b2, func);
 
-	if (checkbats(b1, b2, "BATcalcmul") == GDK_FAIL)
+	if (checkbats(b1, b2, func) == GDK_FAIL)
 		return NULL;
 
 	CANDINIT(b1, s, start, end, cnt, cand, candend);
@@ -4535,14 +4502,14 @@ BATcalcmul(BAT *b1, BAT *b2, BAT *s, int tp, int abort_on_error)
 	if (bn == NULL)
 		return NULL;
 
-	nils = mul_typeswitchloop(Tloc(b1, b1->U->first), b1->T->type, 1,
-				  Tloc(b2, b2->U->first), b2->T->type, 1,
-				  Tloc(bn, bn->U->first), tp,
-				  cnt, start, end,
-				  cand, candend, b1->H->seq,
-				  abort_on_error, "BATcalcmul");
+	nils = (*typeswitchloop)(Tloc(b1, b1->U->first), b1->T->type, 1,
+				 Tloc(b2, b2->U->first), b2->T->type, 1,
+				 Tloc(bn, bn->U->first), tp,
+				 cnt, start, end,
+				 cand, candend, b1->H->seq,
+				 abort_on_error, func);
 
-	if (nils == BUN_NONE) {
+	if (nils >= BUN_NONE) {
 		BBPunfix(bn->batCacheid);
 		return NULL;
 	}
@@ -4557,6 +4524,13 @@ BATcalcmul(BAT *b1, BAT *b2, BAT *s, int tp, int abort_on_error)
 	bn->T->nonil = nils == 0;
 
 	return bn;
+}
+
+BAT *
+BATcalcmul(BAT *b1, BAT *b2, BAT *s, int tp, int abort_on_error)
+{
+	return BATcalcmuldivmod(b1, b2, s, tp, abort_on_error,
+				mul_typeswitchloop, "BATcalcmul");
 }
 
 BAT *
@@ -5798,45 +5772,8 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 BAT *
 BATcalcdiv(BAT *b1, BAT *b2, BAT *s, int tp, int abort_on_error)
 {
-	BAT *bn;
-	BUN nils;
-	BUN start, end, cnt;
-	const oid *cand = NULL, *candend = NULL;
-
-	BATcheck(b1, "BATcalcdiv");
-	BATcheck(b2, "BATcalcdiv");
-
-	if (checkbats(b1, b2, "BATcalcdiv") == GDK_FAIL)
-		return NULL;
-
-	CANDINIT(b1, s, start, end, cnt, cand, candend);
-
-	bn = BATnew(TYPE_void, tp, cnt);
-	if (bn == NULL)
-		return NULL;
-
-	nils = div_typeswitchloop(Tloc(b1, b1->U->first), b1->T->type, 1,
-				  Tloc(b2, b2->U->first), b2->T->type, 1,
-				  Tloc(bn, bn->U->first), tp,
-				  cnt, start, end,
-				  cand, candend, b1->H->seq,
-				  abort_on_error, "BATcalcdiv");
-
-	if (nils >= BUN_NONE) {
-		BBPunfix(bn->batCacheid);
-		return NULL;
-	}
-
-	BATsetcount(bn, cnt);
-	bn = BATseqbase(bn, b1->H->seq);
-
-	bn->T->sorted = cnt <= 1 || nils == cnt;
-	bn->T->revsorted = cnt <= 1 || nils == cnt;
-	bn->T->key = cnt <= 1;
-	bn->T->nil = nils != 0;
-	bn->T->nonil = nils == 0;
-
-	return bn;
+	return BATcalcmuldivmod(b1, b2, s, tp, abort_on_error,
+				div_typeswitchloop, "BATcalcdiv");
 }
 
 BAT *
@@ -6857,45 +6794,8 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 BAT *
 BATcalcmod(BAT *b1, BAT *b2, BAT *s, int tp, int abort_on_error)
 {
-	BAT *bn;
-	BUN nils;
-	BUN start, end, cnt;
-	const oid *cand = NULL, *candend = NULL;
-
-	BATcheck(b1, "BATcalcmod");
-	BATcheck(b2, "BATcalcmod");
-
-	if (checkbats(b1, b2, "BATcalcmod") == GDK_FAIL)
-		return NULL;
-
-	CANDINIT(b1, s, start, end, cnt, cand, candend);
-
-	bn = BATnew(TYPE_void, tp, cnt);
-	if (bn == NULL)
-		return NULL;
-
-	nils = mod_typeswitchloop(Tloc(b1, b1->U->first), b1->T->type, 1,
-				  Tloc(b2, b2->U->first), b2->T->type, 1,
-				  Tloc(bn, bn->U->first), tp,
-				  cnt, start, end,
-				  cand, candend, b1->H->seq,
-				  abort_on_error, "BATcalcmod");
-
-	if (nils >= BUN_NONE) {
-		BBPunfix(bn->batCacheid);
-		return NULL;
-	}
-
-	BATsetcount(bn, cnt);
-	bn = BATseqbase(bn, b1->H->seq);
-
-	bn->T->sorted = cnt <= 1 || nils == cnt;
-	bn->T->revsorted = cnt <= 1 || nils == cnt;
-	bn->T->key = cnt <= 1;
-	bn->T->nil = nils != 0;
-	bn->T->nonil = nils == 0;
-
-	return bn;
+	return BATcalcmuldivmod(b1, b2, s, tp, abort_on_error,
+				mod_typeswitchloop, "BATcalcmod");
 }
 
 BAT *
