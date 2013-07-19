@@ -1165,7 +1165,8 @@ gdk_export bte ATOMelmshift(int sz);
 			if ((b)->HT->width < SIZEOF_VAR_T &&		\
 			    ((b)->HT->width <= 2 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 * (b)->HT->width))) { \
 				/* doesn't fit in current heap, upgrade it */ \
-				GDKupgradevarheap((b)->HT, _d, (copyall)); \
+				if (GDKupgradevarheap((b)->HT, _d, (copyall)) == GDK_FAIL) \
+					goto bunins_failed;		\
 			}						\
 			_ptr = (p);					\
 			switch ((b)->HT->width) {			\
@@ -1211,7 +1212,8 @@ gdk_export bte ATOMelmshift(int sz);
 			if ((b)->HT->width < SIZEOF_VAR_T &&		\
 			    ((b)->HT->width <= 2 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 * (b)->HT->width))) { \
 				/* doesn't fit in current heap, upgrade it */ \
-				GDKupgradevarheap((b)->HT, _d, 0);	\
+				if (GDKupgradevarheap((b)->HT, _d, 0) == GDK_FAIL) \
+					goto bunins_failed;		\
 			}						\
 			_ptr = (p);					\
 			switch ((b)->HT->width) {			\
