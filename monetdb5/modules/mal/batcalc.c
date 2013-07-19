@@ -242,6 +242,8 @@ calctype(int tp1, int tp2)
 {
 	int tp1s = ATOMstorage(tp1);
 	int tp2s = ATOMstorage(tp2);
+	if (tp1s == TYPE_str && tp2s == TYPE_str)
+		return TYPE_str;
 	if (tp1s < TYPE_flt && tp2s < TYPE_flt) {
 		if (tp1s > tp2s)
 			return tp1;

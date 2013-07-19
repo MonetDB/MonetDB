@@ -57,16 +57,6 @@ command batstr.r_search( s:bat[:oid,:str], c:str ) :bat[:oid,:int]
 address STRbatRstrSearchcst
 comment "Reverse search for a substring. Returns position, -1 if not found.";
 
-command batcalc.+( l:bat[:oid,:str], r:bat[:oid,:str]) :bat[:oid,:str]
-address STRbatConcat
-comment "Concatenate two strings.";
-command batcalc.+( l:bat[:oid,:str], r:str) :bat[:oid,:str]
-address STRbatConcatcst
-comment "Concatenate a string to a bat of strings.";
-command batcalc.+( l:str, r:bat[:oid,:str]) :bat[:oid,:str]
-address STRcstConcatbat
-comment "Concatenate two strings.";
-
 command batstr.string(b:bat[:oid,:str],offset:bat[:oid,:int]) :bat[:oid,:str]
 address STRbatTail
 comment "Return the tail s[offset..n] of a string s[0..n].";

@@ -6904,6 +6904,25 @@ address CMDbatMUL
 comment "Return V * B with candidates list, overflow causes NIL value";
 
 
+pattern +(b1:bat[:oid,:str],b2:bat[:oid,:str]) :bat[:oid,:str]
+address CMDbatADD
+comment "Return concatenation of B1 and B2";
+pattern +(b1:bat[:oid,:str],b2:bat[:oid,:str],s:bat[:oid,:oid]) :bat[:oid,:str]
+address CMDbatADD
+comment "Return concatenation of B1 and B2 with candidates list";
+pattern +(b:bat[:oid,:str],v:str) :bat[:oid,:str]
+address CMDbatADD
+comment "Return concatenation of B and V";
+pattern +(b:bat[:oid,:str],v:str,s:bat[:oid,:oid]) :bat[:oid,:str]
+address CMDbatADD
+comment "Return concatenation of B and V with candidates list";
+pattern +(v:str,b:bat[:oid,:str]) :bat[:oid,:str]
+address CMDbatADD
+comment "Return concatenation of V and B";
+pattern +(v:str,b:bat[:oid,:str],s:bat[:oid,:oid]) :bat[:oid,:str]
+address CMDbatADD
+comment "Return concatenation of V and B with candidates list";
+
 pattern /(b1:bat[:oid,:bte],b2:bat[:oid,:bte]) :bat[:oid,:bte]
 address CMDbatDIVsignal
 comment "Return B1 / B2, signal error on overflow";

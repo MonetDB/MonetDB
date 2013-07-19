@@ -1874,6 +1874,74 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 	return BUN_NONE;
 }
 
+static BUN
+addstr_loop(BAT *b1, const char *l, BAT *b2, const char *r, BAT *bn,
+	    BUN cnt, BUN start, BUN end, const oid *cand, const oid *candend)
+{
+	BUN i, j, k, frst = BUNfirst(bn);
+	BUN nils = start + (cnt - end);
+	char *s;
+	size_t slen, llen, rlen;
+	BATiter b1i, b2i;
+	oid candoff;
+
+	assert(b1 != NULL || b2 != NULL); /* at least one not NULL */
+	candoff = b1 ? b1->H->seq : b2->H->seq;
+	b1i = bat_iterator(b1);
+	b2i = bat_iterator(b2);
+	slen = 1024;
+	s = GDKmalloc(slen);
+	if (s == NULL)
+		goto bunins_failed;
+	for (k = 0; k < start; k++)
+		tfastins_nocheck(bn, k + frst, str_nil, Tsize(bn));
+	for (i = start + (b1 ? BUNfirst(b1) : 0), j = start + (b2 ? BUNfirst(b2) : 0), k = start;
+	     k < end; i++, j++, k++) {
+		if (cand) {
+			if (k < *cand - candoff) {
+				nils++;
+				tfastins_nocheck(bn, k + frst, str_nil, Tsize(bn));
+				continue;
+			}
+			assert(k == *cand - candoff);
+			if (++cand == candend)
+				end = k + 1;
+		}
+		if (b1)
+			l = BUNtvar(b1i, i);
+		if (b2)
+			r = BUNtvar(b2i, j);
+		if (strcmp(l, str_nil) == 0 || strcmp(r, str_nil) == 0) {
+			nils++;
+			tfastins_nocheck(bn, k + frst, str_nil, Tsize(bn));
+		} else {
+			llen = strlen(l);
+			rlen = strlen(r);
+			if (llen + rlen >= slen) {
+				slen = llen + rlen + 1024;
+				GDKfree(s);
+				s = GDKmalloc(slen);
+				if (s == NULL)
+					goto bunins_failed;
+			}
+#ifdef HAVE_STPCPY
+			(void) stpcpy(stpcpy(s, l), r);
+#else
+			snprintf(s, slen, "%s%s", l, r);
+#endif
+			tfastins_nocheck(bn, k + frst, s, Tsize(bn));
+		}
+	}
+	for (k = end; k < cnt; k++)
+		tfastins_nocheck(bn, k + frst, str_nil, Tsize(bn));
+	GDKfree(s);
+	return nils;
+
+  bunins_failed:
+	GDKfree(s);
+	return BUN_NONE;
+}
+
 BAT *
 BATcalcadd(BAT *b1, BAT *b2, BAT *s, int tp, int abort_on_error)
 {
@@ -1894,12 +1962,19 @@ BATcalcadd(BAT *b1, BAT *b2, BAT *s, int tp, int abort_on_error)
 	if (bn == NULL)
 		return NULL;
 
-	nils = add_typeswitchloop(Tloc(b1, b1->U->first), b1->T->type, 1,
-				  Tloc(b2, b2->U->first), b2->T->type, 1,
-				  Tloc(bn, bn->U->first), tp,
-				  cnt, start, end,
-				  cand, candend, b1->H->seq,
-				  abort_on_error, "BATcalcadd");
+	if (b1->T->type == TYPE_str && b2->T->type == TYPE_str && tp == TYPE_str) {
+		nils = addstr_loop(b1, NULL, b2, NULL, bn,
+				   cnt, start, end, cand, candend);
+	} else {
+		nils = add_typeswitchloop(Tloc(b1, b1->U->first),
+					  b1->T->type, 1,
+					  Tloc(b2, b2->U->first),
+					  b2->T->type, 1,
+					  Tloc(bn, bn->U->first), tp,
+					  cnt, start, end,
+					  cand, candend, b1->H->seq,
+					  abort_on_error, "BATcalcadd");
+	}
 
 	if (nils == BUN_NONE) {
 		BBPunfix(bn->batCacheid);
@@ -1942,12 +2017,17 @@ BATcalcaddcst(BAT *b, const ValRecord *v, BAT *s, int tp, int abort_on_error)
 	if (bn == NULL)
 		return NULL;
 
-	nils = add_typeswitchloop(Tloc(b, b->U->first), b->T->type, 1,
-				  VALptr(v), v->vtype, 0,
-				  Tloc(bn, bn->U->first), tp,
-				  cnt, start, end,
-				  cand, candend, b->H->seq,
-				  abort_on_error, "BATcalcaddcst");
+	if (b->T->type == TYPE_str && v->vtype == TYPE_str && tp == TYPE_str) {
+		nils = addstr_loop(b, NULL, NULL, v->val.sval, bn,
+				   cnt, start, end, cand, candend);
+	} else {
+		nils = add_typeswitchloop(Tloc(b, b->U->first), b->T->type, 1,
+					  VALptr(v), v->vtype, 0,
+					  Tloc(bn, bn->U->first), tp,
+					  cnt, start, end,
+					  cand, candend, b->H->seq,
+					  abort_on_error, "BATcalcaddcst");
+	}
 
 	if (nils == BUN_NONE) {
 		BBPunfix(bn->batCacheid);
@@ -1990,12 +2070,17 @@ BATcalccstadd(const ValRecord *v, BAT *b, BAT *s, int tp, int abort_on_error)
 	if (bn == NULL)
 		return NULL;
 
-	nils = add_typeswitchloop(VALptr(v), v->vtype, 0,
-				  Tloc(b, b->U->first), b->T->type, 1,
-				  Tloc(bn, bn->U->first), tp,
-				  cnt, start, end,
-				  cand, candend, b->H->seq,
-				  abort_on_error, "BATcalccstadd");
+	if (b->T->type == TYPE_str && v->vtype == TYPE_str && tp == TYPE_str) {
+		nils = addstr_loop(NULL, v->val.sval, b, NULL, bn,
+				   cnt, start, end, cand, candend);
+	} else {
+		nils = add_typeswitchloop(VALptr(v), v->vtype, 0,
+					  Tloc(b, b->U->first), b->T->type, 1,
+					  Tloc(bn, bn->U->first), tp,
+					  cnt, start, end,
+					  cand, candend, b->H->seq,
+					  abort_on_error, "BATcalccstadd");
+	}
 
 	if (nils == BUN_NONE) {
 		BBPunfix(bn->batCacheid);

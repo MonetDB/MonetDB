@@ -56,7 +56,7 @@ function user.qry():void;               #  0 qry:void := user.qry() {G}
     b := batstr.replace(b," ","");      # 16 b:bat[:oid,:str] := STRbatreplace(b:bat[:oid,:str], _27:str, _22:str) {G}
     X_16 := b;                          # 17 _16:bat[:oid,:str] := b:bat[:oid,:str] {G}
     X_16 := batstr.substring(X_16,1,3); # 18 _16:bat[:oid,:str] := STRbatsubstringcst(_16:bat[:oid,:str], _14:int, _17:int) {G}
-    X_18 := batcalc.+(X_13,X_16);       # 19 _18:bat[:oid,:str] := STRbatConcat(_13:bat[:oid,:str], _16:bat[:oid,:str]) {G}
+    X_18 := batcalc.+(X_13,X_16);       # 19 _18:bat[:oid,:str] := CMDbatADD(_13:bat[:oid,:str], _16:bat[:oid,:str]) {G}
     z:bat[:oid,:str] {inline} := X_18;  # 20 z:bat[:oid,:str] := _18:bat[:oid,:str] {G}
 end qry;                                # 21  
 

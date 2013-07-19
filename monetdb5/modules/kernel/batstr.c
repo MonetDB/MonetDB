@@ -66,9 +66,6 @@ batstr_export str STRcststrSearchbat(bat *ret, str *cst, bat *r);
 batstr_export str STRbatRstrSearch(bat *ret, bat *l, bat *r);
 batstr_export str STRbatRstrSearchcst(bat *ret, bat *l, str *cst);
 batstr_export str STRcstRstrSearchbat(bat *ret, str *cst, bat *r);
-batstr_export str STRbatConcat(bat *ret, bat *l, bat *r);
-batstr_export str STRbatConcatcst(bat *ret, bat *l, str *cst);
-batstr_export str STRcstConcatbat(bat *ret, str *cst, bat *r);
 batstr_export str STRbatTail(bat *ret, bat *l, bat *r);
 batstr_export str STRbatTailcst(bat *ret, bat *l, bat *cst);
 batstr_export str STRbatWChrAt(bat *ret, bat *l, bat *r);
@@ -616,99 +613,6 @@ bunins_failed:
 	BBPreleaseref(right->batCacheid);
 	BBPunfix(*ret);
 	throw(MAL, "batstr""r_search", OPERATION_FAILED " During bulk operation");
-}
-
-str STRbatConcat(bat *ret, bat *l, bat *r)
-{
-	BATiter lefti, righti;
-	BAT *bn, *left, *right;
-	BUN p,q;
-	str v, *vp= &v;
-
-	prepareOperand2(left,l,right,r,"batstr.+");
-	if( BATcount(left) != BATcount(right) )
-		throw(MAL, "batstr.+", ILLEGAL_ARGUMENT " Requires bats of identical size");
-	prepareResult2(bn,left,right,TYPE_str,"batstr.+");
-
-	lefti = bat_iterator(left);
-	righti = bat_iterator(right);
-
-	BATloop(left, p, q) {
-		ptr h = BUNhead(lefti,p);
-		str tl = (str) BUNtail(lefti,p);
-		str tr = (str) BUNtail(righti,p);
-		STRConcat(vp, &tl, &tr);
-		bunfastins(bn, h, v);
-		GDKfree(v);
-	}
-	bn->T->nonil = 0;
-	BBPreleaseref(right->batCacheid);
-	finalizeResult(ret,bn,left);
-	return MAL_SUCCEED;
-
-bunins_failed:
-	BBPreleaseref(left->batCacheid);
-	BBPreleaseref(right->batCacheid);
-	BBPunfix(*ret);
-	throw(MAL, "batstr." "+", OPERATION_FAILED " During bulk operation");
-}
-
-str STRbatConcatcst(bat *ret, bat *l, str *cst)
-{
-	BATiter lefti;
-	BAT *bn, *left;
-	BUN p,q;
-	str v, *vp= &v;
-
-	prepareOperand(left,l,"batstr.+");
-	prepareResult(bn,left,TYPE_str,"batstr.+");
-
-	lefti = bat_iterator(left);
-
-	BATloop(left, p, q) {
-		ptr h = BUNhead(lefti,p);
-		str tl = (str) BUNtail(lefti,p);
-		STRConcat(vp, &tl, cst);
-		bunfastins(bn, h, v);
-		GDKfree(v);
-	}
-	bn->T->nonil = 0;
-	finalizeResult(ret,bn,left);
-	return MAL_SUCCEED;
-
-bunins_failed:
-	BBPreleaseref(left->batCacheid);
-	BBPunfix(*ret);
-	throw(MAL, "batstr""+", OPERATION_FAILED " During bulk operation");
-}
-
-str STRcstConcatbat(bat *ret, str *cst, bat *r)
-{
-	BATiter righti;
-	BAT *bn, *right;
-	BUN p,q;
-	str v, *vp= &v;
-
-	prepareOperand(right,r,"batstr.+");
-	prepareResult(bn,right,TYPE_str,"batstr.+");
-
-	righti = bat_iterator(right);
-
-	BATloop(right, p, q) {
-		ptr h = BUNhead(righti,p);
-		str tr = (str) BUNtail(righti,p);
-		STRConcat(vp, cst, &tr);
-		bunfastins(bn, h, v);
-		GDKfree(v);
-	}
-	bn->T->nonil = 0;
-	finalizeResult(ret,bn,right);
-	return MAL_SUCCEED;
-
-bunins_failed:
-	BBPreleaseref(right->batCacheid);
-	BBPunfix(*ret);
-	throw(MAL, "batstr""+", OPERATION_FAILED " During bulk operation");
 }
 
 str STRbatTail(bat *ret, bat *l, bat *r)
