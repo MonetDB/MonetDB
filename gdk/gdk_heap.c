@@ -417,9 +417,10 @@ HEAPextend(Heap *h, size_t size)
 		/* too big: convert it to a disk-based temporary heap */
 		if (can_mmap) {
 			int fd;
-			char *of = h->filename;
 			int existing = 0;
 
+			assert(h->storage == STORE_MEM);
+			h->filename = NULL;
 			/* if the heap file already exists, we want to
 			 * switch to STORE_PRIV (copy-on-write memory
 			 * mapped files), but if the heap file doesn't
@@ -430,18 +431,16 @@ HEAPextend(Heap *h, size_t size)
 				existing = 1;
 				close(fd);
 			}
-			h->filename = NULL;
 			fd = GDKfdlocate(nme, "wb", ext);
 			if (fd >= 0) {
 				close(fd);
-				if (h->storage == STORE_MEM) {
-					storage_t newmode = h->newstorage == STORE_MMAP && existing && !h->forcemap ? STORE_PRIV : h->newstorage;
-					/* make sure we really MMAP */
-					if (must_mmap && h->newstorage == STORE_MEM)
-						newmode = STORE_MMAP;
-					h->newstorage = h->storage = newmode;
-					h->forcemap = 0;
-				}
+				h->storage = h->newstorage == STORE_MMAP && existing && !h->forcemap ? STORE_PRIV : h->newstorage;
+				/* make sure we really MMAP */
+				if (must_mmap && h->newstorage == STORE_MEM)
+					h->storage = STORE_MMAP;
+				h->newstorage = h->storage;
+				h->forcemap = 0;
+
 				h->base = NULL;
 				HEAPDEBUG fprintf(stderr, "#HEAPextend: converting malloced to %s mmapped heap\n", h->newstorage == STORE_MMAP ? "shared" : "privately");
 				/* try to allocate a memory-mapped
@@ -455,13 +454,10 @@ HEAPextend(Heap *h, size_t size)
 				}
 				/* couldn't allocate, now first save
 				 * data to file */
-				if (HEAPsave_intern(&bak, nme, ext, ".tmp") < 0) {
-					*h = bak;
-					return -1;
-				}
+				if (HEAPsave_intern(&bak, nme, ext, ".tmp") < 0)
+					goto failed;
 				/* then free memory */
 				HEAPfree(&bak);
-				of = NULL;	/* file name is freed by HEAPfree */
 				/* and load heap back in via
 				 * memory-mapped file */
 				if (HEAPload_intern(h, nme, ext, ".tmp", FALSE) >= 0) {
@@ -471,9 +467,8 @@ HEAPextend(Heap *h, size_t size)
 				}
 				/* we failed */
 			}
-			if (of)
-				GDKfree(of);
 		}
+	  failed:
 		*h = bak;
 	}
 	GDKerror("HEAPextend: failed to extend to " SZFMT " for %s%s%s\n",
