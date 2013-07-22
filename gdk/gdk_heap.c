@@ -149,66 +149,63 @@ HEAPcacheFind(size_t *maxsz, char *fn, storage_t mode)
 
 	*maxsz = (1 + (*maxsz >> 16)) << 16;	/* round up to 64K */
 	MT_lock_set(&HEAPcacheLock, "HEAPcache_init");
-	if (hc && mode == STORE_MMAP && hc->used < hc->sz) {
+	if (hc && mode == STORE_MMAP && hc->used > 0) {
+		int i;
+		heap_cache_e *e = NULL;
+		size_t cursz = 0;
+
 		HEAPDEBUG fprintf(stderr, "#HEAPcacheFind (%s)" SZFMT " %d %d\n", fn, *maxsz, (int) mode, hc->used);
 
-		if (hc->used) {
-			int i;
-			heap_cache_e *e = NULL;
-			size_t cursz = 0;
-
-			/* find best match: prefer smallest larger
-			 * than or equal to requested, otherwise
-			 * largest smaller than requested */
-			for (i = 0; i < hc->used; i++) {
-				if ((hc->hc[i].maxsz >= *maxsz &&
-				     (e == NULL || hc->hc[i].maxsz < cursz || cursz < *maxsz)) ||
-				    (hc->hc[i].maxsz < *maxsz &&
-				     cursz < *maxsz &&
-				     hc->hc[i].maxsz > cursz)) {
-					e = hc->hc + i;
-					cursz = e->maxsz;
-				}
+		/* find best match: prefer smallest larger than or
+		 * equal to requested, otherwise largest smaller than
+		 * requested */
+		for (i = 0; i < hc->used; i++) {
+			if ((hc->hc[i].maxsz >= *maxsz &&
+			     (e == NULL || hc->hc[i].maxsz < cursz || cursz < *maxsz)) ||
+			    (hc->hc[i].maxsz < *maxsz &&
+			     cursz < *maxsz &&
+			     hc->hc[i].maxsz > cursz)) {
+				e = hc->hc + i;
+				cursz = e->maxsz;
 			}
-			if (e != NULL && e->maxsz < *maxsz) {
-				/* resize file ? */
-				long_str fn;
+		}
+		if (e != NULL && e->maxsz < *maxsz) {
+			/* resize file ? */
+			long_str fn;
 
-				GDKfilepath(fn, HCDIR, e->fn, NULL);
-				if (GDKextend(fn, *maxsz) == 0) {
-					void *base = GDKload(fn, NULL, *maxsz, *maxsz, STORE_MMAP);
-					GDKmunmap(e->base, e->maxsz);
-					e->base = base;
-					e->maxsz = *maxsz;
-				} else {
-					/* extending may have
-					 * failed */
+			GDKfilepath(fn, HCDIR, e->fn, NULL);
+			if (GDKextend(fn, *maxsz) == 0) {
+				void *base = GDKload(fn, NULL, *maxsz, *maxsz, STORE_MMAP);
+				GDKmunmap(e->base, e->maxsz);
+				e->base = base;
+				e->maxsz = *maxsz;
+			} else {
+				/* extending may have failed */
+				e = NULL;
+			}
+		}
+		if (e != NULL) {
+			/* move cached heap to its new location */
+			base = e->base;
+			*maxsz = e->maxsz;
+			if (GDKmove(HCDIR, e->fn, NULL, BATDIR, fn, NULL) < 0) {
+				/* try to create the directory, if
+				 * that was the problem */
+				char path[PATHLENGTH];
+
+				GDKfilepath(path, BATDIR, fn, NULL);
+				GDKcreatedir(path);
+				if (GDKmove(HCDIR, e->fn, NULL, BATDIR, fn, NULL) < 0)
 					e = NULL;
-				}
 			}
-			if (e != NULL) {
-				/* move cached heap to its new location */
-				base = e->base;
-				*maxsz = e->maxsz;
-				if (GDKmove(HCDIR, e->fn, NULL, BATDIR, fn, NULL) < 0) {
-					/* try to create the directory, if
-					 * that was the problem */
-					char path[PATHLENGTH];
-
-					GDKfilepath(path, BATDIR, fn, NULL);
-					GDKcreatedir(path);
-					if (GDKmove(HCDIR, e->fn, NULL, BATDIR, fn, NULL) < 0)
-						e = NULL;
-				}
-			}
-			if (e != NULL) {
-				hc->used--;
-				i = (int) (e - hc->hc);
-				if (i < hc->used) {
-					e->base = hc->hc[hc->used].base;
-					e->maxsz = hc->hc[hc->used].maxsz;
-					GDKmove(HCDIR, hc->hc[hc->used].fn, NULL, HCDIR, e->fn, NULL);
-				}
+		}
+		if (e != NULL) {
+			hc->used--;
+			i = (int) (e - hc->hc);
+			if (i < hc->used) {
+				e->base = hc->hc[hc->used].base;
+				e->maxsz = hc->hc[hc->used].maxsz;
+				GDKmove(HCDIR, hc->hc[hc->used].fn, NULL, HCDIR, e->fn, NULL);
 			}
 		}
 	}
