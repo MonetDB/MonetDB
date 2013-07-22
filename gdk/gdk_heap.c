@@ -91,7 +91,7 @@ HEAPcacheInit(void)
 	MT_lock_init(&HEAPcacheLock, "HEAPcache_init");
 	MT_lock_set(&HEAPcacheLock, "HEAPcache_init");
 	hc.used = 0;
-	hc.hc = GDKmalloc(sizeof(heap_cache_e) * hc.sz);
+	hc.hc = GDKmalloc(sizeof(heap_cache_e) * HEAP_CACHE_SIZE);
 	if (hc.hc == NULL) {
 		MT_lock_unset(&HEAPcacheLock, "HEAPcache_init");
 		return;
