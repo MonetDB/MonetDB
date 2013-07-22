@@ -174,14 +174,13 @@ HEAPcacheFind(size_t *maxsz, char *fn, storage_t mode)
 			long_str fn;
 
 			GDKfilepath(fn, HCDIR, e->fn, NULL);
-			if (GDKextend(fn, *maxsz) == 0) {
-				void *base = GDKload(fn, NULL, *maxsz, *maxsz, STORE_MMAP);
-				GDKmunmap(e->base, e->maxsz);
-				e->base = base;
-				e->maxsz = *maxsz;
-			} else {
+			base = MT_mremap(fn, MMAP_READ | MMAP_WRITE, e->base, e->maxsz, *maxsz);
+			if (base == NULL) {
 				/* extending may have failed */
 				e = NULL;
+			} else {
+				e->base = base;
+				e->maxsz = *maxsz;
 			}
 		}
 		if (e != NULL) {
