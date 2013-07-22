@@ -162,7 +162,7 @@ HEAPcacheFind(size_t *maxsz, char *fn, storage_t mode)
 			 * largest smaller than requested */
 			for (i = 0; i < hc->used; i++) {
 				if ((hc->hc[i].maxsz >= *maxsz &&
-				     (e == NULL || hc->hc[i].maxsz < cursz)) ||
+				     (e == NULL || hc->hc[i].maxsz < cursz || cursz < *maxsz)) ||
 				    (hc->hc[i].maxsz < *maxsz &&
 				     cursz < *maxsz &&
 				     hc->hc[i].maxsz > cursz)) {
