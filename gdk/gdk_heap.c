@@ -409,7 +409,7 @@ HEAPextend(Heap *h, size_t size)
 		if (!must_mmap) {
 			void *p = h->base;
 			h->newstorage = h->storage = STORE_MEM;
-			h->base = (char *) GDKreallocmax(h->base, size, &h->maxsize, 0);
+			h->base = GDKreallocmax(h->base, size, &h->maxsize, 0);
 			HEAPDEBUG fprintf(stderr, "#HEAPextend: extending malloced heap " SZFMT " " SZFMT " " PTRFMT " " PTRFMT "\n", size, h->maxsize, PTRFMTCAST p, PTRFMTCAST h->base);
 			if (h->base)
 				return 0;
@@ -430,6 +430,21 @@ HEAPextend(Heap *h, size_t size)
 			if (fd >= 0) {
 				existing = 1;
 				close(fd);
+			} else {
+				/* no pre-existing heap file, attempt
+				 * to use a file from the cache (or
+				 * create a new one) */
+				h->filename = GDKmalloc(strlen(nme) + strlen(ext) + 2);
+				if (h->filename == NULL)
+					goto failed;
+				sprintf(h->filename, "%s.%s", nme, ext);
+				h->base = HEAPcacheFind(&h->maxsize, h->filename, STORE_MMAP);
+				if (h->base) {
+					h->newstorage = h->storage = STORE_MMAP;
+					memcpy(h->base, bak.base, bak.free);
+					HEAPfree(&bak);
+					return 0;
+				}
 			}
 			fd = GDKfdlocate(nme, "wb", ext);
 			if (fd >= 0) {
