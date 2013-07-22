@@ -209,7 +209,7 @@ HEAPcacheFind(size_t *maxsz, char *fn, storage_t mode)
 		}
 	}
 	MT_lock_unset(&HEAPcacheLock, "HEAPcache_init");
-	if (!base) {
+	if (base == NULL) {
 		int fd = GDKfdlocate(fn, "wb", NULL);
 
 		if (fd >= 0) {
