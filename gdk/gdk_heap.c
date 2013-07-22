@@ -91,8 +91,12 @@ HEAPcacheInit(void)
 	MT_lock_init(&HEAPcacheLock, "HEAPcache_init");
 	MT_lock_set(&HEAPcacheLock, "HEAPcache_init");
 	hc.used = 0;
+	hc.hc = GDKmalloc(sizeof(heap_cache_e) * hc.sz);
+	if (hc.hc == NULL) {
+		MT_lock_unset(&HEAPcacheLock, "HEAPcache_init");
+		return;
+	}
 	hc.sz = HEAP_CACHE_SIZE;
-	hc.hc = (heap_cache_e *) GDKmalloc(sizeof(heap_cache_e) * hc.sz);
 	GDKcreatedir(HCDIR DIR_SEP_STR);
 	/* clean old leftovers */
 	for (i = 0; i < HEAP_CACHE_SIZE; i++) {
