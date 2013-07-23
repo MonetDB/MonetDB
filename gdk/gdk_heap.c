@@ -69,7 +69,7 @@
 typedef struct heap_cache_e {
 	void *base;
 	size_t maxsz;
-	char fn[PATHLENGTH];	/* tmp file name */
+	char fn[8];		/* tmp file name */
 } heap_cache_e;
 
 typedef struct heap_cache {
@@ -100,9 +100,9 @@ HEAPcacheInit(void)
 	GDKcreatedir(HCDIR DIR_SEP_STR);
 	/* clean old leftovers */
 	for (i = 0; i < HEAP_CACHE_SIZE; i++) {
-		char fn[PATHLENGTH];
+		char fn[8];
 
-		snprintf(fn, PATHLENGTH, "%d", i);
+		snprintf(fn, sizeof(fn), "%d", i);
 		GDKunlink(HCDIR, fn, NULL);
 	}
 	MT_lock_unset(&HEAPcacheLock, "HEAPcache_init");
@@ -121,7 +121,7 @@ HEAPcacheAdd(void *base, size_t maxsz, char *fn, storage_t storage, int free_fil
 
 		e->base = base;
 		e->maxsz = maxsz;
-		snprintf(e->fn, PATHLENGTH, "%d", hc.used);
+		snprintf(e->fn, sizeof(e->fn), "%d", hc.used);
 		GDKunlink(HCDIR, e->fn, NULL);
 		added = 1;
 		if (GDKmove(BATDIR, fn, NULL, HCDIR, e->fn, NULL) < 0) {
