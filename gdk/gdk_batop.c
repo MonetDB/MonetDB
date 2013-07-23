@@ -794,8 +794,8 @@ BATslice(BAT *b, BUN l, BUN h)
 		bn->batFirst = bn->batDeleted = bn->batInserted = 0;
 		bn->H->heap.base = (bn->htype) ? BUNhloc(bi, l) : NULL;
 		bn->T->heap.base = (bn->ttype) ? BUNtloc(bi, l) : NULL;
-		bn->H->heap.maxsize = bn->H->heap.size = headsize(bn, cnt);
-		bn->T->heap.maxsize = bn->T->heap.size = tailsize(bn, cnt);
+		bn->H->heap.size = headsize(bn, cnt);
+		bn->T->heap.size = tailsize(bn, cnt);
 		BATsetcount(bn, cnt);
 		BATsetcapacity(bn, cnt);
 	/*

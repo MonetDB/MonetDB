@@ -736,7 +736,6 @@ heapinit(COLrec *col, const char *buf, int *hashash, const char *HT, int oidsize
 	col->norevsorted = (BUN) norevsorted;
 	col->seq = base < 0 ? oid_nil : (oid) base;
 	col->align = (oid) align;
-	col->heap.maxsize = (size_t) size;
 	col->heap.free = (size_t) free;
 	col->heap.size = (size_t) size;
 	col->heap.base = NULL;
@@ -764,7 +763,6 @@ vheapinit(COLrec *col, const char *buf, int hashash, bat bid)
 			   "%n",
 			   &free, &size, &storage, &n) < 3)
 			GDKfatal("BBPinit: invalid format for BBP.dir\n%s", buf);
-		col->vheap->maxsize = (size_t) size;
 		col->vheap->free = (size_t) free;
 		col->vheap->size = (size_t) size;
 		col->vheap->base = NULL;

@@ -144,9 +144,6 @@ infoHeap(BAT *bk, BAT*bv, Heap *hp, str nme)
 	strcpy(p, "size");
 	BUNappend(bk, buf, FALSE);
 	BUNappend(bv, local_utoa(hp->size),FALSE);
-	strcpy(p, "maxsize");
-	BUNappend(bk, buf, FALSE);
-	BUNappend(bv, local_utoa(hp->maxsize),FALSE);
 	strcpy(p, "storage");
 	BUNappend(bk, buf, FALSE);
 	BUNappend(bv, (hp->base == NULL || hp->base == (char*)1) ? "absent" : (hp->storage == STORE_MMAP) ? (hp->filename ? "memory mapped" : "anonymous vm") : (hp->storage == STORE_PRIV) ? "private map" : "malloced",FALSE);

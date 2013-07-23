@@ -383,7 +383,7 @@ VIEWhead(BAT *b)
 	bn->T->width = 0;
 	bn->T->heap.parentid = 0;
 	bn->T->hash = NULL;
-	bn->T->heap.maxsize = bn->T->heap.size = bn->T->heap.free = 0;
+	bn->T->heap.size = bn->T->heap.free = 0;
 	bn->T->heap.base = NULL;
 	BATseqbase(bm, oid_nil);
 	return bn;
@@ -775,8 +775,8 @@ VIEWbounds(BAT *b, BAT *view, BUN l, BUN h)
 	cnt = h - l;
 	view->H->heap.base = (view->htype) ? BUNhloc(bi, l) : NULL;
 	view->T->heap.base = (view->ttype) ? BUNtloc(bi, l) : NULL;
-	view->H->heap.maxsize = view->H->heap.size = headsize(view, cnt);
-	view->T->heap.maxsize = view->T->heap.size = tailsize(view, cnt);
+	view->H->heap.size = headsize(view, cnt);
+	view->T->heap.size = tailsize(view, cnt);
 	BATsetcount(view, cnt);
 	BATsetcapacity(view, cnt);
 }

@@ -58,9 +58,9 @@ end main;
 #-------------------------------------------------#
 # h	t			t		  # name
 # oid	str			str		  # type
-#-------------------------------------------------#
-[ 0@0,	  "batId",		  "tmp_657"	  ]
-[ 1@0,	  "batCacheid",		  "431"		  ]
+#--------------------------#
+[ 0@0,	"batId",	"tmp_505"  ]
+[ 1@0,	"batCacheid",	"325"  ]
 [ 2@0,	  "hparentid",		  "0"		  ]
 [ 3@0,	  "tparentid",		  "0"		  ]
 [ 4@0,	  "batSharecnt",	  "0"		  ]
@@ -109,27 +109,25 @@ end main;
 [ 47@0,	  "batFirst",		  "0"		  ]
 [ 48@0,	  "htop",		  "0"		  ]
 [ 49@0,	  "ttop",		  "0"		  ]
-[ 50@0,	  "batStamp",		  "608"		  ]
-[ 51@0,	  "lastUsed",		  "23084"	  ]
-[ 52@0,	  "curStamp",		  "610"		  ]
+[ 50@0,	"batStamp",	"927"  ]
+[ 51@0,	"lastUsed",	"4063"  ]
+[ 52@0,	"curStamp",	"929"  ]
 [ 53@0,	  "batCopiedtodisk",	  "0"		  ]
 [ 54@0,	  "batDirtydesc",	  "dirty"	  ]
 [ 55@0,	  "H->heap.dirty",	  "clean"	  ]
 [ 56@0,	  "T->heap.dirty",	  "clean"	  ]
 [ 57@0,	  "head.free",		  "0"		  ]
 [ 58@0,	  "head.size",		  "0"		  ]
-[ 59@0,	  "head.maxsize",	  "0"		  ]
-[ 60@0,	  "head.storage",	  "absent"	  ]
-[ 61@0,	  "head.newstorage",	  "malloced"	  ]
-[ 62@0,	  "head.filename",	  "no file"	  ]
-[ 63@0,	  "tail.free",		  "0"		  ]
-[ 64@0,	  "tail.size",		  "1024"	  ]
-[ 65@0,	  "tail.maxsize",	  "1024"	  ]
-[ 66@0,	  "tail.storage",	  "malloced"	  ]
-[ 67@0,	  "tail.newstorage",	  "malloced"	  ]
-[ 68@0,	  "tail.filename",	  "06/657.tail"	  ]
-[ 69@0,	  "H->vheap->dirty",	  "clean"	  ]
-[ 70@0,	  "T->vheap->dirty",	  "clean"	  ]
+[ 59@0,	"head.storage",	"absent"  ]
+[ 60@0,	"head.newstorage",	"malloced"  ]
+[ 61@0,	"head.filename",	"no file"  ]
+[ 62@0,	"tail.free",	"0"  ]
+[ 63@0,	"tail.size",	"1024"  ]
+[ 64@0,	"tail.storage",	"malloced"  ]
+[ 65@0,	"tail.newstorage",	"malloced"  ]
+[ 66@0,	"tail.filename",	"05/505.tail"  ]
+[ 67@0,	"H->vheap->dirty",	"clean"  ]
+[ 68@0,	"T->vheap->dirty",	"clean"  ]
 #~EndVariableOutput~#
 #-----------------#
 # h	t	  # name
