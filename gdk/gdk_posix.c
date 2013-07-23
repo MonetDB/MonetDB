@@ -399,7 +399,7 @@ MT_munmap(void *p, size_t len)
  * in case of failure, the old address is still mapped and NULL is returned.
  */
 void *
-MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t new_size)
+MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t *new_size)
 {
 	void *p;
 	int fd = -1;
@@ -409,22 +409,22 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 	/* doesn't make sense for us to extend read-only memory map */
 	assert(mode & MMAP_WRITABLE);
 
-	if (new_size < old_size) {
+	if (*new_size < old_size) {
 		/* shrink */
-		if (munmap((char *) old_address + new_size,
-			   old_size - new_size) < 0)
+		if (munmap((char *) old_address + *new_size,
+			   old_size - *new_size) < 0)
 			return NULL;
-		if (truncate(path, (off_t) new_size) < 0)
+		if (truncate(path, (off_t) *new_size) < 0)
 			fprintf(stderr, "#MT_mremap(%s): truncate failed\n", path);
 #ifdef MMAP_DEBUG
-		fprintf(stderr, "MT_mremap(%s,"PTRFMT","SZFMT","SZFMT") -> shrinking\n", path?path:"NULL", PTRFMTCAST old_address, old_size, new_size);
+		fprintf(stderr, "MT_mremap(%s,"PTRFMT","SZFMT","SZFMT") -> shrinking\n", path?path:"NULL", PTRFMTCAST old_address, old_size, *new_size);
 #endif
 		return old_address;
 	}
-	if (new_size == old_size) {
+	if (*new_size == old_size) {
 		/* do nothing */
 #ifdef MMAP_DEBUG
-		fprintf(stderr, "MT_mremap(%s,"PTRFMT","SZFMT","SZFMT") -> unchanged\n", path?path:"NULL", PTRFMTCAST old_address, old_size, new_size);
+		fprintf(stderr, "MT_mremap(%s,"PTRFMT","SZFMT","SZFMT") -> unchanged\n", path?path:"NULL", PTRFMTCAST old_address, old_size, *new_size);
 #endif
 		return old_address;
 	}
@@ -434,16 +434,16 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 
 		if ((fd = open(path, O_RDWR)) < 0)
 			return NULL;
-		if (GDKextendf(fd, new_size) < 0) {
+		if (GDKextendf(fd, *new_size) < 0) {
 			close(fd);
 			return NULL;
 		}
 #ifdef HAVE_MREMAP
 		/* on Linux it's easy */
-		p = mremap(old_address, old_size, new_size, MREMAP_MAYMOVE);
+		p = mremap(old_address, old_size, *new_size, MREMAP_MAYMOVE);
 #else
 		/* try to map extension at end of current map */
-		p = mmap((char *) old_address + old_size, new_size - old_size,
+		p = mmap((char *) old_address + old_size, *new_size - old_size,
 			 prot, flags, fd, old_size);
 		/* if it failed, there is no point trying a full mmap:
 		 * that too won't fit */
@@ -456,13 +456,13 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 			} else {
 				/* we got some other address: discard
 				 * it and make full mmap */
-				munmap(p, new_size - old_size);
+				munmap(p, *new_size - old_size);
 #ifdef NO_MMAP_ALIASING
 				msync(old_address, old_size, MS_SYNC);
 #endif
 				/* first create full mmap, then, if
 				 * successful, remove old mmap */
-				p = mmap(NULL, new_size, prot, flags, fd, 0);
+				p = mmap(NULL, *new_size, prot, flags, fd, 0);
 				if (p != MAP_FAILED)
 					munmap(old_address, old_size);
 			}
@@ -479,7 +479,7 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 #endif
 		/* try to map an anonymous area as extent to the
 		 * current map */
-		p = mmap((char *) old_address + old_size, new_size - old_size,
+		p = mmap((char *) old_address + old_size, *new_size - old_size,
 			 prot, flags, fd, 0);
 		/* no point trying a full map if this didn't work:
 		 * there isn't enough space */
@@ -492,11 +492,11 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 			} else {
 				/* we got some other address: discard
 				 * it and make full mmap */
-				munmap(p, new_size - old_size);
+				munmap(p, *new_size - old_size);
 #ifdef HAVE_MREMAP
 				/* first get an area large enough for
-				 * new_size */
-				p = mmap(NULL, new_size, prot, flags, fd, 0);
+				 * *new_size */
+				p = mmap(NULL, *new_size, prot, flags, fd, 0);
 				if (p != MAP_FAILED) {
 					/* then overlay old mmap over new */
 					void *q;
@@ -508,20 +508,20 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 					assert(q == p || q == MAP_FAILED);
 					if (q == MAP_FAILED) {
 						/* we didn't expect this... */
-						munmap(p, new_size);
+						munmap(p, *new_size);
 						p = MAP_FAILED;
 					}
 				}
 #else
 				p = MAP_FAILED;
 				if (path == NULL ||
-				    new_size <= GDK_mmap_minsize) {
+				    *new_size <= GDK_mmap_minsize) {
 					/* size not too big yet or
 					 * anonymous, try to make new
 					 * anonymous mmap and copy
 
 					 * data over */
-					p = mmap(NULL, new_size, prot, flags,
+					p = mmap(NULL, *new_size, prot, flags,
 						 fd, 0);
 					if (p != MAP_FAILED) {
 						memcpy(p, old_address,
@@ -544,13 +544,13 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 						return NULL;
 					if (write(fd, old_address,
 						  old_size) < 0 ||
-					    lseek(fd, new_size - 1,
+					    lseek(fd, *new_size - 1,
 						  SEEK_SET) < 0 ||
 					    write(fd, "\0", 1) < 0) {
 						close(fd);
 						return NULL;
 					}
-					p = mmap(NULL, new_size, prot, flags,
+					p = mmap(NULL, *new_size, prot, flags,
 						 fd, 0);
 					if (p != MAP_FAILED)
 						munmap(old_address, old_size);
@@ -562,7 +562,7 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 			close(fd);
 	}
 #ifdef MMAP_DEBUG
-	fprintf(stderr, "MT_mremap(%s,"PTRFMT","SZFMT","SZFMT") -> "PTRFMT"%s\n", path?path:"NULL", PTRFMTCAST old_address, old_size, new_size, PTRFMTCAST p, path && mode & MMAP_COPY ? " private" : "");
+	fprintf(stderr, "MT_mremap(%s,"PTRFMT","SZFMT","SZFMT") -> "PTRFMT"%s\n", path?path:"NULL", PTRFMTCAST old_address, old_size, *new_size, PTRFMTCAST p, path && mode & MMAP_COPY ? " private" : "");
 #endif
 	return p == MAP_FAILED ? NULL : p;
 }
@@ -761,26 +761,28 @@ MT_munmap(void *p, size_t dummy)
 }
 
 void *
-MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t new_size)
+MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t *new_size)
 {
 	void *p;
 
 	/* doesn't make sense for us to extend read-only memory map */
 	assert(mode & MMAP_WRITABLE);
 
-	if (old_size >= new_size)
+	if (old_size >= *new_size) {
+		*new_size = old_size;
 		return old_address;	/* don't bother shrinking */
-	if (GDKextend(path, new_size) < 0)
+	}
+	if (GDKextend(path, *new_size) < 0)
 		return NULL;
 	if (path && !(mode & MMAP_COPY))
 		MT_munmap(old_address, old_size);
-	p = MT_mmap(path, mode, new_size);
+	p = MT_mmap(path, mode, *new_size);
 	if ((path == NULL || (mode & MMAP_COPY)) && p != (void *) -1) {
 		memcpy(p, old_address, old_size);
 		MT_munmap(old_address, old_size);
 	}
 #ifdef MMAP_DEBUG
-	fprintf(stderr, "MT_mremap(%s,"PTRFMT","SZFMT","SZFMT") -> "PTRFMT"\n", path?path:"NULL", PTRFMTCAST old_address, old_size, new_size, PTRFMTCAST p);
+	fprintf(stderr, "MT_mremap(%s,"PTRFMT","SZFMT","SZFMT") -> "PTRFMT"\n", path?path:"NULL", PTRFMTCAST old_address, old_size, *new_size, PTRFMTCAST p);
 #endif
 	return p;
 }
