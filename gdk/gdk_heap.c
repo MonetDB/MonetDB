@@ -149,7 +149,7 @@ HEAPcacheFind(size_t *maxsz, char *fn, storage_t mode)
 {
 	void *base = NULL;
 
-	*maxsz = (1 + (*maxsz >> 16)) << 16;	/* round up to 64K */
+	*maxsz = (*maxsz + (size_t) 0xFFFF) & ~ (size_t) 0xFFFF; /* round up to 64k */
 	MT_lock_set(&HEAPcacheLock, "HEAPcache_init");
 	if (mode == STORE_MMAP && hc.used > 0) {
 		int i;
