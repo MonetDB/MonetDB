@@ -147,48 +147,49 @@ HEAPcacheAdd(void *base, size_t maxsz, char *fn, storage_t storage, int free_fil
 static void *
 HEAPcacheFind(size_t *maxsz, char *fn, storage_t mode)
 {
+	size_t size = *maxsz;
 	void *base = NULL;
 
-	*maxsz = (*maxsz + (size_t) 0xFFFF) & ~ (size_t) 0xFFFF; /* round up to 64k */
+	size = (*maxsz + (size_t) 0xFFFF) & ~ (size_t) 0xFFFF; /* round up to 64k */
 	MT_lock_set(&HEAPcacheLock, "HEAPcache_init");
 	if (mode == STORE_MMAP && hc.used > 0) {
 		int i;
 		heap_cache_e *e = NULL;
 		size_t cursz = 0;
 
-		HEAPDEBUG fprintf(stderr, "#HEAPcacheFind (%s)" SZFMT " %d %d\n", fn, *maxsz, (int) mode, hc.used);
+		HEAPDEBUG fprintf(stderr, "#HEAPcacheFind (%s)" SZFMT " %d %d\n", fn, size, (int) mode, hc.used);
 
 		/* find best match: prefer smallest larger than or
 		 * equal to requested, otherwise largest smaller than
 		 * requested */
 		for (i = 0; i < hc.used; i++) {
-			if ((hc.hc[i].maxsz >= *maxsz &&
-			     (e == NULL || hc.hc[i].maxsz < cursz || cursz < *maxsz)) ||
-			    (hc.hc[i].maxsz < *maxsz &&
-			     cursz < *maxsz &&
+			if ((hc.hc[i].maxsz >= size &&
+			     (e == NULL || hc.hc[i].maxsz < cursz || cursz < size)) ||
+			    (hc.hc[i].maxsz < size &&
+			     cursz < size &&
 			     hc.hc[i].maxsz > cursz)) {
 				e = hc.hc + i;
 				cursz = e->maxsz;
 			}
 		}
-		if (e != NULL && e->maxsz < *maxsz) {
+		if (e != NULL && e->maxsz < size) {
 			/* resize file ? */
 			long_str fn;
 
 			GDKfilepath(fn, HCDIR, e->fn, NULL);
-			base = MT_mremap(fn, MMAP_READ | MMAP_WRITE, e->base, e->maxsz, *maxsz);
+			base = MT_mremap(fn, MMAP_READ | MMAP_WRITE, e->base, e->maxsz, size);
 			if (base == NULL) {
 				/* extending may have failed */
 				e = NULL;
 			} else {
 				e->base = base;
-				e->maxsz = *maxsz;
+				e->maxsz = size;
 			}
 		}
 		if (e != NULL) {
 			/* move cached heap to its new location */
 			base = e->base;
-			*maxsz = e->maxsz;
+			size = e->maxsz;
 			if (GDKmove(HCDIR, e->fn, NULL, BATDIR, fn, NULL) < 0) {
 				/* try to create the directory, if
 				 * that was the problem */
@@ -216,10 +217,15 @@ HEAPcacheFind(size_t *maxsz, char *fn, storage_t mode)
 
 		if (fd >= 0) {
 			close(fd);
-			return GDKload(fn, NULL, *maxsz, *maxsz, mode);
+			base = GDKload(fn, NULL, size, size, mode);
+			if (base)
+				*maxsz = size;
+			return base;
 		}
 	} else
 		HEAPDEBUG fprintf(stderr, "#HEAPcacheFind (%s) re-used\n", fn);
+	if (base)
+		*maxsz = size;
 	return base;
 }
 
