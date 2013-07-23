@@ -414,7 +414,8 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 		if (munmap((char *) old_address + new_size,
 			   old_size - new_size) < 0)
 			return NULL;
-		truncate(path, (off_t) new_size);
+		if (truncate(path, (off_t) new_size) < 0)
+			fprintf(stderr, "#MT_mremap(%s): truncate failed\n", path);
 #ifdef MMAP_DEBUG
 		fprintf(stderr, "MT_mremap(%s,"PTRFMT","SZFMT","SZFMT") -> shrinking\n", path?path:"NULL", PTRFMTCAST old_address, old_size, new_size);
 #endif
