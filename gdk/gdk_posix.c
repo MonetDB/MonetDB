@@ -389,7 +389,7 @@ MT_munmap(void *p, size_t len)
 	int ret = munmap(p, len);
 
 #ifdef MMAP_DEBUG
-	fprintf(stderr, "#munmap(" PTRFMT "," SZFMT ",%d) = %d\n", PTRFMTCAST p, len, ret);
+	fprintf(stderr, "#munmap(" PTRFMT "," SZFMT ") = %d\n", PTRFMTCAST p, len, ret);
 #endif
 	return ret;
 }
