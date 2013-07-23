@@ -693,9 +693,8 @@ GDKmallocmax(size_t size, size_t *maxsize, int emergency)
 void *
 GDKmalloc(size_t size)
 {
-	size_t maxsize = size;
-	void *p = GDKmallocmax(size, &maxsize, 0);
-	ALLOCDEBUG fprintf(stderr, "#GDKmalloc " SZFMT " " SZFMT " " PTRFMT "\n", size, maxsize, PTRFMTCAST p);
+	void *p = GDKmallocmax(size, &size, 0);
+	ALLOCDEBUG fprintf(stderr, "#GDKmalloc " SZFMT " " PTRFMT "\n", size, PTRFMTCAST p);
 #ifndef NDEBUG
 	DEADBEEFCHK if (p)
 		memset(p, 0xBD, size);

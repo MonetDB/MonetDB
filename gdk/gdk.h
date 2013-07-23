@@ -617,7 +617,7 @@ typedef enum {
 } storage_t;
 
 typedef struct {
-	size_t maxsize;		/* maximum realloc size (bytes) */
+	size_t maxsize;		/* deprecated: kept equal to size */
 	size_t free;		/* index where free area starts. */
 	size_t size;		/* size of the heap (bytes) */
 	char *base;		/* base pointer in memory. */
