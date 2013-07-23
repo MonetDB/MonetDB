@@ -1182,11 +1182,6 @@ strPut(Heap *h, var_t *dst, const char *v)
 			GDKerror("strPut: string heaps gets larger than " SZFMT "GB.\n", (((size_t) VAR_MAX) << GDK_VARSHIFT) >> 30);
 			return 0;
 		}
-		if (h->free + pad + len + extralen < h->maxsize) {
-			/* if there is reserved space, first use the
-			 * reserved space */
-			newsize = MIN(newsize, h->maxsize);
-		}
 		HEAPDEBUG fprintf(stderr, "#HEAPextend in strPut %s " SZFMT " " SZFMT "\n", h->filename, h->size, newsize);
 		if (HEAPextend(h, newsize) < 0) {
 			return 0;

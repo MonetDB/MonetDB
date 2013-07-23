@@ -378,12 +378,16 @@ GDKsave(const char *nme, const char *ext, void *buf, size_t size, storage_t mode
  * Space for the load is directly allocated and the heaps are mapped.
  * Further initialization of the atom heaps require a separate action
  * defined in their implementation.
+ *
+ * size -- how much to read
+ * maxsize -- how much to allocate
  */
 char *
 GDKload(const char *nme, const char *ext, size_t size, size_t maxsize, storage_t mode)
 {
 	char *ret = NULL;
 
+	assert(size <= maxsize);
 	IODEBUG {
 		THRprintf(GDKstdout, "#GDKload: name=%s, ext=%s, mode %d\n", nme, ext ? ext : "", (int) mode);
 	}

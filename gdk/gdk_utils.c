@@ -688,9 +688,8 @@ GDKmallocmax(size_t size, size_t *maxsize, int emergency)
 void *
 GDKmalloc(size_t size)
 {
-	size_t maxsize = size;
-	void *p = GDKmallocmax(size, &maxsize, 0);
-	ALLOCDEBUG fprintf(stderr, "#GDKmalloc " SZFMT " " SZFMT " " PTRFMT "\n", size, maxsize, PTRFMTCAST p);
+	void *p = GDKmallocmax(size, &size, 0);
+	ALLOCDEBUG fprintf(stderr, "#GDKmalloc " SZFMT " " PTRFMT "\n", size, PTRFMTCAST p);
 #ifndef NDEBUG
 	DEADBEEFCHK if (p)
 		memset(p, 0xBD, size);
@@ -704,8 +703,14 @@ GDKzalloc(size_t size)
 	size_t maxsize = size;
 	void *p = GDKmallocmax(size, &maxsize, 0);
 	ALLOCDEBUG fprintf(stderr, "#GDKzalloc " SZFMT " " SZFMT " " PTRFMT "\n", size, maxsize, PTRFMTCAST p);
-	if (p)
+	if (p) {
 		memset(p, 0, size);
+#ifndef NDEBUG
+		/* DeadBeef allocated area beyond what was requested */
+		DEADBEEFCHK if (maxsize > size)
+			memset((char *) p + size, 0xBD, maxsize - size);
+#endif
+	}
 	return p;
 }
 

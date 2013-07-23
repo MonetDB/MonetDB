@@ -389,7 +389,7 @@ MT_munmap(void *p, size_t len)
 	int ret = munmap(p, len);
 
 #ifdef MMAP_DEBUG
-	fprintf(stderr, "#munmap(" PTRFMT "," SZFMT ",%d) = %d\n", PTRFMTCAST p, len, ret);
+	fprintf(stderr, "#munmap(" PTRFMT "," SZFMT ") = %d\n", PTRFMTCAST p, len, ret);
 #endif
 	return ret;
 }
@@ -411,7 +411,10 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 
 	if (new_size < old_size) {
 		/* shrink */
-		munmap((char *) old_address + new_size, old_size - new_size);
+		if (munmap((char *) old_address + new_size,
+			   old_size - new_size) < 0)
+			return NULL;
+		truncate(path, (off_t) new_size);
 #ifdef MMAP_DEBUG
 		fprintf(stderr, "MT_mremap(%s,"PTRFMT","SZFMT","SZFMT") -> shrinking\n", path?path:"NULL", PTRFMTCAST old_address, old_size, new_size);
 #endif
