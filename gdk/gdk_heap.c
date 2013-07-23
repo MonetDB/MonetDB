@@ -93,7 +93,7 @@ HEAPcacheInit(void)
 #endif
 	MT_lock_set(&HEAPcacheLock, "HEAPcache_init");
 	hc.used = 0;
-	hc.hc = GDKmalloc(sizeof(heap_cache_e) * hc.sz);
+	hc.hc = GDKmalloc(sizeof(heap_cache_e) * HEAP_CACHE_SIZE);
 	if (hc.hc == NULL) {
 		MT_lock_unset(&HEAPcacheLock, "HEAPcache_init");
 		return;
@@ -411,7 +411,7 @@ HEAPextend(Heap *h, size_t size)
 		if (!must_mmap) {
 			void *p = h->base;
 			h->newstorage = h->storage = STORE_MEM;
-			h->base = (char *) GDKreallocmax(h->base, size, &h->maxsize, 0);
+			h->base = GDKreallocmax(h->base, size, &h->maxsize, 0);
 			HEAPDEBUG fprintf(stderr, "#HEAPextend: extending malloced heap " SZFMT " " SZFMT " " PTRFMT " " PTRFMT "\n", size, h->maxsize, PTRFMTCAST p, PTRFMTCAST h->base);
 			if (h->base)
 				return 0;
@@ -419,9 +419,10 @@ HEAPextend(Heap *h, size_t size)
 		/* too big: convert it to a disk-based temporary heap */
 		if (can_mmap) {
 			int fd;
-			char *of = h->filename;
 			int existing = 0;
 
+			assert(h->storage == STORE_MEM);
+			h->filename = NULL;
 			/* if the heap file already exists, we want to
 			 * switch to STORE_PRIV (copy-on-write memory
 			 * mapped files), but if the heap file doesn't
@@ -431,19 +432,32 @@ HEAPextend(Heap *h, size_t size)
 			if (fd >= 0) {
 				existing = 1;
 				close(fd);
+			} else {
+				/* no pre-existing heap file, attempt
+				 * to use a file from the cache (or
+				 * create a new one) */
+				h->filename = GDKmalloc(strlen(nme) + strlen(ext) + 2);
+				if (h->filename == NULL)
+					goto failed;
+				sprintf(h->filename, "%s.%s", nme, ext);
+				h->base = HEAPcacheFind(&h->maxsize, h->filename, STORE_MMAP);
+				if (h->base) {
+					h->newstorage = h->storage = STORE_MMAP;
+					memcpy(h->base, bak.base, bak.free);
+					HEAPfree(&bak);
+					return 0;
+				}
 			}
-			h->filename = NULL;
 			fd = GDKfdlocate(nme, "wb", ext);
 			if (fd >= 0) {
 				close(fd);
-				if (h->storage == STORE_MEM) {
-					storage_t newmode = h->newstorage == STORE_MMAP && existing && !h->forcemap ? STORE_PRIV : h->newstorage;
-					/* make sure we really MMAP */
-					if (must_mmap && h->newstorage == STORE_MEM)
-						newmode = STORE_MMAP;
-					h->newstorage = h->storage = newmode;
-					h->forcemap = 0;
-				}
+				h->storage = h->newstorage == STORE_MMAP && existing && !h->forcemap ? STORE_PRIV : h->newstorage;
+				/* make sure we really MMAP */
+				if (must_mmap && h->newstorage == STORE_MEM)
+					h->storage = STORE_MMAP;
+				h->newstorage = h->storage;
+				h->forcemap = 0;
+
 				h->base = NULL;
 				HEAPDEBUG fprintf(stderr, "#HEAPextend: converting malloced to %s mmapped heap\n", h->newstorage == STORE_MMAP ? "shared" : "privately");
 				/* try to allocate a memory-mapped
@@ -457,13 +471,10 @@ HEAPextend(Heap *h, size_t size)
 				}
 				/* couldn't allocate, now first save
 				 * data to file */
-				if (HEAPsave_intern(&bak, nme, ext, ".tmp") < 0) {
-					*h = bak;
-					return -1;
-				}
+				if (HEAPsave_intern(&bak, nme, ext, ".tmp") < 0)
+					goto failed;
 				/* then free memory */
 				HEAPfree(&bak);
-				of = NULL;	/* file name is freed by HEAPfree */
 				/* and load heap back in via
 				 * memory-mapped file */
 				if (HEAPload_intern(h, nme, ext, ".tmp", FALSE) >= 0) {
@@ -473,9 +484,8 @@ HEAPextend(Heap *h, size_t size)
 				}
 				/* we failed */
 			}
-			if (of)
-				GDKfree(of);
 		}
+	  failed:
 		*h = bak;
 	}
 	GDKerror("HEAPextend: failed to extend to " SZFMT " for %s%s%s\n",
