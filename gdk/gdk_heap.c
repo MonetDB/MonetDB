@@ -477,6 +477,55 @@ HEAPextend(Heap *h, size_t size)
 }
 
 int
+HEAPshrink(Heap *h, size_t size)
+{
+	char *p;
+
+	assert(size >= h->free);
+	assert(size <= h->size);
+	if (h->storage == STORE_MEM) {
+		p = GDKreallocmax(h->base, size, &size, 0);
+		HEAPDEBUG fprintf(stderr, "#HEAPshrink: shrinking malloced "
+				  "heap " SZFMT " " SZFMT " " PTRFMT " "
+				  PTRFMT "\n", h->size, size,
+				  PTRFMTCAST h->base, PTRFMTCAST p);
+	} else {
+		char nme[PATHLENGTH], *ext = NULL;
+		long_str path;
+
+		if (h->filename) {
+			strncpy(nme, h->filename, sizeof(nme));
+			nme[sizeof(nme) - 1] = 0;
+			ext = decompose_filename(nme);
+		}
+		/* shrink memory mapped file */
+		GDKfilepath(path, BATDIR, nme, ext);
+		size = (size + MT_pagesize() - 1) & ~(MT_pagesize() - 1);
+		if (size >= h->size) {
+			/* don't grow */
+			return 0;
+		}
+		p = MT_mremap(path,
+			      h->storage == STORE_PRIV ?
+				MMAP_COPY | MMAP_READ | MMAP_WRITE :
+				MMAP_READ | MMAP_WRITE,
+			      h->base, h->size, &size);
+		HEAPDEBUG fprintf(stderr, "#HEAPshrink: shrinking %s mmapped "
+				  "heap (%s) " SZFMT " " SZFMT " " PTRFMT " "
+				  PTRFMT "\n",
+				  h->storage == STORE_MMAP ? "shared" : "privately",
+				  h->filename, h->size, size,
+				  PTRFMTCAST h->base, PTRFMTCAST p);
+	}
+	if (p) {
+		h->maxsize = h->size = size;
+		h->base = p;
+		return 0;
+	}
+	return -1;
+}
+
+int
 GDKupgradevarheap(COLrec *c, var_t v, int copyall)
 {
 	bte shift = c->shift;
