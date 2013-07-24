@@ -177,7 +177,8 @@ HEAPcacheFind(size_t *maxsz, char *fn, storage_t mode)
 			long_str fn;
 
 			GDKfilepath(fn, HCDIR, e->fn, NULL);
-			base = MT_mremap(fn, MMAP_READ | MMAP_WRITE, e->base, e->maxsz, &size);
+			base = MT_mremap(fn, MMAP_READ | MMAP_WRITE,
+					 e->base, e->maxsz, &size);
 			if (base == NULL) {
 				/* extending may have failed */
 				e = NULL;
