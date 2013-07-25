@@ -79,6 +79,7 @@ void HEAP_init(Heap *heap, int tpe);
 int HEAPload(Heap *h, const char *nme, const char *ext, int trunc);
 int HEAP_mmappable(Heap *heap);
 int HEAPsave(Heap *h, const char *nme, const char *ext);
+int HEAPshrink(Heap *h, size_t size);
 int HEAPwarm(Heap *h);
 oid MAXoid(BAT *i);
 void MT_global_exit(int status)
