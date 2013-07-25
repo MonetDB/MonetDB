@@ -620,10 +620,16 @@ BATsave(BAT *bd)
 	if (err == 0) {
 		bd->batCopiedtodisk = 1;
 		DESCclean(bd);
-		if (bd->H->heap.storage == STORE_MMAP)
+		if (bd->H->heap.storage == STORE_MMAP) {
 			HEAPshrink(&bd->H->heap, bd->H->heap.free);
-		if (bd->T->heap.storage == STORE_MMAP)
+			if (bd->U->capacity > bd->H->heap.size >> bd->H->shift)
+				bd->U->capacity = bd->H->heap.size >> bd->H->shift;
+		}
+		if (bd->T->heap.storage == STORE_MMAP) {
 			HEAPshrink(&bd->T->heap, bd->T->heap.free);
+			if (bd->U->capacity > bd->T->heap.size >> bd->T->shift)
+				bd->U->capacity = bd->T->heap.size >> bd->T->shift;
+		}
 		if (bd->H->vheap && bd->H->vheap->storage == STORE_MMAP)
 			HEAPshrink(bd->H->vheap, bd->H->vheap->free);
 		if (bd->T->vheap && bd->T->vheap->storage == STORE_MMAP)
