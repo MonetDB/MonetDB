@@ -111,7 +111,7 @@ idx_destroy(sql_idx * i)
 	/* remove idx from schema */
 	list_remove_data(i->t->s->idxs, i);
 	list_destroy(i->columns);
-	if (isTable(i->t))
+	if (isTableOrArray(i->t))
 		store_funcs.destroy_idx(NULL, i);
 }
 
@@ -127,7 +127,7 @@ trigger_destroy(sql_trigger *tr)
 void
 column_destroy(sql_column *c)
 {
-	if (isTable(c->t))
+	if (isTableOrArray(c->t))
 		store_funcs.destroy_col(NULL, c);
 }
 
@@ -139,7 +139,7 @@ table_destroy(sql_table *t)
 	cs_destroy(&t->triggers);
 	cs_destroy(&t->columns);
 	cs_destroy(&t->tables);
-	if (isTable(t))
+	if (isTableOrArray(t))
 		store_funcs.destroy_del(NULL, t);
 }
 
@@ -352,7 +352,7 @@ load_idx(sql_trans *tr, sql_table *t, oid rid)
 	ni->t = t;
 	ni->key = NULL;
 
-	if (isTable(ni->t) && idx_has_column(ni->type))
+	if (isTableOrArray(ni->t) && idx_has_column(ni->type))
 		store_funcs.create_idx(tr, ni);
 
 	kc_id = find_sql_column(objects, "id");
@@ -439,9 +439,11 @@ load_column(sql_trans *tr, sql_table *t, oid rid)
 	void *v;
 	char *def, *tpe, *st;
 	int sz, d;
+	oid dim_rid;
 	sql_column *c = SA_ZNEW(tr->sa, sql_column);
 	sql_schema *syss = find_sql_schema(tr, "sys");
 	sql_table *columns = find_sql_table(syss, "_columns");
+	sql_table *dimensions = find_sql_table(syss, "_dimensions");
 	sqlid cid;
 
 	v = table_funcs.column_find_value(tr, find_sql_column(columns, "id"), rid);
@@ -457,6 +459,20 @@ load_column(sql_trans *tr, sql_table *t, oid rid)
 	if (!sql_find_subtype(&c->type, tpe, sz, d))
 		sql_init_subtype(&c->type, sql_trans_bind_type(tr, t->s, tpe), sz, d);
 	_DELETE(tpe);
+
+	dim_rid = table_funcs.column_find_row(tr, find_sql_column(dimensions, "column_id"), &cid, NULL);
+	if (dim_rid != oid_nil){ /* this is a dimension column */
+		c->dim = ZNEW(sql_dimrange);
+		if((v = table_funcs.column_find_value(tr, find_sql_column(dimensions, "start"), dim_rid)))
+			c->dim->strt = *(lng *)v; _DELETE(v);
+		if((v = table_funcs.column_find_value(tr, find_sql_column(dimensions, "step"), dim_rid)))
+			c->dim->step = *(lng *)v; _DELETE(v);
+		if((v = table_funcs.column_find_value(tr, find_sql_column(dimensions, "stop"), dim_rid)))
+			c->dim->stop = *(lng *)v; _DELETE(v);
+		if((v = table_funcs.column_find_value(tr, find_sql_column(dimensions, "storage_order"), dim_rid)))
+			c->dim->ord = *(int *)v; _DELETE(v);
+	}
+
 	c->def = NULL;
 	def = table_funcs.column_find_value(tr, find_sql_column(columns, "default"), rid);
 	if (ATOMcmp(TYPE_str, ATOMnilptr(TYPE_str), def) != 0)
@@ -475,7 +491,7 @@ load_column(sql_trans *tr, sql_table *t, oid rid)
 	else
 		_DELETE(st);
 	c->t = t;
-	if (isTable(c->t))
+	if (isTableOrArray(c->t))
 		store_funcs.create_col(tr, c);
 	c->sorted = sql_trans_is_sorted(tr, c);
 	if (bs_debug)
@@ -528,6 +544,7 @@ load_table(sql_trans *tr, sql_schema *s, oid rid)
 	sql_table *t = SA_ZNEW(tr->sa, sql_table);
 	sql_schema *syss = find_sql_schema(tr, "sys");
 	sql_table *tables = find_sql_table(syss, "_tables");
+	sql_table *arrays = find_sql_table(syss, "_arrays");
 	sql_table *columns = find_sql_table(syss, "_columns");
 	sql_table *idxs = find_sql_table(syss, "idxs");
 	sql_table *keys = find_sql_table(syss, "keys");
@@ -537,6 +554,7 @@ load_table(sql_trans *tr, sql_schema *s, oid rid)
 	sql_column *key_table_id, *trigger_table_id;
 	sqlid tid;
 	rids *rs;
+	oid ary_rid;
 
 	v = table_funcs.column_find_value(tr, find_sql_column(tables, "id"), rid);
 	tid = *(sqlid *)v;			_DELETE(v);	
@@ -566,6 +584,17 @@ load_table(sql_trans *tr, sql_schema *s, oid rid)
 	v = table_funcs.column_find_value(tr, find_sql_column(tables, "readonly"),rid);
 	t->readonly = *(bit *)v;	_DELETE(v);
 
+	
+	ary_rid = table_funcs.column_find_row(tr, find_sql_column(arrays, "table_id"), &tid, NULL);
+	if (ary_rid != oid_nil){ /* this is an array */
+		v = table_funcs.column_find_value(tr, find_sql_column(arrays, "valence"), ary_rid);
+		t->valence = *(int *)v;	_DELETE(v);
+		v = table_funcs.column_find_value(tr, find_sql_column(arrays, "fixed"), ary_rid);
+		t->fixed = *(bit *)v;	_DELETE(v);
+		v = table_funcs.column_find_value(tr, find_sql_column(arrays, "materialised"), ary_rid);
+		t->materialised = *(bit *)v;	_DELETE(v);
+	}
+
 	t->pkey = NULL;
 	t->s = s;
 	t->sz = COLSIZE;
@@ -576,7 +605,7 @@ load_table(sql_trans *tr, sql_schema *s, oid rid)
 	cs_new(&t->triggers, tr->sa, (fdestroy) &trigger_destroy);
 	cs_new(&t->tables, tr->sa, (fdestroy) &table_destroy);
 
-	if (isTable(t)) {
+	if (isTableOrArray(t)) {
 		if (store_funcs.create_del(tr, t) != LOG_OK) {
 			if (bs_debug)
 				fprintf(stderr, "#\tload table %s missing 'deletes'", t->base.name);
@@ -599,7 +628,7 @@ load_table(sql_trans *tr, sql_schema *s, oid rid)
 	if (!isKindOfTable(t))
 		return t;
 
-	/* load idx's first as the may be needed by the keys */
+	/* load idx's first as they may be needed by the keys */
 	idx_table_id = find_sql_column(idxs, "table_id");
 	rs = table_funcs.rids_select(tr, idx_table_id, &t->base.id, &t->base.id, NULL);
 	for(rid = table_funcs.rids_next(rs); rid != oid_nil; rid = table_funcs.rids_next(rs)) {
@@ -973,7 +1002,7 @@ insert_schemas(sql_trans *tr)
 			sql_table *t = m->data;
 			sht ca = t->commit_action;
 
-			table_funcs.table_insert(tr, systable, &t->base.id, t->base.name, &s->base.id, ATOMnilptr(TYPE_str), &t->type, &t->system, &ca, &t->readonly);
+			table_funcs.table_insert(tr, systable, &t->base.id, t->base.name, &s->base.id, ATOMnilptr(TYPE_str), &t->type, &t->system, &ca, &t->readonly, &t->valence, &t->fixed, &t->materialised);
 			for (o = t->columns.set->h; o; o = o->next) {
 				sql_column *c = o->data;
 
@@ -1106,14 +1135,14 @@ bootstrap_create_column(sql_trans *tr, sql_table *t, char *name, char *sqltype, 
 	col->storage_type = NULL;
 	cs_add(&t->columns, col, TR_NEW);
 
-	if (isTable(col->t))
+	if (isTableOrArray(col->t))
 		store_funcs.create_col(tr, col);
 	tr->schema_updates ++;
 	return col;
 }
 
 sql_table *
-create_sql_table(sql_allocator *sa, char *name, sht type, bit system, int persistence, int commit_action)
+create_sql_table(sql_allocator *sa, char *name, sht type, bit system, int persistence, int commit_action, int valence, bit fixed, bit materialised)
 {
 	sql_table *t = SA_ZNEW(sa, sql_table);
 
@@ -1135,7 +1164,14 @@ create_sql_table(sql_allocator *sa, char *name, sht type, bit system, int persis
 	t->pkey = NULL;
 	t->sz = COLSIZE;
 	t->cleared = 0;
+
 	t->s = NULL;
+
+	/* Array properties. For tables, they arre always 0. */
+	t->valence = isArray(t) ? valence : 0;
+	t->fixed = isArray(t) ? fixed : 0;
+	t->materialised = isArray(t) ? materialised : 0;
+
 	return t;
 }
 
@@ -1157,6 +1193,13 @@ dup_sql_column(sql_allocator *sa, sql_table *t, sql_column *c)
 	if (c->storage_type)
 		col->storage_type = sa_strdup(sa, c->storage_type);
 	col->sorted = c->sorted;
+	if (c->dim){
+		col->dim = SA_ZNEW(sa, sql_dimrange);
+		col->dim->ord = c->dim->ord;
+		col->dim->strt = c->dim->strt;
+		col->dim->step = c->dim->step;
+		col->dim->stop = c->dim->stop;
+	}
 	cs_add(&t->columns, col, TR_NEW);
 	return col;
 }
@@ -1165,13 +1208,16 @@ sql_table *
 dup_sql_table(sql_allocator *sa, sql_table *t)
 {
 	node *n;
-	sql_table *nt = create_sql_table(sa, t->base.name, t->type, t->system, SQL_DECLARED_TABLE, t->commit_action);
+	sql_table *nt = create_sql_table(sa, t->base.name, t->type, t->system, SQL_DECLARED_TABLE, t->commit_action, t->valence, t->fixed, t->materialised);
 
 	nt->base.flag = t->base.flag;
 	for (n = t->columns.set->h; n; n = n->next) 
 		dup_sql_column(sa, nt, n->data);
 	nt->columns.dset = NULL;
 	nt->columns.nelm = NULL;
+	nt->valence = t->valence;
+	nt->fixed = t->fixed;
+	nt->materialised = t->materialised;
 	
 /*
 	if (t->idxs.set) {
@@ -1199,7 +1245,7 @@ bootstrap_create_table(sql_trans *tr, sql_schema *s, char *name)
 	int istmp = isTempSchema(s);
 	int persistence = istmp?SQL_GLOBAL_TEMP:SQL_PERSIST;
 	sht commit_action = istmp?CA_PRESERVE:CA_COMMIT;
-	sql_table *t = create_sql_table(tr->sa, name, tt_table, 1, persistence, commit_action);
+	sql_table *t = create_sql_table(tr->sa, name, tt_table, 1, persistence, commit_action, 0, 0, 0 /* we never have arrays here */);
 
 	if (bs_debug)
 		fprintf(stderr, "#bootstrap_create_table %s\n", name );
@@ -1209,7 +1255,7 @@ bootstrap_create_table(sql_trans *tr, sql_schema *s, char *name)
 	t->s = s;
 	cs_add(&s->tables, t, TR_NEW);
 
-	if (isTable(t))
+	if (isTableOrArray(t))
 		store_funcs.create_del(tr, t);
 	tr->schema_updates ++;
 	return t;
@@ -1399,6 +1445,19 @@ store_init(int debug, store_type store, char *logdir, backend_stack stk)
 		bootstrap_create_column(tr, t, "null", "boolean", 1);
 		bootstrap_create_column(tr, t, "number", "int", 32);
 		bootstrap_create_column(tr, t, "storage", "varchar", 2048);
+
+		t = bootstrap_create_table(tr, s, "_arrays");
+		bootstrap_create_column(tr, t, "table_id", "int", 32);
+		bootstrap_create_column(tr, t, "valence", "int", 32);
+		bootstrap_create_column(tr, t, "fixed", "boolean", 1);
+		bootstrap_create_column(tr, t, "materialised", "boolean", 1);
+
+		t = bootstrap_create_table(tr, s, "_dimensions");
+		bootstrap_create_column(tr, t, "column_id", "int", 32);
+		bootstrap_create_column(tr, t, "start", "bigint", 64);
+		bootstrap_create_column(tr, t, "step", "bigint", 64);
+		bootstrap_create_column(tr, t, "stop", "bigint", 64);
+		bootstrap_create_column(tr, t, "storage_order", "int", 32);
 
 		t = bootstrap_create_table(tr, s, "keys");
 		bootstrap_create_column(tr, t, "id", "int", 32);
@@ -1766,7 +1825,7 @@ idx_dup(sql_trans *tr, int flag, sql_idx * i, sql_table *t)
 	ni->type = i->type;
 	ni->key = NULL;
 
-	if (isTable(ni->t))
+	if (isTableOrArray(ni->t))
 		store_funcs.dup_idx(tr, i, ni);
 	if (isNew(i) && flag == TR_NEW && tr->parent == gtrans) 
 		i->base.flag = TR_OLD;
@@ -1808,7 +1867,7 @@ sql_trans_copy_idx( sql_trans *tr, sql_table *t, sql_idx *i )
 	list_append(t->s->idxs, ni);
 	cs_add(&t->idxs, ni, TR_NEW);
 
-	if (!isDeclaredTable(t) && isTable(ni->t) && idx_has_column(ni->type))
+	if (!isDeclaredTable(t) && isTableOrArray(ni->t) && idx_has_column(ni->type))
 		store_funcs.create_idx(tr, ni);
 	if (!isDeclaredTable(t))
 		table_funcs.table_insert(tr, sysidx, &ni->base.id, &t->base.id, &ni->type, ni->base.name);
@@ -1871,7 +1930,15 @@ column_dup(sql_trans *tr, int flag, sql_column *oc, sql_table *t)
 	if (oc->storage_type)
 		c->storage_type = sa_strdup(sa, oc->storage_type);
 
-	if (isTable(c->t))
+	if (oc->dim){ 
+		c->dim = ZNEW(sql_dimrange);
+		c->dim->ord = oc->dim->ord;
+		c->dim->strt = oc->dim->strt;
+		c->dim->step = oc->dim->step;
+		c->dim->stop = oc->dim->stop;
+	}
+
+	if (isTableOrArray(c->t))
 		store_funcs.dup_col(tr, oc, c);
 	if (isNew(oc) && flag == TR_NEW && tr->parent == gtrans) 
 		oc->base.flag = TR_OLD;
@@ -1897,13 +1964,25 @@ sql_trans_copy_column( sql_trans *tr, sql_table *t, sql_column *c )
 	col->storage_type = NULL;
 	if (c->storage_type)
 		col->storage_type = sa_strdup(tr->sa, c->storage_type);
+	if (c->dim){ 
+		col->dim = ZNEW(sql_dimrange);
+		col->dim->ord = c->dim->ord;
+		col->dim->strt = c->dim->strt;
+		col->dim->step = c->dim->step;
+		col->dim->stop = c->dim->stop;
+	}
 
 	cs_add(&t->columns, col, TR_NEW);
 
-	if (isTable(t))
+	if (isTableOrArray(t))
 		store_funcs.create_col(tr, col);
-	if (!isDeclaredTable(t))
+	if (!isDeclaredTable(t)) {
 		table_funcs.table_insert(tr, syscolumn, &col->base.id, col->base.name, col->type.type->sqlname, &col->type.digits, &col->type.scale, &t->base.id, (col->def) ? col->def : ATOMnilptr(TYPE_str), &col->null, &col->colnr, (col->storage_type) ? col->storage_type : ATOMnilptr(TYPE_str));
+		if (c->dim) {
+			sql_table *sysdim = find_sql_table(syss, "_dimensions");
+			table_funcs.table_insert(tr, sysdim, &col->base.id, &c->dim->strt, &c->dim->step, &c->dim->stop, &c->dim->ord);
+		}
+	}
 	col->base.wtime = t->base.wtime = t->s->base.wtime = tr->wtime = tr->wstime;
 	if (isGlobal(t)) 
 		tr->schema_updates ++;
@@ -1965,12 +2044,15 @@ table_dup(sql_trans *tr, int flag, sql_table *ot, sql_schema *s)
 
 	t->pkey = NULL;
 
-	if (isTable(ot)) 
+	if (isTableOrArray(ot)) 
 		store_funcs.dup_del(tr, ot, t);
 
 	t->s = s;
 	t->sz = ot->sz;
 	t->cleared = 0;
+	t->valence = ot->valence;
+	t->fixed = ot->fixed;
+	t->materialised = ot->materialised;
 
 	if (ot->columns.set) {
 		for (n = ot->columns.set->h; n; n = n->next) {
@@ -2386,7 +2468,7 @@ static sql_idx *
 rollforward_create_idx(sql_trans *tr, sql_idx * i, int mode)
 {
 
-	if (isTable(i->t) && idx_has_column(i->type)) {
+	if (isTableOrArray(i->t) && idx_has_column(i->type)) {
 		int p = (tr->parent == gtrans && !isTempTable(i->t));
 
 		if ((p && mode == R_SNAPSHOT && store_funcs.snapshot_create_idx(tr, i) != LOG_OK) ||
@@ -2441,7 +2523,7 @@ rollforward_create_seq(sql_trans *tr, sql_sequence *k, int mode)
 static sql_column *
 rollforward_create_column(sql_trans *tr, sql_column *c, int mode)
 {
-	if (isTable(c->t)) {
+	if (isTableOrArray(c->t)) {
 		int p = (tr->parent == gtrans && !isTempTable(c->t));
 
 		if ((p && mode == R_SNAPSHOT && store_funcs.snapshot_create_col(tr, c) != LOG_OK) ||
@@ -2483,7 +2565,7 @@ rollforward_create_table(sql_trans *tr, sql_table *t, int mode)
 		/* only register columns without commit action tables */
 		ok = rollforward_changeset_creates(tr, &t->columns, (rfcfunc) &rollforward_create_column, mode);
 
-		if (isTable(t)) {
+		if (isTableOrArray(t)) {
 			if (p && mode == R_SNAPSHOT)
 				store_funcs.snapshot_create_del(tr, t);
 			else if (p && mode == R_LOG)
@@ -2511,7 +2593,7 @@ rollforward_create_table(sql_trans *tr, sql_table *t, int mode)
 static int
 rollforward_drop_column(sql_trans *tr, sql_column *c, int mode)
 {
-	if (isTable(c->t)) {
+	if (isTableOrArray(c->t)) {
 		int p = (tr->parent == gtrans);
 
 		if (p && mode == R_LOG)
@@ -2527,7 +2609,7 @@ rollforward_drop_idx(sql_trans *tr, sql_idx * i, int mode)
 {
 	int ok = LOG_OK;
 
-	if (isTable(i->t)) {
+	if (isTableOrArray(i->t)) {
 		int p = (tr->parent == gtrans);
 
 		if (p && mode == R_LOG)
@@ -2600,7 +2682,7 @@ rollforward_drop_table(sql_trans *tr, sql_table *t, int mode)
 {
 	int ok = LOG_OK;
 
-	if (isTable(t)) {
+	if (isTableOrArray(t)) {
 		int p = (tr->parent == gtrans);
 
 		if (p && mode == R_LOG)
@@ -2663,7 +2745,7 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt, int mode)
 	if (ok != LOG_OK) 
 		return LOG_ERR;
 
-	if (isTable(ft)) {
+	if (isTableOrArray(ft)) {
 		if (p && mode == R_SNAPSHOT) {
 			ok = store_funcs.snapshot_table(tr, ft, tt);
 		} else if (p && mode == R_LOG) {
@@ -2730,7 +2812,7 @@ rollforward_update_schema(sql_trans *tr, sql_schema *fs, sql_schema *ts, int mod
 				node *nxt = n->next;
 				sql_table *t = n->data;
 	
-				if ((isTable(t) && isGlobal(t) &&
+				if ((isTableOrArray(t) && isGlobal(t) &&
 				    t->commit_action != CA_PRESERVE) || 
 				    t->commit_action == CA_DELETE) {
 					sql_trans_clear_table(tr, t);
@@ -2924,7 +3006,7 @@ reset_idx(sql_trans *tr, sql_idx *fi, sql_idx *pfi)
 {
 	/* did we make changes or is the global changed after we started */
 	if (fi->base.wtime || tr->stime < pfi->base.wtime) {
-		if (isTable(fi->t)) {
+		if (isTableOrArray(fi->t)) {
 			store_funcs.destroy_idx(NULL, fi);
 			store_funcs.dup_idx(tr, pfi, fi);
 		}
@@ -2938,7 +3020,7 @@ reset_column(sql_trans *tr, sql_column *fc, sql_column *pfc)
 {
 	/* did we make changes or is the global changed after we started */
 	if (fc->base.wtime || tr->stime < pfc->base.wtime) {
-		if (isTable(fc->t)) {
+		if (isTableOrArray(fc->t)) {
 			store_funcs.destroy_col(NULL, fc);
 			store_funcs.dup_col(tr, pfc, fc);
 		}
@@ -2982,7 +3064,7 @@ reset_table(sql_trans *tr, sql_table *ft, sql_table *pft)
 	if (ft->base.wtime || tr->stime < pft->base.wtime) {
 		int ok = LOG_OK;
 
-		if (isTable(ft)) {
+		if (isTableOrArray(ft)) {
 			store_funcs.destroy_del(NULL, ft);
 			store_funcs.dup_del(tr, pft, ft);
 		}
@@ -3040,7 +3122,7 @@ reset_schema(sql_trans *tr, sql_schema *fs, sql_schema *pfs)
 				node *nxt = n->next;
 				sql_table *t = n->data;
 	
-				if ((isTable(t) && isGlobal(t) &&
+				if ((isTableOrArray(t) && isGlobal(t) &&
 				    t->commit_action != CA_PRESERVE) || 
 				    t->commit_action == CA_DELETE) {
 					sql_trans_clear_table(tr, t);
@@ -3425,6 +3507,16 @@ sys_drop_column(sql_trans *tr, sql_column *col, int drop_action)
 
 	assert(rid != oid_nil);
 	table_funcs.table_delete(tr, syscolumn, rid);
+
+	/* if this is a dimension column, also remove it from the "_dimensions" table */
+	if (col->dim){
+		sql_table *sysdim = find_sql_table(syss, "_dimensions");
+		rid = table_funcs.column_find_row(tr, find_sql_column(sysdim, "column_id"),
+				&col->base.id, NULL);
+		assert(isArray(col->t) && (rid != oid_nil));
+		table_funcs.table_delete(tr, sysdim, rid);
+	}
+
 	sql_trans_drop_dependencies(tr, col->base.id);
 
 	if (col->def && (seq_pos = strstr(col->def, next_value_for))) {
@@ -3498,6 +3590,16 @@ sys_drop_table(sql_trans *tr, sql_table *t, int drop_action)
 
 	assert(rid != oid_nil);
 	table_funcs.table_delete(tr, systable, rid);
+
+	if(isArray(t)) {
+		sql_table *sysarray = find_sql_table(syss, "_arrays");
+		rid = table_funcs.column_find_row(tr, find_sql_column(sysarray, "table_id"),
+				&t->base.id, NULL);
+		assert(rid != oid_nil);
+		table_funcs.table_delete(tr, sysarray, rid);
+
+	}
+
 	sys_drop_keys(tr, t, drop_action);
 	sys_drop_idxs(tr, t, drop_action);
 
@@ -3861,16 +3963,16 @@ sql_trans_del_table(sql_trans *tr, sql_table *mt, sql_table *pt, int drop_action
 }
 
 sql_table *
-sql_trans_create_table(sql_trans *tr, sql_schema *s, char *name, char *sql, int tt, bit system, int persistence, int commit_action, int sz)
+sql_trans_create_table(sql_trans *tr, sql_schema *s, char *name, char *sql, int tt, bit system, int persistence, int commit_action, int sz, int valence, bit fixed, bit materialised)
 {
-	sql_table *t = create_sql_table(tr->sa, name, tt, system, persistence, commit_action);
+	sql_table *t = create_sql_table(tr->sa, name, tt, system, persistence, commit_action, valence, fixed, materialised);
 	sql_schema *syss = find_sql_schema(tr, isGlobal(t)?"sys":"tmp");
 	sql_table *systable = find_sql_table(syss, "_tables");
 	sht ca;
 
 	/* temps all belong to a special tmp schema and only views/remote
 	   have a query */
-	assert( (isTable(t) ||
+	assert( (isTableOrArray(t) || 
 		(!isTempTable(t) || (strcmp(s->base.name, "tmp") == 0) || isDeclaredTable(t))) || (isView(t) && !sql) || isStream(t) || (isRemote(t) && !sql));
 
 	t->query = sql ? sa_strdup(tr->sa, sql) : NULL;
@@ -3884,7 +3986,7 @@ sql_trans_create_table(sql_trans *tr, sql_schema *s, char *name, char *sql, int 
 	if (isRemote(t))
 		t->persistence = SQL_REMOTE;
 
-	if (isTable(t)) {
+	if (isTableOrArray(t)) {
 		if (store_funcs.create_del(tr, t) != LOG_OK) {
 			if (bs_debug)
 				fprintf(stderr, "#\tload table %s missing 'deletes'", t->base.name);
@@ -3893,10 +3995,15 @@ sql_trans_create_table(sql_trans *tr, sql_schema *s, char *name, char *sql, int 
 	}
 
 	ca = t->commit_action;
-	if (!isDeclaredTable(t))
+	if (!isDeclaredTable(t)) {
 		table_funcs.table_insert(tr, systable, &t->base.id, t->base.name, &s->base.id,
 			(t->query) ? t->query : ATOMnilptr(TYPE_str), &t->type,
 			&t->system, &ca, &t->readonly);
+		if(isArray(t)) {
+			sql_table *sysarray = find_sql_table(syss, "_arrays");
+			table_funcs.table_insert(tr, sysarray, &t->base.id, &t->valence, &t->fixed, &t->materialised);
+		}
+	}
 
 	t->base.wtime = s->base.wtime = tr->wtime = tr->wstime;
 	if (isGlobal(t)) 
@@ -4022,6 +4129,8 @@ create_sql_column(sql_allocator *sa, sql_table *t, char *name, sql_subtype *tpe)
 	col->unique = 0;
 	col->storage_type = NULL;
 
+	col->dim = NULL;
+
 	cs_add(&t->columns, col, TR_NEW);
 	return col;
 }
@@ -4098,9 +4207,10 @@ sql_trans_create_column(sql_trans *tr, sql_table *t, char *name, sql_subtype *tp
 
  	col = create_sql_column(tr->sa, t, name, tpe );
 
-	if (isTable(col->t))
+	if (isTableOrArray(col->t))
 		store_funcs.create_col(tr, col);
 	if (!isDeclaredTable(t))
+		/* "_dimensions" table is not filled here, but in sql_trans_copy_column() */
 		table_funcs.table_insert(tr, syscolumn, &col->base.id, col->base.name, col->type.type->sqlname, &col->type.digits, &col->type.scale, &t->base.id, (col->def) ? col->def : ATOMnilptr(TYPE_str), &col->null, &col->colnr, (col->storage_type) ? col->storage_type : ATOMnilptr(TYPE_str));
 
 	col->base.wtime = t->base.wtime = t->s->base.wtime = tr->wtime = tr->wstime;
@@ -4236,7 +4346,7 @@ sql_trans_alter_default(sql_trans *tr, sql_column *col, char *val)
 int
 sql_trans_is_sorted( sql_trans *tr, sql_column *col )
 {
-	if (col && isTable(col->t) && store_funcs.sorted_col && store_funcs.sorted_col(tr, col))
+	if (col && isTableOrArray(col->t) && store_funcs.sorted_col && store_funcs.sorted_col(tr, col))
 		return 1;
 	return 0;
 }
@@ -4542,7 +4652,7 @@ sql_trans_create_idx(sql_trans *tr, sql_table *t, char *name, idx_type it)
 	cs_add(&t->idxs, ni, TR_NEW);
 	list_append(t->s->idxs, ni);
 
-	if (!isDeclaredTable(t) && isTable(ni->t) && idx_has_column(ni->type))
+	if (!isDeclaredTable(t) && isTableOrArray(ni->t) && idx_has_column(ni->type))
 		store_funcs.create_idx(tr, ni);
 	if (!isDeclaredTable(t))
 		table_funcs.table_insert(tr, sysidx, &ni->base.id, &t->base.id, &ni->type, ni->base.name);

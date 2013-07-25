@@ -514,8 +514,15 @@ dump_column_definition(Mapi mid, stream *toConsole, const char *schema, const ch
 				"\"c\".\"type_scale\","		/* 3 */
 				"\"c\".\"null\","		/* 4 */
 				"\"c\".\"default\","		/* 5 */
-				"\"c\".\"number\" "		/* 6 */
+				"\"c\".\"number\","		/* 6 */
+				"CASE WHEN \"d\".\"column_id\" IS NULL THEN FALSE ELSE TRUE END"
+				" AS \"isdimension\","  /* 7 */
+				"\"d\".\"start\","		/* 8 */
+				"\"d\".\"step\","		/* 9 */
+				"\"d\".\"stop\" "		/* 10 */
 			 "FROM \"sys\".\"_columns\" \"c\" "
+			 	"LEFT JOIN \"sys\".\"_dimensions\" \"d\" "
+					"ON \"c\".\"id\" = \"d\".\"column_id\" "
 			 "WHERE \"c\".\"table_id\" = %s "
 			 "ORDER BY \"number\"", tid);
 	else
@@ -526,8 +533,15 @@ dump_column_definition(Mapi mid, stream *toConsole, const char *schema, const ch
 				"\"c\".\"type_scale\","		/* 3 */
 				"\"c\".\"null\","		/* 4 */
 				"\"c\".\"default\","		/* 5 */
-				"\"c\".\"number\" "		/* 6 */
-			 "FROM \"sys\".\"_columns\" \"c\", "
+				"\"c\".\"number\","		/* 6 */
+				"CASE WHEN \"d\".\"column_id\" IS NULL THEN FALSE ELSE TRUE END"
+				" AS \"isdimension\","  /* 7 */
+				"\"d\".\"start\","		/* 8 */
+				"\"d\".\"step\","		/* 9 */
+				"\"d\".\"stop\" "		/* 10 */
+			 "FROM \"sys\".\"_columns\" \"c\" "
+			 	"LEFT JOIN \"sys\".\"_dimensions\" \"d\" "
+					"ON \"c\".\"id\" = \"d\".\"column_id\", "
 			      "\"sys\".\"_tables\" \"t\", "
 			      "\"sys\".\"schemas\" \"s\" "
 			 "WHERE \"c\".\"table_id\" = \"t\".\"id\" "
@@ -547,6 +561,10 @@ dump_column_definition(Mapi mid, stream *toConsole, const char *schema, const ch
 		char *c_type_scale = mapi_fetch_field(hdl, 3);
 		char *c_null = mapi_fetch_field(hdl, 4);
 		char *c_default = mapi_fetch_field(hdl, 5);
+		char *isdimension = mapi_fetch_field(hdl, 7);
+		char *d_start = mapi_fetch_field(hdl, 8);
+		char *d_step = mapi_fetch_field(hdl, 9);
+		char *d_stop = mapi_fetch_field(hdl, 10);
 		int space;
 
 		if (mapi_error(mid))
@@ -557,6 +575,14 @@ dump_column_definition(Mapi mid, stream *toConsole, const char *schema, const ch
 		mnstr_printf(toConsole, "\t\"%s\"%*s ",
 			     c_name, CAP(slen - strlen(c_name)), "");
 		space = dump_type(mid, toConsole, c_type, c_type_digits, c_type_scale);
+		if (strcmp(isdimension, "true") == 0) {
+			mnstr_printf(toConsole, "%*s DIMENSION [%s:%s:%s]",
+					CAP(13 - space), "",
+					d_start == NULL ? "*" : d_start,
+					d_step  == NULL ? "*" : d_step,
+					d_stop  == NULL ? "*" : d_stop);
+			space = 13;
+		}
 		if (strcmp(c_null, "false") == 0) {
 			mnstr_printf(toConsole, "%*s NOT NULL",
 					CAP(13 - space), "");
@@ -732,6 +758,7 @@ describe_table(Mapi mid, char *schema, char *tname, stream *toConsole, int forei
 	char *view = NULL;
 	size_t maxquerylen;
 	char *sname = NULL;
+	char *isarray = NULL;
 
 	if (schema == NULL) {
 		if ((sname = strchr(tname, '.')) != NULL) {
@@ -751,8 +778,9 @@ describe_table(Mapi mid, char *schema, char *tname, stream *toConsole, int forei
 
 	query = malloc(maxquerylen);
 	snprintf(query, maxquerylen,
-		 "SELECT \"t\".\"name\", \"t\".\"query\" "
-		 "FROM \"sys\".\"_tables\" \"t\", \"sys\".\"schemas\" \"s\" "
+		 "SELECT \"t\".\"name\", \"t\".\"query\", "
+		 "CASE WHEN \"a\".\"table_id\" IS NULL THEN FALSE ELSE TRUE END AS \"isarray\" "
+		 "FROM \"sys\".\"_tables\" \"t\" LEFT OUTER JOIN \"sys\".\"_arrays\" \"a\" ON \"t\".\"id\" = \"a\".\"table_id\", \"sys\".\"schemas\" \"s\" "
 		 "WHERE \"s\".\"name\" = '%s' "
 		 "AND \"t\".\"schema_id\" = \"s\".\"id\" "
 		 "AND \"t\".\"name\" = '%s'",
@@ -764,6 +792,7 @@ describe_table(Mapi mid, char *schema, char *tname, stream *toConsole, int forei
 	while ((mapi_fetch_row(hdl)) != 0) {
 		cnt++;
 		view = mapi_fetch_field(hdl, 1);
+		isarray = mapi_fetch_field(hdl, 2);
 	}
 	if (mapi_error(mid)) {
 		view = NULL;
@@ -771,6 +800,11 @@ describe_table(Mapi mid, char *schema, char *tname, stream *toConsole, int forei
 	}
 	if (view)
 		view = strdup(view);
+	if (isarray && isarray[0] == 't') {
+		isarray = "t";
+	} else {
+		isarray = "f";
+	}
 	mapi_close_handle(hdl);
 	hdl = NULL;
 
@@ -778,8 +812,8 @@ describe_table(Mapi mid, char *schema, char *tname, stream *toConsole, int forei
 		if (cnt == 0)
 			fprintf(stderr, "table %s.%s does not exist\n", schema, tname);
 		else
-			fprintf(stderr, "table %s.%s is not unique, corrupt catalog?\n",
-					schema, tname);
+			fprintf(stderr, "%s %s.%s is not unique, corrupt catalog?\n",
+					isarray[0] == 't' ? "array" : "table", schema, tname);
 		goto bailout;
 	}
 
@@ -789,7 +823,8 @@ describe_table(Mapi mid, char *schema, char *tname, stream *toConsole, int forei
 		goto doreturn;
 	}
 
-	mnstr_printf(toConsole, "CREATE TABLE \"%s\".\"%s\" ", schema, tname);
+	mnstr_printf(toConsole, "CREATE %s \"%s\".\"%s\" ",
+			isarray[0] == 't' ? "ARRAY" : "TABLE", schema, tname);
 
 	if (dump_column_definition(mid, toConsole, schema, tname, NULL, foreign))
 		goto bailout;
@@ -1483,19 +1518,28 @@ dump_database(Mapi mid, stream *toConsole, int describe, const char useInserts)
 		      "\"t\".\"schema_id\" = \"s\".\"id\" AND "
 		      "\"t\".\"system\" = FALSE AND "
 		      "\"p\".\"grantor\" = \"g\".\"id\"";
+	/* FIXME: taking into account of the 'rs' system schema, introduced by
+	 * the geotiff module only in the sciql branch, is just a quick fix to
+	 * avoid the functions and tables created in the 'rs' schema being dumped
+	 * as ordinary functions/tables.
+	 * However, the use of the 'rs' schema should be reconsidered so that the
+	 * geotiff catalog can be integrated into the SQL catalog.
+	 * When removing the 'rs' schame, the code below MUST be adapted
+	 * accordingly.
+	 */
 	const char *schemas =
 		"SELECT \"s\".\"name\", \"a\".\"name\" "
 		"FROM \"sys\".\"schemas\" \"s\", "
 		     "\"sys\".\"auths\" \"a\" "
 		"WHERE \"s\".\"authorization\" = \"a\".\"id\" AND "
-		      "\"s\".\"name\" NOT IN ('sys', 'tmp') "
+		      "\"s\".\"name\" NOT IN ('sys', 'tmp', 'rs') "
 		"ORDER BY \"s\".\"name\"";
 	/* alternative, but then need to handle NULL in second column:
 	   SELECT "s"."name", "a"."name"
 	   FROM "sys"."schemas" "s"
 		LEFT OUTER JOIN "sys"."auths" "a"
 		     ON "s"."authorization" = "a"."id" AND
-		"s"."name" NOT IN ('sys', 'tmp')
+		"s"."name" NOT IN ('sys', 'tmp', 'rs')
 	   ORDER BY "s"."name"
 
 	   This may be needed after a sequence:
@@ -1548,6 +1592,7 @@ dump_database(Mapi mid, stream *toConsole, int describe, const char useInserts)
 			"WHERE \"t\".\"type\" BETWEEN 0 AND 1 AND "
 			      "\"t\".\"system\" = FALSE AND "
 			      "\"s\".\"id\" = \"t\".\"schema_id\" AND "
+			      "\"s\".\"name\" <> 'rs' AND "
 			      "\"s\".\"name\" <> 'tmp' "
 			"UNION "
 			"SELECT \"s\".\"name\" AS \"sname\", "

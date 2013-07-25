@@ -76,8 +76,11 @@ insert_exp_array(mvc *sql, sql_table *t, int *Len)
 sql_table *
 rel_ddl_table_get(sql_rel *r)
 {
-	if (r->flag == DDL_ALTER_TABLE || r->flag == DDL_CREATE_TABLE || r->flag == DDL_CREATE_VIEW) {
-		sql_exp *e = r->exps->t->data;
+	if (r->flag == DDL_ALTER_TABLE || r->flag == DDL_CREATE_TABLE || r->flag == DDL_CREATE_ARRAY || r->flag == DDL_CREATE_VIEW) {
+		/* In case of DDL_CREATE_ARRAY, r->exps now contains the dimension
+		 * range expressions in its end.  The pointer to the sql_table is the
+		 * third expression in r->exps */
+		sql_exp *e = r->exps->h->next->next->data;
 		atom *a = e->l;
 
 		return a->data.val.pval;
@@ -96,6 +99,7 @@ get_table( sql_rel *t)
 	} else if (t->op == op_ddl && (
 			t->flag == DDL_ALTER_TABLE ||
 			t->flag == DDL_CREATE_TABLE ||
+			t->flag == DDL_CREATE_ARRAY ||
 			t->flag == DDL_CREATE_VIEW)) {
 		return rel_ddl_table_get(t);
 	}
@@ -189,13 +193,13 @@ rel_insert_join_idx(mvc *sql, sql_idx *i, sql_rel *inserts)
 		sql_kc *rc = o->data;
 		sql_subfunc *isnil = sql_bind_func(sql->sa, sql->session->schema, "isnull", &c->c->type, NULL, F_FUNC);
 		sql_exp *_is = nth(ins->exps, c->c->colnr), *lnl, *rnl, *je; 
-		sql_exp *rtc = exp_column(sql->sa, rel_name(rt), rc->c->base.name, &rc->c->type, CARD_MULTI, rc->c->null, 0);
+		sql_exp *rtc = exp_column(sql->sa, rel_name(rt), rc->c->base.name, &rc->c->type, CARD_MULTI, rc->c->null, 0, NULL);
 		char *ename = exp_name(_is);
 
 		if (!ename)
 			exp_label(sql->sa, _is, ++sql->label);
 		ename = exp_name(_is);
-		_is = exp_column(sql->sa, exp_relname(_is), ename, exp_subtype(_is), _is->card, has_nil(_is), is_intern(_is));
+		_is = exp_column(sql->sa, exp_relname(_is), ename, exp_subtype(_is), _is->card, has_nil(_is), is_intern(_is), NULL);
 		lnl = exp_unop(sql->sa, _is, isnil);
 		rnl = exp_unop(sql->sa, _is, isnil);
 		if (need_nulls) {
@@ -232,7 +236,7 @@ rel_insert_join_idx(mvc *sql, sql_idx *i, sql_rel *inserts)
 	nnlls->exps = join_exps;
 	nnlls = rel_project(sql->sa, nnlls, pexps);
 	/* add row numbers */
-	e = exp_column(sql->sa, rel_name(rt), "%TID%", sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
+	e = exp_column(sql->sa, rel_name(rt), "%TID%", sql_bind_localtype("oid"), CARD_MULTI, 0, 1, NULL);
 	exp_setname(sql->sa, e, i->t->base.name, iname);
 	append(nnlls->exps, e);
 
@@ -299,6 +303,91 @@ static sql_rel *
 rel_insert_table(mvc *sql, sql_table *t, char *name, sql_rel *inserts)
 {
 	return rel_insert(sql, rel_basetable(sql, t, name), inserts);
+}
+
+/* collist: base array columns addressed by the INSERT INTO stmt
+ * ins: tmp columns with all values to be inserted, to be joined with the base array on the dimensional columns
+ * 
+ * This function walks through the already aligned columns from the base ARRAY
+ * 't' and in the INSERT INTO stmt 'ins->exps'.
+ * For all columns explicitly addressed in the INSERT INTO stmt
+ * (i.e., '!(e->type == e_atom && !e->name && ((atom*)e->l)->isnull)'):
+ * if its a dimension, add a join condition; otherwise add it to 'updates'.
+ *
+ * Note that, omitting a dimensional column in the INSERT INTO stmt causes
+ * _all_ cells on this dimension to be updated; while omitting a
+ * non-dimensional column in the INSERT INTO stmt means that the existing
+ * values of this column may not be changed.
+ *
+ * Also note that, if only one set of new values are given with a NULL value as
+ * the new cell value(s), it is also represented by an sql_exp *e, where
+ * 'e->type == e_atom && !e->name && ((atom*)e->l)->isnull'.  This NULL value
+ * should overwrite existing value(s) of the qualified cell value(s).
+ */
+static sql_rel *
+rel_insert_array(mvc *sql, sql_table *t, sql_rel *ins)
+{
+	sql_rel *r = NULL, *jn = NULL;
+	sql_exp **updates = table_update_array(sql,t);
+	/* to be updated columns, i.e., %TID% and all non-dimensional columns */
+	list *exps= new_exp_list(sql->sa);
+	node *m = NULL, *n = NULL;
+
+	/* join the to be inserted columns with the base array */
+	r = rel_basetable(sql, t, t->base.name);
+	jn = rel_crossproduct(sql->sa, r, ins, op_join);
+
+	/* Initialise the list with the %TID% column */
+	append(exps, exp_column(sql->sa, t->base.name, "%TID%", sql_bind_localtype("oid"), CARD_MULTI, 0, 1, NULL));
+	for(m = t->columns.set->h, n = ins->exps->h; m && n; m = m->next, n = n->next) {
+		sql_column *c = m->data; /* column from base array */
+		sql_exp *eOld = NULL, *eNew = NULL, *e = n->data; /* column exp in INSERT stmt */
+
+		if (e) {
+			exp_label(sql->sa, e, ++sql->label);
+			if (c->dim) {
+				list *rng_exps = new_exp_list(sql->sa), *drngs = sa_list(sql->sa);
+				assert(rng_exps && drngs);
+
+				append(rng_exps, exp_atom_lng(sql->sa, c->dim->strt));
+				append(rng_exps, exp_atom_lng(sql->sa, c->dim->step));
+				append(rng_exps, exp_atom_lng(sql->sa, c->dim->stop));
+				append(drngs, rng_exps);
+				append(drngs, new_exp_list(sql->sa)); /* empty lists for slicing and */
+				append(drngs, new_exp_list(sql->sa)); /* tiling ranges */
+				/* FIXME: is adding rng_exps here useful */
+				eOld = exp_column(sql->sa, c->t->base.name, c->base.name, &c->type, CARD_MULTI, c->null, 0, drngs);
+			} else {
+				eOld = exp_column(sql->sa, c->t->base.name, c->base.name, &c->type, CARD_MULTI, c->null, 0, NULL);
+			}
+			eNew = exp_column(sql->sa, NULL, exp_name(e), exp_subtype(e), ins->card, has_nil(e), is_intern(e), e->type == e_column?e->f:NULL);
+			if (c->dim) {
+				rel_join_add_exp(sql->sa, jn, exp_compare(sql->sa, eOld, eNew, cmp_equal));
+			} else {
+				/* tell rel_project to rename an L_nnn column to the
+				 * corresponding column name in the base ARRAY */
+				exp_setname(sql->sa, eNew, c->t->base.name, c->base.name);
+				updates[c->colnr] = eNew;
+				append(exps, eOld);
+			}
+		} else {
+			/* Add a default NULL value for, both dimensional and
+			 * non-dimensional, columns not in the collist of INSERT INTO.
+			 *
+			 * Note that, for fixed arrays, we shall not use the DEFAULT value
+			 * of a non-dimensional columns to overwrite the values already in
+			 * that column.  However, for unbounded arrays, later on, we
+			 * probably should check if we can automatically fill in the
+			 * unspecified values of new cells using the column DEFAULT.
+			 */
+			n->data = exp_atom(sql->sa, atom_general(sql->sa, &c->type, NULL));
+		}
+	}
+	assert(!m && !n); /* the two list must be the same length */
+
+	/* Don't add columns in 'updates' to rel_project here, this will be done later by rel_update */
+	r = rel_project(sql->sa, jn, append(new_exp_list(sql->sa), exp_column(sql->sa, t->base.name, "%TID%", sql_bind_localtype("oid"), CARD_MULTI, 0, 1, NULL)));
+ 	return rel_update(sql, rel_basetable(sql, t, t->base.name), r, updates, exps);
 }
 
 static sql_rel *
@@ -449,46 +538,65 @@ insert_into(mvc *sql, dlist *qname, dlist *columns, symbol *val_or_q)
 		}
 	}
 
-	for (i = 0; i < len; i++) {
-		if (!inserts[i]) {
-			for (m = t->columns.set->h; m; m = m->next) {
-				sql_column *c = m->data;
+	/* In case of an ARRAY, delay replacing the value of a missing column
+	 * (i.e., not specified in the collist of INSERT INTO) with a default value
+	 * (c->def or NULL).  This is to prevent:
+	 *
+	 * i) a superfluous join between an unspecified dimensional column and the
+	 * 	  default NULL values, which always yields zero tuples in the join
+	 * 	  results, which in turn, causes zero tuples to be inserted; and
+	 *
+	 * ii) that we cannot distinguish an explicitly specified NULL value in the
+	 *     query for a non-dimensional column from an implicitly added NULL
+	 *     value for an unspecified non-dimensional column.
+	 *
+	 * The current solution for both problems is to delay the code below into
+	 * rel_insert_array(), after proper join conditions and projections have
+	 * respectively been added for the dimensional and non-dimensional columns
+	 * that have been specified in the collist.
+	 */
+	if(!isArray(t)) {
+		for (i = 0; i < len; i++) {
+			if (!inserts[i]) {
+				for (m = t->columns.set->h; m; m = m->next) {
+					sql_column *c = m->data;
 
-				if (c->colnr == i) {
-					size_t j = 0;
-					sql_exp *exps = NULL;
+					if (c->colnr == i) {
+						size_t j = 0;
+						sql_exp *exps = NULL;
 
-					for(j = 0; j < rowcount; j++) {
-						sql_exp *e = NULL;
+						for(j = 0; j < rowcount; j++) {
+							sql_exp *e = NULL;
 
-						if (c->def) {
-							char *q = sa_message(sql->sa, "select %s;", c->def);
-							e = rel_parse_val(sql, q, sql->emode);
-							if (!e || (e = rel_check_type(sql, &c->type, e, type_equal)) == NULL)
-								return NULL;
-						} else {
-							atom *a = atom_general(sql->sa, &c->type, NULL);
-							e = exp_atom(sql->sa, a);
+							if (c->def) {
+								char *q = sa_message(sql->sa, "select %s;", c->def);
+								e = rel_parse_val(sql, q, sql->emode);
+								if (!e || (e = rel_check_type(sql, &c->type, e, type_equal)) == NULL)
+									return NULL;
+							} else {
+								atom *a = atom_general(sql->sa, &c->type, NULL);
+								e = exp_atom(sql->sa, a);
+							}
+							if (!e) 
+								return sql_error(sql, 02, "INSERT INTO: column '%s' has no valid default value", c->base.name);
+							if (exps) {
+								list *vals_list = exps->f;
+
+								list_append(vals_list, e);
+							}
+							if (!exps && j+1 < rowcount) {
+								exps = exp_values(sql->sa, sa_list(sql->sa));
+								exps->tpe = c->type;
+								exp_label(sql->sa, exps, ++sql->label);
+							}
+							if (!exps)
+								exps = e;
 						}
-						if (!e) 
-							return sql_error(sql, 02, "INSERT INTO: column '%s' has no valid default value", c->base.name);
-						if (exps) {
-							list *vals_list = exps->f;
-			
-							list_append(vals_list, e);
-						}
-						if (!exps && j+1 < rowcount) {
-							exps = exp_values(sql->sa, sa_list(sql->sa));
-							exps->tpe = c->type;
-							exp_label(sql->sa, exps, ++sql->label);
-						}
-						if (!exps)
-							exps = e;
+						inserts[i] = exps;
 					}
-					inserts[i] = exps;
 				}
+				assert(inserts[i]);
 			}
-			assert(inserts[i]);
 		}
 	}
 	/* now rewrite project exps in proper table order */
@@ -496,7 +604,7 @@ insert_into(mvc *sql, dlist *qname, dlist *columns, symbol *val_or_q)
 	for (i = 0; i<len; i++) 
 		list_append(exps, inserts[i]);
 	r->exps = exps;
-	return rel_insert_table(sql, t, tname, r);
+	return isArray(t)?rel_insert_array(sql, t, r):rel_insert_table(sql, t, tname, r);
 }
 
 static int
@@ -572,7 +680,7 @@ rel_update_hash_idx(mvc *sql, sql_idx *i, sql_rel *updates)
 
 	if (!updates->exps)
 		updates->exps = new_exp_list(sql->sa);
-	append(updates->exps, exp_column(sql->sa, i->t->base.name, iname, wrd, CARD_MULTI, 0, 0));
+	append(updates->exps, exp_column(sql->sa, i->t->base.name, iname, wrd, CARD_MULTI, 0, 0, NULL));
 	return updates;
 }
 
@@ -632,12 +740,12 @@ rel_update_join_idx(mvc *sql, sql_idx *i, sql_rel *updates)
 		sql_kc *rc = o->data;
 		sql_subfunc *isnil = sql_bind_func(sql->sa, sql->session->schema, "isnull", &c->c->type, NULL, F_FUNC);
 		sql_exp *upd = nth(get_inserts(updates), c->c->colnr + 1), *lnl, *rnl, *je;
-		sql_exp *rtc = exp_column(sql->sa, rel_name(rt), rc->c->base.name, &rc->c->type, CARD_MULTI, rc->c->null, 0);
+		sql_exp *rtc = exp_column(sql->sa, rel_name(rt), rc->c->base.name, &rc->c->type, CARD_MULTI, rc->c->null, 0, NULL);
 
 
 		/* FOR MATCH FULL/SIMPLE/PARTIAL see above */
 		/* Currently only the default MATCH SIMPLE is supported */
-		upd = exp_column(sql->sa, exp_relname(upd), exp_name(upd), exp_subtype(upd), upd->card, has_nil(upd), is_intern(upd));
+		upd = exp_column(sql->sa, exp_relname(upd), exp_name(upd), exp_subtype(upd), upd->card, has_nil(upd), is_intern(upd), NULL);
 		lnl = exp_unop(sql->sa, upd, isnil);
 		rnl = exp_unop(sql->sa, upd, isnil);
 		if (need_nulls) {
@@ -673,7 +781,7 @@ rel_update_join_idx(mvc *sql, sql_idx *i, sql_rel *updates)
 	nnlls->exps = join_exps;
 	nnlls = rel_project(sql->sa, nnlls, pexps);
 	/* add row numbers */
-	e = exp_column(sql->sa, rel_name(rt), "%TID%", sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
+	e = exp_column(sql->sa, rel_name(rt), "%TID%", sql_bind_localtype("oid"), CARD_MULTI, 0, 1, NULL);
 	exp_setname(sql->sa, e, i->t->base.name, iname);
 	append(nnlls->exps, e);
 
@@ -686,7 +794,7 @@ rel_update_join_idx(mvc *sql, sql_idx *i, sql_rel *updates)
 	}
 	if (!updates->exps)
 		updates->exps = new_exp_list(sql->sa);
-	append(updates->exps, exp_column(sql->sa, i->t->base.name, iname, sql_bind_localtype("oid"), CARD_MULTI, 0, 0));
+	append(updates->exps, exp_column(sql->sa, i->t->base.name, iname, sql_bind_localtype("oid"), CARD_MULTI, 0, 0, NULL));
 	return updates;
 }
 
@@ -763,8 +871,22 @@ rel_update(mvc *sql, sql_rel *t, sql_rel *uprel, sql_exp **updates, list *exps)
 		sql_column *c = m->data;
 		sql_exp *v = updates[c->colnr];
 
-		if (!v) 
-			v = exp_column(sql->sa, tab->base.name, c->base.name, &c->type, CARD_MULTI, c->null, 0);
+		if (!v) {
+			if (c->dim) {
+				list *rng_exps = new_exp_list(sql->sa), *drngs = sa_list(sql->sa);
+				assert(rng_exps && drngs);
+
+				append(rng_exps, exp_atom_lng(sql->sa, c->dim->strt));
+				append(rng_exps, exp_atom_lng(sql->sa, c->dim->step));
+				append(rng_exps, exp_atom_lng(sql->sa, c->dim->stop));
+				append(drngs, rng_exps);
+				append(drngs, new_exp_list(sql->sa)); /* empty lists for slicing and */
+				append(drngs, new_exp_list(sql->sa)); /* tiling ranges */
+				v = exp_column(sql->sa, tab->base.name, c->base.name, &c->type, CARD_MULTI, c->null, 0, drngs);
+			} else {
+				v = exp_column(sql->sa, tab->base.name, c->base.name, &c->type, CARD_MULTI, c->null, 0, NULL);
+			}
+		}
 		rel_project_add_exp(sql, uprel, v);
 	}
 
@@ -845,9 +967,9 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_where)
 		/* We simply create a relation %TID%, updates */
 
 		/* first create the project */
-		e = exp_column(sql->sa, rel_name(r), "%TID%", sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
+		e = exp_column(sql->sa, rel_name(r), "%TID%", sql_bind_localtype("oid"), CARD_MULTI, 0, 1, NULL);
 		r = rel_project(sql->sa, r, append(new_exp_list(sql->sa),e));
-		e = exp_column(sql->sa, rel_name(r), "%TID%", sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
+		e = exp_column(sql->sa, rel_name(r), "%TID%", sql_bind_localtype("oid"), CARD_MULTI, 0, 1, NULL);
 		append(exps, e);
 		updates = table_update_array(sql, t);
 		for (n = assignmentlist->h; n; n = n->next) {
@@ -902,7 +1024,7 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_where)
 					nr = rel_project(sql->sa, rel_crossproduct(sql->sa, rel_dup(r->l), rel_val, op_join), exps);
 					rel_destroy(r);
 					r = nr;
-					v = exp_column(sql->sa, NULL, exp_name(v), exp_subtype(v), v->card, has_nil(v), is_intern(v));
+					v = exp_column(sql->sa, NULL, exp_name(v), exp_subtype(v), v->card, has_nil(v), is_intern(v), v->type == e_column?v->f:NULL);
 				}		
 			} else {
 				v = exp_atom(sql->sa, atom_general(sql->sa, &c->type, NULL));
@@ -912,7 +1034,20 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_where)
 				rel_destroy(r);
 				return NULL;
 			}
-			list_append(exps, exp_column(sql->sa, t->base.name, cname, &c->type, CARD_MULTI, 0, 0));
+			if (c->dim) {
+				list *rng_exps = new_exp_list(sql->sa), *drngs = sa_list(sql->sa);
+				assert(rng_exps && drngs);
+
+				append(rng_exps, exp_atom_lng(sql->sa, c->dim->strt));
+				append(rng_exps, exp_atom_lng(sql->sa, c->dim->step));
+				append(rng_exps, exp_atom_lng(sql->sa, c->dim->stop));
+				append(drngs, rng_exps);
+				append(drngs, new_exp_list(sql->sa)); /* empty lists for slicing and */
+				append(drngs, new_exp_list(sql->sa)); /* tiling ranges */
+				list_append(exps, exp_column(sql->sa, t->base.name, cname, &c->type, CARD_MULTI, 0, 0, drngs));
+			} else {
+				list_append(exps, exp_column(sql->sa, t->base.name, cname, &c->type, CARD_MULTI, 0, 0, NULL));
+			}
 			assert(!updates[c->colnr]);
 			exp_setname(sql->sa, v, c->t->base.name, c->base.name);
 			updates[c->colnr] = v;
@@ -988,7 +1123,7 @@ delete_table(mvc *sql, dlist *qname, symbol *opt_where)
 			if (!r) {
 				return NULL;
 			} else {
-				sql_exp *e = exp_column(sql->sa, rel_name(r), "%TID%", sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
+				sql_exp *e = exp_column(sql->sa, rel_name(r), "%TID%", sql_bind_localtype("oid"), CARD_MULTI, 0, 1, NULL);
 
 				r = rel_project(sql->sa, r, append(new_exp_list(sql->sa), e));
 
@@ -1036,7 +1171,21 @@ rel_import(mvc *sql, sql_table *t, char *tsep, char *rsep, char *ssep, char *ns,
 	exps = new_exp_list(sql->sa);
 	for (n = t->columns.set->h; n; n = n->next) {
 		sql_column *c = n->data;
-		append(exps, exp_column(sql->sa, t->base.name, c->base.name, &c->type, CARD_MULTI, c->null, 0));
+
+		if (c->dim) {
+			list *rng_exps = new_exp_list(sql->sa), *drngs = sa_list(sql->sa);
+			assert(rng_exps && drngs);
+
+			append(rng_exps, exp_atom_lng(sql->sa, c->dim->strt));
+			append(rng_exps, exp_atom_lng(sql->sa, c->dim->step));
+			append(rng_exps, exp_atom_lng(sql->sa, c->dim->stop));
+			append(drngs, rng_exps);
+			append(drngs, new_exp_list(sql->sa)); /* empty lists for slicing and */
+			append(drngs, new_exp_list(sql->sa)); /* tiling ranges */
+			append(exps, exp_column(sql->sa, t->base.name, c->base.name, &c->type, CARD_MULTI, c->null, 0, drngs));
+		} else {
+			append(exps, exp_column(sql->sa, t->base.name, c->base.name, &c->type, CARD_MULTI, c->null, 0, NULL));
+		}
 	}
 	res = rel_table_func(sql->sa, NULL, import, exps);
 	return res;
@@ -1212,7 +1361,21 @@ bincopyfrom(mvc *sql, dlist *qname, dlist *files)
 	exps = new_exp_list(sql->sa);
 	for (n = t->columns.set->h; n; n = n->next) {
 		sql_column *c = n->data;
-		append(exps, exp_column(sql->sa, t->base.name, c->base.name, &c->type, CARD_MULTI, c->null, 0));
+
+		if (c->dim) {
+			list *rng_exps = new_exp_list(sql->sa), *drngs = sa_list(sql->sa);
+			assert(rng_exps && drngs);
+
+			append(rng_exps, exp_atom_lng(sql->sa, c->dim->strt));
+			append(rng_exps, exp_atom_lng(sql->sa, c->dim->step));
+			append(rng_exps, exp_atom_lng(sql->sa, c->dim->stop));
+			append(drngs, rng_exps);
+			append(drngs, new_exp_list(sql->sa)); /* empty lists for slicing and */
+			append(drngs, new_exp_list(sql->sa)); /* tiling ranges */
+			append(exps, exp_column(sql->sa, t->base.name, c->base.name, &c->type, CARD_MULTI, c->null, 0, drngs));
+		} else {
+			append(exps, exp_column(sql->sa, t->base.name, c->base.name, &c->type, CARD_MULTI, c->null, 0, NULL));
+		}
 	}
 	res = rel_table_func(sql->sa, NULL, import, exps);
 	return rel_insert_table(sql, t, t->base.name, res);

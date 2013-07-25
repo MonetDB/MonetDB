@@ -28,6 +28,7 @@ MTSAFE
 lib_mal = {
 	NOINST
 	SOURCES = \
+		array.mx \
 		batExtensions.c batExtensions.h \
 		bbp.c bbp.h \
 		box.c box.h \
@@ -78,7 +79,8 @@ headers_mal = {
 		txtsim.mal recycle.mal \
 		cluster.mal trader.mal \
 		tokenizer.mal zorder.mal sample.mal \
-		calc.mal batcalc.mal batmtime.mal
+		calc.mal batcalc.mal batmtime.mal \
+		array.mx
 }
 
 EXTRA_DIST = batExtensions.mal iterator.mal constraints.mal \

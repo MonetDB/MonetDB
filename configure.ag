@@ -2209,6 +2209,134 @@ AC_SUBST(MSEED_CFLAGS, $MSEED_CFLAGS)
 AC_SUBST(MSEED_LIBS, $MSEED_LIBS)
 AM_CONDITIONAL(HAVE_MSEED, test x"$have_mseed" != xno)
 
+
+# geotiff
+have_geotiff="auto"
+AC_ARG_WITH(geotiff,
+    AS_HELP_STRING([--with-geotiff=DIR],[geotiff library is installed in DIR]),
+    [have_geotiff="$withval"], [have_geotiff="auto"])
+# first autoconf for distributions that added a .pc file themselves (Fedora)
+if test "x$have_geotiff" != xno; then
+
+	case "$have_geotiff" in
+	auto|yes)
+		PKG_CHECK_MODULES([GEOTIFF], [libgeotiff], [have_geotiff="pkgconf"], [have_geotiff="$have_geotiff"])
+		;;
+	*)
+		GEOTIFF_CFLAGS="-I$have_geotiff/include"
+		GEOTIFF_LIBS="-L$have_geotiff/lib"
+		;;
+	esac
+fi
+# try to detect it manually like upstream provides it
+if test "x$have_geotiff" != xno && test "x$have_geotiff" != xpkgconf; then
+	save_CPPFLAGS="$CPPFLAGS"
+	save_LDFLAGS="$LDFLAGS"
+	save_LIBS="$LIBS"
+	CPPFLAGS="$CPPFLAGS $GEOTIFF_CFLAGS"
+	LDFLAGS="$LDFLAGS $GEOTIFF_LIBS"
+	LIBS=""
+	AC_CHECK_HEADER(tiffio.h, AC_CHECK_LIB(tiff, TIFFOpen))
+	found_xtiffio_h=yes
+	AC_CHECK_HEADER(xtiffio.h,,
+		AC_CHECK_HEADER(geotiff/xtiffio.h,
+			[if test "x$GEOTIFF_CFLAGS" = x; then
+				GEOTIFF_CFLAGS="-I/usr/include/geotiff"
+			 else
+				GEOTIFF_CFLAGS="$GEOTIFF_CFLAGS/geotiff"
+			 fi
+			 CPPFLAGS="$save_CPPFLAGS $GEOTIFF_CFLAGS"],
+			AC_CHECK_HEADER(libgeotiff/xtiffio.h,
+				[if test "x$GEOTIFF_CFLAGS" = x; then
+					GEOTIFF_CFLAGS="-I/usr/include/libgeotiff"
+				 else
+					GEOTIFF_CFLAGS="$GEOTIFF_CFLAGS/libgeotiff"
+				 fi
+				 CPPFLAGS="$save_CPPFLAGS $GEOTIFF_CFLAGS"],
+				[found_xtiffio_h=no])))
+	if test "x$found_xtiffio_h" = xyes; then
+		AC_CHECK_LIB(geotiff, XTIFFOpen,
+			[AC_DEFINE(HAVE_GEOTIFF, 1, [Define if you have the geotiff library])
+			 have_geotiff=yes
+			 LIBS="$LIBS -lgeotiff"],
+			[ if test "x$have_geotiff" != xauto; then AC_MSG_ERROR([-lgeotiff library not found]); fi; have_geotiff=no ],
+			[$MATH_LIBS])
+	else
+		if test "x$have_geotiff" != xauto; then AC_MSG_ERROR([xtiffio.h header not found]); fi; have_geotiff=no
+	fi
+	GEOTIFF_LIBS="$GEOTIFF_LIBS $LIBS"
+	LDFLAGS="$save_LDFLAGS"
+	CPPFLAGS="$save_CPPFLAGS"
+	LIBS="$save_LIBS"
+	if test "x$have_geotiff" != "xyes"; then
+		GEOTIFF_CFLAGS=""
+		GEOTIFF_LIBS=""
+	fi
+fi
+AC_SUBST(geotiff_CFLAGS, $GEOTIFF_CFLAGS)
+AC_SUBST(geotiff_LIBS, $GEOTIFF_LIBS)
+AM_CONDITIONAL(HAVE_GEOTIFF, test x"$have_geotiff" != xno)
+
+# gdal
+have_gdal="auto"
+AC_ARG_WITH(gdal,
+    AS_HELP_STRING([--with-gdal=DIR],[gdal library is installed in DIR]),
+    [have_gdal="$withval"], [have_gdal="auto"])
+# first autoconf for distributions that added a .pc file themselves (Fedora)
+if test "x$have_gdal" != xno; then
+
+	case "$have_gdal" in
+	auto|yes)
+		PKG_CHECK_MODULES([GDAL], [libgdal], [have_gdal="pkgconf"], [have_gdal="$have_gdal"])
+		;;
+	*)
+		GDAL_CFLAGS="-I$have_gdal/include"
+		GDAL_LIBS="-L$have_gdal/lib"
+		;;
+	esac
+fi
+# try to detect it manually like upstream provides it
+if test "x$have_gdal" != xno && test "x$have_gdal" != xpkgconf; then
+	save_CPPFLAGS="$CPPFLAGS"
+	save_LDFLAGS="$LDFLAGS"
+	save_LIBS="$LIBS"
+	CPPFLAGS="$CPPFLAGS $GDAL_CFLAGS"
+	LDFLAGS="$LDFLAGS $GDAL_LIBS"
+	LIBS=""
+	found_gdal_h=yes
+	AC_CHECK_HEADER(gdal.h,,
+		AC_CHECK_HEADER(gdal/gdal.h,
+			[if test "x$GDAL_CFLAGS" = x; then
+				GDAL_CFLAGS="-I/usr/include/gdal"
+			 else
+				GDAL_CFLAGS="$GDAL_CFLAGS/gdal"
+			 fi
+			 CPPFLAGS="$save_CPPFLAGS $GDAL_CFLAGS"],
+			[found_gdal_h=no]))
+	if test "x$found_gdal_h" = xyes; then
+		AC_CHECK_LIB(gdal, GDALAllRegister,
+			[AC_DEFINE(HAVE_GDAL, 1, [Define if you have the gdal library])
+			 have_gdal=yes
+			 LIBS="$LIBS -lgdal"],
+			[ if test "x$have_gdal" != xauto; then AC_MSG_ERROR([-lgdal library not found]); fi; have_gdal=no ],
+			[$MATH_LIBS])
+	else
+		if test "x$have_gdal" != xauto; then AC_MSG_ERROR([gdal.h header not found]); fi; have_gdal=no
+	fi
+	GDAL_LIBS="$GDAL_LIBS $LIBS"
+	LDFLAGS="$save_LDFLAGS"
+	CPPFLAGS="$save_CPPFLAGS"
+	LIBS="$save_LIBS"
+	if test "x$have_gdal" != "xyes"; then
+		GDAL_CFLAGS=""
+		GDAL_LIBS=""
+	fi
+fi
+AC_SUBST(gdal_CFLAGS, $GDAL_CFLAGS)
+AC_SUBST(gdal_LIBS, $GDAL_LIBS)
+AM_CONDITIONAL(HAVE_GDAL, test x"$have_gdal" != xno)
+
+
 # geos, only used in geom module
 have_geos=auto
 GEOS_INCS=''
@@ -3072,6 +3200,8 @@ for comp in \
 	jaql \
 	geom \
 	fits \
+	geotiff \
+	gdal \
 	rdf \
 	datacell \
 	odbc \

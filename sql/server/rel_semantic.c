@@ -175,7 +175,9 @@ rel_semantic(mvc *sql, symbol *s)
 
 	case SQL_CREATE_TABLE:
 	case SQL_CREATE_VIEW:
+	case SQL_CREATE_ARRAY:
 	case SQL_DROP_TABLE:
+	case SQL_DROP_ARRAY:
 	case SQL_DROP_VIEW:
 	case SQL_ALTER_TABLE:
 
@@ -262,6 +264,10 @@ rel_semantic(mvc *sql, symbol *s)
 	case SQL_INTERSECT:
 		return rel_selects(sql, s);
 
+	case SQL_ARRAY:
+	case SQL_ARRAY_DIM_SLICE:
+	case SQL_DIMENSION:
+		return sql_error(sql, 02, "Array not type checked yet");
 	default:
 		return sql_error(sql, 02, "symbol type not found");
 	}

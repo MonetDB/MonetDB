@@ -99,8 +99,11 @@ e_convert
 	-> r	list of from and to subtypes
 
 e_cmp
-	-> l	left sub expression
-	-> r	right sub expression (f second arg for range expressions)
+	-> l	left sub expression, or 
+			the to be filtered dimension in case of an array slcing
+	-> r	right sub expression (f second arg for range expressions), or
+			the (>= 6) parameters to the array_slice filter function in case of an array slicing
+	-> f	the compare/filter function
 	-> flag compare type		
 		(       cmp_gt = 0,
         		cmp_gte = 1,
@@ -132,6 +135,13 @@ e_column
 		l,r names of refered expression
 	-> l 	optional relation name 
 	-> r	expression name
+	-> f	only used by the dimensional columns of the arrays
+			a list of four lists, with each of them containing three expressions denoting the [start:step:stop] values
+			->h->data: the initial range of the array
+			->h->next->data: for unbounded arrays, the range of the _current_ bounding box.
+			                 The same as ->h->data in case of fixed arrays.
+			->h->next->next->data: the slicing range, is empty if there has been no slicing
+			->h->next->next->next->data: the tiling ranges, is empty if there has been no tiling
 	-> type 
 
 	

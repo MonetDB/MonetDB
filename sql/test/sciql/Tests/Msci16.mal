@@ -1,0 +1,1 @@
+ALTER ARRAY img ALTER x DIMENSION[-5:*];

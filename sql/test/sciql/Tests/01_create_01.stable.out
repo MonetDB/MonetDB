@@ -1,0 +1,74 @@
+stdout of test '01_create_01` in directory 'sql/test/sciql` itself:
+
+
+# 13:50:46 >  
+# 13:50:46 >   mserver5  --debug=10 --set gdk_nr_threads=0  --set "gdk_dbfarm=/export/scratch0/zhang/monet-install/sciql/debug/var/MonetDB" --set mapi_open=true --set mapi_port=31258 --set monet_prompt= --trace --forcemito --set mal_listing=2  "--dbname=mTests_test_sciql" --set mal_listing=0 ; echo ; echo Over..
+# 13:50:46 >  
+
+# MonetDB 5 server v11.6.0
+# This is an unreleased version
+# Serving database 'mTests_test_sciql', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.749 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2012 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://jarl.ins.cwi.nl:31258/
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 11:12:52 >  
+# 11:12:52 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=jarl" "--port=33649"
+# 11:12:52 >  
+
+#CREATE ARRAY test_01_01_tinyint  (x TINYINT  DIMENSION[4], v FLOAT DEFAULT 3.7);
+#CREATE ARRAY test_01_01_smallint (x SMALLINT DIMENSION[4], v FLOAT);
+#CREATE ARRAY test_01_01_int      (x INTEGER  DIMENSION[4], v FLOAT DEFAULT 3.7);
+#CREATE ARRAY test_01_01_bigint   (x BIGINT   DIMENSION[4], v FLOAT DEFAULT NULL);
+#SELECT * FROM test_01_01_tinyint;
+% sys.test_01_01_tinyint,	sys.test_01_01_tinyint # table_name
+% x,	v # name
+% tinyint,	double # type
+% 1,	24 # length
+[ 0,	3.7	]
+[ 1,	3.7	]
+[ 2,	3.7	]
+[ 3,	3.7	]
+#SELECT * FROM test_01_01_smallint;
+% sys.test_01_01_smallint,	sys.test_01_01_smallint # table_name
+% x,	v # name
+% smallint,	double # type
+% 1,	24 # length
+[ 0,	NULL	]
+[ 1,	NULL	]
+[ 2,	NULL	]
+[ 3,	NULL	]
+#SELECT * FROM test_01_01_int;
+% sys.test_01_01_int,	sys.test_01_01_int # table_name
+% x,	v # name
+% int,	double # type
+% 1,	24 # length
+[ 0,	3.7	]
+[ 1,	3.7	]
+[ 2,	3.7	]
+[ 3,	3.7	]
+#SELECT * FROM test_01_01_bigint;
+% sys.test_01_01_bigint,	sys.test_01_01_bigint # table_name
+% x,	v # name
+% bigint,	double # type
+% 1,	24 # length
+[ 0,	NULL	]
+[ 1,	NULL	]
+[ 2,	NULL	]
+[ 3,	NULL	]
+#DROP ARRAY test_01_01_tinyint;
+#DROP ARRAY test_01_01_smallint;
+#DROP ARRAY test_01_01_int;
+#DROP ARRAY test_01_01_bigint;
+
+# 13:50:46 >  
+# 13:50:46 >  Done.
+# 13:50:46 >  
+

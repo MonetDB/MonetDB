@@ -51,7 +51,6 @@ include calc;
 include status;
 include group;
 include aggr;
-include array;
 include pqueue;
 include mkey;
 
@@ -88,6 +87,7 @@ include factories;
 include recycle;
 include remote;
 include trader; # experimental
+include array; # extremely experimental
 
 include mat; 	# experimental
 # include histogram; 	# experimental

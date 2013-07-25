@@ -12,7 +12,7 @@ stderr of test 'alter_view` in directory 'sql/test/bugs` itself:
 
 MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
 QUERY = ALTER TABLE v1 ADD PRIMARY KEY(age);
-ERROR = !ALTER TABLE: cannot add constraint to VIEW 'v1'
+ERROR = !ALTER TABLE/ARRAY: cannot add constraint to VIEW 'v1'
 
 # 10:54:20 >  
 # 10:54:20 >  Done.

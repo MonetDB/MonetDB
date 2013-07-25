@@ -29,7 +29,9 @@
  * The mseed catalog initialization script should have been run.
  * @begin verbatim
  * -- this schema is intended to experiment with accessing mseed files
- * DROP FUNCTION mseedImport();
+ * DROP FUNCTION mseedImport;
+ * DROP FUNCTION mseedLoad;
+ * DROP TABLE mseed;
  * DROP TABLE mseedCatalog;
  *
  * -- all records in the mseed files correspond to a row in the catalog

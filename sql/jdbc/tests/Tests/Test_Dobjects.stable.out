@@ -54,6 +54,7 @@ TABLE_TYPE
 mTests_sql_jdbc_tests	
 Resultset with 3 columns
 TABLE_SCHEM	TABLE_CATALOG	TABLE_CAT	
+rs	mTests_sql_jdbc_tests	mTests_sql_jdbc_tests	
 sys	mTests_sql_jdbc_tests	mTests_sql_jdbc_tests	
 tmp	mTests_sql_jdbc_tests	mTests_sql_jdbc_tests	
 Resultset with 3 columns
@@ -61,7 +62,9 @@ TABLE_SCHEM	TABLE_CATALOG	TABLE_CAT
 sys	mTests_sql_jdbc_tests	mTests_sql_jdbc_tests	
 Resultset with 10 columns
 TABLE_CAT	TABLE_SCHEM	TABLE_NAME	TABLE_TYPE	REMARKS	TYPE_CAT	TYPE_SCHEM	TYPE_NAME	SELF_REFERENCING_COL_NAME	REF_GENERATION	
+mTests_sql_jdbc_tests	sys	_arrays	SYSTEM TABLE	null	null	null	null	rowid	SYSTEM	
 mTests_sql_jdbc_tests	sys	_columns	SYSTEM TABLE	null	null	null	null	rowid	SYSTEM	
+mTests_sql_jdbc_tests	sys	_dimensions	SYSTEM TABLE	null	null	null	null	rowid	SYSTEM	
 mTests_sql_jdbc_tests	sys	_tables	SYSTEM TABLE	null	null	null	null	rowid	SYSTEM	
 mTests_sql_jdbc_tests	sys	args	SYSTEM TABLE	null	null	null	null	rowid	SYSTEM	
 mTests_sql_jdbc_tests	sys	auths	SYSTEM TABLE	null	null	null	null	rowid	SYSTEM	
@@ -82,13 +85,17 @@ mTests_sql_jdbc_tests	sys	systemfunctions	SYSTEM TABLE	null	null	null	null	rowid
 mTests_sql_jdbc_tests	sys	triggers	SYSTEM TABLE	null	null	null	null	rowid	SYSTEM	
 mTests_sql_jdbc_tests	sys	types	SYSTEM TABLE	null	null	null	null	rowid	SYSTEM	
 mTests_sql_jdbc_tests	sys	user_role	SYSTEM TABLE	null	null	null	null	rowid	SYSTEM	
+mTests_sql_jdbc_tests	tmp	_arrays	SYSTEM TABLE	null	null	null	null	rowid	SYSTEM	
 mTests_sql_jdbc_tests	tmp	_columns	SYSTEM TABLE	null	null	null	null	rowid	SYSTEM	
+mTests_sql_jdbc_tests	tmp	_dimensions	SYSTEM TABLE	null	null	null	null	rowid	SYSTEM	
 mTests_sql_jdbc_tests	tmp	_tables	SYSTEM TABLE	null	null	null	null	rowid	SYSTEM	
 mTests_sql_jdbc_tests	tmp	idxs	SYSTEM TABLE	null	null	null	null	rowid	SYSTEM	
 mTests_sql_jdbc_tests	tmp	keys	SYSTEM TABLE	null	null	null	null	rowid	SYSTEM	
 mTests_sql_jdbc_tests	tmp	objects	SYSTEM TABLE	null	null	null	null	rowid	SYSTEM	
 mTests_sql_jdbc_tests	tmp	triggers	SYSTEM TABLE	null	null	null	null	rowid	SYSTEM	
+mTests_sql_jdbc_tests	sys	arrays	SYSTEM VIEW	SELECT * FROM (SELECT pt.*, 0 AS "temporary", pa.valence, pa.fixed, pa.materialised FROM "sys"."_tables" AS pt, "sys"."_arrays" AS pa WHERE pt.id = pa.table_id UNION ALL SELECT tt.*, 1 AS "temporary", ta.valence, ta.fixed, ta.materialised FROM "tmp"."_tables" AS tt, "tmp"."_arrays" AS ta WHERE tt.id = ta.table_id) AS arrays;	null	null	null	rowid	SYSTEM	
 mTests_sql_jdbc_tests	sys	columns	SYSTEM VIEW	SELECT * FROM (SELECT p.* FROM "sys"."_columns" AS p UNION ALL SELECT t.* FROM "tmp"."_columns" AS t) AS columns;	null	null	null	rowid	SYSTEM	
+mTests_sql_jdbc_tests	sys	dimensions	SYSTEM VIEW	SELECT * FROM (SELECT pc.*, "pd"."start", pd.step, pd.stop, pd.storage_order FROM "sys"."_columns" AS pc, "sys"."_dimensions" AS pd WHERE pc.id = pd.column_id UNION ALL SELECT tc.*, "td"."start", td.step, td.stop, td.storage_order FROM "tmp"."_columns" AS tc, "tmp"."_dimensions" AS td WHERE tc.id = td.column_id) AS dimensions;	null	null	null	rowid	SYSTEM	
 mTests_sql_jdbc_tests	sys	querylog	SYSTEM VIEW	create view querylog as
 select qd.*, ql.ctime, ql.arguments, ql.exec, ql.result, ql.foot, ql.memory, ql.tuples, ql.inblock, ql.oublock from queryhistory qd, callhistory ql
 where qd.id = ql.id;	null	null	null	rowid	SYSTEM	
@@ -104,6 +111,8 @@ as select "schema","table",max(count) as "count",
 	sum(case when sorted = false then 8 * count else 0 end) as auxillary
 from sys.storagemodel() group by "schema","table";	null	null	null	rowid	SYSTEM	
 mTests_sql_jdbc_tests	sys	users	SYSTEM VIEW	SELECT u."name" AS "name", ui."fullname", ui."default_schema" FROM db_users() AS u LEFT JOIN "sys"."db_user_info" AS ui ON u."name" = ui."name" ;	null	null	null	rowid	SYSTEM	
+mTests_sql_jdbc_tests	rs	catalog	TABLE	null	null	null	null	rowid	SYSTEM	
+mTests_sql_jdbc_tests	rs	files	TABLE	null	null	null	null	rowid	SYSTEM	
 
 # 20:09:14 >  
 # 20:09:14 >  "Done."

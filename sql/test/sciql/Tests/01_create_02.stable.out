@@ -1,0 +1,62 @@
+stdout of test '01_create_02` in directory 'sql/test/sciql` itself:
+
+
+# 23:27:05 >  
+# 23:27:05 >   mserver5  --debug=10 --set gdk_nr_threads=0  --set "gdk_dbfarm=/export/scratch0/zhang/monet-install/sciql/debug/var/MonetDB" --set mapi_open=true --set mapi_port=30166 --set monet_prompt= --trace --forcemito --set mal_listing=2  "--dbname=mTests_test_sciql" --set mal_listing=0 ; echo ; echo Over..
+# 23:27:05 >  
+
+# MonetDB 5 server v11.6.0
+# This is an unreleased version
+# Serving database 'mTests_test_sciql', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.749 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2012 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://jarl.ins.cwi.nl:30166/
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 16:32:40 >  
+# 16:32:40 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=jarl" "--port=31347"
+# 16:32:40 >  
+
+#CREATE SCHEMA TS; 
+#SET SCHEMA TS; 
+#CREATE ARRAY test_01_02_tinyint  (x TINYINT  DIMENSION, v FLOAT DEFAULT 3.7);
+#CREATE ARRAY test_01_02_smallint (x SMALLINT DIMENSION, v FLOAT);
+#CREATE ARRAY test_01_02_int      (x INTEGER  DIMENSION, v FLOAT DEFAULT 3.7);
+#CREATE ARRAY test_01_02_bigint   (x BIGINT   DIMENSION, v FLOAT DEFAULT NULL);
+#SELECT * FROM test_01_02_tinyint;
+% ts.test_01_02_tinyint,	ts.test_01_02_tinyint # table_name
+% x,	v # name
+% tinyint,	double # type
+% 1,	24 # length
+#SELECT * FROM test_01_02_smallint;
+% ts.test_01_02_smallint,	ts.test_01_02_smallint # table_name
+% x,	v # name
+% smallint,	double # type
+% 1,	24 # length
+#SELECT * FROM test_01_02_int;
+% ts.test_01_02_int,	ts.test_01_02_int # table_name
+% x,	v # name
+% int,	double # type
+% 1,	24 # length
+#SELECT * FROM test_01_02_bigint;
+% ts.test_01_02_bigint,	ts.test_01_02_bigint # table_name
+% x,	v # name
+% bigint,	double # type
+% 1,	24 # length
+#DROP ARRAY test_01_02_tinyint;
+#DROP ARRAY test_01_02_smallint;
+#DROP ARRAY test_01_02_int;
+#DROP ARRAY test_01_02_bigint;
+#SET SCHEMA SYS;
+#DROP SCHEMA TS; 
+
+# 23:27:05 >  
+# 23:27:05 >  Done.
+# 23:27:05 >  
+

@@ -400,7 +400,7 @@ stmt_deps(list *dep_list, stmt *s, int depend_type, int dir)
 		case st_append_col:
 		case st_update_col:
 			if (depend_type == COLUMN_DEPENDENCY) { 
-			    	if (isTable(s->op4.cval->t)) 
+			    	if (isTableOrArray(s->op4.cval->t)) 
 					dep_list = cond_append(dep_list, &s->op4.cval->base.id);
 				dep_list = cond_append(dep_list, &s->op4.cval->t->base.id);
 			}

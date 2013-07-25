@@ -115,7 +115,8 @@ typedef enum temp_t {
 	SQL_PERSIST,
 	SQL_LOCAL_TEMP,
 	SQL_GLOBAL_TEMP,
-	SQL_DECLARED_TABLE,	/* variable inside a stored procedure */
+	SQL_DECLARED_TABLE,	/* table variable inside a stored procedure */
+	SQL_DECLARED_ARRAY,	/* array variable inside a stored procedure */
 	SQL_MERGE_TABLE,
 	SQL_STREAM,
 	SQL_REMOTE,
@@ -253,6 +254,13 @@ typedef struct sql_subtype {
 
 	struct sql_table *comp_type;	
 } sql_subtype;
+
+typedef struct sql_dimrange {
+	int ord; /* this dimension is stored as the ord-th dimension */
+	lng strt; /* lng_nil means unbounded */
+	lng step;
+	lng stop;
+} sql_dimrange;
 
 /* sql_func need type transform rules types are equal if underlying
  * types are equal + scale is equal if types do not mach we try type
@@ -411,6 +419,7 @@ typedef enum sql_histype {
 typedef struct sql_column {
 	sql_base base;
 	sql_subtype type;
+	sql_dimrange *dim;
 	int colnr;
 	bit null;
 	char *def;
@@ -430,21 +439,26 @@ typedef enum table_types {
 	tt_merge_table = 3,	/* multiple tables form one table */
 	tt_stream = 4,		/* stream */
 	tt_remote = 5,		/* stored on a remote server */
-	tt_replica_table = 6	/* multiple replica of the same table */
+	tt_replica_table = 6,	/* multiple replica of the same table */
+	tt_array = 7		/* arrays */
 } table_types;
 
-#define isTable(x) 	  (x->type==tt_table)
-#define isView(x)  	  (x->type==tt_view)
-#define isGenerated(x)    (x->type==tt_generated)
-#define isMergeTable(x)   (x->type==tt_merge_table)
-#define isStream(x)  	  (x->type==tt_stream)
-#define isRemote(x)  	  (x->type==tt_remote)
+#define isTable(x) 	(x->type==tt_table)
+#define isView(x)  	(x->type==tt_view)
+#define isGenerated(x)  (x->type==tt_generated)
+#define isMergeTable(x) (x->type==tt_merge_table)
+#define isStream(x)  	(x->type==tt_stream)
+#define isRemote(x)  	(x->type==tt_remote)
 #define isReplicaTable(x) (x->type==tt_replica_table)
-#define isKindOfTable(x)  (isTable(x) || isMergeTable(x) || isRemote(x) || isReplicaTable(x))
+#define isArray(x)  	(x->type==tt_array)
+#define isTableOrArray(x)(x->type==tt_array || x->type==tt_table)
+#define isFixedArray(a) (a->type == tt_array && a->fixed)
+#define isFixedDim(d)   (d->strt != lng_nil && d->step != lng_nil && d->stop != lng_nil)
+#define isKindOfTable(x)  (isTable(x) || isArray(x) || isMergeTable(x) || isRemote(x) || isReplicaTable(x))
 
 typedef struct sql_table {
 	sql_base base;
-	sht type;		/* table, view or generated */
+	sht type;		/* table, view, generated, merge_table, stream or array*/
 	bit system;		/* system or user table */
 	temp_t persistence;	/* persistent, global or local temporary */
 	ca_t commit_action;  	/* on commit action */
@@ -465,9 +479,15 @@ typedef struct sql_table {
 	int drop_action;	/* only needed for alter drop table */
 
 	int cleared;		/* cleared in the current transaction */
+
 	void *data;
 	struct sql_schema *s;
 	struct sql_table *p;
+
+	/* array properties: */
+	int valence; /* number of dimensions */
+	bit fixed; /* fixed or unbounded */
+	bit materialised; /* are the columns materialised? */
 } sql_table;
 
 typedef struct res_col {
@@ -528,6 +548,7 @@ extern sql_column *find_sql_column(sql_table *t, char *cname);
 
 extern sql_table *find_sql_table(sql_schema *s, char *tname);
 extern sql_table *find_sql_table_id(sql_schema *s, int id);
+extern char *tt2string(int tt);
 extern node *find_sql_table_node(sql_schema *s, int id);
 
 extern sql_sequence *find_sql_sequence(sql_schema *s, char *sname);

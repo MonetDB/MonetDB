@@ -371,7 +371,7 @@ sql_update_dec2011( Client c, mvc *m )
 			for( ntab = (s)->tables.set->h ;ntab; ntab = ntab->next){
 				sql_table *t = ntab->data;
 
-				if (!isTable(t) || !t->columns.set)
+				if (!isTableOrArray(t) || !t->columns.set)
 					continue;
 				for ( ncol = (t)->columns.set->h; ncol; ncol= ncol->next){
 					sql_column *c = (sql_column *) ncol->data;
@@ -1057,7 +1057,7 @@ SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output)
 			goto endofcompile;
 		}
 		/* generate MAL code */
-		if (backend_callinline(sql, c, s ) == 0)
+		if (backend_callinline(sql, c, s, r) == 0)
 			addQueryToCache(c);
 		else
 			err = 1;
@@ -1717,7 +1717,7 @@ SQLparser(Client c)
 			MalBlkPtr mb;
 
 			scanner_query_processed(&(m->scanner));
-			if (backend_callinline(be, c, s) == 0) {
+			if (backend_callinline(be, c, s, r) == 0) {
 				trimMalBlk(c->curprg->def);
 				mb = c->curprg->def;
 				chkProgram(c->fdout, c->nspace, mb);
@@ -1744,7 +1744,7 @@ SQLparser(Client c)
 					m->type,  /* the type of the statement */
 					sql_escape_str(QUERY(m->scanner)));
 			scanner_query_processed(&(m->scanner));
-			be->q->code = (backend_code) backend_dumpproc(be, c, be->q, s);
+			be->q->code = (backend_code) backend_dumpproc(be, c, be->q, s, r);
 			if (!be->q->code)
 				err = 1;
 			be->q->stk = 0;
@@ -2022,7 +2022,7 @@ SQLrecompile(Client c, backend *be)
 
 	SQLCacheRemove(c, be->q->name);
 	s = sql_relation2stmt(m, be->q->rel);
-	be->q->code = (backend_code)backend_dumpproc(be, c, be->q, s);
+	be->q->code = (backend_code)backend_dumpproc(be, c, be->q, s, be->q->rel);
 	be->q->stk = 0;
 
 	pushEndInstruction(c->curprg->def);

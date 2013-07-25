@@ -731,8 +731,24 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, stm
                                 return j;
                         }
 			ops = sa_list(sql->sa);
-			append(ops, r);
-			append(ops, r2);
+			if (list_length(e->r) > 2) {
+				/* NB: this is a HACK to make the array_slice filter work.
+				 * Unlike the normal filters, the array_slice doesn't have
+				 *  right-side comparison value.
+				 * Instead, it has a list of dimension and slicing ranges,
+				 *  contained in e->r, that need to be passed to the filter
+				 *  function.
+				 * Here we create a stmt for each of them and add it to the ops
+				 *  list.
+				 */
+				node *n;
+				for (n = ((list*)e->r)->h; n; n = n->next) {
+					append(ops, exp_bin(sql, n->data, NULL, NULL, NULL, NULL, NULL, NULL));
+				}
+			} else { /* the normal/original filter case */
+				append(ops, r);
+				append(ops, r2);
+			}
 			r = stmt_list(sql->sa, ops);
 			s = stmt_genselect(sql->sa, l, r, e->f, sel);
                         if (s && is_anti(e))
@@ -808,7 +824,7 @@ stmt_col( mvc *sql, sql_column *c, stmt *del)
 	int readonly = (mvc_debug_on(sql, 32) || mvc_debug_on(sql, 64) || mvc_debug_on(sql, 8192));
 	stmt *sc = stmt_bat(sql->sa, c, RDONLY);
 
-	if (isTable(c->t) && !c->t->readonly && !readonly &&
+	if (isTableOrArray(c->t) && !c->t->readonly && !readonly &&
 	   (c->base.flag != TR_NEW || c->t->base.flag != TR_NEW /* alter */) &&
 	   (c->t->persistence == SQL_PERSIST || c->t->persistence == SQL_DECLARED_TABLE) && !c->t->commit_action) {
 		stmt *i = stmt_bat(sql->sa, c, RD_INS);
@@ -827,7 +843,7 @@ stmt_idx( mvc *sql, sql_idx *i, stmt *del)
 	int readonly = (mvc_debug_on(sql, 32) || mvc_debug_on(sql, 64) || mvc_debug_on(sql, 8192));
 	stmt *sc = stmt_idxbat(sql->sa, i, RDONLY);
 
-	if (isTable(i->t) && !i->t->readonly && !readonly &&
+	if (isTableOrArray(i->t) && !i->t->readonly && !readonly &&
 	   (i->base.flag != TR_NEW || i->t->base.flag != TR_NEW /* alter */) &&
 	   (i->t->persistence == SQL_PERSIST || i->t->persistence == SQL_DECLARED_TABLE) && !i->t->commit_action) {
 		stmt *ic = stmt_idxbat(sql->sa, i, RD_INS);
@@ -2680,7 +2696,7 @@ rel2bin_sample( mvc *sql, sql_rel *rel, list *refs)
 }
 
 stmt *
-sql_parse(mvc *m, sql_allocator *sa, char *query, char mode)
+_sql_parse(mvc *m, sql_allocator *sa, char *query, char mode, sql_rel **ret)
 {
 	mvc *o = NULL;
 	stmt *sq = NULL;
@@ -2734,6 +2750,8 @@ sql_parse(mvc *m, sql_allocator *sa, char *query, char mode)
 		if (r) {
 			r = rel_optimizer(m, r);
 			sq = rel_bin(m, r);
+			if (ret != NULL)
+				*ret = r;
 		}
 	}
 
@@ -2772,6 +2790,12 @@ sql_parse(mvc *m, sql_allocator *sa, char *query, char mode)
 	}
 	_DELETE(o);
 	return sq;
+}
+
+stmt *
+sql_parse(mvc *m, sql_allocator *sa, char *query, char mode)
+{ 
+	return _sql_parse(m, sa, query, mode, NULL);
 }
 
 static stmt *
@@ -4370,6 +4394,11 @@ rel2bin_catalog_table(mvc *sql, sql_rel *rel, list *refs)
 	append(l, sname);
 	append(l, table);
 	append(l, action);
+	if (rel->flag == DDL_CREATE_ARRAY){ /* the dimension range exps */
+		assert(en && en->next);
+		for(en = en->next; en; en = en->next)
+			append(l, exp_bin(sql, en->data, NULL, NULL, NULL, NULL, NULL, NULL));
+	}
 	return stmt_catalog(sql->sa, rel->flag, stmt_list(sql->sa, l));
 }
 

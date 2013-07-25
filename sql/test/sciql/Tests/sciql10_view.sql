@@ -1,0 +1,22 @@
+CREATE VIEW ARRAY vmatrix (
+  x INTEGER DIMENSION[-1:5:1],
+  y INTEGER DIMENSION[-1:5:1],
+  w FLOAT DEFAULT 1.0) AS
+SELECT y, x, v FROM matrix; 
+
+CREATE VIEW ARRAY vector (
+  x INTEGER DIMENSION[-1:5:1],
+  w FLOAT DEFAULT 1.0) AS
+SELECT A.x, (A.v+B.v)/2
+FROM matrix AS A JOIN
+  (SELECT x+1 AS x, v FROM matrix) AS B ON A.x = B.x;
+
+CREATE VIEW ARRAY vmatrix2 (
+  x INTEGER DIMENSION[-1:5:1], 
+  y INTEGER DIMENSION[-1:5:1],
+  w FLOAT DEFAULT 1.0) AS
+SELECT x, y, v FROM matrix WHERE x < 2
+UNION
+SELECT x-1, y, v FROM matrix WHERE x > 2
+UNION
+SELECT x, y, 5 FROM matrix WHERE x =3;

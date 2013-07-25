@@ -19,6 +19,7 @@
 
 
 #include "monetdb_config.h"
+#include <math.h>
 #include "rel_trans.h"
 #include "rel_select.h"
 #include "rel_updates.h"
@@ -44,8 +45,11 @@ _bind_table(sql_table *t, sql_schema *ss, sql_schema *s, char *name)
 	return tt;
 }
 
+/* drngs: the <start>, <step>, <stop> range for each dimension.
+ * Empty string represents an unspecified range constraint.
+ */
 static sql_rel *
-rel_table(mvc *sql, int cat_type, char *sname, sql_table *t, int nr)
+rel_table(mvc *sql, int cat_type, char *sname, sql_table *t, int nr, list *drngs)
 {
 	sql_rel *rel = rel_create(sql->sa);
 	list *exps = new_exp_list(sql->sa);
@@ -53,6 +57,12 @@ rel_table(mvc *sql, int cat_type, char *sname, sql_table *t, int nr)
 	append(exps, exp_atom_int(sql->sa, nr));
 	append(exps, exp_atom_str(sql->sa, sname, sql_bind_localtype("str") ));
 	append(exps, exp_atom_ptr(sql->sa, t));
+	if(drngs) {
+		node *n; 
+		assert(drngs->cnt == t->valence * 4);
+		for (n = drngs->h ; n; n = n->next)
+			append(exps, n->data);
+	}
 	rel->l = rel_basetable(sql, t, t->base.name);
 	rel->r = NULL;
 	rel->op = op_ddl;
@@ -91,7 +101,7 @@ view_rename_columns( mvc *sql, char *name, sql_rel *sq, dlist *column_spec)
 	       
 		if (!exp_is_atom(e) && !e->name)
 			exp_setname(sql->sa, e, NULL, cname);
-		n = exp_is_atom(e)?e:exp_column(sql->sa, exp_relname(e), e->name, exp_subtype(e), sq->card, has_nil(e), is_intern(e));
+		n = exp_is_atom(e)?e:exp_column(sql->sa, exp_relname(e), e->name, exp_subtype(e), sq->card, has_nil(e), is_intern(e), e->type == e_column?e->f:NULL);
 
 		exp_setname(sql->sa, n, NULL, cname);
 		list_append(l, n);
@@ -564,18 +574,27 @@ table_constraint(mvc *sql, symbol *s, sql_schema *ss, sql_table *t)
 	return res;
 }
 
+/* checks if 'tpe' is one of the MonetDB int types */
+#define isAnInternIntType(tpe) (tpe == TYPE_bit || tpe == TYPE_bte || tpe == TYPE_sht || tpe == TYPE_int || tpe == TYPE_wrd || tpe == TYPE_lng)
+/* checks if 'tpe' is one of the SQL int types, i.e., TINYINT, SMALLINT, INT or BIGINT */
+#define isAnSQLIntType(tpe, len) (tpe[len-3] == 'i' && tpe[len-2] == 'n' && tpe[len-1] == 't')
+/* TODO: update this check if more dimension types are supported. */
+#define isSupportedType(tpe) (isAnSQLIntType(tpe, strlen(tpe)))
+
 static int
 create_column(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 {
 	dlist *l = s->data.lval;
 	char *cname = l->h->data.sval;
+	char *action = alter ? "ALTER":"CREATE";
 	sql_subtype *ctype = &l->h->next->data.typeval;
 	dlist *opt_list = NULL;
 	int res = SQL_OK;
 
-(void)ss;
-	if (alter && !isTable(t)) {
-		sql_error(sql, 02, "42000!ALTER TABLE: cannot add column to VIEW '%s'\n", t->base.name);
+	(void)ss;
+
+	if (alter && !isTableOrArray(t)) {
+		sql_error(sql, 02, "42000!ALTER %s: cannot add column to VIEW '%s'\n", isArray(t)?"ARRAY":"TABLE", t->base.name);
 		return SQL_ERR;
 	}
 	if (l->h->next->next)
@@ -586,9 +605,10 @@ create_column(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 
 		cs = find_sql_column(t, cname);
 		if (cs) {
-			sql_error(sql, 02, "42S21!%s TABLE: a column named '%s' already exists\n", (alter)?"ALTER":"CREATE", cname);
+			sql_error(sql, 02, "42S21!%s TABLE: a column named '%s' already exists\n", action, cname);
 			return SQL_ERR;
 		}
+
 		cs = mvc_create_column(sql, t, cname, ctype);
 		if (column_options(sql, opt_list, ss, t, cs) == SQL_ERR)
 			return SQL_ERR;
@@ -604,7 +624,8 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 {
 	int res = SQL_OK;
 
-	if (alter && (isView(t) || ((isMergeTable(t) || isReplicaTable(t)) && s->token != SQL_TABLE && s->token != SQL_DROP_TABLE) || (isTable(t) && (s->token == SQL_TABLE || s->token == SQL_DROP_TABLE)) )){
+	if (alter && (isView(t) || ((isMergeTable(t) || isReplicaTable(t)) && s->token != SQL_TABLE && s->token != SQL_DROP_TABLE) || (isTable(t) && (s->token == SQL_TABLE || s->token == SQL_DROP_TABLE)) || (isArray(t) && (s->token == SQL_ARRAY || s->token == SQL_DROP_ARRAY))
+				)){
 		char *msg = "";
 
 		switch (s->token) {
@@ -613,6 +634,9 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 			break;
 		case SQL_COLUMN: 	
 			msg = "add column to"; 
+			break;
+		case SQL_DIMENSION:
+			msg = "add dimension to";
 			break;
 		case SQL_CONSTRAINT: 	
 			msg = "add constraint to"; 
@@ -629,6 +653,9 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 		case SQL_DROP_TABLE:
 			msg = "drop table from"; 
 			break;
+		case SQL_DROP_ARRAY:
+			msg = "drop array from"; 
+			break;
 		case SQL_DROP_COLUMN:
 			msg = "drop column from"; 
 			break;
@@ -636,7 +663,8 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 			msg = "drop constraint from"; 
 			break;
 		}
-		sql_error(sql, 02, "42000!ALTER TABLE: cannot %s %s '%s'\n",
+		sql_error(sql, 02, "42000!ALTER %s: cannot %s %s '%s'\n",
+				isTable(t)?"TABLE":(isArray(t)?"ARRAY":"TABLE/ARRAY"),
 				msg, 
 				isMergeTable(t)?"MERGE TABLE":
 				isReplicaTable(t)?"REPLICA TABLE":"VIEW",
@@ -796,52 +824,147 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, char *sname, char *name, sy
 	int instantiate = (sql->emode == m_instantiate);
 	int deps = (sql->emode == m_deps);
 	int create = (!instantiate && !deps);
-	int tt = (temp == SQL_REMOTE)?tt_remote:
-		 (temp == SQL_STREAM)?tt_stream:
-	         (temp == SQL_MERGE_TABLE)?tt_merge_table:
-	         (temp == SQL_REPLICA_TABLE)?tt_replica_table:tt_table;
+	int tt = 0;
+	char *action = (temp == SQL_DECLARED_TABLE || temp == SQL_DECLARED_ARRAY)?"DECLARE":"CREATE";
 
 	(void)create;
-	if (sname && !(s = mvc_bind_schema(sql, sname)))
-		return sql_error(sql, 02, "3F000!CREATE TABLE: no such schema '%s'", sname);
 
-	if (temp != SQL_PERSIST && tt == tt_table && 
+	switch (temp) {
+	case SQL_PERSIST:
+	case SQL_LOCAL_TEMP:
+	case SQL_GLOBAL_TEMP:
+		tt = (table_elements_or_subquery->token == SQL_CREATE_ARRAY) ? tt_array : tt_table;
+		break;
+	case SQL_DECLARED_TABLE:
+		tt = tt_table;
+		break;
+	case SQL_DECLARED_ARRAY:
+		tt = tt_array;
+		break;
+	case SQL_MERGE_TABLE:
+		tt = tt_merge_table;
+		break;
+	case SQL_STREAM:
+		tt = tt_stream;
+		break;
+	case SQL_REMOTE:
+		tt = tt_remote;
+		break;
+	case SQL_REPLICA_TABLE:
+		tt = tt_replica_table;
+		break;
+	default:
+		return sql_error(sql, 02, "Invalid table type %d", temp);
+	}
+
+	if (sname && !(s = mvc_bind_schema(sql, sname)))
+		return sql_error(sql, 02, "3F000!%s %s: no such schema '%s'", action, tt2string(tt), sname);
+
+	if (temp != SQL_PERSIST && (tt == tt_table || tt == tt_array) &&
 			commit_action == CA_COMMIT)
 		commit_action = CA_DELETE;
 	
-	if (temp != SQL_DECLARED_TABLE) {
-		if (temp != SQL_PERSIST && tt == tt_table) {
+	if (temp != SQL_DECLARED_TABLE && temp != SQL_DECLARED_ARRAY) {
+		if (temp != SQL_PERSIST && (tt == tt_table || tt == tt_array)) {
 			s = mvc_bind_schema(sql, "tmp");
 		} else if (s == NULL) {
 			s = ss;
 		}
 	}
 
-	if (temp != SQL_DECLARED_TABLE && s)
+	if (temp != SQL_DECLARED_TABLE  && temp != SQL_DECLARED_ARRAY && s)
 		sname = s->base.name;
 
 	if (mvc_bind_table(sql, s, name)) {
-		char *cd = (temp == SQL_DECLARED_TABLE)?"DECLARE":"CREATE";
-		return sql_error(sql, 02, "42S01!%s TABLE: name '%s' already in use", cd, name);
-	} else if (temp != SQL_DECLARED_TABLE && (!schema_privs(sql->role_id, s) && !(isTempSchema(s) && temp == SQL_LOCAL_TEMP))){
-		return sql_error(sql, 02, "42000!CREATE TABLE: insufficient privileges for user '%s' in schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
-	} else if (table_elements_or_subquery->token == SQL_CREATE_TABLE) { 
-		/* table element list */
+		return sql_error(sql, 02, "42S01!%s %s: name '%s' already in use", action, tt2string(tt), name);
+	} else if (temp != SQL_DECLARED_TABLE && temp != SQL_DECLARED_ARRAY && (!schema_privs(sql->role_id, s) && !(isTempSchema(s) && temp == SQL_LOCAL_TEMP))){
+		return sql_error(sql, 02, "42000!CREATE %s: insufficient privileges for user '%s' in schema '%s'", tt2string(tt), stack_get_string(sql, "current_user"), s->base.name);
+	} else if (table_elements_or_subquery->token == SQL_CREATE_TABLE || table_elements_or_subquery->token == SQL_CREATE_ARRAY) {
+		/* table or array element list, value of 'tt' separates ARRAY from TABLE */
+		/* reuse SQL_DECLARED_TABLE for temp arrays as well. actual type is in 'tt' */
 		sql_table *t = (tt == tt_remote)?
 			mvc_create_remote(sql, s, name, SQL_DECLARED_TABLE, loc):
 			mvc_create_table(sql, s, name, tt, 0, SQL_DECLARED_TABLE, commit_action, -1);
 		dnode *n;
 		dlist *columns = table_elements_or_subquery->data.lval;
+		list *drngs = sa_list(sql->sa);
 
 		for (n = columns->h; n; n = n->next) {
 			symbol *sym = n->data.sym;
 			int res = table_element(sql, sym, s, t, 0);
-
 			if (res == SQL_ERR) 
 				return NULL;
+
+			/* A dimension column? Add the range expressions to rel_table */
+			if (sym->token == SQL_COLUMN && sym->data.lval->cnt == 4) {
+				dnode *dn = sym->data.lval->h->next->next->next;
+				sql_column *dc = t->columns.set->t->data;
+				char *sqltpe = dc->type.type->sqlname;
+				int is_int_dc = isAnSQLIntType(sqltpe, strlen(sqltpe));
+				dlist *drng = NULL;
+				sql_exp *val_exp = NULL;
+
+				exp_kind ek = {type_value, card_value, TRUE};
+				sql_subtype *lngtpe = sql_bind_localtype("lng");
+
+				if (!isArray(t))
+					return sql_error(sql, 02, "%s %s: dimensions ('%s') not allowed in non-ARRAY\n", action, tt2string(tt), dc->base.name);
+
+				if (!isSupportedType(sqltpe))
+					return sql_error(sql, 02, "%s ARRAY: dimension type '%s' not supported yet\n", action, sqltpe);
+
+				/* for each dimension, we store its colnr and <start, step, stop> values */
+				append(drngs, exp_atom_int(sql->sa, dc->colnr));
+
+				drng = dn->data.sym->data.lval;
+				switch(drng->cnt) {
+#define append_rng_exp(sym) \
+{ \
+	if (sym) {\
+		if (!(val_exp = rel_value_exp(sql, NULL, sym, sql_sel, ek)))\
+		return NULL;\
+		append(drngs, rel_check_type(sql, lngtpe, rel_check_type(sql, &dc->type, val_exp, type_cast), type_cast));\
+	} else {\
+		append(drngs, exp_atom_lng(sql->sa, lng_nil));\
+	} \
+}
+				case 0: /* 'DIMENSION' */
+					append(drngs, exp_atom_lng(sql->sa, lng_nil)); /* start */
+					append(drngs, exp_atom_lng(sql->sa, lng_nil)); /* step */
+					append(drngs, exp_atom_lng(sql->sa, lng_nil)); /* stop */
+					break;
+				case 1: /* 'DIMENSION [size-exp]' */
+					if (drng->h->data.sym && !is_int_dc)
+						return sql_error(sql, 02, "%s ARRAY: syntax shortcut '[size]' only allowed for int typed dimensions.  Dimension '%s' has type '%s'\n", action, dc->base.name, sqltpe);
+
+					append(drngs, exp_atom_lng(sql->sa, drng->h->data.sym?0:lng_nil));
+					append(drngs, exp_atom_lng(sql->sa, drng->h->data.sym?1:lng_nil));
+					append_rng_exp(drng->h->data.sym);
+					break;
+				case 2:
+					append_rng_exp(drng->h->data.sym);
+					/* the shortcut [start:stop] => [start:1:stop] for int typed dimensions */
+					append(drngs, exp_atom_lng(sql->sa, is_int_dc?1:lng_nil));
+					/* 'stop' or '*' */
+					append_rng_exp(drng->h->next->data.sym);
+					break;
+				case 3:
+					append_rng_exp(drng->h->data.sym);
+					append_rng_exp(drng->h->next->data.sym);
+					append_rng_exp(drng->h->next->next->data.sym);
+					break;
+				default: /* should not happen */
+					return sql_error(sql, 02, "%s ARRAY: too many values (%d) for a dimension range", action, dn->data.sym->data.lval->cnt);
+				}
+				t->valence++;
+			}
 		}
-		temp = (tt == tt_table)?temp:SQL_PERSIST;
-		return rel_table(sql, DDL_CREATE_TABLE, sname, t, temp);
+
+		if (isArray(t) && t->valence == 0)
+			return sql_error(sql, 02, "CREATE ARRAY: an array must have at least one dimension");
+
+		temp = (tt == tt_table || tt == tt_array)?temp:SQL_PERSIST;
+		return isArray(t)? rel_table(sql, DDL_CREATE_ARRAY, sname, t, temp, drngs) : rel_table(sql, DDL_CREATE_TABLE, sname, t, temp, NULL);
 	} else { /* [col name list] as subquery with or without data */
 		sql_rel *sq = NULL, *res = NULL;
 		dlist *as_sq = table_elements_or_subquery->data.lval;
@@ -861,9 +984,11 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, char *sname, char *name, sy
 			return NULL;
 		}
 
+		/* TODO: handle create_array_as_subquery??? */
+
 		/* insert query result into this table */
-		temp = (tt == tt_table)?temp:SQL_PERSIST;
-		res = rel_table(sql, DDL_CREATE_TABLE, sname, t, temp);
+		temp = (tt == tt_table || tt == tt_array)?temp:SQL_PERSIST;
+		res = (tt == tt_array)? rel_table(sql, DDL_CREATE_ARRAY, sname, t, temp, NULL) : rel_table(sql, DDL_CREATE_TABLE, sname, t, temp, NULL);
 		if (with_data) {
 			res = rel_insert(sql, res, sq);
 		} else {
@@ -922,7 +1047,7 @@ rel_create_view(mvc *sql, sql_schema *ss, dlist *qname, dlist *column_spec, symb
 				rel_destroy(sq);
 				return NULL;
 			}
-			return rel_table(sql, DDL_CREATE_VIEW, s->base.name, t, SQL_PERSIST);
+			return rel_table(sql, DDL_CREATE_VIEW, s->base.name, t, SQL_PERSIST, NULL);
 		}
 		t = mvc_bind_table(sql, s, name);
 		if (!persistent && column_spec) 
@@ -1090,7 +1215,7 @@ rel_alter_table(mvc *sql, dlist *qname, symbol *te)
 
 		if (!te) /* Set Read only */
 			nt = mvc_readonly(sql, nt, 1);
-		res = rel_table(sql, DDL_ALTER_TABLE, sname, nt, 0);
+		res = rel_table(sql, DDL_ALTER_TABLE, sname, nt, 0, NULL);
 		if (!te) /* Set Read only */
 			return res;
 		/* table add table */
@@ -1117,12 +1242,13 @@ rel_alter_table(mvc *sql, dlist *qname, symbol *te)
 
 		/* new columns need update with default values */
 		updates = table_update_array(sql, nt);
-		e = exp_column(sql->sa, nt->base.name, "%TID%", sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
+		e = exp_column(sql->sa, nt->base.name, "%TID%", sql_bind_localtype("oid"), CARD_MULTI, 0, 1, NULL);
 		r = rel_project(sql->sa, res, append(new_exp_list(sql->sa),e));
 		if (nt->columns.nelm) {
 			list *cols = new_exp_list(sql->sa);
 			for (n = nt->columns.nelm; n; n = n->next) {
 				sql_column *c = n->data;
+
 				if (c->def) {
 					char *d = sql_message("select %s;", c->def);
 					e = rel_parse_val(sql, d, sql->emode);
@@ -1134,7 +1260,20 @@ rel_alter_table(mvc *sql, dlist *qname, symbol *te)
 					rel_destroy(r);
 					return NULL;
 				}
-				list_append(cols, exp_column(sql->sa, nt->base.name, c->base.name, &c->type, CARD_MULTI, 0, 0));
+				if(c->dim) {
+					list *rng_exps = new_exp_list(sql->sa), *drngs = sa_list(sql->sa);
+					assert(rng_exps && drngs);
+
+					append(rng_exps, exp_atom_lng(sql->sa, c->dim->strt));
+					append(rng_exps, exp_atom_lng(sql->sa, c->dim->step));
+					append(rng_exps, exp_atom_lng(sql->sa, c->dim->stop));
+					append(drngs, rng_exps);
+					append(drngs, new_exp_list(sql->sa)); /* empty lists for slicing and */
+					append(drngs, new_exp_list(sql->sa)); /* tiling ranges */
+					list_append(cols, exp_column(sql->sa, nt->base.name, c->base.name, &c->type, CARD_MULTI, 0, 0, drngs));
+				} else {
+					list_append(cols, exp_column(sql->sa, nt->base.name, c->base.name, &c->type, CARD_MULTI, 0, 0, NULL));
+				}
 
 				assert(!updates[c->colnr]);
 				exp_setname(sql->sa, e, c->t->base.name, c->base.name);
@@ -1548,7 +1687,7 @@ rel_schemas(mvc *sql, symbol *s)
 {
 	sql_rel *ret = NULL;
 
-	if (s->token != SQL_CREATE_TABLE && s->token != SQL_CREATE_VIEW && STORE_READONLY(active_store_type)) 
+	if (s->token != SQL_CREATE_TABLE && s->token != SQL_CREATE_ARRAY && s->token != SQL_CREATE_VIEW && STORE_READONLY(active_store_type)) 
 		return sql_error(sql, 06, "25006!schema statements cannot be executed on a readonly database.");
 
 	switch (s->token) {
@@ -1570,6 +1709,7 @@ rel_schemas(mvc *sql, symbol *s)
 			   NULL,
 			   l->h->next->data.i_val);	/* drop_action */
 	} 	break;
+	case SQL_CREATE_ARRAY:
 	case SQL_CREATE_TABLE:
 	{
 		dlist *l = s->data.lval;
@@ -1591,6 +1731,7 @@ rel_schemas(mvc *sql, symbol *s)
 		ret = rel_create_view(sql, NULL, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.sym, l->h->next->next->next->data.i_val, l->h->next->next->next->next->data.i_val);
 	} 	break;
 	case SQL_DROP_TABLE:
+	case SQL_DROP_ARRAY:
 	{
 		dlist *l = s->data.lval;
 		char *sname = qname_schema(l->h->data.lval);
@@ -1598,7 +1739,7 @@ rel_schemas(mvc *sql, symbol *s)
 
 		assert(l->h->next->type == type_int);
 		sname = get_schema_name(sql, sname, tname);
-		ret = rel_schema(sql->sa, DDL_DROP_TABLE, sname, tname, l->h->next->data.i_val);
+		ret = rel_schema(sql->sa, (s->token == SQL_DROP_TABLE)?DDL_DROP_TABLE:DDL_DROP_ARRAY, sname, tname, l->h->next->data.i_val);
 	} 	break;
 	case SQL_DROP_VIEW:
 	{

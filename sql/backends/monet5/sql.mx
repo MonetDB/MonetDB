@@ -85,6 +85,10 @@ pattern catalog(type:int,sname:str,t:ptr,temp:int):void
 address SQLcatalog
 comment "a catalog statement";
 
+pattern catalog(type:int,sname:str,t:ptr,temp:int,colnr:int,strt1:lng,step1:lng,stop1:any...):void
+address SQLcatalog
+comment "a create array catalog statement";
+
 pattern catalog(type:int,sname:str,t:ptr,restart:lng):void
 address SQLcatalog
 comment "a catalog statement";
@@ -104,6 +108,7 @@ comment "a grant/revoke privileges statement";
 pattern catalog(type:int,iname:str,itype:int,sname:str,tname:str...):void
 address SQLcatalog
 comment "a create index catalog statement";
+
 
 pattern eval(cmd:str):void 
 address SQLstatement
@@ -1724,6 +1729,7 @@ sql_symbol2relation(mvc *c, symbol *sym)
 	if (!r) 
 		return NULL;
 	if (r) {
+		/* TODO: do we need to optimise anything for SciQL? */
 		r = rel_optimizer(c, r);
 		r = rel_distribute(c, r);
 		if (rel_is_point_query(r) || rel_need_distinct_query(r))
@@ -1958,7 +1964,7 @@ create_table_or_view( mvc *sql, char *sname, sql_table *t, int temp)
 		char *cd = (temp == SQL_DECLARED_TABLE)?"DECLARE":"CREATE";
 		return sql_message("42S01!%s TABLE: name '%s' already in use", cd, t->base.name);
 	} else if (temp != SQL_DECLARED_TABLE && (!schema_privs(sql->role_id, s) && !(isTempSchema(s) && temp == SQL_LOCAL_TEMP))){
-		return sql_message("42000!CREATE TABLE: insufficient privileges for user '%s' in schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
+		return sql_message("42000!CREATE %s: insufficient privileges for user '%s' in schema '%s'", (temp == SQL_ARRAY)?"ARRAY":"TABLE", stack_get_string(sql, "current_user"), s->base.name);
 	}
 
 	osa = sql->sa;
@@ -1983,7 +1989,7 @@ create_table_or_view( mvc *sql, char *sname, sql_table *t, int temp)
 		}
 	}
 
-	nt = sql_trans_create_table(sql->session->tr, s, t->base.name, t->query, t->type, t->system, temp, t->commit_action, t->sz);
+	nt = sql_trans_create_table(sql->session->tr, s, t->base.name, t->query, t->type, t->system, temp, t->commit_action, t->sz, t->valence, t->fixed, t->materialised);
 
 	for (n = t->columns.set->h; n; n = n->next) {
 		sql_column *c = n->data;
@@ -2141,14 +2147,14 @@ alter_table( mvc *sql, char *sname, sql_table *t)
 
 
 static char *
-drop_table(mvc *sql, char *sname, char *tname, int drop_action)
+drop_table(mvc *sql, char *sname, char *tname, int drop_action, int tt)
 {
 	sql_schema *s = NULL;
 	sql_table *t = NULL;
 	node *n; 
 
 	if (sname && !(s=mvc_bind_schema(sql, sname))) 
-		return sql_message("3F000!DROP TABLE: no such schema '%s'", sname);
+		return sql_message("3F000!DROP %s: no such schema '%s'", (tt==tt_table)?"TABLE":"ARRAY", sname);
 	if (!s)
 		s = cur_schema(sql);
 	t = mvc_bind_table(sql, s, tname);
@@ -2157,13 +2163,13 @@ drop_table(mvc *sql, char *sname, char *tname, int drop_action)
 		t = mvc_bind_table(sql, s, tname);
 	}
 	if (!t) { 
-		return sql_message("42S02!DROP TABLE: no such table '%s'", tname);
+		return sql_message("42S02!DROP %s: no such %s '%s'", (tt==tt_table)?"TABLE":"ARRAY", (tt==tt_table)?"table":"array", tname);
 	} else if (isView(t)) {
-		return sql_message("42000!DROP TABLE: cannot drop VIEW '%s'", tname);
+		return sql_message("42000!DROP %s: cannot drop VIEW '%s'", (tt==tt_table)?"TABLE":"ARRAY", tname);
 	} else if (t->system) {
-		return sql_message("42000!DROP TABLE: cannot drop system table '%s'", tname);
+		return sql_message("42000!DROP %s: cannot drop system %s '%s'", (tt==tt_table)?"TABLE":"ARRAY", (tt==tt_table)?"table":"array", tname);
 	} else if (!schema_privs(sql->role_id, s) && !(isTempSchema(s) && t->persistence == SQL_LOCAL_TEMP)){
-		return sql_message("42000!DROP TABLE: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), s->base.name);
+		return sql_message("42000!DROP %s: access denied for %s to schema ;'%s'", (tt==tt_table)?"TABLE":"ARRAY", stack_get_string(sql, "current_user"), s->base.name);
 	}
 	if ( !drop_action && t->keys.set) {
 		for (n = t->keys.set->h; n; n = n->next) {
@@ -2179,7 +2185,7 @@ drop_table(mvc *sql, char *sname, char *tname, int drop_action)
 						k = l->data;
 						/* make sure it is not a self referencing key */
 						if (k->t != t) 
-							return sql_message("40000!DROP TABLE: FOREIGN KEY %s.%s depends on %s", k->t->base.name, k->base.name, tname);
+							return sql_message("40000!DROP %s: FOREIGN KEY %s.%s depends on %s", (tt==tt_table)?"TABLE":"ARRAY", k->t->base.name, k->base.name, tname);
 					}
 				}
 			}
@@ -2187,7 +2193,7 @@ drop_table(mvc *sql, char *sname, char *tname, int drop_action)
 	}
 
 	if (!drop_action && mvc_check_dependency(sql, t->base.id, TABLE_DEPENDENCY, NULL))
-		return sql_message("42000!DROP TABLE: unable to drop table %s (there are database objects which depend on it)\n", t->base.name);
+		return sql_message("42000!DROP %s: unable to drop %s %s (there are database objects which depend on it)\n", (tt==tt_table)?"TABLE":"ARRAY", (tt==tt_table)?"table":"array", t->base.name);
 	
 	mvc_drop_table(sql, s, t, drop_action);
 	return MAL_SUCCEED;
@@ -2610,17 +2616,54 @@ SQLcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	} 	break;
 	case DDL_CREATE_TABLE: 
 	case DDL_CREATE_VIEW: 
+	case DDL_CREATE_ARRAY:
 	{
 		sql_table *t = *(sql_table**) getArgReference(stk, pci, 3);
 		int temp = *(int*) getArgReference(stk, pci, 4);
 
+		if((pci->argc - pci->retc) > 4) {
+			int i = 5;
+			node *n = t->columns.set->h;
+			for (; i <= (pci->argc - 4) && n; i = i + 4, n = n->next) {
+				sql_column *c = n->data;
+				int colnr = *(int*)getArgReference(stk, pci, i);
+				lng strt = *(lng*)getArgReference(stk, pci, i+1);
+				lng step = *(lng*)getArgReference(stk, pci, i+2);
+				lng stop = *(lng*)getArgReference(stk, pci, i+3);
+
+				if (getArgType(mb,pci,i) != TYPE_int ||
+						getArgType(mb,pci,i+1) != TYPE_lng ||
+						getArgType(mb,pci,i+2) != TYPE_lng ||
+						getArgType(mb,pci,i+3) != TYPE_lng)
+					throw(SQL, "sql.catalog", "internal error, parameter of invalid data type");
+
+				while(c->colnr != colnr) {
+					n = n->next;
+					c = n->data;
+				}
+
+				if ( strt != lng_nil && step != lng_nil && stop != lng_nil &&
+					 (step == 0 || strt == stop || (strt < stop && step < 0) ||
+					  (strt > stop && step > 0)) )
+					throw(SQL, "sql.catalog",
+							"Illegal range of dimension '%s': "
+							"[%lld:%lld:%lld]", c->base.name, strt, step, stop);
+				c->dim = ZNEW(sql_dimrange);
+				c->dim->strt = strt;
+				c->dim->step = step;
+				c->dim->stop = stop;
+				if(!isFixedDim(c->dim)) t->fixed = 0;
+			}
+		}
+
 		msg = create_table_or_view(sql, sname, t, temp);
 	} 	break;
+	case DDL_DROP_ARRAY:
 	case DDL_DROP_TABLE: {
 		int action = *(int*) getArgReference(stk, pci, 4);
 		str name = *(str*) getArgReference(stk, pci, 3);
 
-		msg = drop_table( sql, sname, name, action);
+		msg = drop_table( sql, sname, name, action, (type==DDL_DROP_TABLE)?tt_table:tt_array);
 	} 	break;
 	case DDL_DROP_VIEW: {
 		int action = *(int*) getArgReference(stk, pci, 4);
@@ -3709,7 +3752,7 @@ TID(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	nr = store_funcs.count_col(c, 1);
 
-	if (isTable(t) && !readonly &&
+	if (isTableOrArray(t) && !readonly &&
 	   (t->base.flag != TR_NEW /* alter */) &&
 	    t->persistence == SQL_PERSIST && !t->commit_action) 
 		inr = store_funcs.count_col(c, 0);
@@ -7500,7 +7543,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		for(ntab= (s)->tables.set->h ;ntab; ntab= ntab->next){
 			sql_base *bt= ntab->data;
 			sql_table *t= (sql_table*) bt;
-			if (isTable(t))
+			if (isTableOrArray(t))
 			if (t->columns.set) for (ncol= (t)->columns.set->h; ncol; ncol= ncol->next){
 				sql_base *bc = ncol->data;
 				sql_column *c= (sql_column *) ncol->data;
@@ -7561,7 +7604,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				BBPunfix(bn->batCacheid);
 			}
 
-			if (isTable(t))
+			if (isTableOrArray(t))
 				if(t->idxs.set)
 					for (ncol= (t)->idxs.set->h; ncol; ncol= ncol->next){
 						sql_base *bc = ncol->data;
@@ -7668,12 +7711,12 @@ RAstatement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (*opt) 
 			rel = rel_optimizer(m, rel);
 		s = output_rel_bin(m, rel);
-		rel_destroy(rel);
 
 		MSinitClientPrg(cntxt, "user", "test"); 
 
 		/* generate MAL code */
-		backend_callinline(b, cntxt, s );
+		backend_callinline(b, cntxt, s, rel);
+		rel_destroy(rel);
 		addQueryToCache(cntxt); 
 
 		msg = (str) runMAL(cntxt, cntxt->curprg->def, 0, 0);

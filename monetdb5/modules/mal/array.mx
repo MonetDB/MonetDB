@@ -1,0 +1,886 @@
+@/
+The contents of this file are subject to the MonetDB Public License
+Version 1.1 (the "License"); you may not use this file except in
+compliance with the License. You may obtain a copy of the License at
+http://www.monetdb.org/Legal/MonetDBLicense
+
+Software distributed under the License is distributed on an "AS IS"
+basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+License for the specific language governing rights and limitations
+under the License.
+
+The Original Code is the MonetDB Database System.
+
+The Initial Developer of the Original Code is CWI.
+Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+Copyright August 2008-2013 MonetDB B.V.
+All Rights Reserved.
+@
+
+@f array
+@a M.L. Kersten, Y.Zhang, M. Ivanova
+@+ Basic array support
+
+Arrays are represented by a collection of BATs.
+One for each dimension and one for the non-dimension attributes. 
+The structure of the dimension is captured in
+a shape description, which is an ordered list of tripples
+(Start,Step,Stop) where for index variable i the constraint Start<=i<Stop holds
+and where the step size is Step.
+
+In the MAL instructions the shape descriptor should be the last
+of the arguments. Since every dimension can be of a different
+type, we have to rely on runtime type checking. Of course,
+the SciQL compiler already can ensure proper type equality
+for each shape tripple.
+@{
+
+@= array_mdefs
+command series(start:@1, step:@1, stop:@1, N:int, M:int) :bat[:oid,:@1] 
+address ARRAYseries_@1
+comment  "Generates a single series BAT based on range condition, repeating each value N times and repeat the process M times.";
+
+function series_ (start:@1, step:@1, stop:@1, N:int, M:int) (id:bat[:oid,:lng], dimval:bat[:oid,:@1]);
+	b1 := array.series(start, step, stop, N, M);
+	b2 := bat.mirror(b1);
+	b3 := batcalc.lng(b2);
+	return (b3,b1);
+end series_;
+
+@mal
+module array;
+@:array_mdefs(bte)@
+@:array_mdefs(sht)@
+@:array_mdefs(int)@
+@:array_mdefs(lng)@
+@:array_mdefs(flt)@
+@:array_mdefs(dbl)@
+
+@mal
+pattern filler(idx:bat[:oid,:any_1], v:any_2):bat[:oid,:any_2]
+address ARRAYfiller_bat
+comment "Create an array value representation described by a series column and fill it with V";
+
+pattern filler(cnt:lng, v:any_1):bat[:oid,:any_1]
+address ARRAYfiller
+comment "Create an array value representation of CNT items and fill it with V";
+
+function filler_(cnt:lng, v:any_1)(id:bat[:oid,:lng], cellval:bat[:oid,:any_1]);
+	b1 := array.filler(cnt, v);
+	# TODO: why is a markH necessary here, but no in array.series?
+	b2 := algebra.markH(b1, 0@0);
+	b3 := bat.mirror(b2);
+    b4 := batcalc.lng(b3);
+	return (b4,b2);
+end filler_;
+
+pattern slice(dim_strt:lng, dim_step:lng, dim_stop:lng, slc_strt:lng, slc_step:lng, slc_stop:lng...):bat[:oid,:oid]
+address ARRAYslice
+comment "Compute the OIDs of all cells selected by an array slicing"
+
+@= tilesAggrDecl
+module array;
+
+pattern sum(val:@1, any...):lng
+address ARRAYtilesSum_@1
+comment "Construct the sum over all tiles";
+
+pattern sum(val:@1, any...):dbl
+address ARRAYtilesSum_@1
+comment "Construct the sum over all tiles";
+
+pattern avg(val:@1, any...):dbl
+address ARRAYtilesAvg_@1
+comment "Construct the average over all tiles";
+
+pattern min(val:@1, any...):@1
+address ARRAYtilesMin_@1
+comment "Construct the minimum over all tiles";
+
+pattern max(val:@1, any...):@1
+address ARRAYtilesMax_@1
+comment "Construct the maximum over all tiles";
+
+pattern cnt(val:@1, any...):lng
+address ARRAYtilesCnt_@1
+comment "Construct the count over all tiles";
+
+module batarray;
+
+# The BAT version of the AGGR functions over array tiles
+pattern sum(val:bat[:oid,:@1], any...):bat[:oid,:lng]
+address ARRAYtilesSum_@1
+comment "Construct the sum over all tiles";
+
+pattern sum(val:bat[:oid,:@1], any...):bat[:oid,:dbl]
+address ARRAYtilesSum_@1
+comment "Construct the sum over all tiles";
+
+pattern avg(val:bat[:oid,:@1], any...):bat[:oid,:dbl]
+address ARRAYtilesAvg_@1
+comment "Construct the average over all tiles";
+
+pattern min(val:bat[:oid,:@1], any...):bat[:oid,:@1]
+address ARRAYtilesMin_@1
+comment "Construct the minimum over all tiles";
+
+pattern max(val:bat[:oid,:@1], any...):bat[:oid,:@1]
+address ARRAYtilesMax_@1
+comment "Construct the maximum over all tiles";
+
+pattern cnt(val:bat[:oid,:@1], any...):bat[:oid,:lng]
+address ARRAYtilesCnt_@1
+comment "Construct the count over all tiles";
+@
+@mal
+@:tilesAggrDecl(bte)@
+@:tilesAggrDecl(sht)@
+@:tilesAggrDecl(int)@
+@:tilesAggrDecl(lng)@
+@:tilesAggrDecl(flt)@
+@:tilesAggrDecl(dbl)@
+
+@- Implementation
+@h
+
+/*============================================================================*/
+#ifndef __array_h__
+#define __array_h__
+
+#include "gdk.h"
+#include "algebra.h"		/* to include BATmin and BATmax */
+#include "mtime.h"
+#include <math.h>
+#include <time.h>
+
+#ifdef WIN32
+#if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5)
+#define array_export extern __declspec(dllimport)
+#else
+#define array_export extern __declspec(dllexport)
+#endif
+#else
+#define array_export extern
+#endif
+
+array_export str ARRAYfiller_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+array_export str ARRAYfiller(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+
+array_export str ARRAYslice(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+
+@= array_defs
+array_export str ARRAYseries_@1(int *ret, @1 *start, @1 *step, @1 *stop, int *grp, int *series);
+array_export str ARRAYtilesSum_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+array_export str ARRAYtilesAvg_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+array_export str ARRAYtilesMin_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+array_export str ARRAYtilesMax_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+array_export str ARRAYtilesCnt_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+@h
+@:array_defs(bte)@
+@:array_defs(sht)@
+@:array_defs(int)@
+@:array_defs(lng)@
+@:array_defs(flt)@
+@:array_defs(dbl)@
+
+@h
+/* The maximum number of series_ that the print-function can handle... */
+#define MAX_ARRAY_DIM 16
+
+#endif
+/*============================================================================*/
+@c
+/*============================================================================*/
+#include "monetdb_config.h"
+#include "mal_client.h"
+#include "array.h"
+
+/*----------------------------------------------------------------------------*/
+
+@c
+#include "mal.h"
+#include "mal_interpreter.h"
+@= dim_wrapper_impl
+str
+ARRAYseries_@1(int *ret, @1 *start, @1 *step, @1 *stop, int *group, int *series)
+{
+	BAT *bn;
+	@1 i, *o;
+	BUN cnt= 0;
+	int s,g;
+
+	if ( *group < 1 )
+		throw(MAL, "array.series", "#groups must be > 0,  got (%d)", *group);
+	if ( *series < 1 )
+		throw(MAL, "array.series", "#series must be > 0,  got (%d)", *series);
+	
+	if (*step == 0 || *start == *stop || (*start < *stop && *step < 0) ||
+			(*start > *stop && *step > 0))
+		throw(MAL, "array.series", "Illegal dimension range: [@2:@2:@2]",
+				*start, *step, *stop);
+
+
+	cnt =  (BUN) ceil(((*stop * 1.0 - *start) / *step)) * *group * *series ;
+	bn = BATnew(TYPE_void, TYPE_@1, cnt);
+	if ( bn == NULL)
+		throw(MAL, "array.series", MAL_MALLOC_FAIL);
+
+	o = (@1*)Tloc(bn, BUNfirst(bn));
+
+	if ( *start < *stop && *step > 0) {
+		for ( s = 0; s < *series; s++)
+			for ( i = *start; i < *stop; i += *step)
+				for( g = 0; g < *group; g++){
+					*o = i;
+					o++;
+				}
+	} else {
+		for ( s = 0; s < *series; s++)
+			for ( i = *start; i > *stop; i += *step)
+				for( g = 0; g < *group; g++){
+					*o = i;
+					o++;
+				}
+	}
+	BATsetcount(bn, cnt);
+	BATseqbase(bn,0);
+	bn->hdense = TRUE;
+	BATkey(bn, TRUE);
+	bn->hsorted = 1;
+	bn->hrevsorted = (cnt <= 1);
+	bn->tsorted = (cnt <= 1 || (*series == 1 && *step > 0));
+	bn->trevsorted = (cnt <= 1 || (*series == 1 && *step < 0));
+	bn->T->nonil = TRUE;
+
+	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \
+	*ret = bn->batCacheid;
+	BBPkeepref((int)*ret);
+	return MAL_SUCCEED;
+}
+
+@c
+@:dim_wrapper_impl(bte,%d)@
+@:dim_wrapper_impl(sht,%d)@
+@:dim_wrapper_impl(int,%d)@
+@:dim_wrapper_impl(lng,%lld)@
+@:dim_wrapper_impl(flt,%f)@
+@:dim_wrapper_impl(dbl,%f)@
+
+str
+ARRAYfiller_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	BAT *bn, *b;
+	BUN p, q;
+	BATiter bi;
+	int *ret = (int*) getArgReference(stk,pci,0);
+	int bid = *(int*) getArgReference(stk,pci,1);
+	void *val = (void*) getArgReference(stk,pci,2);
+	int type = getArgType(mb,pci,2);
+
+	if ((b = BATdescriptor(bid)) == NULL) 
+		throw(MAL, "array.filler", RUNTIME_OBJECT_MISSING);
+	
+	bn = BATnew(b->htype, type, BATcount(b));
+
+	bi = bat_iterator(b);
+	BATloop(b,p,q){
+		BUNfastins(bn, BUNhead(bi, p), ATOMvarsized(type)?*(str *)val:val);
+	}
+	BATseqbase(bn,b->hseqbase);
+	bn->hdense = BAThdense(b);
+	BATkey(bn, BAThkey(b));
+	bn->hsorted = b->hsorted;
+	bn->hrevsorted = b->hrevsorted;
+	bn->tsorted = b->trevsorted = 1;
+	(void) cntxt;
+	BBPkeepref(*ret = bn->batCacheid);
+	return MAL_SUCCEED;
+}
+
+# define SLICE_CLEANUP() \
+{ \
+	if (dim_strt) GDKfree(dim_strt); \
+	if (dim_step) GDKfree(dim_step); \
+	if (dim_stop) GDKfree(dim_stop); \
+	if (dim_size) GDKfree(dim_size); \
+	if (dim_rept) GDKfree(dim_rept); \
+\
+	if (slc_strt) GDKfree(slc_strt); \
+	if (slc_step) GDKfree(slc_step); \
+	if (slc_stop) GDKfree(slc_stop); \
+	if (slc_size) GDKfree(slc_size); \
+	if (slc_rept) GDKfree(slc_rept); \
+	if (slc_indx) GDKfree(slc_indx); \
+}
+
+/*            Dim 1                     Dim 2                      Dim 3
+ *               size repeat               size repeat                size repeat
+ * dim: [1:2:10],  5,   12         [3:1:6],  3,    4         [0:4:13],  4,    1
+ * slc: [3:4: 8],  2,    4         [4:1:6],  2,    2         [0:4: 5],  2,    1
+ *
+ *      (3 + 0 * 4 - 1) / 2 * 12 + (4 + 0 * 1 - 3) / 1 * 4 + (0 + 0 * 4 - 0) / 4 * 1 = 16
+ *      (3 + 0 * 4 - 1) / 2 * 12 + (4 + 0 * 1 - 3) / 1 * 4 + (0 + 1 * 4 - 0) / 4 * 1 = 17
+ *
+ *      (3 + 0 * 4 - 1) / 2 * 12 + (4 + 1 * 1 - 3) / 1 * 4 + (0 + 0 * 4 - 0) / 4 * 1 = 20
+ *      (3 + 0 * 4 - 1) / 2 * 12 + (4 + 1 * 1 - 3) / 1 * 4 + (0 + 1 * 4 - 0) / 4 * 1 = 21
+ *
+ *      (3 + 1 * 4 - 1) / 2 * 12 + (4 + 0 * 1 - 3) / 1 * 4 + (0 + 0 * 4 - 0) / 4 * 1 = 40
+ *      (3 + 1 * 4 - 1) / 2 * 12 + (4 + 0 * 1 - 3) / 1 * 4 + (0 + 1 * 4 - 0) / 4 * 1 = 41
+ *
+ *      (3 + 1 * 4 - 1) / 2 * 12 + (4 + 1 * 1 - 3) / 1 * 4 + (0 + 0 * 4 - 0) / 4 * 1 = 44
+ *      (3 + 1 * 4 - 1) / 2 * 12 + (4 + 1 * 1 - 3) / 1 * 4 + (0 + 1 * 4 - 0) / 4 * 1 = 45
+ *
+ * The formula for each dimention (0 <= j < valence) in each iteration:
+ *  (slc_strt[j] + slc_indx[j] * slc_step[j] - dim_strt[j]) / dim_step[j] * dim_rept[j]
+ * To get the index of an iteration, compute the sum of the formula for all dimensions.
+ * The key is to compute on the fly the correct value for each slc_indx[j] for
+ *  each dimension in each iteration.
+ * The formula to compute slc_indx[j] for each dimension in each iteratino:
+ *  slc_indx[j] = (((i + 1) % slc_rept[j]) == 0)? ((slc_indx[j] + 1) % slc_size[j]) : slc_indx[j];
+ * The slc_indx[j] should be increased with 1 for the next iteration, if it has
+ *  been repeated enough times for this dimention, i.e., check if the next
+ *  iteration number is a multiple of slc_rept[j].
+ * Additionally, slc_indx[j] must be reset to 0 if we have iterated over all
+ *  slicing elements of this dimension, i.e., check after increasing if the
+ *  value of slc_indx[j] is a multiple of slc_size[j].
+ *
+ * a := array.slice(1:lng,2:lng,10:lng, 3:lng,4:lng,8:lng, 3:lng,1:lng,6:lng, 4:lng,1:lng,6:lng, 0:lng,4:lng,13:lng, 0:lng,4:lng,5:lng); */
+str
+ARRAYslice(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int *ret = (int*) getArgReference(stk,pci,0);
+	lng *dim_strt = NULL, *dim_step = NULL, *dim_stop = NULL, *dim_size = NULL, *dim_rept = NULL,
+		*slc_strt = NULL, *slc_step = NULL, *slc_stop = NULL, *slc_size = NULL, *slc_rept = NULL, *slc_indx = NULL;
+	BUN i = 0, j = 0;
+	BUN rescnt = 1, valence = (pci->argc - pci->retc) / 6;
+	BAT *res = NULL;
+	oid *resT = NULL;
+
+	(void) cntxt;
+	(void) mb;
+
+	if ( (pci->argc - pci->retc) % 6 != 0)
+		throw(MAL, "array.slice", "Unbalanced argument sets");
+
+	dim_strt = (lng*) GDKmalloc(sizeof(lng) * valence);
+	dim_step = (lng*) GDKmalloc(sizeof(lng) * valence);
+	dim_stop = (lng*) GDKmalloc(sizeof(lng) * valence);
+	dim_size = (lng*) GDKmalloc(sizeof(lng) * valence);
+	dim_rept = (lng*) GDKmalloc(sizeof(lng) * valence);
+
+	slc_strt = (lng*) GDKmalloc(sizeof(lng) * valence);
+	slc_step = (lng*) GDKmalloc(sizeof(lng) * valence);
+	slc_stop = (lng*) GDKmalloc(sizeof(lng) * valence);
+	slc_size = (lng*) GDKmalloc(sizeof(lng) * valence);
+	slc_rept = (lng*) GDKmalloc(sizeof(lng) * valence);
+	slc_indx = (lng*) GDKzalloc(sizeof(lng) * valence);
+	
+	if (dim_strt == NULL || dim_step == NULL || dim_stop == NULL || dim_size == NULL || dim_rept == NULL ||
+		slc_strt == NULL || slc_step == NULL || slc_stop == NULL || slc_size == NULL || slc_rept == NULL || slc_indx == NULL)
+	{
+		SLICE_CLEANUP();
+		throw(MAL, "array.slice", MAL_MALLOC_FAIL);
+	}
+
+	for (i = 0; i < valence; i++) {
+		dim_strt[i] = *(lng*)getArgReference(stk,pci,1+6*i);
+		dim_step[i] = *(lng*)getArgReference(stk,pci,1+6*i+1);
+		dim_stop[i] = *(lng*)getArgReference(stk,pci,1+6*i+2);
+		dim_size[i] = (dim_stop[i] - dim_strt[i] + dim_step[i] -1) / dim_step[i];
+		dim_rept[i] = 1;
+
+		slc_strt[i] = *(lng*)getArgReference(stk,pci,1+6*i+3);
+		slc_step[i] = *(lng*)getArgReference(stk,pci,1+6*i+4);
+		slc_stop[i] = *(lng*)getArgReference(stk,pci,1+6*i+5);
+		slc_size[i] = (slc_stop[i] - slc_strt[i] + slc_step[i] - 1) / slc_step[i];
+		slc_rept[i] = 1;
+		slc_indx[i] = 0;
+
+		rescnt *= slc_size[i];
+
+		if ( (slc_step[i] > 0 && (slc_strt[i] < dim_strt[i] || slc_stop[i] > dim_stop[i])) || 
+			 (slc_step[i] < 0 && (slc_strt[i] > dim_strt[i] || slc_stop[i] < dim_stop[i])) ) {
+			SLICE_CLEANUP();
+			throw(MAL, "array.slice", "Slice range [%lld:%lld:%lld] of the " BUNFMT "-th dimension out of bound ([%lld:%lld:%lld])",
+					slc_strt[i], slc_step[i], slc_stop[i], i, dim_strt[i], dim_step[i], dim_stop[i]);
+		}
+
+		if ((slc_strt[i] - dim_strt[i]) % dim_step[i] != 0) {
+			SLICE_CLEANUP();
+			throw(MAL, "array.slice", "Invalid slice range of the " BUNFMT "-th dimension: the slicing start value '%lld' is not a valid value of this dimension",
+					i, slc_strt[i]);
+		}
+
+		if ((slc_strt[i] - dim_strt[i]) % dim_step[i] != 0) {
+			SLICE_CLEANUP();
+			throw(MAL, "array.slice", "Invalid slice range of the " BUNFMT "-th dimension: the slicing step size '%lld' is not a multiple of the step size '%lld' of this dimension",
+					i, slc_step[i], dim_step[i]);
+		}
+	}
+
+	/* The number of time the values of a dimension is repeated is the produce
+	 * of the lengths of all its following dimensions */
+	for (i = 0; i < valence; i++) {
+		for (j = i+1; j < valence; j++) {
+			dim_rept[i] *= dim_size[j];
+			slc_rept[i] *= slc_size[j];
+		}
+	}
+
+	res = BATnew(TYPE_void, TYPE_oid, rescnt);
+	if(res == NULL) {
+		SLICE_CLEANUP();
+		throw(MAL, "array.filler", MAL_MALLOC_FAIL);
+	}
+
+	resT = (oid *) Tloc(res, BUNfirst(res));
+	/* the main loop: compute the index of each cell selected by the slicing */
+	for (i = 0; i < rescnt; i++) {
+		resT[i] = 0;
+		/* compute the formula for each dimension, then sum them up to get the index */
+		for (j = 0; j < valence; j++) {
+			resT[i] += (slc_strt[j] + slc_indx[j] * slc_step[j] - dim_strt[j]) / dim_step[j] * dim_rept[j];
+			/* only increase the index into the slicing elements if the current
+			 * element has been repeated slc_rept[j] times.
+			 * reset the index into the slicing elements if all elements have
+			 * already been processed once.
+			 */
+			slc_indx[j] = (((i + 1) % slc_rept[j]) == 0)? ((slc_indx[j] + 1) % slc_size[j]) : slc_indx[j];
+		}
+	}
+
+	BATsetcount(res, rescnt);
+	BATseqbase(res, 0);
+	res->hdense = TRUE;
+	BATkey(res, TRUE);
+	res->hsorted = res->tsorted = 1;
+	res->hrevsorted = res->trevsorted = 0;
+	res->T->nonil = TRUE;
+	BBPkeepref(*ret = res->batCacheid);
+	return MAL_SUCCEED;
+}
+
+str
+ARRAYfiller(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	BAT *bn;
+	int *ret = (int*) getArgReference(stk,pci,0);
+	oid i = 0;
+	lng cnt = *(lng *) getArgReference(stk,pci,1);
+	void *val = (void*) getArgReference(stk,pci,2);
+	int type = getArgType(mb,pci,2);
+
+	(void) cntxt;
+
+	if (cnt > (lng)BUN_MAX)
+		throw(MAL, "array.filler", "BAT too large");
+
+	if(!(bn = BATnew(TYPE_void, type, cnt)))
+		throw(MAL, "array.filler", MAL_MALLOC_FAIL);
+
+	for (i = 0; i < (oid)cnt; i++)
+		BUNfastins(bn, &i, ATOMvarsized(type)?*(str *)val:val);
+
+	BATsetcount(bn, cnt);
+	BATseqbase(bn, 0);
+	bn->hdense = TRUE;
+	BATkey(bn, TRUE);
+	bn->hsorted = 1;
+	bn->hrevsorted = 0;
+	bn->tsorted = bn->trevsorted = 1;
+	switch(type){
+		case TYPE_bit:
+			bn->T->nonil = *(bit*)val==bit_nil?FALSE:TRUE;
+			break;
+		case TYPE_bte:
+			bn->T->nonil = *(bte*)val==bte_nil?FALSE:TRUE;
+			break;
+		case TYPE_sht:
+			bn->T->nonil = *(sht*)val==sht_nil?FALSE:TRUE;
+			break;
+		case TYPE_int:
+			bn->T->nonil = *(int*)val==int_nil?FALSE:TRUE;
+			break;
+		case TYPE_flt:
+			bn->T->nonil = *(flt*)val==flt_nil?FALSE:TRUE;
+			break;
+		case TYPE_dbl:
+			bn->T->nonil = *(dbl*)val==dbl_nil?FALSE:TRUE;
+			break;
+		case TYPE_lng:
+			bn->T->nonil = *(lng*)val==lng_nil?FALSE:TRUE;
+			break;
+		case TYPE_str:
+			bn->T->nonil = (strcmp(*(str*)val, str_nil) == 0)?FALSE:TRUE;
+			break;
+		default:
+			throw(MAL, "array.filler", "Unsupported data type");
+	}
+	BBPkeepref(*ret = bn->batCacheid);
+	return MAL_SUCCEED;
+}
+
+# define AGGR_CLEANUP() \
+{ \
+	if (bVal) BBPreleaseref(bVal->batCacheid); \
+	for (i = 0; i < ndims; i++) { \
+		if(bDims[i]) BBPreleaseref(bDims[i]->batCacheid); \
+		if(bOffsets[i]) BBPreleaseref(bOffsets[i]->batCacheid); \
+	} \
+	if(bDims) GDKfree(bDims); \
+	if(bDimsT) GDKfree(bDimsT); \
+	if(bOffsets) GDKfree(bOffsets); \
+	if(bOffsetsT) GDKfree(bOffsetsT); \
+	if(dMin) GDKfree(dMin); \
+	if(dMax) GDKfree(dMax); \
+	if(dSize) GDKfree(dSize); \
+}
+
+@= tilesAggr
+/* 
+ * array.[sum|avg|cnt] inputs:
+ *  (cell_val:BAT,
+ *   dim_1:BAT,tile_member_offset_dim_1:BAT,size_dim_1, ...,
+ *   dim_n:BAT,tile_member_offset_dim_n:BAT,size_dim_n)
+ */
+str
+ARRAYtiles@4_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	BAT *bVal = NULL, *bRes = NULL, **bDims = NULL, **bOffsets = NULL;
+	int *ret = (int*) getArgReference(stk,pci,0), i = 0, ndims = 0;
+	bit skip = FALSE, nils = FALSE;
+	@1 *bValT = NULL, elm = 0;
+	@3 *bResT = NULL;
+	int **bDimsT = NULL, **bOffsetsT = NULL;
+	BUN p, r, arrcnt = 0, offcnt = 0, cnt = 0;
+	@2 sum = 0;
+	/* FIXME: this code only deal with INT dimensions */
+	int cidx = 0, *dMin = NULL, *dMax = NULL, *dSize = NULL;
+	oid arrbase = 0, offbase = 0, vid = 0, mul = 0;
+
+	(void) cntxt;
+	(void) mb;
+
+	if ( (pci->argc - pci->retc - 1) % 3 != 0)
+		throw(MAL, "array.@5", "Unbalanced argument sets");
+
+	ndims = (pci->argc - pci->retc - 1) / 3;
+	bDims = (BAT**) GDKzalloc(sizeof(BAT*) * ndims);
+	bDimsT = (int**) GDKzalloc(sizeof(int*) * ndims);
+	bOffsets = (BAT**) GDKzalloc(sizeof(BAT*) * ndims);
+	bOffsetsT = (int**) GDKzalloc(sizeof(int*) * ndims);
+	dMin = (int*) GDKzalloc(sizeof(int) * ndims);
+	dMax = (int*) GDKzalloc(sizeof(int) * ndims);
+	dSize = (int*) GDKzalloc(sizeof(int) * ndims);
+	if(!bDims || !bDimsT || !bOffsets || !bOffsetsT || !dMin || !dMax || !dSize) {
+		AGGR_CLEANUP();
+		throw(MAL, "array.@5", MAL_MALLOC_FAIL);
+	}
+	if(!(bVal = BATdescriptor(*(int*)getArgReference(stk,pci,1)))) {
+		AGGR_CLEANUP();
+		throw(MAL, "array.@5", RUNTIME_OBJECT_MISSING);
+	}
+	for (i = 0; i < ndims; i++) {
+		bDims[i] = BATdescriptor(*(int*)getArgReference(stk,pci,2+i*3));
+		bOffsets[i] = BATdescriptor(*(int*)getArgReference(stk,pci,2+i*3+1));
+		if (!bDims[i] || !bOffsets[i]) {
+			AGGR_CLEANUP();
+			throw(MAL, "array.@5", RUNTIME_OBJECT_MISSING);
+		}
+		dSize[i] = *(int*)getArgReference(stk,pci,2+i*3+2);
+	}
+	/* type check the shapes, prepare iterators, and compute the min/max of the dimensions */
+	if (!BAThdense(bVal)) {
+		AGGR_CLEANUP();
+		throw(MAL, "array.@5", "head of value BAT must be dense");
+	}
+	if (bVal->ttype != TYPE_@1) {
+		AGGR_CLEANUP();
+		throw(MAL, "array.@5", "tail of value BAT must be of type @1");
+	}
+	arrcnt = BATcount(bVal);
+	arrbase = bVal->hseqbase;
+	offbase = bOffsets[0]->hseqbase;
+	offcnt = BATcount(bOffsets[0]);
+	for (i = 0; i < ndims; i++) {
+		if (!BAThdense(bDims[i])) {
+			AGGR_CLEANUP();
+			throw(MAL, "array.@5", "head of all dimension BATs must be dense");
+		}
+		if (!BAThdense(bOffsets[i])) {
+			AGGR_CLEANUP();
+			throw(MAL, "array.@5", "head of all offset BATs must be dense");
+		}
+		if (bDims[i]->hseqbase != arrbase || BATcount(bDims[i]) != arrcnt) {
+			AGGR_CLEANUP();
+			throw(MAL, "array.@5", "head of all dimension BATs must be aligned with head of value BAT");
+		}
+		if (bOffsets[i]->hseqbase != offbase || BATcount(bOffsets[i]) != offcnt) {
+			AGGR_CLEANUP();
+			throw(MAL, "array.@5", "heads of all offset BATs must be aligned");
+		}
+		if (bDims[i]->ttype != TYPE_int || bDims[i]->ttype != bOffsets[i]->ttype) {
+			AGGR_CLEANUP();
+			throw(MAL, "array.@5", SEMANTIC_TYPE_MISMATCH);
+		}
+		BATmin(bDims[i], &(dMin[i]));
+		BATmax(bDims[i], &(dMax[i]));
+	}
+
+	/* access tails as arrays */
+	bValT = (@1*) Tloc(bVal, BUNfirst(bVal));
+	for (i = 0; i < ndims; i++) {
+		bDimsT[i] = (int*) Tloc(bDims[i], BUNfirst(bDims[i]));
+		bOffsetsT[i] = (int*) Tloc(bOffsets[i], BUNfirst(bOffsets[i]));
+	}
+
+	/* For each anchor piont, compute all cells belong to this tile (bVal.head
+	 * is the group nr.) and compute the SUM */
+	bRes = 	BATnew(TYPE_void, TYPE_@3, BATcount(bVal));
+	bResT = (@3*) Tloc(bRes, BUNfirst(bRes));
+	for (p = 0 ; p < arrcnt ; p++) {
+		sum = 0; cnt = 0;
+		/* loop over all sets of offsets */
+		for (r = 0; r < offcnt ; r++) {
+			vid = 0; /* index into bVal for the value of a qualified tile member */
+			mul = 1;
+			skip = FALSE;
+			/* for the index of the anchor point on dimension d_i, check if the
+			 * resulting index is within the dimension range after having
+			 * shifted according this set of offset on dimension d_i.
+			 * If yes, update 'vid' so that we know the OID of the qualified
+			 * cell at the end; otherwise, skip.
+			 */
+			/* TODO: we can skip more.  If the j-th value bOffsets[i]
+			 * disqualifies the index on dimension d_i, we can jump to the next
+			 * of bOffsets[i] which value follows the j-th value */
+			for (i = ndims - 1; i >= 0; i--) {
+				cidx = bDimsT[i][p] + bOffsetsT[i][r];
+				if (dMin[i] <= cidx && cidx <= dMax[i]) {
+					vid += mul * (cidx - dMin[i]);
+				} else {
+					skip = TRUE;
+					break; /* skip remaining dimensions */
+				}
+				mul *= dSize[i];
+			}
+			if (!skip) {
+				elm = bValT[vid];
+				if (elm != @1_nil) {
+					cnt++;
+					sum += elm;
+				}
+			}
+		}
+		bResT[p] = (cnt ? @6 : @3_nil);
+		nils |= !cnt;
+	}
+	AGGR_CLEANUP();
+	BATsetcount(bRes, arrcnt);
+	BATseqbase(bRes, arrbase);
+	bRes->hdense = TRUE;
+	BATkey(bRes, TRUE);
+	bRes->hsorted = 1;
+	bRes->hrevsorted = (arrcnt <= 1);
+	bRes->tsorted = (arrcnt <= 1);
+	bRes->trevsorted = (arrcnt <= 1);
+	bRes->T->nil = nils;
+	bRes->T->nonil = !nils;
+	BATkey(BATmirror(bRes), FALSE);
+	BBPkeepref(*ret = bRes->batCacheid);
+	return MAL_SUCCEED;
+}
+@c
+@:tilesAggr(bte,lng,lng,Sum,sum, sum )@
+@:tilesAggr(sht,lng,lng,Sum,sum, sum )@
+@:tilesAggr(int,lng,lng,Sum,sum, sum )@
+@:tilesAggr(lng,lng,lng,Sum,sum, sum )@
+@:tilesAggr(flt,dbl,dbl,Sum,sum, sum )@
+@:tilesAggr(dbl,dbl,dbl,Sum,sum, sum )@
+@:tilesAggr(bte,lng,dbl,Avg,avg, (dbl)sum / (dbl)cnt )@
+@:tilesAggr(sht,lng,dbl,Avg,avg, (dbl)sum / (dbl)cnt )@
+@:tilesAggr(int,lng,dbl,Avg,avg, (dbl)sum / (dbl)cnt )@
+@:tilesAggr(lng,lng,dbl,Avg,avg, (dbl)sum / (dbl)cnt )@
+@:tilesAggr(flt,dbl,dbl,Avg,avg, (dbl)sum / (dbl)cnt )@
+@:tilesAggr(dbl,dbl,dbl,Avg,avg, (dbl)sum / (dbl)cnt )@
+@:tilesAggr(bte,lng,lng,Cnt,cnt, (lng)cnt )@
+@:tilesAggr(sht,lng,lng,Cnt,cnt, (lng)cnt )@
+@:tilesAggr(int,lng,lng,Cnt,cnt, (lng)cnt )@
+@:tilesAggr(lng,lng,lng,Cnt,cnt, (lng)cnt )@
+@:tilesAggr(flt,dbl,lng,Cnt,cnt, (lng)cnt )@
+@:tilesAggr(dbl,dbl,lng,Cnt,cnt, (lng)cnt )@
+
+@= tilesMinMax
+/* 
+ * array.[min|max] inputs:
+ *  (cell_val:BAT,
+ *   dim_1:BAT,tile_member_offset_dim_1:BAT,size_dim_1, ...,
+ *   dim_n:BAT,tile_member_offset_dim_n:BAT,size_dim_n)
+ */
+str
+ARRAYtiles@2_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	BAT *bVal = NULL, *bRes = NULL, **bDims = NULL, **bOffsets = NULL;
+	int *ret = (int*) getArgReference(stk,pci,0), i = 0, ndims = 0;
+	bit skip = FALSE, nils = FALSE;
+	@1 *bValT = NULL, elm = 0;
+	@1 *bResT = NULL;
+	int **bDimsT = NULL, **bOffsetsT = NULL;
+	BUN p, r, arrcnt = 0, offcnt = 0;
+	@1 minmax = @1_nil;
+	bit first = TRUE;
+	/* FIXME: this code only deal with INT dimensions */
+	int cidx = 0, *dMin = NULL, *dMax = NULL, *dSize = NULL;
+	oid arrbase = 0, offbase = 0, vid = 0, mul = 0;
+
+	(void) cntxt;
+	(void) mb;
+
+	if ( (pci->argc - pci->retc - 1) % 3 != 0)
+		throw(MAL, "array.@3", "Unbalanced argument sets");
+
+	ndims = (pci->argc - pci->retc - 1) / 3;
+	bDims = (BAT**) GDKzalloc(sizeof(BAT*) * ndims);
+	bDimsT = (int**) GDKzalloc(sizeof(int*) * ndims);
+	bOffsets = (BAT**) GDKzalloc(sizeof(BAT*) * ndims);
+	bOffsetsT = (int**) GDKzalloc(sizeof(int*) * ndims);
+	dMin = (int*) GDKzalloc(sizeof(int) * ndims);
+	dMax = (int*) GDKzalloc(sizeof(int) * ndims);
+	dSize = (int*) GDKzalloc(sizeof(int) * ndims);
+	if(!bDims || !bDimsT || !bOffsets || !bOffsetsT || !dMin || !dMax || !dSize) {
+		AGGR_CLEANUP();
+		throw(MAL, "array.@3", MAL_MALLOC_FAIL);
+	}
+	if (!(bVal = BATdescriptor(*(int*)getArgReference(stk,pci,1)))) {
+		AGGR_CLEANUP();
+		throw(MAL, "array.@3", RUNTIME_OBJECT_MISSING);
+	}
+	for (i = 0; i < ndims; i++) {
+		bDims[i] = BATdescriptor(*(int*)getArgReference(stk,pci,2+i*3));
+		bOffsets[i] = BATdescriptor(*(int*)getArgReference(stk,pci,2+i*3+1));
+		if (!bDims[i] || !bOffsets[i]) {
+			AGGR_CLEANUP();
+			throw(MAL, "array.@3", RUNTIME_OBJECT_MISSING);
+		}
+		dSize[i] = *(int*)getArgReference(stk,pci,2+i*3+2);
+	}
+	/* type check the shapes, prepare iterators, and compute the min/max of the dimensions */
+	if (!BAThdense(bVal)) {
+		AGGR_CLEANUP();
+		throw(MAL, "array.@3", "head of value BAT must be dense");
+	}
+	if (bVal->ttype != TYPE_@1) {
+		AGGR_CLEANUP();
+		throw(MAL, "array.@3", "tail of value BAT must be of type @1");
+	}
+	arrcnt = BATcount(bVal);
+	arrbase = bVal->hseqbase;
+	offbase = bOffsets[0]->hseqbase;
+	offcnt = BATcount(bOffsets[0]);
+	for (i = 0; i < ndims; i++) {
+		if (!BAThdense(bDims[i])) {
+			AGGR_CLEANUP();
+			throw(MAL, "array.@3", "head of all dimension BATs must be dense");
+		}
+		if (!BAThdense(bOffsets[i])) {
+			AGGR_CLEANUP();
+			throw(MAL, "array.@3", "head of all offset BATs must be dense");
+		}
+		if (bDims[i]->hseqbase != arrbase || BATcount(bDims[i]) != arrcnt) {
+			AGGR_CLEANUP();
+			throw(MAL, "array.@3", "head of all dimension BATs must be aligned with head of value BAT");
+		}
+		if (bOffsets[i]->hseqbase != offbase || BATcount(bOffsets[i]) != offcnt) {
+			AGGR_CLEANUP();
+			throw(MAL, "array.@3", "heads of all offset BATs must be aligned");
+		}
+		if (bDims[i]->ttype != TYPE_int || bDims[i]->ttype != bOffsets[i]->ttype) {
+			AGGR_CLEANUP();
+			throw(MAL, "array.@3", SEMANTIC_TYPE_MISMATCH);
+		}
+		BATmin(bDims[i], &(dMin[i]));
+		BATmax(bDims[i], &(dMax[i]));
+	}
+
+	/* access tails as arrays */
+	bValT = (@1*) Tloc(bVal, BUNfirst(bVal));
+	for (i = 0; i < ndims; i++) {
+		bDimsT[i] = (int*) Tloc(bDims[i], BUNfirst(bDims[i]));
+		bOffsetsT[i] = (int*) Tloc(bOffsets[i], BUNfirst(bOffsets[i]));
+	}
+
+	/* For each anchor piont, compute all cells belong to this tile (bVal.head
+	 * is the group nr.) and compute the SUM */
+	bRes = 	BATnew(TYPE_void, TYPE_@1, BATcount(bVal));
+	bResT = (@1*) Tloc(bRes, BUNfirst(bRes));
+	for (p = 0 ; p < arrcnt ; p++) {
+		minmax = @1_nil;
+		first = TRUE;
+		/* loop over all sets of offsets */
+		for (r = 0; r < offcnt ; r++) {
+			vid = 0; /* index into bVal for the value of a qualified tile member */
+			mul = 1;
+			skip = FALSE;
+			/* for the index of the anchor point on dimension d_i, check if the
+			 * resulting index is within the dimension range after having
+			 * shifted according this set of offset on dimension d_i.
+			 * If yes, update 'vid' so that we know the OID of the qualified
+			 * cell at the end; otherwise, skip.
+			 */
+			/* TODO: we can skip more.  If the j-th value bOffsets[i]
+			 * disqualifies the index on dimension d_i, we can jump to the next
+			 * of bOffsets[i] which value follows the j-th value */
+			for (i = ndims - 1; i >= 0; i--) {
+				cidx = bDimsT[i][p] + bOffsetsT[i][r];
+				if (dMin[i] <= cidx && cidx <= dMax[i]) {
+					vid += mul * (cidx - dMin[i]);
+				} else {
+					skip = TRUE;
+					break; /* skip remaining dimensions */
+				}
+				mul *= dSize[i];
+			}
+			if (!skip) {
+				elm = bValT[vid];
+				if (elm != @1_nil) {
+					if (first) {
+						minmax = elm;
+						first = FALSE;
+					}
+					else
+						minmax = @4(minmax,elm);
+				}
+			}
+		}
+		bResT[p] = minmax;
+		nils |= minmax == @1_nil;
+	}
+	AGGR_CLEANUP();
+	BATsetcount(bRes, arrcnt);
+	BATseqbase(bRes, arrbase);
+	bRes->hdense = TRUE;
+	BATkey(bRes, TRUE);
+	bRes->hsorted = 1;
+	bRes->hrevsorted = (arrcnt <= 1);
+	bRes->tsorted = (arrcnt <= 1);
+	bRes->trevsorted = (arrcnt <= 1);
+	bRes->T->nil = nils;
+	bRes->T->nonil = !nils;
+	BATkey(BATmirror(bRes), FALSE);
+	BBPkeepref(*ret = bRes->batCacheid);
+	return MAL_SUCCEED;
+}
+@c
+@:tilesMinMax(bte,Min,min,MIN)@
+@:tilesMinMax(sht,Min,min,MIN)@
+@:tilesMinMax(int,Min,min,MIN)@
+@:tilesMinMax(lng,Min,min,MIN)@
+@:tilesMinMax(flt,Min,min,MIN)@
+@:tilesMinMax(dbl,Min,min,MIN)@
+@:tilesMinMax(bte,Max,max,MAX)@
+@:tilesMinMax(sht,Max,max,MAX)@
+@:tilesMinMax(int,Max,max,MAX)@
+@:tilesMinMax(lng,Max,max,MAX)@
+@:tilesMinMax(flt,Max,max,MAX)@
+@:tilesMinMax(dbl,Max,max,MAX)@
+@}

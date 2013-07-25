@@ -1,0 +1,55 @@
+stderr of test '01_create_04` in directory 'sql/test/sciql` itself:
+
+
+# 23:27:27 >  
+# 23:27:27 >   mserver5  --debug=10 --set gdk_nr_threads=0  --set "gdk_dbfarm=/export/scratch0/zhang/monet-install/sciql/debug/var/MonetDB" --set mapi_open=true --set mapi_port=31410 --set monet_prompt= --trace --forcemito --set mal_listing=2  "--dbname=mTests_test_sciql" --set mal_listing=0 ; echo ; echo Over..
+# 23:27:27 >  
+
+# builtin opt 	gdk_dbname = demo
+# builtin opt 	gdk_dbfarm = /export/scratch0/zhang/monet-install/sciql/debug/var/monetdb5/dbfarm
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_alloc_map = no
+# builtin opt 	gdk_vmtrim = yes
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	gdk_dbfarm = /export/scratch0/zhang/monet-install/sciql/debug/var/MonetDB
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 31410
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbname = mTests_test_sciql
+# cmdline opt 	mal_listing = 0
+
+# 23:27:27 >  
+# 23:27:27 >  mclient -lsql -ftest -i -e --host=jarl --port=31410 
+# 23:27:27 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-13130/.s.monetdb.39483
+QUERY = CREATE ARRAY test01_04_real     (x REAL     DIMENSION[1:5], v FLOAT DEFAULT 3.7);
+ERROR = !CREATE ARRAY: dimension type 'real' not supported yet
+MAPI  = (monetdb) /var/tmp/mtest-13130/.s.monetdb.39483
+QUERY = CREATE ARRAY test01_04_double   (x DOUBLE   DIMENSION[1:5], v FLOAT DEFAULT 3.7);
+ERROR = !CREATE ARRAY: dimension type 'double' not supported yet
+MAPI  = (monetdb) /var/tmp/mtest-13130/.s.monetdb.39483
+QUERY = SELECT * FROM test01_04_real;
+ERROR = !SELECT: no such table 'test01_04_real'
+MAPI  = (monetdb) /var/tmp/mtest-13130/.s.monetdb.39483
+QUERY = SELECT * FROM test01_04_double;
+ERROR = !SELECT: no such table 'test01_04_double'
+MAPI  = (monetdb) /var/tmp/mtest-13130/.s.monetdb.39483
+QUERY = DROP ARRAY test01_04_real;
+ERROR = !DROP ARRAY: no such array 'test01_04_real'
+MAPI  = (monetdb) /var/tmp/mtest-13130/.s.monetdb.39483
+QUERY = DROP ARRAY test01_04_double;
+ERROR = !DROP ARRAY: no such array 'test01_04_double'
+
+# 23:27:27 >  
+# 23:27:27 >  Done.
+# 23:27:27 >  
+

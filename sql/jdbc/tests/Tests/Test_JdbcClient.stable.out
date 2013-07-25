@@ -121,6 +121,27 @@ Operation successful
 
 START TRANSACTION;
 
+CREATE SCHEMA "rs";
+
+SET SCHEMA "rs";
+
+CREATE TABLE "catalog" (
+	"imageid" int     ,
+	"fileid"  int     ,
+	"width"   int     ,
+	"length"  int     ,
+	"bps"     smallint
+);
+
+
+CREATE TABLE "files" (
+	"fileid"       int      ,
+	"location"     char     (256),
+	"status"       tinyint  ,
+	"lastmodified" timestamp(6)
+);
+
+
 CREATE SCHEMA "sys";
 
 SET SCHEMA "sys";

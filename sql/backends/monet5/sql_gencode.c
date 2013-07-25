@@ -54,7 +54,7 @@
 #include <rel_bin.h>
 
 static int _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s);
-static int backend_dumpstmt(backend *be, MalBlkPtr mb, stmt *s, int top);
+static int backend_dumpstmt(backend *be, MalBlkPtr mb, stmt *s, int top, sql_rel *rel);
 
 /*
  * @+ MAL code support
@@ -314,7 +314,8 @@ _create_relational_function(mvc *m, char *name, sql_rel *rel, stmt *call)
 		}
 	}
 
-	if (backend_dumpstmt(be, curBlk, s, 0) < 0)
+	/* FIXME: do we really need to pass 'r' here? When is this function called to handle what? */
+	if (backend_dumpstmt(be, curBlk, s, 0, r) < 0)
 		return -1;
 	/* SQL function definitions meant for inlineing should not be optimized before */
 	varSetProp(curBlk, getArg(curInstr, 0), sqlfunctionProp, op_eq, NULL);
@@ -1093,23 +1094,37 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				if (get_cmp(s) == cmp_filter) {
 					node *n;
 					char *mod, *fimp;
+					int isArraySlice = 0;
 
 					if (backend_create_func(sql, s->op4.funcval->func) < 0)
 						return -1;
 					mod  = sql_func_mod(s->op4.funcval->func);
 					fimp = sql_func_imp(s->op4.funcval->func);
+					isArraySlice = (strcmp(mod, "array") == 0 && strcmp(fimp, "slice") == 0);
 
 					q = newStmt(mb, mod, convertOperator(fimp));
-					q = pushArgument(mb, q, l);
-					if (sub > 0)
-						q = pushArgument(mb, q, sub);
+					/* NB: this is a HACK to make the array_slice filter work.
+					 * The array_slice function computes the selected OIDs only
+					 *  based on its scalar parameters.
+					 * It doens't need a left-side column 'l', nor does it
+					 *  use/reduce any previous results 'sub'.
+					 */
+					if (!isArraySlice) {
+						q = pushArgument(mb, q, l);
+						if (sub > 0)
+							q = pushArgument(mb, q, sub);
+					}
 
 					for (n = s->op2->op4.lval->h; n; n = n->next) {
 						stmt *op = n->data;
 
 						q = pushArgument(mb, q, op->nr);
 					}
-					q = pushBit(mb, q, anti);
+					/* We don't have any 'anti' comparison in array slicing
+					 *  (yet). */
+					if (!isArraySlice) {
+						q = pushBit(mb, q, anti);
+					}
 					s->nr = getDestVar(q);
 					break;
 				}
@@ -2220,7 +2235,9 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
  * They have to be initialized, which is currently hacked
  * by using the SQLstatment.
  */
-static void setCommitProperty(MalBlkPtr mb){
+static void
+setCommitProperty(MalBlkPtr mb)
+{
 	ValRecord cst;
 
 	if ( varGetProp(mb, getArg(mb->stmt[0],0), PropertyIndex("autoCommit")) )
@@ -2230,8 +2247,92 @@ static void setCommitProperty(MalBlkPtr mb){
 	varSetProperty(mb, getArg(getInstrPtr(mb,0),0), "autoCommit","=", &cst);
 }
 
+/*
+ * @-
+ * Walk down the rel tree to find usage of arrays.
+ * Add a sciql.materialise statement for each not materialised array.
+ */
+static void
+add_materialise_stmt(MalBlkPtr mb, sql_rel *rel, list *processed)
+{
+	if (!rel)
+		return;
+
+	switch(rel->op) {
+	case op_basetable:
+		{
+			sql_table *t = rel->l;
+			if(isArray(t) && t->fixed && !t->materialised) {
+				int found = 0;
+				node *n = processed->h;
+
+				for ( ; n; n = n->next) {
+					sql_table *tp = n->data;
+					if (strcmp(tp->s->base.name, t->s->base.name) == 0 &&
+							strcmp(tp->base.name, t->base.name) == 0)
+						found = 1;
+				}
+				if (!found) {
+					/* newStmt(): if both 'module' and 'name' are string constants;
+					 * newStmt1(): if 'module' is a reference and 'name' is a string const;
+					 * newStmt2(): if both 'module' and 'name' are references
+					 */
+					InstrPtr q = newStmt1(mb, sciqlRef, "materialise");
+					q = pushSchema(mb, q, t);
+					(void) pushStr(mb, q, t->base.name);
+					/* FIXME: is it safe to just append t?  Do we need to copy it? */
+					list_append(processed, t);	
+				}
+			}
+		}
+		break;
+	case op_table:
+		if (rel->flag == 0 && rel->r != NULL) { /* a table returning UDF */
+			sql_table *t = ((sql_subfunc*)((sql_exp*)rel->r)->f)->res.comp_type;
+			if (t->valence > 0) { /* an array returning UDF */
+				/* TODO: materialise the arrays defined/returned by the function */
+			}
+		}
+
+		if (rel->l)
+			add_materialise_stmt(mb, rel->l, processed);	
+		break;
+	case op_select:
+	case op_project:
+	case op_groupby:
+	case op_topn:
+	case op_sample:
+	case op_insert:
+	/* case op_delete: don't create data just to be deleted */
+	case op_update:
+		add_materialise_stmt(mb, rel->l, processed);
+		break;
+	case op_join:
+	case op_left:
+	case op_right:
+	case op_full:
+	case op_semi:
+	case op_anti:
+	case op_union:
+	case op_except:
+	case op_inter:
+		add_materialise_stmt(mb, rel->l, processed);
+		add_materialise_stmt(mb, rel->r, processed);
+		break;
+	case op_ddl:
+		if (rel->exps) {
+			node *n = NULL;
+			for (n = rel->exps->h; n; n = n->next) {
+				/* TODO: search for op_ddl for arrays declared in a UDF */
+			}
+		}
+	default:
+		break;
+	}
+}
+
 static int 
-backend_dumpstmt(backend *be, MalBlkPtr mb, stmt *s, int top)
+backend_dumpstmt(backend *be, MalBlkPtr mb, stmt *s, int top, sql_rel *rel)
 {
 	mvc *c = be->mvc;
 	stmt **stmts = stmt_array(c->sa, s);
@@ -2243,6 +2344,11 @@ backend_dumpstmt(backend *be, MalBlkPtr mb, stmt *s, int top)
 		setCommitProperty(mb);
 	q = newStmt1(mb, sqlRef, "mvc");
 	be->mvc_var = getDestVar(q);
+
+	if (rel != NULL) {
+		list *processed = sa_list(c->sa);
+		add_materialise_stmt(mb, rel, processed);
+	}
 
 	/*print_stmts(c->sa, stmts);*/
 	clear_stmts(stmts);
@@ -2271,7 +2377,7 @@ backend_dumpstmt(backend *be, MalBlkPtr mb, stmt *s, int top)
 }
 
 int
-backend_callinline(backend *be, Client c, stmt *s )
+backend_callinline(backend *be, Client c, stmt *s, sql_rel *rel)
 {
 	mvc *m = be->mvc;
 	InstrPtr curInstr = 0;
@@ -2304,14 +2410,14 @@ backend_callinline(backend *be, Client c, stmt *s )
 			}
 		}
 	}
-	if (backend_dumpstmt(be, curBlk, s, 1) < 0)
+	if (backend_dumpstmt(be, curBlk, s, 1, rel) < 0)
 		return -1;
 	c->curprg->def = curBlk;
 	return 0;
 }
 
 Symbol
-backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
+backend_dumpproc(backend *be, Client c, cq *cq, stmt *s, sql_rel *rel)
 {
 	mvc *m = be->mvc;
 	MalBlkPtr mb = 0;
@@ -2378,7 +2484,7 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 		}
 	}
 
-	if (backend_dumpstmt(be, mb, s, 1) < 0)
+	if (backend_dumpstmt(be, mb, s, 1, rel) < 0)
 		return NULL;
 	Toptimize = GDKusec();
 	Tparse = Toptimize - m->Tparse;
@@ -2510,6 +2616,7 @@ backend_create_func(backend *be, sql_func *f)
 	stmt *s;
 	int i, retseen =0, sideeffects =0;
 	sql_allocator *sa, *osa = m->sa;
+	sql_rel *rel = NULL;
 
 	/* nothing to do for internal and ready (not recompiling) functions */
 	if (!f->sql || f->sql > 1)
@@ -2517,7 +2624,7 @@ backend_create_func(backend *be, sql_func *f)
 	f->sql++;
  	sa = sa_create();
 	m->session->schema = f->s;
-	s = sql_parse(m, sa, f->query, m_instantiate);
+	s = _sql_parse(m, sa, f->query, m_instantiate, &rel);
 	m->sa = osa;
 	m->session->schema = schema;
 	if (s && !f->sql) { /* native function */
@@ -2572,7 +2679,7 @@ backend_create_func(backend *be, sql_func *f)
 	if ( m->session->auto_commit)
 		setCommitProperty(curBlk);
 
-	if (backend_dumpstmt(be, curBlk, s, 0) < 0)
+	if (backend_dumpstmt(be, curBlk, s, 0, rel) < 0)
 		return -1;
 	/* selectively make functions available for inlineing */
 	/* for the time being we only inline scalar functions */

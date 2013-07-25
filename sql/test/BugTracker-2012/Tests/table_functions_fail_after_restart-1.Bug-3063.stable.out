@@ -30,6 +30,7 @@ Ready.
 % 3 # length
 [ "sys"	]
 [ "tmp"	]
+[ "rs"	]
 [ "ft"	]
 #drop function ft.func;
 #drop schema ft;

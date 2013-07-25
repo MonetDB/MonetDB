@@ -260,6 +260,11 @@ int yydebug=1;
 	XML_primary
 	opt_comma_string_value_expression
 
+	dimension
+	array_dim_slice
+	array_cell_ref
+	range_term
+
 %type <type>
 	data_type
 	datetime_type
@@ -376,6 +381,10 @@ int yydebug=1;
 	XML_value_expression_list
 	window_frame_extent
 	window_frame_between
+	range_exp
+	range_exp_list
+	array_element_def_list
+	tiling_commalist
 
 %type <i_val>
 	any_all_some
@@ -422,6 +431,7 @@ int yydebug=1;
 	XML_whitespace_option
 	window_frame_units
 	window_frame_exclusion
+	table_or_array
 
 %type <w_val>
 	wrdval
@@ -503,6 +513,8 @@ int yydebug=1;
 %token XMLVALIDATE RETURNING LOCATION ID ACCORDING XMLSCHEMA URI XMLAGG
 %token FILTER
 
+/* SciQL tokens */
+%token ARRAY DIMENSION
 
 /* operators */
 %left UNION EXCEPT INTERSECT CORRESPONDING UNIONJOIN
@@ -934,32 +946,53 @@ grantee:
 /* DOMAIN, ASSERTION, CHARACTER SET, TRANSLATION, TRIGGER */
 
 alter_statement:
-   ALTER TABLE qname ADD opt_column add_table_element
+   ALTER table_or_array qname ADD opt_column add_table_element
 
 	{ dlist *l = L();
 	  append_list(l, $3);
 	  append_symbol(l, $6);
-	  $$ = _symbol_create_list( SQL_ALTER_TABLE, l ); }
- | ALTER TABLE qname ADD TABLE qname
+	  if ($2 == SQL_TABLE)
+	  	$$ = _symbol_create_list( SQL_ALTER_TABLE, l );
+	  else /* $2 == SQL_ARRAY */
+	  	$$ = _symbol_create_list( SQL_ALTER_ARRAY, l );
+	}
+ | ALTER table_or_array qname ADD TABLE qname
 	{ dlist *l = L();
+	  if ($2 == SQL_ARRAY) {
+			$$ = NULL;
+			yyerror(m, "\"ADD TABLE\" to an array not allowed");
+			YYABORT;
+	  }
 	  append_list(l, $3);
 	  append_symbol(l, _symbol_create_list( SQL_TABLE, $6));
 	  $$ = _symbol_create_list( SQL_ALTER_TABLE, l ); }
- | ALTER TABLE qname ALTER alter_table_element
+ | ALTER table_or_array qname ALTER alter_table_element
 	{ dlist *l = L();
 	  append_list(l, $3);
 	  append_symbol(l, $5);
-	  $$ = _symbol_create_list( SQL_ALTER_TABLE, l ); }
- | ALTER TABLE qname DROP drop_table_element
+	  if ($2 == SQL_TABLE)
+	  	$$ = _symbol_create_list( SQL_ALTER_TABLE, l );
+	  else /* $2 == SQL_ARRAY */
+	  	$$ = _symbol_create_list( SQL_ALTER_ARRAY, l );
+	}
+ | ALTER table_or_array qname DROP drop_table_element
 	{ dlist *l = L();
 	  append_list(l, $3);
 	  append_symbol(l, $5);
-	  $$ = _symbol_create_list( SQL_ALTER_TABLE, l ); }
- | ALTER TABLE qname SET READ ONLY
+	  if ($2 == SQL_TABLE)
+	  	$$ = _symbol_create_list( SQL_ALTER_TABLE, l );
+	  else /* $2 == SQL_ARRAY */
+	  	$$ = _symbol_create_list( SQL_ALTER_ARRAY, l );
+	}
+ | ALTER table_or_array qname SET READ ONLY
 	{ dlist *l = L();
 	  append_list(l, $3);
 	  append_symbol(l, NULL);
-	  $$ = _symbol_create_list( SQL_ALTER_TABLE, l ); }
+	  if ($2 == SQL_TABLE)
+	  	$$ = _symbol_create_list( SQL_ALTER_TABLE, l );
+	  else /* $2 == SQL_ARRAY */
+	  	$$ = _symbol_create_list( SQL_ALTER_ARRAY, l );
+	}
  | ALTER USER ident passwd_schema
 	{ dlist *l = L();
 	  append_string(l, $3);
@@ -1020,6 +1053,12 @@ alter_table_element:
 	  $$ = _symbol_create_list( SQL_NOT_NULL, l); }
  |	opt_column ident DROP DEFAULT
 	{ $$ = _symbol_create( SQL_DROP_DEFAULT, $2); }
+ | opt_column ident dimension
+	{ dlist *l = L();
+		l = append_string(l,$2);
+		l = append_symbol(l,$3);
+		$$= _symbol_create_list(SQL_DIMENSION, l);
+	}
  ;
 
 drop_table_element:
@@ -1286,16 +1325,25 @@ opt_encrypted:
  ;
 
 table_def:
-    TABLE qname table_content_source 
+    table_or_array qname table_content_source 
 	{ int commit_action = CA_COMMIT;
 	  dlist *l = L();
+
+	  /* since there is no way in table_content_source to tell a TABLE from an
+	   *  ARRAY, we have to do it here.
+	   * This is quite dirty, but is a neater way of distinguish arrays from 
+	   *  tables than checking the token of an outer symbol, since that
+	   *  information is not always passed through.
+	   */
+	  if ($1 == SQL_ARRAY)
+	  	$3->token = SQL_CREATE_ARRAY;
 
 	  append_int(l, SQL_PERSIST);
 	  append_list(l, $2);
 	  append_symbol(l, $3);
 	  append_int(l, commit_action);
 	  append_string(l, NULL);
-	  $$ = _symbol_create_list( SQL_CREATE_TABLE, l ); }
+	  $$ = _symbol_create_list( $1 == SQL_TABLE ? SQL_CREATE_TABLE : SQL_CREATE_ARRAY, l ); }
  |  STREAM TABLE qname table_content_source 
 	{ int commit_action = CA_COMMIT, tpe = SQL_STREAM;
 	  dlist *l = L();
@@ -1348,8 +1396,12 @@ table_def:
 		commit_action = $5;
 	  append_int(l, commit_action);
 	  append_string(l, NULL);
-	  $$ = _symbol_create_list( SQL_CREATE_TABLE, l ); }
+	  $$ = _symbol_create_list(SQL_CREATE_TABLE, l ); }
  ;
+
+table_or_array:
+	TABLE	{$$= SQL_TABLE;}
+	| ARRAY	{$$= SQL_ARRAY;}
 
 opt_temp:
     TEMPORARY		{ $$ = SQL_LOCAL_TEMP; }
@@ -1406,6 +1458,15 @@ column_def:
 			append_string(l, $1);
 			append_type(l, &$2);
 			append_list(l, $3);
+			$$ = _symbol_create_list(SQL_COLUMN, l);
+		}
+ |	column data_type dimension opt_column_def_opt_list
+		{
+			dlist *l = L();
+			append_string(l, $1);
+			append_type(l, &$2);
+			append_list(l, $4);
+			append_symbol(l, $3);
 			$$ = _symbol_create_list(SQL_COLUMN, l);
 		}
  |  column serial_or_bigserial
@@ -1589,6 +1650,16 @@ generated_column:
 	}
  ;
 
+dimension:
+	DIMENSION range_exp
+	{
+		$$= _symbol_create_list(SQL_DIMENSION,$2);
+	}
+  | DIMENSION {
+		$$= _symbol_create_list(SQL_DIMENSION,L());
+	}
+;
+
 serial_opt_params:
 	/* empty: return the defaults */
 	{ $$ = L();
@@ -1716,6 +1787,15 @@ view_def:
 	  append_list(l, $4);
 	  append_symbol(l, $6);
 	  append_int(l, $7);
+	  append_int(l, TRUE);	/* persistent view */
+	  $$ = _symbol_create_list( SQL_CREATE_VIEW, l ); 
+	}
+ | create VIEW ARRAY qname '(' array_element_def_list ')' AS query_expression opt_with_check_option
+	{  dlist *l = L();
+	  append_list(l, $4);
+	  append_list(l, $6);
+	  append_symbol(l, $9);
+	  append_int(l, $10);
 	  append_int(l, TRUE);	/* persistent view */
 	  $$ = _symbol_create_list( SQL_CREATE_VIEW, l ); 
 	}
@@ -1952,8 +2032,8 @@ return_statement:
 return_value:
       select_no_parens_orderby
    |  search_condition
-   |  TABLE '(' select_no_parens_orderby ')'	
-		{ $$ = _symbol_create_symbol(SQL_TABLE, $3); }
+   |  table_or_array '(' select_no_parens_orderby ')'	
+		{ $$ = _symbol_create_symbol($1, $3); }
    |  sqlNULL 	{ $$ = _newAtomNode( NULL);  }
    ;
 
@@ -2067,23 +2147,37 @@ opt_end_label:
 	/* empty */ 	{ $$ = NULL; }
  |	ident 
  ;
-	
-	
+
 table_function_column_list:
 	column data_type	{ $$ = L();
 				  append_string($$, $1);
 			  	  append_type($$, &$2);
 				}
-  |     table_function_column_list ',' column data_type
-				{ 
-				  append_string($$, $3);
-			  	  append_type($$, &$4);
+  | column data_type dimension	{ $$ = L();
+				  append_string($$, $1);
+			  	  append_type($$, &$2);
+			  	  append_symbol($$, $3);
 				}
+  | table_function_column_list ',' column data_type
+  	{ append_string($$, $3);
+	  append_type($$, &$4);
+	}
+  | table_function_column_list ',' column data_type dimension
+  	{ append_string($$, $3);
+	  append_type($$, &$4);
+	  append_symbol($$, $5);
+	}
   ;
 
 func_data_type:
-    TABLE '(' table_function_column_list ')'	
-		{ $$ = _symbol_create_list(SQL_TABLE, $3); }
+    table_or_array '(' table_function_column_list ')'
+	{
+		if ($1 == SQL_TABLE) {
+			$$ = _symbol_create_list(SQL_TABLE, $3);
+		  } else {
+			$$ = _symbol_create_list(SQL_ARRAY, $3);
+		  }
+	}
  |  data_type
 		{ $$ = _symbol_create_list(SQL_TYPE, append_type(L(),&$1)); }
  ;
@@ -2239,6 +2333,11 @@ drop_statement:
 	  append_list(l, $3 );
 	  append_int(l, $4 );
 	  $$ = _symbol_create_list( SQL_DROP_TABLE, l ); }
+ | drop ARRAY qname drop_action
+	{ dlist *l = L();
+	  append_list(l, $3 );
+	  append_int(l, $4 );
+	  $$ = _symbol_create_list( SQL_DROP_ARRAY, l ); }
  | drop FUNCTION qname opt_typelist drop_action
 	{ dlist *l = L();
 	  append_list(l, $3 );
@@ -2681,6 +2780,13 @@ assignment:
 	  append_string(l, $1);
 	  $$ = _symbol_create_list( SQL_ASSIGN, l); }
 
+ | array_cell_ref '=' search_condition
+
+	{ dlist *l = L();
+	  append_symbol(l, $3 );
+	  append_symbol(l, $1);
+	  $$ = _symbol_create_list( SQL_ASSIGN, l); }
+
  | column '=' sqlNULL
 
 	{ dlist *l = L();
@@ -2994,6 +3100,18 @@ table_ref:
 				{ $$ = $2;
 				  append_symbol($2->data.lval, $4); }
 */
+ |  array_dim_slice { /* allow "s1.a1[x][1:2]" */
+ 	dlist *l = L();
+	append_symbol(l, $1);
+	append_symbol(l, NULL);
+	$$ = _symbol_create_list( SQL_ARRAY, l);
+	}
+ |  array_dim_slice table_name { /* allow "s1.a1[x][1:2] AS <ident>" */
+	dlist *l = L();
+	append_symbol(l, $1);
+	append_symbol(l, $2);
+	$$ = _symbol_create_list( SQL_ARRAY, l);
+	}
 
 /* Basket expression, TODO window */
  |  '[' 
@@ -3034,6 +3152,14 @@ table_name:
 opt_group_by_clause:
     /* empty */ 		  { $$ = NULL; }
  |  sqlGROUP BY column_ref_commalist { $$ = _symbol_create_list( SQL_GROUPBY, $3 );}
+ |  sqlGROUP BY tiling_commalist { $$ = _symbol_create_list( SQL_GROUPBY, append_int($3,0) );}
+ |  sqlGROUP BY DISTINCT tiling_commalist { $$ = _symbol_create_list( SQL_GROUPBY, append_int($4,1) );}
+ ;
+
+tiling_commalist:
+    array_dim_slice { $$ = append_symbol(L(),$1);}
+ |  tiling_commalist ',' array_dim_slice
+			{ $$ = append_symbol( $1, $3);}
  ;
 
 column_ref_commalist:
@@ -3432,7 +3558,34 @@ value_exp:
  |  cast_exp
  |  XML_value_function
  |  param
- ;
+ |  array_dim_slice
+ |  array_cell_ref
+ |  ARRAY '(' scalar_exp_list ')' {
+	dlist *l = L();
+	l = append_list(l,$3);
+	$$ = _symbol_create_list( SQL_ARRAY, l);
+	}
+;
+
+array_dim_slice:
+	qname range_exp_list { 
+		dlist *l = L();
+		append_list(l, $1);
+		append_list(l, $2);
+		$$ = _symbol_create_list( SQL_ARRAY_DIM_SLICE, l);
+		}
+;
+
+/* TODO: haven't all uses of this syntax been replaced with:
+ * SELECT <ident> FROM <array_dim_slice>? */
+array_cell_ref:
+	array_dim_slice '.' ident { 
+		dlist *l = L();
+		append_symbol(l, $1);
+		append_string(l, $3);
+		$$ = _symbol_create_list( SQL_COLUMN, l);
+		}
+;
 
 param:  
    '?'			
@@ -3752,6 +3905,21 @@ column_exp:
 		{ dlist *l = L();
   		  append_symbol(l, $1);
   		  append_string(l, $2);
+  		  $$ = _symbol_create_list( SQL_COLUMN, l ); }
+ |  '[' '*' ']'
+		{ dlist *l = L();
+  		  append_string(l, NULL);
+  		  append_string(l, NULL);
+  		  $$ = _symbol_create_list( SQL_TABLE, l ); }
+ |  '[' ident '.' '*' ']'
+		{ dlist *l = L();
+  		  append_string(l, $2);
+  		  append_string(l, NULL);
+  		  $$ = _symbol_create_list( SQL_TABLE, l ); }
+ |  '[' search_condition ']' opt_alias_name
+		{ dlist *l = L();
+  		  append_symbol(l, $2);
+  		  append_string(l, $4);
   		  $$ = _symbol_create_list( SQL_COLUMN, l ); }
  ;
 
@@ -4290,6 +4458,42 @@ column_ref:
 				  L(), $1), $3), $5);}
  ;
 
+range_exp_list:
+	range_exp
+	{
+		$$= append_list(L(), $1);
+	}
+  | range_exp_list range_exp
+	{
+		$$ = append_list($1, $2);
+	}
+;
+
+range_exp:
+	'[' range_term ':' range_term ':' range_term ']'
+	{
+		dlist *l = L();
+		append_symbol(l, $2);
+		append_symbol(l, $4);
+		$$ = append_symbol(l, $6);
+	}
+	| '[' range_term ':' range_term ']'
+	{
+		dlist *l = L();
+		append_symbol(l, $2);
+		$$ = append_symbol(l, $4);
+	}
+	| '[' range_term ']'
+	{
+		$$= append_symbol(L(), $2);
+	}
+;
+
+range_term:
+	scalar_exp { $$= $1; }
+  | '*' { $$= NULL; }
+;
+
 cast_exp:
      CAST '(' cast_value AS data_type ')'
  	{ dlist *l = L();
@@ -4607,8 +4811,26 @@ data_type:
 				sql_init_subtype(&$$, t, $3, 0);
 			  }
 			}
-
+/*
+ * Stefan.Manegold@cwi.nl:
+ * IMHO, this does not belong here, as an ARRAY is not an atomic data type.
+ *
+ * Instead, a correct(ed) version of this needs to be added to "func_data_type:"
+ * to enable ARRAY-returning functions in additition to TABLE-returning functions.
+ *
+ | ARRAY '(' array_element_def_list ')' { 
+	/ * use a fake type  for now * /
+	sql_find_subtype(&$$, "int", 0, 0);
+	}
+*/
  ;
+
+array_element_def_list:
+	column_def
+		{ $$ = append_symbol(L(), $1); }
+ | array_element_def_list ',' column_def
+		{ $$ = append_symbol($1, $3); }
+;
 
 type_alias:
  ALIAS
@@ -5335,6 +5557,7 @@ char *token2string(int token)
 #define SQL(TYPE) case SQL_##TYPE : return #TYPE
 	SQL(CREATE_SCHEMA);
 	SQL(CREATE_TABLE);
+	SQL(CREATE_ARRAY);
 	SQL(CREATE_VIEW);
 	SQL(CREATE_INDEX);
 	SQL(CREATE_ROLE);
@@ -5345,6 +5568,7 @@ char *token2string(int token)
 	SQL(CREATE_TRIGGER);
 	SQL(DROP_SCHEMA);
 	SQL(DROP_TABLE);
+	SQL(DROP_ARRAY);
 	SQL(DROP_VIEW);
 	SQL(DROP_INDEX);
 	SQL(DROP_ROLE);
@@ -5354,6 +5578,7 @@ char *token2string(int token)
 	SQL(DROP_SEQ);
 	SQL(DROP_TRIGGER);
 	SQL(ALTER_TABLE);
+	SQL(ALTER_ARRAY);
 	SQL(ALTER_SEQ);
 	SQL(ALTER_USER);
 	SQL(DROP_COLUMN);
@@ -5467,6 +5692,9 @@ char *token2string(int token)
 	SQL(XMLTEXT);
 	SQL(XMLVALIDATE);
 	SQL(XMLNAMESPACES);
+	SQL(ARRAY);
+	SQL(ARRAY_DIM_SLICE);
+	SQL(DIMENSION);
 	}
 	return "unknown";	/* just needed for broken compilers ! */
 }

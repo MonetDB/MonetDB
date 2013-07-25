@@ -96,7 +96,8 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, int comma, int alias)
 				mnstr_printf(fout, "%s(%s)", 
 					isStream(t)?"stream":
 					isMergeTable(t)?"merge table":
-					isReplicaTable(t)?"replica table":"table",
+					isReplicaTable(t)?"replica table":
+					isArray(t)?"array":"table",
 					t->base.name);
 			} else {
 				char *t = sql_subtype_string(atom_type(a));
@@ -149,6 +150,25 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, int comma, int alias)
 			alias = 0;
 		if (!e->rname && e->name && strcmp(e->name, e->r)==0)
 			alias = 0;
+		if (e->f) { /* the dimension constraints */
+			list *range = NULL;
+
+			assert(list_length(e->f) == 3);
+
+			/* If a slicing has been applied on this dimension, print the sliced range; otherwise the original range */
+			range = list_length(((list*)e->f)->h->next->data) ? ((list*)e->f)->h->next->data : ((list*)e->f)->h->data;
+			mnstr_printf(fout, " DIM[");
+#define PRINT_DIM_CONSTRAINT(EXP, C) \
+			if (EXP->data) \
+			  exp_print(sql, fout, (sql_exp*)EXP->data, depth, 0, alias); \
+			else \
+				mnstr_printf(fout, "*"); \
+			mnstr_printf(fout, C);
+
+			PRINT_DIM_CONSTRAINT(range->h, ":"); /* start */
+			PRINT_DIM_CONSTRAINT(range->h->next, ":"); /* step */
+			PRINT_DIM_CONSTRAINT(range->h->next->next, "]"); /* stop */
+		}
 	 	break;
 	case e_cmp: 
 		if (e->flag == cmp_in || e->flag == cmp_notin) {
@@ -304,13 +324,15 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs)
 			mnstr_printf(fout, "%s(%s.%s)", 
 				isStream(t)?"stream":
 				isRemote(t)?"REMOTE":
-				isReplicaTable(t)?"REPLICA":"table",
+				isReplicaTable(t)?"REPLICA":
+				isArray(t)?"array":"table",
 				t->s->base.name, t->base.name);
 		else
 			mnstr_printf(fout, "%s(%s)", 
 				isStream(t)?"stream":
 				isRemote(t)?"REMOTE":
-				isReplicaTable(t)?"REPLICA":"table",
+				isReplicaTable(t)?"REPLICA":
+				isArray(t)?"array":"table",
 				t->base.name);
 		if (rel->exps) 
 			exps_print(sql, fout, rel->exps, depth, 1, 0);
@@ -735,7 +757,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, char *r, int *pos, int grp)
 			if (!exp && rrel)
 				exp = rel_bind_column2(sql, rrel, tname, cname, 0);
 		} else {
-			exp = exp_column(sql->sa, tname, cname, NULL, CARD_ATOM, 1, (strchr(cname,'%') != NULL));
+			exp = exp_column(sql->sa, tname, cname, NULL, CARD_ATOM, 1, (strchr(cname,'%') != NULL), NULL);
 		}
 		*e = old;
 		break;

@@ -31,7 +31,7 @@ Source: http://dev.monetdb.org/downloads/sources/Feb2013-SP3/%{name}-%{version}.
 
 BuildRequires: bison
 BuildRequires: bzip2-devel
-# BuildRequires: cfitsio-devel
+# BuildRequires: cfitsio-devel libgeotiff-devel
 BuildRequires: flex
 %if %{?rhel:0}%{!?rhel:1}
 # no geos library on RedHat Enterprise Linux and derivatives
@@ -457,6 +457,7 @@ fi
 %exclude %{_libdir}/monetdb5/json*.mal
 %{_libdir}/monetdb5/*.mal
 # %{_libdir}/monetdb5/autoload/*_fits.mal
+# %{_libdir}/monetdb5/autoload/*_geotiff.mal
 %{_libdir}/monetdb5/autoload/*_lsst.mal
 %{_libdir}/monetdb5/autoload/*_opt_sql_append.mal
 %{_libdir}/monetdb5/autoload/*_udf.mal
@@ -656,6 +657,7 @@ developer, but if you do want to test, this is the package you need.
 	--enable-debug=no \
 	--enable-developer=no \
 	--enable-fits=no \
+	--enable-geotiff=no \
 	--enable-gdk=yes \
 	--enable-geom=%{?rhel:no}%{!?rhel:yes} \
 	--enable-instrument=no \
@@ -677,6 +679,7 @@ developer, but if you do want to test, this is the package you need.
 	--with-hwcounters=no \
 	--with-java=no \
 	--with-mseed=no \
+	--with-geotiff=no \
 	--with-perl=yes \
 	--with-pthread=yes \
 	--with-python2=yes \

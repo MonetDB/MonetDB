@@ -155,6 +155,7 @@ rel_psm_declare_table(mvc *sql, dnode *n)
 	char *name = qname_table(qname);
 	char *sname = qname_schema(qname);
 	sql_subtype ctype = *sql_bind_localtype("bat");
+	int tempt = (n->next->next->data.sym->token == SQL_CREATE_ARRAY) ? SQL_DECLARED_ARRAY : SQL_DECLARED_TABLE;
 
 	if (sname)  /* not allowed here */
 		return sql_error(sql, 02, "DECLARE TABLE: qualified name not allowed");
@@ -163,14 +164,23 @@ rel_psm_declare_table(mvc *sql, dnode *n)
 	
 	assert(n->next->next->next->type == type_int);
 	
-	rel = rel_create_table(sql, cur_schema(sql), SQL_DECLARED_TABLE, NULL, name, n->next->next->data.sym, n->next->next->next->data.i_val, NULL);
-
-	if (!rel || rel->op != op_ddl || rel->flag != DDL_CREATE_TABLE)
+	rel = rel_create_table(sql, cur_schema(sql), tempt, NULL, name, n->next->next->data.sym, n->next->next->next->data.i_val, NULL);
+	if (!rel)
 		return NULL;
 
-	ctype.comp_type = (sql_table*)((atom*)((sql_exp*)rel->exps->t->data)->l)->data.val.pval;
-	stack_push_rel_var(sql, name, rel_dup(rel), &ctype);
-	return exp_var(sql->sa, sa_strdup(sql->sa, name), &ctype, sql->frame);
+	if (rel->op == op_ddl) {
+		if (rel->flag != DDL_CREATE_TABLE && rel->flag != DDL_CREATE_ARRAY)
+			return NULL;
+
+		/* In case of DDL_CREATE_ARRAY, rel->exps now contains the dimension
+		 * range expressions in its end.  The pointer to the sql_table is the
+		 * third expression in rel->exps */
+		ctype.comp_type = (sql_table*)((atom*)((sql_exp*)rel->exps->h->next->next->data)->l)->data.val.pval;
+		stack_push_rel_var(sql, name, rel_dup(rel), &ctype);
+		return exp_var(sql->sa, sa_strdup(sql->sa, name), &ctype, sql->frame);
+	}
+
+	return NULL;
 }
 
 /* [ label: ]
@@ -408,7 +418,7 @@ rel_psm_return( mvc *sql, sql_subtype *restype, symbol *return_sym )
 			if (!cname)
 				cname = number2name(name, 16, ++sql->label);
 			if (!isproject) 
-				e = exp_column(sql->sa, exp_relname(e), cname, exp_subtype(e), exp_card(e), has_nil(e), is_intern(e));
+				e = exp_column(sql->sa, exp_relname(e), cname, exp_subtype(e), exp_card(e), has_nil(e), is_intern(e), e->type == e_column?e->f:NULL);
 			e = rel_check_type(sql, &ce->type, e, type_equal);
 			if (!e)
 				return NULL;
@@ -425,13 +435,44 @@ rel_psm_return( mvc *sql, sql_subtype *restype, symbol *return_sym )
 		sql_table *t = rel_ddl_table_get(rel);
 		node *n, *m;
 		char *tname = t->base.name;
+		/* in case of an array, the dimension info. is contained from the
+		 * fourth exp in rel->exps, see also rel_table() */
+		node *d = rel->exps->h->next->next->next;
 
 		if (cs_size(&t->columns) != cs_size(&restype->comp_type->columns))
 			return sql_error(sql, 02, "RETURN: number of columns do not match");
+		if (t->valence != restype->comp_type->valence)
+			return sql_error(sql, 02, "RETURN: number of dimensions do not match (%d != %d)", t->valence, restype->comp_type->valence);
 		for (n = t->columns.set->h, m = restype->comp_type->columns.set->h; n && m; n = n->next, m = m->next) {
 			sql_column *c = n->data;
 			sql_column *ce = m->data;
-			sql_exp *e = exp_alias(sql->sa, tname, c->base.name, tname, c->base.name, &c->type, CARD_MULTI, c->null, 0);
+			sql_exp *e = NULL;
+
+			if (c->dim) {
+				list *rng_exps = new_exp_list(sql->sa), *drngs = sa_list(sql->sa);
+				if (rng_exps == NULL || drngs == NULL)
+					return sql_error(sql, 02, "RETURN: failed to allocate space");
+
+				if (d == NULL)
+					return sql_error(sql, 02, "RETURN: missing info of dimension \"%s.%s\"", tname, c->base.name);
+
+				/* d->data is the exp containing the dim->ord */
+				if (((sql_exp*)d->data)->type != e_atom)
+					return sql_error(sql, 02, "RETURN: invalid type of the order of dimension \"%s.%s\", %d expected, got %d", tname, c->base.name, e_atom, ((sql_exp*)d->data)->type);
+
+				append(rng_exps, d->next->data);
+				append(rng_exps, d->next->next->data);
+				append(rng_exps, d->next->next->next->data);
+				append(drngs, rng_exps);
+				append(drngs, new_exp_list(sql->sa)); /* empty lists for slicing and */
+				append(drngs, new_exp_list(sql->sa)); /* tiling ranges */
+				e = exp_alias(sql->sa, tname, c->base.name, tname, c->base.name, &c->type, CARD_MULTI, c->null, 0, drngs);
+
+				/* info for the next dimension */
+				d = d->next->next->next->next;
+			} else {
+				e = exp_alias(sql->sa, tname, c->base.name, tname, c->base.name, &c->type, CARD_MULTI, c->null, 0, NULL);
+			}
 
 			e = rel_check_type(sql, &ce->type, e, type_equal);
 			if (!e)
@@ -537,6 +578,7 @@ sequential_block (mvc *sql, sql_subtype *restype, dlist *blk, char *opt_label, i
 			reslist = rel_psm_declare(sql, s->data.lval->h);
 			break;
 		case SQL_CREATE_TABLE: 
+		case SQL_CREATE_ARRAY:
 			res = rel_psm_declare_table(sql, s->data.lval->h);
 			break;
 		case SQL_WHILE:
@@ -603,7 +645,7 @@ result_type(mvc *sql, sql_subfunc *f, char *fname, symbol *res)
 {
 	if (res->token == SQL_TYPE) {
 		return &res->data.lval->h->data.typeval;
-	} else if (res->token == SQL_TABLE) {
+	} else if (res->token == SQL_TABLE || res->token == SQL_ARRAY) {
 		/* here we create a new table-type */
 		sql_schema *sys = find_sql_schema(sql->session->tr, "sys");
 		sql_subtype *t = SA_NEW(sql->sa, sql_subtype);
@@ -621,9 +663,29 @@ result_type(mvc *sql, sql_subfunc *f, char *fname, symbol *res)
 			dnode *n = res->data.lval->h;
 
 			tbl = mvc_create_generated(sql, sys, tnme, NULL, 1 /* system ?*/);
-			for(;n; n = n->next->next) {
+			for(;n; ) {
 				sql_subtype *ct = &n->next->data.typeval;
-		    		mvc_create_column(sql, tbl, n->data.sval, ct);
+				sql_column* cs = mvc_create_column(sql, tbl, n->data.sval, ct);
+				/* skip the type_string and type_type dnode-s */
+				n = n->next->next;
+				if (n && n->type == type_symbol) { /* possibly an additional SQL_DIMENSION dnode */
+					if(n->data.sym->token != SQL_DIMENSION) {
+						return sql_error(sql, 01, "DIMENSION declaration expected, got %s", token2string(n->data.sym->token));
+					}
+					if (res->token != SQL_ARRAY) {
+						return sql_error(sql, 01, "DIMENSION declaration not allowed in a TABLE data type");
+					}
+					if (n->data.sym->data.lval->cnt > 0) {
+						return sql_error(sql, 01, "Dimension range specification not allowed in function return declaration");
+					}
+					cs->dim = ZNEW(sql_dimrange);
+					tbl->valence++;
+					/* skip the additional SQL_DIMENSION dnode */
+					n = n->next;
+				}
+			}
+			if (res->token == SQL_ARRAY && tbl->valence == 0) {
+				return sql_error(sql, 01, "An array must have at least one column declared as a DIMENSION");
 			}
 		}
 		_DELETE(tnme);

@@ -1,0 +1,45 @@
+# Query:
+# CREATE ARRAY A1( x integer DIMENSION[4], v float DEFAULT 0.0);
+#
+# Note: additional operations required for explicit indices (what does this mean?)
+function user.s0_1{autoCommit=true}():void;
+	sql.mvc();
+	# TODO: What is the storage model for fixed|unbounded dimensions,
+	#       store the dimensions explicitly or implicitly?
+	#       Fixed dimensions can be stored explicitly when the array is being
+	#       created, or materialised after their first use, or stored
+	#       implicitly.
+	#       Unbounded dimensions can not be stored explicitly when the array is
+	#       being created.
+	#       They can only possibly be stored explicitly after some values have
+	#       been explicitly inserted into the array, and in this case,
+	#       unbounded dimensions with irregular step size _must_ be stored
+	#       explicitly.
+
+	# x:bat[:oid,:int]:= sciql.newDimension("sys","A1","x",0:int,4:int,1:int);
+	sql.catalog(63,"sys":str,140473280789176:ptr,0:int); # DDL_CREATE_ARRAY==63
+	sql.exportOperation("");
+end s0_1;
+
+# Query:
+# CREATE ARRAY A2 ( x integer DIMENSION[0:4:1], v float DEFAULT 0.0);
+function user.s1_1{autoCommit=true}():void;
+	sql.mvc();
+	sql.catalog(63,"sys":str,140473280789176:ptr,0:int); # DDL_CREATE_ARRAY==63
+	sql.exportOperation("");
+end s1_1;
+
+# Query:
+# CREATE SEQUENCE range AS integer START WITH 0 INCREMENT BY 1 MAXVALUE 3;
+# CREATE ARRAY A3 ( x integer DIMENSION range, v float DEFAULT 0.0);
+function user.s2_1{autoCommit=true}():void;
+	sql.mvc();
+	sql.catalog(5,"sys":str,140473281519496:ptr,0:int);
+	sql.exportOperation("");
+end s2_1;
+function user.s3_1{autoCommit=true}():void;
+	sql.mvc();
+	sql.catalog(63,"sys":str,140473280789176:ptr,0:int); # DDL_CREATE_ARRAY==63
+	sql.exportOperation("");
+end s3_1;
+
