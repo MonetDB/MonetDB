@@ -136,6 +136,11 @@
 #define ATOMIC_INC(var, lck, fcn)	__atomic_add_fetch(&var, 1, __ATOMIC_SEQ_CST)
 #define ATOMIC_DEC(var, lck, fcn)	__atomic_sub_fetch(&var, 1, __ATOMIC_SEQ_CST)
 
+#define ATOMIC_FLAG			char
+#define ATOMIC_FLAG_INIT		{ 0 }
+#define ATOMIC_CLEAR(var, lck, fcn)	__atomic_clear(&var, __ATOMIC_SEQ_CST)
+#define ATOMIC_TAS(var, lck, fcn)	__atomic_test_and_set(&var, __ATOMIC_SEQ_CST)
+
 #else
 
 /* the old way of doing this, (still?) needed for Intel compiler on Linux */
@@ -146,14 +151,14 @@
 #define ATOMIC_INC(var, lck, fcn)	__sync_add_and_fetch(&var, 1)
 #define ATOMIC_DEC(var, lck, fcn)	__sync_sub_and_fetch(&var, 1)
 
+#define ATOMIC_FLAG			int
+#define ATOMIC_FLAG_INIT		{ 0 }
+#define ATOMIC_CLEAR(var, lck, fcn)	__sync_lock_release(&var)
+#define ATOMIC_TAS(var, lck, fcn)	__sync_lock_test_and_set(&var, 1)
+
 #endif
 
 #define ATOMIC_INIT(lck, fcn)		((void) 0)
-
-#define ATOMIC_FLAG			char
-#define ATOMIC_FLAG_INIT		{ 0 }
-#define ATOMIC_CLEAR(var, lck, fcn)	__atomic_clear(&var, __ATOMIC_SEQ_CST)
-#define ATOMIC_TAS(var, lck, fcn)	__atomic_test_and_set(&var, __ATOMIC_SEQ_CST)
 
 #else
 
