@@ -7708,6 +7708,7 @@ RAstatement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		int oldstop = cntxt->curprg->def->stop;
 		stmt *s;
 		char *msg;
+		MalStkPtr oldglb = cntxt->glb;
 
 		if (*opt) 
 			rel = rel_optimizer(m, rel);
@@ -7725,6 +7726,8 @@ RAstatement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			resetMalBlk(cntxt->curprg->def, oldstop);
 			freeVariables(cntxt,cntxt->curprg->def, cntxt->glb, oldvtop);
 		}
+		assert(cntxt->glb == 0 || cntxt->glb == oldglb); /* detect leak */
+		cntxt->glb = oldglb;
 	}
 	return msg;
 }

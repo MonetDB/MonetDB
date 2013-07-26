@@ -285,6 +285,7 @@ JAQLengine(Client c)
 	 * workaround */
 	chkProgram(c->fdout, c->nspace, c->curprg->def);
 
+	assert(c->glb == 0 || c->glb == oldglb); /* detect leak */
 	c->glb = 0;
 	if (j->explain) {
 		printFunction(c->fdout, c->curprg->def, 0, LIST_MAL_STMT | LIST_MAPI);
@@ -318,6 +319,7 @@ JAQLengine(Client c)
 
 	MSresetInstructions(c->curprg->def, 1);
 	freeVariables(c, c->curprg->def, c->glb, j->vtop);
+	assert(c->glb == 0 || c->glb == oldglb); /* detect leak */
 	c->glb = oldglb;
 
 	freetree(j->p);
