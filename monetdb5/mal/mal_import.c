@@ -145,6 +145,7 @@ malLoadScript(Client c, str name, bstream **fdin)
 	c->prompt = oldprompt; \
 	c->promptlength= (int)strlen(c->prompt);
 #define restoreClient2 \
+	assert(c->glb == 0 || c->glb == oldglb); /* detect leak */ \
 	c->glb = oldglb; \
 	c->nspace = oldnspace; \
 	c->curprg = oldprg;
