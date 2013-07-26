@@ -99,20 +99,20 @@ AC_SUBST(Qexec_prefix)
 
 if test -f "$srcdir"/vertoo.data; then
 	dnl  Developers compiling from Mercurial:
-	dnl  default is --enable-strict --enable-assert --enable-debug --disable-optimize
+	dnl  default is --enable-strict --enable-assert --enable-debug --disable-optimize --enable-developer
 	dft_strict=yes
 	dft_assert=yes
 	dft_debug=yes
-	dft_optimi=no
-	dft_develop=yes
+	dft_optimize=no
+	dft_developer=yes
 else
 	dnl  Users compiling from source tarball(s):
-	dnl  default is --disable-strict --disable-assert --disable-debug --disable-optimize
+	dnl  default is --disable-strict --disable-assert --disable-debug --disable-optimize --disable-developer
 	dft_strict=no
 	dft_assert=no
 	dft_debug=no
-	dft_optimi=no
-	dft_develop=no
+	dft_optimize=no
+	dft_developer=no
 fi
 
 dnl small hack to get icc -no-gcc, done here because AC_PROG_CC shouldn't
@@ -216,7 +216,7 @@ AC_ARG_ENABLE(jaql,
 	AS_HELP_STRING([--enable-jaql],
 		[enable support for MonetDB/JAQL (default=auto)]),
 	enable_jaql=$enableval,
-	enable_jaql=$dft_sql)
+	enable_jaql=$dft_jaql)
 case "$enable_monetdb5-$enable_jaql" in
 no-yes)
 	AC_MSG_ERROR([MonetDB/JAQL requires MonetDB5.])
@@ -245,7 +245,7 @@ AC_ARG_ENABLE(developer,
 	AS_HELP_STRING([--enable-developer],
 		[enable support for MonetDB development (default=yes for development sources)]),
 	enable_developer=$enableval,
-	enable_developer=$dft_develop)
+	enable_developer=$dft_developer)
 
 dnl The console is a direct client hooked onto the kernel with full
 dnl administrative privileges, bypassing any security checks.  It is
@@ -262,19 +262,21 @@ if test x$use_console = xyes ; then
 	AC_DEFINE([HAVE_CONSOLE], 1, [If the console should be used])
 fi
 
+dft_jdbc=auto
 AC_ARG_ENABLE(jdbc,
 	AS_HELP_STRING([--enable-jdbc], [build the MonetDB JDBC driver]),
 	enable_jdbc="$enableval",
-	enable_jdbc=auto)
+	enable_jdbc=$dft_jdbc)
 case $enable_jdbc in
 	yes|auto) enable_jdbc=$enable_jdbc;;
 	*) enable_jdbc=no;;
 esac
 
+dft_control=auto
 AC_ARG_ENABLE(merocontrol,
 	AS_HELP_STRING([--enable-merocontrol], [build the Merovingian control driver]),
 	enable_control="$enableval",
-	enable_control=auto)
+	enable_control=$dft_control)
 case $enable_control in
 	yes|auto) enable_control=$enable_control;;
 	*) enable_control=no;;
@@ -742,21 +744,23 @@ AC_ARG_ENABLE(assert,
 AC_ARG_ENABLE(optimize,
 	AS_HELP_STRING([--enable-optimize],
 		[enable extra optimization (default=no)]),
-	enable_optim=$enableval,
-	enable_optim=def_$dft_optimi)
+	enable_optimize=$enableval,
+	enable_optimize=def_$dft_optimize)
 
-need_profiling=no
+need_profile=no
+dft_profile=$need_profile
 AC_ARG_ENABLE(profile,
 	AS_HELP_STRING([--enable-profile], [enable profiling (default=no)]),
-	enable_prof=$enableval,
-	enable_prof=no)
+	enable_profile=$enableval,
+	enable_profile=def_$dft_profile)
 
 need_instrument=no
+dft_instrument=$need_instrument
 AC_ARG_ENABLE(instrument,
 	AS_HELP_STRING([--enable-instrument],
 		[enable instrument (default=no)]),
 	enable_instrument=$enableval,
-	enable_instrument=no)
+	enable_instrument=def_$dft_instrument)
 
 dnl check whether no (explictly chosen) mutual exclusive combinations
 dnl were made, compatability matrix:
@@ -767,7 +771,7 @@ dnl   optimize       X    C    \    X    X
 dnl   profile        C    C    X    \    C
 dnl   instrument     C    C    X    C    \
 
-case "x$enable_debug.$enable_optim.$enable_prof.$enable_instrument" in
+case "x$enable_debug.$enable_optimize.$enable_profile.$enable_instrument" in
 	# find conflicts
 	xyes.yes.*.*)
 		AC_MSG_ERROR([combining --enable-optimize and --enable-debug is not possible])
@@ -781,36 +785,54 @@ case "x$enable_debug.$enable_optim.$enable_prof.$enable_instrument" in
 	# handle defaults after user requests
 	xyes.*.*.*)
 		enable_debug=yes
-		enable_optim=no
-		enable_prof="`echo $enable_prof | sed 's:^def_::'`"
+		if test x$enable_optimize != xno ; then
+			disable_optimize="(as debug is enabled)"
+		fi
+		enable_optimize=no
+		enable_profile="`echo $enable_profile | sed 's:^def_::'`"
 		enable_instrument="`echo $enable_instrument | sed 's:^def_::'`"
 		;;
 	x*.*.yes.*)
 		enable_debug="`echo $enable_debug | sed 's:^def_::'`"
-		enable_optim=no
-		enable_prof=yes
+		if test x$enable_optimize != xno ; then
+			disable_optimize="(as profile is enabled)"
+		fi
+		enable_optimize=no
+		enable_profile=yes
 		enable_instrument="`echo $enable_instrument | sed 's:^def_::'`"
 		;;
 	x*.*.*.yes)
 		enable_debug="`echo $enable_debug | sed 's:^def_::'`"
-		enable_optim=no
-		enable_prof="`echo $enable_prof | sed 's:^def_::'`"
+		if test x$enable_optimize != xno ; then
+			disable_optimize="(as instrument is enabled)"
+		fi
+		enable_optimize=no
+		enable_profile="`echo $enable_profile | sed 's:^def_::'`"
 		enable_instrument=yes
 		;;
 	x*.*no.*.*)
 		enable_debug="`echo $enable_debug | sed 's:^def_::'`"
-		enable_optim=no
-		enable_prof="`echo $enable_prof | sed 's:^def_::'`"
+		enable_optimize=no
+		enable_profile="`echo $enable_profile | sed 's:^def_::'`"
 		enable_instrument="`echo $enable_instrument | sed 's:^def_::'`"
 		;;
 	x*.*yes.*.*) # enable-optimize overrules other defaults
-		enable_optim=yes
+		enable_optimize=yes
+		if test x$enable_debug != xno ; then
+			disable_debug="(as optimize is enabled)"
+		fi
 		enable_debug=no
-		enable_prof=no
+		if test x$enable_profile != xno ; then
+			disable_profile="(as optimize is enabled)"
+		fi
+		enable_profile=no
+		if test x$enable_instrument != xno ; then
+			disable_instrument="(as optimize is enabled)"
+		fi
 		enable_instrument=no
 		;;
 	x*)
-		AC_MSG_WARN([unhandled configuration $enable_debug.$enable_optim.$enable_prof.$enable_instrument, please file a bug on bugs.monetdb.org])
+		AC_MSG_WARN([unhandled configuration $enable_debug.$enable_optimize.$enable_profile.$enable_instrument, please file a bug on bugs.monetdb.org])
 		;;
 esac
 # make defaults real for flags which don't conflict with anything
@@ -862,7 +884,7 @@ fi
 
 
 AC_MSG_CHECKING([for --enable-optimize])
-if test "x$enable_optim" = xyes; then
+if test "x$enable_optimize" = xyes; then
 	origCFLAGS="$CFLAGS"
 	dnl  remove "-g" as some compilers don't like "-g -Ox" combinations
 	dnl  remove "-O2" as we add "-Ox" and some compilers don't like "-Oy -Ox" combinations
@@ -1014,9 +1036,9 @@ else
 fi
 
 AC_MSG_CHECKING([for --enable-profile])
-if test "x$enable_prof" = xyes; then
+if test "x$enable_profile" = xyes; then
 	AC_DEFINE(PROFILE, 1, [Compiler flag])
-	need_profiling=yes
+	need_profile=yes
 	if test "x$GCC" = xyes; then
 		CFLAGS="$CFLAGS -pg"
 		AC_MSG_RESULT([yes: -pg])
@@ -1026,7 +1048,7 @@ if test "x$enable_prof" = xyes; then
 else
 	AC_MSG_RESULT([no])
 fi
-AM_CONDITIONAL(PROFILING,test "x$need_profiling" = xyes)
+AM_CONDITIONAL(PROFILING,test "x$need_profile" = xyes)
 
 AC_MSG_CHECKING([for --enable-instrument])
 if test "x$enable_instrument" = xyes; then
@@ -3058,11 +3080,11 @@ echo
 echo
 echo "MonetDB is configured as follows:"
 echo "* Compilation specifics:"
-echo "    Host:       " ${ac_cv_host}
-echo "    Compiler:   " ${CC}
-echo "    CFLAGS:     " ${CFLAGS}
-echo "    X_CFLAGS:   " ${X_CFLAGS}
-echo "    LDFLAGS:    " ${LDFLAGS}
+echo "    Host:     " ${ac_cv_host}
+echo "    Compiler: " ${CC}
+echo "    CFLAGS:   " ${CFLAGS}
+echo "    X_CFLAGS: " ${X_CFLAGS}
+echo "    LDFLAGS:  " ${LDFLAGS}
 echo
 echo "* Enabled/disabled components:"
 for comp in \
