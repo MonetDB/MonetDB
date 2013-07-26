@@ -2104,6 +2104,7 @@ if test x"$have_curl" = x"yes" ; then
 	AC_DEFINE(HAVE_CURL, 1, [Define if you have the cURL library])
 	AC_SUBST(PKG_CURL, libcurl)
 fi
+AM_CONDITIONAL(HAVE_CURL, test x"$have_curl" != xno)
 
 PKG_CHECK_MODULES([zlib], [zlib], [have_zlib="yes"], [have_zlib="no"; why_have_zlib="(zlib not found)"])
 if test x"$have_zlib" = x"yes" ; then

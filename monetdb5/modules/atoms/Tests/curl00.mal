@@ -1,0 +1,8 @@
+
+a:="http://localhost:8998/";
+b:str:= mcurl.getrequest(a);
+io.print(b);
+
+#a:="http://www.example.com/";
+#b:str:= mcurl.getrequest(a);
+#io.print(b);
