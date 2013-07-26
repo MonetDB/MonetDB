@@ -1007,6 +1007,7 @@ SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output)
 		sql_rel *r;
 		stmt *s;
 		int oldvtop, oldstop;
+		MalStkPtr oldglb = c->glb;
 
 		if (!m->sa)
 			m->sa = sa_create();
@@ -1023,6 +1024,7 @@ SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output)
 			execute = 0;
 			if (!err)
 				continue;
+			c->glb = oldglb;
 			goto endofcompile;
 		}
 
@@ -1033,10 +1035,6 @@ SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output)
 		 * optimize and produce code.
 		 * We don;t search the cache for a previous incarnation yet.
 		 */
-		if (c->glb) {
-			/* MSinitClientPrg clears c->glb, so free it here */
-			_DELETE(c->glb);
-		}
 		MSinitClientPrg(c,"user",nme);
 		oldvtop = c->curprg->def->vtop;
 		oldstop = c->curprg->def->stop;
@@ -1054,6 +1052,7 @@ SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output)
 			MSresetInstructions(c->curprg->def, oldstop);
 			freeVariables(c,c->curprg->def, c->glb, oldvtop);
 			c->curprg->def->errors = 0;
+			c->glb = oldglb;
 			goto endofcompile;
 		}
 		/* generate MAL code */
@@ -1068,6 +1067,7 @@ SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output)
 			freeVariables(c,c->curprg->def, c->glb, oldvtop);
 			c->curprg->def->errors = 0;
 			msg = createException(SQL, "SQLparser","Errors encountered in query");
+			c->glb = oldglb;
 			goto endofcompile;
 		}
 
@@ -1084,11 +1084,14 @@ SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output)
 			freeVariables(c,c->curprg->def, c->glb, oldvtop);
 		}
 		sqlcleanup(m, 0);
-		if (!execute)
+		if (!execute) {
+			c->glb = oldglb;
 			goto endofcompile;
+		}
 #ifdef _SQL_COMPILE
 	mnstr_printf(c->fdout, "#parse/execute result %d\n", err);
 #endif
+		c->glb = oldglb;
 	}
 /*
  * @-
