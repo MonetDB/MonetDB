@@ -2286,7 +2286,8 @@ AM_CONDITIONAL(HAVE_MSEED, test x"$have_mseed" != xno)
 
 
 # geotiff
-have_geotiff="auto"
+org_have_geotiff="auto"
+have_geotiff=$org_have_geotiff
 AC_ARG_WITH(geotiff,
     AS_HELP_STRING([--with-geotiff=DIR],[geotiff library is installed in DIR]),
     [have_geotiff="$withval"], [have_geotiff="auto"])
@@ -2334,10 +2335,12 @@ if test "x$have_geotiff" != xno && test "x$have_geotiff" != xpkgconf; then
 			[AC_DEFINE(HAVE_GEOTIFF, 1, [Define if you have the geotiff library])
 			 have_geotiff=yes
 			 LIBS="$LIBS -lgeotiff"],
-			[ if test "x$have_geotiff" != xauto; then AC_MSG_ERROR([-lgeotiff library not found]); fi; have_geotiff=no ],
+			[ if test "x$have_geotiff" != xauto; then AC_MSG_ERROR([-lgeotiff library not found]); fi
+			  have_geotiff=no; why_have_geotiff="(geotiff library not found)" ],
 			[$MATH_LIBS])
 	else
-		if test "x$have_geotiff" != xauto; then AC_MSG_ERROR([xtiffio.h header not found]); fi; have_geotiff=no
+		if test "x$have_geotiff" != xauto; then AC_MSG_ERROR([xtiffio.h header not found]); fi
+		have_geotiff=no; why_have_geotiff="(xtiffio.h header not found)"
 	fi
 	GEOTIFF_LIBS="$GEOTIFF_LIBS $LIBS"
 	LDFLAGS="$save_LDFLAGS"
@@ -2353,7 +2356,8 @@ AC_SUBST(geotiff_LIBS, $GEOTIFF_LIBS)
 AM_CONDITIONAL(HAVE_GEOTIFF, test x"$have_geotiff" != xno)
 
 # gdal
-have_gdal="auto"
+org_have_gdal="auto"
+have_gdal=$org_have_gdal
 AC_ARG_WITH(gdal,
     AS_HELP_STRING([--with-gdal=DIR],[gdal library is installed in DIR]),
     [have_gdal="$withval"], [have_gdal="auto"])
@@ -2393,10 +2397,12 @@ if test "x$have_gdal" != xno && test "x$have_gdal" != xpkgconf; then
 			[AC_DEFINE(HAVE_GDAL, 1, [Define if you have the gdal library])
 			 have_gdal=yes
 			 LIBS="$LIBS -lgdal"],
-			[ if test "x$have_gdal" != xauto; then AC_MSG_ERROR([-lgdal library not found]); fi; have_gdal=no ],
+			[ if test "x$have_gdal" != xauto; then AC_MSG_ERROR([-lgdal library not found]); fi
+			  have_gdal=no; why_have_gdal="(gdal library not found)" ],
 			[$MATH_LIBS])
 	else
-		if test "x$have_gdal" != xauto; then AC_MSG_ERROR([gdal.h header not found]); fi; have_gdal=no
+		if test "x$have_gdal" != xauto; then AC_MSG_ERROR([gdal.h header not found]); fi
+		have_gdal=no; why_have_gdal="(gdal.h header not found)"
 	fi
 	GDAL_LIBS="$GDAL_LIBS $LIBS"
 	LDFLAGS="$save_LDFLAGS"
@@ -3329,6 +3335,8 @@ for comp in \
 	'bz2         ' \
 	'cfitsio     ' \
 	'curl        ' \
+	'gdal        ' \
+	'geotiff     ' \
 	'geos        ' \
 	'getaddrinfo ' \
 	'hwcounters  ' \
