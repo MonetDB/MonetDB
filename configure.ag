@@ -3200,8 +3200,6 @@ for comp in \
 	jaql \
 	geom \
 	fits \
-	geotiff \
-	gdal \
 	rdf \
 	datacell \
 	odbc \
