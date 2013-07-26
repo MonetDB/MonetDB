@@ -1071,7 +1071,8 @@ AC_PROG_LN_S
 
 AC_CHECK_PROGS(RPMBUILD,rpmbuild rpm)
 
-have_perl=auto
+org_have_perl=auto
+have_perl=$org_have_perl
 PERL=perl
 AC_ARG_WITH(perl,
 	AS_HELP_STRING([--with-perl=FILE], [perl is installed as FILE]),
@@ -1093,6 +1094,7 @@ if test "x$have_perl" != xno; then
 				AC_MSG_ERROR([No Perl executable found])
 			fi
 			have_perl=no
+			why_have_perl="(no Perl executable found)"
 		fi
 	fi
 fi
@@ -1130,9 +1132,11 @@ AC_SUBST(PERL_LIBDIR)
 # check if python2 and python3 exist
 # if python2 or python3 doesn't exist, use python if major matches
 
-have_python2=auto
+org_have_python2=auto
+have_python2=$org_have_python2
 PYTHON2=python2
-have_python3=auto
+org_have_python3=auto
+have_python3=$org_have_python3
 PYTHON3=python3
 
 AC_ARG_WITH(python2,
@@ -1187,6 +1191,7 @@ if test "x$have_python2" != xno; then
 				AC_MSG_ERROR([Python 2 executable not found])
 			else
 				have_python2=no
+				why_have_python2="(Python 2 executable not found)"
 			fi
 		fi
 	fi
@@ -1249,6 +1254,7 @@ if test "x$have_python3" != xno; then
 				AC_MSG_ERROR([Python3 executable not found])
 			else
 				have_python3=no
+				why_have_python2="(Python 3 executable not found)"
 			fi
 		fi
 	fi
@@ -1351,7 +1357,8 @@ esac
 AC_SUBST(RUBY_DIR)
 
 RUBYGEM=gem
-have_rubygem=auto
+org_have_rubygem=auto
+have_rubygem=$org_have_rubygem
 AC_ARG_WITH(rubygem,
 	AS_HELP_STRING([--with-rubygem=FILE], [ruby gem is installed as FILE]),
 	have_rubygem="$withval")
@@ -1372,6 +1379,7 @@ if test "x$have_rubygem" != xno; then
 			AC_MSG_ERROR([No rubygem executable found])
 		fi
 		have_rubygem=no
+		why_have_rubygem="(no rubygem executable found)"
 	fi
 fi
 AC_SUBST(RUBYGEM)
@@ -1539,11 +1547,12 @@ JAVA="java"
 JAVAC="javac"
 JAR="jar"
 JAVADOC="javadoc"
+org_have_java=auto
 AC_ARG_WITH(java,
 	AS_HELP_STRING([--with-java=DIR],
 		[java, javac, jar and javadoc are installed in DIR/bin]),
 	have_java="$withval",
-	have_java=auto)
+	have_java=$org_have_java)
 JPATH=$PATH
 case $have_java in
 yes|no|auto)
@@ -1569,11 +1578,13 @@ if test "x$have_java" != xno; then
 			AC_MSG_ERROR([No javac found])
 		fi
 		have_java=no
+		why_have_java="(no javac found)"
 	elif test "x$JAR" = "x"; then
-		 if test "x$have_java" = xyes; then
+		if test "x$have_java" = xyes; then
 			AC_MSG_ERROR([No jar found])
-		 fi
-		 have_java=no
+		fi
+		have_java=no
+		why_have_java="(no jar found)"
 	else
 		 have_java=yes
 	fi
@@ -1589,6 +1600,7 @@ if test "x$have_java" != xno; then
 	fi
 	if test x"$ANT" = xno; then
 		have_java="no"
+		why_have_java="(no ant found)"
 	fi
 fi
 AC_SUBST(JAVA_VERSION)
@@ -1599,7 +1611,8 @@ AC_SUBST(JAVADOC)
 AC_SUBST(CLASSPATH)
 AC_SUBST(JAVA_HOME)
 
-have_java_jdbc=no
+org_have_java_jdbc=no
+have_java_jdbc=$org_have_java_jdbc
 case $have_java-$enable_jdbc in
 *-no)
 	;;
@@ -1629,7 +1642,8 @@ no-*)
 esac
 AM_CONDITIONAL(HAVE_JAVAJDBC,test x$have_java_jdbc != xno)
 
-have_java_control=no
+org_have_java_control=no
+have_java_control=$org_have_java_control
 case $have_java-$enable_control in
 *-no)
 	;;
@@ -1663,12 +1677,16 @@ AM_CONDITIONAL(HAVE_JAVAMEROCONTROL,test x$have_java_control != xno)
 if test x$have_java_jdbc = xno -a x$have_java_control = xno; then
 	# no point doing anything with Java if all Java packages are disabled
 	have_java=no
+	if test x$why_have_java = x ; then
+		why_have_java="(have_java_jdbc = no && have_java_control = no)"
+	fi
 fi
 AM_CONDITIONAL(HAVE_JAVA,test x$have_java != xno)
 
 dnl     checks for libraries
 dnl check for bz2 (de)compression library
-have_bz2=auto
+org_have_bz2=auto
+have_bz2=$org_have_bz2
 BZ_CFLAGS=""
 BZ_LIBS=""
 AC_ARG_WITH(bz2,
@@ -1693,7 +1711,11 @@ if test "x$have_bz2" != xno; then
 	AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <stdio.h>
 #include <bzlib.h>]], [[(void)BZ2_bzopen("","");]])],
 		BZ_LIBS="$BZ_LIBS -lbz2",
-		[ if test "x$have_bz2" != xauto; then AC_MSG_ERROR([bz2 library not found]); fi; have_bz2=no ])
+		[ if test "x$have_bz2" != xauto; then
+			AC_MSG_ERROR([bz2 library not found])
+		  fi
+		  have_bz2=no
+		  why_have_bz2="(bz2 library not found)" ])
 	LIBS="$save_LIBS"
 	CPPFLAGS="$save_CPPFLAGS"
 fi
@@ -1737,7 +1759,8 @@ AC_CHECK_FUNC(mallinfo, AC_TRY_COMPILE([$ac_includes_default
 LIBS="$save_LIBS"
 
 dnl libpthread
-have_pthread=auto
+org_have_pthread=auto
+have_pthread=$org_have_pthread
 PTHREAD_LIBS=""
 PTHREAD_INCS=""
 PTHREAD_EXTRA=""
@@ -1814,6 +1837,7 @@ if test "x$have_pthread" != xno; then
 					AC_MSG_ERROR([pthread library not found])
 				fi
 				have_pthread=no
+				why_have_pthread="(pthread library not found)"
 			fi
 			PTHREAD_LIBS="$LIBS"
 		;;
@@ -1856,7 +1880,8 @@ AC_SUBST(PTHREAD_LIBS)
 AC_SUBST(PTHREAD_INCS)
 
 dnl libreadline
-have_readline=auto
+org_have_readline=auto
+have_readline=$org_have_readline
 READLINE_LIBS=""
 READLINE_INCS=""
 AC_ARG_WITH(readline,
@@ -1888,13 +1913,17 @@ if test "x$have_readline" != xno; then
 					READLINE_LIBS="$READLINE_LIBS -lreadline -lncurses",
 					[ if test "x$have_readline" = xyes; then
 						AC_MSG_ERROR([readline library not found])
-					  fi; have_readline=no ],
+					  fi
+					  have_readline=no
+					  why_have_readline="(readline library not found)" ],
 					-lncurses)],
 				-ltermcap)],
 			),
 		[ if test "x$have_readline" = xyes; then
 			AC_MSG_ERROR([readline header file not found])
-		  fi; have_readline=no ])
+		  fi
+		  have_readline=no
+		  why_have_readline="(readline header file not found)" ])
 fi
 
 if test "x$have_readline" != xno; then
@@ -1906,8 +1935,18 @@ if test "x$have_readline" != xno; then
 #include <readline/readline.h>],[
 	rl_completion_func_t *func = NULL;],
 			[AC_MSG_RESULT([yes])],
-			[ if test "x$have_readline" != xauto; then AC_MSG_ERROR([readline/readline.h does not contain rl_completion_func_t, is it GNU readline?]); else AC_MSG_RESULT([no]); fi; have_readline=no ])],
-		[ if test "x$have_readline" != xauto; then AC_MSG_ERROR([readline library does not contain rl_completion_matches]); fi; have_readline=no ],
+			[ if test "x$have_readline" != xauto; then
+				AC_MSG_ERROR([readline/readline.h does not contain rl_completion_func_t, is it GNU readline?])
+			  else
+				AC_MSG_RESULT([no])
+			  fi
+			  have_readline=no
+			  why_have_readline="(readline/readline.h does not contain rl_completion_func_t, is it GNU readline?)" ])],
+		[ if test "x$have_readline" != xauto; then
+			AC_MSG_ERROR([readline library does not contain rl_completion_matches])
+		  fi
+		  have_readline=no
+		  why_have_readline="(readline library does not contain rl_completion_matches)" ],
 		  $READLINE_LIBS)
 fi
 CPPFLAGS="$save_CPPFLAGS"
@@ -1947,7 +1986,7 @@ dnl OpenSSL library
 dnl required for MonetDB5 (and SQL), optional otherwise
 PKG_CHECK_MODULES([openssl], [openssl],
 	[have_openssl=yes],
-	[have_openssl=no])
+	[have_openssl=no; why_have_openssl="(OpenSSL library not found)"])
 case "$enable_monetdb5-$have_openssl" in
 yes-no)
 	AC_MSG_ERROR([OpenSSL library not found but required for MonetDB5])
@@ -1979,6 +2018,7 @@ auto-no)
 			;;
 		esac
 		have_openssl=no
+		why_have_openssl="(OpenSSL library found but required checksum algorithm not found)"
 	fi
 	;;
 esac
@@ -1990,7 +2030,7 @@ dnl PCRE library
 dnl required for MonetDB5 (and SQL), optional otherwise
 req_pcre_ver='4.5'
 PKG_CHECK_MODULES([pcre], [libpcre >= $req_pcre_ver],
-	[have_pcre=yes], [have_pcre=no])
+	[have_pcre=yes], [have_pcre=no; why_have_pcre="(libpcre >= $req_pcre_ver not found)"])
 if test "x$have_pcre" = xyes; then
 	AC_MSG_CHECKING(whether pcre comes with UTF-8 support)
 	save_LIBS="$LIBS"
@@ -2001,7 +2041,7 @@ if test "x$have_pcre" = xyes; then
 		[[#include <pcre.h>]],
 		[[int rc; pcre_config(PCRE_CONFIG_UTF8, &rc); exit(!rc);]])],
 		AC_MSG_RESULT([yes]),
-		have_pcre=no; AC_MSG_RESULT([no]),
+		have_pcre=no; why_have_pcre="(libpcre found but no UTF-8 support)"; AC_MSG_RESULT([no]),
 		AC_MSG_RESULT([assuming yes]))
 	LIBS="$save_LIBS"
 	CFLAGS="$save_CFLAGS"
@@ -2023,7 +2063,7 @@ auto-no)
 esac
 
 
-PKG_CHECK_MODULES([libxml2], [libxml-2.0], [have_libxml2="yes"], [have_libxml2="no"])
+PKG_CHECK_MODULES([libxml2], [libxml-2.0], [have_libxml2="yes"], [have_libxml2="no"; why_have_libxml2="(libxml2 not found)"])
 case "$enable_monetdb5-$have_libxml2" in
 yes-no)
 	AC_MSG_ERROR([libxml2 library not found but required for MonetDB5])
@@ -2037,33 +2077,36 @@ auto-no)
 esac
 
 
-have_raptor=no
+org_have_raptor=no
+have_raptor=$org_have_raptor
 if test "x$enable_rdf" != xno; then
 	req_raptor_ver='1.4.16'
 	PKG_CHECK_MODULES([raptor], [raptor],
 		[AC_DEFINE(HAVE_RAPTOR, 1, [Define if you have raptor installed])
 		 have_raptor="yes"],
 		[if test "x$enable_rdf" = xyes; then AC_MSG_ERROR([raptor library required for RDF support]); fi
-		 have_raptor="no"; enable_rdf=no; disable_rdf="(raptor library not found)"])
+		 have_raptor="no"; why_have_raptor="(raptor library not found)"
+		 enable_rdf=no; disable_rdf="(raptor library not found)"])
 fi
 AM_CONDITIONAL(HAVE_RAPTOR, test x"$have_raptor" != xno)
 
 AM_CONDITIONAL(ENABLE_DATACELL, test x"$enable_datacell" != xno)
 
-PKG_CHECK_MODULES([curl], [libcurl], [have_curl="yes"], [have_curl="no"])
+PKG_CHECK_MODULES([curl], [libcurl], [have_curl="yes"], [have_curl="no"; why_have_curl="(libcurl not found)"])
 if test x"$have_curl" = x"yes" ; then
 	AC_DEFINE(HAVE_CURL, 1, [Define if you have the cURL library])
 	AC_SUBST(PKG_CURL, libcurl)
 fi
 
-PKG_CHECK_MODULES([zlib], [zlib], [have_zlib="yes"], [have_zlib="no"])
+PKG_CHECK_MODULES([zlib], [zlib], [have_zlib="yes"], [have_zlib="no"; why_have_zlib="(zlib not found)"])
 if test x"$have_zlib" = x"yes" ; then
 	AC_DEFINE(HAVE_LIBZ, 1, [Define if you have the z library])
 	AC_SUBST(PKG_ZLIB, zlib)
 fi
 AM_CONDITIONAL(HAVE_LIBZ, test x"$have_zlib" != xno)
 
-have_valgrind=no
+org_have_valgrind=no
+have_valgrind=$org_have_valgrind
 AC_ARG_WITH(valgrind,
 	AS_HELP_STRING([--with-valgrind],
 		[include valgrind support (default=no)]),
@@ -2075,7 +2118,8 @@ if test "x$have_valgrind" != xno; then
 fi
 
 # check for sphinxclient
-have_sphinxclient="auto"
+org_have_sphinxclient="auto"
+have_sphinxclient=$org_have_sphinxclient
 AC_ARG_WITH(sphinxclient,
     AS_HELP_STRING([--with-sphinxclient=DIR],[sphinxclient library is installed in DIR]),
     [have_sphinxclient="$withval"], [have_sphinxclient="auto"])
@@ -2098,8 +2142,10 @@ if test "x$have_sphinxclient" != xno; then
 			AC_DEFINE(HAVE_SPHINXCLIENT, 1, [Define if you have the sphinxclient library])
 			have_sphinxclient=yes
 			SPHINXCLIENT_LIBS="$SPHINXCLIENT_LIBS -lsphinxclient",
-			[ if test "x$have_sphinxclient" != xauto; then AC_MSG_ERROR([-lsphinxclient library not found]); fi; have_sphinxclient=no ]),
-		[ if test "x$have_sphinxclient" != xauto; then AC_MSG_ERROR([sphinxclient.h header not found]); fi; have_sphinxclient=no ])
+			[ if test "x$have_sphinxclient" != xauto; then AC_MSG_ERROR([-lsphinxclient library not found]); fi
+			  have_sphinxclient=no; why_have_sphinxclient="(sphinxclient library not found)" ]),
+		[ if test "x$have_sphinxclient" != xauto; then AC_MSG_ERROR([sphinxclient.h header not found]); fi
+		  have_sphinxclient=no; why_have_sphinxclient="(sphinxclient.h header not found)" ])
 	LDFLAGS="$save_LDFLAGS"
 	CPPFLAGS="$save_CPPFLAGS"
 fi
@@ -2131,7 +2177,8 @@ if test "x$enable_odbc" != xno; then
 		CPPFLAGS="$CPPFLAGS $ODBC_INCS"
 		AC_CHECK_HEADER(odbcinst.h,
 			AC_DEFINE(HAVE_ODBCINST_H, 1, [Define to 1 if you have the <odbcinst.h> header file.]),
-			[if test "x$have_unixodbc" != xauto; then AC_MSG_ERROR([odbcinst.h not found]); fi; have_unixodbc=no])
+			[if test "x$have_unixodbc" != xauto; then AC_MSG_ERROR([odbcinst.h not found]); fi
+			 have_unixodbc=no; why_have_unixodbc="(odbcinst.h not found)"])
 		CPPFLAGS="$save_CPPFLAGS"
 	fi
 	if test "x$have_unixodbc" != xno; then
@@ -2139,7 +2186,8 @@ if test "x$enable_odbc" != xno; then
 		LIBS="$LIBS $ODBCINST_LIBS"
 		AC_CHECK_LIB(odbcinst,
 			SQLGetPrivateProfileString, :,
-			[if test "x$have_unixodbc" != xauto; then AC_MSG_ERROR([-lodbcinst not found]); fi; have_unixodbc=no])
+			[if test "x$have_unixodbc" != xauto; then AC_MSG_ERROR([-lodbcinst not found]); fi
+			 have_unixodbc=no; why_have_unixodbc="(odbcinst library not found)"])
 		LIBS="$save_LIBS"
 	fi
 	if test "x$have_unixodbc" != xno; then
@@ -2147,7 +2195,8 @@ if test "x$enable_odbc" != xno; then
 		LIBS="$LIBS $ODBC_LIBS"
 		AC_CHECK_LIB(odbc,
 			SQLGetDiagRec, :,
-			[if test "x$have_unixodbc" != xauto; then AC_MSG_ERROR([-lodbc not found]); fi; have_unixodbc=no])
+			[if test "x$have_unixodbc" != xauto; then AC_MSG_ERROR([-lodbc not found]); fi
+			 have_unixodbc=no; why_have_unixodbc="(odbc library not found)"])
 		LIBS="$save_LIBS"
 	fi
 	if test "x$have_unixodbc" != xno; then
@@ -2192,11 +2241,13 @@ if test "x$enable_odbc" != xno; then
 	esac
 else
 	have_unixodbc=no
+	why_have_unixodbc="(ODBC disabled)"
 fi
 AM_CONDITIONAL(HAVE_ODBC, test x$have_unixodbc != xno)
 
 # mseed, only used by sql
-have_mseed="auto"
+org_have_mseed="auto"
+have_mseed=$org_have_mseed
 AC_ARG_WITH(mseed,
     AS_HELP_STRING([--with-mseed=DIR],[mseed library is installed in DIR]),
     [have_mseed="$withval"], [have_mseed="auto"])
@@ -2218,8 +2269,10 @@ if test "x$have_mseed" != xno; then
 	AC_CHECK_HEADER(libmseed.h,
 		AC_CHECK_LIB(mseed, msr_init,
 			AC_DEFINE(HAVE_MSEED, 1, [Define if you have the mseed library]),
-			[ if test "x$have_mseed" != xauto; then AC_MSG_ERROR([-lmseed library not found]); fi; have_mseed=no ], "-lm"),
-		[ if test "x$have_mseed" != xauto; then AC_MSG_ERROR([libmseed.h header not found]); fi; have_mseed=no ])
+			[ if test "x$have_mseed" != xauto; then AC_MSG_ERROR([-lmseed library not found]); fi
+			  have_mseed=no; why_have_mseed="(mseed library not found)" ], "-lm"),
+		[ if test "x$have_mseed" != xauto; then AC_MSG_ERROR([libmseed.h header not found]); fi
+		  have_mseed=no; why_have_mseed="(libmseed.h header not found)" ])
 	LDFLAGS="$save_LDFLAGS"
 	CPPFLAGS="$save_CPPFLAGS"
   if test "x$have_mseed" = "xyes" -o "x$have_mseed" = "xauto"; then
@@ -2232,7 +2285,8 @@ AC_SUBST(MSEED_LIBS, $MSEED_LIBS)
 AM_CONDITIONAL(HAVE_MSEED, test x"$have_mseed" != xno)
 
 # geos, only used in geom module
-have_geos=auto
+org_have_geos=auto
+have_geos=$org_have_geos
 GEOS_INCS=''
 GEOS_LIBS=''
 AC_ARG_WITH(geos,
@@ -2260,6 +2314,7 @@ yes|auto)
 				AC_MSG_ERROR([geos-config not found in $XPATH])
 			else
 				have_geos=no
+				why_have_geos="(geos-config not found in $XPATH)"
 			fi
 		fi
 	fi
@@ -2272,6 +2327,7 @@ yes|auto)
 				AC_MSG_ERROR([geos version $GEOS_VERSION is too old])
 			else
 				have_geos=no
+				why_have_geos="(geos version $GEOS_VERSION is older than required version $GEOS_VERSION_REQUIRED_MIN)"
 			fi
 		fi
 	fi
@@ -2298,11 +2354,13 @@ esac
 AC_SUBST(GEOS_INCS)
 AC_SUBST(GEOS_LIBS)
 
-have_cfitsio=no
+org_have_cfitsio=no
+have_cfitsio=$org_have_cfitsio
 if test "x$enable_fits" != xno; then
 	PKG_CHECK_MODULES([cfitsio], [cfitsio],
 		[have_cfitsio=yes; AC_DEFINE(HAVE_CFITSIO, 1, [Define if you have the cfitsio library])],
-		[have_cfitsio=no; if test "x$enable_fits" = xyes; then AC_MSG_ERROR([cfitsio library required for FITS support]); fi;
+		[have_cfitsio=no; why_have_cfitsio="(cfitsio library not found)"
+		 if test "x$enable_fits" = xyes; then AC_MSG_ERROR([cfitsio library required for FITS support]); fi;
 		 enable_fits=no; disable_fits="(cfitsio library not found)"])
 fi
 AM_CONDITIONAL(HAVE_CFITSIO, test x"$have_cfitsio" != xno)
@@ -2376,11 +2434,13 @@ AC_CHECK_HEADERS([sys/sysctl.h], [], [],
 
 
 SOCKET_LIBS=""
-have_setsockopt=no
+org_have_setsockopt=no
+have_setsockopt=$org_have_setsockopt
 
 case "$host_os" in
 	*mingw*)
-		AC_CHECK_HEADERS([winsock2.h],[have_winsock2=yes],[have_winsock2=no])
+		AC_CHECK_HEADERS([winsock2.h],[have_winsock2=yes],
+			[have_winsock2=no; why_have_winsock2="(winsock2.h header not found)"])
 		save_LIBS="$LIBS"
 		LIBS="$LIBS -lws2_32"
 		AC_MSG_CHECKING(for setsockopt in winsock2)
@@ -2404,7 +2464,8 @@ if test "x$have_setsockopt" = xno; then
 	  AC_CHECK_LIB(socket, setsockopt, [ SOCKET_LIBS="-lsocket $SOCKET_LIBS"; have_setsockopt=yes; ]))
 fi
 
-have_getaddrinfo=no
+org_have_getaddrinfo=no
+have_getaddrinfo=$org_have_getaddrinfo
 save_LIBS="$LIBS"
 LIBS="$LIBS $SOCKET_LIBS"
 
@@ -2651,7 +2712,8 @@ fi
 
 dnl     checks for system services
 dnl hwcounters
-have_hwcounters=auto
+org_have_hwcounters=auto
+have_hwcounters=$org_have_hwcounters
 HWCOUNTERS_LIBS=""
 HWCOUNTERS_INCS=""
 AC_ARG_WITH(hwcounters,
@@ -2675,6 +2737,7 @@ if test "x$have_hwcounters" != xno; then
 	save_LIBS="$LIBS"
 	LIBS="$LIBS $HWCOUNTERS_LIBS"
 	have_hwcounters=no
+	why_have_hwcounters="(no supported harwdware counters interface found)"
 	case "$host_os-$host" in
 	linux*-i?86*|linux*-x86_64*)
 		AC_CHECK_HEADERS( libperfctr.h ,
@@ -3086,20 +3149,15 @@ echo "    CFLAGS:   " ${CFLAGS}
 echo "    X_CFLAGS: " ${X_CFLAGS}
 echo "    LDFLAGS:  " ${LDFLAGS}
 echo
-echo "* Enabled/disabled components:"
+echo "* Enabled/disabled build options:"
 for comp in \
-	gdk \
-	monetdb5 \
-	sql \
-	jaql \
-	geom \
-	fits \
-	rdf \
-	datacell \
-	odbc \
-	jdbc \
-	control \
-	testing \
+        'strict    ' \
+        'assert    ' \
+        'debug     ' \
+        'optimize  ' \
+        'developer ' \
+	'instrument' \
+	'profile   ' \
 ; do
 	eval "dft=\$dft_$comp"
 	eval "enable=\$enable_$comp"
@@ -3109,11 +3167,77 @@ for comp in \
 		-no-*)	disable="(by command line option)";;
 	esac
 	echo $ECHO_N "    $comp is $ECHO_C"
-	if test "x$enable" = xno ; then echo "${ECHO_T}disabled $disable"; else echo "${ECHO_T}enabled"; fi
+	if test "x$enable" = xno ; then echo "disabled $disable"; else echo "enabled"; fi
+done
+echo
+echo "* Enabled/disabled components:"
+for comp in \
+	'gdk     ' \
+	'monetdb5' \
+	'sql     ' \
+	'jaql    ' \
+	'geom    ' \
+	'fits    ' \
+	'rdf     ' \
+	'datacell' \
+	'odbc    ' \
+	'jdbc    ' \
+	'control ' \
+	'testing ' \
+; do
+	eval "dft=\$dft_$comp"
+	eval "enable=\$enable_$comp"
+	eval "disable=\$disable_$comp"
+	case "$disable-$enable-$dft" in
+		-no-no)	disable="(by default)";;
+		-no-*)	disable="(by command line option)";;
+	esac
+	echo $ECHO_N "    $comp is $ECHO_C"
+	if test "x$enable" = xno ; then echo "disabled $disable"; else echo "enabled"; fi
+done
+echo
+echo "* Available features/extensions:"
+for comp in \
+	'bz2         ' \
+	'cfitsio     ' \
+	'curl        ' \
+	'geos        ' \
+	'getaddrinfo ' \
+	'hwcounters  ' \
+	'java        ' \
+	'java_control' \
+	'java_jdbc   ' \
+	'libxml2     ' \
+	'mseed       ' \
+	'openssl     ' \
+	'pcre        ' \
+	'perl        ' \
+	'pthread     ' \
+	'python2     ' \
+	'python3     ' \
+	'raptor      ' \
+	'readline    ' \
+	'rubygem     ' \
+	'setsockopt  ' \
+	'sphinxclient' \
+	'unixodbc    ' \
+	'valgrind    ' \
+	'winsock2    ' \
+	'zlib        ' \
+; do
+	eval "org=\$org_have_$comp"
+	eval "have=\$have_$comp"
+	eval "why=\$why_have_$comp"
+	case "$why-$have-$org" in
+		-no-no)	why="(by default)";;
+		-no-*)	why="(by command line option)";;
+	esac
+	echo $ECHO_N "    $comp = $ECHO_C"
+	if test "x$have" != xno ; then echo "yes"; else echo "no  $why"; fi
 done
 echo
 echo "* Important options:"
-echo "    OID size:   " ${oids} bits
+echo "    OID size: " ${oids} bits
 echo
 
 dnl give some hints to the user
