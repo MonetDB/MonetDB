@@ -102,7 +102,7 @@ request_completed (void *cls, struct MHD_Connection *connection,
 	(void)connection;
 	(void)toe;
 
-	if (NULL == con_info)
+	if (con_info == NULL)
 		return;
 
 	if (con_info->connectiontype == POST)
@@ -168,7 +168,7 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
 	}
 
 	rest = (*http_handler)(url, method, &page, con_info->answerstring);
-	if (rest) {};
+	(void)rest;
 	response =
 		MHD_create_response_from_buffer (strlen (page), (void *) page,
 										 MHD_RESPMEM_MUST_COPY);
