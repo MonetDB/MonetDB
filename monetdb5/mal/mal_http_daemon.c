@@ -30,15 +30,6 @@
 #include "mal_http_daemon.h"
 #ifdef HAVE_MICROHTTPD
 #include <microhttpd.h>
-/*#include "rest_jsonstore.h"*/
-#endif
-
-/*
-void startHttpdaemon(void);
-void stopHttpdaemon(void);
-*/
-
-#ifdef HAVE_MICROHTTPD
 
 static MT_Id hdthread;
 static int volatile hdrunning;
@@ -55,14 +46,14 @@ static
 http_request_handler http_handler;
 
 void register_http_handler(http_request_handler handler) {
-  http_handler = handler;
+	http_handler = handler;
 }
 
 struct connection_info_struct
 {
-  int connectiontype;
-  char *answerstring;
-  struct MHD_PostProcessor *postprocessor;
+	int connectiontype;
+	char *answerstring;
+	struct MHD_PostProcessor *postprocessor;
 };
 
 static int
@@ -71,58 +62,58 @@ iterate_post (void *coninfo_cls, enum MHD_ValueKind kind, const char *key,
               const char *transfer_encoding, const char *data, uint64_t off,
               size_t size)
 {
-  struct connection_info_struct *con_info = coninfo_cls;
+	struct connection_info_struct *con_info = coninfo_cls;
 
-  if (key) {};
-  if (kind) {};
-  if (filename) {};
-  if (content_type) {};
-  if (transfer_encoding) {};
-  if (off) {};
+	(void)key;
+	(void)kind;
+	(void)filename;
+	(void)content_type;
+	(void)transfer_encoding;
+	(void)off;
 
-  if (strcmp (key, "json") == 0)
+	if (strcmp (key, "json") == 0)
     {
-      if ((size > 0) && (size <= MAXNAMESIZE))
+		if ((size > 0) && (size <= MAXNAMESIZE))
         {
-          char *answerstring;
-          answerstring = malloc (MAXANSWERSIZE);
-          if (!answerstring)
-            return MHD_NO;
+			char *answerstring;
+			answerstring = malloc (MAXANSWERSIZE);
+			if (!answerstring)
+				return MHD_NO;
 
-          snprintf (answerstring, MAXANSWERSIZE, "%s", data);
-          con_info->answerstring = answerstring;
+			snprintf (answerstring, MAXANSWERSIZE, "%s", data);
+			con_info->answerstring = answerstring;
         }
-      else
-        con_info->answerstring = NULL;
+		else
+			con_info->answerstring = NULL;
 
-      return MHD_NO;
+		return MHD_NO;
     }
 
-  return MHD_YES;
+	return MHD_YES;
 }
 
 static void
 request_completed (void *cls, struct MHD_Connection *connection,
                    void **con_cls, enum MHD_RequestTerminationCode toe)
 {
-  struct connection_info_struct *con_info = *con_cls;
+	struct connection_info_struct *con_info = *con_cls;
 
-  if (cls) {};
-  if (connection) {};
-  if (toe) {};
+	(void)cls;
+	(void)connection;
+	(void)toe;
 
-  if (NULL == con_info)
-    return;
+	if (NULL == con_info)
+		return;
 
-  if (con_info->connectiontype == POST)
+	if (con_info->connectiontype == POST)
     {
-      MHD_destroy_post_processor (con_info->postprocessor);
-      if (con_info->answerstring)
-        free (con_info->answerstring);
+		MHD_destroy_post_processor (con_info->postprocessor);
+		if (con_info->answerstring)
+			free (con_info->answerstring);
     }
 
-  free (con_info);
-  *con_cls = NULL;
+	free (con_info);
+	*con_cls = NULL;
 }
 
 static int
@@ -131,85 +122,76 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
                       const char *version, const char *upload_data,
                       size_t *upload_data_size, void **con_cls)
 {
-  struct MHD_Response *response;
-  int ret;
-  int rest;
-  char * page = NULL;
-  struct connection_info_struct *con_info = *con_cls;
+	struct MHD_Response *response;
+	int ret;
+	int rest;
+	char * page = NULL;
+	struct connection_info_struct *con_info = *con_cls;
 
-  if (cls) {};
-  if (url) {};
-  if (method) {};
-  if (version) {};
-  //(void)upload_data;
-  //(void)upload_data_size;
-  //(void)con_cls;
+	(void)cls;
+	(void)url;
+	(void)method;
+	(void)version;
 
-  if (*con_cls == NULL) {
-    //struct connection_info_struct *con_info;
+	if (*con_cls == NULL) {
+		con_info = malloc (sizeof (struct connection_info_struct));
+		if (con_info == NULL)
+			return MHD_NO;
+		con_info->answerstring = NULL;
 
-    con_info = malloc (sizeof (struct connection_info_struct));
-    if (con_info == NULL)
-      return MHD_NO;
-    con_info->answerstring = NULL;
+		if (strcmp (method, "POST") == 0) {
+			con_info->postprocessor =
+				MHD_create_post_processor (connection, POSTBUFFERSIZE,
+										   iterate_post, (void *) con_info);
 
-    if (strcmp (method, "POST") == 0) {
-      con_info->postprocessor =
-	MHD_create_post_processor (connection, POSTBUFFERSIZE,
-				   iterate_post, (void *) con_info);
+			if (con_info->postprocessor == NULL) {
+				free (con_info);
+				return MHD_NO;
+			}
+			con_info->connectiontype = POST;
+		} else {
+			con_info->connectiontype = GET;
+		}
+		*con_cls = (void *) con_info;
+		return MHD_YES;
+	}
 
-      if (con_info->postprocessor == NULL) {
-	free (con_info);
-	return MHD_NO;
-      }
-      con_info->connectiontype = POST;
-    } else {
-      con_info->connectiontype = GET;
-    }
-    *con_cls = (void *) con_info;
-    return MHD_YES;
-  }
+	if (strcmp (method, "POST") == 0) {
+		if (*upload_data_size != 0) {
+			MHD_post_process (con_info->postprocessor, upload_data,
+							  *upload_data_size);
+			*upload_data_size = 0;
+		} else if (con_info->answerstring != NULL) {
+			//	return send_page (connection, con_info->answerstring);
+			//return MHD_NO;
+		}
+	}
 
-  if (strcmp (method, "POST") == 0) {
-    if (*upload_data_size != 0) {
-      MHD_post_process (con_info->postprocessor, upload_data,
-			*upload_data_size);
-      *upload_data_size = 0;
-      //return MHD_YES;
-    } else if (con_info->answerstring != NULL) {
-      //	return send_page (connection, con_info->answerstring);
-      //return MHD_NO;
-    }
-  }
+	rest = (*http_handler)(url, method, &page, con_info->answerstring);
+	if (rest) {};
+	response =
+		MHD_create_response_from_buffer (strlen (page), (void *) page,
+										 MHD_RESPMEM_MUST_COPY);
+	ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
+	MHD_destroy_response (response);
 
-  //rest = handle_http_request(url, method, &page, con_info->answerstring);
-  rest = (*http_handler)(url, method, &page, con_info->answerstring);
-  if (rest) {};
-  response =
-    MHD_create_response_from_buffer (strlen (page), (void *) page,
-				     MHD_RESPMEM_MUST_COPY);
-  ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
-  MHD_destroy_response (response);
-
-  return ret;
+	return ret;
 }
 
 static void handleHttpdaemon(void *dummy)
 {
-  //  http_daemon = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY, PORT, NULL, NULL,
-  //                         &answer_to_connection, NULL, MHD_OPTION_END);
-  http_daemon = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY, PORT, NULL, NULL,
-				  &answer_to_connection, NULL,
-				  MHD_OPTION_NOTIFY_COMPLETED, request_completed,
-				  NULL, MHD_OPTION_END);
+	http_daemon = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY, PORT, NULL, NULL,
+									&answer_to_connection, NULL,
+									MHD_OPTION_NOTIFY_COMPLETED, request_completed,
+									NULL, MHD_OPTION_END);
 
-  if (http_daemon == NULL)
-    return;
+	if (http_daemon == NULL)
+		return;
 
-  (void) dummy;
-  while (hdrunning) {
-    MT_sleep_ms(50);
-  }
+	(void) dummy;
+	while (hdrunning) {
+		MT_sleep_ms(50);
+	}
 }
 
 void startHttpdaemon(void)

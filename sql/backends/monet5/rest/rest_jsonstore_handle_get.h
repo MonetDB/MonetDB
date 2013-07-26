@@ -17,16 +17,14 @@
  * All Rights Reserved.
  */
 
-#ifndef _REST_HANDLE
-#define _REST_HANDLE
-#include "monetdb_config.h"
+#ifndef _REST_JSONSTORE_HANDLE_GET_H_
+#define _REST_JSONSTORE_HANDLE_GET_H_
 #include "mal.h"
 #include "mal_client.h"
 #include <gdk.h>
 
-/*
 #ifdef WIN32
-#ifndef LIBFITS
+#ifndef LIBRESTJSONSTORE
 #define rest_export extern __declspec(dllimport)
 #else
 #define rest_export extern __declspec(dllexport)
@@ -34,15 +32,10 @@
 #else
 #define rest_export extern
 #endif
-*/
-#ifdef WIN32
-#define rest_export extern __declspec(dllexport)
-#else
-#define rest_export extern
-#endif
+
 rest_export str RESTwelcome(char **result);
 rest_export str RESTuuid(char **result);
-rest_export str RESTAllDBs(char **result);
+rest_export str RESTallDBs(char **result);
 rest_export str RESTcreateDB(char **result, char * dbName);
 rest_export str RESTdeleteDB(char **result, char * dbName);
 rest_export str RESTcreateDoc(char **result, char * dbName, const char * doc);

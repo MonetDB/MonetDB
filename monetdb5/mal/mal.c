@@ -255,9 +255,9 @@ int mal_init(void){
 	initParser();
 	initHeartbeat();
 	initResource();
-	#ifdef HAVE_JSONSTORE
+#ifdef HAVE_JSONSTORE
 	startHttpdaemon();
-	#endif
+#endif
 	RECYCLEinit();
 	if( malBootstrap() == 0)
 		return -1;
@@ -332,9 +332,9 @@ void mal_exit(void){
 	RECYCLEdrop(mal_clients); /* remove any left over intermediates */
 	stopProfiling();
 	stopHeartbeat();
-	#ifdef HAVE_JSONSTORE
+#ifdef HAVE_JSONSTORE
 	stopHttpdaemon();
-	#endif
+#endif
 	stopMALdataflow();
 
 #if 0

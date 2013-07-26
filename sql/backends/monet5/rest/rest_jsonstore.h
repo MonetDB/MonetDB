@@ -17,25 +17,17 @@
  * All Rights Reserved.
  */
 
-#ifndef MSERVER_REST_H
-#define MSERVER_REST_H
-#include "monetdb_config.h"
+#ifndef _REST_JSONSTORE_H_
+#define _REST_JSONSTORE_H_
 #include "mal.h"
 #include "clients.h"
 
-/*
 #ifdef WIN32
-#ifndef LIBFITS
+#ifndef LIBRESTJSONSTORE
 #define rest_export extern __declspec(dllimport)
 #else
 #define rest_export extern __declspec(dllexport)
 #endif
-#else
-#define rest_export extern
-#endif
-*/
-#ifdef WIN32
-#define rest_export extern __declspec(dllexport)
 #else
 #define rest_export extern
 #endif

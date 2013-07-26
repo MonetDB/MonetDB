@@ -17,31 +17,15 @@
  * All Rights Reserved.
 */
 
-#ifndef _MAL_HTTP_DAEMON_H
-#define _MAL_HTTP_DAEMON_H
-
-/*
-#ifdef WIN32
-#ifndef LIBFITS
-#define rest_export extern __declspec(dllimport)
-#else
-#define rest_export extern __declspec(dllexport)
-#endif
-#else
-#define rest_export extern
-#endif
-*/
-#ifdef WIN32
-#define http_export extern __declspec(dllexport)
-#else
-#define http_export extern
-#endif
+#ifndef _MAL_HTTP_DAEMON_H_
+#define _MAL_HTTP_DAEMON_H_
+#include "mal.h"
 
 typedef int (*http_request_handler)
     (const char *url, const char *method, char **page, const char *);
 
-http_export void register_http_handler(http_request_handler handler);
-http_export void startHttpdaemon(void);
-http_export void stopHttpdaemon(void);
+mal_export void register_http_handler(http_request_handler handler);
+mal_export void startHttpdaemon(void);
+mal_export void stopHttpdaemon(void);
 
 #endif

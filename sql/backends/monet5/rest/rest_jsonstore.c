@@ -42,229 +42,229 @@
 str
 RESTprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-register_http_handler((http_request_handler)&handle_http_request);
-	(void) cntxt;
-	(void) mb;
-	(void) stk;
-	(void) pci;		/* fool compiler */
-	return MAL_SUCCEED;
+    register_http_handler((http_request_handler)&handle_http_request);
+    (void) cntxt;
+    (void) mb;
+    (void) stk;
+    (void) pci;		/* fool compiler */
+    return MAL_SUCCEED;
 }
 
 static int
 mserver_browser_get(const UriUriA uri) {
-  int mserver_rest_command = 0;
-  if (uri.absolutePath) {
-    if (uri.pathHead != NULL) {
-      if (uri.pathHead->next == NULL) {
-	if (strcmp(uri.pathHead->text.first, API_SPECIAL_CHAR) > 0) {
-	  // This path element is on of the special cases
-	  mserver_rest_command = MONETDB_REST_UNKWOWN_SPECIAL;
-	  if (strcmp(uri.pathHead->text.first, MONETDB_REST_PATH_ALLDBS) == 0) {
-	    mserver_rest_command = MONETDB_REST_GET_ALLDBS;
-	    fprintf(stderr, "special url: %s\n", uri.pathHead->text.first);
-	  }
-	  if (strcmp(uri.pathHead->text.first, MONETDB_REST_PATH_UUIDS) == 0) {
-	    mserver_rest_command = MONETDB_REST_GET_ALLUUIDS;
-	    fprintf(stderr, "special url: %s\n", uri.pathHead->text.first);
-	  }
+	int mserver_rest_command = 0;
+	if (uri.absolutePath) {
+		if (uri.pathHead != NULL) {
+			if (uri.pathHead->next == NULL) {
+				if (strcmp(uri.pathHead->text.first, API_SPECIAL_CHAR) > 0) {
+					// This path element is on of the special cases
+					mserver_rest_command = MONETDB_REST_UNKWOWN_SPECIAL;
+					if (strcmp(uri.pathHead->text.first, MONETDB_REST_PATH_ALLDBS) == 0) {
+						mserver_rest_command = MONETDB_REST_GET_ALLDBS;
+						fprintf(stderr, "special url: %s\n", uri.pathHead->text.first);
+					}
+					if (strcmp(uri.pathHead->text.first, MONETDB_REST_PATH_UUIDS) == 0) {
+						mserver_rest_command = MONETDB_REST_GET_ALLUUIDS;
+						fprintf(stderr, "special url: %s\n", uri.pathHead->text.first);
+					}
+				} else {
+					// This path element is a table name
+					mserver_rest_command = MONETDB_REST_DB_INFO;
+					fprintf(stderr, "url: %s\n", uri.pathHead->text.first);
+				}
+			} else {
+				// We have multiple paths
+				if (strcmp(uri.pathHead->text.first, API_SPECIAL_CHAR) > 0) {
+					// This path element is on of the special cases
+					mserver_rest_command = MONETDB_REST_UNKWOWN_SPECIAL;
+					if (strcmp(uri.pathHead->text.first, MONETDB_REST_PATH_ALLDBS) == 0) {
+						mserver_rest_command = MONETDB_REST_NO_PARAMETER_ALLOWED;
+						fprintf(stderr, "special url: %s\n", uri.pathHead->text.first);
+					}
+					if (strcmp(uri.pathHead->text.first, MONETDB_REST_PATH_UUIDS) == 0) {
+						mserver_rest_command = MONETDB_REST_NO_PARAMETER_ALLOWED;
+						fprintf(stderr, "special url: %s\n", uri.pathHead->text.first);
+					}
+				} else {
+					// The first path element is a table name
+					// we cannot check this here, so we assume the table exists
+					fprintf(stderr, "url: %s\n", uri.pathHead->text.first);
+					if (strcmp(uri.pathTail->text.first, API_SPECIAL_CHAR) > 0) {
+						// This path element is on of the special cases
+						mserver_rest_command = MONETDB_REST_UNKWOWN_SPECIAL;
+						if (strcmp(uri.pathTail->text.first, MONETDB_REST_PATH_ALLDBS) == 0) {
+							mserver_rest_command = MONETDB_REST_NO_PARAMETER_ALLOWED;
+							fprintf(stderr, "special url: %s\n", uri.pathTail->text.first);
+						}
+						if (strcmp(uri.pathTail->text.first, MONETDB_REST_PATH_UUIDS) == 0) {
+							mserver_rest_command = MONETDB_REST_NO_PARAMETER_ALLOWED;
+							fprintf(stderr, "special url: %s\n", uri.pathTail->text.first);
+						}
+					} else {
+						// The first path element is a table name
+						// we cannot check this here, so we assume the table exists
+						mserver_rest_command = MONETDB_REST_DB_INFO;
+						fprintf(stderr, "url: %s\n", uri.pathHead->text.first);
+					}
+				}
+			}
+		} else {
+			// A absolutePath with an empty pathHead means the root url
+			mserver_rest_command = MONETDB_REST_WELCOME;
+			fprintf(stderr, "url: %s\n", "/");
+		}
 	} else {
-	  // This path element is a table name
-	  mserver_rest_command = MONETDB_REST_DB_INFO;
-	  fprintf(stderr, "url: %s\n", uri.pathHead->text.first);
+		// handle relative paths
 	}
-      } else {
-	// We have multiple paths
-	if (strcmp(uri.pathHead->text.first, API_SPECIAL_CHAR) > 0) {
-	  // This path element is on of the special cases
-	  mserver_rest_command = MONETDB_REST_UNKWOWN_SPECIAL;
-	  if (strcmp(uri.pathHead->text.first, MONETDB_REST_PATH_ALLDBS) == 0) {
-	    mserver_rest_command = MONETDB_REST_NO_PARAMETER_ALLOWED;
-	    fprintf(stderr, "special url: %s\n", uri.pathHead->text.first);
-	  }
-	  if (strcmp(uri.pathHead->text.first, MONETDB_REST_PATH_UUIDS) == 0) {
-	    mserver_rest_command = MONETDB_REST_NO_PARAMETER_ALLOWED;
-	    fprintf(stderr, "special url: %s\n", uri.pathHead->text.first);
-	  }
-	} else {
-	  // The first path element is a table name
-	  // we cannot check this here, so we assume the table exists
-	  fprintf(stderr, "url: %s\n", uri.pathHead->text.first);
-	  if (strcmp(uri.pathTail->text.first, API_SPECIAL_CHAR) > 0) {
-	    // This path element is on of the special cases
-	    mserver_rest_command = MONETDB_REST_UNKWOWN_SPECIAL;
-	    if (strcmp(uri.pathTail->text.first, MONETDB_REST_PATH_ALLDBS) == 0) {
-	      mserver_rest_command = MONETDB_REST_NO_PARAMETER_ALLOWED;
-	      fprintf(stderr, "special url: %s\n", uri.pathTail->text.first);
-	    }
-	    if (strcmp(uri.pathTail->text.first, MONETDB_REST_PATH_UUIDS) == 0) {
-	      mserver_rest_command = MONETDB_REST_NO_PARAMETER_ALLOWED;
-	      fprintf(stderr, "special url: %s\n", uri.pathTail->text.first);
-	    }
-	  } else {
-	    // The first path element is a table name
-	    // we cannot check this here, so we assume the table exists
-	    mserver_rest_command = MONETDB_REST_DB_INFO;
-	    fprintf(stderr, "url: %s\n", uri.pathHead->text.first);
-	  }
-	}
-      }
-    } else {
-      // A absolutePath with an empty pathHead means the root url
-      mserver_rest_command = MONETDB_REST_WELCOME;
-      fprintf(stderr, "url: %s\n", "/");
-    }
-  } else {
-    // handle relative paths
-  }
-  return mserver_rest_command;
+	return mserver_rest_command;
 }
 
 static int
 mserver_browser_put(const UriUriA uri) {
-  int mserver_rest_command = 0;
-  if (uri.absolutePath) {
-    if (uri.pathHead != NULL) {
-      if (uri.pathHead->next == NULL) {
-	if (strcmp(uri.pathHead->text.first, API_SPECIAL_CHAR) < 0) {
-	  // This path element is on of the special cases
-	  mserver_rest_command = MONETDB_REST_UNKWOWN_SPECIAL;
+	int mserver_rest_command = 0;
+	if (uri.absolutePath) {
+		if (uri.pathHead != NULL) {
+			if (uri.pathHead->next == NULL) {
+				if (strcmp(uri.pathHead->text.first, API_SPECIAL_CHAR) < 0) {
+					// This path element is on of the special cases
+					mserver_rest_command = MONETDB_REST_UNKWOWN_SPECIAL;
+				} else {
+					mserver_rest_command = MONETDB_REST_CREATE_DB;
+					fprintf(stderr, "url: %s\n", uri.pathHead->text.first);
+				}
+			}
+		} else {
+			// A absolutePath with an empty pathHead means the root url
+			// This is not allowed in a put message
+			mserver_rest_command = MONETDB_REST_MISSING_DATABASENAME;
+		}
 	} else {
-	  mserver_rest_command = MONETDB_REST_CREATE_DB;
-	  fprintf(stderr, "url: %s\n", uri.pathHead->text.first);
+		// handle relative paths
 	}
-      }
-    } else {
-      // A absolutePath with an empty pathHead means the root url
-      // This is not allowed in a put message
-      mserver_rest_command = MONETDB_REST_MISSING_DATABASENAME;
-    }
-  } else {
-    // handle relative paths
-  }
-  return mserver_rest_command;
+	return mserver_rest_command;
 }
 
 static int
 mserver_browser_delete(const UriUriA uri) {
-  int mserver_rest_command = 0;
-  if (uri.absolutePath) {
-    if (uri.pathHead != NULL) {
-      if (uri.pathHead->next == NULL) {
-	if (strcmp(uri.pathHead->text.first, API_SPECIAL_CHAR) < 0) {
-	  // This path element is on of the special cases
-	  mserver_rest_command = MONETDB_REST_UNKWOWN_SPECIAL;
+	int mserver_rest_command = 0;
+	if (uri.absolutePath) {
+		if (uri.pathHead != NULL) {
+			if (uri.pathHead->next == NULL) {
+				if (strcmp(uri.pathHead->text.first, API_SPECIAL_CHAR) < 0) {
+					// This path element is on of the special cases
+					mserver_rest_command = MONETDB_REST_UNKWOWN_SPECIAL;
+				} else {
+					mserver_rest_command = MONETDB_REST_DELETE_DB;
+					fprintf(stderr, "url: %s\n", uri.pathHead->text.first);
+				}
+			}
+		} else {
+			// A absolutePath with an empty pathHead means the root url
+			// This is not allowed in a put message
+			mserver_rest_command = MONETDB_REST_MISSING_DATABASENAME;
+		}
 	} else {
-	  mserver_rest_command = MONETDB_REST_DELETE_DB;
-	  fprintf(stderr, "url: %s\n", uri.pathHead->text.first);
+		// handle relative paths
 	}
-      }
-    } else {
-      // A absolutePath with an empty pathHead means the root url
-      // This is not allowed in a put message
-      mserver_rest_command = MONETDB_REST_MISSING_DATABASENAME;
-    }
-  } else {
-    // handle relative paths
-  }
-  return mserver_rest_command;
+	return mserver_rest_command;
 }
 
 static int
 mserver_browser_post(const UriUriA uri) {
-  int mserver_rest_command = 0;
-  if (uri.absolutePath) {
-    if (uri.pathHead != NULL) {
-      if (uri.pathHead->next == NULL) {
-	if (strcmp(uri.pathHead->text.first, API_SPECIAL_CHAR) < 0) {
-	  // This path element is on of the special cases
-	  mserver_rest_command = MONETDB_REST_UNKWOWN_SPECIAL;
+	int mserver_rest_command = 0;
+	if (uri.absolutePath) {
+		if (uri.pathHead != NULL) {
+			if (uri.pathHead->next == NULL) {
+				if (strcmp(uri.pathHead->text.first, API_SPECIAL_CHAR) < 0) {
+					// This path element is on of the special cases
+					mserver_rest_command = MONETDB_REST_UNKWOWN_SPECIAL;
+				} else {
+					mserver_rest_command = MONETDB_REST_POST_NEW_DOC;
+					fprintf(stderr, "url: %s\n", uri.pathHead->text.first);
+				}
+			}
+		} else {
+			// A absolutePath with an empty pathHead means the root url
+			// This is not allowed in a put message
+			mserver_rest_command = MONETDB_REST_MISSING_DATABASENAME;
+		}
 	} else {
-	  mserver_rest_command = MONETDB_REST_POST_NEW_DOC;
-	  fprintf(stderr, "url: %s\n", uri.pathHead->text.first);
+		// handle relative paths
 	}
-      }
-    } else {
-      // A absolutePath with an empty pathHead means the root url
-      // This is not allowed in a put message
-      mserver_rest_command = MONETDB_REST_MISSING_DATABASENAME;
-    }
-  } else {
-    // handle relative paths
-  }
-  return mserver_rest_command;
+	return mserver_rest_command;
 }
 
 static
 char * get_dbname(UriUriA uri) {
-  int len;
-  char * dbname;
-  len = strlen(uri.pathHead->text.first);
-  dbname = malloc(len + 1);
-  strcpy(dbname, uri.pathHead->text.first);
-  return dbname;
+	int len;
+	char * dbname;
+	len = strlen(uri.pathHead->text.first);
+	dbname = malloc(len + 1);
+	strcpy(dbname, uri.pathHead->text.first);
+	return dbname;
 }
 
 int
 handle_http_request (const char *url, const char *method, char **page, 
-		     char * postdata)
+					 char * postdata)
 {
-  int ret;
-  int mserver_rest_command = 0;
-  char * dbname = NULL;
+	int ret;
+	int mserver_rest_command = 0;
+	char * dbname = NULL;
 
-  UriParserStateA state;
-  UriUriA uri;
+	UriParserStateA state;
+	UriUriA uri;
 
-  state.uri = &uri;
-  if (uriParseUriA(&state, url) != URI_SUCCESS) {
-    /* Failure */
-    printf("failed parse");
-    uriFreeUriMembersA(&uri);
-  }
+	state.uri = &uri;
+	if (uriParseUriA(&state, url) != URI_SUCCESS) {
+		/* Failure */
+		printf("failed parse");
+		uriFreeUriMembersA(&uri);
+	}
 
-  if ((strcmp(method, "GET")) == 0) {
-    mserver_rest_command = mserver_browser_get(uri);
-  } else if ((strcmp(method, "PUT")) == 0) {
-    mserver_rest_command = mserver_browser_put(uri);
-  } else if ((strcmp(method, "POST")) == 0) {
-    mserver_rest_command = mserver_browser_post(uri);
-  } else if ((strcmp(method, "DELETE")) == 0) {
-    mserver_rest_command = mserver_browser_delete(uri);
-  } else {
-    // error
-  }
+	if ((strcmp(method, "GET")) == 0) {
+		mserver_rest_command = mserver_browser_get(uri);
+	} else if ((strcmp(method, "PUT")) == 0) {
+		mserver_rest_command = mserver_browser_put(uri);
+	} else if ((strcmp(method, "POST")) == 0) {
+		mserver_rest_command = mserver_browser_post(uri);
+	} else if ((strcmp(method, "DELETE")) == 0) {
+		mserver_rest_command = mserver_browser_delete(uri);
+	} else {
+		// error
+	}
 
-  switch (mserver_rest_command) {
-  case MONETDB_REST_WELCOME:
-    RESTwelcome(page);
-    break;
-  case MONETDB_REST_GET_ALLDBS:
-    RESTAllDBs(page);
-    break;
-  case MONETDB_REST_CREATE_DB:
-    dbname = get_dbname(uri);
-    RESTcreateDB(page, dbname);
-    break;
-  case MONETDB_REST_DELETE_DB:
-    dbname = get_dbname(uri);
-    RESTdeleteDB(page, dbname);
-    break;
-  case  MONETDB_REST_GET_ALLUUIDS:
-    RESTuuid(page);
-    break;
-  case  MONETDB_REST_POST_NEW_DOC:
-    dbname = get_dbname(uri);
-    RESTcreateDoc(page, dbname, postdata);
-    break;
-  default:
-    // error, unknown command
-    ret = 1;
-  }
+	switch (mserver_rest_command) {
+	case MONETDB_REST_WELCOME:
+		RESTwelcome(page);
+		break;
+	case MONETDB_REST_GET_ALLDBS:
+		RESTallDBs(page);
+		break;
+	case MONETDB_REST_CREATE_DB:
+		dbname = get_dbname(uri);
+		RESTcreateDB(page, dbname);
+		break;
+	case MONETDB_REST_DELETE_DB:
+		dbname = get_dbname(uri);
+		RESTdeleteDB(page, dbname);
+		break;
+	case  MONETDB_REST_GET_ALLUUIDS:
+		RESTuuid(page);
+		break;
+	case  MONETDB_REST_POST_NEW_DOC:
+		dbname = get_dbname(uri);
+		RESTcreateDoc(page, dbname, postdata);
+		break;
+	default:
+		// error, unknown command
+		ret = 1;
+	}
 
-  uriFreeUriMembersA(&uri);
-  if (dbname != NULL) {
-    free(dbname);
-  }
+	uriFreeUriMembersA(&uri);
+	if (dbname != NULL) {
+		free(dbname);
+	}
 
-  return ret;
+	return ret;
 }
