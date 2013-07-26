@@ -2894,7 +2894,7 @@ gdk_export int ALIGNsetH(BAT *b1, BAT *b2);
 #define GDK_STREQ(l,r) (*(char*) (l) == *(char*) (r) && !strcmp(l,r))
 
 #define HASHloop(bi, h, hb, v)					\
-	for (hb = HASHget(h, HASHprobe((h), v));			\
+	for (hb = HASHget(h, HASHprobe((h), v));		\
 	     hb != HASHnil(h);					\
 	     hb = HASHgetlink(h,hb))				\
 		if (ATOMcmp(h->type, v, BUNhead(bi, hb)) == 0)
