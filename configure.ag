@@ -2365,7 +2365,8 @@ if test "x$enable_fits" != xno; then
 fi
 AM_CONDITIONAL(HAVE_CFITSIO, test x"$have_cfitsio" != xno)
 
-PKG_CHECK_MODULES([atomic_ops], [atomic_ops], [have_atomic_ops="yes"], [have_atomic_ops="no"])
+PKG_CHECK_MODULES([atomic_ops], [atomic_ops], [have_atomic_ops="yes"],
+	[have_atomic_ops="no"; why_have_atomic_ops="(atomic_ops library not found)"])
 if test x"$have_atomic_ops" = x"yes" ; then
 	AC_DEFINE(HAVE_LIBATOMIC_OPS, 1, [Define if you have the libatomic_ops library])
 	CFLAGS="$CFLAGS $atomic_ops_CFLAGS"
@@ -3205,6 +3206,7 @@ done
 echo
 echo "* Available features/extensions:"
 for comp in \
+	'atomic_ops  ' \
 	'bz2         ' \
 	'cfitsio     ' \
 	'curl        ' \
