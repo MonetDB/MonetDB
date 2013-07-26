@@ -191,6 +191,7 @@ char *mal_trace;		/* enable profile events on console */
 #include "mal_recycle.h"
 #include "mal_dataflow.h"
 #include "mal_profiler.h"
+#include "mal_http_daemon.h"
 
 MT_Lock     mal_contextLock MT_LOCK_INITIALIZER("mal_contextLock");
 MT_Lock     mal_namespaceLock MT_LOCK_INITIALIZER("mal_namespaceLock");
@@ -254,6 +255,9 @@ int mal_init(void){
 	initParser();
 	initHeartbeat();
 	initResource();
+	#ifdef HAVE_JSONSTORE
+	startHttpdaemon();
+	#endif
 	RECYCLEinit();
 	if( malBootstrap() == 0)
 		return -1;
@@ -328,6 +332,9 @@ void mal_exit(void){
 	RECYCLEdrop(mal_clients); /* remove any left over intermediates */
 	stopProfiling();
 	stopHeartbeat();
+	#ifdef HAVE_JSONSTORE
+	stopHttpdaemon();
+	#endif
 	stopMALdataflow();
 
 #if 0
