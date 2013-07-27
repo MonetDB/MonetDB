@@ -478,13 +478,13 @@ ARRAYfiller(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (cnt > (lng)BUN_MAX)
 		throw(MAL, "array.filler", "BAT too large");
 
-	if(!(bn = BATnew(TYPE_void, type, cnt)))
+	if(!(bn = BATnew(TYPE_void, type, (BUN)cnt)))
 		throw(MAL, "array.filler", MAL_MALLOC_FAIL);
 
 	for (i = 0; i < (oid)cnt; i++)
 		BUNfastins(bn, &i, ATOMvarsized(type)?*(str *)val:val);
 
-	BATsetcount(bn, cnt);
+	BATsetcount(bn, (BUN)cnt);
 	BATseqbase(bn, 0);
 	bn->hdense = TRUE;
 	BATkey(bn, TRUE);
