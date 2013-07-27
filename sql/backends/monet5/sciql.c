@@ -159,7 +159,7 @@ SCIQLmaterialise(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			
 			src.vtype = TYPE_str;
 			if (sc->def) {
-				int l = strlen(sc->def);
+				size_t l = strlen(sc->def);
 				if (l == 4 && (sc->def[0] == 'n' || sc->def[0] == 'N') &&
 						(sc->def[1] == 'u' || sc->def[1] == 'U') &&
 						(sc->def[2] == 'l' || sc->def[2] == 'L') &&
@@ -168,7 +168,8 @@ SCIQLmaterialise(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					src.len = 0;
 				} else {
 					src.val.sval = sc->def;
-					src.len = l;
+					assert(l < (size_t) GDK_int_max);
+					src.len = (int) l;
 				}
 			} else {
 				src.val.sval = sc->def;
