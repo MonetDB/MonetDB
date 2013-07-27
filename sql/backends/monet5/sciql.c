@@ -68,7 +68,7 @@ SCIQLmaterialise(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_schema *s = NULL;
 	sql_table *a = NULL;
 	int i = 0, j = 0, *N = NULL, *M = NULL, *bids = NULL;
-	BUN cnt = 0, cntall = 1; /* cntall must be initialised with 1! */
+	BUN cntall = 1; /* cntall must be initialised with 1! */
 	node *n = NULL;
 
 	/* for updating the SQL catalog */
@@ -109,11 +109,23 @@ SCIQLmaterialise(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 		if (sc->dim) {
 			/* TODO: overflow check, see gdk_calc.c */
-			cnt = sc->dim->step > 0 ? (sc->dim->stop - sc->dim->strt + sc->dim->step - 1) / sc->dim->step :
+			lng cnt_l = sc->dim->step > 0 ? (sc->dim->stop - sc->dim->strt + sc->dim->step - 1) / sc->dim->step :
 				(sc->dim->strt - sc->dim->stop - sc->dim->step - 1) / -sc->dim->step;
-			for (j = 0; j < i; j++) N[j] *= cnt;
-			for (j = a->valence; j > i; j--) M[j] *= cnt;
-			cntall *= cnt;
+			int cnt_i = (int) cnt_l;
+#ifndef NDEBUG
+			int lim = GDK_int_max / cnt_i;
+#endif
+			assert(cnt_l < (lng) GDK_int_max);
+			for (j = 0; j < i; j++) {
+				assert(N[j] <= lim);
+				N[j] *= cnt_i;
+			}
+			for (j = a->valence; j > i; j--) {
+				assert(M[j] <= lim);
+				M[j] *= cnt_i;
+			}
+			assert((BUN) cnt_i <= BUN_MAX / cntall);
+			cntall *= cnt_i;
 			i++;
 		}
 	}
