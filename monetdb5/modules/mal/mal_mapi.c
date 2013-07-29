@@ -296,7 +296,7 @@ SERVERlistenThread(SOCKET *Sock)
 				{	int *c_d;
 					/* filedescriptor, put it in place of msgsock */
 					cmsg = CMSG_FIRSTHDR(&msgh);
-					if (!cmsg || !cmsg->cmsg_type == SCM_RIGHTS) {
+					if (!cmsg || cmsg->cmsg_type != SCM_RIGHTS) {
 						closesocket(msgsock);
 						fprintf(stderr, "!mal_mapi.listen: "
 								"expected filedescriptor, but "
