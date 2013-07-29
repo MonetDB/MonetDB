@@ -371,7 +371,6 @@ MT_mmap(const char *path, int mode, size_t len)
 	int fd = open(path, O_CREAT | ((mode & MMAP_WRITE) ? O_RDWR : O_RDONLY), MONETDB_MODE);
 	void *ret = (void *) -1L;
 
-	assert(len % MT_pagesize() == 0);
 	if (fd >= 0) {
 		ret = mmap(NULL,
 			   len,
@@ -389,7 +388,6 @@ MT_munmap(void *p, size_t len)
 {
 	int ret = munmap(p, len);
 
-	assert(len % MT_pagesize() == 0);
 #ifdef MMAP_DEBUG
 	fprintf(stderr, "#munmap(" PTRFMT "," SZFMT ") = %d\n", PTRFMTCAST p, len, ret);
 #endif
@@ -410,9 +408,6 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 
 	/* doesn't make sense for us to extend read-only memory map */
 	assert(mode & MMAP_WRITABLE);
-	assert(old_size % MT_pagesize() == 0);
-	assert(*new_size % MT_pagesize() == 0);
-	assert((size_t) old_address % MT_pagesize() == 0);
 
 	if (*new_size < old_size) {
 		/* shrink */
@@ -713,7 +708,6 @@ MT_mmap(const char *path, int mode, size_t len)
 	HANDLE h1, h2;
 	void *ret;
 
-	assert(len % MT_pagesize() == 0);
 	if (mode & MMAP_WRITE) {
 		mode0 |= FILE_APPEND_DATA | FILE_WRITE_ATTRIBUTES | FILE_WRITE_DATA;
 	}
@@ -784,9 +778,6 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 
 	/* doesn't make sense for us to extend read-only memory map */
 	assert(mode & MMAP_WRITABLE);
-	assert(old_size % MT_pagesize() == 0);
-	assert(*new_size % MT_pagesize() == 0);
-	assert((size_t) old_address % MT_pagesize() == 0);
 
 	if (old_size >= *new_size) {
 		*new_size = old_size;
