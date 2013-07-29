@@ -67,8 +67,8 @@ WriteMemoryCallback(void *contents, size_t size, size_t nmemb, void *userp)
 
 str
 handle_get_request(str *retval, str *url) {
-  str d;
-  char err_string[128];
+  str d = NULL;
+  str msg = MAL_SUCCEED;
 
   CURL *curl_handle;
   CURLcode res = 0;
@@ -100,9 +100,8 @@ handle_get_request(str *retval, str *url) {
 
  /* check for errors */ 
   if(res != CURLE_OK) {
-    sprintf(err_string, "curl_easy_perform() failed: %s\n",
-            curl_easy_strerror(res));
-    d = GDKstrdup(err_string);
+    msg = createException(MAL, "mcurl.getrequest",
+            "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
   }
   else {
     /*
@@ -127,7 +126,7 @@ handle_get_request(str *retval, str *url) {
   curl_easy_cleanup(curl_handle);
 
   *retval = d;
-  return MAL_SUCCEED;
+  return msg;
 }
 #endif
 
