@@ -2628,7 +2628,7 @@ BBPtrim_scan(bat bbppos, bat bbplim)
 		GDKqsort(lastused, bbptrim, NULL, bbptrimlast,
 			 sizeof(lastused[0]), sizeof(bbptrim[0]), TYPE_int);
 		for (i = bbptrimfirst = 0; i < bbptrimlast; i++) {
-			MEMDEBUG THRprintf(GDKstdout, "#TRIMSCAN: %11d%c %9d=%s\t(#" BUNFMT ")\n", BBPLASTUSED(lastused[i]), (lastused[i] & 0x80000000) ? '*' : ' ', i, BBPname(bbptrim[i].bid), bbptrim[i].cnt);
+			MEMDEBUG THRprintf(GDKstdout, "#TRIMSCAN: %11d%c %9d=%s\t(#" BUNFMT ")\n", BBPLASTUSED(lastused[i]), (lastused[i] & (1 << 31)) ? '*' : ' ', i, BBPname(bbptrim[i].bid), bbptrim[i].cnt);
 
 			bbptrim[i].next = i + 1;
 		}
@@ -2867,7 +2867,7 @@ BBPtrim(size_t target)
 			}
 			MEMDEBUG THRprintf(GDKstdout, "#BBPTRIM: %8d%c %7d %s\n",
 					   BBPLASTUSED(lastused[i]),
-					   lastused[i] & 0x80000000 ? '*' : ' ',
+					   lastused[i] & (1 << 31) ? '*' : ' ',
 					   (int) bbptrim[i].bid,
 					   BBPname(bbptrim[i].bid));
 
