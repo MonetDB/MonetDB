@@ -25,7 +25,6 @@
  */
 
 #include "monetdb_config.h"
-#include "mcurl.h"
 #include "mal.h"
 #include "mal_exception.h"
 
