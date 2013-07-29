@@ -20,6 +20,7 @@ INCLUDES = ../../common/options \
 		   ../../common/utils \
 		   ../../clients/mapilib \
 		   ../../gdk \
+		   #../../sql/backends/monet5/rest \
 		   $(READLINE_INCS)
 MTSAFE
 
@@ -37,6 +38,7 @@ lib_mal = {
 		mal_exception.c mal_exception.h \
 		mal_factory.c mal_factory.h \
 		mal_function.c mal_function.h \
+		mal_http_daemon.c mal_http_daemon.h \
 		mal_import.c mal_import.h \
 		mal_runtime.c mal_runtime.h \
 		mal_instruction.c mal_instruction.h \

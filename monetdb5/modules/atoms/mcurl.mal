@@ -1,0 +1,5 @@
+module mcurl;
+
+command getrequest(s:str):str
+address CURLgetRequest
+comment "Perform a http get request";

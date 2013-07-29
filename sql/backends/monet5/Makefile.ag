@@ -15,7 +15,7 @@
 # Copyright August 2008-2013 MonetDB B.V.
 # All Rights Reserved.
 
-SUBDIRS = NOT_WIN32?vaults UDF LSST ENABLE_DATACELL?datacell
+SUBDIRS = NOT_WIN32?vaults UDF LSST ENABLE_DATACELL?datacell HAVE_JSONSTORE?rest
 
 INCLUDES = ../../include ../../common ../../storage ../../server \
 		   ../../../monetdb5/modules/atoms \
@@ -50,7 +50,7 @@ lib__sql = {
 		   ../../storage/bat/libbatstore \
 		   ../../common/libsqlcommon \
 		   HAVE_RAPTOR?../../../monetdb5/extras/rdf/librdf \
-		   ../../../monetdb5/tools/libmonetdb5 \
+ 		   ../../../monetdb5/tools/libmonetdb5 \
 		   ../../../gdk/libbat \
 		   ../../../common/stream/libstream \
 		   ../../../common/utils/libmcrypt \
