@@ -1370,6 +1370,7 @@ str CSTreleaseAll(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str CSTtake(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str CSTtoString(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str CURLgetRequest(str *retval, str *url);
+str CURLgetRequest(str *retval, str *url);
 str CemptySet(int *k, int *bid);
 str DICTbind(int *idx, int *val, str *nme);
 str DICTcompress(int *idx, str *nme, int *bid);
