@@ -45,6 +45,9 @@
 /* Define if building universal (internal helper macro) */
 /* #undef AC_APPLE_UNIVERSAL_BUILD */
 
+/* location where binaries are installed */
+/* #undef BINDIR */
+
 /* Define to one of `_getb67', `GETB67', `getb67' for Cray-2 and Cray-YMP
    systems. This function is required for `alloca.c' support on those systems.
    */
@@ -117,6 +120,9 @@
 /* Define to 1 if you have the <dlfcn.h> header file. */
 /* #undef HAVE_DLFCN_H */
 
+/* Define to 1 if you have the <execinfo.h> header file. */
+/* #undef HAVE_EXECINFO_H */
+
 /* Define to 1 if you have the `fcntl' function. */
 /* #undef HAVE_FCNTL */
 
@@ -156,6 +162,9 @@
 /* Define to 1 if you have the `getaddrinfo' function. */
 #define HAVE_GETADDRINFO 1
 
+/* Define to 1 if you have the `getexecname' function. */
+/* #undef HAVE_GETEXECNAME */
+
 /* Define to 1 if you have the `getlogin' function. */
 /* #undef HAVE_GETLOGIN */
 
@@ -170,6 +179,9 @@
 
 /* Define to 1 if you have the `getrlimit' function. */
 /* #undef HAVE_GETRLIMIT */
+
+/* Define to 1 if you have the `GetSystemInfo' function. */
+/* #undef HAVE_GETSYSTEMINFO */
 
 /* Define to 1 if you have the `gettimeofday' function. */
 /* #undef HAVE_GETTIMEOFDAY */
@@ -209,6 +221,9 @@
 
 /* Define to 1 if you have the `kill' function. */
 /* #undef HAVE_KILL */
+
+/* Define to 1 if you have the <kvm.h> header file. */
+/* #undef HAVE_KVM_H */
 
 /* Define to 1 if you have the <langinfo.h> header file. */
 /* #undef HAVE_LANGINFO_H */
@@ -292,6 +307,15 @@
 #endif
 #endif
 
+/* Define to 1 if you have the <mach/mach_init.h> header file. */
+/* #undef HAVE_MACH_MACH_INIT_H */
+
+/* Define to 1 if you have the <mach-o/dyld.h> header file. */
+/* #undef HAVE_MACH_O_DYLD_H */
+
+/* Define to 1 if you have the <mach/task.h> header file. */
+/* #undef HAVE_MACH_TASK_H */
+
 /* Define to 1 if you have the `madvise' function. */
 /* #undef HAVE_MADVISE */
 
@@ -322,8 +346,14 @@
 /* Define to 1 if you have the <netdb.h> header file. */
 /* #undef HAVE_NETDB_H */
 
+/* Define to 1 if you have the <netinet/in.h> header file. */
+/* #undef HAVE_NETINET_IN_H */
+
 /* Define to 1 if you have the `nl_langinfo' function. */
 /* #undef HAVE_NL_LANGINFO */
+
+/* Define to 1 if you have the `_NSGetExecutablePath' function. */
+/* #undef HAVE__NSGETEXECUTABLEPATH */
 
 /* Define to 1 if you have the <odbcinst.h> header file. */
 #define HAVE_ODBCINST_H 1
@@ -572,6 +602,9 @@
 /* Define to 1 if you have the <sys/types.h> header file. */
 #define HAVE_SYS_TYPES_H 1
 
+/* Define to 1 if you have the <sys/uio.h> header file. */
+/* #undef HAVE_SYS_UIO_H */
+
 /* Define to 1 if you have the <sys/un.h> header file. */
 /* #undef HAVE_SYS_UN_H */
 
@@ -580,6 +613,9 @@
 
 /* Define to 1 if you have the <sys/wait.h> header file. */
 /* #undef HAVE_SYS_WAIT_H */
+
+/* Define to 1 if you have the `task_info' function. */
+/* #undef HAVE_TASK_INFO */
 
 /* Define to 1 if you have the <termios.h> header file. */
 /* #undef HAVE_TERMIOS_H */
@@ -613,6 +649,9 @@
 
 /* Define to 1 if you have the <uuid/uuid.h> header file. */
 /* #undef HAVE_UUID_UUID_H */
+
+/* Define if you have valgrind installed and want to use it */
+/* #undef HAVE_VALGRIND */
 
 /* Define to 1 if you have the <winsock2.h> header file. */
 #define HAVE_WINSOCK2_H 1
@@ -719,6 +758,9 @@
 
 /* Define to the version of this package. */
 #define PACKAGE_VERSION "11.16.0"
+
+/* Define to the home page for this package. */
+#define PACKAGE_URL ""
 
 /* Path separator */
 #define PATH_SEP ';'
