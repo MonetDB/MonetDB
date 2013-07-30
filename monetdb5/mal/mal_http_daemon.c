@@ -19,6 +19,7 @@
 
 #include "monetdb_config.h"
 
+#ifdef HAVE_MICROHTTPD
 #include <sys/types.h>
 #include <sys/select.h>
 #include <sys/socket.h>
@@ -28,7 +29,6 @@
 
 #include "mal_client.h"
 #include "mal_http_daemon.h"
-#ifdef HAVE_MICROHTTPD
 #include <microhttpd.h>
 
 static MT_Id hdthread;
