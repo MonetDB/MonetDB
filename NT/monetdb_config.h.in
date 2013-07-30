@@ -204,6 +204,9 @@
 /* Define to 1 if you have the `isinf' function. */
 /* #undef HAVE_ISINF */
 
+/* Define that you want to build the jsonstore library */
+/* #undef HAVE_JSONSTORE */
+
 /* Define to 1 if you have the `kill' function. */
 /* #undef HAVE_KILL */
 
@@ -300,6 +303,9 @@
 
 /* Define to 1 if you have the `MD5' function. */
 #define HAVE_MD5 1
+
+/* Define if you have the LibMicroHTTPD library */
+/* #undef HAVE_MICROHTTPD */
 
 /* Define to 1 if you have the <memory.h> header file. */
 #define HAVE_MEMORY_H 1
@@ -598,6 +604,9 @@
 
 /* Define to 1 if you have the <utime.h> header file. */
 /* #undef HAVE_UTIME_H */
+
+/* Define if you have the LibUriParser library */
+/* #undef HAVE_URIPARSER */
 
 /* uuid */
 /* #undef HAVE_UUID */
