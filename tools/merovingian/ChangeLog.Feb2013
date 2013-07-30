@@ -1,3 +1,7 @@
 # ChangeLog file for sql/src/backends/monet5/merovingian
 # This file is updated with mchangelog
 
+* Tue Jul 30 2013 Fabian Groffen <fabian@monetdb.org>
+- monetdb now no longer compresses output when not connected to a terminal,
+  bug #3292
+
