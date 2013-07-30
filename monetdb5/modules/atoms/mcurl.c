@@ -112,7 +112,7 @@ handle_get_request(str *retval, str *url)
 		 * should free() it as a nice application.
 		 */
 
-		//printf("%lu bytes retrieved\n", (long)chunk.size);
+		//printf(SZFMT " bytes retrieved\n", chunk.size);
 	}
 	if (chunk.size) {
 		d = GDKstrdup(chunk.memory);
