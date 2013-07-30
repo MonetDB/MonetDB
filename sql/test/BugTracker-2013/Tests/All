@@ -26,3 +26,4 @@ prepare-smallint.Bug-3297
 psm_functions_and_accessrights.Bug-3300
 decimal-cast.Bug-3310
 hashed_exp.Bug-3313
+mitosis-floor.Bug-3330
