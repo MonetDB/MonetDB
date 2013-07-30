@@ -98,7 +98,8 @@ OPTrecyclerImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 				getModuleId(p)== batstrRef || getModuleId(p)== batmmathRef ||
 				getModuleId(p)== arrayRef || getModuleId(p)== batmtimeRef ||
 				getModuleId(p)== batcalcRef || getModuleId(p)== pcreRef ||
-				getModuleId(p)== matRef || getModuleId(p) == calcRef )
+				getModuleId(p)== mtimeRef || getModuleId(p) == calcRef  ||
+				getModuleId(p)== matRef )
 			){
 			pushInstruction(mb,p);
 			continue;
