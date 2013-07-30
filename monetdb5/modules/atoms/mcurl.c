@@ -68,7 +68,7 @@ handle_get_request(str *retval, str *url)
 	str msg = MAL_SUCCEED;
 
 	CURL *curl_handle;
-	CURLcode res = 0;
+	CURLcode res = CURLE_OK;
 
 	struct MemoryStruct chunk;
 
