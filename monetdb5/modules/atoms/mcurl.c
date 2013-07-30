@@ -138,10 +138,11 @@ mcurl_export str CURLgetRequest(str *retval, str *url);
 str
 CURLgetRequest(str *retval, str *url)
 {
-	(void)retval;
-	(void)url;
 #ifdef HAVE_CURL
 	return handle_get_request(retval, url);
-#endif
+#else
+	(void)retval;
+	(void)url;
 	return MAL_SUCCEED;
+#endif
 }
