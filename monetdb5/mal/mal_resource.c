@@ -66,11 +66,10 @@ int memoryclaims = 0;    /* number of threads active with expensive operations *
  * Views are consider cheap and ignored
  */
 lng
-getMemoryClaim(MalBlkPtr mb, MalStkPtr stk, int pc, int i, int flag)
+getMemoryClaim(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int i, int flag)
 {
 	lng total = 0, vol = 0;
 	BAT *b;
-	InstrPtr pci = getInstrPtr(mb,pc);
 	BUN cnt;
 
 	(void)mb;
