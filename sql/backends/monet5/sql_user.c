@@ -31,6 +31,7 @@
 #include "sql_mvc.h"
 #include "bat5.h"
 #include "mal_authorize.h"
+#include "mal_recycle.h"
 #include "mcrypt.h"
 
 #if 0
@@ -490,8 +491,10 @@ monet5_user_get_def_schema(mvc *m, oid user)
 	}
 
 	if (!schema || !mvc_set_schema(m, schema)) {
-		if (m->session->active)
+		if (m->session->active){
+			RECYCLEdrop(0);
 			mvc_rollback(m, 0, NULL);
+		}
 		return NULL;
 	}
 	/* reset the user and schema names */
@@ -499,6 +502,7 @@ monet5_user_get_def_schema(mvc *m, oid user)
 	stack_set_string(m, "current_user", username);
 	stack_set_string(m, "current_role", username);
 	GDKfree(username);
+	RECYCLEdrop(0);
 	mvc_rollback(m, 0, NULL);
 	return schema;
 }

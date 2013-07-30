@@ -975,8 +975,10 @@ SQLexitClient(Client c)
 			if (mvc_status(m) >= 0 && mvc_commit(m, 0, NULL) < 0)
 				(void) handle_error(m, c->fdout, 0);
 		}
-		if (m->session->active)
+		if (m->session->active){
+			RECYCLEdrop(0);
 			mvc_rollback(m, 0, NULL);
+		}
 
 		res_tables_destroy(m->results);
 		m->results= NULL;
@@ -1329,6 +1331,7 @@ SQLinclude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 static int SQLautocommit(Client c, mvc *m){
 	if (m->session->auto_commit && m->session->active) {
 		if (mvc_status(m) < 0) {
+			RECYCLEdrop(0);
 			mvc_rollback(m, 0, NULL);
 		} else if (mvc_commit(m, 0, NULL) < 0) {
 		 	return handle_error(m, c->fdout, 0);
@@ -1723,6 +1726,7 @@ SQLparser(Client c)
 					msg = createException(SQL, "SQLparser",
 							"Xauto_commit (commit) failed");
 				} else if (!commit && mvc_rollback(m, 0, NULL) < 0) {
+					RECYCLEdrop(0);
 					mnstr_printf(out, "!COMMIT: rollback failed while "
 							"disabling auto_commit\n");
 					msg = createException(SQL, "SQLparser",
