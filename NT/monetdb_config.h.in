@@ -276,6 +276,9 @@
 /* Define if you have the readline library */
 /* #undef HAVE_LIBREADLINE */
 
+/* Define to 1 if you have the `tiff' library (-ltiff). */
+/* #undef HAVE_LIBTIFF */
+
 /* Define if you have the z library */
 /* #undef HAVE_LIBZ */
 
