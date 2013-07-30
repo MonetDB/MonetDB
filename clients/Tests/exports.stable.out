@@ -2569,7 +2569,7 @@ char **getHelp(Module m, str pat, int flag);
 char **getHelpMatch(char *pat);
 MalBlkPtr getMalBlkHistory(MalBlkPtr mb, int idx);
 MalBlkPtr getMalBlkMarker(MalBlkPtr mb, str marker);
-lng getMemoryClaim(MalBlkPtr mb, MalStkPtr stk, int pc, int i, int flag);
+lng getMemoryClaim(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int i, int flag);
 str getName(str nme, size_t len);
 int getPC(MalBlkPtr mb, InstrPtr p);
 str getPipeCatalog(int *nme, int *def, int *stat);
