@@ -2383,7 +2383,8 @@ fi
 
 dnl MicroHTTPD library
 dnl required for MonetDB5 SQL jsonstore, optional otherwise
-have_libmicrohttpd=auto
+org_have_libmicrohttpd=auto
+have_libmicrohttpd=$org_have_libmicrohttpd
 AC_ARG_WITH(libmicrohttpd,
 	AS_HELP_STRING([--with-libmicrohttpd=DIR],
 		[libmicrohttpd library is installed in DIR]),
@@ -2391,7 +2392,8 @@ AC_ARG_WITH(libmicrohttpd,
 
 dnl Uriparser library
 dnl required for MonetDB5 SQL jsonstore, optional otherwise
-have_liburiparser=auto
+org_have_liburiparser=auto
+have_liburiparser=$org_have_liburiparser
 AC_ARG_WITH(liburiparser,
 	AS_HELP_STRING([--with-liburiparser=DIR],
 		[liburiparser library is installed in DIR]),
@@ -2400,13 +2402,13 @@ AC_ARG_WITH(liburiparser,
     if test "x$have_liburiparser" == xauto; then
       PKG_CHECK_MODULES([liburiparser], [liburiparser],
       		[have_liburiparser=yes],
-		[have_liburiparser=no])
+		[have_liburiparser=no; why_have_liburiparser="(liburiparser not found)"])
     fi
 
     if test "x$have_libmicrohttpd" == xauto; then
       PKG_CHECK_MODULES([libmicrohttpd], [libmicrohttpd],
       		[have_libmicrohttpd=yes],
-		[have_libmicrohttpd=no])
+		[have_libmicrohttpd=no; why_have_libmicrohttpd="(libmicrohttpd not found)"])
     fi
 
 if test "x$enable_jsonstore" != xno; then
@@ -3274,33 +3276,35 @@ done
 echo
 echo "* Available features/extensions:"
 for comp in \
-	'atomic_ops  ' \
-	'bz2         ' \
-	'cfitsio     ' \
-	'curl        ' \
-	'geos        ' \
-	'getaddrinfo ' \
-	'hwcounters  ' \
-	'java        ' \
-	'java_control' \
-	'java_jdbc   ' \
-	'libxml2     ' \
-	'mseed       ' \
-	'openssl     ' \
-	'pcre        ' \
-	'perl        ' \
-	'pthread     ' \
-	'python2     ' \
-	'python3     ' \
-	'raptor      ' \
-	'readline    ' \
-	'rubygem     ' \
-	'setsockopt  ' \
-	'sphinxclient' \
-	'unixodbc    ' \
-	'valgrind    ' \
-	'winsock2    ' \
-	'zlib        ' \
+	'atomic_ops   ' \
+	'bz2          ' \
+	'cfitsio      ' \
+	'curl         ' \
+	'geos         ' \
+	'getaddrinfo  ' \
+	'hwcounters   ' \
+	'java         ' \
+	'java_control ' \
+	'java_jdbc    ' \
+	'libmicrohttpd' \
+	'liburiparser ' \
+	'libxml2      ' \
+	'mseed        ' \
+	'openssl      ' \
+	'pcre         ' \
+	'perl         ' \
+	'pthread      ' \
+	'python2      ' \
+	'python3      ' \
+	'raptor       ' \
+	'readline     ' \
+	'rubygem      ' \
+	'setsockopt   ' \
+	'sphinxclient ' \
+	'unixodbc     ' \
+	'valgrind     ' \
+	'winsock2     ' \
+	'zlib         ' \
 ; do
 	eval "org=\$org_have_$comp"
 	eval "have=\$have_$comp"
