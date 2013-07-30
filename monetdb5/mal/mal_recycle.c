@@ -65,6 +65,7 @@
 #include "mal_exception.h"
 #include "mal_interpreter.h"
 #include "mal_function.h"
+#include "mal_resource.h"
 #include "mal_listing.h"
 #include "mal_runtime.h"
 
@@ -297,15 +298,14 @@ static void RECYCLEcleanCache(Client cntxt){
 	dbl minben, ben;
 	bte *used;
 
-	assert(recycleBlk);
 #ifdef _DEBUG_RESET_
 	mnstr_printf(cntxt->fdout,"#CACHE BEFORE CLEANUP\n");
 	RECYCLEdumpInternal(cntxt->fdout);
 #endif
 newpass:
-	if (recycleBlk->stop == 0)
+	if ( recycleBlk == 0 || recycleBlk->stop == 0)
 		return;
-	if ( GDKmem_cursize() <  MEMORY_THRESHOLD * monet_memory && recycleBlk->stop < recycleCacheLimit)
+	if ( recycleBlk->stop < recycleCacheLimit)
 		return;
 
 	used = (bte*)GDKzalloc(recycleBlk->vtop);
@@ -498,6 +498,9 @@ RECYCLEkeep(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p, RuntimeProfile 
 	if ( (size_t)(recyclerMemoryUsed + wr) > MEMORY_THRESHOLD * monet_memory)
 		return ; /* no more caching */
 
+	wr = 0;
+	for( j=0;j < p->retc; j++)
+		wr += getMemoryClaim(mb,s,p,j,TRUE);
 	/*
 	 * The instruction is copied and the variables are
 	 * all assigned to the symbol table. This means the
@@ -530,13 +533,6 @@ RECYCLEkeep(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p, RuntimeProfile 
 		setVarUsed(recycleBlk,c);
 	 	setArg(q,i,c);
 	}
-#ifdef _DEBUG_RECYCLE_
-	mnstr_printf(cntxt->fdout,"#RECYCLE [%3d] ",recycleBlk->stop);
-	printInstruction( cntxt->fdout,recycleBlk, 0, q, LIST_MAL_DEBUG);
-#else
-	(void) cntxt;
-#endif
-
 	pushInstruction(recycleBlk,q);
 	i = recycleBlk->stop-1;
 	recycleBlk->profiler[i].clk = clk; // used for LRU scheme
@@ -545,6 +541,13 @@ RECYCLEkeep(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p, RuntimeProfile 
 	recycleBlk->profiler[i].rbytes = rd;
 	recycleBlk->profiler[i].wbytes = wr;
 	recyclerMemoryUsed += wr;
+#ifdef _DEBUG_RECYCLE_
+	mnstr_printf(cntxt->fdout,"#RECYCLE [%3d] cost "LLFMT" mem "LLFMT" ",recycleBlk->stop-1, recycleBlk->profiler[i].ticks, wr);
+	printInstruction( cntxt->fdout,recycleBlk, 0, q, LIST_MAL_DEBUG);
+#else
+	(void) cntxt;
+#endif
+
 
 #ifdef _DEBUG_CACHE_
 	if(0)RECYCLEsync(cntxt,q);
@@ -575,12 +578,13 @@ RECYCLEfind(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 {
 	int i, j;
 	InstrPtr q;
-	lng clk = GDKusec();
+	lng clk;
 
 	(void) mb;
 	if( recycleBlk == 0)
 		return -1;
 
+	clk = GDKusec();
 	(void) cntxt;
 	for (i=0; i<recycleBlk->stop; i++) {
 		q = getInstrPtr(recycleBlk,i);
@@ -593,11 +597,11 @@ RECYCLEfind(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 			if( VALcmp( &s->stk[getArg(p,j)], &getVarConstant(recycleBlk,getArg(q,j))))
 				break;
 		if (j == p->argc){
-			recycleSearchTime = GDKusec()-clk;
+			recycleSearchTime += GDKusec()-clk;
 			return i;
 		}
 	}
-	recycleSearchTime = GDKusec()-clk;
+	recycleSearchTime += GDKusec()-clk;
 	return -1;
 }
 
@@ -863,7 +867,7 @@ RECYCLEreuse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, RuntimeProfi
 		recycled++;
 		recyclerSavings += recycleBlk->profiler[i].ticks;
 		MT_lock_unset(&recycleLock, "recycle");
-		return i;
+		return pc;
 		notfound:
 			continue;
     }
@@ -946,15 +950,15 @@ RECYCLEexitImpl(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, RuntimePr
 	if (recycleBlk == NULL || mb->profiler == NULL)
 		return;
 
+	if ( !RECYCLEinterest(p))
+		return;
 	MT_lock_set(&recycleLock, "recycle");
-	if ( (GDKmem_cursize() >  MEMORY_THRESHOLD * monet_memory  && recyclerMemoryUsed > MEMORY_THRESHOLD * monet_memory) || recycleBlk->stop == recycleCacheLimit)
+	if ( (GDKmem_cursize() >  MEMORY_THRESHOLD * monet_memory  && recyclerMemoryUsed > MEMORY_THRESHOLD * monet_memory) || recycleBlk->stop >= recycleCacheLimit)
 		RECYCLEcleanCache(cntxt);
 
-	if ( RECYCLEinterest(p)){
-		/* infinite case, admit all new instructions */
-		if (RECYCLEfind(cntxt,mb,stk,p)<0 )
-			(void) RECYCLEkeep(cntxt,mb, stk, p, prof);
-	}
+	/* infinite case, admit all new instructions */
+	if (RECYCLEfind(cntxt,mb,stk,p)<0 )
+		(void) RECYCLEkeep(cntxt,mb, stk, p, prof);
 	MT_lock_unset(&recycleLock, "recycle");
 }
 
@@ -984,8 +988,7 @@ RECYCLEdrop(Client cntxt){
 #ifdef _DEBUG_RECYCLE_
 	if( cntxt) {
 		mnstr_printf(cntxt->fdout,"#RECYCLE drop\n");
-		printFunction(cntxt->fdout, recycleBlk,0,0);
-		printStack(cntxt->fdout,mb,0);
+		RECYCLEdumpInternal(cntxt->fdout);
 	}
 #else
 	(void) cntxt;
@@ -1159,9 +1162,9 @@ RECYCLEdumpInternal(stream *s)
 
     if (!recycleBlk) return;
 
-    mnstr_printf(s,"#RECYCLER CATALOG cached %d memory ", recycleBlk->stop);
-    mnstr_printf(s,"MAL recycled = "LLFMT" savings= "LLFMT"(usec) total MAL executed = "LLFMT" memory(KB)= "LLFMT" searchtime="LLFMT"(usec)\n",
-         recycled, recyclerSavings, statements, recyclerMemoryUsed,recycleSearchTime);
+    mnstr_printf(s,"#RECYCLER CATALOG cached %d instructions, ", recycleBlk->stop);
+    mnstr_printf(s,"MAL recycled = "LLFMT" total MAL executed = "LLFMT" memory= "LLFMT" total searchtime="LLFMT"(usec) savings="LLFMT"\n",
+         recycled- recycleBlk->stop, statements, recyclerMemoryUsed,recycleSearchTime,  recyclerSavings);
 
 #ifdef _DEBUG_CACHE_
     /* and dump the statistics per instruction*/
