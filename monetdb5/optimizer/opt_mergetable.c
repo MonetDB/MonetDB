@@ -22,8 +22,8 @@
 typedef enum mat_type_t {
 	mat_none = 0,	/* Simple mat aligned operations (ie batcalc etc) */
 	mat_grp = 1,	/* result of phase one of a mat - group.new/derive */
-	mat_ext = 2,	/* after mat_grp the extend gets a mat.mirror */
-	mat_cnt = 3,	/* after mat_grp the extend gets a mat.mirror */
+	mat_ext = 2,	/* mat_grp extend */
+	mat_cnt = 3,	/* mat_grp count */
 	mat_tpn = 4,	/* Phase one of topn on a mat */
 	mat_slc = 5,	/* Last phase of topn (or just slice) on a mat */
 	mat_rdr = 6	/* Phase one of sorting, ie sorted the parts sofar */
@@ -258,7 +258,9 @@ static InstrPtr
 mat_apply1(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int var)
 {
 	int tpe, k, is_select = isSubSelect(p), is_mirror = (getFunctionId(p) == mirrorRef);
-	InstrPtr r = NULL;
+	int is_identity = (getFunctionId(p) == identityRef && getModuleId(p) == batcalcRef);
+	int ident_var = 0;
+	InstrPtr r = NULL, q;
 
 	//printf("# %s.%s(%d)", getModuleId(p), getFunctionId(p), m);
 
@@ -268,13 +270,35 @@ mat_apply1(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int var)
 	getArg(r, 0) = getArg(p,0);
 	tpe = getArgType(mb,p,0);
 
+	if (is_identity) {
+		q = newInstruction(mb, ASSIGNsymbol);
+		getArg(q, 0) = newTmpVariable(mb, TYPE_oid);
+		q->retc = 1;
+		q->argc = 1;
+		q = pushOid(mb, q, 0);
+		ident_var = getArg(q, 0);
+		pushInstruction(mb, q);
+	}
 	for(k=1; k < mat[m].mi->argc; k++) {
-		InstrPtr q = copyInstruction(p);
+		q = copyInstruction(p);
 
 		getArg(q, 0) = newTmpVariable(mb, tpe);
-		getArg(q, var) = getArg(mat[m].mi, k);
+		if (is_identity)
+			getArg(q, 1) = newTmpVariable(mb, TYPE_oid);
+		getArg(q, var+is_identity) = getArg(mat[m].mi, k);
+		if (is_identity) {
+			getArg(q, 3) = ident_var;
+			q->retc = 2;
+			q->argc = 4;
+			/* make sure to resolve again */
+			q->token = ASSIGNsymbol; 
+			q->typechk = TYPE_UNKNOWN;
+        		q->fcn = NULL;
+        		q->blk = NULL;
+		}
+		ident_var = getArg(q, 1);
 		pushInstruction(mb, q);
-		if (is_mirror) {
+		if (is_mirror || is_identity) {
 			propagateMirror(mb, getArg(mat[m].mi, k), getArg(q,0));
 		} else if (is_select)
 			propagatePartnr(mb, getArg(mat[m].mi, k), getArg(q,0), k);
@@ -763,6 +787,44 @@ group_by_ext(mat_t *mat, int mtop, int g)
 			return i;
 	}
 	return 0;
+}
+
+/* In some cases we have non groupby attribute columns, these require 
+ * gext.leftfetchjoin(mat.pack(per partition ext.leftfetchjoins(x))) 
+ */
+
+static int
+mat_group_project(MalBlkPtr mb, InstrPtr p, mat_t *mat, int mtop, int e, int a)
+{
+	int tp = getArgType(mb,p,0), k;
+	int tail = getTailType(tp);
+	InstrPtr ai1 = newInstruction(mb, ASSIGNsymbol), r;
+
+	setModuleId(ai1,matRef);
+	setFunctionId(ai1,packRef);
+	getArg(ai1,0) = newTmpVariable(mb, tp);
+
+	assert(mat[e].mi->argc == mat[a].mi->argc);
+	for(k=1; k<mat[a].mi->argc; k++) {
+		InstrPtr q = copyInstruction(p);
+
+		getArg(q,0) = newTmpVariable(mb, tp);
+		getArg(q,1) = getArg(mat[e].mi,k);
+		getArg(q,2) = getArg(mat[a].mi,k);
+		pushInstruction(mb,q);
+
+		/* pack the result into a mat */
+		ai1 = pushArgument(mb,ai1,getArg(q,0));
+	}
+	pushInstruction(mb, ai1);
+
+	r = copyInstruction(p);
+	getArg(r,1) = mat[e].mv;
+	getArg(r,2) = getArg(ai1,0);
+	pushInstruction(mb,r);
+	if (tail == TYPE_oid)
+		mtop = mat_add_var(mat, mtop, ai1, r, getArg(r, 0), mat_ext,  -1, -1);
+	return mtop;
 }
 
 /* Per partition aggregates are merged and aggregated together. For 
@@ -1468,7 +1530,11 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		   (m=is_a_mat(getArg(p,1), mat, mtop)) >= 0 &&
 		   (n=is_a_mat(getArg(p,2), mat, mtop)) >= 0 &&
 		   (mat[m].type == mat_ext || mat[n].type == mat_grp)) {
-			pushInstruction(mb, copyInstruction(p));
+			assert(mat[m].pushed);
+			if (!mat[n].pushed) 
+				mtop = mat_group_project(mb, p, mat, mtop, m, n);
+			else
+				pushInstruction(mb, copyInstruction(p));
 			continue;
 		}
 

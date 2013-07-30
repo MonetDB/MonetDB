@@ -67,7 +67,7 @@ static char *mero_host = NULL;
 static int mero_port = -1;
 static char *mero_pass = NULL;
 static char monetdb_quiet = 0;
-static int TERMWIDTH = 80;  /* default to classic terminal width */
+static int TERMWIDTH = 0;  /* default to no wrapping */
 
 static void
 command_help(int argc, char *argv[])
@@ -822,7 +822,7 @@ command_status(int argc, char *argv[])
 		*/
 
 		len = dbwidth < 4 ? 4 : dbwidth + 2 + 5 + 2 + 8 + 2 + uriwidth;
-		if (len > twidth) {
+		if (twidth > 0 && len > twidth) {
 			if (len - twidth < 10) {
 				uriwidth -= len - twidth;
 				if (dbwidth < 4)
@@ -878,7 +878,7 @@ command_discover(int argc, char *argv[])
 	char *buf;
 	char *p, *q;
 	size_t twidth = TERMWIDTH;
-	char *location;
+	char *location = NULL;
 	char *match = NULL;
 	size_t numlocs = 50;
 	size_t posloc = 0;
@@ -912,7 +912,8 @@ command_discover(int argc, char *argv[])
 			fprintf(stderr, "%s: %s\n", argv[0], p);
 			exit(1);
 		}
-		location = malloc(twidth + 1);
+		if (twidth > 0)
+			location = malloc(twidth + 1);
 		while ((p = strtok(NULL, "\n")) != NULL) {
 			if ((q = strchr(p, '\t')) == NULL) {
 				/* doesn't look correct */
@@ -925,8 +926,12 @@ command_discover(int argc, char *argv[])
 			snprintf(path, sizeof(path), "%s%s", q, p);
 
 			if (match == NULL || glob(match, path)) {
-				/* cut too long location name */
-				abbreviateString(location, path, twidth);
+				if (twidth > 0) {
+					/* cut too long location name */
+					abbreviateString(location, path, twidth);
+				} else {
+					location = path;
+				}
 				/* store what we found */
 				if (posloc == numlocs)
 					locations = realloc(locations,
@@ -936,7 +941,8 @@ command_discover(int argc, char *argv[])
 					loclen = strlen(location);
 			}
 		}
-		free(location);
+		if (twidth > 0)
+			free(location);
 	}
 
 	free(buf);
@@ -1220,7 +1226,7 @@ command_get(int argc, char *argv[])
 	int i;
 	sabdb *orig, *stats;
 	int twidth = TERMWIDTH;
-	char *source, *value;
+	char *source, *value = NULL;
 	confkeyval *kv;
 	confkeyval *defprops = getDefaultProps();
 	confkeyval *props = getDefaultProps();
@@ -1305,13 +1311,15 @@ command_get(int argc, char *argv[])
 	readPropsBuf(defprops, buf + 3);
 	free(buf);
 
-	/* name = 15 */
-	/* prop = 8 */
-	/* source = 7 */
-	twidth -= 15 + 2 + 8 + 2 + 7 + 2;
-	if (twidth < 6)
-		twidth = 6;
-	value = malloc(sizeof(char) * twidth + 1);
+	if (twidth > 0) {
+		/* name = 15 */
+		/* prop = 8 */
+		/* source = 7 */
+		twidth -= 15 + 2 + 8 + 2 + 7 + 2;
+		if (twidth < 6)
+			twidth = 6;
+		value = malloc(sizeof(char) * twidth + 1);
+	}
 	stats = orig;
 	while (stats != NULL) {
 		e = control_send(&buf, mero_host, mero_port,
@@ -1379,19 +1387,32 @@ command_get(int argc, char *argv[])
 			/* special virtual case */
 			if (strcmp(p, "name") == 0) {
 				source = "-";
-				abbreviateString(value, stats->dbname, twidth);
+				if (twidth > 0) {
+					abbreviateString(value, stats->dbname, twidth);
+				} else {
+					value = stats->dbname;
+				}
 			} else {
 				kv = findConfKey(props, p);
 				if (kv == NULL)
 					continue;
 				if (kv->val == NULL) {
+					char *y = NULL;
 					kv = findConfKey(defprops, p);
 					source = "default";
-					abbreviateString(value,
-							kv != NULL && kv->val != NULL ? kv->val : "<unknown>", twidth);
+					y = kv != NULL && kv->val != NULL ? kv->val : "<unknown>";
+					if (twidth > 0) {
+						abbreviateString(value, y, twidth);
+					} else {
+						value = y;
+					}
 				} else {
 					source = "local";
-					abbreviateString(value, kv->val, twidth);
+					if (twidth > 0) {
+						abbreviateString(value, kv->val, twidth);
+					} else {
+						value = kv->val;
+					}
 				}
 			}
 
@@ -1403,8 +1424,8 @@ command_get(int argc, char *argv[])
 		stats = stats->next;
 	}
 
-
-	free(value);
+	if (twidth > 0)
+		free(value);
 	msab_freeStatus(&orig);
 	free(props);
 }
@@ -1565,7 +1586,7 @@ main(int argc, char *argv[])
 #ifdef TIOCGWINSZ
 	struct winsize ws;
 
-	if (ioctl(fileno(stdin), TIOCGWINSZ, &ws) == 0 && ws.ws_col > 0)
+	if (ioctl(fileno(stdout), TIOCGWINSZ, &ws) == 0 && ws.ws_col > 0)
 		TERMWIDTH = ws.ws_col;
 #endif
 

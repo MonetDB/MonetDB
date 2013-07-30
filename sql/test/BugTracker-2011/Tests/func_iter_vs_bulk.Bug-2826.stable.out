@@ -36,16 +36,16 @@ Ready.
 % 90 # length
 function user.s5_1{autoCommit=true}(A0:flt):void;
     X_3 := sql.mvc();
-    X_4:bat[:oid,:oid]  := sql.tid(X_3,"sys","tab_2826");
     X_7 := sql.bind(X_3,"sys","tab_2826","d",0);
     (X_10,r1_10) := sql.bind(X_3,"sys","tab_2826","d",2);
     X_13 := sql.bind(X_3,"sys","tab_2826","d",1);
     X_15 := sql.delta(X_7,X_10,r1_10,X_13);
-    X_16 := algebra.leftfetchjoin(X_4,X_15);
+    X_16 := X_15;
     X_17 := batcalc.flt(X_16);
-    X_40 := batmmath.log10(X_17);
-    X_18 := algebra.thetasubselect(X_40,A0,">");
-    X_20 := algebra.leftfetchjoin(X_18,X_16);
+    X_37 := batmmath.log10(X_17);
+    X_4:bat[:oid,:oid]  := sql.tid(X_3,"sys","tab_2826");
+    X_18 := algebra.thetasubselect(X_37,X_4,A0,">");
+    X_20 := sql.projectdelta(X_18,X_7,X_10,r1_10,X_13);
     X_21 := sql.resultSet(1,1,X_20);
     sql.rsColumn(X_21,"sys.tab_2826","d","double",53,0,X_20);
     X_26 := io.stdout();

@@ -1,0 +1,63 @@
+stdout of test 'mitosis-floor.Bug-3330` in directory 'sql/test/BugTracker-2013` itself:
+
+
+# 20:31:24 >  
+# 20:31:24 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38400" "--set" "mapi_usock=/var/tmp/mtest-25950/.s.monetdb.38400" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/niels/scratch/rc-clean/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2013" "--set" "mal_listing=0"
+# 20:31:24 >  
+
+# MonetDB 5 server v11.15.12
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2013', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 3.775 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2013 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://niels.nesco.mine.nu:38400/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-25950/.s.monetdb.38400
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 20:31:25 >  
+# 20:31:25 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-25950" "--port=38400"
+# 20:31:25 >  
+
+#create table error (x int, y int, intensity int);
+#copy 2 records into error from stdin delimiters ',','\n';
+#1,2,3
+#4,5,6
+#
+[ 2	]
+#select
+#	tilex,
+#	tiley,
+#	intensity,
+#	count(*) as count
+#from (
+#	select
+#		floor(x/16) as tilex,
+#		floor(y/16) as tiley,
+#		intensity
+#	from
+#		error
+#) as image
+#group by
+#	tilex,
+#	tiley,
+#	intensity
+#;
+% sys.image,	sys.image,	sys.image,	sys.L1 # table_name
+% tilex,	tiley,	intensity,	count # name
+% real,	real,	int,	wrd # type
+% 15,	15,	1,	1 # length
+[ 0,	0,	3,	1	]
+[ 0,	0,	6,	1	]
+#drop table error;
+
+# 20:31:25 >  
+# 20:31:25 >  "Done."
+# 20:31:25 >  
+
