@@ -61,8 +61,8 @@ Ready.
 #  EXISTS (SELECT pre FROM _rank2933 AS ancestor WHERE
 #    ancestor.pre < _rank1.pre AND _rank1.pre < ancestor.post AND
 #    ancestor.pre < _rank2.pre AND _rank2.pre < ancestor.post);
-% sys.L3 # table_name
-% L3 # name
+% sys.L1 # table_name
+% L1 # name
 % wrd # type
 % 1 # length
 [ 2	]
@@ -77,15 +77,15 @@ Ready.
 #    ancestor.pre < _rank1.pre AND _rank1.pre < ancestor.post 
 #  INTERSECT SELECT pre FROM _rank2933 AS ancestor WHERE
 #    ancestor.pre < _rank2.pre AND _rank2.pre < ancestor.post);
-% sys.L5 # table_name
-% L5 # name
+% sys.L1 # table_name
+% L1 # name
 % wrd # type
 % 1 # length
 [ 2	]
 #DROP TABLE _rank2933;
 #SELECT 123 AS dummy1 FROM tables n WHERE EXISTS ( SELECT 456 AS dummy2 FROM
 #	(SELECT * FROM columns) nnn WHERE n.id > 0 );
-% .L2 # table_name
+% .L # table_name
 % dummy1 # name
 % tinyint # type
 % 3 # length

@@ -62,6 +62,12 @@ typedef struct expression {
 #define EXP_DISTINCT	1
 #define NO_NIL		2
 #define TOPN_INCLUDING	4
+
+#define APPLY_JOIN 	8
+#define APPLY_LOJ 	16
+#define APPLY_EXISTS	32
+#define APPLY_NOTEXISTS	64
+
 /* ASCENDING > 15 else we have problems with cmp types */
 #define ASCENDING	16
 #define CMPMASK		(ASCENDING-1)
@@ -133,6 +139,7 @@ typedef enum operator_type {
 	op_full,
 	op_semi,
 	op_anti,
+	op_apply,
 	op_union,
 	op_inter,
 	op_except,
@@ -172,6 +179,8 @@ typedef enum operator_type {
 	(op == op_join || is_outerjoin(op))
 #define is_semi(op) \
 	(op == op_semi || op == op_anti)
+#define is_apply(op) \
+	(op == op_apply)
 #define is_select(op) \
 	(op == op_select)
 #define is_set(op) \

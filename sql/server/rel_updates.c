@@ -425,7 +425,7 @@ insert_into(mvc *sql, dlist *qname, dlist *columns, symbol *val_or_q)
 	} else {
 		exp_kind ek = {type_value, card_relation, TRUE};
 
-		r = rel_subquery(sql, NULL, val_or_q, ek);
+		r = rel_subquery(sql, NULL, val_or_q, ek, APPLY_JOIN);
 	}
 	if (!r) 
 		return NULL;
@@ -813,7 +813,7 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_where)
 	} else {
 		sql_exp *e = NULL, **updates;
 		sql_rel *r = NULL;
-		list *exps = new_exp_list(sql->sa), *pexps;
+		list *exps = new_exp_list(sql->sa);//, *pexps;
 		dnode *n;
 
 		if (t && !isTempTable(t) && STORE_READONLY(active_store_type))
@@ -842,13 +842,13 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_where)
 			r = rel_basetable(sql, t, t->base.name );
 		}
 	
-		pexps = rel_projections(sql, r, NULL, 1, 0);
+		//pexps = rel_projections(sql, r, NULL, 1, 0);
 		/* We simply create a relation %TID%, updates */
 
 		/* first create the project */
 		e = exp_column(sql->sa, rel_name(r), "%TID%", sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
-		r = rel_project(sql->sa, r, append(new_exp_list(sql->sa),e));
-		e = exp_column(sql->sa, rel_name(r), "%TID%", sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
+		//r = rel_project(sql->sa, r, append(new_exp_list(sql->sa),e));
+		//e = exp_column(sql->sa, rel_name(r), "%TID%", sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
 		append(exps, e);
 		updates = table_update_array(sql, t);
 		for (n = assignmentlist->h; n; n = n->next) {
@@ -873,36 +873,39 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_where)
 				v = rel_value_exp(sql, &rel_val, a, sql_sel, ek);
 
 				if (!v) {
-					symbol *s = n->data.sym;
+					//symbol *s = n->data.sym;
 					sql->errstr[0] = 0;
 					sql->session->status = status;
-					/*v = rel_value_exp(sql, &r, a, sql_sel, ek);*/
-					s->token = SQL_COLUMN;
-					v = rel_column_exp(sql, &r, s, sql_sel);
+					v = rel_value_exp(sql, &r, a, sql_sel, ek);
+					//s->token = SQL_COLUMN;
+					//v = rel_column_exp(sql, &r, s, sql_sel);
 
+					/*
 					if (v && r && r->op == op_project) {
 						sql_rel *rl = r->l;
 
 						if (rl && rl->op == op_project)
 							list_merge(rl->exps, pexps, (fdup)NULL);
 					}
+					*/
 				}
 				if (!v || (v = rel_check_type(sql, &c->type, v, type_equal)) == NULL) {
 					rel_destroy(r);
 					return NULL;
 				}
 				if (rel_val) {
-					sql_rel *nr;
-					list *exps;
+					//sql_rel *nr;
+					//list *exps;
 
 					if (!exp_name(v))
 						exp_label(sql->sa, v, ++sql->label);
 					rel_val = rel_project(sql->sa, rel_val, rel_projections(sql, rel_val, NULL, 0, 1));
 					rel_project_add_exp(sql, rel_val, v);
-					exps = rel_projections(sql, r, NULL, 0, 1);
-					nr = rel_project(sql->sa, rel_crossproduct(sql->sa, rel_dup(r->l), rel_val, op_join), exps);
-					rel_destroy(r);
-					r = nr;
+					//exps = rel_projections(sql, r, NULL, 0, 1);
+					//nr = rel_project(sql->sa, rel_crossproduct(sql->sa, rel_dup(r->l), rel_val, op_join), exps);
+					r = rel_crossproduct(sql->sa, r, rel_val, op_join);
+					//rel_destroy(r);
+					//r = nr;
 					v = exp_column(sql->sa, NULL, exp_name(v), exp_subtype(v), v->card, has_nil(v), is_intern(v));
 				}		
 			} else {
@@ -918,6 +921,8 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_where)
 			exp_setname(sql->sa, v, c->t->base.name, c->base.name);
 			updates[c->colnr] = v;
 		}
+		e = exp_column(sql->sa, rel_name(r), TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
+		r = rel_project(sql->sa, r, append(new_exp_list(sql->sa),e));
 		r = rel_update(sql, rel_basetable(sql, t, tname), r, updates, exps);
 		return r;
 	}
@@ -1252,7 +1257,7 @@ copyto(mvc *sql, symbol *sq, str filename, dlist *seps, str null_string)
 	char *ns = (null_string)?null_string:"null";
 	sql_exp *tsep_e, *rsep_e, *ssep_e, *ns_e, *fname_e;
 	exp_kind ek = {type_value, card_relation, TRUE};
-	sql_rel *r = rel_subquery(sql, NULL, sq, ek);
+	sql_rel *r = rel_subquery(sql, NULL, sq, ek, APPLY_JOIN);
 
 	if (!r) 
 		return NULL;

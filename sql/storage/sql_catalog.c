@@ -20,6 +20,8 @@
 #include "monetdb_config.h"
 #include "sql_catalog.h"
 
+char *TID = "%TID%";
+
 static void *
 _list_find_name(list *l, char *name)
 {

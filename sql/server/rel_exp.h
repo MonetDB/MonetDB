@@ -111,6 +111,7 @@ extern int exp_has_func(sql_exp *e);
 
 extern sql_exp *exps_bind_column( list *exps, char *cname, int *ambiguous);
 extern sql_exp *exps_bind_column2( list *exps, char *rname, char *cname);
+extern sql_exp *exps_bind_alias( list *exps, char *rname, char *cname);
 
 extern int exps_card( list *l );
 extern void exps_fix_card( list *exps, int card);

@@ -168,8 +168,8 @@ Dependencies between database objects
 [ "queryhistory",	"callhistory_id_fkey",	"DEP_FKEY"	]
 [ "t1",	"t2_id_t1_fkey",	"DEP_FKEY"	]
 #SELECT t.name, f.name, 'DEP_FUNC' from functions as f, tables as t, dependencies as dep where t.id = dep.id AND f.id = dep.depend_id AND dep.depend_type = 7 AND t.type = 0 ORDER BY t.name, f.name;
-% .t,	.f,	.L # table_name
-% name,	name,	single_value # name
+% .t,	.f,	.L1 # table_name
+% name,	name,	L1 # name
 % varchar,	varchar,	char # type
 % 17,	35,	8 # length
 [ "auths",	"dependencies_owners_on_schemas",	"DEP_FUNC"	]
@@ -243,8 +243,8 @@ Dependencies between database objects
 % 2,	8,	9 # length
 [ "id",	"id_index",	"DEP_INDEX"	]
 #SELECT c.name, f.name, 'DEP_FUNC' from functions as f, columns as c, dependencies as dep where c.id = dep.id AND f.id = dep.depend_id AND dep.depend_type = 7 ORDER BY c.name, f.name;
-% .c,	.f,	.L # table_name
-% name,	name,	single_value # name
+% .c,	.f,	.L1 # table_name
+% name,	name,	L1 # name
 % varchar,	varchar,	char # type
 % 11,	35,	8 # length
 [ "atomwidth",	"storagemodel",	"DEP_FUNC"	]
@@ -346,8 +346,8 @@ Dependencies between database objects
 [ "age_v1",	"trigger_test",	"DEP_TRIGGER"	]
 [ "id",	"trigger_test_4",	"DEP_TRIGGER"	]
 #SELECT v.name, f.name, 'DEP_FUNC' from functions as f, tables as v, dependencies as dep where v.id = dep.id AND f.id = dep.depend_id AND dep.depend_type = 7 AND v.type = 1 ORDER BY v.name, f.name;
-% .v,	.f,	.L # table_name
-% name,	name,	single_value # name
+% .v,	.f,	.L1 # table_name
+% name,	name,	L1 # name
 % varchar,	varchar,	char # type
 % 7,	34,	8 # length
 [ "columns",	"dependencies_columns_on_functions",	"DEP_FUNC"	]
@@ -376,8 +376,8 @@ Dependencies between database objects
 % varchar,	varchar,	char # type
 % 0,	0,	11 # length
 #SELECT f1.name, f2.name, 'DEP_FUNC' from functions as f1, functions as f2, dependencies as dep where f1.id = dep.id AND f2.id = dep.depend_id AND dep.depend_type = 7 order by f2.name, f1.name;
-% sys.f1,	sys.f2,	.L # table_name
-% name,	name,	single_value # name
+% sys.f1,	sys.f2,	.L1 # table_name
+% name,	name,	L1 # name
 % varchar,	varchar,	char # type
 % 15,	35,	8 # length
 [ "=",	"columnsize",	"DEP_FUNC"	]
@@ -504,8 +504,8 @@ Dependencies between functions with same name
 #	END IF;
 #END;
 #SELECT f1.name, f2.name, 'DEP_FUNC' from functions as f1, functions as f2, dependencies as dep where f1.id = dep.id AND f2.id = dep.depend_id AND dep.depend_type = 7 order by f2.name, f1.name;
-% sys.f1,	sys.f2,	.L # table_name
-% name,	name,	single_value # name
+% sys.f1,	sys.f2,	.L1 # table_name
+% name,	name,	L1 # name
 % varchar,	varchar,	char # type
 % 15,	35,	8 # length
 [ "=",	"columnsize",	"DEP_FUNC"	]
@@ -589,8 +589,8 @@ Dependencies between functions with same name
 #DROP FUNCTION f3;
 #DROP ALL FUNCTION f1;
 #SELECT f1.name, f2.name, 'DEP_FUNC' from functions as f1, functions as f2, dependencies as dep where f1.id = dep.id AND f2.id = dep.depend_id AND dep.depend_type = 7 order by f2.name, f1.name;
-% sys.f1,	sys.f2,	.L # table_name
-% name,	name,	single_value # name
+% sys.f1,	sys.f2,	.L1 # table_name
+% name,	name,	L1 # name
 % varchar,	varchar,	char # type
 % 15,	35,	8 # length
 [ "=",	"columnsize",	"DEP_FUNC"	]
@@ -713,8 +713,8 @@ Cleanup
 % 12,	19,	8 # length
 [ "queryhistory",	"callhistory_id_fkey",	"DEP_FKEY"	]
 #SELECT t.name, f.name, 'DEP_FUNC' from functions as f, tables as t, dependencies as dep where t.id = dep.id AND f.id = dep.depend_id AND dep.depend_type = 7 AND t.type = 0 ORDER BY t.name, f.name;
-% .t,	.f,	.L # table_name
-% name,	name,	single_value # name
+% .t,	.f,	.L1 # table_name
+% name,	name,	L1 # name
 % varchar,	varchar,	char # type
 % 17,	35,	8 # length
 [ "auths",	"dependencies_owners_on_schemas",	"DEP_FUNC"	]
@@ -782,8 +782,8 @@ Cleanup
 % varchar,	varchar,	char # type
 % 0,	0,	9 # length
 #SELECT c.name, f.name, 'DEP_FUNC' from functions as f, columns as c, dependencies as dep where c.id = dep.id AND f.id = dep.depend_id AND dep.depend_type = 7 ORDER BY c.name, f.name;
-% .c,	.f,	.L # table_name
-% name,	name,	single_value # name
+% .c,	.f,	.L1 # table_name
+% name,	name,	L1 # name
 % varchar,	varchar,	char # type
 % 11,	35,	8 # length
 [ "atomwidth",	"storagemodel",	"DEP_FUNC"	]
@@ -879,8 +879,8 @@ Cleanup
 % varchar,	varchar,	char # type
 % 0,	0,	11 # length
 #SELECT v.name, f.name, 'DEP_FUNC' from functions as f, tables as v, dependencies as dep where v.id = dep.id AND f.id = dep.depend_id AND dep.depend_type = 7 AND v.type = 1 ORDER BY v.name, f.name;
-% .v,	.f,	.L # table_name
-% name,	name,	single_value # name
+% .v,	.f,	.L1 # table_name
+% name,	name,	L1 # name
 % varchar,	varchar,	char # type
 % 7,	34,	8 # length
 [ "columns",	"dependencies_columns_on_functions",	"DEP_FUNC"	]
@@ -908,8 +908,8 @@ Cleanup
 % varchar,	varchar,	char # type
 % 0,	0,	11 # length
 #SELECT f1.name, f2.name, 'DEP_FUNC' from functions as f1, functions as f2, dependencies as dep where f1.id = dep.id AND f2.id = dep.depend_id AND dep.depend_type = 7 ORDER BY f1.name, f2.name;
-% sys.f1,	sys.f2,	.L # table_name
-% name,	name,	single_value # name
+% sys.f1,	sys.f2,	.L1 # table_name
+% name,	name,	L1 # name
 % varchar,	varchar,	char # type
 % 15,	35,	8 # length
 [ "<",	"ms_stuff",	"DEP_FUNC"	]

@@ -19,30 +19,30 @@ Ready.
 
 
 
-+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
++-------------------------------------------------------------------------------------------------------------------------+
 | rel                                                                                                                                                                                                                                                                       |
-+===================================================================================================================================================================================================================================================================================================================+
++=========================================================================================================================+
 | project (                                                                                                                                                                                                                                                                 |
 | | group by (                                                                                                                                                                                                                                                              |
 | | | union (                                                                                                      |
 | | | | group by (                                                                                                 |
 | | | | | project (                                                                                                                                                                                                                                                         |
 | | | | | | select (                                                                                                                                                                                                                                                        |
-| | | | | | | table(sys._tables) [ _tables.id as p.id, _tables.name as p.name, _tables.schema_id as p.schema_id, _tables.query as p.query, _tables.type as p.type, _tables.system as p.system, _tables.commit_action as p.commit_action, _tables.readonly as p.readonly, _tables.%TID% NOT NULL as p.%TID% ] COUNT  |
+| | | | | | | table(sys._tables) [ _tables.id as p.id, _tables.type as p.type, _tables.%TID% NOT NULL as p.%TID% ] COUNT  |
 | | | | | | ) [ p.type != smallint[tinyint "2"] ]                                                                                                                                                                                                                                                                   |
 | | | | | ) [ p.id as tables.id ]                                                                                  |
-| | | | ) [  ] [ sys.count() NOT NULL as L1 ],                                                                     |
+| | | | ) [  ] [ sys.count() NOT NULL as L1.L1 ],                                                                         |
 | | | | group by (                                                                                                 |
 | | | | | project (                                                                                                                                                                                                                                                         |
 | | | | | | select (                                                                                                                                                                                                                                                        |
-| | | | | | | table(tmp._tables) [ _tables.id as t.id, _tables.name as t.name, _tables.schema_id as t.schema_id, _tables.query as t.query, _tables.type as t.type, _tables.system as t.system, _tables.commit_action as t.commit_action, _tables.readonly as t.readonly, _tables.%TID% NOT NULL as t.%TID% ] COUNT  |
+| | | | | | | table(tmp._tables) [ _tables.id as t.id, _tables.type as t.type, _tables.%TID% NOT NULL as t.%TID% ] COUNT  |
 | | | | | | ) [ t.type != smallint[tinyint "2"] ]                                                                                                                                                                                                                                                                   |
 | | | | | ) [ t.id as tables.id ]                                                                                  |
-| | | | ) [  ] [ sys.count() NOT NULL as L1 ]                                                                      |
-| | | ) [ L1 ]                                                                                                     |
-| | ) [  ] [ sys.sum no nil (L1) as L1 ]                                                                           |
+| | | | ) [  ] [ sys.count() NOT NULL as L1.L1 ]                                                                          |
+| | | ) [ L1.L1 ]                                                                                                         |
+| | ) [  ] [ sys.sum no nil (L1.L1) as L1.L1 ]                                                                            |
 | ) [ L1 NOT NULL as L1.L1 ]                                                                                                                                                                                                                                                                                        |
-+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
++-------------------------------------------------------------------------------------------------------------------------+
 20 rows
 
 Operation successful

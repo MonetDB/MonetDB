@@ -30,5 +30,4 @@ mitosis-floor.Bug-3330
 avg_needs_abort_on_error.Bug-3329
 unique_constraint_on_declared_table.Bug-3319
 update_on_declared_table.Bug-3318
-
-
+correlated_subselect.Bug-3317

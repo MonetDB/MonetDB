@@ -67,6 +67,11 @@ Ready.
 % id,	n,	flag,	L2 # name
 % int,	int,	int,	wrd # type
 % 1,	1,	2,	1 # length
+[ 1,	1,	NULL,	0	]
+[ 2,	1,	NULL,	0	]
+[ 3,	1,	NULL,	0	]
+[ 4,	2,	NULL,	0	]
+[ 5,	1,	42,	0	]
 [ 6,	1,	42,	1	]
 #rollback;
 

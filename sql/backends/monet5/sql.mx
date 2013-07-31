@@ -283,11 +283,11 @@ address mvc_clear_table_wrap
 comment "Clear table";
 
 pattern tid( mvc:int, sname:str, tname:str):bat[:oid,:any_3] 
-address TID
+address SQLtid
 comment "Return the tables tid column.";
 
 pattern tid( mvc:int, sname:str, tname:str, part_nr:int, nr_parts:int ):bat[:oid,:any_3] 
-address TID
+address SQLtid
 comment "Return the tables tid column.";
 
 pattern delete{unsafe}(mvc:int, sname:str, tname:str, b:any):int
@@ -539,6 +539,18 @@ pattern storage()(
 	sorted:bat[:oid,:bit])
 address sql_storage
 comment "return a table with storage information ";
+
+command calc.identity(:any_2) :oid 
+address SQLidentity
+comment "Returns a unique row identitfier.";
+
+command batcalc.identity(b:bat[:oid,:any_2]) :bat[:oid,:oid] 
+address BATSQLidentity
+comment "Returns the unique row identitfiers.";
+
+pattern batcalc.identity(b:bat[:oid,:any_2], s:oid ) (resb:bat[:oid,:oid],ns:oid)
+address PBATSQLidentity
+comment "Returns the unique row identitfiers.";
 
 # @- SQL function aliases
 # The code generate should identify the precise module
@@ -1327,7 +1339,7 @@ sql5_export str mvc_bind_dbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, In
 sql5_export str mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str mvc_clear_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str mvc_delete_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str TID(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str DELTAbat(bat *result, bat *col, bat *uid, bat *uval, bat *ins);
 sql5_export str DELTAsub(bat *result, bat *col, bat *cid, bat *uid, bat *uval, bat *ins);
 sql5_export str DELTAproject(bat *result, bat *subselect, bat *col, bat *uid, bat *uval, bat *ins);
@@ -1394,6 +1406,9 @@ sql5_export str sql_rank_grp(bat *rid, bat *bid, bat *gid, bat *gpe);
 sql5_export str sql_rank(bat *rid, bat *bid);
 sql5_export str sql_dense_rank_grp(bat *rid, bat *bid, bat *gid, bat *gpe);
 sql5_export str sql_dense_rank(bat *rid, bat *bid);
+sql5_export str SQLidentity(bat *rid, bat *bid);
+sql5_export str BATSQLidentity(bat *rid, bat *bid);
+sql5_export str PBATSQLidentity(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 @= round_export
 sql5_export str @1_dec_round_wrap( @1 *res, @1 *v, @1 *r );
 sql5_export str @1_round_wrap( @1 *res, @1 *v, int *d, int *s, bte *r );
@@ -3679,9 +3694,9 @@ DELTAproject(bat *result, bat *sub, bat *col, bat *uid, bat *uval, bat *ins)
 	return MAL_SUCCEED;
 }
 
-/* str TID(bat *result, mvc *m, str *sname, str *tname) */
+/* str SQLtid(bat *result, mvc *m, str *sname, str *tname) */
 str
-TID(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int *res = (int*)getArgReference(stk, pci, 0);
 	mvc *m = NULL;
@@ -4547,6 +4562,50 @@ not_unique_oids(bat *ret, bat* bid)
 	BBPunfix(b->batCacheid);
 	BBPkeepref(*ret = bn->batCacheid);
 	return MAL_SUCCEED;
+}
+
+/* row case */
+str SQLidentity(bat *ret, bat *bid)
+{
+	BAT *bn, *b;
+
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		throw(SQL, "batcalc.identity", "Cannot access descriptor");
+	}
+	bn = VIEWhead(b);
+	BBPunfix(b->batCacheid);
+	BBPkeepref(*ret = bn->batCacheid);
+	return MAL_SUCCEED;
+}
+
+str BATSQLidentity(bat *ret, bat *bid)
+{
+	return BKCmirror(ret, bid);
+}
+
+str PBATSQLidentity(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int *res = (int *)getArgReference(stk, pci, 0);
+	oid *ns = (oid *)getArgReference(stk, pci, 1);
+	int *bid = (int *)getArgReference(stk, pci, 2);
+	oid *s = (oid *)getArgReference(stk, pci, 3);
+        BAT *b, *bn = NULL;
+	
+	(void)cntxt;
+	(void)mb;
+        if ((b = BATdescriptor(*bid)) == NULL) {
+                throw(MAL, "batcalc.identity", RUNTIME_OBJECT_MISSING);
+        }
+        bn = BATmark(b, *s);
+        if (bn != NULL) {
+		*ns = *s + BATcount(b);
+                BBPreleaseref(b->batCacheid);
+                BBPkeepref(*res = bn->batCacheid);
+                return MAL_SUCCEED;
+        }
+        BBPreleaseref(b->batCacheid);
+        throw(MAL, "batcalc.identity", GDK_EXCEPTION);
+
 }
 
 lng scales[20] = {

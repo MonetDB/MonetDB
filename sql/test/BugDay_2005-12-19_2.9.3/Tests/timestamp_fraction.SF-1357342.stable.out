@@ -30,8 +30,8 @@ Ready.
 #	length(cast(t2 as varchar(200))),
 #	length(cast(t3 as varchar(200)))
 #from t;
-% sys.L,	sys.L,	sys.L # table_name
-% length_t1,	length_t2,	length_t3 # name
+% sys.L1,	sys.L2,	sys.L2 # table_name
+% L1,	L2,	length_t3 # name
 % int,	int,	int # type
 % 2,	2,	2 # length
 [ 26,	19,	23	]

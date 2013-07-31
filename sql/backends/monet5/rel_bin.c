@@ -30,8 +30,6 @@
 
 static stmt * subrel_bin(mvc *sql, sql_rel *rel, list *refs);
 
-static char *TID = "%TID%";
-
 static stmt *
 refs_find_rel(list *refs, sql_rel *rel)
 {
@@ -517,9 +515,11 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, stm
 				list_append(l, ext);
 			}
 		}
+		/*
 		if (strcmp(f->func->base.name, "identity") == 0) 
 			s = stmt_mirror(sql->sa, l->h->data);
 		else
+		*/
 			s = stmt_Nop(sql->sa, stmt_list(sql->sa, l), e->f); 
 	} 	break;
 	case e_aggr: {
@@ -4461,6 +4461,8 @@ subrel_bin(mvc *sql, sql_rel *rel, list *refs)
 		s = rel2bin_join(sql, rel, refs);
 		sql->type = Q_TABLE;
 		break;
+	case op_apply:
+		assert(0);
 	case op_semi:
 	case op_anti:
 		s = rel2bin_semijoin(sql, rel, refs);

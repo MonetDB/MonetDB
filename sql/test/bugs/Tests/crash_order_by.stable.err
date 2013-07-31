@@ -71,9 +71,9 @@ stderr of test 'crash_order_by` in directory 'sql/test/bugs` itself:
 # 23:16:56 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=38180 
 # 23:16:56 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-19468/.s.monetdb.39762
 QUERY = select row_number() over (order by tables) as row, '1' limit 10;
-ERROR = !SELECT: subquery result missing
+ERROR = !SELECT: identifier 'tables' unknown
 
 # 23:16:56 >  
 # 23:16:56 >  Done.

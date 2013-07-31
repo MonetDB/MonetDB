@@ -74,7 +74,7 @@ Ready.
 #		"warehouse_class" AS "warehouse_class" 
 #	where
 #		"warehouse_class"."warehouse_class_id" = "warehouse"."warehouse_class_id" and 
-% sys.L,	sys.L3,	sys.L6,	sys.L11,	sys.L13,	sys.L15,	sys.L16 # table_name
+% .L,	.L3,	.L6,	.L11,	.L12,	.L13,	.L14 # table_name
 % c0,	m0,	m1,	m2,	m3,	m4,	m5 # name
 % varchar,	wrd,	wrd,	wrd,	wrd,	wrd,	wrd # type
 % 0,	1,	1,	1,	1,	1,	1 # length

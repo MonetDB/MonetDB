@@ -68094,8 +68094,8 @@ Ready.
 #(select 1 from voyages v
 #where c.trip = v.trip and v.boatname = 'AMSTERDAM'
 #and v.departure_harbour ='Texel');
-% voc.L3 # table_name
-% L3 # name
+% voc.L1 # table_name
+% L1 # name
 % wrd # type
 % 7 # length
 [ 1305366	]
