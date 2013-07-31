@@ -47,8 +47,9 @@ Ready.
 [ "LINESTRING (10 10, 20 20, 30 40)"	]
 [ "POLYGON ((10 10, 10 20, 20 20, 20 15, 10 10))"	]
 [ "POLYGON ((10 10, 10 20, 20 20, 20 15, 10 10), (15 15, 15 20, 10 15, 15 15))"	]
-% sys.,	sys.,	sys.,	sys. # table_name
-% or_or_=_dimension_g,	geometrytypeid_g,	srid_g,	envelope_g # name
+#SELECT CASE WHEN Dimension(g) IN (0,1,2) THEN 3 ELSE Dimension(g) END, GeometryTypeId(g), SRID(g), Envelope(g) FROM geoms where g is not NULL;
+% sys.L3,	sys.L4,	sys.L5,	sys.L5 # table_name
+% L3,	L4,	L5,	envelope_g # name
 % int,	int,	int,	geometry # type
 % 1,	1,	1,	0 # length
 [ 3,	0,	0,	"POINT (10 10)"	]
@@ -56,8 +57,8 @@ Ready.
 [ 3,	3,	0,	"POLYGON ((10 10, 20 10, 20 20, 10 20, 10 10))"	]
 [ 3,	3,	0,	"POLYGON ((10 10, 20 10, 20 20, 10 20, 10 10))"	]
 #SELECT IsEmpty(g), IsSimple(g), Boundary(g) FROM geoms where g is not NULL;
-% sys.,	sys.,	sys. # table_name
-% isempty_g,	issimple_g,	boundary_g # name
+% sys.L1,	sys.L2,	sys.L2 # table_name
+% L1,	L2,	boundary_g # name
 % boolean,	boolean,	geometry # type
 % 5,	5,	0 # length
 [ false,	true,	"GEOMETRYCOLLECTION EMPTY"	]

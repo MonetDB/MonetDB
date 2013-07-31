@@ -40,8 +40,9 @@ Ready.
 [ "LINESTRING (10 10, 20 20, 30 40)"	]
 [ "POLYGON ((10 10, 10 20, 20 20, 20 15, 10 10))"	]
 [ "POLYGON ((10 10, 10 20, 20 20, 20 15, 10 10), (15 15, 15 20, 10 15, 15 15))"	]
-% sys.a,	sys.b,	sys.,	sys.,	sys.,	sys. # table_name
-% g,	g,	equals_g,	disjoint_g,	Intersect_g,	touches_g # name
+#SELECT a.g, b.g, Equals(a.g,b.g), Disjoint(a.g,b.g), "Intersect"(a.g,b.g), Touches(a.g,b.g) FROM geoms a, geoms b where a.g is not NULL and b.g is not NULL;
+% sys.a,	sys.b,	sys.L1,	sys.L2,	sys.L3,	sys.L3 # table_name
+% g,	g,	L1,	L2,	L3,	touches_g # name
 % geometry,	geometry,	boolean,	boolean,	boolean,	boolean # type
 % 0,	0,	5,	5,	5,	5 # length
 [ "POINT (10 10)",	"POINT (10 10)",	true,	false,	true,	false	]
@@ -60,8 +61,9 @@ Ready.
 [ "POLYGON ((10 10, 10 20, 20 20, 20 15, 10 10), (15 15, 15 20, 10 15, 15 15))",	"LINESTRING (10 10, 20 20, 30 40)",	false,	false,	true,	false	]
 [ "POLYGON ((10 10, 10 20, 20 20, 20 15, 10 10), (15 15, 15 20, 10 15, 15 15))",	"POLYGON ((10 10, 10 20, 20 20, 20 15, 10 10))",	false,	false,	true,	false	]
 [ "POLYGON ((10 10, 10 20, 20 20, 20 15, 10 10), (15 15, 15 20, 10 15, 15 15))",	"POLYGON ((10 10, 10 20, 20 20, 20 15, 10 10), (15 15, 15 20, 10 15, 15 15))",	true,	false,	true,	false	]
-% sys.a,	sys.b,	sys.,	sys.,	sys.,	sys. # table_name
-% g,	g,	crosses_g,	within_g,	contains_g,	overlaps_g # name
+#SELECT a.g, b.g, Crosses(a.g,b.g), Within(a.g,b.g), Contains(a.g,b.g), Overlaps(a.g,b.g) FROM geoms a, geoms b where a.g is not NULL and b.g is not NULL;
+% sys.a,	sys.b,	sys.L1,	sys.L2,	sys.L3,	sys.L3 # table_name
+% g,	g,	L1,	L2,	L3,	overlaps_g # name
 % geometry,	geometry,	boolean,	boolean,	boolean,	boolean # type
 % 0,	0,	5,	5,	5,	5 # length
 [ "POINT (10 10)",	"POINT (10 10)",	false,	true,	true,	false	]
@@ -80,7 +82,8 @@ Ready.
 [ "POLYGON ((10 10, 10 20, 20 20, 20 15, 10 10), (15 15, 15 20, 10 15, 15 15))",	"LINESTRING (10 10, 20 20, 30 40)",	true,	false,	false,	false	]
 [ "POLYGON ((10 10, 10 20, 20 20, 20 15, 10 10), (15 15, 15 20, 10 15, 15 15))",	"POLYGON ((10 10, 10 20, 20 20, 20 15, 10 10))",	false,	true,	false,	false	]
 [ "POLYGON ((10 10, 10 20, 20 20, 20 15, 10 10), (15 15, 15 20, 10 15, 15 15))",	"POLYGON ((10 10, 10 20, 20 20, 20 15, 10 10), (15 15, 15 20, 10 15, 15 15))",	false,	true,	true,	false	]
-% sys.a,	sys.b,	sys. # table_name
+#SELECT a.g, b.g, Relate(a.g,b.g,'*F**T**F*') FROM geoms a, geoms b where a.g is not NULL and b.g is not NULL;
+% sys.a,	sys.b,	sys.L # table_name
 % g,	g,	relate_g # name
 % geometry,	geometry,	boolean # type
 % 0,	0,	5 # length
