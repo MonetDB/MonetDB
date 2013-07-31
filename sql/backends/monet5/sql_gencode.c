@@ -1724,7 +1724,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					q = pushStr(mb, q, fimp);
 				} else {
 					setVarType(mb,getArg(q,0),
-						newBatType(TYPE_any,f->res.type->localtype));
+						newBatType(TYPE_oid,f->res.type->localtype));
 					setVarUDFtype(mb,getArg(q,0));
 				}
 			} else {
@@ -1800,6 +1800,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			/* some "sub" aggregates have an extra
 			 * argument "abort_on_error" */
 			abort_on_error = sum_or_prod ||
+				strncmp(aggrfunc, "avg", 3) == 0 ||
 				strncmp(aggrfunc, "stdev", 5) == 0 ||
 				strncmp(aggrfunc, "variance", 8) == 0;
 
@@ -1810,7 +1811,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				e = _dumpstmt(sql, mb, s->op3);
 
 				q = newStmt(mb, mod, aggrfunc);
-				setVarType(mb, getArg(q, 0), newBatType(TYPE_any, restype));
+				setVarType(mb, getArg(q, 0), newBatType(TYPE_oid, restype));
 				setVarUDFtype(mb, getArg(q, 0));
 			} else {
 				if (no_nil) {

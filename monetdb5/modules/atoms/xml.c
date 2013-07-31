@@ -490,15 +490,19 @@ XMLelement(xml *ret, str *name, xml *nspace, xml *attr, xml *val)
 		len += strlen(*val + 1) + namelen + 2;	/* extra "<", ">", and name ("/" already counted) */
 	}
 	buf = GDKmalloc(len);
-	i = snprintf(buf, len, "C<%s", *name);
-	if (nspace && !strNil(*nspace))
-		i += snprintf(buf + i, len - i, " %s", *nspace + 1);
-	if (attr && !strNil(*attr))
-		i += snprintf(buf + i, len - i, " %s", *attr + 1);
-	if (!strNil(*val))
-		i += snprintf(buf + i, len - i, ">%s</%s>", *val + 1, *name);
-	else
-		i += snprintf(buf + i, len - i, "/>");
+	if (strNil(*val) && (!attr || strNil(*attr))) {
+		strcpy(buf, str_nil);
+	} else {
+		i = snprintf(buf, len, "C<%s", *name);
+		if (nspace && !strNil(*nspace))
+			i += snprintf(buf + i, len - i, " %s", *nspace + 1);
+		if (attr && !strNil(*attr))
+			i += snprintf(buf + i, len - i, " %s", *attr + 1);
+		if (!strNil(*val))
+			i += snprintf(buf + i, len - i, ">%s</%s>", *val + 1, *name);
+		else
+			i += snprintf(buf + i, len - i, "/>");
+	}
 	*ret = buf;
 	return MAL_SUCCEED;
 }

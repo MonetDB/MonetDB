@@ -875,7 +875,7 @@ BATXMLelement(int *ret, str *name, xml *nspace, xml *attr, int *bid)
 				goto bunins_failed;
 			}
 		}
-		if (strNil(t)) {
+		if (strNil(t) && (!attr || strNil(*attr))) {
 			strcpy(buf, str_nil);
 			bn->T->nonil = 0;
 		} else {

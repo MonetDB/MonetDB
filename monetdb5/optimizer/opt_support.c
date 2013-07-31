@@ -826,6 +826,8 @@ int isMapOp(InstrPtr p){
 		(getModuleId(p)== batcalcRef && getFunctionId(p) != mark_grpRef && getFunctionId(p) != rank_grpRef) ||
 		(getModuleId(p)== batmtimeRef) ||
 		(getModuleId(p)== batstrRef) ||
+		(getModuleId(p)== batmmathRef) ||
+		(getModuleId(p)== batxmlRef) ||
 		(getModuleId(p)== mkeyRef);
 }
 
