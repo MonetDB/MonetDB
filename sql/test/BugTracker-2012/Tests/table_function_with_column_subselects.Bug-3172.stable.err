@@ -27,10 +27,9 @@ stderr of test 'table_function_with_column_subselects.Bug-3172` in directory 'sq
 # 13:48:49 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=niels" "--port=32735"
 # 13:48:49 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-14412/.s.monetdb.30345
+MAPI  = (monetdb) /var/tmp/mtest-22265/.s.monetdb.33041
 QUERY = select * from x((select id from _tables), (select schema_id from _tables));
-ERROR = !TypeException:user.s2_1[115]:'sql.x' undefined in: _215:any := sql.x(_211:int, _213:int)
-        !TypeException:user.s2_1[117]:'bat.insert' undefined in: _218:any := bat.insert(_206:bat[:oid,:int], _216:oid, _215:any)
+ERROR = !TypeException:user.s0_1[41]:'mal.multiplex' undefined in: (_55:bat[:oid,:int], _58:bat[:oid,:int]) := mal.multiplex(_56:str, _57:str, _49:bat[:oid,:int], _52:bat[:oid,:int])
         !program contains errors
 
 # 13:48:49 >  
