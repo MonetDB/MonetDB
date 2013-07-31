@@ -129,7 +129,8 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		}
 
 		if (getModuleId(p) == algebraRef && 
-			(getFunctionId(p) == tintersectRef || getFunctionId(p) == tdifferenceRef)) 
+			(getFunctionId(p) == tintersectRef || getFunctionId(p) == tinterRef || 
+			 getFunctionId(p) == tdifferenceRef || getFunctionId(p) == tdiffRef)) 
 			return 0;
 
 		if (getModuleId(p) == algebraRef && getFunctionId(p) == sliceRef)
