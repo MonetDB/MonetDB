@@ -294,7 +294,7 @@ static void RECYCLEcleanCache(Client cntxt){
 	int k, *leaves, *vm;
 	int limit, idx;
 	size_t mem;
-	lng wr = recyclerMemoryUsed - MEMORY_THRESHOLD * monet_memory;
+	lng wr = recyclerMemoryUsed - (lng) (MEMORY_THRESHOLD * monet_memory);
 	dbl minben, ben;
 	bte *used;
 
@@ -355,7 +355,7 @@ newpass:
 #endif
 
 	/* find entries to evict */
-	mem = (size_t)recyclerMemoryUsed  > MEMORY_THRESHOLD * monet_memory ;
+	mem = recyclerMemoryUsed > (lng) (MEMORY_THRESHOLD * monet_memory) ;
 	vm = (int *)GDKzalloc(sizeof(int)*ltop);
 	vtop = 0;
 
@@ -371,7 +371,7 @@ newpass:
 		}
 		vm[vtop++] = leaves[idx];
 	} else {	/* evict several to get enough memory */
-		wr = recyclerMemoryUsed - MEMORY_THRESHOLD * monet_memory;
+		wr = recyclerMemoryUsed - (lng) (MEMORY_THRESHOLD * monet_memory);
 		k = 0;	
 		for (l = 0; l < ltop; l++) {
 			// also discard leaves that are more expensive to find then compute
@@ -439,7 +439,7 @@ newpass:
 
 	GDKfree(dmask);
 	/* check if a new pass of cache cleaning is needed */
-	if ( (size_t)recyclerMemoryUsed > MEMORY_THRESHOLD * monet_memory )
+	if ( recyclerMemoryUsed > (lng) (MEMORY_THRESHOLD * monet_memory) )
 	goto newpass;
 }
 
@@ -495,7 +495,7 @@ RECYCLEkeep(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p, RuntimeProfile 
 
 	if ( recycleBlk->stop >= recycleCacheLimit)
 		return ; /* no more caching */
-	if ( (size_t)(recyclerMemoryUsed + wr) > MEMORY_THRESHOLD * monet_memory)
+	if ( recyclerMemoryUsed + wr > (lng) (MEMORY_THRESHOLD * monet_memory))
 		return ; /* no more caching */
 
 	wr = 0;
@@ -946,6 +946,7 @@ RECYCLEentry(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, RuntimeProfi
 void
 RECYCLEexitImpl(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, RuntimeProfile prof)
 {
+	lng thresh;
 
 	if (recycleBlk == NULL || mb->profiler == NULL)
 		return;
@@ -953,7 +954,8 @@ RECYCLEexitImpl(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, RuntimePr
 	if ( !RECYCLEinterest(p))
 		return;
 	MT_lock_set(&recycleLock, "recycle");
-	if ( (GDKmem_cursize() >  MEMORY_THRESHOLD * monet_memory  && recyclerMemoryUsed > MEMORY_THRESHOLD * monet_memory) || recycleBlk->stop >= recycleCacheLimit)
+	thresh = (lng) (MEMORY_THRESHOLD * monet_memory);
+	if ( (GDKmem_cursize() >  (size_t) thresh  && recyclerMemoryUsed > thresh) || recycleBlk->stop >= recycleCacheLimit)
 		RECYCLEcleanCache(cntxt);
 
 	/* infinite case, admit all new instructions */
