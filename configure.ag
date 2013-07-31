@@ -2710,7 +2710,6 @@ AC_CHECK_FUNCS([\
 				fpclassify \
 				fsync \
 				ftime \
-				ftruncate \
 				getexecname \
 				getlogin \
 				getopt \
