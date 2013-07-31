@@ -120,7 +120,7 @@ SCIQLmaterialise(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				assert(N[j] <= lim);
 				N[j] *= cnt_i;
 			}
-			for (j = a->valence; j > i; j--) {
+			for (j = a->valence - 1; j > i; j--) {
 				assert(M[j] <= lim);
 				M[j] *= cnt_i;
 			}
