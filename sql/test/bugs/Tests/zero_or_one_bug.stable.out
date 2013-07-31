@@ -59,8 +59,8 @@ Ready.
 #      (SELECT col2 FROM my_table2 WHERE col2 = col1a)
 #FROM  my_table1 x
 #;
-% .L,	.L2 # table_name
-% L3,	L2 # name
+% .L1,	.L3 # table_name
+% L1,	L3 # name
 % int,	varchar # type
 % 1,	0 # length
 [ 1,	NULL	]
@@ -77,8 +77,8 @@ Ready.
 #      (SELECT col2 FROM my_table2 WHERE col2 = col1a) AS my_col1
 #FROM  my_table1 x
 #;
-% .L,	.L3 # table_name
-% L3,	my_col1 # name
+% .L1,	.L3 # table_name
+% L1,	my_col1 # name
 % int,	varchar # type
 % 1,	0 # length
 [ 1,	NULL	]

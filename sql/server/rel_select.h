@@ -23,12 +23,14 @@
 #include "rel_semantic.h"
 #include "sql_semantic.h"
 
+#define rel_groupby_gbe(m,r,e) rel_groupby(m, r, append(new_exp_list(m->sa), e))
+
 extern sql_rel* rel_create(sql_allocator *sa);
 extern sql_rel* rel_setop(sql_allocator *sa, sql_rel *l, sql_rel *r, operator_type setop);
 extern sql_rel* rel_inplace_setop(sql_rel *rel, sql_rel *l, sql_rel *r, operator_type setop, list *exps);
 
 extern sql_rel *rel_selects(mvc *sql, symbol *sym);
-extern sql_rel * rel_subquery(mvc *sql, sql_rel *rel, symbol *sq, exp_kind ek);
+extern sql_rel * rel_subquery(mvc *sql, sql_rel *rel, symbol *sq, exp_kind ek, int apply);
 extern sql_rel * rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f);
 extern sql_exp * rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f);
 extern sql_rel * rel_project(sql_allocator *sa, sql_rel *l, list *e);
@@ -67,7 +69,6 @@ extern sql_exp *rel_nop_(mvc *sql, sql_exp *l, sql_exp *r, sql_exp *r2, sql_exp 
 
 extern sql_rel *rel_topn(sql_allocator *sa, sql_rel *l, list *exps );
 extern sql_rel *rel_sample(sql_allocator *sa, sql_rel *l, list *exps );
-extern sql_rel *rel_orderby(mvc *sql, sql_rel *l, list *orderbyexps);
 
 extern sql_rel *rel_dup(sql_rel *r);
 extern sql_rel *rel_copy(sql_allocator *sa, sql_rel *r);

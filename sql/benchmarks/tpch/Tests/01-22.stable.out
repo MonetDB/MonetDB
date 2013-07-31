@@ -79,7 +79,7 @@ Ready.
 % rewrite,	count # name
 % clob,	int # type
 % 7,	1 # length
-[ "joinidx",	6	]
+[ "joinidx",	7	]
 
 # 11:48:05 >  
 # 11:48:05 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781
@@ -153,7 +153,7 @@ Ready.
 #	o_orderpriority
 #order by
 #	o_orderpriority;
-% sys.orders,	sys.L3 # table_name
+% sys.orders,	sys.L1 # table_name
 % o_orderpriority,	order_count # name
 % varchar,	wrd # type
 % 15,	3 # length
@@ -166,7 +166,7 @@ Ready.
 % rewrite,	count # name
 % clob,	int # type
 % 7,	1 # length
-[ "joinidx",	1	]
+[ "joinidx",	0	]
 
 # 11:48:05 >  
 # 11:48:05 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781
@@ -1304,7 +1304,7 @@ Ready.
 #			l3.l_orderkey = l1.l_orderkey
 #			and l3.l_suppkey <> l1.l_suppkey
 #			and l3.l_receiptdate > l3.l_commitdate
-% sys.supplier,	sys.L5 # table_name
+% sys.supplier,	sys.L1 # table_name
 % s_name,	numwait # name
 % varchar,	wrd # type
 % 18,	1 # length
@@ -1347,7 +1347,7 @@ Ready.
 #				select
 #					*
 #				from
-% sys.custsale,	sys.L4,	sys.L5 # table_name
+% sys.custsale,	sys.L2,	sys.L3 # table_name
 % cntrycode,	numcust,	totacctbal # name
 % varchar,	wrd,	decimal # type
 % 2,	2,	17 # length

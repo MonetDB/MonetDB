@@ -45,31 +45,31 @@ Ready.
 # 03:16:16 >  
 
 #select 'optimizer test:',optimizer;
-% .,	. # table_name
-% single_value,	single_value # name
+% .L1,	.L1 # table_name
+% L1,	single_value # name
 % char,	varchar # type
 % 15,	12 # length
 [ "optimizer test:",	"default_pipe"	]
 #select 'optimizer off test:',optimizer;
-% .,	. # table_name
-% single_value,	single_value # name
+% .L1,	.L1 # table_name
+% L1,	single_value # name
 % char,	varchar # type
 % 19,	12 # length
 [ "optimizer off test:",	"default_pipe"	]
 #select 'optimizer on test:',optimizer;
-% .,	. # table_name
-% single_value,	single_value # name
+% .L1,	.L1 # table_name
+% L1,	single_value # name
 % char,	varchar # type
 % 18,	12 # length
 [ "optimizer on test:",	"default_pipe"	]
 #select 'optimizer <empty> test:',optimizer;
-% .,	. # table_name
-% single_value,	single_value # name
+% .L1,	.L1 # table_name
+% L1,	single_value # name
 % char,	varchar # type
 % 23,	12 # length
 [ "optimizer <empty> test:",	"default_pipe"	]
 #select 'done';
-% . # table_name
+% .L # table_name
 % single_value # name
 % char # type
 % 4 # length

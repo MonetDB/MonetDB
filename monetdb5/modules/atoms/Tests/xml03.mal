@@ -7,17 +7,17 @@ bat.insert(h,1@0,"curly dark brown");
 
 io.print(b);
 
-bs:= xml.xml(b);
-bc:= xml.element("name",bs);
-bj:= xml.str(bc);
+bs:= batxml.xml(b);
+bc:= batxml.element("name",bs);
+bj:= batxml.str(bc);
 io.print(bj);
-hs:= xml.xml(h);
-hc:= xml.element("hair",hs);
-hj:= xml.str(hc);
+hs:= batxml.xml(h);
+hc:= batxml.element("hair",hs);
+hj:= batxml.str(hc);
 io.print(hj);
 
-hh:= xml.concat(bc,hc);
+hh:= batxml.concat(bc,hc);
 
-aa:= xml.element("victim",hh);
-as:= xml.str(aa);
+aa:= batxml.element("victim",hh);
+as:= batxml.str(aa);
 io.print(as);

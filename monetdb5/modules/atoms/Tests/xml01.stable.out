@@ -22,8 +22,8 @@ function user.main():void;
     bat.insert(b,0@0,"Mary Ann Walker");
     bat.insert(b,1@0,"Annie Chapman");
     io.print(b);
-    bc := xml.attribute("name",b);
-    bj := xml.str(bc);
+    bc := batxml.attribute("name",b);
+    bj := batxml.str(bc);
     io.print(bj);
 end main;
 #---------------------------------#

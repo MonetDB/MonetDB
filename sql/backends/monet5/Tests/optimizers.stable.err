@@ -30,70 +30,70 @@ stderr of test 'optimizers` in directory 'sql/backends/monet5` itself:
 # 03:16:16 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=rome" "--port=36613"
 # 03:16:16 >  
 
-MAPI  = monetdb@madrid:32172
+MAPI  = (monetdb) /var/tmp/mtest-19468/.s.monetdb.39762
 QUERY = set optimizer='off';
 ERROR = !optimizer 'off' unknown
-MAPI  = monetdb@madrid:32172
+MAPI  = (monetdb) /var/tmp/mtest-19468/.s.monetdb.39762
 QUERY = set optimizer='on';
 ERROR = !optimizer 'on' unknown
-MAPI  = monetdb@madrid:32172
+MAPI  = (monetdb) /var/tmp/mtest-19468/.s.monetdb.39762
 QUERY = set optimizer='';
 ERROR = !optimizer '' unknown
-MAPI  = monetdb@madrid:32172
+MAPI  = (monetdb) /var/tmp/mtest-19468/.s.monetdb.39762
 QUERY = set optimizer='optimizer.costModel();optimizer.coercions();optimizer.emptySet();optimizer.aliases();optimizer.commonTerms();optimizer.accumulators();optimizer.joinPath();optimizer.deadcode();optimizer.reduce();optimizer.garbageCollector();';
 ERROR = !'inline' should be the first
-MAPI  = monetdb@madrid:32172
+MAPI  = (monetdb) /var/tmp/mtest-19468/.s.monetdb.39762
 QUERY = set optimizer='optimizer.coercions();optimizer.emptySet();optimizer.aliases();optimizer.commonTerms();optimizer.accumulators();optimizer.joinPath();optimizer.deadcode();optimizer.reduce();optimizer.garbageCollector();';
 ERROR = !'inline' should be the first
-MAPI  = monetdb@madrid:32172
+MAPI  = (monetdb) /var/tmp/mtest-19468/.s.monetdb.39762
 QUERY = set optimizer='optimizer.emptySet();optimizer.aliases();optimizer.commonTerms();optimizer.accumulators();optimizer.joinPath();optimizer.deadcode();optimizer.reduce();optimizer.garbageCollector();';
 ERROR = !'inline' should be the first
-MAPI  = monetdb@madrid:32172
+MAPI  = (monetdb) /var/tmp/mtest-19468/.s.monetdb.39762
 QUERY = set optimizer='optimizer.aliases();optimizer.commonTerms();optimizer.accumulators();optimizer.joinPath();optimizer.deadcode();optimizer.reduce();optimizer.garbageCollector();';
 ERROR = !'inline' should be the first
-MAPI  = monetdb@madrid:32172
+MAPI  = (monetdb) /var/tmp/mtest-19468/.s.monetdb.39762
 QUERY = set optimizer='optimizer.aliases();optimizer.commonTerms();optimizer.accumulators();optimizer.joinPath();optimizer.deadcode();optimizer.reduce();optimizer.garbageCollector();';
 ERROR = !'inline' should be the first
-MAPI  = monetdb@madrid:32172
+MAPI  = (monetdb) /var/tmp/mtest-19468/.s.monetdb.39762
 QUERY = set optimizer='optimizer.commonTerms();optimizer.accumulators();optimizer.joinPath();optimizer.deadcode();optimizer.reduce();optimizer.garbageCollector();';
 ERROR = !'inline' should be the first
-MAPI  = monetdb@madrid:32172
+MAPI  = (monetdb) /var/tmp/mtest-19468/.s.monetdb.39762
 QUERY = set optimizer='optimizer.accumulators();optimizer.joinPath();optimizer.deadcode();optimizer.reduce();optimizer.garbageCollector();';
 ERROR = !'inline' should be the first
-MAPI  = monetdb@madrid:32172
+MAPI  = (monetdb) /var/tmp/mtest-19468/.s.monetdb.39762
 QUERY = set optimizer='optimizer.joinPath();optimizer.deadcode();optimizer.reduce();optimizer.garbageCollector();';
 ERROR = !'inline' should be the first
-MAPI  = monetdb@madrid:32172
+MAPI  = (monetdb) /var/tmp/mtest-19468/.s.monetdb.39762
 QUERY = set optimizer='optimizer.deadcode();optimizer.reduce();optimizer.garbageCollector();';
 ERROR = !'inline' should be the first
-MAPI  = monetdb@madrid:32172
+MAPI  = (monetdb) /var/tmp/mtest-19468/.s.monetdb.39762
 QUERY = set optimizer='optimizer.reduce();optimizer.garbageCollector();';
 ERROR = !'inline' should be the first
-MAPI  = monetdb@madrid:32172
+MAPI  = (monetdb) /var/tmp/mtest-19468/.s.monetdb.39762
 QUERY = set optimizer='optimizer.garbageCollector();';
 ERROR = !'inline' should be the first
-MAPI  = monetdb@madrid:32172
+MAPI  = (monetdb) /var/tmp/mtest-19468/.s.monetdb.39762
 QUERY = set optimizer='optimizer.costModel();optimizer.coercions();optimizer.emptySet();optimizer.commonTerms();optimizer.accumulators();optimizer.joinPath();optimizer.deadcode();optimizer.reduce();optimizer.garbageCollector();';
 ERROR = !'inline' should be the first
-MAPI  = monetdb@madrid:32172
+MAPI  = (monetdb) /var/tmp/mtest-19468/.s.monetdb.39762
 QUERY = set optimizer='optimizer.costModel();optimizer.coercions();optimizer.emptySet();optimizer.commonTerms();optimizer.accumulators();optimizer.joinPath();optimizer.deadcode();optimizer.garbageCollector();';
 ERROR = !'inline' should be the first
-MAPI  = monetdb@madrid:32172
+MAPI  = (monetdb) /var/tmp/mtest-19468/.s.monetdb.39762
 QUERY = set optimizer='optimizer.inline();';
 ERROR = !'multiplex' should be used
-MAPI  = monetdb@madrid:32172
+MAPI  = (monetdb) /var/tmp/mtest-19468/.s.monetdb.39762
 QUERY = set optimizer='optimizer.inline();optimizer.multiplex();';
 ERROR = !'deadcode' should be used at least once
-MAPI  = monetdb@madrid:32172
+MAPI  = (monetdb) /var/tmp/mtest-19468/.s.monetdb.39762
 QUERY = set optimizer='optimizer.inline();optimizer.multiplex();optimizer.deadcode();';
 ERROR = !'garbageCollector' should be used as the last one
-MAPI  = monetdb@madrid:32172
+MAPI  = (monetdb) /var/tmp/mtest-19468/.s.monetdb.39762
 QUERY = set optimizer='optimizer.inline();optimizer.deadcode();optimizer.multiplex();';
 ERROR = !'garbageCollector' should be used as the last one
-MAPI  = monetdb@madrid:32172
+MAPI  = (monetdb) /var/tmp/mtest-19468/.s.monetdb.39762
 QUERY = set optimizer='optimizer.deadcode();optimizer.inline();optimizer.multiplex();optimizer.garbageCollector();';
 ERROR = !'inline' should be the first
-MAPI  = monetdb@madrid:32172
+MAPI  = (monetdb) /var/tmp/mtest-19468/.s.monetdb.39762
 QUERY = set optimizer='optimizer.inline();optimizer.deadcode();optimizer.garbageCollector();optimizer.multiplex();';
 ERROR = !'garbageCollector' should be used as the last one
 
