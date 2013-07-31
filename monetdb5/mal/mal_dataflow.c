@@ -342,16 +342,13 @@ DFLOWworker(void *t)
 			}
 		MT_lock_unset(&flow->flowlock, "MALworker");
 
+		if ( fnxt == 0 && flow->cntxt->idx > 1 )
+				MALresourceFairness(GDKusec()- flow->mb->starttime);
 		q_enqueue(flow->done, fe);
 		if ( fnxt == 0) {
 			assert(todo);
 			if (todo->last == 0)
 				profilerHeartbeatEvent("wait");
-			/*
-			else
-			if ( flow->cntxt->idx > 1 )
-					MALresourceFairness(GDKusec()- flow->mb->starttime);
-					*/
 		}
 	}
 	GDKfree(GDKerrbuf);
