@@ -242,11 +242,8 @@ GDKextendf(int fd, off_t size)
 		return -1;
 	}
 	/* if necessary, extend the underlying file */
-	if (stb.st_size < size &&
-	    (lseek(fd, size - 1, SEEK_SET) < 0 ||
-	     write(fd, "\0", 1) < 0)) {
-		return -1;
-	}
+	if (stb.st_size < size)
+		return ftruncate(fd, size);
 	return 0;
 }
 #endif
@@ -254,34 +251,26 @@ GDKextendf(int fd, off_t size)
 int
 GDKextend(const char *fn, size_t size)
 {
-	FILE *fp;
 	int t0 = 0;
 
 	IODEBUG t0 = GDKms();
-	if ((fp = fopen(fn, "rb+")) == NULL)
-		return -1;
-#if defined(_WIN64)
-	if (_fseeki64(fp, (ssize_t) size - 1, SEEK_SET) < 0)
-		goto bailout;
-#elif defined(HAVE_FSEEKO)
-	if (fseeko(fp, (off_t) size - 1, SEEK_SET) < 0)
-		goto bailout;
+#ifdef WIN32
+	{
+		int fd, rt;
+
+		if ((fd = open(fn, O_RDWR)) < 0)
+			return -1;
+		rt = _chsize_s(fd, (__int64) size);
+		close(fd);
+		if (rt != 0)
+			return -1;
+	}
 #else
-	if (fseek(fp, size - 1, SEEK_SET) < 0)
-		goto bailout;
-#endif
-	if (fputc('\n', fp) < 0)
-		goto bailout;
-	if (fflush(fp) < 0)
-		goto bailout;
-	if (fclose(fp) < 0)
+	if (truncate(fn, (off_t) size) < 0)
 		return -1;
+#endif
 	IODEBUG fprintf(stderr, "#GDKextend %s " SZFMT " %dms\n", fn, size, GDKms() - t0);
 	return 0;
-  bailout:
-	fclose(fp);
-	IODEBUG fprintf(stderr, "#GDKextend %s failed " SZFMT " %dms\n", fn, size, GDKms() - t0);
-	return -1;
 }
 
 /*

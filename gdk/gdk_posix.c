@@ -519,7 +519,6 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 					/* size not too big yet or
 					 * anonymous, try to make new
 					 * anonymous mmap and copy
-
 					 * data over */
 					p = mmap(NULL, *new_size, prot, flags,
 						 fd, 0);
@@ -544,9 +543,7 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 						return NULL;
 					if (write(fd, old_address,
 						  old_size) < 0 ||
-					    lseek(fd, *new_size - 1,
-						  SEEK_SET) < 0 ||
-					    write(fd, "\0", 1) < 0) {
+					    ftruncate(fd, *new_size) < 0) {
 						close(fd);
 						return NULL;
 					}
@@ -853,32 +850,6 @@ MT_path_absolute(const char *pathname)
 		(pathname[2] == '/' || pathname[2] == '\\'));
 }
 
-
-#ifndef HAVE_FTRUNCATE
-int
-ftruncate(int fd, off_t size)
-{
-	HANDLE hfile;
-	unsigned int curpos;
-
-	if (fd < 0)
-		return -1;
-
-	hfile = (HANDLE) _get_osfhandle(fd);
-	curpos = SetFilePointer(hfile, 0, NULL, FILE_CURRENT);
-	if (curpos == 0xFFFFFFFF ||
-	    SetFilePointer(hfile, (LONG) size, NULL, FILE_BEGIN) == 0xFFFFFFFF ||
-	    !SetEndOfFile(hfile)) {
-		int error = GetLastError();
-
-		if (error && error != ERROR_INVALID_HANDLE)
-			SetLastError(ERROR_OPEN_FAILED);	/* enforce EIO */
-		return -1;
-	}
-
-	return 0;
-}
-#endif
 
 #ifndef HAVE_GETTIMEOFDAY
 static int nodays[12] = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
