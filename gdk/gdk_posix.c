@@ -519,7 +519,6 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 					/* size not too big yet or
 					 * anonymous, try to make new
 					 * anonymous mmap and copy
-
 					 * data over */
 					p = mmap(NULL, *new_size, prot, flags,
 						 fd, 0);
@@ -544,9 +543,7 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 						return NULL;
 					if (write(fd, old_address,
 						  old_size) < 0 ||
-					    lseek(fd, *new_size - 1,
-						  SEEK_SET) < 0 ||
-					    write(fd, "\0", 1) < 0) {
+					    ftruncate(fd, *new_size) < 0) {
 						close(fd);
 						return NULL;
 					}
