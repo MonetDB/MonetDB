@@ -42,7 +42,6 @@ str boxRef;
 str batstrRef;
 str batmtimeRef;
 str batmmathRef;
-str batxmlRef;
 str bbpRef;
 str tidRef;
 str deltaRef;
@@ -302,7 +301,6 @@ void optimizerInit(void){
 		batstrRef = putName("batstr",6);
 		batmtimeRef = putName("batmtime",8);
 		batmmathRef = putName("batmmath",8);
-		batxmlRef = putName("batxml",6);
 		bbpRef = putName("bbp",3);
 		tidRef = putName("tid",3);
 		deltaRef = putName("delta",5);
