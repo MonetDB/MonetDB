@@ -347,9 +347,11 @@ DFLOWworker(void *t)
 			assert(todo);
 			if (todo->last == 0)
 				profilerHeartbeatEvent("wait");
+			/*
 			else
 			if ( flow->cntxt->idx > 1 )
 					MALresourceFairness(GDKusec()- flow->mb->starttime);
+					*/
 		}
 	}
 	GDKfree(GDKerrbuf);
