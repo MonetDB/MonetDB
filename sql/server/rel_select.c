@@ -4537,12 +4537,8 @@ _rel_aggr(mvc *sql, sql_rel **rel, int distinct, char *aggrstr, dnode *args, int
 				sql_rel *j = i->r;
 
 				sql_exp *e = j->exps->h->data;
-<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/__ANY__/source/MonetDB/sql/server/rel_select.c
-				e = exp_column(sql->sa, exp_relname(e), exp_name(e), exp_subtype(e), exp_card(e), has_nil(e), 0, e->type == e_column?e->f:NULL);
-=======
 				assert(0);
-				e = exp_column(sql->sa, exp_relname(e), exp_name(e), exp_subtype(e), exp_card(e), has_nil(e), 0);
->>>>>>> /tmp/rel_select.c~other.Nlx73Y
+				e = exp_column(sql->sa, exp_relname(e), exp_name(e), exp_subtype(e), exp_card(e), has_nil(e), 0, e->type == e_column?e->f:NULL);
 				e = exp_aggr1(sql->sa, e, a, distinct, 1, groupby->card, 0);
 				return e;
 			}
