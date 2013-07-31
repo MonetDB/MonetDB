@@ -27,9 +27,9 @@ stderr of test 'table_function_with_column_subselects.Bug-3172` in directory 'sq
 # 13:48:49 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=niels" "--port=32735"
 # 13:48:49 >  
 
-MAPI  = monetdb@niels:32735
+MAPI  = (monetdb) /var/tmp/mtest-22265/.s.monetdb.33041
 QUERY = select * from x((select id from _tables), (select schema_id from _tables));
-ERROR = !TypeException:user.s0_1[45]:'mal.multiplex' undefined in: (_60:bat[:oid,:int], _63:bat[:oid,:int]) := mal.multiplex(_61:str, _62:str, _49:bat[:oid,:int], _55:bat[:oid,:int])
+ERROR = !TypeException:user.s0_1[41]:'mal.multiplex' undefined in: (_55:bat[:oid,:int], _58:bat[:oid,:int]) := mal.multiplex(_56:str, _57:str, _49:bat[:oid,:int], _52:bat[:oid,:int])
         !program contains errors
 
 # 13:48:49 >  
