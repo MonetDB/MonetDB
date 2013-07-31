@@ -421,7 +421,6 @@ int escapedStrlen(const char *src);
 int fltFromStr(const char *src, int *len, flt **dst);
 int fltToStr(str *dst, int *len, const flt *src);
 const flt flt_nil;
-int ftruncate(int fd, off_t size);
 char *get_bin_path(void);
 int gettimeofday(struct timeval *tv, int *ignore_zone);
 int gprof_pthread_create(pthread_t *__restrict, __const pthread_attr_t *__restrict, void *( *fcn)(void *), void *__restrict);

@@ -252,10 +252,6 @@ gdk_export int win_mkdir(const char *, const int mode);
 #define link		win_link
 #endif
 
-#ifndef HAVE_FTRUNCATE
-gdk_export int ftruncate(int fd, off_t size);
-#endif
-
 #endif
 
 #define _errno		win_errno

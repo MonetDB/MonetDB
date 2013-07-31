@@ -148,7 +148,8 @@
 #define HAVE_FTIME 1
 
 /* Define to 1 if you have the `ftruncate' function. */
-/* #undef HAVE_FTRUNCATE */
+#define HAVE_FTRUNCATE 1
+#define ftruncate(fd, sz)	(_chsize_s((fd), (__int64) (sz)) == 0 ? 0 : -1)
 
 /* Does your compiler support function attributes (__attribute__)? */
 /* #undef HAVE_FUNCTION_ATTRIBUTES */

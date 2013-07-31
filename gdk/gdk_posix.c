@@ -854,32 +854,6 @@ MT_path_absolute(const char *pathname)
 }
 
 
-#ifndef HAVE_FTRUNCATE
-int
-ftruncate(int fd, off_t size)
-{
-	HANDLE hfile;
-	unsigned int curpos;
-
-	if (fd < 0)
-		return -1;
-
-	hfile = (HANDLE) _get_osfhandle(fd);
-	curpos = SetFilePointer(hfile, 0, NULL, FILE_CURRENT);
-	if (curpos == 0xFFFFFFFF ||
-	    SetFilePointer(hfile, (LONG) size, NULL, FILE_BEGIN) == 0xFFFFFFFF ||
-	    !SetEndOfFile(hfile)) {
-		int error = GetLastError();
-
-		if (error && error != ERROR_INVALID_HANDLE)
-			SetLastError(ERROR_OPEN_FAILED);	/* enforce EIO */
-		return -1;
-	}
-
-	return 0;
-}
-#endif
-
 #ifndef HAVE_GETTIMEOFDAY
 static int nodays[12] = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
 
