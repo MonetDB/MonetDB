@@ -22,10 +22,10 @@ function user.main():void;
     bat.insert(h,0@0,"brown");
     bat.insert(h,1@0,"curly dark brown");
     io.print(b);
-    bs := xml.xml(b);
-    bc := xml.element("name",bs);
-    aa := xml.root(bc,"1.0","no");
-    as := xml.str(aa);
+    bs := batxml.xml(b);
+    bc := batxml.element("name",bs);
+    aa := batxml.root(bc,"1.0","no");
+    as := batxml.str(aa);
     io.print(as);
 end main;
 #---------------------------------#
