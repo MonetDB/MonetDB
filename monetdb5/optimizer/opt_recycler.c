@@ -99,6 +99,7 @@ OPTrecyclerImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 				getModuleId(p)== arrayRef || getModuleId(p)== batmtimeRef ||
 				getModuleId(p)== batcalcRef || getModuleId(p)== pcreRef ||
 				getModuleId(p)== mtimeRef || getModuleId(p) == calcRef  ||
+				getModuleId(p)== dateRef || getModuleId(p) == timestampRef  ||
 				getModuleId(p)== matRef )
 			){
 			pushInstruction(mb,p);
@@ -115,10 +116,6 @@ OPTrecyclerImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			if (recycled[getArg(p, j)] ==0)
 				cand++;
 		if (cnt == p->argc - p->retc && cand == p->retc) {
-			OPTDEBUGrecycle {
-				mnstr_printf(cntxt->fdout, "#recycle instruction: ");
-				printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_DEBUG);
-			}
 			marks++;
 			p->recycle = RECYCLING; /* this instruction is to be monitored */
 			for (j = 0; j < p->retc; j++)
@@ -131,5 +128,9 @@ OPTrecyclerImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	GDKfree(old);
 	GDKfree(recycled);
 	mb->recycle = marks > 0;
+	OPTDEBUGrecycle {
+		mnstr_printf(cntxt->fdout, "#recycle optimizer: ");
+		printFunction(cntxt->fdout,mb, 0, LIST_MAL_ALL);
+	}
 	return actions + marks;
 }
