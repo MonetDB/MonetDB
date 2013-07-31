@@ -1,69 +1,71 @@
-command xml.xml(src:bat[:oid,:str]):bat[:oid,:xml]
+module batxml;
+
+command batxml.xml(src:bat[:oid,:str]):bat[:oid,:xml]
 address BATXMLstr2xml
 comment "Cast the string to an xml compliant string.";
 
-command xml.str(src:bat[:oid,:xml]):bat[:oid,:str]
+command batxml.str(src:bat[:oid,:xml]):bat[:oid,:str]
 address BATXMLxml2str
 comment "Cast the xml to a string.";
 
-command xml.document(src:bat[:oid,:str]):bat[:oid,:xml]
+command batxml.document(src:bat[:oid,:str]):bat[:oid,:xml]
 address BATXMLdocument
 comment "Parse the string as an XML document.";
 
-command xml.content(src:bat[:oid,:str]):bat[:oid,:xml]
+command batxml.content(src:bat[:oid,:str]):bat[:oid,:xml]
 address BATXMLcontent
 comment "Parse the string as XML element content.";
 
-command xml.comment(val:bat[:oid,:str]):bat[:oid,:xml]
+command batxml.comment(val:bat[:oid,:str]):bat[:oid,:xml]
 address BATXMLcomment
 comment "Create an XML comment element.";
 
-command xml.parse(doccont:str,val:bat[:oid,:str],option:str):bat[:oid,:xml]
+command batxml.parse(doccont:str,val:bat[:oid,:str],option:str):bat[:oid,:xml]
 address BATXMLparse
 comment "Parse the XML document or element string values.";
 
-command xml.serialize(val:bat[:oid,:xml]):bat[:oid,:str]
+command batxml.serialize(val:bat[:oid,:xml]):bat[:oid,:str]
 address BATXMLxml2str
 comment "Serialize the XML object to a string.";
 
-command xml.text(val:bat[:oid,:xml]):bat[:oid,:str]
+command batxml.text(val:bat[:oid,:xml]):bat[:oid,:str]
 address BATXMLxmltext
 comment "Serialize the XML object to a string.";
 
-command xml.xquery(val:bat[:oid,:str],expr:str):bat[:oid,:xml]
+command batxml.xquery(val:bat[:oid,:str],expr:str):bat[:oid,:xml]
 address BATXMLxquery
 comment "Execute the XQuery against the elements.";
 
 # todo
-# command xml.table(val:bat[:oid,:str],expr:str):bat[:oid,:xml]
+# command batxml.table(val:bat[:oid,:str],expr:str):bat[:oid,:xml]
 # address BATXMLquery
 # comment "Execute the XQuery against the elements";
 
-command xml.pi(target:str, val:bat[:oid,:xml]):bat[:oid,:xml]
+command batxml.pi(target:str, val:bat[:oid,:xml]):bat[:oid,:xml]
 address BATXMLpi
 comment "Construct a processing instruction.";
 
-command xml.attribute(name:str, val:bat[:oid,:str]):bat[:oid,:xml]
+command batxml.attribute(name:str, val:bat[:oid,:str]):bat[:oid,:xml]
 address BATXMLattribute
 comment "Construct an attribute value pair.";
 
-command xml.element(name:str, s:bat[:oid,:xml]) :bat[:oid,:xml]
+command batxml.element(name:str, s:bat[:oid,:xml]) :bat[:oid,:xml]
 address BATXMLelementSmall
 comment "The basic building block for XML elements are namespaces, attributes and a sequence of XML elements. The name space and the attributes may be left unspecified."; 
 
-command xml.options(tag:str, option:str,left:bat[:oid,:xml]):bat[:oid,:xml]
+command batxml.options(tag:str, option:str,left:bat[:oid,:xml]):bat[:oid,:xml]
 address BATXMLoptions
 comment "Create the components including NULL conversions.";
 
-command xml.element(name:str, ns:xml, attr:xml, s:bat[:oid,:xml]):bat[:oid,:xml]
+command batxml.element(name:str, ns:xml, attr:xml, s:bat[:oid,:xml]):bat[:oid,:xml]
 address BATXMLelement
 comment "The basic building block for XML elements are namespaces, attributes and a sequence of XML elements. The name space and the attributes may be left unspecified(=nil).";
 
-command xml.concat(left:bat[:oid,:xml],right:bat[:oid,:xml] ):bat[:oid,:xml]
+command batxml.concat(left:bat[:oid,:xml],right:bat[:oid,:xml] ):bat[:oid,:xml]
 address BATXMLconcat
 comment "Concatenate the XML values.";
 
-pattern xml.forest(val:bat[:oid,:xml]...):bat[:oid,:xml]
+pattern batxml.forest(val:bat[:oid,:xml]...):bat[:oid,:xml]
 address BATXMLforest
 comment "Construct an element list.";
 
@@ -79,11 +81,11 @@ command xml.agg(val:bat[:oid,:xml]):xml
 address BATXMLgroup
 comment "Aggregate the XML values over groups specified.";
 
-command xml.root(val:bat[:oid,:xml], version:str, standalone:str):bat[:oid,:xml]
+command batxml.root(val:bat[:oid,:xml], version:str, standalone:str):bat[:oid,:xml]
 address BATXMLroot
 comment "Contruct the root nodes.";
 
-command xml.isdocument(val:bat[:oid,:str]):bat[:oid,:bit]
+command batxml.isdocument(val:bat[:oid,:str]):bat[:oid,:bit]
 address BATXMLisdocument
 comment "Validate the string as a XML document.";
 

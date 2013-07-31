@@ -266,6 +266,10 @@ column_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_tabl
 {
 	int res = SQL_ERR;
 
+	if (!ss && (s->token != SQL_NULL && s->token != SQL_NOT_NULL)) {
+		(void) sql_error(sql, 02, "42000!CONSTRAINT: constraints on declared tables are not supported\n");
+		return res;
+	}
 	switch (s->token) {
 	case SQL_UNIQUE:
 	case SQL_PRIMARY_KEY: {

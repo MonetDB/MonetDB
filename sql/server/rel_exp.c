@@ -970,6 +970,7 @@ rel_find_exp( sql_rel *rel, sql_exp *e)
 		case op_right:
 		case op_full:
 		case op_join:
+		case op_apply:
 			ne = rel_find_exp(rel->l, e);
 			if (!ne) 
 				ne = rel_find_exp(rel->r, e);
@@ -1189,8 +1190,24 @@ exps_bind_column2( list *exps, char *rname, char *cname )
 				return e;
 			if (e && e->type == e_column && e->name && !e->rname && e->l && strcmp(e->name, cname) == 0 && strcmp(e->l, rname) == 0)
 				return e;
-			if (e && e->type == e_column && !e->name && !e->rname && e->l && e->r && strcmp(e->r, cname) == 0 && strcmp(e->l, rname) == 0) {
-				assert(0);
+		}
+	}
+	return NULL;
+}
+
+/* find an column based on the original name, not the alias it got */
+sql_exp *
+exps_bind_alias( list *exps, char *rname, char *cname ) 
+{
+	if (exps) {
+		node *en;
+
+		for (en = exps->h; en; en = en->next ) {
+			sql_exp *e = en->data;
+		
+			if (e && is_column(e->type) && !rname && e->r && strcmp(e->r, cname) == 0)
+				return e;
+			if (e && e->type == e_column && rname && e->l && e->r && strcmp(e->r, cname) == 0 && strcmp(e->l, rname) == 0) {
 				return e;
 			}
 		}

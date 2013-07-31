@@ -36,10 +36,11 @@ Ready.
 % .L1 # table_name
 % element_a # name
 % xml # type
-% 5 # length
-[ <a/>	]
+% 0 # length
+[ NULL	]
+#rollback;
 
-# 17:59:18 >  
-# 17:59:18 >  Done.
-# 17:59:18 >  
+# 23:08:34 >  
+# 23:08:34 >  "Done."
+# 23:08:34 >  
 

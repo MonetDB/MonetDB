@@ -44,11 +44,11 @@ typedef struct exp_kind_t {
 	bit reduce;	
 } exp_kind;
 
-#define sql_from 0	/* nothing */
-#define sql_where 1	/* relate to any column from the from */
-#define sql_having 2	/* special flag which is used within the having fase */
-#define sql_sel   3	
-
+#define sql_from 	0
+#define sql_where 	1
+#define sql_sel   	2	
+#define sql_having 	3
+#define sql_orderby   	4	
 
 extern sql_schema *cur_schema(mvc *sql);
 extern sql_schema *tmp_schema(mvc *sql);

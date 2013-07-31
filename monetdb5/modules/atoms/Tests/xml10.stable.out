@@ -41,9 +41,9 @@ function user.main():void;
 #			xmlagg(xmlelement('title',t)) 
 #   ) ) 
 # every nesting implies a groupby 
-    ax := xml.xml(a);
-    tx := xml.xml(t);
-    te := xml.element("title",tx);
+    ax := batxml.xml(a);
+    tx := batxml.xml(t);
+    te := batxml.element("title",tx);
     g := bat.new(:oid,:oid);
     bat.insert(g,0@0,0@0);
     bat.insert(g,1@0,0@0);
@@ -58,10 +58,10 @@ function user.main():void;
     j2 := algebra.join(gr,ax);
     k2 := algebra.kunique(j2);
     io.print(k2);
-    cc := xml.concat(k2,ag);
+    cc := batxml.concat(k2,ag);
     io.print(cc);
     io.print("author construction");
-    ae := xml.element("author",cc);
+    ae := batxml.element("author",cc);
     io.print(ae);
     io.print("book construction");
     be := xml.agg(ae);

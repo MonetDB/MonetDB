@@ -24,8 +24,8 @@ Ready.
 # 21:48:51 >  
 
 #SELECT 1, (SELECT count(*) FROM tables);
-% .L2,	.L1 # table_name
-% L2,	L1 # name
+% .L1,	.L2 # table_name
+% L1,	L2 # name
 % tinyint,	wrd # type
 % 1,	2 # length
 [ 1,	38	]

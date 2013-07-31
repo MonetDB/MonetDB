@@ -457,7 +457,7 @@ rel_select_into( mvc *sql, symbol *sq, exp_kind ek)
 
         /* SELECT ... INTO var_list */
         sn->into = NULL;
-	r = rel_subquery(sql, NULL, sq, ek);
+	r = rel_subquery(sql, NULL, sq, ek, APPLY_JOIN);
 	if (!r) 
 		return NULL;
 	nl = sa_list(sql->sa);
