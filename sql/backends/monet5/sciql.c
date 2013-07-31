@@ -115,7 +115,7 @@ SCIQLmaterialise(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #ifndef NDEBUG
 			int lim = GDK_int_max / cnt_i;
 #endif
-			assert(cnt_l < (lng) GDK_int_max);
+			assert(cnt_l <= (lng) GDK_int_max);
 			for (j = 0; j < i; j++) {
 				assert(N[j] <= lim);
 				N[j] *= cnt_i;
@@ -180,7 +180,7 @@ SCIQLmaterialise(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					src.len = 0;
 				} else {
 					src.val.sval = sc->def;
-					assert(l < (size_t) GDK_int_max);
+					assert(l <= (size_t) GDK_int_max);
 					src.len = (int) l;
 				}
 			} else {
