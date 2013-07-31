@@ -793,15 +793,16 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_where)
 	if (!s)
 		s = cur_schema(sql);
 	t = mvc_bind_table(sql, s, tname);
-	if (!t && !sname) 
+	if (!t && !sname) {
 		s = tmp_schema(sql);
-
-	t = mvc_bind_table(sql, s, tname);
-	if (!t && !s) {
-		sql_subtype *tpe;
-
-		if ((tpe = stack_find_type(sql, tname)) != NULL) 
-			t = tpe->comp_type;
+		t = mvc_bind_table(sql, s, tname);
+		if (!t) 
+			t = mvc_bind_table(sql, NULL, tname);
+		if (!t) {
+			sql_subtype *tpe = stack_find_type(sql, tname);
+			if (tpe)
+				t = tpe->comp_type;
+		}
 	}
 	if (!t) {
 		return sql_error(sql, 02, "42S02!UPDATE: no such table '%s'", tname);
@@ -951,6 +952,8 @@ delete_table(mvc *sql, dlist *qname, symbol *opt_where)
 	if (!t && !sname) {
 		schema = tmp_schema(sql);
 		t = mvc_bind_table(sql, schema, tname);
+		if (!t) 
+			t = mvc_bind_table(sql, NULL, tname);
 		if (!t) {
 			sql_subtype *tpe = stack_find_type(sql, tname);
 			if (tpe)
