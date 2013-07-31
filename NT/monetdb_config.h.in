@@ -964,43 +964,6 @@ typedef unsigned char uint8_t;
 #endif
 #endif
 
-/* if nothing defined, ALGEBRA is default.
-   if ALGEBRA_IS_DEFAULT is defined to 0, SQL is default.
-   if both ALGEBRA_IS_DEFAULT and SQL_IS_DEFAULT are defined to 0, we
-   fallback to MPS */
-/* Use algebra back-end by default? */
-#ifndef ALGEBRA_IS_DEFAULT
-#if defined(MILPRINT_SUMMER_IS_DEFAULT) && MILPRINT_SUMMER_IS_DEFAULT
-#define ALGEBRA_IS_DEFAULT 0
-#elif defined(SQL_IS_DEFAULT) && SQL_IS_DEFAULT
-#define ALGEBRA_IS_DEFAULT 0
-#else
-#define ALGEBRA_IS_DEFAULT 1
-#endif
-#endif
-
-/* Use milprint_summer back-end by default? */
-#ifndef MILPRINT_SUMMER_IS_DEFAULT
-#if defined(SQL_IS_DEFAULT) && !SQL_IS_DEFAULT && !ALGEBRA_IS_DEFAULT
-#define MILPRINT_SUMMER_IS_DEFAULT 1
-#else
-#define MILPRINT_SUMMER_IS_DEFAULT 0
-#endif
-#endif
-
-/* Use sql back-end by default? */
-#ifndef SQL_IS_DEFAULT
-#if ALGEBRA_IS_DEFAULT || MILPRINT_SUMMER_IS_DEFAULT
-#define SQL_IS_DEFAULT 0
-#else
-#define SQL_IS_DEFAULT 1
-#endif
-#endif
-
-#if (ALGEBRA_IS_DEFAULT + MILPRINT_SUMMER_IS_DEFAULT + SQL_IS_DEFAULT) != 1
-#error "Only one of ALGEBRA_IS_DEFAULT, MILPRINT_SUMMER_IS_DEFAULT, SQL_IS_DEFAULT can be set to 1"
-#endif
-
 #ifndef _SEEN_MONETDB_CONFIG_H
 #define _SEEN_MONETDB_CONFIG_H 1
 
