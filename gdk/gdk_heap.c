@@ -84,26 +84,24 @@ static MT_Lock HEAPcacheLock;
 void
 HEAPcacheInit(void)
 {
-#if HEAP_CACHE_SIZE > 0
-	int i;
-
-	assert(hc.sz == 0);
 	MT_lock_init(&HEAPcacheLock, "HEAPcache_init");
+#if HEAP_CACHE_SIZE > 0
 	MT_lock_set(&HEAPcacheLock, "HEAPcache_init");
+	assert(hc.sz == 0);
 	hc.used = 0;
 	hc.hc = GDKmalloc(sizeof(heap_cache_e) * HEAP_CACHE_SIZE);
-	if (hc.hc == NULL) {
-		MT_lock_unset(&HEAPcacheLock, "HEAPcache_init");
-		return;
-	}
-	hc.sz = HEAP_CACHE_SIZE;
-	GDKcreatedir(HCDIR DIR_SEP_STR);
-	/* clean old leftovers */
-	for (i = 0; i < HEAP_CACHE_SIZE; i++) {
-		char fn[8];
+	if (hc.hc != NULL) {
+		int i;
 
-		snprintf(fn, sizeof(fn), "%d", i);
-		GDKunlink(HCDIR, fn, NULL);
+		hc.sz = HEAP_CACHE_SIZE;
+		GDKcreatedir(HCDIR DIR_SEP_STR);
+		/* clean old leftovers */
+		for (i = 0; i < HEAP_CACHE_SIZE; i++) {
+			char fn[8];
+
+			snprintf(fn, sizeof(fn), "%d", i);
+			GDKunlink(HCDIR, fn, NULL);
+		}
 	}
 	MT_lock_unset(&HEAPcacheLock, "HEAPcache_init");
 #endif
