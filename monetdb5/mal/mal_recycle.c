@@ -300,8 +300,8 @@ static void RECYCLEcleanCache(Client cntxt){
 	bte *used;
 
 #ifdef _DEBUG_RESET_
-	mnstr_printf(cntxt->fdout,"#CACHE BEFORE CLEANUP\n");
-	RECYCLEdumpInternal(cntxt->fdout);
+	//mnstr_printf(cntxt->fdout,"#CACHE BEFORE CLEANUP %d\n",recycleCacheLimit);
+	//RECYCLEdumpInternal(cntxt->fdout);
 #endif
 newpass:
 	if ( recycleBlk == 0 || recycleBlk->stop == 0)
@@ -342,16 +342,16 @@ newpass:
 	GDKfree(lmask);
 
 #ifdef _DEBUG_CACHE_
-	mnstr_printf(cntxt->fdout,"#RECYCLEcleanCache: usedmem="LLFMT"\n", recyclerMemoryUsed);
-	mnstr_printf(cntxt->fdout,"#Candidates for eviction\n#LRU\tclk\t\tticks\t\twbytes\tCalls\tProfit\n");
-	for (l = 0; l < ltop; l++)
-		mnstr_printf(cntxt->fdout,"#%3d\t"LLFMT"\t"LLFMT"\t\t "LLFMT"\t%3d\t%5.1f\n",
-				leaves[l],
-				recycleBlk->profiler[leaves[l]].clk,
-				recycleBlk->profiler[leaves[l]].ticks,
-				recycleBlk->profiler[leaves[l]].wbytes,
-				recycleBlk->profiler[leaves[l]].calls,
-				recycleProfit2(leaves[l]));
+	//mnstr_printf(cntxt->fdout,"#RECYCLEcleanCache: usedmem="LLFMT"\n", recyclerMemoryUsed);
+	//mnstr_printf(cntxt->fdout,"#Candidates for eviction\n#LRU\tclk\t\tticks\t\twbytes\tCalls\tProfit\n");
+	//for (l = 0; l < ltop; l++)
+		//mnstr_printf(cntxt->fdout,"#%3d\t"LLFMT"\t"LLFMT"\t\t "LLFMT"\t%3d\t%5.1f\n",
+				//leaves[l],
+				//recycleBlk->profiler[leaves[l]].clk,
+				//recycleBlk->profiler[leaves[l]].ticks,
+				//recycleBlk->profiler[leaves[l]].wbytes,
+				//recycleBlk->profiler[leaves[l]].calls,
+				//recycleProfit2(leaves[l]));
 #endif
 
 	/* find entries to evict */
@@ -1024,8 +1024,8 @@ RECYCLEcolumn(Client cntxt,str sch,str tbl, str col)
 	
 	MT_lock_set(&recycleLock, "recycle");
 #ifdef _DEBUG_RESET_
-	mnstr_printf(cntxt->fdout,"#POOL BEFORE CLEANUP\n");
-	RECYCLEdumpInternal(cntxt->fdout);
+	//mnstr_printf(cntxt->fdout,"#POOL BEFORE CLEANUP\n");
+	//RECYCLEdumpInternal(cntxt->fdout);
 #endif
 	release= (char*) GDKzalloc(recycleBlk->vtop);
 	vr.vtype = TYPE_str;
@@ -1089,8 +1089,8 @@ RECYCLEcolumn(Client cntxt,str sch,str tbl, str col)
 		freeInstruction(p);
 	}
 #ifdef _DEBUG_RESET_
-	mnstr_printf(cntxt->fdout,"#POOL AFTER CLEANUP\n");
-	RECYCLEdumpInternal(cntxt->fdout);
+	//mnstr_printf(cntxt->fdout,"#POOL AFTER CLEANUP\n");
+	//RECYCLEdumpInternal(cntxt->fdout);
 #endif
 	MT_lock_unset(&recycleLock, "recycle");
 	GDKfree(release);
@@ -1101,7 +1101,7 @@ RECYCLEcolumn(Client cntxt,str sch,str tbl, str col)
 str 
 RECYCLEresetBAT(Client cntxt, int bid)
 {
-	int i,j;
+	int i,j, actions =0;
 	char *release;
 	InstrPtr *old,p;
 	int limit;
@@ -1109,8 +1109,8 @@ RECYCLEresetBAT(Client cntxt, int bid)
 	
 	MT_lock_set(&recycleLock, "recycle");
 #ifdef _DEBUG_RESET_
-	mnstr_printf(cntxt->fdout,"#POOL BEFORE CLEANUP\n");
-	RECYCLEdumpInternal(cntxt->fdout);
+	//mnstr_printf(cntxt->fdout,"#POOL RESET BAT %d\n",bid);
+	//RECYCLEdumpInternal(cntxt->fdout);
 #endif
 	release= (char*) GDKzalloc(recycleBlk->vtop);
 	limit= recycleBlk->stop;
@@ -1137,7 +1137,7 @@ RECYCLEresetBAT(Client cntxt, int bid)
 			continue;
 		}
 #ifdef _DEBUG_RESET_
-		mnstr_printf(cntxt->fdout,"#Marked for eviction [%d]",i);
+		mnstr_printf(cntxt->fdout,"#EVICT [%d]",i);
 		printInstruction(cntxt->fdout,recycleBlk,0,p, LIST_MAL_DEBUG);
 #endif
 		for(j=0;j<p->argc;j++) {
@@ -1147,11 +1147,16 @@ RECYCLEresetBAT(Client cntxt, int bid)
 				BBPdecref(ABS(v->val.bval), TRUE);
 			}
 		}
+		actions++;
 		freeInstruction(p);
 	}
 #ifdef _DEBUG_RESET_
-	mnstr_printf(cntxt->fdout,"#POOL AFTER CLEANUP\n");
-	RECYCLEdumpInternal(cntxt->fdout);
+	if( actions){
+		mnstr_printf(cntxt->fdout,"#POOL AFTER CLEANUP\n");
+		RECYCLEdumpInternal(cntxt->fdout);
+	}
+#else
+	(void) actions;
 #endif
 	MT_lock_unset(&recycleLock, "recycle");
 	GDKfree(release);
