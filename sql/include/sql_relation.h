@@ -125,7 +125,7 @@ typedef struct expression {
 #define DDL_CREATE_ROLE 59
 #define DDL_DROP_ROLE 	60
 
-#define MAXOPS 20
+#define MAXOPS 21
 
 typedef enum operator_type {
 	op_basetable = 0,
