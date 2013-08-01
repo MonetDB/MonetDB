@@ -392,10 +392,16 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		*groups = gn;
 	} else if (b->tsorted || b->trevsorted) {
 		BUN i, j;
+		BUN *pgrp;
 
 		/* for each value, we need to scan all previous equal
 		 * values (a consecutive, possibly empty, range) to
-		 * see if we can find one in the same old group */
+		 * see if we can find one in the same old group
+		 *
+		 * we do this by maintaining for each old group the
+		 * last time we saw that group, so if the last time we
+		 * saw the old group of the current value is within
+		 * this range, we can reuse the new group */
 		ALGODEBUG fprintf(stderr, "#BATgroup(b=%s#" BUNFMT ","
 				  "g=%s#" BUNFMT ","
 				  "e=%s#" BUNFMT ","
@@ -406,12 +412,32 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				  e ? BATgetId(e) : "NULL", e ? BATcount(e) : 0,
 				  h ? BATgetId(h) : "NULL", h ? BATcount(h) : 0,
 				  subsorted);
+		/* determine how many old groups there are */
+		if (e) {
+			j = BATcount(e) + (BUN) e->hseqbase;
+		} else if (h) {
+			j = BATcount(h) + (BUN) h->hseqbase;
+		} else {
+			oid m = 0;
+			for (i = 0, j = BATcount(g); i < j; i++)
+				if (grps[i] > m)
+					m = grps[i];
+			j = (BUN) m + 1;
+		}
+		/* array to maintain last time we saw each old group */
+		pgrp = GDKmalloc(sizeof(BUN) * j);
+		if (pgrp == NULL)
+			goto error;
+		/* initialize to impossible position */
+		memset(pgrp, ~0, sizeof(BUN) * j);
+
 		pv = BUNtail(bi, BUNfirst(b));
 		ngrps[0] = ngrp;
 		if (extents)
 			exts[0] = b->hseqbase;
 		if (histo)
 			cnts[0] = 1;
+		pgrp[grps[0]] = BUNfirst(b);
 		ngrp++;		/* the next group to be assigned */
 		gn->tsorted = 1; /* be optimistic */
 		for (j = r = BUNfirst(b), p = r + 1, q = r + BATcount(b);
@@ -419,21 +445,25 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		     p++) {
 			v = BUNtail(bi, p);
 			if (cmp(v, pv) == 0) {
-				/* range [j, p) is all same value,
-				 * find one in the same group */
-				for (i = j; i < p; i++) {
-					if (grps[i - r] == grps[p - r]) {
-						oid grp = ngrps[i - r];
-						ngrps[p - r] = grp;
-						if (histo)
-							cnts[grp]++;
-						if (gn->tsorted &&
-						    grp != ngrp - 1)
-							gn->tsorted = 0;
-						break;
-					}
-				}
-				if (i < p) {
+				/* range [j, p) is all same value */
+				/* i is position where we saw p's old
+				 * group last */
+				i = pgrp[grps[p - r]];
+				/* p is new position where we saw this
+				 * group */
+				pgrp[grps[p - r]] = p;
+				if (j <= i && i < p) {
+					/* i is position of equal
+					 * value in same old group as
+					 * p, so p gets same new group
+					 * as i */
+					oid grp = ngrps[i - r];
+					ngrps[p - r] = grp;
+					if (histo)
+						cnts[grp]++;
+					if (gn->tsorted &&
+					    grp != ngrp - 1)
+						gn->tsorted = 0;
 					/* we found the value/group
 					 * combination, go to next
 					 * value */
@@ -443,10 +473,12 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				/* value differs from previous value */
 				j = p;
 				pv = v;
+				pgrp[grps[p - r]] = p;
 			}
 			/* start a new group */
 			GRPnotfound();
 		}
+		GDKfree(pgrp);
 	} else if (b->T->hash) {
 		/* we already have a hash table on b */
 		ALGODEBUG fprintf(stderr, "#BATgroup(b=%s#" BUNFMT ","
