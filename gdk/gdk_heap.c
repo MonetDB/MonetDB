@@ -637,21 +637,26 @@ HEAPcopy(Heap *dst, Heap *src)
  * pre-allocated filename.  simple: alloc and copy.
  */
 static int
-HEAPfree_(Heap *h, int free_file)
+HEAPfree_internal(Heap *h, int free_file)
 {
 	if (h->base) {
 		if (h->storage == STORE_MEM) {	/* plain memory */
-			HEAPDEBUG fprintf(stderr, "#HEAPfree " SZFMT " " SZFMT " " PTRFMT "\n", h->size, h->maxsize, PTRFMTCAST h->base);
+			HEAPDEBUG fprintf(stderr, "#HEAPfree " SZFMT " " SZFMT
+					  " " PTRFMT "\n",
+					  h->size, h->maxsize,
+					  PTRFMTCAST h->base);
 			GDKfree(h->base);
 		} else {	/* mapped file, or STORE_PRIV */
-			int ret = HEAPcacheAdd(h->base, h->size, h->filename, h->storage, free_file);
+			int ret = HEAPcacheAdd(h->base, h->size, h->filename,
+					       h->storage, free_file);
 
 			if (ret < 0) {
-				GDKsyserror("HEAPfree: %s was not mapped\n", h->filename);
+				GDKsyserror("HEAPfree: %s was not mapped\n",
+					    h->filename);
 				assert(0);
 			}
-			HEAPDEBUG fprintf(stderr,
-					  "#munmap(base=" PTRFMT ", size=" SZFMT ") = %d\n",
+			HEAPDEBUG fprintf(stderr, "#munmap(base=" PTRFMT ", "
+					  "size=" SZFMT ") = %d\n",
 					  PTRFMTCAST(void *)h->base,
 					  h->size, ret);
 		}
@@ -667,7 +672,7 @@ HEAPfree_(Heap *h, int free_file)
 int
 HEAPfree(Heap *h)
 {
-	return HEAPfree_(h, 0);
+	return HEAPfree_internal(h, 0);
 }
 
 /*
@@ -816,7 +821,7 @@ HEAPdelete(Heap *h, const char *o, const char *ext)
 		return 0;
 	}
 	if (h->base)
-		HEAPfree_(h, 1);
+		HEAPfree_internal(h, 1);
 	if (h->copied) {
 		return 0;
 	}
