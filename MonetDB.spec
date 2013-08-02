@@ -32,6 +32,7 @@ Source: http://dev.monetdb.org/downloads/sources/Feb2013-SP3/%{name}-%{version}.
 BuildRequires: bison
 BuildRequires: bzip2-devel
 # BuildRequires: cfitsio-devel
+# BuildRequires: gdal-devel
 # BuildRequires: libgeotiff-devel
 BuildRequires: flex
 %if %{?rhel:0}%{!?rhel:1}
@@ -458,6 +459,7 @@ fi
 %exclude %{_libdir}/monetdb5/json*.mal
 %{_libdir}/monetdb5/*.mal
 # %{_libdir}/monetdb5/autoload/*_fits.mal
+# %{_libdir}/monetdb5/autoload/*_gdal.mal
 # %{_libdir}/monetdb5/autoload/*_geotiff.mal
 %{_libdir}/monetdb5/autoload/*_lsst.mal
 %{_libdir}/monetdb5/autoload/*_opt_sql_append.mal
@@ -679,6 +681,7 @@ developer, but if you do want to test, this is the package you need.
 	--with-hwcounters=no \
 	--with-java=no \
 	--with-mseed=no \
+	--with-gdal=no \
 	--with-geotiff=no \
 	--with-perl=yes \
 	--with-pthread=yes \
