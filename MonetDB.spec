@@ -31,7 +31,8 @@ Source: http://dev.monetdb.org/downloads/sources/Feb2013-SP3/%{name}-%{version}.
 
 BuildRequires: bison
 BuildRequires: bzip2-devel
-# BuildRequires: cfitsio-devel libgeotiff-devel
+# BuildRequires: cfitsio-devel
+# BuildRequires: libgeotiff-devel
 BuildRequires: flex
 %if %{?rhel:0}%{!?rhel:1}
 # no geos library on RedHat Enterprise Linux and derivatives
@@ -657,7 +658,6 @@ developer, but if you do want to test, this is the package you need.
 	--enable-debug=no \
 	--enable-developer=no \
 	--enable-fits=no \
-	--enable-geotiff=no \
 	--enable-gdk=yes \
 	--enable-geom=%{?rhel:no}%{!?rhel:yes} \
 	--enable-instrument=no \
