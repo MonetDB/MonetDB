@@ -537,6 +537,7 @@ systemd-tmpfiles --create %{_sysconfdir}/tmpfiles.d/monetdbd.conf
 %{_libdir}/monetdb5/autoload/*_sql.mal
 %{_libdir}/monetdb5/lib_sql.so
 %{_libdir}/monetdb5/*.sql
+%{_libdir}/monetdb5/autoload/*_sciql.mal
 %dir %{_libdir}/monetdb5/createdb
 %if %{?rhel:0}%{!?rhel:1}
 %exclude %{_libdir}/monetdb5/createdb/*_geom.sql
