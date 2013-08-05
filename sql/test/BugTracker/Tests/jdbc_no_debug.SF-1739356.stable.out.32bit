@@ -31,16 +31,16 @@ Ready.
 | | | | | | | table(sys._tables) [ _tables.id as p.id, _tables.type as p.type ] COUNT  |
 | | | | | | ) [ p.type != smallint[tinyint "2"] ]                                      |
 | | | | | ) [ p.id as tables.id ]                                                                                  |
-| | | | ) [  ] [ sys.count() NOT NULL as L1 ],                                                                     |
+| | | | ) [  ] [ sys.count() NOT NULL as L1.L1 ],                                      |
 | | | | group by (                                                                                                 |
 | | | | | project (                                                                                                                                                                                                                                                         |
 | | | | | | select (                                                                                                                                                                                                                                                        |
 | | | | | | | table(tmp._tables) [ _tables.id as t.id, _tables.type as t.type ] COUNT  |
 | | | | | | ) [ t.type != smallint[tinyint "2"] ]                                      |
 | | | | | ) [ t.id as tables.id ]                                                                                  |
-| | | | ) [  ] [ sys.count() NOT NULL as L1 ]                                                                      |
-| | | ) [ L1 ]                                                                                                     |
-| | ) [  ] [ sys.sum no nil (L1) as L1 ]                                                                           |
+| | | | ) [  ] [ sys.count() NOT NULL as L1.L1 ]                                       |
+| | | ) [ L1.L1 ]                                                                      |
+| | ) [  ] [ sys.sum no nil (L1.L1) as L1.L1 ]                                         |
 | ) [ L1 NOT NULL as L1.L1 ]                                                                                                                                                                                                                                                                                        |
 +--------------------------------------------------------------------------------------+
 20 rows
@@ -50,7 +50,7 @@ Operation successful
 +--------------------------------------------------------------------------+
 | mal                                                                 |
 +==========================================================================+
-| function user.s1_1{autoCommit=true}():void;                         |
+| function user.s3_1{autoCommit=true}():void;                              |
 |     X_3:bat[:oid,:wrd]  := bat.new(nil:oid,nil:wrd);                |
 |     X_2 := sql.mvc();                                               |
 |     X_9 := sql.bind(X_2,"sys","_tables","type",0);          |
@@ -60,7 +60,7 @@ Operation successful
 |     X_68 := algebra.subselect(r1_12,2:sht,2:sht,true,true,true);         |
 |     X_15 := sql.bind(X_2,"sys","_tables","type",1);         |
 |     X_69 := algebra.subselect(X_15,X_6,2:sht,2:sht,true,true,true);      |
-|     X_17 := sql.subdelta(X_67,X_6,X_12,X_68,X_69);                           |
+|     X_17 := sql.subdelta(X_67,X_6,X_12,X_68,X_69);                       |
 |     X_18 := sql.bind(X_2,"sys","_tables","id",0);                    |
 |     (X_20,r1_28) := sql.bind(X_2,"sys","_tables","id",2);            |
 |     X_22 := sql.bind(X_2,"sys","_tables","id",1);                    |
@@ -80,7 +80,7 @@ Operation successful
 |     X_43 := algebra.selectNotNil(X_41);                              |
 |     X_44:wrd  := aggr.sum(X_43);                                     |
 |     sql.exportValue(1,".L1","L1","wrd",32,0,6,X_44,"");              |
-| end s1_1;                                                           |
+| end s3_1;                                                                |
 | # querylog.define("explain select count(*) from tables;","default_pipe") |
 +--------------------------------------------------------------------------+
 32 rows
