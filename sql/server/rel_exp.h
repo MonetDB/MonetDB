@@ -20,6 +20,8 @@
 #ifndef _REL_EXP_H_
 #define _REL_EXP_H_
 
+#include "sql_mvc.h"
+
 #define new_exp_list(sa) sa_list(sa)
 #define exp2list(sa,e)   append(sa_list(sa),e)
 
@@ -72,7 +74,7 @@ extern sql_exp * exp_var(sql_allocator *sa, char *name, sql_subtype *type, int l
 extern sql_exp * exp_return(sql_allocator *sa, sql_exp *val, int level);
 extern sql_exp * exp_while(sql_allocator *sa, sql_exp *cond, list *stmts);
 extern sql_exp * exp_if(sql_allocator *sa, sql_exp *cond, list *if_stmts, list *else_stmts);
-extern sql_exp * exp_rel(sql_allocator *sa, sql_rel * r);
+extern sql_exp * exp_rel(mvc *sql, sql_rel * r);
 
 extern void exp_setname(sql_allocator *sa, sql_exp *e, char *rname, char *name );
 extern void exp_setrelname(sql_allocator *sa, sql_exp *e, int nr );

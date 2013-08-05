@@ -23,6 +23,7 @@
 #include "rel_exp.h"
 #include "rel_psm.h"
 #include "rel_prop.h" /* for prop_copy() */
+#include "rel_optimizer.h"
 
 static sql_exp * 
 exp_create(sql_allocator *sa, int type ) 
@@ -439,10 +440,11 @@ exp_if(sql_allocator *sa, sql_exp *cond, list *if_stmts, list *else_stmts)
 }
 
 sql_exp * 
-exp_rel(sql_allocator *sa, sql_rel *rel)
+exp_rel(mvc *sql, sql_rel *rel)
 {
-	sql_exp *e = exp_create(sa, e_psm);
+	sql_exp *e = exp_create(sql->sa, e_psm);
 
+	rel = rel_optimizer(sql, rel);
 	e->l = rel;
 	e->flag = PSM_REL;
 	return e;
