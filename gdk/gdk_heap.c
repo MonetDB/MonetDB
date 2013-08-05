@@ -84,28 +84,26 @@ static MT_Lock HEAPcacheLock MT_LOCK_INITIALIZER("HEAPcacheLock");
 void
 HEAPcacheInit(void)
 {
-#if HEAP_CACHE_SIZE > 0
-	int i;
-
-	assert(hc.sz == 0);
 #ifdef NEED_MT_LOCK_INIT
 	MT_lock_init(&HEAPcacheLock, "HEAPcache_init");
 #endif
+#if HEAP_CACHE_SIZE > 0
 	MT_lock_set(&HEAPcacheLock, "HEAPcache_init");
+	assert(hc.sz == 0);
 	hc.used = 0;
 	hc.hc = GDKmalloc(sizeof(heap_cache_e) * HEAP_CACHE_SIZE);
-	if (hc.hc == NULL) {
-		MT_lock_unset(&HEAPcacheLock, "HEAPcache_init");
-		return;
-	}
-	hc.sz = HEAP_CACHE_SIZE;
-	GDKcreatedir(HCDIR DIR_SEP_STR);
-	/* clean old leftovers */
-	for (i = 0; i < HEAP_CACHE_SIZE; i++) {
-		char fn[8];
+	if (hc.hc != NULL) {
+		int i;
 
-		snprintf(fn, sizeof(fn), "%d", i);
-		GDKunlink(HCDIR, fn, NULL);
+		hc.sz = HEAP_CACHE_SIZE;
+		GDKcreatedir(HCDIR DIR_SEP_STR);
+		/* clean old leftovers */
+		for (i = 0; i < HEAP_CACHE_SIZE; i++) {
+			char fn[8];
+
+			snprintf(fn, sizeof(fn), "%d", i);
+			GDKunlink(HCDIR, fn, NULL);
+		}
 	}
 	MT_lock_unset(&HEAPcacheLock, "HEAPcache_init");
 #endif
@@ -637,21 +635,25 @@ HEAPcopy(Heap *dst, Heap *src)
  * pre-allocated filename.  simple: alloc and copy.
  */
 static int
-HEAPfree_(Heap *h, int free_file)
+HEAPfree_internal(Heap *h, int free_file)
 {
 	if (h->base) {
 		if (h->storage == STORE_MEM) {	/* plain memory */
-			HEAPDEBUG fprintf(stderr, "#HEAPfree " SZFMT " " PTRFMT "\n", h->size, PTRFMTCAST h->base);
+			HEAPDEBUG fprintf(stderr, "#HEAPfree " SZFMT
+					  " " PTRFMT "\n",
+					  h->size, PTRFMTCAST h->base);
 			GDKfree(h->base);
 		} else {	/* mapped file, or STORE_PRIV */
-			int ret = HEAPcacheAdd(h->base, h->size, h->filename, h->storage, free_file);
+			int ret = HEAPcacheAdd(h->base, h->size, h->filename,
+					       h->storage, free_file);
 
 			if (ret < 0) {
-				GDKsyserror("HEAPfree: %s was not mapped\n", h->filename);
+				GDKsyserror("HEAPfree: %s was not mapped\n",
+					    h->filename);
 				assert(0);
 			}
-			HEAPDEBUG fprintf(stderr,
-					  "#munmap(base=" PTRFMT ", size=" SZFMT ") = %d\n",
+			HEAPDEBUG fprintf(stderr, "#munmap(base=" PTRFMT ", "
+					  "size=" SZFMT ") = %d\n",
 					  PTRFMTCAST(void *)h->base,
 					  h->size, ret);
 		}
@@ -667,7 +669,7 @@ HEAPfree_(Heap *h, int free_file)
 int
 HEAPfree(Heap *h)
 {
-	return HEAPfree_(h, 0);
+	return HEAPfree_internal(h, 0);
 }
 
 /*
@@ -815,7 +817,7 @@ HEAPdelete(Heap *h, const char *o, const char *ext)
 		return 0;
 	}
 	if (h->base)
-		HEAPfree_(h, 1);
+		HEAPfree_internal(h, 1);
 	if (h->copied) {
 		return 0;
 	}

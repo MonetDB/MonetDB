@@ -142,15 +142,17 @@ GDKlockstatistics(int what)
 		return;
 	}
 	GDKlocklist = sortlocklist(GDKlocklist);
+	fprintf(stderr, "# lock name\tcount\tcontention\tsleep\tlocked\t(un)locker\n");
 	for (l = GDKlocklist; l; l = l->next)
 		if (what == 0 ||
 		    (what == 1 && l->count) ||
 		    (what == 2 && l->contention) ||
 		    (what == 3 && l->lock))
-			fprintf(stderr, "#lock %-18s\t" SZFMT "\t" SZFMT "\t" SZFMT "%s\n",
+			fprintf(stderr, "# %-18s\t" SZFMT "\t" SZFMT "\t" SZFMT "\t%s\t%s\n",
 				l->name ? l->name : "unknown",
 				l->count, l->contention, l->sleep,
-				what != 3 && l->lock ? "\tlocked" : "");
+				l->lock ? "locked" : "",
+				l->locker ? l->locker : "");
 	fprintf(stderr, "#total lock count " SZFMT "\n", (size_t) GDKlockcnt);
 	fprintf(stderr, "#lock contention  " SZFMT "\n", (size_t) GDKlockcontentioncnt);
 	fprintf(stderr, "#lock sleep count " SZFMT "\n", (size_t) GDKlocksleepcnt);

@@ -205,12 +205,13 @@ typedef struct MT_Lock {
 	size_t sleep;
 	struct MT_Lock * volatile next;
 	const char *name;
+	const char *locker;
 #endif
 } MT_Lock;
 
 #ifndef NDEBUG
 
-#define MT_LOCK_INITIALIZER(name)	= {0, 0, 0, 0, (struct MT_Lock *) -1, name}
+#define MT_LOCK_INITIALIZER(name)	= {0, 0, 0, 0, (struct MT_Lock *) -1, name, NULL}
 
 gdk_export void GDKlockstatistics(int);
 gdk_export MT_Lock * volatile GDKlocklist;
@@ -219,6 +220,7 @@ gdk_export ATOMIC_TYPE volatile GDKlockcnt;
 gdk_export ATOMIC_TYPE volatile GDKlockcontentioncnt;
 gdk_export ATOMIC_TYPE volatile GDKlocksleepcnt;
 #define _DBG_LOCK_COUNT_0(l, n)		ATOMIC_INC(GDKlockcnt, dummy, n)
+#define _DBG_LOCK_LOCKER(l, n)		((l)->locker = (n))
 #define _DBG_LOCK_CONTENTION(l, n)					\
 	do {								\
 		TEMDEBUG fprintf(stderr, "#lock %s contention in %s\n", (l)->name, n); \
@@ -248,7 +250,8 @@ gdk_export ATOMIC_TYPE volatile GDKlocksleepcnt;
 #define _DBG_LOCK_INIT(l, n)						\
 	do {								\
 		(l)->count = (l)->contention = (l)->sleep = 0;		\
-		(l)->name = n;						\
+		(l)->name = (n);					\
+		_DBG_LOCK_LOCKER(l, NULL);				\
 		while (ATOMIC_TAS(GDKlocklistlock, dummy, "") != 0)	\
 			;						\
 		(l)->next = GDKlocklist;				\
@@ -277,13 +280,14 @@ gdk_export ATOMIC_TYPE volatile GDKlocksleepcnt;
 
 #define MT_LOCK_INITIALIZER(name)	= ATOMIC_FLAG_INIT
 
-#define _DBG_LOCK_COUNT_0(l, n)		((void) n)
-#define _DBG_LOCK_CONTENTION(l, n)	((void) n)
-#define _DBG_LOCK_SLEEP(l, n)		((void) n)
+#define _DBG_LOCK_COUNT_0(l, n)		((void) (n))
+#define _DBG_LOCK_CONTENTION(l, n)	((void) (n))
+#define _DBG_LOCK_SLEEP(l, n)		((void) (n))
 #define _DBG_LOCK_COUNT_1(l)		((void) 0)
 #define _DBG_LOCK_COUNT_2(l)		((void) 0)
-#define _DBG_LOCK_INIT(l, n)		((void) n)
+#define _DBG_LOCK_INIT(l, n)		((void) (n))
 #define _DBG_LOCK_DESTROY(l)		((void) 0)
+#define _DBG_LOCK_LOCKER(l, n)		((void) (n))
 
 #endif
 
@@ -302,6 +306,7 @@ gdk_export ATOMIC_TYPE volatile GDKlocksleepcnt;
 			} while (ATOMIC_TAS((l)->lock, dummy, n) != 0); \
 			_DBG_LOCK_COUNT_1(l);				\
 		}							\
+		_DBG_LOCK_LOCKER(l, n);					\
 		_DBG_LOCK_COUNT_2(l);					\
 	} while (0)
 #define MT_lock_init(l, n)				\
@@ -309,7 +314,11 @@ gdk_export ATOMIC_TYPE volatile GDKlocksleepcnt;
 		ATOMIC_CLEAR((l)->lock, dummy, n);	\
 		_DBG_LOCK_INIT(l, n);			\
 	} while (0)
-#define MT_lock_unset(l, n)	ATOMIC_CLEAR((l)->lock, dummy, n)
+#define MT_lock_unset(l, n)					\
+		do {						\
+			_DBG_LOCK_LOCKER(l, n);			\
+			ATOMIC_CLEAR((l)->lock, dummy, n);	\
+		} while (0)
 #define MT_lock_destroy(l)	_DBG_LOCK_DESTROY(l)
 /* return 0 on success, -1 on failure to get the lock */
 #define MT_lock_try(l)		((ATOMIC_TAS((l)->lock, dummy, dummy) == 0) - 1)
