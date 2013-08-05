@@ -47,12 +47,6 @@ SET size_y = (SELECT MAX(y) + 1 FROM rs.image1);
 
 CREATE ARRAY fire (x INT DIMENSION[size_x], y INT DIMENSION[size_y], f INT);
 
----- These two tables SHOULD be DECLARED inside the function(s),
----- but that does not seem to work (correctly) yet !??
----- Hence, we create them globally, for now ...
-CREATE TABLE bridges (x INT, y INT, i INT, a INT);
-CREATE TABLE trans (i INT UNIQUE, a INT, x INT);
-
 
 -- BSM classification (landsatFirePredicate()) --
 
@@ -121,7 +115,7 @@ UPDATE fire SET f = x * size_y + y WHERE f IS NOT NULL;
 --CREATE FUNCTION clump_4connected()
 --RETURNS TABLE (i1 INT, i2 INT)
 --BEGIN
---  --DECLARE TABLE trans (i INT UNIQUE, a INT, x INT);
+--  DECLARE TABLE trans (i INT, a INT, x INT);
 --  DECLARE iter_0 INT, iter_1 INT;
 --  SET iter_0 = 0;
 --  SET iter_1 = 0;
@@ -182,7 +176,7 @@ UPDATE fire SET f = x * size_y + y WHERE f IS NOT NULL;
 CREATE FUNCTION clump_8connected()
 RETURNS TABLE (i1 INT, i2 INT)
 BEGIN
-  --DECLARE TABLE trans (i INT UNIQUE, a INT, x INT);
+  DECLARE TABLE trans (i INT, a INT, x INT);
   DECLARE iter_0 INT, iter_1 INT;
   SET iter_0 = 0;
   SET iter_1 = 0;
@@ -255,8 +249,8 @@ UPDATE fire SET f = NULL WHERE f IN (
 CREATE FUNCTION connect_neighbors()
 RETURNS TABLE (i1 INT, i2 INT)
 BEGIN
-  --DECLARE TABLE bridges (x INT, y INT, i INT, a INT);
-  --DECLARE TABLE trans (i INT UNIQUE, a INT, x INT);
+  DECLARE TABLE bridges (x INT, y INT, i INT, a INT);
+  DECLARE TABLE trans (i INT, a INT, x INT);
   DECLARE iter_0 INT, iter_1 INT;
   SET iter_0 = 0;
   SET iter_1 = 0;
