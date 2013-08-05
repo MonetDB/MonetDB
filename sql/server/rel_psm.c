@@ -91,12 +91,12 @@ psm_set_exp(mvc *sql, dnode *n)
 	if (!e)
 		return NULL;
 	if (rel) {
-		sql_exp *er = exp_rel(sql->sa, rel);
+		sql_exp *er = exp_rel(sql, rel);
 		list *b = sa_list(sql->sa);
 
 		append(b, er);
 		append(b, exp_set(sql->sa, name, e, level));
-		res = exp_rel(sql->sa, rel_psm_block(sql->sa, b));
+		res = exp_rel(sql, rel_psm_block(sql->sa, b));
 	} else {
 		res = exp_set(sql->sa, name, e, level);
 	}
@@ -389,7 +389,7 @@ rel_psm_return( mvc *sql, sql_subtype *restype, symbol *return_sym )
 		return NULL;
 	
 	if (rel && ek.card != card_relation)
-		append(l, exp_rel(sql->sa, rel));
+		append(l, exp_rel(sql, rel));
 	else if (rel) {
 		list *exps = sa_list(sql->sa);
 		node *n, *m;
@@ -418,7 +418,7 @@ rel_psm_return( mvc *sql, sql_subtype *restype, symbol *return_sym )
 			rel -> exps = exps;
 		else
 			rel = rel_project(sql->sa, rel, exps);
-		res = exp_rel(sql->sa, rel);
+		res = exp_rel(sql, rel);
 	} else if (!rel && res->tpe.comp_type){ /* handle return table-var */
 		sql_rel *rel = stack_find_rel_var(sql, res->r);
 		list *exps = sa_list(sql->sa);
@@ -439,7 +439,7 @@ rel_psm_return( mvc *sql, sql_subtype *restype, symbol *return_sym )
 			append(exps, e);
 		}
 		rel = rel_project(sql->sa, rel, exps);
-		res = exp_rel(sql->sa, rel);
+		res = exp_rel(sql, rel);
 	}
 	append(l, exp_return(sql->sa, res, stack_nr_of_declared_tables(sql)));
 	return l;
@@ -461,7 +461,7 @@ rel_select_into( mvc *sql, symbol *sq, exp_kind ek)
 	if (!r) 
 		return NULL;
 	nl = sa_list(sql->sa);
-	append(nl, exp_rel(sql->sa, r));
+	append(nl, exp_rel(sql, r));
 	for (m = r->exps->h, n = into->h; m && n; m = m->next, n = n->next) {
 		sql_subtype *tpe = NULL;
 		char *nme = n->data.sval;
@@ -578,7 +578,7 @@ sequential_block (mvc *sql, sql_subtype *restype, dlist *blk, char *opt_label, i
 			sql_rel *r = rel_updates(sql, s);
 			if (!r)
 				return NULL;
-			res = exp_rel(sql->sa, r);
+			res = exp_rel(sql, r);
 		}	break;
 		default:
 			res = sql_error(sql, 01, 
