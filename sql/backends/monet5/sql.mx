@@ -2520,6 +2520,8 @@ create_func( mvc *sql, char *sname, sql_func *f )
 		sql->sa = sa_create();
 		buf = sa_strdup(sql->sa, nf->query);
 		r = rel_parse(sql, buf, m_deps); 
+		if (r)
+			r = rel_optimizer(sql, r);
 		if (r) {
 			stmt *sb = rel_bin(sql, r);
 			list *id_col_l = stmt_list_dependencies(sql->sa, sb, COLUMN_DEPENDENCY);
