@@ -21,12 +21,14 @@
 #include <stdio.h>
 #include "mal_mapi.h"
 #include "mal_client.h"
+#include "mal_linker.h"
 #include "stream.h"
 #include "sql_scenario.h"
 #include <mapi.h>
 #include <rest_jsonstore_handle_get.h>
 
 static str RESTsqlQuery(char **result, char * query);
+char * result_ok = "select true as ok;";
 
 static str
 RESTsqlQuery(char **result, char * query)
@@ -35,134 +37,120 @@ RESTsqlQuery(char **result, char * query)
 	str qmsg = MAL_SUCCEED;
 	char * resultstring = NULL;
 	struct buffer * resultbuffer;
-	stream * oldstream;
 	stream * resultstream;
 	Client c;
+	bstream *fin = NULL;
+	int len = 0;
 
 	resultbuffer = buffer_create(BLOCK);
 	resultstream = buffer_wastream(resultbuffer, "resultstring");
 
-	c = mal_clients;
-	oldstream = c->fdout;
-	c->fdout = resultstream;
+	c = MCinitClient(CONSOLE, fin, resultstream);
+	c->nspace = newModule(NULL, putName("user", 4));
+
+	// TODO: lookup user_id in bat
+	c->user = 1;
+	initLibraries();
 	msg = setScenario(c, "sql");
+	msg = SQLinitClient(c);
+	MSinitClientPrg(c, "user", "main");
+	(void) MCinitClientThread(c);
+
 	qmsg = SQLstatementIntern(c, &query, "rest", TRUE, TRUE);
-
-	resultstring = buffer_get_buf(resultbuffer);
-	*result = GDKstrdup(resultstring);
-	msg = setScenario(c, "mal");
-	c->fdout = oldstream;
-	free(resultstring);
-	buffer_destroy(resultbuffer);
-
-	if (qmsg != MAL_SUCCEED) {
-		return qmsg;
+	if (qmsg == MAL_SUCCEED) {
+		resultstring = buffer_get_buf(resultbuffer);
+		*result = GDKstrdup(resultstring);
+		free(resultstring);
 	} else {
-		return msg;
+		len = strlen(qmsg) + 19;
+		resultstring = malloc(len);
+		snprintf(resultstring, len, "{ \"error\": \"%s\" }\n", qmsg);
+		*result = GDKstrdup(resultstring);
+		free(resultstring);
 	}
+	buffer_destroy(resultbuffer);
+	msg = SQLexitClient(c);
+	return msg;
 }
 
 str RESTwelcome(char **result)
 {
 	str msg = MAL_SUCCEED;
-	char * querytext = "select '{ \"monetdb jsonstore\": \"Welcome\", \"version\":\"(unreleased)\" }';";
-
+	// TODO: get version from variable
+	char * querytext = "select 'Welcome' as jsonstore, '(unreleased)' as version;";
 	msg = RESTsqlQuery(result, querytext);
-
 	return msg;
 }
 
 str RESTallDBs(char **result)
 {
 	str msg = MAL_SUCCEED;
-	char * querytext = "select name from tables where name like 'json_%';";
-
+	char * querytext = "select substring(name, 6, length(name) -5) from tables where name like 'json_%';";
 	msg = RESTsqlQuery(result, querytext);
-
 	return msg;
 }
 
 str RESTuuid(char **result)
 {
 	str msg = MAL_SUCCEED;
-	char * querytext = "select uuid();";
-
+	char * querytext = "select uuid() as uuid;";
 	msg = RESTsqlQuery(result, querytext);
-
 	return msg;
 }
 
 str RESTcreateDB(char ** result, char * dbname)
 {
 	str msg = MAL_SUCCEED;
-	str qmsg = MAL_SUCCEED;
 	int len = strlen(dbname) + 45;
-	char * committext = "commit;";
-	char * rollbacktext = "rollback;";
 	char * querytext = NULL;
 
 	querytext = malloc(len);
-	sprintf(querytext, "CREATE TABLE sys.json_%s (u uuid, r int, js json);", dbname);
+	snprintf(querytext, len, "CREATE TABLE json_%s (u uuid, r int, js json);", dbname);
 
-	qmsg = RESTsqlQuery(result, querytext);
-	if (qmsg == MAL_SUCCEED) {
-		msg = RESTsqlQuery(result, committext);
-	} else {
-		msg = RESTsqlQuery(result, rollbacktext);
-	}
-	if (msg) {};
+	msg = RESTsqlQuery(result, querytext);
 	if (querytext != NULL) {
 		free(querytext);
 	}
-	return qmsg;
+	if (strcmp(*result,"") == 0) {
+	  msg = RESTsqlQuery(result, result_ok);
+	}
+	return msg;
 }
 
 str RESTdeleteDB(char ** result, char * dbname)
 {
 	str msg = MAL_SUCCEED;
-	str qmsg = MAL_SUCCEED;
 	int len = strlen(dbname) + 23;
-	char * committext = "commit;";
-	char * rollbacktext = "rollback;";
 	char * querytext = NULL;
 
 	querytext = malloc(len);
-	sprintf(querytext, "DROP TABLE json_%s;", dbname);
+	snprintf(querytext, len, "DROP TABLE json_%s;", dbname);
 
-	qmsg = RESTsqlQuery(result, querytext);
-	if (qmsg == MAL_SUCCEED) {
-		msg = RESTsqlQuery(result, committext);
-	} else {
-		msg = RESTsqlQuery(result, rollbacktext);
-	}
-	if (msg) {};
+	msg = RESTsqlQuery(result, querytext);
 	if (querytext != NULL) {
 		free(querytext);
 	}
-	return qmsg;
+	if (strcmp(*result,"") == 0) {
+	  msg = RESTsqlQuery(result, result_ok);
+	}
+	return msg;
 }
 
 str RESTcreateDoc(char ** result, char * dbname, const char * doc)
 {
 	str msg = MAL_SUCCEED;
-	str qmsg = MAL_SUCCEED;
 	int len = strlen(dbname) + strlen(doc)+ 52;
-	char * committext = "commit;";
-	char * rollbacktext = "rollback;";
 	char * querytext = NULL;
 
 	querytext = malloc(len);
-	sprintf(querytext, "INSERT INTO json_%s (u, r, js) VALUES (uuid(), 1, '%s');", dbname, doc);
+	snprintf(querytext, len, "INSERT INTO json_%s (u, r, js) VALUES (uuid(), 1, '%s');", dbname, doc);
 
-	qmsg = RESTsqlQuery(result, querytext);
-	if (qmsg == MAL_SUCCEED) {
-		msg = RESTsqlQuery(result, committext);
-	} else {
-		msg = RESTsqlQuery(result, rollbacktext);
-	}
-	if (msg) {};
+	msg = RESTsqlQuery(result, querytext);
 	if (querytext != NULL) {
 		free(querytext);
 	}
-	return qmsg;
+	if (strcmp(*result,"") == 0) {
+	  msg = RESTsqlQuery(result, result_ok);
+	}
+	return msg;
 }
