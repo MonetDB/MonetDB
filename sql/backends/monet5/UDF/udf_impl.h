@@ -41,7 +41,7 @@
 static char *
 UF(UDFfuse_,UI,UO,_) ( UO *ret , UI one , UI two )
 {
-        int shift = sizeof(UI) * 8;
+	int shift = sizeof(UI) * 8;
 
 	/* assert calling sanity */
 	assert(ret != NULL);
@@ -74,8 +74,8 @@ UF(UDFfuse_,UI,UO,) ( UO *ret , const UI *one , const UI *two )
 /* type-specific core algorithm */
 static char *
 UF(UDFBATfuse_,UI,UO,)  ( const BAT *bres, const BAT *bone, const BAT *btwo, BUN n,
-                       bit *two_tail_sorted_unsigned,
-                       bit *two_tail_revsorted_unsigned )
+                          bit *two_tail_sorted_unsigned,
+                          bit *two_tail_revsorted_unsigned )
 {
 	UI *one = NULL, *two = NULL;
 	UO *res = NULL;
