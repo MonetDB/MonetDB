@@ -437,33 +437,10 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 		if ((fd = open(path, O_RDWR)) < 0) {
 			fprintf(stderr, "= %s:%d: MT_mremap(%s,"PTRFMT","SZFMT","SZFMT"): open() failed\n", __FILE__, __LINE__, path?path:"NULL", PTRFMTCAST old_address, old_size, *new_size);
 			return NULL;
-<<<<<<< variant A
+		}
 		if (GDKextendf(fd, *new_size) < 0) {
->>>>>>> variant B
-		}
-		if (fstat(fd, &stb) < 0) {
-			/* shouldn't happen */
 			close(fd);
-			fprintf(stderr, "= %s:%d: MT_mremap(%s,"PTRFMT","SZFMT","SZFMT"): fstat() failed\n", __FILE__, __LINE__, path?path:"NULL", PTRFMTCAST old_address, old_size, *new_size);
-			return NULL;
-		}
-		/* if necessary, extend the underlying file */
-		if (stb.st_size < (off_t) *new_size &&
-		    (lseek(fd, *new_size - 1, SEEK_SET) < 0 ||
-		     write(fd, "\0", 1) < 0)) {
-####### Ancestor
-		if (fstat(fd, &stb) < 0) {
-			/* shouldn't happen */
-			close(fd);
-			return NULL;
-		}
-		/* if necessary, extend the underlying file */
-		if (stb.st_size < (off_t) *new_size &&
-		    (lseek(fd, *new_size - 1, SEEK_SET) < 0 ||
-		     write(fd, "\0", 1) < 0)) {
-======= end
-			close(fd);
-			fprintf(stderr, "= %s:%d: MT_mremap(%s,"PTRFMT","SZFMT","SZFMT"): lseek() or write() failed\n", __FILE__, __LINE__, path?path:"NULL", PTRFMTCAST old_address, old_size, *new_size);
+			fprintf(stderr, "= %s:%d: MT_mremap(%s,"PTRFMT","SZFMT","SZFMT"): GDKextendf() failed\n", __FILE__, __LINE__, path?path:"NULL", PTRFMTCAST old_address, old_size, *new_size);
 			return NULL;
 		}
 #ifdef HAVE_MREMAP
@@ -577,7 +554,7 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 						  old_size) < 0 ||
 					    ftruncate(fd, *new_size) < 0) {
 						close(fd);
-						fprintf(stderr, "= %s:%d: MT_mremap(%s,"PTRFMT","SZFMT","SZFMT"): write() or lseek() or write() failed\n", __FILE__, __LINE__, path?path:"NULL", PTRFMTCAST old_address, old_size, *new_size);
+						fprintf(stderr, "= %s:%d: MT_mremap(%s,"PTRFMT","SZFMT","SZFMT"): write() or ftruncate() failed\n", __FILE__, __LINE__, path?path:"NULL", PTRFMTCAST old_address, old_size, *new_size);
 						return NULL;
 					}
 					p = mmap(NULL, *new_size, prot, flags,
