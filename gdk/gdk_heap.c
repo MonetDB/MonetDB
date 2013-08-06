@@ -344,6 +344,7 @@ int
 HEAPextend(Heap *h, size_t size)
 {
 	char nme[PATHLENGTH], *ext = NULL;
+	char *failure = "None";
 
 	if (h->filename) {
 		strncpy(nme, h->filename, sizeof(nme));
@@ -352,6 +353,8 @@ HEAPextend(Heap *h, size_t size)
 	}
 	if (size <= h->size)
 		return 0;
+	else
+		failure = "size > h->size";
 
  	if (h->storage != STORE_MEM) {
 		char *p;
@@ -370,6 +373,8 @@ HEAPextend(Heap *h, size_t size)
 			h->maxsize = h->size = size;
 			h->base = p;
  			return 0;
+ 		} else {
+ 			failure = "MT_mremap() failed";
  		}
 	} else {
 		/* extend a malloced heap, possibly switching over to
@@ -395,6 +400,8 @@ HEAPextend(Heap *h, size_t size)
 			HEAPDEBUG fprintf(stderr, "#HEAPextend: extending malloced heap " SZFMT " " SZFMT " " PTRFMT " " PTRFMT "\n", size, h->size, PTRFMTCAST p, PTRFMTCAST h->base);
 			if (h->base)
 				return 0;
+			else
+				failure = "h->storage == STORE_MEM && !must_map && !h->base";
 		}
 		/* too big: convert it to a disk-based temporary heap */
 		if (can_mmap) {
@@ -417,8 +424,10 @@ HEAPextend(Heap *h, size_t size)
 				 * to use a file from the cache (or
 				 * create a new one) */
 				h->filename = GDKmalloc(strlen(nme) + strlen(ext) + 2);
-				if (h->filename == NULL)
+				if (h->filename == NULL) {
+					failure = "h->storage == STORE_MEM && can_map && h->filename == NULL";
 					goto failed;
+				}
 				sprintf(h->filename, "%s.%s", nme, ext);
 				h->base = HEAPcacheFind(&h->size, h->filename, STORE_MMAP);
 				if (h->base) {
@@ -427,6 +436,8 @@ HEAPextend(Heap *h, size_t size)
 					memcpy(h->base, bak.base, bak.free);
 					HEAPfree(&bak);
 					return 0;
+				} else {
+					failure = "h->storage == STORE_MEM && can_map && !h->base";
 				}
 			}
 			fd = GDKfdlocate(nme, "wb", ext);
@@ -449,11 +460,15 @@ HEAPextend(Heap *h, size_t size)
 					memcpy(h->base, bak.base, bak.free);
 					HEAPfree(&bak);
 					return 0;
+				} else {
+					failure = "h->storage == STORE_MEM && can_map && fd >= 0 && HEAPload() < 0";
 				}
 				/* couldn't allocate, now first save
 				 * data to file */
-				if (HEAPsave_intern(&bak, nme, ext, ".tmp") < 0)
+				if (HEAPsave_intern(&bak, nme, ext, ".tmp") < 0) {
+					failure = "h->storage == STORE_MEM && can_map && fd >= 0 && HEAPsave_intern() < 0";
 					goto failed;
+				}
 				/* then free memory */
 				HEAPfree(&bak);
 				/* and load heap back in via
@@ -462,15 +477,21 @@ HEAPextend(Heap *h, size_t size)
 					/* success! */
 					GDKclrerr();	/* don't leak errors from e.g. HEAPload */
 					return 0;
+				} else {
+					failure = "h->storage == STORE_MEM && can_map && fd >= 0 && HEAPload_intern() < 0";
 				}
 				/* we failed */
+			} else {
+				failure = "h->storage == STORE_MEM && can_map && fd < 0";
 			}
+		} else {
+			failure = "h->storage == STORE_MEM && !can_map";
 		}
 	  failed:
 		*h = bak;
 	}
-	GDKerror("HEAPextend: failed to extend to " SZFMT " for %s%s%s\n",
-		 size, nme, ext ? "." : "", ext ? ext : "");
+	GDKerror("HEAPextend: failed to extend to " SZFMT " for %s%s%s: %s\n",
+		 size, nme, ext ? "." : "", ext ? ext : "", failure);
 	return -1;
 }
 

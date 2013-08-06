@@ -41,7 +41,7 @@
 static char *
 UF(UDFfuse_,UI,UO,_) ( UO *ret , UI one , UI two )
 {
-        int shift = sizeof(UI) * 8;
+	int shift = sizeof(UI) * 8;
 
 	/* assert calling sanity */
 	assert(ret != NULL);
@@ -71,16 +71,37 @@ UF(UDFfuse_,UI,UO,) ( UO *ret , const UI *one , const UI *two )
  * accessing value arrays directly.
  */
 
-/* type-specific core algorithm */
+/* type-specific core algorithm on arrays */
+static char *
+UF(UDFarrayfuse_,UI,UO,)  ( UO *res, const UI *one, const UI *two, BUN n )
+{
+	BUN i;
+	int shift = sizeof(UI) * 8;
+
+	/* assert calling sanity */
+	assert(res != NULL && one != NULL && two != NULL);
+
+	/* iterate over all values/tuples and do the work */
+	for (i = 0; i < n; i++)
+		if (one[i] == UN(UI) || two[i] == UN(UI))
+			/* NULL/nil in => NULL/nil out */
+			res[i] = UN(UO);
+		else
+			/* do the work; watch out for sign bits */
+			res[i] = ((UO) (UU) one[i] << shift) | (UU) two[i];
+
+	return MAL_SUCCEED;
+}
+
+/* type-specific core algorithm on BATs */
 static char *
 UF(UDFBATfuse_,UI,UO,)  ( const BAT *bres, const BAT *bone, const BAT *btwo, BUN n,
-                       bit *two_tail_sorted_unsigned,
-                       bit *two_tail_revsorted_unsigned )
+                          bit *two_tail_sorted_unsigned,
+                          bit *two_tail_revsorted_unsigned )
 {
 	UI *one = NULL, *two = NULL;
 	UO *res = NULL;
-	BUN i;
-        int shift = sizeof(UI) * 8;
+	str msg = NULL;
 
 	/* assert calling sanity */
 	assert(bres != NULL && bone != NULL && btwo != NULL);
@@ -93,14 +114,11 @@ UF(UDFBATfuse_,UI,UO,)  ( const BAT *bres, const BAT *bone, const BAT *btwo, BUN
 	one = (UI*) Tloc(bone, BUNfirst(bone));
 	two = (UI*) Tloc(btwo, BUNfirst(btwo));
 	res = (UO*) Tloc(bres, BUNfirst(bres));
-	/* iterate over all values/tuples and do the work */
-	for (i = 0; i < n; i++)
-		if (one[i] == UN(UI) || two[i] == UN(UI))
-			/* NULL/nil in => NULL/nil out */
-			res[i] = UN(UO);
-		else
-			/* do the work; watch out for sign bits */
-			res[i] = ((UO) (UU) one[i] << shift) | (UU) two[i];
+
+	/* call core function on arrays */
+	msg = UF(UDFarrayfuse_,UI,UO,) ( res, one, two , n );
+	if (msg != MAL_SUCCEED)
+		return msg;
 
 	*two_tail_sorted_unsigned =
 		BATtordered(btwo) && (two[0] >= 0 || two[n-1] < 0);
