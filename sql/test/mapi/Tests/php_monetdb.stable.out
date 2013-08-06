@@ -101,13 +101,13 @@ id	name	schema_id	query	type	system	commit_action	readonly	temporary
 5595	optimizers	2000	create view sys.optimizers as select * from sys.optimizers();	1	true	0	false	0	
 5605	environment	2000	create view sys.environment as select * from sys.environment();	1	true	0	false	0	
 5647	queue	2000	create view sys.queue as select * from sys.queue();	1	true	0	false	0	
-6173	storage	2000	create view sys.storage as select * from sys.storage();	1	true	0	false	0	
-6185	storagemodelinput	2000		0	true	0	false	0	
-6228	storagemodel	2000	create view sys.storagemodel as select * from sys.storagemodel();	1	true	0	false	0	
-6237	tablestoragemodel	2000	-- A summary of the table storage requirement is is available as a table view.n-- The auxillary column denotes the maximum space if all non-sorted columnsn-- would be augmented with a hash (rare situation)ncreate view sys.tablestoragemodelnas select "schema","table",max(count) as "count",ntsum(columnsize) as columnsize,ntsum(heapsize) as heapsize,ntsum(indices) as indices,ntsum(case when sorted = false then 8 * count else 0 end) as auxillarynfrom sys.storagemodel() group by "schema","table";	1	true	0	false	0	
-6259	systemfunctions	2000		0	true	0	false	0	
+6177	storage	2000	create view sys.storage as select * from sys.storage();	1	true	0	false	0	
+6189	storagemodelinput	2000		0	true	0	false	0	
+6232	storagemodel	2000	create view sys.storagemodel as select * from sys.storagemodel();	1	true	0	false	0	
+6241	tablestoragemodel	2000	-- A summary of the table storage requirement is is available as a table view.n-- The auxillary column denotes the maximum space if all non-sorted columnsn-- would be augmented with a hash (rare situation)ncreate view sys.tablestoragemodelnas select "schema","table",max(count) as "count",ntsum(columnsize) as columnsize,ntsum(heapsize) as heapsize,ntsum(indices) as indices,ntsum(case when sorted = false then 8 * count else 0 end) as auxillarynfrom sys.storagemodel() group by "schema","table";	1	true	0	false	0	
+6263	systemfunctions	2000		0	true	0	false	0	
 
-# 09:21:22 >  
-# 09:21:22 >  "Done."
-# 09:21:22 >  
+# 16:58:39 >  
+# 16:58:39 >  "Done."
+# 16:58:39 >  
 
