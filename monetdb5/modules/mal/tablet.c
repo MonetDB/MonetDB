@@ -1064,8 +1064,8 @@ SQLinsert_val(Column *fmt, char *s, char quote, ptr key, str *err, int col)
   bunins_failed:
 	if (*err == NULL) {
 		snprintf(buf, BUFSIZ,
-				 "parsing error from line " BUNFMT " field %d not inserted\n",
-				 BATcount(fmt->c[0]) + 1, col);
+				 "value from line " BUNFMT " field %d not inserted: %s\n",
+				 BATcount(fmt->c[0]) + 1, col, GDKerrbuf);
 		*err = GDKstrdup(buf);
 	}
 	return -1;
