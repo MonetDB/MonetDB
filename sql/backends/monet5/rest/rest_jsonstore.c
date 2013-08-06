@@ -56,7 +56,7 @@ mserver_browser_get(const UriUriA uri) {
 	if (uri.absolutePath) {
 		if (uri.pathHead != NULL) {
 			if (uri.pathHead->next == NULL) {
-				if (strcmp(uri.pathHead->text.first, API_SPECIAL_CHAR) > 0) {
+			  if (strncmp(uri.pathHead->text.first, API_SPECIAL_CHAR, 1) == 0) {
 					// This path element is on of the special cases
 					mserver_rest_command = MONETDB_REST_UNKWOWN_SPECIAL;
 					if (strcmp(uri.pathHead->text.first, MONETDB_REST_PATH_ALLDBS) == 0) {
@@ -74,7 +74,7 @@ mserver_browser_get(const UriUriA uri) {
 				}
 			} else {
 				// We have multiple paths
-				if (strcmp(uri.pathHead->text.first, API_SPECIAL_CHAR) > 0) {
+			  if (strncmp(uri.pathHead->text.first, API_SPECIAL_CHAR, 1) == 0) {
 					// This path element is on of the special cases
 					mserver_rest_command = MONETDB_REST_UNKWOWN_SPECIAL;
 					if (strcmp(uri.pathHead->text.first, MONETDB_REST_PATH_ALLDBS) == 0) {
@@ -89,7 +89,7 @@ mserver_browser_get(const UriUriA uri) {
 					// The first path element is a table name
 					// we cannot check this here, so we assume the table exists
 					fprintf(stderr, "url: %s\n", uri.pathHead->text.first);
-					if (strcmp(uri.pathTail->text.first, API_SPECIAL_CHAR) > 0) {
+					if (strncmp(uri.pathTail->text.first, API_SPECIAL_CHAR, 1) == 0) {
 						// This path element is on of the special cases
 						mserver_rest_command = MONETDB_REST_UNKWOWN_SPECIAL;
 						if (strcmp(uri.pathTail->text.first, MONETDB_REST_PATH_ALLDBS) == 0) {
@@ -255,6 +255,10 @@ handle_http_request (const char *url, const char *method, char **page,
 	case  MONETDB_REST_POST_NEW_DOC:
 		dbname = get_dbname(uri);
 		RESTcreateDoc(page, dbname, postdata);
+		break;
+	case MONETDB_REST_DB_INFO:
+		dbname = get_dbname(uri);
+		RESTdbInfo(page, dbname);
 		break;
 	default:
 		// error, unknown command

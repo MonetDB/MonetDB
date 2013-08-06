@@ -101,11 +101,11 @@ str RESTuuid(char **result)
 str RESTcreateDB(char ** result, char * dbname)
 {
 	str msg = MAL_SUCCEED;
-	int len = strlen(dbname) + 45;
+	int len = strlen(dbname) + 58;
 	char * querytext = NULL;
 
 	querytext = malloc(len);
-	snprintf(querytext, len, "CREATE TABLE json_%s (u uuid, r int, js json);", dbname);
+	snprintf(querytext, len, "CREATE TABLE json_%s (_id uuid, _rev VARCHAR(34), js json);", dbname);
 
 	msg = RESTsqlQuery(result, querytext);
 	if (querytext != NULL) {
@@ -139,18 +139,34 @@ str RESTdeleteDB(char ** result, char * dbname)
 str RESTcreateDoc(char ** result, char * dbname, const char * doc)
 {
 	str msg = MAL_SUCCEED;
-	int len = strlen(dbname) + strlen(doc)+ 52;
+	int len = strlen(dbname) + 32 + strlen(doc)+ 72;
 	char * querytext = NULL;
 
 	querytext = malloc(len);
-	snprintf(querytext, len, "INSERT INTO json_%s (u, r, js) VALUES (uuid(), 1, '%s');", dbname, doc);
+	snprintf(querytext, len, "INSERT INTO json_%s (_id, _rev, js) VALUES (uuid(), concat('1-', md5('%s')), '%s');", dbname, doc, doc);
 
 	msg = RESTsqlQuery(result, querytext);
 	if (querytext != NULL) {
 		free(querytext);
 	}
-	if (strcmp(*result,"") == 0) {
+	if (strcmp(*result,"&2 1 -1\n") == 0) {
 	  msg = RESTsqlQuery(result, result_ok);
+	}
+	return msg;
+}
+
+str RESTdbInfo(char **result, char * dbname)
+{
+	str msg = MAL_SUCCEED;
+	int len = strlen(dbname) + 21;
+	char * querytext = NULL;
+
+	querytext = malloc(len);
+	snprintf(querytext, len, "SELECT * FROM json_%s;", dbname);
+
+	msg = RESTsqlQuery(result, querytext);
+	if (querytext != NULL) {
+		free(querytext);
 	}
 	return msg;
 }

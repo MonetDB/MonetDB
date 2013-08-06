@@ -36,8 +36,9 @@
 rest_export str RESTwelcome(char **result);
 rest_export str RESTuuid(char **result);
 rest_export str RESTallDBs(char **result);
-rest_export str RESTcreateDB(char **result, char * dbName);
-rest_export str RESTdeleteDB(char **result, char * dbName);
-rest_export str RESTcreateDoc(char **result, char * dbName, const char * doc);
+rest_export str RESTcreateDB(char **result, char * dbname);
+rest_export str RESTdeleteDB(char **result, char * dbname);
+rest_export str RESTcreateDoc(char **result, char * dbname, const char * doc);
+rest_export str RESTdbInfo(char **result, char * dbname);
 
 #endif
