@@ -412,8 +412,10 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 	if (*new_size < old_size) {
 		/* shrink */
 		if (munmap((char *) old_address + *new_size,
-			   old_size - *new_size) < 0)
+			   old_size - *new_size) < 0) {
+			fprintf(stderr, "= %s:%d: MT_mremap(%s,"PTRFMT","SZFMT","SZFMT"): munmap() failed\n", __FILE__, __LINE__, path?path:"NULL", PTRFMTCAST old_address, old_size, *new_size);
 			return NULL;
+		}
 		if (truncate(path, (off_t) *new_size) < 0)
 			fprintf(stderr, "#MT_mremap(%s): truncate failed\n", path);
 #ifdef MMAP_DEBUG
@@ -433,11 +435,14 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 		/* "normal" memory map */
 		struct stat stb;
 
-		if ((fd = open(path, O_RDWR)) < 0)
+		if ((fd = open(path, O_RDWR)) < 0) {
+			fprintf(stderr, "= %s:%d: MT_mremap(%s,"PTRFMT","SZFMT","SZFMT"): open() failed\n", __FILE__, __LINE__, path?path:"NULL", PTRFMTCAST old_address, old_size, *new_size);
 			return NULL;
+		}
 		if (fstat(fd, &stb) < 0) {
 			/* shouldn't happen */
 			close(fd);
+			fprintf(stderr, "= %s:%d: MT_mremap(%s,"PTRFMT","SZFMT","SZFMT"): fstat() failed\n", __FILE__, __LINE__, path?path:"NULL", PTRFMTCAST old_address, old_size, *new_size);
 			return NULL;
 		}
 		/* if necessary, extend the underlying file */
@@ -445,6 +450,7 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 		    (lseek(fd, *new_size - 1, SEEK_SET) < 0 ||
 		     write(fd, "\0", 1) < 0)) {
 			close(fd);
+			fprintf(stderr, "= %s:%d: MT_mremap(%s,"PTRFMT","SZFMT","SZFMT"): lseek() or write() failed\n", __FILE__, __LINE__, path?path:"NULL", PTRFMTCAST old_address, old_size, *new_size);
 			return NULL;
 		}
 #ifdef HAVE_MREMAP
@@ -483,8 +489,10 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 #ifdef MAP_ANONYMOUS
 		flags |= MAP_ANONYMOUS;
 #else
-		if ((fd = open("/dev/zero", O_RDWR)) < 0)
+		if ((fd = open("/dev/zero", O_RDWR)) < 0) {
+			fprintf(stderr, "= %s:%d: MT_mremap(%s,"PTRFMT","SZFMT","SZFMT"): open('/dev/zero') failed\n", __FILE__, __LINE__, path?path:"NULL", PTRFMTCAST old_address, old_size, *new_size);
 			return NULL;
+		}
 #endif
 		/* try to map an anonymous area as extent to the
 		 * current map */
@@ -548,14 +556,17 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 					fd = open(p, O_RDWR | O_CREAT,
 						  MONETDB_MODE);
 					free(p);
-					if (fd < 0)
+					if (fd < 0) {
+						fprintf(stderr, "= %s:%d: MT_mremap(%s,"PTRFMT","SZFMT","SZFMT"): fd < 0\n", __FILE__, __LINE__, path?path:"NULL", PTRFMTCAST old_address, old_size, *new_size);
 						return NULL;
+					}
 					if (write(fd, old_address,
 						  old_size) < 0 ||
 					    lseek(fd, *new_size - 1,
 						  SEEK_SET) < 0 ||
 					    write(fd, "\0", 1) < 0) {
 						close(fd);
+						fprintf(stderr, "= %s:%d: MT_mremap(%s,"PTRFMT","SZFMT","SZFMT"): write() or lseek() or write() failed\n", __FILE__, __LINE__, path?path:"NULL", PTRFMTCAST old_address, old_size, *new_size);
 						return NULL;
 					}
 					p = mmap(NULL, *new_size, prot, flags,
@@ -572,6 +583,8 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 #ifdef MMAP_DEBUG
 	fprintf(stderr, "MT_mremap(%s,"PTRFMT","SZFMT","SZFMT") -> "PTRFMT"%s\n", path?path:"NULL", PTRFMTCAST old_address, old_size, *new_size, PTRFMTCAST p, path && mode & MMAP_COPY ? " private" : "");
 #endif
+	if (p == MAP_FAILED)
+		fprintf(stderr, "= %s:%d: MT_mremap(%s,"PTRFMT","SZFMT","SZFMT"): p == MAP_FAILED\n", __FILE__, __LINE__, path?path:"NULL", PTRFMTCAST old_address, old_size, *new_size);
 	return p == MAP_FAILED ? NULL : p;
 }
 
@@ -783,8 +796,10 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 		*new_size = old_size;
 		return old_address;	/* don't bother shrinking */
 	}
-	if (GDKextend(path, *new_size) < 0)
+	if (GDKextend(path, *new_size) < 0) {
+		fprintf(stderr, "= %s:%d: MT_mremap(%s,"PTRFMT","SZFMT","SZFMT"): GDKextend() failed\n", __FILE__, __LINE__, path?path:"NULL", PTRFMTCAST old_address, old_size, *new_size);
 		return NULL;
+	}
 	if (path && !(mode & MMAP_COPY))
 		MT_munmap(old_address, old_size);
 	p = MT_mmap(path, mode, *new_size);
@@ -795,6 +810,8 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 #ifdef MMAP_DEBUG
 	fprintf(stderr, "MT_mremap(%s,"PTRFMT","SZFMT","SZFMT") -> "PTRFMT"\n", path?path:"NULL", PTRFMTCAST old_address, old_size, *new_size, PTRFMTCAST p);
 #endif
+	if (p == NULL)
+		fprintf(stderr, "= %s:%d: MT_mremap(%s,"PTRFMT","SZFMT","SZFMT"): p == NULL\n", __FILE__, __LINE__, path?path:"NULL", PTRFMTCAST old_address, old_size, *new_size);
 	return p;
 }
 
