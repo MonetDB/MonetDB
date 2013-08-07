@@ -1,0 +1,3 @@
+These tests are mirrors of the sciql testsuite, fully encoded as SQL.
+The original sciql query is left in place for reference.
+Syntax error tests are obviously not considered.
