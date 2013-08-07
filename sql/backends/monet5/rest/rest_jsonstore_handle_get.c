@@ -26,6 +26,7 @@
 #include "sql_scenario.h"
 #include <mapi.h>
 #include <rest_jsonstore_handle_get.h>
+#include "mal_backend.h"
 
 static str RESTsqlQuery(char **result, char * query);
 char * result_ok = "select true as ok;";
@@ -41,6 +42,7 @@ RESTsqlQuery(char **result, char * query)
 	Client c;
 	bstream *fin = NULL;
 	int len = 0;
+	backend *be;
 
 	resultbuffer = buffer_create(BLOCK);
 	resultstream = buffer_wastream(resultbuffer, "resultstring");
@@ -53,6 +55,8 @@ RESTsqlQuery(char **result, char * query)
 	initLibraries();
 	msg = setScenario(c, "sql");
 	msg = SQLinitClient(c);
+	be = (backend*)c->sqlcontext;
+	be->output_format = OFMT_JSON;
 	MSinitClientPrg(c, "user", "main");
 	(void) MCinitClientThread(c);
 

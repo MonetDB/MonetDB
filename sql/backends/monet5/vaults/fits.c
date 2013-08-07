@@ -228,7 +228,7 @@ str FITSexportTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	struct list * set;
 
 	msg = getSQLContext(cntxt, mb, &m, NULL);
-	if (msg)
+	if ((msg = checkSQLContext(cntxt)) != MAL_SUCCEED)
 		return msg;
 
 	tr = m->session->tr;
@@ -681,7 +681,7 @@ str FITSattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	char stilclass[BUFSIZ] = "", tdate[BUFSIZ] = "", orig[BUFSIZ] = "", comm[BUFSIZ] = "";
 
 	msg = getSQLContext(cntxt, mb, &m, NULL);
-	if (msg)
+	if ((msg = checkSQLContext(cntxt)) != MAL_SUCCEED)
 		return msg;
 
 	if (fits_open_file(&fptr, fname, READONLY, &status)) {
@@ -851,7 +851,7 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	ptr nilptr;
 
 	msg = getSQLContext(cntxt, mb, &m, NULL);
-	if (msg)
+	if ((msg = checkSQLContext(cntxt)) != MAL_SUCCEED)
 		return msg;
 	sch = mvc_bind_schema(m, "sys");
 

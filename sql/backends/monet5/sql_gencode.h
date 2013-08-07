@@ -21,6 +21,7 @@
 #define _SQL2MAL_H
 
 #include <sql.h>
+#include <mal_backend.h>
 #include <sql_atom.h>
 #include <sql_statement.h>
 #include <sql_env.h>

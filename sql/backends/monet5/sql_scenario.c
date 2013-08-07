@@ -36,6 +36,7 @@
  * we update its context descriptor to denote an SQL scenario.
  */
 #include "monetdb_config.h"
+#include "mal_backend.h"
 #include "sql_scenario.h"
 #include "sql_result.h"
 #include "sql_gencode.h"
@@ -1689,7 +1690,7 @@ SQLparser(Client c)
 			n = sscanf(in->buf + in->pos + 7, "%d %d %d", &v, &off, &len);
 
 		if (n == 2 || n == 3) {
-			mvc_export_chunk(m, out, v, off, n == 3 ? len : m->reply_size);
+			mvc_export_chunk(be, out, v, off, n == 3 ? len : m->reply_size);
 
 			in->pos = in->len;  /* HACK: should use parsed length */
 			return MAL_SUCCEED;

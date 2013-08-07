@@ -60,7 +60,7 @@ DCprocedureStmt(Client cntxt, MalBlkPtr mb, str schema, str nme)
 	sql_func *f;
 	/*sql_trans *tr;*/
 
-	if (msg)
+	if ((msg = checkSQLContext(cntxt)) != MAL_SUCCEED)
 		return msg;
 	s = mvc_bind_schema(m, schema);
 	if (s == NULL)
@@ -109,7 +109,7 @@ DCinitialize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_func *f;
 	sql_trans *tr;
 
-	if (msg)
+	if ((msg = checkSQLContext(cntxt)) != MAL_SUCCEED)
 		return msg;
 
 	assert(m != NULL);

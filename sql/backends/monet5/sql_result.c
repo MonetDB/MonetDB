@@ -1042,20 +1042,27 @@ export_value( mvc *m, stream *s, int eclass, char *sqlname, int d, int sc, ptr p
 }
 
 static int
-mvc_export_row(mvc *m, stream *s, res_table *t, str btag, str sep, str rsep, str ssep, str ns)
+mvc_export_row(backend *b, stream *s, res_table *t, str btag, str sep, str rsep, str ssep, str ns)
 {
+	mvc *m = b->mvc;
 	size_t seplen = strlen(sep);
 	size_t rseplen= strlen(rsep);
 	char *buf = NULL;
 	int len = 0;
 	int i, ok = 1;
+	int csv = (b->output_format == OFMT_CSV);
+	int json = (b->output_format == OFMT_JSON);
 
 	if (!s)
 		return 0;
 
 	(void)ssep;
-	if (btag[0])
+	if (csv && btag[0])
 		ok = (mnstr_write(s, btag, strlen(btag), 1) == 1);
+	if (json) { 
+		sep = ", ";
+		seplen = strlen(sep);
+	}
 	for (i = 0; i < t->nr_cols && ok; i++) {
 		res_col *c = t->cols + i;
 
@@ -1063,6 +1070,10 @@ mvc_export_row(mvc *m, stream *s, res_table *t, str btag, str sep, str rsep, str
 			ok = (mnstr_write(s, sep, seplen, 1) == 1);
 			if (!ok)
 				break;
+		}
+		if (json) {
+			mnstr_write(s, c->name, strlen(c->name), 1);
+			mnstr_write(s, ": ", 2, 1);
 		}
 		ok = export_value(m, s, c->type.type->eclass, 
 			c->type.type->sqlname, c->type.digits, c->type.scale, 
@@ -1077,12 +1088,15 @@ mvc_export_row(mvc *m, stream *s, res_table *t, str btag, str sep, str rsep, str
 }
 
 static int
-mvc_export_table(mvc *m, stream *s, res_table *t, BAT *order, BUN offset, BUN nr, char *btag, char *sep, char *rsep, char *ssep, char *ns )
+mvc_export_table(backend *b, stream *s, res_table *t, BAT *order, BUN offset, BUN nr, char *btag, char *sep, char *rsep, char *ssep, char *ns )
 {
+	mvc *m = b->mvc;
 	Tablet as;
 	Column *fmt;
 	int i;
 	struct time_res *tres;
+	int csv = (b->output_format == OFMT_CSV);
+	int json = (b->output_format == OFMT_JSON);
 
 	if (!t)
 		return -1;
@@ -1096,7 +1110,7 @@ mvc_export_table(mvc *m, stream *s, res_table *t, BAT *order, BUN offset, BUN nr
 	tres = GDKmalloc(sizeof(struct time_res) * (as.nr_attrs));
 
 	fmt[0].c[0] = NULL;
-	fmt[0].sep = btag;
+	fmt[0].sep = (csv)?btag:"";
 	fmt[0].seplen = _strlen(fmt[0].sep);
 	fmt[0].ws = 0;
 	fmt[0].nullstr = NULL;
@@ -1110,8 +1124,24 @@ mvc_export_table(mvc *m, stream *s, res_table *t, BAT *order, BUN offset, BUN nr
 		fmt[i].c[0] = BATdescriptor(c->b);
 		fmt[i].ci[0] = bat_iterator(fmt[i].c[0]);
 		fmt[i].name = NULL;
-		fmt[i].sep = ((i - 1) < (t->nr_cols - 1)) ? sep : rsep;
-		fmt[i].seplen = _strlen(fmt[i].sep);
+		if (csv) {
+			fmt[i].sep = ((i - 1) < (t->nr_cols - 1)) ? sep : rsep;
+			fmt[i].seplen = _strlen(fmt[i].sep);
+		}
+		if (json) {
+			res_col *p = t->cols + (i - 2);
+
+			/* TODO name: 
+			 * if i == 1 -> { name :
+			 * if i > 1 -> , name :
+			 */
+			fmt[i-1].sep = p->name;
+			fmt[i-1].seplen = _strlen(fmt[i-1].sep);
+			if (i ==  t->nr_cols) {
+				fmt[i].sep = " }\n";
+				fmt[i].seplen = _strlen(fmt[i].sep);
+			}
+		}
 		fmt[i].type = ATOMname(fmt[i].c[0]->ttype);
 		fmt[i].adt = fmt[i].c[0]->ttype;
 		fmt[i].tostr = &_ASCIIadt_toStr;
@@ -1300,10 +1330,10 @@ export_length( stream *s, int mtype, int eclass, int digits, int scale, int tz, 
 	return ok;
 }
 
- 
 int
-mvc_export_value(mvc *m, stream *s, int qtype, str tn, str cn, str type, int d, int sc, int eclass, ptr p, int mtype, str w, str ns) 
+mvc_export_value(backend *b, stream *s, int qtype, str tn, str cn, str type, int d, int sc, int eclass, ptr p, int mtype, str w, str ns) 
 {
+	mvc *m = b->mvc;
 	char *buf = NULL;
 	int len = 0;
 	int ok = 1;
@@ -1337,8 +1367,10 @@ mvc_export_value(mvc *m, stream *s, int qtype, str tn, str cn, str type, int d, 
 	return ok;
 }
 int
-mvc_export_operation(mvc *m, stream *s, str w)
+mvc_export_operation(backend *b, stream *s, str w)
 {
+	mvc *m = b->mvc;
+	
 	assert(m->type == Q_SCHEMA || m->type == Q_TRANS);
 	if (m->type == Q_SCHEMA) {
 		if (!s || mnstr_write(s, "&3\n", 3, 1) != 1)
@@ -1359,8 +1391,9 @@ mvc_export_operation(mvc *m, stream *s, str w)
 }
 
 int
-mvc_export_affrows(mvc *m, stream *s, lng val, str w)
+mvc_export_affrows(backend *b, stream *s, lng val, str w)
 {
+	mvc *m = b->mvc;
 	/* if we don't have a stream, nothing can go wrong, so we return
 	 * success.  This is especially vital for execution of internal SQL
 	 * commands, since they don't get a stream to suppress their output.
@@ -1392,8 +1425,9 @@ export_error(BAT *order)
 }
 
 int
-mvc_export_head(mvc *m, stream *s, int res_id, int only_header)
+mvc_export_head(backend *b, stream *s, int res_id, int only_header)
 {
+	mvc *m = b->mvc;
 	int i, res = 0;
 	BUN count = 0;
 	res_table *t = res_tables_find(m->results, res_id);
@@ -1505,25 +1539,26 @@ mvc_export_head(mvc *m, stream *s, int res_id, int only_header)
 }
 
 static int
-mvc_export_file(mvc *m, stream *s, res_table *t) 
+mvc_export_file(backend *b, stream *s, res_table *t) 
 {
+	mvc *m = b->mvc;
 	int res = 0;
 	BUN count;
 	BAT *order = NULL;
 
 	if (m->scanner.ws == s) 
 		/* need header */
-		mvc_export_head(m, s, t->id, TRUE);
+		mvc_export_head(b, s, t->id, TRUE);
 
 	if (!t->order) {
-		res = mvc_export_row(m, s, t, "", t->tsep, t->rsep, t->ssep, t->ns);
+		res = mvc_export_row(b, s, t, "", t->tsep, t->rsep, t->ssep, t->ns);
 	} else {
 		order = BATdescriptor(t->order);
 		if (!order)
 			return -1;
 		count = BATcount(order);
 
-		res = mvc_export_table(m, s, t, order, 0, count, "", t->tsep, t->rsep, t->ssep, t->ns);
+		res = mvc_export_table(b, s, t, order, 0, count, "", t->tsep, t->rsep, t->ssep, t->ns);
 		BBPunfix(order->batCacheid);
 		m->results = res_tables_remove(m->results, t);
 	} 
@@ -1531,8 +1566,9 @@ mvc_export_file(mvc *m, stream *s, res_table *t)
 }
 
 int
-mvc_export_result(mvc *m, stream *s, int res_id)
+mvc_export_result(backend *b, stream *s, int res_id)
 {
+	mvc *m = b->mvc;
 	int clean = 0, res = 0;
 	BUN count;
 	res_table *t = res_tables_find(m->results, res_id);
@@ -1544,12 +1580,12 @@ mvc_export_result(mvc *m, stream *s, int res_id)
 	/* we shouldn't have anything else but Q_TABLE here */
 	assert(t->query_type == Q_TABLE);
 	if (t->tsep)
-		return mvc_export_file(m, s, t);
+		return mvc_export_file(b, s, t);
 
-	mvc_export_head(m, s, res_id, TRUE);
+	mvc_export_head(b, s, res_id, TRUE);
 
 	if (!t->order)
-		return mvc_export_row(m, s, t, "[ ", ",\t", "\t]\n", "\"", "NULL");
+		return mvc_export_row(b, s, t, "[ ", ",\t", "\t]\n", "\"", "NULL");
 	order = BATdescriptor(t->order);
 	if (!order)
 		return -1;
@@ -1559,7 +1595,7 @@ mvc_export_result(mvc *m, stream *s, int res_id)
 		count = BATcount(order);
 		clean = 1;
 	}
-	res = mvc_export_table(m, s, t, order, 0, count, "[ ", ",\t", "\t]\n", "\"", "NULL");
+	res = mvc_export_table(b, s, t, order, 0, count, "[ ", ",\t", "\t]\n", "\"", "NULL");
 	BBPunfix(order->batCacheid);
 	if (clean)
 		m->results = res_tables_remove(m->results, t);
@@ -1570,8 +1606,9 @@ mvc_export_result(mvc *m, stream *s, int res_id)
 }
 
 int
-mvc_export_chunk(mvc *m, stream *s, int res_id, BUN offset, BUN nr)
+mvc_export_chunk(backend *b, stream *s, int res_id, BUN offset, BUN nr)
 {
+	mvc *m = b->mvc;
 	int res = 0;
 	res_table *t = res_tables_find(m->results, res_id);
 	BAT *order = NULL;
@@ -1618,7 +1655,7 @@ mvc_export_chunk(mvc *m, stream *s, int res_id, BUN offset, BUN nr)
 	if (mnstr_write(s, "\n", 1, 1) != 1)
 		return export_error(order);
 
-	res = mvc_export_table(m, s, t, order, offset, cnt, "[ ", ",\t", "\t]\n", "\"", "NULL");
+	res = mvc_export_table(b, s, t, order, offset, cnt, "[ ", ",\t", "\t]\n", "\"", "NULL");
 	BBPunfix(order->batCacheid);
 	return res;
 }

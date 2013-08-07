@@ -37,6 +37,7 @@ lib__sql = {
 	DIR = libdir/monetdb5
 	SOURCES = \
 		sql.mx \
+		mal_backend.c mal_backend.h \
 		sql_user.c sql_user.h \
 		sql_scenario.c sql_scenario.h \
 		rel_bin.c rel_bin.h \

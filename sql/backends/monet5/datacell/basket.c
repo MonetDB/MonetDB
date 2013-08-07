@@ -179,7 +179,7 @@ BSKTregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BSKTtolower(ltbl);
 
 
-	if (msg != MAL_SUCCEED)
+	if ((msg = checkSQLContext(cntxt)) != MAL_SUCCEED)
 		return msg;
 
 	tr = m->session->tr;
