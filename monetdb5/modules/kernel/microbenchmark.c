@@ -33,7 +33,7 @@
 #include "microbenchmark.h"
 
 static int
-BATrandom(BAT **bn, oid *base, int *size, int *domain)
+BATrandom(BAT **bn, oid *base, int *size, int *domain, int seed)
 {
 	BUN n = (BUN) * size;
 	BAT *b = NULL;
@@ -63,6 +63,8 @@ BATrandom(BAT **bn, oid *base, int *size, int *domain)
 
 	BATsetcount(b, n);
 	/* create BUNs with random distribution */
+	if (seed != int_nil)
+		srand(seed);
 	if (*domain == int_nil) {
 		BATloop(b, p, q) {
 			*(int *) Tloc(b, p) = rand();
@@ -323,9 +325,14 @@ BATnormal(BAT **bn, oid *base, int *size, int *domain, int *stddev, int *mean)
 
 str
 MBMrandom(int *ret, oid *base, int *size, int *domain){
+	return MBMrandom_seed ( ret, base, size, domain, &int_nil );
+}
+
+str
+MBMrandom_seed(int *ret, oid *base, int *size, int *domain, const int *seed){
 	BAT *bn = NULL;
 
-	BATrandom(&bn, base, size, domain);
+	BATrandom(&bn, base, size, domain, *seed);
 	if( bn ){
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
 		BBPkeepref(*ret= bn->batCacheid);
