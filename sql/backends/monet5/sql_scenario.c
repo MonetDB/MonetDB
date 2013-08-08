@@ -1072,6 +1072,7 @@ SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output)
 	m->type= Q_PARSE;
 	be = sql;
 	sql = backend_create(m, c);
+	sql->output_format = be->output_format;
 	m->qc = NULL;
 	m->caching = 0;
 	m->user_id = m->role_id = USER_MONETDB;

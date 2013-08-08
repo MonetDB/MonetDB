@@ -55,10 +55,10 @@ RESTsqlQuery(char **result, char * query)
 	initLibraries();
 	msg = setScenario(c, "sql");
 	msg = SQLinitClient(c);
-	be = (backend*)c->sqlcontext;
-	be->output_format = OFMT_JSON;
 	MSinitClientPrg(c, "user", "main");
 	(void) MCinitClientThread(c);
+	be = (backend*)c->sqlcontext;
+	be->output_format = OFMT_JSON;
 
 	qmsg = SQLstatementIntern(c, &query, "rest", TRUE, TRUE);
 	if (qmsg == MAL_SUCCEED) {

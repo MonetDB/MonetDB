@@ -1097,6 +1097,7 @@ mvc_export_table(backend *b, stream *s, res_table *t, BAT *order, BUN offset, BU
 	struct time_res *tres;
 	int csv = (b->output_format == OFMT_CSV);
 	int json = (b->output_format == OFMT_JSON);
+	char * bj;
 
 	if (!t)
 		return -1;
@@ -1129,15 +1130,22 @@ mvc_export_table(backend *b, stream *s, res_table *t, BAT *order, BUN offset, BU
 			fmt[i].seplen = _strlen(fmt[i].sep);
 		}
 		if (json) {
-			res_col *p = t->cols + (i - 2);
+			res_col *p = t->cols + (i - 1);
 
 			/* TODO name: 
 			 * if i == 1 -> { name :
 			 * if i > 1 -> , name :
 			 */
-			fmt[i-1].sep = p->name;
-			fmt[i-1].seplen = _strlen(fmt[i-1].sep);
-			if (i ==  t->nr_cols) {
+			if (i == 1) {
+			        bj = SA_NEW_ARRAY(m->sa, char, strlen(p->name) + 6);
+			        snprintf(bj, strlen(p->name) + 6, "{ %s , ", p->name); 
+			        fmt[i-1].sep = bj;
+			        fmt[i-1].seplen = _strlen(fmt[i-1].sep);
+			} else if (i <= t->nr_cols) {
+			        fmt[i-1].sep = p->name;
+			        fmt[i-1].seplen = _strlen(fmt[i-1].sep);
+			} 
+			if (i == t->nr_cols)  {
 				fmt[i].sep = " }\n";
 				fmt[i].seplen = _strlen(fmt[i].sep);
 			}
