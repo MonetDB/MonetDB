@@ -1557,6 +1557,7 @@ str MATsortTail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str MBMmix(int *ret, int *batid);
 str MBMnormal(int *ret, oid *base, int *size, int *domain, int *stddev, int *mean);
 str MBMrandom(int *ret, oid *base, int *size, int *domain);
+str MBMrandom_seed(int *ret, oid *base, int *size, int *domain, const int *seed);
 str MBMskewed(int *ret, oid *base, int *size, int *domain, int *skew);
 str MBMuniform(int *ret, oid *base, int *size, int *domain);
 str MCawakeClient(int id);
