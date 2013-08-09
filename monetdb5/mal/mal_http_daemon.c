@@ -57,6 +57,29 @@ struct connection_info_struct
 };
 
 static int
+send_page (struct MHD_Connection *connection, const char * url,
+	   const char * method, char *page, char * postdata)
+{
+	int ret;
+	int rest;
+	struct MHD_Response *response;
+
+	rest = (*http_handler)(url, method, &page, postdata);
+	(void)rest;
+	response =
+		MHD_create_response_from_buffer (strlen (page), 
+						 (void *) page,
+						 MHD_RESPMEM_MUST_COPY);
+	if (!response)
+		return MHD_NO;
+
+	ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
+	MHD_destroy_response (response);
+
+	return ret;
+}
+
+static int
 iterate_post (void *coninfo_cls, enum MHD_ValueKind kind, const char *key,
               const char *filename, const char *content_type,
               const char *transfer_encoding, const char *data, uint64_t off,
@@ -72,9 +95,9 @@ iterate_post (void *coninfo_cls, enum MHD_ValueKind kind, const char *key,
 	(void)off;
 
 	if (strcmp (key, "json") == 0)
-    {
+	{
 		if ((size > 0) && (size <= MAXNAMESIZE))
-        {
+		{
 			char *answerstring;
 			answerstring = malloc (MAXANSWERSIZE);
 			if (!answerstring)
@@ -87,7 +110,7 @@ iterate_post (void *coninfo_cls, enum MHD_ValueKind kind, const char *key,
 			con_info->answerstring = NULL;
 
 		return MHD_NO;
-    }
+	}
 
 	return MHD_YES;
 }
@@ -106,11 +129,11 @@ request_completed (void *cls, struct MHD_Connection *connection,
 		return;
 
 	if (con_info->connectiontype == POST)
-    {
+	{
 		MHD_destroy_post_processor (con_info->postprocessor);
 		if (con_info->answerstring)
 			free (con_info->answerstring);
-    }
+	}
 
 	free (con_info);
 	*con_cls = NULL;
@@ -122,15 +145,12 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
                       const char *version, const char *upload_data,
                       size_t *upload_data_size, void **con_cls)
 {
-	struct MHD_Response *response;
-	int ret;
-	int rest;
 	char * page = NULL;
-	struct connection_info_struct *con_info = *con_cls;
+	struct connection_info_struct *con_info;
+	int *done = cls;
+	char *errorpage =
+		"<html><body>This doesn't seem to be right.</body></html>";
 
-	(void)cls;
-	(void)url;
-	(void)method;
 	(void)version;
 
 	if (*con_cls == NULL) {
@@ -142,7 +162,7 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
 		if (strcmp (method, "POST") == 0) {
 			con_info->postprocessor =
 				MHD_create_post_processor (connection, POSTBUFFERSIZE,
-										   iterate_post, (void *) con_info);
+							   iterate_post, (void *) con_info);
 
 			if (con_info->postprocessor == NULL) {
 				free (con_info);
@@ -157,31 +177,48 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
 	}
 
 	if (strcmp (method, "POST") == 0) {
+		con_info = *con_cls;
 		if (*upload_data_size != 0) {
 			MHD_post_process (con_info->postprocessor, upload_data,
-							  *upload_data_size);
+					  *upload_data_size);
 			*upload_data_size = 0;
+			return MHD_YES;
 		} else if (con_info->answerstring != NULL) {
-			//	return send_page (connection, con_info->answerstring);
-			//return MHD_NO;
+			return send_page(connection, url, method, page,
+					 con_info->answerstring);
 		}
 	}
 
-	rest = (*http_handler)(url, method, &page, con_info->answerstring);
-	(void)rest;
-	response =
-		MHD_create_response_from_buffer (strlen (page), (void *) page,
-										 MHD_RESPMEM_MUST_COPY);
-	ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
-	MHD_destroy_response (response);
+	if (strcmp (method, "PUT") == 0) {
+		if (*upload_data_size != 0) {
+			char *answerstring;
+			// TODO: check free answerstring
+			answerstring = malloc (MAXANSWERSIZE);
+			if (!answerstring)
+				return MHD_NO;
 
-	return ret;
+			snprintf (answerstring, MAXANSWERSIZE, "%s", upload_data);
+			con_info->answerstring = answerstring;
+			*upload_data_size = 0;
+			return send_page(connection, url, method, page,
+					 con_info->answerstring);
+		}
+		*done = 1;
+	}
+
+	if ((strcmp (method, "GET") == 0) ||
+	    (strcmp (method, "DELETE") == 0)) {
+		return send_page(connection, url, method, page,
+				 con_info->answerstring);
+	}
+	return send_page (connection, url, method, page, errorpage);
 }
 
 static void handleHttpdaemon(void *dummy)
 {
-	http_daemon = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY, PORT, NULL, NULL,
-									&answer_to_connection, NULL,
+  int done_flag = 0;
+	http_daemon = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY|MHD_USE_DEBUG, PORT, NULL, NULL,
+									&answer_to_connection, &done_flag,
 									MHD_OPTION_NOTIFY_COMPLETED, request_completed,
 									NULL, MHD_OPTION_END);
 

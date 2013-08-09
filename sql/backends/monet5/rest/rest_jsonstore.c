@@ -103,7 +103,7 @@ mserver_browser_get(const UriUriA uri) {
 					} else {
 						// The first path element is a table name
 						// we cannot check this here, so we assume the table exists
-						mserver_rest_command = MONETDB_REST_DB_INFO;
+						mserver_rest_command = MONETDB_REST_DB_GETDOCID;
 						fprintf(stderr, "url: %s\n", uri.pathHead->text.first);
 					}
 				}
@@ -130,6 +130,14 @@ mserver_browser_put(const UriUriA uri) {
 					mserver_rest_command = MONETDB_REST_UNKWOWN_SPECIAL;
 				} else {
 					mserver_rest_command = MONETDB_REST_CREATE_DB;
+					fprintf(stderr, "url: %s\n", uri.pathHead->text.first);
+				}
+			} else {
+				if (strcmp(uri.pathHead->text.first, API_SPECIAL_CHAR) < 0) {
+					// This path element is on of the special cases
+					mserver_rest_command = MONETDB_REST_UNKWOWN_SPECIAL;
+				} else {
+					mserver_rest_command = MONETDB_REST_DB_UPDATE_DOC;
 					fprintf(stderr, "url: %s\n", uri.pathHead->text.first);
 				}
 			}
@@ -196,12 +204,24 @@ mserver_browser_post(const UriUriA uri) {
 
 static
 char * get_dbname(UriUriA uri) {
-	int len;
+	size_t len;
 	char * dbname;
-	len = strlen(uri.pathHead->text.first);
+	//len = strlen(uri.pathHead->text.first);
+	len = uri.pathHead->text.afterLast - uri.pathHead->text.first;
 	dbname = malloc(len + 1);
-	strcpy(dbname, uri.pathHead->text.first);
+	strncpy(dbname, uri.pathHead->text.first, len);
+	dbname[len] = '\0';
 	return dbname;
+}
+
+static
+char * get_docid(UriUriA uri) {
+	int len;
+	char * docid;
+	len = strlen(uri.pathHead->next->text.first);
+	docid = malloc(len + 1);
+	strcpy(docid, uri.pathHead->next->text.first);
+	return docid;
 }
 
 int
@@ -211,6 +231,7 @@ handle_http_request (const char *url, const char *method, char **page,
 	int ret;
 	int mserver_rest_command = 0;
 	char * dbname = NULL;
+	char * docid = NULL;
 
 	UriParserStateA state;
 	UriUriA uri;
@@ -259,6 +280,16 @@ handle_http_request (const char *url, const char *method, char **page,
 	case MONETDB_REST_DB_INFO:
 		dbname = get_dbname(uri);
 		RESTdbInfo(page, dbname);
+		break;
+	case MONETDB_REST_DB_GETDOCID:
+		dbname = get_dbname(uri);
+		docid = get_docid(uri);
+		RESTgetDoc(page, dbname, docid);
+		break;
+	case MONETDB_REST_DB_UPDATE_DOC:
+		dbname = get_dbname(uri);
+		docid = get_docid(uri);
+		RESTupdateDoc(page, dbname, postdata, docid);
 		break;
 	default:
 		// error, unknown command

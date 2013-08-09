@@ -40,5 +40,7 @@ rest_export str RESTcreateDB(char **result, char * dbname);
 rest_export str RESTdeleteDB(char **result, char * dbname);
 rest_export str RESTcreateDoc(char **result, char * dbname, const char * doc);
 rest_export str RESTdbInfo(char **result, char * dbname);
+rest_export str RESTgetDoc(char ** result, char * dbname, const char * doc_id);
+rest_export str RESTupdateDoc(char **result, char * dbname, const char * doc, const char * doc_id);
 
 #endif

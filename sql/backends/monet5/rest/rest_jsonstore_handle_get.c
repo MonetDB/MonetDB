@@ -89,7 +89,7 @@ str RESTwelcome(char **result)
 str RESTallDBs(char **result)
 {
 	str msg = MAL_SUCCEED;
-	char * querytext = "select substring(name, 6, length(name) -5) from tables where name like 'json_%';";
+	char * querytext = "select substring(name, 6, length(name) -5) as name from tables where name like 'json_%';";
 	msg = RESTsqlQuery(result, querytext);
 	return msg;
 }
@@ -143,7 +143,7 @@ str RESTdeleteDB(char ** result, char * dbname)
 str RESTcreateDoc(char ** result, char * dbname, const char * doc)
 {
 	str msg = MAL_SUCCEED;
-	int len = strlen(dbname) + 32 + strlen(doc)+ 72;
+	size_t len = strlen(dbname) + 2 * strlen(doc)+ 78;
 	char * querytext = NULL;
 
 	querytext = malloc(len);
@@ -171,6 +171,42 @@ str RESTdbInfo(char **result, char * dbname)
 	msg = RESTsqlQuery(result, querytext);
 	if (querytext != NULL) {
 		free(querytext);
+	}
+	return msg;
+}
+
+str RESTgetDoc(char ** result, char * dbname, const char * doc_id)
+{
+	str msg = MAL_SUCCEED;
+	size_t len = strlen(dbname) + strlen(doc_id) + 36;
+	char * querytext = NULL;
+
+	querytext = malloc(len);
+	snprintf(querytext, len, "SELECT * FROM json_%s WHERE _id = '%s';", dbname, doc_id);
+
+	msg = RESTsqlQuery(result, querytext);
+	if (querytext != NULL) {
+		free(querytext);
+	}
+	return msg;
+
+}
+
+str RESTupdateDoc(char ** result, char * dbname, const char * doc, const char * doc_id)
+{
+	str msg = MAL_SUCCEED;
+	size_t len = strlen(doc_id) + strlen(dbname) + 2 * strlen(doc) + 74;
+	char * querytext = NULL;
+
+	querytext = malloc(len);
+	snprintf(querytext, len, "INSERT INTO json_%s (_id, _rev, js) VALUES ('%s', concat('2-', md5('%s')), '%s');", dbname, doc_id, doc, doc);
+
+	msg = RESTsqlQuery(result, querytext);
+	if (querytext != NULL) {
+		free(querytext);
+	}
+	if (strcmp(*result,"&2 1 -1\n") == 0) {
+	  msg = RESTsqlQuery(result, result_ok);
 	}
 	return msg;
 }
