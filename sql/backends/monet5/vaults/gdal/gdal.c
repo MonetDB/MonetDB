@@ -33,12 +33,14 @@
  */
 
 /* CURRENT_TIMESTAMP() ?*/
-#define INSFILE "INSERT INTO rs.files(fileid,location,status,lastmodified) \
+#define INSFILE \
+	"INSERT INTO rs.files(fileid,location,status,lastmodified) \
 	 VALUES(%d, '%s', %d, CURRENT_TIMESTAMP());"
-#define INSCAT "INSERT INTO rs.catalog(imageid,fileid,width,length,bps) \
+#define INSCAT \
+	"INSERT INTO rs.catalog(imageid,fileid,width,length,bps) \
 	 VALUES(%d, %d, %d, %d, %d);"
-#define CRT_GREYSCALE_IMAGE "CREATE ARRAY %s.%s (x INT DIMENSION[%d], \
-	y INT DIMENSION[%d], intensity %s);"
+#define CRT_GREYSCALE_IMAGE \
+	"CREATE ARRAY %s.%s (x %s DIMENSION[%d], y %s DIMENSION[%d], intensity %s);"
 
 str
 GDALtest(int *wid, int *len, str *fname)
@@ -130,12 +132,28 @@ finish:
 	return msg;
 }
 
+static str
+ARRAYseries(int *bid, bte start, bte step, int stop, int group, int series)
+{
+	if (stop <= (int) GDK_bte_max && group <= (int) GDK_bte_max && series <= (int) GDK_bte_max) {
+		bte sta = (bte) start, ste = (bte) step, sto = (bte) stop;
+		return ARRAYseries_bte(bid, &sta, &ste, &sto, &group, &series);
+	} else
+	if (stop <= (int) GDK_sht_max && group <= (int) GDK_sht_max && series <= (int) GDK_sht_max) {
+		sht sta = (sht) start, ste = (sht) step, sto = (sht) stop;
+		return ARRAYseries_sht(bid, &sta, &ste, &sto, &group, &series);
+	} else {
+		int sta = (int) start, ste = (int) step, sto = (int) stop;
+		return ARRAYseries_int(bid, &sta, &ste, &sto, &group, &series);
+	}
+}
+
 str
 GDALloadGreyscaleImage(bat *x, bat *y, bat *intensity, str *fname)
 {
 	GDALDatasetH  hDataset;
 	GDALRasterBandH hBand;
-	int  bidx = 0, bidy = 0, strt = 0, step = 1, rep1 = 1, wid = 0, len = 0;
+	int  bidx = 0, bidy = 0, wid = 0, len = 0;
 	BUN pixels = BUN_NONE;
 	sht bps;
 	int i, j;
@@ -196,20 +214,20 @@ GDALloadGreyscaleImage(bat *x, bat *y, bat *intensity, str *fname)
 	BBPkeepref(resI->batCacheid);
 
 	/* Manually compute values for the X-dimension, since we know that its
-	 * range is [strt:step:wid] and each of its value must be repeated 'len'
+	 * range is [0:1:wid] and each of its value must be repeated 'len'
 	 * times with 1 #repeats */
-	errbuf = ARRAYseries_int(&bidx, &strt, &step, &wid, &rep1, &len);
+	errbuf = ARRAYseries(&bidx, 0, 1, wid, 1, len);
 	if (errbuf != MAL_SUCCEED) {
 		BBPdecref(resI->batCacheid, 1); /* undo the BBPkeepref(resI->batCacheid) above */
 		return createException(MAL, "gdal.loadimage", "Failed to create the X-dimension of %s", *fname);
 	}
 	/* Manually compute values for the Y-dimension, since we know that its
-	 * range is [strt:step:len] and each of its value must be repeated 1 times
+	 * range is [0:1:len] and each of its value must be repeated 1 times
 	 * with 'wid' #repeats */
-	errbuf = ARRAYseries_int(&bidy, &strt, &step, &len, &wid, &rep1);
+	errbuf = ARRAYseries(&bidy, 0, 1, len, wid, 1);
 	if (errbuf != MAL_SUCCEED) {
 		BBPdecref(resI->batCacheid, 1); /* undo the BBPkeepref(resI->batCacheid) above */
-		BBPdecref(resX->batCacheid, 1); /* undo the BBPkeepref(resX->batCacheid) by ARRAYseries_int() */
+		BBPdecref(resX->batCacheid, 1); /* undo the BBPkeepref(resX->batCacheid) by ARRAYseries_*() */
 		return createException(MAL, "gdal.loadimage", "Failed to create the y-dimension of %s", *fname);
 	}
 
@@ -241,7 +259,7 @@ GDALimportImage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_table *fls = NULL, *cat = NULL, *img = NULL;
 	sql_column *col = NULL;
 	oid irid = oid_nil, frid = oid_nil;
-	str msg = MAL_SUCCEED, fname = NULL;
+	str msg = MAL_SUCCEED, fname = NULL, dimtype = NULL;
 	int imageid = *(int*)getArgReference(stk, pci, 1);
 	int  wid = 0, len = 0, fid;
 	sht bps;
@@ -306,7 +324,15 @@ GDALimportImage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bps = *(sht*)table_funcs.column_find_value(m->session->tr, col, irid);
 
 	snprintf(aname, 20, "image%d", imageid);
-	snprintf(buf, BUFSIZ, CRT_GREYSCALE_IMAGE, sch->base.name, aname, wid, len, (bps == 8)? "SMALLINT" : "INT");
+	if (wid <= (int) GDK_bte_max && len <= (int) GDK_bte_max) {
+		dimtype = "TINYINT";
+	} else
+	if (wid <= (int) GDK_sht_max && len <= (int) GDK_sht_max) {
+		dimtype = "SMALLINT";
+	} else {
+		dimtype = "INT";
+	}
+	snprintf(buf, BUFSIZ, CRT_GREYSCALE_IMAGE, sch->base.name, aname, dimtype, wid, dimtype, len, (bps == 8)? "SMALLINT" : "INT");
 	msg = SQLstatementIntern(cntxt,&s,"gdal.import",TRUE,FALSE);
 	if (msg != MAL_SUCCEED)
 		return msg;
@@ -332,7 +358,7 @@ GDALimportImage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* the 'y' dimension */
 	col = mvc_bind_column(m, img, "y");
 	if (col == NULL)
-		return createException(MAL, "gdal.import", "Could not find \"%s\".\"x\"\n", aname);
+		return createException(MAL, "gdal.import", "Could not find \"%s\".\"y\"\n", aname);
 	store_funcs.append_col(m->session->tr, col, BATdescriptor(y), TYPE_bat);
 	/* the 'intensity' column */
 	col = mvc_bind_column(m, img, "intensity");
