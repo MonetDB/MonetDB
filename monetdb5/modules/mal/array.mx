@@ -82,54 +82,54 @@ comment "Compute the OIDs of all cells selected by an array slicing"
 module array;
 
 pattern sum(val:@1, any...):lng
-address ARRAYtilesSum_@1
+address ARRAYtiles_sum_@1
 comment "Construct the sum over all tiles";
 
 pattern sum(val:@1, any...):dbl
-address ARRAYtilesSum_@1
+address ARRAYtiles_sum_@1
 comment "Construct the sum over all tiles";
 
 pattern avg(val:@1, any...):dbl
-address ARRAYtilesAvg_@1
+address ARRAYtiles_avg_@1
 comment "Construct the average over all tiles";
 
 pattern min(val:@1, any...):@1
-address ARRAYtilesMin_@1
+address ARRAYtiles_min_@1
 comment "Construct the minimum over all tiles";
 
 pattern max(val:@1, any...):@1
-address ARRAYtilesMax_@1
+address ARRAYtiles_max_@1
 comment "Construct the maximum over all tiles";
 
 pattern cnt(val:@1, any...):lng
-address ARRAYtilesCnt_@1
+address ARRAYtiles_cnt_@1
 comment "Construct the count over all tiles";
 
 module batarray;
 
 # The BAT version of the AGGR functions over array tiles
 pattern sum(val:bat[:oid,:@1], any...):bat[:oid,:lng]
-address ARRAYtilesSum_@1
+address ARRAYtiles_sum_@1
 comment "Construct the sum over all tiles";
 
 pattern sum(val:bat[:oid,:@1], any...):bat[:oid,:dbl]
-address ARRAYtilesSum_@1
+address ARRAYtiles_sum_@1
 comment "Construct the sum over all tiles";
 
 pattern avg(val:bat[:oid,:@1], any...):bat[:oid,:dbl]
-address ARRAYtilesAvg_@1
+address ARRAYtiles_avg_@1
 comment "Construct the average over all tiles";
 
 pattern min(val:bat[:oid,:@1], any...):bat[:oid,:@1]
-address ARRAYtilesMin_@1
+address ARRAYtiles_min_@1
 comment "Construct the minimum over all tiles";
 
 pattern max(val:bat[:oid,:@1], any...):bat[:oid,:@1]
-address ARRAYtilesMax_@1
+address ARRAYtiles_max_@1
 comment "Construct the maximum over all tiles";
 
 pattern cnt(val:bat[:oid,:@1], any...):bat[:oid,:lng]
-address ARRAYtilesCnt_@1
+address ARRAYtiles_cnt_@1
 comment "Construct the count over all tiles";
 @
 @mal
@@ -170,11 +170,11 @@ array_export str ARRAYslice(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 
 @= array_defs
 array_export str ARRAYseries_@1(int *ret, @1 *start, @1 *step, @1 *stop, int *grp, int *series);
-array_export str ARRAYtilesSum_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-array_export str ARRAYtilesAvg_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-array_export str ARRAYtilesMin_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-array_export str ARRAYtilesMax_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-array_export str ARRAYtilesCnt_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+array_export str ARRAYtiles_sum_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+array_export str ARRAYtiles_avg_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+array_export str ARRAYtiles_min_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+array_export str ARRAYtiles_max_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+array_export str ARRAYtiles_cnt_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 @h
 @:array_defs(bte)@
 @:array_defs(sht)@
@@ -547,7 +547,7 @@ ARRAYfiller(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
  *   dim_n:BAT,tile_member_offset_dim_n:BAT,size_dim_n)
  */
 str
-ARRAYtiles@4_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+ARRAYtiles_@4_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *bVal = NULL, *bRes = NULL, **bDims = NULL, **bOffsets = NULL;
 	int *ret = (int*) getArgReference(stk,pci,0), i = 0, ndims = 0;
@@ -556,7 +556,7 @@ ARRAYtiles@4_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	@3 *bResT = NULL;
 	int **bDimsT = NULL, **bOffsetsT = NULL;
 	BUN p, r, arrcnt = 0, offcnt = 0, cnt = 0;
-	@2 @6;
+	@2 @5;
 	/* FIXME: this code only deal with INT dimensions */
 	int cidx = 0, *dMin = NULL, *dMax = NULL, *dSize = NULL;
 	oid arrbase = 0, offbase = 0, vid = 0, mul = 0;
@@ -565,7 +565,7 @@ ARRAYtiles@4_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 
 	if ( (pci->argc - pci->retc - 1) % 3 != 0)
-		throw(MAL, "array.@5", "Unbalanced argument sets");
+		throw(MAL, "array.@4", "Unbalanced argument sets");
 
 	ndims = (pci->argc - pci->retc - 1) / 3;
 	bDims = (BAT**) GDKzalloc(sizeof(BAT*) * ndims);
@@ -577,29 +577,29 @@ ARRAYtiles@4_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	dSize = (int*) GDKzalloc(sizeof(int) * ndims);
 	if (!bDims || !bDimsT || !bOffsets || !bOffsetsT || !dMin || !dMax || !dSize) {
 		AGGR_CLEANUP();
-		throw(MAL, "array.@5", MAL_MALLOC_FAIL);
+		throw(MAL, "array.@4", MAL_MALLOC_FAIL);
 	}
 	if (!(bVal = BATdescriptor(*(int*)getArgReference(stk,pci,1)))) {
 		AGGR_CLEANUP();
-		throw(MAL, "array.@5", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "array.@4", RUNTIME_OBJECT_MISSING);
 	}
 	for (i = 0; i < ndims; i++) {
 		bDims[i] = BATdescriptor(*(int*)getArgReference(stk,pci,2+i*3));
 		bOffsets[i] = BATdescriptor(*(int*)getArgReference(stk,pci,2+i*3+1));
 		if (!bDims[i] || !bOffsets[i]) {
 			AGGR_CLEANUP();
-			throw(MAL, "array.@5", RUNTIME_OBJECT_MISSING);
+			throw(MAL, "array.@4", RUNTIME_OBJECT_MISSING);
 		}
 		dSize[i] = *(int*)getArgReference(stk,pci,2+i*3+2);
 	}
 	/* type check the shapes, prepare iterators, and compute the min/max of the dimensions */
 	if (!BAThdense(bVal)) {
 		AGGR_CLEANUP();
-		throw(MAL, "array.@5", "head of value BAT must be dense");
+		throw(MAL, "array.@4", "head of value BAT must be dense");
 	}
 	if (bVal->ttype != TYPE_@1) {
 		AGGR_CLEANUP();
-		throw(MAL, "array.@5", "tail of value BAT must be of type @1");
+		throw(MAL, "array.@4", "tail of value BAT must be of type @1");
 	}
 	arrcnt = BATcount(bVal);
 	arrbase = bVal->hseqbase;
@@ -608,23 +608,23 @@ ARRAYtiles@4_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	for (i = 0; i < ndims; i++) {
 		if (!BAThdense(bDims[i])) {
 			AGGR_CLEANUP();
-			throw(MAL, "array.@5", "head of all dimension BATs must be dense");
+			throw(MAL, "array.@4", "head of all dimension BATs must be dense");
 		}
 		if (!BAThdense(bOffsets[i])) {
 			AGGR_CLEANUP();
-			throw(MAL, "array.@5", "head of all offset BATs must be dense");
+			throw(MAL, "array.@4", "head of all offset BATs must be dense");
 		}
 		if (bDims[i]->hseqbase != arrbase || BATcount(bDims[i]) != arrcnt) {
 			AGGR_CLEANUP();
-			throw(MAL, "array.@5", "head of all dimension BATs must be aligned with head of value BAT");
+			throw(MAL, "array.@4", "head of all dimension BATs must be aligned with head of value BAT");
 		}
 		if (bOffsets[i]->hseqbase != offbase || BATcount(bOffsets[i]) != offcnt) {
 			AGGR_CLEANUP();
-			throw(MAL, "array.@5", "heads of all offset BATs must be aligned");
+			throw(MAL, "array.@4", "heads of all offset BATs must be aligned");
 		}
 		if (bDims[i]->ttype != TYPE_int || bDims[i]->ttype != bOffsets[i]->ttype) {
 			AGGR_CLEANUP();
-			throw(MAL, "array.@5", SEMANTIC_TYPE_MISMATCH);
+			throw(MAL, "array.@4", SEMANTIC_TYPE_MISMATCH);
 		}
 		BATmin(bDims[i], &(dMin[i]));
 		BATmax(bDims[i], &(dMax[i]));
@@ -643,7 +643,7 @@ ARRAYtiles@4_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bResT = (@3*) Tloc(bRes, BUNfirst(bRes));
 	for (p = 0 ; p < arrcnt ; p++) {
 		cnt = 0;
-		@6;
+		@5;
 		/* loop over all sets of offsets */
 		for (r = 0; r < offcnt ; r++) {
 			vid = 0; /* index into bVal for the value of a qualified tile member */
@@ -671,12 +671,12 @@ ARRAYtiles@4_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if (!skip) {
 				elm = bValT[vid];
 				if (elm != @1_nil) {
-					@7;
+					@6;
 					cnt++;
 				}
 			}
 		}
-		bResT[p] = (cnt ? @8 : @3_nil);
+		bResT[p] = (cnt ? @7 : @3_nil);
 		nils |= !cnt;
 	}
 	AGGR_CLEANUP();
@@ -695,38 +695,38 @@ ARRAYtiles@4_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 @c
-@:tilesAggr(bte,lng,lng,Sum,sum, sum = 0, sum += elm, sum )@
-@:tilesAggr(sht,lng,lng,Sum,sum, sum = 0, sum += elm, sum )@
-@:tilesAggr(int,lng,lng,Sum,sum, sum = 0, sum += elm, sum )@
-@:tilesAggr(lng,lng,lng,Sum,sum, sum = 0, sum += elm, sum )@
-@:tilesAggr(flt,dbl,dbl,Sum,sum, sum = 0, sum += elm, sum )@
-@:tilesAggr(dbl,dbl,dbl,Sum,sum, sum = 0, sum += elm, sum )@
+@:tilesAggr(bte,lng,lng,cnt, sum = 0, sum += elm, (lng)cnt )@
+@:tilesAggr(sht,lng,lng,cnt, sum = 0, sum += elm, (lng)cnt )@
+@:tilesAggr(int,lng,lng,cnt, sum = 0, sum += elm, (lng)cnt )@
+@:tilesAggr(lng,lng,lng,cnt, sum = 0, sum += elm, (lng)cnt )@
+@:tilesAggr(flt,dbl,lng,cnt, sum = 0, sum += elm, (lng)cnt )@
+@:tilesAggr(dbl,dbl,lng,cnt, sum = 0, sum += elm, (lng)cnt )@
 
-@:tilesAggr(bte,lng,dbl,Avg,avg, sum = 0, sum += elm, (dbl)sum / (dbl)cnt )@
-@:tilesAggr(sht,lng,dbl,Avg,avg, sum = 0, sum += elm, (dbl)sum / (dbl)cnt )@
-@:tilesAggr(int,lng,dbl,Avg,avg, sum = 0, sum += elm, (dbl)sum / (dbl)cnt )@
-@:tilesAggr(lng,lng,dbl,Avg,avg, sum = 0, sum += elm, (dbl)sum / (dbl)cnt )@
-@:tilesAggr(flt,dbl,dbl,Avg,avg, sum = 0, sum += elm, (dbl)sum / (dbl)cnt )@
-@:tilesAggr(dbl,dbl,dbl,Avg,avg, sum = 0, sum += elm, (dbl)sum / (dbl)cnt )@
+@:tilesAggr(bte,lng,lng,sum, sum = 0, sum += elm, sum )@
+@:tilesAggr(sht,lng,lng,sum, sum = 0, sum += elm, sum )@
+@:tilesAggr(int,lng,lng,sum, sum = 0, sum += elm, sum )@
+@:tilesAggr(lng,lng,lng,sum, sum = 0, sum += elm, sum )@
+@:tilesAggr(flt,dbl,dbl,sum, sum = 0, sum += elm, sum )@
+@:tilesAggr(dbl,dbl,dbl,sum, sum = 0, sum += elm, sum )@
 
-@:tilesAggr(bte,lng,lng,Cnt,cnt, sum = 0, sum += elm, (lng)cnt )@
-@:tilesAggr(sht,lng,lng,Cnt,cnt, sum = 0, sum += elm, (lng)cnt )@
-@:tilesAggr(int,lng,lng,Cnt,cnt, sum = 0, sum += elm, (lng)cnt )@
-@:tilesAggr(lng,lng,lng,Cnt,cnt, sum = 0, sum += elm, (lng)cnt )@
-@:tilesAggr(flt,dbl,lng,Cnt,cnt, sum = 0, sum += elm, (lng)cnt )@
-@:tilesAggr(dbl,dbl,lng,Cnt,cnt, sum = 0, sum += elm, (lng)cnt )@
+@:tilesAggr(bte,lng,dbl,avg, sum = 0, sum += elm, (dbl)sum / (dbl)cnt )@
+@:tilesAggr(sht,lng,dbl,avg, sum = 0, sum += elm, (dbl)sum / (dbl)cnt )@
+@:tilesAggr(int,lng,dbl,avg, sum = 0, sum += elm, (dbl)sum / (dbl)cnt )@
+@:tilesAggr(lng,lng,dbl,avg, sum = 0, sum += elm, (dbl)sum / (dbl)cnt )@
+@:tilesAggr(flt,dbl,dbl,avg, sum = 0, sum += elm, (dbl)sum / (dbl)cnt )@
+@:tilesAggr(dbl,dbl,dbl,avg, sum = 0, sum += elm, (dbl)sum / (dbl)cnt )@
 
-@:tilesAggr(bte,bte,bte,Min,min, minmax = bte_nil, minmax = (cnt ? MIN(minmax,elm) : elm), minmax )@
-@:tilesAggr(sht,sht,sht,Min,min, minmax = sht_nil, minmax = (cnt ? MIN(minmax,elm) : elm), minmax )@
-@:tilesAggr(int,int,int,Min,min, minmax = int_nil, minmax = (cnt ? MIN(minmax,elm) : elm), minmax )@
-@:tilesAggr(lng,lng,lng,Min,min, minmax = lng_nil, minmax = (cnt ? MIN(minmax,elm) : elm), minmax )@
-@:tilesAggr(flt,flt,flt,Min,min, minmax = flt_nil, minmax = (cnt ? MIN(minmax,elm) : elm), minmax )@
-@:tilesAggr(dbl,dbl,dbl,Min,min, minmax = dbl_nil, minmax = (cnt ? MIN(minmax,elm) : elm), minmax )@
+@:tilesAggr(bte,bte,bte,min, minmax = bte_nil, minmax = (cnt ? MIN(minmax,elm) : elm), minmax )@
+@:tilesAggr(sht,sht,sht,min, minmax = sht_nil, minmax = (cnt ? MIN(minmax,elm) : elm), minmax )@
+@:tilesAggr(int,int,int,min, minmax = int_nil, minmax = (cnt ? MIN(minmax,elm) : elm), minmax )@
+@:tilesAggr(lng,lng,lng,min, minmax = lng_nil, minmax = (cnt ? MIN(minmax,elm) : elm), minmax )@
+@:tilesAggr(flt,flt,flt,min, minmax = flt_nil, minmax = (cnt ? MIN(minmax,elm) : elm), minmax )@
+@:tilesAggr(dbl,dbl,dbl,min, minmax = dbl_nil, minmax = (cnt ? MIN(minmax,elm) : elm), minmax )@
 
-@:tilesAggr(bte,bte,bte,Max,max, minmax = bte_nil, minmax = (cnt ? MAX(minmax,elm) : elm), minmax )@
-@:tilesAggr(sht,sht,sht,Max,max, minmax = sht_nil, minmax = (cnt ? MAX(minmax,elm) : elm), minmax )@
-@:tilesAggr(int,int,int,Max,max, minmax = int_nil, minmax = (cnt ? MAX(minmax,elm) : elm), minmax )@
-@:tilesAggr(lng,lng,lng,Max,max, minmax = lng_nil, minmax = (cnt ? MAX(minmax,elm) : elm), minmax )@
-@:tilesAggr(flt,flt,flt,Max,max, minmax = flt_nil, minmax = (cnt ? MAX(minmax,elm) : elm), minmax )@
-@:tilesAggr(dbl,dbl,dbl,Max,max, minmax = dbl_nil, minmax = (cnt ? MAX(minmax,elm) : elm), minmax )@
+@:tilesAggr(bte,bte,bte,max, minmax = bte_nil, minmax = (cnt ? MAX(minmax,elm) : elm), minmax )@
+@:tilesAggr(sht,sht,sht,max, minmax = sht_nil, minmax = (cnt ? MAX(minmax,elm) : elm), minmax )@
+@:tilesAggr(int,int,int,max, minmax = int_nil, minmax = (cnt ? MAX(minmax,elm) : elm), minmax )@
+@:tilesAggr(lng,lng,lng,max, minmax = lng_nil, minmax = (cnt ? MAX(minmax,elm) : elm), minmax )@
+@:tilesAggr(flt,flt,flt,max, minmax = flt_nil, minmax = (cnt ? MAX(minmax,elm) : elm), minmax )@
+@:tilesAggr(dbl,dbl,dbl,max, minmax = dbl_nil, minmax = (cnt ? MAX(minmax,elm) : elm), minmax )@
 @}
