@@ -563,14 +563,13 @@ ARRAYtiles_@4_@1_@8(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *bVal = NULL, *bRes = NULL, **bDims = NULL, **bOffsets = NULL;
 	int *ret = (int*) getArgReference(stk,pci,0), i = 0, ndims = 0;
-	bit skip = FALSE, nils = FALSE;
-	@1 *bValT = NULL, elm = 0;
+	bit nils = FALSE;
+	@1 *bValT = NULL;
 	@3 *bResT = NULL;
 	@8 **bDimsT = NULL, **bOffsetsT = NULL, *dMin = NULL, *dMax = NULL;
-	BUN p, r, arrcnt = 0, offcnt = 0, cnt = 0;
-	@2 @5;
-	int cidx = 0, *dSize = NULL;
-	oid arrbase = 0, offbase = 0, vid = 0, mul = 0;
+	BUN p, r, arrcnt = 0, offcnt = 0;
+	int *dSize = NULL;
+	oid arrbase = 0, offbase = 0;
 
 	(void) cntxt;
 	(void) mb;
@@ -653,13 +652,15 @@ ARRAYtiles_@4_@1_@8(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bRes = 	BATnew(TYPE_void, TYPE_@3, BATcount(bVal));
 	bResT = (@3*) Tloc(bRes, BUNfirst(bRes));
 	for (p = 0 ; p < arrcnt ; p++) {
-		cnt = 0;
-		@5;
+		BUN cnt = 0;
+		@2 @5;
+
 		/* loop over all sets of offsets */
 		for (r = 0; r < offcnt ; r++) {
-			vid = 0; /* index into bVal for the value of a qualified tile member */
-			mul = 1;
-			skip = FALSE;
+			BUN vid = 0; /* index into bVal for the value of a qualified tile member */
+			BUN mul = 1;
+			bit skip = FALSE;
+
 			/* for the index of the anchor point on dimension d_i, check if the
 			 * resulting index is within the dimension range after having
 			 * shifted according this set of offset on dimension d_i.
@@ -670,7 +671,8 @@ ARRAYtiles_@4_@1_@8(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			 * disqualifies the index on dimension d_i, we can jump to the next
 			 * of bOffsets[i] which value follows the j-th value */
 			for (i = ndims - 1; i >= 0; i--) {
-				cidx = (int) bDimsT[i][p] + (int) bOffsetsT[i][r];
+				int cidx = (int) bDimsT[i][p] + (int) bOffsetsT[i][r];
+
 				if ((int) dMin[i] <= cidx && cidx <= (int) dMax[i]) {
 					vid += mul * (cidx - (int) dMin[i]);
 				} else {
@@ -680,7 +682,8 @@ ARRAYtiles_@4_@1_@8(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				mul *= dSize[i];
 			}
 			if (!skip) {
-				elm = bValT[vid];
+				@1 elm = bValT[vid];
+
 				if (elm != @1_nil) {
 					@6;
 					cnt++;
