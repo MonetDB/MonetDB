@@ -67,7 +67,7 @@ send_page (struct MHD_Connection *connection, const char * url,
 	rest = (*http_handler)(url, method, &page, postdata);
 	(void)rest;
 	response =
-		MHD_create_response_from_buffer (strlen (page),
+		MHD_create_response_from_buffer (strlen (page), 
 						 (void *) page,
 						 MHD_RESPMEM_MUST_COPY);
 	if (!response)
