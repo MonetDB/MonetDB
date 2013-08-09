@@ -541,7 +541,7 @@ ARRAYfiller(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 @= tilesAggr
 /* 
- * array.[sum|avg|cnt] inputs:
+ * array.[sum|avg|cnt|min|max] inputs:
  *  (cell_val:BAT,
  *   dim_1:BAT,tile_member_offset_dim_1:BAT,size_dim_1, ...,
  *   dim_n:BAT,tile_member_offset_dim_n:BAT,size_dim_n)
@@ -556,7 +556,7 @@ ARRAYtiles@4_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	@3 *bResT = NULL;
 	int **bDimsT = NULL, **bOffsetsT = NULL;
 	BUN p, r, arrcnt = 0, offcnt = 0, cnt = 0;
-	@2 sum = 0;
+	@2 @6;
 	/* FIXME: this code only deal with INT dimensions */
 	int cidx = 0, *dMin = NULL, *dMax = NULL, *dSize = NULL;
 	oid arrbase = 0, offbase = 0, vid = 0, mul = 0;
@@ -575,11 +575,11 @@ ARRAYtiles@4_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	dMin = (int*) GDKzalloc(sizeof(int) * ndims);
 	dMax = (int*) GDKzalloc(sizeof(int) * ndims);
 	dSize = (int*) GDKzalloc(sizeof(int) * ndims);
-	if(!bDims || !bDimsT || !bOffsets || !bOffsetsT || !dMin || !dMax || !dSize) {
+	if (!bDims || !bDimsT || !bOffsets || !bOffsetsT || !dMin || !dMax || !dSize) {
 		AGGR_CLEANUP();
 		throw(MAL, "array.@5", MAL_MALLOC_FAIL);
 	}
-	if(!(bVal = BATdescriptor(*(int*)getArgReference(stk,pci,1)))) {
+	if (!(bVal = BATdescriptor(*(int*)getArgReference(stk,pci,1)))) {
 		AGGR_CLEANUP();
 		throw(MAL, "array.@5", RUNTIME_OBJECT_MISSING);
 	}
@@ -642,7 +642,8 @@ ARRAYtiles@4_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bRes = 	BATnew(TYPE_void, TYPE_@3, BATcount(bVal));
 	bResT = (@3*) Tloc(bRes, BUNfirst(bRes));
 	for (p = 0 ; p < arrcnt ; p++) {
-		sum = 0; cnt = 0;
+		cnt = 0;
+		@6;
 		/* loop over all sets of offsets */
 		for (r = 0; r < offcnt ; r++) {
 			vid = 0; /* index into bVal for the value of a qualified tile member */
@@ -670,12 +671,12 @@ ARRAYtiles@4_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if (!skip) {
 				elm = bValT[vid];
 				if (elm != @1_nil) {
+					@7;
 					cnt++;
-					sum += elm;
 				}
 			}
 		}
-		bResT[p] = (cnt ? @6 : @3_nil);
+		bResT[p] = (cnt ? @8 : @3_nil);
 		nils |= !cnt;
 	}
 	AGGR_CLEANUP();
@@ -694,196 +695,38 @@ ARRAYtiles@4_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 @c
-@:tilesAggr(bte,lng,lng,Sum,sum, sum )@
-@:tilesAggr(sht,lng,lng,Sum,sum, sum )@
-@:tilesAggr(int,lng,lng,Sum,sum, sum )@
-@:tilesAggr(lng,lng,lng,Sum,sum, sum )@
-@:tilesAggr(flt,dbl,dbl,Sum,sum, sum )@
-@:tilesAggr(dbl,dbl,dbl,Sum,sum, sum )@
-@:tilesAggr(bte,lng,dbl,Avg,avg, (dbl)sum / (dbl)cnt )@
-@:tilesAggr(sht,lng,dbl,Avg,avg, (dbl)sum / (dbl)cnt )@
-@:tilesAggr(int,lng,dbl,Avg,avg, (dbl)sum / (dbl)cnt )@
-@:tilesAggr(lng,lng,dbl,Avg,avg, (dbl)sum / (dbl)cnt )@
-@:tilesAggr(flt,dbl,dbl,Avg,avg, (dbl)sum / (dbl)cnt )@
-@:tilesAggr(dbl,dbl,dbl,Avg,avg, (dbl)sum / (dbl)cnt )@
-@:tilesAggr(bte,lng,lng,Cnt,cnt, (lng)cnt )@
-@:tilesAggr(sht,lng,lng,Cnt,cnt, (lng)cnt )@
-@:tilesAggr(int,lng,lng,Cnt,cnt, (lng)cnt )@
-@:tilesAggr(lng,lng,lng,Cnt,cnt, (lng)cnt )@
-@:tilesAggr(flt,dbl,lng,Cnt,cnt, (lng)cnt )@
-@:tilesAggr(dbl,dbl,lng,Cnt,cnt, (lng)cnt )@
+@:tilesAggr(bte,lng,lng,Sum,sum, sum = 0, sum += elm, sum )@
+@:tilesAggr(sht,lng,lng,Sum,sum, sum = 0, sum += elm, sum )@
+@:tilesAggr(int,lng,lng,Sum,sum, sum = 0, sum += elm, sum )@
+@:tilesAggr(lng,lng,lng,Sum,sum, sum = 0, sum += elm, sum )@
+@:tilesAggr(flt,dbl,dbl,Sum,sum, sum = 0, sum += elm, sum )@
+@:tilesAggr(dbl,dbl,dbl,Sum,sum, sum = 0, sum += elm, sum )@
 
-@= tilesMinMax
-/* 
- * array.[min|max] inputs:
- *  (cell_val:BAT,
- *   dim_1:BAT,tile_member_offset_dim_1:BAT,size_dim_1, ...,
- *   dim_n:BAT,tile_member_offset_dim_n:BAT,size_dim_n)
- */
-str
-ARRAYtiles@2_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	BAT *bVal = NULL, *bRes = NULL, **bDims = NULL, **bOffsets = NULL;
-	int *ret = (int*) getArgReference(stk,pci,0), i = 0, ndims = 0;
-	bit skip = FALSE, nils = FALSE;
-	@1 *bValT = NULL, elm = 0;
-	@1 *bResT = NULL;
-	int **bDimsT = NULL, **bOffsetsT = NULL;
-	BUN p, r, arrcnt = 0, offcnt = 0;
-	@1 minmax = @1_nil;
-	bit first = TRUE;
-	/* FIXME: this code only deal with INT dimensions */
-	int cidx = 0, *dMin = NULL, *dMax = NULL, *dSize = NULL;
-	oid arrbase = 0, offbase = 0, vid = 0, mul = 0;
+@:tilesAggr(bte,lng,dbl,Avg,avg, sum = 0, sum += elm, (dbl)sum / (dbl)cnt )@
+@:tilesAggr(sht,lng,dbl,Avg,avg, sum = 0, sum += elm, (dbl)sum / (dbl)cnt )@
+@:tilesAggr(int,lng,dbl,Avg,avg, sum = 0, sum += elm, (dbl)sum / (dbl)cnt )@
+@:tilesAggr(lng,lng,dbl,Avg,avg, sum = 0, sum += elm, (dbl)sum / (dbl)cnt )@
+@:tilesAggr(flt,dbl,dbl,Avg,avg, sum = 0, sum += elm, (dbl)sum / (dbl)cnt )@
+@:tilesAggr(dbl,dbl,dbl,Avg,avg, sum = 0, sum += elm, (dbl)sum / (dbl)cnt )@
 
-	(void) cntxt;
-	(void) mb;
+@:tilesAggr(bte,lng,lng,Cnt,cnt, sum = 0, sum += elm, (lng)cnt )@
+@:tilesAggr(sht,lng,lng,Cnt,cnt, sum = 0, sum += elm, (lng)cnt )@
+@:tilesAggr(int,lng,lng,Cnt,cnt, sum = 0, sum += elm, (lng)cnt )@
+@:tilesAggr(lng,lng,lng,Cnt,cnt, sum = 0, sum += elm, (lng)cnt )@
+@:tilesAggr(flt,dbl,lng,Cnt,cnt, sum = 0, sum += elm, (lng)cnt )@
+@:tilesAggr(dbl,dbl,lng,Cnt,cnt, sum = 0, sum += elm, (lng)cnt )@
 
-	if ( (pci->argc - pci->retc - 1) % 3 != 0)
-		throw(MAL, "array.@3", "Unbalanced argument sets");
+@:tilesAggr(bte,bte,bte,Min,min, minmax = bte_nil, minmax = (cnt ? MIN(minmax,elm) : elm), minmax )@
+@:tilesAggr(sht,sht,sht,Min,min, minmax = sht_nil, minmax = (cnt ? MIN(minmax,elm) : elm), minmax )@
+@:tilesAggr(int,int,int,Min,min, minmax = int_nil, minmax = (cnt ? MIN(minmax,elm) : elm), minmax )@
+@:tilesAggr(lng,lng,lng,Min,min, minmax = lng_nil, minmax = (cnt ? MIN(minmax,elm) : elm), minmax )@
+@:tilesAggr(flt,flt,flt,Min,min, minmax = flt_nil, minmax = (cnt ? MIN(minmax,elm) : elm), minmax )@
+@:tilesAggr(dbl,dbl,dbl,Min,min, minmax = dbl_nil, minmax = (cnt ? MIN(minmax,elm) : elm), minmax )@
 
-	ndims = (pci->argc - pci->retc - 1) / 3;
-	bDims = (BAT**) GDKzalloc(sizeof(BAT*) * ndims);
-	bDimsT = (int**) GDKzalloc(sizeof(int*) * ndims);
-	bOffsets = (BAT**) GDKzalloc(sizeof(BAT*) * ndims);
-	bOffsetsT = (int**) GDKzalloc(sizeof(int*) * ndims);
-	dMin = (int*) GDKzalloc(sizeof(int) * ndims);
-	dMax = (int*) GDKzalloc(sizeof(int) * ndims);
-	dSize = (int*) GDKzalloc(sizeof(int) * ndims);
-	if(!bDims || !bDimsT || !bOffsets || !bOffsetsT || !dMin || !dMax || !dSize) {
-		AGGR_CLEANUP();
-		throw(MAL, "array.@3", MAL_MALLOC_FAIL);
-	}
-	if (!(bVal = BATdescriptor(*(int*)getArgReference(stk,pci,1)))) {
-		AGGR_CLEANUP();
-		throw(MAL, "array.@3", RUNTIME_OBJECT_MISSING);
-	}
-	for (i = 0; i < ndims; i++) {
-		bDims[i] = BATdescriptor(*(int*)getArgReference(stk,pci,2+i*3));
-		bOffsets[i] = BATdescriptor(*(int*)getArgReference(stk,pci,2+i*3+1));
-		if (!bDims[i] || !bOffsets[i]) {
-			AGGR_CLEANUP();
-			throw(MAL, "array.@3", RUNTIME_OBJECT_MISSING);
-		}
-		dSize[i] = *(int*)getArgReference(stk,pci,2+i*3+2);
-	}
-	/* type check the shapes, prepare iterators, and compute the min/max of the dimensions */
-	if (!BAThdense(bVal)) {
-		AGGR_CLEANUP();
-		throw(MAL, "array.@3", "head of value BAT must be dense");
-	}
-	if (bVal->ttype != TYPE_@1) {
-		AGGR_CLEANUP();
-		throw(MAL, "array.@3", "tail of value BAT must be of type @1");
-	}
-	arrcnt = BATcount(bVal);
-	arrbase = bVal->hseqbase;
-	offbase = bOffsets[0]->hseqbase;
-	offcnt = BATcount(bOffsets[0]);
-	for (i = 0; i < ndims; i++) {
-		if (!BAThdense(bDims[i])) {
-			AGGR_CLEANUP();
-			throw(MAL, "array.@3", "head of all dimension BATs must be dense");
-		}
-		if (!BAThdense(bOffsets[i])) {
-			AGGR_CLEANUP();
-			throw(MAL, "array.@3", "head of all offset BATs must be dense");
-		}
-		if (bDims[i]->hseqbase != arrbase || BATcount(bDims[i]) != arrcnt) {
-			AGGR_CLEANUP();
-			throw(MAL, "array.@3", "head of all dimension BATs must be aligned with head of value BAT");
-		}
-		if (bOffsets[i]->hseqbase != offbase || BATcount(bOffsets[i]) != offcnt) {
-			AGGR_CLEANUP();
-			throw(MAL, "array.@3", "heads of all offset BATs must be aligned");
-		}
-		if (bDims[i]->ttype != TYPE_int || bDims[i]->ttype != bOffsets[i]->ttype) {
-			AGGR_CLEANUP();
-			throw(MAL, "array.@3", SEMANTIC_TYPE_MISMATCH);
-		}
-		BATmin(bDims[i], &(dMin[i]));
-		BATmax(bDims[i], &(dMax[i]));
-	}
-
-	/* access tails as arrays */
-	bValT = (@1*) Tloc(bVal, BUNfirst(bVal));
-	for (i = 0; i < ndims; i++) {
-		bDimsT[i] = (int*) Tloc(bDims[i], BUNfirst(bDims[i]));
-		bOffsetsT[i] = (int*) Tloc(bOffsets[i], BUNfirst(bOffsets[i]));
-	}
-
-	/* For each anchor piont, compute all cells belong to this tile (bVal.head
-	 * is the group nr.) and compute the SUM */
-	bRes = 	BATnew(TYPE_void, TYPE_@1, BATcount(bVal));
-	bResT = (@1*) Tloc(bRes, BUNfirst(bRes));
-	for (p = 0 ; p < arrcnt ; p++) {
-		minmax = @1_nil;
-		first = TRUE;
-		/* loop over all sets of offsets */
-		for (r = 0; r < offcnt ; r++) {
-			vid = 0; /* index into bVal for the value of a qualified tile member */
-			mul = 1;
-			skip = FALSE;
-			/* for the index of the anchor point on dimension d_i, check if the
-			 * resulting index is within the dimension range after having
-			 * shifted according this set of offset on dimension d_i.
-			 * If yes, update 'vid' so that we know the OID of the qualified
-			 * cell at the end; otherwise, skip.
-			 */
-			/* TODO: we can skip more.  If the j-th value bOffsets[i]
-			 * disqualifies the index on dimension d_i, we can jump to the next
-			 * of bOffsets[i] which value follows the j-th value */
-			for (i = ndims - 1; i >= 0; i--) {
-				cidx = bDimsT[i][p] + bOffsetsT[i][r];
-				if (dMin[i] <= cidx && cidx <= dMax[i]) {
-					vid += mul * (cidx - dMin[i]);
-				} else {
-					skip = TRUE;
-					break; /* skip remaining dimensions */
-				}
-				mul *= dSize[i];
-			}
-			if (!skip) {
-				elm = bValT[vid];
-				if (elm != @1_nil) {
-					if (first) {
-						minmax = elm;
-						first = FALSE;
-					}
-					else
-						minmax = @4(minmax,elm);
-				}
-			}
-		}
-		bResT[p] = minmax;
-		nils |= minmax == @1_nil;
-	}
-	AGGR_CLEANUP();
-	BATsetcount(bRes, arrcnt);
-	BATseqbase(bRes, arrbase);
-	bRes->hdense = TRUE;
-	BATkey(bRes, TRUE);
-	bRes->hsorted = 1;
-	bRes->hrevsorted = (arrcnt <= 1);
-	bRes->tsorted = (arrcnt <= 1);
-	bRes->trevsorted = (arrcnt <= 1);
-	bRes->T->nil = nils;
-	bRes->T->nonil = !nils;
-	BATkey(BATmirror(bRes), FALSE);
-	BBPkeepref(*ret = bRes->batCacheid);
-	return MAL_SUCCEED;
-}
-@c
-@:tilesMinMax(bte,Min,min,MIN)@
-@:tilesMinMax(sht,Min,min,MIN)@
-@:tilesMinMax(int,Min,min,MIN)@
-@:tilesMinMax(lng,Min,min,MIN)@
-@:tilesMinMax(flt,Min,min,MIN)@
-@:tilesMinMax(dbl,Min,min,MIN)@
-@:tilesMinMax(bte,Max,max,MAX)@
-@:tilesMinMax(sht,Max,max,MAX)@
-@:tilesMinMax(int,Max,max,MAX)@
-@:tilesMinMax(lng,Max,max,MAX)@
-@:tilesMinMax(flt,Max,max,MAX)@
-@:tilesMinMax(dbl,Max,max,MAX)@
+@:tilesAggr(bte,bte,bte,Max,max, minmax = bte_nil, minmax = (cnt ? MAX(minmax,elm) : elm), minmax )@
+@:tilesAggr(sht,sht,sht,Max,max, minmax = sht_nil, minmax = (cnt ? MAX(minmax,elm) : elm), minmax )@
+@:tilesAggr(int,int,int,Max,max, minmax = int_nil, minmax = (cnt ? MAX(minmax,elm) : elm), minmax )@
+@:tilesAggr(lng,lng,lng,Max,max, minmax = lng_nil, minmax = (cnt ? MAX(minmax,elm) : elm), minmax )@
+@:tilesAggr(flt,flt,flt,Max,max, minmax = flt_nil, minmax = (cnt ? MAX(minmax,elm) : elm), minmax )@
+@:tilesAggr(dbl,dbl,dbl,Max,max, minmax = dbl_nil, minmax = (cnt ? MAX(minmax,elm) : elm), minmax )@
 @}
