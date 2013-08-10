@@ -133,7 +133,7 @@ finish:
 }
 
 static str
-ARRAYseries(int *bid, bte start, bte step, int stop, int group, int series)
+ARRAYseries(bat *bid, bte start, bte step, int stop, int group, int series)
 {
 	if (stop <= (int) GDK_bte_max && group <= (int) GDK_bte_max && series <= (int) GDK_bte_max) {
 		bte sta = (bte) start, ste = (bte) step, sto = (bte) stop;
@@ -153,7 +153,8 @@ GDALloadGreyscaleImage(bat *x, bat *y, bat *intensity, str *fname)
 {
 	GDALDatasetH  hDataset;
 	GDALRasterBandH hBand;
-	int  bidx = 0, bidy = 0, wid = 0, len = 0;
+	bat bidx = 0, bidy = 0;
+	int wid = 0, len = 0;
 	BUN pixels = BUN_NONE;
 	sht bps;
 	int i, j;

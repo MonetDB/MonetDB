@@ -181,7 +181,7 @@ array_export str ARRAYtiles_max_@1_@2(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 array_export str ARRAYtiles_cnt_@1_@2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 @
 @= array_defs
-array_export str ARRAYseries_@1(int *ret, @1 *start, @1 *step, @1 *stop, int *grp, int *series);
+array_export str ARRAYseries_@1(bat *ret, @1 *start, @1 *step, @1 *stop, int *grp, int *series);
 @:array_defs_DimType(@1,bte)@
 @:array_defs_DimType(@1,sht)@
 @:array_defs_DimType(@1,int)@
@@ -213,7 +213,7 @@ array_export str ARRAYseries_@1(int *ret, @1 *start, @1 *step, @1 *stop, int *gr
 #include "mal_interpreter.h"
 @= dim_wrapper_impl
 str
-ARRAYseries_@1(int *ret, @1 *start, @1 *step, @1 *stop, int *group, int *series)
+ARRAYseries_@1(bat *ret, @1 *start, @1 *step, @1 *stop, int *group, int *series)
 {
 	BAT *bn;
 	@1 i, *o;
@@ -265,7 +265,7 @@ ARRAYseries_@1(int *ret, @1 *start, @1 *step, @1 *stop, int *group, int *series)
 
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \
 	*ret = bn->batCacheid;
-	BBPkeepref((int)*ret);
+	BBPkeepref(*ret);
 	return MAL_SUCCEED;
 }
 
@@ -283,8 +283,8 @@ ARRAYfiller_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *bn, *b;
 	BUN p, q;
 	BATiter bi;
-	int *ret = (int*) getArgReference(stk,pci,0);
-	int bid = *(int*) getArgReference(stk,pci,1);
+	bat *ret = (bat*) getArgReference(stk,pci,0);
+	bat bid = *(bat*) getArgReference(stk,pci,1);
 	void *val = (void*) getArgReference(stk,pci,2);
 	int type = getArgType(mb,pci,2);
 
@@ -359,7 +359,7 @@ ARRAYfiller_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 ARRAYslice(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int *ret = (int*) getArgReference(stk,pci,0);
+	bat *ret = (bat*) getArgReference(stk,pci,0);
 	lng *dim_strt = NULL, *dim_step = NULL, *dim_stop = NULL, *dim_size = NULL, *dim_rept = NULL,
 		*slc_strt = NULL, *slc_step = NULL, *slc_stop = NULL, *slc_size = NULL, *slc_rept = NULL, *slc_indx = NULL;
 	int i = 0, j = 0, valence = (pci->argc - pci->retc) / 6;
@@ -478,7 +478,7 @@ str
 ARRAYfiller(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *bn;
-	int *ret = (int*) getArgReference(stk,pci,0);
+	bat *ret = (bat*) getArgReference(stk,pci,0);
 	oid i = 0;
 	lng cnt = *(lng *) getArgReference(stk,pci,1);
 	void *val = (void*) getArgReference(stk,pci,2);
@@ -562,7 +562,7 @@ str
 ARRAYtiles_@4_@1_@8(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *bVal = NULL, *bRes = NULL, **bDims = NULL, **bOffsets = NULL;
-	int *ret = (int*) getArgReference(stk,pci,0), i = 0, ndims = 0;
+	bat *ret = (bat*) getArgReference(stk,pci,0), i = 0, ndims = 0;
 	bit nils = FALSE;
 	@1 *bValT = NULL;
 	@3 *bResT = NULL;
@@ -589,14 +589,14 @@ ARRAYtiles_@4_@1_@8(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		AGGR_CLEANUP();
 		throw(MAL, "array.@4", MAL_MALLOC_FAIL);
 	}
-	if (!(bVal = BATdescriptor(*(int*)getArgReference(stk,pci,1)))) {
+	if (!(bVal = BATdescriptor(*(bat*)getArgReference(stk,pci,1)))) {
 		AGGR_CLEANUP();
 		throw(MAL, "array.@4", RUNTIME_OBJECT_MISSING);
 	}
 	arrsze = 1;
 	for (i = 0; i < ndims; i++) {
-		bDims[i] = BATdescriptor(*(int*)getArgReference(stk,pci,2+i*3));
-		bOffsets[i] = BATdescriptor(*(int*)getArgReference(stk,pci,2+i*3+1));
+		bDims[i] = BATdescriptor(*(bat*)getArgReference(stk,pci,2+i*3));
+		bOffsets[i] = BATdescriptor(*(bat*)getArgReference(stk,pci,2+i*3+1));
 		if (!bDims[i] || !bOffsets[i]) {
 			AGGR_CLEANUP();
 			throw(MAL, "array.@4", RUNTIME_OBJECT_MISSING);
