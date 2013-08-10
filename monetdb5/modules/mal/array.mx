@@ -567,7 +567,7 @@ ARRAYtiles_@4_@1_@8(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	@1 *bValT = NULL;
 	@3 *bResT = NULL;
 	@8 **bDimsT = NULL, **bOffsetsT = NULL, *dMin = NULL, *dMax = NULL;
-	BUN p, r, arrcnt = 0, offcnt = 0;
+	BUN p, r, arrsze = 0, arrcnt = 0, offcnt = 0;
 	int *dSize = NULL;
 	oid arrbase = 0, offbase = 0;
 
@@ -593,6 +593,7 @@ ARRAYtiles_@4_@1_@8(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		AGGR_CLEANUP();
 		throw(MAL, "array.@4", RUNTIME_OBJECT_MISSING);
 	}
+	arrsze = 1;
 	for (i = 0; i < ndims; i++) {
 		bDims[i] = BATdescriptor(*(int*)getArgReference(stk,pci,2+i*3));
 		bOffsets[i] = BATdescriptor(*(int*)getArgReference(stk,pci,2+i*3+1));
@@ -601,6 +602,11 @@ ARRAYtiles_@4_@1_@8(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			throw(MAL, "array.@4", RUNTIME_OBJECT_MISSING);
 		}
 		dSize[i] = *(int*)getArgReference(stk,pci,2+i*3+2);
+		if (dSize[i] == 0) {
+			AGGR_CLEANUP();
+			throw(MAL, "array.@4", "size dimension %d must not be 0", i);
+		}
+		arrsze *= dSize[i];
 	}
 	/* type check the shapes, prepare iterators, and compute the min/max of the dimensions */
 	if (!BAThdense(bVal)) {
@@ -612,32 +618,75 @@ ARRAYtiles_@4_@1_@8(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "array.@4", "tail of value BAT must be of type @1");
 	}
 	arrcnt = BATcount(bVal);
+	if (arrcnt != arrsze) {
+		AGGR_CLEANUP();
+		throw(MAL, "array.@4", "count of value BAT ("BUNFMT") != product of dimension sizes ("BUNFMT")",
+			arrcnt, arrsze);
+	}
 	arrbase = bVal->hseqbase;
 	offbase = bOffsets[0]->hseqbase;
 	offcnt = BATcount(bOffsets[0]);
 	for (i = 0; i < ndims; i++) {
 		if (!BAThdense(bDims[i])) {
 			AGGR_CLEANUP();
-			throw(MAL, "array.@4", "head of all dimension BATs must be dense");
+			throw(MAL, "array.@4", "head of dimension BAT %d is not dense", i);
 		}
 		if (!BAThdense(bOffsets[i])) {
 			AGGR_CLEANUP();
-			throw(MAL, "array.@4", "head of all offset BATs must be dense");
+			throw(MAL, "array.@4", "head of offset BAT %d is not dense", i);
 		}
 		if (bDims[i]->hseqbase != arrbase || BATcount(bDims[i]) != arrcnt) {
 			AGGR_CLEANUP();
-			throw(MAL, "array.@4", "head of all dimension BATs must be aligned with head of value BAT");
+			throw(MAL, "array.@4", "head of dimension BAT %d is not aligned with head of value BAT", i);
 		}
 		if (bOffsets[i]->hseqbase != offbase || BATcount(bOffsets[i]) != offcnt) {
 			AGGR_CLEANUP();
-			throw(MAL, "array.@4", "heads of all offset BATs must be aligned");
+			throw(MAL, "array.@4", "head of offset BAT %d is not aligned with head of offset BAT 0", i);
 		}
 		if (bDims[i]->ttype != TYPE_@8 || bDims[i]->ttype != bOffsets[i]->ttype) {
 			AGGR_CLEANUP();
-			throw(MAL, "array.@4", SEMANTIC_TYPE_MISMATCH);
+			throw(MAL, "array.@4", "tail type of dimension BAT %d is not type @8", i);
 		}
+		/* ! might require 2 full scans ! */
 		BATmin(bDims[i], &(dMin[i]));
 		BATmax(bDims[i], &(dMax[i]));
+		if ((int) (dMax[i] - dMin[i] + 1) != dSize[i]) {
+			AGGR_CLEANUP();
+			throw(MAL, "array.@4", "range of dimension BAT %d (%d) does not match its size (%d)",
+				i, (int) (dMax[i] - dMin[i] + 1), dSize[i]);
+		}
+
+		/* might require (partial) scans; hence, only done when
+		 * assertions or property checking enabled */
+#ifdef NDEBUG
+		PROPDEBUG
+#endif
+		{
+			BAT *slice;
+			slice = BATslice(bDims[i],0,arrsze);
+			BATderiveHeadProps(BATmirror(slice),0);
+			if (!BATtordered(slice)) {
+				BBPunfix(slice->batCacheid);
+				AGGR_CLEANUP();
+				throw(MAL, "array.@4", "values of dimension %d are not sorted %s",
+					i, i ? "within first value of preceeding dimension" : "");
+			}
+			BBPunfix(slice->batCacheid);
+			if (arrsze < arrcnt) {
+				slice = BATslice(bDims[i],arrcnt-arrsze,arrcnt);
+				BATderiveHeadProps(BATmirror(slice),0);
+				if (!BATtordered(slice)) {
+					BBPunfix(slice->batCacheid);
+					AGGR_CLEANUP();
+					throw(MAL, "array.@4", "values of dimension %d are not sorted %s",
+						i, i ? "within last value of preceeding dimension" : "");
+				}
+				BBPunfix(slice->batCacheid);
+			}
+		}
+
+		arrsze /= dSize[i];
+		assert(arrsze);
 	}
 
 	/* access tails as arrays */
@@ -645,6 +694,16 @@ ARRAYtiles_@4_@1_@8(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	for (i = 0; i < ndims; i++) {
 		bDimsT[i] = (@8*) Tloc(bDims[i], BUNfirst(bDims[i]));
 		bOffsetsT[i] = (@8*) Tloc(bOffsets[i], BUNfirst(bOffsets[i]));
+		if (bDimsT[i][0] != dMin[i]) {
+			AGGR_CLEANUP();
+			throw(MAL, "array.@4", "first value of dimension %d (%d) is not its minimum (%d)",
+				i, (int) bDimsT[i][0], (int) dMin[i]);
+		}
+		if (bDimsT[i][arrcnt-1] != dMax[i]) {
+			AGGR_CLEANUP();
+			throw(MAL, "array.@4", "last value of dimension %d (%d) is not its maximum (%d)",
+				i, (int) bDimsT[i][arrcnt-1], (int) dMax[i]);
+		}
 	}
 
 	/* For each anchor piont, compute all cells belong to this tile (bVal.head
