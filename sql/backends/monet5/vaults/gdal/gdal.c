@@ -49,13 +49,13 @@ GDALtest(int *wid, int *len, str *fname)
 	str msg = MAL_SUCCEED;
 
 	GDALAllRegister();
-        hDataset = GDALOpen(*fname, GA_ReadOnly);
+	hDataset = GDALOpen(*fname, GA_ReadOnly);
 
 	if (hDataset==NULL) 
 		return createException(MAL, "gdal.test", "Missing GDAL file %s", *fname);
 
 	*len = GDALGetRasterYSize(hDataset);
-        *wid = GDALGetRasterXSize(hDataset);
+	*wid = GDALGetRasterXSize(hDataset);
 
 	GDALClose(hDataset);
 	return msg;
@@ -92,7 +92,7 @@ GDALattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return createException(MAL, "gdal.attach", "Catalog table missing\n");
 
 	GDALAllRegister();
-        hDataset = GDALOpen(fname, GA_ReadOnly);
+	hDataset = GDALOpen(fname, GA_ReadOnly);
 	if (hDataset==NULL) return createException(MAL, "gdal.attach", "Missing GDAL file %s\n", fname);
 
 	/* check if the file is already attached */
@@ -116,7 +116,7 @@ GDALattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	col = mvc_bind_column(m, cat, "imageid");
 	imid = store_funcs.count_col(col, 1) + 1;
 	len = GDALGetRasterYSize(hDataset);
-        wid = GDALGetRasterXSize(hDataset);
+	wid = GDALGetRasterXSize(hDataset);
 	hBand = GDALGetRasterBand(hDataset, 1);
 	bps = GDALGetDataTypeSize(GDALGetRasterDataType(hBand));
 
@@ -162,14 +162,14 @@ GDALloadGreyscaleImage(bat *x, bat *y, bat *intensity, str *fname)
 	char *errbuf = NULL;
 
 	GDALAllRegister();
-        hDataset = GDALOpen(*fname, GA_ReadOnly);
+	hDataset = GDALOpen(*fname, GA_ReadOnly);
 	if (hDataset==NULL)
 		return createException(MAL, "gdal.loadimage", "Missing GDAL file %s\n", *fname);
 
 	len = GDALGetRasterYSize(hDataset);
-        wid = GDALGetRasterXSize(hDataset);
+	wid = GDALGetRasterXSize(hDataset);
 	hBand = GDALGetRasterBand(hDataset, 1);
-        bps = GDALGetDataTypeSize(GDALGetRasterDataType(hBand));
+	bps = GDALGetDataTypeSize(GDALGetRasterDataType(hBand));
 
 	pixels = (BUN)wid * (BUN)len;
 
@@ -191,10 +191,10 @@ GDALloadGreyscaleImage(bat *x, bat *y, bat *intensity, str *fname)
 
 		for(i = 0; i < len; i++) {
 			if (GDALRasterIO(hBand, GF_Read, 0, i, wid, 1, linebuf, wid, 1, GDT_Byte, 0, 0) != CE_Failure) {
-                                for (j = 0; j < wid; j++) 
-                                        data_sht[i*wid + j] = ((unsigned char*)linebuf)[j];
-                        }
-                }
+				for (j = 0; j < wid; j++) 
+					data_sht[i*wid + j] = ((unsigned char*)linebuf)[j];
+			}
+		}
 		break;
 	}
 	default:
