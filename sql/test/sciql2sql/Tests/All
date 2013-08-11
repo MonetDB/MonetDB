@@ -11,6 +11,7 @@ update_fixed_array
 #update_range_array covered by fixed_array
 update_unbound_array
 update_step_int_array
+update_unbound_step_array
 
 # selections with target is relation
 
