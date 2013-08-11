@@ -3,7 +3,7 @@ SET SCHEMA rs;
 
 -- configuration parameters --
 
-DECLARE window_size INT;
+DECLARE window_size SMALLINT;
 SET window_size = 3; -- 3 for 3x3 window, 5 for 5x5 window
 
 DECLARE ndviThreshold DOUBLE;
@@ -36,16 +36,16 @@ CALL rs.import2(6);
 
 -- global variables and array --
 
-DECLARE d1 INT, d2 INT, majority INT;
+DECLARE d1 SMALLINT, d2 SMALLINT, majority SMALLINT;
 SET d1 = window_size / 2;
 SET d2 = d1 + 1;
 SET majority = (window_size * window_size) / 2;
 
-DECLARE size_x INT, size_y INT;
+DECLARE size_x SMALLINT, size_y SMALLINT;
 SET size_x = (SELECT MAX(x) + 1 FROM rs.image1);
 SET size_y = (SELECT MAX(y) + 1 FROM rs.image1);
 
-CREATE ARRAY fire (x INT DIMENSION[size_x], y INT DIMENSION[size_y], f INT);
+CREATE ARRAY fire (x SMALLINT DIMENSION[size_x], y SMALLINT DIMENSION[size_y], f INT);
 
 
 -- BSM classification (landsatFirePredicate()) --
@@ -248,7 +248,7 @@ UPDATE fire SET f = NULL WHERE f IN (
 CREATE FUNCTION connect_neighbors()
 RETURNS TABLE (i1 INT, i2 INT)
 BEGIN
-  DECLARE TABLE bridges (x INT, y INT, i INT, a INT);
+  DECLARE TABLE bridges (x SMALLINT, y SMALLINT, i INT, a INT);
   DECLARE TABLE trans (i INT, a INT, x INT);
   DECLARE iter_0 INT, iter_1 INT;
   SET iter_0 = 0;
@@ -351,7 +351,7 @@ set optimizer='default_pipe';
 -- to avoid (expensive) joins (in particular in initial classification)
 
 -- option 1:
-CREATE ARRAY image123 (x INT DIMENSION[size_x], y INT DIMENSION[size_y], b3 INT, b4 INT, b7 INT);
+CREATE ARRAY image123 (x SMALLINT DIMENSION[size_x], y SMALLINT DIMENSION[size_y], b3 INT, b4 INT, b7 INT);
 INSERT INTO image123 (
   SELECT b3.x, b3.y, b3.intensity, b4.intensity, b7.intensity
   FROM rs.image1 AS b3, rs.image2 AS b4, rs.image3 AS b7
@@ -359,13 +359,13 @@ INSERT INTO image123 (
 );
 
 -- option 2:
-CREATE ARRAY image347 (x INT DIMENSION[size_x], y INT DIMENSION[size_y], b3 INT, b4 INT, b7 INT);
+CREATE ARRAY image347 (x SMALLINT DIMENSION[size_x], y SMALLINT DIMENSION[size_y], b3 INT, b4 INT, b7 INT);
 UPDATE image347 SET b3 = ( SELECT intensity FROM rs.image1 as i WHERE image347.x = i.x and image347.y = i.y );
 UPDATE image347 SET b4 = ( SELECT intensity FROM rs.image2 as i WHERE image347.x = i.x and image347.y = i.y );
 UPDATE image347 SET b7 = ( SELECT intensity FROM rs.image3 as i WHERE image347.x = i.x and image347.y = i.y );
 
 -- option 3:
-CREATE ARRAY imageB347 (x INT DIMENSION[size_x], y INT DIMENSION[size_y], b3 INT, b4 INT, b7 INT);
+CREATE ARRAY imageB347 (x SMALLINT DIMENSION[size_x], y SMALLINT DIMENSION[size_y], b3 INT, b4 INT, b7 INT);
 INSERT INTO imageB347 (x,y,b3) SELECT [x], [y], intensity FROM rs.image1;
 INSERT INTO imageB347 (x,y,b4) SELECT [x], [y], intensity FROM rs.image2;
 INSERT INTO imageB347 (x,y,b7) SELECT [x], [y], intensity FROM rs.image3;
