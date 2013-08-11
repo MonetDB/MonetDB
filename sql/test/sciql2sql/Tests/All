@@ -8,6 +8,7 @@ create_unbound_step_array.sql
 
 # update non-dimensional attributes
 update_fixed_array
+update_unbound_array
 # update dimensional attributes
 
 # selections with target is relation
