@@ -13,7 +13,8 @@ update_unbound_array
 update_step_int_array
 update_unbound_step_array
 
-# selections with target is relation
+# slice selections with target is relation
+slice_fixed_array
 #show slice/dice over arrays
 #
 # selection with array is arrays
