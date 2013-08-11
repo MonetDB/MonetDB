@@ -60,10 +60,23 @@ SELECT A.x, A.v+B.v
 FROM vector as A, vector as B
 WHERE A.x-1 = B.x;
 
--- more elaborate slices 
+-- a more elaborate slices
 SELECT x, sum(v)
 FROM array1D
 GROUP BY array1D[x : 1 : x+4];
+
+-- alternative for simple range
+SELECT A.beg, (SELECT sum(vector.v) FROM vector WHERE vector.x >= A.beg AND vector.x < A.lim)
+FROM (SELECT x AS beg, x+4 AS lim FROM vector) AS A;
+
+-- a more elaborate slices
+SELECT x, sum(v)
+FROM array1D
+GROUP BY array1D[x : 2 : x+4];
+
+-- alternative for simple range
+SELECT A.beg, (SELECT sum(vector.v) FROM vector WHERE vector.x >= A.beg AND vector.x < A.lim AND ((vector.x - A.beg) % 2) = 0)
+FROM (SELECT x AS beg, x+4 AS lim FROM vector) AS A;
 
 -- casting a more generic predicate into relational
 -- use a relative offset map to indicate group elements
