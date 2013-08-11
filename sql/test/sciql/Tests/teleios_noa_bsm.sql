@@ -57,7 +57,7 @@ INSERT INTO fire (
   SELECT b3.x, b3.y, 1
   FROM rs.image1 AS b3, rs.image2 AS b4, rs.image3 AS b7
   WHERE b3.x = b4.x AND b3.y = b4.y AND b3.x = b7.x AND b3.y = b7.y -- join the images
-    and b3.intensity <> 0 AND b4.intensity <> 0 AND b7.intensity <> 0
+    AND b3.intensity <> 0 AND b4.intensity <> 0 AND b7.intensity <> 0
     AND b4.intensity <= 60 -- indexNIR
     AND (b3.intensity + b4.intensity) / 2 <= 50 -- indexALBEDO
     AND b4.intensity + b7.intensity <> 0
@@ -193,7 +193,7 @@ BEGIN
         SELECT f AS i, MAX(f) AS a
         FROM fire
         GROUP BY fire[x-1:x+2][y-1:y+2]
-        HAVING f IS NOT NULL and f <> MAX(f)
+        HAVING f IS NOT NULL AND f <> MAX(f)
       ) AS t
       GROUP BY i
     );
