@@ -61,7 +61,7 @@ INSERT INTO fire (
     AND b4.intensity <= 60 -- indexNIR
     AND (b3.intensity + b4.intensity) / 2 <= 50 -- indexALBEDO
     AND b4.intensity + b7.intensity <> 0
-    AND (CAST(b4.intensity-b7.intensity AS DOUBLE)/(b4.intensity + b7.intensity) + 1.0) * 127.5 <= 126.0 -- indexNBR, 255.0/2.0=127.5
+    AND (CAST(b4.intensity - b7.intensity AS REAL) / (b4.intensity + b7.intensity) + 1.0) * 127.5 <= 126.0 -- indexNBR, 255.0/2.0=127.5
 );
 
 ---- version 2: using two images
@@ -76,11 +76,11 @@ INSERT INTO fire (
     AND img1_b4.intensity <= 60 -- indexNIR_img1
     AND (img1_b3.intensity + img1_b4.intensity) / 2 <= 50 -- indexALBEDO_img1
     AND img1_b4.intensity + img1_b7.intensity <> 0
-    AND (CAST(img1_b4.intensity-img1_b7.intensity AS DOUBLE)/(img1_b4.intensity + img1_b7.intensity) + 1.0) * 127.5 <= 126.0 -- indexNBR_img1
+    AND (CAST(img1_b4.intensity - img1_b7.intensity AS REAL) / (img1_b4.intensity + img1_b7.intensity) + 1.0) * 127.5 <= 126.0 -- indexNBR_img1
     AND img1_b4.intensity + img1_b3.intensity <> 0
     AND img2_b4.intensity + img2_b3.intensity <> 0
-    AND ABS( CAST(img1_b4.intensity-img1_b3.intensity AS DOUBLE)/(img1_b4.intensity + img1_b3.intensity) -
-             CAST(img2_b4.intensity-img2_b3.intensity AS DOUBLE)/(img2_b4.intensity + img2_b3.intensity) ) > ndviThreshold
+    AND ABS( CAST(img1_b4.intensity - img1_b3.intensity AS REAL) / (img1_b4.intensity + img1_b3.intensity) -
+             CAST(img2_b4.intensity - img2_b3.intensity AS REAL) / (img2_b4.intensity + img2_b3.intensity) ) > ndviThreshold
 );
 
 
