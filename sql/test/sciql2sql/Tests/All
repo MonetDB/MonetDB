@@ -8,6 +8,7 @@ create_unbound_step_array
 
 # update attributes
 update_fixed_array
+
 #update_range_array covered by fixed_array
 update_unbound_array
 update_step_int_array
@@ -15,11 +16,12 @@ update_unbound_step_array
 
 # slice selections with target is relation
 slice_fixed_array
-#show slice/dice over arrays
-#
-# selection with array is arrays
+slice_2d_array
+
+
+# selection with array type result 
 
 # tiling based on dimensional attributes
-# vector manipulations
 vector_fixed_tiles
+#
 # tiling based on mix of dimensional attribues
