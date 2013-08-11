@@ -6,7 +6,9 @@ create_step_int_array.sql
 create_step_flt_array.sql
 create_unbound_step_array.sql
 
-# update dimensional attributs
+# update non-dimensional attributes
+update_fixed_array
+# update dimensional attributes
 
 # selections with target is relation
 
