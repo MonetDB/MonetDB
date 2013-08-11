@@ -549,6 +549,7 @@ ARRAYfiller(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if(dMin) GDKfree(dMin); \
 	if(dMax) GDKfree(dMax); \
 	if(dSize) GDKfree(dSize); \
+	if(offset) GDKfree(offset); \
 }
 
 @= tilesAggr
@@ -576,7 +577,7 @@ ARRAYtiles_@4_@1_@8(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	@1 *bValT = NULL;
 	@3 *bResT = NULL;
 	@8 **bDimsT = NULL, **bOffsetsT = NULL, *dMin = NULL, *dMax = NULL;
-	BUN p, r, arrsze = 0, arrcnt = 0, offcnt = 0;
+	BUN p, r, arrsze = 0, arrcnt = 0, offcnt = 0, *offset = NULL;
 	int *dSize = NULL;
 	oid arrbase = 0, offbase = 0;
 
@@ -735,6 +736,21 @@ ARRAYtiles_@4_@1_@8(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		assert(arrsze);
 	}
 
+	/* allocate and calculate physical (positional) offsets */
+	offset = GDKmalloc(offcnt * sizeof(BUN));
+	if (!offset) {
+		AGGR_CLEANUP();
+		throw(MAL, "array.@4", MAL_MALLOC_FAIL);
+	}
+	for (r = 0; r < offcnt; r++) {
+		BUN mul = 1;
+		offset[r] = 0;
+		for (i = ndims - 1; i >= 0; i--) {
+			offset[r] += mul * bOffsetsT[i][r];
+			mul *= dSize[i];
+		}
+	}
+
 	/* For each anchor piont, compute all cells belong to this tile (bVal.head
 	 * is the group nr.) and compute the SUM */
 	bRes = 	BATnew(TYPE_void, TYPE_@3, BATcount(bVal));
@@ -745,9 +761,8 @@ ARRAYtiles_@4_@1_@8(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 		/* loop over all sets of offsets */
 		for (r = 0; r < offcnt ; r++) {
-			BUN vid = 0; /* index into bVal for the value of a qualified tile member */
-			BUN mul = 1;
-			bit skip = FALSE;
+			BUN vid = p + offset[r]; /* index into bVal for the value of a qualified tile member */
+			bit skip = vid >= arrcnt;
 
 			/* for the index of the anchor point on dimension d_i, check if the
 			 * resulting index is within the dimension range after having
@@ -758,16 +773,15 @@ ARRAYtiles_@4_@1_@8(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			/* TODO: we can skip more.  If the j-th value bOffsets[i]
 			 * disqualifies the index on dimension d_i, we can jump to the next
 			 * of bOffsets[i] which value follows the j-th value */
-			for (i = ndims - 1; i >= 0; i--) {
-				int cidx = (int) bDimsT[i][p] + (int) bOffsetsT[i][r];
+			if (!skip) {
+				for (i = ndims - 1; i >= 0; i--) {
+					int cidx = (int) bDimsT[i][p] + (int) bOffsetsT[i][r];
 
-				if ((int) dMin[i] <= cidx && cidx <= (int) dMax[i]) {
-					vid += mul * (cidx - (int) dMin[i]);
-				} else {
-					skip = TRUE;
-					break; /* skip remaining dimensions */
+					if (cidx < (int) dMin[i] || (int) dMax[i] < cidx) {
+						skip = TRUE;
+						break; /* skip remaining dimensions */
+					}
 				}
-				mul *= dSize[i];
 			}
 			if (!skip) {
 				@1 elm = bValT[vid];
