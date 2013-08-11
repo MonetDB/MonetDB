@@ -1,0 +1,260 @@
+stdout of test 'create_fixed_arrays` in directory 'sql/test/sciql2sql` itself:
+
+
+# 08:26:08 >  
+# 08:26:08 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=37681" "--set" "mapi_usock=/var/tmp/mtest-9857/.s.monetdb.37681" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/sciql//Linux/var/MonetDB/mTests_sql_test_sciql2sql" "--set" "mal_listing=0"
+# 08:26:08 >  
+
+# MonetDB 5 server v11.15.12
+# This is an unreleased version
+# Serving database 'mTests_sql_test_sciql2sql', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.591 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2013 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:37681/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-9857/.s.monetdb.37681
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_history.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_compress.sql
+# loading sql script: 18_dictionary.sql
+# loading sql script: 19_cluster.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 24_zorder.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 29_array.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 99_system.sql
+
+# 08:26:08 >  
+# 08:26:08 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-9857" "--port=37681"
+# 08:26:08 >  
+
+#CREATE ARRAY array1D(x TINYINT DIMENSION[4], v INTEGER DEFAULT 1, w INTEGER DEFAULT 0);
+#SELECT * FROM array1D;
+% sys.array1d,	sys.array1d,	sys.array1d # table_name
+% x,	v,	w # name
+% tinyint,	int,	int # type
+% 1,	1,	1 # length
+[ 0,	1,	0	]
+[ 1,	1,	0	]
+[ 2,	1,	0	]
+[ 3,	1,	0	]
+#DROP ARRAY array1D;
+#CREATE TABLE array1D(x TINYINT CHECK(x >=0 and x < 4), v INTEGER DEFAULT 1, w INTEGER DEFAULT 0);
+#INSERT INTO array1D values 
+#( 0, 1, 0),
+#( 1, 1, 0),
+#( 2, 1, 0),
+#( 3, 1, 0);
+[ 4	]
+#SELECT * FROM array1D;
+% sys.array1d,	sys.array1d,	sys.array1d # table_name
+% x,	v,	w # name
+% tinyint,	int,	int # type
+% 1,	1,	1 # length
+[ 0,	1,	0	]
+[ 1,	1,	0	]
+[ 2,	1,	0	]
+[ 3,	1,	0	]
+#DROP ARRAY array1D;
+#CREATE ARRAY array2D(x TINYINT DIMENSION[4], y BIGINT DIMENSION[4], v INTEGER DEFAULT 2);
+#SELECT * FROM array2D;
+% sys.array2d,	sys.array2d,	sys.array2d # table_name
+% x,	y,	v # name
+% tinyint,	bigint,	int # type
+% 1,	1,	1 # length
+[ 0,	0,	2	]
+[ 0,	1,	2	]
+[ 0,	2,	2	]
+[ 0,	3,	2	]
+[ 1,	0,	2	]
+[ 1,	1,	2	]
+[ 1,	2,	2	]
+[ 1,	3,	2	]
+[ 2,	0,	2	]
+[ 2,	1,	2	]
+[ 2,	2,	2	]
+[ 2,	3,	2	]
+[ 3,	0,	2	]
+[ 3,	1,	2	]
+[ 3,	2,	2	]
+[ 3,	3,	2	]
+#DROP ARRAY array2D;
+#CREATE TABLE array2D(x TINYINT CHECK(x >=0 and x < 4), y BIGINT CHECK( y>=0 and y<4), v INTEGER DEFAULT 2);
+#INSERT INTO array2D values 
+#( 0,	0,	2 ),
+#( 0,	1,	2 ),
+#( 0,	2,	2 ),
+#( 0,	3,	2 ),
+#( 1,	0,	2 ),
+#( 1,	1,	2 ),
+#( 1,	2,	2 ),
+#( 1,	3,	2 ),
+#( 2,	0,	2 ),
+#( 2,	1,	2 ),
+#( 2,	2,	2 ),
+#( 2,	3,	2 ),
+#( 3,	0,	2 ),
+#( 3,	1,	2 ),
+#( 3,	2,	2 ),
+#( 3,	3,	2 );
+[ 16	]
+#SELECT * FROM array2D;
+% sys.array2d,	sys.array2d,	sys.array2d # table_name
+% x,	y,	v # name
+% tinyint,	bigint,	int # type
+% 1,	1,	1 # length
+[ 0,	0,	2	]
+[ 0,	1,	2	]
+[ 0,	2,	2	]
+[ 0,	3,	2	]
+[ 1,	0,	2	]
+[ 1,	1,	2	]
+[ 1,	2,	2	]
+[ 1,	3,	2	]
+[ 2,	0,	2	]
+[ 2,	1,	2	]
+[ 2,	2,	2	]
+[ 2,	3,	2	]
+[ 3,	0,	2	]
+[ 3,	1,	2	]
+[ 3,	2,	2	]
+[ 3,	3,	2	]
+#DROP ARRAY array2D;
+#CREATE ARRAY array3D(x INT DIMENSION[3], y INT DIMENSION[3], z INT DIMENSION [3], v INT DEFAULT 3);
+#SELECT * FROM array3D;
+% sys.array3d,	sys.array3d,	sys.array3d,	sys.array3d # table_name
+% x,	y,	z,	v # name
+% int,	int,	int,	int # type
+% 1,	1,	1,	1 # length
+[ 0,	0,	0,	3	]
+[ 0,	0,	1,	3	]
+[ 0,	0,	2,	3	]
+[ 0,	1,	0,	3	]
+[ 0,	1,	1,	3	]
+[ 0,	1,	2,	3	]
+[ 0,	2,	0,	3	]
+[ 0,	2,	1,	3	]
+[ 0,	2,	2,	3	]
+[ 1,	0,	0,	3	]
+[ 1,	0,	1,	3	]
+[ 1,	0,	2,	3	]
+[ 1,	1,	0,	3	]
+[ 1,	1,	1,	3	]
+[ 1,	1,	2,	3	]
+[ 1,	2,	0,	3	]
+[ 1,	2,	1,	3	]
+[ 1,	2,	2,	3	]
+[ 2,	0,	0,	3	]
+[ 2,	0,	1,	3	]
+[ 2,	0,	2,	3	]
+[ 2,	1,	0,	3	]
+[ 2,	1,	1,	3	]
+[ 2,	1,	2,	3	]
+[ 2,	2,	0,	3	]
+[ 2,	2,	1,	3	]
+[ 2,	2,	2,	3	]
+#DROP ARRAY array3D;
+#CREATE TABLE array3D(x INT CHECK(x>=0 AND x< 3), y INT CHECK(y>=0 AND y< 3), z INT CHECK(z>=0 and z <3), v INT DEFAULT 3);
+#INSERT INTO array3D values 
+#( 0,	0,	0, 3),
+#( 0,	0,	0, 3),
+#( 0,	0,	0, 3),
+#( 0,	1,	0, 3),
+#( 0,	1,	0, 3),
+#( 0,	1,	0, 3),
+#( 0,	2,	0, 3),
+#( 0,	2,	0, 3),
+#( 0,	2,	0, 3),
+#( 1,	0,	0, 3),
+#( 1,	0,	0, 3),
+#( 1,	0,	0, 3),
+#( 1,	1,	0, 3),
+#( 1,	1,	0, 3),
+#( 1,	1,	0, 3),
+#( 1,	2,	0, 3),
+#( 1,	2,	0, 3),
+#( 1,	2,	0, 3),
+#( 2,	0,	0, 3),
+#( 2,	0,	0, 3),
+#( 2,	0,	0, 3),
+#( 2,	1,	0, 3),
+#( 2,	1,	0, 3),
+#( 2,	1,	0, 3),
+#( 2,	2,	0, 3),
+#( 2,	2,	0, 3),
+#( 2,	2,	0, 3),
+#( 3,	0,	0, 3),
+#( 3,	0,	0, 3),
+#( 3,	0,	0, 3),
+#( 3,	1,	0, 3),
+#( 3,	1,	0, 3),
+#( 3,	1,	0, 3),
+[ 36	]
+#SELECT * FROM array3D;
+% sys.array3d,	sys.array3d,	sys.array3d,	sys.array3d # table_name
+% x,	y,	z,	v # name
+% int,	int,	int,	int # type
+% 1,	1,	1,	1 # length
+[ 0,	0,	0,	3	]
+[ 0,	0,	0,	3	]
+[ 0,	0,	0,	3	]
+[ 0,	1,	0,	3	]
+[ 0,	1,	0,	3	]
+[ 0,	1,	0,	3	]
+[ 0,	2,	0,	3	]
+[ 0,	2,	0,	3	]
+[ 0,	2,	0,	3	]
+[ 1,	0,	0,	3	]
+[ 1,	0,	0,	3	]
+[ 1,	0,	0,	3	]
+[ 1,	1,	0,	3	]
+[ 1,	1,	0,	3	]
+[ 1,	1,	0,	3	]
+[ 1,	2,	0,	3	]
+[ 1,	2,	0,	3	]
+[ 1,	2,	0,	3	]
+[ 2,	0,	0,	3	]
+[ 2,	0,	0,	3	]
+[ 2,	0,	0,	3	]
+[ 2,	1,	0,	3	]
+[ 2,	1,	0,	3	]
+[ 2,	1,	0,	3	]
+[ 2,	2,	0,	3	]
+[ 2,	2,	0,	3	]
+[ 2,	2,	0,	3	]
+[ 3,	0,	0,	3	]
+[ 3,	0,	0,	3	]
+[ 3,	0,	0,	3	]
+[ 3,	1,	0,	3	]
+[ 3,	1,	0,	3	]
+[ 3,	1,	0,	3	]
+[ 3,	2,	0,	3	]
+[ 3,	2,	0,	3	]
+[ 3,	2,	0,	3	]
+#DROP ARRAY array3D;
+
+# 08:26:09 >  
+# 08:26:09 >  "Done."
+# 08:26:09 >  
+

@@ -1,0 +1,95 @@
+stdout of test 'create_unbound_step_array` in directory 'sql/test/sciql2sql` itself:
+
+
+# 08:45:42 >  
+# 08:45:42 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=34494" "--set" "mapi_usock=/var/tmp/mtest-11035/.s.monetdb.34494" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/sciql//Linux/var/MonetDB/mTests_sql_test_sciql2sql" "--set" "mal_listing=0"
+# 08:45:42 >  
+
+# MonetDB 5 server v11.15.12
+# This is an unreleased version
+# Serving database 'mTests_sql_test_sciql2sql', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.591 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2013 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:34494/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-11035/.s.monetdb.34494
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 08:45:42 >  
+# 08:45:42 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-11035" "--port=34494"
+# 08:45:42 >  
+
+#CREATE ARRAY array1Dint(x INTEGER DIMENSION[0:*:4], v INTEGER DEFAULT 1);
+#SELECT * FROM array1Dint;
+% sys.array1dint,	sys.array1dint # table_name
+% x,	v # name
+% int,	int # type
+% 1,	1 # length
+#DROP ARRAY array1Dint;
+#CREATE TABLE array1Dintdim(idx INTEGER PRIMARY KEY, x INTEGER );
+#CREATE TABLE array1Dintval(idx INTEGER REFERENCES array1Dintdim(idx), v INTEGER DEFAULT 1);
+#CREATE VIEW array1Dint 
+#AS SELECT x,v FROM array1Dintdim, array1Dintval WHERE array1Dintdim.idx = array1Dintval.idx;
+#INSERT INTO array1Dintdim VALUES (0,0),(1,4);
+[ 2	]
+#INSERT INTO array1Dintval VALUES (0,1),(1,1);
+[ 2	]
+#SELECT * FROM array1Dintdim;
+% sys.array1dintdim,	sys.array1dintdim # table_name
+% idx,	x # name
+% int,	int # type
+% 1,	1 # length
+[ 0,	0	]
+[ 1,	4	]
+#DROP VIEW array1Dint;
+#DROP TABLE array1Dintval;
+#DROP TABLE array1Dintdim;
+#CREATE TABLE array1Dint(x INTEGER, v INTEGER DEFAULT 1);
+#INSERT INTO array1Dint VALUES
+#(0,1),
+#(1,1),
+#(2,1),
+#(3,1);
+[ 4	]
+#SELECT * FROM array1Dint;
+% sys.array1dint,	sys.array1dint # table_name
+% x,	v # name
+% int,	int # type
+% 1,	1 # length
+[ 0,	1	]
+[ 1,	1	]
+[ 2,	1	]
+[ 3,	1	]
+#DROP TABLE array1Dint;
+#CREATE ARRAY array1Dint(x INTEGER DIMENSION[0:*:*], v INTEGER DEFAULT 1);
+#SELECT * FROM array1Dint;
+% sys.array1dint,	sys.array1dint # table_name
+% x,	v # name
+% int,	int # type
+% 1,	1 # length
+#DROP ARRAY array1Dint;
+#CREATE ARRAY array1Dint(x INTEGER DIMENSION[*:*:0], v INTEGER DEFAULT 1);
+#SELECT * FROM array1Dint;
+% sys.array1dint,	sys.array1dint # table_name
+% x,	v # name
+% int,	int # type
+% 1,	1 # length
+#DROP ARRAY array1Dint;
+#CREATE ARRAY array1Dint(x INTEGER DIMENSION[*:*:0], v INTEGER DEFAULT 1);
+#SELECT * FROM array1Dint;
+% sys.array1dint,	sys.array1dint # table_name
+% x,	v # name
+% int,	int # type
+% 1,	1 # length
+#DROP ARRAY array1Dint;
+
+# 08:45:42 >  
+# 08:45:42 >  "Done."
+# 08:45:42 >  
+

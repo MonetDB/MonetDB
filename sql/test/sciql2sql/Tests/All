@@ -1,0 +1,16 @@
+# declaration of integer arrays
+create_fixed_arrays
+create_range_arrays
+create_unbound_array.sql
+create_step_int_array.sql
+create_step_flt_array.sql
+create_unbound_step_array.sql
+
+# update dimensional attributs
+
+# selections with target is relation
+
+# selection with array is arrays
+
+# tiling based on dimensional attributes
+# tiling based on mix of dimensional attribues
