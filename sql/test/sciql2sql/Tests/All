@@ -14,8 +14,11 @@ update_step_int_array
 update_unbound_step_array
 
 # selections with target is relation
-
+#show slice/dice over arrays
+#
 # selection with array is arrays
 
 # tiling based on dimensional attributes
+# vector manipulations
+vector_fixed_tiles
 # tiling based on mix of dimensional attribues
