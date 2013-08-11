@@ -1,0 +1,41 @@
+-- Test construction of arrays from a 1D  fixed array
+CREATE ARRAY array1D(x INTEGER DIMENSION[7], v INTEGER DEFAULT 1, w INTEGER DEFAULT 0);
+
+-- relational equivalent 
+CREATE TABLE vector(x INTEGER CHECK(x >=0 and x < 7), v INTEGER DEFAULT 1, w INTEGER DEFAULT 0);
+INSERT INTO vector values 
+( 0, 1, 1),
+( 1, 1, 2),
+( 2, 2, 1),
+( 3, 2, 5),
+( 4, 3, 7),
+( 5, 3, 7),
+( 6, 4, 1);
+
+-- create an array again
+SELECT [x], v+w FROM array1D;
+
+-- relational equivalent
+SELECT x, v+w FROM vector;
+
+-- shifting the dimension
+SELECT [x+2], v+w FROM array1D;
+
+-- relational equivalent
+SELECT x, v+w FROM vector;
+
+-- extend array with constant y
+SELECT [x],[0], v+w FROM array1D;
+
+-- relational equivalent
+SELECT x, 0, v+w FROM vector;
+
+-- reduce the array
+SELECT [v], x, w FROM array1D;
+
+-- relational equivalent  should ensure uniqueness
+-- and density of the new dimension
+--TBD 
+
+DROP ARRAY array1D;
+DROP TABLE vector;

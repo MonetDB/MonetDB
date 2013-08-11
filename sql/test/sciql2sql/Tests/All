@@ -20,6 +20,7 @@ slice_2d_array
 
 
 # selection with array type result 
+select_vector_array
 
 # tiling based on dimensional attributes
 vector_fixed_tiles
