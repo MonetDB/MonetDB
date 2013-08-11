@@ -34,3 +34,4 @@ update_on_declared_table.Bug-3318
 correlated_subselect.Bug-3317
 incorrect_subquery_delete.Bug-3315
 constraint_checking.Bug_3335
+pivot.Bug-3339
