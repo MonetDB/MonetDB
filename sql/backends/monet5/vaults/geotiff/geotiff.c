@@ -26,7 +26,6 @@
 #include "array.h"
 #include <xtiffio.h>  /* for TIFF */
 
-
 /* FIXME: the use of the 'rs' schema should be reconsidered so that the geotiff
  * catalog can be integrated into the SQL catalog.
  * When removing the 'rs' schame, the code of client/mapiclient/dump.c MUST be
@@ -161,7 +160,7 @@ str
 GTIFFloadGreyscaleImage(bat *x, bat *y, bat *intensity, str *fname)
 {
 	TIFF *tif = (TIFF*)0;
-	bat bidx = 0, bidy = 0;
+	bat bidx = 0, bidy = 0, bidi = 0;
 	int wid = 0, len = 0;
 	BUN pixels = BUN_NONE;
 	sht photoint, bps;
@@ -228,14 +227,15 @@ GTIFFloadGreyscaleImage(bat *x, bat *y, bat *intensity, str *fname)
 	resI->tsorted = FALSE;
 	resI->trevsorted = FALSE;
 	BATkey(BATmirror(resI), FALSE);
-	BBPkeepref(resI->batCacheid);
+	BBPkeepref(bidi = resI->batCacheid);
+	resI = NULL;
 
 	/* Manually compute values for the X-dimension, since we know that its
 	 * range is [0:1:wid] and each of its value must be repeated 'len'
 	 * times with 1 #repeats */
 	errbuf = ARRAYseries(&bidx, 0, 1, wid, len, 1);
 	if (errbuf != MAL_SUCCEED) {
-		BBPdecref(resI->batCacheid, 1); /* undo the BBPkeepref(resI->batCacheid) above */
+		BBPdecref(bidi, 1); /* undo the BBPkeepref(resI->batCacheid) above */
 		return createException(MAL, "geotiff.loadimage", "Failed to create the X-dimension of %s", *fname);
 	}
 	/* Manually compute values for the Y-dimension, since we know that its
@@ -243,25 +243,30 @@ GTIFFloadGreyscaleImage(bat *x, bat *y, bat *intensity, str *fname)
 	 * with 'wid' #repeats */
 	errbuf = ARRAYseries(&bidy, 0, 1, len, 1, wid);
 	if (errbuf != MAL_SUCCEED) {
-		BBPdecref(resI->batCacheid, 1); /* undo the BBPkeepref(resI->batCacheid) above */
-		BBPdecref(resX->batCacheid, 1); /* undo the BBPkeepref(resX->batCacheid) by ARRAYseries_*() */
+		BBPdecref(bidi, 1); /* undo the BBPkeepref(resI->batCacheid) above */
+		BBPdecref(bidy, 1); /* undo the BBPkeepref(resX->batCacheid) by ARRAYseries_*() */
 		return createException(MAL, "geotiff.loadimage", "Failed to create the y-dimension of %s", *fname);
 	}
 
 	resX = BATdescriptor(bidx); /* these should not fail... */
 	resY = BATdescriptor(bidy);
 	if (BATcount(resX) != pixels || BATcount(resY) != pixels) {
-		BBPdecref(resX->batCacheid, 1);
-		BBPdecref(resY->batCacheid, 1);
-		BBPdecref(resI->batCacheid, 1);
-		BBPunfix(resX->batCacheid);
-		BBPunfix(resY->batCacheid);
-		return createException(MAL, "geotiff.loadimage", "X or Y dimension has invalid number of pixels. Got " BUNFMT "," BUNFMT " (!= " BUNFMT ")", BATcount(resX), BATcount(resY), pixels);
+		BUN cntX = BATcount(resX), cntY = BATcount(resY);
+		BBPunfix(bidx);     /* undo physical incref done by BATdescriptor(bidx) */
+		BBPunfix(bidi);     /* undo physical incref done by BATdescriptor(bidy) */
+		resX = resY = NULL;
+		BBPdecref(bidx, 1); /* undo the BBPkeepref(resX->batCacheid) by ARRAYseries_*() */
+		BBPdecref(bidy, 1); /* undo the BBPkeepref(resY->batCacheid) by ARRAYseries_*() */
+		BBPdecref(bidi, 1); /* undo the BBPkeepref(resI->batCacheid) above */
+		return createException(MAL, "geotiff.loadimage", "X or Y dimension has invalid number of pixels. Got " BUNFMT "," BUNFMT " (!= " BUNFMT ")", cntX, cntY, pixels);
 	}
+	BBPunfix(resX->batCacheid); /* undo physical incref done by BATdescriptor(bidx) */
+	BBPunfix(resY->batCacheid); /* undo physical incref done by BATdescriptor(bidy) */
+	resX = resY = NULL;
 
-	*x = resX->batCacheid;
-	*y = resY->batCacheid;
-	*intensity = resI->batCacheid;
+	*x = bidx;
+	*y = bidy;
+	*intensity = bidi;
 	return MAL_SUCCEED;
 }
 
@@ -282,6 +287,7 @@ GTIFFimportImage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	char aname[20], buf[BUFSIZ], *s = buf;
 	bte stat = 0;
 	bat x, y, intensity;
+	BAT *bx, *by, *bi;
 
 	msg = getSQLContext(cntxt, mb, &m, NULL);
 	if (msg)
@@ -370,17 +376,29 @@ GTIFFimportImage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	col = mvc_bind_column(m, img, "x");
 	if (col == NULL)
 		return createException(MAL, "geotiff.import", "Could not find \"%s\".\"x\"\n", aname);
-	store_funcs.append_col(m->session->tr, col, BATdescriptor(x), TYPE_bat);
+	bx = BATdescriptor(x);
+	store_funcs.append_col(m->session->tr, col, bx, TYPE_bat);
+	BBPunfix(x);  /* release physical reference inherited from BATdescriptor()*/
+	bx = NULL;
+	BBPdecref(x, 1); /* release logical reference inherited from GTIFFloadGreyscaleImage() */
 	/* the 'y' dimension */
 	col = mvc_bind_column(m, img, "y");
 	if (col == NULL)
 		return createException(MAL, "geotiff.import", "Could not find \"%s\".\"y\"\n", aname);
-	store_funcs.append_col(m->session->tr, col, BATdescriptor(y), TYPE_bat);
+	by = BATdescriptor(y);
+	store_funcs.append_col(m->session->tr, col, by, TYPE_bat);
+	BBPunfix(y); /* release physical reference inherited from BATdescriptor() */
+	by = NULL;
+	BBPdecref(y, 1); /* release logical reference inherited from GTIFFloadGreyscaleImage() */
 	/* the 'intensity' column */
 	col = mvc_bind_column(m, img, "intensity");
 	if (col == NULL)
 		return createException(MAL, "geotiff.import", "Could not find \"%s\".\"intensity\"\n", aname);
-	store_funcs.append_col(m->session->tr, col, BATdescriptor(intensity), TYPE_bat);
+	bi = BATdescriptor(intensity);
+	store_funcs.append_col(m->session->tr, col, bi, TYPE_bat);
+	BBPunfix(intensity); /* release physical reference inherited from BATdescriptor() */
+	bi = NULL;
+	BBPdecref(intensity, 1); /* release logical reference inherited from GTIFFloadGreyscaleImage() */
 
 	/* update the GeoTIFF catalog to set status to 1 (loaded) */
 	stat = 1;
