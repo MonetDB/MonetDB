@@ -28,6 +28,20 @@ Ready.
 #msqldump tables Wed Sep  8 10:50:27 2010
 
 START TRANSACTION;
+SET SCHEMA "sys";
+CREATE TABLE "sys"."statistics" (
+	"schema" CHARACTER LARGE OBJECT,
+	"table"  CHARACTER LARGE OBJECT,
+	"column" CHARACTER LARGE OBJECT,
+	"type"   CHARACTER LARGE OBJECT,
+	"stamp"  TIMESTAMP,
+	"count"  BIGINT,
+	"unique" BIGINT,
+	"nils"   BIGINT,
+	"minval" CHARACTER LARGE OBJECT,
+	"maxval" CHARACTER LARGE OBJECT,
+	"sorted" BOOLEAN
+);
 COMMIT;
 
 # 10:50:28 >  

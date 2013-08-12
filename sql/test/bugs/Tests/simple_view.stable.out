@@ -65,6 +65,7 @@ Ready.
 [ "storagemodelinput",	"str",	1	]
 [ "storagemodel",	"str",	1	]
 [ "tablestoragemodel",	"str",	1	]
+[ "statistics",	"str",	1	]
 [ "systemfunctions",	"str",	1	]
 [ "test_update",	"str",	1	]
 [ " ",	"str",	1	]

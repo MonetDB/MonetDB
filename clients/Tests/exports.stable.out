@@ -2323,6 +2323,7 @@ str UUIDequal(bit *retval, str *l, str *r);
 str UUIDgenerateUuid(str *retval);
 str UUIDisaUUID(bit *retval, str *s);
 str UUIDstr2uuid(str *retval, str *s);
+int UUIDtoString(str *retval, int *len, str handle);
 str UUIDuuid2str(str *retval, str *s);
 str XMLattribute(xml *ret, str *name, str *val);
 str XMLcomment(xml *x, str *s);

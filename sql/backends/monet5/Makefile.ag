@@ -42,6 +42,7 @@ lib__sql = {
 		sql_scenario.c sql_scenario.h \
 		rel_bin.c rel_bin.h \
 		sql_statement.c sql_statement.h \
+		sql_statistics.c sql_statistics.h \
 		sql_gencode.c sql_gencode.h \
 		sql_optimizer.c sql_optimizer.h \
 		sql_result.c sql_result.h \
