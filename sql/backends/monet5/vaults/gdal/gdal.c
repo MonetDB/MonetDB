@@ -193,7 +193,7 @@ GDALloadGreyscaleImage(bat *x, bat *y, bat *intensity, str *fname)
 		for(i = 0; i < len; i++) {
 			if (GDALRasterIO(hBand, GF_Read, 0, i, wid, 1, linebuf, wid, 1, GDT_Byte, 0, 0) != CE_Failure) {
 				for (j = 0; j < wid; j++) 
-					data_sht[i*wid + j] = ((unsigned char*)linebuf)[j];
+					data_sht[j*len + i] = ((unsigned char*)linebuf)[j];
 			}
 		}
 		break;
@@ -218,7 +218,7 @@ GDALloadGreyscaleImage(bat *x, bat *y, bat *intensity, str *fname)
 	/* Manually compute values for the X-dimension, since we know that its
 	 * range is [0:1:wid] and each of its value must be repeated 'len'
 	 * times with 1 #repeats */
-	errbuf = ARRAYseries(&bidx, 0, 1, wid, 1, len);
+	errbuf = ARRAYseries(&bidx, 0, 1, wid, len, 1);
 	if (errbuf != MAL_SUCCEED) {
 		BBPdecref(bidi, 1); /* undo the BBPkeepref(resI->batCacheid) above */
 		return createException(MAL, "gdal.loadimage", "Failed to create the X-dimension of %s", *fname);
@@ -226,7 +226,7 @@ GDALloadGreyscaleImage(bat *x, bat *y, bat *intensity, str *fname)
 	/* Manually compute values for the Y-dimension, since we know that its
 	 * range is [0:1:len] and each of its value must be repeated 1 times
 	 * with 'wid' #repeats */
-	errbuf = ARRAYseries(&bidy, 0, 1, len, wid, 1);
+	errbuf = ARRAYseries(&bidy, 0, 1, len, 1, wid);
 	if (errbuf != MAL_SUCCEED) {
 		BBPdecref(bidi, 1); /* undo the BBPkeepref(resI->batCacheid) above */
 		BBPdecref(bidx, 1); /* undo the BBPkeepref(resX->batCacheid) by ARRAYseries_*() */
