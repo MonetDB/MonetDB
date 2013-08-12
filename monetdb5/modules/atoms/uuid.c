@@ -30,6 +30,30 @@
 #include "mal_exception.h"
 #include "muuid.h"
 
+#define UUID_LEN 36
+/**
+ * Returns the string representation of the given uuid value.
+ * Warning: GDK function
+ * Returns the length of the string
+ */
+int
+UUIDtoString(str *retval, int *len, str value)
+{
+        if (*len < UUID_LEN) {
+                if (*retval != NULL)
+                        GDKfree(*retval);
+                *retval = GDKmalloc(sizeof(str) * (*len = UUID_LEN));
+        }
+        if (value == str_nil) {
+                *len = snprintf(*retval, *len, "(nil)");
+	} else {
+		strncpy(*retval, value, UUID_LEN);
+		(*retval)[UUID_LEN] = 0;
+		*len = UUID_LEN;
+        }
+        return(*len);
+}
+
 static str
 uuid_GenerateUuid(str *retval) {
   str d;
@@ -55,7 +79,7 @@ UUIDgenerateUuid(str *retval) {
 
 str
 UUIDisaUUID(bit *retval, str *s) {
-  *retval = strlen(*s) == 36;
+  *retval = strlen(*s) == UUID_LEN;
   return MAL_SUCCEED;
 }
 
