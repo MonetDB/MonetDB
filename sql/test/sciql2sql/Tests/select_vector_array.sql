@@ -35,7 +35,17 @@ SELECT [v], x, w FROM array1D;
 
 -- relational equivalent  should ensure uniqueness
 -- and density of the new dimension
---TBD 
+-- From an operational point of view, this is what happens
+CREATE TEMPORARY ARRAY tmp( v INTEGER DIMENSION, x INTEGER, w INTEGER);
+INSERT INTO tmp SELECT v,x,w FROM vector;
+-- which arbitrary drops elements.
+-- To mimick this all but one row of a group should be deleted.
+-- TBD
+-- In a strongly typed setting, a coercion error should be raised when 
+SELECT (SELECT count(*) FROM vector)  = (SELECT count(*)
+	FROM vector
+	GROUP BY v
+	HAVING count(v) =1);
 
 DROP ARRAY array1D;
 DROP TABLE vector;
