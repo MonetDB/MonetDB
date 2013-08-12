@@ -190,6 +190,11 @@ GDALloadGreyscaleImage(bat *x, bat *y, bat *intensity, str *fname)
 		}
 		data_sht = (sht *)Tloc(resI, BUNfirst(resI));
 
+		/* Read image line-wise and turn GeoTIFF's row-major order
+		 * into SciQL's column-major order. */
+		/* If we would care to data BAT sequetially, i.e., keeping
+		 * the row-major order, we would need to swap the order of
+		 * the & y columns / BATs in the final image array */
 		for(i = 0; i < len; i++) {
 			if (GDALRasterIO(hBand, GF_Read, 0, i, wid, 1, linebuf, wid, 1, GDT_Byte, 0, 0) != CE_Failure) {
 				for (j = 0; j < wid; j++) 
