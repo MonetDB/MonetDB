@@ -244,6 +244,7 @@ UPDATE fire SET f = NULL WHERE f IN (
 CREATE FUNCTION connect_neighbors()
 RETURNS TABLE (i1 INT, i2 INT)
 BEGIN
+  DECLARE TABLE bridgesXXL (x SMALLINT, y SMALLINT, i INT, a INT);
   DECLARE TABLE bridges (x SMALLINT, y SMALLINT, i INT, a INT);
   DECLARE TABLE trans (i INT, a INT, x INT);
   DECLARE iter_0 INT, iter_1 INT;
@@ -255,42 +256,53 @@ BEGIN
     SET iter_0 = iter_0 + 1;
 
     -- find neighboring fire clumps
-    DELETE FROM bridges;
-    INSERT INTO bridges (
-      SELECT t1.x, t1.y, i, a
-      FROM (
-        -- 3x3 window is too small and 5x5 is too large; hence,
-        -- we need to union the four possible 4x4 windows ...
-        SELECT x, y, MIN(f) AS i, MAX(f) AS a
-        FROM fire
-        GROUP BY fire[x-2:x+2][y-2:y+2]
-        HAVING f IS NULL AND MIN(f) <> MAX(f)
-        UNION ALL
-        SELECT x, y, MIN(f) AS i, MAX(f) AS a
-        FROM fire
-        GROUP BY fire[x-1:x+3][y-2:y+2]
-        HAVING f IS NULL AND MIN(f) <> MAX(f)
-        UNION ALL
-        SELECT x, y, MIN(f) AS i, MAX(f) AS a
-        FROM fire
-        GROUP BY fire[x-2:x+2][y-1:y+3]
-        HAVING f IS NULL AND MIN(f) <> MAX(f)
-        UNION ALL
-        SELECT x, y, MIN(f) AS i, MAX(f) AS a
-        FROM fire
-        GROUP BY fire[x-1:x+3][y-1:y+3]
-        HAVING f IS NULL AND MIN(f) <> MAX(f)
-      ) AS t1 JOIN (
-        -- avoid (some) incorrect cases
-        SELECT x, y
-        FROM fire
-        GROUP BY fire[x-1:x+2][y-1:y+2]
-        HAVING f IS NULL AND SUM(f) IS NOT NULL
-      ) AS t2
-      ON t1.x = t2.x AND t1.y = t2.y
+    DELETE FROM bridgesXXL;
+    -- 3x3 window is too small and 5x5 is too large; hence,
+    -- we need to union the four possible 4x4 windows ...
+    INSERT INTO bridgesXXL (
+      SELECT x, y, MIN(f) AS i, MAX(f) AS a
+      FROM fire
+      GROUP BY fire[x-2:x+2][y-2:y+2]
+      HAVING f IS NULL AND MIN(f) <> MAX(f)
+    );
+    INSERT INTO bridgesXXL (
+      SELECT x, y, MIN(f) AS i, MAX(f) AS a
+      FROM fire
+      GROUP BY fire[x-1:x+3][y-2:y+2]
+      HAVING f IS NULL AND MIN(f) <> MAX(f)
+    );
+    INSERT INTO bridgesXXL (
+      SELECT x, y, MIN(f) AS i, MAX(f) AS a
+      FROM fire
+      GROUP BY fire[x-2:x+2][y-1:y+3]
+      HAVING f IS NULL AND MIN(f) <> MAX(f)
+    );
+    INSERT INTO bridgesXXL (
+      SELECT x, y, MIN(f) AS i, MAX(f) AS a
+      FROM fire
+      GROUP BY fire[x-1:x+3][y-1:y+3]
+      HAVING f IS NULL AND MIN(f) <> MAX(f)
     );
 
-    SELECT COUNT(*) INTO merge_more FROM bridges;
+    SELECT COUNT(*) INTO merge_more FROM bridgesXXL;
+    IF merge_more > 0 THEN
+      -- avoid (some) incorrect cases
+      DELETE from bridges;
+      INSERT INTO bridges (
+        SELECT t1.x, t1.y, t1.i, t1.a
+        FROM bridgesXXL AS t1
+        JOIN (
+          SELECT x, y
+          FROM fire
+          GROUP BY fire[x-1:x+2][y-1:y+2]
+          HAVING f IS NULL AND SUM(f) IS NOT NULL
+        ) AS t2
+        ON t1.x = t2.x AND t1.y = t2.y
+      );
+      DELETE from bridgesXXL;
+      SELECT COUNT(*) INTO merge_more FROM bridges;
+    END IF;
+
     IF merge_more > 0 THEN
 
       -- create "bridges"
