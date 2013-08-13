@@ -289,6 +289,15 @@ BEGIN
     GROUP BY fire[x-1:x+3][y-1:y+3]
     HAVING f IS NULL AND MIN(f) <> MAX(f);
 END;
+CREATE FUNCTION connect_neighbors_5()
+RETURNS TABLE (x SMALLINT, y SMALLINT)
+BEGIN 
+  RETURN
+    SELECT x, y
+    FROM fire
+    GROUP BY fire[x-1:x+2][y-1:y+2]
+    HAVING f IS NULL AND SUM(f) IS NOT NULL;
+END;
 CREATE FUNCTION connect_neighbors()
 RETURNS TABLE (i1 INT, i2 INT)
 BEGIN
@@ -328,10 +337,7 @@ BEGIN
         SELECT t1.x, t1.y, t1.i, t1.a
         FROM bridgesXXL AS t1
         JOIN (
-          SELECT x, y
-          FROM fire
-          GROUP BY fire[x-1:x+2][y-1:y+2]
-          HAVING f IS NULL AND SUM(f) IS NOT NULL
+          SELECT * FROM connect_neighbors_5()
         ) AS t2
         ON t1.x = t2.x AND t1.y = t2.y
       );
