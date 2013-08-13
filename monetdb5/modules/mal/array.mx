@@ -40,6 +40,14 @@ command series(start:@1, step:@1, stop:@1, N:int, M:int) :bat[:oid,:@1]
 address ARRAYseries_@1
 comment  "Generates a single series BAT based on range condition, repeating each value N times and repeat the process M times.";
 
+pattern offsets(val:@1) :bat[:oid,:@1]
+address ARRAYoffsets_@1
+comment "Generates an offsets BAT containing the given offset values.";
+
+pattern offsets(val:@1, any...) :bat[:oid,:@1]
+address ARRAYoffsets_@1
+comment "Generates an offsets BAT containing the given offset values.";
+
 function series_ (start:@1, step:@1, stop:@1, N:int, M:int) (id:bat[:oid,:lng], dimval:bat[:oid,:@1]);
 	b1 := array.series(start, step, stop, N, M);
 	b2 := bat.mirror(b1);
@@ -182,6 +190,7 @@ array_export str ARRAYtiles_cnt_@1_@2(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 @
 @= array_defs
 array_export str ARRAYseries_@1(bat *ret, @1 *start, @1 *step, @1 *stop, int *grp, int *series);
+array_export str ARRAYoffsets_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 @:array_defs_DimType(@1,bte)@
 @:array_defs_DimType(@1,sht)@
 @:array_defs_DimType(@1,int)@
@@ -266,6 +275,39 @@ ARRAYseries_@1(bat *ret, @1 *start, @1 *step, @1 *stop, int *group, int *series)
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \
 	*ret = bn->batCacheid;
 	BBPkeepref(*ret);
+	return MAL_SUCCEED;
+}
+
+str
+ARRAYoffsets_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	bat *ret = (bat*) getArgReference(stk,pci,0);
+	BUN p, rescnt = pci->argc - pci->retc;
+	BAT *res;
+	@1 *resT;
+	int i;
+
+	(void) cntxt;
+	(void) mb;
+
+	res = BATnew(TYPE_void, TYPE_@1, rescnt);
+	if(res == NULL) {
+		throw(MAL, "array.offsets", MAL_MALLOC_FAIL);
+	}
+	resT = (@1*) Tloc(res, BUNfirst(res));
+
+	for (p = 0, i = pci->retc; p < rescnt; p++, i++)
+		resT[p] = *(@1*) getArgReference(stk,pci,i);
+
+	BATsetcount(res, rescnt);
+	BATseqbase(res, 0);
+	res->hdense = TRUE;
+	BATkey(res, TRUE);
+	res->hsorted = 1;
+	res->hrevsorted = (rescnt <= 1);
+	res->tsorted = res->trevsorted = (rescnt <= 1);
+	res->T->nonil = TRUE;
+	BBPkeepref(*ret = res->batCacheid);
 	return MAL_SUCCEED;
 }
 

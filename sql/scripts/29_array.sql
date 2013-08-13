@@ -36,6 +36,118 @@ create function array_series1("start" bigint,   step bigint,   stop bigint,   N 
 create function array_series1("start" real,     step real,     stop real,     N integer, M integer) returns table (dimval real)     external name "array".series;
 create function array_series1("start" double,   step double,   stop double,   N integer, M integer) returns table (dimval double)   external name "array".series;
 
+create function array_offsets(val tinyint ) returns table (val tinyint ) external name "array".offsets;
+create function array_offsets(val smallint) returns table (val smallint) external name "array".offsets;
+create function array_offsets(val integer ) returns table (val integer ) external name "array".offsets;
+create function array_offsets(val bigint  ) returns table (val bigint  ) external name "array".offsets;
+create function array_offsets(val real    ) returns table (val real    ) external name "array".offsets;
+create function array_offsets(val double  ) returns table (val double  ) external name "array".offsets;
+
+create function array_offsets(val tinyint , val tinyint ) returns table (val tinyint ) external name "array".offsets;
+create function array_offsets(val smallint, val smallint) returns table (val smallint) external name "array".offsets;
+create function array_offsets(val integer , val integer ) returns table (val integer ) external name "array".offsets;
+create function array_offsets(val bigint  , val bigint  ) returns table (val bigint  ) external name "array".offsets;
+create function array_offsets(val real    , val real    ) returns table (val real    ) external name "array".offsets;
+create function array_offsets(val double  , val double  ) returns table (val double  ) external name "array".offsets;
+
+create function array_offsets(val tinyint , val tinyint , val tinyint ) returns table (val tinyint ) external name "array".offsets;
+create function array_offsets(val smallint, val smallint, val smallint) returns table (val smallint) external name "array".offsets;
+create function array_offsets(val integer , val integer , val integer ) returns table (val integer ) external name "array".offsets;
+create function array_offsets(val bigint  , val bigint  , val bigint  ) returns table (val bigint  ) external name "array".offsets;
+create function array_offsets(val real    , val real    , val real    ) returns table (val real    ) external name "array".offsets;
+create function array_offsets(val double  , val double  , val double  ) returns table (val double  ) external name "array".offsets;
+
+create function array_offsets(val tinyint , val tinyint , val tinyint , val tinyint ) returns table (val tinyint ) external name "array".offsets;
+create function array_offsets(val smallint, val smallint, val smallint, val smallint) returns table (val smallint) external name "array".offsets;
+create function array_offsets(val integer , val integer , val integer , val integer ) returns table (val integer ) external name "array".offsets;
+create function array_offsets(val bigint  , val bigint  , val bigint  , val bigint  ) returns table (val bigint  ) external name "array".offsets;
+create function array_offsets(val real    , val real    , val real    , val real    ) returns table (val real    ) external name "array".offsets;
+create function array_offsets(val double  , val double  , val double  , val double  ) returns table (val double  ) external name "array".offsets;
+
+create function array_offsets(val tinyint , val tinyint , val tinyint , val tinyint , val tinyint ) returns table (val tinyint ) external name "array".offsets;
+create function array_offsets(val smallint, val smallint, val smallint, val smallint, val smallint) returns table (val smallint) external name "array".offsets;
+create function array_offsets(val integer , val integer , val integer , val integer , val integer ) returns table (val integer ) external name "array".offsets;
+create function array_offsets(val bigint  , val bigint  , val bigint  , val bigint  , val bigint  ) returns table (val bigint  ) external name "array".offsets;
+create function array_offsets(val real    , val real    , val real    , val real    , val real    ) returns table (val real    ) external name "array".offsets;
+create function array_offsets(val double  , val double  , val double  , val double  , val double  ) returns table (val double  ) external name "array".offsets;
+
+create function array_offsets(val tinyint , val tinyint , val tinyint , val tinyint , val tinyint , val tinyint ) returns table (val tinyint ) external name "array".offsets;
+create function array_offsets(val smallint, val smallint, val smallint, val smallint, val smallint, val smallint) returns table (val smallint) external name "array".offsets;
+create function array_offsets(val integer , val integer , val integer , val integer , val integer , val integer ) returns table (val integer ) external name "array".offsets;
+create function array_offsets(val bigint  , val bigint  , val bigint  , val bigint  , val bigint  , val bigint  ) returns table (val bigint  ) external name "array".offsets;
+create function array_offsets(val real    , val real    , val real    , val real    , val real    , val real    ) returns table (val real    ) external name "array".offsets;
+create function array_offsets(val double  , val double  , val double  , val double  , val double  , val double  ) returns table (val double  ) external name "array".offsets;
+
+create function array_offsets(val tinyint , val tinyint , val tinyint , val tinyint , val tinyint , val tinyint , val tinyint ) returns table (val tinyint ) external name "array".offsets;
+create function array_offsets(val smallint, val smallint, val smallint, val smallint, val smallint, val smallint, val smallint) returns table (val smallint) external name "array".offsets;
+create function array_offsets(val integer , val integer , val integer , val integer , val integer , val integer , val integer ) returns table (val integer ) external name "array".offsets;
+create function array_offsets(val bigint  , val bigint  , val bigint  , val bigint  , val bigint  , val bigint  , val bigint  ) returns table (val bigint  ) external name "array".offsets;
+create function array_offsets(val real    , val real    , val real    , val real    , val real    , val real    , val real    ) returns table (val real    ) external name "array".offsets;
+create function array_offsets(val double  , val double  , val double  , val double  , val double  , val double  , val double  ) returns table (val double  ) external name "array".offsets;
+
+create function array_offsets(val tinyint , val tinyint , val tinyint , val tinyint , val tinyint , val tinyint , val tinyint , val tinyint ) returns table (val tinyint ) external name "array".offsets;
+create function array_offsets(val smallint, val smallint, val smallint, val smallint, val smallint, val smallint, val smallint, val smallint) returns table (val smallint) external name "array".offsets;
+create function array_offsets(val integer , val integer , val integer , val integer , val integer , val integer , val integer , val integer ) returns table (val integer ) external name "array".offsets;
+create function array_offsets(val bigint  , val bigint  , val bigint  , val bigint  , val bigint  , val bigint  , val bigint  , val bigint  ) returns table (val bigint  ) external name "array".offsets;
+create function array_offsets(val real    , val real    , val real    , val real    , val real    , val real    , val real    , val real    ) returns table (val real    ) external name "array".offsets;
+create function array_offsets(val double  , val double  , val double  , val double  , val double  , val double  , val double  , val double  ) returns table (val double  ) external name "array".offsets;
+
+create function array_offsets(val tinyint , val tinyint , val tinyint , val tinyint , val tinyint , val tinyint , val tinyint , val tinyint , val tinyint ) returns table (val tinyint ) external name "array".offsets;
+create function array_offsets(val smallint, val smallint, val smallint, val smallint, val smallint, val smallint, val smallint, val smallint, val smallint) returns table (val smallint) external name "array".offsets;
+create function array_offsets(val integer , val integer , val integer , val integer , val integer , val integer , val integer , val integer , val integer ) returns table (val integer ) external name "array".offsets;
+create function array_offsets(val bigint  , val bigint  , val bigint  , val bigint  , val bigint  , val bigint  , val bigint  , val bigint  , val bigint  ) returns table (val bigint  ) external name "array".offsets;
+create function array_offsets(val real    , val real    , val real    , val real    , val real    , val real    , val real    , val real    , val real    ) returns table (val real    ) external name "array".offsets;
+create function array_offsets(val double  , val double  , val double  , val double  , val double  , val double  , val double  , val double  , val double  ) returns table (val double  ) external name "array".offsets;
+
+create function array_offsets(val tinyint , val tinyint , val tinyint , val tinyint , val tinyint , val tinyint , val tinyint , val tinyint , val tinyint , val tinyint ) returns table (val tinyint ) external name "array".offsets;
+create function array_offsets(val smallint, val smallint, val smallint, val smallint, val smallint, val smallint, val smallint, val smallint, val smallint, val smallint) returns table (val smallint) external name "array".offsets;
+create function array_offsets(val integer , val integer , val integer , val integer , val integer , val integer , val integer , val integer , val integer , val integer ) returns table (val integer ) external name "array".offsets;
+create function array_offsets(val bigint  , val bigint  , val bigint  , val bigint  , val bigint  , val bigint  , val bigint  , val bigint  , val bigint  , val bigint  ) returns table (val bigint  ) external name "array".offsets;
+create function array_offsets(val real    , val real    , val real    , val real    , val real    , val real    , val real    , val real    , val real    , val real    ) returns table (val real    ) external name "array".offsets;
+create function array_offsets(val double  , val double  , val double  , val double  , val double  , val double  , val double  , val double  , val double  , val double  ) returns table (val double  ) external name "array".offsets;
+
+create function array_offsets(val tinyint , val tinyint , val tinyint , val tinyint , val tinyint , val tinyint , val tinyint , val tinyint , val tinyint , val tinyint , val tinyint ) returns table (val tinyint ) external name "array".offsets;
+create function array_offsets(val smallint, val smallint, val smallint, val smallint, val smallint, val smallint, val smallint, val smallint, val smallint, val smallint, val smallint) returns table (val smallint) external name "array".offsets;
+create function array_offsets(val integer , val integer , val integer , val integer , val integer , val integer , val integer , val integer , val integer , val integer , val integer ) returns table (val integer ) external name "array".offsets;
+create function array_offsets(val bigint  , val bigint  , val bigint  , val bigint  , val bigint  , val bigint  , val bigint  , val bigint  , val bigint  , val bigint  , val bigint  ) returns table (val bigint  ) external name "array".offsets;
+create function array_offsets(val real    , val real    , val real    , val real    , val real    , val real    , val real    , val real    , val real    , val real    , val real    ) returns table (val real    ) external name "array".offsets;
+create function array_offsets(val double  , val double  , val double  , val double  , val double  , val double  , val double  , val double  , val double  , val double  , val double  ) returns table (val double  ) external name "array".offsets;
+
+create function array_offsets(val tinyint , val tinyint , val tinyint , val tinyint , val tinyint , val tinyint , val tinyint , val tinyint , val tinyint , val tinyint , val tinyint , val tinyint ) returns table (val tinyint ) external name "array".offsets;
+create function array_offsets(val smallint, val smallint, val smallint, val smallint, val smallint, val smallint, val smallint, val smallint, val smallint, val smallint, val smallint, val smallint) returns table (val smallint) external name "array".offsets;
+create function array_offsets(val integer , val integer , val integer , val integer , val integer , val integer , val integer , val integer , val integer , val integer , val integer , val integer ) returns table (val integer ) external name "array".offsets;
+create function array_offsets(val bigint  , val bigint  , val bigint  , val bigint  , val bigint  , val bigint  , val bigint  , val bigint  , val bigint  , val bigint  , val bigint  , val bigint  ) returns table (val bigint  ) external name "array".offsets;
+create function array_offsets(val real    , val real    , val real    , val real    , val real    , val real    , val real    , val real    , val real    , val real    , val real    , val real    ) returns table (val real    ) external name "array".offsets;
+create function array_offsets(val double  , val double  , val double  , val double  , val double  , val double  , val double  , val double  , val double  , val double  , val double  , val double  ) returns table (val double  ) external name "array".offsets;
+
+create function array_offsets(val tinyint , val tinyint , val tinyint , val tinyint , val tinyint , val tinyint , val tinyint , val tinyint , val tinyint , val tinyint , val tinyint , val tinyint , val tinyint ) returns table (val tinyint ) external name "array".offsets;
+create function array_offsets(val smallint, val smallint, val smallint, val smallint, val smallint, val smallint, val smallint, val smallint, val smallint, val smallint, val smallint, val smallint, val smallint) returns table (val smallint) external name "array".offsets;
+create function array_offsets(val integer , val integer , val integer , val integer , val integer , val integer , val integer , val integer , val integer , val integer , val integer , val integer , val integer ) returns table (val integer ) external name "array".offsets;
+create function array_offsets(val bigint  , val bigint  , val bigint  , val bigint  , val bigint  , val bigint  , val bigint  , val bigint  , val bigint  , val bigint  , val bigint  , val bigint  , val bigint  ) returns table (val bigint  ) external name "array".offsets;
+create function array_offsets(val real    , val real    , val real    , val real    , val real    , val real    , val real    , val real    , val real    , val real    , val real    , val real    , val real    ) returns table (val real    ) external name "array".offsets;
+create function array_offsets(val double  , val double  , val double  , val double  , val double  , val double  , val double  , val double  , val double  , val double  , val double  , val double  , val double  ) returns table (val double  ) external name "array".offsets;
+
+create function array_offsets(val tinyint , val tinyint , val tinyint , val tinyint , val tinyint , val tinyint , val tinyint , val tinyint , val tinyint , val tinyint , val tinyint , val tinyint , val tinyint , val tinyint ) returns table (val tinyint ) external name "array".offsets;
+create function array_offsets(val smallint, val smallint, val smallint, val smallint, val smallint, val smallint, val smallint, val smallint, val smallint, val smallint, val smallint, val smallint, val smallint, val smallint) returns table (val smallint) external name "array".offsets;
+create function array_offsets(val integer , val integer , val integer , val integer , val integer , val integer , val integer , val integer , val integer , val integer , val integer , val integer , val integer , val integer ) returns table (val integer ) external name "array".offsets;
+create function array_offsets(val bigint  , val bigint  , val bigint  , val bigint  , val bigint  , val bigint  , val bigint  , val bigint  , val bigint  , val bigint  , val bigint  , val bigint  , val bigint  , val bigint  ) returns table (val bigint  ) external name "array".offsets;
+create function array_offsets(val real    , val real    , val real    , val real    , val real    , val real    , val real    , val real    , val real    , val real    , val real    , val real    , val real    , val real    ) returns table (val real    ) external name "array".offsets;
+create function array_offsets(val double  , val double  , val double  , val double  , val double  , val double  , val double  , val double  , val double  , val double  , val double  , val double  , val double  , val double  ) returns table (val double  ) external name "array".offsets;
+
+create function array_offsets(val tinyint , val tinyint , val tinyint , val tinyint , val tinyint , val tinyint , val tinyint , val tinyint , val tinyint , val tinyint , val tinyint , val tinyint , val tinyint , val tinyint , val tinyint ) returns table (val tinyint ) external name "array".offsets;
+create function array_offsets(val smallint, val smallint, val smallint, val smallint, val smallint, val smallint, val smallint, val smallint, val smallint, val smallint, val smallint, val smallint, val smallint, val smallint, val smallint) returns table (val smallint) external name "array".offsets;
+create function array_offsets(val integer , val integer , val integer , val integer , val integer , val integer , val integer , val integer , val integer , val integer , val integer , val integer , val integer , val integer , val integer ) returns table (val integer ) external name "array".offsets;
+create function array_offsets(val bigint  , val bigint  , val bigint  , val bigint  , val bigint  , val bigint  , val bigint  , val bigint  , val bigint  , val bigint  , val bigint  , val bigint  , val bigint  , val bigint  , val bigint  ) returns table (val bigint  ) external name "array".offsets;
+create function array_offsets(val real    , val real    , val real    , val real    , val real    , val real    , val real    , val real    , val real    , val real    , val real    , val real    , val real    , val real    , val real    ) returns table (val real    ) external name "array".offsets;
+create function array_offsets(val double  , val double  , val double  , val double  , val double  , val double  , val double  , val double  , val double  , val double  , val double  , val double  , val double  , val double  , val double  ) returns table (val double  ) external name "array".offsets;
+
+create function array_offsets(val tinyint , val tinyint , val tinyint , val tinyint , val tinyint , val tinyint , val tinyint , val tinyint , val tinyint , val tinyint , val tinyint , val tinyint , val tinyint , val tinyint , val tinyint , val tinyint ) returns table (val tinyint ) external name "array".offsets;
+create function array_offsets(val smallint, val smallint, val smallint, val smallint, val smallint, val smallint, val smallint, val smallint, val smallint, val smallint, val smallint, val smallint, val smallint, val smallint, val smallint, val smallint) returns table (val smallint) external name "array".offsets;
+create function array_offsets(val integer , val integer , val integer , val integer , val integer , val integer , val integer , val integer , val integer , val integer , val integer , val integer , val integer , val integer , val integer , val integer ) returns table (val integer ) external name "array".offsets;
+create function array_offsets(val bigint  , val bigint  , val bigint  , val bigint  , val bigint  , val bigint  , val bigint  , val bigint  , val bigint  , val bigint  , val bigint  , val bigint  , val bigint  , val bigint  , val bigint  , val bigint  ) returns table (val bigint  ) external name "array".offsets;
+create function array_offsets(val real    , val real    , val real    , val real    , val real    , val real    , val real    , val real    , val real    , val real    , val real    , val real    , val real    , val real    , val real    , val real    ) returns table (val real    ) external name "array".offsets;
+create function array_offsets(val double  , val double  , val double  , val double  , val double  , val double  , val double  , val double  , val double  , val double  , val double  , val double  , val double  , val double  , val double  , val double  ) returns table (val double  ) external name "array".offsets;
+
 create function array_filler(count bigint, val tinyint)       returns table (id bigint, cellval tinyint)    external name "array".filler_;
 create function array_filler(count bigint, val smallint)      returns table (id bigint, cellval smallint)   external name "array".filler_;
 create function array_filler(count bigint, val integer)       returns table (id bigint, cellval integer)    external name "array".filler_;

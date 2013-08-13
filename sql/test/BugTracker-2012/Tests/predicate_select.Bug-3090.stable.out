@@ -27,7 +27,7 @@ Ready.
 % .tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables # table_name
 % id,	name,	schema_id,	query,	type,	system,	commit_action,	readonly,	temporary # name
 % int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	boolean,	tinyint # type
-% 4,	17,	4,	496,	1,	5,	1,	5,	1 # length
+% 5,	17,	4,	496,	1,	5,	1,	5,	1 # length
 [ 2001,	"schemas",	2000,	NULL,	0,	true,	0,	false,	0	]
 [ 2006,	"types",	2000,	NULL,	0,	true,	0,	false,	0	]
 [ 2015,	"functions",	2000,	NULL,	0,	true,	0,	false,	0	]
@@ -63,11 +63,11 @@ Ready.
 [ 5309,	"queryhistory",	2000,	NULL,	0,	true,	0,	false,	0	]
 [ 5323,	"callhistory",	2000,	NULL,	0,	true,	0,	false,	0	]
 [ 5340,	"querylog",	2000,	"create view querylog as\nselect qd.*, ql.ctime, ql.arguments, ql.exec, ql.result, ql.foot, ql.memory, ql.tuples, ql.inblock, ql.oublock from queryhistory qd, callhistory ql\nwhere qd.id = ql.id;",	1,	true,	0,	false,	0	]
-[ 8623,	"files",	8617,	NULL,	0,	false,	0,	false,	0	]
-[ 8630,	"catalog",	8617,	NULL,	0,	false,	0,	false,	0	]
-[ 9104,	"storagemodelinput",	2000,	NULL,	0,	true,	0,	false,	0	]
-[ 9145,	"tablestoragemodel",	2000,	"-- A summary of the table storage requirement is is available as a table view.\n-- The auxillary column denotes the maximum space if all non-sorted columns\n-- would be augmented with a hash (rare situation)\ncreate view sys.tablestoragemodel\nas select \"schema\",\"table\",max(count) as \"count\",\n\tsum(columnsize) as columnsize,\n\tsum(heapsize) as heapsize,\n\tsum(indices) as indices,\n\tsum(case when sorted = false then 8 * count else 0 end) as auxillary\nfrom sys.storagemodel() group by \"schema\",\"table\";",	1,	true,	0,	false,	0	]
-[ 9167,	"systemfunctions",	2000,	NULL,	0,	true,	0,	false,	0	]
+[ 9919,	"files",	9913,	NULL,	0,	false,	0,	false,	0	]
+[ 9926,	"catalog",	9913,	NULL,	0,	false,	0,	false,	0	]
+[ 10400,	"storagemodelinput",	2000,	NULL,	0,	true,	0,	false,	0	]
+[ 10441,	"tablestoragemodel",	2000,	"-- A summary of the table storage requirement is is available as a table view.\n-- The auxillary column denotes the maximum space if all non-sorted columns\n-- would be augmented with a hash (rare situation)\ncreate view sys.tablestoragemodel\nas select \"schema\",\"table\",max(count) as \"count\",\n\tsum(columnsize) as columnsize,\n\tsum(heapsize) as heapsize,\n\tsum(indices) as indices,\n\tsum(case when sorted = false then 8 * count else 0 end) as auxillary\nfrom sys.storagemodel() group by \"schema\",\"table\";",	1,	true,	0,	false,	0	]
+[ 10463,	"systemfunctions",	2000,	NULL,	0,	true,	0,	false,	0	]
 
 # 18:53:13 >  
 # 18:53:13 >  "Done."
