@@ -46,9 +46,20 @@
 #define MONETDB_REST_POST_NEW_DOC 10
 #define MONETDB_REST_DB_GETDOCID 11
 #define MONETDB_REST_DB_UPDATE_DOC 12
+#define MONETDB_REST_DB_DELETE_DOC 13
+#define MONETDB_REST_INSERT_ATTACHMENT 14
+#define MONETDB_REST_NO_ATTACHMENT_PATH 15
 
+#define MONETDB_REST_ATTACHMENT "attachment"
 #define MONETDB_REST_PATH_ALLDBS "_all_dbs"
 #define MONETDB_REST_PATH_UUIDS "_uuids"
+#define MONETDB_REST_PATH_DESIGN "_design"
+#define MONETDB_REST_PATH_INFO "_info"
+#define MONETDB_REST_PATH_VIEW "_view"
+#define MONETDB_REST_PATH_SHOW "_show"
+#define MONETDB_REST_PATH_LIST "_list"
+#define MONETDB_REST_PATH_UPDATE "_update"
+#define MONETDB_REST_PATH_REWRITE "_rewrite"
 
 rest_export str RESTprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 rest_export int

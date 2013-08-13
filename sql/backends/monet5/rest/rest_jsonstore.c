@@ -165,6 +165,14 @@ mserver_browser_delete(const UriUriA uri) {
 					mserver_rest_command = MONETDB_REST_DELETE_DB;
 					fprintf(stderr, "url: %s\n", uri.pathHead->text.first);
 				}
+			} else {
+				if (strcmp(uri.pathHead->text.first, API_SPECIAL_CHAR) < 0) {
+					// This path element is on of the special cases
+					mserver_rest_command = MONETDB_REST_UNKWOWN_SPECIAL;
+				} else {
+					mserver_rest_command = MONETDB_REST_DB_DELETE_DOC;
+					fprintf(stderr, "url: %s\n", uri.pathHead->text.first);
+				}
 			}
 		} else {
 			// A absolutePath with an empty pathHead means the root url
@@ -183,17 +191,31 @@ mserver_browser_post(const UriUriA uri) {
 	if (uri.absolutePath) {
 		if (uri.pathHead != NULL) {
 			if (uri.pathHead->next == NULL) {
-				if (strcmp(uri.pathHead->text.first, API_SPECIAL_CHAR) < 0) {
+				if (strncmp(uri.pathHead->text.first, API_SPECIAL_CHAR, 1) == 0) {
 					// This path element is on of the special cases
 					mserver_rest_command = MONETDB_REST_UNKWOWN_SPECIAL;
 				} else {
-					mserver_rest_command = MONETDB_REST_POST_NEW_DOC;
-					fprintf(stderr, "url: %s\n", uri.pathHead->text.first);
+					if (uri.pathHead->next == NULL) {
+						mserver_rest_command = MONETDB_REST_POST_NEW_DOC;
+						fprintf(stderr, "url: %s\n", uri.pathHead->text.first);
+					} else {
+						if (strcmp(uri.pathTail->text.first, MONETDB_REST_ATTACHMENT) == 0) {
+							mserver_rest_command = MONETDB_REST_INSERT_ATTACHMENT;
+						} else {
+							mserver_rest_command = MONETDB_REST_NO_ATTACHMENT_PATH;
+						}
+					}
+				}
+			} else {
+				if (strcmp(uri.pathTail->text.first, MONETDB_REST_ATTACHMENT) == 0) {
+					mserver_rest_command = MONETDB_REST_INSERT_ATTACHMENT;
+				} else {
+					mserver_rest_command = MONETDB_REST_NO_ATTACHMENT_PATH;
 				}
 			}
 		} else {
 			// A absolutePath with an empty pathHead means the root url
-			// This is not allowed in a put message
+			// This is not allowed in a post message
 			mserver_rest_command = MONETDB_REST_MISSING_DATABASENAME;
 		}
 	} else {
@@ -215,11 +237,13 @@ char * get_dbname(UriUriA uri) {
 
 static
 char * get_docid(UriUriA uri) {
-	int len;
+	size_t len;
 	char * docid;
-	len = strlen(uri.pathHead->next->text.first);
+	//len = strlen(uri.pathHead->next->text.first);
+	len = uri.pathHead->next->text.afterLast 
+		- uri.pathHead->next->text.first;
 	docid = malloc(len + 1);
-	strcpy(docid, uri.pathHead->next->text.first);
+	strncpy(docid, uri.pathHead->next->text.first, len);
 	return docid;
 }
 
@@ -251,7 +275,7 @@ handle_http_request (const char *url, const char *method, char **page,
 	} else if ((strcmp(method, "DELETE")) == 0) {
 		mserver_rest_command = mserver_browser_delete(uri);
 	} else {
-		// error
+		/* error */
 	}
 
 	switch (mserver_rest_command) {
@@ -272,6 +296,12 @@ handle_http_request (const char *url, const char *method, char **page,
 	case  MONETDB_REST_GET_ALLUUIDS:
 		RESTuuid(page);
 		break;
+	case  MONETDB_REST_MISSING_DATABASENAME:
+		RESTerror(page, mserver_rest_command);
+		break;
+	case  MONETDB_REST_NO_PARAMETER_ALLOWED:
+		RESTerror(page, mserver_rest_command);
+		break;
 	case  MONETDB_REST_POST_NEW_DOC:
 		dbname = get_dbname(uri);
 		RESTcreateDoc(page, dbname, postdata);
@@ -290,8 +320,21 @@ handle_http_request (const char *url, const char *method, char **page,
 		docid = get_docid(uri);
 		RESTupdateDoc(page, dbname, postdata, docid);
 		break;
+	case MONETDB_REST_DB_DELETE_DOC:
+		dbname = get_dbname(uri);
+		docid = get_docid(uri);
+		RESTdeleteDoc(page, dbname, docid);
+		break;
+	case MONETDB_REST_INSERT_ATTACHMENT:
+		dbname = get_dbname(uri);
+		docid = get_docid(uri);
+		RESTinsertAttach(page, dbname, postdata, docid);
+		break;
+	case MONETDB_REST_NO_ATTACHMENT_PATH:
+		RESTerror(page, mserver_rest_command);
+		break;
 	default:
-		// error, unknown command
+		/* error, unknown command */
 		ret = 1;
 	}
 
@@ -299,6 +342,10 @@ handle_http_request (const char *url, const char *method, char **page,
 	if (dbname != NULL) {
 		free(dbname);
 	}
+	if (docid != NULL) {
+		free(docid);
+	}
+
 
 	return ret;
 }

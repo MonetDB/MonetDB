@@ -3,14 +3,14 @@
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  * http://www.monetdb.org/Legal/MonetDBLicense
- * 
+ *
  * Software distributed under the License is distributed on an "AS IS"
  * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
  * License for the specific language governing rights and limitations
  * under the License.
- * 
+ *
  * The Original Code is the MonetDB Database System.
- * 
+ *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
  * Copyright August 2008-2013 MonetDB B.V.
@@ -54,6 +54,7 @@ struct connection_info_struct
 	int connectiontype;
 	char *answerstring;
 	struct MHD_PostProcessor *postprocessor;
+	char * poststring;
 };
 
 static int
@@ -107,6 +108,23 @@ iterate_post (void *coninfo_cls, enum MHD_ValueKind kind, const char *key,
 			con_info->answerstring = answerstring;
 		} else
 			con_info->answerstring = NULL;
+
+		return MHD_NO;
+	}
+
+	if (strcmp (key, "file") == 0)
+	{
+		if ((size > 0) && (size <= MAXNAMESIZE))
+		{
+			char *poststring;
+			poststring = malloc (MAXANSWERSIZE);
+			if (!poststring)
+				return MHD_NO;
+
+			snprintf (poststring, MAXANSWERSIZE, "%s", data);
+			con_info->poststring = poststring;
+		} else
+			con_info->poststring = NULL;
 
 		return MHD_NO;
 	}
@@ -187,9 +205,11 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
 					  *upload_data_size);
 			*upload_data_size = 0;
 			return MHD_YES;
-		} else if (con_info->answerstring != NULL) {
-			return send_page(connection, url, method, page,
-					 con_info->answerstring);
+		} else {
+			if (con_info->answerstring != NULL) {
+				return send_page(connection, url, method, page,
+						 con_info->answerstring);
+			}
 		}
 	}
 

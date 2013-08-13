@@ -25,11 +25,15 @@
 #include "stream.h"
 #include "sql_scenario.h"
 #include <mapi.h>
+#include <rest_jsonstore.h>
 #include <rest_jsonstore_handle_get.h>
 #include "mal_backend.h"
 
 static str RESTsqlQuery(char **result, char * query);
-char * result_ok = "select true as ok;";
+static char * result_ok = "select true as ok;";
+static int char0 = 1;
+static int place = 2;
+static int line = 30;
 
 static str
 RESTsqlQuery(char **result, char * query)
@@ -89,7 +93,7 @@ str RESTwelcome(char **result)
 str RESTallDBs(char **result)
 {
 	str msg = MAL_SUCCEED;
-	char * querytext = "select substring(name, 6, length(name) -5) as name from tables where name like 'json_%';";
+	char * querytext = "select substring(name, 6, length(name) -5) as name from tables where name like 'json!_%'ESCAPE'!';";
 	msg = RESTsqlQuery(result, querytext);
 	return msg;
 }
@@ -105,11 +109,20 @@ str RESTuuid(char **result)
 str RESTcreateDB(char ** result, char * dbname)
 {
 	str msg = MAL_SUCCEED;
-	int len = strlen(dbname) + 58;
 	char * querytext = NULL;
+	char * query = 
+		"CREATE TABLE json_%s (        "
+		"_id uuid, _rev VARCHAR(34),   "
+		"js json);                     "
+		"CREATE TABLE jsonblob_%s (    "
+		"_id uuid,                     "
+		"mimetype varchar(128),        "
+		"filename varchar(128),        "
+		"value blob);                  ";
+	size_t len = 2 * strlen(dbname) + (8 * line) - (2 * place) + char0;
 
 	querytext = malloc(len);
-	snprintf(querytext, len, "CREATE TABLE json_%s (_id uuid, _rev VARCHAR(34), js json);", dbname);
+	snprintf(querytext, len, query, dbname, dbname);
 
 	msg = RESTsqlQuery(result, querytext);
 	if (querytext != NULL) {
@@ -124,11 +137,14 @@ str RESTcreateDB(char ** result, char * dbname)
 str RESTdeleteDB(char ** result, char * dbname)
 {
 	str msg = MAL_SUCCEED;
-	int len = strlen(dbname) + 23;
 	char * querytext = NULL;
+	char * query =
+		"DROP TABLE json_%s;           "
+		"DROP TABLE jsonblob_%s;       ";
+	int len = 2 * strlen(dbname) + (2 * line) - (2 * place) + char0;
 
 	querytext = malloc(len);
-	snprintf(querytext, len, "DROP TABLE json_%s;", dbname);
+	snprintf(querytext, len, query, dbname, dbname);
 
 	msg = RESTsqlQuery(result, querytext);
 	if (querytext != NULL) {
@@ -208,5 +224,80 @@ str RESTupdateDoc(char ** result, char * dbname, const char * doc, const char * 
 	if (strcmp(*result,"&2 1 -1\n") == 0) {
 	  msg = RESTsqlQuery(result, result_ok);
 	}
+	return msg;
+}
+
+str RESTdeleteDoc(char ** result, char * dbname, const char * doc_id)
+{
+	str msg = MAL_SUCCEED;
+	size_t len = strlen(dbname) + strlen(doc_id) + 33 + 1;
+	char * querytext = NULL;
+
+	querytext = malloc(len);
+	snprintf(querytext, len, "DELETE FROM json_%s WHERE _id = '%s';", dbname, doc_id);
+
+	msg = RESTsqlQuery(result, querytext);
+	if (querytext != NULL) {
+		free(querytext);
+	}
+	if (strcmp(*result,"&2 3 -1\n") == 0) {
+	  msg = RESTsqlQuery(result, result_ok);
+	}
+	return msg;
+}
+
+str RESTerror(char **result, int rest_command)
+{
+	str msg = MAL_SUCCEED;
+	char * querytext;
+	switch (rest_command) {
+	case MONETDB_REST_MISSING_DATABASENAME:
+		querytext = "SELECT 'Missing Database Name' AS error;";
+		break;
+	case MONETDB_REST_NO_PARAMETER_ALLOWED:
+		querytext = "SELECT 'No Parameter Allowed' AS error;";
+		break;
+	case MONETDB_REST_NO_ATTACHMENT_PATH:
+		querytext = "SELECT 'Missing Attachment PATH' AS error;";
+		break;
+	default:
+		/* error, unknown command */
+		querytext = "SELECT 'Unknown Error' as error;";
+	}
+	msg = RESTsqlQuery(result, querytext);
+	return msg;
+}
+
+str RESTinsertAttach(char ** result, char * dbname, const char * attachment, const char * doc_id)
+{
+	str msg = MAL_SUCCEED;
+	char * querytext = NULL;
+/*
+	char * query =
+		"INSERT INTO jsonblob_%s (     "
+		"    _id, mimetype,            "
+		"    filename, value )         "
+		"VALUES (                      "
+		"''%s'',                       "
+		"'''', ''\"text/plain\"'',     "
+		"''%s'');                      ";
+	size_t len = strlen(dbname) + strlen(doc_id) + strlen(attachment) 
+		+ (7 * line) - (3 * place) + char0;
+*/
+	char * query =
+		"INSERT INTO jsonblob_%s ( _id, mimetype, filename, value ) VALUES ( '%s', '', '\"text/plain\"','%s');";
+	size_t len = strlen(dbname) + strlen(doc_id) + strlen(attachment)
+		+ 95 + char0;
+
+	querytext = malloc(len);
+	snprintf(querytext, len, query, dbname, doc_id, attachment);
+
+	msg = RESTsqlQuery(result, querytext);
+	if (querytext != NULL) {
+		free(querytext);
+	}
+	//if (strcmp(*result,"&2 1 -1\n") == 0) {
+	//  msg = RESTsqlQuery(result, result_ok);
+	//}
 	return msg;
 }
