@@ -105,9 +105,10 @@ UPDATE fire SET f = x * size_y + y WHERE f IS NOT NULL;
 ---- version 1:
 ---- Clump adjacent pixels using 4-connected,
 ---- i.e., each pixel has 4 neighbors: N, E, S, W
----- HOWEVER, this DOES NOT WORK (yet?), as the SciQL implementation does
----- not support structural grouping (tiling) with non-rectangular windows
----- (tiles) (yet?) !??
+---- For now, we use a work-around the fact the the SciQL implementation
+---- does not yet support structural grouping (tiling) with non-rectangular
+---- windows (tiles).
+---- The SciQL implementation does not support this non-rectangular GROUP BY, yet:
 --CREATE FUNCTION clump_4connected_1()
 --RETURNS TABLE (i INT, a INT)
 --BEGIN
@@ -116,61 +117,79 @@ UPDATE fire SET f = x * size_y + y WHERE f IS NOT NULL;
 --    FROM (
 --      SELECT f AS i, MAX(f) AS a
 --      FROM fire
---      -- the SciQL implementation does not support this GROUP BY (yet?) !??
 --      GROUP BY fire[x][y], fire[x+1][y], fire[x][y+1], fire[x-1][y], fire[x][y-1]
 --      HAVING f IS NOT NULL and f <> MAX(f)
 --    ) AS t
---    GROUP BY i
+--    GROUP BY i;
 --END;
---CREATE FUNCTION clump_4connected()
---RETURNS TABLE (i1 INT, i2 INT)
---BEGIN
---  DECLARE TABLE trans (i INT, a INT, x INT);
---  DECLARE iter_0 INT, iter_1 INT;
---  SET iter_0 = 0;
---  SET iter_1 = 0;
---  DECLARE moreupdates INT, recurse INT;
---  SET moreupdates = 1;
---  WHILE moreupdates > 0 DO
---    SET iter_0 = iter_0 + 1;
---
---    -- create transition map for adjacent pixels
---    DELETE FROM trans;
---    INSERT INTO trans (i,a) (
---      SELECT * FROM clump_8connected_4()
---    );
---
---    SELECT COUNT(*) INTO moreupdates FROM trans;
---    IF moreupdates > 0 THEN
---
---      -- calculate transitive closure
---      SET recurse = 1;
---      WHILE recurse > 0 DO
---        SET iter_1 = iter_1 + 1;
---        UPDATE trans SET x = (SELECT step.a FROM trans AS step WHERE trans.a = step.i);
---        UPDATE trans SET a = x WHERE x IS NOT NULL;
---        SELECT COUNT(x) INTO recurse FROM trans;
---      END WHILE;
---
---      -- connect adjacent pixels
---      INSERT INTO fire (
---        SELECT [fire.x], [fire.y], trans.a
---        FROM fire JOIN trans
---          ON fire.f = trans.i
---      );
---      DELETE FROM trans;
---
---    END IF;
---
---  END WHILE;
---  RETURN SELECT iter_0, iter_1;
---END;
----- For now(?), the mitosis/mergetable optimizers are not up to handling the
----- SciQL used here, in particular conjunctive HAVING predicates, correctly
----- (or vice versa).
---set optimizer='no_mitosis_pipe';
---SELECT * FROM clump_4connected();
---set optimizer='default_pipe';
+---- Hence, we work-around using two rectangular GROUP BY's:
+CREATE FUNCTION clump_4connected_1()
+RETURNS TABLE (i INT, a INT)
+BEGIN
+  RETURN
+    SELECT i, MAX(a)
+    FROM (
+      SELECT f AS i, MAX(f) AS a
+      FROM fire
+      GROUP BY fire[x][y-1:y+2]
+      HAVING f IS NOT NULL and f <> MAX(f)
+      UNION ALL
+      SELECT f AS i, MAX(f) AS a
+      FROM fire
+      GROUP BY fire[x-1:x+2][y]
+      HAVING f IS NOT NULL and f <> MAX(f)
+    ) AS t
+    GROUP BY i;
+END;
+CREATE FUNCTION clump_4connected()
+RETURNS TABLE (i1 INT, i2 INT)
+BEGIN
+  DECLARE TABLE trans (i INT, a INT, x INT);
+  DECLARE iter_0 INT, iter_1 INT;
+  SET iter_0 = 0;
+  SET iter_1 = 0;
+  DECLARE moreupdates INT, recurse INT;
+  SET moreupdates = 1;
+  WHILE moreupdates > 0 DO
+    SET iter_0 = iter_0 + 1;
+
+    -- create transition map for adjacent pixels
+    DELETE FROM trans;
+    INSERT INTO trans (i,a) (
+      SELECT * FROM clump_4connected_1()
+    );
+
+    SELECT COUNT(*) INTO moreupdates FROM trans;
+    IF moreupdates > 0 THEN
+
+      -- calculate transitive closure
+      SET recurse = 1;
+      WHILE recurse > 0 DO
+        SET iter_1 = iter_1 + 1;
+        UPDATE trans SET x = (SELECT step.a FROM trans AS step WHERE trans.a = step.i);
+        UPDATE trans SET a = x WHERE x IS NOT NULL;
+        SELECT COUNT(x) INTO recurse FROM trans;
+      END WHILE;
+
+      -- connect adjacent pixels
+      INSERT INTO fire (
+        SELECT [fire.x], [fire.y], trans.a
+        FROM fire JOIN trans
+          ON fire.f = trans.i
+      );
+      DELETE FROM trans;
+
+    END IF;
+
+  END WHILE;
+  RETURN SELECT iter_0, iter_1;
+END;
+-- For now(?), the mitosis/mergetable optimizers are not up to handling the
+-- SciQL used here, in particular conjunctive HAVING predicates, correctly
+-- (or vice versa).
+set optimizer='no_mitosis_pipe';
+SELECT * FROM clump_4connected();
+set optimizer='default_pipe';
 
 ---- version 2:
 ---- Clump adjacent pixels using 8-connected,
