@@ -206,7 +206,6 @@ static
 char * get_dbname(UriUriA uri) {
 	size_t len;
 	char * dbname;
-	//len = strlen(uri.pathHead->text.first);
 	len = uri.pathHead->text.afterLast - uri.pathHead->text.first;
 	dbname = malloc(len + 1);
 	strncpy(dbname, uri.pathHead->text.first, len);

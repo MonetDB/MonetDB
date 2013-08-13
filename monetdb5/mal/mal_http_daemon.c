@@ -67,7 +67,7 @@ send_page (struct MHD_Connection *connection, const char * url,
 	rest = (*http_handler)(url, method, &page, postdata);
 	(void)rest;
 	response =
-		MHD_create_response_from_buffer (strlen (page), 
+		MHD_create_response_from_buffer (strlen (page),
 						 (void *) page,
 						 MHD_RESPMEM_MUST_COPY);
 	if (!response)
@@ -105,8 +105,7 @@ iterate_post (void *coninfo_cls, enum MHD_ValueKind kind, const char *key,
 
 			snprintf (answerstring, MAXANSWERSIZE, "%s", data);
 			con_info->answerstring = answerstring;
-        }
-		else
+		} else
 			con_info->answerstring = NULL;
 
 		return MHD_NO;
@@ -148,8 +147,11 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
 	char * page = NULL;
 	struct connection_info_struct *con_info;
 	int *done = cls;
+	char *answerstring = NULL;
 	char *errorpage =
-		"<html><body>This doesn't seem to be right.</body></html>";
+		"<html><body>"
+		"Failed to handle error in http request."
+		"</body></html>";
 
 	(void)version;
 
@@ -161,8 +163,10 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
 
 		if (strcmp (method, "POST") == 0) {
 			con_info->postprocessor =
-				MHD_create_post_processor (connection, POSTBUFFERSIZE,
-							   iterate_post, (void *) con_info);
+				MHD_create_post_processor (connection,
+							   POSTBUFFERSIZE,
+							   iterate_post,
+							   (void *) con_info);
 
 			if (con_info->postprocessor == NULL) {
 				free (con_info);
@@ -191,17 +195,15 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
 
 	if (strcmp (method, "PUT") == 0) {
 		if (*upload_data_size != 0) {
-			char *answerstring;
 			// TODO: check free answerstring
 			answerstring = malloc (MAXANSWERSIZE);
 			if (!answerstring)
 				return MHD_NO;
 
 			snprintf (answerstring, MAXANSWERSIZE, "%s", upload_data);
-			con_info->answerstring = answerstring;
 			*upload_data_size = 0;
 			return send_page(connection, url, method, page,
-					 con_info->answerstring);
+					 answerstring);
 		}
 		*done = 1;
 	}

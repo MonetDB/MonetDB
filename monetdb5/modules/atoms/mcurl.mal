@@ -3,3 +3,15 @@ module mcurl;
 command getrequest(s:str):str
 address CURLgetRequest
 comment "Perform a http get request";
+
+command putrequest(s:str):str
+address CURLputRequest
+comment "Perform a http put request";
+
+command postrequest(s:str):str
+address CURLpostRequest
+comment "Perform a http post request";
+
+command deleterequest(s:str):str
+address CURLdeleteRequest
+comment "Perform a http delete request";

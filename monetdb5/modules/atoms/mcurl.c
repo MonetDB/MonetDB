@@ -125,6 +125,203 @@ handle_get_request(str *retval, str *url)
 	*retval = d;
 	return msg;
 }
+
+static str
+handle_put_request(str *retval, str *url)
+{
+	str d = NULL;
+	str msg = MAL_SUCCEED;
+
+	CURL *curl_handle;
+	CURLcode res = CURLE_OK;
+
+	struct MemoryStruct chunk;
+
+	chunk.memory = malloc(1);  /* will be grown as needed by the realloc above */
+	chunk.size = 0;    /* no data at this point */
+
+	curl_global_init(CURL_GLOBAL_ALL);
+	/* init the curl session */
+	curl_handle = curl_easy_init();
+	curl_easy_setopt(curl_handle, CURLOPT_PUT, 1);
+	/* set URL to get */
+
+	curl_easy_setopt(curl_handle, CURLOPT_URL, *url);
+
+	/* no progress meter please */
+	curl_easy_setopt(curl_handle, CURLOPT_NOPROGRESS, 1L);
+
+	/* send all data to this function  */
+	curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, WriteMemoryCallback);
+
+	/* we want the body be written to this file handle instead of stdout */
+	curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *)&chunk);
+
+	/* get it! */
+	res = curl_easy_perform(curl_handle);
+
+	/* check for errors */
+	if(res != CURLE_OK) {
+		msg = createException(MAL, "mcurl.deleterequest",
+							  "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
+	} else {
+		/*
+		 * Now, our chunk.memory points to a memory block that is
+		 * chunk.size bytes big and contains the remote file.
+		 *
+		 * Do something nice with it!
+		 *
+		 * You should be aware of the fact that at this point we might
+		 * have an allocated data block, and nothing has yet
+		 * deallocated that data. So when you're done with it, you
+		 * should free() it as a nice application.
+		 */
+
+		//printf(SZFMT " bytes retrieved\n", chunk.size);
+	}
+	if (chunk.size) {
+		d = GDKstrdup(chunk.memory);
+		if(chunk.memory)
+			free(chunk.memory);
+	}
+	/* cleanup curl stuff */
+	curl_easy_cleanup(curl_handle);
+
+	*retval = d;
+	return msg;
+}
+
+static str
+handle_post_request(str *retval, str *url)
+{
+	str d = NULL;
+	str msg = MAL_SUCCEED;
+
+	CURL *curl_handle;
+	CURLcode res = CURLE_OK;
+
+	struct MemoryStruct chunk;
+
+	chunk.memory = malloc(1);  /* will be grown as needed by the realloc above */
+	chunk.size = 0;    /* no data at this point */
+
+	curl_global_init(CURL_GLOBAL_ALL);
+	/* init the curl session */
+	curl_handle = curl_easy_init();
+	curl_easy_setopt(curl_handle, CURLOPT_POST, 1);
+	/* set URL to get */
+
+	curl_easy_setopt(curl_handle, CURLOPT_URL, *url);
+
+	/* no progress meter please */
+	curl_easy_setopt(curl_handle, CURLOPT_NOPROGRESS, 1L);
+
+	/* send all data to this function  */
+	curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, WriteMemoryCallback);
+
+	/* we want the body be written to this file handle instead of stdout */
+	curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *)&chunk);
+
+	/* get it! */
+	res = curl_easy_perform(curl_handle);
+
+	/* check for errors */
+	if(res != CURLE_OK) {
+		msg = createException(MAL, "mcurl.deleterequest",
+							  "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
+	} else {
+		/*
+		 * Now, our chunk.memory points to a memory block that is
+		 * chunk.size bytes big and contains the remote file.
+		 *
+		 * Do something nice with it!
+		 *
+		 * You should be aware of the fact that at this point we might
+		 * have an allocated data block, and nothing has yet
+		 * deallocated that data. So when you're done with it, you
+		 * should free() it as a nice application.
+		 */
+
+		//printf(SZFMT " bytes retrieved\n", chunk.size);
+	}
+	if (chunk.size) {
+		d = GDKstrdup(chunk.memory);
+		if(chunk.memory)
+			free(chunk.memory);
+	}
+	/* cleanup curl stuff */
+	curl_easy_cleanup(curl_handle);
+
+	*retval = d;
+	return msg;
+}
+
+static str
+handle_delete_request(str *retval, str *url)
+{
+	str d = NULL;
+	str msg = MAL_SUCCEED;
+
+	CURL *curl_handle;
+	CURLcode res = CURLE_OK;
+	char * delete_request = "DELETE";
+
+	struct MemoryStruct chunk;
+
+	chunk.memory = malloc(1);  /* will be grown as needed by the realloc above */
+	chunk.size = 0;    /* no data at this point */
+
+	curl_global_init(CURL_GLOBAL_ALL);
+	/* init the curl session */
+	curl_handle = curl_easy_init();
+	curl_easy_setopt(curl_handle, CURLOPT_CUSTOMREQUEST, delete_request);
+	/* set URL to get */
+
+	curl_easy_setopt(curl_handle, CURLOPT_URL, *url);
+
+	/* no progress meter please */
+	curl_easy_setopt(curl_handle, CURLOPT_NOPROGRESS, 1L);
+
+	/* send all data to this function  */
+	curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, WriteMemoryCallback);
+
+	/* we want the body be written to this file handle instead of stdout */
+	curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *)&chunk);
+
+	/* get it! */
+	res = curl_easy_perform(curl_handle);
+
+	/* check for errors */
+	if(res != CURLE_OK) {
+		msg = createException(MAL, "mcurl.deleterequest",
+							  "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
+	} else {
+		/*
+		 * Now, our chunk.memory points to a memory block that is
+		 * chunk.size bytes big and contains the remote file.
+		 *
+		 * Do something nice with it!
+		 *
+		 * You should be aware of the fact that at this point we might
+		 * have an allocated data block, and nothing has yet
+		 * deallocated that data. So when you're done with it, you
+		 * should free() it as a nice application.
+		 */
+
+		//printf(SZFMT " bytes retrieved\n", chunk.size);
+	}
+	if (chunk.size) {
+		d = GDKstrdup(chunk.memory);
+		if(chunk.memory)
+			free(chunk.memory);
+	}
+	/* cleanup curl stuff */
+	curl_easy_cleanup(curl_handle);
+
+	*retval = d;
+	return msg;
+}
+
 #endif
 
 #ifdef WIN32
@@ -134,12 +331,51 @@ handle_get_request(str *retval, str *url)
 #endif
 
 mcurl_export str CURLgetRequest(str *retval, str *url);
+mcurl_export str CURLputRequest(str *retval, str *url);
+mcurl_export str CURLpostRequest(str *retval, str *url);
+mcurl_export str CURLdeleteRequest(str *retval, str *url);
 
 str
 CURLgetRequest(str *retval, str *url)
 {
 #ifdef HAVE_CURL
 	return handle_get_request(retval, url);
+#else
+	(void)retval;
+	(void)url;
+	return MAL_SUCCEED;
+#endif
+}
+
+str
+CURLputRequest(str *retval, str *url)
+{
+#ifdef HAVE_CURL
+	return handle_put_request(retval, url);
+#else
+	(void)retval;
+	(void)url;
+	return MAL_SUCCEED;
+#endif
+}
+
+str
+CURLpostRequest(str *retval, str *url)
+{
+#ifdef HAVE_CURL
+	return handle_post_request(retval, url);
+#else
+	(void)retval;
+	(void)url;
+	return MAL_SUCCEED;
+#endif
+}
+
+str
+CURLdeleteRequest(str *retval, str *url)
+{
+#ifdef HAVE_CURL
+	return handle_delete_request(retval, url);
 #else
 	(void)retval;
 	(void)url;
