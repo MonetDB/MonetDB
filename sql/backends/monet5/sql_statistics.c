@@ -110,7 +110,7 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					bsample = BATsample(bn, (BUN) 25000);
 				} else 
 					bsample = bn;
-				br = BATselect(bsample, ATOMnil(bn->ttype), ATOMnil(bn->ttype));
+				br = BATselect(bsample,ATOMnil(bn->ttype),0);
 				nils = BATcount(br);
 				BBPunfix(br->batCacheid);
 				if ( bn->tkey)
@@ -130,10 +130,14 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {\
 	TYPE *val=0;\
 	val= BATmax(bn,0);\
-	snprintf(maxval,8192,FMT,*val);\
+	if ( ATOMcmp(bn->ttype,val, ATOMnil(bn->ttype))== 0)\
+		snprintf(maxval,8192,"nil");\
+	else snprintf(maxval,8192,FMT,*val);\
 	GDKfree(val);\
 	val= BATmin(bn,0);\
-	snprintf(minval,8192,FMT,*val);\
+	if ( ATOMcmp(bn->ttype,val, ATOMnil(bn->ttype))== 0)\
+		snprintf(minval,8192,"nil");\
+	else snprintf(minval,8192,FMT,*val);\
 	GDKfree(val);\
 	break;\
 }
