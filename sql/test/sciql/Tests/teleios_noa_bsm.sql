@@ -108,6 +108,20 @@ UPDATE fire SET f = x * size_y + y WHERE f IS NOT NULL;
 ---- HOWEVER, this DOES NOT WORK (yet?), as the SciQL implementation does
 ---- not support structural grouping (tiling) with non-rectangular windows
 ---- (tiles) (yet?) !??
+--CREATE FUNCTION clump_4connected_1()
+--RETURNS TABLE (i INT, a INT)
+--BEGIN
+--  RETURN
+--    SELECT i, MAX(a)
+--    FROM (
+--      SELECT f AS i, MAX(f) AS a
+--      FROM fire
+--      -- the SciQL implementation does not support this GROUP BY (yet?) !??
+--      GROUP BY fire[x][y], fire[x+1][y], fire[x][y+1], fire[x-1][y], fire[x][y-1]
+--      HAVING f IS NOT NULL and f <> MAX(f)
+--    ) AS t
+--    GROUP BY i
+--END;
 --CREATE FUNCTION clump_4connected()
 --RETURNS TABLE (i1 INT, i2 INT)
 --BEGIN
@@ -123,15 +137,7 @@ UPDATE fire SET f = x * size_y + y WHERE f IS NOT NULL;
 --    -- create transition map for adjacent pixels
 --    DELETE FROM trans;
 --    INSERT INTO trans (i,a) (
---      SELECT i, MAX(a)
---      FROM (
---        SELECT f AS i, MAX(f) AS a
---        FROM fire
---        -- the SciQL implementation does not support this GROUP BY (yet?) !??
---        GROUP BY fire[x][y], fire[x+1][y], fire[x][y+1], fire[x-1][y], fire[x][y-1]
---        HAVING f IS NOT NULL and f <> MAX(f)
---      ) AS t
---      GROUP BY i
+--      SELECT * FROM clump_8connected_4()
 --    );
 --
 --    SELECT COUNT(*) INTO moreupdates FROM trans;
@@ -169,6 +175,19 @@ UPDATE fire SET f = x * size_y + y WHERE f IS NOT NULL;
 ---- version 2:
 ---- Clump adjacent pixels using 8-connected,
 ---- i.e., each pixel has 8 neighbors: N, NE, E, SE, S, SW, W, NW
+CREATE FUNCTION clump_8connected_1()
+RETURNS TABLE (i INT, a INT)
+BEGIN
+  RETURN
+    SELECT i, MAX(a)
+    FROM (
+      SELECT f AS i, MAX(f) AS a
+      FROM fire
+      GROUP BY fire[x-1:x+2][y-1:y+2]
+      HAVING f IS NOT NULL AND f <> MAX(f)
+    ) AS t
+    GROUP BY i;
+END;
 CREATE FUNCTION clump_8connected()
 RETURNS TABLE (i1 INT, i2 INT)
 BEGIN
@@ -184,14 +203,7 @@ BEGIN
     -- create transition map for adjacent pixels
     DELETE FROM trans;
     INSERT INTO trans (i,a) (
-      SELECT i, MAX(a)
-      FROM (
-        SELECT f AS i, MAX(f) AS a
-        FROM fire
-        GROUP BY fire[x-1:x+2][y-1:y+2]
-        HAVING f IS NOT NULL AND f <> MAX(f)
-      ) AS t
-      GROUP BY i
+      SELECT * FROM clump_8connected_1()
     );
 
     SELECT COUNT(*) INTO moreupdates FROM trans;
@@ -241,6 +253,42 @@ UPDATE fire SET f = NULL WHERE f IN (
 
 ---- Union fires which are less that 3 pixels apart (using 8-CONNECTED)
 ---- Add fire bridge between them
+CREATE FUNCTION connect_neighbors_1()
+RETURNS TABLE (x SMALLINT, y SMALLINT, i INT, a INT)
+BEGIN
+  RETURN
+    SELECT x, y, MIN(f) AS i, MAX(f) AS a
+    FROM fire
+    GROUP BY fire[x-2:x+2][y-2:y+2]
+    HAVING f IS NULL AND MIN(f) <> MAX(f);
+END;
+CREATE FUNCTION connect_neighbors_2()
+RETURNS TABLE (x SMALLINT, y SMALLINT, i INT, a INT)
+BEGIN
+  RETURN
+    SELECT x, y, MIN(f) AS i, MAX(f) AS a
+    FROM fire
+    GROUP BY fire[x-1:x+3][y-2:y+2]
+    HAVING f IS NULL AND MIN(f) <> MAX(f);
+END;
+CREATE FUNCTION connect_neighbors_3()
+RETURNS TABLE (x SMALLINT, y SMALLINT, i INT, a INT)
+BEGIN
+  RETURN
+    SELECT x, y, MIN(f) AS i, MAX(f) AS a
+    FROM fire
+    GROUP BY fire[x-2:x+2][y-1:y+3]
+    HAVING f IS NULL AND MIN(f) <> MAX(f);
+END;
+CREATE FUNCTION connect_neighbors_4()
+RETURNS TABLE (x SMALLINT, y SMALLINT, i INT, a INT)
+BEGIN
+  RETURN
+    SELECT x, y, MIN(f) AS i, MAX(f) AS a
+    FROM fire
+    GROUP BY fire[x-1:x+3][y-1:y+3]
+    HAVING f IS NULL AND MIN(f) <> MAX(f);
+END;
 CREATE FUNCTION connect_neighbors()
 RETURNS TABLE (i1 INT, i2 INT)
 BEGIN
@@ -260,28 +308,16 @@ BEGIN
     -- 3x3 window is too small and 5x5 is too large; hence,
     -- we need to union the four possible 4x4 windows ...
     INSERT INTO bridgesXXL (
-      SELECT x, y, MIN(f) AS i, MAX(f) AS a
-      FROM fire
-      GROUP BY fire[x-2:x+2][y-2:y+2]
-      HAVING f IS NULL AND MIN(f) <> MAX(f)
+      SELECT * FROM connect_neighbors_1()
     );
     INSERT INTO bridgesXXL (
-      SELECT x, y, MIN(f) AS i, MAX(f) AS a
-      FROM fire
-      GROUP BY fire[x-1:x+3][y-2:y+2]
-      HAVING f IS NULL AND MIN(f) <> MAX(f)
+      SELECT * FROM connect_neighbors_2()
     );
     INSERT INTO bridgesXXL (
-      SELECT x, y, MIN(f) AS i, MAX(f) AS a
-      FROM fire
-      GROUP BY fire[x-2:x+2][y-1:y+3]
-      HAVING f IS NULL AND MIN(f) <> MAX(f)
+      SELECT * FROM connect_neighbors_3()
     );
     INSERT INTO bridgesXXL (
-      SELECT x, y, MIN(f) AS i, MAX(f) AS a
-      FROM fire
-      GROUP BY fire[x-1:x+3][y-1:y+3]
-      HAVING f IS NULL AND MIN(f) <> MAX(f)
+      SELECT * FROM connect_neighbors_4()
     );
 
     SELECT COUNT(*) INTO merge_more FROM bridgesXXL;
