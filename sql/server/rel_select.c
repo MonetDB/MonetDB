@@ -646,7 +646,6 @@ rel_inplace_project(sql_allocator *sa, sql_rel *rel, sql_rel *l, list *e)
 	rel->card = CARD_MULTI;
 	rel->flag = 0;
 	if (l) {
-//		rel->card = l->card;
 		rel->nrcols = l->nrcols;
 		assert (exps_card(rel->exps) <= rel->card);
 	}
@@ -1490,10 +1489,8 @@ rel_named_table_operator(mvc *sql, sql_rel *rel, symbol *query)
 		if (column_spec) {
 			dnode *n = column_spec->h;
 
-			//TO be tested if (!is_project(sq->op)) {
-				sq = rel_project(sql->sa, sq, rel_projections(sql, sq, NULL, 1, 1));
-				set_processed(sq);
-			//}
+			sq = rel_project(sql->sa, sq, rel_projections(sql, sq, NULL, 1, 1));
+			set_processed(sq);
 			for (en = sq->exps->h; n && en; n = n->next, en = en->next) 
 				exp_setname(sql->sa, en->data, tname, n->data.sval );
 		}
@@ -4284,7 +4281,6 @@ rel_order_by(mvc *sql, sql_rel **R, symbol *orderby, int f )
 				int is_last = 0;
 				exp_kind ek = {type_value, card_column, FALSE};
 
-				//e = rel_column_ref(sql, &rel, col, f);
 				e = rel_value_exp2(sql, &rel, col, f, ek, &is_last);
 
 				/* do not cache this query */
@@ -4300,7 +4296,6 @@ rel_order_by(mvc *sql, sql_rel **R, symbol *orderby, int f )
 						e = exps_get_exp(rel->exps, nr);
 						if (!e)
 							return NULL;
-						//e = exp_column(sql->sa, e->rname, e->r, exp_subtype(e), rel->card, has_nil(e), is_intern(e));
 						e = exp_column(sql->sa, e->rname, exp_name(e), exp_subtype(e), exp_card(e), has_nil(e), is_intern(e));
 					} else if (e->type == e_atom) {
 						return sql_error(sql, 02, "order not of type SQL_COLUMN\n");
@@ -4768,25 +4763,6 @@ join_on_column_name(mvc *sql, sql_rel *rel, sql_rel *t1, sql_rel *t2, int op, in
 }
 
 
-#if 0
-static sql_rel *exp_top_relation(sql_exp *e )
-{
-	switch(e->type) {	
-	case e_atom:
-		return NULL;
-	case e_convert:
-	case e_cmp:
-		if (e->l)
-			return exp_top_relation(e->l);
-		break;
-	case e_column:
-	default:
-		return NULL;
-	}
-	return NULL;
-}
-#endif
-
 static int
 exp_is_not_intern(sql_exp *e)
 {
@@ -4955,13 +4931,12 @@ rel_select_exp(mvc *sql, sql_rel *rel, SelectNode *sn, exp_kind ek)
 
 			if (!l || !(l=rel_check_type(sql, wrd, l, type_equal)))
 				return NULL;
-		if ((ek.card != card_relation && sn->limit) &&
-			(ek.card == card_value && sn->limit)) {
-			sql_subaggr *zero_or_one = sql_bind_aggr(sql->sa, sql->session->schema, "zero_or_one", exp_subtype(l));
-
-			l = exp_aggr1(sql->sa, l, zero_or_one, 0, 0, CARD_ATOM, 0);
-		}
-	/*	return sql_error(sql, 01, "SELECT: LIMIT only allowed on outermost SELECT"); */
+			if ((ek.card != card_relation && sn->limit) &&
+				(ek.card == card_value && sn->limit)) {
+				sql_subaggr *zero_or_one = sql_bind_aggr(sql->sa, sql->session->schema, "zero_or_one", exp_subtype(l));
+	
+				l = exp_aggr1(sql->sa, l, zero_or_one, 0, 0, CARD_ATOM, 0);
+			}
 			append(exps, l);
 		} else
 			append(exps, NULL);
