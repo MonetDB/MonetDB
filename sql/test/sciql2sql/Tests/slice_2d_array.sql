@@ -1,5 +1,22 @@
 -- a 2 Dimensional fixed array
 CREATE ARRAY array2D(x TINYINT DIMENSION[4], y BIGINT DIMENSION[4], v INTEGER DEFAULT 2);
+INSERT INTO array2D values 
+( 0,	0,	2 ),
+( 0,	1,	2 ),
+( 0,	2,	2 ),
+( 0,	3,	2 ),
+( 1,	0,	2 ),
+( 1,	1,	2 ),
+( 1,	2,	2 ),
+( 1,	3,	2 ),
+( 2,	0,	2 ),
+( 2,	1,	2 ),
+( 2,	2,	2 ),
+( 2,	3,	2 ),
+( 3,	0,	2 ),
+( 3,	1,	2 ),
+( 3,	2,	2 ),
+( 3,	3,	2 );
 SELECT * FROM array2D;
 DROP ARRAY array2D;
 

@@ -83,11 +83,20 @@ SELECT [x], [y], avg(gray)
 FROM image
 GROUP BY image[x:x+3][y:y+3];
 
-SELECT x AS XOFF, y AS YOFF, (
-    SELECT avg(A.gray + B.gray)
+SELECT R.x , R.y, (
+    SELECT avg(A.gray)
     FROM imageR A,  patchR B
     WHERE A.x - R.x = B.x AND A.y- R.y = B.y )
 FROM imageR R;
+
+-- multiple groups
+SELECT R.x, R.y, S.x, S.y
+FROM imageR R, imageR S
+WHERE gray >1
+GROUP BY R[x:x+2][y:y+2], S[x:x+2][y:y+2]
+HAVING (R.x-S.x)*(R.x-S.x) + (R.y-S.y)*(R.y-S.y) < 5*5;
+
+--relational equivalent, More work needed
 
 DROP ARRAY image;
 DROP ARRAY patch;

@@ -1,5 +1,13 @@
 -- Array slicing examples
 CREATE ARRAY array1D(x INTEGER DIMENSION[7], v INTEGER DEFAULT 1, w INTEGER DEFAULT 0);
+INSERT INTO array1D values 
+( 0, 1, 1),
+( 1, 1, 2),
+( 2, 2, 1),
+( 3, 2, 5),
+( 4, 3, 7),
+( 5, 3, 7),
+( 6, 4, 1);
 
 -- relational equivalent 
 CREATE TABLE vector(x INTEGER CHECK(x >=0 and x < 7), v INTEGER DEFAULT 1, w INTEGER DEFAULT 0);
