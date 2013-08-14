@@ -324,10 +324,28 @@ BEGIN
     GROUP BY fire[x-1:x+2][y-1:y+2]
     HAVING f IS NULL AND SUM(f) IS NOT NULL;
 END;
+CREATE FUNCTION connect_neighbors_6()
+RETURNS TABLE (x SMALLINT, y SMALLINT, i INT, a INT)
+BEGIN
+  RETURN
+    SELECT t1.x, t1.y, t1.i, t1.a
+    FROM (
+      SELECT * FROM connect_neighbors_1()
+      UNION ALL
+      SELECT * FROM connect_neighbors_2()
+      UNION ALL
+      SELECT * FROM connect_neighbors_3()
+      UNION ALL
+      SELECT * FROM connect_neighbors_4()
+    ) AS t1
+    JOIN (
+      SELECT * FROM connect_neighbors_5()
+    ) AS t2
+    ON t1.x = t2.x AND t1.y = t2.y;
+END;
 CREATE FUNCTION connect_neighbors()
 RETURNS TABLE (i1 INT, i2 INT)
 BEGIN
-  DECLARE TABLE bridgesXXL (x SMALLINT, y SMALLINT, i INT, a INT);
   DECLARE TABLE bridges (x SMALLINT, y SMALLINT, i INT, a INT);
   DECLARE TABLE trans (i INT, a INT, x INT);
   DECLARE iter_0 INT, iter_1 INT;
@@ -339,38 +357,14 @@ BEGIN
     SET iter_0 = iter_0 + 1;
 
     -- find neighboring fire clumps
-    DELETE FROM bridgesXXL;
+    DELETE FROM bridges;
     -- 3x3 window is too small and 5x5 is too large; hence,
     -- we need to union the four possible 4x4 windows ...
-    INSERT INTO bridgesXXL (
-      SELECT * FROM connect_neighbors_1()
-    );
-    INSERT INTO bridgesXXL (
-      SELECT * FROM connect_neighbors_2()
-    );
-    INSERT INTO bridgesXXL (
-      SELECT * FROM connect_neighbors_3()
-    );
-    INSERT INTO bridgesXXL (
-      SELECT * FROM connect_neighbors_4()
+    INSERT INTO bridges (
+      SELECT * FROM connect_neighbors_6()
     );
 
-    SELECT COUNT(*) INTO merge_more FROM bridgesXXL;
-    IF merge_more > 0 THEN
-      -- avoid (some) incorrect cases
-      DELETE from bridges;
-      INSERT INTO bridges (
-        SELECT t1.x, t1.y, t1.i, t1.a
-        FROM bridgesXXL AS t1
-        JOIN (
-          SELECT * FROM connect_neighbors_5()
-        ) AS t2
-        ON t1.x = t2.x AND t1.y = t2.y
-      );
-      DELETE from bridgesXXL;
-      SELECT COUNT(*) INTO merge_more FROM bridges;
-    END IF;
-
+    SELECT COUNT(*) INTO merge_more FROM bridges;
     IF merge_more > 0 THEN
 
       -- create "bridges"
