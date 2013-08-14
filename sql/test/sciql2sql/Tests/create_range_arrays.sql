@@ -1,5 +1,10 @@
 -- 1 Dimensional range array with default step size for INTEGER
 CREATE ARRAY array1Dr(x INTEGER DIMENSION[0:1:4], v INTEGER DEFAULT 1);
+INSERT INTO array1Dr values 
+( 0, 1 ),
+( 1, 1 ),
+( 2, 1 ),
+( 3, 1 );
 SELECT * FROM array1Dr;
 DROP ARRAY array1Dr;
 
@@ -15,6 +20,13 @@ DROP ARRAY array1Dr;
 
 -- 1 Dimensional range array with default step size
 CREATE ARRAY array1Dr(x INTEGER DIMENSION[-4:1:2], v INTEGER DEFAULT 1);
+INSERT INTO array1Dr values 
+( -4, 1 ),
+( -3, 1 ),
+( -2, 1 ),
+( -1, 1 ),
+(  0, 1 ),
+(  1, 1 );
 SELECT * FROM array1Dr;
 DROP ARRAY array1Dr;
 
@@ -32,6 +44,9 @@ DROP ARRAY array1Dr;
 
 -- 1 Dimensional range array with fixed step size
 CREATE ARRAY array1Dr(x INTEGER DIMENSION[0:2:4], v INTEGER DEFAULT 1);
+INSERT INTO array1Dr values 
+( 0, 1 ),
+( 2, 1 );
 SELECT * FROM array1Dr;
 DROP ARRAY array1Dr;
 
