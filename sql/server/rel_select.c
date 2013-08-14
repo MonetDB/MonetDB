@@ -501,7 +501,7 @@ static char *
 get_base_name(sql_rel *rel, char *alias)
 {
 	char *bnm = NULL;
-	node *n = rel->exps->h;
+	node *n = NULL;
 
 	if (!rel || !alias)
 		return NULL;
@@ -538,13 +538,12 @@ get_base_name(sql_rel *rel, char *alias)
 		break;
 	}
 
-	if (bnm)
-		return bnm;
-
-	for ( ; n; n = n->next) {
-		bnm = _get_base_name(n->data, alias);
-		if (bnm)
-			return bnm;
+	if (!bnm && rel->exps) {
+		for (n = rel->exps->h; n; n = n->next) {
+			bnm = _get_base_name(n->data, alias);
+			if (bnm)
+				return bnm;
+		}
 	}
 
 	return bnm;
@@ -2208,22 +2207,25 @@ rel_column_ref(mvc *sql, sql_rel **rel, symbol *column_r, int f)
 }
 
 static sql_exp *
-_get_tiled_dimension(mvc *sql, list *exps, symbol *dim_ref)
+_get_tiled_dimension(mvc *sql, list *exps, symbol *dim_ref, str aname)
 {
 	sql_exp *e = NULL;
 	node *n = exps->h;
+	str dname = dim_ref->data.lval->h->data.sval;
 	
 	if (dlist_length(dim_ref->data.lval) != 1)
 		return sql_error(sql, 02, "SELECT: invalid dimension name with %d (!= 1) level(s)", dlist_length(dim_ref->data.lval));	
+	if (dname == NULL)
+		return sql_error(sql, 02, "SELECT: dimension name missing in tiling range");
 
 	for ( ; n; n = n->next) {
 		e = n->data;
 		assert(e->type == e_column);
 
-		if (e->name && dim_ref->data.lval->h->data.sval && strcmp(exp_name(e), dim_ref->data.lval->h->data.sval) == 0)
+		if (e->name && strcmp(exp_name(e), dname) == 0)
 			return e;
 	}
-	return NULL;
+	return sql_error(sql, 02, "SELECT: no such dimension \"%s.%s\"", aname, dname);	
 }
 
 static int
@@ -2252,7 +2254,7 @@ _check_tiled_dimension(mvc *sql, char *dimnm, symbol *dim_ref)
 #define ARRAY_TILING_MAX_DIMS 3
 
 static list *
-rel_arraytiling(mvc *sql, sql_rel **rel, symbol *tile_def, int f)
+rel_arraytiling(mvc *sql, sql_rel **rel, symbol *tile_def, int f, str *aname)
 {
 	list *exps = new_exp_list(sql->sa), *offsets = NULL;
 	node *n = NULL;
@@ -2292,8 +2294,16 @@ rel_arraytiling(mvc *sql, sql_rel **rel, symbol *tile_def, int f)
 		return sql_error(sql, 02, "SELECT: no such array '%s.%s'", (cur_schema(sql))->base.name, aalias);
 	}
 	a = rbt->l;
+	if (a->valence == 0)
+		return sql_error(sql, 02, "SELECT: tiling over a relational table (\"%s\")not allowed", aalias);
 	if (a->valence > ARRAY_TILING_MAX_DIMS)
 		return sql_error(sql, 02, "TODO: tiling over arrays with >%d dimensions", ARRAY_TILING_MAX_DIMS);
+
+	if (*aname != NULL && strcmp(*aname, aalias) != 0) {
+		return sql_error(sql, 02, "SELECT: tiling over multiple arrays not supported (yet)");
+	} else {
+		*aname = aalias;
+	}
 
 	idx_exps = tile_def->data.lval->h->next->data.lval;
 	if (dlist_length(idx_exps) > a->valence)
@@ -2330,7 +2340,7 @@ rel_arraytiling(mvc *sql, sql_rel **rel, symbol *tile_def, int f)
 		 */
 		switch (sym_tsta->token) {
 			case SQL_COLUMN: /* '<column>' */
-				if (!(exp = _get_tiled_dimension(sql, exps, sym_tsta)))
+				if (!(exp = _get_tiled_dimension(sql, exps, sym_tsta, aalias)))
 					return NULL;
 				d_rng = list_length(((list*)exp->f)->h->next->data) ? ((list*)exp->f)->h->next->data : ((list*)exp->f)->h->data;
 
@@ -2346,7 +2356,7 @@ rel_arraytiling(mvc *sql, sql_rel **rel, symbol *tile_def, int f)
 				opr = sym_tsta->data.lval->h->next->next->data.sym;
 				/* the <exp> could also be a SQL_COLUMN, but then opl->data.sym->data.lval->h->type == type_int */
 				if (opl->token == SQL_COLUMN && opl->data.lval->h->type == type_string) { /* '<column> +/- <exp>' */
-					if (!(exp = _get_tiled_dimension(sql, exps, opl)))
+					if (!(exp = _get_tiled_dimension(sql, exps, opl, aalias)))
 						return NULL;
 					d_rng = list_length(((list*)exp->f)->h->next->data) ? ((list*)exp->f)->h->next->data : ((list*)exp->f)->h->data;
 					st = exp_subtype(d_rng->h->data);
@@ -4904,6 +4914,7 @@ rel_group_by(mvc *sql, sql_rel *rel, symbol *groupby, dlist *selection, int f )
 	dnode *o = groupby->data.lval->h;
 	list *exps = new_exp_list(sql->sa);
 	int found_ngb = 0, found_sgb = 0;
+	str aname = NULL;
 
 	for (; o; o = o->next) {
 		symbol *grp = o->data.sym;
@@ -4911,7 +4922,7 @@ rel_group_by(mvc *sql, sql_rel *rel, symbol *groupby, dlist *selection, int f )
 		list *es = NULL;
 		
 		if (grp->token == SQL_ARRAY_DIM_SLICE) {
-			if (!(es = rel_arraytiling(sql, &rel, grp, f)))
+			if (!(es = rel_arraytiling(sql, &rel, grp, f, &aname)))
 				return NULL;
 			/* FIXME: shouldn't we do the same error checks as the case of normal GROUP BY below? */
 			exps = list_merge(exps, es, (fdup)NULL);
@@ -4948,8 +4959,6 @@ rel_group_by(mvc *sql, sql_rel *rel, symbol *groupby, dlist *selection, int f )
 	}
 	if (found_ngb && found_sgb)
 		return sql_error(sql, 02, "SELECT: combination of normal SQL group by and SciQL array tiling not supported yet\n");
-	if (found_sgb > 1)
-		return sql_error(sql, 02, "SELECT: array tiling over multiple arrays not supported yet\n");
 	return exps;
 }
 
