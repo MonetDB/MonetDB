@@ -153,7 +153,7 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, int comma, int alias)
 		if (e->f) { /* the dimension constraints */
 			list *range = NULL;
 
-			assert(list_length(e->f) == 3);
+			assert(list_length(e->f) >= 3);
 
 			/* If a slicing has been applied on this dimension, print the sliced range; otherwise the original range */
 			range = list_length(((list*)e->f)->h->next->data) ? ((list*)e->f)->h->next->data : ((list*)e->f)->h->data;

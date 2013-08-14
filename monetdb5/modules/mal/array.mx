@@ -658,8 +658,9 @@ ARRAYtiles_@4_@1_@8(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 		dSize[i] = *(int*)getArgReference(stk,pci,2+i*3+2);
 		if (dSize[i] <= 0) {
+			int sz = (int) dSize[i];
 			AGGR_CLEANUP();
-			throw(MAL, "array.@4", "size of dimension %d (%d) must not be <= 0", i, (int) dSize[i]);
+			throw(MAL, "array.@4", "size of dimension %d (%d) must not be <= 0", i, sz);
 		}
 		arrsze *= dSize[i];
 	}
@@ -751,29 +752,34 @@ ARRAYtiles_@4_@1_@8(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				BBPunfix(slice->batCacheid);
 
 				if (bDimsT[i][p] != dMin[i]) {
+					int di = (int) bDimsT[i][p], mi = (int) dMin[i];
 					AGGR_CLEANUP();
 					throw(MAL, "array.@4", "first value of slice "BUNFMT" of dimension %d (%d) is not the minimum (%d)",
-						p / arrsze, i, (int) bDimsT[i][p], (int) dMin[i]);
+						p / arrsze, i, di, mi);
 				}
 				if (bDimsT[i][r-1] != dMax[i]) {
+					int di = (int) bDimsT[i][r-1], ma = (int) dMax[i];
 					AGGR_CLEANUP();
 					throw(MAL, "array.@4", "last value of slice "BUNFMT" of dimension %d (%d) is not the maximum (%d)",
-						p / arrsze, i, (int) bDimsT[i][r-1], (int) dMax[i]);
+						p / arrsze, i, di, ma);
 				}
 			}
 		}
 
 		if (dMin[i] > dMax[i]) {
+			int mi = (int) dMin[i], ma = (int) dMax[i];
 			AGGR_CLEANUP();
 			throw(MAL, "array.@4", "minimum value of dimension BAT %d (%d) must not be larger than its maximum value (%d)",
-				i, (int) dMin[i], (int) dMax[i]);
+				i, mi, ma);
 		}
+		/*
 		if ((int) (dMax[i] - dMin[i] + 1) != dSize[i]) {
+			int rng = (int) (dMax[i] - dMin[i] + 1), sz = dSize[i];
 			AGGR_CLEANUP();
 			throw(MAL, "array.@4", "range of dimension BAT %d (%d) does not match its size (%d)",
-				i, (int) (dMax[i] - dMin[i] + 1), dSize[i]);
+				i, rng, sz);
 		}
-
+		*/
 		arrsze /= dSize[i];
 		assert(arrsze);
 	}

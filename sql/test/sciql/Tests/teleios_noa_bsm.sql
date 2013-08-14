@@ -116,20 +116,6 @@ UPDATE fire SET f = x * size_y + y WHERE f IS NOT NULL;
 ---- does not yet support structural grouping (tiling) with non-rectangular
 ---- windows (tiles).
 ---- The SciQL implementation does not support this non-rectangular GROUP BY, yet:
---CREATE FUNCTION clump_4connected_1()
---RETURNS TABLE (i INT, a INT)
---BEGIN
---  RETURN
---    SELECT i, MAX(a)
---    FROM (
---      SELECT f AS i, MAX(f) AS a
---      FROM fire
---      GROUP BY fire[x][y], fire[x+1][y], fire[x][y+1], fire[x-1][y], fire[x][y-1]
---      HAVING f IS NOT NULL and f <> MAX(f)
---    ) AS t
---    GROUP BY i;
---END;
----- Hence, we work-around using two rectangular GROUP BY's:
 CREATE FUNCTION clump_4connected_1()
 RETURNS TABLE (i INT, a INT)
 BEGIN
@@ -138,16 +124,30 @@ BEGIN
     FROM (
       SELECT f AS i, MAX(f) AS a
       FROM fire
-      GROUP BY fire[x][y-1:y+2]
-      HAVING f IS NOT NULL and f <> MAX(f)
-      UNION ALL
-      SELECT f AS i, MAX(f) AS a
-      FROM fire
-      GROUP BY fire[x-1:x+2][y]
+      GROUP BY fire[x][y], fire[x+1][y], fire[x][y+1], fire[x-1][y], fire[x][y-1]
       HAVING f IS NOT NULL and f <> MAX(f)
     ) AS t
     GROUP BY i;
 END;
+---- Hence, we work-around using two rectangular GROUP BY's:
+--CREATE FUNCTION clump_4connected_1()
+--RETURNS TABLE (i INT, a INT)
+--BEGIN
+--  RETURN
+--    SELECT i, MAX(a)
+--    FROM (
+--      SELECT f AS i, MAX(f) AS a
+--      FROM fire
+--      GROUP BY fire[x][y-1:y+2]
+--      HAVING f IS NOT NULL and f <> MAX(f)
+--      UNION ALL
+--      SELECT f AS i, MAX(f) AS a
+--      FROM fire
+--      GROUP BY fire[x-1:x+2][y]
+--      HAVING f IS NOT NULL and f <> MAX(f)
+--    ) AS t
+--    GROUP BY i;
+--END;
 CREATE FUNCTION clump_4connected()
 RETURNS TABLE (i1 INT, i2 INT)
 BEGIN

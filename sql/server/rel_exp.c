@@ -397,7 +397,7 @@ exp_column(sql_allocator *sa, char *rname, char *cname, sql_subtype *t, int card
 	if (drngs) { /* dimension ranges */
 		node *n = NULL;
 
-		assert(list_length(drngs) == 3);
+		assert(list_length(drngs) >= 3);
 
 		e->f = sa_list(sa);
 		n = drngs->h;

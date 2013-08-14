@@ -818,7 +818,7 @@ rel_arrayslice(mvc *sql, sql_table *t, char *tname, symbol *dimref)
 
 		sf = sql_bind_func_(sql->sa, mvc_bind_schema(sql, "sys"), "array_slice", exps_subtype(slc_args), F_FILT);
 		if (!sf)
-			return sql_error(sql, 02, "failed to bind to the SQL function \"array_slice\"");
+			return sql_error(sql, 02, "failed to bind to the SciQL function \"array_slice\"");
 
 		/* apply our array_slice filter function on all columns of the sliced array */
 		for (cn = cols->h; cn; cn = cn->next) {
@@ -2389,7 +2389,7 @@ rel_arraytiling(mvc *sql, sql_rel **rel, symbol *tile_def, int f, str *aname)
 		 * it as an expression; otherwise get the step value from the dimension range */
 		exp_os_ste = (dlist_length(dn->data.lval) == 3) ?
 			rel_check_type(sql, exp_subtype(d_rng->h->next->data), rel_value_exp(sql, rel, dn->data.lval->h->next->data.sym, sql_where, ek), type_cast) :
-			exp_copy(sql->sa, d_rng->h->next->data);
+			(dlist_length(dn->data.lval) == 2)? exp_copy(sql->sa, d_rng->h->next->data) : NULL;
 
 		/* array tiling range stop, which, in case of a single <index_term>, is
 		 * just 'start+step' to make the range only include '0'.
@@ -2401,10 +2401,7 @@ rel_arraytiling(mvc *sql, sql_rel **rel, symbol *tile_def, int f, str *aname)
 		 *    an exp_atom with "0" if not specified (case SQL_COLUMN), and
 		 *    append it to 'offsets'.
 		 */
-		if (dlist_length(dn->data.lval) == 1) {
-			exp_os_sto = exp_binop(sql->sa, exp_copy(sql->sa, exp_os_sta), exp_copy(sql->sa, exp_os_ste), 
-					sql_bind_func(sql->sa, sql->session->schema, "sql_add", st, st, F_FUNC));
-		} else {
+		if (dlist_length(dn->data.lval) > 1) {
 			sym_tsto = (dlist_length(dn->data.lval) == 2) ? dn->data.lval->h->next->data.sym : dn->data.lval->h->next->next->data.sym;
 			switch (sym_tsto->token) {
 				case SQL_COLUMN: /* '<column>' */
@@ -2438,9 +2435,13 @@ rel_arraytiling(mvc *sql, sql_rel **rel, symbol *tile_def, int f, str *aname)
 					return sql_error(sql, 02, "SELECT: expressions in array tiling specification other than \"<column> [ '+' | '-' <exp> ]\" are not supported yet");
 			}
 		}
+
 		append(offsets, exp_os_sta);
-		append(offsets, exp_os_ste);
-		append(offsets, exp_os_sto);
+		if (exp_os_ste != NULL) {
+			assert(exp_os_sto != NULL);
+			append(offsets, exp_os_ste);
+			append(offsets, exp_os_sto);
+		}
 		((list*)exp->f)->h->next->next->data = offsets;
 	}
 
@@ -2451,7 +2452,9 @@ rel_arraytiling(mvc *sql, sql_rel **rel, symbol *tile_def, int f, str *aname)
 			/* This dimension has no tiling range, i.e., the '[*]' case or an
 			 * omitted dimension.  Use the slicing/original range as the tiling
 			 * range to get the whole column included in a tile */
-			((list*)ce->f)->h->next->next->data = list_length(((list*)ce->f)->h->next->data) ? ((list*)ce->f)->h->next->data : ((list*)ce->f)->h->data;
+			((list*)ce->f)->h->next->next->data =
+				list_length(((list*)ce->f)->h->next->data) > 0 ?
+				((list*)ce->f)->h->next->data : ((list*)ce->f)->h->data;
 		}
 	}
 
@@ -4297,7 +4300,7 @@ add_columns(list *exps, sql_exp *exp)
 static sql_exp *
 _rel_tiling_aggr(mvc *sql, sql_rel **rel, sql_rel *groupby, int distinct, char *aggrstr, symbol *sym, int f)
 {
-	sql_exp *exp = NULL, *re_sta = NULL, *re_ste = NULL, *re_sto = NULL, **dim = NULL, **oss = NULL;
+	sql_exp *exp = NULL, *re_sta = NULL, *re_ste = NULL, *re_sto = NULL, **dim = NULL;
 	sql_exp **os_sta = NULL, **os_ste = NULL, **os_sto = NULL; /* start/step/stop of the OffSet */
 	sql_exp **nrep = NULL, **ngrp = NULL, **dsize = NULL;
 	sql_subfunc *sf = NULL;
@@ -4342,11 +4345,10 @@ _rel_tiling_aggr(mvc *sql, sql_rel **rel, sql_rel *groupby, int distinct, char *
 	os_sta = SA_NEW_ARRAY(sql->sa, sql_exp*, t->valence);
 	os_ste = SA_NEW_ARRAY(sql->sa, sql_exp*, t->valence);
 	os_sto = SA_NEW_ARRAY(sql->sa, sql_exp*, t->valence);
-	oss    = SA_NEW_ARRAY(sql->sa, sql_exp*, t->valence);
 	dsize  = SA_NEW_ARRAY(sql->sa, sql_exp*, t->valence);
 	nrep = SA_NEW_ARRAY(sql->sa, sql_exp*, t->valence);
 	ngrp = SA_NEW_ARRAY(sql->sa, sql_exp*, t->valence);
-	if (!dim || !os_sta || !os_ste || !os_sto || !oss || !dsize || !nrep || !ngrp) {
+	if (!dim || !os_sta || !os_ste || !os_sto || !dsize || !nrep || !ngrp) {
 		return sql_error(sql, 02, "SELECT: failed to allocate space");
 	}
 
@@ -4355,9 +4357,7 @@ _rel_tiling_aggr(mvc *sql, sql_rel **rel, sql_rel *groupby, int distinct, char *
 
 	/* get all groupby dimension columns, and the ranges of each dimension and the tile on it */
 	for (cn = ((list*)groupby->r)->h, i = 0; cn; cn = cn->next, i++) {
-
 		dim[i] = cn->data;
-		assert(list_length(dim[i]->f) == 3);
 
 		/* If the dimension has been sliced, use the sliced range; otherwise the original range */
 		rng = list_length(((list*)dim[i]->f)->h->next->data) ? ((list*)dim[i]->f)->h->next->data : ((list*)dim[i]->f)->h->data;
@@ -4382,8 +4382,8 @@ _rel_tiling_aggr(mvc *sql, sql_rel **rel, sql_rel *groupby, int distinct, char *
 
 		rng = ((list*)dim[i]->f)->h->next->next->data;
 		os_sta[i] = rng->h->data;
-		os_ste[i] = rng->h->next->data;
-		os_sto[i] = rng->h->next->next->data;
+		os_ste[i] = list_length(rng)==3?rng->h->next->data:NULL;
+		os_sto[i] = list_length(rng)==3?rng->h->next->next->data:NULL;
 	}
 
 	/* Compute the repeatings, see the formula in rel_schema.c.
@@ -4392,29 +4392,31 @@ _rel_tiling_aggr(mvc *sql, sql_rel **rel, sql_rel *groupby, int distinct, char *
 	for (i = 0; i < t->valence; i++)
 		nrep[i] = ngrp[i] = exp_atom_int(sql->sa, 1);
 	for (i = 0; i < t->valence; i++){
-		if (!(sf = sql_bind_func(sql->sa, sql->session->schema, "sql_sub", exp_subtype(os_sto[i]), exp_subtype(os_sta[i]), F_FUNC)))
-			return sql_error(sql, 02, "failed to bind to the SQL function \"-\"");
-		exp = exp_binop(sql->sa, os_sto[i], os_sta[i], sf);
+		if (os_ste[i] != NULL) { /* otherwise, it's a point-range, and nrep[i] and ngrp[i] are just 1 */
+			if (!(sf = sql_bind_func(sql->sa, sql->session->schema, "sql_sub", exp_subtype(os_sto[i]), exp_subtype(os_sta[i]), F_FUNC)))
+				return sql_error(sql, 02, "failed to bind to the SQL function \"-\"");
+			exp = exp_binop(sql->sa, os_sto[i], os_sta[i], sf);
 
-		if (!(sf = sql_bind_func(sql->sa, sql->session->schema, "sql_div", &st_flt, &st_flt, F_FUNC)))
-			return sql_error(sql, 02, "failed to bind to the SQL function \"/\"");
-		exp = exp_binop(sql->sa,
-				rel_check_type(sql, &st_flt, exp, type_cast),
-				rel_check_type(sql, &st_flt, exp_copy(sql->sa, os_ste[i]), type_cast), sf);
+			if (!(sf = sql_bind_func(sql->sa, sql->session->schema, "sql_div", &st_flt, &st_flt, F_FUNC)))
+				return sql_error(sql, 02, "failed to bind to the SQL function \"/\"");
+			exp = exp_binop(sql->sa,
+					rel_check_type(sql, &st_flt, exp, type_cast),
+					rel_check_type(sql, &st_flt, exp_copy(sql->sa, os_ste[i]), type_cast), sf);
 
-		if (!(sf = sql_bind_func(sql->sa, sql->session->schema, "ceil", exp_subtype(exp), NULL, F_FUNC)))
-			return sql_error(sql, 02, "failed to bind to the SQL function \"ceil\"");
-		exp = rel_check_type(sql, &st_int, exp_op(sql->sa, append(new_exp_list(sql->sa), exp), sf), type_cast);
+			if (!(sf = sql_bind_func(sql->sa, sql->session->schema, "ceil", exp_subtype(exp), NULL, F_FUNC)))
+				return sql_error(sql, 02, "failed to bind to the SQL function \"ceil\"");
+			exp = rel_check_type(sql, &st_int, exp_op(sql->sa, append(new_exp_list(sql->sa), exp), sf), type_cast);
 
-		for (j = 0; j < i; j++) {
-			if (!(sf = sql_bind_func(sql->sa, sql->session->schema, "sql_mul", exp_subtype(nrep[j]), exp_subtype(exp), F_FUNC)))
-				return sql_error(sql, 02, "failed to bind to the SQL function \"*\"");
-			nrep[j] = exp_binop(sql->sa, nrep[j], exp, sf);
-		}
-		for (j = t->valence-1; j > i; j--) {
-			if (!(sf = sql_bind_func(sql->sa, sql->session->schema, "sql_mul", exp_subtype(ngrp[j]), exp_subtype(exp), F_FUNC)))
-				return sql_error(sql, 02, "failed to bind to the SQL function \"*\"");
-			ngrp[j] = exp_binop(sql->sa, ngrp[j], exp, sf);
+			for (j = 0; j < i; j++) {
+				if (!(sf = sql_bind_func(sql->sa, sql->session->schema, "sql_mul", exp_subtype(nrep[j]), exp_subtype(exp), F_FUNC)))
+					return sql_error(sql, 02, "failed to bind to the SQL function \"*\"");
+				nrep[j] = exp_binop(sql->sa, nrep[j], exp, sf);
+			}
+			for (j = t->valence-1; j > i; j--) {
+				if (!(sf = sql_bind_func(sql->sa, sql->session->schema, "sql_mul", exp_subtype(ngrp[j]), exp_subtype(exp), F_FUNC)))
+					return sql_error(sql, 02, "failed to bind to the SQL function \"*\"");
+				ngrp[j] = exp_binop(sql->sa, ngrp[j], exp, sf);
+			}
 		}
 	}
 
@@ -4427,17 +4429,25 @@ _rel_tiling_aggr(mvc *sql, sql_rel **rel, sql_rel *groupby, int distinct, char *
 		append(aggr_types, exp_subtype(dim[i]));
 
 		/* The offset column */
+		if (os_ste[i] != NULL) {
+			/* Build a list of args 'srs_args' with all parameters to
+			 * 'array_series1' to compute the materialised offsets for each
+			 * dimension */
+			append(srs_args, os_sta[i]);
+			append(srs_args, os_ste[i]);
+			append(srs_args, os_sto[i]);
+			append(srs_args, nrep[i]);
+			append(srs_args, ngrp[i]);
+			if (!(sf = sql_bind_func_(sql->sa, mvc_bind_schema(sql, "sys"), "array_series1", exps_subtype(srs_args), F_FUNC)))
+				return sql_error(sql, 02, "failed to bind to the SciQL function \"array_series1\"");
+		} else {
+			for (cn = ((list*)dim[i]->f)->h->next->next; cn; cn = cn->next) {
+				append(srs_args, ((list*)cn->data)->h->data);
+			}
+			if (!(sf = sql_bind_func_(sql->sa, mvc_bind_schema(sql, "sys"), "array_offsets", exps_subtype(srs_args), F_FUNC)))
+				return sql_error(sql, 02, "failed to bind to the SciQL function \"array_offsets\"");
+		}
 
-		/* Build a list of args 'srs_args' with all parameters to
-		 * 'array_series1' to compute the materialised offsets 'oss' for
-		 * each dimension */
-		append(srs_args, os_sta[i]);
-		append(srs_args, os_ste[i]);
-		append(srs_args, os_sto[i]);
-		append(srs_args, nrep[i]);
-		append(srs_args, ngrp[i]);
-		if (!(sf = sql_bind_func_(sql->sa, mvc_bind_schema(sql, "sys"), "array_series1", exps_subtype(srs_args), F_FUNC)))
-			return sql_error(sql, 02, "failed to bind to the SQL function \"array_series1\"");
 		/* have to build the list of types "by hand", since the call to
 		 * 'array_series1' is of the type "bat", which causes the
 		 * sql_bind_func_ below to fail */
@@ -4449,7 +4459,7 @@ _rel_tiling_aggr(mvc *sql, sql_rel **rel, sql_rel *groupby, int distinct, char *
 		append(aggr_types, &st_int);
 	}
 	if (!(sf = sql_bind_func_(sql->sa, mvc_bind_schema(sql, "sys"), aggrstr2, aggr_types, F_FUNC)))
-		return sql_error(sql, 02, "failed to bind to the SQL function \"%s\"", aggrstr2);
+		return sql_error(sql, 02, "failed to bind to the SciQL function \"%s\"", aggrstr2);
 	exp = exp_op(sql->sa, aggr_args, sf);
 	if (!exp->name) {
 		char name[16], *nme = NULL;
@@ -4908,6 +4918,32 @@ rel_selection_ref(mvc *sql, sql_rel *rel, symbol *grp, dlist *selection )
 }
 
 static list *
+add_tiling_ranges(mvc *sql, list *l, list *r)
+{
+	node *nl = NULL, *nr = NULL;
+	
+	assert(l && r && list_length(l) == list_length(r));
+
+	/* Walk over all dimensions.  For each dimension, merge the new tiling
+	 * ranges in 'r' into existing ranges in 'l'.
+	 */
+	for (nl = l->h, nr = r->h; nl && nr; nl = nl->next, nr = nr->next) {
+		sql_exp *cl = nl->data, *cr = nr->data;
+
+		assert(cl->type == e_column && cl->f && cr->type == e_column && cr->f);
+		if (list_length(((list*)cr->f)->h->next->next->data) > 1) {
+			return sql_error(sql, 02, "SELECT: array tiles with mixed point range and interval range not supported yet\n");
+		}
+		/* NB: in the ->f list of an e-column, the 3rd and more lists are all
+		 * tiling ranges. Let's wait and see if this is handy. maybe we want to
+		 * define that the 3rd list of e-column->f is a list of tiling ranges
+		 */
+		list_append(cl->f, ((list*)cr->f)->h->next->next->data);
+	}
+	return l;
+}
+
+static list *
 rel_group_by(mvc *sql, sql_rel *rel, symbol *groupby, dlist *selection, int f )
 {
 	sql_rel *or = rel;
@@ -4925,7 +4961,11 @@ rel_group_by(mvc *sql, sql_rel *rel, symbol *groupby, dlist *selection, int f )
 			if (!(es = rel_arraytiling(sql, &rel, grp, f, &aname)))
 				return NULL;
 			/* FIXME: shouldn't we do the same error checks as the case of normal GROUP BY below? */
-			exps = list_merge(exps, es, (fdup)NULL);
+			if (list_length(exps) == 0) {
+				exps = list_merge(exps, es, (fdup)NULL);
+			} else {
+				exps = add_tiling_ranges(sql, exps, es);
+			}
 			found_sgb += 1;
 			if (o->next->type == type_int) {
 				if (o->next->data.i_val) {
