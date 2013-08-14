@@ -27,5 +27,6 @@ structural_joins
 
 # tiling based on dimensional attributes
 vector_fixed_tiles
+vector_multi_tiles
 #
 # tiling based on mix of dimensional attribues
