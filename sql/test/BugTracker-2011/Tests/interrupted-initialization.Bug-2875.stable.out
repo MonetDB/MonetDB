@@ -17,20 +17,6 @@ stdout of test 'interrupted-initialization.Bug-2875` in directory 'sql/test/BugT
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 START TRANSACTION;
-SET SCHEMA "sys";
-CREATE TABLE "sys"."statistics" (
-	"schema" CHARACTER LARGE OBJECT,
-	"table"  CHARACTER LARGE OBJECT,
-	"column" CHARACTER LARGE OBJECT,
-	"type"   CHARACTER LARGE OBJECT,
-	"stamp"  TIMESTAMP,
-	"count"  BIGINT,
-	"unique" BIGINT,
-	"nils"   BIGINT,
-	"minval" CHARACTER LARGE OBJECT,
-	"maxval" CHARACTER LARGE OBJECT,
-	"sorted" BOOLEAN
-);
 COMMIT;
 # MonetDB 5 server v11.5.8
 # This is an unreleased version

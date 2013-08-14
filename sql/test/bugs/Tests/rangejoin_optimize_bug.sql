@@ -91,12 +91,12 @@ COPY 89 RECORDS INTO inputStat from STDIN USING DELIMITERS ',','\n';
 0,16,339,27,0,0,1,57,305782,-1,-1,-1,-1,-1,-1
 0,16,340,27,0,0,1,44,237142,-1,-1,-1,-1,-1,-1
 
-CREATE TABLE statistics(dir  int,seg  int,time_minute int,numvehicles int,lav   float,toll  int,accident int,accidentSeg int);
+CREATE TABLE test_statistics(dir  int,seg  int,time_minute int,numvehicles int,lav   float,toll  int,accident int,accidentSeg int);
 
-INSERT INTO  statistics (dir,seg,time_minute,numvehicles,lav,toll,accident,accidentSeg) Select dir, seg, tme+1, null,null,null,null,null from (select dir as dir , seg as seg, (time/60) as tme from inputStat where type = 0) AS tmpT Group by dir,seg,tme;
+INSERT INTO  test_statistics (dir,seg,time_minute,numvehicles,lav,toll,accident,accidentSeg) Select dir, seg, tme+1, null,null,null,null,null from (select dir as dir , seg as seg, (time/60) as tme from inputStat where type = 0) AS tmpT Group by dir,seg,tme;
 
-select count(*) from statistics;
-select count(*) from statistics where lav is null;
+select count(*) from test_statistics;
+select count(*) from test_statistics where lav is null;
 
 CREATE TABLE preLav( dir  int,seg  int,time_minute3 int,lav  float);
 
@@ -108,19 +108,19 @@ FROM    (SELECT  dir AS dir, seg AS seg, carid as carid, (time/60)+1 AS tme,  sp
                 GROUP BY dir,seg,carid,tme ) AS temp_B
         GROUP BY dir,seg,tme) AS temp_C;
 
-UPDATE statistics SET lav = (SELECT floor(avg(prelav.lav)) FROM   prelav WHERE  statistics.dir = prelav.dir AND statistics.seg = prelav.seg AND prelav.time_minute3 <= statistics.time_minute - 1);
+UPDATE test_statistics SET lav = (SELECT floor(avg(prelav.lav)) FROM   prelav WHERE  test_statistics.dir = prelav.dir AND test_statistics.seg = prelav.seg AND prelav.time_minute3 <= test_statistics.time_minute - 1);
 
-select count(*) from statistics where lav is null;
+select count(*) from test_statistics where lav is null;
 
-UPDATE statistics SET lav = (SELECT floor(avg(prelav.lav)) FROM   prelav WHERE  statistics.dir = prelav.dir AND statistics.seg = prelav.seg AND prelav.time_minute3  >= statistics.time_minute - 5);
+UPDATE test_statistics SET lav = (SELECT floor(avg(prelav.lav)) FROM   prelav WHERE  test_statistics.dir = prelav.dir AND test_statistics.seg = prelav.seg AND prelav.time_minute3  >= test_statistics.time_minute - 5);
 
-select count(*) from statistics where lav is null;
+select count(*) from test_statistics where lav is null;
 
-UPDATE statistics SET lav = (SELECT floor(avg(prelav.lav)) FROM   prelav WHERE  statistics.dir = prelav.dir AND statistics.seg = prelav.seg AND prelav.time_minute3 <= statistics.time_minute - 1 AND prelav.time_minute3 >= statistics.time_minute - 5);
+UPDATE test_statistics SET lav = (SELECT floor(avg(prelav.lav)) FROM   prelav WHERE  test_statistics.dir = prelav.dir AND test_statistics.seg = prelav.seg AND prelav.time_minute3 <= test_statistics.time_minute - 1 AND prelav.time_minute3 >= test_statistics.time_minute - 5);
 
-select count(*) from statistics;
-select count(*) from statistics where lav is null;
+select count(*) from test_statistics;
+select count(*) from test_statistics where lav is null;
 
 drop table inputStat;
-drop table statistics;
+drop table test_statistics;
 drop table preLav;

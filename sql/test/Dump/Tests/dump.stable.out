@@ -27,19 +27,6 @@ Ready.
 START TRANSACTION;
 CREATE SEQUENCE "sys"."test_seq" AS INTEGER;
 SET SCHEMA "sys";
-CREATE TABLE "sys"."statistics" (
-	"schema" CHARACTER LARGE OBJECT,
-	"table"  CHARACTER LARGE OBJECT,
-	"column" CHARACTER LARGE OBJECT,
-	"type"   CHARACTER LARGE OBJECT,
-	"stamp"  TIMESTAMP,
-	"count"  BIGINT,
-	"unique" BIGINT,
-	"nils"   BIGINT,
-	"minval" CHARACTER LARGE OBJECT,
-	"maxval" CHARACTER LARGE OBJECT,
-	"sorted" BOOLEAN
-);
 CREATE TABLE "sys"."test" (
 	"id" INTEGER,
 	"i"  SMALLINT      DEFAULT next value for "sys"."test_seq"

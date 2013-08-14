@@ -31,20 +31,6 @@ CREATE SCHEMA "test" AUTHORIZATION "test";
 CREATE SCHEMA "voc" AUTHORIZATION "voc";
 ALTER USER "test" SET SCHEMA "test";
 ALTER USER "voc" SET SCHEMA "voc";
-SET SCHEMA "sys";
-CREATE TABLE "sys"."statistics" (
-	"schema" CHARACTER LARGE OBJECT,
-	"table"  CHARACTER LARGE OBJECT,
-	"column" CHARACTER LARGE OBJECT,
-	"type"   CHARACTER LARGE OBJECT,
-	"stamp"  TIMESTAMP,
-	"count"  BIGINT,
-	"unique" BIGINT,
-	"nils"   BIGINT,
-	"minval" CHARACTER LARGE OBJECT,
-	"maxval" CHARACTER LARGE OBJECT,
-	"sorted" BOOLEAN
-);
 SET SCHEMA "voc";
 CREATE TABLE "voc"."foo" (
 	"id" INTEGER       NOT NULL,

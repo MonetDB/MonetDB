@@ -20,15 +20,15 @@ Ready.
 
 #create table tmp(name string, id int);
 #insert into tmp select name, id from tables where "type" = 0;
-[ 26	]
+[ 27	]
 #select count(*) from tmp;
 % sys.L1 # table_name
 % L1 # name
 % wrd # type
 % 2 # length
-[ 26	]
+[ 27	]
 #delete from tmp;
-[ 26	]
+[ 27	]
 #select count(*) from tmp;
 % sys.L1 # table_name
 % L1 # name
@@ -36,15 +36,15 @@ Ready.
 % 1 # length
 [ 0	]
 #insert into tmp select name, id from tables where "type" = 0;
-[ 26	]
+[ 27	]
 #select count(*) from tmp;
 % sys.L1 # table_name
 % L1 # name
 % wrd # type
 % 2 # length
-[ 26	]
+[ 27	]
 #delete from tmp;
-[ 26	]
+[ 27	]
 #select count(*) from tmp;
 % sys.L1 # table_name
 % L1 # name

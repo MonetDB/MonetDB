@@ -75,6 +75,7 @@ mTests_sql_jdbc_tests	sys	objects	SYSTEM TABLE	null	null	null	null	rowid	SYSTEM
 mTests_sql_jdbc_tests	sys	privileges	SYSTEM TABLE	null	null	null	null	rowid	SYSTEM	
 mTests_sql_jdbc_tests	sys	schemas	SYSTEM TABLE	null	null	null	null	rowid	SYSTEM	
 mTests_sql_jdbc_tests	sys	sequences	SYSTEM TABLE	null	null	null	null	rowid	SYSTEM	
+mTests_sql_jdbc_tests	sys	statistics	SYSTEM TABLE	null	null	null	null	rowid	SYSTEM	
 mTests_sql_jdbc_tests	sys	storagemodelinput	SYSTEM TABLE	null	null	null	null	rowid	SYSTEM	
 mTests_sql_jdbc_tests	sys	systemfunctions	SYSTEM TABLE	null	null	null	null	rowid	SYSTEM	
 mTests_sql_jdbc_tests	sys	triggers	SYSTEM TABLE	null	null	null	null	rowid	SYSTEM	
