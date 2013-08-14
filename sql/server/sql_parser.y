@@ -314,6 +314,9 @@ int yydebug=1;
 	row_commalist
 	qname
 	qfunc
+	qrank
+	qaggr
+	qaggr2
 	routine_name
 	sort_specification_list
 	opt_schema_element_list
@@ -3511,7 +3514,7 @@ window_function:
   ;
 
 window_function_type:
-	RANK '(' ')' 	{ $$ = _symbol_create( SQL_RANK, $1 ); }
+	qrank '(' ')' 	{ $$ = _symbol_create_list( SQL_RANK, $1 ); }
   |	aggr_ref
   ;
 
@@ -3782,50 +3785,59 @@ atom:
 	}
  ;
 
+qrank:
+	RANK		{ $$ = append_string(L(), $1); }
+ |      ident '.' RANK	{ $$ = append_string(
+			  append_string(L(), $1), $3);}
+ ;
+
+qaggr:
+	AGGR		{ $$ = append_string(L(), $1); }
+ |      ident '.' AGGR	{ $$ = append_string(
+			  append_string(L(), $1), $3);}
+ ;
+
+qaggr2:
+	AGGR2		{ $$ = append_string(L(), $1); }
+ |      ident '.' AGGR2	{ $$ = append_string(
+			  append_string(L(), $1), $3);}
+ ;
 
 /* change to set function */
 aggr_ref:
-    AGGR '(' '*' ')'
+    qaggr '(' '*' ')'
 		{ dlist *l = L();
-  		  append_string(l, $1);
+  		  append_list(l, $1);
   		  append_int(l, FALSE);
   		  append_symbol(l, NULL);
 		  $$ = _symbol_create_list( SQL_AGGR, l ); }
- |  AGGR '(' ident '.' '*' ')'
+ |  qaggr '(' ident '.' '*' ')'
 		{ dlist *l = L();
-  		  append_string(l, $1);
+  		  append_list(l, $1);
   		  append_int(l, FALSE);
   		  append_symbol(l, NULL);
 		  $$ = _symbol_create_list( SQL_AGGR, l ); }
-/*
- |  AGGR '(' DISTINCT column_ref ')'
+ |  qaggr '(' DISTINCT case_scalar_exp ')'
 		{ dlist *l = L();
-  		  append_string(l, $1);
-  		  append_int(l, TRUE);
-  		  append_symbol(l, _symbol_create_list(SQL_COLUMN, $4));
-		  $$ = _symbol_create_list( SQL_AGGR, l ); }
-*/
- |  AGGR '(' DISTINCT case_scalar_exp ')'
-		{ dlist *l = L();
-  		  append_string(l, $1);
+  		  append_list(l, $1);
   		  append_int(l, TRUE);
   		  append_symbol(l, $4);
 		  $$ = _symbol_create_list( SQL_AGGR, l ); }
- |  AGGR '(' ALL case_scalar_exp ')'
+ |  qaggr '(' ALL case_scalar_exp ')'
 		{ dlist *l = L();
-  		  append_string(l, $1);
+  		  append_list(l, $1);
   		  append_int(l, FALSE);
   		  append_symbol(l, $4);
 		  $$ = _symbol_create_list( SQL_AGGR, l ); }
- |  AGGR '(' case_scalar_exp ')'
+ |  qaggr '(' case_scalar_exp ')'
 		{ dlist *l = L();
-  		  append_string(l, $1);
+  		  append_list(l, $1);
   		  append_int(l, FALSE);
   		  append_symbol(l, $3);
 		  $$ = _symbol_create_list( SQL_AGGR, l ); }
- |  AGGR2 '(' case_scalar_exp ',' case_scalar_exp ')'
+ |  qaggr2 '(' case_scalar_exp ',' case_scalar_exp ')'
 		{ dlist *l = L();
-  		  append_string(l, $1);
+  		  append_list(l, $1);
   		  append_int(l, FALSE);
   		  append_symbol(l, $3);
   		  append_symbol(l, $5);
@@ -5320,7 +5332,7 @@ XML_aggregate:
 			YYABORT;
 		}
 	  }
-	  append_string(aggr, "xmlagg");
+          append_list(aggr, append_string(append_string(L(), "sys"), "xmlagg"));
   	  append_int(aggr, FALSE);
 	  append_symbol(aggr, $3);
 	  /* int returning not used */
