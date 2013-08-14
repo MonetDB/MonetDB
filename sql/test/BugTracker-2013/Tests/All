@@ -36,3 +36,4 @@ incorrect_subquery_delete.Bug-3315
 constraint_checking.Bug_3335
 pivot.Bug-3339
 qualified_aggrname.Bug-3332
+cannot_use_columns_after_groupby.Bug-3340

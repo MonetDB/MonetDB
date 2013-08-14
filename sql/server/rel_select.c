@@ -1388,10 +1388,6 @@ sql_exp *
 rel_bind_column2( mvc *sql, sql_rel *rel, char *tname, char *cname, int f )
 {
 	(void)f;
-	/*
-	if (f == sql_sel && rel && is_project(rel->op) && !is_processed(rel))
-		rel = rel->l;
-		*/
 
 	if (!rel)
 		return NULL;
@@ -3647,6 +3643,8 @@ _rel_aggr(mvc *sql, sql_rel **rel, int distinct, sql_schema *s, char *aname, dno
 	gr = groupby->l;
 
 	no_nil = 1;
+
+	reset_processed(groupby);
 	for (	; args; args = args->next ) {
 		sql_exp *e = rel_value_exp(sql, &gr, args->data.sym, f, ek);
 
@@ -3654,10 +3652,13 @@ _rel_aggr(mvc *sql, sql_rel **rel, int distinct, sql_schema *s, char *aname, dno
 			rel_project_add_exp(sql, gr, e);
 			e = exp_alias_or_copy(sql, exp_relname(e), exp_name(e), gr->l, e);
 		}
-		if (!e)
+		if (!e) {
+			set_processed(groupby);
 			return NULL;
+		}
 		list_append(exps, e);
 	}
+	set_processed(groupby);
 	groupby->l = gr;
 
 	a = sql_bind_aggr_(sql->sa, s, aname, exp_types(sql->sa, exps));

@@ -247,6 +247,8 @@ typedef enum operator_type {
 	(rel->processed)
 #define set_processed(rel) \
 	rel->processed = 1
+#define reset_processed(rel) \
+	rel->processed = 0
 #define is_subquery(rel) \
 	(rel->subquery)
 #define set_subquery(rel) \
