@@ -3,7 +3,7 @@ CREATE ARRAY array1Dunbound(x INTEGER DIMENSION, v INTEGER DEFAULT 1);
 SELECT * FROM array1Dunbound;
 DROP ARRAY array1Dunbound;
 
--- relational equivalent , step size can be cast as constraint
+-- relational equivalent 
 CREATE TABLE array1Dunbound(x INTEGER, v INTEGER DEFAULT 1);
 SELECT * FROM array1Dunbound;
 DROP ARRAY array1Dunbound;

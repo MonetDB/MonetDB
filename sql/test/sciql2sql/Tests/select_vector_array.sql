@@ -22,7 +22,7 @@ SELECT x, v+w FROM vector;
 SELECT [x+2], v+w FROM array1D;
 
 -- relational equivalent
-SELECT x, v+w FROM vector;
+SELECT x+2, v+w FROM vector;
 
 -- extend array with constant y
 SELECT [x],[0], v+w FROM array1D;
@@ -40,7 +40,11 @@ CREATE TEMPORARY ARRAY tmp( v INTEGER DIMENSION, x INTEGER, w INTEGER);
 INSERT INTO tmp SELECT v,x,w FROM vector;
 -- which arbitrary drops elements.
 -- To mimick this all but one row of a group should be deleted.
--- TBD
+CREATE FUNCTION ord() RETURNS TABLE (v integer, x integer, w integer)
+BEGIN
+	RETURN SELECT row_number() as id, v,x,w FROM vector ORDER BY v,x,w;
+END;
+SELECT v, min(id) FROM ord() GROUP BY v;
 -- In a strongly typed setting, a coercion error should be raised when 
 SELECT (SELECT count(*) FROM vector)  = (SELECT count(*)
 	FROM vector

@@ -10,9 +10,10 @@ CREATE TABLE array1Dintval(idx INTEGER REFERENCES array1Dintdim(idx), v INTEGER 
 CREATE VIEW array1Dint 
 AS SELECT x,v FROM array1Dintdim, array1Dintval WHERE array1Dintdim.idx = array1Dintval.idx;
 
-INSERT INTO array1Dintdim VALUES (0,0),(1,4);
+-- the boundaries are known and can be initialized
+INSERT INTO array1Dintdim VALUES (0,0),(1,3);
 INSERT INTO array1Dintval VALUES (0,1),(1,1);
-SELECT * FROM array1Dintdim;
+SELECT * FROM array1Dint;
 
 DROP VIEW array1Dint;
 DROP TABLE array1Dintval;

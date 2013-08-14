@@ -22,6 +22,9 @@ slice_2d_array
 # selection with array type result 
 select_vector_array
 
+# all kind of array joins
+structural_joins
+
 # tiling based on dimensional attributes
 vector_fixed_tiles
 #
