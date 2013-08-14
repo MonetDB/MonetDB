@@ -17,21 +17,25 @@ SET ndviThreshold = 0; -- what is the correct value ?
 CALL rs.attach2('/tmp/img1_b3.tif');
 CALL rs.attach2('/tmp/img1_b4.tif');
 CALL rs.attach2('/tmp/img1_b7.tif');
+CALL rs.attach2('/tmp/img1_mask.tif');
 
 CALL rs.attach2('/tmp/img2_b3.tif');
 CALL rs.attach2('/tmp/img2_b4.tif');
 CALL rs.attach2('/tmp/img2_b7.tif');
+CALL rs.attach2('/tmp/img2_mask.tif');
 
 CALL rs.import2(1);
 CALL rs.import2(2);
 CALL rs.import2(3);
-
 CALL rs.import2(4);
+
 CALL rs.import2(5);
 CALL rs.import2(6);
+CALL rs.import2(7);
+CALL rs.import2(8);
 ---- Now the TIF images have been imported as the following:
----- b3, b4 and b7 of the 1st image as rs.image1, rs.image2 and rs.image3
----- b3, b4 and b7 of the 2nd image as rs.image4, rs.image5 and rs.image6
+---- b3, b4, b7 and mask of the 1st image as rs.image1, rs.image2, rs.image3 and rs.image4
+---- b3, b4, b7 and mask of the 2nd image as rs.image5, rs.image5, rs.image7 and rs.image8
 
 
 -- global variables and array --
@@ -55,9 +59,12 @@ CREATE ARRAY fire (x SMALLINT DIMENSION[size_x], y SMALLINT DIMENSION[size_y], f
 ---- version 1: using one image
 INSERT INTO fire (
   SELECT b3.x, b3.y, 1
-  FROM rs.image1 AS b3, rs.image2 AS b4, rs.image3 AS b7
-  WHERE b3.x = b4.x AND b3.y = b4.y AND b3.x = b7.x AND b3.y = b7.y -- join the images
-    AND b3.intensity <> 0 AND b4.intensity <> 0 AND b7.intensity <> 0
+  FROM rs.image1 AS b3, rs.image2 AS b4, rs.image3 AS b7, rs.image4 AS msk
+  WHERE b3.x =  b4.x AND b3.y =  b4.y -- join the images
+    AND b3.x =  b7.x AND b3.y =  b7.y -- join the images
+    AND b3.x = msk.x AND b3.y = msk.y -- join the images
+    AND msk.intensity = 1 -- cloud- & water-mask
+    AND b3.intensity > 0 AND b4.intensity > 0 AND b7.intensity > 0
     AND b4.intensity <= 60 -- indexNIR
     AND (b3.intensity + b4.intensity) / 2 <= 50 -- indexALBEDO
     AND (CAST(b4.intensity - b7.intensity AS REAL) / (b4.intensity + b7.intensity) + 1.0) * 127.5 <= 126.0 -- indexNBR, 255.0/2.0=127.5
