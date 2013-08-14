@@ -5870,7 +5870,7 @@ rel_apply_rewrite(int *changes, mvc *sql, sql_rel *rel)
 		return rel;
 	}
 	if (r->op == op_project) { /* merge projections */
-		if (!r->l) { // TODO check realy apply case 
+		if (!r->l) { /* TODO check realy apply case */
 			(*changes)++;
 			return l;
 		} else {
