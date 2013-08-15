@@ -2188,7 +2188,7 @@ drop_table(mvc *sql, char *sname, char *tname, int drop_action, int tt)
 		return sql_message("42000!DROP %s: cannot drop system %s '%s'", (tt==tt_table)?"TABLE":"ARRAY", (tt==tt_table)?"table":"array", tname);
 	} else if (!schema_privs(sql->role_id, s) && !(isTempSchema(s) && t->persistence == SQL_LOCAL_TEMP)){
 		return sql_message("42000!DROP %s: access denied for %s to schema ;'%s'", (tt==tt_table)?"TABLE":"ARRAY", stack_get_string(sql, "current_user"), s->base.name);
-	} else if ((tt == tt_table && t->valence > 0) || (tt == tt_array && t->valence == 0)) {
+	} else if ((tt == tt_table && isArray(t)) || (tt == tt_array && isTable(t))) {
 		return sql_message("42S02!DROP %s: '%s' is %s not %s, ", (tt==tt_table)?"TABLE":"ARRAY", tname, (tt==tt_table)?"an array":"a table", (tt==tt_table)?"a table":"an array");
 	}
 

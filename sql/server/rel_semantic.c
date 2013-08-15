@@ -180,6 +180,7 @@ rel_semantic(mvc *sql, symbol *s)
 	case SQL_DROP_ARRAY:
 	case SQL_DROP_VIEW:
 	case SQL_ALTER_TABLE:
+	case SQL_ALTER_ARRAY:
 
 	case SQL_GRANT:
 	case SQL_REVOKE:

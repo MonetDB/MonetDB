@@ -1177,7 +1177,7 @@ get_schema_name( mvc *sql, char *sname, char *tname)
 }
 
 static sql_rel *
-rel_alter_table(mvc *sql, dlist *qname, symbol *te)
+rel_alter_table(mvc *sql, int cat_type, dlist *qname, symbol *te)
 {
 	char *sname = qname_schema(qname);
 	char *tname = qname_table(qname);
@@ -1192,7 +1192,17 @@ rel_alter_table(mvc *sql, dlist *qname, symbol *te)
 		s = cur_schema(sql);
 
 	if ((t = mvc_bind_table(sql, s, tname)) == NULL) {
-		return sql_error(sql, 02, "42S02!ALTER TABLE: no such table '%s'", tname);
+		return sql_error(sql, 02, "42S02!ALTER %s: no such %s '%s'",
+				cat_type == DDL_ALTER_TABLE?"TABLE":"ARRAY", tname,
+				cat_type == DDL_ALTER_TABLE?"table":"array");
+	} else if ((cat_type == DDL_ALTER_TABLE && isArray(t)) ||
+		(cat_type == DDL_ALTER_ARRAY && isTable(t))) {
+		return sql_error(sql, 02, "42S02!ALTER %s: '%s' is %s not %s",
+				cat_type == DDL_ALTER_TABLE?"TABLE":"ARRAY", tname,
+				cat_type == DDL_ALTER_TABLE?"an array":"a table",
+				cat_type == DDL_ALTER_TABLE?"a table":"an array");
+	} else if (cat_type == DDL_ALTER_ARRAY) {
+		return sql_error(sql, 02, "42S02!ALTER ARRAY: altering array elements not supported yet");
 	} else {
 		node *n;
 		sql_rel *res = NULL, *r;
@@ -1756,10 +1766,12 @@ rel_schemas(mvc *sql, symbol *s)
 		ret = rel_schema(sql->sa, DDL_DROP_VIEW, sname, tname, l->h->next->data.i_val);
 	} 	break;
 	case SQL_ALTER_TABLE:
+	case SQL_ALTER_ARRAY:
 	{
 		dlist *l = s->data.lval;
 
 		ret = rel_alter_table(sql, 
+			(s->token == SQL_ALTER_TABLE)?DDL_ALTER_TABLE:DDL_ALTER_ARRAY,
 			l->h->data.lval,	/* table name */
 		  	l->h->next->data.sym);/* table element */
 	} 	break;
