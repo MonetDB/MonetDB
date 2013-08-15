@@ -2254,7 +2254,7 @@ _check_tiled_dimension(mvc *sql, char *dimnm, symbol *dim_ref)
 #define ARRAY_TILING_MAX_DIMS 3
 
 static list *
-rel_arraytiling(mvc *sql, sql_rel **rel, symbol *tile_def, int f, str *aname)
+rel_arraytiling(mvc *sql, sql_rel **rel, symbol *tile_def, int f, str *aname, int oneRange)
 {
 	list *exps = new_exp_list(sql->sa), *offsets = NULL;
 	node *n = NULL;
@@ -2386,10 +2386,21 @@ rel_arraytiling(mvc *sql, sql_rel **rel, symbol *tile_def, int f, str *aname)
 			st = exp_subtype(d_rng->h->data);
 
 		/* If a step is specified, we don't care what it exactly is, just treat
-		 * it as an expression; otherwise get the step value from the dimension range */
-		exp_os_ste = (dlist_length(dn->data.lval) == 3) ?
-			rel_check_type(sql, exp_subtype(d_rng->h->next->data), rel_value_exp(sql, rel, dn->data.lval->h->next->data.sym, sql_where, ek), type_cast) :
-			(dlist_length(dn->data.lval) == 2)? exp_copy(sql->sa, d_rng->h->next->data) : NULL;
+		 *  it as an expression;
+		 * otherwise get the step value from the dimension range for tiling
+		 *  spec. with only one range definition.
+		 * That is, for tiling group by such as:
+		 *   SELECT x, y, SUM(v) FROM a GROUP BY a[x][y:y+2];
+		 * We want to use 'array_series1' to generate a list of offsets for 'x',
+		 *  instead of using 'offsets' to generate a single value.
+		 * This is because the impl. of tiled AGGR requires that the offsets
+		 *  lists of all columns to be aligned (i.e., have the same length).
+		 */
+		if (dlist_length(dn->data.lval) == 3) {
+			exp_os_ste = rel_check_type(sql, exp_subtype(d_rng->h->next->data), rel_value_exp(sql, rel, dn->data.lval->h->next->data.sym, sql_where, ek), type_cast);
+		} else if (dlist_length(dn->data.lval) == 2 || oneRange) {
+			exp_os_ste = exp_copy(sql->sa, d_rng->h->next->data);
+		}
 
 		/* array tiling range stop, which, in case of a single <index_term>, is
 		 * just 'start+step' to make the range only include '0'.
@@ -2401,7 +2412,10 @@ rel_arraytiling(mvc *sql, sql_rel **rel, symbol *tile_def, int f, str *aname)
 		 *    an exp_atom with "0" if not specified (case SQL_COLUMN), and
 		 *    append it to 'offsets'.
 		 */
-		if (dlist_length(dn->data.lval) > 1) {
+		if (dlist_length(dn->data.lval) == 1 && oneRange) {
+			exp_os_sto = exp_binop(sql->sa, exp_copy(sql->sa, exp_os_sta), exp_copy(sql->sa, exp_os_ste), 
+					sql_bind_func(sql->sa, sql->session->schema, "sql_add", st, st, F_FUNC));
+		} else if (dlist_length(dn->data.lval) > 1) {
 			sym_tsto = (dlist_length(dn->data.lval) == 2) ? dn->data.lval->h->next->data.sym : dn->data.lval->h->next->next->data.sym;
 			switch (sym_tsto->token) {
 				case SQL_COLUMN: /* '<column>' */
@@ -4930,7 +4944,8 @@ add_tiling_ranges(mvc *sql, list *l, list *r)
 	for (nl = l->h, nr = r->h; nl && nr; nl = nl->next, nr = nr->next) {
 		sql_exp *cl = nl->data, *cr = nr->data;
 
-		assert(cl->type == e_column && cl->f && cr->type == e_column && cr->f);
+		assert(cl->type == e_column && cl->f && cr->type == e_column && cr->f && strcmp(cl->name, cr->name) ==0);
+
 		if (list_length(((list*)cr->f)->h->next->next->data) > 1) {
 			return sql_error(sql, 02, "SELECT: array tiles with mixed point range and interval range not supported yet\n");
 		}
@@ -4958,7 +4973,7 @@ rel_group_by(mvc *sql, sql_rel *rel, symbol *groupby, dlist *selection, int f )
 		list *es = NULL;
 		
 		if (grp->token == SQL_ARRAY_DIM_SLICE) {
-			if (!(es = rel_arraytiling(sql, &rel, grp, f, &aname)))
+			if (!(es = rel_arraytiling(sql, &rel, grp, f, &aname, dlist_length(groupby->data.lval) ==1)))
 				return NULL;
 			/* FIXME: shouldn't we do the same error checks as the case of normal GROUP BY below? */
 			if (list_length(exps) == 0) {
@@ -4967,13 +4982,6 @@ rel_group_by(mvc *sql, sql_rel *rel, symbol *groupby, dlist *selection, int f )
 				exps = add_tiling_ranges(sql, exps, es);
 			}
 			found_sgb += 1;
-			if (o->next->type == type_int) {
-				if (o->next->data.i_val) {
-					/* TODO: how do we pass this information? */
-					return sql_error(sql, 02, "SELECT: DISTINCT array tiles not supported yet\n");
-				}
-				o = o->next; /* skip the node containing the DISTINCT information */
-			}
 		} else {
 			e = rel_column_ref(sql, &rel, grp, f);
 

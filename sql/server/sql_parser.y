@@ -3152,8 +3152,7 @@ table_name:
 opt_group_by_clause:
     /* empty */ 		  { $$ = NULL; }
  |  sqlGROUP BY column_ref_commalist { $$ = _symbol_create_list( SQL_GROUPBY, $3 );}
- |  sqlGROUP BY tiling_commalist { $$ = _symbol_create_list( SQL_GROUPBY, append_int($3,0) );}
- |  sqlGROUP BY DISTINCT tiling_commalist { $$ = _symbol_create_list( SQL_GROUPBY, append_int($4,1) );}
+ |  sqlGROUP BY tiling_commalist { $$ = _symbol_create_list( SQL_GROUPBY, $3 );}
  ;
 
 tiling_commalist:
