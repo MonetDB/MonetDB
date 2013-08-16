@@ -46,6 +46,7 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	lng uniq = 0;
 	lng samplesize = 0;
 	int argc = pci->argc;
+	int width = 0;
 
 	if ( msg != MAL_SUCCEED || (msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
@@ -141,19 +142,34 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	GDKfree(val);\
 	break;\
 }
+				width = bn->T->width;
 				switch(bn->ttype){
 				case TYPE_sht: minmax(sht,"%d");
 				case TYPE_int: minmax(int,"%d");
 				case TYPE_lng: minmax(lng,LLFMT);
 				case TYPE_flt: minmax(flt,"%f");
 				case TYPE_dbl: minmax(dbl,"%f");
+				case TYPE_str:
+                {
+                    BUN p,q;
+                    double sum=0;
+                    BATiter bi = bat_iterator(bn);
+                    BATloop(bn,p,q){
+                        str s = BUNtail(bi,p);
+                        if( s != NULL && strcmp(s, str_nil))
+                            sum += (int) strlen(s);
+                    }
+                    if ( sz)
+                        width = (int) (sum/sz);
+                }
+
 				default:
 					snprintf(maxval,8192,"nil");
 					snprintf(minval,8192,"nil");
 				}
 				snprintf(query,8192,
-					"insert into sys.statistics values('%s','%s','%s','%s',now(),"LLFMT","LLFMT","LLFMT",'%s','%s',%s);",
-						b->name, bt->name, bc->name, c->type.type->sqlname,sz,uniq,nils, minval,maxval, sorted?"true":"false");
+					"insert into sys.statistics values('%s','%s','%s','%s',%d,now(),"LLFMT","LLFMT","LLFMT","LLFMT",'%s','%s',%s);",
+						b->name, bt->name, bc->name, c->type.type->sqlname,width, samplesize, sz, uniq, nils, minval,maxval, sorted?"true":"false");
 #ifdef DEBUG_SQL_STATISTICS
 				mnstr_printf(cntxt->fdout,"%s\n",dquery);
 				mnstr_printf(cntxt->fdout,"%s\n",query);
@@ -176,34 +192,6 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					return msg;
 				}
 			}
-
-			if (isTable(t) && t->idxs.set)
-				for (ncol= (t)->idxs.set->h; ncol; ncol= ncol->next){
-					sql_base *bc = ncol->data;
-					sql_idx *c= (sql_idx *) ncol->data;
-					if(c->type != no_idx){
-						BAT *bn = store_funcs.bind_idx(tr, c, 0);
-						lng sz= BATcount(bn);
-						sorted = BATtordered(bn);
-		
-						snprintf(query,8192,
-							"insert into sys.statistics values('%s','%s','%s','oid',now(),"LLFMT","LLFMT","LLFMT",'%s','%s',%s);",
-								b->name, bt->name, bc->name, sz,uniq,nils,minval,maxval,sorted?"true":"false");
-#ifdef DEBUG_SQL_STATISTICS
-						mnstr_printf(cntxt->fdout,"%s\n",query);
-#endif
-						BBPunfix(bn->batCacheid);
-						msg = SQLstatementIntern(cntxt,&query,"SQLanalyze",TRUE,FALSE);
-						if ( msg){
-							GDKfree(dquery);
-							GDKfree(query);
-							GDKfree(maxval);
-							GDKfree(minval);
-							return msg;
-						}
-					}
-				}
-		
 		}
 	}
 	GDKfree(dquery);
