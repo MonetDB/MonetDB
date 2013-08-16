@@ -1166,7 +1166,8 @@ BATorder_internal(BAT *b, int stable, int reverse, int copy, const char *func)
 		 * column needs to be key) */
 		return BATrevert(b);
 	}
-	if (do_sort(Hloc(b, BUNfirst(b)), Tloc(b, BUNfirst(b)),
+	if ((!(reverse && b->hrevsorted) && !(!reverse && b->hsorted)) &&
+	    do_sort(Hloc(b, BUNfirst(b)), Tloc(b, BUNfirst(b)),
 		    b->H->vheap ? b->H->vheap->base : NULL,
 		    BATcount(b), Hsize(b), Tsize(b), b->htype,
 		    reverse, stable) == GDK_FAIL) {
@@ -1408,7 +1409,15 @@ BATsubsort(BAT **sorted, BAT **order, BAT **groups,
 		bn->tsorted = r == 0 && !reverse;
 		bn->trevsorted = r == 0 && reverse;
 	} else {
-		if (do_sort(Tloc(bn, BUNfirst(bn)),
+		if (b->ttype == TYPE_void) {
+			b->tsorted = 1;
+			b->trevsorted = b->tseqbase == oid_nil || b->U->count <= 1;
+			b->tkey |= b->tseqbase != oid_nil;
+		} else if (b->U->count <= 1) {
+			b->tsorted = b->trevsorted = 1;
+		}
+		if ((!(reverse && bn->trevsorted) && !(!reverse && bn->tsorted)) &&
+		    do_sort(Tloc(bn, BUNfirst(bn)),
 			    on ? Tloc(on, BUNfirst(on)) : NULL,
 			    bn->T->vheap ? bn->T->vheap->base : NULL,
 			    BATcount(bn), Tsize(bn), on ? Tsize(on) : 0,
