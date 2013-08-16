@@ -177,7 +177,6 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		// we limit ourselfs to evaluation of the first assignment only.
 		setonce = assigned[getArg(p,0)] == 1;
 		OPTDEBUGevaluate printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_ALL);
-		constantblock +=  blockStart(p) && OPTallConstant(cntxt,mb,p);
 
 		/* be aware that you only assign once to a variable */
 		if (setonce && p->retc == 1 && OPTallConstant(cntxt, mb, p) && !isUnsafeFunction(p)) {
@@ -230,6 +229,7 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 				mb->errors = 0;
 			}
 		}
+		constantblock +=  blockStart(p) && OPTallConstant(cntxt,mb,p);
 	}
 	if ( constantblock )
 		actions += OPTremoveUnusedBlocks(cntxt, mb);
