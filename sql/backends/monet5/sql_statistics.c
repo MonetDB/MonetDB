@@ -169,7 +169,7 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				}
 				snprintf(query,8192,
 					"insert into sys.statistics values('%s','%s','%s','%s',%d,now(),"LLFMT","LLFMT","LLFMT","LLFMT",'%s','%s',%s);",
-						b->name, bt->name, bc->name, c->type.type->sqlname,width, samplesize, sz, uniq, nils, minval,maxval, sorted?"true":"false");
+						b->name, bt->name, bc->name, c->type.type->sqlname,width, (samplesize?samplesize:sz), sz, uniq, nils, minval,maxval, sorted?"true":"false");
 #ifdef DEBUG_SQL_STATISTICS
 				mnstr_printf(cntxt->fdout,"%s\n",dquery);
 				mnstr_printf(cntxt->fdout,"%s\n",query);
