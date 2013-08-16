@@ -697,12 +697,19 @@ ARRAYtiles_@4_@1_@8(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			throw(MAL, "array.@4", "head of offset BAT %d is not dense", i);
 		}
 		if (bDims[i]->hseqbase != arrbase || BATcount(bDims[i]) != arrcnt) {
+			oid arrbaseX = bDims[i]->hseqbase;
+			BUN arrcntX = BATcount(bDims[i]);
 			AGGR_CLEANUP();
-			throw(MAL, "array.@4", "head of dimension BAT %d is not aligned with head of value BAT", i);
+			throw(MAL, "array.@4", "head of dimension BAT %d is not aligned with head of value BAT (value: "OIDFMT", dim[%d]: "OIDFMT", value: "BUNFMT", dim[%d]: "BUNFMT")",
+				i, arrbase, i, arrbaseX, arrcnt, i, arrcntX);
+
 		}
 		if (bOffsets[i]->hseqbase != offbase || BATcount(bOffsets[i]) != offcnt) {
+			oid offbaseX = bOffsets[i]->hseqbase;
+			BUN offcntX = BATcount(bOffsets[i]);
 			AGGR_CLEANUP();
-			throw(MAL, "array.@4", "head of offset BAT %d is not aligned with head of offset BAT 0", i);
+			throw(MAL, "array.@4", "head of offset BAT %d is not aligned with head of offset BAT 0 (base[0]: "OIDFMT", base[%d]: "OIDFMT", count[0]: "BUNFMT", count[%d]: "BUNFMT")",
+				i, offbase, i, offbaseX, offcnt, i, offcntX);
 		}
 		if (bDims[i]->ttype != TYPE_@8) {
 			AGGR_CLEANUP();
