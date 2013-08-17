@@ -63,18 +63,12 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL,"analyze",MAL_MALLOC_FAIL);
 
 	switch(argc){
-	case 2:
-		tbl = *(str*) getArgReference(stk,pci,1);
-		break;
-	case 3:
-		sch = *(str*) getArgReference(stk,pci,1);
-		tbl = *(str*) getArgReference(stk,pci,2);
-		break;
 	case 4:
-		sch = *(str*) getArgReference(stk,pci,1);
-		tbl = *(str*) getArgReference(stk,pci,2);
 		col = *(str*) getArgReference(stk,pci,3);
-		break;
+	case 3:
+		tbl = *(str*) getArgReference(stk,pci,2);
+	case 2:
+		sch = *(str*) getArgReference(stk,pci,1);
 	}
 #ifdef DEBUG_SQL_STATISTICS
 	mnstr_printf(cntxt->fdout,"analyze %s.%s.%s sample "LLFMT"\n",(sch?sch:""),(tbl?tbl:" "),(col?col:" "),samplesize);
