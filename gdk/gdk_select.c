@@ -660,6 +660,8 @@ BAT_scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 		 * BUNlast(s) (i.e. s not fully used)? */
 		candlist = (const oid *) Tloc(s, p);
 		/* call type-specific core scan select function */
+		assert(b->batCapacity >= BATcount(b));
+		assert(s->batCapacity >= BATcount(s));
 		switch (ATOMstorage(b->ttype)) {
 		case TYPE_bte:
 			cnt = candscan_bte(scanargs);
@@ -684,6 +686,7 @@ BAT_scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 		}
 		if (cnt == BUN_NONE)
 			return NULL;
+		assert(bn->batCapacity >= cnt);
 	} else {
 		if (s) {
 			assert(BATtdense(s));
@@ -725,6 +728,7 @@ BAT_scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 		}
 		if (cnt == BUN_NONE)
 			return NULL;
+		assert(bn->batCapacity >= cnt);
 	}
 	BATsetcount(bn, cnt);
 	bn->tsorted = 1;

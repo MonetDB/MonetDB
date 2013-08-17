@@ -727,6 +727,7 @@ do {                                                              \
 		BBPunfix(b->batCacheid);
 		b = o;
 	}
+	assert(b->batCapacity >= BATcount(b));
 	return b;
 };
 
