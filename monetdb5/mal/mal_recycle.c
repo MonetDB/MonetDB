@@ -260,7 +260,7 @@ int chooseVictims(Client cntxt, int *leaves, int ltop)
 		mnstr_printf(cntxt->fdout,"#TO be evicted based on space %d\n" ,i);
 #endif
 
-	/* throw out all cheap instructions as well */
+	/* throw out all cheap leaf instructions as well */
 	for(l = i ; l< ltop; l++){
 		if ( recycleBlk->profiler[leaves[l]].ticks < recycleSearchTime/recycleSearchCalls){
 			leaves[i++] = leaves[l];
@@ -420,8 +420,6 @@ RECYCLEkeep(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p, RuntimeProfile 
 	lng clk= mb->profiler[pc].clk;
 	lng ticks= GDKusec() - clk;
 
-	if ( recycleSearchCalls  && ticks < recycleSearchTime/recycleSearchCalls)
-		return;
 	if ( recycleBlk->stop >= recycleCacheLimit)
 		return ; /* no more caching */
 	if ( recyclerMemoryUsed + mb->profiler[pc].wbytes > (lng) (MEMORY_THRESHOLD * monet_memory))
