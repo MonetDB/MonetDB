@@ -254,8 +254,11 @@ int chooseVictims(Client cntxt, int *leaves, int ltop)
 					break;
 				}
 			} else break; 
-	} else
+	} else{
 		i=1;	/* at least one instruction removed */
+		if ( ltop > 20) /* reduce 5% of the pool */
+			i = ltop/20;
+	}
 #ifdef _DEBUG_CACHE_
 		mnstr_printf(cntxt->fdout,"#To be evicted based on space %d and time %5.2f\n" ,i, ((double)recycleSearchTime) / recycleSearchCalls);
 		mnstr_printf(cntxt->fdout,"#leaf[%d], cheap benefit %6.2f\n" ,leaves[0], recycleProfit2(leaves[0]));
