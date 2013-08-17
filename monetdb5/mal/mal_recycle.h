@@ -33,7 +33,7 @@
 /*
  * We need some hard limits to not run out of datastructure spaces.
  */
-#define HARDLIMIT_STMT 250 /*5000*/
+#define HARDLIMIT_STMT 1000 /*5000*/
 
 #define NO_RECYCLING -1
 #define RECYCLING 1

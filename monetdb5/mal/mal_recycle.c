@@ -257,12 +257,13 @@ int chooseVictims(Client cntxt, int *leaves, int ltop)
 	} else
 		i=1;	/* at least one instruction removed */
 #ifdef _DEBUG_CACHE_
-		mnstr_printf(cntxt->fdout,"#TO be evicted based on space %d\n" ,i);
+		mnstr_printf(cntxt->fdout,"#To be evicted based on space %d and time %5.2f\n" ,i, ((double)recycleSearchTime) / recycleSearchCalls);
+		mnstr_printf(cntxt->fdout,"#leaf[%d], cheap benefit %6.2f\n" ,leaves[0], recycleProfit2(leaves[0]));
 #endif
 
 	/* throw out all cheap leaf instructions as well */
 	for(l = i ; l< ltop; l++){
-		if ( recycleBlk->profiler[leaves[l]].ticks < recycleSearchTime/recycleSearchCalls){
+		if ( (double) recycleBlk->profiler[leaves[l]].ticks < ((double)recycleSearchTime)/recycleSearchCalls){
 			leaves[i++] = leaves[l];
 #ifdef _DEBUG_CACHE_
 			mnstr_printf(cntxt->fdout,"#leaf[%d], cheap benefit %6.2f\n" ,leaves[l], recycleProfit2(leaves[l]));
@@ -270,7 +271,7 @@ int chooseVictims(Client cntxt, int *leaves, int ltop)
 		}
 	}
 #ifdef _DEBUG_CACHE_
-		mnstr_printf(cntxt->fdout,"#TO be evicted based on space +cheap %d\n" ,i);
+		mnstr_printf(cntxt->fdout,"#To be evicted based on space +cheap %d\n" ,i);
 #endif
 	
 	return i;
@@ -352,7 +353,7 @@ newpass:
 	vtop = chooseVictims(cntxt,leaves, ltop);
 
 #ifdef _DEBUG_CACHE_
-	mnstr_printf(cntxt->fdout,"#Evicted %d instruction(s) \n",vtop);
+	mnstr_printf(cntxt->fdout,"#Evicted ltop %d vtop %d instruction(s) \n",ltop,vtop);
 	for(v=0; v<vtop;v++){
 		mnstr_printf(cntxt->fdout,"#%d\t " LLFMT" ",leaves[v],recycleBlk->profiler[leaves[v]].ticks);
 		printInstruction(cntxt->fdout,recycleBlk,0,recycleBlk->stmt[leaves[v]], LIST_MAL_ALL);
