@@ -186,26 +186,26 @@ do {									    \
 	e = i+limit-pr_off;						    \
 	if (im[icnt] & mask) {						    \
 		if ((im[icnt] & ~innermask) == 0) {			    \
-			while (o < e && p <= q) {			    \
+			while (o < e && p < q) {			    \
 				v = src[o];				    \
 				ADD;					    \
 				cnt++;					    \
-				CAND;					    \
 				p++;					    \
+				CAND;					    \
 			}						    \
 		} else {						    \
-			while (o < e && p <= q) {			    \
+			while (o < e && p < q) {			    \
 				v = src[o];				    \
 				ADD;					    \
 				cnt += (TEST);				    \
-				CAND;					    \
 				p++;					    \
+				CAND;					    \
 			}						    \
 		}							    \
 	} else {							    \
 		while (o < e && p <= q) {				    \
-			CAND;						    \
 			p++;						    \
+			CAND;						    \
 		}							    \
 	}								    \
 } while (0)
@@ -222,7 +222,6 @@ do {									    \
 	cchdc_t *d = (cchdc_t *) imprints->dict->base;			    \
 	bte rpp    = ATOMelmshift(IMPS_PAGE >> b->T->shift);		    \
 	CAND;								    \
-	p++;								    \
 	for (i=0, dcnt=0, icnt=0;					    \
 	     (dcnt < imprints->dictcnt) && (i < w+pr_off);		    \
 	     dcnt++) {							    \
