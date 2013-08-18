@@ -3219,6 +3219,11 @@ rel_unop_(mvc *sql, sql_exp *e, sql_schema *s, char *fname, int card)
 			f->res.digits = t->digits;
 			f->res.scale = t->scale;
 		}
+		if (card == card_relation && e->card > CARD_ATOM) {
+			sql_subaggr *zero_or_one = sql_bind_aggr(sql->sa, sql->session->schema, "zero_or_one", exp_subtype(e));
+
+			e = exp_aggr1(sql->sa, e, zero_or_one, 0, 0, CARD_ATOM, 0);
+		}
 		return exp_unop(sql->sa, e, f);
 	} else if (e) {
 		char *type = exp_subtype(e)->type->sqlname;
@@ -3335,6 +3340,16 @@ rel_binop_(mvc *sql, sql_exp *l, sql_exp *r, sql_schema *s,
 			l = exp_sum_scales(sql, f, l, r);
 		} else if (f->func->fix_scale == DIGITS_ADD) {
 			f->res.digits = (t1->digits && t2->digits)?t1->digits + t2->digits:0;
+		}
+		if (card == card_relation && l->card > CARD_ATOM) {
+			sql_subaggr *zero_or_one = sql_bind_aggr(sql->sa, sql->session->schema, "zero_or_one", exp_subtype(l));
+
+			l = exp_aggr1(sql->sa, l, zero_or_one, 0, 0, CARD_ATOM, 0);
+		}
+		if (card == card_relation && r->card > CARD_ATOM) {
+			sql_subaggr *zero_or_one = sql_bind_aggr(sql->sa, sql->session->schema, "zero_or_one", exp_subtype(r));
+
+			r = exp_aggr1(sql->sa, r, zero_or_one, 0, 0, CARD_ATOM, 0);
 		}
 		return exp_binop(sql->sa, l, r, f);
 	} else {
@@ -3544,6 +3559,11 @@ rel_nop(mvc *sql, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 			if (!e) {
 				nexps = NULL;
 				break;
+			}
+			if (table_func && e->card > CARD_ATOM) {
+				sql_subaggr *zero_or_one = sql_bind_aggr(sql->sa, sql->session->schema, "zero_or_one", exp_subtype(e));
+
+				e = exp_aggr1(sql->sa, e, zero_or_one, 0, 0, CARD_ATOM, 0);
 			}
 			append(nexps, e);
 		}

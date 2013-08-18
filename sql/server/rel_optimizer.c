@@ -3816,6 +3816,10 @@ rel_reduce_groupby_exps(int *changes, mvc *sql, sql_rel *rel)
 		}
 		if (i) { /* forall tables find pkey and 
 				remove useless other columns */
+			/* TODO also remove group by columns which are related to
+			 * the other columns using a foreign-key join (n->1), ie 1
+			 * on the to be removed side.
+			 */
 			for(j = 0; j < i; j++) {
 				int l, nr = 0, cnr = 0;
 
@@ -5671,6 +5675,7 @@ rel_rename(mvc *sql, sql_rel *rel, list *aliases)
 		nme = number2name(name, 16, ++sql->label);
 		/* label + put aliases list into aliases */
 		nrel->l = rel->l;
+		nrel->r = rel->r;
 		nrel->exps = new_exp_list(sql->sa);
 		for (n = rel->exps->h; n; n = n->next) {
 			sql_exp *e = n->data, *ne, *a;
@@ -5743,7 +5748,10 @@ rel_apply_rename(mvc *sql, sql_rel *rel)
 		return rel;
 	switch(rel->op) {
 	case op_basetable:
+		return rel;
 	case op_table:
+		if (rel->l)
+			rel->l = rel_apply_rename(sql, rel->l);
 		return rel;
 	case op_project:
 	case op_select: 
@@ -5848,6 +5856,18 @@ rel_apply_rewrite(int *changes, mvc *sql, sql_rel *rel)
 		(*changes)++;
 		return nrel;
 	}
+	/* table function (TODO should output any input cols) */
+	if (r->op == op_table && r->l) {
+		/*
+		int used = rel_uses_exps(r->l, rel->exps);
+
+		if (used) {
+		*/
+			/* ugh */
+			r->l = rel->l;
+			return r;
+		//}
+	} 
 	if (r->op == op_table || r->op == op_basetable) {
 		if (rel->flag == APPLY_LOJ)
 			rel->op = op_left;
