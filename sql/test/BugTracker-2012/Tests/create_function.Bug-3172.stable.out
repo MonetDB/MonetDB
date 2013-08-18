@@ -18,7 +18,6 @@ stdout of test 'create_function.Bug-3172` in directory 'sql/test/BugTracker-2012
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
 
-Needs a proper error message!
 Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql

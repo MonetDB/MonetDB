@@ -25,16 +25,16 @@ stderr of test 'create_function.Bug-3172` in directory 'sql/test/BugTracker-2012
 # cmdline opt 	gdk_dbname = mTests_test_BugTracker-2012
 # cmdline opt 	mal_listing = 0
 
+# 16:07:20 >  
+# 16:07:20 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-27661" "--port=38365"
+# 16:07:20 >  
 
+MAPI  = (monetdb) /var/tmp/mtest-27661/.s.monetdb.38365
+QUERY = select * from x((select id from _tables), (select schema_id from _tables));
+ERROR = !TypeException:user.s0_1[41]:'mal.multiplex' undefined in: (_56:bat[:oid,:int], _59:bat[:oid,:int]) := mal.multiplex(_57:str, _58:str, _50:bat[:oid,:int], _53:bat[:oid,:int])
+        !program contains errors
 
-
-# 13:24:28 >  
-# 13:24:28 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=lodz" "--port=38620"
-# 13:24:28 >  
-
-Needs a proper error message!
-
-# 13:24:29 >  
-# 13:24:29 >  "Done."
-# 13:24:29 >  
+# 16:07:20 >  
+# 16:07:20 >  "Done."
+# 16:07:20 >  
 

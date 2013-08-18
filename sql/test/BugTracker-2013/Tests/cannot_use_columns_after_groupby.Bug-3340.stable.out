@@ -1,0 +1,42 @@
+stdout of test 'cannot_use_columns_after_groupby.Bug-3340` in directory 'sql/test/BugTracker-2013` itself:
+
+
+# 20:54:48 >  
+# 20:54:48 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=35773" "--set" "mapi_usock=/var/tmp/mtest-27846/.s.monetdb.35773" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/niels/scratch/rc-clean/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2013" "--set" "mal_listing=0"
+# 20:54:48 >  
+
+# MonetDB 5 server v11.15.12
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2013', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 3.775 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2013 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://niels.nesco.mine.nu:35773/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-27846/.s.monetdb.35773
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 20:54:49 >  
+# 20:54:49 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-27846" "--port=35773"
+# 20:54:49 >  
+
+#CREATE TABLE "sys"."filer_volumes" (
+#	     "filer"     VARCHAR(256)  NOT NULL,
+#	     "volume"    VARCHAR(256)  NOT NULL,
+#	     "claim_tb"  INTEGER,
+#	     "used_tb"   INTEGER,
+#	     "used_perc" SMALLINT,
+#	     "function"  VARCHAR(24),
+#	     CONSTRAINT "filer_volumes_filer_volume_pkey" PRIMARY KEY ("filer", "volume")
+#);
+#drop table filer_volumes;
+
+# 20:54:49 >  
+# 20:54:49 >  "Done."
+# 20:54:49 >  
+

@@ -38,7 +38,7 @@ OPTallConstant(Client cntxt, MalBlkPtr mb, InstrPtr p)
 	for (i = 0; i < p->retc; i++)
 		if (isaBatType(getArgType(mb, p, i)))
 			return FALSE;
-	return p->argc != p->retc;
+	return TRUE;
 }
 
 static int
@@ -115,6 +115,7 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	for (i = 1; i < limit; i++) {
 		p = getInstrPtr(mb, i);
 		for ( k =0;  k < p->retc; k++)
+		if ( p->retc != p->argc || p->token != ASSIGNsymbol )
 			assigned[getArg(p,k)]++;
 	}
 
@@ -124,14 +125,13 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 
 	for (i = 1; i < limit; i++) {
 		p = getInstrPtr(mb, i);
-		use = assigned[getArg(p,0)] == 1;
+		use = assigned[getArg(p,0)] == 1 && !(p->argc == p->retc && blockExit(p));
 		for (k = p->retc; k < p->argc; k++)
 			if (alias[getArg(p, k)])
 				getArg(p, k) = alias[getArg(p, k)];
 		OPTDEBUGevaluate printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_ALL);
 		/* be aware that you only assign once to a variable */
 		if (use && p->retc == 1 && OPTallConstant(cntxt, mb, p) && !isUnsafeFunction(p)) {
-			constantblock += p->barrier > 0;
 			barrier = p->barrier;
 			p->barrier = 0;
 			profiler = malProfileMode;	/* we don't trace it */
@@ -180,6 +180,7 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 				mb->errors = 0;
 			}
 		}
+		constantblock += p->barrier > 0 && OPTallConstant(cntxt, mb, p);
 	}
 	if ( constantblock)
 		actions += OPTremoveUnusedBlocks(cntxt, mb);

@@ -1193,8 +1193,9 @@ rel_alter_table(mvc *sql, int cat_type, dlist *qname, symbol *te)
 
 	if ((t = mvc_bind_table(sql, s, tname)) == NULL) {
 		return sql_error(sql, 02, "42S02!ALTER %s: no such %s '%s'",
-				cat_type == DDL_ALTER_TABLE?"TABLE":"ARRAY", tname,
-				cat_type == DDL_ALTER_TABLE?"table":"array");
+				cat_type == DDL_ALTER_TABLE?"TABLE":"ARRAY",
+				cat_type == DDL_ALTER_TABLE?"table":"array",
+				tname);
 	} else if ((cat_type == DDL_ALTER_TABLE && isArray(t)) ||
 		(cat_type == DDL_ALTER_ARRAY && isTable(t))) {
 		return sql_error(sql, 02, "42S02!ALTER %s: '%s' is %s not %s",
