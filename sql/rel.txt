@@ -138,7 +138,7 @@ for aggr
 e_column
 	-> rname alias for the relation (i.e., alias of ->l, used by higher expressions)
 	-> name alias for the expression (i.e., alias of ->r, used by higher expressions)
-		l,r names of refered expression
+		l,r names of referred expression
 	-> l 	optional relation name 
 	-> r	expression name
 	-> f	only used by the dimensional columns of the arrays
@@ -149,7 +149,7 @@ e_column
 			->h->next->next->data: the tiling ranges, is empty if there has been no tiling
 				for rectangular tiles, this is a list of three nodes, and there is no next
 				for non-rectangular tiles, this is a list of one node
-					(i.e., the single dimention value);
+					(i.e., the single dimension value);
 					more point-ranges are appended after this one
 						(i.e., ->h->next->next->...->data),
 						and they are all lists of one node.
