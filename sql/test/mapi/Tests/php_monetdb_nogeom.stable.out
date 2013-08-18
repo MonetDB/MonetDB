@@ -66,6 +66,7 @@ storage
 storagemodelinput
 storagemodel
 tablestoragemodel
+statistics
 systemfunctions
 id	name	schema_id	query	type	system	commit_action	readonly	temporary 	
 2001	schemas	2000		0	true	0	false	0	
@@ -101,13 +102,14 @@ id	name	schema_id	query	type	system	commit_action	readonly	temporary
 5595	optimizers	2000	create view sys.optimizers as select * from sys.optimizers();	1	true	0	false	0	
 5605	environment	2000	create view sys.environment as select * from sys.environment();	1	true	0	false	0	
 5647	queue	2000	create view sys.queue as select * from sys.queue();	1	true	0	false	0	
-5973	storage	2000	create view sys.storage as select * from sys.storage();	1	true	0	false	0	
-5985	storagemodelinput	2000		0	true	0	false	0	
-6028	storagemodel	2000	create view sys.storagemodel as select * from sys.storagemodel();	1	true	0	false	0	
-6037	tablestoragemodel	2000	-- A summary of the table storage requirement is is available as a table view.n-- The auxillary column denotes the maximum space if all non-sorted columnsn-- would be augmented with a hash (rare situation)ncreate view sys.tablestoragemodelnas select "schema","table",max(count) as "count",ntsum(columnsize) as columnsize,ntsum(heapsize) as heapsize,ntsum(indices) as indices,ntsum(case when sorted = false then 8 * count else 0 end) as auxillarynfrom sys.storagemodel() group by "schema","table";	1	true	0	false	0	
-6059	systemfunctions	2000		0	true	0	false	0	
+5977	storage	2000	create view sys.storage as select * from sys.storage();	1	true	0	false	0	
+5989	storagemodelinput	2000		0	true	0	false	0	
+6032	storagemodel	2000	create view sys.storagemodel as select * from sys.storagemodel();	1	true	0	false	0	
+6041	tablestoragemodel	2000	-- A summary of the table storage requirement is is available as a table view.n-- The auxillary column denotes the maximum space if all non-sorted columnsn-- would be augmented with a hash (rare situation)ncreate view sys.tablestoragemodelnas select "schema","table",max(count) as "count",ntsum(columnsize) as columnsize,ntsum(heapsize) as heapsize,ntsum(indices) as indices,ntsum(case when sorted = false then 8 * count else 0 end) as auxillarynfrom sys.storagemodel() group by "schema","table";	1	true	0	false	0	
+6056	statistics	2000		0	true	0	false	0	
+6110	systemfunctions	2000		0	true	0	false	0	
 
-# 09:54:42 >  
-# 09:54:42 >  "Done."
-# 09:54:42 >  
+# 16:45:49 >  
+# 16:45:49 >  "Done."
+# 16:45:49 >  
 
