@@ -1,0 +1,53 @@
+stdout of test 'bogus_aggregation_casts.Bug-3342` in directory 'sql/test/BugTracker-2013` itself:
+
+
+# 21:17:24 >  
+# 21:17:24 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30271" "--set" "mapi_usock=/var/tmp/mtest-12574/.s.monetdb.30271" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/niels/scratch/rc-clean/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2013" "--set" "mal_listing=0"
+# 21:17:24 >  
+
+# MonetDB 5 server v11.15.12
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2013', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 3.775 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2013 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://niels.nesco.mine.nu:30271/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-12574/.s.monetdb.30271
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 21:17:25 >  
+# 21:17:25 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-12574" "--port=30271"
+# 21:17:25 >  
+
+#create table part (p_partkey integer not null, p_name varchar(55) not null, p_mfgr char(25) not null, p_brand char(10) not null, p_type varchar(25) not null, p_size integer not null, p_container char(10) not null, p_retailprice decimal(12,2) not null, p_comment varchar(23) not null);
+#copy 5 records into part from stdin;
+#1|goldenrod lavender spring chocolate lace|Manufacturer#1|Brand#13|PROMO BURNISHED COPPER|7|JUMBO PKG|901.00|ly. slyly ironi|
+#2|maroon sky cream royal snow|Manufacturer#1|Brand#13|LARGE BRUSHED BRASS|1|LG CASE|902.00|lar accounts amo|
+#3|brown blue puff midnight black|Manufacturer#4|Brand#42|STANDARD POLISHED BRASS|21|WRAP CASE|903.00|egular deposits hag|
+#4|orange goldenrod peach misty seashell|Manufacturer#3|Brand#34|SMALL PLATED BRASS|14|MED DRUM|904.00|p furiously r|
+#5|midnight linen almond tomato plum|Manufacturer#3|Brand#32|STANDARD POLISHED TIN|15|SM PKG|905.00| wake carefully |
+[ 5	]
+#select sys.median(cast (p_retailprice as double)) from part;
+% sys.L1 # table_name
+% L1 # name
+% double # type
+% 24 # length
+[ 903	]
+#select sys.median(p_retailprice) from part;
+% sys.L1 # table_name
+% L1 # name
+% double # type
+% 24 # length
+[ 903	]
+#drop table part;
+
+# 21:17:25 >  
+# 21:17:25 >  "Done."
+# 21:17:25 >  
+
