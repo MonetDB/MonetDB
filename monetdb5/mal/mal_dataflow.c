@@ -268,7 +268,8 @@ DFLOWworker(void *t)
 	GDKsetbuf(GDKmalloc(GDKMAXERRLEN)); /* where to leave errors */
 	GDKerrbuf[0] = 0;
 	while (1) {
-		wq = workerqueue[id];
+		assert(workerqueue[id] > 0);
+		wq = workerqueue[id] - 1;
 		if (fnxt == 0)
 			fe = q_dequeue(todo[wq]);
 		else
@@ -376,6 +377,8 @@ DFLOWinitialize(int index)
 {
 	int i, worker, limit;
 
+	assert(index >= 0);
+	assert(index < THREADS);
 	MT_lock_set(&mal_contextLock, "DFLOWinitialize");
 	if (todo[index]) {
 		MT_lock_unset(&mal_contextLock, "DFLOWinitialize");
@@ -387,8 +390,10 @@ DFLOWinitialize(int index)
 		if( workers[worker] == 0)
 			break;
 	for (i = 0; i < limit; i++){
+		assert(workers[worker] == 0);
 		MT_create_thread(&workers[worker], DFLOWworker, (void *) &workers[worker], MT_THR_JOINABLE);
-		workerqueue[worker] = index;
+		assert(workers[worker] > 0);
+		workerqueue[worker] = index + 1;
 		for (; worker < THREADS; worker++)
 			if( workers[worker] == 0)
 				break;
