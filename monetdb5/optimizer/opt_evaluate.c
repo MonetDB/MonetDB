@@ -99,8 +99,8 @@ OPTremoveUnusedBlocks(Client cntxt, MalBlkPtr mb)
 				top--;
 				freeInstruction(p);
 				continue;
-			} 
-			if (skip )
+			}
+			if (skip)
 				freeInstruction(p);
 			else
 				mb->stmt[j++] = p;
@@ -229,10 +229,10 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 				mb->errors = 0;
 			}
 		}
-		constantblock +=  blockStart(p) && OPTallConstant(cntxt, mb, p);	/* default */
 		//constantblock += p->barrier > 0 && OPTallConstant(cntxt, mb, p);	/* Feb2013 */
+		constantblock +=  blockStart(p) && OPTallConstant(cntxt, mb, p);	/* default */
 	}
-	if ( constantblock )
+	if ( constantblock)
 		actions += OPTremoveUnusedBlocks(cntxt, mb);
 	GDKfree(assigned);
 	GDKfree(alias);

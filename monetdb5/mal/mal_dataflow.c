@@ -114,7 +114,6 @@ q_create(int sz, const char *name)
 {
 	Queue *q = (Queue*)GDKmalloc(sizeof(Queue));
 
-	(void) name;
 	if (q == NULL)
 		return NULL;
 	q->size = ((sz << 1) >> 1); /* we want a multiple of 2 */
