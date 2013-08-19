@@ -1162,7 +1162,7 @@ static stmt *
 rel2bin_table( mvc *sql, sql_rel *rel, list *refs)
 {
 	list *l; 
-	stmt *sub = NULL;
+	stmt *sub = NULL, *osub = NULL;
 	node *en, *n;
 	sql_exp *op = rel->r;
 
@@ -1194,17 +1194,20 @@ rel2bin_table( mvc *sql, sql_rel *rel, list *refs)
 			assert(0);
 			return NULL;	
 		}
-		sub = psub;
 		l = sa_list(sql->sa);
 		for(i = 0, n = t->columns.set->h; n; n = n->next, i++ ) {
 			sql_column *c = n->data;
-			stmt *s = stmt_rs_column(sql->sa, sub, i, &c->type); 
+			stmt *s = stmt_rs_column(sql->sa, psub, i, &c->type); 
 			char *nme = c->base.name;
 			char *rnme = exp_find_rel_name(op);
 
 			rnme = (rnme)?sa_strdup(sql->sa, rnme):NULL;
 			s = stmt_alias(sql->sa, s, rnme, sa_strdup(sql->sa, nme));
 			list_append(l, s);
+		}
+		if (sub && sub->nrcols) { /* add sub */
+			list_merge(l, sub->op4.lval, NULL);
+			osub = sub;
 		}
 		sub = stmt_list(sql->sa, l);
 	} else if (rel->l) {
@@ -1266,6 +1269,8 @@ rel2bin_table( mvc *sql, sql_rel *rel, list *refs)
 		s = stmt_alias(sql->sa, s, rnme, sa_strdup(sql->sa, exp->name));
 		list_append(l, s);
 	}
+	if (osub && osub->nrcols) 
+		list_merge(l, osub->op4.lval, NULL);
 	sub = stmt_list(sql->sa, l);
 	return sub;
 }

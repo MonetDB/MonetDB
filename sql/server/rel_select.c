@@ -1904,6 +1904,24 @@ exp_convert_inplace(mvc *sql, sql_subtype *t, sql_exp *exp)
 	return NULL;
 }
 
+static sql_exp *
+rel_numeric_supertype(mvc *sql, sql_exp *e )
+{
+	sql_subtype *tp = exp_subtype(e);
+
+	if (tp->type->eclass == EC_DEC) {
+		sql_subtype *dtp = sql_bind_localtype("dbl");
+
+		return rel_check_type(sql, dtp, e, type_cast);
+	}
+	if (tp->type->eclass == EC_NUM) {
+		sql_subtype *ltp = sql_bind_localtype("lng");
+
+		return rel_check_type(sql, ltp, e, type_cast);
+	}
+	return e;
+}
+
 sql_exp *
 rel_check_type(mvc *sql, sql_subtype *t, sql_exp *exp, int tpe)
 {
@@ -3219,6 +3237,11 @@ rel_unop_(mvc *sql, sql_exp *e, sql_schema *s, char *fname, int card)
 			f->res.digits = t->digits;
 			f->res.scale = t->scale;
 		}
+		if (card == card_relation && e->card > CARD_ATOM) {
+			sql_subaggr *zero_or_one = sql_bind_aggr(sql->sa, sql->session->schema, "zero_or_one", exp_subtype(e));
+
+			e = exp_aggr1(sql->sa, e, zero_or_one, 0, 0, CARD_ATOM, 0);
+		}
 		return exp_unop(sql->sa, e, f);
 	} else if (e) {
 		char *type = exp_subtype(e)->type->sqlname;
@@ -3335,6 +3358,16 @@ rel_binop_(mvc *sql, sql_exp *l, sql_exp *r, sql_schema *s,
 			l = exp_sum_scales(sql, f, l, r);
 		} else if (f->func->fix_scale == DIGITS_ADD) {
 			f->res.digits = (t1->digits && t2->digits)?t1->digits + t2->digits:0;
+		}
+		if (card == card_relation && l->card > CARD_ATOM) {
+			sql_subaggr *zero_or_one = sql_bind_aggr(sql->sa, sql->session->schema, "zero_or_one", exp_subtype(l));
+
+			l = exp_aggr1(sql->sa, l, zero_or_one, 0, 0, CARD_ATOM, 0);
+		}
+		if (card == card_relation && r->card > CARD_ATOM) {
+			sql_subaggr *zero_or_one = sql_bind_aggr(sql->sa, sql->session->schema, "zero_or_one", exp_subtype(r));
+
+			r = exp_aggr1(sql->sa, r, zero_or_one, 0, 0, CARD_ATOM, 0);
 		}
 		return exp_binop(sql->sa, l, r, f);
 	} else {
@@ -3545,6 +3578,11 @@ rel_nop(mvc *sql, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 				nexps = NULL;
 				break;
 			}
+			if (table_func && e->card > CARD_ATOM) {
+				sql_subaggr *zero_or_one = sql_bind_aggr(sql->sa, sql->session->schema, "zero_or_one", exp_subtype(e));
+
+				e = exp_aggr1(sql->sa, e, zero_or_one, 0, 0, CARD_ATOM, 0);
+			}
 			append(nexps, e);
 		}
 		if (nexps) 
@@ -3611,26 +3649,6 @@ _rel_aggr(mvc *sql, sql_rel **rel, int distinct, sql_schema *s, char *aname, dno
 			return e;
 		}
 		a = sql_bind_aggr(sql->sa, s, aname, NULL);
-		/* add aggr expression to the groupby, and return a
-			column expression */
-
-		/* for correlated selections, we need to count on the
-		   join expression */
-		/*
-		if (groupby->r && exps_intern(groupby->r)) {
-			sql_rel *i = groupby->l;
-
-			if (i->exps && f == sql_sel && is_join(i->op)) {
-				sql_rel *j = i->r;
-
-				sql_exp *e = j->exps->h->data;
-				assert(0);
-				e = exp_column(sql->sa, exp_relname(e), exp_name(e), exp_subtype(e), exp_card(e), has_nil(e), 0);
-				e = exp_aggr1(sql->sa, e, a, distinct, 1, groupby->card, 0);
-				return e;
-			}
-		}
-		*/
 		e = exp_aggr(sql->sa, NULL, a, distinct, 0, groupby->card, 0);
 		if (*rel == groupby && f == sql_sel) /* selection */
 			return e;
@@ -3663,22 +3681,40 @@ _rel_aggr(mvc *sql, sql_rel **rel, int distinct, sql_schema *s, char *aname, dno
 
 	a = sql_bind_aggr_(sql->sa, s, aname, exp_types(sql->sa, exps));
 	if (!a) { /* find aggr + convert */
-		a = sql_find_aggr(sql->sa, s, aname);
-		if (a) {
-			node *n, *op = a->aggr->ops->h;
-			list *nexps = sa_list(sql->sa);
+		/* First try larger numeric type */
+		node *n;
+		list *nexps = sa_list(sql->sa);
 
-			for (n = exps->h ; a && op && n; op = op->next, n = n->next ) {
-				sql_arg *arg = op->data;
-				sql_exp *e = n->data;
+		for (n = exps->h ;  n; n = n->next ) {
+			sql_exp *e = n->data;
 
-				e = rel_check_type(sql, &arg->type, e, type_equal);
-				if (!e)
-					a = NULL;
-				list_append(nexps, e);
+			/* cast up, for now just dec to double */
+			e = rel_numeric_supertype(sql, e);
+			if (!e)
+				break;
+			list_append(nexps, e);
+		}
+		a = sql_bind_aggr_(sql->sa, s, aname, exp_types(sql->sa, nexps));
+		if (a && list_length(nexps))  /* count(col) has |exps| != |nexps| */
+			exps = nexps;
+		if (!a) {
+			a = sql_find_aggr(sql->sa, s, aname);
+			if (a) {
+				node *n, *op = a->aggr->ops->h;
+				list *nexps = sa_list(sql->sa);
+
+				for (n = exps->h ; a && op && n; op = op->next, n = n->next ) {
+					sql_arg *arg = op->data;
+					sql_exp *e = n->data;
+
+					e = rel_check_type(sql, &arg->type, e, type_equal);
+					if (!e)
+						a = NULL;
+					list_append(nexps, e);
+				}
+				if (a && list_length(nexps))  /* count(col) has |exps| != |nexps| */
+					exps = nexps;
 			}
-			if (a && list_length(nexps))  /* count(col) has |exps| != |nexps| */
-				exps = nexps;
 		}
 	}
 	/* TODO: convert to single super type (iff |exps| > 1) */
