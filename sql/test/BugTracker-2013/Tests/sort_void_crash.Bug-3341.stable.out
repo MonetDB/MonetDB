@@ -1,0 +1,83 @@
+stdout of test 'sort_void_crash.Bug-3341` in directory 'sql/test/BugTracker-2013` itself:
+
+
+# 13:37:20 >  
+# 13:37:20 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=36185" "--set" "mapi_usock=/var/tmp/mtest-26703/.s.monetdb.36185" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/niels/scratch/rc-clean/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2013" "--set" "mal_listing=0"
+# 13:37:20 >  
+
+# MonetDB 5 server v11.15.12
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2013', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 3.775 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2013 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://niels.nesco.mine.nu:36185/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-26703/.s.monetdb.36185
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 13:37:20 >  
+# 13:37:20 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-26703" "--port=36185"
+# 13:37:20 >  
+
+#CREATE TABLE orders (
+#o_orderkey BIGINT NOT NULL,
+#o_custkey INTEGER NOT NULL,
+#o_orderstatus CHAR(1) NOT NULL,
+#o_totalprice DECIMAL(12,2) NOT NULL,
+#o_orderdate DATE NOT NULL,
+#o_orderpriority CHAR(15) NOT NULL,
+#o_clerk CHAR(15) NOT NULL,
+#o_shippriority INTEGER NOT NULL,
+#o_comment VARCHAR(79) NOT NULL
+#);
+#COPY 28 RECORDS into "orders" from STDIN;
+#1|36901|O|173665.47|1996-01-02|5-LOW|Clerk#000000951|0|nstructions sleep furiously among |
+#2|78002|O|46929.18|1996-12-01|1-URGENT|Clerk#000000880|0| foxes. pending accounts at the pending, silent asymptot|
+#3|123314|F|193846.25|1993-10-14|5-LOW|Clerk#000000955|0|sly final accounts boost. carefully regular ideas cajole carefully. depos|
+#4|136777|O|32151.78|1995-10-11|5-LOW|Clerk#000000124|0|sits. slyly regular warthogs cajole. regular, regular theodolites acro|
+#5|44485|F|144659.20|1994-07-30|5-LOW|Clerk#000000925|0|quickly. bold deposits sleep slyly. packages use slyly|
+[ 28	]
+#select rank() over(partition by o_custkey) from orders;
+% .L # table_name
+% rank_o_custkey # name
+% int # type
+% 1 # length
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+
+# 13:37:20 >  
+# 13:37:20 >  "Done."
+# 13:37:20 >  
+

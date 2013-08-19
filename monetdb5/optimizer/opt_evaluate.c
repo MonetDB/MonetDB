@@ -133,7 +133,7 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	int profiler;
 	str msg;
 	int debugstate = cntxt->itrace, actions = 0, constantblock = 0;
-	int *assigned, setonce; 
+	int *assigned, use; 
 
 	cntxt->itrace = 0;
 	(void)stk;
@@ -165,21 +165,21 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		// The double count emerging from a barrier exit is ignored.
 		if (! blockExit(p) || (blockExit(p) && p->retc != p->argc))
 		for ( k =0;  k < p->retc; k++)
+		if ( p->retc != p->argc || p->token != ASSIGNsymbol )
 			assigned[getArg(p,k)]++;
 	}
 
 	for (i = 1; i < limit; i++) {
 		p = getInstrPtr(mb, i);
+		// to avoid management of duplicate assignments over multiple blocks
+		// we limit ourselfs to evaluation of the first assignment only.
+		use = assigned[getArg(p,0)] == 1 && !(p->argc == p->retc && blockExit(p));
 		for (k = p->retc; k < p->argc; k++)
 			if (alias[getArg(p, k)])
 				getArg(p, k) = alias[getArg(p, k)];
-		// to avoid management of duplicate assignments over multiple blocks
-		// we limit ourselfs to evaluation of the first assignment only.
-		setonce = assigned[getArg(p,0)] == 1;
 		OPTDEBUGevaluate printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_ALL);
-
 		/* be aware that you only assign once to a variable */
-		if (setonce && p->retc == 1 && OPTallConstant(cntxt, mb, p) && !isUnsafeFunction(p)) {
+		if (use && p->retc == 1 && OPTallConstant(cntxt, mb, p) && !isUnsafeFunction(p)) {
 			barrier = p->barrier;
 			p->barrier = 0;
 			profiler = malProfileMode;	/* we don't trace it */
@@ -229,7 +229,8 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 				mb->errors = 0;
 			}
 		}
-		constantblock +=  blockStart(p) && OPTallConstant(cntxt,mb,p);
+		constantblock +=  blockStart(p) && OPTallConstant(cntxt, mb, p);	/* default */
+		//constantblock += p->barrier > 0 && OPTallConstant(cntxt, mb, p);	/* Feb2013 */
 	}
 	if ( constantblock )
 		actions += OPTremoveUnusedBlocks(cntxt, mb);
