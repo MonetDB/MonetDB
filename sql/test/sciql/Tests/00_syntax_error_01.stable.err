@@ -46,7 +46,6 @@ MAPI  = (monetdb) /var/tmp/mtest-13130/.s.monetdb.39483
 QUERY = CREATE ARRAY test_00_01_bigint   (x BIGINT   DIMENSION[-4]);
 ERROR = !Illegal range of dimension 'x': [0:1:-4]
 
-
 # 13:37:16 >  
 # 13:37:16 >  Done.
 # 13:37:16 >  

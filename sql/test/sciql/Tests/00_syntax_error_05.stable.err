@@ -34,9 +34,6 @@ MAPI  = (monetdb) /var/tmp/mtest-13130/.s.monetdb.39483
 QUERY = CREATE ARRAY err(x INTEGER DIMENSION[1:10:1]);
 ERROR = !Illegal range of dimension 'x': [1:10:1]
 
-
-
-
 # 13:48:15 >  
 # 13:48:15 >  Done.
 # 13:48:15 >  
