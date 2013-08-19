@@ -54,7 +54,6 @@ struct connection_info_struct
 	int connectiontype;
 	char *answerstring;
 	struct MHD_PostProcessor *postprocessor;
-	char * poststring;
 };
 
 static int
@@ -87,6 +86,7 @@ iterate_post (void *coninfo_cls, enum MHD_ValueKind kind, const char *key,
               size_t size)
 {
 	struct connection_info_struct *con_info = coninfo_cls;
+	char *answerstring;
 
 	(void)key;
 	(void)kind;
@@ -99,7 +99,6 @@ iterate_post (void *coninfo_cls, enum MHD_ValueKind kind, const char *key,
 	{
 		if ((size > 0) && (size <= MAXNAMESIZE))
 		{
-			char *answerstring;
 			answerstring = malloc (MAXANSWERSIZE);
 			if (!answerstring)
 				return MHD_NO;
@@ -111,24 +110,23 @@ iterate_post (void *coninfo_cls, enum MHD_ValueKind kind, const char *key,
 
 		return MHD_NO;
 	}
-
+	
 	if (strcmp (key, "file") == 0)
 	{
 		if ((size > 0) && (size <= MAXNAMESIZE))
 		{
-			char *poststring;
-			poststring = malloc (MAXANSWERSIZE);
-			if (!poststring)
+			answerstring = malloc (MAXANSWERSIZE);
+			if (!answerstring)
 				return MHD_NO;
 
-			snprintf (poststring, MAXANSWERSIZE, "%s", data);
-			con_info->poststring = poststring;
+			snprintf (answerstring, MAXANSWERSIZE, "%s", data);
+			con_info->answerstring = answerstring;
 		} else
-			con_info->poststring = NULL;
+			con_info->answerstring = NULL;
 
 		return MHD_NO;
 	}
-
+	
 	return MHD_YES;
 }
 

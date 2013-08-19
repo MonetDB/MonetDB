@@ -56,7 +56,7 @@ mserver_browser_get(const UriUriA uri) {
 	if (uri.absolutePath) {
 		if (uri.pathHead != NULL) {
 			if (uri.pathHead->next == NULL) {
-			  if (strncmp(uri.pathHead->text.first, API_SPECIAL_CHAR, 1) == 0) {
+				if (strncmp(uri.pathHead->text.first, API_SPECIAL_CHAR, 1) == 0) {
 					// This path element is on of the special cases
 					mserver_rest_command = MONETDB_REST_UNKWOWN_SPECIAL;
 					if (strcmp(uri.pathHead->text.first, MONETDB_REST_PATH_ALLDBS) == 0) {
@@ -74,7 +74,7 @@ mserver_browser_get(const UriUriA uri) {
 				}
 			} else {
 				// We have multiple paths
-			  if (strncmp(uri.pathHead->text.first, API_SPECIAL_CHAR, 1) == 0) {
+				if (strncmp(uri.pathHead->text.first, API_SPECIAL_CHAR, 1) == 0) {
 					// This path element is on of the special cases
 					mserver_rest_command = MONETDB_REST_UNKWOWN_SPECIAL;
 					if (strcmp(uri.pathHead->text.first, MONETDB_REST_PATH_ALLDBS) == 0) {
@@ -191,7 +191,8 @@ mserver_browser_post(const UriUriA uri) {
 	if (uri.absolutePath) {
 		if (uri.pathHead != NULL) {
 			if (uri.pathHead->next == NULL) {
-				if (strncmp(uri.pathHead->text.first, API_SPECIAL_CHAR, 1) == 0) {
+				if (strncmp(uri.pathHead->text.first, 
+					    API_SPECIAL_CHAR, 1) == 0) {
 					// This path element is on of the special cases
 					mserver_rest_command = MONETDB_REST_UNKWOWN_SPECIAL;
 				} else {

@@ -284,13 +284,46 @@ str RESTinsertAttach(char ** result, char * dbname, const char * attachment, con
 	size_t len = strlen(dbname) + strlen(doc_id) + strlen(attachment) 
 		+ (7 * line) - (3 * place) + char0;
 */
+	char *s;
+	char * attach;
+	size_t i;
+
+	size_t len;
 	char * query =
-		"INSERT INTO jsonblob_%s ( _id, mimetype, filename, value ) VALUES ( '%s', '', '\"text/plain\"','%s');";
-	size_t len = strlen(dbname) + strlen(doc_id) + strlen(attachment)
+	  "INSERT INTO jsonblob_%s ( _id, mimetype, filename, value ) VALUES ( '%s', '', '\"text/plain\"','%s');";
+	char hexit[] = "0123456789ABCDEF";
+
+	size_t expectedlen;
+
+	if (strlen(attachment) == ~(size_t) 0)
+		expectedlen = 4;
+	else
+	  expectedlen = (strlen(attachment) * 2);
+	    /*if (*l < 0 || (size_t) * l < expectedlen) {
+		if (*tostr != NULL)
+			GDKfree(*tostr);
+		*tostr = (str) GDKmalloc(expectedlen);
+		*l = (int) expectedlen;
+	}
+	    */
+	attach = malloc(expectedlen);    
+	s = attach + strlen(attach);
+
+	for (i = 0; i < strlen(attachment); i++) {
+		int val = (attachment[i] >> 4) & 15;
+
+		//*s++ = ' ';
+		*s++ = hexit[val];
+		val = attachment[i] & 15;
+		*s++ = hexit[val];
+	}
+	*s = '\0';
+
+	len = strlen(dbname) + strlen(doc_id) + strlen(attach)
 		+ 95 + char0;
 
 	querytext = malloc(len);
-	snprintf(querytext, len, query, dbname, doc_id, attachment);
+	snprintf(querytext, len, query, dbname, doc_id, attach);
 
 	msg = RESTsqlQuery(result, querytext);
 	if (querytext != NULL) {
@@ -299,5 +332,40 @@ str RESTinsertAttach(char ** result, char * dbname, const char * attachment, con
 	//if (strcmp(*result,"&2 1 -1\n") == 0) {
 	//  msg = RESTsqlQuery(result, result_ok);
 	//}
+	return msg;
+}
+
+str RESTgetAttach(char ** result, char * dbname, const char * doc_id)
+{
+	str msg = MAL_SUCCEED;
+	size_t len = strlen(dbname) + strlen(doc_id) + 40;
+	char * querytext = NULL;
+
+	querytext = malloc(len);
+	snprintf(querytext, len, "SELECT * FROM jsonblob_%s WHERE _id = '%s';", dbname, doc_id);
+
+	msg = RESTsqlQuery(result, querytext);
+	if (querytext != NULL) {
+		free(querytext);
+	}
+	return msg;
+}
+
+str RESTdeleteAttach(char ** result, char * dbname, const char * doc_id)
+{
+	str msg = MAL_SUCCEED;
+	size_t len = strlen(dbname) + strlen(doc_id) + 37 + 1;
+	char * querytext = NULL;
+
+	querytext = malloc(len);
+	snprintf(querytext, len, "DELETE FROM jsonblob_%s WHERE _id = '%s';", dbname, doc_id);
+
+	msg = RESTsqlQuery(result, querytext);
+	if (querytext != NULL) {
+		free(querytext);
+	}
+	if (strcmp(*result,"&2 3 -1\n") == 0) {
+	  msg = RESTsqlQuery(result, result_ok);
+	}
 	return msg;
 }
