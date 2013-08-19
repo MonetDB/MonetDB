@@ -726,15 +726,14 @@ stopMALdataflow(void)
 
 	exiting = 1;
 	for (worker = 0; worker < THREADS; worker++) {
-		int wq = workerqueue[worker];
-		if (todo[wq]) {
+		int wq = workerqueue[worker] - 1;
+		if (wq >= 0 && todo[wq])
 			for (i = 0; i < THREADS; i++)
 				MT_sema_up(&todo[wq]->s, "stopMALdataflow");
-			for (i = 0; i < THREADS; i++) {
-				if (workers[i])
-					MT_join_thread(workers[i]);
-				workers[i] = 0;
-			}
-		}
+	}
+	for (i = 0; i < THREADS; i++) {
+		if (workers[i])
+			MT_join_thread(workers[i]);
+		workers[i] = 0;
 	}
 }
