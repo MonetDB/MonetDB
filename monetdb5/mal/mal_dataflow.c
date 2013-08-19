@@ -124,6 +124,7 @@ q_create(int sz, const char *name)
 		return NULL;
 	}
 
+	(void) name; /* in case MT_LOCK_TRACE is not enabled in gdk_system.h */
 	MT_lock_init(&q->l, name);
 	MT_sema_init(&q->s, 0, name);
 	return q;
@@ -132,6 +133,7 @@ q_create(int sz, const char *name)
 static void
 q_destroy(Queue *q)
 {
+	assert(q);
 	MT_lock_destroy(&q->l);
 	MT_sema_destroy(&q->s);
 	GDKfree(q->data);
@@ -143,6 +145,8 @@ q_destroy(Queue *q)
 static void
 q_enqueue_(Queue *q, FlowEvent d)
 {
+	assert(q);
+	assert(d);
 	if (q->last == q->size) {
 		q->size <<= 1;
 		q->data = (FlowEvent*) GDKrealloc(q->data, sizeof(FlowEvent) * q->size);
@@ -173,6 +177,8 @@ q_requeue_(Queue *q, FlowEvent d)
 {
 	int i;
 
+	assert(q);
+	assert(d);
 	if (q->last == q->size) {
 		/* enlarge buffer */
 		q->size <<= 1;
