@@ -83,9 +83,9 @@ typedef struct DATAFLOW {
 } *DataFlow, DataFlowRec;
 
 #define MAXQ 1024
-static MT_Id workers[THREADS];
-static int workerqueue[THREADS]; /* maps workers towards the todo queues */
-static Queue *todo[MAXQ];	/* pending instructions organized by user MAXTODO > #users */
+static MT_Id workers[THREADS] = {0};
+static int workerqueue[THREADS] = {0}; /* maps workers towards the todo queues */
+static Queue *todo[MAXQ] = {0};	/* pending instructions organized by user MAXTODO > #users */
 
 /*
  * Calculate the size of the dataflow dependency graph.
