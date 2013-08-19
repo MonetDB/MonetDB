@@ -111,6 +111,12 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	if (assigned == NULL)
 		return 0;
 
+	alias = (int*)GDKzalloc(mb->vsize * sizeof(int) * 2); /* we introduce more */
+	if (alias == NULL){
+		GDKfree(assigned);
+		return 0;
+	}
+
 	limit = mb->stop;
 	for (i = 1; i < limit; i++) {
 		p = getInstrPtr(mb, i);
@@ -118,10 +124,6 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		if ( p->retc != p->argc || p->token != ASSIGNsymbol )
 			assigned[getArg(p,k)]++;
 	}
-
-	alias = (int*)GDKzalloc(mb->vsize * sizeof(int) * 2); /* we introduce more */
-	if (alias == NULL)
-		return 0;
 
 	for (i = 1; i < limit; i++) {
 		p = getInstrPtr(mb, i);
