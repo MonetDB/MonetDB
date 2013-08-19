@@ -84,10 +84,10 @@ typedef struct DATAFLOW {
 } *DataFlow, DataFlowRec;
 
 #define MAXQ 1024
-static MT_Id workers[THREADS];
-static int workerqueue[THREADS]; /* maps workers towards the todo queues */
-static Queue *todo[MAXQ];	/* pending instructions organized by user MAXTODO > #users */
-static int volatile exiting;
+static MT_Id workers[THREADS] = {0};
+static int workerqueue[THREADS] = {0}; /* maps workers towards the todo queues */
+static Queue *todo[MAXQ] = {0};	/* pending instructions organized by user MAXTODO > #users */
+static int volatile exiting = 0;
 
 /*
  * Calculate the size of the dataflow dependency graph.
@@ -270,7 +270,8 @@ DFLOWworker(void *t)
 	GDKsetbuf(GDKmalloc(GDKMAXERRLEN)); /* where to leave errors */
 	GDKerrbuf[0] = 0;
 	while (1) {
-		wq = workerqueue[id];
+		assert(workerqueue[id] > 0);
+		wq = workerqueue[id] - 1;
 		if (fnxt == 0)
 			fe = q_dequeue(todo[wq]);
 		else
@@ -382,6 +383,8 @@ DFLOWinitialize(int index)
 {
 	int i, worker, limit;
 
+	assert(index >= 0);
+	assert(index < THREADS);
 	MT_lock_set(&mal_contextLock, "DFLOWinitialize");
 	if (todo[index]) {
 		MT_lock_unset(&mal_contextLock, "DFLOWinitialize");
@@ -393,18 +396,17 @@ DFLOWinitialize(int index)
 		throw(MAL, "dataflow", "DFLOWinitialize(): Failed to create todo queue");
 	}
 	limit = GDKnr_threads ? GDKnr_threads : 1;
-	for (worker = 0; worker < THREADS; worker++)
-		if( workers[worker] == 0)
-			break;
-	for (i = 0; i < limit && i < THREADS; i++) {
+	for (worker = 0, i = 0; i < limit && i < THREADS; i++) {
+		for (; worker < THREADS; worker++)
+			if( workers[worker] == 0)
+				break;
+		assert(workers[worker] == 0);
 		if (MT_create_thread(&workers[worker], DFLOWworker, (void *) &workers[worker], MT_THR_JOINABLE) < 0) {
 			MT_lock_unset(&mal_contextLock, "DFLOWinitialize");
 			throw(MAL, "dataflow", "Can not create interpreter thread");
 		}
-		workerqueue[worker] = index;
-		for (; worker < THREADS; worker++)
-			if( workers[worker] == 0)
-				break;
+		assert(workers[worker] > 0);
+		workerqueue[worker] = index + 1;
 	}
 	MT_lock_unset(&mal_contextLock, "DFLOWinitialize");
 	return MAL_SUCCEED;
