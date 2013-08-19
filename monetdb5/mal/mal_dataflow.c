@@ -386,17 +386,14 @@ DFLOWinitialize(int index)
 	}
 	todo[index] = q_create(2048);
 	limit = GDKnr_threads ? GDKnr_threads : 1;
-	for (worker = 0; worker < THREADS; worker++)
-		if( workers[worker] == 0)
-			break;
-	for (i = 0; i < limit; i++){
+	for (worker = 0, i = 0; i < limit; i++){
+		for (; worker < THREADS; worker++)
+			if( workers[worker] == 0)
+				break;
 		assert(workers[worker] == 0);
 		MT_create_thread(&workers[worker], DFLOWworker, (void *) &workers[worker], MT_THR_JOINABLE);
 		assert(workers[worker] > 0);
 		workerqueue[worker] = index + 1;
-		for (; worker < THREADS; worker++)
-			if( workers[worker] == 0)
-				break;
 	}
 	MT_lock_unset(&mal_contextLock, "DFLOWinitialize");
 }
