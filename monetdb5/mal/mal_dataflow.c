@@ -83,9 +83,9 @@ typedef struct DATAFLOW {
 } *DataFlow, DataFlowRec;
 
 #define MAXQ 1024
-static MT_Id workers[THREADS];
-static int workerqueue[THREADS]; /* maps workers towards the todo queues */
-static Queue *todo[MAXQ];	/* pending instructions organized by user MAXTODO > #users */
+static MT_Id workers[THREADS] = {0};
+static int workerqueue[THREADS] = {0}; /* maps workers towards the todo queues */
+static Queue *todo[MAXQ] = {0};	/* pending instructions organized by user MAXTODO > #users */
 
 /*
  * Calculate the size of the dataflow dependency graph.
@@ -268,7 +268,8 @@ DFLOWworker(void *t)
 	GDKsetbuf(GDKmalloc(GDKMAXERRLEN)); /* where to leave errors */
 	GDKerrbuf[0] = 0;
 	while (1) {
-		wq = workerqueue[id];
+		assert(workerqueue[id] > 0);
+		wq = workerqueue[id] - 1;
 		if (fnxt == 0)
 			fe = q_dequeue(todo[wq]);
 		else
@@ -376,6 +377,8 @@ DFLOWinitialize(int index)
 {
 	int i, worker, limit;
 
+	assert(index >= 0);
+	assert(index < THREADS);
 	MT_lock_set(&mal_contextLock, "DFLOWinitialize");
 	if (todo[index]) {
 		MT_lock_unset(&mal_contextLock, "DFLOWinitialize");
@@ -383,15 +386,14 @@ DFLOWinitialize(int index)
 	}
 	todo[index] = q_create(2048);
 	limit = GDKnr_threads ? GDKnr_threads : 1;
-	for (worker = 0; worker < THREADS; worker++)
-		if( workers[worker] == 0)
-			break;
-	for (i = 0; i < limit; i++){
-		MT_create_thread(&workers[worker], DFLOWworker, (void *) &workers[worker], MT_THR_JOINABLE);
-		workerqueue[worker] = index;
+	for (worker = 0, i = 0; i < limit; i++){
 		for (; worker < THREADS; worker++)
 			if( workers[worker] == 0)
 				break;
+		assert(workers[worker] == 0);
+		MT_create_thread(&workers[worker], DFLOWworker, (void *) &workers[worker], MT_THR_JOINABLE);
+		assert(workers[worker] > 0);
+		workerqueue[worker] = index + 1;
 	}
 	MT_lock_unset(&mal_contextLock, "DFLOWinitialize");
 }
