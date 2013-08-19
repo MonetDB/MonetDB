@@ -139,6 +139,9 @@ mdbSetBreakRequest(Client cntxt, MalBlkPtr mb, str request, char cmd)
 	}
 	/* the final step is to break on a variable */
 	i = findVariable(mb, request);
+	/* ignore a possible dummy TMPMARKER character */
+	if ( i < 0)
+		i = findVariable(mb, request+1);
 	if (i < 0)
 		mnstr_printf(cntxt->fdout, "breakpoint on %s not set\n", request);
 	else {
