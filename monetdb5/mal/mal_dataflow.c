@@ -396,16 +396,26 @@ DFLOWinitialize(int index)
 		throw(MAL, "dataflow", "DFLOWinitialize(): Failed to create todo queue");
 	}
 	limit = GDKnr_threads ? GDKnr_threads : 1;
-	for (worker = 0, i = 0; i < limit && i < THREADS; i++) {
+	if (limit > THREADS) {
+		MT_lock_unset(&mal_contextLock, "DFLOWinitialize");
+		throw(MAL, "dataflow", "DFLOWinitialize(): using more threads than thread slots: %d > %d", limit, THREADS);
+	}
+	for (worker = 0, i = 0; i < limit; i++){
 		for (; worker < THREADS; worker++)
 			if( workers[worker] == 0)
 				break;
-		assert(workers[worker] == 0);
+		if (worker >= THREADS || workers[worker] > 0) {
+			MT_lock_unset(&mal_contextLock, "DFLOWinitialize");
+			throw(MAL, "dataflow", "No free worker slot found");
+		}
 		if (MT_create_thread(&workers[worker], DFLOWworker, (void *) &workers[worker], MT_THR_JOINABLE) < 0) {
 			MT_lock_unset(&mal_contextLock, "DFLOWinitialize");
 			throw(MAL, "dataflow", "Can not create interpreter thread");
 		}
-		assert(workers[worker] > 0);
+		if (workers[worker] == 0) {
+			MT_lock_unset(&mal_contextLock, "DFLOWinitialize");
+			throw(MAL, "dataflow", "Failed to create interpreter thread");
+		}
 		workerqueue[worker] = index + 1;
 	}
 	MT_lock_unset(&mal_contextLock, "DFLOWinitialize");
