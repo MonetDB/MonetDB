@@ -103,8 +103,17 @@ mserver_browser_get(const UriUriA uri) {
 					} else {
 						// The first path element is a table name
 						// we cannot check this here, so we assume the table exists
-						mserver_rest_command = MONETDB_REST_DB_GETDOCID;
-						fprintf(stderr, "url: %s\n", uri.pathHead->text.first);
+						if (strncmp(uri.pathHead->next->text.first, API_SPECIAL_CHAR, 1) == 0) {
+							// This path element is on of the special cases
+							mserver_rest_command = MONETDB_REST_UNKWOWN_SPECIAL;
+							if (strncmp(uri.pathHead->next->text.first, MONETDB_REST_PATH_DESIGN, 7) == 0) {
+								mserver_rest_command = MONETDB_REST_GET_DESIGN;
+								fprintf(stderr, "special url: %s\n", uri.pathTail->text.first);
+							}
+						} else {
+							mserver_rest_command = MONETDB_REST_DB_GETDOCID;
+							fprintf(stderr, "url: %s\n", uri.pathHead->text.first);
+						}
 					}
 				}
 			}
@@ -125,7 +134,7 @@ mserver_browser_put(const UriUriA uri) {
 	if (uri.absolutePath) {
 		if (uri.pathHead != NULL) {
 			if (uri.pathHead->next == NULL) {
-				if (strcmp(uri.pathHead->text.first, API_SPECIAL_CHAR) < 0) {
+				if (strncmp(uri.pathHead->text.first, API_SPECIAL_CHAR, 1) == 0) {
 					// This path element is on of the special cases
 					mserver_rest_command = MONETDB_REST_UNKWOWN_SPECIAL;
 				} else {
@@ -133,12 +142,24 @@ mserver_browser_put(const UriUriA uri) {
 					fprintf(stderr, "url: %s\n", uri.pathHead->text.first);
 				}
 			} else {
-				if (strcmp(uri.pathHead->text.first, API_SPECIAL_CHAR) < 0) {
+				// We have multiple paths
+				if (strncmp(uri.pathHead->text.first, API_SPECIAL_CHAR, 1) == 0) {
 					// This path element is on of the special cases
 					mserver_rest_command = MONETDB_REST_UNKWOWN_SPECIAL;
 				} else {
-					mserver_rest_command = MONETDB_REST_DB_UPDATE_DOC;
+					// The first path element is a table name
+					// we cannot check this here, so we assume the table exists
 					fprintf(stderr, "url: %s\n", uri.pathHead->text.first);
+					if (strncmp(uri.pathHead->next->text.first, API_SPECIAL_CHAR, 1) == 0) {
+						// This path element is on of the special cases
+						mserver_rest_command = MONETDB_REST_UNKWOWN_SPECIAL;
+						if (strncmp(uri.pathHead->next->text.first, MONETDB_REST_PATH_DESIGN, 7) == 0) {
+							mserver_rest_command = MONETDB_REST_INSERT_DESIGN;
+							fprintf(stderr, "special url: %s\n", uri.pathTail->text.first);
+						}
+					} else {
+						mserver_rest_command = MONETDB_REST_DB_UPDATE_DOC;
+					}
 				}
 			}
 		} else {
@@ -248,6 +269,16 @@ char * get_docid(UriUriA uri) {
 	return docid;
 }
 
+static
+char * get_designid(UriUriA uri) {
+	size_t len;
+	char * docid;
+	len = strlen(uri.pathHead->next->text.first);
+	docid = malloc(len + 1);
+	strncpy(docid, uri.pathHead->next->text.first, len);
+	return docid;
+}
+
 int
 handle_http_request (const char *url, const char *method, char **page, 
 					 char * postdata)
@@ -333,6 +364,16 @@ handle_http_request (const char *url, const char *method, char **page,
 		break;
 	case MONETDB_REST_NO_ATTACHMENT_PATH:
 		RESTerror(page, mserver_rest_command);
+		break;
+	case MONETDB_REST_INSERT_DESIGN:
+		dbname = get_dbname(uri);
+		docid = get_designid(uri);
+		RESTinsertDesign(page, dbname, docid, postdata);
+		break;
+	case MONETDB_REST_GET_DESIGN:
+		dbname = get_dbname(uri);
+		docid = get_designid(uri);
+		RESTgetDesign(page, dbname, docid);
 		break;
 	default:
 		/* error, unknown command */

@@ -114,15 +114,19 @@ str RESTcreateDB(char ** result, char * dbname)
 		"CREATE TABLE json_%s (        "
 		"_id uuid, _rev VARCHAR(34),   "
 		"js json);                     "
+		"CREATE TABLE jsondesign_%s (  "
+		"_id varchar(128),             "
+		"_rev VARCHAR(34),             "
+		"design json);                 "
 		"CREATE TABLE jsonblob_%s (    "
 		"_id uuid,                     "
 		"mimetype varchar(128),        "
 		"filename varchar(128),        "
 		"value blob);                  ";
-	size_t len = 2 * strlen(dbname) + (8 * line) - (2 * place) + char0;
+	size_t len = 3 * strlen(dbname) + (12 * line) - (3 * place) + char0;
 
 	querytext = malloc(len);
-	snprintf(querytext, len, query, dbname, dbname);
+	snprintf(querytext, len, query, dbname, dbname, dbname);
 
 	msg = RESTsqlQuery(result, querytext);
 	if (querytext != NULL) {
@@ -366,6 +370,63 @@ str RESTdeleteAttach(char ** result, char * dbname, const char * doc_id)
 	}
 	if (strcmp(*result,"&2 3 -1\n") == 0) {
 	  msg = RESTsqlQuery(result, result_ok);
+	}
+	return msg;
+}
+
+str RESTinsertDesign(char ** result, char * dbname, const char * doc_id, const char * doc)
+{
+	str msg = MAL_SUCCEED;
+	size_t len = strlen(dbname) + strlen(doc_id) + 2 * strlen(doc) + 85 + char0;
+	char * querytext = NULL;
+
+	querytext = malloc(len);
+	snprintf(querytext, len, "INSERT INTO jsondesign_%s (_id, _rev, design ) VALUES ( '%s', concat('1-', md5('%s')), '%s');", dbname, doc_id, doc, doc);
+
+	msg = RESTsqlQuery(result, querytext);
+	if (querytext != NULL) {
+		free(querytext);
+	}
+	if (strcmp(*result,"&2 1 -1\n") == 0) {
+	  msg = RESTsqlQuery(result, result_ok);
+	}
+	return msg;
+}
+
+str RESTgetDesign(char ** result, char * dbname, const char * doc_id)
+{
+	str msg = MAL_SUCCEED;
+	size_t len = strlen(dbname) + strlen(doc_id) + 108 + char0;
+	char * querytext = NULL;
+	char * begin_query;
+	char * end_query;
+	size_t query_len;
+	char * viewquery;
+
+	querytext = malloc(len);
+	snprintf(querytext, len, "SELECT json_text(json_path(design, 'views.foo'), 'query') AS query FROM jsondesign_%s WHERE _id = '%s' LIMIT 1;", dbname, doc_id);
+
+	msg = RESTsqlQuery(result, querytext);
+	/*
+	  First implementation of running views stored in a json document
+	  Missing error handling and sanity checks. They will be added 
+	  when the API and the corresponding implementation get are 
+	  defined. For now this is only a proof of concept that the idea
+	  will work. Not production ready.
+	 */
+	if (msg == MAL_SUCCEED) {
+		begin_query = strstr((const char *)*result, "{ query , \"");
+		end_query = strstr((const char *)*result, " \" }");
+		query_len = strlen(begin_query + 12) - strlen(end_query) + 1;
+		viewquery = malloc(query_len);
+		snprintf(viewquery, query_len, "%s", begin_query + 12);
+		msg = RESTsqlQuery(result, viewquery);
+	}
+	if (querytext != NULL) {
+		free(querytext);
+	}
+	if (viewquery != NULL) {
+		free(viewquery);
 	}
 	return msg;
 }

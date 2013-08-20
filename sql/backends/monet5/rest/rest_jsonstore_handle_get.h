@@ -47,5 +47,7 @@ rest_export str RESTerror(char **result, int rest_command);
 rest_export str RESTinsertAttach(char ** result, char * dbname, const char * attachment, const char * doc_id);
 rest_export str RESTgetAttach(char ** result, char * dbname, const char * doc_id);
 rest_export str RESTdeleteAttach(char ** result, char * dbname, const char * doc_id);
+rest_export str RESTinsertDesign(char ** result, char * dbname, const char * doc_id, const char * doc);
+rest_export str RESTgetDesign(char ** result, char * dbname, const char * doc_id);
 
 #endif
