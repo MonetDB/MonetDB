@@ -385,15 +385,20 @@ DFLOWinitialize(int index)
 		return;
 	}
 	todo[index] = q_create(2048);
+	assert(todo[index]);
 	limit = GDKnr_threads ? GDKnr_threads : 1;
+	assert(limit <= THREADS);
 	for (worker = 0, i = 0; i < limit; i++){
 		for (; worker < THREADS; worker++)
 			if( workers[worker] == 0)
 				break;
-		assert(workers[worker] == 0);
-		MT_create_thread(&workers[worker], DFLOWworker, (void *) &workers[worker], MT_THR_JOINABLE);
-		assert(workers[worker] > 0);
-		workerqueue[worker] = index + 1;
+		assert(worker < THREADS);
+		if (worker < THREADS) {
+			assert(workers[worker] == 0);
+			MT_create_thread(&workers[worker], DFLOWworker, (void *) &workers[worker], MT_THR_JOINABLE);
+			assert(workers[worker] > 0);
+			workerqueue[worker] = index + 1;
+		}
 	}
 	MT_lock_unset(&mal_contextLock, "DFLOWinitialize");
 }
