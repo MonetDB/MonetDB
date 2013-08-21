@@ -329,8 +329,6 @@ DFLOWworker(void *t)
 		InstrPtr p = getInstrPtr(flow->mb, fe->pc);
 		assert(p);
 		fe->hotclaim = 0;
-		//for (i = 0; i < p->retc; i++)
-			//fe->hotclaim += getMemoryClaim(flow->mb, flow->stk, p, i, FALSE);
 		}
 #endif
 		MT_lock_set(&flow->flowlock, "MALworker");
@@ -550,7 +548,6 @@ DFLOWscheduler(DataFlow flow, Queue *todo)
 	int last;
 	int i;
 #ifdef USE_MAL_ADMISSION
-	//int j;
 	InstrPtr p;
 #endif
 	int tasks=0, actions;
@@ -574,8 +571,6 @@ DFLOWscheduler(DataFlow flow, Queue *todo)
 				MT_lock_unset(&flow->flowlock, "MALworker");
 				throw(MAL, "dataflow", "DFLOWscheduler(): getInstrPtr(flow->mb,fe[i].pc) returned NULL");
 			}
-			//for (j = p->retc; j < p->argc; j++)
-				//fe[i].argclaim = getMemoryClaim(fe[0].flow->mb, fe[0].flow->stk, p, j, FALSE);
 #endif
 			q_enqueue(todo, flow->status + i);
 			flow->status[i].state = DFLOWrunning;
