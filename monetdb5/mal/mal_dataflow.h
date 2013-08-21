@@ -25,5 +25,7 @@
 #include "mal_resource.h"
 
 mal_export str runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr stk);
+mal_export void stopMALdataflow(void); 
+
 
 #endif /*  _MAL_DATAFLOW_H*/

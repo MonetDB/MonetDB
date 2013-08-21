@@ -121,21 +121,30 @@ CMDcallString(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
+CMDcallFunction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	str mod = *(str*) getArgReference(stk,pci,1);
+	str fcn = *(str*) getArgReference(stk,pci,2);
+	char buf[BUFSIZ];
+
+	(void) mb;		/* fool compiler */
+	if (strlen(mod) == 0 || strlen(fcn) ==0)
+		return MAL_SUCCEED;
+	// lazy implementation of the call
+	snprintf(buf,BUFSIZ,"%s.%s();",mod,fcn);
+	callString(cntxt, buf, FALSE);
+	return MAL_SUCCEED;
+}
+
+str
 MALstartDataflow( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	str msg= MAL_SUCCEED;
 	int *ret = (int*) getArgReference(stk,pci,0);
 
-	(void) cntxt;
-	if (stk->cmd ){
-		*ret = 1; /* in debugging mode, ignore dataflow request, and run sequentially */
-		return MAL_SUCCEED;
-	}
 	if ( getPC(mb, pci) > pci->jump)
 		throw(MAL,"language.dataflow","Illegal statement range");
-	msg = runMALdataflow(cntxt, mb, getPC(mb,pci), pci->jump, stk);
 	*ret = 0;	/* continue at end of block */
-	return msg;
+	return runMALdataflow(cntxt, mb, getPC(mb,pci), pci->jump, stk);
 }
 
 /*
@@ -245,88 +254,4 @@ CMDdebug(int *ret, int *flg)
 	if (*flg)
 		GDKdebug = *flg;
 	return MAL_SUCCEED;
-}
-
-/*
- * MAL iterator code
- * This module contains the framework for the construction of iterators.
- * Iterators enumerate elements in a collection defined by a few parameters,
- * e.g. a lower/upper bound.
- *
- * Iterators appear as ordinary function calls in the MAL code and
- * always return a boolean, to indicate that an element is available for
- * consumption. Initialization of the iterator representation depends
- * on its kind.
- *
- * The most common class of iterators encountered in a programming
- * environment is the for-loop. It contains a for-loop variable,
- * a starting point and a limit. Changing the for-loop variable
- * within the for-loop body is considered bad code and should be avoided
- * to simplify data-flow analysis.
- *
- * We assume that the range boundaries comply with the underlying domain.
- */
-str
-CMDsetMemoryTrace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-    bit *flag= (bit*) getArgReference(stk,pci,1);
-
-    (void) mb;
-    if( *flag) {
-		cntxt->flags |= footprintFlag;
-        MCdefault |= footprintFlag;
-    } else {
-		cntxt->flags &= footprintFlag;
-        MCdefault &= ~footprintFlag;
-	}
-    return MAL_SUCCEED;
-}
-
-str
-CMDsetTimerTrace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-    bit *flag= (bit*) getArgReference(stk,pci,1);
-
-    (void) mb;
-    if( *flag) {
-		cntxt->flags |= timerFlag;
-        MCdefault |= timerFlag;
-    } else {
-		cntxt->flags &= ~timerFlag;
-        MCdefault &= ~timerFlag;
-	}
-    return MAL_SUCCEED;
-}
-
-str
-CMDsetThreadTrace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-    bit *flag= (bit*) getArgReference(stk,pci,1);
-
-    (void) mb;
-    if( *flag){
-		cntxt->flags |= threadFlag;
-        MCdefault |= threadFlag;
-    }else{
-		cntxt->flags &= threadFlag;
-        MCdefault &= ~threadFlag;
-	}
-    return MAL_SUCCEED;
-}
-
-
-str
-CMDsetIOTrace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-    bit *flag= (bit*) getArgReference(stk,pci,1);
-
-    (void) mb;
-    if( *flag){
-		cntxt->flags |= ioFlag;
-        MCdefault |= ioFlag;
-    }else{
-		cntxt->flags &= ioFlag;
-        MCdefault &= ~ioFlag;
-	}
-    return MAL_SUCCEED;
 }
