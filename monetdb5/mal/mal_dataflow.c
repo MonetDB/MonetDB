@@ -724,9 +724,3 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr st
 	GDKfree(flow);
 	return msg;
 }
-
-void
-stopMALdataflow(void)
-{
-	exiting = 1;
-}
