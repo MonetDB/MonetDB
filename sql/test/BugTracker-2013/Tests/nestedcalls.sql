@@ -36,7 +36,7 @@ SELECT count(*) FROM leaf1();
 SELECT count(*) FROM leaf2();
 SELECT count(*) FROM leaf3();
 
-DROP FUNCTION leaf1;
-DROP FUNCTION leaf2;
 DROP FUNCTION leaf3;
+DROP FUNCTION leaf2;
+DROP FUNCTION leaf1;
 DROP FUNCTION bottom;

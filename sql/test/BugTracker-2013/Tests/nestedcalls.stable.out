@@ -1,0 +1,112 @@
+stdout of test 'nestedcalls` in directory 'sql/test/BugTracker-2013` itself:
+
+
+# 09:11:23 >  
+# 09:11:23 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=37677" "--set" "mapi_usock=/var/tmp/mtest-1158/.s.monetdb.37677" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/Feb2013//Linux/var/MonetDB/mTests_sql_test_BugTracker-2013" "--set" "mal_listing=0"
+# 09:11:23 >  
+
+# MonetDB 5 server v11.15.12
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2013', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.591 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2013 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:37677/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-1158/.s.monetdb.37677
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_history.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_compress.sql
+# loading sql script: 18_dictionary.sql
+# loading sql script: 19_cluster.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 24_zorder.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 99_system.sql
+
+# 09:11:23 >  
+# 09:11:23 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1158" "--port=37677"
+# 09:11:23 >  
+
+#CREATE FUNCTION bottom()
+#RETURNS TABLE (name string)
+#BEGIN
+#	RETURN select name from tables;
+#END;
+#CREATE FUNCTION leaf1()
+#RETURNS TABLE (name string)
+#BEGIN
+#	RETURN select name from bottom()
+#	UNION  select name from bottom()
+#	UNION  select name from bottom()
+#	UNION  select name from bottom();
+#END;
+#CREATE FUNCTION leaf2()
+#RETURNS TABLE (name string)
+#BEGIN
+#	RETURN select name from leaf1()
+#	UNION  select name from leaf1()
+#	UNION  select name from leaf1()
+#	UNION  select name from leaf1();
+#END;
+#CREATE FUNCTION leaf3()
+#RETURNS TABLE (name string)
+#BEGIN
+#	RETURN select name from leaf2()
+#	UNION  select name from leaf2()
+#	UNION  select name from leaf2()
+#	UNION  select name from leaf2();
+#END;
+#SELECT count(*) FROM bottom();
+% .L1 # table_name
+% L1 # name
+% wrd # type
+% 2 # length
+[ 35	]
+#SELECT count(*) FROM leaf1();
+% .L1 # table_name
+% L1 # name
+% wrd # type
+% 2 # length
+[ 29	]
+#SELECT count(*) FROM leaf2();
+% .L1 # table_name
+% L1 # name
+% wrd # type
+% 2 # length
+[ 29	]
+#SELECT count(*) FROM leaf3();
+% .L1 # table_name
+% L1 # name
+% wrd # type
+% 2 # length
+[ 29	]
+#DROP FUNCTION leaf3;
+#DROP FUNCTION leaf2;
+#DROP FUNCTION leaf1;
+#DROP FUNCTION bottom;
+
+# 09:11:24 >  
+# 09:11:24 >  "Done."
+# 09:11:24 >  
+

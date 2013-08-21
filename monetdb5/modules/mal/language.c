@@ -139,19 +139,12 @@ CMDcallFunction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 MALstartDataflow( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	str msg= MAL_SUCCEED;
 	int *ret = (int*) getArgReference(stk,pci,0);
 
-	(void) cntxt;
-	if (stk->cmd ){
-		*ret = 1; /* in debugging mode, ignore dataflow request, and run sequentially */
-		return MAL_SUCCEED;
-	}
 	if ( getPC(mb, pci) > pci->jump)
 		throw(MAL,"language.dataflow","Illegal statement range");
-	msg = runMALdataflow(cntxt, mb, getPC(mb,pci), pci->jump, stk);
 	*ret = 0;	/* continue at end of block */
-	return msg;
+	return runMALdataflow(cntxt, mb, getPC(mb,pci), pci->jump, stk);
 }
 
 /*
