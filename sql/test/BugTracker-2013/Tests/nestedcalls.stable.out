@@ -82,25 +82,25 @@ Ready.
 % L1 # name
 % wrd # type
 % 2 # length
-[ 32	]
+[ 35	]
 #SELECT count(*) FROM leaf1();
 % .L1 # table_name
 % L1 # name
 % wrd # type
 % 2 # length
-[ 26	]
+[ 29	]
 #SELECT count(*) FROM leaf2();
 % .L1 # table_name
 % L1 # name
 % wrd # type
 % 2 # length
-[ 26	]
+[ 29	]
 #SELECT count(*) FROM leaf3();
 % .L1 # table_name
 % L1 # name
 % wrd # type
 % 2 # length
-[ 26	]
+[ 29	]
 #DROP FUNCTION leaf3;
 #DROP FUNCTION leaf2;
 #DROP FUNCTION leaf1;
