@@ -619,6 +619,8 @@ _slicing2basetable(mvc *sql, sql_rel *rel, char *tname, char *cname, list *rng)
 	return sql_error(sql, 02, "Dimension %s not found in table %s", cname, tname);
 }
 
+#define ARRAY_SLICING_MAX_DIMS 4
+
 static sql_rel *
 rel_arrayslice(mvc *sql, sql_table *t, char *tname, symbol *dimref)
 {
@@ -644,7 +646,7 @@ rel_arrayslice(mvc *sql, sql_table *t, char *tname, symbol *dimref)
 		if (dlist_length(idx_exp->data.lval) == 3) 
 			realSlice = 1;
 	}
-	if (realSlice && t->valence > 3)
+	if (realSlice && t->valence > ARRAY_SLICING_MAX_DIMS)
 		return sql_error(sql, 02, "array slicing with step size over arrays with more than three dimensions not supported yet");
 
 	/* If none of the slicing ranges has a step size, translate the slicing into [range|point] selections */
@@ -2244,7 +2246,7 @@ _check_tiled_dimension(mvc *sql, char *dimnm, symbol *dim_ref)
 	return 1;
 }
 
-#define ARRAY_TILING_MAX_DIMS 3
+#define ARRAY_TILING_MAX_DIMS 4
 
 static list *
 rel_arraytiling(mvc *sql, sql_rel **rel, symbol *tile_def, int f, str *aname, int oneRange)
