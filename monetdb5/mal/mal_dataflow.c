@@ -326,7 +326,9 @@ DFLOWworker(void *t)
 		 */
 #ifdef USE_MAL_ADMISSION
 		{
+#ifndef NDEBUG
 		InstrPtr p = getInstrPtr(flow->mb, fe->pc);
+#endif
 		assert(p);
 		fe->hotclaim = 0;
 		}
