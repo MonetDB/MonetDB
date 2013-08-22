@@ -238,7 +238,6 @@ END;
 -- SciQL used here, in particular conjunctive HAVING predicates, correctly
 -- (or vice versa).
 set optimizer='no_mitosis_pipe';
--- CAVEAT: this takes about 1 minute to execute !
 SELECT * FROM clump_8connected();
 set optimizer='default_pipe';
 
@@ -387,7 +386,6 @@ END;
 -- SciQL used here, in particular conjunctive HAVING predicates, correctly
 -- (or vice versa).
 set optimizer='no_mitosis_pipe';
--- CAVEAT: this takes more than 5 minutes to execute !
 SELECT * FROM connect_neighbors();
 set optimizer='default_pipe';
 
