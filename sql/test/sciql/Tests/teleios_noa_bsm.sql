@@ -253,72 +253,157 @@ UPDATE fire SET f = NULL WHERE f IN (
 
 -- BSM connect nearby fires filter --
 
----- Union fires which are less that 3 pixels apart (using 8-CONNECTED)
+---- Union fires which are less than 3 pixels apart (using 8-CONNECTED)
 ---- Add fire bridge between them
-CREATE FUNCTION connect_neighbors_1()
+--
+-- Using these 12 different tile "patterns":
+--  x...   xx..   ..xx   ...x   x...   xx..   ..xx   ...x   ....   ....   .x..   .x..
+--  xx..   .x..   ..x.   ..xx   xo..   .o..   ..o.   ..ox   ....   ....   .x..   .o..
+--  ..ox   ..o.   .o..   xo..   ..xx   ..x.   .x..   xx..   xoxx   xxox   .o..   .x..
+--  ...x   ..xx   xx..   x...   ...x   ..xx   xx..   x...   ....   ....   .x..   .x..
+--
+-- we achieve that for these constellations of fires being less than 3
+-- pixels apart (modulo symmetry, these are all possible constellations):
+--  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
+--  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
+--  .  .  1  .  2  .  .  .  .  3  .  .  .  .  .  .  5  .  .  .  .  .  .  .  .  .  .  .  .
+--  .  .  .  .  .  .  .  .  .  .  .  4  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
+--  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  6  .  .  .  .  .  .  .  .  .  .
+--  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
+--  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
+--  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
+--  .  .  7  .  .  8  .  .  .  9  .  .  .  .  .  . 11  .  .  .  .  .  . 13  .  .  .  .  .
+--  .  .  .  .  .  .  .  .  .  .  .  . 10  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
+--  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . 12  .  .  .  .  .  .  .  .  .
+--  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . 14  .  .
+--  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
+--  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
+--
+-- we create the following result:
+--  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
+--  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
+--  .  .  2  2  2  .  .  .  .  4  4  .  .  .  .  .  6  .  .  .  .  .  .  .  .  .  .  .  .
+--  .  .  .  .  .  .  .  .  .  .  4  4  .  .  .  .  .  6  .  .  .  .  .  .  .  .  .  .  .
+--  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  6  .  .  .  .  .  .  .  .  .  .
+--  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
+--  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
+--  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
+--  .  .  8  8  8  8  .  .  . 10 10  .  .  .  .  . 12 12  .  .  .  .  . 14  .  .  .  .  .
+--  .  .  .  .  .  .  .  .  .  .  . 10 10  .  .  .  . 12 12  .  .  .  .  . 14  .  .  .  .
+--  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . 12 12  .  .  .  .  . 14  .  .  .
+--  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . 14  .  .
+--  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
+--  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
+--
+CREATE FUNCTION connect_neighbors_A()
 RETURNS TABLE (x SMALLINT, y SMALLINT, i INT, a INT)
 BEGIN
   RETURN
     SELECT x, y, MIN(f) AS i, MAX(f) AS a
     FROM fire
-    GROUP BY fire[x-2:x+2][y-2:y+2]
+    GROUP BY fire[x-2][y+2],fire[x-2][y+1],fire[x-1][y+1],fire[x+1][y],fire[x+1][y-1]
     HAVING f IS NULL AND MIN(f) <> MAX(f);
 END;
-CREATE FUNCTION connect_neighbors_2()
+CREATE FUNCTION connect_neighbors_B()
 RETURNS TABLE (x SMALLINT, y SMALLINT, i INT, a INT)
 BEGIN
   RETURN
     SELECT x, y, MIN(f) AS i, MAX(f) AS a
     FROM fire
-    GROUP BY fire[x-1:x+3][y-2:y+2]
+    GROUP BY fire[x+2][y+2],fire[x+1][y+2],fire[x+1][y+1],fire[x][y-1],fire[x-1][y-1]
     HAVING f IS NULL AND MIN(f) <> MAX(f);
 END;
-CREATE FUNCTION connect_neighbors_3()
+CREATE FUNCTION connect_neighbors_C()
 RETURNS TABLE (x SMALLINT, y SMALLINT, i INT, a INT)
 BEGIN
   RETURN
     SELECT x, y, MIN(f) AS i, MAX(f) AS a
     FROM fire
-    GROUP BY fire[x-2:x+2][y-1:y+3]
+    GROUP BY fire[x+2][y-2],fire[x+2][y-1],fire[x+1][y-1],fire[x-1][y],fire[x-1][y+1]
     HAVING f IS NULL AND MIN(f) <> MAX(f);
 END;
-CREATE FUNCTION connect_neighbors_4()
+CREATE FUNCTION connect_neighbors_D()
 RETURNS TABLE (x SMALLINT, y SMALLINT, i INT, a INT)
 BEGIN
   RETURN
     SELECT x, y, MIN(f) AS i, MAX(f) AS a
     FROM fire
-    GROUP BY fire[x-1:x+3][y-1:y+3]
+    GROUP BY fire[x-2][y-2],fire[x-1][y-2],fire[x-1][y-1],fire[x][y+1],fire[x+1][y+1]
     HAVING f IS NULL AND MIN(f) <> MAX(f);
 END;
-CREATE FUNCTION connect_neighbors_5()
-RETURNS TABLE (x SMALLINT, y SMALLINT)
-BEGIN
-  RETURN
-    SELECT x, y
-    FROM fire
-    GROUP BY fire[x-1:x+2][y-1:y+2]
-    HAVING f IS NULL AND SUM(f) IS NOT NULL;
-END;
-CREATE FUNCTION connect_neighbors_6()
+CREATE FUNCTION connect_neighbors_E()
 RETURNS TABLE (x SMALLINT, y SMALLINT, i INT, a INT)
 BEGIN
   RETURN
-    SELECT t1.x, t1.y, t1.i, t1.a
-    FROM (
-      SELECT * FROM connect_neighbors_1()
-      UNION ALL
-      SELECT * FROM connect_neighbors_2()
-      UNION ALL
-      SELECT * FROM connect_neighbors_3()
-      UNION ALL
-      SELECT * FROM connect_neighbors_4()
-    ) AS t1
-    JOIN (
-      SELECT * FROM connect_neighbors_5()
-    ) AS t2
-    ON t1.x = t2.x AND t1.y = t2.y;
+    SELECT x, y, MIN(f) AS i, MAX(f) AS a
+    FROM fire
+    GROUP BY fire[x-2][y+2],fire[x-1][y+2],fire[x-1][y+1],fire[x][y-1],fire[x+1][y-1]
+    HAVING f IS NULL AND MIN(f) <> MAX(f);
 END;
+CREATE FUNCTION connect_neighbors_F()
+RETURNS TABLE (x SMALLINT, y SMALLINT, i INT, a INT)
+BEGIN
+  RETURN
+    SELECT x, y, MIN(f) AS i, MAX(f) AS a
+    FROM fire
+    GROUP BY fire[x+2][y+2],fire[x+2][y+1],fire[x+1][y+1],fire[x-1][y],fire[x-1][y-1]
+    HAVING f IS NULL AND MIN(f) <> MAX(f);
+END;
+CREATE FUNCTION connect_neighbors_G()
+RETURNS TABLE (x SMALLINT, y SMALLINT, i INT, a INT)
+BEGIN
+  RETURN
+    SELECT x, y, MIN(f) AS i, MAX(f) AS a
+    FROM fire
+    GROUP BY fire[x+2][y-2],fire[x+1][y-2],fire[x+1][y-1],fire[x][y+1],fire[x-1][y+1]
+    HAVING f IS NULL AND MIN(f) <> MAX(f);
+END;
+CREATE FUNCTION connect_neighbors_H()
+RETURNS TABLE (x SMALLINT, y SMALLINT, i INT, a INT)
+BEGIN
+  RETURN
+    SELECT x, y, MIN(f) AS i, MAX(f) AS a
+    FROM fire
+    GROUP BY fire[x-2][y-2],fire[x-2][y-1],fire[x-1][y-1],fire[x+1][y],fire[x+1][y+1]
+    HAVING f IS NULL AND MIN(f) <> MAX(f);
+END;
+CREATE FUNCTION connect_neighbors_I()
+RETURNS TABLE (x SMALLINT, y SMALLINT, i INT, a INT)
+BEGIN
+  RETURN
+    SELECT x, y, MIN(f) AS i, MAX(f) AS a
+    FROM fire
+    GROUP BY fire[x-1][y],fire[x+1][y],fire[x+2][y]
+    HAVING f IS NULL AND MIN(f) <> MAX(f);
+END;
+CREATE FUNCTION connect_neighbors_J()
+RETURNS TABLE (x SMALLINT, y SMALLINT, i INT, a INT)
+BEGIN
+  RETURN
+    SELECT x, y, MIN(f) AS i, MAX(f) AS a
+    FROM fire
+    GROUP BY fire[x-2][y],fire[x-1][y],fire[x+1][y]
+    HAVING f IS NULL AND MIN(f) <> MAX(f);
+END;
+CREATE FUNCTION connect_neighbors_K()
+RETURNS TABLE (x SMALLINT, y SMALLINT, i INT, a INT)
+BEGIN
+  RETURN
+    SELECT x, y, MIN(f) AS i, MAX(f) AS a
+    FROM fire
+    GROUP BY fire[x][y-2],fire[x][y-1],fire[x][y+1]
+    HAVING f IS NULL AND MIN(f) <> MAX(f);
+END;
+CREATE FUNCTION connect_neighbors_L()
+RETURNS TABLE (x SMALLINT, y SMALLINT, i INT, a INT)
+BEGIN
+  RETURN
+    SELECT x, y, MIN(f) AS i, MAX(f) AS a
+    FROM fire
+    GROUP BY fire[x][y-1],fire[x][y+1],fire[x][y+2]
+    HAVING f IS NULL AND MIN(f) <> MAX(f);
+END;
+--
 CREATE FUNCTION connect_neighbors()
 RETURNS TABLE (i1 INT, i2 INT)
 BEGIN
@@ -334,10 +419,30 @@ BEGIN
 
     -- find neighboring fire clumps
     DELETE FROM bridges;
-    -- 3x3 window is too small and 5x5 is too large; hence,
-    -- we need to union the four possible 4x4 windows ...
     INSERT INTO bridges (
-      SELECT * FROM connect_neighbors_6()
+      SELECT * FROM connect_neighbors_A()
+      UNION ALL
+      SELECT * FROM connect_neighbors_B()
+      UNION ALL
+      SELECT * FROM connect_neighbors_C()
+      UNION ALL
+      SELECT * FROM connect_neighbors_D()
+      UNION ALL
+      SELECT * FROM connect_neighbors_E()
+      UNION ALL
+      SELECT * FROM connect_neighbors_F()
+      UNION ALL
+      SELECT * FROM connect_neighbors_G()
+      UNION ALL
+      SELECT * FROM connect_neighbors_H()
+      UNION ALL
+      SELECT * FROM connect_neighbors_I()
+      UNION ALL
+      SELECT * FROM connect_neighbors_J()
+      UNION ALL
+      SELECT * FROM connect_neighbors_K()
+      UNION ALL
+      SELECT * FROM connect_neighbors_L()
     );
 
     SELECT COUNT(*) INTO merge_more FROM bridges;
@@ -386,6 +491,7 @@ END;
 -- SciQL used here, in particular conjunctive HAVING predicates, correctly
 -- (or vice versa).
 set optimizer='no_mitosis_pipe';
+select now();
 SELECT * FROM connect_neighbors();
 set optimizer='default_pipe';
 
