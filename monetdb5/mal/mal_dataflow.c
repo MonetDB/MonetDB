@@ -86,7 +86,6 @@ typedef struct DATAFLOW {
 #define MAXQ 256
 static Queue *todos[MAXQ] = {0};	/* pending instructions organized by dataflow block */
 static bit occupied[MAXQ]={0}; 		/* worker pool is in use? */
-static int volatile exiting = 0;
 
 /*
  * Calculate the size of the dataflow dependency graph.
@@ -208,8 +207,6 @@ q_dequeue(Queue *q)
 
 	assert(q);
 	MT_sema_down(&q->s, "q_dequeue");
-	if (exiting)
-		return NULL;
 	MT_lock_set(&q->l, "q_dequeue");
 	assert(q->last > 0);
 	if (q->last > 0) {
@@ -271,9 +268,6 @@ DFLOWworker(void *t)
 			fe = q_dequeue(todo);
 		else
 			fe = fnxt;
-		if (exiting) {
-			break;
-		}
 		fnxt = 0;
 		assert(fe);
 		flow = fe->flow;
@@ -584,8 +578,6 @@ DFLOWscheduler(DataFlow flow, Queue *todo)
 
 	while (actions != tasks ) {
 		f = q_dequeue(flow->done);
-		if (exiting)
-			break;
 		if (f == NULL)
 			throw(MAL, "dataflow", "DFLOWscheduler(): q_dequeue(flow->done) returned NULL");
 
