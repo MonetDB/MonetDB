@@ -491,7 +491,6 @@ END;
 -- SciQL used here, in particular conjunctive HAVING predicates, correctly
 -- (or vice versa).
 set optimizer='no_mitosis_pipe';
-select now();
 SELECT * FROM connect_neighbors();
 set optimizer='default_pipe';
 
