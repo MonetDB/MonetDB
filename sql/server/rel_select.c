@@ -1180,24 +1180,36 @@ rel_add_intern(mvc *sql, sql_rel *rel)
 static sql_rel *
 rel_table_optname(mvc *sql, sql_rel *sq, symbol *optname)
 {
-	(void)sql;
 	if (optname && optname->token == SQL_NAME) {
 		dlist *columnrefs = NULL;
 		char *tname = optname->data.lval->h->data.sval;
+		list *l = sa_list(sql->sa);
 
 		columnrefs = optname->data.lval->h->next->data.lval;
 		if (columnrefs && sq->exps) {
 			dnode *d = columnrefs->h;
 			node *ne = sq->exps->h;
 
-			for (; d && ne; d = d->next, ne = ne->next)
-				exp_setname(sql->sa, ne->data, tname, d->data.sval );
+			for (; d && ne; d = d->next, ne = ne->next) {
+				sql_exp *e = ne->data;
+
+				if (exps_bind_column2(l, tname, d->data.sval))
+					return sql_error(sql, ERR_AMBIGUOUS, "SELECT: Duplicate column name '%s.%s'", tname, d->data.sval);
+				exp_setname(sql->sa, e, tname, d->data.sval );
+				append(l, e);
+			}
 		}
 		if (!columnrefs && sq->exps) {
 			node *ne = sq->exps->h;
 
-			for (; ne; ne = ne->next) 
-				noninternexp_setname(sql->sa, ne->data, tname, NULL );
+			for (; ne; ne = ne->next) {
+				sql_exp *e = ne->data;
+
+				if (exp_name(e) && exps_bind_column2(l, tname, exp_name(e)))
+					return sql_error(sql, ERR_AMBIGUOUS, "SELECT: Duplicate column name '%s.%s'", tname, exp_name(e));
+				noninternexp_setname(sql->sa, e, tname, NULL );
+				append(l, e);
+			}
 		}
 	}
 	rel_add_intern(sql, sq);

@@ -38,3 +38,4 @@ sort_void_crash.Bug-3341
 bogus_aggregation_casts.Bug-3342
 nestedcalls
 like_pcre_or.Bug-3348
+duplicate_column_name.Bug-3349
