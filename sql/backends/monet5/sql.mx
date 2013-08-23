@@ -4377,8 +4377,8 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		default:
 			throw(SQL, "sql", "failed to attach file %s", *(str*)getArgReference(stk, pci, i));
 		}
-		if (i!=(pci->retc + 2) && cnt != BATcount(c)) 
-			throw(SQL, "sql", "table %s not found", tname);
+		if (i!=(pci->retc + 2) && cnt != BATcount(c))
+			throw(SQL, "sql", "binary files for table '%s' have inconsistent counts", tname);
 		cnt = BATcount(c);
 		*(int*)getArgReference(stk, pci, i-(2+pci->retc)) = c->batCacheid;
 		BBPkeepref(c->batCacheid);
