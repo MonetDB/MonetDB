@@ -1145,7 +1145,7 @@ static void showcolormap(char *filename, int all)
 		 * "*.*" stays first (colors[0]) */
 		_clrs_ = (Color*) malloc (sizeof(colors));
 		if (_clrs_) {
-			*_clrs_ = *colors;
+			memcpy (_clrs_, colors, sizeof(colors));
 			qsort (_clrs_, NUM_COLORS, sizeof(Color), cmp_clr);
 			clrs = _clrs_;
 		}
