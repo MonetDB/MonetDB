@@ -31,12 +31,16 @@ mitosis-floor.Bug-3330
 avg_needs_abort_on_error.Bug-3329
 unique_constraint_on_declared_table.Bug-3319
 update_on_declared_table.Bug-3318
-correlated_subselect.Bug-3317
+correlated_subquery.Bug-3317
 incorrect_subquery_delete.Bug-3315
 constraint_checking.Bug_3335
 pivot.Bug-3339
 qualified_aggrname.Bug-3332
 cannot_use_columns_after_groupby.Bug-3340
+iso8601_weekofyear.Bug-3232
 sort_void_crash.Bug-3341
 bogus_aggregation_casts.Bug-3342
 nestedcalls
+like_pcre_or.Bug-3348
+duplicate_column_name.Bug-3349
+binary_copy_into.Bug-3345

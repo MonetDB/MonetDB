@@ -496,7 +496,7 @@ HEAPextend(Heap *h, size_t size)
 int
 HEAPshrink(Heap *h, size_t size)
 {
-	char *p;
+	char *p = NULL;
 
 	assert(size >= h->free);
 	assert(size <= h->size);
@@ -517,6 +517,7 @@ HEAPshrink(Heap *h, size_t size)
 		}
 		/* shrink memory mapped file */
 		GDKfilepath(path, BATDIR, nme, ext);
+		size = MAX(size, MT_pagesize()); /* at least one page */
 		size = (size + MT_pagesize() - 1) & ~(MT_pagesize() - 1);
 		if (size >= h->size) {
 			/* don't grow */

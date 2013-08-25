@@ -1180,24 +1180,36 @@ rel_add_intern(mvc *sql, sql_rel *rel)
 static sql_rel *
 rel_table_optname(mvc *sql, sql_rel *sq, symbol *optname)
 {
-	(void)sql;
 	if (optname && optname->token == SQL_NAME) {
 		dlist *columnrefs = NULL;
 		char *tname = optname->data.lval->h->data.sval;
+		list *l = sa_list(sql->sa);
 
 		columnrefs = optname->data.lval->h->next->data.lval;
 		if (columnrefs && sq->exps) {
 			dnode *d = columnrefs->h;
 			node *ne = sq->exps->h;
 
-			for (; d && ne; d = d->next, ne = ne->next)
-				exp_setname(sql->sa, ne->data, tname, d->data.sval );
+			for (; d && ne; d = d->next, ne = ne->next) {
+				sql_exp *e = ne->data;
+
+				if (exps_bind_column2(l, tname, d->data.sval))
+					return sql_error(sql, ERR_AMBIGUOUS, "SELECT: Duplicate column name '%s.%s'", tname, d->data.sval);
+				exp_setname(sql->sa, e, tname, d->data.sval );
+				append(l, e);
+			}
 		}
 		if (!columnrefs && sq->exps) {
 			node *ne = sq->exps->h;
 
-			for (; ne; ne = ne->next) 
-				noninternexp_setname(sql->sa, ne->data, tname, NULL );
+			for (; ne; ne = ne->next) {
+				sql_exp *e = ne->data;
+
+				if (exp_name(e) && exps_bind_column2(l, tname, exp_name(e)))
+					return sql_error(sql, ERR_AMBIGUOUS, "SELECT: Duplicate column name '%s.%s'", tname, exp_name(e));
+				noninternexp_setname(sql->sa, e, tname, NULL );
+				append(l, e);
+			}
 		}
 	}
 	rel_add_intern(sql, sq);
@@ -3278,6 +3290,17 @@ rel_unop(mvc *sql, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 		f = sql_bind_func(sql->sa, s, fname, t, NULL, F_AGGR);
 	if (f && IS_AGGR(f->func))
 		return _rel_aggr(sql, rel, 0, s, fname, l->next, fs);
+
+	if (f && type_has_tz(t) && f->func->fix_scale == SCALE_FIX) {
+		/* set timezone (using msec) */
+		sql_subtype *intsec = sql_bind_subtype(sql->sa, "sec_interval", 10 /*hour to second */, 0);
+		sql_exp *tz = exp_atom_lng(sql->sa, sql->timezone);
+
+		tz = exp_convert(sql->sa, tz, exp_subtype(tz), intsec); 
+		e = rel_binop_(sql, e, tz, NULL, "sql_add", ek.card);
+		if (!e)
+			return NULL;
+	}
 	return rel_unop_(sql, e, s, fname, ek.card);
 }
 

@@ -1,0 +1,44 @@
+stderr of test 'duplicate_column_name.Bug-3349` in directory 'sql/test/BugTracker-2013` itself:
+
+
+# 10:39:09 >  
+# 10:39:09 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=32749" "--set" "mapi_usock=/var/tmp/mtest-28423/.s.monetdb.32749" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/niels/scratch/rc-clean/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2013" "--set" "mal_listing=0"
+# 10:39:09 >  
+
+# builtin opt 	gdk_dbpath = /home/niels/scratch/rc-clean/Linux-x86_64/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = yes
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 32749
+# cmdline opt 	mapi_usock = /var/tmp/mtest-28423/.s.monetdb.32749
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbpath = /home/niels/scratch/rc-clean/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2013
+# cmdline opt 	mal_listing = 0
+
+# 10:39:09 >  
+# 10:39:09 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-28423" "--port=32749"
+# 10:39:09 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-28423/.s.monetdb.32749
+QUERY = SELECT *
+        FROM (
+        	    SELECT a1.x, a1.y, a2.x, a2.y
+        	    FROM ( SELECT * FROM test) AS a1 JOIN 
+        		 ( SELECT * FROM test) AS a2 
+        		ON a1.x = a2.x
+        	) AS t;
+ERROR = !SELECT: Duplicate column name 't.x'
+
+# 10:39:09 >  
+# 10:39:09 >  "Done."
+# 10:39:09 >  
+

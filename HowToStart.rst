@@ -73,6 +73,19 @@ autoconf/automake/libtool
 	Make_ phase.  autoconf and automake are not needed when you
 	start with the source distribution.
 
+iconv
+	A macrofile `iconv.m4` is expected in `/usr/share/aclocal/`.
+	On Ubuntu, you can search with `apt-file` what provides these
+	files:
+
+	$ apt-file search iconv.m4
+	gettext: /usr/share/aclocal/iconv.m4
+	gnulib: /usr/share/gnulib/m4/iconv.m4
+
+	The .m4 that usually works is in gettext. Simply run,
+
+	$ sudo apt-get install gettext
+
 standard software development tools
 	To compile MonetDB, you also need to have the following
 	standard software development tools installed and ready for

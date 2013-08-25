@@ -783,6 +783,14 @@ comment "cast @1 to @1 and check for overflow";
 @:mal_casttime(timestamp)@
 @:mal_casttime(daytime)@
 
+pattern current_time() :daytime
+address SQLcurrent_daytime
+comment "Get the clients current daytime";
+
+pattern current_timestamp() :timestamp
+address SQLcurrent_timestamp
+comment "Get the clients current timestamp";
+
 command calc.date( v:void ) :date 
 address nil_2_date
 comment "cast to date";
@@ -4383,8 +4391,8 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		} else {
 			throw(SQL, "sql", "failed to attach file %s", *(str*)getArgReference(stk, pci, i));
 		}
-		if (i!=(pci->retc + 2) && cnt != BATcount(c)) 
-			throw(SQL, "sql", "table %s not found", tname);
+		if (i!=(pci->retc + 2) && cnt != BATcount(c))
+			throw(SQL, "sql", "binary files for table '%s' have inconsistent counts", tname);
 		cnt = BATcount(c);
 		*(int*)getArgReference(stk, pci, i-(2+pci->retc)) = c->batCacheid;
 		BBPkeepref(c->batCacheid);
@@ -6385,6 +6393,8 @@ sql5_export str second_interval_daytime( lng *res, daytime *s, int *ek, int *sk 
 sql5_export str second_interval_2_daytime( daytime *res, lng *s, int *d);
 sql5_export str timestamp_2_daytime( daytime *res, timestamp *v, int *d);
 sql5_export str date_2_timestamp( timestamp *res, date *v, int *d);
+str SQLcurrent_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+str SQLcurrent_timestamp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 @c
 str
 second_interval_daytime( lng *res, daytime *s, int *d, int *sk )
@@ -6417,6 +6427,36 @@ second_interval_daytime( lng *res, daytime *s, int *d, int *sk )
 	}
 	*res = r;
 	return MAL_SUCCEED;
+}
+
+str SQLcurrent_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	mvc *m = NULL;
+	str msg = getSQLContext(cntxt, mb, &m, NULL);
+	daytime t, *res = (daytime *) getArgReference(stk, pci, 0);
+
+	if (msg)
+		return msg;
+
+	if ((msg = MTIMEcurrent_time(&t)) == MAL_SUCCEED) 
+		*res = t+m->timezone;
+	return msg;
+}
+
+str SQLcurrent_timestamp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	mvc *m = NULL;
+	str msg = getSQLContext(cntxt, mb, &m, NULL);
+	timestamp t, *res = (timestamp *) getArgReference(stk, pci, 0);
+
+	if (msg)
+		return msg;
+
+	if ((msg = MTIMEcurrent_timestamp(&t)) == MAL_SUCCEED) {
+		lng offset = m->timezone;
+		return MTIMEtimestamp_add(res, &t, &offset);
+	}
+	return msg;
 }
 
 /* str dump_cache(int *r); */

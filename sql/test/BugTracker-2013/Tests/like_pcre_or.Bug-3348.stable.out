@@ -1,0 +1,64 @@
+stdout of test 'like_pcre_or.Bug-3348` in directory 'sql/test/BugTracker-2013` itself:
+
+
+# 09:04:45 >  
+# 09:04:45 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=39939" "--set" "mapi_usock=/var/tmp/mtest-5753/.s.monetdb.39939" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/niels/scratch/rc-clean/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2013" "--set" "mal_listing=0"
+# 09:04:45 >  
+
+# MonetDB 5 server v11.15.12
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2013', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 3.775 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2013 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://niels.nesco.mine.nu:39939/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-5753/.s.monetdb.39939
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 09:04:45 >  
+# 09:04:45 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-5753" "--port=39939"
+# 09:04:45 >  
+
+#create table x (a CLOB);
+#insert into x VALUES ('aapX');
+[ 1	]
+#insert into x VALUES ('abc|aapX');
+[ 1	]
+#insert into x VALUES ('abc|aap_beer');
+[ 1	]
+#select * from x where a like 'abc|aap_%';
+% sys.x # table_name
+% a # name
+% clob # type
+% 12 # length
+[ "abc|aapX"	]
+[ "abc|aap_beer"	]
+#select * from x where a like 'abc|aap_%' escape '_';
+% sys.x # table_name
+% a # name
+% clob # type
+% 0 # length
+#select * from x where a like 'abc|aap__%' escape '_';
+% sys.x # table_name
+% a # name
+% clob # type
+% 12 # length
+[ "abc|aap_beer"	]
+#select * from x where a like 'abc|aap!_%' escape '!';
+% sys.x # table_name
+% a # name
+% clob # type
+% 12 # length
+[ "abc|aap_beer"	]
+#drop table x;
+
+# 09:04:45 >  
+# 09:04:45 >  "Done."
+# 09:04:45 >  
+

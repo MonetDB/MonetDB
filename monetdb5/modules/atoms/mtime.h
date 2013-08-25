@@ -163,6 +163,7 @@ mtime_export str MTIMEdate_extract_day(int *ret, date *v);
 mtime_export str MTIMEdate_extract_dayofyear(int *ret, date *v);
 mtime_export str MTIMEdate_extract_weekofyear(int *ret, date *v);
 mtime_export str MTIMEdate_extract_dayofweek(int *ret, date *v);
+mtime_export str MTIMEdate_extract_dayofworkweek(int *ret, date *v);
 mtime_export str MTIMEdaytime_extract_hours(int *ret, daytime *v);
 mtime_export str MTIMEdaytime_extract_minutes(int *ret, daytime *v);
 mtime_export str MTIMEdaytime_extract_seconds(int *ret, daytime *v);

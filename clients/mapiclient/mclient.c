@@ -2562,6 +2562,7 @@ set_timezone(Mapi mid)
 	tmp = gmtime(&t);
 	gt = mktime(tmp);
 	tmp = localtime(&t);
+	tmp->tm_isdst=0; /* We need the difference without dst */
 	lt = mktime(tmp);
 	assert((lng) gt - (lng) lt >= (lng) INT_MIN && (lng) gt - (lng) lt <= (lng) INT_MAX);
 	tzone = (int) (gt - lt);
