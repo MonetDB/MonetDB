@@ -2292,7 +2292,6 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 	int argc = 0;
 	char arg[SMALLBUFSIZ];
 	node *n;
-	str pipe;
 
 	backup = c->curprg;
 
@@ -2359,7 +2358,7 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 		q->token = REMsymbol;	// will be patched
 		q = pushStr(mb, q, t);
 		GDKfree(tt);
-		q = pushStr(mb, q, pipe= getSQLoptimizer(be->mvc));
+		q = pushStr(mb, q, getSQLoptimizer(be->mvc));
 		m->Tparse = 0;
 	}
 	if (cq)
