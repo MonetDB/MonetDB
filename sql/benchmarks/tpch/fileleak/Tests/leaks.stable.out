@@ -25,22 +25,22 @@ Ready.
 # 16:01:26 >  "/usr/bin/python2" "leaks.SQL.py" "leaks"
 # 16:01:26 >  
 
-(u'/home/niels/scratch/rc-clean/Linux-x86_64/var/MonetDB/mTests_sql_benchmarks_tpch_fileleak/bat/10/1047.tail', 0, 0)
-(u'/home/niels/scratch/rc-clean/Linux-x86_64/var/MonetDB/mTests_sql_benchmarks_tpch_fileleak/bat/10/1050.tail', 0, 0)
-(u'/home/niels/scratch/rc-clean/Linux-x86_64/var/MonetDB/mTests_sql_benchmarks_tpch_fileleak/bat/10/1051.tail', 0, 0)
-(u'/home/niels/scratch/rc-clean/Linux-x86_64/var/MonetDB/mTests_sql_benchmarks_tpch_fileleak/bat/10/1052.tail', 0, 0)
-(u'/home/niels/scratch/rc-clean/Linux-x86_64/var/MonetDB/mTests_sql_benchmarks_tpch_fileleak/bat/10/1053.tail', 0, 0)
-(u'/home/niels/scratch/rc-clean/Linux-x86_64/var/MonetDB/mTests_sql_benchmarks_tpch_fileleak/bat/10/1054.tail', 0, 0)
-(u'/home/niels/scratch/rc-clean/Linux-x86_64/var/MonetDB/mTests_sql_benchmarks_tpch_fileleak/bat/10/1055.tail', 0, 0)
-(u'/home/niels/scratch/rc-clean/Linux-x86_64/var/MonetDB/mTests_sql_benchmarks_tpch_fileleak/bat/10/1056.tail', 0, 0)
-(u'/home/niels/scratch/rc-clean/Linux-x86_64/var/MonetDB/mTests_sql_benchmarks_tpch_fileleak/bat/10/1057.tail', 0, 0)
-(u'/home/niels/scratch/rc-clean/Linux-x86_64/var/MonetDB/mTests_sql_benchmarks_tpch_fileleak/bat/10/1060.tail', 0, 0)
-(u'/home/niels/scratch/rc-clean/Linux-x86_64/var/MonetDB/mTests_sql_benchmarks_tpch_fileleak/bat/10/1061.tail', 0, 0)
-(u'/home/niels/scratch/rc-clean/Linux-x86_64/var/MonetDB/mTests_sql_benchmarks_tpch_fileleak/bat/10/1062.tail', 0, 0)
-(u'/home/niels/scratch/rc-clean/Linux-x86_64/var/MonetDB/mTests_sql_benchmarks_tpch_fileleak/bat/10/1063.tail', 0, 0)
-(u'/home/niels/scratch/rc-clean/Linux-x86_64/var/MonetDB/mTests_sql_benchmarks_tpch_fileleak/bat/10/1064.tail', 0, 0)
-(u'/home/niels/scratch/rc-clean/Linux-x86_64/var/MonetDB/mTests_sql_benchmarks_tpch_fileleak/bat/10/1065.tail', 0, 0)
-(u'/home/niels/scratch/rc-clean/Linux-x86_64/var/MonetDB/mTests_sql_benchmarks_tpch_fileleak/bat/10/1066.tail', 0, 0)
+(u'10/1047', 0, 0)
+(u'10/1050', 0, 0)
+(u'10/1051', 0, 0)
+(u'10/1052', 0, 0)
+(u'10/1053', 0, 0)
+(u'10/1054', 0, 0)
+(u'10/1055', 0, 0)
+(u'10/1056', 0, 0)
+(u'10/1057', 0, 0)
+(u'10/1060', 0, 0)
+(u'10/1061', 0, 0)
+(u'10/1062', 0, 0)
+(u'10/1063', 0, 0)
+(u'10/1064', 0, 0)
+(u'10/1065', 0, 0)
+(u'10/1066', 0, 0)
 
 # 16:01:26 >  
 # 16:01:26 >  "Done."
