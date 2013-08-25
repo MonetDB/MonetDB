@@ -1,0 +1,54 @@
+stdout of test 'iso8601_weekofyear.Bug-3232` in directory 'sql/test/BugTracker-2013` itself:
+
+
+# 12:18:09 >  
+# 12:18:09 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=32914" "--set" "mapi_usock=/var/tmp/mtest-29797/.s.monetdb.32914" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/niels/scratch/rc-clean/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2013" "--set" "mal_listing=0"
+# 12:18:09 >  
+
+# MonetDB 5 server v11.15.12
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2013', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 3.775 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2013 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://niels.nesco.mine.nu:32914/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-29797/.s.monetdb.32914
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 12:18:09 >  
+# 12:18:09 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-29797" "--port=32914"
+# 12:18:09 >  
+
+#create table weekofyear_test (d date);
+#insert into weekofyear_test values ('1986-JAN-01');
+[ 1	]
+#insert into weekofyear_test values ('1987-JAN-01');
+[ 1	]
+#insert into weekofyear_test values ('1988-JAN-01');
+[ 1	]
+#insert into weekofyear_test values ('1989-JAN-01');
+[ 1	]
+#insert into weekofyear_test values ('1990-JAN-01');
+[ 1	]
+#select d, weekofyear(d), dayofweek(d), dayofmonth(d) from weekofyear_test;
+% sys.weekofyear_test,	sys.L1,	sys.L2,	sys.L2 # table_name
+% d,	L1,	L2,	dayofmonth_d # name
+% date,	int,	int,	int # type
+% 10,	2,	1,	1 # length
+[ 1986-01-01,	1,	3,	1	]
+[ 1987-01-01,	1,	4,	1	]
+[ 1988-01-01,	53,	5,	1	]
+[ 1989-01-01,	52,	7,	1	]
+[ 1990-01-01,	1,	1,	1	]
+#drop table weekofyear_test;
+
+# 12:18:09 >  
+# 12:18:09 >  "Done."
+# 12:18:09 >  
+

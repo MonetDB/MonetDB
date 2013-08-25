@@ -3290,6 +3290,17 @@ rel_unop(mvc *sql, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 		f = sql_bind_func(sql->sa, s, fname, t, NULL, F_AGGR);
 	if (f && IS_AGGR(f->func))
 		return _rel_aggr(sql, rel, 0, s, fname, l->next, fs);
+
+	if (f && type_has_tz(t) && f->func->fix_scale == SCALE_FIX) {
+		/* set timezone (using msec) */
+		sql_subtype *intsec = sql_bind_subtype(sql->sa, "sec_interval", 10 /*hour to second */, 0);
+		sql_exp *tz = exp_atom_lng(sql->sa, sql->timezone);
+
+		tz = exp_convert(sql->sa, tz, exp_subtype(tz), intsec); 
+		e = rel_binop_(sql, e, tz, NULL, "sql_add", ek.card);
+		if (!e)
+			return NULL;
+	}
 	return rel_unop_(sql, e, s, fname, ek.card);
 }
 

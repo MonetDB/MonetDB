@@ -34,6 +34,7 @@ correlated_subquery.Bug-3317
 incorrect_subquery_delete.Bug-3315
 qualified_aggrname.Bug-3332
 cannot_use_columns_after_groupby.Bug-3340
+iso8601_weekofyear.Bug-3232
 sort_void_crash.Bug-3341
 bogus_aggregation_casts.Bug-3342
 nestedcalls

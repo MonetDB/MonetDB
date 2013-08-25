@@ -427,11 +427,23 @@ parse_substr(int *ret, str s, int min, str list[], int size)
 	return j;
 }
 
+/* Sunday = 1, Saturday = 7 */
 static int
 date_dayofweek(date v)
 {
 	v %= 7;
 	return v <= 0 ? v + 7 : v;
+}
+
+/* Monday = 1, Sunday = 7 */
+static int
+date_dayofworkweek(date v)
+{
+	int res = date_dayofweek(v);
+
+	if (res >= 2)
+		return res -1;
+	return 7;
 }
 
 #define SKIP_DAYS(d,w,i) d += i; w = (w + i)%7; if (w <= 0) w += 7;
@@ -1310,10 +1322,10 @@ date_extract_weekofyear(int *ret, date *v)
 
 		fromdate((int) *v, &dummy, &dummy, &year);
 		year_jan_1 = todate(1, 1, year);
-		dayofweek = date_dayofweek(year_jan_1);
+		dayofweek = date_dayofworkweek(year_jan_1);
 
 		if (dayofweek <= 4) {
-			/* week of jan 1 belongs to this year */
+			/* 4 or more days in first week, ie week of jan 1 belongs to this year */
 			*ret = (int) (1 + (*v - year_jan_1 + dayofweek - 1) / 7);
 		} else if (*v - year_jan_1 > 7 - dayofweek) {
 			/* week of jan 1 belongs to last year; but this is a later week */
@@ -1336,6 +1348,18 @@ date_extract_dayofweek(int *ret, date *v)
 		*ret = int_nil;
 	} else {
 		*ret = date_dayofweek(*v);
+	}
+	return MAL_SUCCEED;
+}
+
+/* Returns the current day  of the week where 1=monday, .., 7=sunday */
+static str
+date_extract_dayofworkweek(int *ret, date *v)
+{
+	if (*v == date_nil) {
+		*ret = int_nil;
+	} else {
+		*ret = date_dayofworkweek(*v);
 	}
 	return MAL_SUCCEED;
 }
@@ -1956,6 +1980,12 @@ str
 MTIMEdate_extract_dayofweek(int *ret, date *v)
 {
 	return date_extract_dayofweek(ret, v);
+}
+
+str
+MTIMEdate_extract_dayofworkweek(int *ret, date *v)
+{
+	return date_extract_dayofworkweek(ret, v);
 }
 
 str

@@ -30,9 +30,9 @@ stderr of test 'predicate_select.Bug-3090` in directory 'sql/test/BugTracker-201
 # 18:53:13 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=niels" "--port=32323"
 # 18:53:13 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-16462/.s.monetdb.36324
+MAPI  = (monetdb) /var/tmp/mtest-4932/.s.monetdb.34449
 QUERY = select * from tables where name;
-ERROR = !conversion of string 'r' to type bit failed.
+ERROR = !conversion of string 'storagemodelinput' to type bit failed.
 
 # 18:53:13 >  
 # 18:53:13 >  "Done."
