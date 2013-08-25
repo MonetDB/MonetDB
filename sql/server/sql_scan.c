@@ -284,6 +284,7 @@ scanner_init_keywords(void)
 	keywords_insert("CALL", CALL);
 	keywords_insert("LANGUAGE", LANGUAGE);
 
+	keywords_insert("ANALYZE", ANALYZE);
 	keywords_insert("EXPLAIN", SQL_EXPLAIN);
 	keywords_insert("PLAN", SQL_PLAN);
 	keywords_insert("DEBUG", SQL_DEBUG);

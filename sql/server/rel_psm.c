@@ -1060,6 +1060,84 @@ drop_trigger(mvc *sql, dlist *qname)
 	return rel_drop_trigger(sql, ss->base.name, tname);
 }
 
+static sql_rel *
+psm_analyze(mvc *sql, dlist *qname, dlist *columns, symbol *sample )
+{
+	exp_kind ek = {type_value, card_value, FALSE};
+	sql_exp *sample_exp = NULL, *call;
+	char *sname = NULL, *tname = NULL;
+	list *tl = sa_list(sql->sa);
+	list *exps = sa_list(sql->sa), *analyze_calls = sa_list(sql->sa);
+	sql_subfunc *f = NULL;
+
+	if (sample) {
+		sql_subtype *tpe = sql_bind_localtype("lng");
+
+       		sample_exp = rel_value_exp( sql, NULL, sample, 0, ek);
+		sample_exp = rel_check_type(sql, tpe, sample_exp, type_cast); 
+	}
+	if (qname) {
+		if (qname->h->next)
+			sname = qname_schema(qname);
+		else
+			sname = qname_table(qname);
+		if (!sname)
+			sname = cur_schema(sql)->base.name;
+		if (qname->h->next)
+			tname = qname_table(qname);
+	}
+	/* call analyze( [schema, [ table ]], opt_sample_size ) */
+	if (sname) {
+		sql_exp *sname_exp = exp_atom_clob(sql->sa, sname);
+
+		append(exps, sname_exp);
+		append(tl, exp_subtype(sname_exp));
+	}
+	if (tname) {
+		sql_exp *tname_exp = exp_atom_clob(sql->sa, tname);
+
+		append(exps, tname_exp);
+		append(tl, exp_subtype(tname_exp));
+
+		if (columns)
+			append(tl, exp_subtype(tname_exp));
+	}
+	if (!columns) {
+		if (sample_exp) {
+			append(exps, sample_exp);
+			append(tl, exp_subtype(sample_exp));
+		}
+		f = sql_bind_func_(sql->sa, mvc_bind_schema(sql, "sys"), "analyze", tl, F_PROC);
+		if (!f)
+			return sql_error(sql, 01, "Analyze procedure missing");
+		call = exp_op(sql->sa, exps, f);
+		append(analyze_calls, call);
+	} else {
+		dnode *n;
+
+		if (sample_exp)
+			append(tl, exp_subtype(sample_exp));
+		f = sql_bind_func_(sql->sa, mvc_bind_schema(sql, "sys"), "analyze", tl, F_PROC);
+
+		if (!f)
+			return sql_error(sql, 01, "Analyze procedure missing");
+		for( n = columns->h; n; n = n->next) {
+			char *cname = n->data.sval;
+			list *nexps = list_dup(exps, NULL);
+			sql_exp *cname_exp = exp_atom_clob(sql->sa, cname);
+
+			append(nexps, cname_exp);
+			if (sample_exp)
+				append(nexps, sample_exp);
+			/* call analyze( sname, tname, cname, opt_sample_size ) */
+			call = exp_op(sql->sa, nexps, f);
+			append(analyze_calls, call);
+		}
+	}
+	return rel_psm_block(sql->sa, analyze_calls);
+}
+
+
 sql_rel *
 rel_psm(mvc *sql, symbol *s)
 {
@@ -1122,6 +1200,12 @@ rel_psm(mvc *sql, symbol *s)
 	}
 		break;
 
+	case SQL_ANALYZE: {
+		dlist *l = s->data.lval;
+
+		ret = psm_analyze(sql, l->h->data.lval /* qualified table name */, l->h->next->data.lval /* opt list of column */, l->h->next->next->data.sym /* opt_sample_size */);
+		sql->type = Q_UPDATE;
+	} 	break;
 	default:
 		return sql_error(sql, 01, "schema statement unknown symbol(" PTRFMT ")->token = %s", PTRFMTCAST s, token2string(s->token));
 	}

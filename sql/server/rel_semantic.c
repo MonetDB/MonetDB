@@ -211,6 +211,8 @@ rel_semantic(mvc *sql, symbol *s)
 
 	case SQL_CREATE_TRIGGER:
 	case SQL_DROP_TRIGGER:
+
+	case SQL_ANALYZE:
 		return rel_psm(sql, s);
 
 	case SQL_INSERT:

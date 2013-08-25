@@ -210,27 +210,16 @@ SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 	GDKfree(old);
 	optimizerCheck(cntxt,mb,"optimizer.SQLgetstatistics",actions,GDKusec()-clk,0);
 }
-/*
- * Optimizers steps are identified by a pipeline name. The default pipeline in the distribution has been
- * tested extensively and should provide overall good performance.
- * Additional pipelines are defined in the opt_pipes.mx file.
- *
- */
-static str optimizerpipe;		/* the active pipeline */
 
 str
-initSQLoptimizer(void)
+getSQLoptimizer(mvc *m)
 {
-	char *pipe;
+	ValRecord *val = stack_get_var(m,"optimizer");
+	char *pipe = "default_pipe";
 
-	/* do nothing if the pipe line is already set */
-	if (optimizerpipe == NULL ){
-		pipe = GDKgetenv("sql_optimizer");
-		if ( pipe == NULL)
-			optimizerpipe = GDKstrdup("default_pipe");
-		else optimizerpipe= GDKstrdup(pipe);
-	} 
-	return GDKstrdup(optimizerpipe);
+	if (val && val->val.sval)
+		pipe = val->val.sval;
+	return pipe;
 }
 
 void
@@ -260,13 +249,12 @@ addQueryToCache(Client c)
 {
 	MalBlkPtr mb;
 	mvc *m;
-	ValRecord *val;
 	backend *be;
-	str msg = 0;
+	str msg = 0, pipe;
 
 	be = (backend *) c->sqlcontext;
 	assert( be && be->mvc ); 	/* SQL clients should always have their state set */
-	val = stack_get_var(be->mvc,"optimizer");
+	pipe = getSQLoptimizer(be->mvc);
 
 	insertSymbol(c->nspace, c->curprg);
 	trimMalBlk(c->curprg->def);
@@ -292,7 +280,7 @@ addQueryToCache(Client c)
 			runMALDebugger(c,c->curprg);
 		return;
 	}
-	addOptimizers(c, mb, val->val.sval);
+	addOptimizers(c, mb, pipe);
 	SQLgetStatistics(c,m,mb);
 	if ( m->emod & mod_debug )
 		addtoMalBlkHistory(mb,"getStatistics");

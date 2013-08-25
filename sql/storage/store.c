@@ -4053,7 +4053,7 @@ sql_trans_drop_table(sql_trans *tr, sql_schema *s, int id, int drop_action)
 		list_append(tr->dropped, local_id);
 	}
 		
-	if (!isDeclaredTable(t))
+	if (!isDeclaredTable(t) && !isTempSchema(s))
 		sys_drop_table(tr, t, drop_action);
 
 	t->base.wtime = s->base.wtime = tr->wtime = tr->wstime;
@@ -4885,6 +4885,8 @@ sql_session_reset(sql_session *s, int ac)
 
 			if (isGlobal(t) && isKindOfTable(t))
 				sql_trans_clear_table(s->tr, t);
+			else 
+				sql_trans_drop_table(s->tr, tmp, t->base.id, DROP_RESTRICT);
 		}
 	}
 	assert(s->active == 0);

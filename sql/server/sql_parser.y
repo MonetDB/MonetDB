@@ -537,7 +537,7 @@ SQLCODE SQLERROR UNDER WHENEVER
 %token CHECK CONSTRAINT CREATE
 %token TYPE PROCEDURE FUNCTION AGGREGATE RETURNS EXTERNAL sqlNAME DECLARE
 %token CALL LANGUAGE 
-%token SQL_EXPLAIN SQL_PLAN SQL_DEBUG SQL_TRACE SQL_DOT PREPARE EXECUTE
+%token ANALYZE SQL_EXPLAIN SQL_PLAN SQL_DEBUG SQL_TRACE SQL_DOT PREPARE EXECUTE
 %token DEFAULT DISTINCT DROP
 %token FOREIGN
 %token RENAME ENCRYPTED UNENCRYPTED PASSWORD GRANT REVOKE ROLE ADMIN INTO
@@ -678,6 +678,12 @@ sql:
  |  alter_statement
  |  declare_statement
  |  set_statement
+ |  ANALYZE qname opt_column_list opt_sample	
+		{ dlist *l = L();
+		append_list(l, $2);
+		append_list(l, $3);
+		append_symbol(l, $4);
+		$$ = _symbol_create_list( SQL_ANALYZE, l); }
  |  call_procedure_statement
  ;
 
@@ -1935,6 +1941,7 @@ routine_invocation:
 		{ dlist *l = L(); 
 		  append_list( l, $1);
 		  append_list( l, $3);
+		  assert(0);
 		  $$ = _symbol_create_list( SQL_FUNC, l);
 		}
     ;
@@ -3636,7 +3643,7 @@ qfunc:
  ;
 
 func_ident:
-	IDENT 	{ $$ = $1; }
+	ident 	{ $$ = $1; }
  |	LEFT	{ $$ = sa_strdup(SA, "left"); }
  |	RIGHT	{ $$ = sa_strdup(SA, "right"); }
  |	INSERT	{ $$ = sa_strdup(SA, "insert"); }
@@ -4774,6 +4781,7 @@ non_reserved_word:
 |  URI		{ $$ = sa_strdup(SA, "uri"); }
 |  FILTER	{ $$ = sa_strdup(SA, "filter"); }
 |  TEMPORARY	{ $$ = sa_strdup(SA, "temporary"); }
+|  ANALYZE	{ $$ = sa_strdup(SA, "analyze"); }
 ;
 
 name_commalist:

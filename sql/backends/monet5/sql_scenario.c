@@ -282,10 +282,12 @@ global_variables(mvc *sql, char *user, char *schema)
 	SQLglobal("current_schema", schema);
 	SQLglobal("current_user", user);
 	SQLglobal("current_role", user);
+
 	/* inherit the optimizer from the server */
-	opt = initSQLoptimizer();
+	opt = GDKgetenv("sql_optimizer");
+	if (!opt)
+		opt = "default_pipe";
 	SQLglobal("optimizer", opt);
-	GDKfree(opt);
 	SQLglobal("trace","show,ticks,stmt");
 
 	typename = "sec_interval";

@@ -2359,9 +2359,8 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 		q->token = REMsymbol;	// will be patched
 		q = pushStr(mb, q, t);
 		GDKfree(tt);
-		q = pushStr(mb, q, pipe= initSQLoptimizer());
+		q = pushStr(mb, q, pipe= getSQLoptimizer(be->mvc));
 		m->Tparse = 0;
-		GDKfree(pipe);
 	}
 	if (cq)
 		addQueryToCache(c);
