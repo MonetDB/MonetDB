@@ -33,7 +33,7 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 90 # length
+% 93 # length
 function user.s5_1{autoCommit=true}(A0:flt):void;
     X_3 := sql.mvc();
     X_7 := sql.bind(X_3,"sys","tab_2826","d",0);
