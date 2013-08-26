@@ -329,7 +329,7 @@ SQLColumns_(ODBCStmt *stmt,
 				" case when c.type_digits = 53 and c.type_scale = 0 then 15"
 				" else c.type_digits"
 				" end"
-			   " when 'decimal' then c.type_digits"
+			   " when 'decimal' then c.type_scale"
 			   " when 'bigint' then 19"
 			   " when 'int' then 10"
 			   " when 'smallint' then 5"
