@@ -310,7 +310,6 @@ SQLSetDescField(SQLHDESC DescriptorHandle,
 	return SQLSetDescField_((ODBCDesc *) DescriptorHandle, RecNumber, FieldIdentifier, ValuePtr, BufferLength);
 }
 
-#ifdef WITH_WCHAR
 SQLRETURN SQL_API
 SQLSetDescFieldW(SQLHDESC DescriptorHandle,
 		 SQLSMALLINT RecNumber,
@@ -355,4 +354,3 @@ SQLSetDescFieldW(SQLHDESC DescriptorHandle,
 
 	return rc;
 }
-#endif /* WITH_WCHAR */

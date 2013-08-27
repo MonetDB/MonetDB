@@ -245,7 +245,6 @@ SQLColumnPrivileges(SQLHSTMT StatementHandle,
 				    ColumnName, NameLength4);
 }
 
-#ifdef WITH_WCHAR
 SQLRETURN SQL_API
 SQLColumnPrivilegesA(SQLHSTMT StatementHandle,
 		     SQLCHAR *CatalogName,
@@ -314,4 +313,3 @@ SQLColumnPrivilegesW(SQLHSTMT StatementHandle,
 		free(column);
 	return rc;
 }
-#endif /* WITH_WCHAR */

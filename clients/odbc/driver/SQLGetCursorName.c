@@ -81,7 +81,6 @@ SQLGetCursorName(SQLHSTMT StatementHandle,
 	return SQLGetCursorName_(stmt, CursorName, BufferLength, NameLengthPtr);
 }
 
-#ifdef WITH_WCHAR
 SQLRETURN SQL_API
 SQLGetCursorNameA(SQLHSTMT StatementHandle,
 		  SQLCHAR *CursorName,
@@ -129,4 +128,3 @@ SQLGetCursorNameW(SQLHSTMT StatementHandle,
 
 	return rc;
 }
-#endif /* WITH_WCHAR */

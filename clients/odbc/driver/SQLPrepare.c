@@ -330,7 +330,6 @@ SQLPrepare(SQLHSTMT StatementHandle,
 			   TextLength);
 }
 
-#ifdef WITH_WCHAR
 SQLRETURN SQL_API
 SQLPrepareA(SQLHSTMT StatementHandle,
 	    SQLCHAR *StatementText,
@@ -367,4 +366,3 @@ SQLPrepareW(SQLHSTMT StatementHandle,
 
 	return rc;
 }
-#endif /* WITH_WCHAR */

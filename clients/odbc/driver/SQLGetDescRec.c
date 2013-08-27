@@ -136,7 +136,6 @@ SQLGetDescRec(SQLHDESC DescriptorHandle,
 			      NullablePtr);
 }
 
-#ifdef WITH_WCHAR
 SQLRETURN SQL_API
 SQLGetDescRecA(SQLHDESC DescriptorHandle,
 	       SQLSMALLINT RecNumber,
@@ -211,4 +210,3 @@ SQLGetDescRecW(SQLHDESC DescriptorHandle,
 
 	return rc;
 }
-#endif /* WITH_WCHAR */

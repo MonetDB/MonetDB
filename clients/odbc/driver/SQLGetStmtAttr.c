@@ -194,7 +194,6 @@ SQLGetStmtAttr(SQLHSTMT StatementHandle,
 			       StringLengthPtr);
 }
 
-#ifdef WITH_WCHAR
 SQLRETURN SQL_API
 SQLGetStmtAttrA(SQLHSTMT StatementHandle,
 		SQLINTEGER Attribute,
@@ -234,4 +233,3 @@ SQLGetStmtAttrW(SQLHSTMT StatementHandle,
 			       BufferLength,
 			       StringLengthPtr);
 }
-#endif /* WITH_WCHAR */

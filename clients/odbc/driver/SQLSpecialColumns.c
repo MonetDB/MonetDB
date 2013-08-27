@@ -553,7 +553,6 @@ SQLSpecialColumns(SQLHSTMT StatementHandle,
 				  Nullable);
 }
 
-#ifdef WITH_WCHAR
 SQLRETURN SQL_API
 SQLSpecialColumnsA(SQLHSTMT StatementHandle,
 		   SQLUSMALLINT IdentifierType,
@@ -627,4 +626,3 @@ SQLSpecialColumnsW(SQLHSTMT StatementHandle,
 
 	return rc;
 }
-#endif /* WITH_WCHAR */

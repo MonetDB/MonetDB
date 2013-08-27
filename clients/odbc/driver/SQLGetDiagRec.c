@@ -183,7 +183,6 @@ SQLGetDiagRec(SQLSMALLINT HandleType,
 			      TextLengthPtr);
 }
 
-#ifdef WITH_WCHAR
 SQLRETURN SQL_API
 SQLGetDiagRecA(SQLSMALLINT HandleType,
 	       SQLHANDLE Handle,
@@ -260,4 +259,3 @@ SQLGetDiagRecW(SQLSMALLINT HandleType,
 
 	return rc;
 }
-#endif /* WITH_WCHAR */

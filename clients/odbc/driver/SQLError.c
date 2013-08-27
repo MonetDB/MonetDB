@@ -68,7 +68,6 @@ SQLError(SQLHENV EnvironmentHandle,
 			      TextLengthPtr);
 }
 
-#ifdef WITH_WCHAR
 SQLRETURN SQL_API
 SQLErrorA(SQLHENV EnvironmentHandle,
 	  SQLHDBC ConnectionHandle,
@@ -142,4 +141,3 @@ SQLErrorW(SQLHENV EnvironmentHandle,
 
 	return rc;
 }
-#endif /* WITH_WCHAR */

@@ -110,7 +110,6 @@ extern char *ODBCTranslateSQL(const SQLCHAR *query, size_t length, SQLUINTEGER n
 			errfunc((hdl), "01004", NULL, 0);		\
 	} while (0)
 
-#ifdef WITH_WCHAR
 extern SQLCHAR *ODBCwchar2utf8(const SQLWCHAR *s, SQLLEN length, char **errmsg);
 extern char *ODBCutf82wchar(const SQLCHAR *s, SQLINTEGER length, SQLWCHAR *buf, SQLLEN buflen, SQLSMALLINT *buflenout);
 
@@ -142,7 +141,6 @@ extern char *ODBCutf82wchar(const SQLCHAR *s, SQLINTEGER length, SQLWCHAR *buf, 
 		if (wslp)						\
 			*(wslp) = (sl) * (cw);				\
 	} while (0)
-#endif /* WITH_WCHAR */
 
 char *ODBCParseOA(const char *tab, const char *col, const char *arg, size_t len);
 char *ODBCParsePV(const char *tab, const char *col, const char *arg, size_t len);

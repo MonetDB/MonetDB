@@ -42,7 +42,6 @@ SQLDrivers(SQLHENV EnvironmentHandle,
 	return SQL_ERROR;
 }
 
-#ifdef WITH_WCHAR
 SQLRETURN SQL_API
 SQLDriversA(SQLHENV EnvironmentHandle,
 	    SQLUSMALLINT Direction,
@@ -84,4 +83,3 @@ SQLDriversW(SQLHENV EnvironmentHandle,
 		    "Driver Manager only function", 0);
 	return SQL_ERROR;
 }
-#endif /* WITH_WCHAR */

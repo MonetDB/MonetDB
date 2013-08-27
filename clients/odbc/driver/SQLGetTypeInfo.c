@@ -1269,7 +1269,6 @@ SQLGetTypeInfo(SQLHSTMT StatementHandle,
 	return SQLGetTypeInfo_(stmt, DataType);
 }
 
-#ifdef WITH_WCHAR
 SQLRETURN SQL_API
 SQLGetTypeInfoA(SQLHSTMT StatementHandle,
 		SQLSMALLINT DataType)
@@ -1295,4 +1294,3 @@ SQLGetTypeInfoW(SQLHSTMT StatementHandle,
 
 	return SQLGetTypeInfo_(stmt, DataType);
 }
-#endif /* WITH_WCHAR */

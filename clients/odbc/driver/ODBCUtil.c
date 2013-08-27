@@ -78,7 +78,6 @@ dupODBCstring(const SQLCHAR *inStr, size_t length)
 	return tmp;
 }
 
-#ifdef WITH_WCHAR
 /* Conversion to and from SQLWCHAR */
 static int utf8chkmsk[] = {
 	0x0000007f,
@@ -250,7 +249,6 @@ ODBCutf82wchar(const SQLCHAR *s,
 		*buflenout = len;
 	return NULL;
 }
-#endif /* WITH_WCHAR */
 
 /*
  * Translate an ODBC-compatible query to one that the SQL server

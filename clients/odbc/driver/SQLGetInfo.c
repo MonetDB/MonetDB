@@ -1107,7 +1107,6 @@ SQLGetInfo(SQLHDBC ConnectionHandle,
 			   StringLengthPtr);
 }
 
-#ifdef WITH_WCHAR
 SQLRETURN SQL_API
 SQLGetInfoA(SQLHDBC ConnectionHandle,
 	    SQLUSMALLINT InfoType,
@@ -1211,4 +1210,3 @@ SQLGetInfoW(SQLHDBC ConnectionHandle,
 
 	return rc;
 }
-#endif /* WITH_WCHAR */

@@ -163,7 +163,6 @@ SQLDescribeCol(SQLHSTMT StatementHandle,
 			       NullablePtr);
 }
 
-#ifdef WITH_WCHAR
 SQLRETURN SQL_API
 SQLDescribeColA(SQLHSTMT StatementHandle,
 		SQLUSMALLINT ColumnNumber,
@@ -236,4 +235,3 @@ SQLDescribeColW(SQLHSTMT StatementHandle,
 
 	return rc;
 }
-#endif /* WITH_WCHAR */

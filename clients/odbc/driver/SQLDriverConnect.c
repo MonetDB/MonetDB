@@ -397,7 +397,6 @@ SQLDriverConnect(SQLHDBC ConnectionHandle,
 				 0);
 }
 
-#ifdef WITH_WCHAR
 SQLRETURN SQL_API
 SQLDriverConnectA(SQLHDBC ConnectionHandle,
 		  SQLHWND WindowHandle,
@@ -463,4 +462,3 @@ SQLDriverConnectW(SQLHDBC ConnectionHandle,
 		free(in);
 	return rc;
 }
-#endif /* WITH_WCHAR */

@@ -205,7 +205,6 @@ SQLProcedures(SQLHSTMT StatementHandle,
 			      ProcName, NameLength3);
 }
 
-#ifdef WITH_WCHAR
 SQLRETURN SQL_API
 SQLProceduresA(SQLHSTMT StatementHandle,
 	       SQLCHAR *CatalogName,
@@ -262,4 +261,3 @@ SQLProceduresW(SQLHSTMT StatementHandle,
 
 	return rc;
 }
-#endif /* WITH_WCHAR */

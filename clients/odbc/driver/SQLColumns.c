@@ -541,7 +541,6 @@ SQLColumns(SQLHSTMT StatementHandle,
 			   ColumnName, NameLength4);
 }
 
-#ifdef WITH_WCHAR
 SQLRETURN SQL_API
 SQLColumnsA(SQLHSTMT StatementHandle,
 	    SQLCHAR *CatalogName,
@@ -610,4 +609,3 @@ SQLColumnsW(SQLHSTMT StatementHandle,
 		free(column);
 	return rc;
 }
-#endif /* WITH_WCHAR */

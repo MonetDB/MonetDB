@@ -298,7 +298,6 @@ SQLConnect(SQLHDBC ConnectionHandle,
 			   NULL, 0, NULL);
 }
 
-#ifdef WITH_WCHAR
 SQLRETURN SQL_API
 SQLConnectA(SQLHDBC ConnectionHandle,
 	    SQLCHAR *ServerName,
@@ -358,4 +357,3 @@ SQLConnectW(SQLHDBC ConnectionHandle,
 		free(pwd);
 	return rc;
 }
-#endif /* WITH_WCHAR */

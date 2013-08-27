@@ -300,7 +300,6 @@ SQLTables(SQLHSTMT StatementHandle,
 			  TableType, NameLength4);
 }
 
-#ifdef WITH_WCHAR
 SQLRETURN SQL_API
 SQLTablesA(SQLHSTMT StatementHandle,
 	   SQLCHAR *CatalogName, SQLSMALLINT NameLength1,
@@ -362,4 +361,3 @@ SQLTablesW(SQLHSTMT StatementHandle,
 
 	return rc;
 }
-#endif /* WITH_WCHAR */

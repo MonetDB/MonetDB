@@ -151,7 +151,6 @@ SQLSetConnectAttr(SQLHDBC ConnectionHandle,
 				  StringLength);
 }
 
-#ifdef WITH_WCHAR
 SQLRETURN SQL_API
 SQLSetConnectAttrA(SQLHDBC ConnectionHandle,
 		   SQLINTEGER Attribute,
@@ -209,4 +208,3 @@ SQLSetConnectAttrW(SQLHDBC ConnectionHandle,
 
 	return rc;
 }
-#endif /* WITH_WCHAR */
