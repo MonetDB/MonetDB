@@ -397,6 +397,7 @@ ODBCDefaultType(ODBCDescRec *rec)
 	case SQL_LONGVARCHAR:
 	case SQL_DECIMAL:
 	case SQL_NUMERIC:
+	case SQL_GUID:
 		return SQL_C_CHAR;
 	case SQL_WCHAR:
 	case SQL_WVARCHAR:
@@ -453,8 +454,6 @@ ODBCDefaultType(ODBCDescRec *rec)
 		return SQL_C_INTERVAL_HOUR_TO_SECOND;
 	case SQL_INTERVAL_MINUTE_TO_SECOND:
 		return SQL_C_INTERVAL_MINUTE_TO_SECOND;
-	case SQL_GUID:
-		return SQL_C_GUID;
 	}
 	return 0;
 }
