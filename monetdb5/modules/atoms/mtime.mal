@@ -632,10 +632,6 @@ comment "Returns the week number in the year.";
 command dayofweek(d:date) :int
 address MTIMEdate_extract_dayofweek
 comment "Returns the current day of the week
-	where 1=sunday, .., 7=saturday";
-command dayofworkweek(d:date) :int
-address MTIMEdate_extract_dayofworkweek
-comment "Returns the current day of the week
 	where 1=monday, .., 7=sunday";
 
 command add(v:timestamp, msecs:lng) :timestamp

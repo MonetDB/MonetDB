@@ -166,16 +166,16 @@ function user.main():void;
 #var rule_may := mtime.rule("MAY 26@01:15"); 
     rule_jun := mtime.rule("2nd TUE from end of june@01:15");
 #var rule_jun := mtime.rule("2nd TUE from end of june@01:15"); 
-    rule_jul := mtime.rule(7,1,1,75);
-#var rule_jul := mtime.rule(7,1,1,75); 
-    rule_aug := mtime.rule(8,-1,1,75);
-#var rule_aug := mtime.rule(8,-1,1,75); 
-    rule_sep := mtime.rule(9,-10,3,75);
-#var rule_sep := mtime.rule(9,-10,3,75); 
+    rule_jul := mtime.rule(7,1,7,75);
+#var rule_jul := mtime.rule(7,1,7,75); 
+    rule_aug := mtime.rule(8,-1,7,75);
+#var rule_aug := mtime.rule(8,-1,7,75); 
+    rule_sep := mtime.rule(9,-10,2,75);
+#var rule_sep := mtime.rule(9,-10,2,75); 
     rule_oct := mtime.rule(10,31,0,75);
 #var rule_oct := mtime.rule(10,31,0,75); 
-    rule_nov := mtime.rule(11,-10,-4,75);
-#var rule_nov := mtime.rule(11,-10,-4,75); 
+    rule_nov := mtime.rule(11,-10,-3,75);
+#var rule_nov := mtime.rule(11,-10,-3,75); 
 ## nil rules 
     rule_dec := mtime.rule(12,-31,0,75);
 #var rule_dec := mtime.rule(12,-31,0,75); 
@@ -515,17 +515,17 @@ end main;
 # h	t	rule						month	weekday		day	minutes		  # name
 # void	str	zrule						int	int		int	int		  # type
 #-----------------------------------------------------------------------------------------------------------------#
-[ 0@0,	  "jan",  first monday from start of january@01:15,	  1,	  2,		  1,	  75		  ]
+[ 0@0,	  "jan",  first monday from start of january@01:15,	  1,	  1,		  1,	  75		  ]
 [ 1@0,	  "feb",  nil,						  nil,	  nil,		  nil,	  nil		  ]
-[ 2@0,	  "mar",  first wednesday on or after march 10@01:15,	  3,	  -4,		  10,	  75		  ]
-[ 3@0,	  "apr",  last thursday on or before april 1@01:15,	  4,	  -5,		  -1,	  75		  ]
+[ 2@0,	  "mar",  first wednesday on or after march 10@01:15,	  3,	  -3,		  10,	  75		  ]
+[ 3@0,	  "apr",  last thursday on or before april 1@01:15,	  4,	  -4,		  -1,	  75		  ]
 [ 4@0,	  "may",  may 26@01:15,					  5,	  0,		  26,	  75		  ]
-[ 5@0,	  "jun",  second tuesday from end of june@01:15,	  6,	  3,		  -2,	  75		  ]
-[ 6@0,	  "jul",  first sunday from start of july@01:15,	  7,	  1,		  1,	  75		  ]
-[ 7@0,	  "aug",  first sunday from end of august@01:15,	  8,	  1,		  -1,	  75		  ]
-[ 8@0,	  "sep",  10th tuesday from end of september@01:15,	  9,	  3,		  -10,	  75		  ]
+[ 5@0,	  "jun",  second tuesday from end of june@01:15,	  6,	  2,		  -2,	  75		  ]
+[ 6@0,	  "jul",  first sunday from start of july@01:15,	  7,	  7,		  1,	  75		  ]
+[ 7@0,	  "aug",  first sunday from end of august@01:15,	  8,	  7,		  -1,	  75		  ]
+[ 8@0,	  "sep",  10th tuesday from end of september@01:15,	  9,	  2,		  -10,	  75		  ]
 [ 9@0,	  "oct",  october 31@01:15,				  10,	  0,		  31,	  75		  ]
-[ 10@0,	  "nov",  last wednesday on or before november 10@01:15,  11,	  -4,		  -10,	  75		  ]
+[ 10@0,	  "nov",  last wednesday on or before november 10@01:15,  11,	  -3,		  -10,	  75		  ]
 [ 11@0,	  "dec",  nil,						  nil,	  nil,		  nil,	  nil		  ]
 [ "rule_bat,xa_a,cb_a,eb_a,ib_a,kb_a,ob_a" ]
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------#
