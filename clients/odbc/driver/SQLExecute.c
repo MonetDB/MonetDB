@@ -290,12 +290,17 @@ ODBCInitResult(ODBCStmt *stmt)
 		rec->sql_desc_concise_type = tp->concise_type;
 		rec->sql_desc_type = tp->type;
 		rec->sql_desc_datetime_interval_code = tp->code;
-		if (tp->precision != UNAFFECTED)
-			rec->sql_desc_precision = tp->precision;
+		if (concise_type == SQL_DECIMAL) {
+			rec->sql_desc_precision = mapi_get_digits(hdl, i);
+			rec->sql_desc_scale = mapi_get_scale(hdl, i);
+		} else {
+			if (tp->precision != UNAFFECTED)
+				rec->sql_desc_precision = tp->precision;
+			if (tp->scale != UNAFFECTED)
+				rec->sql_desc_scale = tp->scale;
+		}
 		if (tp->datetime_interval_precision != UNAFFECTED)
 			rec->sql_desc_datetime_interval_precision = tp->datetime_interval_precision;
-		if (tp->scale != UNAFFECTED)
-			rec->sql_desc_scale = tp->scale;
 		rec->sql_desc_fixed_prec_scale = tp->fixed;
 		rec->sql_desc_num_prec_radix = tp->radix;
 		rec->sql_desc_unsigned = tp->radix == 0 ? SQL_TRUE : SQL_FALSE;
