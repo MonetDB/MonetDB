@@ -31,29 +31,29 @@ Operation successful
 |     X_2 := sql.mvc(); |
 |     X_9 := sql.bind(X_2,"sys","_tables","type",0);             |
 |     X_6:bat[:oid,:oid]  := sql.tid(X_2,"sys","_tables");       |
-|     X_58 := algebra.subselect(X_9,X_6,2:sht,2:sht,true,true,true);   |
+|     X_55 := algebra.subselect(X_9,X_6,2:sht,2:sht,true,true,true);   |
 |     (X_12,r1_12) := sql.bind(X_2,"sys","_tables","type",2);    |
-|     X_59 := algebra.subselect(r1_12,2:sht,2:sht,true,true,true);     |
+|     X_56 := algebra.subselect(r1_12,2:sht,2:sht,true,true,true);     |
 |     X_15 := sql.bind(X_2,"sys","_tables","type",1);            |
-|     X_60 := algebra.subselect(X_15,X_6,2:sht,2:sht,true,true,true);  |
-|     X_17 := sql.subdelta(X_58,X_6,X_12,X_59,X_60);                   |
+|     X_57 := algebra.subselect(X_15,X_6,2:sht,2:sht,true,true,true);  |
+|     X_17 := sql.subdelta(X_55,X_6,X_12,X_56,X_57);                   |
 |     X_18 := sql.bind(X_2,"sys","_tables","name",0);                  |
-|     (X_20,r1_28) := sql.bind(X_2,"sys","_tables","name",2);          |
+|     (X_20,r1_25) := sql.bind(X_2,"sys","_tables","name",2);          |
 |     X_22 := sql.bind(X_2,"sys","_tables","name",1);                  |
-|     X_23 := sql.projectdelta(X_17,X_18,X_20,r1_28,X_22);             |
+|     X_23 := sql.projectdelta(X_17,X_18,X_20,r1_25,X_22);             |
 |     X_24 := bat.append(X_3,X_23,true);                               |
-|     X_29 := sql.bind(X_2,"tmp","_tables","type",0);                  |
-|     X_32 := X_29;                                                    |
-|     X_26:bat[:oid,:oid]  := sql.tid(X_2,"tmp","_tables");            |
-|     X_33 := algebra.subselect(X_32,X_26,2:sht,2:sht,true,true,true); |
-|     X_34 := sql.bind(X_2,"tmp","_tables","name",0);                  |
-|     X_35 := X_34;                                                    |
-|     X_36 := algebra.leftfetchjoin(X_33,X_35);                        |
-|     X_38 := bat.append(X_24,X_36,true);                              |
-|     X_39 := sql.resultSet(1,1,X_38);                                 |
-|     sql.rsColumn(X_39,".tables","name","varchar",1024,0,X_38);       |
-|     X_45 := io.stdout();                                             |
-|     sql.exportResult(X_45,X_39);                                     |
+|     X_27 := sql.bind(X_2,"tmp","_tables","type",0);                  |
+|     X_28 := X_27;                                                    |
+|     X_25:bat[:oid,:oid]  := sql.tid(X_2,"tmp","_tables");            |
+|     X_29 := algebra.subselect(X_28,X_25,2:sht,2:sht,true,true,true); |
+|     X_31 := sql.bind(X_2,"tmp","_tables","name",0);                  |
+|     X_33 := X_31;                                                    |
+|     X_34 := algebra.leftfetchjoin(X_29,X_33);                        |
+|     X_35 := bat.append(X_24,X_34,true);                              |
+|     X_36 := sql.resultSet(1,1,X_35);                                 |
+|     sql.rsColumn(X_36,".tables","name","varchar",1024,0,X_35);       |
+|     X_42 := io.stdout();                                             |
+|     sql.exportResult(X_42,X_36);                                     |
 | end s0_1;                                                           |
 +----------------------------------------------------------------------+
 29 rows

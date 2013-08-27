@@ -80,7 +80,6 @@ hash_del(sql_hash *h, int key, void *value)
 unsigned int
 hash_key(char *k)
 {
-	unsigned char *s = (unsigned char*)k;
 	unsigned int h = 0;
 
 	while (*k) {
@@ -89,6 +88,8 @@ hash_key(char *k)
 		h ^= (h >> 6);
 		k++;
 	}
-	h += (unsigned int) (k - (char*)s);
+	h += (h << 3);
+	h ^= (h >> 11);
+	h += (h << 15);
 	return h;
 }

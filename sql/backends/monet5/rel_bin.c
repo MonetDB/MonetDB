@@ -66,7 +66,7 @@ list_find_column(sql_allocator *sa, list *l, char *rname, char *name )
 	node *n;
 
 	if (l && !l->ht && list_length(l) > HASH_MIN_SIZE) {
-		l->ht = hash_new(l->sa, list_length(l), (fkeyvalue)&stmt_key);
+		l->ht = hash_new(l->sa, MAX(list_length(l), l->expected_cnt), (fkeyvalue)&stmt_key);
 
 		for (n = l->h; n; n = n->next) {
 			char *nme = column_name(sa, n->data);
@@ -881,7 +881,7 @@ check_table_types(mvc *sql, sql_table *ct, stmt *s, check_type tpe)
 			stmt *r = check_types(sql, &c->type, dtcs, tpe);
 			if (!r) 
 				return NULL;
-			r = stmt_alias(sql->sa, r, sa_strdup(sql->sa, tbl->base.name), sa_strdup(sql->sa, c->base.name));
+			r = stmt_alias(sql->sa, r, tbl->base.name, c->base.name);
 			list_append(l, r);
 		}
 	 	return stmt_table(sql->sa, stmt_list(sql->sa, l), temp);
@@ -896,7 +896,7 @@ check_table_types(mvc *sql, sql_table *ct, stmt *s, check_type tpe)
 			if (!r) 
 				return NULL;
 			tname = table_name(sql->sa, r);
-			r = stmt_alias(sql->sa, r, tname, sa_strdup(sql->sa, c->base.name));
+			r = stmt_alias(sql->sa, r, tname, c->base.name);
 			list_append(l, r);
 		}
 		return stmt_table(sql->sa, stmt_list(sql->sa, l), temp);
@@ -917,7 +917,7 @@ check_table_types(mvc *sql, sql_table *ct, stmt *s, check_type tpe)
 		c = ct->columns.set->h->data;
 		r = check_types(sql, &c->type, tab, tpe);
 		tname = table_name(sql->sa, r);
-		r = stmt_alias(sql->sa, r, tname, sa_strdup(sql->sa, c->base.name));
+		r = stmt_alias(sql->sa, r, tname, c->base.name);
 		return stmt_table(sql->sa, r, temp);
 	}
 }
@@ -1170,14 +1170,10 @@ stmt_rename(mvc *sql, sql_rel *rel, sql_exp *exp, stmt *s )
 		name = exp->r;
 	if (!name)
 		name = column_name(sql->sa, s);
-	else
-		name = sa_strdup(sql->sa, name);
 	if (!rname && exp->type == e_column && exp->l)
 		rname = exp->l;
 	if (!rname)
 		rname = table_name(sql->sa, s);
-	else
-		rname = sa_strdup(sql->sa, rname);
 	s = stmt_alias(sql->sa, s, rname, name);
 	return s;
 }
@@ -1198,17 +1194,17 @@ rel2bin_sql_table(mvc *sql, sql_table *t)
 	/* TID column */
 	if (t->columns.set->h) { 
 		/* tid function  sql.tid(t) */
-		char *rnme = sa_strdup(sql->sa, t->base.name);
+		char *rnme = t->base.name;
 
 		stmt *sc = dels?dels:stmt_tid(sql->sa, t);
-		sc = stmt_alias(sql->sa, sc, rnme, sa_strdup(sql->sa, TID));
+		sc = stmt_alias(sql->sa, sc, rnme, TID);
 		list_append(l, sc);
 	}
 	if (t->idxs.set) {
 		for (n = t->idxs.set->h; n; n = n->next) {
 			sql_idx *i = n->data;
 			stmt *sc = stmt_idx(sql, i, dels);
-			char *rnme = sa_strdup(sql->sa, t->base.name);
+			char *rnme = t->base.name;
 
 			/* index names are prefixed, to make them independent */
 			sc = stmt_alias(sql->sa, sc, rnme, sa_strconcat(sql->sa, "%", i->base.name));
@@ -1219,34 +1215,41 @@ rel2bin_sql_table(mvc *sql, sql_table *t)
 }
 
 static stmt *
-rel2bin_basetable( mvc *sql, sql_rel *rel, list *refs)
+rel2bin_basetable( mvc *sql, sql_rel *rel)
 {
 	sql_table *t = rel->l;
-	stmt *sub = rel2bin_sql_table(sql, t);
+	list *l = sa_list(sql->sa);
+	stmt *dels = stmt_dels( sql, t);
+	node *en;
 
-	(void)refs;
 	assert(rel->exps);
 	/* add aliases */
-	if (rel->exps) {
-		node *en;
-		list *l = sa_list(sql->sa);
+	for( en = rel->exps->h; en; en = en->next ) {
+		sql_exp *exp = en->data;
+		char *rname = exp->rname?exp->rname:exp->l;
+		char *oname = exp->r;
+		stmt *s = NULL;
 
-		for( en = rel->exps->h; en; en = en->next ) {
-			sql_exp *exp = en->data;
-			stmt *s = bin_find_column(sql->sa, sub, exp->l, exp->r);
-			char *rname = exp->rname?exp->rname:exp->l;
-	
-			if (!s) {
-				assert(0);
-				return NULL;
-			}
-			rname = rname?sa_strdup(sql->sa, rname):NULL;
-			s = stmt_alias(sql->sa, s, rname, sa_strdup(sql->sa, exp->name));
-			list_append(l, s);
+		if (oname[0] == '%' && strcmp(oname, TID) == 0) {
+			/* tid function  sql.tid(t) */
+			char *rnme = t->base.name;
+
+			s = dels?dels:stmt_tid(sql->sa, t);
+			s = stmt_alias(sql->sa, s, rnme, TID);
+		} else if (oname[0] == '%') { 
+			sql_idx *i = find_sql_idx(t, oname+1);
+
+			s = stmt_idx(sql, i, dels);
+		} else {
+			sql_column *c = find_sql_column(t, oname);
+
+			s = stmt_col(sql, c, dels);
 		}
-		sub = stmt_list(sql->sa, l);
+		s->tname = rname;
+		s->cname = exp->name;
+		list_append(l, s);
 	}
-	return sub;
+	return stmt_list(sql->sa, l);
 }
 
 static stmt *
@@ -1280,7 +1283,7 @@ rel2bin_table( mvc *sql, sql_rel *rel, list *refs)
 				return NULL;
 		}
 
-		psub = exp_bin(sql, op, sub, psub, NULL, NULL, NULL, NULL); /* table function */
+		psub = exp_bin(sql, op, sub, NULL, NULL, NULL, NULL, NULL); /* table function */
 		if (!t || !psub) { 
 			assert(0);
 			return NULL;	
@@ -1292,8 +1295,7 @@ rel2bin_table( mvc *sql, sql_rel *rel, list *refs)
 			char *nme = c->base.name;
 			char *rnme = exp_find_rel_name(op);
 
-			rnme = (rnme)?sa_strdup(sql->sa, rnme):NULL;
-			s = stmt_alias(sql->sa, s, rnme, sa_strdup(sql->sa, nme));
+			s = stmt_alias(sql->sa, s, rnme, nme);
 			list_append(l, s);
 		}
 		if (sub && sub->nrcols) { /* add sub */
@@ -1329,8 +1331,7 @@ rel2bin_table( mvc *sql, sql_rel *rel, list *refs)
 			char *nme = exp_name(c);
 			char *rnme = op?exp_find_rel_name(op):NULL;
 
-			rnme = (rnme)?sa_strdup(sql->sa, rnme):NULL;
-			s = stmt_alias(sql->sa, s, rnme, sa_strdup(sql->sa, nme));
+			s = stmt_alias(sql->sa, s, rnme, nme);
 			list_append(l, s);
 		}
 		sub = stmt_list(sql->sa, l);
@@ -1356,8 +1357,7 @@ rel2bin_table( mvc *sql, sql_rel *rel, list *refs)
 		}
 		if (sub && sub->nrcols >= 1 && s->nrcols == 0)
 			s = stmt_const(sql->sa, bin_first_column(sql->sa, sub), s);
-		rnme = (rnme)?sa_strdup(sql->sa, rnme):NULL;
-		s = stmt_alias(sql->sa, s, rnme, sa_strdup(sql->sa, exp->name));
+		s = stmt_alias(sql->sa, s, rnme, exp->name);
 		list_append(l, s);
 	}
 	if (osub && osub->nrcols) 
@@ -2306,6 +2306,8 @@ rel2bin_project( mvc *sql, sql_rel *rel, list *refs, sql_rel *topn)
 	}
 
 	pl = sa_list(sql->sa);
+	if (sub)
+		pl->expected_cnt = list_length(sub->op4.lval);
 	psub = stmt_list(sql->sa, pl);
 	for( en = rel->exps->h; en; en = en->next ) {
 		sql_exp *exp = en->data;
@@ -4452,7 +4454,7 @@ subrel_bin(mvc *sql, sql_rel *rel, list *refs)
 	}
 	switch (rel->op) {
 	case op_basetable:
-		s = rel2bin_basetable(sql, rel, refs);
+		s = rel2bin_basetable(sql, rel);
 		sql->type = Q_TABLE;
 		break;
 	case op_table:

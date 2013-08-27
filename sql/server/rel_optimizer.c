@@ -1360,6 +1360,8 @@ rel_push_func_down(int *changes, mvc *sql, sql_rel *rel)
 	if ((is_select(rel->op) || is_join(rel->op) || is_semi(rel->op)) && rel->l && rel->exps && !(rel_is_ref(rel))) {
 		list *exps = rel->exps;
 
+		if (is_select(rel->op) &&  list_length(rel->exps) <= 1)  /* only push down when thats useful */
+			return rel;
 		if (exps_can_push_func(exps, rel)) {
 			sql_rel *nrel;
 			sql_rel *l = rel->l, *ol = l;
@@ -4362,9 +4364,15 @@ rel_mark_used(mvc *sql, sql_rel *rel, int proj)
 			rel_mark_used(sql, rel->l, 0);
 		}
 		break;
-	case op_insert:
 	case op_update:
 	case op_delete:
+		if (proj && rel->r) {
+			exps_mark_used(rel, rel->r);
+			rel_mark_used(sql, rel->r, 0);
+		}
+		break;
+
+	case op_insert:
 	case op_ddl:
 		break;
 
@@ -4545,10 +4553,17 @@ rel_dce_down(mvc *sql, sql_rel *rel, int skip_proj)
 			rel_dce_sub(sql, rel);
 
 	case op_insert:
-	case op_update:
-	case op_delete:
 	case op_ddl:
 
+		return rel;
+
+	case op_update:
+	case op_delete:
+
+		if (skip_proj && rel->r)
+			rel->r = rel_dce_down(sql, rel->r, 0);
+		if (!skip_proj)
+			rel_dce_sub(sql, rel);
 		return rel;
 
 	case op_topn: 
@@ -6260,6 +6275,9 @@ _rel_optimizer(mvc *sql, sql_rel *rel, int level)
 	if (gp.cnt[op_project])
 		rel = rewrite(sql, rel, &rel_push_project_down_union, &changes);
 
+	/* Remove unused expressions */
+	rel = rel_dce(sql, rel);
+
 	if (gp.cnt[op_join] || 
 	    gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full] || 
 	    gp.cnt[op_semi] || gp.cnt[op_anti] ||
@@ -6272,9 +6290,6 @@ _rel_optimizer(mvc *sql, sql_rel *rel, int level)
 	}
 
 	rel = rewrite_topdown(sql, rel, &rel_merge_table_rewrite, &changes);
-
-	/* Remove unused expressions */
-	rel = rel_dce(sql, rel);
 
 	if (changes && level > 10) {
 		assert(0);

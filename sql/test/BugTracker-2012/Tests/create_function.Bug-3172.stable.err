@@ -29,9 +29,9 @@ stderr of test 'create_function.Bug-3172` in directory 'sql/test/BugTracker-2012
 # 16:07:20 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-27661" "--port=38365"
 # 16:07:20 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-27661/.s.monetdb.38365
+MAPI  = (monetdb) /var/tmp/mtest-15406/.s.monetdb.34903
 QUERY = select * from x((select id from _tables), (select schema_id from _tables));
-ERROR = !TypeException:user.s0_1[41]:'mal.multiplex' undefined in: (_56:bat[:oid,:int], _59:bat[:oid,:int]) := mal.multiplex(_57:str, _58:str, _50:bat[:oid,:int], _53:bat[:oid,:int])
+ERROR = !TypeException:user.s0_1[21]:'mal.multiplex' undefined in: (_32:bat[:oid,:int], _35:bat[:oid,:int]) := mal.multiplex(_33:str, _34:str, _30:bat[:oid,:int], _31:bat[:oid,:int])
         !program contains errors
 
 # 16:07:20 >  

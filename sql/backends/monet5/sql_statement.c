@@ -1360,9 +1360,6 @@ stmt_alias(sql_allocator *sa, stmt *op1, char *tname, char *alias)
 	stmt *s = stmt_create(sa, st_alias);
 
 	s->op1 = op1;
-	if (tname)
-		s->op2 = stmt_atom_string(sa, tname);
-	s->op3 = stmt_atom_string(sa, alias);
 	s->nrcols = op1->nrcols;
 	s->key = op1->key;
 	s->aggr = op1->aggr;

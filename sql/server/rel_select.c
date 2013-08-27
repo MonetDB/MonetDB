@@ -181,7 +181,7 @@ exp_alias_or_copy( mvc *sql, char *tname, char *cname, sql_rel *orel, sql_exp *o
 		nme = number2name(name, 16, ++sql->label);
 
 		exp_setname(sql->sa, old, nme, nme);
-		ne = exp_column(sql->sa, nme, nme, exp_subtype(old), orel?orel->card:CARD_ATOM, has_nil(old), is_intern(old));
+		ne = exp_column(sql->sa, exp_relname(old), exp_name(old), exp_subtype(old), orel?orel->card:CARD_ATOM, has_nil(old), is_intern(old));
 		ne->p = prop_copy(sql->sa, old->p);
 		return ne;
 	} else if (cname && !old->name) {

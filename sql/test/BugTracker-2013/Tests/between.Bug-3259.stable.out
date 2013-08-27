@@ -46,9 +46,9 @@ Ready.
 % clob # type
 % 58 # length
 function user.s0_1():void;
-    X_22 := nil:bat[:oid,:int];
-    X_24 := nil:bat[:oid,:int];
-barrier X_43 := language.dataflow();
+    X_19 := nil:bat[:oid,:int];
+    X_20 := nil:bat[:oid,:int];
+barrier X_39 := language.dataflow();
     X_1 := sql.mvc();
     X_2:bat[:oid,:oid]  := sql.tid(X_1,"sys","treeitems");
     X_5 := sql.bind(X_1,"sys","treeitems","pre",0);
@@ -56,21 +56,21 @@ barrier X_43 := language.dataflow();
     X_9 := sql.bind(X_1,"sys","treeitems","size",0);
     X_11 := algebra.leftfetchjoin(X_2,X_9);
     X_12:bat[:oid,:lng]  := batcalc.+(X_8,X_11);
-    (X_13,r1_41) := algebra.join(X_8,X_8,X_12,true,true);
+    (X_13,r1_18) := algebra.join(X_8,X_8,X_12,true,true);
     X_16 := sql.bind(X_1,"sys","treeitems","subject",0);
-    X_21 := algebra.leftfetchjoin(X_2,X_16);
-    X_22 := algebra.leftfetchjoin(r1_41,X_21);
-    X_24 := algebra.leftfetchjoin(X_13,X_21);
+    X_18 := algebra.leftfetchjoin(X_2,X_16);
+    X_19 := algebra.leftfetchjoin(r1_18,X_18);
+    X_20 := algebra.leftfetchjoin(X_13,X_18);
     language.pass(X_8);
     language.pass(X_8);
     language.pass(X_2);
-    language.pass(X_21);
-exit X_43;
-    X_26 := sql.resultSet(2,1,X_22);
-    sql.rsColumn(X_26,"sys.L","id1","int",32,0,X_22);
-    sql.rsColumn(X_26,"sys.L","id2","int",32,0,X_24);
-    X_35 := io.stdout();
-    sql.exportResult(X_35,X_26);
+    language.pass(X_18);
+exit X_39;
+    X_21 := sql.resultSet(2,1,X_19);
+    sql.rsColumn(X_21,"sys.L","id1","int",32,0,X_19);
+    sql.rsColumn(X_21,"sys.L","id2","int",32,0,X_20);
+    X_31 := io.stdout();
+    sql.exportResult(X_31,X_21);
 end s0_1;
 #ROLLBACK;
 
