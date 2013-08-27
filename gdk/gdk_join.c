@@ -1607,7 +1607,7 @@ thetajoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int opcode)
  * matching tuples.  The result is in the same order as l (i.e. r1 is
  * sorted). */
 gdk_return
-BATsubleftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, BUN estimate)
+BATsubleftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate)
 {
 	BAT *r1, *r2;
 
@@ -1620,8 +1620,8 @@ BATsubleftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, BUN estim
 	*r1p = r1;
 	*r2p = r2;
 	if (r->tsorted || r->trevsorted)
-		return mergejoin(r1, r2, l, r, sl, sr, 0, 0, 0, 0);
-	return hashjoin(r1, r2, l, r, sl, sr, 0, 0, 0, 0);
+		return mergejoin(r1, r2, l, r, sl, sr, nil_matches, 0, 0, 0);
+	return hashjoin(r1, r2, l, r, sl, sr, nil_matches, 0, 0, 0);
 }
 
 /* Perform an equi-join over l and r.  Returns two new, aligned,
@@ -1629,7 +1629,7 @@ BATsubleftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, BUN estim
  * matching tuples.  The result is in the same order as l (i.e. r1 is
  * sorted).  All values in l must match at least one value in r. */
 gdk_return
-BATsubleftfetchjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, BUN estimate)
+BATsubleftfetchjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate)
 {
 	BAT *r1, *r2;
 
@@ -1642,8 +1642,8 @@ BATsubleftfetchjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, BUN 
 	*r1p = r1;
 	*r2p = r2;
 	if (r->tsorted || r->trevsorted)
-		return mergejoin(r1, r2, l, r, sl, sr, 0, 0, 0, 1);
-	return hashjoin(r1, r2, l, r, sl, sr, 0, 0, 0, 1);
+		return mergejoin(r1, r2, l, r, sl, sr, nil_matches, 0, 0, 1);
+	return hashjoin(r1, r2, l, r, sl, sr, nil_matches, 0, 0, 1);
 }
 
 /* Performs a left outer join over l and r.  Returns two new, aligned,
@@ -1652,7 +1652,7 @@ BATsubleftfetchjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, BUN 
  * second output bat if the value in l does not occur in r.  The
  * result is in the same order as l (i.e. r1 is sorted). */
 gdk_return
-BATsubouterjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, BUN estimate)
+BATsubouterjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate)
 {
 	BAT *r1, *r2;
 
@@ -1665,8 +1665,8 @@ BATsubouterjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, BUN esti
 	*r1p = r1;
 	*r2p = r2;
 	if (r->tsorted || r->trevsorted)
-		return mergejoin(r1, r2, l, r, sl, sr, 0, 1, 0, 0);
-	return hashjoin(r1, r2, l, r, sl, sr, 0, 1, 0, 0);
+		return mergejoin(r1, r2, l, r, sl, sr, nil_matches, 1, 0, 0);
+	return hashjoin(r1, r2, l, r, sl, sr, nil_matches, 1, 0, 0);
 }
 
 /* Perform a semi-join over l and r.  Returns two new, aligned,
@@ -1674,7 +1674,7 @@ BATsubouterjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, BUN esti
  * matching tuples.  The result is in the same order as l (i.e. r1 is
  * sorted). */
 gdk_return
-BATsubsemijoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, BUN estimate)
+BATsubsemijoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate)
 {
 	BAT *r1, *r2;
 
@@ -1687,18 +1687,18 @@ BATsubsemijoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, BUN estim
 	*r1p = r1;
 	*r2p = r2;
 	if (r->tsorted || r->trevsorted)
-		return mergejoin(r1, r2, l, r, sl, sr, 0, 0, 1, 0);
-	return hashjoin(r1, r2, l, r, sl, sr, 0, 0, 1, 0);
+		return mergejoin(r1, r2, l, r, sl, sr, nil_matches, 0, 1, 0);
+	return hashjoin(r1, r2, l, r, sl, sr, nil_matches, 0, 1, 0);
 }
 
 gdk_return
-BATsubthetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, const char *op, BUN estimate)
+BATsubthetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, const char *op, int nil_matches, BUN estimate)
 {
 	BAT *r1, *r2;
 	int opcode = 0;
 
 	if (op[0] == '=' && ((op[1] == '=' && op[2] == 0) || op[1] == 0))
-		return BATsubjoin(r1p, r2p, l, r, sl, sr, estimate);
+		return BATsubjoin(r1p, r2p, l, r, sl, sr, nil_matches, estimate);
 
 	/* encode operator as a bit mask into opcode */
 	if (op[0] == '=' && ((op[1] == '=' && op[2] == 0) || op[1] == 0)) {
@@ -1748,7 +1748,7 @@ BATsubthetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, const ch
 }
 
 gdk_return
-BATsubjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, BUN estimate)
+BATsubjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate)
 {
 	BAT *r1, *r2;
 	BUN lcount, rcount;
@@ -1782,7 +1782,7 @@ BATsubjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, BUN estimate)
 	swap = 0;
 	if ((l->tsorted || l->trevsorted) && (r->tsorted || r->trevsorted)) {
 		/* both sorted, don't swap */
-		return mergejoin(r1, r2, l, r, sl, sr, 0, 0, 0, 0);
+		return mergejoin(r1, r2, l, r, sl, sr, nil_matches, 0, 0, 0);
 	} else if (l->T->hash && r->T->hash) {
 		/* both have hash, smallest on right */
 		if (lcount < rcount)
@@ -1795,18 +1795,18 @@ BATsubjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, BUN estimate)
 		swap = 0;
 	} else if (l->tsorted || l->trevsorted) {
 		/* left is sorted, swap */
-		return mergejoin(r2, r1, r, l, sr, sl, 0, 0, 0, 0);
+		return mergejoin(r2, r1, r, l, sr, sl, nil_matches, 0, 0, 0);
 	} else if (r->tsorted || r->trevsorted) {
 		/* right is sorted, don't swap */
-		return mergejoin(r1, r2, l, r, sl, sr, 0, 0, 0, 0);
+		return mergejoin(r1, r2, l, r, sl, sr, nil_matches, 0, 0, 0);
 	} else if (BATcount(l) < BATcount(r)) {
 		/* no hashes, not sorted, create hash on smallest BAT */
 		swap = 1;
 	}
 	if (swap) {
-		return hashjoin(r2, r1, r, l, sr, sl, 0, 0, 0, 0);
+		return hashjoin(r2, r1, r, l, sr, sl, nil_matches, 0, 0, 0);
 	} else {
-		return hashjoin(r1, r2, l, r, sl, sr, 0, 0, 0, 0);
+		return hashjoin(r1, r2, l, r, sl, sr, nil_matches, 0, 0, 0);
 	}
 }
 
@@ -1985,7 +1985,7 @@ BATsemijoin(BAT *l, BAT *r)
 		/* r is [dense2,any_1] */
 		BBPfix(r->batCacheid);
 	}
-	if (BATsubsemijoin(&res1, &res2, l, r, NULL, NULL, BATcount(l)) == GDK_FAIL) {
+	if (BATsubsemijoin(&res1, &res2, l, r, NULL, NULL, 0, BATcount(l)) == GDK_FAIL) {
 		if (lmap)
 			BBPunfix(lmap->batCacheid);
 		BBPunfix(l->batCacheid);
@@ -2022,8 +2022,8 @@ BATsemijoin(BAT *l, BAT *r)
 
 static BAT *
 do_batjoin(BAT *l, BAT *r, const char *op, BUN estimate,
-	   gdk_return (*joinfunc)(BAT **, BAT **, BAT *, BAT *, BAT *, BAT *, BUN),
-	   gdk_return (*joinfunc2)(BAT **, BAT **, BAT *, BAT *, BAT *, BAT *, const char *, BUN))
+	   gdk_return (*joinfunc)(BAT **, BAT **, BAT *, BAT *, BAT *, BAT *, int, BUN),
+	   gdk_return (*joinfunc2)(BAT **, BAT **, BAT *, BAT *, BAT *, BAT *, const char *, int, BUN))
 {
 	BAT *lmap, *rmap;
 	BAT *res1, *res2;
@@ -2056,7 +2056,7 @@ do_batjoin(BAT *l, BAT *r, const char *op, BUN estimate,
 		rmap = NULL;
 		BBPfix(r->batCacheid);
 	}
-	if ((joinfunc ? (*joinfunc)(&res1, &res2, l, r, NULL, NULL, estimate) : (*joinfunc2)(&res1, &res2, l, r, NULL, NULL, op, estimate)) == GDK_FAIL) {
+	if ((joinfunc ? (*joinfunc)(&res1, &res2, l, r, NULL, NULL, 0, estimate) : (*joinfunc2)(&res1, &res2, l, r, NULL, NULL, op, 0, estimate)) == GDK_FAIL) {
 		BBPunfix(l->batCacheid);
 		BBPunfix(r->batCacheid);
 		if (lmap)

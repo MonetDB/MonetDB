@@ -1051,9 +1051,9 @@ ALGrangejoin(int *result, int *lid, int *rlid, int *rhid, bit *li, bit *hi)
 
 static str
 do_join(bat *r1, bat *r2, bat *lid, bat *rid, bat *slid, bat *srid,
-		const char *op, lng *estimate,
-		gdk_return (*joinfunc)(BAT **, BAT **, BAT *, BAT *, BAT *, BAT *, BUN),
-		gdk_return (*thetafunc)(BAT **, BAT **, BAT *, BAT *, BAT *, BAT *, const char *, BUN),
+		const char *op, bit *nil_matches, lng *estimate,
+		gdk_return (*joinfunc)(BAT **, BAT **, BAT *, BAT *, BAT *, BAT *, int, BUN),
+		gdk_return (*thetafunc)(BAT **, BAT **, BAT *, BAT *, BAT *, BAT *, const char *, int, BUN),
 		const char *funcname)
 {
 	BAT *left = NULL, *right = NULL, *candleft = NULL, *candright = NULL;
@@ -1076,11 +1076,11 @@ do_join(bat *r1, bat *r2, bat *lid, bat *rid, bat *slid, bat *srid,
 	if (thetafunc) {
 		assert(op != NULL);
 		assert(joinfunc == NULL);
-		if ((*thetafunc)(&result1, &result2, left, right, candleft, candright, op, est) == GDK_FAIL)
+		if ((*thetafunc)(&result1, &result2, left, right, candleft, candright, op, *nil_matches, est) == GDK_FAIL)
 			goto fail;
 	} else {
 		assert(op == NULL);
-		if ((*joinfunc)(&result1, &result2, left, right, candleft, candright, est) == GDK_FAIL)
+		if ((*joinfunc)(&result1, &result2, left, right, candleft, candright, *nil_matches, est) == GDK_FAIL)
 			goto fail;
 	}
 	*r1 = result1->batCacheid;
@@ -1108,30 +1108,30 @@ do_join(bat *r1, bat *r2, bat *lid, bat *rid, bat *slid, bat *srid,
 }
 
 str
-ALGsubjoin(bat *r1, bat *r2, bat *lid, bat *rid, bat *slid, bat *srid, lng *estimate)
+ALGsubjoin(bat *r1, bat *r2, bat *lid, bat *rid, bat *slid, bat *srid, bit *nil_matches, lng *estimate)
 {
-	return do_join(r1, r2, lid, rid, slid, srid, NULL, estimate,
+	return do_join(r1, r2, lid, rid, slid, srid, NULL, nil_matches, estimate,
 				   BATsubjoin, NULL, "algebra.subjoin");
 }
 
 str
-ALGsubleftjoin(bat *r1, bat *r2, bat *lid, bat *rid, bat *slid, bat *srid, lng *estimate)
+ALGsubleftjoin(bat *r1, bat *r2, bat *lid, bat *rid, bat *slid, bat *srid, bit *nil_matches, lng *estimate)
 {
-	return do_join(r1, r2, lid, rid, slid, srid, NULL, estimate,
+	return do_join(r1, r2, lid, rid, slid, srid, NULL, nil_matches, estimate,
 				   BATsubleftjoin, NULL, "algebra.subleftjoin");
 }
 
 str
-ALGsubouterjoin(bat *r1, bat *r2, bat *lid, bat *rid, bat *slid, bat *srid, lng *estimate)
+ALGsubouterjoin(bat *r1, bat *r2, bat *lid, bat *rid, bat *slid, bat *srid, bit *nil_matches, lng *estimate)
 {
-	return do_join(r1, r2, lid, rid, slid, srid, NULL, estimate,
+	return do_join(r1, r2, lid, rid, slid, srid, NULL, nil_matches, estimate,
 				   BATsubouterjoin, NULL, "algebra.subouterjoin");
 }
 
 str
-ALGsubthetajoin(bat *r1, bat *r2, bat *lid, bat *rid, bat *slid, bat *srid, str *op, lng *estimate)
+ALGsubthetajoin(bat *r1, bat *r2, bat *lid, bat *rid, bat *slid, bat *srid, str *op, bit *nil_matches, lng *estimate)
 {
-	return do_join(r1, r2, lid, rid, slid, srid, *op, estimate,
+	return do_join(r1, r2, lid, rid, slid, srid, *op, nil_matches, estimate,
 				   NULL, BATsubthetajoin, "algebra.subthetajoin");
 }
 
@@ -1290,7 +1290,7 @@ ALGantijoin2( bat *l, bat *r, bat *left, bat *right)
 		throw(MAL, "algebra.antijoin", RUNTIME_OBJECT_MISSING);
 	}
 
-	ret = BATsubthetajoin(&j1, &j2, L, R, NULL, NULL, "!=", BUN_NONE);
+	ret = BATsubthetajoin(&j1, &j2, L, R, NULL, NULL, "!=", 0, BUN_NONE);
 	BBPunfix(L->batCacheid);
 	BBPunfix(R->batCacheid);
 	if (ret == GDK_FAIL)
@@ -1327,7 +1327,7 @@ ALGjoin2( bat *l, bat *r, bat *left, bat *right)
 		lmap = NULL;
 		rmap = NULL;
 	}
-	ret = BATsubjoin(&j1, &j2, L, R, NULL, NULL, BUN_NONE);
+	ret = BATsubjoin(&j1, &j2, L, R, NULL, NULL, 0, BUN_NONE);
 	BBPunfix(L->batCacheid);
 	BBPunfix(R->batCacheid);
 	if (ret == GDK_FAIL) {
@@ -1389,7 +1389,7 @@ ALGthetajoin2( bat *l, bat *r, bat *left, bat *right, int *opc)
 		throw(MAL, "algebra.thetajoin", RUNTIME_OBJECT_MISSING);
 	}
 
-	ret = BATsubthetajoin(&j1, &j2, L, R, NULL, NULL, ops, BUN_NONE);
+	ret = BATsubthetajoin(&j1, &j2, L, R, NULL, NULL, ops, 0, BUN_NONE);
 
 	BBPunfix(L->batCacheid);
 	BBPunfix(R->batCacheid);

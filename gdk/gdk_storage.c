@@ -947,7 +947,7 @@ BATmultiprintf(stream *s, int argc, BAT *argv[], int printhead, int order, int p
 
 		if ((r = BATmirror(BATmark(argv[i], 0))) == NULL)
 			goto bailout;
-		ret = BATsubleftjoin(&a, &b, bats[0], r, NULL, NULL, BUN_NONE);
+		ret = BATsubleftjoin(&a, &b, bats[0], r, NULL, NULL, 0, BUN_NONE);
 		BBPunfix(r->batCacheid);
 		if (ret == GDK_FAIL)
 			goto bailout;
