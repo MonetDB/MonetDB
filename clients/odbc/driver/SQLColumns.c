@@ -192,9 +192,9 @@ SQLColumns_(ODBCStmt *stmt,
 				     " when 13 then %d"
 				" end"
 			   " when 'smallint' then %d"
+			   " when 'time' then %d"
 			   " when 'timestamp' then %d"
 			   " when 'timestamptz' then %d"
-			   " when 'time' then %d"
 			   " when 'timetz' then %d"
 			   " when 'tinyint' then %d"
 			   " when 'varchar' then %d"
@@ -235,9 +235,9 @@ SQLColumns_(ODBCStmt *stmt,
 				     " when 13 then 'INTERVAL SECOND'"
 				" end"
 			   " when 'smallint' then 'SMALLINT'"
+			   " when 'time' then 'TIME'"
 			   " when 'timestamp' then 'TIMESTAMP'"
 			   " when 'timestamptz' then 'TIMESTAMP'"
-			   " when 'time' then 'TIME'"
 			   " when 'timetz' then 'TIME'"
 			   " when 'tinyint' then 'TINYINT'"
 			   " when 'varchar' then 'VARCHAR'"
@@ -248,6 +248,7 @@ SQLColumns_(ODBCStmt *stmt,
 				" end"
 		      " end as type_name,"
 		      " case c.\"type\""
+			   " when 'date' then 10"
 			   " when 'month_interval' then"
 				" case c.type_digits"
 				     " when 1 then 26"
@@ -267,20 +268,26 @@ SQLColumns_(ODBCStmt *stmt,
 				     " when 12 then 44"
 				     " when 13 then 30"
 				" end"
-			   " when 'date' then 10"
 			   " when 'time' then 12"
-			   " when 'timetz' then 12"
 			   " when 'timestamp' then 23"
 			   " when 'timestamptz' then 23"
+			   " when 'timetz' then 12"
 			   " else c.type_digits"
 		      " end as column_size,"
 		      " case c.\"type\""
+			   " when 'bigint' then 20"
+			   " when 'char' then 2 * c.type_digits"
+			   " when 'clob' then 2 * c.type_digits"
+			   " when 'date' then 10"
+			   " when 'double' then 24"
+			   " when 'int' then 11"
 			   " when 'month_interval' then"
 				" case c.type_digits"
 				     " when 1 then 26"
 				     " when 2 then 38"
 				     " when 3 then 27"
 				" end"
+			   " when 'real' then 14"
 			   " when 'sec_interval' then"
 				" case c.type_digits"
 				     " when 4 then 25"
@@ -294,19 +301,13 @@ SQLColumns_(ODBCStmt *stmt,
 				     " when 12 then 44"
 				     " when 13 then 30"
 				" end"
-			   " when 'date' then 10"
+			   " when 'smallint' then 6"
 			   " when 'time' then 12"
-			   " when 'timetz' then 12"
 			   " when 'timestamp' then 23"
 			   " when 'timestamptz' then 23"
-			   " when 'bigint' then 20"
-			   " when 'int' then 11"
-			   " when 'smallint' then 6"
+			   " when 'timetz' then 12"
 			   " when 'tinyint' then 4"
-			   " when 'char' then 6 * c.type_digits"
-			   " when 'varchar' then 6 * c.type_digits"
-			   " when 'double' then 24"
-			   " when 'real' then 14"
+			   " when 'varchar' then 2 * c.type_digits"
 			   " when 'wrd' then"
 				" case c.type_digits"
 				     " when 32 then 11"
@@ -315,45 +316,46 @@ SQLColumns_(ODBCStmt *stmt,
 			   " else c.type_digits"
 		      " end as buffer_length,"
 		      " case c.\"type\""
-			   " when 'time' then c.type_digits - 1"
-			   " when 'timetz' then c.type_digits - 1"
-			   " when 'timestamp' then c.type_digits - 1"
-			   " when 'timestamptz' then c.type_digits - 1"
-			   " when 'sec_interval' then 0"
+			   " when 'bigint' then 19"
+			   " when 'decimal' then c.type_scale"
+			   " when 'double' then"
+				" case when c.type_digits = 53 and c.type_scale = 0 then 15"
+				" else c.type_digits"
+				" end"
+			   " when 'int' then 10"
 			   " when 'month_interval' then 0"
 			   " when 'real' then"
 				" case when c.type_digits = 24 and c.type_scale = 0 then 7"
 				" else c.type_digits"
 				" end"
-			   " when 'double' then"
-				" case when c.type_digits = 53 and c.type_scale = 0 then 15"
-				" else c.type_digits"
-				" end"
-			   " when 'decimal' then c.type_scale"
-			   " when 'bigint' then 19"
-			   " when 'int' then 10"
+			   " when 'sec_interval' then 0"
 			   " when 'smallint' then 5"
+			   " when 'time' then c.type_digits - 1"
+			   " when 'timestamp' then c.type_digits - 1"
+			   " when 'timestamptz' then c.type_digits - 1"
+			   " when 'timetz' then c.type_digits - 1"
 			   " when 'tinyint' then 3"
 			   " when 'wrd' then"
 				" case c.type_digits"
 				     " when 32 then 10"
 				     " when 64 then 19"
 				" end"
+			   " else cast(null as smallint)"
 		      " end as decimal_digits,"
 		      " case c.\"type\""
+			   " when 'bigint' then 2"
+			   " when 'decimal' then 10"
 			   " when 'double' then"
 				" case when c.type_digits = 53 and c.type_scale = 0 then 2"
 				" else 10"
 				" end"
+			   " when 'int' then 2"
 			   " when 'real' then"
 				" case when c.type_digits = 24 and c.type_scale = 0 then 2"
 				" else 10"
 				" end"
-			   " when 'bigint' then 2"
-			   " when 'int' then 2"
 			   " when 'smallint' then 2"
 			   " when 'tinyint' then 2"
-			   " when 'decimal' then 10"
 			   " when 'wrd' then 2"
 			   " else cast(null as smallint)"
 		      " end as num_prec_radix,"
@@ -377,9 +379,9 @@ SQLColumns_(ODBCStmt *stmt,
 			   " when 'real' then %d"
 			   " when 'sec_interval' then %d"
 			   " when 'smallint' then %d"
+			   " when 'time' then %d"
 			   " when 'timestamp' then %d"
 			   " when 'timestamptz' then %d"
-			   " when 'time' then %d"
 			   " when 'timetz' then %d"
 			   " when 'tinyint' then %d"
 			   " when 'varchar' then %d"
@@ -410,23 +412,23 @@ SQLColumns_(ODBCStmt *stmt,
 				     " when 12 then %d"
 				     " when 13 then %d"
 				" end"
+			   " when 'time' then %d"
 			   " when 'timestamp' then %d"
 			   " when 'timestamptz' then %d"
-			   " when 'time' then %d"
 			   " when 'timetz' then %d"
 			   " else cast(null as smallint)"
 		      " end as sql_datetime_sub,"
 		      " case c.\"type\""
-			   " when 'char' then 6 * c.type_digits"
-			   " when 'varchar' then 6 * c.type_digits"
-			   " when 'clob' then 6 * c.type_digits"
+			   " when 'char' then 2 * c.type_digits"
+			   " when 'varchar' then 2 * c.type_digits"
+			   " when 'clob' then 2 * c.type_digits"
 			   " when 'blob' then c.type_digits"
 			   " else cast(null as integer)"
 		      " end as char_octet_length,"
 		      " cast(c.\"number\" + 1 as integer) as ordinal_position,"
 		      " case c.\"null\""
-			   " when true then cast('yes' as varchar(3))"
-			   " when false then cast('no' as varchar(3))"
+			   " when true then cast('YES' as varchar(3))"
+			   " when false then cast('NO' as varchar(3))"
 		      " end as is_nullable"
 		" from sys.\"schemas\" s,"
 		     " sys.\"tables\" t,"
@@ -436,25 +438,25 @@ SQLColumns_(ODBCStmt *stmt,
 		      " t.\"id\" = c.\"table_id\" and"
 		      " e.\"name\" = 'gdk_dbname'",
 		/* data_type: */
-		SQL_BIGINT, SQL_LONGVARBINARY, SQL_BIT, SQL_CHAR,
-		SQL_LONGVARCHAR, SQL_TYPE_DATE, SQL_DECIMAL, SQL_DOUBLE,
+		SQL_BIGINT, SQL_LONGVARBINARY, SQL_BIT, SQL_WCHAR,
+		SQL_WLONGVARCHAR, SQL_TYPE_DATE, SQL_DECIMAL, SQL_DOUBLE,
 		SQL_INTEGER, SQL_INTERVAL_YEAR, SQL_INTERVAL_YEAR_TO_MONTH,
 		SQL_INTERVAL_MONTH, SQL_REAL, SQL_INTERVAL_DAY,
 		SQL_INTERVAL_DAY_TO_HOUR, SQL_INTERVAL_DAY_TO_MINUTE,
 		SQL_INTERVAL_DAY_TO_SECOND, SQL_INTERVAL_HOUR,
 		SQL_INTERVAL_HOUR_TO_MINUTE, SQL_INTERVAL_HOUR_TO_SECOND,
 		SQL_INTERVAL_MINUTE, SQL_INTERVAL_MINUTE_TO_SECOND,
-		SQL_INTERVAL_SECOND, SQL_SMALLINT, SQL_TYPE_TIMESTAMP,
-		SQL_TYPE_TIMESTAMP, SQL_TYPE_TIME, SQL_TYPE_TIME,
-		SQL_TINYINT, SQL_VARCHAR, SQL_INTEGER, SQL_BIGINT,
+		SQL_INTERVAL_SECOND, SQL_SMALLINT, SQL_TYPE_TIME,
+		SQL_TYPE_TIMESTAMP, SQL_TYPE_TIMESTAMP, SQL_TYPE_TIME,
+		SQL_TINYINT, SQL_WVARCHAR, SQL_INTEGER, SQL_BIGINT,
 		/* nullable: */
 		SQL_NULLABLE, SQL_NO_NULLS,
 		/* sql_data_type: */
-		SQL_BIGINT, SQL_LONGVARBINARY, SQL_BIT, SQL_CHAR,
-		SQL_LONGVARCHAR, SQL_DATETIME, SQL_DECIMAL, SQL_DOUBLE,
+		SQL_BIGINT, SQL_LONGVARBINARY, SQL_BIT, SQL_WCHAR,
+		SQL_WLONGVARCHAR, SQL_DATETIME, SQL_DECIMAL, SQL_DOUBLE,
 		SQL_INTEGER, SQL_INTERVAL, SQL_REAL, SQL_INTERVAL,
 		SQL_SMALLINT, SQL_DATETIME, SQL_DATETIME, SQL_DATETIME,
-		SQL_DATETIME, SQL_TINYINT, SQL_VARCHAR, SQL_INTEGER,
+		SQL_DATETIME, SQL_TINYINT, SQL_WVARCHAR, SQL_INTEGER,
 		SQL_BIGINT,
 		/* sql_datetime_sub: */
 		SQL_CODE_DATE, SQL_CODE_YEAR, SQL_CODE_YEAR_TO_MONTH,
@@ -463,7 +465,7 @@ SQLColumns_(ODBCStmt *stmt,
 		SQL_CODE_HOUR, SQL_CODE_HOUR_TO_MINUTE,
 		SQL_CODE_HOUR_TO_SECOND, SQL_CODE_MINUTE,
 		SQL_CODE_MINUTE_TO_SECOND, SQL_CODE_SECOND,
-		SQL_CODE_TIMESTAMP, SQL_CODE_TIMESTAMP, SQL_CODE_TIME,
+		SQL_CODE_TIME, SQL_CODE_TIMESTAMP, SQL_CODE_TIMESTAMP,
 		SQL_CODE_TIME);
 	assert(strlen(query) < 6300);
 	query_end += strlen(query_end);

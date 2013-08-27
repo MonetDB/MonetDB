@@ -1090,8 +1090,6 @@ ODBCFetch(ODBCStmt *stmt,
 
 	/* see SQLExecute.c for possible types */
 	switch (sql_type) {
-	case SQL_CHAR:
-		break;
 	case SQL_DECIMAL:
 	case SQL_TINYINT:
 	case SQL_SMALLINT:
@@ -1238,7 +1236,10 @@ ODBCFetch(ODBCStmt *stmt,
 			if (data != NULL &&
 			    (sql_type == SQL_CHAR ||
 			     sql_type == SQL_VARCHAR ||
-			     sql_type == SQL_LONGVARCHAR))
+			     sql_type == SQL_LONGVARCHAR ||
+			     sql_type == SQL_WCHAR ||
+			     sql_type == SQL_WVARCHAR ||
+			     sql_type == SQL_WLONGVARCHAR))
 				buflen = (SQLLEN) datalen + 1; /* but this is certainly enough for strings */
 			ptr = malloc(buflen);
 
@@ -1251,6 +1252,9 @@ ODBCFetch(ODBCStmt *stmt,
 		case SQL_CHAR:
 		case SQL_VARCHAR:
 		case SQL_LONGVARCHAR:
+		case SQL_WCHAR:
+		case SQL_WVARCHAR:
+		case SQL_WLONGVARCHAR:
 			copyString(data, datalen, ptr, buflen, lenp, SQLLEN, addStmtError, stmt, return SQL_ERROR);
 			break;
 		case SQL_BINARY:
@@ -1822,6 +1826,9 @@ ODBCFetch(ODBCStmt *stmt,
 
 		switch (sql_type) {
 		case SQL_CHAR:
+		case SQL_VARCHAR:
+		case SQL_WCHAR:
+		case SQL_WVARCHAR:
 		case SQL_DECIMAL:
 		case SQL_TINYINT:
 		case SQL_SMALLINT:
@@ -1860,6 +1867,9 @@ ODBCFetch(ODBCStmt *stmt,
 			*lenp = 1;
 		switch (sql_type) {
 		case SQL_CHAR:
+		case SQL_VARCHAR:
+		case SQL_WCHAR:
+		case SQL_WVARCHAR:
 			if (!parsedouble(data, &fval)) {
 				/* Invalid character value for cast
 				   specification */
@@ -1957,6 +1967,9 @@ ODBCFetch(ODBCStmt *stmt,
 		}
 		switch (sql_type) {
 		case SQL_CHAR:
+		case SQL_VARCHAR:
+		case SQL_WCHAR:
+		case SQL_WVARCHAR:
 		case SQL_DOUBLE:
 		case SQL_REAL:
 			/* reparse double and float, parse char */
@@ -2055,6 +2068,9 @@ ODBCFetch(ODBCStmt *stmt,
 		maxval--;
 		switch (sql_type) {
 		case SQL_CHAR:
+		case SQL_VARCHAR:
+		case SQL_WCHAR:
+		case SQL_WVARCHAR:
 		case SQL_DOUBLE:
 		case SQL_REAL:
 			/* reparse double and float, parse char */
@@ -2118,6 +2134,9 @@ ODBCFetch(ODBCStmt *stmt,
 
 		switch (sql_type) {
 		case SQL_CHAR:
+		case SQL_VARCHAR:
+		case SQL_WCHAR:
+		case SQL_WVARCHAR:
 		case SQL_DOUBLE:
 		case SQL_REAL:
 			/* reparse double and float, parse char */
@@ -2173,6 +2192,9 @@ ODBCFetch(ODBCStmt *stmt,
 	case SQL_C_DOUBLE:
 		switch (sql_type) {
 		case SQL_CHAR:
+		case SQL_VARCHAR:
+		case SQL_WCHAR:
+		case SQL_WVARCHAR:
 			if (!parsedouble(data, &fval)) {
 				/* Invalid character value for cast
 				 * specification */
@@ -2237,6 +2259,9 @@ ODBCFetch(ODBCStmt *stmt,
 		i = 1;
 		switch (sql_type) {
 		case SQL_CHAR:
+		case SQL_VARCHAR:
+		case SQL_WCHAR:
+		case SQL_WVARCHAR:
 			i = parsetimestamp(data, &tsval);
 			/* fall through */
 		case SQL_TYPE_TIMESTAMP:	/* note i==1 unless we fell through */
@@ -2273,6 +2298,9 @@ ODBCFetch(ODBCStmt *stmt,
 		i = 1;
 		switch (sql_type) {
 		case SQL_CHAR:
+		case SQL_VARCHAR:
+		case SQL_WCHAR:
+		case SQL_WVARCHAR:
 			i = parsetimestamp(data, &tsval);
 			/* fall through */
 		case SQL_TYPE_TIMESTAMP:	/* note i==1 unless we fell through */
@@ -2309,6 +2337,9 @@ ODBCFetch(ODBCStmt *stmt,
 		i = 1;
 		switch (sql_type) {
 		case SQL_CHAR:
+		case SQL_VARCHAR:
+		case SQL_WCHAR:
+		case SQL_WVARCHAR:
 			i = parsetimestamp(data, &tsval);
 			if (i == 0) {
 				i = parsetime(data, &tval);
@@ -2370,6 +2401,9 @@ ODBCFetch(ODBCStmt *stmt,
 
 		switch (sql_type) {
 		case SQL_CHAR:
+		case SQL_VARCHAR:
+		case SQL_WCHAR:
+		case SQL_WVARCHAR:
 			if (parsemonthintervalstring(&data, NULL, &ival) == SQL_ERROR) {
 				/* Invalid character value for cast
 				 * specification */
@@ -2447,6 +2481,9 @@ ODBCFetch(ODBCStmt *stmt,
 
 		switch (sql_type) {
 		case SQL_CHAR:
+		case SQL_VARCHAR:
+		case SQL_WCHAR:
+		case SQL_WVARCHAR:
 			if (parsesecondintervalstring(&data, NULL, &ival, &ivalprec) == SQL_ERROR) {
 				/* Invalid character value for cast
 				 * specification */
@@ -2974,6 +3011,9 @@ ODBCStore(ODBCStmt *stmt,
 	case SQL_CHAR:
 	case SQL_VARCHAR:
 	case SQL_LONGVARCHAR:
+	case SQL_WCHAR:
+	case SQL_WVARCHAR:
+	case SQL_WLONGVARCHAR:
 		assign(buf, bufpos, buflen, '\'', stmt);
 		switch (ctype) {
 		case SQL_C_CHAR:

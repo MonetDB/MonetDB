@@ -47,8 +47,8 @@ static struct msql_types {
 	{"bigint", SQL_BIGINT},
 	{"blob", SQL_LONGVARBINARY},
 	{"boolean", SQL_BIT},
-	{"char", SQL_CHAR},
-	{"clob", SQL_LONGVARCHAR},
+	{"char", SQL_WCHAR},
+	{"clob", SQL_WLONGVARCHAR},
 	{"date", SQL_TYPE_DATE},
 	{"decimal", SQL_DECIMAL},
 	{"double", SQL_DOUBLE},
@@ -65,7 +65,7 @@ static struct msql_types {
 	{"timestamptz", SQL_TYPE_TIMESTAMP},
 	{"tinyint", SQL_TINYINT},
 /* 	{"ubyte", SQL_TINYINT}, */
-	{"varchar", SQL_VARCHAR},
+	{"varchar", SQL_WVARCHAR},
 	{"wrd", SQL_BIGINT},
 	{0, 0},			/* sentinel */
 };
@@ -302,7 +302,10 @@ ODBCInitResult(ODBCStmt *stmt)
 
 		if (rec->sql_desc_concise_type == SQL_CHAR ||
 		    rec->sql_desc_concise_type == SQL_VARCHAR ||
-		    rec->sql_desc_concise_type == SQL_LONGVARCHAR)
+		    rec->sql_desc_concise_type == SQL_LONGVARCHAR ||
+		    rec->sql_desc_concise_type == SQL_WCHAR ||
+		    rec->sql_desc_concise_type == SQL_WVARCHAR ||
+		    rec->sql_desc_concise_type == SQL_WLONGVARCHAR)
 			rec->sql_desc_case_sensitive = SQL_TRUE;
 		else
 			rec->sql_desc_case_sensitive = SQL_FALSE;
