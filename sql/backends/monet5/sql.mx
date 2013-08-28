@@ -4235,7 +4235,11 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(IO, "streams.open", "could not open file '%s': %s",
 				filename, strerror(errnr));
 	}
-	s = bstream_create(ss, 33554432);
+#if SIZEOF_VOID_P == 4
+	s = bstream_create(ss, 0x20000);
+#else
+	s = bstream_create(ss, 0x2000000);
+#endif
 	if (!s)
 		throw(IO, "bstreams.create", "failed to create block stream");
 	b = mvc_import_table(cntxt, m, s, *sname, *tname, (char*)tsep, (char*)rsep, (char*)ssep, (char*)ns, *sz, *offset, *locked);
