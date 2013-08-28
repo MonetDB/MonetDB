@@ -1370,7 +1370,7 @@ join_hash_key( mvc *sql, list *l )
 }
 
 static stmt *
-releqjoin( mvc *sql, list *l1, list *l2, int used_hash )
+releqjoin( mvc *sql, list *l1, list *l2, int used_hash, comp_type cmp_op )
 {
 	node *n1 = l1->h, *n2 = l2->h;
 	stmt *l, *r, *res;
@@ -1378,18 +1378,18 @@ releqjoin( mvc *sql, list *l1, list *l2, int used_hash )
 	if (list_length(l1) <= 1) {
 		l = l1->h->data;
 		r = l2->h->data;
-		return stmt_join(sql->sa, l, r, cmp_equal);
+		return stmt_join(sql->sa, l, r, cmp_op);
 	}
 	if (used_hash) {
 		l = n1->data;
 		r = n2->data;
 		n1 = n1->next;
 		n2 = n2->next;
-		res = stmt_join(sql->sa, l, r, cmp_equal);
+		res = stmt_join(sql->sa, l, r, cmp_op);
 	} else { /* need hash */
 		l = join_hash_key(sql, l1);
 		r = join_hash_key(sql, l2);
-		res = stmt_join(sql->sa, l, r, cmp_equal);
+		res = stmt_join(sql->sa, l, r, cmp_op);
 	}
 	l = stmt_result(sql->sa, res, 0);
 	r = stmt_result(sql->sa, res, 1);
@@ -1399,10 +1399,15 @@ releqjoin( mvc *sql, list *l1, list *l2, int used_hash )
 		stmt *le = stmt_project(sql->sa, l, ld );
 		stmt *re = stmt_project(sql->sa, r, rd );
 		/* intentional both tail_type's of le (as re sometimes is a find for bulk loading */
-		sql_subfunc *f=sql_bind_func(sql->sa, sql->session->schema, "=", tail_type(le), tail_type(le), F_FUNC);
+		sql_subfunc *f = NULL;
 		stmt * cmp;
 
+		if (cmp_op == cmp_equal)
+			f = sql_bind_func(sql->sa, sql->session->schema, "=", tail_type(le), tail_type(le), F_FUNC);
+		else	/* cmp_equal_nil ? */
+			f = sql_bind_func(sql->sa, sql->session->schema, "=", tail_type(le), tail_type(le), F_FUNC);
 		assert(f);
+
 		cmp = stmt_binop(sql->sa, le, re, f);
 		cmp = stmt_uselect(sql->sa, cmp, stmt_bool(sql->sa, 1), cmp_equal, NULL);
 		l = stmt_project(sql->sa, cmp, l );
@@ -1522,7 +1527,7 @@ rel2bin_join( mvc *sql, sql_rel *rel, list *refs)
 			list_append(rje, s->op2);
 		}
 		if (list_length(lje) > 1) {
-			join = releqjoin(sql, lje, rje, used_hash);
+			join = releqjoin(sql, lje, rje, used_hash, cmp_equal);
 		} else if (!join) {
 			join = stmt_join(sql->sa, lje->h->data, rje->h->data, cmp_equal);
 		}
@@ -1680,7 +1685,7 @@ rel2bin_semijoin( mvc *sql, sql_rel *rel, list *refs)
 			}
 		}
 		if (list_length(lje) > 1) {
-			join = releqjoin(sql, lje, rje, 0 /* no hash used */);
+			join = releqjoin(sql, lje, rje, 0 /* no hash used */, cmp_equal);
 		} else if (!join) {
 			join = stmt_join(sql->sa, lje->h->data, rje->h->data, cmp_equal);
 		}
@@ -1920,10 +1925,7 @@ rel2bin_except( mvc *sql, sql_rel *rel, list *refs)
 	stmt_group_done(rg);
 
 	/* now find the matching groups */
-	/* There is a bug (#3040) in the scheme, ie the join removes the nil's
-	 * as during joining nil != nil. But for except's nil aren't distinct.
-	 * We would need a bat.join operator which has both semantics.
-	 */
+
 	/* TODO change to leftjoin semantics to keep those in A not in B */
 	/* would need outerjoin eqjoin and outer project code, cleans up following mess */
 	for (n = left->op4.lval->h, m = right->op4.lval->h; n && m; n = n->next, m = m->next) {
@@ -1935,7 +1937,7 @@ rel2bin_except( mvc *sql, sql_rel *rel, list *refs)
 		list_append(lje, l);
 		list_append(rje, r);
 	}
-	s = releqjoin(sql, lje, rje, 0 /* no hash used */);
+	s = releqjoin(sql, lje, rje, 1 /* no hash used */, cmp_equal_nil);
 	lm = stmt_result(sql->sa, s, 0);
 	rm = stmt_result(sql->sa, s, 1);
 
@@ -2069,7 +2071,7 @@ rel2bin_inter( mvc *sql, sql_rel *rel, list *refs)
 		list_append(lje, l);
 		list_append(rje, r);
 	}
-	s = releqjoin(sql, lje, rje, 0 /* no hash used */);
+	s = releqjoin(sql, lje, rje, 1 /* no hash used */, cmp_equal_nil);
 	lm = stmt_result(sql->sa, s, 0);
 	rm = stmt_result(sql->sa, s, 1);
 		
@@ -2763,7 +2765,7 @@ insert_check_ukey(mvc *sql, list *inserts, sql_key *k, stmt *idx_inserts)
 				list_append(lje, col);
 				list_append(rje, nth(inserts, c->c->colnr)->op1);
 			}
-			s = releqjoin(sql, lje, rje, 1 /* hash used */);
+			s = releqjoin(sql, lje, rje, 1 /* hash used */, cmp_equal);
 			s = stmt_result(sql->sa, s, 0);
 		}
 		s = stmt_binop(sql->sa, stmt_aggr(sql->sa, s, NULL, NULL, cnt, 1, 0), stmt_atom_wrd(sql->sa, 0), ne);
@@ -3165,7 +3167,7 @@ update_check_ukey(mvc *sql, stmt **updates, sql_key *k, stmt *tids, stmt *idx_up
 				list_append(lje, stmt_col(sql, c->c, nu_tids));
 				list_append(rje, upd);
 			}
-			s = releqjoin(sql, lje, rje, 1 /* hash used */);
+			s = releqjoin(sql, lje, rje, 1 /* hash used */, cmp_equal);
 			s = stmt_result(sql->sa, s, 0);
 			s = stmt_binop(sql->sa, stmt_aggr(sql->sa, s, NULL, NULL, cnt, 1, 0), stmt_atom_wrd(sql->sa, 0), ne);
 		}
@@ -3399,7 +3401,7 @@ join_updated_pkey(mvc *sql, sql_key * k, stmt *tids, stmt **updates, int updcol)
 		list_append(lje, upd);
 		list_append(rje, col);
 	}
-	s = releqjoin(sql, lje, rje, 1 /* hash used */);
+	s = releqjoin(sql, lje, rje, 1 /* hash used */, cmp_equal);
 	s = stmt_result(sql->sa, s, 0);
 	/* add missing nulls */
 	if (nulls)
@@ -3700,7 +3702,7 @@ join_idx_update(mvc *sql, sql_idx * i, stmt **updates, int updcol)
 		list_append(lje, check_types(sql, &rc->c->type, upd, type_equal));
 		list_append(rje, stmt_col(sql, rc->c, rdels));
 	}
-	s = releqjoin(sql, lje, rje, 0 /* no hash used */);
+	s = releqjoin(sql, lje, rje, 0 /* no hash used */, cmp_equal);
 	l = stmt_result(sql->sa, s, 0);
 	r = stmt_result(sql->sa, s, 1);
 	s = stmt_project(sql->sa, stmt_reverse(sql->sa, l), r);

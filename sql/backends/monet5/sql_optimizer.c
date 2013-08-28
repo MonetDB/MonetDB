@@ -103,7 +103,7 @@ SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 		char *f = getFunctionId(p);
 
 		if( getModuleId(p) == sqlRef &&
-		    (f == bindRef || f == bindidxRef || f == binddbatRef ) ){
+		    (f == bindRef || f == bindidxRef) ){
 			ValRecord vr;
 			int upd = (p->argc == 7 || p->argc == 9);
 			char *sname = getVarConstant(mb, getArg(p,2+upd)).val.sval;
@@ -120,12 +120,8 @@ SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 				pushInstruction(mb,p);
 				continue;
 			}
-			if (f == binddbatRef) {
-				mode = getVarConstant(mb, getArg(p,4)).val.ival;
-			} else {
-				cname = getVarConstant(mb, getArg(p,4+upd)).val.sval;
-				mode = getVarConstant(mb, getArg(p,5+upd)).val.ival;
-			}
+			cname = getVarConstant(mb, getArg(p,4+upd)).val.sval;
+			mode = getVarConstant(mb, getArg(p,5+upd)).val.ival;
 
 			if (s && f == bindidxRef && cname) {
 				size_t cnt;
@@ -165,17 +161,6 @@ SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 					}
 					rows = (wrd) cnt;
 				}
-			} else if (s && f == binddbatRef) {
-				size_t cnt;
-				sql_table *t = mvc_bind_table(m, s, tname);
-				sql_column *c = NULL;
-
-				if (t->columns.set->h) {
-					c = t->columns.set->h->data;
-
-					cnt = store_funcs.count_col(tr, c, 1);
-					rows = (wrd) cnt;
-				}
 			}
 			if (rows > 1 && mode != RD_INS)
 				varSetProp(mb, k, rowsProp, op_eq, VALset(&vr, TYPE_wrd, &rows));
@@ -189,13 +174,8 @@ SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 				pushInstruction(mb, p);
 
 				if (mode == RD_INS) {
-					if (f != binddbatRef)
-						low = high;
+					low = high;
 					high += 1024*1024;
-				}
-				if (f == binddbatRef) {
-					lowprop = tlbProp;
-					highprop = tubProp;
 				}
 				varSetProp(mb, getArg(p,0), lowprop, op_gte, VALset(&vr, TYPE_oid, &low));
 				varSetProp(mb, getArg(p,0), highprop, op_lt, VALset(&vr, TYPE_oid, &high));

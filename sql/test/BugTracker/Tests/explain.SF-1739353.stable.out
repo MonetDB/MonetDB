@@ -31,12 +31,12 @@ Operation successful
 |     X_2 := sql.mvc(); |
 |     X_9 := sql.bind(X_2,"sys","_tables","type",0);             |
 |     X_6:bat[:oid,:oid]  := sql.tid(X_2,"sys","_tables");       |
-|     X_55 := algebra.subselect(X_9,X_6,2:sht,2:sht,true,true,true);   |
+|     X_58 := algebra.subselect(X_9,X_6,2:sht,2:sht,true,true,true);              |
 |     (X_12,r1_12) := sql.bind(X_2,"sys","_tables","type",2);    |
-|     X_56 := algebra.subselect(r1_12,2:sht,2:sht,true,true,true);     |
+|     X_59 := algebra.subselect(r1_12,2:sht,2:sht,true,true,true);                |
 |     X_15 := sql.bind(X_2,"sys","_tables","type",1);            |
-|     X_57 := algebra.subselect(X_15,X_6,2:sht,2:sht,true,true,true);  |
-|     X_17 := sql.subdelta(X_55,X_6,X_12,X_56,X_57);                   |
+|     X_60 := algebra.subselect(X_15,X_6,2:sht,2:sht,true,true,true);             |
+|     X_17 := sql.subdelta(X_58,X_6,X_12,X_59,X_60);                              |
 |     X_18 := sql.bind(X_2,"sys","_tables","name",0);                  |
 |     (X_20,r1_25) := sql.bind(X_2,"sys","_tables","name",2);          |
 |     X_22 := sql.bind(X_2,"sys","_tables","name",1);                  |
@@ -54,9 +54,10 @@ Operation successful
 |     sql.rsColumn(X_36,".tables","name","varchar",1024,0,X_35);       |
 |     X_42 := io.stdout();                                             |
 |     sql.exportResult(X_42,X_36);                                     |
-| end s0_1;                                                           |
-+----------------------------------------------------------------------+
-29 rows
+| end s2_1;                                                                       |
+| # querylog.define("explain select \"name\" from \"tables\";","sequential_pipe") |
++---------------------------------------------------------------------------------+
+30 rows
 
 
 # 15:15:37 >  

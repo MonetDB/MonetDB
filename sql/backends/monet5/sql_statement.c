@@ -58,7 +58,7 @@ stmt_key( stmt *s )
 	return hash_key(nme);
 }
 
-const char *
+static const char *
 st_type2string(st_type type)
 {
 	switch (type) {
@@ -74,7 +74,6 @@ st_type2string(st_type type)
 
 		ST(tid);
 		ST(bat);
-		ST(dbat);
 		ST(idxbat);
 
 		ST(const);
@@ -165,16 +164,6 @@ stmt_atom_string_nil(sql_allocator *sa)
 }
 
 stmt *
-stmt_atom_clob(sql_allocator *sa, char *S)
-{
-	char *s = sql2str(S);
-	sql_subtype t; 
-
-	sql_find_subtype(&t, "clob", _strlen(s), 0);
-	return stmt_atom(sa, atom_string(sa, &t, s));
-}
-
-stmt *
 stmt_atom_int(sql_allocator *sa, int i)
 {
 	sql_subtype t;
@@ -205,15 +194,6 @@ stmt_atom_wrd_nil(sql_allocator *sa)
 	else
 		sql_find_subtype(&t, "wrd", 64, 0);
 	return stmt_atom(sa, atom_general(sa, &t, NULL));
-}
-
-stmt *
-stmt_atom_lng(sql_allocator *sa, lng l)
-{
-	sql_subtype t;
-
-	sql_find_subtype(&t, "bigint", 64, 0);
-	return stmt_atom(sa, atom_int(sa, &t, l));
 }
 
 stmt *
@@ -434,7 +414,6 @@ stmt_deps(list *dep_list, stmt *s, int depend_type, int dir)
 		case st_append_idx:
 		case st_update_idx:
 		case st_delete:
-		case st_dbat:
 		case st_idxbat:
 		case st_none:
 		case st_var:
@@ -515,18 +494,6 @@ stmt_temp(sql_allocator *sa, sql_subtype *t)
 
 	s->op4.typeval = *t;
 	s->nrcols = 1;
-	return s;
-}
-
-stmt *
-stmt_tbat(sql_allocator *sa, sql_table *t, int access)
-{
-	stmt *s = stmt_create(sa, st_dbat);
-
-	assert(access == RD_INS);
-	s->nrcols = 0;
-	s->flag = access;
-	s->op4.tval = t;
 	return s;
 }
 
@@ -728,24 +695,6 @@ stmt_const(sql_allocator *sa, stmt *rows, stmt *val)
 	} else {
 		return stmt_const_(sa, rows, val);
 	}
-}
-
-/* BEWARE stmt_mark marks the head, this while the mil mark is a mark tail
- * Current implementation adds the reverses in stmt_mark nolonger in
- * the generated code.
-*/
-stmt *
-stmt_mark(sql_allocator *sa, stmt *s, oid id)
-{
-	stmt *ns = stmt_create(sa, st_mark);
-
-	ns->op1 = stmt_reverse(sa, s);
-	ns->op2 = stmt_atom_oid(sa, id);
-
-	ns->nrcols = s->nrcols;
-	ns->key = s->key;
-	ns->aggr = s->aggr;
-	return stmt_reverse(sa, ns);
 }
 
 stmt *
@@ -1374,13 +1323,7 @@ tail_type(stmt *st)
 {
 	switch (st->type) {
 	case st_const:
-	case st_join:
 		return tail_type(st->op2);
-	case st_join2:
-	case st_joinN:
-		/* The tail type of a join2 is the head of the second operant!,
-		   ie should be 'oid' */
-		return head_type(st->op2);
 
 	case st_uselect:
 	case st_uselect2:
@@ -1410,17 +1353,21 @@ tail_type(stmt *st)
 		} else if (st->op4.idxval->type == join_idx) {
 			return sql_bind_localtype("oid");
 		}
+	case st_join:
+	case st_join2:
+	case st_joinN:
+		if (st->flag == cmp_project || st->flag == cmp_reorder_project)
+			return tail_type(st->op2);
 	case st_mark:
 	case st_reorder:
 	case st_group:
 	case st_result:
 	case st_tid:
+	case st_mirror:
+	case st_reverse:
 		return sql_bind_localtype("oid");
 	case st_table_clear:
 		return sql_bind_localtype("lng");
-	case st_mirror:
-	case st_reverse:
-		return head_type(st->op1);
 
 	case st_aggr:
 		return &st->op4.aggrval->res;
@@ -1447,63 +1394,6 @@ tail_type(stmt *st)
 	default:
 		fprintf(stderr, "missing tail type %u: %s\n", st->type, st_type2string(st->type));
 		assert(0);
-		return NULL;
-	}
-}
-
-sql_subtype *
-head_type(stmt *st)
-{
-	switch (st->type) {
-	case st_alias:
-	case st_aggr:
-	case st_convert:
-	case st_unop:
-	case st_binop:
-	case st_Nop:
-	case st_unique:
-	case st_tunion:
-	case st_tdiff:
-	case st_tinter:
-	case st_diff:
-	case st_union:
-	case st_join:
-	case st_join2:
-	case st_joinN:
-	case st_mirror:
-	case st_uselect:
-	case st_uselect2:
-	case st_append:
-	case st_gen_group:
-	case st_group:
-	case st_result:
-	case st_order:
-	case st_mark:
-		return head_type(st->op1);
-
-	case st_list:
-		return head_type(st->op4.lval->h->data);
-
-	case st_temp:
-	case st_single:
-	case st_tid:
-	case st_bat:
-	case st_idxbat:
-	case st_dbat:
-	case st_const:
-	case st_rs_column:
-		return sql_bind_localtype("oid");
-		/* return NULL; oid */
-
-	case st_reverse:
-		return tail_type(st->op1);
-	case st_atom:
-		return atom_type(st->op4.aval);
-	case st_var:
-		if (st->op4.typeval.type)
-			return &st->op4.typeval;
-	default:
-		fprintf(stderr, "missing head type %u: %s\n", st->type, st_type2string(st->type));
 		return NULL;
 	}
 }
@@ -1998,7 +1888,6 @@ print_stmt( sql_allocator *sa, stmt *s )
 				s->op4.idxval->t->base.name, 
 				s->op4.idxval->base.name);
 			break;
-		case st_dbat:
 		case st_delete:
 		case st_table_clear:
 			printf("%s.%s, ", 

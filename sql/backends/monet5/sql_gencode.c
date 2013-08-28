@@ -791,19 +791,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			}
 		}
 			break;
-		case st_dbat:{
-			int ht = TYPE_oid;
-			sql_table *t = s->op4.tval;
-
-			q = newStmt2(mb, sqlRef, binddbatRef);
-			setVarType(mb, getArg(q,0), newBatType(ht,TYPE_oid));
-			q = pushArgument(mb, q, sql->mvc_var);
-			q = pushSchema(mb, q, t);
-			q = pushStr(mb, q, t->base.name);
-			q = pushInt(mb, q, s->flag);
-			s->nr = getDestVar(q);
-		}
-			break;
 		case st_idxbat:{
 			int ht = TYPE_oid;
 			int tt = tail_type(s)->type->localtype;
@@ -1156,7 +1143,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					q = pushStr(mb, q, ">=");
 					break;
 				default:
-					showException(GDKout, SQL,"sql","SQL2MAL: error impossible\n");
+					showException(GDKout, SQL,"sql","SQL2MAL: error impossible subselect compare\n");
 				}
 			}
 			if ( q )
@@ -1318,6 +1305,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			int l = _dumpstmt(sql, mb, s->op1);
 			int r = _dumpstmt(sql, mb, s->op2);
 			char *jt = "join";
+			char *sjt = "subjoin";
 
 			assert(l >= 0 && r >= 0);
 
@@ -1364,6 +1352,16 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
                         	q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 				q = pushArgument(mb, q, l);
 				q = pushArgument(mb, q, r);
+				break;
+			case cmp_equal_nil:
+				q = newStmt1(mb, algebraRef, sjt);
+                        	q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				q = pushArgument(mb, q, l);
+				q = pushArgument(mb, q, r);
+				q = pushNil(mb, q, TYPE_bat);
+				q = pushNil(mb, q, TYPE_bat);
+				q = pushBit(mb, q, TRUE);
+				q = pushNil(mb, q, TYPE_lng);
 				break;
 			case cmp_notequal:
 				q = newStmt1(mb, algebraRef, antijoinRef);

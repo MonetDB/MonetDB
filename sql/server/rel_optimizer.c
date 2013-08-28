@@ -4379,6 +4379,11 @@ rel_mark_used(mvc *sql, sql_rel *rel, int proj)
 	case op_update:
 	case op_delete:
 		if (proj && rel->r) {
+			sql_rel *r = rel->r;
+			if (r->exps && r->exps->h) { /* TID is used */
+				sql_exp *e = r->exps->h->data;
+				e->used = 1;
+			}
 			exps_mark_used(sql->sa, rel, rel->r);
 			rel_mark_used(sql, rel->r, 0);
 		}

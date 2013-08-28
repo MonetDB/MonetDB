@@ -55,12 +55,12 @@ Operation successful
 |     X_2 := sql.mvc();                                               |
 |     X_9 := sql.bind(X_2,"sys","_tables","type",0);          |
 |     X_6:bat[:oid,:oid]  := sql.tid(X_2,"sys","_tables");    |
-|     X_61 := algebra.subselect(X_9,X_6,2:sht,2:sht,true,true,true);   |
+|     X_64 := algebra.subselect(X_9,X_6,2:sht,2:sht,true,true,true);          |
 |     (X_12,r1_12) := sql.bind(X_2,"sys","_tables","type",2); |
-|     X_62 := algebra.subselect(r1_12,2:sht,2:sht,true,true,true);     |
+|     X_65 := algebra.subselect(r1_12,2:sht,2:sht,true,true,true);            |
 |     X_15 := sql.bind(X_2,"sys","_tables","type",1);         |
-|     X_63 := algebra.subselect(X_15,X_6,2:sht,2:sht,true,true,true);  |
-|     X_17 := sql.subdelta(X_61,X_6,X_12,X_62,X_63);                   |
+|     X_66 := algebra.subselect(X_15,X_6,2:sht,2:sht,true,true,true);         |
+|     X_17 := sql.subdelta(X_64,X_6,X_12,X_65,X_66);                          |
 |     X_18 := sql.bind(X_2,"sys","_tables","id",0);                    |
 |     (X_20,r1_25) := sql.bind(X_2,"sys","_tables","id",2);            |
 |     X_22 := sql.bind(X_2,"sys","_tables","id",1);                    |
@@ -80,9 +80,10 @@ Operation successful
 |     X_40 := algebra.selectNotNil(X_39);                              |
 |     X_41:wrd  := aggr.sum(X_40);                                     |
 |     sql.exportValue(1,".L1","L1","wrd",64,0,6,X_41,"");              |
-| end s1_1;                                                           |
-+----------------------------------------------------------------------+
-31 rows
+| end s3_1;                                                                   |
+| # querylog.define("explain select count(*) from tables;","sequential_pipe") |
++-----------------------------------------------------------------------------+
+32 rows
 
 
 # 19:39:11 >  

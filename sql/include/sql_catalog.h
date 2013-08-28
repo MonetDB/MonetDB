@@ -138,11 +138,12 @@ typedef enum comp_type {
 	cmp_in = 8,
 	cmp_notin = 9,
 
-	/* cmp_all and cmp_project are only used within stmt (not sql_exp) */
-	cmp_all = 10,		/* special case for crossproducts */
-	cmp_project = 11,	/* special case for projection joins */
+	/* The followin cmp_* are only used within stmt (not sql_exp) */
+	cmp_all = 10,			/* special case for crossproducts */
+	cmp_project = 11,		/* special case for projection joins */
 	cmp_reorder_project = 12,	/* special case for (reordering) projection joins */
-	cmp_joined = 13 	/* special case already joined */
+	cmp_joined = 13, 		/* special case already joined */
+	cmp_equal_nil = 14 		/* special case equi join, with nil = nil */
 } comp_type;
 
 #define is_theta_exp(e) ((e) == cmp_gt || (e) == cmp_gte || (e) == cmp_lte ||\

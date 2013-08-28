@@ -177,14 +177,6 @@ pattern restart{unsafe}( sname:str, sequence:str, start:lng ):lng
 address mvc_restart_seq
 comment "restart the sequence with value start";
 
-pattern bind_dbat(mvc:int, schema:str, table:str, access:int):bat[:oid,:oid]
-address mvc_bind_dbat_wrap
-comment "Bind to 'schema.table' BAT with deleted objecs
-and with specific access kind:
-	0 - base table
-	1 - inserts
-	2 - updates";
-
 pattern bind_idxbat(mvc:int, schema:str, table:str, index:str, access:int):bat[:oid,:any_1]
 address mvc_bind_idxbat_wrap
 comment "Bind the 'schema.table.index' BAT with access kind:
@@ -1156,25 +1148,6 @@ function octopus.bind(conn:str, sch:str, tab:str,col:str,kind:int, version:int):
 	return bind:= b;
 end octopus.bind;
 
-function octopus.bind_dbat(mvc:int, sch:str, tab:str,access:int, version:int):bat[:oid,:oid];
-	b := sql.bind_dbat(mvc,sch,tab,access);
-	return bind_dbat:= b;
-end octopus.bind_dbat;
-
-function octopus.bind_dbat(conn:str, sch:str, tab:str, access:int, version:int):bat[:oid,:oid];
-	b:bat[:oid,:any_1] := nil:bat[:oid,:any_1];
-	m := nil:int;
-	rm := remote.put(conn,m);
-	rm := remote.exec(conn,"sql","mvc");
-	s := remote.put(conn,sch);
-	t := remote.put(conn,tab);
-	a := remote.put(conn,access);
-	bh:= remote.put(conn,b);
-	bh:= remote.exec(conn,"sql","bind_dbat",rm,s,t,a);
-	b:bat[:oid,:oid]:= remote.get(conn,bh);
-	return bind_dbat:= b;
-end octopus.bind_dbat;
-
 function octopus.bind_idxbat(mvc:int, sch:str, tab:str, index:str, access:int, version:int):bat[:oid,:oid];
 	b := sql.bind_idxbat(mvc,sch,tab,index,access);
 	return bind_idxbat:= b;
@@ -1292,21 +1265,6 @@ function remote.bind_idxbat{inline}(dbconn:str, sch:str, tab:str, index:str, acc
 	return bind_idxbat:= b;
 end remote.bind_idxbat;
 
-function remote.bind_dbat{inline}(dbconn:str, sch:str, tab:str, access:int, version:int):bat[:oid,:oid];
-	b:bat[:oid,:any_1] := nil:bat[:oid,:any_1];
-	m := nil:int;
-	conn := remote.connect(dbconn, "monetdb", "monetdb", "msql");
-	rm := remote.put(conn,m);
-	rm := remote.exec(conn,"sql","mvc");
-	s := remote.put(conn,sch);
-	t := remote.put(conn,tab);
-	a := remote.put(conn,access);
-	bh:= remote.put(conn,b);
-	bh:= remote.exec(conn,"sql","bind_dbat",rm,s,t,a);
-	b:bat[:oid,:oid]:= remote.get(conn,bh);
-	return bind_dbat:= b;
-end remote.bind_dbat;
-
 pattern rdfshred (location:str, gname:str, schema:str)
 address SQLrdfShred
 comment "Procedure that wraps around the shredder of the rdf module in MAL. 
@@ -1370,7 +1328,6 @@ extern int sqlcleanup(mvc *c, int err);
 extern sql_rel *sql_symbol2relation(mvc *c, symbol *sym);
 extern stmt *sql_relation2stmt(mvc *c, sql_rel *r);
 
-extern BAT *mvc_bind_dbat(mvc *m, char *sname, char *tname, int access);
 extern BAT *mvc_bind_idxbat(mvc *m, char *sname, char *tname, char *iname, int access);
 
 sql5_export str SQLmvc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -1383,7 +1340,6 @@ sql5_export str SQLcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 sql5_export str mvc_append_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str mvc_update_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str mvc_bind_dbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str mvc_clear_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str mvc_delete_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -1439,7 +1395,6 @@ sql5_export str SQLgzdecompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 sql5_export str SQLtruncate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLexpand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLoctopusBind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str SQLoctopusBinddbat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLargRecord(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLrdfShred(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLoptimizersUpdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -3126,7 +3081,7 @@ mvc_bind(mvc *m, char *sname, char *tname, char *cname, int access)
 	return b;
 }
 
-BAT *
+static BAT *
 mvc_bind_dbat(mvc *m, char *sname, char *tname, int access)
 {
 	sql_trans *tr = m->session->tr;
@@ -3414,28 +3369,6 @@ mvc_update_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 @
 @c
-
-/* str mvc_bind_dbat_wrap(int *ret, str *sname, str *tname, int *access); */
-str
-mvc_bind_dbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	BAT *b;
-	int *ret = (int *)getArgReference(stk, pci, 0);
-	mvc *m = NULL;
-	str msg = getSQLContext(cntxt,mb, &m, NULL);
-	str *sname = (str *)getArgReference(stk, pci, 2);
-	str *tname = (str *)getArgReference(stk, pci, 3);
-	int *access = (int*)getArgReference(stk, pci, 4);
-
-	if ((msg = checkSQLContext(cntxt)) != NULL)
-		return msg;
-	b = mvc_bind_dbat(m, *sname, *tname, *access);
-	if (b) {
-		BBPkeepref( *ret = b->batCacheid);
-		return MAL_SUCCEED;
-	}
-	throw(SQL, "mvc_bind_dbat_wrap", "error");
-}
 
 /* str mvc_clear_table_wrap(wrd *res, str *sname, str *tname); */
 str

@@ -48,10 +48,10 @@ Ready.
 # 14:34:20 >  
 
 #SELECT null EXCEPT SELECT null;
-% . # table_name
-% single_value # name
-% tinyint # type
-% 1 # length
+% .L2 # table_name
+% L1 # name
+% char # type
+% 0 # length
 
 # 14:34:20 >  
 # 14:34:20 >  "Done."
