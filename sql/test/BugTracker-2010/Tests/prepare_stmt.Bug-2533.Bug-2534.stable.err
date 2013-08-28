@@ -71,7 +71,7 @@ stderr of test 'prepare_stmt.Bug-2533.Bug-2534` in directory 'sql/test/BugTracke
 # 09:32:45 >  mclient -lsql -ftest -i -e --host=rig --port=33580 
 # 09:32:45 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-11752/.s.monetdb.33864
+MAPI  = (monetdb) /var/tmp/mtest-5003/.s.monetdb.36177
 QUERY = exec  1(2.3);
 ERROR = !EXEC: wrong type for argument 1 of prepared statement: decimal, expected wrd
 

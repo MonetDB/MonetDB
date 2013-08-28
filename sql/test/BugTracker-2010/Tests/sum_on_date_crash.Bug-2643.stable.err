@@ -59,7 +59,7 @@ stderr of test 'sum_on_date_crash.Bug-2643` in directory 'sql/test/BugTracker-20
 # 00:48:05 >  mclient -lsql -ftest -i -e --host=alf --port=38743 
 # 00:48:05 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-11752/.s.monetdb.33864
+MAPI  = (monetdb) /var/tmp/mtest-5003/.s.monetdb.36177
 QUERY = select sum(today) from test;
 ERROR = !types date(0,0) and tinyint(8,0) are not equal for column 'today'
 

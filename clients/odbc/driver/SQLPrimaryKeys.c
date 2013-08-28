@@ -204,7 +204,6 @@ SQLPrimaryKeys(SQLHSTMT StatementHandle,
 			       TableName, NameLength3);
 }
 
-#ifdef WITH_WCHAR
 SQLRETURN SQL_API
 SQLPrimaryKeysA(SQLHSTMT StatementHandle,
 		SQLCHAR *CatalogName,
@@ -264,4 +263,3 @@ SQLPrimaryKeysW(SQLHSTMT StatementHandle,
 
 	return rc;
 }
-#endif /* WITH_WCHAR */

@@ -40,6 +40,7 @@ list_create(fdestroy destroy)
 	l->destroy = destroy;
 	l->h = l->t = NULL;
 	l->cnt = 0;
+	l->expected_cnt = 0;
 	l->ht = NULL;
 	return l;
 }

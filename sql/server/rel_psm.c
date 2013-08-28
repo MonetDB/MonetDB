@@ -406,7 +406,7 @@ rel_psm_return( mvc *sql, sql_subtype *restype, symbol *return_sym )
 			char name[16];
 
 			if (!cname)
-				cname = number2name(name, 16, ++sql->label);
+				cname = sa_strdup(sql->sa, number2name(name, 16, ++sql->label));
 			if (!isproject) 
 				e = exp_column(sql->sa, exp_relname(e), cname, exp_subtype(e), exp_card(e), has_nil(e), is_intern(e));
 			e = rel_check_type(sql, &ce->type, e, type_equal);

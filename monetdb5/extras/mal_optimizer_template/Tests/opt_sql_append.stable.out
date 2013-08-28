@@ -63,15 +63,15 @@ Ready.
 % clob # type
 % 150 # length
 function user.s4_1{autoCommit=true}():void;
-barrier X_35 := language.dataflow();
+barrier X_33 := language.dataflow();
     X_2 := sql.mvc();
     (X_13:bat[:oid,:int] ,X_14:bat[:oid,:int] ,X_15:bat[:oid,:int] ) := sql.copy_from("sys","ttt","|","\\n",nil:str,"null","/tmp/xyz",-1:lng,0:lng,0);
-exit X_35;
-    X_17 := sql.append(X_2,"sys","ttt","a",X_13);
-    X_19 := sql.append(X_17,"sys","ttt","b",X_14);
-    X_23 := sql.append(X_19,"sys","ttt","c",X_15);
-    X_24 := aggr.count(X_15);
-    sql.affectedRows(X_23,X_24,"");
+exit X_33;
+    X_16 := sql.append(X_2,"sys","ttt","a",X_13);
+    X_18 := sql.append(X_16,"sys","ttt","b",X_14);
+    X_20 := sql.append(X_18,"sys","ttt","c",X_15);
+    X_22 := aggr.count(X_15);
+    sql.affectedRows(X_20,X_22,"");
 end s4_1;
 # querylog.define("explain copy into ttt from \\'/tmp/xyz\\';","default_pipe")
 #declare opt_pipe_name string;
@@ -97,17 +97,17 @@ end s4_1;
 % clob # type
 % 150 # length
 function user.s12_1{autoCommit=true}():void;
-barrier X_36 := language.dataflow();
+barrier X_34 := language.dataflow();
     X_2 := sql.mvc();
     (X_13:bat[:oid,:int] ,X_14:bat[:oid,:int] ,X_15:bat[:oid,:int] ) := sql.copy_from("sys","ttt","|","\\n",nil:str,"null","/tmp/xyz",-1:lng,0:lng,0);
-exit X_36;
-    X_17 := sql.append(X_2,"sys","ttt","a",X_13);
-    X_19 := sql.append(X_17,"sys","ttt","b",X_14);
-    X_24 := aggr.count(X_15);
-    X_23 := sql.append(X_19,"sys","ttt","c",X_15);
-    sql.affectedRows(X_23,X_24,"");
+exit X_34;
+    X_16 := sql.append(X_2,"sys","ttt","a",X_13);
+    X_18 := sql.append(X_16,"sys","ttt","b",X_14);
+    X_22 := aggr.count(X_15);
+    X_20 := sql.append(X_18,"sys","ttt","c",X_15);
+    sql.affectedRows(X_20,X_22,"");
 end s12_1;
-# querylog.define("explain copy into ttt from \\'/tmp/xyz\\';","default_pipe")
+# querylog.define("explain copy into ttt from \\'/tmp/xyz\\';","user_1")
 #drop table ttt;
 
 # 22:58:58 >  

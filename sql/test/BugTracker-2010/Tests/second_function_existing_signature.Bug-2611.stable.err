@@ -71,7 +71,7 @@ stderr of test 'second_function_existing_signature.Bug-2611` in directory 'sql/t
 # 09:47:40 >  mclient -lsql -ftest -i -e --host=yngling --port=33720 
 # 09:47:40 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-11752/.s.monetdb.33864
+MAPI  = (monetdb) /var/tmp/mtest-5003/.s.monetdb.36177
 QUERY = create function next_a()
         returns integer
         begin

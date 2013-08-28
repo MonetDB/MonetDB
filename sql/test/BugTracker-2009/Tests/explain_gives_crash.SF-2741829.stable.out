@@ -48,7 +48,7 @@ function user.s4_1{autoCommit=true}():void;
 "    sql.assert(X_30,""UPDATE: UNIQUE constraint 'blabla.dada' violated"");"
 "    sql.exportOperation("""");"
 end s4_1;
-"# querylog.define(""explain alter table blabla add constraint dada unique (id);"",""default_pipe"")"
+"# querylog.define(""explain alter table blabla add constraint dada unique (id);"",""sequential_pipe"")"
 function user.s5_1{autoCommit=true}():void;
     X_2 := sql.mvc();
 "    sql.catalog(29,""sys"",nil,0);"
@@ -72,7 +72,7 @@ function user.s5_1{autoCommit=true}():void;
 "    sql.assert(X_30,""UPDATE: UNIQUE constraint 'blabla.dada' violated"");"
 "    sql.exportOperation("""");"
 end s5_1;
-"# querylog.define(""explain alter table blabla add constraint dada unique (id);"",""default_pipe"")"
+"# querylog.define(""explain alter table blabla add constraint dada unique (id);"",""sequential_pipe"")"
 #~EndVariableOutput~#
 #~BeginVariableOutput~#
 function user.s9_1{autoCommit=true}():void;
@@ -98,7 +98,7 @@ function user.s9_1{autoCommit=true}():void;
 "    sql.assert(X_30,""UPDATE: UNIQUE constraint 'blabla.dada' violated"");"
 "    sql.exportOperation("""");"
 end s9_1;
-"# querylog.define(""explain alter table blabla add constraint dada unique (id);"",""default_pipe"")"
+"# querylog.define(""explain alter table blabla add constraint dada unique (id);"",""sequential_pipe"")"
 #~EndVariableOutput~#
 
 # 11:37:28 >  

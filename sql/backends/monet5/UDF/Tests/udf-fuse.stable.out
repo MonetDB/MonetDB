@@ -103,17 +103,17 @@ function user.s8_1{autoCommit=true}():void;
     X_14 := sql.delta(X_6,X_9,r1_9,X_12);
     X_15 := algebra.leftfetchjoin(X_3,X_14);
     X_16 := sql.bind(X_2,"sys","udf_fuse","b",0);
-    (X_18,r1_20) := sql.bind(X_2,"sys","udf_fuse","b",2);
+    (X_18,r1_18) := sql.bind(X_2,"sys","udf_fuse","b",2);
     X_20 := sql.bind(X_2,"sys","udf_fuse","b",1);
-    X_21 := sql.delta(X_16,X_18,r1_20,X_20);
+    X_21 := sql.delta(X_16,X_18,r1_18,X_20);
     X_22 := algebra.leftfetchjoin(X_3,X_21);
     X_23:bat[:oid,:sht]  := batudf.fuse(X_15,X_22);
-    X_25 := sql.resultSet(1,1,X_23);
-    sql.rsColumn(X_25,"sys.L","fuse_a","smallint",16,0,X_23);
+    X_24 := sql.resultSet(1,1,X_23);
+    sql.rsColumn(X_24,"sys.L","fuse_a","smallint",16,0,X_23);
     X_30 := io.stdout();
-    sql.exportResult(X_30,X_25);
+    sql.exportResult(X_30,X_24);
 end s8_1;
-# querylog.define("explain select fuse(a,b) from udf_fuse;","default_pipe")
+# querylog.define("explain select fuse(a,b) from udf_fuse;","sequential_pipe")
 #explain select fuse(c,d) from udf_fuse;
 % .explain # table_name
 % mal # name
@@ -128,17 +128,17 @@ function user.s9_1{autoCommit=true}():void;
     X_14 := sql.delta(X_6,X_9,r1_9,X_12);
     X_15 := algebra.leftfetchjoin(X_3,X_14);
     X_16 := sql.bind(X_2,"sys","udf_fuse","d",0);
-    (X_18,r1_20) := sql.bind(X_2,"sys","udf_fuse","d",2);
+    (X_18,r1_18) := sql.bind(X_2,"sys","udf_fuse","d",2);
     X_20 := sql.bind(X_2,"sys","udf_fuse","d",1);
-    X_21 := sql.delta(X_16,X_18,r1_20,X_20);
+    X_21 := sql.delta(X_16,X_18,r1_18,X_20);
     X_22 := algebra.leftfetchjoin(X_3,X_21);
     X_23:bat[:oid,:int]  := batudf.fuse(X_15,X_22);
-    X_25 := sql.resultSet(1,1,X_23);
-    sql.rsColumn(X_25,"sys.L","fuse_c","int",32,0,X_23);
+    X_24 := sql.resultSet(1,1,X_23);
+    sql.rsColumn(X_24,"sys.L","fuse_c","int",32,0,X_23);
     X_30 := io.stdout();
-    sql.exportResult(X_30,X_25);
+    sql.exportResult(X_30,X_24);
 end s9_1;
-# querylog.define("explain select fuse(c,d) from udf_fuse;","default_pipe")
+# querylog.define("explain select fuse(c,d) from udf_fuse;","sequential_pipe")
 #explain select fuse(e,f) from udf_fuse;
 % .explain # table_name
 % mal # name
@@ -153,17 +153,17 @@ function user.s10_1{autoCommit=true}():void;
     X_14 := sql.delta(X_6,X_9,r1_9,X_12);
     X_15 := algebra.leftfetchjoin(X_3,X_14);
     X_16 := sql.bind(X_2,"sys","udf_fuse","f",0);
-    (X_18,r1_20) := sql.bind(X_2,"sys","udf_fuse","f",2);
+    (X_18,r1_18) := sql.bind(X_2,"sys","udf_fuse","f",2);
     X_20 := sql.bind(X_2,"sys","udf_fuse","f",1);
-    X_21 := sql.delta(X_16,X_18,r1_20,X_20);
+    X_21 := sql.delta(X_16,X_18,r1_18,X_20);
     X_22 := algebra.leftfetchjoin(X_3,X_21);
     X_23:bat[:oid,:lng]  := batudf.fuse(X_15,X_22);
-    X_25 := sql.resultSet(1,1,X_23);
-    sql.rsColumn(X_25,"sys.L","fuse_e","bigint",64,0,X_23);
+    X_24 := sql.resultSet(1,1,X_23);
+    sql.rsColumn(X_24,"sys.L","fuse_e","bigint",64,0,X_23);
     X_30 := io.stdout();
-    sql.exportResult(X_30,X_25);
+    sql.exportResult(X_30,X_24);
 end s10_1;
-# querylog.define("explain select fuse(e,f) from udf_fuse;","default_pipe")
+# querylog.define("explain select fuse(e,f) from udf_fuse;","sequential_pipe")
 #select fuse(a,b) from udf_fuse;
 % sys.L # table_name
 % fuse_a # name

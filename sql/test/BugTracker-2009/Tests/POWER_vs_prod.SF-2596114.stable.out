@@ -37,12 +37,12 @@ function user.s3_1{autoCommit=true}(A0:dbl):void;
     X_15 := sql.delta(X_7,X_10,r1_10,X_13);
     X_16 := algebra.leftfetchjoin(X_4,X_15);
     X_17:bat[:oid,:dbl]  := batmmath.pow(X_16,A0);
-    X_19 := sql.resultSet(1,1,X_17);
-    sql.rsColumn(X_19,"sys.L","power_x","double",53,0,X_17);
+    X_18 := sql.resultSet(1,1,X_17);
+    sql.rsColumn(X_18,"sys.L","power_x","double",53,0,X_17);
     X_24 := io.stdout();
-    sql.exportResult(X_24,X_19);
+    sql.exportResult(X_24,X_18);
 end s3_1;
-# querylog.define("explain select power(x,2) from sf_2596114;","default_pipe")
+# querylog.define("explain select power(x,2) from sf_2596114;","sequential_pipe")
 #explain select x*x from SF_2596114;
 % .explain # table_name
 % mal # name
@@ -57,12 +57,12 @@ function user.s4_1{autoCommit=true}():void;
     X_14 := sql.delta(X_6,X_9,r1_9,X_12);
     X_15 := algebra.leftfetchjoin(X_3,X_14);
     X_16:bat[:oid,:dbl]  := batcalc.*(X_15,X_15);
-    X_18 := sql.resultSet(1,1,X_16);
-    sql.rsColumn(X_18,"sys.L","sql_mul_x","double",53,0,X_16);
+    X_17 := sql.resultSet(1,1,X_16);
+    sql.rsColumn(X_17,"sys.L","sql_mul_x","double",53,0,X_16);
     X_23 := io.stdout();
-    sql.exportResult(X_23,X_18);
+    sql.exportResult(X_23,X_17);
 end s4_1;
-# querylog.define("explain select x*x from sf_2596114;","default_pipe")
+# querylog.define("explain select x*x from sf_2596114;","sequential_pipe")
 #drop table SF_2596114;
 
 # 23:02:30 >  

@@ -1,0 +1,17 @@
+start transaction;
+
+create table test3351 (i integer);
+
+copy into test3351 from '$TSTSRCDIR/test3351.csv';
+select * from test3351;
+delete from test3351;
+
+copy into test3351 from '$TSTSRCDIR/test3351.csv.gz';
+select * from test3351;
+delete from test3351;
+
+copy into test3351 from '$TSTSRCDIR/test3351.csv.bz2';
+select * from test3351;
+delete from test3351;
+
+rollback;

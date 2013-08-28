@@ -763,9 +763,10 @@ rel_update(mvc *sql, sql_rel *t, sql_rel *uprel, sql_exp **updates, list *exps)
 		sql_column *c = m->data;
 		sql_exp *v = updates[c->colnr];
 
-		if (!v) 
+		if (tab && tab->idxs.set && !v) 
 			v = exp_column(sql->sa, tab->base.name, c->base.name, &c->type, CARD_MULTI, c->null, 0);
-		rel_project_add_exp(sql, uprel, v);
+		if (v)
+			rel_project_add_exp(sql, uprel, v);
 	}
 
 	r->op = op_update;
@@ -785,6 +786,7 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_where)
 	char *tname = qname_table(qname);
 	sql_schema *s = NULL;
 	sql_table *t = NULL;
+	sql_rel *bt = NULL;
 
 	if (sname && !(s=mvc_bind_schema(sql,sname))) {
 		(void) sql_error(sql, 02, "3F000!UPDATE: no such schema '%s'", sname);
@@ -826,12 +828,12 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_where)
 			if (r) { /* simple predicate which is not using the to 
 				    be updated table. We add a select all */
 
-				sql_rel *l = rel_basetable(sql, t, t->base.name );
+				sql_rel *l = bt = rel_basetable(sql, t, t->base.name );
 				r = rel_crossproduct(sql->sa, l, r, op_semi);
 			} else {
 				sql->errstr[0] = 0;
 				sql->session->status = status;
-				r = rel_basetable(sql, t, t->base.name );
+				bt = r = rel_basetable(sql, t, t->base.name );
 				r = rel_logical_exp(sql, r, opt_where, sql_where);
 				if (r && is_join(r->op))
 					r->op = op_semi;
@@ -839,7 +841,7 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_where)
 			if (!r) 
 				return NULL;
 		} else {	/* update all */
-			r = rel_basetable(sql, t, t->base.name );
+			bt = r = rel_basetable(sql, t, t->base.name );
 		}
 	
 		//pexps = rel_projections(sql, r, NULL, 1, 0);
@@ -923,7 +925,7 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_where)
 		}
 		e = exp_column(sql->sa, rel_name(r), TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
 		r = rel_project(sql->sa, r, append(new_exp_list(sql->sa),e));
-		r = rel_update(sql, rel_basetable(sql, t, tname), r, updates, exps);
+		r = rel_update(sql, bt, r, updates, exps);
 		return r;
 	}
 }

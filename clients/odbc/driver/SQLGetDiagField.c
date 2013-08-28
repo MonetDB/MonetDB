@@ -213,7 +213,6 @@ SQLGetDiagField(SQLSMALLINT HandleType,
 				StringLengthPtr);
 }
 
-#ifdef WITH_WCHAR
 SQLRETURN SQL_API
 SQLGetDiagFieldA(SQLSMALLINT HandleType,
 		 SQLHANDLE Handle,
@@ -296,4 +295,3 @@ SQLGetDiagFieldW(SQLSMALLINT HandleType,
 
 	return rc;
 }
-#endif /* WITH_WCHAR */

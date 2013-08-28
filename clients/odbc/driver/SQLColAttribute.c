@@ -268,7 +268,6 @@ SQLColAttribute(SQLHSTMT StatementHandle,
 				NumericAttributePtr);
 }
 
-#ifdef WITH_WCHAR
 SQLRETURN SQL_API
 SQLColAttributeA(SQLHSTMT StatementHandle,
 		 SQLSMALLINT ColumnNumber,
@@ -354,4 +353,3 @@ SQLColAttributeW(SQLHSTMT StatementHandle,
 
 	return rc;
 }
-#endif /* WITH_WCHAR */

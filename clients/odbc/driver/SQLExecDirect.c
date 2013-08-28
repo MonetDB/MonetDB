@@ -201,7 +201,6 @@ SQLExecDirect(SQLHSTMT StatementHandle,
 			      TextLength);
 }
 
-#ifdef WITH_WCHAR
 SQLRETURN SQL_API
 SQLExecDirectA(SQLHSTMT StatementHandle,
 	       SQLCHAR *StatementText,
@@ -238,4 +237,3 @@ SQLExecDirectW(SQLHSTMT StatementHandle,
 
 	return rc;
 }
-#endif /* WITH_WCHAR */

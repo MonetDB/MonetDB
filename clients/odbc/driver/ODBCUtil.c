@@ -78,7 +78,6 @@ dupODBCstring(const SQLCHAR *inStr, size_t length)
 	return tmp;
 }
 
-#ifdef WITH_WCHAR
 /* Conversion to and from SQLWCHAR */
 static int utf8chkmsk[] = {
 	0x0000007f,
@@ -134,7 +133,13 @@ ODBCwchar2utf8(const SQLWCHAR *s, SQLLEN length, char **errmsg)
 					*errmsg = "High surrogate not followed by low surrogate";
 				return NULL;
 			}
+#if 1
+			if (errmsg)
+				*errmsg = "Code points larger than U+FFFF are not supported";
+			return NULL;
+#else
 			c = (c << 10) + *s1 + SURROGATE_OFFSET;
+#endif
 		} else if (0xDC00 <= c && c <= 0xDFFF) {
 			/* low surrogate--illegal */
 			if (errmsg)
@@ -237,11 +242,15 @@ ODBCutf82wchar(const SQLCHAR *s,
 				*p++ = c;
 			len++;
 		} else {
+#if 1
+			return "Code points larger than U+FFFF are not supported";
+#else
 			if ((buflen -= 2) > 0 && p != NULL) {
 				*p++ = LEAD_OFFSET + (c >> 10);
 				*p++ = 0xDC00 + (c & 0x3FF);
 			}
 			len += 2;
+#endif
 		}
 	}
 	if (p != NULL)
@@ -250,7 +259,6 @@ ODBCutf82wchar(const SQLCHAR *s,
 		*buflenout = len;
 	return NULL;
 }
-#endif /* WITH_WCHAR */
 
 /*
  * Translate an ODBC-compatible query to one that the SQL server

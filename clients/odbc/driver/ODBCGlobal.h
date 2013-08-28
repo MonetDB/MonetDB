@@ -62,7 +62,6 @@
 #define MONETDB_PRODUCT_NAME "MonetDB ODBC driver"
 #define MONETDB_SERVER_NAME  "MonetDB"
 
-#define WITH_WCHAR	1
 #define ODBCDEBUG	1
 
 #ifdef WIN32

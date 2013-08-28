@@ -290,7 +290,6 @@ SQLStatistics(SQLHSTMT StatementHandle,
 			      Reserved);
 }
 
-#ifdef WITH_WCHAR
 SQLRETURN SQL_API
 SQLStatisticsA(SQLHSTMT StatementHandle,
 	       SQLCHAR *CatalogName,
@@ -358,4 +357,3 @@ SQLStatisticsW(SQLHSTMT StatementHandle,
 
 	return rc;
 }
-#endif /* WITH_WCHAR */

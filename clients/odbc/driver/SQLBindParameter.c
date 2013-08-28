@@ -196,9 +196,9 @@ SQLBindParameter_(ODBCStmt *stmt,
 	case SQL_DOUBLE:
 		ipdrec->sql_desc_precision = (SQLSMALLINT) ColumnSize;
 		break;
-/* 	case SQL_WCHAR: */
-/* 	case SQL_WVARCHAR: */
-/* 	case SQL_WLONGVARCHAR: */
+	case SQL_WCHAR:
+	case SQL_WVARCHAR:
+	case SQL_WLONGVARCHAR:
 	case SQL_BIT:
 	case SQL_TINYINT:
 	case SQL_SMALLINT:
@@ -226,9 +226,6 @@ SQLBindParameter_(ODBCStmt *stmt,
 	case SQL_INTERVAL_MINUTE_TO_SECOND:
 	case SQL_NUMERIC:
 	case SQL_FLOAT:
-	case SQL_WCHAR:
-	case SQL_WVARCHAR:
-	case SQL_WLONGVARCHAR:
 	case SQL_GUID:
 		/* Optional feature not implemented */
 		addStmtError(stmt, "HYC00", NULL, 0);

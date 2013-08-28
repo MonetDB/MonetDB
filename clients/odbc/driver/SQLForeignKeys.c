@@ -304,7 +304,6 @@ SQLForeignKeys(SQLHSTMT StatementHandle,
 			       FKTableName, NameLength6);
 }
 
-#ifdef WITH_WCHAR
 SQLRETURN SQL_API
 SQLForeignKeysA(SQLHSTMT StatementHandle,
 		SQLCHAR *PKCatalogName,
@@ -390,4 +389,3 @@ SQLForeignKeysW(SQLHSTMT StatementHandle,
 
 	return rc;
 }
-#endif /* WITH_WCHAR */

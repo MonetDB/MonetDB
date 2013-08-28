@@ -92,12 +92,12 @@ function user.s6_1{autoCommit=true}():void;
     X_14 := sql.delta(X_6,X_9,r1_9,X_12);
     X_15 := algebra.leftfetchjoin(X_3,X_14);
     X_16:bat[:oid,:str]  := batudf.reverse(X_15);
-    X_18 := sql.resultSet(1,1,X_16);
-    sql.rsColumn(X_18,"sys.L","reverse_x","clob",0,0,X_16);
+    X_17 := sql.resultSet(1,1,X_16);
+    sql.rsColumn(X_17,"sys.L","reverse_x","clob",0,0,X_16);
     X_22 := io.stdout();
-    sql.exportResult(X_22,X_18);
+    sql.exportResult(X_22,X_17);
 end s6_1;
-# querylog.define("explain select reverse(x) from udf_reverse;","default_pipe")
+# querylog.define("explain select reverse(x) from udf_reverse;","sequential_pipe")
 #select reverse(x) from udf_reverse;
 % sys.L # table_name
 % reverse_x # name

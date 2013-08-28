@@ -118,7 +118,6 @@ SQLDataSources(SQLHENV EnvironmentHandle,
 			       Description, BufferLength2, NameLength2);
 }
 
-#ifdef WITH_WCHAR
 SQLRETURN SQL_API
 SQLDataSourcesA(SQLHENV EnvironmentHandle,
 		SQLUSMALLINT Direction,
@@ -179,4 +178,3 @@ SQLDataSourcesW(SQLHENV EnvironmentHandle,
 
 	return rc;
 }
-#endif /* WITH_WCHAR */

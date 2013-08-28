@@ -310,7 +310,6 @@ SQLSetDescField(SQLHDESC DescriptorHandle,
 	return SQLSetDescField_((ODBCDesc *) DescriptorHandle, RecNumber, FieldIdentifier, ValuePtr, BufferLength);
 }
 
-#ifdef WITH_WCHAR
 SQLRETURN SQL_API
 SQLSetDescFieldW(SQLHDESC DescriptorHandle,
 		 SQLSMALLINT RecNumber,
@@ -324,9 +323,10 @@ SQLSetDescFieldW(SQLHDESC DescriptorHandle,
 	SQLINTEGER n;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLSetDescFieldW " PTRFMT " %d %s\n",
+	ODBCLOG("SQLSetDescFieldW " PTRFMT " %d %s " PTRFMT "\n",
 		PTRFMTCAST DescriptorHandle, (int) RecNumber,
-		translateFieldIdentifier(FieldIdentifier));
+		translateFieldIdentifier(FieldIdentifier),
+		PTRFMTCAST ValuePtr);
 #endif
 
 	if (!isValidDesc(desc))
@@ -355,4 +355,3 @@ SQLSetDescFieldW(SQLHDESC DescriptorHandle,
 
 	return rc;
 }
-#endif /* WITH_WCHAR */

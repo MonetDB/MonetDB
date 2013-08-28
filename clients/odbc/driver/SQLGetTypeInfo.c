@@ -248,7 +248,7 @@ static struct types {
 	/* binary */
 	{
 		"character large object", /* type_name */
-		SQL_LONGVARCHAR,       /* data_type */
+		SQL_WLONGVARCHAR,      /* data_type */
 		1000000,	       /* column_size */
 		"'",		       /* literal_prefix */
 		"'",		       /* literal_suffix */
@@ -262,7 +262,7 @@ static struct types {
 		NULL,		       /* local_type_name */
 		-1,		       /* minimum_scale */
 		-1,		       /* maximum_scale */
-		SQL_LONGVARCHAR,       /* sql_data_type */
+		SQL_WLONGVARCHAR,      /* sql_data_type */
 		-1,		       /* sql_datetime_sub */
 		-1,		       /* num_prec_radix */
 		-1,		       /* interval_precision */
@@ -270,7 +270,7 @@ static struct types {
 	},
 	{
 		"character",	       /* type_name */
-		SQL_CHAR,	       /* data_type */
+		SQL_WCHAR,	       /* data_type */
 		1000000,	       /* column_size */
 		"'",		       /* literal_prefix */
 		"'",		       /* literal_suffix */
@@ -284,7 +284,7 @@ static struct types {
 		NULL,		       /* local_type_name */
 		-1,		       /* minimum_scale */
 		-1,		       /* maximum_scale */
-		SQL_CHAR,	       /* sql_data_type */
+		SQL_WCHAR,	       /* sql_data_type */
 		-1,		       /* sql_datetime_sub */
 		-1,		       /* num_prec_radix */
 		-1,		       /* interval_precision */
@@ -292,7 +292,7 @@ static struct types {
 	},
 	{
 		"char",		       /* type_name */
-		SQL_CHAR,	       /* data_type */
+		SQL_WCHAR,	       /* data_type */
 		1000000,	       /* column_size */
 		"'",		       /* literal_prefix */
 		"'",		       /* literal_suffix */
@@ -306,7 +306,7 @@ static struct types {
 		NULL,		       /* local_type_name */
 		-1,		       /* minimum_scale */
 		-1,		       /* maximum_scale */
-		SQL_CHAR,	       /* sql_data_type */
+		SQL_WCHAR,	       /* sql_data_type */
 		-1,		       /* sql_datetime_sub */
 		-1,		       /* num_prec_radix */
 		-1,		       /* interval_precision */
@@ -512,7 +512,7 @@ static struct types {
 	},
 	{
 		"varchar",	       /* type_name */
-		SQL_VARCHAR,	       /* data_type */
+		SQL_WVARCHAR,	       /* data_type */
 		1000000,	       /* column_size */
 		"'",		       /* literal_prefix */
 		"'",		       /* literal_suffix */
@@ -526,7 +526,7 @@ static struct types {
 		NULL,		       /* local_type_name */
 		-1,		       /* minimum_scale */
 		-1,		       /* maximum_scale */
-		SQL_VARCHAR,	       /* sql_data_type */
+		SQL_WVARCHAR,	       /* sql_data_type */
 		-1,		       /* sql_datetime_sub */
 		-1,		       /* num_prec_radix */
 		-1,		       /* interval_precision */
@@ -1269,7 +1269,6 @@ SQLGetTypeInfo(SQLHSTMT StatementHandle,
 	return SQLGetTypeInfo_(stmt, DataType);
 }
 
-#ifdef WITH_WCHAR
 SQLRETURN SQL_API
 SQLGetTypeInfoA(SQLHSTMT StatementHandle,
 		SQLSMALLINT DataType)
@@ -1295,4 +1294,3 @@ SQLGetTypeInfoW(SQLHSTMT StatementHandle,
 
 	return SQLGetTypeInfo_(stmt, DataType);
 }
-#endif /* WITH_WCHAR */

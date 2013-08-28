@@ -99,7 +99,6 @@ SQLNativeSql(SQLHDBC ConnectionHandle,
 			     TextLength2Ptr);
 }
 
-#ifdef WITH_WCHAR
 SQLRETURN SQL_API
 SQLNativeSqlA(SQLHDBC ConnectionHandle,
 	      SQLCHAR *InStatementText,
@@ -158,4 +157,3 @@ SQLNativeSqlW(SQLHDBC ConnectionHandle,
 
 	return rc;
 }
-#endif /* WITH_WCHAR */

@@ -137,12 +137,12 @@ function user.s4_1{autoCommit=true}():void;
     X_12 := sql.bind(X_2,"sys","oblo","a",1);
     X_14 := sql.delta(X_6,X_9,r1_9,X_12);
     X_15 := algebra.leftfetchjoin(X_3,X_14);
-    X_20 := sql.resultSet(1,1,X_15);
-    sql.rsColumn(X_20,"sys.oblo","a","int",32,0,X_15);
-    X_25 := io.stdout();
-    sql.exportResult(X_25,X_20);
+    X_16 := sql.resultSet(1,1,X_15);
+    sql.rsColumn(X_16,"sys.oblo","a","int",32,0,X_15);
+    X_21 := io.stdout();
+    sql.exportResult(X_21,X_16);
 end s4_1;
-# querylog.define("explain select * from oblo;","default_pipe")
+# querylog.define("explain select * from oblo;","minimal_pipe")
 #EXPLAIN select * from oblo OFFSET 2;
 % .explain # table_name
 % mal # name
@@ -156,18 +156,18 @@ function user.s5_1{autoCommit=true}():void;
     X_12 := sql.bind(X_2,"sys","oblo","a",1);
     X_14 := sql.delta(X_6,X_9,r1_9,X_12);
     X_15 := algebra.leftfetchjoin(X_3,X_14);
-    X_22 := calc.wrd(2:wrd);
-    X_24 := calc.wrd(nil:wrd);
-    X_26 := calc.+(X_22,X_24);
-    X_27 := calc.-(X_26,1);
-    X_28 := algebra.subslice(X_15,X_22,X_27);
-    X_29 := algebra.leftfetchjoin(X_28,X_15);
-    X_32 := sql.resultSet(1,1,X_29);
-    sql.rsColumn(X_32,"sys.oblo","a","int",32,0,X_29);
-    X_37 := io.stdout();
-    sql.exportResult(X_37,X_32);
+    X_16 := calc.wrd(2:wrd);
+    X_18 := calc.wrd(nil:wrd);
+    X_20 := calc.+(X_16,X_18);
+    X_21 := calc.-(X_20,1);
+    X_22 := algebra.subslice(X_15,X_16,X_21);
+    X_23 := algebra.leftfetchjoin(X_22,X_15);
+    X_24 := sql.resultSet(1,1,X_23);
+    sql.rsColumn(X_24,"sys.oblo","a","int",32,0,X_23);
+    X_29 := io.stdout();
+    sql.exportResult(X_29,X_24);
 end s5_1;
-# querylog.define("explain select * from oblo offset 2;","default_pipe")
+# querylog.define("explain select * from oblo offset 2;","minimal_pipe")
 #EXPLAIN select * from oblo LIMIT 2;
 % .explain # table_name
 % mal # name
@@ -181,18 +181,18 @@ function user.s6_1{autoCommit=true}():void;
     X_12 := sql.bind(X_2,"sys","oblo","a",1);
     X_14 := sql.delta(X_6,X_9,r1_9,X_12);
     X_15 := algebra.leftfetchjoin(X_3,X_14);
-    X_22 := calc.wrd(0:wrd);
-    X_24 := calc.wrd(2:wrd);
-    X_26 := calc.+(X_22,X_24);
-    X_27 := calc.-(X_26,1);
-    X_28 := algebra.subslice(X_15,X_22,X_27);
-    X_29 := algebra.leftfetchjoin(X_28,X_15);
-    X_32 := sql.resultSet(1,1,X_29);
-    sql.rsColumn(X_32,"sys.oblo","a","int",32,0,X_29);
-    X_37 := io.stdout();
-    sql.exportResult(X_37,X_32);
+    X_16 := calc.wrd(0:wrd);
+    X_18 := calc.wrd(2:wrd);
+    X_20 := calc.+(X_16,X_18);
+    X_21 := calc.-(X_20,1);
+    X_22 := algebra.subslice(X_15,X_16,X_21);
+    X_23 := algebra.leftfetchjoin(X_22,X_15);
+    X_24 := sql.resultSet(1,1,X_23);
+    sql.rsColumn(X_24,"sys.oblo","a","int",32,0,X_23);
+    X_29 := io.stdout();
+    sql.exportResult(X_29,X_24);
 end s6_1;
-# querylog.define("explain select * from oblo limit 2;","default_pipe")
+# querylog.define("explain select * from oblo limit 2;","minimal_pipe")
 #EXPLAIN select * from oblo LIMIT 1 OFFSET 2;
 % .explain # table_name
 % mal # name
@@ -206,18 +206,18 @@ function user.s7_1{autoCommit=true}():void;
     X_12 := sql.bind(X_2,"sys","oblo","a",1);
     X_14 := sql.delta(X_6,X_9,r1_9,X_12);
     X_15 := algebra.leftfetchjoin(X_3,X_14);
-    X_22 := calc.wrd(2:wrd);
-    X_24 := calc.wrd(1:wrd);
-    X_26 := calc.+(X_22,X_24);
-    X_27 := calc.-(X_26,1);
-    X_28 := algebra.subslice(X_15,X_22,X_27);
-    X_29 := algebra.leftfetchjoin(X_28,X_15);
-    X_32 := sql.resultSet(1,1,X_29);
-    sql.rsColumn(X_32,"sys.oblo","a","int",32,0,X_29);
-    X_37 := io.stdout();
-    sql.exportResult(X_37,X_32);
+    X_16 := calc.wrd(2:wrd);
+    X_18 := calc.wrd(1:wrd);
+    X_20 := calc.+(X_16,X_18);
+    X_21 := calc.-(X_20,1);
+    X_22 := algebra.subslice(X_15,X_16,X_21);
+    X_23 := algebra.leftfetchjoin(X_22,X_15);
+    X_24 := sql.resultSet(1,1,X_23);
+    sql.rsColumn(X_24,"sys.oblo","a","int",32,0,X_23);
+    X_29 := io.stdout();
+    sql.exportResult(X_29,X_24);
 end s7_1;
-# querylog.define("explain select * from oblo limit 1 offset 2;","default_pipe")
+# querylog.define("explain select * from oblo limit 1 offset 2;","minimal_pipe")
 #EXPLAIN select * from oblo LIMIT 2 OFFSET 1;
 % .explain # table_name
 % mal # name
@@ -231,18 +231,18 @@ function user.s8_1{autoCommit=true}():void;
     X_12 := sql.bind(X_2,"sys","oblo","a",1);
     X_14 := sql.delta(X_6,X_9,r1_9,X_12);
     X_15 := algebra.leftfetchjoin(X_3,X_14);
-    X_22 := calc.wrd(1:wrd);
-    X_24 := calc.wrd(2:wrd);
-    X_26 := calc.+(X_22,X_24);
-    X_27 := calc.-(X_26,1);
-    X_28 := algebra.subslice(X_15,X_22,X_27);
-    X_29 := algebra.leftfetchjoin(X_28,X_15);
-    X_32 := sql.resultSet(1,1,X_29);
-    sql.rsColumn(X_32,"sys.oblo","a","int",32,0,X_29);
-    X_37 := io.stdout();
-    sql.exportResult(X_37,X_32);
+    X_16 := calc.wrd(1:wrd);
+    X_18 := calc.wrd(2:wrd);
+    X_20 := calc.+(X_16,X_18);
+    X_21 := calc.-(X_20,1);
+    X_22 := algebra.subslice(X_15,X_16,X_21);
+    X_23 := algebra.leftfetchjoin(X_22,X_15);
+    X_24 := sql.resultSet(1,1,X_23);
+    sql.rsColumn(X_24,"sys.oblo","a","int",32,0,X_23);
+    X_29 := io.stdout();
+    sql.exportResult(X_29,X_24);
 end s8_1;
-# querylog.define("explain select * from oblo limit 2 offset 1;","default_pipe")
+# querylog.define("explain select * from oblo limit 2 offset 1;","minimal_pipe")
 #EXPLAIN select * from oblo ORDER BY a;
 % .explain # table_name
 % mal # name
@@ -256,14 +256,14 @@ function user.s9_1{autoCommit=true}():void;
     X_12 := sql.bind(X_2,"sys","oblo","a",1);
     X_14 := sql.delta(X_6,X_9,r1_9,X_12);
     X_15 := algebra.leftfetchjoin(X_3,X_14);
-    (X_20,r1_20,r2_20) := algebra.subsort(X_15,false,false);
-    X_24 := algebra.leftfetchjoin(r1_20,X_15);
-    X_27 := sql.resultSet(1,1,X_24);
-    sql.rsColumn(X_27,"sys.oblo","a","int",32,0,X_24);
-    X_32 := io.stdout();
-    sql.exportResult(X_32,X_27);
+    (X_16,r1_16,r2_16) := algebra.subsort(X_15,false,false);
+    X_20 := algebra.leftfetchjoin(r1_16,X_15);
+    X_21 := sql.resultSet(1,1,X_20);
+    sql.rsColumn(X_21,"sys.oblo","a","int",32,0,X_20);
+    X_26 := io.stdout();
+    sql.exportResult(X_26,X_21);
 end s9_1;
-# querylog.define("explain select * from oblo order by a;","default_pipe")
+# querylog.define("explain select * from oblo order by a;","minimal_pipe")
 #EXPLAIN select * from oblo ORDER BY a OFFSET 2;
 % .explain # table_name
 % mal # name
@@ -277,20 +277,20 @@ function user.s10_1{autoCommit=true}():void;
     X_12 := sql.bind(X_2,"sys","oblo","a",1);
     X_14 := sql.delta(X_6,X_9,r1_9,X_12);
     X_15 := algebra.leftfetchjoin(X_3,X_14);
-    (X_20,r1_20,r2_20) := algebra.subsort(X_15,false,false);
-    X_24 := algebra.leftfetchjoin(r1_20,X_15);
-    X_29 := calc.wrd(2:wrd);
-    X_31 := calc.wrd(nil:wrd);
-    X_33 := calc.+(X_29,X_31);
-    X_34 := calc.-(X_33,1);
-    X_35 := algebra.subslice(X_24,X_29,X_34);
-    X_36 := algebra.leftfetchjoin(X_35,X_24);
-    X_41 := sql.resultSet(1,1,X_36);
-    sql.rsColumn(X_41,"sys.oblo","a","int",32,0,X_36);
-    X_47 := io.stdout();
-    sql.exportResult(X_47,X_41);
+    (X_16,r1_16,r2_16) := algebra.subsort(X_15,false,false);
+    X_20 := algebra.leftfetchjoin(r1_16,X_15);
+    X_21 := calc.wrd(2:wrd);
+    X_23 := calc.wrd(nil:wrd);
+    X_25 := calc.+(X_21,X_23);
+    X_26 := calc.-(X_25,1);
+    X_27 := algebra.subslice(X_20,X_21,X_26);
+    X_28 := algebra.leftfetchjoin(X_27,X_20);
+    X_29 := sql.resultSet(1,1,X_28);
+    sql.rsColumn(X_29,"sys.oblo","a","int",32,0,X_28);
+    X_34 := io.stdout();
+    sql.exportResult(X_34,X_29);
 end s10_1;
-# querylog.define("explain select * from oblo order by a offset 2;","default_pipe")
+# querylog.define("explain select * from oblo order by a offset 2;","minimal_pipe")
 #EXPLAIN select * from oblo ORDER BY a LIMIT 2;
 % .explain # table_name
 % mal # name
@@ -304,27 +304,27 @@ function user.s11_1{autoCommit=true}():void;
     X_12 := sql.bind(X_2,"sys","oblo","a",1);
     X_14 := sql.delta(X_6,X_9,r1_9,X_12);
     X_15 := algebra.leftfetchjoin(X_3,X_14);
-    X_20 := calc.wrd(0:wrd);
-    X_22 := calc.wrd(2:wrd);
-    X_24 := calc.+(X_20,X_22);
-    X_25 := pqueue.topn_max(X_15,X_24);
-    X_26 := calc.wrd(0:wrd);
-    X_27 := calc.+(X_26,X_22);
-    X_28 := calc.-(X_27,1);
-    X_29 := algebra.subslice(X_25,X_26,X_28);
-    X_30 := algebra.leftfetchjoin(X_29,X_15);
-    X_33 := calc.wrd(0:wrd);
-    X_34 := calc.wrd(2:wrd);
-    X_35 := calc.+(X_33,X_34);
-    X_36 := calc.-(X_35,1);
-    X_37 := algebra.subslice(X_30,X_33,X_36);
-    X_38 := algebra.leftfetchjoin(X_37,X_30);
-    X_43 := sql.resultSet(1,1,X_38);
-    sql.rsColumn(X_43,"sys.oblo","a","int",32,0,X_38);
-    X_49 := io.stdout();
-    sql.exportResult(X_49,X_43);
+    X_16 := calc.wrd(0:wrd);
+    X_18 := calc.wrd(2:wrd);
+    X_20 := calc.+(X_16,X_18);
+    X_21 := pqueue.topn_max(X_15,X_20);
+    X_22 := calc.wrd(0:wrd);
+    X_23 := calc.+(X_22,X_18);
+    X_24 := calc.-(X_23,1);
+    X_25 := algebra.subslice(X_21,X_22,X_24);
+    X_26 := algebra.leftfetchjoin(X_25,X_15);
+    X_27 := calc.wrd(0:wrd);
+    X_28 := calc.wrd(2:wrd);
+    X_29 := calc.+(X_27,X_28);
+    X_30 := calc.-(X_29,1);
+    X_31 := algebra.subslice(X_26,X_27,X_30);
+    X_32 := algebra.leftfetchjoin(X_31,X_26);
+    X_33 := sql.resultSet(1,1,X_32);
+    sql.rsColumn(X_33,"sys.oblo","a","int",32,0,X_32);
+    X_38 := io.stdout();
+    sql.exportResult(X_38,X_33);
 end s11_1;
-# querylog.define("explain select * from oblo order by a limit 2;","default_pipe")
+# querylog.define("explain select * from oblo order by a limit 2;","minimal_pipe")
 #EXPLAIN select * from oblo ORDER BY a LIMIT 2 OFFSET 1;
 % .explain # table_name
 % mal # name
@@ -338,29 +338,29 @@ function user.s12_1{autoCommit=true}():void;
     X_12 := sql.bind(X_2,"sys","oblo","a",1);
     X_14 := sql.delta(X_6,X_9,r1_9,X_12);
     X_15 := algebra.leftfetchjoin(X_3,X_14);
-    X_20 := calc.wrd(0:wrd);
-    X_22 := calc.wrd(2:wrd);
-    X_24 := calc.wrd(1:wrd);
-    X_26 := calc.+(X_22,X_24);
-    X_27 := calc.+(X_20,X_26);
-    X_28 := pqueue.topn_max(X_15,X_27);
-    X_29 := calc.wrd(0:wrd);
-    X_30 := calc.+(X_29,X_26);
-    X_31 := calc.-(X_30,1);
-    X_32 := algebra.subslice(X_28,X_29,X_31);
-    X_33 := algebra.leftfetchjoin(X_32,X_15);
-    X_36 := calc.wrd(1:wrd);
-    X_37 := calc.wrd(2:wrd);
-    X_38 := calc.+(X_36,X_37);
-    X_39 := calc.-(X_38,1);
-    X_40 := algebra.subslice(X_33,X_36,X_39);
-    X_41 := algebra.leftfetchjoin(X_40,X_33);
-    X_46 := sql.resultSet(1,1,X_41);
-    sql.rsColumn(X_46,"sys.oblo","a","int",32,0,X_41);
-    X_53 := io.stdout();
-    sql.exportResult(X_53,X_46);
+    X_16 := calc.wrd(0:wrd);
+    X_18 := calc.wrd(2:wrd);
+    X_20 := calc.wrd(1:wrd);
+    X_22 := calc.+(X_18,X_20);
+    X_23 := calc.+(X_16,X_22);
+    X_24 := pqueue.topn_max(X_15,X_23);
+    X_25 := calc.wrd(0:wrd);
+    X_26 := calc.+(X_25,X_22);
+    X_27 := calc.-(X_26,1);
+    X_28 := algebra.subslice(X_24,X_25,X_27);
+    X_29 := algebra.leftfetchjoin(X_28,X_15);
+    X_30 := calc.wrd(1:wrd);
+    X_31 := calc.wrd(2:wrd);
+    X_32 := calc.+(X_30,X_31);
+    X_33 := calc.-(X_32,1);
+    X_34 := algebra.subslice(X_29,X_30,X_33);
+    X_35 := algebra.leftfetchjoin(X_34,X_29);
+    X_36 := sql.resultSet(1,1,X_35);
+    sql.rsColumn(X_36,"sys.oblo","a","int",32,0,X_35);
+    X_42 := io.stdout();
+    sql.exportResult(X_42,X_36);
 end s12_1;
-# querylog.define("explain select * from oblo order by a limit 2 offset 1;","default_pipe")
+# querylog.define("explain select * from oblo order by a limit 2 offset 1;","minimal_pipe")
 #EXPLAIN select * from oblo ORDER BY a LIMIT 1 OFFSET 2;
 % .explain # table_name
 % mal # name
@@ -374,29 +374,29 @@ function user.s13_1{autoCommit=true}():void;
     X_12 := sql.bind(X_2,"sys","oblo","a",1);
     X_14 := sql.delta(X_6,X_9,r1_9,X_12);
     X_15 := algebra.leftfetchjoin(X_3,X_14);
-    X_20 := calc.wrd(0:wrd);
-    X_22 := calc.wrd(1:wrd);
-    X_24 := calc.wrd(2:wrd);
-    X_26 := calc.+(X_22,X_24);
-    X_27 := calc.+(X_20,X_26);
-    X_28 := pqueue.topn_max(X_15,X_27);
-    X_29 := calc.wrd(0:wrd);
-    X_30 := calc.+(X_29,X_26);
-    X_31 := calc.-(X_30,1);
-    X_32 := algebra.subslice(X_28,X_29,X_31);
-    X_33 := algebra.leftfetchjoin(X_32,X_15);
-    X_36 := calc.wrd(2:wrd);
-    X_37 := calc.wrd(1:wrd);
-    X_38 := calc.+(X_36,X_37);
-    X_39 := calc.-(X_38,1);
-    X_40 := algebra.subslice(X_33,X_36,X_39);
-    X_41 := algebra.leftfetchjoin(X_40,X_33);
-    X_46 := sql.resultSet(1,1,X_41);
-    sql.rsColumn(X_46,"sys.oblo","a","int",32,0,X_41);
-    X_53 := io.stdout();
-    sql.exportResult(X_53,X_46);
+    X_16 := calc.wrd(0:wrd);
+    X_18 := calc.wrd(1:wrd);
+    X_20 := calc.wrd(2:wrd);
+    X_22 := calc.+(X_18,X_20);
+    X_23 := calc.+(X_16,X_22);
+    X_24 := pqueue.topn_max(X_15,X_23);
+    X_25 := calc.wrd(0:wrd);
+    X_26 := calc.+(X_25,X_22);
+    X_27 := calc.-(X_26,1);
+    X_28 := algebra.subslice(X_24,X_25,X_27);
+    X_29 := algebra.leftfetchjoin(X_28,X_15);
+    X_30 := calc.wrd(2:wrd);
+    X_31 := calc.wrd(1:wrd);
+    X_32 := calc.+(X_30,X_31);
+    X_33 := calc.-(X_32,1);
+    X_34 := algebra.subslice(X_29,X_30,X_33);
+    X_35 := algebra.leftfetchjoin(X_34,X_29);
+    X_36 := sql.resultSet(1,1,X_35);
+    sql.rsColumn(X_36,"sys.oblo","a","int",32,0,X_35);
+    X_42 := io.stdout();
+    sql.exportResult(X_42,X_36);
 end s13_1;
-# querylog.define("explain select * from oblo order by a limit 1 offset 2;","default_pipe")
+# querylog.define("explain select * from oblo order by a limit 1 offset 2;","minimal_pipe")
 #select * from oblo;
 % sys.oblo # table_name
 % a # name

@@ -150,9 +150,9 @@ exp_convert(sql_allocator *sa, sql_exp *exp, sql_subtype *fromtype, sql_subtype 
 	e->r = append(append(sa_list(sa), dup_subtype(sa, fromtype)),totype);
 	e->tpe = *totype; 
 	if (exp->name)
-		e->name = sa_strdup(sa, exp->name);
+		e->name = exp->name;
 	if (exp->rname)
-		e->rname = sa_strdup(sa, exp->rname);
+		e->rname = exp->rname;
 	return e;
 }
 
@@ -303,7 +303,7 @@ sql_exp *
 exp_param(sql_allocator *sa, char *name, sql_subtype *tpe, int frame) 
 {
 	sql_exp *e = exp_create(sa, e_atom);
-	e->r = sa_strdup(sa, name);
+	e->r = name;
 	e->card = CARD_ATOM;
 	e->flag = frame;
 	if (tpe)
@@ -351,10 +351,10 @@ exp_alias(sql_allocator *sa, char *arname, char *acname, char *org_rname, char *
 
 	assert(acname && org_cname);
 	e->card = card;
-	e->rname = (arname)?sa_strdup(sa, arname):(org_rname)?sa_strdup(sa, org_rname):NULL;
-	e->name = sa_strdup(sa, acname);
-	e->l = (org_rname)?sa_strdup(sa, org_rname):NULL;
-	e->r = sa_strdup(sa, org_cname);
+	e->rname = (arname)?arname:org_rname;
+	e->name = acname;
+	e->l = org_rname;
+	e->r = org_cname;
 	if (t)
 		e->tpe = *t;
 	if (!has_nils)
@@ -371,10 +371,10 @@ exp_column(sql_allocator *sa, char *rname, char *cname, sql_subtype *t, int card
 
 	assert(cname);
 	e->card = card;
-	e->name = sa_strdup(sa, cname);
-	e->rname = (rname)?sa_strdup(sa, rname):NULL;
-	e->r = sa_strdup(sa, cname);
-	e->l = (rname)?sa_strdup(sa, rname):NULL;
+	e->name = cname;
+	e->rname = rname;
+	e->r = e->name;
+	e->l = e->rname;
 	if (t)
 		e->tpe = *t;
 	if (!has_nils)

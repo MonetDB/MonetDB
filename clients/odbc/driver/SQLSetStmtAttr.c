@@ -297,7 +297,6 @@ SQLSetStmtAttr(SQLHSTMT StatementHandle,
 			       StringLength);
 }
 
-#ifdef WITH_WCHAR
 SQLRETURN SQL_API
 SQLSetStmtAttrW(SQLHSTMT StatementHandle,
 		SQLINTEGER Attribute,
@@ -322,4 +321,3 @@ SQLSetStmtAttrW(SQLHSTMT StatementHandle,
 			       ValuePtr,
 			       StringLength);
 }
-#endif /* WITH_WCHAR */

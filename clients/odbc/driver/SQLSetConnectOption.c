@@ -104,7 +104,6 @@ SQLSetConnectOption(SQLHDBC ConnectionHandle,
 	return SQLSetConnectOption_(dbc, Option, ValuePtr);
 }
 
-#ifdef WITH_WCHAR
 SQLRETURN SQL_API
 SQLSetConnectOptionA(SQLHDBC ConnectionHandle,
 		     SQLUSMALLINT Option,
@@ -154,4 +153,3 @@ SQLSetConnectOptionW(SQLHDBC ConnectionHandle,
 
 	return rc;
 }
-#endif /* WITH_WCHAR */

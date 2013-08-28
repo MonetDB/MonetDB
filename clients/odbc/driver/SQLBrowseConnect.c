@@ -264,7 +264,6 @@ SQLBrowseConnect(SQLHDBC ConnectionHandle,
 	return SQLBrowseConnect_(dbc, InConnectionString, StringLength1, OutConnectionString, BufferLength, StringLength2Ptr);
 }
 
-#ifdef WITH_WCHAR
 SQLRETURN SQL_API
 SQLBrowseConnectA(SQLHDBC ConnectionHandle,
 		  SQLCHAR *InConnectionString,
@@ -311,4 +310,3 @@ SQLBrowseConnectW(SQLHDBC ConnectionHandle,
 		free(in);
 	return rc;
 }
-#endif /* WITH_WCHAR */

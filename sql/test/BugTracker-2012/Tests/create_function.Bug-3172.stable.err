@@ -29,10 +29,10 @@ stderr of test 'create_function.Bug-3172` in directory 'sql/test/BugTracker-2012
 # 16:07:20 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-27661" "--port=38365"
 # 16:07:20 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-27661/.s.monetdb.38365
+MAPI  = (monetdb) /var/tmp/mtest-5003/.s.monetdb.36177
 QUERY = select * from x((select id from _tables), (select schema_id from _tables));
-ERROR = !TypeException:user.s2_1[115]:'sql.x' undefined in: _216:any := sql.x(_212:int, _214:int)
-        !TypeException:user.s2_1[117]:'bat.insert' undefined in: _219:any := bat.insert(_207:bat[:oid,:int], _217:oid, _216:any)
+ERROR = !TypeException:user.s2_1[115]:'sql.x' undefined in: _214:any := sql.x(_210:int, _212:int)
+        !TypeException:user.s2_1[117]:'bat.insert' undefined in: _217:any := bat.insert(_205:bat[:oid,:int], _215:oid, _214:any)
         !program contains errors
 
 # 16:07:20 >  

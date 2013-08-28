@@ -38,6 +38,7 @@ typedef struct list {
 	node *h;
 	node *t;
 	int cnt;
+	int expected_cnt;
 } list;
 
 typedef int (*traverse_func) (void *clientdata, int seqnr, void *data);

@@ -263,7 +263,10 @@ SQLPrepare_(ODBCStmt *stmt,
 
 		if (rec->sql_desc_concise_type == SQL_CHAR ||
 		    rec->sql_desc_concise_type == SQL_VARCHAR ||
-		    rec->sql_desc_concise_type == SQL_LONGVARCHAR)
+		    rec->sql_desc_concise_type == SQL_LONGVARCHAR ||
+		    rec->sql_desc_concise_type == SQL_WCHAR ||
+		    rec->sql_desc_concise_type == SQL_WVARCHAR ||
+		    rec->sql_desc_concise_type == SQL_WLONGVARCHAR)
 			rec->sql_desc_case_sensitive = SQL_TRUE;
 		else
 			rec->sql_desc_case_sensitive = SQL_FALSE;
@@ -330,7 +333,6 @@ SQLPrepare(SQLHSTMT StatementHandle,
 			   TextLength);
 }
 
-#ifdef WITH_WCHAR
 SQLRETURN SQL_API
 SQLPrepareA(SQLHSTMT StatementHandle,
 	    SQLCHAR *StatementText,
@@ -367,4 +369,3 @@ SQLPrepareW(SQLHSTMT StatementHandle,
 
 	return rc;
 }
-#endif /* WITH_WCHAR */
