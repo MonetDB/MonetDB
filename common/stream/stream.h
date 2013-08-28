@@ -173,7 +173,6 @@ stream_export stream *file_rastream(FILE *fp, const char *name);
 stream_export stream *file_wastream(FILE *fp, const char *name);
 
 stream_export FILE *getFile(stream *s);
-stream_export stream *dupFileStream(stream *s);
 
 stream_export stream *iconv_rstream(stream *ss, const char *charset, const char *name);
 stream_export stream *iconv_wstream(stream *ss, const char *charset, const char *name);
@@ -215,7 +214,6 @@ stream_export buffer *mnstr_get_buffer(stream *s);
  */
 stream_export stream *wbstream(stream *s, size_t buflen);
 stream_export stream *block_stream(stream *s);
-stream_export ssize_t bs_read_next(stream *s, void *buf, size_t nbytes, int *last);
 stream_export int isa_block_stream(stream *s);
 /* read block of data including the end of block marker */
 stream_export ssize_t mnstr_read_block(stream *s, void *buf, size_t elmsize, size_t cnt);
@@ -234,10 +232,6 @@ stream_export bstream *bstream_create(stream *rs, size_t chunk_size);
 stream_export void bstream_destroy(bstream *s);
 stream_export ssize_t bstream_read(bstream *s, size_t size);
 stream_export ssize_t bstream_next(bstream *s);
-
-stream_export stream *attach_teestream(stream *orig, stream *log);
-stream_export void detach_teestream(stream *ts);
-
 
 typedef enum mnstr_errors {
 	MNSTR_NO__ERROR = 0,
