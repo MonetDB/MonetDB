@@ -664,11 +664,11 @@ stream_gzread(stream *s, void *buf, size_t elmsize, size_t cnt)
 {
 	gzFile fp = (gzFile) s->stream_data.p;
 	int size = (int) (elmsize * cnt);
-	int err;
+	int err = 0;
 
 	if (!gzeof(fp)) {
 		size = gzread(fp, buf, size);
-		if (gzerror(fp, &err) != NULL) {
+		if (gzerror(fp, &err) != NULL && err) {
 			s->errnr = MNSTR_READ_ERROR;
 			return -1;
 		}
@@ -682,11 +682,11 @@ stream_gzwrite(stream *s, const void *buf, size_t elmsize, size_t cnt)
 {
 	gzFile fp = (gzFile) s->stream_data.p;
 	int size = (int) (elmsize * cnt);
-	int err;
+	int err = 0;
 
 	if (size) {
 		size = gzwrite(fp, buf, size);
-		if (gzerror(fp, &err) != NULL) {
+		if (gzerror(fp, &err) != NULL && err) {
 			s->errnr = MNSTR_WRITE_ERROR;
 			return -1;
 		}
