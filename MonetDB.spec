@@ -253,6 +253,7 @@ Requires: %{name}-client = %{version}-%{release}
 Requires: perl
 Requires: perl(DBI)
 Requires: perl(Digest::SHA)
+Requires: perl(Digest::MD5)
 
 %description client-perl
 MonetDB is a database management system that is developed from a
