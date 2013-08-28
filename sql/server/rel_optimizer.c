@@ -6290,7 +6290,8 @@ _rel_optimizer(mvc *sql, sql_rel *rel, int level)
 		rel = rewrite(sql, rel, &rel_push_project_down_union, &changes);
 
 	/* Remove unused expressions */
-	rel = rel_dce(sql, rel);
+	if (level <= 0)
+		rel = rel_dce(sql, rel);
 
 	if (gp.cnt[op_join] || 
 	    gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full] || 
