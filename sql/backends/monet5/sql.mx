@@ -4240,17 +4240,19 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #else
 	s = bstream_create(ss, 0x2000000);
 #endif
-	if (!s)
-		throw(IO, "bstreams.create", "failed to create block stream");
-	b = mvc_import_table(cntxt, m, s, *sname, *tname, (char*)tsep, (char*)rsep, (char*)ssep, (char*)ns, *sz, *offset, *locked);
-	bstream_destroy(s);
+	if (s != NULL) {
+		b = mvc_import_table(cntxt, m, s, *sname, *tname, (char*)tsep, (char*)rsep, (char*)ssep, (char*)ns, *sz, *offset, *locked);
+		bstream_destroy(s);
+	}
 	GDKfree(filename);
 	GDKfree(tsep);
 	GDKfree(rsep);
-	if(ssep)
+	if (ssep)
 		GDKfree(ssep);
 	GDKfree(ns);
-	if (!b)
+	if (s == NULL)
+		throw(IO, "bstreams.create", "failed to create block stream");
+	if (b == NULL)
 		throw(SQL, "importTable", "%sfailed to import table", m->errstr);
 	bat2return(stk, pci, b);
 	GDKfree(b);
