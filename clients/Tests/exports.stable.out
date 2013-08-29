@@ -3170,9 +3170,7 @@ str zero_or_oneRef;
 # stream
 stream *append_wastream(const char *filename);
 stream *append_wstream(const char *filename);
-stream *attach_teestream(stream *orig, stream *log);
 stream *block_stream(stream *s);
-ssize_t bs_read_next(stream *s, void *buf, size_t nbytes, int *last);
 bstream *bstream_create(stream *rs, size_t chunk_size);
 void bstream_destroy(bstream *s);
 ssize_t bstream_next(bstream *s);
@@ -3184,8 +3182,6 @@ void buffer_init(buffer *b, char *buf, size_t size);
 stream *buffer_rastream(buffer *b, const char *name);
 stream *buffer_wastream(buffer *b, const char *name);
 void close_stream(stream *s);
-void detach_teestream(stream *ts);
-stream *dupFileStream(stream *s);
 stream *file_rastream(FILE *fp, const char *name);
 stream *file_rstream(FILE *fp, const char *name);
 stream *file_wastream(FILE *fp, const char *name);
