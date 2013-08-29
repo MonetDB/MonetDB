@@ -557,6 +557,21 @@ _ASCIIadt_toStr(void *extra, char **buf, int *len, int type, ptr a)
 }
 
 
+static int
+has_whitespace(char *sep)
+{
+	char *s = sep;
+
+	if (*s == ' ' || *s == '\t')
+		return 1;
+	while (*s)
+		s++;
+	s--;
+	if (*s == ' ' || *s == '\t')
+		return 1;
+	return 0;
+}
+
 BAT **
 mvc_import_table(Client cntxt, mvc *m, bstream *bs, char *sname, char *tname, char *sep, char *rsep, char *ssep, char *ns, lng sz, lng offset, int locked)
 {

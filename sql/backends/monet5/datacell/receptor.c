@@ -316,6 +316,192 @@ RCreconnect(Receptor rc)
 }
 
 
+#define myisspace(s)  ((s) == ' ' || (s) == '\t')
+
+static inline char *
+find_quote(char *s, char quote)
+{
+	while (*s != quote)
+		s++;
+	return s;
+}
+
+static inline char *
+rfind_quote(char *s, char *e, char quote)
+{
+	while (*e != quote && e > s)
+		e--;
+	return e;
+}
+
+static inline int
+insert_val(Column *fmt, char *s, char *e, char quote, ptr key, str *err, int c)
+{
+	char bak = 0;
+	ptr *adt;
+	char buf[BUFSIZ];
+
+	if (quote) {
+		/* string needs the quotes included */
+		s = find_quote(s, quote);
+		if (!s) {
+			snprintf(buf, BUFSIZ, "quote '%c' expected but not found in \"%s\" from line " BUNFMT "\n", quote, s, BATcount(fmt->c[0]));
+			*err = GDKstrdup(buf);
+			return -1;
+		}
+		s++;
+		e = rfind_quote(s, e, quote);
+		if (s != e) {
+			bak = *e;
+			*e = 0;
+		}
+		if ((s == e && fmt->nullstr[0] == 0) ||
+			(quote == fmt->nullstr[0] && e > s &&
+			 strncasecmp(s, fmt->nullstr + 1, fmt->nillen) == 0 &&
+			 quote == fmt->nullstr[fmt->nillen - 1])) {
+			adt = fmt->nildata;
+			fmt->c[0]->T->nonil = 0;
+		} else
+			adt = fmt->frstr(fmt, fmt->adt, s, e, quote);
+		if (bak)
+			*e = bak;
+	} else {
+		if (s != e) {
+			bak = *e;
+			*e = 0;
+		}
+
+		if ((s == e && fmt->nullstr[0] == 0) ||
+			(e > s && strcasecmp(s, fmt->nullstr) == 0)) {
+			adt = fmt->nildata;
+			fmt->c[0]->T->nonil = 0;
+		} else
+			adt = fmt->frstr(fmt, fmt->adt, s, e, quote);
+		if (bak)
+			*e = bak;
+	}
+
+	if (!adt) {
+		char *val;
+		bak = *e;
+		*e = 0;
+		val = (s != e) ? GDKstrdup(s) : GDKstrdup("");
+		*e = bak;
+
+		snprintf(buf, BUFSIZ, "value '%s' while parsing '%s' from line " BUNFMT " field %d not inserted, expecting type %s\n", val, s, BATcount(fmt->c[0]), c, fmt->type);
+		*err = GDKstrdup(buf);
+		GDKfree(val);
+		return -1;
+	}
+	/* key may be NULL but that's not a problem, as long as we have void */
+	if (fmt->raw) {
+		mnstr_write(fmt->raw, adt, ATOMsize(fmt->adt), 1);
+	} else {
+		bunfastins(fmt->c[0], key, adt);
+	}
+	return 0;
+  bunins_failed:
+	snprintf(buf, BUFSIZ, "while parsing '%s' from line " BUNFMT " field %d not inserted\n", s, BATcount(fmt->c[0]), c);
+	*err = GDKstrdup(buf);
+	return -1;
+}
+
+static char *
+tablet_skip_string(char *s, char quote)
+{
+	while (*s) {
+		if (*s == '\\' && s[1] != '\0')
+			s++;
+		else if (*s == quote) {
+			if (s[1] == quote)
+				*s++ = '\\';	/* sneakily replace "" with \" */
+			else
+				break;
+		}
+		s++;
+	}
+	assert(*s == quote || *s == '\0');
+	if (*s)
+		s++;
+	else
+		return NULL;
+	return s;
+}
+
+static int
+insert_line(Tablet *as, char *line, ptr key, BUN col1, BUN col2)
+{
+	Column *fmt = as->format;
+	char *s, *e = 0, quote = 0, seperator = 0;
+	BUN i;
+	char errmsg[BUFSIZ];
+
+	for (i = 0; i < as->nr_attrs; i++) {
+		e = 0;
+
+		/* skip leading spaces */
+		if (fmt[i].ws)
+			while (myisspace((int) (*line)))
+				line++;
+		s = line;
+
+		/* recognize fields starting with a quote */
+		if (*line && *line == fmt[i].quote && (line == s || *(line - 1) != '\\')) {
+			quote = *line;
+			line++;
+			line = tablet_skip_string(line, quote);
+			if (!line) {
+				snprintf(errmsg, BUFSIZ, "End of string (%c) missing " "in %s at line " BUNFMT "\n", quote, s, BATcount(fmt->c[0]));
+				as->error = GDKstrdup(errmsg);
+				if (!as->tryall)
+					return -1;
+				BUNins(as->complaints, NULL, as->error, TRUE);
+			}
+		}
+
+		/* skip until separator */
+		seperator = fmt[i].sep[0];
+		if (fmt[i].sep[1] == 0) {
+			while (*line) {
+				if (*line == seperator) {
+					e = line;
+					break;
+				}
+				line++;
+			}
+		} else {
+			while (*line) {
+				if (*line == seperator &&
+					strncmp(fmt[i].sep, line, fmt[i].seplen) == 0) {
+					e = line;
+					break;
+				}
+				line++;
+			}
+		}
+		if (!e && i == (as->nr_attrs - 1))
+			e = line;
+		if (e) {
+			if (i >= col1 && i < col2)
+				(void) insert_val(&fmt[i], s, e, quote, key, &as->error, (int) i);
+			quote = 0;
+			line = e + fmt[i].seplen;
+			if (as->error) {
+				if (!as->tryall)
+					return -1;
+				BUNins(as->complaints, NULL, as->error, TRUE);
+			}
+		} else {
+			snprintf(errmsg, BUFSIZ, "missing separator '%s' line " BUNFMT " field " BUNFMT "\n", fmt->sep, BATcount(fmt->c[0]), i);
+			as->error = GDKstrdup(errmsg);
+			if (!as->tryall)
+				return -1;
+			BUNins(as->complaints, NULL, as->error, TRUE);
+		}
+	}
+	return 0;
+}
+
 static void
 RCbody(Receptor rc)
 {

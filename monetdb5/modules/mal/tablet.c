@@ -53,38 +53,7 @@
 #include <string.h>
 #include <ctype.h>
 
-#define CLEAR(X) if(X) {GDKfree(X);X = NULL;}
-
-#ifdef _MSC_VER
-#define getcwd _getcwd
-#endif
-
 tablet_export str CMDtablet_input(int *ret, int *nameid, int *sepid, int *typeid, stream *s, int *nr);
-
-
-#define LINE(s, X)								\
-	do {										\
-		int n=(int)(X)-1;						\
-		mnstr_write(s, "#", 1, 1);				\
-		while(--n>0)							\
-			mnstr_write(s, "-", 1, 1);			\
-		mnstr_printf(s, "#\n");					\
-	} while (0)
-#define TABS(s, X)								\
-	do {										\
-		int n=(int)(X);							\
-		while(n-->0)							\
-			mnstr_printf(s, "\t");				\
-	} while (0)
-
-static ptr
-bun_tail(BAT *b, BUN nr)
-{
-	BATiter bi = bat_iterator(b);
-	register BUN _i = BUNfirst(b);
-
-	return (ptr) BUNtail(bi, _i + nr);
-}
 
 
 static BAT *
@@ -184,23 +153,6 @@ TABLETadt_toStr(void *extra, char **buf, int *len, int type, ptr a)
 	}
 }
 
-#define myisspace(s)  ((s) == ' ' || (s) == '\t')
-
-int
-has_whitespace(char *sep)
-{
-	char *s = sep;
-
-	if (myisspace(*s))
-		return 1;
-	while (*s)
-		s++;
-	s--;
-	if (myisspace(*s))
-		return 1;
-	return 0;
-}
-
 void
 TABLETdestroy_format(Tablet *as)
 {
@@ -266,14 +218,6 @@ TABLETcreate_bats(Tablet *as, BUN est)
 {
 	Column *fmt = as->format;
 	BUN i;
-	char nme[BUFSIZ];
-
-	if (getcwd(nme, BUFSIZ) == NULL) {
-		GDKerror("TABLETcreate_bats: Failed to locate directory\n");
-		return -1;
-	}
-
-	assert(strlen(nme) < BUFSIZ - 50);
 
 	for (i = 0; i < as->nr_attrs; i++) {
 		fmt[i].c[0] = void_bat_create(fmt[i].adt, est);
@@ -355,106 +299,7 @@ TABLETcollect_parts(Tablet *as, BUN offset)
 	return bats;
 }
 
-static inline char *
-rstrip(char *s, char *e)
-{
-	e--;
-	while (myisspace((int) *e) && e >= s)
-		e--;
-	e++;
-	*e = 0;
-	return e;
-}
-
-static inline char *
-find_quote(char *s, char quote)
-{
-	while (*s != quote)
-		s++;
-	return s;
-}
-
-static inline char *
-rfind_quote(char *s, char *e, char quote)
-{
-	while (*e != quote && e > s)
-		e--;
-	return e;
-}
-
-static inline int
-insert_val(Column *fmt, char *s, char *e, char quote, ptr key, str *err, int c)
-{
-	char bak = 0;
-	ptr *adt;
-	char buf[BUFSIZ];
-
-	if (quote) {
-		/* string needs the quotes included */
-		s = find_quote(s, quote);
-		if (!s) {
-			snprintf(buf, BUFSIZ, "quote '%c' expected but not found in \"%s\" from line " BUNFMT "\n", quote, s, BATcount(fmt->c[0]));
-			*err = GDKstrdup(buf);
-			return -1;
-		}
-		s++;
-		e = rfind_quote(s, e, quote);
-		if (s != e) {
-			bak = *e;
-			*e = 0;
-		}
-		if ((s == e && fmt->nullstr[0] == 0) ||
-			(quote == fmt->nullstr[0] && e > s &&
-			 strncasecmp(s, fmt->nullstr + 1, fmt->nillen) == 0 &&
-			 quote == fmt->nullstr[fmt->nillen - 1])) {
-			adt = fmt->nildata;
-			fmt->c[0]->T->nonil = 0;
-		} else
-			adt = fmt->frstr(fmt, fmt->adt, s, e, quote);
-		if (bak)
-			*e = bak;
-	} else {
-		if (s != e) {
-			bak = *e;
-			*e = 0;
-		}
-
-		if ((s == e && fmt->nullstr[0] == 0) ||
-			(e > s && strcasecmp(s, fmt->nullstr) == 0)) {
-			adt = fmt->nildata;
-			fmt->c[0]->T->nonil = 0;
-		} else
-			adt = fmt->frstr(fmt, fmt->adt, s, e, quote);
-		if (bak)
-			*e = bak;
-	}
-
-	if (!adt) {
-		char *val;
-		bak = *e;
-		*e = 0;
-		val = (s != e) ? GDKstrdup(s) : GDKstrdup("");
-		*e = bak;
-
-		snprintf(buf, BUFSIZ, "value '%s' while parsing '%s' from line " BUNFMT " field %d not inserted, expecting type %s\n", val, s, BATcount(fmt->c[0]), c, fmt->type);
-		*err = GDKstrdup(buf);
-		GDKfree(val);
-		return -1;
-	}
-	/* key may be NULL but that's not a problem, as long as we have void */
-	if (fmt->raw) {
-		mnstr_write(fmt->raw, adt, ATOMsize(fmt->adt), 1);
-	} else {
-		bunfastins(fmt->c[0], key, adt);
-	}
-	return 0;
-  bunins_failed:
-	snprintf(buf, BUFSIZ, "while parsing '%s' from line " BUNFMT " field %d not inserted\n", s, BATcount(fmt->c[0]), c);
-	*err = GDKstrdup(buf);
-	return -1;
-}
-
-char *
+static char *
 tablet_skip_string(char *s, char quote)
 {
 	while (*s) {
@@ -476,80 +321,6 @@ tablet_skip_string(char *s, char quote)
 	return s;
 }
 
-inline int
-insert_line(Tablet *as, char *line, ptr key, BUN col1, BUN col2)
-{
-	Column *fmt = as->format;
-	char *s, *e = 0, quote = 0, seperator = 0;
-	BUN i;
-	char errmsg[BUFSIZ];
-
-	for (i = 0; i < as->nr_attrs; i++) {
-		e = 0;
-
-		/* skip leading spaces */
-		if (fmt[i].ws)
-			while (myisspace((int) (*line)))
-				line++;
-		s = line;
-
-		/* recognize fields starting with a quote */
-		if (*line && *line == fmt[i].quote && (line == s || *(line - 1) != '\\')) {
-			quote = *line;
-			line++;
-			line = tablet_skip_string(line, quote);
-			if (!line) {
-				snprintf(errmsg, BUFSIZ, "End of string (%c) missing " "in %s at line " BUNFMT "\n", quote, s, BATcount(fmt->c[0]));
-				as->error = GDKstrdup(errmsg);
-				if (!as->tryall)
-					return -1;
-				BUNins(as->complaints, NULL, as->error, TRUE);
-			}
-		}
-
-		/* skip until separator */
-		seperator = fmt[i].sep[0];
-		if (fmt[i].sep[1] == 0) {
-			while (*line) {
-				if (*line == seperator) {
-					e = line;
-					break;
-				}
-				line++;
-			}
-		} else {
-			while (*line) {
-				if (*line == seperator &&
-					strncmp(fmt[i].sep, line, fmt[i].seplen) == 0) {
-					e = line;
-					break;
-				}
-				line++;
-			}
-		}
-		if (!e && i == (as->nr_attrs - 1))
-			e = line;
-		if (e) {
-			if (i >= col1 && i < col2)
-				(void) insert_val(&fmt[i], s, e, quote, key, &as->error, (int) i);
-			quote = 0;
-			line = e + fmt[i].seplen;
-			if (as->error) {
-				if (!as->tryall)
-					return -1;
-				BUNins(as->complaints, NULL, as->error, TRUE);
-			}
-		} else {
-			snprintf(errmsg, BUFSIZ, "missing separator '%s' line " BUNFMT " field " BUNFMT "\n", fmt->sep, BATcount(fmt->c[0]), i);
-			as->error = GDKstrdup(errmsg);
-			if (!as->tryall)
-				return -1;
-			BUNins(as->complaints, NULL, as->error, TRUE);
-		}
-	}
-	return 0;
-}
-
 static int
 TABLET_error(stream *s)
 {
@@ -562,36 +333,6 @@ TABLET_error(stream *s)
 			free(err);
 	}
 	return -1;
-}
-
-static inline int
-dump_line(char **buf, int *len, Column *fmt, stream *fd, BUN nr_attrs, BUN id)
-{
-	BUN i;
-
-	for (i = 0; i < nr_attrs; i++) {
-		Column *f;
-		char *p;
-		int l;
-
-		f = fmt + i;
-		if (f->c[0]) {
-			p = (char *) bun_tail(f->c[0], id);
-
-			if (!p || ATOMcmp(f->adt, ATOMnilptr(f->adt), p) == 0) {
-				l = (int) strlen(f->nullstr);
-				if (mnstr_write(fd, f->nullstr, 1, l) != l)
-					return TABLET_error(fd);
-			} else {
-				l = f->tostr(f->extra, buf, len, f->adt, p);
-				if (mnstr_write(fd, *buf, 1, l) != l)
-					return TABLET_error(fd);
-			}
-		}
-		if (mnstr_write(fd, f->sep, 1, f->seplen) != f->seplen)
-			return TABLET_error(fd);
-	}
-	return 0;
 }
 
 /* The output line is first build before being sent. It solves a problem
@@ -713,7 +454,7 @@ output_line_lookup(char **buf, int *len, Column *fmt, stream *fd, BUN nr_attrs, 
 	return 0;
 }
 
-int
+static int
 tablet_read_more(bstream *in, stream *out, size_t n)
 {
 	if (out) {
@@ -815,7 +556,7 @@ output_file_default(Tablet *as, BAT *order, stream *fd)
 	return res;
 }
 
-int
+static int
 output_file_dense(Tablet *as, stream *fd)
 {
 	int len = BUFSIZ, locallen= BUFSIZ, res = 0;

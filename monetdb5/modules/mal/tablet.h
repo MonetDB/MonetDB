@@ -134,14 +134,5 @@ tablet_export int TABLEToutput_file(Tablet *as, BAT *order, stream *s);
 tablet_export ptr *TABLETstrFrStr(Column *c, char *s, char *e);
 tablet_export ptr *TABLETadt_frStr(Column *c, int type, char *s, char *e, char quote);
 tablet_export int TABLETadt_toStr(void *extra, char **buf, int *len, int type, ptr a);
-tablet_export int insert_line(Tablet *as, char *line, ptr key, BUN col1, BUN col2);
-tablet_export int output_file_dense(Tablet *as, stream *fd);
-tablet_export int has_whitespace(char *sep);
-
-#ifdef LIBMAL
-/* not exported since only used within library */
-extern int tablet_read_more(bstream *in, stream *out, size_t n);
-extern char *tablet_skip_string(char *s, char quote);
-#endif
 
 #endif
