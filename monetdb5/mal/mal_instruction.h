@@ -249,7 +249,7 @@ mal_export MalBlkPtr gotoMalBlkMarker(MalBlkPtr mb, str marker);
 mal_export MalBlkPtr getMalBlkMarker(MalBlkPtr mb, str marker);
 mal_export void expandMalBlk(MalBlkPtr mb, int lines);
 mal_export void trimMalBlk(MalBlkPtr mb);
-mal_export void trimMalVariables(MalBlkPtr mb);
+mal_export void trimMalVariables(MalBlkPtr mb, MalStkPtr stk);
 mal_export void trimMalVariables_(MalBlkPtr mb, bit *used, MalStkPtr glb);
 mal_export void moveInstruction(MalBlkPtr mb, int pc, int target);
 mal_export void insertInstruction(MalBlkPtr mb, InstrPtr p, int pc);

@@ -1211,7 +1211,7 @@ trimMalVariables_(MalBlkPtr mb, bit *used, MalStkPtr glb)
 }
 
 void
-trimMalVariables(MalBlkPtr mb)
+trimMalVariables(MalBlkPtr mb, MalStkPtr stk)
 {
 	bit *used;
 	int i, j;
@@ -1230,7 +1230,7 @@ trimMalVariables(MalBlkPtr mb)
 		if (mb->prps[i].var)
 			used[mb->prps[i].var] = 1;
 	}
-	trimMalVariables_(mb, used, 0);
+	trimMalVariables_(mb, used, stk);
 	GDKfree(used);
 }
 

@@ -404,7 +404,7 @@ newpass:
 	GDKfree(old);
 	GDKfree(used);
 	/* remove all un-used variables as well */
-	trimMalVariables(recycleBlk);
+	trimMalVariables(recycleBlk,0);
 
 	GDKfree(dmask);
 	/* check if a new pass of cache cleaning is needed */

@@ -30,7 +30,7 @@ OPTreduceImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	(void) p;
 
 	actions = mb->vtop;
-	trimMalVariables(mb);
+	trimMalVariables(mb,0);
 	actions = actions - mb->vtop;
 	return actions;
 }
