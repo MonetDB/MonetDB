@@ -441,6 +441,43 @@ MATpack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	return MATpackInternal(stk,p);
 }
 
+// merging multiple OID lists 
+str
+MATmergepack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
+	int i, *ret = (int*) getArgReference(stk,p,0);
+	BAT *b, *bn, *bm;
+	BUN cap = 0;
+
+	(void)cntxt;
+	(void)mb;
+	for (i = 1; i < p->argc; i++) {
+		int bid = stk->stk[getArg(p,i)].val.ival;
+		b = BBPquickdesc(ABS(bid),FALSE);
+		if (b )
+			cap += BATcount(b);
+	}
+
+	bn = BATnew(TYPE_void, TYPE_oid, cap);
+	if (bn == NULL)
+		throw(MAL, "mat.pack", MAL_MALLOC_FAIL);
+
+	for (i = 1; i < p->argc; i++) {
+		b = BATdescriptor(stk->stk[getArg(p,i)].val.ival);
+		if( b ){
+			bm = BATmergecand(bn,b);
+			BBPunfix(b->batCacheid);
+			BBPunfix(bn->batCacheid);
+			bn = bm;
+		}
+	}
+	assert(!bn->H->nil || !bn->H->nonil);
+	assert(!bn->T->nil || !bn->T->nonil);
+	BATsettrivprop(bn);
+	BBPkeepref(*ret = bn->batCacheid);
+	return MAL_SUCCEED;
+}
+
 str
 MATpackValues(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {

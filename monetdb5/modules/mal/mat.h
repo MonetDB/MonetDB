@@ -36,6 +36,7 @@
 #endif
 
 mat_export str MATpack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mat_export str MATmergepack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mat_export str MATpack2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mat_export str MATpack3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mat_export str MATpackIncrement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);

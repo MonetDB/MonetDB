@@ -13,6 +13,10 @@ pattern pack(b:bat[:oid,:any_2]...):bat[:oid,:any_2]
 address MATpack
 comment "Materialize the MAT into a BAT";
 
+pattern mergepack(b:bat[:oid,:oid]...):bat[:oid,:oid]
+address MATmergepack
+comment "Merge multiple candidate lists ";
+
 pattern pack2(b:bat[:oid,:any_2]...):bat[:oid,:any_2]
 address MATpack2
 comment "Materialize the MAT into a BAT (by an append all)";
