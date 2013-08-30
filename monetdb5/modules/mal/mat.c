@@ -129,6 +129,8 @@ MATpackInternal(MalStkPtr stk, InstrPtr p)
 	}
 	assert(!bn->H->nil || !bn->H->nonil);
 	assert(!bn->T->nil || !bn->T->nonil);
+	BATsettrivprop(bn);
+	BATderiveProps(bn,FALSE);
 	BBPkeepref(*ret = bn->batCacheid);
 	return MAL_SUCCEED;
 }
