@@ -1074,6 +1074,7 @@ rel_alter_table(mvc *sql, dlist *qname, symbol *te)
 		sql_table *nt = dup_sql_table(sql->sa, t);
 		sql_exp ** updates, *e;
 
+		assert(te);
 		if (nt && te && te->token == SQL_DROP_CONSTRAINT) {
 			dlist *l = te->data.lval;
 			char *kname = l->h->data.sval;
@@ -1083,20 +1084,32 @@ rel_alter_table(mvc *sql, dlist *qname, symbol *te)
 			return rel_schema(sql->sa, DDL_DROP_CONSTRAINT, sname, kname, drop_action);
 		}
 
-		if (!nt || (te && table_element(sql, te, s, nt, 1) == SQL_ERR)) 
-			return NULL;
-
 		if (t->persistence != SQL_DECLARED_TABLE && s)
 			sname = s->base.name;
+
+		/* read only or read write */
+		if (nt && te && te->token == SQL_ALTER_TABLE) {
+			int state = te->data.i_val;
+
+			if (t->s && !nt->s)
+				nt->s = t->s;
+
+			if (state == tr_readonly) {
+				nt = mvc_readonly(sql, nt, 1);
+			} else {
+				nt = mvc_readonly(sql, nt, 0);
+			}
+			return rel_table(sql, DDL_ALTER_TABLE, sname, nt, 0);
+		}
+
+		if (!nt || (te && table_element(sql, te, s, nt, 1) == SQL_ERR)) 
+			return NULL;
 
 		if (t->s && !nt->s)
 			nt->s = t->s;
 
-		if (!te) /* Set Read only */
-			nt = mvc_readonly(sql, nt, 1);
 		res = rel_table(sql, DDL_ALTER_TABLE, sname, nt, 0);
-		if (!te) /* Set Read only */
-			return res;
+
 		/* table add table */
 		if (te->token == SQL_TABLE) {
 			char *ntname = te->data.lval->h->data.sval;
@@ -1619,7 +1632,7 @@ rel_schemas(mvc *sql, symbol *s)
 		dlist *l = s->data.lval;
 
 		ret = rel_alter_table(sql, 
-			l->h->data.lval,	/* table name */
+			l->h->data.lval,      /* table name */
 		  	l->h->next->data.sym);/* table element */
 	} 	break;
 	case SQL_GRANT_ROLES:

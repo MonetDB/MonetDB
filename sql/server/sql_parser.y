@@ -961,7 +961,12 @@ alter_statement:
  | ALTER TABLE qname SET READ ONLY
 	{ dlist *l = L();
 	  append_list(l, $3);
-	  append_symbol(l, NULL);
+	  append_symbol(l, _symbol_create_int(SQL_ALTER_TABLE, tr_readonly));
+	  $$ = _symbol_create_list( SQL_ALTER_TABLE, l ); }
+ | ALTER TABLE qname SET READ WRITE
+	{ dlist *l = L();
+	  append_list(l, $3);
+	  append_symbol(l, _symbol_create_int(SQL_ALTER_TABLE, tr_writable));
 	  $$ = _symbol_create_list( SQL_ALTER_TABLE, l ); }
  | ALTER USER ident passwd_schema
 	{ dlist *l = L();
