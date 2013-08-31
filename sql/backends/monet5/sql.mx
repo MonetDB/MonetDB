@@ -627,11 +627,15 @@ comment "truncate the floating point v to r digits behind the dot (if r < 0, bef
 @:mal_fround(dbl)@
 
 command sql.alpha(dec:dbl, theta:dbl) :dbl
-address SQLdbl_alpha
+address SQLcst_alpha_cst
 comment "Implementation of astronomy alpha function: expands the radius theta depending on the declination";
 
 command batsql.alpha(dec:bat[:oid,:dbl], theta:dbl) :bat[:oid,:dbl]
-address SQLbat_alpha
+address SQLbat_alpha_cst
+comment "BAT implementation of astronomy alpha function";
+
+command batsql.alpha(dec:dbl, theta:bat[:oid,:dbl]) :bat[:oid,:dbl]
+address SQLcst_alpha_bat
 comment "BAT implementation of astronomy alpha function";
 
 @= mal_cast
@@ -1473,8 +1477,9 @@ sql5_export str @1_trunc_wrap( @1 *res, @1 *v, int *r );
 @:fround_export(dbl)@
 #define radians(x)       ((x) * 3.14159265358979323846 /180.0 )
 #define degrees(x)       ((x) * 180.0/3.14159265358979323846 )
-sql5_export str SQLdbl_alpha(dbl *res, dbl *decl, dbl *theta);
-sql5_export str SQLbat_alpha(bat *res, bat *decl, dbl *theta);
+sql5_export str SQLcst_alpha_cst(dbl *res, dbl *decl, dbl *theta);
+sql5_export str SQLbat_alpha_cst(bat *res, bat *decl, dbl *theta);
+sql5_export str SQLcst_alpha_bat(bat *res, dbl *decl, bat *theta);
 sql5_export str month_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str second_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str month_interval_daytime( int *ret, daytime *s, int *ek, int *sk );
@@ -5123,7 +5128,7 @@ str
 @:fround(dbl)@
 
 str
-SQLdbl_alpha(dbl *res, dbl *decl, dbl *theta)
+SQLcst_alpha_cst(dbl *res, dbl *decl, dbl *theta)
 {
 	dbl s, c1, c2;
     char *msg = MAL_SUCCEED;
@@ -5140,8 +5145,14 @@ SQLdbl_alpha(dbl *res, dbl *decl, dbl *theta)
 	}
     return msg;
 }
+
+/*
+sql5_export str SQLcst_alpha_cst(dbl *res, dbl *decl, dbl *theta);
+sql5_export str SQLbat_alpha_cst(bat *res, bat *decl, dbl *theta);
+sql5_export str SQLcst_alpha_bat(bat *res, dbl *decl, bat *theta);
+*/
 str
-SQLbat_alpha(bat *res, bat *decl, dbl *theta)
+SQLbat_alpha_cst(bat *res, bat *decl, dbl *theta)
 {
     BAT *b, *bn;
     BATiter bi;
@@ -5173,6 +5184,45 @@ SQLbat_alpha(bat *res, bat *decl, dbl *theta)
 			c1 = cos(radians(d - *theta));
 			c2 = cos(radians(d + *theta));
 		    r = degrees(fabs(atan(s / sqrt(fabs(c1 * c2)))));
+        }
+        BUNins(bn, BUNhead(bi,p), &r, FALSE);
+    }
+    BBPkeepref( *res = bn->batCacheid);
+    BBPunfix(b->batCacheid);
+    return msg;
+}
+str
+SQLcst_alpha_bat(bat *res, dbl *decl, bat *theta)
+{
+    BAT *b, *bn;
+    BATiter bi;
+    BUN p,q;
+	dbl s, c1, c2, r;
+    char *msg = NULL;
+
+    if( (b = BATdescriptor(*theta)) == NULL ){
+        throw(SQL, "alpha", "Cannot access descriptor");
+    }
+    bi = bat_iterator(b);
+    bn = BATnew(b->htype, TYPE_dbl, BATcount(b));
+    if( bn == NULL){
+        BBPreleaseref(b->batCacheid);
+        throw(SQL, "sql.alpha", MAL_MALLOC_FAIL);
+    }
+    BATseqbase(bn, b->hseqbase);
+    BATloop(b,p,q) {
+	dbl d = *decl;
+        dbl *theta = (dbl*)BUNtail(bi,p);
+
+	if (d == dbl_nil)
+		r = dbl_nil;
+	else if (fabs(d) + *theta > 89.9 )
+		r = (dbl) 180.0;
+	else {
+        	s = sin(radians(*theta));
+		c1 = cos(radians(d - *theta));
+		c2 = cos(radians(d + *theta));
+		r = degrees(fabs(atan(s / sqrt(fabs(c1 * c2)))));
         }
         BUNins(bn, BUNhead(bi,p), &r, FALSE);
     }
