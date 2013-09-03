@@ -2242,10 +2242,10 @@ BATmergecand(BAT *a, BAT *b)
 	assert(b->htype == TYPE_void);
 	assert(ATOMtype(a->htype) == TYPE_oid);
 	assert(ATOMtype(b->htype) == TYPE_oid);
-	assert(a->tsorted);
-	assert(b->tsorted);
-	assert(a->tkey);
-	assert(b->tkey);
+	assert(BATcount(a) <= 1 || a->tsorted);
+	assert(BATcount(b) <= 1 || b->tsorted);
+	assert(BATcount(a) <= 1 || a->tkey);
+	assert(BATcount(b) <= 1 || b->tkey);
 	assert(a->T->nonil);
 	assert(b->T->nonil);
 
