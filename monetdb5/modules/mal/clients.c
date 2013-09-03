@@ -359,14 +359,18 @@ CLTsuspend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
     return MCsuspendClient(*id);
 }
 
+//set time out based on seconds
 str
 CLTsetTimeout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	lng qto=  *(lng *) getArgReference(stk,pci,1);
-	lng sto=  *(lng *) getArgReference(stk,pci,2);
+	lng qto,sto;
 	(void) mb;
-	cntxt->qtimeout = qto;
-	cntxt->stimeout = sto;
+	qto=  *(lng *) getArgReference(stk,pci,1);
+	cntxt->qtimeout = qto * 1000 * 1000;
+	if ( pci->argc == 3){
+		sto=  *(lng *) getArgReference(stk,pci,2);
+		cntxt->stimeout = sto * 1000 * 1000;
+	}
     return MAL_SUCCEED;
 }
 str

@@ -461,7 +461,7 @@ MATmergepack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	bn = BATnew(TYPE_void, TYPE_oid, cap);
 	if (bn == NULL)
 		throw(MAL, "mat.pack", MAL_MALLOC_FAIL);
-
+	BATsettrivprop(bn);
 	for (i = 1; i < p->argc; i++) {
 		b = BATdescriptor(stk->stk[getArg(p,i)].val.ival);
 		if( b ){
@@ -473,7 +473,6 @@ MATmergepack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	}
 	assert(!bn->H->nil || !bn->H->nonil);
 	assert(!bn->T->nil || !bn->T->nonil);
-	BATsettrivprop(bn);
 	BBPkeepref(*ret = bn->batCacheid);
 	return MAL_SUCCEED;
 }

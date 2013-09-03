@@ -477,7 +477,15 @@ comment "return table of users with sql scenario";
 
 pattern password(user:str) :str
 address db_password_wrap
-comment "return password hash of user";
+comment "Return password hash of user";
+
+pattern settimeout(s:lng):void
+address CLTsetTimeout
+comment "Abort query after s seconds";
+
+pattern settimeout(s:lng,t:lng):void
+address CLTsetTimeout
+comment "Abort query after s and session after t seconds";
 
 pattern dump_cache()(query:bat[:oid,:str],count:bat[:oid,:int])
 address dump_cache

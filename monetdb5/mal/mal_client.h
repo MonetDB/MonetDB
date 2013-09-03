@@ -94,8 +94,9 @@ typedef struct CLIENT {
 
 	time_t      login;  
 	time_t      lastcmd;	/* set when input is received */
-	lng 	    qtimeout;	/* query abort after x milliseconds */
-	lng	        stimeout;	/* session abort after x milliseconds */
+	lng 		session;	/* usec since start of server */
+	lng 	    qtimeout;	/* query abort after x usec*/
+	lng	        stimeout;	/* session abort after x usec */
 	/*
 	 * Communication channels for the interconnect are stored here.
 	 * It is perfectly legal to have a client without input stream.

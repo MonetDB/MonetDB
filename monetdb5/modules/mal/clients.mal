@@ -71,9 +71,13 @@ command wakeup(id:int):void
 address CLTwakeup
 comment "Wakeup a client process";
 
+pattern settimeout(n:lng):void
+address CLTsettimeout
+comment "Abort a query after  n seconds.";
+
 pattern setTimeout(q:lng,s:lng):void
 address CLTsetTimeout
-comment "Abort a query after q milliseconds (q=0 means run undisturbed).
+comment "Abort a query after q seconds (q=0 means run undisturbed).
 The session timeout aborts the connection after spending too
 many seconds on query processing.";
 

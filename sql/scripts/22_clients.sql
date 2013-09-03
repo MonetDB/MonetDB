@@ -14,6 +14,12 @@
 -- Copyright August 2008-2013 MonetDB B.V.
 -- All Rights Reserved.
 
-create function password_hash (username string) 
+create function sys.password_hash (username string) 
 	returns string 
 	external name sql.password;
+
+-- control the query time out 
+create procedure sys.settimeout("query" bigint)
+	external name sql.settimeout;
+create procedure sys.settimeout("query" bigint, "session" bigint)
+	external name sql.settimeout;
