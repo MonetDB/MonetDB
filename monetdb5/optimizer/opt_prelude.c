@@ -86,6 +86,7 @@ str tintersectRef;
 str tdiffRef;
 str tinterRef;
 str mergecandRef;
+str mergepack;
 str intersectcandRef;
 str eqRef;
 str disconnectRef;
@@ -353,6 +354,7 @@ void optimizerInit(void){
 		tdiffRef= putName("tdiff",5);
 		tinterRef= putName("tinter",6);
 		mergecandRef= putName("mergecand",9);
+		mergepack= putName("mergepack",9);
 		intersectcandRef= putName("intersectcand",13);
 		eqRef = putName("==",2);
 		disconnectRef= putName("disconnect",10);
