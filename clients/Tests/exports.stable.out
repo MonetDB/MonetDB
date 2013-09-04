@@ -2774,6 +2774,7 @@ str mdbTrapClient(Client cntxt, MalBlkPtr mb1, MalStkPtr stk1, InstrPtr pc1);
 int memoryclaims;
 lng memorypool;
 str mergecandRef;
+str mergepackRef;
 str minRef;
 str min_no_nilRef;
 str minusRef;
