@@ -175,7 +175,7 @@ MCgetClient(int id)
 	return mal_clients + id;
 }
 
-static void
+void
 MCexitClient(Client c)
 {
 #ifdef MAL_CLIENT_DEBUG
