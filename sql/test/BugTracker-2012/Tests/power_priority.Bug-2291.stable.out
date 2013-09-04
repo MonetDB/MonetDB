@@ -50,7 +50,7 @@ Ready.
 % . # table_name
 % sql_sub_single_value # name
 % decimal # type
-% 21 # length
+% 20 # length
 [ -0.00076334574955	]
 
 # 15:05:38 >  
