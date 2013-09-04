@@ -1211,13 +1211,17 @@ sqltypeinit( sql_allocator *sa)
 	BTE = *t++ = sql_create_type(sa, "TINYINT",   8, SCALE_FIX, 2, EC_NUM, "bte");
 	SHT = *t++ = sql_create_type(sa, "SMALLINT", 16, SCALE_FIX, 2, EC_NUM, "sht");
 	INT = *t++ = sql_create_type(sa, "INT",      32, SCALE_FIX, 2, EC_NUM, "int");
-#if SIZEOF_WRD == SIZEOF_INT
+#if SIZEOF_OID == SIZEOF_INT
 	OID = *t++ = sql_create_type(sa, "OID", 31, 0, 2, EC_NUM, "oid");
+#endif
+#if SIZEOF_WRD == SIZEOF_INT
 	WRD = *t++ = sql_create_type(sa, "WRD", 32, SCALE_FIX, 2, EC_NUM, "wrd");
 #endif
 	LNG = *t++ = sql_create_type(sa, "BIGINT",   64, SCALE_FIX, 2, EC_NUM, "lng");
-#if SIZEOF_WRD == SIZEOF_LNG
+#if SIZEOF_OID == SIZEOF_LNG
 	OID = *t++ = sql_create_type(sa, "OID", 63, 0, 2, EC_NUM, "oid");
+#endif
+#if SIZEOF_WRD == SIZEOF_LNG
 	WRD = *t++ = sql_create_type(sa, "WRD", 64, SCALE_FIX, 2, EC_NUM, "wrd");
 #endif
 
