@@ -606,7 +606,7 @@ bodyRestart:
 		  read it*/
 
 		if ((n = mnstr_readline(receptor, buf, MYBUFSIZ)) > 0) {
-			buf[n + 1] = 0;
+			buf[n] = 0;
 #ifdef _DEBUG_RECEPTOR_
 			mnstr_printf(RCout, "#Receptor buf [" SSZFMT "]:%s \n", n, buf);
 			m = 0;
@@ -634,7 +634,7 @@ bodyRestart:
 			/* this code should be optimized for block-based reads */
 			while (cnt < counter) {
 				if ((n = mnstr_readline(receptor, buf, MYBUFSIZ)) > 0) {
-					buf[n + 1] = 0;
+					buf[n] = 0;
 #ifdef _DEBUG_RECEPTOR_
 					mnstr_printf(RCout, "#Receptor buf [" SSZFMT "]:%s \n", n, buf);
 #endif

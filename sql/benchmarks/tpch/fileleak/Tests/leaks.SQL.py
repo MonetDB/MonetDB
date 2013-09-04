@@ -15,5 +15,5 @@ res = (cursor.fetchall())
 for (dbpath, fn, count) in res:
     f = fn
     fn =  os.path.join(dbpath, 'bat', fn + '.tail');
-    print(f, os.path.getsize(fn) , count)
+    print(f, int(os.path.getsize(fn)), count)
 

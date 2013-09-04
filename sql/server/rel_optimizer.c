@@ -5280,11 +5280,8 @@ is_identity_of(sql_exp *e, sql_rel *l)
 	return 1;
 }
 
-/* rewrite {semi,anti}join (A, join(A,B)) into {semi,anti}join (A,B) */
-/* TODO: handle A, join(B,A) as well */
 
 /* More general case is (join reduction)
- *
    	{semi,anti}join (A, join(A,B) [A.c1 == B.c1]) [ A.c1 == B.c1 ]
 	into {semi,anti}join (A,B) [ A.c1 == B.c1 ] 
 */
@@ -5297,21 +5294,26 @@ rel_rewrite_semijoin(int *changes, mvc *sql, sql_rel *rel)
 		sql_rel *l = rel->l;
 		sql_rel *r = rel->r;
 		sql_rel *rl = (r->l)?r->l:NULL;
+		int on_identity = 1;
 
-		if (l->ref.refcnt == 2 && 
-		   ((is_join(r->op) && l == r->l) || 
-		    (is_project(r->op) && rl && is_join(rl->op) && l == rl->l))){
+		if (!rel->exps || list_length(rel->exps) != 1 || !is_identity_of(rel->exps->h->data, l))
+			on_identity = 0;
+			
+		/* rewrite {semi,anti}join (A, join(A,B)) into {semi,anti}join (A,B) 
+		 * and     {semi,anti}join (A, join(B,A)) into {semi,anti}join (A,B) 
+		 * Where the semi/anti join is done using the identity */
+		if (on_identity && l->ref.refcnt == 2 && ((is_join(r->op) && (l == r->l || l == r->r)) || 
+		   (is_project(r->op) && rl && is_join(rl->op) && (l == rl->l || l == rl->r)))){
 			sql_rel *or = r;
 
-			if (!rel->exps || list_length(rel->exps) != 1 ||
-			    !is_identity_of(rel->exps->h->data, l)) 
-				return rel;
-			
 			if (is_project(r->op)) 
 				r = rl;
 
-			rel->r = rel_dup(r->r);
-			/* maybe rename exps ? */
+			if (l == r->r)
+				rel->r = rel_dup(r->l);
+			else
+				rel->r = rel_dup(r->r);
+
 			rel->exps = r->exps;
 			r->exps = NULL;
 			rel_destroy(or);

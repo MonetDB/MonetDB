@@ -2965,6 +2965,8 @@ BBPquickdesc(bat bid, int delaccess)
 {
 	BAT *b = BBP_cache(bid);
 
+	if ( bid == 0)
+		return NULL;
 	if (bid < 0) {
 		GDKerror("BBPquickdesc: called with negative batid.\n");
 		assert(0);

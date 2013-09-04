@@ -28,7 +28,7 @@ Ready.
 % sys.c,	sys.c,	sys.c # table_name
 % unit_price,	price,	units # name
 % decimal,	decimal,	decimal # type
-% 21,	19,	21 # length
+% 20,	19,	20 # length
 [ 0.1603,	1411.5000,	8800.0000	]
 
 # 13:00:43 >  

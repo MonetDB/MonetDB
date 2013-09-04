@@ -1227,7 +1227,7 @@ sqltypeinit( sql_allocator *sa)
 	*t++ = sql_create_type(sa, "DECIMAL",  2, SCALE_FIX, 10, EC_DEC, "bte");
 	*t++ = sql_create_type(sa, "DECIMAL",  4, SCALE_FIX, 10, EC_DEC, "sht");
 	DEC = *t++ = sql_create_type(sa, "DECIMAL",  9, SCALE_FIX, 10, EC_DEC, "int");
-	*t++ = sql_create_type(sa, "DECIMAL", 19, SCALE_FIX, 10, EC_DEC, "lng");
+	*t++ = sql_create_type(sa, "DECIMAL", 18, SCALE_FIX, 10, EC_DEC, "lng");
 
 	/* float(n) (n indicates precision of atleast n digits) */
 	/* ie n <= 23 -> flt */

@@ -182,7 +182,7 @@ static struct types {
 	{
 		"bigint",	       /* type_name */
 		SQL_BIGINT,	       /* data_type */
-		19,		       /* column_size */
+		18,		       /* column_size */
 		NULL,		       /* literal_prefix */
 		NULL,		       /* literal_suffix */
 		"precision",	       /* create_params */
@@ -315,7 +315,7 @@ static struct types {
 	{
 		"numeric",	       /* type_name */
 		SQL_NUMERIC,	       /* data_type */
-		19,		       /* column_size */
+		18,		       /* column_size */
 		NULL,		       /* literal_prefix */
 		NULL,		       /* literal_suffix */
 		"precision,scale",     /* create_params */
@@ -327,7 +327,7 @@ static struct types {
 		SQL_FALSE,	       /* auto_unique_value */
 		NULL,		       /* local_type_name */
 		0,		       /* minimum_scale */
-		19,		       /* maximum_scale */
+		18,		       /* maximum_scale */
 		SQL_NUMERIC,	       /* sql_data_type */
 		-1,		       /* sql_datetime_sub */
 		10,		       /* num_prec_radix */
@@ -337,7 +337,7 @@ static struct types {
 	{
 		"decimal",	       /* type_name */
 		SQL_DECIMAL,	       /* data_type */
-		19,		       /* column_size */
+		18,		       /* column_size */
 		NULL,		       /* literal_prefix */
 		NULL,		       /* literal_suffix */
 		"precision,scale",     /* create_params */
@@ -349,7 +349,7 @@ static struct types {
 		SQL_FALSE,	       /* auto_unique_value */
 		NULL,		       /* local_type_name */
 		0,		       /* minimum_scale */
-		19,		       /* maximum_scale */
+		18,		       /* maximum_scale */
 		SQL_DECIMAL,	       /* sql_data_type */
 		-1,		       /* sql_datetime_sub */
 		10,		       /* num_prec_radix */
