@@ -97,7 +97,7 @@ ODBCExecDirect(ODBCStmt *stmt, SQLCHAR *StatementText, SQLINTEGER TextLength)
 	 * 'value'} or {ts 'value'} or {escape 'e-char'} or {oj
 	 * outer-join} or {fn scalar-function} etc. ) to MonetDB SQL
 	 * syntax */
-	query = ODBCTranslateSQL(StatementText, (size_t) TextLength,
+	query = ODBCTranslateSQL(stmt->Dbc, StatementText, (size_t) TextLength,
 				 stmt->noScan);
 
 	ODBCResetStmt(stmt);

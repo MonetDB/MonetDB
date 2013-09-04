@@ -78,13 +78,6 @@ extern char *dupODBCstring(const SQLCHAR *inStr, size_t length);
 	} while (0)
 
 
-/*
-  Function to translate an ODBC SQL query to native format.
-  The return value is a freshly allocated null-terminated string.
-  For now this function just calls dupODBCstring.
-*/
-extern char *ODBCTranslateSQL(const SQLCHAR *query, size_t length, SQLUINTEGER noscan);
-
 /* Utility macro to copy a string to an output argument.  In the ODBC
    API there are generally three arguments involved: the pointer to a
    buffer, the length of that buffer, and a pointer to where the

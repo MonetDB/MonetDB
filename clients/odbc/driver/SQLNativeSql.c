@@ -62,7 +62,7 @@ SQLNativeSql_(ODBCDbc *dbc,
 	ODBCLOG("\"%.*s\"\n", (int) TextLength1, (char *) InStatementText);
 #endif
 
-	query = ODBCTranslateSQL(InStatementText, (size_t) TextLength1,
+	query = ODBCTranslateSQL(dbc, InStatementText, (size_t) TextLength1,
 				 SQL_NOSCAN_OFF);
 	copyString(query, strlen(query), OutStatementText, BufferLength,
 		   TextLength2Ptr, SQLINTEGER, addDbcError, dbc,

@@ -40,6 +40,7 @@
  **********************************************/
 
 #include "ODBCUtil.h"
+#include "ODBCDbc.h"
 #include <float.h>
 
 
@@ -281,11 +282,138 @@ ODBCutf82wchar(const SQLCHAR *s,
   {[?=]call procedure-name[([parameter][,[parameter]]...)]}
  */
 
+static struct scalars {
+	const char *name;
+	int nargs;
+	const char *repl;
+} scalars[] = {
+	{"ascii", 1, "\"ascii\"(\1)", },
+	{"bit_length", 1, NULL, },
+	{"char", 1, NULL, },
+	{"char_length", 1, "\"char_length\"(\1)", },
+	{"character_length", 1, "\"character_length\"(\1)", },
+	{"concat", 2, "(\1 || \2)", },
+	{"difference", 2, "\"difference\"(\1,\2)", },
+	{"insert", 4, "\"insert\"(\1,\2,\3,\4)", },
+	{"lcase", 1, "\"lcase\"(\1)", },
+	{"left", 2, "\"left\"(\1,\2)", },
+	{"length", 1, "\"length\"(\1)", },
+	{"locate", 2, "\"locate\"(\1,\2)", },
+	{"locate", 3, "\"locate\"(\1,\2,\3)", },
+	{"ltrim", 1, "\"ltrim\"(\1)", },
+	{"octet_length", 1, "\"octet_length\"(\1)", },
+	{"position", 1, "\"position\"(\1)", }, /* includes "IN" in argument */
+	{"repeat", 2, "\"repeat\"(\1,\2)", },
+	{"replace", 3, "\"replace\"(\1,\2,\3)", },
+	{"right", 2, "\"right\"(\1,\2)", },
+	{"rtrim", 1, "\"rtrim\"(\1)", },
+	{"soundex", 1, "\"soundex\"(\1)", },
+	{"space", 1, "\"space\"(\1)", },
+	{"substring", 3, "\"substring\"(\1,\2,\3)", },
+	{"ucase", 1, "\"ucase\"(\1)", },
+	{"abs", 1, "\"abs\"(\1)", },
+	{"acos", 1, "\"acos\"(\1)", },
+	{"asin", 1, "\"asin\"(\1)", },
+	{"atan", 1, "\"atan\"(\1)", },
+	{"atan2", 2, "\"atan\"(\1,\2)", }, /* note: not atan2 */
+	{"ceiling", 1, "\"ceiling\"(\1)", },
+	{"cos", 1, "\"cos\"(\1)", },
+	{"cot", 1, "\"cot\"(\1)", },
+	{"degrees", 1, "\"sys\".\"degrees\"(\1)", },
+	{"exp", 1, "\"exp\"(\1)", },
+	{"floor", 1, "\"floor\"(\1)", },
+	{"log", 1, "\"log\"(\1)", },
+	{"log10", 1, "\"log10\"(\1)", },
+	{"mod", 2, "\"mod\"(\1,\2)", },
+	{"pi", 0, "\"pi\"()", },
+	{"power", 2, "\"power\"(\1,\2)", },
+	{"radians", 1, "\"sys\".\"radians\"(\1)", },
+	{"rand", 0, "\"rand\"()", },
+	{"rand", 1, "\"rand\"(\1)", },
+	{"round", 2, "\"round\"(\1,\2)", },
+	{"sign", 1, "\"sign\"(\1)", },
+	{"sin", 1, "\"sin\"(\1)", },
+	{"sqrt", 1, "\"sqrt\"(\1)", },
+	{"tan", 1, "\"tan\"(\1)", },
+	{"truncate", 2, "\"truncate\"(\1,\2)", },
+	{"current_date", 0, "\"current_date\"()", },
+	{"current_time", 0, "\"current_time\"()", },
+	{"current_time", 1, NULL, },
+	{"current_timestamp", 0, "\"current_timestamp\"()", },
+	{"current_timestamp", 1, NULL, },
+	{"curdate", 0, "\"curdate\"()", },
+	{"curtime", 0, "\"curtime\"()", },
+	{"dayname", 1, NULL, },
+	{"dayofmonth", 1, "\"dayofmonth\"(\1)", },
+	{"dayofweek", 1, "\"dayofweek\"(\1)", },
+	{"dayofyear", 1, "\"dayofyear\"(\1)", },
+	{"extract", 1, "\"extract\"(\1)", }, /* include "FROM" in argument */
+	{"hour", 1, "\"hour\"(\1)", },
+	{"minute", 1, "\"minute\"(\1)", },
+	{"month", 1, "\"month\"(\1)", },
+	{"monthname", 1, NULL, },
+	{"now", 0, "\"now\"()", },
+	{"quarter", 1, "((\"month\"(\1) - 1) / 3 + 1)", },
+	{"second", 1, "\"second\"(\1)", },
+	{"timestampdiff", 3, NULL, },
+	{"week", 1, "\"week\"(\1)", },
+	{"year", 1, "\"year\"(\1)", },
+	{"database", 0, NULL, },
+	{"ifnull", 2, "\"coalesce\"(\1,\2)", },
+	{"user", 0, NULL, },
+	{"convert", 2, NULL, },
+	{NULL, 0, NULL, },	/* sentinel */
+};
+
+static struct convert {
+	const char *odbc;
+	const char *server;
+} convert[] = {
+	{ "SQL_BIGINT", "bigint", },
+	{ "SQL_BINARY", "binary large object", },
+	{ "SQL_BIT", "boolean", },
+	{ "SQL_CHAR", "character large object", },
+	{ "SQL_DATE", "date", },
+	{ "SQL_DECIMAL", "decimal(18,7)", },
+	{ "SQL_DOUBLE", "double", },
+	{ "SQL_FLOAT", "float", },
+	/* { "SQL_GUID", "SQL_GUID", }, */
+	{ "SQL_INTEGER", "integer", },
+	{ "SQL_INTERVAL_DAY", "interval day", },
+	{ "SQL_INTERVAL_DAY_TO_HOUR", "interval day to hour", },
+	{ "SQL_INTERVAL_DAY_TO_MINUTE", "interval day to minute", },
+	{ "SQL_INTERVAL_DAY_TO_SECOND", "interval day to second", },
+	{ "SQL_INTERVAL_HOUR", "interval hour", },
+	{ "SQL_INTERVAL_HOUR_TO_MINUTE", "interval hour to minute", },
+	{ "SQL_INTERVAL_HOUR_TO_SECOND", "interval hour to second", },
+	{ "SQL_INTERVAL_MINUTE", "interval minute", },
+	{ "SQL_INTERVAL_MINUTE_TO_SECOND", "interval minute to second", },
+	{ "SQL_INTERVAL_MONTH", "interval month", },
+	{ "SQL_INTERVAL_SECOND", "interval second", },
+	{ "SQL_INTERVAL_YEAR", "interval year", },
+	{ "SQL_INTERVAL_YEAR_TO_MONTH", "interval year to month", },
+	{ "SQL_LONGVARBINARY", "binary large object", },
+	{ "SQL_LONGVARCHAR", "character large object", },
+	{ "SQL_NUMERIC", "numeric(18,7)", },
+	{ "SQL_REAL", "real", },
+	{ "SQL_SMALLINT", "smallint", },
+	{ "SQL_TIME", "time", },
+	{ "SQL_TIMESTAMP", "timestamp", },
+	{ "SQL_TINYINT", "tinyint", },
+	{ "SQL_VARBINARY", "binary large object", },
+	{ "SQL_VARCHAR", "character large object", },
+	{ "SQL_WCHAR", "character", },
+	{ "SQL_WLONGVARCHAR", "character large object", },
+	{ "SQL_WVARCHAR", "character large object", },
+	{ NULL, NULL, },	/* sentinel */
+};
+
 char *
-ODBCTranslateSQL(const SQLCHAR *query, size_t length, SQLUINTEGER noscan)
+ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLUINTEGER noscan)
 {
 	char *nquery;
-	char *p, *q;
+	const char *p;
+	char *q;
 	char buf[512];
 	unsigned yr, mt, dy, hr, mn, sc;
 	unsigned long fr = 0;
@@ -394,6 +522,138 @@ ODBCTranslateSQL(const SQLCHAR *query, size_t length, SQLUINTEGER noscan)
 			free(nquery);
 			nquery = q;
 			q += n;
+		} else if (p[0] == 'f' && p[1] == 'n' && p[2] == ' ') {
+			const char *scalarfunc;
+			size_t scalarfunclen;
+			struct arg {
+				const char *argstart;
+				size_t arglen;
+			} args[4];
+			int nargs;
+			struct scalars *func;
+
+			p += 3;
+			while (*p == ' ')
+				p++;
+			scalarfunc = p;
+			while (*p && isascii(*p) && isalnum(*p))
+				p++;
+			if (p == scalarfunc ||
+			    (isascii(*scalarfunc) && !isalpha(*scalarfunc)))
+				continue;
+			scalarfunclen = p - scalarfunc;
+			while (*p == ' ')
+				p++;
+			if (*p++ != '(')
+				continue;
+			while (*p == ' ')
+				p++;
+			nargs = 0;
+			while (*p && *p != ')') {
+				int nparen = 0;
+
+				if (nargs == 4) {
+					/* too many args to be matched */
+					break;
+				}
+				args[nargs].argstart = p;
+				while (*p &&
+				       (nparen != 0 ||
+					(*p != ')' && *p != ','))) {
+					if (*p == '"') {
+						while (*++p && *p != '"')
+							;
+						if (*p)
+							p++;
+					} else if (*p == '\'') {
+						while (*++p && *p != '\'')
+							if (*p == '\\' &&
+							    *++p == 0)
+								break;
+						if (*p)
+							p++;
+					} else {
+						if (*p == '(')
+							nparen++;
+						else if (*p == ')')
+							nparen--;
+						p++;
+					}
+				}
+				args[nargs].arglen = p - args[nargs].argstart;
+				while (args[nargs].argstart[args[nargs].arglen - 1] == ' ')
+					args[nargs].arglen--;
+				if (*p == ',') {
+					p++;
+					while (*p == ' ')
+						p++;
+				}
+				nargs++;
+			}
+			if (*p != ')')
+				continue;
+			while (*++p && *p == ' ')
+				;
+			if (*p != '}')
+				continue;
+			p++;
+			n = (int) (q - nquery);
+			pr = (int) (p - q);
+			for (func = scalars; func->name; func++) {
+				if (strncasecmp(func->name, scalarfunc, scalarfunclen) == 0 && func->name[scalarfunclen] == 0 && func->nargs == nargs) {
+					if (func->repl) {
+						const char *r;
+						q = malloc(length - pr + strlen(func->repl) - nargs + (nargs > 0 ? args[0].arglen : 0) + (nargs > 1 ? args[1].arglen : 0) + (nargs > 2 ? args[2].arglen : 0) + 1);
+						if (q == NULL)
+							break;
+						pr = n;
+						strncpy(q, nquery, pr);
+						for (r = func->repl; *r; r++) {
+							if (*r == '\1' || *r == '\2' || *r == '\3' || *r == '\4') {
+								strncpy(q + pr, args[*r - 1].argstart, args[*r - 1].arglen);
+								pr += args[*r - 1].arglen;
+							} else {
+								q[pr++] = *r;
+							}
+						}
+						strcpy(q + pr, p);
+						free(nquery);
+						nquery = q;
+						q += n;
+					} else if (strcmp(func->name, "user") == 0) {
+						q = malloc(length - pr + (dbc->Connected && dbc->uid ? strlen(dbc->uid) : 0) + 3);
+						if (q == NULL)
+							break;
+						sprintf(q, "%.*s'%s'%s", n, nquery, dbc->Connected && dbc->uid ? dbc->uid : "", p);
+						free(nquery);
+						nquery = q;
+						q += n;
+					} else if (strcmp(func->name, "database") == 0) {
+						q = malloc(length - pr + (dbc->Connected && dbc->dbname ? strlen(dbc->dbname) : 0) + 3);
+						if (q == NULL)
+							break;
+						sprintf(q, "%.*s'%s'%s", n, nquery, dbc->Connected && dbc->dbname ? dbc->dbname : "", p);
+						free(nquery);
+						nquery = q;
+						q += n;
+					} else if (strcmp(func->name, "convert") == 0) {
+						struct convert *c;
+						for (c = convert; c->odbc; c++) {
+							if (strncasecmp(c->odbc, args[1].argstart, args[1].arglen) == 0 &&
+							    c->odbc[args[1].arglen] == 0) {
+								q = malloc(length - pr + 11 + args[0].arglen + strlen(c->server));
+								if (q == NULL)
+									break;
+								sprintf(q, "%.*scast(%.*s as %s)%s", n, nquery, (int) args[0].arglen, args[0].argstart, c->server, p);
+								free(nquery);
+								nquery = q;
+								break;
+							}
+						}
+					}
+					break;
+				}
+			}
 		}
 	}
 	return nquery;
