@@ -70,8 +70,12 @@ class Connection(object):
         self.database = ""
         self.language = ""
 
-    def connect(self, hostname, port, username, password, database, language):
-        """ setup connection to MAPI server"""
+    def connect(self, database, username, password, language, hostname=None,
+                port=None, unix_socket=None):
+        """ setup connection to MAPI server
+
+        unix_socket is used if hostname is not defined.
+        """
 
         self.hostname = hostname
         self.port = port
@@ -79,24 +83,34 @@ class Connection(object):
         self.password = password
         self.database = database
         self.language = language
+        self.unix_socket = unix_socket
 
-        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        if hostname:
+            self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            # For performance, mirror MonetDB/src/common/stream.c socket settings.
+            self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 0)
+            self.socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+            self.socket.connect((hostname, port))
+        else:
+            self.socket = socket.socket(socket.AF_UNIX)
+            self.socket.connect(unix_socket)
+            if self.language != 'control':
+                self.socket.send('0')  # don't know why, but we need to do this
 
-        # For performance, mirror MonetDB/src/common/stream.c socket settings.
-        self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 0)
-        self.socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+        if not (self.language == 'control' and not self.hostname):
+            # control doesn't require authentication over socket
+            self._login()
 
-        self.socket.connect((hostname, port))
-        self.__login()
+        self.state = STATE_READY
 
-    def __login(self, iteration=0):
+    def _login(self, iteration=0):
         """ Reads challenge from line, generate response and check if
         everything is okay """
 
-        challenge = self.__getblock()
-        response = self.__challenge_response(challenge)
-        self.__putblock(response)
-        prompt = self.__getblock().strip()
+        challenge = self._getblock()
+        response = self._challenge_response(challenge)
+        self._putblock(response)
+        prompt = self._getblock().strip()
 
         if len(prompt) == 0:
             # Empty response, server is happy
@@ -117,7 +131,7 @@ class Connection(object):
             if redirect[1] == "merovingian":
                 logger.debug("restarting authentication")
                 if iteration <= 10:
-                    self.__login(iteration=iteration + 1)
+                    self._login(iteration=iteration + 1)
                 else:
                     raise OperationalError("maximal number of redirects "
                                            "reached (10)")
@@ -138,9 +152,6 @@ class Connection(object):
         else:
             raise ProgrammingError("unknown state: %s" % prompt)
 
-        self.state = STATE_READY
-        return True
-
     def disconnect(self):
         """ disconnect from the monetdb server """
         self.state = STATE_INIT
@@ -153,8 +164,8 @@ class Connection(object):
         if self.state != STATE_READY:
             raise(ProgrammingError, "Not connected")
 
-        self.__putblock(operation)
-        response = self.__getblock()
+        self._putblock(operation)
+        response = self._getblock()
         if not len(response):
             return ""
         elif response.startswith(MSG_OK):
@@ -166,10 +177,16 @@ class Connection(object):
             return response
         elif response[0] == MSG_ERROR:
             raise OperationalError(response[1:])
+        elif (self.language == 'control' and not self.hostname):
+            if response.startswith("OK"):
+                return response[2:].strip() or ""
+            else:
+                return response
         else:
             raise ProgrammingError("unknown state: %s" % response)
 
-    def __challenge_response(self, challenge):
+
+    def _challenge_response(self, challenge):
         """ generate a response to a mapi login challenge """
         challenges = challenge.split(':')
         salt, identity, protocol, hashes, endian = challenges[:5]
@@ -204,19 +221,36 @@ class Connection(object):
         return ":".join(["BIG", self.username, pwhash, self.language,
                          self.database]) + ":"
 
-    def __getblock(self):
+    def _getblock(self):
         """ read one mapi encoded block """
+        if (self.language == 'control' and not self.hostname):
+            return self._getblock_socket()  # control doesn't do block
+                                            # splitting when using a socket
+        else:
+            return self._getblock_inet()
+
+    def _getblock_inet(self):
         result = StringIO()
         last = 0
         while not last:
-            flag = self.__getbytes(2)
+            flag = self._getbytes(2)
             unpacked = struct.unpack('<H', flag)[0]  # little endian short
             length = unpacked >> 1
             last = unpacked & 1
-            result.write(self.__getbytes(length))
+            result.write(self._getbytes(length))
         return result.getvalue()
 
-    def __getbytes(self, bytes_):
+    def _getblock_socket(self):
+        buffer = StringIO()
+        while True:
+            x = self.socket.recv(1)
+            if len(x):
+                buffer.write(x)
+            else:
+                break
+        return buffer.getvalue().strip()
+
+    def _getbytes(self, bytes_):
         """Read an amount of bytes from the socket"""
         result = StringIO()
         count = bytes_
@@ -228,8 +262,15 @@ class Connection(object):
             result.write(recv)
         return result.getvalue()
 
-    def __putblock(self, block):
+    def _putblock(self, block):
         """ wrap the line in mapi format and put it into the socket """
+        if (self.language == 'control' and not self.hostname):
+            return self.socket.send(block)  # control doesn't do block
+                                            # splitting when using a socket
+        else:
+            self._putblock_inet(block)
+
+    def _putblock_inet(self, block):
         pos = 0
         last = 0
         while not last:
