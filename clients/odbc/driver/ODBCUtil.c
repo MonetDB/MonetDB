@@ -292,7 +292,7 @@ static struct scalars {
 	{"char", 1, NULL, },
 	{"char_length", 1, "\"char_length\"(\1)", },
 	{"character_length", 1, "\"character_length\"(\1)", },
-	{"concat", 2, "(\1 || \2)", },
+	{"concat", 2, "\"concat\"(\1,\2)", },
 	{"difference", 2, "\"difference\"(\1,\2)", },
 	{"insert", 4, "\"insert\"(\1,\2,\3,\4)", },
 	{"lcase", 1, "\"lcase\"(\1)", },
@@ -512,13 +512,30 @@ ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLUINTEGER 
 			if (*p != '}')
 				continue;
 			p++;
-			pr = 0;
 			snprintf(buf, sizeof(buf),
 				 "DATE '%04u-%02u-%02u'", yr, mt, dy);
 			n = (int) (q - nquery);
 			pr = (int) (p - q);
 			q = malloc(length - pr + strlen(buf) + 1);
 			sprintf(q, "%.*s%s%s", n, nquery, buf, p);
+			free(nquery);
+			nquery = q;
+			q += n;
+		} else if (strncasecmp(p, "interval", 8) == 0 && p[8] == ' ') {
+			const char *intv = p;
+			size_t intvl;
+
+			p = strchr(p, '}');
+			if (p == NULL)
+				continue;
+			intvl = p - intv;
+			while (intv[intvl - 1] == ' ')
+				intvl--;
+			p++;
+			n = (int) (q - nquery);
+			pr = (int) (p - q);
+			q = malloc(length - pr + intvl + 1);
+			sprintf(q, "%.*s%.*s%s", n, nquery, (int) intvl, intv, p);
 			free(nquery);
 			nquery = q;
 			q += n;
