@@ -1,0 +1,10 @@
+MonetDB Python API changelog
+============================
+
+2013-09-05
+----------
+
+* Add support for unix socket
+* Unix sockets partially working for control protocol
+* Changed defaults for connecting (defaults to unix socket now)
+
