@@ -3206,6 +3206,8 @@ int mnstr_printf(stream *s, _In_z_ _Printf_format_string_ const char *format, ..
 ssize_t mnstr_read(stream *s, void *buf, size_t elmsize, size_t cnt);
 int mnstr_readBte(stream *s, signed char *val);
 int mnstr_readBteArray(stream *s, signed char *val, size_t cnt);
+int mnstr_readHge(stream *s, hge *val);
+int mnstr_readHgeArray(stream *s, hge *val, size_t cnt);
 int mnstr_readInt(stream *s, int *val);
 int mnstr_readIntArray(stream *s, int *val, size_t cnt);
 int mnstr_readLng(stream *s, lng *val);
@@ -3221,6 +3223,8 @@ int mnstr_type(stream *s);
 ssize_t mnstr_write(stream *s, const void *buf, size_t elmsize, size_t cnt);
 int mnstr_writeBte(stream *s, signed char val);
 int mnstr_writeBteArray(stream *s, const signed char *val, size_t cnt);
+int mnstr_writeHge(stream *s, hge val);
+int mnstr_writeHgeArray(stream *s, const hge *val, size_t cnt);
 int mnstr_writeInt(stream *s, int val);
 int mnstr_writeIntArray(stream *s, const int *val, size_t cnt);
 int mnstr_writeLng(stream *s, lng val);

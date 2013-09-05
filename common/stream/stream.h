@@ -57,6 +57,18 @@ typedef __int64 lng;
 typedef long long lng;
 # endif
 #endif
+#ifndef HAVE_HGE
+# ifdef HAVE___INT128
+#  define HAVE_HGE 1
+typedef __int128 hge;
+# else
+#  ifdef HAVE___INT128_T
+#   define HAVE_HGE 1
+typedef __int128_t hge;
+#  endif
+# endif
+#endif
+
 
 /* Defines to help the compiler check printf-style format arguments.
  * These defines are also in our config.h, but we repeat them here so
@@ -104,6 +116,10 @@ stream_export int mnstr_readInt(stream *s, int *val);
 stream_export int mnstr_writeInt(stream *s, int val);
 stream_export int mnstr_readLng(stream *s, lng *val);
 stream_export int mnstr_writeLng(stream *s, lng val);
+#ifdef HAVE_HGE
+stream_export int mnstr_readHge(stream *s, hge *val);
+stream_export int mnstr_writeHge(stream *s, hge val);
+#endif
 
 stream_export int mnstr_readBteArray(stream *s, signed char *val, size_t cnt);
 stream_export int mnstr_writeBteArray(stream *s, const signed char *val, size_t cnt);
@@ -113,6 +129,10 @@ stream_export int mnstr_readIntArray(stream *s, int *val, size_t cnt);
 stream_export int mnstr_writeIntArray(stream *s, const int *val, size_t cnt);
 stream_export int mnstr_readLngArray(stream *s, lng *val, size_t cnt);
 stream_export int mnstr_writeLngArray(stream *s, const lng *val, size_t cnt);
+#ifdef HAVE_HGE
+stream_export int mnstr_readHgeArray(stream *s, hge *val, size_t cnt);
+stream_export int mnstr_writeHgeArray(stream *s, const hge *val, size_t cnt);
+#endif
 stream_export int mnstr_printf(stream *s, _In_z_ _Printf_format_string_ const char *format, ...)
 	__attribute__((__format__(__printf__, 2, 3)));
 stream_export ssize_t mnstr_read(stream *s, void *buf, size_t elmsize, size_t cnt);

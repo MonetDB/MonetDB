@@ -124,6 +124,12 @@
 		((((lng)normal_int_SWAP(l))<<32) |\
 		 (0xffffffff&normal_int_SWAP(l>>32)))
 
+#ifdef HAVE_HGE
+#define huge_int_SWAP(h) \
+		((((hge)long_long_SWAP(h))<<64) |\
+		 (0xffffffffffffffff&long_long_SWAP(h>>64)))
+#endif
+
 
 struct stream {
 	short byteorder;
@@ -2843,6 +2849,33 @@ mnstr_writeLng(stream *s, lng val)
 	return s->write(s, (void *) &val, sizeof(val), (size_t) 1) == 1;
 }
 
+#ifdef HAVE_HGE
+int
+mnstr_readHge(stream *s, hge *val)
+{
+	switch (s->read(s, (void *) val, sizeof(*val), 1)) {
+	case 1:
+		if (s->byteorder != 1234)
+			*val = huge_int_SWAP(*val);
+		return 1;
+	case 0:
+		/* consider EOF an error */
+		s->errnr = MNSTR_READ_ERROR;
+		/* fall through */
+	default:
+		/* read failed */
+		return 0;
+	}
+}
+
+int
+mnstr_writeHge(stream *s, hge val)
+{
+	if (!s || s->errnr)
+		return 0;
+	return s->write(s, (void *) &val, sizeof(val), (size_t) 1) == 1;
+}
+#endif
 
 int
 mnstr_readBteArray(stream *s, signed char *val, size_t cnt)
@@ -2934,6 +2967,32 @@ mnstr_writeLngArray(stream *s, const lng *val, size_t cnt)
 		return 0;
 	return s->write(s, val, sizeof(*val), cnt) == (ssize_t) cnt;
 }
+
+#ifdef HAVE_HGE
+int
+mnstr_readHgeArray(stream *s, hge *val, size_t cnt)
+{
+	if (s->read(s, (void *) val, sizeof(*val), cnt) < (ssize_t) cnt) {
+		s->errnr = MNSTR_READ_ERROR;
+		return 0;
+	}
+
+	if (s->byteorder != 1234) {
+		size_t i;
+		for (i = 0; i < cnt; i++, val++)
+			*val = huge_int_SWAP(*val);
+	}
+	return 1;
+}
+
+int
+mnstr_writeHgeArray(stream *s, const hge *val, size_t cnt)
+{
+	if (!s || s->errnr)
+		return 0;
+	return s->write(s, val, sizeof(*val), cnt) == (ssize_t) cnt;
+}
+#endif
 
 int
 mnstr_printf(stream *s, const char *format, ...)
