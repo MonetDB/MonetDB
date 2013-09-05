@@ -6445,8 +6445,8 @@ sql5_export str second_interval_daytime( lng *res, daytime *s, int *ek, int *sk 
 sql5_export str second_interval_2_daytime( daytime *res, lng *s, int *d);
 sql5_export str timestamp_2_daytime( daytime *res, timestamp *v, int *d);
 sql5_export str date_2_timestamp( timestamp *res, date *v, int *d);
-str SQLcurrent_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-str SQLcurrent_timestamp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str SQLcurrent_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str SQLcurrent_timestamp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 @c
 str
 second_interval_daytime( lng *res, daytime *s, int *d, int *sk )
