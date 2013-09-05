@@ -1180,32 +1180,13 @@ SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output)
 #endif
 
 		if ( execute) {
-			bstream *tmp=NULL;
-			buffer *b= (buffer*) GDKmalloc(sizeof(buffer));
 			MalBlkPtr mb = c->curprg->def;
 
 			if (!output)
 				sql->out = NULL; /* no output */
-
-			/* if the MAL program has been turned into a string returing function
-			 * then pick the result set from a scratch file (as is) */
-			if ( mb->var[0]->type == TYPE_str){
-				tmp = bstream_create(buffer_rastream(b, "SQLoutput"), 0);
-				if ( tmp == NULL){
-					msg = createException(SQL,"sql.eval","Can not create tmp file");
-					GDKfree(b);
-					goto noexecution;
-				}
-				//sql->out = tmp;
-			}
-			msg = (str) runMAL(c, mb, 0, 0);
-noexecution:
+			msg = runMAL(c, mb, 0, 0);
 			MSresetInstructions(mb, oldstop);
 			freeVariables(c, mb, c->glb, oldvtop);
-			if (msg == MAL_SUCCEED && tmp){
-				msg = GDKstrdup(b->buf);
-				(void) bstream_destroy(tmp);
-			}
 		}
 		sqlcleanup(m, 0);
 		if (!execute) {
