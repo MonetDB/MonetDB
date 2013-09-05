@@ -75,6 +75,11 @@ VALset(ValPtr v, int t, ptr p)
 	case TYPE_lng:
 		v->val.lval = *(lng *) p;
 		break;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		v->val.hval = *(hge *) p;
+		break;
+#endif
 	case TYPE_str:
 		v->val.sval = (str) p;
 		v->len = ATOMlen(t, p);
@@ -103,6 +108,9 @@ VALget(ValPtr v)
 	case TYPE_flt: return (void *) &v->val.fval;
 	case TYPE_dbl: return (void *) &v->val.dval;
 	case TYPE_lng: return (void *) &v->val.lval;
+#ifdef HAVE_HGE
+	case TYPE_hge: return (void *) &v->val.hval;
+#endif
 	case TYPE_str: return (void *) v->val.sval;
 	default:       return (void *) v->val.pval;
 	}
@@ -265,6 +273,10 @@ VALisnil(const ValRecord *v)
 		return v->val.ival == int_nil;
 	case TYPE_lng:
 		return v->val.lval == lng_nil;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		return v->val.hval == hge_nil;
+#endif
 	case TYPE_flt:
 		return v->val.fval == flt_nil;
 	case TYPE_dbl:
