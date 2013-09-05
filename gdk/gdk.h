@@ -479,7 +479,12 @@
 #define TYPE_flt	9
 #define TYPE_dbl	10
 #define TYPE_lng	11
+#ifdef HAVE_HGE
+#define TYPE_hge	12
+#define TYPE_str	13
+#else
 #define TYPE_str	12
+#endif
 #define TYPE_any	255	/* limit types to <255! */
 
 typedef signed char bit;
@@ -740,6 +745,9 @@ typedef struct {
 		str sval;
 		dbl dval;
 		lng lval;
+#ifdef HAVE_HGE
+		hge hval;
+#endif
 	} val;
 	int len, vtype;
 } *ValPtr, ValRecord;
@@ -2324,6 +2332,9 @@ VALptr(const ValRecord *v)
 	case TYPE_flt: return (const void *) &v->val.fval;
 	case TYPE_dbl: return (const void *) &v->val.dval;
 	case TYPE_lng: return (const void *) &v->val.lval;
+#ifdef HAVE_HGE
+	case TYPE_hge: return (const void *) &v->val.hval;
+#endif
 	case TYPE_str: return (const void *) v->val.sval;
 	default:       return (const void *) v->val.pval;
 	}
@@ -2415,6 +2426,12 @@ VALptr(const ValRecord *v)
 #define long_long_SWAP(l) \
 		((((lng)normal_int_SWAP(l))<<32) |\
 		 (0xffffffff&normal_int_SWAP(l>>32)))
+
+#ifdef HAVE_HGE
+#define huge_int_SWAP(h) \
+		((((hge)long_long_SWAP(h))<<64) |\
+		 (0xffffffffffffffff&long_long_SWAP(h>>64)))
+#endif
 
 /*
  * The kernel maintains a central table of all active threads.  They
@@ -2970,6 +2987,9 @@ gdk_export int ALIGNsetH(BAT *b1, BAT *b2);
 #define HASHloop_int(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, int)
 #define HASHloop_wrd(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, wrd)
 #define HASHloop_lng(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, lng)
+#ifdef HAVE_HGE
+#define HASHloop_hge(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, hge)
+#endif
 #define HASHloop_oid(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, oid)
 #define HASHloop_bat(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, bat)
 #define HASHloop_flt(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, flt)
