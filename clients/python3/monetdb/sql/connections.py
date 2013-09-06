@@ -16,6 +16,7 @@
 # All Rights Reserved.
 
 import logging
+import platform
 
 from monetdb.sql import cursors
 from monetdb import exceptions
@@ -51,6 +52,9 @@ class Connection(object):
             hostname = host
         if user:
             username = user
+
+        if platform.system() == "Windows" and not hostname:
+            hostname = "localhost"
 
         self.mapi = mapi.Connection()
         self.mapi.connect(hostname=hostname, port=int(port), username=username,

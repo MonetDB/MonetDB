@@ -1,4 +1,4 @@
-
+import platform
 from monetdb import mapi
 from monetdb.exceptions import OperationalError, InterfaceError
 
@@ -68,11 +68,14 @@ class Control:
         if not unix_socket:
             unix_socket = "/tmp/.s.merovingian.%i" % port
 
+        if platform.system() == "Windows" and not hostname:
+            hostname = "localhost"
+
         self.server = mapi.Connection()
         self.hostname = hostname
         self.port = port
         self.passphrase = passphrase
-        self.unix_socket= unix_socket
+        self.unix_socket = unix_socket
 
         # check connection
         self.server.connect(hostname=hostname, port=port, username='monetdb',
