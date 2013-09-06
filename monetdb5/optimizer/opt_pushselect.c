@@ -114,7 +114,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		mnstr_printf(cntxt->fdout,"#Push select optimizer started\n");
 	(void) stk;
 	(void) pci;
-        vars= (int*) GDKmalloc(sizeof(int)* mb->vtop);
+	vars= (int*) GDKmalloc(sizeof(int)* mb->vtop);
 	limit = mb->stop;
 	slimit= mb->ssize;
 	old = mb->stmt;
@@ -130,8 +130,10 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 
 		if (getModuleId(p) == algebraRef && 
 			(getFunctionId(p) == tintersectRef || getFunctionId(p) == tinterRef || 
-			 getFunctionId(p) == tdifferenceRef || getFunctionId(p) == tdiffRef)) 
+			 getFunctionId(p) == tdifferenceRef || getFunctionId(p) == tdiffRef)) {
+			GDKfree(vars);
 			return 0;
+		}
 
 		if (getModuleId(p) == algebraRef && getFunctionId(p) == sliceRef)
 			nr_topn++;

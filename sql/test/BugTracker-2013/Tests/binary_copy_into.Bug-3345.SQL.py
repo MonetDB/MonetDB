@@ -22,5 +22,5 @@ clt.stdin.write('create table bug (n_nationkey INTEGER,n_regionkey INTEGER);\n')
 clt.stdin.write('copy binary into bug from \'%s/n_nationkey.sorted\', \'%s/n_regionkey.sorted\';\n'% (dst,dst))
 
 out, err = clt.communicate()
-sys.stdout.write(out)
-sys.stderr.write(err)
+sys.stdout.write(out.replace(os.environ['TSTTRGBASE'],'${TSTTRGBASE}').replace('\\','/'))
+sys.stderr.write(err.replace(os.environ['TSTTRGBASE'],'${TSTTRGBASE}').replace('\\','/'))
