@@ -1223,7 +1223,7 @@ SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output)
 		c->glb = oldglb;
 	}
 /*
- * We are done; a MAL procedure recides in the cache.
+ * We are done; a MAL procedure resides in the cache.
  */
 endofcompile:
 	if (execute)
