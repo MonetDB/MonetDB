@@ -119,6 +119,8 @@
  *  The IEEE @strong{double} type.
  * @item lng:
  *  Longs: the C @strong{long long} type (64-bit integers).
+ * @item hge:
+ *  "huge" integers: the GCC @strong{__int128} type (128-bit integers).
  * @item str:
  *  UTF-8 strings (Unicode). A zero-terminated byte sequence.
  * @item bat:
@@ -2839,6 +2841,9 @@ gdk_export int ALIGNsetH(BAT *b1, BAT *b2);
  * @item HASHloop_lng
  * @tab
  *  (BAT *b; Hash *h, size_t idx; lng *value, BUN w)
+ * @item HASHloop_hge
+ * @tab
+ *  (BAT *b; Hash *h, size_t idx; hge *value, BUN w)
  * @item HASHloop_dbl
  * @tab
  *  (BAT *b; Hash *h, size_t idx; dbl *value, BUN w)

@@ -1507,7 +1507,7 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, int 
 		TYPE x, a;						\
 									\
 		/* first try to calculate the sum of all values into a */ \
-		/* lng_hge */						\
+		/* lng/hge */						\
 		for (;;) {						\
 			if (cand) {					\
 				if (cand == candend)			\
@@ -1535,7 +1535,7 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, int 
 		if (0) {						\
 		  overflow##TYPE:					\
 			/* we get here if sum(x[0],...,x[i]) doesn't */	\
-			/* fit in a lng_hge but sum(x[0],...,x[i-1]) did */ \
+			/* fit in a lng/hge but sum(x[0],...,x[i-1]) did */ \
 			/* the variable sum contains that sum */	\
 			/* the rest of the calculation is done */	\
 			/* according to the loop invariant described */	\

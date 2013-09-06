@@ -178,7 +178,7 @@ gdk_export const ptr ptr_nil;
 /*
  * @- Derived types
  * In all algorithms across GDK, you will find switches on the types (
- * bte, sht, int, wrd, flt, dbl, lng, str). They respectively
+ * bte, sht, int, wrd, flt, dbl, lng, hge, str). They respectively
  * represent an octet, a 16-bit int, a 32-bit int, a 32-bit float, a
  * 64-bit double, a 64-bit int, and a pointer-sized location of a
  * char-buffer (ended by a zero char).
