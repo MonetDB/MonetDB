@@ -62,8 +62,12 @@ class Control:
     Use this module to manage your MonetDB databases. You can create, start,
     stop, lock, unlock, destroy your databases and request status information.
     """
-    def __init__(self, hostname=None, port=None, passphrase=None,
-                 unix_socket="/tmp/.s.merovingian.50000"):
+    def __init__(self, hostname=None, port=50000, passphrase=None,
+                 unix_socket=None):
+
+        if not unix_socket:
+            unix_socket = "/tmp/.s.merovingian.%i" % port
+
         self.server = mapi.Connection()
         self.hostname = hostname
         self.port = port

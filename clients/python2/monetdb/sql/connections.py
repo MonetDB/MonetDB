@@ -29,8 +29,8 @@ class Connection(object):
     default_cursor = cursors.Cursor
 
     def __init__(self, database, hostname=None, port=50000, username="monetdb",
-                 password="monetdb", unix_socket="/tmp/.s.monetdb.50000",
-                 autocommit=False):
+                 password="monetdb", unix_socket=None, autocommit=False,
+                 host=None, user=None):
         """ Set up a connection to a MonetDB SQL database.
 
         database    -- name of the database
@@ -43,6 +43,15 @@ class Connection(object):
         autocommit  -- enable/disable auto commit (default: False)
 
         """
+        if not unix_socket:
+            unix_socket = "/tmp/.s.monetdb.%i" % port
+
+        # The DB API spec is not specific about this
+        if host:
+            hostname = host
+        if user:
+            username = user
+
         self.mapi = mapi.Connection()
         self.mapi.connect(hostname=hostname, port=int(port), username=username,
                           password=password, database=database, language="sql",
