@@ -136,7 +136,7 @@ GDKremovedir(const char *dirname)
 int
 GDKfdlocate(const char *nme, const char *mode, const char *extension)
 {
-	char buf[PATHLENGTH], *path = buf;
+	char path[PATHLENGTH];
 	int fd, flags = 0;
 
 	if ((nme == NULL) || (*nme == 0)) {
@@ -164,11 +164,8 @@ GDKfdlocate(const char *nme, const char *mode, const char *extension)
 #endif
 	fd = open(path, flags, MONETDB_MODE);
 	if (fd < 0 && *mode == 'w') {
-		/* try to create the directory, if that was the problem */
-		char tmp[PATHLENGTH];
-
-		strcpy(tmp, buf);
-		if (GDKcreatedir(tmp)) {
+		/* try to create the directory, in case that was the problem */
+		if (GDKcreatedir(path)) {
 			fd = open(path, flags, MONETDB_MODE);
 		}
 	}
