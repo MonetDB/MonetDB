@@ -957,12 +957,23 @@ BATcopy(BAT *b, int ht, int tt, int writable)
 				while (bunstocopy--) {
 					*dst++ = *src++;
 				}
-			} else {
+			} else if ((tpe == TYPE_lng) || (tpe == TYPE_dbl)) {
 				lng *src = (lng *) cur, *dst = (lng *) d;
 
 				while (bunstocopy--) {
 					*dst++ = *src++;
 				}
+			} else {
+#ifdef HAVE_HGE
+				hge *src = (hge *) cur, *dst = (hge *) d;
+
+				while (bunstocopy--) {
+					*dst++ = *src++;
+				}
+#else
+				assert(0);
+#endif
+
 			}
 		}
 		/* copy all properties (size+other) from the source bat */
@@ -1003,8 +1014,18 @@ BATcopy(BAT *b, int ht, int tt, int writable)
 	return NULL;
 }
 
+#ifdef HAVE_HGE
+#define un_move_sz16(src, dst, sz)					\
+		if (sz == 16) {						\
+			* (hge *) dst = * (hge *) src;			\
+		} else
+#else
+#define un_move_sz16(src, dst, sz)
+#endif
+
 #define un_move(src, dst, sz)						\
 	do {								\
+		un_move_sz16(src,dst,sz)				\
 		if (sz == 8) {						\
 			* (lng *) dst = * (lng *) src;			\
 		} else if (sz == 4) {					\
@@ -1794,6 +1815,11 @@ BUNfnd(BAT *b, const void *v)
 	case TYPE_lng:
 		HASHfnd_lng(r, bi, v);
 		break;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		HASHfnd_hge(r, bi, v);
+		break;
+#endif
 	case TYPE_str:
 		HASHfnd_str(r, bi, v);
 		break;
@@ -1960,6 +1986,12 @@ BUNlocate(BAT *b, const void *x, const void *y)
 				x = &hidx.l;
 				htpe = TYPE_lng;
 				break;
+#ifdef HAVE_HGE
+			case SIZEOF_HGE:
+				/* does this occur? do we need to handle it? */
+				assert(0);
+				break;
+#endif
 			}
 		}
 	}
@@ -1979,6 +2011,12 @@ BUNlocate(BAT *b, const void *x, const void *y)
 				y = &tidx.l;
 				ttpe = TYPE_lng;
 				break;
+#ifdef HAVE_HGE
+			case SIZEOF_HGE:
+				/* does this occur? do we need to handle it? */
+				assert(0);
+				break;
+#endif
 			}
 		}
 	}
@@ -1988,10 +2026,18 @@ BUNlocate(BAT *b, const void *x, const void *y)
 	if (!ATOMvarsized(htpe)) {
 		hint = (ATOMsize(htpe) == sizeof(int));
 		hlng = (ATOMsize(htpe) == sizeof(lng));
+#ifdef HAVE_HGE
+		/* does this occur? do we need to handle it? */
+		assert(ATOMsize(htpe) != sizeof(hge));
+#endif
 	}
 	if (!ATOMvarsized(ttpe)) {
 		tint = (ATOMsize(ttpe) == sizeof(int));
 		tlng = (ATOMsize(ttpe) == sizeof(lng));
+#ifdef HAVE_HGE
+		/* does this occur? do we need to handle it? */
+		assert(ATOMsize(ttpe) != sizeof(hge));
+#endif
 	}
 
 	/* hashloop over head values, check tail values */
