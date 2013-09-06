@@ -694,6 +694,28 @@ sql_update_oct2013(Client c)
 	pos += snprintf(buf+pos, bufsize-pos, "drop procedure sys.resetHistory;\n");
 	pos += snprintf(buf+pos, bufsize-pos, "drop procedure sys.keepCall;\n");
 	pos += snprintf(buf+pos, bufsize-pos, "drop procedure sys.keepQuery;\n");
+	{
+		char *msg;
+		mvc *sql = NULL;
+
+		if ((msg = getSQLContext(c, c->curprg->def, &sql, NULL)) != MAL_SUCCEED) {
+			GDKfree(msg);
+		} else {
+			sql_schema *s;
+
+			if ((s = mvc_bind_schema(sql, "sys")) != NULL) {
+				sql_table *t;
+
+				if ((t = mvc_bind_table(sql, s, "querylog")) != NULL)
+					t->system = 0;
+				if ((t = mvc_bind_table(sql, s, "callhistory")) != NULL)
+					t->system = 0;
+				if ((t = mvc_bind_table(sql, s, "queryhistory")) != NULL)
+					t->system = 0;
+			}
+		}
+	}
+	pos += snprintf(buf+pos, bufsize-pos, "update sys._tables set system = false where name in ('querylog','callhistory','queryhistory') and schema_id = (select id from sys.schemas where name = 'sys');\n");
 	pos += snprintf(buf+pos, bufsize-pos, "drop view sys.queryLog;\n");
 	pos += snprintf(buf+pos, bufsize-pos, "drop table sys.callHistory;\n");
 	pos += snprintf(buf+pos, bufsize-pos, "drop table sys.queryHistory;\n");
