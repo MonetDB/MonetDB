@@ -951,6 +951,9 @@ GDKinit(opt *set, int setlen)
 	assert(sizeof(int) == SIZEOF_INT);
 	assert(sizeof(long) == SIZEOF_LONG);
 	assert(sizeof(lng) == SIZEOF_LNG);
+#ifdef HAVE_HGE
+	assert(sizeof(hge) == SIZEOF_HGE);
+#endif
 	assert(sizeof(oid) == SIZEOF_OID);
 	assert(sizeof(void *) == SIZEOF_VOID_P);
 	assert(sizeof(wrd) == SIZEOF_WRD);
