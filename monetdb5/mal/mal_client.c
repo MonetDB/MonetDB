@@ -56,6 +56,7 @@
 #include "mal_import.h"
 #include "mal_parser.h"
 #include "mal_namespace.h"
+#include "mal_private.h"
 #include <mapi.h> /* for PROMPT1 */
 
 

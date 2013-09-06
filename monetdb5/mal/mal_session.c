@@ -27,6 +27,7 @@
 #include "mal_readline.h"
 #include "mal_authorize.h"
 #include "mal_sabaoth.h"
+#include "mal_private.h"
 #include <gdk.h>	/* for opendir and friends */
 
 /*
