@@ -46,13 +46,13 @@ Ready.
 
 #create table ttt (a int, b int, c int);
 #select optimizer;
-% . # table_name
+% .L # table_name
 % single_value # name
 % varchar # type
 % 12 # length
 [ "default_pipe"	]
 #select def from optimizers() where name = optimizer;
-% . # table_name
+% .L # table_name
 % def # name
 % clob # type
 % 447 # length
@@ -65,22 +65,22 @@ Ready.
 function user.s2_1{autoCommit=true}():void;
     X_2 := sql.mvc();
     (X_13:bat[:oid,:int] ,X_14:bat[:oid,:int] ,X_15:bat[:oid,:int] ) := sql.copy_from("sys","ttt","|","\\n",nil:str,"null","a:\\tmp/xyz",-1:lng,0:lng,0);
-    X_17 := sql.append(X_2,"sys","ttt","a",X_13);
-    X_19 := sql.append(X_17,"sys","ttt","b",X_14);
-    X_23 := sql.append(X_19,"sys","ttt","c",X_15);
-    X_24 := aggr.count(X_15);
-    sql.affectedRows(X_23,X_24,"");
+    X_16 := sql.append(X_2,"sys","ttt","a",X_13);
+    X_18 := sql.append(X_16,"sys","ttt","b",X_14);
+    X_20 := sql.append(X_18,"sys","ttt","c",X_15);
+    X_22 := aggr.count(X_15);
+    sql.affectedRows(X_20,X_22,"");
 end s2_1;
 # optimizer.mitosis()
 # optimizer.dataflow()
 #select optimizer;
-% . # table_name
+% .L # table_name
 % single_value # name
 % varchar # type
 % 6 # length
 [ "user_1"	]
 #select def from optimizers() where name = optimizer;
-% . # table_name
+% .L # table_name
 % def # name
 % clob # type
 % 470 # length
@@ -93,11 +93,11 @@ end s2_1;
 function user.s5_1{autoCommit=true}():void;
     X_2 := sql.mvc();
     (X_13:bat[:oid,:int] ,X_14:bat[:oid,:int] ,X_15:bat[:oid,:int] ) := sql.copy_from("sys","ttt","|","\\n",nil:str,"null","Z:/tmp/xyz",-1:lng,0:lng,0);
-    X_17 := sql.append(X_2,"sys","ttt","a",X_13);
-    X_19 := sql.append(X_17,"sys","ttt","b",X_14);
-    X_24 := aggr.count(X_15);
-    X_23 := sql.append(X_19,"sys","ttt","c",X_15);
-    sql.affectedRows(X_23,X_24,"");
+    X_16 := sql.append(X_2,"sys","ttt","a",X_13);
+    X_18 := sql.append(X_16,"sys","ttt","b",X_14);
+    X_22 := aggr.count(X_15);
+    X_20 := sql.append(X_18,"sys","ttt","c",X_15);
+    sql.affectedRows(X_20,X_22,"");
 end s5_1;
 # optimizer.mitosis()
 # optimizer.dataflow()
