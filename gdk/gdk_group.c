@@ -579,6 +579,11 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		case TYPE_lng:
 			GRP_compare_consecutive_values_tpe(lng);
 			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			GRP_compare_consecutive_values_tpe(hge);
+			break;
+#endif
 		case TYPE_flt:
 			GRP_compare_consecutive_values_tpe(flt);
 			break;
@@ -652,6 +657,11 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		case TYPE_lng:
 			GRP_subscan_old_groups_tpe(lng);
 			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			GRP_subscan_old_groups_tpe(hge);
+			break;
+#endif
 		case TYPE_flt:
 			GRP_subscan_old_groups_tpe(flt);
 			break;
@@ -691,6 +701,11 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		case TYPE_lng:
 			GRP_use_existing_hash_table_tpe(lng);
 			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			GRP_use_existing_hash_table_tpe(hge);
+			break;
+#endif
 		case TYPE_flt:
 			GRP_use_existing_hash_table_tpe(flt);
 			break;
@@ -768,6 +783,11 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		case TYPE_lng:
 			GRP_create_partial_hash_table_tpe(lng);
 			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			GRP_create_partial_hash_table_tpe(hge);
+			break;
+#endif
 		case TYPE_flt:
 			GRP_create_partial_hash_table_tpe(flt);
 			break;
