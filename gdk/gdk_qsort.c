@@ -168,6 +168,35 @@ struct qsort_t {
 #undef EQ
 #undef SWAP
 
+#ifdef HAVE_HGE
+#define SWAP(i, j)							\
+	do {								\
+		hge _t = ((hge *) h)[i];				\
+		((hge *) h)[i] = ((hge *) h)[j];			\
+		((hge *) h)[j] = _t;					\
+		if (t && buf->ts)					\
+			SWAP1((i) * buf->ts, (j) * buf->ts, t, buf->ts); \
+	} while (0)
+#define GDKqsort_impl GDKqsort_impl_hge
+#define EQ(i, j)	(((hge *) h)[i] == ((hge *) h)[j])
+#define LE(i, j)	(((hge *) h)[i] <= ((hge *) h)[j])
+#define LT(i, j)	(((hge *) h)[i] < ((hge *) h)[j])
+#include "gdk_qsort_impl.h"
+#undef GDKqsort_impl
+#undef LE
+#undef LT
+
+#define GDKqsort_impl GDKqsort_impl_hge_rev
+#define LE(i, j)	(((hge *) h)[i] >= ((hge *) h)[j])
+#define LT(i, j)	(((hge *) h)[i] > ((hge *) h)[j])
+#include "gdk_qsort_impl.h"
+#undef GDKqsort_impl
+#undef LE
+#undef LT
+#undef EQ
+#undef SWAP
+#endif
+
 #define SWAP(i, j)							\
 	do {								\
 		flt _t = ((flt *) h)[i];				\
@@ -327,6 +356,11 @@ GDKqsort(void *h, void *t, const void *base, size_t n, int hs, int ts, int tpe)
 	case TYPE_lng:
 		GDKqsort_impl_lng(&buf, h, t, n);
 		break;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		GDKqsort_impl_hge(&buf, h, t, n);
+		break;
+#endif
 	case TYPE_flt:
 		GDKqsort_impl_flt(&buf, h, t, n);
 		break;
@@ -374,6 +408,11 @@ GDKqsort_rev(void *h, void *t, const void *base, size_t n, int hs, int ts, int t
 	case TYPE_lng:
 		GDKqsort_impl_lng_rev(&buf, h, t, n);
 		break;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		GDKqsort_impl_hge_rev(&buf, h, t, n);
+		break;
+#endif
 	case TYPE_flt:
 		GDKqsort_impl_flt_rev(&buf, h, t, n);
 		break;
