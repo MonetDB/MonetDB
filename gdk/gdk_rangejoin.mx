@@ -83,6 +83,10 @@ BAT *BATrangejoin(BAT *l, BAT *rl, BAT *rh, bit li, bit hi)
 		@:rangejoin(dbl,)@
 	case TYPE_lng:
 		@:rangejoin(lng,)@
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		@:rangejoin(hge,)@
+#endif
 	default:
 		@:rangejoin(any,any)@
 	}
@@ -225,6 +229,10 @@ BATbandjoin_nl(BAT *l, BAT *r, ptr c1, ptr c2, bit li, bit hi)
 		@:bandjoin_nl(dbl)@
 	case TYPE_lng:
 		@:bandjoin_nl(lng)@
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		@:bandjoin_nl(hge)@
+#endif
 	default:
 		(void) c1;
 		(void) c2;
@@ -381,6 +389,10 @@ BATbandjoin_mj(BAT *l, BAT *r, ptr c1, ptr c2, bit li, bit hi, BUN *limit)
 		@:bandjoin_mj_(dbl)@
 	case TYPE_lng:
 		@:bandjoin_mj_(lng)@
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		@:bandjoin_mj_(hge)@
+#endif
 	default:
 		(void) c1;
 		(void) c2;
