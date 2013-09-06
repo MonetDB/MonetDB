@@ -166,3 +166,46 @@ extern MT_Lock MT_system_lock;
 #define SORTloop_var(b,p,q,tl,th) SORTloop_loc(b,p,q,tl,th)
 
 #define SORTloop_bit(b,p,q,tl,th) SORTloop_bte(b,p,q,tl,th)
+
+#ifdef GDKMALLOC_DEBUG
+#define GDKallocmax(s,ps,e)						\
+	({								\
+		size_t _size = (s);					\
+		size_t *_psize  = (ps);					\
+		void *_res = GDKmallocmax(_size,_psize,e);		\
+		ALLOCDEBUG						\
+			fprintf(stderr,					\
+				"#GDKmallocmax(" SZFMT ",(" SZFMT ")) -> " \
+				PTRFMT " %s[%s:%d]\n",			\
+				_size, *_psize, PTRFMTCAST _res,	\
+				__func__, __FILE__, __LINE__);		\
+		_res;							\
+	 })
+#define GDKmunmap(p, l)							\
+	({	void *_ptr = (p);					\
+		size_t _len = (l);					\
+		int _res = GDKmunmap(_ptr, _len);			\
+		ALLOCDEBUG						\
+			fprintf(stderr,					\
+				"#GDKmunmap(" PTRFMT "," SZFMT ") -> %d" \
+				" %s[%s:%d]\n",				\
+				PTRFMTCAST _ptr, _len, _res,		\
+				__func__, __FILE__, __LINE__);		\
+		_res;							\
+	})
+#define GDKreallocmax(p,s,ps,e)						\
+	({								\
+		void *_ptr = (p);					\
+		size_t _size = (s);					\
+		size_t *_psize  = (ps);					\
+		void *_res = GDKreallocmax(_ptr,_size,_psize,e);	\
+		ALLOCDEBUG						\
+			fprintf(stderr,					\
+				"#GDKreallocmax(" PTRFMT "," SZFMT \
+				",(" SZFMT ")) -> " PTRFMT		\
+				" %s[%s:%d]\n", PTRFMTCAST _ptr,	\
+				_size, *_psize, PTRFMTCAST _res,	\
+				__func__, __FILE__, __LINE__);		\
+		_res;							\
+	 })
+#endif
