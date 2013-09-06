@@ -148,6 +148,9 @@ merge_getmem(MergeState *ms, ssize_t need, void ***ap,
 #define COPY_sht(d,s,w)		(* (sht *) (d) = * (sht *) (s))
 #define COPY_int(d,s,w)		(* (int *) (d) = * (int *) (s))
 #define COPY_lng(d,s,w)		(* (lng *) (d) = * (lng *) (s))
+#ifdef HAVE_HGE
+#define COPY_hge(d,s,w)		(* (hge *) (d) = * (hge *) (s))
+#endif
 #define COPY_flt(d,s,w)		(* (flt *) (d) = * (flt *) (s))
 #define COPY_dbl(d,s,w)		(* (dbl *) (d) = * (dbl *) (s))
 #define COPY_oid(d,s,w)		(* (oid *) (d) = * (oid *) (s))
@@ -217,6 +220,9 @@ merge_getmem(MergeState *ms, ssize_t need, void ***ap,
 #define ISLT_sht(X, Y, ms)	(* (sht *) (X) < * (sht *) (Y))
 #define ISLT_int(X, Y, ms)	(* (int *) (X) < * (int *) (Y))
 #define ISLT_lng(X, Y, ms)	(* (lng *) (X) < * (lng *) (Y))
+#ifdef HAVE_HGE
+#define ISLT_hge(X, Y, ms)	(* (hge *) (X) < * (hge *) (Y))
+#endif
 #define ISLT_flt(X, Y, ms)	(* (flt *) (X) < * (flt *) (Y))
 #define ISLT_dbl(X, Y, ms)	(* (dbl *) (X) < * (dbl *) (Y))
 #define ISLT_oid(X, Y, ms)	(* (oid *) (X) < * (oid *) (Y))
@@ -224,6 +230,9 @@ merge_getmem(MergeState *ms, ssize_t need, void ***ap,
 #define ISLT_sht_rev(X, Y, ms)	(* (sht *) (X) > * (sht *) (Y))
 #define ISLT_int_rev(X, Y, ms)	(* (int *) (X) > * (int *) (Y))
 #define ISLT_lng_rev(X, Y, ms)	(* (lng *) (X) > * (lng *) (Y))
+#ifdef HAVE_HGE
+#define ISLT_hge_rev(X, Y, ms)	(* (hge *) (X) > * (hge *) (Y))
+#endif
 #define ISLT_flt_rev(X, Y, ms)	(* (flt *) (X) > * (flt *) (Y))
 #define ISLT_dbl_rev(X, Y, ms)	(* (dbl *) (X) > * (dbl *) (Y))
 #define ISLT_oid_rev(X, Y, ms)	(* (oid *) (X) > * (oid *) (Y))
@@ -397,6 +406,40 @@ merge_compute_minrun(ssize_t n)
 
 #undef COPY
 
+#ifdef HAVE_HGE
+#define COPY		COPY_hge
+
+#define binarysort	binarysort_hge
+#define do_ssort	do_ssort_hge
+#define gallop_left	gallop_left_hge
+#define gallop_right	gallop_right_hge
+#define ISLT		ISLT_hge
+#define merge_at	merge_at_hge
+#include "gdk_ssort_impl.h"
+#undef binarysort
+#undef do_ssort
+#undef gallop_left
+#undef gallop_right
+#undef ISLT
+#undef merge_at
+
+#define binarysort	binarysort_hge_rev
+#define do_ssort	do_ssort_hge_rev
+#define gallop_left	gallop_left_hge_rev
+#define gallop_right	gallop_right_hge_rev
+#define ISLT		ISLT_hge_rev
+#define merge_at	merge_at_hge_rev
+#include "gdk_ssort_impl.h"
+#undef binarysort
+#undef do_ssort
+#undef gallop_left
+#undef gallop_right
+#undef ISLT
+#undef merge_at
+
+#undef COPY
+#endif
+
 #define COPY		COPY_flt
 
 #define binarysort	binarysort_flt
@@ -527,6 +570,9 @@ merge_compute_minrun(ssize_t n)
 #define do_ssort_sht	do_ssort_sht_rev
 #define do_ssort_int	do_ssort_int_rev
 #define do_ssort_lng	do_ssort_lng_rev
+#ifdef HAVE_HGE
+#define do_ssort_hge	do_ssort_hge_rev
+#endif
 #define do_ssort_flt	do_ssort_flt_rev
 #define do_ssort_dbl	do_ssort_dbl_rev
 #define do_ssort_oid	do_ssort_oid_rev
@@ -539,6 +585,9 @@ merge_compute_minrun(ssize_t n)
 #undef do_ssort_sht
 #undef do_ssort_int
 #undef do_ssort_lng
+#ifdef HAVE_HGE
+#undef do_ssort_hge
+#endif
 #undef do_ssort_flt
 #undef do_ssort_dbl
 #undef do_ssort_oid
