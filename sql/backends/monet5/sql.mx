@@ -7785,7 +7785,7 @@ RAstatement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = (str) runMAL(cntxt, cntxt->curprg->def, 0, 0);
 		if (!msg) { 
 			resetMalBlk(cntxt->curprg->def, oldstop);
-			freeVariables(cntxt,cntxt->curprg->def, cntxt->glb, oldvtop);
+			freeVariables(cntxt,cntxt->curprg->def, NULL, oldvtop);
 		}
 		assert(cntxt->glb == 0 || cntxt->glb == oldglb); /* detect leak */
 		cntxt->glb = oldglb;

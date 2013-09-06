@@ -1208,7 +1208,7 @@ SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output)
 				sql->out = NULL; /* no output */
 			msg = runMAL(c, mb, 0, 0);
 			MSresetInstructions(mb, oldstop);
-			freeVariables(c, mb, c->glb, oldvtop);
+			freeVariables(c, mb, NULL, oldvtop);
 		}
 		sqlcleanup(m, 0);
 		if (!execute) {
@@ -2101,7 +2101,7 @@ cleanup_engine:
 		enum malexception type = getExceptionType(msg);
 		if (type == OPTIMIZER) {
 			MSresetInstructions(c->curprg->def, 1);
-			freeVariables(c,c->curprg->def, c->glb, be->vtop);
+			freeVariables(c,c->curprg->def, NULL, be->vtop);
 			be->language = oldlang;
 			assert(c->glb == 0 || c->glb == oldglb); /* detect leak */
 			c->glb = oldglb;
@@ -2138,7 +2138,7 @@ cleanup_engine:
 	be->q = NULL;
 	sqlcleanup(be->mvc, (!msg)?0:-1);
 	MSresetInstructions(c->curprg->def, 1);
-	freeVariables(c,c->curprg->def, c->glb, be->vtop);
+	freeVariables(c,c->curprg->def, NULL, be->vtop);
 	be->language = oldlang;
 	/*
 	 * Any error encountered during execution should block further processing
