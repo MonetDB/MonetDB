@@ -88,6 +88,10 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
 #define hash_int(H,V)         ((BUN) mix_int(*((const unsigned int*) (V))) & (H)->mask)
 /* XXX return size_t-sized value for 8-byte oid? */
 #define hash_lng(H,V)         ((BUN) mix_int((unsigned int) (*(const lng *)(V) ^ (*(lng *)(V) >> 32))) & (H)->mask)
+#ifdef HAVE_HGE
+#define hash_hge(H,V)         ((BUN) mix_int((unsigned int) (*(const hge *)(V) ^ (*(hge *)(V) >> 32) ^ \
+                                                           (*(hge *)(V) >> 64) ^ (*(hge *)(V) >> 96))) & (H)->mask)
+#endif
 #if SIZEOF_OID == SIZEOF_INT
 #define hash_oid(H,V)         ((BUN) mix_int((unsigned int) *((const oid*) (V))) & (H)->mask)
 #else
@@ -154,6 +158,9 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
 #define HASHfnd_sht(x,y,z)	HASHfnd_TYPE(x,y,z,sht)
 #define HASHfnd_int(x,y,z)	HASHfnd_TYPE(x,y,z,int)
 #define HASHfnd_lng(x,y,z)	HASHfnd_TYPE(x,y,z,lng)
+#ifdef HAVE_HGE
+#define HASHfnd_hge(x,y,z)	HASHfnd_TYPE(x,y,z,hge)
+#endif
 #define HASHfnd_oid(x,y,z)	HASHfnd_TYPE(x,y,z,oid)
 #define HASHfnd_wrd(x,y,z)	HASHfnd_TYPE(x,y,z,wrd)
 
@@ -231,6 +238,9 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
 #define HASHins_sht(h,i,v)	HASHins_TYPE(h,i,v,sht)
 #define HASHins_int(h,i,v)	HASHins_TYPE(h,i,v,int)
 #define HASHins_lng(h,i,v)	HASHins_TYPE(h,i,v,lng)
+#ifdef HAVE_HGE
+#define HASHins_hge(h,i,v)	HASHins_TYPE(h,i,v,hge)
+#endif
 
 #define HASHdel(h, i, v, next)						\
 	do {								\

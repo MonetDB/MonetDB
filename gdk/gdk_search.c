@@ -335,6 +335,11 @@ BAThash(BAT *b, BUN masksize)
 			case TYPE_lng:
 				starthash(lng);
 				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				starthash(hge);
+				break;
+#endif
 			default:
 				for (; r < p; r++) {
 					ptr v = BUNhead(bi, r);
@@ -367,6 +372,11 @@ BAThash(BAT *b, BUN masksize)
 		case TYPE_lng:
 			finishhash(lng);
 			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			finishhash(hge);
+			break;
+#endif
 		default:
 			for (; p < q; p++) {
 				ptr v = BUNhead(bi, p);
@@ -409,6 +419,10 @@ HASHprobe(Hash *h, const void *v)
 	case TYPE_dbl:
 	case TYPE_lng:
 		return hash_lng(h, v);
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		return hash_hge(h, v);
+#endif
 	default:
 		return hash_any(h, v);
 	}
@@ -576,6 +590,11 @@ SORTfndwhich(BAT *b, const void *v, int which)
 		case TYPE_lng:
 			SORTfndloop(lng, simple_CMP, BUNtloc);
 			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			SORTfndloop(hge, simple_CMP, BUNtloc);
+			break;
+#endif
 		case TYPE_flt:
 			SORTfndloop(flt, simple_CMP, BUNtloc);
 			break;
@@ -603,6 +622,11 @@ SORTfndwhich(BAT *b, const void *v, int which)
 		case TYPE_lng:
 			SORTfndloop(lng, -simple_CMP, BUNtloc);
 			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			SORTfndloop(hge, -simple_CMP, BUNtloc);
+			break;
+#endif
 		case TYPE_flt:
 			SORTfndloop(flt, -simple_CMP, BUNtloc);
 			break;
