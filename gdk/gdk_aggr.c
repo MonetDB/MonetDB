@@ -374,6 +374,31 @@ dosum(const void *values, int nonil, oid seqb, BUN start, BUN end,
 		}
 		break;
 	}
+#ifdef HAVE_HGE
+	case TYPE_hge: {
+		hge *sums = (hge *) results;
+		switch (ATOMstorage(tp1)) {
+		case TYPE_bte:
+			AGGR_SUM(bte, hge);
+			break;
+		case TYPE_sht:
+			AGGR_SUM(sht, hge);
+			break;
+		case TYPE_int:
+			AGGR_SUM(int, hge);
+			break;
+		case TYPE_lng:
+			AGGR_SUM(lng, lng);
+			break;
+		case TYPE_hge:
+			AGGR_SUM(hge, hge);
+			break;
+		default:
+			goto unsupported;
+		}
+		break;
+	}
+#endif
 	case TYPE_flt: {
 		flt *sums = (flt *) results;
 		switch (ATOMstorage(tp1)) {
@@ -532,6 +557,11 @@ BATsum(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, int
 	case TYPE_lng:
 		* (lng *) res = nil_if_empty ? lng_nil : 0;
 		break;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		* (hge *) res = nil_if_empty ? hge_nil : 0;
+		break;
+#endif
 	case TYPE_flt:
 	case TYPE_dbl:
 		switch (ATOMstorage(b->ttype)) {
@@ -539,6 +569,9 @@ BATsum(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, int
 		case TYPE_sht:
 		case TYPE_int:
 		case TYPE_lng:
+#ifdef HAVE_HGE
+		case TYPE_hge:
+#endif
 		{
 			/* special case for summing integer types into
 			 * a floating point: We calculate the average
@@ -659,6 +692,52 @@ BATsum(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, int
 		}							\
 	} while (0)
 
+#ifdef HAVE_HGE
+#define AGGR_PROD_HGE(TYPE)						\
+	do {								\
+		const TYPE *vals = (const TYPE *) values;		\
+		assert(gidincr == 0 || gidincr == 1);			\
+		gid = 0;	/* doesn't change if gidincr == 0 */	\
+		for (;;) {						\
+			if (cand) {					\
+				if (cand == candend)			\
+					break;				\
+				i = *cand++ - seqb;			\
+				if (i >= end)				\
+					break;				\
+			} else {					\
+				i = start++;				\
+				if (i == end)				\
+					break;				\
+			}						\
+			if (gids == NULL || gidincr == 0 ||		\
+			    (gids[i] >= min && gids[i] <= max)) {	\
+				if (gidincr) {				\
+					if (gids)			\
+						gid = gids[i] - min;	\
+					else				\
+						gid = (oid) i;		\
+				}					\
+				if (nil_if_empty &&			\
+				    !(seen[gid >> 5] & (1 << (gid & 0x1F)))) { \
+					seen[gid >> 5] |= 1 << (gid & 0x1F); \
+					prods[gid] = 1;			\
+				}					\
+				if (vals[i] == TYPE##_nil) {		\
+					if (!skip_nils) {		\
+						prods[gid] = hge_nil;	\
+						nils++;			\
+					}				\
+				} else if (prods[gid] != hge_nil) {	\
+					HGEMUL_CHECK(TYPE, vals[i],	\
+						     hge, prods[gid],	\
+						     prods[gid],	\
+						     goto overflow);	\
+				}					\
+			}						\
+		}							\
+	} while (0)
+#else
 #define AGGR_PROD_LNG(TYPE)						\
 	do {								\
 		const TYPE *vals = (const TYPE *) values;		\
@@ -703,6 +782,7 @@ BATsum(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, int
 			}						\
 		}							\
 	} while (0)
+#endif
 
 #define AGGR_PROD_FLOAT(TYPE1, TYPE2)					\
 	do {								\
@@ -815,6 +895,51 @@ doprod(const void *values, oid seqb, BUN start, BUN end, void *results,
 		}
 		break;
 	}
+#ifdef HAVE_HGE
+	case TYPE_lng: {
+		lng *prods = (lng *) results;
+		switch (ATOMstorage(tp1)) {
+		case TYPE_bte:
+			AGGR_PROD(bte, lng, hge);
+			break;
+		case TYPE_sht:
+			AGGR_PROD(sht, lng, hge);
+			break;
+		case TYPE_int:
+			AGGR_PROD(int, lng, hge);
+			break;
+		case TYPE_lng:
+			AGGR_PROD(lng, lng, hge);
+			break;
+		default:
+			goto unsupported;
+		}
+		break;
+	}
+	case TYPE_hge: {
+		hge *prods = (hge *) results;
+		switch (ATOMstorage(tp1)) {
+		case TYPE_bte:
+			AGGR_PROD_HGE(bte);
+			break;
+		case TYPE_sht:
+			AGGR_PROD_HGE(sht);
+			break;
+		case TYPE_int:
+			AGGR_PROD_HGE(int);
+			break;
+		case TYPE_lng:
+			AGGR_PROD_HGE(lng);
+			break;
+		case TYPE_hge:
+			AGGR_PROD_HGE(hge);
+			break;
+		default:
+			goto unsupported;
+		}
+		break;
+	}
+#else
 	case TYPE_lng: {
 		lng *prods = (lng *) results;
 		switch (ATOMstorage(tp1)) {
@@ -835,6 +960,7 @@ doprod(const void *values, oid seqb, BUN start, BUN end, void *results,
 		}
 		break;
 	}
+#endif
 	case TYPE_flt: {
 		flt *prods = (flt *) results;
 		switch (ATOMstorage(tp1)) {
@@ -850,6 +976,11 @@ doprod(const void *values, oid seqb, BUN start, BUN end, void *results,
 		case TYPE_lng:
 			AGGR_PROD_FLOAT(lng, flt);
 			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			AGGR_PROD_FLOAT(hge, flt);
+			break;
+#endif
 		case TYPE_flt:
 			AGGR_PROD_FLOAT(flt, flt);
 			break;
@@ -873,6 +1004,11 @@ doprod(const void *values, oid seqb, BUN start, BUN end, void *results,
 		case TYPE_lng:
 			AGGR_PROD_FLOAT(lng, dbl);
 			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			AGGR_PROD_FLOAT(hge, dbl);
+			break;
+#endif
 		case TYPE_flt:
 			AGGR_PROD_FLOAT(flt, dbl);
 			break;
@@ -1017,6 +1153,11 @@ BATprod(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, in
 	case TYPE_lng:
 		* (lng *) res = nil_if_empty ? lng_nil : (lng) 1;
 		break;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		* (hge *) res = nil_if_empty ? hge_nil : (hge) 1;
+		break;
+#endif
 	case TYPE_flt:
 		* (flt *) res = nil_if_empty ? flt_nil : (flt) 1;
 		break;
@@ -1261,6 +1402,9 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, int 
 	case TYPE_sht:
 	case TYPE_int:
 	case TYPE_lng:
+#ifdef HAVE_HGE
+	case TYPE_hge:
+#endif
 		rems = GDKzalloc(ngrp * sizeof(BUN));
 		if (rems == NULL)
 			goto alloc_fail;
@@ -1302,6 +1446,11 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, int 
 	case TYPE_lng:
 		AGGR_AVG(lng);
 		break;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		AGGR_AVG(hge);
+		break;
+#endif
 	case TYPE_flt:
 		AGGR_AVG_FLOAT(flt);
 		break;
@@ -1353,12 +1502,12 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, int 
 	return GDK_FAIL;
 }
 
-#define AVERAGE_TYPE(TYPE)						\
+#define AVERAGE_TYPE_LNG_HGE(TYPE,lng_hge)				\
 	do {								\
 		TYPE x, a;						\
 									\
 		/* first try to calculate the sum of all values into a */ \
-		/* lng */						\
+		/* lng_hge */						\
 		for (;;) {						\
 			if (cand) {					\
 				if (cand == candend)			\
@@ -1375,8 +1524,8 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, int 
 			if (x == TYPE##_nil)				\
 				continue;				\
 			ADD_WITH_CHECK(TYPE, x,				\
-				       lng, sum,			\
-				       lng, sum,			\
+				       lng_hge, sum,			\
+				       lng_hge, sum,			\
 				       goto overflow##TYPE);		\
 			/* don't count value until after overflow check */ \
 			n++;						\
@@ -1386,17 +1535,17 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, int 
 		if (0) {						\
 		  overflow##TYPE:					\
 			/* we get here if sum(x[0],...,x[i]) doesn't */	\
-			/* fit in a lng but sum(x[0],...,x[i-1]) did */ \
+			/* fit in a lng_hge but sum(x[0],...,x[i-1]) did */ \
 			/* the variable sum contains that sum */	\
 			/* the rest of the calculation is done */	\
 			/* according to the loop invariant described */	\
 			/* in the below loop */				\
 			if (sum >= 0) {					\
-				a = (TYPE) (sum / (lng) n); /* this fits */ \
+				a = (TYPE) (sum / (lng_hge) n); /* this fits */ \
 				r = (BUN) (sum % (SBUN) n);		\
 			} else {					\
 				sum = -sum;				\
-				a = - (TYPE) (sum / (lng) n); /* this fits */ \
+				a = - (TYPE) (sum / (lng_hge) n); /* this fits */ \
 				r = (BUN) (sum % (SBUN) n);		\
 				if (r) {				\
 					a--;				\
@@ -1427,6 +1576,12 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, int 
 		}							\
 	} while (0)
 
+#ifdef HAVE_HGE
+#define AVERAGE_TYPE(TYPE) AVERAGE_TYPE_LNG_HGE(TYPE,hge)
+#else
+#define AVERAGE_TYPE(TYPE) AVERAGE_TYPE_LNG_HGE(TYPE,lng)
+#endif
+
 #define AVERAGE_FLOATTYPE(TYPE)					\
 	do {							\
 		double a = 0;					\
@@ -1455,7 +1610,11 @@ int
 BATcalcavg(BAT *b, BAT *s, dbl *avg, BUN *vals)
 {
 	BUN n = 0, r = 0, i = 0;
+#ifdef HAVE_HGE
+	hge sum = 0;
+#else
 	lng sum = 0;
+#endif
 	BUN start, end, cnt;
 	const oid *cand = NULL, *candend = NULL;
 	const void *src;
@@ -1480,6 +1639,11 @@ BATcalcavg(BAT *b, BAT *s, dbl *avg, BUN *vals)
 	case TYPE_lng:
 		AVERAGE_TYPE(lng);
 		break;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		AVERAGE_TYPE(hge);
+		break;
+#endif
 	case TYPE_flt:
 		AVERAGE_FLOATTYPE(flt);
 		break;
@@ -1599,6 +1763,11 @@ BATgroupcount(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_o
 	case TYPE_lng:
 		AGGR_COUNT(lng);
 		break;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		AGGR_COUNT(hge);
+		break;
+#endif
 	case TYPE_flt:
 		AGGR_COUNT(flt);
 		break;
@@ -1929,6 +2098,11 @@ do_groupmin(oid *oids, BAT *b, const oid *gids, BUN ngrp, oid min, oid max,
 	case TYPE_lng:
 		AGGR_CMP(lng, LT);
 		break;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		AGGR_CMP(hge, LT);
+		break;
+#endif
 	case TYPE_flt:
 		AGGR_CMP(flt, LT);
 		break;
@@ -2067,6 +2241,11 @@ do_groupmax(oid *oids, BAT *b, const oid *gids, BUN ngrp, oid min, oid max,
 	case TYPE_lng:
 		AGGR_CMP(lng, GT);
 		break;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		AGGR_CMP(hge, GT);
+		break;
+#endif
 	case TYPE_flt:
 		AGGR_CMP(flt, GT);
 		break;
@@ -2354,6 +2533,11 @@ calcvariance(dbl *avgp, const void *values, BUN cnt, int tp, int issample)
 	case TYPE_lng:
 		AGGR_STDEV_SINGLE(lng);
 		break;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		AGGR_STDEV_SINGLE(hge);
+		break;
+#endif
 	case TYPE_flt:
 		AGGR_STDEV_SINGLE(flt);
 		break;
@@ -2552,6 +2736,11 @@ dogroupstdev(BAT **avgb, BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 	case TYPE_lng:
 		AGGR_STDEV(lng);
 		break;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		AGGR_STDEV(hge);
+		break;
+#endif
 	case TYPE_flt:
 		AGGR_STDEV(flt);
 		break;

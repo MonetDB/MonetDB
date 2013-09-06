@@ -25,6 +25,16 @@ typedef unsigned long long ulng;
 typedef unsigned __int64 ulng;
 #endif
 
+#ifdef HAVE_HGE
+#ifdef HAVE___INT128
+typedef unsigned __int128 uhge;
+#else
+#ifdef HAVE___INT128_T
+typedef unsigned __int128_t uhge;
+#endif
+#endif
+#endif
+
 /* signed version of BUN */
 #if SIZEOF_BUN == SIZEOF_INT
 #define SBUN	int
@@ -171,3 +181,37 @@ typedef unsigned __int64 ulng;
 			nils++;						\
 		}							\
 	} while (0)
+
+#ifdef HAVE_HGE
+#define HGEMUL_CHECK(TYPE1, lft, TYPE2, rgt, dst, on_overflow)		\
+	do {								\
+		hge a = (lft), b = (rgt);				\
+		ulng a1, a2, b1, b2;				\
+		uhge c;							\
+		int sign = 1;						\
+									\
+		if (a < 0) {						\
+			sign = -sign;					\
+			a = -a;						\
+		}							\
+		if (b < 0) {						\
+			sign = -sign;					\
+			b = -b;						\
+		}							\
+		a1 = (ulng) (a >> 64);					\
+		a2 = (ulng) a;						\
+		b1 = (ulng) (b >> 64);					\
+		b2 = (ulng) b;						\
+		/* result = (a1*b1<<128) + ((a1*b2+a2*b1)<<64) + a2*b2 */ \
+		if ((a1 == 0 || b1 == 0) &&				\
+		    ((c = (uhge) a1 * b2 + (uhge) a2 * b1) & (~(uhge)0 << 63)) == 0 && \
+		    (((c = (c << 64) + (uhge) a2 * b2) & ((uhge) 1 << 127)) == 0)) { \
+			(dst) = sign * (hge) c;				\
+		} else {						\
+			if (abort_on_error)				\
+				on_overflow;				\
+			(dst) = hge_nil;				\
+			nils++;						\
+		}							\
+	} while (0)
+#endif
