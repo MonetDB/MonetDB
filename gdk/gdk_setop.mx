@@ -183,6 +183,10 @@ All Rights Reserved.
 		@:elim(@1,loc,_dbl,simple_CMP(h,BUNhloc(bi,r),dbl))@
 	case TYPE_lng:
 		@:elim(@1,loc,_lng,simple_CMP(h,BUNhloc(bi,r),lng))@
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		@:elim(@1,loc,_hge,simple_CMP(h,BUNhloc(bi,r),hge))@
+#endif
 	case TYPE_str:
 		if (b->H->vheap->hashash) {
 			@:elim(@1,var,_str_hv,GDK_STRCMP(h,BUNhvar(bi,r)))@
@@ -485,6 +489,9 @@ BATsunique(BAT *b)
 #define sht_EQ(x,y) simple_EQ(x,y,sht)
 #define int_EQ(x,y) simple_EQ(x,y,int)
 #define lng_EQ(x,y) simple_EQ(x,y,lng)
+#ifdef HAVE_HGE
+#define hge_EQ(x,y) simple_EQ(x,y,hge)
+#endif
 #define flt_EQ(x,y) simple_EQ(x,y,flt)
 #define dbl_EQ(x,y) simple_EQ(x,y,dbl)
 
@@ -735,6 +742,10 @@ BATins_@1@2(BAT *bn, BAT *l, BAT *r)
 			@:check(@2,loc,dbl,simple_CMP(h,h2,dbl),@1,dbl_EQ)@
 		case TYPE_lng:
 			@:check(@2,loc,lng,simple_CMP(h,h2,lng),@1,lng_EQ)@
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			@:check(@2,loc,hge,simple_CMP(h,h2,hge),@1,hge_EQ)@
+#endif
 		default:
 			if (r->hvarsized) {
 				@:checkall(@2,var,var,((*merge)(h,h2)),@1,0==cmp)@
