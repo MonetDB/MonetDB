@@ -344,6 +344,9 @@ do {									\
 #define PREVVALUEsht(x)	((x) - 1)
 #define PREVVALUEint(x)	((x) - 1)
 #define PREVVALUElng(x)	((x) - 1)
+#ifdef HAVE_HGE
+#define PREVVALUEhge(x)	((x) - 1)
+#endif
 #define PREVVALUEoid(x)	((x) - 1)
 #define PREVVALUEflt(x)	nextafterf((x), -GDK_flt_max)
 #define PREVVALUEdbl(x)	nextafter((x), -GDK_dbl_max)
@@ -352,6 +355,9 @@ do {									\
 #define NEXTVALUEsht(x)	((x) + 1)
 #define NEXTVALUEint(x)	((x) + 1)
 #define NEXTVALUElng(x)	((x) + 1)
+#ifdef HAVE_HGE
+#define NEXTVALUEhge(x)	((x) + 1)
+#endif
 #define NEXTVALUEoid(x)	((x) + 1)
 #define NEXTVALUEflt(x)	nextafterf((x), GDK_flt_max)
 #define NEXTVALUEdbl(x)	nextafter((x), GDK_dbl_max)
@@ -360,6 +366,9 @@ do {									\
 #define MINVALUEsht	NEXTVALUEsht(GDK_sht_min)
 #define MINVALUEint	NEXTVALUEint(GDK_int_min)
 #define MINVALUElng	NEXTVALUElng(GDK_lng_min)
+#ifdef HAVE_HGE
+#define MINVALUEhge	NEXTVALUEhge(GDK_hge_min)
+#endif
 #define MINVALUEoid	GDK_oid_min
 #define MINVALUEflt	NEXTVALUEflt(GDK_flt_min)
 #define MINVALUEdbl	NEXTVALUEdbl(GDK_dbl_min)
@@ -368,6 +377,9 @@ do {									\
 #define MAXVALUEsht	GDK_sht_max
 #define MAXVALUEint	GDK_int_max
 #define MAXVALUElng	GDK_lng_max
+#ifdef HAVE_HGE
+#define MAXVALUEhge	GDK_hge_max
+#endif
 #define MAXVALUEoid	GDK_oid_max
 #define MAXVALUEflt	GDK_flt_max
 #define MAXVALUEdbl	GDK_dbl_max
@@ -588,13 +600,20 @@ fullscan_any(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 }
 
 /* scan select type switch */
+#ifdef HAVE_HGE
+#define scanfunc_hge(NAME, CAND, END)	\
+	scanfunc(NAME, hge, CAND, END)
+#else
+#define scanfunc_hge(NAME, CAND, END)
+#endif
 #define scan_sel(NAME, CAND, END)		\
 	scanfunc(NAME, bte, CAND, END)		\
 	scanfunc(NAME, sht, CAND, END)		\
 	scanfunc(NAME, int, CAND, END)		\
 	scanfunc(NAME, flt, CAND, END)		\
 	scanfunc(NAME, dbl, CAND, END)		\
-	scanfunc(NAME, lng, CAND, END)
+	scanfunc(NAME, lng, CAND, END)		\
+	scanfunc_hge(NAME, CAND, END)
 
 /* scan/imprints select with candidates */
 scan_sel(candscan, o = (oid) (*candlist++ - off), w = (BUN) ((*(oid *) Tloc(s, q - 1)) + 1 - off))
@@ -680,6 +699,11 @@ BAT_scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 		case TYPE_lng:
 			cnt = candscan_lng(scanargs);
 			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			cnt = candscan_hge(scanargs);
+			break;
+#endif
 		default:
 			cnt = candscan_any(scanargs);
 		}
@@ -722,6 +746,11 @@ BAT_scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 		case TYPE_lng:
 			cnt = fullscan_lng(scanargs);
 			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			cnt = fullscan_hge(scanargs);
+			break;
+#endif
 		default:
 			cnt = fullscan_any(scanargs);
 		}
@@ -932,6 +961,9 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 		sht v_sht;
 		int v_int;
 		lng v_lng;
+#ifdef HAVE_HGE
+		hge v_hge;
+#endif
 		flt v_flt;
 		dbl v_dbl;
 		oid v_oid;
@@ -1105,6 +1137,11 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 		case TYPE_lng:
 			NORMALIZE(lng);
 			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			NORMALIZE(hge);
+			break;
+#endif
 		case TYPE_flt:
 			NORMALIZE(flt);
 			break;
@@ -1267,6 +1304,11 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 			case TYPE_lng:
 				estimate = (BUN) (*(lng *) th - *(lng *) tl);
 				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				estimate = (BUN) (*(hge *) th - *(hge *) tl);
+				break;
+#endif
 			}
 			if (estimate != BUN_NONE)
 				estimate += li + hi - 1;
