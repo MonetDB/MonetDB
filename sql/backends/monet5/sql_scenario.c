@@ -1003,7 +1003,7 @@ SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output)
 	 * Scan the complete string for SQL statements, stop at the first error.
 	 */
 	c->sqlcontext = sql;
-	while( m->scanner.rs->pos < m->scanner.rs->len ){
+	while( msg == MAL_SUCCEED && m->scanner.rs->pos < m->scanner.rs->len ){
 		sql_rel *r;
 		stmt *s;
 		int oldvtop, oldstop;
