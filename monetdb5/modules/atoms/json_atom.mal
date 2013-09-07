@@ -85,17 +85,7 @@ pattern nest(k:bat[:oid,:str],v:bat[:oid,:any]):json
 address JSONnest
 comment "Combine the key-value pairs into a single json object list.";
 
-pattern nest(k:bat[:oid,:str]):json
-address JSONnest;
-pattern nest(k:bat[:oid,:sht]):json
-address JSONnest;
-pattern nest(k:bat[:oid,:int]):json
-address JSONnest;
-pattern nest(k:bat[:oid,:lng]):json
-address JSONnest;
-pattern nest(k:bat[:oid,:flt]):json
-address JSONnest;
-pattern nest(k:bat[:oid,:dbl]):json
+pattern nest(v:bat[:oid,:any]):json
 address JSONnest
 comment "Combine the value list into a single json array object.";
 
