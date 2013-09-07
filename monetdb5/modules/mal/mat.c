@@ -686,6 +686,39 @@ MATproject_lng( BAT *map, BAT **bats, int len, int ttpe )
 	return res;
 }
 
+#ifdef HAVE_HGE
+static BAT *
+MATproject_hge( BAT *map, BAT **bats, int len, int ttpe )
+{
+	BAT *res;
+	int i;
+	BUN j, cnt = BATcount(map);
+	hge *resT, **batsT;
+	bte *mapT;
+
+	res = BATnew(TYPE_void, ttpe, cnt);
+	batsT = (hge**)GDKmalloc(sizeof(hge*) * len);
+	if (res == NULL || batsT == NULL) {
+		if (res)
+			BBPreclaim(res);
+		if (batsT)
+			GDKfree(batsT);
+		return NULL;
+	}
+	BATseqbase(res, map->hseqbase);
+	resT = (hge*)Tloc(res, 0);
+	mapT = (bte*)Tloc(map, 0);
+	for (i=0; i<len; i++)
+		batsT[i] = (hge*)Tloc(bats[i], 0);
+	for (j=0; j<cnt; j++)
+		resT[j] = *batsT[mapT[j]]++;
+	BATsetcount(res, j);
+	res->hrevsorted = j <= 1;
+	GDKfree(batsT);
+	return res;
+}
+#endif
+
 /*
  *  Mitosis-pieces are usually slices (views) of a base table/BAT.
  *  For variable-size atoms, this means that the vheap's of all pieces are
@@ -734,6 +767,11 @@ MATproject_var( BAT *map, BAT **bats, int len )
 		case sizeof(lng):
 			res = MATproject_lng(map, bats, len, TYPE_lng);
 			break;
+#ifdef HAVE_HGE
+		case sizeof(hge):
+			res = MATproject_hge(map, bats, len, TYPE_hge);
+			break;
+#endif
 		default:
 			/* can (should) not happen */
 			assert(0);
@@ -781,6 +819,10 @@ MATproject_( BAT *map, BAT **bats, int len )
 		res = MATproject_int(map, bats, len, bats[0]->ttype);
 	} else if (ATOMsize(bats[0]->ttype) == sizeof(lng)) {
 		res = MATproject_lng(map, bats, len, bats[0]->ttype);
+#ifdef HAVE_HGE
+	} else if (ATOMsize(bats[0]->ttype) == sizeof(hge)) {
+		res = MATproject_hge(map, bats, len, bats[0]->ttype);
+#endif
 	} else {
 		res = MATproject_any(map, bats, len);
 	}
@@ -1383,6 +1425,145 @@ MATsort_lng( BAT **map, BAT **bats, int len, BUN cnt, int rev )
 	GDKfree(batsT);
 	return res;
 }
+
+#ifdef HAVE_HGE
+static int
+MATsortloop_hge_rev( hge *val_res, bte *map_res, hge *val_i1, bte *map_i1, BUN cnt_i1, hge *val_i2, bte map_i2, BUN cnt_i2 ) {
+
+	hge *end_i1 = val_i1 + cnt_i1;
+	hge *end_i2 = val_i2 + cnt_i2;
+
+	if (map_i1 == NULL) {
+		/* map_i1 = 0 */
+		while ( val_i1 < end_i1 && val_i2 < end_i2) {
+			if (*val_i1 >= *val_i2) {
+				*val_res++ = *val_i1++;
+				*map_res++ = 0;
+			} else if (*val_i1 < *val_i2) {
+				*val_res++ = *val_i2++;
+				*map_res++ = map_i2;
+			}
+		}
+		while ( val_i1 < end_i1 ) {
+			*val_res++ = *val_i1++;
+			*map_res++ = 0;
+		}
+	} else {
+		while ( val_i1 < end_i1 && val_i2 < end_i2) {
+			if (*val_i1 >= *val_i2) {
+				*val_res++ = *val_i1++;
+				*map_res++ = *map_i1++;
+			} else if (*val_i1 < *val_i2) {
+				*val_res++ = *val_i2++;
+				*map_res++ = map_i2;
+			}
+		}
+		while ( val_i1 < end_i1 ) {
+			*val_res++ = *val_i1++;
+			*map_res++ = *map_i1++;
+		}
+	}
+	while ( val_i2 < end_i2 ) {
+		*val_res++ = *val_i2++;
+		*map_res++ = map_i2;
+	}
+	return 0;
+}
+
+static int
+MATsortloop_hge_( hge *val_res, bte *map_res, hge *val_i1, bte *map_i1, BUN cnt_i1, hge *val_i2, bte map_i2, BUN cnt_i2 ) {
+
+	hge *end_i1 = val_i1 + cnt_i1;
+	hge *end_i2 = val_i2 + cnt_i2;
+
+	if (map_i1 == NULL) {
+		/* map_i1 = 0 */
+		while ( val_i1 < end_i1 && val_i2 < end_i2) {
+			if (*val_i1 <= *val_i2) {
+				*val_res++ = *val_i1++;
+				*map_res++ = 0;
+			} else if (*val_i1 > *val_i2) {
+				*val_res++ = *val_i2++;
+				*map_res++ = map_i2;
+			}
+		}
+		while ( val_i1 < end_i1 ) {
+			*val_res++ = *val_i1++;
+			*map_res++ = 0;
+		}
+	} else {
+		while ( val_i1 < end_i1 && val_i2 < end_i2) {
+			if (*val_i1 <= *val_i2) {
+				*val_res++ = *val_i1++;
+				*map_res++ = *map_i1++;
+			} else if (*val_i1 > *val_i2) {
+				*val_res++ = *val_i2++;
+				*map_res++ = map_i2;
+			}
+		}
+		while ( val_i1 < end_i1 ) {
+			*val_res++ = *val_i1++;
+			*map_res++ = *map_i1++;
+		}
+	}
+	while ( val_i2 < end_i2 ) {
+		*val_res++ = *val_i2++;
+		*map_res++ = map_i2;
+	}
+	return 0;
+}
+
+/* multi-bat sort primitives */
+static BAT *
+MATsort_hge( BAT **map, BAT **bats, int len, BUN cnt, int rev )
+{
+	BAT *res;
+	int i;
+	hge *resT, **batsT, *in;
+	bte *mapT;
+	BUN len1, len2;
+	bte *map_in = NULL;
+
+	res = BATnew(TYPE_void, bats[0]->ttype, cnt);
+	*map = BATnew(TYPE_void, TYPE_bte, cnt);
+	BATseqbase(res, 0);
+	BATseqbase(*map, 0);
+	resT = (hge*)Tloc(res, 0);
+	mapT = (bte*)Tloc(*map, 0);
+	batsT = (hge**)GDKmalloc(sizeof(hge*) * len);
+	for (i=0; i<len; i++)
+		batsT[i] = (hge*)Tloc(bats[i], 0);
+	/* merge */
+	in = batsT[0];
+	len1 = BATcount(bats[0]);
+	map_in = NULL;
+	/* TODO: change into a tree version */
+	for (i=1; i<len; i++) {
+		len2 = BATcount(bats[i]);
+		if (rev) {
+			MATsortloop_hge_rev( resT+cnt-len1-len2,
+					mapT+cnt-len1-len2,
+				        in, map_in, len1,
+					batsT[i], i, len2);
+		} else {
+			MATsortloop_hge_( resT+cnt-len1-len2,
+					mapT+cnt-len1-len2,
+				        in, map_in, len1,
+					batsT[i], i, len2);
+		}
+		in = resT+cnt-len1-len2;
+		map_in = mapT+cnt-len1-len2;
+		len1 += len2;
+	}
+	BATsetcount(res, len1);
+	BATsetcount(*map, len1);
+	res->hrevsorted = len1 <= 1;
+	(*map)->hrevsorted = len1 <= 1;
+	GDKfree(batsT);
+	return res;
+}
+#endif
+
 static BAT *
 MATsort_int( BAT **map, BAT **bats, int len, BUN cnt, int rev )
 {
@@ -1560,6 +1741,10 @@ MATsort(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int rev)
 		res = MATsort_int(&map, bats, len, pcnt, rev);
 	} else if (ATOMsize(bats[0]->ttype) == sizeof(lng)) {
 		res = MATsort_lng(&map, bats, len, pcnt, rev);
+#ifdef HAVE_HGE
+	} else if (ATOMsize(bats[0]->ttype) == sizeof(hge)) {
+		res = MATsort_hge(&map, bats, len, pcnt, rev);
+#endif
 	} else {
 		res = MATsort_any(&map, bats, len, pcnt, rev);
 	}
