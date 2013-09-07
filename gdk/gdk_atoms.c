@@ -207,7 +207,16 @@ align(int n)
 		return 2;
 	if (n & 4)
 		return 4;
+#ifdef HAVE_HGE
+	/* Do we indeed need 16-byte alignment
+	 * for 128-bit integers ?
+	 * I.e., does this indeed make sense ? */
+	if (n & 8)
+		return 8;
+	return 16;
+#else
 	return 8;
+#endif
 }
 
 void
