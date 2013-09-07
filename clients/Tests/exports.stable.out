@@ -869,11 +869,6 @@ str ARRAYgridShift_int(int *ret, int *groups, int *groupsize, int *clustersize, 
 str ARRAYgridShift_lng(lng *ret, lng *groups, lng *groupsize, lng *clustersize, lng *offset, lng *shift);
 str ARRAYgrid_int(int *ret, int *groups, int *groupsize, int *clustersize, int *offset);
 str ARRAYgrid_lng(lng *ret, lng *groups, lng *groupsize, lng *clustersize, lng *offset);
-str ARRAYmultiply_int_int(int *ret, int *bid, int *rid);
-str ARRAYmultiply_int_lng(int *ret, int *bid, int *rid);
-str ARRAYmultiply_lng_lng(int *ret, int *bid, int *rid);
-str ARRAYmultiply_sht_int(int *ret, int *bid, int *rid);
-str ARRAYmultiply_sht_lng(int *ret, int *bid, int *rid);
 str ARRAYproduct(int *ret, int *bid, int *rid);
 str ARRAYproject(int *ret, int *bid, int *cst);
 str AUTHaddUser(oid *ret, Client *c, str *user, str *pass);

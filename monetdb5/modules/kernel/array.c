@@ -321,46 +321,6 @@ ARRAYgridBATshift_lng(lng *ret, lng *bid, lng *groups, lng *groupsize, lng *clus
 	return MAL_SUCCEED;
 }
 
-#define arraymultiply(X1,X2)\
-str \
-ARRAYmultiply_##X1##_##X2(int *ret, int *bid, int *rid){\
-	BAT *bn, *b, *r;\
-	BUN p,q, s,t;\
-	X2 val;\
-	oid o= oid_nil;\
-	BATiter bi, ri;\
-	if( (b= BATdescriptor(*bid)) == NULL ){\
-		 throw(MAL, "array.*", RUNTIME_OBJECT_MISSING);\
-	}\
-	if( (r= BATdescriptor(*rid)) == NULL ){\
-		BBPreleaseref(b->batCacheid);\
-		 throw(MAL, "array.*", RUNTIME_OBJECT_MISSING);\
-	}\
-	bn= BATnew(TYPE_void, TYPE_##X2, BATcount(b)*BATcount(r));\
-	BATseqbase(bn,0);\
-	bi = bat_iterator(b);\
-	ri = bat_iterator(r);\
-	BATloop(b,p,q){\
-		BATloop(r,s,t){\
-			val = (*(X1*) BUNtail(bi,p)) * (*(X1*)BUNtail(ri,s));\
-			BUNfastins(bn,&o,&val);\
-		}\
-	}\
-	bn->T->nonil = b->T->nonil & r->T->nonil;\
-	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \
-	*ret= bn->batCacheid;\
-	BBPkeepref(*ret);\
-	BBPreleaseref(b->batCacheid);\
-	BBPreleaseref(r->batCacheid);\
-	return MAL_SUCCEED;\
-}
-
-arraymultiply(sht,lng)
-arraymultiply(sht,int)
-arraymultiply(int,int)
-arraymultiply(int,lng)
-arraymultiply(lng,lng)
-
 str
 ARRAYproduct(int *ret, int *bid, int *rid)
 {

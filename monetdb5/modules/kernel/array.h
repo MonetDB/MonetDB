@@ -46,10 +46,4 @@ array_export str ARRAYgrid_lng(lng *ret, lng *groups, lng *groupsize, lng *clust
 array_export str ARRAYgridShift_lng(lng *ret, lng *groups, lng *groupsize, lng *clustersize, lng *offset, lng *shift);
 array_export str ARRAYgridBAT_lng(lng *ret, lng *bid, lng *groups, lng *groupsize, lng *clustersize, lng *offset);
 array_export str ARRAYgridBATshift_lng(lng *ret, lng *bid, lng *groups, lng *groupsize, lng *clustersize, lng *offset, lng *shift);
-
-array_export str ARRAYmultiply_sht_lng(int *ret, int *bid, int *rid);
-array_export str ARRAYmultiply_sht_int(int *ret, int *bid, int *rid);
-array_export str ARRAYmultiply_int_int(int *ret, int *bid, int *rid);
-array_export str ARRAYmultiply_int_lng(int *ret, int *bid, int *rid);
-array_export str ARRAYmultiply_lng_lng(int *ret, int *bid, int *rid);
 #endif
