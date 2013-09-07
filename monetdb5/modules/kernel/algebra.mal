@@ -795,31 +795,7 @@ command max(b:bat[:any_1,:any_2]):any_2
 address ALGmaxany
 comment "Return the highest tail value or nil.";
 
-command avg (b:bat[:any_1,:bte] ) :dbl
-address ALGavg
-comment "Gives the avg of all tail values";
-
-command avg (b:bat[:any_1,:sht] ) :dbl
-address ALGavg
-comment "Gives the avg of all tail values";
-
-command avg (b:bat[:any_1,:int] ) :dbl
-address ALGavg
-comment "Gives the avg of all tail values";
-
-command avg (b:bat[:any_1,:wrd] ) :dbl
-address ALGavg
-comment "Gives the avg of all tail values";
-
-command avg (b:bat[:any_1,:lng] ) :dbl
-address ALGavg
-comment "Gives the avg of all tail values";
-
-command avg (b:bat[:any_1,:flt] ) :dbl
-address ALGavg
-comment "Gives the avg of all tail values";
-
-command avg (b:bat[:any_1,:dbl] ) :dbl
+command avg (b:bat[:any_1,:any_2] ) :dbl
 address ALGavg
 comment "Gives the avg of all tail values";
 
@@ -827,94 +803,16 @@ comment "Gives the avg of all tail values";
 # The standard deviation of a set is the square root of its variance.
 # The variance is the sum of squares of the deviation of each value in the set
 # from the mean (average) value, divided by the population of the set.
-command stdev(b:bat[:any_1,:bte]) :dbl
+command stdev(b:bat[:any_1,:any_2]) :dbl
 address ALGstdev
 comment "Gives the standard deviation of all tail values";
-command stdevp(b:bat[:any_1,:bte]) :dbl
+command stdevp(b:bat[:any_1,:any_2]) :dbl
 address ALGstdevp
 comment "Gives the standard deviation of all tail values";
-command variance(b:bat[:any_1,:bte]) :dbl
+command variance(b:bat[:any_1,:any_2]) :dbl
 address ALGvariance
 comment "Gives the variance of all tail values";
-command variancep(b:bat[:any_1,:bte]) :dbl
-address ALGvariancep
-comment "Gives the variance of all tail values";
-
-command stdev(b:bat[:any_1,:sht]) :dbl
-address ALGstdev
-comment "Gives the standard deviation of all tail values";
-command stdevp(b:bat[:any_1,:sht]) :dbl
-address ALGstdevp
-comment "Gives the standard deviation of all tail values";
-command variance(b:bat[:any_1,:sht]) :dbl
-address ALGvariance
-comment "Gives the variance of all tail values";
-command variancep(b:bat[:any_1,:sht]) :dbl
-address ALGvariancep
-comment "Gives the variance of all tail values";
-
-command stdev(b:bat[:any_1,:int]) :dbl
-address ALGstdev
-comment "Gives the standard deviation of all tail values";
-command stdevp(b:bat[:any_1,:int]) :dbl
-address ALGstdevp
-comment "Gives the standard deviation of all tail values";
-command variance(b:bat[:any_1,:int]) :dbl
-address ALGvariance
-comment "Gives the variance of all tail values";
-command variancep(b:bat[:any_1,:int]) :dbl
-address ALGvariancep
-comment "Gives the variance of all tail values";
-
-command stdev(b:bat[:any_1,:wrd]) :dbl
-address ALGstdev
-comment "Gives the standard deviation of all tail values";
-command stdevp(b:bat[:any_1,:wrd]) :dbl
-address ALGstdevp
-comment "Gives the standard deviation of all tail values";
-command variance(b:bat[:any_1,:wrd]) :dbl
-address ALGvariance
-comment "Gives the variance of all tail values";
-command variancep(b:bat[:any_1,:wrd]) :dbl
-address ALGvariancep
-comment "Gives the variance of all tail values";
-
-command stdev(b:bat[:any_1,:lng]) :dbl
-address ALGstdev
-comment "Gives the standard deviation of all tail values";
-command stdevp(b:bat[:any_1,:lng]) :dbl
-address ALGstdevp
-comment "Gives the standard deviation of all tail values";
-command variance(b:bat[:any_1,:lng]) :dbl
-address ALGvariance
-comment "Gives the variance of all tail values";
-command variancep(b:bat[:any_1,:lng]) :dbl
-address ALGvariancep
-comment "Gives the variance of all tail values";
-
-command stdev(b:bat[:any_1,:flt]) :dbl
-address ALGstdev
-comment "Gives the standard deviation of all tail values";
-command stdevp(b:bat[:any_1,:flt]) :dbl
-address ALGstdevp
-comment "Gives the standard deviation of all tail values";
-command variance(b:bat[:any_1,:flt]) :dbl
-address ALGvariance
-comment "Gives the variance of all tail values";
-command variancep(b:bat[:any_1,:flt]) :dbl
-address ALGvariancep
-comment "Gives the variance of all tail values";
-
-command stdev(b:bat[:any_1,:dbl]) :dbl
-address ALGstdev
-comment "Gives the standard deviation of all tail values";
-command stdevp(b:bat[:any_1,:dbl]) :dbl
-address ALGstdevp
-comment "Gives the standard deviation of all tail values";
-command variance(b:bat[:any_1,:dbl]) :dbl
-address ALGvariance
-comment "Gives the variance of all tail values";
-command variancep(b:bat[:any_1,:dbl]) :dbl
+command variancep(b:bat[:any_1,:any_2]) :dbl
 address ALGvariancep
 comment "Gives the variance of all tail values";
 
