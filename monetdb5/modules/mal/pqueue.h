@@ -154,6 +154,28 @@ pqueue_export str PQutopn_lngmax(int *ret, int *bid, wrd *N);
 pqueue_export str PQtopn2_lngmax(int *ret, int *aid, int *bid, wrd *N);
 pqueue_export str PQutopn2_lngmax(int *ret, int *aid, int *bid, wrd *N);
 
+#ifdef HAVE_HGE
+pqueue_export str PQenqueue_hgemin(int *ret, int *bid, oid *idx, hge *el);
+pqueue_export str PQtopreplace_hgemin(int *ret, int *bid, oid *idx, hge *el);
+pqueue_export str PQmovedowntop_hgemin(int *ret, int *bid);
+pqueue_export str PQdequeue_hgemin(int *ret, int *bid);
+
+pqueue_export str PQtopn_hgemin(int *ret, int *bid, wrd *N);
+pqueue_export str PQutopn_hgemin(int *ret, int *bid, wrd *N);
+pqueue_export str PQtopn2_hgemin(int *ret, int *aid, int *bid, wrd *N);
+pqueue_export str PQutopn2_hgemin(int *ret, int *aid, int *bid, wrd *N);
+
+pqueue_export str PQenqueue_hgemax(int *ret, int *bid, oid *idx, hge *el);
+pqueue_export str PQtopreplace_hgemax(int *ret, int *bid, oid *idx, hge *el);
+pqueue_export str PQmovedowntop_hgemax(int *ret, int *bid);
+pqueue_export str PQdequeue_hgemax(int *ret, int *bid);
+
+pqueue_export str PQtopn_hgemax(int *ret, int *bid, wrd *N);
+pqueue_export str PQutopn_hgemax(int *ret, int *bid, wrd *N);
+pqueue_export str PQtopn2_hgemax(int *ret, int *aid, int *bid, wrd *N);
+pqueue_export str PQutopn2_hgemax(int *ret, int *aid, int *bid, wrd *N);
+#endif
+
 pqueue_export str PQenqueue_fltmin(int *ret, int *bid, oid *idx, flt *el);
 pqueue_export str PQtopreplace_fltmin(int *ret, int *bid, oid *idx, flt *el);
 pqueue_export str PQmovedowntop_fltmin(int *ret, int *bid);

@@ -393,6 +393,10 @@ pqueueimpl_minmax(oid, oidmin, >)
 pqueueimpl_minmax(oid, oidmax, >)
 pqueueimpl_minmax(lng, lngmin, <)
 pqueueimpl_minmax(lng, lngmax, >)
+#ifdef HAVE_HGE
+pqueueimpl_minmax(hge, hgemin, <)
+pqueueimpl_minmax(hge, hgemax, >)
+#endif
 pqueueimpl_minmax(flt, fltmin, <)
 pqueueimpl_minmax(flt, fltmax, >)
 pqueueimpl_minmax(dbl, dblmin, <)
@@ -1248,6 +1252,9 @@ PQminmax(int)
 PQminmax(oid)
 PQminmax(wrd)
 PQminmax(lng)
+#ifdef HAVE_HGE
+PQminmax(hge)
+#endif
 PQminmax(flt)
 PQminmax(dbl)
 PQimpl2(any, min)
