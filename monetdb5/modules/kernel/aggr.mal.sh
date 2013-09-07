@@ -39,13 +39,13 @@ module aggr;
 
 EOF
 
-integer="bte sht int wrd lng"	# all integer types
+integer="bte sht int wrd lng hge"	# all integer types
 numeric="$integer flt dbl"	# all numeric types
 fixtypes="bit $numeric oid"
 alltypes="$fixtypes str"
 
-for tp1 in 1:bte 2:sht 4:int 8:wrd 8:lng; do
-    for tp2 in 8:dbl 1:bte 2:sht 4:int 4:wrd 8:lng; do
+for tp1 in 1:bte 2:sht 4:int 8:wrd 8:lng 16:hge; do
+    for tp2 in 8:dbl 1:bte 2:sht 4:int 4:wrd 8:lng 16:hge; do
 	if [ ${tp1%:*} -le ${tp2%:*} -o ${tp1#*:} = ${tp2#*:} ]; then
 	    cat <<EOF
 command sum(b:bat[:oid,:${tp1#*:}], e:bat[:oid,:any_1]) :bat[:oid,:${tp2#*:}]
@@ -136,7 +136,7 @@ EOF
 done
 
 # We may have to extend the signatures to all possible {void,oid} combos
-for tp in bte sht int wrd lng flt dbl; do
+for tp in bte sht int wrd lng hge flt dbl; do
     cat <<EOF
 command avg(b:bat[:oid,:${tp}], e:bat[:oid,:any_1]) :bat[:oid,:dbl]
 address AGGRavg12_dbl

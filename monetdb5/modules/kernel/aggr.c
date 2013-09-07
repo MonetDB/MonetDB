@@ -240,6 +240,16 @@ AGGRsum3_lng(bat *retval, bat *bid, bat *gid, bat *eid)
 						BATgroupsum, NULL, 1, "aggr.sum");
 }
 
+#ifdef HAVE_HGE
+aggr_export str AGGRsum3_hge(bat *retval, bat *bid, bat *gid, bat *eid);
+str
+AGGRsum3_hge(bat *retval, bat *bid, bat *gid, bat *eid)
+{
+	return AGGRgrouped3(retval, NULL, bid, gid, eid, TYPE_hge,
+						BATgroupsum, NULL, 1, "aggr.sum");
+}
+#endif
+
 aggr_export str AGGRsum3_flt(bat *retval, bat *bid, bat *gid, bat *eid);
 str
 AGGRsum3_flt(bat *retval, bat *bid, bat *gid, bat *eid)
@@ -290,6 +300,15 @@ AGGRsum2_lng(bat *retval, bat *bid, bat *eid)
 {
 	return AGGRgrouped2(retval, NULL, bid, eid, TYPE_lng, BATgroupsum, NULL, 1, "aggr.sum");
 }
+
+#ifdef HAVE_HGE
+aggr_export str AGGRsum2_hge(bat *retval, bat *bid, bat *eid);
+str
+AGGRsum2_hge(bat *retval, bat *bid, bat *eid)
+{
+	return AGGRgrouped2(retval, NULL, bid, eid, TYPE_hge, BATgroupsum, NULL, 1, "aggr.sum");
+}
+#endif
 
 aggr_export str AGGRsum2_flt(bat *retval, bat *bid, bat *eid);
 str
@@ -345,6 +364,16 @@ AGGRprod3_lng(bat *retval, bat *bid, bat *gid, bat *eid)
 						BATgroupprod, NULL, 1, "aggr.prod");
 }
 
+#ifdef HAVE_HGE
+aggr_export str AGGRprod3_hge(bat *retval, bat *bid, bat *gid, bat *eid);
+str
+AGGRprod3_hge(bat *retval, bat *bid, bat *gid, bat *eid)
+{
+	return AGGRgrouped3(retval, NULL, bid, gid, eid, TYPE_hge,
+						BATgroupprod, NULL, 1, "aggr.prod");
+}
+#endif
+
 aggr_export str AGGRprod3_flt(bat *retval, bat *bid, bat *gid, bat *eid);
 str
 AGGRprod3_flt(bat *retval, bat *bid, bat *gid, bat *eid)
@@ -395,6 +424,15 @@ AGGRprod2_lng(bat *retval, bat *bid, bat *eid)
 {
 	return AGGRgrouped2(retval, NULL, bid, eid, TYPE_lng, BATgroupprod, NULL, 1, "aggr.prod");
 }
+
+#ifdef HAVE_HGE
+aggr_export str AGGRprod2_hge(bat *retval, bat *bid, bat *eid);
+str
+AGGRprod2_hge(bat *retval, bat *bid, bat *eid)
+{
+	return AGGRgrouped2(retval, NULL, bid, eid, TYPE_hge, BATgroupprod, NULL, 1, "aggr.prod");
+}
+#endif
 
 aggr_export str AGGRprod2_flt(bat *retval, bat *bid, bat *eid);
 str
@@ -724,6 +762,16 @@ AGGRsubsum_lng(bat *retval, bat *bid, bat *gid, bat *eid, bit *skip_nils, bit *a
 						  *abort_on_error, TYPE_lng, BATgroupsum, NULL, "aggr.subsum");
 }
 
+#ifdef HAVE_HGE
+aggr_export str AGGRsubsum_hge(bat *retval, bat *bid, bat *gid, bat *eid, bit *skip_nils, bit *abort_on_error);
+str
+AGGRsubsum_hge(bat *retval, bat *bid, bat *gid, bat *eid, bit *skip_nils, bit *abort_on_error)
+{
+	return AGGRsubgrouped(retval, NULL, bid, gid, eid, NULL, *skip_nils,
+						  *abort_on_error, TYPE_hge, BATgroupsum, NULL, "aggr.subsum");
+}
+#endif
+
 aggr_export str AGGRsubsum_flt(bat *retval, bat *bid, bat *gid, bat *eid, bit *skip_nils, bit *abort_on_error);
 str
 AGGRsubsum_flt(bat *retval, bat *bid, bat *gid, bat *eid, bit *skip_nils, bit *abort_on_error)
@@ -779,6 +827,16 @@ AGGRsubsumcand_lng(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, bit *ski
 	return AGGRsubgrouped(retval, NULL, bid, gid, eid, sid, *skip_nils,
 						  *abort_on_error, TYPE_lng, BATgroupsum, NULL, "aggr.subsum");
 }
+
+#ifdef HAVE_HGE
+aggr_export str AGGRsubsumcand_hge(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, bit *skip_nils, bit *abort_on_error);
+str
+AGGRsubsumcand_hge(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, bit *skip_nils, bit *abort_on_error)
+{
+	return AGGRsubgrouped(retval, NULL, bid, gid, eid, sid, *skip_nils,
+						  *abort_on_error, TYPE_hge, BATgroupsum, NULL, "aggr.subsum");
+}
+#endif
 
 aggr_export str AGGRsubsumcand_flt(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, bit *skip_nils, bit *abort_on_error);
 str
@@ -836,6 +894,16 @@ AGGRsubprod_lng(bat *retval, bat *bid, bat *gid, bat *eid, bit *skip_nils, bit *
 						  *abort_on_error, TYPE_lng, BATgroupprod, NULL, "aggr.subprod");
 }
 
+#ifdef HAVE_HGE
+aggr_export str AGGRsubprod_hge(bat *retval, bat *bid, bat *gid, bat *eid, bit *skip_nils, bit *abort_on_error);
+str
+AGGRsubprod_hge(bat *retval, bat *bid, bat *gid, bat *eid, bit *skip_nils, bit *abort_on_error)
+{
+	return AGGRsubgrouped(retval, NULL, bid, gid, eid, NULL, *skip_nils,
+						  *abort_on_error, TYPE_hge, BATgroupprod, NULL, "aggr.subprod");
+}
+#endif
+
 aggr_export str AGGRsubprod_flt(bat *retval, bat *bid, bat *gid, bat *eid, bit *skip_nils, bit *abort_on_error);
 str
 AGGRsubprod_flt(bat *retval, bat *bid, bat *gid, bat *eid, bit *skip_nils, bit *abort_on_error)
@@ -891,6 +959,16 @@ AGGRsubprodcand_lng(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, bit *sk
 	return AGGRsubgrouped(retval, NULL, bid, gid, eid, sid, *skip_nils,
 						  *abort_on_error, TYPE_lng, BATgroupprod, NULL, "aggr.subprod");
 }
+
+#ifdef HAVE_HGE
+aggr_export str AGGRsubprodcand_hge(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, bit *skip_nils, bit *abort_on_error);
+str
+AGGRsubprodcand_hge(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, bit *skip_nils, bit *abort_on_error)
+{
+	return AGGRsubgrouped(retval, NULL, bid, gid, eid, sid, *skip_nils,
+						  *abort_on_error, TYPE_hge, BATgroupprod, NULL, "aggr.subprod");
+}
+#endif
 
 aggr_export str AGGRsubprodcand_flt(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, bit *skip_nils, bit *abort_on_error);
 str

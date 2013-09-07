@@ -67,11 +67,11 @@ function user.f3():void;                #  0 f3:void := user.f3() {G}
     t19 := batcalc.+(t16,t18);          # 19 t19:bat[:oid,:int] := CMDbatADDsignal(t16:bat[:oid,:int], t18:bat[:oid,:int]) {G}
     t20 := batcalc.oid(t19);            # 20 t20:bat[:oid,:oid] := CMDconvertsignal_oid(t19:bat[:oid,:int]) {G}
     t21 := array.grid(1,4096,1,0);      # 21 t21:bat[:oid,:int] := ARRAYgrid_int(_6:int, _4:int, _6:int, _7:int) {G}
-    t22 := aggr.sum(t15,t20,t21);       # 22 t22:bat[:oid,:lng] := AGGRsum3_lng(t15:bat[:oid,:int], t20:bat[:oid,:oid], t21:bat[:oid,:int]) {G}
-    top := t22;                         # 23 top:bat[:oid,:lng] := t22:bat[:oid,:lng] {G}
+    t22 := aggr.sum(t15,t20,t21);       # 22 t22:bat[:oid,:hge] := AGGRsum3_hge(t15:bat[:oid,:int], t20:bat[:oid,:oid], t21:bat[:oid,:int]) {G}
+    top := t22;                         # 23 top:bat[:oid,:hge] := t22:bat[:oid,:hge] {G}
     bat_0 := array.grid(64,64,1,0);     # 24 bat_0:bat[:oid,:int] := ARRAYgrid_int(_5:int, _5:int, _6:int, _7:int) {G}
     bat_1 := array.grid(1,64,64,0);     # 25 bat_1:bat[:oid,:int] := ARRAYgrid_int(_6:int, _5:int, _5:int, _7:int) {G}
-    io.table(bat_0,bat_1,top);          # 26 _32:void := IOttable(bat_0:bat[:oid,:int], bat_1:bat[:oid,:int], top:bat[:oid,:lng]) {G}
+    io.table(bat_0,bat_1,top);          # 26 _32:void := IOttable(bat_0:bat[:oid,:int], bat_1:bat[:oid,:int], top:bat[:oid,:hge]) {G}
 #       io.table(bat_0,bat_1,top); 
 end f3;                                 # 28  
 
