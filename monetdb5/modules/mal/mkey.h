@@ -140,6 +140,9 @@ mkey_export str  MKEYhash_flt(wrd *ret, flt *v);
 mkey_export str  MKEYhash_wrd(wrd *ret, wrd *v);
 mkey_export str  MKEYhash_dbl(wrd *ret, dbl *v);
 mkey_export str  MKEYhash_lng(wrd *ret, lng *v);
+#ifdef HAVE_HGE
+mkey_export str  MKEYhash_hge(wrd *ret, hge *v);
+#endif
 mkey_export str  MKEYhash_str(wrd *ret, str *v);
 mkey_export str  MKEYrotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mkey_export str  MKEYbulk_rotate_xor_hash(int *ret, int *hid, int *nbits,int *bid);

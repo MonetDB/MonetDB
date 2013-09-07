@@ -1628,6 +1628,7 @@ str MKEYhash_bit(wrd *ret, bit *v);
 str MKEYhash_bte(wrd *ret, bte *v);
 str MKEYhash_dbl(wrd *ret, dbl *v);
 str MKEYhash_flt(wrd *ret, flt *v);
+str MKEYhash_hge(wrd *ret, hge *v);
 str MKEYhash_int(wrd *ret, int *v);
 str MKEYhash_lng(wrd *ret, lng *v);
 str MKEYhash_sht(wrd *ret, sht *v);
