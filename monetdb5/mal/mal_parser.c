@@ -517,6 +517,9 @@ cstToken(Client cntxt, ValPtr cst)
 			return i;
 		}
 		if (*s == 'L') {
+#ifdef HAVE_HGE
+			assert(cst->vtype != TYPE_hge);
+#endif
 			if (cst->vtype == TYPE_int)
 				cst->vtype = TYPE_lng;
 			if (cst->vtype == TYPE_flt)
@@ -549,6 +552,9 @@ cstToken(Client cntxt, ValPtr cst)
 			return i;
 		}
 handleInts:
+#ifdef HAVE_HGE
+		assert(cst->vtype != TYPE_hge);
+#endif
 		if (cst->vtype == TYPE_int || cst->vtype == TYPE_lng) {
 			int len = (int) sizeof(lng);
 			lng *pval = &l;

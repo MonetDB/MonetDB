@@ -159,6 +159,12 @@ getTypeIndex(str nme, int len, int deftype)
 			if (qt("lng"))
 				return TYPE_lng;
 			break;
+#ifdef HAVE_HGE
+		case 'h':
+			if (qt("hge"))
+				return TYPE_hge;
+			break;
+#endif
 		case 'o':
 			if (qt("oid"))
 				return TYPE_oid;
@@ -196,7 +202,7 @@ getTypeIndex(str nme, int len, int deftype)
 /*
  * @-
  * Literal constants are not necessarily type specific, e.g.
- * the value '0' could represent bte,sht,wrd,int,lng.
+ * the value '0' could represent bte,sht,wrd,int,lng,hge.
  * If the value is potentially ambiguous, it should
  * be made type specific in listings
  */
@@ -204,6 +210,9 @@ int
 isAmbiguousType(int type){
 	switch(type){
 		case TYPE_bte: case TYPE_sht: case TYPE_wrd: case TYPE_int: case TYPE_lng:
+#ifdef HAVE_HGE
+		case TYPE_hge:
+#endif
 		return type != TYPE_int;
 		case TYPE_flt: case TYPE_dbl:
 		return type != TYPE_flt;

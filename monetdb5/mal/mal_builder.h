@@ -42,6 +42,9 @@ mal_export InstrPtr pushBte(MalBlkPtr mb, InstrPtr q, bte val);
 mal_export InstrPtr pushOid(MalBlkPtr mb, InstrPtr q, oid val);
 mal_export InstrPtr pushVoid(MalBlkPtr mb, InstrPtr q);
 mal_export InstrPtr pushLng(MalBlkPtr mb, InstrPtr q, lng val);
+#ifdef HAVE_HGE
+mal_export InstrPtr pushHge(MalBlkPtr mb, InstrPtr q, hge val);
+#endif
 mal_export InstrPtr pushDbl(MalBlkPtr mb, InstrPtr q, dbl val);
 mal_export InstrPtr pushFlt(MalBlkPtr mb, InstrPtr q, flt val);
 mal_export InstrPtr pushStr(MalBlkPtr mb, InstrPtr q, const char *val);

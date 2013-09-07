@@ -59,6 +59,9 @@ ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k)
 	case TYPE_flt: ret = (ptr) & v->val.fval; break;
 	case TYPE_dbl: ret = (ptr) & v->val.dval; break;
 	case TYPE_lng: ret = (ptr) & v->val.lval; break;
+#ifdef HAVE_HGE
+	case TYPE_hge: ret = (ptr) & v->val.hval; break;
+#endif
 	case TYPE_str: ret = (ptr) & v->val.sval; break;
 	default:
 		ret = (ptr) & v->val.pval;
@@ -954,6 +957,12 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				if (v->val.lval == lng_nil)
 					stkpc = pci->jump;
 				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				if (v->val.hval == hge_nil)
+					stkpc = pci->jump;
+				break;
+#endif
 			case TYPE_flt:
 				if (v->val.fval == flt_nil)
 					stkpc = pci->jump;
@@ -1026,6 +1035,14 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				else
 					stkpc++;
 				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				if (v->val.hval != hge_nil)
+					stkpc = pci->jump;
+				else
+					stkpc++;
+				break;
+#endif
 			case TYPE_flt:
 				if (v->val.fval != flt_nil)
 					stkpc = pci->jump;

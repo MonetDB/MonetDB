@@ -2926,6 +2926,7 @@ InstrPtr pushDbl(MalBlkPtr mb, InstrPtr q, dbl val);
 InstrPtr pushEmptyBAT(MalBlkPtr mb, InstrPtr q, int tpe);
 void pushEndInstruction(MalBlkPtr mb);
 InstrPtr pushFlt(MalBlkPtr mb, InstrPtr q, flt val);
+InstrPtr pushHge(MalBlkPtr mb, InstrPtr q, hge val);
 void pushInstruction(MalBlkPtr mb, InstrPtr p);
 InstrPtr pushInt(MalBlkPtr mb, InstrPtr q, int val);
 InstrPtr pushLng(MalBlkPtr mb, InstrPtr q, lng val);

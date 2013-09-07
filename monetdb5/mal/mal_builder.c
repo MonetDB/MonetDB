@@ -246,6 +246,20 @@ pushLng(MalBlkPtr mb, InstrPtr q, lng val)
 	return pushArgument(mb, q, _t);
 }
 
+#ifdef HAVE_HGE
+InstrPtr
+pushHge(MalBlkPtr mb, InstrPtr q, hge val)
+{
+	int _t;
+	ValRecord cst;
+
+	cst.vtype= TYPE_hge;
+	cst.val.hval= val;
+	_t = defConstant(mb,TYPE_hge,&cst);
+	return pushArgument(mb, q, _t);
+}
+#endif
+
 InstrPtr
 pushDbl(MalBlkPtr mb, InstrPtr q, dbl val)
 {
