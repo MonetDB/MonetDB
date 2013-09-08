@@ -1477,6 +1477,7 @@ str ITRnewChunk(lng *res, int *vid, int *bid, lng *granule);
 str ITRnextChunk(lng *res, int *vid, int *bid, lng *granule);
 str ITRnext_dbl(dbl *i, dbl *step, dbl *last);
 str ITRnext_flt(flt *i, flt *step, flt *last);
+str ITRnext_hge(hge *i, hge *step, hge *last);
 str ITRnext_int(int *i, int *step, int *last);
 str ITRnext_lng(lng *i, lng *step, lng *last);
 str ITRnext_oid(oid *i, oid *step, oid *last);
