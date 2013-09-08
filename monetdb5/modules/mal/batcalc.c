@@ -255,6 +255,10 @@ calctype(int tp1, int tp2)
 		return TYPE_dbl;
 	if (tp1s == TYPE_flt || tp2s == TYPE_flt)
 		return TYPE_flt;
+#ifdef HAVE_HGE
+	if (tp1s == TYPE_hge || tp2s == TYPE_hge)
+		return TYPE_hge;
+#endif
 	return TYPE_lng;
 }
 
@@ -272,6 +276,13 @@ calctypeenlarge(int tp1, int tp2)
 	case TYPE_wrd:
 #endif
 		return TYPE_lng;
+#ifdef HAVE_HGE
+#if SIZEOF_WRD == SIZEOF_LNG
+	case TYPE_wrd:
+#endif
+	case TYPE_lng:
+		return TYPE_hge;
+#endif
 	case TYPE_flt:
 		return TYPE_dbl;
 	default:
@@ -1308,6 +1319,29 @@ CMDconvertsignal_lng(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	return CMDconvertbat(stk, pci, TYPE_lng, 1);
 }
+
+#ifdef HAVE_HGE
+batcalc_export str CMDconvert_hge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+batcalc_export str CMDconvertsignal_hge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+
+str
+CMDconvert_hge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	(void) mb;
+
+	return CMDconvertbat(stk, pci, TYPE_hge, 0);
+}
+
+str
+CMDconvertsignal_hge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	(void) mb;
+
+	return CMDconvertbat(stk, pci, TYPE_hge, 1);
+}
+#endif
 
 batcalc_export str CMDconvert_flt(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 batcalc_export str CMDconvertsignal_flt(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
