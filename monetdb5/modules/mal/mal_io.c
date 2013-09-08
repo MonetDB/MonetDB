@@ -321,6 +321,12 @@ IOprintf_(str *res, str format, ...)
 					goto largetypes;
 				} else if (type == TYPE_lng) {
 					goto largetypes;
+#ifdef HAVE_HGE
+				} else if (type == TYPE_hge) {
+					/* Does this happen?
+					 * If so, what do we have TODO ? */
+					return_error(type_error);
+#endif
 				} else if (type == TYPE_int) {
 					ival = *(int *) p;
 				} else {
@@ -353,6 +359,12 @@ IOprintf_(str *res, str format, ...)
 					lval = (lng) *(dbl *) p;
 				} else if (type == TYPE_lng) {
 					lval = *(lng *) p;
+#ifdef HAVE_HGE
+				} else if (type == TYPE_hge) {
+					/* Does this happen?
+					 * If so, what do we have TODO ? */
+					return_error(type_error);
+#endif
 				} else {
 					va_end(ap);
 					return_error(type_error);
@@ -473,6 +485,9 @@ tstagain:
 	case TYPE_flt: val= (ptr) & v->val.fval; break;
 	case TYPE_dbl: val= (ptr) & v->val.dval; break;
 	case TYPE_lng: val= (ptr) & v->val.lval; break;
+#ifdef HAVE_HGE
+	case TYPE_hge: val= (ptr) & v->val.hval; break;
+#endif
 	case TYPE_str: val= (ptr) v->val.sval; break;/*!!*/
 	default:
 		tpe= ATOMstorage(tpe);
