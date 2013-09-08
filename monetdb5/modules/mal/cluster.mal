@@ -51,6 +51,12 @@ address CLS_create_lng;
 command new(b:bat[:oid,:lng], bits:int, offset:int, order:bit) (psum:bat[:oid,:wrd], map:bat[:oid,:bte])
 address CLS_create2_lng;
 
+command new(b:bat[:oid,:hge], bits:int, offset:int) (psum:bat[:oid,:wrd], map:bat[:oid,:wrd])
+address CLS_create_hge;
+
+command new(b:bat[:oid,:hge], bits:int, offset:int, order:bit) (psum:bat[:oid,:wrd], map:bat[:oid,:bte])
+address CLS_create2_hge;
+
 command new(b:bat[:oid,:flt], bits:int, offset:int) (psum:bat[:oid,:wrd], map:bat[:oid,:wrd])
 address CLS_create_flt;
 

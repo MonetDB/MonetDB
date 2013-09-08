@@ -57,6 +57,11 @@ cluster_export str  CLS_create2_wrd(bat *rpsum, bat *rcmap, bat *b, unsigned int
 cluster_export str  CLS_create_lng(bat *rpsum, bat *rcmap, bat *b, unsigned int *bits, unsigned int *offset);
 cluster_export str  CLS_create2_lng(bat *rpsum, bat *rcmap, bat *b, unsigned int *bits, unsigned int *offset, bit *order);
 
+#ifdef HAVE_HGE
+cluster_export str  CLS_create_hge(bat *rpsum, bat *rcmap, bat *b, unsigned int *bits, unsigned int *offset);
+cluster_export str  CLS_create2_hge(bat *rpsum, bat *rcmap, bat *b, unsigned int *bits, unsigned int *offset, bit *order);
+#endif
+
 cluster_export str  CLS_create_flt(bat *rpsum, bat *rcmap, bat *b, unsigned int *bits, unsigned int *offset);
 cluster_export str  CLS_create2_flt(bat *rpsum, bat *rcmap, bat *b, unsigned int *bits, unsigned int *offset, bit *order);
 

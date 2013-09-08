@@ -1098,6 +1098,7 @@ str CLRycc(color *c, int *y, int *cr, int *cb);
 str CLS_create2_bte(bat *rpsum, bat *rcmap, bat *b, unsigned int *bits, unsigned int *offset, bit *order);
 str CLS_create2_dbl(bat *rpsum, bat *rcmap, bat *b, unsigned int *bits, unsigned int *offset, bit *order);
 str CLS_create2_flt(bat *rpsum, bat *rcmap, bat *b, unsigned int *bits, unsigned int *offset, bit *order);
+str CLS_create2_hge(bat *rpsum, bat *rcmap, bat *b, unsigned int *bits, unsigned int *offset, bit *order);
 str CLS_create2_int(bat *rpsum, bat *rcmap, bat *b, unsigned int *bits, unsigned int *offset, bit *order);
 str CLS_create2_lng(bat *rpsum, bat *rcmap, bat *b, unsigned int *bits, unsigned int *offset, bit *order);
 str CLS_create2_sht(bat *rpsum, bat *rcmap, bat *b, unsigned int *bits, unsigned int *offset, bit *order);
@@ -1105,6 +1106,7 @@ str CLS_create2_wrd(bat *rpsum, bat *rcmap, bat *b, unsigned int *bits, unsigned
 str CLS_create_bte(bat *rpsum, bat *rcmap, bat *b, unsigned int *bits, unsigned int *offset);
 str CLS_create_dbl(bat *rpsum, bat *rcmap, bat *b, unsigned int *bits, unsigned int *offset);
 str CLS_create_flt(bat *rpsum, bat *rcmap, bat *b, unsigned int *bits, unsigned int *offset);
+str CLS_create_hge(bat *rpsum, bat *rcmap, bat *b, unsigned int *bits, unsigned int *offset);
 str CLS_create_int(bat *rpsum, bat *rcmap, bat *b, unsigned int *bits, unsigned int *offset);
 str CLS_create_lng(bat *rpsum, bat *rcmap, bat *b, unsigned int *bits, unsigned int *offset);
 str CLS_create_sht(bat *rpsum, bat *rcmap, bat *b, unsigned int *bits, unsigned int *offset);
