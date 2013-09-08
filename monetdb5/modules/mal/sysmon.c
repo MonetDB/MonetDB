@@ -144,7 +144,16 @@ SYSMONpause(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	switch( getArgType(mb,pci,1)){
 	case TYPE_sht: tag = *(sht*) getArgReference(stk,pci,1); break;
 	case TYPE_int: tag = *(int*) getArgReference(stk,pci,1); break;
-	case TYPE_lng: tag = *(lng*) getArgReference(stk,pci,1); 
+	case TYPE_lng: tag = *(lng*) getArgReference(stk,pci,1); break;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		/* Does this happen?
+		 * If so, what do we have TODO ? */
+		throw(MAL, "SYSMONpause", "type hge not handled, yet");
+		break;
+#endif
+	default:
+		assert(0);
 	}
 	MT_lock_set(&mal_delayLock, "sysmon");
 	for ( i = 0; QRYqueue[i].tag; i++)
@@ -166,7 +175,16 @@ SYSMONresume(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	switch( getArgType(mb,pci,1)){
 	case TYPE_sht: tag = *(sht*) getArgReference(stk,pci,1); break;
 	case TYPE_int: tag = *(int*) getArgReference(stk,pci,1); break;
-	case TYPE_lng: tag = *(lng*) getArgReference(stk,pci,1); 
+	case TYPE_lng: tag = *(lng*) getArgReference(stk,pci,1); break;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		/* Does this happen?
+		 * If so, what do we have TODO ? */
+		throw(MAL, "SYSMONresume", "type hge not handled, yet");
+		break;
+#endif
+	default:
+		assert(0);
 	}
 	MT_lock_set(&mal_delayLock, "sysmon");
 	for ( i = 0; QRYqueue[i].tag; i++)
@@ -188,7 +206,16 @@ SYSMONstop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	switch( getArgType(mb,pci,1)){
 	case TYPE_sht: tag = *(sht*) getArgReference(stk,pci,1); break;
 	case TYPE_int: tag = *(int*) getArgReference(stk,pci,1); break;
-	case TYPE_lng: tag = *(lng*) getArgReference(stk,pci,1); 
+	case TYPE_lng: tag = *(lng*) getArgReference(stk,pci,1); break;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		/* Does this happen?
+		 * If so, what do we have TODO ? */
+		throw(MAL, "SYSMONstop", "type hge not handled, yet");
+		break;
+#endif
+	default:
+		assert(0);
 	}
 	MT_lock_set(&mal_delayLock, "sysmon");
 	for ( i = 0; QRYqueue[i].tag; i++)
