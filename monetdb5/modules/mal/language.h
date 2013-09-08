@@ -46,6 +46,9 @@ language_export str MALassertOid(int *ret, oid *val, str *msg);
 language_export str MALassertSht(int *ret, sht *val, str *msg);
 language_export str MALassertInt(int *ret, int *val, str *msg);
 language_export str MALassertLng(int *ret, lng *val, str *msg);
+#ifdef HAVE_HGE
+language_export str MALassertHge(int *ret, hge *val, str *msg);
+#endif
 language_export str MALstartDataflow( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 language_export str MALpass( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 language_export str MALgarbagesink( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);

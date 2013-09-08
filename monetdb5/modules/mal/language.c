@@ -64,6 +64,15 @@ MALassertLng(int *ret, lng *val, str *msg){
 		throw(MAL, "mal.assert", "%s", *msg);
 	return MAL_SUCCEED;
 }
+#ifdef HAVE_HGE
+str
+MALassertHge(int *ret, hge *val, str *msg){
+	(void) ret;
+	if( *val == 0 || *val == hge_nil)
+		throw(MAL, "mal.assert", "%s", *msg);
+	return MAL_SUCCEED;
+}
+#endif
 str
 MALassertSht(int *ret, sht *val, str *msg){
 	(void) ret;

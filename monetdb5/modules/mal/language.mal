@@ -24,6 +24,8 @@ command assert(v:int,term:str):void
 address MALassertInt;
 command assert(v:lng,term:str):void
 address MALassertLng;
+command assert(v:hge,term:str):void
+address MALassertHge;
 command assert(v:str,term:str):void
 address MALassertStr;
 command assert(v:oid,term:str):void
