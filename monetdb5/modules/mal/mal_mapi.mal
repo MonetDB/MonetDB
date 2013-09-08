@@ -144,6 +144,10 @@ command fetch_field(hdl:int,fnr:int):lng
 address SERVERfetch_field_lng
 comment "Retrieve a single lng field.";
 
+command fetch_field(hdl:int,fnr:int):hge
+address SERVERfetch_field_hge
+comment "Retrieve a single hge field.";
+
 command fetch_field(hdl:int,fnr:int):sht
 address SERVERfetch_field_sht
 comment "Retrieve a single sht field.";

@@ -1140,6 +1140,22 @@ SERVERfetch_field_lng(lng *ret, int *key, int *fnr){
 	return MAL_SUCCEED;
 }
 
+#ifdef HAVE_HGE
+str
+SERVERfetch_field_hge(hge *ret, int *key, int *fnr){
+	Mapi mid;
+	int i;
+	str fld;
+	accessTest(*key, "fetch_field");
+	fld= mapi_fetch_field(SERVERsessions[i].hdl,*fnr);
+	*ret= fld? atol(fld): hge_nil;
+	if( mapi_error(mid) )
+		throw(MAL, "mapi.fetch_field_hge", "%s",
+			mapi_result_error(SERVERsessions[i].hdl));
+	return MAL_SUCCEED;
+}
+#endif
+
 str
 SERVERfetch_field_sht(sht *ret, int *key, int *fnr){
 	Mapi mid;
@@ -1350,6 +1366,13 @@ static void SERVERfieldAnalysis(str fld, int tpe, ValPtr v){
 			v->val.lval= lng_nil;
 		else v->val.lval= (lng)  atol(fld);
 		break;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		if(fld==0 || strcmp(fld,"nil")==0)
+			v->val.hval= hge_nil;
+		else v->val.hval= (hge)  atol(fld);
+		break;
+#endif
 	case TYPE_flt:
 		if(fld==0 || strcmp(fld,"nil")==0)
 			v->val.fval= flt_nil;
@@ -1423,6 +1446,9 @@ SERVERmapi_rpc_single_row(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			case TYPE_int:
 			case TYPE_wrd:
 			case TYPE_lng:
+#ifdef HAVE_HGE
+			case TYPE_hge:
+#endif
 			case TYPE_flt:
 			case TYPE_dbl:
 			case TYPE_str:

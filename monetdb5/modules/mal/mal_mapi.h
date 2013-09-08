@@ -82,6 +82,9 @@ mal_mapi_export str SERVERfetch_all_rows(lng *ret, int *idx);
 mal_mapi_export str SERVERfetch_field_str(str *ret, int *idx, int *fnr);
 mal_mapi_export str SERVERfetch_field_int(int *ret, int *idx, int *fnr);
 mal_mapi_export str SERVERfetch_field_lng(lng *ret, int *idx, int *fnr);
+#ifdef HAVE_HGE
+mal_mapi_export str SERVERfetch_field_hge(hge *ret, int *idx, int *fnr);
+#endif
 mal_mapi_export str SERVERfetch_field_sht(sht *ret, int *idx, int *fnr);
 mal_mapi_export str SERVERfetch_field_void(oid *ret, int *idx, int *fnr);
 mal_mapi_export str SERVERfetch_field_oid(oid *ret, int *idx, int *fnr);
