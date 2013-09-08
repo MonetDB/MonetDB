@@ -39,7 +39,7 @@ module batcalc;
 
 EOF
 
-integer="bte sht int wrd lng"	# all integer types
+integer="bte sht int wrd lng hge"	# all integer types
 numeric="$integer flt dbl"	# all numeric types
 alltypes="bit $numeric oid str"
 
@@ -122,11 +122,12 @@ done
 for func in +:ADD -:SUB \*:MUL; do
     name=${func#*:}
     op=${func%:*}
-    for tp1 in bte sht int lng flt; do
-	for tp2 in bte sht int lng flt; do
+    for tp1 in bte sht int lng hge flt; do
+	for tp2 in bte sht int lng hge flt; do
 	    case $tp1$tp2 in
 	    *flt*) tp3=dbl;;
-	    *lng*) continue;;	# lng only allowed in combination with flt
+	    *hge*) continue;;	# hge only allowed in combination with flt
+	    *lng*) tp3=hge;;
 	    *int*) tp3=lng;;
 	    *sht*) tp3=int;;
 	    *bte*) tp3=sht;;
@@ -165,6 +166,7 @@ for func in +:ADD -:SUB \*:MUL; do
 	    case $tp1$tp2 in
 	    *dbl*) tp3=dbl;;
 	    *flt*) tp3=flt;;
+	    *hge*) tp3=hge;;
 	    *lng*) tp3=lng;;
 	    *wrd*) tp3=wrd;;
 	    *int*) tp3=int;;
@@ -242,6 +244,7 @@ for tp1 in $numeric; do
 	case $tp1$tp2 in
 	*dbl*) tp3=dbl;;
 	*flt*) tp3=flt;;
+	hge*) tp3=hge;;
 	lng*) tp3=lng;;
 	wrd*) tp3=wrd;;
 	int*) tp3=int;;
@@ -301,6 +304,7 @@ for tp1 in $numeric; do
 	*int*) tp3=int;;
 	*wrd*) tp3=wrd;;
 	*lng*) tp3=lng;;
+	*hge*) tp3=hge;;
 	esac
 	cat <<EOF
 pattern %(b1:bat[:oid,:$tp1],b2:bat[:oid,:$tp2]) :bat[:oid,:$tp3]
