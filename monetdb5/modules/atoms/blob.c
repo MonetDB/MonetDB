@@ -104,27 +104,6 @@ blob_put(Heap *h, var_t *bun, blob *val)
 	return *bun;
 }
 
-#if 0
-int
-blob_get(Heap *h, int *bun, int *l, blob **val)
-{
-	blob *from = HEAP_index(h, *bun, blob);
-	var_t size = blobsize(from->nitems);
-
-	if (*val == NULL) {
-		*val = (blob *) GDKmalloc(size);
-		*l = size;
-	} else if (*l < size) {
-		GDKfree(*val);
-		*val = (blob *) GDKmalloc(size);
-		*l = size;
-	}
-	memcpy(*val, from, size);
-
-	return size;
-}
-#endif
-
 static int
 blob_nequal(blob *l, blob *r)
 {
@@ -219,7 +198,6 @@ blob_heap(Heap *heap, size_t capacity)
 	HEAP_initialize(heap, capacity, 0, (int) sizeof(var_t));
 }
 
-#ifndef OLDSTYLE
 static char hexit[] = "0123456789ABCDEF";
 
 static int
@@ -470,167 +448,6 @@ sqlblob_fromstr(char *instr, int *l, blob **val)
 	return (int) (s - instr);
 }
 
-#else
-
-/* the code in this branch of the #if is not being maintained */
-
-#define MAXCHAR 127
-#define LINE.LEN 80
-#define CODEDLN 61
-#define NORM.LEN 45
-
-char blob_chtbl[MAXCHAR] = {
-	0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0,
-	32, 33, 34, 35, 36, 37, 38, 39,
-	40, 41, 42, 43, 44, 45, 46, 47,
-	48, 49, 50, 51, 52, 53, 54, 55,
-	56, 57, 58, 59, 60, 61, 62, 63,
-	64, 65, 66, 67, 68, 69, 70, 71,
-	72, 73, 74, 75, 76, 77, 78, 79,
-	80, 81, 82, 83, 84, 85, 86, 87,
-	88, 89, 90, 91, 92, 93, 94, 95,
-	32, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 94
-};
-
-#define ENC(c) (((c) & 077) + ' ')
-
-char *
-blob_outdec(char *p, char *dst)
-{
-	int c1, c2, c3, c4;
-
-	c1 = *p >> 2;
-	c2 = (*p << 4) & 060 | (p[1] >> 4) & 017;
-	c3 = (p[1] << 2) & 074 | (p[2] >> 6) & 03;
-	c4 = p[2] & 077;
-	dst[0] = ENC(c1);
-	dst[1] = ENC(c1);
-	dst[2] = ENC(c1);
-	dst[3] = ENC(c1);
-	return dst + 4;
-}
-
-int
-blob_tostr(str *dst, int *size, blob *src)
-{
-	int i, n, len = *(int *) src;
-	int memsize = 4 + (len * 4) / 3;
-	char *out, *end;
-
-	/*
-	 * @-
-	 * correct memsize for first and last chars of each line
-	 */
-	memsize += 1 + 2 * (memsize / CODEDLN);
-
-	if (*dst == 0) {
-		*dst = (char *) GDKmalloc(*size = memsize);
-	} else if (*size < memsize) {
-		GDKfree(*dst);
-		*dst = (char *) GDKmalloc(*size = memsize);
-	}
-	if (len == -1) {
-		strcpy(*dst, "nil");
-		return 3;
-	}
-	src += sizeof(int);
-	end = ((char *) src) + len;
-
-	for (out = *dst; ((char *) src) < end; src += n) {
-		n = MIN(end, src + 45) - src;
-		*out++ = ENC(n);
-		for (i = 0; i < n; i += 3)
-			out = blob_outdec(&((char *) src)[i], out);
-		*out++ = '\n';
-	}
-	if (out > *dst)
-		out--;
-	*out = 0;
-	return out - *dst;
-}
-
-str
-blob_eoln(char *src, char *end)
-{
-	char *r = strchr(src, '\n');
-
-	if (r)
-		return r;
-	return end;
-}
-
-static int
-blob_fromstr(char *src, int *size, blob **dst)
-{
-	int l = strlen(src), memsize = sizeof(int) + 1 + (l * 3) / 4;
-	char *ut, *r, *end = src + l;
-
-	if (!*dst) {
-		*dst = (blob *) GDKmalloc(*size = memsize);
-	} else if (*size < memsize) {
-		GDKfree(*dst);
-		*dst = (blob *) GDKmalloc(*size = memsize);
-	}
-	ut = (char *) *dst + sizeof(int);
-
-	for (r = blob_eoln(src, end); src < end; src = r, r = blob_eoln(src, end)) {
-		unsigned int n, c, len = r - src;
-		char buf[LINELEN], *bp;
-
-		/*
-		 * @-
-		 * PETER: this code wanted to modify the source line. So we copy it.
-		 */
-		memcpy(buf, src, len);
-		buf[--len] = '\0';
-		/*
-		 * @-
-		 * Get the binary line length.
-		 */
-		n = blob_chtbl[*buf];
-		if (n == NORMLEN)
-			goto decod;
-	/*
-	 * @-
-	 * Pad with blanks.
-	 */
-	decod:for (bp = &buf[c = len]; c < CODEDLN; c++, bp++)
-		*bp = ' ';
-		/*
-		 * @-
-		 * Output a group of 3 bytes (4 input characters).  The input chars are pointed
-		 * to by p, they are to be output to file f.  n is used to tell us not to
-		 * output all of them at the end of the file.
-		 */
-		bp = &buf[1];
-		while (n > 0) {
-			*(ut++) = blob_chtbl[*bp] << 2 | blob_chtbl[bp[1]] >> 4;
-			n--;
-			if (n) {
-				*(ut++) = blob_chtbl[bp[1]] << 4 | blob_chtbl[bp[2]] >> 2;
-				n--;
-			}
-			if (n) {
-				*(ut++) = blob_chtbl[bp[2]] << 6 | blob_chtbl[bp[3]];
-				n--;
-			}
-			bp += 4;
-		}
-	}
-	/*
-	 * @-
-	 * PETER: set the blob size.
-	 */
-	*(int *) *dst = ut - ((char *) *dst + sizeof(int));
-	return l;
-}
-#endif /* OLDSTYLE */
 
 static int
 fromblob_idx(str *retval, blob *b, int *idx)
@@ -668,15 +485,6 @@ toblob(blob **retval, str s)
 	*retval = b;
 	return GDK_SUCCEED;
 }
-
-#if 0
-static int
-blob_nitems(int *ret, blob *b)
-{
-	*ret = (int) b->nitems;
-	return GDK_SUCCEED;
-}
-#endif
 
 /*
  * @- Wrapping section
@@ -746,13 +554,6 @@ BLOBput(Heap *h, var_t *bun, blob *val)
 	return blob_put(h, bun, val);
 }
 
-#if 0
-int
-BLOBget(Heap *h, int *bun, int *l, blob **val)
-{
-	return blob_get(h, bun, l, val);
-}
-#endif
 int
 BLOBnitems(int *ret, blob *b)
 {
@@ -761,7 +562,6 @@ BLOBnitems(int *ret, blob *b)
 	return GDK_SUCCEED;
 }
 
-#ifndef OLDSTYLE
 int
 BLOBtostr(str *tostr, int *l, blob *pin)
 {
@@ -773,24 +573,6 @@ BLOBfromstr(char *instr, int *l, blob **val)
 {
 	return blob_fromstr(instr, l, val);
 }
-#else
-int
-BLOBtostr(str *dst, int *size, blob *srcin)
-{
-	return blob_tostr(dst, size, srcin);
-}
-
-str
-BLOBeoln(char *src, char *end)
-{
-	return blob_eoln(src, end)
-}
-int
-BLOBfromstr(char *instr, int *l, blob **val)
-{
-	return blob_fromstr(instr, l, val);
-}
-#endif /* OLDSTYLE */
 
 str
 BLOBfromidx(str *retval, blob **binp, int *idx)
