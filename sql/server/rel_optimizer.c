@@ -3874,7 +3874,7 @@ rel_reduce_groupby_exps(int *changes, mvc *sql, sql_rel *rel)
 					}
 				}
 				if (cnr && nr && list_length(tbls[j]->pkey->k.columns) == nr) {
-					char rname[16], *rnme = number2name(rname, 16, ++sql->label);
+					char rname[16], *rnme = sa_strdup(sql->sa, number2name(rname, 16, ++sql->label));
 					sql_rel *r = rel_basetable(sql, tbls[j], rnme);
 					list *ngbe = new_exp_list(sql->sa);
 					list *exps = rel->exps, *nexps = new_exp_list(sql->sa);
