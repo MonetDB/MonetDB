@@ -628,7 +628,7 @@ ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLUINTEGER 
 						for (r = func->repl; *r; r++) {
 							if (*r == '\1' || *r == '\2' || *r == '\3' || *r == '\4') {
 								strncpy(q + pr, args[*r - 1].argstart, args[*r - 1].arglen);
-								pr += args[*r - 1].arglen;
+								pr += (int) args[*r - 1].arglen;
 							} else {
 								q[pr++] = *r;
 							}
