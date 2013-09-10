@@ -2,7 +2,8 @@ import monetdb.sql
 import os
 
 dbh = monetdb.sql.Connection(database = os.environ['TSTDB'],
-                             port = int(os.environ['MAPIPORT']))
+                             port = int(os.environ['MAPIPORT']),
+                             hostname = os.environ['MAPIHOST'])
 
 cursor = dbh.cursor()
 

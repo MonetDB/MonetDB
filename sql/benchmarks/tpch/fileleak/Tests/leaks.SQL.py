@@ -5,8 +5,9 @@ import os, sys, time
 
 port = int(os.environ['MAPIPORT'])
 db = os.environ['TSTDB']
+host = os.environ['MAPIHOST']
 
-dbh = monetdb.sql.Connection(port=port,database=db,autocommit=True)
+dbh = monetdb.sql.Connection(port=port,database=db,hostname=host,autocommit=True)
 
 cursor = dbh.cursor();
 

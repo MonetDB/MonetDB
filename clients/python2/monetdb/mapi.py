@@ -23,6 +23,7 @@ import socket
 import logging
 import struct
 import hashlib
+import os
 from cStringIO import StringIO
 
 
@@ -76,6 +77,14 @@ class Connection(object):
 
         unix_socket is used if hostname is not defined.
         """
+
+        if hostname and hostname[:1] == '/' and not unix_socket:
+            unix_socket = '%s/.s.monetdb.%d' % (hostname, port)
+            hostname = None
+        if not unix_socket and os.path.exists("/tmp/.s.monetdb.%i" % port):
+            unix_socket = "/tmp/.s.monetdb.%i" % port
+        elif not hostname:
+            hostname = 'localhost'
 
         self.hostname = hostname
         self.port = port

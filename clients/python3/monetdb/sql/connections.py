@@ -44,8 +44,6 @@ class Connection(object):
         autocommit  -- enable/disable auto commit (default: False)
 
         """
-        if not unix_socket:
-            unix_socket = "/tmp/.s.monetdb.%i" % port
 
         # The DB API spec is not specific about this
         if host:

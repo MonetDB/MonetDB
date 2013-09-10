@@ -45,7 +45,7 @@ TSTDB = os.environ.get('TSTDB', 'demo')
 TSTHOSTNAME = os.environ.get('TSTHOSTNAME', 'localhost')
 TSTUSERNAME = os.environ.get('TSTUSERNAME', 'monetdb')
 TSTPASSWORD = os.environ.get('TSTPASSWORD', 'monetdb')
-TSTHOSTNAME = None  # set to none if test a socket
+TSTHOSTNAME = os.environ.get('MAPIHOST')  # set to this if testing a socket
 
 
 if os.environ.get("TSTDEBUG", "no") == "yes":
