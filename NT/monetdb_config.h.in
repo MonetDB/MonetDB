@@ -680,6 +680,9 @@
 /* Define to 1 if the system has the type `__int128_t'. */
 /* #undef HAVE___INT128_T */
 
+/* Define to 1 if the system has the type `__uint128_t'. */
+/* #undef HAVE___UINT128_T */
+
 /* Define to 1 if the system has the type `__int64'. */
 #define HAVE___INT64 1
 

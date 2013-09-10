@@ -29,8 +29,8 @@ typedef unsigned __int64 ulng;
 #ifdef HAVE___INT128
 typedef unsigned __int128 uhge;
 #else
-#ifdef HAVE___INT128_T
-typedef unsigned __int128_t uhge;
+#ifdef HAVE___UINT128_T
+typedef __uint128_t uhge;
 #endif
 #endif
 #endif
