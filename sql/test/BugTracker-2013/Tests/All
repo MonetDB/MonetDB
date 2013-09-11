@@ -47,3 +47,4 @@ duplicate_column_name.Bug-3349
 binary_copy_into.Bug-3345
 copy-into-compressed.Bug-3351
 median.Bug-3352
+check-constraint.Bug-3335
