@@ -653,6 +653,7 @@ GDKmemfail(str s, size_t len)
  * The emergency flag can be set to force a fatal error if needed.
  * Otherwise, the caller is able to deal with the lack of memory.
  */
+#undef GDKmallocmax
 void *
 GDKmallocmax(size_t size, size_t *maxsize, int emergency)
 {
@@ -685,11 +686,14 @@ GDKmallocmax(size_t size, size_t *maxsize, int emergency)
 	return (void *) s;
 }
 
+#undef GDKmalloc
 void *
 GDKmalloc(size_t size)
 {
 	void *p = GDKmallocmax(size, &size, 0);
+#ifndef GDKMALLOC_DEBUG
 	ALLOCDEBUG fprintf(stderr, "#GDKmalloc " SZFMT " " PTRFMT "\n", size, PTRFMTCAST p);
+#endif
 #ifndef NDEBUG
 	DEADBEEFCHK if (p)
 		memset(p, 0xBD, size);
@@ -697,12 +701,15 @@ GDKmalloc(size_t size)
 	return p;
 }
 
+#undef GDKzalloc
 void *
 GDKzalloc(size_t size)
 {
 	size_t maxsize = size;
 	void *p = GDKmallocmax(size, &maxsize, 0);
+#ifndef GDKMALLOC_DEBUG
 	ALLOCDEBUG fprintf(stderr, "#GDKzalloc " SZFMT " " SZFMT " " PTRFMT "\n", size, maxsize, PTRFMTCAST p);
+#endif
 	if (p) {
 		memset(p, 0, size);
 #ifndef NDEBUG
@@ -750,13 +757,17 @@ GDKfree_(void *blk)
 	heapdec(size);
 }
 
+#undef GDKfree
 void
 GDKfree(void *blk)
 {
+#ifndef GDKMALLOC_DEBUG
 	ALLOCDEBUG fprintf(stderr, "#GDKfree " PTRFMT "\n", PTRFMTCAST blk);
+#endif
 	GDKfree_(blk);
 }
 
+#undef GDKreallocmax
 ptr
 GDKreallocmax(void *blk, size_t size, size_t *maxsize, int emergency)
 {
@@ -815,18 +826,22 @@ GDKreallocmax(void *blk, size_t size, size_t *maxsize, int emergency)
 	return blk;
 }
 
+#undef GDKrealloc
 ptr
 GDKrealloc(void *blk, size_t size)
 {
 	size_t sz = size;
 	void *p;
 
-	p = GDKreallocmax(blk, size, &size, 0);
+	p = GDKreallocmax(blk, sz, &size, 0);
+#ifndef GDKMALLOC_DEBUG
 	ALLOCDEBUG fprintf(stderr, "#GDKrealloc " SZFMT " " SZFMT " " PTRFMT " " PTRFMT "\n", sz, size, PTRFMTCAST blk, PTRFMTCAST p);
+#endif
 	return p;
 }
 
 
+#undef GDKstrdup
 char *
 GDKstrdup(const char *s)
 {
@@ -843,6 +858,7 @@ GDKstrdup(const char *s)
  * @- virtual memory
  * allocations affect only the logical VM resources.
  */
+#undef GDKmmap
 void *
 GDKmmap(const char *path, int mode, size_t len)
 {
@@ -855,7 +871,9 @@ GDKmmap(const char *path, int mode, size_t len)
 			THRprintf(GDKstdout, "#GDKmmap: recovery ok. Continuing..\n");
 		}
 	}
+#ifndef GDKMALLOC_DEBUG
 	ALLOCDEBUG fprintf(stderr, "#GDKmmap " SZFMT " " PTRFMT "\n", len, PTRFMTCAST ret);
+#endif
 	if (ret != (void *) -1L) {
 		/* since mmap directly have content we say it's zero-ed
 		 * memory */
@@ -865,12 +883,15 @@ GDKmmap(const char *path, int mode, size_t len)
 	return (void *) ret;
 }
 
+#undef GDKmunmap
 int
 GDKmunmap(void *addr, size_t size)
 {
 	int ret;
 
+#ifndef GDKMALLOC_DEBUG
 	ALLOCDEBUG fprintf(stderr, "#GDKmunmap " SZFMT " " PTRFMT "\n", size, PTRFMTCAST addr);
+#endif
 	ret = MT_munmap(addr, size);
 	VALGRIND_FREELIKE_BLOCK(addr, 0);
 	if (ret == 0)

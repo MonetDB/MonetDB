@@ -3171,6 +3171,7 @@ os.environ['HOST'] = HOST
 # check the host port actually works
 _, HOST = randomPort(30000,39999)
 os.environ['HOST'] = HOST
+os.environ['MAPIHOST'] = HOST
 
 if os.name == "nt":
     SYST    = "Windows"
@@ -3752,6 +3753,7 @@ def main(argv) :
             SOCK = "--set mapi_usock=%s/.s.monetdb.%s" % \
                     (sockdir, env['MAPIPORT'])
             HOST = sockdir
+            os.environ['MAPIHOST'] = HOST
         except:
             SOCK = ""
     else:

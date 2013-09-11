@@ -16,6 +16,7 @@
 # All Rights Reserved.
 
 import logging
+import platform
 
 from monetdb.sql import cursors
 from monetdb import exceptions
@@ -28,25 +29,35 @@ class Connection(object):
     """A MonetDB SQL database connection"""
     default_cursor = cursors.Cursor
 
-    def __init__(self, username="monetdb", password="monetdb",
-                 hostname="localhost", port=50000, database="demo",
-                 autocommit=False, user=None, host=None):
+    def __init__(self, database, hostname=None, port=50000, username="monetdb",
+                 password="monetdb", unix_socket=None, autocommit=False,
+                 host=None, user=None):
         """ Set up a connection to a MonetDB SQL database.
 
-        username   -- username for connection (default: monetdb)
-        password   -- password for connection (default: monetdb)
-        hostname   -- hostname to connect to (default: localhost)
-        port       -- port to connect to (default: 50000)
-        database   -- name of the database (default: demo)
-        autocommit -- enable/disable auto commit (default: False)
+        database    -- name of the database
+        hostname    -- Hostname where monetDB is running
+        port        -- port to connect to (default: 50000)
+        username    -- username for connection (default: "monetdb")
+        password    -- password for connection (default: "monetdb")
+        unix_socket -- socket to connect to. used when hostname not set
+                            (default: "/tmp/.s.monetdb.50000")
+        autocommit  -- enable/disable auto commit (default: False)
+
         """
-        if user is not None:
-            username = user
-        if host is not None:
+
+        # The DB API spec is not specific about this
+        if host:
             hostname = host
+        if user:
+            username = user
+
+        if platform.system() == "Windows" and not hostname:
+            hostname = "localhost"
+
         self.mapi = mapi.Connection()
         self.mapi.connect(hostname=hostname, port=int(port), username=username,
-                          password=password, database=database, language="sql")
+                          password=password, database=database, language="sql",
+                          unix_socket=unix_socket)
         self.set_autocommit(autocommit)
         self.set_sizeheader(True)
         self.set_replysize(100)

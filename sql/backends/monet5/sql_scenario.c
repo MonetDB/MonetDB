@@ -694,6 +694,28 @@ sql_update_oct2013(Client c)
 	pos += snprintf(buf+pos, bufsize-pos, "drop procedure sys.resetHistory;\n");
 	pos += snprintf(buf+pos, bufsize-pos, "drop procedure sys.keepCall;\n");
 	pos += snprintf(buf+pos, bufsize-pos, "drop procedure sys.keepQuery;\n");
+	{
+		char *msg;
+		mvc *sql = NULL;
+
+		if ((msg = getSQLContext(c, c->curprg->def, &sql, NULL)) != MAL_SUCCEED) {
+			GDKfree(msg);
+		} else {
+			sql_schema *s;
+
+			if ((s = mvc_bind_schema(sql, "sys")) != NULL) {
+				sql_table *t;
+
+				if ((t = mvc_bind_table(sql, s, "querylog")) != NULL)
+					t->system = 0;
+				if ((t = mvc_bind_table(sql, s, "callhistory")) != NULL)
+					t->system = 0;
+				if ((t = mvc_bind_table(sql, s, "queryhistory")) != NULL)
+					t->system = 0;
+			}
+		}
+	}
+	pos += snprintf(buf+pos, bufsize-pos, "update sys._tables set system = false where name in ('querylog','callhistory','queryhistory') and schema_id = (select id from sys.schemas where name = 'sys');\n");
 	pos += snprintf(buf+pos, bufsize-pos, "drop view sys.queryLog;\n");
 	pos += snprintf(buf+pos, bufsize-pos, "drop table sys.callHistory;\n");
 	pos += snprintf(buf+pos, bufsize-pos, "drop table sys.queryHistory;\n");
@@ -1103,7 +1125,7 @@ SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output)
 	 * Scan the complete string for SQL statements, stop at the first error.
 	 */
 	c->sqlcontext = sql;
-	while( m->scanner.rs->pos < m->scanner.rs->len ){
+	while( msg == MAL_SUCCEED && m->scanner.rs->pos < m->scanner.rs->len ){
 		sql_rel *r;
 		stmt *s;
 		int oldvtop, oldstop;
@@ -1180,32 +1202,13 @@ SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output)
 #endif
 
 		if ( execute) {
-			bstream *tmp=NULL;
-			buffer *b= (buffer*) GDKmalloc(sizeof(buffer));
 			MalBlkPtr mb = c->curprg->def;
 
 			if (!output)
 				sql->out = NULL; /* no output */
-
-			/* if the MAL program has been turned into a string returing function
-			 * then pick the result set from a scratch file (as is) */
-			if ( mb->var[0]->type == TYPE_str){
-				tmp = bstream_create(buffer_rastream(b, "SQLoutput"), 0);
-				if ( tmp == NULL){
-					msg = createException(SQL,"sql.eval","Can not create tmp file");
-					GDKfree(b);
-					goto noexecution;
-				}
-				//sql->out = tmp;
-			}
-			msg = (str) runMAL(c, mb, 0, 0);
-noexecution:
+			msg = runMAL(c, mb, 0, 0);
 			MSresetInstructions(mb, oldstop);
-			freeVariables(c, mb, c->glb, oldvtop);
-			if (msg == MAL_SUCCEED && tmp){
-				msg = GDKstrdup(b->buf);
-				(void) bstream_destroy(tmp);
-			}
+			freeVariables(c, mb, NULL, oldvtop);
 		}
 		sqlcleanup(m, 0);
 		if (!execute) {
@@ -1220,7 +1223,7 @@ noexecution:
 		c->glb = oldglb;
 	}
 /*
- * We are done; a MAL procedure recides in the cache.
+ * We are done; a MAL procedure resides in the cache.
  */
 endofcompile:
 	if (execute)
@@ -2098,7 +2101,7 @@ cleanup_engine:
 		enum malexception type = getExceptionType(msg);
 		if (type == OPTIMIZER) {
 			MSresetInstructions(c->curprg->def, 1);
-			freeVariables(c,c->curprg->def, c->glb, be->vtop);
+			freeVariables(c,c->curprg->def, NULL, be->vtop);
 			be->language = oldlang;
 			assert(c->glb == 0 || c->glb == oldglb); /* detect leak */
 			c->glb = oldglb;
@@ -2135,7 +2138,7 @@ cleanup_engine:
 	be->q = NULL;
 	sqlcleanup(be->mvc, (!msg)?0:-1);
 	MSresetInstructions(c->curprg->def, 1);
-	freeVariables(c,c->curprg->def, c->glb, be->vtop);
+	freeVariables(c,c->curprg->def, NULL, be->vtop);
 	be->language = oldlang;
 	/*
 	 * Any error encountered during execution should block further processing

@@ -20,7 +20,7 @@
 import monetdb.sql
 import sys
 
-dbh = monetdb.sql.Connection(port=int(sys.argv[1]),database=sys.argv[2],autocommit=True)
+dbh = monetdb.sql.Connection(port=int(sys.argv[1]),database=sys.argv[2],hostname=sys.argv[3],autocommit=True)
 
 cursor = dbh.cursor();
 cursor.execute('select 1;')

@@ -1,0 +1,210 @@
+stdout of test '08-explain` in directory 'sql/benchmarks/tpch` itself:
+
+
+# 22:53:27 >  
+# 22:53:27 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=34581" "--set" "mapi_usock=/var/tmp/mtest-9096/.s.monetdb.34581" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/manegold/_/Monet/HG/Feb2013/prefix/--disable-debug_--enable-assert_--enable-optimize/var/MonetDB/mTests_sql_benchmarks_tpch" "--set" "mal_listing=0"
+# 22:53:27 >  
+
+# MonetDB 5 server v11.15.12
+# This is an unreleased version
+# Serving database 'mTests_sql_benchmarks_tpch', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.591 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2013 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://rome.ins.cwi.nl:34581/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-9096/.s.monetdb.34581
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 22:53:27 >  
+# 22:53:27 >  "/usr/bin/python2" "08-explain.SQL.py" "08-explain"
+# 22:53:27 >  
+
+#set optimizer = 'no_mitosis_pipe';
+#explain select
+#	o_year,
+#	sum(case
+#		when nation = 'BRAZIL' then volume
+#		else 0
+#	end) / sum(volume) as mkt_share
+#from
+#	(
+#		select
+#			extract(year from o_orderdate) as o_year,
+#			l_extendedprice * (1 - l_discount) as volume,
+#			n2.n_name as nation
+#		from
+#			part,
+#			supplier,
+#			lineitem,
+#			orders,
+#			customer,
+#			nation n1,
+#			nation n2,
+#			region
+#		where
+#			p_partkey = l_partkey
+#			and s_suppkey = l_suppkey
+#			and l_orderkey = o_orderkey
+#			and o_custkey = c_custkey
+#			and c_nationkey = n1.n_nationkey
+#			and n1.n_regionkey = r_regionkey
+% .explain # table_name
+% mal # name
+% clob # type
+% 942 # length
+function user.s2_1{autoCommit=true}(A0:str,A1:bte,A2:bte,A3:str,A4:date,A5:date,A6:str):void;
+barrier X_283 := language.dataflow();
+    X_9 := sql.mvc();
+    X_10:bat[:oid,:oid]  := sql.tid(X_9,"sys","nation");
+    X_13 := sql.bind_idxbat(X_9,"sys","nation","nation_n_regionkey_fkey",0);
+    (X_16,r1_16) := sql.bind_idxbat(X_9,"sys","nation","nation_n_regionkey_fkey",2);
+    X_19 := sql.bind_idxbat(X_9,"sys","nation","nation_n_regionkey_fkey",1);
+    X_21 := sql.projectdelta(X_10,X_13,X_16,r1_16,X_19);
+    X_24 := sql.bind(X_9,"sys","region","r_name",0);
+    X_22:bat[:oid,:oid]  := sql.tid(X_9,"sys","region");
+    X_248 := algebra.subselect(X_24,X_22,A3,A3,true,true,false);
+    (X_26,r1_27) := sql.bind(X_9,"sys","region","r_name",2);
+    X_249 := algebra.subselect(r1_27,A3,A3,true,true,false);
+    X_28 := sql.bind(X_9,"sys","region","r_name",1);
+    X_250 := algebra.subselect(X_28,X_22,A3,A3,true,true,false);
+    X_29 := sql.subdelta(X_248,X_22,X_26,X_249,X_250);
+    X_31 := X_29;
+    (X_32,r1_36) := algebra.join(X_21,X_31);
+    X_34 := algebra.leftfetchjoin(X_32,X_10);
+    X_35:bat[:oid,:oid]  := sql.tid(X_9,"sys","customer");
+    X_37 := sql.bind_idxbat(X_9,"sys","customer","customer_c_nationkey_fkey",0);
+    (X_39,r1_43) := sql.bind_idxbat(X_9,"sys","customer","customer_c_nationkey_fkey",2);
+    X_42 := sql.bind_idxbat(X_9,"sys","customer","customer_c_nationkey_fkey",1);
+    X_43 := sql.projectdelta(X_35,X_37,X_39,r1_43,X_42);
+    (X_44,r1_49) := algebra.join(X_34,X_43);
+    X_46 := algebra.leftfetchjoin(r1_49,X_35);
+    X_49 := sql.bind(X_9,"sys","orders","o_orderdate",0);
+    X_47:bat[:oid,:oid]  := sql.tid(X_9,"sys","orders");
+    X_251 := algebra.subselect(X_49,X_47,A4,A5,true,true,false);
+    (X_52,r1_57) := sql.bind(X_9,"sys","orders","o_orderdate",2);
+    X_252 := algebra.subselect(r1_57,A4,A5,true,true,false);
+    X_55 := sql.bind(X_9,"sys","orders","o_orderdate",1);
+    X_253 := algebra.subselect(X_55,X_47,A4,A5,true,true,false);
+    X_57 := sql.subdelta(X_251,X_47,X_52,X_252,X_253);
+    X_60 := sql.bind_idxbat(X_9,"sys","orders","orders_o_custkey_fkey",0);
+    (X_62,r1_71) := sql.bind_idxbat(X_9,"sys","orders","orders_o_custkey_fkey",2);
+    X_64 := sql.bind_idxbat(X_9,"sys","orders","orders_o_custkey_fkey",1);
+    X_65 := sql.projectdelta(X_57,X_60,X_62,r1_71,X_64);
+    (X_66,r1_77) := algebra.join(X_46,X_65);
+    X_68 := X_57;
+    X_69 := algebra.leftfetchjoin(r1_77,X_68);
+    X_70:bat[:oid,:oid]  := sql.tid(X_9,"sys","lineitem");
+    X_73 := sql.bind_idxbat(X_9,"sys","lineitem","lineitem_l_orderkey_fkey",0);
+    (X_75,r1_86) := sql.bind_idxbat(X_9,"sys","lineitem","lineitem_l_orderkey_fkey",2);
+    X_77 := sql.bind_idxbat(X_9,"sys","lineitem","lineitem_l_orderkey_fkey",1);
+    X_78 := sql.projectdelta(X_70,X_73,X_75,r1_86,X_77);
+    (X_79,r1_91) := algebra.join(X_69,X_78);
+    X_81 := sql.bind_idxbat(X_9,"sys","lineitem","lineitem_l_partkey_fkey",0);
+    (X_84,r1_96) := sql.bind_idxbat(X_9,"sys","lineitem","lineitem_l_partkey_fkey",2);
+    X_87 := sql.bind_idxbat(X_9,"sys","lineitem","lineitem_l_partkey_fkey",1);
+    X_89 := sql.projectdelta(X_70,X_81,X_84,r1_96,X_87);
+    X_90 := algebra.leftfetchjoin(r1_91,X_89);
+    X_93 := sql.bind(X_9,"sys","part","p_type",0);
+    X_91:bat[:oid,:oid]  := sql.tid(X_9,"sys","part");
+    X_254 := algebra.subselect(X_93,X_91,A6,A6,true,true,false);
+    (X_95,r1_108) := sql.bind(X_9,"sys","part","p_type",2);
+    X_255 := algebra.subselect(r1_108,A6,A6,true,true,false);
+    X_97 := sql.bind(X_9,"sys","part","p_type",1);
+    X_256 := algebra.subselect(X_97,X_91,A6,A6,true,true,false);
+    X_98 := sql.subdelta(X_254,X_91,X_95,X_255,X_256);
+    X_101 := X_98;
+    (X_102,r1_118) := algebra.join(X_90,X_101);
+    X_257 := algebra.leftfetchjoin(X_102,r1_91);
+    X_104 := sql.bind_idxbat(X_9,"sys","lineitem","lineitem_l_suppkey_fkey",0);
+    (X_108,r1_124) := sql.bind_idxbat(X_9,"sys","lineitem","lineitem_l_suppkey_fkey",2);
+    X_110 := sql.bind_idxbat(X_9,"sys","lineitem","lineitem_l_suppkey_fkey",1);
+    X_111 := sql.projectdelta(X_70,X_104,X_108,r1_124,X_110);
+    X_112:bat[:oid,:oid]  := algebra.leftfetchjoin(X_257,X_111);
+    X_113:bat[:oid,:oid]  := sql.tid(X_9,"sys","supplier");
+    (X_115,r1_133) := algebra.join(X_112,X_113);
+    X_117 := sql.bind_idxbat(X_9,"sys","supplier","supplier_s_nationkey_fkey",0);
+    (X_120,r1_138) := sql.bind_idxbat(X_9,"sys","supplier","supplier_s_nationkey_fkey",2);
+    X_123 := sql.bind_idxbat(X_9,"sys","supplier","supplier_s_nationkey_fkey",1);
+    X_125 := sql.projectdelta(X_113,X_117,X_120,r1_138,X_123);
+    X_126 := algebra.leftfetchjoin(r1_133,X_125);
+    X_127:bat[:oid,:oid]  := sql.tid(X_9,"sys","nation");
+    (X_129,r1_148) := algebra.join(X_126,X_127);
+    X_258 := algebra.leftfetchjoin(X_129,X_115);
+    X_131 := sql.projectdelta(X_57,X_49,X_52,r1_57,X_55);
+    X_132:bat[:oid,:date]  := algebra.leftfetchjoinPath(X_258,X_102,X_79,r1_77,X_131);
+    X_133:bat[:oid,:int]  := batmtime.year(X_132);
+    (X_134,r1_159,r2_159) := group.subgroupdone(X_133);
+    X_137 := algebra.leftfetchjoin(r1_159,X_133);
+    X_143 := sql.bind(X_9,"sys","nation","n_name",0);
+    (X_147,r1_172) := sql.bind(X_9,"sys","nation","n_name",2);
+    X_150 := sql.bind(X_9,"sys","nation","n_name",1);
+    X_152 := sql.projectdelta(X_127,X_143,X_147,r1_172,X_150);
+    X_153 := algebra.leftfetchjoin(r1_148,X_152);
+    X_154:bat[:oid,:bit]  := batcalc.==(X_153,A0);
+    X_155:bat[:oid,:bit]  := batcalc.isnil(X_154);
+    X_156:bat[:oid,:bit]  := batcalc.ifthenelse(X_155,false,X_154);
+    X_157 := sql.bind(X_9,"sys","lineitem","l_extendedprice",0);
+    (X_160,r1_194) := sql.bind(X_9,"sys","lineitem","l_extendedprice",2);
+    X_162 := sql.bind(X_9,"sys","lineitem","l_extendedprice",1);
+    X_163 := sql.projectdelta(X_70,X_157,X_160,r1_194,X_162);
+    X_164:bat[:oid,:lng]  := algebra.leftfetchjoinPath(X_258,X_102,r1_91,X_163);
+    X_165 := calc.lng(A2,15,2);
+    X_167 := sql.bind(X_9,"sys","lineitem","l_discount",0);
+    (X_171,r1_210) := sql.bind(X_9,"sys","lineitem","l_discount",2);
+    X_174 := sql.bind(X_9,"sys","lineitem","l_discount",1);
+    X_176 := sql.projectdelta(X_70,X_167,X_171,r1_210,X_174);
+    X_177:bat[:oid,:lng]  := algebra.leftfetchjoinPath(X_258,X_102,r1_91,X_176);
+    X_178:bat[:oid,:lng]  := batcalc.-(X_165,X_177);
+    X_179:bat[:oid,:lng]  := batcalc.*(X_164,X_178);
+    X_180 := calc.lng(A1,18,4);
+    X_183:bat[:oid,:lng]  := batcalc.ifthenelse(X_156,X_179,X_180);
+    X_184:bat[:oid,:lng]  := aggr.subsum(X_183,X_134,r1_159,true,true);
+    X_188:bat[:oid,:lng]  := aggr.subsum(X_179,X_134,r1_159,true,true);
+    (X_138,r1_163,r2_163) := algebra.subsort(X_137,false,false);
+    X_142 := algebra.leftfetchjoin(r1_163,X_137);
+    X_186:bat[:oid,:lng]  := batcalc.lng(4,X_184,18,8);
+    X_189:bat[:oid,:lng]  := batcalc./(X_186,X_188);
+    X_190 := algebra.leftfetchjoin(r1_163,X_189);
+    language.pass(X_22);
+    language.pass(X_10);
+    language.pass(X_35);
+    language.pass(X_47);
+    language.pass(X_91);
+    language.pass(X_113);
+    language.pass(X_57);
+    language.pass(X_49);
+    language.pass(X_52);
+    language.pass(r1_57);
+    language.pass(X_55);
+    language.pass(r1_77);
+    language.pass(X_133);
+    language.pass(X_127);
+    language.pass(X_154);
+    language.pass(X_70);
+    language.pass(X_258);
+    language.pass(X_102);
+    language.pass(r1_91);
+    language.pass(X_179);
+    language.pass(X_134);
+    language.pass(r1_159);
+    language.pass(X_137);
+    language.pass(r1_163);
+exit X_283;
+    X_191 := sql.resultSet(2,1,X_142);
+    sql.rsColumn(X_191,"sys.all_nations","o_year","int",32,0,X_142);
+    sql.rsColumn(X_191,"sys.L3","mkt_share","decimal",18,4,X_190);
+    X_202 := io.stdout();
+    sql.exportResult(X_202,X_191);
+end s2_1;
+# querylog.define("explain select\n\to_year,\n\tsum(case\n\t\twhen nation = \\'BRAZIL\\' then volume\n\t\telse 0\n\tend) / sum(volume) as mkt_share\nfrom\n\t(\n\t\tselect\n\t\t\textract(year from o_orderdate) as o_year,\n\t\t\tl_extendedprice * (1 - l_discount) as volume,\n\t\t\tn2.n_name as nation\n\t\tfrom\n\t\t\tpart,\n\t\t\tsupplier,\n\t\t\tlineitem,\n\t\t\torders,\n\t\t\tcustomer,\n\t\t\tnation n1,\n\t\t\tnation n2,\n\t\t\tregion\n\t\twhere\n\t\t\tp_partkey = l_partkey\n\t\t\tand s_suppkey = l_suppkey\n\t\t\tand l_orderkey = o_orderkey\n\t\t\tand o_custkey = c_custkey\n\t\t\tand c_nationkey = n1.n_nationkey\n\t\t\tand n1.n_regionkey = r_regionkey\n\t\t\tand r_name = \\'AMERICA\\'\n\t\t\tand s_nationkey = n2.n_nationkey\n\t\t\tand o_orderdate between date \\'1995-01-01\\' and date \\'1996-12-31\\'\n\t\t\tand p_type = \\'ECONOMY ANODIZED STEEL\\'\n\t) as all_nations\ngroup by\n\to_year\norder by\n\to_year;","no_mitosis_pipe")
+
+# 22:53:27 >  
+# 22:53:27 >  "Done."
+# 22:53:27 >  
+

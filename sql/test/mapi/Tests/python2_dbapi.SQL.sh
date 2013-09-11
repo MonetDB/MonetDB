@@ -8,4 +8,4 @@ testpath="$TSTSRCBASE/clients/examples/python"
 PYTHONPATH=${PYTHON2PATH}
 export PYTHONPATH
 
-Mlog -x "${PYTHON2} ${testpath}/sqlsample.py $MAPIPORT $TSTDB"
+Mlog -x "${PYTHON2} ${testpath}/sqlsample.py $MAPIPORT $TSTDB $MAPIHOST"

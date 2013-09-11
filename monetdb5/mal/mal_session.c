@@ -27,6 +27,7 @@
 #include "mal_readline.h"
 #include "mal_authorize.h"
 #include "mal_sabaoth.h"
+#include "mal_private.h"
 #include <gdk.h>	/* for opendir and friends */
 
 /*
@@ -136,6 +137,18 @@ MSinitClientPrg(Client cntxt, str mod, str nme)
  * The scheduleClient receives a challenge response consisting of
  * endian:user:password:lang:database:
  */
+static void
+exit_streams( bstream *fin, stream *fout )
+{
+	if (fout && fout != GDKstdout) {
+		mnstr_flush(fout);
+		(void) mnstr_close(fout);
+		(void) mnstr_destroy(fout);
+	}
+	if (fin) 
+		(void) bstream_destroy(fin);
+}
+
 void
 MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
 {
@@ -154,7 +167,7 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
 		user = s + 1;
 	} else {
 		mnstr_printf(fout, "!incomplete challenge '%s'\n", user);
-		mnstr_flush(fout);
+		exit_streams(fin, fout);
 		GDKfree(command);
 		return;
 	}
@@ -167,7 +180,7 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
 		/* decode algorithm, i.e. {plain}mypasswordchallenge */
 		if (*passwd != '{') {
 			mnstr_printf(fout, "!invalid password entry\n");
-			mnstr_flush(fout);
+			exit_streams(fin, fout);
 			GDKfree(command);
 			return;
 		}
@@ -175,7 +188,7 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
 		s = strchr(algo, '}');
 		if (!s) {
 			mnstr_printf(fout, "!invalid password entry\n");
-			mnstr_flush(fout);
+			exit_streams(fin, fout);
 			GDKfree(command);
 			return;
 		}
@@ -183,7 +196,7 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
 		passwd = s + 1;
 	} else {
 		mnstr_printf(fout, "!incomplete challenge '%s'\n", user);
-		mnstr_flush(fout);
+		exit_streams(fin, fout);
 		GDKfree(command);
 		return;
 	}
@@ -195,7 +208,7 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
 		lang = s + 1;
 	} else {
 		mnstr_printf(fout, "!incomplete challenge, missing language\n");
-		mnstr_flush(fout);
+		exit_streams(fin, fout);
 		GDKfree(command);
 		return;
 	}
@@ -220,7 +233,7 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
 						   "did you mean to connect to monetdbd instead?\n",
 				database, dbname);
 		/* flush the error to the client, and abort further execution */
-		mnstr_flush(fout);
+		exit_streams(fin, fout);
 		GDKfree(command);
 		return;
 	} else {
@@ -235,7 +248,7 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
 		err = AUTHcheckCredentials(&uid, &root, &user, &passwd, &challenge, &algo);
 		if (err != MAL_SUCCEED) {
 			mnstr_printf(fout, "!%s\n", err);
-			mnstr_flush(fout);
+			exit_streams(fin, fout);
 			GDKfree(command);
 			return;
 		}
@@ -249,7 +262,7 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
 				GDKfree(err);
 			mnstr_printf(fout, "!internal server error, "
 						 "please try again later\n");
-			mnstr_flush(fout);
+			exit_streams(fin, fout);
 			GDKfree(command);
 			return;
 		}
@@ -260,7 +273,7 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
 			} else {
 				mnstr_printf(fout, "!server is running in "
 							 "maintenance mode, please try again later\n");
-				mnstr_flush(fout);
+				exit_streams(fin, fout);
 				SABAOTHfreeStatus(&stats);
 				GDKfree(command);
 				return;
@@ -272,7 +285,7 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
 		if (c == NULL) {
 			mnstr_printf(fout, "!maximum concurrent client limit reached "
 							   "(%d), please try again later\n", MAL_MAXCLIENTS);
-			mnstr_flush(fout);
+			exit_streams(fin, fout);
 			GDKfree(command);
 			return;
 		}
@@ -311,6 +324,8 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
 		mnstr_printf(fout, "!internal server error (cannot fork new "
 						   "client thread), please try again later\n");
 		mnstr_flush(fout);
+		c->mode = FINISHING;
+		MCexitClient(c);
 		showException(c->fdout, MAL, "initClient", "cannot fork new client thread");
 		return;
 	}

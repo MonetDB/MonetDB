@@ -318,7 +318,7 @@ JAQLengine(Client c)
 	}
 
 	MSresetInstructions(c->curprg->def, 1);
-	freeVariables(c, c->curprg->def, c->glb, j->vtop);
+	freeVariables(c, c->curprg->def, NULL, j->vtop);
 	assert(c->glb == 0 || c->glb == oldglb); /* detect leak */
 	c->glb = oldglb;
 

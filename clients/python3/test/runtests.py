@@ -45,6 +45,8 @@ TSTDB = os.environ.get('TSTDB', 'demo')
 TSTHOSTNAME = os.environ.get('TSTHOSTNAME', 'localhost')
 TSTUSERNAME = os.environ.get('TSTUSERNAME', 'monetdb')
 TSTPASSWORD = os.environ.get('TSTPASSWORD', 'monetdb')
+TSTHOSTNAME = os.environ.get('MAPIHOST')  # set to this if testing a socket
+
 
 if os.environ.get("TSTDEBUG", "no") == "yes":
     logging.basicConfig(level=logging.DEBUG)

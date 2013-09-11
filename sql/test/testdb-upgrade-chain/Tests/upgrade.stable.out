@@ -31,6 +31,7 @@ create view sys.storagemodel as select * from sys.storagemodel();
 drop procedure sys.resetHistory;
 drop procedure sys.keepCall;
 drop procedure sys.keepQuery;
+update sys._tables set system = false where name in ('querylog','callhistory','queryhistory') and schema_id = (select id from sys.schemas where name = 'sys');
 drop view sys.queryLog;
 drop table sys.callHistory;
 drop table sys.queryHistory;

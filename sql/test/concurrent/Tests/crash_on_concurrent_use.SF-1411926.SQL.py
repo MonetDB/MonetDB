@@ -22,7 +22,7 @@ class Client(threading.Thread):
     def __init__(self, client):
         threading.Thread.__init__ (self)
         self.client = client
-        self.dbh = monetdb.sql.Connection(port=int(os.getenv('MAPIPORT')),database=os.getenv('TSTDB'))
+        self.dbh = monetdb.sql.Connection(port=int(os.getenv('MAPIPORT')),hostname=os.getenv('MAPIHOST'),database=os.getenv('TSTDB'))
 
     def run(self):
         cursor = self.dbh.cursor();

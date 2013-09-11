@@ -1,4 +1,4 @@
-
+import platform
 from monetdb import mapi
 from monetdb.exceptions import OperationalError, InterfaceError
 
@@ -8,10 +8,12 @@ def parse_statusline(line):
     parses a sabdb format status line. Support v1 and v2.
 
     """
-    if not line.startswith('=sabdb:'):
+    if line.startswith("="):
+        line = line[1:]
+    if not line.startswith('sabdb:'):
         raise OperationalError('wrong result recieved')
 
-    prot_version, rest = line.split(":", 2)[1:]
+    code, prot_version, rest = line.split(":", 2)
 
     if prot_version not in ["1", "2"]:
         raise InterfaceError("unsupported sabdb protocol")
@@ -60,20 +62,33 @@ class Control:
     Use this module to manage your MonetDB databases. You can create, start,
     stop, lock, unlock, destroy your databases and request status information.
     """
-    def __init__(self, hostname, port, passphrase):
+    def __init__(self, hostname=None, port=50000, passphrase=None,
+                 unix_socket=None):
+
+        if not unix_socket:
+            unix_socket = "/tmp/.s.merovingian.%i" % port
+
+        if platform.system() == "Windows" and not hostname:
+            hostname = "localhost"
+
         self.server = mapi.Connection()
         self.hostname = hostname
         self.port = port
         self.passphrase = passphrase
+        self.unix_socket = unix_socket
 
         # check connection
-        self.server.connect(hostname, port, 'monetdb', passphrase,
-                            'merovingian', 'control')
+        self.server.connect(hostname=hostname, port=port, username='monetdb',
+                            password=passphrase,
+                            database='merovingian', language='control',
+                            unix_socket=unix_socket)
         self.server.disconnect()
 
     def _send_command(self, database_name, command):
-        self.server.connect(self.hostname, self.port, 'monetdb',
-                            self.passphrase, 'merovingian', 'control')
+        self.server.connect(hostname=self.hostname, port=self.port,
+                            username='monetdb', password=self.passphrase,
+                            database='merovingian', language='control',
+                            unix_socket=self.unix_socket)
         try:
             return self.server.cmd("%s %s\n" % (database_name, command))
         finally:
@@ -165,8 +180,9 @@ class Control:
         """
         properties = self._send_command(database_name, "get")
         values = {}
-        for dirty_line in properties.split("\n"):
-            line = dirty_line[1:]
+        for line in properties.split("\n"):
+            if line.startswith("="):
+                line = line[1:]
             if not line.startswith("#"):
                 if "=" in line:
                     split = line.split("=")

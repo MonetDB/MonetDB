@@ -2240,6 +2240,87 @@ gdk_export void *GDKzalloc(size_t size);
 gdk_export void *GDKrealloc(void *pold, size_t size);
 gdk_export void GDKfree(void *blk);
 gdk_export str GDKstrdup(const char *s);
+#if !defined(NDEBUG) && defined(__GNUC__)
+#define GDKMALLOC_DEBUG
+#endif
+#ifdef GDKMALLOC_DEBUG
+#define GDKmalloc(s)							\
+	({								\
+		size_t _size = (s);					\
+		void *_res = GDKmalloc(_size);				\
+		ALLOCDEBUG						\
+			fprintf(stderr,					\
+				"#GDKmalloc(" SZFMT ") -> " PTRFMT	\
+				" %s[%s:%d]\n",				\
+				_size, PTRFMTCAST _res,			\
+				__func__, __FILE__, __LINE__);		\
+		_res;							\
+	})
+#define GDKzalloc(s)							\
+	({								\
+		size_t _size = (s);					\
+		void *_res = GDKzalloc(_size);				\
+		ALLOCDEBUG						\
+			fprintf(stderr,					\
+				"#GDKzalloc(" SZFMT ") -> " PTRFMT	\
+				" %s[%s:%d]\n",				\
+				_size, PTRFMTCAST _res,			\
+				__func__, __FILE__, __LINE__);		\
+		_res;							\
+	})
+#define GDKrealloc(p,s)							\
+	({								\
+		void *_ptr = (p);					\
+		size_t _size = (s);					\
+		void *_res = GDKrealloc(_ptr,_size);			\
+		ALLOCDEBUG						\
+			fprintf(stderr,					\
+				"#GDKrealloc(" PTRFMT "," SZFMT ") -> " PTRFMT \
+				" %s[%s:%d]\n",				\
+				PTRFMTCAST _ptr, _size, PTRFMTCAST _res, \
+				__func__, __FILE__, __LINE__);		\
+		_res;							\
+	 })
+#define GDKfree(p)							\
+	({								\
+		void *_ptr = (p);					\
+		ALLOCDEBUG						\
+			fprintf(stderr,					\
+				"#GDKfree(" PTRFMT ")"			\
+				" %s[%s:%d]\n",				\
+				PTRFMTCAST _ptr,			\
+				__func__, __FILE__, __LINE__);		\
+		GDKfree(_ptr);						\
+	})
+#define GDKstrdup(s)							\
+	({								\
+		const char *_str = (s);					\
+		void *_res = GDKstrdup(_str);				\
+		ALLOCDEBUG						\
+			fprintf(stderr,					\
+				"#GDKstrdup(len=" SZFMT ") -> " PTRFMT	\
+				" %s[%s:%d]\n",				\
+				strlen(_str),				\
+				PTRFMTCAST _res,			\
+				__func__, __FILE__, __LINE__);		\
+		_res;							\
+	})
+#define GDKmmap(p, m, l)						\
+	({								\
+		const char *_path = (p);				\
+		int _mode = (m);					\
+		size_t _len = (l);					\
+		void *_res = GDKmmap(_path, _mode, _len);		\
+		ALLOCDEBUG						\
+			fprintf(stderr,					\
+				"#GDKmmap(%s,0x%x," SZFMT ") -> " SZFMT \
+				" %s[%s:%d]\n",				\
+				_path ? _path : "NULL", _mode, _len,	\
+				PTRFMTCAST _res,			\
+				__func__, __FILE__, __LINE__);		\
+		_res;							\
+	 })
+#endif
 
 /*
  * @- GDK error handling
