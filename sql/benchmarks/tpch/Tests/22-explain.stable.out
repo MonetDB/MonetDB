@@ -25,7 +25,7 @@ Ready.
 # 22:53:31 >  "/usr/bin/python2" "22-explain.SQL.py" "22-explain"
 # 22:53:31 >  
 
-#set optimizer = 'no_mitosis_pipe';
+#set optimizer = 'sequential_pipe';
 #explain select
 #	cntrycode,
 #	count(*) as numcust,
@@ -58,7 +58,6 @@ Ready.
 % clob # type
 % 868 # length
 function user.s2_1{autoCommit=true}(A0:int,A1:int,A2:int,A3:int,A4:str,A5:str,A6:str,A7:str,A8:str,A9:str,A10:str,A11:sht,A12:int,A13:int,A14:str,A15:str,A16:str,A17:str,A18:str,A19:str,A20:str):void;
-barrier X_197 := language.dataflow();
     X_23 := sql.mvc();
     X_24:bat[:oid,:oid]  := sql.tid(X_23,"sys","customer");
     X_27 := sql.bind(X_23,"sys","customer","c_phone",0);
@@ -126,36 +125,18 @@ barrier X_197 := language.dataflow();
     X_118 := algebra.leftfetchjoin(X_108,X_117);
     (X_119,r1_165) := algebra.join(X_106,X_118);
     X_121 := algebra.tdiff(X_107,X_119);
-    X_179 := algebra.leftfetchjoin(X_121,X_105);
-    X_122:bat[:oid,:str]  := algebra.leftfetchjoinPath(X_179,X_52,X_36);
+    X_178 := algebra.leftfetchjoin(X_121,X_105);
+    X_122:bat[:oid,:str]  := algebra.leftfetchjoinPath(X_178,X_52,X_36);
     X_123:bat[:oid,:str]  := batstr.substring(X_122,A0,A1);
     (X_124,r1_176,r2_176) := group.subgroupdone(X_123);
     X_127 := algebra.leftfetchjoin(r1_176,X_123);
     X_133:bat[:oid,:wrd]  := aggr.subcount(X_124,X_124,r1_176,false);
-    X_135:bat[:oid,:lng]  := algebra.leftfetchjoin(X_179,X_73);
+    X_135:bat[:oid,:lng]  := algebra.leftfetchjoin(X_178,X_73);
     X_136:bat[:oid,:lng]  := aggr.subsum(X_135,X_124,r1_176,true,true);
     (X_128,r1_180,r2_180) := algebra.subsort(X_127,false,false);
     X_132 := algebra.leftfetchjoin(r1_180,X_127);
     X_138 := algebra.leftfetchjoin(r1_180,X_136);
     X_134 := algebra.leftfetchjoin(r1_180,X_133);
-    language.pass(X_37);
-    language.pass(X_24);
-    language.pass(X_75);
-    language.pass(X_79);
-    language.pass(X_72);
-    language.pass(X_64);
-    language.pass(X_106);
-    language.pass(X_105);
-    language.pass(X_52);
-    language.pass(X_36);
-    language.pass(X_123);
-    language.pass(X_179);
-    language.pass(X_73);
-    language.pass(X_124);
-    language.pass(r1_176);
-    language.pass(X_127);
-    language.pass(r1_180);
-exit X_197;
     X_139 := sql.resultSet(3,1,X_132);
     sql.rsColumn(X_139,"sys.custsale","cntrycode","varchar",15,0,X_132);
     sql.rsColumn(X_139,"sys.L2","numcust","wrd",64,0,X_134);
@@ -163,7 +144,7 @@ exit X_197;
     X_158 := io.stdout();
     sql.exportResult(X_158,X_139);
 end s2_1;
-# querylog.define("explain select\n\tcntrycode,\n\tcount(*) as numcust,\n\tsum(c_acctbal) as totacctbal\nfrom\n\t(\n\t\tselect\n\t\t\tsubstring(c_phone from 1 for 2) as cntrycode,\n\t\t\tc_acctbal\n\t\tfrom\n\t\t\tcustomer\n\t\twhere\n\t\t\tsubstring(c_phone from 1 for 2) in\n\t\t\t\t(\\'13\\', \\'31\\', \\'23\\', \\'29\\', \\'30\\', \\'18\\', \\'17\\')\n\t\t\tand c_acctbal > (\n\t\t\t\tselect\n\t\t\t\t\tavg(c_acctbal)\n\t\t\t\tfrom\n\t\t\t\t\tcustomer\n\t\t\t\twhere\n\t\t\t\t\tc_acctbal > 0.00\n\t\t\t\t\tand substring(c_phone from 1 for 2) in\n\t\t\t\t\t\t(\\'13\\', \\'31\\', \\'23\\', \\'29\\', \\'30\\', \\'18\\', \\'17\\')\n\t\t\t)\n\t\t\tand not exists (\n\t\t\t\tselect\n\t\t\t\t\t*\n\t\t\t\tfrom\n\t\t\t\t\torders\n\t\t\t\twhere\n\t\t\t\t\to_custkey = c_custkey\n\t\t\t)\n\t) as custsale\ngroup by\n\tcntrycode\norder by\n\tcntrycode;","no_mitosis_pipe")
+# querylog.define("explain select\n\tcntrycode,\n\tcount(*) as numcust,\n\tsum(c_acctbal) as totacctbal\nfrom\n\t(\n\t\tselect\n\t\t\tsubstring(c_phone from 1 for 2) as cntrycode,\n\t\t\tc_acctbal\n\t\tfrom\n\t\t\tcustomer\n\t\twhere\n\t\t\tsubstring(c_phone from 1 for 2) in\n\t\t\t\t(\\'13\\', \\'31\\', \\'23\\', \\'29\\', \\'30\\', \\'18\\', \\'17\\')\n\t\t\tand c_acctbal > (\n\t\t\t\tselect\n\t\t\t\t\tavg(c_acctbal)\n\t\t\t\tfrom\n\t\t\t\t\tcustomer\n\t\t\t\twhere\n\t\t\t\t\tc_acctbal > 0.00\n\t\t\t\t\tand substring(c_phone from 1 for 2) in\n\t\t\t\t\t\t(\\'13\\', \\'31\\', \\'23\\', \\'29\\', \\'30\\', \\'18\\', \\'17\\')\n\t\t\t)\n\t\t\tand not exists (\n\t\t\t\tselect\n\t\t\t\t\t*\n\t\t\t\tfrom\n\t\t\t\t\torders\n\t\t\t\twhere\n\t\t\t\t\to_custkey = c_custkey\n\t\t\t)\n\t) as custsale\ngroup by\n\tcntrycode\norder by\n\tcntrycode;","sequential_pipe")
 
 # 22:53:31 >  
 # 22:53:31 >  "Done."

@@ -25,7 +25,7 @@ Ready.
 # 22:53:30 >  "/usr/bin/python2" "18-explain.SQL.py" "18-explain"
 # 22:53:30 >  
 
-#set optimizer = 'no_mitosis_pipe';
+#set optimizer = 'sequential_pipe';
 #explain select
 #	c_name,
 #	c_custkey,
@@ -64,7 +64,6 @@ Ready.
 % clob # type
 % 545 # length
 function user.s2_1{autoCommit=true}(A0:lng):void;
-barrier X_248 := language.dataflow();
     X_3 := sql.mvc();
     X_4:bat[:oid,:oid]  := sql.tid(X_3,"sys","orders");
     X_7 := sql.bind_idxbat(X_3,"sys","orders","orders_o_custkey_fkey",0);
@@ -105,84 +104,57 @@ barrier X_248 := language.dataflow();
     X_69:bat[:oid,:int]  := algebra.leftfetchjoinPath(X_67,r1_64,X_61);
     (X_70,r1_74) := algebra.join(X_42,X_69);
     X_72 := algebra.tinter(X_43,X_70);
-    X_217 := algebra.leftfetchjoin(X_31,r1_19);
+    X_216 := algebra.leftfetchjoin(X_31,r1_19);
     X_73 := sql.bind(X_3,"sys","customer","c_custkey",0);
     (X_78,r1_82) := sql.bind(X_3,"sys","customer","c_custkey",2);
     X_81 := sql.bind(X_3,"sys","customer","c_custkey",1);
     X_83 := sql.delta(X_73,X_78,r1_82,X_81);
     X_84 := algebra.leftfetchjoin(X_17,X_83);
-    X_85:bat[:oid,:int]  := algebra.leftfetchjoinPath(X_72,X_217,X_84);
+    X_85:bat[:oid,:int]  := algebra.leftfetchjoinPath(X_72,X_216,X_84);
     X_86 := algebra.leftfetchjoin(X_72,X_42);
     (X_87,r1_93,r2_93) := group.subgroup(X_86);
     (X_90,r1_96,r2_96) := group.subgroupdone(X_85,X_87);
     X_93 := algebra.leftfetchjoin(r1_96,X_85);
     (X_94,r1_107) := algebra.join(X_93,X_84);
     X_96:bat[:oid,:int]  := algebra.leftfetchjoinPath(X_94,r1_96,X_86);
-    X_221 := algebra.leftfetchjoin(r1_31,X_22);
+    X_220 := algebra.leftfetchjoin(r1_31,X_22);
     X_144 := sql.bind(X_3,"sys","lineitem","l_quantity",0);
     (X_149,r1_197) := sql.bind(X_3,"sys","lineitem","l_quantity",2);
     X_152 := sql.bind(X_3,"sys","lineitem","l_quantity",1);
     X_154 := sql.delta(X_144,X_149,r1_197,X_152);
-    X_155:bat[:oid,:int]  := algebra.leftfetchjoinPath(X_72,X_221,X_154);
+    X_155:bat[:oid,:int]  := algebra.leftfetchjoinPath(X_72,X_220,X_154);
     X_156:bat[:oid,:lng]  := aggr.subsum(X_155,X_90,r1_96,true,true);
     (X_102,r1_124) := algebra.join(X_96,X_41);
-    X_218 := algebra.leftfetchjoin(r1_124,X_4);
+    X_217 := algebra.leftfetchjoin(r1_124,X_4);
     X_104 := sql.bind(X_3,"sys","orders","o_totalprice",0);
     (X_106,r1_128) := sql.bind(X_3,"sys","orders","o_totalprice",2);
     X_108 := sql.bind(X_3,"sys","orders","o_totalprice",1);
     X_109 := sql.delta(X_104,X_106,r1_128,X_108);
-    X_110:bat[:oid,:lng]  := algebra.leftfetchjoin(X_218,X_109);
+    X_110:bat[:oid,:lng]  := algebra.leftfetchjoin(X_217,X_109);
     X_112 := pqueue.utopn_min(X_110,100:wrd);
     X_113 := bat.mirror(X_112);
     X_114 := sql.bind(X_3,"sys","orders","o_orderdate",0);
     (X_116,r1_143) := sql.bind(X_3,"sys","orders","o_orderdate",2);
     X_120 := sql.bind(X_3,"sys","orders","o_orderdate",1);
     X_121 := sql.delta(X_114,X_116,r1_143,X_120);
-    X_122:bat[:oid,:date]  := algebra.leftfetchjoin(X_218,X_121);
+    X_122:bat[:oid,:date]  := algebra.leftfetchjoin(X_217,X_121);
     X_123 := algebra.leftfetchjoin(X_113,X_122);
     X_124 := pqueue.topn_max(X_112,X_123,100:wrd);
     X_126 := algebra.subslice(X_124,0:wrd,99:wrd);
-    X_219 := algebra.leftfetchjoin(X_126,X_102);
+    X_218 := algebra.leftfetchjoin(X_126,X_102);
     X_127 := sql.bind(X_3,"sys","customer","c_name",0);
     (X_131,r1_164) := sql.bind(X_3,"sys","customer","c_name",2);
     X_134 := sql.bind(X_3,"sys","customer","c_name",1);
     X_135 := sql.delta(X_127,X_131,r1_164,X_134);
-    X_136:bat[:oid,:str]  := algebra.leftfetchjoinPath(X_219,r1_107,X_17,X_135);
+    X_136:bat[:oid,:str]  := algebra.leftfetchjoinPath(X_218,r1_107,X_17,X_135);
     X_138 := algebra.subslice(X_136,0:wrd,99:wrd);
     X_139 := algebra.leftfetchjoin(X_138,X_136);
-    X_220 := algebra.leftfetchjoin(X_138,X_126);
-    X_158:bat[:oid,:lng]  := algebra.leftfetchjoinPath(X_220,X_102,X_94,X_156);
-    X_143:bat[:oid,:lng]  := algebra.leftfetchjoin(X_220,X_110);
-    X_142:bat[:oid,:date]  := algebra.leftfetchjoin(X_220,X_122);
-    X_141:bat[:oid,:int]  := algebra.leftfetchjoinPath(X_220,X_102,X_96);
-    X_140:bat[:oid,:int]  := algebra.leftfetchjoinPath(X_220,X_102,X_94,X_93);
-    language.pass(X_19);
-    language.pass(r1_64);
-    language.pass(X_61);
-    language.pass(X_31);
-    language.pass(X_42);
-    language.pass(X_85);
-    language.pass(X_84);
-    language.pass(X_86);
-    language.pass(X_22);
-    language.pass(X_72);
-    language.pass(r1_96);
-    language.pass(X_41);
-    language.pass(X_4);
-    language.pass(X_218);
-    language.pass(X_112);
-    language.pass(X_17);
-    language.pass(X_136);
-    language.pass(X_138);
-    language.pass(X_126);
-    language.pass(X_110);
-    language.pass(X_122);
-    language.pass(X_96);
-    language.pass(X_220);
-    language.pass(X_102);
-    language.pass(X_94);
-    language.pass(X_93);
-exit X_248;
+    X_219 := algebra.leftfetchjoin(X_138,X_126);
+    X_158:bat[:oid,:lng]  := algebra.leftfetchjoinPath(X_219,X_102,X_94,X_156);
+    X_143:bat[:oid,:lng]  := algebra.leftfetchjoin(X_219,X_110);
+    X_142:bat[:oid,:date]  := algebra.leftfetchjoin(X_219,X_122);
+    X_141:bat[:oid,:int]  := algebra.leftfetchjoinPath(X_219,X_102,X_96);
+    X_140:bat[:oid,:int]  := algebra.leftfetchjoinPath(X_219,X_102,X_94,X_93);
     X_159 := sql.resultSet(6,1,X_139);
     sql.rsColumn(X_159,"sys.customer","c_name","varchar",25,0,X_139);
     sql.rsColumn(X_159,"sys.customer","c_custkey","int",32,0,X_140);
@@ -193,7 +165,7 @@ exit X_248;
     X_186 := io.stdout();
     sql.exportResult(X_186,X_159);
 end s2_1;
-# querylog.define("explain select\n\tc_name,\n\tc_custkey,\n\to_orderkey,\n\to_orderdate,\n\to_totalprice,\n\tsum(l_quantity)\nfrom\n\tcustomer,\n\torders,\n\tlineitem\nwhere\n\to_orderkey in (\n\t\tselect\n\t\t\tl_orderkey\n\t\tfrom\n\t\t\tlineitem\n\t\tgroup by\n\t\t\tl_orderkey having\n\t\t\t\tsum(l_quantity) > 300\n\t)\n\tand c_custkey = o_custkey\n\tand o_orderkey = l_orderkey\ngroup by\n\tc_name,\n\tc_custkey,\n\to_orderkey,\n\to_orderdate,\n\to_totalprice\norder by\n\to_totalprice desc,\n\to_orderdate\nlimit 100;","no_mitosis_pipe")
+# querylog.define("explain select\n\tc_name,\n\tc_custkey,\n\to_orderkey,\n\to_orderdate,\n\to_totalprice,\n\tsum(l_quantity)\nfrom\n\tcustomer,\n\torders,\n\tlineitem\nwhere\n\to_orderkey in (\n\t\tselect\n\t\t\tl_orderkey\n\t\tfrom\n\t\t\tlineitem\n\t\tgroup by\n\t\t\tl_orderkey having\n\t\t\t\tsum(l_quantity) > 300\n\t)\n\tand c_custkey = o_custkey\n\tand o_orderkey = l_orderkey\ngroup by\n\tc_name,\n\tc_custkey,\n\to_orderkey,\n\to_orderdate,\n\to_totalprice\norder by\n\to_totalprice desc,\n\to_orderdate\nlimit 100;","sequential_pipe")
 
 # 22:53:30 >  
 # 22:53:30 >  "Done."

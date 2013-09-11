@@ -25,7 +25,7 @@ Ready.
 # 22:53:26 >  "/usr/bin/python2" "04-explain.SQL.py" "04-explain"
 # 22:53:26 >  
 
-#set optimizer = 'no_mitosis_pipe';
+#set optimizer = 'sequential_pipe';
 #explain select
 #	o_orderpriority,
 #	count(*) as order_count
@@ -52,7 +52,6 @@ Ready.
 % clob # type
 % 440 # length
 function user.s2_1{autoCommit=true}(A0:date,A1:date,A2:int):void;
-barrier X_129 := language.dataflow();
     X_5 := sql.mvc();
     X_6:bat[:oid,:oid]  := sql.tid(X_5,"sys","orders");
     X_9 := sql.bind(X_5,"sys","orders","o_orderdate",0);
@@ -62,12 +61,12 @@ barrier X_129 := language.dataflow();
     X_18 := algebra.leftfetchjoin(X_6,X_17);
     X_19 := mtime.addmonths(A1,A2);
     X_20 := algebra.subselect(X_18,A0,X_19,true,false,false);
-    X_119 := algebra.leftfetchjoin(X_20,X_6);
+    X_118 := algebra.leftfetchjoin(X_20,X_6);
     X_22 := sql.bind(X_5,"sys","orders","o_orderkey",0);
     (X_24,r1_27) := sql.bind(X_5,"sys","orders","o_orderkey",2);
     X_26 := sql.bind(X_5,"sys","orders","o_orderkey",1);
     X_27 := sql.delta(X_22,X_24,r1_27,X_26);
-    X_28:bat[:oid,:int]  := algebra.leftfetchjoin(X_119,X_27);
+    X_28:bat[:oid,:int]  := algebra.leftfetchjoin(X_118,X_27);
     X_29 := bat.mirror(X_28);
     X_30:bat[:oid,:oid]  := sql.tid(X_5,"sys","lineitem");
     X_32 := sql.bind(X_5,"sys","lineitem","l_commitdate",0);
@@ -93,30 +92,20 @@ barrier X_129 := language.dataflow();
     (X_67,r1_74) := sql.bind(X_5,"sys","orders","o_orderpriority",2);
     X_70 := sql.bind(X_5,"sys","orders","o_orderpriority",1);
     X_71 := sql.delta(X_64,X_67,r1_74,X_70);
-    X_72:bat[:oid,:str]  := algebra.leftfetchjoinPath(X_63,X_119,X_71);
+    X_72:bat[:oid,:str]  := algebra.leftfetchjoinPath(X_63,X_118,X_71);
     (X_73,r1_82,r2_82) := group.subgroupdone(X_72);
     X_76 := algebra.leftfetchjoin(r1_82,X_72);
     X_81:bat[:oid,:wrd]  := aggr.subcount(X_73,X_73,r1_82,false);
     (X_77,r1_86,r2_86) := algebra.subsort(X_76,false,false);
     X_80 := algebra.leftfetchjoin(r1_86,X_76);
     X_82 := algebra.leftfetchjoin(r1_86,X_81);
-    language.pass(X_6);
-    language.pass(X_30);
-    language.pass(X_28);
-    language.pass(X_119);
-    language.pass(X_72);
-    language.pass(X_73);
-    language.pass(r1_82);
-    language.pass(X_76);
-    language.pass(r1_86);
-exit X_129;
     X_83 := sql.resultSet(2,1,X_80);
     sql.rsColumn(X_83,"sys.orders","o_orderpriority","varchar",15,0,X_80);
     sql.rsColumn(X_83,"sys.L1","order_count","wrd",64,0,X_82);
     X_96 := io.stdout();
     sql.exportResult(X_96,X_83);
 end s2_1;
-# querylog.define("explain select\n\to_orderpriority,\n\tcount(*) as order_count\nfrom\n\torders\nwhere\n\to_orderdate >= date \\'1993-07-01\\'\n\tand o_orderdate < date \\'1993-07-01\\' + interval \\'3\\' month\n\tand exists (\n\t\tselect\n\t\t\t*\n\t\tfrom\n\t\t\tlineitem\n\t\twhere\n\t\t\tl_orderkey = o_orderkey\n\t\t\tand l_commitdate < l_receiptdate\n\t)\ngroup by\n\to_orderpriority\norder by\n\to_orderpriority;","no_mitosis_pipe")
+# querylog.define("explain select\n\to_orderpriority,\n\tcount(*) as order_count\nfrom\n\torders\nwhere\n\to_orderdate >= date \\'1993-07-01\\'\n\tand o_orderdate < date \\'1993-07-01\\' + interval \\'3\\' month\n\tand exists (\n\t\tselect\n\t\t\t*\n\t\tfrom\n\t\t\tlineitem\n\t\twhere\n\t\t\tl_orderkey = o_orderkey\n\t\t\tand l_commitdate < l_receiptdate\n\t)\ngroup by\n\to_orderpriority\norder by\n\to_orderpriority;","sequential_pipe")
 
 # 22:53:26 >  
 # 22:53:26 >  "Done."
