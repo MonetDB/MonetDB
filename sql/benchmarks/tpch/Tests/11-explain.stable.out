@@ -25,7 +25,7 @@ Ready.
 # 22:53:28 >  "/usr/bin/python2" "11-explain.SQL.py" "11-explain"
 # 22:53:28 >  
 
-#set optimizer = 'no_mitosis_pipe';
+#set optimizer = 'sequential_pipe';
 #explain select
 #	ps_partkey,
 #	sum(ps_supplycost * ps_availqty) as value
@@ -58,7 +58,6 @@ Ready.
 % clob # type
 % 714 # length
 function user.s2_1{autoCommit=true}(A0:str,A1:lng,A2:str):void;
-barrier X_165 := language.dataflow();
     X_5 := sql.mvc();
     X_6:bat[:oid,:oid]  := sql.tid(X_5,"sys","supplier");
     X_9 := sql.bind_idxbat(X_5,"sys","supplier","supplier_s_nationkey_fkey",0);
@@ -117,49 +116,30 @@ barrier X_165 := language.dataflow();
     X_59 := algebra.leftfetchjoin(r1_58,X_55);
     X_80:bat[:oid,:lng]  := aggr.subsum(X_79,X_56,r1_58,true,true);
     X_60 := bat.mirror(X_59);
-    language.pass(r1_124);
-    language.pass(X_27);
-    language.pass(X_19);
-    language.pass(X_18);
-    language.pass(X_6);
-    language.pass(X_43);
-    language.pass(X_67);
-    language.pass(X_77);
-    language.pass(r1_45);
-    language.pass(X_34);
-    language.pass(X_55);
-    language.pass(r1_58);
-exit X_165;
-    X_175:bat[:lng,:oid]  := bat.reverse(X_97);
-    X_177 := bat.new(nil:oid,nil:lng);
-barrier (X_181,X_182) := iterator.new(X_97);
-    X_184 := sql.dec_round(X_182,100:lng);
-    X_185 := algebra.fetch(X_175,X_181);
-    bat.insert(X_177,X_185,X_184);
-    redo (X_181,X_182) := iterator.next(X_97);
-exit (X_181,X_182);
+    X_152:bat[:lng,:oid]  := bat.reverse(X_97);
+    X_154 := bat.new(nil:oid,nil:lng);
+barrier (X_158,X_159) := iterator.new(X_97);
+    X_161 := sql.dec_round(X_159,100:lng);
+    X_162 := algebra.fetch(X_152,X_158);
+    bat.insert(X_154,X_162,X_161);
+    redo (X_158,X_159) := iterator.next(X_97);
+exit (X_158,X_159);
     X_97:bat[:oid,:lng]  := nil:bat[:oid,:lng];
-    X_175:bat[:lng,:oid]  := nil:bat[:lng,:oid];
-    X_99:bat[:oid,:lng]  := X_177;
-barrier X_172 := language.dataflow();
+    X_152:bat[:lng,:oid]  := nil:bat[:lng,:oid];
+    X_99:bat[:oid,:lng]  := X_154;
     (X_102,r1_158) := algebra.thetajoin(X_80,X_99,1);
     X_104 := algebra.tinter(X_60,X_102);
     X_105 := algebra.leftfetchjoin(X_104,X_80);
     (X_106,r1_162,r2_162) := algebra.subsort(X_105,true,false);
     X_111:bat[:oid,:int]  := algebra.leftfetchjoinPath(r1_162,X_104,X_59);
     X_112 := algebra.leftfetchjoin(r1_162,X_105);
-    language.pass(X_80);
-    language.pass(X_104);
-    language.pass(r1_162);
-    language.pass(X_105);
-exit X_172;
     X_113 := sql.resultSet(2,1,X_111);
     sql.rsColumn(X_113,"sys.partsupp","ps_partkey","int",32,0,X_111);
     sql.rsColumn(X_113,"sys.L1","value","decimal",18,2,X_112);
     X_127 := io.stdout();
     sql.exportResult(X_127,X_113);
 end s2_1;
-# querylog.define("explain select\n\tps_partkey,\n\tsum(ps_supplycost * ps_availqty) as value\nfrom\n\tpartsupp,\n\tsupplier,\n\tnation\nwhere\n\tps_suppkey = s_suppkey\n\tand s_nationkey = n_nationkey\n\tand n_name = \\'GERMANY\\'\ngroup by\n\tps_partkey \nhaving\n\tsum(ps_supplycost * ps_availqty) >\n\t(\n\t\tselect\n\t\t\tsum(ps_supplycost * ps_availqty) * 0.0100000000\n\t\t\t-- The above constant needs to be adjusted according\n\t\t\t-- to the scale factor (SF): constant = 0.0001 / SF.\n\t\tfrom\n\t\t\tpartsupp,\n\t\t\tsupplier,\n\t\t\tnation\n\t\twhere\n\t\t\tps_suppkey = s_suppkey\n\t\t\tand s_nationkey = n_nationkey\n\t\t\tand n_name = \\'GERMANY\\'\n\t)\norder by\n\tvalue desc;","no_mitosis_pipe")
+# querylog.define("explain select\n\tps_partkey,\n\tsum(ps_supplycost * ps_availqty) as value\nfrom\n\tpartsupp,\n\tsupplier,\n\tnation\nwhere\n\tps_suppkey = s_suppkey\n\tand s_nationkey = n_nationkey\n\tand n_name = \\'GERMANY\\'\ngroup by\n\tps_partkey \nhaving\n\tsum(ps_supplycost * ps_availqty) >\n\t(\n\t\tselect\n\t\t\tsum(ps_supplycost * ps_availqty) * 0.0100000000\n\t\t\t-- The above constant needs to be adjusted according\n\t\t\t-- to the scale factor (SF): constant = 0.0001 / SF.\n\t\tfrom\n\t\t\tpartsupp,\n\t\t\tsupplier,\n\t\t\tnation\n\t\twhere\n\t\t\tps_suppkey = s_suppkey\n\t\t\tand s_nationkey = n_nationkey\n\t\t\tand n_name = \\'GERMANY\\'\n\t)\norder by\n\tvalue desc;","sequential_pipe")
 
 # 22:53:28 >  
 # 22:53:28 >  "Done."

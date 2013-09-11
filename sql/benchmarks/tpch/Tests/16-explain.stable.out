@@ -25,7 +25,7 @@ Ready.
 # 22:53:29 >  "/usr/bin/python2" "16-explain.SQL.py" "16-explain"
 # 22:53:29 >  
 
-#set optimizer = 'no_mitosis_pipe';
+#set optimizer = 'sequential_pipe';
 #explain select
 #	p_brand,
 #	p_type,
@@ -61,7 +61,6 @@ Ready.
 % clob # type
 % 577 # length
 function user.s2_1{autoCommit=true}(A0:str,A1:str,A2:int,A3:int,A4:int,A5:int,A6:int,A7:int,A8:int,A9:int,A10:str):void;
-barrier X_221 := language.dataflow();
     X_13 := sql.mvc();
     X_14:bat[:oid,:oid]  := sql.tid(X_13,"sys","partsupp");
     X_17 := sql.bind_idxbat(X_13,"sys","partsupp","partsupp_ps_partkey_fkey",0);
@@ -124,10 +123,10 @@ barrier X_221 := language.dataflow();
     X_105:bat[:oid,:int]  := algebra.leftfetchjoinPath(X_97,X_87,X_104);
     (X_106,r1_121) := algebra.join(X_85,X_105);
     X_108 := algebra.tdiff(X_86,X_106);
-    X_197 := algebra.leftfetchjoin(X_108,r1_83);
-    X_109:bat[:oid,:str]  := algebra.leftfetchjoinPath(X_197,X_70,X_42);
-    X_110:bat[:oid,:str]  := algebra.leftfetchjoinPath(X_197,X_70,X_51);
-    X_111:bat[:oid,:int]  := algebra.leftfetchjoinPath(X_197,X_70,X_35);
+    X_196 := algebra.leftfetchjoin(X_108,r1_83);
+    X_109:bat[:oid,:str]  := algebra.leftfetchjoinPath(X_196,X_70,X_42);
+    X_110:bat[:oid,:str]  := algebra.leftfetchjoinPath(X_196,X_70,X_51);
+    X_111:bat[:oid,:int]  := algebra.leftfetchjoinPath(X_196,X_70,X_35);
     (X_112,r1_133,r2_133) := group.subgroup(X_111);
     (X_115,r1_136,r2_136) := group.subgroup(X_110,X_112);
     (X_118,r1_139,r2_139) := group.subgroupdone(X_109,X_115);
@@ -147,30 +146,6 @@ barrier X_221 := language.dataflow();
     X_148 := algebra.leftfetchjoin(r1_163,X_130);
     X_147 := algebra.leftfetchjoin(r1_163,X_121);
     X_146 := algebra.leftfetchjoin(r1_163,X_122);
-    language.pass(X_54);
-    language.pass(X_27);
-    language.pass(X_14);
-    language.pass(X_87);
-    language.pass(X_42);
-    language.pass(X_51);
-    language.pass(X_197);
-    language.pass(X_70);
-    language.pass(X_35);
-    language.pass(X_111);
-    language.pass(X_109);
-    language.pass(X_110);
-    language.pass(X_108);
-    language.pass(X_85);
-    language.pass(X_124);
-    language.pass(r1_146);
-    language.pass(X_118);
-    language.pass(r1_139);
-    language.pass(X_123);
-    language.pass(X_130);
-    language.pass(X_121);
-    language.pass(r1_163);
-    language.pass(X_122);
-exit X_221;
     X_149 := sql.resultSet(4,1,X_145);
     sql.rsColumn(X_149,"sys.part","p_brand","varchar",10,0,X_145);
     sql.rsColumn(X_149,"sys.part","p_type","varchar",25,0,X_146);
@@ -179,7 +154,7 @@ exit X_221;
     X_170 := io.stdout();
     sql.exportResult(X_170,X_149);
 end s2_1;
-# querylog.define("explain select\n\tp_brand,\n\tp_type,\n\tp_size,\n\tcount(distinct ps_suppkey) as supplier_cnt\nfrom\n\tpartsupp,\n\tpart\nwhere\n\tp_partkey = ps_partkey\n\tand p_brand <> \\'Brand#45\\'\n\tand p_type not like \\'MEDIUM POLISHED%\\'\n\tand p_size in (49, 14, 23, 45, 19, 3, 36, 9)\n\tand ps_suppkey not in (\n\t\tselect\n\t\t\ts_suppkey\n\t\tfrom\n\t\t\tsupplier\n\t\twhere\n\t\t\ts_comment like \\'%Customer%Complaints%\\'\n\t)\ngroup by\n\tp_brand,\n\tp_type,\n\tp_size\norder by\n\tsupplier_cnt desc,\n\tp_brand,\n\tp_type,\n\tp_size;","no_mitosis_pipe")
+# querylog.define("explain select\n\tp_brand,\n\tp_type,\n\tp_size,\n\tcount(distinct ps_suppkey) as supplier_cnt\nfrom\n\tpartsupp,\n\tpart\nwhere\n\tp_partkey = ps_partkey\n\tand p_brand <> \\'Brand#45\\'\n\tand p_type not like \\'MEDIUM POLISHED%\\'\n\tand p_size in (49, 14, 23, 45, 19, 3, 36, 9)\n\tand ps_suppkey not in (\n\t\tselect\n\t\t\ts_suppkey\n\t\tfrom\n\t\t\tsupplier\n\t\twhere\n\t\t\ts_comment like \\'%Customer%Complaints%\\'\n\t)\ngroup by\n\tp_brand,\n\tp_type,\n\tp_size\norder by\n\tsupplier_cnt desc,\n\tp_brand,\n\tp_type,\n\tp_size;","sequential_pipe")
 
 # 22:53:29 >  
 # 22:53:29 >  "Done."

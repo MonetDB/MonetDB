@@ -9,7 +9,7 @@ TSTDIR = os.environ['TSTDIR']
 SRCDIR = os.path.join(TSTSRCBASE,TSTDIR)
 
 c = process.client('sql', stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
-c.stdin.write("set optimizer = 'no_mitosis_pipe';\n")
+c.stdin.write("set optimizer = 'sequential_pipe';\n")
 query = re.compile(r'^select\n')
 stats = re.compile(r'^select \* from optimizer_stats\(\) stats;\n')
 for ln in open(os.path.join(SRCDIR,"%s.sql" % os.environ['TST'][0:2])):
