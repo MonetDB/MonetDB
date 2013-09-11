@@ -1,0 +1,100 @@
+stdout of test '02-explain` in directory 'sql/benchmarks/ssbm` itself:
+
+
+# 23:10:45 >  
+# 23:10:45 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=35257" "--set" "mapi_usock=/var/tmp/mtest-17595/.s.monetdb.35257" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/manegold/_/Monet/HG/Feb2013/prefix/--disable-debug_--enable-assert_--enable-optimize/var/MonetDB/mTests_sql_benchmarks_ssbm" "--set" "mal_listing=0"
+# 23:10:45 >  
+
+# MonetDB 5 server v11.15.12
+# This is an unreleased version
+# Serving database 'mTests_sql_benchmarks_ssbm', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.591 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2013 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://rome.ins.cwi.nl:35257/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-17595/.s.monetdb.35257
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 23:10:45 >  
+# 23:10:45 >  "/usr/bin/python2" "02-explain.SQL.py" "02-explain"
+# 23:10:45 >  
+
+#set optimizer = 'no_mitosis_pipe';
+#explain
+#select sum(lo_extendedprice*lo_discount) as revenue
+#	from lineorder, dwdate
+#	where lo_orderdate = d_datekey
+#		and d_yearmonthnum = 199401
+#		and lo_discount between 4 and 6
+#		and lo_quantity between 26 and 35;
+% .explain # table_name
+% mal # name
+% clob # type
+% 91 # length
+function user.s0_1{autoCommit=true}(A0:int,A1:int,A2:int,A3:int,A4:int):void;
+    X_62:lng  := nil:lng;
+barrier X_97 := language.dataflow();
+    X_7 := sql.mvc();
+    X_11 := sql.bind(X_7,"sys","lineorder","lo_discount",0);
+    X_19 := sql.bind(X_7,"sys","lineorder","lo_quantity",0);
+    X_8:bat[:oid,:oid]  := sql.tid(X_7,"sys","lineorder");
+    X_88 := algebra.subselect(X_19,X_8,A3,A4,true,true,false);
+    (X_21,r1_25) := sql.bind(X_7,"sys","lineorder","lo_quantity",2);
+    X_89 := algebra.subselect(r1_25,A3,A4,true,true,false);
+    X_23 := sql.bind(X_7,"sys","lineorder","lo_quantity",1);
+    X_90 := algebra.subselect(X_23,X_8,A3,A4,true,true,false);
+    X_24 := sql.subdelta(X_88,X_8,X_21,X_89,X_90);
+    X_91 := algebra.subselect(X_11,X_24,A1,A2,true,true,false);
+    (X_14,r1_14) := sql.bind(X_7,"sys","lineorder","lo_discount",2);
+    X_92 := algebra.subselect(r1_14,A1,A2,true,true,false);
+    X_17 := sql.bind(X_7,"sys","lineorder","lo_discount",1);
+    X_93 := algebra.subselect(X_17,X_24,A1,A2,true,true,false);
+    X_26 := sql.subdelta(X_91,X_24,X_14,X_92,X_93);
+    X_27 := sql.bind_idxbat(X_7,"sys","lineorder","lineorder_lo_orderdate_fkey",0);
+    (X_29,r1_37) := sql.bind_idxbat(X_7,"sys","lineorder","lineorder_lo_orderdate_fkey",2);
+    X_31 := sql.bind_idxbat(X_7,"sys","lineorder","lineorder_lo_orderdate_fkey",1);
+    X_32 := sql.projectdelta(X_26,X_27,X_29,r1_37,X_31);
+    X_36 := sql.bind(X_7,"sys","dwdate","d_yearmonthnum",0);
+    X_33:bat[:oid,:oid]  := sql.tid(X_7,"sys","dwdate");
+    X_94 := algebra.subselect(X_36,X_33,A0,A0,true,true,false);
+    (X_39,r1_49) := sql.bind(X_7,"sys","dwdate","d_yearmonthnum",2);
+    X_95 := algebra.subselect(r1_49,A0,A0,true,true,false);
+    X_42 := sql.bind(X_7,"sys","dwdate","d_yearmonthnum",1);
+    X_96 := algebra.subselect(X_42,X_33,A0,A0,true,true,false);
+    X_44 := sql.subdelta(X_94,X_33,X_39,X_95,X_96);
+    X_46 := X_44;
+    (X_47,r1_60) := algebra.join(X_32,X_46);
+    X_49 := sql.bind(X_7,"sys","lineorder","lo_extendedprice",0);
+    (X_52,r1_65) := sql.bind(X_7,"sys","lineorder","lo_extendedprice",2);
+    X_54 := sql.bind(X_7,"sys","lineorder","lo_extendedprice",1);
+    X_55 := sql.projectdelta(X_26,X_49,X_52,r1_65,X_54);
+    X_56 := algebra.leftfetchjoin(X_47,X_55);
+    X_57 := batcalc.lng(X_56);
+    X_58 := sql.projectdelta(X_26,X_11,X_14,r1_14,X_17);
+    X_59 := algebra.leftfetchjoin(X_47,X_58);
+    X_60:bat[:oid,:lng]  := batcalc.*(X_57,X_59);
+    X_61 := algebra.selectNotNil(X_60);
+    X_62:lng  := aggr.sum(X_61);
+    language.pass(X_8);
+    language.pass(X_24);
+    language.pass(X_33);
+    language.pass(X_26);
+    language.pass(X_11);
+    language.pass(X_14);
+    language.pass(r1_14);
+    language.pass(X_17);
+    language.pass(X_47);
+exit X_97;
+    sql.exportValue(1,"sys.L1","revenue","bigint",53,0,6,X_62,"");
+end s0_1;
+
+# 23:10:45 >  
+# 23:10:45 >  "Done."
+# 23:10:45 >  
+

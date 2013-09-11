@@ -1,0 +1,93 @@
+stdout of test '07-plan` in directory 'sql/benchmarks/tpch` itself:
+
+
+# 22:46:30 >  
+# 22:46:30 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=31690" "--set" "mapi_usock=/var/tmp/mtest-6004/.s.monetdb.31690" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/manegold/_/Monet/HG/Feb2013/prefix/--disable-debug_--enable-assert_--enable-optimize/var/MonetDB/mTests_sql_benchmarks_tpch" "--set" "mal_listing=0"
+# 22:46:30 >  
+
+# MonetDB 5 server v11.15.12
+# This is an unreleased version
+# Serving database 'mTests_sql_benchmarks_tpch', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.591 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2013 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://rome.ins.cwi.nl:31690/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-6004/.s.monetdb.31690
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 22:46:30 >  
+# 22:46:30 >  "/usr/bin/python2" "07-plan.SQL.py" "07-plan"
+# 22:46:30 >  
+
+#plan select
+#	supp_nation,
+#	cust_nation,
+#	l_year,
+#	sum(volume) as revenue
+#from
+#	(
+#		select
+#			n1.n_name as supp_nation,
+#			n2.n_name as cust_nation,
+#			extract(year from l_shipdate) as l_year,
+#			l_extendedprice * (1 - l_discount) as volume
+#		from
+#			supplier,
+#			lineitem,
+#			orders,
+#			customer,
+#			nation n1,
+#			nation n2
+#		where
+#			s_suppkey = l_suppkey
+#			and o_orderkey = l_orderkey
+#			and c_custkey = o_custkey
+#			and s_nationkey = n1.n_nationkey
+#			and c_nationkey = n2.n_nationkey
+#			and (
+#				(n1.n_name = 'FRANCE' and n2.n_name = 'GERMANY')
+% .plan # table_name
+% rel # name
+% clob # type
+% 1553 # length
+project (
+| group by (
+| | project (
+| | | select (
+| | | | join (
+| | | | | join (
+| | | | | | join (
+| | | | | | | join (
+| | | | | | | | join (
+| | | | | | | | | select (
+| | | | | | | | | | table(sys.lineitem) [ lineitem.l_orderkey NOT NULL HASHCOL , lineitem.l_suppkey NOT NULL, lineitem.l_extendedprice NOT NULL, lineitem.l_discount NOT NULL, lineitem.l_shipdate NOT NULL, lineitem.%TID% NOT NULL, lineitem.%lineitem_l_orderkey_l_linenumber_pkey NOT NULL HASHIDX , lineitem.%lineitem_l_orderkey_fkey NOT NULL JOINIDX sys.lineitem.lineitem_l_orderkey_fkey, lineitem.%lineitem_l_partkey_fkey NOT NULL JOINIDX sys.lineitem.lineitem_l_partkey_fkey, lineitem.%lineitem_l_suppkey_fkey NOT NULL JOINIDX sys.lineitem.lineitem_l_suppkey_fkey, lineitem.%lineitem_l_partkey_l_suppkey_fkey NOT NULL JOINIDX sys.lineitem.lineitem_l_partkey_l_suppkey_fkey ] COUNT 
+| | | | | | | | | ) [ date "1995-01-01" <= lineitem.l_shipdate NOT NULL <= date "1996-12-31" ],
+| | | | | | | | | table(sys.orders) [ orders.o_orderkey NOT NULL HASHCOL , orders.o_custkey NOT NULL, orders.%TID% NOT NULL, orders.%orders_o_orderkey_pkey NOT NULL HASHIDX , orders.%orders_o_custkey_fkey NOT NULL JOINIDX sys.orders.orders_o_custkey_fkey ] COUNT 
+| | | | | | | | ) [ lineitem.l_orderkey NOT NULL HASHCOL  = orders.o_orderkey NOT NULL HASHCOL  JOINIDX sys.lineitem.lineitem_l_orderkey_fkey ],
+| | | | | | | | table(sys.supplier) [ supplier.s_suppkey NOT NULL HASHCOL , supplier.s_nationkey NOT NULL, supplier.%TID% NOT NULL, supplier.%supplier_s_suppkey_pkey NOT NULL HASHIDX , supplier.%supplier_s_nationkey_fkey NOT NULL JOINIDX sys.supplier.supplier_s_nationkey_fkey ] COUNT 
+| | | | | | | ) [ lineitem.l_suppkey NOT NULL = supplier.s_suppkey NOT NULL HASHCOL  JOINIDX sys.lineitem.lineitem_l_suppkey_fkey ],
+| | | | | | | select (
+| | | | | | | | table(sys.nation) [ nation.n_nationkey NOT NULL HASHCOL  as n1.n_nationkey, nation.n_name NOT NULL as n1.n_name, nation.%TID% NOT NULL as n1.%TID%, nation.%nation_n_nationkey_pkey NOT NULL HASHIDX  as n1.%nation_n_nationkey_pkey, nation.%nation_n_regionkey_fkey NOT NULL JOINIDX sys.nation.nation_n_regionkey_fkey as n1.%nation_n_regionkey_fkey ] COUNT 
+| | | | | | | ) [ n1.n_name NOT NULL in (varchar(25)[char(6) "FRANCE"], varchar(25)[char(7) "GERMANY"]) ]
+| | | | | | ) [ supplier.s_nationkey NOT NULL = n1.n_nationkey NOT NULL HASHCOL  JOINIDX sys.supplier.supplier_s_nationkey_fkey ],
+| | | | | | table(sys.customer) [ customer.c_custkey NOT NULL HASHCOL , customer.c_nationkey NOT NULL, customer.%TID% NOT NULL, customer.%customer_c_custkey_pkey NOT NULL HASHIDX , customer.%customer_c_nationkey_fkey NOT NULL JOINIDX sys.customer.customer_c_nationkey_fkey ] COUNT 
+| | | | | ) [ orders.o_custkey NOT NULL = customer.c_custkey NOT NULL HASHCOL  JOINIDX sys.orders.orders_o_custkey_fkey ],
+| | | | | select (
+| | | | | | table(sys.nation) [ nation.n_nationkey NOT NULL HASHCOL  as n2.n_nationkey, nation.n_name NOT NULL as n2.n_name, nation.%TID% NOT NULL as n2.%TID%, nation.%nation_n_nationkey_pkey NOT NULL HASHIDX  as n2.%nation_n_nationkey_pkey, nation.%nation_n_regionkey_fkey NOT NULL JOINIDX sys.nation.nation_n_regionkey_fkey as n2.%nation_n_regionkey_fkey ] COUNT 
+| | | | | ) [ n2.n_name NOT NULL in (varchar(25)[char(7) "GERMANY"], varchar(25)[char(6) "FRANCE"]) ]
+| | | | ) [ customer.c_nationkey NOT NULL = n2.n_nationkey NOT NULL HASHCOL  JOINIDX sys.customer.customer_c_nationkey_fkey ]
+| | | ) [ (n1.n_name NOT NULL = varchar(25)[char(6) "FRANCE"], n2.n_name NOT NULL = varchar(25)[char(7) "GERMANY"]) or (n1.n_name NOT NULL = varchar(25)[char(7) "GERMANY"], n2.n_name NOT NULL = varchar(25)[char(6) "FRANCE"]) ]
+| | ) [ n1.n_name NOT NULL as shipping.supp_nation, n2.n_name NOT NULL as shipping.cust_nation, sys.year(lineitem.l_shipdate NOT NULL) as shipping.l_year, sys.sql_mul(lineitem.l_extendedprice NOT NULL, sys.sql_sub(decimal(15,2)[tinyint "1"], lineitem.l_discount NOT NULL)) as shipping.volume, supplier.%TID% NOT NULL, supplier.%supplier_s_suppkey_pkey NOT NULL HASHIDX , supplier.%supplier_s_nationkey_fkey NOT NULL JOINIDX sys.supplier.supplier_s_nationkey_fkey, lineitem.%TID% NOT NULL, lineitem.%lineitem_l_orderkey_l_linenumber_pkey NOT NULL HASHIDX , lineitem.%lineitem_l_orderkey_fkey NOT NULL JOINIDX sys.lineitem.lineitem_l_orderkey_fkey, lineitem.%lineitem_l_partkey_fkey NOT NULL JOINIDX sys.lineitem.lineitem_l_partkey_fkey, lineitem.%lineitem_l_suppkey_fkey NOT NULL JOINIDX sys.lineitem.lineitem_l_suppkey_fkey, lineitem.%lineitem_l_partkey_l_suppkey_fkey NOT NULL JOINIDX sys.lineitem.lineitem_l_partkey_l_suppkey_fkey, orders.%TID% NOT NULL, orders.%orders_o_orderkey_pkey NOT NULL HASHIDX , orders.%orders_o_custkey_fkey NOT NULL JOINIDX sys.orders.orders_o_custkey_fkey, customer.%TID% NOT NULL, customer.%customer_c_custkey_pkey NOT NULL HASHIDX , customer.%customer_c_nationkey_fkey NOT NULL JOINIDX sys.customer.customer_c_nationkey_fkey, n1.%TID% NOT NULL, n1.%nation_n_nationkey_pkey NOT NULL HASHIDX , n1.%nation_n_regionkey_fkey NOT NULL JOINIDX sys.nation.nation_n_regionkey_fkey, n2.%TID% NOT NULL, n2.%nation_n_nationkey_pkey NOT NULL HASHIDX , n2.%nation_n_regionkey_fkey NOT NULL JOINIDX sys.nation.nation_n_regionkey_fkey ]
+| ) [ shipping.l_year, shipping.supp_nation NOT NULL, shipping.cust_nation NOT NULL ] [ shipping.supp_nation NOT NULL, shipping.cust_nation NOT NULL, shipping.l_year, sys.sum no nil (shipping.volume) as L1.L1 ]
+) [ shipping.supp_nation NOT NULL, shipping.cust_nation NOT NULL, shipping.l_year, L1 as L1.revenue ] [ shipping.supp_nation ASC NOT NULL, shipping.cust_nation ASC NOT NULL, shipping.l_year ASC ]
+
+# 22:46:30 >  
+# 22:46:30 >  "Done."
+# 22:46:30 >  
+
