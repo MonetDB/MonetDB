@@ -25,7 +25,7 @@ Ready.
 # 22:53:28 >  "/usr/bin/python2" "14-explain.SQL.py" "14-explain"
 # 22:53:28 >  
 
-#set optimizer = 'no_mitosis_pipe';
+#set optimizer = 'sequential_pipe';
 #explain select
 #	100.00 * sum(case
 #		when p_type like 'PROMO%'
@@ -44,18 +44,16 @@ Ready.
 % clob # type
 % 100 # length
 function user.s0_1{autoCommit=true}(A0:int,A1:str,A2:bte,A3:bte,A4:bte,A5:date,A6:date,A7:int):void;
-    X_84 := nil:lng;
-barrier X_111 := language.dataflow();
     X_10 := sql.mvc();
     X_14 := sql.bind(X_10,"sys","lineitem","l_shipdate",0);
     X_11:bat[:oid,:oid]  := sql.tid(X_10,"sys","lineitem");
     X_22 := mtime.addmonths(A6,A7);
-    X_108 := algebra.subselect(X_14,X_11,A5,X_22,true,false,false);
+    X_107 := algebra.subselect(X_14,X_11,A5,X_22,true,false,false);
     (X_17,r1_18) := sql.bind(X_10,"sys","lineitem","l_shipdate",2);
-    X_109 := algebra.subselect(r1_18,A5,X_22,true,false,false);
+    X_108 := algebra.subselect(r1_18,A5,X_22,true,false,false);
     X_20 := sql.bind(X_10,"sys","lineitem","l_shipdate",1);
-    X_110 := algebra.subselect(X_20,X_11,A5,X_22,true,false,false);
-    X_23 := sql.subdelta(X_108,X_11,X_17,X_109,X_110);
+    X_109 := algebra.subselect(X_20,X_11,A5,X_22,true,false,false);
+    X_23 := sql.subdelta(X_107,X_11,X_17,X_108,X_109);
     X_25 := sql.bind_idxbat(X_10,"sys","lineitem","lineitem_l_partkey_fkey",0);
     (X_27,r1_33) := sql.bind_idxbat(X_10,"sys","lineitem","lineitem_l_partkey_fkey",2);
     X_29 := sql.bind_idxbat(X_10,"sys","lineitem","lineitem_l_partkey_fkey",1);
@@ -95,14 +93,6 @@ barrier X_111 := language.dataflow();
     X_82:lng  := aggr.sum(X_81);
     X_83 := calc./(X_75,X_82);
     X_84 := calc.*(A0,X_83);
-    language.pass(X_11);
-    language.pass(X_31);
-    language.pass(X_43);
-    language.pass(X_23);
-    language.pass(X_33);
-    language.pass(X_66);
-    language.pass(X_56);
-exit X_111;
     sql.exportValue(1,".L2","promo_revenue","decimal",18,2,8,X_84,"");
 end s0_1;
 

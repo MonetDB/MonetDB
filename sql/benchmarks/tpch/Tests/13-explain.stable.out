@@ -25,7 +25,7 @@ Ready.
 # 22:53:28 >  "/usr/bin/python2" "13-explain.SQL.py" "13-explain"
 # 22:53:28 >  
 
-#set optimizer = 'no_mitosis_pipe';
+#set optimizer = 'sequential_pipe';
 #explain select
 #	c_count,
 #	count(*) as custdist
@@ -51,9 +51,6 @@ Ready.
 % clob # type
 % 82 # length
 function user.s0_1{autoCommit=true}(A0:str):void;
-    X_84 := nil:bat[:oid,:wrd];
-    X_85 := nil:bat[:oid,:wrd];
-barrier X_117 := language.dataflow();
     X_4:bat[:oid,:int]  := bat.new(nil:oid,nil:int);
     X_3 := sql.mvc();
     X_7:bat[:oid,:oid]  := sql.tid(X_3,"sys","customer");
@@ -64,18 +61,18 @@ barrier X_117 := language.dataflow();
     X_20 := sql.delta(X_12,X_15,r1_15,X_18);
     X_21 := algebra.leftfetchjoin(X_10,X_20);
     (X_22,r1_22) := algebra.join(X_7,X_21);
-    X_116 := algebra.leftfetchjoin(r1_22,X_10);
+    X_115 := algebra.leftfetchjoin(r1_22,X_10);
     X_24 := sql.bind(X_3,"sys","orders","o_comment",0);
     (X_26,r1_26) := sql.bind(X_3,"sys","orders","o_comment",2);
     X_28 := sql.bind(X_3,"sys","orders","o_comment",1);
     X_29 := sql.delta(X_24,X_26,r1_26,X_28);
-    X_30:bat[:oid,:str]  := algebra.leftfetchjoin(X_116,X_29);
+    X_30:bat[:oid,:str]  := algebra.leftfetchjoin(X_115,X_29);
     X_32 := algebra.likesubselect(X_30,A0,"",true);
     X_34 := sql.bind(X_3,"sys","orders","o_orderkey",0);
     (X_36,r1_40) := sql.bind(X_3,"sys","orders","o_orderkey",2);
     X_39 := sql.bind(X_3,"sys","orders","o_orderkey",1);
     X_41 := sql.delta(X_34,X_36,r1_40,X_39);
-    X_42:bat[:oid,:int]  := algebra.leftfetchjoinPath(X_32,X_116,X_41);
+    X_42:bat[:oid,:int]  := algebra.leftfetchjoinPath(X_32,X_115,X_41);
     X_43 := bat.append(X_4,X_42,true);
     X_44 := sql.bind(X_3,"sys","customer","c_custkey",0);
     (X_48,r1_53) := sql.bind(X_3,"sys","customer","c_custkey",2);
@@ -101,20 +98,6 @@ barrier X_117 := language.dataflow();
     (X_81,r1_87,r2_87) := algebra.subsort(X_75,r1_84,r2_84,true,false);
     X_84 := algebra.leftfetchjoin(r1_87,X_75);
     X_85 := algebra.leftfetchjoin(r1_87,X_76);
-    language.pass(X_10);
-    language.pass(X_116);
-    language.pass(X_7);
-    language.pass(X_32);
-    language.pass(X_56);
-    language.pass(X_57);
-    language.pass(X_54);
-    language.pass(X_71);
-    language.pass(X_72);
-    language.pass(r1_78);
-    language.pass(X_75);
-    language.pass(r1_87);
-    language.pass(X_76);
-exit X_117;
     X_86 := sql.resultSet(2,1,X_84);
     sql.rsColumn(X_86,".c_orders","c_count","wrd",64,0,X_84);
     sql.rsColumn(X_86,".L2","custdist","wrd",64,0,X_85);

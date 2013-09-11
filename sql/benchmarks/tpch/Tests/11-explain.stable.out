@@ -25,7 +25,7 @@ Ready.
 # 22:53:28 >  "/usr/bin/python2" "11-explain.SQL.py" "11-explain"
 # 22:53:28 >  
 
-#set optimizer = 'no_mitosis_pipe';
+#set optimizer = 'sequential_pipe';
 #explain select
 #	ps_partkey,
 #	sum(ps_supplycost * ps_availqty) as value
@@ -58,11 +58,6 @@ Ready.
 % clob # type
 % 88 # length
 function user.s0_1{autoCommit=true}(A0:str,A1:lng,A2:str):void;
-    X_97:bat[:oid,:lng]  := nil:bat[:oid,:lng];
-    X_59 := nil:bat[:oid,:int];
-    X_80:bat[:oid,:lng]  := nil:bat[:oid,:lng];
-    X_60 := nil:bat[:oid,:oid];
-barrier X_150 := language.dataflow();
     X_5 := sql.mvc();
     X_6:bat[:oid,:oid]  := sql.tid(X_5,"sys","supplier");
     X_9 := sql.bind_idxbat(X_5,"sys","supplier","supplier_s_nationkey_fkey",0);
@@ -121,44 +116,23 @@ barrier X_150 := language.dataflow();
     X_59 := algebra.leftfetchjoin(r1_58,X_55);
     X_80:bat[:oid,:lng]  := aggr.subsum(X_79,X_56,r1_58,true,true);
     X_60 := bat.mirror(X_59);
-    language.pass(r1_124);
-    language.pass(X_27);
-    language.pass(X_19);
-    language.pass(X_18);
-    language.pass(X_6);
-    language.pass(X_43);
-    language.pass(X_67);
-    language.pass(X_77);
-    language.pass(r1_45);
-    language.pass(X_34);
-    language.pass(X_55);
-    language.pass(r1_58);
-exit X_150;
-    X_184:bat[:lng,:oid]  := bat.reverse(X_97);
-    X_186 := bat.new(nil:oid,nil:lng);
-barrier (X_190,X_191) := iterator.new(X_97);
-    X_193 := sql.dec_round(X_191,100:lng);
-    X_194 := algebra.fetch(X_184,X_190);
-    bat.insert(X_186,X_194,X_193);
-    redo (X_190,X_191) := iterator.next(X_97);
-exit (X_190,X_191);
+    X_149:bat[:lng,:oid]  := bat.reverse(X_97);
+    X_151 := bat.new(nil:oid,nil:lng);
+barrier (X_155,X_156) := iterator.new(X_97);
+    X_158 := sql.dec_round(X_156,100:lng);
+    X_159 := algebra.fetch(X_149,X_155);
+    bat.insert(X_151,X_159,X_158);
+    redo (X_155,X_156) := iterator.next(X_97);
+exit (X_155,X_156);
     X_97:bat[:oid,:lng]  := nil:bat[:oid,:lng];
-    X_184:bat[:lng,:oid]  := nil:bat[:lng,:oid];
-    X_99:bat[:oid,:lng]  := X_186;
-    X_111:bat[:oid,:int]  := nil:bat[:oid,:int];
-    X_112 := nil:bat[:oid,:lng];
-barrier X_173 := language.dataflow();
+    X_149:bat[:lng,:oid]  := nil:bat[:lng,:oid];
+    X_99:bat[:oid,:lng]  := X_151;
     (X_102,r1_158) := algebra.thetajoin(X_80,X_99,1);
     X_104 := algebra.tinter(X_60,X_102);
     X_105 := algebra.leftfetchjoin(X_104,X_80);
     (X_106,r1_162,r2_162) := algebra.subsort(X_105,true,false);
     X_111:bat[:oid,:int]  := algebra.leftfetchjoinPath(r1_162,X_104,X_59);
     X_112 := algebra.leftfetchjoin(r1_162,X_105);
-    language.pass(X_80);
-    language.pass(X_104);
-    language.pass(r1_162);
-    language.pass(X_105);
-exit X_173;
     X_113 := sql.resultSet(2,1,X_111);
     sql.rsColumn(X_113,"sys.partsupp","ps_partkey","int",32,0,X_111);
     sql.rsColumn(X_113,"sys.L1","value","decimal",18,2,X_112);

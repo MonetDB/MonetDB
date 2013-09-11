@@ -25,7 +25,7 @@ Ready.
 # 22:53:29 >  "/usr/bin/python2" "15-explain.SQL.py" "15-explain"
 # 22:53:29 >  
 
-#set optimizer = 'no_mitosis_pipe';
+#set optimizer = 'sequential_pipe';
 #create view revenue0 (supplier_no, total_revenue) as
 #	select
 #		l_suppkey,
@@ -61,12 +61,6 @@ Ready.
 % clob # type
 % 77 # length
 function user.s0_1{autoCommit=true}():void;
-    X_88 := nil:bat[:oid,:int];
-    X_115:bat[:oid,:lng]  := nil:bat[:oid,:lng];
-    X_114:bat[:oid,:str]  := nil:bat[:oid,:str];
-    X_107:bat[:oid,:str]  := nil:bat[:oid,:str];
-    X_96:bat[:oid,:str]  := nil:bat[:oid,:str];
-barrier X_163 := language.dataflow();
     X_2 := sql.mvc();
     X_3:bat[:oid,:oid]  := sql.tid(X_2,"sys","supplier");
     X_6 := sql.bind(X_2,"sys","supplier","s_suppkey",0);
@@ -117,38 +111,23 @@ barrier X_163 := language.dataflow();
     X_83 := algebra.leftfetchjoin(X_82,X_45);
     (X_84,r1_154,r2_154) := algebra.subsort(X_83,false,false);
     X_88 := algebra.leftfetchjoin(r1_154,X_83);
-    X_162 := algebra.leftfetchjoin(r1_154,X_82);
-    X_115:bat[:oid,:lng]  := algebra.leftfetchjoin(X_162,X_72);
+    X_161 := algebra.leftfetchjoin(r1_154,X_82);
+    X_115:bat[:oid,:lng]  := algebra.leftfetchjoin(X_161,X_72);
     X_108 := sql.bind(X_2,"sys","supplier","s_phone",0);
     (X_110,r1_186) := sql.bind(X_2,"sys","supplier","s_phone",2);
     X_112 := sql.bind(X_2,"sys","supplier","s_phone",1);
     X_113 := sql.delta(X_108,X_110,r1_186,X_112);
-    X_114:bat[:oid,:str]  := algebra.leftfetchjoinPath(X_162,X_43,X_3,X_113);
+    X_114:bat[:oid,:str]  := algebra.leftfetchjoinPath(X_161,X_43,X_3,X_113);
     X_97 := sql.bind(X_2,"sys","supplier","s_address",0);
     (X_101,r1_174) := sql.bind(X_2,"sys","supplier","s_address",2);
     X_104 := sql.bind(X_2,"sys","supplier","s_address",1);
     X_106 := sql.delta(X_97,X_101,r1_174,X_104);
-    X_107:bat[:oid,:str]  := algebra.leftfetchjoinPath(X_162,X_43,X_3,X_106);
+    X_107:bat[:oid,:str]  := algebra.leftfetchjoinPath(X_161,X_43,X_3,X_106);
     X_89 := sql.bind(X_2,"sys","supplier","s_name",0);
     (X_92,r1_162) := sql.bind(X_2,"sys","supplier","s_name",2);
     X_94 := sql.bind(X_2,"sys","supplier","s_name",1);
     X_95 := sql.delta(X_89,X_92,r1_162,X_94);
-    X_96:bat[:oid,:str]  := algebra.leftfetchjoinPath(X_162,X_43,X_3,X_95);
-    language.pass(X_38);
-    language.pass(X_16);
-    language.pass(X_28);
-    language.pass(r1_42);
-    language.pass(X_15);
-    language.pass(X_70);
-    language.pass(X_45);
-    language.pass(X_83);
-    language.pass(r1_154);
-    language.pass(X_82);
-    language.pass(X_72);
-    language.pass(X_162);
-    language.pass(X_43);
-    language.pass(X_3);
-exit X_163;
+    X_96:bat[:oid,:str]  := algebra.leftfetchjoinPath(X_161,X_43,X_3,X_95);
     X_116 := sql.resultSet(5,1,X_88);
     sql.rsColumn(X_116,"sys.supplier","s_suppkey","int",32,0,X_88);
     sql.rsColumn(X_116,"sys.supplier","s_name","varchar",25,0,X_96);

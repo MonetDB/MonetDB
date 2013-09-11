@@ -25,7 +25,7 @@ Ready.
 # 22:53:31 >  "/usr/bin/python2" "22-explain.SQL.py" "22-explain"
 # 22:53:31 >  
 
-#set optimizer = 'no_mitosis_pipe';
+#set optimizer = 'sequential_pipe';
 #explain select
 #	cntrycode,
 #	count(*) as numcust,
@@ -58,10 +58,6 @@ Ready.
 % clob # type
 % 200 # length
 function user.s0_1{autoCommit=true}(A0:int,A1:int,A2:int,A3:int,A4:str,A5:str,A6:str,A7:str,A8:str,A9:str,A10:str,A11:sht,A12:int,A13:int,A14:str,A15:str,A16:str,A17:str,A18:str,A19:str,A20:str):void;
-    X_139 := nil:bat[:oid,:str];
-    X_145 := nil:bat[:oid,:lng];
-    X_141 := nil:bat[:oid,:wrd];
-barrier X_184 := language.dataflow();
     X_23 := sql.mvc();
     X_24:bat[:oid,:oid]  := sql.tid(X_23,"sys","customer");
     X_27 := sql.bind(X_23,"sys","customer","c_phone",0);
@@ -134,37 +130,18 @@ barrier X_184 := language.dataflow();
     X_125 := algebra.leftfetchjoin(X_115,X_124);
     (X_126,r1_176) := algebra.join(X_113,X_125);
     X_128 := algebra.tdiff(X_114,X_126);
-    X_183 := algebra.leftfetchjoin(X_128,X_112);
-    X_129:bat[:oid,:str]  := algebra.leftfetchjoinPath(X_183,X_52,X_36);
+    X_182 := algebra.leftfetchjoin(X_128,X_112);
+    X_129:bat[:oid,:str]  := algebra.leftfetchjoinPath(X_182,X_52,X_36);
     X_130:bat[:oid,:str]  := batstr.substring(X_129,A0,A1);
     (X_131,r1_187,r2_187) := group.subgroupdone(X_130);
     X_134 := algebra.leftfetchjoin(r1_187,X_130);
     X_140:bat[:oid,:wrd]  := aggr.subcount(X_131,X_131,r1_187,false);
-    X_142:bat[:oid,:lng]  := algebra.leftfetchjoin(X_183,X_73);
+    X_142:bat[:oid,:lng]  := algebra.leftfetchjoin(X_182,X_73);
     X_143:bat[:oid,:lng]  := aggr.subsum(X_142,X_131,r1_187,true,true);
     (X_135,r1_191,r2_191) := algebra.subsort(X_134,false,false);
     X_139 := algebra.leftfetchjoin(r1_191,X_134);
     X_145 := algebra.leftfetchjoin(r1_191,X_143);
     X_141 := algebra.leftfetchjoin(r1_191,X_140);
-    language.pass(X_37);
-    language.pass(X_24);
-    language.pass(X_75);
-    language.pass(X_79);
-    language.pass(X_72);
-    language.pass(X_99);
-    language.pass(X_64);
-    language.pass(X_113);
-    language.pass(X_112);
-    language.pass(X_52);
-    language.pass(X_36);
-    language.pass(X_130);
-    language.pass(X_183);
-    language.pass(X_73);
-    language.pass(X_131);
-    language.pass(r1_187);
-    language.pass(X_134);
-    language.pass(r1_191);
-exit X_184;
     X_146 := sql.resultSet(3,1,X_139);
     sql.rsColumn(X_146,"sys.custsale","cntrycode","varchar",15,0,X_139);
     sql.rsColumn(X_146,"sys.L2","numcust","wrd",64,0,X_141);
