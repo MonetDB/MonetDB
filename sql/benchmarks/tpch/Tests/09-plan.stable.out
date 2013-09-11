@@ -54,7 +54,7 @@ Ready.
 % .plan # table_name
 % rel # name
 % clob # type
-% 1650 # length
+% 519 # length
 project (
 | group by (
 | | project (
@@ -63,20 +63,20 @@ project (
 | | | | | join (
 | | | | | | join (
 | | | | | | | join (
-| | | | | | | | table(sys.lineitem) [ lineitem.l_orderkey NOT NULL HASHCOL , lineitem.l_partkey NOT NULL, lineitem.l_suppkey NOT NULL, lineitem.l_quantity NOT NULL, lineitem.l_extendedprice NOT NULL, lineitem.l_discount NOT NULL, lineitem.%TID% NOT NULL, lineitem.%lineitem_l_orderkey_l_linenumber_pkey NOT NULL HASHIDX , lineitem.%lineitem_l_orderkey_fkey NOT NULL JOINIDX sys.lineitem.lineitem_l_orderkey_fkey, lineitem.%lineitem_l_partkey_fkey NOT NULL JOINIDX sys.lineitem.lineitem_l_partkey_fkey, lineitem.%lineitem_l_suppkey_fkey NOT NULL JOINIDX sys.lineitem.lineitem_l_suppkey_fkey, lineitem.%lineitem_l_partkey_l_suppkey_fkey NOT NULL JOINIDX sys.lineitem.lineitem_l_partkey_l_suppkey_fkey ] COUNT ,
-| | | | | | | | table(sys.orders) [ orders.o_orderkey NOT NULL HASHCOL , orders.o_orderdate NOT NULL, orders.%TID% NOT NULL, orders.%orders_o_orderkey_pkey NOT NULL HASHIDX , orders.%orders_o_custkey_fkey NOT NULL JOINIDX sys.orders.orders_o_custkey_fkey ] COUNT 
-| | | | | | | ) [ lineitem.l_orderkey NOT NULL HASHCOL  = orders.o_orderkey NOT NULL HASHCOL  JOINIDX sys.lineitem.lineitem_l_orderkey_fkey ],
-| | | | | | | select (
-| | | | | | | | table(sys.part) [ part.p_partkey NOT NULL HASHCOL , part.p_name NOT NULL, part.%TID% NOT NULL, part.%part_p_partkey_pkey NOT NULL HASHIDX  ] COUNT 
-| | | | | | | ) [ char[part.p_name NOT NULL] FILTER like (char[char(7) "%green%"], char "") ]
-| | | | | | ) [ lineitem.l_partkey NOT NULL = part.p_partkey NOT NULL HASHCOL  JOINIDX sys.lineitem.lineitem_l_partkey_fkey ],
-| | | | | | table(sys.supplier) [ supplier.s_suppkey NOT NULL HASHCOL , supplier.s_nationkey NOT NULL, supplier.%TID% NOT NULL, supplier.%supplier_s_suppkey_pkey NOT NULL HASHIDX , supplier.%supplier_s_nationkey_fkey NOT NULL JOINIDX sys.supplier.supplier_s_nationkey_fkey ] COUNT 
-| | | | | ) [ lineitem.l_suppkey NOT NULL = supplier.s_suppkey NOT NULL HASHCOL  JOINIDX sys.lineitem.lineitem_l_suppkey_fkey ],
-| | | | | table(sys.nation) [ nation.n_nationkey NOT NULL HASHCOL , nation.n_name NOT NULL, nation.%TID% NOT NULL, nation.%nation_n_nationkey_pkey NOT NULL HASHIDX , nation.%nation_n_regionkey_fkey NOT NULL JOINIDX sys.nation.nation_n_regionkey_fkey ] COUNT 
-| | | | ) [ supplier.s_nationkey NOT NULL = nation.n_nationkey NOT NULL HASHCOL  JOINIDX sys.supplier.supplier_s_nationkey_fkey ],
-| | | | table(sys.partsupp) [ partsupp.ps_suppkey NOT NULL, partsupp.ps_supplycost NOT NULL, partsupp.%TID% NOT NULL, partsupp.%partsupp_ps_partkey_ps_suppkey_pkey NOT NULL HASHIDX , partsupp.%partsupp_ps_partkey_fkey NOT NULL JOINIDX sys.partsupp.partsupp_ps_partkey_fkey, partsupp.%partsupp_ps_suppkey_fkey NOT NULL JOINIDX sys.partsupp.partsupp_ps_suppkey_fkey ] COUNT 
-| | | ) [ lineitem.l_suppkey NOT NULL = partsupp.ps_suppkey NOT NULL JOINIDX sys.lineitem.lineitem_l_partkey_l_suppkey_fkey ]
-| | ) [ nation.n_name NOT NULL as profit.nation, sys.year(orders.o_orderdate NOT NULL) as profit.o_year, sys.sql_sub(sys.sql_mul(lineitem.l_extendedprice NOT NULL, sys.sql_sub(decimal(15,2)[tinyint "1"], lineitem.l_discount NOT NULL)), sys.scale_up(sys.sql_mul(partsupp.ps_supplycost NOT NULL, lineitem.l_quantity NOT NULL), bigint "100")) as profit.amount, part.%TID% NOT NULL, part.%part_p_partkey_pkey NOT NULL HASHIDX , supplier.%TID% NOT NULL, supplier.%supplier_s_suppkey_pkey NOT NULL HASHIDX , supplier.%supplier_s_nationkey_fkey NOT NULL JOINIDX sys.supplier.supplier_s_nationkey_fkey, lineitem.%TID% NOT NULL, lineitem.%lineitem_l_orderkey_l_linenumber_pkey NOT NULL HASHIDX , lineitem.%lineitem_l_orderkey_fkey NOT NULL JOINIDX sys.lineitem.lineitem_l_orderkey_fkey, lineitem.%lineitem_l_partkey_fkey NOT NULL JOINIDX sys.lineitem.lineitem_l_partkey_fkey, lineitem.%lineitem_l_suppkey_fkey NOT NULL JOINIDX sys.lineitem.lineitem_l_suppkey_fkey, lineitem.%lineitem_l_partkey_l_suppkey_fkey NOT NULL JOINIDX sys.lineitem.lineitem_l_partkey_l_suppkey_fkey, partsupp.%TID% NOT NULL, partsupp.%partsupp_ps_partkey_ps_suppkey_pkey NOT NULL HASHIDX , partsupp.%partsupp_ps_partkey_fkey NOT NULL JOINIDX sys.partsupp.partsupp_ps_partkey_fkey, partsupp.%partsupp_ps_suppkey_fkey NOT NULL JOINIDX sys.partsupp.partsupp_ps_suppkey_fkey, orders.%TID% NOT NULL, orders.%orders_o_orderkey_pkey NOT NULL HASHIDX , orders.%orders_o_custkey_fkey NOT NULL JOINIDX sys.orders.orders_o_custkey_fkey, nation.%TID% NOT NULL, nation.%nation_n_nationkey_pkey NOT NULL HASHIDX , nation.%nation_n_regionkey_fkey NOT NULL JOINIDX sys.nation.nation_n_regionkey_fkey ]
+| | | | | | | | table(sys.lineitem) [ lineitem.l_quantity NOT NULL, lineitem.l_extendedprice NOT NULL, lineitem.l_discount NOT NULL, lineitem.%lineitem_l_orderkey_fkey NOT NULL JOINIDX sys.lineitem.lineitem_l_orderkey_fkey, lineitem.%lineitem_l_partkey_fkey NOT NULL JOINIDX sys.lineitem.lineitem_l_partkey_fkey, lineitem.%lineitem_l_suppkey_fkey NOT NULL JOINIDX sys.lineitem.lineitem_l_suppkey_fkey, lineitem.%lineitem_l_partkey_l_suppkey_fkey NOT NULL JOINIDX sys.lineitem.lineitem_l_partkey_l_suppkey_fkey ] COUNT ,
+| | | | | | | | select (
+| | | | | | | | | table(sys.part) [ part.p_name NOT NULL, part.%TID% NOT NULL ] COUNT 
+| | | | | | | | ) [ char[part.p_name NOT NULL] FILTER like (char[char(7) "%green%"], char "") ]
+| | | | | | | ) [ lineitem.%lineitem_l_partkey_fkey NOT NULL = part.%TID% NOT NULL JOINIDX sys.lineitem.lineitem_l_partkey_fkey ],
+| | | | | | | table(sys.supplier) [ supplier.%TID% NOT NULL, supplier.%supplier_s_nationkey_fkey NOT NULL JOINIDX sys.supplier.supplier_s_nationkey_fkey ] COUNT 
+| | | | | | ) [ lineitem.%lineitem_l_suppkey_fkey NOT NULL = supplier.%TID% NOT NULL JOINIDX sys.lineitem.lineitem_l_suppkey_fkey ],
+| | | | | | table(sys.partsupp) [ partsupp.ps_supplycost NOT NULL, partsupp.%TID% NOT NULL ] COUNT 
+| | | | | ) [ lineitem.%lineitem_l_partkey_l_suppkey_fkey NOT NULL = partsupp.%TID% NOT NULL JOINIDX sys.lineitem.lineitem_l_partkey_l_suppkey_fkey ],
+| | | | | table(sys.orders) [ orders.o_orderdate NOT NULL, orders.%TID% NOT NULL ] COUNT 
+| | | | ) [ lineitem.%lineitem_l_orderkey_fkey NOT NULL = orders.%TID% NOT NULL JOINIDX sys.lineitem.lineitem_l_orderkey_fkey ],
+| | | | table(sys.nation) [ nation.n_name NOT NULL, nation.%TID% NOT NULL ] COUNT 
+| | | ) [ supplier.%supplier_s_nationkey_fkey NOT NULL = nation.%TID% NOT NULL JOINIDX sys.supplier.supplier_s_nationkey_fkey ]
+| | ) [ nation.n_name NOT NULL as profit.nation, sys.year(orders.o_orderdate NOT NULL) as profit.o_year, sys.sql_sub(sys.sql_mul(lineitem.l_extendedprice NOT NULL, sys.sql_sub(decimal(15,2)[tinyint "1"], lineitem.l_discount NOT NULL)), sys.scale_up(sys.sql_mul(partsupp.ps_supplycost NOT NULL, lineitem.l_quantity NOT NULL), bigint "100")) as profit.amount ]
 | ) [ profit.o_year, profit.nation NOT NULL ] [ profit.nation NOT NULL, profit.o_year, sys.sum no nil (profit.amount) as L1.L1 ]
 ) [ profit.nation NOT NULL, profit.o_year, L1 as L1.sum_profit ] [ profit.nation ASC NOT NULL, profit.o_year ]
 

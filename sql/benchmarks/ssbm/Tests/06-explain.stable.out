@@ -41,12 +41,9 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 91 # length
-function user.s0_1{autoCommit=true}(A0:str,A1:str):void;
-    X_102 := nil:bat[:oid,:lng];
-    X_104 := nil:bat[:oid,:str];
-    X_103 := nil:bat[:oid,:int];
-barrier X_157 := language.dataflow();
+% 437 # length
+function user.s2_1{autoCommit=true}(A0:str,A1:str):void;
+barrier X_178 := language.dataflow();
     X_4 := sql.mvc();
     X_5:bat[:oid,:oid]  := sql.tid(X_4,"sys","lineorder");
     X_8 := sql.bind_idxbat(X_4,"sys","lineorder","lineorder_lo_partkey_fkey",0);
@@ -55,12 +52,12 @@ barrier X_157 := language.dataflow();
     X_16 := sql.projectdelta(X_5,X_8,X_11,r1_11,X_14);
     X_19 := sql.bind(X_4,"sys","part","p_brand1",0);
     X_17:bat[:oid,:oid]  := sql.tid(X_4,"sys","part");
-    X_149 := algebra.subselect(X_19,X_17,A0,A0,true,true,false);
+    X_152 := algebra.subselect(X_19,X_17,A0,A0,true,true,false);
     (X_21,r1_22) := sql.bind(X_4,"sys","part","p_brand1",2);
-    X_150 := algebra.subselect(r1_22,A0,A0,true,true,false);
+    X_153 := algebra.subselect(r1_22,A0,A0,true,true,false);
     X_23 := sql.bind(X_4,"sys","part","p_brand1",1);
-    X_151 := algebra.subselect(X_23,X_17,A0,A0,true,true,false);
-    X_24 := sql.subdelta(X_149,X_17,X_21,X_150,X_151);
+    X_154 := algebra.subselect(X_23,X_17,A0,A0,true,true,false);
+    X_24 := sql.subdelta(X_152,X_17,X_21,X_153,X_154);
     X_26 := X_24;
     (X_27,r1_31) := algebra.join(X_16,X_26);
     X_29 := sql.bind_idxbat(X_4,"sys","lineorder","lineorder_lo_suppkey_fkey",0);
@@ -70,25 +67,25 @@ barrier X_157 := language.dataflow();
     X_35 := algebra.leftfetchjoin(X_27,X_34);
     X_39 := sql.bind(X_4,"sys","supplier","s_region",0);
     X_36:bat[:oid,:oid]  := sql.tid(X_4,"sys","supplier");
-    X_152 := algebra.subselect(X_39,X_36,A1,A1,true,true,false);
+    X_155 := algebra.subselect(X_39,X_36,A1,A1,true,true,false);
     (X_42,r1_47) := sql.bind(X_4,"sys","supplier","s_region",2);
-    X_153 := algebra.subselect(r1_47,A1,A1,true,true,false);
+    X_156 := algebra.subselect(r1_47,A1,A1,true,true,false);
     X_45 := sql.bind(X_4,"sys","supplier","s_region",1);
-    X_154 := algebra.subselect(X_45,X_36,A1,A1,true,true,false);
-    X_47 := sql.subdelta(X_152,X_36,X_42,X_153,X_154);
+    X_157 := algebra.subselect(X_45,X_36,A1,A1,true,true,false);
+    X_47 := sql.subdelta(X_155,X_36,X_42,X_156,X_157);
     X_49 := X_47;
     (X_50,r1_58) := algebra.join(X_35,X_49);
-    X_155 := algebra.leftfetchjoin(X_50,X_27);
+    X_158 := algebra.leftfetchjoin(X_50,X_27);
     X_52 := sql.bind_idxbat(X_4,"sys","lineorder","lineorder_lo_orderdate_fkey",0);
     (X_55,r1_63) := sql.bind_idxbat(X_4,"sys","lineorder","lineorder_lo_orderdate_fkey",2);
     X_57 := sql.bind_idxbat(X_4,"sys","lineorder","lineorder_lo_orderdate_fkey",1);
     X_58 := sql.projectdelta(X_5,X_52,X_55,r1_63,X_57);
-    X_59:bat[:oid,:oid]  := algebra.leftfetchjoin(X_155,X_58);
+    X_59:bat[:oid,:oid]  := algebra.leftfetchjoin(X_158,X_58);
     X_60:bat[:oid,:oid]  := sql.tid(X_4,"sys","dwdate");
     (X_62,r1_72) := algebra.join(X_59,X_60);
-    X_156 := algebra.leftfetchjoin(X_62,X_50);
+    X_159 := algebra.leftfetchjoin(X_62,X_50);
     X_64 := sql.projectdelta(X_24,X_19,X_21,r1_22,X_23);
-    X_65:bat[:oid,:str]  := algebra.leftfetchjoinPath(X_156,r1_31,X_64);
+    X_65:bat[:oid,:str]  := algebra.leftfetchjoinPath(X_159,r1_31,X_64);
     X_66 := sql.bind(X_4,"sys","dwdate","d_year",0);
     (X_70,r1_82) := sql.bind(X_4,"sys","dwdate","d_year",2);
     X_73 := sql.bind(X_4,"sys","dwdate","d_year",1);
@@ -102,7 +99,7 @@ barrier X_157 := language.dataflow();
     (X_95,r1_108) := sql.bind(X_4,"sys","lineorder","lo_revenue",2);
     X_97 := sql.bind(X_4,"sys","lineorder","lo_revenue",1);
     X_98 := sql.projectdelta(X_5,X_92,X_95,r1_108,X_97);
-    X_99:bat[:oid,:int]  := algebra.leftfetchjoinPath(X_156,X_27,X_98);
+    X_99:bat[:oid,:int]  := algebra.leftfetchjoinPath(X_159,X_27,X_98);
     X_100:bat[:oid,:lng]  := aggr.subsum(X_99,X_80,r1_93,true,true);
     (X_85,r1_98,r2_98) := algebra.subsort(X_84,false,false);
     (X_89,r1_102,r2_102) := algebra.subsort(X_83,r1_98,r2_98,false,false);
@@ -121,20 +118,21 @@ barrier X_157 := language.dataflow();
     language.pass(X_65);
     language.pass(X_76);
     language.pass(X_5);
-    language.pass(X_156);
+    language.pass(X_159);
     language.pass(X_27);
     language.pass(r1_93);
     language.pass(X_83);
     language.pass(r1_102);
     language.pass(X_84);
-exit X_157;
+exit X_178;
     X_105 := sql.resultSet(3,1,X_102);
     sql.rsColumn(X_105,"sys.L1","L1","bigint",32,0,X_102);
     sql.rsColumn(X_105,"sys.dwdate","d_year","int",32,0,X_103);
     sql.rsColumn(X_105,"sys.part","p_brand1","clob",0,0,X_104);
     X_122 := io.stdout();
     sql.exportResult(X_122,X_105);
-end s0_1;
+end s2_1;
+# querylog.define("explain\nselect sum(lo_revenue), d_year, p_brand1\n\tfrom lineorder, dwdate, part, supplier\n\twhere lo_orderdate = d_datekey\n\t\tand lo_partkey = p_partkey\n\t\tand lo_suppkey = s_suppkey\n\t\t-- OK to add p_mfgr=’MFGR#2’\n\t\t-- OK to add p_category=’MFGR#22’\n\t\tand p_brand1 = \\'MFGR#2221\\'\n\t\tand s_region = \\'EUROPE\\'\n\tgroup by d_year, p_brand1\n\torder by d_year, p_brand1;","no_mitosis_pipe")
 
 # 23:10:46 >  
 # 23:10:46 >  "Done."

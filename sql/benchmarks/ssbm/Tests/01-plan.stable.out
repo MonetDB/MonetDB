@@ -35,17 +35,17 @@ Ready.
 % .plan # table_name
 % rel # name
 % clob # type
-% 718 # length
+% 211 # length
 project (
 | group by (
 | | join (
 | | | select (
-| | | | table(sys.lineorder) [ lineorder.lo_orderdate, lineorder.lo_quantity, lineorder.lo_extendedprice, lineorder.lo_discount, lineorder.%TID% NOT NULL, lineorder.%lineorder_lo_orderkey_lo_linenumber_pkey NOT NULL HASHIDX , lineorder.%lineorder_lo_orderdate_fkey NOT NULL JOINIDX sys.lineorder.lineorder_lo_orderdate_fkey, lineorder.%lineorder_lo_commitdate_fkey NOT NULL JOINIDX sys.lineorder.lineorder_lo_commitdate_fkey, lineorder.%lineorder_lo_suppkey_fkey NOT NULL JOINIDX sys.lineorder.lineorder_lo_suppkey_fkey, lineorder.%lineorder_lo_custkey_fkey NOT NULL JOINIDX sys.lineorder.lineorder_lo_custkey_fkey, lineorder.%lineorder_lo_partkey_fkey NOT NULL JOINIDX sys.lineorder.lineorder_lo_partkey_fkey ] COUNT 
+| | | | table(sys.lineorder) [ lineorder.lo_quantity, lineorder.lo_extendedprice, lineorder.lo_discount, lineorder.%lineorder_lo_orderdate_fkey NOT NULL JOINIDX sys.lineorder.lineorder_lo_orderdate_fkey ] COUNT 
 | | | ) [ int[tinyint "1"] <= lineorder.lo_discount <= int[tinyint "3"], lineorder.lo_quantity < int[tinyint "25"] ],
 | | | select (
-| | | | table(sys.dwdate) [ dwdate.d_datekey NOT NULL HASHCOL , dwdate.d_year, dwdate.%TID% NOT NULL, dwdate.%dwdate_d_datekey_pkey NOT NULL HASHIDX  ] COUNT 
+| | | | table(sys.dwdate) [ dwdate.d_year, dwdate.%TID% NOT NULL ] COUNT 
 | | | ) [ dwdate.d_year = int[smallint "1993"] ]
-| | ) [ lineorder.lo_orderdate = dwdate.d_datekey NOT NULL HASHCOL  JOINIDX sys.lineorder.lineorder_lo_orderdate_fkey ]
+| | ) [ lineorder.%lineorder_lo_orderdate_fkey NOT NULL = dwdate.%TID% NOT NULL JOINIDX sys.lineorder.lineorder_lo_orderdate_fkey ]
 | ) [  ] [ sys.sum no nil (sys.sql_mul(bigint[lineorder.lo_extendedprice] as lineorder.lo_extendedprice, lineorder.lo_discount)) as L1.L1 ]
 ) [ L1 as L1.revenue ]
 

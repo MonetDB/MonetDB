@@ -36,38 +36,37 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 91 # length
-function user.s0_1{autoCommit=true}(A0:int,A1:int,A2:int,A3:int):void;
-    X_62:lng  := nil:lng;
-barrier X_97 := language.dataflow();
+% 246 # length
+function user.s2_1{autoCommit=true}(A0:int,A1:int,A2:int,A3:int):void;
+barrier X_109 := language.dataflow();
     X_6 := sql.mvc();
     X_10 := sql.bind(X_6,"sys","lineorder","lo_quantity",0);
     X_18 := sql.bind(X_6,"sys","lineorder","lo_discount",0);
     X_7:bat[:oid,:oid]  := sql.tid(X_6,"sys","lineorder");
-    X_88 := algebra.subselect(X_18,X_7,A1,A2,true,true,false);
+    X_91 := algebra.subselect(X_18,X_7,A1,A2,true,true,false);
     (X_20,r1_23) := sql.bind(X_6,"sys","lineorder","lo_discount",2);
-    X_89 := algebra.subselect(r1_23,A1,A2,true,true,false);
+    X_92 := algebra.subselect(r1_23,A1,A2,true,true,false);
     X_22 := sql.bind(X_6,"sys","lineorder","lo_discount",1);
-    X_90 := algebra.subselect(X_22,X_7,A1,A2,true,true,false);
-    X_23 := sql.subdelta(X_88,X_7,X_20,X_89,X_90);
-    X_91 := algebra.thetasubselect(X_10,X_23,A3,"<");
+    X_93 := algebra.subselect(X_22,X_7,A1,A2,true,true,false);
+    X_23 := sql.subdelta(X_91,X_7,X_20,X_92,X_93);
+    X_94 := algebra.thetasubselect(X_10,X_23,A3,"<");
     (X_13,r1_13) := sql.bind(X_6,"sys","lineorder","lo_quantity",2);
-    X_92 := algebra.thetasubselect(r1_13,A3,"<");
+    X_95 := algebra.thetasubselect(r1_13,A3,"<");
     X_16 := sql.bind(X_6,"sys","lineorder","lo_quantity",1);
-    X_93 := algebra.thetasubselect(X_16,X_23,A3,"<");
-    X_25 := sql.subdelta(X_91,X_23,X_13,X_92,X_93);
+    X_96 := algebra.thetasubselect(X_16,X_23,A3,"<");
+    X_25 := sql.subdelta(X_94,X_23,X_13,X_95,X_96);
     X_27 := sql.bind_idxbat(X_6,"sys","lineorder","lineorder_lo_orderdate_fkey",0);
     (X_29,r1_36) := sql.bind_idxbat(X_6,"sys","lineorder","lineorder_lo_orderdate_fkey",2);
     X_31 := sql.bind_idxbat(X_6,"sys","lineorder","lineorder_lo_orderdate_fkey",1);
     X_32 := sql.projectdelta(X_25,X_27,X_29,r1_36,X_31);
     X_36 := sql.bind(X_6,"sys","dwdate","d_year",0);
     X_33:bat[:oid,:oid]  := sql.tid(X_6,"sys","dwdate");
-    X_94 := algebra.subselect(X_36,X_33,A0,A0,true,true,false);
+    X_97 := algebra.subselect(X_36,X_33,A0,A0,true,true,false);
     (X_39,r1_48) := sql.bind(X_6,"sys","dwdate","d_year",2);
-    X_95 := algebra.subselect(r1_48,A0,A0,true,true,false);
+    X_98 := algebra.subselect(r1_48,A0,A0,true,true,false);
     X_42 := sql.bind(X_6,"sys","dwdate","d_year",1);
-    X_96 := algebra.subselect(X_42,X_33,A0,A0,true,true,false);
-    X_44 := sql.subdelta(X_94,X_33,X_39,X_95,X_96);
+    X_99 := algebra.subselect(X_42,X_33,A0,A0,true,true,false);
+    X_44 := sql.subdelta(X_97,X_33,X_39,X_98,X_99);
     X_46 := X_44;
     (X_47,r1_59) := algebra.join(X_32,X_46);
     X_49 := sql.bind(X_6,"sys","lineorder","lo_extendedprice",0);
@@ -90,9 +89,10 @@ barrier X_97 := language.dataflow();
     language.pass(r1_23);
     language.pass(X_22);
     language.pass(X_47);
-exit X_97;
+exit X_109;
     sql.exportValue(1,"sys.L1","revenue","bigint",53,0,6,X_62,"");
-end s0_1;
+end s2_1;
+# querylog.define("explain\nselect sum(lo_extendedprice*lo_discount) as revenue\n\tfrom lineorder, dwdate\n\twhere lo_orderdate = d_datekey\n\t\tand d_year = 1993\n\t\tand lo_discount between 1 and 3\n\t\tand lo_quantity < 25;","no_mitosis_pipe")
 
 # 23:10:45 >  
 # 23:10:45 >  "Done."

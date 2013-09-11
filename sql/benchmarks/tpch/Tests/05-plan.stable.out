@@ -52,7 +52,7 @@ Ready.
 % .plan # table_name
 % rel # name
 % clob # type
-% 647 # length
+% 286 # length
 project (
 | group by (
 | | join (
@@ -60,21 +60,21 @@ project (
 | | | | join (
 | | | | | join (
 | | | | | | join (
-| | | | | | | table(sys.lineitem) [ lineitem.l_orderkey NOT NULL HASHCOL , lineitem.l_suppkey NOT NULL, lineitem.l_extendedprice NOT NULL, lineitem.l_discount NOT NULL, lineitem.%TID% NOT NULL, lineitem.%lineitem_l_orderkey_l_linenumber_pkey NOT NULL HASHIDX , lineitem.%lineitem_l_orderkey_fkey NOT NULL JOINIDX sys.lineitem.lineitem_l_orderkey_fkey, lineitem.%lineitem_l_partkey_fkey NOT NULL JOINIDX sys.lineitem.lineitem_l_partkey_fkey, lineitem.%lineitem_l_suppkey_fkey NOT NULL JOINIDX sys.lineitem.lineitem_l_suppkey_fkey, lineitem.%lineitem_l_partkey_l_suppkey_fkey NOT NULL JOINIDX sys.lineitem.lineitem_l_partkey_l_suppkey_fkey ] COUNT ,
 | | | | | | | select (
-| | | | | | | | table(sys.orders) [ orders.o_orderkey NOT NULL HASHCOL , orders.o_custkey NOT NULL, orders.o_orderdate NOT NULL, orders.%TID% NOT NULL, orders.%orders_o_orderkey_pkey NOT NULL HASHIDX , orders.%orders_o_custkey_fkey NOT NULL JOINIDX sys.orders.orders_o_custkey_fkey ] COUNT 
-| | | | | | | ) [ date "1994-01-01" <= orders.o_orderdate NOT NULL < sys.sql_add(date "1994-01-01", month_interval "12") ]
-| | | | | | ) [ lineitem.l_orderkey NOT NULL HASHCOL  = orders.o_orderkey NOT NULL HASHCOL  JOINIDX sys.lineitem.lineitem_l_orderkey_fkey ],
-| | | | | | table(sys.customer) [ customer.c_custkey NOT NULL HASHCOL , customer.c_nationkey NOT NULL, customer.%TID% NOT NULL, customer.%customer_c_custkey_pkey NOT NULL HASHIDX , customer.%customer_c_nationkey_fkey NOT NULL JOINIDX sys.customer.customer_c_nationkey_fkey ] COUNT 
-| | | | | ) [ orders.o_custkey NOT NULL = customer.c_custkey NOT NULL HASHCOL  JOINIDX sys.orders.orders_o_custkey_fkey ],
-| | | | | table(sys.supplier) [ supplier.s_suppkey NOT NULL HASHCOL , supplier.s_nationkey NOT NULL, supplier.%TID% NOT NULL, supplier.%supplier_s_suppkey_pkey NOT NULL HASHIDX , supplier.%supplier_s_nationkey_fkey NOT NULL JOINIDX sys.supplier.supplier_s_nationkey_fkey ] COUNT 
-| | | | ) [ lineitem.l_suppkey NOT NULL = supplier.s_suppkey NOT NULL HASHCOL  JOINIDX sys.lineitem.lineitem_l_suppkey_fkey, customer.c_nationkey NOT NULL = supplier.s_nationkey NOT NULL ],
-| | | | table(sys.nation) [ nation.n_nationkey NOT NULL HASHCOL , nation.n_name NOT NULL, nation.n_regionkey NOT NULL, nation.%TID% NOT NULL, nation.%nation_n_nationkey_pkey NOT NULL HASHIDX , nation.%nation_n_regionkey_fkey NOT NULL JOINIDX sys.nation.nation_n_regionkey_fkey ] COUNT 
-| | | ) [ supplier.s_nationkey NOT NULL = nation.n_nationkey NOT NULL HASHCOL  JOINIDX sys.supplier.supplier_s_nationkey_fkey ],
+| | | | | | | | table(sys.orders) [ orders.o_orderdate NOT NULL, orders.%TID% NOT NULL, orders.%orders_o_custkey_fkey NOT NULL JOINIDX sys.orders.orders_o_custkey_fkey ] COUNT 
+| | | | | | | ) [ date "1994-01-01" <= orders.o_orderdate NOT NULL < sys.sql_add(date "1994-01-01", month_interval "12") ],
+| | | | | | | table(sys.customer) [ customer.c_nationkey NOT NULL, customer.%TID% NOT NULL ] COUNT 
+| | | | | | ) [ orders.%orders_o_custkey_fkey NOT NULL = customer.%TID% NOT NULL JOINIDX sys.orders.orders_o_custkey_fkey ],
+| | | | | | table(sys.lineitem) [ lineitem.l_extendedprice NOT NULL, lineitem.l_discount NOT NULL, lineitem.%lineitem_l_orderkey_fkey NOT NULL JOINIDX sys.lineitem.lineitem_l_orderkey_fkey, lineitem.%lineitem_l_suppkey_fkey NOT NULL JOINIDX sys.lineitem.lineitem_l_suppkey_fkey ] COUNT 
+| | | | | ) [ lineitem.%lineitem_l_orderkey_fkey NOT NULL = orders.%TID% NOT NULL JOINIDX sys.lineitem.lineitem_l_orderkey_fkey ],
+| | | | | table(sys.supplier) [ supplier.s_nationkey NOT NULL, supplier.%TID% NOT NULL, supplier.%supplier_s_nationkey_fkey NOT NULL JOINIDX sys.supplier.supplier_s_nationkey_fkey ] COUNT 
+| | | | ) [ lineitem.%lineitem_l_suppkey_fkey NOT NULL = supplier.%TID% NOT NULL JOINIDX sys.lineitem.lineitem_l_suppkey_fkey, customer.c_nationkey NOT NULL = supplier.s_nationkey NOT NULL ],
+| | | | table(sys.nation) [ nation.n_name NOT NULL, nation.%TID% NOT NULL, nation.%nation_n_regionkey_fkey NOT NULL JOINIDX sys.nation.nation_n_regionkey_fkey ] COUNT 
+| | | ) [ supplier.%supplier_s_nationkey_fkey NOT NULL = nation.%TID% NOT NULL JOINIDX sys.supplier.supplier_s_nationkey_fkey ],
 | | | select (
-| | | | table(sys.region) [ region.r_regionkey NOT NULL HASHCOL , region.r_name NOT NULL, region.%TID% NOT NULL, region.%region_r_regionkey_pkey NOT NULL HASHIDX  ] COUNT 
+| | | | table(sys.region) [ region.r_name NOT NULL, region.%TID% NOT NULL ] COUNT 
 | | | ) [ region.r_name NOT NULL = varchar(25)[char(4) "ASIA"] ]
-| | ) [ nation.n_regionkey NOT NULL = region.r_regionkey NOT NULL HASHCOL  JOINIDX sys.nation.nation_n_regionkey_fkey ]
+| | ) [ nation.%nation_n_regionkey_fkey NOT NULL = region.%TID% NOT NULL JOINIDX sys.nation.nation_n_regionkey_fkey ]
 | ) [ nation.n_name NOT NULL ] [ nation.n_name NOT NULL, sys.sum no nil (sys.sql_mul(lineitem.l_extendedprice NOT NULL, sys.sql_sub(decimal(15,2)[tinyint "1"], lineitem.l_discount NOT NULL))) as L1.L1 ]
 ) [ nation.n_name NOT NULL, L1 as L1.revenue ] [ L1.revenue ]
 

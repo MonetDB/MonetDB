@@ -49,17 +49,17 @@ Ready.
 % .plan # table_name
 % rel # name
 % clob # type
-% 650 # length
+% 188 # length
 project (
 | group by (
 | | semijoin (
 | | | project (
 | | | | select (
-| | | | | table(sys.orders) [ orders.o_orderkey NOT NULL HASHCOL , orders.o_orderdate NOT NULL, orders.o_orderpriority NOT NULL, orders.%TID% NOT NULL, orders.%orders_o_orderkey_pkey NOT NULL HASHIDX , orders.%orders_o_custkey_fkey NOT NULL JOINIDX sys.orders.orders_o_custkey_fkey ] COUNT 
+| | | | | table(sys.orders) [ orders.o_orderkey NOT NULL HASHCOL , orders.o_orderdate NOT NULL, orders.o_orderpriority NOT NULL ] COUNT 
 | | | | ) [ date "1993-07-01" <= orders.o_orderdate NOT NULL < sys.sql_add(date "1993-07-01", month_interval "3") ]
-| | | ) [ orders.o_orderkey NOT NULL HASHCOL , orders.o_orderpriority NOT NULL, orders.%TID% NOT NULL, orders.%orders_o_orderkey_pkey NOT NULL HASHIDX , orders.%orders_o_custkey_fkey NOT NULL JOINIDX sys.orders.orders_o_custkey_fkey ],
+| | | ) [ orders.o_orderkey NOT NULL HASHCOL , orders.o_orderpriority NOT NULL ],
 | | | select (
-| | | | table(sys.lineitem) [ lineitem.l_orderkey NOT NULL as L2.l_orderkey, lineitem.l_commitdate NOT NULL as L2.l_commitdate, lineitem.l_receiptdate NOT NULL as L2.l_receiptdate, lineitem.%TID% NOT NULL as L2.%TID%, lineitem.%lineitem_l_orderkey_l_linenumber_pkey NOT NULL as L2.%lineitem_l_orderkey_l_linenumber_pkey, lineitem.%lineitem_l_orderkey_fkey NOT NULL as L2.%lineitem_l_orderkey_fkey, lineitem.%lineitem_l_partkey_fkey NOT NULL as L2.%lineitem_l_partkey_fkey, lineitem.%lineitem_l_suppkey_fkey NOT NULL as L2.%lineitem_l_suppkey_fkey, lineitem.%lineitem_l_partkey_l_suppkey_fkey NOT NULL as L2.%lineitem_l_partkey_l_suppkey_fkey ] COUNT 
+| | | | table(sys.lineitem) [ lineitem.l_orderkey NOT NULL as L2.l_orderkey, lineitem.l_commitdate NOT NULL as L2.l_commitdate, lineitem.l_receiptdate NOT NULL as L2.l_receiptdate ] COUNT 
 | | | ) [ L2.l_commitdate NOT NULL < L2.l_receiptdate NOT NULL ]
 | | ) [ L2.l_orderkey NOT NULL HASHCOL  = orders.o_orderkey NOT NULL ]
 | ) [ orders.o_orderpriority NOT NULL ] [ orders.o_orderpriority NOT NULL, sys.count() NOT NULL as L1.L1 ]

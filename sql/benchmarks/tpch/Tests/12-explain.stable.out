@@ -53,12 +53,9 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 138 # length
-function user.s0_1{autoCommit=true}(A0:str,A1:str,A2:bte,A3:bte,A4:str,A5:str,A6:bte,A7:bte,A8:str,A9:str,A10:date,A11:date,A12:int):void;
-    X_84 := nil:bat[:oid,:str];
-    X_110 := nil:bat[:oid,:lng];
-    X_101 := nil:bat[:oid,:lng];
-barrier X_157 := language.dataflow();
+% 711 # length
+function user.s2_1{autoCommit=true}(A0:str,A1:str,A2:bte,A3:bte,A4:str,A5:str,A6:bte,A7:bte,A8:str,A9:str,A10:date,A11:date,A12:int):void;
+barrier X_181 := language.dataflow();
     X_15 := sql.mvc();
     X_19 := sql.bind(X_15,"sys","lineitem","l_shipmode",0);
     X_27 := sql.bind(X_15,"sys","lineitem","l_receiptdate",0);
@@ -82,20 +79,20 @@ barrier X_157 := language.dataflow();
     X_52 := algebra.subselect(X_51,X_16,true,true,true,true,false);
     X_56 := algebra.subselect(X_55,X_52,true,true,true,true,false);
     X_34 := mtime.addmonths(A11,A12);
-    X_148 := algebra.subselect(X_27,X_56,A10,X_34,true,false,false);
-    X_149 := algebra.subselect(r1_32,A10,X_34,true,false,false);
-    X_150 := algebra.subselect(X_31,X_56,A10,X_34,true,false,false);
-    X_57 := sql.subdelta(X_148,X_56,X_29,X_149,X_150);
-    X_151 := algebra.subselect(X_19,X_57,A8,A8,true,true,false);
+    X_151 := algebra.subselect(X_27,X_56,A10,X_34,true,false,false);
+    X_152 := algebra.subselect(r1_32,A10,X_34,true,false,false);
+    X_153 := algebra.subselect(X_31,X_56,A10,X_34,true,false,false);
+    X_57 := sql.subdelta(X_151,X_56,X_29,X_152,X_153);
+    X_154 := algebra.subselect(X_19,X_57,A8,A8,true,true,false);
     (X_22,r1_22) := sql.bind(X_15,"sys","lineitem","l_shipmode",2);
-    X_152 := algebra.subselect(r1_22,A8,A8,true,true,false);
+    X_155 := algebra.subselect(r1_22,A8,A8,true,true,false);
     X_25 := sql.bind(X_15,"sys","lineitem","l_shipmode",1);
-    X_153 := algebra.subselect(X_25,X_57,A8,A8,true,true,false);
-    X_58 := sql.subdelta(X_151,X_57,X_22,X_152,X_153);
-    X_154 := algebra.subselect(X_19,X_57,A9,A9,true,true,false);
-    X_155 := algebra.subselect(r1_22,A9,A9,true,true,false);
-    X_156 := algebra.subselect(X_25,X_57,A9,A9,true,true,false);
-    X_59 := sql.subdelta(X_154,X_57,X_22,X_155,X_156);
+    X_156 := algebra.subselect(X_25,X_57,A8,A8,true,true,false);
+    X_58 := sql.subdelta(X_154,X_57,X_22,X_155,X_156);
+    X_157 := algebra.subselect(X_19,X_57,A9,A9,true,true,false);
+    X_158 := algebra.subselect(r1_22,A9,A9,true,true,false);
+    X_159 := algebra.subselect(X_25,X_57,A9,A9,true,true,false);
+    X_59 := sql.subdelta(X_157,X_57,X_22,X_158,X_159);
     X_60 := bat.mergecand(X_58,X_59);
     X_61 := sql.bind_idxbat(X_15,"sys","lineitem","lineitem_l_orderkey_fkey",0);
     (X_64,r1_74) := sql.bind_idxbat(X_15,"sys","lineitem","lineitem_l_orderkey_fkey",2);
@@ -151,14 +148,15 @@ barrier X_157 := language.dataflow();
     language.pass(r1_88);
     language.pass(X_79);
     language.pass(r1_92);
-exit X_157;
+exit X_181;
     X_111 := sql.resultSet(3,1,X_84);
     sql.rsColumn(X_111,"sys.lineitem","l_shipmode","varchar",10,0,X_84);
     sql.rsColumn(X_111,"sys.L1","high_line_count","bigint",8,0,X_101);
     sql.rsColumn(X_111,"sys.L2","low_line_count","bigint",8,0,X_110);
     X_128 := io.stdout();
     sql.exportResult(X_128,X_111);
-end s0_1;
+end s2_1;
+# querylog.define("explain select\n\tl_shipmode,\n\tsum(case\n\t\twhen o_orderpriority = \\'1-URGENT\\'\n\t\t\tor o_orderpriority = \\'2-HIGH\\'\n\t\t\tthen 1\n\t\telse 0\n\tend) as high_line_count,\n\tsum(case\n\t\twhen o_orderpriority <> \\'1-URGENT\\'\n\t\t\tand o_orderpriority <> \\'2-HIGH\\'\n\t\t\tthen 1\n\t\telse 0\n\tend) as low_line_count\nfrom\n\torders,\n\tlineitem\nwhere\n\to_orderkey = l_orderkey\n\tand l_shipmode in (\\'MAIL\\', \\'SHIP\\')\n\tand l_commitdate < l_receiptdate\n\tand l_shipdate < l_commitdate\n\tand l_receiptdate >= date \\'1994-01-01\\'\n\tand l_receiptdate < date \\'1994-01-01\\' + interval \\'1\\' year\ngroup by\n\tl_shipmode\norder by\n\tl_shipmode;","no_mitosis_pipe")
 
 # 22:53:28 >  
 # 22:53:28 >  "Done."

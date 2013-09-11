@@ -38,23 +38,23 @@ Ready.
 % .plan # table_name
 % rel # name
 % clob # type
-% 713 # length
+% 352 # length
 project (
 | group by (
 | | join (
 | | | join (
 | | | | join (
-| | | | | table(sys.lineorder) [ lineorder.lo_partkey, lineorder.lo_suppkey, lineorder.lo_orderdate, lineorder.lo_revenue, lineorder.%TID% NOT NULL, lineorder.%lineorder_lo_orderkey_lo_linenumber_pkey NOT NULL HASHIDX , lineorder.%lineorder_lo_orderdate_fkey NOT NULL JOINIDX sys.lineorder.lineorder_lo_orderdate_fkey, lineorder.%lineorder_lo_commitdate_fkey NOT NULL JOINIDX sys.lineorder.lineorder_lo_commitdate_fkey, lineorder.%lineorder_lo_suppkey_fkey NOT NULL JOINIDX sys.lineorder.lineorder_lo_suppkey_fkey, lineorder.%lineorder_lo_custkey_fkey NOT NULL JOINIDX sys.lineorder.lineorder_lo_custkey_fkey, lineorder.%lineorder_lo_partkey_fkey NOT NULL JOINIDX sys.lineorder.lineorder_lo_partkey_fkey ] COUNT ,
+| | | | | table(sys.lineorder) [ lineorder.lo_revenue, lineorder.%lineorder_lo_orderdate_fkey NOT NULL JOINIDX sys.lineorder.lineorder_lo_orderdate_fkey, lineorder.%lineorder_lo_suppkey_fkey NOT NULL JOINIDX sys.lineorder.lineorder_lo_suppkey_fkey, lineorder.%lineorder_lo_partkey_fkey NOT NULL JOINIDX sys.lineorder.lineorder_lo_partkey_fkey ] COUNT ,
 | | | | | select (
-| | | | | | table(sys.part) [ part.p_partkey NOT NULL HASHCOL , part.p_category, part.p_brand1, part.%TID% NOT NULL, part.%part_p_partkey_pkey NOT NULL HASHIDX  ] COUNT 
+| | | | | | table(sys.part) [ part.p_category, part.p_brand1, part.%TID% NOT NULL ] COUNT 
 | | | | | ) [ part.p_category = clob[char(7) "MFGR#12"] ]
-| | | | ) [ lineorder.lo_partkey = part.p_partkey NOT NULL HASHCOL  JOINIDX sys.lineorder.lineorder_lo_partkey_fkey ],
+| | | | ) [ lineorder.%lineorder_lo_partkey_fkey NOT NULL = part.%TID% NOT NULL JOINIDX sys.lineorder.lineorder_lo_partkey_fkey ],
 | | | | select (
-| | | | | table(sys.supplier) [ supplier.s_suppkey NOT NULL HASHCOL , supplier.s_region, supplier.%TID% NOT NULL, supplier.%supplier_s_suppkey_pkey NOT NULL HASHIDX  ] COUNT 
+| | | | | table(sys.supplier) [ supplier.s_region, supplier.%TID% NOT NULL ] COUNT 
 | | | | ) [ supplier.s_region = clob[char(7) "AMERICA"] ]
-| | | ) [ lineorder.lo_suppkey = supplier.s_suppkey NOT NULL HASHCOL  JOINIDX sys.lineorder.lineorder_lo_suppkey_fkey ],
-| | | table(sys.dwdate) [ dwdate.d_datekey NOT NULL HASHCOL , dwdate.d_year, dwdate.%TID% NOT NULL, dwdate.%dwdate_d_datekey_pkey NOT NULL HASHIDX  ] COUNT 
-| | ) [ lineorder.lo_orderdate = dwdate.d_datekey NOT NULL HASHCOL  JOINIDX sys.lineorder.lineorder_lo_orderdate_fkey ]
+| | | ) [ lineorder.%lineorder_lo_suppkey_fkey NOT NULL = supplier.%TID% NOT NULL JOINIDX sys.lineorder.lineorder_lo_suppkey_fkey ],
+| | | table(sys.dwdate) [ dwdate.d_year, dwdate.%TID% NOT NULL ] COUNT 
+| | ) [ lineorder.%lineorder_lo_orderdate_fkey NOT NULL = dwdate.%TID% NOT NULL JOINIDX sys.lineorder.lineorder_lo_orderdate_fkey ]
 | ) [ dwdate.d_year, part.p_brand1 ] [ dwdate.d_year, part.p_brand1, sys.sum no nil (lineorder.lo_revenue) as L1.L1 ]
 ) [ L1 as L1.L1, dwdate.d_year, part.p_brand1 ] [ dwdate.d_year ASC, part.p_brand1 ASC ]
 
