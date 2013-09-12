@@ -1499,11 +1499,19 @@ stack_get_string(mvc *sql, char *name)
 }
 
 void
+#ifdef HAVE_HGE
+stack_set_number(mvc *sql, char *name, hge val)
+#else
 stack_set_number(mvc *sql, char *name, lng val)
+#endif
 {
 	ValRecord *v = stack_get_var(sql, name);
 
 	if (v != NULL) {
+#ifdef HAVE_HGE
+		if (v->vtype == TYPE_hge) 
+			v->val.hval = val;
+#endif
 		if (v->vtype == TYPE_lng) 
 			v->val.lval = val;
 		if (v->vtype == TYPE_int) 
@@ -1521,12 +1529,20 @@ stack_set_number(mvc *sql, char *name, lng val)
 	}
 }
 
+#ifdef HAVE_HGE
+hge
+#else
 lng
+#endif
 stack_get_number(mvc *sql, char *name)
 {
 	ValRecord *v = stack_get_var(sql, name);
 
 	if (v != NULL) {
+#ifdef HAVE_HGE
+		if (v->vtype == TYPE_hge) 
+			return v->val.hval;
+#endif
 		if (v->vtype == TYPE_lng) 
 			return v->val.lval;
 		if (v->vtype == TYPE_int) 

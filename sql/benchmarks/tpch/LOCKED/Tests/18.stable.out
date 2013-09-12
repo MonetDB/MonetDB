@@ -62,7 +62,7 @@ Ready.
 #limit 100;
 % sys.customer,	sys.customer,	sys.orders,	sys.orders,	sys.orders,	sys.L6 # table_name
 % c_name,	c_custkey,	o_orderkey,	o_orderdate,	o_totalprice,	L6 # name
-% varchar,	int,	int,	date,	decimal,	bigint # type
+% varchar,	int,	int,	date,	decimal,	hugeint # type
 % 18,	3,	5,	10,	17,	3 # length
 [ "Customer#000000667",	667,	29158,	1995-10-21,	439687.23,	305	]
 [ "Customer#000000178",	178,	6882,	1997-04-09,	422359.65,	303	]

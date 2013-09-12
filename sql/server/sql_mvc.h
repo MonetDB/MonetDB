@@ -239,8 +239,13 @@ extern void stack_set_var(mvc *sql, char *name, ValRecord *v);
 
 extern str stack_get_string(mvc *sql, char *name);
 extern void stack_set_string(mvc *sql, char *name, str v);
+#ifdef HAVE_HGE
+extern hge stack_get_number(mvc *sql, char *name);
+extern void stack_set_number(mvc *sql, char *name, hge v);
+#else
 extern lng stack_get_number(mvc *sql, char *name);
 extern void stack_set_number(mvc *sql, char *name, lng v);
+#endif
 
 extern sql_column *mvc_copy_column(mvc *m, sql_table *t, sql_column *c);
 extern sql_key *mvc_copy_key(mvc *m, sql_table *t, sql_key *k);

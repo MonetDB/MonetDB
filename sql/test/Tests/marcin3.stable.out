@@ -31,7 +31,7 @@ Ready.
 #select id, sum(val) AS valsum from nutki group by id having sum(val)>1;
 % sys.nutki,	sys.L1 # table_name
 % id,	valsum # name
-% int,	bigint # type
+% int,	hugeint # type
 % 1,	1 # length
 [ 1,	3	]
 [ 3,	7	]

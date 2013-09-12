@@ -130,7 +130,7 @@ function user.s2_1{autoCommit=true}(A0:str,A1:str,A2:str,A3:str,A4:str,A5:str,A6
     (X_117,r1_145,r2_145) := group.subgroup(X_116);
     (X_120,r1_148,r2_148) := group.subgroup(X_114,X_117);
     (X_123,r1_151,r2_151) := group.subgroupdone(X_112,X_120);
-    X_126:bat[:oid,:lng]  := aggr.subsum(X_110,X_123,r1_151,true,true);
+    X_126:bat[:oid,:hge]  := aggr.subsum(X_110,X_123,r1_151,true,true);
     X_128 := algebra.leftfetchjoin(r1_151,X_116);
     (X_129,r1_157,r2_157) := algebra.subsort(X_128,false,false);
     (X_133,r1_161,r2_161) := algebra.subsort(X_126,r1_157,r2_157,true,false);
@@ -143,7 +143,7 @@ function user.s2_1{autoCommit=true}(A0:str,A1:str,A2:str,A3:str,A4:str,A5:str,A6
     sql.rsColumn(X_140,"sys.customer","c_city","clob",0,0,X_136);
     sql.rsColumn(X_140,"sys.supplier","s_city","clob",0,0,X_137);
     sql.rsColumn(X_140,"sys.dwdate","d_year","int",32,0,X_138);
-    sql.rsColumn(X_140,"sys.L1","revenue","bigint",32,0,X_139);
+    sql.rsColumn(X_140,"sys.L1","revenue","hugeint",32,0,X_139);
     X_160 := io.stdout();
     sql.exportResult(X_160,X_140);
 end s2_1;

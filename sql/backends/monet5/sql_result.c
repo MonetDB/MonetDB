@@ -31,9 +31,9 @@
 #include <rel_exp.h>
 
 #define DEC_TOSTR(X) \
-	char buf[32]; \
+	char buf[64]; \
 	X v = *(X*)a; \
-	int scale = (int)(ptrdiff_t)extra, cur = 31, neg = (v<0)?1:0, i, done = 0; \
+	int scale = (int)(ptrdiff_t)extra, cur = 63, neg = (v<0)?1:0, i, done = 0; \
 	int l; \
 	if (v == X##_nil) { \
 		if (*len < 5){ \
@@ -64,7 +64,7 @@
 		buf[cur--] = '0'; \
 	if (neg) \
 		buf[cur--] = '-'; \
-	l = (32-cur-1); \
+	l = (64-cur-1); \
 	if (*len < l){ \
 		if (*Buf) \
 			GDKfree(*Buf); \
@@ -86,6 +86,10 @@ dec_tostr(void *extra, char **Buf, int *len, int type, ptr a)
 		DEC_TOSTR(int);
 	} else if (type == TYPE_lng) {
 		DEC_TOSTR(lng);
+#ifdef HAVE_HGE
+	} else if (type == TYPE_hge) {
+		DEC_TOSTR(hge);
+#endif
 	} else {
 		GDKerror("Decimal cannot be mapped to %s\n", ATOMname(type));
 	}
@@ -342,6 +346,37 @@ bat_max_lnglength(BAT *b)
 	return ret;
 }
 
+#ifdef HAVE_HGE
+static size_t
+bat_max_hgelength(BAT *b)
+{
+	BUN p, q;
+	hge max = 0;
+	hge min = 0;
+	size_t ret = 0;
+	BATiter bi = bat_iterator(b);
+
+	BATloop(b, p, q) {
+		hge m = 0;
+		hge l = *((hge *)BUNtail(bi, p));
+
+		if (l != hge_nil)
+			m = l;
+		if (m > max) max = m;
+		if (m < min) min = m;
+	}
+
+	if (-min > max / 10) {
+		max = -min;
+		ret++;		/* '-' */
+	}
+	while (max /= 10)
+		ret++;
+	ret++;
+	return ret;
+}
+#endif
+
 #define DEC_FRSTR(X) \
 	sql_column *col = c->extra; \
 	sql_subtype *t = &col->type; \
@@ -411,6 +446,10 @@ dec_frstr(Column *c, int type, char *s, char *e, char quote)
 		DEC_FRSTR(int);
 	} else if (type == TYPE_lng) {
 		DEC_FRSTR(lng);
+#ifdef HAVE_HGE
+	} else if (type == TYPE_hge) {
+		DEC_FRSTR(hge);
+#endif
 	}
 	return NULL;
 }
@@ -513,7 +552,10 @@ _ASCIIadt_frStr(Column *c, int type, char *s, char *e, char quote)
 		/* decimals can be converted to integers when *.000 */
 		if ( s[len++] == '.')
 		switch( type ){
-		case TYPE_bte: case TYPE_int: case TYPE_lng: case TYPE_sht:
+		case TYPE_bte: case TYPE_sht: case TYPE_int: case TYPE_lng:
+#ifdef HAVE_HGE
+		case TYPE_hge:
+#endif
 			while (s[len]=='0') len++;
 			if ( s[len] == 0)
 				return c->data;
@@ -956,6 +998,24 @@ mvc_send_lng(stream *s, lng cnt){
 	return mnstr_write(s, b, 50- (b-buf),1)==1;
 }
 
+#ifdef HAVE_HGE
+static int
+mvc_send_hge(stream *s, hge cnt){
+	char buf[50], *b;
+	int neg = cnt <0;
+	if(neg) cnt = -cnt;
+	b= buf+49;
+	do{
+		*b--= (char) ('0'+ (cnt % 10));
+		cnt /=10;
+	} while(cnt>0);
+	if( neg)
+		*b = '-';
+	else b++;
+	return mnstr_write(s, b, 50- (b-buf),1)==1;
+}
+#endif
+
 int
 convert2str( mvc *m, int eclass, int d, int sc, int has_tz, ptr p, int mtype, char **buf, int len)
 {
@@ -1047,6 +1107,11 @@ export_value( mvc *m, stream *s, int eclass, char *sqlname, int d, int sc, ptr p
 		case TYPE_lng:
 			ok = mvc_send_lng(s, *(lng*)p);
 			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			ok = mvc_send_hge(s, *(hge*)p);
+			break;
+#endif
 		default: {
 			l = (*BATatoms[mtype].atomToStr) (buf, len, p);
 			ok = (mnstr_write(s, *buf, l, 1) == 1);
@@ -1273,8 +1338,14 @@ export_length( stream *s, int mtype, int eclass, int digits, int scale, int tz, 
 					count = bat_max_shtlength(b);
 				} else if (mtype == TYPE_int) {
 					count = bat_max_intlength(b);
-				} else { /* TYPE_lng */
+				} else if (mtype == TYPE_lng) {
 					count = bat_max_lnglength(b);
+#ifdef HAVE_HGE
+				} else if (mtype == TYPE_hge) {
+					count = bat_max_hgelength(b);
+#endif
+				} else {
+					assert(0);
 				}
 				count += incr;
 				BBPunfix(b->batCacheid);
@@ -1290,15 +1361,25 @@ export_length( stream *s, int mtype, int eclass, int digits, int scale, int tz, 
 			}
 		} else {
 			if (p) {
+#ifdef HAVE_HGE
+				hge val = 0;
+#else
 				lng val = 0;
+#endif
 				if (mtype == TYPE_bte) {
 					val = *((bte *)p);
 				} else if (mtype == TYPE_sht) {
 					val = *((sht *)p);
 				} else if (mtype == TYPE_int) {
 					val = *((int *)p);
-				} else { /* TYPE_lng */
+				} else if (mtype == TYPE_lng) {
 					val = *((lng *)p);
+#ifdef HAVE_HGE
+				} else if (mtype == TYPE_hge) {
+					val = *((hge *)p);
+#endif
+				} else {
+					assert(0);
 				}
 
 				if (val < 0) count++;

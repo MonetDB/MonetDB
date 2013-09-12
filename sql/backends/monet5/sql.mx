@@ -136,6 +136,10 @@ comment "Generate an exception when b!=0";
 pattern assert(b:lng,msg:str):void
 address SQLassertLng
 comment "Generate an exception when b!=0";
+
+pattern assert(b:hge,msg:str):void
+address SQLassertHge
+comment "Generate an exception when b!=0";
 # @- The SQL multi-version catalog
 # This module also contains the definitions for managing an SQL database schema in
 # version 5.  It is an adaptation of the original V4.3 code base.
@@ -637,6 +641,8 @@ pattern calc.hash( v:int ) :wrd address MKEYhash;
 command batcalc.hash( b:bat[:oid,:int] ) :bat[:oid,:wrd] address MKEYbathash;
 pattern calc.hash( v:lng ) :wrd address MKEYhash; 
 command batcalc.hash( b:bat[:oid,:lng] ) :bat[:oid,:wrd] address MKEYbathash;
+pattern calc.hash( v:hge ) :wrd address MKEYhash; 
+command batcalc.hash( b:bat[:oid,:hge] ) :bat[:oid,:wrd] address MKEYbathash;
 pattern calc.hash( v:oid ) :wrd address MKEYhash; 
 command batcalc.hash( b:bat[:oid,:oid] ) :bat[:oid,:wrd] address MKEYbathash;
 pattern calc.hash( v:wrd ) :wrd address MKEYhash; 
@@ -676,6 +682,7 @@ comment "cast @1 decimal to a second_interval";
 @:mal_round(sht)@
 @:mal_round(int)@
 @:mal_round(lng)@
+@:mal_round(hge)@
 
 @= mal_fround
 command sql.dec_round( v:@1, r:@1 ) :@1 
@@ -747,6 +754,7 @@ comment "cast to dec(@1) and check for overflow";
 @:mal_cast(sht)@
 @:mal_cast(int)@
 @:mal_cast(lng)@
+@:mal_cast(hge)@
 
 @= mal_casttime
 command calc.@1( v:void ) :@1 
@@ -856,11 +864,13 @@ comment "cast number to decimal(@1) and check for overflow";
 @:mal_cast_2dec(int,flt)@
 @:mal_cast_2dec(wrd,flt)@
 @:mal_cast_2dec(lng,flt)@
+@:mal_cast_2dec(hge,flt)@
 @:mal_cast_2dec(bte,dbl)@
 @:mal_cast_2dec(sht,dbl)@
 @:mal_cast_2dec(int,dbl)@
 @:mal_cast_2dec(wrd,dbl)@
 @:mal_cast_2dec(lng,dbl)@
+@:mal_cast_2dec(hge,dbl)@
 
 @= mal_cast_dec2
 command calc.@1( s1:int, v:@2) :@1 
@@ -889,16 +899,19 @@ comment "cast decimal(@2) to decimal(@1) and check for overflow";
 @:mal_cast2(bte,int)@
 @:mal_cast2(bte,wrd)@
 @:mal_cast2(bte,lng)@
+@:mal_cast2(bte,hge)@
 @:mal_cast2(sht,bte)@
 @:mal_cast2(sht,sht)@
 @:mal_cast2(sht,int)@
 @:mal_cast2(sht,wrd)@
 @:mal_cast2(sht,lng)@
+@:mal_cast2(sht,hge)@
 @:mal_cast2(int,bte)@
 @:mal_cast2(int,sht)@
 @:mal_cast2(int,int)@
 @:mal_cast2(int,wrd)@
 @:mal_cast2(int,lng)@
+@:mal_cast2(int,hge)@
 @:mal_cast2(wrd,bte)@
 @:mal_cast2(wrd,sht)@
 @:mal_cast2(wrd,int)@
@@ -908,16 +921,25 @@ comment "cast decimal(@2) to decimal(@1) and check for overflow";
 @:mal_cast2(lng,int)@
 @:mal_cast2(lng,wrd)@
 @:mal_cast2(lng,lng)@
+@:mal_cast2(lng,hge)@
+@:mal_cast2(hge,bte)@
+@:mal_cast2(hge,sht)@
+@:mal_cast2(hge,int)@
+@:mal_cast2(hge,wrd)@
+@:mal_cast2(hge,lng)@
+@:mal_cast2(hge,hge)@
 @:mal_cast2(flt,bte)@
 @:mal_cast2(flt,sht)@
 @:mal_cast2(flt,int)@
 @:mal_cast2(flt,wrd)@
 @:mal_cast2(flt,lng)@
+@:mal_cast2(flt,hge)@
 @:mal_cast2(dbl,bte)@
 @:mal_cast2(dbl,sht)@
 @:mal_cast2(dbl,int)@
 @:mal_cast2(dbl,wrd)@
 @:mal_cast2(dbl,lng)@
+@:mal_cast2(dbl,hge)@
 
 command calc.month_interval( v:str, ek:int, sk:int ) :int
 address month_interval_str
@@ -1447,6 +1469,9 @@ sql5_export str batnil_2num_@1( int *res, int *v, int *len );
 @:round_export(int)@
 @:round_export(wrd)@
 @:round_export(lng)@
+#ifdef HAVE_HGE
+@:round_export(hge)@
+#endif
 
 @= cast_time
 sql5_export str nil_2time_@1( @1 *res, void *v, int *len );
@@ -1521,6 +1546,14 @@ sql5_export str bat@2_num2dec_@1( int *res, int *v, int *d2, int *s2 );
 @:numcastup_export(lng,int)@
 @:numcastup_export(lng,wrd)@
 @:numcastup_export(lng,lng)@
+#ifdef HAVE_HGE
+@:numcastup_export(hge,bte)@
+@:numcastup_export(hge,sht)@
+@:numcastup_export(hge,int)@
+@:numcastup_export(hge,wrd)@
+@:numcastup_export(hge,lng)@
+@:numcastup_export(hge,hge)@
+#endif
 @= fnumcastdown_export
 @:simpledowncast_export(@1,@2)@
 sql5_export str @2_num2dec_@1( @1 *res, @2 *v, int *d2, int *s2 );
@@ -1532,11 +1565,17 @@ sql5_export str bat@2_num2dec_@1( int *res, int *v, int *d2, int *s2 );
 @:fnumcastdown_export(int,flt)@
 @:fnumcastdown_export(wrd,flt)@
 @:fnumcastdown_export(lng,flt)@
+#ifdef HAVE_HGE
+@:fnumcastdown_export(hge,flt)@
+#endif
 @:fnumcastdown_export(bte,dbl)@
 @:fnumcastdown_export(sht,dbl)@
 @:fnumcastdown_export(int,dbl)@
 @:fnumcastdown_export(wrd,dbl)@
 @:fnumcastdown_export(lng,dbl)@
+#ifdef HAVE_HGE
+@:fnumcastdown_export(hge,dbl)@
+#endif
 @= fnumcastup_export
 @:simpleupcast_export(@1,@2)@
 sql5_export str @2_dec2_@1( @1 *res, int *s1, @2 *v );
@@ -1552,11 +1591,17 @@ sql5_export str bat@2_num2dec_@1( int *res, int *v, int *d2, int *s2 );
 @:fnumcastup_export(flt,int)@
 @:fnumcastup_export(flt,wrd)@
 @:fnumcastup_export(flt,lng)@
+#ifdef HAVE_HGE
+@:fnumcastup_export(flt,hge)@
+#endif
 @:fnumcastup_export(dbl,bte)@
 @:fnumcastup_export(dbl,sht)@
 @:fnumcastup_export(dbl,int)@
 @:fnumcastup_export(dbl,wrd)@
 @:fnumcastup_export(dbl,lng)@
+#ifdef HAVE_HGE
+@:fnumcastup_export(dbl,hge)@
+#endif
 @= numcastdown_export
 @:simpledowncast_export(@1,@2)@
 sql5_export str @2_dec2_@1( @1 *res, int *s1, @2 *v );
@@ -1571,12 +1616,25 @@ sql5_export str bat@2_num2dec_@1( int *res, int *v, int *d2, int *s2 );
 @:numcastdown_export(bte,int)@
 @:numcastdown_export(bte,wrd)@
 @:numcastdown_export(bte,lng)@
+#ifdef HAVE_HGE
+@:numcastdown_export(bte,hge)@
+#endif
 @:numcastdown_export(sht,int)@
 @:numcastdown_export(sht,wrd)@
 @:numcastdown_export(sht,lng)@
+#ifdef HAVE_HGE
+@:numcastdown_export(sht,hge)@
+#endif
 @:numcastdown_export(int,wrd)@
 @:numcastdown_export(int,lng)@
+#ifdef HAVE_HGE
+@:numcastdown_export(int,hge)@
+#endif
 @:numcastdown_export(wrd,lng)@
+#ifdef HAVE_HGE
+@:numcastdown_export(wrd,hge)@
+@:numcastdown_export(lng,hge)@
+#endif
 
 sql5_export str checkSQLContext(Client cntxt);
 sql5_export str getSQLContext(Client cntxt, MalBlkPtr mb, mvc **c, backend **b );
@@ -4390,6 +4448,10 @@ zero_or_one(ptr ret, int *bid)
 		*(sht*) ret = *(sht*)p;
 	} else if (_s == 8) {
 		*(lng*) ret = *(lng*)p;
+#ifdef HAVE_HGE
+	} else if (_s == 16) {
+		*(hge*) ret = *(hge*)p;
+#endif
 	} else {
 		memcpy(ret, p, _s);
 	}
@@ -4575,7 +4637,49 @@ str PBATSQLidentity(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 }
 
-lng scales[20] = {
+#ifdef HAVE_HGE
+hge scales[39] = {
+	(hge) LL_CONSTANT(1),
+	(hge) LL_CONSTANT(10),
+	(hge) LL_CONSTANT(100),
+	(hge) LL_CONSTANT(1000),
+	(hge) LL_CONSTANT(10000),
+	(hge) LL_CONSTANT(100000),
+	(hge) LL_CONSTANT(1000000),
+	(hge) LL_CONSTANT(10000000),
+	(hge) LL_CONSTANT(100000000),
+	(hge) LL_CONSTANT(1000000000),
+	(hge) LL_CONSTANT(10000000000),
+	(hge) LL_CONSTANT(100000000000),
+	(hge) LL_CONSTANT(1000000000000),
+	(hge) LL_CONSTANT(10000000000000),
+	(hge) LL_CONSTANT(100000000000000),
+	(hge) LL_CONSTANT(1000000000000000),
+	(hge) LL_CONSTANT(10000000000000000),
+	(hge) LL_CONSTANT(100000000000000000),
+	(hge) LL_CONSTANT(1000000000000000000),
+	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(10),
+	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(100),
+	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(1000),
+	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(10000),
+	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(100000),
+	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(1000000),
+	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(10000000),
+	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(100000000),
+	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(1000000000),
+	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(10000000000),
+	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(100000000000),
+	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(1000000000000),
+	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(10000000000000),
+	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(100000000000000),
+	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(1000000000000000),
+	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(10000000000000000),
+	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(100000000000000000),
+	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(1000000000000000000),
+	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(10000000000000000000U)
+};
+#else
+lng scales[19] = {
 	LL_CONSTANT(1),
 	LL_CONSTANT(10),
 	LL_CONSTANT(100),
@@ -4596,6 +4700,7 @@ lng scales[20] = {
 	LL_CONSTANT(100000000000000000),
 	LL_CONSTANT(1000000000000000000)
 };
+#endif
 
 /*
  * @-
@@ -4636,23 +4741,41 @@ str
 		*res = 0;
 	} else if (*r > 0 && *r < *s) {
 		int dff = *s - *r;
+#ifdef HAVE_HGE
+		hge rnd = scales[dff]>>1;
+		hge lres;
+#else
 		lng rnd = scales[dff]>>1;
 		lng lres;
+#endif
 		if (*v > 0)
 			lres = (((*v + rnd)/scales[dff])*scales[dff]);
 		else
 			lres = (((*v - rnd)/scales[dff])*scales[dff]);
+#ifdef HAVE_HGE
+		assert((hge) GDK_@1_min < lres && lres <= (hge) GDK_@1_max);
+#else
 		assert((lng) GDK_@1_min < lres && lres <= (lng) GDK_@1_max);
+#endif
 		*res = (@1) lres;
 	} else if (*r <= 0 && -*r + *s > 0) {
 		int dff = -*r + *s;
+#ifdef HAVE_HGE
+		hge rnd = scales[dff]>>1;
+		hge lres;
+#else
 		lng rnd = scales[dff]>>1;
 		lng lres;
+#endif
 		if (*v > 0)
 			lres = (((*v + rnd)/scales[dff])*scales[dff]);
 		else
 			lres = (((*v - rnd)/scales[dff])*scales[dff]);
+#ifdef HAVE_HGE
+		assert((hge) GDK_@1_min < lres && lres <= (hge) GDK_@1_max);
+#else
 		assert((lng) GDK_@1_min < lres && lres <= (lng) GDK_@1_max);
+#endif
 		*res = (@1) lres;
 	} else {
 		*res = *v;
@@ -4678,7 +4801,11 @@ str_2dec_@1( @1 *res, str *val, int *d, int *sc )
 	char *dot = strchr(s, '.');
 	int digits = _strlen(s) - 1;
 	int scale = digits - (int) (dot-s);
+#ifdef HAVE_HGE
+	hge value = 0;
+#else
 	lng value = 0;
+#endif
 
 	if (!dot) {
 		if (GDK_STRNIL(*val)) {
@@ -4703,9 +4830,8 @@ str_2dec_@1( @1 *res, str *val, int *d, int *sc )
 	} else if (scale > *sc){
 		/* the current scale is too big, decrease it by correctly rounding */
 		int d = scale - *sc;	/* CANNOT be 0 */
-		lng rnd = scales[d]>>1;
 
-		value += rnd;
+		value += scales[d]>>1;
 		value /= scales[d];
 		scale -= d;
 		digits -= d;
@@ -4838,13 +4964,15 @@ str
 	(void)sk;
 	if (*sc < 3) {
 		int d = 3 - *sc;
-		value *= scales[d];
+		assert(d < 20);
+		value *= (lng) scales[d];
 	} else if (*sc > 3 ) {
 		int d = *sc - 3;
-		lng rnd = scales[d]>>1;
+		lng rnd = (lng) scales[d]>>1;
+		assert(d < 20);
 
 		value += rnd;
-		value /= scales[d];
+		value /= (lng) scales[d];
 	}
 	*res = value;
 	return MAL_SUCCEED;
@@ -4858,6 +4986,9 @@ str
 @:round(int)@
 @:round(wrd)@
 @:round(lng)@
+#ifdef HAVE_HGE
+@:round(hge)@
+#endif
 
 str
 daytime_2time_daytime( daytime *res, daytime *v, int *digits )
@@ -5472,7 +5603,7 @@ str @2_2_@1( @1 *res, @2 *v )
 		return(MAL_SUCCEED);
 	} else {
 		throw(SQL, "convert",
-			"22003!value (" @4 ") exceeds limits of type @1", val);
+			"22003!value (" @4 ") exceeds limits of type @1", @5 val);
 	}
 }
 
@@ -5505,7 +5636,7 @@ str bat@2_2_@1( int *res, int *bid )
 			if ((@3)(@1)val > (@3) GDK_@1_min && val > (@3) GDK_@1_min && val <= (@3) GDK_@1_max)	{
 				*o = (@1)val;
 			} else {
-				msg= createException(SQL, "convert", "22003!value (" @4 ") exceeds limits of type @1", val);
+				msg= createException(SQL, "convert", "22003!value (" @4 ") exceeds limits of type @1", @5 val);
 				break;
 			}
 		}
@@ -5520,7 +5651,7 @@ str bat@2_2_@1( int *res, int *bid )
 				if ((@3)(@1)val > (@3) GDK_@1_min && val > (@3) GDK_@1_min && val <= (@3) GDK_@1_max)	{
 					*o = (@1)val;
 				} else {
-					msg= createException(SQL, "convert", "22003!value (" @4 ") exceeds limits of type @1", val);
+					msg= createException(SQL, "convert", "22003!value (" @4 ") exceeds limits of type @1", @5 val);
 					break;
 				}
 			}
@@ -5755,6 +5886,14 @@ str bat@2_num2dec_@1( int *res, int *bid, int *d2, int *s2 )
 @:numcastup(lng,int)@
 @:numcastup(lng,wrd)@
 @:numcastup(lng,lng)@
+#ifdef HAVE_HGE
+@:numcastup(hge,bte)@
+@:numcastup(hge,sht)@
+@:numcastup(hge,int)@
+@:numcastup(hge,wrd)@
+@:numcastup(hge,lng)@
+@:numcastup(hge,hge)@
+#endif
 
 @= fnumcastdown
 @:simpledowncast(@1,@2,dbl,"%f")@
@@ -5767,7 +5906,11 @@ str
 {
 	int p = *d2, inlen = 1, scale = *s2;
 	@2 r;
+#ifdef HAVE_HGE
+	hge cpyval;
+#else
 	lng cpyval;
+#endif
 
 	/* shortcut nil */
 	if (*v == @2_nil) {
@@ -5780,7 +5923,11 @@ str
 	r = (@2) *v;
 	if (scale) 
 		r *= scales[scale];
+#ifdef HAVE_HGE
+	cpyval = (hge) r;
+#else
 	cpyval = (lng) r;
+#endif
 
 	/* count the number of digits in the input */
 	while (cpyval /= 10)
@@ -5831,11 +5978,17 @@ bat@2_num2dec_@1( int *res, int *bid, int *d2, int *s2 )
 @:fnumcastdown(int,flt)@
 @:fnumcastdown(wrd,flt)@
 @:fnumcastdown(lng,flt)@
+#ifdef HAVE_HGE
+@:fnumcastdown(hge,flt)@
+#endif
 @:fnumcastdown(bte,dbl)@
 @:fnumcastdown(sht,dbl)@
 @:fnumcastdown(int,dbl)@
 @:fnumcastdown(wrd,dbl)@
 @:fnumcastdown(lng,dbl)@
+#ifdef HAVE_HGE
+@:fnumcastdown(hge,dbl)@
+#endif
 
 @= fnumcastup
 @:simpleupcast(@1,@2)@
@@ -6027,20 +6180,34 @@ str bat@2_num2dec_@1( int *res, int *bid, int *d2, int *s2 )
 @:fnumcastup(flt,int)@
 @:fnumcastup(flt,wrd)@
 @:fnumcastup(flt,lng)@
+#ifdef HAVE_HGE
+@:fnumcastup(flt,hge)@
+#endif
 @:fnumcastup(dbl,bte)@
 @:fnumcastup(dbl,sht)@
 @:fnumcastup(dbl,int)@
 @:fnumcastup(dbl,wrd)@
 @:fnumcastup(dbl,lng)@
+#ifdef HAVE_HGE
+@:fnumcastup(dbl,hge)@
+#endif
 
 @= numcastdown
+#ifdef HAVE_HGE
+@:simpledowncast(@1,@2,hge,"%.40g",(dbl))@
+#else
 @:simpledowncast(@1,@2,lng,LLFMT)@
+#endif
 
 str 
 @2_dec2_@1( @1 *res, int *s1, @2 *v )
 {
 	int scale = *s1;
+#ifdef HAVE_HGE
+	hge val = *v, h = (val<0)?-5:5;
+#else
 	lng val = *v, h = (val<0)?-5:5;
+#endif
 
 	/* shortcut nil */
 	if (*v == @2_nil) {
@@ -6056,7 +6223,11 @@ str
 		return MAL_SUCCEED;
 	} else {
 		throw(SQL, "convert",
+#ifdef HAVE_HGE
+			"22003!value (%.40g) exceeds limits of type @1", (dbl) val);
+#else
 			"22003!value (" LLFMT ") exceeds limits of type @1", val);
+#endif
 	}
 }
 
@@ -6064,7 +6235,11 @@ str
 @2_dec2dec_@1( @1 *res, int *S1, @2 *v, int *d2, int *S2 )
 {
 	int p = *d2, inlen = 1;
+#ifdef HAVE_HGE
+	hge val = *v, cpyval = val, h = (val<0)?-5:5;
+#else
 	lng val = *v, cpyval = val, h = (val<0)?-5:5;
+#endif
 	int s1 = *S1, s2 = *S2;
 
 	/* shortcut nil */
@@ -6094,7 +6269,11 @@ str
 		return MAL_SUCCEED;
 	} else {
 		throw(SQL, "convert",
+#ifdef HAVE_HGE
+			"22003!value (%.40g) exceeds limits of type @1", (dbl) val);
+#else
 			"22003!value (" LLFMT ") exceeds limits of type @1", val);
+#endif
 	}
 }
 
@@ -6141,7 +6320,7 @@ str bat@2_dec2_@1( int *res, int *s1, int *bid )
 			else {
 				BBPreleaseref(b->batCacheid);
 				BBPreleaseref(bn->batCacheid);
-				throw(SQL, "convert", "22003!value (" LLFMT ") exceeds limits of type @1", (lng) val);
+				throw(SQL, "convert", "22003!value (%.40g) exceeds limits of type @1", (dbl) val);
 			}
 		}
 	} else{
@@ -6160,7 +6339,7 @@ str bat@2_dec2_@1( int *res, int *s1, int *bid )
 				else {
 					BBPreleaseref(b->batCacheid);
 					BBPreleaseref(bn->batCacheid);
-					throw(SQL, "convert", "22003!value (" LLFMT ") exceeds limits of type @1", (lng) val);
+					throw(SQL, "convert", "22003!value (%.40g) exceeds limits of type @1", (dbl) val);
 				}
 			}
 		}
@@ -6253,12 +6432,25 @@ str bat@2_num2dec_@1( int *res, int *bid, int *d2, int *s2 )
 @:numcastdown(bte,int)@
 @:numcastdown(bte,wrd)@
 @:numcastdown(bte,lng)@
+#ifdef HAVE_HGE
+@:numcastdown(bte,hge)@
+#endif
 @:numcastdown(sht,int)@
 @:numcastdown(sht,wrd)@
 @:numcastdown(sht,lng)@
+#ifdef HAVE_HGE
+@:numcastdown(sht,hge)@
+#endif
 @:numcastdown(int,wrd)@
 @:numcastdown(int,lng)@
+#ifdef HAVE_HGE
+@:numcastdown(int,hge)@
+#endif
 @:numcastdown(wrd,lng)@
+#ifdef HAVE_HGE
+@:numcastdown(wrd,hge)@
+@:numcastdown(lng,hge)@
+#endif
 
 str 
 month_interval_str( int *ret, str *s, int *d, int *sk )
@@ -6305,8 +6497,17 @@ month_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		r = (int) stk->stk[getArg(pci, 1)].val.wval;
 		break;
 	case TYPE_lng:
+		assert((lng) GDK_int_min <= stk->stk[getArg(pci, 1)].val.lval);
+		assert(stk->stk[getArg(pci, 1)].val.lval <= (lng) GDK_int_max);
 		r = (int) stk->stk[getArg(pci, 1)].val.lval;
 		break;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		assert((hge) GDK_int_min <= stk->stk[getArg(pci, 1)].val.hval);
+		assert(stk->stk[getArg(pci, 1)].val.hval <= (hge) GDK_int_max);
+		r = (int) stk->stk[getArg(pci, 1)].val.hval;
+		break;
+#endif
 	default:
 		throw(ILLARG, "calc.month_interval","illegal argument");
 	}
@@ -6348,6 +6549,13 @@ second_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	case TYPE_lng:
 		r = stk->stk[getArg(pci, 1)].val.lval;
 		break;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		assert((hge) GDK_lng_min <= stk->stk[getArg(pci, 1)].val.hval);
+		assert(stk->stk[getArg(pci, 1)].val.hval <= (hge) GDK_lng_max);
+		r = (lng) stk->stk[getArg(pci, 1)].val.hval;
+		break;
+#endif
 	default:
 		throw(ILLARG, "calc.sec_interval", "illegal argument");
 	}
@@ -7882,6 +8090,7 @@ end aggr.corr;
 @:analytic(int)@
 @:analytic(wrd)@
 @:analytic(lng)@
+@:analytic(hge)@
 @:analytic(flt)@
 @:analytic(dbl)@
 

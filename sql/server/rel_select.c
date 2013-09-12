@@ -1792,10 +1792,18 @@ rel_column_ref(mvc *sql, sql_rel **rel, symbol *column_r, int f)
 	return exp;
 }
 
+#ifdef HAVE_HGE
+static hge
+#else
 static lng
+#endif
 scale2value(int scale)
 {
+#ifdef HAVE_HGE
+	hge val = 1;
+#else
 	lng val = 1;
+#endif
 
 	if (scale < 0)
 		scale = -scale;
@@ -1825,7 +1833,11 @@ exp_fix_scale(mvc *sql, sql_subtype *ct, sql_exp *e, int both, int always)
 				c = sql_bind_func(sql->sa, sql->session->schema, "scale_up", et, it, F_FUNC);
 			}
 			if (c) {
+#ifdef HAVE_HGE
+				hge val = scale2value(scale_diff);
+#else
 				lng val = scale2value(scale_diff);
+#endif
 				atom *a = atom_int(sql->sa, it, val);
 
 				c->res.scale = (et->scale + scale_diff);
@@ -1838,7 +1850,11 @@ exp_fix_scale(mvc *sql, sql_subtype *ct, sql_exp *e, int both, int always)
 		sql_subfunc *c = sql_bind_func(sql->sa, sql->session->schema, "scale_down", et, it, F_FUNC);
 
 		if (c) {
+#ifdef HAVE_HGE
+			hge val = scale2value(scale_diff);
+#else
 			lng val = scale2value(scale_diff);
+#endif
 			atom *a = atom_int(sql->sa, it, val);
 
 			c->res.scale = 0;
@@ -1858,7 +1874,11 @@ rel_set_type_param(mvc *sql, sql_subtype *type, sql_exp *param, int upcast)
 
 	/* use largest numeric types */
 	if (upcast && type->type->eclass == EC_NUM) 
+#ifdef HAVE_HGE
+		type = sql_bind_localtype("hge");
+#else
 		type = sql_bind_localtype("lng");
+#endif
 	if (upcast && type->type->eclass == EC_FLT) 
 		type = sql_bind_localtype("dbl");
 
@@ -1927,7 +1947,11 @@ rel_numeric_supertype(mvc *sql, sql_exp *e )
 		return rel_check_type(sql, dtp, e, type_cast);
 	}
 	if (tp->type->eclass == EC_NUM) {
+#ifdef HAVE_HGE
+		sql_subtype *ltp = sql_bind_localtype("hge");
+#else
 		sql_subtype *ltp = sql_bind_localtype("lng");
+#endif
 
 		return rel_check_type(sql, ltp, e, type_cast);
 	}
@@ -1989,8 +2013,13 @@ exp_sum_scales(mvc *sql, sql_subfunc *f, sql_exp *l, sql_exp *r)
 		f->res.digits = lt->digits + rt->digits;
 
 		/* HACK alert: digits should be less than max */
+#ifdef HAVE_HGE
+		if (f->res.type->radix == 10 && f->res.digits > 38)
+			f->res.digits = 38;
+#else
 		if (f->res.type->radix == 10 && f->res.digits > 18)
 			f->res.digits = 18;
+#endif
 		if (f->res.type->radix == 2 && f->res.digits > 53)
 			f->res.digits = 53;
 
@@ -2039,8 +2068,13 @@ exp_scale_algebra(mvc *sql, sql_subfunc *f, sql_exp *l, sql_exp *r)
 		digits = (digL > (int)rt->digits) ? digL : (int)rt->digits;
 
 		/* HACK alert: digits should be less than max */
+#ifdef HAVE_HGE
+		if (f->res.type->radix == 10 && digits > 38)
+			digits = 38;
+#else
 		if (f->res.type->radix == 10 && digits > 18)
 			digits = 18;
+#endif
 		if (f->res.type->radix == 2 && digits > 53)
 			digits = 53;
 

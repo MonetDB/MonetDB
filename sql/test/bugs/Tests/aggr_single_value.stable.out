@@ -56,14 +56,14 @@ Ready.
 #SELECT sum(1);
 % .L1 # table_name
 % L1 # name
-% bigint # type
+% hugeint # type
 % 1 # length
 [ 1	]
 #SELECT sum(cast (NULL as int));
 % .L1 # table_name
 % L1 # name
-% bigint # type
-% 20 # length
+% hugeint # type
+% 40 # length
 [ NULL	]
 #SELECT max(1);
 % .L1 # table_name

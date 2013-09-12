@@ -35,7 +35,7 @@ Ready.
 #	order by d_year asc, revenue desc;
 % sys.customer,	sys.supplier,	sys.dwdate,	sys.L1 # table_name
 % c_nation,	s_nation,	d_year,	revenue # name
-% clob,	clob,	int,	bigint # type
+% clob,	clob,	int,	hugeint # type
 % 9,	9,	4,	9 # length
 [ "INDONESIA",	"VIETNAM",	1992,	172784923	]
 [ "INDONESIA",	"INDIA",	1992,	121272321	]

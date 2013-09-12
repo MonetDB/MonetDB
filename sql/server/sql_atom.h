@@ -33,11 +33,19 @@ typedef struct atom {
 #define atom_null(a) (((atom*)a)->isnull)
 
 extern atom *atom_bool( sql_allocator *sa, sql_subtype *tpe, bit t);
+#ifdef HAVE_HGE
+extern atom *atom_int( sql_allocator *sa, sql_subtype *tpe, hge val);
+#else
 extern atom *atom_int( sql_allocator *sa, sql_subtype *tpe, lng val);
+#endif
 extern atom *atom_float( sql_allocator *sa, sql_subtype *tpe, double val);
 extern atom *atom_string( sql_allocator *sa, sql_subtype *tpe, char *val);
 extern atom *atom_general( sql_allocator *sa, sql_subtype *tpe, char *val);
+#ifdef HAVE_HGE
+extern atom *atom_dec( sql_allocator *sa, sql_subtype *tpe, hge val, double dval);
+#else
 extern atom *atom_dec( sql_allocator *sa, sql_subtype *tpe, lng val, double dval);
+#endif
 extern atom *atom_ptr( sql_allocator *sa, sql_subtype *tpe, void *v);
 
 extern int atom_neg( atom *a );
@@ -55,7 +63,11 @@ extern sql_subtype *atom_type(atom *a);
 
 extern void atom_dump(atom *a, stream *s);
 
+#ifdef HAVE_HGE
+extern hge atom_get_int(atom *a);
+#else
 extern lng atom_get_int(atom *a);
+#endif
 
 extern int atom_cmp(atom *a1, atom *a2);
 #endif /* _SQL_ATOM_H_ */

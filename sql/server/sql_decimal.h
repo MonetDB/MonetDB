@@ -24,8 +24,13 @@
 #include "sql_types.h"
 #include <gdk.h>
 
+#ifdef HAVE_HGE
+extern hge decimal_from_str(char *dec);
+extern char * decimal_to_str(hge v, sql_subtype *t);
+#else
 extern lng decimal_from_str(char *dec);
 extern char * decimal_to_str(lng v, sql_subtype *t);
+#endif
 
 #endif /* _SQL_DECIMAL_H */
 

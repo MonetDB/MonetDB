@@ -60,6 +60,12 @@
 #define FALSE 0
 #define TRUE 1
 
+#ifdef HAVE_HGE
+#define MAX_DEC_DIGITS 38
+#else
+#define MAX_DEC_DIGITS 18
+#endif
+
 %}
 /* KNOWN NOT DONE OF sql'99
  *
@@ -469,7 +475,7 @@ int yydebug=1;
 	GLOBAL CAST CONVERT
 	CHARACTER VARYING LARGE OBJECT VARCHAR CLOB sqlTEXT BINARY sqlBLOB
 	sqlDECIMAL sqlFLOAT
-	TINYINT SMALLINT BIGINT sqlINTEGER
+	TINYINT SMALLINT BIGINT HUGEINT sqlINTEGER
 	sqlDOUBLE sqlREAL PRECISION PARTIAL SIMPLE ACTION CASCADE RESTRICT
 	BOOL_FALSE BOOL_TRUE
 	CURRENT_DATE CURRENT_TIMESTAMP CURRENT_TIME LOCALTIMESTAMP LOCALTIME
@@ -3113,7 +3119,7 @@ opt_limit:
     /* empty */ 	{ $$ = NULL; }
  |  LIMIT nonzerowrd	{ 
 		  	  sql_subtype *t = sql_bind_localtype("wrd");
-			  $$ = _newAtomNode( atom_int(SA, t, (lng)$2)); 
+			  $$ = _newAtomNode( atom_int(SA, t, $2)); 
 			}
  |  LIMIT param		{ $$ = $2; }
  ;
@@ -3122,7 +3128,7 @@ opt_offset:
 	/* empty */	{ $$ = NULL; }
  |  OFFSET poswrd	{ 
 		  	  sql_subtype *t = sql_bind_localtype("wrd");
-			  $$ = _newAtomNode( atom_int(SA, t, (lng)$2)); 
+			  $$ = _newAtomNode( atom_int(SA, t, $2)); 
 			}
  |  OFFSET param	{ $$ = $2; }
  ;
@@ -3131,7 +3137,7 @@ opt_sample:
 	/* empty */	{ $$ = NULL; }
  |  SAMPLE poswrd	{
 		  	  sql_subtype *t = sql_bind_localtype("wrd");
-			  $$ = _newAtomNode( atom_int(SA, t, (lng)$2));
+			  $$ = _newAtomNode( atom_int(SA, t, $2));
 			}
  |  SAMPLE INTNUM	{
 		  	  sql_subtype *t = sql_bind_localtype("dbl");
@@ -4015,6 +4021,10 @@ literal:
 		  	sql_find_subtype(&t, "int", 32, 0);
 		  else if ( i > 10 && i <= 18)
 		  	sql_find_subtype(&t, "bigint", 64, 0);
+#ifdef HAVE_HGE
+		  else if ( i > 18 && i <= 38)
+		  	sql_find_subtype(&t, "hugeint", 128, 0);
+#endif
 		  else
 			err = 1;
 		  
@@ -4061,13 +4071,25 @@ literal:
 		  }
 		}
  |  sqlINT
-		{ int digits = _strlen($1), err = 0, len = sizeof(lng);
+		{ int digits = _strlen($1), err = 0;
+#ifdef HAVE_HGE
+		  hge value, *p = &value;
+		  int len = sizeof(hge);
+#else
 		  lng value, *p = &value;
+		  int len = sizeof(lng);
+#endif
 		  sql_subtype t;
 
+#ifdef HAVE_HGE
+		  hgeFromStr($1, &len, &p);
+		  if (value == hge_nil)
+		  	err = 2;
+#else
 		  lngFromStr($1, &len, &p);
 		  if (value == lng_nil)
 		  	err = 2;
+#endif
 
 		  /* find the most suitable data type for the given number */
 		  if (!err) {
@@ -4080,6 +4102,10 @@ literal:
 		  	  sql_find_subtype(&t, "int", bits, 0 );
 		    else if ((value > GDK_lng_min && value <= GDK_lng_max))
 		  	  sql_find_subtype(&t, "bigint", bits, 0 );
+#ifdef HAVE_HGE
+		    else if ((value > GDK_hge_min && value <= GDK_hge_max))
+		  	  sql_find_subtype(&t, "hugeint", bits, 0 );
+#endif
 		    else
 			  err = 1;
 		  }
@@ -4104,9 +4130,13 @@ literal:
 
 		  if (digits <= 0)
 			digits = 1;
-		  if (digits <= 18) {
+		  if (digits <= MAX_DEC_DIGITS) {
 		  	double val = strtod($1,NULL);
+#ifdef HAVE_HGE
+		  	hge value = decimal_from_str(s);
+#else
 		  	lng value = decimal_from_str(s);
+#endif
 
 		  	if (*s == '+' || *s == '-')
 				digits --;
@@ -4552,12 +4582,13 @@ data_type:
  |  SMALLINT		{ sql_find_subtype(&$$, "smallint", 0, 0); }
  |  sqlINTEGER		{ sql_find_subtype(&$$, "int", 0, 0); }
  |  BIGINT		{ sql_find_subtype(&$$, "bigint", 0, 0); }
+ |  HUGEINT		{ sql_find_subtype(&$$, "hugeint", 0, 0); }
 
  |  sqlDECIMAL		{ sql_find_subtype(&$$, "decimal", 1, 0); }
  |  sqlDECIMAL '(' nonzero ')'
 			{ 
 			  int d = $3;
-			  if (d > 18) {
+			  if (d > MAX_DEC_DIGITS) {
 				char *msg = sql_message("\b22003!decimal of %d digits are not supported", d);
 				yyerror(m, msg);
 				_DELETE(msg);
@@ -4571,12 +4602,12 @@ data_type:
 			{ 
 			  int d = $3;
 			  int s = $5;
-			  if (s > d || d > 18) {
+			  if (s > d || d > MAX_DEC_DIGITS) {
 				char *msg = NULL;
 				if (s > d)
 					msg = sql_message("\b22003!scale (%d) should be less or equal to the precision (%d)", s, d);
 				else
-					msg = sql_message("\b22003!decimal(%d,%d) isn't supported because P=%d > 18", d, s, d);
+					msg = sql_message("\b22003!decimal(%d,%d) isn't supported because P=%d > %d", d, s, d, MAX_DEC_DIGITS);
 				yyerror(m, msg);
 				_DELETE(msg);
 				$$.type = NULL;

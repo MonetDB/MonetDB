@@ -63,7 +63,7 @@ Ready.
 % mal # name
 % clob # type
 % 545 # length
-function user.s2_1{autoCommit=true}(A0:lng):void;
+function user.s2_1{autoCommit=true}(A0:hge):void;
     X_3 := sql.mvc();
     X_4:bat[:oid,:oid]  := sql.tid(X_3,"sys","orders");
     X_7 := sql.bind_idxbat(X_3,"sys","orders","orders_o_custkey_fkey",0);
@@ -99,7 +99,7 @@ function user.s2_1{autoCommit=true}(A0:lng):void;
     X_60 := sql.delta(X_54,X_57,r1_59,X_59);
     X_61 := algebra.leftfetchjoin(X_22,X_60);
     (X_62,r1_64,r2_64) := group.subgroupdone(X_61);
-    X_65:bat[:oid,:lng]  := aggr.subsum(X_53,X_62,r1_64,true,true);
+    X_65:bat[:oid,:hge]  := aggr.subsum(X_53,X_62,r1_64,true,true);
     X_67 := algebra.thetasubselect(X_65,A0,">");
     X_69:bat[:oid,:int]  := algebra.leftfetchjoinPath(X_67,r1_64,X_61);
     (X_70,r1_74) := algebra.join(X_42,X_69);
@@ -123,7 +123,7 @@ function user.s2_1{autoCommit=true}(A0:lng):void;
     X_152 := sql.bind(X_3,"sys","lineitem","l_quantity",1);
     X_154 := sql.delta(X_144,X_149,r1_197,X_152);
     X_155:bat[:oid,:int]  := algebra.leftfetchjoinPath(X_72,X_220,X_154);
-    X_156:bat[:oid,:lng]  := aggr.subsum(X_155,X_90,r1_96,true,true);
+    X_156:bat[:oid,:hge]  := aggr.subsum(X_155,X_90,r1_96,true,true);
     (X_102,r1_124) := algebra.join(X_96,X_41);
     X_217 := algebra.leftfetchjoin(r1_124,X_4);
     X_104 := sql.bind(X_3,"sys","orders","o_totalprice",0);
@@ -150,7 +150,7 @@ function user.s2_1{autoCommit=true}(A0:lng):void;
     X_138 := algebra.subslice(X_136,0:wrd,99:wrd);
     X_139 := algebra.leftfetchjoin(X_138,X_136);
     X_219 := algebra.leftfetchjoin(X_138,X_126);
-    X_158:bat[:oid,:lng]  := algebra.leftfetchjoinPath(X_219,X_102,X_94,X_156);
+    X_158:bat[:oid,:hge]  := algebra.leftfetchjoinPath(X_219,X_102,X_94,X_156);
     X_143:bat[:oid,:lng]  := algebra.leftfetchjoin(X_219,X_110);
     X_142:bat[:oid,:date]  := algebra.leftfetchjoin(X_219,X_122);
     X_141:bat[:oid,:int]  := algebra.leftfetchjoinPath(X_219,X_102,X_96);
@@ -161,7 +161,7 @@ function user.s2_1{autoCommit=true}(A0:lng):void;
     sql.rsColumn(X_159,"sys.orders","o_orderkey","int",32,0,X_141);
     sql.rsColumn(X_159,"sys.orders","o_orderdate","date",0,0,X_142);
     sql.rsColumn(X_159,"sys.orders","o_totalprice","decimal",15,2,X_143);
-    sql.rsColumn(X_159,"sys.L6","L6","bigint",32,0,X_158);
+    sql.rsColumn(X_159,"sys.L6","L6","hugeint",32,0,X_158);
     X_186 := io.stdout();
     sql.exportResult(X_186,X_159);
 end s2_1;

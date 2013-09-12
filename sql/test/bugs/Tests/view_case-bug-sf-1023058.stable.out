@@ -20,7 +20,7 @@ Ready.
 
 % sys.metadata,	sys.metadata,	sys.metadata,	sys.metadata,	sys.metadata,	sys.metadata # table_name
 % artist,	album,	track,	tracknum,	duration,	weightindex # name
-% varchar,	varchar,	varchar,	int,	int,	bigint # type
+% varchar,	varchar,	varchar,	int,	int,	hugeint # type
 % 0,	0,	0,	1,	1,	1 # length
 
 # 11:55:42 >  

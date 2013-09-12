@@ -5126,6 +5126,20 @@ rel_find_range(int *changes, mvc *sql, sql_rel *rel)
 static int
 reduce_scale(atom *a)
 {
+#ifdef HAVE_HGE
+	if (a->data.vtype == TYPE_hge) {
+		hge v = a->data.val.hval;
+		int i = 0;
+
+		if (v != 0) 
+                        while( (v/10)*10 == v ) {
+                                i++;
+                                v /= 10;
+                        }
+		a->data.val.hval = v;
+		return i;
+	}
+#endif
 	if (a->data.vtype == TYPE_lng) {
 		lng v = a->data.val.lval;
 		int i = 0;
@@ -5242,7 +5256,11 @@ rel_reduce_casts(int *changes, mvc *sql, sql_rel *rel)
 
 							if (fst->scale == ft->scale &&
 							   (a = exp_value(ce, sql->args, sql->argc)) != NULL) {
+#ifdef HAVE_HGE
+								hge v = 1;
+#else
 								lng v = 1;
+#endif
 								/* multiply with smallest value, then scale and (round) */
 								int scale = tt->scale - ft->scale;
 								int rs = reduce_scale(a);
@@ -5255,7 +5273,11 @@ rel_reduce_casts(int *changes, mvc *sql, sql_rel *rel)
 									v *= 10;
 								}
 								append(args, re);
+#ifdef HAVE_HGE
+								append(args, exp_atom_hge(sql->sa, v));
+#else
 								append(args, exp_atom_lng(sql->sa, v));
+#endif
 								f = find_func(sql, "scale_down", args);
 								nre = exp_op(sql->sa, args, f);
 								e = exp_compare(sql->sa, le->l, nre, e->flag);

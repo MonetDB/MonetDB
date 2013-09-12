@@ -36,7 +36,7 @@ Ready.
 % L1 # name
 % wrd # type
 % 2 # length
-[ 44	]
+[ 46	]
 #SELECT COUNT(*) FROM tracelog();
 % .L1 # table_name
 % L1 # name

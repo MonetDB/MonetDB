@@ -35,7 +35,7 @@ Ready.
 #FROM A2;
 % .L1 # table_name
 % L1 # name
-% bigint # type
+% hugeint # type
 % 6 # length
 [ 246864	]
 [ 1	]

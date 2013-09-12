@@ -35,7 +35,7 @@ Ready.
 #group by s_name;
 % sys.score_table,	sys.L1,	.L2 # table_name
 % s_name,	totalscore,	rank_L2 # name
-% varchar,	bigint,	int # type
+% varchar,	hugeint,	int # type
 % 3,	3,	1 # length
 [ "foo",	180,	1	]
 [ "bar",	120,	2	]

@@ -55,7 +55,13 @@ int digits2bits(int digits)
 		return 32;
 	else if (digits < 17) 
 		return 51;
+#ifdef HAVE_HGE
+	else if (digits < 19)
+		return 64;
+	return 128;
+#else
 	return 64;
+#endif
 }
 
 int bits2digits(int bits) 
@@ -80,7 +86,13 @@ int bits2digits(int bits)
 		return 9;
 	else if (bits <= 32) 
 		return 10;
+#ifdef HAVE_HGE
+	else if (bits <= 64)
+		return 19;
+	return 39;
+#else
 	return 19;
+#endif
 }
 
 /* 0 cannot convert */
@@ -158,8 +170,13 @@ localtypes_cmp(int nlt, int olt)
 {
 	if (nlt == TYPE_flt || nlt == TYPE_dbl) {
 		nlt = TYPE_dbl;
+#ifdef HAVE_HGE
+	} else if (nlt == TYPE_bte || nlt == TYPE_sht || nlt == TYPE_int || nlt == TYPE_wrd || nlt == TYPE_lng || nlt == TYPE_hge) {
+		nlt = TYPE_hge;
+#else
 	} else if (nlt == TYPE_bte || nlt == TYPE_sht || nlt == TYPE_int || nlt == TYPE_wrd || nlt == TYPE_lng) {
 		nlt = TYPE_lng;
+#endif
 	}
 	if (nlt == olt)
 		return 1;
@@ -174,9 +191,15 @@ sql_find_numeric(sql_subtype *r, int localtype, unsigned int digits)
 	if (localtype == TYPE_flt || localtype == TYPE_dbl) {
 		localtype = TYPE_dbl;
 	} else {
+#ifdef HAVE_HGE
+		localtype = TYPE_hge;
+		if (digits > 128)
+			digits = 128;
+#else
 		localtype = TYPE_lng;
 		if (digits > 64)
 			digits = 64;
+#endif
 	}
 
 	for (n = types->h; n; n = n->next) {
@@ -1187,10 +1210,14 @@ sqltypeinit( sql_allocator *sa)
 	sql_type **strings, **numerical;
 	sql_type **decimals, **floats, **dates, **end, **t;
 	sql_type *STR, *BTE, *SHT, *INT, *LNG, *OID, *BIT, *DBL, *WRD, *DEC;
+#ifdef HAVE_HGE
+	sql_type *HGE;
+#endif
 	sql_type *SECINT, *MONINT, *DTE; 
 	sql_type *TME, *TMETZ, *TMESTAMP, *TMESTAMPTZ;
 	sql_type *ANY, *TABLE;
 	sql_func *f;
+	sql_type *LargestINT, *LargestDEC;
 
 	ANY = sql_create_type(sa, "ANY", 0, 0, 0, EC_ANY, "void");
 
@@ -1217,6 +1244,9 @@ sqltypeinit( sql_allocator *sa)
 #if SIZEOF_WRD == SIZEOF_INT
 	WRD = *t++ = sql_create_type(sa, "WRD", 32, SCALE_FIX, 2, EC_NUM, "wrd");
 #endif
+#ifndef HAVE_HGE
+	LargestINT =
+#endif
 	LNG = *t++ = sql_create_type(sa, "BIGINT",   64, SCALE_FIX, 2, EC_NUM, "lng");
 #if SIZEOF_OID == SIZEOF_LNG
 	OID = *t++ = sql_create_type(sa, "OID", 63, 0, 2, EC_NUM, "oid");
@@ -1224,14 +1254,26 @@ sqltypeinit( sql_allocator *sa)
 #if SIZEOF_WRD == SIZEOF_LNG
 	WRD = *t++ = sql_create_type(sa, "WRD", 64, SCALE_FIX, 2, EC_NUM, "wrd");
 #endif
+#ifdef HAVE_HGE
+	LargestINT =
+	HGE = *t++ = sql_create_type(sa, "HUGEINT",  128, SCALE_FIX, 2, EC_NUM, "hge");
+#endif
 
 	decimals = t;
 	/* decimal(d,s) (d indicates nr digits,
 	   s scale indicates nr of digits after the dot .) */
 	*t++ = sql_create_type(sa, "DECIMAL",  2, SCALE_FIX, 10, EC_DEC, "bte");
 	*t++ = sql_create_type(sa, "DECIMAL",  4, SCALE_FIX, 10, EC_DEC, "sht");
-	DEC = *t++ = sql_create_type(sa, "DECIMAL",  9, SCALE_FIX, 10, EC_DEC, "int");
+	DEC =
+	*t++ = sql_create_type(sa, "DECIMAL",  9, SCALE_FIX, 10, EC_DEC, "int");
+#ifndef HAVE_HGE
+	LargestDEC =
+#endif
 	*t++ = sql_create_type(sa, "DECIMAL", 18, SCALE_FIX, 10, EC_DEC, "lng");
+#ifdef HAVE_HGE
+	LargestDEC =
+	*t++ = sql_create_type(sa, "DECIMAL", 38, SCALE_FIX, 10, EC_DEC, "hge");
+#endif
 
 	/* float(n) (n indicates precision of atleast n digits) */
 	/* ie n <= 23 -> flt */
@@ -1287,36 +1329,50 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_func3(sa, "ifthenelse", "calc", "ifthenelse", BIT, ANY, ANY, ANY, SCALE_FIX);
 
 	/* sum for numerical and decimals */
-	sql_create_aggr(sa, "sum", "aggr", "sum", BTE, LNG);
-	sql_create_aggr(sa, "sum", "aggr", "sum", SHT, LNG);
-	sql_create_aggr(sa, "sum", "aggr", "sum", INT, LNG);
-	sql_create_aggr(sa, "sum", "aggr", "sum", LNG, LNG);
+	sql_create_aggr(sa, "sum", "aggr", "sum", BTE, LargestINT);
+	sql_create_aggr(sa, "sum", "aggr", "sum", SHT, LargestINT);
+	sql_create_aggr(sa, "sum", "aggr", "sum", INT, LargestINT);
+	sql_create_aggr(sa, "sum", "aggr", "sum", LNG, LargestINT);
+#ifdef HAVE_HGE
+	sql_create_aggr(sa, "sum", "aggr", "sum", HGE, LargestINT);
+#endif
 	sql_create_aggr(sa, "sum", "aggr", "sum", WRD, WRD);
 
 	t = decimals; /* BTE */
-	sql_create_aggr(sa, "sum", "aggr", "sum", *(t), *(t+3));
+	sql_create_aggr(sa, "sum", "aggr", "sum", *(t), LargestDEC);
 	t++; /* SHT */
-	sql_create_aggr(sa, "sum", "aggr", "sum", *(t), *(t+2));
+	sql_create_aggr(sa, "sum", "aggr", "sum", *(t), LargestDEC);
 	t++; /* INT */
-	sql_create_aggr(sa, "sum", "aggr", "sum", *(t), *(t+1));
+	sql_create_aggr(sa, "sum", "aggr", "sum", *(t), LargestDEC);
 	t++; /* LNG */
-	sql_create_aggr(sa, "sum", "aggr", "sum", *(t), *(t));
+	sql_create_aggr(sa, "sum", "aggr", "sum", *(t), LargestDEC);
+#ifdef HAVE_HGE
+	t++; /* HGE */
+	sql_create_aggr(sa, "sum", "aggr", "sum", *(t), LargestDEC);
+#endif
 
 	/* prod for numerical and decimals */
-	sql_create_aggr(sa, "prod", "aggr", "prod", BTE, LNG);
-	sql_create_aggr(sa, "prod", "aggr", "prod", SHT, LNG);
-	sql_create_aggr(sa, "prod", "aggr", "prod", INT, LNG);
-	sql_create_aggr(sa, "prod", "aggr", "prod", LNG, LNG);
+	sql_create_aggr(sa, "prod", "aggr", "prod", BTE, LargestINT);
+	sql_create_aggr(sa, "prod", "aggr", "prod", SHT, LargestINT);
+	sql_create_aggr(sa, "prod", "aggr", "prod", INT, LargestINT);
+	sql_create_aggr(sa, "prod", "aggr", "prod", LNG, LargestINT);
+#ifdef HAVE_HGE
+	sql_create_aggr(sa, "prod", "aggr", "prod", HGE, LargestINT);
+#endif
 	/*sql_create_aggr(sa, "prod", "aggr", "prod", WRD, WRD);*/
 
 	t = decimals; /* BTE */
-	sql_create_aggr(sa, "prod", "aggr", "prod", *(t), *(t+3));
+	sql_create_aggr(sa, "prod", "aggr", "prod", *(t), LargestDEC);
 	t++; /* SHT */
-	sql_create_aggr(sa, "prod", "aggr", "prod", *(t), *(t+2));
+	sql_create_aggr(sa, "prod", "aggr", "prod", *(t), LargestDEC);
 	t++; /* INT */
-	sql_create_aggr(sa, "prod", "aggr", "prod", *(t), *(t+1));
+	sql_create_aggr(sa, "prod", "aggr", "prod", *(t), LargestDEC);
 	t++; /* LNG */
-	sql_create_aggr(sa, "prod", "aggr", "prod", *(t), *(t));
+	sql_create_aggr(sa, "prod", "aggr", "prod", *(t), LargestDEC);
+#ifdef HAVE_HGE
+	t++; /* HGE */
+	sql_create_aggr(sa, "prod", "aggr", "prod", *(t), LargestDEC);
+#endif
 
 	for (t = numerical; t < dates; t++) 
 		sql_create_func(sa, "mod", "calc", "%", *t, *t, *t, SCALE_FIX);
@@ -1330,6 +1386,9 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_aggr(sa, "avg", "aggr", "avg", SHT, DBL);
 	sql_create_aggr(sa, "avg", "aggr", "avg", INT, DBL);
 	sql_create_aggr(sa, "avg", "aggr", "avg", LNG, DBL);
+#ifdef HAVE_HGE
+	sql_create_aggr(sa, "avg", "aggr", "avg", HGE, DBL);
+#endif
 	*/
 	sql_create_aggr(sa, "avg", "aggr", "avg", DBL, DBL);
 

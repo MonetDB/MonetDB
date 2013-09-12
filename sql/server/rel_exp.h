@@ -54,6 +54,9 @@ extern sql_exp * exp_atom(sql_allocator *sa, atom *a);
 extern sql_exp * exp_atom_bool(sql_allocator *sa, int b); 
 extern sql_exp * exp_atom_int(sql_allocator *sa, int i);
 extern sql_exp * exp_atom_lng(sql_allocator *sa, lng l);
+#ifdef HAVE_HGE
+extern sql_exp * exp_atom_hge(sql_allocator *sa, hge l);
+#endif
 extern sql_exp * exp_atom_wrd(sql_allocator *sa, wrd w);
 extern sql_exp * exp_atom_flt(sql_allocator *sa, flt f);
 extern sql_exp * exp_atom_dbl(sql_allocator *sa, dbl d);

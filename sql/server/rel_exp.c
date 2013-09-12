@@ -221,8 +221,19 @@ exp_atom_lng(sql_allocator *sa, lng i)
 	sql_subtype it; 
 
 	sql_find_subtype(&it, "bigint", 18, 0);
-	return exp_atom(sa, atom_int(sa, &it, (lng)i ));
+	return exp_atom(sa, atom_int(sa, &it, i ));
 }
+
+#ifdef HAVE_HGE
+sql_exp *
+exp_atom_hge(sql_allocator *sa, hge i) 
+{
+	sql_subtype it; 
+
+	sql_find_subtype(&it, "hugeint", 38, 0);
+	return exp_atom(sa, atom_int(sa, &it, i ));
+}
+#endif
 
 sql_exp *
 exp_atom_wrd(sql_allocator *sa, wrd w) 
@@ -230,7 +241,7 @@ exp_atom_wrd(sql_allocator *sa, wrd w)
 	sql_subtype it; 
 
 	sql_find_subtype(&it, "wrd", 18, 0);
-	return exp_atom(sa, atom_int(sa, &it, (lng)w ));
+	return exp_atom(sa, atom_int(sa, &it, w ));
 }
 
 sql_exp *

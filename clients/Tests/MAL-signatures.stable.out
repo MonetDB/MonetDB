@@ -166,6 +166,10 @@ function aggr.corr(e1:bat[:oid,:flt],e2:bat[:oid,:flt],g:bat[:oid,:oid],e:bat[:o
 function aggr.covar(e1:bat[:oid,:flt],e2:bat[:oid,:flt],g:bat[:oid,:oid],e:bat[:oid,:any_2]):bat[:oid,:flt];
 function aggr.corr(e1:bat[:oid,:flt],e2:bat[:oid,:flt]):flt;
 function aggr.covar(e1:bat[:oid,:flt],e2:bat[:oid,:flt]):flt;
+function aggr.corr(e1:bat[:oid,:hge],e2:bat[:oid,:hge],g:bat[:oid,:oid],e:bat[:oid,:any_2]):bat[:oid,:hge];
+function aggr.covar(e1:bat[:oid,:hge],e2:bat[:oid,:hge],g:bat[:oid,:oid],e:bat[:oid,:any_2]):bat[:oid,:hge];
+function aggr.corr(e1:bat[:oid,:hge],e2:bat[:oid,:hge]):hge;
+function aggr.covar(e1:bat[:oid,:hge],e2:bat[:oid,:hge]):hge;
 function aggr.corr(e1:bat[:oid,:lng],e2:bat[:oid,:lng],g:bat[:oid,:oid],e:bat[:oid,:any_2]):bat[:oid,:lng];
 function aggr.covar(e1:bat[:oid,:lng],e2:bat[:oid,:lng],g:bat[:oid,:oid],e:bat[:oid,:any_2]):bat[:oid,:lng];
 function aggr.corr(e1:bat[:oid,:lng],e2:bat[:oid,:lng]):lng;
@@ -27120,6 +27124,18 @@ pattern batcalc.abs(b:bat[:oid,:bte]):bat[:oid,:bte]
 address CMDbatABS;
 comment Unary abs over the tail of the bat
 
+command batcalc.bte(s1:int,v:bat[:oid,:hge],d2:int,s2:int):bat[:oid,:bte] 
+address bathge_dec2dec_bte;
+comment cast decimal(hge) to decimal(bte) and check for overflow
+
+command batcalc.bte(s1:int,v:bat[:oid,:hge]):bat[:oid,:bte] 
+address bathge_dec2_bte;
+comment cast decimal(hge) to bte and check for overflow
+
+command batcalc.bte(v:bat[:oid,:hge],digits:int,scale:int):bat[:oid,:bte] 
+address bathge_num2dec_bte;
+comment cast number to decimal(bte) and check for overflow
+
 command batcalc.bte(s1:int,v:bat[:oid,:lng],d2:int,s2:int):bat[:oid,:bte] 
 address batlng_dec2dec_bte;
 comment cast decimal(lng) to decimal(bte) and check for overflow
@@ -29519,6 +29535,18 @@ comment Return -1/0/1 if B1 </==/> B2
 function batcalc.dense_rank_grp{inline}(b:bat[:oid,:any_1]):bat[:oid,:int];
 function batcalc.dense_rank_grp{inline}(b:bat[:oid,:any_1],ord:bat[:oid,:oid],orig:bat[:oid,:any_2]):bat[:oid,:int];
 function batcalc.dense_rank_grp{inline}(b:bat[:oid,:any_1],ord:bat[:oid,:oid],grp:bat[:oid,:oid],ext:bat[:oid,:oid]):bat[:oid,:int];
+command batcalc.dbl(s1:int,v:bat[:oid,:hge],d2:int,s2:int):bat[:oid,:dbl] 
+address bathge_dec2dec_dbl;
+comment cast decimal(hge) to decimal(dbl) and check for overflow
+
+command batcalc.dbl(s1:int,v:bat[:oid,:hge]):bat[:oid,:dbl] 
+address bathge_dec2_dbl;
+comment cast decimal(hge) to dbl and check for overflow
+
+command batcalc.dbl(v:bat[:oid,:hge],digits:int,scale:int):bat[:oid,:dbl] 
+address bathge_num2dec_dbl;
+comment cast number to decimal(dbl) and check for overflow
+
 command batcalc.dbl(s1:int,v:bat[:oid,:lng],d2:int,s2:int):bat[:oid,:dbl] 
 address batlng_dec2dec_dbl;
 comment cast decimal(lng) to decimal(dbl) and check for overflow
@@ -31335,6 +31363,18 @@ pattern batcalc.div_noerror(b1:bat[:oid,:bte],b2:bat[:oid,:bte]):bat[:oid,:bte]
 address CMDbatDIV;
 comment Return B1 / B2, overflow causes NIL value
 
+command batcalc.flt(s1:int,v:bat[:oid,:hge],d2:int,s2:int):bat[:oid,:flt] 
+address bathge_dec2dec_flt;
+comment cast decimal(hge) to decimal(flt) and check for overflow
+
+command batcalc.flt(s1:int,v:bat[:oid,:hge]):bat[:oid,:flt] 
+address bathge_dec2_flt;
+comment cast decimal(hge) to flt and check for overflow
+
+command batcalc.flt(v:bat[:oid,:hge],digits:int,scale:int):bat[:oid,:flt] 
+address bathge_num2dec_flt;
+comment cast number to decimal(flt) and check for overflow
+
 command batcalc.flt(s1:int,v:bat[:oid,:lng],d2:int,s2:int):bat[:oid,:flt] 
 address batlng_dec2dec_flt;
 comment cast decimal(lng) to decimal(flt) and check for overflow
@@ -31587,6 +31627,102 @@ pattern batcalc.flt(b:bat[:oid,:void]):bat[:oid,:flt]
 address CMDconvertsignal_flt;
 comment cast from void to flt, signal error on overflow
 
+command batcalc.hge(s1:int,v:bat[:oid,:hge],d2:int,s2:int):bat[:oid,:hge] 
+address bathge_dec2dec_hge;
+comment cast decimal(hge) to decimal(hge) and check for overflow
+
+command batcalc.hge(s1:int,v:bat[:oid,:hge]):bat[:oid,:hge] 
+address bathge_dec2_hge;
+comment cast decimal(hge) to hge and check for overflow
+
+command batcalc.hge(v:bat[:oid,:hge],digits:int,scale:int):bat[:oid,:hge] 
+address bathge_num2dec_hge;
+comment cast number to decimal(hge) and check for overflow
+
+command batcalc.hge(s1:int,v:bat[:oid,:lng],d2:int,s2:int):bat[:oid,:hge] 
+address batlng_dec2dec_hge;
+comment cast decimal(lng) to decimal(hge) and check for overflow
+
+command batcalc.hge(s1:int,v:bat[:oid,:lng]):bat[:oid,:hge] 
+address batlng_dec2_hge;
+comment cast decimal(lng) to hge and check for overflow
+
+command batcalc.hge(v:bat[:oid,:lng],digits:int,scale:int):bat[:oid,:hge] 
+address batlng_num2dec_hge;
+comment cast number to decimal(hge) and check for overflow
+
+command batcalc.hge(s1:int,v:bat[:oid,:wrd],d2:int,s2:int):bat[:oid,:hge] 
+address batwrd_dec2dec_hge;
+comment cast decimal(wrd) to decimal(hge) and check for overflow
+
+command batcalc.hge(s1:int,v:bat[:oid,:wrd]):bat[:oid,:hge] 
+address batwrd_dec2_hge;
+comment cast decimal(wrd) to hge and check for overflow
+
+command batcalc.hge(v:bat[:oid,:wrd],digits:int,scale:int):bat[:oid,:hge] 
+address batwrd_num2dec_hge;
+comment cast number to decimal(hge) and check for overflow
+
+command batcalc.hge(s1:int,v:bat[:oid,:int],d2:int,s2:int):bat[:oid,:hge] 
+address batint_dec2dec_hge;
+comment cast decimal(int) to decimal(hge) and check for overflow
+
+command batcalc.hge(s1:int,v:bat[:oid,:int]):bat[:oid,:hge] 
+address batint_dec2_hge;
+comment cast decimal(int) to hge and check for overflow
+
+command batcalc.hge(v:bat[:oid,:int],digits:int,scale:int):bat[:oid,:hge] 
+address batint_num2dec_hge;
+comment cast number to decimal(hge) and check for overflow
+
+command batcalc.hge(s1:int,v:bat[:oid,:sht],d2:int,s2:int):bat[:oid,:hge] 
+address batsht_dec2dec_hge;
+comment cast decimal(sht) to decimal(hge) and check for overflow
+
+command batcalc.hge(s1:int,v:bat[:oid,:sht]):bat[:oid,:hge] 
+address batsht_dec2_hge;
+comment cast decimal(sht) to hge and check for overflow
+
+command batcalc.hge(v:bat[:oid,:sht],digits:int,scale:int):bat[:oid,:hge] 
+address batsht_num2dec_hge;
+comment cast number to decimal(hge) and check for overflow
+
+command batcalc.hge(s1:int,v:bat[:oid,:bte],d2:int,s2:int):bat[:oid,:hge] 
+address batbte_dec2dec_hge;
+comment cast decimal(bte) to decimal(hge) and check for overflow
+
+command batcalc.hge(s1:int,v:bat[:oid,:bte]):bat[:oid,:hge] 
+address batbte_dec2_hge;
+comment cast decimal(bte) to hge and check for overflow
+
+command batcalc.hge(v:bat[:oid,:bte],digits:int,scale:int):bat[:oid,:hge] 
+address batbte_num2dec_hge;
+comment cast number to decimal(hge) and check for overflow
+
+command batcalc.hge(v:bat[:oid,:dbl],digits:int,scale:int):bat[:oid,:hge] 
+address batdbl_num2dec_hge;
+comment cast number to decimal(hge) and check for overflow
+
+command batcalc.hge(v:bat[:oid,:flt],digits:int,scale:int):bat[:oid,:hge] 
+address batflt_num2dec_hge;
+comment cast number to decimal(hge) and check for overflow
+
+command batcalc.hge(v:bat[:oid,:str],digits:int,scale:int):bat[:oid,:hge] 
+address batstr_2dec_hge;
+comment cast to dec(hge) and check for overflow
+
+command batcalc.hge(v:bat[:oid,:str],digits:int):bat[:oid,:hge] 
+address batstr_2num_hge;
+comment cast to hge and check for overflow
+
+command batcalc.hge(v:bat[:oid,:void],digits:int,scale:int):bat[:oid,:hge] 
+address batnil_2dec_hge;
+comment cast to dec(hge) and check for overflow
+
+command batcalc.hge(v:bat[:oid,:void],digits:int):bat[:oid,:hge] 
+address batnil_2num_hge;
+comment cast to hge and check for overflow
+
 command batcalc.hash(b:bat[:oid,:any_1]):bat[:oid,:wrd] 
 address MKEYbathash;
 command batcalc.hash(b:bat[:oid,:dbl]):bat[:oid,:wrd] 
@@ -31596,6 +31732,8 @@ address MKEYbathash;
 command batcalc.hash(b:bat[:oid,:wrd]):bat[:oid,:wrd] 
 address MKEYbathash;
 command batcalc.hash(b:bat[:oid,:oid]):bat[:oid,:wrd] 
+address MKEYbathash;
+command batcalc.hash(b:bat[:oid,:hge]):bat[:oid,:wrd] 
 address MKEYbathash;
 command batcalc.hash(b:bat[:oid,:lng]):bat[:oid,:wrd] 
 address MKEYbathash;
@@ -31796,6 +31934,18 @@ comment cast from void to hge with candidates list, signal error on overflow
 pattern batcalc.hge(b:bat[:oid,:void]):bat[:oid,:hge] 
 address CMDconvertsignal_hge;
 comment cast from void to hge, signal error on overflow
+
+command batcalc.int(s1:int,v:bat[:oid,:hge],d2:int,s2:int):bat[:oid,:int] 
+address bathge_dec2dec_int;
+comment cast decimal(hge) to decimal(int) and check for overflow
+
+command batcalc.int(s1:int,v:bat[:oid,:hge]):bat[:oid,:int] 
+address bathge_dec2_int;
+comment cast decimal(hge) to int and check for overflow
+
+command batcalc.int(v:bat[:oid,:hge],digits:int,scale:int):bat[:oid,:int] 
+address bathge_num2dec_int;
+comment cast number to decimal(int) and check for overflow
 
 command batcalc.int(s1:int,v:bat[:oid,:lng],d2:int,s2:int):bat[:oid,:int] 
 address batlng_dec2dec_int;
@@ -32280,6 +32430,18 @@ comment Unary check for zero over the tail of the bat with candidates list
 pattern batcalc.iszero(b:bat[:oid,:bte]):bat[:oid,:bit] 
 address CMDbatISZERO;
 comment Unary check for zero over the tail of the bat
+
+command batcalc.lng(s1:int,v:bat[:oid,:hge],d2:int,s2:int):bat[:oid,:lng] 
+address bathge_dec2dec_lng;
+comment cast decimal(hge) to decimal(lng) and check for overflow
+
+command batcalc.lng(s1:int,v:bat[:oid,:hge]):bat[:oid,:lng] 
+address bathge_dec2_lng;
+comment cast decimal(hge) to lng and check for overflow
+
+command batcalc.lng(v:bat[:oid,:hge],digits:int,scale:int):bat[:oid,:lng] 
+address bathge_num2dec_lng;
+comment cast number to decimal(lng) and check for overflow
 
 command batcalc.lng(s1:int,v:bat[:oid,:lng],d2:int,s2:int):bat[:oid,:lng] 
 address batlng_dec2dec_lng;
@@ -37780,6 +37942,18 @@ comment Return B1 >> B2 with candidates list, out of range second operand causes
 pattern batcalc.rsh_noerror(b1:bat[:oid,:bte],b2:bat[:oid,:bte]):bat[:oid,:bte] 
 address CMDbatRSH;
 comment Return B1 >> B2, out of range second operand causes NIL value
+
+command batcalc.sht(s1:int,v:bat[:oid,:hge],d2:int,s2:int):bat[:oid,:sht] 
+address bathge_dec2dec_sht;
+comment cast decimal(hge) to decimal(sht) and check for overflow
+
+command batcalc.sht(s1:int,v:bat[:oid,:hge]):bat[:oid,:sht] 
+address bathge_dec2_sht;
+comment cast decimal(hge) to sht and check for overflow
+
+command batcalc.sht(v:bat[:oid,:hge],digits:int,scale:int):bat[:oid,:sht] 
+address bathge_num2dec_sht;
+comment cast number to decimal(sht) and check for overflow
 
 command batcalc.sht(s1:int,v:bat[:oid,:lng],d2:int,s2:int):bat[:oid,:sht] 
 address batlng_dec2dec_sht;
@@ -45527,6 +45701,18 @@ pattern calc.abs(v:bte):bte
 address CMDvarABS;
 comment Unary absolute value of V
 
+command calc.bte(s1:int,v:hge,d2:int,s2:int):bte 
+address hge_dec2dec_bte;
+comment cast decimal(hge) to decimal(bte) and check for overflow
+
+command calc.bte(s1:int,v:hge):bte 
+address hge_dec2_bte;
+comment cast decimal(hge) to bte and check for overflow
+
+command calc.bte(v:hge,digits:int,scale:int):bte 
+address hge_num2dec_bte;
+comment cast number to decimal(bte) and check for overflow
+
 command calc.bte(s1:int,v:lng,d2:int,s2:int):bte 
 address lng_dec2dec_bte;
 comment cast decimal(lng) to decimal(bte) and check for overflow
@@ -45988,6 +46174,18 @@ command calc.daytime(v:lng,d:int):daytime
 address second_interval_2_daytime;
 comment cast second_interval to a daytime and check for overflow
 
+command calc.dbl(s1:int,v:hge,d2:int,s2:int):dbl 
+address hge_dec2dec_dbl;
+comment cast decimal(hge) to decimal(dbl) and check for overflow
+
+command calc.dbl(s1:int,v:hge):dbl 
+address hge_dec2_dbl;
+comment cast decimal(hge) to dbl and check for overflow
+
+command calc.dbl(v:hge,digits:int,scale:int):dbl 
+address hge_num2dec_dbl;
+comment cast number to decimal(dbl) and check for overflow
+
 command calc.dbl(s1:int,v:lng,d2:int,s2:int):dbl 
 address lng_dec2dec_dbl;
 comment cast decimal(lng) to decimal(dbl) and check for overflow
@@ -46394,6 +46592,18 @@ pattern calc.div_noerror(v1:bte,v2:bte):bte
 address CMDvarDIV;
 comment Return V1 / V2, overflow causes NIL value
 
+command calc.flt(s1:int,v:hge,d2:int,s2:int):flt 
+address hge_dec2dec_flt;
+comment cast decimal(hge) to decimal(flt) and check for overflow
+
+command calc.flt(s1:int,v:hge):flt 
+address hge_dec2_flt;
+comment cast decimal(hge) to flt and check for overflow
+
+command calc.flt(v:hge,digits:int,scale:int):flt 
+address hge_num2dec_flt;
+comment cast number to decimal(flt) and check for overflow
+
 command calc.flt(s1:int,v:lng,d2:int,s2:int):flt 
 address lng_dec2dec_flt;
 comment cast decimal(lng) to decimal(flt) and check for overflow
@@ -46512,6 +46722,102 @@ command calc.getBATidentifier(b:bat[:any_1,:any_2]):BAT
 address CALCbat2batid;
 comment Coerce bat to BAT identifier
 
+command calc.hge(s1:int,v:hge,d2:int,s2:int):hge 
+address hge_dec2dec_hge;
+comment cast decimal(hge) to decimal(hge) and check for overflow
+
+command calc.hge(s1:int,v:hge):hge 
+address hge_dec2_hge;
+comment cast decimal(hge) to hge and check for overflow
+
+command calc.hge(v:hge,digits:int,scale:int):hge 
+address hge_num2dec_hge;
+comment cast number to decimal(hge) and check for overflow
+
+command calc.hge(s1:int,v:lng,d2:int,s2:int):hge 
+address lng_dec2dec_hge;
+comment cast decimal(lng) to decimal(hge) and check for overflow
+
+command calc.hge(s1:int,v:lng):hge 
+address lng_dec2_hge;
+comment cast decimal(lng) to hge and check for overflow
+
+command calc.hge(v:lng,digits:int,scale:int):hge 
+address lng_num2dec_hge;
+comment cast number to decimal(hge) and check for overflow
+
+command calc.hge(s1:int,v:wrd,d2:int,s2:int):hge 
+address wrd_dec2dec_hge;
+comment cast decimal(wrd) to decimal(hge) and check for overflow
+
+command calc.hge(s1:int,v:wrd):hge 
+address wrd_dec2_hge;
+comment cast decimal(wrd) to hge and check for overflow
+
+command calc.hge(v:wrd,digits:int,scale:int):hge 
+address wrd_num2dec_hge;
+comment cast number to decimal(hge) and check for overflow
+
+command calc.hge(s1:int,v:int,d2:int,s2:int):hge 
+address int_dec2dec_hge;
+comment cast decimal(int) to decimal(hge) and check for overflow
+
+command calc.hge(s1:int,v:int):hge 
+address int_dec2_hge;
+comment cast decimal(int) to hge and check for overflow
+
+command calc.hge(v:int,digits:int,scale:int):hge 
+address int_num2dec_hge;
+comment cast number to decimal(hge) and check for overflow
+
+command calc.hge(s1:int,v:sht,d2:int,s2:int):hge 
+address sht_dec2dec_hge;
+comment cast decimal(sht) to decimal(hge) and check for overflow
+
+command calc.hge(s1:int,v:sht):hge 
+address sht_dec2_hge;
+comment cast decimal(sht) to hge and check for overflow
+
+command calc.hge(v:sht,digits:int,scale:int):hge 
+address sht_num2dec_hge;
+comment cast number to decimal(hge) and check for overflow
+
+command calc.hge(s1:int,v:bte,d2:int,s2:int):hge 
+address bte_dec2dec_hge;
+comment cast decimal(bte) to decimal(hge) and check for overflow
+
+command calc.hge(s1:int,v:bte):hge 
+address bte_dec2_hge;
+comment cast decimal(bte) to hge and check for overflow
+
+command calc.hge(v:bte,digits:int,scale:int):hge 
+address bte_num2dec_hge;
+comment cast number to decimal(hge) and check for overflow
+
+command calc.hge(v:dbl,digits:int,scale:int):hge 
+address dbl_num2dec_hge;
+comment cast number to decimal(hge) and check for overflow
+
+command calc.hge(v:flt,digits:int,scale:int):hge 
+address flt_num2dec_hge;
+comment cast number to decimal(hge) and check for overflow
+
+command calc.hge(v:str,digits:int,scale:int):hge 
+address str_2dec_hge;
+comment cast to dec(hge) and check for overflow
+
+command calc.hge(v:str,digits:int):hge 
+address str_2num_hge;
+comment cast to hge and check for overflow
+
+command calc.hge(v:void,digits:int,scale:int):hge 
+address nil_2dec_hge;
+comment cast to dec(hge) and check for overflow
+
+command calc.hge(v:void,digits:int):hge 
+address nil_2num_hge;
+comment cast to hge and check for overflow
+
 pattern calc.hash(v:any):wrd 
 address MKEYhash;
 pattern calc.hash(v:dbl):wrd 
@@ -46521,6 +46827,8 @@ address MKEYhash;
 pattern calc.hash(v:wrd):wrd 
 address MKEYhash;
 pattern calc.hash(v:oid):wrd 
+address MKEYhash;
+pattern calc.hash(v:hge):wrd 
 address MKEYhash;
 pattern calc.hash(v:lng):wrd 
 address MKEYhash;
@@ -46577,6 +46885,18 @@ comment Cast VALUE to hge
 pattern calc.hge(v:void):hge 
 address CMDvarCONVERT;
 comment Cast VALUE to hge
+
+command calc.int(s1:int,v:hge,d2:int,s2:int):int 
+address hge_dec2dec_int;
+comment cast decimal(hge) to decimal(int) and check for overflow
+
+command calc.int(s1:int,v:hge):int 
+address hge_dec2_int;
+comment cast decimal(hge) to int and check for overflow
+
+command calc.int(v:hge,digits:int,scale:int):int 
+address hge_num2dec_int;
+comment cast number to decimal(int) and check for overflow
 
 command calc.int(s1:int,v:lng,d2:int,s2:int):int 
 address lng_dec2dec_int;
@@ -46893,6 +47213,18 @@ comment Unary check for zero of V
 command calc.json(j:str):json 
 address JSONstr2json;
 comment Convert string to its JSON. Dealing with escape characters
+
+command calc.lng(s1:int,v:hge,d2:int,s2:int):lng 
+address hge_dec2dec_lng;
+comment cast decimal(hge) to decimal(lng) and check for overflow
+
+command calc.lng(s1:int,v:hge):lng 
+address hge_dec2_lng;
+comment cast decimal(hge) to lng and check for overflow
+
+command calc.lng(v:hge,digits:int,scale:int):lng 
+address hge_num2dec_lng;
+comment cast number to decimal(lng) and check for overflow
 
 command calc.lng(s1:int,v:lng,d2:int,s2:int):lng 
 address lng_dec2dec_lng;
@@ -48232,6 +48564,18 @@ command calc.second_interval(v:str,ek:int,sk:int):lng
 address second_interval_str;
 comment cast str to a second_interval and check for overflow
 
+command calc.sht(s1:int,v:hge,d2:int,s2:int):sht 
+address hge_dec2dec_sht;
+comment cast decimal(hge) to decimal(sht) and check for overflow
+
+command calc.sht(s1:int,v:hge):sht 
+address hge_dec2_sht;
+comment cast decimal(hge) to sht and check for overflow
+
+command calc.sht(v:hge,digits:int,scale:int):sht 
+address hge_num2dec_sht;
+comment cast number to decimal(sht) and check for overflow
+
 command calc.sht(s1:int,v:lng,d2:int,s2:int):sht 
 address lng_dec2dec_sht;
 comment cast decimal(lng) to decimal(sht) and check for overflow
@@ -48335,6 +48679,10 @@ comment cast to dec(sht) and check for overflow
 command calc.sht(v:void,digits:int):sht 
 address nil_2num_sht;
 comment cast to sht and check for overflow
+
+command calc.second_interval(sc:int,v:hge,ek:int,sk:int):lng 
+address hge_dec2second_interval;
+comment cast hge decimal to a second_interval
 
 command calc.second_interval(sc:int,v:lng,ek:int,sk:int):lng 
 address lng_dec2second_interval;
@@ -52361,6 +52709,10 @@ pattern sql.append(mvc:int,sname:str,tname:str,cname:str,ins:any):int
 address mvc_append_wrap;
 comment Append b to the column tname.cname (possibly optimized to replace the insert bat of tname.cname (returns sequence number for order dependence)
 
+pattern sql.assert(b:hge,msg:str):void 
+address SQLassertHge;
+comment Generate an exception when b!=0
+
 pattern sql.assert(b:lng,msg:str):void 
 address SQLassertLng;
 comment Generate an exception when b!=0
@@ -52508,6 +52860,10 @@ comment round off the value v to nearests multiple of r
 
 command sql.dec_round(v:flt,r:flt):flt 
 address flt_dec_round_wrap;
+comment round off the value v to nearests multiple of r
+
+command sql.dec_round(v:hge,r:hge):hge 
+address hge_dec_round_wrap;
 comment round off the value v to nearests multiple of r
 
 command sql.dec_round(v:lng,r:lng):lng 
@@ -52737,6 +53093,10 @@ comment round off the floating point v to r digits behind the dot (if r < 0, bef
 command sql.round(v:flt,r:bte):flt 
 address flt_round_wrap;
 comment round off the floating point v to r digits behind the dot (if r < 0, before the dot)
+
+command sql.round(v:hge,d:int,s:int,r:bte):hge 
+address hge_round_wrap;
+comment round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)
 
 command sql.round(v:lng,d:int,s:int,r:bte):lng 
 address lng_round_wrap;
