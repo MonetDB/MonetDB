@@ -1,0 +1,158 @@
+stdout of test '01-explain` in directory 'sql/benchmarks/tpch` itself:
+
+
+# 22:53:25 >  
+# 22:53:25 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=34581" "--set" "mapi_usock=/var/tmp/mtest-9096/.s.monetdb.34581" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/manegold/_/Monet/HG/Feb2013/prefix/--disable-debug_--enable-assert_--enable-optimize/var/MonetDB/mTests_sql_benchmarks_tpch" "--set" "mal_listing=0"
+# 22:53:25 >  
+
+# MonetDB 5 server v11.15.12
+# This is an unreleased version
+# Serving database 'mTests_sql_benchmarks_tpch', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.591 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2013 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://rome.ins.cwi.nl:34581/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-9096/.s.monetdb.34581
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 22:53:25 >  
+# 22:53:25 >  "/usr/bin/python2" "01-explain.SQL.py" "01-explain"
+# 22:53:25 >  
+
+#set optimizer = 'sequential_pipe';
+#explain select
+#	l_returnflag,
+#	l_linestatus,
+#	sum(l_quantity) as sum_qty,
+#	sum(l_extendedprice) as sum_base_price,
+#	sum(l_extendedprice * (1 - l_discount)) as sum_disc_price,
+#	sum(l_extendedprice * (1 - l_discount) * (1 + l_tax)) as sum_charge,
+#	avg(l_quantity) as avg_qty,
+#	avg(l_extendedprice) as avg_price,
+#	avg(l_discount) as avg_disc,
+#	count(*) as count_order
+#from
+#	lineitem
+#where
+#	l_shipdate <= date '1998-12-01' - interval '90' day (3)
+#group by
+#	l_returnflag,
+#	l_linestatus
+#order by
+#	l_returnflag,
+#	l_linestatus;
+% .explain # table_name
+% mal # name
+% clob # type
+% 78 # length
+function user.s0_1{autoCommit=true}(A0:bte,A1:bte,A2:bte,A3:date,A4:lng):void;
+    X_7 := sql.mvc();
+    X_11 := sql.bind(X_7,"sys","lineitem","l_shipdate",0);
+    X_8:bat[:oid,:oid]  := sql.tid(X_7,"sys","lineitem");
+    X_19 := mtime.date_sub_msec_interval(A3,A4);
+    X_199 := algebra.thetasubselect(X_11,X_8,X_19,"<=");
+    (X_14,r1_14) := sql.bind(X_7,"sys","lineitem","l_shipdate",2);
+    X_200 := algebra.thetasubselect(r1_14,X_19,"<=");
+    X_17 := sql.bind(X_7,"sys","lineitem","l_shipdate",1);
+    X_201 := algebra.thetasubselect(X_17,X_8,X_19,"<=");
+    X_20 := sql.subdelta(X_199,X_8,X_14,X_200,X_201);
+    X_22 := sql.bind(X_7,"sys","lineitem","l_linestatus",0);
+    (X_24,r1_28) := sql.bind(X_7,"sys","lineitem","l_linestatus",2);
+    X_26 := sql.bind(X_7,"sys","lineitem","l_linestatus",1);
+    X_27 := sql.projectdelta(X_20,X_22,X_24,r1_28,X_26);
+    X_28 := sql.bind(X_7,"sys","lineitem","l_returnflag",0);
+    (X_30,r1_36) := sql.bind(X_7,"sys","lineitem","l_returnflag",2);
+    X_32 := sql.bind(X_7,"sys","lineitem","l_returnflag",1);
+    X_33 := sql.projectdelta(X_20,X_28,X_30,r1_36,X_32);
+    (X_34,r1_42,r2_42) := group.subgroup(X_33);
+    (X_37,r1_45,r2_45) := group.subgroupdone(X_27,X_34);
+    X_40 := algebra.leftfetchjoin(r1_45,X_27);
+    X_41 := algebra.leftfetchjoin(r1_45,X_33);
+    X_51 := sql.bind(X_7,"sys","lineitem","l_quantity",0);
+    (X_56,r1_64) := sql.bind(X_7,"sys","lineitem","l_quantity",2);
+    X_59 := sql.bind(X_7,"sys","lineitem","l_quantity",1);
+    X_61 := sql.projectdelta(X_20,X_51,X_56,r1_64,X_59);
+    X_62:bat[:oid,:lng]  := aggr.subsum(X_61,X_37,r1_45,true,true);
+    X_65 := sql.bind(X_7,"sys","lineitem","l_extendedprice",0);
+    (X_67,r1_77) := sql.bind(X_7,"sys","lineitem","l_extendedprice",2);
+    X_69 := sql.bind(X_7,"sys","lineitem","l_extendedprice",1);
+    X_70 := sql.projectdelta(X_20,X_65,X_67,r1_77,X_69);
+    X_71:bat[:oid,:lng]  := aggr.subsum(X_70,X_37,r1_45,true,true);
+    X_73 := calc.lng(A0,15,2);
+    X_75 := sql.bind(X_7,"sys","lineitem","l_discount",0);
+    (X_77,r1_90) := sql.bind(X_7,"sys","lineitem","l_discount",2);
+    X_79 := sql.bind(X_7,"sys","lineitem","l_discount",1);
+    X_82 := sql.projectdelta(X_20,X_75,X_77,r1_90,X_79);
+    X_83:bat[:oid,:lng]  := batcalc.-(X_73,X_82);
+    X_84:bat[:oid,:lng]  := batcalc.*(X_70,X_83);
+    X_85:bat[:oid,:lng]  := aggr.subsum(X_84,X_37,r1_45,true,true);
+    X_87 := calc.lng(A1,15,2);
+    X_89:bat[:oid,:lng]  := batcalc.-(X_87,X_82);
+    X_90:bat[:oid,:lng]  := batcalc.*(X_70,X_89);
+    X_91 := calc.lng(A2,15,2);
+    X_92 := sql.bind(X_7,"sys","lineitem","l_tax",0);
+    (X_95,r1_115) := sql.bind(X_7,"sys","lineitem","l_tax",2);
+    X_97 := sql.bind(X_7,"sys","lineitem","l_tax",1);
+    X_99 := sql.projectdelta(X_20,X_92,X_95,r1_115,X_97);
+    X_100:bat[:oid,:lng]  := batcalc.+(X_91,X_99);
+    X_101:bat[:oid,:lng]  := batcalc.*(X_90,X_100);
+    X_102:bat[:oid,:lng]  := aggr.subsum(X_101,X_37,r1_45,true,true);
+    X_105 := batcalc.dbl(X_61);
+    X_106:bat[:oid,:dbl]  := aggr.subsum(X_105,X_37,r1_45,true,true);
+    X_107:bat[:oid,:wrd]  := aggr.subcount(X_105,X_37,r1_45,true);
+    X_115:bat[:oid,:dbl]  := batcalc.dbl(2,X_70);
+    X_117:bat[:oid,:dbl]  := aggr.subsum(X_115,X_37,r1_45,true,true);
+    X_118:bat[:oid,:wrd]  := aggr.subcount(X_115,X_37,r1_45,true);
+    X_124:bat[:oid,:dbl]  := batcalc.dbl(2,X_82);
+    X_125:bat[:oid,:dbl]  := aggr.subsum(X_124,X_37,r1_45,true,true);
+    X_127:bat[:oid,:wrd]  := aggr.subcount(X_124,X_37,r1_45,true);
+    X_133:bat[:oid,:wrd]  := aggr.subcount(X_37,X_37,r1_45,false);
+    (X_42,r1_50,r2_50) := algebra.subsort(X_41,false,false);
+    (X_46,r1_54,r2_54) := algebra.subsort(X_40,r1_50,r2_50,false,false);
+    X_49 := algebra.leftfetchjoin(r1_54,X_41);
+    X_135 := algebra.leftfetchjoin(r1_54,X_133);
+    X_128:bat[:oid,:bit]  := batcalc.==(X_127,0:wrd);
+    X_129 := batcalc.dbl(X_127);
+    X_130:bat[:oid,:dbl]  := batcalc.ifthenelse(X_128,nil:dbl,X_129);
+    X_131:bat[:oid,:dbl]  := batcalc./(X_125,X_130);
+    X_132 := algebra.leftfetchjoin(r1_54,X_131);
+    X_119:bat[:oid,:bit]  := batcalc.==(X_118,0:wrd);
+    X_120 := batcalc.dbl(X_118);
+    X_121:bat[:oid,:dbl]  := batcalc.ifthenelse(X_119,nil:dbl,X_120);
+    X_122:bat[:oid,:dbl]  := batcalc./(X_117,X_121);
+    X_123 := algebra.leftfetchjoin(r1_54,X_122);
+    X_109:bat[:oid,:bit]  := batcalc.==(X_107,0:wrd);
+    X_111 := batcalc.dbl(X_107);
+    X_112:bat[:oid,:dbl]  := batcalc.ifthenelse(X_109,nil:dbl,X_111);
+    X_113:bat[:oid,:dbl]  := batcalc./(X_106,X_112);
+    X_114 := algebra.leftfetchjoin(r1_54,X_113);
+    X_104 := algebra.leftfetchjoin(r1_54,X_102);
+    X_86 := algebra.leftfetchjoin(r1_54,X_85);
+    X_72 := algebra.leftfetchjoin(r1_54,X_71);
+    X_64 := algebra.leftfetchjoin(r1_54,X_62);
+    X_50 := algebra.leftfetchjoin(r1_54,X_40);
+    X_136 := sql.resultSet(10,1,X_49);
+    sql.rsColumn(X_136,"sys.lineitem","l_returnflag","varchar",1,0,X_49);
+    sql.rsColumn(X_136,"sys.lineitem","l_linestatus","varchar",1,0,X_50);
+    sql.rsColumn(X_136,"sys.L1","sum_qty","bigint",32,0,X_64);
+    sql.rsColumn(X_136,"sys.L2","sum_base_price","decimal",15,2,X_72);
+    sql.rsColumn(X_136,"sys.L3","sum_disc_price","decimal",18,4,X_86);
+    sql.rsColumn(X_136,"sys.L4","sum_charge","decimal",18,6,X_104);
+    sql.rsColumn(X_136,"sys.L5","avg_qty","double",53,0,X_114);
+    sql.rsColumn(X_136,"sys.L6","avg_price","double",53,0,X_123);
+    sql.rsColumn(X_136,"sys.L7","avg_disc","double",53,0,X_132);
+    sql.rsColumn(X_136,"sys.L10","count_order","wrd",32,0,X_135);
+    X_182 := io.stdout();
+    sql.exportResult(X_182,X_136);
+end s0_1;
+
+# 22:53:25 >  
+# 22:53:25 >  "Done."
+# 22:53:25 >  
+
