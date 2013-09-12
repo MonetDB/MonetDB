@@ -2908,9 +2908,33 @@ command batsql.alpha(dec:bat[:oid,:dbl],theta:dbl):bat[:oid,:dbl]
 address SQLbat_alpha_cst;
 comment BAT implementation of astronomy alpha function
 
+command batsql.dec_round(v:bat[:oid,:lng],r:lng):bat[:oid,:lng] 
+address lng_bat_dec_round_wrap;
+comment round off the value v to nearests multiple of r
+
+command batsql.dec_round(v:bat[:oid,:int],r:int):bat[:oid,:int] 
+address int_bat_dec_round_wrap;
+comment round off the value v to nearests multiple of r
+
+command batsql.dec_round(v:bat[:oid,:sht],r:sht):bat[:oid,:sht] 
+address sht_bat_dec_round_wrap;
+comment round off the value v to nearests multiple of r
+
+command batsql.dec_round(v:bat[:oid,:bte],r:bte):bat[:oid,:bte] 
+address bte_bat_dec_round_wrap;
+comment round off the value v to nearests multiple of r
+
 pattern batsql.next_value(sname:bat[:oid,:str],sequence:str):bat[:oid,:lng] 
 address mvc_bat_next_value;
 comment return the next value of the sequence
+
+command batsql.round(v:bat[:oid,:dbl],r:bte):bat[:oid,:dbl] 
+address dbl_bat_round_wrap;
+comment round off the floating point v to r digits behind the dot (if r < 0, before the dot)
+
+command batsql.round(v:bat[:oid,:flt],r:bte):bat[:oid,:flt] 
+address flt_bat_round_wrap;
+comment round off the floating point v to r digits behind the dot (if r < 0, before the dot)
 
 command batgeom.point(x:bat[:oid,:dbl],y:bat[:oid,:dbl]):bat[:oid,:wkb] 
 address wkbcreatepoint_bat;
@@ -42062,8 +42086,16 @@ command sql.dense_rank_grp(b:bat[:oid,:any_1],gp:bat[:oid,:oid],gpe:bat[:oid,:oi
 address sql_dense_rank_grp;
 comment return the densely ranked groups
 
+command sql.dec_round(v:bat[:oid,:dbl],r:dbl):bat[:oid,:dbl] 
+address dbl_bat_dec_round_wrap;
+comment round off the value v to nearests multiple of r
+
 command sql.dec_round(v:dbl,r:dbl):dbl 
 address dbl_dec_round_wrap;
+comment round off the value v to nearests multiple of r
+
+command sql.dec_round(v:bat[:oid,:flt],r:flt):bat[:oid,:flt] 
+address flt_bat_dec_round_wrap;
 comment round off the value v to nearests multiple of r
 
 command sql.dec_round(v:flt,r:flt):flt 
@@ -42298,16 +42330,32 @@ command sql.round(v:flt,r:bte):flt
 address flt_round_wrap;
 comment round off the floating point v to r digits behind the dot (if r < 0, before the dot)
 
+command sql.round(v:bat[:oid,:lng],d:int,s:int,r:bte):bat[:oid,:lng] 
+address lng_bat_round_wrap;
+comment round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)
+
 command sql.round(v:lng,d:int,s:int,r:bte):lng 
 address lng_round_wrap;
+comment round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)
+
+command sql.round(v:bat[:oid,:int],d:int,s:int,r:bte):bat[:oid,:int] 
+address int_bat_round_wrap;
 comment round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)
 
 command sql.round(v:int,d:int,s:int,r:bte):int 
 address int_round_wrap;
 comment round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)
 
+command sql.round(v:bat[:oid,:sht],d:int,s:int,r:bte):bat[:oid,:sht] 
+address sht_bat_round_wrap;
+comment round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)
+
 command sql.round(v:sht,d:int,s:int,r:bte):sht 
 address sht_round_wrap;
+comment round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)
+
+command sql.round(v:bat[:oid,:bte],d:int,s:int,r:bte):bat[:oid,:bte] 
+address bte_bat_round_wrap;
 comment round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)
 
 command sql.round(v:bte,d:int,s:int,r:bte):bte 
