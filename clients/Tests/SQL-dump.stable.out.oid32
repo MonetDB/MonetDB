@@ -1620,7 +1620,7 @@ COPY 406 RECORDS INTO "sys"."_columns" FROM stdin USING DELIMITERS '\t','\n','"'
 5283	"start"	"timestamp"	7	0	5281	NULL	true	1	NULL
 5284	"stop"	"timestamp"	7	0	5281	NULL	true	2	NULL
 5285	"arguments"	"clob"	0	0	5281	NULL	true	3	NULL
-5286	"tuples"	"wrd"	32	0	5281	NULL	true	4	NULL
+5286	"tuples"	"wrd"	64	0	5281	NULL	true	4	NULL
 5287	"run"	"bigint"	64	0	5281	NULL	true	5	NULL
 5288	"ship"	"bigint"	64	0	5281	NULL	true	6	NULL
 5289	"cpu"	"int"	32	0	5281	NULL	true	7	NULL
@@ -1637,7 +1637,7 @@ COPY 406 RECORDS INTO "sys"."_columns" FROM stdin USING DELIMITERS '\t','\n','"'
 5306	"start"	"timestamp"	7	0	5315	NULL	true	1	NULL
 5307	"stop"	"timestamp"	7	0	5315	NULL	true	2	NULL
 5308	"arguments"	"clob"	0	0	5315	NULL	true	3	NULL
-5309	"tuples"	"wrd"	32	0	5315	NULL	true	4	NULL
+5309	"tuples"	"wrd"	64	0	5315	NULL	true	4	NULL
 5310	"run"	"bigint"	64	0	5315	NULL	true	5	NULL
 5311	"ship"	"bigint"	64	0	5315	NULL	true	6	NULL
 5312	"cpu"	"int"	32	0	5315	NULL	true	7	NULL
@@ -1653,7 +1653,7 @@ COPY 406 RECORDS INTO "sys"."_columns" FROM stdin USING DELIMITERS '\t','\n','"'
 5324	"start"	"timestamp"	7	0	5333	NULL	true	7	NULL
 5325	"stop"	"timestamp"	7	0	5333	NULL	true	8	NULL
 5326	"arguments"	"clob"	0	0	5333	NULL	true	9	NULL
-5327	"tuples"	"wrd"	32	0	5333	NULL	true	10	NULL
+5327	"tuples"	"wrd"	64	0	5333	NULL	true	10	NULL
 5328	"run"	"bigint"	64	0	5333	NULL	true	11	NULL
 5329	"ship"	"bigint"	64	0	5333	NULL	true	12	NULL
 5330	"cpu"	"int"	32	0	5333	NULL	true	13	NULL
@@ -1943,13 +1943,13 @@ CREATE TABLE "sys"."args" (
 );
 COPY 3383 RECORDS INTO "sys"."args" FROM stdin USING DELIMITERS '\t','\n','"';
 2151	28	"result"	"oid"	31	0	0
-2152	28	"arg_1"	"wrd"	32	0	1
+2152	28	"arg_1"	"wrd"	64	0	1
 2153	29	"result"	"oid"	31	0	0
 2154	29	"arg_1"	"oid"	31	0	1
-2155	30	"result"	"wrd"	32	0	0
+2155	30	"result"	"wrd"	64	0	0
 2156	30	"arg_1"	"any"	0	0	1
-2157	31	"result"	"wrd"	32	0	0
-2158	31	"arg_1"	"wrd"	32	0	1
+2157	31	"result"	"wrd"	64	0	0
+2158	31	"arg_1"	"wrd"	64	0	1
 2159	31	"arg_2"	"int"	32	0	2
 2160	31	"arg_3"	"any"	0	0	3
 2161	32	"result"	"boolean"	1	0	0
@@ -2005,12 +2005,12 @@ COPY 3383 RECORDS INTO "sys"."args" FROM stdin USING DELIMITERS '\t','\n','"';
 2211	71	"result"	"oid"	31	0	0
 2212	71	"arg_1"	"oid"	31	0	1
 2213	71	"arg_2"	"oid"	31	0	2
-2214	72	"result"	"wrd"	32	0	0
-2215	72	"arg_1"	"wrd"	32	0	1
-2216	72	"arg_2"	"wrd"	32	0	2
-2217	73	"result"	"bigint"	64	0	0
-2218	73	"arg_1"	"bigint"	64	0	1
-2219	73	"arg_2"	"bigint"	64	0	2
+2214	72	"result"	"bigint"	64	0	0
+2215	72	"arg_1"	"bigint"	64	0	1
+2216	72	"arg_2"	"bigint"	64	0	2
+2217	73	"result"	"wrd"	64	0	0
+2218	73	"arg_1"	"wrd"	64	0	1
+2219	73	"arg_2"	"wrd"	64	0	2
 2220	74	"result"	"decimal"	2	0	0
 2221	74	"arg_1"	"decimal"	2	0	1
 2222	74	"arg_2"	"decimal"	2	0	2
@@ -2383,136 +2383,136 @@ COPY 3383 RECORDS INTO "sys"."args" FROM stdin USING DELIMITERS '\t','\n','"';
 2589	205	"result"	"sec_interval"	19	0	0
 2590	205	"arg_1"	"sec_interval"	19	0	1
 2591	205	"arg_2"	"oid"	31	0	2
-2592	206	"result"	"wrd"	32	0	0
-2593	206	"arg_1"	"wrd"	32	0	1
-2594	206	"arg_2"	"wrd"	32	0	2
-2595	207	"result"	"wrd"	32	0	0
-2596	207	"arg_1"	"wrd"	32	0	1
-2597	207	"arg_2"	"wrd"	32	0	2
-2598	208	"result"	"wrd"	32	0	0
-2599	208	"arg_1"	"wrd"	32	0	1
-2600	208	"arg_2"	"wrd"	32	0	2
-2601	209	"result"	"wrd"	32	0	0
-2602	209	"arg_1"	"wrd"	32	0	1
-2603	209	"arg_2"	"wrd"	32	0	2
-2604	210	"result"	"wrd"	32	0	0
-2605	210	"arg_1"	"wrd"	32	0	1
-2606	210	"arg_2"	"wrd"	32	0	2
-2607	211	"result"	"wrd"	32	0	0
-2608	211	"arg_1"	"wrd"	32	0	1
-2609	211	"arg_2"	"wrd"	32	0	2
-2610	212	"result"	"wrd"	32	0	0
-2611	212	"arg_1"	"wrd"	32	0	1
-2612	212	"arg_2"	"wrd"	32	0	2
-2613	213	"result"	"wrd"	32	0	0
-2614	213	"arg_1"	"wrd"	32	0	1
-2615	214	"result"	"wrd"	32	0	0
-2616	214	"arg_1"	"wrd"	32	0	1
+2592	206	"result"	"bigint"	64	0	0
+2593	206	"arg_1"	"bigint"	64	0	1
+2594	206	"arg_2"	"bigint"	64	0	2
+2595	207	"result"	"bigint"	64	0	0
+2596	207	"arg_1"	"bigint"	64	0	1
+2597	207	"arg_2"	"bigint"	64	0	2
+2598	208	"result"	"bigint"	64	0	0
+2599	208	"arg_1"	"bigint"	64	0	1
+2600	208	"arg_2"	"bigint"	64	0	2
+2601	209	"result"	"bigint"	64	0	0
+2602	209	"arg_1"	"bigint"	64	0	1
+2603	209	"arg_2"	"bigint"	64	0	2
+2604	210	"result"	"bigint"	64	0	0
+2605	210	"arg_1"	"bigint"	64	0	1
+2606	210	"arg_2"	"bigint"	64	0	2
+2607	211	"result"	"bigint"	64	0	0
+2608	211	"arg_1"	"bigint"	64	0	1
+2609	211	"arg_2"	"bigint"	64	0	2
+2610	212	"result"	"bigint"	64	0	0
+2611	212	"arg_1"	"bigint"	64	0	1
+2612	212	"arg_2"	"bigint"	64	0	2
+2613	213	"result"	"bigint"	64	0	0
+2614	213	"arg_1"	"bigint"	64	0	1
+2615	214	"result"	"bigint"	64	0	0
+2616	214	"arg_1"	"bigint"	64	0	1
 2617	214	"arg_2"	"int"	32	0	2
-2618	215	"result"	"wrd"	32	0	0
-2619	215	"arg_1"	"wrd"	32	0	1
+2618	215	"result"	"bigint"	64	0	0
+2619	215	"arg_1"	"bigint"	64	0	1
 2620	215	"arg_2"	"int"	32	0	2
-2621	216	"result"	"wrd"	32	0	0
-2622	216	"arg_1"	"wrd"	32	0	1
-2623	217	"result"	"wrd"	32	0	0
-2624	217	"arg_1"	"wrd"	32	0	1
+2621	216	"result"	"bigint"	64	0	0
+2622	216	"arg_1"	"bigint"	64	0	1
+2623	217	"result"	"bigint"	64	0	0
+2624	217	"arg_1"	"bigint"	64	0	1
 2625	218	"result"	"tinyint"	8	0	0
-2626	218	"arg_1"	"wrd"	32	0	1
-2627	219	"result"	"wrd"	32	0	0
-2628	219	"arg_1"	"wrd"	32	0	1
-2629	219	"arg_2"	"wrd"	32	0	2
-2630	220	"result"	"wrd"	32	0	0
-2631	220	"arg_1"	"wrd"	32	0	1
-2632	220	"arg_2"	"wrd"	32	0	2
+2626	218	"arg_1"	"bigint"	64	0	1
+2627	219	"result"	"bigint"	64	0	0
+2628	219	"arg_1"	"bigint"	64	0	1
+2629	219	"arg_2"	"bigint"	64	0	2
+2630	220	"result"	"bigint"	64	0	0
+2631	220	"arg_1"	"bigint"	64	0	1
+2632	220	"arg_2"	"bigint"	64	0	2
 2633	221	"result"	"month_interval"	32	0	0
 2634	221	"arg_1"	"month_interval"	32	0	1
-2635	221	"arg_2"	"wrd"	32	0	2
+2635	221	"arg_2"	"bigint"	64	0	2
 2636	222	"result"	"month_interval"	32	0	0
 2637	222	"arg_1"	"month_interval"	32	0	1
-2638	222	"arg_2"	"wrd"	32	0	2
+2638	222	"arg_2"	"bigint"	64	0	2
 2639	223	"result"	"month_interval"	32	0	0
 2640	223	"arg_1"	"month_interval"	32	0	1
-2641	223	"arg_2"	"wrd"	32	0	2
+2641	223	"arg_2"	"bigint"	64	0	2
 2642	224	"result"	"month_interval"	32	0	0
 2643	224	"arg_1"	"month_interval"	32	0	1
-2644	224	"arg_2"	"wrd"	32	0	2
+2644	224	"arg_2"	"bigint"	64	0	2
 2645	225	"result"	"sec_interval"	19	0	0
 2646	225	"arg_1"	"sec_interval"	19	0	1
-2647	225	"arg_2"	"wrd"	32	0	2
+2647	225	"arg_2"	"bigint"	64	0	2
 2648	226	"result"	"sec_interval"	19	0	0
 2649	226	"arg_1"	"sec_interval"	19	0	1
-2650	226	"arg_2"	"wrd"	32	0	2
+2650	226	"arg_2"	"bigint"	64	0	2
 2651	227	"result"	"sec_interval"	19	0	0
 2652	227	"arg_1"	"sec_interval"	19	0	1
-2653	227	"arg_2"	"wrd"	32	0	2
+2653	227	"arg_2"	"bigint"	64	0	2
 2654	228	"result"	"sec_interval"	19	0	0
 2655	228	"arg_1"	"sec_interval"	19	0	1
-2656	228	"arg_2"	"wrd"	32	0	2
-2657	229	"result"	"bigint"	64	0	0
-2658	229	"arg_1"	"bigint"	64	0	1
-2659	229	"arg_2"	"bigint"	64	0	2
-2660	230	"result"	"bigint"	64	0	0
-2661	230	"arg_1"	"bigint"	64	0	1
-2662	230	"arg_2"	"bigint"	64	0	2
-2663	231	"result"	"bigint"	64	0	0
-2664	231	"arg_1"	"bigint"	64	0	1
-2665	231	"arg_2"	"bigint"	64	0	2
-2666	232	"result"	"bigint"	64	0	0
-2667	232	"arg_1"	"bigint"	64	0	1
-2668	232	"arg_2"	"bigint"	64	0	2
-2669	233	"result"	"bigint"	64	0	0
-2670	233	"arg_1"	"bigint"	64	0	1
-2671	233	"arg_2"	"bigint"	64	0	2
-2672	234	"result"	"bigint"	64	0	0
-2673	234	"arg_1"	"bigint"	64	0	1
-2674	234	"arg_2"	"bigint"	64	0	2
-2675	235	"result"	"bigint"	64	0	0
-2676	235	"arg_1"	"bigint"	64	0	1
-2677	235	"arg_2"	"bigint"	64	0	2
-2678	236	"result"	"bigint"	64	0	0
-2679	236	"arg_1"	"bigint"	64	0	1
-2680	237	"result"	"bigint"	64	0	0
-2681	237	"arg_1"	"bigint"	64	0	1
+2656	228	"arg_2"	"bigint"	64	0	2
+2657	229	"result"	"wrd"	64	0	0
+2658	229	"arg_1"	"wrd"	64	0	1
+2659	229	"arg_2"	"wrd"	64	0	2
+2660	230	"result"	"wrd"	64	0	0
+2661	230	"arg_1"	"wrd"	64	0	1
+2662	230	"arg_2"	"wrd"	64	0	2
+2663	231	"result"	"wrd"	64	0	0
+2664	231	"arg_1"	"wrd"	64	0	1
+2665	231	"arg_2"	"wrd"	64	0	2
+2666	232	"result"	"wrd"	64	0	0
+2667	232	"arg_1"	"wrd"	64	0	1
+2668	232	"arg_2"	"wrd"	64	0	2
+2669	233	"result"	"wrd"	64	0	0
+2670	233	"arg_1"	"wrd"	64	0	1
+2671	233	"arg_2"	"wrd"	64	0	2
+2672	234	"result"	"wrd"	64	0	0
+2673	234	"arg_1"	"wrd"	64	0	1
+2674	234	"arg_2"	"wrd"	64	0	2
+2675	235	"result"	"wrd"	64	0	0
+2676	235	"arg_1"	"wrd"	64	0	1
+2677	235	"arg_2"	"wrd"	64	0	2
+2678	236	"result"	"wrd"	64	0	0
+2679	236	"arg_1"	"wrd"	64	0	1
+2680	237	"result"	"wrd"	64	0	0
+2681	237	"arg_1"	"wrd"	64	0	1
 2682	237	"arg_2"	"int"	32	0	2
-2683	238	"result"	"bigint"	64	0	0
-2684	238	"arg_1"	"bigint"	64	0	1
+2683	238	"result"	"wrd"	64	0	0
+2684	238	"arg_1"	"wrd"	64	0	1
 2685	238	"arg_2"	"int"	32	0	2
-2686	239	"result"	"bigint"	64	0	0
-2687	239	"arg_1"	"bigint"	64	0	1
-2688	240	"result"	"bigint"	64	0	0
-2689	240	"arg_1"	"bigint"	64	0	1
+2686	239	"result"	"wrd"	64	0	0
+2687	239	"arg_1"	"wrd"	64	0	1
+2688	240	"result"	"wrd"	64	0	0
+2689	240	"arg_1"	"wrd"	64	0	1
 2690	241	"result"	"tinyint"	8	0	0
-2691	241	"arg_1"	"bigint"	64	0	1
-2692	242	"result"	"bigint"	64	0	0
-2693	242	"arg_1"	"bigint"	64	0	1
-2694	242	"arg_2"	"bigint"	64	0	2
-2695	243	"result"	"bigint"	64	0	0
-2696	243	"arg_1"	"bigint"	64	0	1
-2697	243	"arg_2"	"bigint"	64	0	2
+2691	241	"arg_1"	"wrd"	64	0	1
+2692	242	"result"	"wrd"	64	0	0
+2693	242	"arg_1"	"wrd"	64	0	1
+2694	242	"arg_2"	"wrd"	64	0	2
+2695	243	"result"	"wrd"	64	0	0
+2696	243	"arg_1"	"wrd"	64	0	1
+2697	243	"arg_2"	"wrd"	64	0	2
 2698	244	"result"	"month_interval"	32	0	0
 2699	244	"arg_1"	"month_interval"	32	0	1
-2700	244	"arg_2"	"bigint"	64	0	2
+2700	244	"arg_2"	"wrd"	64	0	2
 2701	245	"result"	"month_interval"	32	0	0
 2702	245	"arg_1"	"month_interval"	32	0	1
-2703	245	"arg_2"	"bigint"	64	0	2
+2703	245	"arg_2"	"wrd"	64	0	2
 2704	246	"result"	"month_interval"	32	0	0
 2705	246	"arg_1"	"month_interval"	32	0	1
-2706	246	"arg_2"	"bigint"	64	0	2
+2706	246	"arg_2"	"wrd"	64	0	2
 2707	247	"result"	"month_interval"	32	0	0
 2708	247	"arg_1"	"month_interval"	32	0	1
-2709	247	"arg_2"	"bigint"	64	0	2
+2709	247	"arg_2"	"wrd"	64	0	2
 2710	248	"result"	"sec_interval"	19	0	0
 2711	248	"arg_1"	"sec_interval"	19	0	1
-2712	248	"arg_2"	"bigint"	64	0	2
+2712	248	"arg_2"	"wrd"	64	0	2
 2713	249	"result"	"sec_interval"	19	0	0
 2714	249	"arg_1"	"sec_interval"	19	0	1
-2715	249	"arg_2"	"bigint"	64	0	2
+2715	249	"arg_2"	"wrd"	64	0	2
 2716	250	"result"	"sec_interval"	19	0	0
 2717	250	"arg_1"	"sec_interval"	19	0	1
-2718	250	"arg_2"	"bigint"	64	0	2
+2718	250	"arg_2"	"wrd"	64	0	2
 2719	251	"result"	"sec_interval"	19	0	0
 2720	251	"arg_1"	"sec_interval"	19	0	1
-2721	251	"arg_2"	"bigint"	64	0	2
+2721	251	"arg_2"	"wrd"	64	0	2
 2722	252	"result"	"decimal"	2	0	0
 2723	252	"arg_1"	"decimal"	2	0	1
 2724	252	"arg_2"	"decimal"	2	0	2
@@ -2973,9 +2973,9 @@ COPY 3383 RECORDS INTO "sys"."args" FROM stdin USING DELIMITERS '\t','\n','"';
 3179	413	"arg_2"	"decimal"	18	0	2
 3180	414	"result"	"decimal"	18	0	0
 3181	414	"arg_1"	"decimal"	18	0	1
-3182	414	"arg_2"	"wrd"	32	0	2
+3182	414	"arg_2"	"wrd"	64	0	2
 3183	415	"result"	"decimal"	18	0	0
-3184	415	"arg_1"	"wrd"	32	0	1
+3184	415	"arg_1"	"wrd"	64	0	1
 3185	415	"arg_2"	"decimal"	18	0	2
 3186	416	"result"	"decimal"	18	0	0
 3187	416	"arg_1"	"decimal"	18	0	1
@@ -3026,10 +3026,10 @@ COPY 3383 RECORDS INTO "sys"."args" FROM stdin USING DELIMITERS '\t','\n','"';
 3232	431	"arg_1"	"oid"	31	0	1
 3233	431	"arg_2"	"tinyint"	8	0	2
 3234	432	"result"	"tinyint"	8	0	0
-3235	432	"arg_1"	"wrd"	32	0	1
+3235	432	"arg_1"	"bigint"	64	0	1
 3236	432	"arg_2"	"tinyint"	8	0	2
 3237	433	"result"	"tinyint"	8	0	0
-3238	433	"arg_1"	"bigint"	64	0	1
+3238	433	"arg_1"	"wrd"	64	0	1
 3239	433	"arg_2"	"tinyint"	8	0	2
 3240	434	"result"	"tinyint"	8	0	0
 3241	434	"arg_1"	"decimal"	2	0	1
@@ -3086,10 +3086,10 @@ COPY 3383 RECORDS INTO "sys"."args" FROM stdin USING DELIMITERS '\t','\n','"';
 3292	451	"arg_1"	"oid"	31	0	1
 3293	451	"arg_2"	"smallint"	16	0	2
 3294	452	"result"	"smallint"	16	0	0
-3295	452	"arg_1"	"wrd"	32	0	1
+3295	452	"arg_1"	"bigint"	64	0	1
 3296	452	"arg_2"	"smallint"	16	0	2
 3297	453	"result"	"smallint"	16	0	0
-3298	453	"arg_1"	"bigint"	64	0	1
+3298	453	"arg_1"	"wrd"	64	0	1
 3299	453	"arg_2"	"smallint"	16	0	2
 3300	454	"result"	"smallint"	16	0	0
 3301	454	"arg_1"	"decimal"	2	0	1
@@ -3146,10 +3146,10 @@ COPY 3383 RECORDS INTO "sys"."args" FROM stdin USING DELIMITERS '\t','\n','"';
 3352	471	"arg_1"	"oid"	31	0	1
 3353	471	"arg_2"	"int"	32	0	2
 3354	472	"result"	"int"	32	0	0
-3355	472	"arg_1"	"wrd"	32	0	1
+3355	472	"arg_1"	"bigint"	64	0	1
 3356	472	"arg_2"	"int"	32	0	2
 3357	473	"result"	"int"	32	0	0
-3358	473	"arg_1"	"bigint"	64	0	1
+3358	473	"arg_1"	"wrd"	64	0	1
 3359	473	"arg_2"	"int"	32	0	2
 3360	474	"result"	"int"	32	0	0
 3361	474	"arg_1"	"decimal"	2	0	1
@@ -3206,10 +3206,10 @@ COPY 3383 RECORDS INTO "sys"."args" FROM stdin USING DELIMITERS '\t','\n','"';
 3412	491	"arg_1"	"oid"	31	0	1
 3413	491	"arg_2"	"oid"	31	0	2
 3414	492	"result"	"oid"	31	0	0
-3415	492	"arg_1"	"wrd"	32	0	1
+3415	492	"arg_1"	"bigint"	64	0	1
 3416	492	"arg_2"	"oid"	31	0	2
 3417	493	"result"	"oid"	31	0	0
-3418	493	"arg_1"	"bigint"	64	0	1
+3418	493	"arg_1"	"wrd"	64	0	1
 3419	493	"arg_2"	"oid"	31	0	2
 3420	494	"result"	"oid"	31	0	0
 3421	494	"arg_1"	"decimal"	2	0	1
@@ -3253,126 +3253,126 @@ COPY 3383 RECORDS INTO "sys"."args" FROM stdin USING DELIMITERS '\t','\n','"';
 3459	507	"result"	"oid"	31	0	0
 3460	507	"arg_1"	"blob"	0	0	1
 3461	507	"arg_2"	"oid"	31	0	2
-3462	508	"result"	"wrd"	32	0	0
+3462	508	"result"	"bigint"	64	0	0
 3463	508	"arg_1"	"tinyint"	8	0	1
-3464	508	"arg_2"	"wrd"	32	0	2
-3465	509	"result"	"wrd"	32	0	0
+3464	508	"arg_2"	"bigint"	64	0	2
+3465	509	"result"	"bigint"	64	0	0
 3466	509	"arg_1"	"smallint"	16	0	1
-3467	509	"arg_2"	"wrd"	32	0	2
-3468	510	"result"	"wrd"	32	0	0
+3467	509	"arg_2"	"bigint"	64	0	2
+3468	510	"result"	"bigint"	64	0	0
 3469	510	"arg_1"	"int"	32	0	1
-3470	510	"arg_2"	"wrd"	32	0	2
-3471	511	"result"	"wrd"	32	0	0
+3470	510	"arg_2"	"bigint"	64	0	2
+3471	511	"result"	"bigint"	64	0	0
 3472	511	"arg_1"	"oid"	31	0	1
-3473	511	"arg_2"	"wrd"	32	0	2
-3474	512	"result"	"wrd"	32	0	0
-3475	512	"arg_1"	"wrd"	32	0	1
-3476	512	"arg_2"	"wrd"	32	0	2
-3477	513	"result"	"wrd"	32	0	0
-3478	513	"arg_1"	"bigint"	64	0	1
-3479	513	"arg_2"	"wrd"	32	0	2
-3480	514	"result"	"wrd"	32	0	0
+3473	511	"arg_2"	"bigint"	64	0	2
+3474	512	"result"	"bigint"	64	0	0
+3475	512	"arg_1"	"bigint"	64	0	1
+3476	512	"arg_2"	"bigint"	64	0	2
+3477	513	"result"	"bigint"	64	0	0
+3478	513	"arg_1"	"wrd"	64	0	1
+3479	513	"arg_2"	"bigint"	64	0	2
+3480	514	"result"	"bigint"	64	0	0
 3481	514	"arg_1"	"decimal"	2	0	1
-3482	514	"arg_2"	"wrd"	32	0	2
-3483	515	"result"	"wrd"	32	0	0
+3482	514	"arg_2"	"bigint"	64	0	2
+3483	515	"result"	"bigint"	64	0	0
 3484	515	"arg_1"	"decimal"	4	0	1
-3485	515	"arg_2"	"wrd"	32	0	2
-3486	516	"result"	"wrd"	32	0	0
+3485	515	"arg_2"	"bigint"	64	0	2
+3486	516	"result"	"bigint"	64	0	0
 3487	516	"arg_1"	"decimal"	9	0	1
-3488	516	"arg_2"	"wrd"	32	0	2
-3489	517	"result"	"wrd"	32	0	0
+3488	516	"arg_2"	"bigint"	64	0	2
+3489	517	"result"	"bigint"	64	0	0
 3490	517	"arg_1"	"decimal"	18	0	1
-3491	517	"arg_2"	"wrd"	32	0	2
-3492	518	"result"	"wrd"	32	0	0
+3491	517	"arg_2"	"bigint"	64	0	2
+3492	518	"result"	"bigint"	64	0	0
 3493	518	"arg_1"	"real"	24	0	1
-3494	518	"arg_2"	"wrd"	32	0	2
-3495	519	"result"	"wrd"	32	0	0
+3494	518	"arg_2"	"bigint"	64	0	2
+3495	519	"result"	"bigint"	64	0	0
 3496	519	"arg_1"	"double"	53	0	1
-3497	519	"arg_2"	"wrd"	32	0	2
-3498	520	"result"	"wrd"	32	0	0
+3497	519	"arg_2"	"bigint"	64	0	2
+3498	520	"result"	"bigint"	64	0	0
 3499	520	"arg_1"	"month_interval"	32	0	1
-3500	520	"arg_2"	"wrd"	32	0	2
-3501	521	"result"	"wrd"	32	0	0
+3500	520	"arg_2"	"bigint"	64	0	2
+3501	521	"result"	"bigint"	64	0	0
 3502	521	"arg_1"	"sec_interval"	19	0	1
-3503	521	"arg_2"	"wrd"	32	0	2
-3504	522	"result"	"wrd"	32	0	0
+3503	521	"arg_2"	"bigint"	64	0	2
+3504	522	"result"	"bigint"	64	0	0
 3505	522	"arg_1"	"time"	7	0	1
-3506	522	"arg_2"	"wrd"	32	0	2
-3507	523	"result"	"wrd"	32	0	0
+3506	522	"arg_2"	"bigint"	64	0	2
+3507	523	"result"	"bigint"	64	0	0
 3508	523	"arg_1"	"timetz"	7	0	1
-3509	523	"arg_2"	"wrd"	32	0	2
-3510	524	"result"	"wrd"	32	0	0
+3509	523	"arg_2"	"bigint"	64	0	2
+3510	524	"result"	"bigint"	64	0	0
 3511	524	"arg_1"	"date"	0	0	1
-3512	524	"arg_2"	"wrd"	32	0	2
-3513	525	"result"	"wrd"	32	0	0
+3512	524	"arg_2"	"bigint"	64	0	2
+3513	525	"result"	"bigint"	64	0	0
 3514	525	"arg_1"	"timestamp"	7	0	1
-3515	525	"arg_2"	"wrd"	32	0	2
-3516	526	"result"	"wrd"	32	0	0
+3515	525	"arg_2"	"bigint"	64	0	2
+3516	526	"result"	"bigint"	64	0	0
 3517	526	"arg_1"	"timestamptz"	7	0	1
-3518	526	"arg_2"	"wrd"	32	0	2
-3519	527	"result"	"wrd"	32	0	0
+3518	526	"arg_2"	"bigint"	64	0	2
+3519	527	"result"	"bigint"	64	0	0
 3520	527	"arg_1"	"blob"	0	0	1
-3521	527	"arg_2"	"wrd"	32	0	2
-3522	528	"result"	"bigint"	64	0	0
+3521	527	"arg_2"	"bigint"	64	0	2
+3522	528	"result"	"wrd"	64	0	0
 3523	528	"arg_1"	"tinyint"	8	0	1
-3524	528	"arg_2"	"bigint"	64	0	2
-3525	529	"result"	"bigint"	64	0	0
+3524	528	"arg_2"	"wrd"	64	0	2
+3525	529	"result"	"wrd"	64	0	0
 3526	529	"arg_1"	"smallint"	16	0	1
-3527	529	"arg_2"	"bigint"	64	0	2
-3528	530	"result"	"bigint"	64	0	0
+3527	529	"arg_2"	"wrd"	64	0	2
+3528	530	"result"	"wrd"	64	0	0
 3529	530	"arg_1"	"int"	32	0	1
-3530	530	"arg_2"	"bigint"	64	0	2
-3531	531	"result"	"bigint"	64	0	0
+3530	530	"arg_2"	"wrd"	64	0	2
+3531	531	"result"	"wrd"	64	0	0
 3532	531	"arg_1"	"oid"	31	0	1
-3533	531	"arg_2"	"bigint"	64	0	2
-3534	532	"result"	"bigint"	64	0	0
-3535	532	"arg_1"	"wrd"	32	0	1
-3536	532	"arg_2"	"bigint"	64	0	2
-3537	533	"result"	"bigint"	64	0	0
-3538	533	"arg_1"	"bigint"	64	0	1
-3539	533	"arg_2"	"bigint"	64	0	2
-3540	534	"result"	"bigint"	64	0	0
+3533	531	"arg_2"	"wrd"	64	0	2
+3534	532	"result"	"wrd"	64	0	0
+3535	532	"arg_1"	"bigint"	64	0	1
+3536	532	"arg_2"	"wrd"	64	0	2
+3537	533	"result"	"wrd"	64	0	0
+3538	533	"arg_1"	"wrd"	64	0	1
+3539	533	"arg_2"	"wrd"	64	0	2
+3540	534	"result"	"wrd"	64	0	0
 3541	534	"arg_1"	"decimal"	2	0	1
-3542	534	"arg_2"	"bigint"	64	0	2
-3543	535	"result"	"bigint"	64	0	0
+3542	534	"arg_2"	"wrd"	64	0	2
+3543	535	"result"	"wrd"	64	0	0
 3544	535	"arg_1"	"decimal"	4	0	1
-3545	535	"arg_2"	"bigint"	64	0	2
-3546	536	"result"	"bigint"	64	0	0
+3545	535	"arg_2"	"wrd"	64	0	2
+3546	536	"result"	"wrd"	64	0	0
 3547	536	"arg_1"	"decimal"	9	0	1
-3548	536	"arg_2"	"bigint"	64	0	2
-3549	537	"result"	"bigint"	64	0	0
+3548	536	"arg_2"	"wrd"	64	0	2
+3549	537	"result"	"wrd"	64	0	0
 3550	537	"arg_1"	"decimal"	18	0	1
-3551	537	"arg_2"	"bigint"	64	0	2
-3552	538	"result"	"bigint"	64	0	0
+3551	537	"arg_2"	"wrd"	64	0	2
+3552	538	"result"	"wrd"	64	0	0
 3553	538	"arg_1"	"real"	24	0	1
-3554	538	"arg_2"	"bigint"	64	0	2
-3555	539	"result"	"bigint"	64	0	0
+3554	538	"arg_2"	"wrd"	64	0	2
+3555	539	"result"	"wrd"	64	0	0
 3556	539	"arg_1"	"double"	53	0	1
-3557	539	"arg_2"	"bigint"	64	0	2
-3558	540	"result"	"bigint"	64	0	0
+3557	539	"arg_2"	"wrd"	64	0	2
+3558	540	"result"	"wrd"	64	0	0
 3559	540	"arg_1"	"month_interval"	32	0	1
-3560	540	"arg_2"	"bigint"	64	0	2
-3561	541	"result"	"bigint"	64	0	0
+3560	540	"arg_2"	"wrd"	64	0	2
+3561	541	"result"	"wrd"	64	0	0
 3562	541	"arg_1"	"sec_interval"	19	0	1
-3563	541	"arg_2"	"bigint"	64	0	2
-3564	542	"result"	"bigint"	64	0	0
+3563	541	"arg_2"	"wrd"	64	0	2
+3564	542	"result"	"wrd"	64	0	0
 3565	542	"arg_1"	"time"	7	0	1
-3566	542	"arg_2"	"bigint"	64	0	2
-3567	543	"result"	"bigint"	64	0	0
+3566	542	"arg_2"	"wrd"	64	0	2
+3567	543	"result"	"wrd"	64	0	0
 3568	543	"arg_1"	"timetz"	7	0	1
-3569	543	"arg_2"	"bigint"	64	0	2
-3570	544	"result"	"bigint"	64	0	0
+3569	543	"arg_2"	"wrd"	64	0	2
+3570	544	"result"	"wrd"	64	0	0
 3571	544	"arg_1"	"date"	0	0	1
-3572	544	"arg_2"	"bigint"	64	0	2
-3573	545	"result"	"bigint"	64	0	0
+3572	544	"arg_2"	"wrd"	64	0	2
+3573	545	"result"	"wrd"	64	0	0
 3574	545	"arg_1"	"timestamp"	7	0	1
-3575	545	"arg_2"	"bigint"	64	0	2
-3576	546	"result"	"bigint"	64	0	0
+3575	545	"arg_2"	"wrd"	64	0	2
+3576	546	"result"	"wrd"	64	0	0
 3577	546	"arg_1"	"timestamptz"	7	0	1
-3578	546	"arg_2"	"bigint"	64	0	2
-3579	547	"result"	"bigint"	64	0	0
+3578	546	"arg_2"	"wrd"	64	0	2
+3579	547	"result"	"wrd"	64	0	0
 3580	547	"arg_1"	"blob"	0	0	1
-3581	547	"arg_2"	"bigint"	64	0	2
+3581	547	"arg_2"	"wrd"	64	0	2
 3582	548	"result"	"decimal"	2	0	0
 3583	548	"arg_1"	"tinyint"	8	0	1
 3584	548	"arg_2"	"decimal"	2	0	2
@@ -3386,10 +3386,10 @@ COPY 3383 RECORDS INTO "sys"."args" FROM stdin USING DELIMITERS '\t','\n','"';
 3592	551	"arg_1"	"oid"	31	0	1
 3593	551	"arg_2"	"decimal"	2	0	2
 3594	552	"result"	"decimal"	2	0	0
-3595	552	"arg_1"	"wrd"	32	0	1
+3595	552	"arg_1"	"bigint"	64	0	1
 3596	552	"arg_2"	"decimal"	2	0	2
 3597	553	"result"	"decimal"	2	0	0
-3598	553	"arg_1"	"bigint"	64	0	1
+3598	553	"arg_1"	"wrd"	64	0	1
 3599	553	"arg_2"	"decimal"	2	0	2
 3600	554	"result"	"decimal"	2	0	0
 3601	554	"arg_1"	"decimal"	2	0	1
@@ -3446,10 +3446,10 @@ COPY 3383 RECORDS INTO "sys"."args" FROM stdin USING DELIMITERS '\t','\n','"';
 3652	571	"arg_1"	"oid"	31	0	1
 3653	571	"arg_2"	"decimal"	4	0	2
 3654	572	"result"	"decimal"	4	0	0
-3655	572	"arg_1"	"wrd"	32	0	1
+3655	572	"arg_1"	"bigint"	64	0	1
 3656	572	"arg_2"	"decimal"	4	0	2
 3657	573	"result"	"decimal"	4	0	0
-3658	573	"arg_1"	"bigint"	64	0	1
+3658	573	"arg_1"	"wrd"	64	0	1
 3659	573	"arg_2"	"decimal"	4	0	2
 3660	574	"result"	"decimal"	4	0	0
 3661	574	"arg_1"	"decimal"	2	0	1
@@ -3506,10 +3506,10 @@ COPY 3383 RECORDS INTO "sys"."args" FROM stdin USING DELIMITERS '\t','\n','"';
 3712	591	"arg_1"	"oid"	31	0	1
 3713	591	"arg_2"	"decimal"	9	0	2
 3714	592	"result"	"decimal"	9	0	0
-3715	592	"arg_1"	"wrd"	32	0	1
+3715	592	"arg_1"	"bigint"	64	0	1
 3716	592	"arg_2"	"decimal"	9	0	2
 3717	593	"result"	"decimal"	9	0	0
-3718	593	"arg_1"	"bigint"	64	0	1
+3718	593	"arg_1"	"wrd"	64	0	1
 3719	593	"arg_2"	"decimal"	9	0	2
 3720	594	"result"	"decimal"	9	0	0
 3721	594	"arg_1"	"decimal"	2	0	1
@@ -3566,10 +3566,10 @@ COPY 3383 RECORDS INTO "sys"."args" FROM stdin USING DELIMITERS '\t','\n','"';
 3772	611	"arg_1"	"oid"	31	0	1
 3773	611	"arg_2"	"decimal"	18	0	2
 3774	612	"result"	"decimal"	18	0	0
-3775	612	"arg_1"	"wrd"	32	0	1
+3775	612	"arg_1"	"bigint"	64	0	1
 3776	612	"arg_2"	"decimal"	18	0	2
 3777	613	"result"	"decimal"	18	0	0
-3778	613	"arg_1"	"bigint"	64	0	1
+3778	613	"arg_1"	"wrd"	64	0	1
 3779	613	"arg_2"	"decimal"	18	0	2
 3780	614	"result"	"decimal"	18	0	0
 3781	614	"arg_1"	"decimal"	2	0	1
@@ -3626,10 +3626,10 @@ COPY 3383 RECORDS INTO "sys"."args" FROM stdin USING DELIMITERS '\t','\n','"';
 3832	631	"arg_1"	"oid"	31	0	1
 3833	631	"arg_2"	"real"	24	0	2
 3834	632	"result"	"real"	24	0	0
-3835	632	"arg_1"	"wrd"	32	0	1
+3835	632	"arg_1"	"bigint"	64	0	1
 3836	632	"arg_2"	"real"	24	0	2
 3837	633	"result"	"real"	24	0	0
-3838	633	"arg_1"	"bigint"	64	0	1
+3838	633	"arg_1"	"wrd"	64	0	1
 3839	633	"arg_2"	"real"	24	0	2
 3840	634	"result"	"real"	24	0	0
 3841	634	"arg_1"	"decimal"	2	0	1
@@ -3686,10 +3686,10 @@ COPY 3383 RECORDS INTO "sys"."args" FROM stdin USING DELIMITERS '\t','\n','"';
 3892	651	"arg_1"	"oid"	31	0	1
 3893	651	"arg_2"	"double"	53	0	2
 3894	652	"result"	"double"	53	0	0
-3895	652	"arg_1"	"wrd"	32	0	1
+3895	652	"arg_1"	"bigint"	64	0	1
 3896	652	"arg_2"	"double"	53	0	2
 3897	653	"result"	"double"	53	0	0
-3898	653	"arg_1"	"bigint"	64	0	1
+3898	653	"arg_1"	"wrd"	64	0	1
 3899	653	"arg_2"	"double"	53	0	2
 3900	654	"result"	"double"	53	0	0
 3901	654	"arg_1"	"decimal"	2	0	1
@@ -3746,10 +3746,10 @@ COPY 3383 RECORDS INTO "sys"."args" FROM stdin USING DELIMITERS '\t','\n','"';
 3952	671	"arg_1"	"oid"	31	0	1
 3953	671	"arg_2"	"month_interval"	32	0	2
 3954	672	"result"	"month_interval"	32	0	0
-3955	672	"arg_1"	"wrd"	32	0	1
+3955	672	"arg_1"	"bigint"	64	0	1
 3956	672	"arg_2"	"month_interval"	32	0	2
 3957	673	"result"	"month_interval"	32	0	0
-3958	673	"arg_1"	"bigint"	64	0	1
+3958	673	"arg_1"	"wrd"	64	0	1
 3959	673	"arg_2"	"month_interval"	32	0	2
 3960	674	"result"	"month_interval"	32	0	0
 3961	674	"arg_1"	"decimal"	2	0	1
@@ -3806,10 +3806,10 @@ COPY 3383 RECORDS INTO "sys"."args" FROM stdin USING DELIMITERS '\t','\n','"';
 4012	691	"arg_1"	"oid"	31	0	1
 4013	691	"arg_2"	"sec_interval"	19	0	2
 4014	692	"result"	"sec_interval"	19	0	0
-4015	692	"arg_1"	"wrd"	32	0	1
+4015	692	"arg_1"	"bigint"	64	0	1
 4016	692	"arg_2"	"sec_interval"	19	0	2
 4017	693	"result"	"sec_interval"	19	0	0
-4018	693	"arg_1"	"bigint"	64	0	1
+4018	693	"arg_1"	"wrd"	64	0	1
 4019	693	"arg_2"	"sec_interval"	19	0	2
 4020	694	"result"	"sec_interval"	19	0	0
 4021	694	"arg_1"	"decimal"	2	0	1
@@ -3866,10 +3866,10 @@ COPY 3383 RECORDS INTO "sys"."args" FROM stdin USING DELIMITERS '\t','\n','"';
 4072	711	"arg_1"	"oid"	31	0	1
 4073	711	"arg_2"	"time"	7	0	2
 4074	712	"result"	"time"	7	0	0
-4075	712	"arg_1"	"wrd"	32	0	1
+4075	712	"arg_1"	"bigint"	64	0	1
 4076	712	"arg_2"	"time"	7	0	2
 4077	713	"result"	"time"	7	0	0
-4078	713	"arg_1"	"bigint"	64	0	1
+4078	713	"arg_1"	"wrd"	64	0	1
 4079	713	"arg_2"	"time"	7	0	2
 4080	714	"result"	"time"	7	0	0
 4081	714	"arg_1"	"decimal"	2	0	1
@@ -3926,10 +3926,10 @@ COPY 3383 RECORDS INTO "sys"."args" FROM stdin USING DELIMITERS '\t','\n','"';
 4132	731	"arg_1"	"oid"	31	0	1
 4133	731	"arg_2"	"timetz"	7	0	2
 4134	732	"result"	"timetz"	7	0	0
-4135	732	"arg_1"	"wrd"	32	0	1
+4135	732	"arg_1"	"bigint"	64	0	1
 4136	732	"arg_2"	"timetz"	7	0	2
 4137	733	"result"	"timetz"	7	0	0
-4138	733	"arg_1"	"bigint"	64	0	1
+4138	733	"arg_1"	"wrd"	64	0	1
 4139	733	"arg_2"	"timetz"	7	0	2
 4140	734	"result"	"timetz"	7	0	0
 4141	734	"arg_1"	"decimal"	2	0	1
@@ -3986,10 +3986,10 @@ COPY 3383 RECORDS INTO "sys"."args" FROM stdin USING DELIMITERS '\t','\n','"';
 4192	751	"arg_1"	"oid"	31	0	1
 4193	751	"arg_2"	"date"	0	0	2
 4194	752	"result"	"date"	0	0	0
-4195	752	"arg_1"	"wrd"	32	0	1
+4195	752	"arg_1"	"bigint"	64	0	1
 4196	752	"arg_2"	"date"	0	0	2
 4197	753	"result"	"date"	0	0	0
-4198	753	"arg_1"	"bigint"	64	0	1
+4198	753	"arg_1"	"wrd"	64	0	1
 4199	753	"arg_2"	"date"	0	0	2
 4200	754	"result"	"date"	0	0	0
 4201	754	"arg_1"	"decimal"	2	0	1
@@ -4046,10 +4046,10 @@ COPY 3383 RECORDS INTO "sys"."args" FROM stdin USING DELIMITERS '\t','\n','"';
 4252	771	"arg_1"	"oid"	31	0	1
 4253	771	"arg_2"	"timestamp"	7	0	2
 4254	772	"result"	"timestamp"	7	0	0
-4255	772	"arg_1"	"wrd"	32	0	1
+4255	772	"arg_1"	"bigint"	64	0	1
 4256	772	"arg_2"	"timestamp"	7	0	2
 4257	773	"result"	"timestamp"	7	0	0
-4258	773	"arg_1"	"bigint"	64	0	1
+4258	773	"arg_1"	"wrd"	64	0	1
 4259	773	"arg_2"	"timestamp"	7	0	2
 4260	774	"result"	"timestamp"	7	0	0
 4261	774	"arg_1"	"decimal"	2	0	1
@@ -4106,10 +4106,10 @@ COPY 3383 RECORDS INTO "sys"."args" FROM stdin USING DELIMITERS '\t','\n','"';
 4312	791	"arg_1"	"oid"	31	0	1
 4313	791	"arg_2"	"timestamptz"	7	0	2
 4314	792	"result"	"timestamptz"	7	0	0
-4315	792	"arg_1"	"wrd"	32	0	1
+4315	792	"arg_1"	"bigint"	64	0	1
 4316	792	"arg_2"	"timestamptz"	7	0	2
 4317	793	"result"	"timestamptz"	7	0	0
-4318	793	"arg_1"	"bigint"	64	0	1
+4318	793	"arg_1"	"wrd"	64	0	1
 4319	793	"arg_2"	"timestamptz"	7	0	2
 4320	794	"result"	"timestamptz"	7	0	0
 4321	794	"arg_1"	"decimal"	2	0	1
@@ -4166,10 +4166,10 @@ COPY 3383 RECORDS INTO "sys"."args" FROM stdin USING DELIMITERS '\t','\n','"';
 4372	811	"arg_1"	"oid"	31	0	1
 4373	811	"arg_2"	"blob"	0	0	2
 4374	812	"result"	"blob"	0	0	0
-4375	812	"arg_1"	"wrd"	32	0	1
+4375	812	"arg_1"	"bigint"	64	0	1
 4376	812	"arg_2"	"blob"	0	0	2
 4377	813	"result"	"blob"	0	0	0
-4378	813	"arg_1"	"bigint"	64	0	1
+4378	813	"arg_1"	"wrd"	64	0	1
 4379	813	"arg_2"	"blob"	0	0	2
 4380	814	"result"	"blob"	0	0	0
 4381	814	"arg_1"	"decimal"	2	0	1
@@ -4830,8 +4830,8 @@ COPY 3383 RECORDS INTO "sys"."args" FROM stdin USING DELIMITERS '\t','\n','"';
 5036	53	"arg"	"int"	32	0	1
 5037	54	"result"	"bigint"	64	0	0
 5038	54	"arg"	"bigint"	64	0	1
-5039	55	"result"	"wrd"	32	0	0
-5040	55	"arg"	"wrd"	32	0	1
+5039	55	"result"	"wrd"	64	0	0
+5040	55	"arg"	"wrd"	64	0	1
 5041	56	"result"	"decimal"	18	0	0
 5042	56	"arg"	"decimal"	2	0	1
 5043	57	"result"	"decimal"	18	0	0
@@ -4866,8 +4866,8 @@ COPY 3383 RECORDS INTO "sys"."args" FROM stdin USING DELIMITERS '\t','\n','"';
 5072	83	"arg"	"double"	53	0	1
 5073	84	"result"	"double"	53	0	0
 5074	84	"arg"	"double"	53	0	1
-5075	85	"result"	"wrd"	32	0	0
-5076	86	"result"	"wrd"	32	0	0
+5075	85	"result"	"wrd"	64	0	0
+5076	86	"result"	"wrd"	64	0	0
 5102	5101	"result"	"table"	5098	0	0
 5106	5105	"result"	"table"	5103	0	0
 5114	5113	"result"	"table"	5111	0	0
@@ -5039,7 +5039,7 @@ COPY 3383 RECORDS INTO "sys"."args" FROM stdin USING DELIMITERS '\t','\n','"';
 5698	5697	"result"	"double"	53	0	0
 5699	5697	"val"	"int"	32	0	1
 5702	5701	"result"	"double"	53	0	0
-5703	5701	"val"	"wrd"	32	0	1
+5703	5701	"val"	"wrd"	64	0	1
 5706	5705	"result"	"double"	53	0	0
 5707	5705	"val"	"bigint"	64	0	1
 5710	5709	"result"	"double"	53	0	0
@@ -5059,7 +5059,7 @@ COPY 3383 RECORDS INTO "sys"."args" FROM stdin USING DELIMITERS '\t','\n','"';
 5738	5737	"result"	"double"	53	0	0
 5739	5737	"val"	"int"	32	0	1
 5742	5741	"result"	"double"	53	0	0
-5743	5741	"val"	"wrd"	32	0	1
+5743	5741	"val"	"wrd"	64	0	1
 5746	5745	"result"	"double"	53	0	0
 5747	5745	"val"	"bigint"	64	0	1
 5750	5749	"result"	"double"	53	0	0
@@ -5079,7 +5079,7 @@ COPY 3383 RECORDS INTO "sys"."args" FROM stdin USING DELIMITERS '\t','\n','"';
 5778	5777	"result"	"double"	53	0	0
 5779	5777	"val"	"int"	32	0	1
 5782	5781	"result"	"double"	53	0	0
-5783	5781	"val"	"wrd"	32	0	1
+5783	5781	"val"	"wrd"	64	0	1
 5786	5785	"result"	"double"	53	0	0
 5787	5785	"val"	"bigint"	64	0	1
 5790	5789	"result"	"double"	53	0	0
@@ -5099,7 +5099,7 @@ COPY 3383 RECORDS INTO "sys"."args" FROM stdin USING DELIMITERS '\t','\n','"';
 5818	5817	"result"	"double"	53	0	0
 5819	5817	"val"	"int"	32	0	1
 5822	5821	"result"	"double"	53	0	0
-5823	5821	"val"	"wrd"	32	0	1
+5823	5821	"val"	"wrd"	64	0	1
 5826	5825	"result"	"double"	53	0	0
 5827	5825	"val"	"bigint"	64	0	1
 5830	5829	"result"	"double"	53	0	0
@@ -5118,8 +5118,8 @@ COPY 3383 RECORDS INTO "sys"."args" FROM stdin USING DELIMITERS '\t','\n','"';
 5855	5853	"val"	"smallint"	16	0	1
 5858	5857	"result"	"int"	32	0	0
 5859	5857	"val"	"int"	32	0	1
-5862	5861	"result"	"wrd"	32	0	0
-5863	5861	"val"	"wrd"	32	0	1
+5862	5861	"result"	"wrd"	64	0	0
+5863	5861	"val"	"wrd"	64	0	1
 5866	5865	"result"	"bigint"	64	0	0
 5867	5865	"val"	"bigint"	64	0	1
 5870	5869	"result"	"real"	24	0	0
@@ -5141,9 +5141,9 @@ COPY 3383 RECORDS INTO "sys"."args" FROM stdin USING DELIMITERS '\t','\n','"';
 5900	5899	"result"	"int"	32	0	0
 5901	5899	"e1"	"int"	32	0	1
 5902	5899	"e2"	"int"	32	0	2
-5905	5904	"result"	"wrd"	32	0	0
-5906	5904	"e1"	"wrd"	32	0	1
-5907	5904	"e2"	"wrd"	32	0	2
+5905	5904	"result"	"wrd"	64	0	0
+5906	5904	"e1"	"wrd"	64	0	1
+5907	5904	"e2"	"wrd"	64	0	2
 5910	5909	"result"	"bigint"	64	0	0
 5911	5909	"e1"	"bigint"	64	0	1
 5912	5909	"e2"	"bigint"	64	0	2
@@ -5512,9 +5512,9 @@ COPY 199 RECORDS INTO "sys"."dependencies" FROM stdin USING DELIMITERS '\t','\n'
 35	5550	7
 985	5550	7
 971	5550	7
-229	5550	7
+206	5550	7
 982	5550	7
-230	5550	7
+207	5550	7
 32	5562	7
 427	5562	7
 113	5562	7
@@ -5535,14 +5535,14 @@ COPY 199 RECORDS INTO "sys"."dependencies" FROM stdin USING DELIMITERS '\t','\n'
 6209	6213	13
 6210	6213	13
 32	6215	7
-231	6215	7
-237	6215	7
+208	6215	7
+214	6215	7
 110	6221	7
 33	6221	7
-230	6221	7
-231	6221	7
+207	6221	7
+208	6221	7
 32	6227	7
-231	6227	7
+208	6227	7
 6201	6242	7
 6211	6242	7
 6202	6242	7
@@ -5563,7 +5563,7 @@ COPY 199 RECORDS INTO "sys"."dependencies" FROM stdin USING DELIMITERS '\t','\n'
 50	6263	5
 34	6263	5
 32	6263	5
-231	6263	5
+208	6263	5
 COMMIT;
 START TRANSACTION;
 CREATE TABLE "sys"."functions" (
@@ -8230,8 +8230,8 @@ COPY 44 RECORDS INTO "sys"."types" FROM stdin USING DELIMITERS '\t','\n','"';
 8	"sht"	"smallint"	16	1	2	6	0
 9	"int"	"int"	32	1	2	6	0
 10	"oid"	"oid"	31	0	2	6	0
-11	"wrd"	"wrd"	32	1	2	6	0
-12	"lng"	"bigint"	64	1	2	6	0
+11	"lng"	"bigint"	64	1	2	6	0
+12	"wrd"	"wrd"	64	1	2	6	0
 13	"bte"	"decimal"	2	1	10	8	0
 14	"sht"	"decimal"	4	1	10	8	0
 15	"int"	"decimal"	9	1	10	8	0
