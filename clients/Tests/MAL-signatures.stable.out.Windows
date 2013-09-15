@@ -2476,7 +2476,7 @@ command algebra.likesubselect(b:bat[:oid,:str],pat:str,esc:str,caseignore:bit,an
 address PCRElikesubselect1;
 comment Select all head values for which the tail value is "like"	the given (SQL-style) pattern.	Input is a dense-headed BAT, output is a dense-headed BAT with in	the tail the head value of the input BAT for which the	relationship holds.  The output BAT is sorted on the tail value.
 
-command algebra.leftfetchjoin(left:bat[:any_1,:oid],right:bat[:oid,:any_3]):bat[:any_1,:any_3] 
+command algebra.leftfetchjoin(left:bat[:oid,:oid],right:bat[:oid,:any_3]):bat[:oid,:any_3] 
 address ALGleftfetchjoin;
 comment Hook directly into the left fetch join implementation.
 
