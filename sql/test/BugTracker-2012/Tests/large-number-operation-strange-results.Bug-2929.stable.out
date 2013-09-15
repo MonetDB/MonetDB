@@ -48,12 +48,24 @@ Ready.
 # 14:36:23 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=riga" "--port=32568"
 # 14:36:23 >  
 
-#select convert (10000000 * 100000 * 11.51,decimal(15)) +convert (51.097 * 100000, decimal(15));
-% . # table_name
+#select                             10000000                *          100000 * 11.51                +          51.097 *          100000;
+% .L # table_name
+% sql_mul_single_value # name
+% decimal # type
+% 40 # length
+[ 11510005109700.000000	]
+#select convert (                   10000000                *          100000 * 11.51 , decimal(15)) + convert (51.097 *          100000 , decimal(15));
+% .L # table_name
 % sql_mul_single_value # name
 % decimal # type
 % 19 # length
 [ 11510005109700	]
+#select convert (convert(1000000000000000000 , decimal(20)) * 100000000000000 * 11.51 , decimal(35)) + convert (51.097 * 100000000000000 , decimal(35));
+% .L # table_name
+% sql_mul_single_value # name
+% decimal # type
+% 39 # length
+[ 1151000000000000005109700000000000	]
 
 # 14:36:23 >  
 # 14:36:23 >  "Done."
