@@ -1443,7 +1443,7 @@ rel_push_func_down(int *changes, mvc *sql, sql_rel *rel)
 								append(r->exps, ne);
 							else
 								append(l->exps, ne);
-							ne = exp_column(sql->sa, NULL, exp_name(ne), exp_subtype(ne), ne->card, has_nil(ne), is_intern(ne));
+							ne = exp_column(sql->sa, exp_relname(ne), exp_name(ne), exp_subtype(ne), ne->card, has_nil(ne), is_intern(ne));
 							(*changes)++;
 						}
 						e->l = ne;
@@ -1457,7 +1457,7 @@ rel_push_func_down(int *changes, mvc *sql, sql_rel *rel)
 								append(r->exps, ne);
 							else
 								append(l->exps, ne);
-							ne = exp_column(sql->sa, NULL, exp_name(ne), exp_subtype(ne), ne->card, has_nil(ne), is_intern(ne));
+							ne = exp_column(sql->sa, exp_relname(ne), exp_name(ne), exp_subtype(ne), ne->card, has_nil(ne), is_intern(ne));
 							(*changes)++;
 						}
 						e->r = ne;
@@ -1472,7 +1472,7 @@ rel_push_func_down(int *changes, mvc *sql, sql_rel *rel)
 									append(r->exps, ne);
 								else
 									append(l->exps, ne);
-								ne = exp_column(sql->sa, NULL, exp_name(ne), exp_subtype(ne), ne->card, has_nil(ne), is_intern(ne));
+								ne = exp_column(sql->sa, exp_relname(ne), exp_name(ne), exp_subtype(ne), ne->card, has_nil(ne), is_intern(ne));
 								(*changes)++;
 							}
 							e->f = ne;

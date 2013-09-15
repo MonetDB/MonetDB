@@ -1,0 +1,52 @@
+stdout of test 'crash_after_creation_of_unique_key.Bug-3363` in directory 'sql/test/BugTracker-2013` itself:
+
+
+# 16:50:25 >  
+# 16:50:25 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=33150" "--set" "mapi_usock=/var/tmp/mtest-2732/.s.monetdb.33150" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/niels/scratch/rc-clean/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2013" "--set" "mal_listing=0"
+# 16:50:25 >  
+
+# MonetDB 5 server v11.15.12
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2013', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 3.775 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2013 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://niels.nesco.mine.nu:33150/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-2732/.s.monetdb.33150
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 16:50:26 >  
+# 16:50:26 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-2732" "--port=33150"
+# 16:50:26 >  
+
+#CREATE TABLE mmtest10 (  
+#	a1  varchar(4)   NOT NULL,
+#   	a2  bigint       NOT NULL,
+#	a3  bigint       NOT NULL,
+#	a4  bigint       NOT NULL );
+#CREATE TABLE mmtest20 (  
+#	a1  varchar(9)   NOT NULL, 
+#	a2  bigint       NOT NULL,
+#	a3  bigint       NOT NULL,
+#	a4  bigint       NOT NULL );
+#ALTER TABLE mmtest20 ADD CONSTRAINT mmtest20_uk1 UNIQUE (a1,a2,a3,a4);
+#SELECT p.a1, p.a2, p.a3, v.a3  
+#  FROM mmtest10 v JOIN mmtest20 p 
+#    ON (p.a1 = v.a1 AND p.a2 = v.a2 AND p.a3 = v.a3 AND p.a4 = v.a4);
+% sys.p,	sys.p,	sys.p,	sys.v # table_name
+% a1,	a2,	a3,	a3 # name
+% varchar,	bigint,	bigint,	bigint # type
+% 0,	1,	1,	1 # length
+#drop table mmtest20;
+#drop table mmtest10;
+
+# 16:50:26 >  
+# 16:50:26 >  "Done."
+# 16:50:26 >  
+
