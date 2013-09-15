@@ -2744,11 +2744,11 @@ comment Select all BUNs that have tail values: {v| low <= v <= high}.	NIL bounda
 
 command algebra.subselect(b:bat[:oid,:any_1],s:bat[:oid,:oid],low:any_1,high:any_1,li:bit,hi:bit,anti:bit):bat[:oid,:oid] 
 address ALGsubselect2;
-comment Select all head values of the first input BAT for which the tail value	is in range and for which the head value occurs in the tail of the	second input BAT.	The first input is a dense-headed BAT, the second input is a	dense-headed BAT with sorted tail, output is a dense-headed BAT	with in the tail the head value of the input BAT for which the	tail value is between the values low and high (inclusive if li	respectively hi is set).  The output BAT is sorted on the tail	value.  If low or high is nil, the boundary is not considered	(effectively - and + infinity).  If anti is set, the result is the	complement.  Nil values in the tail are never matched, unless	low=nil, high=nil, li=1, hi=1, anti=0.  All non-nil values are	returned if low=nil, high=nil, and li, hi are not both 1, or anti=1.	Note that the output is suitable as second input for this	function.
+comment Select all head values of the first input BAT for which the tail value	is in range and for which the head value occurs in the tail of the	second input BAT.	The first input is a dense-headed BAT, the second input is a	dense-headed BAT with sorted tail, output is a dense-headed BAT	with in the tail the head value of the input BAT for which the	tail value is between the values low and high (inclusive if li	respectively hi is set).  The output BAT is sorted on the tail	value.  If low or high is nil, 
 
 command algebra.subselect(b:bat[:oid,:any_1],low:any_1,high:any_1,li:bit,hi:bit,anti:bit):bat[:oid,:oid] 
 address ALGsubselect1;
-comment Select all head values for which the tail value is in range.	Input is a dense-headed BAT, output is a dense-headed BAT with in	the tail the head value of the input BAT for which the tail value	is between the values low and high (inclusive if li respectively	hi is set).  The output BAT is sorted on the tail value.  If low	or high is nil, the boundary is not considered (effectively - and	+ infinity).  If anti is set, the result is the complement.  Nil	values in the tail are never matched, unless low=nil, high=nil,	li=1, hi=1, anti=0.  All non-nil values are returned if low=nil,	high=nil, and li, hi are not both 1, or anti=1.	Note that the output is suitable as second input for the other	version of this function.
+comment Select all head values for which the tail value is in range.	Input is a dense-headed BAT, output is a dense-headed BAT with in	the tail the head value of the input BAT for which the tail value	is between the values low and high (inclusive if li respectively	hi is set).  The output BAT is sorted on the tail value.  If low	or high is nil, the boundary is not considered (effectively - and	+ infinity).  If anti is set, the result is the complement.  Nil	values in the tail are never matched, unless lo
 
 command algebra.thetajoin(left:bat[:any_1,:any_2],right:bat[:any_2,:any_3],opname:int,estimate:lng):bat[:any_1,:any_3] 
 address ALGthetajoinEstimate;
@@ -31951,7 +31951,7 @@ comment alias for madvise(b, mode, mode, mode, mode)
 
 command bat.setMemoryAdvise(b:bat[:any_1,:any_2],head_mode:int,tail_mode:int,hheap_mode:int,theap_mode:int):bit 
 address BKCmadvise;
-comment Modern Operating Systems allow users to influence the buffer         management policy of virtual memory. This is a crucial feature         for database systems, and eliminates the need to reimplement 	the OS in a database buffer manager.  The supported flags are         BUF_NORMAL (the normal adaptive kernel algorithm),	BUF_RANDOM (no page prefetching), 	BUF_SEQUENTIAL (prefetch and swapout),	BUF_WILLNEED (load everything with prefetch), 	BUF_DONTNEED (swapout).	These buffer management modes are not persistent. 	Returns the BAT operated upon.
+comment Modern Operating Systems allow users to influence the buffer         management policy of virtual memory. This is a crucial feature         for database systems, and eliminates the need to reimplement 	the OS in a database buffer manager.  The supported flags are         BUF_NORMAL (the normal adaptive kernel algorithm),	BUF_RANDOM (no page prefetching), 	BUF_SEQUENTIAL (prefetch and swapout),	BUF_WILLNEED (load everything with prefetch), 	BUF_DONTNEED (swapout).	These buffer management modes are
 
 command bat.setMemoryMap(b:bat[:any_1,:any_2],mode:int):bit 
 address BKCmmap2;
@@ -38647,7 +38647,7 @@ command cluster.new(b:bat[:oid,:sht],bits:int,offset:int) (psum:bat[:oid,:wrd],m
 address CLS_create_sht;
 command cluster.new(b:bat[:oid,:bte],bits:int,offset:int,order:bit) (psum:bat[:oid,:wrd],map:bat[:oid,:bte]) 
 address CLS_create2_bte;
-comment Compute the cluster map for bat b. A cluster map is a list of partition ids. The p(refix) sum is a by product which returns the prefix sum of the per partition frequency. Prefix sum and map can be use to 'cluster' related columns based on b. Incase the offset is non negative it is used to shift the key values. Offset together with the mask bits should make sure that the result of the partitioning can be used in a order by sequence. If this holds and the input is sorted we return a 'compressed' representation of the map, ie [:oid,:bte], the repeated values are not inserted. The order flag indicates that the clustering is used for ordering, ie partition keys aren't fixed so we can internaly optimize partition sizes.
+comment Compute the cluster map for bat b. A cluster map is a list of partition ids. The p(refix) sum is a by product which returns the prefix sum of the per partition frequency. Prefix sum and map can be use to 'cluster' related columns based on b. Incase the offset is non negative it is used to shift the key values. Offset together with the mask bits should make sure that the result of the partitioning can be used in a order by sequence. If this holds and the input is sorted we return a 'compressed' re
 
 command cluster.new(b:bat[:oid,:bte],bits:int,offset:int) (psum:bat[:oid,:wrd],map:bat[:oid,:wrd]) 
 address CLS_create_bte;
@@ -39048,30 +39048,6 @@ comment Retrieve the names for all active factories.
 pattern factories.shutdown(m:str,f:str):void 
 address FCTshutdown;
 comment Close a factory.
-
-pattern fits.attach(fname:str):void 
-address FITSattach;
-comment Open a FITS file and return catalog of the table HDUs
-
-pattern fits.export(tablename:str):void 
-address FITSexportTable;
-comment Export a table to a FITS file
-
-command fits.fitstest(filename:str):int 
-address FITStest;
-comment Returns the type of first extension in the FITS file filename
-
-pattern fits.load(tablename:str):void 
-address FITSloadTable;
-comment Load a FITS table from an attached file
-
-pattern fits.listdirpattern(dirname:str,pattern:str):void 
-address FITSdirpat;
-comment Attach all FITS file in the directory, giving a pattern
-
-pattern fits.listdir(dirname:str):void 
-address FITSdir;
-comment Attach all FITS files in the directory
 
 command geom.Area(g:wkb):dbl 
 address wkbArea;
@@ -41287,7 +41263,7 @@ command pcre.replace(orig:bat[:oid,:str],pat:str,repl:str,flag:str):bat[:oid,:st
 address PCREreplace_bat_wrap;
 command pcre.replace(origin:str,pat:str,repl:str,flags:str):str 
 address PCREreplace_wrap;
-comment Replace _all_ matches of "pattern" in "origin_str" with "replacement".	 Parameter "flags" accept these flags: 'i', 'm', 's', and 'x'.	   'e': if present, an empty string is considered to be a valid match	   'i': if present, the match operates in case-insensitive mode.		Otherwise, in case-sensitive mode.	   'm': if present, the match operates in multi-line mode.	   's': if present, the match operates in "dot-all"	   The specifications of the flags can be found in "man pcreapi"	   The flag letters may be repeated.	   No other letters than 'e', 'i', 'm', 's' and 'x' are allowed in "flags".	   Returns the replaced string, or if no matches found, the original string.
+comment Replace _all_ matches of "pattern" in "origin_str" with "replacement".	 Parameter "flags" accept these flags: 'i', 'm', 's', and 'x'.	   'e': if present, an empty string is considered to be a valid match	   'i': if present, the match operates in case-insensitive mode.		Otherwise, in case-sensitive mode.	   'm': if present, the match operates in multi-line mode.	   's': if present, the match operates in "dot-all"	   The specifications of the flags can be found in "man pcreapi"	   The flag letters 
 
 command pcre.sql2pcre(pat:str,esc:str):str 
 address PCREsql2pcre;

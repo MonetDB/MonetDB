@@ -168,7 +168,7 @@ extern MT_Lock MT_system_lock;
 #define SORTloop_bit(b,p,q,tl,th) SORTloop_bte(b,p,q,tl,th)
 
 #ifdef GDKMALLOC_DEBUG
-#define GDKallocmax(s,ps,e)						\
+#define GDKmallocmax(s,ps,e)						\
 	({								\
 		size_t _size = (s);					\
 		size_t *_psize  = (ps);					\
