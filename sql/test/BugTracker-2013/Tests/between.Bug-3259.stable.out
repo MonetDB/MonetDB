@@ -44,33 +44,43 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 58 # length
+% 70 # length
 function user.s0_1():void;
-    X_19 := nil:bat[:oid,:int];
-    X_20 := nil:bat[:oid,:int];
-barrier X_39 := language.dataflow();
+    X_27:bat[:oid,:int]  := nil:bat[:oid,:int];
+    X_28:bat[:oid,:int]  := nil:bat[:oid,:int];
+barrier X_48 := language.dataflow();
     X_1 := sql.mvc();
     X_2:bat[:oid,:oid]  := sql.tid(X_1,"sys","treeitems");
-    X_5 := sql.bind(X_1,"sys","treeitems","pre",0);
+    X_5 := sql.bind(X_1,"sys","treeitems","subject",0);
     X_8 := algebra.leftfetchjoin(X_2,X_5);
-    X_9 := sql.bind(X_1,"sys","treeitems","size",0);
-    X_11 := algebra.leftfetchjoin(X_2,X_9);
-    X_12:bat[:oid,:lng]  := batcalc.+(X_8,X_11);
-    (X_13,r1_18) := algebra.join(X_8,X_8,X_12,true,true);
-    X_16 := sql.bind(X_1,"sys","treeitems","subject",0);
+    (X_9,r1_12) := algebra.crossproduct(X_8,X_8);
+    X_11 := sql.bind(X_1,"sys","treeitems","pre",0);
+    X_13 := algebra.leftfetchjoin(X_2,X_11);
+    X_14 := algebra.leftfetchjoin(r1_12,X_13);
+    X_15 := algebra.leftfetchjoin(X_9,X_13);
+    X_25:bat[:oid,:bit]  := batcalc.>=(X_14,X_15);
+    X_16 := sql.bind(X_1,"sys","treeitems","size",0);
     X_18 := algebra.leftfetchjoin(X_2,X_16);
-    X_19 := algebra.leftfetchjoin(r1_18,X_18);
-    X_20 := algebra.leftfetchjoin(X_13,X_18);
-    language.pass(X_8);
-    language.pass(X_8);
+    X_19:bat[:oid,:lng]  := batcalc.+(X_13,X_18);
+    X_20 := algebra.leftfetchjoin(X_9,X_19);
+    X_21:bat[:oid,:bit]  := batcalc.<=(X_14,X_20);
+    X_22 := algebra.subselect(X_21,true,true,true,true,false);
+    X_26 := algebra.subselect(X_25,X_22,true,true,true,true,false);
+    X_27:bat[:oid,:int]  := algebra.leftfetchjoinPath(X_26,X_9,X_8);
+    X_28:bat[:oid,:int]  := algebra.leftfetchjoinPath(X_26,r1_12,X_8);
     language.pass(X_2);
-    language.pass(X_18);
-exit X_39;
-    X_21 := sql.resultSet(2,1,X_19);
-    sql.rsColumn(X_21,"sys.L","id1","int",32,0,X_19);
-    sql.rsColumn(X_21,"sys.L","id2","int",32,0,X_20);
-    X_31 := io.stdout();
-    sql.exportResult(X_31,X_21);
+    language.pass(X_13);
+    language.pass(X_14);
+    language.pass(X_9);
+    language.pass(X_26);
+    language.pass(r1_12);
+    language.pass(X_8);
+exit X_48;
+    X_29 := sql.resultSet(2,1,X_27);
+    sql.rsColumn(X_29,"sys.L","id1","int",32,0,X_27);
+    sql.rsColumn(X_29,"sys.L","id2","int",32,0,X_28);
+    X_40 := io.stdout();
+    sql.exportResult(X_40,X_29);
 end s0_1;
 #ROLLBACK;
 
