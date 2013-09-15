@@ -1851,6 +1851,7 @@ BATproject(BAT *l, BAT *r)
 			  BATgetId(l), BATgetId(r), BATgetId(bn), BATcount(bn),
 			  bn->tsorted ? "-sorted" : "",
 			  bn->trevsorted ? "-revsorted" : "");
+		assert(bn->htype == TYPE_void);
 		return bn;
 	}
 	if (l->ttype == TYPE_void || BATcount(l) == 0) {
@@ -1923,6 +1924,8 @@ BATproject(BAT *l, BAT *r)
 	assert(n == BATcount(l));
 	BATsetcount(bn, n);
 	BATseqbase(bn, l->hseqbase);
+	if (!BATtdense(r))
+		BATseqbase(BATmirror(bn), oid_nil);
 	ALGODEBUG fprintf(stderr, "#BATproject(l=%s,r=%s)=%s#"BUNFMT"%s%s\n",
 		  BATgetId(l), BATgetId(r), BATgetId(bn), BATcount(bn),
 		  bn->tsorted ? "-sorted" : "",

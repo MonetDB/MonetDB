@@ -1777,6 +1777,7 @@ log_bat(logger *lg, BAT *b, char *name)
 			return LOG_ERR;
 
 		if (b->htype == TYPE_void &&
+		    b->ttype > TYPE_void &&
 		    b->ttype < TYPE_str &&
 		    !isVIEW(b)) {
 			const void *t = BUNtail(bi, b->batInserted);

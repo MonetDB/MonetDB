@@ -790,7 +790,10 @@ BATslice(BAT *b, BUN l, BUN h)
 	if (BAThrestricted(b) == BAT_READ && BATtrestricted(b) == BAT_READ) {
 		BUN cnt = h - l;
 
-		bn = VIEWcreate_(b, b, TRUE);
+		if (BAThdense(b))
+			bn = BATmirror(VIEWhead(BATmirror(b)));
+		else
+			bn = VIEWcreate_(b, b, TRUE);
 		bn->batFirst = bn->batDeleted = bn->batInserted = 0;
 		bn->H->heap.base = (bn->htype) ? BUNhloc(bi, l) : NULL;
 		bn->T->heap.base = (bn->ttype) ? BUNtloc(bi, l) : NULL;
@@ -805,11 +808,15 @@ BATslice(BAT *b, BUN l, BUN h)
 		BUN p = (BUN) l;
 		BUN q = (BUN) h;
 
-		bn = BATnew(b->htype, b->ttype, h - l);
+		bn = BATnew((BAThdense(b)?TYPE_void:b->htype), b->ttype, h - l);
 		if (bn == NULL) {
 			return bn;
 		}
-		if (b->htype != b->ttype || b->htype != TYPE_void) {
+		if (BAThdense(b) && b->ttype) {
+			for (; p < q; p++) {
+				bunfastins(bn, NULL, BUNtail(bi, p));
+			}
+		} else if (b->htype != b->ttype || b->htype != TYPE_void) {
 			for (; p < q; p++) {
 				bunfastins(bn, BUNhead(bi, p), BUNtail(bi, p));
 			}

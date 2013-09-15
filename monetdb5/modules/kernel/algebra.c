@@ -1513,15 +1513,9 @@ ALGleftjoin(bat *result, bat *lid, bat *rid)
 }
 
 str
-ALGleftfetchjoinestimate(bat *result, bat *lid, bat *rid, lng *estimate)
-{
-	return ALGbinaryestimate(result, lid, rid, estimate, BATleftfetchjoin, "algebra.leftfetchjoin");
-}
-
-str
 ALGleftfetchjoin(bat *result, bat *lid, bat *rid)
 {
-	return ALGbinaryestimate(result, lid, rid, NULL, BATleftfetchjoin, "algebra.leftfetchjoin");
+	return ALGbinary(result, lid, rid, BATproject, "algebra.leftfetchjoin");
 }
 
 str
