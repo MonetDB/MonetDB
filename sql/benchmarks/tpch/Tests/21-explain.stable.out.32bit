@@ -186,7 +186,7 @@ function user.s2_1{autoCommit=true}(A0:str,A1:str):void;
     X_197:bat[:oid,:wrd]  := algebra.leftfetchjoinPath(X_195,X_193,X_184);
     X_198 := sql.resultSet(2,1,X_196);
     sql.rsColumn(X_198,"sys.supplier","s_name","varchar",25,0,X_196);
-    sql.rsColumn(X_198,"sys.L1","numwait","wrd",64,0,X_197);
+    sql.rsColumn(X_198,"sys.L1","numwait","wrd",32,0,X_197);
     X_212 := io.stdout();
     sql.exportResult(X_212,X_198);
 end s2_1;

@@ -63,7 +63,6 @@ Ready.
 % clob # type
 % 153 # length
 function user.s4_1{autoCommit=true}():void;
-barrier X_35 := language.dataflow();
     X_2 := sql.mvc();
     (X_13:bat[:oid,:int] ,X_14:bat[:oid,:int] ,X_15:bat[:oid,:int] ) := sql.copy_from("sys","ttt","|","\\n",nil:str,"null","a:\\tmp/xyz",-1:lng,0:lng,0);
     X_16 := sql.append(X_2,"sys","ttt","a",X_13);
@@ -71,9 +70,13 @@ barrier X_35 := language.dataflow();
     X_20 := sql.append(X_18,"sys","ttt","c",X_15);
     X_22 := aggr.count(X_15);
     sql.affectedRows(X_20,X_22,"");
-end s2_1;
-# optimizer.mitosis()
-# optimizer.dataflow()
+end s4_1;
+# querylog.define("explain copy into ttt from \\'a:\\\\tmp/xyz\\';","default_pipe")
+#declare opt_pipe_name string;
+#set opt_pipe_name = ( select optimizer );
+#declare opt_pipe_def  string;
+#set opt_pipe_def  = ( select def from optimizers() where name = opt_pipe_name );
+#set optimizer = substring(opt_pipe_def,0,length(opt_pipe_def)-length('optimizer.garbageCollector();')) || 'optimizer.sql_append();optimizer.garbageCollector();';
 #select optimizer;
 % .L # table_name
 % single_value # name
@@ -92,7 +95,6 @@ end s2_1;
 % clob # type
 % 152 # length
 function user.s12_1{autoCommit=true}():void;
-barrier X_36 := language.dataflow();
     X_2 := sql.mvc();
     (X_13:bat[:oid,:int] ,X_14:bat[:oid,:int] ,X_15:bat[:oid,:int] ) := sql.copy_from("sys","ttt","|","\\n",nil:str,"null","Z:/tmp/xyz",-1:lng,0:lng,0);
     X_16 := sql.append(X_2,"sys","ttt","a",X_13);
@@ -100,9 +102,8 @@ barrier X_36 := language.dataflow();
     X_22 := aggr.count(X_15);
     X_20 := sql.append(X_18,"sys","ttt","c",X_15);
     sql.affectedRows(X_20,X_22,"");
-end s5_1;
-# optimizer.mitosis()
-# optimizer.dataflow()
+end s12_1;
+# querylog.define("explain copy into ttt from \\'Z:/tmp/xyz\\';","user_1")
 #drop table ttt;
 
 # 22:58:58 >  

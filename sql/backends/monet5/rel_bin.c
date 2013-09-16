@@ -1958,7 +1958,7 @@ rel2bin_except( mvc *sql, sql_rel *rel, list *refs)
 		s = stmt_binop(sql->sa, glcnt, grcnt, sub); /* use count */
 
 		/* now we need to add the groups which weren't in B */
-		lcnt = stmt_project(sql->sa, stmt_reverse(sql->sa, lm), s);
+		lcnt = stmt_reorder_project(sql->sa, stmt_reverse(sql->sa, lm), s);
 		s = stmt_union(sql->sa, ecnt, lcnt);
 		o = stmt_mark_tail(sql->sa, lext, 0);
 		s = stmt_reorder_project(sql->sa, stmt_reverse(sql->sa, o), s);
@@ -2258,14 +2258,15 @@ rel2bin_project( mvc *sql, sql_rel *rel, list *refs, sql_rel *topn)
 			if (!limit) {	/* topn based on a single column */
 				limit = stmt_limit(sql->sa, orderbycolstmt, stmt_atom_wrd(sql->sa, 0), l, LIMIT_DIRECTION(is_ascending(orderbycole), 1, inc));
 			} else { 	/* topn based on 2 columns */
-				stmt *obc = stmt_project(sql->sa, stmt_mirror(sql->sa, limit), orderbycolstmt);
+				stmt *obc = stmt_reorder_project(sql->sa, stmt_mirror(sql->sa, limit), orderbycolstmt);
+
 				limit = stmt_limit2(sql->sa, limit, obc, stmt_atom_wrd(sql->sa, 0), l, LIMIT_DIRECTION(is_ascending(orderbycole), 1, inc));
 			}
 			if (!limit) 
 				return NULL;
 		}
 
-		if (distinct) 
+		if (!distinct) 
 			limit = stmt_reverse(sql->sa, stmt_mark_tail(sql->sa, limit, 0));
 		else	/* add limit to mark end of pqueue topns */
 			limit = stmt_limit(sql->sa, limit, stmt_atom_wrd(sql->sa, 0), l, LIMIT_DIRECTION(0, 0, 0));
@@ -3260,12 +3261,12 @@ update_check_ukey(mvc *sql, stmt **updates, sql_key *k, stmt *tids, stmt *idx_up
 
 		/* s should be empty */
 		if (!isNew(k)) {
-			//stmt *nu_tids = stmt_tdiff(sql->sa, dels, tids); /* not updated ids */
+			stmt *nu_tids = stmt_tdiff(sql->sa, dels, tids); /* not updated ids */
 			assert (updates);
 
 			h = updates[c->c->colnr]->op2;
-			o = stmt_diff(sql->sa, stmt_col(sql, c->c, dels), stmt_reverse(sql->sa, tids));
-			//o = stmt_col(sql, c->c, nu_tids);
+			//o = stmt_diff(sql->sa, stmt_col(sql, c->c, dels), stmt_reverse(sql->sa, tids));
+			o = stmt_col(sql, c->c, nu_tids);
 			s = stmt_join(sql->sa, o, h, cmp_equal);
 			s = stmt_result(sql->sa, s, 0);
 			s = stmt_binop(sql->sa, stmt_aggr(sql->sa, s, NULL, NULL, cnt, 1, 0), stmt_atom_wrd(sql->sa, 0), ne);

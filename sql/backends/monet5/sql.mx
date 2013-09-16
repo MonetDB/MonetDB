@@ -668,8 +668,16 @@ command sql.dec_round( v:@1, r:@1 ) :@1
 address @1_dec_round_wrap
 comment "round off the value v to nearests multiple of r";
 
+command batsql.dec_round( v:bat[:oid,:@1], r:@1 ) :bat[:oid,:@1] 
+address @1_bat_dec_round_wrap
+comment "round off the value v to nearests multiple of r";
+
 command sql.round( v:@1, d:int, s:int, r:bte) :@1
 address @1_round_wrap
+comment "round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)";
+
+command sql.round( v:bat[:oid,:@1], d:int, s:int, r:bte) :bat[:oid,:@1]
+address @1_bat_round_wrap
 comment "round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)";
 
 command calc.second_interval( sc:int, v:@1, ek:int, sk:int ) :lng
@@ -689,8 +697,16 @@ command sql.dec_round( v:@1, r:@1 ) :@1
 address @1_dec_round_wrap
 comment "round off the value v to nearests multiple of r";
 
+command sql.dec_round( v:bat[:oid,:@1], r:@1 ) :bat[:oid,:@1] 
+address @1_bat_dec_round_wrap
+comment "round off the value v to nearests multiple of r";
+
 command sql.round( v:@1, r:bte) :@1
 address @1_round_wrap
+comment "round off the floating point v to r digits behind the dot (if r < 0, before the dot)";
+
+command batsql.round( v:bat[:oid,:@1], r:bte) :bat[:oid,:@1]
+address @1_bat_round_wrap
 comment "round off the floating point v to r digits behind the dot (if r < 0, before the dot)";
 
 command sql.ms_trunc( v:@1, r:int) :@1
@@ -1451,7 +1467,9 @@ sql5_export str BATSQLidentity(bat *rid, bat *bid);
 sql5_export str PBATSQLidentity(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 @= round_export
 sql5_export str @1_dec_round_wrap( @1 *res, @1 *v, @1 *r );
+sql5_export str @1_bat_dec_round_wrap( bat *res, bat *v, @1 *r );
 sql5_export str @1_round_wrap( @1 *res, @1 *v, int *d, int *s, bte *r );
+sql5_export str @1_bat_round_wrap( bat *res, bat *v, int *d, int *s, bte *r );
 sql5_export str str_2dec_@1( @1 *res, str *val, int *d, int *sc );
 sql5_export str str_2num_@1( @1 *res, str *v, int *len );
 sql5_export str batstr_2dec_@1( int *res, int *val, int *d, int *sc );
@@ -1500,7 +1518,9 @@ sql5_export str SQLstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 sql5_export str SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 @= fround_export
 sql5_export str @1_dec_round_wrap( @1 *res, @1 *v, @1 *r );
+sql5_export str @1_bat_dec_round_wrap( bat *res, bat *v, @1 *r );
 sql5_export str @1_round_wrap( @1 *res, @1 *v, bte *r );
+sql5_export str @1_bat_round_wrap( bat *res, bat *v, bte *r );
 sql5_export str @1_trunc_wrap( @1 *res, @1 *v, int *r );
 @
 @h
@@ -4709,79 +4729,187 @@ lng scales[19] = {
  * SQL-99 are shown below. At some point they also should be
  * moved to module code base.
  */
-@= round
-str 
-@1_dec_round_wrap( @1 *res, @1 *v, @1 *r )
+
+@= round_wrappers
+static inline @1 @2
 {
-	@1 val = *v;
-	@1 add = *r;
-
 	/* shortcut nil */
-	if (*v == @1_nil) {
-		*res = @1_nil;
-		return NULL;
+	if (v == @1_nil) {
+		return @1_nil;
+	} else {
+		return @5;
 	}
-
-	add >>=1;
-	if (val < 0) 
-		add = -add;
-	val += add; 
-	val /= *r;
-	*res = val;
-	return NULL;
 }
 
-str 
-@1_round_wrap( @1 *res, @1 *v, int *d, int *s, bte *r )
+str @3
 {
-	/* shortcut nil */
-	if (*v == @1_nil) {
-		*res = @1_nil;
-	} else if (-*r > *d) {
-		*res = 0;
-	} else if (*r > 0 && *r < *s) {
-		int dff = *s - *r;
-#ifdef HAVE_HGE
-		hge rnd = scales[dff]>>1;
-		hge lres;
-#else
-		lng rnd = scales[dff]>>1;
-		lng lres;
-#endif
-		if (*v > 0)
-			lres = (((*v + rnd)/scales[dff])*scales[dff]);
-		else
-			lres = (((*v - rnd)/scales[dff])*scales[dff]);
-#ifdef HAVE_HGE
-		assert((hge) GDK_@1_min < lres && lres <= (hge) GDK_@1_max);
-#else
-		assert((lng) GDK_@1_min < lres && lres <= (lng) GDK_@1_max);
-#endif
-		*res = (@1) lres;
-	} else if (*r <= 0 && -*r + *s > 0) {
-		int dff = -*r + *s;
-#ifdef HAVE_HGE
-		hge rnd = scales[dff]>>1;
-		hge lres;
-#else
-		lng rnd = scales[dff]>>1;
-		lng lres;
-#endif
-		if (*v > 0)
-			lres = (((*v + rnd)/scales[dff])*scales[dff]);
-		else
-			lres = (((*v - rnd)/scales[dff])*scales[dff]);
-#ifdef HAVE_HGE
-		assert((hge) GDK_@1_min < lres && lres <= (hge) GDK_@1_max);
-#else
-		assert((lng) GDK_@1_min < lres && lres <= (lng) GDK_@1_max);
-#endif
-		*res = (@1) lres;
-	} else {
-		*res = *v;
-	}
+	/* basic sanity checks */
+	assert(res && v && r @8);
+
+	*res = @6;
 	return MAL_SUCCEED;
 }
+
+str @4
+{
+	BAT *res, *v;
+	@1 *src, *dst;
+	BUN i, cnt;
+	bit nonil; /* TRUE: we know there are no NIL (NULL) values */
+	bit   nil; /* TRUE: we know there is at least one NIL (NULL) value */
+
+	/* basic sanity checks */
+	assert(_res && _v && r @8);
+
+	/* get argument BAT descriptor */
+	if ((v = BATdescriptor(*_v)) == NULL)
+		throw(MAL, "round", RUNTIME_OBJECT_MISSING);
+
+	/* more sanity checks */
+	if (!BAThdense(v)) {
+		BBPreleaseref(v->batCacheid);
+		throw(MAL, "round", "argument 1 must have a dense head");
+	}
+	if (v->ttype != TYPE_@1) {
+		BBPreleaseref(v->batCacheid);
+		throw(MAL, "round", "argument 1 must have a @1 tail");
+	}
+	cnt = BATcount(v);
+
+	/* allocate result BAT */
+	res = BATnew(TYPE_void, TYPE_@1, cnt);
+	if (res == NULL) {
+		BBPreleaseref(v->batCacheid);
+		throw(MAL, "round", MAL_MALLOC_FAIL);
+	}
+
+	/* access columns as arrays */
+	src = (@1*) Tloc(v, BUNfirst(v));
+	dst = (@1*) Tloc(res, BUNfirst(res));
+
+	nil = FALSE;
+	nonil = TRUE;
+	if (v->T->nonil == TRUE) {
+		for (i = 0; i < cnt; i++)
+			dst[i] = @7;
+	} else {
+		for (i = 0; i < cnt; i++) {
+			if (src[i] == @1_nil) {
+				nil = TRUE;
+				nonil = FALSE;
+				dst[i] = @1_nil;
+			} else {
+				dst[i] = @7;
+			}
+		}
+	}
+
+	/* set result BAT properties */
+	BATsetcount(res, cnt);
+	/* result head is aligned with agument head */
+	ALIGNsetH(res, v);
+	/* hard to predict correct tail properties in general */
+	res->T->nonil = nonil;
+	res->T->nil   = nil;
+	res->tdense   = FALSE;
+	res->tsorted  = v->tsorted;
+	BATkey(BATmirror(res), FALSE);
+
+	/* release argument BAT descriptors */
+	BBPreleaseref(v->batCacheid);
+
+	/* keep result */
+	BBPkeepref(*_res = res->batCacheid);
+
+	return MAL_SUCCEED;
+}
+@
+
+@= round
+static inline @1
+@1_dec_round_body_nonil( @1 v, @1 r )
+{
+	@1 add = r >> 1;
+
+	assert(v != @1_nil);
+
+	if (v < 0)
+		add = -add;
+	v += add;
+	return v / r;
+}
+
+@:round_wrappers(@1,						\
+	@1_dec_round_body ( @1 v, @1 r ),			\
+	@1_dec_round_wrap ( @1 *res, @1 *v, @1 *r ),		\
+	@1_bat_dec_round_wrap ( bat *_res, bat *_v, @1 *r ),	\
+	@1_dec_round_body_nonil ( v, r ),			\
+	@1_dec_round_body ( *v, *r ),				\
+	@1_dec_round_body_nonil ( src[i], *r ),			\
+)@
+
+static inline @1
+@1_round_body_nonil( @1 v, int d, int s, bte r )
+{
+	@1 res = @1_nil;
+
+	assert(v != @1_nil);
+
+	if (-r > d) {
+		res = 0;
+	} else if (r > 0 && r < s) {
+		int dff = s - r;
+#ifdef HAVE_HGE
+		hge rnd = scales[dff]>>1;
+		hge lres;
+#else
+		lng rnd = scales[dff]>>1;
+		lng lres;
+#endif
+		if (v > 0)
+			lres = (((v + rnd)/scales[dff])*scales[dff]);
+		else
+			lres = (((v - rnd)/scales[dff])*scales[dff]);
+#ifdef HAVE_HGE
+		assert((hge) GDK_@1_min < lres && lres <= (hge) GDK_@1_max);
+#else
+		assert((lng) GDK_@1_min < lres && lres <= (lng) GDK_@1_max);
+#endif
+		res = (@1) lres;
+	} else if (r <= 0 && -r + s > 0) {
+		int dff = -r + s;
+#ifdef HAVE_HGE
+		hge rnd = scales[dff]>>1;
+		hge lres;
+#else
+		lng rnd = scales[dff]>>1;
+		lng lres;
+#endif
+		if (v > 0)
+			lres = (((v + rnd)/scales[dff])*scales[dff]);
+		else
+			lres = (((v - rnd)/scales[dff])*scales[dff]);
+#ifdef HAVE_HGE
+		assert((hge) GDK_@1_min < lres && lres <= (hge) GDK_@1_max);
+#else
+		assert((lng) GDK_@1_min < lres && lres <= (lng) GDK_@1_max);
+#endif
+		res = (@1) lres;
+	} else {
+		res = v;
+	}
+	return res;
+}
+
+@:round_wrappers(@1,								\
+	@1_round_body ( @1 v, int d, int s, bte r ),				\
+	@1_round_wrap ( @1 *res, @1 *v, int *d, int *s, bte *r ),		\
+	@1_bat_round_wrap ( bat *_res, bat *_v, int *d, int *s, bte *r ),	\
+	@1_round_body_nonil ( v, d, s, r ),					\
+	@1_round_body ( *v, *d, *s, *r ),					\
+	@1_round_body_nonil ( src[i], *d, *s, *r ),				\
+	&& d && s								\
+)@
 
 str
 nil_2dec_@1( @1 *res, void *val, int *d, int *sc )
@@ -5142,45 +5270,54 @@ bat@2_2time_@1( int *res, int *bid, int *digits )
 @:bat2time(daytime,daytime,daytime,v)@
 
 @= fround
-str 
-@1_dec_round_wrap( @1 *res, @1 *v, @1 *r )
+static inline @1
+@1_dec_round_body_nonil( @1 v, @1 r )
 {
-	@1 val = *v;
+	assert(v != @1_nil);
 
-	/* not nil */
-	if (ATOMcmp(TYPE_@1, v, ATOMnilptr(TYPE_@1)) != 0) {
-		val /= *r;
-	}
-	*res = val;
-	return MAL_SUCCEED;
+	return v / r;
 }
 
-str 
-@1_round_wrap( @1 *res, @1 *v, bte *r )
+@:round_wrappers(@1,						\
+	@1_dec_round_body ( @1 v, @1 r ),			\
+	@1_dec_round_wrap ( @1 *res, @1 *v, @1 *r ),		\
+	@1_bat_dec_round_wrap ( bat *_res, bat *_v, @1 *r ),	\
+	@1_dec_round_body_nonil ( v, r ),			\
+	@1_dec_round_body ( *v, *r ),				\
+	@1_dec_round_body_nonil ( src[i], *r ),			\
+)@
+
+static inline @1
+@1_round_body_nonil( @1 v, bte r )
 {
-	/* shortcut nil */
-	if (*v == @1_nil) {
-		*res = @1_nil;
-	} else if (*r < 0) {
-		int d = -*r;
-		@1 rnd = (@1) (scales[d]>>1); 
+	@1 res = @1_nil;
 
-		if (*v > 0)
-			*res = (@1) (floor(((*v + rnd)/((@1)(scales[d]))))*scales[d]);
-		else
-			*res = (@1) (floor(((*v + rnd)/((@1)(scales[d]))))*scales[d]);
-	} else if (*r > 0) {
-		int d = *r;
+	assert(v != @1_nil);
 
-		if (*v > 0)
-			*res = (@1) (floor(*v*(@1)scales[d]+.5)/scales[d]);
-		else
-			*res = (@1) (floor(*v*(@1)scales[d]+.5)/scales[d]);
+	if (r < 0) {
+		int d = -r;
+		@1 rnd = (@1) (scales[d]>>1);
+
+		res = (@1) (floor(((v + rnd)/((@1)(scales[d]))))*scales[d]);
+	} else if (r > 0) {
+		int d = r;
+
+		res = (@1) (floor(v*(@1)scales[d]+.5)/scales[d]);
 	} else {
-		*res = (@1) round(*v); 
+		res = (@1) round(v);
 	}
-	return MAL_SUCCEED;
+	return res;
 }
+
+@:round_wrappers(@1,						\
+	@1_round_body ( @1 v, bte r ),				\
+	@1_round_wrap ( @1 *res, @1 *v, bte *r ),		\
+	@1_bat_round_wrap ( bat *_res, bat *_v, bte *r ),	\
+	@1_round_body_nonil ( v, r ),				\
+	@1_round_body ( *v, *r ),				\
+	@1_round_body_nonil ( src[i], *r ),			\
+)@
+
 str
 @1_trunc_wrap( @1 *res, @1 *v, int *r )
 {

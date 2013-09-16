@@ -416,21 +416,23 @@ static void
 delta_append_bat( sql_delta *bat, BAT *i ) 
 {
 	int id = i->batCacheid;
+	BAT *b;
 #ifndef NDEBUG
 	BAT *c = BBPquickdesc(bat->bid, 0); 
+	assert(!c || c->htype == TYPE_void);
 #endif
-	BAT *b;
 
 	if (!BATcount(i))
 		return ;
 	b = temp_descriptor(bat->ibid);
+	assert(b->htype == TYPE_void);
 
 	if (bat->cached) {
 		bat_destroy(bat->cached);
 		bat->cached = NULL;
 	}
 	assert(!c || BATcount(c) == bat->ibase);
-	if (!bat->ibase && !BATcount(b) && BBP_refs(id) == 1 && BBP_lrefs(id) == 1 && !isVIEW(i) /* we need info if this is comming from copy into, like role == PERSISTENT */){
+	if (!bat->ibase && !BATcount(b) && BBP_refs(id) == 1 && BBP_lrefs(id) == 1 && !isVIEW(i) && i->ttype /* we need info if this is comming from copy into, like role == PERSISTENT */){
 		temp_destroy(bat->ibid);
 		bat->ibid = id;
 		temp_dup(id);
@@ -461,8 +463,10 @@ delta_append_val( sql_delta *bat, void *i )
 	BAT *b = temp_descriptor(bat->ibid);
 #ifndef NDEBUG
 	BAT *c = BBPquickdesc(bat->bid, 0);
+	assert(!c || c->htype == TYPE_void);
 #endif
 
+	assert(b->htype == TYPE_void);
 	if (bat->cached) {
 		bat_destroy(bat->cached);
 		bat->cached = NULL;
@@ -1579,7 +1583,7 @@ gtr_minmax( sql_trans *tr )
 }
 
 int 
-tr_update_delta( sql_trans *tr, sql_delta *obat, sql_delta *cbat, BUN snapshot_minsize)
+tr_update_delta( sql_trans *tr, sql_delta *obat, sql_delta *cbat)
 {
 	int ok = LOG_OK;
 	BAT *ups, *ins, *cur = NULL;
@@ -1603,7 +1607,7 @@ tr_update_delta( sql_trans *tr, sql_delta *obat, sql_delta *cbat, BUN snapshot_m
 	ins = temp_descriptor(cbat->ibid);
 	/* any inserts */
 	if (BUNlast(ins) > BUNfirst(ins) || cleared) {
-		if ((!obat->ibase && BATcount(ins) > snapshot_minsize)){
+		if ((!obat->ibase && BATcount(ins) > SNAPSHOT_MINSIZE)){
 			/* swap cur and ins */
 			BAT *newcur = ins;
 
@@ -1672,7 +1676,8 @@ tr_update_dbat(sql_trans *tr, sql_dbat *tdb, sql_dbat *fdb, int cleared)
 	if (BUNlast(db) > db->batInserted || cleared) {
 		BAT *odb = temp_descriptor(tdb->dbid);
 
-		if (!BATcount(odb)) {
+		/* For large deletes write the new deletes bat */
+		if (BATcount(db) > SNAPSHOT_MINSIZE) {
 			temp_destroy(tdb->dbid);
 			tdb->dbid = fdb->dbid;
 		} else {
@@ -1762,7 +1767,7 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 			}
 		} else {
 			assert(oc->base.allocated);
-			tr_update_delta(tr, oc->data, cc->data, SNAPSHOT_MINSIZE);
+			tr_update_delta(tr, oc->data, cc->data);
 		}
 
 		if (oc->base.rtime < cc->base.rtime)
@@ -1800,7 +1805,7 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 				}
 			} else {
 				assert(oi->base.allocated);
-				tr_update_delta(tr, oi->data, ci->data, SNAPSHOT_MINSIZE);
+				tr_update_delta(tr, oi->data, ci->data);
 			}
 
 			if (oi->base.rtime < ci->base.rtime)
@@ -1873,8 +1878,16 @@ tr_log_dbat(sql_trans *tr, sql_dbat *fdb, int cleared)
 		log_bat_clear(bat_logger, fdb->dname);
 
 	db = temp_descriptor(fdb->dbid);
-	if (BUNlast(db) > db->batInserted || cleared) 
-		ok = log_bat(bat_logger, db, fdb->dname);
+	if (BUNlast(db) > BUNfirst(db)) {
+		assert(store_nr_active>0);
+		if (BUNlast(db) > db->batInserted && (store_nr_active != 1 || BATcount(db) <= SNAPSHOT_MINSIZE))
+			ok = log_bat(bat_logger, db, fdb->dname);
+		if (store_nr_active == 1 && BATcount(db) > SNAPSHOT_MINSIZE) {
+			/* log new snapshot */
+			logger_add_bat(bat_logger, db, fdb->dname);
+			ok = log_bat_persists(bat_logger, db, fdb->dname);
+		}
+	}
 	bat_destroy(db);
 	return ok;
 }

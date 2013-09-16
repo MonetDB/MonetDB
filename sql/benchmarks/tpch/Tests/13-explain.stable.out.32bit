@@ -1,0 +1,112 @@
+stdout of test '13-explain` in directory 'sql/benchmarks/tpch` itself:
+
+
+# 22:53:28 >  
+# 22:53:28 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=34581" "--set" "mapi_usock=/var/tmp/mtest-9096/.s.monetdb.34581" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/manegold/_/Monet/HG/Feb2013/prefix/--disable-debug_--enable-assert_--enable-optimize/var/MonetDB/mTests_sql_benchmarks_tpch" "--set" "mal_listing=0"
+# 22:53:28 >  
+
+# MonetDB 5 server v11.15.12
+# This is an unreleased version
+# Serving database 'mTests_sql_benchmarks_tpch', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.591 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2013 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://rome.ins.cwi.nl:34581/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-9096/.s.monetdb.34581
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 22:53:28 >  
+# 22:53:28 >  "/usr/bin/python2" "13-explain.SQL.py" "13-explain"
+# 22:53:28 >  
+
+#set optimizer = 'sequential_pipe';
+#explain select
+#	c_count,
+#	count(*) as custdist
+#from
+#	(
+#		select
+#			c_custkey,
+#			count(o_orderkey)
+#		from
+#			customer left outer join orders on
+#				c_custkey = o_custkey
+#				and o_comment not like '%special%requests%'
+#		group by
+#			c_custkey
+#	) as c_orders (c_custkey, c_count)
+#group by
+#	c_count
+#order by
+#	custdist desc,
+#	c_count desc;
+% .explain # table_name
+% mal # name
+% clob # type
+% 430 # length
+function user.s2_1{autoCommit=true}(A0:str):void;
+    X_4:bat[:oid,:int]  := bat.new(nil:oid,nil:int);
+    X_3 := sql.mvc();
+    X_7:bat[:oid,:oid]  := sql.tid(X_3,"sys","customer");
+    X_10:bat[:oid,:oid]  := sql.tid(X_3,"sys","orders");
+    X_12 := sql.bind_idxbat(X_3,"sys","orders","orders_o_custkey_fkey",0);
+    (X_15,r1_15) := sql.bind_idxbat(X_3,"sys","orders","orders_o_custkey_fkey",2);
+    X_18 := sql.bind_idxbat(X_3,"sys","orders","orders_o_custkey_fkey",1);
+    X_20 := sql.delta(X_12,X_15,r1_15,X_18);
+    X_21 := algebra.leftfetchjoin(X_10,X_20);
+    (X_22,r1_22) := algebra.join(X_7,X_21);
+    X_118 := algebra.leftfetchjoin(r1_22,X_10);
+    X_24 := sql.bind(X_3,"sys","orders","o_comment",0);
+    (X_26,r1_26) := sql.bind(X_3,"sys","orders","o_comment",2);
+    X_28 := sql.bind(X_3,"sys","orders","o_comment",1);
+    X_29 := sql.delta(X_24,X_26,r1_26,X_28);
+    X_30:bat[:oid,:str]  := algebra.leftfetchjoin(X_118,X_29);
+    X_32 := algebra.likesubselect(X_30,A0,"",true);
+    X_34 := sql.bind(X_3,"sys","orders","o_orderkey",0);
+    (X_36,r1_40) := sql.bind(X_3,"sys","orders","o_orderkey",2);
+    X_39 := sql.bind(X_3,"sys","orders","o_orderkey",1);
+    X_41 := sql.delta(X_34,X_36,r1_40,X_39);
+    X_42:bat[:oid,:int]  := algebra.leftfetchjoinPath(X_32,X_118,X_41);
+    X_43 := bat.append(X_4,X_42,true);
+    X_44 := sql.bind(X_3,"sys","customer","c_custkey",0);
+    (X_48,r1_53) := sql.bind(X_3,"sys","customer","c_custkey",2);
+    X_51 := sql.bind(X_3,"sys","customer","c_custkey",1);
+    X_53 := sql.delta(X_44,X_48,r1_53,X_51);
+    X_54 := algebra.leftfetchjoin(X_7,X_53);
+    X_55 := bat.mirror(X_54);
+    X_56 := algebra.leftfetchjoin(X_32,X_22);
+    X_57 := algebra.tdiff(X_55,X_56);
+    X_59 := algebra.project(X_57,nil:int);
+    X_60 := bat.append(X_43,X_59,true);
+    X_61:bat[:oid,:int]  := bat.new(nil:oid,nil:int);
+    X_63 := algebra.leftfetchjoin(X_56,X_54);
+    X_64 := bat.append(X_61,X_63,true);
+    X_66 := algebra.leftfetchjoin(X_57,X_54);
+    X_67 := bat.append(X_64,X_66,true);
+    (X_68,r1_74,r2_74) := group.subgroupdone(X_67);
+    X_71:bat[:oid,:wrd]  := aggr.subcount(X_60,X_68,r1_74,true);
+    (X_72,r1_78,r2_78) := group.subgroupdone(X_71);
+    X_75 := algebra.leftfetchjoin(r1_78,X_71);
+    X_76:bat[:oid,:wrd]  := aggr.subcount(X_72,X_72,r1_78,false);
+    (X_78,r1_84,r2_84) := algebra.subsort(X_76,true,false);
+    (X_81,r1_87,r2_87) := algebra.subsort(X_75,r1_84,r2_84,true,false);
+    X_84 := algebra.leftfetchjoin(r1_87,X_75);
+    X_85 := algebra.leftfetchjoin(r1_87,X_76);
+    X_86 := sql.resultSet(2,1,X_84);
+    sql.rsColumn(X_86,".c_orders","c_count","wrd",32,0,X_84);
+    sql.rsColumn(X_86,".L2","custdist","wrd",32,0,X_85);
+    X_98 := io.stdout();
+    sql.exportResult(X_98,X_86);
+end s2_1;
+# querylog.define("explain select\n\tc_count,\n\tcount(*) as custdist\nfrom\n\t(\n\t\tselect\n\t\t\tc_custkey,\n\t\t\tcount(o_orderkey)\n\t\tfrom\n\t\t\tcustomer left outer join orders on\n\t\t\t\tc_custkey = o_custkey\n\t\t\t\tand o_comment not like \\'%special%requests%\\'\n\t\tgroup by\n\t\t\tc_custkey\n\t) as c_orders (c_custkey, c_count)\ngroup by\n\tc_count\norder by\n\tcustdist desc,\n\tc_count desc;","sequential_pipe")
+
+# 22:53:28 >  
+# 22:53:28 >  "Done."
+# 22:53:28 >  
+

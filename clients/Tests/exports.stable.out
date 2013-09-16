@@ -780,7 +780,6 @@ str ALGkdiff(int *result, int *lid, int *rid);
 str ALGkunion(int *result, int *lid, int *rid);
 str ALGkunique(int *result, int *bid);
 str ALGleftfetchjoin(int *result, int *lid, int *rid);
-str ALGleftfetchjoinestimate(int *result, int *lid, int *rid, lng *estimate);
 str ALGleftjoin(int *result, int *lid, int *rid);
 str ALGleftjoinestimate(int *result, int *lid, int *rid, lng *estimate);
 str ALGlike(int *ret, int *bid, str *k);

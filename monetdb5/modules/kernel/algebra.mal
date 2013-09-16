@@ -577,8 +577,8 @@ command join( left:bat[:any_1,:any_2], right:bat[:any_2,:any_3],
 		estimate:lng) :bat[:any_1,:any_3]
 address ALGjoinestimate;
 
-command leftfetchjoin ( left:bat[:any_1,:oid], right:bat[:oid,:any_3] )
-		:bat[:any_1,:any_3]
+command leftfetchjoin ( left:bat[:oid,:oid], right:bat[:oid,:any_3] )
+		:bat[:oid,:any_3]
 address ALGleftfetchjoin
 comment "Hook directly into the left fetch join implementation.";
 

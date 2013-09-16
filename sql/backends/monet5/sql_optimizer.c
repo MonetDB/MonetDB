@@ -70,7 +70,8 @@ BATlocation(str *fnme, int *bid)
 	BAT *b = BBPquickdesc(*bid, FALSE);
 	char path[BUFSIZ], *s;
 
-	if (b == NULL)
+	*fnme = NULL;
+	if (b == NULL || (!b->T->heap.filename && !b->H->heap.filename))
 		return 0;
 
 	snprintf(path, BUFSIZ, "%s%c", GDKgetenv("gdk_dbpath"), DIR_SEP);

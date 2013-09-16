@@ -95,7 +95,6 @@ algebra_export str ALGjoinestimate(int *result, int *lid, int *rid, lng *estimat
 algebra_export str ALGjoin(int *result, int* lid, int *rid);
 algebra_export str ALGleftjoinestimate(int *result, int *lid, int *rid, lng *estimate);
 algebra_export str ALGleftjoin(int *result, int* lid, int *rid);
-algebra_export str ALGleftfetchjoinestimate(int *result, int *lid, int *rid, lng *estimate);
 algebra_export str ALGleftfetchjoin(int *result, int* lid, int *rid);
 algebra_export str ALGouterjoinestimate(int *result, int *lid, int *rid, lng *estimate);
 algebra_export str ALGouterjoin(int *result, int* lid, int *rid);
