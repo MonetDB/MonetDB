@@ -80,7 +80,8 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 			/* force garbage collection of all within upper block */
 			depth--;
 			for (k = 0; k < vlimit; k++) {
-				if (getEndLifespan(span,k) == i &&
+				if (getBeginLifespan(span,k) > 0  &&
+					getEndLifespan(span,k) == i &&
 					isaBatType(getVarType(mb,k)) &&
 					varGetProp(mb, k, keepProp) == NULL){
 						q= newAssignment(mb);
