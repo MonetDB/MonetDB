@@ -682,9 +682,9 @@ do {                                                              \
 		sprintf(imprints->dict->filename, "%s.dict", nme);
 
 		/* TODO: better estimation for the size to alloc */
-		if (HEAPalloc(imprints->imps, b->T->heap.size/IMPS_PAGE,
+		if (HEAPalloc(imprints->imps, (b->T->heap.size+IMPS_PAGE-1)/IMPS_PAGE,
 					imprints->bits/8) +
-			HEAPalloc(imprints->dict, b->T->heap.size/IMPS_PAGE,
+			HEAPalloc(imprints->dict, (b->T->heap.size+IMPS_PAGE-1)/IMPS_PAGE,
 				sizeof(cchdc_t)) < 0) {
 			GDKerror("#BATimprints: memory allocation error");
 			HEAPfree(imprints->bins);
