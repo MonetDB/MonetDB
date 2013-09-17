@@ -34,7 +34,7 @@
  * The MonetDB server uses a startup script to boot the system.
  * This script is an ordinary MAL program, but will mostly
  * consist of include statements to load modules of general interest.
- * The startup script is ran as user Admin.
+ * The startup script is run as user Admin.
  */
 int
 malBootstrap(void)

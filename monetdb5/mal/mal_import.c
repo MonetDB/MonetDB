@@ -105,9 +105,9 @@ malLoadScript(Client c, str name, bstream **fdin)
 
 /*
  * Beware that we have to isolate the execution of the source file
- * in its own environment. E.g. we have to removed the execution
+ * in its own environment. E.g. we have to remove the execution
  * state until we are finished.
- * The script being read my contain errors, such as non-balanced
+ * The script being read may contain errors, such as non-balanced
  * brackets as indicated by blkmode.
  * It should be reset before continuing.
 */
@@ -158,10 +158,11 @@ malLoadScript(Client c, str name, bstream **fdin)
 	c->mode = oldmode; \
 	c->blkmode = oldblkmode; \
 	c->srcFile = oldsrcFile;
+
 /*
  * The include operation parses the file indentified and
  * leaves the MAL code behind in the 'main' function.
-*/
+ */
 str
 malInclude(Client c, str name, int listing)
 {

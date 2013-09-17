@@ -1093,7 +1093,7 @@ SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output)
 			goto endofcompile;
 		}
 #ifdef _SQL_COMPILE
-	mnstr_printf(c->fdout, "#parse/execute result %d\n", err);
+		mnstr_printf(c->fdout, "#parse/execute result %d\n", err);
 #endif
 		assert(c->glb == 0 || c->glb == oldglb); /* detect leak */
 		c->glb = oldglb;
