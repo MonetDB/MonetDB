@@ -8,7 +8,8 @@
   \code{mc(...)} provides a short way of connecting to a MonetDB database. It is equivalent to \code{dbConnect(MonetDB.R(),...)}
 }
 \usage{
-mc(dbname="demo", user="monetdb", password="monetdb", host="localhost",port=50000, timeout=86400, wait=FALSE,...) 
+mc(dbname="demo", user="monetdb", password="monetdb", host="localhost", port=50000, 
+  timeout=86400, wait=FALSE,...) 
 }
 \arguments{
   \item{dbname}{Database name}

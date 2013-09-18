@@ -1,5 +1,4 @@
 require(DBI)
-require(bitops)
 require(digest)
 
 # TODO: make these values configurable in the call to dbConnect
@@ -581,78 +580,10 @@ REPLY_SIZE    <- 100 # Apparently, -1 means unlimited, but we will start with a 
 }
 
 
-.mapiReadOld <- function(con) {
-	resp <- list()
-	repeat {
-		unpacked <- readBin(con,"integer",n=1,size=2,signed=FALSE,endian="little")
-		
-		if (length(unpacked) == 0) {
-			stop("Empty response from MonetDB server, probably a timeout. You can increase the time to wait for responses with the 'timeout' parameter to 'dbConnect()'.")
-		}
-		
-		blength <- bitShiftR(unpacked,1)
-		final <- bitAnd(unpacked,1)
-		
-		# counting transmitted bytes
-		counterenv$bytes.in <- counterenv$bytes.in + blength
-		
-		if (DEBUG_IO) cat(paste("II: Reading ",blength," bytes, last: ",final==TRUE,"\n",sep=""))
-		if (blength <= 0) break
-		if (blength > 8190) stop("Protocol error, block size cannot be > 8K-2 bytes")
-		
-		# readChar does not guarantee to block until n bytes are read
-		# this is an issue especially on windows
-		
-		while (blength > 0) {
-			block <- readChar(con,blength, useBytes = TRUE)
-			resp <- c(resp,block)
-			blength <- blength - nchar(block,type="bytes")-1 # readChar adds terminator, most expensive 1 ever
-			if (blength > 0) {
-				cat(paste0("II: Read ",nchar(block,type="bytes")," bytes, : ",blength," bytes to go\n"))
-				cat(paste0(substring(block,1,10),"...",substring(block,nchar(block)-10,nchar(block)),"\n"))
-			}
-		}
-		
-		if (final == 1) break
-	}
-	respstr <- paste0("",resp,collapse="")
-	if (DEBUG_IO) {
-		dstr <- respstr
-		if (nchar(dstr) > 300) {
-			dstr <- paste0(substring(dstr,1,200),"...",substring(dstr,nchar(dstr)-100,nchar(dstr))) 
-		} 
-		cat(paste0("RX: '",dstr,"'\n"))
-	}
-	return(respstr)
-}
 
 .mapiLongInt <- function(someint) {
 	stopifnot(length(someint) == 1)
 	formatC(someint,format="d")
-}
-
-.mapiWriteOld <- function(con, msg) {
-	final <- FALSE
-	pos <- 0
-	
-	if (DEBUG_IO)  cat(paste("TX: '",msg,"'\n",sep=""))	
-	
-	while (!final) {		
-		req <- substring(msg,pos+1,min(MAX_PACKET_SIZE, nchar(msg))+pos)
-		bytes <- nchar(req)
-		pos <- pos + bytes
-		final <- max(nchar(msg) - pos,0) == 0
-		
-		# counting transmitted bytes
-		counterenv$bytes.out <- counterenv$bytes.out + bytes
-		
-		# if (DEBUG_IO) cat(paste("II: Writing ",bytes," bytes, last: ",final,"\n",sep=""))
-		header <- as.integer(bitOr(bitShiftL(bytes,1),as.numeric(final)))
-		writeBin(header, con, 2,endian="little")
-		writeChar(req,con,bytes,useBytes=TRUE,eos=NULL)
-	}
-	flush(con)
-	NULL
 }
 
 # determines and partially parses the answer from the server in response to a query
