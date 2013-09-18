@@ -3,19 +3,19 @@
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  * http://www.monetdb.org/Legal/MonetDBLicense
- * 
+ *
  * Software distributed under the License is distributed on an "AS IS"
  * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
  * License for the specific language governing rights and limitations
  * under the License.
- * 
+ *
  * The Original Code is the MonetDB Database System.
- * 
+ *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
  * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
-*/
+ */
 
 /*
  * Out of order execution
@@ -37,7 +37,6 @@
  */
 #include "monetdb_config.h"
 #include "mal_dataflow.h"
-#include "mal_client.h"
 
 #define DFLOWpending 0		/* runnable */
 #define DFLOWrunning 1		/* currently in progress */
@@ -60,6 +59,7 @@ typedef struct FLOWEVENT {
 typedef struct queue {
 	int size;	/* size of queue */
 	int last;	/* last element in the queue */
+	int exitcount;	/* how many threads should exit */
 	FlowEvent *data;
 	MT_Lock l;	/* it's a shared resource, ie we need locks */
 	MT_Sema s;	/* threads wait on empty queues */
@@ -83,9 +83,11 @@ typedef struct DATAFLOW {
 	Queue *done;        /* instructions handled */
 } *DataFlow, DataFlowRec;
 
-#define MAXQ 256
-static Queue *todos[MAXQ] = {0};	/* pending instructions organized by dataflow block */
-static bit occupied[MAXQ]={0}; 		/* worker pool is in use? */
+static struct worker {
+	MT_Id id;
+	enum {IDLE, RUNNING, EXITED} flag;
+} workers[THREADS];
+static Queue *todo = 0;	/* pending instructions */
 static int volatile exiting = 0;
 
 /*
@@ -122,6 +124,7 @@ q_create(int sz, const char *name)
 		GDKfree(q);
 		return NULL;
 	}
+	q->exitcount = 0;
 
 	(void) name; /* in case MT_LOCK_TRACE is not enabled in gdk_system.h */
 	MT_lock_init(&q->l, name);
@@ -211,6 +214,11 @@ q_dequeue(Queue *q)
 	if (exiting)
 		return NULL;
 	MT_lock_set(&q->l, "q_dequeue");
+	if (q->exitcount > 0) {
+		q->exitcount--;
+		MT_lock_unset(&q->l, "q_dequeue");
+		return NULL;
+	}
 	assert(q->last > 0);
 	if (q->last > 0) {
 		/* LIFO favors garbage collection */
@@ -253,13 +261,14 @@ q_dequeue(Queue *q)
  */
 
 static void
-DFLOWworker(void *t)
+DFLOWworker(void *T)
 {
+	struct worker *t = (struct worker *) T;
 	DataFlow flow;
 	FlowEvent fe = 0, fnxt = 0;
+	int id = (int) (t - workers);
 	Thread thr;
 	str error = 0;
-	Queue *todo = *(Queue **) t;
 	int i,last;
 
 	thr = THRnew("DFLOWworker");
@@ -267,9 +276,10 @@ DFLOWworker(void *t)
 	GDKsetbuf(GDKmalloc(GDKMAXERRLEN)); /* where to leave errors */
 	GDKerrbuf[0] = 0;
 	while (1) {
-		if (fnxt == 0)
-			fe = q_dequeue(todo);
-		else
+		if (fnxt == 0) {
+			if ((fe = q_dequeue(todo)) == NULL)
+				break;;
+		} else
 			fe = fnxt;
 		if (exiting) {
 			break;
@@ -297,8 +307,8 @@ DFLOWworker(void *t)
 			}
 #endif
 			error = runMALsequence(flow->cntxt, flow->mb, fe->pc, fe->pc + 1, flow->stk, 0, 0);
-			PARDEBUG mnstr_printf(GDKstdout, "#executed pc= %d wrk= %d claim= " LLFMT "," LLFMT " %s\n",
-								  fe->pc, (int)((Queue **)t - todos), fe->argclaim, fe->hotclaim, error ? error : "");
+			PARDEBUG fprintf(stderr, "#executed pc= %d wrk= %d claim= " LLFMT "," LLFMT " %s\n",
+							 fe->pc, id, fe->argclaim, fe->hotclaim, error ? error : "");
 #ifdef USE_MAL_ADMISSION
 			/* release the memory claim */
 			MALadmission(-fe->argclaim, -fe->hotclaim);
@@ -308,7 +318,7 @@ DFLOWworker(void *t)
 			if (error) {
 				MT_lock_set(&flow->flowlock, "runMALdataflow");
 				/* only collect one error (from one thread, needed for stable testing) */
-				if (!flow->error) 
+				if (!flow->error)
 					flow->error = error;
 				MT_lock_unset(&flow->flowlock, "runMALdataflow");
 				/* after an error we skip the rest of the block */
@@ -334,7 +344,7 @@ DFLOWworker(void *t)
 		}
 #endif
 		MT_lock_set(&flow->flowlock, "MALworker");
-	
+
 		for (last = fe->pc - flow->start; last >= 0 && (i = flow->nodes[last]) > 0; last = flow->edges[last])
 			if (flow->status[i].state == DFLOWpending &&
 				flow->status[i].blocks == 1) {
@@ -358,59 +368,36 @@ DFLOWworker(void *t)
 	GDKfree(GDKerrbuf);
 	GDKsetbuf(0);
 	THRdel(thr);
+	t->flag = EXITED;
 }
 
-/* 
+/*
  * Create an interpreter pool.
  * One worker will adaptively be available for each client.
  * The remainder are taken from the GDKnr_threads argument and
- * typically is equal to the number of cores.
- * A recursive MAL function call would make for one worker less,
- * which limits the number of cores for parallel processing.
+ * typically is equal to the number of cores
  * The workers are assembled in a local table to enable debugging.
- *
- * BEWARE, failure to create a new worker thread is not an error
- * but would lead to serial execution.
  */
-static int
+static void
 DFLOWinitialize(void)
 {
-	int i, threads, grp;
-	MT_Id worker;
+	int i, limit;
 
-	threads = GDKnr_threads ? GDKnr_threads : 1;
 	MT_lock_set(&mal_contextLock, "DFLOWinitialize");
-	for(grp = 0; grp< MAXQ; grp++)
-		if ( occupied[grp] == FALSE){
-			occupied[grp] = TRUE;
-			break;
-		}
+	if (todo) {
+		MT_lock_unset(&mal_contextLock, "DFLOWinitialize");
+		return;
+	}
+	todo = q_create(2048, "DFLOWinitialize");
+	limit = GDKnr_threads ? GDKnr_threads : 1;
+	for (i = 0; i < limit; i++) {
+		workers[i].flag = RUNNING;
+		if (MT_create_thread(&workers[i].id, DFLOWworker, (void *) &workers[i], MT_THR_JOINABLE) < 0)
+			workers[i].flag = IDLE;
+	}
 	MT_lock_unset(&mal_contextLock, "DFLOWinitialize");
-	if (grp > THREADS) {
-		// continue non-parallel
-		return -1;
-	}
-	if ( todos[grp] )
-		return grp;
-
-	todos[grp] = q_create(2048, "todo");
-	if (todos[grp] == NULL) 
-		return -1;
-
-	// associate a set of workers with the pool
-	for (i = 0; grp>= 0 && i < threads; i++){
-		if (MT_create_thread(&worker, DFLOWworker, (void *) &todos[grp], MT_THR_JOINABLE) < 0) {
-			//Can not create interpreter thread
-			grp = -1;
-		}
-		if (worker == 0) {
-			//Failed to create interpreter thread
-			grp = -1;
-		}
-	}
-	return grp;
 }
- 
+
 /*
  * The dataflow administration is based on administration of
  * how many variables are still missing before it can be executed.
@@ -428,7 +415,7 @@ DFLOWinitBlk(DataFlow flow, MalBlkPtr mb, int size)
 		throw(MAL, "dataflow", "DFLOWinitBlk(): Called with flow == NULL");
 	if (mb == NULL)
 		throw(MAL, "dataflow", "DFLOWinitBlk(): Called with mb == NULL");
-	PARDEBUG printf("Initialize dflow block\n");
+	PARDEBUG fprintf(stderr, "Initialize dflow block\n");
 	assign = (int *) GDKzalloc(mb->vtop * sizeof(int));
 	if (assign == NULL)
 		throw(MAL, "dataflow", "DFLOWinitBlk(): Failed to allocate assign");
@@ -479,7 +466,7 @@ DFLOWinitBlk(DataFlow flow, MalBlkPtr mb, int size)
 				l = getEndOfLife(mb, getArg(p, j));
 				if (l != pc && l < flow->stop && l > flow->start) {
 					/* add edge to the target instruction for wakeup call */
-					PARDEBUG mnstr_printf(GDKstdout, "endoflife for %s is %d -> %d\n", getVarName(mb, getArg(p, j)), n + flow->start, l);
+					PARDEBUG fprintf(stderr, "endoflife for %s is %d -> %d\n", getVarName(mb, getArg(p, j)), n + flow->start, l);
 					assert(pc < l); /* only dependencies on earlier instructions */
 					l -= flow->start;
 					if (flow->nodes[n]) {
@@ -504,17 +491,18 @@ DFLOWinitBlk(DataFlow flow, MalBlkPtr mb, int size)
 			assign[getArg(p, j)] = pc;  /* ensure recognition of dependency on first instruction and constant */
 	}
 	GDKfree(assign);
-	PARDEBUG
-	for (n = 0; n < flow->stop - flow->start; n++) {
-		mnstr_printf(GDKstdout, "#[%d] %d: ", flow->start + n, n);
-		printInstruction(GDKstdout, mb, 0, getInstrPtr(mb, n + flow->start), LIST_MAL_STMT | LIST_MAPI);
-		mnstr_printf(GDKstdout, "#[%d]Dependents block count %d wakeup", flow->start + n, flow->status[n].blocks);
-		for (j = n; flow->edges[j]; j = flow->edges[j]) {
-			mnstr_printf(GDKstdout, "%d ", flow->start + flow->nodes[j]);
-			if (flow->edges[j] == -1)
-				break;
+	PARDEBUG {
+		for (n = 0; n < flow->stop - flow->start; n++) {
+			mnstr_printf(GDKstdout, "#[%d] %d: ", flow->start + n, n);
+			printInstruction(GDKstdout, mb, 0, getInstrPtr(mb, n + flow->start), LIST_MAL_STMT | LIST_MAPI);
+			mnstr_printf(GDKstdout, "#[%d]Dependents block count %d wakeup", flow->start + n, flow->status[n].blocks);
+			for (j = n; flow->edges[j]; j = flow->edges[j]) {
+				mnstr_printf(GDKstdout, "%d ", flow->start + flow->nodes[j]);
+				if (flow->edges[j] == -1)
+					break;
+			}
+			mnstr_printf(GDKstdout, "\n");
 		}
-		mnstr_printf(GDKstdout, "\n");
 	}
 #ifdef USE_MAL_ADMISSION
 	memorypool = memoryclaims = 0;
@@ -537,17 +525,17 @@ static void showFlowEvent(DataFlow flow, int pc)
 	int i;
 	FlowEvent fe = flow->status;
 
-	mnstr_printf(GDKstdout, "#end of data flow %d done %d \n", pc, flow->stop - flow->start);
+	fprintf(stderr, "#end of data flow %d done %d \n", pc, flow->stop - flow->start);
 	for (i = 0; i < flow->stop - flow->start; i++)
 		if (fe[i].state != DFLOWwrapup && fe[i].pc >= 0) {
-			mnstr_printf(GDKstdout, "#missed pc %d status %d %d  blocks %d", fe[i].state, i, fe[i].pc, fe[i].blocks);
+			fprintf(stderr, "#missed pc %d status %d %d  blocks %d", fe[i].state, i, fe[i].pc, fe[i].blocks);
 			printInstruction(GDKstdout, fe[i].flow->mb, 0, getInstrPtr(fe[i].flow->mb, fe[i].pc), LIST_MAL_STMT | LIST_MAPI);
 		}
 }
 */
 
 static str
-DFLOWscheduler(DataFlow flow, Queue *todo)
+DFLOWscheduler(DataFlow flow)
 {
 	int last;
 	int i;
@@ -581,11 +569,11 @@ DFLOWscheduler(DataFlow flow, Queue *todo)
 #endif
 			q_enqueue(todo, flow->status + i);
 			flow->status[i].state = DFLOWrunning;
-			PARDEBUG mnstr_printf(GDKstdout, "#enqueue pc=%d claim=" LLFMT "\n", flow->status[i].pc, flow->status[i].argclaim);
+			PARDEBUG fprintf(stderr, "#enqueue pc=%d claim=" LLFMT "\n", flow->status[i].pc, flow->status[i].argclaim);
 		}
 	MT_lock_unset(&flow->flowlock, "MALworker");
 
-	PARDEBUG mnstr_printf(GDKstdout, "#run %d instructions in dataflow block\n", actions);
+	PARDEBUG fprintf(stderr, "#run %d instructions in dataflow block\n", actions);
 
 	while (actions != tasks ) {
 		f = q_dequeue(flow->done);
@@ -609,18 +597,17 @@ DFLOWscheduler(DataFlow flow, Queue *todo)
 					flow->status[i].state = DFLOWrunning;
 					flow->status[i].blocks--;
 					q_enqueue(todo, flow->status + i);
-					PARDEBUG
-					mnstr_printf(GDKstdout, "#enqueue pc=%d claim= " LLFMT "\n", flow->status[i].pc, flow->status[i].argclaim);
+					PARDEBUG fprintf(stderr, "#enqueue pc=%d claim= " LLFMT "\n", flow->status[i].pc, flow->status[i].argclaim);
 				} else {
 					flow->status[i].blocks--;
 				}
-			} 
+			}
 		MT_lock_unset(&flow->flowlock, "MALworker");
 	}
 	/* wrap up errors */
 	assert(flow->done->last == 0);
 	if (flow->error ) {
-		PARDEBUG mnstr_printf(GDKstdout, "#errors encountered %s ", flow->error ? flow->error : "unknown");
+		PARDEBUG fprintf(stderr, "#errors encountered %s ", flow->error ? flow->error : "unknown");
 		ret = flow->error;
 	}
 	return ret;
@@ -631,11 +618,12 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr st
 {
 	DataFlow flow = NULL;
 	str msg = MAL_SUCCEED;
-	int size, pool;
+	int size;
 	int *ret;
+	int i;
 
 #ifdef DEBUG_FLOW
-	mnstr_printf(GDKstdout, "runMALdataflow for block %d - %d\n", startpc, stoppc);
+	fprintf(stderr, "runMALdataflow for block %d - %d\n", startpc, stoppc);
 	printFunction(GDKstdout, mb, 0, LIST_MAL_STMT | LIST_MAPI);
 #endif
 
@@ -643,23 +631,31 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr st
 	if (stk == NULL)
 		throw(MAL, "dataflow", "runMALdataflow(): Called with stk == NULL");
 	ret = (int*) getArgReference(stk,getInstrPtr(mb,startpc),0);
-	if (stk->cmd){
-		*ret = TRUE;
-		return MAL_SUCCEED;
-	}
-	/* too many threads turns dataflow processing off */
-	if ( cntxt->idx > MAXQ){
+	if (stk->cmd) {
 		*ret = TRUE;
 		return MAL_SUCCEED;
 	}
 
 	assert(stoppc > startpc);
 
-	/* check existence of free worker group, resort to sequential upon failure */
-	if( (pool= DFLOWinitialize()) < 0){
-		*ret = TRUE;
-		return MAL_SUCCEED;
+	/* check existence of workers */
+	if (todo == NULL) {
+		DFLOWinitialize();		/* create the whole pool */
+		i = THREADS;			/* we didn't create an extra thread */
+	} else {
+		/* create one more worker to compensate for our waiting until
+		 * all work is done */
+		MT_lock_set(&mal_contextLock, "runMALdataflow");
+		for (i = 0; i < THREADS; i++) {
+			if (workers[i].flag == IDLE) {
+				workers[i].flag = RUNNING;
+				MT_create_thread(&workers[i].id, DFLOWworker, (void *) &workers[i], MT_THR_JOINABLE);
+				break;
+			}
+		}
+		MT_lock_unset(&mal_contextLock, "runMALdataflow");
 	}
+	assert(todo);
 
 	flow = (DataFlow)GDKzalloc(sizeof(DataFlowRec));
 	if (flow == NULL)
@@ -679,7 +675,6 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr st
 	if (flow->done == NULL) {
 		MT_lock_destroy(&flow->flowlock);
 		GDKfree(flow);
-		occupied[pool]= FALSE;
 		throw(MAL, "dataflow", "runMALdataflow(): Failed to create flow->done queue");
 	}
 
@@ -688,7 +683,6 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr st
 		q_destroy(flow->done);
 		MT_lock_destroy(&flow->flowlock);
 		GDKfree(flow);
-		occupied[pool]= FALSE;
 		throw(MAL, "dataflow", "runMALdataflow(): Failed to allocate flow->status");
 	}
 	size = DFLOWgraphSize(mb, startpc, stoppc);
@@ -699,7 +693,6 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr st
 		q_destroy(flow->done);
 		MT_lock_destroy(&flow->flowlock);
 		GDKfree(flow);
-		occupied[pool]= FALSE;
 		throw(MAL, "dataflow", "runMALdataflow(): Failed to allocate flow->nodes");
 	}
 	flow->edges = (int*)GDKzalloc(sizeof(int) * size);
@@ -709,21 +702,36 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr st
 		q_destroy(flow->done);
 		MT_lock_destroy(&flow->flowlock);
 		GDKfree(flow);
-		occupied[pool]= FALSE;
 		throw(MAL, "dataflow", "runMALdataflow(): Failed to allocate flow->edges");
 	}
 	msg = DFLOWinitBlk(flow, mb, size);
 
 	if (msg == MAL_SUCCEED)
-		msg = DFLOWscheduler(flow,todos[pool]);
+		msg = DFLOWscheduler(flow);
 
-	occupied[pool]= FALSE;
 	GDKfree(flow->status);
 	GDKfree(flow->edges);
 	GDKfree(flow->nodes);
 	q_destroy(flow->done);
 	MT_lock_destroy(&flow->flowlock);
 	GDKfree(flow);
+
+	if (i != THREADS) {
+		/* we created one worker, now tell one worker to exit again */
+		MT_lock_set(&todo->l, "runMALdataflow");
+		todo->exitcount++;
+		MT_lock_unset(&todo->l, "runMALdataflow");
+		MT_sema_up(&todo->s, "runMALdataflow");
+		MT_lock_set(&mal_contextLock, "runMALdataflow");
+		for (i = 0; i < THREADS; i++) {
+			if (workers[i].flag == EXITED) {
+				MT_join_thread(workers[i].id);
+				workers[i].flag = IDLE;
+				break;
+			}
+		}
+		MT_lock_unset(&mal_contextLock, "runMALdataflow");
+	}
 	return msg;
 }
 
