@@ -319,13 +319,8 @@ DFLOWworker(void *t)
 		 * All eligible instructions are queued
 		 */
 #ifdef USE_MAL_ADMISSION
-		{
-#ifndef NDEBUG
-		InstrPtr p = getInstrPtr(flow->mb, fe->pc);
-#endif
-		assert(p);
+		assert(getInstrPtr(flow->mb, fe->pc));
 		fe->hotclaim = 0;
-		}
 #endif
 		MT_lock_set(&flow->flowlock, "MALworker");
 	
