@@ -3,19 +3,19 @@
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  * http://www.monetdb.org/Legal/MonetDBLicense
- * 
+ *
  * Software distributed under the License is distributed on an "AS IS"
  * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
  * License for the specific language governing rights and limitations
  * under the License.
- * 
+ *
  * The Original Code is the MonetDB Database System.
- * 
+ *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
  * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
-*/
+ */
 
 /*
  * Out of order execution
@@ -37,7 +37,6 @@
  */
 #include "monetdb_config.h"
 #include "mal_dataflow.h"
-#include "mal_client.h"
 
 #define DFLOWpending 0		/* runnable */
 #define DFLOWrunning 1		/* currently in progress */
@@ -302,7 +301,7 @@ DFLOWworker(void *T)
 			}
 #endif
 			error = runMALsequence(flow->cntxt, flow->mb, fe->pc, fe->pc + 1, flow->stk, 0, 0);
-			PARDEBUG mnstr_printf(GDKstdout, "#executed pc= %d wrk= %d claim= " LLFMT "," LLFMT " %s\n",
+			PARDEBUG fprintf(stderr, "#executed pc= %d wrk= %d claim= " LLFMT "," LLFMT " %s\n",
 							 fe->pc, id, fe->argclaim, fe->hotclaim, error ? error : "");
 #ifdef USE_MAL_ADMISSION
 			/* release the memory claim */
@@ -313,7 +312,7 @@ DFLOWworker(void *T)
 			if (error) {
 				MT_lock_set(&flow->flowlock, "runMALdataflow");
 				/* only collect one error (from one thread, needed for stable testing) */
-				if (!flow->error) 
+				if (!flow->error)
 					flow->error = error;
 				MT_lock_unset(&flow->flowlock, "runMALdataflow");
 				/* after an error we skip the rest of the block */
@@ -334,7 +333,7 @@ DFLOWworker(void *T)
 		fe->hotclaim = 0;
 #endif
 		MT_lock_set(&flow->flowlock, "MALworker");
-	
+
 		for (last = fe->pc - flow->start; last >= 0 && (i = flow->nodes[last]) > 0; last = flow->edges[last])
 			if (flow->status[i].state == DFLOWpending &&
 				flow->status[i].blocks == 1) {
@@ -359,7 +358,7 @@ DFLOWworker(void *T)
 	t->flag = EXITED;
 }
 
-/* 
+/*
  * Create an interpreter pool.
  * One worker will adaptively be available for each client.
  * The remainder are taken from the GDKnr_threads argument and
@@ -385,7 +384,7 @@ DFLOWinitialize(void)
 	}
 	MT_lock_unset(&mal_contextLock, "DFLOWinitialize");
 }
- 
+
 /*
  * The dataflow administration is based on administration of
  * how many variables are still missing before it can be executed.
@@ -403,7 +402,7 @@ DFLOWinitBlk(DataFlow flow, MalBlkPtr mb, int size)
 		throw(MAL, "dataflow", "DFLOWinitBlk(): Called with flow == NULL");
 	if (mb == NULL)
 		throw(MAL, "dataflow", "DFLOWinitBlk(): Called with mb == NULL");
-	PARDEBUG printf("Initialize dflow block\n");
+	PARDEBUG fprintf(stderr, "Initialize dflow block\n");
 	assign = (int *) GDKzalloc(mb->vtop * sizeof(int));
 	if (assign == NULL)
 		throw(MAL, "dataflow", "DFLOWinitBlk(): Failed to allocate assign");
@@ -454,7 +453,7 @@ DFLOWinitBlk(DataFlow flow, MalBlkPtr mb, int size)
 				l = getEndOfLife(mb, getArg(p, j));
 				if (l != pc && l < flow->stop && l > flow->start) {
 					/* add edge to the target instruction for wakeup call */
-					PARDEBUG mnstr_printf(GDKstdout, "endoflife for %s is %d -> %d\n", getVarName(mb, getArg(p, j)), n + flow->start, l);
+					PARDEBUG fprintf(stderr, "endoflife for %s is %d -> %d\n", getVarName(mb, getArg(p, j)), n + flow->start, l);
 					assert(pc < l); /* only dependencies on earlier instructions */
 					l -= flow->start;
 					if (flow->nodes[n]) {
@@ -479,17 +478,18 @@ DFLOWinitBlk(DataFlow flow, MalBlkPtr mb, int size)
 			assign[getArg(p, j)] = pc;  /* ensure recognition of dependency on first instruction and constant */
 	}
 	GDKfree(assign);
-	PARDEBUG
-	for (n = 0; n < flow->stop - flow->start; n++) {
-		mnstr_printf(GDKstdout, "#[%d] %d: ", flow->start + n, n);
-		printInstruction(GDKstdout, mb, 0, getInstrPtr(mb, n + flow->start), LIST_MAL_STMT | LIST_MAPI);
-		mnstr_printf(GDKstdout, "#[%d]Dependents block count %d wakeup", flow->start + n, flow->status[n].blocks);
-		for (j = n; flow->edges[j]; j = flow->edges[j]) {
-			mnstr_printf(GDKstdout, "%d ", flow->start + flow->nodes[j]);
-			if (flow->edges[j] == -1)
-				break;
+	PARDEBUG {
+		for (n = 0; n < flow->stop - flow->start; n++) {
+			mnstr_printf(GDKstdout, "#[%d] %d: ", flow->start + n, n);
+			printInstruction(GDKstdout, mb, 0, getInstrPtr(mb, n + flow->start), LIST_MAL_STMT | LIST_MAPI);
+			mnstr_printf(GDKstdout, "#[%d]Dependents block count %d wakeup", flow->start + n, flow->status[n].blocks);
+			for (j = n; flow->edges[j]; j = flow->edges[j]) {
+				mnstr_printf(GDKstdout, "%d ", flow->start + flow->nodes[j]);
+				if (flow->edges[j] == -1)
+					break;
+			}
+			mnstr_printf(GDKstdout, "\n");
 		}
-		mnstr_printf(GDKstdout, "\n");
 	}
 #ifdef USE_MAL_ADMISSION
 	memorypool = memoryclaims = 0;
@@ -512,10 +512,10 @@ static void showFlowEvent(DataFlow flow, int pc)
 	int i;
 	FlowEvent fe = flow->status;
 
-	mnstr_printf(GDKstdout, "#end of data flow %d done %d \n", pc, flow->stop - flow->start);
+	fprintf(stderr, "#end of data flow %d done %d \n", pc, flow->stop - flow->start);
 	for (i = 0; i < flow->stop - flow->start; i++)
 		if (fe[i].state != DFLOWwrapup && fe[i].pc >= 0) {
-			mnstr_printf(GDKstdout, "#missed pc %d status %d %d  blocks %d", fe[i].state, i, fe[i].pc, fe[i].blocks);
+			fprintf(stderr, "#missed pc %d status %d %d  blocks %d", fe[i].state, i, fe[i].pc, fe[i].blocks);
 			printInstruction(GDKstdout, fe[i].flow->mb, 0, getInstrPtr(fe[i].flow->mb, fe[i].pc), LIST_MAL_STMT | LIST_MAPI);
 		}
 }
@@ -553,11 +553,11 @@ DFLOWscheduler(DataFlow flow)
 #endif
 			q_enqueue(todo, flow->status + i);
 			flow->status[i].state = DFLOWrunning;
-			PARDEBUG mnstr_printf(GDKstdout, "#enqueue pc=%d claim=" LLFMT "\n", flow->status[i].pc, flow->status[i].argclaim);
+			PARDEBUG fprintf(stderr, "#enqueue pc=%d claim=" LLFMT "\n", flow->status[i].pc, flow->status[i].argclaim);
 		}
 	MT_lock_unset(&flow->flowlock, "MALworker");
 
-	PARDEBUG mnstr_printf(GDKstdout, "#run %d instructions in dataflow block\n", actions);
+	PARDEBUG fprintf(stderr, "#run %d instructions in dataflow block\n", actions);
 
 	while (actions != tasks ) {
 		f = q_dequeue(flow->done);
@@ -579,18 +579,17 @@ DFLOWscheduler(DataFlow flow)
 					flow->status[i].state = DFLOWrunning;
 					flow->status[i].blocks--;
 					q_enqueue(todo, flow->status + i);
-					PARDEBUG
-					mnstr_printf(GDKstdout, "#enqueue pc=%d claim= " LLFMT "\n", flow->status[i].pc, flow->status[i].argclaim);
+					PARDEBUG fprintf(stderr, "#enqueue pc=%d claim= " LLFMT "\n", flow->status[i].pc, flow->status[i].argclaim);
 				} else {
 					flow->status[i].blocks--;
 				}
-			} 
+			}
 		MT_lock_unset(&flow->flowlock, "MALworker");
 	}
 	/* wrap up errors */
 	assert(flow->done->last == 0);
 	if (flow->error ) {
-		PARDEBUG mnstr_printf(GDKstdout, "#errors encountered %s ", flow->error ? flow->error : "unknown");
+		PARDEBUG fprintf(stderr, "#errors encountered %s ", flow->error ? flow->error : "unknown");
 		ret = flow->error;
 	}
 	return ret;
@@ -606,7 +605,7 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr st
 	int i;
 
 #ifdef DEBUG_FLOW
-	mnstr_printf(GDKstdout, "runMALdataflow for block %d - %d\n", startpc, stoppc);
+	fprintf(stderr, "runMALdataflow for block %d - %d\n", startpc, stoppc);
 	printFunction(GDKstdout, mb, 0, LIST_MAL_STMT | LIST_MAPI);
 #endif
 
