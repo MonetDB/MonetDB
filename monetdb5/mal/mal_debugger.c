@@ -1275,7 +1275,7 @@ mdbTrapClient(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 	(void) cntxt;
 	(void) mb;
-	if (id < 0 || id > MAL_MAXCLIENTS || mal_clients[id].mode == 0)
+	if (id < 0 || id >= MAL_MAXCLIENTS || mal_clients[id].mode == 0)
 		throw(INVCRED, "mdb.grab", INVCRED_WRONG_ID);
 	c = mal_clients + id;
 

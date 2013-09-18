@@ -373,7 +373,7 @@ DFLOWinitialize(void)
 			break;
 		}
 	MT_lock_unset(&mal_contextLock, "DFLOWinitialize");
-	if (grp > THREADS) {
+	if (grp >= MAXQ) {
 		// continue non-parallel
 		return -1;
 	}

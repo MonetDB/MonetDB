@@ -107,7 +107,7 @@ MDBstart(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	if( p->argc == 2){
 		/* debug running process */
 		pid = *(int *) getArgReference(stk, p, 1);
-		if( pid< 0 || pid > MAL_MAXCLIENTS || mal_clients[pid].mode <= FINISHING)
+		if( pid< 0 || pid >= MAL_MAXCLIENTS || mal_clients[pid].mode <= FINISHING)
 			throw(MAL, "mdb.start", ILLEGAL_ARGUMENT " Illegal process id");
 		c= mal_clients+pid;
 		/* make client aware of being debugged */
