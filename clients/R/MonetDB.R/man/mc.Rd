@@ -18,6 +18,8 @@ mc(dbname="demo", user="monetdb", password="monetdb", host="localhost",port=5000
   \item{port}{TCP Port number of database server}
   \item{timeout}{Database connection and query timeout}
   \item{wait}{Wait for DB to become available or not}
+  \item{...}{Unused}
+
   }
 \value{
   Returns a DBI connection to the specified MonetDB database.
