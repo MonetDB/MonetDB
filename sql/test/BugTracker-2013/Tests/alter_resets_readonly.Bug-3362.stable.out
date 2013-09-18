@@ -1,0 +1,50 @@
+stdout of test 'alter_resets_readonly.Bug-3362` in directory 'sql/test/BugTracker-2013` itself:
+
+
+# 15:44:27 >  
+# 15:44:27 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=39723" "--set" "mapi_usock=/var/tmp/mtest-3611/.s.monetdb.39723" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/niels/scratch/rc-clean/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2013" "--set" "mal_listing=0"
+# 15:44:27 >  
+
+# MonetDB 5 server v11.15.12
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2013', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 3.775 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2013 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://niels.nesco.mine.nu:39723/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-3611/.s.monetdb.39723
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 15:44:28 >  
+# 15:44:28 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-3611" "--port=39723"
+# 15:44:28 >  
+
+#create table x(a int);
+#insert into x values (1),(2),(3);
+[ 3	]
+#alter table x set read only;
+#select readonly from sys.tables where name='x';
+% .tables # table_name
+% readonly # name
+% boolean # type
+% 5 # length
+[ true	]
+#alter table x add primary key (a);
+#select readonly from sys.tables where name='x';
+% .tables # table_name
+% readonly # name
+% boolean # type
+% 5 # length
+[ true	]
+#drop table x;
+
+# 15:44:28 >  
+# 15:44:28 >  "Done."
+# 15:44:28 >  
+
