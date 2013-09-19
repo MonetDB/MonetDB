@@ -43,9 +43,11 @@ SEXP mapiInit(void) {
 SEXP mapiDisconnect(SEXP conn) {
 	CHECK_MAPI_SOCK(conn);
 	SOCKET *sock = R_ExternalPtrAddr(conn);
-	shutdown(*sock, 2);
-	R_ClearExternalPtr(conn);
-	free(sock);
+	if (sock != NULL) {
+		shutdown(*sock, 2);
+		R_ClearExternalPtr(conn);
+		free(sock);
+	}
 	return R_NilValue;
 }
 
