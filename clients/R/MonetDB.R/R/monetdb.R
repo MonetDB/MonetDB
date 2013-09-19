@@ -1,6 +1,11 @@
 require(DBI)
 require(digest)
 
+.onLoad <- function(lib, pkg) {
+	library.dynam( "MonetDB.R", pkg, lib )
+	.Call("mapiInit",PACKAGE="MonetDB.R")
+}
+
 # TODO: make these values configurable in the call to dbConnect
 DEBUG_IO      <- FALSE
 DEBUG_QUERY   <- FALSE
@@ -59,17 +64,17 @@ setMethod("dbConnect", "MonetDBDriver", def=function(drv,dbname="demo", user="mo
 								#	blocking = TRUE, open="r+b",timeout = 5 )
 								
 								# this goes to src/mapi.c
-								socket <- socket <<- .Call("mapiConnect",host,port,5)
+								socket <- socket <<- .Call("mapiConnect",host,port,5,PACKAGE="MonetDB.R")
 								# authenticate
 								.monetAuthenticate(socket,dbname,user,password)
 								# test the connection to make sure it works before
 								.mapiWrite(socket,"sSELECT 42;"); .mapiRead(socket)
 								#close(socket)
-								.Call("mapiDisconnect",socket)
+								.Call("mapiDisconnect",socket,PACKAGE="MonetDB.R")
 								break
 							}, error = function(e) {
 								if ("connection" %in% class(socket)) {
-									.Call("mapiDisconnect",socket)
+									.Call("mapiDisconnect",socket,PACKAGE="MonetDB.R")
 								}
 								cat(paste0("Server not ready(",e$message,"), retrying (ESC or CTRL+C to abort)\n"))
 								Sys.sleep(1)
@@ -81,7 +86,7 @@ setMethod("dbConnect", "MonetDBDriver", def=function(drv,dbname="demo", user="mo
 			# make new socket with user-specified timeout
 			#socket <- socket <<- socketConnection(host = host, port = port, 
 			#	blocking = TRUE, open="r+b",timeout = timeout) 
-			socket <- socket <<- .Call("mapiConnect",host,port,5)
+			socket <- socket <<- .Call("mapiConnect",host,port,timeout,PACKAGE="MonetDB.R")
 			.monetAuthenticate(socket,dbname,user,password)
 			connenv <- new.env(parent=emptyenv())
 			connenv$lock <- 0
@@ -94,10 +99,10 @@ setMethod("dbConnect", "MonetDBDriver", def=function(drv,dbname="demo", user="mo
 
 
 ### MonetDBConnection, #monetdb_mapi_conn
-setClass("MonetDBConnection", representation("DBIConnection",socket="monetdb_mapi_conn",connenv="environment",fetchSize="integer"))
+setClass("MonetDBConnection", representation("DBIConnection",socket="externalptr",connenv="environment",fetchSize="integer"))
 
 setMethod("dbDisconnect", "MonetDBConnection", def=function(conn, ...) {
-			.Call("mapiDisconnect",conn@socket)
+			.Call("mapiDisconnect",conn@socket,PACKAGE="MonetDB.R")
 			TRUE
 		})
 
@@ -557,9 +562,9 @@ REPLY_SIZE    <- 100 # Apparently, -1 means unlimited, but we will start with a 
 }
 
 .mapiRead <- function(con) {
-	if (!identical(class(con)[[1]],"monetdb_mapi_conn"))
-		stop("I can only be called with a monetdb_mapi_conn object as parameter.")
-	respstr <- .Call("mapiRead",con)
+	if (!identical(class(con)[[1]],"externalptr"))
+		stop("I can only be called with a MonetDB connection object as parameter.")
+	respstr <- .Call("mapiRead",con,PACKAGE="MonetDB.R")
 	if (DEBUG_IO) {
 		dstr <- respstr
 		if (nchar(dstr) > 300) {
@@ -571,11 +576,11 @@ REPLY_SIZE    <- 100 # Apparently, -1 means unlimited, but we will start with a 
 }
 
 .mapiWrite <- function(con,msg) {
-	if (!identical(class(con)[[1]],"monetdb_mapi_conn"))
-		stop("I can only be called with a monetdb_mapi_conn object as parameter.")
+	if (!identical(class(con)[[1]],"externalptr"))
+		stop("I can only be called with a MonetDB connection object as parameter.")
 	
 	if (DEBUG_IO)  cat(paste("TX: '",msg,"'\n",sep=""))	
-	.Call("mapiWrite",con,msg)
+	.Call("mapiWrite",con,msg,PACKAGE="MonetDB.R")
 	return (NULL)
 }
 

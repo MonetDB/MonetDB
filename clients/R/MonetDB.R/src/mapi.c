@@ -21,12 +21,33 @@
 #define BLOCKSIZE 8190
 #define BUFSIZE BLOCKSIZE+1
 #define SOCKET int
-#define SOCK_ATTR "mapi_conn_do_not_touch"
-#define CONN_CLASS "monetdb_mapi_conn"
 #define TRUE 1
 #define FALSE 0
 #define ALLOCSIZE 1048576 // 1 MB
 #define DEBUG FALSE
+
+// reference tricks taken from http://homepage.stat.uiowa.edu/~luke/R/simpleref.html#NWarqU3-KrSQa-1
+static SEXP MAPI_type_tag;
+
+#define CHECK_MAPI_SOCK(s) do { \
+    if (TYPEOF(s) != EXTPTRSXP || \
+        R_ExternalPtrTag(s) != MAPI_type_tag) \
+        error("bad socket"); \
+} while (0)
+
+SEXP mapiInit(void) {
+	MAPI_type_tag = install("MAPI_TYPE_TAG");
+	return R_NilValue;
+}
+
+SEXP mapiDisconnect(SEXP conn) {
+	CHECK_MAPI_SOCK(conn);
+	SOCKET *sock = R_ExternalPtrAddr(conn);
+	shutdown(*sock, 2);
+	R_ClearExternalPtr(conn);
+	free(sock);
+	return R_NilValue;
+}
 
 SEXP mapiConnect(SEXP host, SEXP port, SEXP timeout) {
 	// be a bit paranoid about the parameters
@@ -45,7 +66,7 @@ SEXP mapiConnect(SEXP host, SEXP port, SEXP timeout) {
 	assert(portval > 0 && portval < 65535);
 	assert(timeoutval > 0);
 
-	SEXP connobj, class, attr;
+	SEXP connobj;
 	SOCKET sock;
 
 	struct addrinfo hints;
@@ -69,9 +90,9 @@ SEXP mapiConnect(SEXP host, SEXP port, SEXP timeout) {
 	hints.ai_socktype = SOCK_STREAM;
 	hints.ai_protocol = IPPROTO_TCP;
 
+	// resolve dns name
 	char portvalstr[15];
 	sprintf(portvalstr, "%d", portval);
-
 	int s = getaddrinfo(hostval, portvalstr, &hints, &result);
 	if (s != 0) {
 		error("ERROR, failed to resolve host %s", hostval);
@@ -101,7 +122,7 @@ SEXP mapiConnect(SEXP host, SEXP port, SEXP timeout) {
 			if (DEBUG) {
 				printf("II: Connected to %s:%s\n", hostval, portvalstr);
 			}
-			break; /* Success */
+			break; // Profit
 		}
 		close(sock);
 	}
@@ -111,35 +132,24 @@ SEXP mapiConnect(SEXP host, SEXP port, SEXP timeout) {
 	}
 	freeaddrinfo(result);
 
-	if (setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (char *) &sto, sizeof(sto))
-			< 0)
-		error("setsockopt failed");
-	if (setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, (char *) &sto, sizeof(sto))
-			< 0)
-		error("setsockopt failed");
+	// get the socket number off the stack so that we can use R external pointers for passing it around
+	// external pointers are very useful as they can have finalizers, in our case, mapiDisconnect()
+	void * sockaddr = malloc(sizeof(int));
+	if (sockaddr == NULL) {
+		error("Error in malloc() for a single integer, srsly?");
+	}
+	memcpy(sockaddr, &sock, sizeof(int));
 
-	// construct a r object of class monetdb_mapi_conn with an attribute holding the connection id
-	PROTECT(connobj = ScalarInteger(1));
-	PROTECT(attr = ScalarInteger(1));
-	PROTECT(class = allocVector(STRSXP, 1));
-	SET_STRING_ELT(class, 0, mkChar(CONN_CLASS));
-	classgets(connobj, class);
-	INTEGER_POINTER(attr)[0] = sock;
-	setAttrib(connobj, install(SOCK_ATTR), attr);
-	UNPROTECT(3);
+	PROTECT(connobj = R_MakeExternalPtr(sockaddr, MAPI_type_tag, R_NilValue));
+	R_RegisterCFinalizerEx(connobj, (R_CFinalizer_t) mapiDisconnect, 0);
+	CHECK_MAPI_SOCK(connobj);
+	UNPROTECT(1);
 	return connobj;
 }
 
-SEXP mapiDisconnect(SEXP conn) {
-	SOCKET sock = INTEGER_POINTER(
-			AS_INTEGER(getAttrib(conn, install(SOCK_ATTR))))[0];
-	shutdown(sock, 2);
-	return R_NilValue;
-}
-
 SEXP mapiRead(SEXP conn) {
-	SOCKET sock = INTEGER_POINTER(
-			AS_INTEGER(getAttrib(conn, install(SOCK_ATTR))))[0];
+	CHECK_MAPI_SOCK(conn);
+	SOCKET sock = *((SOCKET*) R_ExternalPtrAddr(conn));
 
 	SEXP lines;
 	char read_buf[BUFSIZE];
@@ -157,7 +167,6 @@ SEXP mapiRead(SEXP conn) {
 	while (!block_final) {
 		//  read block header and extract block length and final bit from header
 		// this assumes little-endianness (so sue me)
-
 		n = recv(sock, (void *) &header, 2, MSG_WAITALL);
 		if (n != 2) {
 			error("ERROR reading MAPI block header (%d)", n);
@@ -207,11 +216,12 @@ SEXP mapiRead(SEXP conn) {
 }
 
 SEXP mapiWrite(SEXP conn, SEXP message) {
+	CHECK_MAPI_SOCK(conn);
+	SOCKET sock = *((SOCKET*) R_ExternalPtrAddr(conn));
+
 	assert(IS_CHARACTER(message));
 	assert(GET_LENGTH(message) == 1);
 
-	SOCKET sock = INTEGER_POINTER(
-			AS_INTEGER(getAttrib(conn, install(SOCK_ATTR))))[0];
 	const char *messageval = CHAR(STRING_ELT(message, 0));
 	assert(strlen(messageval) > 0);
 
