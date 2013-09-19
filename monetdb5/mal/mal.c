@@ -188,6 +188,7 @@ size_t monet_memory;
 #include "mal_client.h"
 #include "mal_sabaoth.h"
 #include "mal_recycle.h"
+#include "mal_private.h"
 
 MT_Lock     mal_contextLock;
 MT_Lock     mal_namespaceLock;
@@ -291,6 +292,7 @@ void mal_exit(void){
 	 */
 	RECYCLEshutdown(mal_clients); /* remove any left over intermediates */
 	stopProfiling();
+	stopMALdataflow();
 #if 0
 {
 	int reruns=0, goon;

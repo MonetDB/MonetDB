@@ -37,6 +37,7 @@
  */
 #include "monetdb_config.h"
 #include "mal_dataflow.h"
+#include "mal_private.h"
 
 #define DFLOWpending 0		/* runnable */
 #define DFLOWrunning 1		/* currently in progress */
@@ -89,6 +90,7 @@ static struct worker {
 	enum {IDLE, RUNNING, EXITED} flag;
 } workers[THREADS];
 static Queue *todo = 0;	/* pending instructions */
+static int volatile exiting = 0;
 
 /*
  * Calculate the size of the dataflow dependency graph.
@@ -212,6 +214,8 @@ q_dequeue(Queue *q)
 
 	assert(q);
 	MT_sema_down(&q->s, "q_dequeue");
+	if (exiting)
+		return NULL;
 	MT_lock_set(&q->l, "q_dequeue");
 	if (q->exitcount > 0) {
 		q->exitcount--;
@@ -281,6 +285,9 @@ DFLOWworker(void *T)
 				break;;
 		} else
 			fe = fnxt;
+		if (exiting) {
+			break;
+		}
 		fnxt = 0;
 		assert(fe);
 		flow = fe->flow;
@@ -580,6 +587,8 @@ DFLOWscheduler(DataFlow flow)
 
 	while (actions != tasks ) {
 		f = q_dequeue(flow->done);
+		if (exiting)
+			break;
 		if (f == NULL)
 			throw(MAL, "dataflow", "DFLOWscheduler(): q_dequeue(flow->done) returned NULL");
 
@@ -751,4 +760,21 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr st
 		MT_lock_unset(&mal_contextLock, "runMALdataflow");
 	}
 	return msg;
+}
+
+void
+stopMALdataflow(void)
+{
+	int i;
+
+	exiting = 1;
+	if (todo) {
+		for (i = 0; i < THREADS; i++)
+			MT_sema_up(&todo->s, "stopMALdataflow");
+		for (i = 0; i < THREADS; i++) {
+			if (workers[i].flag != IDLE)
+				MT_join_thread(workers[i].id);
+			workers[i].flag = IDLE;
+		}
+	}
 }

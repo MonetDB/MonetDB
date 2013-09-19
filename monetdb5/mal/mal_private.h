@@ -20,3 +20,4 @@
 /* This file should not be included in any file outside of this directory */
 
 extern void MCexitClient(Client c);
+extern void stopMALdataflow(void);
