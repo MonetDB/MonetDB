@@ -63,6 +63,7 @@ typedef struct queue {
 	FlowEvent *data;
 	MT_Lock l;	/* it's a shared resource, ie we need locks */
 	MT_Sema s;	/* threads wait on empty queues */
+	MT_Sema e;	/* synchronize exiting of thread */
 } Queue;
 
 /*
@@ -128,6 +129,7 @@ q_create(int sz, const char *name)
 	(void) name; /* in case MT_LOCK_TRACE is not enabled in gdk_system.h */
 	MT_lock_init(&q->l, name);
 	MT_sema_init(&q->s, 0, name);
+	MT_sema_init(&q->e, 0, name);
 	return q;
 }
 
@@ -214,6 +216,7 @@ q_dequeue(Queue *q)
 	if (q->exitcount > 0) {
 		q->exitcount--;
 		MT_lock_unset(&q->l, "q_dequeue");
+		MT_sema_up(&q->e, "q_dequeue");
 		return NULL;
 	}
 	assert(q->last > 0);
@@ -736,6 +739,7 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr st
 		todo->exitcount++;
 		MT_lock_unset(&todo->l, "runMALdataflow");
 		MT_sema_up(&todo->s, "runMALdataflow");
+		MT_sema_down(&todo->e, "runMALdataflow");
 		MT_lock_set(&mal_contextLock, "runMALdataflow");
 		for (i = 0; i < THREADS; i++) {
 			if (workers[i].flag == EXITED) {
