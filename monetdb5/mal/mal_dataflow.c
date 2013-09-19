@@ -738,5 +738,16 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr st
 void
 stopMALdataflow(void)
 {
+	int i;
+
 	exiting = 1;
+	if (todo) {
+		for (i = 0; i < THREADS; i++)
+			MT_sema_up(&todo->s, "stopMALdataflow");
+		for (i = 0; i < THREADS; i++) {
+			if (workers[i].flag != IDLE)
+				MT_join_thread(workers[i].id);
+			workers[i].flag = IDLE;
+		}
+	}
 }
