@@ -49,3 +49,4 @@ copy-into-compressed.Bug-3351
 median.Bug-3352
 check-constraint.Bug-3335
 crash_after_creation_of_unique_key.Bug-3363
+alter_resets_readonly.Bug-3362

@@ -48,6 +48,9 @@ Ready.
 # 09:11:23 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1158" "--port=37677"
 # 09:11:23 >  
 
+#CREATE TABLE tnc (name VARCHAR(10));
+#INSERT INTO tnc VALUES ('test');
+[ 1	]
 #CREATE FUNCTION bottom()
 #RETURNS TABLE (name string)
 #BEGIN
@@ -81,26 +84,26 @@ Ready.
 % .L1 # table_name
 % L1 # name
 % wrd # type
-% 2 # length
-[ 42	]
+% 1 # length
+[ 1	]
 #SELECT count(*) FROM leaf1();
 % .L1 # table_name
 % L1 # name
 % wrd # type
-% 2 # length
-[ 36	]
+% 1 # length
+[ 1	]
 #SELECT count(*) FROM leaf2();
 % .L1 # table_name
 % L1 # name
 % wrd # type
-% 2 # length
-[ 36	]
+% 1 # length
+[ 1	]
 #SELECT count(*) FROM leaf3();
 % .L1 # table_name
 % L1 # name
 % wrd # type
-% 2 # length
-[ 36	]
+% 1 # length
+[ 1	]
 #DROP FUNCTION leaf3;
 #DROP FUNCTION leaf2;
 #DROP FUNCTION leaf1;

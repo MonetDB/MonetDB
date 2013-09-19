@@ -1,7 +1,10 @@
+CREATE TABLE tnc (name VARCHAR(10));
+INSERT INTO tnc VALUES ('test');
+
 CREATE FUNCTION bottom()
 RETURNS TABLE (name string)
 BEGIN
-	RETURN select name from tables;
+	RETURN select name from tnc;
 END;
 
 CREATE FUNCTION leaf1()
@@ -40,3 +43,4 @@ DROP FUNCTION leaf3;
 DROP FUNCTION leaf2;
 DROP FUNCTION leaf1;
 DROP FUNCTION bottom;
+DROP TABLE tnc;

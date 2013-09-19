@@ -171,7 +171,7 @@ MCnewClient(void)
 Client
 MCgetClient(int id)
 {
-	if (id < 0 || id > MAL_MAXCLIENTS)
+	if (id < 0 || id >= MAL_MAXCLIENTS)
 		return NULL;
 	return mal_clients + id;
 }
@@ -430,7 +430,7 @@ MCcleanupClients(void)
 str
 MCsuspendClient(int id)
 {
-	if (id < 0 || id > MAL_MAXCLIENTS)
+	if (id < 0 || id >= MAL_MAXCLIENTS)
 		throw(INVCRED, "mal.clients", INVCRED_WRONG_ID);
 	mal_clients[id].itrace = 'S';
 	return MAL_SUCCEED;
@@ -439,7 +439,7 @@ MCsuspendClient(int id)
 str
 MCawakeClient(int id)
 {
-	if (id < 0 || id > MAL_MAXCLIENTS)
+	if (id < 0 || id >= MAL_MAXCLIENTS)
 		throw(INVCRED, "mal.clients", INVCRED_WRONG_ID);
 	mal_clients[id].itrace = 0;
 	return MAL_SUCCEED;

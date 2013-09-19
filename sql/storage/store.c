@@ -1172,6 +1172,10 @@ dup_sql_table(sql_allocator *sa, sql_table *t)
 	sql_table *nt = create_sql_table(sa, t->base.name, t->type, t->system, SQL_DECLARED_TABLE, t->commit_action);
 
 	nt->base.flag = t->base.flag;
+
+	nt->readonly = t->readonly;
+	nt->query = (t->query) ? sa_strdup(sa, t->query) : NULL;
+
 	for (n = t->columns.set->h; n; n = n->next) 
 		dup_sql_column(sa, nt, n->data);
 	nt->columns.dset = NULL;
@@ -2693,6 +2697,8 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt, int mode)
 				fprintf(stderr, "#update table %s\n", tt->base.name);
 			ok = store_funcs.update_table(tr, ft, tt);
 			ft->cleared = 0;
+			ft->base.rtime = ft->base.wtime = 0;
+			tt->readonly = ft->readonly;
 		}
 	}
 	return ok;
