@@ -294,6 +294,7 @@ JAQLengine(Client c)
 		printtree(c->fdout, j->p, 0, j->planf);
 		mnstr_printf(c->fdout, "\n");
 		freetree(j->p);
+		c->glb = oldglb;
 		return MAL_SUCCEED;  /* don't have a plan generated */
 	} else if (j->debug) {
 		msg = runMALDebugger(c, c->curprg);

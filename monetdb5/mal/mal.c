@@ -192,6 +192,7 @@ char *mal_trace;		/* enable profile events on console */
 #include "mal_dataflow.h"
 #include "mal_profiler.h"
 #include "mal_http_daemon.h"
+#include "mal_private.h"
 
 MT_Lock     mal_contextLock MT_LOCK_INITIALIZER("mal_contextLock");
 MT_Lock     mal_namespaceLock MT_LOCK_INITIALIZER("mal_namespaceLock");

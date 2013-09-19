@@ -3093,7 +3093,6 @@ str startProfiling(void);
 str startRef;
 void stopHeartbeat(void);
 void stopHttpdaemon(void);
-void stopMALdataflow(void);
 str stopProfiling(void);
 str stopRef;
 void strAfterCall(ValPtr v, ValPtr bak);
