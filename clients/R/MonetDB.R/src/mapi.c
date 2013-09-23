@@ -261,3 +261,8 @@ SEXP mapiWrite(SEXP conn, SEXP message) {
 	}
 	return R_NilValue;
 }
+
+SEXP mapiRequest(SEXP conn, SEXP message) {
+	mapiWrite(conn, message);
+	return (mapiRead(conn));
+}

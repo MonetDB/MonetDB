@@ -1,14 +1,18 @@
 require(DBI)
 require(digest)
 
+C_LIBRARY <- "MonetDB.R"
+
 .onLoad <- function(lib, pkg) {
-	library.dynam( "MonetDB.R", pkg, lib )
-	.Call("mapiInit",PACKAGE="MonetDB.R")
+	library.dynam( C_LIBRARY, pkg, lib )
+	.Call("mapiInit",PACKAGE=C_LIBRARY)
 }
 
 # TODO: make these values configurable in the call to dbConnect
 DEBUG_IO      <- FALSE
 DEBUG_QUERY   <- FALSE
+
+
 
 # Make S4 aware of S3 classes
 setOldClass(c("sockconn","connection","monetdb_mapi_conn"))
@@ -23,7 +27,7 @@ MonetR <- MonetDB <- MonetDBR <- MonetDB.R <- function() {
 
 setMethod("dbGetInfo", "MonetDBDriver", def=function(dbObj, ...)
 			list(name="MonetDBDriver", 
-					driver.version="0.7.11",
+					driver.version="0.8.0",
 					DBI.version="0.2-5",
 					client.version=NA,
 					max.connections=NA)
@@ -64,17 +68,17 @@ setMethod("dbConnect", "MonetDBDriver", def=function(drv,dbname="demo", user="mo
 								#	blocking = TRUE, open="r+b",timeout = 5 )
 								
 								# this goes to src/mapi.c
-								socket <- socket <<- .Call("mapiConnect",host,port,5,PACKAGE="MonetDB.R")
+								socket <- socket <<- .Call("mapiConnect",host,port,5,PACKAGE=C_LIBRARY)
 								# authenticate
 								.monetAuthenticate(socket,dbname,user,password)
 								# test the connection to make sure it works before
 								.mapiWrite(socket,"sSELECT 42;"); .mapiRead(socket)
 								#close(socket)
-								.Call("mapiDisconnect",socket,PACKAGE="MonetDB.R")
+								.Call("mapiDisconnect",socket,PACKAGE=C_LIBRARY)
 								break
 							}, error = function(e) {
 								if ("connection" %in% class(socket)) {
-									.Call("mapiDisconnect",socket,PACKAGE="MonetDB.R")
+									.Call("mapiDisconnect",socket,PACKAGE=C_LIBRARY)
 								}
 								cat(paste0("Server not ready(",e$message,"), retrying (ESC or CTRL+C to abort)\n"))
 								Sys.sleep(1)
@@ -86,7 +90,7 @@ setMethod("dbConnect", "MonetDBDriver", def=function(drv,dbname="demo", user="mo
 			# make new socket with user-specified timeout
 			#socket <- socket <<- socketConnection(host = host, port = port, 
 			#	blocking = TRUE, open="r+b",timeout = timeout) 
-			socket <- socket <<- .Call("mapiConnect",host,port,timeout,PACKAGE="MonetDB.R")
+			socket <- socket <<- .Call("mapiConnect",host,port,timeout,PACKAGE=C_LIBRARY)
 			.monetAuthenticate(socket,dbname,user,password)
 			connenv <- new.env(parent=emptyenv())
 			connenv$lock <- 0
@@ -102,7 +106,7 @@ setMethod("dbConnect", "MonetDBDriver", def=function(drv,dbname="demo", user="mo
 setClass("MonetDBConnection", representation("DBIConnection",socket="externalptr",connenv="environment",fetchSize="integer"))
 
 setMethod("dbDisconnect", "MonetDBConnection", def=function(conn, ...) {
-			.Call("mapiDisconnect",conn@socket,PACKAGE="MonetDB.R")
+			.Call("mapiDisconnect",conn@socket,PACKAGE=C_LIBRARY)
 			TRUE
 		})
 
@@ -403,7 +407,7 @@ setMethod("fetch", signature(res="MonetDBResult", n="numeric"), def=function(res
 			#parts[parts=="NULL"] <- NA
 			
 			# call to a faster C implementation for the hard and annoying task of splitting everyting into fields
-			parts <- .Call("mapiSplit", res@env$data[1:n],info$cols, PACKAGE="MonetDB.R")
+			parts <- .Call("mapiSplit", res@env$data[1:n],info$cols, PACKAGE=C_LIBRARY)
 			
 			# convert values column by column
 			for (j in seq.int(info$cols)) {	
@@ -533,16 +537,17 @@ REPLY_SIZE    <- 100 # Apparently, -1 means unlimited, but we will start with a 
 	conObj@connenv$lock <- 1
 	
 	# send payload and read response		
-	.mapiWrite(conObj@socket,msg)
-	resp <- .mapiRead(conObj@socket)
+	#.mapiWrite(conObj@socket,msg)
+	#resp <- .mapiRead(conObj@socket)
+	
+	resp <- .Call("mapiRequest",conObj@socket,msg,PACKAGE=C_LIBRARY)
 	
 	# get deferred statements from deferred list and execute
 	while (length(conObj@connenv$deferred) > 0) {
 		# take element, execute, check response for prompt
 		dmesg <- conObj@connenv$deferred[[1]]
 		conObj@connenv$deferred[[1]] <- NULL
-		.mapiWrite(conObj@socket,dmesg)
-		dresp <- .mapiParseResponse(.mapiRead(conObj@socket))
+		dresp <- .mapiParseResponse(.Call("mapiRequest",conObj@socket,dmesg,PACKAGE=C_LIBRARY))
 		if (dresp$type == MSG_MESSAGE) {
 			conObj@connenv$lock <- 0
 			warning(paste("II: Failed to execute deferred statement '",dmesg,"'. Server said: '",dresp$message,"'\n"))
@@ -564,7 +569,7 @@ REPLY_SIZE    <- 100 # Apparently, -1 means unlimited, but we will start with a 
 .mapiRead <- function(con) {
 	if (!identical(class(con)[[1]],"externalptr"))
 		stop("I can only be called with a MonetDB connection object as parameter.")
-	respstr <- .Call("mapiRead",con,PACKAGE="MonetDB.R")
+	respstr <- .Call("mapiRead",con,PACKAGE=C_LIBRARY)
 	if (DEBUG_IO) {
 		dstr <- respstr
 		if (nchar(dstr) > 300) {
@@ -580,7 +585,7 @@ REPLY_SIZE    <- 100 # Apparently, -1 means unlimited, but we will start with a 
 		stop("I can only be called with a MonetDB connection object as parameter.")
 	
 	if (DEBUG_IO)  cat(paste("TX: '",msg,"'\n",sep=""))	
-	.Call("mapiWrite",con,msg,PACKAGE="MonetDB.R")
+	.Call("mapiWrite",con,msg,PACKAGE=C_LIBRARY)
 	return (NULL)
 }
 
