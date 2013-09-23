@@ -597,7 +597,7 @@ fullscan_any(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 	scanfunc(NAME, lng, CAND, END)
 
 /* scan/imprints select with candidates */
-scan_sel(candscan, o = (oid) (*candlist++ - off), w = (BUN) ((*(oid *) Tloc(s, q - 1)) + 1 - off))
+scan_sel(candscan, o = (oid) (*candlist++ - off), w = (BUN) ((*(oid *) Tloc(s,q?(q - 1):0)) + 1 - off))
 /* scan/imprints select without candidates */
     scan_sel(fullscan, o = p, w = q)
 
