@@ -468,6 +468,7 @@ MATmergepack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	bn = BATnew(TYPE_void, TYPE_oid, cap);
 	if (bn == NULL)
 		throw(MAL, "mat.pack", MAL_MALLOC_FAIL);
+	if( cap > 0)
 	for (i = 0; i < top; i++) {
 		b = BATdescriptor(bids[i]);
 		if( b ){
