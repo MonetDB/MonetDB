@@ -81,6 +81,14 @@ RESTsqlQuery(char **result, char * query)
 	return msg;
 }
 
+str RESTunknown(char **result)
+{
+	str msg = MAL_SUCCEED;
+	char * querytext = "select 'Unknown' as error;";
+	msg = RESTsqlQuery(result, querytext);
+	return msg;
+}
+
 str RESTwelcome(char **result)
 {
 	str msg = MAL_SUCCEED;

@@ -33,6 +33,7 @@
 #define rest_export extern
 #endif
 
+rest_export str RESTunknown(char **result);
 rest_export str RESTwelcome(char **result);
 rest_export str RESTuuid(char **result);
 rest_export str RESTallDBs(char **result);
