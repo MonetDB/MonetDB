@@ -470,7 +470,11 @@ DFLOWinitBlk(DataFlow flow, MalBlkPtr mb, int size)
 					flow->edges[i] = etop;
 					etop++;
 					(void) size;
-					assert(etop < size);
+					if( etop == size){
+						flow->nodes = (int*) GDKrealloc(flow->nodes, sizeof(int) * 2 * size);
+						flow->edges = (int*) GDKrealloc(flow->edges, sizeof(int) * 2 * size);
+						size *=2;
+					}
 				} else {
 					flow->nodes[k] = n;
 					flow->edges[k] = -1;
@@ -497,7 +501,11 @@ DFLOWinitBlk(DataFlow flow, MalBlkPtr mb, int size)
 						flow->edges[etop] = -1;
 						flow->edges[i] = etop;
 						etop++;
-						assert(etop < size);
+						if( etop == size){
+							flow->nodes = (int*) GDKrealloc(flow->nodes, sizeof(int) * 2 * size);
+							flow->edges = (int*) GDKrealloc(flow->edges, sizeof(int) * 2 * size);
+							size *=2;
+						}
 					} else {
 						flow->nodes[n] = l;
 						flow->edges[n] = -1;
