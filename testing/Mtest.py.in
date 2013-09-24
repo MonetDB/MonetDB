@@ -312,6 +312,7 @@ CONDITIONALS = {
     'HAVE_DEVELOPER'       : "@HAVE_DEVELOPER_FALSE@",
     'HAVE_GDK'             : "@HAVE_GDK_FALSE@",
     'HAVE_GEOM'            : "@HAVE_GEOM_FALSE@",
+    'HAVE_HGE'             : "@HAVE_HGE_FALSE@",
     'HAVE_JAVA'            : "@HAVE_JAVA_FALSE@",
     'HAVE_JAVAJDBC'        : "@HAVE_JAVAJDBC_FALSE@",
     'HAVE_JAVAMEROCONTROL' : "@HAVE_JAVAMEROCONTROL_FALSE@",
