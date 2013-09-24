@@ -156,7 +156,7 @@ SEXP mapiConnect(SEXP host, SEXP port, SEXP timeout) {
 }
 
 size_t sockRead(int fd, void *buf, size_t size) {
-	ssize_t retval;
+	ssize_t retval = -1;
 	do {
 		retval = recv(fd, buf, size, MSG_WAITALL);
 	} while (retval == -1 && errno == EINTR);
@@ -171,7 +171,7 @@ size_t sockRead(int fd, void *buf, size_t size) {
 }
 
 size_t sockWrite(int fd, const void *buf, size_t size) {
-	ssize_t retval;
+	ssize_t retval = -1;
 	do {
 		retval = send(fd, buf, size, 0);
 	} while (retval == -1 && errno == EINTR);
@@ -224,11 +224,11 @@ SEXP mapiRead(SEXP conn) {
 						block_length, block_final ? "true" : "false", n);
 			}
 		}
+		read_buf[block_length] = '\0';
 		if (DEBUG) {
 			printf("II: Received block of %u bytes, final=%s\n", block_length,
 					block_final ? "true" : "false");
 		}
-		read_buf[block_length] = '\0';
 		// lets see whether we need moar memory for the response
 		while (response_buf_offset + block_length > response_buf_len) {
 			response_buf_len += ALLOCSIZE;
@@ -245,8 +245,21 @@ SEXP mapiRead(SEXP conn) {
 		memcpy(response_buf + response_buf_offset, read_buf, block_length);
 		response_buf_offset += block_length;
 	}
-
 	response_buf[response_buf_offset] = '\0';
+
+	// We have this issue that on Windows sometimes a \0 appears in the middle of the response...
+	// since it always appears instead of a \t, let's replace it for now and pray
+	// MonetDB Bug #3369 http://bugs.monetdb.org/show_bug.cgi?id=3369
+#ifdef __WIN32__
+	size_t i;
+	for (i = 0; i < response_buf_offset; i++) {
+		if (response_buf[i] == '\0') {
+			warning("Removed a NULL character from response at offset %lu of %lu",i,response_buf_offset);
+			response_buf[i] = '\t';
+		}
+	}
+#endif
+
 	PROTECT(lines = NEW_STRING(1));
 	SET_STRING_ELT(lines, 0, mkChar(response_buf));
 	free(response_buf);

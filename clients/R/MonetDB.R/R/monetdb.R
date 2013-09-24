@@ -540,7 +540,15 @@ REPLY_SIZE    <- 100 # Apparently, -1 means unlimited, but we will start with a 
 	#.mapiWrite(conObj@socket,msg)
 	#resp <- .mapiRead(conObj@socket)
 	
+	if (DEBUG_IO)  cat(paste("TX: '",msg,"'\n",sep=""))	
 	resp <- .Call("mapiRequest",conObj@socket,msg,PACKAGE=C_LIBRARY)
+	if (DEBUG_IO) {
+		dstr <- resp
+		if (nchar(dstr) > 300) {
+			dstr <- paste0(substring(dstr,1,200),"...",substring(dstr,nchar(dstr)-100,nchar(dstr))) 
+		} 
+		cat(paste0("RX: '",dstr,"'\n"))
+	}
 	
 	# get deferred statements from deferred list and execute
 	while (length(conObj@connenv$deferred) > 0) {
@@ -630,7 +638,8 @@ REPLY_SIZE    <- 100 # Apparently, -1 means unlimited, but we will start with a 
 			env$lengths	<- .mapiParseTableHeader(lines[5])
 			
 			env$tuples <-lines[6:length(lines)]
-			
+
+			stopifnot(length(env$tuples) == header$index)
 			return(env)
 		}
 		# Continuation of Q_TABLE without headers describing table structure
@@ -644,6 +653,8 @@ REPLY_SIZE    <- 100 # Apparently, -1 means unlimited, but we will start with a 
 			env$cols	<- header$cols
 			env$index	<- header$index
 			env$tuples <- lines[2:length(lines)]
+			
+			stopifnot(length(env$tuples) == header$rows)
 			
 			return(env)
 		}
