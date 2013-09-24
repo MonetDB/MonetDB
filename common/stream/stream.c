@@ -668,7 +668,7 @@ stream_gzread(stream *s, void *buf, size_t elmsize, size_t cnt)
 
 	if (!gzeof(fp)) {
 		size = gzread(fp, buf, size);
-		if (gzerror(fp, &err) != NULL && err) {
+		if (gzerror(fp, &err) != NULL && err < 0) {
 			s->errnr = MNSTR_READ_ERROR;
 			return -1;
 		}
@@ -686,7 +686,7 @@ stream_gzwrite(stream *s, const void *buf, size_t elmsize, size_t cnt)
 
 	if (size) {
 		size = gzwrite(fp, buf, size);
-		if (gzerror(fp, &err) != NULL && err) {
+		if (gzerror(fp, &err) != NULL && err < 0) {
 			s->errnr = MNSTR_WRITE_ERROR;
 			return -1;
 		}
