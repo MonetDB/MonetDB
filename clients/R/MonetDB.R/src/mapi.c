@@ -13,6 +13,7 @@
 #endif
 #include <assert.h>
 #include <fcntl.h>
+#include <errno.h>
 
 // R headers
 #include <R.h>
@@ -83,9 +84,14 @@ SEXP mapiConnect(SEXP host, SEXP port, SEXP timeout) {
 #endif
 
 	//  send/receive timeouts for socket
+#ifdef __WIN32__
+	int sto;
+	sto = timeoutval * 1000;
+#else
 	struct timeval sto;
 	sto.tv_sec = timeoutval;
 	sto.tv_usec = 0;
+#endif
 
 	memset(&hints, 0, sizeof(struct addrinfo));
 	hints.ai_family = AF_UNSPEC;
@@ -105,11 +111,11 @@ SEXP mapiConnect(SEXP host, SEXP port, SEXP timeout) {
 		if (sock == -1)
 			continue;
 
-		if (setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (char *) &sto,
+		if (setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (const char *) &sto,
 				sizeof(sto)) < 0) {
 			error("setsockopt failed");
 		}
-		if (setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, (char *) &sto,
+		if (setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, (const char *) &sto,
 				sizeof(sto)) < 0) {
 			error("setsockopt failed\n");
 		}
@@ -149,16 +155,47 @@ SEXP mapiConnect(SEXP host, SEXP port, SEXP timeout) {
 	return connobj;
 }
 
+size_t sockRead(int fd, void *buf, size_t size) {
+	ssize_t retval;
+	do {
+		retval = recv(fd, buf, size, MSG_WAITALL);
+	} while (retval == -1 && errno == EINTR);
+	if (retval == -1) {
+#ifdef __WIN32__
+		errno = WSAGetLastError();
+#endif
+		error("error reading from socket (%d)", errno);
+	} else {
+		return retval;
+	}
+}
+
+size_t sockWrite(int fd, const void *buf, size_t size) {
+	ssize_t retval;
+	do {
+		retval = send(fd, buf, size, 0);
+	} while (retval == -1 && errno == EINTR);
+	if (retval == -1) {
+#ifdef __WIN32__
+		errno = WSAGetLastError();
+#endif
+		error("error writing to socket (%d)", errno);
+	} else {
+		return retval;
+	}
+}
+
 SEXP mapiRead(SEXP conn) {
 	CHECK_MAPI_SOCK(conn);
 	SOCKET sock = *((SOCKET*) R_ExternalPtrAddr(conn));
 
 	SEXP lines;
 	char read_buf[BUFSIZE];
-	int n, block_final, block_length;
+	int block_final, block_length;
 	short header;
 	size_t response_buf_len = ALLOCSIZE;
 	size_t response_buf_offset = 0;
+	size_t n = 0;
 
 	char* response_buf = malloc(response_buf_len);
 	if (response_buf == NULL) {
@@ -169,7 +206,7 @@ SEXP mapiRead(SEXP conn) {
 	while (!block_final) {
 		//  read block header and extract block length and final bit from header
 		// this assumes little-endianness (so sue me)
-		n = recv(sock, (void *) &header, 2, MSG_WAITALL);
+		n = sockRead(sock, (void*) &header, 2);
 		if (n != 2) {
 			error("ERROR reading MAPI block header (%d)", n);
 		}
@@ -180,7 +217,7 @@ SEXP mapiRead(SEXP conn) {
 		block_final = header & 1;
 
 		if (block_length > 0) {
-			n = recv(sock, read_buf, block_length, MSG_WAITALL);
+			n = sockRead(sock, (void*) read_buf, block_length);
 			if (n != block_length) {
 				error(
 						"ERROR reading block of %u bytes (final=%s) from socket (%d)",
@@ -228,7 +265,8 @@ SEXP mapiWrite(SEXP conn, SEXP message) {
 	assert(strlen(messageval) > 0);
 
 	size_t message_len = strlen(messageval);
-	int n, block_final, block_length;
+	int block_final, block_length;
+	size_t n;
 
 	size_t request_offset = 0;
 
@@ -248,11 +286,11 @@ SEXP mapiWrite(SEXP conn, SEXP message) {
 		if (block_final) {
 			header |= 1;
 		}
-		n = send(sock, (void *) &header, 2, 0);
+		n = sockWrite(sock, (void *) &header, 2);
 		if (n != 2) {
 			error("ERROR writing MAPI block header");
 		}
-		n = send(sock, messageval + request_offset, block_length, 0);
+		n = sockWrite(sock, messageval + request_offset, block_length);
 		if (n != block_length) {
 			error("ERROR writing block of %u bytes (final=%s) to socket",
 					block_length, block_final ? "true" : "false");
