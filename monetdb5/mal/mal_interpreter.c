@@ -282,6 +282,12 @@ str malCommandCall(MalStkPtr stk, InstrPtr pci)
 		}\
 	} 
 
+void 
+initMALstack(MalBlkPtr mb, MalStkPtr stk){
+	int i;
+	ValPtr lhs, rhs;
+	initStack(getInstrPtr(mb,0)->argc);
+}
 int
 isNotUsedIn(InstrPtr p, int start, int a)
 {
