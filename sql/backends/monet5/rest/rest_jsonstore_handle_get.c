@@ -61,6 +61,7 @@ RESTsqlQuery(char **result, char * query)
 	msg = SQLinitClient(c);
 	MSinitClientPrg(c, "user", "main");
 	(void) MCinitClientThread(c);
+	// TODO: check that be <> NULL
 	be = (backend*)c->sqlcontext;
 	be->output_format = OFMT_JSON;
 
@@ -130,11 +131,48 @@ str RESTcreateDB(char ** result, char * dbname)
 		"_id uuid,                     "
 		"mimetype varchar(128),        "
 		"filename varchar(128),        "
-		"value blob);                  ";
-	size_t len = 3 * strlen(dbname) + (12 * line) - (3 * place) + char0;
+	        "value blob);                  ";
 
+	size_t len = 3 * strlen(dbname) + (12 * line) - (3 * place) + char0;
 	querytext = malloc(len);
 	snprintf(querytext, len, query, dbname, dbname, dbname);
+
+	msg = RESTsqlQuery(result, querytext);
+	if (querytext != NULL) {
+		free(querytext);
+	}
+
+	query = 
+		"CREATE FUNCTION %s_UPDATE_DOC "
+		"( doc_id VARCHAR(36),         "
+		"  doc json )                  "
+		"RETURNS VARCHAR(100)          "
+		"BEGIN                         "
+		"  DECLARE ISNEW INTEGER;      "
+		"  DECLARE VERSION INTEGER;    "
+		"  SET ISNEW = (SELECT         "
+		"    COUNT(*) FROM json_%s     "
+		"    WHERE _id = doc_id);      "
+		"  IF (ISNEW = 0) THEN         "
+		"    INSERT INTO json_%s (     "
+		"      _id, _rev, js )         "
+		"    VALUES ( doc_id,          "
+		"      CONCAT('1-', md5(doc)), "
+		"        doc );                "
+		"  ELSE                        "
+		"    INSERT INTO json_%s (     "
+		"      _id, _rev, js )         "
+		"    VALUES ( doc_id,          "
+		"      CONCAT('2-', md5(doc)), "
+		"        doc );                "
+		"  END IF;                    "
+		"    RETURN                    "
+		"      SELECT 'TRUE' as ok;    "
+	        "END;                          ";
+	len = 4 * strlen(dbname) + (26 * line) - (4 * place) + char0;
+
+	querytext = malloc(len);
+	snprintf(querytext, len, query, dbname, dbname, dbname, dbname);
 
 	msg = RESTsqlQuery(result, querytext);
 	if (querytext != NULL) {
@@ -151,12 +189,14 @@ str RESTdeleteDB(char ** result, char * dbname)
 	str msg = MAL_SUCCEED;
 	char * querytext = NULL;
 	char * query =
+		"DROP FUNCTION %s_UPDATE_DOC;  "
 		"DROP TABLE json_%s;           "
-		"DROP TABLE jsonblob_%s;       ";
-	int len = 2 * strlen(dbname) + (2 * line) - (2 * place) + char0;
+		"DROP TABLE jsonblob_%s;       "
+		"DROP TABLE jsondesign_%s;     ";
+	int len = 4 * strlen(dbname) + (4 * line) - (4 * place) + char0;
 
 	querytext = malloc(len);
-	snprintf(querytext, len, query, dbname, dbname);
+	snprintf(querytext, len, query, dbname, dbname, dbname);
 
 	msg = RESTsqlQuery(result, querytext);
 	if (querytext != NULL) {
@@ -223,18 +263,15 @@ str RESTgetDoc(char ** result, char * dbname, const char * doc_id)
 str RESTupdateDoc(char ** result, char * dbname, const char * doc, const char * doc_id)
 {
 	str msg = MAL_SUCCEED;
-	size_t len = strlen(doc_id) + strlen(dbname) + 2 * strlen(doc) + 74;
+	size_t len = strlen(dbname) + strlen(doc) + strlen(doc_id) + 28 + char0;
 	char * querytext = NULL;
 
 	querytext = malloc(len);
-	snprintf(querytext, len, "INSERT INTO json_%s (_id, _rev, js) VALUES ('%s', concat('2-', md5('%s')), '%s');", dbname, doc_id, doc, doc);
+	snprintf(querytext, len, "SELECT %s_update_doc ('%s', '%s');", dbname, doc_id, doc);
 
 	msg = RESTsqlQuery(result, querytext);
 	if (querytext != NULL) {
 		free(querytext);
-	}
-	if (strcmp(*result,"&2 1 -1\n") == 0) {
-	  msg = RESTsqlQuery(result, result_ok);
 	}
 	return msg;
 }
@@ -252,7 +289,7 @@ str RESTdeleteDoc(char ** result, char * dbname, const char * doc_id)
 	if (querytext != NULL) {
 		free(querytext);
 	}
-	if (strcmp(*result,"&2 3 -1\n") == 0) {
+	if (strcmp(*result,"&2 1 -1\n") == 0) {
 	  msg = RESTsqlQuery(result, result_ok);
 	}
 	return msg;
