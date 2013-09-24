@@ -4347,8 +4347,6 @@ rel_order_by(mvc *sql, sql_rel **R, symbol *orderby, int f )
 
 				e = rel_value_exp2(sql, &rel, col, f, ek, &is_last);
 
-				/* do not cache this query */
-				scanner_reset_key(&sql->scanner);
 				if (e && e->card <= CARD_ATOM) {
 					sql_subtype *tpe = &e->tpe;
 					/* integer atom on the stack */
@@ -4361,6 +4359,9 @@ rel_order_by(mvc *sql, sql_rel **R, symbol *orderby, int f )
 						if (!e)
 							return NULL;
 						e = exp_column(sql->sa, e->rname, exp_name(e), exp_subtype(e), exp_card(e), has_nil(e), is_intern(e));
+						/* do not cache this query */
+						if (e)
+							scanner_reset_key(&sql->scanner);
 					} else if (e->type == e_atom) {
 						return sql_error(sql, 02, "order not of type SQL_COLUMN\n");
 					}
