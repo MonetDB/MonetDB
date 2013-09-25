@@ -1020,8 +1020,8 @@ function batcalc.mark_grp{inline}( b:bat[:oid,:any_1], ord:bat[:oid,:oid], grp:b
 end batcalc.mark_grp;
 
 function batcalc.mark_grp{inline}( b:bat[:oid,:any_1], ord:bat[:oid,:oid], orig:bat[:oid,:any_2]) :bat[:oid,:int]; 
-        x := algebra.markT(b,1:oid);
-        mg := batcalc.int(x);
+	x := algebra.markT(b,1:oid);
+	mg := batcalc.int(x);
 
 	# restore the order based on grp 
 	or := bat.reverse(ord);
@@ -1031,8 +1031,8 @@ function batcalc.mark_grp{inline}( b:bat[:oid,:any_1], ord:bat[:oid,:oid], orig:
 end batcalc.mark_grp;
 
 function batcalc.mark_grp{inline}( b:bat[:oid,:any_1] ) :bat[:oid,:int]; 
-        x := algebra.markT(b,1:oid);
-        return mark_grp:= batcalc.int(x);
+	x := algebra.markT(b,1:oid);
+	return mark_grp:= batcalc.int(x);
 end batcalc.mark_grp;
 
 function batcalc.rank_grp{inline}( b:bat[:oid,:any_1], ord:bat[:oid,:oid], grp:bat[:oid,:oid], ext:bat[:oid,:oid]) :bat[:oid,:int]; 
@@ -1257,7 +1257,7 @@ barrier remotewrk := calc.!=(dbname,"NOTworker");
  	   raise ANYexception:str ;
 	exit ANYexception:str ;
 exit remotewrk;
-    return getBid:lng := res;
+	return getBid:lng := res;
 end getBid;
 
 function remote.bind{inline}(dbconn:str, sch:str, tab:str,col:str,kind:int, 
@@ -1501,8 +1501,8 @@ sql5_export str @1_trunc_wrap( @1 *res, @1 *v, int *r );
 @h
 @:fround_export(flt)@
 @:fround_export(dbl)@
-#define radians(x)       ((x) * 3.14159265358979323846 /180.0 )
-#define degrees(x)       ((x) * 180.0/3.14159265358979323846 )
+#define radians(x)	((x) * 3.14159265358979323846 /180.0 )
+#define degrees(x)	((x) * 180.0/3.14159265358979323846 )
 sql5_export str SQLcst_alpha_cst(dbl *res, dbl *decl, dbl *theta);
 sql5_export str SQLbat_alpha_cst(bat *res, bat *decl, dbl *theta);
 sql5_export str SQLcst_alpha_bat(bat *res, dbl *decl, bat *theta);
@@ -4576,22 +4576,22 @@ str PBATSQLidentity(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	oid *ns = (oid *)getArgReference(stk, pci, 1);
 	int *bid = (int *)getArgReference(stk, pci, 2);
 	oid *s = (oid *)getArgReference(stk, pci, 3);
-        BAT *b, *bn = NULL;
+	BAT *b, *bn = NULL;
 	
 	(void)cntxt;
 	(void)mb;
-        if ((b = BATdescriptor(*bid)) == NULL) {
-                throw(MAL, "batcalc.identity", RUNTIME_OBJECT_MISSING);
-        }
-        bn = BATmark(b, *s);
-        if (bn != NULL) {
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		throw(MAL, "batcalc.identity", RUNTIME_OBJECT_MISSING);
+	}
+	bn = BATmark(b, *s);
+	if (bn != NULL) {
 		*ns = *s + BATcount(b);
-                BBPreleaseref(b->batCacheid);
-                BBPkeepref(*res = bn->batCacheid);
-                return MAL_SUCCEED;
-        }
-        BBPreleaseref(b->batCacheid);
-        throw(MAL, "batcalc.identity", GDK_EXCEPTION);
+		BBPreleaseref(b->batCacheid);
+		BBPkeepref(*res = bn->batCacheid);
+		return MAL_SUCCEED;
+	}
+	BBPreleaseref(b->batCacheid);
+	throw(MAL, "batcalc.identity", GDK_EXCEPTION);
 
 }
 
@@ -5214,19 +5214,18 @@ str
 SQLcst_alpha_cst(dbl *res, dbl *decl, dbl *theta)
 {
 	dbl s, c1, c2;
-    char *msg = MAL_SUCCEED;
-    if (*decl == dbl_nil || *theta == dbl_nil) {
-        *res = dbl_nil;
-    } else if ( fabs(*decl) + *theta > 89.9 ) {
-        *res = (dbl) 180.0;
-    } else {
+	char *msg = MAL_SUCCEED;
+	if (*decl == dbl_nil || *theta == dbl_nil) {
+		*res = dbl_nil;
+	} else if (fabs(*decl) + *theta > 89.9) {
+		*res = 180.0;
+	} else {
 		s = sin(radians(*theta));
 		c1 = cos(radians(*decl - *theta));
 		c2 = cos(radians(*decl + *theta));
-	    *res = degrees(fabs(atan(s / sqrt(fabs(c1 * c2)))));
-		/*		mnstr_printf(GDKout,"%f\n", *res); */
+		*res = degrees(fabs(atan(s / sqrt(fabs(c1 * c2)))));
 	}
-    return msg;
+	return msg;
 }
 
 /*
@@ -5237,81 +5236,83 @@ sql5_export str SQLcst_alpha_bat(bat *res, dbl *decl, bat *theta);
 str
 SQLbat_alpha_cst(bat *res, bat *decl, dbl *theta)
 {
-    BAT *b, *bn;
-    BATiter bi;
-    BUN p,q;
+	BAT *b, *bn;
+	BATiter bi;
+	BUN p,q;
 	dbl s, c1, c2, r;
-    char *msg = NULL;
+	char *msg = NULL;
 
-	if ( *theta == dbl_nil ){
-        throw(SQL, "SQLbat_alpha", "Parameter theta should not be nil");
-    }
-    if( (b = BATdescriptor(*decl)) == NULL ){
-        throw(SQL, "alpha", "Cannot access descriptor");
-    }
-    bi = bat_iterator(b);
-    bn = BATnew(b->htype, TYPE_dbl, BATcount(b));
-    if( bn == NULL){
-        BBPreleaseref(b->batCacheid);
-        throw(SQL, "sql.alpha", MAL_MALLOC_FAIL);
-    }
-    BATseqbase(bn, b->hseqbase);
-    s = sin(radians(*theta));
-    BATloop(b,p,q) {
-        dbl d = *(dbl*)BUNtail(bi,p);
-	    if (d == dbl_nil)
+	if (*theta == dbl_nil) {
+		throw(SQL, "SQLbat_alpha", "Parameter theta should not be nil");
+	}
+	if ((b = BATdescriptor(*decl)) == NULL) {
+		throw(SQL, "alpha", "Cannot access descriptor");
+	}
+	bi = bat_iterator(b);
+	bn = BATnew(b->htype, TYPE_dbl, BATcount(b));
+	if (bn == NULL){
+		BBPreleaseref(b->batCacheid);
+		throw(SQL, "sql.alpha", MAL_MALLOC_FAIL);
+	}
+	BATseqbase(bn, b->hseqbase);
+	s = sin(radians(*theta));
+	BATloop(b,p,q) {
+		dbl d = *(dbl*)BUNtail(bi,p);
+		if (d == dbl_nil)
 			r = dbl_nil;
-	    else if ( fabs(d) + *theta > 89.9 )
-			r = (dbl) 180.0;
+		else if (fabs(d) + *theta > 89.9)
+			r = 180.0;
 		else {
 			c1 = cos(radians(d - *theta));
 			c2 = cos(radians(d + *theta));
-		    r = degrees(fabs(atan(s / sqrt(fabs(c1 * c2)))));
-        }
-        BUNins(bn, BUNhead(bi,p), &r, FALSE);
-    }
-    BBPkeepref( *res = bn->batCacheid);
-    BBPunfix(b->batCacheid);
-    return msg;
+			r = degrees(fabs(atan(s / sqrt(fabs(c1 * c2)))));
+		}
+		BUNins(bn, BUNhead(bi,p), &r, FALSE);
+	}
+	*res = bn->batCacheid;
+	BBPkeepref(bn->batCacheid);
+	BBPunfix(b->batCacheid);
+	return msg;
 }
+
 str
 SQLcst_alpha_bat(bat *res, dbl *decl, bat *theta)
 {
-    BAT *b, *bn;
-    BATiter bi;
-    BUN p,q;
+	BAT *b, *bn;
+	BATiter bi;
+	BUN p,q;
 	dbl s, c1, c2, r;
-    char *msg = NULL;
+	char *msg = NULL;
 
-    if( (b = BATdescriptor(*theta)) == NULL ){
-        throw(SQL, "alpha", "Cannot access descriptor");
-    }
-    bi = bat_iterator(b);
-    bn = BATnew(b->htype, TYPE_dbl, BATcount(b));
-    if( bn == NULL){
-        BBPreleaseref(b->batCacheid);
-        throw(SQL, "sql.alpha", MAL_MALLOC_FAIL);
-    }
-    BATseqbase(bn, b->hseqbase);
-    BATloop(b,p,q) {
-	dbl d = *decl;
-        dbl *theta = (dbl*)BUNtail(bi,p);
+	if( (b = BATdescriptor(*theta)) == NULL) {
+		throw(SQL, "alpha", "Cannot access descriptor");
+	}
+	bi = bat_iterator(b);
+	bn = BATnew(b->htype, TYPE_dbl, BATcount(b));
+	if( bn == NULL){
+		BBPreleaseref(b->batCacheid);
+		throw(SQL, "sql.alpha", MAL_MALLOC_FAIL);
+	}
+	BATseqbase(bn, b->hseqbase);
+	BATloop(b,p,q) {
+		dbl d = *decl;
+		dbl *theta = (dbl*)BUNtail(bi,p);
 
-	if (d == dbl_nil)
-		r = dbl_nil;
-	else if (fabs(d) + *theta > 89.9 )
-		r = (dbl) 180.0;
-	else {
-        	s = sin(radians(*theta));
-		c1 = cos(radians(d - *theta));
-		c2 = cos(radians(d + *theta));
-		r = degrees(fabs(atan(s / sqrt(fabs(c1 * c2)))));
-        }
-        BUNins(bn, BUNhead(bi,p), &r, FALSE);
-    }
-    BBPkeepref( *res = bn->batCacheid);
-    BBPunfix(b->batCacheid);
-    return msg;
+		if (d == dbl_nil)
+			r = dbl_nil;
+		else if (fabs(d) + *theta > 89.9)
+			r = (dbl) 180.0;
+		else {
+			s = sin(radians(*theta));
+			c1 = cos(radians(d - *theta));
+			c2 = cos(radians(d + *theta));
+			r = degrees(fabs(atan(s / sqrt(fabs(c1 * c2)))));
+		}
+		BUNins(bn, BUNhead(bi,p), &r, FALSE);
+	}
+	BBPkeepref( *res = bn->batCacheid);
+	BBPunfix(b->batCacheid);
+	return msg;
 }
 
 #if SIZEOF_WRD == SIZEOF_INT
