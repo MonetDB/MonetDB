@@ -1,3 +1,5 @@
 exports
-MAL-signatures
-SQL-dump
+HAVE_GEOM?MAL-signatures
+!HAVE_GEOM?MAL-signatures_nogeom
+HAVE_GEOM?SQL-dump
+!HAVE_GEOM?SQL-dump_nogeom
