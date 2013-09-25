@@ -1,10 +1,10 @@
 Package: MonetDB.R
 Version: 0.8.0
-Date: 2013-09-17
+Date: 2013-09-25
 Title: Connect MonetDB to R
-Authors@R: c(person("Hannes Muehleisen", "Developer", role = c("aut", "cre"),email = "hannes@cwi.nl"),
-	person("Thomas Lumley", "Contributor", role = "ctb"),
-	person("Anthony Damico", "Contributor", role = "ctb"))
+Authors@R: c(person("Hannes Muehleisen", role = c("aut", "cre"),email = "hannes@cwi.nl"),
+	person("Thomas Lumley", role = "ctb"),
+	person("Anthony Damico", role = "ctb"))
 Depends: DBI (>= 0.2-5), digest (>= 0.6.0), methods, utils, stats
 Description: Allows to pull data from MonetDB into R
 License: MPL (== 1.1)

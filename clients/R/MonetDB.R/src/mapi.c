@@ -32,8 +32,9 @@ static SEXP MAPI_type_tag;
 
 #define CHECK_MAPI_SOCK(s) do { \
     if (TYPEOF(s) != EXTPTRSXP || \
-        R_ExternalPtrTag(s) != MAPI_type_tag) \
-        error("bad socket"); \
+        R_ExternalPtrTag(s) != MAPI_type_tag || \
+        EXTPTR_PTR(s) == NULL) \
+        error("Socket has already been closed and cannot be used."); \
 } while (0)
 
 SEXP mapiInit(void) {
