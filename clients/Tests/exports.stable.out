@@ -2620,6 +2620,7 @@ str ilikesubselectRef;
 str ilikeuselectRef;
 void initHeartbeat(void);
 void initLibraries(void);
+void initMALstack(MalBlkPtr mb, MalStkPtr stk);
 void initNamespace(void);
 void initParser(void);
 void initProfiler(MalBlkPtr mb);
