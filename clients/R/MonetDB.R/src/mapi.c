@@ -6,6 +6,7 @@
 #ifdef __WIN32__
 #include <winsock2.h>
 #include <ws2tcpip.h>
+#undef ERROR
 #else
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -123,8 +124,8 @@ SEXP mapiConnect(SEXP host, SEXP port, SEXP timeout) {
 		// lets have a 1M buffer on this socket, ok?
 		int recvbuf_size = ALLOCSIZE;
 
-		if (setsockopt(sock, SOL_SOCKET, SO_RCVBUF, &recvbuf_size,
-				sizeof(recvbuf_size))) {
+		if (setsockopt(sock, SOL_SOCKET, SO_RCVBUF,
+				(const char *) &recvbuf_size, sizeof(recvbuf_size))) {
 			error("setsockopt failed");
 		}
 		if (connect(sock, rp->ai_addr, rp->ai_addrlen) != -1) {
@@ -235,7 +236,7 @@ SEXP mapiRead(SEXP conn) {
 			response_buf_len += ALLOCSIZE;
 			if (DEBUG) {
 				printf("II: Reallocating memory, new size %lu\n",
-						response_buf_len);
+						(unsigned long) response_buf_len);
 			}
 			response_buf = realloc(response_buf, response_buf_len);
 			if (response_buf == NULL) {
@@ -255,7 +256,7 @@ SEXP mapiRead(SEXP conn) {
 	size_t i;
 	for (i = 0; i < response_buf_offset; i++) {
 		if (response_buf[i] == '\0') {
-			warning("Removed a NULL character from response at offset %lu of %lu",i,response_buf_offset);
+			warning("Removed a NULL character from response at offset %lu of %lu",(unsigned long) i,(unsigned long) response_buf_offset);
 			response_buf[i] = '\t';
 		}
 	}
