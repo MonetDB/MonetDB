@@ -755,6 +755,9 @@ rm -f $RPM_BUILD_ROOT%{_bindir}/Maddlog
 rm -fr $RPM_BUILD_ROOT
 
 %changelog
+* Wed Sep 25 2013 Sjoerd Mullender <sjoerd@acm.org> - 11.15.15-20130925
+- Rebuilt.
+
 * Fri Sep 20 2013 Sjoerd Mullender <sjoerd@acm.org> - 11.15.13-20130920
 - Rebuilt.
 
