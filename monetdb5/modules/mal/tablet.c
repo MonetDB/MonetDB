@@ -627,7 +627,7 @@ output_line(char **buf, int *len, char **localbuf, int *locallen, Column *fmt, s
 					l = f->tostr(f->extra, localbuf, locallen, f->adt, p);
 					p = *localbuf;
 				}
-				if (fill + l + f->seplen > *len) {
+				if (fill + l + f->seplen + 1 > *len) {
 					/* extend the buffer */
 					*buf = (char *) GDKrealloc(*buf, fill + l + f->seplen + BUFSIZ);
 					*len = fill + l + f->seplen + BUFSIZ;
