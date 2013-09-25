@@ -35,16 +35,27 @@ static SEXP MAPI_type_tag;
     if (TYPEOF(s) != EXTPTRSXP || \
         R_ExternalPtrTag(s) != MAPI_type_tag || \
         EXTPTR_PTR(s) == NULL) \
-        error("Socket has already been closed and cannot be used."); \
+        error("Socket was either not successfully connected or is already closed. Either way, it cannot be used."); \
 } while (0)
 
 SEXP mapiInit(void) {
 	MAPI_type_tag = install("MAPI_TYPE_TAG");
+#ifdef __WIN32__
+	// I will not even TRY to understand why this is required
+	WSADATA wsaData;
+	int iResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
+	if (iResult != 0) {
+		error("WSAStartup failed: %d", iResult);
+	}
+#endif
 	return R_NilValue;
 }
 
 SEXP mapiDisconnect(SEXP conn) {
-	CHECK_MAPI_SOCK(conn);
+	if (TYPEOF(conn) != EXTPTRSXP || R_ExternalPtrTag(conn) != MAPI_type_tag) {
+		warning("trying to disconnect from a non-socket.");
+		return R_NilValue;
+	}
 	SOCKET *sock = R_ExternalPtrAddr(conn);
 	if (sock != NULL) {
 		shutdown(*sock, 2);
@@ -76,14 +87,6 @@ SEXP mapiConnect(SEXP host, SEXP port, SEXP timeout) {
 
 	struct addrinfo hints;
 	struct addrinfo *result, *rp;
-#ifdef __WIN32__
-	// I will not even TRY to understand why this is required
-	WSADATA wsaData;
-	int iResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
-	if (iResult != 0) {
-		error("WSAStartup failed: %d", iResult);
-	}
-#endif
 
 	//  send/receive timeouts for socket
 #ifdef __WIN32__
@@ -316,6 +319,7 @@ SEXP mapiWrite(SEXP conn, SEXP message) {
 }
 
 SEXP mapiRequest(SEXP conn, SEXP message) {
+	CHECK_MAPI_SOCK(conn);
 	mapiWrite(conn, message);
 	return (mapiRead(conn));
 }
