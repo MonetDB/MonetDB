@@ -39754,7 +39754,7 @@ pattern language.dataflow():bit
 address MALstartDataflow;
 comment The current guarded block is executed using dataflow control. 
 
-pattern language.pass(v:any_1):any_1 
+pattern language.pass(v:any_1):void 
 address MALpass;
 comment Cheap instruction to disgard storage while retaining the dataflow dependency
 
