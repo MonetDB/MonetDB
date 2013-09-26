@@ -2256,10 +2256,6 @@ BATmergecand(BAT *a, BAT *b)
 	assert(a->T->nonil);
 	assert(b->T->nonil);
 
-	/* we could return a if they denote the same projection */
-	if ( a->tseqbase == b->tseqbase && a->tdense && b->tdense && BATcount(a) == BATcount(b)){
-		return BATcopy(a, a->htype, a->ttype,0);
-	}
 	/* we could return a if b is empty (and v.v.) */
 	if ( BATcount(a) == 0){
 		return BATcopy(b, b->htype, b->ttype, 0);
