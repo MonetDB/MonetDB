@@ -61,10 +61,10 @@ typedef struct queue {
 	int size;	/* size of queue */
 	int last;	/* last element in the queue */
 	int exitcount;	/* how many threads should exit */
+	int exitedcount;			/* how many threads have exited */
 	FlowEvent *data;
 	MT_Lock l;	/* it's a shared resource, ie we need locks */
 	MT_Sema s;	/* threads wait on empty queues */
-	MT_Sema e;	/* synchronize exiting of thread */
 } Queue;
 
 /*
@@ -127,11 +127,11 @@ q_create(int sz, const char *name)
 		return NULL;
 	}
 	q->exitcount = 0;
+	q->exitedcount = 0;
 
 	(void) name; /* in case MT_LOCK_TRACE is not enabled in gdk_system.h */
 	MT_lock_init(&q->l, name);
 	MT_sema_init(&q->s, 0, name);
-	MT_sema_init(&q->e, 0, name);
 	return q;
 }
 
@@ -220,7 +220,9 @@ q_dequeue(Queue *q)
 	if (q->exitcount > 0) {
 		q->exitcount--;
 		MT_lock_unset(&q->l, "q_dequeue");
-		MT_sema_up(&q->e, "q_dequeue");
+		MT_lock_set(&mal_contextLock, "q_dequeue");
+		q->exitedcount++;
+		MT_lock_unset(&mal_contextLock, "q_dequeue");
 		return NULL;
 	}
 	assert(q->last > 0);
@@ -662,6 +664,13 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr st
 		/* create one more worker to compensate for our waiting until
 		 * all work is done */
 		MT_lock_set(&mal_contextLock, "runMALdataflow");
+		for (i = 0; i < THREADS && todo->exitedcount > 0; i++) {
+			if (workers[i].flag == EXITED) {
+				todo->exitedcount--;
+				workers[i].flag = IDLE;
+				MT_join_thread(workers[i].id);
+			}
+		}
 		for (i = 0; i < THREADS; i++) {
 			if (workers[i].flag == IDLE) {
 				workers[i].flag = RUNNING;
@@ -748,16 +757,6 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr st
 		todo->exitcount++;
 		MT_lock_unset(&todo->l, "runMALdataflow");
 		MT_sema_up(&todo->s, "runMALdataflow");
-		MT_sema_down(&todo->e, "runMALdataflow");
-		MT_lock_set(&mal_contextLock, "runMALdataflow");
-		for (i = 0; i < THREADS; i++) {
-			if (workers[i].flag == EXITED) {
-				MT_join_thread(workers[i].id);
-				workers[i].flag = IDLE;
-				break;
-			}
-		}
-		MT_lock_unset(&mal_contextLock, "runMALdataflow");
 	}
 	return msg;
 }
