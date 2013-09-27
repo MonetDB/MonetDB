@@ -2247,8 +2247,8 @@ BATmergecand(BAT *a, BAT *b)
 	BATcheck(b, "BATmergecand");
 	assert(a->htype == TYPE_void);
 	assert(b->htype == TYPE_void);
-	assert(ATOMtype(a->htype) == TYPE_oid);
-	assert(ATOMtype(b->htype) == TYPE_oid);
+	assert(ATOMtype(a->ttype) == TYPE_oid);
+	assert(ATOMtype(b->ttype) == TYPE_oid);
 	assert(BATcount(a) <= 1 || a->tsorted);
 	assert(BATcount(b) <= 1 || b->tsorted);
 	assert(BATcount(a) <= 1 || a->tkey);
@@ -2350,8 +2350,8 @@ BATintersectcand(BAT *a, BAT *b)
 	BATcheck(b, "BATintersectcand");
 	assert(a->htype == TYPE_void);
 	assert(b->htype == TYPE_void);
-	assert(ATOMtype(a->htype) == TYPE_oid);
-	assert(ATOMtype(b->htype) == TYPE_oid);
+	assert(ATOMtype(a->ttype) == TYPE_oid);
+	assert(ATOMtype(b->ttype) == TYPE_oid);
 	assert(a->tsorted);
 	assert(b->tsorted);
 	assert(a->tkey);
