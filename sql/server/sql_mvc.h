@@ -239,6 +239,7 @@ extern void stack_set_var(mvc *sql, char *name, ValRecord *v);
 
 extern str stack_get_string(mvc *sql, char *name);
 extern void stack_set_string(mvc *sql, char *name, str v);
+extern lng val_get_number(ValRecord *val);
 extern lng stack_get_number(mvc *sql, char *name);
 extern void stack_set_number(mvc *sql, char *name, lng v);
 

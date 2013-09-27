@@ -64,37 +64,28 @@ mvc_debug_on(mvc *m, int flg)
 }
 
 str
-sql_update_var(mvc *m, char *name)
+sql_update_var(mvc *m, char *name, char *sval, lng sgn)
 {
-	lng sgn;
 	if (strcmp(name, "debug") == 0) {
-		sgn = stack_get_number(m, "debug");
 		assert((lng) GDK_int_min <= sgn && sgn <= (lng) GDK_int_max);
 		m->debug = (int) sgn;
 	} else if (strcmp(name, "current_schema") == 0) {
-		char *schema = stack_get_string(m, "current_schema");
-
-		if (!mvc_set_schema(m, schema)) {
-			return sql_message( "Schema (%s) missing\n", schema);
+		if (!mvc_set_schema(m, sval)) {
+			return sql_message( "Schema (%s) missing\n", sval);
 		}
 	} else if (strcmp(name, "current_role") == 0) {
-		char *role = stack_get_string(m, "current_role");
-
-		if (!mvc_set_role(m, role)) {
-			return sql_message( "Role (%s) missing\n", role);
+		if (!mvc_set_role(m, sval)) {
+			return sql_message( "Role (%s) missing\n", sval);
 		}
 	} else if (strcmp(name, "current_timezone") == 0) {
-		sgn = stack_get_number(m, "current_timezone");
 		assert((lng) GDK_int_min <= sgn && sgn <= (lng) GDK_int_max);
 		m->timezone = (int) sgn;
 	} else if (strcmp(name, "cache") == 0) {
-		sgn = stack_get_number(m, "cache");
 		assert((lng) GDK_int_min <= sgn && sgn <= (lng) GDK_int_max);
 		m->cache = (int) sgn;
 	} else if (strcmp(name, "history") == 0) {
 		sql_schema *sys = mvc_bind_schema(m, "sys");
 
-		sgn = stack_get_number(m, "history");
 		assert((lng) GDK_int_min <= sgn && sgn <= (lng) GDK_int_max);
 		if (!m->sa)
 			m->sa = sa_create();
@@ -105,7 +96,6 @@ sql_update_var(mvc *m, char *name)
 	} 
 	return NULL;
 }
-
 
 int
 sql_create_env(mvc *m, sql_schema *s)
