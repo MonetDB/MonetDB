@@ -4194,7 +4194,7 @@ sql_trans_alter_null(sql_trans *tr, sql_column *col, int isnull)
 }
 
 sql_table *
-sql_trans_alter_readonly(sql_trans *tr, sql_table *t, int readonly)
+sql_trans_alter_readonly(sql_trans *tr, sql_table *t, bit readonly)
 {
 	if (t->readonly != readonly) {
 		sql_schema *syss = find_sql_schema(tr, isGlobal(t)?"sys":"tmp"); 
