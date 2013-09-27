@@ -108,7 +108,7 @@ MATpackInternal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		}
 		if ( !b->tsorted) sorted =0;
 		if ( !b->tkey) keyed =0;
-		if ( b->htype != TYPE_void || b->ttype != TYPE_oid) voidheaded =0;
+		if ( b->htype != TYPE_void ) voidheaded =0;
 	}
 	if (tt == TYPE_any){
 		*ret = 0;
@@ -475,7 +475,7 @@ MATmergepack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			if ( BATcount(b) ){
 				// pre-sort the arguments
 				onxt = *(oid*) Tloc(b,BUNfirst(b));
-				for( j =top; j> top && onxt < *o_src[j]; j--){
+				for( j =top; j > 0 && onxt < *o_src[j]; j--){
 					o_src[j] = o_src[j-1];
 					o_end[j] = o_end[j-1];
 					bats[j] = bats[j-1];
