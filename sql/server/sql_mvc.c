@@ -1522,10 +1522,8 @@ stack_set_number(mvc *sql, char *name, lng val)
 }
 
 lng
-stack_get_number(mvc *sql, char *name)
+val_get_number(ValRecord *v) 
 {
-	ValRecord *v = stack_get_var(sql, name);
-
 	if (v != NULL) {
 		if (v->vtype == TYPE_lng) 
 			return v->val.lval;
@@ -1541,6 +1539,13 @@ stack_get_number(mvc *sql, char *name)
 			return 0;
 	}
 	return 0;
+}
+
+lng
+stack_get_number(mvc *sql, char *name)
+{
+	ValRecord *v = stack_get_var(sql, name);
+	return val_get_number(v);
 }
 
 sql_column *

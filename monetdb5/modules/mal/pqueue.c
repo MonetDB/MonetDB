@@ -1066,6 +1066,31 @@ PQinit(int *ret, int *bid, wrd *maxsize)
 	return MAL_SUCCEED;
 }
 
+static void
+PQtopn_sorted_min( BAT **bn, BAT *b, wrd N )
+{
+	ssize_t cnt = BATcount(b);
+	if (b->tsorted) {
+		b = BATslice(b, (cnt-N)<0?0:cnt-N, cnt);
+		*bn = BATsort_rev(b);
+		BBPreleaseref(b->batCacheid);	
+	} else 
+		*bn = BATslice(b, 0, N>=cnt?cnt:N);
+}
+
+static void
+PQtopn_sorted_max( BAT **bn, BAT *b, wrd N )
+{
+	ssize_t cnt = BATcount(b);
+	if (b->tsorted) 
+		*bn = BATslice(b, 0, N>=cnt?cnt:N);
+	else {
+		b = BATslice(b, (cnt-N)<0?0:cnt-N, cnt);
+		*bn = BATsort_rev(b);
+		BBPreleaseref(b->batCacheid);	
+	}
+}
+
 #define PQimpl1a(X,Y)												\
 	str																\
 	PQenqueue_##X##Y(int *ret, int *bid, oid *idx, X *el){			\
@@ -1119,6 +1144,15 @@ PQinit(int *ret, int *bid, wrd *maxsize)
 		BAT *b,*bn = NULL;												\
 		if( (b= BATdescriptor(*bid)) == NULL)							\
 			throw(MAL, "pqueue.topN", RUNTIME_OBJECT_MISSING);			\
+		if (b->tsorted || b->trevsorted) { 	\
+			PQtopn_sorted_##K(&bn, b, *N);	\
+			if (bn) { 			\
+				*ret= bn->batCacheid;		\
+				BBPkeepref(*ret);		\
+				BBPreleaseref(b->batCacheid);	\
+				return MAL_SUCCEED;		\
+			}				\
+		} else					\
 		if ((b->htype == TYPE_void ? pqueue_topn_void##TYPE##K(&bn,b,N) : pqueue_topn_##TYPE##K(&bn,b,N)) == GDK_SUCCEED && bn) { \
 			*ret= bn->batCacheid;										\
 			BBPkeepref(*ret);											\
