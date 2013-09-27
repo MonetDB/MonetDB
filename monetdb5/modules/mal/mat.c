@@ -475,7 +475,7 @@ MATmergepack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			if ( BATcount(b) ){
 				// pre-sort the arguments
 				onxt = *(oid*) Tloc(b,BUNfirst(b));
-				for( j =top; j > 0 && onxt < *o_src[j]; j--){
+				for( j =top; j > 0 && onxt < *o_src[j-1]; j--){
 					o_src[j] = o_src[j-1];
 					o_end[j] = o_end[j-1];
 					bats[j] = bats[j-1];
