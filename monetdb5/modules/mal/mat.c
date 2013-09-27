@@ -84,12 +84,13 @@ MAThasMoreElements(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
  * do not produce RUNTIME_OBJECT_MISSING.
  */
 static str
-MATpackInternal(MalStkPtr stk, InstrPtr p)
+MATpackInternal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int i, *ret = (int*) getArgReference(stk,p,0);
 	BAT *b, *bn;
 	BUN cap = 0;
 	int tt = TYPE_any;
+	int sorted =1, keyed=1, voidheaded=1;
 
 	for (i = 1; i < p->argc; i++) {
 		int bid = stk->stk[getArg(p,i)].val.ival;
@@ -105,11 +106,16 @@ MATpackInternal(MalStkPtr stk, InstrPtr p)
 				tt = b->ttype;
 			cap += BATcount(b);
 		}
+		if ( !b->tsorted) sorted =0;
+		if ( !b->tkey) keyed =0;
+		if ( b->htype != TYPE_void || b->ttype != TYPE_oid) voidheaded =0;
 	}
 	if (tt == TYPE_any){
 		*ret = 0;
 		return MAL_SUCCEED;
 	}
+	if (tt == TYPE_oid && sorted && keyed && voidheaded)
+		return MATmergepack(cntxt, mb, stk, p);
 
 	bn = BATnew(TYPE_void, tt, cap);
 	if (bn == NULL)
@@ -435,9 +441,7 @@ MATpack3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 str
 MATpack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	(void) cntxt;
-	(void) mb;
-	return MATpackInternal(stk,p);
+	return MATpackInternal(cntxt,mb,stk,p);
 }
 
 // merging multiple OID lists, optimized for empty bats
@@ -445,45 +449,94 @@ MATpack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 str
 MATmergepack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	int i, *ret = (int*) getArgReference(stk,p,0);
-	int top=0, *bids;
-	BAT *b, *bn, *bm;
+	int i,j= 0, *ret = (int*) getArgReference(stk,p,0);
+	int top=0;
+	oid  **o_end, **o_src, *o, *oo, onxt;
+	BAT *b, *bn, *bm, **bats;
 	BUN cap = 0;
 
 	(void)cntxt;
 	(void)mb;
-	bids = (int*) GDKzalloc(sizeof(int) * p->argc);
-	if ( bids ==0)
+	bats = (BAT**) GDKzalloc(sizeof(BAT*) * p->argc);
+	o_end = (oid**) GDKzalloc(sizeof(oid*) * p->argc);
+	o_src = (oid**) GDKzalloc(sizeof(oid*) * p->argc);
+
+	if ( bats ==0 || o_end == 0 || o_src == 0){
+		if (bats) GDKfree(bats);
+		if (o_src) GDKfree(o_src);
+		if (o_end) GDKfree(o_end);
 		throw(MAL,"mat.mergepack",MAL_MALLOC_FAIL);
+	}
 	for (i = 1; i < p->argc; i++) {
 		int bid = stk->stk[getArg(p,i)].val.ival;
-		b = BBPquickdesc(ABS(bid),FALSE);
+		b = BATdescriptor(ABS(bid));
 		if (b ){
 			cap += BATcount(b);
-			if ( BATcount(b) )
-				bids[top++] = b->batCacheid;
+			if ( BATcount(b) ){
+				// pre-sort the arguments
+				onxt = *(oid*) Tloc(b,BUNfirst(b));
+				for( j =top; j> top && onxt < *o_src[j]; j--){
+					o_src[j] = o_src[j-1];
+					o_end[j] = o_end[j-1];
+					bats[j] = bats[j-1];
+				}
+				o_src[j] = (oid*) Tloc(b,BUNfirst(b));
+				o_end[j] = o_src[top] + BATcount(b);
+				bats[j] = b;
+				top++;
+			}
 		}
 	}
 
 	bn = BATnew(TYPE_void, TYPE_oid, cap);
 	if (bn == NULL)
 		throw(MAL, "mat.pack", MAL_MALLOC_FAIL);
-	if( cap > 0)
-	for (i = 0; i < top; i++) {
-		b = BATdescriptor(bids[i]);
-		if( b ){
-            if ( i == 1)
-                BATseqbase(bn, b->hseqbase);
-			bm = BATmergecand(bn,b);
-			BBPunfix(b->batCacheid);
-			BBPunfix(bn->batCacheid);
-			bn = bm;
+	if ( cap == 0){
+		BATseqbase(bn, 0);
+		BATseqbase(BATmirror(bn), 0);
+		BBPkeepref(*ret = bn->batCacheid);
+		GDKfree(bats);
+		GDKfree(o_src);
+		GDKfree(o_end);
+		return MAL_SUCCEED;
+	}
+	BATseqbase(bn, bats[0]->hseqbase);
+	// UNROLL THE MULTI-BAT MERGE
+	o = (oid*) Tloc(bn,BUNfirst(bn));
+	while( top){
+		*o++ = *o_src[0];
+		o_src[0]++;
+		if( o_src[0] == o_end[0]){
+			// remove this one
+			for(j=0; j< top; j++){
+				o_src[j]= o_src[j+1];
+				o_end[j]= o_end[j+1];
+				bats[j] = bats[j+1];
+			}
+			top--;
+		} else{
+			onxt= *o_src[0];
+			for( j=1; j< top && onxt > *o_src[j]; j++){
+				oo = o_src[j]; o_src[j]= o_src[j-1]; o_src[j-1]= oo;
+				oo = o_end[j]; o_end[j]= o_end[j-1]; o_end[j-1]= oo;
+				bm = bats[j]; bats[j]=bats[j-1]; bats[j-1] = bm;
+			}
 		}
 	}
-	GDKfree(bids);
+	for( i=0; i< top; i++)
+		BBPunfix(bats[i]->batCacheid);
 	BATsettrivprop(bn);
-	assert(!bn->H->nil || !bn->H->nonil);
-	assert(!bn->T->nil || !bn->T->nonil);
+	GDKfree(bats);
+	GDKfree(o_src);
+	GDKfree(o_end);
+    /* properties */
+    BATsetcount(bn, (BUN) (o - (oid *) Tloc(bn, BUNfirst(bn))));
+    BATseqbase(bn, 0);
+    bn->trevsorted = 0;
+    bn->tsorted = 1;
+    bn->tkey = 1;
+    bn->T->nil = 0;
+    bn->T->nonil = 1;
 	BBPkeepref(*ret = bn->batCacheid);
 	return MAL_SUCCEED;
 }
