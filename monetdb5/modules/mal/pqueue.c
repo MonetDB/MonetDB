@@ -1066,10 +1066,10 @@ PQinit(int *ret, int *bid, wrd *maxsize)
 }
 
 static void
-PQtopn_sorted_min( BAT **bn, BAT *b, wrd _N )
+PQtopn_sorted_min( BAT **bn, BAT *b, wrd NN )
 {
-	BUN cnt = BATcount(b), N = (BUN) _N;
-	assert(_N >= 0);
+	BUN cnt = BATcount(b), N = (BUN) NN;
+	assert(NN >= 0);
 	if (b->tsorted) {
 		b = BATslice(b, N>=cnt?0:cnt-N, cnt);
 		*bn = BATsort_rev(b);
@@ -1079,10 +1079,10 @@ PQtopn_sorted_min( BAT **bn, BAT *b, wrd _N )
 }
 
 static void
-PQtopn_sorted_max( BAT **bn, BAT *b, wrd _N )
+PQtopn_sorted_max( BAT **bn, BAT *b, wrd NN )
 {
-	BUN cnt = BATcount(b), N = (BUN) _N;
-	assert(_N >= 0);
+	BUN cnt = BATcount(b), N = (BUN) NN;
+	assert(NN >= 0);
 	if (b->tsorted) 
 		*bn = BATslice(b, 0, N>=cnt?cnt:N);
 	else {
