@@ -1278,7 +1278,7 @@ PQtopn_sorted_max( BAT **bn, BAT *b, wrd NN )
 
 
 PQminmax(bte)
-	PQminmax(sht)
+PQminmax(sht)
 PQminmax(int)
 PQminmax(oid)
 PQminmax(wrd)
