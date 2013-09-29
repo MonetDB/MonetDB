@@ -91,6 +91,8 @@ MATpackInternal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	BUN cap = 0;
 	int tt = TYPE_any;
 	int sorted =1, keyed=1, voidheaded=1;
+	(void) cntxt;
+	(void) mb;
 
 	for (i = 1; i < p->argc; i++) {
 		int bid = stk->stk[getArg(p,i)].val.ival;
@@ -515,6 +517,7 @@ MATmergepack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			}
 			top--;
 		} else{
+			// resort priority queue
 			onxt= *o_src[0];
 			for( j=1; j< top && onxt > *o_src[j]; j++){
 				oo = o_src[j]; o_src[j]= o_src[j-1]; o_src[j-1]= oo;
@@ -525,13 +528,13 @@ MATmergepack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	}
 	for( i=0; i< top; i++)
 		BBPunfix(bats[i]->batCacheid);
+    BATsetcount(bn, (BUN) (o - (oid *) Tloc(bn, BUNfirst(bn))));
+    BATseqbase(bn, 0);
 	BATsettrivprop(bn);
 	GDKfree(bats);
 	GDKfree(o_src);
 	GDKfree(o_end);
     /* properties */
-    BATsetcount(bn, (BUN) (o - (oid *) Tloc(bn, BUNfirst(bn))));
-    BATseqbase(bn, 0);
     bn->trevsorted = 0;
     bn->tsorted = 1;
     bn->tkey = 1;
