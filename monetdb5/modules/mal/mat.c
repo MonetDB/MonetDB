@@ -483,7 +483,7 @@ MATmergepack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 					bats[j] = bats[j-1];
 				}
 				o_src[j] = (oid*) Tloc(b,BUNfirst(b));
-				o_end[j] = o_src[top] + BATcount(b);
+				o_end[j] = o_src[j] + BATcount(b);
 				bats[j] = b;
 				top++;
 			}
