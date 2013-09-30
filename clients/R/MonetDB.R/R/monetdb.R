@@ -187,6 +187,8 @@ setMethod("dbSendQuery", signature(conn="MonetDBConnection", statement="characte
 			
 			if (!env$success) {
 				sp <- strsplit(env$message,"!",fixed=T)[[1]]
+				# truncate statement to not hide actual error message
+				if (nchar(statement) > 100) { statement <- paste0(substring(statement,1,100),"...") }
 				if (length(sp) == 3) {
 					errno <- as.numeric(sp[[2]])
 					errmsg <- sp[[3]]
