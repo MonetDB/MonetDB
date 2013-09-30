@@ -1016,8 +1016,6 @@ GDKinit(opt *set, int setlen)
 	GDKremovedir(DELDIR);
 	BBPinit();
 
-	HEAPcacheInit();
-
 	GDKkey = BATnew(TYPE_void, TYPE_str, 100);
 	GDKval = BATnew(TYPE_void, TYPE_str, 100);
 	if (GDKkey == NULL)

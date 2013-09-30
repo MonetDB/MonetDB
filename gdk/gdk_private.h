@@ -69,7 +69,6 @@ int HASHgonebad(BAT *b, const void *v);
 BUN HASHmask(BUN cnt);
 Hash *HASHnew(Heap *hp, int tpe, BUN size, BUN mask);
 int HEAPalloc(Heap *h, size_t nitems, size_t itemsize);
-void HEAPcacheInit(void);
 int HEAP_check(Heap *h, HeapRepair *hr);
 int HEAPdelete(Heap *h, const char *o, const char *ext);
 void HEAP_init(Heap *heap, int tpe);
