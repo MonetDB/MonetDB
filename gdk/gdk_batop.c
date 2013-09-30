@@ -2256,7 +2256,7 @@ BATmergecand(BAT *a, BAT *b)
 	assert(a->T->nonil);
 	assert(b->T->nonil);
 
-	/* we could return a if b is empty (and v.v.) */
+	/* we can return a if b is empty (and v.v.) */
 	if ( BATcount(a) == 0){
 		return BATcopy(b, b->htype, b->ttype, 0);
 	}
