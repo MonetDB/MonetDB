@@ -183,7 +183,7 @@ BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl, BUN maximum)
 /* inner check */
 #define impscheck(CAND,TEST,ADD)					    \
 do {									    \
-	e = i+limit-pr_off+off;						    \
+	e = (BUN) (i+limit-pr_off+off);					    \
 	if (im[icnt] & mask) {						    \
 		if ((im[icnt] & ~innermask) == 0) {			    \
 			while (o < e && p < q) {			    \
@@ -599,7 +599,7 @@ fullscan_any(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 /* scan/imprints select with candidates */
 scan_sel(candscan, o = (oid) (*candlist++), w = (BUN) ((*(oid *) Tloc(s,q?(q - 1):0)) + 1))
 /* scan/imprints select without candidates */
-scan_sel(fullscan, o = p+off, w = q+off)
+scan_sel(fullscan, o = (oid) (p+off), w = (BUN) (q+off))
 
 
 static BAT *

@@ -12,10 +12,10 @@ stderr of test 'delete_primarykey_1643845` in directory 'sql/test/BugConstraints
 # 12:55:04 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=33669  < delete_primarykey_1643845.sql
 # 12:55:04 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-481/.s.monetdb.31323
+MAPI  = monetdb@sofia:39182
 QUERY = insert into t2 values(2,33);
 ERROR = !INSERT INTO: FOREIGN KEY constraint 't2.t2_id_f_fkey' violated
-MAPI  = (monetdb) /var/tmp/mtest-481/.s.monetdb.31323
+MAPI  = monetdb@sofia:39182
 QUERY = delete from t1 where id = 1;
 ERROR = !DELETE: FOREIGN KEY constraint 't2.t2_id_f_fkey' violated
 

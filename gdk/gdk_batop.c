@@ -2247,8 +2247,8 @@ BATmergecand(BAT *a, BAT *b)
 	BATcheck(b, "BATmergecand");
 	assert(a->htype == TYPE_void);
 	assert(b->htype == TYPE_void);
-	assert(ATOMtype(a->htype) == TYPE_oid);
-	assert(ATOMtype(b->htype) == TYPE_oid);
+	assert(ATOMtype(a->ttype) == TYPE_oid);
+	assert(ATOMtype(b->ttype) == TYPE_oid);
 	assert(BATcount(a) <= 1 || a->tsorted);
 	assert(BATcount(b) <= 1 || b->tsorted);
 	assert(BATcount(a) <= 1 || a->tkey);
@@ -2256,7 +2256,13 @@ BATmergecand(BAT *a, BAT *b)
 	assert(a->T->nonil);
 	assert(b->T->nonil);
 
-	/* XXX we could return a if b is empty (and v.v.) */
+	/* we could return a if b is empty (and v.v.) */
+	if ( BATcount(a) == 0){
+		return BATcopy(b, b->htype, b->ttype, 0);
+	}
+	if ( BATcount(b) == 0){
+		return BATcopy(a, a->htype, a->ttype, 0);
+	}
 
 	bn = BATnew(TYPE_void, TYPE_oid, BATcount(a) + BATcount(b));
 	if (bn == NULL)
@@ -2344,8 +2350,8 @@ BATintersectcand(BAT *a, BAT *b)
 	BATcheck(b, "BATintersectcand");
 	assert(a->htype == TYPE_void);
 	assert(b->htype == TYPE_void);
-	assert(ATOMtype(a->htype) == TYPE_oid);
-	assert(ATOMtype(b->htype) == TYPE_oid);
+	assert(ATOMtype(a->ttype) == TYPE_oid);
+	assert(ATOMtype(b->ttype) == TYPE_oid);
 	assert(a->tsorted);
 	assert(b->tsorted);
 	assert(a->tkey);

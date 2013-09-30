@@ -74,7 +74,7 @@ stderr of test 'insert_queue` in directory 'sql/test/ssqq` itself:
 # 15:07:52 >  mclient -lsql -ftest -i -e --host=yngling --port=35482 
 # 15:07:52 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-32505/.s.monetdb.33041
+MAPI  = monetdb@sofia:38256
 QUERY = set id_result = insert_queue(10, 'monet', 'linux');
 ERROR = !INSERT INTO: FOREIGN KEY constraint 'ssqq_queue.queue_query_id_fk' violated
 

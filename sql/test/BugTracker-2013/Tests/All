@@ -26,7 +26,7 @@ add_boolean.Bug-3289
 prepare-smallint.Bug-3297
 psm_functions_and_accessrights.Bug-3300
 decimal-cast.Bug-3310
-hashed_exp.Bug-3313
+HAVE_GEOM?hashed_exp.Bug-3313
 mitosis-floor.Bug-3330
 avg_needs_abort_on_error.Bug-3329
 unique_constraint_on_declared_table.Bug-3319
@@ -50,3 +50,4 @@ median.Bug-3352
 check-constraint.Bug-3335
 crash_after_creation_of_unique_key.Bug-3363
 alter_resets_readonly.Bug-3362
+env_errors.Bug-3370
