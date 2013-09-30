@@ -90,7 +90,6 @@ MATpackInternal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	BAT *b, *bn;
 	BUN cap = 0;
 	int tt = TYPE_any;
-	int sorted =1, keyed=1, voidheaded=1;
 	(void) cntxt;
 	(void) mb;
 
@@ -108,16 +107,11 @@ MATpackInternal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 				tt = b->ttype;
 			cap += BATcount(b);
 		}
-		if ( !b->tsorted) sorted =0;
-		if ( !b->tkey) keyed =0;
-		if ( b->htype != TYPE_void ) voidheaded =0;
 	}
 	if (tt == TYPE_any){
 		*ret = 0;
 		return MAL_SUCCEED;
 	}
-	if (tt == TYPE_oid && sorted && keyed && voidheaded)
-		return MATmergepack(cntxt, mb, stk, p);
 
 	bn = BATnew(TYPE_void, tt, cap);
 	if (bn == NULL)
