@@ -2242,6 +2242,9 @@ BATmergecand(BAT *a, BAT *b)
 	BAT *bn;
 	const oid *ap, *bp, *ape, *bpe;
 	oid *p, i;
+	oid af, al, bf, bl;
+	BATiter ai, bi;
+	bit ad, bd;
 
 	BATcheck(a, "BATmergecand");
 	BATcheck(b, "BATmergecand");
@@ -2262,6 +2265,21 @@ BATmergecand(BAT *a, BAT *b)
 	}
 	if ( BATcount(b) == 0){
 		return BATcopy(a, a->htype, a->ttype, 0);
+	}
+	/* we can return a if a fully covers b (and v.v) */
+	ai = bat_iterator(a);
+	bi = bat_iterator(b);
+	af = *(oid*) BUNtail(ai, BUNfirst(a));
+	bf = *(oid*) BUNtail(bi, BUNfirst(b));
+	al = *(oid*) BUNtail(ai, BUNlast(a) - 1);
+	bl = *(oid*) BUNtail(bi, BUNlast(b) - 1);
+	ad = (af + BATcount(a) - 1 == al); /* i.e., dense */
+	bd = (bf + BATcount(b) - 1 == bl); /* i.e., dense */
+	if (ad && af <= bf && al >= bl) {
+		return BATcopy(a, a->htype, a->ttype,0);
+	}
+	if (bd && bf <= af && bl >= al) {
+		return BATcopy(b, b->htype, b->ttype,0);
 	}
 
 	bn = BATnew(TYPE_void, TYPE_oid, BATcount(a) + BATcount(b));
