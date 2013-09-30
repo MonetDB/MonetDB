@@ -589,9 +589,9 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 }
 
 int
-MT_msync(void *p, size_t off, size_t len, int mode)
+MT_msync(void *p, size_t len, int mode)
 {
-	int ret = msync(((char *) p) + off, len,
+	int ret = msync(p, len,
 			(mode & MMAP_SYNC) ? MS_SYNC :
 			((mode & MMAP_ASYNC) ? MS_ASYNC : MS_INVALIDATE));
 
@@ -816,14 +816,14 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 }
 
 int
-MT_msync(void *p, size_t off, size_t len, int mode)
+MT_msync(void *p, size_t len, int mode)
 {
 	int ret = 0;
 
 	(void) mode;
 	/*       Windows' UnmapViewOfFile returns success!=0, error== 0,
 	 * while Unix's   munmap          returns success==0, error==-1. */
-	return -(FlushViewOfFile(((char *) p) + off, len) == 0);
+	return -(FlushViewOfFile(p, len) == 0);
 }
 
 #ifndef _HEAPOK			/* MinGW */

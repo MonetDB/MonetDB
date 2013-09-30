@@ -293,7 +293,7 @@ GDKsave(const char *nme, const char *ext, void *buf, size_t size, storage_t mode
 		 * commit-time.
 		 */
 		if (size)
-			err = MT_msync(buf, 0, size, MMAP_SYNC);
+			err = MT_msync(buf, size, MMAP_SYNC);
 		if (err)
 			GDKsyserror("GDKsave: error on: name=%s, ext=%s, mode=%d\n", nme, ext ? ext : "", (int) mode);
 		IODEBUG THRprintf(GDKstdout, "#MT_msync(buf " PTRFMT ", size " SZFMT ", MMAP_SYNC) = %d\n", PTRFMTCAST buf, size, err);
