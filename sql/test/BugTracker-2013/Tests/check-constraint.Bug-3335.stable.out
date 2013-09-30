@@ -53,8 +53,6 @@ Ready.
 #insert into t3335 values(1);
 [ 1	]
 #insert into t3335 values(0);
-[ 1	]
-#insert into t3335 values(2);
 We expect an error here.
 
 # 15:34:31 >  
