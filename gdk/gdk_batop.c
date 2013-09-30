@@ -2232,7 +2232,13 @@ BATmergecand(BAT *a, BAT *b)
 	assert(a->T->nonil);
 	assert(b->T->nonil);
 
-	/* XXX we could return a if b is empty (and v.v.) */
+	/* we can return a if b is empty (and v.v.) */
+	if ( BATcount(a) == 0){
+		return BATcopy(b, b->htype, b->ttype, 0);
+	}
+	if ( BATcount(b) == 0){
+		return BATcopy(a, a->htype, a->ttype, 0);
+	}
 
 	bn = BATnew(TYPE_void, TYPE_oid, BATcount(a) + BATcount(b));
 	if (bn == NULL)
