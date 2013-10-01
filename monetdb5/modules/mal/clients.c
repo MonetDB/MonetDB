@@ -361,6 +361,15 @@ CLTsuspend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 //set time out based on seconds
 str
+CLTsetSessionTimeout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	lng sto;
+	(void) mb;
+	sto=  *(lng *) getArgReference(stk,pci,1);
+	cntxt->stimeout = sto * 1000 * 1000;
+    return MAL_SUCCEED;
+}
+str
 CLTsetTimeout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	lng qto,sto;

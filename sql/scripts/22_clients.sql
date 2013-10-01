@@ -18,8 +18,10 @@ create function sys.password_hash (username string)
 	returns string 
 	external name sql.password;
 
--- control the query time out 
+-- control the query and session time out 
 create procedure sys.settimeout("query" bigint)
 	external name sql.settimeout;
 create procedure sys.settimeout("query" bigint, "session" bigint)
 	external name sql.settimeout;
+create procedure sys.setsession("timeout" bigint)
+	external name sql.setsession;
