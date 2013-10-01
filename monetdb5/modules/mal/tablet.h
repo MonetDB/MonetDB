@@ -47,48 +47,32 @@
 #define tablet_export extern
 #endif
 
-#define SIZE (1*1024*1024)
-#define SLICES 2
-#define BINS 100
-
-struct Column_t;
-typedef ptr *(*frStr) (struct Column_t *fmt, int type, char *s, char *e, char quote);
-/* as toString functions are also used outside tablet we don't pass
- * the column here */
-typedef int (*toStr) (void *extra, char **buf, int *len, int type, ptr a);
-
 typedef struct Column_t {
-	char *batname;
-	char *name;					/* column title */
-	char *sep;
+	const char *name;			/* column title */
+	const char *sep;
 	int seplen;
 	char *type;
 	int adt;					/* type index */
-	BAT *c[SLICES];				/* set to NULL when scalar is meant */
-	BATiter ci[SLICES];
-	BAT *bin[BINS];
+	BAT *c;						/* set to NULL when scalar is meant */
+	BATiter ci;
 	BUN p;
 	unsigned int tabs;			/* field size in tab positions */
-	str lbrk, rbrk;				/* column brackets */
-	str nullstr;				/* null representation */
+	const char *nullstr;		/* null representation */
 	size_t null_length;			/* its length */
 	unsigned int width;			/* actual column width */
 	unsigned int maxwidth;		/* permissible width */
 	int fieldstart;				/* Fixed character field load positions */
 	int fieldwidth;
 	int scale, precision;
-	toStr tostr;
-	frStr frstr;
+	int (*tostr)(void *extra, char **buf, int *len, int type, const void *a);
+	void *(*frstr)(struct Column_t *fmt, int type, const char *s, const char *e, char quote);
 	void *extra;
 	void *data;
 	int len;
 	int nillen;
 	bit ws;						/* if set we need to skip white space */
-	bit quote;					/* if set use this character for string quotes */
-	void *nildata;
-	str batfile;				/* what is the BAT to be replaced */
-	str rawfile;				/* where to find the raw file */
-	stream *raw;				/* this column should be stored directly on stream */
+	char quote;					/* if set use this character for string quotes */
+	const void *nildata;
 	int size;
 } Column;
 
@@ -131,8 +115,7 @@ tablet_export BAT **TABLETcollect(Tablet *as);
 tablet_export BAT **TABLETcollect_parts(Tablet *as, BUN offset);
 tablet_export void TABLETdestroy_format(Tablet *as);
 tablet_export int TABLEToutput_file(Tablet *as, BAT *order, stream *s);
-tablet_export ptr *TABLETstrFrStr(Column *c, char *s, char *e);
-tablet_export ptr *TABLETadt_frStr(Column *c, int type, char *s, char *e, char quote);
+tablet_export void *TABLETadt_frStr(Column *c, int type, char *s, char *e, char quote);
 tablet_export int TABLETadt_toStr(void *extra, char **buf, int *len, int type, ptr a);
 
 #endif

@@ -140,8 +140,8 @@ RCreceptorStartInternal(int *ret, str *tbl, str *host, int *port, int mode, int 
 		}
 		BBPincref(b->batCacheid, TRUE);
 		fmt[j].c[0] = b;
-		fmt[j].name = GDKstrdup(baskets[idx].cols[i]);
-		fmt[j].sep = GDKstrdup(",");
+		fmt[j].name = baskets[idx].cols[i];
+		fmt[j].sep = ",";
 		fmt[j].seplen = 1;
 		fmt[j].type = GDKstrdup(ATOMname(b->ttype));
 		fmt[j].adt = (b)->ttype;
@@ -151,7 +151,7 @@ RCreceptorStartInternal(int *ret, str *tbl, str *host, int *port, int mode, int 
 		fmt[j].len = fmt[j].nillen =
 						 ATOMlen(fmt[j].adt, ATOMnilptr(fmt[j].adt));
 		fmt[j].data = GDKmalloc(fmt[j].len);
-		fmt[j].nullstr = GDKmalloc(fmt[j].len + 1);
+		fmt[j].nullstr = "";
 		j++;
 	}
 	rc->table.nr_attrs = j;
@@ -338,7 +338,7 @@ static inline int
 insert_val(Column *fmt, char *s, char *e, char quote, ptr key, str *err, int c)
 {
 	char bak = 0;
-	ptr *adt;
+	const void *adt;
 	char buf[BUFSIZ];
 
 	if (quote) {
@@ -394,11 +394,7 @@ insert_val(Column *fmt, char *s, char *e, char quote, ptr key, str *err, int c)
 		return -1;
 	}
 	/* key may be NULL but that's not a problem, as long as we have void */
-	if (fmt->raw) {
-		mnstr_write(fmt->raw, adt, ATOMsize(fmt->adt), 1);
-	} else {
-		bunfastins(fmt->c[0], key, adt);
-	}
+	bunfastins(fmt->c[0], key, adt);
 	return 0;
   bunins_failed:
 	snprintf(buf, BUFSIZ, "while parsing '%s' from line " BUNFMT " field %d not inserted\n", s, BATcount(fmt->c[0]), c);
@@ -570,10 +566,7 @@ bodyRestart:
 		if (rc->status == BSKTSTOP) {
 			mnstr_close(receptor);
 			for (j = 0; j < rc->table.nr_attrs; j++) {
-				GDKfree(rc->table.format[j].sep);
-				GDKfree(rc->table.format[j].name);
 				GDKfree(rc->table.format[j].data);
-				GDKfree(rc->table.format[j].nullstr);
 				BBPdecref(rc->table.format[j].c[0]->batCacheid, TRUE);
 				/* above will be double freed with multiple
 				 * streams/threads */

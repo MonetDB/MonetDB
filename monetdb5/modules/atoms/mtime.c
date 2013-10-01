@@ -483,7 +483,7 @@ static int dummy;
 #define BEFORE(d1,m1,d2,m2) (d1 < d2 || (d1 == d2 && m1 <= m2))
 
 static int
-timestamp_inside(timestamp *ret, timestamp *t, tzone *z, lng offset)
+timestamp_inside(timestamp *ret, const timestamp *t, const tzone *z, lng offset)
 {
 	/* starts with GMT time t, and returns whether it is in the DST for z */
 	lng add = (offset != (lng) 0) ? offset : (get_offset(z)) * (lng) 60000;
@@ -598,7 +598,7 @@ date_fromstr(str buf, int *len, date **d)
 }
 
 int
-date_tostr(str *buf, int *len, date *val)
+date_tostr(str *buf, int *len, const date *val)
 {
 	int day, month, year;
 
@@ -707,7 +707,7 @@ daytime_tz_fromstr(str buf, int *len, daytime **ret)
 }
 
 int
-daytime_tostr(str *buf, int *len, daytime *val)
+daytime_tostr(str *buf, int *len, const daytime *val)
 {
 	int hour, min, sec, msec;
 
@@ -787,7 +787,7 @@ timestamp_fromstr(str buf, int *len, timestamp **ret)
 }
 
 int
-timestamp_tz_tostr(str *buf, int *len, timestamp *val, tzone *timezone)
+timestamp_tz_tostr(str *buf, int *len, const timestamp *val, const tzone *timezone)
 {
 	int len1, len2, big = 128;
 	char buf1[128], buf2[128], *s = *buf, *s1 = buf1, *s2 = buf2;
@@ -832,7 +832,7 @@ timestamp_tz_tostr(str *buf, int *len, timestamp *val, tzone *timezone)
 }
 
 int
-timestamp_tostr(str *buf, int *len, timestamp *val)
+timestamp_tostr(str *buf, int *len, const timestamp *val)
 {
 	return timestamp_tz_tostr(buf, len, val, &tzone_local);
 }
@@ -855,7 +855,7 @@ count1(int i)
  * @- rule
  */
 int
-rule_tostr(str *buf, int *len, rule *r)
+rule_tostr(str *buf, int *len, const rule *r)
 {
 	int hours = r->s.minutes / 60;
 	int minutes = r->s.minutes % 60;
@@ -1052,7 +1052,7 @@ tzone_fromstr(str buf, int *len, tzone **d)
 }
 
 int
-tzone_tostr(str *buf, int *len, tzone *z)
+tzone_tostr(str *buf, int *len, const tzone *z)
 {
 	str s;
 
@@ -1509,7 +1509,7 @@ date_addmonths(date *ret, date *v, int *delta)
 
 /* returns the timestamp that comes 'milliseconds' after 'value'. */
 str
-MTIMEtimestamp_add(timestamp *ret, timestamp *v, lng *msecs)
+MTIMEtimestamp_add(timestamp *ret, const timestamp *v, const lng *msecs)
 {
 	if (!ts_isnil(*v) && *msecs != lng_nil) {
 		int days = (int) (*msecs / (24 * 60 * 60 * 1000));
@@ -1827,7 +1827,7 @@ MTIMEdate_date(date *d, date *s)
 }
 
 str
-MTIMEdate_tostr(str *ret, date *d)
+MTIMEdate_tostr(str *ret, const date *d)
 {
 	int big = 128;
 	char buf[128], *s1 = buf;
@@ -1863,7 +1863,7 @@ MTIMEdate_create(date *ret, int *year, int *month, int *day)
 }
 
 str
-MTIMEdaytime_tostr(str *ret, daytime *d)
+MTIMEdaytime_tostr(str *ret, const daytime *d)
 {
 	char buf[128], *s = buf;
 	int len = 128;
@@ -2224,7 +2224,7 @@ MTIMEtimestamp_inside_dst(bit *ret, timestamp *p, tzone *z)
 }
 
 str
-MTIMErule_tostr(str *s, rule *r)
+MTIMErule_tostr(str *s, const rule *r)
 {
 	char buf[128], *s1 = buf;
 	int len = 128;
@@ -2445,7 +2445,7 @@ MTIMEcompute_rule_foryear(date *ret, rule *val, int *year)
 }
 
 str
-MTIMEtzone_tostr(str *s, tzone *ret)
+MTIMEtzone_tostr(str *s, const tzone *ret)
 {
 	char buf[128], *s1 = buf;
 	int len = 128;

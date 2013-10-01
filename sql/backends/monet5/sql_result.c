@@ -32,7 +32,7 @@
 
 #define DEC_TOSTR(X) \
 	char buf[32]; \
-	X v = *(X*)a; \
+	X v = *(const X*)a; \
 	int scale = (int)(ptrdiff_t)extra, cur = 31, neg = (v<0)?1:0, i, done = 0; \
 	int l; \
 	if (v == X##_nil) { \
@@ -75,7 +75,7 @@
 	return l-1; 
 
 static int
-dec_tostr(void *extra, char **Buf, int *len, int type, ptr a)
+dec_tostr(void *extra, char **Buf, int *len, int type, const void *a)
 {
 	/* support dec map to bte, sht, int and lng */
 	if (type == TYPE_bte) {
@@ -99,13 +99,14 @@ struct time_res {
 };
 
 static int
-sql_time_tostr(void *TS_RES, char **buf, int *len, int type, ptr A)
+sql_time_tostr(void *TS_RES, char **buf, int *len, int type, const void *A)
 {
 	struct time_res *ts_res = TS_RES;
 	int i, len1, big = 128;
 	char buf1[128], *s1 = buf1, *s;
 	lng val = 0, timezone = ts_res->timezone;
-	daytime tmp, *a = A;
+	daytime tmp;
+	const daytime *a = A;
 	daytime mtime = 24 * 60 * 60 * 1000;
 
 	(void) type;
@@ -158,12 +159,13 @@ sql_time_tostr(void *TS_RES, char **buf, int *len, int type, ptr A)
 }
 
 static int
-sql_timestamp_tostr(void *TS_RES, char **buf, int *len, int type, ptr A)
+sql_timestamp_tostr(void *TS_RES, char **buf, int *len, int type, const void *A)
 {
 	struct time_res *ts_res = TS_RES;
 	int i, len1, len2, big = 128;
 	char buf1[128], buf2[128], *s, *s1 = buf1, *s2 = buf2;
-	timestamp tmp, *a = A;
+	timestamp tmp;
+	const timestamp *a = A;
 	lng timezone = ts_res->timezone;
 
 	(void) type;
@@ -393,10 +395,10 @@ bat_max_lnglength(BAT *b)
 		*r = -res; \
 	else \
 		*r = res; \
-	return (ptr*)r;
+	return (void *) r;
 
-static ptr *
-dec_frstr(Column *c, int type, char *s, char *e, char quote)
+static void *
+dec_frstr(Column *c, int type, const char *s, const char *e, char quote)
 {
 	/* support dec map to bte, sht, int and lng */
 	(void)e;
@@ -415,8 +417,8 @@ dec_frstr(Column *c, int type, char *s, char *e, char quote)
 	return NULL;
 }
 
-static ptr *
-sec_frstr(Column *c, int type, char *s, char *e, char quote)
+static void *
+sec_frstr(Column *c, int type, const char *s, const char *e, char quote)
 {
 	/* read a sec_interval value
 	 * this knows that the stored scale is always 3 */
@@ -474,11 +476,11 @@ sec_frstr(Column *c, int type, char *s, char *e, char quote)
 		*r = -res;
 	else
 		*r = res;
-	return (ptr *) r;
+	return (void *) r;
 }
 
-static ptr *
-_ASCIIadt_frStr(Column *c, int type, char *s, char *e, char quote)
+static void *
+_ASCIIadt_frStr(Column *c, int type, const char *s, const char *e, char quote)
 {
 	int len;
 	(void)quote;
@@ -525,11 +527,12 @@ _ASCIIadt_frStr(Column *c, int type, char *s, char *e, char quote)
 
 
 static int
-_ASCIIadt_toStr(void *extra, char **buf, int *len, int type, ptr a)
+_ASCIIadt_toStr(void *extra, char **buf, int *len, int type, const void *a)
 {
 	if (type == TYPE_str) {
 		Column *c = extra;
-		char *dst, *src = a;
+		char *dst;
+		const char *src = a;
 		int l = (c->quote)?escapedStrlen(src):(int)strlen(src), l2 = 0;
 
 		if (l + 3 > *len) {
@@ -558,10 +561,8 @@ _ASCIIadt_toStr(void *extra, char **buf, int *len, int type, ptr a)
 
 
 static int
-has_whitespace(char *sep)
+has_whitespace(const char *s)
 {
-	char *s = sep;
-
 	if (*s == ' ' || *s == '\t')
 		return 1;
 	while (*s)
@@ -642,13 +643,12 @@ mvc_import_table(Client cntxt, mvc *m, bstream *bs, char *sname, char *tname, ch
 			fmt[i].len = fmt[i].nillen = 
 				ATOMlen(fmt[i].adt, ATOMnilptr(fmt[i].adt));
 			fmt[i].data = GDKmalloc(fmt[i].len);
-			fmt[i].c[0] = NULL;
-			fmt[i].ws = !(has_whitespace(fmt[i].sep));
+			fmt[i].c = NULL;
+			fmt[i].ws = !has_whitespace(fmt[i].sep);
 			fmt[i].quote = ssep?ssep[0]:0;
 			fmt[i].nullstr = ns;
 			fmt[i].null_length = strlen(ns);
-			fmt[i].nildata = GDKmalloc(fmt[i].nillen);
-			memcpy(fmt[i].nildata, ATOMnilptr(fmt[i].adt), fmt[i].nillen);
+			fmt[i].nildata = ATOMnilptr(fmt[i].adt);
 			if (col->type.type->eclass == EC_DEC) {
 				fmt[i].tostr = &dec_tostr;
 				fmt[i].frstr = &dec_frstr;
@@ -657,9 +657,6 @@ mvc_import_table(Client cntxt, mvc *m, bstream *bs, char *sname, char *tname, ch
 				fmt[i].tostr = &dec_tostr;
 				fmt[i].frstr = &sec_frstr;
 			}
-			fmt[i].raw = NULL;
-			fmt[i].rawfile = NULL;
-			fmt[i].batfile = NULL;
 			fmt[i].size = ATOMsize(fmt[i].adt);
 			
 			if (locked) {
@@ -674,17 +671,17 @@ mvc_import_table(Client cntxt, mvc *m, bstream *bs, char *sname, char *tname, ch
 
 				HASHdestroy(b);
 
-				fmt[i].c[0] = b;
+				fmt[i].c = b;
 				cnt = BATcount(b);
 				if ( sz > 0 && BATcapacity(b) < (BUN) sz ) {
-					if ( (fmt[i].c[0] =  BATextend(fmt[i].c[0], (BUN) sz)) == NULL){
+					if ( (fmt[i].c =  BATextend(fmt[i].c, (BUN) sz)) == NULL){
 						for ( i--; i>=0; i--)
-							BBPunfix( fmt[i].c[0]->batCacheid);
+							BBPunfix( fmt[i].c->batCacheid);
 						sql_error(m, 500, "failed to allocate result table sizes ");
 						return NULL;
 					}
 				}
-				fmt[i].ci[0] = bat_iterator(fmt[i].c[0]);
+				fmt[i].ci = bat_iterator(fmt[i].c);
 			}
 		}
 		if (locked || TABLETcreate_bats(&as, (BUN) (sz < 0 ? 1000 : sz)) >= 0) {
@@ -764,7 +761,7 @@ mvc_export_prepare(mvc *c, stream *out, cq *q, str w)
 		nrows += list_length(r->exps);
 
 		for (n = r->exps->h; n; n = n->next) {
-			char *name;
+			const char *name;
 			sql_exp *e = n->data;
 			size_t slen;
 
@@ -833,7 +830,7 @@ mvc_export_prepare(mvc *c, stream *out, cq *q, str w)
 		sql_rel *r = q->rel;
 
 		for (n = r->exps->h; n; n = n->next) {
-			char *name, *rname, *schema = NULL;
+			const char *name, *rname, *schema = NULL;
 			sql_exp *e = n->data;
 
 			t = exp_subtype(e);
@@ -1125,7 +1122,7 @@ mvc_export_table(backend *b, stream *s, res_table *t, BAT *order, BUN offset, BU
 	fmt = as.format = (Column *) GDKzalloc(sizeof(Column) * (as.nr_attrs + 1));
 	tres = GDKmalloc(sizeof(struct time_res) * (as.nr_attrs));
 
-	fmt[0].c[0] = NULL;
+	fmt[0].c = NULL;
 	fmt[0].sep = (csv)?btag:"";
 	fmt[0].seplen = _strlen(fmt[0].sep);
 	fmt[0].ws = 0;
@@ -1137,8 +1134,8 @@ mvc_export_table(backend *b, stream *s, res_table *t, BAT *order, BUN offset, BU
 		if (!c->b)
 			break;
 
-		fmt[i].c[0] = BATdescriptor(c->b);
-		fmt[i].ci[0] = bat_iterator(fmt[i].c[0]);
+		fmt[i].c = BATdescriptor(c->b);
+		fmt[i].ci = bat_iterator(fmt[i].c);
 		fmt[i].name = NULL;
 		if (csv) {
 			fmt[i].sep = ((i - 1) < (t->nr_cols - 1)) ? sep : rsep;
@@ -1165,8 +1162,8 @@ mvc_export_table(backend *b, stream *s, res_table *t, BAT *order, BUN offset, BU
 				fmt[i].seplen = _strlen(fmt[i].sep);
 			}
 		}
-		fmt[i].type = ATOMname(fmt[i].c[0]->ttype);
-		fmt[i].adt = fmt[i].c[0]->ttype;
+		fmt[i].type = ATOMname(fmt[i].c->ttype);
+		fmt[i].adt = fmt[i].c->ttype;
 		fmt[i].tostr = &_ASCIIadt_toStr;
 		fmt[i].frstr = &_ASCIIadt_frStr;
 		fmt[i].extra = fmt+i;

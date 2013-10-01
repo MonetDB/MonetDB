@@ -116,7 +116,7 @@ EMemitterStartInternal(int *ret, str *tbl, str *host, int *port, int mode, int p
 	em->table.format = GDKzalloc(sizeof(Column) * (len + 1));
 	em->table.format[0].c[0] = NULL;
 	em->table.format[0].name = NULL;
-	em->table.format[0].sep = GDKstrdup("[ ");
+	em->table.format[0].sep = "[ ";
 	em->table.format[0].seplen = (int) strlen(em->table.format[0].sep);
 
 	for (j = 0, i = 0; i < baskets[idx].colcount; i++) {
@@ -128,12 +128,12 @@ EMemitterStartInternal(int *ret, str *tbl, str *host, int *port, int mode, int p
 
 		em->table.format[j].c[0] = BATcopy(b, b->htype, b->ttype, FALSE);
 		em->table.format[j].ci[0] = bat_iterator(em->table.format[j].c[0]);
-		em->table.format[j].name = GDKstrdup(baskets[idx].cols[i]);
-		em->table.format[j].sep = GDKstrdup(",");
+		em->table.format[j].name = baskets[idx].cols[i];
+		em->table.format[j].sep = ",";
 		em->table.format[j].seplen = (int) strlen(em->table.format[j].sep);
 		em->table.format[j].type = GDKstrdup(ATOMname(em->table.format[j].c[0]->ttype));
 		em->table.format[j].adt = em->table.format[j].c[0]->ttype;
-		em->table.format[j].nullstr = GDKstrdup("");
+		em->table.format[j].nullstr = "";
 		em->table.format[j].tostr = &TABLETadt_toStr;
 		em->table.format[j].frstr = &TABLETadt_frStr;
 		em->table.format[j].extra = em->table.format + j;
@@ -143,7 +143,7 @@ EMemitterStartInternal(int *ret, str *tbl, str *host, int *port, int mode, int p
 		j++;
 	}
 	GDKfree(em->table.format[j - 1].sep);
-	em->table.format[j - 1].sep = GDKstrdup("\n");
+	em->table.format[j - 1].sep = "\n";
 	em->table.format[j - 1].seplen = (int) strlen(em->table.format[j - 1].sep);
 	em->table.nr_attrs = j;
 	em->status = BSKTPAUSE;
@@ -314,10 +314,6 @@ bodyRestart:
 		if (em->status == BSKTSTOP) {
 			/* request to finalize the emitter*/
 			mnstr_close(em->emitter);
-			for (j = 0; j < em->table.nr_attrs; j++) {
-				GDKfree(em->table.format[j].sep);
-				GDKfree(em->table.format[j].name);
-			}
 			GDKfree(em->table.format);
 			shutdown(em->newsockfd, SHUT_RDWR);
 			GDKfree(em);
