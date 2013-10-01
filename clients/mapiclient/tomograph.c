@@ -146,11 +146,15 @@ static int colormap = 0;
 static int fixedmap=1;
 static int beat = 50;
 static char *sqlstatement = NULL;
+static int batchsize = 1; /* number of queries to combine in one run */
 static int batch = 1; /* number of queries to combine in one run */
 static lng maxio = 0;
 static int cpus = 0;
-
+static int atlas= 0;
+static int atlaspage = 0;
 static FILE *gnudata;
+
+static int capturing=0;
 
 static void
 usage(void)
@@ -168,7 +172,8 @@ usage(void)
 	fprintf(stderr, "  -i | --input=<profiler event file > \n");
 	fprintf(stderr, "  -o | --output=<file prefix > (default 'tomograph'\n");
 	fprintf(stderr, "  -b | --beat=<delay> in milliseconds (default 50)\n");
-	fprintf(stderr, "  -B | --batch=<number> of combined queries\n");
+	fprintf(stderr, "  -A | --atlas=<number> of pages\n");
+	fprintf(stderr, "  -B | --batch=<number> of queries per page\n");
 	fprintf(stderr, "  -a | --adaptive colormap \n");
 	fprintf(stderr, "  -m | --colormap=<userdefined colormap>\n");
 	fprintf(stderr, "  -D | --debug\n");
@@ -229,7 +234,10 @@ stopListening(int i)
 			mnstr_close(walk->s);
 		}
 	}
+	atlaspage= atlas-1;
+	batch = 0;
 	createTomogram();
+	exit(0);
 }
 
 static int
@@ -297,10 +305,8 @@ typedef struct BOX {
 	int state;
 } Box;
 
-
 int threads[MAXTHREADS];
 lng lastclk[MAXTHREADS];
-int prevthreads[MAXTHREADS];
 Box box[MAXBOX];
 int topbox = 0;
 
@@ -308,9 +314,38 @@ lng totalclkticks = 0; /* number of clock ticks reported */
 lng totalexecticks = 0; /* number of ticks reported for processing */
 lng lastclktick = 0;
 lng totalticks; 
-
-
 lng starttime = 0;
+int figures = 0;
+char *currentfunction= 0;
+int object = 1;
+
+static void resetTomograph(void){
+	static char buf[128];
+	int i;
+	if(atlas) {
+		snprintf(buf,128,"atlas_%02d",++atlaspage);
+		filename = buf;
+	} else
+		filename = "tomograph";
+	if (debug)
+		fprintf(stderr, "RESET tomograph %d\n", atlaspage);
+	for(i=0; i< MAXTHREADS; i++)
+		lastclk[MAXTHREADS]=0;
+	topbox =0;
+	for (i = 0; i < MAXTHREADS; i++)
+		threads[i] = topbox++;
+
+	startrange = 0, endrange = 0;
+	maxio = 0;
+	cpus = 0;
+	batch = batchsize;
+	totalclkticks = 0; 
+	totalexecticks = 0;
+	lastclktick = 0;
+	figures = 0;
+	currentfunction = 0;
+	object = 1;
+}
 
 static void dumpbox(int i)
 {
@@ -711,8 +746,6 @@ static int cmp_clr ( const void * _one , const void * _two )
 		  ((one->freq > two->freq) ? 1 :
 		   0))));
 }
-
-int object = 1;
 
 static void initcolors(FILE *map)
 {
@@ -1402,7 +1435,6 @@ static void createTomogram(void)
 	char *scalename = "\0\0\0\0";
 	int digits;
 	int TME;
-	static int figures = 0;
 
 	snprintf(buf, BUFSIZ, "%s.gpl", filename);
 	gnudata = fopen(buf, "w");
@@ -1549,16 +1581,25 @@ static void createTomogram(void)
 	fprintf(gnudata, "unset multiplot\n");
 	keepdata(filename);
 	(void) fclose(gnudata);
+	gnudata = 0;
 
-	if (figures++ == 0) {
-		fprintf(stderr, "Created tomogram '%s' \n", buf);
-		fprintf(stderr, "Run: 'gnuplot %s.gpl' to create the '%s.pdf' file\n", buf, filename);
+	// show follow up action only once
+	if (atlas && atlaspage == atlas-1){
+		fprintf(stderr, "Created tomogram atlas\n");
+		for( i = 0; i<= atlas;  i++)
+			fprintf(stderr, "gnuplot atlas_%02d.gpl\n",i);
+		fprintf(stderr, "gs -dNOPAUSE -sDEVICE=pdfwrite -sOUTPUTFILE=atlas.pdf -dBATCH atlas_??.pdf\n");
+		exit(0);
+	} else
+	if (!atlas && figures++ == 0) {
+		fprintf(stderr, "Created tomogram '%s'\n", buf);
+			fprintf(stderr, "Run: 'gnuplot %s.gpl' to create the '%s.pdf' file\n", buf, filename);
 		if (tracefile == 0) {
 			fprintf(stderr, "The memory map is stored in '%s.dat'\n", filename);
 			fprintf(stderr, "The trace is saved in '%s.trace' for use with --trace option\n", filename);
 		}
+		exit(0);
 	}
-	exit(0);
 }
 
 /* the main issue to deal with in the analyse is
@@ -1569,58 +1610,85 @@ static void createTomogram(void)
  * A secondary issue is to properly count the functions
  * being monitored. 
  */
-char *currentfunction= 0;
 
-static void update(int state, int thread, lng clkticks, lng ticks, lng memory, lng footprint, lng reads, lng writes, char *fcn, char *stmt)
+static void 
+update(int state, int thread, lng clkticks, lng ticks, lng memory, lng footprint, lng reads, lng writes, char *fcn, char *stmt)
 {
 	int idx;
 	Box b;
 	char *s;
 
 	/* ignore the flow of control statements 'function' and 'end' */
-	if (fcn && strncmp(fcn, "end ", 4) == 0)
+	if (fcn && strncmp(fcn, "end ", 4) == 0) {
 		return;
+	}
 	if (starttime == 0) {
 		/* ignore all instructions up to the first function call, unless input comes from a file */
-		if ( inputfile == NULL && (state >= PING || fcn == 0 || strncmp(fcn, "function", 8) != 0))
+		if ( inputfile == NULL && (state >= PING || fcn == 0 || strncmp(fcn, "function", 8) )){
 			return;
+		}
+		if (debug)
+			fprintf(stderr, "Start capturing updates \n");
 		assert(clkticks >= 0);
 		starttime = clkticks;
 	}
 
 	/* monitor top level function brackets */
 	if (state == START && fcn && strncmp(fcn, "function", 8) == 0 ){
-		if ( currentfunction == 0) {
+		capturing++;
+		starttime = clkticks;
+		if ( currentfunction == 0) 
 			currentfunction = strdup(fcn+9);
-			if (debug)
-				fprintf(stderr, "Enter function %s batch %d\n", currentfunction, batch);
-		}
+		if (debug)
+			fprintf(stderr, "Enter function %s capture %d\n", currentfunction, capturing);
 		return;
 	}
 	if (state == DONE && fcn && strncmp(fcn, "function", 8) == 0 ){
 		if ( currentfunction  && strcmp(currentfunction, fcn+9) == 0){
+			capturing--;
 			if (debug)
-				fprintf(stderr, "Leave function %s batch %d\n", currentfunction, batch);
+				fprintf(stderr, "Leave function %s capture %d\n", currentfunction, capturing);
 			free(currentfunction);
 			currentfunction = 0;
 		} else return;
+
 		if ( batch -- > 1)  return;
-		deactivateBeat();
+
+		if (atlas == atlaspage){
+			deactivateBeat();
+			createTomogram();
+			totalclkticks = 0; /* number of clock ticks reported */
+			totalexecticks = 0; /* number of ticks reported for processing */
+			if (fcn && title == 0)
+				title = strdup(fcn + 9);
+			return;
+		}
+		// create a new atlas page
 		createTomogram();
 		totalclkticks = 0; /* number of clock ticks reported */
 		totalexecticks = 0; /* number of ticks reported for processing */
-		if (fcn && title == 0)
+		if (fcn )
 			title = strdup(fcn + 9);
+		resetTomograph();
 		return;
 	}
 
 	if (state == DONE && strncmp(fcn, "profiler.tomograph", 18) == 0) {
 		if (debug)
 			fprintf(stderr, "Profiler.tomograph ends  %d\n", batch);
-		deactivateBeat();
+		if (atlas == atlaspage){
+			deactivateBeat();
+			createTomogram();
+			totalclkticks = 0; /* number of clock ticks reported */
+			totalexecticks = 0; /* number of ticks reported for processing */
+			return;
+		} 
 		createTomogram();
 		totalclkticks = 0; /* number of clock ticks reported */
 		totalexecticks = 0; /* number of ticks reported for processing */
+		if (fcn )
+			title = strdup(fcn + 9);
+		resetTomograph();
 		return;
 	}
 
@@ -1639,7 +1707,7 @@ static void update(int state, int thread, lng clkticks, lng ticks, lng memory, l
 	}
 
 	/* handle a ping event, keep the current instruction in focus */
-	if (state >= PING) {
+	if (state >= PING && capturing) {
 		idx = threads[thread];
 		b = box[idx];
 		box[idx].state = state;
@@ -1667,6 +1735,8 @@ static void update(int state, int thread, lng clkticks, lng ticks, lng memory, l
 	idx = threads[thread];
 	/* start of instruction box */
 	if (state == START && thread < MAXTHREADS) {
+		if (debug)
+			fprintf(stderr, "Start box %s thread %d idx %d box %d\n", currentfunction, thread,idx,topbox);
 		box[idx].state = state;
 		box[idx].thread = thread;
 		box[idx].clkstart = clkticks;
@@ -1677,6 +1747,8 @@ static void update(int state, int thread, lng clkticks, lng ticks, lng memory, l
 	}
 	/* end the instruction box */
 	if (state == DONE && thread < MAXTHREADS && fcn && box[idx].fcn && strcmp(fcn, box[idx].fcn) == 0) {
+		if (debug)
+			fprintf(stderr, "End box %s thread %d idx %d box %d\n", currentfunction, thread,idx,topbox);
 		lastclk[thread] = clkticks;
 		box[idx].clkend = clkticks;
 		box[idx].memend = memory;
@@ -2093,7 +2165,7 @@ doProfile(void *d)
 			/* TOMOGRAPH EXTENSIONS */
 			i = parser(response);
 			if (debug )
-				fprintf(stderr, "ERROR %d:%s\n", i, response);
+				fprintf(stderr, "PARSE %d:%s\n", i, response);
 			response = e + 1;
 		}
 		/* handle last line in buffer */
@@ -2140,7 +2212,7 @@ main(int argc, char **argv)
 
 	wthread *walk;
 
-	static struct option long_options[17] = {
+	static struct option long_options[18] = {
 		{ "dbname", 1, 0, 'd' },
 		{ "user", 1, 0, 'u' },
 		{ "port", 1, 0, 'p' },
@@ -2154,6 +2226,7 @@ main(int argc, char **argv)
 		{ "debug", 0, 0, 'D' },
 		{ "beat", 1, 0, 'b' },
 		{ "batch", 1, 0, 'B' },
+		{ "atlas", 1, 0, 'A' },
 		{ "sql", 1, 0, 's' },
 		{ "colormap", 1, 0, 'm' },
 		{ "adaptive", 0, 0, 'a' },
@@ -2166,7 +2239,7 @@ main(int argc, char **argv)
 
 	while (1) {
 		int option_index = 0;
-		int c = getopt_long(argc, argv, "d:u:p:h:?T:i:t:r:o:Db:B:s:m:a",
+		int c = getopt_long(argc, argv, "d:u:p:h:?T:i:t:r:o:Db:B:A:s:m:a",
 				long_options, &option_index);
 		if (c == -1)
 			break;
@@ -2174,8 +2247,12 @@ main(int argc, char **argv)
 		case 'a':
 			fixedmap = 0;
 			break;
+		case 'A':
+			atlas = atoi(optarg ? optarg : "1");
+			filename = "atlas_00";
+			break;
 		case 'B':
-			batch = atoi(optarg ? optarg : "1");
+			batchsize = batch = atoi(optarg ? optarg : "1");
 			break;
 		case 'b':
 			beat = atoi(optarg ? optarg : "50");
