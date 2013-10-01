@@ -37,6 +37,7 @@ except ImportError:
 import capabilities
 import dbapi20
 import test_pythonize
+import test_monetize
 
 warnings.filterwarnings('error')
 
@@ -97,6 +98,7 @@ if __name__ == '__main__':
         Test_Capabilities,
         Test_DBAPI20,
         test_pythonize.TestPythonize,
+        test_monetize.TestMonetize,
     ]
 
     for suite in suites:
