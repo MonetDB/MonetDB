@@ -199,7 +199,7 @@ SQLinit(void)
 	char *debug_str = GDKgetenv("sql_debug");
 	int readonly  = GDKgetenv_isyes("gdk_readonly");
 	int single_user = GDKgetenv_isyes("gdk_single_user");
-	char *gmt = "GMT";
+	const char *gmt = "GMT";
 	tzone tz;
 
 #ifdef _SQL_SCENARIO_DEBUG
