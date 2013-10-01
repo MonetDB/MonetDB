@@ -23,7 +23,8 @@ tomograph [options]
   -i | --input=<profiler event file > 
   -o | --output=<file prefix > (default 'tomograph'
   -b | --beat=<delay> in milliseconds (default 50)
-  -B | --batch=<number> of combined queries
+  -A | --atlas=<number> of pages
+  -B | --batch=<number> of queries per page
   -a | --adaptive colormap 
   -m | --colormap=<userdefined colormap>
   -D | --debug
