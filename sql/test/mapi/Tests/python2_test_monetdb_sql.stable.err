@@ -158,6 +158,13 @@ test_Binary (test_pythonize.TestPythonize) ... ok
 Ran 1 test
 
 OK
+test_str_subclass (test_monetize.TestMonetize) ... ok
+test_unknown_type (test_monetize.TestMonetize) ... ok
+
+----------------------------------------------------------------------
+Ran 2 tests
+
+OK
 
 # 11:54:48 >  
 # 11:54:48 >  Done.
