@@ -330,7 +330,7 @@ static void resetTomograph(void){
 	if (debug)
 		fprintf(stderr, "RESET tomograph %d\n", atlaspage);
 	for(i=0; i< MAXTHREADS; i++)
-		lastclk[MAXTHREADS]=0;
+		lastclk[i]=0;
 	topbox =0;
 	for (i = 0; i < MAXTHREADS; i++)
 		threads[i] = topbox++;
