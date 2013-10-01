@@ -1845,6 +1845,7 @@ file_stream(const char *name)
 	s->write = file_write;
 	s->close = file_close;
 	s->flush = file_flush;
+	s->fsync = file_fsync;
 	s->fgetpos = file_fgetpos;
 	s->fsetpos = file_fsetpos;
 	return s;
