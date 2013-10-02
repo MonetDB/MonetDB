@@ -1048,7 +1048,7 @@ stmt_join2(sql_allocator *sa, stmt *l, stmt *ra, stmt *rb, int cmp, int swapped)
 }
 
 stmt *
-stmt_joinN(sql_allocator *sa, stmt *l, stmt *r, stmt *opt, sql_subfunc *op)
+stmt_joinN(sql_allocator *sa, stmt *l, stmt *r, stmt *opt, sql_subfunc *op, int swapped)
 {
 	stmt *s = stmt_create(sa, st_joinN);
 
@@ -1057,6 +1057,8 @@ stmt_joinN(sql_allocator *sa, stmt *l, stmt *r, stmt *opt, sql_subfunc *op)
 	s->op3 = opt;
 	s->op4.funcval = op;
 	s->nrcols = (opt)?3:2;
+	if (swapped)
+		s->flag |= SWAPPED;
 	return s;
 }
 
