@@ -2074,10 +2074,10 @@ typedef struct {
 	ptr atomNull;		/* global nil value */
 
 	/* generic (fixed + varsized atom) ADT functions */
-	int (*atomFromStr) (const char *s, int *len, ptr *dst);
-	int (*atomToStr) (str *s, int *len, const void *src);
-	void *(*atomRead) (ptr a, stream *s, size_t cnt);
-	int (*atomWrite) (const void *a, stream *s, size_t cnt);
+	int (*atomFromStr) (const char *src, int *len, ptr *dst);
+	int (*atomToStr) (str *dst, int *len, const void *src);
+	void *(*atomRead) (void *dst, stream *s, size_t cnt);
+	int (*atomWrite) (const void *src, stream *s, size_t cnt);
 	int (*atomCmp) (const void *v1, const void *v2);
 	BUN (*atomHash) (const void *v);
 	/* optional functions */
