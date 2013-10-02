@@ -136,6 +136,7 @@ typedef struct _wthread {
 
 static wthread *thds = NULL;
 static char hostname[128];
+static char *basefilename = "tomograph";
 static char *filename = "tomograph";
 static char *tracefile = 0;
 static lng startrange = 0, endrange = 0;
@@ -151,7 +152,7 @@ static int batch = 1; /* number of queries to combine in one run */
 static lng maxio = 0;
 static int cpus = 0;
 static int atlas= 0;
-static int atlaspage = 0;
+static int atlaspage = -1;
 static FILE *gnudata;
 
 static int capturing=0;
@@ -323,10 +324,9 @@ static void resetTomograph(void){
 	static char buf[128];
 	int i;
 	if(atlas) {
-		snprintf(buf,128,"atlas_%02d",++atlaspage);
+		snprintf(buf,128,"%s_%02d",basefilename, ++atlaspage);
 		filename = buf;
-	} else
-		filename = "tomograph";
+	} 
 	if (debug)
 		fprintf(stderr, "RESET tomograph %d\n", atlaspage);
 	for(i=0; i< MAXTHREADS; i++)
@@ -1588,9 +1588,9 @@ static void createTomogram(void)
 	// show follow up action only once
 	if (atlas && atlaspage == atlas-1){
 		fprintf(stderr, "Created tomogram atlas\n");
-		for( i = 0; i<= atlas-1;  i++)
-			fprintf(stderr, "gnuplot atlas_%02d.gpl\n",i);
-		fprintf(stderr, "gs -dNOPAUSE -sDEVICE=pdfwrite -sOUTPUTFILE=atlas.pdf -dBATCH atlas_??.pdf\n");
+		for( i = 0; i<= atlaspage;  i++)
+			fprintf(stderr, "gnuplot %s_%02d.gpl\n",basefilename,i);
+		fprintf(stderr, "gs -dNOPAUSE -sDEVICE=pdfwrite -sOUTPUTFILE=%s.pdf -dBATCH %s_??.pdf\n",basefilename,basefilename);
 		exit(0);
 	} else
 	if (!atlas && figures++ == 0) {
@@ -2251,7 +2251,6 @@ main(int argc, char **argv)
 			break;
 		case 'A':
 			atlas = atoi(optarg ? optarg : "1");
-			filename = "atlas_00";
 			break;
 		case 'B':
 			batchsize = batch = atoi(optarg ? optarg : "1");
@@ -2305,7 +2304,7 @@ main(int argc, char **argv)
 				tracefile = optarg;
 			break;
 		case 'o':
-			filename = optarg;
+			basefilename = filename = optarg;
 			break;
 		case 'r':
 		{
@@ -2342,6 +2341,8 @@ main(int argc, char **argv)
 			exit(-1);
 		}
 	}
+
+	resetTomograph();
 	if ( othermap){
 		FILE *map ;
 		map = fopen(othermap,"r");
