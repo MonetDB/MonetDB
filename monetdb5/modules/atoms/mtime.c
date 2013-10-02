@@ -1321,7 +1321,7 @@ MTIMEsynonyms(const bit *allow)
 }
 
 str
-MTIMEoldduration(int *ndays, const char **s)
+MTIMEoldduration(int *ndays, const char * const *s)
 {
 	int year = 0, month = 0, day = 0;
 	int hour = 0 /*, min=0 */ ;
@@ -1378,7 +1378,7 @@ MTIMEoldduration(int *ndays, const char **s)
 }
 
 str
-MTIMEolddate(date *d, const char **buf)
+MTIMEolddate(date *d, const char * const *buf)
 {
 	int day = 0, month, year, yearneg = ((*buf)[0] == '-'), pos = yearneg;
 
@@ -1410,7 +1410,7 @@ MTIMEolddate(date *d, const char **buf)
 }
 
 str
-MTIMEtimezone(tzone *ret, const char **name)
+MTIMEtimezone(tzone *ret, const char * const *name)
 {
 	BUN p;
 	str s;
@@ -1453,7 +1453,7 @@ MTIMElocal_timezone(lng *res)
 
 /* Returns month number [1-12] from a string (or nil if does not match any). */
 str
-MTIMEmonth_from_str(int *ret, const char **month)
+MTIMEmonth_from_str(int *ret, const char * const *month)
 {
 	parse_substr(ret, *month, 3, MONTHS, 12);
 	return MAL_SUCCEED;
@@ -1469,7 +1469,7 @@ MTIMEmonth_to_str(str *ret, const int *month)
 
 /* Returns number of day [1-7] from a string (or nil if does not match any). */
 str
-MTIMEday_from_str(int *ret, const char **day)
+MTIMEday_from_str(int *ret, const char * const *day)
 {
 	if (strcmp(*day, str_nil) == 0)
 		*ret = int_nil;
@@ -1506,7 +1506,7 @@ MTIMEdate_tostr(str *ret, const date *d)
 }
 
 str
-MTIMEdate_fromstr(date *ret, const char **s)
+MTIMEdate_fromstr(date *ret, const char * const *s)
 {
 	int len = 0;
 	date *d = 0;
@@ -1550,7 +1550,7 @@ MTIMEdaytime_create(daytime *ret, const int *hour, const int *min, const int *se
 }
 
 str
-MTIMEtimestamp_fromstr(timestamp *ret, const char **d)
+MTIMEtimestamp_fromstr(timestamp *ret, const char * const *d)
 {
 	int len = (int) strlen(*d);
 
@@ -2088,7 +2088,7 @@ MTIMErule_tostr(str *s, const rule *r)
 }
 
 str
-MTIMErule_fromstr(rule *ret, const char **s)
+MTIMErule_fromstr(rule *ret, const char * const *s)
 {
 	int len = 0;
 	rule *d = 0;
@@ -2336,7 +2336,7 @@ MTIMEtzone_tostr(str *s, const tzone *ret)
 }
 
 str
-MTIMEtzone_fromstr(tzone *ret, const char **s)
+MTIMEtzone_fromstr(tzone *ret, const char * const *s)
 {
 	int len = 0;
 	tzone *d = 0;
@@ -2355,7 +2355,7 @@ MTIMEtzone_fromstr(tzone *ret, const char **s)
 }
 
 str
-MTIMEdaytime_fromstr(daytime *ret, const char **s)
+MTIMEdaytime_fromstr(daytime *ret, const char * const *s)
 {
 	int len = 0;
 	daytime *d = 0;
@@ -2492,7 +2492,7 @@ MTIMEruleDef0(rule *ret, const int *m, const int *d, const int *w, const int *h,
 }
 
 str
-MTIMEruleDef1(rule *ret, const int *m, const char **dnme, const int *w, const int *h, const int *mint)
+MTIMEruleDef1(rule *ret, const int *m, const char * const *dnme, const int *w, const int *h, const int *mint)
 {
 	int d;
 	int d0 = 60 * *h;
@@ -2505,7 +2505,7 @@ MTIMEruleDef1(rule *ret, const int *m, const char **dnme, const int *w, const in
 }
 
 str
-MTIMEruleDef2(rule *ret, const int *m, const char **dnme, const int *w, const int *mint)
+MTIMEruleDef2(rule *ret, const int *m, const char * const *dnme, const int *w, const int *mint)
 {
 	int d;
 	str e;
@@ -3100,7 +3100,7 @@ MTIMEdaytime_extract_milliseconds_bulk(bat *ret, const bat *bid)
 }
 
 str
-MTIMEstrptime(date *d, const char **s, const char **format)
+MTIMEstrptime(date *d, const char * const *s, const char * const *format)
 {
 #ifdef HAVE_STRPTIME
 	struct tm t;
@@ -3120,7 +3120,7 @@ MTIMEstrptime(date *d, const char **s, const char **format)
 }
 
 str
-MTIMEstrftime(str *s, const date *d, const char **format)
+MTIMEstrftime(str *s, const date *d, const char * const *format)
 {
 #ifdef HAVE_STRFTIME
 	struct tm t;
