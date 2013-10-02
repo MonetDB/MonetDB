@@ -53,7 +53,6 @@ blob_export int BLOBfromstr(char *instr, int *l, blob **val);
 blob_export int BLOBnequal(blob *l, blob *r);
 blob_export BUN BLOBhash(blob *b);
 blob_export blob * BLOBnull(void);
-blob_export void BLOBconvert(blob *b, int direction);
 blob_export var_t BLOBput(Heap *h, var_t *bun, blob *val);
 blob_export void BLOBdel(Heap *h, var_t *index);
 blob_export int BLOBlength(blob *p);
@@ -175,13 +174,6 @@ blob_write(blob *a, stream *s, size_t cnt)
 #else
 #define normal_vart_SWAP(x)	((var_t) long_long_SWAP((lng)x))
 #endif
-
-static void
-blob_convert(blob *b, int direction)
-{
-	(void) direction;
-	b->nitems = normal_vart_SWAP(b->nitems);
-}
 
 static int
 blob_length(blob *p)
@@ -528,12 +520,6 @@ int
 BLOBwrite(blob *a, stream *s, size_t cnt)
 {
 	return blob_write(a,s,cnt);
-}
-
-void
-BLOBconvert(blob *b, int direction)
-{
-	blob_convert(b, direction);
 }
 
 int

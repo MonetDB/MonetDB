@@ -32209,8 +32209,6 @@ command blob.blob(s:blob):blob
 address BLOBblob_blob;
 comment Noop routine.
 
-command blob.#convert():void 
-address BLOBconvert;
 command blob.#del():void 
 address BLOBdel;
 command blob.#fromstr():void 

@@ -126,11 +126,6 @@ int malAtomProperty(MalBlkPtr mb, InstrPtr pci)
 			setAtomName(pci);
 			return 1;
 		}
-		if (idcmp("convert", name) == 0 && pci->argc == 1) {
-			BATatoms[tpe].atomConvert = (void (*)(ptr, int))pci->fcn;
-			setAtomName(pci);
-			return 1;
-		}
 		break;
 	case 'f':
 		if (idcmp("fromstr", name) == 0 && pci->argc == 1) {

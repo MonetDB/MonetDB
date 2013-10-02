@@ -205,7 +205,6 @@ gdk_export const ptr ptr_nil;
 #define ATOMtype(t)		((t == TYPE_void)?TYPE_oid:t)
 #define ATOMfix(t,v)		do if (BATatoms[t].atomFix) BATatoms[t].atomFix(v); while (0)
 #define ATOMunfix(t,v)		do if (BATatoms[t].atomUnfix) BATatoms[t].atomUnfix(v); while (0)
-#define ATOMconvert(t,v,d)	do if (BATatoms[t].atomConvert) BATatoms[t].atomConvert(v,d); while (0)
 #define ATOMheapConvert(t,hp,d)	do if (BATatoms[t].atomHeapConvert) BATatoms[t].atomHeapConvert(hp,d); while (0)
 
 #define CONV_HTON               1

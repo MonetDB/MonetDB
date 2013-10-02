@@ -1941,8 +1941,6 @@ gdk_export BAT *BBPquickdesc(bat b, int delaccess);
  * @item int
  * @tab ATOMcmp         (int id, ptr val_1, ptr val_2);
  * @item int
- * @tab ATOMconvert     (int id, ptr v, int direction);
- * @item int
  * @tab ATOMfix         (int id, ptr v);
  * @item int
  * @tab ATOMunfix       (int id, ptr v);
@@ -2083,7 +2081,6 @@ typedef struct {
 	int (*atomCmp) (const void *v1, const void *v2);
 	BUN (*atomHash) (const void *v);
 	/* optional functions */
-	void (*atomConvert) (ptr v, int direction);
 	int (*atomFix) (const void *atom);
 	int (*atomUnfix) (const void *atom);
 
