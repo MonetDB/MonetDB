@@ -258,6 +258,8 @@ VIEWcreate_(BAT *h, BAT *t, int slice_view)
 	BATcheck(h, "VIEWcreate_");
 	BATcheck(t, "VIEWcreate_");
 
+	if (BATcount(h) != BATcount(t))
+		slice_view = 1;
 	bs = BATcreatedesc(h->htype, t->ttype, FALSE);
 	if (bs == NULL)
 		return NULL;
