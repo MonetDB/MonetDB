@@ -1426,7 +1426,7 @@ static void gnuplotheader(char *filename)
 static void createTomogram(void)
 {
 	char buf[BUFSIZ];
-	int rows[MAXTHREADS];
+	int rows[MAXTHREADS] = {0};
 	int top = 0;
 	int i, j;
 	int h, prevobject = 1;
@@ -1458,8 +1458,6 @@ static void createTomogram(void)
 	fprintf(gnudata, "set xrange ["LLFMT".0:"LLFMT".0]\n", startrange, lastclktick - starttime);
 
 	/* detect all different threads and assign them a row */
-	for (j = 0; j < MAXTHREADS; j++)
-		rows[j]=0; // needed to silense compiler
 	for (i = 0; i < topbox; i++)
 		if (box[i].clkend && box[i].state != PING) {
 			for (j = 0; j < top; j++)
