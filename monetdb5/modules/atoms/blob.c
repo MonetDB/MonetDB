@@ -169,12 +169,6 @@ blob_write(blob *a, stream *s, size_t cnt)
 	return GDK_SUCCEED;
 }
 
-#if SIZEOF_SIZE_T == SIZEOF_INT
-#define normal_vart_SWAP(x)	((var_t) normal_int_SWAP((int)x))
-#else
-#define normal_vart_SWAP(x)	((var_t) long_long_SWAP((lng)x))
-#endif
-
 static int
 blob_length(blob *p)
 {
