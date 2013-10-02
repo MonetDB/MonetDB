@@ -710,9 +710,7 @@ BATload_intern(bat i, int lock)
 			HEAPfree(&b->T->heap);
 			return NULL;
 		}
-		if (BATatoms[b->htype].atomHeapCheck == HEAP_check) {
-			HEAP_init(b->H->vheap, b->htype);
-		} else if (ATOMstorage(b->htype) == TYPE_str) {
+		if (ATOMstorage(b->htype) == TYPE_str) {
 			strCleanHash(b->H->vheap, FALSE);	/* ensure consistency */
 		}
 	}
@@ -726,9 +724,7 @@ BATload_intern(bat i, int lock)
 			HEAPfree(&b->T->heap);
 			return NULL;
 		}
-		if (BATatoms[b->ttype].atomHeapCheck == HEAP_check) {
-			HEAP_init(b->T->vheap, b->ttype);
-		} else if (ATOMstorage(b->ttype) == TYPE_str) {
+		if (ATOMstorage(b->ttype) == TYPE_str) {
 			strCleanHash(b->T->vheap, FALSE);	/* ensure consistency */
 		}
 	}

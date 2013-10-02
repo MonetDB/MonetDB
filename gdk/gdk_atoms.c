@@ -236,10 +236,6 @@ ATOMproperty(str id, str property, GDKfcn arg, int val)
 			BATatoms[t].varsized = 1;
 			BATatoms[t].align = sizeof(var_t);
 			atomset(BATatoms[t].atomHeap, (void (*)(Heap *, size_t)) arg);
-		} else if (strcmp("heapconvert", property) == 0) {
-			atomset(BATatoms[t].atomHeapConvert, (void (*)(Heap *, int)) arg);
-		} else if (strcmp("check", property) == 0) {
-			atomset(BATatoms[t].atomHeapCheck, (int (*)(Heap *, HeapRepair *)) arg);
 		} else if (strcmp("del", property) == 0) {
 			atomset(BATatoms[t].atomDel, (void (*)(Heap *, var_t *)) arg);
 		} else if (strcmp("put", property) == 0) {
@@ -1752,14 +1748,12 @@ atomDesc BATatoms[MAXATOMS] = {
 #endif
 	 0, 0,
 	 0, 0,
-	 0, 0,
 	 0, 0},
 	{"bit", TYPE_bte, 1, sizeof(bit), sizeof(bit), 0, 0, (ptr) &bte_nil,
 	 (int (*)(const char *, int *, ptr *)) bitFromStr, (int (*)(str *, int *, const void *)) bitToStr,
 	 (void *(*)(void *, stream *, size_t)) bitRead, (int (*)(const void *, stream *, size_t)) bitWrite,
 	 (int (*)(const void *, const void *)) bteCmp,
 	 (BUN (*)(const void *)) bteHash,
-	 0, 0,
 	 0, 0,
 	 0, 0,
 	 0, 0},
@@ -1770,14 +1764,12 @@ atomDesc BATatoms[MAXATOMS] = {
 	 (BUN (*)(const void *)) bteHash,
 	 0, 0,
 	 0, 0,
-	 0, 0,
 	 0, 0},
 	{"sht", TYPE_sht, 1, sizeof(sht), sizeof(sht), 0, 0, (ptr) &sht_nil,
 	 (int (*)(const char *, int *, ptr *)) shtFromStr, (int (*)(str *, int *, const void *)) shtToStr,
 	 (void *(*)(void *, stream *, size_t)) shtRead, (int (*)(const void *, stream *, size_t)) shtWrite,
 	 (int (*)(const void *, const void *)) shtCmp,
 	 (BUN (*)(const void *)) shtHash,
-	 0, 0,
 	 0, 0,
 	 0, 0,
 	 0, 0},
@@ -1788,14 +1780,12 @@ atomDesc BATatoms[MAXATOMS] = {
 	 (BUN (*)(const void *)) intHash,
 	 (int (*)(const void *)) batFix, (int (*)(const void *)) batUnfix,
 	 0, 0,
-	 0, 0,
 	 0, 0},
 	{"int", TYPE_int, 1, sizeof(int), sizeof(int), 0, 0, (ptr) &int_nil,
 	 (int (*)(const char *, int *, ptr *)) intFromStr, (int (*)(str *, int *, const void *)) intToStr,
 	 (void *(*)(void *, stream *, size_t)) intRead, (int (*)(const void *, stream *, size_t)) intWrite,
 	 (int (*)(const void *, const void *)) intCmp,
 	 (BUN (*)(const void *)) intHash,
-	 0, 0,
 	 0, 0,
 	 0, 0,
 	 0, 0},
@@ -1815,7 +1805,6 @@ atomDesc BATatoms[MAXATOMS] = {
 #endif
 	 0, 0,
 	 0, 0,
-	 0, 0,
 	 0, 0},
 	{"wrd",
 #if SIZEOF_WRD == SIZEOF_INT
@@ -1831,7 +1820,6 @@ atomDesc BATatoms[MAXATOMS] = {
 	 (int (*)(const void *, const void *)) lngCmp,
 	 (BUN (*)(const void *)) lngHash,
 #endif
-	 0, 0,
 	 0, 0,
 	 0, 0,
 	 0, 0},
@@ -1851,14 +1839,12 @@ atomDesc BATatoms[MAXATOMS] = {
 #endif
 	 0, 0,
 	 0, 0,
-	 0, 0,
 	 0, 0},
 	{"flt", TYPE_flt, 1, sizeof(flt), sizeof(flt), 0, 0, (ptr) &flt_nil,
 	 (int (*)(const char *, int *, ptr *)) fltFromStr, (int (*)(str *, int *, const void *)) fltToStr,
 	 (void *(*)(void *, stream *, size_t)) fltRead, (int (*)(const void *, stream *, size_t)) fltWrite,
 	 (int (*)(const void *, const void *)) fltCmp,
 	 (BUN (*)(const void *)) intHash,
-	 0, 0,
 	 0, 0,
 	 0, 0,
 	 0, 0},
@@ -1869,14 +1855,12 @@ atomDesc BATatoms[MAXATOMS] = {
 	 (BUN (*)(const void *)) lngHash,
 	 0, 0,
 	 0, 0,
-	 0, 0,
 	 0, 0},
 	{"lng", TYPE_lng, 1, sizeof(lng), sizeof(lng), 0, 0, (ptr) &lng_nil,
 	 (int (*)(const char *, int *, ptr *)) lngFromStr, (int (*)(str *, int *, const void *)) lngToStr,
 	 (void *(*)(void *, stream *, size_t)) lngRead, (int (*)(const void *, stream *, size_t)) lngWrite,
 	 (int (*)(const void *, const void *)) lngCmp,
 	 (BUN (*)(const void *)) lngHash,
-	 0, 0,
 	 0, 0,
 	 0, 0,
 	 0, 0},
@@ -1887,8 +1871,7 @@ atomDesc BATatoms[MAXATOMS] = {
 	 (BUN (*)(const void *)) strHash,
 	 0, 0,
 	 (var_t (*)(Heap *, var_t *, const void *)) strPut, 0,
-	 (int (*)(const void *)) strLen, strHeap,
-	 (void (*)(Heap *, int)) 0, 0},
+	 (int (*)(const void *)) strLen, strHeap},
 };
 
 int GDKatomcnt = TYPE_str + 1;

@@ -1037,8 +1037,6 @@ gdk_export size_t HEAPmemsize(Heap *h);
  * HEAP_private     (Heap* h)
  * @item void
  * HEAP_printstatus (Heap* h)
- * @item void
- * HEAP_check       (Heap* h)
  * @end table
  *
  * The heap space starts with a private space that is left untouched
@@ -1048,16 +1046,6 @@ gdk_export size_t HEAPmemsize(Heap *h);
  * previously allocated chunk HEAP_private returns an integer index to
  * private space.
  */
-/* structure used by HEAP_check functions */
-typedef struct {
-	size_t minpos;		/* minimum block byte-index */
-	size_t maxpos;		/* maximum block byte-index */
-	int alignment;		/* block index alignment */
-	int *validmask;		/* bitmap with all valid byte-indices
-				 * first bit corresponds with 'minpos';
-				 * 2nd bit with 'minpos+alignment', etc
-				 */
-} HeapRepair;
 
 gdk_export void HEAP_initialize(
 	Heap *heap,		/* nbytes -- Initial size of the heap. */
@@ -1946,10 +1934,6 @@ gdk_export BAT *BBPquickdesc(bat b, int delaccess);
  * @tab ATOMunfix       (int id, ptr v);
  * @item int
  * @tab ATOMheap        (int id, Heap *hp, size_t cap);
- * @item void
- * @tab ATOMheapconvert (int id, Heap *hp, int direction);
- * @item int
- * @tab ATOMheapcheck   (int id, Heap *hp, HeapRepair *hr);
  * @item int
  * @tab ATOMput         (int id, Heap *hp, BUN pos_dst, ptr val_src);
  * @item int
@@ -2089,9 +2073,6 @@ typedef struct {
 	void (*atomDel) (Heap *, var_t *atom);
 	int (*atomLen) (const void *atom);
 	void (*atomHeap) (Heap *, size_t);
-	/* optional functions */
-	void (*atomHeapConvert) (Heap *, int direction);
-	int (*atomHeapCheck) (Heap *, HeapRepair *);
 } atomDesc;
 
 gdk_export atomDesc BATatoms[];
