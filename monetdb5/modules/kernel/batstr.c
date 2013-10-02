@@ -82,7 +82,6 @@ batstr_export str STRbatLength(bat *ret, bat *l);
 batstr_export str STRbatstringLength(bat *ret, bat *l);
 batstr_export str STRbatBytes(bat *ret, bat *l);
 
-batstr_export str STRbatSubstitutecst(bat *ret, bat *l, str *arg2, str *arg3, bit *rep);
 batstr_export str STRbatlike_uselect(bat *ret, bat *bid, str *pat, str *esc);
 batstr_export str STRbatlike_uselect2(bat *ret, bat *bid, str *pat);
 batstr_export str STRbatsubstringcst(bat *ret, bat *bid, int *start, int *length);

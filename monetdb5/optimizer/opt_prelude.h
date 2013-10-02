@@ -144,7 +144,6 @@ opt_export  str mark_grpRef;
 opt_export  str materializeRef;
 opt_export  str mtimeRef;
 opt_export  str dense_rank_grpRef;
-opt_export  str materializeRef;
 opt_export  str matRef;
 opt_export  str max_no_nilRef;
 opt_export  str maxRef;

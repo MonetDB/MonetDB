@@ -56,8 +56,6 @@ streams_export str open_block_streamwrap(Stream *S, Stream *is);
 streams_export str bstream_create_wrapwrap(Bstream *Bs, Stream *S, int *bufsize);
 streams_export str bstream_destroy_wrapwrap(int *ret, Bstream *BS);
 streams_export str bstream_read_wrapwrap(int *res, Bstream *BS, int *size);
-streams_export str mnstr_readIntwrap(int *ret, Stream *S);
-streams_export str mnstr_read_stringwrap(str *res, Stream *s);
 
 streams_export str mnstr_open_rstreamwrap(Stream *S, str *filename);
 streams_export str mnstr_open_wstreamwrap(Stream *S, str *filename);
