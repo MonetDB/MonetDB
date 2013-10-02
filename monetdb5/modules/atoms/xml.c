@@ -644,10 +644,18 @@ XMLfromString(str src, int *len, xml *x)
 {
 	if (*x)
 		GDKfree(*x);
-	if (strcmp(src, "nil") == 0)
+	if (strcmp(src, "nil") == 0) {
 		*x = GDKstrdup(str_nil);
-	else
-		XMLstr2xml(x, &src);
+		if (*x == NULL)
+			return -1;
+	} else {
+		char *err = XMLstr2xml(x, &src);
+		if (err != MAL_SUCCEED) {
+			if (err != M5OutOfMemory)
+				GDKfree(err);
+			return -1;
+		}
+	}
 	*len = (int) strlen(*x);
 	return *len;
 }
