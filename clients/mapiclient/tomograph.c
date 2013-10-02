@@ -1588,7 +1588,7 @@ static void createTomogram(void)
 	// show follow up action only once
 	if (atlas && atlaspage == atlas-1){
 		fprintf(stderr, "Created tomogram atlas\n");
-		for( i = 0; i<= atlas;  i++)
+		for( i = 0; i<= atlas-1;  i++)
 			fprintf(stderr, "gnuplot atlas_%02d.gpl\n",i);
 		fprintf(stderr, "gs -dNOPAUSE -sDEVICE=pdfwrite -sOUTPUTFILE=atlas.pdf -dBATCH atlas_??.pdf\n");
 		exit(0);
