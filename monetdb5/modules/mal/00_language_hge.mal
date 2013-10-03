@@ -1,0 +1,4 @@
+module language;
+
+command assert(v:hge,term:str):void
+address MALassertHge;

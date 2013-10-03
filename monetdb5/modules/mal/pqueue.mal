@@ -95,18 +95,6 @@ command dequeue_max(h:bat[:oid,:lng]) address PQdequeue_lngmax;
 command topn_max(t:bat[:oid,:lng], n:wrd) :bat[:oid,:oid] address PQtopn_lngmax;
 command utopn_max(t:bat[:oid,:lng], n:wrd) :bat[:oid,:oid] address PQutopn_lngmax;
 
-command enqueue_min(h:bat[:oid,:hge], id:oid, value:hge) address PQenqueue_hgemin;
-command topreplace_min(h:bat[:oid,:hge], id:oid, value:hge) address PQtopreplace_hgemin;
-command dequeue_min(h:bat[:oid,:hge]) address PQdequeue_hgemin;
-command topn_min(t:bat[:oid,:hge], n:wrd) :bat[:oid,:oid] address PQtopn_hgemin;
-command utopn_min(t:bat[:oid,:hge], n:wrd) :bat[:oid,:oid] address PQutopn_hgemin;
-
-command enqueue_max(h:bat[:oid,:hge], id:oid, value:hge) address PQenqueue_hgemax;
-command topreplace_max(h:bat[:oid,:hge], id:oid, value:hge) address PQtopreplace_hgemax;
-command dequeue_max(h:bat[:oid,:hge]) address PQdequeue_hgemax;
-command topn_max(t:bat[:oid,:hge], n:wrd) :bat[:oid,:oid] address PQtopn_hgemax;
-command utopn_max(t:bat[:oid,:hge], n:wrd) :bat[:oid,:oid] address PQutopn_hgemax;
-
 command enqueue_min(h:bat[:oid,:flt], id:oid, value:flt) address PQenqueue_fltmin;
 command topreplace_min(h:bat[:oid,:flt], id:oid, value:flt) address PQtopreplace_fltmin;
 command dequeue_min(h:bat[:oid,:flt]) address PQdequeue_fltmin;

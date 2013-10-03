@@ -41,8 +41,6 @@ command hash(v:dbl):wrd
 address MKEYhash_dbl;
 command hash(v:lng):wrd
 address MKEYhash_lng;
-command hash(v:hge):wrd
-address MKEYhash_hge;
 command hash(v:str):wrd
 address MKEYhash_str;
 

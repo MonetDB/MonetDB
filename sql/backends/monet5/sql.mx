@@ -33,6 +33,14 @@ All Rights Reserved.
 module batsql;
 module sql;
 
+@f 41_sql_hge
+@mal
+
+module sql;
+
+@f sql
+@mal
+
 pattern start():void 
 address SQLsession
 comment "Switch to processing SQL statements";
@@ -137,9 +145,16 @@ pattern assert(b:lng,msg:str):void
 address SQLassertLng
 comment "Generate an exception when b!=0";
 
+@f 41_sql_hge
+@mal
+
 pattern assert(b:hge,msg:str):void
 address SQLassertHge
 comment "Generate an exception when b!=0";
+
+@f sql
+@mal
+
 # @- The SQL multi-version catalog
 # This module also contains the definitions for managing an SQL database schema in
 # version 5.  It is an adaptation of the original V4.3 code base.
@@ -641,8 +656,16 @@ pattern calc.hash( v:int ) :wrd address MKEYhash;
 command batcalc.hash( b:bat[:oid,:int] ) :bat[:oid,:wrd] address MKEYbathash;
 pattern calc.hash( v:lng ) :wrd address MKEYhash; 
 command batcalc.hash( b:bat[:oid,:lng] ) :bat[:oid,:wrd] address MKEYbathash;
+
+@f 41_sql_hge
+@mal
+
 pattern calc.hash( v:hge ) :wrd address MKEYhash; 
 command batcalc.hash( b:bat[:oid,:hge] ) :bat[:oid,:wrd] address MKEYbathash;
+
+@f sql
+@mal
+
 pattern calc.hash( v:oid ) :wrd address MKEYhash; 
 command batcalc.hash( b:bat[:oid,:oid] ) :bat[:oid,:wrd] address MKEYbathash;
 pattern calc.hash( v:wrd ) :wrd address MKEYhash; 
@@ -690,7 +713,14 @@ comment "cast @1 decimal to a second_interval";
 @:mal_round(sht)@
 @:mal_round(int)@
 @:mal_round(lng)@
+
+@f 41_sql_hge
+@mal
+
 @:mal_round(hge)@
+
+@f sql
+@mal
 
 @= mal_fround
 command sql.dec_round( v:@1, r:@1 ) :@1 
@@ -770,7 +800,14 @@ comment "cast to dec(@1) and check for overflow";
 @:mal_cast(sht)@
 @:mal_cast(int)@
 @:mal_cast(lng)@
+
+@f 41_sql_hge
+@mal
+
 @:mal_cast(hge)@
+
+@f sql
+@mal
 
 @= mal_casttime
 command calc.@1( v:void ) :@1 
@@ -880,13 +917,28 @@ comment "cast number to decimal(@1) and check for overflow";
 @:mal_cast_2dec(int,flt)@
 @:mal_cast_2dec(wrd,flt)@
 @:mal_cast_2dec(lng,flt)@
+
+@f 41_sql_hge
+@mal
+
 @:mal_cast_2dec(hge,flt)@
+
+@f sql
+@mal
+
 @:mal_cast_2dec(bte,dbl)@
 @:mal_cast_2dec(sht,dbl)@
 @:mal_cast_2dec(int,dbl)@
 @:mal_cast_2dec(wrd,dbl)@
 @:mal_cast_2dec(lng,dbl)@
+
+@f 41_sql_hge
+@mal
+
 @:mal_cast_2dec(hge,dbl)@
+
+@f sql
+@mal
 
 @= mal_cast_dec2
 command calc.@1( s1:int, v:@2) :@1 
@@ -915,19 +967,16 @@ comment "cast decimal(@2) to decimal(@1) and check for overflow";
 @:mal_cast2(bte,int)@
 @:mal_cast2(bte,wrd)@
 @:mal_cast2(bte,lng)@
-@:mal_cast2(bte,hge)@
 @:mal_cast2(sht,bte)@
 @:mal_cast2(sht,sht)@
 @:mal_cast2(sht,int)@
 @:mal_cast2(sht,wrd)@
 @:mal_cast2(sht,lng)@
-@:mal_cast2(sht,hge)@
 @:mal_cast2(int,bte)@
 @:mal_cast2(int,sht)@
 @:mal_cast2(int,int)@
 @:mal_cast2(int,wrd)@
 @:mal_cast2(int,lng)@
-@:mal_cast2(int,hge)@
 @:mal_cast2(wrd,bte)@
 @:mal_cast2(wrd,sht)@
 @:mal_cast2(wrd,int)@
@@ -937,6 +986,23 @@ comment "cast decimal(@2) to decimal(@1) and check for overflow";
 @:mal_cast2(lng,int)@
 @:mal_cast2(lng,wrd)@
 @:mal_cast2(lng,lng)@
+@:mal_cast2(flt,bte)@
+@:mal_cast2(flt,sht)@
+@:mal_cast2(flt,int)@
+@:mal_cast2(flt,wrd)@
+@:mal_cast2(flt,lng)@
+@:mal_cast2(dbl,bte)@
+@:mal_cast2(dbl,sht)@
+@:mal_cast2(dbl,int)@
+@:mal_cast2(dbl,wrd)@
+@:mal_cast2(dbl,lng)@
+
+@f 41_sql_hge
+@mal
+
+@:mal_cast2(bte,hge)@
+@:mal_cast2(sht,hge)@
+@:mal_cast2(int,hge)@
 @:mal_cast2(lng,hge)@
 @:mal_cast2(hge,bte)@
 @:mal_cast2(hge,sht)@
@@ -944,18 +1010,11 @@ comment "cast decimal(@2) to decimal(@1) and check for overflow";
 @:mal_cast2(hge,wrd)@
 @:mal_cast2(hge,lng)@
 @:mal_cast2(hge,hge)@
-@:mal_cast2(flt,bte)@
-@:mal_cast2(flt,sht)@
-@:mal_cast2(flt,int)@
-@:mal_cast2(flt,wrd)@
-@:mal_cast2(flt,lng)@
 @:mal_cast2(flt,hge)@
-@:mal_cast2(dbl,bte)@
-@:mal_cast2(dbl,sht)@
-@:mal_cast2(dbl,int)@
-@:mal_cast2(dbl,wrd)@
-@:mal_cast2(dbl,lng)@
 @:mal_cast2(dbl,hge)@
+
+@f sql
+@mal
 
 command calc.month_interval( v:str, ek:int, sk:int ) :int
 address month_interval_str
@@ -8227,7 +8286,15 @@ end aggr.corr;
 @:analytic(int)@
 @:analytic(wrd)@
 @:analytic(lng)@
+
+@f 41_sql_hge
+@mal
+
 @:analytic(hge)@
+
+@f sql
+@mal
+
 @:analytic(flt)@
 @:analytic(dbl)@
 

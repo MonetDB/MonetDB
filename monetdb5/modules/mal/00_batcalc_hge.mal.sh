@@ -39,11 +39,11 @@ module batcalc;
 
 EOF
 
-integer="bte sht int wrd lng"	# all integer types
+integer="bte sht int wrd lng hge"	# all integer types
 numeric="$integer flt dbl"	# all numeric types
 alltypes="bit $numeric oid str"
 
-for tp in $numeric; do
+for tp in hge; do
     cat <<EOF
 pattern iszero(b:bat[:oid,:$tp]) :bat[:oid,:bit]
 address CMDbatISZERO
@@ -56,7 +56,7 @@ EOF
 done
 echo
 
-for tp in $alltypes; do
+for tp in hge; do
     cat <<EOF
 pattern isnil(b:bat[:oid,:$tp]) :bat[:oid,:bit]
 address CMDbatISNIL
@@ -69,8 +69,8 @@ EOF
 done
 echo
 
-com="Return the Boolean inverse"
-for tp in bit $integer; do
+com="Unary bitwise not over the tail of the bat"
+for tp in hge; do
     cat <<EOF
 pattern not(b:bat[:oid,:$tp]) :bat[:oid,:$tp]
 address CMDbatNOT
@@ -80,11 +80,10 @@ address CMDbatNOT
 comment "$com with candidates list";
 
 EOF
-    com="Unary bitwise not over the tail of the bat"
 done
 echo
 
-for tp in $numeric; do
+for tp in hge; do
     cat <<EOF
 pattern sign(b:bat[:oid,:$tp]) :bat[:oid,:bte]
 address CMDbatSIGN
@@ -105,7 +104,7 @@ for func in 'abs:ABS:Unary abs over the tail of the bat' \
     com=${func##*:}
     func=${func%:*}
     func=${func#*:}
-    for tp in $numeric; do
+    for tp in hge; do
 	cat <<EOF
 pattern $op(b:bat[:oid,:$tp]) :bat[:oid,:$tp]
 address CMDbat${func}
@@ -122,14 +121,17 @@ done
 for func in +:ADD -:SUB \*:MUL; do
     name=${func#*:}
     op=${func%:*}
-    for tp1 in bte sht int lng flt; do
-	for tp2 in bte sht int lng flt; do
+    for tp1 in bte sht int lng hge flt; do
+	for tp2 in bte sht int lng hge flt; do
 	    case $tp1$tp2 in
-	    *flt*) tp3=dbl;;
-	    *lng*) continue;;	# lng only allowed in combination with flt
-	    *int*) tp3=lng;;
-	    *sht*) tp3=int;;
-	    *bte*) tp3=sht;;
+	    hgeflt|flthge)
+		tp3=dbl;;
+	    *flt*|*hge*)
+		continue;;
+	    *lng*)
+		tp3=hge;;
+	    *)
+		continue;;
 	    esac
 	    cat <<EOF
 pattern $op(b1:bat[:oid,:$tp1],b2:bat[:oid,:$tp2]) :bat[:oid,:$tp3]
@@ -163,13 +165,14 @@ for func in +:ADD -:SUB \*:MUL; do
     for tp1 in $numeric; do
 	for tp2 in $numeric; do
 	    case $tp1$tp2 in
-	    *dbl*) tp3=dbl;;
-	    *flt*) tp3=flt;;
-	    *lng*) tp3=lng;;
-	    *wrd*) tp3=wrd;;
-	    *int*) tp3=int;;
-	    *sht*) tp3=sht;;
-	    *bte*) tp3=bte;;
+	    hgedbl|dblhge)
+		tp3=dbl;;
+	    hgeflt|flthge)
+		tp3=flt;;
+	    *hge*)
+		tp3=hge;;
+	    *)
+		continue;;
 	    esac
 	    cat <<EOF
 pattern $op(b1:bat[:oid,:$tp1],b2:bat[:oid,:$tp2]) :bat[:oid,:$tp3]
@@ -215,38 +218,17 @@ EOF
     echo
 done
 
-cat <<EOF
-pattern +(b1:bat[:oid,:str],b2:bat[:oid,:str]) :bat[:oid,:str]
-address CMDbatADD
-comment "Return concatenation of B1 and B2";
-pattern +(b1:bat[:oid,:str],b2:bat[:oid,:str],s:bat[:oid,:oid]) :bat[:oid,:str]
-address CMDbatADD
-comment "Return concatenation of B1 and B2 with candidates list";
-pattern +(b:bat[:oid,:str],v:str) :bat[:oid,:str]
-address CMDbatADD
-comment "Return concatenation of B and V";
-pattern +(b:bat[:oid,:str],v:str,s:bat[:oid,:oid]) :bat[:oid,:str]
-address CMDbatADD
-comment "Return concatenation of B and V with candidates list";
-pattern +(v:str,b:bat[:oid,:str]) :bat[:oid,:str]
-address CMDbatADD
-comment "Return concatenation of V and B";
-pattern +(v:str,b:bat[:oid,:str],s:bat[:oid,:oid]) :bat[:oid,:str]
-address CMDbatADD
-comment "Return concatenation of V and B with candidates list";
-
-EOF
-
 for tp1 in $numeric; do
     for tp2 in $numeric; do
 	case $tp1$tp2 in
-	*dbl*) tp3=dbl;;
-	*flt*) tp3=flt;;
-	lng*) tp3=lng;;
-	wrd*) tp3=wrd;;
-	int*) tp3=int;;
-	sht*) tp3=sht;;
-	bte*) tp3=bte;;
+	hgedbl|dblhge)
+	    tp3=dbl;;
+	hgeflt|flthge)
+	    tp3=flt;;
+	*hge*)
+	    tp3=$tp1;;
+	*)
+	    continue;;
 	esac
 	cat <<EOF
 pattern /(b1:bat[:oid,:$tp1],b2:bat[:oid,:$tp2]) :bat[:oid,:$tp3]
@@ -294,13 +276,21 @@ done
 for tp1 in $numeric; do
     for tp2 in $numeric; do
 	case $tp1$tp2 in
-	*dbl*) tp3=dbl;;
-	*flt*) tp3=flt;;
-	*bte*) tp3=bte;;
-	*sht*) tp3=sht;;
-	*int*) tp3=int;;
-	*wrd*) tp3=wrd;;
-	*lng*) tp3=lng;;
+	*hge*)
+	    case $tp1$tp2 in
+	    *dbl*) tp3=dbl;;
+	    *flt*) tp3=flt;;
+	    *bte*) tp3=bte;;
+	    *sht*) tp3=sht;;
+	    *int*) tp3=int;;
+	    *wrd*) tp3=wrd;;
+	    *lng*) tp3=lng;;
+	    *hge*) tp3=hge;;
+	    esac
+	    ;;
+	*)
+	    continue
+	    ;;
 	esac
 	cat <<EOF
 pattern %(b1:bat[:oid,:$tp1],b2:bat[:oid,:$tp2]) :bat[:oid,:$tp3]
@@ -346,7 +336,7 @@ done
 echo
 
 for op in and or xor; do
-    for tp in bit $integer; do
+    for tp in hge; do
 	cat <<EOF
 pattern ${op}(b1:bat[:oid,:$tp],b2:bat[:oid,:$tp]) :bat[:oid,:$tp]
 address CMDbat${op^^}
@@ -377,6 +367,10 @@ for func in '<<:lsh' '>>:rsh'; do
     func=${func#*:}
     for tp1 in $integer; do
 	for tp2 in $integer; do
+	    case $tp1$tp2 in
+	    *hge*) ;;
+	    *) continue;;
+	    esac
 	    cat <<EOF
 pattern $op(b1:bat[:oid,:$tp1],b2:bat[:oid,:$tp2]) :bat[:oid,:$tp1]
 address CMDbat${func^^}signal
@@ -424,31 +418,12 @@ done
 for func in '<:lt' '<=:le' '>:gt' '>=:ge' '==:eq' '!=:ne'; do
     op=${func%:*}
     func=${func#*:}
-    for tp in bit str oid; do
-	cat <<EOF
-pattern $op(b1:bat[:oid,:$tp],b2:bat[:oid,:$tp]) :bat[:oid,:bit]
-address CMDbat${func^^}
-comment "Return B1 $op B2";
-pattern $op(b1:bat[:oid,:$tp],b2:bat[:oid,:$tp],s:bat[:oid,:oid]) :bat[:oid,:bit]
-address CMDbat${func^^}
-comment "Return B1 $op B2 with candidates list";
-pattern $op(b:bat[:oid,:$tp],v:$tp) :bat[:oid,:bit]
-address CMDbat${func^^}
-comment "Return B $op V";
-pattern $op(b:bat[:oid,:$tp],v:$tp,s:bat[:oid,:oid]) :bat[:oid,:bit]
-address CMDbat${func^^}
-comment "Return B $op V with candidates list";
-pattern $op(v:$tp,b:bat[:oid,:$tp]) :bat[:oid,:bit]
-address CMDbat${func^^}
-comment "Return V $op B";
-pattern $op(v:$tp,b:bat[:oid,:$tp],s:bat[:oid,:oid]) :bat[:oid,:bit]
-address CMDbat${func^^}
-comment "Return V $op B with candidates list";
-
-EOF
-    done
     for tp1 in $numeric; do
 	for tp2 in $numeric; do
+	    case $tp1$tp2 in
+	    *hge*) ;;
+	    *) continue;;
+	    esac
 	    cat <<EOF
 pattern $op(b1:bat[:oid,:$tp1],b2:bat[:oid,:$tp2]) :bat[:oid,:bit]
 address CMDbat${func^^}
@@ -477,31 +452,12 @@ done
 
 op=${func%:*}
 func=${func#*:}
-for tp in bit str oid; do
-    cat <<EOF
-pattern cmp(b1:bat[:oid,:$tp],b2:bat[:oid,:$tp]) :bat[:oid,:bte]
-address CMDbatCMP
-comment "Return -1/0/1 if B1 </==/> B2";
-pattern cmp(b1:bat[:oid,:$tp],b2:bat[:oid,:$tp],s:bat[:oid,:oid]) :bat[:oid,:bte]
-address CMDbatCMP
-comment "Return -1/0/1 if B1 </==/> B2 with candidates list";
-pattern cmp(b:bat[:oid,:$tp],v:$tp) :bat[:oid,:bte]
-address CMDbatCMP
-comment "Return -1/0/1 if B </==/> V";
-pattern cmp(v:$tp,b:bat[:oid,:$tp]) :bat[:oid,:bte]
-address CMDbatCMP
-comment "Return -1/0/1 if V </==/> B";
-pattern cmp(b:bat[:oid,:$tp],v:$tp,s:bat[:oid,:oid]) :bat[:oid,:bte]
-address CMDbatCMP
-comment "Return -1/0/1 if B </==/> V with candidates list";
-pattern cmp(v:$tp,b:bat[:oid,:$tp],s:bat[:oid,:oid]) :bat[:oid,:bte]
-address CMDbatCMP
-comment "Return -1/0/1 if V </==/> B with candidates list";
-
-EOF
-done
 for tp1 in $numeric; do
     for tp2 in $numeric; do
+	case $tp1$tp2 in
+	*hge*) ;;
+	*) continue;;
+	esac
 	cat <<EOF
 pattern cmp(b1:bat[:oid,:$tp1],b2:bat[:oid,:$tp2]) :bat[:oid,:bte]
 address CMDbatCMP
@@ -527,7 +483,7 @@ EOF
 done
 echo
 
-for tp in bit $numeric oid; do
+for tp in hge; do
     cat <<EOF
 pattern between(b:bat[:oid,:$tp],lo:bat[:oid,:$tp],hi:bat[:oid,:$tp]) :bat[:oid,:bit]
 address CMDbatBETWEEN
@@ -558,7 +514,7 @@ EOF
 done
 echo
 
-for tp in $numeric; do
+for tp in hge; do
     cat <<EOF
 pattern avg(b:bat[:oid,:$tp]) :dbl
 address CMDcalcavg
@@ -578,6 +534,10 @@ done
 
 for tp1 in $alltypes; do
     for tp2 in void $alltypes; do
+	case $tp1$tp2 in
+	*hge*) ;;
+	*) continue;;
+	esac
 	cat <<EOF
 pattern $tp1(b:bat[:oid,:$tp2]) :bat[:oid,:$tp1]
 address CMDconvertsignal_$tp1
@@ -595,30 +555,3 @@ comment "cast from $tp2 to $tp1 with candidates list";
 EOF
     done
 done
-
-cat <<EOF
-pattern ifthen(b:bat[:oid,:bit], v1:any_1) :bat[:oid,:any_1]
-address CMDifthen
-comment "If-then operation to assemble a conditional result";
-
-pattern ifthenelse(b:bat[:oid,:bit], v1:any_1, v2:any_1) :bat[:oid,:any_1]
-address CMDifthen
-comment "If-then-else operation to assemble a conditional result";
-
-pattern ifthenelse(b:bat[:oid,:bit], b1:bat[:oid,:any_1], v2:any_1) :bat[:oid,:any_1]
-address CMDifthen
-comment "If-then-else operation to assemble a conditional result";
-
-pattern ifthenelse(b:bat[:oid,:bit], v1:any_1, b2:bat[:oid,:any_1]) :bat[:oid,:any_1]
-address CMDifthen
-comment "If-then-else operation to assemble a conditional result";
-
-pattern ifthen(b:bat[:oid,:bit], b1:bat[:oid,:any_1]) :bat[:oid,:any_1]
-address CMDifthen
-comment "If-then operation to assemble a conditional result";
-
-pattern ifthenelse(b:bat[:oid,:bit], b1:bat[:oid,:any_1], b2:bat[:oid,:any_1]) :bat[:oid,:any_1]
-address CMDifthen
-comment "If-then-else operation to assemble a conditional result";
-
-EOF

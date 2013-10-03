@@ -43,8 +43,6 @@ command next(step:int,last:int):int
 address ITRnext_int; 
 command next(step:lng,last:lng):lng
 address ITRnext_lng; 
-command next(step:hge,last:hge):hge
-address ITRnext_hge; 
 command next(step:flt,last:flt):flt
 address ITRnext_flt; 
 command next(step:dbl,last:dbl):dbl
