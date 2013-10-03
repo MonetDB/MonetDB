@@ -81,14 +81,15 @@ headers_mal = {
 		txtsim.mal recycle.mal \
 		cluster.mal trader.mal \
 		tokenizer.mal zorder.mal sample.mal json_util.mal \
-		calc.mal batcalc.mal batmtime.mal querylog.mal sysmon.mal
+		batmtime.mal querylog.mal sysmon.mal
 }
 
 headers_hge = {
 	COND = HAVE_HGE
 	HEADERS = mal
 	DIR = libdir/monetdb5/autoload
-	SOURCES = 00_calc_hge.mal 00_batcalc_hge.mal \
+	SOURCES = 01_calc.mal 01_batcalc.mal \
+		00_calc_hge.mal 00_batcalc_hge.mal \
 		00_cluster_hge.mal 00_iterator_hge.mal 00_language_hge.mal \
 		00_mal_mapi_hge.mal 00_mkey_hge.mal 00_pqueue_hge.mal
 }
@@ -97,8 +98,9 @@ EXTRA_DIST = batExtensions.mal iterator.mal constraints.mal \
 	groupby.mal mal_init.mal manual.mal mkey.mal pcre.mal \
 	profiler.mal recycle.mal remote.mal sabaoth.mal trader.mal \
 	transaction.mal txtsim.mal tablet.mal tablet.h sample.mal json_util.mal \
-	mal_mapi.mal mat.mal tokenizer.mal pqueue.mal calc.mal \
-	batcalc.mal batmtime.mal querylog.mal sysmon.mal \
+	mal_mapi.mal mat.mal tokenizer.mal pqueue.mal \
+	batmtime.mal querylog.mal sysmon.mal \
+	01_calc.mal 01_batcalc.mal \
 	00_calc_hge.mal 00_batcalc_hge.mal \
 	00_cluster_hge.mal 00_iterator_hge.mal 00_language_hge.mal \
 	00_mal_mapi_hge.mal 00_mkey_hge.mal 00_pqueue_hge.mal
