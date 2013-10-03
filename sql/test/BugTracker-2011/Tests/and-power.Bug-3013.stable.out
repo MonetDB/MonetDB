@@ -48,7 +48,7 @@ Ready.
 % .L # table_name
 % bit_and_single_value # name
 % decimal # type
-% 19 # length
+% 20 # length
 [ 0	]
 
 # 14:12:27 >  

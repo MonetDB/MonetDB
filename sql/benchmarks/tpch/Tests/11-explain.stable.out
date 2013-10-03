@@ -125,7 +125,7 @@ function user.s2_1{autoCommit=true}(A0:str,A1:lng,A2:str):void;
     X_110 := algebra.leftfetchjoin(r1_162,X_103);
     X_111 := sql.resultSet(2,1,X_109);
     sql.rsColumn(X_111,"sys.partsupp","ps_partkey","int",32,0,X_109);
-    sql.rsColumn(X_111,"sys.L1","value","decimal",18,2,X_110);
+    sql.rsColumn(X_111,"sys.L1","value","decimal",19,2,X_110);
     X_125 := io.stdout();
     sql.exportResult(X_125,X_111);
 end s2_1;

@@ -1989,8 +1989,8 @@ exp_sum_scales(mvc *sql, sql_subfunc *f, sql_exp *l, sql_exp *r)
 		f->res.digits = lt->digits + rt->digits;
 
 		/* HACK alert: digits should be less than max */
-		if (f->res.type->radix == 10 && f->res.digits > 18)
-			f->res.digits = 18;
+		if (f->res.type->radix == 10 && f->res.digits > 19)
+			f->res.digits = 19;
 		if (f->res.type->radix == 2 && f->res.digits > 53)
 			f->res.digits = 53;
 
@@ -2039,8 +2039,8 @@ exp_scale_algebra(mvc *sql, sql_subfunc *f, sql_exp *l, sql_exp *r)
 		digits = (digL > (int)rt->digits) ? digL : (int)rt->digits;
 
 		/* HACK alert: digits should be less than max */
-		if (f->res.type->radix == 10 && digits > 18)
-			digits = 18;
+		if (f->res.type->radix == 10 && digits > 19)
+			digits = 19;
 		if (f->res.type->radix == 2 && digits > 53)
 			digits = 53;
 
