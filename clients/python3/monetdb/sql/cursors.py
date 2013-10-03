@@ -393,7 +393,10 @@ class Cursor(object):
 
             elif line.startswith(mapi.MSG_TUPLE):
                 values = self.__parse_tuple(line)
-                self.__rows .append(values)
+                self.__rows.append(values)
+
+            elif line.startswith(mapi.MSG_TUPLE_NOSLCE):
+                self.__rows.append((line[1:],))
 
             elif line.startswith(mapi.MSG_QBLOCK):
                 self.__rows = []
@@ -421,7 +424,7 @@ class Cursor(object):
                 self.description = None
                 self.rowcount = -1
 
-            elif line.startswith(mapi.MSG_PROMPT):
+            elif line == mapi.MSG_PROMPT:
                 return
 
             elif line.startswith(mapi.MSG_ERROR):
