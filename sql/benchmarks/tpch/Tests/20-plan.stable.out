@@ -93,7 +93,7 @@ project (
 | | | | | | | ) [ partsupp.ps_partkey NOT NULL = L16.l_partkey NOT NULL HASHCOL , partsupp.ps_suppkey NOT NULL = L16.l_suppkey NOT NULL HASHCOL  ]
 | | | | | | ) [ L17.L17 ] [ partsupp.ps_suppkey NOT NULL, partsupp.ps_availqty NOT NULL, partsupp.%TID% NOT NULL, partsupp.%partsupp_ps_partkey_ps_suppkey_pkey NOT NULL HASHIDX , partsupp.%partsupp_ps_partkey_fkey NOT NULL JOINIDX sys.partsupp.partsupp_ps_partkey_fkey, partsupp.%partsupp_ps_suppkey_fkey NOT NULL JOINIDX sys.partsupp.partsupp_ps_suppkey_fkey, L17.L17, sys.sum no nil (L16.l_quantity NOT NULL as lineitem.l_quantity) NOT NULL as L12.L12 ]
 | | | | | ) [ partsupp.ps_suppkey NOT NULL, partsupp.ps_availqty NOT NULL, partsupp.%TID% NOT NULL, partsupp.%partsupp_ps_partkey_ps_suppkey_pkey NOT NULL HASHIDX , partsupp.%partsupp_ps_partkey_fkey NOT NULL JOINIDX sys.partsupp.partsupp_ps_partkey_fkey, partsupp.%partsupp_ps_suppkey_fkey NOT NULL JOINIDX sys.partsupp.partsupp_ps_suppkey_fkey, sys.sql_mul(decimal(11,1)[decimal(2,1) "5"], decimal(11,1)[L12 NOT NULL] as L12) as L13.L13 ]
-| | | | ) [ decimal(18,2)[partsupp.ps_availqty NOT NULL] > L13.L13 ]
+| | | | ) [ decimal(19,2)[partsupp.ps_availqty NOT NULL] > L13.L13 ]
 | | | ) [ partsupp.ps_suppkey NOT NULL as L15.L14 ]
 | | ) [ supplier.s_suppkey NOT NULL HASHCOL  = L15.L14 NOT NULL ]
 | ) [ supplier.s_name NOT NULL, supplier.s_address NOT NULL, supplier.%TID% NOT NULL, supplier.%supplier_s_suppkey_pkey NOT NULL HASHIDX , supplier.%supplier_s_nationkey_fkey NOT NULL JOINIDX sys.supplier.supplier_s_nationkey_fkey, nation.%TID% NOT NULL, nation.%nation_n_nationkey_pkey NOT NULL HASHIDX , nation.%nation_n_regionkey_fkey NOT NULL JOINIDX sys.nation.nation_n_regionkey_fkey ]

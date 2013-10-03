@@ -154,7 +154,7 @@ function user.s0_1{autoCommit=true}(A0:bte,A1:str):void;
     X_168 := sql.resultSet(3,1,X_116);
     sql.rsColumn(X_168,"sys.profit","nation","varchar",25,0,X_116);
     sql.rsColumn(X_168,"sys.profit","o_year","int",32,0,X_117);
-    sql.rsColumn(X_168,"sys.L1","sum_profit","decimal",18,4,X_167);
+    sql.rsColumn(X_168,"sys.L1","sum_profit","decimal",19,4,X_167);
     X_186 := io.stdout();
     sql.exportResult(X_186,X_168);
 end s0_1;

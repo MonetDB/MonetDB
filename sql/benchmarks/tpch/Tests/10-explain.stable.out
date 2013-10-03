@@ -168,7 +168,7 @@ function user.s0_1{autoCommit=true}(A0:bte,A1:date,A2:date,A3:int,A4:str):void;
     X_172 := sql.resultSet(8,1,X_124);
     sql.rsColumn(X_172,"sys.customer","c_custkey","int",32,0,X_124);
     sql.rsColumn(X_172,"sys.customer","c_name","varchar",25,0,X_136);
-    sql.rsColumn(X_172,"sys.L1","revenue","decimal",18,4,X_137);
+    sql.rsColumn(X_172,"sys.L1","revenue","decimal",19,4,X_137);
     sql.rsColumn(X_172,"sys.customer","c_acctbal","decimal",15,2,X_144);
     sql.rsColumn(X_172,"sys.nation","n_name","varchar",25,0,X_145);
     sql.rsColumn(X_172,"sys.customer","c_address","varchar",40,0,X_154);

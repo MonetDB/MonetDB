@@ -139,7 +139,7 @@ function user.s0_1{autoCommit=true}(A0:bte,A1:str,A2:date,A3:date):void;
     X_129:bat[:oid,:lng]  := algebra.leftfetchjoin(X_190,X_116);
     X_132 := sql.resultSet(4,1,X_128);
     sql.rsColumn(X_132,"sys.lineitem","l_orderkey","int",32,0,X_128);
-    sql.rsColumn(X_132,"sys.L1","revenue","decimal",18,4,X_129);
+    sql.rsColumn(X_132,"sys.L1","revenue","decimal",19,4,X_129);
     sql.rsColumn(X_132,"sys.orders","o_orderdate","date",0,0,X_130);
     sql.rsColumn(X_132,"sys.orders","o_shippriority","int",32,0,X_131);
     X_151 := io.stdout();

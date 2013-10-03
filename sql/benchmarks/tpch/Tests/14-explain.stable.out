@@ -81,11 +81,11 @@ function user.s0_1{autoCommit=true}(A0:int,A1:str,A2:bte,A3:bte,A4:bte,A5:date,A
     X_66 := algebra.leftfetchjoin(X_33,X_65);
     X_67:bat[:oid,:lng]  := batcalc.-(X_57,X_66);
     X_68:bat[:oid,:lng]  := batcalc.*(X_56,X_67);
-    X_69 := calc.lng(A3,18,4);
+    X_69 := calc.lng(A3,19,4);
     X_72:bat[:oid,:lng]  := batcalc.ifthenelse(X_45,X_68,X_69);
     X_73 := algebra.selectNotNil(X_72);
     X_74:lng  := aggr.sum(X_73);
-    X_75 := calc.lng(4,X_74,18,8);
+    X_75 := calc.lng(4,X_74,19,8);
     X_77 := calc.lng(A4,15,2);
     X_79:bat[:oid,:lng]  := batcalc.-(X_77,X_66);
     X_80:bat[:oid,:lng]  := batcalc.*(X_56,X_79);
@@ -93,7 +93,7 @@ function user.s0_1{autoCommit=true}(A0:int,A1:str,A2:bte,A3:bte,A4:bte,A5:date,A
     X_82:lng  := aggr.sum(X_81);
     X_83 := calc./(X_75,X_82);
     X_84 := calc.*(A0,X_83);
-    sql.exportValue(1,".L2","promo_revenue","decimal",18,2,8,X_84,"");
+    sql.exportValue(1,".L2","promo_revenue","decimal",19,2,8,X_84,"");
 end s0_1;
 
 # 22:53:29 >  

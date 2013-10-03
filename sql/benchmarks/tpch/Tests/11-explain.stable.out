@@ -135,7 +135,7 @@ exit (X_155,X_156);
     X_112 := algebra.leftfetchjoin(r1_162,X_105);
     X_113 := sql.resultSet(2,1,X_111);
     sql.rsColumn(X_113,"sys.partsupp","ps_partkey","int",32,0,X_111);
-    sql.rsColumn(X_113,"sys.L1","value","decimal",18,2,X_112);
+    sql.rsColumn(X_113,"sys.L1","value","decimal",19,2,X_112);
     X_127 := io.stdout();
     sql.exportResult(X_127,X_113);
 end s0_1;

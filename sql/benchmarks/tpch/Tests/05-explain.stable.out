@@ -148,7 +148,7 @@ function user.s0_1{autoCommit=true}(A0:bte,A1:str,A2:date,A3:date,A4:int):void;
     X_160 := algebra.leftfetchjoin(r1_192,X_153);
     X_161 := sql.resultSet(2,1,X_159);
     sql.rsColumn(X_161,"sys.nation","n_name","varchar",25,0,X_159);
-    sql.rsColumn(X_161,"sys.L1","revenue","decimal",18,4,X_160);
+    sql.rsColumn(X_161,"sys.L1","revenue","decimal",19,4,X_160);
     X_172 := io.stdout();
     sql.exportResult(X_172,X_161);
 end s0_1;
