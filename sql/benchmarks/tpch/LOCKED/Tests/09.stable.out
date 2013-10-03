@@ -46,7 +46,7 @@ Ready.
 % sys.profit,	sys.profit,	sys.L1 # table_name
 % nation,	o_year,	sum_profit # name
 % varchar,	int,	decimal # type
-% 14,	4,	20 # length
+% 14,	4,	21 # length
 [ "ALGERIA",	1998,	386617.8283	]
 [ "ALGERIA",	1997,	401601.1258	]
 [ "ALGERIA",	1996,	156938.7971	]

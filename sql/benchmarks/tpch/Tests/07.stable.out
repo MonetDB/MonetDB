@@ -58,7 +58,7 @@ Ready.
 % sys.shipping,	sys.shipping,	sys.shipping,	sys.L1 # table_name
 % supp_nation,	cust_nation,	l_year,	revenue # name
 % varchar,	varchar,	int,	decimal # type
-% 7,	7,	4,	20 # length
+% 7,	7,	4,	21 # length
 [ "FRANCE",	"GERMANY",	1995,	268068.5774	]
 [ "FRANCE",	"GERMANY",	1996,	303862.2980	]
 [ "GERMANY",	"FRANCE",	1995,	621159.4882	]
