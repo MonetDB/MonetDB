@@ -395,7 +395,7 @@ class Cursor(object):
                 values = self.__parse_tuple(line)
                 self.__rows.append(values)
 
-            elif line.startswith(mapi.MSG_TUPLE_NOSLCE):
+            elif line.startswith(mapi.MSG_TUPLE_NOSLICE):
                 self.__rows.append((line[1:],))
 
             elif line.startswith(mapi.MSG_QBLOCK):
