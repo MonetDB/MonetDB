@@ -474,6 +474,8 @@ fi
 %exclude %{_libdir}/monetdb5/jaql*.mal
 %exclude %{_libdir}/monetdb5/json*.mal
 %{_libdir}/monetdb5/*.mal
+%{_libdir}/monetdb5/autoload/00_*_hge.mal
+%{_libdir}/monetdb5/autoload/01_*calc.mal
 # %{_libdir}/monetdb5/autoload/*_fits.mal
 %{_libdir}/monetdb5/autoload/*_lsst.mal
 %{_libdir}/monetdb5/autoload/*_opt_sql_append.mal
@@ -570,6 +572,7 @@ systemd-tmpfiles --create %{_sysconfdir}/tmpfiles.d/monetdbd.conf
 %endif
 %config(noreplace) %{_localstatedir}/monetdb5/dbfarm/.merovingian_properties
 %{_libdir}/monetdb5/autoload/*_sql.mal
+%{_libdir}/monetdb5/autoload/*_sql_hge.mal
 %{_libdir}/monetdb5/lib_sql.so
 %{_libdir}/monetdb5/*.sql
 %dir %{_libdir}/monetdb5/createdb
