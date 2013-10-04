@@ -170,7 +170,7 @@ VLTimport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	snprintf(path,BUFSIZ,"%s%c%s", vaultpath, DIR_SEP, *target);
 	/*mnstr_printf(GDKout,"#vault.import: %s\n",path);*/
 	if (strcmp(path, *source) == 0) {
-		MTIMEepoch(ret);
+		MTIMEcurrent_timestamp(ret);
 		return MAL_SUCCEED;
 	}
 	/* create the subdir */
@@ -218,7 +218,7 @@ VLTimport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #endif
 	if ( msg)
 		return msg;
-	MTIMEepoch(ret);
+	MTIMEcurrent_timestamp(ret);
 	(void) mb;
 	(void) cntxt;
 	return msg;

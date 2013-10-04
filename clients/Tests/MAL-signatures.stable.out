@@ -49542,8 +49542,12 @@ address CLTsetTimeout;
 comment Abort a query after q seconds (q=0 means run undisturbed).The session timeout aborts the connection after spending toomany seconds on query processing.
 
 pattern clients.settimeout(n:lng):void 
-address CLTsettimeout;
+address CLTsetTimeout;
 comment Abort a query after  n seconds.
+
+pattern clients.setsession(n:lng):void 
+address CLTsetSessionTimeout;
+
 
 pattern clients.suspend(id:int):void 
 address CLTsuspend;
@@ -53670,7 +53674,7 @@ address MTIMEepoch2int;
 comment unix-time (epoch) support: seconds since epoch
 
 command timestamp.epoch{unsafe}():timestamp 
-address MTIMEepoch;
+address MTIMEcurrent_timestamp;
 comment unix-time (epoch) support: seconds since the Unix epoch
 
 command timestamp.#fromstr():timestamp 

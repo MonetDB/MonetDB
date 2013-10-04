@@ -232,7 +232,7 @@ command unix_epoch{unsafe}():timestamp
 address MTIMEunix_epoch
 comment "The Unix epoch time (00:00:00 UTC on January 1, 1970)";
 command epoch{unsafe}():timestamp
-address MTIMEepoch
+address MTIMEcurrent_timestamp
 comment "unix-time (epoch) support: seconds since the Unix epoch";
 command epoch(t:timestamp):int
 address MTIMEepoch2int

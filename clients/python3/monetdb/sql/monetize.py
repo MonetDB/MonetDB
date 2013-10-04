@@ -57,27 +57,35 @@ def monet_bytes(data):
     return monet_escape(data)
 
 
-mapping = {
-    type(None): monet_none,
-    bool: monet_bool,
-    float: str,
-    complex: str,
-    int: str,
-    str: monet_escape,
-    datetime.datetime: monet_escape,
-    datetime.time: monet_escape,
-    decimal.Decimal: str,
-    datetime.timedelta: monet_escape,
-    datetime.date: monet_escape,
-    bytes: monet_bytes,
-}
+mapping = (
+    (str, monet_escape),
+    (bytes, monet_bytes),
+    (int, str),
+    (complex, str),
+    (float, str),
+    (decimal.Decimal, str),
+    (datetime.datetime, monet_escape),
+    (datetime.time, monet_escape),
+    (datetime.date, monet_escape),
+    (datetime.timedelta, monet_escape),
+    (bool, monet_bool),
+    (type(None), monet_none),
+)
+
+mapping_dict = dict(mapping)
 
 
 def convert(data):
     """
-    Calls the appropriate convertion function based upon the python type
+    Return the appropriate convertion function based upon the python type.
     """
-    try:
-        return mapping[type(data)](data)
-    except KeyError:
-        raise ProgrammingError("type %s not supported as value" % type(data))
+    if type(data) in mapping_dict:
+        return mapping_dict[type(data)](data)
+    else:
+        for type_, func in mapping:
+            if issubclass(type(data), type_):
+                return func
+        #if hasattr(data, '__str__'):
+        #    return monet_escape
+    raise ProgrammingError("type %s not supported as value" % type(data))
+

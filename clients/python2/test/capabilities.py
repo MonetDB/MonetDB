@@ -373,7 +373,7 @@ class DatabaseTest(unittest.TestCase):
     def test_customtype(self):
         t = ["list", "test"]
         self.assertRaises(ProgrammingError, self.db_module.monetize.convert, t)
-        self.db_module.monetize.mapping[list] = str
+        self.db_module.monetize.mapping_dict[list] = str
         self.assertEqual(self.db_module.monetize.convert(t), "['list', 'test']")
 
     def test_multiple_queries(self):

@@ -145,7 +145,6 @@ str mark_grpRef;
 str materializeRef;
 str mtimeRef;
 str dense_rank_grpRef;
-str materializeRef;
 str matRef;
 str max_no_nilRef;
 str maxRef;
@@ -413,7 +412,6 @@ void optimizerInit(void){
 		materializeRef = putName("materialize", 11);
 		mtimeRef = putName("mtime", 5);
 		dense_rank_grpRef = putName("dense_rank_grp", 14);
-		materializeRef = putName("materialize", 11);
 		matRef = putName("mat", 3);
 		max_no_nilRef = putName("max_no_nil", 10);
 		maxRef = putName("max", 3);

@@ -99,17 +99,17 @@ id	name	schema_id	query	type	system	commit_action	readonly	temporary
 5768	querylog_calls	2000	create view sys.querylog_calls as select * from sys.querylog_calls();	1	true	0	false	0	
 5786	querylog_history	2000	create view sys.querylog_history asnselect qd.*, ql."start",ql."stop", ql.arguments, ql.tuples, ql.run, ql.ship, ql.cpu, ql.space, ql.io nfrom sys.querylog_catalog() qd, sys.querylog_calls() qlnwhere qd.id = ql.id and qd.owner = user;	1	true	0	false	0	
 5825	tracelog	2000	create view sys.tracelog as select * from sys.tracelog();	1	true	0	false	0	
-6070	optimizers	2000	create view sys.optimizers as select * from sys.optimizers();	1	true	0	false	0	
-6080	environment	2000	create view sys.environment as select * from sys.environment();	1	true	0	false	0	
-6122	queue	2000	create view sys.queue as select * from sys.queue();	1	true	0	false	0	
-6677	storage	2000	create view sys.storage as select * from sys.storage();	1	true	0	false	0	
-6689	storagemodelinput	2000		0	true	0	false	0	
-6732	storagemodel	2000	create view sys.storagemodel as select * from sys.storagemodel();	1	true	0	false	0	
-6741	tablestoragemodel	2000	-- A summary of the table storage requirement is is available as a table view.n-- The auxillary column denotes the maximum space if all non-sorted columnsn-- would be augmented with a hash (rare situation)ncreate view sys.tablestoragemodelnas select "schema","table",max(count) as "count",ntsum(columnsize) as columnsize,ntsum(heapsize) as heapsize,ntsum(indices) as indices,ntsum(case when sorted = false then 8 * count else 0 end) as auxillarynfrom sys.storagemodel() group by "schema","table";	1	true	0	false	0	
-6756	statistics	2000		0	true	0	false	0	
-6810	systemfunctions	2000		0	true	0	false	0	
+6073	optimizers	2000	create view sys.optimizers as select * from sys.optimizers();	1	true	0	false	0	
+6083	environment	2000	create view sys.environment as select * from sys.environment();	1	true	0	false	0	
+6125	queue	2000	create view sys.queue as select * from sys.queue();	1	true	0	false	0	
+6680	storage	2000	create view sys.storage as select * from sys.storage();	1	true	0	false	0	
+6692	storagemodelinput	2000		0	true	0	false	0	
+6735	storagemodel	2000	create view sys.storagemodel as select * from sys.storagemodel();	1	true	0	false	0	
+6744	tablestoragemodel	2000	-- A summary of the table storage requirement is is available as a table view.n-- The auxillary column denotes the maximum space if all non-sorted columnsn-- would be augmented with a hash (rare situation)ncreate view sys.tablestoragemodelnas select "schema","table",max(count) as "count",ntsum(columnsize) as columnsize,ntsum(heapsize) as heapsize,ntsum(indices) as indices,ntsum(case when sorted = false then 8 * count else 0 end) as auxillarynfrom sys.storagemodel() group by "schema","table";	1	true	0	false	0	
+6759	statistics	2000		0	true	0	false	0	
+6813	systemfunctions	2000		0	true	0	false	0	
 
-# 15:02:20 >  
-# 15:02:20 >  "Done."
-# 15:02:20 >  
+# 09:39:11 >  
+# 09:39:11 >  "Done."
+# 09:39:11 >  
 
