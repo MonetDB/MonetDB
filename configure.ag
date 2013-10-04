@@ -2325,7 +2325,7 @@ yes|auto)
 				AC_MSG_ERROR([geos-config not found in $XPATH])
 			else
 				have_geos=no
-				why_have_geos="(geos-config not found in $XPATH)"
+				why_have_geos="(geos-config not found)"
 			fi
 		fi
 	fi
