@@ -106,20 +106,19 @@ monetdb (11.15.1-20130212) unstable; urgency=low
 
 monetdb (11.15.1-20130212) unstable; urgency=low
 
-  * testing:
-enabled "top-level" Mtest.py
-So far, while Mtest.py could be called in any subdirectory of the MonetDB
-source tree (and could then run all tests in the entire sub-tree),
-it was not possible to call Mtest.py in the top-level MonetDB source
-directory to run all tests.  Instead, to run all tests, Mtest.py had to
-be called at least 4 times, once in each of these directories: "clients",
-"monetdb5", "sql", "geom".
-Now, it is possible to call Mtest.py once in the top-level MonetDB source
-directory to run all tests in one go.
-The behaviour of calling Mtest.py in any subdirectory, including the
-four mentioned above, did not changed, other than that now obsolete
-command line options "-p / --package <package>" and "-5 / --monetdb5"
-have been removed.
+  * testing: enabled "top-level" Mtest.py
+    So far, while Mtest.py could be called in any subdirectory of the MonetDB
+    source tree (and could then run all tests in the entire sub-tree),
+    it was not possible to call Mtest.py in the top-level MonetDB source
+    directory to run all tests.  Instead, to run all tests, Mtest.py had to
+    be called at least 4 times, once in each of these directories: "clients",
+    "monetdb5", "sql", "geom".
+    Now, it is possible to call Mtest.py once in the top-level MonetDB source
+    directory to run all tests in one go.
+    The behaviour of calling Mtest.py in any subdirectory, including the
+    four mentioned above, did not changed, other than that now obsolete
+    command line options "-p / --package <package>" and "-5 / --monetdb5"
+    have been removed.
 
  -- Stefan Manegold <Stefan.Manegold@cwi.nl>  Thu, 17 Jan 2013 09:51:39 +0100
 
