@@ -1047,8 +1047,6 @@ gdk_export size_t HEAPmemsize(Heap *h);
  * HEAP_private     (Heap* h)
  * @item void
  * HEAP_printstatus (Heap* h)
- * @item void
- * HEAP_check       (Heap* h)
  * @end table
  *
  * The heap space starts with a private space that is left untouched
@@ -1058,16 +1056,6 @@ gdk_export size_t HEAPmemsize(Heap *h);
  * previously allocated chunk HEAP_private returns an integer index to
  * private space.
  */
-/* structure used by HEAP_check functions */
-typedef struct {
-	size_t minpos;		/* minimum block byte-index */
-	size_t maxpos;		/* maximum block byte-index */
-	int alignment;		/* block index alignment */
-	int *validmask;		/* bitmap with all valid byte-indices
-				 * first bit corresponds with 'minpos';
-				 * 2nd bit with 'minpos+alignment', etc
-				 */
-} HeapRepair;
 
 gdk_export void HEAP_initialize(
 	Heap *heap,		/* nbytes -- Initial size of the heap. */
@@ -1951,17 +1939,11 @@ gdk_export BAT *BBPquickdesc(bat b, int delaccess);
  * @item int
  * @tab ATOMcmp         (int id, ptr val_1, ptr val_2);
  * @item int
- * @tab ATOMconvert     (int id, ptr v, int direction);
- * @item int
  * @tab ATOMfix         (int id, ptr v);
  * @item int
  * @tab ATOMunfix       (int id, ptr v);
  * @item int
  * @tab ATOMheap        (int id, Heap *hp, size_t cap);
- * @item void
- * @tab ATOMheapconvert (int id, Heap *hp, int direction);
- * @item int
- * @tab ATOMheapcheck   (int id, Heap *hp, HeapRepair *hr);
  * @item int
  * @tab ATOMput         (int id, Heap *hp, BUN pos_dst, ptr val_src);
  * @item int
@@ -2086,14 +2068,13 @@ typedef struct {
 	ptr atomNull;		/* global nil value */
 
 	/* generic (fixed + varsized atom) ADT functions */
-	int (*atomFromStr) (const char *s, int *len, ptr *dst);
-	int (*atomToStr) (str *s, int *len, const void *src);
-	void *(*atomRead) (ptr a, stream *s, size_t cnt);
-	int (*atomWrite) (const void *a, stream *s, size_t cnt);
+	int (*atomFromStr) (const char *src, int *len, ptr *dst);
+	int (*atomToStr) (str *dst, int *len, const void *src);
+	void *(*atomRead) (void *dst, stream *s, size_t cnt);
+	int (*atomWrite) (const void *src, stream *s, size_t cnt);
 	int (*atomCmp) (const void *v1, const void *v2);
 	BUN (*atomHash) (const void *v);
 	/* optional functions */
-	void (*atomConvert) (ptr v, int direction);
 	int (*atomFix) (const void *atom);
 	int (*atomUnfix) (const void *atom);
 
@@ -2102,9 +2083,6 @@ typedef struct {
 	void (*atomDel) (Heap *, var_t *atom);
 	int (*atomLen) (const void *atom);
 	void (*atomHeap) (Heap *, size_t);
-	/* optional functions */
-	void (*atomHeapConvert) (Heap *, int direction);
-	int (*atomHeapCheck) (Heap *, HeapRepair *);
 } atomDesc;
 
 gdk_export atomDesc BATatoms[];
@@ -2500,21 +2478,6 @@ VALptr(const ValRecord *v)
 
 #define FORCEMITOMASK	(1<<29)
 #define FORCEMITODEBUG	if (GDKdebug & FORCEMITOMASK)
-
-#define short_int_SWAP(s) ((short)(((0x00ff&(s))<<8) | ((0xff00&(s))>>8)))
-
-#define normal_int_SWAP(i) (((0x000000ff&(i))<<24) | ((0x0000ff00&(i))<<8) | \
-	               ((0x00ff0000&(i))>>8)  | ((0xff000000&(i))>>24))
-
-#define long_long_SWAP(l) \
-		((((lng)normal_int_SWAP(l))<<32) |\
-		 (0xffffffff&normal_int_SWAP(l>>32)))
-
-#ifdef HAVE_HGE
-#define huge_int_SWAP(h) \
-		((((hge)long_long_SWAP(h))<<64) |\
-		 (0xffffffffffffffff&long_long_SWAP(h>>64)))
-#endif
 
 /*
  * The kernel maintains a central table of all active threads.  They

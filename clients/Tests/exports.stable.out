@@ -1022,7 +1022,6 @@ str BKCunload(bit *res, str *input);
 str BLOB_isnil(bit *retval, blob *val);
 str BLOBblob_blob(blob **d, blob **s);
 str BLOBblob_fromstr(blob **b, str *d);
-void BLOBconvert(blob *b, int direction);
 void BLOBdel(Heap *h, var_t *index);
 str BLOBeoln(char *src, char *end);
 str BLOBfromblob(str *retval, blob **b);

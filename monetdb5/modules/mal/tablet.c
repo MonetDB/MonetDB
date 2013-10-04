@@ -119,8 +119,8 @@ TABLETadt_frStr(Column *c, int type, char *s, char *e, char quote)
 		memcpy(c->data, ATOMnilptr(type), c->nillen);
 	} else if (type == TYPE_str) {
 		return TABLETstrFrStr(c, s, e);
-	} else {
-		(void) (*BATatoms[type].atomFromStr) (s, &c->len, (ptr) &c->data);
+	} else if ((*BATatoms[type].atomFromStr) (s, &c->len, (ptr) &c->data) < 0) {
+		return NULL;
 	}
 	return c->data;
 }

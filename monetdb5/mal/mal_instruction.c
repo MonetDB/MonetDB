@@ -1276,8 +1276,7 @@ convertConstant(int type, ValPtr vr)
 		ptr d = NULL;
 		char *s = vr->val.sval;
 
-		ATOMfromstr(type, &d, &ll, vr->val.sval);
-		if (d == NULL) {
+		if (ATOMfromstr(type, &d, &ll, vr->val.sval) < 0 || d == NULL) {
 			VALinit(vr, type, ATOMnilptr(type));
 			throw(SYNTAX, "convertConstant", "parse error in '%s'", s);
 		}
@@ -1418,8 +1417,7 @@ convertConstant(int type, ValPtr vr)
 			/* dump the non-string atom as string in w */
 			ATOMformat(vr->vtype, VALptr(vr), &w);
 			/* and try to parse it from string as the desired type */
-			ATOMfromstr(type, &d, &ll, w);
-			if (d == 0) {
+			if (ATOMfromstr(type, &d, &ll, w) < 0 || d == 0) {
 				VALinit(vr, type, ATOMnilptr(type));
 				GDKfree(w);
 				throw(SYNTAX, "convertConstant", "conversion error");
@@ -1430,8 +1428,7 @@ convertConstant(int type, ValPtr vr)
 				GDKfree(d);
 			GDKfree(w);
 		} else {				/* what we're converting from is a string */
-			ATOMfromstr(type, &d, &ll, vr->val.sval);
-			if (d == NULL) {
+			if (ATOMfromstr(type, &d, &ll, vr->val.sval) < 0 || d == NULL) {
 				VALinit(vr, type, ATOMnilptr(type));
 				throw(SYNTAX, "convertConstant", "conversion error");
 			}

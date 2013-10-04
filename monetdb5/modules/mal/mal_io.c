@@ -721,12 +721,14 @@ IOimport(int *ret, int *bid, str *fnme)
 	BAT *b;
 	int (*hconvert) (const char *, int *, ptr *);
 	int (*tconvert) (const char *, int *, ptr *);
+	int n;
 	size_t bufsize = 2048;	/* NIELS:tmp change used to be 1024 */
 	char *base, *cur, *end;
 	char *buf;
 	ptr h = 0, t = 0;
 	int lh = 0, lt = 0;
 	FILE *fp = fopen(*fnme, "r");
+	char msg[BUFSIZ];
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		if (fp)
@@ -833,23 +835,39 @@ IOimport(int *ret, int *bid, str *fnme)
 			for (p++; *p && GDKisspace(*p); p++)
 				;
 		if (*p == 0) {
-			char msg[BUFSIZ];
-			BBPunfix(*ret=b->batCacheid);
-			snprintf(msg,BUFSIZ,"error in input %s",buf);
-			throw(MAL,  "io.import", "%s", msg);
+			BBPunfix(b->batCacheid);
+			snprintf(msg,sizeof(msg),"error in input %s",buf);
+			throw(MAL, "io.import", "%s", msg);
 		}
-		p += hconvert(p, &lh, (ptr*)&h);
+		n = hconvert(p, &lh, (ptr*)&h);
+		if (n <= 0) {
+			BBPunfix(b->batCacheid);
+			snprintf(msg,sizeof(msg),"error in input %s",buf);
+			throw(MAL, "io.import", "%s", msg);
+		}
+		p += n;
 
-		for (;*p && *p != COMMA; p++);
-		if (*p) for (p++; *p && GDKisspace(*p); p++);
+		for (;*p && *p != COMMA; p++)
+			;
+		if (*p)
+			for (p++; *p && GDKisspace(*p); p++)
+				;
 		if (*p == 0) {
-			char msg[BUFSIZ];
-			BBPunfix(*ret=b->batCacheid);
-			snprintf(msg,BUFSIZ,"error in input %s",buf);
-			throw(MAL,  "io.import", "%s", msg);
+			BBPunfix(b->batCacheid);
+			snprintf(msg,sizeof(msg),"error in input %s",buf);
+			throw(MAL, "io.import", "%s", msg);
 		}
-		p += tconvert(p, &lt, (ptr*)&t);
-		BUNins(b, h, t, FALSE);
+		n = tconvert(p, &lt, (ptr*)&t);
+		if (n <= 0) {
+			BBPunfix(b->batCacheid);
+			snprintf(msg,sizeof(msg),"error in input %s",buf);
+			throw(MAL, "io.import", "%s", msg);
+		}
+		p += n;
+		if (BUNins(b, h, t, FALSE) == NULL) {
+			BBPunfix(b->batCacheid);
+			throw(MAL, "io.import", "insert failed");
+		}
 
 /*
  * Unmap already parsed memory, to keep the memory usage low.

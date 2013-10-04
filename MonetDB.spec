@@ -731,7 +731,7 @@ developer, but if you do want to test, this is the package you need.
 	--with-valgrind=no \
 	%{?comp_cc:CC="%{comp_cc}"}
 
-make
+make  -j
 
 %install
 rm -rf $RPM_BUILD_ROOT

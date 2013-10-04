@@ -126,11 +126,6 @@ int malAtomProperty(MalBlkPtr mb, InstrPtr pci)
 			setAtomName(pci);
 			return 1;
 		}
-		if (idcmp("convert", name) == 0 && pci->argc == 1) {
-			BATatoms[tpe].atomConvert = (void (*)(ptr, int))pci->fcn;
-			setAtomName(pci);
-			return 1;
-		}
 		break;
 	case 'f':
 		if (idcmp("fromstr", name) == 0 && pci->argc == 1) {
@@ -155,18 +150,8 @@ int malAtomProperty(MalBlkPtr mb, InstrPtr pci)
 			setAtomName(pci);
 			return 1;
 		}
-		if (idcmp("heapconvert", name) == 0 && pci->argc == 1) {
-			BATatoms[tpe].atomHeapConvert = (void (*)(Heap *, int))pci->fcn;
-			setAtomName(pci);
-			return 1;
-		}
 		if (idcmp("hash", name) == 0 && pci->argc == 1) {
 			BATatoms[tpe].atomHash = (BUN (*)(const void *))pci->fcn;
-			setAtomName(pci);
-			return 1;
-		}
-		if (idcmp("heapcheck", name) == 0 && pci->argc == 1) {
-			BATatoms[tpe].atomHeapCheck = (int (*)(Heap *, HeapRepair *))pci->fcn;
 			setAtomName(pci);
 			return 1;
 		}

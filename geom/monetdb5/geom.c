@@ -71,7 +71,6 @@ geom_export str wkbAsText(str *r, wkb **w);
 geom_export void wkbDEL(Heap *h, var_t *index);
 geom_export wkb *wkbREAD(wkb *a, stream *s, size_t cnt);
 geom_export int wkbWRITE(wkb *a, stream *s, size_t cnt);
-geom_export void wkbCONVERT(wkb *b, int direction);
 geom_export int wkbLENGTH(wkb *p);
 geom_export void wkbHEAP(Heap *heap, size_t capacity);
 geom_export var_t wkbPUT(Heap *h, var_t *bun, wkb *val);
@@ -582,13 +581,6 @@ wkbWRITE(wkb *a, stream *s, size_t cnt)
 	    mnstr_write(s, (char *) a->data, len, 1) < 0)
 		return GDK_FAIL;
 	return GDK_SUCCEED;
-}
-
-void
-wkbCONVERT(wkb *b, int direction)
-{
-	(void) direction;
-	b->len = normal_int_SWAP(b->len);
 }
 
 int

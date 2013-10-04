@@ -32205,8 +32205,6 @@ command blob.blob(s:blob):blob
 address BLOBblob_blob;
 comment Noop routine.
 
-command blob.#convert():void 
-address BLOBconvert;
 command blob.#del():void 
 address BLOBdel;
 command blob.#fromstr():void 
@@ -38742,8 +38740,12 @@ address CLTsetTimeout;
 comment Abort a query after q seconds (q=0 means run undisturbed).The session timeout aborts the connection after spending toomany seconds on query processing.
 
 pattern clients.settimeout(n:lng):void 
-address CLTsettimeout;
+address CLTsetTimeout;
 comment Abort a query after  n seconds.
+
+pattern clients.setsession(n:lng):void 
+address CLTsetSessionTimeout;
+comment Abort a session after n seconds.
 
 pattern clients.suspend(id:int):void 
 address CLTsuspend;
@@ -42676,7 +42678,7 @@ address MTIMEepoch2int;
 comment unix-time (epoch) support: seconds since epoch
 
 command timestamp.epoch{unsafe}():timestamp 
-address MTIMEepoch;
+address MTIMEcurrent_timestamp;
 comment unix-time (epoch) support: seconds since the Unix epoch
 
 command timestamp.#fromstr():timestamp 

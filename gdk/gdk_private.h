@@ -72,11 +72,8 @@ BUN HASHmask(BUN cnt);
 Hash *HASHnew(Heap *hp, int tpe, BUN size, BUN mask);
 void HASHremove(BAT *b);
 int HEAPalloc(Heap *h, size_t nitems, size_t itemsize);
-int HEAP_check(Heap *h, HeapRepair *hr);
 int HEAPdelete(Heap *h, const char *o, const char *ext);
-void HEAP_init(Heap *heap, int tpe);
 int HEAPload(Heap *h, const char *nme, const char *ext, int trunc);
-int HEAP_mmappable(Heap *heap);
 int HEAPsave(Heap *h, const char *nme, const char *ext);
 int HEAPshrink(Heap *h, size_t size);
 int HEAPwarm(Heap *h);
@@ -124,9 +121,7 @@ extern MT_Lock GDKthreadLock;
 extern MT_Lock GDKtmLock;
 extern MT_Lock MT_system_lock;
 
-#define ATOMappendpriv(t, h)						\
-	((BATatoms[t].atomHeapCheck != HEAP_check || !HEAP_mmappable(h)) && \
-	 (ATOMstorage(t) != TYPE_str || GDK_ELIMDOUBLES(h)))
+#define ATOMappendpriv(t, h) (ATOMstorage(t) != TYPE_str || GDK_ELIMDOUBLES(h))
 
 #define BBPdirty(x)	(BBP_dirty=(x))
 

@@ -550,6 +550,8 @@ _ASCIIadt_frStr(Column *c, int type, const char *s, const char *e, char quote)
 	}
 	 
 	len = (*BATatoms[type].atomFromStr)(s, &c->len, (ptr) &c->data);
+	if (len < 0)
+		return NULL;
 	if (len == 0 || len != e-s){
 		/* decimals can be converted to integers when *.000 */
 		if ( s[len++] == '.')
