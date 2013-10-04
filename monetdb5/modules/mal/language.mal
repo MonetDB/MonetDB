@@ -41,7 +41,7 @@ address MALgarbagesink
 comment "Variables to be considered together when triggering garbage collection.
 Used in the dataflow blocks to avoid early release of values.";
 
-pattern pass(v:any_1):any_1
+pattern pass(v:any_1)
 address MALpass
 comment "Cheap instruction to disgard storage while retaining the dataflow dependency";
 

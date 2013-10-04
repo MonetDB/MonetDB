@@ -335,13 +335,13 @@ TABLET_error(stream *s)
 	return -1;
 }
 
-/* The output line is first build before being sent. It solves a problem
+/* The output line is first built before being sent. It solves a problem
    with UDP, where you may loose most of the information using short writes
 */
 static inline int
 output_line(char **buf, int *len, char **localbuf, int *locallen, Column *fmt, stream *fd, BUN nr_attrs, ptr id)
 {
-	BUN i = 0;
+	BUN i;
 	int fill = 0;
 
 	for (i = 0; i < nr_attrs; i++) {
@@ -368,9 +368,9 @@ output_line(char **buf, int *len, char **localbuf, int *locallen, Column *fmt, s
 					l = f->tostr(f->extra, localbuf, locallen, f->adt, p);
 					p = *localbuf;
 				}
-				if (fill + l + f->seplen > *len) {
+				if (fill + l + f->seplen >= *len) {
 					/* extend the buffer */
-					*buf = (char *) GDKrealloc(*buf, fill + l + f->seplen + BUFSIZ);
+					*buf = GDKrealloc(*buf, fill + l + f->seplen + BUFSIZ);
 					*len = fill + l + f->seplen + BUFSIZ;
 					if (*buf == NULL)
 						return -1;
@@ -395,10 +395,11 @@ output_line_dense(char **buf, int *len, char **localbuf, int *locallen, Column *
 
 	for (i = 0; i < nr_attrs; i++) {
 		Column *f = fmt + i;
+		char *p;
+		int l;
 
 		if (f->c[0]) {
-			char *p = BUNtail(f->ci[0], f->p);
-			int l;
+			p = BUNtail(f->ci[0], f->p);
 
 			if (!p || ATOMcmp(f->adt, ATOMnilptr(f->adt), p) == 0) {
 				p = f->nullstr;
@@ -409,7 +410,7 @@ output_line_dense(char **buf, int *len, char **localbuf, int *locallen, Column *
 			}
 			if (fill + l + f->seplen >= *len) {
 				/* extend the buffer */
-				*buf = (char *) GDKrealloc(*buf, fill + l + f->seplen + BUFSIZ);
+				*buf = GDKrealloc(*buf, fill + l + f->seplen + BUFSIZ);
 				*len = fill + l + f->seplen + BUFSIZ;
 				if (*buf == NULL)
 					return -1;

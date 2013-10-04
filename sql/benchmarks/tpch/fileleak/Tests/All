@@ -2,5 +2,7 @@ create
 check0
 load
 check1
-delete_all
-leaks
+HAVE_GEOM?delete_all
+!HAVE_GEOM?delete_all_nogeom
+HAVE_GEOM?leaks
+!HAVE_GEOM?leaks_nogeom

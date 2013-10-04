@@ -183,11 +183,11 @@ BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl, BUN maximum)
 /* inner check */
 #define impscheck(CAND,TEST,ADD)					    \
 do {									    \
-	e = i+limit-pr_off;						    \
+	e = i+limit-pr_off+off;						    \
 	if (im[icnt] & mask) {						    \
 		if ((im[icnt] & ~innermask) == 0) {			    \
 			while (o < e && p < q) {			    \
-				v = src[o];				    \
+				v = src[o-off];				    \
 				ADD;					    \
 				cnt++;					    \
 				p++;					    \
@@ -195,7 +195,7 @@ do {									    \
 			}						    \
 		} else {						    \
 			while (o < e && p < q) {			    \
-				v = src[o];				    \
+				v = src[o-off];				    \
 				ADD;					    \
 				cnt += (TEST);				    \
 				p++;					    \
@@ -223,24 +223,24 @@ do {									    \
 	bte rpp    = ATOMelmshift(IMPS_PAGE >> b->T->shift);		    \
 	CAND;								    \
 	for (i=0, dcnt=0, icnt=0;					    \
-	     (dcnt < imprints->dictcnt) && (i < w+pr_off);		    \
+	     (dcnt < imprints->dictcnt) && (i+off < w+pr_off);		    \
 	     dcnt++) {							    \
 		limit = ((BUN) d[dcnt].cnt) << rpp;			    \
-		while ((i+limit) <= (o+pr_off)) {			    \
+		while ((i+limit+off) <= (o+pr_off)) {			    \
 			i += limit;					    \
 			icnt += d[dcnt].repeat?1:d[dcnt].cnt;		    \
 			dcnt++;						    \
 			limit = ((BUN) d[dcnt].cnt) << rpp;		    \
 		}							    \
 		if (!d[dcnt].repeat) {					    \
-			limit = (BUN) 1 << rpp;				\
+			limit = (BUN) 1 << rpp;				    \
 			l = icnt + d[dcnt].cnt;				    \
-			while (i+limit <= (o+pr_off)) {			    \
+			while ((i+limit+off) <= (o+pr_off)) { 		    \
 				icnt++;					    \
 				i += limit;				    \
 			}						    \
 			for (;						    \
-			     icnt < l && (i < w+pr_off);		    \
+			     icnt < l && (i+off < w+pr_off);		    \
 			     icnt++) {					    \
 				impscheck(CAND,TEST,ADD);		    \
 				i += limit;				    \
@@ -278,12 +278,12 @@ do {									    \
 									    \
 	if (BATcapacity(bn) < maximum) {				    \
 		impsloop(CAND, TEST,					    \
-			 buninsfix(bn, T, dst, cnt, oid, (oid)(o + off),    \
+			 buninsfix(bn, T, dst, cnt, oid, (oid)(o),          \
 			           (BUN) ((dbl) cnt / (dbl) (p-r)	    \
 			                  * (dbl) (q-p) * 1.1 + 1024),	    \
 			           BATcapacity(bn) + q - p, BUN_NONE));	    \
 	} else {							    \
-		impsloop(CAND, TEST, dst[cnt] = (oid)(o + off));	    \
+		impsloop(CAND, TEST, dst[cnt] = (oid)(o));	            \
 	}								    \
 } while (0)
 
@@ -316,8 +316,8 @@ do {									\
 	if (BATcapacity(bn) < maximum) {				\
 		while (p < q) {						\
 			CAND;						\
-			v = src[o];					\
-			buninsfix(bn, T, dst, cnt, oid, (oid)(o + off),	\
+			v = src[o-off];					\
+			buninsfix(bn, T, dst, cnt, oid, (oid)(o),	\
 			          (BUN) ((dbl) cnt / (dbl) (p-r)	\
 			                 * (dbl) (q-p) * 1.1 + 1024),	\
 			          BATcapacity(bn) + q - p, BUN_NONE);	\
@@ -327,8 +327,8 @@ do {									\
 	} else {							\
 		while (p < q) {						\
 			CAND;						\
-			v = src[o];					\
-			dst[cnt] = (oid)(o + off);			\
+			v = src[o-off];					\
+			dst[cnt] = (oid)(o);				\
 			cnt += (TEST);					\
 			p++;						\
 		}							\
@@ -616,9 +616,9 @@ fullscan_any(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 	scanfunc_hge(NAME, CAND, END)
 
 /* scan/imprints select with candidates */
-scan_sel(candscan, o = (oid) (*candlist++ - off), w = (BUN) ((*(oid *) Tloc(s, q - 1)) + 1 - off))
+scan_sel(candscan, o = (oid) (*candlist++), w = (BUN) ((*(oid *) Tloc(s,q?(q - 1):0)) + 1))
 /* scan/imprints select without candidates */
-    scan_sel(fullscan, o = p, w = q)
+scan_sel(fullscan, o = p+off, w = q+off)
 
 
 static BAT *

@@ -361,8 +361,6 @@ DFLOWworker(void *T)
 			}
 		MT_lock_unset(&flow->flowlock, "MALworker");
 
-		if ( fnxt == 0 && flow->cntxt->idx > 1 )
-				MALresourceFairness(GDKusec()- flow->mb->starttime);
 		q_enqueue(flow->done, fe);
 		if ( fnxt == 0) {
 			if (todo->last == 0)
@@ -470,7 +468,11 @@ DFLOWinitBlk(DataFlow flow, MalBlkPtr mb, int size)
 					flow->edges[i] = etop;
 					etop++;
 					(void) size;
-					assert(etop < size);
+					if( etop == size){
+						flow->nodes = (int*) GDKrealloc(flow->nodes, sizeof(int) * 2 * size);
+						flow->edges = (int*) GDKrealloc(flow->edges, sizeof(int) * 2 * size);
+						size *=2;
+					}
 				} else {
 					flow->nodes[k] = n;
 					flow->edges[k] = -1;
@@ -497,7 +499,11 @@ DFLOWinitBlk(DataFlow flow, MalBlkPtr mb, int size)
 						flow->edges[etop] = -1;
 						flow->edges[i] = etop;
 						etop++;
-						assert(etop < size);
+						if( etop == size){
+							flow->nodes = (int*) GDKrealloc(flow->nodes, sizeof(int) * 2 * size);
+							flow->edges = (int*) GDKrealloc(flow->edges, sizeof(int) * 2 * size);
+							size *=2;
+						}
 					} else {
 						flow->nodes[n] = l;
 						flow->edges[n] = -1;
@@ -674,13 +680,13 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr st
 		MT_lock_set(&mal_contextLock, "runMALdataflow");
 		for (i = 0; i < THREADS; i++) {
 			if (workers[i].flag == IDLE) {
-				workers[i].flag = RUNNING;
 				if (MT_create_thread(&workers[i].id, DFLOWworker, (void *) &workers[i], MT_THR_JOINABLE) < 0) {
 					/* cannot start new thread, run serially */
 					*ret = TRUE;
 					MT_lock_unset(&mal_contextLock, "runMALdataflow");
 					return MAL_SUCCEED;
 				}
+				workers[i].flag = RUNNING;
 				break;
 			}
 		}

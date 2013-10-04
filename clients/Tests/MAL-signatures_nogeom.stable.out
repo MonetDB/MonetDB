@@ -1,8 +1,8 @@
-stdout of test 'MAL-signatures` in directory 'clients` itself:
+stdout of test 'MAL-signatures_nogeom` in directory 'clients` itself:
 
 
 # 20:07:36 >  
-# 20:07:36 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=31131" "--set" "mapi_usock=/var/tmp/mtest-1103/.s.monetdb.31131" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/manegold/_/Monet/HG/Feb2013/prefix/--disable-debug_--enable-assert_--enable-optimize/var/MonetDB/mTests_clients" "MAL-signatures.mal"
+# 20:07:36 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=31131" "--set" "mapi_usock=/var/tmp/mtest-1103/.s.monetdb.31131" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/manegold/_/Monet/HG/Feb2013/prefix/--disable-debug_--enable-assert_--enable-optimize/var/MonetDB/mTests_clients" "MAL-signatures_nogeom.mal"
 # 20:07:36 >  
 
 # MonetDB 5 server v11.15.12
@@ -2744,11 +2744,11 @@ comment Select all BUNs that have tail values: {v| low <= v <= high}.	NIL bounda
 
 command algebra.subselect(b:bat[:oid,:any_1],s:bat[:oid,:oid],low:any_1,high:any_1,li:bit,hi:bit,anti:bit):bat[:oid,:oid] 
 address ALGsubselect2;
-comment Select all head values of the first input BAT for which the tail value	is in range and for which the head value occurs in the tail of the	second input BAT.	The first input is a dense-headed BAT, the second input is a	dense-headed BAT with sorted tail, output is a dense-headed BAT	with in the tail the head value of the input BAT for which the	tail value is between the values low and high (inclusive if li	respectively hi is set).  The output BAT is sorted on the tail	value.  If low or high is nil, 
+comment Select all head values of the first input BAT for which the tail value	is in range and for which the head value occurs in the tail of the	second input BAT.	The first input is a dense-headed BAT, the second input is a	dense-headed BAT with sorted tail, output is a dense-headed BAT	with in the tail the head value of the input BAT for which the	tail value is between the values low and high (inclusive if li	respectively hi is set).  The output BAT is sorted on the tail	value.  If low or high is nil, the boundary is not considered	(effectively - and + infinity).  If anti is set, the result is the	complement.  Nil values in the tail are never matched, unless	low=nil, high=nil, li=1, hi=1, anti=0.  All non-nil values are	returned if low=nil, high=nil, and li, hi are not both 1, or anti=1.	Note that the output is suitable as second input for this	function.
 
 command algebra.subselect(b:bat[:oid,:any_1],low:any_1,high:any_1,li:bit,hi:bit,anti:bit):bat[:oid,:oid] 
 address ALGsubselect1;
-comment Select all head values for which the tail value is in range.	Input is a dense-headed BAT, output is a dense-headed BAT with in	the tail the head value of the input BAT for which the tail value	is between the values low and high (inclusive if li respectively	hi is set).  The output BAT is sorted on the tail value.  If low	or high is nil, the boundary is not considered (effectively - and	+ infinity).  If anti is set, the result is the complement.  Nil	values in the tail are never matched, unless lo
+comment Select all head values for which the tail value is in range.	Input is a dense-headed BAT, output is a dense-headed BAT with in	the tail the head value of the input BAT for which the tail value	is between the values low and high (inclusive if li respectively	hi is set).  The output BAT is sorted on the tail value.  If low	or high is nil, the boundary is not considered (effectively - and	+ infinity).  If anti is set, the result is the complement.  Nil	values in the tail are never matched, unless low=nil, high=nil,	li=1, hi=1, anti=0.  All non-nil values are returned if low=nil,	high=nil, and li, hi are not both 1, or anti=1.	Note that the output is suitable as second input for the other	version of this function.
 
 command algebra.thetajoin(left:bat[:any_1,:any_2],right:bat[:any_2,:any_3],opname:int,estimate:lng):bat[:any_1,:any_3] 
 address ALGthetajoinEstimate;
@@ -2935,10 +2935,6 @@ comment round off the floating point v to r digits behind the dot (if r < 0, bef
 command batsql.round(v:bat[:oid,:flt],r:bte):bat[:oid,:flt] 
 address flt_bat_round_wrap;
 comment round off the floating point v to r digits behind the dot (if r < 0, before the dot)
-
-command batgeom.point(x:bat[:oid,:dbl],y:bat[:oid,:dbl]):bat[:oid,:wkb] 
-address wkbcreatepoint_bat;
-comment Construct a point-BAT from two geometry-BATs
 
 command batcolor.blue(c:bat[:oid,:color]):bat[:oid,:int] 
 address CLRbatBlue;
@@ -31951,7 +31947,7 @@ comment alias for madvise(b, mode, mode, mode, mode)
 
 command bat.setMemoryAdvise(b:bat[:any_1,:any_2],head_mode:int,tail_mode:int,hheap_mode:int,theap_mode:int):bit 
 address BKCmadvise;
-comment Modern Operating Systems allow users to influence the buffer         management policy of virtual memory. This is a crucial feature         for database systems, and eliminates the need to reimplement 	the OS in a database buffer manager.  The supported flags are         BUF_NORMAL (the normal adaptive kernel algorithm),	BUF_RANDOM (no page prefetching), 	BUF_SEQUENTIAL (prefetch and swapout),	BUF_WILLNEED (load everything with prefetch), 	BUF_DONTNEED (swapout).	These buffer management modes are
+comment Modern Operating Systems allow users to influence the buffer         management policy of virtual memory. This is a crucial feature         for database systems, and eliminates the need to reimplement 	the OS in a database buffer manager.  The supported flags are         BUF_NORMAL (the normal adaptive kernel algorithm),	BUF_RANDOM (no page prefetching), 	BUF_SEQUENTIAL (prefetch and swapout),	BUF_WILLNEED (load everything with prefetch), 	BUF_DONTNEED (swapout).	These buffer management modes are not persistent. 	Returns the BAT operated upon.
 
 command bat.setMemoryMap(b:bat[:any_1,:any_2],mode:int):bit 
 address BKCmmap2;
@@ -35835,7 +35831,6 @@ pattern calc.bit(v:void):bit
 address CMDvarCONVERT;
 comment Cast VALUE to bit
 
-function calc.curve{unsafe}(wkt:str):wkb;
 pattern calc.cmp(v1:dbl,v2:dbl):bte 
 address CMDvarCMP;
 comment Return -1/0/1 if V1 </==/> V2
@@ -36498,8 +36493,6 @@ pattern calc.flt(v:void):flt
 address CMDvarCONVERT;
 comment Cast VALUE to flt
 
-function calc.geomcollection{unsafe}(wkt:str):wkb;
-function calc.geometry{unsafe}(wkt:str):wkb;
 command calc.getBAT(b:BAT):bat[:any_1,:any_2] 
 address CALCbat2batid;
 comment Coerce bat to BAT identifier
@@ -36613,10 +36606,6 @@ comment cast to int and check for overflow
 command calc.identity(X_1:any_2):oid 
 address SQLidentity;
 comment Returns a unique row identitfier.
-
-command calc.isnil(v:wkb):bit 
-address wkbIsnil;
-comment Nil test for wkb value
 
 command calc.isnil(v:inet):bit 
 address INET_isnil;
@@ -36910,7 +36899,6 @@ command calc.lng(v:void,digits:int):lng
 address nil_2num_lng;
 comment cast to lng and check for overflow
 
-function calc.linestring{unsafe}(wkt:str):wkb;
 command calc.length(s:str):int 
 address CMDstrlength;
 comment Length of STRING
@@ -37083,15 +37071,6 @@ command calc.month_interval(v:str,ek:int,sk:int):int
 address month_interval_str;
 comment cast str to a month_interval and check for overflow
 
-function calc.multipolygon{unsafe}(wkt:str):wkb;
-function calc.multisurface{unsafe}(wkt:str):wkb;
-function calc.multilinestring{unsafe}(wkt:str):wkb;
-function calc.multicurve{unsafe}(wkt:str):wkb;
-function calc.multipoint{unsafe}(wkt:str):wkb;
-command calc.mbr(v:mbr):mbr 
-address mbrFromMBR;
-command calc.mbr{unsafe}(v:str):mbr 
-address mbrFromString;
 pattern calc.max_no_nil(v:timestamp,w:timestamp):timestamp 
 address CALCmax_no_nil;
 comment Maximum test for timestamp value
@@ -37784,8 +37763,6 @@ pattern calc.or(v1:bit,v2:bit):bit
 address CMDvarOR;
 comment Return V1 OR V2
 
-function calc.polygon{unsafe}(wkt:str):wkb;
-function calc.point{unsafe}(wkt:str):wkb;
 command calc.ptr(v:ptr):ptr 
 address CMDvarCONVERTptr;
 comment Cast VALUE to ptr
@@ -38044,7 +38021,6 @@ command calc.second_interval(sc:int,v:bte,ek:int,sk:int):lng
 address bte_dec2second_interval;
 comment cast bte decimal to a second_interval
 
-function calc.surface{unsafe}(wkt:str):wkb;
 command calc.sqlblob(s:str):sqlblob 
 address BLOBsqlblob_fromstr;
 command calc.sqlblob(b:sqlblob):sqlblob 
@@ -38517,10 +38493,6 @@ command calc.wrd(v:flt,digits:int,scale:int):wrd
 address flt_num2dec_wrd;
 comment cast number to decimal(wrd) and check for overflow
 
-command calc.wkb(v:wkb):wkb 
-address wkbFromWKB;
-command calc.wkb{unsafe}(v:str):wkb 
-address wkbFromString;
 pattern calc.wrd(v:str):wrd 
 address CMDvarCONVERT;
 comment Cast VALUE to wrd
@@ -38647,7 +38619,7 @@ command cluster.new(b:bat[:oid,:sht],bits:int,offset:int) (psum:bat[:oid,:wrd],m
 address CLS_create_sht;
 command cluster.new(b:bat[:oid,:bte],bits:int,offset:int,order:bit) (psum:bat[:oid,:wrd],map:bat[:oid,:bte]) 
 address CLS_create2_bte;
-comment Compute the cluster map for bat b. A cluster map is a list of partition ids. The p(refix) sum is a by product which returns the prefix sum of the per partition frequency. Prefix sum and map can be use to 'cluster' related columns based on b. Incase the offset is non negative it is used to shift the key values. Offset together with the mask bits should make sure that the result of the partitioning can be used in a order by sequence. If this holds and the input is sorted we return a 'compressed' re
+comment Compute the cluster map for bat b. A cluster map is a list of partition ids. The p(refix) sum is a by product which returns the prefix sum of the per partition frequency. Prefix sum and map can be use to 'cluster' related columns based on b. Incase the offset is non negative it is used to shift the key values. Offset together with the mask bits should make sure that the result of the partitioning can be used in a order by sequence. If this holds and the input is sorted we return a 'compressed' representation of the map, ie [:oid,:bte], the repeated values are not inserted. The order flag indicates that the clustering is used for ordering, ie partition keys aren't fixed so we can internaly optimize partition sizes.
 
 command cluster.new(b:bat[:oid,:bte],bits:int,offset:int) (psum:bat[:oid,:wrd],map:bat[:oid,:wrd]) 
 address CLS_create_bte;
@@ -39049,147 +39021,29 @@ pattern factories.shutdown(m:str,f:str):void
 address FCTshutdown;
 comment Close a factory.
 
-command geom.Area(g:wkb):dbl 
-address wkbArea;
-comment Returns the area of the geometry.
+pattern fits.attach(fname:str):void 
+address FITSattach;
+comment Open a FITS file and return catalog of the table HDUs
 
-command geom.AsText(w:wkb):str 
-address wkbAsText;
-command geom.Buffer(a:wkb,distance:dbl):wkb 
-address wkbBuffer;
-comment Returns a geometry that represents all points whose distance from this geometry is less than or equal to distance. Calculations are in the Spatial Reference System of this Geometry.
+pattern fits.export(tablename:str):void 
+address FITSexportTable;
+comment Export a table to a FITS file
 
-command geom.Boundary(w:wkb):wkb 
-address wkbBoundary;
-comment Returns the closure of the combinatorial boundary of this Geometry.
+command fits.fitstest(filename:str):int 
+address FITStest;
+comment Returns the type of first extension in the FITS file filename
 
-command geom.ConvexHull(a:wkb):wkb 
-address wkbConvexHull;
-comment Returns a geometry that represents the convex hull of this geometry.
+pattern fits.load(tablename:str):void 
+address FITSloadTable;
+comment Load a FITS table from an attached file
 
-command geom.Contains(a:wkb,b:wkb):bit 
-address wkbContains;
-comment Returns true if the Geometry a 'spatially contains' Geometry b
+pattern fits.listdirpattern(dirname:str,pattern:str):void 
+address FITSdirpat;
+comment Attach all FITS file in the directory, giving a pattern
 
-command geom.Crosses(a:wkb,b:wkb):bit 
-address wkbCrosses;
-comment Returns true if the Geometry a 'spatially crosses' Geometry b
-
-function geom.CurveFromText{unsafe}(wkt:str,srid:sht):wkb;
-command geom.Difference(a:wkb,b:wkb):wkb 
-address wkbDifference;
-comment Returns a geometry that represents the point set difference of Geometry a with b.
-
-command geom.Distance(a:wkb,b:wkb):dbl 
-address wkbDistance;
-comment Returns the shortest distance between any two points in the two geometries as calculated in the spatial reference system of this Geometries.
-
-command geom.Disjoint(a:wkb,b:wkb):bit 
-address wkbDisjoint;
-comment Returns true if these Geometries are 'spatially disjoint'
-
-command geom.Dimension(w:wkb):int 
-address wkbDimension;
-comment The inherent dimension of this geometry object, which must be less than or equal to the coordinate dimension. This specification is restricted to geometries in two-dimensional coordinate space.
-
-command geom.Equals(a:wkb,b:wkb):bit 
-address wkbEquals;
-comment Returns true if these Geometries are 'spatially equal'
-
-command geom.Envelope(w:wkb):wkb 
-address wkbEnvelope;
-comment The minimum bounding box for this Geometry, returned as a Geometry. The polygon is defined by the corner points of the bounding box ((MINX,MINY),(MAXX,MINY),(MAXX,MAXY),(MINX,MAXY)).
-
-command geom.GeometryTypeId(w:wkb):int 
-address wkbGeometryTypeId;
-comment Returns the name of the instantiable subtype of Geometry of which this Geometry instance is a member. The name of the instantiable subtype of Geometry is returned as string.
-
-function geom.GeomCollectionFromText{unsafe}(wkt:str,srid:sht):wkb;
-function geom.GeomFromText{unsafe}(wkt:str,srid:sht):wkb;
-command geom.Intersection(a:wkb,b:wkb):wkb 
-address wkbIntersection;
-comment Returns a geometry that represents the point set intersection of Geometry a with b.
-
-command geom.Intersect(a:wkb,b:wkb):bit 
-address wkbIntersect;
-comment Returns true if these Geometries 'spatially intersect'
-
-command geom.IsSimple(w:wkb):bit 
-address wkbIsSimple;
-comment Returns true if this Geometry has no anomalous geometric points, such as self intersection or self tangency. The description of each instantiable geometric class will include the specific conditions that cause an instance of that class to be classified as not simple.
-
-command geom.IsEmpty(w:wkb):bit 
-address wkbIsEmpty;
-comment Returns true if this Geometry is the empty geometry. If true, then this Geometry represents the empty point set, for the coordinate space.
-
-command geom.Length(g:wkb):dbl 
-address wkbLength;
-comment Returns the length of the geometry.
-
-function geom.LineFromText{unsafe}(wkt:str,srid:sht):wkb;
-function geom.MultiPolyFromText{unsafe}(wkt:str,srid:sht):wkb;
-function geom.MultiSurfaceFromText{unsafe}(wkt:str,srid:sht):wkb;
-function geom.MultiLineFromText{unsafe}(wkt:str,srid:sht):wkb;
-function geom.MultiCurveFromText{unsafe}(wkt:str,srid:sht):wkb;
-function geom.MultiPointFromText{unsafe}(wkt:str,srid:sht):wkb;
-command geom.Overlaps(a:wkb,b:wkb):bit 
-address wkbOverlaps;
-comment Returns true if the Geometry a 'spatially overlaps' Geometry b
-
-function geom.PolyFromText{unsafe}(wkt:str,srid:sht):wkb;
-function geom.PointFromText{unsafe}(wkt:str,srid:sht):wkb;
-command geom.Relate(a:wkb,b:wkb,intersectionPatternMatrix:str):bit 
-address wkbRelate;
-comment Returns true if the Geometry a 'spatially related' to Geometry b, by testing for intersection between the Interior, Boundary and Exterior of the two geometries as specified by the values in the intersectionPatternMatrix.
-
-command geom.SymDifference(a:wkb,b:wkb):wkb 
-address wkbSymDifference;
-comment Returns a geometry that represents the point set semmetric difference of Geometry a with b.
-
-command geom.SRID(w:wkb):int 
-address wkbSRID;
-comment Returns the Spatial Reference System ID for this Geometry.
-
-function geom.SurfaceFromText{unsafe}(wkt:str,srid:sht):wkb;
-command geom.Touches(a:wkb,b:wkb):bit 
-address wkbTouches;
-comment Returns true if these Geometries 'spatially touch' each other
-
-command geom.Union(a:wkb,b:wkb):wkb 
-address wkbUnion;
-comment Returns a geometry that represents the point set union of Geometry a with b.
-
-command geom.Within(a:wkb,b:wkb):bit 
-address wkbWithin;
-comment Returns true if the Geometry a 'spatially within' Geometry b
-
-command geom.X(g:wkb):dbl 
-address wkbgetcoordX;
-comment Returns the x-coordinate of a point geometry.
-
-command geom.Y(g:wkb):dbl 
-address wkbgetcoordY;
-comment Returns the y-coordinate of a point geometry.
-
-command geom.epilogue():void 
-address geom_epilogue;
-command geom.mbr(X_1:wkb):mbr 
-address wkbMBR;
-comment Creates the mbr for the given wkb.
-
-command geom.mbr(X_1:flt,X_2:flt,X_3:flt,X_4:flt):mbr 
-address ordinatesMBR;
-comment Creates the mbr for the given (xmin,ymin) and (xmax,ymax).
-
-command geom.mbroverlaps(a:mbr,b:mbr):bit 
-address mbroverlaps;
-comment Returns true if the two mbrs overlap
-
-command geom.prelude():void 
-address geom_prelude;
-command geom.point(x:dbl,y:dbl):wkb 
-address wkbcreatepoint;
-comment Construct a point from two geometries
+pattern fits.listdir(dirname:str):void 
+address FITSdir;
+comment Attach all FITS files in the directory
 
 pattern group.multicolumns(l:bat[:oid,:any]...) (ref:bat[:oid,:oid],grp:bat[:oid,:any],ext:bat[:oid,:any]) 
 address GRPmulticolumngroup;
@@ -40134,22 +39988,6 @@ pattern mat.slice(first:wrd,last:wrd,b:bat[:oid,:any_2]...):bat[:oid,:any_2]
 address MATpackSlice;
 comment Materialize a sliced MAT into a BAT
 
-command mbr.#cmp():int 
-address mbrCOMP;
-command mbr.#fromstr():mbr 
-address mbrFROMSTR;
-command mbr.#hash():int 
-address mbrHASH;
-command mbr.mbr(v:str):mbr 
-address mbrFromString;
-command mbr.#null():int 
-address mbrNULL;
-command mbr.#read():void 
-address mbrREAD;
-command mbr.#tostr():str 
-address mbrTOSTR;
-command mbr.#write():void 
-address mbrWRITE;
 command mcurl.deleterequest(s:str):str 
 address CURLdeleteRequest;
 comment Perform a http delete request
@@ -41263,7 +41101,7 @@ command pcre.replace(orig:bat[:oid,:str],pat:str,repl:str,flag:str):bat[:oid,:st
 address PCREreplace_bat_wrap;
 command pcre.replace(origin:str,pat:str,repl:str,flags:str):str 
 address PCREreplace_wrap;
-comment Replace _all_ matches of "pattern" in "origin_str" with "replacement".	 Parameter "flags" accept these flags: 'i', 'm', 's', and 'x'.	   'e': if present, an empty string is considered to be a valid match	   'i': if present, the match operates in case-insensitive mode.		Otherwise, in case-sensitive mode.	   'm': if present, the match operates in multi-line mode.	   's': if present, the match operates in "dot-all"	   The specifications of the flags can be found in "man pcreapi"	   The flag letters 
+comment Replace _all_ matches of "pattern" in "origin_str" with "replacement".	 Parameter "flags" accept these flags: 'i', 'm', 's', and 'x'.	   'e': if present, an empty string is considered to be a valid match	   'i': if present, the match operates in case-insensitive mode.		Otherwise, in case-sensitive mode.	   'm': if present, the match operates in multi-line mode.	   's': if present, the match operates in "dot-all"	   The specifications of the flags can be found in "man pcreapi"	   The flag letters may be repeated.	   No other letters than 'e', 'i', 'm', 's' and 'x' are allowed in "flags".	   Returns the replaced string, or if no matches found, the original string.
 
 command pcre.sql2pcre(pat:str,esc:str):str 
 address PCREsql2pcre;
@@ -43117,32 +42955,6 @@ command uuid.uuid(s:str):uuid
 address UUIDstr2uuid;
 comment Coerce a string to a uuid, validating its format
 
-command wkb.FromText{unsafe}(w:str,type:int):wkb 
-address wkbFromText;
-command wkb.#cmp():int 
-address wkbCOMP;
-command wkb.#del():int 
-address wkbDEL;
-command wkb.#fromstr():wkb 
-address wkbFROMSTR;
-command wkb.#heap():int 
-address wkbHEAP;
-command wkb.#hash():int 
-address wkbHASH;
-command wkb.#length():int 
-address wkbLENGTH;
-command wkb.#null():int 
-address wkbNULL;
-command wkb.#put():int 
-address wkbPUT;
-command wkb.#read():void 
-address wkbREAD;
-command wkb.#tostr():str 
-address wkbTOSTR;
-command wkb.wkb{unsafe}(v:str):wkb 
-address wkbFromString;
-command wkb.#write():void 
-address wkbWRITE;
 command xml.aggr(val:bat[:oid,:xml]):xml 
 address BATXMLgroup;
 comment Aggregate the XML values.

@@ -114,7 +114,6 @@ MATpackInternal(MalStkPtr stk, InstrPtr p)
 	bn = BATnew(TYPE_void, tt, cap);
 	if (bn == NULL)
 		throw(MAL, "mat.pack", MAL_MALLOC_FAIL);
-	BATsettrivprop(bn);
 
 	for (i = 1; i < p->argc; i++) {
 		b = BATdescriptor(stk->stk[getArg(p,i)].val.ival);
@@ -441,36 +440,48 @@ MATpack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	return MATpackInternal(stk,p);
 }
 
-// merging multiple OID lists 
+// merging multiple OID lists, optimized for empty bats
+// Further improvement should come from multi-bat merging.
 str
 MATmergepack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int i, *ret = (int*) getArgReference(stk,p,0);
+	int top=0, *bids;
 	BAT *b, *bn, *bm;
 	BUN cap = 0;
 
 	(void)cntxt;
 	(void)mb;
+	bids = (int*) GDKzalloc(sizeof(int) * p->argc);
+	if ( bids ==0)
+		throw(MAL,"mat.mergepack",MAL_MALLOC_FAIL);
 	for (i = 1; i < p->argc; i++) {
 		int bid = stk->stk[getArg(p,i)].val.ival;
 		b = BBPquickdesc(ABS(bid),FALSE);
-		if (b )
+		if (b ){
 			cap += BATcount(b);
+			if ( BATcount(b) )
+				bids[top++] = b->batCacheid;
+		}
 	}
 
 	bn = BATnew(TYPE_void, TYPE_oid, cap);
 	if (bn == NULL)
 		throw(MAL, "mat.pack", MAL_MALLOC_FAIL);
-	BATsettrivprop(bn);
-	for (i = 1; i < p->argc; i++) {
-		b = BATdescriptor(stk->stk[getArg(p,i)].val.ival);
+	if( cap > 0)
+	for (i = 0; i < top; i++) {
+		b = BATdescriptor(bids[i]);
 		if( b ){
+            if ( i == 1)
+                BATseqbase(bn, b->hseqbase);
 			bm = BATmergecand(bn,b);
 			BBPunfix(b->batCacheid);
 			BBPunfix(bn->batCacheid);
 			bn = bm;
 		}
 	}
+	GDKfree(bids);
+	BATsettrivprop(bn);
 	assert(!bn->H->nil || !bn->H->nonil);
 	assert(!bn->T->nil || !bn->T->nonil);
 	BBPkeepref(*ret = bn->batCacheid);
