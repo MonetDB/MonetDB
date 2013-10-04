@@ -639,6 +639,7 @@ dump_joinN(backend *sql, MalBlkPtr mb, stmt *s)
 	char *mod, *fimp; 
 	InstrPtr q;
 	int op1, op2, op3 = 0;
+	bit swapped = (s->flag&SWAPPED)?TRUE:FALSE;
 
 	if (backend_create_func(sql, s->op4.funcval->func) < 0)
 		return -1;
@@ -660,8 +661,28 @@ dump_joinN(backend *sql, MalBlkPtr mb, stmt *s)
 		q = pushArgument(mb, q, op3);
 	s->nr = getDestVar(q);
 
-	/* rename second result */
-	renameVariable(mb, getArg(q,1), "r1_%d",s->nr);
+	if (swapped) {
+		InstrPtr r = newInstruction(mb, ASSIGNsymbol);
+		getArg(r,0) = newTmpVariable(mb, TYPE_any);
+		getArg(r,1) = getArg(q,1);
+		r->retc = 1;
+		r->argc = 2;
+		pushInstruction(mb, r);
+		s->nr = getArg(r,0);
+
+		r = newInstruction(mb, ASSIGNsymbol);
+		getArg(r,0) = newTmpVariable(mb, TYPE_any);
+		getArg(r,1) = getArg(q,0);
+		r->retc = 1;
+		r->argc = 2;
+		pushInstruction(mb, r);
+
+		/* rename second result */
+		renameVariable(mb, getArg(r,0), "r1_%d", s->nr);
+	} else {
+		/* rename second result */
+		renameVariable(mb, getArg(q,1), "r1_%d", s->nr);
+	}
 	return s->nr;
 }
 

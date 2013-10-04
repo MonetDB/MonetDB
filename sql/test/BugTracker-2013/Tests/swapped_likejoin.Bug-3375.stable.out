@@ -1,0 +1,50 @@
+stdout of test 'swapped_likejoin.Bug-3375` in directory 'sql/test/BugTracker-2013` itself:
+
+
+# 10:06:32 >  
+# 10:06:32 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=34205" "--set" "mapi_usock=/var/tmp/mtest-22741/.s.monetdb.34205" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/niels/scratch/rc-clean/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2013" "--set" "mal_listing=0"
+# 10:06:32 >  
+
+# MonetDB 5 server v11.15.12
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2013', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 3.775 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2013 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://niels.nesco.mine.nu:34205/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-22741/.s.monetdb.34205
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 10:06:32 >  
+# 10:06:32 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-22741" "--port=34205"
+# 10:06:32 >  
+
+#create table x (s string);
+#insert into x values('%able%');
+[ 1	]
+#select * from sys._tables, x where name like s;
+% sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys.x # table_name
+% id,	name,	schema_id,	query,	type,	system,	commit_action,	readonly,	s # name
+% int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	boolean,	clob # type
+% 4,	35,	4,	496,	1,	5,	1,	5,	6 # length
+[ 2055,	"_tables",	2000,	NULL,	0,	true,	0,	false,	"%able%"	]
+[ 2103,	"_tables",	2102,	NULL,	0,	true,	2,	false,	"%able%"	]
+[ 5075,	"tables",	2000,	"SELECT * FROM (SELECT p.*, 0 AS \"temporary\" FROM \"sys\".\"_tables\" AS p UNION ALL SELECT t.*, 1 AS \"temporary\" FROM \"tmp\".\"_tables\" AS t) AS tables where tables.type <> 2;",	1,	true,	0,	false,	"%able%"	]
+[ 5405,	"#dependencies_tables_on_views",	2000,	NULL,	2,	true,	0,	false,	"%able%"	]
+[ 5412,	"#dependencies_tables_on_indexes",	2000,	NULL,	2,	true,	0,	false,	"%able%"	]
+[ 5419,	"#dependencies_tables_on_triggers",	2000,	NULL,	2,	true,	0,	false,	"%able%"	]
+[ 5426,	"#dependencies_tables_on_foreignkeys",	2000,	NULL,	2,	true,	0,	false,	"%able%"	]
+[ 5433,	"#dependencies_tables_on_functions",	2000,	NULL,	2,	true,	0,	false,	"%able%"	]
+[ 6115,	"tablestoragemodel",	2000,	"-- A summary of the table storage requirement is is available as a table view.\n-- The auxillary column denotes the maximum space if all non-sorted columns\n-- would be augmented with a hash (rare situation)\ncreate view sys.tablestoragemodel\nas select \"schema\",\"table\",max(count) as \"count\",\n\tsum(columnsize) as columnsize,\n\tsum(heapsize) as heapsize,\n\tsum(indices) as indices,\n\tsum(case when sorted = false then 8 * count else 0 end) as auxillary\nfrom sys.storagemodel() group by \"schema\",\"table\";",	1,	true,	0,	false,	"%able%"	]
+#drop table x;
+
+# 10:06:32 >  
+# 10:06:32 >  "Done."
+# 10:06:32 >  
+

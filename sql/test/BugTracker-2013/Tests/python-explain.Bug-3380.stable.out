@@ -1,20 +1,22 @@
-stdout of test 'and-power.Bug-3013` in directory 'sql/test/BugTracker-2011` itself:
+stdout of test 'python-explain.Bug-3380` in directory 'sql/test/BugTracker-2013` itself:
 
 
-# 14:12:27 >  
-# 14:12:27 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "gdk_dbfarm=/ufs/sjoerd/Monet-stable/var/MonetDB" "--set" "mapi_open=true" "--set" "mapi_port=30422" "--set" "monet_prompt=" "--trace" "--forcemito" "--set" "mal_listing=2" "--dbname=mTests_test_BugTracker-2011" "--set" "mal_listing=0"
-# 14:12:27 >  
+# 10:49:58 >  
+# 10:49:58 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=35283" "--set" "mapi_usock=/var/tmp/mtest-1162/.s.monetdb.35283" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/sjoerd/Monet-stable/var/MonetDB/mTests_sql_test_BugTracker-2013" "--set" "mal_listing=0"
+# 10:49:58 >  
 
-# MonetDB 5 server v11.7.6 (hg id: fc936b0e04ac+)
+# MonetDB 5 server v11.15.16 (hg id: c17161829217+)
 # This is an unreleased version
-# Serving database 'mTests_test_BugTracker-2011', using 8 threads
+# Serving database 'mTests_sql_test_BugTracker-2013', using 8 threads
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
-# Found 15.629 GiB available main-memory.
+# Found 15.591 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
 # Copyright (c) August 2008-2013 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
-# Listening for connection requests on mapi:monetdb://madrid.ins.cwi.nl:30422/
+# Listening for connection requests on mapi:monetdb://madrid.ins.cwi.nl:35283/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-1162/.s.monetdb.35283
 # MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
 
 Ready.
@@ -36,22 +38,18 @@ Ready.
 # loading sql script: 23_skyserver.sql
 # loading sql script: 24_zorder.sql
 # loading sql script: 25_debug.sql
+# loading sql script: 39_analytics.sql
 # loading sql script: 40_geom.sql
+# loading sql script: 75_storagemodel.sql
 # loading sql script: 80_udf.sql
 # loading sql script: 99_system.sql
 
-# 14:12:27 >  
-# 14:12:27 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=madrid" "--port=30422"
-# 14:12:27 >  
+# 10:49:58 >  
+# 10:49:58 >  "/usr/bin/python2" "python-explain.Bug-3380.SQL.py" "python-explain.Bug-3380"
+# 10:49:58 >  
 
-#select bit_and(1, power(2, 1));
-% .L # table_name
-% bit_and_single_value # name
-% decimal # type
-% 40 # length
-[ 0	]
 
-# 14:12:27 >  
-# 14:12:27 >  "Done."
-# 14:12:27 >  
+# 10:49:58 >  
+# 10:49:58 >  "Done."
+# 10:49:58 >  
 

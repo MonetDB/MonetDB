@@ -4022,7 +4022,7 @@ literal:
 		  else if ( i > 10 && i <= 18)
 		  	sql_find_subtype(&t, "bigint", 64, 0);
 #ifdef HAVE_HGE
-		  else if ( i > 18 && i <= 38)
+		  else if ( i > 18 && i <= 34)
 		  	sql_find_subtype(&t, "hugeint", 128, 0);
 #endif
 		  else

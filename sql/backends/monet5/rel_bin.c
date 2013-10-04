@@ -635,7 +635,7 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, stm
 			if (left && right && re->card > CARD_ATOM && !is_select) {
 				/* find predicate function */
 				sql_subfunc *f = e->f;
-				stmt *j = stmt_joinN(sql->sa, l, r, r2, f);
+				stmt *j = stmt_joinN(sql->sa, l, r, r2, f, swapped);
 
 				if (j && is_anti(e))
 					j->flag |= ANTI;

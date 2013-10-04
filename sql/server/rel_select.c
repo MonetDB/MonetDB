@@ -2014,11 +2014,11 @@ exp_sum_scales(mvc *sql, sql_subfunc *f, sql_exp *l, sql_exp *r)
 
 		/* HACK alert: digits should be less than max */
 #ifdef HAVE_HGE
-		if (f->res.type->radix == 10 && f->res.digits > 38)
-			f->res.digits = 38;
+		if (f->res.type->radix == 10 && f->res.digits > 39)
+			f->res.digits = 39;
 #else
-		if (f->res.type->radix == 10 && f->res.digits > 18)
-			f->res.digits = 18;
+		if (f->res.type->radix == 10 && f->res.digits > 19)
+			f->res.digits = 19;
 #endif
 		if (f->res.type->radix == 2 && f->res.digits > 53)
 			f->res.digits = 53;
@@ -2069,11 +2069,11 @@ exp_scale_algebra(mvc *sql, sql_subfunc *f, sql_exp *l, sql_exp *r)
 
 		/* HACK alert: digits should be less than max */
 #ifdef HAVE_HGE
-		if (f->res.type->radix == 10 && digits > 38)
-			digits = 38;
+		if (f->res.type->radix == 10 && digits > 39)
+			digits = 39;
 #else
-		if (f->res.type->radix == 10 && digits > 18)
-			digits = 18;
+		if (f->res.type->radix == 10 && digits > 19)
+			digits = 19;
 #endif
 		if (f->res.type->radix == 2 && digits > 53)
 			digits = 53;
