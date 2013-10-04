@@ -1344,6 +1344,7 @@ case "$have_rubygem_dir" in
 						else
 							AC_MSG_RESULT([unable to determine rubygems location])
 							RUBY=no
+							have_rubygem_dir=no
 						fi
 					else
 						AC_MSG_RESULT([$RUBY_DIR])
