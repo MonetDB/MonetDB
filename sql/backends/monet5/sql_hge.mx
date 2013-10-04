@@ -1,0 +1,220 @@
+@/
+The contents of this file are subject to the MonetDB Public License
+Version 1.1 (the "License"); you may not use this file except in
+compliance with the License. You may obtain a copy of the License at
+http://www.monetdb.org/Legal/MonetDBLicense
+
+Software distributed under the License is distributed on an "AS IS"
+basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+License for the specific language governing rights and limitations
+under the License.
+
+The Original Code is the MonetDB Database System.
+
+The Initial Developer of the Original Code is CWI.
+Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+Copyright August 2008-2013 MonetDB B.V.
+All Rights Reserved.
+@
+
+@f sql_hge
+
+@c
+/*
+ * @t SQL Scenario implementation
+ * @a M Kersten
+ * @v 0
+ * @* SQL support implementation
+ * This module contains the wrappers around the SQL
+ * multi-version-catalog and support routines copied
+ * from the Version 4 code base.
+ */
+@mal
+module batsql;
+module sql;
+
+pattern assert(b:hge,msg:str):void
+address SQLassertHge
+comment "Generate an exception when b!=0";
+
+pattern calc.hash( v:hge ) :wrd address MKEYhash; 
+command batcalc.hash( b:bat[:oid,:hge] ) :bat[:oid,:wrd] address MKEYbathash;
+
+# @- SQL functions
+# The SQL functions are all recognized by their module name.
+# For some we need to provide a new implementation, others
+# merely require a different address binding.
+#
+# The aggregate operations work on doubles by default.
+# This calls for casting values around in the process.
+@= mal_round
+command sql.dec_round( v:@1, r:@1 ) :@1 
+address @1_dec_round_wrap
+comment "round off the value v to nearests multiple of r";
+
+command batsql.dec_round( v:bat[:oid,:@1], r:@1 ) :bat[:oid,:@1] 
+address @1_bat_dec_round_wrap
+comment "round off the value v to nearests multiple of r";
+
+command sql.round( v:@1, d:int, s:int, r:bte) :@1
+address @1_round_wrap
+comment "round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)";
+
+command sql.round( v:bat[:oid,:@1], d:int, s:int, r:bte) :bat[:oid,:@1]
+address @1_bat_round_wrap
+comment "round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)";
+
+command calc.second_interval( sc:int, v:@1, ek:int, sk:int ) :lng
+address @1_dec2second_interval
+comment "cast @1 decimal to a second_interval";
+
+@
+@mal
+@:mal_round(hge)@
+
+@= mal_cast
+command calc.@1( v:void, digits:int ) :@1 
+address nil_2num_@1
+comment "cast to @1 and check for overflow";
+
+command calc.@1( v:void, digits:int, scale:int ) :@1 
+address nil_2dec_@1
+comment "cast to dec(@1) and check for overflow";
+
+command batcalc.@1( v:bat[:oid,:void], digits:int ) :bat[:oid,:@1] 
+address batnil_2num_@1
+comment "cast to @1 and check for overflow";
+command batcalc.@1( v:bat[:oid,:void], digits:int, scale:int ) :bat[:oid,:@1] 
+address batnil_2dec_@1
+comment "cast to dec(@1) and check for overflow";
+
+command calc.@1( v:str, digits:int ) :@1 
+address str_2num_@1
+comment "cast to @1 and check for overflow";
+command calc.@1( v:str, digits:int, scale:int ) :@1 
+address str_2dec_@1
+comment "cast to dec(@1) and check for overflow";
+
+command batcalc.@1( v:bat[:oid,:str], digits:int ) :bat[:oid,:@1] 
+address batstr_2num_@1
+comment "cast to @1 and check for overflow";
+command batcalc.@1( v:bat[:oid,:str], digits:int, scale:int ) :bat[:oid,:@1] 
+address batstr_2dec_@1
+comment "cast to dec(@1) and check for overflow";
+@
+@mal
+# @-
+# address CALCstr2@1
+# command calc.str( v:@1 ) :str
+# address CALC@12str
+# comment "Cast @1 to str";
+@:mal_cast(hge)@
+
+@= mal_cast_2dec
+# command calc.@1( v:@2) :@1 
+# address @2_2_@1
+# comment "cast @2 to @1";
+command calc.@1( v:@2, digits:int, scale:int ) :@1 
+address @2_num2dec_@1
+comment "cast number to decimal(@1) and check for overflow";
+
+# command batcalc.@1( v:bat[:oid,:@2]) :bat[:oid,:@1]
+# address bat@2_2_@1
+# comment "cast @2 to @1";
+command batcalc.@1( v:bat[:oid,:@2], digits:int, scale:int ) :bat[:oid,:@1] 
+address bat@2_num2dec_@1
+comment "cast number to decimal(@1) and check for overflow";
+@
+@mal
+@:mal_cast_2dec(hge,flt)@
+@:mal_cast_2dec(hge,dbl)@
+
+@= mal_cast_dec2
+command calc.@1( s1:int, v:@2) :@1 
+address @2_dec2_@1
+comment "cast decimal(@2) to @1 and check for overflow";
+command calc.@1( s1:int, v:@2, d2:int, s2:int ) :@1 
+address @2_dec2dec_@1
+comment "cast decimal(@2) to decimal(@1) and check for overflow";
+
+command batcalc.@1( s1:int, v:bat[:oid,:@2]) :bat[:oid,:@1]
+address bat@2_dec2_@1
+comment "cast decimal(@2) to @1 and check for overflow";
+command batcalc.@1( s1:int, v:bat[:oid,:@2], d2:int, s2:int ) :bat[:oid,:@1] 
+address bat@2_dec2dec_@1
+comment "cast decimal(@2) to decimal(@1) and check for overflow";
+@
+
+@= mal_cast2
+@:mal_cast_2dec(@1,@2)@
+@:mal_cast_dec2(@1,@2)@
+@
+
+@mal
+@:mal_cast2(bte,hge)@
+@:mal_cast2(sht,hge)@
+@:mal_cast2(int,hge)@
+@:mal_cast2(lng,hge)@
+@:mal_cast2(hge,bte)@
+@:mal_cast2(hge,sht)@
+@:mal_cast2(hge,int)@
+@:mal_cast2(hge,wrd)@
+@:mal_cast2(hge,lng)@
+@:mal_cast2(hge,hge)@
+@:mal_cast2(flt,hge)@
+@:mal_cast2(dbl,hge)@
+
+@= analytic
+function aggr.covar(e1:bat[:oid,:@1], e2:bat[:oid,:@1]):@1;
+	e0:bat[:oid,:@1] := batcalc.*(e1,e2);
+	s0:@1 := aggr.sum(e0);
+	s1:@1 := aggr.sum(e1);
+	s2:@1 := aggr.sum(e2);
+	v2:@1 := calc.*(s1,s2);
+	c := aggr.count(e1);
+	n:@1 := calc.@1(c);
+	v3:@1 := calc./(v2,n);
+	v1:@1 := calc.-(s0,v3);
+	v:@1 := calc./(v1,n);
+	return v;
+end aggr.covar;
+
+function aggr.corr(e1:bat[:oid,:@1], e2:bat[:oid,:@1]):@1;
+	cv:@1 := aggr.covar(e1,e2);
+	sd1 := aggr.stdev(e1);
+	sd2 := aggr.stdev(e2);
+	sd := calc.*(sd1,sd2);
+	r := calc./(cv,sd);
+	res := calc.@1(r);
+	return res;
+end aggr.corr;
+
+function aggr.covar(e1:bat[:oid,:@1], e2:bat[:oid,:@1], g:bat[:oid,:oid], e:bat[:oid,:any_2]):bat[:oid,:@1];
+	e0:bat[:oid,:@1] := batcalc.*(e1,e2);
+	s0:bat[:oid,:@1] := aggr.sum(e0,g,e);
+	s1:bat[:oid,:@1] := aggr.sum(e1,g,e);
+	s2:bat[:oid,:@1] := aggr.sum(e2,g,e);
+	v2:bat[:oid,:@1] := batcalc.*(s1,s2);
+	c := aggr.count(e1,g,e);
+	n:bat[:oid,:@1] := batcalc.@1(c);
+	v3:bat[:oid,:@1] := batcalc./(v2,n);
+	v1:bat[:oid,:@1] := batcalc.-(s0,v3);
+	v:bat[:oid,:@1] := batcalc./(v1,n);
+	return v;
+end aggr.covar;
+
+function aggr.corr(e1:bat[:oid,:@1], e2:bat[:oid,:@1], g:bat[:oid,:oid],e:bat[:oid,:any_2]):bat[:oid,:@1];
+	cv:bat[:oid,:@1] := aggr.covar(e1,e2,g,e);
+	sd1 := aggr.stdevp(e1,g,e);
+	sd2 := aggr.stdevp(e2,g,e);
+	sd := batcalc.*(sd1,sd2);
+	sdn := batcalc.==(sd,0:@1);
+	sds := batcalc.ifthenelse(sdn,1:@1,sd);
+	r := batcalc./(cv,sds);
+	res := batcalc.@1(r);
+	return res;
+end aggr.corr;
+@
+
+@mal
+@:analytic(hge)@

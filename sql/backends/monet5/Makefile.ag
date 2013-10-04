@@ -99,13 +99,20 @@ headers_mal = {
 	SOURCES = sql.mx
 }
 
+headers_mal_hge = {
+	COND = HAVE_HGE
+	HEADERS = mal
+	DIR = libdir/monetdb5
+	SOURCES = sql_hge.mx
+}
+
 headers_autoload = {
 	HEADERS = mal
 	DIR = libdir/monetdb5/autoload
 	SOURCES = 40_sql.mal
 }
 
-headers_hge = {
+headers_autoload_hge = {
 	COND = HAVE_HGE
 	HEADERS = mal
 	DIR = libdir/monetdb5/autoload
