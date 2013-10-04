@@ -283,79 +283,83 @@ GDKextend(const char *fn, size_t size)
 int
 GDKsave(const char *nme, const char *ext, void *buf, size_t size, storage_t mode)
 {
-	int fd = -1, err = 0;
+	int err = 0;
 
 	IODEBUG THRprintf(GDKstdout, "#GDKsave: name=%s, ext=%s, mode %d\n", nme, ext ? ext : "", (int) mode);
 
 	if (mode == STORE_MMAP) {
-		/*
-		 * Only dirty pages must be written to disk.
-		 * Unchanged block will still be mapped on the file,
-		 * reading those will be cheap.  Only the changed
-		 * blocks are now mapped to swap space.  PUSHED OUT:
-		 * due to rather horrendous performance caused by
-		 * updating the image on disk.
-		 *
-		 * Maybe it is better to make use of MT_msync().  But
-		 * then we would need to bring in a backup mechanism,
-		 * in which stable images of the BATs are created at
-		 * commit-time.
-		 */
 		if (size)
-			err = MT_msync(buf, 0, size, MMAP_SYNC);
+			err = MT_msync(buf, size, MMAP_SYNC);
 		if (err)
-			GDKsyserror("GDKsave: error on: name=%s, ext=%s, mode=%d\n", nme, ext ? ext : "", (int) mode);
-		IODEBUG THRprintf(GDKstdout, "#MT_msync(buf " PTRFMT ", size " SZFMT ", MMAP_SYNC) = %d\n", PTRFMTCAST buf, size, err);
+			GDKsyserror("GDKsave: error on: name=%s, ext=%s, "
+				    "mode=%d\n", nme, ext ? ext : "",
+				    (int) mode);
+		IODEBUG THRprintf(GDKstdout,
+				  "#MT_msync(buf " PTRFMT ", size " SZFMT
+				  ", MMAP_SYNC) = %d\n",
+				  PTRFMTCAST buf, size, err);
 	} else {
+		int fd;
+
 		if ((fd = GDKfdlocate(nme, "wb", ext)) >= 0) {
 			/* write() on 64-bits Redhat for IA64 returns
 			 * 32-bits signed result (= OS BUG)! write()
-			 * on Windows only takes int as size */
+			 * on Windows only takes unsigned int as
+			 * size */
 			while (size > 0) {
 				/* circumvent problems by writing huge
-				 * buffers in chunks <= 1GB */
-				ssize_t ret = write(fd, buf, (unsigned) MIN(1 << 30, size));
+				 * buffers in chunks <= 1GiB */
+				ssize_t ret;
 
+				ret = write(fd, buf,
+					    (unsigned) MIN(1 << 30, size));
 				if (ret < 0) {
 					err = -1;
-					GDKsyserror("GDKsave: error " SSZFMT " on: name=%s, ext=%s, mode=%d\n", ret, nme, ext ? ext : "", (int) mode);
+					GDKsyserror("GDKsave: error " SSZFMT
+						    " on: name=%s, ext=%s, "
+						    "mode=%d\n", ret, nme,
+						    ext ? ext : "", (int) mode);
 					break;
 				}
 				size -= ret;
 				buf = (void *) ((char *) buf + ret);
-				IODEBUG THRprintf(GDKstdout, "#write(fd %d, buf " PTRFMT ", size %u) = " SSZFMT "\n", fd, PTRFMTCAST buf, (unsigned) MIN(1 << 30, size), ret);
+				IODEBUG THRprintf(GDKstdout,
+						  "#write(fd %d, buf " PTRFMT
+						  ", size %u) = " SSZFMT "\n",
+						  fd, PTRFMTCAST buf,
+						  (unsigned) MIN(1 << 30, size),
+						  ret);
+			}
+			if (!(GDKdebug & FORCEMITOMASK) &&
+#if defined(NATIVE_WIN32)
+			    _commit(fd) < 0
+#elif defined(HAVE_FDATASYNC)
+			    fdatasync(fd) < 0
+#elif defined(HAVE_FSYNC)
+			    fsync(fd) < 0
+#else
+			    0
+#endif
+				) {
+				GDKsyserror("GDKsave: error on: name=%s, "
+					    "ext=%s, mode=%d\n", nme,
+					    ext ? ext : "", (int) mode);
+				err = -1;
+			}
+			err |= close(fd);
+			if (err && GDKunlink(BATDIR, nme, ext)) {
+				/* do not tolerate corrupt heap images
+				 * (BBPrecover on restart will kill
+				 * them) */
+				GDKfatal("GDKsave: could not open: name=%s, "
+					 "ext=%s, mode %d\n", nme,
+					 ext ? ext : "", (int) mode);
 			}
 		} else {
 			err = -1;
+			GDKerror("GDKsave: failed name=%s, ext=%s, mode %d\n",
+				 nme, ext ? ext : "", (int) mode);
 		}
-	}
-	if (fd >= 0) {
-		if (!(GDKdebug & FORCEMITOMASK) &&
-#ifdef NATIVE_WIN32
-			_commit(fd) < 0
-#else
-#ifdef HAVE_FDATASYNC
-			fdatasync(fd) < 0
-#else
-#ifdef HAVE_FSYNC
-			fsync(fd) < 0
-#else
-			0
-#endif
-#endif
-#endif
-			) {
-			GDKsyserror("GDKsave: error on: name=%s, ext=%s, mode=%d\n", nme, ext ? ext : "", (int) mode);
-			err = -1;
-		}
-		err |= close(fd);
-		if (err && GDKunlink(BATDIR, nme, ext)) {
-			/* do not tolerate corrupt heap images
-			 * (BBPrecover on restart will kill them) */
-			GDKfatal("GDKsave: could not open: name=%s, ext=%s, mode %d\n", nme, ext ? ext : "", (int) mode);
-		}
-	} else if (mode != STORE_MMAP) {
-		GDKerror("GDKsave: failed name=%s, ext=%s, mode %d\n", nme, ext ? ext : "", (int) mode);
 	}
 	return err;
 }

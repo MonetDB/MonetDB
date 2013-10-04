@@ -1307,25 +1307,21 @@ date_extract_weekofyear(int *ret, date *v)
 	if (*v == date_nil) {
 		*ret = int_nil;
 	} else {
-		int year, dayofweek;
-		date year_jan_1;
+		int dummy;
+		int year;
+		date thd;
+		date thd1;
 
-		fromdate((int) *v, &dummy, &dummy, &year);
-		year_jan_1 = todate(1, 1, year);
-		dayofweek = date_dayofweek(year_jan_1);
-
-		if (dayofweek <= 4) {
-			/* 4 or more days in first week, ie week of jan 1 belongs to this year */
-			*ret = (int) (1 + (*v - year_jan_1 + dayofweek - 1) / 7);
-		} else if (*v - year_jan_1 > 7 - dayofweek) {
-			/* week of jan 1 belongs to last year; but this is a later week */
-			*ret = (int) ((*v - year_jan_1 + dayofweek - 1) / 7);
-		} else {
-			/* recurse to get last weekno of previous year (it is 52 or 53) */
-			date lastyear_dec_31 = todate(31, 12, (year == 1) ? -1 : year - 1);
-
-			return date_extract_weekofyear(ret, &lastyear_dec_31);
-		}
+		/* find the Thursday in the same week as the given date */
+		thd = *v + 4 - date_dayofweek(*v);
+		/* extract the year (may be different from year of the given date!) */
+		fromdate((int) thd, &dummy, &dummy, &year);
+		/* find January 4 of that year */
+		thd1 = todate(4, 1, year);
+		/* find the Thursday of the week in which January 4 falls */
+		thd1 += 4 - date_dayofweek(thd1);
+		/* now calculate the week number */
+		*ret = (int) ((thd - thd1) / 7) + 1;
 	}
 	return MAL_SUCCEED;
 }

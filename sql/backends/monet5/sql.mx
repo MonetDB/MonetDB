@@ -2885,14 +2885,15 @@ setVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	src = &stk->stk[getArg(pci, 3)];
 	if (stack_find_var(m, varname)) {
+		lng sgn = val_get_number(src);
+		if ((msg = sql_update_var(m, varname, src->val.sval, sgn)) != NULL) {
+			snprintf(buf, BUFSIZ, "%s", msg);
+			_DELETE(msg);
+			throw(SQL, "sql.setVariable", "%s", buf);
+		}
 		stack_set_var(m, varname, src);
 	} else {
 		snprintf(buf, BUFSIZ, "variable '%s' unknown", varname);
-		throw(SQL, "sql.setVariable", "%s", buf);
-	}
-	if ((msg = sql_update_var(m, varname)) != NULL) {
-		snprintf(buf, BUFSIZ, "%s", msg);
-		_DELETE(msg);
 		throw(SQL, "sql.setVariable", "%s", buf);
 	}
 	return MAL_SUCCEED;

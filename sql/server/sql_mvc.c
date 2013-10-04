@@ -1534,10 +1534,8 @@ hge
 #else
 lng
 #endif
-stack_get_number(mvc *sql, char *name)
+val_get_number(ValRecord *v) 
 {
-	ValRecord *v = stack_get_var(sql, name);
-
 	if (v != NULL) {
 #ifdef HAVE_HGE
 		if (v->vtype == TYPE_hge) 
@@ -1557,6 +1555,17 @@ stack_get_number(mvc *sql, char *name)
 			return 0;
 	}
 	return 0;
+}
+
+#ifdef HAVE_HGE
+hge
+#else
+lng
+#endif
+stack_get_number(mvc *sql, char *name)
+{
+	ValRecord *v = stack_get_var(sql, name);
+	return val_get_number(v);
 }
 
 sql_column *

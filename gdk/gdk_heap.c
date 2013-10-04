@@ -59,174 +59,21 @@
 #include "gdk.h"
 #include "gdk_private.h"
 
-/* The heap cache should reduce mmap/munmap calls which are very
- * expensive.  Instead we try to reuse mmap's. This however requires
- * file renames.  The cache has a limited size!
- */
-
-#define HEAP_CACHE_SIZE 5
-
-typedef struct heap_cache_e {
-	void *base;
-	size_t maxsz;
-	char fn[8];		/* tmp file name */
-} heap_cache_e;
-
-typedef struct heap_cache {
-	int sz;
-	int used;
-	heap_cache_e *hc;
-} heap_cache;
-
-static heap_cache hc;
-static MT_Lock HEAPcacheLock MT_LOCK_INITIALIZER("HEAPcacheLock");
-
-void
-HEAPcacheInit(void)
-{
-#ifdef NEED_MT_LOCK_INIT
-	MT_lock_init(&HEAPcacheLock, "HEAPcache_init");
-#endif
-#if HEAP_CACHE_SIZE > 0
-	MT_lock_set(&HEAPcacheLock, "HEAPcache_init");
-	assert(hc.sz == 0);
-	hc.used = 0;
-	hc.hc = GDKmalloc(sizeof(heap_cache_e) * HEAP_CACHE_SIZE);
-	if (hc.hc != NULL) {
-		int i;
-
-		hc.sz = HEAP_CACHE_SIZE;
-		GDKcreatedir(HCDIR DIR_SEP_STR);
-		/* clean old leftovers */
-		for (i = 0; i < HEAP_CACHE_SIZE; i++) {
-			char fn[8];
-
-			snprintf(fn, sizeof(fn), "%d", i);
-			GDKunlink(HCDIR, fn, NULL);
-		}
-	}
-	MT_lock_unset(&HEAPcacheLock, "HEAPcache_init");
-#endif
-}
-
-static int
-HEAPcacheAdd(void *base, size_t maxsz, char *fn, storage_t storage, int free_file)
-{
-	int added = 0;
-
-
-	MT_lock_set(&HEAPcacheLock, "HEAPcache_init");
-	if (free_file && fn && storage == STORE_MMAP && hc.used < hc.sz) {
-		heap_cache_e *e = hc.hc + hc.used;
-
-		e->base = base;
-		e->maxsz = maxsz;
-		snprintf(e->fn, sizeof(e->fn), "%d", hc.used);
-		GDKunlink(HCDIR, e->fn, NULL);
-		added = 1;
-		if (GDKmove(BATDIR, fn, NULL, HCDIR, e->fn, NULL) < 0) {
-			/* try to create the directory, if that was
-			 * the problem */
-			char path[PATHLENGTH];
-
-			GDKfilepath(path, HCDIR, e->fn, NULL);
-			GDKcreatedir(path);
-			if (GDKmove(BATDIR, fn, NULL, HCDIR, e->fn, NULL) < 0)
-				added = 0;
-		}
-		if (added)
-			hc.used++;
-	}
-	MT_lock_unset(&HEAPcacheLock, "HEAPcache_init");
-	if (!added)
-		return GDKmunmap(base, maxsz);
-	HEAPDEBUG fprintf(stderr, "#HEAPcacheAdd (%s) " SZFMT " " PTRFMT " %d %d %d\n", fn, maxsz, PTRFMTCAST base, (int) storage, free_file, hc.used);
-	return 0;
-}
-
 static void *
-HEAPcacheFind(size_t *maxsz, char *fn, storage_t mode)
+HEAPcreatefile(size_t *maxsz, char *fn, storage_t mode)
 {
 	size_t size = *maxsz;
 	void *base = NULL;
+	int fd;
 
 	size = (*maxsz + (size_t) 0xFFFF) & ~ (size_t) 0xFFFF; /* round up to 64k */
-	MT_lock_set(&HEAPcacheLock, "HEAPcache_init");
-	if (mode == STORE_MMAP && hc.used > 0) {
-		int i;
-		heap_cache_e *e = NULL;
-		size_t cursz = 0;
-
-		HEAPDEBUG fprintf(stderr, "#HEAPcacheFind (%s)" SZFMT " %d %d\n", fn, size, (int) mode, hc.used);
-
-		/* find best match: prefer smallest larger than or
-		 * equal to requested, otherwise largest smaller than
-		 * requested */
-		for (i = 0; i < hc.used; i++) {
-			if ((hc.hc[i].maxsz >= size &&
-			     (e == NULL || hc.hc[i].maxsz < cursz || cursz < size)) ||
-			    (hc.hc[i].maxsz < size &&
-			     cursz < size &&
-			     hc.hc[i].maxsz > cursz)) {
-				e = hc.hc + i;
-				cursz = e->maxsz;
-			}
-		}
-		if (e != NULL && e->maxsz < size) {
-			/* resize file ? */
-			long_str fn;
-
-			GDKfilepath(fn, HCDIR, e->fn, NULL);
-			base = MT_mremap(fn, MMAP_READ | MMAP_WRITE,
-					 e->base, e->maxsz, &size);
-			if (base == NULL) {
-				/* extending may have failed */
-				e = NULL;
-			} else {
-				e->base = base;
-				e->maxsz = size;
-			}
-		}
-		if (e != NULL) {
-			/* move cached heap to its new location */
-			base = e->base;
-			size = e->maxsz;
-			if (GDKmove(HCDIR, e->fn, NULL, BATDIR, fn, NULL) < 0) {
-				/* try to create the directory, if
-				 * that was the problem */
-				char path[PATHLENGTH];
-
-				GDKfilepath(path, BATDIR, fn, NULL);
-				GDKcreatedir(path);
-				if (GDKmove(HCDIR, e->fn, NULL, BATDIR, fn, NULL) < 0)
-					e = NULL;
-			}
-		}
-		if (e != NULL) {
-			hc.used--;
-			i = (int) (e - hc.hc);
-			if (i < hc.used) {
-				e->base = hc.hc[hc.used].base;
-				e->maxsz = hc.hc[hc.used].maxsz;
-				GDKmove(HCDIR, hc.hc[hc.used].fn, NULL, HCDIR, e->fn, NULL);
-			}
-		}
+	fd = GDKfdlocate(fn, "wb", NULL);
+	if (fd >= 0) {
+		close(fd);
+		base = GDKload(fn, NULL, size, size, mode);
+		if (base)
+			*maxsz = size;
 	}
-	MT_lock_unset(&HEAPcacheLock, "HEAPcache_init");
-	if (base == NULL) {
-		int fd = GDKfdlocate(fn, "wb", NULL);
-
-		if (fd >= 0) {
-			close(fd);
-			base = GDKload(fn, NULL, size, size, mode);
-			if (base)
-				*maxsz = size;
-			return base;
-		}
-	} else
-		HEAPDEBUG fprintf(stderr, "#HEAPcacheFind (%s) re-used\n", fn);
-	if (base)
-		*maxsz = size;
 	return base;
 }
 
@@ -295,7 +142,7 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 
 		if (stat(nme, &st) != 0) {
 			h->storage = STORE_MMAP;
-			h->base = HEAPcacheFind(&h->size, of, h->storage);
+			h->base = HEAPcreatefile(&h->size, of, h->storage);
 			h->filename = of;
 		} else {
 			char *ext;
@@ -428,7 +275,7 @@ HEAPextend(Heap *h, size_t size)
 					goto failed;
 				}
 				sprintf(h->filename, "%s.%s", nme, ext);
-				h->base = HEAPcacheFind(&h->size, h->filename, STORE_MMAP);
+				h->base = HEAPcreatefile(&h->size, h->filename, STORE_MMAP);
 				if (h->base) {
 					h->newstorage = h->storage = STORE_MMAP;
 					memcpy(h->base, bak.base, bak.free);
@@ -656,8 +503,8 @@ HEAPcopy(Heap *dst, Heap *src)
  * Is now called even on heaps without memory, just to free the
  * pre-allocated filename.  simple: alloc and copy.
  */
-static int
-HEAPfree_internal(Heap *h, int free_file)
+int
+HEAPfree(Heap *h)
 {
 	if (h->base) {
 		if (h->storage == STORE_MEM) {	/* plain memory */
@@ -666,8 +513,7 @@ HEAPfree_internal(Heap *h, int free_file)
 					  h->size, PTRFMTCAST h->base);
 			GDKfree(h->base);
 		} else {	/* mapped file, or STORE_PRIV */
-			int ret = HEAPcacheAdd(h->base, h->size, h->filename,
-					       h->storage, free_file);
+			int ret = GDKmunmap(h->base, h->size);
 
 			if (ret < 0) {
 				GDKsyserror("HEAPfree: %s was not mapped\n",
@@ -686,12 +532,6 @@ HEAPfree_internal(Heap *h, int free_file)
 		h->filename = NULL;
 	}
 	return 0;
-}
-
-int
-HEAPfree(Heap *h)
-{
-	return HEAPfree_internal(h, 0);
 }
 
 /*
@@ -839,7 +679,7 @@ HEAPdelete(Heap *h, const char *o, const char *ext)
 		return 0;
 	}
 	if (h->base)
-		HEAPfree_internal(h, 1);
+		HEAPfree(h);
 	if (h->copied) {
 		return 0;
 	}

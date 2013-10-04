@@ -12,7 +12,7 @@ stderr of test 'update_primarykey_1643375` in directory 'sql/test/BugConstraints
 # 12:55:04 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=33669  < update_primarykey_1643375.sql
 # 12:55:04 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-481/.s.monetdb.31323
+MAPI  = monetdb@sofia:39182
 QUERY = update t1 set id = 0 where id =1;
 ERROR = !UPDATE: FOREIGN KEY constraint 't2.t2_id_f_fkey' violated
 

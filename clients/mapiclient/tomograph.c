@@ -793,7 +793,7 @@ static void dumpboxes(void)
 				//fprintf(f,""LLFMT" %f 0 0 \n", box[i].clkstart, (box[i].memstart/1024.0));
 				fprintf(f, ""LLFMT" %f %f 0 0\n", box[i].clkend, (box[i].memend / 1024.0), box[i].footend/1024.0);
 			} else 
-			if (box[i].state == PING) {
+			if (box[i].state >= PING) {
 				/* cpu stat events may arrive out of order, drop those */
 				if ( box[i].clkstart <= e)
 					continue;

@@ -72,7 +72,6 @@ BUN HASHmask(BUN cnt);
 Hash *HASHnew(Heap *hp, int tpe, BUN size, BUN mask);
 void HASHremove(BAT *b);
 int HEAPalloc(Heap *h, size_t nitems, size_t itemsize);
-void HEAPcacheInit(void);
 int HEAP_check(Heap *h, HeapRepair *hr);
 int HEAPdelete(Heap *h, const char *o, const char *ext);
 void HEAP_init(Heap *heap, int tpe);
@@ -86,7 +85,7 @@ void MT_global_exit(int status)
 	__attribute__((__noreturn__));
 void MT_init_posix(void);
 void *MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t *new_size);
-int MT_msync(void *p, size_t off, size_t len, int mode);
+int MT_msync(void *p, size_t len, int mode);
 int OIDdirty(void);
 int OIDinit(void);
 oid OIDread(str buf);

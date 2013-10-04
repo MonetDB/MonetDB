@@ -2280,13 +2280,16 @@ BATmergecand(BAT *a, BAT *b)
 	BAT *bn;
 	const oid *ap, *bp, *ape, *bpe;
 	oid *p, i;
+	oid af, al, bf, bl;
+	BATiter ai, bi;
+	bit ad, bd;
 
 	BATcheck(a, "BATmergecand");
 	BATcheck(b, "BATmergecand");
 	assert(a->htype == TYPE_void);
 	assert(b->htype == TYPE_void);
-	assert(ATOMtype(a->htype) == TYPE_oid);
-	assert(ATOMtype(b->htype) == TYPE_oid);
+	assert(ATOMtype(a->ttype) == TYPE_oid);
+	assert(ATOMtype(b->ttype) == TYPE_oid);
 	assert(BATcount(a) <= 1 || a->tsorted);
 	assert(BATcount(b) <= 1 || b->tsorted);
 	assert(BATcount(a) <= 1 || a->tkey);
@@ -2294,7 +2297,28 @@ BATmergecand(BAT *a, BAT *b)
 	assert(a->T->nonil);
 	assert(b->T->nonil);
 
-	/* XXX we could return a if b is empty (and v.v.) */
+	/* we can return a if b is empty (and v.v.) */
+	if ( BATcount(a) == 0){
+		return BATcopy(b, b->htype, b->ttype, 0);
+	}
+	if ( BATcount(b) == 0){
+		return BATcopy(a, a->htype, a->ttype, 0);
+	}
+	/* we can return a if a fully covers b (and v.v) */
+	ai = bat_iterator(a);
+	bi = bat_iterator(b);
+	af = *(oid*) BUNtail(ai, BUNfirst(a));
+	bf = *(oid*) BUNtail(bi, BUNfirst(b));
+	al = *(oid*) BUNtail(ai, BUNlast(a) - 1);
+	bl = *(oid*) BUNtail(bi, BUNlast(b) - 1);
+	ad = (af + BATcount(a) - 1 == al); /* i.e., dense */
+	bd = (bf + BATcount(b) - 1 == bl); /* i.e., dense */
+	if (ad && af <= bf && al >= bl) {
+		return BATcopy(a, a->htype, a->ttype,0);
+	}
+	if (bd && bf <= af && bl >= al) {
+		return BATcopy(b, b->htype, b->ttype,0);
+	}
 
 	bn = BATnew(TYPE_void, TYPE_oid, BATcount(a) + BATcount(b));
 	if (bn == NULL)
@@ -2382,8 +2406,8 @@ BATintersectcand(BAT *a, BAT *b)
 	BATcheck(b, "BATintersectcand");
 	assert(a->htype == TYPE_void);
 	assert(b->htype == TYPE_void);
-	assert(ATOMtype(a->htype) == TYPE_oid);
-	assert(ATOMtype(b->htype) == TYPE_oid);
+	assert(ATOMtype(a->ttype) == TYPE_oid);
+	assert(ATOMtype(b->ttype) == TYPE_oid);
 	assert(a->tsorted);
 	assert(b->tsorted);
 	assert(a->tkey);

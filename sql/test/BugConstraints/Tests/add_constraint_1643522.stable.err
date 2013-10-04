@@ -12,7 +12,7 @@ stderr of test 'add_constraint_1643522` in directory 'sql/test/BugConstraints` i
 # 12:55:03 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=33669  < add_constraint_1643522.sql
 # 12:55:03 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-481/.s.monetdb.31323
+MAPI  = monetdb@sofia:38972
 QUERY = alter table t1 add constraint id_p primary key(id);
 ERROR = !CONSTRAINT PRIMARY KEY: key 'id_p' already exists
 

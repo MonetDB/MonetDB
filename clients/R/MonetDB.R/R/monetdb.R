@@ -38,7 +38,10 @@ mc <- function(dbname="demo", user="monetdb", password="monetdb", host="localhos
 	dbConnect(MonetDB.R(),dbname,user,password,host,port,timeout,wait,...)
 }
 
-setMethod("dbConnect", "MonetDBDriver", def=function(drv,dbname="demo", user="monetdb", password="monetdb", host="localhost",port=50000, timeout=86400, wait=FALSE,...) {
+setMethod("dbConnect", "MonetDBDriver", def=function(drv,dbname="demo", user="monetdb", password="monetdb", host="localhost",port=50000, timeout=86400, wait=FALSE,...,url="") {
+			if (substring(url,1,10) == "monetdb://") {
+				dbname <- url
+			}
 			if (substring(dbname,1,10) == "monetdb://") {
 				#warning("MonetDB.R: Using 'monetdb://...' URIs in dbConnect() is deprecated. Please switch to dbname, host, port named arguments.")
 				rest <- substring(dbname,11,nchar(dbname))
@@ -184,6 +187,8 @@ setMethod("dbSendQuery", signature(conn="MonetDBConnection", statement="characte
 			
 			if (!env$success) {
 				sp <- strsplit(env$message,"!",fixed=T)[[1]]
+				# truncate statement to not hide actual error message
+				if (nchar(statement) > 100) { statement <- paste0(substring(statement,1,100),"...") }
 				if (length(sp) == 3) {
 					errno <- as.numeric(sp[[2]])
 					errmsg <- sp[[3]]

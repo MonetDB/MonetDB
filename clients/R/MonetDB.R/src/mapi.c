@@ -6,6 +6,7 @@
 #ifdef __WIN32__
 #include <winsock2.h>
 #include <ws2tcpip.h>
+#undef ERROR
 #else
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -34,16 +35,27 @@ static SEXP MAPI_type_tag;
     if (TYPEOF(s) != EXTPTRSXP || \
         R_ExternalPtrTag(s) != MAPI_type_tag || \
         EXTPTR_PTR(s) == NULL) \
-        error("Socket has already been closed and cannot be used."); \
+        error("Socket was either not successfully connected or is already closed. Either way, it cannot be used."); \
 } while (0)
 
 SEXP mapiInit(void) {
 	MAPI_type_tag = install("MAPI_TYPE_TAG");
+#ifdef __WIN32__
+	// I will not even TRY to understand why this is required
+	WSADATA wsaData;
+	int iResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
+	if (iResult != 0) {
+		error("WSAStartup failed: %d", iResult);
+	}
+#endif
 	return R_NilValue;
 }
 
 SEXP mapiDisconnect(SEXP conn) {
-	CHECK_MAPI_SOCK(conn);
+	if (TYPEOF(conn) != EXTPTRSXP || R_ExternalPtrTag(conn) != MAPI_type_tag) {
+		warning("trying to disconnect from a non-socket.");
+		return R_NilValue;
+	}
 	SOCKET *sock = R_ExternalPtrAddr(conn);
 	if (sock != NULL) {
 		shutdown(*sock, 2);
@@ -75,14 +87,6 @@ SEXP mapiConnect(SEXP host, SEXP port, SEXP timeout) {
 
 	struct addrinfo hints;
 	struct addrinfo *result, *rp;
-#ifdef __WIN32__
-	// I will not even TRY to understand why this is required
-	WSADATA wsaData;
-	int iResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
-	if (iResult != 0) {
-		error("WSAStartup failed: %d", iResult);
-	}
-#endif
 
 	//  send/receive timeouts for socket
 #ifdef __WIN32__
@@ -123,8 +127,8 @@ SEXP mapiConnect(SEXP host, SEXP port, SEXP timeout) {
 		// lets have a 1M buffer on this socket, ok?
 		int recvbuf_size = ALLOCSIZE;
 
-		if (setsockopt(sock, SOL_SOCKET, SO_RCVBUF, &recvbuf_size,
-				sizeof(recvbuf_size))) {
+		if (setsockopt(sock, SOL_SOCKET, SO_RCVBUF,
+				(const char *) &recvbuf_size, sizeof(recvbuf_size))) {
 			error("setsockopt failed");
 		}
 		if (connect(sock, rp->ai_addr, rp->ai_addrlen) != -1) {
@@ -235,7 +239,7 @@ SEXP mapiRead(SEXP conn) {
 			response_buf_len += ALLOCSIZE;
 			if (DEBUG) {
 				printf("II: Reallocating memory, new size %lu\n",
-						response_buf_len);
+						(unsigned long) response_buf_len);
 			}
 			response_buf = realloc(response_buf, response_buf_len);
 			if (response_buf == NULL) {
@@ -255,7 +259,7 @@ SEXP mapiRead(SEXP conn) {
 	size_t i;
 	for (i = 0; i < response_buf_offset; i++) {
 		if (response_buf[i] == '\0') {
-			warning("Removed a NULL character from response at offset %lu of %lu",i,response_buf_offset);
+			warning("Removed a NULL character from response at offset %lu of %lu",(unsigned long) i,(unsigned long) response_buf_offset);
 			response_buf[i] = '\t';
 		}
 	}
@@ -315,6 +319,7 @@ SEXP mapiWrite(SEXP conn, SEXP message) {
 }
 
 SEXP mapiRequest(SEXP conn, SEXP message) {
+	CHECK_MAPI_SOCK(conn);
 	mapiWrite(conn, message);
 	return (mapiRead(conn));
 }

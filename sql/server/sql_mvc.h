@@ -240,9 +240,11 @@ extern void stack_set_var(mvc *sql, char *name, ValRecord *v);
 extern str stack_get_string(mvc *sql, char *name);
 extern void stack_set_string(mvc *sql, char *name, str v);
 #ifdef HAVE_HGE
+extern hge val_get_number(ValRecord *val);
 extern hge stack_get_number(mvc *sql, char *name);
 extern void stack_set_number(mvc *sql, char *name, hge v);
 #else
+extern lng val_get_number(ValRecord *val);
 extern lng stack_get_number(mvc *sql, char *name);
 extern void stack_set_number(mvc *sql, char *name, lng v);
 #endif
