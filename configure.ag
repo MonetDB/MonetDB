@@ -1317,34 +1317,45 @@ if test "x$enable_testing" != xno ; then
 fi
 
 RUBY=ruby
+AC_PATH_PROG(RUBY,$RUBY,no,$PATH)
 have_rubygem_dir=auto
 AC_ARG_WITH(rubygem-dir,
 	AS_HELP_STRING([--with-rubygem-dir=DIR], [Ruby gems are installed in DIR]),
 	have_rubygem_dir="$withval")
 
 case "$have_rubygem_dir" in
-	yes|auto)
-		AC_PATH_PROG(RUBY,$RUBY,no,$PATH)
+	no) ;;
+	*)
 		if test "x$RUBY" = xno; then
 			if test "x$have_rubygem_dir" != xauto; then
-				AC_MSG_ERROR([No Ruby executable found, specify --with-rubygem-dir explicitly])
+				AC_MSG_ERROR([No Ruby executable found])
 			fi
 			have_rubygem_dir=no
 		else
-			AC_MSG_CHECKING([where rubygems are stored])
-			RUBY_DIR=
-			d=`$RUBY -rrbconfig -e "puts Config::CONFIG[['prefix']]" 2>/dev/null`
-			RUBY_DIR=`$RUBY -rrbconfig -e "puts Config::CONFIG[['sitelibdir']]" 2>/dev/null | sed -e "s|^$d/||" -e 's/site_ruby/gems/'`
-			if test x"$RUBY_DIR" = x ; then
-				AC_MSG_ERROR([unable to determine rubygems location])
-			else
-				AC_MSG_RESULT([$RUBY_DIR])
-			fi
+			case "$have_rubygem_dir" in
+				yes|auto)
+					AC_MSG_CHECKING([where rubygems are stored])
+					RUBY_DIR=
+					d=`$RUBY -rrbconfig -e "puts Config::CONFIG[['prefix']]" 2>/dev/null`
+					RUBY_DIR=`$RUBY -rrbconfig -e "puts Config::CONFIG[['sitelibdir']]" 2>/dev/null | sed -e "s|^$d/||" -e 's/site_ruby/gems/'`
+					if test x"$RUBY_DIR" = x ; then
+						if test x"$have_rubygem_dir" != xauto; then
+							AC_MSG_ERROR([unable to determine rubygems location])
+						else
+							AC_MSG_RESULT([unable to determine rubygems location])
+							RUBY=no
+						fi
+					else
+						AC_MSG_RESULT([$RUBY_DIR])
+					fi
+					;;
+				*)
+					RUBY_DIR="$have_rubygem_dir"
+					;;
+			esac
 		fi
 		;;
-	no) ;;
 	*)
-		RUBY_DIR="$have_rubygem_dir"
 		;;
 esac
 case "$RUBY_DIR" in
