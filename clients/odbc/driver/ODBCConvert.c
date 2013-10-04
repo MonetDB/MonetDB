@@ -1255,7 +1255,25 @@ ODBCFetch(ODBCStmt *stmt,
 		case SQL_WCHAR:
 		case SQL_WVARCHAR:
 		case SQL_WLONGVARCHAR:
-			copyString(data, datalen, ptr, buflen, lenp, SQLLEN, addStmtError, stmt, return SQL_ERROR);
+			if (irdrec->already_returned > datalen) {
+				data += datalen;
+				datalen = 0;
+			} else {
+				data += irdrec->already_returned;
+				datalen -= irdrec->already_returned;
+			}
+			if (datalen == 0 && irdrec->already_returned != 0) {
+				/* no more data to return */
+				if (type == SQL_C_WCHAR)
+					free(ptr);
+				return SQL_NO_DATA;
+			}
+			copyString(data, datalen, ptr, buflen, lenp, SQLLEN,
+				   addStmtError, stmt, return SQL_ERROR);
+			if (datalen < (size_t) buflen)
+				irdrec->already_returned += datalen;
+			else
+				irdrec->already_returned += buflen;
 			break;
 		case SQL_BINARY:
 		case SQL_VARBINARY:
@@ -1272,6 +1290,19 @@ ODBCFetch(ODBCStmt *stmt,
 				if (type == SQL_C_WCHAR)
 					free(ptr);
 				return SQL_ERROR;
+			}
+			if (irdrec->already_returned > datalen) {
+				data += datalen;
+				datalen = 0;
+			} else {
+				data += irdrec->already_returned;
+				datalen -= irdrec->already_returned;
+			}
+			if (datalen == 0 && irdrec->already_returned != 0) {
+				/* no more data to return */
+				if (type == SQL_C_WCHAR)
+					free(ptr);
+				return SQL_NO_DATA;
 			}
 			for (k = 0; k < datalen; k++) {
 				if ('0' <= data[k] && data[k] <= '9')
@@ -1296,6 +1327,7 @@ ODBCFetch(ODBCStmt *stmt,
 				} else
 					c = n << 4;
 			}
+			irdrec->already_returned += k;
 			if (lenp)
 				*lenp = j;
 			break;

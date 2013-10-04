@@ -59,6 +59,7 @@ typedef struct {
 	SQLSMALLINT sql_desc_unnamed;
 	SQLSMALLINT sql_desc_unsigned;
 	SQLSMALLINT sql_desc_updatable;
+	size_t already_returned;
 } ODBCDescRec;
 
 typedef struct {
