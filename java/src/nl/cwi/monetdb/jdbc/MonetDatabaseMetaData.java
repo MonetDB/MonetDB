@@ -1708,23 +1708,26 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 			"AS smallint) AS \"DATA_TYPE\", " +
 			"\"columns\".\"type\" AS \"TYPE_NAME\", " +
 			"\"columns\".\"type_digits\" AS \"COLUMN_SIZE\", " +
-			"\"columns\".\"type_scale\" AS \"DECIMAL_DIGITS\", 0 AS \"BUFFER_LENGTH\", " +
+			"0 AS \"BUFFER_LENGTH\", " +
+			"\"columns\".\"type_scale\" AS \"DECIMAL_DIGITS\", " +
 			"10 AS \"NUM_PREC_RADIX\", " +
 			"cast(CASE \"null\" " +
 				"WHEN true THEN " + ResultSetMetaData.columnNullable + " " +
 				"WHEN false THEN " + ResultSetMetaData.columnNoNulls + " " +
-			"END AS int) AS \"NULLABLE\", cast(null AS varchar(1)) AS \"REMARKS\", " +
-			"\"columns\".\"default\" AS \"COLUMN_DEF\", 0 AS \"SQL_DATA_TYPE\", " +
+			"END AS int) AS \"NULLABLE\", " +
+			"cast(null AS varchar(1)) AS \"REMARKS\", " +
+			"\"columns\".\"default\" AS \"COLUMN_DEF\", " +
+			"0 AS \"SQL_DATA_TYPE\", " +
 			"0 AS \"SQL_DATETIME_SUB\", 0 AS \"CHAR_OCTET_LENGTH\", " +
 			"\"columns\".\"number\" + 1 AS \"ORDINAL_POSITION\", " +
-			"cast(null AS varchar(1)) AS \"SCOPE_CATALOG\", " +
-			"cast(null AS varchar(1)) AS \"SCOPE_SCHEMA\", " +
-			"cast(null AS varchar(1)) AS \"SCOPE_TABLE\", " +
-			"cast(" + MonetDriver.getJavaType("other") + " AS smallint) AS \"SOURCE_DATA_TYPE\", " +
 			"CASE \"null\" " +
 				"WHEN true THEN CAST ('YES' AS varchar(3)) " +
 				"WHEN false THEN CAST ('NO' AS varchar(3)) " +
-			"END AS \"IS_NULLABLE\" " +
+			"END AS \"IS_NULLABLE\", " +
+			"cast(null AS varchar(1)) AS \"SCOPE_CATALOG\", " +
+			"cast(null AS varchar(1)) AS \"SCOPE_SCHEMA\", " +
+			"cast(null AS varchar(1)) AS \"SCOPE_TABLE\", " +
+			"cast(" + MonetDriver.getJavaType("other") + " AS smallint) AS \"SOURCE_DATA_TYPE\" " +
 				"FROM \"sys\".\"columns\" AS \"columns\", " +
 					"\"sys\".\"tables\" AS \"tables\", " +
 					"\"sys\".\"schemas\" AS \"schemas\" " +
@@ -2102,7 +2105,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 			"\"schemas\".\"name\" AS \"TABLE_SCHEM\", " +
 			"\"tables\".\"name\" AS \"TABLE_NAME\", " +
 			"\"objects\".\"name\" AS \"COLUMN_NAME\", " +
-			"\"objects\".\"nr\" AS \"KEY_SEQ\", \"keys\".\"name\" AS \"PK_NAME\" " +
+			"\"objects\".\"nr\" + 1 AS \"KEY_SEQ\", \"keys\".\"name\" AS \"PK_NAME\" " +
 		"FROM \"sys\".\"keys\" AS \"keys\", " +
 			"\"sys\".\"objects\" AS \"objects\", " +
 			"\"sys\".\"tables\" AS \"tables\", " +
@@ -2124,16 +2127,20 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 		return getStmt().executeQuery(query);
 	}
 
-	final static String keyQuery =
-		", \"pkschema\".\"name\" AS \"PKTABLE_SCHEM\", " +
-		"\"pktable\".\"name\" AS \"PKTABLE_NAME\", \"pkkeycol\".\"name\" AS \"PKCOLUMN_NAME\", " +
+	final static String keyQuery = "SELECT 'DBSCHEMA_TOKEN' AS \"PKTABLE_CAT\", " +
+		"\"pkschema\".\"name\" AS \"PKTABLE_SCHEM\", " +
+		"\"pktable\".\"name\" AS \"PKTABLE_NAME\", " +
+		"\"pkkeycol\".\"name\" AS \"PKCOLUMN_NAME\", " +
+		"'DBSCHEMA_TOKEN'  AS \"FKTABLE_CAT\", " +
 		"\"fkschema\".\"name\" AS \"FKTABLE_SCHEM\", " +
-		"\"fktable\".\"name\" AS \"FKTABLE_NAME\", \"fkkeycol\".\"name\" AS \"FKCOLUMN_NAME\", " +
-		"\"pkkeycol\".\"nr\" AS \"KEY_SEQ\", " +
+		"\"fktable\".\"name\" AS \"FKTABLE_NAME\", " +
+		"\"fkkeycol\".\"name\" AS \"FKCOLUMN_NAME\", " +
+		"\"pkkeycol\".\"nr\" + 1 AS \"KEY_SEQ\", " +
 		DatabaseMetaData.importedKeyNoAction + " AS \"UPDATE_RULE\", " +
 		"" + DatabaseMetaData.importedKeyNoAction + " AS \"DELETE_RULE\", " +
-		"\"fkkey\".\"name\" AS \"FK_NAME\", \"pkkey\".\"name\" AS \"PK_NAME\", " +
-		"" + DatabaseMetaData.importedKeyNotDeferrable + " AS \"DEFERRABILITY\" " +
+		"\"fkkey\".\"name\" AS \"FK_NAME\", " +
+		"\"pkkey\".\"name\" AS \"PK_NAME\", " +
+		DatabaseMetaData.importedKeyNotDeferrable + " AS \"DEFERRABILITY\" " +
 			"FROM \"sys\".\"keys\" AS \"fkkey\", \"sys\".\"keys\" AS \"pkkey\", \"sys\".\"objects\" AS \"fkkeycol\", " +
 			"\"sys\".\"objects\" AS \"pkkeycol\", \"sys\".\"tables\" AS \"fktable\", \"sys\".\"tables\" AS \"pktable\", " +
 			"\"sys\".\"schemas\" AS \"fkschema\", \"sys\".\"schemas\" AS \"pkschema\" " +
@@ -2145,7 +2152,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 
 	static String keyQuery(String cat) {
 		// FIXME: cat should probably be single-quote-escaped
-		return "SELECT '" + cat + "' AS \"PKTABLE_CAT\", '" + cat + "' AS \"FKTABLE_CAT\"" + keyQuery;
+		return keyQuery.replaceAll("DBSCHEMA_TOKEN",cat);
 	}
 
 	/**
@@ -2539,7 +2546,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 				"\"schemas\".\"name\" AS \"TABLE_SCHEM\", " +
 				"CASE WHEN \"keys\".\"name\" IS NULL THEN true ELSE false END AS \"NON_UNIQUE\", " +
 				"CASE \"idxs\".\"type\" WHEN 0 THEN " + DatabaseMetaData.tableIndexHashed + " ELSE " + DatabaseMetaData.tableIndexOther + " END AS \"TYPE\", " +
-				"\"objects\".\"nr\" AS \"ORDINAL_POSITION\", " +
+				"\"objects\".\"nr\" + 1 AS \"ORDINAL_POSITION\", " +
 				"\"columns\".\"name\" as \"COLUMN_NAME\", " +
 				"cast(null AS varchar(1)) AS \"INDEX_QUALIFIER\", " +
 				"cast(null AS varchar(1)) AS \"ASC_OR_DESC\", " +
