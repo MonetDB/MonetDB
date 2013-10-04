@@ -84,12 +84,17 @@ headers_mal = {
 		batmtime.mal querylog.mal sysmon.mal
 }
 
+headers_auto = {
+	HEADERS = mal
+	DIR = libdir/monetdb5/autoload
+	SOURCES = 01_calc.mal 01_batcalc.mal
+}
+
 headers_hge = {
 	COND = HAVE_HGE
 	HEADERS = mal
 	DIR = libdir/monetdb5/autoload
-	SOURCES = 01_calc.mal 01_batcalc.mal \
-		00_calc_hge.mal 00_batcalc_hge.mal \
+	SOURCES = 00_calc_hge.mal 00_batcalc_hge.mal \
 		00_cluster_hge.mal 00_iterator_hge.mal 00_language_hge.mal \
 		00_mal_mapi_hge.mal 00_mkey_hge.mal 00_pqueue_hge.mal
 }
