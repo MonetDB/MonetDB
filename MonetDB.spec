@@ -782,20 +782,19 @@ rm -fr $RPM_BUILD_ROOT
 - Rebuilt.
 
 * Thu Jan 17 2013 Stefan Manegold <Stefan.Manegold@cwi.nl> - 11.15.1-20130212
-- testing:
-enabled "top-level" Mtest.py
-So far, while Mtest.py could be called in any subdirectory of the MonetDB
-source tree (and could then run all tests in the entire sub-tree),
-it was not possible to call Mtest.py in the top-level MonetDB source
-directory to run all tests.  Instead, to run all tests, Mtest.py had to
-be called at least 4 times, once in each of these directories: "clients",
-"monetdb5", "sql", "geom".
-Now, it is possible to call Mtest.py once in the top-level MonetDB source
-directory to run all tests in one go.
-The behaviour of calling Mtest.py in any subdirectory, including the
-four mentioned above, did not changed, other than that now obsolete
-command line options "-p / --package <package>" and "-5 / --monetdb5"
-have been removed.
+- testing: enabled "top-level" Mtest.py
+  So far, while Mtest.py could be called in any subdirectory of the MonetDB
+  source tree (and could then run all tests in the entire sub-tree),
+  it was not possible to call Mtest.py in the top-level MonetDB source
+  directory to run all tests.  Instead, to run all tests, Mtest.py had to
+  be called at least 4 times, once in each of these directories: "clients",
+  "monetdb5", "sql", "geom".
+  Now, it is possible to call Mtest.py once in the top-level MonetDB source
+  directory to run all tests in one go.
+  The behaviour of calling Mtest.py in any subdirectory, including the
+  four mentioned above, did not changed, other than that now obsolete
+  command line options "-p / --package <package>" and "-5 / --monetdb5"
+  have been removed.
 
 * Tue Jan 15 2013 Fabian Groffen <fabian@monetdb.org> - 11.15.1-20130212
 - clients: Mapi protocol v8 support was removed from all client drivers.  Protocol
