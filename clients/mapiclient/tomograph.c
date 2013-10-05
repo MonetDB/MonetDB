@@ -314,38 +314,11 @@ int topbox = 0;
 lng totalclkticks = 0; /* number of clock ticks reported */
 lng totalexecticks = 0; /* number of ticks reported for processing */
 lng lastclktick = 0;
-lng totalticks; 
+lng totalticks = 0; 
 lng starttime = 0;
 int figures = 0;
 char *currentfunction= 0;
 int object = 1;
-
-static void resetTomograph(void){
-	static char buf[128];
-	int i;
-	if(atlas) {
-		snprintf(buf,128,"%s_%02d",basefilename, ++atlaspage);
-		filename = buf;
-	} 
-	if (debug)
-		fprintf(stderr, "RESET tomograph %d\n", atlaspage);
-	for(i=0; i< MAXTHREADS; i++)
-		lastclk[i]=0;
-	topbox =0;
-	for (i = 0; i < MAXTHREADS; i++)
-		threads[i] = topbox++;
-
-	startrange = 0, endrange = 0;
-	maxio = 0;
-	cpus = 0;
-	batch = batchsize;
-	totalclkticks = 0; 
-	totalexecticks = 0;
-	lastclktick = 0;
-	figures = 0;
-	currentfunction = 0;
-	object = 1;
-}
 
 static void dumpbox(int i)
 {
@@ -1421,6 +1394,38 @@ static void gnuplotheader(char *filename)
 			*c = '-';
 	fprintf(gnudata, "set title \"%s\t\t%s\"\n", (title ? title : "Tomogram"), date);
 	fprintf(gnudata, "set multiplot\n");
+}
+
+static void resetTomograph(void){
+	static char buf[128];
+	int i;
+	if(atlas) {
+		snprintf(buf,128,"%s_%02d",basefilename, ++atlaspage);
+		filename = buf;
+	} 
+	if (debug)
+		fprintf(stderr, "RESET tomograph %d\n", atlaspage);
+	for(i=0; i< NUM_COLORS;i++){
+		colors[i].freq=0;
+		colors[i].timeused = 0;
+	}
+	for(i=0; i< MAXTHREADS; i++)
+		lastclk[i]=0;
+	topbox =0;
+	for (i = 0; i < MAXTHREADS; i++)
+		threads[i] = topbox++;
+
+	startrange = 0, endrange = 0;
+	maxio = 0;
+	cpus = 0;
+	batch = batchsize;
+	totalclkticks = 0; 
+	totalticks = 0; 
+	totalexecticks = 0;
+	lastclktick = 0;
+	figures = 0;
+	currentfunction = 0;
+	object = 1;
 }
 
 static void createTomogram(void)
