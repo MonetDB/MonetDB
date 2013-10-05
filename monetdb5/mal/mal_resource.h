@@ -24,6 +24,7 @@
 
 #define TIMESLICE  2000000 /* usec */
 #define DELAYUNIT 5 /* ms delay in parallel processing decisions */
+#define MAX_DELAYS 1000 /* never wait forever */
 
 #define USE_MAL_ADMISSION
 #ifdef USE_MAL_ADMISSION
