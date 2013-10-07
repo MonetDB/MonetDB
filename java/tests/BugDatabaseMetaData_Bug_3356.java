@@ -3,36 +3,38 @@
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  * http://www.monetdb.org/Legal/MonetDBLicense
- * 
+ *
  * Software distributed under the License is distributed on an "AS IS"
  * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
  * License for the specific language governing rights and limitations
  * under the License.
- * 
+ *
  * The Original Code is the MonetDB Database System.
- * 
+ *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
  * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
-*/
+ */
 
-#ifndef _MAL_RESOURCE_H
-#define _MAL_RESOURCE_H
+import java.sql.*;
 
-#include "mal_interpreter.h"
-
-#define TIMESLICE  2000000 /* usec */
-#define DELAYUNIT 5 /* ms delay in parallel processing decisions */
-#define MAX_DELAYS 1000 /* never wait forever */
-
-#define USE_MAL_ADMISSION
-#ifdef USE_MAL_ADMISSION
-mal_export int MALadmission(lng argclaim, lng hotclaim);
-#endif
-
-mal_export lng getMemoryClaim(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int i, int flag);
-mal_export void MALresourceFairness(lng usec);
-mal_export void initResource(void);
-
-#endif /*  _MAL_RESOURCE_H*/
+public class BugDatabaseMetaData_Bug_3356 {
+	public static void main(String[] args) throws Exception {
+		Class.forName("nl.cwi.monetdb.jdbc.MonetDriver");
+		Connection con = DriverManager.getConnection(args[0]);
+		DatabaseMetaData dbmd = con.getMetaData();
+		ResultSet rs = dbmd.getColumns("mTests_sql_jdbc_tests", "sys", "_tables", "id");
+		rs.next();
+		String tableName1 = rs.getString("TABLE_NAME");
+		String tableName2 = rs.getString(3);
+		String isNullable1 = rs.getString("IS_NULLABLE");
+		String isNullable2 = rs.getString(18);
+		System.out.println(tableName1);
+		System.out.println(tableName2);
+		System.out.println(isNullable1);
+		System.out.println(isNullable2);
+		rs.close();
+		con.close();
+	}
+}

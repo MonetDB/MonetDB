@@ -60,7 +60,7 @@ command sql.round( v:@1, d:int, s:int, r:bte) :@1
 address @1_round_wrap
 comment "round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)";
 
-command sql.round( v:bat[:oid,:@1], d:int, s:int, r:bte) :bat[:oid,:@1]
+command batsql.round( v:bat[:oid,:@1], d:int, s:int, r:bte) :bat[:oid,:@1]
 address @1_bat_round_wrap
 comment "round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)";
 
