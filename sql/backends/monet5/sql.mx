@@ -670,7 +670,7 @@ command sql.round( v:@1, d:int, s:int, r:bte) :@1
 address @1_round_wrap
 comment "round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)";
 
-command sql.round( v:bat[:oid,:@1], d:int, s:int, r:bte) :bat[:oid,:@1]
+command batsql.round( v:bat[:oid,:@1], d:int, s:int, r:bte) :bat[:oid,:@1]
 address @1_bat_round_wrap
 comment "round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)";
 
@@ -690,7 +690,7 @@ command sql.dec_round( v:@1, r:@1 ) :@1
 address @1_dec_round_wrap
 comment "round off the value v to nearests multiple of r";
 
-command sql.dec_round( v:bat[:oid,:@1], r:@1 ) :bat[:oid,:@1] 
+command batsql.dec_round( v:bat[:oid,:@1], r:@1 ) :bat[:oid,:@1] 
 address @1_bat_dec_round_wrap
 comment "round off the value v to nearests multiple of r";
 
