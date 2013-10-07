@@ -1,0 +1,41 @@
+stdout of test 'BugDatabaseMetaData_Bug_3356` in directory 'sql/jdbc/tests` itself:
+
+
+# 17:27:28 >  
+# 17:27:28 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=34631" "--set" "mapi_usock=/var/tmp/mtest-23634/.s.monetdb.34631" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/sjoerd/Monet-stable/var/MonetDB/mTests_sql_jdbc_tests" "--set" "mal_listing=0"
+# 17:27:28 >  
+
+# MonetDB 5 server v11.15.16 (hg id: 4e1be37a5d65+)
+# This is an unreleased version
+# Serving database 'mTests_sql_jdbc_tests', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.591 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2013 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://madrid.ins.cwi.nl:34631/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-23634/.s.monetdb.34631
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 17:27:28 >  
+# 17:27:28 >  "./BugDatabaseMetaData_Bug_3356.SQL.sh" "BugDatabaseMetaData_Bug_3356"
+# 17:27:28 >  
+
+
+# 17:27:28 >  
+# 17:27:28 >  java BugDatabaseMetaData_Bug_3356 "jdbc:monetdb://madrid:34631/mTests_sql_jdbc_tests?user=monetdb&password=monetdb"
+# 17:27:28 >  
+
+_tables
+_tables
+YES
+YES
+
+# 17:27:28 >  
+# 17:27:28 >  "Done."
+# 17:27:28 >  
+
