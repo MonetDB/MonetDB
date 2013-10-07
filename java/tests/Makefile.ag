@@ -35,6 +35,7 @@ EXTRA_DIST = \
 		Test_Rtimedate.java \
 		Test_Sbatching.java \
 		BugConcurrent_clients_SF_1504657.java \
+		BugDatabaseMetaData_Bug_3356.java \
 		build.xml build.properties
 
 ant_jar_jdbctests = {
