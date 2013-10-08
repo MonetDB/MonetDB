@@ -287,11 +287,11 @@ BBPunlock(const char *nme)
 
 
 static void
-BBPinithash(void)
+BBPinithash(int j)
 {
 	bat i = BBPsize;
-	int j = 0;
 
+	assert(j >= 0 && j <= BBP_THREADMASK);
 	for (BBP_mask = 1; (BBP_mask << 1) <= BBPlimit; BBP_mask <<= 1)
 		;
 	BBP_hash = (bat *) GDKzalloc(BBP_mask * sizeof(bat));
@@ -326,7 +326,7 @@ BBPinithash(void)
  * BBPtrim, causing deadlock.
  */
 static void
-BBPextend(int buildhash)
+BBPextend(int idx, int buildhash)
 {
 	BBP_notrim = MT_getpid();
 
@@ -350,7 +350,7 @@ BBPextend(int buildhash)
 		BBP_hash = NULL;
 		for (i = 0; i <= BBP_THREADMASK; i++)
 			BBP_free(i) = 0;
-		BBPinithash();
+		BBPinithash(idx);
 	}
 	BBP_notrim = 0;
 }
@@ -836,7 +836,7 @@ BBPreadEntries(FILE *fp, int *min_stamp, int *max_stamp, int oidsize, int bbpver
 		if ((bat) batid >= BBPsize) {
 			BBPsize = (bat) batid + 1;
 			if (BBPsize >= BBPlimit)
-				BBPextend(FALSE);
+				BBPextend(0, FALSE);
 		}
 		if (BBP_desc(bid) != NULL)
 			GDKfatal("BBPinit: duplicate entry in BBP.dir.");
@@ -1012,7 +1012,7 @@ BBPinit(void)
 
 	bbpversion = BBPheader(fp, &BBPoid, &oidsize);
 
-	BBPextend(0);		/* allocate BBP records */
+	BBPextend(0, FALSE);		/* allocate BBP records */
 	BBPsize = 1;
 
 	BBPreadEntries(fp, &min_stamp, &max_stamp, oidsize, bbpversion);
@@ -1026,7 +1026,7 @@ BBPinit(void)
 		BBPsetstamp(max_stamp - min_stamp);
 	}
 
-	BBPinithash();
+	BBPinithash(0);
 	BBP_notrim = 0;
 
 	OIDbase(BBPoid);
@@ -1650,7 +1650,7 @@ BBPinsert(BATstore *bs)
 		 * while we were waiting */
 		if (BBP_free(idx) <= 0) {
 			if (BBPsize++ >= BBPlimit) {
-				BBPextend(TRUE);
+				BBPextend(idx, TRUE);
 			} else {
 				BBP_free(idx) = BBPsize - 1;
 			}
