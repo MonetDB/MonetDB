@@ -122,6 +122,7 @@ str RESTcreateDB(char ** result, char * dbname)
 	char * query = 
 		"CREATE TABLE json_%s (        "
 		"_id uuid, _rev VARCHAR(34),   "
+                "deleted BOOLEAN,              "
 		"js json);                     "
 		"CREATE TABLE jsondesign_%s (  "
 		"_id varchar(128),             "
@@ -133,7 +134,7 @@ str RESTcreateDB(char ** result, char * dbname)
 		"filename varchar(128),        "
 	        "value blob);                  ";
 
-	size_t len = 3 * strlen(dbname) + (12 * line) - (3 * place) + char0;
+	size_t len = 3 * strlen(dbname) + (13 * line) - (3 * place) + char0;
 	querytext = malloc(len);
 	snprintf(querytext, len, query, dbname, dbname, dbname);
 
@@ -171,17 +172,18 @@ str RESTcreateDB(char ** result, char * dbname)
                 "       VARCHAR(6));           "
                 "   END IF;                    "
                 "  INSERT INTO json_%s (       "
-                "   _id, _rev, js )            "
+                "   _id, _rev, deleted, js )   "
                 "  VALUES ( doc_id,            "
                 "   CONCAT(NEWVER,             "
                 "    CONCAT('-',               "
                 "     md5(doc))),              "
+                "   FALSE,                     "
                 "   doc );                     "
                 "  RETURN                      "
                 "   SELECT TRUE;               "
                 "END;                          ";
 
-	len = 4 * strlen(dbname) + (38 * line) - (4 * place) + char0;
+	len = 4 * strlen(dbname) + (39 * line) - (4 * place) + char0;
 
 	querytext = malloc(len);
 	snprintf(querytext, len, query, dbname, dbname, dbname, dbname);
@@ -223,11 +225,11 @@ str RESTdeleteDB(char ** result, char * dbname)
 str RESTcreateDoc(char ** result, char * dbname, const char * doc)
 {
 	str msg = MAL_SUCCEED;
-	size_t len = strlen(dbname) + 2 * strlen(doc)+ 78;
+	size_t len = strlen(dbname) + 2 * strlen(doc)+ 93 + char0;
 	char * querytext = NULL;
 
 	querytext = malloc(len);
-	snprintf(querytext, len, "INSERT INTO json_%s (_id, _rev, js) VALUES (uuid(), concat('1-', md5('%s')), '%s');", dbname, doc, doc);
+	snprintf(querytext, len, "INSERT INTO json_%s (_id, _rev, deleted, js) VALUES (uuid(), concat('1-', md5('%s')), FALSE, '%s');", dbname, doc, doc);
 
 	msg = RESTsqlQuery(result, querytext);
 	if (querytext != NULL) {
@@ -258,16 +260,17 @@ str RESTdbInfo(char **result, char * dbname)
                        "json_%s                       "
                        "WHERE curr_%s._id =           "
                        " json_%s._id                  "
+                       "AND json_%s.deleted = FALSE   "
                        "AND curr_%s.maxrev =          "
                        " CAST(SUBSTRING(_rev,         "
                        " 1,POSITION('-' IN _rev) - 1) "
 	               "AS INT);                      ";
-	size_t len = 10 * strlen(dbname) + (19 * line) - (10 * place) + char0;
+	size_t len = 11 * strlen(dbname) + (20 * line) - (11 * place) + char0;
 
 	querytext = malloc(len);
-	snprintf(querytext, len, query, dbname, dbname, dbname, dbname, 
-                                        dbname, dbname, dbname, 
-                                        dbname, dbname, dbname);
+	snprintf(querytext, len, query, dbname, dbname, dbname, dbname,
+		 dbname, dbname, dbname, dbname,
+		 dbname, dbname, dbname);
 
 	msg = RESTsqlQuery(result, querytext);
 	if (querytext != NULL) {
@@ -296,16 +299,17 @@ str RESTgetDoc(char ** result, char * dbname, const char * doc_id)
                        "json_%s                       "
                        "WHERE curr_%s._id =           "
                        " json_%s._id                  "
+                       "AND json_%s.deleted = FALSE   "
                        "AND curr_%s.maxrev =          "
                        " CAST(SUBSTRING(_rev,         "
                        " 1,POSITION('-' IN _rev) - 1) "
 	               "AS INT);                      ";
-	size_t len = 10 * strlen(dbname) + (1 * strlen(doc_id)) + (20 * line) - (11 * place) + char0;
+	size_t len = 11 * strlen(dbname) + (1 * strlen(doc_id)) + (21 * line) - (12 * place) + char0;
 
 	querytext = malloc(len);
 	snprintf(querytext, len, query, dbname, dbname, doc_id, dbname, 
-                                        dbname, dbname, dbname, dbname,
-                                        dbname, dbname, dbname);
+		 dbname, dbname, dbname, dbname,
+		 dbname, dbname, dbname, dbname);
 
 	msg = RESTsqlQuery(result, querytext);
 	if (querytext != NULL) {
@@ -334,11 +338,11 @@ str RESTupdateDoc(char ** result, char * dbname, const char * doc, const char * 
 str RESTdeleteDoc(char ** result, char * dbname, const char * doc_id)
 {
 	str msg = MAL_SUCCEED;
-	size_t len = strlen(dbname) + strlen(doc_id) + 33 + 1;
+	size_t len = strlen(dbname) + strlen(doc_id) + 47 + 1;
 	char * querytext = NULL;
 
 	querytext = malloc(len);
-	snprintf(querytext, len, "DELETE FROM json_%s WHERE _id = '%s';", dbname, doc_id);
+	snprintf(querytext, len, "UPDATE json_%s SET deleted = TRUE WHERE _id = '%s';", dbname, doc_id);
 
 	msg = RESTsqlQuery(result, querytext);
 	if (querytext != NULL) {
