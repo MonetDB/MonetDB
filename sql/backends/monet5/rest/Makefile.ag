@@ -33,9 +33,7 @@ INCLUDES = .. \
 
 lib__jsonstore = {
 	MODULE
-	#SEP = _
 	DIR = libdir/monetdb5
-	#COND = HAVE_URIPARSER
 	SOURCES = rest_jsonstore.c rest_jsonstore.h \ 
 		rest_jsonstore_handle_get.c rest_jsonstore_handle_get.h
 	LIBS = ../../../../monetdb5/tools/libmonetdb5 \
@@ -44,7 +42,8 @@ lib__jsonstore = {
 	     ../../../../sql/storage/libstore \
 	     #../../../../sql/backends/monet5/lib_sql \
 	     ../../../../gdk/libbat \
-	     $(uriparser_LIBS)
+	     $(uriparser_LIBS) \
+	     $(openssl_LIBS)
 }
 
 headers_jsonstoremal = {

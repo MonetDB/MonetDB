@@ -19,6 +19,10 @@
 
 #include "monetdb_config.h"
 #include <stdio.h>
+#include <openssl/bio.h>
+#include <openssl/evp.h>
+#include <string.h>
+#include <math.h>
 #include "mal_mapi.h"
 #include "mal_client.h"
 #include "mal_linker.h"
@@ -132,9 +136,10 @@ str RESTcreateDB(char ** result, char * dbname)
 		"_id uuid,                     "
 		"mimetype varchar(128),        "
 		"filename varchar(128),        "
-	        "value blob);                  ";
+                "deleted BOOLEAN,               "
+	        "value clob);                  ";
 
-	size_t len = 3 * strlen(dbname) + (13 * line) - (3 * place) + char0;
+	size_t len = 3 * strlen(dbname) + (14 * line) - (3 * place) + char0;
 	querytext = malloc(len);
 	snprintf(querytext, len, query, dbname, dbname, dbname);
 
@@ -392,54 +397,40 @@ str RESTinsertAttach(char ** result, char * dbname, const char * attachment, con
 	size_t len = strlen(dbname) + strlen(doc_id) + strlen(attachment) 
 		+ (7 * line) - (3 * place) + char0;
 */
-	char *s;
-	char * attach;
-	size_t i;
-
 	size_t len;
+	char * attach64;
 	char * query =
-	  "INSERT INTO jsonblob_%s ( _id, mimetype, filename, value ) VALUES ( '%s', '', '\"text/plain\"','%s');";
-	char hexit[] = "0123456789ABCDEF";
+	  "INSERT INTO jsonblob_%s ( _id, mimetype, filename, deleted, value ) VALUES ( '%s', '', '\"text/plain\"', FALSE, '%s');";
 
-	size_t expectedlen;
+	BIO *bio;
+	BIO *b64;
+	FILE* stream;
+	int encodedSize = 4*ceil((double)strlen(attachment)/3);
+	attach64 = malloc(encodedSize+1);
 
-	if (strlen(attachment) == ~(size_t) 0)
-		expectedlen = 4;
-	else
-	  expectedlen = (strlen(attachment) * 2);
-	    /*if (*l < 0 || (size_t) * l < expectedlen) {
-		if (*tostr != NULL)
-			GDKfree(*tostr);
-		*tostr = (str) GDKmalloc(expectedlen);
-		*l = (int) expectedlen;
-	}
-	    */
-	attach = malloc(expectedlen);    
-	s = attach + strlen(attach);
+	stream = fmemopen(attach64, encodedSize+1, "w");
+	b64 = BIO_new(BIO_f_base64());
+	bio = BIO_new_fp(stream, BIO_NOCLOSE);
+	bio = BIO_push(b64, bio);
+	BIO_set_flags(bio, BIO_FLAGS_BASE64_NO_NL);
+	BIO_write(bio, attachment, strlen(attachment));
+	(void)BIO_flush(bio);
+	BIO_free_all(bio);
+	fclose(stream);
 
-	for (i = 0; i < strlen(attachment); i++) {
-		int val = (attachment[i] >> 4) & 15;
-
-		//*s++ = ' ';
-		*s++ = hexit[val];
-		val = attachment[i] & 15;
-		*s++ = hexit[val];
-	}
-	*s = '\0';
-
-	len = strlen(dbname) + strlen(doc_id) + strlen(attach)
-		+ 95 + char0;
+	len = strlen(dbname) + strlen(doc_id) + strlen(attach64)
+		+ 112 + char0;
 
 	querytext = malloc(len);
-	snprintf(querytext, len, query, dbname, doc_id, attach);
+	snprintf(querytext, len, query, dbname, doc_id, attach64);
 
 	msg = RESTsqlQuery(result, querytext);
 	if (querytext != NULL) {
 		free(querytext);
 	}
-	//if (strcmp(*result,"&2 1 -1\n") == 0) {
-	//  msg = RESTsqlQuery(result, result_ok);
-	//}
+	if (attach64 != NULL) {
+		free(attach64);
+	}
 	return msg;
 }
 
@@ -448,11 +439,52 @@ str RESTgetAttach(char ** result, char * dbname, const char * doc_id)
 	str msg = MAL_SUCCEED;
 	size_t len = strlen(dbname) + strlen(doc_id) + 40;
 	char * querytext = NULL;
+	BIO *bio;
+	BIO *b64;
+	int len01 = 0;
+	int inputLen = 0;
+	int decodeLen = 0;
+	int padding = 0;
+	char * attach64;
+	char * attach01;
+	FILE* stream;
 
 	querytext = malloc(len);
-	snprintf(querytext, len, "SELECT * FROM jsonblob_%s WHERE _id = '%s';", dbname, doc_id);
+	snprintf(querytext, len, "SELECT clob FROM jsonblob_%s WHERE _id = '%s';", dbname, doc_id);
 
 	msg = RESTsqlQuery(result, querytext);
+
+	/*
+	  TODO: get the base64 encoded attachment from the resultset 
+	        and replace the current value of result
+	*/
+	attach64 = *result;
+	inputLen = strlen(attach64);
+
+	if (attach64[inputLen - 1] == '=' && attach64[inputLen - 2] == '=') {
+	  padding = 2;
+	} else if (attach64[inputLen - 1] == '=') {
+	  padding = 1;
+	}
+	decodeLen = (int)inputLen*0.75 - padding;
+
+	attach01 = (char*)malloc(decodeLen+1);
+	stream = fmemopen(attach64, strlen(attach64), "r");
+
+	b64 = BIO_new(BIO_f_base64());
+	bio = BIO_new_fp(stream, BIO_NOCLOSE);
+	bio = BIO_push(b64, bio);
+	BIO_set_flags(bio, BIO_FLAGS_BASE64_NO_NL);
+	len01 = BIO_read(bio, attach01, strlen(attach64));
+	//Can test here if len == decodeLen - if not, then return an error
+	attach01[len01] = '\0';
+
+	BIO_free_all(bio);
+	fclose(stream);
+
+	if (attach01 != NULL) {
+		free(attach01);
+	}
 	if (querytext != NULL) {
 		free(querytext);
 	}
