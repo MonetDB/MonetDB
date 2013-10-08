@@ -142,34 +142,46 @@ str RESTcreateDB(char ** result, char * dbname)
 		free(querytext);
 	}
 
-	query = 
-		"CREATE FUNCTION %s_UPDATE_DOC "
-		"( doc_id VARCHAR(36),         "
-		"  doc json )                  "
-		"RETURNS VARCHAR(100)          "
-		"BEGIN                         "
-		"  DECLARE ISNEW INTEGER;      "
-		"  DECLARE VERSION INTEGER;    "
-		"  SET ISNEW = (SELECT         "
-		"    COUNT(*) FROM json_%s     "
-		"    WHERE _id = doc_id);      "
-		"  IF (ISNEW = 0) THEN         "
-		"    INSERT INTO json_%s (     "
-		"      _id, _rev, js )         "
-		"    VALUES ( doc_id,          "
-		"      CONCAT('1-', md5(doc)), "
-		"        doc );                "
-		"  ELSE                        "
-		"    INSERT INTO json_%s (     "
-		"      _id, _rev, js )         "
-		"    VALUES ( doc_id,          "
-		"      CONCAT('2-', md5(doc)), "
-		"        doc );                "
-		"  END IF;                    "
-		"    RETURN                    "
-		"      SELECT 'TRUE' as ok;    "
-	        "END;                          ";
-	len = 4 * strlen(dbname) + (26 * line) - (4 * place) + char0;
+	query = "CREATE FUNCTION %s_update_doc "
+                "( doc_id VARCHAR(36),         "
+                "  doc json )                  "
+                "  RETURNS TABLE ( OK BOOLEAN )"
+                "BEGIN                         "
+                " DECLARE ISNEW INTEGER;       "
+                " DECLARE VERSION INT;         "
+                " DECLARE NEWVER VARCHAR(6);   "
+                " SET ISNEW = (SELECT          "
+                "  COUNT(*) FROM json_%s       "
+                "  WHERE _id = doc_id);        "
+                "   IF (ISNEW = 0) THEN        "
+                "    SET NEWVER = '1';         "
+                "   ELSE                       "
+                "    SET VERSION = (           "
+                "     SELECT MAX(              "
+                "      CAST(                   "
+                "       SUBSTRING(_rev,        "
+                "        1,POSITION('-'        "
+                "         IN _rev) - 1)        "
+                "       AS INT) + 1)           "
+                "     FROM json_%s             "
+                "     WHERE _id =              "
+                "      doc_id);                "
+                "     SET NEWVER =             "
+                "      CAST(VERSION AS         "
+                "       VARCHAR(6));           "
+                "   END IF;                    "
+                "  INSERT INTO json_%s (       "
+                "   _id, _rev, js )            "
+                "  VALUES ( doc_id,            "
+                "   CONCAT(NEWVER,             "
+                "    CONCAT('-',               "
+                "     md5(doc))),              "
+                "   doc );                     "
+                "  RETURN                      "
+                "   SELECT TRUE;               "
+                "END;                          ";
+
+	len = 4 * strlen(dbname) + (38 * line) - (4 * place) + char0;
 
 	querytext = malloc(len);
 	snprintf(querytext, len, query, dbname, dbname, dbname, dbname);
@@ -189,11 +201,11 @@ str RESTdeleteDB(char ** result, char * dbname)
 	str msg = MAL_SUCCEED;
 	char * querytext = NULL;
 	char * query =
-		"DROP FUNCTION %s_UPDATE_DOC;  "
+		"DROP FUNCTION %s_update_doc;  "
 		"DROP TABLE json_%s;           "
 		"DROP TABLE jsonblob_%s;       "
 		"DROP TABLE jsondesign_%s;     ";
-	int len = 4 * strlen(dbname) + (4 * line) - (4 * place) + char0;
+	size_t len = 4 * strlen(dbname) + (4 * line) - (4 * place) + char0;
 
 	querytext = malloc(len);
 	snprintf(querytext, len, query, dbname, dbname, dbname);
@@ -230,11 +242,32 @@ str RESTcreateDoc(char ** result, char * dbname, const char * doc)
 str RESTdbInfo(char **result, char * dbname)
 {
 	str msg = MAL_SUCCEED;
-	int len = strlen(dbname) + 21;
 	char * querytext = NULL;
+	char * query = "WITH curr_%s(maxrev,          "
+                       "             _id) AS (        "
+                       "SELECT MAX(CAST(              "
+                       " SUBSTRING(_rev,1,            "
+                       " POSITION('-' IN _rev) - 1)   "
+                       " AS INT)), _id                "
+                       "FROM json_%s                  "
+                       "GROUP BY _id)                 "
+                       "SELECT json_%s._id,           "
+                       "json_%s._rev,                 "
+                       "json_%s.js                    "
+                       "FROM curr_%s,                 "
+                       "json_%s                       "
+                       "WHERE curr_%s._id =           "
+                       " json_%s._id                  "
+                       "AND curr_%s.maxrev =          "
+                       " CAST(SUBSTRING(_rev,         "
+                       " 1,POSITION('-' IN _rev) - 1) "
+	               "AS INT);                      ";
+	size_t len = 10 * strlen(dbname) + (19 * line) - (10 * place) + char0;
 
 	querytext = malloc(len);
-	snprintf(querytext, len, "SELECT * FROM json_%s;", dbname);
+	snprintf(querytext, len, query, dbname, dbname, dbname, dbname, 
+                                        dbname, dbname, dbname, 
+                                        dbname, dbname, dbname);
 
 	msg = RESTsqlQuery(result, querytext);
 	if (querytext != NULL) {
@@ -246,11 +279,33 @@ str RESTdbInfo(char **result, char * dbname)
 str RESTgetDoc(char ** result, char * dbname, const char * doc_id)
 {
 	str msg = MAL_SUCCEED;
-	size_t len = strlen(dbname) + strlen(doc_id) + 36;
 	char * querytext = NULL;
+	char * query = "WITH curr_%s(maxrev,          "
+                       "             _id) AS (        "
+                       "SELECT MAX(CAST(              "
+                       " SUBSTRING(_rev,1,            "
+                       " POSITION('-' IN _rev) - 1)   "
+                       " AS INT)), _id                "
+                       "FROM json_%s                  "
+                       "WHERE _id = '%s'              "
+                       "GROUP BY _id)                 "
+                       "SELECT json_%s._id,           "
+                       "json_%s._rev,                 "
+                       "json_%s.js                    "
+                       "FROM curr_%s,                 "
+                       "json_%s                       "
+                       "WHERE curr_%s._id =           "
+                       " json_%s._id                  "
+                       "AND curr_%s.maxrev =          "
+                       " CAST(SUBSTRING(_rev,         "
+                       " 1,POSITION('-' IN _rev) - 1) "
+	               "AS INT);                      ";
+	size_t len = 10 * strlen(dbname) + (1 * strlen(doc_id)) + (20 * line) - (11 * place) + char0;
 
 	querytext = malloc(len);
-	snprintf(querytext, len, "SELECT * FROM json_%s WHERE _id = '%s';", dbname, doc_id);
+	snprintf(querytext, len, query, dbname, dbname, doc_id, dbname, 
+                                        dbname, dbname, dbname, dbname,
+                                        dbname, dbname, dbname);
 
 	msg = RESTsqlQuery(result, querytext);
 	if (querytext != NULL) {
@@ -263,11 +318,11 @@ str RESTgetDoc(char ** result, char * dbname, const char * doc_id)
 str RESTupdateDoc(char ** result, char * dbname, const char * doc, const char * doc_id)
 {
 	str msg = MAL_SUCCEED;
-	size_t len = strlen(dbname) + strlen(doc) + strlen(doc_id) + 28 + char0;
+	size_t len = strlen(dbname) + strlen(doc) + strlen(doc_id) + 35 + char0;
 	char * querytext = NULL;
 
 	querytext = malloc(len);
-	snprintf(querytext, len, "SELECT %s_update_doc ('%s', '%s');", dbname, doc_id, doc);
+	snprintf(querytext, len, "SELECT * FROM %s_update_doc ('%s', '%s');", dbname, doc_id, doc);
 
 	msg = RESTsqlQuery(result, querytext);
 	if (querytext != NULL) {

@@ -62,3 +62,4 @@ headers_restautoload = {
 }
 
 EXTRA_DIST = 73_jsonstore.mal jsonstore.mal rest_jsonstore.h
+EXTRA_DIST_DIR = Tests
