@@ -290,6 +290,7 @@ static void
 BBPinithash(void)
 {
 	bat i = BBPsize;
+	int j = 0;
 
 	for (BBP_mask = 1; (BBP_mask << 1) <= BBPlimit; BBP_mask <<= 1)
 		;
@@ -311,8 +312,10 @@ BBPinithash(void)
 				BBP_insert(-i);
 			}
 		} else {
-			BBP_next(i) = BBP_free(i);
-			BBP_free(i) = i;
+			BBP_next(i) = BBP_free(j);
+			BBP_free(j) = i;
+			if (++j > BBP_THREADMASK)
+				j = 0;
 		}
 	}
 }
@@ -1648,10 +1651,6 @@ BBPinsert(BATstore *bs)
 		if (BBP_free(idx) <= 0) {
 			if (BBPsize++ >= BBPlimit) {
 				BBPextend(TRUE);
-				/* it seems BBPextend could return and
-				 * still leaving BBP_free(idx) == 0 */
-				if (BBP_free(idx) == 0)
-					BBP_free(idx) = BBPsize - 1;
 			} else {
 				BBP_free(idx) = BBPsize - 1;
 			}
