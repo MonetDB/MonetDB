@@ -27,7 +27,7 @@ Vendor: MonetDB BV <info@monetdb.org>
 Group: Applications/Databases
 License: MPL - http://www.monetdb.org/Legal/MonetDBLicense
 URL: http://www.monetdb.org/
-Source: http://dev.monetdb.org/downloads/sources/Feb2013-SP4/%{name}-%{version}.tar.bz2
+Source: http://dev.monetdb.org/downloads/sources/Feb2013-SP5/%{name}-%{version}.tar.bz2
 
 BuildRequires: bison
 BuildRequires: bzip2-devel
@@ -758,6 +758,41 @@ rm -f $RPM_BUILD_ROOT%{_bindir}/Maddlog
 rm -fr $RPM_BUILD_ROOT
 
 %changelog
+* Tue Oct 08 2013 Hannes Muehleisen <hannes@cwi.nl> - 11.15.17-20131008
+- Rebuilt.
+- BZ#3323: Heapcache bugs/performance issues
+- BZ#3331: SAMPLE will return same result every time.
+- BZ#3356: DatabaseMetaData.getColumns() doesn't work correctly when
+  using index-based getters
+- BZ#3367: Fully qualified order by column gives "relational query
+  without result"
+- BZ#3368: BAT sortedness info ignored on ORDER BY and TOPN
+- BZ#3370: SQL environment settings are updated even when the set
+  statement fails
+- BZ#3373: Setting table to read-only (Bug 3362) fails on big-endian
+- BZ#3375: LIKE join: BATfetchjoin does not hit always
+- BZ#3376: COPY INTO fails with HEAPextend: failed to extend: MT_mremap()
+  failed
+- BZ#3377: Query interfering with next query in same transaction,
+  after SP4
+- BZ#3380: Python DBAPI driver throws exception when fetching EXPLAIN
+  results
+- BZ#3381: Windows ODBC driver hangs or crashes on simple queries
+
+* Mon Oct  7 2013 Sjoerd Mullender <sjoerd@acm.org> - 11.15.17-20131008
+- java: Rearranged order of returned columns of certain metadata functions to
+  comply with the JDBC documentation.  See bug 3356.
+
+* Fri Oct  4 2013 Sjoerd Mullender <sjoerd@acm.org> - 11.15.17-20131008
+- clients: ODBC: Implemented retrieving variable-length data in parts with
+  SQLGetData.  See bug 3381.
+
+* Mon Sep 30 2013 Sjoerd Mullender <sjoerd@acm.org> - 11.15.17-20131008
+- gdk: Removed the heap cache.  Since the fix for bug 3323 which made that
+  the cache was actually getting used, bug 3376 made clear that it didn't
+  work very well.  In addition, on Linux at least, the heap cache slows
+  things down.
+
 * Wed Sep 25 2013 Sjoerd Mullender <sjoerd@acm.org> - 11.15.15-20130925
 - Rebuilt.
 

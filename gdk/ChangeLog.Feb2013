@@ -1,9 +1,3 @@
 # ChangeLog file for MonetDB
 # This file is updated with Maddlog
 
-* Mon Sep 30 2013 Sjoerd Mullender <sjoerd@acm.org>
-- Removed the heap cache.  Since the fix for bug 3323 which made that
-  the cache was actually getting used, bug 3376 made clear that it didn't
-  work very well.  In addition, on Linux at least, the heap cache slows
-  things down.
-
