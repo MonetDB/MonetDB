@@ -10,21 +10,19 @@ dbh = monetdb.sql.Connection(port=port,database=db,autocommit=True)
 
 cursor = dbh.cursor();
 
-cursor.execute('select p.*, "location", "count" from storage(), (select value from env() where name = \'gdk_dbpath\') as p where "table"=\'lineitem\';');
+cursor.execute('select p.*, "location", "count", "column" from storage(), (select value from env() where name = \'gdk_dbpath\') as p where "table"=\'lineitem\' order by "column"');
 res = (cursor.fetchall())
-for (dbpath, fn, count) in res:
-    f = fn
+for (dbpath, fn, count, column) in res:
     fn =  os.path.join(dbpath, 'bat', fn + '.tail');
-    print(f, int(os.path.getsize(fn)), count)
+    print(column, int(os.path.getsize(fn)), count)
 
 cursor.execute('delete from lineitem;');
 
-cursor.execute('select "location", "count" from storage() where "table" = \'lineitem\';');
+cursor.execute('select "column", "count" from storage() where "table" = \'lineitem\' order by "column"');
 print(cursor.fetchall())
 
-cursor.execute('select p.*, "location", "count" from storage(), (select value from env() where name = \'gdk_dbpath\') as p where "table"=\'lineitem\';');
+cursor.execute('select p.*, "location", "count", "column" from storage(), (select value from env() where name = \'gdk_dbpath\') as p where "table"=\'lineitem\' order by "column"');
 res = (cursor.fetchall())
-for (dbpath, fn, count) in res:
-    f = fn
+for (dbpath, fn, count, column) in res:
     fn =  os.path.join(dbpath, 'bat', fn + '.tail');
-    print(f, int(os.path.getsize(fn)), count)
+    print(column, int(os.path.getsize(fn)), count)
