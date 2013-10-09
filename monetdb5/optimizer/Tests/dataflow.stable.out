@@ -19,7 +19,7 @@ stdout of test 'dataflow` in directory 'monetdb5/optimizer` itself:
 # MonetDB/DataCell module not loaded
 # SQLException:mvc:SQL module not initialized
 function user.tst():void;
-    s := microbenchmark.uniform(0@0:oid,10000000,10000000);
+    s := microbenchmark.uniform(0@0:oid,10000000:wrd,10000000);
     l := aggr.min(s);
     h := l;
 #mdb.setTimer(true); 
@@ -47,12 +47,12 @@ function user.main():void;
     user.tst();
 end main;
 function user.tst():void;               #  0 tst:void := user.tst() {G}
-    s:bat[:oid,:int]  := microbenchmark.uniform(0@0:oid,10000000,10000000);#  1 s:bat[:oid,:int] := MBMuniform(_2:oid, _3:int, _3:int) {G}
+    s:bat[:oid,:int]  := microbenchmark.uniform(0@0:oid,10000000:wrd,10000000);#  1 s:bat[:oid,:int] := MBMuniform(_2:oid, _3:wrd, _4:int) {G}
     l := aggr.min(s);                   #  2 l:int := ALGminany(s:bat[:oid,:int]) {G}
     h := l;                             #  3 h:int := l:int 
 #mdb.setTimer(true); 
 #mdb.setThread(true); 
-    z := nil:bat[:oid,:int];            #  6 z:bat[:oid,:int] := _9:bat[:oid,:int] {G}
+    z := nil:bat[:oid,:int];            #  6 z:bat[:oid,:int] := _10:bat[:oid,:int] {G}
 barrier go := language.dataflow();      #  7 go:bit := MALstartDataflow() {J17}
     t1 := algebra.select(s,l,h);        #  8 t1:bat[:oid,:int] := ALGselect(s:bat[:oid,:int], l:int, h:int) {G}
     t2 := algebra.select(s,l,h);        #  9 t2:bat[:oid,:int] := ALGselect(s:bat[:oid,:int], l:int, h:int) {G}
@@ -64,11 +64,11 @@ barrier go := language.dataflow();      #  7 go:bit := MALstartDataflow() {J17}
     t8 := algebra.select(s,l,h);        # 15 t8:bat[:oid,:int] := ALGselect(s:bat[:oid,:int], l:int, h:int) {G}
     z := mat.pack(t1,t2,t3,t4,t5,t6,t7,t8);# 16 z:bat[:oid,:int] := MATpack(t1:bat[:oid,:int], t2:bat[:oid,:int], t3:bat[:oid,:int], t4:bat[:oid,:int], t5:bat[:oid,:int], t6:bat[:oid,:int], t7:bat[:oid,:int], t8:bat[:oid,:int]) {G}
 exit go;                                # 17 go:bit 
-    s:bat[:oid,:int]  := nil:bat[:oid,:int];# 18 s:bat[:oid,:int] := _25:bat[:oid,:int] {G}
-    mdb.var();                          # 19 _19:void := MDBvar() 
+    s:bat[:oid,:int]  := nil:bat[:oid,:int];# 18 s:bat[:oid,:int] := _26:bat[:oid,:int] {G}
+    mdb.var();                          # 19 _20:void := MDBvar() 
     c := aggr.count(z);                 # 20 c:wrd := ALGcount_bat(z:bat[:oid,:int]) {G}
-    io.print(c);                        # 21 _21:void := IOprint_val(c:wrd) 
-    io.print("done");                   # 22 _22:void := IOprint_val(_23:str) {G}
+    io.print(c);                        # 21 _22:void := IOprint_val(c:wrd) 
+    io.print("done");                   # 22 _23:void := IOprint_val(_24:str) {G}
 end tst;                                # 23  
 
 
