@@ -4,3 +4,6 @@ prepare select * from rr limit ?;
 exec ** (1);
 
 drop table rr;
+
+prepare select * from tables limit 42;
+exec ** ();
