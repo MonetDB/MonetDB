@@ -223,7 +223,7 @@ do {									    \
 	bte rpp    = ATOMelmshift(IMPS_PAGE >> b->T->shift);		    \
 	CAND;								    \
 	for (i=0, dcnt=0, icnt=0;					    \
-	     (dcnt < imprints->dictcnt) && (i+off < w+pr_off);		    \
+	     (dcnt < imprints->dictcnt) && (i+off < w+pr_off) && (p<q);		    \
 	     dcnt++) {							    \
 		limit = ((BUN) d[dcnt].cnt) << rpp;			    \
 		while ((i+limit+off) <= (o+pr_off)) {			    \
