@@ -482,16 +482,18 @@ MT_thread_sigmask(sigset_t * new_mask, sigset_t * orig_mask)
 #endif
 
 static void
-rm_posthread(struct posthread *p)
+rm_posthread(struct posthread *p, int lock)
 {
 	struct posthread **pp;
 
-	pthread_mutex_lock(&posthread_lock);
+	if (lock)
+		pthread_mutex_lock(&posthread_lock);
 	for (pp = &posthreads; *pp && *pp != p; pp = &(*pp)->next)
 		;
 	if (*pp)
 		*pp = p->next;
-	pthread_mutex_unlock(&posthread_lock);
+	if (lock)
+		pthread_mutex_unlock(&posthread_lock);
 	free(p);
 }
 
@@ -509,22 +511,24 @@ join_threads(void)
 {
 	struct posthread *p;
 	int waited;
+	pthread_t tid;
 
+	pthread_mutex_lock(&posthread_lock);
 	do {
 		waited = 0;
-		pthread_mutex_lock(&posthread_lock);
 		for (p = posthreads; p; p = p->next) {
 			if (p->exited) {
+				tid = p->tid;
+				rm_posthread(p, 0);
 				pthread_mutex_unlock(&posthread_lock);
-				pthread_join(p->tid, NULL);
-				rm_posthread(p);
+				pthread_join(tid, NULL);
 				pthread_mutex_lock(&posthread_lock);
 				waited = 1;
 				break;
 			}
 		}
-		pthread_mutex_unlock(&posthread_lock);
 	} while (waited);
+	pthread_mutex_unlock(&posthread_lock);
 }
 
 int
@@ -570,7 +574,7 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d)
 		*t = (MT_Id) (((size_t) newt) + 1);	/* use pthread-id + 1 */
 #endif
 	} else if (p) {
-		rm_posthread(p);
+		rm_posthread(p, 1);
 	}
 #ifdef HAVE_PTHREAD_SIGMASK
 	MT_thread_sigmask(&orig_mask, NULL);
