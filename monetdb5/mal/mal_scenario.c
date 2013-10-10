@@ -144,6 +144,7 @@ static struct SCENARIO scenarioRec[MAXSCEN] = {
 };
 
 static str fillScenario(Client c, Scenario scen);
+static MT_Lock scenarioLock MT_LOCK_INITIALIZER("scenarioLock");
 
 /*
  * @-
@@ -156,7 +157,7 @@ getFreeScenario(void)
 	int i;
 	Scenario scen = NULL;
 
-	MT_lock_set(&mal_contextLock, "Scenario");
+	MT_lock_set(&scenarioLock, "Scenario");
 	for (i = 0; i < MAXSCEN && scenarioRec[i].name; i++)
 		;
 
@@ -165,7 +166,7 @@ getFreeScenario(void)
 	} else {
 		scen = scenarioRec + i;
 	}
-	MT_lock_unset(&mal_contextLock, "Scenario");
+	MT_lock_unset(&scenarioLock, "Scenario");
 
 	return scen;
 }
@@ -228,6 +229,10 @@ initScenario(Client c, Scenario s)
 str
 defaultScenario(Client c)
 {
+#ifdef NEED_MT_LOCK_INIT
+	if (c == mal_clients)
+		MT_lock_init(&admissionLock, "admissionLock");
+#endif
 	return initScenario(c, scenarioRec);
 }
 

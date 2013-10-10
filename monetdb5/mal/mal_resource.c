@@ -124,6 +124,8 @@ getMemoryClaim(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int i, int flag)
  * The hotclaim is a hint how large the result would be.
  */
 #ifdef USE_MAL_ADMISSION
+static MT_Lock admissionLock MT_LOCK_INITIALIZER("admissionLock");
+
 /* experiments on sf-100 on small machine showed no real improvement */
 int
 MALadmission(lng argclaim, lng hotclaim)
@@ -132,7 +134,7 @@ MALadmission(lng argclaim, lng hotclaim)
 	if (argclaim == 0)
 		return 0;
 
-	MT_lock_set(&mal_contextLock, "DFLOWdelay");
+	MT_lock_set(&admissionLock, "MALadmission");
 	if (memoryclaims < 0)
 		memoryclaims = 0;
 	if (memorypool <= 0 && memoryclaims == 0)
@@ -145,12 +147,12 @@ MALadmission(lng argclaim, lng hotclaim)
 			PARDEBUG
 			mnstr_printf(GDKstdout, "#DFLOWadmit %3d thread %d pool " LLFMT "claims " LLFMT "," LLFMT "\n",
 						 memoryclaims, THRgettid(), memorypool, argclaim, hotclaim);
-			MT_lock_unset(&mal_contextLock, "DFLOWdelay");
+			MT_lock_unset(&admissionLock, "MALadmission");
 			return 0;
 		}
 		PARDEBUG
 		mnstr_printf(GDKstdout, "#Delayed due to lack of memory " LLFMT " requested " LLFMT " memoryclaims %d\n", memorypool, argclaim + hotclaim, memoryclaims);
-		MT_lock_unset(&mal_contextLock, "DFLOWdelay");
+		MT_lock_unset(&admissionLock, "MALadmission");
 		return -1;
 	}
 	/* release memory claimed before */
@@ -159,7 +161,7 @@ MALadmission(lng argclaim, lng hotclaim)
 	PARDEBUG
 	mnstr_printf(GDKstdout, "#DFLOWadmit %3d thread %d pool " LLFMT " claims " LLFMT "," LLFMT "\n",
 				 memoryclaims, THRgettid(), memorypool, argclaim, hotclaim);
-	MT_lock_unset(&mal_contextLock, "DFLOWdelay");
+	MT_lock_unset(&admissionLock, "MALadmission");
 	return 0;
 }
 #endif
@@ -224,9 +226,10 @@ MALresourceFairness(lng usec)
 void
 initResource(void)
 {
-#ifdef ATOMIC_LOCK
 #ifdef NEED_MT_LOCK_INIT
 	ATOMIC_INIT(runningLock, "runningLock");
+#ifdef USE_MAL_ADMISSION
+	MT_lock_init(&admissionLock, "admissionLock");
 #endif
 #endif
 	running = (ATOMIC_TYPE) GDKnr_threads;
