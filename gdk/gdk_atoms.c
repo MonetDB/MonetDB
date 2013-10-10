@@ -1665,7 +1665,7 @@ OIDdirty(void)
 {
 	int ret;
 	MT_lock_set(&MT_system_lock, "OIDdirty");
-	ret = ATOMIC_GET(GDKoid, GDKoidLock, "OIDdirty") > GDKflushed;
+	ret = (oid) ATOMIC_GET(GDKoid, GDKoidLock, "OIDdirty") > GDKflushed;
 	MT_lock_unset(&MT_system_lock, "OIDdirty");
 	return ret;
 }
