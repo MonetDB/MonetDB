@@ -1621,7 +1621,7 @@ BBPinsert(BATstore *bs)
 	const char *s;
 	long_str dirname;
 	bat i;
-	int idx = (int) (pid & BBP_THREADMASK);
+	int idx = threadmask(pid);
 
 	assert(bs->B.H != NULL);
 	assert(bs->B.T != NULL);
@@ -1830,7 +1830,7 @@ BBPclear(bat i)
 	int lock = locked_by ? pid != locked_by : 1;
 
 	if (BBPcheck(i, "BBPclear")) {
-		bbpclear(ABS(i), (int) (pid & BBP_THREADMASK), lock ? "BBPclear" : NULL);
+		bbpclear(ABS(i), threadmask(pid), lock ? "BBPclear" : NULL);
 	}
 }
 
@@ -1879,7 +1879,7 @@ BBPrename(bat bid, const char *nme)
 	if (strlen(dirname) + strLen(nme) + 1 >= IDLENGTH) {
 		return BBPRENAME_LONG;
 	}
-	idx = (int) (MT_getpid() & BBP_THREADMASK);
+	idx = threadmask(MT_getpid());
 	MT_lock_set(&GDKtrimLock(idx), "BBPrename");
 	MT_lock_set(&GDKnameLock, "BBPrename");
 	i = BBP_find(nme, FALSE);
@@ -2911,9 +2911,10 @@ BBPcold(bat i)
 		i = -i;
 	if (BBPcheck(i, "BBPcold")) {
 		MT_Id pid = MT_getpid();
+		int idx = threadmask(pid);
 		int lock = locked_by ? pid != locked_by : 1;
 
-		MT_lock_set(&GDKtrimLock(pid), "BBPcold");
+		MT_lock_set(&GDKtrimLock(idx), "BBPcold");
 		if (lock)
 			MT_lock_set(&GDKswapLock(i), "BBPcold");
 		/* make very cold and insert on top of trim list */
@@ -2926,7 +2927,7 @@ BBPcold(bat i)
 		}
 		if (lock)
 			MT_lock_unset(&GDKswapLock(i), "BBPcold");
-		MT_lock_unset(&GDKtrimLock(pid), "BBPcold");
+		MT_lock_unset(&GDKtrimLock(idx), "BBPcold");
 	}
 }
 

@@ -125,9 +125,14 @@ extern MT_Lock MT_system_lock;
 
 #define GDKswapLock(x)  GDKbatLock[(x)&BBP_BATMASK].swap
 #define GDKhashLock(x)  GDKbatLock[(x)&BBP_BATMASK].hash
-#define GDKtrimLock(y)  GDKbbpLock[(y)&BBP_THREADMASK].trim
-#define GDKcacheLock(y) GDKbbpLock[(y)&BBP_THREADMASK].alloc
-#define BBP_free(y)	GDKbbpLock[(y)&BBP_THREADMASK].free
+#if SIZEOF_SIZE_T == 8
+#define threadmask(y)	((int) ((mix_int((unsigned int) y) ^ mix_int((unsigned int) (y >> 32))) & BBP_THREADMASK))
+#else
+#define threadmask(y)	((int) (mix_int(y) & BBP_THREADMASK))
+#endif
+#define GDKtrimLock(y)	GDKbbpLock[y].trim
+#define GDKcacheLock(y)	GDKbbpLock[y].alloc
+#define BBP_free(y)	GDKbbpLock[y].free
 
 #define SORTloop_TYPE(b, p, q, tl, th, TYPE)				\
 	if (!BATtordered(b))						\
