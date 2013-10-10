@@ -45,13 +45,14 @@
 #include "mal_parser.h"
 #include "mal_resolve.h"
 #include "mal_linker.h"
-#include "mal_atom.h"       /* for malAtomDefinition(), malAtomArray(), malAtomProperty() */
+#include "mal_atom.h"       /* for malAtomDefinition(), malAtomProperty() */
 #include "mal_interpreter.h"    /* for showErrors() */
 #include "mal_instruction.h"    /* for pushEndInstruction(), findVariableLength() */
 #include "mal_namespace.h"
 #include "mal_utils.h"
 #include "mal_builder.h"
 #include "mal_type.h"
+#include "mal_private.h"
 
 #define FATALINPUT MAXERRORS+1
 #define NL(X) ((X)=='\n' || (X)=='\r')

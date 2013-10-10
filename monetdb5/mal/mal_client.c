@@ -408,25 +408,6 @@ MCcloseClient(Client c)
 	mal_exit();
 }
 
-/*
- * At the end of the server session all remaining structured are
- * explicitly released to simplify detection of memory leakage problems.
- */
-void
-MCcleanupClients(void)
-{
-	Client c;
-	for (c = mal_clients; c < mal_clients + MAL_MAXCLIENTS; c++) {
-		if (c->prompt) {
-			GDKfree(c->prompt);
-			c->prompt = NULL;
-		}
-		c->user = oid_nil;
-		assert(c->bak == NULL);
-		MCexitClient(c);
-	}
-}
-
 str
 MCsuspendClient(int id)
 {
@@ -443,22 +424,6 @@ MCawakeClient(int id)
 		throw(INVCRED, "mal.clients", INVCRED_WRONG_ID);
 	mal_clients[id].itrace = 0;
 	return MAL_SUCCEED;
-}
-
-/*
- * In embedded mode there can be at most one console client and one Mapi
- * connection. Moreover, the Mapi connection should disable the
- * administrator console.
- */
-int
-MCcountClients(void)
-{
-	int cnt = 0;
-	Client c;
-	for (c = mal_clients; c < mal_clients + MAL_MAXCLIENTS; c++)
-		if (c->mode != FREECLIENT)
-			cnt++;
-	return cnt;
 }
 
 /*

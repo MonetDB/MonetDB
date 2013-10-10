@@ -57,9 +57,6 @@ mal_export str	createException(enum malexception, const char *,
 mal_export void	showException(stream *out, enum malexception, const char *,
 	_In_z_ _Printf_format_string_ const char *, ...)
 	__attribute__((__format__(__printf__, 4, 5)));
-mal_export str	createScriptException(MalBlkPtr, int, enum malexception, const char *,
-	_In_z_ _Printf_format_string_ const char *, ...)
-	__attribute__((__format__(__printf__, 5, 6)));
 mal_export void	showScriptException(stream *out, MalBlkPtr, int, enum malexception,
 	_In_z_ _Printf_format_string_ const char *, ...)
 	__attribute__((__format__(__printf__, 5, 6)));
@@ -68,7 +65,6 @@ mal_export int isExceptionVariable(str nme);
 mal_export enum malexception	getExceptionType(str);
 mal_export str	getExceptionPlace(str);
 mal_export str	getExceptionMessage(str);
-mal_export str	exceptionToString(enum malexception);
 mal_export void dumpExceptionsToStream(stream *out, str msg);
 mal_export char *M5OutOfMemory;	/* pointer to constant string */
 

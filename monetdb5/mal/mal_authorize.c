@@ -36,6 +36,7 @@
  */
 #include "monetdb_config.h"
 #include "mal_authorize.h"
+#include "mal_private.h"
 #include "mcrypt.h"
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>

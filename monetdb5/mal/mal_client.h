@@ -191,15 +191,8 @@ mal_export Client  MCinitClient(oid user, bstream *fin, stream *fout);
 mal_export Client  MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout);
 mal_export int     MCinitClientThread(Client c);
 mal_export void    MCcloseClient(Client c);
-mal_export Client  MCforkClient(Client c);
-mal_export int     MCcountClients(void);
-mal_export int     MCreadClient(Client c);
 mal_export str     MCsuspendClient(int id);
 mal_export str     MCawakeClient(int id);
-mal_export void    MCcleanupClients(void);
-mal_export void    MCtraceAllClients(int flag);
-mal_export void    MCtraceClient(oid which, int flag);
 mal_export int     MCpushClientInput(Client c, bstream *new_input, int listing, char *prompt);
-mal_export void    MCpopClientInput(Client c);
 
 #endif /* _MAL_CLIENT_H_ */

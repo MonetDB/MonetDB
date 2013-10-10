@@ -29,6 +29,7 @@
 #include "mal_debugger.h"   /* for mdbStep() */
 #include "mal_recycle.h"
 #include "mal_type.h"
+#include "mal_private.h"
 
 /*
  * The struct alignment leads to 40% gain in simple instructions when set.

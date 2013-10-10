@@ -86,6 +86,7 @@
 #include "monetdb_config.h"
 #include "mal_resolve.h"
 #include "mal_namespace.h"
+#include "mal_private.h"
 
 static malType getPolyType(malType t, int *polytype);
 static int updateTypeMap(int formal, int actual, int polytype[MAXTYPEVAR]);

@@ -113,17 +113,14 @@ mal_export char		*mal_trace;		/* enable profile events on console */
 
 
 mal_export MT_Lock  mal_contextLock;
-mal_export MT_Lock  mal_namespaceLock;
 mal_export MT_Lock  mal_remoteLock;
 mal_export MT_Lock  mal_profileLock ;
 mal_export MT_Lock  mal_copyLock ;
 mal_export MT_Lock  mal_delayLock ;
-mal_export MT_Sema	mal_parallelism;
 
 
 mal_export int mal_init(void);
 mal_export void mal_exit(void);
-mal_export int moreClients(int reruns);
 
 /* This should be here, but cannot, as "Client" isn't known, yet ... |-(
  * For now, we move the prototype declaration to src/mal/mal_client.c,

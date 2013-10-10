@@ -185,7 +185,6 @@ char *mal_trace;		/* enable profile events on console */
 #include "mal_parser.h"
 #include "mal_interpreter.h"
 #include "mal_namespace.h"  /* for initNamespace() */
-#include "mal_debugger.h" /* for mdbInit() */
 #include "mal_client.h"
 #include "mal_sabaoth.h"
 #include "mal_recycle.h"

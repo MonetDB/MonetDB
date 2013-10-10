@@ -20,7 +20,6 @@
 #include "monetdb_config.h"
 #include "mal.h"
 #include "mal_exception.h"
-#include "mal_atom.h"
 #include "group.h"
 #include "algebra.h"
 

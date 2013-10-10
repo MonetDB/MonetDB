@@ -48,6 +48,7 @@
 #include "mal_type.h"
 #include "mal_namespace.h"
 #include "mal_exception.h"
+#include "mal_private.h"
 
 #define MAXIDENTIFIERS 4096
 #define HASHMASK  4095

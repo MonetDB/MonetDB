@@ -126,6 +126,7 @@
  */
 #include "monetdb_config.h"
 #include "mal_exception.h"
+#include "mal_private.h"
 
 static char *exceptionNames[] = {
 /* 0 */	"MALException",
@@ -404,14 +405,4 @@ getExceptionMessage(str exception)
 	if (strncmp(exception, "!ERROR: ", 8) == 0)
 		return exception + 8;
 	return exception;
-}
-
-/**
- * Returns the string representation of the given exception.  This is
- * the string as used when creating an exception of the same type.
- */
-str
-exceptionToString(enum malexception e)
-{
-	return(exceptionNames[e]);
 }

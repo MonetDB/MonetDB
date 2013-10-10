@@ -29,6 +29,7 @@
 
 #include "mal_client.h"
 #include "mal_http_daemon.h"
+#include "mal_private.h"
 #include <microhttpd.h>
 
 static MT_Id hdthread;

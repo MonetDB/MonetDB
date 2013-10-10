@@ -85,9 +85,11 @@
  * They should be implemented with parameter-less functions.
  */
 #include "monetdb_config.h"
+#include "mal_instruction.h"
 #include "mal_atom.h"
 #include "mal_namespace.h"
 #include "mal_exception.h"
+#include "mal_private.h"
 
 #ifndef MAXPATHLEN
 #define MAXPATHLEN 1024
@@ -275,24 +277,6 @@ void malAtomDefinition(stream *out, str name, int tpe)
  * User defined modules may introduce fixed sized types
  * to store information in BATs.
  */
-int malAtomFixed(int size, int align, char *name)
-{
-	int i = 0;
-
-	ATOMproperty(name, "", (int (*)()) 0, 0);
-	if (strlen(name) >= sizeof(BATatoms[0].name))
-		return -1;
-	i = ATOMindex(name);
-	BATatoms[i] = BATatoms[TYPE_bte];
-	strncpy(BATatoms[i].name, name, sizeof(BATatoms[i].name));
-	BATatoms[i].name[sizeof(BATatoms[i].name) - 1] = 0;
-	BATatoms[i].storage = i;
-	BATatoms[i].size = size;
-	assert_shift_width(ATOMelmshift(BATatoms[i].size), BATatoms[i].size);
-	BATatoms[i].align = align;
-	BATatoms[i].linear = FALSE;
-	return i;
-}
 int malAtomSize(int size, int align, char *name)
 {
 	int i = 0;

@@ -224,6 +224,8 @@ static Box malbox[MAXSPACES];
 static int topbox=0;
 
 static str boxFileName(Box box, str extension);
+static int saveBox(Box box, int flag);
+static void loadBox(str name);
 
 static Box
 newBox(str name)
@@ -540,8 +542,16 @@ discardBox(Box box, str name)
 	return 0;
 }
 
+static str
+getBoxName(Box box, lng i)
+{
+	str s;
+
+	s = getVarName(box->sym, (int) i);
+	return GDKstrdup(s);
+}
+
 /*
- * @-
  * The elements can be obtained using iterator, which returns the name
  * of the next element in the box.
  */
@@ -558,15 +568,6 @@ nextBoxElement(Box box, oid *cursor, ValPtr v)
 	v->val.sval = getBoxName(box, *cursor);
 	*cursor = *cursor + 1;
 	return 0;
-}
-
-str
-getBoxName(Box box, lng i)
-{
-	str s;
-
-	s = getVarName(box->sym, (int) i);
-	return GDKstrdup(s);
 }
 
 str
@@ -666,7 +667,7 @@ prepareSaveBox(Box box, str *boxfile, str *boxfilebak)
 	return f;
 }
 
-int
+static int
 saveBox(Box box, int flag)
 {
 	int i;
@@ -727,7 +728,7 @@ saveBox(Box box, int flag)
  * Loading a box is equivalent to reading a script.
  * Beware to execute it into its own context.
  */
-void
+static void
 loadBox(str name)
 {
 	char boxfile[PATHLENGTH];

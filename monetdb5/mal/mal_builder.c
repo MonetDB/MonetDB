@@ -41,16 +41,6 @@ newAssignment(MalBlkPtr mb)
 }
 
 InstrPtr
-newAssignmentId(MalBlkPtr mb, str nme)
-{
-	InstrPtr q = newInstruction(mb,ASSIGNsymbol);
-
-	getArg(q,0)= newVariable(mb, GDKstrdup(nme), TYPE_any);
-	pushInstruction(mb, q);
-	return q;
-}
-
-InstrPtr
 newStmt(MalBlkPtr mb, char *module, char *name)
 {
 	InstrPtr q = newInstruction(mb,ASSIGNsymbol);
@@ -83,18 +73,6 @@ newStmt2(MalBlkPtr mb, str module, char *name)
 	setFunctionId(q, name);
 	setDestVar(q, newTmpVariable(mb, TYPE_any));
 	pushInstruction(mb, q);
-	return q;
-}
-InstrPtr
-newStmtId(MalBlkPtr mb, char *id, char *module, char *name)
-{
-	InstrPtr q = newInstruction(mb,ASSIGNsymbol);
-
-	setModuleId(q, (module) ? putName(module, strlen(module)) : NULL);
-	setFunctionId(q, (name) ? putName(name, strlen(name)) : NULL);
-	setDestVar(q, newVariable(mb, GDKstrdup(id), TYPE_any));
-	pushInstruction(mb, q);
-
 	return q;
 }
 

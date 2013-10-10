@@ -19,6 +19,7 @@
 
 #include "monetdb_config.h"
 #include "mal_resource.h"
+#include "mal_private.h"
 
 #define heapinfo(X) if ((X) && (X)->base) vol = (X)->free; else vol = 0;
 #define hashinfo(X) if ((X) && (X)->mask) vol = ((X)->mask + (X)->lim + 1) * sizeof(int) + sizeof(*(X)) + cnt * sizeof(int); else vol = 0;

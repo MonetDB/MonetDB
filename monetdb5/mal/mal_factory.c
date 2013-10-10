@@ -257,6 +257,7 @@
  */
 #include "monetdb_config.h"
 #include "mal_factory.h"
+#include "mal_private.h"
 
 typedef struct {
 	int id;			/* unique plant number */
@@ -280,10 +281,6 @@ static int plantId = 1;
 
 mal_export Plant newPlant(MalBlkPtr mb);
 
-int
-factoryHasFreeSpace(void){
-	return lastPlant <MAXPLANTS-1;
-}
 static int
 findPlant(MalBlkPtr mb){
 	int i;
@@ -292,6 +289,7 @@ findPlant(MalBlkPtr mb){
 		return i;
 	return -1;
 }
+
 str
 runFactory(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr stk, InstrPtr pci)
 {
@@ -615,16 +613,3 @@ shutdownFactoryByName(Client cntxt, Module m, str nme){
 		}
 	return MAL_SUCCEED;
 }
-str
-finishFactory(Client cntxt, MalBlkPtr mb, InstrPtr pp, int pc)
-{
-	(void) pp;
-	(void) pc;
-	return shutdownFactory(cntxt, mb);
-}
-
-/*
- * @- Enquiry operations.
- * All access to the plant administration is organized here.
- */
-
