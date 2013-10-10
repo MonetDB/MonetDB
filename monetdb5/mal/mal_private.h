@@ -21,3 +21,5 @@
 
 extern void MCexitClient(Client c);
 extern void stopMALdataflow(void);
+extern str defaultScenario(Client c);	/* used in src/mal/mal_session.c */
+extern void exitScenario(Client c);	/* used in src/mal/mal_session.c */

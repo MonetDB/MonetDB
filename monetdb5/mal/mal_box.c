@@ -212,6 +212,7 @@
 #include "mal_box.h"
 #include "mal_interpreter.h"	/* for garbageCollector() & garbageElement() */
 #include "mal_client.h"
+#include "mal_private.h"
 
 #if defined(_MSC_VER) && _MSC_VER >= 1400
 #define access _access

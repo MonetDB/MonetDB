@@ -113,12 +113,13 @@
 #include "mal_client.h"
 #include "mal_authorize.h"
 #include "mal_exception.h"
+#include "mal_private.h"
 
 #ifdef HAVE_SYS_TIMES_H
 # include <sys/times.h>
 #endif
 
-struct SCENARIO scenarioRec[MAXSCEN] = {
+static struct SCENARIO scenarioRec[MAXSCEN] = {
 	{"mal", "mal",
 	 0, 0,			/* hardwired MALinit*/
 	 0, 0,			/* implicit */
