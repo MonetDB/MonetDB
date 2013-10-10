@@ -322,11 +322,11 @@ DFLOWworker(void *T)
 
 			fe->state = DFLOWwrapup;
 			if (error) {
-				MT_lock_set(&flow->flowlock, "runMALdataflow");
+				MT_lock_set(&flow->flowlock, "DFLOWworker");
 				/* only collect one error (from one thread, needed for stable testing) */
 				if (!flow->error)
 					flow->error = error;
-				MT_lock_unset(&flow->flowlock, "runMALdataflow");
+				MT_lock_unset(&flow->flowlock, "DFLOWworker");
 				/* after an error we skip the rest of the block */
 				q_enqueue(flow->done, fe);
 				continue;
@@ -349,7 +349,7 @@ DFLOWworker(void *T)
 			fe->hotclaim += getMemoryClaim(flow->mb, flow->stk, p, i, FALSE);
 		}
 #endif
-		MT_lock_set(&flow->flowlock, "MALworker");
+		MT_lock_set(&flow->flowlock, "DFLOWworker");
 
 		for (last = fe->pc - flow->start; last >= 0 && (i = flow->nodes[last]) > 0; last = flow->edges[last])
 			if (flow->status[i].state == DFLOWpending &&
@@ -361,7 +361,7 @@ DFLOWworker(void *T)
 				fnxt = flow->status + i;
 				break;
 			}
-		MT_lock_unset(&flow->flowlock, "MALworker");
+		MT_lock_unset(&flow->flowlock, "DFLOWworker");
 
 		q_enqueue(flow->done, fe);
 		if ( fnxt == 0) {
@@ -394,7 +394,7 @@ DFLOWinitialize(void)
 		MT_lock_unset(&mal_contextLock, "DFLOWinitialize");
 		return 0;
 	}
-	todo = q_create(2048, "DFLOWinitialize");
+	todo = q_create(2048, "todo");
 	if (todo == NULL) {
 		MT_lock_unset(&mal_contextLock, "DFLOWinitialize");
 		return -1;
@@ -583,13 +583,13 @@ DFLOWscheduler(DataFlow flow)
 	/* initialize the eligible statements */
 	fe = flow->status;
 
-	MT_lock_set(&flow->flowlock, "MALworker");
+	MT_lock_set(&flow->flowlock, "DFLOWscheduler");
 	for (i = 0; i < actions; i++)
 		if (fe[i].blocks == 0) {
 #ifdef USE_MAL_ADMISSION
 			p = getInstrPtr(flow->mb,fe[i].pc);
 			if (p == NULL) {
-				MT_lock_unset(&flow->flowlock, "MALworker");
+				MT_lock_unset(&flow->flowlock, "DFLOWscheduler");
 				throw(MAL, "dataflow", "DFLOWscheduler(): getInstrPtr(flow->mb,fe[i].pc) returned NULL");
 			}
 			for (j = p->retc; j < p->argc; j++)
@@ -599,7 +599,7 @@ DFLOWscheduler(DataFlow flow)
 			flow->status[i].state = DFLOWrunning;
 			PARDEBUG fprintf(stderr, "#enqueue pc=%d claim=" LLFMT "\n", flow->status[i].pc, flow->status[i].argclaim);
 		}
-	MT_lock_unset(&flow->flowlock, "MALworker");
+	MT_lock_unset(&flow->flowlock, "DFLOWscheduler");
 
 	PARDEBUG fprintf(stderr, "#run %d instructions in dataflow block\n", actions);
 
@@ -616,7 +616,7 @@ DFLOWscheduler(DataFlow flow)
 		 * drops to zero we can scheduler it we do it here instead of the scheduler
 		 */
 
-		MT_lock_set(&flow->flowlock, "MALworker");
+		MT_lock_set(&flow->flowlock, "DFLOWscheduler");
 		tasks++;
 		for (last = f->pc - flow->start; last >= 0 && (i = flow->nodes[last]) > 0; last = flow->edges[last])
 			if (flow->status[i].state == DFLOWpending) {
@@ -630,7 +630,7 @@ DFLOWscheduler(DataFlow flow)
 					flow->status[i].blocks--;
 				}
 			}
-		MT_lock_unset(&flow->flowlock, "MALworker");
+		MT_lock_unset(&flow->flowlock, "DFLOWscheduler");
 	}
 	/* wrap up errors */
 	assert(flow->done->last == 0);
@@ -721,7 +721,7 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr st
 	flow->start = startpc + 1;
 	flow->stop = stoppc;
 
-	MT_lock_init(&flow->flowlock, "DFLOWworker");
+	MT_lock_init(&flow->flowlock, "flow->flowlock");
 	flow->done = q_create(stoppc- startpc+1, "flow->done");
 	if (flow->done == NULL) {
 		MT_lock_destroy(&flow->flowlock);
