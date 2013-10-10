@@ -1564,16 +1564,11 @@ strWrite(const char *a, stream *s, size_t cnt)
  * BUNhead(b,p)/BUNtail(b,p) instantiate a value on-the-fly by looking
  * at the position p in BAT b.
  */
-oid	GDKoid, GDKflushed;
-/*
- * Init the shared array of oid bases.
- */
-int
-OIDinit(void)
-{
-	GDKflushed = GDKoid = 0;
-	return 0;
-}
+static volatile ATOMIC_TYPE GDKoid;
+#ifdef ATOMIC_LOCK
+static MT_Lock GDKoidLock MT_LOCK_INITIALIZER("GDKoidLock");
+#endif
+static oid GDKflushed;		/* protected by MT_system_lock */
 
 /*
  * Make up some new OID for a specified database, based on the current
@@ -1586,29 +1581,39 @@ OIDrand(void)
 }
 
 /*
+ * Init the shared array of oid bases.
+ */
+int
+OIDinit(void)
+{
+#ifdef NEED_MT_LOCK_INIT
+	ATOMIC_INIT(GDKoidLock, "GDKoidLock");
+#endif
+	GDKflushed = 0;
+	GDKoid = OIDrand();
+	return 0;
+}
+
+/*
  * Initialize the current OID number to be starting at 'o'.
  */
 oid
 OIDbase(oid o)
 {
-	MT_lock_set(&MT_system_lock, "OIDbase");
-	GDKoid = o;
-	MT_lock_unset(&MT_system_lock, "OIDbase");
+	ATOMIC_SET(GDKoid, (ATOMIC_TYPE) o, GDKoidLock, "OIDbase");
 	return o;
 }
 
 static oid
 OIDseed(oid o)
 {
-	oid t, p = GDKoid;
+	oid t, p = ATOMIC_GET(GDKoid, GDKoidLock, "OIDseed");
 
-	MT_lock_set(&MT_system_lock, "OIDseed");
 	t = OIDrand();
 	if (o > t)
 		t = o;
 	if (p >= t)
 		t = p;
-	MT_lock_unset(&MT_system_lock, "OIDseed");
 	return t;
 }
 
@@ -1640,10 +1645,12 @@ int
 OIDwrite(stream *s)
 {
 	int ret = 0;
+	ATOMIC_TYPE o;
 
 	MT_lock_set(&MT_system_lock, "OIDwrite");
-	if (GDKoid) {
-		GDKflushed = GDKoid;
+	o = ATOMIC_GET(GDKoid, GDKoidLock, "OIDwrite");
+	if (o) {
+		GDKflushed = (oid) o;
 		ATOMprint(TYPE_oid, &GDKflushed, s);
 		if (mnstr_errnr(s) ||
 		    mnstr_write(s, " ", 1, 1) <= 0)
@@ -1656,10 +1663,11 @@ OIDwrite(stream *s)
 int
 OIDdirty(void)
 {
-	if (GDKoid && GDKoid > GDKflushed) {
-		return TRUE;
-	}
-	return FALSE;
+	int ret;
+	MT_lock_set(&MT_system_lock, "OIDdirty");
+	ret = ATOMIC_GET(GDKoid, GDKoidLock, "OIDdirty") > GDKflushed;
+	MT_lock_unset(&MT_system_lock, "OIDdirty");
+	return ret;
 }
 
 /*
@@ -1668,15 +1676,7 @@ OIDdirty(void)
 oid
 OIDnew(oid inc)
 {
-	oid ret;
-
-	MT_lock_set(&MT_system_lock, "OIDnew");
-	if (!GDKoid)
-		GDKoid = OIDrand();
-	ret = GDKoid;
-	GDKoid += inc;
-	MT_lock_unset(&MT_system_lock, "OIDnew");
-	return ret;
+	return (oid) ATOMIC_ADD(GDKoid, (ATOMIC_TYPE) inc, GDKoidLock, "OIDnew");
 }
 
 /*
