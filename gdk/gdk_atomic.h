@@ -32,7 +32,7 @@
  * ATOMIC_SET -- set the value of a variable;
  * ATOMIC_ADD -- add a value to a variable, return original value;
  * ATOMIC_SUB -- subtract a value from a variable, return original value;
- * ATOMIC_INT -- increment a variable's value, return new value;
+ * ATOMIC_INC -- increment a variable's value, return new value;
  * ATOMIC_DEC -- decrement a variable's value, return new value;
  * ATOMIC_CAS -- compare-and-set: compare the variable's value with
  *               old and if it matches, replace with new, return
