@@ -1607,7 +1607,7 @@ OIDbase(oid o)
 static oid
 OIDseed(oid o)
 {
-	oid t, p = ATOMIC_GET(GDKoid, GDKoidLock, "OIDseed");
+	oid t, p = (oid) ATOMIC_GET(GDKoid, GDKoidLock, "OIDseed");
 
 	t = OIDrand();
 	if (o > t)
