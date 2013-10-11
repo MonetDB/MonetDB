@@ -676,9 +676,10 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr st
 			return MAL_SUCCEED;
 		}
 		i = THREADS;			/* we didn't create an extra thread */
-	} else {
+	} else 
+	if( stk->calldepth){
 		/* create one more worker to compensate for our waiting until
-		 * all work is done */
+		 * all work is done, provided we are about to perform a recursive call */
 		MT_lock_set(&mal_contextLock, "runMALdataflow");
 		for (i = 0; i < THREADS && todo->exitedcount > 0; i++) {
 			if (workers[i].flag == EXITED) {
@@ -705,7 +706,7 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr st
 			*ret = TRUE;
 			return MAL_SUCCEED;
 		}
-	}
+	} else i = THREADS;
 	assert(todo);
 
 	flow = (DataFlow)GDKzalloc(sizeof(DataFlowRec));
