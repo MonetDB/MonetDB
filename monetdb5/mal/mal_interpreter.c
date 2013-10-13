@@ -869,8 +869,6 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 
 				/* unknown exceptions lead to propagation */
 				if (exceptionVar == -1) {
-					runtimeProfileExit(cntxt, mb, stk, pci, &runtimeProfile);
-					runtimeProfileFinish(cntxt, mb);
 					if (cntxt->qtimeout && GDKusec()- mb->starttime > cntxt->qtimeout)
 						ret= createException(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
 					stkpc = mb->stop;
