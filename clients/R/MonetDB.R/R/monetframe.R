@@ -1158,8 +1158,8 @@ sqlexpr<-function(expr,env=emptyenv()){
 				val <- get(nm,env)
 				if (is.numeric(val))
 					cat(val, file=out)
-				else if (is.character(val))
-					cat("'",val,"'",file=out,sep="")
+				else if (is.character(val)) 
+					cat(paste0("(",paste0("'",val,"'",collapse=","),")"),file=out,sep="")
 				else 
 					cat(e, file=out)
 			}
