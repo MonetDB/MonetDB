@@ -71,4 +71,5 @@ clients_export str CLTchangePassword(Client cntxt, MalBlkPtr mb, MalStkPtr stk, 
 clients_export str CLTsetPassword(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 clients_export str CLTcheckPermission(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 clients_export str CLTgetUsers(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+clients_export str CLTsessions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 #endif /* _CLIENTS_H */

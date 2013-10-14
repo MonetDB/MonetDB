@@ -94,6 +94,7 @@ typedef struct CLIENT {
 
 	time_t      login;  
 	time_t      lastcmd;	/* set when input is received */
+	bit			active;		/* processing a query or not */
 	lng 		session;	/* usec since start of server */
 	lng 	    qtimeout;	/* query abort after x usec*/
 	lng	        stimeout;	/* session abort after x usec */
