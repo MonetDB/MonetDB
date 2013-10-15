@@ -364,7 +364,8 @@ init_readline(Mapi mid, char *lang, int save_history)
 	_mid = mid;
 	/* Allow conditional parsing of the ~/.inputrc file. */
 	rl_readline_name = "MapiClient";
-	/* Tell the completer that we want to try our own completion before std completion (filename) kicks in. */
+	/* Tell the completer that we want to try our own completion
+	 * before std completion (filename) kicks in. */
 	if (strcmp(language, "sql") == 0) {
 		rl_attempted_completion_function = sql_completion;
 	} else if (strcmp(language, "mil") == 0) {
