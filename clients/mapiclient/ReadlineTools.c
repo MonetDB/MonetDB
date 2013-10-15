@@ -401,7 +401,7 @@ init_readline(Mapi mid, char *lang, int save_history)
 			case ENOENT:
 				/* history file didn't exist, so try to create
 				 * it and then try again */
-				if ((f = fopen(_history_file, "w")) != NULL) {
+				if ((f = fopen(_history_file, "w")) == NULL) {
 					/* failed to create, don't
 					 * bother saving */
 					_save_history = 0;
