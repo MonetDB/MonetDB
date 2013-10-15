@@ -471,6 +471,10 @@ pattern sql_variables():bat[:oid,:str]
 address sql_variables
 comment "return the table with session variables";
 
+pattern sessions() ( user:bat[:oid,:str], start:bat[:oid,:timestamp],stimeout:bat[:oid,:lng], lastcmd:bat[:oid,:timestamp], qtimeout:bat[:oid,:lng], idle:bat[:oid,:bit])
+address sql_sessions_wrap
+comment "SQL export table of active sessions, their timeouts and idle status";
+
 pattern db_users() :bat[:oid,:str]
 address db_users_wrap
 comment "return table of users with sql scenario";
@@ -1431,6 +1435,7 @@ sql5_export str second_interval_str( lng *res, str *s, int *ek, int *sk );
 sql5_export str dump_cache(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str dump_opt_stats(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str dump_trace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str sql_sessions_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str sql_querylog_catalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str sql_querylog_calls(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -1629,6 +1634,7 @@ sql5_export void freeVariables(Client c, MalBlkPtr mb, MalStkPtr glb, int start)
 #include <cluster.h>
 #include <opt_dictionary.h>
 #include <opt_pipes.h>
+#include "clients.h"
 #ifdef HAVE_RAPTOR
 # include <rdf.h>
 #endif
@@ -6683,6 +6689,12 @@ dump_trace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPkeepref(id);
 	}
 	return MAL_SUCCEED;
+}
+
+str
+sql_sessions_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	return CLTsessions(cntxt,mb,stk,pci);
 }
 
 str

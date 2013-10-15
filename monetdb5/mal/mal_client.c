@@ -228,6 +228,7 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 
 	c->father = NULL;
 	c->login = c->lastcmd = time(0);
+	c->active = 0;
 	c->session = GDKusec();
 	c->qtimeout = 0;
 	c->stimeout = 0;
@@ -367,6 +368,7 @@ freeClient(Client c)
 	}
 	c->father = 0;
 	c->login = c->lastcmd = 0;
+	c->active = 0;
 	c->qtimeout = 0;
 	c->stimeout = 0;
 	c->user = oid_nil;
