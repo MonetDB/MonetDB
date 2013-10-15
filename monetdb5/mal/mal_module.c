@@ -861,7 +861,7 @@ char **getHelp(Module m, str inputpat, int completion)
 	Symbol s;
 	size_t len1 = 0,len2 = 0;
 	int fnd=0;
-	char *t, **msg, buf[BUFSIZ];
+	char *t, **msg, buf[1024];
 	int top=0, i,j,k, sig = 0, doc = 0;
 	int maxhelp= MAXHELP;
 
@@ -953,7 +953,7 @@ char **getHelp(Module m, str inputpat, int completion)
 			if( strncmp(fcnnme,s->name,len2)==0 || *fcnnme=='*') {
 				fnd=0;
 				if( completion ) {
-					snprintf(buf,BUFSIZ," %s.%s",
+					snprintf(buf,sizeof(buf)," %s.%s",
 						((*modnme=='*' || *modnme==0)? m->name:modnme),s->name);
 					if( tstDuplicate(msg,buf+1) ) {
 						fnd=1;
@@ -963,7 +963,7 @@ char **getHelp(Module m, str inputpat, int completion)
 				if( doc) {
 					char *v;
 
-					fcnDefinition(s->def,s->def->stmt[0],buf,FALSE,buf,BUFSIZ);
+					fcnDefinition(s->def,s->def->stmt[0],buf,FALSE,buf,sizeof(buf));
 					buf[0]=' ';
 
 					v= strstr(buf,"address");
@@ -982,7 +982,7 @@ char **getHelp(Module m, str inputpat, int completion)
 						char *w;
 						strcpy(buf+1,"comment ");
 						v= buf+1+8;
-						for( w= s->def->help; *w && v <buf+BUFSIZ-2; w++)
+						for( w= s->def->help; *w && v <buf+sizeof(buf)-2; w++)
 						if( *w == '\n'){
 							/*ignore */
 						} else *v++ = *w;
@@ -994,7 +994,7 @@ char **getHelp(Module m, str inputpat, int completion)
 					}
 				} else if( strncmp(fcnnme,s->name,strlen(fcnnme))==0 ||
 							*fcnnme=='*' ) {
-					fcnDefinition(s->def,s->def->stmt[0],buf,FALSE,buf,BUFSIZ);
+					fcnDefinition(s->def,s->def->stmt[0],buf,FALSE,buf,sizeof(buf));
 					buf[0]=' ';
 					t= strstr(buf,"address");
 					if( t) *t= 0;
@@ -1021,7 +1021,7 @@ char **getHelp(Module m, str inputpat, int completion)
  * it simple.
  */
 char **getHelpMatch(char *pat){
-	char **msg, buf[BUFSIZ];
+	char **msg, buf[1024];
 	Module m;
 	Symbol s;
 	int top = 0, i,j,k;
@@ -1043,7 +1043,7 @@ char **getHelpMatch(char *pat){
 				if( strstr(m->name,pat) || strstr(s->name,pat) ||
 					(s->def->help && strstr(s->def->help,pat))) {
 					char *v,*w;
-					fcnDefinition(s->def,s->def->stmt[0],buf,FALSE,buf,BUFSIZ);
+					fcnDefinition(s->def,s->def->stmt[0],buf,FALSE,buf,sizeof(buf));
 					buf[0]=' ';
 					if( s->def->help ){
 						v= strchr(buf,0);
@@ -1051,7 +1051,7 @@ char **getHelpMatch(char *pat){
 						*v++ = '\\';
 						*v++ = 'n';
 						*v++ = '#';
-						for( w= s->def->help; *w && v <buf+BUFSIZ-3; w++)
+						for( w= s->def->help; *w && v <buf+sizeof(buf)-3; w++)
 						if( *w == '\n'){
 							*v++ = '\\';
 							*v++ = 'n';
