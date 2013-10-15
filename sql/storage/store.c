@@ -1807,7 +1807,7 @@ sql_trans_copy_idx( sql_trans *tr, sql_table *t, sql_idx *i )
 	ni->type = i->type;
 	ni->key = NULL;
 
-	if (list_length(i->columns) == 1)
+	if (i->type == hash_idx && list_length(i->columns) == 1)
 		unique = 1;
 	for (n = i->columns->h, nr = 0; n; n = n->next, nr++) {
 		sql_kc *okc = n->data, *ic;

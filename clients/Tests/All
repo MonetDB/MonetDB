@@ -1,5 +1,6 @@
 exports
-HAVE_GEOM?MAL-signatures
-!HAVE_GEOM?MAL-signatures_nogeom
+HAVE_GEOM&HAVE_CFITSIO?MAL-signatures
+!HAVE_GEOM&HAVE_CFITSIO?MAL-signatures_nogeom
+!HAVE_CFITSIO&HAVE_GEOM?MAL-signatures_nocfitsio
 HAVE_GEOM?SQL-dump
 !HAVE_GEOM?SQL-dump_nogeom
