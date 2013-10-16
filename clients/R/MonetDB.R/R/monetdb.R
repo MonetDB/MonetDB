@@ -239,13 +239,13 @@ setMethod("dbWriteTable", "MonetDBConnection", def=function(conn, name, value, o
 		})
 
 
-setMethod("dbDataType", signature(dbObj="MonetDBConnection", obj = "ANY"), def = function(dbObj, obj, ...) {
+setMethod("dbDataType", signature(dbObj="MonetDBConnection", obj = "ANY"), def=function(dbObj, obj, ...) {
 			if (is.logical(obj)) "BOOLEAN"
 			else if (is.integer(obj)) "INTEGER"
 			else if (is.numeric(obj)) "DOUBLE PRECISION"
 			else if (is.raw(obj)) "BLOB"
 			
-			else "VARCHAR(255)"
+			else "STRING"
 		}, valueClass = "character")
 
 
