@@ -49,3 +49,4 @@ alter_resets_readonly.Bug-3362
 env_errors.Bug-3370
 swapped_likejoin.Bug-3375
 python-explain.Bug-3380
+case-orderby.Bug-3388
