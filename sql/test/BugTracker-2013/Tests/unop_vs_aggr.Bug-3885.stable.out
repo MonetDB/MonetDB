@@ -1,0 +1,44 @@
+stdout of test 'unop_vs_aggr.Bug-3885` in directory 'sql/test/BugTracker-2013` itself:
+
+
+# 17:13:55 >  
+# 17:13:55 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=32330" "--set" "mapi_usock=/var/tmp/mtest-29023/.s.monetdb.32330" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/niels/scratch/rc-clean/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2013" "--set" "mal_listing=0"
+# 17:13:55 >  
+
+# MonetDB 5 server v11.15.12
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2013', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 3.775 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2013 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://niels.nesco.mine.nu:32330/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-29023/.s.monetdb.32330
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 17:13:55 >  
+# 17:13:55 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-29023" "--port=32330"
+# 17:13:55 >  
+
+#create table err_stddev2(col1 double);
+#insert into err_stddev2 values(2.4);
+[ 1	]
+#insert into err_stddev2 values(2.6);
+[ 1	]
+#SELECT sys.stddev_pop(col1) * sys.stddev_pop(col1) FROM err_stddev2;
+% sys.L2 # table_name
+% sql_mul_L1 # name
+% double # type
+% 24 # length
+[ 0.01	]
+#drop table err_stddev2;
+
+# 17:13:55 >  
+# 17:13:55 >  "Done."
+# 17:13:55 >  
+
