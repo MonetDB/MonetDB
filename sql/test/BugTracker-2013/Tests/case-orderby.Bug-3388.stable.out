@@ -73,13 +73,13 @@ Ready.
 % L1 # name
 % bigint # type
 % 2 # length
-[ 0	]
-[ 0	]
 [ 2	]
 [ 2	]
 [ 3	]
 [ 21	]
 [ 65	]
+[ NULL	]
+[ NULL	]
 [ NULL	]
 [ NULL	]
 #rollback;

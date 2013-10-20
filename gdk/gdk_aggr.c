@@ -234,12 +234,12 @@ BATgroupaggrinit(const BAT *b, const BAT *g, const BAT *e, const BAT *s,
 				if (gids == NULL ||			\
 				    (gids[i] >= min && gids[i] <= max)) { \
 					gid = gids ? gids[i] - min : (oid) i; \
-					if (nil_if_empty &&		\
+					x = vals[i];			\
+					if (nil_if_empty && x != TYPE1##_nil && \
 					    !(seen[gid >> 5] & (1 << (gid & 0x1F)))) { \
 						seen[gid >> 5] |= 1 << (gid & 0x1F); \
 						sums[gid] = 0;		\
 					}				\
-					x = vals[i];			\
 					if (x == TYPE1##_nil) {		\
 						if (!skip_nils) {	\
 							sums[gid] = TYPE2##_nil; \
@@ -729,7 +729,7 @@ BATsum(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, int
 					else				\
 						gid = (oid) i;		\
 				}					\
-				if (nil_if_empty &&			\
+				if (nil_if_empty && vals[i] != TYPE1##_nil &&  \
 				    !(seen[gid >> 5] & (1 << (gid & 0x1F)))) { \
 					seen[gid >> 5] |= 1 << (gid & 0x1F); \
 					prods[gid] = 1;			\
