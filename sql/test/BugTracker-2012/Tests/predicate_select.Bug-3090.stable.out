@@ -24,42 +24,42 @@ Ready.
 # 18:53:13 >  
 
 #select * from tables where 1;
-% .tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables # table_name
-% id,	name,	schema_id,	query,	type,	system,	commit_action,	readonly,	temporary # name
-% int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	boolean,	tinyint # type
-% 4,	17,	4,	496,	1,	5,	1,	5,	1 # length
-[ 2001,	"schemas",	2000,	NULL,	0,	true,	0,	false,	0	]
-[ 2006,	"types",	2000,	NULL,	0,	true,	0,	false,	0	]
-[ 2015,	"functions",	2000,	NULL,	0,	true,	0,	false,	0	]
-[ 2024,	"args",	2000,	NULL,	0,	true,	0,	false,	0	]
-[ 2032,	"sequences",	2000,	NULL,	0,	true,	0,	false,	0	]
-[ 2042,	"dependencies",	2000,	NULL,	0,	true,	0,	false,	0	]
-[ 2046,	"connections",	2000,	NULL,	0,	true,	0,	false,	0	]
-[ 2055,	"_tables",	2000,	NULL,	0,	true,	0,	false,	0	]
-[ 2064,	"_columns",	2000,	NULL,	0,	true,	0,	false,	0	]
-[ 2075,	"keys",	2000,	NULL,	0,	true,	0,	false,	0	]
-[ 2082,	"idxs",	2000,	NULL,	0,	true,	0,	false,	0	]
-[ 2087,	"triggers",	2000,	NULL,	0,	true,	0,	false,	0	]
-[ 2098,	"objects",	2000,	NULL,	0,	true,	0,	false,	0	]
-[ 2103,	"_tables",	2102,	NULL,	0,	true,	2,	false,	0	]
-[ 2112,	"_columns",	2102,	NULL,	0,	true,	2,	false,	0	]
-[ 2123,	"keys",	2102,	NULL,	0,	true,	2,	false,	0	]
-[ 2130,	"idxs",	2102,	NULL,	0,	true,	2,	false,	0	]
-[ 2135,	"triggers",	2102,	NULL,	0,	true,	2,	false,	0	]
-[ 2146,	"objects",	2102,	NULL,	0,	true,	2,	false,	0	]
-[ 5075,	"tables",	2000,	"SELECT * FROM (SELECT p.*, 0 AS \"temporary\" FROM \"sys\".\"_tables\" AS p UNION ALL SELECT t.*, 1 AS \"temporary\" FROM \"tmp\".\"_tables\" AS t) AS tables where tables.type <> 2;",	1,	true,	0,	false,	0	]
-[ 5085,	"columns",	2000,	"SELECT * FROM (SELECT p.* FROM \"sys\".\"_columns\" AS p UNION ALL SELECT t.* FROM \"tmp\".\"_columns\" AS t) AS columns;",	1,	true,	0,	false,	0	]
-[ 5105,	"db_user_info",	2000,	NULL,	0,	true,	0,	false,	0	]
-[ 5113,	"users",	2000,	"SELECT u.\"name\" AS \"name\", ui.\"fullname\", ui.\"default_schema\" FROM db_users() AS u LEFT JOIN \"sys\".\"db_user_info\" AS ui ON u.\"name\" = ui.\"name\" ;",	1,	true,	0,	false,	0	]
-[ 5117,	"user_role",	2000,	NULL,	0,	true,	0,	false,	0	]
-[ 5120,	"auths",	2000,	NULL,	0,	true,	0,	false,	0	]
-[ 5124,	"privileges",	2000,	NULL,	0,	true,	0,	false,	0	]
-[ 5277,	"queryhistory",	2000,	NULL,	0,	true,	0,	false,	0	]
-[ 5291,	"callhistory",	2000,	NULL,	0,	true,	0,	false,	0	]
-[ 5308,	"querylog",	2000,	"create view querylog as\nselect qd.*, ql.ctime, ql.arguments, ql.exec, ql.result, ql.foot, ql.memory, ql.tuples, ql.inblock, ql.oublock from queryhistory qd, callhistory ql\nwhere qd.id = ql.id;",	1,	true,	0,	false,	0	]
-[ 6074,	"storagemodelinput",	2000,	NULL,	0,	true,	0,	false,	0	]
-[ 6115,	"tablestoragemodel",	2000,	"-- A summary of the table storage requirement is is available as a table view.\n-- The auxillary column denotes the maximum space if all non-sorted columns\n-- would be augmented with a hash (rare situation)\ncreate view sys.tablestoragemodel\nas select \"schema\",\"table\",max(count) as \"count\",\n\tsum(columnsize) as columnsize,\n\tsum(heapsize) as heapsize,\n\tsum(indices) as indices,\n\tsum(case when sorted = false then 8 * count else 0 end) as auxillary\nfrom sys.storagemodel() group by \"schema\",\"table\";",	1,	true,	0,	false,	0	]
-[ 6137,	"systemfunctions",	2000,	NULL,	0,	true,	0,	false,	0	]
+% .tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables # table_name
+% name,	schema_id,	query,	type,	system,	commit_action,	readonly,	temporary # name
+% varchar,	int,	varchar,	smallint,	boolean,	smallint,	boolean,	tinyint # type
+% 17,	4,	496,	1,	5,	1,	5,	1 # length
+[ "schemas",	2000,	NULL,	0,	true,	0,	false,	0	]
+[ "types",	2000,	NULL,	0,	true,	0,	false,	0	]
+[ "functions",	2000,	NULL,	0,	true,	0,	false,	0	]
+[ "args",	2000,	NULL,	0,	true,	0,	false,	0	]
+[ "sequences",	2000,	NULL,	0,	true,	0,	false,	0	]
+[ "dependencies",	2000,	NULL,	0,	true,	0,	false,	0	]
+[ "connections",	2000,	NULL,	0,	true,	0,	false,	0	]
+[ "_tables",	2000,	NULL,	0,	true,	0,	false,	0	]
+[ "_columns",	2000,	NULL,	0,	true,	0,	false,	0	]
+[ "keys",	2000,	NULL,	0,	true,	0,	false,	0	]
+[ "idxs",	2000,	NULL,	0,	true,	0,	false,	0	]
+[ "triggers",	2000,	NULL,	0,	true,	0,	false,	0	]
+[ "objects",	2000,	NULL,	0,	true,	0,	false,	0	]
+[ "_tables",	2102,	NULL,	0,	true,	2,	false,	0	]
+[ "_columns",	2102,	NULL,	0,	true,	2,	false,	0	]
+[ "keys",	2102,	NULL,	0,	true,	2,	false,	0	]
+[ "idxs",	2102,	NULL,	0,	true,	2,	false,	0	]
+[ "triggers",	2102,	NULL,	0,	true,	2,	false,	0	]
+[ "objects",	2102,	NULL,	0,	true,	2,	false,	0	]
+[ "tables",	2000,	"SELECT * FROM (SELECT p.*, 0 AS \"temporary\" FROM \"sys\".\"_tables\" AS p UNION ALL SELECT t.*, 1 AS \"temporary\" FROM \"tmp\".\"_tables\" AS t) AS tables where tables.type <> 2;",	1,	true,	0,	false,	0	]
+[ "columns",	2000,	"SELECT * FROM (SELECT p.* FROM \"sys\".\"_columns\" AS p UNION ALL SELECT t.* FROM \"tmp\".\"_columns\" AS t) AS columns;",	1,	true,	0,	false,	0	]
+[ "db_user_info",	2000,	NULL,	0,	true,	0,	false,	0	]
+[ "users",	2000,	"SELECT u.\"name\" AS \"name\", ui.\"fullname\", ui.\"default_schema\" FROM db_users() AS u LEFT JOIN \"sys\".\"db_user_info\" AS ui ON u.\"name\" = ui.\"name\" ;",	1,	true,	0,	false,	0	]
+[ "user_role",	2000,	NULL,	0,	true,	0,	false,	0	]
+[ "auths",	2000,	NULL,	0,	true,	0,	false,	0	]
+[ "privileges",	2000,	NULL,	0,	true,	0,	false,	0	]
+[ "queryhistory",	2000,	NULL,	0,	true,	0,	false,	0	]
+[ "callhistory",	2000,	NULL,	0,	true,	0,	false,	0	]
+[ "querylog",	2000,	"create view querylog as\nselect qd.*, ql.ctime, ql.arguments, ql.exec, ql.result, ql.foot, ql.memory, ql.tuples, ql.inblock, ql.oublock from queryhistory qd, callhistory ql\nwhere qd.id = ql.id;",	1,	true,	0,	false,	0	]
+[ "storagemodelinput",	2000,	NULL,	0,	true,	0,	false,	0	]
+[ "tablestoragemodel",	2000,	"-- A summary of the table storage requirement is is available as a table view.\n-- The auxillary column denotes the maximum space if all non-sorted columns\n-- would be augmented with a hash (rare situation)\ncreate view sys.tablestoragemodel\nas select \"schema\",\"table\",max(count) as \"count\",\n\tsum(columnsize) as columnsize,\n\tsum(heapsize) as heapsize,\n\tsum(indices) as indices,\n\tsum(case when sorted = false then 8 * count else 0 end) as auxillary\nfrom sys.storagemodel() group by \"schema\",\"table\";",	1,	true,	0,	false,	0	]
+[ "systemfunctions",	2000,	NULL,	0,	true,	0,	false,	0	]
 
 # 18:53:13 >  
 # 18:53:13 >  "Done."
