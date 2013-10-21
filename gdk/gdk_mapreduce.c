@@ -29,9 +29,15 @@
 #include "gdk.h"
 #include "gdk_mapreduce.h"
 
+typedef struct {
+	MT_Sema *sema;			/* micro scheduler handle */
+	void (*cmd) (void *);		/* the function to be executed */
+	void *arg;			/* the arguments of the function */
+} MRtask;
+
 /* each entry in the queue contains a list of tasks */
 typedef struct MRQUEUE {
-	MRtask **tasks;
+	MRtask *tasks;
 	int index;		/* next available task */
 	int size;		/* number of tasks */
 } MRqueue;
@@ -79,7 +85,7 @@ MRqueueCreate(int sz)
 }
 
 static void
-MRenqueue(int taskcnt, MRtask ** tasks)
+MRenqueue(int taskcnt, MRtask *tasks)
 {
 	assert(taskcnt > 0);
 	MT_lock_set(&mrqlock, "MRenqueue");
@@ -113,7 +119,7 @@ MRdequeue(void)
 	MT_lock_set(&mrqlock, "MRdequeue");
 	if (mrqlast > 0) {
 		idx = mrqueue[mrqlast - 1].index;
-		r = mrqueue[mrqlast - 1].tasks[idx++];
+		r = &mrqueue[mrqlast - 1].tasks[idx++];
 		if (mrqueue[mrqlast - 1].size == idx)
 			mrqlast--;
 		else
@@ -131,7 +137,7 @@ MRworker(void *arg)
 	(void) arg;
 	do {
 		task = MRdequeue();
-		(task->cmd) (task);
+		(task->cmd) (task->arg);
 		MT_sema_up(task->sema, "MRworker");
 	} while (1);
 }
@@ -142,19 +148,21 @@ MRschedule(int taskcnt, void **arg, void (*cmd) (void *p))
 {
 	int i;
 	MT_Sema sema;
-	MRtask **task = (MRtask **) arg;
+	MRtask *task = GDKmalloc(taskcnt * sizeof(MRtask));
 
 	if (mrqueue == 0)
 		MRqueueCreate(1024);
 
 	MT_sema_init(&sema, 0, "sema");
 	for (i = 0; i < taskcnt; i++) {
-		task[i]->sema = &sema;
-		task[i]->cmd = cmd;
+		task[i].sema = &sema;
+		task[i].cmd = cmd;
+		task[i].arg = arg ? arg[i] : NULL;
 	}
 	MRenqueue(taskcnt, task);
 	/* waiting for all report result */
 	for (i = 0; i < taskcnt; i++)
 		MT_sema_down(&sema, "MRschedule");
 	MT_sema_destroy(&sema);
+	GDKfree(task);
 }
