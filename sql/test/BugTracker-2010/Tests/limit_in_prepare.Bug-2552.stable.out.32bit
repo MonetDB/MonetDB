@@ -38,13 +38,12 @@ Ready.
 % 1 # length
 [ 1	]
 #drop table rr;
-#prepare select * from tables limit 42;
-#prepare select * from tables limit 42;
+#prepare select name, schema_id, query, type, system, commit_action, readonly, temporary from tables limit 42;
+#prepare select name, schema_id, query, type, system, commit_action, readonly, temporary from tables limit 42;
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	str,	str,	str # type
 % 8,	4,	1,	0,	6,	13 # length
-[ "int",	32,	0,	"",	"tables",	"id"	]
 [ "varchar",	1024,	0,	"",	"tables",	"name"	]
 [ "int",	32,	0,	"",	"tables",	"schema_id"	]
 [ "varchar",	2048,	0,	"",	"tables",	"query"	]
@@ -54,49 +53,49 @@ Ready.
 [ "boolean",	1,	0,	"",	"tables",	"readonly"	]
 [ "tinyint",	8,	0,	"",	"tables",	"temporary"	]
 #exec  2 ();
-% .tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables # table_name
-% id,	name,	schema_id,	query,	type,	system,	commit_action,	readonly,	temporary # name
-% int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	boolean,	tinyint # type
-% 4,	17,	4,	496,	1,	5,	1,	5,	1 # length
-[ 2001,	"schemas",	2000,	NULL,	0,	true,	0,	false,	0	]
-[ 2006,	"types",	2000,	NULL,	0,	true,	0,	false,	0	]
-[ 2015,	"functions",	2000,	NULL,	0,	true,	0,	false,	0	]
-[ 2024,	"args",	2000,	NULL,	0,	true,	0,	false,	0	]
-[ 2032,	"sequences",	2000,	NULL,	0,	true,	0,	false,	0	]
-[ 2042,	"dependencies",	2000,	NULL,	0,	true,	0,	false,	0	]
-[ 2046,	"connections",	2000,	NULL,	0,	true,	0,	false,	0	]
-[ 2055,	"_tables",	2000,	NULL,	0,	true,	0,	false,	0	]
-[ 2064,	"_columns",	2000,	NULL,	0,	true,	0,	false,	0	]
-[ 2075,	"keys",	2000,	NULL,	0,	true,	0,	false,	0	]
-[ 2082,	"idxs",	2000,	NULL,	0,	true,	0,	false,	0	]
-[ 2087,	"triggers",	2000,	NULL,	0,	true,	0,	false,	0	]
-[ 2098,	"objects",	2000,	NULL,	0,	true,	0,	false,	0	]
-[ 2103,	"_tables",	2102,	NULL,	0,	true,	2,	false,	0	]
-[ 2112,	"_columns",	2102,	NULL,	0,	true,	2,	false,	0	]
-[ 2123,	"keys",	2102,	NULL,	0,	true,	2,	false,	0	]
-[ 2130,	"idxs",	2102,	NULL,	0,	true,	2,	false,	0	]
-[ 2135,	"triggers",	2102,	NULL,	0,	true,	2,	false,	0	]
-[ 2146,	"objects",	2102,	NULL,	0,	true,	2,	false,	0	]
-[ 5077,	"tables",	2000,	"SELECT * FROM (SELECT p.*, 0 AS \"temporary\" FROM \"sys\".\"_tables\" AS p UNION ALL SELECT t.*, 1 AS \"temporary\" FROM \"tmp\".\"_tables\" AS t) AS tables where tables.type <> 2;",	1,	true,	0,	false,	0	]
-[ 5087,	"columns",	2000,	"SELECT * FROM (SELECT p.* FROM \"sys\".\"_columns\" AS p UNION ALL SELECT t.* FROM \"tmp\".\"_columns\" AS t) AS columns;",	1,	true,	0,	false,	0	]
-[ 5107,	"db_user_info",	2000,	NULL,	0,	true,	0,	false,	0	]
-[ 5115,	"users",	2000,	"SELECT u.\"name\" AS \"name\", ui.\"fullname\", ui.\"default_schema\" FROM db_users() AS u LEFT JOIN \"sys\".\"db_user_info\" AS ui ON u.\"name\" = ui.\"name\" ;",	1,	true,	0,	false,	0	]
-[ 5119,	"user_role",	2000,	NULL,	0,	true,	0,	false,	0	]
-[ 5122,	"auths",	2000,	NULL,	0,	true,	0,	false,	0	]
-[ 5126,	"privileges",	2000,	NULL,	0,	true,	0,	false,	0	]
-[ 5303,	"querylog_catalog",	2000,	"-- create table views for convenience\ncreate view sys.querylog_catalog as select * from sys.querylog_catalog();",	1,	true,	0,	false,	0	]
-[ 5315,	"querylog_calls",	2000,	"create view sys.querylog_calls as select * from sys.querylog_calls();",	1,	true,	0,	false,	0	]
-[ 5333,	"querylog_history",	2000,	"create view sys.querylog_history as\nselect qd.*, ql.\"start\",ql.\"stop\", ql.arguments, ql.tuples, ql.run, ql.ship, ql.cpu, ql.space, ql.io \nfrom sys.querylog_catalog() qd, sys.querylog_calls() ql\nwhere qd.id = ql.id and qd.owner = user;",	1,	true,	0,	false,	0	]
-[ 5372,	"tracelog",	2000,	"create view sys.tracelog as select * from sys.tracelog();",	1,	true,	0,	false,	0	]
-[ 5630,	"optimizers",	2000,	"create view sys.optimizers as select * from sys.optimizers();",	1,	true,	0,	false,	0	]
-[ 5640,	"environment",	2000,	"create view sys.environment as select * from sys.environment();",	1,	true,	0,	false,	0	]
-[ 5682,	"queue",	2000,	"create view sys.queue as select * from sys.queue();",	1,	true,	0,	false,	0	]
-[ 6212,	"storage",	2000,	"create view sys.storage as select * from sys.storage();",	1,	true,	0,	false,	0	]
-[ 6224,	"storagemodelinput",	2000,	NULL,	0,	true,	0,	false,	0	]
-[ 6267,	"storagemodel",	2000,	"create view sys.storagemodel as select * from sys.storagemodel();",	1,	true,	0,	false,	0	]
-[ 6276,	"tablestoragemodel",	2000,	"-- A summary of the table storage requirement is is available as a table view.\n-- The auxillary column denotes the maximum space if all non-sorted columns\n-- would be augmented with a hash (rare situation)\ncreate view sys.tablestoragemodel\nas select \"schema\",\"table\",max(count) as \"count\",\n\tsum(columnsize) as columnsize,\n\tsum(heapsize) as heapsize,\n\tsum(indices) as indices,\n\tsum(case when sorted = false then 8 * count else 0 end) as auxillary\nfrom sys.storagemodel() group by \"schema\",\"table\";",	1,	true,	0,	false,	0	]
-[ 6291,	"statistics",	2000,	NULL,	0,	true,	0,	false,	0	]
-[ 6345,	"systemfunctions",	2000,	NULL,	0,	true,	0,	false,	0	]
+% .tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables # table_name
+% name,	schema_id,	query,	type,	system,	commit_action,	readonly,	temporary # name
+% varchar,	int,	varchar,	smallint,	boolean,	smallint,	boolean,	tinyint # type
+% 17,	4,	496,	1,	5,	1,	5,	1 # length
+[ "schemas",	2000,	NULL,	0,	true,	0,	false,	0	]
+[ "types",	2000,	NULL,	0,	true,	0,	false,	0	]
+[ "functions",	2000,	NULL,	0,	true,	0,	false,	0	]
+[ "args",	2000,	NULL,	0,	true,	0,	false,	0	]
+[ "sequences",	2000,	NULL,	0,	true,	0,	false,	0	]
+[ "dependencies",	2000,	NULL,	0,	true,	0,	false,	0	]
+[ "connections",	2000,	NULL,	0,	true,	0,	false,	0	]
+[ "_tables",	2000,	NULL,	0,	true,	0,	false,	0	]
+[ "_columns",	2000,	NULL,	0,	true,	0,	false,	0	]
+[ "keys",	2000,	NULL,	0,	true,	0,	false,	0	]
+[ "idxs",	2000,	NULL,	0,	true,	0,	false,	0	]
+[ "triggers",	2000,	NULL,	0,	true,	0,	false,	0	]
+[ "objects",	2000,	NULL,	0,	true,	0,	false,	0	]
+[ "_tables",	2102,	NULL,	0,	true,	2,	false,	0	]
+[ "_columns",	2102,	NULL,	0,	true,	2,	false,	0	]
+[ "keys",	2102,	NULL,	0,	true,	2,	false,	0	]
+[ "idxs",	2102,	NULL,	0,	true,	2,	false,	0	]
+[ "triggers",	2102,	NULL,	0,	true,	2,	false,	0	]
+[ "objects",	2102,	NULL,	0,	true,	2,	false,	0	]
+[ "tables",	2000,	"SELECT * FROM (SELECT p.*, 0 AS \"temporary\" FROM \"sys\".\"_tables\" AS p UNION ALL SELECT t.*, 1 AS \"temporary\" FROM \"tmp\".\"_tables\" AS t) AS tables where tables.type <> 2;",	1,	true,	0,	false,	0	]
+[ "columns",	2000,	"SELECT * FROM (SELECT p.* FROM \"sys\".\"_columns\" AS p UNION ALL SELECT t.* FROM \"tmp\".\"_columns\" AS t) AS columns;",	1,	true,	0,	false,	0	]
+[ "db_user_info",	2000,	NULL,	0,	true,	0,	false,	0	]
+[ "users",	2000,	"SELECT u.\"name\" AS \"name\", ui.\"fullname\", ui.\"default_schema\" FROM db_users() AS u LEFT JOIN \"sys\".\"db_user_info\" AS ui ON u.\"name\" = ui.\"name\" ;",	1,	true,	0,	false,	0	]
+[ "user_role",	2000,	NULL,	0,	true,	0,	false,	0	]
+[ "auths",	2000,	NULL,	0,	true,	0,	false,	0	]
+[ "privileges",	2000,	NULL,	0,	true,	0,	false,	0	]
+[ "querylog_catalog",	2000,	"-- create table views for convenience\ncreate view sys.querylog_catalog as select * from sys.querylog_catalog();",	1,	true,	0,	false,	0	]
+[ "querylog_calls",	2000,	"create view sys.querylog_calls as select * from sys.querylog_calls();",	1,	true,	0,	false,	0	]
+[ "querylog_history",	2000,	"create view sys.querylog_history as\nselect qd.*, ql.\"start\",ql.\"stop\", ql.arguments, ql.tuples, ql.run, ql.ship, ql.cpu, ql.space, ql.io \nfrom sys.querylog_catalog() qd, sys.querylog_calls() ql\nwhere qd.id = ql.id and qd.owner = user;",	1,	true,	0,	false,	0	]
+[ "tracelog",	2000,	"create view sys.tracelog as select * from sys.tracelog();",	1,	true,	0,	false,	0	]
+[ "optimizers",	2000,	"create view sys.optimizers as select * from sys.optimizers();",	1,	true,	0,	false,	0	]
+[ "environment",	2000,	"create view sys.environment as select * from sys.environment();",	1,	true,	0,	false,	0	]
+[ "queue",	2000,	"create view sys.queue as select * from sys.queue();",	1,	true,	0,	false,	0	]
+[ "storage",	2000,	"create view sys.storage as select * from sys.storage();",	1,	true,	0,	false,	0	]
+[ "storagemodelinput",	2000,	NULL,	0,	true,	0,	false,	0	]
+[ "storagemodel",	2000,	"create view sys.storagemodel as select * from sys.storagemodel();",	1,	true,	0,	false,	0	]
+[ "tablestoragemodel",	2000,	"-- A summary of the table storage requirement is is available as a table view.\n-- The auxillary column denotes the maximum space if all non-sorted columns\n-- would be augmented with a hash (rare situation)\ncreate view sys.tablestoragemodel\nas select \"schema\",\"table\",max(count) as \"count\",\n\tsum(columnsize) as columnsize,\n\tsum(heapsize) as heapsize,\n\tsum(indices) as indices,\n\tsum(case when sorted = false then 8 * count else 0 end) as auxillary\nfrom sys.storagemodel() group by \"schema\",\"table\";",	1,	true,	0,	false,	0	]
+[ "statistics",	2000,	NULL,	0,	true,	0,	false,	0	]
+[ "systemfunctions",	2000,	NULL,	0,	true,	0,	false,	0	]
 
 # 10:59:54 >  
 # 10:59:54 >  "Done."

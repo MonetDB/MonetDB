@@ -3264,6 +3264,7 @@ rel_unop_(mvc *sql, sql_exp *e, sql_schema *s, char *fname, int card)
 }
 
 static sql_exp * _rel_aggr(mvc *sql, sql_rel **rel, int distinct, sql_schema *s, char *aname, dnode *arguments, int f);
+static sql_exp *rel_aggr(mvc *sql, sql_rel **rel, symbol *se, int f);
 
 static sql_exp *
 rel_unop(mvc *sql, sql_rel **rel, symbol *se, int fs, exp_kind ek)
@@ -3278,8 +3279,12 @@ rel_unop(mvc *sql, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 	sql_subtype *t = NULL;
 	int type = (ek.card == card_none)?F_PROC:F_FUNC;
 
-	if (!e)
-		return NULL;
+	if (!e) { /* possibly we cannot resolve the argument as the function maybe an aggregate */
+		/* reset error */
+		sql->session->status = 0;
+		sql->errstr[0] = '\0';
+		return rel_aggr(sql, rel, se, fs);
+	}
 	if (sname)
 		s = mvc_bind_schema(sql, sname);
 	if (!s)
@@ -3769,15 +3774,19 @@ static sql_exp *
 rel_aggr(mvc *sql, sql_rel **rel, symbol *se, int f)
 {
 	dlist *l = se->data.lval;
-	int distinct = l->h->next->data.i_val;
+	dnode *d = l->h->next;
+	int distinct = 0;
 	char *aname = qname_fname(l->h->data.lval);
 	char *sname = qname_schema(l->h->data.lval);
 	sql_schema *s = sql->session->schema;
 
-	assert(l->h->next->type == type_int);
+	if (l->h->next->type == type_int) {
+		distinct = l->h->next->data.i_val;
+		d = l->h->next->next;
+	}
 	if (sname)
 		s = mvc_bind_schema(sql, sname);
-	return _rel_aggr( sql, rel, distinct, s, aname, l->h->next->next, f);
+	return _rel_aggr( sql, rel, distinct, s, aname, d, f);
 }
 
 static sql_exp *

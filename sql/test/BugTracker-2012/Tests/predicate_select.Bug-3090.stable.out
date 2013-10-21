@@ -23,7 +23,7 @@ Ready.
 # 18:53:13 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=niels" "--port=32323"
 # 18:53:13 >  
 
-#select name,   schema_id,      query,  type,   system, commit_action,  readonly,       temporary  from tables where 1;
+#select * from tables where 1;
 % .tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables # table_name
 % name,	schema_id,	query,	type,	system,	commit_action,	readonly,	temporary # name
 % varchar,	int,	varchar,	smallint,	boolean,	smallint,	boolean,	tinyint # type
@@ -65,7 +65,6 @@ Ready.
 [ "storagemodelinput",	2000,	NULL,	0,	true,	0,	false,	0	]
 [ "storagemodel",	2000,	"create view sys.storagemodel as select * from sys.storagemodel();",	1,	true,	0,	false,	0	]
 [ "tablestoragemodel",	2000,	"-- A summary of the table storage requirement is is available as a table view.\n-- The auxillary column denotes the maximum space if all non-sorted columns\n-- would be augmented with a hash (rare situation)\ncreate view sys.tablestoragemodel\nas select \"schema\",\"table\",max(count) as \"count\",\n\tsum(columnsize) as columnsize,\n\tsum(heapsize) as heapsize,\n\tsum(indices) as indices,\n\tsum(case when sorted = false then 8 * count else 0 end) as auxillary\nfrom sys.storagemodel() group by \"schema\",\"table\";",	1,	true,	0,	false,	0	]
-[ "statistics",	2000,	NULL,	0,	true,	0,	false,	0	]
 [ "systemfunctions",	2000,	NULL,	0,	true,	0,	false,	0	]
 
 # 18:53:13 >  
