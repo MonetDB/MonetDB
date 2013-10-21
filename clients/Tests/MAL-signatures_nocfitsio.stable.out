@@ -42342,6 +42342,10 @@ pattern sql.storage() (schema:bat[:oid,:str],table:bat[:oid,:str],column:bat[:oi
 address sql_storage;
 comment return a table with storage information 
 
+pattern sql.sessions() (user:bat[:oid,:str],start:bat[:oid,:timestamp],stimeout:bat[:oid,:lng],lastcmd:bat[:oid,:timestamp],qtimeout:bat[:oid,:lng],idle:bat[:oid,:bit]) 
+address sql_sessions_wrap;
+comment SQL export table of active sessions, their timeouts and idle status
+
 pattern sql.sql_variables():bat[:oid,:str] 
 address sql_variables;
 comment return the table with session variables

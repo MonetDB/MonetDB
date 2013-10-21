@@ -42245,6 +42245,10 @@ pattern sql.settimeout(s:lng):void
 address CLTsetTimeout;
 comment Abort query after s seconds
 
+pattern sql.sessions() (user:bat[:oid,:str],start:bat[:oid,:timestamp],stimeout:bat[:oid,:lng],lastcmd:bat[:oid,:timestamp],qtimeout:bat[:oid,:lng],idle:bat[:oid,:bit]) 
+address sql_sessions_wrap;
+comment SQL export table of active sessions, their timeouts and idle status
+
 pattern sql.sql_variables():bat[:oid,:str] 
 address sql_variables;
 comment return the table with session variables

@@ -179,6 +179,7 @@ SYSTEM FUNCTION  sys.radians
 SYSTEM FUNCTION  sys.resume
 SYSTEM FUNCTION  sys.reuse
 SYSTEM FUNCTION  sys.reverse
+SYSTEM FUNCTION  sys.sessions
 SYSTEM FUNCTION  sys.setmasklen
 SYSTEM FUNCTION  sys.setsession
 SYSTEM FUNCTION  sys.settimeout
@@ -1347,7 +1348,7 @@ CREATE TABLE "sys"."_columns" (
 	"number"      INTEGER,
 	"storage"     VARCHAR(2048)
 );
-COPY 406 RECORDS INTO "sys"."_columns" FROM stdin USING DELIMITERS '\t','\n','"';
+COPY 412 RECORDS INTO "sys"."_columns" FROM stdin USING DELIMITERS '\t','\n','"';
 2002	"id"	"int"	32	0	2001	NULL	true	0	NULL
 2003	"name"	"varchar"	1024	0	2001	NULL	true	1	NULL
 2004	"authorization"	"int"	32	0	2001	NULL	true	2	NULL
@@ -1641,119 +1642,125 @@ COPY 406 RECORDS INTO "sys"."_columns" FROM stdin USING DELIMITERS '\t','\n','"'
 5532	"sch"	"varchar"	100	0	5531	NULL	true	0	NULL
 5533	"usr"	"varchar"	100	0	5531	NULL	true	1	NULL
 5534	"dep_type"	"varchar"	32	0	5531	NULL	true	2	NULL
-5595	"rewrite"	"clob"	0	0	5594	NULL	true	0	NULL
-5596	"count"	"int"	32	0	5594	NULL	true	1	NULL
-5601	"query"	"clob"	0	0	5600	NULL	true	0	NULL
-5602	"count"	"int"	32	0	5600	NULL	true	1	NULL
-5610	"name"	"clob"	0	0	5609	NULL	true	0	NULL
-5611	"def"	"clob"	0	0	5609	NULL	true	1	NULL
-5612	"status"	"clob"	0	0	5609	NULL	true	2	NULL
-5617	"name"	"clob"	0	0	5620	NULL	true	0	NULL
-5618	"def"	"clob"	0	0	5620	NULL	true	1	NULL
-5619	"status"	"clob"	0	0	5620	NULL	true	2	NULL
-5622	"name"	"clob"	0	0	5621	NULL	true	0	NULL
-5623	"value"	"clob"	0	0	5621	NULL	true	1	NULL
-5628	"name"	"clob"	0	0	5630	NULL	true	0	NULL
-5629	"value"	"clob"	0	0	5630	NULL	true	1	NULL
-5632	"id"	"int"	32	0	5631	NULL	true	0	NULL
-5633	"name"	"clob"	0	0	5631	NULL	true	1	NULL
-5634	"htype"	"clob"	0	0	5631	NULL	true	2	NULL
-5635	"ttype"	"clob"	0	0	5631	NULL	true	3	NULL
-5636	"count"	"bigint"	64	0	5631	NULL	true	4	NULL
-5637	"refcnt"	"int"	32	0	5631	NULL	true	5	NULL
-5638	"lrefcnt"	"int"	32	0	5631	NULL	true	6	NULL
-5639	"location"	"clob"	0	0	5631	NULL	true	7	NULL
-5640	"heat"	"int"	32	0	5631	NULL	true	8	NULL
-5641	"dirty"	"clob"	0	0	5631	NULL	true	9	NULL
-5642	"status"	"clob"	0	0	5631	NULL	true	10	NULL
-5643	"kind"	"clob"	0	0	5631	NULL	true	11	NULL
-5652	"qtag"	"bigint"	64	0	5651	NULL	true	0	NULL
-5653	"user"	"clob"	0	0	5651	NULL	true	1	NULL
-5654	"started"	"timestamp"	7	0	5651	NULL	true	2	NULL
-5655	"estimate"	"timestamp"	7	0	5651	NULL	true	3	NULL
-5656	"progress"	"int"	32	0	5651	NULL	true	4	NULL
-5657	"status"	"clob"	0	0	5651	NULL	true	5	NULL
-5658	"tag"	"oid"	63	0	5651	NULL	true	6	NULL
-5659	"query"	"clob"	0	0	5651	NULL	true	7	NULL
-5664	"qtag"	"bigint"	64	0	5672	NULL	true	0	NULL
-5665	"user"	"clob"	0	0	5672	NULL	true	1	NULL
-5666	"started"	"timestamp"	7	0	5672	NULL	true	2	NULL
-5667	"estimate"	"timestamp"	7	0	5672	NULL	true	3	NULL
-5668	"progress"	"int"	32	0	5672	NULL	true	4	NULL
-5669	"status"	"clob"	0	0	5672	NULL	true	5	NULL
-5670	"tag"	"oid"	63	0	5672	NULL	true	6	NULL
-5671	"query"	"clob"	0	0	5672	NULL	true	7	NULL
-5976	"schema"	"clob"	0	0	5975	NULL	true	0	NULL
-5977	"table"	"clob"	0	0	5975	NULL	true	1	NULL
-5978	"column"	"clob"	0	0	5975	NULL	true	2	NULL
-5979	"type"	"clob"	0	0	5975	NULL	true	3	NULL
-5980	"location"	"clob"	0	0	5975	NULL	true	4	NULL
-5981	"count"	"bigint"	64	0	5975	NULL	true	5	NULL
-5982	"typewidth"	"int"	32	0	5975	NULL	true	6	NULL
-5983	"columnsize"	"bigint"	64	0	5975	NULL	true	7	NULL
-5984	"heapsize"	"bigint"	64	0	5975	NULL	true	8	NULL
-5985	"indices"	"bigint"	64	0	5975	NULL	true	9	NULL
-5986	"sorted"	"boolean"	1	0	5975	NULL	true	10	NULL
-5991	"schema"	"clob"	0	0	6002	NULL	true	0	NULL
-5992	"table"	"clob"	0	0	6002	NULL	true	1	NULL
-5993	"column"	"clob"	0	0	6002	NULL	true	2	NULL
-5994	"type"	"clob"	0	0	6002	NULL	true	3	NULL
-5995	"location"	"clob"	0	0	6002	NULL	true	4	NULL
-5996	"count"	"bigint"	64	0	6002	NULL	true	5	NULL
-5997	"typewidth"	"int"	32	0	6002	NULL	true	6	NULL
-5998	"columnsize"	"bigint"	64	0	6002	NULL	true	7	NULL
-5999	"heapsize"	"bigint"	64	0	6002	NULL	true	8	NULL
-6000	"indices"	"bigint"	64	0	6002	NULL	true	9	NULL
-6001	"sorted"	"boolean"	1	0	6002	NULL	true	10	NULL
-6004	"schema"	"clob"	0	0	6014	NULL	true	0	NULL
-6005	"table"	"clob"	0	0	6014	NULL	true	1	NULL
-6006	"column"	"clob"	0	0	6014	NULL	true	2	NULL
-6007	"type"	"clob"	0	0	6014	NULL	true	3	NULL
-6008	"typewidth"	"int"	32	0	6014	NULL	true	4	NULL
-6009	"count"	"bigint"	64	0	6014	NULL	true	5	NULL
-6010	"distinct"	"bigint"	64	0	6014	NULL	true	6	NULL
-6011	"atomwidth"	"int"	32	0	6014	NULL	true	7	NULL
-6012	"reference"	"boolean"	1	0	6014	NULL	true	8	NULL
-6013	"sorted"	"boolean"	1	0	6014	NULL	true	9	NULL
-6035	"schema"	"clob"	0	0	6034	NULL	true	0	NULL
-6036	"table"	"clob"	0	0	6034	NULL	true	1	NULL
-6037	"column"	"clob"	0	0	6034	NULL	true	2	NULL
-6038	"type"	"clob"	0	0	6034	NULL	true	3	NULL
-6039	"count"	"bigint"	64	0	6034	NULL	true	4	NULL
-6040	"columnsize"	"bigint"	64	0	6034	NULL	true	5	NULL
-6041	"heapsize"	"bigint"	64	0	6034	NULL	true	6	NULL
-6042	"indices"	"bigint"	64	0	6034	NULL	true	7	NULL
-6043	"sorted"	"boolean"	1	0	6034	NULL	true	8	NULL
-6048	"schema"	"clob"	0	0	6057	NULL	true	0	NULL
-6049	"table"	"clob"	0	0	6057	NULL	true	1	NULL
-6050	"column"	"clob"	0	0	6057	NULL	true	2	NULL
-6051	"type"	"clob"	0	0	6057	NULL	true	3	NULL
-6052	"count"	"bigint"	64	0	6057	NULL	true	4	NULL
-6053	"columnsize"	"bigint"	64	0	6057	NULL	true	5	NULL
-6054	"heapsize"	"bigint"	64	0	6057	NULL	true	6	NULL
-6055	"indices"	"bigint"	64	0	6057	NULL	true	7	NULL
-6056	"sorted"	"boolean"	1	0	6057	NULL	true	8	NULL
-6059	"schema"	"clob"	0	0	6066	NULL	true	0	NULL
-6060	"table"	"clob"	0	0	6066	NULL	true	1	NULL
-6061	"count"	"bigint"	64	0	6066	NULL	true	2	NULL
-6062	"columnsize"	"bigint"	64	0	6066	NULL	true	3	NULL
-6063	"heapsize"	"bigint"	64	0	6066	NULL	true	4	NULL
-6064	"indices"	"bigint"	64	0	6066	NULL	true	5	NULL
-6065	"auxillary"	"bigint"	53	0	6066	NULL	true	6	NULL
-6068	"schema"	"clob"	0	0	6081	NULL	true	0	NULL
-6069	"table"	"clob"	0	0	6081	NULL	true	1	NULL
-6070	"column"	"clob"	0	0	6081	NULL	true	2	NULL
-6071	"type"	"clob"	0	0	6081	NULL	true	3	NULL
-6072	"width"	"int"	32	0	6081	NULL	true	4	NULL
-6073	"stamp"	"timestamp"	7	0	6081	NULL	true	5	NULL
-6074	"sample"	"bigint"	64	0	6081	NULL	true	6	NULL
-6075	"count"	"bigint"	64	0	6081	NULL	true	7	NULL
-6076	"unique"	"bigint"	64	0	6081	NULL	true	8	NULL
-6077	"nils"	"bigint"	64	0	6081	NULL	true	9	NULL
-6078	"minval"	"clob"	0	0	6081	NULL	true	10	NULL
-6079	"maxval"	"clob"	0	0	6081	NULL	true	11	NULL
-6080	"sorted"	"boolean"	1	0	6081	NULL	true	12	NULL
-6134	"function_id"	"int"	32	0	6135	NULL	true	0	NULL
+5543	"user"	"clob"	0	0	5542	NULL	true	0	NULL
+5544	"login"	"timestamp"	7	0	5542	NULL	true	1	NULL
+5545	"sessiontimeout"	"bigint"	64	0	5542	NULL	true	2	NULL
+5546	"lastcommand"	"timestamp"	7	0	5542	NULL	true	3	NULL
+5547	"querytimeout"	"bigint"	64	0	5542	NULL	true	4	NULL
+5548	"active"	"boolean"	1	0	5542	NULL	true	5	NULL
+5605	"rewrite"	"clob"	0	0	5604	NULL	true	0	NULL
+5606	"count"	"int"	32	0	5604	NULL	true	1	NULL
+5611	"query"	"clob"	0	0	5610	NULL	true	0	NULL
+5612	"count"	"int"	32	0	5610	NULL	true	1	NULL
+5620	"name"	"clob"	0	0	5619	NULL	true	0	NULL
+5621	"def"	"clob"	0	0	5619	NULL	true	1	NULL
+5622	"status"	"clob"	0	0	5619	NULL	true	2	NULL
+5627	"name"	"clob"	0	0	5630	NULL	true	0	NULL
+5628	"def"	"clob"	0	0	5630	NULL	true	1	NULL
+5629	"status"	"clob"	0	0	5630	NULL	true	2	NULL
+5632	"name"	"clob"	0	0	5631	NULL	true	0	NULL
+5633	"value"	"clob"	0	0	5631	NULL	true	1	NULL
+5638	"name"	"clob"	0	0	5640	NULL	true	0	NULL
+5639	"value"	"clob"	0	0	5640	NULL	true	1	NULL
+5642	"id"	"int"	32	0	5641	NULL	true	0	NULL
+5643	"name"	"clob"	0	0	5641	NULL	true	1	NULL
+5644	"htype"	"clob"	0	0	5641	NULL	true	2	NULL
+5645	"ttype"	"clob"	0	0	5641	NULL	true	3	NULL
+5646	"count"	"bigint"	64	0	5641	NULL	true	4	NULL
+5647	"refcnt"	"int"	32	0	5641	NULL	true	5	NULL
+5648	"lrefcnt"	"int"	32	0	5641	NULL	true	6	NULL
+5649	"location"	"clob"	0	0	5641	NULL	true	7	NULL
+5650	"heat"	"int"	32	0	5641	NULL	true	8	NULL
+5651	"dirty"	"clob"	0	0	5641	NULL	true	9	NULL
+5652	"status"	"clob"	0	0	5641	NULL	true	10	NULL
+5653	"kind"	"clob"	0	0	5641	NULL	true	11	NULL
+5662	"qtag"	"bigint"	64	0	5661	NULL	true	0	NULL
+5663	"user"	"clob"	0	0	5661	NULL	true	1	NULL
+5664	"started"	"timestamp"	7	0	5661	NULL	true	2	NULL
+5665	"estimate"	"timestamp"	7	0	5661	NULL	true	3	NULL
+5666	"progress"	"int"	32	0	5661	NULL	true	4	NULL
+5667	"status"	"clob"	0	0	5661	NULL	true	5	NULL
+5668	"tag"	"oid"	63	0	5661	NULL	true	6	NULL
+5669	"query"	"clob"	0	0	5661	NULL	true	7	NULL
+5674	"qtag"	"bigint"	64	0	5682	NULL	true	0	NULL
+5675	"user"	"clob"	0	0	5682	NULL	true	1	NULL
+5676	"started"	"timestamp"	7	0	5682	NULL	true	2	NULL
+5677	"estimate"	"timestamp"	7	0	5682	NULL	true	3	NULL
+5678	"progress"	"int"	32	0	5682	NULL	true	4	NULL
+5679	"status"	"clob"	0	0	5682	NULL	true	5	NULL
+5680	"tag"	"oid"	63	0	5682	NULL	true	6	NULL
+5681	"query"	"clob"	0	0	5682	NULL	true	7	NULL
+5986	"schema"	"clob"	0	0	5985	NULL	true	0	NULL
+5987	"table"	"clob"	0	0	5985	NULL	true	1	NULL
+5988	"column"	"clob"	0	0	5985	NULL	true	2	NULL
+5989	"type"	"clob"	0	0	5985	NULL	true	3	NULL
+5990	"location"	"clob"	0	0	5985	NULL	true	4	NULL
+5991	"count"	"bigint"	64	0	5985	NULL	true	5	NULL
+5992	"typewidth"	"int"	32	0	5985	NULL	true	6	NULL
+5993	"columnsize"	"bigint"	64	0	5985	NULL	true	7	NULL
+5994	"heapsize"	"bigint"	64	0	5985	NULL	true	8	NULL
+5995	"indices"	"bigint"	64	0	5985	NULL	true	9	NULL
+5996	"sorted"	"boolean"	1	0	5985	NULL	true	10	NULL
+6001	"schema"	"clob"	0	0	6012	NULL	true	0	NULL
+6002	"table"	"clob"	0	0	6012	NULL	true	1	NULL
+6003	"column"	"clob"	0	0	6012	NULL	true	2	NULL
+6004	"type"	"clob"	0	0	6012	NULL	true	3	NULL
+6005	"location"	"clob"	0	0	6012	NULL	true	4	NULL
+6006	"count"	"bigint"	64	0	6012	NULL	true	5	NULL
+6007	"typewidth"	"int"	32	0	6012	NULL	true	6	NULL
+6008	"columnsize"	"bigint"	64	0	6012	NULL	true	7	NULL
+6009	"heapsize"	"bigint"	64	0	6012	NULL	true	8	NULL
+6010	"indices"	"bigint"	64	0	6012	NULL	true	9	NULL
+6011	"sorted"	"boolean"	1	0	6012	NULL	true	10	NULL
+6014	"schema"	"clob"	0	0	6024	NULL	true	0	NULL
+6015	"table"	"clob"	0	0	6024	NULL	true	1	NULL
+6016	"column"	"clob"	0	0	6024	NULL	true	2	NULL
+6017	"type"	"clob"	0	0	6024	NULL	true	3	NULL
+6018	"typewidth"	"int"	32	0	6024	NULL	true	4	NULL
+6019	"count"	"bigint"	64	0	6024	NULL	true	5	NULL
+6020	"distinct"	"bigint"	64	0	6024	NULL	true	6	NULL
+6021	"atomwidth"	"int"	32	0	6024	NULL	true	7	NULL
+6022	"reference"	"boolean"	1	0	6024	NULL	true	8	NULL
+6023	"sorted"	"boolean"	1	0	6024	NULL	true	9	NULL
+6045	"schema"	"clob"	0	0	6044	NULL	true	0	NULL
+6046	"table"	"clob"	0	0	6044	NULL	true	1	NULL
+6047	"column"	"clob"	0	0	6044	NULL	true	2	NULL
+6048	"type"	"clob"	0	0	6044	NULL	true	3	NULL
+6049	"count"	"bigint"	64	0	6044	NULL	true	4	NULL
+6050	"columnsize"	"bigint"	64	0	6044	NULL	true	5	NULL
+6051	"heapsize"	"bigint"	64	0	6044	NULL	true	6	NULL
+6052	"indices"	"bigint"	64	0	6044	NULL	true	7	NULL
+6053	"sorted"	"boolean"	1	0	6044	NULL	true	8	NULL
+6058	"schema"	"clob"	0	0	6067	NULL	true	0	NULL
+6059	"table"	"clob"	0	0	6067	NULL	true	1	NULL
+6060	"column"	"clob"	0	0	6067	NULL	true	2	NULL
+6061	"type"	"clob"	0	0	6067	NULL	true	3	NULL
+6062	"count"	"bigint"	64	0	6067	NULL	true	4	NULL
+6063	"columnsize"	"bigint"	64	0	6067	NULL	true	5	NULL
+6064	"heapsize"	"bigint"	64	0	6067	NULL	true	6	NULL
+6065	"indices"	"bigint"	64	0	6067	NULL	true	7	NULL
+6066	"sorted"	"boolean"	1	0	6067	NULL	true	8	NULL
+6069	"schema"	"clob"	0	0	6076	NULL	true	0	NULL
+6070	"table"	"clob"	0	0	6076	NULL	true	1	NULL
+6071	"count"	"bigint"	64	0	6076	NULL	true	2	NULL
+6072	"columnsize"	"bigint"	64	0	6076	NULL	true	3	NULL
+6073	"heapsize"	"bigint"	64	0	6076	NULL	true	4	NULL
+6074	"indices"	"bigint"	64	0	6076	NULL	true	5	NULL
+6075	"auxillary"	"bigint"	53	0	6076	NULL	true	6	NULL
+6078	"schema"	"clob"	0	0	6091	NULL	true	0	NULL
+6079	"table"	"clob"	0	0	6091	NULL	true	1	NULL
+6080	"column"	"clob"	0	0	6091	NULL	true	2	NULL
+6081	"type"	"clob"	0	0	6091	NULL	true	3	NULL
+6082	"width"	"int"	32	0	6091	NULL	true	4	NULL
+6083	"stamp"	"timestamp"	7	0	6091	NULL	true	5	NULL
+6084	"sample"	"bigint"	64	0	6091	NULL	true	6	NULL
+6085	"count"	"bigint"	64	0	6091	NULL	true	7	NULL
+6086	"unique"	"bigint"	64	0	6091	NULL	true	8	NULL
+6087	"nils"	"bigint"	64	0	6091	NULL	true	9	NULL
+6088	"minval"	"clob"	0	0	6091	NULL	true	10	NULL
+6089	"maxval"	"clob"	0	0	6091	NULL	true	11	NULL
+6090	"sorted"	"boolean"	1	0	6091	NULL	true	12	NULL
+6144	"function_id"	"int"	32	0	6145	NULL	true	0	NULL
 COMMIT;
 START TRANSACTION;
 CREATE TABLE "sys"."_tables" (
@@ -1766,7 +1773,7 @@ CREATE TABLE "sys"."_tables" (
 	"commit_action" SMALLINT,
 	"readonly"      BOOLEAN
 );
-COPY 70 RECORDS INTO "sys"."_tables" FROM stdin USING DELIMITERS '\t','\n','"';
+COPY 71 RECORDS INTO "sys"."_tables" FROM stdin USING DELIMITERS '\t','\n','"';
 2001	"schemas"	2000	NULL	0	true	0	false
 2006	"types"	2000	NULL	0	true	0	false
 2015	"functions"	2000	NULL	0	true	0	false
@@ -1820,23 +1827,24 @@ COPY 70 RECORDS INTO "sys"."_tables" FROM stdin USING DELIMITERS '\t','\n','"';
 5517	"#dependencies_functions_on_functions"	2000	NULL	2	true	0	false
 5524	"#dependencies_functions_os_triggers"	2000	NULL	2	true	0	false
 5531	"#dependencies_keys_on_foreignkeys"	2000	NULL	2	true	0	false
-5594	"#optimizer_stats"	2000	NULL	2	true	0	false
-5600	"#querycache"	2000	NULL	2	true	0	false
-5609	"#optimizers"	2000	NULL	2	true	0	false
-5620	"optimizers"	2000	"create view sys.optimizers as select * from sys.optimizers();"	1	true	0	false
-5621	"#environment"	2000	NULL	2	true	0	false
-5630	"environment"	2000	"create view sys.environment as select * from sys.environment();"	1	true	0	false
-5631	"#bbp"	2000	NULL	2	true	0	false
-5651	"#queue"	2000	NULL	2	true	0	false
-5672	"queue"	2000	"create view sys.queue as select * from sys.queue();"	1	true	0	false
-5975	"#storage"	2000	NULL	2	true	0	false
-6002	"storage"	2000	"create view sys.storage as select * from sys.storage();"	1	true	0	false
-6014	"storagemodelinput"	2000	NULL	0	true	0	false
-6034	"#storagemodel"	2000	NULL	2	true	0	false
-6057	"storagemodel"	2000	"create view sys.storagemodel as select * from sys.storagemodel();"	1	true	0	false
-6066	"tablestoragemodel"	2000	"-- A summary of the table storage requirement is is available as a table view.\n-- The auxillary column denotes the maximum space if all non-sorted columns\n-- would be augmented with a hash (rare situation)\ncreate view sys.tablestoragemodel\nas select \"schema\",\"table\",max(count) as \"count\",\n\tsum(columnsize) as columnsize,\n\tsum(heapsize) as heapsize,\n\tsum(indices) as indices,\n\tsum(case when sorted = false then 8 * count else 0 end) as auxillary\nfrom sys.storagemodel() group by \"schema\",\"table\";"	1	true	0	false
-6081	"statistics"	2000	NULL	0	true	0	false
-6135	"systemfunctions"	2000	NULL	0	true	0	false
+5542	"#sessions"	2000	NULL	2	true	0	false
+5604	"#optimizer_stats"	2000	NULL	2	true	0	false
+5610	"#querycache"	2000	NULL	2	true	0	false
+5619	"#optimizers"	2000	NULL	2	true	0	false
+5630	"optimizers"	2000	"create view sys.optimizers as select * from sys.optimizers();"	1	true	0	false
+5631	"#environment"	2000	NULL	2	true	0	false
+5640	"environment"	2000	"create view sys.environment as select * from sys.environment();"	1	true	0	false
+5641	"#bbp"	2000	NULL	2	true	0	false
+5661	"#queue"	2000	NULL	2	true	0	false
+5682	"queue"	2000	"create view sys.queue as select * from sys.queue();"	1	true	0	false
+5985	"#storage"	2000	NULL	2	true	0	false
+6012	"storage"	2000	"create view sys.storage as select * from sys.storage();"	1	true	0	false
+6024	"storagemodelinput"	2000	NULL	0	true	0	false
+6044	"#storagemodel"	2000	NULL	2	true	0	false
+6067	"storagemodel"	2000	"create view sys.storagemodel as select * from sys.storagemodel();"	1	true	0	false
+6076	"tablestoragemodel"	2000	"-- A summary of the table storage requirement is is available as a table view.\n-- The auxillary column denotes the maximum space if all non-sorted columns\n-- would be augmented with a hash (rare situation)\ncreate view sys.tablestoragemodel\nas select \"schema\",\"table\",max(count) as \"count\",\n\tsum(columnsize) as columnsize,\n\tsum(heapsize) as heapsize,\n\tsum(indices) as indices,\n\tsum(case when sorted = false then 8 * count else 0 end) as auxillary\nfrom sys.storagemodel() group by \"schema\",\"table\";"	1	true	0	false
+6091	"statistics"	2000	NULL	0	true	0	false
+6145	"systemfunctions"	2000	NULL	0	true	0	false
 COMMIT;
 START TRANSACTION;
 CREATE TABLE "sys"."args" (
@@ -1848,7 +1856,7 @@ CREATE TABLE "sys"."args" (
 	"type_scale"  INTEGER,
 	"number"      INTEGER
 );
-COPY 3277 RECORDS INTO "sys"."args" FROM stdin USING DELIMITERS '\t','\n','"';
+COPY 3278 RECORDS INTO "sys"."args" FROM stdin USING DELIMITERS '\t','\n','"';
 2151	28	"result"	"oid"	63	0	0
 2152	28	"arg_1"	"wrd"	64	0	1
 2153	29	"result"	"oid"	63	0	0
@@ -4895,237 +4903,238 @@ COPY 3277 RECORDS INTO "sys"."args" FROM stdin USING DELIMITERS '\t','\n','"';
 5537	5536	"result"	"table"	5531	0	0
 5540	5539	"result"	"clob"	0	0	0
 5541	5539	"username"	"clob"	0	0	1
-5544	5543	"query"	"bigint"	64	0	0
-5547	5546	"query"	"bigint"	64	0	0
-5548	5546	"session"	"bigint"	64	0	1
-5551	5550	"timeout"	"bigint"	64	0	0
-5554	5553	"result"	"varchar"	32	0	0
-5555	5553	"s1"	"varchar"	32	0	1
-5556	5553	"st"	"int"	32	0	2
-5557	5553	"len"	"int"	32	0	3
-5558	5553	"s3"	"varchar"	32	0	4
-5561	5560	"result"	"double"	53	0	0
-5562	5560	"num"	"double"	53	0	1
-5563	5560	"prc"	"int"	32	0	2
-5566	5565	"result"	"double"	53	0	0
-5567	5565	"num"	"double"	53	0	1
-5568	5565	"prc"	"int"	32	0	2
-5569	5565	"truncat"	"int"	32	0	3
-5572	5571	"result"	"clob"	0	0	0
-5573	5571	"num"	"double"	53	0	1
-5574	5571	"prc"	"int"	32	0	2
-5575	5571	"truncat"	"int"	32	0	3
-5578	5577	"result"	"double"	53	0	0
-5579	5577	"pdec"	"double"	53	0	1
-5580	5577	"pradius"	"double"	53	0	2
-5583	5582	"result"	"oid"	63	0	0
-5584	5582	"x"	"int"	32	0	1
-5585	5582	"y"	"int"	32	0	2
-5588	5587	"result"	"int"	32	0	0
-5589	5587	"z"	"oid"	63	0	1
-5592	5591	"result"	"int"	32	0	0
-5593	5591	"z"	"oid"	63	0	1
-5599	5598	"result"	"table"	5594	0	0
-5605	5604	"result"	"table"	5600	0	0
-5608	5607	"filename"	"clob"	0	0	0
-5615	5614	"result"	"table"	5609	0	0
-5626	5625	"result"	"table"	5621	0	0
-5646	5645	"result"	"table"	5631	0	0
-5649	5648	"ra_stmt"	"clob"	0	0	0
-5650	5648	"opt"	"boolean"	1	0	1
-5662	5661	"result"	"table"	5651	0	0
-5675	5674	"tag"	"int"	32	0	0
-5678	5677	"tag"	"int"	32	0	0
-5681	5680	"tag"	"int"	32	0	0
-5684	5683	"tag"	"bigint"	64	0	0
-5687	5686	"tag"	"bigint"	64	0	0
-5690	5689	"tag"	"bigint"	64	0	0
-5693	5692	"result"	"double"	53	0	0
-5694	5692	"val"	"tinyint"	8	0	1
-5697	5696	"result"	"double"	53	0	0
-5698	5696	"val"	"smallint"	16	0	1
-5701	5700	"result"	"double"	53	0	0
-5702	5700	"val"	"int"	32	0	1
-5705	5704	"result"	"double"	53	0	0
-5706	5704	"val"	"wrd"	64	0	1
-5709	5708	"result"	"double"	53	0	0
-5710	5708	"val"	"bigint"	64	0	1
-5713	5712	"result"	"double"	53	0	0
-5714	5712	"val"	"real"	24	0	1
-5717	5716	"result"	"double"	53	0	0
-5718	5716	"val"	"double"	53	0	1
-5721	5720	"result"	"double"	53	0	0
-5722	5720	"val"	"date"	0	0	1
-5725	5724	"result"	"double"	53	0	0
-5726	5724	"val"	"time"	1	0	1
-5729	5728	"result"	"double"	53	0	0
-5730	5728	"val"	"timestamp"	7	0	1
-5733	5732	"result"	"double"	53	0	0
-5734	5732	"val"	"tinyint"	8	0	1
-5737	5736	"result"	"double"	53	0	0
-5738	5736	"val"	"smallint"	16	0	1
-5741	5740	"result"	"double"	53	0	0
-5742	5740	"val"	"int"	32	0	1
-5745	5744	"result"	"double"	53	0	0
-5746	5744	"val"	"wrd"	64	0	1
-5749	5748	"result"	"double"	53	0	0
-5750	5748	"val"	"bigint"	64	0	1
-5753	5752	"result"	"double"	53	0	0
-5754	5752	"val"	"real"	24	0	1
-5757	5756	"result"	"double"	53	0	0
-5758	5756	"val"	"double"	53	0	1
-5761	5760	"result"	"double"	53	0	0
-5762	5760	"val"	"date"	0	0	1
-5765	5764	"result"	"double"	53	0	0
-5766	5764	"val"	"time"	1	0	1
-5769	5768	"result"	"double"	53	0	0
-5770	5768	"val"	"timestamp"	7	0	1
-5773	5772	"result"	"double"	53	0	0
-5774	5772	"val"	"tinyint"	8	0	1
-5777	5776	"result"	"double"	53	0	0
-5778	5776	"val"	"smallint"	16	0	1
-5781	5780	"result"	"double"	53	0	0
-5782	5780	"val"	"int"	32	0	1
-5785	5784	"result"	"double"	53	0	0
-5786	5784	"val"	"wrd"	64	0	1
-5789	5788	"result"	"double"	53	0	0
-5790	5788	"val"	"bigint"	64	0	1
-5793	5792	"result"	"double"	53	0	0
-5794	5792	"val"	"real"	24	0	1
-5797	5796	"result"	"double"	53	0	0
-5798	5796	"val"	"double"	53	0	1
-5801	5800	"result"	"double"	53	0	0
-5802	5800	"val"	"date"	0	0	1
-5805	5804	"result"	"double"	53	0	0
-5806	5804	"val"	"time"	1	0	1
-5809	5808	"result"	"double"	53	0	0
-5810	5808	"val"	"timestamp"	7	0	1
-5813	5812	"result"	"double"	53	0	0
-5814	5812	"val"	"tinyint"	8	0	1
-5817	5816	"result"	"double"	53	0	0
-5818	5816	"val"	"smallint"	16	0	1
-5821	5820	"result"	"double"	53	0	0
-5822	5820	"val"	"int"	32	0	1
-5825	5824	"result"	"double"	53	0	0
-5826	5824	"val"	"wrd"	64	0	1
-5829	5828	"result"	"double"	53	0	0
-5830	5828	"val"	"bigint"	64	0	1
-5833	5832	"result"	"double"	53	0	0
-5834	5832	"val"	"real"	24	0	1
-5837	5836	"result"	"double"	53	0	0
-5838	5836	"val"	"double"	53	0	1
-5841	5840	"result"	"double"	53	0	0
-5842	5840	"val"	"date"	0	0	1
-5845	5844	"result"	"double"	53	0	0
-5846	5844	"val"	"time"	1	0	1
-5849	5848	"result"	"double"	53	0	0
-5850	5848	"val"	"timestamp"	7	0	1
-5853	5852	"result"	"tinyint"	8	0	0
-5854	5852	"val"	"tinyint"	8	0	1
-5857	5856	"result"	"smallint"	16	0	0
-5858	5856	"val"	"smallint"	16	0	1
-5861	5860	"result"	"int"	32	0	0
-5862	5860	"val"	"int"	32	0	1
-5865	5864	"result"	"wrd"	64	0	0
-5866	5864	"val"	"wrd"	64	0	1
-5869	5868	"result"	"bigint"	64	0	0
-5870	5868	"val"	"bigint"	64	0	1
-5873	5872	"result"	"real"	24	0	0
-5874	5872	"val"	"real"	24	0	1
-5877	5876	"result"	"double"	53	0	0
-5878	5876	"val"	"double"	53	0	1
-5881	5880	"result"	"date"	0	0	0
-5882	5880	"val"	"date"	0	0	1
-5885	5884	"result"	"time"	1	0	0
-5886	5884	"val"	"time"	1	0	1
-5889	5888	"result"	"timestamp"	7	0	0
-5890	5888	"val"	"timestamp"	7	0	1
-5893	5892	"result"	"tinyint"	8	0	0
-5894	5892	"e1"	"tinyint"	8	0	1
-5895	5892	"e2"	"tinyint"	8	0	2
-5898	5897	"result"	"smallint"	16	0	0
-5899	5897	"e1"	"smallint"	16	0	1
-5900	5897	"e2"	"smallint"	16	0	2
-5903	5902	"result"	"int"	32	0	0
-5904	5902	"e1"	"int"	32	0	1
-5905	5902	"e2"	"int"	32	0	2
-5908	5907	"result"	"wrd"	64	0	0
-5909	5907	"e1"	"wrd"	64	0	1
-5910	5907	"e2"	"wrd"	64	0	2
-5913	5912	"result"	"bigint"	64	0	0
-5914	5912	"e1"	"bigint"	64	0	1
-5915	5912	"e2"	"bigint"	64	0	2
-5918	5917	"result"	"real"	24	0	0
-5919	5917	"e1"	"real"	24	0	1
-5920	5917	"e2"	"real"	24	0	2
-5923	5922	"result"	"double"	53	0	0
-5924	5922	"e1"	"double"	53	0	1
-5925	5922	"e2"	"double"	53	0	2
-5929	5928	"result"	"json"	0	0	0
-5930	5928	"js"	"json"	0	0	1
-5931	5928	"name"	"clob"	0	0	2
-5934	5933	"result"	"json"	0	0	0
-5935	5933	"js"	"json"	0	0	1
-5936	5933	"name"	"clob"	0	0	2
+5551	5550	"result"	"table"	5542	0	0
+5554	5553	"query"	"bigint"	64	0	0
+5557	5556	"query"	"bigint"	64	0	0
+5558	5556	"session"	"bigint"	64	0	1
+5561	5560	"timeout"	"bigint"	64	0	0
+5564	5563	"result"	"varchar"	32	0	0
+5565	5563	"s1"	"varchar"	32	0	1
+5566	5563	"st"	"int"	32	0	2
+5567	5563	"len"	"int"	32	0	3
+5568	5563	"s3"	"varchar"	32	0	4
+5571	5570	"result"	"double"	53	0	0
+5572	5570	"num"	"double"	53	0	1
+5573	5570	"prc"	"int"	32	0	2
+5576	5575	"result"	"double"	53	0	0
+5577	5575	"num"	"double"	53	0	1
+5578	5575	"prc"	"int"	32	0	2
+5579	5575	"truncat"	"int"	32	0	3
+5582	5581	"result"	"clob"	0	0	0
+5583	5581	"num"	"double"	53	0	1
+5584	5581	"prc"	"int"	32	0	2
+5585	5581	"truncat"	"int"	32	0	3
+5588	5587	"result"	"double"	53	0	0
+5589	5587	"pdec"	"double"	53	0	1
+5590	5587	"pradius"	"double"	53	0	2
+5593	5592	"result"	"oid"	63	0	0
+5594	5592	"x"	"int"	32	0	1
+5595	5592	"y"	"int"	32	0	2
+5598	5597	"result"	"int"	32	0	0
+5599	5597	"z"	"oid"	63	0	1
+5602	5601	"result"	"int"	32	0	0
+5603	5601	"z"	"oid"	63	0	1
+5609	5608	"result"	"table"	5604	0	0
+5615	5614	"result"	"table"	5610	0	0
+5618	5617	"filename"	"clob"	0	0	0
+5625	5624	"result"	"table"	5619	0	0
+5636	5635	"result"	"table"	5631	0	0
+5656	5655	"result"	"table"	5641	0	0
+5659	5658	"ra_stmt"	"clob"	0	0	0
+5660	5658	"opt"	"boolean"	1	0	1
+5672	5671	"result"	"table"	5661	0	0
+5685	5684	"tag"	"int"	32	0	0
+5688	5687	"tag"	"int"	32	0	0
+5691	5690	"tag"	"int"	32	0	0
+5694	5693	"tag"	"bigint"	64	0	0
+5697	5696	"tag"	"bigint"	64	0	0
+5700	5699	"tag"	"bigint"	64	0	0
+5703	5702	"result"	"double"	53	0	0
+5704	5702	"val"	"tinyint"	8	0	1
+5707	5706	"result"	"double"	53	0	0
+5708	5706	"val"	"smallint"	16	0	1
+5711	5710	"result"	"double"	53	0	0
+5712	5710	"val"	"int"	32	0	1
+5715	5714	"result"	"double"	53	0	0
+5716	5714	"val"	"wrd"	64	0	1
+5719	5718	"result"	"double"	53	0	0
+5720	5718	"val"	"bigint"	64	0	1
+5723	5722	"result"	"double"	53	0	0
+5724	5722	"val"	"real"	24	0	1
+5727	5726	"result"	"double"	53	0	0
+5728	5726	"val"	"double"	53	0	1
+5731	5730	"result"	"double"	53	0	0
+5732	5730	"val"	"date"	0	0	1
+5735	5734	"result"	"double"	53	0	0
+5736	5734	"val"	"time"	1	0	1
+5739	5738	"result"	"double"	53	0	0
+5740	5738	"val"	"timestamp"	7	0	1
+5743	5742	"result"	"double"	53	0	0
+5744	5742	"val"	"tinyint"	8	0	1
+5747	5746	"result"	"double"	53	0	0
+5748	5746	"val"	"smallint"	16	0	1
+5751	5750	"result"	"double"	53	0	0
+5752	5750	"val"	"int"	32	0	1
+5755	5754	"result"	"double"	53	0	0
+5756	5754	"val"	"wrd"	64	0	1
+5759	5758	"result"	"double"	53	0	0
+5760	5758	"val"	"bigint"	64	0	1
+5763	5762	"result"	"double"	53	0	0
+5764	5762	"val"	"real"	24	0	1
+5767	5766	"result"	"double"	53	0	0
+5768	5766	"val"	"double"	53	0	1
+5771	5770	"result"	"double"	53	0	0
+5772	5770	"val"	"date"	0	0	1
+5775	5774	"result"	"double"	53	0	0
+5776	5774	"val"	"time"	1	0	1
+5779	5778	"result"	"double"	53	0	0
+5780	5778	"val"	"timestamp"	7	0	1
+5783	5782	"result"	"double"	53	0	0
+5784	5782	"val"	"tinyint"	8	0	1
+5787	5786	"result"	"double"	53	0	0
+5788	5786	"val"	"smallint"	16	0	1
+5791	5790	"result"	"double"	53	0	0
+5792	5790	"val"	"int"	32	0	1
+5795	5794	"result"	"double"	53	0	0
+5796	5794	"val"	"wrd"	64	0	1
+5799	5798	"result"	"double"	53	0	0
+5800	5798	"val"	"bigint"	64	0	1
+5803	5802	"result"	"double"	53	0	0
+5804	5802	"val"	"real"	24	0	1
+5807	5806	"result"	"double"	53	0	0
+5808	5806	"val"	"double"	53	0	1
+5811	5810	"result"	"double"	53	0	0
+5812	5810	"val"	"date"	0	0	1
+5815	5814	"result"	"double"	53	0	0
+5816	5814	"val"	"time"	1	0	1
+5819	5818	"result"	"double"	53	0	0
+5820	5818	"val"	"timestamp"	7	0	1
+5823	5822	"result"	"double"	53	0	0
+5824	5822	"val"	"tinyint"	8	0	1
+5827	5826	"result"	"double"	53	0	0
+5828	5826	"val"	"smallint"	16	0	1
+5831	5830	"result"	"double"	53	0	0
+5832	5830	"val"	"int"	32	0	1
+5835	5834	"result"	"double"	53	0	0
+5836	5834	"val"	"wrd"	64	0	1
+5839	5838	"result"	"double"	53	0	0
+5840	5838	"val"	"bigint"	64	0	1
+5843	5842	"result"	"double"	53	0	0
+5844	5842	"val"	"real"	24	0	1
+5847	5846	"result"	"double"	53	0	0
+5848	5846	"val"	"double"	53	0	1
+5851	5850	"result"	"double"	53	0	0
+5852	5850	"val"	"date"	0	0	1
+5855	5854	"result"	"double"	53	0	0
+5856	5854	"val"	"time"	1	0	1
+5859	5858	"result"	"double"	53	0	0
+5860	5858	"val"	"timestamp"	7	0	1
+5863	5862	"result"	"tinyint"	8	0	0
+5864	5862	"val"	"tinyint"	8	0	1
+5867	5866	"result"	"smallint"	16	0	0
+5868	5866	"val"	"smallint"	16	0	1
+5871	5870	"result"	"int"	32	0	0
+5872	5870	"val"	"int"	32	0	1
+5875	5874	"result"	"wrd"	64	0	0
+5876	5874	"val"	"wrd"	64	0	1
+5879	5878	"result"	"bigint"	64	0	0
+5880	5878	"val"	"bigint"	64	0	1
+5883	5882	"result"	"real"	24	0	0
+5884	5882	"val"	"real"	24	0	1
+5887	5886	"result"	"double"	53	0	0
+5888	5886	"val"	"double"	53	0	1
+5891	5890	"result"	"date"	0	0	0
+5892	5890	"val"	"date"	0	0	1
+5895	5894	"result"	"time"	1	0	0
+5896	5894	"val"	"time"	1	0	1
+5899	5898	"result"	"timestamp"	7	0	0
+5900	5898	"val"	"timestamp"	7	0	1
+5903	5902	"result"	"tinyint"	8	0	0
+5904	5902	"e1"	"tinyint"	8	0	1
+5905	5902	"e2"	"tinyint"	8	0	2
+5908	5907	"result"	"smallint"	16	0	0
+5909	5907	"e1"	"smallint"	16	0	1
+5910	5907	"e2"	"smallint"	16	0	2
+5913	5912	"result"	"int"	32	0	0
+5914	5912	"e1"	"int"	32	0	1
+5915	5912	"e2"	"int"	32	0	2
+5918	5917	"result"	"wrd"	64	0	0
+5919	5917	"e1"	"wrd"	64	0	1
+5920	5917	"e2"	"wrd"	64	0	2
+5923	5922	"result"	"bigint"	64	0	0
+5924	5922	"e1"	"bigint"	64	0	1
+5925	5922	"e2"	"bigint"	64	0	2
+5928	5927	"result"	"real"	24	0	0
+5929	5927	"e1"	"real"	24	0	1
+5930	5927	"e2"	"real"	24	0	2
+5933	5932	"result"	"double"	53	0	0
+5934	5932	"e1"	"double"	53	0	1
+5935	5932	"e2"	"double"	53	0	2
 5939	5938	"result"	"json"	0	0	0
 5940	5938	"js"	"json"	0	0	1
-5941	5938	"e"	"clob"	0	0	2
-5944	5943	"result"	"clob"	0	0	0
+5941	5938	"name"	"clob"	0	0	2
+5944	5943	"result"	"json"	0	0	0
 5945	5943	"js"	"json"	0	0	1
-5946	5943	"e"	"clob"	0	0	2
-5949	5948	"result"	"boolean"	1	0	0
-5950	5948	"js"	"clob"	0	0	1
-5953	5952	"result"	"boolean"	1	0	0
-5954	5952	"js"	"clob"	0	0	1
-5957	5956	"result"	"boolean"	1	0	0
-5958	5956	"js"	"clob"	0	0	1
-5961	5960	"result"	"int"	32	0	0
-5962	5960	"js"	"json"	0	0	1
-5965	5964	"result"	"clob"	0	0	0
-5966	5964	"v"	"clob"	0	0	1
-5970	5969	"result"	"uuid"	0	0	0
-5973	5972	"result"	"uuid"	0	0	0
-5974	5972	"u"	"uuid"	0	0	1
-5989	5988	"result"	"table"	5975	0	0
-6019	6018	"result"	"bigint"	64	0	0
-6020	6018	"nme"	"clob"	0	0	1
-6021	6018	"i"	"bigint"	64	0	2
-6022	6018	"d"	"bigint"	64	0	3
-6025	6024	"result"	"bigint"	64	0	0
-6026	6024	"tpe"	"clob"	0	0	1
-6027	6024	"i"	"bigint"	64	0	2
-6028	6024	"w"	"int"	32	0	3
-6031	6030	"result"	"bigint"	64	0	0
-6032	6030	"b"	"boolean"	1	0	1
-6033	6030	"i"	"bigint"	64	0	2
-6046	6045	"result"	"table"	6034	0	0
-6086	6085	"tbl"	"clob"	0	0	0
-6089	6088	"sch"	"clob"	0	0	0
-6090	6088	"tbl"	"clob"	0	0	1
-6093	6092	"sch"	"clob"	0	0	0
-6094	6092	"tbl"	"clob"	0	0	1
-6095	6092	"col"	"clob"	0	0	2
-6098	6097	"sample"	"bigint"	64	0	0
-6101	6100	"tbl"	"clob"	0	0	0
-6102	6100	"sample"	"bigint"	64	0	1
-6105	6104	"sch"	"clob"	0	0	0
-6106	6104	"tbl"	"clob"	0	0	1
-6107	6104	"sample"	"bigint"	64	0	2
-6110	6109	"sch"	"clob"	0	0	0
-6111	6109	"tbl"	"clob"	0	0	1
-6112	6109	"col"	"clob"	0	0	2
-6113	6109	"sample"	"bigint"	64	0	3
-6116	6115	"result"	"clob"	0	0	0
-6117	6115	"src"	"clob"	0	0	1
-6120	6119	"result"	"smallint"	16	0	0
-6121	6119	"one"	"tinyint"	8	0	1
-6122	6119	"two"	"tinyint"	8	0	2
-6125	6124	"result"	"int"	32	0	0
-6126	6124	"one"	"smallint"	16	0	1
-6127	6124	"two"	"smallint"	16	0	2
-6130	6129	"result"	"bigint"	64	0	0
-6131	6129	"one"	"int"	32	0	1
-6132	6129	"two"	"int"	32	0	2
+5946	5943	"name"	"clob"	0	0	2
+5949	5948	"result"	"json"	0	0	0
+5950	5948	"js"	"json"	0	0	1
+5951	5948	"e"	"clob"	0	0	2
+5954	5953	"result"	"clob"	0	0	0
+5955	5953	"js"	"json"	0	0	1
+5956	5953	"e"	"clob"	0	0	2
+5959	5958	"result"	"boolean"	1	0	0
+5960	5958	"js"	"clob"	0	0	1
+5963	5962	"result"	"boolean"	1	0	0
+5964	5962	"js"	"clob"	0	0	1
+5967	5966	"result"	"boolean"	1	0	0
+5968	5966	"js"	"clob"	0	0	1
+5971	5970	"result"	"int"	32	0	0
+5972	5970	"js"	"json"	0	0	1
+5975	5974	"result"	"clob"	0	0	0
+5976	5974	"v"	"clob"	0	0	1
+5980	5979	"result"	"uuid"	0	0	0
+5983	5982	"result"	"uuid"	0	0	0
+5984	5982	"u"	"uuid"	0	0	1
+5999	5998	"result"	"table"	5985	0	0
+6029	6028	"result"	"bigint"	64	0	0
+6030	6028	"nme"	"clob"	0	0	1
+6031	6028	"i"	"bigint"	64	0	2
+6032	6028	"d"	"bigint"	64	0	3
+6035	6034	"result"	"bigint"	64	0	0
+6036	6034	"tpe"	"clob"	0	0	1
+6037	6034	"i"	"bigint"	64	0	2
+6038	6034	"w"	"int"	32	0	3
+6041	6040	"result"	"bigint"	64	0	0
+6042	6040	"b"	"boolean"	1	0	1
+6043	6040	"i"	"bigint"	64	0	2
+6056	6055	"result"	"table"	6044	0	0
+6096	6095	"tbl"	"clob"	0	0	0
+6099	6098	"sch"	"clob"	0	0	0
+6100	6098	"tbl"	"clob"	0	0	1
+6103	6102	"sch"	"clob"	0	0	0
+6104	6102	"tbl"	"clob"	0	0	1
+6105	6102	"col"	"clob"	0	0	2
+6108	6107	"sample"	"bigint"	64	0	0
+6111	6110	"tbl"	"clob"	0	0	0
+6112	6110	"sample"	"bigint"	64	0	1
+6115	6114	"sch"	"clob"	0	0	0
+6116	6114	"tbl"	"clob"	0	0	1
+6117	6114	"sample"	"bigint"	64	0	2
+6120	6119	"sch"	"clob"	0	0	0
+6121	6119	"tbl"	"clob"	0	0	1
+6122	6119	"col"	"clob"	0	0	2
+6123	6119	"sample"	"bigint"	64	0	3
+6126	6125	"result"	"clob"	0	0	0
+6127	6125	"src"	"clob"	0	0	1
+6130	6129	"result"	"smallint"	16	0	0
+6131	6129	"one"	"tinyint"	8	0	1
+6132	6129	"two"	"tinyint"	8	0	2
+6135	6134	"result"	"int"	32	0	0
+6136	6134	"one"	"smallint"	16	0	1
+6137	6134	"two"	"smallint"	16	0	2
+6140	6139	"result"	"bigint"	64	0	0
+6141	6139	"one"	"int"	32	0	1
+6142	6139	"two"	"int"	32	0	2
 COMMIT;
 START TRANSACTION;
 CREATE TABLE "sys"."auths" (
@@ -5308,63 +5317,63 @@ COPY 199 RECORDS INTO "sys"."dependencies" FROM stdin USING DELIMITERS '\t','\n'
 2075	5536	7
 2076	5536	7
 2080	5536	7
-111	5553	7
-37	5553	7
-35	5553	7
-985	5553	7
-971	5553	7
-183	5553	7
-982	5553	7
-184	5553	7
-32	5565	7
-427	5565	7
-113	5565	7
-5560	5565	7
-5614	5620	5
-5625	5630	5
-5661	5672	5
-5988	6002	5
-6004	6016	13
-6014	6016	13
-6005	6016	13
-6006	6016	13
-6007	6016	13
-6008	6016	13
-6009	6016	13
-6010	6016	13
-6011	6016	13
-6012	6016	13
-6013	6016	13
-32	6018	7
-185	6018	7
-191	6018	7
-110	6024	7
-33	6024	7
-184	6024	7
-185	6024	7
-32	6030	7
-185	6030	7
-6004	6045	7
-6014	6045	7
-6005	6045	7
-6006	6045	7
-6007	6045	7
-6009	6045	7
-6010	6045	7
-6011	6045	7
-6012	6045	7
-6013	6045	7
-6018	6045	7
-6024	6045	7
-6030	6045	7
-6045	6057	5
-6045	6066	5
-47	6066	5
-54	6066	5
-50	6066	5
-34	6066	5
-32	6066	5
-185	6066	5
+111	5563	7
+37	5563	7
+35	5563	7
+985	5563	7
+971	5563	7
+183	5563	7
+982	5563	7
+184	5563	7
+32	5575	7
+427	5575	7
+113	5575	7
+5570	5575	7
+5624	5630	5
+5635	5640	5
+5671	5682	5
+5998	6012	5
+6014	6026	13
+6024	6026	13
+6015	6026	13
+6016	6026	13
+6017	6026	13
+6018	6026	13
+6019	6026	13
+6020	6026	13
+6021	6026	13
+6022	6026	13
+6023	6026	13
+32	6028	7
+185	6028	7
+191	6028	7
+110	6034	7
+33	6034	7
+184	6034	7
+185	6034	7
+32	6040	7
+185	6040	7
+6014	6055	7
+6024	6055	7
+6015	6055	7
+6016	6055	7
+6017	6055	7
+6019	6055	7
+6020	6055	7
+6021	6055	7
+6022	6055	7
+6023	6055	7
+6028	6055	7
+6034	6055	7
+6040	6055	7
+6055	6067	5
+6055	6076	5
+47	6076	5
+54	6076	5
+50	6076	5
+34	6076	5
+32	6076	5
+185	6076	5
 COMMIT;
 START TRANSACTION;
 CREATE TABLE "sys"."functions" (
@@ -5377,7 +5386,7 @@ CREATE TABLE "sys"."functions" (
 	"side_effect" BOOLEAN,
 	"schema_id"   INTEGER
 );
-COPY 1211 RECORDS INTO "sys"."functions" FROM stdin USING DELIMITERS '\t','\n','"';
+COPY 1212 RECORDS INTO "sys"."functions" FROM stdin USING DELIMITERS '\t','\n','"';
 28	"not_uniques"	"not_uniques"	"sql"	false	1	false	0
 29	"not_uniques"	"not_uniques"	"sql"	false	1	false	0
 30	"hash"	"hash"	"calc"	false	1	false	0
@@ -6478,117 +6487,118 @@ COPY 1211 RECORDS INTO "sys"."functions" FROM stdin USING DELIMITERS '\t','\n','
 5529	"dependencies_functions_os_triggers"	"--Function f1 has a dependency on trigger tri\ncreate function dependencies_functions_os_triggers()\nreturns table (sch varchar(100), usr varchar(100), dep_type varchar(32))\nreturn table (select f.name, tri.name, 'DEP_TRIGGER' from functions as f, triggers as tri, dependencies as dep where dep.id = f.id and dep.depend_id =tri.id and dep.depend_type = 8);"	"user"	true	1	false	2000
 5536	"dependencies_keys_on_foreignkeys"	"--Key k has a dependency on foreign key fk\ncreate function dependencies_keys_on_foreignkeys()\nreturns table (sch varchar(100), usr varchar(100), dep_type varchar(32))\nreturn table (select k.name, fk.name, 'DEP_FKEY' from keys as k, keys as fk where fk.rkey = k.id);"	"user"	true	1	false	2000
 5539	"password_hash"	"-- The contents of this file are subject to the MonetDB Public License\n-- Version 1.1 (the \"License\"); you may not use this file except in\n-- compliance with the License. You may obtain a copy of the License at\n-- http://www.monetdb.org/Legal/MonetDBLicense\n--\n-- Software distributed under the License is distributed on an \"AS IS\"\n-- basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the\n-- License for the specific language governing rights and limitations\n-- under the License.\n--\n-- The Original Code is the MonetDB Database System.\n--\n-- The Initial Developer of the Original Code is CWI.\n-- Copyright August 2008-2013 MonetDB B.V.\n-- All Rights Reserved.\n\ncreate function sys.password_hash (username string) \n\treturns string \n\texternal name sql.password;"	"sql"	true	1	false	2000
-5543	"settimeout"	"-- control the query and session time out \ncreate procedure sys.settimeout(\"query\" bigint)\n\texternal name sql.settimeout;"	"sql"	true	2	false	2000
-5546	"settimeout"	"create procedure sys.settimeout(\"query\" bigint, \"session\" bigint)\n\texternal name sql.settimeout;"	"sql"	true	2	false	2000
-5550	"setsession"	"create procedure sys.setsession(\"timeout\" bigint)\n\texternal name sql.setsession;"	"sql"	true	2	false	2000
-5553	"ms_stuff"	"-- The contents of this file are subject to the MonetDB Public License\n-- Version 1.1 (the \"License\"); you may not use this file except in\n-- compliance with the License. You may obtain a copy of the License at\n-- http://www.monetdb.org/Legal/MonetDBLicense\n--\n-- Software distributed under the License is distributed on an \"AS IS\"\n-- basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the\n-- License for the specific language governing rights and limitations\n-- under the License.\n--\n-- The Original Code is the MonetDB Database System.\n--\n-- The Initial Developer of the Original Code is CWI.\n-- Copyright August 2008-2013 MonetDB B.V.\n-- All Rights Reserved.\n\ncreate function ms_stuff( s1 varchar(32), st int, len int, s3 varchar(32))\nreturns varchar(32)\nbegin\n\tdeclare res varchar(32), aux varchar(32);\n\tdeclare ofset int;\n\n    if ( st < 0 or st > length(s1))\n        then return '';\n    end if;\n\n    set ofset = 1;\n    set res = substring(s1,ofset,st-1);\n    set res = res || s3;\n    set ofset = st + len;\n    set aux = substring(s1,ofset,length(s1)-ofset+1);\n\tset res = res || aux;\n\treturn res;\nend;"	"user"	true	1	false	2000
-5560	"ms_trunc"	"create function ms_trunc(num double, prc int)\nreturns double\nexternal name sql.ms_trunc;"	"sql"	true	1	false	2000
-5565	"ms_round"	"create function ms_round(num double, prc int, truncat int)\nreturns double\nbegin\n\tif (truncat = 0)\n\t\tthen return round(num, prc);\n\t\telse return ms_trunc(num, prc);\n\tend if;\nend;"	"user"	true	1	false	2000
-5571	"ms_str"	"create function ms_str(num float, prc int, truncat int)\nreturns string\nbegin\n        return cast(num as string);\nend;"	"user"	true	1	false	2000
-5577	"alpha"	"create function alpha(pdec double, pradius double)\nreturns double external name sql.alpha;"	"sql"	true	1	false	2000
-5582	"zorder_encode"	"-- The contents of this file are subject to the MonetDB Public License\n-- Version 1.1 (the \"License\"); you may not use this file except in\n-- compliance with the License. You may obtain a copy of the License at\n-- http://www.monetdb.org/Legal/MonetDBLicense\n--\n-- Software distributed under the License is distributed on an \"AS IS\"\n-- basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the\n-- License for the specific language governing rights and limitations\n-- under the License.\n--\n-- The Original Code is the MonetDB Database System.\n--\n-- The Initial Developer of the Original Code is CWI.\n-- Copyright August 2008-2013 MonetDB B.V.\n-- All Rights Reserved.\n\ncreate function zorder_encode(x integer, y integer) returns oid\n    external name zorder.encode;"	"zorder"	true	1	false	2000
-5587	"zorder_decode_x"	"create function zorder_decode_x(z oid) returns integer\n    external name zorder.decode_x;"	"zorder"	true	1	false	2000
-5591	"zorder_decode_y"	"create function zorder_decode_y(z oid) returns integer\n    external name zorder.decode_y;"	"zorder"	true	1	false	2000
-5598	"optimizer_stats"	"-- The contents of this file are subject to the MonetDB Public License\n-- Version 1.1 (the \"License\"); you may not use this file except in\n-- compliance with the License. You may obtain a copy of the License at\n-- http://www.monetdb.org/Legal/MonetDBLicense\n--\n-- Software distributed under the License is distributed on an \"AS IS\"\n-- basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the\n-- License for the specific language governing rights and limitations\n-- under the License.\n--\n-- The Original Code is the MonetDB Database System.\n--\n-- The Initial Developer of the Original Code is CWI.\n-- Copyright August 2008-2013 MonetDB B.V.\n-- All Rights Reserved.\n\n-- show the optimizer statistics maintained by the SQL frontend\ncreate function sys.optimizer_stats () \n\treturns table (rewrite string, count int) \n\texternal name sql.dump_opt_stats;"	"sql"	true	1	false	2000
-5604	"querycache"	"-- SQL QUERY CACHE\n-- The SQL query cache returns a table with the query plans kept\n\ncreate function sys.querycache() \n\treturns table (query string, count int) \n\texternal name sql.dump_cache;"	"sql"	true	1	false	2000
-5607	"querylog"	"-- Trace the SQL input\ncreate procedure sys.querylog(filename string) \n\texternal name sql.logfile;"	"sql"	true	2	false	2000
-5614	"optimizers"	"-- MONETDB KERNEL SECTION\n-- optimizer pipe catalog\ncreate function sys.optimizers () \n\treturns table (name string, def string, status string)\n\texternal name sql.optimizers;"	"sql"	true	1	false	2000
-5625	"environment"	"-- The environment table\ncreate function sys.environment()\n\treturns table (\"name\" string, value string)\n\texternal name sql.sql_environment;"	"sql"	true	1	false	2000
-5645	"bbp"	"-- The BAT buffer pool overview\ncreate function sys.bbp () \n\treturns table (id int, name string, htype string, \n\t\tttype string, count bigint, refcnt int, lrefcnt int, \n\t\tlocation string, heat int, dirty string, \n\t\tstatus string, kind string) \n\texternal name sql.bbp;"	"sql"	true	1	false	2000
-5648	"evalalgebra"	"create procedure sys.evalalgebra( ra_stmt string, opt bool)\n\texternal name sql.\"evalAlgebra\";"	"sql"	true	2	false	2000
-5661	"queue"	"-- The contents of this file are subject to the MonetDB Public License\n-- Version 1.1 (the \"License\"); you may not use this file except in\n-- compliance with the License. You may obtain a copy of the License at\n-- http://www.monetdb.org/Legal/MonetDBLicense\n--\n-- Software distributed under the License is distributed on an \"AS IS\"\n-- basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the\n-- License for the specific language governing rights and limitations\n-- under the License.\n--\n-- The Original Code is the MonetDB Database System.\n--\n-- The Initial Developer of the Original Code is CWI.\n-- Copyright August 2008-2013 MonetDB B.V.\n-- All Rights Reserved.\n\n-- System monitoring\n\n-- show status of all active SQL queries.\ncreate function sys.queue()\nreturns table(\n\tqtag bigint,\n\t\"user\" string,\n\tstarted timestamp,\n\testimate timestamp,\n\tprogress int,\n\tstatus string,\n\ttag oid,\n\tquery string\n)\nexternal name sql.sysmon_queue;"	"sql"	true	1	false	2000
-5674	"pause"	"-- operations to manipulate the state of havoc queries\ncreate procedure sys.pause(tag int)\nexternal name sql.sysmon_pause;"	"sql"	true	2	false	2000
-5677	"resume"	"create procedure sys.resume(tag int)\nexternal name sql.sysmon_resume;"	"sql"	true	2	false	2000
-5680	"stop"	"create procedure sys.stop(tag int)\nexternal name sql.sysmon_stop;"	"sql"	true	2	false	2000
-5683	"pause"	"create procedure sys.pause(tag bigint)\nexternal name sql.sysmon_pause;"	"sql"	true	2	false	2000
-5686	"resume"	"create procedure sys.resume(tag bigint)\nexternal name sql.sysmon_resume;"	"sql"	true	2	false	2000
-5689	"stop"	"create procedure sys.stop(tag bigint)\nexternal name sql.sysmon_stop;"	"sql"	true	2	false	2000
-5692	"stddev_samp"	"create aggregate stddev_samp(val tinyint) returns double\n\texternal name \"aggr\".\"stdev\";"	"aggr"	true	3	false	2000
-5696	"stddev_samp"	"create aggregate stddev_samp(val smallint) returns double\n\texternal name \"aggr\".\"stdev\";"	"aggr"	true	3	false	2000
-5700	"stddev_samp"	"create aggregate stddev_samp(val integer) returns double\n\texternal name \"aggr\".\"stdev\";"	"aggr"	true	3	false	2000
-5704	"stddev_samp"	"create aggregate stddev_samp(val wrd) returns double\n\texternal name \"aggr\".\"stdev\";"	"aggr"	true	3	false	2000
-5708	"stddev_samp"	"create aggregate stddev_samp(val bigint) returns double\n\texternal name \"aggr\".\"stdev\";"	"aggr"	true	3	false	2000
-5712	"stddev_samp"	"create aggregate stddev_samp(val real) returns double\n\texternal name \"aggr\".\"stdev\";"	"aggr"	true	3	false	2000
-5716	"stddev_samp"	"create aggregate stddev_samp(val double) returns double\n\texternal name \"aggr\".\"stdev\";"	"aggr"	true	3	false	2000
-5720	"stddev_samp"	"create aggregate stddev_samp(val date) returns double\n\texternal name \"aggr\".\"stdev\";"	"aggr"	true	3	false	2000
-5724	"stddev_samp"	"create aggregate stddev_samp(val time) returns double\n\texternal name \"aggr\".\"stdev\";"	"aggr"	true	3	false	2000
-5728	"stddev_samp"	"create aggregate stddev_samp(val timestamp) returns double\n\texternal name \"aggr\".\"stdev\";"	"aggr"	true	3	false	2000
-5732	"stddev_pop"	"create aggregate stddev_pop(val tinyint) returns double\n\texternal name \"aggr\".\"stdevp\";"	"aggr"	true	3	false	2000
-5736	"stddev_pop"	"create aggregate stddev_pop(val smallint) returns double\n\texternal name \"aggr\".\"stdevp\";"	"aggr"	true	3	false	2000
-5740	"stddev_pop"	"create aggregate stddev_pop(val integer) returns double\n\texternal name \"aggr\".\"stdevp\";"	"aggr"	true	3	false	2000
-5744	"stddev_pop"	"create aggregate stddev_pop(val wrd) returns double\n\texternal name \"aggr\".\"stdevp\";"	"aggr"	true	3	false	2000
-5748	"stddev_pop"	"create aggregate stddev_pop(val bigint) returns double\n\texternal name \"aggr\".\"stdevp\";"	"aggr"	true	3	false	2000
-5752	"stddev_pop"	"create aggregate stddev_pop(val real) returns double\n\texternal name \"aggr\".\"stdevp\";"	"aggr"	true	3	false	2000
-5756	"stddev_pop"	"create aggregate stddev_pop(val double) returns double\n\texternal name \"aggr\".\"stdevp\";"	"aggr"	true	3	false	2000
-5760	"stddev_pop"	"create aggregate stddev_pop(val date) returns double\n\texternal name \"aggr\".\"stdevp\";"	"aggr"	true	3	false	2000
-5764	"stddev_pop"	"create aggregate stddev_pop(val time) returns double\n\texternal name \"aggr\".\"stdevp\";"	"aggr"	true	3	false	2000
-5768	"stddev_pop"	"create aggregate stddev_pop(val timestamp) returns double\n\texternal name \"aggr\".\"stdevp\";"	"aggr"	true	3	false	2000
-5772	"var_samp"	"create aggregate var_samp(val tinyint) returns double\n\texternal name \"aggr\".\"variance\";"	"aggr"	true	3	false	2000
-5776	"var_samp"	"create aggregate var_samp(val smallint) returns double\n\texternal name \"aggr\".\"variance\";"	"aggr"	true	3	false	2000
-5780	"var_samp"	"create aggregate var_samp(val integer) returns double\n\texternal name \"aggr\".\"variance\";"	"aggr"	true	3	false	2000
-5784	"var_samp"	"create aggregate var_samp(val wrd) returns double\n\texternal name \"aggr\".\"variance\";"	"aggr"	true	3	false	2000
-5788	"var_samp"	"create aggregate var_samp(val bigint) returns double\n\texternal name \"aggr\".\"variance\";"	"aggr"	true	3	false	2000
-5792	"var_samp"	"create aggregate var_samp(val real) returns double\n\texternal name \"aggr\".\"variance\";"	"aggr"	true	3	false	2000
-5796	"var_samp"	"create aggregate var_samp(val double) returns double\n\texternal name \"aggr\".\"variance\";"	"aggr"	true	3	false	2000
-5800	"var_samp"	"create aggregate var_samp(val date) returns double\n\texternal name \"aggr\".\"variance\";"	"aggr"	true	3	false	2000
-5804	"var_samp"	"create aggregate var_samp(val time) returns double\n\texternal name \"aggr\".\"variance\";"	"aggr"	true	3	false	2000
-5808	"var_samp"	"create aggregate var_samp(val timestamp) returns double\n\texternal name \"aggr\".\"variance\";"	"aggr"	true	3	false	2000
-5812	"var_pop"	"create aggregate var_pop(val tinyint) returns double\n\texternal name \"aggr\".\"variancep\";"	"aggr"	true	3	false	2000
-5816	"var_pop"	"create aggregate var_pop(val smallint) returns double\n\texternal name \"aggr\".\"variancep\";"	"aggr"	true	3	false	2000
-5820	"var_pop"	"create aggregate var_pop(val integer) returns double\n\texternal name \"aggr\".\"variancep\";"	"aggr"	true	3	false	2000
-5824	"var_pop"	"create aggregate var_pop(val wrd) returns double\n\texternal name \"aggr\".\"variancep\";"	"aggr"	true	3	false	2000
-5828	"var_pop"	"create aggregate var_pop(val bigint) returns double\n\texternal name \"aggr\".\"variancep\";"	"aggr"	true	3	false	2000
-5832	"var_pop"	"create aggregate var_pop(val real) returns double\n\texternal name \"aggr\".\"variancep\";"	"aggr"	true	3	false	2000
-5836	"var_pop"	"create aggregate var_pop(val double) returns double\n\texternal name \"aggr\".\"variancep\";"	"aggr"	true	3	false	2000
-5840	"var_pop"	"create aggregate var_pop(val date) returns double\n\texternal name \"aggr\".\"variancep\";"	"aggr"	true	3	false	2000
-5844	"var_pop"	"create aggregate var_pop(val time) returns double\n\texternal name \"aggr\".\"variancep\";"	"aggr"	true	3	false	2000
-5848	"var_pop"	"create aggregate var_pop(val timestamp) returns double\n\texternal name \"aggr\".\"variancep\";"	"aggr"	true	3	false	2000
-5852	"median"	"create aggregate median(val tinyint) returns tinyint\n\texternal name \"aggr\".\"median\";"	"aggr"	true	3	false	2000
-5856	"median"	"create aggregate median(val smallint) returns smallint\n\texternal name \"aggr\".\"median\";"	"aggr"	true	3	false	2000
-5860	"median"	"create aggregate median(val integer) returns integer\n\texternal name \"aggr\".\"median\";"	"aggr"	true	3	false	2000
-5864	"median"	"create aggregate median(val wrd) returns wrd\n\texternal name \"aggr\".\"median\";"	"aggr"	true	3	false	2000
-5868	"median"	"create aggregate median(val bigint) returns bigint\n\texternal name \"aggr\".\"median\";"	"aggr"	true	3	false	2000
-5872	"median"	"create aggregate median(val real) returns real\n\texternal name \"aggr\".\"median\";"	"aggr"	true	3	false	2000
-5876	"median"	"create aggregate median(val double) returns double\n\texternal name \"aggr\".\"median\";"	"aggr"	true	3	false	2000
-5880	"median"	"create aggregate median(val date) returns date\n\texternal name \"aggr\".\"median\";"	"aggr"	true	3	false	2000
-5884	"median"	"create aggregate median(val time) returns time\n\texternal name \"aggr\".\"median\";"	"aggr"	true	3	false	2000
-5888	"median"	"create aggregate median(val timestamp) returns timestamp\n\texternal name \"aggr\".\"median\";"	"aggr"	true	3	false	2000
-5892	"corr"	"create aggregate corr(e1 tinyint, e2 tinyint) returns tinyint\n\texternal name \"aggr\".\"corr\";"	"aggr"	true	3	false	2000
-5897	"corr"	"create aggregate corr(e1 smallint, e2 smallint) returns smallint\n\texternal name \"aggr\".\"corr\";"	"aggr"	true	3	false	2000
-5902	"corr"	"create aggregate corr(e1 integer, e2 integer) returns integer\n\texternal name \"aggr\".\"corr\";"	"aggr"	true	3	false	2000
-5907	"corr"	"create aggregate corr(e1 wrd, e2 wrd) returns wrd\n\texternal name \"aggr\".\"corr\";"	"aggr"	true	3	false	2000
-5912	"corr"	"create aggregate corr(e1 bigint, e2 bigint) returns bigint\n\texternal name \"aggr\".\"corr\";"	"aggr"	true	3	false	2000
-5917	"corr"	"create aggregate corr(e1 real, e2 real) returns real\n\texternal name \"aggr\".\"corr\";"	"aggr"	true	3	false	2000
-5922	"corr"	"create aggregate corr(e1 double, e2 double) returns double\n\texternal name \"aggr\".\"corr\";"	"aggr"	true	3	false	2000
-5928	"json_filter"	"-- access the top level key by name, return its value\ncreate function sys.json_filter(js json, name string)\nreturns json external name json.filter;"	"json"	true	1	false	2000
-5933	"json_filter_all"	"create function sys.json_filter_all(js json, name string)\nreturns json external name json.filterall;"	"json"	true	1	false	2000
-5938	"json_path"	"-- a simple path extractor\ncreate function sys.json_path(js json, e string)\nreturns json external name json.path;"	"json"	true	1	false	2000
-5943	"json_text"	"-- a simple path extractor as plain text\ncreate function sys.json_text(js json, e string)\nreturns string external name json.text;"	"json"	true	1	false	2000
-5948	"json_isvalid"	"-- test string for JSON compliancy\ncreate function sys.json_isvalid(js string)\nreturns bool external name json.isvalid;"	"json"	true	1	false	2000
-5952	"json_isvalidobject"	"create function sys.json_isvalidobject(js string)\nreturns bool external name json.isvalidobject;"	"json"	true	1	false	2000
-5956	"json_isvalidarray"	"create function sys.json_isvalidarray(js string)\nreturns bool external name json.isvalidarray;"	"json"	true	1	false	2000
-5960	"json_length"	"-- return the number of primary components\ncreate function sys.json_length(js json)\nreturns integer external name json.length;"	"json"	true	1	false	2000
-5964	"md5"	"\n-- The contents of this file are subject to the MonetDB Public License\n-- Version 1.1 (the \"License\"); you may not use this file except in\n-- compliance with the License. You may obtain a copy of the License at\n-- http://www.monetdb.org/Legal/MonetDBLicense\n--\n-- Software distributed under the License is distributed on an \"AS IS\"\n-- basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the\n-- License for the specific language governing rights and limitations\n-- under the License.\n--\n-- The Original Code is the MonetDB Database System.\n--\n-- The Initial Developer of the Original Code is CWI.\n-- Copyright August 2008-2013 MonetDB B.V.\n-- All Rights Reserved.\n\n-- (co) Arjen de Rijke\n-- Functions supporting jsonstore\n\ncreate function sys.md5(v string)\nreturns string external name clients.md5sum;"	"clients"	true	1	false	2000
-5969	"uuid"	"-- generate a new uuid\ncreate function sys.uuid()\nreturns uuid external name uuid.\"new\";"	"uuid"	true	1	false	2000
-5972	"isauuid"	"create function sys.isauuid(u uuid)\nreturns uuid external name uuid.\"isaUUID\";"	"uuid"	true	1	false	2000
-5988	"storage"	"-- The contents of this file are subject to the MonetDB Public License\n-- Version 1.1 (the \"License\"); you may not use this file except in\n-- compliance with the License. You may obtain a copy of the License at\n-- http://www.monetdb.org/Legal/MonetDBLicense\n--\n-- Software distributed under the License is distributed on an \"AS IS\"\n-- basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the\n-- License for the specific language governing rights and limitations\n-- under the License.\n--\n-- The Original Code is the MonetDB Database System.\n--\n-- The Initial Developer of the Original Code is CWI.\n-- Copyright August 2008-2013 MonetDB B.V.\n-- All Rights Reserved.\n\n\n-- Author M.Kersten\n-- This script gives the database administrator insight in the actual\n-- footprint of the persistent tables and the maximum playground used\n-- when indices are introduced upon them.\n-- By chancing the storagemodelinput table directly, the footprint for\n-- yet to be loaded databases can be assessed.\n\n-- The actual storage footprint of an existing database can be\n-- obtained by the table procuding function storage()\n-- It represents the actual state of affairs, i.e. storage on disk\n-- of columns and foreign key indices, and possible temporary hash indices.\n-- For strings we take a sample to determine their average length.\n\ncreate function sys.storage()\nreturns table (\"schema\" string, \"table\" string, \"column\" string, \"type\" string, location string, \"count\" bigint, typewidth int, columnsize bigint, heapsize bigint, indices bigint, sorted boolean)\nexternal name sql.storage;"	"sql"	true	1	false	2000
-6016	"storagemodelinit"	"-- this table can be adjusted to reflect the anticipated final database size\n\n-- The model input can be derived from the current database using\ncreate procedure sys.storagemodelinit()\nbegin\n\tdelete from sys.storagemodelinput;\n\n\tinsert into sys.storagemodelinput\n\tselect x.\"schema\", x.\"table\", x.\"column\", x.\"type\", x.typewidth, x.count, 0, x.typewidth, false, x.sorted from sys.storage() x;\n\n\tupdate sys.storagemodelinput\n\tset reference = true\n\twhere concat(concat(\"schema\",\"table\"), \"column\") in (\n\t\tselect concat( concat(\"fkschema\".\"name\", \"fktable\".\"name\"), \"fkkeycol\".\"name\" )\n\t\tfrom\t\"sys\".\"keys\" as    \"fkkey\",\n\t\t\t\t\"sys\".\"objects\" as \"fkkeycol\",\n\t\t\t\t\"sys\".\"tables\" as  \"fktable\",\n\t\t\t\t\"sys\".\"schemas\" as \"fkschema\"\n\t\twhere   \"fktable\".\"id\" = \"fkkey\".\"table_id\"\n\t\t\tand \"fkkey\".\"id\" = \"fkkeycol\".\"id\"\n\t\t\tand \"fkschema\".\"id\" = \"fktable\".\"schema_id\"\n\t\t\tand \"fkkey\".\"rkey\" > -1);\n\n\tupdate sys.storagemodelinput\n\tset \"distinct\" = \"count\" -- assume all distinct\n\twhere \"type\" = 'varchar' or \"type\"='clob';\nend;"	"user"	true	2	false	2000
-6018	"columnsize"	"-- The predicted storage footprint of the complete database\n-- determines the amount of diskspace needed for persistent storage\n-- and the upperbound when all possible index structures are created.\n-- The storage requirement for foreign key joins is split amongst the participants.\n\ncreate function sys.columnsize(nme string, i bigint, d bigint)\nreturns bigint\nbegin\n\tcase\n\twhen nme = 'boolean' then return i;\n\twhen nme = 'char' then return 2*i;\n\twhen nme = 'smallint' then return 2 * i;\n\twhen nme = 'int'\t then return 4 * i;\n\twhen nme = 'bigint'\t then return 8 * i;\n\twhen nme = 'timestamp' then return 8 * i;\n\twhen  nme = 'varchar' then\n\t\tcase\n\t\twhen cast(d as bigint) << 8 then return i;\n\t\twhen cast(d as bigint) << 16 then return 2 * i;\n\t\twhen cast(d as bigint) << 32 then return 4 * i;\n\t\telse return 8 * i;\n\t\tend case;\n\telse return 8 * i;\n\tend case;\nend;"	"user"	true	1	false	2000
-6024	"heapsize"	"create function sys.heapsize(tpe string, i bigint, w int)\nreturns bigint\nbegin\n\tif  tpe <> 'varchar' and tpe <> 'clob'\n\tthen\n\t\treturn 0;\n\tend if;\n\treturn 10240 + i * w;\nend;"	"user"	true	1	false	2000
-6030	"indexsize"	"create function sys.indexsize(b boolean, i bigint)\nreturns bigint\nbegin\n\t-- assume non-compound keys\n\tif  b = true\n\tthen\n\t\treturn 8 * i;\n\tend if;\n\treturn 0;\nend;"	"user"	true	1	false	2000
-6045	"storagemodel"	"create function sys.storagemodel()\nreturns table (\n\t\"schema\" string,\n\t\"table\" string,\n\t\"column\" string,\n\t\"type\" string,\n\t\"count\"\tbigint,\n\tcolumnsize bigint,\n\theapsize bigint,\n\tindices bigint,\n\tsorted boolean)\nbegin\n\treturn select i.\"schema\", i.\"table\", i.\"column\", i.\"type\", i.\"count\",\n\tcolumnsize(i.\"type\", i.count, i.\"distinct\"),\n\theapsize(i.\"type\", i.\"distinct\", i.\"atomwidth\"),\n\tindexsize(i.\"reference\", i.\"count\"),\n\ti.sorted\n\tfrom sys.storagemodelinput i;\nend;"	"user"	true	1	false	2000
-6083	"analyze"	"create procedure analyze()\nexternal name sql.analyze;"	"sql"	true	2	false	2000
-6085	"analyze"	"create procedure analyze(tbl string)\nexternal name sql.analyze;"	"sql"	true	2	false	2000
-6088	"analyze"	"create procedure analyze(sch string, tbl string)\nexternal name sql.analyze;"	"sql"	true	2	false	2000
-6092	"analyze"	"create procedure analyze(sch string, tbl string, col string)\nexternal name sql.analyze;"	"sql"	true	2	false	2000
-6097	"analyze"	"-- control the sample size\ncreate procedure analyze(\"sample\" bigint)\nexternal name sql.analyze;"	"sql"	true	2	false	2000
-6100	"analyze"	"create procedure analyze(tbl string, \"sample\" bigint)\nexternal name sql.analyze;"	"sql"	true	2	false	2000
-6104	"analyze"	"create procedure analyze(sch string, tbl string, \"sample\" bigint)\nexternal name sql.analyze;"	"sql"	true	2	false	2000
-6109	"analyze"	"create procedure analyze(sch string, tbl string, col string, \"sample\" bigint)\nexternal name sql.analyze;"	"sql"	true	2	false	2000
-6115	"reverse"	"/*\nThe contents of this file are subject to the MonetDB Public License\nVersion 1.1 (the \"License\"); you may not use this file except in\ncompliance with the License. You may obtain a copy of the License at\nhttp://www.monetdb.org/Legal/MonetDBLicense\n\nSoftware distributed under the License is distributed on an \"AS IS\"\nbasis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the\nLicense for the specific language governing rights and limitations\nunder the License.\n\nThe Original Code is the MonetDB Database System.\n\nThe Initial Developer of the Original Code is CWI.\nPortions created by CWI are Copyright (C) 1997-July 2008 CWI.\nCopyright August 2008-2013 MonetDB B.V.\nAll Rights Reserved.\n*/\n\n\n-- add function signatures to SQL catalog\n\n\n-- Reverse a string\ncreate function reverse(src string)\nreturns string external name udf.reverse;"	"udf"	true	1	false	2000
-6119	"fuse"	"-- fuse two (1-byte) tinyint values into one (2-byte) smallint value\ncreate function fuse(one tinyint, two tinyint)\nreturns smallint external name udf.fuse;"	"udf"	true	1	false	2000
-6124	"fuse"	"-- fuse two (2-byte) smallint values into one (4-byte) integer value\ncreate function fuse(one smallint, two smallint)\nreturns integer external name udf.fuse;"	"udf"	true	1	false	2000
-6129	"fuse"	"-- fuse two (4-byte) integer values into one (8-byte) bigint value\ncreate function fuse(one integer, two integer)\nreturns bigint external name udf.fuse;"	"udf"	true	1	false	2000
+5550	"sessions"	"create function sys.sessions()\nreturns table(\"user\" string, \"login\" timestamp, \"sessiontimeout\" bigint, \"lastcommand\" timestamp, \"querytimeout\" bigint, \"active\" bool)\nexternal name sql.sessions;"	"sql"	true	1	false	2000
+5553	"settimeout"	"-- control the query and session time out \ncreate procedure sys.settimeout(\"query\" bigint)\n\texternal name sql.settimeout;"	"sql"	true	2	false	2000
+5556	"settimeout"	"create procedure sys.settimeout(\"query\" bigint, \"session\" bigint)\n\texternal name sql.settimeout;"	"sql"	true	2	false	2000
+5560	"setsession"	"create procedure sys.setsession(\"timeout\" bigint)\n\texternal name sql.setsession;"	"sql"	true	2	false	2000
+5563	"ms_stuff"	"-- The contents of this file are subject to the MonetDB Public License\n-- Version 1.1 (the \"License\"); you may not use this file except in\n-- compliance with the License. You may obtain a copy of the License at\n-- http://www.monetdb.org/Legal/MonetDBLicense\n--\n-- Software distributed under the License is distributed on an \"AS IS\"\n-- basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the\n-- License for the specific language governing rights and limitations\n-- under the License.\n--\n-- The Original Code is the MonetDB Database System.\n--\n-- The Initial Developer of the Original Code is CWI.\n-- Copyright August 2008-2013 MonetDB B.V.\n-- All Rights Reserved.\n\ncreate function ms_stuff( s1 varchar(32), st int, len int, s3 varchar(32))\nreturns varchar(32)\nbegin\n\tdeclare res varchar(32), aux varchar(32);\n\tdeclare ofset int;\n\n    if ( st < 0 or st > length(s1))\n        then return '';\n    end if;\n\n    set ofset = 1;\n    set res = substring(s1,ofset,st-1);\n    set res = res || s3;\n    set ofset = st + len;\n    set aux = substring(s1,ofset,length(s1)-ofset+1);\n\tset res = res || aux;\n\treturn res;\nend;"	"user"	true	1	false	2000
+5570	"ms_trunc"	"create function ms_trunc(num double, prc int)\nreturns double\nexternal name sql.ms_trunc;"	"sql"	true	1	false	2000
+5575	"ms_round"	"create function ms_round(num double, prc int, truncat int)\nreturns double\nbegin\n\tif (truncat = 0)\n\t\tthen return round(num, prc);\n\t\telse return ms_trunc(num, prc);\n\tend if;\nend;"	"user"	true	1	false	2000
+5581	"ms_str"	"create function ms_str(num float, prc int, truncat int)\nreturns string\nbegin\n        return cast(num as string);\nend;"	"user"	true	1	false	2000
+5587	"alpha"	"create function alpha(pdec double, pradius double)\nreturns double external name sql.alpha;"	"sql"	true	1	false	2000
+5592	"zorder_encode"	"-- The contents of this file are subject to the MonetDB Public License\n-- Version 1.1 (the \"License\"); you may not use this file except in\n-- compliance with the License. You may obtain a copy of the License at\n-- http://www.monetdb.org/Legal/MonetDBLicense\n--\n-- Software distributed under the License is distributed on an \"AS IS\"\n-- basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the\n-- License for the specific language governing rights and limitations\n-- under the License.\n--\n-- The Original Code is the MonetDB Database System.\n--\n-- The Initial Developer of the Original Code is CWI.\n-- Copyright August 2008-2013 MonetDB B.V.\n-- All Rights Reserved.\n\ncreate function zorder_encode(x integer, y integer) returns oid\n    external name zorder.encode;"	"zorder"	true	1	false	2000
+5597	"zorder_decode_x"	"create function zorder_decode_x(z oid) returns integer\n    external name zorder.decode_x;"	"zorder"	true	1	false	2000
+5601	"zorder_decode_y"	"create function zorder_decode_y(z oid) returns integer\n    external name zorder.decode_y;"	"zorder"	true	1	false	2000
+5608	"optimizer_stats"	"-- The contents of this file are subject to the MonetDB Public License\n-- Version 1.1 (the \"License\"); you may not use this file except in\n-- compliance with the License. You may obtain a copy of the License at\n-- http://www.monetdb.org/Legal/MonetDBLicense\n--\n-- Software distributed under the License is distributed on an \"AS IS\"\n-- basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the\n-- License for the specific language governing rights and limitations\n-- under the License.\n--\n-- The Original Code is the MonetDB Database System.\n--\n-- The Initial Developer of the Original Code is CWI.\n-- Copyright August 2008-2013 MonetDB B.V.\n-- All Rights Reserved.\n\n-- show the optimizer statistics maintained by the SQL frontend\ncreate function sys.optimizer_stats () \n\treturns table (rewrite string, count int) \n\texternal name sql.dump_opt_stats;"	"sql"	true	1	false	2000
+5614	"querycache"	"-- SQL QUERY CACHE\n-- The SQL query cache returns a table with the query plans kept\n\ncreate function sys.querycache() \n\treturns table (query string, count int) \n\texternal name sql.dump_cache;"	"sql"	true	1	false	2000
+5617	"querylog"	"-- Trace the SQL input\ncreate procedure sys.querylog(filename string) \n\texternal name sql.logfile;"	"sql"	true	2	false	2000
+5624	"optimizers"	"-- MONETDB KERNEL SECTION\n-- optimizer pipe catalog\ncreate function sys.optimizers () \n\treturns table (name string, def string, status string)\n\texternal name sql.optimizers;"	"sql"	true	1	false	2000
+5635	"environment"	"-- The environment table\ncreate function sys.environment()\n\treturns table (\"name\" string, value string)\n\texternal name sql.sql_environment;"	"sql"	true	1	false	2000
+5655	"bbp"	"-- The BAT buffer pool overview\ncreate function sys.bbp () \n\treturns table (id int, name string, htype string, \n\t\tttype string, count bigint, refcnt int, lrefcnt int, \n\t\tlocation string, heat int, dirty string, \n\t\tstatus string, kind string) \n\texternal name sql.bbp;"	"sql"	true	1	false	2000
+5658	"evalalgebra"	"create procedure sys.evalalgebra( ra_stmt string, opt bool)\n\texternal name sql.\"evalAlgebra\";"	"sql"	true	2	false	2000
+5671	"queue"	"-- The contents of this file are subject to the MonetDB Public License\n-- Version 1.1 (the \"License\"); you may not use this file except in\n-- compliance with the License. You may obtain a copy of the License at\n-- http://www.monetdb.org/Legal/MonetDBLicense\n--\n-- Software distributed under the License is distributed on an \"AS IS\"\n-- basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the\n-- License for the specific language governing rights and limitations\n-- under the License.\n--\n-- The Original Code is the MonetDB Database System.\n--\n-- The Initial Developer of the Original Code is CWI.\n-- Copyright August 2008-2013 MonetDB B.V.\n-- All Rights Reserved.\n\n-- System monitoring\n\n-- show status of all active SQL queries.\ncreate function sys.queue()\nreturns table(\n\tqtag bigint,\n\t\"user\" string,\n\tstarted timestamp,\n\testimate timestamp,\n\tprogress int,\n\tstatus string,\n\ttag oid,\n\tquery string\n)\nexternal name sql.sysmon_queue;"	"sql"	true	1	false	2000
+5684	"pause"	"-- operations to manipulate the state of havoc queries\ncreate procedure sys.pause(tag int)\nexternal name sql.sysmon_pause;"	"sql"	true	2	false	2000
+5687	"resume"	"create procedure sys.resume(tag int)\nexternal name sql.sysmon_resume;"	"sql"	true	2	false	2000
+5690	"stop"	"create procedure sys.stop(tag int)\nexternal name sql.sysmon_stop;"	"sql"	true	2	false	2000
+5693	"pause"	"create procedure sys.pause(tag bigint)\nexternal name sql.sysmon_pause;"	"sql"	true	2	false	2000
+5696	"resume"	"create procedure sys.resume(tag bigint)\nexternal name sql.sysmon_resume;"	"sql"	true	2	false	2000
+5699	"stop"	"create procedure sys.stop(tag bigint)\nexternal name sql.sysmon_stop;"	"sql"	true	2	false	2000
+5702	"stddev_samp"	"create aggregate stddev_samp(val tinyint) returns double\n\texternal name \"aggr\".\"stdev\";"	"aggr"	true	3	false	2000
+5706	"stddev_samp"	"create aggregate stddev_samp(val smallint) returns double\n\texternal name \"aggr\".\"stdev\";"	"aggr"	true	3	false	2000
+5710	"stddev_samp"	"create aggregate stddev_samp(val integer) returns double\n\texternal name \"aggr\".\"stdev\";"	"aggr"	true	3	false	2000
+5714	"stddev_samp"	"create aggregate stddev_samp(val wrd) returns double\n\texternal name \"aggr\".\"stdev\";"	"aggr"	true	3	false	2000
+5718	"stddev_samp"	"create aggregate stddev_samp(val bigint) returns double\n\texternal name \"aggr\".\"stdev\";"	"aggr"	true	3	false	2000
+5722	"stddev_samp"	"create aggregate stddev_samp(val real) returns double\n\texternal name \"aggr\".\"stdev\";"	"aggr"	true	3	false	2000
+5726	"stddev_samp"	"create aggregate stddev_samp(val double) returns double\n\texternal name \"aggr\".\"stdev\";"	"aggr"	true	3	false	2000
+5730	"stddev_samp"	"create aggregate stddev_samp(val date) returns double\n\texternal name \"aggr\".\"stdev\";"	"aggr"	true	3	false	2000
+5734	"stddev_samp"	"create aggregate stddev_samp(val time) returns double\n\texternal name \"aggr\".\"stdev\";"	"aggr"	true	3	false	2000
+5738	"stddev_samp"	"create aggregate stddev_samp(val timestamp) returns double\n\texternal name \"aggr\".\"stdev\";"	"aggr"	true	3	false	2000
+5742	"stddev_pop"	"create aggregate stddev_pop(val tinyint) returns double\n\texternal name \"aggr\".\"stdevp\";"	"aggr"	true	3	false	2000
+5746	"stddev_pop"	"create aggregate stddev_pop(val smallint) returns double\n\texternal name \"aggr\".\"stdevp\";"	"aggr"	true	3	false	2000
+5750	"stddev_pop"	"create aggregate stddev_pop(val integer) returns double\n\texternal name \"aggr\".\"stdevp\";"	"aggr"	true	3	false	2000
+5754	"stddev_pop"	"create aggregate stddev_pop(val wrd) returns double\n\texternal name \"aggr\".\"stdevp\";"	"aggr"	true	3	false	2000
+5758	"stddev_pop"	"create aggregate stddev_pop(val bigint) returns double\n\texternal name \"aggr\".\"stdevp\";"	"aggr"	true	3	false	2000
+5762	"stddev_pop"	"create aggregate stddev_pop(val real) returns double\n\texternal name \"aggr\".\"stdevp\";"	"aggr"	true	3	false	2000
+5766	"stddev_pop"	"create aggregate stddev_pop(val double) returns double\n\texternal name \"aggr\".\"stdevp\";"	"aggr"	true	3	false	2000
+5770	"stddev_pop"	"create aggregate stddev_pop(val date) returns double\n\texternal name \"aggr\".\"stdevp\";"	"aggr"	true	3	false	2000
+5774	"stddev_pop"	"create aggregate stddev_pop(val time) returns double\n\texternal name \"aggr\".\"stdevp\";"	"aggr"	true	3	false	2000
+5778	"stddev_pop"	"create aggregate stddev_pop(val timestamp) returns double\n\texternal name \"aggr\".\"stdevp\";"	"aggr"	true	3	false	2000
+5782	"var_samp"	"create aggregate var_samp(val tinyint) returns double\n\texternal name \"aggr\".\"variance\";"	"aggr"	true	3	false	2000
+5786	"var_samp"	"create aggregate var_samp(val smallint) returns double\n\texternal name \"aggr\".\"variance\";"	"aggr"	true	3	false	2000
+5790	"var_samp"	"create aggregate var_samp(val integer) returns double\n\texternal name \"aggr\".\"variance\";"	"aggr"	true	3	false	2000
+5794	"var_samp"	"create aggregate var_samp(val wrd) returns double\n\texternal name \"aggr\".\"variance\";"	"aggr"	true	3	false	2000
+5798	"var_samp"	"create aggregate var_samp(val bigint) returns double\n\texternal name \"aggr\".\"variance\";"	"aggr"	true	3	false	2000
+5802	"var_samp"	"create aggregate var_samp(val real) returns double\n\texternal name \"aggr\".\"variance\";"	"aggr"	true	3	false	2000
+5806	"var_samp"	"create aggregate var_samp(val double) returns double\n\texternal name \"aggr\".\"variance\";"	"aggr"	true	3	false	2000
+5810	"var_samp"	"create aggregate var_samp(val date) returns double\n\texternal name \"aggr\".\"variance\";"	"aggr"	true	3	false	2000
+5814	"var_samp"	"create aggregate var_samp(val time) returns double\n\texternal name \"aggr\".\"variance\";"	"aggr"	true	3	false	2000
+5818	"var_samp"	"create aggregate var_samp(val timestamp) returns double\n\texternal name \"aggr\".\"variance\";"	"aggr"	true	3	false	2000
+5822	"var_pop"	"create aggregate var_pop(val tinyint) returns double\n\texternal name \"aggr\".\"variancep\";"	"aggr"	true	3	false	2000
+5826	"var_pop"	"create aggregate var_pop(val smallint) returns double\n\texternal name \"aggr\".\"variancep\";"	"aggr"	true	3	false	2000
+5830	"var_pop"	"create aggregate var_pop(val integer) returns double\n\texternal name \"aggr\".\"variancep\";"	"aggr"	true	3	false	2000
+5834	"var_pop"	"create aggregate var_pop(val wrd) returns double\n\texternal name \"aggr\".\"variancep\";"	"aggr"	true	3	false	2000
+5838	"var_pop"	"create aggregate var_pop(val bigint) returns double\n\texternal name \"aggr\".\"variancep\";"	"aggr"	true	3	false	2000
+5842	"var_pop"	"create aggregate var_pop(val real) returns double\n\texternal name \"aggr\".\"variancep\";"	"aggr"	true	3	false	2000
+5846	"var_pop"	"create aggregate var_pop(val double) returns double\n\texternal name \"aggr\".\"variancep\";"	"aggr"	true	3	false	2000
+5850	"var_pop"	"create aggregate var_pop(val date) returns double\n\texternal name \"aggr\".\"variancep\";"	"aggr"	true	3	false	2000
+5854	"var_pop"	"create aggregate var_pop(val time) returns double\n\texternal name \"aggr\".\"variancep\";"	"aggr"	true	3	false	2000
+5858	"var_pop"	"create aggregate var_pop(val timestamp) returns double\n\texternal name \"aggr\".\"variancep\";"	"aggr"	true	3	false	2000
+5862	"median"	"create aggregate median(val tinyint) returns tinyint\n\texternal name \"aggr\".\"median\";"	"aggr"	true	3	false	2000
+5866	"median"	"create aggregate median(val smallint) returns smallint\n\texternal name \"aggr\".\"median\";"	"aggr"	true	3	false	2000
+5870	"median"	"create aggregate median(val integer) returns integer\n\texternal name \"aggr\".\"median\";"	"aggr"	true	3	false	2000
+5874	"median"	"create aggregate median(val wrd) returns wrd\n\texternal name \"aggr\".\"median\";"	"aggr"	true	3	false	2000
+5878	"median"	"create aggregate median(val bigint) returns bigint\n\texternal name \"aggr\".\"median\";"	"aggr"	true	3	false	2000
+5882	"median"	"create aggregate median(val real) returns real\n\texternal name \"aggr\".\"median\";"	"aggr"	true	3	false	2000
+5886	"median"	"create aggregate median(val double) returns double\n\texternal name \"aggr\".\"median\";"	"aggr"	true	3	false	2000
+5890	"median"	"create aggregate median(val date) returns date\n\texternal name \"aggr\".\"median\";"	"aggr"	true	3	false	2000
+5894	"median"	"create aggregate median(val time) returns time\n\texternal name \"aggr\".\"median\";"	"aggr"	true	3	false	2000
+5898	"median"	"create aggregate median(val timestamp) returns timestamp\n\texternal name \"aggr\".\"median\";"	"aggr"	true	3	false	2000
+5902	"corr"	"create aggregate corr(e1 tinyint, e2 tinyint) returns tinyint\n\texternal name \"aggr\".\"corr\";"	"aggr"	true	3	false	2000
+5907	"corr"	"create aggregate corr(e1 smallint, e2 smallint) returns smallint\n\texternal name \"aggr\".\"corr\";"	"aggr"	true	3	false	2000
+5912	"corr"	"create aggregate corr(e1 integer, e2 integer) returns integer\n\texternal name \"aggr\".\"corr\";"	"aggr"	true	3	false	2000
+5917	"corr"	"create aggregate corr(e1 wrd, e2 wrd) returns wrd\n\texternal name \"aggr\".\"corr\";"	"aggr"	true	3	false	2000
+5922	"corr"	"create aggregate corr(e1 bigint, e2 bigint) returns bigint\n\texternal name \"aggr\".\"corr\";"	"aggr"	true	3	false	2000
+5927	"corr"	"create aggregate corr(e1 real, e2 real) returns real\n\texternal name \"aggr\".\"corr\";"	"aggr"	true	3	false	2000
+5932	"corr"	"create aggregate corr(e1 double, e2 double) returns double\n\texternal name \"aggr\".\"corr\";"	"aggr"	true	3	false	2000
+5938	"json_filter"	"-- access the top level key by name, return its value\ncreate function sys.json_filter(js json, name string)\nreturns json external name json.filter;"	"json"	true	1	false	2000
+5943	"json_filter_all"	"create function sys.json_filter_all(js json, name string)\nreturns json external name json.filterall;"	"json"	true	1	false	2000
+5948	"json_path"	"-- a simple path extractor\ncreate function sys.json_path(js json, e string)\nreturns json external name json.path;"	"json"	true	1	false	2000
+5953	"json_text"	"-- a simple path extractor as plain text\ncreate function sys.json_text(js json, e string)\nreturns string external name json.text;"	"json"	true	1	false	2000
+5958	"json_isvalid"	"-- test string for JSON compliancy\ncreate function sys.json_isvalid(js string)\nreturns bool external name json.isvalid;"	"json"	true	1	false	2000
+5962	"json_isvalidobject"	"create function sys.json_isvalidobject(js string)\nreturns bool external name json.isvalidobject;"	"json"	true	1	false	2000
+5966	"json_isvalidarray"	"create function sys.json_isvalidarray(js string)\nreturns bool external name json.isvalidarray;"	"json"	true	1	false	2000
+5970	"json_length"	"-- return the number of primary components\ncreate function sys.json_length(js json)\nreturns integer external name json.length;"	"json"	true	1	false	2000
+5974	"md5"	"\n-- The contents of this file are subject to the MonetDB Public License\n-- Version 1.1 (the \"License\"); you may not use this file except in\n-- compliance with the License. You may obtain a copy of the License at\n-- http://www.monetdb.org/Legal/MonetDBLicense\n--\n-- Software distributed under the License is distributed on an \"AS IS\"\n-- basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the\n-- License for the specific language governing rights and limitations\n-- under the License.\n--\n-- The Original Code is the MonetDB Database System.\n--\n-- The Initial Developer of the Original Code is CWI.\n-- Copyright August 2008-2013 MonetDB B.V.\n-- All Rights Reserved.\n\n-- (co) Arjen de Rijke\n-- Functions supporting jsonstore\n\ncreate function sys.md5(v string)\nreturns string external name clients.md5sum;"	"clients"	true	1	false	2000
+5979	"uuid"	"-- generate a new uuid\ncreate function sys.uuid()\nreturns uuid external name uuid.\"new\";"	"uuid"	true	1	false	2000
+5982	"isauuid"	"create function sys.isauuid(u uuid)\nreturns uuid external name uuid.\"isaUUID\";"	"uuid"	true	1	false	2000
+5998	"storage"	"-- The contents of this file are subject to the MonetDB Public License\n-- Version 1.1 (the \"License\"); you may not use this file except in\n-- compliance with the License. You may obtain a copy of the License at\n-- http://www.monetdb.org/Legal/MonetDBLicense\n--\n-- Software distributed under the License is distributed on an \"AS IS\"\n-- basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the\n-- License for the specific language governing rights and limitations\n-- under the License.\n--\n-- The Original Code is the MonetDB Database System.\n--\n-- The Initial Developer of the Original Code is CWI.\n-- Copyright August 2008-2013 MonetDB B.V.\n-- All Rights Reserved.\n\n\n-- Author M.Kersten\n-- This script gives the database administrator insight in the actual\n-- footprint of the persistent tables and the maximum playground used\n-- when indices are introduced upon them.\n-- By chancing the storagemodelinput table directly, the footprint for\n-- yet to be loaded databases can be assessed.\n\n-- The actual storage footprint of an existing database can be\n-- obtained by the table procuding function storage()\n-- It represents the actual state of affairs, i.e. storage on disk\n-- of columns and foreign key indices, and possible temporary hash indices.\n-- For strings we take a sample to determine their average length.\n\ncreate function sys.storage()\nreturns table (\"schema\" string, \"table\" string, \"column\" string, \"type\" string, location string, \"count\" bigint, typewidth int, columnsize bigint, heapsize bigint, indices bigint, sorted boolean)\nexternal name sql.storage;"	"sql"	true	1	false	2000
+6026	"storagemodelinit"	"-- this table can be adjusted to reflect the anticipated final database size\n\n-- The model input can be derived from the current database using\ncreate procedure sys.storagemodelinit()\nbegin\n\tdelete from sys.storagemodelinput;\n\n\tinsert into sys.storagemodelinput\n\tselect x.\"schema\", x.\"table\", x.\"column\", x.\"type\", x.typewidth, x.count, 0, x.typewidth, false, x.sorted from sys.storage() x;\n\n\tupdate sys.storagemodelinput\n\tset reference = true\n\twhere concat(concat(\"schema\",\"table\"), \"column\") in (\n\t\tselect concat( concat(\"fkschema\".\"name\", \"fktable\".\"name\"), \"fkkeycol\".\"name\" )\n\t\tfrom\t\"sys\".\"keys\" as    \"fkkey\",\n\t\t\t\t\"sys\".\"objects\" as \"fkkeycol\",\n\t\t\t\t\"sys\".\"tables\" as  \"fktable\",\n\t\t\t\t\"sys\".\"schemas\" as \"fkschema\"\n\t\twhere   \"fktable\".\"id\" = \"fkkey\".\"table_id\"\n\t\t\tand \"fkkey\".\"id\" = \"fkkeycol\".\"id\"\n\t\t\tand \"fkschema\".\"id\" = \"fktable\".\"schema_id\"\n\t\t\tand \"fkkey\".\"rkey\" > -1);\n\n\tupdate sys.storagemodelinput\n\tset \"distinct\" = \"count\" -- assume all distinct\n\twhere \"type\" = 'varchar' or \"type\"='clob';\nend;"	"user"	true	2	false	2000
+6028	"columnsize"	"-- The predicted storage footprint of the complete database\n-- determines the amount of diskspace needed for persistent storage\n-- and the upperbound when all possible index structures are created.\n-- The storage requirement for foreign key joins is split amongst the participants.\n\ncreate function sys.columnsize(nme string, i bigint, d bigint)\nreturns bigint\nbegin\n\tcase\n\twhen nme = 'boolean' then return i;\n\twhen nme = 'char' then return 2*i;\n\twhen nme = 'smallint' then return 2 * i;\n\twhen nme = 'int'\t then return 4 * i;\n\twhen nme = 'bigint'\t then return 8 * i;\n\twhen nme = 'timestamp' then return 8 * i;\n\twhen  nme = 'varchar' then\n\t\tcase\n\t\twhen cast(d as bigint) << 8 then return i;\n\t\twhen cast(d as bigint) << 16 then return 2 * i;\n\t\twhen cast(d as bigint) << 32 then return 4 * i;\n\t\telse return 8 * i;\n\t\tend case;\n\telse return 8 * i;\n\tend case;\nend;"	"user"	true	1	false	2000
+6034	"heapsize"	"create function sys.heapsize(tpe string, i bigint, w int)\nreturns bigint\nbegin\n\tif  tpe <> 'varchar' and tpe <> 'clob'\n\tthen\n\t\treturn 0;\n\tend if;\n\treturn 10240 + i * w;\nend;"	"user"	true	1	false	2000
+6040	"indexsize"	"create function sys.indexsize(b boolean, i bigint)\nreturns bigint\nbegin\n\t-- assume non-compound keys\n\tif  b = true\n\tthen\n\t\treturn 8 * i;\n\tend if;\n\treturn 0;\nend;"	"user"	true	1	false	2000
+6055	"storagemodel"	"create function sys.storagemodel()\nreturns table (\n\t\"schema\" string,\n\t\"table\" string,\n\t\"column\" string,\n\t\"type\" string,\n\t\"count\"\tbigint,\n\tcolumnsize bigint,\n\theapsize bigint,\n\tindices bigint,\n\tsorted boolean)\nbegin\n\treturn select i.\"schema\", i.\"table\", i.\"column\", i.\"type\", i.\"count\",\n\tcolumnsize(i.\"type\", i.count, i.\"distinct\"),\n\theapsize(i.\"type\", i.\"distinct\", i.\"atomwidth\"),\n\tindexsize(i.\"reference\", i.\"count\"),\n\ti.sorted\n\tfrom sys.storagemodelinput i;\nend;"	"user"	true	1	false	2000
+6093	"analyze"	"create procedure analyze()\nexternal name sql.analyze;"	"sql"	true	2	false	2000
+6095	"analyze"	"create procedure analyze(tbl string)\nexternal name sql.analyze;"	"sql"	true	2	false	2000
+6098	"analyze"	"create procedure analyze(sch string, tbl string)\nexternal name sql.analyze;"	"sql"	true	2	false	2000
+6102	"analyze"	"create procedure analyze(sch string, tbl string, col string)\nexternal name sql.analyze;"	"sql"	true	2	false	2000
+6107	"analyze"	"-- control the sample size\ncreate procedure analyze(\"sample\" bigint)\nexternal name sql.analyze;"	"sql"	true	2	false	2000
+6110	"analyze"	"create procedure analyze(tbl string, \"sample\" bigint)\nexternal name sql.analyze;"	"sql"	true	2	false	2000
+6114	"analyze"	"create procedure analyze(sch string, tbl string, \"sample\" bigint)\nexternal name sql.analyze;"	"sql"	true	2	false	2000
+6119	"analyze"	"create procedure analyze(sch string, tbl string, col string, \"sample\" bigint)\nexternal name sql.analyze;"	"sql"	true	2	false	2000
+6125	"reverse"	"/*\nThe contents of this file are subject to the MonetDB Public License\nVersion 1.1 (the \"License\"); you may not use this file except in\ncompliance with the License. You may obtain a copy of the License at\nhttp://www.monetdb.org/Legal/MonetDBLicense\n\nSoftware distributed under the License is distributed on an \"AS IS\"\nbasis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the\nLicense for the specific language governing rights and limitations\nunder the License.\n\nThe Original Code is the MonetDB Database System.\n\nThe Initial Developer of the Original Code is CWI.\nPortions created by CWI are Copyright (C) 1997-July 2008 CWI.\nCopyright August 2008-2013 MonetDB B.V.\nAll Rights Reserved.\n*/\n\n\n-- add function signatures to SQL catalog\n\n\n-- Reverse a string\ncreate function reverse(src string)\nreturns string external name udf.reverse;"	"udf"	true	1	false	2000
+6129	"fuse"	"-- fuse two (1-byte) tinyint values into one (2-byte) smallint value\ncreate function fuse(one tinyint, two tinyint)\nreturns smallint external name udf.fuse;"	"udf"	true	1	false	2000
+6134	"fuse"	"-- fuse two (2-byte) smallint values into one (4-byte) integer value\ncreate function fuse(one smallint, two smallint)\nreturns integer external name udf.fuse;"	"udf"	true	1	false	2000
+6139	"fuse"	"-- fuse two (4-byte) integer values into one (8-byte) bigint value\ncreate function fuse(one integer, two integer)\nreturns bigint external name udf.fuse;"	"udf"	true	1	false	2000
 COMMIT;
 START TRANSACTION;
 CREATE TABLE "sys"."idxs" (
@@ -6642,7 +6652,7 @@ COPY 19 RECORDS INTO "sys"."privileges" FROM stdin USING DELIMITERS '\t','\n','"
 5119	1	1	0	0
 5122	1	1	0	0
 5126	1	1	0	0
-6135	1	1	3	0
+6145	1	1	3	0
 COMMIT;
 START TRANSACTION;
 CREATE TABLE "sys"."schemas" (
@@ -6703,7 +6713,7 @@ START TRANSACTION;
 CREATE TABLE "sys"."systemfunctions" (
 	"function_id" INTEGER
 );
-COPY 1211 RECORDS INTO "sys"."systemfunctions" FROM stdin USING DELIMITERS '\t','\n','"';
+COPY 1212 RECORDS INTO "sys"."systemfunctions" FROM stdin USING DELIMITERS '\t','\n','"';
 28
 29
 30
@@ -7804,117 +7814,118 @@ COPY 1211 RECORDS INTO "sys"."systemfunctions" FROM stdin USING DELIMITERS '\t',
 5529
 5536
 5539
-5543
-5546
 5550
 5553
+5556
 5560
-5565
-5571
-5577
-5582
+5563
+5570
+5575
+5581
 5587
-5591
-5598
-5604
-5607
+5592
+5597
+5601
+5608
 5614
-5625
-5645
-5648
-5661
-5674
-5677
-5680
-5683
-5686
-5689
-5692
+5617
+5624
+5635
+5655
+5658
+5671
+5684
+5687
+5690
+5693
 5696
-5700
-5704
-5708
-5712
-5716
-5720
-5724
-5728
-5732
-5736
-5740
-5744
-5748
-5752
-5756
-5760
-5764
-5768
-5772
-5776
-5780
-5784
-5788
-5792
-5796
-5800
-5804
-5808
-5812
-5816
-5820
-5824
-5828
-5832
-5836
-5840
-5844
-5848
-5852
-5856
-5860
-5864
-5868
-5872
-5876
-5880
-5884
-5888
-5892
-5897
+5699
+5702
+5706
+5710
+5714
+5718
+5722
+5726
+5730
+5734
+5738
+5742
+5746
+5750
+5754
+5758
+5762
+5766
+5770
+5774
+5778
+5782
+5786
+5790
+5794
+5798
+5802
+5806
+5810
+5814
+5818
+5822
+5826
+5830
+5834
+5838
+5842
+5846
+5850
+5854
+5858
+5862
+5866
+5870
+5874
+5878
+5882
+5886
+5890
+5894
+5898
 5902
 5907
 5912
 5917
 5922
-5928
-5933
+5927
+5932
 5938
 5943
 5948
-5952
-5956
-5960
-5964
-5969
-5972
-5988
-6016
-6018
-6024
-6030
-6045
-6083
-6085
-6088
-6092
-6097
-6100
-6104
-6109
-6115
+5953
+5958
+5962
+5966
+5970
+5974
+5979
+5982
+5998
+6026
+6028
+6034
+6040
+6055
+6093
+6095
+6098
+6102
+6107
+6110
+6114
 6119
-6124
+6125
 6129
+6134
+6139
 COMMIT;
 START TRANSACTION;
 CREATE TABLE "sys"."triggers" (
@@ -7971,8 +7982,8 @@ COPY 31 RECORDS INTO "sys"."types" FROM stdin USING DELIMITERS '\t','\n','"';
 26	"sqlblob"	"blob"	0	0	0	5	0
 5152	"url"	"url"	0	0	0	13	2000
 5232	"inet"	"inet"	0	0	0	13	2000
-5926	"json"	"json"	0	0	0	13	2000
-5967	"uuid"	"uuid"	0	0	0	13	2000
+5936	"json"	"json"	0	0	0	13	2000
+5977	"uuid"	"uuid"	0	0	0	13	2000
 COMMIT;
 START TRANSACTION;
 CREATE TABLE "sys"."user_role" (

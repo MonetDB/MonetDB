@@ -41,7 +41,7 @@ Ready.
 [ 5447,	"#dependencies_tables_on_triggers",	2000,	NULL,	2,	true,	0,	false,	"%able%"	]
 [ 5454,	"#dependencies_tables_on_foreignkeys",	2000,	NULL,	2,	true,	0,	false,	"%able%"	]
 [ 5461,	"#dependencies_tables_on_functions",	2000,	NULL,	2,	true,	0,	false,	"%able%"	]
-[ 6266,	"tablestoragemodel",	2000,	"-- A summary of the table storage requirement is is available as a table view.\n-- The auxillary column denotes the maximum space if all non-sorted columns\n-- would be augmented with a hash (rare situation)\ncreate view sys.tablestoragemodel\nas select \"schema\",\"table\",max(count) as \"count\",\n\tsum(columnsize) as columnsize,\n\tsum(heapsize) as heapsize,\n\tsum(indices) as indices,\n\tsum(case when sorted = false then 8 * count else 0 end) as auxillary\nfrom sys.storagemodel() group by \"schema\",\"table\";",	1,	true,	0,	false,	"%able%"	]
+[ 6276,	"tablestoragemodel",	2000,	"-- A summary of the table storage requirement is is available as a table view.\n-- The auxillary column denotes the maximum space if all non-sorted columns\n-- would be augmented with a hash (rare situation)\ncreate view sys.tablestoragemodel\nas select \"schema\",\"table\",max(count) as \"count\",\n\tsum(columnsize) as columnsize,\n\tsum(heapsize) as heapsize,\n\tsum(indices) as indices,\n\tsum(case when sorted = false then 8 * count else 0 end) as auxillary\nfrom sys.storagemodel() group by \"schema\",\"table\";",	1,	true,	0,	false,	"%able%"	]
 #drop table x;
 
 # 10:06:32 >  
