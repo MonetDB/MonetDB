@@ -70,7 +70,6 @@ sql_tablename_generator(const char *text, int state)
 
 	static int seekpos, len, rowcount;
 	static MapiHdl table_hdl;
-	char *name;
 
 	if (!state) {
 		seekpos = 0;
@@ -88,12 +87,15 @@ sql_tablename_generator(const char *text, int state)
 	}
 
 	while (seekpos < rowcount) {
+		const char *name;
+
 		mapi_seek_row(table_hdl, seekpos++, MAPI_SEEK_SET);
 		mapi_fetch_row(table_hdl);
 		name = mapi_fetch_field(table_hdl, 0);
 		if (strncmp(name, text, len) == 0) {
-			char *s, *schema = mapi_fetch_field(table_hdl, 1);
-			int l1 = strlen(name), l2 = strlen(schema);
+			char *s;
+			const char *schema = mapi_fetch_field(table_hdl, 1);
+			size_t l1 = strlen(name), l2 = strlen(schema);
 
 			s = malloc(l1 + l2 + 2);
 			s[0] = 0;
