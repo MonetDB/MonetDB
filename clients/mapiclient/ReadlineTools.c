@@ -72,9 +72,12 @@ sql_tablename_generator(const char *text, int state)
 	static MapiHdl table_hdl;
 
 	if (!state) {
+		char query[512];
+
 		seekpos = 0;
 		len = strlen(text);
-		if ((table_hdl = mapi_query(_mid, "SELECT t.\"name\", s.\"name\" FROM \"sys\".\"tables\" t, \"sys\".\"schemas\" s where t.schema_id = s.id")) == NULL || mapi_error(_mid)) {
+		snprintf(query, sizeof(query), "SELECT t.\"name\", s.\"name\" FROM \"sys\".\"tables\" t, \"sys\".\"schemas\" s where t.schema_id = s.id AND t.\"name\" like '%s%%'", text);
+		if ((table_hdl = mapi_query(_mid, query)) == NULL || mapi_error(_mid)) {
 			if (table_hdl) {
 				mapi_explain_query(table_hdl, stderr);
 				mapi_close_handle(table_hdl);
