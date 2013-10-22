@@ -100,11 +100,8 @@ sql_tablename_generator(const char *text, int state)
 			const char *schema = mapi_fetch_field(table_hdl, 1);
 			size_t l1 = strlen(name), l2 = strlen(schema);
 
-			s = malloc(l1 + l2 + 2);
-			s[0] = 0;
-			strcat(s, schema); 
-			strcat(s, ".");
-			strcat(s, name);
+			s = malloc(l1 + l2 + 6);
+			snprintf(s, l1 + l2 + 6, "\"%s\".\"%s\"", schema, name);
 			return s;
 		}
 	}
