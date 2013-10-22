@@ -158,6 +158,7 @@ BATgroupaggrinit(const BAT *b, const BAT *g, const BAT *e, const BAT *s,
 		TYPE1 x;						\
 		const TYPE1 *vals = (const TYPE1 *) values;		\
 		if (ngrp == 1 && cand == NULL) {			\
+			/* single group, no candidate list */		\
 			TYPE2 sum;					\
 			ALGODEBUG fprintf(stderr,			\
 					  "#%s: no candidates, no groups; " \
@@ -196,6 +197,7 @@ BATgroupaggrinit(const BAT *b, const BAT *g, const BAT *e, const BAT *s,
 			if (*seen)					\
 				*sums = sum;				\
 		} else if (ngrp == 1) {					\
+			/* single group, with candidate list */		\
 			TYPE2 sum;					\
 			int seenval = 0;				\
 			ALGODEBUG fprintf(stderr,			\
@@ -204,7 +206,7 @@ BATgroupaggrinit(const BAT *b, const BAT *g, const BAT *e, const BAT *s,
 					  "\n",				\
 					  func, start, end);		\
 			sum = 0;					\
-			while (cand < candend) {			\
+			while (cand < candend && nils == 0) {		\
 				i = *cand++ - seqb;			\
 				if (i >= end)				\
 					break;				\
@@ -225,6 +227,7 @@ BATgroupaggrinit(const BAT *b, const BAT *g, const BAT *e, const BAT *s,
 			if (seenval)					\
 				*sums = sum;				\
 		} else if (cand == NULL) {				\
+			/* multiple groups, no candidate list */	\
 			ALGODEBUG fprintf(stderr,			\
 					  "#%s: no candidates, with groups; " \
 					  "start " BUNFMT ", end " BUNFMT \
@@ -235,27 +238,32 @@ BATgroupaggrinit(const BAT *b, const BAT *g, const BAT *e, const BAT *s,
 				    (gids[i] >= min && gids[i] <= max)) { \
 					gid = gids ? gids[i] - min : (oid) i; \
 					x = vals[i];			\
-					if (nil_if_empty && x != TYPE1##_nil && \
-					    !(seen[gid >> 5] & (1 << (gid & 0x1F)))) { \
-						seen[gid >> 5] |= 1 << (gid & 0x1F); \
-						sums[gid] = 0;		\
-					}				\
 					if (x == TYPE1##_nil) {		\
 						if (!skip_nils) {	\
 							sums[gid] = TYPE2##_nil; \
-							nils++;		\
+							nils++;	\
 						}			\
-					} else if (sums[gid] != TYPE2##_nil) { \
-						ADD_WITH_CHECK(TYPE1, x, \
-							       TYPE2,	\
-							       sums[gid], \
-							       TYPE2,	\
-							       sums[gid], \
-							       goto overflow); \
+					} else {			\
+						if (nil_if_empty &&	\
+						    !(seen[gid >> 5] & (1 << (gid & 0x1F)))) { \
+							seen[gid >> 5] |= 1 << (gid & 0x1F); \
+							sums[gid] = 0;	\
+						}			\
+						if (sums[gid] != TYPE2##_nil) { \
+							ADD_WITH_CHECK(	\
+								TYPE1,	\
+								x,	\
+								TYPE2,	\
+								sums[gid], \
+								TYPE2,	\
+								sums[gid], \
+								goto overflow); \
+						}			\
 					}				\
 				}					\
 			}						\
 		} else {						\
+			/* multiple groups, with candidate list */	\
 			ALGODEBUG fprintf(stderr,			\
 					  "#%s: with candidates, with " \
 					  "groups; start " BUNFMT ", "	\
@@ -268,24 +276,28 @@ BATgroupaggrinit(const BAT *b, const BAT *g, const BAT *e, const BAT *s,
 				if (gids == NULL ||			\
 				    (gids[i] >= min && gids[i] <= max)) {	\
 					gid = gids ? gids[i] - min : (oid) i; \
-					if (nil_if_empty &&		\
-					    !(seen[gid >> 5] & (1 << (gid & 0x1F)))) { \
-						seen[gid >> 5] |= 1 << (gid & 0x1F); \
-						sums[gid] = 0;		\
-					}				\
 					x = vals[i];			\
 					if (x == TYPE1##_nil) {		\
 						if (!skip_nils) {	\
 							sums[gid] = TYPE2##_nil; \
 							nils++;		\
 						}			\
-					} else if (sums[gid] != TYPE2##_nil) { \
-						ADD_WITH_CHECK(TYPE1, x, \
-							       TYPE2,	\
-							       sums[gid], \
-							       TYPE2,	\
-							       sums[gid], \
-							       goto overflow); \
+					} else {			\
+						if (nil_if_empty &&	\
+						    !(seen[gid >> 5] & (1 << (gid & 0x1F)))) { \
+							seen[gid >> 5] |= 1 << (gid & 0x1F); \
+							sums[gid] = 0;	\
+						}			\
+						if (sums[gid] != TYPE2##_nil) { \
+							ADD_WITH_CHECK(	\
+								TYPE1,	\
+								x,	\
+								TYPE2,	\
+								sums[gid], \
+								TYPE2,	\
+								sums[gid], \
+								goto overflow); \
+						}			\
 					}				\
 				}					\
 			}						\
@@ -638,22 +650,25 @@ BATsum(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, int
 					else				\
 						gid = (oid) i;		\
 				}					\
-				if (nil_if_empty &&			\
-				    !(seen[gid >> 5] & (1 << (gid & 0x1F)))) { \
-					seen[gid >> 5] |= 1 << (gid & 0x1F); \
-					prods[gid] = 1;			\
-				}					\
 				if (vals[i] == TYPE1##_nil) {		\
 					if (!skip_nils) {		\
 						prods[gid] = TYPE2##_nil; \
 						nils++;			\
 					}				\
-				} else if (prods[gid] != TYPE2##_nil) {	\
-					MUL4_WITH_CHECK(TYPE1, vals[i],	\
+				} else {				\
+					if (nil_if_empty &&		\
+					    !(seen[gid >> 5] & (1 << (gid & 0x1F)))) { \
+						seen[gid >> 5] |= 1 << (gid & 0x1F); \
+						prods[gid] = 1;		\
+					}				\
+					if (prods[gid] != TYPE2##_nil) { \
+						MUL4_WITH_CHECK(	\
+							TYPE1, vals[i],	\
 							TYPE2, prods[gid], \
 							TYPE2, prods[gid], \
 							TYPE3,		\
 							goto overflow);	\
+					}				\
 				}					\
 			}						\
 		}							\
@@ -684,21 +699,24 @@ BATsum(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, int
 					else				\
 						gid = (oid) i;		\
 				}					\
-				if (nil_if_empty &&			\
-				    !(seen[gid >> 5] & (1 << (gid & 0x1F)))) { \
-					seen[gid >> 5] |= 1 << (gid & 0x1F); \
-					prods[gid] = 1;			\
-				}					\
 				if (vals[i] == TYPE##_nil) {		\
 					if (!skip_nils) {		\
 						prods[gid] = lng_nil;	\
 						nils++;			\
 					}				\
-				} else if (prods[gid] != lng_nil) {	\
-					LNGMUL_CHECK(TYPE, vals[i],	\
-						     lng, prods[gid],	\
-						     prods[gid],	\
-						     goto overflow);	\
+				} else {				\
+					if (nil_if_empty &&		\
+					    !(seen[gid >> 5] & (1 << (gid & 0x1F)))) { \
+						seen[gid >> 5] |= 1 << (gid & 0x1F); \
+						prods[gid] = 1;		\
+					}				\
+					if (prods[gid] != lng_nil) {	\
+						LNGMUL_CHECK(		\
+							TYPE, vals[i],	\
+							lng, prods[gid], \
+							prods[gid],	\
+							goto overflow); \
+					}				\
 				}					\
 			}						\
 		}							\
@@ -729,25 +747,27 @@ BATsum(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, int
 					else				\
 						gid = (oid) i;		\
 				}					\
-				if (nil_if_empty && vals[i] != TYPE1##_nil &&  \
-				    !(seen[gid >> 5] & (1 << (gid & 0x1F)))) { \
-					seen[gid >> 5] |= 1 << (gid & 0x1F); \
-					prods[gid] = 1;			\
-				}					\
 				if (vals[i] == TYPE1##_nil) {		\
 					if (!skip_nils) {		\
 						prods[gid] = TYPE2##_nil; \
 						nils++;			\
 					}				\
-				} else if (prods[gid] != TYPE2##_nil) {	\
-					if (ABSOLUTE(vals[i]) > 1 &&	\
-					    GDK_##TYPE2##_max / ABSOLUTE(vals[i]) < ABSOLUTE(prods[gid])) { \
-						if (abort_on_error)	\
-							goto overflow;	\
-						prods[gid] = TYPE2##_nil; \
-						nils++;			\
-					} else {			\
-						prods[gid] *= vals[i];	\
+				} else {				\
+					if (nil_if_empty && \
+					    !(seen[gid >> 5] & (1 << (gid & 0x1F)))) { \
+						seen[gid >> 5] |= 1 << (gid & 0x1F); \
+						prods[gid] = 1;		\
+					}				\
+					if (prods[gid] != TYPE2##_nil) { \
+						if (ABSOLUTE(vals[i]) > 1 && \
+						    GDK_##TYPE2##_max / ABSOLUTE(vals[i]) < ABSOLUTE(prods[gid])) { \
+							if (abort_on_error) \
+								goto overflow; \
+							prods[gid] = TYPE2##_nil; \
+								nils++;	\
+						} else {		\
+							prods[gid] *= vals[i]; \
+						}			\
 					}				\
 				}					\
 			}						\
