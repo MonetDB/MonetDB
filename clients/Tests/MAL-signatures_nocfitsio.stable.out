@@ -26,60 +26,116 @@ Ready.
 # 17:54:18 >  
 
 #?*)
+command aggr.avg(b:bat[:oid,:dbl],g:bat[:oid,:oid],e:bat[:oid,:any_1]) (X_4:bat[:oid,:dbl],X_5:bat[:oid,:wrd]) 
+address AGGRavg23_dbl;
+comment Grouped tail average on dbl, also returns count
+
+command aggr.avg(b:bat[:oid,:dbl],e:bat[:oid,:any_1]) (X_3:bat[:oid,:dbl],X_4:bat[:oid,:wrd]) 
+address AGGRavg22_dbl;
+comment Grouped tail average on dbl, also returns count
+
 command aggr.avg(b:bat[:oid,:dbl],g:bat[:oid,:oid],e:bat[:oid,:any_1]):bat[:oid,:dbl] 
-address AGGRavg3_dbl;
+address AGGRavg13_dbl;
 comment Grouped tail average on dbl
 
 command aggr.avg(b:bat[:oid,:dbl],e:bat[:oid,:any_1]):bat[:oid,:dbl] 
-address AGGRavg2_dbl;
+address AGGRavg12_dbl;
 comment Grouped tail average on dbl
 
+command aggr.avg(b:bat[:oid,:flt],g:bat[:oid,:oid],e:bat[:oid,:any_1]) (X_4:bat[:oid,:dbl],X_5:bat[:oid,:wrd]) 
+address AGGRavg23_dbl;
+comment Grouped tail average on flt, also returns count
+
+command aggr.avg(b:bat[:oid,:flt],e:bat[:oid,:any_1]) (X_3:bat[:oid,:dbl],X_4:bat[:oid,:wrd]) 
+address AGGRavg22_dbl;
+comment Grouped tail average on flt, also returns count
+
 command aggr.avg(b:bat[:oid,:flt],g:bat[:oid,:oid],e:bat[:oid,:any_1]):bat[:oid,:dbl] 
-address AGGRavg3_dbl;
+address AGGRavg13_dbl;
 comment Grouped tail average on flt
 
 command aggr.avg(b:bat[:oid,:flt],e:bat[:oid,:any_1]):bat[:oid,:dbl] 
-address AGGRavg2_dbl;
+address AGGRavg12_dbl;
 comment Grouped tail average on flt
 
+command aggr.avg(b:bat[:oid,:lng],g:bat[:oid,:oid],e:bat[:oid,:any_1]) (X_4:bat[:oid,:dbl],X_5:bat[:oid,:wrd]) 
+address AGGRavg23_dbl;
+comment Grouped tail average on lng, also returns count
+
+command aggr.avg(b:bat[:oid,:lng],e:bat[:oid,:any_1]) (X_3:bat[:oid,:dbl],X_4:bat[:oid,:wrd]) 
+address AGGRavg22_dbl;
+comment Grouped tail average on lng, also returns count
+
 command aggr.avg(b:bat[:oid,:lng],g:bat[:oid,:oid],e:bat[:oid,:any_1]):bat[:oid,:dbl] 
-address AGGRavg3_dbl;
+address AGGRavg13_dbl;
 comment Grouped tail average on lng
 
 command aggr.avg(b:bat[:oid,:lng],e:bat[:oid,:any_1]):bat[:oid,:dbl] 
-address AGGRavg2_dbl;
+address AGGRavg12_dbl;
 comment Grouped tail average on lng
 
+command aggr.avg(b:bat[:oid,:wrd],g:bat[:oid,:oid],e:bat[:oid,:any_1]) (X_4:bat[:oid,:dbl],X_5:bat[:oid,:wrd]) 
+address AGGRavg23_dbl;
+comment Grouped tail average on wrd, also returns count
+
+command aggr.avg(b:bat[:oid,:wrd],e:bat[:oid,:any_1]) (X_3:bat[:oid,:dbl],X_4:bat[:oid,:wrd]) 
+address AGGRavg22_dbl;
+comment Grouped tail average on wrd, also returns count
+
 command aggr.avg(b:bat[:oid,:wrd],g:bat[:oid,:oid],e:bat[:oid,:any_1]):bat[:oid,:dbl] 
-address AGGRavg3_dbl;
+address AGGRavg13_dbl;
 comment Grouped tail average on wrd
 
 command aggr.avg(b:bat[:oid,:wrd],e:bat[:oid,:any_1]):bat[:oid,:dbl] 
-address AGGRavg2_dbl;
+address AGGRavg12_dbl;
 comment Grouped tail average on wrd
 
+command aggr.avg(b:bat[:oid,:int],g:bat[:oid,:oid],e:bat[:oid,:any_1]) (X_4:bat[:oid,:dbl],X_5:bat[:oid,:wrd]) 
+address AGGRavg23_dbl;
+comment Grouped tail average on int, also returns count
+
+command aggr.avg(b:bat[:oid,:int],e:bat[:oid,:any_1]) (X_3:bat[:oid,:dbl],X_4:bat[:oid,:wrd]) 
+address AGGRavg22_dbl;
+comment Grouped tail average on int, also returns count
+
 command aggr.avg(b:bat[:oid,:int],g:bat[:oid,:oid],e:bat[:oid,:any_1]):bat[:oid,:dbl] 
-address AGGRavg3_dbl;
+address AGGRavg13_dbl;
 comment Grouped tail average on int
 
 command aggr.avg(b:bat[:oid,:int],e:bat[:oid,:any_1]):bat[:oid,:dbl] 
-address AGGRavg2_dbl;
+address AGGRavg12_dbl;
 comment Grouped tail average on int
 
+command aggr.avg(b:bat[:oid,:sht],g:bat[:oid,:oid],e:bat[:oid,:any_1]) (X_4:bat[:oid,:dbl],X_5:bat[:oid,:wrd]) 
+address AGGRavg23_dbl;
+comment Grouped tail average on sht, also returns count
+
+command aggr.avg(b:bat[:oid,:sht],e:bat[:oid,:any_1]) (X_3:bat[:oid,:dbl],X_4:bat[:oid,:wrd]) 
+address AGGRavg22_dbl;
+comment Grouped tail average on sht, also returns count
+
 command aggr.avg(b:bat[:oid,:sht],g:bat[:oid,:oid],e:bat[:oid,:any_1]):bat[:oid,:dbl] 
-address AGGRavg3_dbl;
+address AGGRavg13_dbl;
 comment Grouped tail average on sht
 
 command aggr.avg(b:bat[:oid,:sht],e:bat[:oid,:any_1]):bat[:oid,:dbl] 
-address AGGRavg2_dbl;
+address AGGRavg12_dbl;
 comment Grouped tail average on sht
 
+command aggr.avg(b:bat[:oid,:bte],g:bat[:oid,:oid],e:bat[:oid,:any_1]) (X_4:bat[:oid,:dbl],X_5:bat[:oid,:wrd]) 
+address AGGRavg23_dbl;
+comment Grouped tail average on bte, also returns count
+
+command aggr.avg(b:bat[:oid,:bte],e:bat[:oid,:any_1]) (X_3:bat[:oid,:dbl],X_4:bat[:oid,:wrd]) 
+address AGGRavg22_dbl;
+comment Grouped tail average on bte, also returns count
+
 command aggr.avg(b:bat[:oid,:bte],g:bat[:oid,:oid],e:bat[:oid,:any_1]):bat[:oid,:dbl] 
-address AGGRavg3_dbl;
+address AGGRavg13_dbl;
 comment Grouped tail average on bte
 
 command aggr.avg(b:bat[:oid,:bte],e:bat[:oid,:any_1]):bat[:oid,:dbl] 
-address AGGRavg2_dbl;
+address AGGRavg12_dbl;
 comment Grouped tail average on bte
 
 command aggr.avg(b:bat[:any_1,:dbl]):dbl 
@@ -193,62 +249,6 @@ command aggr.max(b:bat[:oid,:any_1],e:bat[:oid,:any_2]):bat[:oid,:any_1]
 address AGGRmax2;
 command aggr.min(b:bat[:oid,:any_1],e:bat[:oid,:any_2]):bat[:oid,:any_1] 
 address AGGRmin2;
-command aggr.min(b:bat[:any_1,:lng]):lng 
-address ALGmin_lng;
-comment Give the lowest tail value. 
-
-command aggr.min(b:bat[:any_1,:dbl]):dbl 
-address ALGmin_dbl;
-comment Give the lowest tail value. 
-
-command aggr.min(b:bat[:any_1,:flt]):flt 
-address ALGmin_flt;
-comment Give the lowest tail value. 
-
-command aggr.min(b:bat[:any_1,:wrd]):wrd 
-address ALGmin_wrd;
-comment Give the lowest tail value. 
-
-command aggr.min(b:bat[:any_1,:int]):int 
-address ALGmin_int;
-comment Give the lowest tail value. 
-
-command aggr.min(b:bat[:any_1,:sht]):sht 
-address ALGmin_sht;
-comment Give the lowest tail value. 
-
-command aggr.min(b:bat[:any_1,:bte]):bte 
-address ALGmin_bte;
-comment Give the lowest tail value. 
-
-command aggr.max(b:bat[:any_1,:lng]):lng 
-address ALGmax_lng;
-comment Give the highest tail value.
-
-command aggr.max(b:bat[:any_1,:dbl]):dbl 
-address ALGmax_dbl;
-comment Give the highest tail value.
-
-command aggr.max(b:bat[:any_1,:flt]):flt 
-address ALGmax_flt;
-comment Give the highest tail value.
-
-command aggr.max(b:bat[:any_1,:wrd]):wrd 
-address ALGmax_wrd;
-comment Give the highest tail value.
-
-command aggr.max(b:bat[:any_1,:int]):int 
-address ALGmax_int;
-comment Give the highest tail value.
-
-command aggr.max(b:bat[:any_1,:sht]):sht 
-address ALGmax_sht;
-comment Give the highest tail value.
-
-command aggr.max(b:bat[:any_1,:bte]):bte 
-address ALGmax_bte;
-comment Give the highest tail value.
-
 command aggr.max(b:bat[:any_1,:any_2]):any_2 
 address ALGmaxany;
 comment Return the highest tail value or nil.
@@ -873,12 +873,20 @@ command aggr.stdev(b:bat[:oid,:dbl],e:bat[:oid,:any_1]):bat[:oid,:dbl]
 address AGGRstdev2_dbl;
 comment Grouped tail standard deviation (sample/non-biased) on dbl
 
+command aggr.subavg(b:bat[:oid,:dbl],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:bit,abort_on_error:bit) (X_7:bat[:oid,:dbl],X_8:bat[:oid,:wrd]) 
+address AGGRsubavg2cand_dbl;
+comment Grouped average aggregate with candidates list, also returns count
+
+command aggr.subavg(b:bat[:oid,:dbl],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:bit,abort_on_error:bit) (X_6:bat[:oid,:dbl],X_7:bat[:oid,:wrd]) 
+address AGGRsubavg2_dbl;
+comment Grouped average aggregate, also returns count
+
 command aggr.subavg(b:bat[:oid,:dbl],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:bit,abort_on_error:bit):bat[:oid,:dbl] 
-address AGGRsubavgcand_dbl;
+address AGGRsubavg1cand_dbl;
 comment Grouped average aggregate with candidates list
 
 command aggr.subavg(b:bat[:oid,:dbl],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:bit,abort_on_error:bit):bat[:oid,:dbl] 
-address AGGRsubavg_dbl;
+address AGGRsubavg1_dbl;
 comment Grouped average aggregate
 
 command aggr.subvariancep(b:bat[:oid,:flt],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:bit,abort_on_error:bit):bat[:oid,:dbl] 
@@ -929,12 +937,20 @@ command aggr.stdev(b:bat[:oid,:flt],e:bat[:oid,:any_1]):bat[:oid,:dbl]
 address AGGRstdev2_dbl;
 comment Grouped tail standard deviation (sample/non-biased) on flt
 
+command aggr.subavg(b:bat[:oid,:flt],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:bit,abort_on_error:bit) (X_7:bat[:oid,:dbl],X_8:bat[:oid,:wrd]) 
+address AGGRsubavg2cand_dbl;
+comment Grouped average aggregate with candidates list, also returns count
+
+command aggr.subavg(b:bat[:oid,:flt],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:bit,abort_on_error:bit) (X_6:bat[:oid,:dbl],X_7:bat[:oid,:wrd]) 
+address AGGRsubavg2_dbl;
+comment Grouped average aggregate, also returns count
+
 command aggr.subavg(b:bat[:oid,:flt],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:bit,abort_on_error:bit):bat[:oid,:dbl] 
-address AGGRsubavgcand_dbl;
+address AGGRsubavg1cand_dbl;
 comment Grouped average aggregate with candidates list
 
 command aggr.subavg(b:bat[:oid,:flt],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:bit,abort_on_error:bit):bat[:oid,:dbl] 
-address AGGRsubavg_dbl;
+address AGGRsubavg1_dbl;
 comment Grouped average aggregate
 
 command aggr.subvariancep(b:bat[:oid,:lng],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:bit,abort_on_error:bit):bat[:oid,:dbl] 
@@ -985,12 +1001,20 @@ command aggr.stdev(b:bat[:oid,:lng],e:bat[:oid,:any_1]):bat[:oid,:dbl]
 address AGGRstdev2_dbl;
 comment Grouped tail standard deviation (sample/non-biased) on lng
 
+command aggr.subavg(b:bat[:oid,:lng],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:bit,abort_on_error:bit) (X_7:bat[:oid,:dbl],X_8:bat[:oid,:wrd]) 
+address AGGRsubavg2cand_dbl;
+comment Grouped average aggregate with candidates list, also returns count
+
+command aggr.subavg(b:bat[:oid,:lng],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:bit,abort_on_error:bit) (X_6:bat[:oid,:dbl],X_7:bat[:oid,:wrd]) 
+address AGGRsubavg2_dbl;
+comment Grouped average aggregate, also returns count
+
 command aggr.subavg(b:bat[:oid,:lng],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:bit,abort_on_error:bit):bat[:oid,:dbl] 
-address AGGRsubavgcand_dbl;
+address AGGRsubavg1cand_dbl;
 comment Grouped average aggregate with candidates list
 
 command aggr.subavg(b:bat[:oid,:lng],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:bit,abort_on_error:bit):bat[:oid,:dbl] 
-address AGGRsubavg_dbl;
+address AGGRsubavg1_dbl;
 comment Grouped average aggregate
 
 command aggr.subvariancep(b:bat[:oid,:wrd],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:bit,abort_on_error:bit):bat[:oid,:dbl] 
@@ -1041,12 +1065,20 @@ command aggr.stdev(b:bat[:oid,:wrd],e:bat[:oid,:any_1]):bat[:oid,:dbl]
 address AGGRstdev2_dbl;
 comment Grouped tail standard deviation (sample/non-biased) on wrd
 
+command aggr.subavg(b:bat[:oid,:wrd],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:bit,abort_on_error:bit) (X_7:bat[:oid,:dbl],X_8:bat[:oid,:wrd]) 
+address AGGRsubavg2cand_dbl;
+comment Grouped average aggregate with candidates list, also returns count
+
+command aggr.subavg(b:bat[:oid,:wrd],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:bit,abort_on_error:bit) (X_6:bat[:oid,:dbl],X_7:bat[:oid,:wrd]) 
+address AGGRsubavg2_dbl;
+comment Grouped average aggregate, also returns count
+
 command aggr.subavg(b:bat[:oid,:wrd],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:bit,abort_on_error:bit):bat[:oid,:dbl] 
-address AGGRsubavgcand_dbl;
+address AGGRsubavg1cand_dbl;
 comment Grouped average aggregate with candidates list
 
 command aggr.subavg(b:bat[:oid,:wrd],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:bit,abort_on_error:bit):bat[:oid,:dbl] 
-address AGGRsubavg_dbl;
+address AGGRsubavg1_dbl;
 comment Grouped average aggregate
 
 command aggr.subvariancep(b:bat[:oid,:int],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:bit,abort_on_error:bit):bat[:oid,:dbl] 
@@ -1097,12 +1129,20 @@ command aggr.stdev(b:bat[:oid,:int],e:bat[:oid,:any_1]):bat[:oid,:dbl]
 address AGGRstdev2_dbl;
 comment Grouped tail standard deviation (sample/non-biased) on int
 
+command aggr.subavg(b:bat[:oid,:int],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:bit,abort_on_error:bit) (X_7:bat[:oid,:dbl],X_8:bat[:oid,:wrd]) 
+address AGGRsubavg2cand_dbl;
+comment Grouped average aggregate with candidates list, also returns count
+
+command aggr.subavg(b:bat[:oid,:int],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:bit,abort_on_error:bit) (X_6:bat[:oid,:dbl],X_7:bat[:oid,:wrd]) 
+address AGGRsubavg2_dbl;
+comment Grouped average aggregate, also returns count
+
 command aggr.subavg(b:bat[:oid,:int],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:bit,abort_on_error:bit):bat[:oid,:dbl] 
-address AGGRsubavgcand_dbl;
+address AGGRsubavg1cand_dbl;
 comment Grouped average aggregate with candidates list
 
 command aggr.subavg(b:bat[:oid,:int],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:bit,abort_on_error:bit):bat[:oid,:dbl] 
-address AGGRsubavg_dbl;
+address AGGRsubavg1_dbl;
 comment Grouped average aggregate
 
 command aggr.subvariancep(b:bat[:oid,:sht],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:bit,abort_on_error:bit):bat[:oid,:dbl] 
@@ -1153,12 +1193,20 @@ command aggr.stdev(b:bat[:oid,:sht],e:bat[:oid,:any_1]):bat[:oid,:dbl]
 address AGGRstdev2_dbl;
 comment Grouped tail standard deviation (sample/non-biased) on sht
 
+command aggr.subavg(b:bat[:oid,:sht],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:bit,abort_on_error:bit) (X_7:bat[:oid,:dbl],X_8:bat[:oid,:wrd]) 
+address AGGRsubavg2cand_dbl;
+comment Grouped average aggregate with candidates list, also returns count
+
+command aggr.subavg(b:bat[:oid,:sht],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:bit,abort_on_error:bit) (X_6:bat[:oid,:dbl],X_7:bat[:oid,:wrd]) 
+address AGGRsubavg2_dbl;
+comment Grouped average aggregate, also returns count
+
 command aggr.subavg(b:bat[:oid,:sht],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:bit,abort_on_error:bit):bat[:oid,:dbl] 
-address AGGRsubavgcand_dbl;
+address AGGRsubavg1cand_dbl;
 comment Grouped average aggregate with candidates list
 
 command aggr.subavg(b:bat[:oid,:sht],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:bit,abort_on_error:bit):bat[:oid,:dbl] 
-address AGGRsubavg_dbl;
+address AGGRsubavg1_dbl;
 comment Grouped average aggregate
 
 command aggr.subvariancep(b:bat[:oid,:bte],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:bit,abort_on_error:bit):bat[:oid,:dbl] 
@@ -1209,12 +1257,20 @@ command aggr.stdev(b:bat[:oid,:bte],e:bat[:oid,:any_1]):bat[:oid,:dbl]
 address AGGRstdev2_dbl;
 comment Grouped tail standard deviation (sample/non-biased) on bte
 
+command aggr.subavg(b:bat[:oid,:bte],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:bit,abort_on_error:bit) (X_7:bat[:oid,:dbl],X_8:bat[:oid,:wrd]) 
+address AGGRsubavg2cand_dbl;
+comment Grouped average aggregate with candidates list, also returns count
+
+command aggr.subavg(b:bat[:oid,:bte],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:bit,abort_on_error:bit) (X_6:bat[:oid,:dbl],X_7:bat[:oid,:wrd]) 
+address AGGRsubavg2_dbl;
+comment Grouped average aggregate, also returns count
+
 command aggr.subavg(b:bat[:oid,:bte],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:bit,abort_on_error:bit):bat[:oid,:dbl] 
-address AGGRsubavgcand_dbl;
+address AGGRsubavg1cand_dbl;
 comment Grouped average aggregate with candidates list
 
 command aggr.subavg(b:bat[:oid,:bte],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:bit,abort_on_error:bit):bat[:oid,:dbl] 
-address AGGRsubavg_dbl;
+address AGGRsubavg1_dbl;
 comment Grouped average aggregate
 
 command aggr.subprod(b:bat[:oid,:dbl],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:bit,abort_on_error:bit):bat[:oid,:dbl] 
@@ -2331,22 +2387,10 @@ command algebra.exist(b:bat[:any_1,:any_2],h:any_1):bit
 address ALGexist;
 comment Returns whether 'h' occurs as a head value in b.
 
-command algebra.fetchjoin(left:bat[:any_1,:oid],right:bat[:oid,:any_3]):bat[:any_1,:any_3] 
-address ALGfetchjoin;
-comment Hook directly into the fetch implementation of the join.
-
 command algebra.fragment(b:bat[:any_1,:any_2],hlow:any_1,hhigh:any_1,tlow:any_2,thigh:any_2):bat[:any_1,:any_2] 
 address ALGfragment;
 comment Select both on head and tail range.
 
-command algebra.fetch(b:bat[:any_1,:any_2],s:bat[:oid,:any_3]):bat[:any_1,:any_2] 
-address ALGfetchbat;
-comment Returns a positional selection of b by the oid 	head values of s
-
-command algebra.fetch(b:bat[:any_1,:any_2],s:bat[:lng,:any_3]):bat[:any_1,:any_2] 
-address ALGfetchbat;
-command algebra.fetch(b:bat[:any_1,:any_2],s:bat[:int,:any_3]):bat[:any_1,:any_2] 
-address ALGfetchbat;
 command algebra.fetch(b:bat[:any_2,:any_1],x:int):any_1 
 address ALGfetchint;
 comment Returns the tail value of the BUN at x-th position 	with 0 <= x < b.count
@@ -2363,10 +2407,6 @@ command algebra.groupby(gids:bat[:oid,:oid],cnts:bat[:oid,:wrd]):bat[:oid,:oid]
 address ALGgroupby;
 comment Produces a new BAT with groups identified by the head column. The result contains tail times the head value, ie the tail contains the result group sizes.
 
-command algebra.hashjoin(left:bat[:any_1,:any_2],right:bat[:any_2,:any_3]):bat[:any_1,:any_3] 
-address ALGhashjoin;
-comment Hook directly into the hash implementation of the join.
-
 command algebra.ilikesubselect(s:bat[:oid,:str],pat:bat[:oid,:str],esc:str) (l:bat[:oid,:oid],r:bat[:oid,:oid]) 
 address PCREilike_join_pcre;
 function algebra.ilikesubselect(b:bat[:oid,:str],cand:bat[:oid,:oid],pat:str,esc:str,anti:bit):bat[:oid,:oid];
@@ -2377,7 +2417,7 @@ comment Hook directly into the index implementation of the join.
 
 command algebra.intersect(left:bat[:any_1,:any_2],right:bat[:any_1,:any_2]):bat[:any_1,:any_2] 
 address ALGsintersect;
-pattern algebra.joinPath(l:bat[:oid,:any]...):bat[:oid,:any] 
+pattern algebra.joinPath(l:bat[:any,:any]...):bat[:oid,:any] 
 address ALGjoinPath;
 comment Routine to handle join paths.  The type analysis is rather tricky.
 
@@ -2413,18 +2453,21 @@ command algebra.kunique(b:bat[:any_1,:any_2]):bat[:any_1,:any_2]
 address ALGkunique;
 comment Select unique tuples from the input BAT.  Double elimination is 		done only looking at the head column. The result is a BAT with		property hkeyed() == true.
 
-pattern algebra.leftfetchjoinPath(l:bat[:oid,:any]...):bat[:oid,:any] 
+pattern algebra.leftfetchjoinPath(l:bat[:any,:any]...):bat[:any,:any] 
 address ALGjoinPath;
 comment Routine to handle join paths.  The type analysis is rather tricky.
 
-pattern algebra.leftjoinPath(l:bat[:oid,:any]...):bat[:oid,:any] 
+pattern algebra.leftjoinPath(l:bat[:any,:any]...):bat[:oid,:any] 
 address ALGjoinPath;
 comment Routine to handle join paths.  The type analysis is rather tricky.
 
 command algebra.likesubselect(s:bat[:oid,:str],pat:bat[:oid,:str],esc:str) (l:bat[:oid,:oid],r:bat[:oid,:oid]) 
 address PCRElike_join_pcre;
 function algebra.likesubselect(b:bat[:oid,:str],cand:bat[:oid,:oid],pat:str,esc:str,anti:bit):bat[:oid,:oid];
-function algebra.likesubselect(b:bat[:oid,:str],pat:str,esc:str,anti:bit):bat[:oid,:oid];
+command algebra.likesubselect(b:bat[:oid,:str],pat:str,esc:str,anti:bit):bat[:oid,:oid] 
+address PCRElikesubselect3;
+comment Select all head values of the first input BAT for which the	tail value is "like" the given (SQL-style) pattern and for	which the head value occurs in the tail of the second input	BAT.	Input is a dense-headed BAT, output is a dense-headed BAT with in	the tail the head value of the input BAT for which the	relationship holds.  The output BAT is sorted on the tail value.
+
 command algebra.likesubselect(b:bat[:oid,:str],s:bat[:oid,:oid],pat:str,esc:str,caseignore:bit,anti:bit):bat[:oid,:oid] 
 address PCRElikesubselect2;
 comment Select all head values of the first input BAT for which the	tail value is "like" the given (SQL-style) pattern and for	which the head value occurs in the tail of the second input	BAT.	Input is a dense-headed BAT, output is a dense-headed BAT with in	the tail the head value of the input BAT for which the	relationship holds.  The output BAT is sorted on the tail value.
@@ -2433,7 +2476,7 @@ command algebra.likesubselect(b:bat[:oid,:str],pat:str,esc:str,caseignore:bit,an
 address PCRElikesubselect1;
 comment Select all head values for which the tail value is "like"	the given (SQL-style) pattern.	Input is a dense-headed BAT, output is a dense-headed BAT with in	the tail the head value of the input BAT for which the	relationship holds.  The output BAT is sorted on the tail value.
 
-command algebra.leftfetchjoin(left:bat[:any_1,:oid],right:bat[:oid,:any_3]):bat[:any_1,:any_3] 
+command algebra.leftfetchjoin(left:bat[:oid,:oid],right:bat[:oid,:any_3]):bat[:oid,:any_3] 
 address ALGleftfetchjoin;
 comment Hook directly into the left fetch join implementation.
 
@@ -2485,10 +2528,6 @@ command algebra.markT(b:bat[:any_1,:any_2],base:oid):bat[:any_1,:oid]
 address ALGtmark;
 comment Produces a BAT with fresh unique dense sequense of OIDs in 		the tail that starts at base (i.e. [base,..base+b.count()-1] ).
 
-command algebra.mergejoin(left:bat[:any_1,:any_2],right:bat[:any_2,:any_3]):bat[:any_1,:any_3] 
-address ALGmergejoin;
-comment Hook directly into the merge implementation of the join.
-
 command algebra.outerjoin(outer:bat[:any_1,:any_2],inner:bat[:any_2,:any_3],estimate:lng):bat[:any_1,:any_3] 
 address ALGouterjoinestimate;
 command algebra.outerjoin(outer:bat[:any_1,:oid],inner:bat[:oid,:any_3]):bat[:any_1,:any_3] 
@@ -2535,13 +2574,29 @@ command algebra.revert(b:bat[:any_1,:any_2]):bat[:any_1,:any_2]
 address ALGrevert;
 comment Returns a BAT copy with buns in reverse order
 
-pattern algebra.semijoinPath(l:bat[:oid,:any]...):bat[:oid,:any] 
+pattern algebra.semijoinPath(l:bat[:any,:any]...):bat[:any,:any] 
 address ALGjoinPath;
 comment Routine to handle join paths.  The type analysis is rather tricky.
 
 command algebra.split(b:bat[:lng,:oid]):bat[:oid,:oid] 
 address ALGsplit;
 comment Split head into two values
+
+command algebra.subthetajoin(l:bat[:oid,:any_1],r:bat[:oid,:any_1],sl:bat[:oid,:oid],sr:bat[:oid,:oid],op:str,nil_matches:bit,estimate:lng) (X_8:bat[:oid,:oid],X_9:bat[:oid,:oid]) 
+address ALGsubthetajoin;
+comment Theta join with candidate lists
+
+command algebra.subouterjoin(l:bat[:oid,:any_1],r:bat[:oid,:any_1],sl:bat[:oid,:oid],sr:bat[:oid,:oid],nil_matches:bit,estimate:lng) (X_7:bat[:oid,:oid],X_8:bat[:oid,:oid]) 
+address ALGsubouterjoin;
+comment Left outer join with candidate lists
+
+command algebra.subleftjoin(l:bat[:oid,:any_1],r:bat[:oid,:any_1],sl:bat[:oid,:oid],sr:bat[:oid,:oid],nil_matches:bit,estimate:lng) (X_7:bat[:oid,:oid],X_8:bat[:oid,:oid]) 
+address ALGsubleftjoin;
+comment Left join with candidate lists
+
+command algebra.subjoin(l:bat[:oid,:any_1],r:bat[:oid,:any_1],sl:bat[:oid,:oid],sr:bat[:oid,:oid],nil_matches:bit,estimate:lng) (X_7:bat[:oid,:oid],X_8:bat[:oid,:oid]) 
+address ALGsubjoin;
+comment Join
 
 command algebra.sunion(left:bat[:any_1,:any_2],right:bat[:any_1,:any_2]):bat[:any_1,:any_2] 
 address ALGsunion;
@@ -2630,6 +2685,10 @@ comment Returns a BAT copy reversely sorted on the head column.
 command algebra.sort(b:bat[:any_1,:any_2]):bat[:any_1,:any_2] 
 address ALGhsort;
 comment Returns a BAT copy sorted on the head column.
+
+command algebra.subsample(b:bat[:oid,:any_1],num:int):bat[:oid,:oid] 
+address ALGsubsample;
+comment Return the oids of a random selection of size 'num' from the input BAT.
 
 command algebra.sample(b:bat[:oid,:any_2],num:int):bat[:oid,:any_2] 
 address ALGsample;
@@ -2849,9 +2908,57 @@ command batsql.alpha(dec:bat[:oid,:dbl],theta:dbl):bat[:oid,:dbl]
 address SQLbat_alpha_cst;
 comment BAT implementation of astronomy alpha function
 
+command batsql.dec_round(v:bat[:oid,:dbl],r:dbl):bat[:oid,:dbl] 
+address dbl_bat_dec_round_wrap;
+comment round off the value v to nearests multiple of r
+
+command batsql.dec_round(v:bat[:oid,:flt],r:flt):bat[:oid,:flt] 
+address flt_bat_dec_round_wrap;
+comment round off the value v to nearests multiple of r
+
+command batsql.dec_round(v:bat[:oid,:lng],r:lng):bat[:oid,:lng] 
+address lng_bat_dec_round_wrap;
+comment round off the value v to nearests multiple of r
+
+command batsql.dec_round(v:bat[:oid,:int],r:int):bat[:oid,:int] 
+address int_bat_dec_round_wrap;
+comment round off the value v to nearests multiple of r
+
+command batsql.dec_round(v:bat[:oid,:sht],r:sht):bat[:oid,:sht] 
+address sht_bat_dec_round_wrap;
+comment round off the value v to nearests multiple of r
+
+command batsql.dec_round(v:bat[:oid,:bte],r:bte):bat[:oid,:bte] 
+address bte_bat_dec_round_wrap;
+comment round off the value v to nearests multiple of r
+
 pattern batsql.next_value(sname:bat[:oid,:str],sequence:str):bat[:oid,:lng] 
 address mvc_bat_next_value;
 comment return the next value of the sequence
+
+command batsql.round(v:bat[:oid,:dbl],r:bte):bat[:oid,:dbl] 
+address dbl_bat_round_wrap;
+comment round off the floating point v to r digits behind the dot (if r < 0, before the dot)
+
+command batsql.round(v:bat[:oid,:flt],r:bte):bat[:oid,:flt] 
+address flt_bat_round_wrap;
+comment round off the floating point v to r digits behind the dot (if r < 0, before the dot)
+
+command batsql.round(v:bat[:oid,:lng],d:int,s:int,r:bte):bat[:oid,:lng] 
+address lng_bat_round_wrap;
+comment round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)
+
+command batsql.round(v:bat[:oid,:int],d:int,s:int,r:bte):bat[:oid,:int] 
+address int_bat_round_wrap;
+comment round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)
+
+command batsql.round(v:bat[:oid,:sht],d:int,s:int,r:bte):bat[:oid,:sht] 
+address sht_bat_round_wrap;
+comment round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)
+
+command batsql.round(v:bat[:oid,:bte],d:int,s:int,r:bte):bat[:oid,:bte] 
+address bte_bat_round_wrap;
+comment round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)
 
 command batgeom.point(x:bat[:oid,:dbl],y:bat[:oid,:dbl]):bat[:oid,:wkb] 
 address wkbcreatepoint_bat;
@@ -7229,17 +7336,29 @@ pattern batcalc.*(b1:bat[:oid,:bte],b2:bat[:oid,:bte]):bat[:oid,:sht]
 address CMDbatMULenlarge;
 comment Return B1 * B2, guarantee no overflow by returning larger type
 
-command batcalc.+(l:str,r:bat[:oid,:str]):bat[:oid,:str] 
-address STRcstConcatbat;
-comment Concatenate two strings.
+pattern batcalc.+(v:str,b:bat[:oid,:str],s:bat[:oid,:oid]):bat[:oid,:str] 
+address CMDbatADD;
+comment Return concatenation of V and B with candidates list
 
-command batcalc.+(l:bat[:oid,:str],r:str):bat[:oid,:str] 
-address STRbatConcatcst;
-comment Concatenate a string to a bat of strings.
+pattern batcalc.+(v:str,b:bat[:oid,:str]):bat[:oid,:str] 
+address CMDbatADD;
+comment Return concatenation of V and B
 
-command batcalc.+(l:bat[:oid,:str],r:bat[:oid,:str]):bat[:oid,:str] 
-address STRbatConcat;
-comment Concatenate two strings.
+pattern batcalc.+(b:bat[:oid,:str],v:str,s:bat[:oid,:oid]):bat[:oid,:str] 
+address CMDbatADD;
+comment Return concatenation of B and V with candidates list
+
+pattern batcalc.+(b:bat[:oid,:str],v:str):bat[:oid,:str] 
+address CMDbatADD;
+comment Return concatenation of B and V
+
+pattern batcalc.+(b1:bat[:oid,:str],b2:bat[:oid,:str],s:bat[:oid,:oid]):bat[:oid,:str] 
+address CMDbatADD;
+comment Return concatenation of B1 and B2 with candidates list
+
+pattern batcalc.+(b1:bat[:oid,:str],b2:bat[:oid,:str]):bat[:oid,:str] 
+address CMDbatADD;
+comment Return concatenation of B1 and B2
 
 pattern batcalc.+(v:dbl,b:bat[:oid,:dbl],s:bat[:oid,:oid]):bat[:oid,:dbl] 
 address CMDbatADDsignal;
@@ -32114,8 +32233,6 @@ command blob.blob(s:blob):blob
 address BLOBblob_blob;
 comment Noop routine.
 
-command blob.#convert():void 
-address BLOBconvert;
 command blob.#del():void 
 address BLOBdel;
 command blob.#fromstr():void 
@@ -34556,6 +34673,10 @@ pattern calc.==(v:date,w:date):bit
 address CMDvarEQ;
 comment Equality of two dates
 
+command calc.==(l:uuid,r:uuid):bit 
+address UUIDequal;
+comment Compare two UUID values for equality
+
 pattern calc.==(v1:dbl,v2:dbl):bit 
 address CMDvarEQ;
 comment Return V1 == V2
@@ -36599,6 +36720,10 @@ pattern calc.int(v:void):int
 address CMDvarCONVERT;
 comment Cast VALUE to int
 
+pattern calc.isnotnil(v:BAT):bit 
+address CMDvarISNOTNIL;
+comment Unary check for notnil of V
+
 pattern calc.isnotnil(v:str):bit 
 address CMDvarISNOTNIL;
 comment Unary check for notnil of V
@@ -36642,6 +36767,10 @@ comment Unary check for notnil of V
 pattern calc.isnotnil(v:void):bit 
 address CMDvarISNOTNIL;
 comment Unary check for notnil of V
+
+pattern calc.isnil(v:BAT):bit 
+address CMDvarISNIL;
+comment Unary check for nil of V
 
 pattern calc.isnil(v:str):bit 
 address CMDvarISNIL;
@@ -36714,6 +36843,10 @@ comment Unary check for zero of V
 pattern calc.iszero(v:bte):bit 
 address CMDvarISZERO;
 comment Unary check for zero of V
+
+command calc.json(j:str):json 
+address JSONstr2json;
+comment Convert string to its JSON. Dealing with escape characters
 
 command calc.lng(s1:int,v:lng,d2:int,s2:int):lng 
 address lng_dec2dec_lng;
@@ -38290,6 +38423,14 @@ command calc.timestamp(t:timestamp):timestamp
 address MTIMEtimestamp2timestamp;
 command calc.timestamp(s:str):timestamp 
 address MTIMEtimestamp_fromstr;
+command calc.uuid(s:uuid):str 
+address UUIDuuid2str;
+comment Coerce a uuid to a string type
+
+command calc.uuid(s:str):uuid 
+address UUIDstr2uuid;
+comment Coerce a string to a uuid, validating its format
+
 command calc.url(s:url):url 
 address URLnoop;
 comment Create an URL from a string literal
@@ -38574,13 +38715,13 @@ pattern clients.getUsername():str
 address CLTgetUsername;
 comment Return the username of the currently logged in user
 
-pattern clients.getTimeout() (q:int,s:int) 
+pattern clients.getTimeout() (q:lng,s:lng) 
 address CLTgetTimeout;
-comment A query is aborted after q seconds (q=0 means run undisturbed).The session timeout aborts the connection after spending toomany seconds on query processing.
+comment A query is aborted after q milliseconds (q=0 means run undisturbed).The session timeout aborts the connection after spending toomany seconds on query processing.
 
 command clients.getUsers():bat[:oid,:str] 
 address CLTusers;
-comment Pseudo bat of users logged in.
+comment Pseudo bat of users id and name.
 
 command clients.getTime():bat[:oid,:lng] 
 address CLTTime;
@@ -38594,9 +38735,9 @@ command clients.getLastCommand():bat[:oid,:str]
 address CLTLastCommand;
 comment Pseudo bat of client's last command time.
 
-command clients.getLogins():bat[:oid,:str] 
+command clients.getLogins() (user:bat[:oid,:oid],start:bat[:oid,:str]) 
 address CLTLogin;
-comment Pseudo bat of client login time.
+comment Pseudo bat of client id and login time.
 
 pattern clients.getScenario():str 
 address CLTgetScenario;
@@ -38646,9 +38787,17 @@ command clients.shutdown(forced:bit):void
 address CLTshutdown;
 comment Close all client connections. If forced=false theclients are moved into FINISHING mode, which means thatthe process stops at the next cycle of the scenario.If forced=true all client processes are immediately killed
 
-pattern clients.setTimeout(q:int,s:int):void 
+pattern clients.setTimeout(q:lng,s:lng):void 
 address CLTsetTimeout;
 comment Abort a query after q seconds (q=0 means run undisturbed).The session timeout aborts the connection after spending toomany seconds on query processing.
+
+pattern clients.settimeout(n:lng):void 
+address CLTsetTimeout;
+comment Abort a query after  n seconds.
+
+pattern clients.setsession(n:lng):void 
+address CLTsetSessionTimeout;
+comment Abort a session after  n seconds.
 
 pattern clients.suspend(id:int):void 
 address CLTsuspend;
@@ -39068,183 +39217,9 @@ command geom.point(x:dbl,y:dbl):wkb
 address wkbcreatepoint;
 comment Construct a point from two geometries
 
-command group.avg(b:bat[:any_2,:oid],e:bat[:any_2,:any_1]):bat[:any_2,:oid] 
-address GRPavg_oid;
-comment grouped tail average
-
-command group.avg(b:bat[:any_2,:dbl],e:bat[:any_2,:any_1]):bat[:any_2,:dbl] 
-address GRPavg_dbl;
-comment grouped tail average
-
-command group.avg(b:bat[:any_2,:flt],e:bat[:any_2,:any_1]):bat[:any_2,:flt] 
-address GRPavg_flt;
-comment grouped tail average
-
-command group.avg(b:bat[:any_2,:wrd],e:bat[:any_2,:any_1]):bat[:any_2,:wrd] 
-address GRPavg_wrd;
-comment grouped tail average
-
-command group.avg(b:bat[:any_2,:lng],e:bat[:any_2,:any_1]):bat[:any_2,:lng] 
-address GRPavg_lng;
-comment grouped tail average
-
-command group.avg(b:bat[:any_2,:int],e:bat[:any_2,:any_1]):bat[:any_2,:int] 
-address GRPavg_int;
-comment grouped tail average
-
-command group.avg(b:bat[:any_2,:sht],e:bat[:any_2,:any_1]):bat[:any_2,:sht] 
-address GRPavg_sht;
-comment grouped tail average
-
-command group.avg(b:bat[:any_2,:bte],e:bat[:any_2,:any_1]):bat[:any_2,:bte] 
-address GRPavg_bte;
-comment grouped tail average
-
-command group.count(b:bat[:any_2,:any_1],e:bat[:any_2,:any_3],nonils:bit):bat[:any_2,:wrd] 
-address GRPaggr_count;
-comment Grouped count
-
-command group.done(histo:bat[:void,:wrd],map:bat[:void,:oid],a:bat[:oid,:any_2]) (hist:bat[:oid,:wrd],grp:bat[:oid,:oid]) 
-address GRPderive;
-command group.done(hist:bat[:any_1,:wrd],map:bat[:any_1,:oid],a:bat[:any_1,:any_2]) (histo:bat[:any_1,:wrd],grp:bat[:any_1,:oid]) 
-address GRPderive;
-command group.derive(histo:bat[:void,:wrd],map:bat[:void,:oid],a:bat[:oid,:any_2]) (hist:bat[:oid,:wrd],grp:bat[:oid,:oid]) 
-address GRPderive;
-command group.derive(hist:bat[:any_1,:wrd],map:bat[:any_1,:oid],a:bat[:any_1,:any_2]) (histo:bat[:any_1,:wrd],grp:bat[:any_1,:oid]) 
-address GRPderive;
-comment Cross tabulation group extension step.  Returned head values are 		identical as in 'ct'. Tail values are from the same domain and 		indicate further refinement of the groups in 'ct', taking into 		account also the tail-values in 'attr'.
-
-command group.done(attr:bat[:any_1,:any_2]) (histo:bat[:any_1,:wrd],grp:bat[:any_1,:oid]) 
-address GRPgroup;
-command group.done(attr:bat[:any_1,:any_2]) (histo:bat[:any_1,:wrd],grp:bat[:any_1,:void]) 
-address GRPgroup;
 pattern group.multicolumns(l:bat[:oid,:any]...) (ref:bat[:oid,:oid],grp:bat[:oid,:any],ext:bat[:oid,:any]) 
 address GRPmulticolumngroup;
 comment Derive a group index over multiple columns.
-
-command group.max(b:bat[:any_2,:any_1],e:bat[:any_2,:any_3]):bat[:any_2,:any_1] 
-address GRPmax;
-comment Grouped tail maximum
-
-command group.min(b:bat[:any_2,:any_1],e:bat[:any_2,:any_3]):bat[:any_2,:any_1] 
-address GRPmin;
-comment Grouped tail minimum
-
-command group.new(attr:bat[:any_1,:any_2]) (histo:bat[:any_1,:wrd],grp:bat[:any_1,:oid]) 
-address GRPgroup;
-command group.new(attr:bat[:any_1,:any_2]) (histo:bat[:any_1,:wrd],grp:bat[:any_1,:void]) 
-address GRPgroup;
-command group.refine_reverse(b:bat[:any_2,:any_3],a:bat[:any_2,:any_1]):bat[:any_2,:oid] 
-address GRPrefine_rev;
-comment refine the ordering of a tail-ordered BAT by sub-ordering on the 		values of a second bat 'a' (where the heads of a and b match 1-1).		The effect of this is similar to (hash-based) GRPderive, with the 		distinction that the group ids respect the ordering of the group 		values.
-
-command group.refine(b:bat[:void,:any_3],a:bat[:oid,:any_1]):bat[:oid,:oid] 
-address GRPrefine;
-command group.refine(b:bat[:oid,:any_3],a:bat[:void,:any_1]):bat[:oid,:oid] 
-address GRPrefine;
-command group.refine(b:bat[:any_2,:any_3],a:bat[:any_2,:any_1]):bat[:any_2,:oid] 
-address GRPrefine;
-comment refine the ordering of a tail-ordered BAT by sub-ordering on the 		values of a second bat 'a' (where the heads of a and b match 1-1).		The effect of this is similar to (hash-based) GRPderive, with the 		distinction that the group ids respect the ordering of the group 		values.
-
-command group.size(b:bat[:any_2,:bit],e:bat[:any_2,:any_1]):bat[:any_2,:wrd] 
-address GRPsize;
-comment Grouped count of true values
-
-command group.sum(b:bat[:any_2,:oid],size:int,shift:int):bat[:any_2,:oid] 
-address GRPslidingsum_oid;
-comment Tail sum of groups of a sliding window of fixed size
-
-command group.sum(b:bat[:any_2,:oid],size:int):bat[:any_2,:oid] 
-address GRPwindowsum_oid;
-comment Tail sum of groups of a fixed size
-
-command group.sum(b:bat[:any_2,:oid],e:bat[:any_2,:any_1]):bat[:any_2,:oid] 
-address GRPsum_oid_oid;
-comment grouped tail sum
-
-command group.sum(b:bat[:any_2,:dbl],size:int,shift:int):bat[:any_2,:dbl] 
-address GRPslidingsum_dbl;
-comment Tail sum of groups of a sliding window of fixed size
-
-command group.sum(b:bat[:any_2,:dbl],size:int):bat[:any_2,:dbl] 
-address GRPwindowsum_dbl;
-comment Tail sum of groups of a fixed size
-
-command group.sum(b:bat[:any_2,:dbl],e:bat[:any_2,:any_1]):bat[:any_2,:dbl] 
-address GRPsum_dbl_dbl;
-comment grouped tail sum
-
-command group.sum(b:bat[:any_2,:flt],size:int,shift:int):bat[:any_2,:flt] 
-address GRPslidingsum_flt;
-comment Tail sum of groups of a sliding window of fixed size
-
-command group.sum(b:bat[:any_2,:flt],size:int):bat[:any_2,:flt] 
-address GRPwindowsum_flt;
-comment Tail sum of groups of a fixed size
-
-command group.sum(b:bat[:any_2,:flt],e:bat[:any_2,:any_1]):bat[:any_2,:flt] 
-address GRPsum_flt_flt;
-comment grouped tail sum
-
-command group.sum(b:bat[:any_2,:wrd],size:int,shift:int):bat[:any_2,:wrd] 
-address GRPslidingsum_wrd;
-comment Tail sum of groups of a sliding window of fixed size
-
-command group.sum(b:bat[:any_2,:wrd],size:int):bat[:any_2,:wrd] 
-address GRPwindowsum_wrd;
-comment Tail sum of groups of a fixed size
-
-command group.sum(b:bat[:any_2,:wrd],e:bat[:any_2,:any_1]):bat[:any_2,:wrd] 
-address GRPsum_wrd_wrd;
-comment grouped tail sum
-
-command group.sum(b:bat[:any_2,:lng],size:int,shift:int):bat[:any_2,:lng] 
-address GRPslidingsum_lng;
-comment Tail sum of groups of a sliding window of fixed size
-
-command group.sum(b:bat[:any_2,:lng],size:int):bat[:any_2,:lng] 
-address GRPwindowsum_lng;
-comment Tail sum of groups of a fixed size
-
-command group.sum(b:bat[:any_2,:lng],e:bat[:any_2,:any_1]):bat[:any_2,:lng] 
-address GRPsum_lng_lng;
-comment grouped tail sum
-
-command group.sum(b:bat[:any_2,:int],size:int,shift:int):bat[:any_2,:int] 
-address GRPslidingsum_int;
-comment Tail sum of groups of a sliding window of fixed size
-
-command group.sum(b:bat[:any_2,:int],size:int):bat[:any_2,:int] 
-address GRPwindowsum_int;
-comment Tail sum of groups of a fixed size
-
-command group.sum(b:bat[:any_2,:int],e:bat[:any_2,:any_1]):bat[:any_2,:int] 
-address GRPsum_int_int;
-comment grouped tail sum
-
-command group.sum(b:bat[:any_2,:sht],size:int,shift:int):bat[:any_2,:sht] 
-address GRPslidingsum_sht;
-comment Tail sum of groups of a sliding window of fixed size
-
-command group.sum(b:bat[:any_2,:sht],size:int):bat[:any_2,:sht] 
-address GRPwindowsum_sht;
-comment Tail sum of groups of a fixed size
-
-command group.sum(b:bat[:any_2,:sht],e:bat[:any_2,:any_1]):bat[:any_2,:sht] 
-address GRPsum_sht_sht;
-comment grouped tail sum
-
-command group.sum(b:bat[:any_2,:bte],size:int,shift:int):bat[:any_2,:bte] 
-address GRPslidingsum_bte;
-comment Tail sum of groups of a sliding window of fixed size
-
-command group.sum(b:bat[:any_2,:bte],size:int):bat[:any_2,:bte] 
-address GRPwindowsum_bte;
-comment Tail sum of groups of a fixed size
-
-command group.sum(b:bat[:any_2,:bte],e:bat[:any_2,:any_1]):bat[:any_2,:bte] 
-address GRPsum_bte_bte;
-comment grouped tail sum
 
 command group.subgroupdone(b:bat[:oid,:any_1],g:bat[:oid,:oid],e:bat[:oid,:oid],h:bat[:oid,:wrd]) (groups:bat[:oid,:oid],extents:bat[:oid,:oid],histo:bat[:oid,:wrd]) 
 address GRPsubgroup4;
@@ -39258,38 +39233,6 @@ command group.subgroup(b:bat[:oid,:any_1],g:bat[:oid,:oid]) (groups:bat[:oid,:oi
 address GRPsubgroup2;
 command group.subgroup(b:bat[:oid,:any_1]) (groups:bat[:oid,:oid],extents:bat[:oid,:oid],histo:bat[:oid,:wrd]) 
 address GRPsubgroup1;
-command group.variance(b:bat[:any_2,:oid],e:bat[:any_2,:any_1]):bat[:any_2,:oid] 
-address GRPvar_oid;
-comment grouped tail variance
-
-command group.variance(b:bat[:any_2,:dbl],e:bat[:any_2,:any_1]):bat[:any_2,:dbl] 
-address GRPvar_dbl;
-comment grouped tail variance
-
-command group.variance(b:bat[:any_2,:flt],e:bat[:any_2,:any_1]):bat[:any_2,:flt] 
-address GRPvar_flt;
-comment grouped tail variance
-
-command group.variance(b:bat[:any_2,:wrd],e:bat[:any_2,:any_1]):bat[:any_2,:wrd] 
-address GRPvar_wrd;
-comment grouped tail variance
-
-command group.variance(b:bat[:any_2,:lng],e:bat[:any_2,:any_1]):bat[:any_2,:lng] 
-address GRPvar_lng;
-comment grouped tail variance
-
-command group.variance(b:bat[:any_2,:int],e:bat[:any_2,:any_1]):bat[:any_2,:int] 
-address GRPvar_int;
-comment grouped tail variance
-
-command group.variance(b:bat[:any_2,:sht],e:bat[:any_2,:any_1]):bat[:any_2,:sht] 
-address GRPvar_sht;
-comment grouped tail variance
-
-command group.variance(b:bat[:any_2,:bte],e:bat[:any_2,:any_1]):bat[:any_2,:bte] 
-address GRPvar_bte;
-comment grouped tail variance
-
 command identifier.#fromstr():void 
 address IDfromString;
 comment Convert a string to an identifier without any check
@@ -39666,19 +39609,95 @@ command json.exportResult(o:streams,kind:bat[:oid,:bte],string:bat[:oid,:str],in
 address JSONexportResult;
 comment Serialise the given JSON pointer into JSON format, respecting the MAPI protocol
 
+command json.filter(name:json,i:int):json 
+address JSONfilterArray;
+comment Extract a single element from an array
+
+command json.filterall(name:json,s:str):json 
+address JSONfilterObjectAll;
+comment Filter the members of an object by name
+
+command json.filter(name:json,s:str):json 
+address JSONfilterObject;
+comment Filter the members of an object by name
+
+command json.#fromstr():json 
+address JSONfromString;
+comment Validate a string to be JSON compliant. A NOOP if valid json, NULL otherwise.
+
+command json.isvalidarray(val:json):bit 
+address JSONisarray;
+comment Validate the string as a valid JSON array
+
+command json.isvalidobject(val:json):bit 
+address JSONisobject;
+comment Validate the string as a valid JSON object
+
+command json.isvalid(val:str):bit 
+address JSONisvalid;
+comment Validate the string as a valid JSON document
+
 command json.load(nme:str) (kind:bat[:oid,:bte],string:bat[:oid,:str],integer:bat[:oid,:lng],double:bat[:oid,:dbl],array:bat[:oid,:oid],object:bat[:oid,:oid],name:bat[:oid,:str]) 
 address JSONload;
 comment Load the JSON object name from the database
 
+command json.length(val:json):int 
+address JSONlength;
+comment Returns the number of elements in the outermost JSON object.
+
 command json.nextid(kind:bat[:oid,:bte]):oid 
 address JSONnextid;
 comment Returns the next free id for the kind BAT
+
+command json.names(val:json):bat[:oid,:str] 
+address JSONnames;
+comment Expands the outermost JSON object names.
+
+pattern json.nest(k:bat[:oid,:dbl]):json 
+address JSONnest;
+comment Combine the value list into a single json array object.
+
+pattern json.nest(k:bat[:oid,:flt]):json 
+address JSONnest;
+pattern json.nest(k:bat[:oid,:lng]):json 
+address JSONnest;
+pattern json.nest(k:bat[:oid,:int]):json 
+address JSONnest;
+pattern json.nest(k:bat[:oid,:sht]):json 
+address JSONnest;
+pattern json.nest(k:bat[:oid,:str]):json 
+address JSONnest;
+pattern json.nest(k:bat[:oid,:str],v:bat[:oid,:any]):json 
+address JSONnest;
+comment Combine the key-value pairs into a single json object list.
+
+pattern json.nest(o:bat[:oid,:oid],k:bat[:oid,:str],v:bat[:oid,:any]):json 
+address JSONnest;
+comment Nest the key-value pairs with object identity into a list of JSON objects 
+
+command json.new(j:str):json 
+address JSONstr2json;
+comment Convert string to its JSON. Dealing with escape characters
 
 function json.print(o:streams,kind:bat[:oid,:bte],string:bat[:oid,:str],integer:bat[:oid,:lng],double:bat[:oid,:dbl],array:bat[:oid,:oid],object:bat[:oid,:oid],name:bat[:oid,:str]):void;
 command json.print(o:streams,kind:bat[:oid,:bte],string:bat[:oid,:str],integer:bat[:oid,:lng],double:bat[:oid,:dbl],array:bat[:oid,:oid],object:bat[:oid,:oid],name:bat[:oid,:str],start:oid,pretty:bit):void 
 address JSONprint;
 comment Serialise the given JSON pointer into JSON format
 
+command json.path(js:json,e:str):json 
+address JSONpath;
+comment Simple JSON path accessor
+
+command json.prelude():void 
+address JSONprelude;
+command json.resultSet(u:bat[:oid,:uuid],rev:bat[:oid,:lng],js:bat[:oid,:json]):json 
+address JSONresultSet;
+comment Converts the json store into a single json string:
+
+pattern json.renderarray(val:any...):json 
+address JSONrenderarray;
+pattern json.renderobject(val:any...):json 
+address JSONrenderobject;
 command json.store(nme:str,kind:bat[:oid,:bte],string:bat[:oid,:str],integer:bat[:oid,:lng],double:bat[:oid,:dbl],array:bat[:oid,:oid],object:bat[:oid,:oid],name:bat[:oid,:str]):void 
 address JSONstore;
 comment Store the JSON object in the database as name
@@ -39691,6 +39710,18 @@ command json.shred(json:str) (kind:bat[:oid,:bte],string:bat[:oid,:str],integer:
 address JSONshred;
 comment Parse the given JSON object into internal shredded representation
 
+command json.str(j:json):str 
+address JSONjson2str;
+comment Convert JSON to its string equivalent. Dealing with escape characters
+
+command json.text(js:json,e:str):str 
+address JSONtext;
+comment Simple JSON path accessor, returning the concatenated string
+
+command json.#tostr():str 
+address JSONtoString;
+comment Convert JSON to its string equivalent. Dealing with escape characters
+
 pattern json.unwrap(kind:bat[:oid,:bte],string:bat[:oid,:str],integer:bat[:oid,:lng],double:bat[:oid,:dbl],array:bat[:oid,:oid],object:bat[:oid,:oid],name:bat[:oid,:str],arrid:oid,tpe:any_1):bat[:oid,:any_1] 
 address JSONunwrap;
 comment Return the JSON array with oid arrid elements as BAT with tail type tpe performing the necessary casts
@@ -39698,6 +39729,22 @@ comment Return the JSON array with oid arrid elements as BAT with tail type tpe 
 pattern json.unwraptype(kind:bat[:oid,:bte],string:bat[:oid,:str],integer:bat[:oid,:lng],double:bat[:oid,:dbl],array:bat[:oid,:oid],object:bat[:oid,:oid],name:bat[:oid,:str],arrid:oid):str 
 address JSONunwrap;
 comment Retrieve the type necessary to unwrap the given JSON array to
+
+command json.unnest(val:json):bat[:oid,:json] 
+address JSONunnestOne;
+comment Expands a JSON list to its elements.
+
+command json.unnest(val:json) (k:bat[:oid,:str],v:bat[:oid,:json]) 
+address JSONunnest;
+comment Expands the outermost JSON object into key-value pairs.
+
+command json.unnest(val:json) (o:bat[:oid,:oid],k:bat[:oid,:str],v:bat[:oid,:json]) 
+address JSONunnestGrouped;
+comment Expands the outermost JSON object into key-value pairs with object identity.
+
+command json.values(val:json):bat[:oid,:json] 
+address JSONvalues;
+comment Expands the outermost JSON values.
 
 command json.wrap(elems:bat[:oid,:any]) (kind:bat[:oid,:bte],string:bat[:oid,:str],integer:bat[:oid,:lng],double:bat[:oid,:dbl],array:bat[:oid,:oid],object:bat[:oid,:oid],name:bat[:oid,:str]) 
 address JSONwrap;
@@ -39723,6 +39770,8 @@ pattern language.call(s:bat[:oid,:str]):void
 address CMDcallBAT;
 comment Evaluate a program stored in a BAT.
 
+pattern language.call(m:str,f:str):void 
+address CMDcallFunction;
 pattern language.call(s:str):void 
 address CMDcallString;
 comment Evaluate a MAL string program.
@@ -39731,7 +39780,7 @@ pattern language.dataflow():bit
 address MALstartDataflow;
 comment The current guarded block is executed using dataflow control. 
 
-pattern language.pass(v:any_1):any_1 
+pattern language.pass(v:any_1):void 
 address MALpass;
 comment Cheap instruction to disgard storage while retaining the dataflow dependency
 
@@ -39742,22 +39791,6 @@ comment Compile the code string to MAL and register it as a function.
 command language.raise(msg:str):str 
 address CMDraise;
 comment Raise an exception labeled 	with a specific message.
-
-pattern language.setIOTrace(flg:bit):void 
-address CMDsetIOTrace;
-comment Set the flag to trace the IO
-
-pattern language.setTimerTrace(flg:bit):void 
-address CMDsetTimerTrace;
-comment Set the flag to trace the execution time
-
-pattern language.setThreadTrace(flg:bit):void 
-address CMDsetThreadTrace;
-comment Set the flag to trace the interpreter threads
-
-pattern language.setMemoryTrace(flg:bit):void 
-address CMDsetMemoryTrace;
-comment Set the flag to trace the memory footprint
 
 pattern language.sink(v:any...):void 
 address MALgarbagesink;
@@ -39816,6 +39849,8 @@ address LSSTxmatch;
 comment Return the HtmID pairs that lie within the same triangle at level depth
 
 pattern mal.multiplex(a:any...):any 
+address OPTremapMultiplex;
+pattern mal.multiplex(a:any...):any... 
 address OPTremapMultiplex;
 command mapreduce.getCloud(nme:str):bat[:oid,:str] 
 address MRgetCloud;
@@ -40063,6 +40098,10 @@ command mat.info(g:str,e:str):bat[:oid,:any_2]
 address MATinfo;
 comment retrieve the definition from the partition catalogue
 
+pattern mat.mergepack(b:bat[:oid,:oid]...):bat[:oid,:oid] 
+address MATmergepack;
+comment Merge multiple candidate lists 
+
 pattern mat.newIterator(grp:bat[:oid,:any_2]...):bat[:oid,:any_2] 
 address MATnewIterator;
 comment Create an iterator over a MAT
@@ -40101,14 +40140,6 @@ pattern mat.pack(X_1:any_2...):bat[:oid,:any_2]
 address MATpackValues;
 comment Materialize the MAT (of values) into a BAT
 
-pattern mat.refine_reverse(sorted:bat[:oid,:any_2],map:bat[:oid,:bte],b:bat[:oid,:any_3]...) (rsorted:bat[:oid,:oid],rmap:bat[:oid,:bte]) 
-address MATrefineReverse;
-comment refine map.
-
-pattern mat.refine(sorted:bat[:oid,:any_2],map:bat[:oid,:bte],b:bat[:oid,:any_3]...) (rsorted:bat[:oid,:oid],rmap:bat[:oid,:bte]) 
-address MATrefine;
-comment refine map.
-
 pattern mat.sortReverseTail(b:bat[:oid,:any_2]...) (sorted:bat[:oid,:any_2],map:bat[:oid,:bte]) 
 address MATsortReverseTail;
 comment Returns a BAT copy sorted on the head column.
@@ -40145,6 +40176,22 @@ command mbr.#tostr():str
 address mbrTOSTR;
 command mbr.#write():void 
 address mbrWRITE;
+command mcurl.deleterequest(s:str):str 
+address CURLdeleteRequest;
+comment Perform a http delete request
+
+command mcurl.getrequest(s:str):str 
+address CURLgetRequest;
+comment Perform a http get request
+
+command mcurl.postrequest(s:str):str 
+address CURLpostRequest;
+comment Perform a http post request
+
+command mcurl.putrequest(s:str):str 
+address CURLputRequest;
+comment Perform a http put request
+
 pattern mdb.List(M:str,F:str):void 
 address MDBlist3Detail;
 comment Dump the routine M.F on standard out.
@@ -40236,34 +40283,6 @@ comment Set the kernel debugging bit-set and return its previous value.
 command mdb.setDebug(flg:str):int 
 address MDBsetDebugStr;
 comment Set the kernel debugging bit-set and return its previous value.The recognized options are: threads, memory, properties,io, transactions, modules, algorithms, estimates, xproperties.
-
-pattern mdb.setCount(b:bit):void 
-address MDBsetCount;
-comment Turn on/off bat count statistics tracing
-
-pattern mdb.setIO(b:bit):void 
-address MDBsetIO;
-comment Turn on/off io statistics tracing
-
-pattern mdb.setMemory(b:bit):void 
-address MDBsetMemory;
-comment Turn on/off memory statistics tracing.
-
-pattern mdb.setFlow(b:bit):void 
-address MDBsetFlow;
-comment Turn on/off memory flow debugger
-
-pattern mdb.setMemoryTrace(b:bit):void 
-address MDBsetBigfoot;
-comment Turn on/off memory foot print tracer for debugger
-
-pattern mdb.setTimer(b:bit):void 
-address MDBsetTimer;
-comment Turn on/off performance timer for debugger
-
-pattern mdb.setThread(b:bit):void 
-address MDBsetThread;
-comment Turn on/off thread identity for debugger
 
 pattern mdb.setCatch(b:bit):void 
 address MDBsetCatch;
@@ -40865,8 +40884,6 @@ function octopus.bind(conn:str,sch:str,tab:str,col:str,kind:int,part_nr:int,nr_p
 function octopus.bind(mvc:int,sch:str,tab:str,col:str,kind:int,part_nr:int,nr_parts:int,version:int):bat[:oid,:any_1];
 function octopus.bind_idxbat(conn:str,sch:str,tab:str,index:str,access:int,version:int):bat[:oid,:oid];
 function octopus.bind_idxbat(mvc:int,sch:str,tab:str,index:str,access:int,version:int):bat[:oid,:oid];
-function octopus.bind_dbat(conn:str,sch:str,tab:str,access:int,version:int):bat[:oid,:oid];
-function octopus.bind_dbat(mvc:int,sch:str,tab:str,access:int,version:int):bat[:oid,:oid];
 function octopus.bind(conn:str,sch:str,tab:str,col:str,kind:int,version:int):bat[:oid,:any_1];
 function octopus.bind(mvc:int,sch:str,tab:str,col:str,kind:int,version:int):bat[:oid,:any_1];
 command octopus.connect(dbname:str):str 
@@ -40949,10 +40966,12 @@ comment Modify the plan to exploit parallel processing on multiple cores
 
 pattern optimizer.centipede():str 
 address OPTwrapper;
-pattern optimizer.dumpQEP():void 
+pattern optimizer.dumpQEP(mod:str,fcn:str):str 
 address OPTwrapper;
 comment Produce an indented tree visualisation
 
+pattern optimizer.dumpQEP():void 
+address OPTwrapper;
 pattern optimizer.dictionary(mod:str,fcn:str):str 
 address OPTwrapper;
 pattern optimizer.dictionary():str 
@@ -41011,17 +41030,17 @@ comment Garbage collector optimizer
 
 pattern optimizer.garbageCollector():str 
 address OPTwrapper;
-pattern optimizer.history(mod:str,fcn:str):str 
-address OPTwrapper;
-comment Collect SQL query statistics
-
-pattern optimizer.history():str 
-address OPTwrapper;
 pattern optimizer.inline(mod:str,fcn:str):str 
 address OPTwrapper;
 comment Expand inline functions
 
 pattern optimizer.inline():str 
+address OPTwrapper;
+pattern optimizer.json(mod:str,fcn:str):str 
+address OPTwrapper;
+comment Unroll the mat.pack operation
+
+pattern optimizer.json():str 
 address OPTwrapper;
 pattern optimizer.joinselect(mod:str,fcn:str):str 
 address OPTwrapper;
@@ -41127,6 +41146,12 @@ pattern optimizer.prelude():void
 address optimizer_prelude;
 comment Initialize the optimizer
 
+pattern optimizer.querylog(mod:str,fcn:str):str 
+address OPTwrapper;
+comment Collect SQL query statistics
+
+pattern optimizer.querylog():str 
+address OPTwrapper;
 pattern optimizer.reorder(mod:str,fcn:str):str 
 address OPTwrapper;
 comment Reorder by dataflow dependencies
@@ -41151,11 +41176,11 @@ comment Reduce the stack space claims
 
 pattern optimizer.reduce():str 
 address OPTwrapper;
-pattern optimizer.recycle(mod:str,fcn:str):str 
+pattern optimizer.recycler(mod:str,fcn:str):str 
 address OPTwrapper;
 comment Recycler marking and code injection
 
-pattern optimizer.recycle():str 
+pattern optimizer.recycler():str 
 address OPTwrapper;
 pattern optimizer.sql_append(mod:str,fcn:str):str 
 address OPTsql_append;
@@ -41520,6 +41545,14 @@ pattern profiler.activate(name:str...):void
 address CMDactivateProfiler;
 comment A list of counters to be activated.
 
+command profiler.cpuload(user:lng,nice:lng,sys:lng,idle:lng,iowait:lng) (cycles:int,io:int) 
+address CMDcpuloadPercentage;
+comment Calculate the average cpu load percentage and io waiting times
+
+command profiler.cpustats() (user:lng,nice:lng,sys:lng,idle:lng,iowait:lng) 
+address CMDcpustats;
+comment Extract cpu statistics from the kernel
+
 command profiler.cleanup():void 
 address CMDcleanup;
 comment Remove the temporary tables for profiling
@@ -41544,13 +41577,9 @@ pattern profiler.deactivate(name:str...):void
 address CMDdeactivateProfiler;
 comment A list of counters to be deactivated.
 
-pattern profiler.getMemory():lng 
-address CMDgetMemory;
-comment Get the amount of memory claimed and reset the flag
-
 pattern profiler.getFootprint():lng 
 address CMDgetFootprint;
-comment Get the memory footprint and reset the flag
+comment Get the amount of memory claimed and reset the flag
 
 command profiler.getSystemTime():lng 
 address CMDgetSystemTime;
@@ -41596,14 +41625,6 @@ command profiler.reset():void
 address CMDclearTrace;
 comment Clear the profiler traces
 
-pattern profiler.setMemoryFlag{unsafe}():void 
-address CMDsetMemoryFlag;
-comment Trace memory accress
-
-pattern profiler.setFootprintFlag{unsafe}():void 
-address CMDsetFootprintFlag;
-comment Trace memory footprint of BATs during query
-
 pattern profiler.stop():void 
 address CMDstopProfiler;
 comment Stop performance tracing
@@ -41640,7 +41661,34 @@ command profiler.tomograph():void
 address CMDtomograph;
 comment No-op operation, merely a signal to the tomograph package
 
-function remote.bind_dbat{inline}(dbconn:str,sch:str,tab:str,access:int,version:int):bat[:oid,:oid];
+pattern querylog.call(tick1:timestamp,tick2:timestamp,arg:str,tuples:wrd,xtime:lng,rtime:lng,cpu:int,iowait:int,space:lng):void 
+address QLOGcall;
+comment Add a new query call to the query log
+
+pattern querylog.define(q:str,pipe:str,usr:str,tick:timestamp):oid 
+address QLOGdefine;
+comment Add a new query call to the query log
+
+command querylog.disable():void 
+address QLOGdisable;
+comment Turn off the query logger
+
+command querylog.empty():void 
+address QLOGempty;
+comment Clear the query log tables
+
+command querylog.enable():void 
+address QLOGenable;
+comment Turn on the query logger
+
+command querylog.enable(threshold:int):void 
+address QLOGenableThreshold;
+comment Turn on the query logger
+
+command querylog.isset():int 
+address QLOGissetFcn;
+comment Return status of query logger
+
 function remote.bind_idxbat{inline}(dbconn:str,sch:str,tab:str,index:str,access:int,version:int):bat[:oid,:oid];
 function remote.bind{inline}(dbconn:str,sch:str,tab:str,col:str,kind:int,version:int):bat[:oid,:any_1];
 pattern remote.bintype():void 
@@ -41715,75 +41763,41 @@ command remote.resolve(pattern:str):bat[:oid,:str]
 address RMTresolve;
 comment resolve a pattern against Merovingian and return the URIs
 
-pattern recycle.dump(tp:int,nm:str):void 
-address RECYCLEdumpWrap;
-comment Dump summary of recycler structures into a file:1: recycle table;2: statistics of query patterns;3: statistics of data transfer.
+pattern recycle.append(delta:int,sname:str,tbl:str,col:str,val:any):void 
+address RECYCLEappendSQL;
+comment Correct recycle pool for SQL append statement
 
-pattern recycle.dump(tp:int):void 
-address RECYCLEdumpWrap;
-comment Dump summary of recycler structures:1: recycle table;2: statistics of query patterns;3: statistics of data transfer.
+pattern recycle.drop():void 
+address RECYCLEdropWrap;
+comment Remove the recycle cache
+
+pattern recycle.delete(delta:int,sname:str,tbl:str,col:str):void 
+address RECYCLEdeleteSQL;
+comment Correct recycle pool for SQL delete statement
 
 pattern recycle.dump():void 
 address RECYCLEdumpWrap;
 comment Dump summary of recycle table
 
 pattern recycle.epilogue():void 
-address RECYCLEepilogue;
+address RECYCLEepilogueWrap;
+comment To be called when recycler is not needed anymore
+
+pattern recycle.prologue():void 
+address RECYCLEprologueWrap;
 comment Called at the start of a recycle controlled function
 
-command recycle.getCachePolicy():int 
-address RECYCLEgetCache;
-command recycle.getReusePolicy():int 
-address RECYCLEgetReuse;
-command recycle.getAdmPolicy():int 
-address RECYCLEgetAdmission;
-command recycle.log(nm:str):void 
-address RECYCLElog;
-comment Set the name of recycle log file
-
-command recycle.monitor(f:int):void 
-address RECYCLEmonitor;
-comment start/stop the monitoring (printing) of the recycler info (storage size used and number of statements admitted)
-
-pattern recycle.prelude():void 
-address RECYCLEprelude;
-comment Called at the start of a recycle controlled function
-
-pattern recycle.reset(delta:int,sname:str...):void 
-address RECYCLEresetCMD;
-comment Reset off all recycled variables matching the arguments:delta:0 only the main bat, 2 including delta batssname: schema name,tname: table name (optional)cname: column name (optional)
-
-pattern recycle.reset(bid:BAT):void 
-address RECYCLEresetCMD;
+pattern recycle.reset(bid:bat[:oid,:any]):void 
+address RECYCLEresetBATwrap;
 comment Reset a recycled bat variable
 
-pattern recycle.shutdown():void 
-address RECYCLEshutdownWrap;
-comment Clear the recycle cache
-
-pattern recycle.setCachePolicy(p:int,cl:int,mem:int,alpha:flt):void 
+pattern recycle.setCache(clines:int):void 
 address RECYCLEsetCache;
-comment Set recycler cache policy with alpha parameter
+comment Set recycler cache line parameter
 
-pattern recycle.setCachePolicy(p:int...):void 
-address RECYCLEsetCache;
-comment Set recycler cache policy:0- RCACHE_ALL: baseline, do nothing1- RCACHE_LRU: throw LRU by setting the limit2- RCACHE_CREDIT: credit-based LRU scheme3- RCACHE_CAT: use semantics of query patternsoptional arguments are [ instruction-, [memory -]] limit
-
-pattern recycle.setReusePolicy(p:int...):void 
-address RECYCLEsetReuse;
-comment Set recycler reuse policy
-
-pattern recycle.setAdmPolicy(p:int...):void 
-address RECYCLEsetAdmission;
-comment Set recycler admission policy:0- ADM_NONE: baseline, keeps stat, no admission, no reuse1- ADM_ALL: infinite case, admit all2- ADM_CAT: use query category3- ADM_INTEREST: use credits4- ADM_ADAPT: adaptive credits for globally reused templates
-
-pattern recycle.stop():void 
-address RECYCLEstop;
-comment Cleans recycler bookkeeping
-
-pattern recycle.start():void 
-address RECYCLEstart;
-comment Initialize recycler for the current block
+command sample.subuniform(b:bat[:oid,:any],s:wrd):bat[:oid,:oid] 
+address SAMPLEsubuniform;
+comment Returns the oids of a uniform sample of size s
 
 command sample.uniform(b:bat[:oid,:any],p:dbl):bat[:oid,:any] 
 address SAMPLEuniform_dbl;
@@ -41897,6 +41911,26 @@ command sql.alpha(dec:dbl,theta:dbl):dbl
 address SQLcst_alpha_cst;
 comment Implementation of astronomy alpha function: expands the radius theta depending on the declination
 
+pattern sql.analyze(sch:str,tbl:str,col:str,sample:lng):void 
+address sql_analyze;
+comment Update the database statistics table
+
+pattern sql.analyze(sch:str,tbl:str,sample:lng):void 
+address sql_analyze;
+pattern sql.analyze(sch:str,sample:lng):void 
+address sql_analyze;
+pattern sql.analyze(sample:lng):void 
+address sql_analyze;
+pattern sql.analyze(sch:str,tbl:str,col:str):void 
+address sql_analyze;
+comment Update the database statistics table
+
+pattern sql.analyze(sch:str,tbl:str):void 
+address sql_analyze;
+pattern sql.analyze(sch:str):void 
+address sql_analyze;
+pattern sql.analyze():void 
+address sql_analyze;
 pattern sql.argRecord(a:any...):str 
 address SQLargRecord;
 comment Glue together the calling sequence
@@ -41966,10 +42000,6 @@ pattern sql.bind_idxbat(mvc:int,schema:str,table:str,index:str,access:int):bat[:
 address mvc_bind_idxbat_wrap;
 comment Bind the 'schema.table.index' BAT with access kind:	0 - base table	1 - inserts	2 - updates
 
-pattern sql.bind_dbat(mvc:int,schema:str,table:str,access:int):bat[:oid,:oid] 
-address mvc_bind_dbat_wrap;
-comment Bind to 'schema.table' BAT with deleted objecsand with specific access kind:	0 - base table	1 - inserts	2 - updates
-
 pattern sql.cluster2(sch:str,tbl:str):void 
 address SQLcluster2;
 comment Cluster the columns of a table on the (first) primary key
@@ -41986,7 +42016,6 @@ pattern sql.current_time():daytime
 address SQLcurrent_daytime;
 comment Get the clients current daytime
 
-function sql.clients() (user:bat[:oid,:str],login:bat[:oid,:str],lastcommand:bat[:oid,:str],actions:bat[:oid,:int],seconds:bat[:oid,:lng]);
 pattern sql.copyfrom(sname:str,tname:str,sep:str,rsep:str,ssep:str,ns:str,nr:lng,offset:lng,locked:int):bat[:oid,:any]... 
 address mvc_import_table_stdin;
 comment Import a table from bstream s with the 	given tuple and seperators (sep/rsep)
@@ -42163,10 +42192,6 @@ pattern sql.eval(cmd:str):void
 address SQLstatement;
 comment Compile and execute a single sql statement
 
-pattern sql.forgetPrevious():void 
-address OPTforgetPrevious;
-comment invalidate the previous instruction from future execution
-
 pattern sql.gzexpand(sch:str,tbl:str):void 
 address SQLexpand;
 comment Remove the compressed image
@@ -42207,7 +42232,6 @@ pattern sql.init():void
 address SQLinitEnvironment;
 comment Initialize the environment for MAL
 
-function sql.keepquery{unsafe}(qid:int,qry:str,parse:lng,optimize:lng):void;
 pattern sql.logfile{unsafe}(filename:str):void 
 address mvc_logfile;
 comment Enable/disable saving the sql statement traces
@@ -42250,7 +42274,7 @@ command sql.prelude():void
 address SQLprelude;
 pattern sql.password(user:str):str 
 address db_password_wrap;
-comment return password hash of user
+comment Return password hash of user
 
 command sql.projectdelta(subselect:bat[:oid,:oid],col:bat[:oid,:any_3],uid:bat[:oid,:oid],uval:bat[:oid,:any_3]):bat[:oid,:any_3] 
 address DELTAproject2;
@@ -42260,9 +42284,22 @@ command sql.projectdelta(subselect:bat[:oid,:oid],col:bat[:oid,:any_3],uid:bat[:
 address DELTAproject;
 comment Return column bat with delta's applied.
 
-function sql.queryId{unsafe}(qid:int):void;
-function sql.refine_rev(b:bat[:oid,:oid],a:bat[:oid,:any_1]):bat[:oid,:oid];
-function sql.refine(b:bat[:oid,:oid],a:bat[:oid,:any_1]):bat[:oid,:oid];
+command sql.querylog_disable():void 
+address QLOGdisable;
+command sql.querylog_enable(thres:int):void 
+address QLOGenablehreshold;
+command sql.querylog_enable():void 
+address QLOGenable;
+pattern sql.querylog_empty():void 
+address sql_querylog_empty;
+pattern sql.querylog_calls() (id:bat[:oid,:oid],start:bat[:oid,:timestamp],stop:bat[:oid,:timestamp],arguments:bat[:oid,:str],tuples:bat[:oid,:wrd],exec:bat[:oid,:lng],result:bat[:oid,:lng],cpuload:bat[:oid,:int],iowait:bat[:oid,:int],space:bat[:oid,:lng]) 
+address sql_querylog_calls;
+comment Obtain the query log calls
+
+pattern sql.querylog_catalog() (id:bat[:oid,:oid],user:bat[:oid,:str],defined:bat[:oid,:timestamp],query:bat[:oid,:str],pipe:bat[:oid,:str],mal:bat[:oid,:int],optimize:bat[:oid,:lng]) 
+address sql_querylog_catalog;
+comment Obtain the query log catalog
+
 pattern sql.rdfshred(location:str,gname:str,schema:str):void 
 address SQLrdfShred;
 comment Procedure that wraps around the shredder of the rdf module in MAL. Shredding an RDF data file from location results in 7 new tables (6 permutations of SPO and a mapping) in the RDF schema and an entry to table rdf.graph We can then query with SQL queries the RDF triple storeby quering tables gid_spo, gid_pso etc., where gid is looked up in rdf.graph
@@ -42338,9 +42375,37 @@ address SQLshrink;
 comment Consolidate the deletion table over all columns using shrinking
 
 function sql.subzero_or_one{inline}(b:bat[:oid,:any_1],gp:bat[:oid,:oid],gpe:bat[:oid,:oid],no_nil:bit):bat[:oid,:any_1];
+pattern sql.sysmon_stop(tag:lng):void 
+address SYSMONstop;
+pattern sql.sysmon_stop(tag:int):void 
+address SYSMONstop;
+pattern sql.sysmon_stop(tag:sht):void 
+address SYSMONstop;
+pattern sql.sysmon_resume(tag:lng):void 
+address SYSMONresume;
+pattern sql.sysmon_resume(tag:int):void 
+address SYSMONresume;
+pattern sql.sysmon_resume(tag:sht):void 
+address SYSMONresume;
+pattern sql.sysmon_pause(tag:lng):void 
+address SYSMONpause;
+pattern sql.sysmon_pause(tag:int):void 
+address SYSMONpause;
+pattern sql.sysmon_pause(tag:sht):void 
+address SYSMONpause;
+pattern sql.sysmon_queue() (qtag:bat[:oid,:lng],user:bat[:oid,:str],started:bat[:oid,:timestamp],estimate:bat[:oid,:timestamp],progress:bat[:oid,:int],status:bat[:oid,:str],tag:bat[:oid,:oid],query:bat[:oid,:str]) 
+address SYSMONqueue;
 pattern sql.storage() (schema:bat[:oid,:str],table:bat[:oid,:str],column:bat[:oid,:str],type:bat[:oid,:str],location:bat[:oid,:str],count:bat[:oid,:lng],atomwidth:bat[:oid,:int],columnsize:bat[:oid,:lng],heap:bat[:oid,:lng],indices:bat[:oid,:lng],sorted:bat[:oid,:bit]) 
 address sql_storage;
 comment return a table with storage information 
+
+pattern sql.settimeout(s:lng,t:lng):void 
+address CLTsetTimeout;
+comment Abort query after s and session after t seconds
+
+pattern sql.settimeout(s:lng):void 
+address CLTsetTimeout;
+comment Abort query after s seconds
 
 pattern sql.sessions() (user:bat[:oid,:str],start:bat[:oid,:timestamp],stimeout:bat[:oid,:lng],lastcmd:bat[:oid,:timestamp],qtimeout:bat[:oid,:lng],idle:bat[:oid,:bit]) 
 address sql_sessions_wrap;
@@ -42708,6 +42773,32 @@ command streams.writeStr{unsafe}(s:streams,data:str):void
 address mnstr_write_stringwrap;
 comment write data on the stream
 
+command sysmon.pause(id:lng):void 
+address SYSMONpause;
+comment Temporary suspend a single query
+
+command sysmon.pause(id:int):void 
+address SYSMONpause;
+command sysmon.pause(id:sht):void 
+address SYSMONpause;
+pattern sysmon.queue() (tag:bat[:oid,:lng],user:bat[:oid,:str],started:bat[:oid,:timestamp],estimate:bat[:oid,:timestamp],progress:bat[:oid,:int],status:bat[:oid,:str],qrytag:bat[:oid,:oid],query:bat[:oid,:str]) 
+address SYSMONqueue;
+command sysmon.resume(id:lng):void 
+address SYSMONresume;
+comment Resume processing 
+
+command sysmon.resume(id:int):void 
+address SYSMONresume;
+command sysmon.resume(id:sht):void 
+address SYSMONresume;
+command sysmon.stop(id:lng):void 
+address SYSMONstop;
+comment Stop a single query a.s.a.p.
+
+command sysmon.stop(id:int):void 
+address SYSMONstop;
+command sysmon.stop(id:sht):void 
+address SYSMONstop;
 command timezone.#fromstr():timezone 
 address tzone_fromstr;
 command timezone.str():str 
@@ -42753,7 +42844,7 @@ address MTIMEepoch2int;
 comment unix-time (epoch) support: seconds since epoch
 
 command timestamp.epoch{unsafe}():timestamp 
-address MTIMEepoch;
+address MTIMEcurrent_timestamp;
 comment unix-time (epoch) support: seconds since the Unix epoch
 
 command timestamp.#fromstr():timestamp 
@@ -43011,6 +43102,26 @@ comment Create an URL from a string literal
 command url.url(s:str):url 
 address URLnew;
 comment Create an URL from a string literal
+
+command uuid.isaUUID(u:uuid):bit 
+address UUIDisaUUID;
+comment Test a string for a UUID format
+
+command uuid.new():uuid 
+address UUIDgenerateUuid;
+comment Generate uuid
+
+command uuid.str(u:uuid):str 
+address UUIDuuid2str;
+comment Coerce a uuid to its string type
+
+command uuid.#tostr():void 
+address UUIDtoString;
+comment Convert uuid to string equivalent
+
+command uuid.uuid(s:str):uuid 
+address UUIDstr2uuid;
+comment Coerce a string to a uuid, validating its format
 
 command wkb.FromText{unsafe}(w:str,type:int):wkb 
 address wkbFromText;
