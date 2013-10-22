@@ -51,3 +51,4 @@ swapped_likejoin.Bug-3375
 python-explain.Bug-3380
 case-orderby.Bug-3388
 unop_vs_aggr.Bug-3885
+singleton-median.Bug-3389

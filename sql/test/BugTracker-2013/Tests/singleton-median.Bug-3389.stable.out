@@ -1,0 +1,90 @@
+stdout of test 'singleton-median.Bug-3389` in directory 'sql/test/BugTracker-2013` itself:
+
+
+# 20:37:01 >  
+# 20:37:01 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=31822" "--set" "mapi_usock=/var/tmp/mtest-20311/.s.monetdb.31822" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/sjoerd/Monet-stable/var/MonetDB/mTests_sql_test_BugTracker-2013" "--set" "mal_listing=0"
+# 20:37:01 >  
+
+# MonetDB 5 server v11.15.18 (hg id: 92f9d7980dd3+)
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2013', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.735 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2013 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://gaai.mullender.nl:31822/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-20311/.s.monetdb.31822
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_history.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_compress.sql
+# loading sql script: 18_dictionary.sql
+# loading sql script: 19_cluster.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 24_zorder.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 99_system.sql
+
+# 20:37:01 >  
+# 20:37:01 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-20311" "--port=31822"
+# 20:37:01 >  
+
+#start transaction;
+#create table table3389 (k int,b int);
+#insert into table3389 values (1,2);
+[ 1	]
+#insert into table3389 values (2,2);
+[ 1	]
+#insert into table3389 values (3,3);
+[ 1	]
+#insert into table3389 values (4,65);
+[ 1	]
+#insert into table3389 values (5,21);
+[ 1	]
+#insert into table3389 values (6,null);
+[ 1	]
+#insert into table3389 values (7,null);
+[ 1	]
+#insert into table3389 values (8,null);
+[ 1	]
+#insert into table3389 values (9,null);
+[ 1	]
+#select median(b) from table3389 group by k;
+% sys.L1 # table_name
+% L1 # name
+% int # type
+% 2 # length
+[ 2	]
+[ 2	]
+[ 3	]
+[ 65	]
+[ 21	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+#rollback;
+
+# 20:37:01 >  
+# 20:37:01 >  "Done."
+# 20:37:01 >  
+

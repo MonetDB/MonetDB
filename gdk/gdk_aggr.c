@@ -2061,6 +2061,8 @@ BATgroupmedian(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_
 	}
 
 	if (s) {
+		/* there is a candidate list, replace b (and g, if
+		 * given) with just the values we're interested in */
 		b = BATleftjoin(s, b, BATcount(s));
 		if (b->htype != TYPE_void) {
 			t1 = BATmirror(BATmark(BATmirror(b), 0));
@@ -2079,7 +2081,19 @@ BATgroupmedian(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_
 		}
 	}
 
+	/* we want to sort b so that we can figure out the median, but
+	 * if g is given, sort g and subsort b so that we can get the
+	 * median for each group */
 	if (g) {
+		if (BATtdense(g)) {
+			/* singleton groups, so calculating medians is
+			 * easy */
+			bn = BATcopy(b, TYPE_void, b->ttype, 0);
+			BATseqbase(bn, g->tseqbase);
+			if (freeg)
+				BBPunfix(g->batCacheid);
+			return bn;
+		}
 		BATsubsort(&t1, &t2, NULL, g, NULL, NULL, 0, 0);
 		if (freeg)
 			BBPunfix(g->batCacheid);
