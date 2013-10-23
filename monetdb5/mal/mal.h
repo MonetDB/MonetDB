@@ -18,6 +18,7 @@
  */
 
 /*
+ * (c) Martin Kersten
  * @+ Monet Basic Definitions
  * Definitions that need to included in every file of the Monet system,
  * as well as in user defined module implementations.
@@ -42,7 +43,6 @@
  * The number of invocation arguments is kept to a minimum.
  * See `man mserver5` or tools/mserver/mserver5.1
  * for additional system variable settings.
- * @
  */
 #define MAXSCRIPT 64
 #define MEMORY_THRESHOLD  0.8
@@ -70,8 +70,6 @@ mal_export int 		memoryclaims;    /* number of threads active with expensive ope
 #define GRPoptimizers  (OPTMASK)
 #define GRPforcemito (FORCEMITOMASK)
 /*
- * @-
- * @node Execution Engine, Session Scenarios, MAL Synopsis , Design  Overview
  * @+ Execution Engine
  * The execution engine comes in several flavors. The default is a
  * simple, sequential MAL interpreter. For each MAL function call it creates
@@ -156,4 +154,5 @@ mal_export int moreClients(int reruns);
 #define MAXPATHLEN 1024
 #endif
 
+#define SERVERSHUTDOWNDELAY 5 /* seconds */
 #endif /*  _MAL_H*/

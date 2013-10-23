@@ -540,6 +540,11 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 
 	while (stkpc < mb->stop && stkpc != stoppc) {
 		pci = getInstrPtr(mb, stkpc);
+		if (cntxt->mode == FINISHCLIENT){
+			stkpc = stoppc;
+			ret= createException(MAL, "mal.interpreter", "premature stopped client");
+			break;
+		}
 		if (cntxt->itrace || mb->trap) {
 			lng t = 0;
 
@@ -551,7 +556,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				BBPTraceCall(cntxt, mb, stk, prevpc);
 			prevpc = stkpc;
 			mdbStep(cntxt, mb, stk, stkpc);
-			if (stk->cmd == 'x' || cntxt->mode == FINISHING) {
+			if (stk->cmd == 'x' ) {
 				stk->cmd = 0;
 				stkpc = mb->stop;
 				continue;
@@ -672,7 +677,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 						if (oldtimer)
 							t = GDKusec();
 						mdbStep(cntxt, pci->blk, stk, 0);
-						if (stk->cmd == 'x' || cntxt->mode == FINISHING) {
+						if (stk->cmd == 'x') {
 							stk->cmd = 0;
 							stkpc = mb->stop;
 						}
@@ -857,7 +862,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 					mnstr_printf(cntxt->fdout, "!ERROR: %s\n", ret);
 					stk->cmd = '\n'; /* in debugging go to step mode */
 					mdbStep(cntxt, mb, stk, stkpc);
-					if (stk->cmd == 'x' || stk->cmd == 'q' || cntxt->mode == FINISHING) {
+					if (stk->cmd == 'x' || stk->cmd == 'q' ) {
 						stkpc = mb->stop;
 						continue;
 					}
@@ -922,7 +927,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 						BBPTraceCall(cntxt, mb, stk, prevpc);
 					prevpc = stkpc;
 					mdbStep(cntxt, mb, stk, stkpc);
-					if (stk->cmd == 'x' || cntxt->mode == FINISHING) {
+					if (stk->cmd == 'x' ) {
 						stkpc = mb->stop;
 						continue;
 					}
@@ -1104,7 +1109,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 					BBPTraceCall(cntxt, mb, stk, prevpc);
 				prevpc = stkpc;
 				mdbStep(cntxt, mb, stk, stkpc);
-				if (stk->cmd == 'x' || cntxt->mode == FINISHING) {
+				if (stk->cmd == 'x' ) {
 					stkpc = mb->stop;
 					continue;
 				}

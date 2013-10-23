@@ -2409,7 +2409,7 @@ RECYCLEshutdown(Client cntxt){
 	recycleSearchTime = 0;
 	recyclerUsedMemory = 0;
 	for(c = mal_clients; c < mal_clients+MAL_MAXCLIENTS; c++)
-		if (c->mode != FREECLIENT) {
+		if (c->mode != FREECLIENT && c->mode != BLOCKCLIENT) {
 			memset((char *)c->rcc, 0, sizeof(RecStat));
 			c->rcc->curQ = -1;
     }

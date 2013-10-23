@@ -193,7 +193,7 @@ CLTLogin(int *ret)
 
 	for (i = 0; i < MAL_MAXCLIENTS; i++) {
 		Client c = mal_clients+i;
-		if (c->mode >= CLAIMED && c->user != oid_nil) {
+		if (c->mode >= RUNCLIENT && c->user != oid_nil) {
 			CLTtimeConvert((time_t) c->login,s);
 			BUNappend(b, s, FALSE);
 		}
@@ -215,7 +215,7 @@ CLTLastCommand(int *ret)
 	BATseqbase(b,0);
 	for (i = 0; i < MAL_MAXCLIENTS; i++) {
 		Client c = mal_clients+i;
-		if (c->mode >= CLAIMED && c->user != oid_nil) {
+		if (c->mode >= RUNCLIENT && c->user != oid_nil) {
 			CLTtimeConvert((time_t) c->lastcmd,s);
 			BUNappend(b, s, FALSE);
 		}
@@ -236,7 +236,7 @@ CLTActions(int *ret)
 	BATseqbase(b,0);
 	for (i = 0; i < MAL_MAXCLIENTS; i++) {
 		Client c = mal_clients+i;
-		if (c->mode >= CLAIMED && c->user != oid_nil) {
+		if (c->mode >= RUNCLIENT && c->user != oid_nil) {
 			BUNappend(b, &c->actions, FALSE);
 		}
 	}
@@ -255,7 +255,7 @@ CLTTime(int *ret)
 	BATseqbase(b,0);
 	for (i = 0; i < MAL_MAXCLIENTS; i++) {
 		Client c = mal_clients+i;
-		if (c->mode >= CLAIMED && c->user != oid_nil) {
+		if (c->mode >= RUNCLIENT && c->user != oid_nil) {
 			BUNappend(b, &c->totaltime, FALSE);
 		}
 	}
@@ -278,7 +278,7 @@ CLTusers(int *ret)
 	BATseqbase(b,0);
 	for (i = 0; i < MAL_MAXCLIENTS; i++) {
 		Client c = mal_clients+i;
-		if (c->mode >= CLAIMED && c->user != oid_nil)
+		if (c->mode >= RUNCLIENT && c->user != oid_nil)
 			BUNappend(b, &i, FALSE);
 	}
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
@@ -324,7 +324,7 @@ CLTquit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (id == 0 && cntxt->fdout != GDKout )
 		throw(MAL, "client.quit", INVCRED_ACCESS_DENIED);
 	if ( cntxt->idx == mal_clients[id].idx)
-		mal_clients[id].mode = FINISHING;
+		mal_clients[id].mode = FINISHCLIENT;
 	/* the console should be finished with an exception */
 	if (id == 0)
 		throw(MAL,"client.quit",SERVER_STOPPED);

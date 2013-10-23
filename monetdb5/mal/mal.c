@@ -18,9 +18,6 @@
  */
 
 /*
- * @f mal
- * @-
- * @node  Design Considerations, Architecture Overview, Design Overview, Design Overview
  * @+ Design Considerations
  * Redesign of the MonetDB software stack was driven by the need to
  * reduce the effort to extend the system into novel directions
@@ -73,7 +70,7 @@
  * Moreover, a textual interface reduces the programming
  * effort otherwise needed to develop test and application programs.
  * The XML trend as the language for tool interaction supports our decision.
- * @-
+ * 
  * @node Architecture Overview, MAL Synopsis, Design Considerations, Design  Overview
  * @+ Architecture Overview
  * The architecture is built around a few independent components:
@@ -255,55 +252,75 @@ int mal_init(void){
 	return 0;
 }
 /*
- * @-
  * Upon exit we should attempt to remove all allocated memory explicitly.
  * This seemingly superflous action is necessary to simplify analyis of
  * memory leakage problems later on.
  */
+
+/* stopping clients should be done with care, as they may be in the mids of
+ * transactions. One safe place is between MAL instructions, which would
+ * abort the transaction by raising an exception. All non-console sessions are
+ * terminate this way.
+ * We should also ensure that no new client enters the scene while shutting down.
+ * For this we mark the client records as BLOCKCLIENT.
+ *
+ * Beware, mal_exit is also called during a SIGTERM from the monetdb tool
+ */
+static void stopClients(void)
+{
+	Client cntxt = mal_clients;
+
+	MT_lock_set(&mal_contextLock,"stopClients");
+	for(cntxt= mal_clients +1;  cntxt < mal_clients+MAL_MAXCLIENTS; cntxt++)
+	if ( cntxt->mode == RUNCLIENT)
+		cntxt->mode = FINISHCLIENT; 
+	else if (cntxt->mode == FREECLIENT)
+		cntxt->mode = BLOCKCLIENT;
+	MT_lock_unset(&mal_contextLock,"stopClients");
+}
+
 int
 moreClients(int reruns)
 {
-	int freeclient=0, finishing=0, claimed=0;
+	int freeclient=0, finishing=0, running=0, blocked = 0;
 	Client cntxt = mal_clients;
 
-	freeclient=0; finishing=0; claimed=0;
 	for(cntxt= mal_clients+1;  cntxt<mal_clients+MAL_MAXCLIENTS; cntxt++){
 		freeclient += (cntxt->mode == FREECLIENT);
-		finishing += (cntxt->mode == FINISHING);
-		claimed += (cntxt->mode == CLAIMED);
-		if( cntxt->mode & FINISHING)
-			printf("#Client %d %d\n",(int)(cntxt - mal_clients), cntxt->idx);
+		finishing += (cntxt->mode == FINISHCLIENT);
+		running += (cntxt->mode == RUNCLIENT);
+		blocked += (cntxt->mode == BLOCKCLIENT);
 	}
-	if( reruns == 3){
-		mnstr_printf(mal_clients->fdout,"#MALexit: server forced exit"
-			" %d finishing %d claimed\n",
-				finishing,claimed);
+	if( reruns > 3){
+		printf("MALexit: server forced exit %d free %d finishing %d running %d blocked\n",
+				freeclient, finishing,running, blocked);
 		return 0;
 	}
-	return finishing+claimed;
+	return finishing+running;
 }
+
 void mal_exit(void){
 	str err;
 
 	/*
-	 * @-
 	 * Before continuing we should make sure that all clients
 	 * (except the console) have left the scene.
 	 */
-	RECYCLEshutdown(mal_clients); /* remove any left over intermediates */
-	stopProfiling();
-	stopMALdataflow();
+	stopClients();
 #if 0
 {
-	int reruns=0, goon;
+	int reruns=0, go_on;
 	do{
-		if ( (goon=moreClients(reruns)) )
+		if ( (go_on = moreClients(reruns)) )
 			MT_sleep_ms(1000);
 		if(reruns)
 			mnstr_printf(mal_clients->fdout,"#MALexit: clients still active\n");
-	} while (++reruns<3 && goon);
+	} while (++reruns < SERVERSHUTDOWNDELAY && go_on);
 }
 #endif
+	stopMALdataflow();
+	stopProfiling();
+	RECYCLEshutdown(mal_clients); /* remove any left over intermediates */
 	unloadLibraries();
 #if 0
 	/* skip this to solve random crashes, needs work */

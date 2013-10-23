@@ -430,7 +430,7 @@ DFLOWinitBlk(DataFlow flow, MalBlkPtr mb, int size)
 		throw(MAL, "dataflow", "DFLOWinitBlk(): Called with flow == NULL");
 	if (mb == NULL)
 		throw(MAL, "dataflow", "DFLOWinitBlk(): Called with mb == NULL");
-	PARDEBUG fprintf(stderr, "Initialize dflow block\n");
+	PARDEBUG fprintf(stderr, "#Initialize dflow block\n");
 	assign = (int *) GDKzalloc(mb->vtop * sizeof(int));
 	if (assign == NULL)
 		throw(MAL, "dataflow", "DFLOWinitBlk(): Failed to allocate assign");
@@ -481,7 +481,7 @@ DFLOWinitBlk(DataFlow flow, MalBlkPtr mb, int size)
 				l = getEndOfLife(mb, getArg(p, j));
 				if (l != pc && l < flow->stop && l > flow->start) {
 					/* add edge to the target instruction for wakeup call */
-					PARDEBUG fprintf(stderr, "endoflife for %s is %d -> %d\n", getVarName(mb, getArg(p, j)), n + flow->start, l);
+					PARDEBUG fprintf(stderr, "#endoflife for %s is %d -> %d\n", getVarName(mb, getArg(p, j)), n + flow->start, l);
 					assert(pc < l); /* only dependencies on earlier instructions */
 					l -= flow->start;
 					if (flow->nodes[n]) {
@@ -635,7 +635,7 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr st
 	int i;
 
 #ifdef DEBUG_FLOW
-	fprintf(stderr, "runMALdataflow for block %d - %d\n", startpc, stoppc);
+	fprintf(stderr, "#runMALdataflow for block %d - %d\n", startpc, stoppc);
 	printFunction(GDKstdout, mb, 0, LIST_MAL_STMT | LIST_MAPI);
 #endif
 

@@ -86,7 +86,7 @@ many seconds on query processing.";
 command shutdown(forced:bit):void
 address CLTshutdown
 comment "Close all client connections. If forced=false the
-clients are moved into FINISHING mode, which means that
+clients are moved into finishing mode, which means that
 the process stops at the next cycle of the scenario.
 If forced=true all client processes are immediately killed";
 

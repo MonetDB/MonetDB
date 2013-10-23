@@ -38,7 +38,7 @@
  *
  * A client record is initialized upon acceptance of a connection.  The
  * client runs in his own thread of control until it finds a
- * soft-termination request mode (FINISHING) or its IO file descriptors
+ * soft-termination request mode (FINISHCLIENT) or its IO file descriptors
  * are closed. The latter generates an IO error, which leads to a safe
  * termination.
  *
@@ -135,14 +135,14 @@ MCnewClient(void)
 {
 	Client c;
 	MT_lock_set(&mal_contextLock, "newClient");
-	if (mal_clients[CONSOLE].user && mal_clients[CONSOLE].mode == FINISHING) {
+	if (mal_clients[CONSOLE].user && mal_clients[CONSOLE].mode == FINISHCLIENT) {
 		/*system shutdown in progress */
 		MT_lock_unset(&mal_contextLock, "newClient");
 		return NULL;
 	}
 	for (c = mal_clients; c < mal_clients + MAL_MAXCLIENTS; c++) {
 		if (c->mode == FREECLIENT) {
-			c->mode = CLAIMED;
+			c->mode = RUNCLIENT;
 			break;
 		}
 	}
@@ -346,7 +346,7 @@ void
 freeClient(Client c)
 {
 	Thread t = c->mythread;
-	c->mode = FINISHING;
+	c->mode = FINISHCLIENT;
 
 #ifdef MAL_CLIENT_DEBUG
 	printf("# Free client %d\n", c->idx);
@@ -409,7 +409,7 @@ MCcloseClient(Client c)
 	}
 
 	/* adm is set to disallow new clients entering */
-	mal_clients[CONSOLE].mode = FINISHING;
+	mal_clients[CONSOLE].mode = FINISHCLIENT;
 	mal_exit();
 }
 

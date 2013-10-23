@@ -299,7 +299,7 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
 			mnstr_printf(c->fdout, "!%s\n", s);
 			mnstr_flush(c->fdout);
 			GDKfree(s);
-			c->mode = FINISHING;
+			c->mode = FINISHCLIENT;
 		}
 	}
 
@@ -324,7 +324,7 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
 		mnstr_printf(fout, "!internal server error (cannot fork new "
 						   "client thread), please try again later\n");
 		mnstr_flush(fout);
-		c->mode = FINISHING;
+		c->mode = FINISHCLIENT;
 		MCexitClient(c);
 		showException(c->fdout, MAL, "initClient", "cannot fork new client thread");
 		return;
@@ -429,7 +429,7 @@ MSserveClient(void *dummy)
 		c->glb = newGlobalStack(MAXGLOBALS + mb->vsize);
 	if (c->glb == NULL) {
 		showException(c->fdout, MAL, "serveClient", MAL_MALLOC_FAIL);
-		c->mode = FINISHING + 1; /* == CLAIMED */
+		c->mode = FINISHCLIENT + 1; /* == RUNCLIENT */
 	} else {
 		c->glb->stktop = mb->vtop;
 		c->glb->blk = mb;
@@ -439,16 +439,16 @@ MSserveClient(void *dummy)
 		msg = defaultScenario(c);
 	if (msg) {
 		showException(c->fdout, MAL, "serveClient", "could not initialize default scenario");
-		c->mode = FINISHING + 1; /* == CLAIMED */
+		c->mode = FINISHCLIENT + 1; /* == RUNCLIENT */
 	} else {
 		do {
 			do {
 				runScenario(c);
-				if (c->mode == FINISHING)
+				if (c->mode == FINISHCLIENT)
 					break;
 				resetScenario(c);
 			} while (c->scenario && !GDKexiting());
-		} while (c->scenario && c->mode != FINISHING && !GDKexiting());
+		} while (c->scenario && c->mode != FINISHCLIENT && !GDKexiting());
 	}
 	/*
 	 * At this stage we should clean out the MAL block
@@ -456,7 +456,7 @@ MSserveClient(void *dummy)
 	freeMalBlk(c->curprg->def);
 	c->curprg->def = 0;
 
-	if (c->mode > FINISHING) {
+	if (c->mode > FINISHCLIENT) {
 		if (isAdministrator(c) /* && moreClients(0)==0 */) {
 			if (c->scenario) {
 				exitScenario(c);
@@ -493,7 +493,7 @@ MALexitClient(Client c)
 		garbageCollector(c, c->curprg->def, c->glb, TRUE);
 	if (c->bak)
 		return NULL;
-	c->mode = FINISHING;
+	c->mode = FINISHCLIENT;
 	return NULL;
 }
 
@@ -510,7 +510,7 @@ MALreader(Client c)
 			return MAL_SUCCEED;
 	} else if (MCreadClient(c) > 0)
 		return MAL_SUCCEED;
-	c->mode = FINISHING;
+	c->mode = FINISHCLIENT;
 	if (c->fdin)
 		c->fdin->buf[c->fdin->pos] = 0;
 	else
