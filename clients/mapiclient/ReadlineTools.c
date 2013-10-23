@@ -70,12 +70,14 @@ sql_tablename_generator(const char *text, int state)
 
 	static int seekpos, len, rowcount;
 	static MapiHdl table_hdl;
-	char *name;
 
 	if (!state) {
+		char query[512];
+
 		seekpos = 0;
 		len = strlen(text);
-		if ((table_hdl = mapi_query(_mid, "SELECT t.\"name\", s.\"name\" FROM \"sys\".\"tables\" t, \"sys\".\"schemas\" s where t.schema_id = s.id")) == NULL || mapi_error(_mid)) {
+		snprintf(query, sizeof(query), "SELECT t.\"name\", s.\"name\" FROM \"sys\".\"tables\" t, \"sys\".\"schemas\" s where t.schema_id = s.id AND t.\"name\" like '%s%%'", text);
+		if ((table_hdl = mapi_query(_mid, query)) == NULL || mapi_error(_mid)) {
 			if (table_hdl) {
 				mapi_explain_query(table_hdl, stderr);
 				mapi_close_handle(table_hdl);
@@ -88,18 +90,18 @@ sql_tablename_generator(const char *text, int state)
 	}
 
 	while (seekpos < rowcount) {
+		const char *name;
+
 		mapi_seek_row(table_hdl, seekpos++, MAPI_SEEK_SET);
 		mapi_fetch_row(table_hdl);
 		name = mapi_fetch_field(table_hdl, 0);
 		if (strncmp(name, text, len) == 0) {
-			char *s, *schema = mapi_fetch_field(table_hdl, 1);
-			int l1 = strlen(name), l2 = strlen(schema);
+			char *s;
+			const char *schema = mapi_fetch_field(table_hdl, 1);
+			size_t l1 = strlen(name), l2 = strlen(schema);
 
-			s = malloc(l1 + l2 + 2);
-			s[0] = 0;
-			strcat(s, schema); 
-			strcat(s, ".");
-			strcat(s, name);
+			s = malloc(l1 + l2 + 6);
+			snprintf(s, l1 + l2 + 6, "\"%s\".\"%s\"", schema, name);
 			return s;
 		}
 	}
