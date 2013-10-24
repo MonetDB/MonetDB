@@ -1376,6 +1376,7 @@ BATsubsort(BAT **sorted, BAT **order, BAT **groups,
 		}
 		BATseqbase(on, 0);
 		on->tsorted = on->trevsorted = 0;
+		on->tdense = 0;
 		*order = on;
 	}
 	if (g) {
