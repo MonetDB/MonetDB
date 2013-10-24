@@ -1,0 +1,5 @@
+module gsl;
+
+command chi2prob(d:dbl,i:dbl):dbl
+address GSLchisqProb
+comment "Chi Squared probability";
