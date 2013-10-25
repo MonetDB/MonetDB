@@ -1373,7 +1373,7 @@ BATsubsort(BAT **sorted, BAT **order, BAT **groups,
 				goto error;
 			grps = (oid *) Tloc(on, BUNfirst(on));
 			for (p = 0, q = BATcount(bn); p < q; p++)
-				     grps[p] = p;
+				grps[p] = p;
 			BATsetcount(on, BATcount(bn));
 			on->tkey = 1;
 		}
@@ -1434,7 +1434,7 @@ BATsubsort(BAT **sorted, BAT **order, BAT **groups,
 		} else if (b->U->count <= 1) {
 			b->tsorted = b->trevsorted = 1;
 		}
-		if ((!(reverse && bn->trevsorted) && !(!reverse && bn->tsorted)) &&
+		if (!(reverse ? bn->trevsorted : bn->tsorted) &&
 		    do_sort(Tloc(bn, BUNfirst(bn)),
 			    on ? Tloc(on, BUNfirst(on)) : NULL,
 			    bn->T->vheap ? bn->T->vheap->base : NULL,
