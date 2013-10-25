@@ -1298,8 +1298,10 @@ BATsubsort(BAT **sorted, BAT **order, BAT **groups,
 		return GDK_SUCCEED;
 	}
 	if (BATcount(b) <= 1 ||
-	    (BATtordered(b) && o == NULL && g == NULL &&
-	     (groups == NULL || BATtkey(b) || BATtrevordered(b)))) {
+	    ((reverse ? BATtrevordered(b) : BATtordered(b)) &&
+	     o == NULL && g == NULL &&
+	     (groups == NULL || BATtkey(b) ||
+	      (reverse ? BATtordered(b) : BATtrevordered(b))))) {
 		/* trivially (sub)sorted, and either we don't need to
 		 * return group information, or we can trivially
 		 * deduce the groups */
@@ -1328,7 +1330,8 @@ BATsubsort(BAT **sorted, BAT **order, BAT **groups,
 			} else {
 				/* single group */
 				const oid *o = 0;
-				assert(BATcount(b) == 1 || BATtrevordered(b));
+				assert(BATcount(b) == 1 ||
+				       (BATtordered(b) && BATtrevordered(b)));
 				gn = BATconstant(TYPE_oid, &o, BATcount(b));
 				if (gn == NULL)
 					goto error;
