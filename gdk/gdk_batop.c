@@ -1315,8 +1315,14 @@ BATsubsort(BAT **sorted, BAT **order, BAT **groups,
 		/* no place to put result, so we're done quickly */
 		return GDK_SUCCEED;
 	}
-	if (BATcount(b) <= 1 || (BATtordered(b) && o == NULL && g == NULL && groups == NULL)) {
-		/* trivially (sub)sorted */
+	if (BATcount(b) <= 1 ||
+	    ((reverse ? BATtrevordered(b) : BATtordered(b)) &&
+	     o == NULL && g == NULL &&
+	     (groups == NULL || BATtkey(b) ||
+	      (reverse ? BATtordered(b) : BATtrevordered(b))))) {
+		/* trivially (sub)sorted, and either we don't need to
+		 * return group information, or we can trivially
+		 * deduce the groups */
 		if (sorted) {
 			BBPfix(b->batCacheid);
 			bn = b;
@@ -1332,12 +1338,23 @@ BATsubsort(BAT **sorted, BAT **order, BAT **groups,
 			*order = on;
 		}
 		if (groups) {
-			gn = BATnew(TYPE_void, TYPE_void, BATcount(b));
-			if (gn == NULL)
-				goto error;
-			BATsetcount(gn, BATcount(b));
+			if (BATtkey(b)) {
+				/* singleton groups */
+				gn = BATnew(TYPE_void, TYPE_void, BATcount(b));
+				if (gn == NULL)
+					goto error;
+				BATsetcount(gn, BATcount(b));
+				BATseqbase(BATmirror(gn), 0);
+			} else {
+				/* single group */
+				const oid *o = 0;
+				assert(BATcount(b) == 1 ||
+				       (BATtordered(b) && BATtrevordered(b)));
+				gn = BATconstant(TYPE_oid, &o, BATcount(b));
+				if (gn == NULL)
+					goto error;
+			}
 			BATseqbase(gn, 0);
-			BATseqbase(BATmirror(gn), 0);
 			*groups = gn;
 		}
 		return GDK_SUCCEED;
@@ -1380,6 +1397,7 @@ BATsubsort(BAT **sorted, BAT **order, BAT **groups,
 		}
 		BATseqbase(on, 0);
 		on->tsorted = on->trevsorted = 0;
+		on->tdense = 0;
 		*order = on;
 	}
 	if (g) {
@@ -1434,7 +1452,7 @@ BATsubsort(BAT **sorted, BAT **order, BAT **groups,
 		} else if (b->U->count <= 1) {
 			b->tsorted = b->trevsorted = 1;
 		}
-		if ((!(reverse && bn->trevsorted) && !(!reverse && bn->tsorted)) &&
+		if (!(reverse ? bn->trevsorted : bn->tsorted) &&
 		    do_sort(Tloc(bn, BUNfirst(bn)),
 			    on ? Tloc(on, BUNfirst(on)) : NULL,
 			    bn->T->vheap ? bn->T->vheap->base : NULL,

@@ -155,7 +155,7 @@ JAQLreader(Client c)
 	/* "activate" the stream by sending a prompt (client sync) */
 	if (c->fdin->eof != 0) {
 		if (mnstr_flush(c->fdout) < 0) {
-			c->mode = FINISHING;
+			c->mode = FINISHCLIENT;
 		} else {
 			c->fdin->eof = 0;
 		}
@@ -180,7 +180,7 @@ JAQLparser(Client c)
 		fprintf(stderr, "%s, cannot handle client!\n", errmsg);
 		/* stop here, instead of printing the exception below to the
 		 * client in an endless loop */
-		c->mode = FINISHING;
+		c->mode = FINISHCLIENT;
 		return errmsg;
 	}
 
@@ -204,7 +204,7 @@ JAQLparser(Client c)
 
 	/* stop if it seems nothing is going to come any more */
 	if (j->scanstreameof == 1) {
-		c->mode = FINISHING;
+		c->mode = FINISHCLIENT;
 		freetree(j->p);
 		j->p = NULL;
 		return MAL_SUCCEED;

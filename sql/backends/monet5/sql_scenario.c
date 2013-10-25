@@ -1361,14 +1361,14 @@ SQLreader(Client c)
 	int blocked = isa_block_stream(in->s);
 
 	if (SQLinitialized == FALSE) {
-		c->mode = FINISHING;
+		c->mode = FINISHCLIENT;
 		return NULL;
 	}
-	if (!be || c->mode <= FINISHING) {
+	if (!be || c->mode <= FINISHCLIENT) {
 #ifdef _SQL_READER_DEBUG
 		mnstr_printf(GDKout, "#SQL client finished\n");
 #endif
-		c->mode = FINISHING;
+		c->mode = FINISHCLIENT;
 		return NULL;
 	}
 #ifdef _SQL_READER_DEBUG
@@ -1472,7 +1472,7 @@ SQLreader(Client c)
 	}
 	if (!go || (strncmp(CURRENT(c), "\\q", 2) == 0)) {
 		in->pos = in->len;  /* skip rest of the input */
-		c->mode = FINISHING;
+		c->mode = FINISHCLIENT;
 		return NULL;
 	}
 	return 0;
@@ -1665,7 +1665,7 @@ SQLparser(Client c)
 		fprintf(stderr, "SQL state descriptor missing, cannot handle client!\n");
 		/* stop here, instead of printing the exception below to the
 		 * client in an endless loop */
-		c->mode = FINISHING;
+		c->mode = FINISHCLIENT;
 		throw(SQL, "SQLparser", "State descriptor missing");
 	}
 	oldvtop = c->curprg->def->vtop;
@@ -1758,7 +1758,7 @@ SQLparser(Client c)
 			return MAL_SUCCEED;
 		}
 		if (strncmp(in->buf + in->pos, "quit", 4) == 0) {
-			c->mode = FINISHING;
+			c->mode = FINISHCLIENT;
 			return MAL_SUCCEED;
 		}
 		mnstr_printf(out, "!unrecognized X command: %s\n", in->buf + in->pos);

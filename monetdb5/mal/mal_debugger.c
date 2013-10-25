@@ -391,7 +391,7 @@ retryRead:
 			b = (char *) (*cntxt->phase[MAL_SCENARIO_READER])(cntxt);
 			if (b != 0)
 				break;
-			if (cntxt->mode == FINISHING)
+			if (cntxt->mode == FINISHCLIENT)
 				break;
 			/* SQL patch, it should only react to Smessages, Xclose requests to be ignored */
 			if (strncmp(cntxt->fdin->buf, "Xclose", 6) == 0) {

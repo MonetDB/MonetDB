@@ -18,6 +18,7 @@
  */
 
 /*
+ * (c) Martin Kersten
  * @+ MonetDB Basic Definitions
  * Definitions that need to included in every file of the Monet system,
  * as well as in user defined module implementations.
@@ -70,8 +71,6 @@ mal_export char		*mal_trace;		/* enable profile events on console */
 #define GRPforcemito (FORCEMITOMASK)
 #define GRPrecycler (1<<30)
 /*
- * @-
- * @node Execution Engine, Session Scenarios, MAL Synopsis , Design  Overview
  * @+ Execution Engine
  * The execution engine comes in several flavors. The default is a
  * simple, sequential MAL interpreter. For each MAL function call it creates
@@ -153,4 +152,5 @@ mal_export void mal_exit(void);
 #define MAXPATHLEN 1024
 #endif
 
+#define SERVERSHUTDOWNDELAY 5 /* seconds */
 #endif /*  _MAL_H*/

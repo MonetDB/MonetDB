@@ -30,9 +30,10 @@
 #define CONSOLE     0
 #define isAdministrator(X) (X==mal_clients)
 
-#define FREECLIENT  0
-#define FINISHING   1   
-#define CLAIMED     2
+#define FREECLIENT  	0
+#define FINISHCLIENT	1   
+#define RUNCLIENT		2
+#define BLOCKCLIENT     3
 
 #define PROCESSTIMEOUT  2   /* seconds */
 

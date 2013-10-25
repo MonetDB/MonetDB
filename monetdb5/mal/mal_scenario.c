@@ -542,8 +542,8 @@ runScenarioBody(Client c)
 
 	c->exception_buf_initialized = 1;
 	if (setjmp( c->exception_buf) < 0)
-		c->mode = FINISHING;
-	while ((c->mode > FINISHING || msg != MAL_SUCCEED) && !GDKexiting()) {
+		c->mode = FINISHCLIENT;
+	while ((c->mode > FINISHCLIENT || msg != MAL_SUCCEED) && !GDKexiting()) {
 		if (msg != MAL_SUCCEED){
 /* we should actually show it [postponed]
 			mnstr_printf(c->fdout,"!%s\n",msg);
@@ -555,21 +555,21 @@ runScenarioBody(Client c)
 		if (!c->state[0] &&
 		    (msg = runPhase(c, MAL_SCENARIO_INITCLIENT)) != MAL_SUCCEED)
 			continue;
-		if (c->mode <= FINISHING ||
+		if (c->mode <= FINISHCLIENT ||
 		    (msg = runPhase(c, MAL_SCENARIO_READER)) != MAL_SUCCEED)
 			continue;
 		c->lastcmd= time(0);
 		start= GDKusec();
-		if (c->mode <= FINISHING ||
+		if (c->mode <= FINISHCLIENT ||
 		    (msg = runPhase(c, MAL_SCENARIO_PARSER)) != MAL_SUCCEED)
 			continue;
-		if (c->mode <= FINISHING ||
+		if (c->mode <= FINISHCLIENT ||
 		    (msg = runPhase(c, MAL_SCENARIO_OPTIMIZE)) != MAL_SUCCEED)
 			continue;
-		if (c->mode <= FINISHING ||
+		if (c->mode <= FINISHCLIENT ||
                     (msg = runPhase(c, MAL_SCENARIO_SCHEDULER)) != MAL_SUCCEED)
 			continue;
-		if (c->mode <= FINISHING ||
+		if (c->mode <= FINISHCLIENT ||
 		    (msg = runPhase(c, MAL_SCENARIO_ENGINE)) != MAL_SUCCEED)
 			continue;
 		c->actions++;
