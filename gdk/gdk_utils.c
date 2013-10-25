@@ -438,10 +438,7 @@ MT_init(void)
 size_t
 GDKmem_cursize(void)
 {
-	/* RAM/swapmem that Monet has claimed from OS */
-	size_t heapsize = MT_heapcur() - MT_heapbase;
-
-	return (size_t) SEG_SIZE(heapsize, MT_VMUNITLOG);
+	return GDKmem_inuse();
 }
 
 size_t

@@ -34,10 +34,6 @@
 #include <unistd.h>		/* sbrk on Solaris */
 #include <string.h>     /* strncpy */
 
-#ifdef __hpux
-extern char *sbrk(int);
-#endif
-
 #ifdef HAVE_FCNTL_H
 # include <fcntl.h>
 #endif
@@ -277,7 +273,7 @@ char *MT_heapbase = NULL;
 void
 MT_init_posix(void)
 {
-	MT_heapbase = (char *) sbrk(0);
+	MT_heapbase = 0;
 }
 
 /* return RSS in bytes */
@@ -362,7 +358,7 @@ MT_getrss(void)
 char *
 MT_heapcur(void)
 {
-	return (char *) sbrk(0);
+	return 0;
 }
 
 void *
