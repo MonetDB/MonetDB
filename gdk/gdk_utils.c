@@ -644,15 +644,18 @@ GDKmemfail(str s, size_t len)
 
 /* allocate 8 bytes extra (so it stays 8-bytes aligned) and put
  * realsize in front */
-#define GDKmalloc_prefixsize(s,size)					\
-	do {								\
-		s = (ssize_t *) malloc(size + MALLOC_EXTRA_SPACE + GLIBC_BUG); \
-		if (s != NULL) {					\
-			assert((((size_t) s)&7) == 0); /* no MISALIGN */ \
-			s = (ssize_t*) ((char*) s + MALLOC_EXTRA_SPACE); \
-			s[-1] = (ssize_t) (size + MALLOC_EXTRA_SPACE);	\
-		}							\
-	} while (0)
+static inline void *
+GDKmalloc_prefixsize(size_t size)
+{
+	ssize_t *s;
+
+	if ((s = malloc(size + MALLOC_EXTRA_SPACE + GLIBC_BUG)) != NULL) {
+		assert((((size_t) s) & 7) == 0); /* no MISALIGN */
+		s = (ssize_t*) ((char*) s + MALLOC_EXTRA_SPACE);
+		s[-1] = (ssize_t) (size + MALLOC_EXTRA_SPACE);
+	}
+	return s;
+}
 
 /*
  * The emergency flag can be set to force a fatal error if needed.
@@ -661,7 +664,7 @@ GDKmemfail(str s, size_t len)
 void *
 GDKmallocmax(size_t size, size_t *maxsize, int emergency)
 {
-	ssize_t *s = NULL;
+	void *s;
 
 	if (size == 0) {
 #ifdef GDK_MEM_NULLALLOWED
@@ -671,10 +674,10 @@ GDKmallocmax(size_t size, size_t *maxsize, int emergency)
 #endif
 	}
 	size = (size + 7) & ~7;	/* round up to a multiple of eight */
-	GDKmalloc_prefixsize(s, size);
+	s = GDKmalloc_prefixsize(size);
 	if (s == NULL) {
 		GDKmemfail("GDKmalloc", size);
-		GDKmalloc_prefixsize(s, size);
+		s = GDKmalloc_prefixsize(size);
 		if (s == NULL) {
 			if (emergency == 0) {
 				GDKerror("GDKmallocmax: failed for " SZFMT " bytes", size);
@@ -687,7 +690,7 @@ GDKmallocmax(size_t size, size_t *maxsize, int emergency)
 	}
 	*maxsize = size;
 	heapinc(size + MALLOC_EXTRA_SPACE);
-	return (void *) s;
+	return s;
 }
 
 void *
