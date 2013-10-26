@@ -22,7 +22,7 @@
  * @a Peter Boncz, Martin van Dinther
  * @v 1.0
  *
- * @+ Temporal Module
+ * Temporal Module
  * The goal of this module is to provide adequate functionality for
  * storing and manipulated time-related data. The minimum requirement
  * is that data can easily be imported from all common commercial
@@ -71,7 +71,7 @@
  * default value of the local timezone is plain GMT).
  * @end table
  *
- * @+ Limitations
+ * Limitations
  * The valid ranges of the various data types are as follows:
  *
  * @table @samp
@@ -196,7 +196,7 @@
  * dynamic in this structure. The timezone_setlocal would just set the
  * string name of the timezone.
  *
- * @+ Time/date comparison
+ * Time/date comparison
  */
 
 #include "monetdb_config.h"
@@ -224,20 +224,17 @@
 
 tzone tzone_local;
 
-/*
- * @+ Defines
- */
-str MONTHS[13] = { NULL, "january", "february", "march", "april", "may", "june",
+static str MONTHS[13] = { NULL, "january", "february", "march", "april", "may", "june",
 	"july", "august", "september", "october", "november", "december"
 };
 
-str DAYS[8] = { NULL, "monday", "tuesday", "wednesday", "thursday",
+static str DAYS[8] = { NULL, "monday", "tuesday", "wednesday", "thursday",
 				"friday", "saturday", "sunday"
 };
-str COUNT1[7] = { NULL, "first", "second", "third", "fourth", "fifth", "last" };
-str COUNT2[7] = { NULL, "1st", "2nd", "3rd", "4th", "5th", "last" };
-int NODAYS[13] = { 0, 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
-int CUMDAYS[13] = { 0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365 };
+static str COUNT1[7] = { NULL, "first", "second", "third", "fourth", "fifth", "last" };
+static str COUNT2[7] = { NULL, "1st", "2nd", "3rd", "4th", "5th", "last" };
+static int NODAYS[13] = { 0, 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
+static int CUMDAYS[13] = { 0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365 };
 
 date DATE_MAX, DATE_MIN;		/* often used dates; computed once */
 
@@ -251,7 +248,7 @@ date DATE_MAX, DATE_MIN;		/* often used dates; computed once */
 #define LOWER(c)	(((c) >= 'A' && (c) <= 'Z') ? (c)+'a'-'A' : (c))
 
 /*
- * @+ auxiliary functions
+ * auxiliary functions
  */
 
 static union {
@@ -331,9 +328,16 @@ todate(int day, int month, int year)
 void
 fromdate(int n, int *d, int *m, int *y)
 {
-	int month, year = n / 365;
-	int day = (n - year * 365) - LEAPYEARS(year >= 0 ? year - 1 : year);
+	int day, month, year;
 
+	if ( n == int_nil){
+		if( d) *d = int_nil;
+		if( m) *m = int_nil;
+		if( y) *y = int_nil;
+		return;
+	}
+	year = n / 365;
+	day = (n - year * 365) - LEAPYEARS(year >= 0 ? year - 1 : year);
 	if (n < 0) {
 		year--;
 		while (day >= 0) {
@@ -347,21 +351,25 @@ fromdate(int n, int *d, int *m, int *y)
 			day += YEARDAYS(year);
 		}
 	}
+	if ( d == 0 && m == 0) {
+		if( y) *y = (year <= 0) ? year - 1 : year;	/* HACK: hide year 0 */
+		return;
+	}
+
 	day++;
 	for (month = 1; month <= 12; month++) {
 		int days = MONTHDAYS(month, year);
 
-		if (day <= days)
+		if (day <= days){
+			if( m) *m = month;
+			if (d == 0) return;
 			break;
+		}
 		day -= days;
 	}
-	if (n != int_nil) {
-		*d = day;
-		*m = month;
-		*y = (year <= 0) ? year - 1 : year;	/* HACK: hide year 0 */
-	} else {
-		*d = *m = *y = int_nil;
-	}
+	if( d) *d = day;
+	if( m) *m = month;
+	if( y) *y = (year <= 0) ? year - 1 : year;	/* HACK: hide year 0 */
 }
 
 static daytime
@@ -487,7 +495,6 @@ timestamp_inside(timestamp *ret, timestamp *t, tzone *z, lng offset)
 	lng add = (offset != (lng) 0) ? offset : (get_offset(z)) * (lng) 60000;
 	int start_days, start_msecs, end_days, end_msecs, year;
 	rule start, end;
-	int dummy;
 
 	MTIMEtimestamp_add(ret, t, &add);
 
@@ -500,7 +507,7 @@ timestamp_inside(timestamp *ret, timestamp *t, tzone *z, lng offset)
 	start_msecs = start.s.minutes * 60000;
 	end_msecs = end.s.minutes * 60000;
 
-	fromdate((int) ret->days, &dummy, &dummy, &year);
+	fromdate((int) ret->days, 0, 0, &year);
 	start_days = compute_rule(&start, year);
 	end_days = compute_rule(&end, year);
 
@@ -512,7 +519,7 @@ timestamp_inside(timestamp *ret, timestamp *t, tzone *z, lng offset)
 }
 
 /*
- * @+ ADT implementations
+ * ADT implementations
  * @- date
  */
 int
@@ -1094,7 +1101,7 @@ tzone_tostr(str *buf, int *len, tzone *z)
 }
 
 /*
- * @+ operator implementations
+ * operator implementations
  */
 static void
 date_prelude(void)
@@ -1252,11 +1259,10 @@ timestamp_create(timestamp *ret, date *d, daytime *t, tzone *z)
 static str
 date_extract_year(int *ret, date *v)
 {
-	int dummy;
 	if (*v == date_nil) {
 		*ret = int_nil;
 	} else {
-		fromdate((int) *v, &dummy, &dummy, ret);
+		fromdate((int) *v, 0, 0, ret);
 	}
 	return MAL_SUCCEED;
 }
@@ -1265,11 +1271,10 @@ date_extract_year(int *ret, date *v)
 static str
 date_extract_month(int *ret, date *v)
 {
-	int dummy;
 	if (*v == date_nil) {
 		*ret = int_nil;
 	} else {
-		fromdate((int) *v, &dummy, ret, &dummy);
+		fromdate((int) *v, 0, ret, 0);
 	}
 	return MAL_SUCCEED;
 }
@@ -1278,11 +1283,10 @@ date_extract_month(int *ret, date *v)
 static str
 date_extract_day(int *ret, date *v)
 {
-	int dummy;
 	if (*v == date_nil) {
 		*ret = int_nil;
 	} else {
-		fromdate((int) *v, ret, &dummy, &dummy);
+		fromdate((int) *v, ret, 0, 0);
 	}
 	return MAL_SUCCEED;
 }
@@ -1291,13 +1295,12 @@ date_extract_day(int *ret, date *v)
 static str
 date_extract_dayofyear(int *ret, date *v)
 {
-	int dummy;
 	if (*v == date_nil) {
 		*ret = int_nil;
 	} else {
 		int year;
 
-		fromdate((int) *v, &dummy, &dummy, &year);
+		fromdate((int) *v, 0, 0, &year);
 		*ret = (int) (1 + *v - todate(1, 1, year));
 	}
 	return MAL_SUCCEED;
@@ -1310,7 +1313,6 @@ date_extract_weekofyear(int *ret, date *v)
 	if (*v == date_nil) {
 		*ret = int_nil;
 	} else {
-		int dummy;
 		int year;
 		date thd;
 		date thd1;
@@ -1318,7 +1320,7 @@ date_extract_weekofyear(int *ret, date *v)
 		/* find the Thursday in the same week as the given date */
 		thd = *v + 4 - date_dayofweek(*v);
 		/* extract the year (may be different from year of the given date!) */
-		fromdate((int) thd, &dummy, &dummy, &year);
+		fromdate((int) thd, 0, 0, &year);
 		/* find January 4 of that year */
 		thd1 = todate(4, 1, year);
 		/* find the Thursday of the week in which January 4 falls */
