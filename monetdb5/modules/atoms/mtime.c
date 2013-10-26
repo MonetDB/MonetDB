@@ -478,8 +478,6 @@ compute_rule(rule *val, int y)
 	return d;
 }
 
-static int dummy;
-
 #define BEFORE(d1,m1,d2,m2) (d1 < d2 || (d1 == d2 && m1 <= m2))
 
 static int
@@ -489,6 +487,7 @@ timestamp_inside(timestamp *ret, timestamp *t, tzone *z, lng offset)
 	lng add = (offset != (lng) 0) ? offset : (get_offset(z)) * (lng) 60000;
 	int start_days, start_msecs, end_days, end_msecs, year;
 	rule start, end;
+	int dummy;
 
 	MTIMEtimestamp_add(ret, t, &add);
 
@@ -1253,6 +1252,7 @@ timestamp_create(timestamp *ret, date *d, daytime *t, tzone *z)
 static str
 date_extract_year(int *ret, date *v)
 {
+	int dummy;
 	if (*v == date_nil) {
 		*ret = int_nil;
 	} else {
@@ -1265,6 +1265,7 @@ date_extract_year(int *ret, date *v)
 static str
 date_extract_month(int *ret, date *v)
 {
+	int dummy;
 	if (*v == date_nil) {
 		*ret = int_nil;
 	} else {
@@ -1277,6 +1278,7 @@ date_extract_month(int *ret, date *v)
 static str
 date_extract_day(int *ret, date *v)
 {
+	int dummy;
 	if (*v == date_nil) {
 		*ret = int_nil;
 	} else {
@@ -1289,6 +1291,7 @@ date_extract_day(int *ret, date *v)
 static str
 date_extract_dayofyear(int *ret, date *v)
 {
+	int dummy;
 	if (*v == date_nil) {
 		*ret = int_nil;
 	} else {
@@ -1342,6 +1345,7 @@ date_extract_dayofweek(int *ret, date *v)
 static str
 daytime_extract_hours(int *ret, daytime *v)
 {
+	int dummy;
 	if (*v == daytime_nil) {
 		*ret = int_nil;
 	} else {
@@ -1354,6 +1358,7 @@ daytime_extract_hours(int *ret, daytime *v)
 static str
 daytime_extract_minutes(int *ret, daytime *v)
 {
+	int dummy;
 	if (*v == daytime_nil) {
 		*ret = int_nil;
 	} else {
@@ -1366,6 +1371,7 @@ daytime_extract_minutes(int *ret, daytime *v)
 static str
 daytime_extract_seconds(int *ret, daytime *v)
 {
+	int dummy;
 	if (*v == daytime_nil) {
 		*ret = int_nil;
 	} else {
@@ -1379,6 +1385,8 @@ static str
 daytime_extract_sql_seconds(int *ret, daytime *v)
 {
 	int sec, milli;
+	int dummy;
+
 	if (*v == daytime_nil) {
 		*ret = int_nil;
 	} else {
@@ -1392,6 +1400,7 @@ daytime_extract_sql_seconds(int *ret, daytime *v)
 static str
 daytime_extract_milliseconds(int *ret, daytime *v)
 {
+	int dummy;
 	if (*v == daytime_nil) {
 		*ret = int_nil;
 	} else {
@@ -2854,43 +2863,54 @@ str
 MTIMEdate_extract_year_bulk(int *ret, int *bid)
 {
 	BAT *b, *bn;
-	int v;
-	date d;
-	BUN p, q;
-	BATiter bi;
+	BUN i,n;
+	int *y;
+	date *t;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "bbp.getdate", "Cannot access descriptor");
+		throw(MAL, "batmtime.year", "Cannot access descriptor");
+	n = BATcount(b);
 
 	bn = BATnew(TYPE_void, TYPE_int, BATcount(b));
-	if (bn == NULL)
+	if (bn == NULL){
+		BBPreleaseref(b->batCacheid);
 		throw(MAL, "batmtime.year", "memory allocation failure");
+	}
 	BATseqbase(bn, b->H->seq);
+	bn->T->nonil = 1;
+	bn->T->nil = 0;
 
-	bi = bat_iterator(b);
-	BATloop(b, p, q) {
-		d = *(date *) BUNtail(bi, p);
-		MTIMEdate_extract_year(&v, &d);
-		if (BUNappend(bn, &v, FALSE) == NULL) {
-			BBPunfix(bn->batCacheid);
-			throw(MAL, "batmtime.year", "inserting value failed");
+	t = (date *) Tloc(b, BUNfirst(b));
+	y = (int *) Tloc(bn, BUNfirst(bn));
+	for( i = 0; i < n ; i++){
+		if ( *t == date_nil){
+			*y = int_nil;
+		} else 
+			date_extract_year(y, t);
+		if (*y == int_nil){
+			bn->T->nonil = 0;
+			bn->T->nil = 1;
 		}
+		y++; t++;
 	}
 
-        if (b->htype != bn->htype) {
-                BAT *r = VIEWcreate(b,bn);
+	if (b->htype != bn->htype) {
+			BAT *r = VIEWcreate(b,bn);
+			BBPreleaseref(bn->batCacheid);
+			bn = r;
+	}
 
-                BBPreleaseref(bn->batCacheid);
-                bn = r;
-        }
+	BATsetcount(bn, (BUN) (y - (int *) Tloc(bn, BUNfirst(bn))));
+    BATsettrivprop(bn);
 
 	bn->H->nonil = b->H->nonil;
+	bn->H->nil = b->H->nil;
 	bn->hsorted = b->hsorted;
 	bn->hrevsorted = b->hrevsorted;
 	BATkey(bn, BAThkey(b));
-	bn->tsorted = FALSE;
-	bn->trevsorted = FALSE;
-	bn->T->nonil = FALSE;
+
+	bn->tsorted = BATcount(bn)<2;
+	bn->trevsorted = BATcount(bn)<2;
 
 	BBPkeepref(*ret = bn->batCacheid);
 	BBPunfix(b->batCacheid);
@@ -2901,43 +2921,52 @@ str
 MTIMEdate_extract_month_bulk(int *ret, int *bid)
 {
 	BAT *b, *bn;
-	int v;
-	date d;
-	BUN p, q;
-	BATiter bi;
+	BUN i,n;
+	int *m;
+	date *t;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "bbp.getdate", "Cannot access descriptor");
+		throw(MAL, "batmtime.year", "Cannot access descriptor");
+	n = BATcount(b);
 
 	bn = BATnew(TYPE_void, TYPE_int, BATcount(b));
-	if (bn == NULL)
+	if (bn == NULL){
+		BBPreleaseref(b->batCacheid);
 		throw(MAL, "batmtime.month", "memory allocation failure");
-	BATseqbase(bn, b->H->seq);
-
-	bi = bat_iterator(b);
-	BATloop(b, p, q) {
-		d = *(date *) BUNtail(bi, p);
-		MTIMEdate_extract_month(&v, &d);
-		if (BUNappend(bn, &v, FALSE) == NULL) {
-			BBPunfix(bn->batCacheid);
-			throw(MAL, "batmtime.month", "inserting value failed");
-		}
 	}
+	BATseqbase(bn, b->H->seq);
+	bn->T->nonil = 1;
+	bn->T->nil = 0;
 
-        if (b->htype != bn->htype) {
-                BAT *r = VIEWcreate(b,bn);
-
-                BBPreleaseref(bn->batCacheid);
-                bn = r;
-        }
+	t = (date *) Tloc(b, BUNfirst(b));
+	m = (int *) Tloc(bn, BUNfirst(bn));
+	for( i = 0; i < n ; i++){
+		if ( *t == date_nil){
+			*m = int_nil;
+		} else 
+			date_extract_month(m, t);
+		if (*m == int_nil){
+			bn->T->nonil = 0;
+			bn->T->nil = 1;
+		}
+		m++; t++;
+	}
+	if (b->htype != bn->htype) {
+			BAT *r = VIEWcreate(b,bn);
+			BBPreleaseref(bn->batCacheid);
+			bn = r;
+	}
+	BATsetcount(bn, (BUN) (m - (int *) Tloc(bn, BUNfirst(bn))));
+    BATsettrivprop(bn);
 
 	bn->H->nonil = b->H->nonil;
+	bn->H->nil = b->H->nil;
 	bn->hsorted = b->hsorted;
 	bn->hrevsorted = b->hrevsorted;
 	BATkey(bn, BAThkey(b));
-	bn->tsorted = FALSE;
-	bn->trevsorted = FALSE;
-	bn->T->nonil = FALSE;
+
+	bn->tsorted = BATcount(bn) < 2;
+	bn->trevsorted = BATcount(bn) < 2;
 
 	BBPkeepref(*ret = bn->batCacheid);
 	BBPunfix(b->batCacheid);
@@ -2948,43 +2977,53 @@ str
 MTIMEdate_extract_day_bulk(int *ret, int *bid)
 {
 	BAT *b, *bn;
-	int v;
-	date d;
-	BUN p, q;
-	BATiter bi;
+	BUN i,n;
+	int *d;
+	date *t;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "bbp.getdate", "Cannot access descriptor");
+		throw(MAL, "batmtime.day", "Cannot access descriptor");
+	n = BATcount(b);
 
 	bn = BATnew(TYPE_void, TYPE_int, BATcount(b));
-	if (bn == NULL)
+	if (bn == NULL){
+		BBPreleaseref(b->batCacheid);
 		throw(MAL, "batmtime.day", "memory allocation failure");
-	BATseqbase(bn, b->H->seq);
-
-	bi = bat_iterator(b);
-	BATloop(b, p, q) {
-		d = *(date *) BUNtail(bi, p);
-		MTIMEdate_extract_day(&v, &d);
-		if (BUNappend(bn, &v, FALSE) == NULL) {
-			BBPunfix(bn->batCacheid);
-			throw(MAL, "batmtime.day", "inserting value failed");
-		}
 	}
+	BATseqbase(bn, b->H->seq);
+	bn->T->nonil = 1;
+	bn->T->nil = 0;
 
-        if (b->htype != bn->htype) {
-                BAT *r = VIEWcreate(b,bn);
-
-                BBPreleaseref(bn->batCacheid);
-                bn = r;
-        }
+	t = (date *) Tloc(b, BUNfirst(b));
+	d = (int *) Tloc(bn, BUNfirst(bn));
+	for( i = 0; i < n ; i++){
+		if ( *t == date_nil){
+			*d = int_nil;
+		} else 
+			date_extract_day(d, t);
+		if (*d == int_nil){
+			bn->T->nonil = 0;
+			bn->T->nil = 1;
+		}
+		d++; t++;
+	}
+	
+	if (b->htype != bn->htype) {
+			BAT *r = VIEWcreate(b,bn);
+			BBPreleaseref(bn->batCacheid);
+			bn = r;
+	}
+	BATsetcount(bn, (BUN) (d - (int *) Tloc(bn, BUNfirst(bn))));
+    BATsettrivprop(bn);
 
 	bn->H->nonil = b->H->nonil;
+	bn->H->nil = b->H->nil;
 	bn->hsorted = b->hsorted;
 	bn->hrevsorted = b->hrevsorted;
 	BATkey(bn, BAThkey(b));
-	bn->tsorted = FALSE;
-	bn->trevsorted = FALSE;
-	bn->T->nonil = FALSE;
+
+	bn->tsorted = BATcount(bn) <2;
+	bn->trevsorted = BATcount(bn) <2;
 
 	BBPkeepref(*ret = bn->batCacheid);
 	BBPunfix(b->batCacheid);
@@ -2995,43 +3034,52 @@ str
 MTIMEdaytime_extract_hours_bulk(int *ret, int *bid)
 {
 	BAT *b, *bn;
-	int v;
-	date d;
-	BUN p, q;
-	BATiter bi;
+	BUN i, n;
+	int *h;
+	date *t;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "bbp.getdaytime", "Cannot access descriptor");
+		throw(MAL, "batmtime.hourse", "Cannot access descriptor");
+	n = BATcount(b);
 
 	bn = BATnew(TYPE_void, TYPE_int, BATcount(b));
-	if (bn == NULL)
+	if (bn == NULL){
+		BBPreleaseref(b->batCacheid);
 		throw(MAL, "batmtime.hours", "memory allocation failure");
-	BATseqbase(bn, b->H->seq);
-
-	bi = bat_iterator(b);
-	BATloop(b, p, q) {
-		d = *(date *) BUNtail(bi, p);
-		MTIMEdaytime_extract_hours(&v, &d);
-		if (BUNappend(bn, &v, FALSE) == NULL) {
-			BBPunfix(bn->batCacheid);
-			throw(MAL, "batmtime.hours", "inserting value failed");
-		}
 	}
+	BATseqbase(bn, b->H->seq);
+	bn->T->nonil = 1;
+	bn->T->nil = 0;
 
-        if (b->htype != bn->htype) {
-                BAT *r = VIEWcreate(b,bn);
-
-                BBPreleaseref(bn->batCacheid);
-                bn = r;
-        }
+	t = (date *) Tloc(b, BUNfirst(b));
+	h = (int *) Tloc(bn, BUNfirst(bn));
+	for( i = 0; i < n ; i++){
+		if ( *t == date_nil){
+			*h = int_nil;
+		} else 
+			daytime_extract_hours(h, t);
+		if (*h == int_nil){
+			bn->T->nonil = 0;
+			bn->T->nil = 1;
+		}
+		h++; t++;
+	}
+	if (b->htype != bn->htype) {
+			BAT *r = VIEWcreate(b,bn);
+			BBPreleaseref(bn->batCacheid);
+			bn = r;
+	}
+	BATsetcount(bn, (BUN) (h - (int *) Tloc(bn, BUNfirst(bn))));
+    BATsettrivprop(bn);
 
 	bn->H->nonil = b->H->nonil;
+	bn->H->nil = b->H->nil;
 	bn->hsorted = b->hsorted;
 	bn->hrevsorted = b->hrevsorted;
 	BATkey(bn, BAThkey(b));
-	bn->tsorted = FALSE;
-	bn->trevsorted = FALSE;
-	bn->T->nonil = FALSE;
+
+	bn->tsorted = BATcount(bn) <2;;
+	bn->trevsorted = BATcount(bn) <2;;
 
 	BBPkeepref(*ret = bn->batCacheid);
 	BBPunfix(b->batCacheid);
@@ -3042,43 +3090,50 @@ str
 MTIMEdaytime_extract_minutes_bulk(int *ret, int *bid)
 {
 	BAT *b, *bn;
-	int v;
-	date d;
-	BUN p, q;
-	BATiter bi;
+	BUN i, n;
+	date *t;
+	int *m;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "bbp.getdaytime", "Cannot access descriptor");
+		throw(MAL, "batmtime.minutes", "Cannot access descriptor");
+	n = BATcount(b);
 
 	bn = BATnew(TYPE_void, TYPE_int, BATcount(b));
-	if (bn == NULL)
+	if (bn == NULL){
+		BBPreleaseref(b->batCacheid);
 		throw(MAL, "batmtime.minutes", "memory allocation failure");
+	}
 	BATseqbase(bn, b->H->seq);
 
-	bi = bat_iterator(b);
-	BATloop(b, p, q) {
-		d = *(date *) BUNtail(bi, p);
-		MTIMEdaytime_extract_minutes(&v, &d);
-		if (BUNappend(bn, &v, FALSE) == NULL) {
-			BBPunfix(bn->batCacheid);
-			throw(MAL, "batmtime.minutes", "inserting value failed");
+	t = (date *) Tloc(b, BUNfirst(b));
+	m = (int *) Tloc(bn, BUNfirst(bn));
+	for( i = 0; i < n ; i++){
+		if ( *t == date_nil){
+			*m = int_nil;
+		} else 
+			daytime_extract_minutes(m, t);
+		if (*m == int_nil){
+			bn->T->nonil = 0;
+			bn->T->nil = 1;
 		}
+		m++; t++;
 	}
-
-        if (b->htype != bn->htype) {
-                BAT *r = VIEWcreate(b,bn);
-
-                BBPreleaseref(bn->batCacheid);
-                bn = r;
-        }
+	if (b->htype != bn->htype) {
+			BAT *r = VIEWcreate(b,bn);
+			BBPreleaseref(bn->batCacheid);
+			bn = r;
+	}
+	BATsetcount(bn, (BUN) (m - (int *) Tloc(bn, BUNfirst(bn))));
+    BATsettrivprop(bn);
 
 	bn->H->nonil = b->H->nonil;
+	bn->H->nil = b->H->nil;
 	bn->hsorted = b->hsorted;
 	bn->hrevsorted = b->hrevsorted;
 	BATkey(bn, BAThkey(b));
+
 	bn->tsorted = FALSE;
 	bn->trevsorted = FALSE;
-	bn->T->nonil = FALSE;
 
 	BBPkeepref(*ret = bn->batCacheid);
 	BBPunfix(b->batCacheid);
@@ -3089,43 +3144,49 @@ str
 MTIMEdaytime_extract_seconds_bulk(int *ret, int *bid)
 {
 	BAT *b, *bn;
-	int v;
-	date d;
-	BUN p, q;
-	BATiter bi;
+	BUN i, n;
+	date *t;
+	int *s;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "bbp.getdaytime", "Cannot access descriptor");
+		throw(MAL, "batmtime.seconds", "Cannot access descriptor");
+	n = BATcount(b);
 
 	bn = BATnew(TYPE_void, TYPE_int, BATcount(b));
-	if (bn == NULL)
+	if (bn == NULL){
+		BBPreleaseref(b->batCacheid);
 		throw(MAL, "batmtime.seconds", "memory allocation failure");
+	}
 	BATseqbase(bn, b->H->seq);
 
-	bi = bat_iterator(b);
-	BATloop(b, p, q) {
-		d = *(date *) BUNtail(bi, p);
-		MTIMEdaytime_extract_seconds(&v, &d);
-		if (BUNappend(bn, &v, FALSE) == NULL) {
-			BBPunfix(bn->batCacheid);
-			throw(MAL, "batmtime.seconds", "inserting value failed");
+	t = (date *) Tloc(b, BUNfirst(b));
+	s = (int *) Tloc(bn, BUNfirst(bn));
+	for( i = 0; i < n ; i++){
+		if ( *t == date_nil){
+			*s = int_nil;
+		} else 
+			daytime_extract_seconds(s, t);
+		if (*s == int_nil){
+			bn->T->nonil = 0;
+			bn->T->nil = 1;
 		}
+		s++; t++;
 	}
-
-        if (b->htype != bn->htype) {
-                BAT *r = VIEWcreate(b,bn);
-
-                BBPreleaseref(bn->batCacheid);
-                bn = r;
-        }
+	if (b->htype != bn->htype) {
+			BAT *r = VIEWcreate(b,bn);
+			BBPreleaseref(bn->batCacheid);
+			bn = r;
+	}
+	BATsetcount(bn, (BUN) (s - (int *) Tloc(bn, BUNfirst(bn))));
+    BATsettrivprop(bn);
 
 	bn->H->nonil = b->H->nonil;
+	bn->H->nil = b->H->nil;
 	bn->hsorted = b->hsorted;
 	bn->hrevsorted = b->hrevsorted;
 	BATkey(bn, BAThkey(b));
 	bn->tsorted = FALSE;
 	bn->trevsorted = FALSE;
-	bn->T->nonil = FALSE;
 
 	BBPkeepref(*ret = bn->batCacheid);
 	BBPunfix(b->batCacheid);
@@ -3136,43 +3197,50 @@ str
 MTIMEdaytime_extract_sql_seconds_bulk(int *ret, int *bid)
 {
 	BAT *b, *bn;
-	int v;
-	date d;
-	BUN p, q;
-	BATiter bi;
+	BUN i, n;
+	date *t;
+	int *s;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "bbp.getdaytime", "Cannot access descriptor");
+		throw(MAL, "batmtime.sql_seconds", "Cannot access descriptor");
+	n = BATcount(b);
 
 	bn = BATnew(TYPE_void, TYPE_int, BATcount(b));
-	if (bn == NULL)
+	if (bn == NULL){
+		BBPreleaseref(b->batCacheid);
 		throw(MAL, "batmtime.sql_seconds", "memory allocation failure");
+	}
 	BATseqbase(bn, b->H->seq);
 
-	bi = bat_iterator(b);
-	BATloop(b, p, q) {
-		d = *(date *) BUNtail(bi, p);
-		MTIMEdaytime_extract_sql_seconds(&v, &d);
-		if (BUNappend(bn, &v, FALSE) == NULL) {
-			BBPunfix(bn->batCacheid);
-			throw(MAL, "batmtime.sql_seconds", "inserting value failed");
+	t = (date *) Tloc(b, BUNfirst(b));
+	s = (int *) Tloc(bn, BUNfirst(bn));
+	for( i = 0; i < n ; i++){
+		if ( *t == date_nil){
+			*s = int_nil;
+		} else 
+			daytime_extract_sql_seconds(s, t);
+		if (*s == int_nil){
+			bn->T->nonil = 0;
+			bn->T->nil = 1;
 		}
+		s++; t++;
+	}
+	BATsetcount(bn, (BUN) (s - (int *) Tloc(bn, BUNfirst(bn))));
+    BATsettrivprop(bn);
+
+	if (b->htype != bn->htype) {
+			BAT *r = VIEWcreate(b,bn);
+			BBPreleaseref(bn->batCacheid);
+			bn = r;
 	}
 
-        if (b->htype != bn->htype) {
-                BAT *r = VIEWcreate(b,bn);
-
-                BBPreleaseref(bn->batCacheid);
-                bn = r;
-        }
-
 	bn->H->nonil = b->H->nonil;
+	bn->H->nil = b->H->nil;
 	bn->hsorted = b->hsorted;
 	bn->hrevsorted = b->hrevsorted;
 	BATkey(bn, BAThkey(b));
-	bn->tsorted = FALSE;
-	bn->trevsorted = FALSE;
-	bn->T->nonil = FALSE;
+	bn->tsorted = BATcount(bn) <2;
+	bn->trevsorted = BATcount(bn) <2;
 
 	BBPkeepref(*ret = bn->batCacheid);
 	BBPunfix(b->batCacheid);
@@ -3183,43 +3251,49 @@ str
 MTIMEdaytime_extract_milliseconds_bulk(int *ret, int *bid)
 {
 	BAT *b, *bn;
-	int v;
-	date d;
-	BUN p, q;
-	BATiter bi;
+	BUN i, n;
+	date *t;
+	int *s;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "bbp.getdaytime", "Cannot access descriptor");
+		throw(MAL, "batmtime.milliseconds", "Cannot access descriptor");
+	n = BATcount(b);
 
 	bn = BATnew(TYPE_void, TYPE_int, BATcount(b));
-	if (bn == NULL)
+	if (bn == NULL){
+		BBPreleaseref(b->batCacheid);
 		throw(MAL, "batmtime.milliseconds", "memory allocation failure");
+	}
 	BATseqbase(bn, b->H->seq);
 
-	bi = bat_iterator(b);
-	BATloop(b, p, q) {
-		d = *(date *) BUNtail(bi, p);
-		MTIMEdaytime_extract_milliseconds(&v, &d);
-		if (BUNappend(bn, &v, FALSE) == NULL) {
-			BBPunfix(bn->batCacheid);
-			throw(MAL, "batmtime.milliseconds", "inserting value failed");
+	t = (date *) Tloc(b, BUNfirst(b));
+	s = (int *) Tloc(bn, BUNfirst(bn));
+	for( i = 0; i < n ; i++){
+		if ( *t == date_nil){
+			*s = int_nil;
+		} else 
+			daytime_extract_milliseconds(s, t);
+		if (*s == int_nil){
+			bn->T->nonil = 0;
+			bn->T->nil = 1;
 		}
+		s++; t++;
 	}
-
-        if (b->htype != bn->htype) {
-                BAT *r = VIEWcreate(b,bn);
-
-                BBPreleaseref(bn->batCacheid);
-                bn = r;
-        }
+	if (b->htype != bn->htype) {
+			BAT *r = VIEWcreate(b,bn);
+			BBPreleaseref(bn->batCacheid);
+			bn = r;
+	}
+	BATsetcount(bn, (BUN) (s - (int *) Tloc(bn, BUNfirst(bn))));
+    BATsettrivprop(bn);
 
 	bn->H->nonil = b->H->nonil;
+	bn->H->nil = b->H->nil;
 	bn->hsorted = b->hsorted;
 	bn->hrevsorted = b->hrevsorted;
 	BATkey(bn, BAThkey(b));
 	bn->tsorted = FALSE;
 	bn->trevsorted = FALSE;
-	bn->T->nonil = FALSE;
 
 	BBPkeepref(*ret = bn->batCacheid);
 	BBPunfix(b->batCacheid);
