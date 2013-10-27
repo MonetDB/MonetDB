@@ -360,7 +360,7 @@ fromdate(int n, int *d, int *m, int *y)
 
 	day++;
 	if ( leapyear(year)){
-		for (month = day/28==0?1:day/28; month <= 12; month++) 
+		for (month = day/31==0?1:day/31; month <= 12; month++) 
 		if ( day > CUMLEAPDAYS[month-1] && day <= CUMLEAPDAYS[month]){
 			if( m) *m = month;
 			if (d == 0) return;
@@ -368,7 +368,7 @@ fromdate(int n, int *d, int *m, int *y)
 		}
 		day -= CUMLEAPDAYS[month-1];
 	} else{
-		for (month = day/28==0?1:day/28; month <= 12; month++) 
+		for (month = day/31==0?1:day/31; month <= 12; month++) 
 		if ( day > CUMDAYS[month-1] && day <= CUMDAYS[month]){
 			if( m) *m = month;
 			if (d == 0) return;
