@@ -233,14 +233,16 @@ static str DAYS[8] = { NULL, "monday", "tuesday", "wednesday", "thursday",
 };
 static str COUNT1[7] = { NULL, "first", "second", "third", "fourth", "fifth", "last" };
 static str COUNT2[7] = { NULL, "1st", "2nd", "3rd", "4th", "5th", "last" };
-static int NODAYS[13] = { 0, 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
+static int LEAPDAYS[13] = { 0, 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
+//static int NOLEAPDAYS[13] = { 0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
 static int CUMDAYS[13] = { 0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365 };
+static int CUMLEAPDAYS[13] = { 0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335, 366 };
 
 date DATE_MAX, DATE_MIN;		/* often used dates; computed once */
 
 #define YEAR_MAX	5867411
 #define YEAR_MIN	-YEAR_MAX
-#define MONTHDAYS(m,y)	(((m)!=2)?NODAYS[m]:leapyear(y)?29:28)
+#define MONTHDAYS(m,y)	(((m)!=2)?LEAPDAYS[m]:leapyear(y)?29:28)
 #define YEARDAYS(y)	(leapyear(y)?366:365)
 #define LEAPYEARS(y)	(leapyears(y)+((y)>=0))
 #define DATE(d,m,y)	((m)>0&&(m)<=12&&(d)>0&&(y)!=0&&(y)>=YEAR_MIN&&(y)<=YEAR_MAX&&(d)<=MONTHDAYS(m,y))
@@ -357,15 +359,22 @@ fromdate(int n, int *d, int *m, int *y)
 	}
 
 	day++;
-	for (month = 1; month <= 12; month++) {
-		int days = MONTHDAYS(month, year);
-
-		if (day <= days){
+	if ( leapyear(year)){
+		for (month = day/28==0?1:day/28; month <= 12; month++) 
+		if ( day > CUMLEAPDAYS[month-1] && day <= CUMLEAPDAYS[month]){
 			if( m) *m = month;
 			if (d == 0) return;
 			break;
 		}
-		day -= days;
+		day -= CUMLEAPDAYS[month-1];
+	} else{
+		for (month = day/28==0?1:day/28; month <= 12; month++) 
+		if ( day > CUMDAYS[month-1] && day <= CUMDAYS[month]){
+			if( m) *m = month;
+			if (d == 0) return;
+			break;
+		}
+		day -= CUMDAYS[month-1];
 	}
 	if( d) *d = day;
 	if( m) *m = month;
@@ -974,7 +983,7 @@ rule_fromstr(str buf, int *len, rule **d)
 	}
 
 	/* assign if semantically ok */
-	if (day >= 1 && day <= NODAYS[month] &&
+	if (day >= 1 && day <= LEAPDAYS[month] &&
 		hours >= 0 && hours < 60 &&
 		minutes >= 0 && minutes < 60) {
 		(*d)->s.month = month;
@@ -1108,7 +1117,7 @@ date_prelude(void)
 {
 	MONTHS[0] = (str) str_nil;
 	DAYS[0] = (str) str_nil;
-	NODAYS[0] = int_nil;
+	LEAPDAYS[0] = int_nil;
 	DATE_MAX = todate(31, 12, YEAR_MAX);
 	DATE_MIN = todate(1, 1, YEAR_MIN);
 	tzone_local.dst = 0;
@@ -1554,7 +1563,7 @@ rule_create(rule *ret, int *month, int *day, int *weekday, int *minutes)
 	if (*month != int_nil && *month >= 1 && *month <= 12 &&
 		*weekday != int_nil && ABS(*weekday) <= 7 &&
 		*minutes != int_nil && *minutes >= 0 && *minutes < 24 * 60 &&
-		*day != int_nil && ABS(*day) >= 1 && ABS(*day) <= NODAYS[*month] &&
+		*day != int_nil && ABS(*day) >= 1 && ABS(*day) <= LEAPDAYS[*month] &&
 		(*weekday || *day > 0)) {
 		ret->s.month = *month;
 		ret->s.day = DAY_ZERO + *day;
