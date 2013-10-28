@@ -318,11 +318,11 @@ todate(int day, int month, int year)
 }
 
 static void
-fromdate(int n, int *d, int *m, int *y)
+fromdate(date n, int *d, int *m, int *y)
 {
 	int day, month, year;
 
-	if (n == int_nil) {
+	if (n == date_nil) {
 		if (d)
 			*d = int_nil;
 		if (m)
@@ -392,11 +392,11 @@ totime(int hour, int min, int sec, int msec)
 }
 
 static void
-fromtime(int n, int *hour, int *min, int *sec, int *msec)
+fromtime(daytime n, int *hour, int *min, int *sec, int *msec)
 {
 	int h, m, s, ms;
 
-	if (n != int_nil) {
+	if (n != daytime_nil) {
 		h = n / 3600000;
 		n -= h * 3600000;
 		m = n / 60000;
@@ -533,7 +533,7 @@ timestamp_inside(timestamp *ret, const timestamp *t, const tzone *z, lng offset)
 	start_msecs = start.s.minutes * 60000;
 	end_msecs = end.s.minutes * 60000;
 
-	fromdate((int) ret->days, NULL, NULL, &year);
+	fromdate(ret->days, NULL, NULL, &year);
 	start_days = compute_rule(&start, year);
 	end_days = compute_rule(&end, year);
 
@@ -634,7 +634,7 @@ date_tostr(str *buf, int *len, const date *val)
 {
 	int day, month, year;
 
-	fromdate((int) *val, &day, &month, &year);
+	fromdate(*val, &day, &month, &year);
 	/* longest possible string: "-5867411-01-01" i.e. 14 chars
 	   without NUL (see definition of YEAR_MIN/YEAR_MAX above) */
 	if (*len < 15) {
@@ -743,7 +743,7 @@ daytime_tostr(str *buf, int *len, const daytime *val)
 {
 	int hour, min, sec, msec;
 
-	fromtime((int) *val, &hour, &min, &sec, &msec);
+	fromtime(*val, &hour, &min, &sec, &msec);
 	if (*len < 12) {
 		if (*buf)
 			GDKfree(*buf);
@@ -1555,7 +1555,7 @@ MTIMEdate_extract_year(int *ret, const date *v)
 	if (*v == date_nil) {
 		*ret = int_nil;
 	} else {
-		fromdate((int) *v, NULL, NULL, ret);
+		fromdate(*v, NULL, NULL, ret);
 	}
 	return MAL_SUCCEED;
 }
@@ -1567,7 +1567,7 @@ MTIMEdate_extract_month(int *ret, const date *v)
 	if (*v == date_nil) {
 		*ret = int_nil;
 	} else {
-		fromdate((int) *v, NULL, ret, NULL);
+		fromdate(*v, NULL, ret, NULL);
 	}
 	return MAL_SUCCEED;
 }
@@ -1579,7 +1579,7 @@ MTIMEdate_extract_day(int *ret, const date *v)
 	if (*v == date_nil) {
 		*ret = int_nil;
 	} else {
-		fromdate((int) *v, ret, NULL, NULL);
+		fromdate(*v, ret, NULL, NULL);
 	}
 	return MAL_SUCCEED;
 }
@@ -1593,7 +1593,7 @@ MTIMEdate_extract_dayofyear(int *ret, const date *v)
 	} else {
 		int year;
 
-		fromdate((int) *v, NULL, NULL, &year);
+		fromdate(*v, NULL, NULL, &year);
 		*ret = (int) (1 + *v - todate(1, 1, year));
 	}
 	return MAL_SUCCEED;
@@ -1613,7 +1613,7 @@ MTIMEdate_extract_weekofyear(int *ret, const date *v)
 		/* find the Thursday in the same week as the given date */
 		thd = *v + 4 - date_dayofweek(*v);
 		/* extract the year (may be different from year of the given date!) */
-		fromdate((int) thd, NULL, NULL, &year);
+		fromdate(thd, NULL, NULL, &year);
 		/* find January 4 of that year */
 		thd1 = todate(4, 1, year);
 		/* find the Thursday of the week in which January 4 falls */
@@ -1643,7 +1643,7 @@ MTIMEdaytime_extract_hours(int *ret, const daytime *v)
 	if (*v == daytime_nil) {
 		*ret = int_nil;
 	} else {
-		fromtime((int) *v, ret, NULL, NULL, NULL);
+		fromtime(*v, ret, NULL, NULL, NULL);
 	}
 	return MAL_SUCCEED;
 }
@@ -1655,7 +1655,7 @@ MTIMEdaytime_extract_minutes(int *ret, const daytime *v)
 	if (*v == daytime_nil) {
 		*ret = int_nil;
 	} else {
-		fromtime((int) *v, NULL, ret, NULL, NULL);
+		fromtime(*v, NULL, ret, NULL, NULL);
 	}
 	return MAL_SUCCEED;
 }
@@ -1667,7 +1667,7 @@ MTIMEdaytime_extract_seconds(int *ret, const daytime *v)
 	if (*v == daytime_nil) {
 		*ret = int_nil;
 	} else {
-		fromtime((int) *v, NULL, NULL, ret, NULL);
+		fromtime(*v, NULL, NULL, ret, NULL);
 	}
 	return MAL_SUCCEED;
 }
@@ -1681,7 +1681,7 @@ MTIMEdaytime_extract_sql_seconds(int *ret, const daytime *v)
 	if (*v == daytime_nil) {
 		*ret = int_nil;
 	} else {
-		fromtime((int) *v, NULL, NULL, &sec, &milli);
+		fromtime(*v, NULL, NULL, &sec, &milli);
 		*ret = sec * 1000 + milli;
 	}
 	return MAL_SUCCEED;
@@ -1694,7 +1694,7 @@ MTIMEdaytime_extract_milliseconds(int *ret, const daytime *v)
 	if (*v == daytime_nil) {
 		*ret = int_nil;
 	} else {
-		fromtime((int) *v, NULL, NULL, NULL, ret);
+		fromtime(*v, NULL, NULL, NULL, ret);
 	}
 	return MAL_SUCCEED;
 }
@@ -1767,7 +1767,7 @@ MTIMEdate_addyears(date *ret, const date *v, const int *delta)
 	} else {
 		int d, m, y, x, z = *delta;
 
-		fromdate((int) *v, &d, &m, &y);
+		fromdate(*v, &d, &m, &y);
 		if (m >= 3) {
 			y++;
 		}
@@ -1814,7 +1814,7 @@ MTIMEdate_addmonths(date *ret, const date *v, const int *delta)
 	} else {
 		int d, m, y, x, z = *delta;
 
-		fromdate((int) *v, &d, &m, &y);
+		fromdate(*v, &d, &m, &y);
 		*ret = *v;
 		while (z > 0) {
 			z--;
@@ -3129,7 +3129,7 @@ MTIMEstrftime(str *s, const date *d, const char * const *format)
 		return MAL_SUCCEED;
 	}
 	memset(&t, 0, sizeof(struct tm));
-	fromdate((int) *d, &t.tm_mday, &mon, &year);
+	fromdate(*d, &t.tm_mday, &mon, &year);
 	t.tm_mon = mon - 1;
 	t.tm_year = year - 1900;
 	if ((sz = strftime(buf, BUFSIZ, *format, &t)) == 0)
