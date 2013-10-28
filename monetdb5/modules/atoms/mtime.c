@@ -2782,13 +2782,11 @@ MTIMEdate_extract_year_bulk(int *ret, int *bid)
 	}
 
 	if (b->htype != bn->htype) {
-			BAT *r = VIEWcreate(b,bn);
-			BBPreleaseref(bn->batCacheid);
-			bn = r;
+		BAT *r = VIEWcreate(b,bn);
+		BBPreleaseref(bn->batCacheid);
+		bn = r;
 	}
-
 	BATsetcount(bn, (BUN) (y - (int *) Tloc(bn, BUNfirst(bn))));
-    BATsettrivprop(bn);
 
 	bn->H->nonil = b->H->nonil;
 	bn->H->nil = b->H->nil;
@@ -2840,12 +2838,11 @@ MTIMEdate_extract_month_bulk(int *ret, int *bid)
 		t++;
 	}
 	if (b->htype != bn->htype) {
-			BAT *r = VIEWcreate(b,bn);
-			BBPreleaseref(bn->batCacheid);
-			bn = r;
+		BAT *r = VIEWcreate(b,bn);
+		BBPreleaseref(bn->batCacheid);
+		bn = r;
 	}
 	BATsetcount(bn, (BUN) (m - (int *) Tloc(bn, BUNfirst(bn))));
-    BATsettrivprop(bn);
 
 	bn->H->nonil = b->H->nonil;
 	bn->H->nil = b->H->nil;
@@ -2898,12 +2895,11 @@ MTIMEdate_extract_day_bulk(int *ret, int *bid)
 	}
 
 	if (b->htype != bn->htype) {
-			BAT *r = VIEWcreate(b,bn);
-			BBPreleaseref(bn->batCacheid);
-			bn = r;
+		BAT *r = VIEWcreate(b,bn);
+		BBPreleaseref(bn->batCacheid);
+		bn = r;
 	}
 	BATsetcount(bn, (BUN) (d - (int *) Tloc(bn, BUNfirst(bn))));
-    BATsettrivprop(bn);
 
 	bn->H->nonil = b->H->nonil;
 	bn->H->nil = b->H->nil;
@@ -2955,12 +2951,11 @@ MTIMEdaytime_extract_hours_bulk(int *ret, int *bid)
 		t++;
 	}
 	if (b->htype != bn->htype) {
-			BAT *r = VIEWcreate(b,bn);
-			BBPreleaseref(bn->batCacheid);
-			bn = r;
+		BAT *r = VIEWcreate(b,bn);
+		BBPreleaseref(bn->batCacheid);
+		bn = r;
 	}
 	BATsetcount(bn, (BUN) (h - (int *) Tloc(bn, BUNfirst(bn))));
-    BATsettrivprop(bn);
 
 	bn->H->nonil = b->H->nonil;
 	bn->H->nil = b->H->nil;
@@ -3010,12 +3005,11 @@ MTIMEdaytime_extract_minutes_bulk(int *ret, int *bid)
 		t++;
 	}
 	if (b->htype != bn->htype) {
-			BAT *r = VIEWcreate(b,bn);
-			BBPreleaseref(bn->batCacheid);
-			bn = r;
+		BAT *r = VIEWcreate(b,bn);
+		BBPreleaseref(bn->batCacheid);
+		bn = r;
 	}
 	BATsetcount(bn, (BUN) (m - (int *) Tloc(bn, BUNfirst(bn))));
-    BATsettrivprop(bn);
 
 	bn->H->nonil = b->H->nonil;
 	bn->H->nil = b->H->nil;
@@ -3064,12 +3058,11 @@ MTIMEdaytime_extract_seconds_bulk(int *ret, int *bid)
 		s++; t++;
 	}
 	if (b->htype != bn->htype) {
-			BAT *r = VIEWcreate(b,bn);
-			BBPreleaseref(bn->batCacheid);
-			bn = r;
+		BAT *r = VIEWcreate(b,bn);
+		BBPreleaseref(bn->batCacheid);
+		bn = r;
 	}
 	BATsetcount(bn, (BUN) (s - (int *) Tloc(bn, BUNfirst(bn))));
-    BATsettrivprop(bn);
 
 	bn->H->nonil = b->H->nonil;
 	bn->H->nil = b->H->nil;
@@ -3117,14 +3110,13 @@ MTIMEdaytime_extract_sql_seconds_bulk(int *ret, int *bid)
 		s++;
 		t++;
 	}
-	BATsetcount(bn, (BUN) (s - (int *) Tloc(bn, BUNfirst(bn))));
-    BATsettrivprop(bn);
 
 	if (b->htype != bn->htype) {
-			BAT *r = VIEWcreate(b,bn);
-			BBPreleaseref(bn->batCacheid);
-			bn = r;
+		BAT *r = VIEWcreate(b,bn);
+		BBPreleaseref(bn->batCacheid);
+		bn = r;
 	}
+	BATsetcount(bn, (BUN) (s - (int *) Tloc(bn, BUNfirst(bn))));
 
 	bn->H->nonil = b->H->nonil;
 	bn->H->nil = b->H->nil;
@@ -3173,12 +3165,11 @@ MTIMEdaytime_extract_milliseconds_bulk(int *ret, int *bid)
 		t++;
 	}
 	if (b->htype != bn->htype) {
-			BAT *r = VIEWcreate(b,bn);
-			BBPreleaseref(bn->batCacheid);
-			bn = r;
+		BAT *r = VIEWcreate(b,bn);
+		BBPreleaseref(bn->batCacheid);
+		bn = r;
 	}
 	BATsetcount(bn, (BUN) (s - (int *) Tloc(bn, BUNfirst(bn))));
-    BATsettrivprop(bn);
 
 	bn->H->nonil = b->H->nonil;
 	bn->H->nil = b->H->nil;
