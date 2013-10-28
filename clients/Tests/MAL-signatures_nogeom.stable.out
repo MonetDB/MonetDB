@@ -38757,7 +38757,7 @@ comment Return hex string representation of the SHA-1 hash of the given string
 
 command clients.shutdown(forced:bit):void 
 address CLTshutdown;
-comment Close all client connections. If forced=false theclients are moved into FINISHING mode, which means thatthe process stops at the next cycle of the scenario.If forced=true all client processes are immediately killed
+comment Close all client connections. If forced=false theclients are moved into finishing mode, which means thatthe process stops at the next cycle of the scenario.If forced=true all client processes are immediately killed
 
 pattern clients.setTimeout(q:lng,s:lng):void 
 address CLTsetTimeout;
