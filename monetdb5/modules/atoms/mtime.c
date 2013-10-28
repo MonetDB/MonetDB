@@ -394,17 +394,27 @@ totime(int hour, int min, int sec, int msec)
 void
 fromtime(int n, int *hour, int *min, int *sec, int *msec)
 {
+	int h, m, s, ms;
+
 	if (n != int_nil) {
-		*hour = n / 3600000;
-		n -= (*hour) * 3600000;
-		*min = n / 60000;
-		n -= (*min) * 60000;
-		*sec = n / 1000;
-		n -= (*sec) * 1000;
-		*msec = n;
+		h = n / 3600000;
+		n -= h * 3600000;
+		m = n / 60000;
+		n -= m * 60000;
+		s = n / 1000;
+		n -= s * 1000;
+		ms = n;
 	} else {
-		*hour = *min = *sec = *msec = int_nil;
+		h = m = s = ms = int_nil;
 	}
+	if (hour)
+		*hour = h;
+	if (min)
+		*min = m;
+	if (sec)
+		*sec = s;
+	if (msec)
+		*msec = ms;
 }
 
 /* matches regardless of case and extra spaces */
@@ -1718,11 +1728,10 @@ MTIMEdate_extract_dayofweek(int *ret, date *v)
 str
 MTIMEdaytime_extract_hours(int *ret, daytime *v)
 {
-	int dummy;
 	if (*v == daytime_nil) {
 		*ret = int_nil;
 	} else {
-		fromtime((int) *v, ret, &dummy, &dummy, &dummy);
+		fromtime((int) *v, ret, NULL, NULL, NULL);
 	}
 	return MAL_SUCCEED;
 }
@@ -1731,11 +1740,10 @@ MTIMEdaytime_extract_hours(int *ret, daytime *v)
 str
 MTIMEdaytime_extract_minutes(int *ret, daytime *v)
 {
-	int dummy;
 	if (*v == daytime_nil) {
 		*ret = int_nil;
 	} else {
-		fromtime((int) *v, &dummy, ret, &dummy, &dummy);
+		fromtime((int) *v, NULL, ret, NULL, NULL);
 	}
 	return MAL_SUCCEED;
 }
@@ -1744,11 +1752,10 @@ MTIMEdaytime_extract_minutes(int *ret, daytime *v)
 str
 MTIMEdaytime_extract_seconds(int *ret, daytime *v)
 {
-	int dummy;
 	if (*v == daytime_nil) {
 		*ret = int_nil;
 	} else {
-		fromtime((int) *v, &dummy, &dummy, ret, &dummy);
+		fromtime((int) *v, NULL, NULL, ret, NULL);
 	}
 	return MAL_SUCCEED;
 }
@@ -1758,12 +1765,11 @@ str
 MTIMEdaytime_extract_sql_seconds(int *ret, daytime *v)
 {
 	int sec, milli;
-	int dummy;
 
 	if (*v == daytime_nil) {
 		*ret = int_nil;
 	} else {
-		fromtime((int) *v, &dummy, &dummy, &sec, &milli);
+		fromtime((int) *v, NULL, NULL, &sec, &milli);
 		*ret = sec * 1000 + milli;
 	}
 	return MAL_SUCCEED;
@@ -1773,11 +1779,10 @@ MTIMEdaytime_extract_sql_seconds(int *ret, daytime *v)
 str
 MTIMEdaytime_extract_milliseconds(int *ret, daytime *v)
 {
-	int dummy;
 	if (*v == daytime_nil) {
 		*ret = int_nil;
 	} else {
-		fromtime((int) *v, &dummy, &dummy, &dummy, ret);
+		fromtime((int) *v, NULL, NULL, NULL, ret);
 	}
 	return MAL_SUCCEED;
 }
