@@ -318,11 +318,11 @@ todate(int day, int month, int year)
 }
 
 void
-fromdate(date n, int *d, int *m, int *y)
+fromdate(int n, int *d, int *m, int *y)
 {
 	int day, month, year;
 
-	if (n == date_nil) {
+	if (n == int_nil) {
 		if (d)
 			*d = int_nil;
 		if (m)
@@ -523,7 +523,7 @@ timestamp_inside(timestamp *ret, timestamp *t, const tzone *z, lng offset)
 	start_msecs = start.s.minutes * 60000;
 	end_msecs = end.s.minutes * 60000;
 
-	fromdate(ret->days, NULL, NULL, &year);
+	fromdate((int) ret->days, NULL, NULL, &year);
 	start_days = compute_rule(&start, year);
 	end_days = compute_rule(&end, year);
 
@@ -624,7 +624,7 @@ date_tostr(str *buf, int *len, date *val)
 {
 	int day, month, year;
 
-	fromdate(*val, &day, &month, &year);
+	fromdate((int) *val, &day, &month, &year);
 	/* longest possible string: "-5867411-01-01" i.e. 14 chars
 	   without NUL (see definition of YEAR_MIN/YEAR_MAX above) */
 	if (*len < 15) {
@@ -1634,7 +1634,7 @@ MTIMEdate_extract_year(int *ret, date *v)
 	if (*v == date_nil) {
 		*ret = int_nil;
 	} else {
-		fromdate(*v, NULL, NULL, ret);
+		fromdate((int) *v, NULL, NULL, ret);
 	}
 	return MAL_SUCCEED;
 }
@@ -1646,7 +1646,7 @@ MTIMEdate_extract_month(int *ret, date *v)
 	if (*v == date_nil) {
 		*ret = int_nil;
 	} else {
-		fromdate(*v, NULL, ret, NULL);
+		fromdate((int) *v, NULL, ret, NULL);
 	}
 	return MAL_SUCCEED;
 }
@@ -1658,7 +1658,7 @@ MTIMEdate_extract_day(int *ret, date *v)
 	if (*v == date_nil) {
 		*ret = int_nil;
 	} else {
-		fromdate(*v, ret, NULL, NULL);
+		fromdate((int) *v, ret, NULL, NULL);
 	}
 	return MAL_SUCCEED;
 }
@@ -1672,7 +1672,7 @@ MTIMEdate_extract_dayofyear(int *ret, date *v)
 	} else {
 		int year;
 
-		fromdate(*v, NULL, NULL, &year);
+		fromdate((int) *v, NULL, NULL, &year);
 		*ret = (int) (1 + *v - todate(1, 1, year));
 	}
 	return MAL_SUCCEED;
@@ -1691,7 +1691,7 @@ MTIMEdate_extract_weekofyear(int *ret, date *v)
 		/* find the Thursday in the same week as the given date */
 		thd = *v + 4 - date_dayofweek(*v);
 		/* extract the year (may be different from year of the given date!) */
-		fromdate(thd, NULL, NULL, &year);
+		fromdate((int) thd, NULL, NULL, &year);
 		/* find January 4 of that year */
 		thd1 = todate(4, 1, year);
 		/* find the Thursday of the week in which January 4 falls */
@@ -1850,7 +1850,7 @@ MTIMEdate_addyears(date *ret, date *v, int *delta)
 	} else {
 		int d, m, y, x, z = *delta;
 
-		fromdate(*v, &d, &m, &y);
+		fromdate((int) *v, &d, &m, &y);
 		if (m >= 3) {
 			y++;
 		}
@@ -1897,7 +1897,7 @@ MTIMEdate_addmonths(date *ret, date *v, int *delta)
 	} else {
 		int d, m, y, x, z = *delta;
 
-		fromdate(*v, &d, &m, &y);
+		fromdate((int) *v, &d, &m, &y);
 		*ret = *v;
 		while (z > 0) {
 			z--;
@@ -3218,7 +3218,7 @@ MTIMEstrftime(str *s, date *d, str *format)
 		return MAL_SUCCEED;
 	}
 	memset(&t, 0, sizeof(struct tm));
-	fromdate(*d, &t.tm_mday, &mon, &year);
+	fromdate((int) *d, &t.tm_mday, &mon, &year);
 	t.tm_mon = mon - 1;
 	t.tm_year = year - 1900;
 	if ((sz = strftime(buf, BUFSIZ, *format, &t)) == 0)
