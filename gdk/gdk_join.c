@@ -105,12 +105,22 @@ joininitresults(BAT **r1p, BAT **r2p, BUN size, const char *func)
  */
 #define BINSEARCHBODY(OP)						\
 	do {								\
-		while (hi - lo > 1) {					\
-			mid = (hi + lo) / 2;				\
-			if (rvals[rcand ? rcand[mid] - offset : mid] OP v) \
-				hi = mid;				\
-			else						\
-				lo = mid;				\
+		if (rcand) {						\
+			while (hi - lo > 1) {				\
+				mid = (hi + lo) / 2;			\
+				if (rvals[rcand[mid] - offset] OP v)	\
+					hi = mid;			\
+				else					\
+					lo = mid;			\
+			}						\
+		} else {						\
+			while (hi - lo > 1) {				\
+				mid = (hi + lo) / 2;			\
+				if (rvals[mid] OP v)			\
+					hi = mid;			\
+				else					\
+					lo = mid;			\
+			}						\
 		}							\
 	} while (0)
 
@@ -223,11 +233,14 @@ binsearch(const oid *rcand, oid offset,
 	if ((c = ordering * cmp(VALUE(r, rcand ? rcand[hi] - offset : hi), v)) < 0 ||
 	    (last && c == 0))
 		return hi + 1;
-/* the two versions here are equivalent, the first is disabled because
- * it does more work in the inner loop */
-#if 0
+
 	/* loop invariant:
-	 * last ? value@lo <= v < value@hi : value@lo < v <= value@hi */
+	 * last ? value@lo <= v < value@hi : value@lo < v <= value@hi
+	 *
+	 * This version does some more work in the inner loop than the
+	 * type-expanded versions (ordering and rcand checks) but is
+	 * slow due to the function call and the needed check for
+	 * rvars (in VALUE()) already, so we're beyond caring. */
 	while (hi - lo > 1) {
 		mid = (hi + lo) / 2;
 		if ((c = ordering * cmp(VALUE(r, rcand ? rcand[mid] - offset : mid), v)) > 0 ||
@@ -236,29 +249,6 @@ binsearch(const oid *rcand, oid offset,
 		else
 			lo = mid;
 	}
-#else
-	if (last) {
-		/* loop invariant:
-		 * value@lo <= v < value@hi */
-		while (hi - lo > 1) {
-			mid = (hi + lo) / 2;
-			if (ordering * cmp(VALUE(r, rcand ? rcand[mid] - offset : mid), v) > 0)
-				hi = mid;
-			else
-				lo = mid;
-		}
-	} else {
-		/* loop invariant:
-		 * value@lo < v <= value@hi */
-		while (hi - lo > 1) {
-			mid = (hi + lo) / 2;
-			if (ordering * cmp(VALUE(r, rcand ? rcand[mid] - offset : mid), v) >= 0)
-				hi = mid;
-			else
-				lo = mid;
-		}
-	}
-#endif
 	return hi;
 }
 
