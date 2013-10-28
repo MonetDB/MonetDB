@@ -224,30 +224,40 @@
 
 tzone tzone_local;
 
-static str MONTHS[13] = { NULL, "january", "february", "march", "april", "may", "june",
+static const char *MONTHS[13] = {
+	NULL, "january", "february", "march", "april", "may", "june",
 	"july", "august", "september", "october", "november", "december"
 };
 
-static str DAYS[8] = { NULL, "monday", "tuesday", "wednesday", "thursday",
-				"friday", "saturday", "sunday"
+static const char *DAYS[8] = {
+	NULL, "monday", "tuesday", "wednesday", "thursday",
+	"friday", "saturday", "sunday"
 };
-static str COUNT1[7] = { NULL, "first", "second", "third", "fourth", "fifth", "last" };
-static str COUNT2[7] = { NULL, "1st", "2nd", "3rd", "4th", "5th", "last" };
-static int LEAPDAYS[13] = { 0, 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
-//static int NOLEAPDAYS[13] = { 0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
-static int CUMDAYS[13] = { 0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365 };
-static int CUMLEAPDAYS[13] = { 0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335, 366 };
+static const char *COUNT1[7] = {
+	NULL, "first", "second", "third", "fourth", "fifth", "last"
+};
+static const char *COUNT2[7] = {
+	NULL, "1st", "2nd", "3rd", "4th", "5th", "last"
+};
+static int LEAPDAYS[13] = {
+	0, 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31
+};
+static int CUMDAYS[13] = {
+	0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365
+};
+static int CUMLEAPDAYS[13] = {
+	0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335, 366
+};
 
-date DATE_MAX, DATE_MIN;		/* often used dates; computed once */
+static date DATE_MAX, DATE_MIN;		/* often used dates; computed once */
 
-#define YEAR_MAX	5867411
-#define YEAR_MIN	-YEAR_MAX
-#define MONTHDAYS(m,y)	(((m)!=2)?LEAPDAYS[m]:leapyear(y)?29:28)
-#define YEARDAYS(y)	(leapyear(y)?366:365)
-#define LEAPYEARS(y)	(leapyears(y)+((y)>=0))
-#define DATE(d,m,y)	((m)>0&&(m)<=12&&(d)>0&&(y)!=0&&(y)>=YEAR_MIN&&(y)<=YEAR_MAX&&(d)<=MONTHDAYS(m,y))
-#define TIME(h,m,s,x)	((h)>=0&&(h)<24&&(m)>=0&&(m)<60&&(s)>=0&&(s)<60&&(x)>=0 &&(x)<1000)
-#define LOWER(c)	(((c) >= 'A' && (c) <= 'Z') ? (c)+'a'-'A' : (c))
+#define YEAR_MAX		5867411
+#define YEAR_MIN		(-YEAR_MAX)
+#define MONTHDAYS(m,y)	((m) != 2 ? LEAPDAYS[m] : leapyear(y) ? 29 : 28)
+#define YEARDAYS(y)		(leapyear(y) ? 366 : 365)
+#define DATE(d,m,y)		((m) > 0 && (m) <= 12 && (d) > 0 && (y) != 0 && (y) >= YEAR_MIN && (y) <= YEAR_MAX && (d) <= MONTHDAYS(m, y))
+#define TIME(h,m,s,x)	((h) >= 0 && (h) < 24 && (m) >= 0 && (m) < 60 && (s) >= 0 && (s) < 60 && (x) >= 0 && (x) < 1000)
+#define LOWER(c)		((c) >= 'A' && (c) <= 'Z' ? (c) + 'a' - 'A' : (c))
 
 /*
  * auxiliary functions
@@ -264,31 +274,11 @@ static union {
 timestamp *timestamp_nil = NULL;
 static tzone *tzone_nil = NULL;
 
-static void date_prelude(void);
-
 int TYPE_date;
 int TYPE_daytime;
 int TYPE_timestamp;
 int TYPE_tzone;
 int TYPE_rule;
-
-static bat *
-monettime_prelude(void)
-{
-	ts_nil.nilval = lng_nil;
-	tz_nil.nilval = lng_nil;
-
-	timestamp_nil = &ts_nil.ts;
-	tzone_nil = &tz_nil.tz;
-
-	TYPE_date = ATOMindex("date");
-	TYPE_daytime = ATOMindex("daytime");
-	TYPE_timestamp = ATOMindex("timestamp");
-	TYPE_tzone = ATOMindex("timezone");
-	TYPE_rule = ATOMindex("rule");
-	date_prelude();
-	return NULL;
-}
 
 static int synonyms = TRUE;
 
@@ -306,7 +296,7 @@ leapyears(int year)
 	/* count the 400-fold years */
 	int y400 = year / 400;
 
-	return y4 + y400 - y100;	/* may be negative */
+	return y4 + y400 - y100 + (year >= 0);	/* may be negative */
 }
 
 static date
@@ -322,24 +312,27 @@ todate(int day, int month, int year)
 			n++;
 		n += CUMDAYS[month - 1];
 		/* current year does not count as leapyear */
-		n += 365 * year + LEAPYEARS(year >= 0 ? year - 1 : year);
+		n += 365 * year + leapyears(year >= 0 ? year - 1 : year);
 	}
 	return n;
 }
 
 void
-fromdate(int n, int *d, int *m, int *y)
+fromdate(date n, int *d, int *m, int *y)
 {
 	int day, month, year;
 
-	if ( n == int_nil){
-		if( d) *d = int_nil;
-		if( m) *m = int_nil;
-		if( y) *y = int_nil;
+	if (n == date_nil) {
+		if (d)
+			*d = int_nil;
+		if (m)
+			*m = int_nil;
+		if (y)
+			*y = int_nil;
 		return;
 	}
 	year = n / 365;
-	day = (n - year * 365) - LEAPYEARS(year >= 0 ? year - 1 : year);
+	day = (n - year * 365) - leapyears(year >= 0 ? year - 1 : year);
 	if (n < 0) {
 		year--;
 		while (day >= 0) {
@@ -353,32 +346,40 @@ fromdate(int n, int *d, int *m, int *y)
 			day += YEARDAYS(year);
 		}
 	}
-	if ( d == 0 && m == 0) {
-		if( y) *y = (year <= 0) ? year - 1 : year;	/* HACK: hide year 0 */
+	if (d == 0 && m == 0) {
+		if (y)
+			*y = (year <= 0) ? year - 1 : year;	/* HACK: hide year 0 */
 		return;
 	}
 
 	day++;
-	if ( leapyear(year)){
-		for (month = day/31==0?1:day/31; month <= 12; month++) 
-		if ( day > CUMLEAPDAYS[month-1] && day <= CUMLEAPDAYS[month]){
-			if( m) *m = month;
-			if (d == 0) return;
-			break;
-		}
-		day -= CUMLEAPDAYS[month-1];
-	} else{
-		for (month = day/31==0?1:day/31; month <= 12; month++) 
-		if ( day > CUMDAYS[month-1] && day <= CUMDAYS[month]){
-			if( m) *m = month;
-			if (d == 0) return;
-			break;
-		}
-		day -= CUMDAYS[month-1];
+	if (leapyear(year)) {
+		for (month = day / 31 == 0 ? 1 : day / 31; month <= 12; month++)
+			if (day > CUMLEAPDAYS[month - 1] && day <= CUMLEAPDAYS[month]) {
+				if (m)
+					*m = month;
+				if (d == 0)
+					return;
+				break;
+			}
+		day -= CUMLEAPDAYS[month - 1];
+	} else {
+		for (month = day / 31 == 0 ? 1 : day / 31; month <= 12; month++)
+			if (day > CUMDAYS[month - 1] && day <= CUMDAYS[month]) {
+				if (m)
+					*m = month;
+				if (d == 0)
+					return;
+				break;
+			}
+		day -= CUMDAYS[month - 1];
 	}
-	if( d) *d = day;
-	if( m) *m = month;
-	if( y) *y = (year <= 0) ? year - 1 : year;	/* HACK: hide year 0 */
+	if (d)
+		*d = day;
+	if (m)
+		*m = month;
+	if (y)
+		*y = (year <= 0) ? year - 1 : year;	/* HACK: hide year 0 */
 }
 
 static daytime
@@ -408,7 +409,7 @@ fromtime(int n, int *hour, int *min, int *sec, int *msec)
 
 /* matches regardless of case and extra spaces */
 static int
-fleximatch(str s, str pat, int min)
+fleximatch(const char *s, const char *pat, int min)
 {
 	int hit, spacy = 0;
 
@@ -430,7 +431,7 @@ fleximatch(str s, str pat, int min)
 }
 
 static int
-parse_substr(int *ret, str s, int min, str list[], int size)
+parse_substr(int *ret, const char *s, int min, const char *list[], int size)
 {
 	int j = 0, i = 0;
 
@@ -453,10 +454,16 @@ date_dayofweek(date v)
 	return (v % 7 + 12) % 7 + 1;
 }
 
-#define SKIP_DAYS(d,w,i) d += i; w = (w + i)%7; if (w <= 0) w += 7;
+#define SKIP_DAYS(d, w, i)						\
+	do {										\
+		d += i;									\
+		w = (w + i) % 7;						\
+		if (w <= 0)								\
+			w += 7;								\
+	} while (0)
 
 static date
-compute_rule(rule *val, int y)
+compute_rule(const rule *val, int y)
 {
 	int m = val->s.month, cnt = ABS(val->s.day - DAY_ZERO);
 	date d = todate(1, m, y);
@@ -495,10 +502,10 @@ compute_rule(rule *val, int y)
 	return d;
 }
 
-#define BEFORE(d1,m1,d2,m2) (d1 < d2 || (d1 == d2 && m1 <= m2))
+#define BEFORE(d1, m1, d2, m2) ((d1) < (d2) || ((d1) == (d2) && (m1) <= (m2)))
 
 static int
-timestamp_inside(timestamp *ret, timestamp *t, tzone *z, lng offset)
+timestamp_inside(timestamp *ret, timestamp *t, const tzone *z, lng offset)
 {
 	/* starts with GMT time t, and returns whether it is in the DST for z */
 	lng add = (offset != (lng) 0) ? offset : (get_offset(z)) * (lng) 60000;
@@ -516,7 +523,7 @@ timestamp_inside(timestamp *ret, timestamp *t, tzone *z, lng offset)
 	start_msecs = start.s.minutes * 60000;
 	end_msecs = end.s.minutes * 60000;
 
-	fromdate((int) ret->days, 0, 0, &year);
+	fromdate(ret->days, NULL, NULL, &year);
 	start_days = compute_rule(&start, year);
 	end_days = compute_rule(&end, year);
 
@@ -541,7 +548,7 @@ date_fromstr(str buf, int *len, date **d)
 	if (*len < (int) sizeof(date)) {
 		if (*d)
 			GDKfree(*d);
-		*d = (date *) GDKzalloc(*len = sizeof(date));
+		*d = (date *) GDKmalloc(*len = sizeof(date));
 	}
 	**d = date_nil;
 	if (yearneg == 0 && !GDKisdigit(buf[0])) {
@@ -617,13 +624,13 @@ date_tostr(str *buf, int *len, date *val)
 {
 	int day, month, year;
 
-	fromdate((int) *val, &day, &month, &year);
+	fromdate(*val, &day, &month, &year);
 	/* longest possible string: "-5867411-01-01" i.e. 14 chars
 	   without NUL (see definition of YEAR_MIN/YEAR_MAX above) */
 	if (*len < 15) {
 		if (*buf)
 			GDKfree(*buf);
-		*buf = (str) GDKzalloc(*len = 15);
+		*buf = (str) GDKmalloc(*len = 15);
 	}
 	if (*val == date_nil || !DATE(day, month, year)) {
 		strcpy(*buf, "nil");
@@ -644,7 +651,7 @@ daytime_fromstr(str buf, int *len, daytime **ret)
 	if (*len < (int) sizeof(daytime)) {
 		if (*ret)
 			GDKfree(*ret);
-		*ret = (daytime *) GDKzalloc(*len = sizeof(daytime));
+		*ret = (daytime *) GDKmalloc(*len = sizeof(daytime));
 	}
 	**ret = daytime_nil;
 	if (!GDKisdigit(buf[pos])) {
@@ -684,7 +691,7 @@ daytime_fromstr(str buf, int *len, daytime **ret)
 int
 daytime_tz_fromstr(str buf, int *len, daytime **ret)
 {
-	str s = buf;
+	char *s = buf;
 	int pos = daytime_fromstr(s, len, ret);
 	lng val, offset = 0;
 	daytime mtime = 24 * 60 * 60 * 1000;
@@ -730,7 +737,7 @@ daytime_tostr(str *buf, int *len, daytime *val)
 	if (*len < 12) {
 		if (*buf)
 			GDKfree(*buf);
-		*buf = (str) GDKzalloc(*len = 13);
+		*buf = (str) GDKmalloc(*len = 13);
 	}
 	if (*val == daytime_nil || !TIME(hour, min, sec, msec)) {
 		strcpy(*buf, "nil");
@@ -746,7 +753,7 @@ daytime_tostr(str *buf, int *len, daytime *val)
 int
 timestamp_fromstr(str buf, int *len, timestamp **ret)
 {
-	str s = buf;
+	char *s = buf;
 	int pos;
 	date *d;
 	daytime *t;
@@ -754,7 +761,7 @@ timestamp_fromstr(str buf, int *len, timestamp **ret)
 	if (*len < (int) sizeof(timestamp)) {
 		if (*ret)
 			GDKfree(*ret);
-		*ret = (timestamp *) GDKzalloc(*len = sizeof(timestamp));
+		*ret = (timestamp *) GDKmalloc(*len = sizeof(timestamp));
 	}
 	d = &(*ret)->days;
 	t = &(*ret)->msecs;
@@ -822,7 +829,7 @@ timestamp_tz_tostr(str *buf, int *len, timestamp *val, tzone *timezone)
 		if (*len < 2 + len1 + len2) {
 			if (*buf)
 				GDKfree(*buf);
-			*buf = (str) GDKzalloc(*len = len1 + len2 + 2);
+			*buf = (str) GDKmalloc(*len = len1 + len2 + 2);
 		}
 		s = *buf;
 		if (ts_isnil(tmp)) {
@@ -852,7 +859,7 @@ timestamp_tostr(str *buf, int *len, timestamp *val)
 	return timestamp_tz_tostr(buf, len, val, &tzone_local);
 }
 
-static str
+static const char *
 count1(int i)
 {
 	static char buf[16];
@@ -878,7 +885,7 @@ rule_tostr(str *buf, int *len, rule *r)
 	if (*len < 64) {
 		if (*buf)
 			GDKfree(*buf);
-		*buf = (str) GDKzalloc(*len = 64);
+		*buf = (str) GDKmalloc(*len = 64);
 	}
 	if (r->asint == int_nil) {
 		strcpy(*buf, "nil");
@@ -910,12 +917,12 @@ rule_fromstr(str buf, int *len, rule **d)
 {
 	int day = 0, month = 0, weekday = 0, hours = 0, minutes = 0;
 	int neg_day = 0, neg_weekday = 0, pos;
-	str cur = buf;
+	const char *cur = buf;
 
 	if (*len < (int) sizeof(rule)) {
 		if (*d)
 			GDKfree(*d);
-		*d = (rule *) GDKzalloc(*len = sizeof(rule));
+		*d = (rule *) GDKmalloc(*len = sizeof(rule));
 	}
 	(*d)->asint = int_nil;
 
@@ -1002,13 +1009,13 @@ tzone_fromstr(str buf, int *len, tzone **d)
 {
 	int hours = 0, minutes = 0, neg_offset = 0, pos = 0;
 	rule r1, *rp1 = &r1, r2, *rp2 = &r2;
-	str cur = buf;
+	char *cur = buf;
 
 	rp1->asint = rp2->asint = 0;
 	if (*len < (int) sizeof(tzone)) {
 		if (*d)
 			GDKfree(*d);
-		*d = (tzone *) GDKzalloc(*len = sizeof(tzone));
+		*d = (tzone *) GDKmalloc(*len = sizeof(tzone));
 	}
 	**d = *tzone_nil;
 
@@ -1018,7 +1025,7 @@ tzone_fromstr(str buf, int *len, tzone **d)
 	}
 	cur += 3;
 	if (*cur == '-' || *cur == '+') {
-		str bak = cur + 1;
+		const char *bak = cur + 1;
 
 		neg_offset = (*cur++ == '-');
 		if (!GDKisdigit(*cur)) {
@@ -1074,7 +1081,7 @@ tzone_tostr(str *buf, int *len, tzone *z)
 	if (*len < 160) {
 		if (*buf)
 			GDKfree(*buf);
-		*buf = (str) GDKzalloc(*len = 160);
+		*buf = (str) GDKmalloc(*len = 160);
 	}
 	s = *buf;
 	if (tz_isnil(*z)) {
@@ -1112,311 +1119,12 @@ tzone_tostr(str *buf, int *len, tzone *z)
 /*
  * operator implementations
  */
-static void
-date_prelude(void)
-{
-	MONTHS[0] = (str) str_nil;
-	DAYS[0] = (str) str_nil;
-	LEAPDAYS[0] = int_nil;
-	DATE_MAX = todate(31, 12, YEAR_MAX);
-	DATE_MIN = todate(1, 1, YEAR_MIN);
-	tzone_local.dst = 0;
-	set_offset(&tzone_local, 0);
-}
-
-static str
-oldduration(int *ndays, str s)
-{
-	int year = 0, month = 0, day = 0;
-	int hour = 0 /*, min=0 */ ;
-	char *snew = s;
-	int v = 0;
-
-	while (*snew != '\0') {
-		if (GDKisdigit(*snew)) {
-			v = 0;
-			while (GDKisdigit(*snew)) {
-				v = v * 10 + (*snew) - '0';
-				snew++;
-			}
-		} else if (isupper((int) (*snew)) || islower((int) (*snew))) {
-			switch (*snew++) {
-			case 'y':
-			case 'Y':
-				year = v;
-				v = 0;
-				break;
-			case 'm':
-			case 'M':
-				if (month || day || hour)	/*min = v */
-					;
-				else
-					month = v;
-				v = 0;
-				break;
-			case 'd':
-			case 'D':
-				day = v;
-				v = 0;
-				break;
-			case 'h':
-			case 'H':
-				hour = v;
-				v = 0;
-				break;
-			case 's':
-			case 'S':
-				v = 0;
-				break;
-			default:
-				/* GDKerror("duration_fromstr: wrong duration '%s'!\n",s); */
-				*ndays = int_nil;
-				return MAL_SUCCEED;
-			}
-		} else {
-			snew++;
-		}
-	}
-	*ndays = year * 365 + month * 30 + day;
-	return MAL_SUCCEED;
-}
-
-static str
-olddate(date *d, str buf)
-{
-	int day = 0, month, year, yearneg = (buf[0] == '-'), pos = yearneg;
-
-	*d = date_nil;
-	if (!GDKisdigit(buf[pos])) {
-		throw(MAL, "mtime.olddate", "syntax error");
-	}
-	for (year = 0; GDKisdigit(buf[pos]); pos++) {
-		year = (buf[pos] - '0') + year * 10;
-		if (year > YEAR_MAX)
-			break;
-	}
-	pos += parse_substr(&month, buf + pos, 3, MONTHS, 12);
-	if (month == int_nil) {
-		throw(MAL, "mtime.olddate", "syntax error");
-	}
-	if (!GDKisdigit(buf[pos])) {
-		throw(MAL, "mtime.olddate", "syntax error");
-	}
-	while (GDKisdigit(buf[pos])) {
-		day = (buf[pos] - '0') + day * 10;
-		pos++;
-		if (day > 31)
-			break;
-	}
-	/* handle semantic error here (returns nil in that case) */
-	*d = todate(day, month, yearneg ? -year : year);
-	return MAL_SUCCEED;
-}
-
 static str
 tzone_set_local(tzone *z)
 {
 	if (tz_isnil(*z))
 		throw(MAL, "mtime.timezone_local", "cannot set timezone to nil");
 	tzone_local = *z;
-	return MAL_SUCCEED;
-}
-
-/* Returns number of day [1-7] from a string (or nil if does not match any). */
-static str
-day_from_str(int *ret, str day)
-{
-	if (strcmp(day, str_nil) == 0)
-		*ret = int_nil;
-	else
-		parse_substr(ret, day, 3, DAYS, 7);
-	return MAL_SUCCEED;
-}
-
-/* creates a daytime from (hours,minutes,seconds,milliseconds) parameters */
-static str
-daytime_create(daytime *ret, int *hour, int *min, int *sec, int *msec)
-{
-	*ret = totime(*hour, *min, *sec, *msec);
-	return MAL_SUCCEED;
-}
-
-/* creates a timestamp from (date,daytime) parameters */
-static str
-timestamp_create(timestamp *ret, date *d, daytime *t, tzone *z)
-{
-	if (*d == date_nil || *t == daytime_nil || tz_isnil(*z)) {
-		*ret = *timestamp_nil;
-	} else {
-		lng add = get_offset(z) * (lng) -60000;
-
-		ret->days = *d;
-		ret->msecs = *t;
-		if (z->dst) {
-			timestamp tmp;
-
-			if (timestamp_inside(&tmp, ret, z, (lng) -3600000)) {
-				*ret = tmp;
-			}
-		}
-		MTIMEtimestamp_add(ret, ret, &add);
-	}
-	return MAL_SUCCEED;
-}
-
-/* extracts year from date (value between -5867411 and +5867411). */
-static str
-date_extract_year(int *ret, date *v)
-{
-	if (*v == date_nil) {
-		*ret = int_nil;
-	} else {
-		fromdate((int) *v, 0, 0, ret);
-	}
-	return MAL_SUCCEED;
-}
-
-/* extracts month from date (value between 1 and 12) */
-static str
-date_extract_month(int *ret, date *v)
-{
-	if (*v == date_nil) {
-		*ret = int_nil;
-	} else {
-		fromdate((int) *v, 0, ret, 0);
-	}
-	return MAL_SUCCEED;
-}
-
-/* extracts day from date (value between 1 and 31)*/
-static str
-date_extract_day(int *ret, date *v)
-{
-	if (*v == date_nil) {
-		*ret = int_nil;
-	} else {
-		fromdate((int) *v, ret, 0, 0);
-	}
-	return MAL_SUCCEED;
-}
-
-/* Returns N where d is the Nth day of the year (january 1 returns 1). */
-static str
-date_extract_dayofyear(int *ret, date *v)
-{
-	if (*v == date_nil) {
-		*ret = int_nil;
-	} else {
-		int year;
-
-		fromdate((int) *v, 0, 0, &year);
-		*ret = (int) (1 + *v - todate(1, 1, year));
-	}
-	return MAL_SUCCEED;
-}
-
-/* Returns the week number */
-static str
-date_extract_weekofyear(int *ret, date *v)
-{
-	if (*v == date_nil) {
-		*ret = int_nil;
-	} else {
-		int year;
-		date thd;
-		date thd1;
-
-		/* find the Thursday in the same week as the given date */
-		thd = *v + 4 - date_dayofweek(*v);
-		/* extract the year (may be different from year of the given date!) */
-		fromdate((int) thd, 0, 0, &year);
-		/* find January 4 of that year */
-		thd1 = todate(4, 1, year);
-		/* find the Thursday of the week in which January 4 falls */
-		thd1 += 4 - date_dayofweek(thd1);
-		/* now calculate the week number */
-		*ret = (int) ((thd - thd1) / 7) + 1;
-	}
-	return MAL_SUCCEED;
-}
-
-/* Returns the current day  of the week where 1=monday, .., 7=sunday */
-static str
-date_extract_dayofweek(int *ret, date *v)
-{
-	if (*v == date_nil) {
-		*ret = int_nil;
-	} else {
-		*ret = date_dayofweek(*v);
-	}
-	return MAL_SUCCEED;
-}
-
-/* extracts hour from daytime (value between 0 and 23) */
-static str
-daytime_extract_hours(int *ret, daytime *v)
-{
-	int dummy;
-	if (*v == daytime_nil) {
-		*ret = int_nil;
-	} else {
-		fromtime((int) *v, ret, &dummy, &dummy, &dummy);
-	}
-	return MAL_SUCCEED;
-}
-
-/* extracts minutes from daytime (value between 0 and 59) */
-static str
-daytime_extract_minutes(int *ret, daytime *v)
-{
-	int dummy;
-	if (*v == daytime_nil) {
-		*ret = int_nil;
-	} else {
-		fromtime((int) *v, &dummy, ret, &dummy, &dummy);
-	}
-	return MAL_SUCCEED;
-}
-
-/* extracts seconds from daytime (value between 0 and 59) */
-static str
-daytime_extract_seconds(int *ret, daytime *v)
-{
-	int dummy;
-	if (*v == daytime_nil) {
-		*ret = int_nil;
-	} else {
-		fromtime((int) *v, &dummy, &dummy, ret, &dummy);
-	}
-	return MAL_SUCCEED;
-}
-
-/* extracts (milli) seconds from daytime (value between 0 and 59000) */
-static str
-daytime_extract_sql_seconds(int *ret, daytime *v)
-{
-	int sec, milli;
-	int dummy;
-
-	if (*v == daytime_nil) {
-		*ret = int_nil;
-	} else {
-		fromtime((int) *v, &dummy, &dummy, &sec, &milli);
-		*ret = sec * 1000 + milli;
-	}
-	return MAL_SUCCEED;
-}
-
-/* extracts milliseconds from daytime (value between 0 and 999) */
-static str
-daytime_extract_milliseconds(int *ret, daytime *v)
-{
-	int dummy;
-	if (*v == daytime_nil) {
-		*ret = int_nil;
-	} else {
-		fromtime((int) *v, &dummy, &dummy, &dummy, ret);
-	}
 	return MAL_SUCCEED;
 }
 
@@ -1427,102 +1135,6 @@ daytime_add(daytime *ret, daytime *v, lng *msec)
 		*ret = int_nil;
 	} else {
 		*ret = *v + (daytime) (*msec);
-	}
-	return MAL_SUCCEED;
-}
-
-/* extracts daytime from timestamp */
-static str
-timestamp_extract_daytime(daytime *ret, timestamp *t, tzone *z)
-{
-	if (ts_isnil(*t) || tz_isnil(*z)) {
-		*ret = daytime_nil;
-	} else {
-		timestamp tmp;
-
-		if (timestamp_inside(&tmp, t, z, (lng) 0)) {
-			lng add = (lng) 3600000;
-
-			MTIMEtimestamp_add(&tmp, &tmp, &add);
-		}
-		if (ts_isnil(tmp)) {
-			*ret = daytime_nil;
-		} else {
-			*ret = tmp.msecs;
-		}
-	}
-	return MAL_SUCCEED;
-}
-
-/* extracts date from timestamp */
-static str
-timestamp_extract_date(date *ret, timestamp *t, tzone *z)
-{
-	if (ts_isnil(*t) || tz_isnil(*z)) {
-		*ret = date_nil;
-	} else {
-		timestamp tmp;
-
-		if (timestamp_inside(&tmp, t, z, (lng) 0)) {
-			lng add = (lng) 3600000;
-
-			MTIMEtimestamp_add(&tmp, &tmp, &add);
-		}
-		if (ts_isnil(tmp)) {
-			*ret = date_nil;
-		} else {
-			*ret = tmp.days;
-		}
-	}
-	return MAL_SUCCEED;
-}
-
-/* returns the date that comes a number of day after 'v' (or before
- * iff *delta < 0). */
-static str
-date_adddays(date *ret, date *v, int *delta)
-{
-	lng min = DATE_MIN, max = DATE_MAX;
-	lng cur = (lng) *v, inc = *delta;
-
-	if (cur == int_nil || inc == int_nil || (inc > 0 && (max - cur) < inc) || (inc < 0 && (min - cur) > inc)) {
-		*ret = date_nil;
-	} else {
-		*ret = *v + *delta;
-	}
-	return MAL_SUCCEED;
-}
-
-/* returns the date that comes a number of months after 'v' (or before
- * if *delta < 0). */
-static str
-date_addmonths(date *ret, date *v, int *delta)
-{
-	if (*v == date_nil || *delta == int_nil) {
-		*ret = date_nil;
-	} else {
-		int d, m, y, x, z = *delta;
-
-		fromdate((int) *v, &d, &m, &y);
-		*ret = *v;
-		while (z > 0) {
-			z--;
-			x = MONTHDAYS(m, y);
-			if (++m == 13) {
-				m = 1;
-				y++;
-			}
-			date_adddays(ret, ret, &x);
-		}
-		while (z < 0) {
-			z++;
-			if (--m == 0) {
-				m = 12;
-				y--;
-			}
-			x = -MONTHDAYS(m, y);
-			date_adddays(ret, ret, &x);
-		}
 	}
 	return MAL_SUCCEED;
 }
@@ -1544,58 +1156,13 @@ MTIMEtimestamp_add(timestamp *ret, timestamp *v, lng *msecs)
 			ret->msecs += (24 * 60 * 60 * 1000);
 		}
 		if (days) {
-			date_adddays(&ret->days, &ret->days, &days);
+			MTIMEdate_adddays(&ret->days, &ret->days, &days);
 			if (ret->days == int_nil) {
 				*ret = *timestamp_nil;
 			}
 		}
 	} else {
 		*ret = *timestamp_nil;
-	}
-	return MAL_SUCCEED;
-}
-
-/* create a DST start/end date rule. */
-static str
-rule_create(rule *ret, int *month, int *day, int *weekday, int *minutes)
-{
-	ret->asint = int_nil;
-	if (*month != int_nil && *month >= 1 && *month <= 12 &&
-		*weekday != int_nil && ABS(*weekday) <= 7 &&
-		*minutes != int_nil && *minutes >= 0 && *minutes < 24 * 60 &&
-		*day != int_nil && ABS(*day) >= 1 && ABS(*day) <= LEAPDAYS[*month] &&
-		(*weekday || *day > 0)) {
-		ret->s.month = *month;
-		ret->s.day = DAY_ZERO + *day;
-		ret->s.weekday = WEEKDAY_ZERO + *weekday;
-		ret->s.minutes = *minutes;
-	}
-	return MAL_SUCCEED;
-}
-
-/* create a tzone as a simple hour difference from GMT. */
-static str
-tzone_create_dst(tzone *ret, int *minutes, rule *start, rule *end)
-{
-	*ret = *tzone_nil;
-	if (*minutes != int_nil && ABS(*minutes) < 24 * 60 &&
-		start->asint != int_nil && end->asint != int_nil) {
-		set_offset(ret, *minutes);
-		ret->dst = TRUE;
-		ret->dst_start = get_rule(*start);
-		ret->dst_end = get_rule(*end);
-	}
-	return MAL_SUCCEED;
-}
-
-/* create a tzone as an hour difference from GMT and a DST. */
-static str
-tzone_create(tzone *ret, int *minutes)
-{
-	*ret = *tzone_nil;
-	if (*minutes != int_nil && ABS(*minutes) < 24 * 60) {
-		set_offset(ret, *minutes);
-		ret->dst = FALSE;
 	}
 	return MAL_SUCCEED;
 }
@@ -1609,22 +1176,22 @@ union lng_tzone {
  * Wrapper
  * The Monet V5 API interface is defined here
  */
-#define TIMEZONES(X1, X2)									\
-	do {													\
-		ticks = (X2);										\
-		tzone_create(&ltz.tzval, &ticks);					\
-		vr.val.lval = ltz.lval;								\
-		tzbatnme = BUNappend(tzbatnme, (X1), FALSE);	\
+#define TIMEZONES(X1, X2)										\
+	do {														\
+		ticks = (X2);											\
+		MTIMEtzone_create(&ltz.tzval, &ticks);					\
+		vr.val.lval = ltz.lval;									\
+		tzbatnme = BUNappend(tzbatnme, (X1), FALSE);			\
 		tzbatdef = BUNappend(tzbatdef, &vr.val.lval, FALSE);	\
 	} while (0)
 
-#define TIMEZONES2(X1, X2, X3, X4)							\
-	do {													\
-		ticks = (X2);										\
-		tzone_create_dst(&ltz.tzval, &ticks, &(X3), &(X4));	\
-		vr.val.lval = ltz.lval;								\
-		tzbatnme = BUNappend(tzbatnme, (X1), FALSE);	\
-		tzbatdef = BUNappend(tzbatdef, &vr.val.lval, FALSE);	\
+#define TIMEZONES2(X1, X2, X3, X4)									\
+	do {															\
+		ticks = (X2);												\
+		MTIMEtzone_create_dst(&ltz.tzval, &ticks, &(X3), &(X4));	\
+		vr.val.lval = ltz.lval;										\
+		tzbatnme = BUNappend(tzbatnme, (X1), FALSE);				\
+		tzbatdef = BUNappend(tzbatdef, &vr.val.lval, FALSE);		\
 	} while (0)
 
 /*
@@ -1679,7 +1246,26 @@ MTIMEprelude(void)
 	str s2 = "first sunday from end of october@02:00";
 	tzone tz;
 
-	monettime_prelude();
+	ts_nil.nilval = lng_nil;
+	tz_nil.nilval = lng_nil;
+
+	timestamp_nil = &ts_nil.ts;
+	tzone_nil = &tz_nil.tz;
+
+	TYPE_date = ATOMindex("date");
+	TYPE_daytime = ATOMindex("daytime");
+	TYPE_timestamp = ATOMindex("timestamp");
+	TYPE_tzone = ATOMindex("timezone");
+	TYPE_rule = ATOMindex("rule");
+
+	MONTHS[0] = (str) str_nil;
+	DAYS[0] = (str) str_nil;
+	LEAPDAYS[0] = int_nil;
+	DATE_MAX = todate(31, 12, YEAR_MAX);
+	DATE_MIN = todate(1, 1, YEAR_MIN);
+	tzone_local.dst = 0;
+	set_offset(&tzone_local, 0);
+
 	tz = *tzone_nil;			/* to ensure initialized variables */
 
 	/* here we should initialize the time box as well */
@@ -1758,13 +1344,90 @@ MTIMEsynonyms(bit *allow)
 str
 MTIMEoldduration(int *ndays, str *s)
 {
-	return oldduration(ndays, *s);
+	int year = 0, month = 0, day = 0;
+	int hour = 0 /*, min=0 */ ;
+	const char *snew = *s;
+	int v = 0;
+
+	while (*snew != '\0') {
+		if (GDKisdigit(*snew)) {
+			v = 0;
+			while (GDKisdigit(*snew)) {
+				v = v * 10 + (*snew) - '0';
+				snew++;
+			}
+		} else if (isupper((int) (*snew)) || islower((int) (*snew))) {
+			switch (*snew++) {
+			case 'y':
+			case 'Y':
+				year = v;
+				v = 0;
+				break;
+			case 'm':
+			case 'M':
+				if (month || day || hour)	/*min = v */
+					;
+				else
+					month = v;
+				v = 0;
+				break;
+			case 'd':
+			case 'D':
+				day = v;
+				v = 0;
+				break;
+			case 'h':
+			case 'H':
+				hour = v;
+				v = 0;
+				break;
+			case 's':
+			case 'S':
+				v = 0;
+				break;
+			default:
+				/* GDKerror("duration_fromstr: wrong duration '%s'!\n",*s); */
+				*ndays = int_nil;
+				return MAL_SUCCEED;
+			}
+		} else {
+			snew++;
+		}
+	}
+	*ndays = year * 365 + month * 30 + day;
+	return MAL_SUCCEED;
 }
 
 str
 MTIMEolddate(date *d, str *buf)
 {
-	return olddate(d, *buf);
+	int day = 0, month, year, yearneg = ((*buf)[0] == '-'), pos = yearneg;
+
+	*d = date_nil;
+	if (!GDKisdigit((*buf)[pos])) {
+		throw(MAL, "mtime.olddate", "syntax error");
+	}
+	for (year = 0; GDKisdigit((*buf)[pos]); pos++) {
+		year = ((*buf)[pos] - '0') + year * 10;
+		if (year > YEAR_MAX)
+			break;
+	}
+	pos += parse_substr(&month, (*buf) + pos, 3, MONTHS, 12);
+	if (month == int_nil) {
+		throw(MAL, "mtime.olddate", "syntax error");
+	}
+	if (!GDKisdigit((*buf)[pos])) {
+		throw(MAL, "mtime.olddate", "syntax error");
+	}
+	while (GDKisdigit((*buf)[pos])) {
+		day = ((*buf)[pos] - '0') + day * 10;
+		pos++;
+		if (day > 31)
+			break;
+	}
+	/* handle semantic error here (returns nil in that case) */
+	*d = todate(day, month, yearneg ? -year : year);
+	return MAL_SUCCEED;
 }
 
 str
@@ -1825,10 +1488,15 @@ MTIMEmonth_to_str(str *ret, int *month)
 	return MAL_SUCCEED;
 }
 
+/* Returns number of day [1-7] from a string (or nil if does not match any). */
 str
 MTIMEday_from_str(int *ret, str *day)
 {
-	return day_from_str(ret, *day);
+	if (strcmp(*day, str_nil) == 0)
+		*ret = int_nil;
+	else
+		parse_substr(ret, *day, 3, DAYS, 7);
+	return MAL_SUCCEED;
 }
 
 /* Returns day name from a number between [1-7], str(nil) otherwise. */
@@ -1894,10 +1562,12 @@ MTIMEdaytime_tostr(str *ret, daytime *d)
 	return MAL_SUCCEED;
 }
 
+/* creates a daytime from (hours,minutes,seconds,milliseconds) parameters */
 str
 MTIMEdaytime_create(daytime *ret, int *hour, int *min, int *sec, int *msec)
 {
-	return daytime_create(ret, hour, min, sec, msec);
+	*ret = totime(*hour, *min, *sec, *msec);
+	return MAL_SUCCEED;
 }
 
 str
@@ -1921,10 +1591,27 @@ MTIMEtimestamp_timestamp(timestamp *d, timestamp *s)
 	return MAL_SUCCEED;
 }
 
+/* creates a timestamp from (date,daytime) parameters */
 str
 MTIMEtimestamp_create(timestamp *ret, date *d, daytime *t, tzone *z)
 {
-	return timestamp_create(ret, d, t, z);
+	if (*d == date_nil || *t == daytime_nil || tz_isnil(*z)) {
+		*ret = *timestamp_nil;
+	} else {
+		lng add = get_offset(z) * (lng) -60000;
+
+		ret->days = *d;
+		ret->msecs = *t;
+		if (z->dst) {
+			timestamp tmp;
+
+			if (timestamp_inside(&tmp, ret, z, (lng) -3600000)) {
+				*ret = tmp;
+			}
+		}
+		MTIMEtimestamp_add(ret, ret, &add);
+	}
+	return MAL_SUCCEED;
 }
 
 str
@@ -1940,76 +1627,182 @@ MTIMEtimestamp_create_from_date(timestamp *ret, date *d)
 	return MTIMEtimestamp_create(ret, d, &t, &tzone_local);
 }
 
+/* extracts year from date (value between -5867411 and +5867411). */
 str
 MTIMEdate_extract_year(int *ret, date *v)
 {
-	return date_extract_year(ret, v);
+	if (*v == date_nil) {
+		*ret = int_nil;
+	} else {
+		fromdate(*v, NULL, NULL, ret);
+	}
+	return MAL_SUCCEED;
 }
 
+/* extracts month from date (value between 1 and 12) */
 str
 MTIMEdate_extract_month(int *ret, date *v)
 {
-	return date_extract_month(ret, v);
+	if (*v == date_nil) {
+		*ret = int_nil;
+	} else {
+		fromdate(*v, NULL, ret, NULL);
+	}
+	return MAL_SUCCEED;
 }
 
+/* extracts day from date (value between 1 and 31)*/
 str
 MTIMEdate_extract_day(int *ret, date *v)
 {
-	return date_extract_day(ret, v);
+	if (*v == date_nil) {
+		*ret = int_nil;
+	} else {
+		fromdate(*v, ret, NULL, NULL);
+	}
+	return MAL_SUCCEED;
 }
 
+/* Returns N where d is the Nth day of the year (january 1 returns 1). */
 str
 MTIMEdate_extract_dayofyear(int *ret, date *v)
 {
-	return date_extract_dayofyear(ret, v);
+	if (*v == date_nil) {
+		*ret = int_nil;
+	} else {
+		int year;
+
+		fromdate(*v, NULL, NULL, &year);
+		*ret = (int) (1 + *v - todate(1, 1, year));
+	}
+	return MAL_SUCCEED;
 }
 
 str
 MTIMEdate_extract_weekofyear(int *ret, date *v)
 {
-	return date_extract_weekofyear(ret, v);
+	if (*v == date_nil) {
+		*ret = int_nil;
+	} else {
+		int year;
+		date thd;
+		date thd1;
+
+		/* find the Thursday in the same week as the given date */
+		thd = *v + 4 - date_dayofweek(*v);
+		/* extract the year (may be different from year of the given date!) */
+		fromdate(thd, NULL, NULL, &year);
+		/* find January 4 of that year */
+		thd1 = todate(4, 1, year);
+		/* find the Thursday of the week in which January 4 falls */
+		thd1 += 4 - date_dayofweek(thd1);
+		/* now calculate the week number */
+		*ret = (int) ((thd - thd1) / 7) + 1;
+	}
+	return MAL_SUCCEED;
 }
 
+/* Returns the current day  of the week where 1=monday, .., 7=sunday */
 str
 MTIMEdate_extract_dayofweek(int *ret, date *v)
 {
-	return date_extract_dayofweek(ret, v);
+	if (*v == date_nil) {
+		*ret = int_nil;
+	} else {
+		*ret = date_dayofweek(*v);
+	}
+	return MAL_SUCCEED;
 }
 
+/* extracts hour from daytime (value between 0 and 23) */
 str
 MTIMEdaytime_extract_hours(int *ret, daytime *v)
 {
-	return daytime_extract_hours(ret, v);
+	int dummy;
+	if (*v == daytime_nil) {
+		*ret = int_nil;
+	} else {
+		fromtime((int) *v, ret, &dummy, &dummy, &dummy);
+	}
+	return MAL_SUCCEED;
 }
 
+/* extracts minutes from daytime (value between 0 and 59) */
 str
 MTIMEdaytime_extract_minutes(int *ret, daytime *v)
 {
-	return daytime_extract_minutes(ret, v);
+	int dummy;
+	if (*v == daytime_nil) {
+		*ret = int_nil;
+	} else {
+		fromtime((int) *v, &dummy, ret, &dummy, &dummy);
+	}
+	return MAL_SUCCEED;
 }
 
+/* extracts seconds from daytime (value between 0 and 59) */
 str
 MTIMEdaytime_extract_seconds(int *ret, daytime *v)
 {
-	return daytime_extract_seconds(ret, v);
+	int dummy;
+	if (*v == daytime_nil) {
+		*ret = int_nil;
+	} else {
+		fromtime((int) *v, &dummy, &dummy, ret, &dummy);
+	}
+	return MAL_SUCCEED;
 }
 
+/* extracts (milli) seconds from daytime (value between 0 and 59000) */
 str
 MTIMEdaytime_extract_sql_seconds(int *ret, daytime *v)
 {
-	return daytime_extract_sql_seconds(ret, v);
+	int sec, milli;
+	int dummy;
+
+	if (*v == daytime_nil) {
+		*ret = int_nil;
+	} else {
+		fromtime((int) *v, &dummy, &dummy, &sec, &milli);
+		*ret = sec * 1000 + milli;
+	}
+	return MAL_SUCCEED;
 }
 
+/* extracts milliseconds from daytime (value between 0 and 999) */
 str
 MTIMEdaytime_extract_milliseconds(int *ret, daytime *v)
 {
-	return daytime_extract_milliseconds(ret, v);
+	int dummy;
+	if (*v == daytime_nil) {
+		*ret = int_nil;
+	} else {
+		fromtime((int) *v, &dummy, &dummy, &dummy, ret);
+	}
+	return MAL_SUCCEED;
 }
 
+/* extracts daytime from timestamp */
 str
 MTIMEtimestamp_extract_daytime(daytime *ret, timestamp *t, tzone *z)
 {
-	return timestamp_extract_daytime(ret, t, z);
+	if (ts_isnil(*t) || tz_isnil(*z)) {
+		*ret = daytime_nil;
+	} else {
+		timestamp tmp;
+
+		if (timestamp_inside(&tmp, t, z, (lng) 0)) {
+			lng add = (lng) 3600000;
+
+			MTIMEtimestamp_add(&tmp, &tmp, &add);
+		}
+		if (ts_isnil(tmp)) {
+			*ret = daytime_nil;
+		} else {
+			*ret = tmp.msecs;
+		}
+	}
+	return MAL_SUCCEED;
 }
 
 str
@@ -2018,10 +1811,27 @@ MTIMEtimestamp_extract_daytime_default(daytime *ret, timestamp *t)
 	return MTIMEtimestamp_extract_daytime(ret, t, &tzone_local);
 }
 
+/* extracts date from timestamp */
 str
 MTIMEtimestamp_extract_date(date *ret, timestamp *t, tzone *z)
 {
-	return timestamp_extract_date(ret, t, z);
+	if (ts_isnil(*t) || tz_isnil(*z)) {
+		*ret = date_nil;
+	} else {
+		timestamp tmp;
+
+		if (timestamp_inside(&tmp, t, z, (lng) 0)) {
+			lng add = (lng) 3600000;
+
+			MTIMEtimestamp_add(&tmp, &tmp, &add);
+		}
+		if (ts_isnil(tmp)) {
+			*ret = date_nil;
+		} else {
+			*ret = tmp.days;
+		}
+	}
+	return MAL_SUCCEED;
 }
 
 str
@@ -2040,14 +1850,14 @@ MTIMEdate_addyears(date *ret, date *v, int *delta)
 	} else {
 		int d, m, y, x, z = *delta;
 
-		fromdate((int) *v, &d, &m, &y);
+		fromdate(*v, &d, &m, &y);
 		if (m >= 3) {
 			y++;
 		}
 		*ret = *v;
 		while (z > 0) {
 			x = YEARDAYS(y);
-			date_adddays(ret, ret, &x);
+			MTIMEdate_adddays(ret, ret, &x);
 			z--;
 			y++;
 		}
@@ -2055,22 +1865,60 @@ MTIMEdate_addyears(date *ret, date *v, int *delta)
 			z++;
 			y--;
 			x = -YEARDAYS(y);
-			date_adddays(ret, ret, &x);
+			MTIMEdate_adddays(ret, ret, &x);
 		}
 	}
 	return MAL_SUCCEED;
 }
 
+/* returns the date that comes a number of day after 'v' (or before
+ * iff *delta < 0). */
 str
 MTIMEdate_adddays(date *ret, date *v, int *delta)
 {
-	return date_adddays(ret, v, delta);
+	lng min = DATE_MIN, max = DATE_MAX;
+	lng cur = (lng) *v, inc = *delta;
+
+	if (cur == int_nil || inc == int_nil || (inc > 0 && (max - cur) < inc) || (inc < 0 && (min - cur) > inc)) {
+		*ret = date_nil;
+	} else {
+		*ret = *v + *delta;
+	}
+	return MAL_SUCCEED;
 }
 
+/* returns the date that comes a number of months after 'v' (or before
+ * if *delta < 0). */
 str
 MTIMEdate_addmonths(date *ret, date *v, int *delta)
 {
-	return date_addmonths(ret, v, delta);
+	if (*v == date_nil || *delta == int_nil) {
+		*ret = date_nil;
+	} else {
+		int d, m, y, x, z = *delta;
+
+		fromdate(*v, &d, &m, &y);
+		*ret = *v;
+		while (z > 0) {
+			z--;
+			x = MONTHDAYS(m, y);
+			if (++m == 13) {
+				m = 1;
+				y++;
+			}
+			MTIMEdate_adddays(ret, ret, &x);
+		}
+		while (z < 0) {
+			z++;
+			if (--m == 0) {
+				m = 12;
+				y--;
+			}
+			x = -MONTHDAYS(m, y);
+			MTIMEdate_adddays(ret, ret, &x);
+		}
+	}
+	return MAL_SUCCEED;
 }
 
 /* returns the number of days between 'val1' and 'val2'. */
@@ -2271,22 +2119,49 @@ MTIMErule_fromstr(rule *ret, str *s)
 	return MAL_SUCCEED;
 }
 
+/* create a DST start/end date rule. */
 str
 MTIMErule_create(rule *ret, int *month, int *day, int *weekday, int *minutes)
 {
-	return rule_create(ret, month, day, weekday, minutes);
+	ret->asint = int_nil;
+	if (*month != int_nil && *month >= 1 && *month <= 12 &&
+		*weekday != int_nil && ABS(*weekday) <= 7 &&
+		*minutes != int_nil && *minutes >= 0 && *minutes < 24 * 60 &&
+		*day != int_nil && ABS(*day) >= 1 && ABS(*day) <= LEAPDAYS[*month] &&
+		(*weekday || *day > 0)) {
+		ret->s.month = *month;
+		ret->s.day = DAY_ZERO + *day;
+		ret->s.weekday = WEEKDAY_ZERO + *weekday;
+		ret->s.minutes = *minutes;
+	}
+	return MAL_SUCCEED;
 }
 
+/* create a tzone as a simple hour difference from GMT. */
 str
 MTIMEtzone_create_dst(tzone *ret, int *minutes, rule *start, rule *end)
 {
-	return tzone_create_dst(ret, minutes, start, end);
+	*ret = *tzone_nil;
+	if (*minutes != int_nil && ABS(*minutes) < 24 * 60 &&
+		start->asint != int_nil && end->asint != int_nil) {
+		set_offset(ret, *minutes);
+		ret->dst = TRUE;
+		ret->dst_start = get_rule(*start);
+		ret->dst_end = get_rule(*end);
+	}
+	return MAL_SUCCEED;
 }
 
+/* create a tzone as an hour difference from GMT and a DST. */
 str
 MTIMEtzone_create(tzone *ret, int *minutes)
 {
-	return tzone_create(ret, minutes);
+	*ret = *tzone_nil;
+	if (*minutes != int_nil && ABS(*minutes) < 24 * 60) {
+		set_offset(ret, *minutes);
+		ret->dst = FALSE;
+	}
+	return MAL_SUCCEED;
 }
 
 str
@@ -2366,7 +2241,7 @@ MTIMEdate_sub_sec_interval_wrap(date *ret, date *t, int *sec)
 	if (*sec > 0) {
 		int delta = -(*sec / 86400);
 
-		return date_adddays(ret, t, &delta);
+		return MTIMEdate_adddays(ret, t, &delta);
 	}
 
 	return MAL_SUCCEED;
@@ -2378,7 +2253,7 @@ MTIMEdate_sub_msec_interval_lng_wrap(date *ret, date *t, lng *msec)
 	if (*msec > 0) {
 		int delta = (int) -(*msec / 86400000);
 
-		return date_adddays(ret, t, &delta);
+		return MTIMEdate_adddays(ret, t, &delta);
 	}
 
 	return MAL_SUCCEED;
@@ -2390,7 +2265,7 @@ MTIMEdate_add_sec_interval_wrap(date *ret, date *t, int *sec)
 	if (*sec > 0) {
 		int delta = *sec / 86400;
 
-		return date_adddays(ret, t, &delta);
+		return MTIMEdate_adddays(ret, t, &delta);
 	}
 
 	return MAL_SUCCEED;
@@ -2402,7 +2277,7 @@ MTIMEdate_add_msec_interval_lng_wrap(date *ret, date *t, lng *msec)
 	if (*msec > 0) {
 		int delta = (int) (*msec / 86400000);
 
-		return date_adddays(ret, t, &delta);
+		return MTIMEdate_adddays(ret, t, &delta);
 	}
 
 	return MAL_SUCCEED;
@@ -2420,10 +2295,10 @@ MTIMEtimestamp_add_month_interval_wrap(timestamp *ret, timestamp *v, int *months
 {
 	daytime t;
 	date d;
-	timestamp_extract_daytime(&t, v, &tzone_local);
-	timestamp_extract_date(&d, v, &tzone_local);
-	date_addmonths(&d, &d, months);
-	return timestamp_create(ret, &d, &t, &tzone_local);
+	MTIMEtimestamp_extract_daytime(&t, v, &tzone_local);
+	MTIMEtimestamp_extract_date(&d, v, &tzone_local);
+	MTIMEdate_addmonths(&d, &d, months);
+	return MTIMEtimestamp_create(ret, &d, &t, &tzone_local);
 }
 
 str
@@ -2431,11 +2306,11 @@ MTIMEtimestamp_sub_month_interval_wrap(timestamp *ret, timestamp *v, int *months
 {
 	daytime t;
 	date d;
-	int m = 0 - *months;
-	timestamp_extract_daytime(&t, v, &tzone_local);
-	timestamp_extract_date(&d, v, &tzone_local);
-	date_addmonths(&d, &d, &m);
-	return timestamp_create(ret, &d, &t, &tzone_local);
+	int m = -*months;
+	MTIMEtimestamp_extract_daytime(&t, v, &tzone_local);
+	MTIMEtimestamp_extract_date(&d, v, &tzone_local);
+	MTIMEdate_addmonths(&d, &d, &m);
+	return MTIMEtimestamp_create(ret, &d, &t, &tzone_local);
 }
 
 str
@@ -2448,7 +2323,7 @@ MTIMEtime_add_msec_interval_wrap(daytime *ret, daytime *t, lng *mseconds)
 str
 MTIMEtime_sub_msec_interval_wrap(daytime *ret, daytime *t, lng *mseconds)
 {
-	lng s = -1 * *mseconds;
+	lng s = -*mseconds;
 	return daytime_add(ret, t, &s);
 }
 
@@ -2533,7 +2408,7 @@ MTIMEdaytime1(daytime *ret, int *h)
 {
 	int m = 0, s = 0, ms = 0;
 
-	return daytime_create(ret, h, &m, &s, &ms);
+	return MTIMEdaytime_create(ret, h, &m, &s, &ms);
 }
 
 str
@@ -2548,7 +2423,7 @@ MTIMEdaytime2(daytime *ret, int *h, int *m)
 {
 	int s = 0, ms = 0;
 
-	return daytime_create(ret, h, m, &s, &ms);
+	return MTIMEdaytime_create(ret, h, m, &s, &ms);
 }
 
 str
@@ -2556,7 +2431,7 @@ MTIMEdaytime3(daytime *ret, int *h, int *m, int *s)
 {
 	int ms = 0;
 
-	return daytime_create(ret, h, m, s, &ms);
+	return MTIMEdaytime_create(ret, h, m, s, &ms);
 }
 
 str
@@ -2569,11 +2444,11 @@ MTIMEunix_epoch(timestamp *ret)
 	tzone d2;
 	str e;
 
-	if ((e = daytime_create(&d1, &zero, &zero, &zero, &zero)) != MAL_SUCCEED)
+	if ((e = MTIMEdaytime_create(&d1, &zero, &zero, &zero, &zero)) != MAL_SUCCEED)
 		return e;
 	if ((e = MTIMEtzone_fromstr(&d2, &s)) != MAL_SUCCEED)
 		return e;
-	return timestamp_create(ret, &d0, &d1, &d2);
+	return MTIMEtimestamp_create(ret, &d0, &d1, &d2);
 }
 
 str
@@ -2642,7 +2517,7 @@ MTIMEruleDef0(rule *ret, int *m, int *d, int *w, int *h, int *mint)
 	int d0 = 60 * *h;
 	int d1 = d0 + *mint;
 
-	return rule_create(ret, m, d, w, &d1);
+	return MTIMErule_create(ret, m, d, w, &d1);
 }
 
 str
@@ -2653,9 +2528,9 @@ MTIMEruleDef1(rule *ret, int *m, str *dnme, int *w, int *h, int *mint)
 	int d1 = d0 + *mint;
 	str e;
 
-	if ((e = day_from_str(&d, *dnme)) != MAL_SUCCEED)
+	if ((e = MTIMEday_from_str(&d, dnme)) != MAL_SUCCEED)
 		return e;
-	return rule_create(ret, m, &d, w, &d1);
+	return MTIMErule_create(ret, m, &d, w, &d1);
 }
 
 str
@@ -2664,9 +2539,9 @@ MTIMEruleDef2(rule *ret, int *m, str *dnme, int *w, int *mint)
 	int d;
 	str e;
 
-	if ((e = day_from_str(&d, *dnme)) != MAL_SUCCEED)
+	if ((e = MTIMEday_from_str(&d, dnme)) != MAL_SUCCEED)
 		return e;
-	return rule_create(ret, m, &d, w, mint);
+	return MTIMErule_create(ret, m, &d, w, mint);
 }
 
 str
@@ -2704,9 +2579,9 @@ MTIMEtimestamp_year(int *ret, timestamp *t)
 	date d;
 	str e;
 
-	if ((e = timestamp_extract_date(&d, t, &tzone_local)) != MAL_SUCCEED)
+	if ((e = MTIMEtimestamp_extract_date(&d, t, &tzone_local)) != MAL_SUCCEED)
 		return e;
-	return date_extract_year(ret, &d);
+	return MTIMEdate_extract_year(ret, &d);
 }
 
 str
@@ -2715,9 +2590,9 @@ MTIMEtimestamp_month(int *ret, timestamp *t)
 	date d;
 	str e;
 
-	if ((e = timestamp_extract_date(&d, t, &tzone_local)) != MAL_SUCCEED)
+	if ((e = MTIMEtimestamp_extract_date(&d, t, &tzone_local)) != MAL_SUCCEED)
 		return e;
-	return date_extract_month(ret, &d);
+	return MTIMEdate_extract_month(ret, &d);
 }
 
 str
@@ -2726,9 +2601,9 @@ MTIMEtimestamp_day(int *ret, timestamp *t)
 	date d;
 	str e;
 
-	if ((e = timestamp_extract_date(&d, t, &tzone_local)) != MAL_SUCCEED)
+	if ((e = MTIMEtimestamp_extract_date(&d, t, &tzone_local)) != MAL_SUCCEED)
 		return e;
-	return date_extract_day(ret, &d);
+	return MTIMEdate_extract_day(ret, &d);
 }
 
 str
@@ -2737,9 +2612,9 @@ MTIMEtimestamp_hours(int *ret, timestamp *t)
 	daytime d;
 	str e;
 
-	if ((e = timestamp_extract_daytime(&d, t, &tzone_local)) != MAL_SUCCEED)
+	if ((e = MTIMEtimestamp_extract_daytime(&d, t, &tzone_local)) != MAL_SUCCEED)
 		return e;
-	return daytime_extract_hours(ret, &d);
+	return MTIMEdaytime_extract_hours(ret, &d);
 }
 
 str
@@ -2748,9 +2623,9 @@ MTIMEtimestamp_minutes(int *ret, timestamp *t)
 	daytime d;
 	str e;
 
-	if ((e = timestamp_extract_daytime(&d, t, &tzone_local)) != MAL_SUCCEED)
+	if ((e = MTIMEtimestamp_extract_daytime(&d, t, &tzone_local)) != MAL_SUCCEED)
 		return e;
-	return daytime_extract_minutes(ret, &d);
+	return MTIMEdaytime_extract_minutes(ret, &d);
 }
 
 str
@@ -2759,9 +2634,9 @@ MTIMEtimestamp_seconds(int *ret, timestamp *t)
 	daytime d;
 	str e;
 
-	if ((e = timestamp_extract_daytime(&d, t, &tzone_local)) != MAL_SUCCEED)
+	if ((e = MTIMEtimestamp_extract_daytime(&d, t, &tzone_local)) != MAL_SUCCEED)
 		return e;
-	return daytime_extract_seconds(ret, &d);
+	return MTIMEdaytime_extract_seconds(ret, &d);
 }
 
 str
@@ -2770,9 +2645,9 @@ MTIMEtimestamp_sql_seconds(int *ret, timestamp *t)
 	daytime d;
 	str e;
 
-	if ((e = timestamp_extract_daytime(&d, t, &tzone_local)) != MAL_SUCCEED)
+	if ((e = MTIMEtimestamp_extract_daytime(&d, t, &tzone_local)) != MAL_SUCCEED)
 		return e;
-	return daytime_extract_sql_seconds(ret, &d);
+	return MTIMEdaytime_extract_sql_seconds(ret, &d);
 }
 
 str
@@ -2781,9 +2656,9 @@ MTIMEtimestamp_milliseconds(int *ret, timestamp *t)
 	daytime d;
 	str e;
 
-	if ((e = timestamp_extract_daytime(&d, t, &tzone_local)) != MAL_SUCCEED)
+	if ((e = MTIMEtimestamp_extract_daytime(&d, t, &tzone_local)) != MAL_SUCCEED)
 		return e;
-	return daytime_extract_milliseconds(ret, &d);
+	return MTIMEdaytime_extract_milliseconds(ret, &d);
 }
 
 str
@@ -2883,7 +2758,7 @@ MTIMEdate_extract_year_bulk(int *ret, int *bid)
 	n = BATcount(b);
 
 	bn = BATnew(TYPE_void, TYPE_int, BATcount(b));
-	if (bn == NULL){
+	if (bn == NULL) {
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "batmtime.year", "memory allocation failure");
 	}
@@ -2893,16 +2768,17 @@ MTIMEdate_extract_year_bulk(int *ret, int *bid)
 
 	t = (date *) Tloc(b, BUNfirst(b));
 	y = (int *) Tloc(bn, BUNfirst(bn));
-	for( i = 0; i < n ; i++){
-		if ( *t == date_nil){
+	for (i = 0; i < n; i++) {
+		if (*t == date_nil) {
 			*y = int_nil;
-		} else 
-			date_extract_year(y, t);
-		if (*y == int_nil){
+		} else
+			MTIMEdate_extract_year(y, t);
+		if (*y == int_nil) {
 			bn->T->nonil = 0;
 			bn->T->nil = 1;
 		}
-		y++; t++;
+		y++;
+		t++;
 	}
 
 	if (b->htype != bn->htype) {
@@ -2941,7 +2817,7 @@ MTIMEdate_extract_month_bulk(int *ret, int *bid)
 	n = BATcount(b);
 
 	bn = BATnew(TYPE_void, TYPE_int, BATcount(b));
-	if (bn == NULL){
+	if (bn == NULL) {
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "batmtime.month", "memory allocation failure");
 	}
@@ -2951,16 +2827,17 @@ MTIMEdate_extract_month_bulk(int *ret, int *bid)
 
 	t = (date *) Tloc(b, BUNfirst(b));
 	m = (int *) Tloc(bn, BUNfirst(bn));
-	for( i = 0; i < n ; i++){
-		if ( *t == date_nil){
+	for (i = 0; i < n; i++) {
+		if (*t == date_nil) {
 			*m = int_nil;
-		} else 
-			date_extract_month(m, t);
-		if (*m == int_nil){
+		} else
+			MTIMEdate_extract_month(m, t);
+		if (*m == int_nil) {
 			bn->T->nonil = 0;
 			bn->T->nil = 1;
 		}
-		m++; t++;
+		m++;
+		t++;
 	}
 	if (b->htype != bn->htype) {
 			BAT *r = VIEWcreate(b,bn);
@@ -2997,7 +2874,7 @@ MTIMEdate_extract_day_bulk(int *ret, int *bid)
 	n = BATcount(b);
 
 	bn = BATnew(TYPE_void, TYPE_int, BATcount(b));
-	if (bn == NULL){
+	if (bn == NULL) {
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "batmtime.day", "memory allocation failure");
 	}
@@ -3007,18 +2884,19 @@ MTIMEdate_extract_day_bulk(int *ret, int *bid)
 
 	t = (date *) Tloc(b, BUNfirst(b));
 	d = (int *) Tloc(bn, BUNfirst(bn));
-	for( i = 0; i < n ; i++){
-		if ( *t == date_nil){
+	for (i = 0; i < n; i++) {
+		if (*t == date_nil) {
 			*d = int_nil;
-		} else 
-			date_extract_day(d, t);
-		if (*d == int_nil){
+		} else
+			MTIMEdate_extract_day(d, t);
+		if (*d == int_nil) {
 			bn->T->nonil = 0;
 			bn->T->nil = 1;
 		}
-		d++; t++;
+		d++;
+		t++;
 	}
-	
+
 	if (b->htype != bn->htype) {
 			BAT *r = VIEWcreate(b,bn);
 			BBPreleaseref(bn->batCacheid);
@@ -3054,7 +2932,7 @@ MTIMEdaytime_extract_hours_bulk(int *ret, int *bid)
 	n = BATcount(b);
 
 	bn = BATnew(TYPE_void, TYPE_int, BATcount(b));
-	if (bn == NULL){
+	if (bn == NULL) {
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "batmtime.hours", "memory allocation failure");
 	}
@@ -3064,16 +2942,17 @@ MTIMEdaytime_extract_hours_bulk(int *ret, int *bid)
 
 	t = (date *) Tloc(b, BUNfirst(b));
 	h = (int *) Tloc(bn, BUNfirst(bn));
-	for( i = 0; i < n ; i++){
-		if ( *t == date_nil){
+	for (i = 0; i < n; i++) {
+		if (*t == date_nil) {
 			*h = int_nil;
-		} else 
-			daytime_extract_hours(h, t);
-		if (*h == int_nil){
+		} else
+			MTIMEdaytime_extract_hours(h, t);
+		if (*h == int_nil) {
 			bn->T->nonil = 0;
 			bn->T->nil = 1;
 		}
-		h++; t++;
+		h++;
+		t++;
 	}
 	if (b->htype != bn->htype) {
 			BAT *r = VIEWcreate(b,bn);
@@ -3110,7 +2989,7 @@ MTIMEdaytime_extract_minutes_bulk(int *ret, int *bid)
 	n = BATcount(b);
 
 	bn = BATnew(TYPE_void, TYPE_int, BATcount(b));
-	if (bn == NULL){
+	if (bn == NULL) {
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "batmtime.minutes", "memory allocation failure");
 	}
@@ -3118,16 +2997,17 @@ MTIMEdaytime_extract_minutes_bulk(int *ret, int *bid)
 
 	t = (date *) Tloc(b, BUNfirst(b));
 	m = (int *) Tloc(bn, BUNfirst(bn));
-	for( i = 0; i < n ; i++){
-		if ( *t == date_nil){
+	for (i = 0; i < n; i++) {
+		if (*t == date_nil) {
 			*m = int_nil;
-		} else 
-			daytime_extract_minutes(m, t);
-		if (*m == int_nil){
+		} else
+			MTIMEdaytime_extract_minutes(m, t);
+		if (*m == int_nil) {
 			bn->T->nonil = 0;
 			bn->T->nil = 1;
 		}
-		m++; t++;
+		m++;
+		t++;
 	}
 	if (b->htype != bn->htype) {
 			BAT *r = VIEWcreate(b,bn);
@@ -3164,7 +3044,7 @@ MTIMEdaytime_extract_seconds_bulk(int *ret, int *bid)
 	n = BATcount(b);
 
 	bn = BATnew(TYPE_void, TYPE_int, BATcount(b));
-	if (bn == NULL){
+	if (bn == NULL) {
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "batmtime.seconds", "memory allocation failure");
 	}
@@ -3172,12 +3052,12 @@ MTIMEdaytime_extract_seconds_bulk(int *ret, int *bid)
 
 	t = (date *) Tloc(b, BUNfirst(b));
 	s = (int *) Tloc(bn, BUNfirst(bn));
-	for( i = 0; i < n ; i++){
-		if ( *t == date_nil){
+	for (i = 0; i < n; i++) {
+		if (*t == date_nil) {
 			*s = int_nil;
-		} else 
-			daytime_extract_seconds(s, t);
-		if (*s == int_nil){
+		} else
+			MTIMEdaytime_extract_seconds(s, t);
+		if (*s == int_nil) {
 			bn->T->nonil = 0;
 			bn->T->nil = 1;
 		}
@@ -3217,7 +3097,7 @@ MTIMEdaytime_extract_sql_seconds_bulk(int *ret, int *bid)
 	n = BATcount(b);
 
 	bn = BATnew(TYPE_void, TYPE_int, BATcount(b));
-	if (bn == NULL){
+	if (bn == NULL) {
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "batmtime.sql_seconds", "memory allocation failure");
 	}
@@ -3225,16 +3105,17 @@ MTIMEdaytime_extract_sql_seconds_bulk(int *ret, int *bid)
 
 	t = (date *) Tloc(b, BUNfirst(b));
 	s = (int *) Tloc(bn, BUNfirst(bn));
-	for( i = 0; i < n ; i++){
-		if ( *t == date_nil){
+	for (i = 0; i < n; i++) {
+		if (*t == date_nil) {
 			*s = int_nil;
-		} else 
-			daytime_extract_sql_seconds(s, t);
-		if (*s == int_nil){
+		} else
+			MTIMEdaytime_extract_sql_seconds(s, t);
+		if (*s == int_nil) {
 			bn->T->nonil = 0;
 			bn->T->nil = 1;
 		}
-		s++; t++;
+		s++;
+		t++;
 	}
 	BATsetcount(bn, (BUN) (s - (int *) Tloc(bn, BUNfirst(bn))));
     BATsettrivprop(bn);
@@ -3271,7 +3152,7 @@ MTIMEdaytime_extract_milliseconds_bulk(int *ret, int *bid)
 	n = BATcount(b);
 
 	bn = BATnew(TYPE_void, TYPE_int, BATcount(b));
-	if (bn == NULL){
+	if (bn == NULL) {
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "batmtime.milliseconds", "memory allocation failure");
 	}
@@ -3279,16 +3160,17 @@ MTIMEdaytime_extract_milliseconds_bulk(int *ret, int *bid)
 
 	t = (date *) Tloc(b, BUNfirst(b));
 	s = (int *) Tloc(bn, BUNfirst(bn));
-	for( i = 0; i < n ; i++){
-		if ( *t == date_nil){
+	for (i = 0; i < n; i++) {
+		if (*t == date_nil) {
 			*s = int_nil;
-		} else 
-			daytime_extract_milliseconds(s, t);
-		if (*s == int_nil){
+		} else
+			MTIMEdaytime_extract_milliseconds(s, t);
+		if (*s == int_nil) {
 			bn->T->nonil = 0;
 			bn->T->nil = 1;
 		}
-		s++; t++;
+		s++;
+		t++;
 	}
 	if (b->htype != bn->htype) {
 			BAT *r = VIEWcreate(b,bn);
@@ -3345,7 +3227,7 @@ MTIMEstrftime(str *s, date *d, str *format)
 		return MAL_SUCCEED;
 	}
 	memset(&t, 0, sizeof(struct tm));
-	fromdate((int) *d, &t.tm_mday, &mon, &year);
+	fromdate(*d, &t.tm_mday, &mon, &year);
 	t.tm_mon = mon - 1;
 	t.tm_year = year - 1900;
 	if ((sz = strftime(buf, BUFSIZ, *format, &t)) == 0)
