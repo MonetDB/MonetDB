@@ -132,8 +132,6 @@ mtime_export str MTIMEtimestamp2timestamp(timestamp *ret, const timestamp *src);
 mtime_export str MTIMEprelude(void);
 mtime_export str MTIMEepilogue(void);
 mtime_export str MTIMEsynonyms(const bit *allow);
-mtime_export str MTIMEoldduration(int *ndays, const char * const *s);
-mtime_export str MTIMEolddate(date *d, const char * const *buf);
 mtime_export str MTIMEtimezone(tzone *z, const char * const *name);
 mtime_export str MTIMElocal_timezone(lng *res);
 mtime_export str MTIMEtzone_set_local(int res, const tzone *z);

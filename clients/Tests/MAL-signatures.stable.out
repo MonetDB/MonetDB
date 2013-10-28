@@ -40781,14 +40781,6 @@ command mtime.month(d:date):int
 address MTIMEdate_extract_month;
 comment extracts month from date
 
-command mtime.oldduration(format:str):int 
-address MTIMEoldduration;
-comment parse the old duration format and	return an (estimated) number of days.
-
-command mtime.olddate(format:str):date 
-address MTIMEolddate;
-comment create a date from the old instant	format.
-
 command mtime.prelude():void 
 address MTIMEprelude;
 command mtime.rule(mo:int,d:int,wkday:int,mi:int):zrule 
