@@ -2006,6 +2006,63 @@ project_loop(dbl)
 project_loop(lng)
 
 static int
+project_void(BAT *bn, BAT *l, BAT *r, int nilcheck)
+{
+	BUN n;
+	oid lo, hi;
+	oid v, prev = oid_nil;
+	const oid *o;
+
+	o = (const oid *) Tloc(l, BUNfirst(l));
+	n = BUNfirst(bn);
+	for (lo = 0, hi = lo + BATcount(l); lo < hi; lo++, o++, n++) {
+		if (*o == oid_nil) {
+			tfastins_nocheck(bn, n, &oid_nil, Tsize(bn));
+			bn->T->nonil = 0;
+			bn->T->nil = 1;
+			bn->tsorted = 0;
+			bn->trevsorted = 0;
+			bn->tkey = 0;
+		} else if (*o < r->hseqbase ||
+		   	*o >= r->hseqbase + BATcount(r)) {
+			GDKerror("BATproject: does not match always\n");
+			goto bunins_failed;
+		} else {
+			if (r->tseqbase == oid_nil) {
+				v = oid_nil;
+				if (nilcheck && bn->T->nonil) {
+					bn->T->nonil = 0;
+					bn->T->nil = 1;
+				}
+			} else {
+				v = *o - r->hseqbase + r->tseqbase;
+			}
+			tfastins_nocheck(bn, n, &v, Tsize(bn));
+			if (n > BUNfirst(bn) &&
+			    (bn->trevsorted | bn->tsorted | bn->tkey)) {
+				if (prev < v) {
+					bn->trevsorted = 0;
+					if (!bn->tsorted)
+						bn->tkey = 0; /* can't be sure */
+				} else if (prev > v) {
+					bn->tsorted = 0;
+					if (!bn->trevsorted)
+						bn->tkey = 0; /* can't be sure */
+				} else {
+					bn->tkey = 0; /* definitely */
+				}
+			}
+			prev = v;
+		}
+	}
+	assert(n == BATcount(l));
+	BATsetcount(bn, n);
+	return GDK_SUCCEED;
+bunins_failed:
+	return GDK_FAIL;
+}
+
+static int
 project_any(BAT *bn, BAT *l, BAT *r, int nilcheck)
 {
 	BUN n;
@@ -2164,6 +2221,17 @@ BATproject(BAT *l, BAT *r)
 		break;
 	case TYPE_lng:
 		res = project_lng(projectargs);
+		break;
+	case TYPE_oid:
+		if (r->ttype == TYPE_void) {
+			res = project_void(projectargs);
+		} else {
+#if SIZEOF_OID == SIZEOF_INT
+			res = project_int(projectargs);
+#else
+			res = project_lng(projectargs);
+#endif
+		}
 		break;
 	default:
 		res = project_any(projectargs);
