@@ -585,9 +585,12 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		nr = 0;		/* maybe we won't match anything in r */
 		if (lcand) {
 			v = VALUE(l, lcand[0] - l->hseqbase);
-			if (lscan > 0 &&
-			    lscan < (BUN) (lcandend - lcand) &&
-			    cmp(v, VALUE(l, lcand[lscan] - l->hseqbase)) == 0) {
+			if (l->tkey) {
+				/* if l is key, there is a single value */
+				lcand++;
+			} else if (lscan > 0 &&
+				   lscan < (BUN) (lcandend - lcand) &&
+				   cmp(v, VALUE(l, lcand[lscan] - l->hseqbase)) == 0) {
 				/* lots of equal values: use binary
 				 * search to find end */
 				nl = binsearch(lcand, l->hseqbase, l->ttype, lvals, lvars, lwidth, lscan, (BUN) (lcandend - lcand), v, cmp, lordering, 1);
@@ -607,9 +610,13 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				v = (const char *) &lval;
 			} else {
 				/* compare values without offset */
-				if (lscan > 0 &&
-				    lscan < lend - lstart &&
-				    cmp(v, VALUE(l, lstart + lscan)) == 0) {
+				if (l->tkey) {
+					/* if l is key, there is a
+					 * single value */
+					lstart++;
+				} else if (lscan > 0 &&
+					   lscan < lend - lstart &&
+					   cmp(v, VALUE(l, lstart + lscan)) == 0) {
 					/* lots of equal values: use
 					 * binary search to find
 					 * end */
@@ -691,11 +698,19 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 					       rordering * cmp(v, VALUE(r, rcand[0] - r->hseqbase)) > 0)
 						rcand++;
 				}
-				/* look ahead a little (rscan) in r to
-				 * see whether we're better off doing
-				 * a binary search */
-				if (rscan < (BUN) (rcandend - rcand) &&
-				    cmp(v, VALUE(r, rcand[rscan] - r->hseqbase)) == 0) {
+				/* if r is key, there is zero or one
+				 * match, otherwise look ahead a
+				 * little (rscan) in r to see whether
+				 * we're better off doing a binary
+				 * search */
+				if (r->tkey) {
+					if (rcand < rcandend &&
+					    cmp(v, VALUE(r, rcand[0] - r->hseqbase)) == 0) {
+						nr = 1;
+						rcand++;
+					}
+				} else if (rscan < (BUN) (rcandend - rcand) &&
+					   cmp(v, VALUE(r, rcand[rscan] - r->hseqbase)) == 0) {
 					/* range too large: use binary
 					 * search */
 					nr = binsearch(rcand, r->hseqbase,
@@ -736,11 +751,19 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 					       rordering * cmp(v, VALUE(r, rstart)) > 0)
 						rstart++;
 				}
-				/* look ahead a little (rscan) in r to
-				 * see whether we're better off doing
-				 * a binary search */
-				if (rscan < rend - rstart &&
-				    cmp(v, VALUE(r, rstart + rscan)) == 0) {
+				/* if r is key, there is zero or one
+				 * match, otherwise look ahead a
+				 * little (rscan) in r to see whether
+				 * we're better off doing a binary
+				 * search */
+				if (r->tkey) {
+					if (rstart < rend &&
+					    cmp(v, VALUE(r, rstart)) == 0) {
+						nr = 1;
+						rstart++;
+					}
+				} else if (rscan < rend - rstart &&
+					   cmp(v, VALUE(r, rstart + rscan)) == 0) {
 					/* range too large: use binary
 					 * search */
 					nr = binsearch(NULL, 0, r->ttype, rvals, rvars,
@@ -815,11 +838,19 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 					       rordering * cmp(v, VALUE(r, rcandend[-1] - r->hseqbase)) < 0)
 						rcandend--;
 				}
-				/* look ahead a little (rscan) in r to
-				 * see whether we're better off doing
-				 * a binary search */
-				if (rscan < (BUN) (rcandend - rcand) &&
-				    cmp(v, VALUE(r, rcandend[-(ssize_t)rscan - 1] - r->hseqbase)) == 0) {
+				/* if r is key, there is zero or one
+				 * match, otherwise look ahead a
+				 * little (rscan) in r to see whether
+				 * we're better off doing a binary
+				 * search */
+				if (r->tkey) {
+					if (rcand < rcandend &&
+					    cmp(v, VALUE(r, rcandend[-1] - r->hseqbase)) == 0) {
+						nr = 1;
+						rcandend--;
+					}
+				} else if (rscan < (BUN) (rcandend - rcand) &&
+					   cmp(v, VALUE(r, rcandend[-(ssize_t)rscan - 1] - r->hseqbase)) == 0) {
 					nr = binsearch(rcand, r->hseqbase,
 						       r->ttype, rvals, rvars, rwidth, 0,
 						       (BUN) (rcandend - rcand) - rscan,
@@ -841,11 +872,19 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				 * value in r that is >= v; the
 				 * difference is the number of values
 				 * equal v */
-				/* look ahead a little (rscan) in r to
-				 * see whether we're better off doing
-				 * a binary search */
-				if (rscan < rend - rstart &&
-				    rordering * cmp(v, VALUE(r, rend - rscan - 1)) < 0) {
+				/* if r is key, there is zero or one
+				 * match, otherwise look ahead a
+				 * little (rscan) in r to see whether
+				 * we're better off doing a binary
+				 * search */
+				if (r->tkey) {
+					if (rstart < rend &&
+					    cmp(v, VALUE(r, rend - 1)) == 0) {
+						nr = 1;
+						rend--;
+					}
+				} else if (rscan < rend - rstart &&
+					   rordering * cmp(v, VALUE(r, rend - rscan - 1)) < 0) {
 					/* value too far away in r:
 					 * use binary search */
 					rend = binsearch(NULL, 0, r->ttype, rvals, rvars,
