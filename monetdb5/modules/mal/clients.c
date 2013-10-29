@@ -35,6 +35,7 @@
 #include "mal_instruction.h"
 #include "mal_client.h"
 #include "mal_authorize.h"
+#include "mal_private.h"
 #include "mtime.h"
 
 #ifdef HAVE_LIBREADLINE
@@ -545,10 +546,41 @@ str CLTgetUsers(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	return(MAL_SUCCEED);
 }
 
-str CLTshutdown(int *ret, bit *forced) {
-	(void) ret;
-	(void) forced;
-	throw(MAL,"clients.shutdown", PROGRAM_NYI);
+str
+CLTshutdown(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+	str *ret  = (str*) getArgReference(stk,pci,0);
+	int delay = *(int*) getArgReference(stk,pci,1);
+	bit force = FALSE;
+	int leftover;
+	char buf[1024]={"safe to stop last connection"};
+
+	if ( pci->argc == 3) 
+		force = *(bit*) getArgReference(stk,pci,2);
+
+	(void) mb;
+	switch( getArgType(mb,pci,1)){
+	case TYPE_bte:
+	case TYPE_sht:
+		delay = *(sht*) getArgReference(stk,pci,1);
+		break;
+	default:
+		delay = *(int*) getArgReference(stk,pci,1);
+	}
+
+	if ( cntxt->user != mal_clients[0].user)
+		throw(MAL,"mal.shutdown", "Administrator rights required");
+	MCstopClients(cntxt);
+	do{
+		if ( (leftover = MCactiveClients()) )
+			MT_sleep_ms(1000);
+		delay --;
+	} while (delay > 0 && leftover > 1);
+	if( delay == 0 && leftover > 1)
+		snprintf(buf, 1024,"%d client sessions still running",leftover);
+	*ret = GDKstrdup(buf);
+	if ( force)
+		mal_exit();
+	return MAL_SUCCEED;
 }
 
 str
@@ -592,7 +624,7 @@ CLTsessions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	
     MT_lock_set(&mal_contextLock, "clients.sessions");
 	
-    for (c = mal_clients; c < mal_clients + MAL_MAXCLIENTS; c++) 
+    for (c = mal_clients + (GDKgetenv_isyes("monet_daemon")?1:0); c < mal_clients + MAL_MAXCLIENTS; c++) 
 	if (c->mode == RUNCLIENT) {
 		BUNappend(user, &usrname, FALSE);
 		(void) MTIMEunix_epoch(&ts);

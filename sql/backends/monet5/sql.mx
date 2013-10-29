@@ -45,6 +45,20 @@ pattern init():void
 address SQLinitEnvironment
 comment "Initialize the environment for MAL";
 
+pattern shutdown(delay:bte, force:bit):str
+address SQLshutdown_wrap;
+pattern shutdown(delay:sht, force:bit):str
+address SQLshutdown_wrap;
+pattern shutdown(delay:int, force:bit):str
+address SQLshutdown_wrap;
+
+pattern shutdown(delay:bte):str
+address SQLshutdown_wrap;
+pattern shutdown(delay:sht):str
+address SQLshutdown_wrap;
+pattern shutdown(delay:int):str
+address SQLshutdown_wrap;
+
 pattern mvc():int
 address SQLmvc
 comment "get the multiversion catalog context, needed for correct statement dependencies (ie sql.update, should be after sql.bind in concurrent execution)";
@@ -1366,6 +1380,7 @@ sql5_export str SQLmvc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLtransaction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLcommit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLabort(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str SQLshutdown_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLtransaction2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
@@ -1970,6 +1985,18 @@ SQLabort(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		mvc_rollback(sql, 0, NULL);
 	}
 	return msg;
+}
+
+str
+SQLshutdown_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	str answ = *(str*) getArgReference(stk,pci,0);
+
+	CLTshutdown(cntxt, mb, stk, pci);
+
+	// administer the shutdown
+	mnstr_printf(GDKstdout,"#%s\n",answ);
+	return MAL_SUCCEED;
 }
 
 str

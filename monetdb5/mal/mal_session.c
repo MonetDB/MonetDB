@@ -283,8 +283,11 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
 
 		c = MCinitClient(uid, fin, fout);
 		if (c == NULL) {
-			mnstr_printf(fout, "!maximum concurrent client limit reached "
-							   "(%d), please try again later\n", MAL_MAXCLIENTS);
+			if ( MCshutdowninprogress())
+				mnstr_printf(fout, "!system shutdown in progress, please try again later\n");
+			else
+				mnstr_printf(fout, "!maximum concurrent client limit reached "
+								   "(%d), please try again later\n", MAL_MAXCLIENTS);
 			exit_streams(fin, fout);
 			GDKfree(command);
 			return;

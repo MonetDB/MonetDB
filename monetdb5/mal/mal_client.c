@@ -373,7 +373,7 @@ freeClient(Client c)
 	c->stimeout = 0;
 	c->user = oid_nil;
 	c->mythread = 0;
-	c->mode = FREECLIENT;
+	c->mode = MCshutdowninprogress()? BLOCKCLIENT: FREECLIENT;
 	GDKfree(c->glb);
 	c->glb = NULL;
 	if (t)
@@ -392,7 +392,49 @@ freeClient(Client c)
  *
  * Furthermore, once we enter closeClient, the process in which it is
  * raised has already lost its file descriptors.
+ *
+ * When the server is about to shutdown, we should softly terminate
+ * all outstanding session.
  */
+static int shutdowninprogress = 0;
+
+int
+MCshutdowninprogress(void){
+	return shutdowninprogress;
+}
+
+void
+MCstopClients(Client cntxt)
+{
+	Client c = mal_clients;
+
+	MT_lock_set(&mal_contextLock,"stopClients");
+	for(c= mal_clients +1;  c < mal_clients+MAL_MAXCLIENTS; c++)
+	if( cntxt != c){
+		if ( c->mode == RUNCLIENT)
+			c->mode = FINISHCLIENT; 
+		else if (c->mode == FREECLIENT)
+			c->mode = BLOCKCLIENT;
+	}
+	shutdowninprogress =1;
+	MT_lock_unset(&mal_contextLock,"stopClients");
+}
+
+int
+MCactiveClients(void)
+{
+	int freeclient=0, finishing=0, running=0, blocked = 0;
+	Client cntxt = mal_clients;
+
+	for(cntxt= mal_clients+1;  cntxt<mal_clients+MAL_MAXCLIENTS; cntxt++){
+		freeclient += (cntxt->mode == FREECLIENT);
+		finishing += (cntxt->mode == FINISHCLIENT);
+		running += (cntxt->mode == RUNCLIENT);
+		blocked += (cntxt->mode == BLOCKCLIENT);
+	}
+	return finishing+running;
+}
+
 void
 MCcloseClient(Client c)
 {

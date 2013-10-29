@@ -305,38 +305,6 @@ int mal_init(void){
  *
  * Beware, mal_exit is also called during a SIGTERM from the monetdb tool
  */
-static void stopClients(void)
-{
-	Client cntxt = mal_clients;
-
-	MT_lock_set(&mal_contextLock,"stopClients");
-	for(cntxt= mal_clients +1;  cntxt < mal_clients+MAL_MAXCLIENTS; cntxt++)
-	if ( cntxt->mode == RUNCLIENT)
-		cntxt->mode = FINISHCLIENT; 
-	else if (cntxt->mode == FREECLIENT)
-		cntxt->mode = BLOCKCLIENT;
-	MT_lock_unset(&mal_contextLock,"stopClients");
-}
-
-int
-moreClients(int reruns)
-{
-	int freeclient=0, finishing=0, running=0, blocked = 0;
-	Client cntxt = mal_clients;
-
-	for(cntxt= mal_clients+1;  cntxt<mal_clients+MAL_MAXCLIENTS; cntxt++){
-		freeclient += (cntxt->mode == FREECLIENT);
-		finishing += (cntxt->mode == FINISHCLIENT);
-		running += (cntxt->mode == RUNCLIENT);
-		blocked += (cntxt->mode == BLOCKCLIENT);
-	}
-	if( reruns > 3){
-		printf("MALexit: server forced exit %d free %d finishing %d running %d blocked\n",
-				freeclient, finishing,running, blocked);
-		return 0;
-	}
-	return finishing+running;
-}
 
 void mal_exit(void){
 	str err;
@@ -345,16 +313,15 @@ void mal_exit(void){
 	 * Before continuing we should make sure that all clients
 	 * (except the console) have left the scene.
 	 */
-	stopClients();
+	MCstopClients(0);
 #if 0
 {
 	int reruns=0, go_on;
 	do{
-		if ( (go_on = moreClients(reruns)) )
+		if ( (go_on = MCactiveClients()) )
 			MT_sleep_ms(1000);
-		if(reruns)
-			mnstr_printf(mal_clients->fdout,"#MALexit: clients still active\n");
-	} while (++reruns < SERVERSHUTDOWNDELAY && go_on);
+		mnstr_printf(mal_clients->fdout,"#MALexit: %d clients still active\n", go_on);
+	} while (++reruns < SERVERSHUTDOWNDELAY && go_on > 1);
 }
 #endif
 	stopHeartbeat();

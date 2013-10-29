@@ -21,6 +21,13 @@ create function sys.password_hash (username string)
 create function sys.sessions()
 returns table("user" string, "login" timestamp, "sessiontimeout" bigint, "lastcommand" timestamp, "querytimeout" bigint, "active" bool)
 external name sql.sessions;
+create view sys.sessions as select * from sys.sessions();
+
+create procedure sys.shutdown(delay tinyint) 
+external name sql.shutdown;
+
+create procedure sys.shutdown(delay tinyint, force bool) 
+external name sql.shutdown;
 
 -- control the query and session time out 
 create procedure sys.settimeout("query" bigint)
