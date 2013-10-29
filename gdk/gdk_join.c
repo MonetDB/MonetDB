@@ -872,19 +872,11 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				 * value in r that is >= v; the
 				 * difference is the number of values
 				 * equal v */
-				/* if r is key, there is zero or one
-				 * match, otherwise look ahead a
-				 * little (rscan) in r to see whether
-				 * we're better off doing a binary
-				 * search */
-				if (r->tkey) {
-					if (rstart < rend &&
-					    cmp(v, VALUE(r, rend - 1)) == 0) {
-						nr = 1;
-						rend--;
-					}
-				} else if (rscan < rend - rstart &&
-					   rordering * cmp(v, VALUE(r, rend - rscan - 1)) < 0) {
+				/* look ahead a little (rscan) in r to
+				 * see whether we're better off doing
+				 * a binary search */
+				if (rscan < rend - rstart &&
+				    rordering * cmp(v, VALUE(r, rend - rscan - 1)) < 0) {
 					/* value too far away in r:
 					 * use binary search */
 					rend = binsearch(NULL, 0, r->ttype, rvals, rvars,
@@ -897,11 +889,19 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 					       rordering * cmp(v, VALUE(r, rend - 1)) < 0)
 						rend--;
 				}
-				/* look ahead a little (rscan) in r to
-				 * see whether we're better off doing
-				 * a binary search */
-				if (rscan < rend - rstart &&
-				    cmp(v, VALUE(r, rend - rscan - 1)) == 0) {
+				/* if r is key, there is zero or one
+				 * match, otherwise look ahead a
+				 * little (rscan) in r to see whether
+				 * we're better off doing a binary
+				 * search */
+				if (r->tkey) {
+					if (rstart < rend &&
+					    cmp(v, VALUE(r, rend - 1)) == 0) {
+						nr = 1;
+						rend--;
+					}
+				} else if (rscan < rend - rstart &&
+					   cmp(v, VALUE(r, rend - rscan - 1)) == 0) {
 					nr = binsearch(NULL, 0, r->ttype, rvals, rvars, rwidth, rstart, rend - rscan, v, cmp, rordering, 0);
 					nr = rend - nr;
 					rend -= nr;
