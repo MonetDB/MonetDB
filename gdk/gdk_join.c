@@ -1942,73 +1942,71 @@ BATsubjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_match
 }
 
 #define projectargs bn,l,r,nilcheck
-#define project_loop(NAME, TYPE) 							\
-static int 										\
-NAME##_##TYPE( BAT *bn, BAT *l, BAT *r, int nilcheck)					\
-{											\
-	BUN n;										\
-	oid lo, hi;									\
-	TYPE *rt, *bt;	 								\
-	TYPE v, prev = 0;								\
-	const oid *o;									\
-											\
-	o = (const oid *) Tloc(l, BUNfirst(l));						\
-	rt = (TYPE *) Tloc(r, BUNfirst(r));						\
-	bt = (TYPE *) Tloc(bn, BUNfirst(bn));						\
-	n = BUNfirst(bn);								\
-	for (lo = 0, hi = lo + BATcount(l); lo < hi; lo++, o++, n++) {			\
-		if (*o == oid_nil) {							\
-			bt[n] = TYPE##_nil; 						\
-			bn->T->nonil = 0;						\
-			bn->T->nil = 1;							\
-			bn->tsorted = 0;						\
-			bn->trevsorted = 0;						\
-			bn->tkey = 0;							\
-		} else if (*o < r->hseqbase ||						\
-		   	*o >= r->hseqbase + BATcount(r)) {				\
-			GDKerror("BATproject: does not match always\n");		\
-			return GDK_FAIL;						\
-		} else {								\
-			v = rt[*o - r->hseqbase];					\
-			bt[n] = v; 							\
-			if (nilcheck && bn->T->nonil && v == TYPE##_nil) {		\
-				bn->T->nonil = 0;					\
-				bn->T->nil = 1;						\
-			}								\
-			if (lo && (bn->trevsorted | bn->tsorted | bn->tkey)) {		\
-				if (v > prev) {						\
-					bn->trevsorted = 0;				\
-					if (!bn->tsorted)				\
-						bn->tkey = 0; /* can't be sure */	\
-				} else if (v < prev) {					\
-					bn->tsorted = 0;				\
-					if (!bn->trevsorted)				\
-						bn->tkey = 0; /* can't be sure */	\
-				} else {						\
-					bn->tkey = 0; /* definitely */			\
-				}							\
-			}								\
-			prev = v;							\
-		}									\
-	}										\
-	assert(n == BATcount(l));							\
-	BATsetcount(bn, n);								\
-	return GDK_SUCCEED;								\
+#define project_loop(TYPE)						\
+static int								\
+project_##TYPE(BAT *bn, BAT *l, BAT *r, int nilcheck)			\
+{									\
+	BUN n;								\
+	oid lo, hi;							\
+	const TYPE *rt;							\
+	TYPE *bt;							\
+	TYPE v, prev = 0;						\
+	const oid *o;							\
+									\
+	o = (const oid *) Tloc(l, BUNfirst(l));				\
+	rt = (const TYPE *) Tloc(r, BUNfirst(r));			\
+	bt = (TYPE *) Tloc(bn, BUNfirst(bn));				\
+	n = BUNfirst(bn);						\
+	for (lo = 0, hi = lo + BATcount(l); lo < hi; lo++, o++, n++) {	\
+		if (*o == oid_nil) {					\
+			bt[n] = TYPE##_nil;				\
+			bn->T->nonil = 0;				\
+			bn->T->nil = 1;					\
+			bn->tsorted = 0;				\
+			bn->trevsorted = 0;				\
+			bn->tkey = 0;					\
+		} else if (*o < r->hseqbase ||				\
+		   	*o >= r->hseqbase + BATcount(r)) {		\
+			GDKerror("BATproject: does not match always\n"); \
+			return GDK_FAIL;				\
+		} else {						\
+			v = rt[*o - r->hseqbase];			\
+			bt[n] = v;					\
+			if (nilcheck && bn->T->nonil && v == TYPE##_nil) { \
+				bn->T->nonil = 0;			\
+				bn->T->nil = 1;				\
+			}						\
+			if (lo && (bn->trevsorted | bn->tsorted | bn->tkey)) { \
+				if (v > prev) {				\
+					bn->trevsorted = 0;		\
+					if (!bn->tsorted)		\
+						bn->tkey = 0; /* can't be sure */ \
+				} else if (v < prev) {			\
+					bn->tsorted = 0;		\
+					if (!bn->trevsorted)		\
+						bn->tkey = 0; /* can't be sure */ \
+				} else {				\
+					bn->tkey = 0; /* definitely */	\
+				}					\
+			}						\
+			prev = v;					\
+		}							\
+	}								\
+	assert(n == BATcount(l));					\
+	BATsetcount(bn, n);						\
+	return GDK_SUCCEED;						\
 }
 
 /* project type switch */
-#define project_type(NAME)               \
-	project_loop(NAME, bte)          \
-        project_loop(NAME, sht)          \
-        project_loop(NAME, int)          \
-        project_loop(NAME, flt)          \
-        project_loop(NAME, dbl)          \
-        project_loop(NAME, lng) 	 
-	
-project_type(project)
+project_loop(bte)
+project_loop(sht)
+project_loop(int)
+project_loop(flt)
+project_loop(dbl)
+project_loop(lng)
 
 static int
-project_any( BAT *bn, BAT *l, BAT *r, int nilcheck)
+project_any(BAT *bn, BAT *l, BAT *r, int nilcheck)
 {
 	BUN n;
 	oid lo, hi;
@@ -2169,6 +2167,7 @@ BATproject(BAT *l, BAT *r)
 		break;
 	default:
 		res = project_any(projectargs);
+		break;
 	}
 
 	/* handle string trick */
