@@ -488,8 +488,9 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			 * if we're not inserting NILs for missing
 			 * values in r (nil_on_miss set, i.e., outer
 			 * join).
-			 * The next value to in r is the first if
-			 * equal_order is set, the last otherwise. */
+			 * The next value to match in r is the first
+			 * if equal_order is set, the last
+			 * otherwise. */
 			if (rcand) {
 				if (rcand == rcandend)
 					break;
@@ -1885,10 +1886,10 @@ BATsubjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_match
 		/* only right has hash, don't swap */
 		swap = 0;
 	} else if (l->tsorted || l->trevsorted) {
-		/* left is sorted, swap */
+		/* only left is sorted, swap */
 		return mergejoin(r2, r1, r, l, sr, sl, nil_matches, 0, 0, 0);
 	} else if (r->tsorted || r->trevsorted) {
-		/* right is sorted, don't swap */
+		/* only right is sorted, don't swap */
 		return mergejoin(r1, r2, l, r, sl, sr, nil_matches, 0, 0, 0);
 	} else if (BATcount(l) < BATcount(r)) {
 		/* no hashes, not sorted, create hash on smallest BAT */
