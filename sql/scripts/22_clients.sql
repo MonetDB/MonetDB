@@ -22,6 +22,10 @@ create function sys.sessions()
 returns table("user" string, "login" timestamp, "sessiontimeout" bigint, "lastcommand" timestamp, "querytimeout" bigint, "active" bool)
 external name sql.sessions;
 create view sys.sessions as select * from sys.sessions();
+update sys._tables
+    set system = true
+    where name = 'sessions'
+        and schema_id = (select id from sys.schemas where name = 'sys');
 
 create procedure sys.shutdown(delay tinyint) 
 external name sql.shutdown;

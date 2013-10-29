@@ -38783,10 +38783,12 @@ command clients.sha1sum(pw:str):str
 address CLTsha1sum;
 comment Return hex string representation of the SHA-1 hash of the given string
 
-command clients.shutdown(forced:bit):void 
+pattern clients.shutdown(delay:int,forced:bit):str 
 address CLTshutdown;
-comment Close all client connections. If forced=false theclients are moved into finishing mode, which means thatthe process stops at the next cycle of the scenario.If forced=true all client processes are immediately killed
+comment Close all other client connections. Return if it succeeds.If forced is set then always stop the system the hard way
 
+pattern clients.shutdown(delay:int):str 
+address CLTshutdown;
 pattern clients.setTimeout(q:lng,s:lng):void 
 address CLTsetTimeout;
 comment Abort a query after q seconds (q=0 means run undisturbed).The session timeout aborts the connection after spending toomany seconds on query processing.
@@ -42421,6 +42423,18 @@ pattern sql.setVariable(mvc:int,varname:str,value:any_1):int
 address setVariable;
 comment Set the value of a session variable
 
+pattern sql.shutdown(delay:int):str 
+address SQLshutdown_wrap;
+pattern sql.shutdown(delay:sht):str 
+address SQLshutdown_wrap;
+pattern sql.shutdown(delay:bte):str 
+address SQLshutdown_wrap;
+pattern sql.shutdown(delay:int,force:bit):str 
+address SQLshutdown_wrap;
+pattern sql.shutdown(delay:sht,force:bit):str 
+address SQLshutdown_wrap;
+pattern sql.shutdown(delay:bte,force:bit):str 
+address SQLshutdown_wrap;
 pattern sql.start2():void 
 address SQLsession2;
 comment Switch to processing precompiled sql statements
