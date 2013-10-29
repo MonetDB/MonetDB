@@ -187,6 +187,9 @@
 /* Define to 1 if you have the `gettimeofday' function. */
 /* #undef HAVE_GETTIMEOFDAY */
 
+/* Define if you have the gsl library */
+/* #undef HAVE_GSL */
+
 /* Define to 1 if you have the `getuid' function. */
 /* #undef HAVE_GETUID */
 
