@@ -556,6 +556,14 @@ AGGRsize2(bat *retval, bat *bid, bat *eid)
 						BATgroupsize, NULL, 1, "aggr.size");
 }
 
+aggr_export str AGGRsize2nils(bat *retval, bat *bid, bat *eid);
+str
+AGGRsize2nils(bat *retval, bat *bid, bat *eid)
+{
+	return AGGRgrouped2(retval, NULL, bid, eid, TYPE_wrd,
+						BATgroupsize, NULL, 0, "aggr.size");
+}
+
 aggr_export str AGGRmin3(bat *retval, bat *bid, bat *gid, bat *eid);
 str
 AGGRmin3(bat *retval, bat *bid, bat *gid, bat *eid)

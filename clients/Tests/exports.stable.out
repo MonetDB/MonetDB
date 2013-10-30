@@ -645,6 +645,7 @@ str AGGRprod3_lng(bat *retval, bat *bid, bat *gid, bat *eid);
 str AGGRprod3_sht(bat *retval, bat *bid, bat *gid, bat *eid);
 str AGGRprod3_wrd(bat *retval, bat *bid, bat *gid, bat *eid);
 str AGGRsize2(bat *retval, bat *bid, bat *eid);
+str AGGRsize2nils(bat *retval, bat *bid, bat *eid);
 str AGGRstdev2_dbl(bat *retval, bat *bid, bat *eid);
 str AGGRstdev3_dbl(bat *retval, bat *bid, bat *gid, bat *eid);
 str AGGRstdevp2_dbl(bat *retval, bat *bid, bat *eid);
