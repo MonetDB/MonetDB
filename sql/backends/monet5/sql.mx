@@ -610,7 +610,7 @@ address sql_querylog_empty;
 command querylog_enable()
 address QLOGenable;
 command querylog_enable(thres:int)
-address QLOGenablehreshold;
+address QLOGenableThreshold;
 command querylog_disable()
 address QLOGdisable;
 
@@ -5169,8 +5169,10 @@ bat@2_2time_@1( int *res, int *bid, int *digits )
 @c
 @:bat2time(timestamp,str,char,&v)@
 @:bat2time(timestamp,timestamp,timestamp,v)@
+@:bat2time(timestamp,nil,void,v)@
 @:bat2time(daytime,str,char,&v)@
 @:bat2time(daytime,daytime,daytime,v)@
+@:bat2time(daytime,nil,void,v)@
 
 @= fround
 static inline @1

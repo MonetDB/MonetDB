@@ -38587,10 +38587,6 @@ pattern calc.xor(v1:bit,v2:bit):bit
 address CMDvarXOR;
 comment Return V1 XOR V2
 
-command centipede.materialize(b:bat[:any_1,:any_2],low:any_2,high:any_2):bat[:any_1,:any_2] 
-address OPTcentipedeMaterialize;
-comment Implement the centipede partition operation. Throw an exception if the partition was empty,because then the subquery should produce a NIL 
-
 pattern centipede.vector(b:bat[:oid,:any_1]) (X_2:oid,X_3:oid...) 
 address OPTvectorOid;
 comment Derive a series of slices values based on sampling
@@ -40039,10 +40035,6 @@ comment Dump the routine M.F on standard out.
 pattern mdb.List():void 
 address MDBlistDetail;
 comment Dump the current routine on standard out.
-
-pattern mdb.collect(v:any_1):void 
-address OPTtraceCall;
-comment Dump the previous instruction to a temporary file
 
 pattern mdb.dump():void 
 address MDBdump;
@@ -41611,14 +41603,6 @@ pattern recycle.dump():void
 address RECYCLEdumpWrap;
 comment Dump summary of recycle table
 
-pattern recycle.epilogue():void 
-address RECYCLEepilogueWrap;
-comment To be called when recycler is not needed anymore
-
-pattern recycle.prologue():void 
-address RECYCLEprologueWrap;
-comment Called at the start of a recycle controlled function
-
 pattern recycle.reset(bid:bat[:oid,:any]):void 
 address RECYCLEresetBATwrap;
 comment Reset a recycled bat variable
@@ -42119,7 +42103,7 @@ comment Return column bat with delta's applied.
 command sql.querylog_disable():void 
 address QLOGdisable;
 command sql.querylog_enable(thres:int):void 
-address QLOGenablehreshold;
+address QLOGenableThreshold;
 command sql.querylog_enable():void 
 address QLOGenable;
 pattern sql.querylog_empty():void 

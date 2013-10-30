@@ -41,10 +41,10 @@ pattern drop():void
 address RECYCLEdropWrap
 comment "Remove the recycle cache";
 
-pattern prologue():void
-address RECYCLEprologueWrap
-comment "Called at the start of a recycle controlled function";
+# pattern prologue():void
+# address RECYCLEprologueWrap
+# comment "Called at the start of a recycle controlled function";
 
-pattern epilogue():void
-address RECYCLEepilogueWrap
-comment "To be called when recycler is not needed anymore";
+# pattern epilogue():void
+# address RECYCLEepilogueWrap
+# comment "To be called when recycler is not needed anymore";

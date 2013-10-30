@@ -1766,7 +1766,6 @@ int OPTaccumulatorsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 void OPTaliasRemap(InstrPtr p, int *alias);
 int OPTaliasesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 int OPTcentipedeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-str OPTcentipedeMaterialize(int *result, int *bid, ptr low, ptr high);
 int OPTclusterImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 int OPTcoercionImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 int OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);

@@ -25,7 +25,6 @@
 
 opt_export str OPTvector(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 opt_export str OPTvectorOid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-opt_export str OPTcentipedeMaterialize(int *result, int *bid, ptr low, ptr high);
 opt_export str OPTpeers(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 opt_export int OPTcentipedeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
