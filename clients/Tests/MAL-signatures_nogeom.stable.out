@@ -33306,31 +33306,31 @@ address CMDvarADDsignal;
 comment Return V1 + V2, guarantee no overflow by returning larger type
 
 pattern calc.++(v:dbl):dbl 
-address CMDvarINCR;
+address CMDvarINCRsignal;
 comment Unary V + 1
 
 pattern calc.++(v:flt):flt 
-address CMDvarINCR;
+address CMDvarINCRsignal;
 comment Unary V + 1
 
 pattern calc.++(v:lng):lng 
-address CMDvarINCR;
+address CMDvarINCRsignal;
 comment Unary V + 1
 
 pattern calc.++(v:wrd):wrd 
-address CMDvarINCR;
+address CMDvarINCRsignal;
 comment Unary V + 1
 
 pattern calc.++(v:int):int 
-address CMDvarINCR;
+address CMDvarINCRsignal;
 comment Unary V + 1
 
 pattern calc.++(v:sht):sht 
-address CMDvarINCR;
+address CMDvarINCRsignal;
 comment Unary V + 1
 
 pattern calc.++(v:bte):bte 
-address CMDvarINCR;
+address CMDvarINCRsignal;
 comment Unary V + 1
 
 pattern calc.-(v1:dbl,v2:dbl):dbl 
@@ -33610,31 +33610,31 @@ address CMDvarSUBsignal;
 comment Return V1 - V2, guarantee no overflow by returning larger type
 
 pattern calc.--(v:dbl):dbl 
-address CMDvarDECR;
+address CMDvarDECRsignal;
 comment Unary V - 1
 
 pattern calc.--(v:flt):flt 
-address CMDvarDECR;
+address CMDvarDECRsignal;
 comment Unary V - 1
 
 pattern calc.--(v:lng):lng 
-address CMDvarDECR;
+address CMDvarDECRsignal;
 comment Unary V - 1
 
 pattern calc.--(v:wrd):wrd 
-address CMDvarDECR;
+address CMDvarDECRsignal;
 comment Unary V - 1
 
 pattern calc.--(v:int):int 
-address CMDvarDECR;
+address CMDvarDECRsignal;
 comment Unary V - 1
 
 pattern calc.--(v:sht):sht 
-address CMDvarDECR;
+address CMDvarDECRsignal;
 comment Unary V - 1
 
 pattern calc.--(v:bte):bte 
-address CMDvarDECR;
+address CMDvarDECRsignal;
 comment Unary V - 1
 
 pattern calc.-(v:dbl):dbl 

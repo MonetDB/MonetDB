@@ -90,8 +90,8 @@ echo
 
 for func in 'abs:ABS:Unary absolute value of V' \
     '-:NEG:Unary negation of V' \
-    '++:INCR:Unary V + 1' \
-    '--:DECR:Unary V - 1'; do
+    '++:INCRsignal:Unary V + 1' \
+    '--:DECRsignal:Unary V - 1'; do
     op=${func%%:*}
     com=${func##*:}
     func=${func%:*}

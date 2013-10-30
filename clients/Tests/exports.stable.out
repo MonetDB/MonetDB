@@ -1159,6 +1159,7 @@ str CMDbatAND(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str CMDbatBETWEEN(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str CMDbatCMP(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str CMDbatDECR(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+str CMDbatDIV(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str CMDbatDIVdbl(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str CMDbatDIVdblsignal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str CMDbatDIVflt(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
