@@ -983,7 +983,7 @@ ALGthetajoin(int *result, int *lid, int *rid, int *opc)
 }
 
 str
-ALGbandjoin(int *result, int *lid, int *rid, ptr *minus, ptr *plus, bit *li, bit *hi)
+ALGbandjoin(int *result, int *lid, int *rid, const void *minus, const void *plus, bit *li, bit *hi)
 {
 	BAT *left, *right, *bn = NULL;
 
@@ -1009,7 +1009,7 @@ ALGbandjoin(int *result, int *lid, int *rid, ptr *minus, ptr *plus, bit *li, bit
 }
 
 str
-ALGbandjoin_default(int *result, int *lid, int *rid, ptr *minus, ptr *plus)
+ALGbandjoin_default(int *result, int *lid, int *rid, const void *minus, const void *plus)
 {
 	bit li = TRUE;
 	bit hi = TRUE;
@@ -1400,9 +1400,10 @@ ALGcrossproduct2( bat *l, bat *r, bat *left, bat *right)
 	return MAL_SUCCEED;
 }
 str
-ALGbandjoin2(bat *l, bat *r, bat *left, bat *right, ptr *minus, ptr *plus, bit *li, bit *hi)
+ALGbandjoin2(bat *l, bat *r, bat *left, bat *right, const void *minus, const void *plus, bit *li, bit *hi)
 {
-	BAT *L, *R, *j;
+	BAT *L, *R, *bn1, *bn2;
+	gdk_return ret;
 
 	if ((L = BATdescriptor(*left)) == NULL) {
 		throw(MAL, "algebra.bandjoin", RUNTIME_OBJECT_MISSING);
@@ -1412,20 +1413,13 @@ ALGbandjoin2(bat *l, bat *r, bat *left, bat *right, ptr *minus, ptr *plus, bit *
 		throw(MAL, "algebra.bandjoin", RUNTIME_OBJECT_MISSING);
 	}
 
-	/* j = bandjoin(left,reverse(right), minus, plus, li, hi)
-	   l = reverse(mark(j))
-	   r = reverse(mark(reverse(j)))
-	*/
-	j = BATbandjoin(L, BATmirror(R), minus, plus, *li, *hi);
-	if (!j)
-		throw(MAL, "algebra.bandjoin", GDK_EXCEPTION);
+	ret = BATsubbandjoin(&bn1, &bn2, L, R, NULL, NULL, minus, plus, *li, *hi, BUN_NONE);
 	BBPunfix(L->batCacheid);
 	BBPunfix(R->batCacheid);
-	L = BATmirror(BATmark(j,0));
-	R = BATmirror(BATmark(BATmirror(j),0));
-	BBPunfix(j->batCacheid);
-	BBPkeepref(*l = L->batCacheid);
-	BBPkeepref(*r = R->batCacheid);
+	if (ret == GDK_FAIL)
+		throw(MAL, "algebra.bandjoin", GDK_EXCEPTION);
+	BBPkeepref(*l = bn1->batCacheid);
+	BBPkeepref(*r = bn2->batCacheid);
 	return MAL_SUCCEED;
 }
 
