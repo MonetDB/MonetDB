@@ -210,7 +210,8 @@ ALGjoinPathBody(Client cntxt, int top, BAT **joins, int flag)
 			b = BATsemijoin(joins[j], joins[j + 1]);
 			break;
 		case 3:
-			b = BATleftfetchjoin(joins[j], joins[j + 1], BATcount(joins[j]));
+			b = BATproject(joins[j], joins[j + 1]);
+			break;
 		}
 		if (b==NULL){
 			if ( postpone[j] && postpone[j+1]){

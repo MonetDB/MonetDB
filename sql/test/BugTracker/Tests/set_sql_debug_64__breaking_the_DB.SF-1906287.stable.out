@@ -35,7 +35,7 @@ stdout of test 'set_sql_debug_64__breaking_the_DB.SF-1906287` in directory 'sql/
 % name,	fullname,	default_schema # name
 % varchar,	varchar,	int # type
 % 9,	10,	4 # length
-[ "skyserver",	"sky server",	7819	]
+[ "skyserver",	"sky server",	7834	]
 #alter user "skyserver" set schema "sys";
 #drop schema sky;
 #drop user skyserver;

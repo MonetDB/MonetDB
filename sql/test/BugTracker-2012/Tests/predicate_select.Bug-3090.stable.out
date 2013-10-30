@@ -58,6 +58,7 @@ Ready.
 [ "querylog_calls",	2000,	"create view sys.querylog_calls as select * from sys.querylog_calls();",	1,	true,	0,	false,	0	]
 [ "querylog_history",	2000,	"create view sys.querylog_history as\nselect qd.*, ql.\"start\",ql.\"stop\", ql.arguments, ql.tuples, ql.run, ql.ship, ql.cpu, ql.space, ql.io \nfrom sys.querylog_catalog() qd, sys.querylog_calls() ql\nwhere qd.id = ql.id and qd.owner = user;",	1,	true,	0,	false,	0	]
 [ "tracelog",	2000,	"create view sys.tracelog as select * from sys.tracelog();",	1,	true,	0,	false,	0	]
+[ "sessions",	2000,	"create view sys.sessions as select * from sys.sessions();",	1,	true,	0,	false,	0	]
 [ "optimizers",	2000,	"create view sys.optimizers as select * from sys.optimizers();",	1,	true,	0,	false,	0	]
 [ "environment",	2000,	"create view sys.environment as select * from sys.environment();",	1,	true,	0,	false,	0	]
 [ "queue",	2000,	"create view sys.queue as select * from sys.queue();",	1,	true,	0,	false,	0	]

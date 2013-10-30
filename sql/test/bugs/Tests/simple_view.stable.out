@@ -58,6 +58,7 @@ Ready.
 [ "querylog_calls",	"str",	1	]
 [ "querylog_history",	"str",	1	]
 [ "tracelog",	"str",	1	]
+[ "sessions",	"str",	1	]
 [ "optimizers",	"str",	1	]
 [ "environment",	"str",	1	]
 [ "queue",	"str",	1	]

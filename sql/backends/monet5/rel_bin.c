@@ -2239,7 +2239,7 @@ rel2bin_project( mvc *sql, sql_rel *rel, list *refs, sql_rel *topn)
 	/* In case of a topn 
 		if both order by and distinct: then get first order by col 
 		do topn on it. Project all again! Then rest
-		*/
+	*/
 	if (topn && rel->r) {
 		list *oexps = rel->r, *npl = sa_list(sql->sa);
 		/* distinct, topn returns atleast N (unique) */

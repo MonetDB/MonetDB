@@ -1754,6 +1754,7 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 			cc->base.allocated = cc->base.rtime = cc->base.wtime = 0;
 			continue;
 		}
+
 		assert(oc->base.wtime < cc->base.wtime);
 		if (store_nr_active > 1) { /* move delta */
 			sql_delta *b = cc->data, *p = NULL;
@@ -1773,6 +1774,13 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 			assert(oc->base.allocated);
 			tr_update_delta(tr, oc->data, cc->data, cc->unique == 1);
 		}
+
+		oc->null = cc->null;
+		oc->unique = cc->unique;
+		if (cc->storage_type && (!cc->storage_type || strcmp(cc->storage_type, oc->storage_type) != 0))
+			oc->storage_type = sa_strdup(tr->sa, cc->storage_type);
+		if (cc->def && (!cc->def || strcmp(cc->def, oc->def) != 0))
+			oc->def = sa_strdup(tr->sa, cc->def);
 
 		if (oc->base.rtime < cc->base.rtime)
 			oc->base.rtime = cc->base.rtime;
