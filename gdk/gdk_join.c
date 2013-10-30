@@ -1733,6 +1733,50 @@ thetajoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int opcode)
 	return GDK_FAIL;
 }
 
+/* Make the implementation choices for various left joins. */
+static gdk_return
+subleftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate, int nil_on_miss, int semi, int must_match, const char *name)
+{
+	BAT *r1, *r2;
+	BUN lcount, rcount;
+
+	*r1p = NULL;
+	*r2p = NULL;
+	if (joinparamcheck(l, r, sl, sr, name) == GDK_FAIL)
+		return GDK_FAIL;
+
+	lcount = BATcount(l);
+	if (sl)
+		lcount = MIN(lcount, BATcount(sl));
+	rcount = BATcount(r);
+	if (sr)
+		rcount = MIN(rcount, BATcount(sr));
+	if (lcount == 0 || rcount == 0) {
+		r1 = BATnew(TYPE_void, TYPE_void, 0);
+		BATseqbase(r1, 0);
+		BATseqbase(BATmirror(r1), 0);
+		r2 = BATnew(TYPE_void, TYPE_void, 0);
+		BATseqbase(r2, 0);
+		BATseqbase(BATmirror(r2), 0);
+		*r1p = r1;
+		*r2p = r2;
+		return GDK_SUCCEED;
+	}
+
+	if (joininitresults(&r1, &r2, estimate != BUN_NONE ? estimate : sl ? BATcount(sl) : BATcount(l), name) == GDK_FAIL)
+		return GDK_FAIL;
+	*r1p = r1;
+	*r2p = r2;
+	if ((r->tsorted || r->trevsorted) &&
+	    (r->ttype == TYPE_void ||
+	     lcount < 1024 ||
+	     BATcount(r) * (Tsize(r) + (r->T->vheap ? r->T->vheap->size : 0) + 2 * sizeof(BUN)) > GDK_mem_maxsize / (GDKnr_threads ? GDKnr_threads : 1)))
+		return mergejoin(r1, r2, l, r, sl, sr, nil_matches,
+				 nil_on_miss, semi, must_match);
+	return hashjoin(r1, r2, l, r, sl, sr, nil_matches,
+			nil_on_miss, semi, must_match);
+}
+
 /* Perform an equi-join over l and r.  Returns two new, aligned,
  * dense-headed bats with in the tail the oids (head column values) of
  * matching tuples.  The result is in the same order as l (i.e. r1 is
@@ -1740,19 +1784,8 @@ thetajoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int opcode)
 gdk_return
 BATsubleftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate)
 {
-	BAT *r1, *r2;
-
-	*r1p = NULL;
-	*r2p = NULL;
-	if (joinparamcheck(l, r, sl, sr, "BATsubleftjoin") == GDK_FAIL)
-		return GDK_FAIL;
-	if (joininitresults(&r1, &r2, estimate != BUN_NONE ? estimate : sl ? BATcount(sl) : BATcount(l), "BATsubleftjoin") == GDK_FAIL)
-		return GDK_FAIL;
-	*r1p = r1;
-	*r2p = r2;
-	if (r->tsorted || r->trevsorted)
-		return mergejoin(r1, r2, l, r, sl, sr, nil_matches, 0, 0, 0);
-	return hashjoin(r1, r2, l, r, sl, sr, nil_matches, 0, 0, 0);
+	return subleftjoin(r1p, r2p, l, r, sl, sr, nil_matches, estimate,
+			   0, 0, 0, "BATsubleftjoin");
 }
 
 /* Perform an equi-join over l and r.  Returns two new, aligned,
@@ -1762,19 +1795,8 @@ BATsubleftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_m
 gdk_return
 BATsubleftfetchjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate)
 {
-	BAT *r1, *r2;
-
-	*r1p = NULL;
-	*r2p = NULL;
-	if (joinparamcheck(l, r, sl, sr, "BATsubleftjoin") == GDK_FAIL)
-		return GDK_FAIL;
-	if (joininitresults(&r1, &r2, estimate != BUN_NONE ? estimate : sl ? BATcount(sl) : BATcount(l), "BATsubleftjoin") == GDK_FAIL)
-		return GDK_FAIL;
-	*r1p = r1;
-	*r2p = r2;
-	if (r->tsorted || r->trevsorted)
-		return mergejoin(r1, r2, l, r, sl, sr, nil_matches, 0, 0, 1);
-	return hashjoin(r1, r2, l, r, sl, sr, nil_matches, 0, 0, 1);
+	return subleftjoin(r1p, r2p, l, r, sl, sr, nil_matches, estimate,
+			   0, 0, 1, "BATsubleftfetchjoin");
 }
 
 /* Performs a left outer join over l and r.  Returns two new, aligned,
@@ -1785,19 +1807,8 @@ BATsubleftfetchjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int 
 gdk_return
 BATsubouterjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate)
 {
-	BAT *r1, *r2;
-
-	*r1p = NULL;
-	*r2p = NULL;
-	if (joinparamcheck(l, r, sl, sr, "BATsubouterjoin") == GDK_FAIL)
-		return GDK_FAIL;
-	if (joininitresults(&r1, &r2, estimate != BUN_NONE ? estimate : sl ? BATcount(sl) : BATcount(l), "BATsubouterjoin") == GDK_FAIL)
-		return GDK_FAIL;
-	*r1p = r1;
-	*r2p = r2;
-	if (r->tsorted || r->trevsorted)
-		return mergejoin(r1, r2, l, r, sl, sr, nil_matches, 1, 0, 0);
-	return hashjoin(r1, r2, l, r, sl, sr, nil_matches, 1, 0, 0);
+	return subleftjoin(r1p, r2p, l, r, sl, sr, nil_matches, estimate,
+			   1, 0, 0, "BATsubouterjoin");
 }
 
 /* Perform a semi-join over l and r.  Returns two new, aligned,
@@ -1807,19 +1818,8 @@ BATsubouterjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_
 gdk_return
 BATsubsemijoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate)
 {
-	BAT *r1, *r2;
-
-	*r1p = NULL;
-	*r2p = NULL;
-	if (joinparamcheck(l, r, sl, sr, "BATsubsemijoin") == GDK_FAIL)
-		return GDK_FAIL;
-	if (joininitresults(&r1, &r2, estimate != BUN_NONE ? estimate : sl ? BATcount(sl) : BATcount(l), "BATsubsemijoin") == GDK_FAIL)
-		return GDK_FAIL;
-	*r1p = r1;
-	*r2p = r2;
-	if (r->tsorted || r->trevsorted)
-		return mergejoin(r1, r2, l, r, sl, sr, nil_matches, 0, 1, 0);
-	return hashjoin(r1, r2, l, r, sl, sr, nil_matches, 0, 1, 0);
+	return subleftjoin(r1p, r2p, l, r, sl, sr, nil_matches, estimate,
+			   0, 1, 0, "BATsubsemijoin");
 }
 
 gdk_return
@@ -1883,7 +1883,9 @@ BATsubjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_match
 {
 	BAT *r1, *r2;
 	BUN lcount, rcount;
+	BUN lsize, rsize;
 	int swap;
+	size_t mem_size;
 
 	*r1p = NULL;
 	*r2p = NULL;
@@ -1911,24 +1913,40 @@ BATsubjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_match
 	*r1p = r1;
 	*r2p = r2;
 	swap = 0;
+
+	/* some statistics to help us decide */
+	lsize = BATcount(l) * (Tsize(l) + (l->T->vheap ? l->T->vheap->size : 0) + 2 * sizeof(BUN));
+	rsize = BATcount(r) * (Tsize(r) + (r->T->vheap ? r->T->vheap->size : 0) + 2 * sizeof(BUN));
+	mem_size = GDK_mem_maxsize / (GDKnr_threads ? GDKnr_threads : 1);
+
 	if ((l->tsorted || l->trevsorted) && (r->tsorted || r->trevsorted)) {
-		/* both sorted, don't swap */
-		return mergejoin(r1, r2, l, r, sl, sr, nil_matches, 0, 0, 0);
+		/* both sorted, smallest on left */
+		if (BATcount(l) <= BATcount(r))
+			return mergejoin(r1, r2, l, r, sl, sr, nil_matches, 0, 0, 0);
+		else
+			return mergejoin(r2, r1, r, l, sr, sl, nil_matches, 0, 0, 0);
 	} else if (l->T->hash && r->T->hash) {
 		/* both have hash, smallest on right */
-		if (lcount < rcount)
-			swap = 1;
+		swap = lcount < rcount;
 	} else if (l->T->hash) {
 		/* only left has hash, swap */
 		swap = 1;
 	} else if (r->T->hash) {
 		/* only right has hash, don't swap */
 		swap = 0;
-	} else if (l->tsorted || l->trevsorted) {
-		/* only left is sorted, swap */
+	} else if ((l->tsorted || l->trevsorted) &&
+		   (l->ttype == TYPE_void || rcount < 1024 || MIN(lsize, rsize) > mem_size)) {
+		/* only left is sorted, swap; but only if right is
+		 * "large" and the smaller of the two isn't too large
+		 * (i.e. prefer hash over binary search, but only if
+		 * the hash table doesn't cause thrashing) */
 		return mergejoin(r2, r1, r, l, sr, sl, nil_matches, 0, 0, 0);
-	} else if (r->tsorted || r->trevsorted) {
-		/* only right is sorted, don't swap */
+	} else if ((r->tsorted || r->trevsorted) &&
+		   (r->ttype == TYPE_void || lcount < 1024 || MIN(lsize, rsize) > mem_size)) {
+		/* only right is sorted, don't swap; but only if left
+		 * is "large" and the smaller of the two isn't too
+		 * large (i.e. prefer hash over binary search, but
+		 * only if the hash table doesn't cause thrashing) */
 		return mergejoin(r1, r2, l, r, sl, sr, nil_matches, 0, 0, 0);
 	} else if (BATcount(l) < BATcount(r)) {
 		/* no hashes, not sorted, create hash on smallest BAT */
