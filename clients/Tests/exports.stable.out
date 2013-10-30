@@ -203,7 +203,7 @@ gdk_return BATsubouterjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *s
 BAT *BATsubselect(BAT *b, BAT *s, const void *tl, const void *th, int li, int hi, int anti);
 gdk_return BATsubsemijoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate);
 gdk_return BATsubsort(BAT **sorted, BAT **order, BAT **groups, BAT *b, BAT *o, BAT *g, int reverse, int stable);
-gdk_return BATsubthetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, const char *op, int nil_matches, BUN estimate);
+gdk_return BATsubthetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int op, int nil_matches, BUN estimate);
 gdk_return BATsum(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, int nil_if_empty);
 BAT *BATsunion(BAT *b, BAT *c);
 BAT *BATsunique(BAT *b);
@@ -828,7 +828,7 @@ str ALGsubsort23(bat *result, bat *norder, bat *ngroup, bat *bid, bat *order, bi
 str ALGsubsort31(bat *result, bat *bid, bat *order, bat *group, bit *reverse, bit *stable);
 str ALGsubsort32(bat *result, bat *norder, bat *bid, bat *order, bat *group, bit *reverse, bit *stable);
 str ALGsubsort33(bat *result, bat *norder, bat *ngroup, bat *bid, bat *order, bat *group, bit *reverse, bit *stable);
-str ALGsubthetajoin(bat *r1, bat *r2, bat *l, bat *r, bat *sl, bat *sr, str *op, bit *nil_matches, lng *estimate);
+str ALGsubthetajoin(bat *r1, bat *r2, bat *l, bat *r, bat *sl, bat *sr, int *op, bit *nil_matches, lng *estimate);
 str ALGsunion(int *result, int *lid, int *rid);
 str ALGsunique(int *result, int *bid);
 str ALGtdiff(int *result, int *lid, int *rid);

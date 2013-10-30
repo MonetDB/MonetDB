@@ -657,7 +657,7 @@ command subouterjoin(l:bat[:oid,:any_1],r:bat[:oid,:any_1],sl:bat[:oid,:oid],sr:
 address ALGsubouterjoin
 comment "Left outer join with candidate lists";
 
-command subthetajoin(l:bat[:oid,:any_1],r:bat[:oid,:any_1],sl:bat[:oid,:oid],sr:bat[:oid,:oid],op:str,nil_matches:bit,estimate:lng) (:bat[:oid,:oid],:bat[:oid,:oid])
+command subthetajoin(l:bat[:oid,:any_1],r:bat[:oid,:any_1],sl:bat[:oid,:oid],sr:bat[:oid,:oid],op:int,nil_matches:bit,estimate:lng) (:bat[:oid,:oid],:bat[:oid,:oid])
 address ALGsubthetajoin
 comment "Theta join with candidate lists";
 

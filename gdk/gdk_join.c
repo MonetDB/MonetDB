@@ -1823,43 +1823,32 @@ BATsubsemijoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_m
 }
 
 gdk_return
-BATsubthetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, const char *op, int nil_matches, BUN estimate)
+BATsubthetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int op, int nil_matches, BUN estimate)
 {
 	BAT *r1, *r2;
 	int opcode = 0;
 
-	if (op[0] == '=' && ((op[1] == '=' && op[2] == 0) || op[1] == 0))
-		return BATsubjoin(r1p, r2p, l, r, sl, sr, nil_matches, estimate);
-
 	/* encode operator as a bit mask into opcode */
-	if (op[0] == '=' && ((op[1] == '=' && op[2] == 0) || op[1] == 0)) {
-		/* "=" or "==" */
-		opcode |= MASK_EQ;
-	} else if (op[0] == '!' && op[1] == '=' && op[2] == 0) {
-		/* "!=" (equivalent to "<>") */
-		opcode |= MASK_NE;
-	} else 	if (op[0] == '<') {
-		if (op[1] == 0) {
-			/* "<" */
-			opcode |= MASK_LT;
-		} else if (op[1] == '=' && op[2] == 0) {
-			/* "<=" */
-			opcode |= MASK_LE;
-		} else if (op[1] == '>' && op[2] == 0) {
-			/* "<>" (equivalent to "!=") */
-			opcode |= MASK_NE;
-		}
-	} else if (op[0] == '>') {
-		if (op[1] == 0) {
-			/* ">" */
-			opcode |= MASK_GT;
-		} else if (op[1] == '=' && op[2] == 0) {
-			/* ">=" */
-			opcode |= MASK_GE;
-		}
-	}
-	if (opcode == 0) {
-		GDKerror("BATsubthetajoin: unknown operator \"%s\".\n", op);
+	switch (op) {
+	case JOIN_EQ:
+		return BATsubjoin(r1p, r2p, l, r, sl, sr, nil_matches, estimate);
+	case JOIN_NE:
+		opcode = MASK_NE;
+		break;
+	case JOIN_LT:
+		opcode = MASK_LT;
+		break;
+	case JOIN_LE:
+		opcode = MASK_LE;
+		break;
+	case JOIN_GT:
+		opcode = MASK_GT;
+		break;
+	case JOIN_GE:
+		opcode = MASK_GE;
+		break;
+	default:
+		GDKerror("BATsubthetajoin: unknown operator %d.\n", op);
 		return GDK_FAIL;
 	}
 
@@ -2394,9 +2383,9 @@ BATsemijoin(BAT *l, BAT *r)
 }
 
 static BAT *
-do_batjoin(BAT *l, BAT *r, const char *op, BUN estimate,
+do_batjoin(BAT *l, BAT *r, int op, BUN estimate,
 	   gdk_return (*joinfunc)(BAT **, BAT **, BAT *, BAT *, BAT *, BAT *, int, BUN),
-	   gdk_return (*joinfunc2)(BAT **, BAT **, BAT *, BAT *, BAT *, BAT *, const char *, int, BUN))
+	   gdk_return (*joinfunc2)(BAT **, BAT **, BAT *, BAT *, BAT *, BAT *, int, int, BUN))
 {
 	BAT *lmap, *rmap;
 	BAT *res1, *res2;
@@ -2405,8 +2394,6 @@ do_batjoin(BAT *l, BAT *r, const char *op, BUN estimate,
 	/* exactly one of joinfunc and joinfunc2 is not NULL */
 	assert(joinfunc == NULL || joinfunc2 == NULL);
 	assert(joinfunc != NULL || joinfunc2 != NULL);
-	/* op is only set if joinfunc2 is */
-	assert((joinfunc2 == NULL) == (op == NULL));
 
 	r = BATmirror(r);
 	/* r is [any_3,any_2] */
@@ -2465,7 +2452,7 @@ do_batjoin(BAT *l, BAT *r, const char *op, BUN estimate,
 BAT *
 BATjoin(BAT *l, BAT *r, BUN estimate)
 {
-	return do_batjoin(l, r, NULL, estimate, BATsubjoin, NULL);
+	return do_batjoin(l, r, 0, estimate, BATsubjoin, NULL);
 }
 
 /* join [any_1,any_2] with [any_2,any_3], return [any_1,any_3];
@@ -2473,35 +2460,16 @@ BATjoin(BAT *l, BAT *r, BUN estimate)
 BAT *
 BATleftjoin(BAT *l, BAT *r, BUN estimate)
 {
-	return do_batjoin(l, r, NULL, estimate, BATsubleftjoin, NULL);
+	return do_batjoin(l, r, 0, estimate, BATsubleftjoin, NULL);
 }
 
 /* join [any_1,any_2] with [any_2,any_3], return [any_1,any_3] */
 BAT *
 BATthetajoin(BAT *l, BAT *r, int op, BUN estimate)
 {
-	const char *ops;
-
-	switch (op) {
-	case JOIN_EQ:
-		return do_batjoin(l, r, NULL, estimate, BATsubjoin, NULL);
-	case JOIN_LT:
-		ops = "<";
-		break;
-	case JOIN_LE:
-		ops = "<=";
-		break;
-	case JOIN_GT:
-		ops = ">";
-		break;
-	case JOIN_GE:
-		ops = ">=";
-		break;
-	default:
-		assert(0);
-		return NULL;
-	}
-	return do_batjoin(l, r, ops, estimate, NULL, BATsubthetajoin);
+	if (op == JOIN_EQ)
+		return do_batjoin(l, r, 0, estimate, BATsubjoin, NULL);
+	return do_batjoin(l, r, op, estimate, NULL, BATsubthetajoin);
 }
 
 /* join [any_1,any_2] with [any_2,any_3], return [any_1,any_3];
@@ -2509,7 +2477,7 @@ BATthetajoin(BAT *l, BAT *r, int op, BUN estimate)
 BAT *
 BATouterjoin(BAT *l, BAT *r, BUN estimate)
 {
-	return do_batjoin(l, r, NULL, estimate, BATsubouterjoin, NULL);
+	return do_batjoin(l, r, 0, estimate, BATsubouterjoin, NULL);
 }
 
 /* join [any_1,any_2] with [any_2,any_3], return [any_1,any_3];
@@ -2517,13 +2485,13 @@ BATouterjoin(BAT *l, BAT *r, BUN estimate)
 BAT *
 BATleftfetchjoin(BAT *l, BAT *r, BUN estimate)
 {
-	return do_batjoin(l, r, NULL, estimate, BATsubleftfetchjoin, NULL);
+	return do_batjoin(l, r, 0, estimate, BATsubleftfetchjoin, NULL);
 }
 
 BAT *
 BATantijoin(BAT *l, BAT *r)
 {
-	return do_batjoin(l, r, "!=",
+	return do_batjoin(l, r, JOIN_NE,
 			  (BUN) MIN((lng) BATcount(l) * BATcount(r), BUN_MAX),
 			  NULL, BATsubthetajoin);
 }

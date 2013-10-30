@@ -24,7 +24,7 @@ All Rights Reserved.
  * @a N. J. Nes
  *
  * @* Range Join Operators
- * The sql statement b.x <= a.z <= b.y, could be implemented using too thetajoins.
+ * The sql statement b.x <= a.z <= b.y, could be implemented using two thetajoins.
  * But that results in very large intermediates.
  */
 @h
