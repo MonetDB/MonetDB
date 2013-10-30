@@ -1719,18 +1719,18 @@ BATgroupsize(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on
 
 	bits = (const bit *) Tloc(b, BUNfirst(b));
 
-		for (;;) {
-			if (cand) {
-				if (cand == candend)
-					break;
-				i = *cand++ - b->hseqbase;
-				if (i >= end)
-					break;
-			} else {
-				i = start++;
-				if (i == end)
-					break;
-			}
+	for (;;) {
+		if (cand) {
+			if (cand == candend)
+				break;
+			i = *cand++ - b->hseqbase;
+			if (i >= end)
+				break;
+		} else {
+			i = start++;
+			if (i == end)
+				break;
+		}
 		if (bits[i] == 1 &&
 		    (gids == NULL || (gids[i] >= min && gids[i] <= max))) {
 			cnts[gids ? gids[i] - min : (oid) i]++;
