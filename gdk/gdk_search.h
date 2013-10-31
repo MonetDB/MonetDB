@@ -77,17 +77,17 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
 		                      (((BUN1type*) (h)->Link)[i] = (BUN1type) (v)) )))
 #endif
 
-#define mix_sht(X)            (((X)>>7)^(X))
-#define mix_int(X)            (((X)>>7)^((X)>>13)^((X)>>21)^(X))
-#define hash_loc(H,V)         hash_any(H,V)
-#define hash_var(H,V)         hash_any(H,V)
-#define hash_any(H,V)         (ATOMhash((H)->type, (V)) & (H)->mask)
-#define heap_hash_any(hp,H,V) ((hp) && (hp)->hashash ? ((BUN *) (V))[-1] & (H)->mask : hash_any(H,V))
-#define hash_bte(H,V)         ((BUN) (*(const unsigned char*) (V)) & (H)->mask)
-#define hash_sht(H,V)         ((BUN) mix_sht(*((const unsigned short*) (V))) & (H)->mask)
-#define hash_int(H,V)         ((BUN) mix_int(*((const unsigned int*) (V))) & (H)->mask)
+#define mix_sht(X)	(((X)>>7)^(X))
+#define mix_int(X)	(((X)>>7)^((X)>>13)^((X)>>21)^(X))
+#define hash_loc(H,V)	hash_any(H,V)
+#define hash_var(H,V)	hash_any(H,V)
+#define hash_any(H,V)	(ATOMhash((H)->type, (V)) & (H)->mask)
+#define heap_hash_any(hp,H,V)	((hp) && (hp)->hashash ? ((BUN *) (V))[-1] & (H)->mask : hash_any(H,V))
+#define hash_bte(H,V)	((BUN) (*(const unsigned char*) (V)) & (H)->mask)
+#define hash_sht(H,V)	((BUN) mix_sht(*((const unsigned short*) (V))) & (H)->mask)
+#define hash_int(H,V)	((BUN) mix_int(*((const unsigned int*) (V))) & (H)->mask)
 /* XXX return size_t-sized value for 8-byte oid? */
-#define hash_lng(H,V)         ((BUN) mix_int((unsigned int) (*(const lng *)(V) ^ (*(lng *)(V) >> 32))) & (H)->mask)
+#define hash_lng(H,V)	((BUN) mix_int((unsigned int) (*(const lng *)(V) ^ (*(lng *)(V) >> 32))) & (H)->mask)
 #if SIZEOF_OID == SIZEOF_INT
 #define hash_oid(H,V)	hash_int(H,V)
 #else
@@ -99,8 +99,8 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
 #define hash_wrd(H,V)	hash_lng(H,V)
 #endif
 
-#define hash_flt(H,V)         hash_int(H,V)
-#define hash_dbl(H,V)         hash_lng(H,V)
+#define hash_flt(H,V)	hash_int(H,V)
+#define hash_dbl(H,V)	hash_lng(H,V)
 
 #define HASHfnd_str(x,y,z)						\
 	do {								\
