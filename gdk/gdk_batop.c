@@ -805,8 +805,8 @@ BATslice(BAT *b, BUN l, BUN h)
 	 * We have to do it: create a new BAT and put everything into it.
 	 */
 	} else {
-		BUN p = (BUN) l;
-		BUN q = (BUN) h;
+		BUN p = l;
+		BUN q = h;
 
 		bn = BATnew((BAThdense(b)?TYPE_void:b->htype), b->ttype, h - l);
 		if (bn == NULL) {
@@ -823,6 +823,14 @@ BATslice(BAT *b, BUN l, BUN h)
 		} else {
 			BATsetcount(bn, h - l);
 		}
+		bn->hsorted = b->hsorted;
+		bn->hrevsorted = b->hrevsorted;
+		bn->hkey = b->hkey & 1;
+		bn->H->nonil = b->H->nonil;
+		bn->tsorted = b->tsorted;
+		bn->trevsorted = b->trevsorted;
+		bn->tkey = b->tkey & 1;
+		bn->T->nonil = b->T->nonil;
 	}
 	bni = bat_iterator(bn);
 	if (BAThdense(b)) {
