@@ -812,7 +812,20 @@ BATslice(BAT *b, BUN l, BUN h)
 		if (bn == NULL) {
 			return bn;
 		}
-		if (BAThdense(b) && b->ttype) {
+		if ((bn->htype == TYPE_void || !bn->hvarsized) &&
+		    BATatoms[bn->htype].atomPut == NULL &&
+		    BATatoms[bn->htype].atomFix == NULL &&
+		    (bn->ttype == TYPE_void || !bn->tvarsized) &&
+		    BATatoms[bn->ttype].atomPut == NULL &&
+		    BATatoms[bn->ttype].atomFix == NULL) {
+			if (bn->htype)
+				memcpy(Hloc(bn, BUNfirst(bn)), Hloc(b, p),
+				       (q - p) * Hsize(bn));
+			if (bn->ttype)
+				memcpy(Tloc(bn, BUNfirst(bn)), Tloc(b, p),
+				       (q - p) * Tsize(bn));
+			BATsetcount(bn, h - l);
+		} else if (BAThdense(b) && b->ttype) {
 			for (; p < q; p++) {
 				bunfastins(bn, NULL, BUNtail(bi, p));
 			}
