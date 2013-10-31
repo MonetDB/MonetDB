@@ -178,7 +178,7 @@ gdk_export const ptr ptr_nil;
  * @code{ ptr} types to @code{ lng} instead of @code{ int}.
  *
  * Derived types mimic their fathers in many ways. They inherit the
- * @code{ size}, @code{ varsized}, @code{ linear}, @code{ null} and
+ * @code{ size}, @code{ linear}, @code{ null} and
  * @code{ align} properties of their father.  The same goes for the
  * ADT functions HASH, CMP, PUT, NULL, DEL, LEN, and HEAP. So, a
  * derived type differs in only two ways from its father:

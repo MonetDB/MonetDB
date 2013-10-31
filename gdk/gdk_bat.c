@@ -223,8 +223,8 @@ BATsetdims(BAT *b)
 	b->T->shift = ATOMelmshift(Tsize(b));
 	assert_shift_width(b->H->shift, b->H->width);
 	assert_shift_width(b->T->shift, b->T->width);
-	b->H->varsized = BATatoms[b->htype].varsized;
-	b->T->varsized = BATatoms[b->ttype].varsized;
+	b->H->varsized = b->htype == TYPE_void || BATatoms[b->htype].atomPut != NULL;
+	b->T->varsized = b->ttype == TYPE_void || BATatoms[b->ttype].atomPut != NULL;
 }
 
 /*

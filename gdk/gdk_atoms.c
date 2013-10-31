@@ -1648,7 +1648,6 @@ atomDesc BATatoms[MAXATOMS] = {
 	 1,			/* linear */
 	 0,			/* size */
 	 0,			/* align */
-	 1,			/* varsized */
 	 (ptr) &oid_nil,	/* atomNull */
 	 (int (*)(const char *, int *, ptr *)) OIDfromStr,    /* atomFromStr */
 	 (int (*)(str *, int *, const void *)) OIDtoStr,      /* atomToStr */
@@ -1673,7 +1672,6 @@ atomDesc BATatoms[MAXATOMS] = {
 	 1,			/* linear */
 	 sizeof(bit),		/* size */
 	 sizeof(bit),		/* align */
-	 0,			/* varsized */
 	 (ptr) &bte_nil,	/* atomNull */
 	 (int (*)(const char *, int *, ptr *)) bitFromStr,   /* atomFromStr */
 	 (int (*)(str *, int *, const void *)) bitToStr,     /* atomToStr */
@@ -1693,7 +1691,6 @@ atomDesc BATatoms[MAXATOMS] = {
 	 1,			/* linear */
 	 sizeof(bte),		/* size */
 	 sizeof(bte),		/* align */
-	 0,			/* varsized */
 	 (ptr) &bte_nil,	/* atomNull */
 	 (int (*)(const char *, int *, ptr *)) bteFromStr,   /* atomFromStr */
 	 (int (*)(str *, int *, const void *)) bteToStr,     /* atomToStr */
@@ -1713,7 +1710,6 @@ atomDesc BATatoms[MAXATOMS] = {
 	 1,			/* linear */
 	 sizeof(sht),		/* size */
 	 sizeof(sht),		/* align */
-	 0,			/* varsized */
 	 (ptr) &sht_nil,	/* atomNull */
 	 (int (*)(const char *, int *, ptr *)) shtFromStr,   /* atomFromStr */
 	 (int (*)(str *, int *, const void *)) shtToStr,     /* atomToStr */
@@ -1733,7 +1729,6 @@ atomDesc BATatoms[MAXATOMS] = {
 	 1,			/* linear */
 	 sizeof(bat),		/* size */
 	 sizeof(bat),		/* align */
-	 0,			/* varsized */
 	 (ptr) &int_nil,	/* atomNull */
 	 (int (*)(const char *, int *, ptr *)) batFromStr,   /* atomFromStr */
 	 (int (*)(str *, int *, const void *)) batToStr,     /* atomToStr */
@@ -1753,7 +1748,6 @@ atomDesc BATatoms[MAXATOMS] = {
 	 1,			/* linear */
 	 sizeof(int),		/* size */
 	 sizeof(int),		/* align */
-	 0,			/* varsized */
 	 (ptr) &int_nil,	/* atomNull */
 	 (int (*)(const char *, int *, ptr *)) intFromStr,   /* atomFromStr */
 	 (int (*)(str *, int *, const void *)) intToStr,     /* atomToStr */
@@ -1777,7 +1771,6 @@ atomDesc BATatoms[MAXATOMS] = {
 	 1,			/* linear */
 	 sizeof(oid),		/* size */
 	 sizeof(oid),		/* align */
-	 0,			/* varsized */
 	 (ptr) &oid_nil,	/* atomNull */
 	 (int (*)(const char *, int *, ptr *)) OIDfromStr,   /* atomFromStr */
 	 (int (*)(str *, int *, const void *)) OIDtoStr,     /* atomToStr */
@@ -1808,7 +1801,6 @@ atomDesc BATatoms[MAXATOMS] = {
 	 1,			/* linear */
 	 sizeof(wrd),		/* size */
 	 sizeof(wrd),		/* align */
-	 0,			/* varsized */
 #if SIZEOF_WRD == SIZEOF_INT
 	 (ptr) &int_nil,	/* atomNull */
 	 (int (*)(const char *, int *, ptr *)) intFromStr,   /* atomFromStr */
@@ -1838,7 +1830,6 @@ atomDesc BATatoms[MAXATOMS] = {
 	 1,			/* linear */
 	 sizeof(ptr),		/* size */
 	 sizeof(ptr),		/* align */
-	 0,			/* varsized */
 	 (ptr) &ptr_nil,	/* atomNull */
 	 (int (*)(const char *, int *, ptr *)) ptrFromStr,   /* atomFromStr */
 	 (int (*)(str *, int *, const void *)) ptrToStr,     /* atomToStr */
@@ -1863,7 +1854,6 @@ atomDesc BATatoms[MAXATOMS] = {
 	 1,			/* linear */
 	 sizeof(flt),		/* size */
 	 sizeof(flt),		/* align */
-	 0,			/* varsized */
 	 (ptr) &flt_nil,	/* atomNull */
 	 (int (*)(const char *, int *, ptr *)) fltFromStr,   /* atomFromStr */
 	 (int (*)(str *, int *, const void *)) fltToStr,     /* atomToStr */
@@ -1883,7 +1873,6 @@ atomDesc BATatoms[MAXATOMS] = {
 	 1,			/* linear */
 	 sizeof(dbl),		/* size */
 	 sizeof(dbl),		/* align */
-	 0,			/* varsized */
 	 (ptr) &dbl_nil,	/* atomNull */
 	 (int (*)(const char *, int *, ptr *)) dblFromStr,   /* atomFromStr */
 	 (int (*)(str *, int *, const void *)) dblToStr,     /* atomToStr */
@@ -1903,7 +1892,6 @@ atomDesc BATatoms[MAXATOMS] = {
 	 1,			/* linear */
 	 sizeof(lng),		/* size */
 	 sizeof(lng),		/* align */
-	 0,			/* varsized */
 	 (ptr) &lng_nil,	/* atomNull */
 	 (int (*)(const char *, int *, ptr *)) lngFromStr,   /* atomFromStr */
 	 (int (*)(str *, int *, const void *)) lngToStr,     /* atomToStr */
@@ -1923,7 +1911,6 @@ atomDesc BATatoms[MAXATOMS] = {
 	 1,			/* linear */
 	 sizeof(var_t),		/* size */
 	 sizeof(var_t),		/* align */
-	 1,			/* varsized */
 	 (ptr) str_nil,		/* atomNull */
 	 (int (*)(const char *, int *, ptr *)) strFromStr,   /* atomFromStr */
 	 (int (*)(str *, int *, const void *)) strToStr,     /* atomToStr */

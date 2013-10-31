@@ -707,7 +707,7 @@ heapinit(COLrec *col, const char *buf, int *hashash, const char *HT, int oidsize
 		strcpy(type, "bte");
 	if ((t = ATOMindex(type)) < 0)
 		t = ATOMunknown_find(type);
-	else if (BATatoms[t].varsized != var)
+	else if (var != (t == TYPE_void || BATatoms[t].atomPut != NULL))
 		GDKfatal("BBPinit: inconsistent entry in BBP.dir: %s.varsized mismatch for BAT " LLFMT "\n", HT, batid);
 	else if (var && t != 0 ?
 		 BATatoms[t].size < width ||

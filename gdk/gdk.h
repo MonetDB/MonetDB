@@ -2050,7 +2050,6 @@ typedef struct {
 	short linear;		/* atom can be ordered linearly */
 	short size;		/* fixed size of atom */
 	short align;		/* alignment condition for values */
-	int varsized;		/* variable-size or fixed-sized */
 
 	/* automatically generated fields */
 	ptr atomNull;		/* global nil value */

@@ -146,7 +146,6 @@ int malAtomProperty(MalBlkPtr mb, InstrPtr pci)
 			/* heap function makes an atom varsized */
 			BATatoms[tpe].size = sizeof(var_t);
 			assert_shift_width(ATOMelmshift(BATatoms[tpe].size), BATatoms[tpe].size);
-			BATatoms[tpe].varsized = 1;
 			BATatoms[tpe].align = sizeof(var_t);
 			BATatoms[tpe].atomHeap = (void (*)(Heap *, size_t))pci->fcn;
 			setAtomName(pci);
@@ -203,13 +202,6 @@ int malAtomProperty(MalBlkPtr mb, InstrPtr pci)
 	case 'u':
 		if (idcmp("unfix", name) == 0 && pci->argc == 1) {
 			BATatoms[tpe].atomUnfix = (int (*)(const void *))pci->fcn;
-			setAtomName(pci);
-			return 1;
-		}
-		break;
-	case 'v':
-		if (idcmp("varsized", name) == 0 && pci->argc == 1) {
-			BATatoms[tpe].varsized = (*(long (*)(void))pci->fcn)();
 			setAtomName(pci);
 			return 1;
 		}
