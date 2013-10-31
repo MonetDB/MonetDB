@@ -928,41 +928,15 @@ BATcopy(BAT *b, int ht, int tt, int writable)
 			}
 		} else {
 			/* case (4): optimized for simple array copy */
-			int tpe = ATOMstorage(ht | tt);
 			BUN p = BUNfirst(b);
-			char *cur = (ht ? Hloc(b, p) : Tloc(b, p));
-			char *d = (ht ? Hloc(bn, 0) : Tloc(bn, 0));
 
 			bn->H->heap.free = bn->T->heap.free = 0;
-			if (ht)
+			if (ht) {
 				bn->H->heap.free = bunstocopy * Hsize(bn);
-			else
-				bn->T->heap.free = bunstocopy * Tsize(bn);
-
-			if (tpe == TYPE_bte) {
-				bte *src = (bte *) cur, *dst = (bte *) d;
-
-				while (bunstocopy--) {
-					*dst++ = *src++;
-				}
-			} else if (tpe == TYPE_sht) {
-				sht *src = (sht *) cur, *dst = (sht *) d;
-
-				while (bunstocopy--) {
-					*dst++ = *src++;
-				}
-			} else if ((tpe == TYPE_int) || (tpe == TYPE_flt)) {
-				int *src = (int *) cur, *dst = (int *) d;
-
-				while (bunstocopy--) {
-					*dst++ = *src++;
-				}
+				memcpy(Hloc(bn, 0), Hloc(b, p), bn->H->heap.free);
 			} else {
-				lng *src = (lng *) cur, *dst = (lng *) d;
-
-				while (bunstocopy--) {
-					*dst++ = *src++;
-				}
+				bn->T->heap.free = bunstocopy * Tsize(bn);
+				memcpy(Tloc(bn, 0), Tloc(b, p), bn->T->heap.free);
 			}
 		}
 		/* copy all properties (size+other) from the source bat */
