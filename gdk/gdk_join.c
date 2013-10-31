@@ -1166,6 +1166,23 @@ binsearchcand(const oid *cand, BUN lo, BUN hi, oid v)
 	return cand[lo] == v;
 }
 
+#define HASHLOOPBODY()							\
+	do {								\
+		if (BUNlast(r1) == BATcapacity(r1)) {			\
+			newcap = BATgrows(r1);				\
+			BATsetcount(r1, BATcount(r1));			\
+			BATsetcount(r2, BATcount(r2));			\
+			r1 = BATextend(r1, newcap);			\
+			r2 = BATextend(r2, newcap);			\
+			if (r1 == NULL || r2 == NULL)			\
+				goto bailout;				\
+			assert(BATcapacity(r1) == BATcapacity(r2));	\
+		}							\
+		APPEND(r1, lo);						\
+		APPEND(r2, ro);						\
+		nr++;							\
+	} while (0)
+
 static gdk_return
 hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, int nil_on_miss, int semi, int must_match)
 {
@@ -1284,19 +1301,7 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, in
 					ro = (oid) (rb + rbun2oid);
 					if (!binsearchcand(rcand, 0, nrcand, ro))
 						continue;
-					if (BUNlast(r1) == BATcapacity(r1)) {
-						newcap = BATgrows(r1);
-						BATsetcount(r1, BATcount(r1));
-						BATsetcount(r2, BATcount(r2));
-						r1 = BATextend(r1, newcap);
-						r2 = BATextend(r2, newcap);
-						if (r1 == NULL || r2 == NULL)
-							goto bailout;
-						assert(BATcapacity(r1) == BATcapacity(r2));
-					}
-					APPEND(r1, lo);
-					APPEND(r2, ro);
-					nr++;
+					HASHLOOPBODY();
 					if (semi)
 						break;
 				}
@@ -1305,20 +1310,8 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, in
 					rb0 = rb - BUNfirst(r); /* zero-based */
 					if (rb0 < rstart || rb0 >= rend)
 						continue;
-					if (BUNlast(r1) == BATcapacity(r1)) {
-						newcap = BATgrows(r1);
-						BATsetcount(r1, BATcount(r1));
-						BATsetcount(r2, BATcount(r2));
-						r1 = BATextend(r1, newcap);
-						r2 = BATextend(r2, newcap);
-						if (r1 == NULL || r2 == NULL)
-							goto bailout;
-						assert(BATcapacity(r1) == BATcapacity(r2));
-					}
 					ro = (oid) (rb + rbun2oid);
-					APPEND(r1, lo);
-					APPEND(r2, ro);
-					nr++;
+					HASHLOOPBODY();
 					if (semi)
 						break;
 				}
@@ -1383,43 +1376,57 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, in
 					ro = (oid) (rb + rbun2oid);
 					if (!binsearchcand(rcand, 0, nrcand, ro))
 						continue;
-					if (BUNlast(r1) == BATcapacity(r1)) {
-						newcap = BATgrows(r1);
-						BATsetcount(r1, BATcount(r1));
-						BATsetcount(r2, BATcount(r2));
-						r1 = BATextend(r1, newcap);
-						r2 = BATextend(r2, newcap);
-						if (r1 == NULL || r2 == NULL)
-							goto bailout;
-						assert(BATcapacity(r1) == BATcapacity(r2));
-					}
-					APPEND(r1, lo);
-					APPEND(r2, ro);
-					nr++;
+					HASHLOOPBODY();
 					if (semi)
 						break;
 				}
 			} else {
-				HASHloop(ri, r->H->hash, rb, v) {
-					rb0 = rb - BUNfirst(r); /* zero-based */
-					if (rb0 < rstart || rb0 >= rend)
-						continue;
-					if (BUNlast(r1) == BATcapacity(r1)) {
-						newcap = BATgrows(r1);
-						BATsetcount(r1, BATcount(r1));
-						BATsetcount(r2, BATcount(r2));
-						r1 = BATextend(r1, newcap);
-						r2 = BATextend(r2, newcap);
-						if (r1 == NULL || r2 == NULL)
-							goto bailout;
-						assert(BATcapacity(r1) == BATcapacity(r2));
+				switch (r->htype) {
+				case TYPE_int:
+#if SIZEOF_OID == SIZEOF_INT
+				case TYPE_oid:
+#endif
+#if SIZEOF_WRD == SIZEOF_INT
+				case TYPE_wrd:
+#endif
+					HASHloop_int(ri, r->H->hash, rb, v) {
+						rb0 = rb - BUNfirst(r); /* zero-based */
+						if (rb0 < rstart || rb0 >= rend)
+							continue;
+						ro = (oid) (rb + rbun2oid);
+						HASHLOOPBODY();
+						if (semi)
+							break;
 					}
-					ro = (oid) (rb + rbun2oid);
-					APPEND(r1, lo);
-					APPEND(r2, ro);
-					nr++;
-					if (semi)
-						break;
+					break;
+				case TYPE_lng:
+#if SIZEOF_OID == SIZEOF_LNG
+				case TYPE_oid:
+#endif
+#if SIZEOF_WRD == SIZEOF_LNG
+				case TYPE_wrd:
+#endif
+					HASHloop_lng(ri, r->H->hash, rb, v) {
+						rb0 = rb - BUNfirst(r); /* zero-based */
+						if (rb0 < rstart || rb0 >= rend)
+							continue;
+						ro = (oid) (rb + rbun2oid);
+						HASHLOOPBODY();
+						if (semi)
+							break;
+					}
+					break;
+				default:
+					HASHloop(ri, r->H->hash, rb, v) {
+						rb0 = rb - BUNfirst(r); /* zero-based */
+						if (rb0 < rstart || rb0 >= rend)
+							continue;
+						ro = (oid) (rb + rbun2oid);
+						HASHLOOPBODY();
+						if (semi)
+							break;
+					}
+					break;
 				}
 			}
 			if (nr == 0) {
