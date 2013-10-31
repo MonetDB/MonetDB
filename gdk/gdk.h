@@ -1183,7 +1183,7 @@ gdk_export bte ATOMelmshift(int sz);
 		if ((b)->HT->varsized && (b)->HT->type) {		\
 			var_t _d;					\
 			ptr _ptr;					\
-			ATOMput((b)->HT->type, (b)->HT->vheap, &_d, v);	\
+			ATOMputVAR((b)->HT->type, (b)->HT->vheap, &_d, v); \
 			if ((b)->HT->width < SIZEOF_VAR_T &&		\
 			    ((b)->HT->width <= 2 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 * (b)->HT->width))) { \
 				/* doesn't fit in current heap, upgrade it */ \
@@ -1205,8 +1205,9 @@ gdk_export bte ATOMelmshift(int sz);
 				* (var_t *) _ptr = _d;			\
 				break;					\
 			}						\
-		} else							\
-			ATOMput((b)->HT->type, (b)->HT->vheap, (p), v);	\
+		} else {						\
+			ATOMputFIX((b)->HT->type, (b)->HT->vheap, (p), v); \
+		}							\
 	} while (0)
 #define Hputvalue(b, p, v, copyall)	HTputvalue(b, p, v, copyall, H)
 #define Tputvalue(b, p, v, copyall)	HTputvalue(b, p, v, copyall, T)
@@ -1230,7 +1231,7 @@ gdk_export bte ATOMelmshift(int sz);
 				_d = * (var_t *) _ptr;			\
 				break;					\
 			}						\
-			ATOMreplace((b)->HT->type, (b)->HT->vheap, &_d, v); \
+			ATOMreplaceVAR((b)->HT->type, (b)->HT->vheap, &_d, v); \
 			if ((b)->HT->width < SIZEOF_VAR_T &&		\
 			    ((b)->HT->width <= 2 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 * (b)->HT->width))) { \
 				/* doesn't fit in current heap, upgrade it */ \
@@ -1252,8 +1253,9 @@ gdk_export bte ATOMelmshift(int sz);
 				* (var_t *) _ptr = _d;			\
 				break;					\
 			}						\
-		} else							\
-			ATOMreplace((b)->HT->type, (b)->HT->vheap, (p), v); \
+		} else {						\
+			ATOMreplaceFIX((b)->HT->type, (b)->HT->vheap, (p), v); \
+		}							\
 	} while (0)
 #define Hreplacevalue(b, p, v)		HTreplacevalue(b, p, v, H)
 #define Treplacevalue(b, p, v)		HTreplacevalue(b, p, v, T)

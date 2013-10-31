@@ -216,77 +216,84 @@ gdk_export const ptr ptr_nil;
  * of BATs but also BATs of ODMG odSet) can never be persistent, as
  * this would make the commit tremendously complicated.
  */
-#define ATOMput(type, heap, dst, src)					\
+#define ATOMputVAR(type, heap, dst, src)				\
+	do {								\
+		assert(BATatoms[type].atomPut != NULL);			\
+		if ((*BATatoms[type].atomPut)(heap, dst, src) == 0)	\
+			goto bunins_failed;				\
+	} while (0)
+#define ATOMputFIX(type, heap, dst, src)				\
 	do {								\
 		int t_ = (type);					\
-		ptr d_ = (ptr) (dst);					\
-		ptr s_ = (ptr) (src);					\
+		void *d_ = (dst);					\
+		const void *s_ = (src);					\
 									\
-		if (BATatoms[t_].atomPut) {				\
-			if ((*BATatoms[t_].atomPut)((heap), (var_t *) d_, s_) == 0) \
-				goto bunins_failed;			\
-		} else {						\
-			ATOMfix(t_, s_);				\
-			switch (BATatoms[t_].size) {			\
-			case 0:		/* void */			\
-				break;					\
-			case 1:						\
-				* (bte *) d_ = * (bte *) s_;		\
-				break;					\
-			case 2:						\
-				* (sht *) d_ = * (sht *) s_;		\
-				break;					\
-			case 4:						\
-				* (int *) d_ = * (int *) s_;		\
-				break;					\
-			case 8:						\
-				* (lng *) d_ = * (lng *) s_;		\
-				break;					\
-			default:					\
-				memcpy(d_, s_, (size_t) BATatoms[t_].size); \
-				break;					\
-			}						\
+		assert(BATatoms[t_].atomPut == NULL);			\
+		ATOMfix(t_, s_);					\
+		switch (BATatoms[t_].size) {				\
+		case 0:		/* void */				\
+			break;						\
+		case 1:							\
+			* (bte *) d_ = * (bte *) s_;			\
+			break;						\
+		case 2:							\
+			* (sht *) d_ = * (sht *) s_;			\
+			break;						\
+		case 4:							\
+			* (int *) d_ = * (int *) s_;			\
+			break;						\
+		case 8:							\
+			* (lng *) d_ = * (lng *) s_;			\
+			break;						\
+		default:						\
+			memcpy(d_, s_, (size_t) BATatoms[t_].size);	\
+			break;						\
 		}							\
 	} while (0)
 
-#define ATOMreplace(type, heap, dst, src)				\
+#define ATOMreplaceVAR(type, heap, dst, src)				\
 	do {								\
 		int t_ = (type);					\
-		ptr d_ = (ptr) (dst);					\
-		ptr s_ = (ptr) (src);					\
+		var_t *d_ = (var_t *) (dst);				\
+		const void *s_ = (src);					\
+		var_t loc_ = *d_;					\
+		Heap *h_ = (heap);					\
 									\
-		if (BATatoms[t_].atomPut) {				\
-			var_t loc_ = * (var_t *) d_;			\
-			Heap *h_ = (heap);				\
+		assert(BATatoms[t_].atomPut != NULL);			\
+		if ((*BATatoms[t_].atomPut)(h_, &loc_, s_) == 0)	\
+			goto bunins_failed;				\
+		ATOMunfix(t_, d_);					\
+		ATOMdel(t_, h_, d_);					\
+		*d_ = loc_;						\
+		ATOMfix(t_, s_);					\
+	} while (0)
+#define ATOMreplaceFIX(type, heap, dst, src)				\
+	do {								\
+		int t_ = (type);					\
+		void *d_ = (dst);					\
+		const void *s_ = (src);					\
 									\
-			if ((*BATatoms[t_].atomPut)(h_, &loc_, s_) == 0) \
-				goto bunins_failed;			\
-			ATOMunfix(t_, d_);				\
-			ATOMdel(t_, h_, d_);				\
-			* (var_t *) d_ = loc_;				\
-			ATOMfix(t_, s_);				\
-		} else {						\
-			ATOMfix(t_, s_);				\
-			ATOMunfix(t_, d_);				\
-			switch (BATatoms[t_].size) {			\
-			case 0:		/* void */			\
-				break;					\
-			case 1:						\
-				* (bte *) d_ = * (bte *) s_;		\
-				break;					\
-			case 2:						\
-				* (sht *) d_ = * (sht *) s_;		\
-				break;					\
-			case 4:						\
-				* (int *) d_ = * (int *) s_;		\
-				break;					\
-			case 8:						\
-				* (lng *) d_ = * (lng *) s_;		\
-				break;					\
-			default:					\
-				memcpy(d_, s_, (size_t) BATatoms[t_].size); \
-				break;					\
-			}						\
+		assert(BATatoms[t_].atomPut == NULL);			\
+		ATOMfix(t_, s_);					\
+		ATOMunfix(t_, d_);					\
+		switch (BATatoms[t_].size) {				\
+		case 0:	     /* void */					\
+			break;						\
+		case 1:							\
+			* (bte *) d_ = * (bte *) s_;			\
+			break;						\
+		case 2:							\
+			* (sht *) d_ = * (sht *) s_;			\
+			break;						\
+		case 4:							\
+			* (int *) d_ = * (int *) s_;			\
+			break;						\
+		case 8:							\
+			* (lng *) d_ = * (lng *) s_;			\
+			break;						\
+		default:						\
+			memcpy(d_, s_, (size_t) BATatoms[t_].size);	\
+			break;						\
 		}							\
 	} while (0)
 
