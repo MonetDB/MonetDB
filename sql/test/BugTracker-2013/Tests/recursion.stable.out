@@ -1,0 +1,122 @@
+stdout of test 'recursion` in directory 'sql/test/BugTracker-2013` itself:
+
+
+# 16:05:20 >  
+# 16:05:20 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=34043" "--set" "mapi_usock=/var/tmp/mtest-32244/.s.monetdb.34043" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/sjoerd/Monet-candidate/var/MonetDB/mTests_sql_test_BugTracker-2013" "--set" "mal_listing=0"
+# 16:05:20 >  
+
+# MonetDB 5 server v11.16.0 (hg id: d0f2c7b9b9ba+)
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2013', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.591 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2013 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://madrid.ins.cwi.nl:34043/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-32244/.s.monetdb.34043
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_compress.sql
+# loading sql script: 18_dictionary.sql
+# loading sql script: 19_cluster.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 24_zorder.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 40_json.sql
+# loading sql script: 41_jsonstore.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 99_system.sql
+
+# 16:05:21 >  
+# 16:05:21 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-32244" "--port=34043"
+# 16:05:21 >  
+
+#CREATE FUNCTION fibonacci(i integer)
+#RETURNS integer
+#BEGIN
+#	if ( i = 0) THEN RETURN 0; END IF;
+#	if ( i = 1) THEN RETURN 1; END IF;
+#	RETURN 1;
+#END;
+#SELECT fibonacci(0);
+% .L # table_name
+% fibonacci_single_value # name
+% int # type
+% 1 # length
+[ 0	]
+#SELECT fibonacci(1);
+% .L # table_name
+% fibonacci_single_value # name
+% int # type
+% 1 # length
+[ 1	]
+#SELECT fibonacci(2);
+% .L # table_name
+% fibonacci_single_value # name
+% int # type
+% 1 # length
+[ 1	]
+#SELECT fibonacci(3);
+% .L # table_name
+% fibonacci_single_value # name
+% int # type
+% 1 # length
+[ 2	]
+#SELECT fibonacci(4);
+% .L # table_name
+% fibonacci_single_value # name
+% int # type
+% 1 # length
+[ 3	]
+#SELECT fibonacci(5);
+% .L # table_name
+% fibonacci_single_value # name
+% int # type
+% 1 # length
+[ 5	]
+#SELECT fibonacci(6);
+% .L # table_name
+% fibonacci_single_value # name
+% int # type
+% 1 # length
+[ 8	]
+#SELECT fibonacci(7);
+% .L # table_name
+% fibonacci_single_value # name
+% int # type
+% 2 # length
+[ 13	]
+#SELECT fibonacci(8);
+% .L # table_name
+% fibonacci_single_value # name
+% int # type
+% 2 # length
+[ 21	]
+#DROP FUNCTION fibonacci(integer);
+
+# 16:05:21 >  
+# 16:05:21 >  "Done."
+# 16:05:21 >  
+
