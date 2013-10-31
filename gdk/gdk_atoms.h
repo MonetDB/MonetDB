@@ -206,9 +206,6 @@ gdk_export const ptr ptr_nil;
 #define ATOMfix(t,v)		do if (BATatoms[t].atomFix) BATatoms[t].atomFix(v); while (0)
 #define ATOMunfix(t,v)		do if (BATatoms[t].atomUnfix) BATatoms[t].atomUnfix(v); while (0)
 
-#define CONV_HTON               1
-#define CONV_NTOH               0
-
 /*
  * In case that atoms are added to a bat, their logical reference
  * count should be incremented (and decremented if deleted). Notice

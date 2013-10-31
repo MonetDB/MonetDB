@@ -191,7 +191,6 @@ ATOMproperty(str id, str property, GDKfcn arg, int val)
 		BATatoms[t].align = sizeof(int);	/* default */
 		BATatoms[t].linear = 1;			/* default */
 		BATatoms[t].storage = t;		/* default */
-		BATatoms[t].deleting = 1;		/* not yet usable */
 	}
 	if (strcmp("size", property) == 0) {
 		if (val) {
@@ -1737,7 +1736,6 @@ atomDesc BATatoms[MAXATOMS] = {
 	 1,			/* linear */
 	 0,			/* size */
 	 0,			/* align */
-	 0,			/* deleting */
 	 1,			/* varsized */
 	 (ptr) &oid_nil,	/* atomNull */
 	 (int (*)(const char *, int *, ptr *)) OIDfromStr,    /* atomFromStr */
@@ -1763,7 +1761,6 @@ atomDesc BATatoms[MAXATOMS] = {
 	 1,			/* linear */
 	 sizeof(bit),		/* size */
 	 sizeof(bit),		/* align */
-	 0,			/* deleting */
 	 0,			/* varsized */
 	 (ptr) &bte_nil,	/* atomNull */
 	 (int (*)(const char *, int *, ptr *)) bitFromStr,   /* atomFromStr */
@@ -1784,7 +1781,6 @@ atomDesc BATatoms[MAXATOMS] = {
 	 1,			/* linear */
 	 sizeof(bte),		/* size */
 	 sizeof(bte),		/* align */
-	 0,			/* deleting */
 	 0,			/* varsized */
 	 (ptr) &bte_nil,	/* atomNull */
 	 (int (*)(const char *, int *, ptr *)) bteFromStr,   /* atomFromStr */
@@ -1805,7 +1801,6 @@ atomDesc BATatoms[MAXATOMS] = {
 	 1,			/* linear */
 	 sizeof(sht),		/* size */
 	 sizeof(sht),		/* align */
-	 0,			/* deleting */
 	 0,			/* varsized */
 	 (ptr) &sht_nil,	/* atomNull */
 	 (int (*)(const char *, int *, ptr *)) shtFromStr,   /* atomFromStr */
@@ -1826,7 +1821,6 @@ atomDesc BATatoms[MAXATOMS] = {
 	 1,			/* linear */
 	 sizeof(bat),		/* size */
 	 sizeof(bat),		/* align */
-	 0,			/* deleting */
 	 0,			/* varsized */
 	 (ptr) &int_nil,	/* atomNull */
 	 (int (*)(const char *, int *, ptr *)) batFromStr,   /* atomFromStr */
@@ -1847,7 +1841,6 @@ atomDesc BATatoms[MAXATOMS] = {
 	 1,			/* linear */
 	 sizeof(int),		/* size */
 	 sizeof(int),		/* align */
-	 0,			/* deleting */
 	 0,			/* varsized */
 	 (ptr) &int_nil,	/* atomNull */
 	 (int (*)(const char *, int *, ptr *)) intFromStr,   /* atomFromStr */
@@ -1872,7 +1865,6 @@ atomDesc BATatoms[MAXATOMS] = {
 	 1,			/* linear */
 	 sizeof(oid),		/* size */
 	 sizeof(oid),		/* align */
-	 0,			/* deleting */
 	 0,			/* varsized */
 	 (ptr) &oid_nil,	/* atomNull */
 	 (int (*)(const char *, int *, ptr *)) OIDfromStr,   /* atomFromStr */
@@ -1904,7 +1896,6 @@ atomDesc BATatoms[MAXATOMS] = {
 	 1,			/* linear */
 	 sizeof(wrd),		/* size */
 	 sizeof(wrd),		/* align */
-	 0,			/* deleting */
 	 0,			/* varsized */
 #if SIZEOF_WRD == SIZEOF_INT
 	 (ptr) &int_nil,	/* atomNull */
@@ -1935,7 +1926,6 @@ atomDesc BATatoms[MAXATOMS] = {
 	 1,			/* linear */
 	 sizeof(ptr),		/* size */
 	 sizeof(ptr),		/* align */
-	 0,			/* deleting */
 	 0,			/* varsized */
 	 (ptr) &ptr_nil,	/* atomNull */
 	 (int (*)(const char *, int *, ptr *)) ptrFromStr,   /* atomFromStr */
@@ -1961,7 +1951,6 @@ atomDesc BATatoms[MAXATOMS] = {
 	 1,			/* linear */
 	 sizeof(flt),		/* size */
 	 sizeof(flt),		/* align */
-	 0,			/* deleting */
 	 0,			/* varsized */
 	 (ptr) &flt_nil,	/* atomNull */
 	 (int (*)(const char *, int *, ptr *)) fltFromStr,   /* atomFromStr */
@@ -1982,7 +1971,6 @@ atomDesc BATatoms[MAXATOMS] = {
 	 1,			/* linear */
 	 sizeof(dbl),		/* size */
 	 sizeof(dbl),		/* align */
-	 0,			/* deleting */
 	 0,			/* varsized */
 	 (ptr) &dbl_nil,	/* atomNull */
 	 (int (*)(const char *, int *, ptr *)) dblFromStr,   /* atomFromStr */
@@ -2003,7 +1991,6 @@ atomDesc BATatoms[MAXATOMS] = {
 	 1,			/* linear */
 	 sizeof(lng),		/* size */
 	 sizeof(lng),		/* align */
-	 0,			/* deleting */
 	 0,			/* varsized */
 	 (ptr) &lng_nil,	/* atomNull */
 	 (int (*)(const char *, int *, ptr *)) lngFromStr,   /* atomFromStr */
@@ -2024,7 +2011,6 @@ atomDesc BATatoms[MAXATOMS] = {
 	 1,			/* linear */
 	 sizeof(var_t),		/* size */
 	 sizeof(var_t),		/* align */
-	 0,			/* deleting */
 	 1,			/* varsized */
 	 (ptr) str_nil,		/* atomNull */
 	 (int (*)(const char *, int *, ptr *)) strFromStr,   /* atomFromStr */

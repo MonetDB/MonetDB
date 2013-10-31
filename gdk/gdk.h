@@ -2053,7 +2053,6 @@ typedef struct {
 	short linear;		/* atom can be ordered linearly */
 	short size;		/* fixed size of atom */
 	short align;		/* alignment condition for values */
-	short deleting;		/* set if unloading */
 	int varsized;		/* variable-size or fixed-sized */
 
 	/* automatically generated fields */
