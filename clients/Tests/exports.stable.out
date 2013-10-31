@@ -8,16 +8,16 @@ stdout of test 'exports` in directory 'clients` itself:
 # gdk
 int ALIGNsetH(BAT *b1, BAT *b2);
 int ALIGNsynced(BAT *b1, BAT *b2);
+int ATOMallocate(const char *nme);
 int ATOMcmp(int id, const void *v_1, const void *v_2);
 ptr ATOMdup(int id, const void *val);
 bte ATOMelmshift(int sz);
 int ATOMformat(int id, const void *val, char **buf);
-int ATOMindex(char *nme);
+int ATOMindex(const char *nme);
 int ATOMlen(int id, const void *v);
 str ATOMname(int id);
 ptr ATOMnil(int id);
 int ATOMprint(int id, const void *val, stream *fd);
-void ATOMproperty(char *nme, char *property, GDKfcn fcn, int val);
 BAT *BATalpha(BAT *b);
 BAT *BATantijoin(BAT *l, BAT *r);
 BAT *BATantiuselect_(BAT *b, const void *tl, const void *th, bit li, bit hi);

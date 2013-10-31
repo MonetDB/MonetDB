@@ -1905,7 +1905,7 @@ gdk_export BAT *BBPquickdesc(bat b, int delaccess);
  * are described by an atom descriptor.
  *  @multitable @columnfractions 0.08 0.7
  * @item void
- * @tab ATOMproperty    (str   nme, char *property, int (*fcn)(), int val);
+ * @tab ATOMallocate    (str   nme);
  * @item int
  * @tab ATOMindex       (char *nme);
  * @item int
@@ -1957,11 +1957,8 @@ gdk_export BAT *BBPquickdesc(bat b, int delaccess);
  * following interface:.
  *
  * @itemize
- * @item @emph{ATOMproperty()} registers a new atom definition, if
- * there is no atom registered yet under that name.  It then installs
- * the attribute of the named property.  Valid names are "size",
- * "align", "null", "fromstr", "tostr", "cmp", "hash", "put", "get",
- * "del", "length" and "heap".
+ * @item @emph{ATOMallocate()} registers a new atom definition if
+ * there is no atom registered yet under that name.
  *
  * @item @emph{ATOMdelete()} unregisters an atom definition.
  *
@@ -2079,8 +2076,8 @@ typedef struct {
 gdk_export atomDesc BATatoms[];
 gdk_export int GDKatomcnt;
 
-gdk_export void ATOMproperty(char *nme, char *property, GDKfcn fcn, int val);
-gdk_export int ATOMindex(char *nme);
+gdk_export int ATOMallocate(const char *nme);
+gdk_export int ATOMindex(const char *nme);
 
 gdk_export str ATOMname(int id);
 gdk_export int ATOMlen(int id, const void *v);

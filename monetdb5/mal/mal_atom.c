@@ -234,7 +234,7 @@ int malAtomProperty(MalBlkPtr mb, InstrPtr pci)
 /*
  * @-
  * Atoms are constructed incrementally in the kernel using the
- * ATOMproperty function. It takes an existing type as a base
+ * ATOMallocate function. It takes an existing type as a base
  * to derive a new one.
  * The most tedisous work is to check the signature types of the functions
  * acceptable for the kernel.
@@ -257,10 +257,9 @@ void malAtomDefinition(stream *out, str name, int tpe)
 		return;
 	}
 
-	ATOMproperty(name, "", (int (*)()) 0, 0);
 	if (strlen(name) >= sizeof(BATatoms[0].name))
 		return;
-	i = ATOMindex(name);
+	i = ATOMallocate(name);
 	/* overload atom ? */
 	if (tpe) {
 		BATatoms[i] = BATatoms[tpe];

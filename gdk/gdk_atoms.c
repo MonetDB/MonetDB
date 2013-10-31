@@ -124,11 +124,8 @@ batUnfix(const bat *b)
  * support the BAT administration.
  *
  * A new type is incrementally build using the routine
- * ATOMproperty(id, property, function, value).  The parameter id
- * denotes the type name; an entry is created if the type is so far
- * unknown. The property argument is a string identifying the type
- * description property to be updated. Valid property names are size,
- * tostr, fromstr, put, get, cmp, eq, del, hash, null, new, and heap.
+ * ATOMallocate(id).  The parameter id denotes the type name; an entry
+ * is created if the type is so far unknown.
  *
  * The size describes the amount of space to be reserved in the BUN.
  *
@@ -152,27 +149,12 @@ batUnfix(const bat *b)
  * The incremental atom construction uses hardwired properties.  This
  * should be improved later on.
  */
-static int
-align(int n)
-{
-	if (n == 0)
-		return 0;
-	/* successively check bits from the bottom to see if one is set */
-	if (n & 1)
-		return 1;
-	if (n & 2)
-		return 2;
-	if (n & 4)
-		return 4;
-	return 8;
-}
-
-void
-ATOMproperty(str id, str property, GDKfcn arg, int val)
+int
+ATOMallocate(const char *id)
 {
 	int t;
 
-	MT_lock_set(&GDKthreadLock, "ATOMproperty");
+	MT_lock_set(&GDKthreadLock, "ATOMallocate");
 	t = ATOMindex(id);
 
 	if (t < 0) {
@@ -181,92 +163,22 @@ ATOMproperty(str id, str property, GDKfcn arg, int val)
 			GDKatomcnt++;
 		}
 		if (GDKatomcnt == MAXATOMS)
-			GDKfatal("ATOMproperty: too many types");
+			GDKfatal("ATOMallocate: too many types");
 		if (strlen(id) >= IDLENGTH)
-			GDKfatal("ATOMproperty: name too long");
+			GDKfatal("ATOMallocate: name too long");
 		memset(BATatoms + t, 0, sizeof(atomDesc));
 		strncpy(BATatoms[t].name, id, IDLENGTH);
 		BATatoms[t].size = sizeof(int);		/* default */
-		assert_shift_width(ATOMelmshift(BATatoms[t].size), BATatoms[t].size);
 		BATatoms[t].align = sizeof(int);	/* default */
 		BATatoms[t].linear = 1;			/* default */
 		BATatoms[t].storage = t;		/* default */
 	}
-	if (strcmp("size", property) == 0) {
-		if (val) {
-			assert(val <= SHRT_MAX);
-			BATatoms[t].size = val;
-			assert_shift_width(ATOMelmshift(BATatoms[t].size), BATatoms[t].size);
-			BATatoms[t].varsized = 0;
-			BATatoms[t].align = align(val);
-		} else {
-			BATatoms[t].size = sizeof(var_t);
-			assert_shift_width(ATOMelmshift(BATatoms[t].size), BATatoms[t].size);
-			BATatoms[t].varsized = 1;
-			BATatoms[t].align = sizeof(var_t);
-		}
-	} else if (strcmp("linear", property) == 0) {
-		BATatoms[t].linear = val;
-	} else if (strcmp("align", property) == 0) {
-		BATatoms[t].align = val;
-	} else if (strcmp("storage", property) == 0) {
-		BATatoms[t] = BATatoms[val];	/* copy from example */
-		strncpy(BATatoms[t].name, id, IDLENGTH); /* restore name */
-		BATatoms[t].name[IDLENGTH - 1] = 0;
-	} else if (strcmp("fromstr", property) == 0) {
-		BATatoms[t].atomFromStr = (int (*)(const char *, int *, void **)) arg;
-	} else if (strcmp("tostr", property) == 0) {
-		BATatoms[t].atomToStr = (int (*)(char **, int *, const void *)) arg;
-	} else if (strcmp("read", property) == 0) {
-		BATatoms[t].atomRead = (void *(*)(void *, stream *, size_t)) arg;
-	} else if (strcmp("write", property) == 0) {
-		BATatoms[t].atomWrite = (int (*)(const void *, stream *, size_t)) arg;
-	} else if (strcmp("fix", property) == 0) {
-		BATatoms[t].atomFix = (int (*)(const void *)) arg;
-	} else if (strcmp("unfix", property) == 0) {
-		BATatoms[t].atomUnfix = (int (*)(const void *)) arg;
-	} else {
-#define atomset(dst,val) oldval = (ptr) dst; if (val == NULL || dst == val) goto out; dst = val;
-		ptr oldval = NULL;
-
-		if (strcmp("heap", property) == 0) {
-			BATatoms[t].size = sizeof(var_t);
-			assert_shift_width(ATOMelmshift(BATatoms[t].size), BATatoms[t].size);
-			BATatoms[t].varsized = 1;
-			BATatoms[t].align = sizeof(var_t);
-			atomset(BATatoms[t].atomHeap, (void (*)(Heap *, size_t)) arg);
-		} else if (strcmp("del", property) == 0) {
-			atomset(BATatoms[t].atomDel, (void (*)(Heap *, var_t *)) arg);
-		} else if (strcmp("put", property) == 0) {
-			atomset(BATatoms[t].atomPut, (var_t (*)(Heap *, var_t *, const void *)) arg);
-		} else if (strcmp("null", property) == 0) {
-			ptr atmnull = ((ptr (*)(void)) arg) ();
-
-			atomset(BATatoms[t].atomNull, atmnull);
-		}
-		if (oldval)
-			goto out;
-
-		/* these ADT functions *must* be equal for overloaded types */
-		if (strcmp("cmp", property) == 0) {
-			atomset(BATatoms[t].atomCmp, (int (*)(const void *, const void *)) arg);
-		} else if (strcmp("hash", property) == 0) {
-			atomset(BATatoms[t].atomHash, (BUN (*)(const void *)) arg);
-		} else if (strcmp("length", property) == 0) {
-			atomset(BATatoms[t].atomLen, (int (*)(const void *)) arg);
-		}
-		if (BATatoms[t].storage != t)
-			GDKerror("ATOMproperty: %s overload of %s violates "
-				 "inheritance from %s.\n", ATOMname(t),
-				 property, ATOMname(BATatoms[t].storage));
-		BATatoms[t].storage = t;	/* critical redefine: undo remapping */
-	}
-      out:
-	MT_lock_unset(&GDKthreadLock, "ATOMproperty");
+	MT_lock_unset(&GDKthreadLock, "ATOMallocate");
+	return t;
 }
 
 int
-ATOMindex(str nme)
+ATOMindex(const char *nme)
 {
 	int t, j = GDKatomcnt;
 
