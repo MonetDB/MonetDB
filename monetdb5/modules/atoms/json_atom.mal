@@ -33,6 +33,10 @@ command calc.json(j:str):json
 address JSONstr2json
 comment "Convert string to its JSON. Dealing with escape characters";
 
+command calc.json(j:json):json
+address JSONstr2json
+comment "Convert JSON to JSON. Dealing with escape characters";
+
 command str(j:json):str
 address JSONjson2str
 comment "Convert JSON to its string equivalent. Dealing with escape characters";
