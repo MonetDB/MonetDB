@@ -1337,11 +1337,11 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 		bn = BAT_hashselect(b, s, bn, tl, maximum);
 	} else {
 		int use_imprints = 0;
-		if (((b->batPersistence == PERSISTENT) ||
-		    ((parent = VIEWtparent(b)) &&
-		     (BBPquickdesc(ABS(parent),0)->batPersistence == PERSISTENT)))
-		   && !equi
-		   && !ATOMvarsized(b->ttype)) {
+		if (!equi &&
+		    !b->tvarsized &&
+		    (b->batPersistence == PERSISTENT ||
+		     ((parent = VIEWtparent(b)) != 0 &&
+		      BBPquickdesc(ABS(parent),0)->batPersistence == PERSISTENT))) {
 			/* use imprints if
 			 *   i) bat is persistent, or parent is persistent
 			 *  ii) it is not an equi-select, and
