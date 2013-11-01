@@ -94,8 +94,9 @@ var_t strLocate(Heap *h, const char *v);
 void VIEWdestroy(BAT *b);
 BAT *VIEWreset(BAT *b);
 int IMPSgetbin(int tpe, bte bits, char *bins, const void *v);
-void IMPSremove(BAT *b);
+#ifndef NDEBUG
 void IMPSprint(BAT *b);
+#endif
 
 #define BBP_BATMASK	511
 #define BBP_THREADMASK	63

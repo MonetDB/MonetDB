@@ -784,7 +784,7 @@ IMPSgetbin(int tpe, bte bits, char *inbins, const void *v)
 }
 
 
-void
+static void
 IMPSremove(BAT *b) {
 	Imprints *imprints;
 
@@ -840,6 +840,8 @@ IMPSdestroy(BAT *b) {
 	return;
 }
 
+#ifndef NDEBUG
+/* never called, useful for debugging */
 void
 IMPSprint(BAT *b) {
 	Imprints *imprints;
@@ -879,3 +881,4 @@ do {									\
 		}
 	}
 }
+#endif
