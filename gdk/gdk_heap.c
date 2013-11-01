@@ -227,7 +227,7 @@ HEAPextend(Heap *h, size_t size)
 		/* extend a malloced heap, possibly switching over to
 		 * file-mapped storage */
 		Heap bak = *h;
-		size_t cur = GDKmem_inuse(), tot = GDK_mem_maxsize;
+		size_t cur = GDKmem_cursize(), tot = GDK_mem_maxsize;
 		int exceeds_swap = size > (tot + tot - MIN(tot + tot, cur));
 		int can_mmap = h->filename && (size >= GDK_mem_bigsize || h->newstorage != STORE_MEM);
 		int small_cpy = (h->size * 4 < size) && (size >= GDK_mmap_minsize);

@@ -2805,7 +2805,7 @@ BBPtrim(size_t target)
 	}
 	MEMDEBUG THRprintf(GDKstdout,
 			   "#BBPTRIM_ENTER: memsize=" SZFMT ",vmsize=" SZFMT "\n",
-			   GDKmem_inuse(), GDKvm_cursize());
+			   GDKmem_cursize(), GDKvm_cursize());
 
 	MEMDEBUG THRprintf(GDKstdout, "#BBPTRIM: target=" SZFMT "\n", target);
 	PERFDEBUG THRprintf(GDKstdout, "#BBPtrim(mem=%d)\n", target > 0);

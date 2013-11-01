@@ -43,7 +43,7 @@ ALGprejoin(int *rl, int *rr, int *l, int *r){
 	if( bl->batPersistence != TRANSIENT || 	/* no change in persistent */
 		BATtordered(bl) ||		/* ordered tails are fine */
 		bl->batSharecnt ||		/* avoid dependent views */
-		rpages + lpages <= GDKmem_inuse()/MT_pagesize()  ||	/* small operands are ok*/
+		rpages + lpages <= GDKmem_cursize()/MT_pagesize()  ||	/* small operands are ok*/
 		(dbl)BATcount(bl) < ( 2* rpages * log((dbl)rpages)) ){
 		BBPkeepref(*rl = bl->batCacheid);
 		BBPkeepref(*rr = br->batCacheid);

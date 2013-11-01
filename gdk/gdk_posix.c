@@ -355,12 +355,6 @@ MT_getrss(void)
 }
 
 
-char *
-MT_heapcur(void)
-{
-	return 0;
-}
-
 void *
 MT_mmap(const char *path, int mode, size_t len)
 {
@@ -678,12 +672,6 @@ MT_getrss(void)
 	if (GetProcessMemoryInfo(GetCurrentProcess(), &ctr, sizeof(ctr)))
 		return ctr.WorkingSetSize;
 	return 0;
-}
-
-char *
-MT_heapcur(void)
-{
-	return (char *) 0;
 }
 
 /* Windows mmap keeps a global list of base addresses for complex

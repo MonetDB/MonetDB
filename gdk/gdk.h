@@ -1593,8 +1593,6 @@ gdk_export gdk_return BATgroup(BAT **groups, BAT **extents, BAT **histo, BAT *b,
 gdk_export int GDK_mem_pagebits;	/* page size for non-linear mmaps */
 
 #define REMAP_PAGE_BITS	GDK_mem_pagebits
-#define REMAP_PAGE_SIZE	((size_t) 1 << REMAP_PAGE_BITS)
-#define REMAP_PAGE_MASK	(REMAP_PAGE_SIZE - 1)
 #define REMAP_PAGE_MAXBITS (REMAP_PAGE_BITS+3)
 #define REMAP_PAGE_MAXSIZE ((size_t) 1 << REMAP_PAGE_MAXBITS) /* max page bytesize of unary BUN heap (8-byte atom) */
 
@@ -2196,7 +2194,6 @@ gdk_export size_t GDK_mem_maxsize;	/* max allowed size of committed memory */
 gdk_export size_t GDK_vm_maxsize;	/* max allowed size of reserved vm */
 gdk_export int	GDK_vm_trim;		/* allow trimming */
 
-gdk_export size_t GDKmem_inuse(void);	/* RAM/swapmem that MonetDB is really using now */
 gdk_export size_t GDKmem_cursize(void);	/* RAM/swapmem that MonetDB has claimed from OS */
 gdk_export size_t GDKvm_cursize(void);	/* current MonetDB VM address space usage */
 

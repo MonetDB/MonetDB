@@ -433,21 +433,15 @@ MT_init(void)
 size_t
 GDKmem_cursize(void)
 {
-	return GDKmem_inuse();
-}
-
-size_t
-GDKmem_inuse(void)
-{
 	/* RAM/swapmem that Monet is really using now */
-	return (size_t) ATOMIC_GET(GDK_mallocedbytes_estimate, mbyteslock, "GDKmem_inuse");
+	return (size_t) ATOMIC_GET(GDK_mallocedbytes_estimate, mbyteslock, "GDKmem_cursize");
 }
 
 size_t
 GDKvm_cursize(void)
 {
 	/* current Monet VM address space usage */
-	return (size_t) ATOMIC_GET(GDK_vm_cursize, mbyteslock, "GDKvm_cursize") + GDKmem_inuse();
+	return (size_t) ATOMIC_GET(GDK_vm_cursize, mbyteslock, "GDKvm_cursize") + GDKmem_cursize();
 }
 
 #ifdef GDK_MEM_KEEPHISTO
@@ -597,8 +591,8 @@ GDKmemfail(str s, size_t len)
 
 	/* bumped your nose against the wall; try to prevent
 	 * repetition by adjusting maxsizes
-	   if (memtarget < 0.3 * GDKmem_inuse()) {
-		   size_t newmax = (size_t) (0.7 * (double) GDKmem_inuse());
+	   if (memtarget < 0.3 * GDKmem_cursize()) {
+		   size_t newmax = (size_t) (0.7 * (double) GDKmem_cursize());
 
 		   if (newmax < GDK_mem_maxsize)
 		   GDK_mem_maxsize = newmax;
@@ -611,14 +605,14 @@ GDKmemfail(str s, size_t len)
 	   }
 	 */
 
-	THRprintf(GDKstdout, "#%s(" SZFMT ") fails, try to free up space [memory in use=" SZFMT ",virtual memory in use=" SZFMT "]\n", s, len, GDKmem_inuse(), GDKvm_cursize());
+	THRprintf(GDKstdout, "#%s(" SZFMT ") fails, try to free up space [memory in use=" SZFMT ",virtual memory in use=" SZFMT "]\n", s, len, GDKmem_cursize(), GDKvm_cursize());
 	GDKmemdump();
 /*	GDKdebug |= MEMMASK;  avoid debugging output */
 
 	BBPtrim(BBPTRIM_ALL);
 
 	GDKdebug = MIN(GDKdebug, bak);
-	THRprintf(GDKstdout, "#%s(" SZFMT ") result [mem=" SZFMT ",vm=" SZFMT "]\n", s, len, GDKmem_inuse(), GDKvm_cursize());
+	THRprintf(GDKstdout, "#%s(" SZFMT ") result [mem=" SZFMT ",vm=" SZFMT "]\n", s, len, GDKmem_cursize(), GDKvm_cursize());
 	GDKmemdump();
 }
 
