@@ -110,11 +110,16 @@ opt_export  str insertRef;
 opt_export  str intRef;
 opt_export  str ioRef;
 opt_export  str iteratorRef;
-opt_export  str joinRef;
 opt_export  str joinPathRef;
 opt_export  str jsonRef;
+opt_export  str joinRef;
+opt_export  str antijoinRef;
 opt_export  str bandjoinRef;
 opt_export  str thetajoinRef;
+opt_export  str subjoinRef;
+opt_export  str subantijoinRef;
+opt_export  str subbandjoinRef;
+opt_export  str subthetajoinRef;
 opt_export  str thetauselectRef;
 opt_export  str thetaselectRef;
 opt_export  str kdifferenceRef;
@@ -254,7 +259,6 @@ opt_export  str uselectRef;
 opt_export  str userRef;
 opt_export  str vectorRef;
 opt_export  str antiuselectRef;
-opt_export  str antijoinRef;
 opt_export  str zero_or_oneRef;
 
 opt_export int canBeCrackedProp;	/* binary */
