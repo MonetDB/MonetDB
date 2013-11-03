@@ -30,21 +30,22 @@ stderr of test 'default` in directory 'sql/test` itself:
 # 11:45:04 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=sofia" "--port=39182"
 # 11:45:04 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
-QUERY = INSERT INTO t1 (id) VALUES(1);
-ERROR = !INSERT INTO: NOT NULL constraint violated for column t1.text2
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
-QUERY = INSERT INTO t1 (text1) VALUES('test1');
-ERROR = !INSERT INTO: NOT NULL constraint violated for column t1.text2
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
-QUERY = INSERT INTO t1 (id, text3) VALUES(1, 'test3');
-ERROR = !INSERT INTO: NOT NULL constraint violated for column t1.text2
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
-QUERY = INSERT INTO t1 (id, text1, text3, text4) VALUES(1, 'test1', 'test3', 'test4');
-ERROR = !INSERT INTO: NOT NULL constraint violated for column t1.text2
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
-QUERY = INSERT INTO t1 (id, text1, text2, text3, text4) VALUES(1, 'test1', 'test2', 'test3', NULL);
-ERROR = !INSERT INTO: NOT NULL constraint violated for column t1.text4
+MAPI  = (monetdb) /var/tmp/mtest-8142/.s.monetdb.36261
+QUERY = INSERT INTO t1default (id) VALUES(1);
+
+MAPI  = (monetdb) /var/tmp/mtest-8142/.s.monetdb.36261
+QUERY = INSERT INTO t1default (text1) VALUES('test1');
+
+MAPI  = (monetdb) /var/tmp/mtest-8142/.s.monetdb.36261
+QUERY = INSERT INTO t1default (id, text3) VALUES(1, 'test3');
+
+MAPI  = (monetdb) /var/tmp/mtest-8142/.s.monetdb.36261
+QUERY = INSERT INTO t1default (id, text1, text3, text4) VALUES(1, 'test1', 'test3', 'test4');
+
+MAPI  = (monetdb) /var/tmp/mtest-8142/.s.monetdb.36261
+QUERY = INSERT INTO t1default (id, text1, text2, text3, text4) VALUES(1, 'test1', 'test2', 'test3', NULL);
+
+
 
 # 17:34:21 >  
 # 17:34:21 >  Done.

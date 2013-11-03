@@ -39,7 +39,17 @@ Ready.
 [ 1	]
 [ 1	]
 [ 1	]
-% sys.t1,	sys.t1,	sys.t1,	sys.t1,	sys.t1 # table_name
+#select * from t1default;
+% sys.t1default,	sys.t1default,	sys.t1default,	sys.t1default,	sys.t1default # table_name
+% id,	text1,	text2,	text3,	text4 # name
+% int,	varchar,	varchar,	varchar,	varchar # type
+% 1,	5,	5,	5,	5 # length
+[ 1,	"test1",	"test2",	"test3",	"test4"	]
+[ 2,	NULL,	"test2",	"foo",	"foo"	]
+[ NULL,	NULL,	"test2",	"foo",	"foo"	]
+#commit;
+#select * from t1default;
+% sys.t1default,	sys.t1default,	sys.t1default,	sys.t1default,	sys.t1default # table_name
 % id,	text1,	text2,	text3,	text4 # name
 % int,	varchar,	varchar,	varchar,	varchar # type
 % 1,	5,	5,	5,	5 # length

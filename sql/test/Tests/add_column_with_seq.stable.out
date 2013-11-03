@@ -34,7 +34,8 @@ Ready.
 # 12:38:48 >  
 
 [ 3	]
-% sys.t3 # table_name
+#select * from t3addcolumn;
+% sys.t3addcolumn # table_name
 % name # name
 % varchar # type
 % 1 # length
@@ -42,7 +43,8 @@ Ready.
 [ "b"	]
 [ "c"	]
 [ 3	]
-% sys.t2,	sys.t2 # table_name
+#select * from t2addcolumn;
+% sys.t2addcolumn,	sys.t2addcolumn # table_name
 % name,	seq # name
 % varchar,	int # type
 % 1,	1 # length
@@ -50,7 +52,9 @@ Ready.
 [ "b",	2	]
 [ "c",	3	]
 [ 3	]
-% sys.t1,	sys.t1 # table_name
+#alter table t1addcolumn add column seq serial;
+#select * from t1addcolumn;
+% sys.t1addcolumn,	sys.t1addcolumn # table_name
 % name,	seq # name
 % varchar,	int # type
 % 1,	1 # length
