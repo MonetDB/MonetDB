@@ -18,10 +18,8 @@
  */
 
 /*
- * @f groupby
- * @a Martin Kersten
- * @v 1.0
- * @+ Group-by support
+ * (c) Martin Kersten
+ * Group-by support
  * The group-by support module is meant to replace and speedup the kernel grouping routines.
  * The latter was originally designed in a memory constraint setting and an exercise in
  * performing column-wise grouping incrementally. The effect is that these routines are
@@ -56,6 +54,7 @@
  */
 #include "monetdb_config.h"
 #include "groupby.h"
+#include "group.h"
 
 /*
  * The implementation is based on a two-phase process. In phase 1, we estimate
@@ -64,83 +63,85 @@
  * The final pieces are glued together.
  */
 typedef struct{
-	BAT *bn;	/* result */
+	bat *bid;	/* input bats */
 	BAT **cols;
-	BUN *estimate; /* number of different values */
-	BATiter *iter;
+	BUN *unique; /* number of different values */
 	int last;
-	int maxcol;
+	BUN size;
 } AGGRtask;
 
 static AGGRtask*
 GROUPcollect( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	AGGRtask *a;
-	int *bid;
-	int i,j;
+	int i,j,k;
 	BAT *b, *bs, *bh = NULL;
 	BUN sample;
 
 	(void) mb;
+	(void) cntxt;
 	a= (AGGRtask *) GDKzalloc(sizeof(*a));
 	if ( a == NULL)
 		return NULL;
+	a->bid = (bat*) GDKzalloc(pci->argc * sizeof(bat));
 	a->cols = (BAT**) GDKzalloc(pci->argc * sizeof(BAT*));
-	a->estimate = (BUN *) GDKzalloc(pci->argc * sizeof(BUN));
-	a->iter = (BATiter *) GDKzalloc(pci->argc * sizeof(BATiter));
+	a->unique = (BUN *) GDKzalloc(pci->argc * sizeof(BUN));
 	if ( a->cols == NULL){
 		GDKfree(a);
 		return NULL;
 	}
-	a->maxcol= pci->argc;
-	for ( i= pci->retc; i< pci->argc; i++,a->last++) {
-		bid = (int*) getArgReference(stk,pci,i);
-		b = a->cols[a->last]= BATdescriptor(*bid);
+	for ( i= pci->retc; i< pci->argc; i++, a->last++) {
+		a->bid[a->last] = *(int*) getArgReference(stk,pci,i);
+		b = a->cols[a->last]= BATdescriptor(a->bid[a->last]);
 		if ( a->cols[a->last] == NULL){
 			for(a->last--; a->last>=0; a->last--)
 				BBPreleaseref(a->cols[a->last]->batCacheid);
 			return NULL;
 		}
-		sample = BATcount(b) < 2000 ? BATcount(b): 2000;
+		a->size = BATcount(b);
+		sample = BATcount(b) < 1000 ? BATcount(b): 1000;
 		bs = BATsample( b, sample);
 		if (bs) {
-			bh = BAThistogram(bs);
-			a->estimate[a->last] = BATcount(bh);
+			bh = BATkunique(BATmirror(bs));
+			a->unique[a->last] = BATcount(bh);
+			if ( bh ) BBPreleaseref(bh->batCacheid);
 		}
 		if ( bs ) BBPreleaseref(bs->batCacheid);
-		if ( bh ) BBPreleaseref(bh->batCacheid);
 	}
-	/* sort the columns by decreasing estimate */
+
+	/* sort the columns by decreasing unique */
 	for (i = 1; i< a->last; i++)
 	for( j = i+1; j<a->last; j++)
-	if ( a->estimate[i] < a->estimate[j]){
+	if ( a->unique[i] < a->unique[j]){
+		k =a->bid[i];
+		a->bid[i] = a->bid[j];
+		a->bid[j] = k;
+
 		b= a->cols[i];
 		a->cols[i] = a->cols[j];
 		a->cols[j] = b;
-		sample = a->estimate[i];
-		a->estimate[i] = a->estimate[j];
-		a->estimate[j] = sample;
+
+		sample = a->unique[i];
+		a->unique[i] = a->unique[j];
+		a->unique[j] = sample;
 	}
 #ifdef _DEBUG_GROUPBY_
 	for(i=0; i<a->last; i++)
-		mnstr_printf(cntxt->fdout,"#group %d estimate "BUNFMT "\n", i, a->estimate[i]);
+		mnstr_printf(cntxt->fdout,"#group %d unique "BUNFMT "\n", i, a->unique[i]);
 #endif
-	/* get iterator stuff ready as well */
-	for(i=0; i<a->last; i++)
-		a->iter[i] = bat_iterator(a->cols[i]);
-
 	return a;
 }
 
 static void
 GROUPdelete(AGGRtask *a){
-	for(a->last--; a->last>=0; a->last--)
+	for(a->last--; a->last>=0; a->last--){
 		BBPreleaseref(a->cols[a->last]->batCacheid);
+	}
 	GDKfree(a->cols);
-	GDKfree(a->estimate);
-	GDKfree(a->iter);
+	GDKfree(a->unique);
 	GDKfree(a);
 }
 
+// Collect the unique group identifiers for all
 str
 GROUPid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -149,11 +150,12 @@ GROUPid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *bn;
 
 	a = GROUPcollect(cntxt,mb,stk,pci);
-	bn = a->bn = BATnew(TYPE_oid,TYPE_wrd,a->estimate[1]);
+	bn =  BATnew(TYPE_void,TYPE_oid, a->size);
 	if ( bn == NULL) {
 		GROUPdelete(a);
-		throw(MAL,"groupby.count",MAL_MALLOC_FAIL);
+		throw(MAL,"groupby.id",MAL_MALLOC_FAIL);
 	}
+	BATseqbase(bn,0);
 
 	GROUPdelete(a);
 	BBPkeepref(*ret= bn->batCacheid);
@@ -165,14 +167,18 @@ GROUPcount(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int *ret = (int*) getArgReference(stk,pci,0);
 	AGGRtask *a;
-	BAT *bn;
+	BAT *bn, *bo;
 
 	a = GROUPcollect(cntxt,mb,stk,pci);
-	bn = a->bn = BATnew(TYPE_oid,TYPE_wrd,a->estimate[1]);
-	if ( bn == NULL) {
+	bo = BATnew(TYPE_void,TYPE_oid,a->size);
+	bn = BATnew(TYPE_void,TYPE_wrd,a->size);
+	if ( bo == NULL || bn == NULL) {
 		GROUPdelete(a);
+		if ( bo) BBPreleaseref(bo->batCacheid);
+		if ( bn) BBPreleaseref(bn->batCacheid);
 		throw(MAL,"groupby.count",MAL_MALLOC_FAIL);
 	}
+	BATseqbase(bn,0);
 
 	GROUPdelete(a);
 	BBPkeepref(*ret= bn->batCacheid);
@@ -184,14 +190,18 @@ GROUPmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int *ret = (int*) getArgReference(stk,pci,0);
 	AGGRtask *a;
-	BAT *bn;
+	BAT *bn, *bo;
 
 	a = GROUPcollect(cntxt,mb,stk,pci);
-	bn = a->bn = BATnew(TYPE_oid,TYPE_wrd,a->estimate[1]);
-	if ( bn == NULL) {
+	bo = BATnew(TYPE_void,TYPE_oid,a->size);
+	bn = BATnew(TYPE_void,TYPE_wrd,a->size);
+	if ( bo == NULL || bn == NULL) {
 		GROUPdelete(a);
+		if ( bo) BBPreleaseref(bo->batCacheid);
+		if ( bn) BBPreleaseref(bn->batCacheid);
 		throw(MAL,"groupby.count",MAL_MALLOC_FAIL);
 	}
+	BATseqbase(bn,0);
 
 	GROUPdelete(a);
 	BBPkeepref(*ret= bn->batCacheid);
@@ -203,14 +213,18 @@ GROUPmin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int *ret = (int*) getArgReference(stk,pci,0);
 	AGGRtask *a;
-	BAT *bn;
+	BAT *bn, *bo;
 
 	a = GROUPcollect(cntxt,mb,stk,pci);
-	bn = a->bn = BATnew(TYPE_oid,TYPE_wrd,a->estimate[1]);
-	if ( bn == NULL) {
+	bo = BATnew(TYPE_void,TYPE_oid,a->size);
+	bn = BATnew(TYPE_void,TYPE_wrd,a->size);
+	if ( bo == NULL || bn == NULL) {
 		GROUPdelete(a);
+		if ( bo) BBPreleaseref(bo->batCacheid);
+		if ( bn) BBPreleaseref(bn->batCacheid);
 		throw(MAL,"groupby.count",MAL_MALLOC_FAIL);
 	}
+	BATseqbase(bn,0);
 
 	GROUPdelete(a);
 	BBPkeepref(*ret= bn->batCacheid);
@@ -222,16 +236,75 @@ GROUPavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int *ret = (int*) getArgReference(stk,pci,0);
 	AGGRtask *a;
-	BAT *bn;
+	BAT *bn, *bo;
 
 	a = GROUPcollect(cntxt,mb,stk,pci);
-	bn = a->bn = BATnew(TYPE_oid,TYPE_wrd,a->estimate[1]);
-	if ( bn == NULL) {
+	bo = BATnew(TYPE_void,TYPE_oid,a->size);
+	bn = BATnew(TYPE_void,TYPE_wrd,a->size);
+	if ( bo == NULL || bn == NULL) {
 		GROUPdelete(a);
+		if ( bo) BBPreleaseref(bo->batCacheid);
+		if ( bn) BBPreleaseref(bn->batCacheid);
 		throw(MAL,"groupby.count",MAL_MALLOC_FAIL);
 	}
+	BATseqbase(bn,0);
 
 	GROUPdelete(a);
 	BBPkeepref(*ret= bn->batCacheid);
 	return MAL_SUCCEED;
+}
+
+/*
+ * The groups optimizer takes a grouping sequence and attempts to
+ * minimize the intermediate result.  The choice depends on a good
+ * estimate of intermediate results using properties.
+ */
+
+str
+GROUPmulticolumn(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	bat *grp = (bat *) getArgReference(stk, pci, 0);
+	bat *ext = (bat *) getArgReference(stk, pci, 1);
+	bat *hist = (bat *) getArgReference(stk, pci, 2);
+	int i, j;
+	bat oldgrp, oldext, oldhist;
+	str msg = MAL_SUCCEED;
+	BAT *b;
+	BUN count = 0;
+	AGGRtask *aggr;
+
+	aggr = GROUPcollect(cntxt, mb, stk, pci);
+
+	/* (grp,ext,hist) := group.subgroup(..) */
+	/* use the old pattern to perform the incremental grouping */
+	*grp = 0;
+	*ext = 0;
+	*hist = 0;
+	msg = GRPsubgroup1(grp, ext, hist, &aggr->bid[0]);
+	i = 1;
+	if (msg == MAL_SUCCEED && aggr->last > 1)
+		do {
+			/* early break when there are as many groups as entries */
+			b = BATdescriptor(*hist);
+			if (b) {
+				j = BATcount(b) == count;
+				BBPreleaseref(*hist);
+				if (j)
+					break;
+			}
+
+			/* (grp,ext,hist) := group.subgroup(arg,grp,ext,hist) */
+			oldgrp = *grp;
+			oldext = *ext;
+			oldhist = *hist;
+			*grp = 0;
+			*ext = 0;
+			*hist = 0;
+			msg = GRPsubgroup4(grp, ext, hist, &aggr->bid[i], &oldgrp, &oldext, &oldhist);
+			BBPdecref(oldgrp, TRUE);
+			BBPdecref(oldext, TRUE);
+			BBPdecref(oldhist, TRUE);
+		} while (msg == MAL_SUCCEED && ++i < aggr->last);
+	GROUPdelete(aggr);
+	return msg;
 }

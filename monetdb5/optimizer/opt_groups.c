@@ -51,7 +51,8 @@ OPTgroupsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	for (i = 0; i<limit; i++){
 		p= old[i];
 		if (getModuleId(p) == groupRef && p->argc == 4 && getFunctionId(p) == subgroupRef ){
-			setFunctionId(p, multicolumnsRef);
+			//setModuleId(p, groupRef);
+			//setFunctionId(p, multicolumnsRef);
 			ref[getArg(p,0)] = p;
 			actions++;
 			OPTDEBUGgroups {
@@ -67,8 +68,11 @@ OPTgroupsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			q= copyInstruction(ref[getArg(p,4)]);
 			q= pushArgument(mb, q, getArg(p,3));
 			getArg(q,0) = getArg(p,0);
+			setVarType(mb,getArg(q,0),getArgType(mb,p,0));
 			getArg(q,1) = getArg(p,1);
+			setVarType(mb,getArg(q,1),getArgType(mb,p,1));
 			getArg(q,2) = getArg(p,2);
+			setVarType(mb,getArg(q,2),getArgType(mb,p,2));
 			ref[getArg(q,0)] = q;
 			freeInstruction(p);
 			p= q;
@@ -84,5 +88,9 @@ OPTgroupsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			freeInstruction(old[i]);
 	GDKfree(old);
 	GDKfree(ref);
+	OPTDEBUGgroups if( actions) {
+		mnstr_printf(cntxt->fdout,"Result of group by optimizer\n");
+		printFunction(cntxt->fdout,mb,0,LIST_MAL_ALL);
+	}
 	return actions;
 }

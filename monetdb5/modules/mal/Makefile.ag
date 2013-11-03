@@ -37,7 +37,6 @@ lib_mal = {
 		constraints.c constraints.h \
 		factories.c factories.h \
 		groupby.c groupby.h \
-		groups.c groups.h \
 		inspect.c inspect.h \
 		iterator.c  iterator.h \
 		joinpath.c  joinpath.h \

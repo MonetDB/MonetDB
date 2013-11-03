@@ -1,0 +1,77 @@
+#testing the group_by minimalistics
+
+b1:= bat.new(:oid,:int);
+b2:= bat.new(:oid,:int);
+b3:= bat.new(:oid,:int);
+
+bat.append(b1,1);
+bat.append(b1,1);
+bat.append(b1,1);
+bat.append(b1,1);
+bat.append(b1,2);
+bat.append(b1,2);
+bat.append(b1,2);
+bat.append(b1,2);
+
+bat.append(b2,3);
+bat.append(b2,3);
+bat.append(b2,4);
+bat.append(b2,4);
+bat.append(b2,3);
+bat.append(b2,3);
+bat.append(b2,4);
+bat.append(b2,4);
+
+bat.append(b3,5);
+bat.append(b3,6);
+bat.append(b3,5);
+bat.append(b3,6);
+bat.append(b3,5);
+bat.append(b3,6);
+bat.append(b3,5);
+bat.append(b3,6);
+
+io.print(b1,b2,b3);
+
+#single column groups
+(g1,grp,ext):= group.subgroup(b1);
+z1:= group.id(b1,g1);
+io.print(z1);
+
+(g2,grp,ext):= group.subgroup(b2);
+z2:= group.id(b2,g2);
+io.print(z2);
+
+(g3,grp,ext):= group.subgroup(b3);
+z3:= group.id(b3,g3);
+io.print(z3);
+
+(g1_1,grp,ext):= group.subgroup(b1,b1);
+z1_1:= group.id(b1,b1);
+io.print(z1_1);
+
+(g1_2,grp,ext):= group.subgroup(b1,b2);
+z1_2:= group.id(b1,b2);
+io.print(z1_2);
+
+(g1_3,grp,ext):= group.subgroup(b1,b3);
+z1_3:= group.id(b1,b3);
+io.print(z1_3);
+
+(g1_1_1,grp,ext):= group.subgroup(b1,b1,b1);
+z1_1_1:= group.id(b1,b1,b1);
+io.print(z1_1_1);
+
+(g1_2_2,grp,ext):= group.subgroup(b1,b2,b2);
+z1_2_2:= group.id(b1,b2,b2);
+io.print(z1_2_2);
+
+(g1_3_3,grp,ext):= group.subgroup(b1,b3,b3);
+z1_3_3:= group.id(b1,b3,b3);
+io.print(z1_3_3);
+
+(g1_2_3,grp,ext):= group.subgroup(b1,b2,b3);
+z1_2_3:= group.id(b1,b2,b3);
+io.print(z1_2_3);
+
+

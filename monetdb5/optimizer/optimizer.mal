@@ -212,10 +212,6 @@ pattern optimizer.groups(mod:str, fcn:str):str
 address OPTwrapper
 comment "Join path constructor";
 
-pattern group.multicolumns(l:bat[:oid,:any]...)(ref:bat[:oid,:oid],grp:bat[:oid,:any],ext:bat[:oid,:any])
-address GRPmulticolumngroup
-comment "Derive a group index over multiple columns.";
-
 #opt_querylog
 pattern optimizer.querylog():str
 address OPTwrapper;

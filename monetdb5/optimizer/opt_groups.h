@@ -25,5 +25,6 @@
 opt_export int OPTgroupsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
 #define OPTDEBUGgroups  if ( optDebug & ((lng)1 <<DEBUG_OPT_GROUPS) )
+//#define OPTDEBUGgroups if(1)
 
 #endif
