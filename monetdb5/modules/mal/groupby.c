@@ -19,17 +19,15 @@
 
 /*
  * (c) Martin Kersten
- * Group-by support
+ * Multicolumn group-by support
  * The group-by support module is meant to replace and speedup the kernel grouping routines.
  * The latter was originally designed in a memory constraint setting and an exercise in
  * performing column-wise grouping incrementally. The effect is that these routines are
  * now a major performance hindrances.
  *
- * This module again takes the columnar approach to grouping, but supports for more
- * parallelism in achieving these goals.
- *
- * The target is to support SQL-like group_by operations, which are lists of
- * attributes (reduced by a pivot list) followed by a group aggregate function.
+ * The target is to support SQL-like multicolumngroup_by operations, which are lists of
+ * attributes and a group aggregate function.
+ * Each group can be represented with an oid into the n-ary table.
  * Consider the query "select count(*), max(A) from R group by A, B,C." whose code
  * snippet in MAL would become something like:
  * @verbatim
@@ -39,14 +37,17 @@
  * ...
  * _9 := algebra.select(_1,0,100);
  * ..
- * grp:bat[:oid,:oid] := groupby.id(_9, _1, _2, _3);
- * grp_4:bat[:oid,:wrd] := groupby.count(_9, _1, _2, _3);
- * grp_5:bat[:oid,:lng] := groupby.max(_9,_2, _3, _1);
+ * (grp_4:bat[:oid,:wrd], gid:bat[:oid,:oid]) := groupby.count(_9,  _1,_2 _3);
+ * (grp_5:bat[:oid,:lng], gid:bat[:oid,:oid]) := groupby.max(_9,_2, _1,_2,_3);
  * @end verbatim
  *
+ * All instructions have a candidate oid list.
  * The id() function merely becomes the old-fashioned oid-based group identification list.
  * This way related values can be obtained from the attribute columns. It can be the input
  * for the count() function, which saves some re-computation.
+ *
+ * Aside the group ids, we also provide options to return the value based aggregate table
+ * to ease development of parallel plans.
  *
  * The implementation is optimized for a limited number of groups. The default is
  * to fall back on the old code sequences.
@@ -159,6 +160,46 @@ GROUPid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	GROUPdelete(a);
 	BBPkeepref(*ret= bn->batCacheid);
+	return MAL_SUCCEED;
+}
+
+str
+GROUPcountTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	(void) mb;
+	(void) stk;
+	(void) pci;
+	return MAL_SUCCEED;
+}
+
+str
+GROUPmaxTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	(void) mb;
+	(void) stk;
+	(void) pci;
+	return MAL_SUCCEED;
+}
+
+str
+GROUPminTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	(void) mb;
+	(void) stk;
+	(void) pci;
+	return MAL_SUCCEED;
+}
+
+str
+GROUPavgTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	(void) mb;
+	(void) stk;
+	(void) pci;
 	return MAL_SUCCEED;
 }
 
