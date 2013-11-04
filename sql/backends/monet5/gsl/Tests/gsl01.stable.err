@@ -24,12 +24,48 @@ stderr of test 'gsl01` in directory 'sql/backends/monet5/gsl` itself:
 # cmdline opt 	gdk_dbpath = /export/scratch2/rijke/monetdb/default/var/MonetDB/mTests_sql_backends_monet5_gsl
 # cmdline opt 	mal_listing = 0
 
-# 15:55:27 >  
-# 15:55:27 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-19131" "--port=36073"
-# 15:55:27 >  
+# 15:57:56 >  
+# 15:57:56 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16688" "--port=34082"
+# 15:57:56 >  
 
+MAPI  = (monetdb) /var/tmp/mtest-16688/.s.monetdb.34082
+QUERY = SELECT gsl.chi2prob(20.0, NULL);
+ERROR = !Wrong value for datapoints
+MAPI  = (monetdb) /var/tmp/mtest-16688/.s.monetdb.34082
+QUERY = SELECT gsl.chi2prob(NULL, 5.0);
+ERROR = !Wrong value for chi2
+MAPI  = (monetdb) /var/tmp/mtest-16688/.s.monetdb.34082
+QUERY = SELECT gsl.chi2prob(-1, 5.0);
+ERROR = !Wrong value for chi2
+MAPI  = (monetdb) /var/tmp/mtest-16688/.s.monetdb.34082
+QUERY = SELECT gsl.chi2prob(20.0, 1.0);
+ERROR = !Wrong value for datapoints
+MAPI  = (monetdb) /var/tmp/mtest-16688/.s.monetdb.34082
+QUERY = SELECT chi2prob(a, b) FROM chi2;
+ERROR = !Wrong value for datapoints
+MAPI  = (monetdb) /var/tmp/mtest-16688/.s.monetdb.34082
+QUERY = SELECT chi2prob(19.0, b) FROM chi2;
+ERROR = !Wrong value for datapoints
+MAPI  = (monetdb) /var/tmp/mtest-16688/.s.monetdb.34082
+QUERY = SELECT chi2prob(a, b) FROM chi2;
+ERROR = !Wrong value for chi2
+MAPI  = (monetdb) /var/tmp/mtest-16688/.s.monetdb.34082
+QUERY = SELECT chi2prob(a, 6.0) FROM chi2;
+ERROR = !Wrong value for chi2
+MAPI  = (monetdb) /var/tmp/mtest-16688/.s.monetdb.34082
+QUERY = SELECT chi2prob(a, b) FROM chi2;
+ERROR = !Wrong value for chi2
+MAPI  = (monetdb) /var/tmp/mtest-16688/.s.monetdb.34082
+QUERY = SELECT chi2prob(a, 6.0) FROM chi2;
+ERROR = !Wrong value for chi2
+MAPI  = (monetdb) /var/tmp/mtest-16688/.s.monetdb.34082
+QUERY = SELECT chi2prob(a, b) FROM chi2;
+ERROR = !Wrong value for datapoints
+MAPI  = (monetdb) /var/tmp/mtest-16688/.s.monetdb.34082
+QUERY = SELECT chi2prob(19.0, b) FROM chi2;
+ERROR = !Wrong value for datapoints
 
-# 15:55:27 >  
-# 15:55:27 >  "Done."
-# 15:55:27 >  
+# 15:57:57 >  
+# 15:57:57 >  "Done."
+# 15:57:57 >  
 
