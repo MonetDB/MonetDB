@@ -29,6 +29,10 @@ pattern group.id(b:bat[:oid,:any]...) :bat[:oid,:oid]
 address GROUPid
 comment "Derive a group id for all n-tuples.";
 
+pattern group.count(cand:bat[:oid,:oid]) (cnt:bat[:oid,:wrd], gid:bat[:oid,:oid])
+address GROUPcount
+comment "Derive a count for an group id table.";
+
 pattern group.count(cand:bat[:oid,:oid],b:bat[:oid,:any]...) (cnt:bat[:oid,:wrd], b:bat[:oid,:any]...)
 address GROUPcountTable
 comment "Derive a group table for all n-tuples and their count. The first argument is a candidate list";
@@ -45,6 +49,10 @@ pattern group.max(cand:bat[:oid,:oid],target:bat[:oid,:any_1],b:bat[:oid,:any]..
 address GROUPmax
 comment "Derive the group id of all n-tuples and determine their maximum value. The first argument is a candidate list";
 
+pattern group.max(cand:bat[:oid,:oid],target:bat[:oid,:any_1]) (mx:bat[:oid,:any_1], gid:bat[:oid,:oid])
+address GROUPmax
+comment "Derive the group id of all n-tuples and determine their maximum value. The first argument is a candidate list";
+
 pattern group.min(cand:bat[:oid,:oid],target:bat[:oid,:any_1],b:bat[:oid,:any]...) (mi:bat[:oid,:any_1], o:bat[:oid,:any]...)
 address GROUPminTable
 comment "Derive the grop id of all n-tuples and determine their minimum value. The first argument is a candidate list";
@@ -53,10 +61,18 @@ pattern group.min(cand:bat[:oid,:oid], target:bat[:oid,:any_1],b:bat[:oid,:any].
 address GROUPmin
 comment "Derive the group id of all n-tuples and determin their minimum value. The first argument is a candidate list";
 
-pattern group.avg(cand:bat[:oid,:oid], target:bat[:oid,:any_1],b:bat[:oid,:any_2]...) (a:bat[:oid,:dbl])
-address GROUPavg
-comment "Derive the group id of all n-tuples and determine their average value. The first argument is a candidate list";
+pattern group.min(cand:bat[:oid,:oid], target:bat[:oid,:any_1]) (mi:bat[:oid,:any_1], gid:bat[:oid,:oid])
+address GROUPmin
+comment "Derive the group id of all n-tuples and determin their minimum value. The first argument is a candidate list";
 
 pattern group.avg(cand:bat[:oid,:oid], target:bat[:oid,:any_1],b:bat[:oid,:any_2]...) (a:bat[:oid,:dbl], o:bat[:oid,:any]...)
 address GROUPavgTable
+comment "Derive the group id of all n-tuples and determine their average value. The first argument is a candidate list";
+
+pattern group.avg(cand:bat[:oid,:oid], target:bat[:oid,:any_1],b:bat[:oid,:any_2]...) (a:bat[:oid,:dbl], gid:bat[:oid,:oid])
+address GROUPavg
+comment "Derive the group id of all n-tuples and determine their average value. The first argument is a candidate list";
+
+pattern group.avg(cand:bat[:oid,:oid], target:bat[:oid,:any_1]) (a:bat[:oid,:dbl], gid:bat[:oid,:oid])
+address GROUPavg
 comment "Derive the group id of all n-tuples and determine their average value. The first argument is a candidate list";
