@@ -2256,8 +2256,8 @@ BATsubjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_match
 	swap = 0;
 
 	/* some statistics to help us decide */
-	lsize = BATcount(l) * (Tsize(l) + (l->T->vheap ? l->T->vheap->size : 0) + 2 * sizeof(BUN));
-	rsize = BATcount(r) * (Tsize(r) + (r->T->vheap ? r->T->vheap->size : 0) + 2 * sizeof(BUN));
+	lsize = BATcount(l) * (Tsize(l) + (l->T->vheap ? l->T->vheap->size : 0) + 2 * (BUN) sizeof(BUN));
+	rsize = BATcount(r) * (Tsize(r) + (r->T->vheap ? r->T->vheap->size : 0) + 2 * (BUN) sizeof(BUN));
 	mem_size = GDK_mem_maxsize / (GDKnr_threads ? GDKnr_threads : 1);
 
 	if ((l->tsorted || l->trevsorted) && (r->tsorted || r->trevsorted)) {
