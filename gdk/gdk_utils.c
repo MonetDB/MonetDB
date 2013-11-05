@@ -1006,12 +1006,6 @@ GDKinit(opt *set, int setlen)
 
 	/* Mserver by default takes 80% of all memory as a default */
 	GDK_mem_maxsize = GDK_mem_maxsize_max = (size_t) ((double) MT_npages() * (double) MT_pagesize() * 0.815);
-#ifdef NATIVE_WIN32
-	GDK_mmap_minsize = GDK_mem_maxsize_max;
-#else
-	GDK_mmap_minsize = MIN( 1<<30 , GDK_mem_maxsize_max/6 );
-	/*   per op:  2 args + 1 res, each with head & tail  =>  (2+1)*2 = 6  ^ */
-#endif
 	GDK_mem_bigsize = 1024*1024;
 	GDKremovedir(DELDIR);
 	BBPinit();
@@ -1054,6 +1048,10 @@ GDKinit(opt *set, int setlen)
 		GDKsetenv(n[i].name, n[i].value);
 	free(n);
 
+	GDKnr_threads = GDKgetenv_int("gdk_nr_threads", 0);
+	if (GDKnr_threads == 0)
+		GDKnr_threads = MT_check_nr_cores();
+
 	if ((p = GDKgetenv("gdk_dbpath")) != NULL &&
 	    (p = strrchr(p, DIR_SEP)) != NULL) {
 		GDKsetenv("gdk_dbname", p + 1);
@@ -1079,6 +1077,13 @@ GDKinit(opt *set, int setlen)
 	}
 	if ((p = GDKgetenv("gdk_mmap_minsize"))) {
 		GDK_mmap_minsize = MAX(REMAP_PAGE_MAXSIZE, (size_t) strtoll(p, NULL, 10));
+	} else {
+#ifdef NATIVE_WIN32
+		GDK_mmap_minsize = GDK_mem_maxsize_max / (GDKnr_threads ? GDKnr_threads : 1);
+#else
+		GDK_mmap_minsize = MIN(1 << 30, (GDK_mem_maxsize_max / 6) / (GDKnr_threads ? GDKnr_threads : 1));
+		/* per op: 2 args + 1 res, each with head & tail => (2+1)*2 = 6 */
+#endif
 	}
 	if (GDKgetenv("gdk_mem_pagebits") == NULL) {
 		snprintf(buf, sizeof(buf), "%d", GDK_mem_pagebits);
@@ -1092,18 +1097,6 @@ GDKinit(opt *set, int setlen)
 		snprintf(buf, sizeof(buf), "%d", (int) getpid());
 		GDKsetenv("monet_pid", buf);
 	}
-
-	GDKnr_threads = GDKgetenv_int("gdk_nr_threads", 0);
-	if (GDKnr_threads == 0)
-		GDKnr_threads = MT_check_nr_cores();
-#ifdef NATIVE_WIN32
-	GDK_mmap_minsize /= (GDKnr_threads ? GDKnr_threads : 1);
-#else
-	/* WARNING: This unconditionally overwrites above settings, */
-	/* incl. setting via MonetDB env. var. "gdk_mmap_minsize" ! */
-	GDK_mmap_minsize = MIN( 1<<30 , (GDK_mem_maxsize_max/6) / (GDKnr_threads ? GDKnr_threads : 1) );
-	/*    per op:  2 args + 1 res, each with head & tail  =>  (2+1)*2 = 6  ^ */
-#endif
 
 	if ((p = mo_find_option(set, setlen, "gdk_vmtrim")) == NULL ||
 	    strcasecmp(p, "yes") == 0)
