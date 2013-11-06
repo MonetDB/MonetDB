@@ -1,3 +1,8 @@
 # ChangeLog file for clients
 # This file is updated with Maddlog
 
+* Wed Nov  6 2013 Sjoerd Mullender <sjoerd@acm.org>
+- ODBC: Fixed transaction level: MonetDB only supports the highest level
+  (SQL_TXN_SERIALIZABLE), so setting the transaction level can be accepted
+  and ignored.
+
