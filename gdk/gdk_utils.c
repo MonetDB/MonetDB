@@ -336,8 +336,8 @@ static MT_Lock GDKstoppedLock;
 #endif
 #endif
 
-size_t _MT_pagesize = 0;	/* variable holding memory size */
-size_t _MT_npages = 0;		/* variable holding page size */
+size_t _MT_pagesize = 0;	/* variable holding page size */
+size_t _MT_npages = 0;		/* variable holding memory size in pages */
 
 void
 MT_init(void)
