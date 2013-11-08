@@ -2183,10 +2183,16 @@ BATmax(BAT *b, void *aggr)
 
 
 /* ---------------------------------------------------------------------- */
-/* median */
+/* quantiles/median */
 
 BAT *
-BATgroupmedian(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_error)
+
+BATgroupmedian(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_error) {
+	return BATgroupquantile(b,g,e,s,tp,0.5,skip_nils,abort_on_error);
+}
+
+BAT *
+ BATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,int skip_nils, int abort_on_error)
 {
 	int freeb = 0, freeg = 0;
 	oid min, max;
@@ -2201,18 +2207,24 @@ BATgroupmedian(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_
 	const void *nil;
 	int (*atomcmp)(const void *, const void *);
 	const char *err;
-
 	(void) abort_on_error;
+
+	// TODO: remove printf
+	printf("BATgroupquantile(%f)\n",quantile);
 
 	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &start, &end,
 				    &cnt, &cand, &candend)) != NULL) {
-		GDKerror("BATgroupmedian: %s\n", err);
+		GDKerror("BATgroupquantile: %s\n", err);
 		return NULL;
 	}
 	assert(tp == b->ttype);
 	if (!ATOMlinear(b->ttype)) {
-		GDKerror("BATgroupmedian: cannot determine median on "
+		GDKerror("BATgroupquantile: cannot determine quantile on "
 			 "non-linear type %s\n", ATOMname(b->ttype));
+		return NULL;
+	}
+	if (quantile < 0 || quantile > 1) {
+		GDKerror("BATgroupquantile: cannot determine quantile for p=%f (p has to be in [0,1])\n",quantile);
 		return NULL;
 	}
 
@@ -2305,7 +2317,8 @@ BATgroupmedian(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_
 							   nil, 0, Tsize(bn));
 					nils++;
 				} else {
-					v = BUNtail(bi, BUNfirst(b) + (r + p - 1) / 2);
+					// actual selection of quantile value for groups
+					v = BUNtail(bi, (oid)( BUNfirst(b) + (r + p - 1)  * quantile));
 					bunfastins_nocheck(bn, BUNlast(bn), 0,
 							   v, 0, Tsize(bn));
 					nils += (*atomcmp)(v, nil) == 0;
@@ -2321,7 +2334,8 @@ BATgroupmedian(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_
 		}
 		BATseqbase(bn, min);
 	} else {
-		v = BUNtail(bi, BUNfirst(b) + (BATcount(b) - 1) / 2);
+		// actual selection of quantile value
+		v = BUNtail(bi, (oid) (BUNfirst(b) + (BATcount(b) - 1)  * quantile));
 		BUNappend(bn, v, FALSE);
 		BATseqbase(bn, 0);
 		nils += (*atomcmp)(v, nil) == 0;

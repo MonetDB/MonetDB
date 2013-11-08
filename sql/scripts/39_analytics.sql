@@ -107,6 +107,28 @@ create aggregate median(val TIME) returns TIME
 	external name "aggr"."median";
 create aggregate median(val TIMESTAMP) returns TIMESTAMP
 	external name "aggr"."median";
+	
+create aggregate quantile(val TINYINT, q DOUBLE) returns TINYINT
+	external name "aggr"."quantile";
+create aggregate quantile(val SMALLINT, q DOUBLE) returns SMALLINT
+	external name "aggr"."quantile";
+create aggregate quantile(val INTEGER, q DOUBLE) returns INTEGER
+	external name "aggr"."quantile";
+create aggregate quantile(val WRD, q DOUBLE) returns WRD
+	external name "aggr"."quantile";
+create aggregate quantile(val BIGINT, q DOUBLE) returns BIGINT
+	external name "aggr"."quantile";
+create aggregate quantile(val REAL, q DOUBLE) returns REAL
+	external name "aggr"."quantile";
+create aggregate quantile(val DOUBLE, q DOUBLE) returns DOUBLE
+	external name "aggr"."quantile";
+
+create aggregate quantile(val DATE, q DOUBLE) returns DATE
+	external name "aggr"."quantile";
+create aggregate quantile(val TIME, q DOUBLE) returns TIME
+	external name "aggr"."quantile";
+create aggregate quantile(val TIMESTAMP, q DOUBLE) returns TIMESTAMP
+	external name "aggr"."quantile";
 
 create aggregate corr(e1 TINYINT, e2 TINYINT) returns TINYINT
 	external name "aggr"."corr";
