@@ -169,7 +169,7 @@ deactivateCounter(str name)
 		loglen += (int) strlen(logbase+loglen);					\
 	} while (0)
 
-static void logsent(int header, char *logbuffer)
+static void logsend(int header, char *logbuffer)
 {
 	MT_lock_set(&mal_profileLock, "profileLock");
 	if (eventstream) {
@@ -298,7 +298,7 @@ offlineProfilerHeader(void)
 	if (profileCounter[PROFuser].status)
 		logadd("user,\t");
 	logadd("# name");
-	logsent(1, logbuffer);
+	logsend(1, logbuffer);
 }
 
 void
@@ -475,7 +475,7 @@ offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc, int start)
 	if (profileCounter[PROFuser].status) {
 		logadd(" %d", idx);
 	}
-	logsent(0, logbuffer);
+	logsend(0, logbuffer);
 }
 /*
  * Postprocessing events
@@ -1419,7 +1419,7 @@ void profilerHeartbeatEvent(str msg)
 		//logadd("\"\",\t");
 	//if (profileCounter[PROFuser].status)
 		//logadd(" 0");
-	logsent(0, logbuffer);
+	logsend(0, logbuffer);
 }
 
 static void profilerHeartbeat(void *dummy)
