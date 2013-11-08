@@ -436,7 +436,7 @@ SQLGetInfo_(ODBCDbc *dbc,
 		sValue = "N";
 		break;
 	case SQL_DEFAULT_TXN_ISOLATION:
-		nValue = SQL_TXN_READ_COMMITTED;
+		nValue = SQL_TXN_SERIALIZABLE;
 		len = sizeof(SQLUINTEGER);
 		break;
 	case SQL_EXPRESSIONS_IN_ORDERBY:
@@ -568,7 +568,7 @@ SQLGetInfo_(ODBCDbc *dbc,
 		len = sizeof(SQLUINTEGER);
 		break;
 	case SQL_TXN_ISOLATION_OPTION:
-		nValue = SQL_TXN_REPEATABLE_READ;
+		nValue = SQL_TXN_SERIALIZABLE;
 		len = sizeof(SQLUINTEGER);
 		break;
 	case SQL_INTEGRITY:

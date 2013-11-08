@@ -1,3 +1,12 @@
 # ChangeLog file for clients
 # This file is updated with Maddlog
 
+* Wed Nov  6 2013 Sjoerd Mullender <sjoerd@acm.org>
+- ODBC: Fixed interpretation SQL_C_SLONG/SQL_C_ULONG/SQL_C_LONG to
+  refer to a 32 bit integer always (i.e. "int" on 64 bit architectures
+  despite the name and the Microsoft documentation).  This seems to be
+  the consensus.
+- ODBC: Fixed transaction level: MonetDB only supports the highest level
+  (SQL_TXN_SERIALIZABLE), so setting the transaction level can be accepted
+  and ignored.
+

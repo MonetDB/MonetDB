@@ -126,7 +126,7 @@ main(int argc, char **argv)
 	SQLULEN *processed;
 	SQLUSMALLINT *status;
 	SQLINTEGER offset;
-	long *data_i;
+	int *data_i;
 	char (*data_s)[20];
 	SQLLEN *data_slen;
 	float *data_f;
@@ -370,7 +370,7 @@ main(int argc, char **argv)
 				data[i].t.hour, data[i].t.minute,
 				data[i].t.second);
 			fprintf(stderr,
-				"%ld %g %s %04d-%02d-%02d %02d:%02d:%02d\n",
+				"%d %g %s %04d-%02d-%02d %02d:%02d:%02d\n",
 				data_i[i], data_f[i], data_s[i],
 				data_d[i].year, data_d[i].month, data_d[i].day,
 				data_t[i].hour, data_t[i].minute,
