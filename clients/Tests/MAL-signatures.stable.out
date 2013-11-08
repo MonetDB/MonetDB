@@ -36844,6 +36844,10 @@ pattern calc.iszero(v:bte):bit
 address CMDvarISZERO;
 comment Unary check for zero of V
 
+command calc.json(j:json):json 
+address JSONstr2json;
+comment Convert JSON to JSON. Dealing with escape characters
+
 command calc.json(j:str):json 
 address JSONstr2json;
 comment Convert string to its JSON. Dealing with escape characters
@@ -39239,26 +39243,6 @@ command geom.point(x:dbl,y:dbl):wkb
 address wkbcreatepoint;
 comment Construct a point from two geometries
 
-pattern group.avg(pivot:bat[:oid,:any_1],b:bat[:oid,:any_2]...) (o:bat[:oid,:oid],a:bat[:oid,:any_2]) 
-address GROUPavg;
-comment Derive the grouping of all tuples in the BATs and determine their average value.
-
-pattern group.count(b:bat[:oid,:any]...) (o:bat[:oid,:oid],cnt:bat[:oid,:wrd]) 
-address GROUPcount;
-comment Derive the grouping of all tuples in the BATs and derive their count them.
-
-pattern group.id(b:bat[:oid,:any]...):bat[:oid,:oid] 
-address GROUPid;
-comment Derive the grouping of all tuples in the BATs.
-
-pattern group.min(target:bat[:oid,:any_1],b:bat[:oid,:any]...) (o:bat[:oid,:oid],mi:bat[:oid,:any_1]) 
-address GROUPmin;
-comment Derive the grouping of all tuples in the BATs and their determine minimum value.
-
-pattern group.max(target:bat[:oid,:any_1],b:bat[:oid,:any]...) (o:bat[:oid,:oid],X_4:bat[:oid,:any_1]) 
-address GROUPmax;
-comment Derive the grouping of all tuples in the BATs and determine their maximum value.
-
 command group.subgroupdone(b:bat[:oid,:any_1],g:bat[:oid,:oid],e:bat[:oid,:oid],h:bat[:oid,:wrd]) (groups:bat[:oid,:oid],extents:bat[:oid,:oid],histo:bat[:oid,:wrd]) 
 address GRPsubgroup4;
 command group.subgroupdone(b:bat[:oid,:any_1],g:bat[:oid,:oid]) (groups:bat[:oid,:oid],extents:bat[:oid,:oid],histo:bat[:oid,:wrd]) 
@@ -39271,9 +39255,9 @@ command group.subgroup(b:bat[:oid,:any_1],g:bat[:oid,:oid]) (groups:bat[:oid,:oi
 address GRPsubgroup2;
 command group.subgroup(b:bat[:oid,:any_1]) (groups:bat[:oid,:oid],extents:bat[:oid,:oid],histo:bat[:oid,:wrd]) 
 address GRPsubgroup1;
-pattern group.subgroup(b:bat[:oid,:any]...) (ref:bat[:oid,:oid],grp:bat[:oid,:any],ext:bat[:oid,:any]) 
+pattern group.subgroup(b:bat[:oid,:any]...) (ref:bat[:oid,:oid],grp:bat[:oid,:oid],hist:bat[:oid,:any]) 
 address GROUPmulticolumn;
-comment Old-fashioned derivation of a group index over multiple columns.
+comment Derivation of a group index over multiple columns.
 
 command identifier.#fromstr():void 
 address IDfromString;

@@ -37,14 +37,4 @@
 
 group_by_export str GROUPmulticolumn(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-group_by_export str GROUPid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-group_by_export str GROUPcount(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-group_by_export str GROUPcountTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-group_by_export str GROUPmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-group_by_export str GROUPmaxTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-group_by_export str GROUPmin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-group_by_export str GROUPminTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-group_by_export str GROUPavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-group_by_export str GROUPavgTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-
 #endif /* _GROUPBY_H */

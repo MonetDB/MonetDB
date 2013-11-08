@@ -20,16 +20,15 @@
 /*
  * (c) Martin Kersten
  * Multicolumn group-by support
- * The group-by support module is meant to replace and speedup the kernel grouping routines.
- * The latter was originally designed in a memory constraint setting and an exercise in
- * performing column-wise grouping incrementally. The effect is that these routines are
- * now a major performance hindrances.
+ * The group-by support module is meant to simplify code analysis and
+ * speedup the kernel on multi-attribute grouping routines.
  *
  * The target is to support SQL-like multicolumngroup_by operations, which are lists of
  * attributes and a group aggregate function.
  * Each group can be represented with an oid into the n-ary table.
  * Consider the query "select count(*), max(A) from R group by A, B,C." whose code
  * snippet in MAL would become something like:
+ *
  * @verbatim
  * _1:bat[:oid,:int]  := sql.bind("sys","r","a",0);
  * _2:bat[:oid,:str]  := sql.bind("sys","r","b",0);
@@ -37,11 +36,10 @@
  * ...
  * _9 := algebra.select(_1,0,100);
  * ..
- * (grp_4:bat[:oid,:wrd], gid:bat[:oid,:oid]) := groupby.count(_9,  _1,_2 _3);
- * (grp_5:bat[:oid,:lng], gid:bat[:oid,:oid]) := groupby.max(_9,_2, _1,_2,_3);
+ * (grp_4:bat[:oid,:wrd], gid:bat[:oid,:oid]) := groupby.count(_9,_2);
+ * (grp_5:bat[:oid,:lng], gid:bat[:oid,:oid]) := groupby.max(_9,_2,_3);
  * @end verbatim
  *
- * All instructions have a candidate oid list.
  * The id() function merely becomes the old-fashioned oid-based group identification list.
  * This way related values can be obtained from the attribute columns. It can be the input
  * for the count() function, which saves some re-computation.
@@ -65,6 +63,7 @@
  */
 typedef struct{
 	bat *bid;	/* input bats */
+	BAT *candidate; /* list */
 	BAT **cols;
 	BUN *unique; /* number of different values */
 	int last;
@@ -74,7 +73,7 @@ typedef struct{
 static AGGRtask*
 GROUPcollect( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	AGGRtask *a;
-	int i,j,k;
+	int i;
 	BAT *b, *bs, *bh = NULL;
 	BUN sample;
 
@@ -98,7 +97,6 @@ GROUPcollect( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 				BBPreleaseref(a->cols[a->last]->batCacheid);
 			return NULL;
 		}
-		a->size = BATcount(b);
 		sample = BATcount(b) < 1000 ? BATcount(b): 1000;
 		bs = BATsample( b, sample);
 		if (bs) {
@@ -106,12 +104,29 @@ GROUPcollect( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 			a->unique[a->last] = BATcount(bh);
 			if ( bh ) BBPreleaseref(bh->batCacheid);
 		}
+		if ( b->tsorted)
+			a->unique[a->last] = 1000; /* sorting helps grouping */
+		a->size = BATcount(b);
 		if ( bs ) BBPreleaseref(bs->batCacheid);
 	}
 
+#ifdef _DEBUG_GROUPBY_
+	for(i=0; i<a->last; i++)
+		mnstr_printf(cntxt->fdout,"#group %d unique "BUNFMT "\n", i, a->unique[i]);
+#endif
+	return a;
+}
+
+static void 
+GROUPcollectSort(AGGRtask *a, int start, int finish)
+{
+	int i,j,k;
+	BAT *b;
+	BUN sample;
+
 	/* sort the columns by decreasing unique */
-	for (i = 1; i< a->last; i++)
-	for( j = i+1; j<a->last; j++)
+	for (i = start; i< finish; i++)
+	for( j = i+1; j<finish; j++)
 	if ( a->unique[i] < a->unique[j]){
 		k =a->bid[i];
 		a->bid[i] = a->bid[j];
@@ -125,11 +140,6 @@ GROUPcollect( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		a->unique[i] = a->unique[j];
 		a->unique[j] = sample;
 	}
-#ifdef _DEBUG_GROUPBY_
-	for(i=0; i<a->last; i++)
-		mnstr_printf(cntxt->fdout,"#group %d unique "BUNFMT "\n", i, a->unique[i]);
-#endif
-	return a;
 }
 
 static void
@@ -140,159 +150,6 @@ GROUPdelete(AGGRtask *a){
 	GDKfree(a->cols);
 	GDKfree(a->unique);
 	GDKfree(a);
-}
-
-// Collect the unique group identifiers for all
-str
-GROUPid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	int *ret = (int*) getArgReference(stk,pci,0);
-	AGGRtask *a;
-	BAT *bn;
-
-	a = GROUPcollect(cntxt,mb,stk,pci);
-	bn =  BATnew(TYPE_void,TYPE_oid, a->size);
-	if ( bn == NULL) {
-		GROUPdelete(a);
-		throw(MAL,"groupby.id",MAL_MALLOC_FAIL);
-	}
-	BATseqbase(bn,0);
-
-	GROUPdelete(a);
-	BBPkeepref(*ret= bn->batCacheid);
-	return MAL_SUCCEED;
-}
-
-str
-GROUPcountTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	(void) cntxt;
-	(void) mb;
-	(void) stk;
-	(void) pci;
-	return MAL_SUCCEED;
-}
-
-str
-GROUPmaxTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	(void) cntxt;
-	(void) mb;
-	(void) stk;
-	(void) pci;
-	return MAL_SUCCEED;
-}
-
-str
-GROUPminTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	(void) cntxt;
-	(void) mb;
-	(void) stk;
-	(void) pci;
-	return MAL_SUCCEED;
-}
-
-str
-GROUPavgTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	(void) cntxt;
-	(void) mb;
-	(void) stk;
-	(void) pci;
-	return MAL_SUCCEED;
-}
-
-str
-GROUPcount(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	int *ret = (int*) getArgReference(stk,pci,0);
-	AGGRtask *a;
-	BAT *bn, *bo;
-
-	a = GROUPcollect(cntxt,mb,stk,pci);
-	bo = BATnew(TYPE_void,TYPE_oid,a->size);
-	bn = BATnew(TYPE_void,TYPE_wrd,a->size);
-	if ( bo == NULL || bn == NULL) {
-		GROUPdelete(a);
-		if ( bo) BBPreleaseref(bo->batCacheid);
-		if ( bn) BBPreleaseref(bn->batCacheid);
-		throw(MAL,"groupby.count",MAL_MALLOC_FAIL);
-	}
-	BATseqbase(bn,0);
-
-	GROUPdelete(a);
-	BBPkeepref(*ret= bn->batCacheid);
-	return MAL_SUCCEED;
-}
-
-str
-GROUPmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	int *ret = (int*) getArgReference(stk,pci,0);
-	AGGRtask *a;
-	BAT *bn, *bo;
-
-	a = GROUPcollect(cntxt,mb,stk,pci);
-	bo = BATnew(TYPE_void,TYPE_oid,a->size);
-	bn = BATnew(TYPE_void,TYPE_wrd,a->size);
-	if ( bo == NULL || bn == NULL) {
-		GROUPdelete(a);
-		if ( bo) BBPreleaseref(bo->batCacheid);
-		if ( bn) BBPreleaseref(bn->batCacheid);
-		throw(MAL,"groupby.count",MAL_MALLOC_FAIL);
-	}
-	BATseqbase(bn,0);
-
-	GROUPdelete(a);
-	BBPkeepref(*ret= bn->batCacheid);
-	return MAL_SUCCEED;
-}
-
-str
-GROUPmin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	int *ret = (int*) getArgReference(stk,pci,0);
-	AGGRtask *a;
-	BAT *bn, *bo;
-
-	a = GROUPcollect(cntxt,mb,stk,pci);
-	bo = BATnew(TYPE_void,TYPE_oid,a->size);
-	bn = BATnew(TYPE_void,TYPE_wrd,a->size);
-	if ( bo == NULL || bn == NULL) {
-		GROUPdelete(a);
-		if ( bo) BBPreleaseref(bo->batCacheid);
-		if ( bn) BBPreleaseref(bn->batCacheid);
-		throw(MAL,"groupby.count",MAL_MALLOC_FAIL);
-	}
-	BATseqbase(bn,0);
-
-	GROUPdelete(a);
-	BBPkeepref(*ret= bn->batCacheid);
-	return MAL_SUCCEED;
-}
-
-str
-GROUPavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	int *ret = (int*) getArgReference(stk,pci,0);
-	AGGRtask *a;
-	BAT *bn, *bo;
-
-	a = GROUPcollect(cntxt,mb,stk,pci);
-	bo = BATnew(TYPE_void,TYPE_oid,a->size);
-	bn = BATnew(TYPE_void,TYPE_wrd,a->size);
-	if ( bo == NULL || bn == NULL) {
-		GROUPdelete(a);
-		if ( bo) BBPreleaseref(bo->batCacheid);
-		if ( bn) BBPreleaseref(bn->batCacheid);
-		throw(MAL,"groupby.count",MAL_MALLOC_FAIL);
-	}
-	BATseqbase(bn,0);
-
-	GROUPdelete(a);
-	BBPkeepref(*ret= bn->batCacheid);
-	return MAL_SUCCEED;
 }
 
 /*
@@ -315,6 +172,9 @@ GROUPmulticolumn(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	AGGRtask *aggr;
 
 	aggr = GROUPcollect(cntxt, mb, stk, pci);
+	if( aggr == NULL)
+		throw(MAL,"group.subgroup",MAL_MALLOC_FAIL);
+	GROUPcollectSort(aggr, 0, aggr->last);
 
 	/* (grp,ext,hist) := group.subgroup(..) */
 	/* use the old pattern to perform the incremental grouping */
