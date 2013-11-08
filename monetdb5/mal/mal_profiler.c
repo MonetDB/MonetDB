@@ -547,7 +547,6 @@ openProfilerStream(stream *fd)
 str
 closeProfilerStream(void)
 {
-	profilerHeartbeatEvent("ping");
 	if (eventstream) {
 		(void)mnstr_close(eventstream);
 		(void)mnstr_destroy(eventstream);
