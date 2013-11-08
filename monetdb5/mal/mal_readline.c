@@ -61,7 +61,7 @@
  * using the commands @sc{manual.help}.
  * Keyword based lookup is supported by the operation @sc{manual.search};
  * Additional routines are available in the @sc{inspect}
- * module to built reflexive code.
+ * module to build reflexive code.
  *
  * For console input the @sc{readline} library linked with
  * the system provides a history mechanism and also name completion.

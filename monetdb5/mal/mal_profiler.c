@@ -158,7 +158,7 @@ deactivateCounter(str name)
  * Offline processing
  * The offline processing structure is the easiest. We merely have to
  * produce a correct tuple format for the front-end.
- * To avoid unnecessary locks we first built the event as a string
+ * To avoid unnecessary locks we first build the event as a string
  * It uses a local logbuffer[LOGLEN] and logbase, logtop, loglen
  */
 #define LOGLEN 8192
