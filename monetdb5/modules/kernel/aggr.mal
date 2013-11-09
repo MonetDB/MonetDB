@@ -1433,6 +1433,7 @@ command subcount(b:bat[:oid,:any_1],g:bat[:oid,:oid],e:bat[:oid,:any_2],s:bat[:o
 address AGGRsubcountcand
 comment "Grouped count aggregate with candidates list";
 
+
 command median(b:bat[:oid,:any_1],g:bat[:oid,:oid],e:bat[:oid,:any_2]) :bat[:oid,:any_1]
 address AGGRmedian3
 comment "Grouped median aggregate";
@@ -1453,3 +1454,27 @@ comment "Grouped median aggregate";
 command submedian(b:bat[:oid,:any_1],g:bat[:oid,:oid],e:bat[:oid,:any_2],s:bat[:oid,:oid],skip_nils:bit) :bat[:oid,:any_1]
 address AGGRsubmediancand
 comment "Grouped median aggregate with candidate list";
+
+
+command quantile(b:bat[:oid,:any_1],g:bat[:oid,:oid],e:bat[:oid,:any_2],q:dbl) :bat[:oid,:any_1]
+address AGGRquantile3
+comment "Grouped quantile aggregate";
+
+function quantile(b:bat[:oid,:any_1],q:dbl) :any_1;
+	bn := subquantile(b, q, false);
+	return algebra.fetch(bn, 0);
+end aggr.quantile;
+
+command subquantile(b:bat[:oid,:any_1],q:dbl,skip_nils:bit) :bat[:oid,:any_1]
+address AGGRquantile
+comment "Quantile aggregate";
+
+command subquantile(b:bat[:oid,:any_1],g:bat[:oid,:oid],e:bat[:oid,:any_2],q:dbl,skip_nils:bit) :bat[:oid,:any_1]
+address AGGRsubquantile
+comment "Grouped quantile aggregate";
+
+command subquantile(b:bat[:oid,:any_1],g:bat[:oid,:oid],e:bat[:oid,:any_2],s:bat[:oid,:oid],q:dbl,skip_nils:bit) :bat[:oid,:any_1]
+address AGGRsubquantilecand
+comment "Grouped quantile with candidate list";
+
+

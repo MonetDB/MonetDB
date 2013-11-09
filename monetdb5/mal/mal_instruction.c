@@ -98,9 +98,11 @@ newMalBlk(int maxvars, int maxstmts)
 	VarPtr *v;
 
 	/* each MAL instruction implies at least on variable */
-	if ( maxvars < maxstmts)
+	// TODO: this check/assignment makes little sense
+	/*
+	if (maxvars < maxstmts)
 		maxvars = maxvars;
-
+	*/
 	v = (VarPtr *) GDKzalloc(sizeof(VarPtr) * maxvars);
 	if (v == NULL) {
 		GDKerror("newMalBlk:" MAL_MALLOC_FAIL);

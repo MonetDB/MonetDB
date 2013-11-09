@@ -2275,7 +2275,7 @@ gdk_export str GDKstrdup(const char *s);
 		void *_res = GDKmmap(_path, _mode, _len);		\
 		ALLOCDEBUG						\
 			fprintf(stderr,					\
-				"#GDKmmap(%s,0x%x," SZFMT ") -> " SZFMT \
+				"#GDKmmap(%s,0x%x," SZFMT ") -> " PTRFMT \
 				" %s[%s:%d]\n",				\
 				_path ? _path : "NULL", _mode, _len,	\
 				PTRFMTCAST _res,			\

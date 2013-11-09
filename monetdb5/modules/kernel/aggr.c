@@ -38,14 +38,17 @@ static str
 AGGRgrouped(bat *retval1, bat *retval2, BAT *b, BAT *g, BAT *e, int tp,
 			BAT *(*grpfunc1)(BAT *, BAT *, BAT *, BAT *, int, int, int),
 			gdk_return (*grpfunc2)(BAT **, BAT **, BAT *, BAT *, BAT *, BAT *, int, int, int),
+			BAT *(*quantilefunc)(BAT *, BAT *, BAT *, BAT *, int, double, int, int),
+			double quantile,
 			int skip_nils,
 			const char *malfunc)
 {
 	BAT *bn, *cnts = NULL, *t, *map;
 
-	/* one or the other of grpfunc1 and grpfunc2 is non-NULL */
-	assert(grpfunc1 == NULL || grpfunc2 == NULL);
-	assert(grpfunc1 || grpfunc2);
+   /* one of grpfunc1, grpfunc2 and quantilefunc is non-NULL and the others are */
+	assert((grpfunc1 != NULL && grpfunc2 == NULL && quantilefunc == NULL) ||
+			(grpfunc1 == NULL && grpfunc2 != NULL && quantilefunc == NULL) ||
+			(grpfunc1 == NULL && grpfunc2 == NULL && quantilefunc != NULL) );
 	/* if retval2 is non-NULL, we must have grpfunc2 */
 	assert(retval2 == NULL || grpfunc2 != NULL);
 
@@ -58,7 +61,7 @@ AGGRgrouped(bat *retval1, bat *retval2, BAT *b, BAT *g, BAT *e, int tp,
 			BBPreleaseref(e->batCacheid);
 		throw(MAL, malfunc, RUNTIME_OBJECT_MISSING);
 	}
-	if (tp == TYPE_any && grpfunc1 == BATgroupmedian)
+	if (tp == TYPE_any && (grpfunc1 == BATgroupmedian || quantilefunc == BATgroupquantile))
 		tp = b->ttype;
 	if (!BAThdense(b) || !BAThdense(g)) {
 		/* if b or g don't have a dense head, replace the head with a
@@ -112,7 +115,9 @@ AGGRgrouped(bat *retval1, bat *retval2, BAT *b, BAT *g, BAT *e, int tp,
 	}
 	if (grpfunc1)
 		bn = (*grpfunc1)(b, g, e, NULL, tp, skip_nils, 1);
-	else if ((*grpfunc2)(&bn, retval2 ? &cnts : NULL, b, g, e, NULL, tp, skip_nils, 1) == GDK_FAIL)
+	if (quantilefunc)
+		bn = (*quantilefunc)(b, g, e, NULL, tp, quantile, skip_nils, 1);
+	if (grpfunc2 && (*grpfunc2)(&bn, retval2 ? &cnts : NULL, b, g, e, NULL, tp, skip_nils, 1) == GDK_FAIL)
 		bn = NULL;
 	if (bn != NULL && (grpfunc1 == BATgroupmin || grpfunc1 == BATgroupmax)) {
 		t = BATproject(bn, b);
@@ -177,7 +182,7 @@ AGGRgrouped3(bat *retval1, bat *retval2, bat *bid, bat *gid, bat *eid, int tp,
 	b = BATdescriptor(*bid);	/* [head,value] */
 	g = BATdescriptor(*gid);	/* [head,gid] */
 	e = BATdescriptor(*eid);	/* [gid,any] */
-	return AGGRgrouped(retval1, retval2, b, g, e, tp, grpfunc1, grpfunc2, skip_nils, malfunc);
+	return AGGRgrouped(retval1, retval2, b, g, e, tp, grpfunc1, grpfunc2, NULL, 0 , skip_nils, malfunc);
 }
 
 static str
@@ -197,7 +202,7 @@ AGGRgrouped2(bat *retval1, bat *retval2, bat *bid, bat *eid, int tp,
 	BBPreleaseref(b->batCacheid);
 	b = e;
 	e = BATdescriptor(*eid);	/* [gid,any] */
-	return AGGRgrouped(retval1, retval2, b, g, e, tp, grpfunc1, grpfunc2, skip_nils, malfunc);
+	return AGGRgrouped(retval1, retval2, b, g, e, tp, grpfunc1, grpfunc2,NULL, 0, skip_nils, malfunc);
 }
 
 aggr_export str AGGRsum3_bte(bat *retval, bat *bid, bat *gid, bat *eid);
@@ -602,18 +607,36 @@ AGGRmedian3(bat *retval, bat *bid, bat *gid, bat *eid)
 						BATgroupmedian, NULL, 0, "aggr.median");
 }
 
+
+// XXX: when are these functions called?
+aggr_export str AGGRquantile3(bat *retval, bat *bid, bat *gid, bat *eid, double *quantile);
+str
+AGGRquantile3(bat *retval, bat *bid, bat *gid, bat *eid, double *quantile)
+{
+	// this is inlined from AGGRgrouped3 to avoid changing all the other functions for now
+	BAT *b, *g, *e;
+	b = BATdescriptor(*bid);	/* [head,value] */
+	g = BATdescriptor(*gid);	/* [head,gid] */
+	e = BATdescriptor(*eid);	/* [gid,any] */
+	return AGGRgrouped(retval, NULL, b, g, e, TYPE_any, NULL, NULL, BATgroupquantile, *quantile, 0,  "aggr.quantile");
+}
+
 static str
-AGGRsubgrouped(bat *retval1, bat *retval2, bat *bid, bat *gid, bat *eid, bat *sid,
+AGGRsubgroupedExt(bat *retval1, bat *retval2, bat *bid, bat *gid, bat *eid, bat *sid,
 			   int skip_nils, int abort_on_error, int tp,
 			   BAT *(*grpfunc1)(BAT *, BAT *, BAT *, BAT *, int, int, int),
 			   gdk_return (*grpfunc2)(BAT **, BAT **, BAT *, BAT *, BAT *, BAT *, int, int, int),
+			   BAT *(*quantilefunc)(BAT *, BAT *, BAT *, BAT *, int, double, int, int),
+			   double quantile,
 			   const char *malfunc)
 {
 	BAT *b, *g, *e, *s, *bn, *cnts = NULL;
 
-	/* one or the other of grpfunc1 and grpfunc2 is non-NULL */
-	assert(grpfunc1 == NULL || grpfunc2 == NULL);
-	assert(grpfunc1 || grpfunc2);
+   /* one of grpfunc1, grpfunc2 and quantilefunc is non-NULL and the others are */
+	assert((grpfunc1 && grpfunc2 == NULL && quantilefunc == NULL) ||
+			(grpfunc1 == NULL && grpfunc1 && quantilefunc == NULL) ||
+			(grpfunc1 == NULL && grpfunc2 == NULL && quantilefunc) );
+
 	/* if retval2 is non-NULL, we must have grpfunc2 */
 	assert(retval2 == NULL || grpfunc2 != NULL);
 
@@ -629,7 +652,7 @@ AGGRsubgrouped(bat *retval1, bat *retval2, bat *bid, bat *gid, bat *eid, bat *si
 			BBPreleaseref(e->batCacheid);
 		throw(MAL, malfunc, RUNTIME_OBJECT_MISSING);
 	}
-	if (tp == TYPE_any && grpfunc1 == BATgroupmedian)
+	if (tp == TYPE_any && (grpfunc1 == BATgroupmedian || quantilefunc == BATgroupquantile))
 		tp = b->ttype;
 
 	if (sid) {
@@ -654,7 +677,9 @@ AGGRsubgrouped(bat *retval1, bat *retval2, bat *bid, bat *gid, bat *eid, bat *si
 	}
 	if (grpfunc1)
 		bn = (*grpfunc1)(b, g, e, s, tp, skip_nils, abort_on_error);
-	else if ((*grpfunc2)(&bn, retval2 ? &cnts : NULL, b, g, e, s, tp, skip_nils, abort_on_error) == GDK_FAIL)
+	if (quantilefunc)
+			bn = (*quantilefunc)(b, g, e, s, tp, quantile, skip_nils, abort_on_error);
+	if (grpfunc2 && (*grpfunc2)(&bn, retval2 ? &cnts : NULL, b, g, e, s, tp, skip_nils, abort_on_error) == GDK_FAIL)
 		bn = NULL;
 
 	BBPreleaseref(b->batCacheid);
@@ -690,6 +715,15 @@ AGGRsubgrouped(bat *retval1, bat *retval2, bat *bid, bat *gid, bat *eid, bat *si
 		BBPkeepref(cnts->batCacheid);
 	}
 	return MAL_SUCCEED;
+}
+
+static str
+AGGRsubgrouped(bat *retval1, bat *retval2, bat *bid, bat *gid, bat *eid, bat *sid,
+			   int skip_nils, int abort_on_error, int tp,
+			   BAT *(*grpfunc1)(BAT *, BAT *, BAT *, BAT *, int, int, int),
+			   gdk_return (*grpfunc2)(BAT **, BAT **, BAT *, BAT *, BAT *, BAT *, int, int, int),
+			   const char *malfunc) {
+	return AGGRsubgroupedExt(retval1,retval2,bid,gid,eid,sid,skip_nils,abort_on_error,tp,grpfunc1,grpfunc2, NULL,0,malfunc);
 }
 
 aggr_export str AGGRsubsum_bte(bat *retval, bat *bid, bat *gid, bat *eid, bit *skip_nils, bit *abort_on_error);
@@ -1167,4 +1201,29 @@ AGGRsubmediancand(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, bit *skip
 {
 	return AGGRsubgrouped(retval, NULL, bid, gid, eid, sid, *skip_nils,
 						  0, TYPE_any, BATgroupmedian, NULL, "aggr.submedian");
+}
+
+/* quantile functions, could make median functions obsolete completely */
+aggr_export str AGGRquantile(bat *retval, bat *bid, double *quantile, bit *skip_nils);
+str
+AGGRquantile(bat *retval, bat *bid, double *quantile, bit *skip_nils)
+{
+	return AGGRsubgroupedExt(retval, NULL, bid, NULL, NULL, NULL, *skip_nils,
+						  0, TYPE_any, NULL, NULL,BATgroupquantile, *quantile ,"aggr.subquantile");
+}
+
+aggr_export str AGGRsubquantile(bat *retval, bat *bid, bat *gid, bat *eid,  double *quantile, bit *skip_nils);
+str
+AGGRsubquantile(bat *retval, bat *bid, bat *gid, bat *eid, double *quantile, bit *skip_nils)
+{
+	return AGGRsubgroupedExt(retval, NULL, bid, gid, eid, NULL, *skip_nils,
+						  0, TYPE_any, NULL, NULL, BATgroupquantile, *quantile , "aggr.subquantile");
+}
+
+aggr_export str AGGRsubquantilecand(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, double *quantile, bit *skip_nils);
+str
+AGGRsubquantilecand(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, double *quantile,  bit *skip_nils)
+{
+	return AGGRsubgroupedExt(retval, NULL, bid, gid, eid, sid, *skip_nils,
+						  0, TYPE_any, NULL, NULL,BATgroupquantile,*quantile, "aggr.subquantile");
 }

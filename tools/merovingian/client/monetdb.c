@@ -1196,7 +1196,7 @@ command_set(int argc, char *argv[], meroset type)
 
 	for (stats = orig; stats != NULL; stats = stats->next) {
 		if (type == INHERIT) {
-			strncat(property, "=", sizeof(property));
+			strncat(property, "=", sizeof(property) - strlen(property) - 1);
 			p = property;
 		}
 		out = control_send(&res, mero_host, mero_port,
