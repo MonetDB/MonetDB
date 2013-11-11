@@ -60,6 +60,12 @@ Ready.
 % double # type
 % 24 # length
 [ 0.001249730563	]
+#SELECT gsl.chi2prob(20.0, 1.0);
+% .L # table_name
+% chi2prob_single_value # name
+% double # type
+% 24 # length
+[ 7.744216431e-06	]
 #CREATE TABLE chi2(a double, b double);
 #INSERT INTO chi2 VALUES (20.0, 5.0),
 #       	    	 	(22.0, 4.0),
@@ -141,6 +147,15 @@ Ready.
 #			(20.0, 6.0),
 #                        (20.0, 1.0);
 [ 4	]
+#SELECT chi2prob(a, b) FROM chi2;
+% sys.L # table_name
+% chi2prob_a # name
+% double # type
+% 24 # length
+[ 0.001249730563	]
+[ 0.0002004204095	]
+[ 0.002769395716	]
+[ 7.744216431e-06	]
 #SELECT chi2prob(a, 6.0) FROM chi2;
 % sys.L # table_name
 % chi2prob_a # name
@@ -150,6 +165,15 @@ Ready.
 [ 0.001210873307	]
 [ 0.002769395716	]
 [ 0.002769395716	]
+#SELECT chi2prob(19.0, b) FROM chi2;
+% .L # table_name
+% chi2prob_single_value # name
+% double # type
+% 24 # length
+[ 0.001922136821	]
+[ 0.0007859442138	]
+[ 0.004163633038	]
+[ 1.307184537e-05	]
 
 # 15:55:27 >  
 # 15:55:27 >  "Done."
