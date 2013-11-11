@@ -3970,12 +3970,13 @@ mvc_declared_table_column_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 	str msg = getSQLContext(cntxt,mb, &m, NULL);
 	sql_schema *s = NULL;
 	sql_table *t = NULL;
+	sql_type *type = NULL;
 	sql_subtype tpe;
 	int *ret  = (int *) getArgReference(stk, pci, 0);
 	int *rs = (int *) getArgReference(stk, pci, 1);
 	str *tname = (str *) getArgReference(stk, pci, 2);
 	str *name = (str *) getArgReference(stk, pci, 3);
-	str *type = (str *) getArgReference(stk, pci, 4);
+	str *typename = (str *) getArgReference(stk, pci, 4);
 	int *digits = (int *) getArgReference(stk, pci, 5);
 	int *scale = (int *) getArgReference(stk, pci, 6);
 
@@ -3984,8 +3985,11 @@ mvc_declared_table_column_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 		return msg;
 	if (*rs != 0)
 		throw(SQL, "sql.dtColumn", "Cannot access declared table");
-	if (!sql_find_subtype(&tpe, *type, *digits, *scale))
+	if (!sql_find_subtype(&tpe, *typename, *digits, *scale) &&
+	    (type = mvc_bind_type(m, *typename)) == NULL)
 		throw(SQL, "sql.dtColumn", "Cannot find column type");
+	if (type)
+		sql_init_subtype(&tpe, type, 0, 0);
 	s = mvc_bind_schema(m, dt_schema);
 	if ( s == NULL)
 		throw(SQL,"sql.declared_table_column","3F000!Schema missing");
