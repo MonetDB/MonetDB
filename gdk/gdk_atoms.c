@@ -1116,11 +1116,21 @@ strCleanHash(Heap *h, int rebuild)
 				GDK_STRHASH(s, strhash);
 			off = strhash & GDK_STRHASHMASK;
 			bucket = ((stridx_t *) h->base) + off;
-			if (*bucket == 0)
-				*bucket = pos - extralen - sizeof(stridx_t);
+			*bucket = pos - extralen - sizeof(stridx_t);
+			pos += GDK_STRLEN(s);
+		}
+#ifndef NDEBUG
+		pos = GDK_STRHASHSIZE;
+		while (pos < h->free) {
+			pad = GDK_VARALIGN - (pos & (GDK_VARALIGN - 1));
+			if (pad < sizeof(stridx_t))
+				pad += GDK_VARALIGN;
+			pos += pad + extralen;
+			s = h->base + pos;
 			assert(strLocate(h, s) != 0);
 			pos += GDK_STRLEN(s);
 		}
+#endif
 	}
 }
 
