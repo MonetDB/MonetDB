@@ -1076,6 +1076,9 @@ strHash(const char *s)
 	return res;
 }
 
+/* if at least (2*SIZEOF_BUN), also store length (heaps are then
+ * incompatible) */
+#define EXTRALEN ((SIZEOF_BUN + GDK_VARALIGN - 1) & ~(GDK_VARALIGN - 1))
 
 void
 strCleanHash(Heap *h, int rebuild)
@@ -1084,6 +1087,40 @@ strCleanHash(Heap *h, int rebuild)
 	if (!GDK_ELIMDOUBLES(h)) {
 		/* flush hash table for security */
 		memset(h->base, 0, GDK_STRHASHSIZE);
+	} else {
+		/* rebuild hash table for double elimination
+		 *
+		 * If appending strings to the BAT was aborted, if the
+		 * heap was memory mapped, the hash in the string heap
+		 * may well be incorrect.  Therefore we don't trust it
+		 * when we read in a string heap and we rebuild the
+		 * complete table (it is small, so this won't take any
+		 * time at all). */
+		size_t pad, pos;
+		const size_t extralen = h->hashash ? EXTRALEN : 0;
+		stridx_t *bucket;
+		BUN off, strhash;
+		const char *s;
+
+		memset(h->base, 0, GDK_STRHASHSIZE);
+		pos = GDK_STRHASHSIZE;
+		while (pos < h->free) {
+			pad = GDK_VARALIGN - (pos & (GDK_VARALIGN - 1));
+			if (pad < sizeof(stridx_t))
+				pad += GDK_VARALIGN;
+			pos += pad + extralen;
+			s = h->base + pos;
+			if (h->hashash)
+				strhash = ((const BUN *) s)[-1];
+			else
+				GDK_STRHASH(s, strhash);
+			off = strhash & GDK_STRHASHMASK;
+			bucket = ((stridx_t *) h->base) + off;
+			if (*bucket == 0)
+				*bucket = pos - extralen - sizeof(stridx_t);
+			assert(strLocate(h, s) != 0);
+			pos += GDK_STRLEN(s);
+		}
 	}
 }
 
@@ -1092,15 +1129,11 @@ strCleanHash(Heap *h, int rebuild)
  * the location of a string in the heap if it exists. Otherwise it
  * returns zero.
  */
-/* if at least (2*SIZEOF_BUN), also store length (heaps are then
- * incompatible) */
-#define EXTRALEN ((SIZEOF_BUN + GDK_VARALIGN - 1) & ~(GDK_VARALIGN - 1))
-
 var_t
 strLocate(Heap *h, const char *v)
 {
 	stridx_t *ref, *next;
-	size_t extralen = h->hashash ? EXTRALEN : 0;
+	const size_t extralen = h->hashash ? EXTRALEN : 0;
 
 	/* search hash-table, if double-elimination is still in place */
 	BUN off;
@@ -1125,7 +1158,7 @@ strPut(Heap *h, var_t *dst, const char *v)
 	size_t elimbase = GDK_ELIMBASE(h->free);
 	size_t pad = GDK_VARALIGN - (h->free & (GDK_VARALIGN - 1));
 	size_t pos, len = GDK_STRLEN(v);
-	size_t extralen = h->hashash ? EXTRALEN : 0;
+	const size_t extralen = h->hashash ? EXTRALEN : 0;
 	stridx_t *bucket, *ref, *next;
 	BUN off, strhash;
 
@@ -1134,24 +1167,30 @@ strPut(Heap *h, var_t *dst, const char *v)
 	off &= GDK_STRHASHMASK;
 	bucket = ((stridx_t *) h->base) + off;
 
-	/* search hash-table, if double-elimination is still in place */
-	if (elimbase == 0) {	/* small string heap (<64KB) -- fully double eliminated */
-		for (ref = bucket; *ref; ref = next) {	/* search the linked list */
+	/* if double-elimination is still in place, search hash-table */
+	if (elimbase == 0) {
+		/* small string heap (<64KB) -- fully double eliminated */
+		for (ref = bucket; *ref; ref = next) {
+			/* search the linked list */
 			next = (stridx_t *) (h->base + *ref);
-			if (GDK_STRCMP(v, (str) (next + 1) + extralen) == 0) {	/* found */
+			if (GDK_STRCMP(v, (str) (next + 1) + extralen) == 0) {
+				/* found */
 				pos = sizeof(stridx_t) + *ref + extralen;
 				return *dst = (var_t) (pos >> GDK_VARSHIFT);
 			}
 		}
 		/* is there room for the next pointer in the padding space? */
-		if (pad < sizeof(stridx_t))
-			pad += GDK_VARALIGN;	/* if not, pad more */
+		if (pad < sizeof(stridx_t)) {
+			/* if not, pad more */
+			pad += GDK_VARALIGN;
+		}
 	} else if (*bucket) {
 		/* large string heap (>=64KB) --
 		 * opportunistic/probabilistic double elimination */
 		pos = elimbase + *bucket + extralen;
 		if (GDK_STRCMP(v, h->base + pos) == 0) {
-			return *dst = (var_t) (pos >> GDK_VARSHIFT);	/* already in heap; do not insert! */
+			/* already in heap; do not insert! */
+			return *dst = (var_t) (pos >> GDK_VARSHIFT);
 		}
 #if SIZEOF_VAR_T >= SIZEOF_VOID_P /* in fact SIZEOF_VAR_T == SIZEOF_VOID_P */
 		if (extralen == 0)
