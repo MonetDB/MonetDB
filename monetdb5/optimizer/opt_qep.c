@@ -124,7 +124,7 @@ QEPinsert(QEP qep, int pos, QEP child){
 #define TOPNODE 3
 
 static QEP
-QEPbuilt(MalBlkPtr mb){
+QEPbuild(MalBlkPtr mb){
 	QEP qroot= NULL, q= NULL, *vq;
 	InstrPtr p;
 	int i, j, k, *status;
@@ -209,7 +209,7 @@ OPTdumpQEPImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	(void) stk;
 	(void) p;
 
-	qep= QEPbuilt(mb);
+	qep= QEPbuild(mb);
 	QEPdump(cntxt->fdout,qep,0);
 	return 1;
 }

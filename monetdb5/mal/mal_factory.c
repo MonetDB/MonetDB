@@ -122,7 +122,7 @@
  * end random;
  * @end example
  *
- * The operators to built client aware factories are,
+ * The operators to build client aware factories are,
  * @sc{factories.getCaller()}, which returns a client
  * index, @sc{factories.getModule()} and @sc{factories.getFunction()},
  * which returns the identity of scope enclosed.
