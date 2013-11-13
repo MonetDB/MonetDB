@@ -1003,7 +1003,7 @@ strCleanHash(Heap *h, int rebuild)
 				GDK_STRHASH(s, strhash);
 			off = strhash & GDK_STRHASHMASK;
 			bucket = ((stridx_t *) h->base) + off;
-			*bucket = pos - extralen - sizeof(stridx_t);
+			*bucket = (stridx_t) (pos - extralen - sizeof(stridx_t));
 			pos += GDK_STRLEN(s);
 		}
 #ifndef NDEBUG
