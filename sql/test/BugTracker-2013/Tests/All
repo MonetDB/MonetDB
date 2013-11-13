@@ -57,3 +57,4 @@ unop_vs_aggr.Bug-3885
 singleton-median.Bug-3389
 Cannot_Find_Column_Type.Bug-3394
 case_when.Bug-3395
+udf_error.Bug-3396

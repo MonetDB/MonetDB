@@ -1,0 +1,29 @@
+CREATE TABLE TEST_UDF (
+x float,
+y float
+);
+
+--COPY 200000 RECORDS INTO TEST_UDF from '/home/alastair/test_data.csv' USING
+--DELIMITERS ',','\n','"' NULL AS '';
+COPY 5 RECORDS INTO TEST_UDF from stdin USING DELIMITERS ',','\n','"' NULL AS '';
+0.1,0.2
+0.118605379902,0.933008230218
+0.504782158934,0.0927420819153
+0.36667111241,0.216447762367
+0.538823741129,0.794452784083
+
+CREATE FUNCTION MY_UDF (x float, y float)
+RETURNS float
+BEGIN
+DECLARE ret float;
+set ret = LOG(x/y);
+RETURN ret;
+END;
+
+SELECT 'udf alone',MY_UDF(0.1,0.2);
+
+SELECT 'udf from table',MY_UDF(t.x,t.y) FROM TEST_UDF as t;
+-- this returns NULL with 200000 records
+
+DROP FUNCTION MY_UDF;
+DROP TABLE TEST_UDF;
