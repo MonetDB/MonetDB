@@ -634,7 +634,7 @@ AGGRsubgroupedExt(bat *retval1, bat *retval2, bat *bid, bat *gid, bat *eid, bat 
 
    /* one of grpfunc1, grpfunc2 and quantilefunc is non-NULL and the others are */
 	assert((grpfunc1 && grpfunc2 == NULL && quantilefunc == NULL) ||
-			(grpfunc1 == NULL && grpfunc1 && quantilefunc == NULL) ||
+			(grpfunc1 == NULL && grpfunc2 && quantilefunc == NULL) ||
 			(grpfunc1 == NULL && grpfunc2 == NULL && quantilefunc) );
 
 	/* if retval2 is non-NULL, we must have grpfunc2 */
