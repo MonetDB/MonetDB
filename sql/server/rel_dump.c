@@ -988,7 +988,10 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, char *r, int *pos, int grp)
 	        	list *exps;
 		       
 			if (f == cmp_filter) {
-				fname = r+*pos, e;
+				// this produces a clang compile error (e unused)
+				//fname = r+*pos, e;
+				fname = r+*pos;
+
 
 				skipIdent(r,pos);
 				e = r+*pos;

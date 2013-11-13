@@ -45,3 +45,8 @@ begin
 end;
 
 select tmp4();
+
+drop function tmp4;
+drop function tmp3;
+drop function tmp2;
+drop function tmp1;

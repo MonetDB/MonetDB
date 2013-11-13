@@ -3165,8 +3165,14 @@ do_backup(const char *srcdir, const char *nme, const char *extbase,
 	int ret = 0;
 
 	 /* direct mmap is unprotected (readonly usage, or has WAL
-	  * protection)  */
-	if (h->storage != STORE_MMAP) {
+	  * protection); however, if we're backing up for subcommit
+	  * and a backup already exists in the main backup directory
+	  * (see GDKupgradevarheap), move the file */
+	if (subcommit && file_exists(BAKDIR, nme, extbase)) {
+		assert(h->storage == STORE_MMAP);
+		if (file_move(BAKDIR, SUBDIR, nme, extbase))
+			return -1;
+	} else if (h->storage != STORE_MMAP) {
 		/* STORE_PRIV saves into X.new files. Two cases could
 		 * happen. The first is when a valid X.new exists
 		 * because of an access change or a previous
