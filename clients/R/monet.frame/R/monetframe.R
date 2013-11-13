@@ -1008,6 +1008,35 @@ aggregatef <- function(formula, data, FUN, ..., subset, na.action = na.omit){
 }
 
 
+
+lm.monet.frame <- function (formula, data, subset, weights, na.action, method = "qr", 
+		model = TRUE, x = FALSE, y = FALSE, qr = TRUE, singular.ok = TRUE, 
+		contrasts = NULL, offset, ...)  {
+	cl <- match.call()
+	
+	
+	# slight optimization to not recalc mean(x) and mean(y) more than once
+	if ( missing(formula) || !inherits(formula, "formula") ) stop("'formula' missing or incorrect")
+	if (length(formula) != 3L) stop("'formula' must have both left and right hand sides, and only a single predictor is allowed.")
+	# extract both sides of the formula
+	rhs <- unlist(strsplit(deparse(formula[[3L]]), " *[:+] *"))
+	lhs <- unlist(strsplit(deparse(formula[[2L]]), " *[:+] *"))
+	
+	x <- data[,c(lhs),drop=F]
+	y <- data[,c(rhs),drop=F]
+	
+	mx <- mean(x)
+	my <- mean(y)
+	b <- (mean(x*y) - mx*my)/mean(x^2)-mx*mx
+	a <- my - b*mx
+	coeff <- c(a,b)
+	names(coeff) <- c("a","b")
+	res <- list(coefficients=coeff,call=cl,na.action=na.action, rank=2)
+	class(res) <- "lm"
+	res
+}
+
+
 aggregate.monet.frame <- function(x, by, FUN, ..., simplify = TRUE) {
 	if (!is.character(FUN)) FUN <- tolower(substitute(FUN)) 
 	else fname = tolower(FUN)
@@ -1215,4 +1244,10 @@ rTypes <- function(x) {
 
 `[<-.monet.frame` <- `dim<-.monet.frame` <- `dimnames<-.monet.frame` <- `names<-.monet.frame` <- function(x, j, k, ..., value) {
 	stop("write operators not (yet) supported for monet.frame")
+}
+
+#TODO: export this from MonetDB.R?
+.mapiLongInt <- function(someint) {
+	stopifnot(length(someint) == 1)
+	formatC(someint,format="d")
 }
