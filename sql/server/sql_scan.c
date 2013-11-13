@@ -46,6 +46,7 @@ scanner_init_keywords(void)
 	keywords_insert("AND", AND);
 	keywords_insert("MEDIAN", AGGR);
 	keywords_insert("CORR", AGGR2);
+	keywords_insert("QUANTILE", AGGR2);
 	keywords_insert("AVG", AGGR);
 	keywords_insert("MIN", AGGR);
 	keywords_insert("MAX", AGGR);
