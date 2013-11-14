@@ -400,11 +400,21 @@ BATins(BAT *b, BAT *n, bit force)
 			    VIEWtparent(n) == 0)) {
 			b = insert_string_bat(b, n, 0);
 		} else if (b->htype == TYPE_void) {
-			BATiter ni = bat_iterator(n);
+			if (!ATOMvarsized(b->ttype) &&
+			    BATatoms[b->ttype].atomFix == NULL &&
+			    n->ttype != TYPE_void) {
+				/* use fast memcpy if we can */
+				memcpy(Tloc(b, BUNlast(b)),
+				       Tloc(n, BUNfirst(n)),
+				       BATcount(n) * Tsize(n));
+				BATsetcount(b, BATcount(b) + BATcount(n));
+			} else {
+				BATiter ni = bat_iterator(n);
 
-			BATloop(n, p, q) {
-				bunfastins_nocheck(b, r, NULL, BUNtail(ni, p), 0, Tsize(b));
-				r++;
+				BATloop(n, p, q) {
+					bunfastins_nocheck(b, r, NULL, BUNtail(ni, p), 0, Tsize(b));
+					r++;
+				}
 			}
 		} else if (b->H->hash) {
 			BUN i = BUNlast(b);
@@ -418,6 +428,20 @@ BATins(BAT *b, BAT *n, bit force)
 				r++;
 				i++;
 			}
+		} else if (!ATOMvarsized(b->htype) &&
+			   BATatoms[b->htype].atomFix == NULL &&
+			   !ATOMvarsized(b->ttype) &&
+			   BATatoms[b->ttype].atomFix == NULL &&
+			   n->htype != TYPE_void &&
+			   n->ttype != TYPE_void) {
+			/* use fast memcpy if we can */
+			memcpy(Hloc(b, BUNlast(b)),
+			       Hloc(n, BUNfirst(n)),
+			       BATcount(n) * Hsize(n));
+			memcpy(Tloc(b, BUNlast(b)),
+			       Tloc(n, BUNfirst(n)),
+			       BATcount(n) * Tsize(n));
+			BATsetcount(b, BATcount(b) + BATcount(n));
 		} else {
 			BATiter ni = bat_iterator(n);
 
@@ -581,7 +605,8 @@ BATappend(BAT *b, BAT *n, bit force)
 				return NULL;
 		} else if (b->htype == TYPE_void) {
 			if (!ATOMvarsized(b->ttype) &&
-			    BATatoms[b->ttype].atomFix == NULL) {
+			    BATatoms[b->ttype].atomFix == NULL &&
+			    n->ttype != TYPE_void) {
 				/* use fast memcpy if we can */
 				memcpy(Tloc(b, BUNlast(b)),
 				       Tloc(n, BUNfirst(n)),
