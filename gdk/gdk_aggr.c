@@ -2224,10 +2224,11 @@ BAT *
 		GDKerror("BATgroupquantile: cannot determine quantile for p=%f (p has to be in [0,1])\n",quantile);
 		return NULL;
 	}
+	assert(quantile >=0 && quantile <=1);
 
 	if (BATcount(b) == 0 || ngrp == 0) {
-		/* trivial: no medians, so return bat aligned with e with
-		 * nil in the tail */
+		/* trivial: no values, thus also no quantiles,
+		 * so return bat aligned with e with nil in the tail */
 		bn = BATconstant(tp, ATOMnilptr(tp), ngrp);
 		BATseqbase(bn, ngrp == 0 ? 0 : min);
 		return bn;
@@ -2254,12 +2255,12 @@ BAT *
 		}
 	}
 
-	/* we want to sort b so that we can figure out the median, but
+	/* we want to sort b so that we can figure out the quantile, but
 	 * if g is given, sort g and subsort b so that we can get the
-	 * median for each group */
+	 * quantile for each group */
 	if (g) {
 		if (BATtdense(g)) {
-			/* singleton groups, so calculating medians is
+			/* singleton groups, so calculating quantile is
 			 * easy */
 			bn = BATcopy(b, TYPE_void, b->ttype, 0);
 			BATseqbase(bn, g->tseqbase);
@@ -2291,15 +2292,18 @@ BAT *
 	nil = ATOMnilptr(b->ttype);
 	atomcmp = BATatoms[b->ttype].atomCmp;
 
-	if (g) {
+	if (g) { /* we have to do this by group */
 		const oid *grps;
 		oid prev;
 		BUN p, q, r;
 
 		grps = (const oid *) Tloc(g, BUNfirst(g));
 		prev = grps[0];
+		 /* for each group (r and p are the beginning and end of the current group, respectively) */
 		for (r = 0, p = 1, q = BATcount(g); p <= q; p++) {
-			if (p == q || grps[p] != prev) {
+			assert(r < p);
+			if ( p == q || grps[p] != prev) {
+				BUN qindex;
 				if (skip_nils) {
 					while (r < p && (*atomcmp)(BUNtail(bi, BUNfirst(b) + r), nil) == 0)
 						r++;
@@ -2309,17 +2313,14 @@ BAT *
 							   nil, 0, Tsize(bn));
 					nils++;
 				}
-				if (r == p) {
-					bunfastins_nocheck(bn, BUNlast(bn), 0,
-							   nil, 0, Tsize(bn));
-					nils++;
-				} else {
-					// actual selection of quantile value for groups
-					v = BUNtail(bi, (oid)( BUNfirst(b) + (r + p - 1)  * quantile));
-					bunfastins_nocheck(bn, BUNlast(bn), 0,
-							   v, 0, Tsize(bn));
-					nils += (*atomcmp)(v, nil) == 0;
-				}
+				qindex = BUNfirst(b) + (BUN) (r + (p-r-1) * quantile);
+				// be a little paranoid about the index
+				assert(qindex >= (BUNfirst(b) + r ));
+				assert(qindex <  (BUNfirst(b) + p));
+				v = BUNtail(bi, qindex);
+				bunfastins_nocheck(bn, BUNlast(bn), 0, v, 0, Tsize(bn));
+				nils += (*atomcmp)(v, nil) == 0;
+
 				r = p;
 				if (p < q)
 					prev = grps[p];
@@ -2330,9 +2331,10 @@ BAT *
 					   nil, 0, Tsize(bn));
 		}
 		BATseqbase(bn, min);
-	} else {
-		// actual selection of quantile value
-		v = BUNtail(bi, (oid) (BUNfirst(b) + (BATcount(b) - 1)  * quantile));
+	} else { /* quantiles for entire BAT b, EZ */
+
+		BUN index = BUNfirst(b) + (BUN) ((BATcount(b) - 1)  * quantile);
+		v = BUNtail(bi, index);
 		BUNappend(bn, v, FALSE);
 		BATseqbase(bn, 0);
 		nils += (*atomcmp)(v, nil) == 0;
