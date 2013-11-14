@@ -580,11 +580,20 @@ BATappend(BAT *b, BAT *n, bit force)
 			if (b == NULL)
 				return NULL;
 		} else if (b->htype == TYPE_void) {
-			BATiter ni = bat_iterator(n);
+			if (!ATOMvarsized(b->ttype) &&
+			    BATatoms[b->ttype].atomFix == NULL) {
+				/* use fast memcpy if we can */
+				memcpy(Tloc(b, BUNlast(b)),
+				       Tloc(n, BUNfirst(n)),
+				       BATcount(n) * Tsize(n));
+				BATsetcount(b, BATcount(b) + BATcount(n));
+			} else {
+				BATiter ni = bat_iterator(n);
 
-			BATloop(n, p, q) {
-				bunfastins_nocheck(b, r, NULL, BUNtail(ni, p), 0, Tsize(b));
-				r++;
+				BATloop(n, p, q) {
+					bunfastins_nocheck(b, r, NULL, BUNtail(ni, p), 0, Tsize(b));
+					r++;
+				}
 			}
 			if (b->hseqbase != oid_nil)
 				b->hrevsorted = 0;
