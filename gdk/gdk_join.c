@@ -2267,8 +2267,8 @@ BATsubjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_match
 		else
 			return mergejoin(r2, r1, r, l, sr, sl, nil_matches, 0, 0, 0);
 	} else if (l->T->hash && r->T->hash) {
-		/* both have hash, smallest on right */
-		swap = lcount < rcount;
+		/* both have hash, largest on right */
+		swap = lcount > rcount;
 	} else if (l->T->hash) {
 		/* only left has hash, swap */
 		swap = 1;
@@ -2289,8 +2289,8 @@ BATsubjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_match
 		 * large (i.e. prefer hash over binary search, but
 		 * only if the hash table doesn't cause thrashing) */
 		return mergejoin(r1, r2, l, r, sl, sr, nil_matches, 0, 0, 0);
-	} else if (BATcount(l) < BATcount(r)) {
-		/* no hashes, not sorted, create hash on smallest BAT */
+	} else if (BATcount(l) > BATcount(r)) {
+		/* no hashes, not sorted, create hash on largest BAT */
 		swap = 1;
 	}
 	if (swap) {
