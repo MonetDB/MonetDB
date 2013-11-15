@@ -123,9 +123,28 @@ HASHmask(BUN cnt)
 static void
 HASHclear(Hash *h)
 {
-	BUN i, j, nil = (BUN) HASHnil(h);
-	for (i = 0, j = h->mask; i <= j; i++)
-		(void) HASHput(h, i, nil);
+	BUN i, j = h->mask, nil = HASHnil(h);
+
+	switch (h->width) {
+	case 1:
+		for (i = 0; i <= j; i++)
+			HASHput1(h, i, nil);
+		break;
+	case 2:
+		for (i = 0; i <= j; i++)
+			HASHput2(h, i, nil);
+		break;
+	case 4:
+		for (i = 0; i <= j; i++)
+			HASHput4(h, i, nil);
+		break;
+#if SIZEOF_BUN == 8
+	case 8:
+		for (i = 0; i <= j; i++)
+			HASHput8(h, i, nil);
+		break;
+#endif
+	}
 }
 
 Hash *
@@ -329,10 +348,22 @@ BAThash(BAT *b, BUN masksize)
 				break;
 			case TYPE_int:
 			case TYPE_flt:
+#if SIZEOF_OID == SIZEOF_INT
+			case TYPE_oid:
+#endif
+#if SIZEOF_WRD == SIZEOF_INT
+			case TYPE_wrd:
+#endif
 				starthash(int);
 				break;
 			case TYPE_dbl:
 			case TYPE_lng:
+#if SIZEOF_OID == SIZEOF_LNG
+			case TYPE_oid:
+#endif
+#if SIZEOF_WRD == SIZEOF_LNG
+			case TYPE_wrd:
+#endif
 				starthash(lng);
 				break;
 			default:
@@ -361,10 +392,22 @@ BAThash(BAT *b, BUN masksize)
 			break;
 		case TYPE_int:
 		case TYPE_flt:
+#if SIZEOF_OID == SIZEOF_INT
+			case TYPE_oid:
+#endif
+#if SIZEOF_WRD == SIZEOF_INT
+			case TYPE_wrd:
+#endif
 			finishhash(int);
 			break;
 		case TYPE_dbl:
 		case TYPE_lng:
+#if SIZEOF_OID == SIZEOF_LNG
+			case TYPE_oid:
+#endif
+#if SIZEOF_WRD == SIZEOF_LNG
+			case TYPE_wrd:
+#endif
 			finishhash(lng);
 			break;
 		default:
