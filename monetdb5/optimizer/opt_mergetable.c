@@ -259,7 +259,7 @@ mat_apply1(MalBlkPtr mb, InstrPtr p, mat_t *mat, int mtop, int m, int var)
 {
 	int tpe, k, is_select = isSubSelect(p), is_mirror = (getFunctionId(p) == mirrorRef);
 	int is_identity = (getFunctionId(p) == identityRef && getModuleId(p) == batcalcRef);
-	int ident_var = 0, is_assign = (getFunctionId(p) == NULL), n;
+	int ident_var = 0, is_assign = (getFunctionId(p) == NULL), n = 0;
 	InstrPtr r = NULL, q;
 
 	/* Find the mat we overwrite */
