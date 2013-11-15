@@ -3278,7 +3278,7 @@ rel_push_semijoin_down(int *changes, mvc *sql, sql_rel *rel)
 			l = l->l;
 		*/
 
-		if (!is_join(l->op)  
+		if (!is_join(l->op))
 			return rel;
 
 		ll = l->l;
