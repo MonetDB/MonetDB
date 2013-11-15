@@ -60,7 +60,7 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
 #define HASHget(h,i)				\
 	(((h)->width == BUN4 ? HASHget4(h,i) :	\
 	  ((h)->width == BUN2 ? HASHget2(h,i) :	\
-	   HASHget1(h,i) )))
+	   HASHget1(h,i))))
 #define HASHput(h,i,v)				\
 	do {					\
 		switch ((h)->width) {		\
@@ -78,7 +78,7 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
 #define HASHgetlink(h,i)				\
 	(((h)->width == BUN4 ? HASHgetlink4(h,i) :	\
 	  ((h)->width == BUN2 ? HASHgetlink2(h,i) :	\
-	   HASHgetlink1(h,i) )))
+	   HASHgetlink1(h,i))))
 #define HASHputlink(h,i,v)			\
 	do {					\
 		switch ((h)->width) {		\
@@ -114,7 +114,7 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
 	(((h)->width == BUN8 ? HASHget8(h,i) :		\
 	  ((h)->width == BUN4 ? HASHget4(h,i) :		\
 	   ((h)->width == BUN2 ? HASHget2(h,i) :	\
-	    HASHget1(h,i) ))))
+	    HASHget1(h,i)))))
 #define HASHput(h,i,v)				\
 	do {					\
 		switch ((h)->width) {		\
@@ -136,7 +136,7 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
 	(((h)->width == BUN8 ? HASHgetlink8(h,i) :	\
 	  ((h)->width == BUN4 ? HASHgetlink4(h,i) :	\
 	   ((h)->width == BUN2 ? HASHgetlink2(h,i) :	\
-	    HASHgetlink1(h,i) ))))
+	    HASHgetlink1(h,i)))))
 #define HASHputlink(h,i,v)			\
 	do {					\
 		switch ((h)->width) {		\
@@ -331,41 +331,43 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
 #define HASHdel(h, i, v, next)						\
 	do {								\
 		if (next && HASHgetlink(h, i+1) == i) {			\
-			HASHputlink(h,i+1,HASHgetlink(h,i));  	\
+			HASHputlink(h,i+1,HASHgetlink(h,i));		\
 		} else {						\
 			BUN _c = HASHprobe(h, v);			\
-			if ( HASHget(h,_c) == i) {				\
-				HASHput(h,_c, HASHgetlink(h,i));\
+			if (HASHget(h,_c) == i) {			\
+				HASHput(h,_c, HASHgetlink(h,i));	\
 			} else {					\
-				for(_c = HASHget(h,_c); _c != HASHnil(h);	\
-						_c = HASHgetlink(h,_c)){	\
-					if ( HASHgetlink(h,_c) == i) {		\
-						HASHputlink(h,_c, HASHgetlink(h,i));\
+				for(_c = HASHget(h,_c); _c != HASHnil(h); \
+				    _c = HASHgetlink(h,_c)) {		\
+					if (HASHgetlink(h,_c) == i) {	\
+						HASHputlink(h,_c, HASHgetlink(h,i)); \
 						break;			\
 					}				\
 				}					\
 			}						\
-		} HASHputlink(h,i,HASHnil(h)); \
+		}							\
+		HASHputlink(h,i,HASHnil(h));				\
 	} while (0)
 
 #define HASHmove(h, i, j, v, next)					\
 	do {								\
 		if (next && HASHgetlink(h,i+1) == i) {			\
-			HASHputlink(h,i+1,j);\
+			HASHputlink(h,i+1,j);				\
 		} else {						\
 			BUN _c = HASHprobe(h, v);			\
-			if ( HASHget(h,_c) == i) {				\
-				HASHput(h,_c,j);\
+			if (HASHget(h,_c) == i) {			\
+				HASHput(h,_c,j);			\
 			} else {					\
-				for(_c = HASHget(h,_c) ; _c != HASHnil(h);	\
-						_c = HASHgetlink(h,_c)){	\
-					if ( HASHgetlink(h,_c) == i) {		\
-						HASHputlink(h,_c,j);\
+				for(_c = HASHget(h,_c) ; _c != HASHnil(h); \
+				    _c = HASHgetlink(h,_c)) {		\
+					if (HASHgetlink(h,_c) == i) {	\
+						HASHputlink(h,_c,j);	\
 						break;			\
 					}				\
 				}					\
 			}						\
-		} HASHputlink(h,j, HASHgetlink(h,i));\
+		}							\
+		HASHputlink(h,j, HASHgetlink(h,i));			\
 	} while (0)
 /*
  * @+ Binary Search on a Sorted BAT
