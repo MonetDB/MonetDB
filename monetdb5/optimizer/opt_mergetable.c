@@ -255,14 +255,18 @@ mat_delta(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int n, int o, int e, int 
 
 
 static InstrPtr
-mat_apply1(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int var)
+mat_apply1(MalBlkPtr mb, InstrPtr p, mat_t *mat, int mtop, int m, int var)
 {
 	int tpe, k, is_select = isSubSelect(p), is_mirror = (getFunctionId(p) == mirrorRef);
 	int is_identity = (getFunctionId(p) == identityRef && getModuleId(p) == batcalcRef);
-	int ident_var = 0;
+	int ident_var = 0, is_assign = (getFunctionId(p) == NULL), n;
 	InstrPtr r = NULL, q;
 
-	//printf("# %s.%s(%d)", getModuleId(p), getFunctionId(p), m);
+	/* Find the mat we overwrite */
+	if (is_assign) {
+		n = is_a_mat(getArg(p, 0), mat, mtop);
+		is_assign = (n >= 0);
+	}
 
 	r = newInstruction(mb, ASSIGNsymbol);
 	setModuleId(r,matRef);
@@ -282,7 +286,10 @@ mat_apply1(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int var)
 	for(k=1; k < mat[m].mi->argc; k++) {
 		q = copyInstruction(p);
 
-		getArg(q, 0) = newTmpVariable(mb, tpe);
+		if (is_assign)
+			getArg(q, 0) = getArg(mat[n].mi, k);
+		else
+			getArg(q, 0) = newTmpVariable(mb, tpe);
 		if (is_identity)
 			getArg(q, 1) = newTmpVariable(mb, TYPE_oid);
 		getArg(q, var+is_identity) = getArg(mat[m].mi, k);
@@ -1641,7 +1648,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		if (match == 1 && bats == 1 && (isFragmentGroup(p) || isMapOp(p) || 
 		   (!getModuleId(p) && !getFunctionId(p) && p->barrier == 0 /* simple assignment */)) && p->retc != 2 && 
 		   (m=is_a_mat(getArg(p,fm), mat, mtop)) >= 0){
-			if ((r = mat_apply1(mb, p, mat, m, fm)) != NULL)
+			if ((r = mat_apply1(mb, p, mat, mtop, m, fm)) != NULL)
 				mtop = mat_add(mat, mtop, r, mat_type(mat, m), getFunctionId(p));
 			actions++;
 			continue;
