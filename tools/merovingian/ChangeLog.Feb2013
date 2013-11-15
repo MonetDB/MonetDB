@@ -1,3 +1,7 @@
 # ChangeLog file for sql/src/backends/monet5/merovingian
 # This file is updated with mchangelog
 
+* Fri Nov 15 2013 Fabian Groffen <fabian@monetdb.org>
+- monetdbd(1) now refuses to startup if it cannot read the properties
+  from the dbfarm, bug #3398
+
