@@ -660,7 +660,11 @@ main(int argc, char *argv[])
 	}
 
 	/* read the merovingian properties from the dbfarm */
-	readProps(ckv, ".");
+	if (readProps(ckv, ".") != 0) {
+		Mfprintf(stderr, "cannot find or read properties file, was "
+				"this dbfarm created by `monetdbd create`?\n");
+		MERO_EXIT_CLEAN(1);
+	}
 	_mero_props = ckv;
 
 	pidfilename = getConfVal(_mero_props, "pidfile");
