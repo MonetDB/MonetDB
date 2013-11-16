@@ -606,7 +606,7 @@ BATappend(BAT *b, BAT *n, bit force)
 		} else if (b->htype == TYPE_void) {
 			if (!ATOMvarsized(b->ttype) &&
 			    BATatoms[b->ttype].atomFix == NULL &&
-			    n->ttype != TYPE_void) {
+			    b->ttype != TYPE_void && n->ttype != TYPE_void) {
 				/* use fast memcpy if we can */
 				memcpy(Tloc(b, BUNlast(b)),
 				       Tloc(n, BUNfirst(n)),

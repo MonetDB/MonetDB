@@ -80,7 +80,7 @@ Ready.
 #    return true;
 #end;
 % .L # table_name
-% tmp1 # name
+% tmp2 # name
 % boolean # type
 % 5 # length
 [ true	]
@@ -109,7 +109,7 @@ Ready.
 #    return true;
 #end;
 % .L # table_name
-% tmp1 # name
+% tmp4 # name
 % boolean # type
 % 5 # length
 [ true	]
