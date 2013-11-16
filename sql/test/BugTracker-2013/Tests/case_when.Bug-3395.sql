@@ -1,6 +1,5 @@
 create table aaa1 (a varchar(100), b varchar(100), c int);
 create table aaa2 (a varchar(100), b varchar(100), c decimal(9,6));
-create table aaa3 (a varchar(100), b varchar(100), c double);
 
 insert into aaa1 values ('a1aaaaaaaaaaaaaaaaa', 'b1bbbbbbbbbbbbbbbbbb', 100);
 insert into aaa1 values ('a2aaaaaaaaaaaaaaaaa', 'b2bbbbbbbbbbbbbbbbbb', 100);
@@ -10,11 +9,7 @@ insert into aaa2 values ('a1aaaaaaaaaaaaaaaaa', 'b1bbbbbbbbbbbbbbbbbb', 100);
 insert into aaa2 values ('a2aaaaaaaaaaaaaaaaa', 'b2bbbbbbbbbbbbbbbbbb', 100);
 insert into aaa2 values ('a3aaaaaaaaaaaaaaaaa', 'b3bbbbbbbbbbbbbbbbbb', 100);
 
-insert into aaa3 values ('a1aaaaaaaaaaaaaaaaa', 'b1bbbbbbbbbbbbbbbbbb', 100.0);
-insert into aaa3 values ('a2aaaaaaaaaaaaaaaaa', 'b2bbbbbbbbbbbbbbbbbb', 100.0);
-insert into aaa3 values ('a3aaaaaaaaaaaaaaaaa', 'b3bbbbbbbbbbbbbbbbbb', 100.0);
-
-SELECT a, CASE WHEN cast (c >=100.000000
+SELECT a, CASE WHEN c >=100.000000
             AND c <=200.000000 THEN 'IntValue1' WHEN c>=200.000000
             AND c <=300.000000 THEN 'IntValue2' ELSE 'Out of range' END AS
 CaseSentence
@@ -109,7 +104,7 @@ or
 );
 
 -- The double version
-SELECT a, CASE WHEN cast (c >=100.000000
+SELECT a, CASE WHEN c >=100.000000
             AND c <=200.000000 THEN 'IntValue1' WHEN c>=200.000000
             AND c <=300.000000 THEN 'IntValue2' ELSE 'Out of range' END AS
 CaseSentence
