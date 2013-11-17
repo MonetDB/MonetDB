@@ -1366,12 +1366,12 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, in
 				v = VALUE(l, lstart);
 			}
 			lstart++;
-			if (!nil_matches && cmp(v, nil) == 0) {
-				lskipped = BATcount(r1) > 0;
-				continue;
-			}
 			nr = 0;
 			if (rcand) {
+				if (!nil_matches && cmp(v, nil) == 0) {
+					lskipped = BATcount(r1) > 0;
+					continue;
+				}
 				HASHloop(ri, r->H->hash, rb, v) {
 					ro = (oid) (rb + rbun2oid);
 					if (!binsearchcand(rcand, 0, nrcand, ro))
@@ -1389,6 +1389,10 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, in
 #if SIZEOF_WRD == SIZEOF_INT
 				case TYPE_wrd:
 #endif
+					if (!nil_matches && *(const int*)v == int_nil) {
+						lskipped = BATcount(r1) > 0;
+						continue;
+					}
 					HASHloop_int(ri, r->H->hash, rb, v) {
 						rb0 = rb - BUNfirst(r); /* zero-based */
 						if (rb0 < rstart || rb0 >= rend)
@@ -1406,6 +1410,10 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, in
 #if SIZEOF_WRD == SIZEOF_LNG
 				case TYPE_wrd:
 #endif
+					if (!nil_matches && *(const lng*)v == lng_nil) {
+						lskipped = BATcount(r1) > 0;
+						continue;
+					}
 					HASHloop_lng(ri, r->H->hash, rb, v) {
 						rb0 = rb - BUNfirst(r); /* zero-based */
 						if (rb0 < rstart || rb0 >= rend)
@@ -1417,6 +1425,10 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, in
 					}
 					break;
 				default:
+					if (!nil_matches && cmp(v, nil) == 0) {
+						lskipped = BATcount(r1) > 0;
+						continue;
+					}
 					HASHloop(ri, r->H->hash, rb, v) {
 						rb0 = rb - BUNfirst(r); /* zero-based */
 						if (rb0 < rstart || rb0 >= rend)
