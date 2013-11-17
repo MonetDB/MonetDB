@@ -108,6 +108,7 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
 			HASHputlink4(h, i, HASHget4(h, v));	\
 			HASHput4(h, v, i);			\
 			break;					\
+		}						\
 	} while (0)
 #else
 #define HASHget(h,i)					\
