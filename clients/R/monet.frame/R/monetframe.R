@@ -191,6 +191,24 @@ as.vector.monet.frame <- av <- function(x,...) {
 	l
 }
 
+.hasColFunc <- function(conn,func) {
+	tryCatch({
+				r <- dbSendQuery(conn,paste0("SELECT ",func,"(1);"))
+				TRUE
+			}, error = function(e) {
+				FALSE
+			})
+}
+
+.hasColFuncParam2 <- function(conn,func,param) {
+	tryCatch({
+				r <- dbSendQuery(conn,paste0("SELECT ",func,"(1,",param,");"))
+				TRUE
+			}, error = function(e) {
+				FALSE
+			})
+}
+
 .is.sequential <- function(x, eps=1e-8) {
 	if (length(x) && isTRUE(abs(x[1] - floor(x[1])) < eps)) {
 		all(abs(diff(x)-1) < eps)
@@ -838,7 +856,7 @@ mean.monet.frame <- avg.monet.frame <- function(x,...) {
 	conn <- attr(x,"conn")
 	nexpr <- NA
 	
-	if (func %in% c("min", "max", "sum","avg","abs","sign","sqrt","floor","ceiling","exp","log","cos","sin","tan","acos","asin","atan","cosh","sinh","tanh","stddev_pop","stddev","prod","distinct")) {
+	if (func %in% c("min", "max", "sum","avg","abs","sign","sqrt","floor","ceiling","exp","log","cos","sin","tan","acos","asin","atan","cosh","sinh","tanh","stddev_pop","stddev","prod","distinct","quantile")) {
 		nexpr <- paste0(toupper(func),"(",col,")")
 	}
 	if (func == "range") {
@@ -1111,27 +1129,40 @@ sort.monet.frame <- function (x, decreasing = FALSE, ...) {
 	monet.frame.internal(conn,nquery,.is.debug(x),nrow.hint=nrow(x),ncol.hint=ncol(x),cnames.hint=names(x),rtypes.hint=rTypes(x))
 }
 
-quantile.monet.frame <-  function(x, probs = seq(0, 1, 0.25), na.rm = FALSE,
+quantile.monet.frame <- function(x, probs = seq(0, 1, 0.25), na.rm = FALSE,
 		names = TRUE, type = 7, printDots=FALSE, ...) {
+	if (any(probs < 0) || any(probs > 1)) stop("Quantiles must be in range [0,1]")
 	if (ncol(x) != 1) 
 		stop("quantile() only defined for one-column frames, consider using $ first.")
 	isNum <- attr(x,"rtypes")[[1]] == "numeric"
 	if (!isNum)
 		stop("quantile() is only defined for numeric columns.")
 	if (na.rm) x <- .filter.na(x)
-	n <- nrow(x)
-	ret <- c()
-	for (i in 1:length(probs)) {
-		if (printDots) cat(".")
-		index <- ceiling(probs[i]*n)+1
-		if (index > n) index <- n
-		# TODO: if prob = 0.5 use median()?
-		y <- sort(x)[index,1,drop=FALSE]
-		ret <- c(ret,as.vector(y)[[1]])
+	if (.hasColFuncParam2(attr(x,"conn"),"quantile",.5)) {
+		# make some effort to get all quantiles in a single call, allows later optimization!
+		# TODO: move this to generic functions, like wrapSelect etc.
+		query <- getQuery(x)
+		col <- sub("(select )(.*?)( from.*)","\\2",query,ignore.case=TRUE)
+		nexpr <- paste0("QUANTILE((",col,"),",probs,")",collapse=",")
+		nquery <- sub("select (.*?) from",paste0("SELECT ",nexpr," FROM"),query,ignore.case=TRUE)
+		if (.is.debug(x)) cat(paste0("EX: '",nquery,"'\n",sep=""))	
+		ret <- as.vector(dbGetQuery(attr(x,"conn"),nquery)[1,])
+	}
+	else {
+		n <- nrow(x)
+		ret <- c()
+		for (i in 1:length(probs)) {
+			if (printDots) cat(".")
+			index <- ceiling(probs[i]*n)+1
+			if (index > n) index <- n
+			y <- sort(x)[index,1,drop=FALSE]
+			ret <- c(ret,as.vector(y)[[1]])
+		}
 	}
 	if (names) names(ret) <- paste0(as.integer(probs*100),"%")
 	ret
 }
+
 
 
 median.monet.frame <- function (x, na.rm = FALSE) {
