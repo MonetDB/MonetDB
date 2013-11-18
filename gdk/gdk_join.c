@@ -2333,12 +2333,10 @@ BATsubbandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	return bandjoin(r1, r2, l, r, sl, sr, c1, c2, li, hi);
 }
 
-#define projectargs bn,l,r,nilcheck
 #define project_loop(TYPE)						\
 static int								\
 project_##TYPE(BAT *bn, BAT *l, BAT *r, int nilcheck)			\
 {									\
-	BUN n;								\
 	oid lo, hi;							\
 	const TYPE *rt;							\
 	TYPE *bt;							\
@@ -2348,10 +2346,9 @@ project_##TYPE(BAT *bn, BAT *l, BAT *r, int nilcheck)			\
 	o = (const oid *) Tloc(l, BUNfirst(l));				\
 	rt = (const TYPE *) Tloc(r, BUNfirst(r));			\
 	bt = (TYPE *) Tloc(bn, BUNfirst(bn));				\
-	n = BUNfirst(bn);						\
-	for (lo = 0, hi = lo + BATcount(l); lo < hi; lo++, o++, n++) {	\
+	for (lo = 0, hi = lo + BATcount(l); lo < hi; lo++, o++, bt++) { \
 		if (*o == oid_nil) {					\
-			bt[n] = TYPE##_nil;				\
+			*bt = TYPE##_nil;				\
 			bn->T->nonil = 0;				\
 			bn->T->nil = 1;					\
 			bn->tsorted = 0;				\
@@ -2363,8 +2360,8 @@ project_##TYPE(BAT *bn, BAT *l, BAT *r, int nilcheck)			\
 			return GDK_FAIL;				\
 		} else {						\
 			v = rt[*o - r->hseqbase];			\
-			bt[n] = v;					\
-			if (nilcheck && bn->T->nonil && v == TYPE##_nil) { \
+			*bt = v;					\
+			if (nilcheck && v == TYPE##_nil && bn->T->nonil) { \
 				bn->T->nonil = 0;			\
 				bn->T->nil = 1;				\
 			}						\
@@ -2384,8 +2381,8 @@ project_##TYPE(BAT *bn, BAT *l, BAT *r, int nilcheck)			\
 			prev = v;					\
 		}							\
 	}								\
-	assert(n == BATcount(l));					\
-	BATsetcount(bn, n);						\
+	assert((BUN) lo == BATcount(l));				\
+	BATsetcount(bn, (BUN) lo);					\
 	return GDK_SUCCEED;						\
 }
 
@@ -2398,48 +2395,47 @@ project_loop(dbl)
 project_loop(lng)
 
 static int
-project_void(BAT *bn, BAT *l, BAT *r, int nilcheck)
+project_void(BAT *bn, BAT *l, BAT *r)
 {
-	BUN n;
 	oid lo, hi;
-	oid v, prev = oid_nil;
+	oid v = oid_nil, prev = oid_nil;
+	oid *bt;
 	const oid *o;
 
+	assert(r->tseqbase != oid_nil);
 	o = (const oid *) Tloc(l, BUNfirst(l));
-	n = BUNfirst(bn);
-	for (lo = 0, hi = lo + BATcount(l); lo < hi; lo++, o++, n++) {
+	bt = (oid *) Tloc(bn, BUNfirst(bn));
+	for (lo = 0, hi = lo + BATcount(l); lo < hi; lo++, o++, bt++) {
 		if (*o == oid_nil) {
-			tfastins_nocheck(bn, n, &oid_nil, Tsize(bn));
+			*bt = oid_nil;
 			bn->T->nonil = 0;
 			bn->T->nil = 1;
 			bn->tsorted = 0;
 			bn->trevsorted = 0;
 			bn->tkey = 0;
 		} else if (*o < r->hseqbase ||
-		   	*o >= r->hseqbase + BATcount(r)) {
+			   *o >= r->hseqbase + BATcount(r)) {
 			GDKerror("BATproject: does not match always\n");
 			goto bunins_failed;
 		} else {
-			if (r->tseqbase == oid_nil) {
-				v = oid_nil;
-				if (nilcheck && bn->T->nonil) {
-					bn->T->nonil = 0;
-					bn->T->nil = 1;
-				}
-			} else {
-				v = *o - r->hseqbase + r->tseqbase;
-			}
-			tfastins_nocheck(bn, n, &v, Tsize(bn));
-			if (n > BUNfirst(bn) &&
-			    (bn->trevsorted | bn->tsorted | bn->tkey)) {
+			*bt = v = *o - r->hseqbase + r->tseqbase;
+			if (lo && (bn->trevsorted | bn->tsorted | bn->tkey)) {
 				if (prev < v) {
 					bn->trevsorted = 0;
+#if 1
+					bn->tkey &= ~bn->tsorted; /* can't be sure */
+#else
 					if (!bn->tsorted)
 						bn->tkey = 0; /* can't be sure */
+#endif
 				} else if (prev > v) {
 					bn->tsorted = 0;
+#if 1
+					bn->tkey &= ~bn->trevsorted; /* can't be sure */
+#else
 					if (!bn->trevsorted)
 						bn->tkey = 0; /* can't be sure */
+#endif
 				} else {
 					bn->tkey = 0; /* definitely */
 				}
@@ -2447,8 +2443,8 @@ project_void(BAT *bn, BAT *l, BAT *r, int nilcheck)
 			prev = v;
 		}
 	}
-	assert(n == BATcount(l));
-	BATsetcount(bn, n);
+	assert((BUN) lo == BATcount(l));
+	BATsetcount(bn, (BUN) lo);
 	return GDK_SUCCEED;
 bunins_failed:
 	return GDK_FAIL;
@@ -2552,13 +2548,16 @@ BATproject(BAT *l, BAT *r)
 		assert(bn->htype == TYPE_void);
 		return bn;
 	}
-	if (l->ttype == TYPE_void || BATcount(l) == 0) {
+	if (l->ttype == TYPE_void || BATcount(l) == 0 ||
+	    (r->ttype == TYPE_void && r->tseqbase == oid_nil)) {
+		/* trivial: all values are nil */
 		const void *nil = ATOMnilptr(r->ttype);
-		assert(BATcount(l) == 0 || l->tseqbase == oid_nil);
-		bn = BATconstant(r->ttype, nil, BATcount(l));
+		bn = BATconstant(r->ttype == TYPE_oid ? TYPE_void : r->ttype,
+				 nil, BATcount(l));
 		if (bn != NULL) {
 			bn = BATseqbase(bn, l->hseqbase);
-			if (ATOMtype(bn->ttype) == TYPE_oid && BATcount(bn) == 0) {
+			if (ATOMtype(bn->ttype) == TYPE_oid &&
+			    BATcount(bn) == 0) {
 				bn->tdense = 1;
 				BATseqbase(BATmirror(bn), 0);
 			}
@@ -2597,36 +2596,36 @@ BATproject(BAT *l, BAT *r)
 
 	switch (tpe) {
 	case TYPE_bte:
-		res = project_bte(projectargs);
+		res = project_bte(bn, l, r, nilcheck);
 		break;
 	case TYPE_sht:
-		res = project_sht(projectargs);
+		res = project_sht(bn, l, r, nilcheck);
 		break;
 	case TYPE_int:
-		res = project_int(projectargs);
+		res = project_int(bn, l, r, nilcheck);
 		break;
 	case TYPE_flt:
-		res = project_flt(projectargs);
+		res = project_flt(bn, l, r, nilcheck);
 		break;
 	case TYPE_dbl:
-		res = project_dbl(projectargs);
+		res = project_dbl(bn, l, r, nilcheck);
 		break;
 	case TYPE_lng:
-		res = project_lng(projectargs);
+		res = project_lng(bn, l, r, nilcheck);
 		break;
 	case TYPE_oid:
 		if (r->ttype == TYPE_void) {
-			res = project_void(projectargs);
+			res = project_void(bn, l, r);
 		} else {
 #if SIZEOF_OID == SIZEOF_INT
-			res = project_int(projectargs);
+			res = project_int(bn, l, r, nilcheck);
 #else
-			res = project_lng(projectargs);
+			res = project_lng(bn, l, r, nilcheck);
 #endif
 		}
 		break;
 	default:
-		res = project_any(projectargs);
+		res = project_any(bn, l, r, nilcheck);
 		break;
 	}
 
