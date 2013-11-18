@@ -2422,20 +2422,12 @@ project_void(BAT *bn, BAT *l, BAT *r)
 			if (lo && (bn->trevsorted | bn->tsorted | bn->tkey)) {
 				if (prev < v) {
 					bn->trevsorted = 0;
-#if 1
-					bn->tkey &= ~bn->tsorted; /* can't be sure */
-#else
 					if (!bn->tsorted)
 						bn->tkey = 0; /* can't be sure */
-#endif
 				} else if (prev > v) {
 					bn->tsorted = 0;
-#if 1
-					bn->tkey &= ~bn->trevsorted; /* can't be sure */
-#else
 					if (!bn->trevsorted)
 						bn->tkey = 0; /* can't be sure */
-#endif
 				} else {
 					bn->tkey = 0; /* definitely */
 				}
