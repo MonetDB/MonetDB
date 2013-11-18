@@ -1,0 +1,171 @@
+stdout of test 'quantiles` in directory 'sql/test/quantiles` itself:
+
+
+# 12:24:30 >  
+# 12:24:30 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=34927" "--set" "mapi_usock=/var/tmp/mtest-30339/.s.monetdb.34927" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/hannes/monetdb-default-install/var/MonetDB/mTests_sql_test_quantiles" "--set" "mal_listing=0"
+# 12:24:30 >  
+
+# MonetDB 5 server v11.16.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_quantiles', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.592 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2013 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://bristol.ins.cwi.nl:34927/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-30339/.s.monetdb.34927
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_compress.sql
+# loading sql script: 18_dictionary.sql
+# loading sql script: 19_cluster.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 24_zorder.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 40_json.sql
+# loading sql script: 41_jsonstore.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 99_system.sql
+
+# 12:24:30 >  
+# 12:24:30 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-30339" "--port=34927"
+# 12:24:30 >  
+
+#CREATE TABLE "sys"."lit" (
+#	"l_extendedprice" DECIMAL(15,2),
+#	"l_returnflag"    VARCHAR(1)
+#);
+#COPY 10000 RECORDS INTO "sys"."lit" FROM stdin USING DELIMITERS '\t','\n','"';
+#21168.23	"N"
+#45983.16	"N"
+#13309.60	"N"
+#28955.64	"N"
+#22824.48	"N"
+#49620.16	"N"
+#44694.46	"N"
+#54058.05	"R"
+#46796.47	"R"
+#39890.88	"A"
+#2618.76	"A"
+#32986.52	"R"
+#28733.64	"A"
+#30690.90	"N"
+#23678.55	"R"
+#50723.92	"R"
+#73426.50	"A"
+#61998.31	"A"
+#13608.60	"N"
+#11594.16	"N"
+#81639.88	"N"
+#31809.96	"N"
+#73943.82	"N"
+#43058.75	"N"
+#6476.15	"N"
+#47227.60	"N"
+#64605.44	"N"
+#2210.32	"N"
+#6582.96	"N"
+#79059.64	"N"
+#9159.66	"N"
+#40217.23	"A"
+#47344.32	"A"
+#7532.30	"A"
+[ 10000	]
+#select quantile(l_extendedprice,0.5) from lit;
+% sys.L1 # table_name
+% L1 # name
+% double # type
+% 24 # length
+[ 36724.5	]
+#select median(l_extendedprice) from lit;
+% sys.L1 # table_name
+% L1 # name
+% double # type
+% 24 # length
+[ 36724.5	]
+#select quantile(l_extendedprice,0.0) from lit;
+% sys.L1 # table_name
+% L1 # name
+% double # type
+% 24 # length
+[ 947.02	]
+#select quantile(l_extendedprice,1.0) from lit;
+% sys.L1 # table_name
+% L1 # name
+% double # type
+% 24 # length
+[ 103149	]
+#select quantile(l_extendedprice,0.05),quantile(l_extendedprice,0.5),quantile(l_extendedprice,0.95) from lit;
+% sys.L1,	sys.L2,	sys.L3 # table_name
+% L1,	L2,	L3 # name
+% double,	double,	double # type
+% 24,	24,	24 # length
+[ 4171.32,	36724.5,	79584.12	]
+#select quantile(l_extendedprice,0.5) from lit group by l_returnflag;
+% sys.L1 # table_name
+% L1 # name
+% double # type
+% 24 # length
+[ 36960.68	]
+[ 37144.2	]
+[ 35937.88	]
+#select median(l_extendedprice) from lit group by l_returnflag;
+% sys.L1 # table_name
+% L1 # name
+% double # type
+% 24 # length
+[ 36960.68	]
+[ 37144.2	]
+[ 35937.88	]
+#select quantile(l_extendedprice,0.0) from lit group by l_returnflag;
+% sys.L1 # table_name
+% L1 # name
+% double # type
+% 24 # length
+[ 947.02	]
+[ 1027.01	]
+[ 1012.09	]
+#select quantile(l_extendedprice,1.0) from lit group by l_returnflag;
+% sys.L1 # table_name
+% L1 # name
+% double # type
+% 24 # length
+[ 103149	]
+[ 100248.5	]
+[ 101896.5	]
+#select quantile(l_extendedprice,0.05),quantile(l_extendedprice,0.5),quantile(l_extendedprice,0.95) from lit  group by l_returnflag;
+% sys.L1,	sys.L2,	sys.L3 # table_name
+% L1,	L2,	L3 # name
+% double,	double,	double # type
+% 24,	24,	24 # length
+[ 4424.44,	36960.68,	80045.91	]
+[ 3885.88,	37144.2,	79010.1	]
+[ 4171.32,	35937.88,	78572.76	]
+#drop table lit;
+
+# 12:24:32 >  
+# 12:24:32 >  "Done."
+# 12:24:32 >  
+
