@@ -648,8 +648,8 @@ sql_update_feb2013_sp3(Client c)
 static str
 sql_update_oct2013(Client c)
 {
-	char *buf = GDKmalloc(10240), *err = NULL;
-	size_t bufsize = 10240, pos = 0;
+	size_t bufsize = 12800, pos = 0;
+	char *buf = GDKmalloc(bufsize), *err = NULL;
 	char *fullname;
 	FILE *fp1 = NULL, *fp2 = NULL, *fp3 = NULL;
 	ValRecord *schvar = stack_get_var(((backend *) c->sqlcontext)->mvc, "current_schema");
@@ -754,13 +754,14 @@ sql_update_oct2013(Client c)
 	pos += snprintf(buf+pos, bufsize-pos, "create aggregate quantile(val TIMESTAMP, q DOUBLE) returns TIMESTAMP external name \"aggr\".\"quantile\";\n");
 
 	pos += snprintf(buf+pos, bufsize-pos, "create aggregate median(val DECIMAL) returns DECIMAL external name \"aggr\".\"median\";\n");
+	pos += snprintf(buf + pos, bufsize-pos, "insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('quantile', 'median') and f.type = %d and f.schema_id = s.id and s.name = 'sys');\n", F_AGGR);
 
 	if (schema) {
 		pos += snprintf(buf+pos, bufsize-pos, "set schema \"%s\";\n", schema);
 		free(schema);
 	}
 
-	assert(pos < 10240);
+	assert(pos < bufsize);
 
 	printf("Running database upgrade commands:\n%s\n", buf);
 	err = SQLstatementIntern(c, &buf, "update", 1, 0);
