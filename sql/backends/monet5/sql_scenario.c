@@ -752,7 +752,6 @@ sql_update_oct2013(Client c)
 	pos += snprintf(buf+pos, bufsize-pos, "create aggregate quantile(val DATE, q DOUBLE) returns DATE external name \"aggr\".\"quantile\";\n");
 	pos += snprintf(buf+pos, bufsize-pos, "create aggregate quantile(val TIME, q DOUBLE) returns TIME external name \"aggr\".\"quantile\";\n");
 	pos += snprintf(buf+pos, bufsize-pos, "create aggregate quantile(val TIMESTAMP, q DOUBLE) returns TIMESTAMP external name \"aggr\".\"quantile\";\n");
-	pos += snprintf(buf+pos, bufsize-pos, "create aggregate quantile(val TIMESTAMP, q DOUBLE) returns TIMESTAMP external name \"aggr\".\"quantile\";\n");
 
 	pos += snprintf(buf+pos, bufsize-pos, "create aggregate median(val DECIMAL) returns DECIMAL external name \"aggr\".\"median\";\n");
 
