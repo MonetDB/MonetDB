@@ -51,7 +51,6 @@
 
 #include "monetdb_config.h"
 #include "algebra.h"
-#include "gdk_rangejoin.h"
 #include <math.h>
 
 /*
