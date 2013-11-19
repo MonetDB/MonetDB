@@ -2335,7 +2335,7 @@ BATsubbandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 
 #define project_loop(TYPE)						\
 static int								\
-project_##TYPE(BAT *bn, BAT *l, BAT *r, int nilcheck)			\
+project_##TYPE(BAT *bn, BAT *l, BAT *r, int nilcheck, int sortcheck)	\
 {									\
 	oid lo, hi;							\
 	const TYPE *rt;							\
@@ -2365,7 +2365,8 @@ project_##TYPE(BAT *bn, BAT *l, BAT *r, int nilcheck)			\
 				bn->T->nonil = 0;			\
 				bn->T->nil = 1;				\
 			}						\
-			if (lo && (bn->trevsorted | bn->tsorted | bn->tkey)) { \
+			if (sortcheck && lo &&				\
+			    (bn->trevsorted | bn->tsorted | bn->tkey)) { \
 				if (v > prev) {				\
 					bn->trevsorted = 0;		\
 					if (!bn->tsorted)		\
@@ -2416,7 +2417,7 @@ project_void(BAT *bn, BAT *l, BAT *r)
 		} else if (*o < r->hseqbase ||
 			   *o >= r->hseqbase + BATcount(r)) {
 			GDKerror("BATproject: does not match always\n");
-			goto bunins_failed;
+			return GDK_FAIL;
 		} else {
 			*bt = v = *o - r->hseqbase + r->tseqbase;
 			if (lo && (bn->trevsorted | bn->tsorted | bn->tkey)) {
@@ -2438,8 +2439,6 @@ project_void(BAT *bn, BAT *l, BAT *r)
 	assert((BUN) lo == BATcount(l));
 	BATsetcount(bn, (BUN) lo);
 	return GDK_SUCCEED;
-bunins_failed:
-	return GDK_FAIL;
 }
 
 static int
@@ -2506,7 +2505,7 @@ BATproject(BAT *l, BAT *r)
 {
 	BAT *bn;
 	oid lo, hi;
-	int res, tpe = ATOMtype(r->ttype), nilcheck = 1, postprops = 0;
+	int res, tpe = ATOMtype(r->ttype), nilcheck = 1, sortcheck = 1, stringtrick = 0;
 	BUN lcount = BATcount(l), rcount = BATcount(r);
 
 	ALGODEBUG fprintf(stderr, "#BATproject(l=%s#" BUNFMT "%s%s,"
@@ -2544,6 +2543,7 @@ BATproject(BAT *l, BAT *r)
 	    (r->ttype == TYPE_void && r->tseqbase == oid_nil)) {
 		/* trivial: all values are nil */
 		const void *nil = ATOMnilptr(r->ttype);
+
 		bn = BATconstant(r->ttype == TYPE_oid ? TYPE_void : r->ttype,
 				 nil, BATcount(l));
 		if (bn != NULL) {
@@ -2565,54 +2565,59 @@ BATproject(BAT *l, BAT *r)
 	if (ATOMstorage(tpe) == TYPE_str && (!rcount || (lcount << 3) > rcount)) {
 		/* insert double-eliminated strings as ints */
 		tpe = r->T->width == 1 ? TYPE_bte : (r->T->width == 2 ? TYPE_sht : (r->T->width == 4 ? TYPE_int : TYPE_lng));
+		/* int's nil representation is a valid offset, so
+		 * don't check for nils */
 		nilcheck = 0;
+		sortcheck = 0;
+		stringtrick = 1;
 	}
 	bn = BATnew(TYPE_void, tpe, BATcount(l));
 	if (bn == NULL)
 		return NULL;
-	/* be optimistic, we'll change this as needed */
-	bn->T->nonil = 1;
-	bn->T->nil = 0;
-	bn->tsorted = 1;
-	bn->trevsorted = 1;
-	bn->tkey = 1;
-	/* "string type" */
-	if (tpe != ATOMtype(r->ttype)) {
+	if (stringtrick) {
+		/* "string type" */
 		bn->tsorted = 0;
 		bn->trevsorted = 0;
 		bn->tkey = 0;
-		postprops = 1;
+		bn->T->nonil = 0;
+	} else {
+		/* be optimistic, we'll clear these if necessary later */
+		bn->T->nonil = 1;
+		bn->tsorted = 1;
+		bn->trevsorted = 1;
+		bn->tkey = 1;
+		if (l->T->nonil && r->T->nonil)
+			nilcheck = 0; /* don't bother checking: no nils */
 	}
-	if (l->T->nonil && r->T->nonil)
-		nilcheck = 0;
+	bn->T->nil = 0;
 
 	switch (tpe) {
 	case TYPE_bte:
-		res = project_bte(bn, l, r, nilcheck);
+		res = project_bte(bn, l, r, nilcheck, sortcheck);
 		break;
 	case TYPE_sht:
-		res = project_sht(bn, l, r, nilcheck);
+		res = project_sht(bn, l, r, nilcheck, sortcheck);
 		break;
 	case TYPE_int:
-		res = project_int(bn, l, r, nilcheck);
+		res = project_int(bn, l, r, nilcheck, sortcheck);
 		break;
 	case TYPE_flt:
-		res = project_flt(bn, l, r, nilcheck);
+		res = project_flt(bn, l, r, nilcheck, sortcheck);
 		break;
 	case TYPE_dbl:
-		res = project_dbl(bn, l, r, nilcheck);
+		res = project_dbl(bn, l, r, nilcheck, sortcheck);
 		break;
 	case TYPE_lng:
-		res = project_lng(bn, l, r, nilcheck);
+		res = project_lng(bn, l, r, nilcheck, sortcheck);
 		break;
 	case TYPE_oid:
 		if (r->ttype == TYPE_void) {
 			res = project_void(bn, l, r);
 		} else {
 #if SIZEOF_OID == SIZEOF_INT
-			res = project_int(bn, l, r, nilcheck);
+			res = project_int(bn, l, r, nilcheck, sortcheck);
 #else
-			res = project_lng(bn, l, r, nilcheck);
+			res = project_lng(bn, l, r, nilcheck, sortcheck);
 #endif
 		}
 		break;
@@ -2621,55 +2626,59 @@ BATproject(BAT *l, BAT *r)
 		break;
 	}
 
+	if (res == GDK_FAIL)
+		goto bailout;
+
 	/* handle string trick */
-	if (tpe != r->ttype && ATOMstorage(r->ttype) == TYPE_str) {
+	if (stringtrick) {
 		if (r->batRestricted == BAT_READ) {
+			/* really share string heap */
 			assert(r->T->vheap->parentid > 0);
 			BBPshare(r->T->vheap->parentid);
 			bn->T->vheap = r->T->vheap;
 		} else {
+			/* make copy of string heap */
 			bn->T->vheap = (Heap *) GDKzalloc(sizeof(Heap));
-			if (bn->T->vheap == NULL) 
-				goto bunins_failed;
+			if (bn->T->vheap == NULL)
+				goto bailout;
 			bn->T->vheap->parentid = bn->batCacheid;
 			if (r->T->vheap->filename) {
 				char *nme = BBP_physical(bn->batCacheid);
-					bn->T->vheap->filename = (str) GDKmalloc(strlen(nme) + 12);
-				if (bn->T->vheap->filename == NULL) 
-					goto bunins_failed;
+				bn->T->vheap->filename = (str) GDKmalloc(strlen(nme) + 12);
+				if (bn->T->vheap->filename == NULL)
+					goto bailout;
 				GDKfilepath(bn->T->vheap->filename, NULL, nme, "theap");
 			}
-			if (HEAPcopy(bn->T->vheap, r->T->vheap) < 0) 
-				goto bunins_failed;
+			if (HEAPcopy(bn->T->vheap, r->T->vheap) < 0)
+				goto bailout;
 		}
 		bn->ttype = r->ttype;
 		bn->tvarsized = 1;
 		bn->T->width = r->T->width;
 		bn->T->shift = r->T->shift;
+
+		bn->T->nil = 0; /* we don't know */
 	}
-	if (res == GDK_FAIL) {
-bunins_failed:
-		BBPreclaim(bn);
-		return NULL;
-	}
-	if (postprops) {
-		if (!nilcheck) {
-			bn->T->nonil = bn->T->nonil && l->T->nonil && r->T->nonil;
-			bn->T->nil = (bn->T->nil || l->T->nil || r->T->nil);
-		} 
-		bn->tsorted = (l->tsorted && r->tsorted);
-		bn->trevsorted = (l->trevsorted && r->trevsorted);
-		bn->tkey = (l->tkey && r->tkey);
-	}
+	/* some properties follow from certain combinations of input
+	 * properties */
+	bn->tkey |= l->tkey && r->tkey;
+	bn->tsorted |= (l->tsorted & r->tsorted) | (l->trevsorted & r->trevsorted);
+	bn->trevsorted |= (l->tsorted & r->trevsorted) | (l->trevsorted & r->tsorted);
+	bn->T->nonil |= l->T->nonil & r->T->nonil;
 
 	BATseqbase(bn, l->hseqbase);
 	if (!BATtdense(r))
 		BATseqbase(BATmirror(bn), oid_nil);
-	ALGODEBUG fprintf(stderr, "#BATproject(l=%s,r=%s)=%s#"BUNFMT"%s%s\n",
+	ALGODEBUG fprintf(stderr, "#BATproject(l=%s,r=%s)=%s#"BUNFMT"%s%s%s\n",
 		  BATgetId(l), BATgetId(r), BATgetId(bn), BATcount(bn),
 		  bn->tsorted ? "-sorted" : "",
-		  bn->trevsorted ? "-revsorted" : "");
+		  bn->trevsorted ? "-revsorted" : "",
+		  bn->ttype == TYPE_str && bn->T->vheap == r->T->vheap ? " shared string heap" : "");
 	return bn;
+
+  bailout:
+	BBPreclaim(bn);
+	return NULL;
 }
 
 /* backward compatible interfaces */
