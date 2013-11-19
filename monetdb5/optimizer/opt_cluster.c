@@ -317,6 +317,11 @@ cluster_orderby(MalBlkPtr mb)
 	int *prj = (int*) GDKzalloc(sizeof(int) * MAX_STMTS);
 	InstrPtr q;
 
+	if( ord == NULL || prj == NULL){
+		if( ord) GDKfree(ord);
+		if( prj) GDKfree(prj);
+		return 0;
+	}
 	/* TODO only cluster on large inputs */
 	/* TODO reuse ordered columns */
 
@@ -466,6 +471,15 @@ _cluster_join(MalBlkPtr mb, int *join, int jl, int *prj, int pjl)
 		njn = (InstrPtr*)GDKzalloc(sizeof(InstrPtr)*nr_parts);
 		mr = (InstrPtr*)GDKzalloc(sizeof(InstrPtr)*nr_parts);
 		rmr = (InstrPtr*)GDKzalloc(sizeof(InstrPtr)*nr_parts);
+
+		if( njn== NULL || mr == NULL || rmr == NULL){
+			if(njn ) GDKfree(njn);
+			if(mr ) GDKfree(mr);
+			if(rmr ) GDKfree(rmr);
+			mb->errors++;
+			return 0;
+		}
+
 		jn = old[join[0]];
 		for (p = 0; p<nr_parts; p++) {
 			InstrPtr r = newStmt2( mb, batRef, reverseRef);
@@ -578,6 +592,11 @@ cluster_join(MalBlkPtr mb)
 	int *prj = (int*) GDKzalloc(sizeof(int) * MAX_STMTS);
 	InstrPtr q;
 
+	if( join == NULL || prj == NULL){
+		if(join) GDKfree(join);
+		if(prj) GDKfree(prj);
+		return 0;
+	}
 	/* locate the a sequence of group.new/derive statements */
 	for (i=1; i< mb->stop && j < MAX_STMTS && k < MAX_STMTS; i++) {
 		q = getInstrPtr(mb,i);

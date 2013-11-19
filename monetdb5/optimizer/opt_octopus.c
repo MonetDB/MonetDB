@@ -513,6 +513,11 @@ OCTnewOctBlk(MalBlkPtr mb, InstrPtr *old, int v2)
 
 	if( wnm == NULL || wvar == NULL || tnm == NULL || bid == NULL || res == NULL){
 		GDKerror("octopus"MAL_MALLOC_FAIL);
+		if(wnm) GDKfree(wnm);
+		if(wvar) GDKfree(wvar);
+		if(tnm) GDKfree(tnm);
+		if(bid) GDKfree(bid);
+		if(res) GDKfree(res);
 		return ;
 	}
 
@@ -528,9 +533,17 @@ OCTnewOctBlk(MalBlkPtr mb, InstrPtr *old, int v2)
 		cst.len= (int) strlen(cst.val.sval);
 		tnm[j] = defConstant(mb, TYPE_str, &cst);
 		bid[j] = (int*) GDKzalloc(sizeof(int) * tcnt);
+		if( bid[j] == NULL){
+			GDKerror("octopus" MAL_MALLOC_FAIL);
+			break;
+		}
 			
 		ocl = &octCluster[j+1];
 		res[j] = (int*) GDKzalloc(sizeof(int) * ocl->retcnt);
+		if( res[j] == NULL){
+			GDKerror("octopus" MAL_MALLOC_FAIL);
+			break;
+		}
 		for ( i = 0; i < ocl->retcnt; i++){
 			snprintf(buf,BUFSIZ,"res_%d_%d",j+1,i); 
 			res[j][i] = newVariable(mb,GDKstrdup(buf),getVarType(mb,ocl->ret[i]));	
@@ -1010,7 +1023,16 @@ OPToctopusImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 
 	/* exclude variable reuse */
 	alias = (int*) GDKzalloc(mb->vtop * sizeof(int));
+	if( alias == NULL){
+		GDKerror("octopus" MAL_MALLOC_FAIL);
+		return 0;
+	}
 	set = (bte*) GDKzalloc(mb->vtop);
+	if( set == NULL){
+		GDKfree(alias);
+		GDKerror("octopus" MAL_MALLOC_FAIL);
+		return 0;
+	}
 	for (i = 0; i < mb->vtop; i++) 
 		alias[i] = i;
 	
@@ -1049,6 +1071,14 @@ OPToctopusImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	src = (int*) GDKzalloc(mb->vtop * sizeof(int));
 	pref = (InstrPtr*) GDKzalloc(mb->stop * sizeof(InstrPtr));
 
+	if( malPart == NULL || bnd == NULL || src == NULL || pref == NULL){
+		if(malPart) GDKfree(malPart);
+		if(bnd) GDKfree(bnd);
+		if(src) GDKfree(src);
+		if(pref) GDKfree(pref);
+		GDKerror("octopus" MAL_MALLOC_FAIL);
+		return 0;
+	}
 
 	/* analysis and clustering of instructions */
 	for (i = 1; i < limit; i++) {
