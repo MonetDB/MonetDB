@@ -2186,13 +2186,15 @@ BATmax(BAT *b, void *aggr)
 /* quantiles/median */
 
 BAT *
-
-BATgroupmedian(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_error) {
+BATgroupmedian(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
+	       int skip_nils, int abort_on_error)
+{
 	return BATgroupquantile(b,g,e,s,tp,0.5,skip_nils,abort_on_error);
 }
 
 BAT *
- BATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,int skip_nils, int abort_on_error)
+BATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
+		 int skip_nils, int abort_on_error)
 {
 	int freeb = 0, freeg = 0;
 	oid min, max;
@@ -2221,7 +2223,8 @@ BAT *
 		return NULL;
 	}
 	if (quantile < 0 || quantile > 1) {
-		GDKerror("BATgroupquantile: cannot determine quantile for p=%f (p has to be in [0,1])\n",quantile);
+		GDKerror("BATgroupquantile: cannot determine quantile for "
+			 "p=%f (p has to be in [0,1])\n", quantile);
 		return NULL;
 	}
 	assert(quantile >=0 && quantile <=1);
@@ -2299,7 +2302,8 @@ BAT *
 
 		grps = (const oid *) Tloc(g, BUNfirst(g));
 		prev = grps[0];
-		 /* for each group (r and p are the beginning and end of the current group, respectively) */
+		 /* for each group (r and p are the beginning and end
+		  * of the current group, respectively) */
 		for (r = 0, p = 1, q = BATcount(g); p <= q; p++) {
 			assert(r < p);
 			if ( p == q || grps[p] != prev) {
@@ -2314,7 +2318,7 @@ BAT *
 					nils++;
 				}
 				qindex = BUNfirst(b) + (BUN) (r + (p-r-1) * quantile);
-				// be a little paranoid about the index
+				/* be a little paranoid about the index */
 				assert(qindex >= (BUNfirst(b) + r ));
 				assert(qindex <  (BUNfirst(b) + p));
 				v = BUNtail(bi, qindex);
