@@ -22,6 +22,57 @@
 #include "gdk_private.h"
 #include "gdk_calc_private.h"
 
+/*
+ * All "sub" join variants produce some sort of join on two input
+ * BATs, optionally subject to up to two candidate lists.  Only values
+ * in the input BATs that are mentioned in the associated candidate
+ * list (if provided) are eligible.  They all return two output BATs
+ * in the first two arguments.  The join operations differ in the way
+ * in which tuples from the two inputs are matched.
+ *
+ * All inputs BATs must be dense headed, the output BATs will also be
+ * dense headed.  The outputs consist of two aligned BATs (i.e. same
+ * length and same seqbase in the head column (0@0)) that contain in
+ * their tails the OIDs of the input BATs that match.  The candidate
+ * lists, if given, contain in their tail the OIDs of the associated
+ * input BAT which must be considered for matching.  The input BATs
+ * must have the same tail type.
+ *
+ * All functions also have a parameter nil_matches which indicates
+ * whether NIL must be considered an ordinary value that can match, or
+ * whether NIL must be considered to never match.
+ *
+ * The join functions that are provided here are:
+ * BATsubjoin
+ *	normal equi-join
+ * BATsubleftjoin
+ *	normal equi-join, but the left output is sorted
+ * BATsubleftfetchjoin
+ *	normal equi-join, but the left output is sorted, and all
+ *	values in the left input must match at least one value in the
+ *	right input
+ * BATsubouterjoin
+ *	equi-join, but the left output is sorted, and if there is no
+ *	match for a value in the left input, there is still an output
+ *	with NIL in the right output
+ * BATsubsemijoin
+ *	equi-join, but the left output is sorted, and if there are
+ *	multiple matches, only one is returned (i.e., the left output
+ *	is also key)
+ * BATsubthetajoin
+ *	theta-join: an extra operator must be provided encoded as an
+ *	integer (macros JOIN_EQ, JOIN_NE, JOIN_LT, JOIN_LE, JOIN_GT,
+ *	JOIN_GE); value match if the left input has the given
+ *	relationship with the right input; order of the outputs is not
+ *	guaranteed
+ * BATsubbandjoin
+ *	band-join: two extra input values (c1, c2) must be provided as
+ *	well as Booleans (li, hi) that indicate whether the value
+ *	ranges are inclusive or not; values in the left and right
+ *	inputs match if right - c1 <[=] left <[=] right + c2; if c1 or
+ *	c2 is NIL, there are no matches
+ */
+
 /* Perform a bunch of sanity checks on the inputs to a join. */
 static gdk_return
 joinparamcheck(BAT *l, BAT *r, BAT *sl, BAT *sr, const char *func)
