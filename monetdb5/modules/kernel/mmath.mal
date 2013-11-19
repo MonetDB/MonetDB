@@ -182,6 +182,10 @@ command rand{unsafe} () :int
 address MATHrandint
 comment "return a random number";
 
+command rand{unsafe} (v:int) :int 
+address MATHrandint
+comment "return a random number";
+
 command srand(seed:int) :void 
 address MATHsrandint
 comment "initialize the rand() function with a seed";

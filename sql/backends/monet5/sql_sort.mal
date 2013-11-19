@@ -1,0 +1,12 @@
+function sql.sortTail( b:bat[:oid,:any_1]) :bat[:oid,:oid];
+	s := algebra.sortTail(b);
+	m := algebra.markT(s, 0:oid);
+	return bat.reverse(m);
+end sql.sortTail;
+
+function sql.sortReverseTail( b:bat[:oid,:any_1]) :bat[:oid,:oid];
+	s := algebra.sortReverseTail(b);
+	m := algebra.markT(s, 0:oid);
+	return bat.reverse(m);
+end sql.sortReverseTail;
+

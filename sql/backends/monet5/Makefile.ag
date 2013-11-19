@@ -96,7 +96,7 @@ lib__sql = {
 headers_mal = {
 	HEADERS = mal
 	DIR = libdir/monetdb5
-	SOURCES = sql.mx
+	SOURCES = sql.mx sql_aggr_bte.mal  sql_aggr_flt.mal  sql_aggr_int.mal  sql_aggr_lng.mal  sql_aggr_sht.mal  sql_aggr_wrd.mal  sql_cast.mal  sql_inspect.mal  sql.mal  sql_octopus.mal  sql_rank.mal  sql_rdf.mal  sql_sort.mal
 }
 
 headers_autoload = {

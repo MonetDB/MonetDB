@@ -1,0 +1,141 @@
+# The distributed processing of queries requires the SQL runtime
+# system to be able to deliver portions of the BATs in an efficient way.
+# It should be cast into a more efficient C procedure, which also
+# takes care of NAS opportunities.
+
+function octopus.bind(mvc:int, sch:str, tab:str,col:str,kind:int, version:int):bat[:oid,:any_1];
+	b:bat[:oid,:any_1]:= sql.bind(mvc,sch,tab,col,kind);
+	return bind:= b;
+end bind;
+
+function octopus.bind(conn:str, sch:str, tab:str,col:str,kind:int, version:int):bat[:oid,:any_1];
+	b:bat[:oid,:any_1] := nil:bat[:oid,:any_1];
+	m := nil:int;
+	rm := remote.put(conn,m);
+	rm := remote.exec(conn,"sql","mvc");
+	s := remote.put(conn,sch);
+	t := remote.put(conn,tab);
+	c := remote.put(conn,col);
+	k := remote.put(conn,kind);
+	bh:= remote.put(conn,b);
+	bh:= remote.exec(conn,"sql","bind",rm,s,t,c,k);
+	b:bat[:oid,:any_1]:= remote.get(conn,bh);
+	return bind:= b;
+end octopus.bind;
+
+function octopus.bind_idxbat(mvc:int, sch:str, tab:str, index:str, access:int, version:int):bat[:oid,:oid];
+	b := sql.bind_idxbat(mvc,sch,tab,index,access);
+	return bind_idxbat:= b;
+end octopus.bind_idxbat;
+
+function octopus.bind_idxbat(conn:str, sch:str, tab:str, index:str, access:int, version:int):bat[:oid,:oid];
+	b:bat[:oid,:oid] := nil:bat[:oid,:oid];
+	m := nil:int;
+	rm := remote.put(conn,m);
+	rm := remote.exec(conn,"sql","mvc");
+	s := remote.put(conn,sch);
+	t := remote.put(conn,tab);
+	i := remote.put(conn,index);
+	a := remote.put(conn,access);
+	bh:= remote.put(conn,b);
+	bh:= remote.exec(conn,"sql","bind_idxbat",rm,s,t,i,a);
+	b:bat[:oid,:oid]:= remote.get(conn,bh);
+	return bind_idxbat:= b;
+end octopus.bind_idxbat;
+
+# Octopus.bind signatures adjusted to new mitosis sql.bind (part_nr, nr_parts)
+function octopus.bind(mvc:int, sch:str, tab:str,col:str,kind:int, part_nr:int, nr_parts:int, version:int) :bat[:oid,:any_1];
+	b:bat[:oid,:any_1]:= sql.bind(mvc,sch,tab,col,kind,part_nr,nr_parts);
+	return bind:= b;
+end bind;
+
+function octopus.bind(conn:str, sch:str, tab:str,col:str,kind:int, part_nr:int, nr_parts:int, version:int):bat[:oid,:any_1];
+	b:bat[:oid,:any_1] := nil:bat[:oid,:any_1];
+	m := nil:int;
+	rm := remote.put(conn,m);
+	rm := remote.exec(conn,"sql","mvc");
+	s := remote.put(conn,sch);
+	t := remote.put(conn,tab);
+	c := remote.put(conn,col);
+	k := remote.put(conn,kind);
+	v := remote.put(conn,version);
+	l := remote.put(conn,part_nr);
+	h := remote.put(conn,nr_parts);
+	rb:= remote.put(conn,b);
+	rb:= remote.exec(conn,"sql","bind",rm,s,t,c,k,l,h);
+	b:bat[:oid,:any_1]:= remote.get(conn,rb);
+	return bind:= b;
+end octopus.bind;
+
+function octopus.bind_idxbat(conn:str, sch:str, tab:str, index:str, access:int, part_nr:int, nr_parts:int, version:int):bat[:oid,:oid];
+	b:bat[:oid,:oid] := nil:bat[:oid,:oid];
+	m := nil:int;
+	rm := remote.put(conn,m);
+	rm := remote.exec(conn,"sql","mvc");
+	s := remote.put(conn,sch);
+	t := remote.put(conn,tab);
+	i := remote.put(conn,index);
+	a := remote.put(conn,access);
+	l := remote.put(conn,part_nr);
+	h := remote.put(conn,nr_parts);
+	bh:= remote.put(conn,b);
+	bh:= remote.exec(conn,"sql","bind_idxbat",rm,s,t,i,a,l,h);
+	b:bat[:oid,:oid]:= remote.get(conn,bh);
+	return bind_idxbat:= b;
+end octopus.bind_idxbat;
+
+function octopus.getVariable(conn:str,name:str):any_1;
+	s := remote.put(conn,name);
+	bh:= remote.exec(conn,"sql","getVariable",s);
+	b:any_1 := remote.get(conn,bh);
+	return getVariable:= b;
+end octopus.getVariable;
+
+function octopus.getBid(dbname:str, fn:str, bidtype:sht):lng;
+res:lng := -1:lng;
+barrier remotewrk := calc.!=(dbname,"NOTworker");
+	conn := octopus.connect(dbname);
+	r_fn := remote.put(conn,fn);
+	r_bt := remote.put(conn,bidtype);
+	r_getBid := remote.put(conn,res);
+	r_getBid := remote.exec(conn,"trader","makeBid",r_fn,r_bt);
+	res:lng  := remote.get(conn,r_getBid);
+	catch ANYexception:str;
+ 	   raise ANYexception:str ;
+	exit ANYexception:str ;
+exit remotewrk;
+	return getBid:lng := res;
+end getBid;
+
+function remote.bind{inline}(dbconn:str, sch:str, tab:str,col:str,kind:int, 
+version:int):bat[:oid,:any_1];
+	b:bat[:oid,:any_1] := nil:bat[:oid,:any_1];
+	m := nil:int;
+	conn := remote.connect(dbconn, "monetdb", "monetdb", "msql");
+	rm := remote.put(conn,m);
+	rm := remote.exec(conn,"sql","mvc");
+	s := remote.put(conn,sch);
+	t := remote.put(conn,tab);
+	c := remote.put(conn,col);
+	k := remote.put(conn,kind);
+	bh:= remote.put(conn,b);
+	bh:= remote.exec(conn,"sql","bind",rm,s,t,c,k);
+	b:bat[:oid,:any_1]:= remote.get(conn,bh);
+	return bind:= b;
+end remote.bind;
+
+function remote.bind_idxbat{inline}(dbconn:str, sch:str, tab:str, index:str, access:int, version:int):bat[:oid,:oid];
+	b:bat[:oid,:oid] := nil:bat[:oid,:oid];
+	m := nil:int;
+	conn := remote.connect(dbconn, "monetdb", "monetdb", "msql");
+	rm := remote.put(conn,m);
+	rm := remote.exec(conn,"sql","mvc");
+	s := remote.put(conn,sch);
+	t := remote.put(conn,tab);
+	i := remote.put(conn,index);
+	a := remote.put(conn,access);
+	bh:= remote.put(conn,b);
+	bh:= remote.exec(conn,"sql","bind_idxbat",rm,s,t,i,a);
+	b:bat[:oid,:oid]:= remote.get(conn,bh);
+	return bind_idxbat:= b;
+end remote.bind_idxbat;
