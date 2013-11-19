@@ -1,3 +1,7 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Tue Nov 19 2013 Sjoerd Mullender <sjoerd@acm.org>
+- Fixed a bug where the server at some point stopped saving compiled
+  queries in the SQL query cache.
+

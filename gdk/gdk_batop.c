@@ -1238,7 +1238,7 @@ BATorder_internal(BAT *b, int stable, int reverse, int copy, const char *func)
 		 * column needs to be key) */
 		return BATrevert(b);
 	}
-	if ((!(reverse && b->hrevsorted) && !(!reverse && b->hsorted)) &&
+	if (!(reverse ? b->hrevsorted : b->hsorted) &&
 	    do_sort(Hloc(b, BUNfirst(b)), Tloc(b, BUNfirst(b)),
 		    b->H->vheap ? b->H->vheap->base : NULL,
 		    BATcount(b), Hsize(b), Tsize(b), b->htype,
