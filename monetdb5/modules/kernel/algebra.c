@@ -1426,7 +1426,8 @@ ALGbandjoin2(bat *l, bat *r, bat *left, bat *right, const void *minus, const voi
 str
 ALGrangejoin2(int *l, int *r, int *left, int *rightl, int *righth, bit *li, bit *hi)
 {
-	BAT *L, *R, *RL, *RH, *j;
+	BAT *L, *RL, *RH, *bn1, *bn2;
+	gdk_return ret;
 
 	if ((L = BATdescriptor(*left)) == NULL) {
 		throw(MAL, "algebra.join", RUNTIME_OBJECT_MISSING);
@@ -1441,21 +1442,14 @@ ALGrangejoin2(int *l, int *r, int *left, int *rightl, int *righth, bit *li, bit 
 		throw(MAL, "algebra.join", RUNTIME_OBJECT_MISSING);
 	}
 
-	/* j = join(left,rightl,righth, li, hi)
-	   l = reverse(mark(j))
-	   r = reverse(mark(reverse(j)))
-	*/
-	j = BATrangejoin(L, RL, RH, *li, *hi);
-	if (!j)
-		throw(MAL, "algebra.join", GDK_EXCEPTION);
+	ret = BATsubrangejoin(&bn1, &bn2, L, RL, RH, NULL, NULL, *li, *hi, BUN_NONE);
 	BBPunfix(L->batCacheid);
 	BBPunfix(RL->batCacheid);
 	BBPunfix(RH->batCacheid);
-	L = BATmirror(BATmark(j,0));
-	R = BATmirror(BATmark(BATmirror(j),0));
-	BBPunfix(j->batCacheid);
-	BBPkeepref(*l = L->batCacheid);
-	BBPkeepref(*r = R->batCacheid);
+	if (ret == GDK_FAIL)
+		throw(MAL, "algebra.rangejoin", GDK_EXCEPTION);
+	BBPkeepref(*l = bn1->batCacheid);
+	BBPkeepref(*r = bn2->batCacheid);
 	return MAL_SUCCEED;
 }
 
