@@ -422,6 +422,7 @@ GDKupgradevarheap(COLrec *c, var_t v, int copyall)
 	size_t i, n;
 	size_t savefree;
 	const char *filename;
+	bat bid;
 
 	assert(c->heap.parentid == 0);
 	assert(width != 0);
@@ -453,7 +454,10 @@ GDKupgradevarheap(COLrec *c, var_t v, int copyall)
 		filename = c->heap.filename;
 	else
 		filename++;
-	if (c->heap.storage == STORE_MMAP && !file_exists(BAKDIR, filename, NULL)) {
+	bid = strtol(filename, NULL, 8);
+	if (c->heap.storage == STORE_MMAP &&
+	    (BBP_status(bid) & (BBPEXISTING|BBPDELETED)) &&
+	    !file_exists(BAKDIR, filename, NULL)) {
 		int fd;
 		ssize_t ret = 0;
 		size_t size = n << c->shift;
