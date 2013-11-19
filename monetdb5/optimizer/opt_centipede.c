@@ -87,6 +87,11 @@ OPTexecController(Client cntxt, MalBlkPtr mb, MalBlkPtr pmb, InstrPtr ret, Instr
 		return 0;
 	nrpack= getInstrPtr(pmb,0)->retc;
 	pack = (InstrPtr *) GDKzalloc(sizeof(InstrPtr) * nrpack);
+	if( pack == NULL){
+		GDKerror("centipede" MAL_MALLOC_FAIL);
+		mb->errors++;
+		return mb;
+	}
 
 	pushInstruction(cmb, copyInstruction(pmb->stmt[0]));
 	getFunctionId( getInstrPtr(cmb,0)) = putName(nme,strlen(nme));
@@ -96,6 +101,12 @@ OPTexecController(Client cntxt, MalBlkPtr mb, MalBlkPtr pmb, InstrPtr ret, Instr
 	q= newFcnCall(cmb, sqlRef, mvcRef);
 	x= getArg(q,0);
 	alias = (int*) GDKzalloc(nrservers * sizeof(int));
+	if (alias == NULL){
+		GDKerror("centipede" MAL_MALLOC_FAIL);
+		GDKfree(pack);
+		mb->errors++;
+		return mb;
+	}
 	if( slices->column) {
 		q= newInstruction(cmb, ASSIGNsymbol);
 		getModuleId(q) = sqlRef;
@@ -323,6 +334,9 @@ OPTplanStub(Client cntxt, MalBlkPtr mb, MalBlkPtr pmb, oid plantag)
 
 	sig = getInstrPtr(smb,0);
 	arg = (int*) GDKzalloc(sizeof(int) * sig->argc);
+	if( arg == NULL){
+		GDKerror("centipede" MAL_MALLOC_FAIL);
+	}
 	/* k:= remote.put(conn,kvar) */
 	for (j= sig->retc+1; j < sig->argc; j++) {
 		q= newFcnCall(smb,remoteRef,putRef);

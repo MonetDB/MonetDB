@@ -29,11 +29,17 @@ QEPnew(int p, int c){
 	qep->mb= NULL;
 	qep->p = NULL;
 	qep->plimit = p;
-	if( p )
+	if( p ) {
 		qep->parents = (QEP*) GDKzalloc( sizeof(QEP) * p);
+		if( qep->parents == NULL)
+			return NULL;
+	}
 	qep->climit = c;
-	if( c)
+	if( c){
 		qep->children = (QEP *) GDKzalloc( sizeof(QEP) * c);
+		if( qep->children == NULL)
+			return NULL;
+	}
 	return qep;
 }
 static QEP
@@ -48,8 +54,9 @@ static QEP
 QEPexpandChildren(QEP qep, int extra){
 	int i;
 	/*extend node */
-	qep->children = (QEP*) GDKrealloc( (char*) qep->children, 
-				sizeof(QEP) * (qep->climit + extra));
+	qep->children = (QEP*) GDKrealloc( (char*) qep->children, sizeof(QEP) * (qep->climit + extra));
+	if( qep->children == NULL)
+		return NULL;
 	for(i=qep->climit;i <qep->climit + extra; i++)
 		qep->children[i]=0;
 	qep->climit = qep->climit + extra;

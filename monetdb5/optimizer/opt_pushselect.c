@@ -129,6 +129,9 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	(void) stk;
 	(void) pci;
 	vars= (int*) GDKmalloc(sizeof(int)* mb->vtop);
+	if( vars == NULL)
+		return 0;
+
 	limit = mb->stop;
 	slimit= mb->ssize;
 	old = mb->stmt;

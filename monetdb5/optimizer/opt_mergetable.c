@@ -1375,7 +1375,11 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	old = mb->stmt;
 	oldtop= mb->stop;
 
-        vars= (int*) GDKmalloc(sizeof(int)* mb->vtop);
+	vars= (int*) GDKmalloc(sizeof(int)* mb->vtop);
+	if( vars == NULL){
+		GDKerror("mergetable"MAL_MALLOC_FAIL);
+		return 0;
+	}
 	/* check for bailout conditions */
 	for (i = 1; i < oldtop; i++) {
 		int j;
