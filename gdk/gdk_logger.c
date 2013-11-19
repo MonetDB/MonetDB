@@ -1912,13 +1912,18 @@ log_tend(logger *lg)
 
 	if (DELTAdirty(lg->snapshots_bid)) {
 		/* sub commit all new snapshots */
-		BAT *tids = BATuselect(lg->snapshots_tid, &lg->tid, &lg->tid);
-		BAT *bids = BATsemijoin(lg->snapshots_bid, tids);
+		BAT *tids, *bids;
 
+		tids = BATsubselect(lg->snapshots_tid, NULL, &lg->tid, &lg->tid,
+				    TRUE, TRUE, FALSE);
+		if (tids == NULL)
+			return LOG_ERR;
+		bids = BATproject(tids, lg->snapshots_bid);
 		BBPunfix(tids->batCacheid);
 		if (bids == NULL)
 			return LOG_ERR;
-		res = bm_subcommit(bids, NULL, lg->snapshots_bid, lg->snapshots_tid, NULL, lg->debug);
+		res = bm_subcommit(bids, NULL, lg->snapshots_bid,
+				   lg->snapshots_tid, NULL, lg->debug);
 		BBPunfix(bids->batCacheid);
 	}
 	l.flag = LOG_END;
