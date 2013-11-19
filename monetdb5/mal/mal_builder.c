@@ -18,11 +18,9 @@
  */
 
 /*
- * @f mal_builder
- * @a M. Kersten
- * @v 1.0
+ * author M. Kersten
  *
- * @* The MAL builder
+ * MAL builder
  * The MAL builder library containst the primitives to simplify construction
  * of programs by compilers. It has grown out of the MonetDB/SQL code generator.
  * The strings being passed as arguments are copied in the process.

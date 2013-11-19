@@ -248,11 +248,17 @@ newBox(str name)
 	for (i = 0; i < topbox; i++)
 		if (malbox[i] == NULL) {
 			obj= (Box) GDKzalloc(sizeof(BoxRecord));
+			if( obj == NULL){
+				showException(GDKout, MAL,"box.new", MAL_MALLOC_FAIL);
+				return NULL;
+			}
 			obj->name= GDKstrdup(name);
 			obj->sym=  newMalBlk(MAXVARS,STMT_INCREMENT);
 			obj->val = newGlobalStack(MAXVARS);
-			if ( obj->val == NULL)
+			if ( obj->val == NULL || obj->sym == NULL){
 				showException(GDKout, MAL,"box.new", MAL_MALLOC_FAIL);
+				return NULL;
+			}
 			MT_lock_init(&obj->lock,"M5_box_lock");
 			malbox[i] = obj;
 			break;
@@ -261,11 +267,17 @@ newBox(str name)
 	if (i == topbox) {
 		if ( topbox < MAXSPACES){
 			obj= (Box) GDKzalloc(sizeof(BoxRecord));
+			if( obj == NULL){
+				showException(GDKout, MAL,"box.new", MAL_MALLOC_FAIL);
+				return NULL;
+			}
 			obj->name= GDKstrdup(name);
 			obj->sym=  newMalBlk(MAXVARS,STMT_INCREMENT);
 			obj->val = newGlobalStack(MAXVARS);
-			if ( obj->val == NULL)
+			if ( obj->val == NULL || obj->sym == NULL){
 				showException(GDKout, MAL,"box.new", MAL_MALLOC_FAIL);
+				return NULL;
+			}
 			MT_lock_init(&obj->lock,"M5_box_lock");
 			malbox[topbox++] = obj;
 		} else

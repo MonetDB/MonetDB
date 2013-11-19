@@ -477,6 +477,10 @@ locate_file(const char *basename, const char *ext, bit recurse)
 		for (c = 0; c < lasts; c++)
 			i += strlen(strs[c]) + 1; /* PATH_SEP or \0 */
 		fullname = GDKrealloc(fullname, i);
+		if( fullname == NULL){
+			GDKerror("locate_file" MAL_MALLOC_FAIL);
+			return NULL;
+		}
 		i = 0;
 		for (c = 0; c < lasts; c++) {
 			if (strstr(fullname, strs[c]) == NULL) {

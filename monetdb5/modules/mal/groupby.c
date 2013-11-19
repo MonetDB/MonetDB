@@ -85,8 +85,11 @@ GROUPcollect( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	a->bid = (bat*) GDKzalloc(pci->argc * sizeof(bat));
 	a->cols = (BAT**) GDKzalloc(pci->argc * sizeof(BAT*));
 	a->unique = (BUN *) GDKzalloc(pci->argc * sizeof(BUN));
-	if ( a->cols == NULL){
-		GDKfree(a);
+	if ( a->cols == NULL || a->bid == NULL || a->unique == NULL){
+		if(a->cols) GDKfree(a->cols);
+		if(a->bid) GDKfree(a->bid);
+		if(a->unique) GDKfree(a->unique);
+		if(a) GDKfree(a);
 		return NULL;
 	}
 	for ( i= pci->retc; i< pci->argc; i++, a->last++) {

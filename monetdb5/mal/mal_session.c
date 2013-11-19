@@ -378,6 +378,10 @@ MSresetVariables(Client cntxt, MalBlkPtr mb, MalStkPtr glb, int start)
 {
 	int i, k;
 	bit *used = GDKzalloc(mb->vtop * sizeof(bit));
+	if( used == NULL){
+		GDKerror("MSresetVariables" MAL_MALLOC_FAIL);
+		return;
+	}
 
 	for (i = 0; i < start && start < mb->vtop; i++)
 		used[i] = 1;
@@ -620,8 +624,11 @@ MALengine(Client c)
 	if (prg->def->stop == 1 || MALcommentsOnly(prg->def))
 		return 0;   /* empty block */
 	if (c->glb) {
-		if (prg->def && c->glb->stksize < prg->def->vsize)
+		if (prg->def && c->glb->stksize < prg->def->vsize){
 			c->glb = reallocGlobalStack(c->glb, prg->def->vsize);
+			if( c->glb == NULL)
+				throw(MAL, "mal.engine", MAL_MALLOC_FAIL);
+		}
 		c->glb->stktop = prg->def->vtop;
 		c->glb->blk = prg->def;
 		c->glb->cmd = (c->itrace && c->itrace != 'C') ? 'n' : 0;

@@ -692,6 +692,10 @@ setLifespan(MalBlkPtr mb)
 	prop = PropertyIndex("transparent");
 
 	blk= (int *) GDKzalloc(sizeof(int)*mb->vtop);
+	if( blk == NULL){
+		GDKerror("setLifeSpan" MAL_MALLOC_FAIL);
+		return NULL;
+	}
 
 	for (pc = 0; pc < mb->stop; pc++) {
 		p = getInstrPtr(mb, pc);

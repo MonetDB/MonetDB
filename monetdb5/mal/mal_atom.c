@@ -19,7 +19,7 @@
 
 /*
  * @a M.L.Kersten
- * @- User Defined Types
+ *  User Defined Types
  * MonetDB supports an extensible type system to accomodate a wide
  * spectrum of database kernels and application needs.
  * The type administration keeps track of their properties and
@@ -46,7 +46,7 @@
  * A concrete example is the 'blob' datatype in the MonetDB atom module
  * library(see ../modules/atoms/blob.mx)
  *
- * @- Defining your own types
+ * Defining your own types
  * For the courageous at heart, you may enter the difficult world
  * of extending the kernel library. The easiest way is to derive
  * the atom modules from one shipped in the source distributed.
@@ -55,18 +55,18 @@
  * because you have to develop a handful routines complying with the
  * signatures required in the kernel library.
  * They are registered upon loading the @sc{atom} module.
- * @-
+ * 
  * The atom registration functions perform the necessary
  * type checks, but relies on the user to comply with this signature in
  * its C-implementation. The ruler calls are part of a module
  * initialization routine.
- * @-
+ * 
  * Functions passed to the GDK kernel are not directly accessible
  * as MAL routines, because their implementation requires a
  * GDK-specific signature. (See GDK documentation)
  * They are renamed to an non-parseable function, effectively shielding
  * them from the MAL programmer.
- * @-
+ * 
  * This feature is of particular interest to system experts.
  * It is not meant for end-users trying to intruduce record- or
  * struct-like objects in the database. They better decompose
@@ -224,7 +224,6 @@ int malAtomProperty(MalBlkPtr mb, InstrPtr pci)
 	return 0;
 }
 /*
- * @-
  * Atoms are constructed incrementally in the kernel using the
  * ATOMallocate function. It takes an existing type as a base
  * to derive a new one.
@@ -264,7 +263,6 @@ void malAtomDefinition(stream *out, str name, int tpe)
 	}
 }
 /*
- * @-
  * User defined modules may introduce fixed sized types
  * to store information in BATs.
  */

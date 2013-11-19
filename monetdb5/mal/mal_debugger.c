@@ -54,7 +54,7 @@ static mdbStateRecord *mdbTable;
  * The debugger flags overview
  */
 
-void
+int
 mdbInit(void)
 {
 	/*
@@ -64,6 +64,11 @@ mdbInit(void)
 	 * space in each instruction.
 	 */
 	mdbTable = GDKzalloc(sizeof(mdbStateRecord) * MAL_MAXCLIENTS);
+	if (mdbTable == NULL) {
+		showException(GDKout,MAL, "mdbInit",MAL_MALLOC_FAIL);
+		return -1;
+	}
+	return 0;
 }
 
 static char
@@ -472,8 +477,10 @@ retryRead:
 		case 's':   /* step */
 			if (strncmp("span", b, 4) == 0) {
 				Lifespan span = setLifespan(mb);
-				debugLifespan(cntxt, mb, span);
-				GDKfree(span);
+				if ( span){
+					debugLifespan(cntxt, mb, span);
+					GDKfree(span);
+				}
 				continue;
 			} else if (strncmp("scenarios", b, 9) == 0) {
 				showAllScenarios(out);

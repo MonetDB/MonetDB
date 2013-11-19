@@ -269,7 +269,7 @@ mal_export int newVariable(MalBlkPtr mb, str name, malType type);
 mal_export int cloneVariable(MalBlkPtr dst, MalBlkPtr src, int varid);
 mal_export void renameVariable(MalBlkPtr mb, int i, str pattern, int newid);
 mal_export void resetVarName(MalBlkPtr mb, int i);
-mal_export void copyVariable(MalBlkPtr dst, VarPtr v);
+mal_export int copyVariable(MalBlkPtr dst, VarPtr v);
 mal_export void copyProperties(MalBlkPtr mb, int src, int dst);
 mal_export void removeVariable(MalBlkPtr mb, int varid);
 mal_export int newTmpVariable(MalBlkPtr mb, malType type);

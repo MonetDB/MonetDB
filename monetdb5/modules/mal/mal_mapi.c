@@ -686,6 +686,7 @@ SERVERexit(void){
 																		\
 			l = 2 * strlen(err) + 8192;									\
 			newerr = (str) GDKmalloc(l);								\
+			if(newerr == NULL) { err = MAL_MALLOC_FAIL; break;}			\
 																		\
 			f = newerr;													\
 			/* I think this code tries to deal with multiple errors, this \

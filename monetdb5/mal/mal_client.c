@@ -90,6 +90,10 @@ MCinit(void)
 		/* console */ 1 +
 		/* client connections */ maxclients;
 	mal_clients = GDKzalloc(sizeof(ClientRec) * MAL_MAXCLIENTS);
+	if( mal_clients == NULL){
+		showException(GDKout, MAL, "MCinit",MAL_MALLOC_FAIL);
+		mal_exit();
+	}
 }
 
 int
@@ -274,8 +278,7 @@ MCinitClientThread(Client c)
 	cname[11] = '\0';
 	t = THRnew(cname);
 	if (t == 0) {
-		showException(c->fdout, MAL, "initClientThread",
-				"Failed to initialize client");
+		showException(c->fdout, MAL, "initClientThread", "Failed to initialize client");
 		MPresetProfiler(c->fdout);
 		return -1;
 	}
@@ -288,7 +291,12 @@ MCinitClientThread(Client c)
 	c->mythread = t;
 	c->errbuf = GDKerrbuf;
 	if (c->errbuf == NULL) {
-		GDKsetbuf(GDKzalloc(GDKMAXERRLEN));
+		char *n = GDKzalloc(GDKMAXERRLEN);
+		if ( n == NULL){
+			showException(GDKout, MAL, "initClientThread", "Failed to initialize client");
+			return -1;
+		}
+		GDKsetbuf(n);
 		c->errbuf = GDKerrbuf;
 	} else
 		c->errbuf[0] = 0;

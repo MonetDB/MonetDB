@@ -103,7 +103,7 @@
  * @image{base00,,,,.pdf}
  * @emph{Figure 2.1}
  * @end iftex
- * @-
+ * 
  * @node MAL Synopsis, Execution Engine, Architecture Overview,  Design  Overview
  * @+ MonetDB Assembly Language (MAL)
  * The target language for a query compiler is
@@ -157,7 +157,6 @@
  * function modules.
  * @end itemize
  *
- * @-
  * @+ Critical sections and semaphores
  * MonetDB Version 5 is implemented as a collection of threads.
  * This calls for extreme
@@ -245,7 +244,8 @@ int mal_init(void){
 
 	tstAligned();
 	MCinit();
-	mdbInit();
+	if (mdbInit()) 
+		return -1;
 	if (monet_memory == 0)
 		monet_memory = MT_npages() * MT_pagesize();
 	initNamespace();

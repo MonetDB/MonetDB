@@ -19,7 +19,6 @@
 
 /*
  * @a M. Kersten
- * @v 0.0
  * @+ Factories
  * A convenient programming construct is the co-routine, which
  * is specified as an ordinary function, but maintains its
@@ -80,7 +79,7 @@
  * end random;
  * @end example
  *
- * @- Factory Ownership
+ * Factory Ownership
  * For simple cases, e.g. implementation of a random function,
  * it suffices to ensure that the state is secured between calls.
  * But, in a database context there are multiple clients
@@ -139,7 +138,7 @@
  * end random;
  * @end example
  *
- * @- Complex Factories
+ * Complex Factories
  * The factory scheme can be used to model
  * a volcano-style query processor. Each node in the query
  * tree is an iterator that calls upon the operands to produce
@@ -247,7 +246,6 @@
  *
  */
 /*
- * @-
  * The initial implementation is geared at a central
  * factory plant manager, which is called to forward
  * any factory call to their proper destination.
@@ -331,7 +329,6 @@ runFactory(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr stk, InstrP
 			throw(MAL, "factory.new", MAL_MALLOC_FAIL);
 	}
 	/*
-	 * @-
 	 * We have found a factory to process the request.
 	 * Let's call it as a synchronous action, without concern on parallelism.
 	 */
@@ -389,7 +386,6 @@ runFactory(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr stk, InstrP
 	return msg;
 }
 /*
- * @-
  * The shortcut operator for factory calls assumes that the user is
  * not interested in the results produced.
  */
@@ -435,7 +431,6 @@ callFactory(Client cntxt, MalBlkPtr mb, ValPtr argv[], char flag){
 	} else  {
 		pl= plants+i;
 		/*
-		 * @-
 		 * When you re-enter the factory the old arguments should be
 		 * released to make room for the new ones.
 		 */
@@ -462,7 +457,6 @@ callFactory(Client cntxt, MalBlkPtr mb, ValPtr argv[], char flag){
 	return ret;
 }
 /*
- * @-
  * A new plant is constructed. The properties of the factory
  * should be known upon compile time. They are retrieved from
  * the signature of the factory definition.
@@ -492,7 +486,6 @@ newPlant(MalBlkPtr mb)
 }
 
 /*
- * @-
  * Upon reaching the yield operator, the factory is
  * suspended until the next request arrives.
  * The information in the target list should be delivered
@@ -545,7 +538,6 @@ yieldFactory(MalBlkPtr mb, InstrPtr p, int pc)
 }
 
 /*
- * @-
  * A return from a factory body implies removal of
  * all state information.
  * This code should also prepare for handling factories

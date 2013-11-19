@@ -28,11 +28,6 @@
  * Currently the bid estimate is made using only the recycle cache.
  * ToDo: use the info about server load
  * FactFinder
- * @-
- */
-/*
- * @-
- * Bidding described ...
  */
 #include "monetdb_config.h"
 #include <mal.h>

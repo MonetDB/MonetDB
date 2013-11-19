@@ -49,7 +49,7 @@ extern void showAtoms(stream *fd);  /* used in src/mal/mal_debugger.c */
 extern MT_Lock mal_namespaceLock;
 extern MT_Sema mal_parallelism;
 
-extern void mdbInit(void);
+extern int mdbInit(void);
 
 extern str createScriptException(MalBlkPtr, int, enum malexception,
 	const char *, _In_z_ _Printf_format_string_ const char *, ...)
