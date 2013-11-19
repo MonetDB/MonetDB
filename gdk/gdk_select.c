@@ -1448,53 +1448,57 @@ BAT_select_(BAT *b, const void *tl, const void *th,
 		ALGODEBUG fprintf(stderr, "#BAT_select_(b=%s#" BUNFMT
 				  ",tail=%d): make map\n",
 				  BATgetId(b), BATcount(b), tail);
-		map = BATmirror(BATmark(b, 0)); /* [dense,any_1] */
-		b1 = BATmirror(BATmark(BATmirror(b), 0)); /* dense,any_2] */
+		map = BATmirror(BATmark(b, 0)); /* [dense1,any_1] */
+		b1 = BATmirror(BATmark(BATmirror(b), 0)); /* dense1,any_2] */
 	} else {
 		ALGODEBUG fprintf(stderr, "#BAT_select_(b=%s#" BUNFMT
 				  ",tail=%d): dense head\n",
 				  BATgetId(b), BATcount(b), tail);
 		map = NULL;
-		b1 = b;		/* [dense,any_2] (any_1==dense) */
+		b1 = b;		/* [dense1,any_2] (any_1==dense1) */
 	}
-	/* b1 is a [dense,any_2] BAT, map (if set) is a [dense,any_1] BAT */
+	/* b1 is a [dense1,any_2] BAT, map (if set) is a [dense1,any_1] BAT */
 	bn = BATsubselect(b1, NULL, tl, th, li, hi, anti);
 	if (bn == NULL)
 		goto error;
-	/* bn is a [dense,oid] BAT */
+	/* bn is a [dense2,oid] BAT, if b was hdense, oid==any_1 */
 	if (tail) {
 		/* we want to return a [any_1,any_2] subset of b */
 		if (map) {
 			bn1 = BATproject(bn, map);
 			if (bn1 == NULL)
 				goto error;
-			/* bn1 is [dense,any_1] */
+			/* bn1 is [dense2,any_1] */
 			BBPunfix(map->batCacheid);
 			map = BATmirror(bn1);
-			/* map is [any_1,dense] */
+			/* map is [any_1,dense2] */
 			bn1 = BATproject(bn, b1);
 			if (bn1 == NULL)
 				goto error;
-			/* bn1 is [dense,any_2] */
+			/* bn1 is [dense2,any_2] */
 			BBPunfix(b1->batCacheid);
 			b1 = NULL;
 			BBPunfix(bn->batCacheid);
-			bn = BATleftfetchjoin(map, bn1, BATcount(map));
+			bn = VIEWcreate(map, bn1);
 			if (bn == NULL)
 				goto error;
 			/* bn is [any_1,any_2] */
-			BBPunfix(map->batCacheid);
 			BBPunfix(bn1->batCacheid);
-			map = bn1 = NULL;
+			BBPunfix(map->batCacheid);
+			bn1 = map = NULL;
 		} else {
-			/* b was [dense,any_2] */
-			bn1 = VIEWcombine(BATmirror(bn));
-			/* bn1 is [oid,oid] */
-			BBPunfix(bn->batCacheid);
-			bn = BATleftfetchjoin(bn1, b, BATcount(bn1));
-			if (bn == NULL)
+			bn1 = BATproject(bn, b);
+			if (bn1 == NULL)
 				goto error;
-			/* bn is [oid,any_2] */
+			/* bn1 is [dense2,any_2] */
+			/* bn was [dense2,any_1] since b was hdense */
+			b1 = VIEWcreate(BATmirror(bn), bn1);
+			if (b1 == NULL)
+				goto error;
+			/* b1 is [any_1,any_2] */
+			BBPunfix(bn->batCacheid);
+			bn = b1;
+			b1 = NULL;
 			BBPunfix(bn1->batCacheid);
 			bn1 = NULL;
 		}
@@ -1515,7 +1519,7 @@ BAT_select_(BAT *b, const void *tl, const void *th,
 			bn1 = BATproject(bn, map);
 			if (bn1 == NULL)
 				goto error;
-			/* bn1 is [dense,any_1] */
+			/* bn1 is [dense2,any_1] */
 			BBPunfix(map->batCacheid);
 			BBPunfix(bn->batCacheid);
 			bn = bn1;
@@ -1566,8 +1570,8 @@ BATselect(BAT *b, const void *h, const void *t)
 	return BATselect_(b, h, t, TRUE, TRUE);
 }
 
-/* Return a BAT with in its head a subset of qualifying tuples from
- * the head of b, and void-nil in its tail. */
+/* Return a BAT with in its head a subset of qualifying head values
+ * from b, and void-nil in its tail. */
 BAT *
 BATuselect(BAT *b, const void *h, const void *t)
 {
