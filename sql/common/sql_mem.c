@@ -78,6 +78,7 @@ sql_allocator *sa_reset( sql_allocator *sa )
 	}
 	sa->nr = 1;
 	sa->used = 0;
+	sa->usedmem = SA_BLOCK;
 	return sa;
 }
 
