@@ -2682,6 +2682,8 @@ BATproject(BAT *l, BAT *r)
 }
 
 /* backward compatible interfaces */
+
+/* Return a subset of l where head elements occur as head element in r. */
 BAT *
 BATsemijoin(BAT *l, BAT *r)
 {
@@ -2775,13 +2777,24 @@ do_batjoin(BAT *l, BAT *r, int op,
 	   gdk_return (*thetajoin)(BAT **, BAT **, BAT *, BAT *, BAT *, BAT *,
 				   int, int, BUN),
 	   gdk_return (*bandjoin)(BAT **, BAT **, BAT *, BAT *, BAT *, BAT *,
-				  const void *, const void *, int, int, BUN))
+				  const void *, const void *, int, int, BUN),
+	   const char *name)
 {
 	BAT *lmap, *rmap;
 	BAT *res1, *res2;
 	BAT *bn;
 	gdk_return ret;
 
+	ALGODEBUG fprintf(stderr, "#Legacy %s(l=%s#" BUNFMT "[%s,%s]%s%s%s,"
+			  "r=%s#" BUNFMT "[%s,%s]%s%s%s)\n", name,
+			  BATgetId(l), BATcount(l), ATOMname(l->htype), ATOMname(l->ttype),
+			  BAThdense(l) ? "-hdense" : "",
+			  l->tsorted ? "-sorted" : "",
+			  l->trevsorted ? "-revsorted" : "",
+			  BATgetId(r), BATcount(r), ATOMname(r->htype), ATOMname(r->ttype),
+			  BAThdense(r) ? "-hdense" : "",
+			  r->tsorted ? "-sorted" : "",
+			  r->trevsorted ? "-revsorted" : "");
 	r = BATmirror(r);
 	/* r is [any_3,any_2] */
 	if (!BAThdense(l) || !BAThdense(r)) {
@@ -2854,7 +2867,8 @@ do_batjoin(BAT *l, BAT *r, int op,
 BAT *
 BATjoin(BAT *l, BAT *r, BUN estimate)
 {
-	return do_batjoin(l, r, 0, NULL, NULL, 0, 0, estimate, BATsubjoin, NULL, NULL);
+	return do_batjoin(l, r, 0, NULL, NULL, 0, 0, estimate,
+			  BATsubjoin, NULL, NULL, "BATjoin");
 }
 
 /* join [any_1,any_2] with [any_2,any_3], return [any_1,any_3];
@@ -2862,7 +2876,8 @@ BATjoin(BAT *l, BAT *r, BUN estimate)
 BAT *
 BATleftjoin(BAT *l, BAT *r, BUN estimate)
 {
-	return do_batjoin(l, r, 0, NULL, NULL, 0, 0, estimate, BATsubleftjoin, NULL, NULL);
+	return do_batjoin(l, r, 0, NULL, NULL, 0, 0, estimate,
+			  BATsubleftjoin, NULL, NULL, "BATleftjoin");
 }
 
 /* join [any_1,any_2] with [any_2,any_3], return [any_1,any_3] */
@@ -2870,8 +2885,10 @@ BAT *
 BATthetajoin(BAT *l, BAT *r, int op, BUN estimate)
 {
 	if (op == JOIN_EQ)
-		return do_batjoin(l, r, 0, NULL, NULL, 0, 0, estimate, BATsubjoin, NULL, NULL);
-	return do_batjoin(l, r, op, NULL, NULL, 0, 0, estimate, NULL, BATsubthetajoin, NULL);
+		return do_batjoin(l, r, 0, NULL, NULL, 0, 0, estimate,
+				  BATsubjoin, NULL, NULL, "BATthetajoin");
+	return do_batjoin(l, r, op, NULL, NULL, 0, 0, estimate, NULL,
+			  BATsubthetajoin, NULL, "BATthetajoin");
 }
 
 /* join [any_1,any_2] with [any_2,any_3], return [any_1,any_3];
@@ -2879,7 +2896,8 @@ BATthetajoin(BAT *l, BAT *r, int op, BUN estimate)
 BAT *
 BATouterjoin(BAT *l, BAT *r, BUN estimate)
 {
-	return do_batjoin(l, r, 0, NULL, NULL, 0, 0, estimate, BATsubouterjoin, NULL, NULL);
+	return do_batjoin(l, r, 0, NULL, NULL, 0, 0, estimate,
+			  BATsubouterjoin, NULL, NULL, "BATouterjoin");
 }
 
 /* join [any_1,any_2] with [any_2,any_3], return [any_1,any_3];
@@ -2887,7 +2905,8 @@ BATouterjoin(BAT *l, BAT *r, BUN estimate)
 BAT *
 BATleftfetchjoin(BAT *l, BAT *r, BUN estimate)
 {
-	return do_batjoin(l, r, 0, NULL, NULL, 0, 0, estimate, BATsubleftfetchjoin, NULL, NULL);
+	return do_batjoin(l, r, 0, NULL, NULL, 0, 0, estimate,
+			  BATsubleftfetchjoin, NULL, NULL, "BATleftfetchjoin");
 }
 
 BAT *
@@ -2895,12 +2914,12 @@ BATantijoin(BAT *l, BAT *r)
 {
 	return do_batjoin(l, r, JOIN_NE, NULL, NULL, 0, 0,
 			  (BUN) MIN((lng) BATcount(l) * BATcount(r), BUN_MAX),
-			  NULL, BATsubthetajoin, NULL);
+			  NULL, BATsubthetajoin, NULL, "BATantijoin");
 }
 
 BAT *
 BATbandjoin(BAT *l, BAT *r, const void *c1, const void *c2, bit li, bit hi)
 {
 	return do_batjoin(l, r, 0, c1, c2, li, hi, BUN_NONE,
-			  NULL, NULL, BATsubbandjoin);
+			  NULL, NULL, BATsubbandjoin, "BATbandjoin");
 }

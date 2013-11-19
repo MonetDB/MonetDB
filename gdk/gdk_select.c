@@ -1425,13 +1425,23 @@ BATthetasubselect(BAT *b, BAT *s, const void *val, const char *op)
 
 static BAT *
 BAT_select_(BAT *b, const void *tl, const void *th,
-            bit li, bit hi, bit tail, bit anti)
+            bit li, bit hi, bit tail, bit anti, const char *name)
 {
 	BAT *bn;
 	BAT *bn1 = NULL;
 	BAT *map;
 	BAT *b1;
 
+	ALGODEBUG fprintf(stderr, "#Legacy %s(b=%s#" BUNFMT "[%s,%s]%s%s%s,"
+			  "li=%s,hi=%s,tail=%s,anti=%s)\n", name,
+			  BATgetId(b), BATcount(b), ATOMname(b->htype), ATOMname(b->ttype),
+			  BAThdense(b) ? "-hdense" : "",
+			  b->tsorted ? "-sorted" : "",
+			  b->trevsorted ? "-revsorted" : "",
+			  li ? "true" : "false",
+			  hi ? "true" : "false",
+			  tail ? "true" : "false",
+			  anti ? "true" : "false");
 	BATcheck(b, "BAT_select_");
 	/* b is a [any_1,any_2] BAT */
 	if (!BAThdense(b)) {
@@ -1533,27 +1543,31 @@ BAT_select_(BAT *b, const void *tl, const void *th,
 BAT *
 BATselect_(BAT *b, const void *h, const void *t, bit li, bit hi)
 {
-	return BAT_select_(b, h, t, li, hi, TRUE, FALSE);
+	return BAT_select_(b, h, t, li, hi, TRUE, FALSE, "BATselect_");
 }
 
 BAT *
 BATuselect_(BAT *b, const void *h, const void *t, bit li, bit hi)
 {
-	return BAT_select_(b, h, t, li, hi, FALSE, FALSE);
+	return BAT_select_(b, h, t, li, hi, FALSE, FALSE, "BATuselect_");
 }
 
 BAT *
 BATantiuselect_(BAT *b, const void *h, const void *t, bit li, bit hi)
 {
-	return BAT_select_(b, h, t, li, hi, FALSE, TRUE);
+	return BAT_select_(b, h, t, li, hi, FALSE, TRUE, "BATantiuselect");
 }
 
+/* Return a BAT which is a subset of b with just the qualifying
+ * tuples. */
 BAT *
 BATselect(BAT *b, const void *h, const void *t)
 {
 	return BATselect_(b, h, t, TRUE, TRUE);
 }
 
+/* Return a BAT with in its head a subset of qualifying tuples from
+ * the head of b, and void-nil in its tail. */
 BAT *
 BATuselect(BAT *b, const void *h, const void *t)
 {
