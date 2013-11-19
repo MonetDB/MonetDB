@@ -2240,20 +2240,10 @@ BATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 	if (s) {
 		/* there is a candidate list, replace b (and g, if
 		 * given) with just the values we're interested in */
-		b = BATleftjoin(s, b, BATcount(s));
-		if (b->htype != TYPE_void) {
-			t1 = BATmirror(BATmark(BATmirror(b), 0));
-			BBPunfix(b->batCacheid);
-			b = t1;
-		}
+		b = BATproject(s, b);
 		freeb = 1;
 		if (g) {
-			g = BATleftjoin(s, g, BATcount(s));
-			if (g->htype != TYPE_void) {
-				t1 = BATmirror(BATmark(BATmirror(g), 0));
-				BBPunfix(g->batCacheid);
-				g = t1;
-			}
+			g = BATproject(s, g);
 			freeg = 1;
 		}
 	}
