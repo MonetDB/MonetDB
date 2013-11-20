@@ -2439,7 +2439,7 @@ InstrPtr copyInstruction(InstrPtr p);
 MalBlkPtr copyMalBlk(MalBlkPtr mb);
 void copyProperties(MalBlkPtr mb, int src, int dst);
 str copyRef;
-void copyVariable(MalBlkPtr dst, VarPtr v);
+int copyVariable(MalBlkPtr dst, VarPtr v);
 str copy_fromRef;
 str countRef;
 str count_no_nilRef;
