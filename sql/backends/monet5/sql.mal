@@ -1036,7 +1036,7 @@ comment "cast date to a timestamp and check for overflow";
 
 include sql_decimal;
 include sql_rank;
-include sql_cast;
+#include sql_cast;
 include sql_aggr_bte;
 include sql_aggr_sht;
 include sql_aggr_int;
