@@ -27,7 +27,7 @@ Vendor: MonetDB BV <info@monetdb.org>
 Group: Applications/Databases
 License: MPL - http://www.monetdb.org/Legal/MonetDBLicense
 URL: http://www.monetdb.org/
-Source: http://dev.monetdb.org/downloads/sources/Feb2013-SP5/%{name}-%{version}.tar.bz2
+Source: http://dev.monetdb.org/downloads/sources/Feb2013-SP6/%{name}-%{version}.tar.bz2
 
 BuildRequires: bison
 BuildRequires: bzip2-devel
@@ -755,6 +755,69 @@ rm -f $RPM_BUILD_ROOT%{_bindir}/Maddlog
 rm -fr $RPM_BUILD_ROOT
 
 %changelog
+* Wed Nov 20 2013 Sjoerd Mullender <sjoerd@acm.org> - 11.15.19-20131120
+- Rebuilt.
+- BZ#3243: Segmentation fault (possible data corruption) after clean
+  shutdown
+- BZ#3258: Scheduling issues
+- BZ#3368: BAT sortedness info ignored on ORDER BY and TOPN
+- BZ#3374: UNIQUE constraint does not set tkey property on the
+  corresponding BAT
+- BZ#3382: Response to PREPARE emtpy if query contains a LIMIT
+- BZ#3385: Simple query fails with 'identifier not found'
+- BZ#3387: mclient does not properly double quote schema names when
+  using autofill tab
+- BZ#3388: case statement in "order by" clause doesn't work when used
+  together with "group by"
+- BZ#3389: median function with "group by"  - SIGSEGV
+- BZ#3392: ODBC datatype conversion for INTEGER not working properly
+- BZ#3394: "Cannot find column type" error in temporary tables in
+  functions
+- BZ#3395: error occurred during a query: "'CASE WHEN" sentence
+- BZ#3396: Improper UDF expansion
+- BZ#3397: Error in ODBC-Driver when using Prepared Statements
+- BZ#3398: Cannot stop monetdbd after erroneously starting an
+  uninitialized dbfarm
+
+* Tue Nov 19 2013 Sjoerd Mullender <sjoerd@acm.org> - 11.15.19-20131120
+- clients: mclient: Fixed a bug where the -H option only worked if the readline
+  history file already existed.  Now we properly create and use the
+  history file.
+
+* Tue Nov 19 2013 Sjoerd Mullender <sjoerd@acm.org> - 11.15.19-20131120
+- gdk: Stopped using the deprecated sbrk() system call.
+- gdk: Fixed a problem when reverse sorting a sorted column.
+- gdk: Fixed bugs that deal with problems that could possibly occur when
+  transactions are aborted and the server is restarted.  See bug #3243.
+- gdk: A bug was fixed in the handling of grouped aggregates when all values
+  in a group are null.  See bug #3388.
+
+* Tue Nov 19 2013 Sjoerd Mullender <sjoerd@acm.org> - 11.15.19-20131120
+- monetdb5: Fixed a possible buffer overflow in the COPY INTO code.
+- monetdb5: Fixed a problem that when the server is using all available threads
+  for a query, it was not possible to attach another client and have
+  it execute even the smallest query.  This is fixed by creating extra
+  threads for each client entering the fray at the cost of having more
+  threads that execute queries.  But at least there is guaranteed progress
+  for all clients (modulo the operating system scheduler).  See bug #3258.
+
+* Tue Nov 19 2013 Sjoerd Mullender <sjoerd@acm.org> - 11.15.19-20131120
+- sql: Fixed a bug where the server at some point stopped saving compiled
+  queries in the SQL query cache.
+
+* Fri Nov 15 2013 Fabian Groffen <fabian@monetdb.org> - 11.15.19-20131120
+- merovingian: monetdbd(1) now refuses to startup if it cannot read the properties
+  from the dbfarm, bug #3398
+
+* Wed Nov  6 2013 Sjoerd Mullender <sjoerd@acm.org> - 11.15.19-20131120
+- clients: ODBC: Fixed interpretation SQL_C_SLONG/SQL_C_ULONG/SQL_C_LONG to
+  refer to a 32 bit integer always (i.e. "int" on 64 bit architectures
+  despite the name and the Microsoft documentation).  This seems to be
+  the consensus.
+- clients: ODBC: Fixed transaction level: MonetDB only supports the highest level
+  (SQL_TXN_SERIALIZABLE), so setting the transaction level can be accepted
+  and ignored.
+
 * Tue Oct 08 2013 Hannes Muehleisen <hannes@cwi.nl> - 11.15.17-20131008
 - Rebuilt.
 - BZ#3323: Heapcache bugs/performance issues
