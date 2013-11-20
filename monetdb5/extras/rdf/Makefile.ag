@@ -28,7 +28,7 @@ MTSAFE
 lib_rdf = {
 	MODULE
 	DIR = libdir/monetdb5
-	SOURCES = rdf.h rdf_shredder.mx rdfalgebra.c
+	SOURCES = rdf.h rdf_shredder.c rdfalgebra.c
 
 	LIBS = ../../tools/libmonetdb5 \
 		   ../../../gdk/libbat \

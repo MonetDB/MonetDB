@@ -1,29 +1,25 @@
-@/
-The contents of this file are subject to the MonetDB Public License
-Version 1.1 (the "License"); you may not use this file except in
-compliance with the License. You may obtain a copy of the License at
-http://www.monetdb.org/Legal/MonetDBLicense
-
-Software distributed under the License is distributed on an "AS IS"
-basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
-License for the specific language governing rights and limitations
-under the License.
-
-The Original Code is the MonetDB Database System.
-
-The Initial Developer of the Original Code is CWI.
-Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-Copyright August 2008-2013 MonetDB B.V.
-All Rights Reserved.
-@
-
-@f rdf_shredder
-
-@c
 /*
- * @a L.Sidirourgos
+ * The contents of this file are subject to the MonetDB Public License
+ * Version 1.1 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ * http://www.monetdb.org/Legal/MonetDBLicense
+ * 
+ * Software distributed under the License is distributed on an "AS IS"
+ * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+ * License for the specific language governing rights and limitations
+ * under the License.
+ * 
+ * The Original Code is the MonetDB Database System.
+ * 
+ * The Initial Developer of the Original Code is CWI.
+ * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+ * Copyright August 2008-2013 MonetDB B.V.
+ * All Rights Reserved.
+*/
+/*
+ * (author) L.Sidirourgos
  *
- * @+ Shredder for RDF Documents
+ * Shredder for RDF Documents
  */
 #include "monetdb_config.h"
 #include "mal_exception.h"
@@ -97,24 +93,22 @@ typedef struct parserData {
 } parserData;
 
 /*
- * @-
  * The (fatal) errors and warnings produced by the raptor parser are handled
  * by the next three message handler functions.
  */
-@= raptor_exception
-@1->exception++;
-@1->exceptionMsg = @2;
-raptor_parse_abort (@1->rparser);
+#define raptor_exception(P,M) \
+P->exception++;\
+P->exceptionMsg = M;\
+raptor_parse_abort (P->rparser);
 
-@= rdf_parser_handler
 static void
-@1Handler (void *user_data, raptor_locator* locator,
+fatalHandler (void *user_data, raptor_locator* locator,
 		const char *message)
 {
 	parserData *pdata = (parserData *) user_data;
-	pdata->@1Msg = GDKstrdup(message);
-	mnstr_printf(GDKout, "rdflib: @1:%s\n", pdata->@1Msg);
-	pdata->@1++;
+	pdata->fatalMsg = GDKstrdup(message);
+	mnstr_printf(GDKout, "rdflib: fatal:%s\n", pdata->fatalMsg);
+	pdata->fatal++;
 
 	/* check for a valid locator object and only then use it */
 	if (locator != NULL) {
@@ -124,69 +118,64 @@ static void
 	}
 }
 
-@
-@c
-@:rdf_parser_handler(fatal)@
-@:rdf_parser_handler(error)@
-@:rdf_parser_handler(warning)@
+errorHandler (void *user_data, raptor_locator* locator,
+		const char *message)
+{
+	parserData *pdata = (parserData *) user_data;
+	pdata->errorMsg = GDKstrdup(message);
+	mnstr_printf(GDKout, "rdflib: error:%s\n", pdata->errorMsg);
+	pdata->error++;
+
+	/* check for a valid locator object and only then use it */
+	if (locator != NULL) {
+		pdata->line = locator->line;
+		pdata->column = locator->column;
+	} else {
+	}
+}
+
+warningHandler (void *user_data, raptor_locator* locator,
+		const char *message)
+{
+	parserData *pdata = (parserData *) user_data;
+	pdata->warningMsg = GDKstrdup(message);
+	mnstr_printf(GDKout, "rdflib: warning:%s\n", pdata->warningMsg);
+	pdata->warning++;
+
+	/* check for a valid locator object and only then use it */
+	if (locator != NULL) {
+		pdata->line = locator->line;
+		pdata->column = locator->column;
+	} else {
+	}
+}
+
 
 /*
- * @-
  * The raptor parser needs to register a callback function that handles one triple
  * at a time. Function rdf_parser_triple_handler() does exactly this.
  */
-@= rdf_insert
-#ifdef _TKNZR_H
- @:rdf_tknzr_insert(@2)@
-#else
- @:rdf_BUNappend_unq(@1, @2)@
-#endif
 
-
-@= rdf_BUNappend_unq_1
-bun = BUNfnd(BATmirror(@1),(ptr)@2);
-if (bun == BUN_NONE) {
-	if (@1->T->hash && BATcount(@1) > 4 * @1->T->hash->mask) {
-		HASHdestroy(@1);
-		BAThash(BATmirror(@1), 2*BATcount(@1));
-	}
-	bun = (BUN) ((@1)->hseqbase + (@1)->batCount);
-	@1 = BUNappend(@1, (ptr)@2, TRUE);
-	if (@1 == NULL) {
-		@:raptor_exception(pdata, "could not append in@1")@
-	}
-} else {
-	bun = (@1)->hseqbase + bun;
+#define rdf_BUNappend_unq(X,Y)\
+bun = BUNfnd(BATmirror(X),(ptr)Y);\
+if (bun == BUN_NONE) {\
+	if (BATcount(X) > 4 * X->T->hash->mask) {\
+		HASHdestroy(X);\
+		BAThash(BATmirror(X), 2*BATcount(X));\
+	}\
+	bun = (BUN) X->batCount;\
+	X = BUNappend(X, (ptr)Y, TRUE);\
+	if (X == NULL) {\
+		raptor_exception(pdata, "could not append");\
+	}\
 }
 
-@= rdf_BUNappend_unq
-bun = BUNfnd(BATmirror(@1),(ptr)@2);
-if (bun == BUN_NONE) {
-	if (BATcount(@1) > 4 * @1->T->hash->mask) {
-		HASHdestroy(@1);
-		BAThash(BATmirror(@1), 2*BATcount(@1));
-	}
-	bun = (BUN) @1->batCount;
-	@1 = BUNappend(@1, (ptr)@2, TRUE);
-	if (@1 == NULL) {
-		@:raptor_exception(pdata, "could not append in@1")@
-	}
+#define rdf_BUNappend(X,Y) \
+{X = BUNappend(X, Y, TRUE);}\
+if (X  == NULL) {\
+	raptor_exception(pdata, "could not append");\
 }
 
-@= rdf_tknzr_insert
-{
-	str t = @1;
-	TKNZRappend(&bun,&t);
-}
-
-@= rdf_BUNappend
-{@1 = BUNappend(@1, @2, TRUE);}
-if (@1 == NULL) {
-	@:raptor_exception(pdata, "could not append in@1")@
-}
-
-@
-@c
 static void
 tripleHandler(void* user_data, const raptor_statement* triple)
 {
@@ -196,32 +185,67 @@ tripleHandler(void* user_data, const raptor_statement* triple)
 
 	if (triple->subject_type == RAPTOR_IDENTIFIER_TYPE_RESOURCE
 			|| triple->subject_type == RAPTOR_IDENTIFIER_TYPE_ANONYMOUS) {
-		@:rdf_insert(graph[MAP_LEX],(str)triple->subject)@
-		@:rdf_BUNappend(graph[S_sort], &bun)@
+#ifdef _TKNZR_H
+{
+	str t = (str)triple->subject;
+	TKNZRappend(&bun,&t);
+}
+#else
+		 rdf_BUNappend_unq(graph[MAP_LEX], (str)triple->sibject);
+#endif
+		rdf_BUNappend(graph[S_sort], &bun);
 		bun = BUN_NONE;
 	} else {
-		@:raptor_exception(pdata, "could not determine type of subject")@
+		raptor_exception(pdata, "could not determine type of subject");
 	}
 
 	if (triple->predicate_type == RAPTOR_IDENTIFIER_TYPE_RESOURCE) {
-		@:rdf_insert(graph[MAP_LEX],(str)triple->predicate)@
-		@:rdf_BUNappend(graph[P_sort], &bun)@
+#ifdef _TKNZR_H
+{
+	str t = (str)triple->predicate;
+	TKNZRappend(&bun,&t);
+}
+#else
+		 rdf_BUNappend_unq(pdate, (str)triple->predicate);
+#endif
+		rdf_BUNappend(graph[P_sort], &bun);
 		bun = BUN_NONE;
 	} else {
-		@:raptor_exception(pdata, "could not determine type of property")@
+		raptor_exception(pdata, "could not determine type of property");
 	}
 
 	if (triple->object_type == RAPTOR_IDENTIFIER_TYPE_RESOURCE
 			|| triple->object_type == RAPTOR_IDENTIFIER_TYPE_ANONYMOUS) {
-		@:rdf_insert(graph[MAP_LEX],(str)triple->object)@
-		@:rdf_BUNappend(graph[O_sort], &bun)@
+#ifdef _TKNZR_H
+{
+	str t = (str)triple->object;
+	TKNZRappend(&bun,&t);
+}
+#else
+	 rdf_BUNappend_unq(graph[MAP_LEX], (str)triple->object);
+#endif
+		rdf_BUNappend(graph[O_sort], &bun);
 		bun = BUN_NONE;
 	} else if (triple->object_type == RAPTOR_IDENTIFIER_TYPE_LITERAL) {
-		@:rdf_BUNappend_unq_1(graph[MAP_LEX], triple->object)@
-		@:rdf_BUNappend(graph[O_sort], &bun)@
+		bun = BUNfnd(BATmirror(graph[MAP_LEX]),(ptr)triple->object);
+		if (bun == BUN_NONE) {
+			if (graph[MAP_LEX]->T->hash && BATcount(graph[MAP_LEX]) > 4 * graph[MAP_LEX]->T->hash->mask) {
+				HASHdestroy(graph[MAP_LEX]);
+				BAThash(BATmirror(graph[MAP_LEX]), 2*BATcount(graph[MAP_LEX]));
+			}
+			bun = (BUN) ((graph[MAP_LEX])->hseqbase + (graph[MAP_LEX])->batCount);
+			graph[MAP_LEX] = BUNappend(graph[MAP_LEX], (ptr)triple->object, TRUE);
+			if (graph[MAP_LEX] == NULL) {
+				raptor_exception(pdata, "could not append ingraph[MAP_LEX]");
+			}
+		} else {
+			bun = (graph[MAP_LEX])->hseqbase + bun;
+		}
+
+		rdf_BUNappend(graph[O_sort], &bun);
 		bun = BUN_NONE;
 	} else {
-		@:raptor_exception(pdata, "could not determine type of object")@
+		raptor_exception(pdata, "could not determine type of object");
 	}
 
 	pdata->tcount++;
@@ -230,19 +254,8 @@ tripleHandler(void* user_data, const raptor_statement* triple)
 }
 
 /*
- * @-
  * Function RDFParser() is the entry point to parse an RDF document.
  */
-@= set_handlers
-/* set callback handler for triples */
-raptor_set_statement_handler   (@1, @2, tripleHandler);
-/* set message handlers */
-raptor_set_fatal_error_handler (@1, @2, fatalHandler);
-raptor_set_error_handler       (@1, @2, errorHandler);
-raptor_set_warning_handler     (@1, @2, warningHandler);
-
-@
-@c
 /* creates a BAT for the triple table */
 static BAT*
 create_BAT(int ht, int tt, int size)
@@ -315,7 +328,6 @@ parserData_create (str location, BAT** graph)
 }
 
 /*
- * @-
  * After the RDF document has been shredded into 3 bats and a lexical value
  * dictionary, a post-shred processing step follows that orders the lexical
  * dictionary, re-maps oids to match the ordered dictionary and finally creates
@@ -479,23 +491,15 @@ bailout:
 #endif
 }
 
-@= clean_raptor
-/* Free memory of raptor */
-raptor_free_parser(rparser);
-raptor_free_uri(uri);
-raptor_finish();
-@
-
-@= clean
-if (pdata != NULL) {
-	for (iret = 0; iret < N_GRAPH_BAT; iret++) {
-		if (pdata->graph[iret] != NULL)
-			BBPreclaim(pdata->graph[iret]);
-	}
-	GDKfree(pdata);
+#define clean() \
+if (pdata != NULL) {\
+	for (iret = 0; iret < N_GRAPH_BAT; iret++) {\
+		if (pdata->graph[iret] != NULL)\
+			BBPreclaim(pdata->graph[iret]);\
+	}\
+	GDKfree(pdata);\
 }
-@
-@c
+
 #define RDF_CHUNK_SIZE 100*1024*1024
 
 /* Main RDF parser function that drives raptor */
@@ -526,7 +530,7 @@ RDFParser (BAT **graph, str *location, str *graphname, str *schema)
 #ifdef _TKNZR_H
 		TKNZRclose(&iret);
 #endif
-		@:clean@
+		clean();
 		throw(RDF, "rdf.rdfShred",
 				"could not allocate enough memory for pdata\n");
 	}
@@ -539,10 +543,16 @@ RDFParser (BAT **graph, str *location, str *graphname, str *schema)
 		TKNZRclose(&iret);
 #endif
 		raptor_finish();
-		@:clean@
+		clean();
 		throw(RDF, "rdf.rdfShred", "could not create raptor parser object\n");
 	}
-	@:set_handlers(rparser, pdata)@
+	/* set callback handler for triples */
+	raptor_set_statement_handler   (rparser, pdata, tripleHandler);
+	/* set message handlers */
+	raptor_set_fatal_error_handler (rparser, pdata, fatalHandler);
+	raptor_set_error_handler       (rparser, pdata, errorHandler);
+	raptor_set_warning_handler     (rparser, pdata, warningHandler);
+
 	raptor_set_parser_strict(rparser, 0);
 
 	/* Parse URI or local file. */
@@ -551,7 +561,7 @@ RDFParser (BAT **graph, str *location, str *graphname, str *schema)
 #ifdef _TKNZR_H
 		TKNZRclose(&iret);
 #endif
-		@:clean@
+		clean();
 		return ret;
 	} else if (isURI) {
 		uri = raptor_new_uri((unsigned char *) pdata->location);
@@ -584,7 +594,11 @@ RDFParser (BAT **graph, str *location, str *graphname, str *schema)
                                 raptor_uri_filename_to_uri_string(pdata->location));
                 iret = raptor_parse_file(rparser, uri, NULL);
 	}
-	@:clean_raptor@
+	/* Free memory of raptor */
+	raptor_free_parser(rparser);
+	raptor_free_uri(uri);
+	raptor_finish();
+
 #ifdef _TKNZR_H
 	TKNZRclose(&iret);
 #endif
@@ -595,7 +609,7 @@ RDFParser (BAT **graph, str *location, str *graphname, str *schema)
 
 	/* error check */
 	if (iret) {
-		@:clean@
+		clean();
 		throw(RDF, "rdf.rdfShred", "parsing failed\n");
 	}
 	if (pdata->exception) {
@@ -614,7 +628,7 @@ RDFParser (BAT **graph, str *location, str *graphname, str *schema)
 	/* post processing step */
 	ret = post_processing(pdata);
 	if (ret != MAL_SUCCEED) {
-		@:clean@
+		clean();
 		throw(RDF, "rdf.rdfShred", "could not post-proccess data");
 	}
 	GDKfree(pdata);
