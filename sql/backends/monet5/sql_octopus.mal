@@ -3,6 +3,8 @@
 # It should be cast into a more efficient C procedure, which also
 # takes care of NAS opportunities.
 
+module octopus;
+
 function octopus.bind(mvc:int, sch:str, tab:str,col:str,kind:int, version:int):bat[:oid,:any_1];
 	b:bat[:oid,:any_1]:= sql.bind(mvc,sch,tab,col,kind);
 	return bind:= b;

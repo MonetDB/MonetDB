@@ -1034,22 +1034,19 @@ address date_2_timestamp
 comment "cast date to a timestamp and check for overflow";
 
 
-#include "sql_rank.mal"
-
-#include "sql_cast.mal"
-
-#include "sql_aggr_bte.mal"
-#include "sql_aggr_sht.mal"
-#include "sql_aggr_int.mal"
-#include "sql_aggr_wrd.mal"
-#include "sql_aggr_lng.mal"
-#include "sql_aggr_flt.mal"
-#include "sql_aggr_dbl.mal"
-
-#include "sql_octopus.mal"
-#include "sql_sort.mal"
-#include "sql_rdf.mal"
-
-#include "sql_inspect.mal"
+include sql_decimal;
+include sql_rank;
+include sql_cast;
+include sql_aggr_bte;
+include sql_aggr_sht;
+include sql_aggr_int;
+include sql_aggr_wrd;
+include sql_aggr_lng;
+include sql_aggr_flt;
+include sql_aggr_dbl;
+include sql_inspect;
+include sql_sort;
+include sql_rdf;
+include sql_octopus;
 
 sql.prelude();

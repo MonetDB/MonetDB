@@ -1,3 +1,5 @@
+module sql;
+
 command sql.rank_grp(b:bat[:oid,:any_1], gp:bat[:oid,:oid], gpe:bat[:oid,:oid]) :bat[:oid,:int] 
 address sql_rank_grp
 comment "return the ranked groups";

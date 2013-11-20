@@ -36,7 +36,7 @@ lib__sql = {
 	MODULE
 	DIR = libdir/monetdb5
 	SOURCES = \
-		sql.mx \
+		sql.c sql.h \
 		mal_backend.c mal_backend.h \
 		sql_user.c sql_user.h \
 		sql_scenario.c sql_scenario.h \
@@ -46,7 +46,9 @@ lib__sql = {
 		sql_gencode.c sql_gencode.h \
 		sql_optimizer.c sql_optimizer.h \
 		sql_result.c sql_result.h \
-		sql_readline.c sql_readline.h 
+		sql_readline.c sql_readline.h \
+		sql_cast.c sql_cast.h \
+		sql_round.c sql_bat2time.c sql_fround.c sql_rdf.c
 	LIBS = ../../server/libsqlserver \
 		   ../../storage/libstore \
 		   ../../storage/bat/libbatstore \
@@ -96,7 +98,9 @@ lib__sql = {
 headers_mal = {
 	HEADERS = mal
 	DIR = libdir/monetdb5
-	SOURCES = sql.mx sql_aggr_bte.mal  sql_aggr_flt.mal  sql_aggr_int.mal  sql_aggr_lng.mal  sql_aggr_sht.mal  sql_aggr_wrd.mal  sql_decimal.mal  sql_inspect.mal  sql.mal  sql_octopus.mal  sql_rank.mal  sql_rdf.mal  sql_sort.mal
+	SOURCES = sql_aggr_bte.mal  sql_aggr_flt.mal  sql_aggr_int.mal  sql_aggr_lng.mal \
+		sql_aggr_sht.mal  sql_aggr_wrd.mal  sql_decimal.mal  sql_inspect.mal \
+		sql_rank.mal  sql_rdf.mal  sql_sort.mal sql.mal sql_octopus.mal
 }
 
 headers_autoload = {
@@ -105,5 +109,9 @@ headers_autoload = {
 	SOURCES = 40_sql.mal
 }
 
-EXTRA_DIST = 40_sql.mal
+EXTRA_DIST = 40_sql.mal \
+	sql_aggr_bte.mal  sql_aggr_flt.mal  sql_aggr_int.mal  sql_aggr_lng.mal \
+	sql_aggr_sht.mal  sql_aggr_wrd.mal  sql_decimal.mal  sql_inspect.mal \
+	sql_rank.mal  sql_rdf.mal  sql_sort.mal sql.mal sql_octopus.mal
+
 EXTRA_DIST_DIR = Tests
