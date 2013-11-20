@@ -1,7 +1,5 @@
 
 --create type json external name json;
-create function json_filter(js json, nme string)
-returns json external name json.filter;
 
 create table minitable(j json);
 
@@ -37,4 +35,5 @@ select json_filter(j,'name'), json_filter(j,'contribs') from minitable;
 select json_keys(j) from minitable;
 select json_names(j) from minitable;
 select json_values(j) from minitable;
+
 drop table minitable;
