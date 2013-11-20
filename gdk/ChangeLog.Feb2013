@@ -1,11 +1,3 @@
 # ChangeLog file for MonetDB
 # This file is updated with Maddlog
 
-* Tue Nov 19 2013 Sjoerd Mullender <sjoerd@acm.org>
-- Stopped using the deprecated sbrk() system call.
-- Fixed a problem when reverse sorting a sorted column.
-- Fixed bugs that deal with problems that could possibly occur when
-  transactions are aborted and the server is restarted.  See bug #3243.
-- A bug was fixed in the handling of grouped aggregates when all values
-  in a group are null.  See bug #3388.
-
