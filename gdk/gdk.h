@@ -839,7 +839,7 @@ typedef struct {
 	 dirtyflushed:1,	/* was dirty before commit started? */
 	 descdirty:1,		/* bat descriptor dirty marker */
 	 set:1,			/* real set semantics */
-	 restricted:2,		/* access priviliges */
+	 restricted:2,		/* access privileges */
 	 persistence:1,		/* should the BAT persist on disk? */
 	 unused:23;		/* value=0 for now */
 	int sharecnt;		/* incoming view count */
