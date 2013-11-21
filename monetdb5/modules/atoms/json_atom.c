@@ -960,7 +960,7 @@ JSONunnestGrouped(int *grp, int *key, int *val, json *js)
 }
 
 str
-JSONnames(int *ret, json *js)
+JSONkeys(int *ret, json *js)
 {
 	BAT *bn;
 	char *namebegin, *nameend;
@@ -985,7 +985,7 @@ JSONnames(int *ret, json *js)
 	// the result is an array of values
 	result = (char *) GDKmalloc(BUFSIZ);
 	if (result == 0)
-		throw(MAL, "json.names", MAL_MALLOC_FAIL);
+		throw(MAL, "json.keys", MAL_MALLOC_FAIL);
 	lim = BUFSIZ;
 
 	for (j++; *j && *j != '}'; j++) {
@@ -993,7 +993,7 @@ JSONnames(int *ret, json *js)
 		if (*j == '}')
 			break;
 		if (*j != '"') {
-			msg = createException(MAL, "json.names", "Name expected");
+			msg = createException(MAL, "json.keys", "Name expected");
 			goto wrapup;
 		}
 		namebegin = j + 1;
@@ -1010,7 +1010,7 @@ JSONnames(int *ret, json *js)
 
 		skipblancs;
 		if (*j != ':') {
-			msg = createException(MAL, "json.names", "Value expected");
+			msg = createException(MAL, "json.keys", "Value expected");
 			goto wrapup;
 		}
 		j++;
@@ -1022,7 +1022,7 @@ JSONnames(int *ret, json *js)
 		if (*j == '}')
 			break;
 		if (*j != ',')
-			msg = createException(MAL, "json.names", "',' expected");
+			msg = createException(MAL, "json.keys", "',' expected");
 	}
       wrapup:;
 	BBPkeepref(*ret = bn->batCacheid);
@@ -1030,7 +1030,7 @@ JSONnames(int *ret, json *js)
 	return msg;
 }
 str
-JSONkeys(json *ret, json *js)
+JSONkeyArray(json *ret, json *js)
 {
 	char *namebegin, *nameend;
 	char *msg = MAL_SUCCEED;
@@ -1087,6 +1087,81 @@ JSONkeys(json *ret, json *js)
 		msg = JSONvalueParser(j, &j);
 		if (msg)
 			goto wrapup;
+		skipblancs;
+		if (*j == '}')
+			break;
+		if (*j != ',')
+			msg = createException(MAL, "json.keys", "',' expected");
+	}
+	result[l]=']';
+	result[l+1]= 0;
+	l=1;
+	*ret = result;
+	return MAL_SUCCEED;
+wrapup:
+	GDKfree(result);
+	return msg;
+}
+
+str
+JSONvalueArray(json *ret, json *js)
+{
+	char *namebegin, *nameend;
+	char *msg = MAL_SUCCEED;
+	char *result = NULL;
+	size_t l = 0, lim;
+	char *j = *js;
+
+	skipblancs;
+	if (*j != '{')
+		throw(MAL, "json.filter", "JSON object expected");
+
+	// the result is an array of values
+	result = (char *) GDKmalloc(BUFSIZ);
+	if (result == 0)
+		throw(MAL, "json.keys", MAL_MALLOC_FAIL);
+	lim = BUFSIZ;
+
+	result[0]='[';
+	result[1]= 0;
+	l=1;
+	for (j++; *j && *j != '}'; j++) {
+		skipblancs;
+		if (*j == '}')
+			break;
+		if (*j != '"') {
+			msg = createException(MAL, "json.keys", "Name expected");
+			goto wrapup;
+		}
+		if( l > 1){
+			result[l++] = ',';
+			result[l] = 0;
+		}
+		msg = JSONstringParser(j + 1, &j);
+		if (msg)
+			goto wrapup;
+
+		skipblancs;
+		if (*j != ':') {
+			msg = createException(MAL, "json.keys", "Value expected");
+			goto wrapup;
+		}
+		j++;
+		skipblancs;
+		namebegin = j + 1;
+		msg = JSONvalueParser(j, &j);
+		if (msg)
+			goto wrapup;
+		nameend = j - 1;
+		if (l + (size_t)(nameend-namebegin) + 5 > lim){
+			result = GDKrealloc(result, lim += BUFSIZ);
+			if ( result == NULL)
+				goto wrapup;
+		}
+		strncpy(result+l, namebegin-1, nameend - namebegin+2);
+		l += nameend - namebegin+2;
+		result[l] = 0;
+
 		skipblancs;
 		if (*j == '}')
 			break;
@@ -1671,7 +1746,7 @@ JSONpathInternal(json *ret, json *js, str *expr,int flag)
 	for (t = 0; terms[t].token != 0; t++) {
 		result = (char *) GDKmalloc(BUFSIZ);
 		if (result == NULL)
-			throw(MAL, "json.names", MAL_MALLOC_FAIL);
+			throw(MAL, "json.path", MAL_MALLOC_FAIL);
 		if ( !flag){
 			result[0] = '[';
 			result[1] = 0;

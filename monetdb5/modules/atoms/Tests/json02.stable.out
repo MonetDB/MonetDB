@@ -21,22 +21,22 @@ stdout of test 'json02` in directory 'monetdb5/modules/atoms` itself:
 function user.main():void;
 #validity tests 
     b := json.new("{\"f1\":1}");
-    f := json.names(b);
+    f := json.keys(b);
     io.print(f);
     ff := json.values(b);
     io.print(ff);
     b := json.new("{\"f1\":1,\"f2\":2}");
-    f := json.names(b);
+    f := json.keys(b);
     io.print(f);
     ff := json.values(b);
     io.print(ff);
     b := json.new("{\"f1\":1,\"f2\":2,\"f1\":3}");
-    f := json.names(b);
+    f := json.keys(b);
     io.print(f);
     ff := json.values(b);
     io.print(ff);
     b := json.new("{\"f1\":{\"f12\":3},\"f2\":[2,3,4]}");
-    f := json.names(b);
+    f := json.keys(b);
     io.print(f);
     ff := json.values(b);
     io.print(ff);
