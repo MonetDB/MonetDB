@@ -26,54 +26,6 @@ from tokenize import tokenize
 from tokenize import NL
 
 
-mx2mal = re.compile("^@mal[ \t\r\n]+", re.MULTILINE)
-mx2h = re.compile("^@h[ \t\r\n]+", re.MULTILINE)
-mx2c = re.compile("^@c[ \t\r\n]+", re.MULTILINE)
-mx2y = re.compile("^@y[ \t\r\n]+", re.MULTILINE)
-mx2l = re.compile("^@l[ \t\r\n]+", re.MULTILINE)
-mx2cfg = re.compile("^@cfg[ \t\r\n]+", re.MULTILINE)
-mx2sql = re.compile("^@sql[ \t\r\n]+", re.MULTILINE)
-mx2java = re.compile("^@java[ \t\r\n]+", re.MULTILINE)
-mx2xsl = re.compile("^@xsl[ \t\r\n]+", re.MULTILINE)
-mx2sh = re.compile("^@sh[ \t\r\n]+", re.MULTILINE)
-#mx2tex = re.compile("^@T|-|\+|\*[ \t\r\n]+", re.MULTILINE)
-#mx2html = re.compile("^@w[ \t\r\n]+", re.MULTILINE)
-
-e_mx = re.compile('^@[^{}]', re.MULTILINE)
-
-code_extract = { 'mx': [
-                  (mx2mal, '.mal'),
-                  (mx2c, '.c'),
-                  (mx2h, '.h'),
-                  (mx2y, '.y'),
-                  (mx2l, '.l'),
-                  (mx2cfg, '.cfg'),
-                  (mx2sql, '.sql'),
-                  (mx2java, '.java'),
-                  (mx2xsl, '.xsl'),
-                  (mx2sh, ''), ],
-                  #(mx2tex, '.tex'),
-                  #(mx2tex, '.bdy.tex'),
-                  #(mx2html, '.html'),
-                  #(mx2tex, '.bdy.html'), ],
-                'mx.in': [
-                  (mx2mal, '.mal'),
-                  (mx2c, '.c'),
-                  (mx2h, '.h'),
-                  (mx2y, '.y'),
-                  (mx2l, '.l'),
-                  (mx2cfg, '.cfg'),
-                  (mx2sql, '.sql'),
-                  (mx2java, '.java'),
-                  (mx2xsl, '.xsl'),
-                  (mx2sh, ''), ]
-                  #(mx2tex, '.tex'),
-                  #(mx2tex, '.bdy.tex'),
-                  #(mx2html, '.html'),
-                  #(mx2tex, '.bdy.html'), ]
-}
-end_code_extract = { 'mx': e_mx, 'mx.in': e_mx }
-
 # direct rules
 code_gen = {'y':        [ '.tab.c', '.tab.h' ],
             'tab.c':    [ '.tab.o' ],
@@ -84,7 +36,6 @@ code_gen = {'y':        [ '.tab.c', '.tab.h' ],
             't':        [ '.c' ],
             'c':        [ '.o' ],
 #            'java':     [ '.class' ],
-            'mx.in':    [ '.mx' ],
             #'tex':      [ '.html', '.dvi', '.pdf' ],
             #'dvi':      [ '.ps' ],
             #'fig':      [ '.eps' ],
@@ -117,13 +68,11 @@ c_inc = '^[ \t]*#[ \t]*include[ \t]*[<"](?P<fnd>[-a-zA-Z0-9._/]+)[>"]'
 xsl_inc = "^[ \t]*<xsl:(include|import)[ \t]+href=['\"](?P<fnd>[a-zA-Z0-9._]+)['\"]"
 tex_inc = r"\\epsf(file|box){(?P<fnd>[a-zA-Z0-9._]+)"
 t_inc = '^[ \t]*\%[ \t]*include[ \t]*{[ \t](?P<fnd>[-a-zA-Z0-9._/]+)[ \t]*}'
-mx_inc = '^[ \t]*@include[ \t]*(?P<fnd>[-a-zA-Z0-9._/]+)'
 
 c_inc = re.compile(c_inc, re.MULTILINE)
 xsl_inc = re.compile(xsl_inc, re.MULTILINE)
 tex_inc = re.compile(tex_inc)
 t_inc = re.compile(t_inc, re.MULTILINE)
-mx_inc = re.compile(mx_inc, re.MULTILINE)
 
 scan_map = {
     'c': [ c_inc, None, '' ],
@@ -135,7 +84,6 @@ scan_map = {
     't': [ t_inc, None, '' ],
     'xsl': [ xsl_inc, None, '' ],
     'tex': [ tex_inc, None, '' ],
-    'mx': [ mx_inc, None, '' ],
 }
 
 def split_filename(f):
@@ -157,44 +105,11 @@ def readfilepart(f,ext):
     src = open(f, 'r')
     buf = src.read()
     src.close()
-    buf2 = ""
-    if ext != 'mx' and fext in code_extract:
-        epat = end_code_extract[fext]
-        for pat,newext in code_extract[fext]:
-            if newext == "." + ext:
-                res = pat.search(buf)
-                while res is not None:
-                    m = res.start(0)
-                    eres = epat.search(buf,res.end(0))
-                    if eres is not None:
-                        n = eres.start(0)
-                        buf2 = buf2 + buf[m:n]
-                        res = pat.search(buf,n)
-                    else:
-                        buf2 = buf2 + buf[m:]
-                        res = None
-    else:
-        return buf
-    return buf2
+    return buf
 
 # targets are all objects which can somehow be created.
 # In the code extraction phase targets are created from files
 # possibly containing multiple targets
-#
-# The do_code_extract also tracks the files from which to extract
-# these targets , ie. the dependencies.
-def do_code_extract(f,base,ext, targets, deps, cwd):
-    file = os.path.join(cwd,f)
-    if os.path.exists(file) and ext in code_extract:
-        b = readfile(file)
-        for pat,newext in code_extract[ext]:
-            if pat.search(b) is not None:
-                extracted = base + newext
-                if extracted not in targets:
-                    targets.append( extracted )
-                deps[extracted] = [ f ]
-    elif f not in targets:
-        targets.append(f)
 
 # In the code generation phase targets are generated using input files
 # depending on the extention a target is generated
@@ -463,7 +378,8 @@ def codegen(tree, cwd, topdir, incdirsmap):
         if type(v) is type({}) and "SOURCES" in v:
             for f in v["SOURCES"]:
                 base,ext = split_filename(f)
-                do_code_extract(f,base,ext, targets, deps, cwd)
+                if f not in targets:
+                    targets.append(f)
             targets = do_code_gen(targets,deps,code_gen)
             if i[0:4] == "lib_" or i == "LIBS":
                 targets = do_code_gen(targets,deps,lib_code_gen)

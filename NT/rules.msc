@@ -246,7 +246,6 @@ LIBC_INCS = $(PTHREAD_INCS)
 MATH_LIBS =
 SOCKET_LIBS = wsock32.lib Ws2_32.lib
 
-MX=$(TOPDIR)\buildtools\Mx\Mx.exe
 CP=copy
 MV=copy
 DEL=del
@@ -513,40 +512,6 @@ CFLAGS = $(CFLAGS) -DMONET_OID32
 
 CONFIG_H = monetdb_config.h
 
-{$(srcdir)}.mx.h:
-	$(MX) $(MXFLAGS) -l -x h $<
-
-.mx.h:
-	$(MX) $(MXFLAGS) -l -x h $<
-
-{$(srcdir)}.mx.c:
-	$(MX) $(MXFLAGS) -x c $<
-
-.mx.c:
-	$(MX) $(MXFLAGS) -x c $<
-
-{$(srcdir)}.mx.mal:
-	$(MX) $(MXFLAGS) -l -x mal $<
-	if not exist .libs $(MKDIR) .libs
-	$(INSTALL) $@ .libs\$@
-
-.mx.mal:
-	$(MX) $(MXFLAGS) -l -x mal $<
-	if not exist .libs $(MKDIR) .libs
-	$(INSTALL) $@ .libs\$@
-
-{$(srcdir)}.mx.sql:
-	$(MX) $(MXFLAGS) -l -x sql $<
-
-.mx.sql:
-	$(MX) $(MXFLAGS) -l -x sql $<
-
-{$(srcdir)}.mx.y:
-	$(MX) $(MXFLAGS) -x y $<
-
-.mx.y:
-	$(MX) $(MXFLAGS) -x y $<
-
 {$(srcdir)}.c.obj:
 	$(CC) $(CFLAGS) -c $<
 
@@ -561,4 +526,4 @@ CONFIG_H = monetdb_config.h
 	echo EXPORTS > $@
 	type $< >> $@
 
-.SUFFIXES: .mx .syms .def
+.SUFFIXES: .syms .def

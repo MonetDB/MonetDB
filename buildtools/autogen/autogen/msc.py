@@ -325,14 +325,10 @@ def msc_dep(fd, tar, deplist, msc):
             if dep != t:
                 fd.write('%s"%s"' % (sep, dep))
                 sep = " "
-                if dep.endswith('.mx') and tar not in msc['BUILT_SOURCES']:
-                    msc['BUILT_SOURCES'].append(tar)
         else:
             print("!WARNING: dropped absolute dependency " + d)
     if sep == " ":
         fd.write("\n")
-        if tf+'.mx.in' in deplist:
-            fd.write('\t$(MX) $(MXFLAGS) -x sh "%s.mx"\n' % tf)
     for x, y in _in:
         # TODO
         # replace this hack by something like configure ...

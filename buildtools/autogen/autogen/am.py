@@ -30,7 +30,7 @@ automake_ext = ['', 'c', 'def', 'h', 'lo', 'o', 'pm.c',
 # buildtools/conf.  The generated sources should therefore be included
 # in the tar ball and not be removed with `make distclean' when
 # running "in" said tar ball.
-buildtools_ext = ['brg', 'l', 'mx', 'pm.i', 'syms', 't', 'y']
+buildtools_ext = ['brg', 'l', 'pm.i', 'syms', 't', 'y']
 
 am_assign = "+="
 

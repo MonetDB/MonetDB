@@ -563,7 +563,7 @@ yes-*-*)
 	dnl  With clang 2.8 (no other tested) and gcc < 4.5 (tested
 	dnl  3.4.6, 4.2.1, 4.3.2, 4.4.4, 4.4.5, 4.5.1, 4.5.2),
 	dnl  "-Wunreachable-code" triggers numerous "will never be
-	dnl  executed" (at least) in our Mx and stream code, mostly (if
+	dnl  executed" (at least) in our stream code, mostly (if
 	dnl  not all) false positives, though; thus, we do not use
 	dnl  "-Wunreachable-code" with clang 2.8 and gcc < 4.5 .
 	case "$CC-$gcc_ver" in
@@ -2656,7 +2656,7 @@ AC_TRY_COMPILE([$ac_includes_default
 AC_TRY_COMPILE([$ac_includes_default
 #include <malloc.h>], [struct mallinfo m = {0};
 /* compilers that don't like <0 comparisons on unsigned data *
- * will fail here (but then not in src/gdk/gdk_utils.mx)     */
+ * will fail here (but then not in src/gdk/gdk_utils.c)     */
 int x = (m.usmblks < 0);], AC_DEFINE(HAVE_SIGNED_MALLINFO, 1, [Define if your mallinfo struct has signed elements])
 ))
 

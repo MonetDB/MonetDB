@@ -15,6 +15,6 @@
 # Copyright August 2008-2013 MonetDB B.V.
 # All Rights Reserved.
 
-SUBDIRS = Mx conf
+SUBDIRS = conf
 
 EXTRA_DIST_DIR = autogen doc
