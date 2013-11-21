@@ -216,12 +216,12 @@ MDBsetDebugStr(int *ret, str *flg)
 		GDKdebug |= GRPmodules;
 	if( strcmp("algorithms",*flg)==0)
 		GDKdebug |= GRPalgorithms;
+	if( strcmp("optimizers",*flg)==0)
+		GDKdebug |= GRPoptimizers;
+	if( strcmp("recycler",*flg)==0)
+		GDKdebug |= GRPrecycler;
 	if( strcmp("performance",*flg)==0)
 		GDKdebug |= GRPperformance;
-#if 0
-	if( strcmp("xproperties",*flg)==0)
-		GDKdebug |= GRPxproperties;
-#endif
 	if( strcmp("forcemito",*flg)==0)
 		GDKdebug |= GRPforcemito;
     return MAL_SUCCEED;

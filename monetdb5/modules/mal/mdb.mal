@@ -51,7 +51,7 @@ command setDebug(flg:str):int
 address MDBsetDebugStr
 comment "Set the kernel debugging bit-set and return its previous value.
 The recognized options are: threads, memory, properties,
-io, transactions, modules, algorithms, estimates, xproperties.";
+io, transactions, modules, algorithms, estimates.";
 command setDebug(flg:int):int
 address MDBsetDebug
 comment "Set the kernel debugging bit-set and return its previous value.";
