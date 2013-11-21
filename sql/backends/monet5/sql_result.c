@@ -3,19 +3,19 @@
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  * http://www.monetdb.org/Legal/MonetDBLicense
- * 
+ *
  * Software distributed under the License is distributed on an "AS IS"
  * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
  * License for the specific language governing rights and limitations
  * under the License.
- * 
+ *
  * The Original Code is the MonetDB Database System.
- * 
+ *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
  * Copyright August 2008-2013 MonetDB B.V.
  * All Rights Reserved.
-*/
+ */
 
 /*
  * author N.J. Nes
@@ -72,7 +72,7 @@
 		*Buf = GDKmalloc(*len); \
 	} \
 	strcpy(*Buf, buf+cur+1); \
-	return l-1; 
+	return l-1;
 
 static int
 dec_tostr(void *extra, char **Buf, int *len, int type, const void *a)
@@ -110,7 +110,7 @@ sql_time_tostr(void *TS_RES, char **buf, int *len, int type, const void *A)
 	daytime mtime = 24 * 60 * 60 * 1000;
 
 	(void) type;
-	if (ts_res->has_tz) 
+	if (ts_res->has_tz)
 		val = *a + timezone;
 	else
 		val = *a;
@@ -132,9 +132,9 @@ sql_time_tostr(void *TS_RES, char **buf, int *len, int type, const void *A)
 	}
 
 	/* fixup the fraction, default is 3 */
-	len1 += (ts_res->fraction-3);
-	if (ts_res->fraction == 0) 
-		len1 --;
+	len1 += (ts_res->fraction - 3);
+	if (ts_res->fraction == 0)
+		len1--;
 
 	if (*len < len1 + 8) {
 		if (*buf)
@@ -146,11 +146,11 @@ sql_time_tostr(void *TS_RES, char **buf, int *len, int type, const void *A)
 	s += len1;
 	s[0] = 0;
 	/* extra zero's for usec's */
-	for (i=3; i<ts_res->fraction; i++) 
-		s[-i+2] = '0';
+	for (i = 3; i < ts_res->fraction; i++)
+		s[-i + 2] = '0';
 
 	if (ts_res->has_tz) {
-		timezone = ts_res->timezone/60000;
+		timezone = ts_res->timezone / 60000;
 		*s++ = (ts_res->timezone >= 0) ? '+' : '-';
 		sprintf(s, "%02d:%02d", ABS(timezone) / 60, ABS(timezone) % 60);
 		s += 5;
@@ -179,9 +179,9 @@ sql_timestamp_tostr(void *TS_RES, char **buf, int *len, int type, const void *A)
 	}
 
 	/* fixup the fraction, default is 3 */
-	len2 += (ts_res->fraction-3);
-	if (ts_res->fraction == 0) 
-		len2 --;
+	len2 += (ts_res->fraction - 3);
+	if (ts_res->fraction == 0)
+		len2--;
 
 	if (*len < len1 + len2 + 8) {
 		if (*buf)
@@ -196,11 +196,11 @@ sql_timestamp_tostr(void *TS_RES, char **buf, int *len, int type, const void *A)
 	s += len2;
 	s[0] = 0;
 	/* extra zero's for usec's */
-	for (i=3; i<ts_res->fraction; i++) 
-		s[-i+2] = '0';
+	for (i = 3; i < ts_res->fraction; i++)
+		s[-i + 2] = '0';
 
 	if (ts_res->has_tz) {
-		timezone = ts_res->timezone/60000;
+		timezone = ts_res->timezone / 60000;
 		*s++ = (ts_res->timezone >= 0) ? '+' : '-';
 		sprintf(s, "%02d:%02d", ABS(timezone) / 60, ABS(timezone) % 60);
 		s += 5;
@@ -220,7 +220,7 @@ bat_max_strlength(BAT *b)
 		str v = (str) BUNtail(bi, p);
 		strLength(&l, v);
 
-		if (l == int_nil) 
+		if (l == int_nil)
 			l = 0;
 		if (l > max)
 			max = l;
@@ -239,12 +239,14 @@ bat_max_btelength(BAT *b)
 
 	BATloop(b, p, q) {
 		lng m = 0;
-		bte l = *((bte *)BUNtail(bi, p));
+		bte l = *((bte *) BUNtail(bi, p));
 
 		if (l != bte_nil)
 			m = l;
-		if (m > max) max = m;
-		if (m < min) min = m;
+		if (m > max)
+			max = m;
+		if (m < min)
+			min = m;
 	}
 
 	if (-min > max / 10) {
@@ -268,12 +270,14 @@ bat_max_shtlength(BAT *b)
 
 	BATloop(b, p, q) {
 		lng m = 0;
-		sht l = *((sht *)BUNtail(bi, p));
+		sht l = *((sht *) BUNtail(bi, p));
 
 		if (l != sht_nil)
 			m = l;
-		if (m > max) max = m;
-		if (m < min) min = m;
+		if (m > max)
+			max = m;
+		if (m < min)
+			min = m;
 	}
 
 	if (-min > max / 10) {
@@ -297,12 +301,14 @@ bat_max_intlength(BAT *b)
 
 	BATloop(b, p, q) {
 		lng m = 0;
-		int l = *((int *)BUNtail(bi, p));
+		int l = *((int *) BUNtail(bi, p));
 
 		if (l != int_nil)
 			m = l;
-		if (m > max) max = m;
-		if (m < min) min = m;
+		if (m > max)
+			max = m;
+		if (m < min)
+			min = m;
 	}
 
 	if (-min > max / 10) {
@@ -326,12 +332,14 @@ bat_max_lnglength(BAT *b)
 
 	BATloop(b, p, q) {
 		lng m = 0;
-		lng l = *((lng *)BUNtail(bi, p));
+		lng l = *((lng *) BUNtail(bi, p));
 
 		if (l != lng_nil)
 			m = l;
-		if (m > max) max = m;
-		if (m < min) min = m;
+		if (m > max)
+			max = m;
+		if (m < min)
+			min = m;
 	}
 
 	if (-min > max / 10) {
@@ -401,8 +409,8 @@ static void *
 dec_frstr(Column *c, int type, const char *s, const char *e, char quote)
 {
 	/* support dec map to bte, sht, int and lng */
-	(void)e;
-	(void)quote;
+	(void) e;
+	(void) quote;
 	if (s == e) {
 		return NULL;
 	} else if (type == TYPE_bte) {
@@ -434,10 +442,10 @@ sec_frstr(Column *c, int type, const char *s, const char *e, char quote)
 	if (s == e)
 		return NULL;
 
-	if (*s == '-'){
+	if (*s == '-') {
 		neg = 1;
 		s++;
-	} else if (*s == '+'){
+	} else if (*s == '+') {
 		neg = 0;
 		s++;
 	}
@@ -448,7 +456,7 @@ sec_frstr(Column *c, int type, const char *s, const char *e, char quote)
 		res += (*s - '0');
 	}
 	if (!*s) {
-		for( i = 0; i < 3; i++) {
+		for (i = 0; i < 3; i++) {
 			res *= 10;
 		}
 	}
@@ -460,7 +468,7 @@ sec_frstr(Column *c, int type, const char *s, const char *e, char quote)
 			if (*s < '0' || *s > '9')
 				return NULL;
 			res *= 10;
-			res += (*s-'0');
+			res += (*s - '0');
 		}
 		for (; i < 3; i++) {
 			res *= 10;
@@ -483,45 +491,49 @@ static void *
 _ASCIIadt_frStr(Column *c, int type, const char *s, const char *e, char quote)
 {
 	int len;
-	(void)quote;
+	(void) quote;
 	if (type == TYPE_str) {
-		sql_column *col = (sql_column*)c->extra;
-		int len = (int) (e - s + 1); /* 64bit: should check for overflow */
+		sql_column *col = (sql_column *) c->extra;
+		int len = (int) (e - s + 1);	/* 64bit: should check for overflow */
 		/* or shouldn't len rather be ssize_t, here? */
 
-		if (c->len < len){
+		if (c->len < len) {
 			c->len = len;
-			c->data = GDKrealloc(c->data,len); 
+			c->data = GDKrealloc(c->data, len);
 		}
-	
+
 		if (s == e) {
 			len = -1;
-			*(char*)c->data = 0;
-		} else if ((len = (int)GDKstrFromStr(c->data, (unsigned char *) s, (ssize_t) (e - s))) < 0) {
+			*(char *) c->data = 0;
+		} else if ((len = (int) GDKstrFromStr(c->data, (unsigned char *) s, (ssize_t) (e - s))) < 0) {
 			/* 64bit: should check for overflow */
 			/* or shouldn't len rather be ssize_t, here? */
 			return NULL;
 		}
-		if (col->type.digits > 0 && len > 0 && len > (int)col->type.digits) { 
+		if (col->type.digits > 0 && len > 0 && len > (int) col->type.digits) {
 			strLength(&len, c->data);
-			if (len > (int)col->type.digits)
+			if (len > (int) col->type.digits)
 				return NULL;
 		}
 		return c->data;
 	}
-	 
-	len = (*BATatoms[type].atomFromStr)(s, &c->len, (ptr) &c->data);
+
+	len = (*BATatoms[type].atomFromStr) (s, &c->len, (ptr) &c->data);
 	if (len < 0)
 		return NULL;
-	if (len == 0 || len != e-s){
+	if (len == 0 || len != e - s) {
 		/* decimals can be converted to integers when *.000 */
-		if ( s[len++] == '.')
-		switch( type ){
-		case TYPE_bte: case TYPE_int: case TYPE_lng: case TYPE_sht:
-			while (s[len]=='0') len++;
-			if ( s[len] == 0)
-				return c->data;
-		}
+		if (s[len++] == '.')
+			switch (type) {
+			case TYPE_bte:
+			case TYPE_int:
+			case TYPE_lng:
+			case TYPE_sht:
+				while (s[len] == '0')
+					len++;
+				if (s[len] == 0)
+					return c->data;
+			}
 		return NULL;
 	}
 	return c->data;
@@ -535,7 +547,7 @@ _ASCIIadt_toStr(void *extra, char **buf, int *len, int type, const void *a)
 		Column *c = extra;
 		char *dst;
 		const char *src = a;
-		int l = (c->quote)?escapedStrlen(src):(int)strlen(src), l2 = 0;
+		int l = (c->quote) ? escapedStrlen(src) : (int) strlen(src), l2 = 0;
 
 		if (l + 3 > *len) {
 			GDKfree(*buf);
@@ -620,13 +632,13 @@ mvc_import_table(Client cntxt, mvc *m, bstream *bs, char *sname, char *tname, ch
 	if (t->columns.set) {
 		stream *out = m->scanner.ws;
 
-		memset((char*) &as, 0, sizeof(as));
+		memset((char *) &as, 0, sizeof(as));
 		as.nr_attrs = list_length(t->columns.set);
-		as.nr = (sz<1)?BUN_NONE:(BUN)sz;
+		as.nr = (sz < 1) ? BUN_NONE : (BUN) sz;
 		as.offset = (BUN) offset;
 		as.error = NULL;
 		as.tryall = 0;
-		as.complaints= NULL;
+		as.complaints = NULL;
 		fmt = as.format = (Column *) GDKmalloc(sizeof(Column) * (as.nr_attrs + 1));
 		if (!isa_block_stream(bs->s))
 			 out = NULL;
@@ -642,31 +654,29 @@ mvc_import_table(Client cntxt, mvc *m, bstream *bs, char *sname, char *tname, ch
 			fmt[i].tostr = &_ASCIIadt_toStr;
 			fmt[i].frstr = &_ASCIIadt_frStr;
 			fmt[i].extra = col;
-			fmt[i].len = fmt[i].nillen = 
-				ATOMlen(fmt[i].adt, ATOMnilptr(fmt[i].adt));
+			fmt[i].len = fmt[i].nillen = ATOMlen(fmt[i].adt, ATOMnilptr(fmt[i].adt));
 			fmt[i].data = GDKmalloc(fmt[i].len);
 			fmt[i].c = NULL;
 			fmt[i].ws = !has_whitespace(fmt[i].sep);
-			fmt[i].quote = ssep?ssep[0]:0;
+			fmt[i].quote = ssep ? ssep[0] : 0;
 			fmt[i].nullstr = ns;
 			fmt[i].null_length = strlen(ns);
 			fmt[i].nildata = ATOMnilptr(fmt[i].adt);
 			if (col->type.type->eclass == EC_DEC) {
 				fmt[i].tostr = &dec_tostr;
 				fmt[i].frstr = &dec_frstr;
-			} else if (col->type.type->eclass == EC_INTERVAL &&
-				   strcmp(col->type.type->sqlname, "sec_interval") == 0) {
+			} else if (col->type.type->eclass == EC_INTERVAL && strcmp(col->type.type->sqlname, "sec_interval") == 0) {
 				fmt[i].tostr = &dec_tostr;
 				fmt[i].frstr = &sec_frstr;
 			}
 			fmt[i].size = ATOMsize(fmt[i].adt);
-			
+
 			if (locked) {
 				BAT *b = store_funcs.bind_col(m->session->tr, col, RDONLY);
 
-				if (sz < 0 || sz > (lng)REMAP_PAGE_MAXSIZE)
+				if (sz < 0 || sz > (lng) REMAP_PAGE_MAXSIZE)
 					BATmmap(b, STORE_MMAP, STORE_MMAP, STORE_MMAP, STORE_MMAP, 1);
-				if (sz > (lng)BATTINY)
+				if (sz > (lng) BATTINY)
 					b = BATextend(b, (BUN) sz);
 
 				assert(b != NULL);
@@ -675,10 +685,10 @@ mvc_import_table(Client cntxt, mvc *m, bstream *bs, char *sname, char *tname, ch
 
 				fmt[i].c = b;
 				cnt = BATcount(b);
-				if ( sz > 0 && BATcapacity(b) < (BUN) sz ) {
-					if ( (fmt[i].c =  BATextend(fmt[i].c, (BUN) sz)) == NULL){
-						for ( i--; i>=0; i--)
-							BBPunfix( fmt[i].c->batCacheid);
+				if (sz > 0 && BATcapacity(b) < (BUN) sz) {
+					if ((fmt[i].c = BATextend(fmt[i].c, (BUN) sz)) == NULL) {
+						for (i--; i >= 0; i--)
+							BBPunfix(fmt[i].c->batCacheid);
 						sql_error(m, 500, "failed to allocate result table sizes ");
 						return NULL;
 					}
@@ -687,12 +697,12 @@ mvc_import_table(Client cntxt, mvc *m, bstream *bs, char *sname, char *tname, ch
 			}
 		}
 		if (locked || TABLETcreate_bats(&as, (BUN) (sz < 0 ? 1000 : sz)) >= 0) {
-			if (SQLload_file(cntxt, &as, bs, out, sep, rsep, ssep?ssep[0]:0, offset, sz) != BUN_NONE && !as.error) {
-				if (locked) 
+			if (SQLload_file(cntxt, &as, bs, out, sep, rsep, ssep ? ssep[0] : 0, offset, sz) != BUN_NONE && !as.error) {
+				if (locked)
 					bats = TABLETcollect_parts(&as, cnt);
 				else
 					bats = TABLETcollect(&as);
-			} else if (locked) { /* restore old counts */
+			} else if (locked) {	/* restore old counts */
 				for (n = t->columns.set->h, i = 0; n; n = n->next, i++) {
 					sql_column *col = n->data;
 					BAT *b = store_funcs.bind_col(m->session->tr, col, RDONLY);
@@ -701,7 +711,7 @@ mvc_import_table(Client cntxt, mvc *m, bstream *bs, char *sname, char *tname, ch
 				}
 			}
 		}
-		if (locked) { /* fix delta structures and transaction */
+		if (locked) {	/* fix delta structures and transaction */
 			for (n = t->columns.set->h, i = 0; n; n = n->next, i++) {
 				sql_column *c = n->data;
 				BAT *b = store_funcs.bind_col(m->session->tr, c, RDONLY);
@@ -712,7 +722,7 @@ mvc_import_table(Client cntxt, mvc *m, bstream *bs, char *sname, char *tname, ch
 				BBPunfix(b->batCacheid);
 			}
 		}
-		if (as.error) 
+		if (as.error)
 			sql_error(m, 500, "%s", as.error);
 		for (n = t->columns.set->h, i = 0; n; n = n->next, i++) {
 			fmt[i].sep = NULL;
@@ -730,16 +740,17 @@ mvc_import_table(Client cntxt, mvc *m, bstream *bs, char *sname, char *tname, ch
  */
 
 static int
-mvc_export_warning(stream *s, str w) {
+mvc_export_warning(stream *s, str w)
+{
 	str tmp = NULL;
 	while (w != NULL && *w != '\0') {
-		if ((tmp = strchr(w, (int)'\n')) != NULL)
+		if ((tmp = strchr(w, (int) '\n')) != NULL)
 			*tmp++ = '\0';
 		if (mnstr_printf(s, "#%s", w) < 0)
-			return(-1);
+			return (-1);
 		w = tmp;
 	}
-	return(1);
+	return (1);
 }
 
 int
@@ -760,7 +771,7 @@ mvc_export_prepare(mvc *c, stream *out, cq *q, str w)
 	if (is_topn(r->op))
 		r = r->l;
 	if (r && is_project(r->op) && r->exps) {
-		unsigned int max2 = 10, max3 = 10; /* to help calculate widths */
+		unsigned int max2 = 10, max3 = 10;	/* to help calculate widths */
 		nrows += list_length(r->exps);
 
 		for (n = r->exps->h; n; n = n->next) {
@@ -796,7 +807,7 @@ mvc_export_prepare(mvc *c, stream *out, cq *q, str w)
 	}
 	/* calculate column widths */
 	if (c->params) {
-		unsigned int max2 = 10, max3 = 10; /* to help calculate widths */
+		unsigned int max2 = 10, max3 = 10;	/* to help calculate widths */
 
 		for (n = c->params->h; n; n = n->next) {
 			size_t slen;
@@ -814,18 +825,14 @@ mvc_export_prepare(mvc *c, stream *out, cq *q, str w)
 				len3++;
 				max3 *= 10;
 			}
-			
+
 		}
 	}
 
 	/* write header, query type: Q_PREPARE */
-	if (mnstr_printf(out,
-			 "&5 %d %d 6 %d\n" /* TODO: add type here: r(esult) or u(pdate) */
-			 "%% .prepare,\t.prepare,\t.prepare,\t.prepare,\t.prepare,\t.prepare # table_name\n"
-			 "%% type,\tdigits,\tscale,\tschema,\ttable,\tcolumn # name\n"
-			 "%% varchar,\tint,\tint,\tstr,\tstr,\tstr # type\n"
-			 "%% " SZFMT ",\t%d,\t%d,\t" SZFMT ",\t" SZFMT ",\t" SZFMT " # length\n",
-			 q->id, nrows, nrows, len1, len2, len3, len4, len5, len6) < 0) {
+	if (mnstr_printf(out, "&5 %d %d 6 %d\n"	/* TODO: add type here: r(esult) or u(pdate) */
+			 "%% .prepare,\t.prepare,\t.prepare,\t.prepare,\t.prepare,\t.prepare # table_name\n" "%% type,\tdigits,\tscale,\tschema,\ttable,\tcolumn # name\n" "%% varchar,\tint,\tint,\tstr,\tstr,\tstr # type\n" "%% " SZFMT ",\t%d,\t%d,\t"
+			 SZFMT ",\t" SZFMT ",\t" SZFMT " # length\n", q->id, nrows, nrows, len1, len2, len3, len4, len5, len6) < 0) {
 		return -1;
 	}
 
@@ -842,17 +849,9 @@ mvc_export_prepare(mvc *c, stream *out, cq *q, str w)
 			if (!rname && e->type == e_column && e->l)
 				rname = e->l;
 
-			if (mnstr_printf(out,
-				"[ \"%s\",\t%d,\t%d,\t\"%s\",\t\"%s\",\t\"%s\"\t]\n",
-				t->type->sqlname,
-				t->digits,
-				t->scale,
-				schema?schema:"",
-				rname?rname:"",
-				name?name:""
-				) < 0) {
-					return -1;
-				}
+			if (mnstr_printf(out, "[ \"%s\",\t%d,\t%d,\t\"%s\",\t\"%s\",\t\"%s\"\t]\n", t->type->sqlname, t->digits, t->scale, schema ? schema : "", rname ? rname : "", name ? name : "") < 0) {
+				return -1;
+			}
 		}
 	}
 	if (c->params) {
@@ -860,17 +859,12 @@ mvc_export_prepare(mvc *c, stream *out, cq *q, str w)
 
 		q->paramlen = nparam;
 		q->params = SA_NEW_ARRAY(q->sa, sql_subtype, nrows);
-		for (n = c->params->h, i=0; n; n = n->next, i++) {
+		for (n = c->params->h, i = 0; n; n = n->next, i++) {
 			a = n->data;
 			t = &a->type;
 
 			if (t) {
-				if (mnstr_printf(out,
-					"[ \"%s\",\t%d,\t%d,\tNULL,\tNULL,\tNULL\t]\n",
-					t->type->sqlname,
-					t->digits,
-					t->scale
-				) < 0) {
+				if (mnstr_printf(out, "[ \"%s\",\t%d,\t%d,\tNULL,\tNULL,\tNULL\t]\n", t->type->sqlname, t->digits, t->scale) < 0) {
 					return -1;
 				}
 				/* add to the query cache parameters */
@@ -891,71 +885,83 @@ mvc_export_prepare(mvc *c, stream *out, cq *q, str w)
  */
 
 static int
-mvc_send_bte(stream *s, bte cnt){
+mvc_send_bte(stream *s, bte cnt)
+{
 	char buf[50], *b;
-	int neg = cnt <0;
-	if(neg) cnt = -cnt;
-	b= buf+49;
-	do{
-		*b--= (char) ('0'+ (cnt % 10));
-		cnt /=10;
-	} while(cnt>0);
-	if( neg) 
-		*b = '-'; 
-	else b++;
-	return mnstr_write(s, b, 50- (b-buf),1)==1;
+	int neg = cnt < 0;
+	if (neg)
+		cnt = -cnt;
+	b = buf + 49;
+	do {
+		*b-- = (char) ('0' + (cnt % 10));
+		cnt /= 10;
+	} while (cnt > 0);
+	if (neg)
+		*b = '-';
+	else
+		b++;
+	return mnstr_write(s, b, 50 - (b - buf), 1) == 1;
 }
 
 static int
-mvc_send_sht(stream *s, sht cnt){
+mvc_send_sht(stream *s, sht cnt)
+{
 	char buf[50], *b;
-	int neg = cnt <0;
-	if(neg) cnt = -cnt;
-	b= buf+49;
-	do{
-		*b--= (char) ('0'+ (cnt % 10));
-		cnt /=10;
-	} while(cnt>0);
-	if( neg) 
-		*b = '-'; 
-	else b++;
-	return mnstr_write(s, b, 50- (b-buf),1)==1;
+	int neg = cnt < 0;
+	if (neg)
+		cnt = -cnt;
+	b = buf + 49;
+	do {
+		*b-- = (char) ('0' + (cnt % 10));
+		cnt /= 10;
+	} while (cnt > 0);
+	if (neg)
+		*b = '-';
+	else
+		b++;
+	return mnstr_write(s, b, 50 - (b - buf), 1) == 1;
 }
 
 static int
-mvc_send_int(stream *s, int cnt){
+mvc_send_int(stream *s, int cnt)
+{
 	char buf[50], *b;
-	int neg = cnt <0;
-	if(neg) cnt = -cnt;
-	b= buf+49;
-	do{
-		*b--= (char) ('0'+ (cnt % 10));
-		cnt /=10;
-	} while(cnt>0);
-	if( neg) 
-		*b = '-'; 
-	else b++;
-	return mnstr_write(s, b, 50- (b-buf),1)==1;
+	int neg = cnt < 0;
+	if (neg)
+		cnt = -cnt;
+	b = buf + 49;
+	do {
+		*b-- = (char) ('0' + (cnt % 10));
+		cnt /= 10;
+	} while (cnt > 0);
+	if (neg)
+		*b = '-';
+	else
+		b++;
+	return mnstr_write(s, b, 50 - (b - buf), 1) == 1;
 }
 
 static int
-mvc_send_lng(stream *s, lng cnt){
+mvc_send_lng(stream *s, lng cnt)
+{
 	char buf[50], *b;
-	int neg = cnt <0;
-	if(neg) cnt = -cnt;
-	b= buf+49;
-	do{
-		*b--= (char) ('0'+ (cnt % 10));
-		cnt /=10;
-	} while(cnt>0);
-	if( neg) 
-		*b = '-'; 
-	else b++;
-	return mnstr_write(s, b, 50- (b-buf),1)==1;
+	int neg = cnt < 0;
+	if (neg)
+		cnt = -cnt;
+	b = buf + 49;
+	do {
+		*b-- = (char) ('0' + (cnt % 10));
+		cnt /= 10;
+	} while (cnt > 0);
+	if (neg)
+		*b = '-';
+	else
+		b++;
+	return mnstr_write(s, b, 50 - (b - buf), 1) == 1;
 }
 
 int
-convert2str( mvc *m, int eclass, int d, int sc, int has_tz, ptr p, int mtype, char **buf, int len)
+convert2str(mvc *m, int eclass, int d, int sc, int has_tz, ptr p, int mtype, char **buf, int len)
 {
 	int l = 0;
 
@@ -967,18 +973,18 @@ convert2str( mvc *m, int eclass, int d, int sc, int has_tz, ptr p, int mtype, ch
 	} else if (eclass == EC_TIME) {
 		struct time_res ts_res;
 		ts_res.has_tz = has_tz;
-		ts_res.fraction = d?d-1:0;
+		ts_res.fraction = d ? d - 1 : 0;
 		ts_res.timezone = m->timezone;
-		l = sql_time_tostr( (void *) &ts_res, buf, &len, mtype, p);
+		l = sql_time_tostr((void *) &ts_res, buf, &len, mtype, p);
 
 	} else if (eclass == EC_TIMESTAMP) {
 		struct time_res ts_res;
 		ts_res.has_tz = has_tz;
-		ts_res.fraction = d?d-1:0;
+		ts_res.fraction = d ? d - 1 : 0;
 		ts_res.timezone = m->timezone;
 		l = sql_timestamp_tostr((void *) &ts_res, buf, &len, mtype, p);
 	} else if (eclass == EC_BIT) {
-		bit b = *(bit*)p;
+		bit b = *(bit *) p;
 		if (b == bit_nil) {
 			(*buf)[0] = 'N';
 			(*buf)[1] = 'U';
@@ -999,7 +1005,7 @@ convert2str( mvc *m, int eclass, int d, int sc, int has_tz, ptr p, int mtype, ch
 }
 
 static int
-export_value( mvc *m, stream *s, int eclass, char *sqlname, int d, int sc, ptr p, int mtype, char **buf, int *len, str ns)
+export_value(mvc *m, stream *s, int eclass, char *sqlname, int d, int sc, ptr p, int mtype, char **buf, int *len, str ns)
 {
 	int ok = 0;
 	int l = 0;
@@ -1008,44 +1014,42 @@ export_value( mvc *m, stream *s, int eclass, char *sqlname, int d, int sc, ptr p
 		size_t ll = strlen(ns);
 		ok = (mnstr_write(s, ns, ll, 1) == 1);
 	} else if (eclass == EC_DEC) {
-		l = dec_tostr((void *) (ptrdiff_t) sc, buf, len,
-				  mtype, p);
+		l = dec_tostr((void *) (ptrdiff_t) sc, buf, len, mtype, p);
 		ok = (mnstr_write(s, *buf, l, 1) == 1);
 	} else if (eclass == EC_TIME) {
 		struct time_res ts_res;
 		ts_res.has_tz = (strcmp(sqlname, "timetz") == 0);
-		ts_res.fraction = d?d-1:0;
+		ts_res.fraction = d ? d - 1 : 0;
 		ts_res.timezone = m->timezone;
-		l = sql_time_tostr( (void *) &ts_res, buf, len, mtype, p);
+		l = sql_time_tostr((void *) &ts_res, buf, len, mtype, p);
 
 		ok = (mnstr_write(s, *buf, l, 1) == 1);
 	} else if (eclass == EC_TIMESTAMP) {
 		struct time_res ts_res;
 		ts_res.has_tz = (strcmp(sqlname, "timestamptz") == 0);
-		ts_res.fraction = d?d-1:0;
+		ts_res.fraction = d ? d - 1 : 0;
 		ts_res.timezone = m->timezone;
 		l = sql_timestamp_tostr((void *) &ts_res, buf, len, mtype, p);
 
 		ok = (mnstr_write(s, *buf, l, 1) == 1);
-	} else if (eclass == EC_INTERVAL &&
-		   strcmp(sqlname, "sec_interval") == 0) {
+	} else if (eclass == EC_INTERVAL && strcmp(sqlname, "sec_interval") == 0) {
 		l = dec_tostr((void *) (ptrdiff_t) 3, buf, len, mtype, p);
 		ok = mnstr_write(s, *buf, l, 1) == 1;
 	} else {
-		switch(mtype) {
+		switch (mtype) {
 		case TYPE_bte:
-			ok = mvc_send_bte(s, *(bte*)p);
+			ok = mvc_send_bte(s, *(bte *) p);
 			break;
 		case TYPE_sht:
-			ok = mvc_send_sht(s, *(sht*)p);
+			ok = mvc_send_sht(s, *(sht *) p);
 			break;
 		case TYPE_int:
-			ok = mvc_send_int(s, *(int*)p);
+			ok = mvc_send_int(s, *(int *) p);
 			break;
 		case TYPE_lng:
-			ok = mvc_send_lng(s, *(lng*)p);
+			ok = mvc_send_lng(s, *(lng *) p);
 			break;
-		default: {
+		default:{
 			l = (*BATatoms[mtype].atomToStr) (buf, len, p);
 			ok = (mnstr_write(s, *buf, l, 1) == 1);
 		}
@@ -1059,7 +1063,7 @@ mvc_export_row(backend *b, stream *s, res_table *t, str btag, str sep, str rsep,
 {
 	mvc *m = b->mvc;
 	size_t seplen = strlen(sep);
-	size_t rseplen= strlen(rsep);
+	size_t rseplen = strlen(rsep);
 	char *buf = NULL;
 	int len = 0;
 	int i, ok = 1;
@@ -1069,10 +1073,10 @@ mvc_export_row(backend *b, stream *s, res_table *t, str btag, str sep, str rsep,
 	if (!s)
 		return 0;
 
-	(void)ssep;
+	(void) ssep;
 	if (csv && btag[0])
 		ok = (mnstr_write(s, btag, strlen(btag), 1) == 1);
-	if (json) { 
+	if (json) {
 		sep = ", ";
 		seplen = strlen(sep);
 	}
@@ -1088,9 +1092,7 @@ mvc_export_row(backend *b, stream *s, res_table *t, str btag, str sep, str rsep,
 			mnstr_write(s, c->name, strlen(c->name), 1);
 			mnstr_write(s, ": ", 2, 1);
 		}
-		ok = export_value(m, s, c->type.type->eclass, 
-			c->type.type->sqlname, c->type.digits, c->type.scale, 
-			c->p, c->mtype, &buf, &len, ns);
+		ok = export_value(m, s, c->type.type->eclass, c->type.type->sqlname, c->type.digits, c->type.scale, c->p, c->mtype, &buf, &len, ns);
 	}
 	if (len)
 		_DELETE(buf);
@@ -1101,7 +1103,7 @@ mvc_export_row(backend *b, stream *s, res_table *t, str btag, str sep, str rsep,
 }
 
 static int
-mvc_export_table(backend *b, stream *s, res_table *t, BAT *order, BUN offset, BUN nr, char *btag, char *sep, char *rsep, char *ssep, char *ns )
+mvc_export_table(backend *b, stream *s, res_table *t, BAT *order, BUN offset, BUN nr, char *btag, char *sep, char *rsep, char *ssep, char *ns)
 {
 	mvc *m = b->mvc;
 	Tablet as;
@@ -1110,7 +1112,7 @@ mvc_export_table(backend *b, stream *s, res_table *t, BAT *order, BUN offset, BU
 	struct time_res *tres;
 	int csv = (b->output_format == OFMT_CSV);
 	int json = (b->output_format == OFMT_JSON);
-	char * bj;
+	char *bj;
 
 	if (!t)
 		return -1;
@@ -1124,7 +1126,7 @@ mvc_export_table(backend *b, stream *s, res_table *t, BAT *order, BUN offset, BU
 	tres = GDKmalloc(sizeof(struct time_res) * (as.nr_attrs));
 
 	fmt[0].c = NULL;
-	fmt[0].sep = (csv)?btag:"";
+	fmt[0].sep = (csv) ? btag : "";
 	fmt[0].seplen = _strlen(fmt[0].sep);
 	fmt[0].ws = 0;
 	fmt[0].nullstr = NULL;
@@ -1150,15 +1152,15 @@ mvc_export_table(backend *b, stream *s, res_table *t, BAT *order, BUN offset, BU
 			 * if i > 1 -> , name :
 			 */
 			if (i == 1) {
-			        bj = SA_NEW_ARRAY(m->sa, char, strlen(p->name) + 6);
-			        snprintf(bj, strlen(p->name) + 6, "{ %s , ", p->name); 
-			        fmt[i-1].sep = bj;
-			        fmt[i-1].seplen = _strlen(fmt[i-1].sep);
+				bj = SA_NEW_ARRAY(m->sa, char, strlen(p->name) + 6);
+				snprintf(bj, strlen(p->name) + 6, "{ %s , ", p->name);
+				fmt[i - 1].sep = bj;
+				fmt[i - 1].seplen = _strlen(fmt[i - 1].sep);
 			} else if (i <= t->nr_cols) {
-			        fmt[i-1].sep = p->name;
-			        fmt[i-1].seplen = _strlen(fmt[i-1].sep);
-			} 
-			if (i == t->nr_cols)  {
+				fmt[i - 1].sep = p->name;
+				fmt[i - 1].seplen = _strlen(fmt[i - 1].sep);
+			}
+			if (i == t->nr_cols) {
 				fmt[i].sep = " }\n";
 				fmt[i].seplen = _strlen(fmt[i].sep);
 			}
@@ -1167,12 +1169,12 @@ mvc_export_table(backend *b, stream *s, res_table *t, BAT *order, BUN offset, BU
 		fmt[i].adt = fmt[i].c->ttype;
 		fmt[i].tostr = &_ASCIIadt_toStr;
 		fmt[i].frstr = &_ASCIIadt_frStr;
-		fmt[i].extra = fmt+i;
+		fmt[i].extra = fmt + i;
 		fmt[i].data = NULL;
 		fmt[i].len = 0;
 		fmt[i].nillen = 0;
 		fmt[i].ws = 0;
-		fmt[i].quote = ssep?ssep[0]:0;
+		fmt[i].quote = ssep ? ssep[0] : 0;
 		fmt[i].nullstr = ns;
 		if (c->type.type->eclass == EC_DEC) {
 			fmt[i].tostr = &dec_tostr;
@@ -1180,8 +1182,8 @@ mvc_export_table(backend *b, stream *s, res_table *t, BAT *order, BUN offset, BU
 			fmt[i].extra = (void *) (ptrdiff_t) c->type.scale;
 		} else if (c->type.type->eclass == EC_TIMESTAMP) {
 			struct time_res *ts_res = tres + (i - 1);
-			ts_res->has_tz = (strcmp(c->type.type->sqlname, "timestamptz") == 0); 
-			ts_res->fraction = c->type.digits?c->type.digits-1:0;
+			ts_res->has_tz = (strcmp(c->type.type->sqlname, "timestamptz") == 0);
+			ts_res->fraction = c->type.digits ? c->type.digits - 1 : 0;
 			ts_res->timezone = m->timezone;
 
 			fmt[i].tostr = &sql_timestamp_tostr;
@@ -1189,20 +1191,19 @@ mvc_export_table(backend *b, stream *s, res_table *t, BAT *order, BUN offset, BU
 			fmt[i].extra = ts_res;
 		} else if (c->type.type->eclass == EC_TIME) {
 			struct time_res *ts_res = tres + (i - 1);
-			ts_res->has_tz = (strcmp(c->type.type->sqlname, "timetz") == 0); 
-			ts_res->fraction = c->type.digits?c->type.digits-1:0;
+			ts_res->has_tz = (strcmp(c->type.type->sqlname, "timetz") == 0);
+			ts_res->fraction = c->type.digits ? c->type.digits - 1 : 0;
 			ts_res->timezone = m->timezone;
 
 			fmt[i].tostr = &sql_time_tostr;
 			fmt[i].frstr = NULL;
 			fmt[i].extra = ts_res;
-		} else if (c->type.type->eclass == EC_INTERVAL &&
-			   strcmp(c->type.type->sqlname, "sec_interval") == 0) {
+		} else if (c->type.type->eclass == EC_INTERVAL && strcmp(c->type.type->sqlname, "sec_interval") == 0) {
 			fmt[i].tostr = &dec_tostr;
 			fmt[i].frstr = &sec_frstr;
 			fmt[i].extra = (void *) (ptrdiff_t) 3;
 		} else {
-			fmt[i].extra = fmt+i;
+			fmt[i].extra = fmt + i;
 		}
 	}
 	if (i == t->nr_cols + 1) {
@@ -1220,14 +1221,14 @@ mvc_export_table(backend *b, stream *s, res_table *t, BAT *order, BUN offset, BU
 	return 0;
 }
 
-static int 
-export_length( stream *s, int mtype, int eclass, int digits, int scale, int tz, bat bid, ptr p) 
+static int
+export_length(stream *s, int mtype, int eclass, int digits, int scale, int tz, bat bid, ptr p)
 {
 	int ok = 1;
-	size_t count = 0, incr =0;;
+	size_t count = 0, incr = 0;;
 
-	if (mtype == TYPE_oid) 
-		incr =2;
+	if (mtype == TYPE_oid)
+		incr = 2;
 	mtype = ATOMstorage(mtype);
 	if (mtype == TYPE_str) {
 		if (eclass == EC_CHAR) {
@@ -1254,7 +1255,7 @@ export_length( stream *s, int mtype, int eclass, int digits, int scale, int tz, 
 				str v = (str) p;
 
 				strLength(&l, v);
-				if (l == int_nil) 
+				if (l == int_nil)
 					l = 0;
 			}
 			ok = mvc_send_int(s, l);
@@ -1271,7 +1272,7 @@ export_length( stream *s, int mtype, int eclass, int digits, int scale, int tz, 
 					count = bat_max_shtlength(b);
 				} else if (mtype == TYPE_int) {
 					count = bat_max_intlength(b);
-				} else { /* TYPE_lng */
+				} else {	/* TYPE_lng */
 					count = bat_max_lnglength(b);
 				}
 				count += incr;
@@ -1290,17 +1291,19 @@ export_length( stream *s, int mtype, int eclass, int digits, int scale, int tz, 
 			if (p) {
 				lng val = 0;
 				if (mtype == TYPE_bte) {
-					val = *((bte *)p);
+					val = *((bte *) p);
 				} else if (mtype == TYPE_sht) {
-					val = *((sht *)p);
+					val = *((sht *) p);
 				} else if (mtype == TYPE_int) {
-					val = *((int *)p);
-				} else { /* TYPE_lng */
-					val = *((lng *)p);
+					val = *((int *) p);
+				} else {	/* TYPE_lng */
+					val = *((lng *) p);
 				}
 
-				if (val < 0) count++;
-				while (val /= 10) count++;
+				if (val < 0)
+					count++;
+				while (val /= 10)
+					count++;
 				count++;
 				count += incr;
 			} else {
@@ -1308,18 +1311,18 @@ export_length( stream *s, int mtype, int eclass, int digits, int scale, int tz, 
 			}
 		}
 		ok = mvc_send_lng(s, (lng) count);
-	/* the following two could be done once by taking the
-	   max value and calculating the number of digits from that
-	   value, instead of the maximum values taken now, which
-	   include the optional sign */
+		/* the following two could be done once by taking the
+		   max value and calculating the number of digits from that
+		   value, instead of the maximum values taken now, which
+		   include the optional sign */
 	} else if (eclass == EC_FLT) {
 		/* floats are printed using "%.9g":
 		 * [sign]+digit+period+[max 8 digits]+E+[sign]+[max 2 digits] */
 		if (mtype == TYPE_flt) {
 			ok = mvc_send_int(s, 15);
-		/* doubles are printed using "%.17g":
-		 * [sign]+digit+period+[max 16 digits]+E+[sign]+[max 3 digits] */
-		} else { /* TYPE_dbl */
+			/* doubles are printed using "%.17g":
+			 * [sign]+digit+period+[max 16 digits]+E+[sign]+[max 3 digits] */
+		} else {	/* TYPE_dbl */
 			ok = mvc_send_int(s, 24);
 		}
 	} else if (eclass == EC_DEC) {
@@ -1331,15 +1334,15 @@ export_length( stream *s, int mtype, int eclass, int digits, int scale, int tz, 
 		ok = mvc_send_int(s, 10);
 	} else if (eclass == EC_TIME) {
 		count = 8;
-		if (tz)	/* time zone */
+		if (tz)		/* time zone */
 			count += 6;	/* +03:30 */
 		if (digits > 1)	/* fractional seconds precision (including dot) */
 			count += digits;
 		ok = mvc_send_lng(s, (lng) count);
 	} else if (eclass == EC_TIMESTAMP) {
 		count = 10 + 1 + 8;
-		if (tz)	/* time zone */
-			count += 6;		/* +03:30 */
+		if (tz)		/* time zone */
+			count += 6;	/* +03:30 */
 		if (digits)	/* fractional seconds precision */
 			count += digits;
 		ok = mvc_send_lng(s, (lng) count);
@@ -1352,7 +1355,7 @@ export_length( stream *s, int mtype, int eclass, int digits, int scale, int tz, 
 }
 
 int
-mvc_export_value(backend *b, stream *s, int qtype, str tn, str cn, str type, int d, int sc, int eclass, ptr p, int mtype, str w, str ns) 
+mvc_export_value(backend *b, stream *s, int qtype, str tn, str cn, str type, int d, int sc, int eclass, ptr p, int mtype, str w, str ns)
 {
 	mvc *m = b->mvc;
 	char *buf = NULL;
@@ -1361,25 +1364,18 @@ mvc_export_value(backend *b, stream *s, int qtype, str tn, str cn, str type, int
 	char *rsep = "\t]\n";
 
 #ifdef NDEBUG
-	(void) qtype; /* pacify compiler in case asserts are disabled */
+	(void) qtype;		/* pacify compiler in case asserts are disabled */
 #endif
 	assert(qtype == Q_TABLE);
 
 	if (mnstr_write(s, "&1 0 1 1 1\n", 11, 1) == 1 &&
 	    /* fallback to default tuplecount (1) and id (0) */
 	    /* TODO first header name then values */
-	    mnstr_write(s, "% ", 2, 1) == 1 &&
-	    mnstr_write(s, tn, strlen(tn), 1) == 1 &&
-	    mnstr_write(s, " # table_name\n% ", 16, 1) == 1 &&
-	    mnstr_write(s, cn, strlen(cn), 1) == 1 &&
-	    mnstr_write(s, " # name\n% ", 10, 1) == 1 &&
-	    mnstr_write(s, type, strlen(type), 1) == 1 &&
-	    mnstr_write(s, " # type\n% ", 10, 1) == 1 &&
-	    export_length(s, mtype, eclass, d, sc, has_tz(eclass,type), 0, p) &&
-	    mnstr_write(s, " # length\n[ ", 12, 1) == 1 &&
-	    export_value( m, s, eclass, type, d, sc, p, mtype, &buf, &len, ns)) 
+	    mnstr_write(s, "% ", 2, 1) == 1 && mnstr_write(s, tn, strlen(tn), 1) == 1 && mnstr_write(s, " # table_name\n% ", 16, 1) == 1 && mnstr_write(s, cn, strlen(cn), 1) == 1 && mnstr_write(s, " # name\n% ", 10, 1) == 1 &&
+	    mnstr_write(s, type, strlen(type), 1) == 1 && mnstr_write(s, " # type\n% ", 10, 1) == 1 && export_length(s, mtype, eclass, d, sc, has_tz(eclass, type), 0, p) && mnstr_write(s, " # length\n[ ", 12, 1) == 1 &&
+	    export_value(m, s, eclass, type, d, sc, p, mtype, &buf, &len, ns))
 		ok = (mnstr_write(s, rsep, strlen(rsep), 1) == 1);
-	    
+
 	if (buf)
 		_DELETE(buf);
 
@@ -1387,11 +1383,12 @@ mvc_export_value(backend *b, stream *s, int qtype, str tn, str cn, str type, int
 		ok = mvc_export_warning(s, w);
 	return ok;
 }
+
 int
 mvc_export_operation(backend *b, stream *s, str w)
 {
 	mvc *m = b->mvc;
-	
+
 	assert(m->type == Q_SCHEMA || m->type == Q_TRANS);
 	if (m->type == Q_SCHEMA) {
 		if (!s || mnstr_write(s, "&3\n", 3, 1) != 1)
@@ -1421,18 +1418,15 @@ mvc_export_affrows(backend *b, stream *s, lng val, str w)
 	 * If we would fail on having no stream here, those internal commands
 	 * fail too.
 	 */
-	if (!s) return 0;
-	
-	if (mnstr_write(s, "&2 ", 3, 1) != 1 || 
-	   !mvc_send_lng(s, val) ||
-	    mnstr_write(s, " ", 1, 1) != 1 ||
-	   !mvc_send_lng(s, m->last_id) ||
-   	    mnstr_write(s, "\n", 1, 1) != 1)
+	if (!s)
+		return 0;
+
+	if (mnstr_write(s, "&2 ", 3, 1) != 1 || !mvc_send_lng(s, val) || mnstr_write(s, " ", 1, 1) != 1 || !mvc_send_lng(s, m->last_id) || mnstr_write(s, "\n", 1, 1) != 1)
 		return -1;
 	if (mvc_export_warning(s, w) != 1)
 		return -1;
 
-	m->last_id = -1; /* reset after we exposed the value */
+	m->last_id = -1;	/* reset after we exposed the value */
 
 	return 0;
 }
@@ -1462,9 +1456,8 @@ mvc_export_head(backend *b, stream *s, int res_id, int only_header)
 		return -1;
 
 	/* id */
-	if (!mvc_send_int(s, t->id) ||
-			mnstr_write(s, " ", 1, 1) != 1)
-		return -1;
+	if (!mvc_send_int(s, t->id) || mnstr_write(s, " ", 1, 1) != 1)
+		 return -1;
 
 	/* tuple count */
 	if (only_header) {
@@ -1477,17 +1470,15 @@ mvc_export_head(backend *b, stream *s, int res_id, int only_header)
 		} else
 			count = 1;
 	}
-	if (!mvc_send_lng(s, (lng) count) ||
-			mnstr_write(s, " ", 1, 1) != 1)
+	if (!mvc_send_lng(s, (lng) count) || mnstr_write(s, " ", 1, 1) != 1)
 		return -1;
 
 	/* column count */
-	if (!mvc_send_int(s, t->nr_cols) ||
-			mnstr_write(s, " ", 1, 1) != 1)
+	if (!mvc_send_int(s, t->nr_cols) || mnstr_write(s, " ", 1, 1) != 1)
 		return -1;
 
 	/* row count, min(count, reply_size) */
-	if (!mvc_send_int(s, (m->reply_size >= 0 && (BUN) m->reply_size < count) ? m->reply_size : (int) count)) 
+	if (!mvc_send_int(s, (m->reply_size >= 0 && (BUN) m->reply_size < count) ? m->reply_size : (int) count))
 		return -1;
 
 	if (mnstr_write(s, "\n% ", 3, 1) != 1)
@@ -1518,8 +1509,7 @@ mvc_export_head(backend *b, stream *s, int res_id, int only_header)
 	for (i = 0; i < t->nr_cols; i++) {
 		res_col *c = t->cols + i;
 
-		if (mnstr_write(s, c->type.type->sqlname,
-					strlen(c->type.type->sqlname), 1) != 1)
+		if (mnstr_write(s, c->type.type->sqlname, strlen(c->type.type->sqlname), 1) != 1)
 			return -1;
 		if (i + 1 < t->nr_cols && mnstr_write(s, ",\t", 2, 1) != 1)
 			return -1;
@@ -1546,11 +1536,9 @@ mvc_export_head(backend *b, stream *s, int res_id, int only_header)
 		for (i = 0; i < t->nr_cols; i++) {
 			res_col *c = t->cols + i;
 
-			if (mnstr_printf(s, "%u %u",
-					 c->type.digits, c->type.scale) < 0)
+			if (mnstr_printf(s, "%u %u", c->type.digits, c->type.scale) < 0)
 				return -1;
-			if (i + 1 < t->nr_cols &&
-			    mnstr_write(s, ",\t", 2, 1) != 1)
+			if (i + 1 < t->nr_cols && mnstr_write(s, ",\t", 2, 1) != 1)
 				return -1;
 		}
 		if (mnstr_write(s, " # typesizes\n", 13, 1) != 1)
@@ -1560,14 +1548,14 @@ mvc_export_head(backend *b, stream *s, int res_id, int only_header)
 }
 
 static int
-mvc_export_file(backend *b, stream *s, res_table *t) 
+mvc_export_file(backend *b, stream *s, res_table *t)
 {
 	mvc *m = b->mvc;
 	int res = 0;
 	BUN count;
 	BAT *order = NULL;
 
-	if (m->scanner.ws == s) 
+	if (m->scanner.ws == s)
 		/* need header */
 		mvc_export_head(b, s, t->id, TRUE);
 
@@ -1582,7 +1570,7 @@ mvc_export_file(backend *b, stream *s, res_table *t)
 		res = mvc_export_table(b, s, t, order, 0, count, "", t->tsep, t->rsep, t->ssep, t->ns);
 		BBPunfix(order->batCacheid);
 		m->results = res_tables_remove(m->results, t);
-	} 
+	}
 	return res;
 }
 
@@ -1644,33 +1632,30 @@ mvc_export_chunk(backend *b, stream *s, int res_id, BUN offset, BUN nr)
 		return export_error(order);
 
 	/* result id */
-	if (!mvc_send_int(s, res_id) ||
-			mnstr_write(s, " ", 1, 1) != 1)
+	if (!mvc_send_int(s, res_id) || mnstr_write(s, " ", 1, 1) != 1)
 		return export_error(order);
 
 	/* column count */
-	if (!mvc_send_int(s, t->nr_cols) ||
-			mnstr_write(s, " ", 1, 1) != 1)
+	if (!mvc_send_int(s, t->nr_cols) || mnstr_write(s, " ", 1, 1) != 1)
 		return export_error(order);
 
 	order = BATdescriptor(t->order);
 	if (!order)
 		return -1;
 	cnt = nr;
-	if (cnt == 0) 
+	if (cnt == 0)
 		cnt = BATcount(order);
 	if (offset >= BATcount(order))
 		cnt = 0;
-	if (offset + cnt > BATcount(order)) 
+	if (offset + cnt > BATcount(order))
 		cnt = BATcount(order) - offset;
 
 	/* row count */
-	if (!mvc_send_lng(s, (lng) cnt) || 
-			mnstr_write(s, " ", 1, 1) != 1)
+	if (!mvc_send_lng(s, (lng) cnt) || mnstr_write(s, " ", 1, 1) != 1)
 		return export_error(order);
 
 	/* block offset */
-	if (!mvc_send_lng(s, (lng) offset)) 
+	if (!mvc_send_lng(s, (lng) offset))
 		return export_error(order);
 
 	if (mnstr_write(s, "\n", 1, 1) != 1)
@@ -1693,14 +1678,13 @@ mvc_result_table(mvc *m, int nr_cols, int type, BAT *order)
 int
 mvc_result_column(mvc *m, char *tn, char *name, char *typename, int digits, int scale, BAT *b)
 {
-	(void)res_col_create(m->session->tr, m->results, tn, name, typename, digits, scale, TYPE_bat, b);
+	(void) res_col_create(m->session->tr, m->results, tn, name, typename, digits, scale, TYPE_bat, b);
 	return 0;
 }
 
 int
 mvc_result_value(mvc *m, char *tn, char *name, char *typename, int digits, int scale, ptr *p, int mtype)
 {
-	(void)res_col_create(m->session->tr, m->results, tn, name, typename, digits, scale, mtype, p);
+	(void) res_col_create(m->session->tr, m->results, tn, name, typename, digits, scale, mtype, p);
 	return 0;
 }
-

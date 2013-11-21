@@ -1,3 +1,22 @@
+/*
+ * The contents of this file are subject to the MonetDB Public License
+ * Version 1.1 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ * http://www.monetdb.org/Legal/MonetDBLicense
+ *
+ * Software distributed under the License is distributed on an "AS IS"
+ * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+ * License for the specific language governing rights and limitations
+ * under the License.
+ *
+ * The Original Code is the MonetDB Database System.
+ *
+ * The Initial Developer of the Original Code is CWI.
+ * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+ * Copyright August 2008-2013 MonetDB B.V.
+ * All Rights Reserved.
+ */
+
 #include "monetdb_config.h"
 #include "sql.h"
 #include "sql_result.h"
@@ -97,8 +116,8 @@ flt_bat_dec_round_wrap(bat *_res, bat *_v, flt *r)
 	BAT *res, *v;
 	flt *src, *dst;
 	BUN i, cnt;
-	bit nonil;  /* TRUE: we know there are no NIL (NULL) values */
-	bit nil; /* TRUE: we know there is at least one NIL (NULL) value */
+	bit nonil;		/* TRUE: we know there are no NIL (NULL) values */
+	bit nil;		/* TRUE: we know there is at least one NIL (NULL) value */
 
 	/* basic sanity checks */
 	assert(_res && _v && r);
@@ -215,8 +234,8 @@ flt_bat_round_wrap(bat *_res, bat *_v, bte *r)
 	BAT *res, *v;
 	flt *src, *dst;
 	BUN i, cnt;
-	bit nonil;  /* TRUE: we know there are no NIL (NULL) values */
-	bit nil; /* TRUE: we know there is at least one NIL (NULL) value */
+	bit nonil;		/* TRUE: we know there are no NIL (NULL) values */
+	bit nil;		/* TRUE: we know there is at least one NIL (NULL) value */
 
 	/* basic sanity checks */
 	assert(_res && _v && r);
@@ -337,8 +356,8 @@ dbl_bat_dec_round_wrap(bat *_res, bat *_v, dbl *r)
 	BAT *res, *v;
 	dbl *src, *dst;
 	BUN i, cnt;
-	bit nonil;  /* TRUE: we know there are no NIL (NULL) values */
-	bit nil; /* TRUE: we know there is at least one NIL (NULL) value */
+	bit nonil;		/* TRUE: we know there are no NIL (NULL) values */
+	bit nil;		/* TRUE: we know there is at least one NIL (NULL) value */
 
 	/* basic sanity checks */
 	assert(_res && _v && r);
@@ -455,8 +474,8 @@ dbl_bat_round_wrap(bat *_res, bat *_v, bte *r)
 	BAT *res, *v;
 	dbl *src, *dst;
 	BUN i, cnt;
-	bit nonil;  /* TRUE: we know there are no NIL (NULL) values */
-	bit nil; /* TRUE: we know there is at least one NIL (NULL) value */
+	bit nonil;		/* TRUE: we know there are no NIL (NULL) values */
+	bit nil;		/* TRUE: we know there is at least one NIL (NULL) value */
 
 	/* basic sanity checks */
 	assert(_res && _v && r);

@@ -52,4 +52,3 @@ sql5_export str SQLCacheRemove(Client c, str nme);
 
 sql5_export MT_Lock sql_contextLock;
 #endif /* _SQL_SCENARIO_H_ */
-

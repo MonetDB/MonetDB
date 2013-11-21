@@ -1,3 +1,22 @@
+/*
+ * The contents of this file are subject to the MonetDB Public License
+ * Version 1.1 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ * http://www.monetdb.org/Legal/MonetDBLicense
+ *
+ * Software distributed under the License is distributed on an "AS IS"
+ * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+ * License for the specific language governing rights and limitations
+ * under the License.
+ *
+ * The Original Code is the MonetDB Database System.
+ *
+ * The Initial Developer of the Original Code is CWI.
+ * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+ * Copyright August 2008-2013 MonetDB B.V.
+ * All Rights Reserved.
+ */
+
 #include "monetdb_config.h"
 #include "sql.h"
 #include "sql_result.h"
@@ -55,9 +74,9 @@ SQLrdfShred(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #endif /* STORE */
 	sql_table *map_tbl;
 	sql_subtype tpe;
-	str *location = (str *) getArgReference(stk,pci,1);
-	str *name = (str *) getArgReference(stk,pci,2);
-	str *schema = (str *) getArgReference(stk,pci,3);
+	str *location = (str *) getArgReference(stk, pci, 1);
+	str *name = (str *) getArgReference(stk, pci, 2);
+	str *schema = (str *) getArgReference(stk, pci, 3);
 	char buff[24];
 	mvc *m = NULL;
 	int id = 0;
@@ -94,51 +113,44 @@ SQLrdfShred(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 #if STORE == TRIPLE_STORE
 	sprintf(buff, "spo%d", id);
-	spo_tbl = mvc_create_table(m, sch, buff, tt_table, 0,
-				   SQL_PERSIST, 0, 3);
+	spo_tbl = mvc_create_table(m, sch, buff, tt_table, 0, SQL_PERSIST, 0, 3);
 	mvc_create_column(m, spo_tbl, "subject", &tpe);
 	mvc_create_column(m, spo_tbl, "property", &tpe);
 	mvc_create_column(m, spo_tbl, "object", &tpe);
 
 	sprintf(buff, "sop%d", id);
-	sop_tbl = mvc_create_table(m, sch, buff, tt_table, 0,
-				   SQL_PERSIST, 0, 3);
+	sop_tbl = mvc_create_table(m, sch, buff, tt_table, 0, SQL_PERSIST, 0, 3);
 	mvc_create_column(m, sop_tbl, "subject", &tpe);
 	mvc_create_column(m, sop_tbl, "object", &tpe);
 	mvc_create_column(m, sop_tbl, "property", &tpe);
 
 	sprintf(buff, "pso%d", id);
-	pso_tbl = mvc_create_table(m, sch, buff, tt_table, 0,
-				   SQL_PERSIST, 0, 3);
+	pso_tbl = mvc_create_table(m, sch, buff, tt_table, 0, SQL_PERSIST, 0, 3);
 	mvc_create_column(m, pso_tbl, "property", &tpe);
 	mvc_create_column(m, pso_tbl, "subject", &tpe);
 	mvc_create_column(m, pso_tbl, "object", &tpe);
 
 	sprintf(buff, "pos%d", id);
-	pos_tbl = mvc_create_table(m, sch, buff, tt_table, 0,
-				   SQL_PERSIST, 0, 3);
+	pos_tbl = mvc_create_table(m, sch, buff, tt_table, 0, SQL_PERSIST, 0, 3);
 	mvc_create_column(m, pos_tbl, "property", &tpe);
 	mvc_create_column(m, pos_tbl, "object", &tpe);
 	mvc_create_column(m, pos_tbl, "subject", &tpe);
 
 	sprintf(buff, "osp%d", id);
-	osp_tbl = mvc_create_table(m, sch, buff, tt_table, 0,
-				   SQL_PERSIST, 0, 3);
+	osp_tbl = mvc_create_table(m, sch, buff, tt_table, 0, SQL_PERSIST, 0, 3);
 	mvc_create_column(m, osp_tbl, "object", &tpe);
 	mvc_create_column(m, osp_tbl, "subject", &tpe);
 	mvc_create_column(m, osp_tbl, "property", &tpe);
 
 	sprintf(buff, "ops%d", id);
-	ops_tbl = mvc_create_table(m, sch, buff, tt_table, 0,
-				   SQL_PERSIST, 0, 3);
+	ops_tbl = mvc_create_table(m, sch, buff, tt_table, 0, SQL_PERSIST, 0, 3);
 	mvc_create_column(m, ops_tbl, "object", &tpe);
 	mvc_create_column(m, ops_tbl, "property", &tpe);
 	mvc_create_column(m, ops_tbl, "subject", &tpe);
 
 #elif STORE == MLA_STORE
 	sprintf(buff, "spo%d", id);
-	spo_tbl = mvc_create_table(m, sch, buff, tt_table,
-				   0, SQL_PERSIST, 0, 3);
+	spo_tbl = mvc_create_table(m, sch, buff, tt_table, 0, SQL_PERSIST, 0, 3);
 	mvc_create_column(m, spo_tbl, "subject", &tpe);
 	mvc_create_column(m, spo_tbl, "property", &tpe);
 	mvc_create_column(m, spo_tbl, "object", &tpe);
@@ -151,110 +163,66 @@ SQLrdfShred(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	mvc_create_column(m, map_tbl, "lexical", &tpe);
 
 	s = b[MAP_LEX];
-	store_funcs.append_col(m->session->tr,
-			mvc_bind_column(m, map_tbl, "lexical"),
-			BATmirror(BATmark(BATmirror(s),0)), TYPE_bat);
-	store_funcs.append_col(m->session->tr,
-			mvc_bind_column(m, map_tbl, "sid"),
-			BATmirror(BATmark(s, 0)),
-			TYPE_bat);
+	store_funcs.append_col(m->session->tr, mvc_bind_column(m, map_tbl, "lexical"), BATmirror(BATmark(BATmirror(s), 0)), TYPE_bat);
+	store_funcs.append_col(m->session->tr, mvc_bind_column(m, map_tbl, "sid"), BATmirror(BATmark(s, 0)), TYPE_bat);
 	BBPunfix(s->batCacheid);
 
 #if STORE == TRIPLE_STORE
 	s = b[S_sort];
 	p = b[P_PO];
 	o = b[O_PO];
-	store_funcs.append_col(m->session->tr,
-			       mvc_bind_column(m, spo_tbl, "subject"),
-			       s, TYPE_bat);
-	store_funcs.append_col(m->session->tr,
-			       mvc_bind_column(m, spo_tbl, "property"),
-			       p, TYPE_bat);
-	store_funcs.append_col(m->session->tr,
-			       mvc_bind_column(m, spo_tbl, "object"),
-			       o, TYPE_bat);
+	store_funcs.append_col(m->session->tr, mvc_bind_column(m, spo_tbl, "subject"), s, TYPE_bat);
+	store_funcs.append_col(m->session->tr, mvc_bind_column(m, spo_tbl, "property"), p, TYPE_bat);
+	store_funcs.append_col(m->session->tr, mvc_bind_column(m, spo_tbl, "object"), o, TYPE_bat);
 	s = b[S_sort];
 	p = b[P_OP];
 	o = b[O_OP];
-	store_funcs.append_col(m->session->tr,
-			       mvc_bind_column(m, sop_tbl, "subject"),
-			       s, TYPE_bat);
-	store_funcs.append_col(m->session->tr,
-			       mvc_bind_column(m, sop_tbl, "property"),
-			       p, TYPE_bat);
-	store_funcs.append_col(m->session->tr,
-			       mvc_bind_column(m, sop_tbl, "object"),
-			       o, TYPE_bat);
+	store_funcs.append_col(m->session->tr, mvc_bind_column(m, sop_tbl, "subject"), s, TYPE_bat);
+	store_funcs.append_col(m->session->tr, mvc_bind_column(m, sop_tbl, "property"), p, TYPE_bat);
+	store_funcs.append_col(m->session->tr, mvc_bind_column(m, sop_tbl, "object"), o, TYPE_bat);
 	s = b[S_SO];
 	p = b[P_sort];
 	o = b[O_SO];
-	store_funcs.append_col(m->session->tr,
-			       mvc_bind_column(m, pso_tbl, "subject"),
-			       s, TYPE_bat);
-	store_funcs.append_col(m->session->tr,
-			       mvc_bind_column(m, pso_tbl, "property"),
-			       p, TYPE_bat);
-	store_funcs.append_col(m->session->tr,
-			       mvc_bind_column(m, pso_tbl, "object"),
-			       o, TYPE_bat);
+	store_funcs.append_col(m->session->tr, mvc_bind_column(m, pso_tbl, "subject"), s, TYPE_bat);
+	store_funcs.append_col(m->session->tr, mvc_bind_column(m, pso_tbl, "property"), p, TYPE_bat);
+	store_funcs.append_col(m->session->tr, mvc_bind_column(m, pso_tbl, "object"), o, TYPE_bat);
 	s = b[S_OS];
 	p = b[P_sort];
 	o = b[O_OS];
-	store_funcs.append_col(m->session->tr,
-			       mvc_bind_column(m, pos_tbl, "subject"),
-			       s, TYPE_bat);
-	store_funcs.append_col(m->session->tr,
-			       mvc_bind_column(m, pos_tbl, "property"),
-			       p, TYPE_bat);
-	store_funcs.append_col(m->session->tr,
-			       mvc_bind_column(m, pos_tbl, "object"),
-			       o, TYPE_bat);
+	store_funcs.append_col(m->session->tr, mvc_bind_column(m, pos_tbl, "subject"), s, TYPE_bat);
+	store_funcs.append_col(m->session->tr, mvc_bind_column(m, pos_tbl, "property"), p, TYPE_bat);
+	store_funcs.append_col(m->session->tr, mvc_bind_column(m, pos_tbl, "object"), o, TYPE_bat);
 	s = b[S_SP];
 	p = b[P_SP];
 	o = b[O_sort];
-	store_funcs.append_col(m->session->tr,
-			       mvc_bind_column(m, osp_tbl, "subject"),
-			       s, TYPE_bat);
-	store_funcs.append_col(m->session->tr,
-			       mvc_bind_column(m, osp_tbl, "property"),
-			       p, TYPE_bat);
-	store_funcs.append_col(m->session->tr,
-			       mvc_bind_column(m, osp_tbl, "object"),
-			       o, TYPE_bat);
+	store_funcs.append_col(m->session->tr, mvc_bind_column(m, osp_tbl, "subject"), s, TYPE_bat);
+	store_funcs.append_col(m->session->tr, mvc_bind_column(m, osp_tbl, "property"), p, TYPE_bat);
+	store_funcs.append_col(m->session->tr, mvc_bind_column(m, osp_tbl, "object"), o, TYPE_bat);
 	s = b[S_PS];
 	p = b[P_PS];
 	o = b[O_sort];
-	store_funcs.append_col(m->session->tr,
-			       mvc_bind_column(m, ops_tbl, "subject"),
-			       s, TYPE_bat);
-	store_funcs.append_col(m->session->tr,
-			       mvc_bind_column(m, ops_tbl, "property"),
-			       p, TYPE_bat);
-	store_funcs.append_col(m->session->tr,
-			       mvc_bind_column(m, ops_tbl, "object"),
-			       o, TYPE_bat);
+	store_funcs.append_col(m->session->tr, mvc_bind_column(m, ops_tbl, "subject"), s, TYPE_bat);
+	store_funcs.append_col(m->session->tr, mvc_bind_column(m, ops_tbl, "property"), p, TYPE_bat);
+	store_funcs.append_col(m->session->tr, mvc_bind_column(m, ops_tbl, "object"), o, TYPE_bat);
 #elif STORE == MLA_STORE
 	s = b[S_sort];
 	p = b[P_sort];
 	o = b[O_sort];
-	store_funcs.append_col(m->session->tr,
-			       mvc_bind_column(m, spo_tbl, "subject"),
-			       s, TYPE_bat);
-	store_funcs.append_col(m->session->tr,
-			       mvc_bind_column(m, spo_tbl, "property"),
-			       p, TYPE_bat);
-	store_funcs.append_col(m->session->tr,
-			       mvc_bind_column(m, spo_tbl, "object"),
-			       o, TYPE_bat);
+	store_funcs.append_col(m->session->tr, mvc_bind_column(m, spo_tbl, "subject"), s, TYPE_bat);
+	store_funcs.append_col(m->session->tr, mvc_bind_column(m, spo_tbl, "property"), p, TYPE_bat);
+	store_funcs.append_col(m->session->tr, mvc_bind_column(m, spo_tbl, "object"), o, TYPE_bat);
 #endif /* STORE */
 
 	/* unfix graph */
-	for(id=0; b[id]; id++) {
+	for (id = 0; b[id]; id ++) {
 		BBPunfix(b[id]->batCacheid);
 	}
 	return MAL_SUCCEED;
 #else
-	(void) cntxt; (void) mb; (void) stk; (void) pci;
+	(void) cntxt;
+	(void) mb;
+	(void) stk;
+	(void) pci;
 	throw(SQL, "sql.rdfShred", "RDF support is missing from MonetDB5");
 #endif /* RDF */
 }
