@@ -31230,6 +31230,18 @@ command batcalc.timestamp(v:bat[:oid,:void]):bat[:oid,:timestamp]
 address batnil_2_timestamp;
 comment Cast to timestamp
 
+command batcalc.wrd(s1:int,v:bat[:oid,:lng],d2:int,s2:int):bat[:oid,:wrd] 
+address batlng_dec2dec_wrd;
+comment cast decimal(lng) to decimal(wrd) and check for overflow
+
+command batcalc.wrd(s1:int,v:bat[:oid,:lng]):bat[:oid,:wrd] 
+address batlng_dec2_wrd;
+comment cast decimal(lng) to wrd and check for overflow
+
+command batcalc.wrd(v:bat[:oid,:lng],digits:int,scale:int):bat[:oid,:wrd] 
+address batlng_num2dec_wrd;
+comment cast number to decimal(wrd) and check for overflow
+
 command batcalc.wrd(s1:int,v:bat[:oid,:wrd],d2:int,s2:int):bat[:oid,:wrd] 
 address batwrd_dec2dec_wrd;
 comment cast decimal(wrd) to decimal(wrd) and check for overflow
@@ -36083,14 +36095,6 @@ pattern calc.cmp(v1:bit,v2:bit):bte
 address CMDvarCMP;
 comment Return -1/0/1 if V1 </==/> V2
 
-command calc.daytime(v:timestamp,d:int):daytime 
-address timestamp_2_daytime;
-comment cast timestamp to a daytime and check for overflow
-
-command calc.daytime(v:lng,d:int):daytime 
-address second_interval_2_daytime;
-comment cast second_interval to a daytime and check for overflow
-
 command calc.dbl(s1:int,v:lng,d2:int,s2:int):dbl 
 address lng_dec2dec_dbl;
 comment cast decimal(lng) to decimal(dbl) and check for overflow
@@ -36150,6 +36154,14 @@ comment cast decimal(bte) to dbl and check for overflow
 command calc.dbl(v:bte,digits:int,scale:int):dbl 
 address bte_num2dec_dbl;
 comment cast number to decimal(dbl) and check for overflow
+
+command calc.daytime(v:timestamp,d:int):daytime 
+address timestamp_2_daytime;
+comment cast timestamp to a daytime and check for overflow
+
+command calc.daytime(v:lng,d:int):daytime 
+address second_interval_2_daytime;
+comment cast second_interval to a daytime and check for overflow
 
 command calc.date(v:str):date 
 address str_2_date;
@@ -37939,34 +37951,6 @@ pattern calc.rsh_noerror(v1:bte,v2:bte):bte
 address CMDvarRSH;
 comment Return V1 >> V2, out of range second operand causes NIL value
 
-command calc.second_interval(v:daytime,ek:int,sk:int):lng 
-address second_interval_daytime;
-comment cast daytime to a second_interval and check for overflow
-
-pattern calc.second_interval(v:lng,ek:int,sk:int):lng 
-address second_interval;
-comment cast lng to a second_interval and check for overflow
-
-pattern calc.second_interval(v:wrd,ek:int,sk:int):lng 
-address second_interval;
-comment cast wrd to a second_interval and check for overflow
-
-pattern calc.second_interval(v:int,ek:int,sk:int):lng 
-address second_interval;
-comment cast int to a second_interval and check for overflow
-
-pattern calc.second_interval(v:sht,ek:int,sk:int):lng 
-address second_interval;
-comment cast sht to a second_interval and check for overflow
-
-pattern calc.second_interval(v:bte,ek:int,sk:int):lng 
-address second_interval;
-comment cast bte to a second_interval and check for overflow
-
-command calc.second_interval(v:str,ek:int,sk:int):lng 
-address second_interval_str;
-comment cast str to a second_interval and check for overflow
-
 command calc.sht(s1:int,v:lng,d2:int,s2:int):sht 
 address lng_dec2dec_sht;
 comment cast decimal(lng) to decimal(sht) and check for overflow
@@ -38034,6 +38018,34 @@ comment cast number to decimal(sht) and check for overflow
 command calc.sht(v:flt,digits:int,scale:int):sht 
 address flt_num2dec_sht;
 comment cast number to decimal(sht) and check for overflow
+
+command calc.second_interval(v:daytime,ek:int,sk:int):lng 
+address second_interval_daytime;
+comment cast daytime to a second_interval and check for overflow
+
+pattern calc.second_interval(v:lng,ek:int,sk:int):lng 
+address second_interval;
+comment cast lng to a second_interval and check for overflow
+
+pattern calc.second_interval(v:wrd,ek:int,sk:int):lng 
+address second_interval;
+comment cast wrd to a second_interval and check for overflow
+
+pattern calc.second_interval(v:int,ek:int,sk:int):lng 
+address second_interval;
+comment cast int to a second_interval and check for overflow
+
+pattern calc.second_interval(v:sht,ek:int,sk:int):lng 
+address second_interval;
+comment cast sht to a second_interval and check for overflow
+
+pattern calc.second_interval(v:bte,ek:int,sk:int):lng 
+address second_interval;
+comment cast bte to a second_interval and check for overflow
+
+command calc.second_interval(v:str,ek:int,sk:int):lng 
+address second_interval_str;
+comment cast str to a second_interval and check for overflow
 
 command calc.substring(s:str,offset:int,count:int):str 
 address STRsubstring;
@@ -38503,6 +38515,18 @@ comment Cast VALUE to void
 pattern calc.void(v:void):void 
 address CMDvarCONVERT;
 comment Cast VALUE to void
+
+command calc.wrd(s1:int,v:lng,d2:int,s2:int):wrd 
+address lng_dec2dec_wrd;
+comment cast decimal(lng) to decimal(wrd) and check for overflow
+
+command calc.wrd(s1:int,v:lng):wrd 
+address lng_dec2_wrd;
+comment cast decimal(lng) to wrd and check for overflow
+
+command calc.wrd(v:lng,digits:int,scale:int):wrd 
+address lng_num2dec_wrd;
+comment cast number to decimal(wrd) and check for overflow
 
 command calc.wrd(s1:int,v:wrd,d2:int,s2:int):wrd 
 address wrd_dec2dec_wrd;
@@ -39656,6 +39680,10 @@ command json.isvalid(val:str):bit
 address JSONisvalid;
 comment Validate the string as a valid JSON document
 
+command json.keys(val:json):str 
+address JSONkeys;
+comment Expands the outermost JSON object keys into an array.
+
 command json.load(nme:str) (kind:bat[:oid,:bte],string:bat[:oid,:str],integer:bat[:oid,:lng],double:bat[:oid,:dbl],array:bat[:oid,:oid],object:bat[:oid,:oid],name:bat[:oid,:str]) 
 address JSONload;
 comment Load the JSON object name from the database
@@ -40507,7 +40535,10 @@ comment The pow(x,y) function  returns the value of x raised to the power of y.
 
 command mmath.pow(x:flt,y:flt):flt 
 address MATHbinary_POWflt;
-function mmath.rand{inline}(v:int):int;
+command mmath.rand{unsafe}(v:int):int 
+address MATHrandint;
+comment return a random number
+
 command mmath.rand{unsafe}():int 
 address MATHrandint;
 comment return a random number
@@ -42071,14 +42102,6 @@ pattern sql.commit():void
 address SQLcommit;
 comment Trigger the commit operation for a MAL block
 
-pattern sql.dropdictionary(sch:str,tbl:str):void 
-address SQLdropDictionary;
-comment Perform dictionary decompression on a table
-
-pattern sql.drop_hash(sch:str,tbl:str):void 
-address SQLdrop_hash;
-comment Drop hash indices for the given table
-
 command sql.dense_rank(b:bat[:oid,:any_1]):bat[:oid,:int] 
 address sql_dense_rank;
 comment return the densely ranked bat
@@ -42086,6 +42109,14 @@ comment return the densely ranked bat
 command sql.dense_rank_grp(b:bat[:oid,:any_1],gp:bat[:oid,:oid],gpe:bat[:oid,:oid]):bat[:oid,:int] 
 address sql_dense_rank_grp;
 comment return the densely ranked groups
+
+pattern sql.dropdictionary(sch:str,tbl:str):void 
+address SQLdropDictionary;
+comment Perform dictionary decompression on a table
+
+pattern sql.drop_hash(sch:str,tbl:str):void 
+address SQLdrop_hash;
+comment Drop hash indices for the given table
 
 command sql.dec_round(v:dbl,r:dbl):dbl 
 address dbl_dec_round_wrap;
@@ -42245,7 +42276,7 @@ comment truncate the floating point v to r digits behind the dot (if r < 0, befo
 
 pattern sql.mvc():int 
 address SQLmvc;
-comment get the multiversion catalog context, needed for correct statement dependencies (ie sql.update, should be after sql.bind in concurrent execution)
+comment Get the multiversion catalog context. Needed for correct statement dependencies(ie sql.update, should be after sql.bind in concurrent execution)
 
 pattern sql.newdictionary(sch:str,tbl:str):void 
 address SQLnewDictionary;
@@ -42303,10 +42334,6 @@ pattern sql.rdfshred(location:str,gname:str,schema:str):void
 address SQLrdfShred;
 comment Procedure that wraps around the shredder of the rdf module in MAL. Shredding an RDF data file from location results in 7 new tables (6 permutations of SPO and a mapping) in the RDF schema and an entry to table rdf.graph We can then query with SQL queries the RDF triple storeby quering tables gid_spo, gid_pso etc., where gid is looked up in rdf.graph
 
-pattern sql.reuse(sch:str,tbl:str):void 
-address SQLreuse;
-comment Consolidate the deletion table over all columns reusing deleted slots
-
 command sql.rank(b:bat[:oid,:any_1]):bat[:oid,:int] 
 address sql_rank;
 comment return the rank bat
@@ -42314,6 +42341,10 @@ comment return the rank bat
 command sql.rank_grp(b:bat[:oid,:any_1],gp:bat[:oid,:oid],gpe:bat[:oid,:oid]):bat[:oid,:int] 
 address sql_rank_grp;
 comment return the ranked groups
+
+pattern sql.reuse(sch:str,tbl:str):void 
+address SQLreuse;
+comment Consolidate the deletion table over all columns reusing deleted slots
 
 command sql.round(v:dbl,r:bte):dbl 
 address dbl_round_wrap;
@@ -42369,11 +42400,12 @@ comment restart the sequence with value start
 
 function sql.sortReverseTail(b:bat[:oid,:any_1]):bat[:oid,:oid];
 function sql.sortTail(b:bat[:oid,:any_1]):bat[:oid,:oid];
+function sql.sql_environment() (name:bat[:oid,:str],value:bat[:oid,:str]);
+function sql.subzero_or_one{inline}(b:bat[:oid,:any_1],gp:bat[:oid,:oid],gpe:bat[:oid,:oid],no_nil:bit):bat[:oid,:any_1];
 pattern sql.shrink(sch:str,tbl:str):void 
 address SQLshrink;
 comment Consolidate the deletion table over all columns using shrinking
 
-function sql.subzero_or_one{inline}(b:bat[:oid,:any_1],gp:bat[:oid,:oid],gpe:bat[:oid,:oid],no_nil:bit):bat[:oid,:any_1];
 pattern sql.sysmon_stop(tag:lng):void 
 address SYSMONstop;
 pattern sql.sysmon_stop(tag:int):void 
@@ -42414,7 +42446,6 @@ pattern sql.sql_variables():bat[:oid,:str]
 address sql_variables;
 comment return the table with session variables
 
-function sql.sql_environment() (name:bat[:oid,:str],value:bat[:oid,:str]);
 function sql.single(x:any_2):bat[:oid,:any_2];
 command sql.subdelta(col:bat[:oid,:oid],cand:bat[:oid,:oid],uid:bat[:oid,:oid],uval:bat[:oid,:oid]):bat[:oid,:oid] 
 address DELTAsub2;
@@ -42448,8 +42479,6 @@ pattern sql.start():void
 address SQLsession;
 comment Switch to processing SQL statements
 
-factory sql.times():void;
-function sql.times(elaps:int,inblock:lng,oublock:lng):void;
 pattern sql.tid(mvc:int,sname:str,tname:str,part_nr:int,nr_parts:int):bat[:oid,:any_3] 
 address SQLtid;
 comment Return the tables tid column.
@@ -42464,7 +42493,7 @@ comment Start an autocommit transaction
 
 pattern sql.trans(type:int,chain:int,name:str):void 
 address SQLtransaction;
-comment a transaction statement (type can be commit,release,rollback or start)
+comment A transaction statement (type can be commit,release,rollback or start)
 
 pattern sql.update(mvc:int,sname:str,tname:str,cname:str,rids:any,upd:any):int 
 address mvc_update_wrap;

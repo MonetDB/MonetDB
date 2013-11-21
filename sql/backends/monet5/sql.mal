@@ -67,15 +67,25 @@ address SQLabort
 comment "Trigger the abort operation for a MAL block";
 
 pattern catalog(type:int,sname:str,name:str,action:int):void
-address SQLcatalog;
+address SQLcatalog
+comment "a catalog statement";
+
 pattern catalog(type:int,sname:str,name:str,funcid:int,ft:int,action:int):void
-address SQLcatalog;
+address SQLcatalog
+comment "a catalog statement";
+
 pattern catalog(type:int,sname:str,name:str,tname:str,time:int,o:int,event:int,oname:str,nname:str,condition:str,query:str):void
-address SQLcatalog;
+address SQLcatalog
+comment "a catalog statement";
+
 pattern catalog(type:int,sname:str,t:ptr):void
-address SQLcatalog;
+address SQLcatalog
+comment "a catalog statement";
+
 pattern catalog(type:int,sname:str,t:ptr,temp:int):void
-address SQLcatalog;
+address SQLcatalog
+comment "a catalog statement";
+
 pattern catalog(type:int,sname:str,t:ptr,restart:lng):void
 address SQLcatalog
 comment "a catalog statement";
@@ -97,7 +107,8 @@ address SQLcatalog
 comment "a create index catalog statement";
 
 pattern eval(cmd:str):void 
-address SQLstatement;
+address SQLstatement
+comment "Compile and execute a single sql statement";
 pattern eval(cmd:str, output:bit):void 
 address SQLstatement
 comment "Compile and execute a single sql statement (and optionaly send output on the output stream)";
@@ -111,11 +122,14 @@ address RAstatement
 comment "Compile and execute a single 'relational algebra' statement";
 
 pattern assert(b:bit,msg:str):void
-address SQLassert;
+address SQLassert
+comment "Generate an exception when b==true";
 pattern assert(b:int,msg:str):void
-address SQLassertInt;
+address SQLassertInt
+comment "Generate an exception when b!=0";
 pattern assert(b:wrd,msg:str):void
-address SQLassertWrd;
+address SQLassertWrd
+comment "Generate an exception when b!=0";
 pattern assert(b:lng,msg:str):void
 address SQLassertLng
 comment "Generate an exception when b!=0";
@@ -246,7 +260,8 @@ address mvc_clear_table_wrap
 comment "Clear table";
 
 pattern tid( mvc:int, sname:str, tname:str):bat[:oid,:any_3] 
-address SQLtid;
+address SQLtid
+comment "Return the tables tid column.";
 pattern tid( mvc:int, sname:str, tname:str, part_nr:int, nr_parts:int ):bat[:oid,:any_3] 
 address SQLtid
 comment "Return the tables tid column.";
@@ -256,13 +271,17 @@ address mvc_delete_wrap
 comment "delete from table";
 
 pattern resultSet{unsafe}( nr_cols:int, sep:str, rsep:str, ssep:str, ns:str, order:any_1 ) :int 
-address mvc_result_file_wrap;
+address mvc_result_file_wrap
+comment "Prepare a file result set";
 pattern resultSet{unsafe}( nr_cols:int, sep:str, rsep:str, ssep:str, ns:str, order:bat[:oid,:any_1] ) :int 
-address mvc_result_file_wrap;
+address mvc_result_file_wrap
+comment "Prepare a file result set";
 pattern resultSet{unsafe}( nr_cols:int, qtype:int, order:any_1 ) :int 
-address mvc_result_row_wrap;
+address mvc_result_row_wrap
+comment "Prepare a row result set";
 pattern resultSet{unsafe}( nr_cols:int, qtype:int, order:bat[:oid,:any_1] ) :int 
-address mvc_result_table_wrap;
+address mvc_result_table_wrap
+comment "Prepare a table result set";
 pattern rsColumn{unsafe}(rs:int, tname:str, name:str, typename:str, digits:int, scale:int, val:any_1 ) :void
 address mvc_result_value_wrap
 comment "Add the value to the row query result";
@@ -543,13 +562,15 @@ pattern calc.rotate_xor_hash(h:wrd, nbits:int, v:any_1) :wrd address MKEYrotate_
 command batcalc.rotate_xor_hash(h:bat[:oid,:wrd], nbits:int, b:bat[:oid,:any_1]) :bat[:oid,:int] address MKEYbulk_rotate_xor_hash;
 
 command sql.dec_round( v:bte, r:bte ) :bte 
-address bte_dec_round_wrap;
+address bte_dec_round_wrap
+comment "round off the value v to nearests multiple of r";
 command batsql.dec_round( v:bat[:oid,:bte], r:bte ) :bat[:oid,:bte] 
 address bte_bat_dec_round_wrap
 comment "round off the value v to nearests multiple of r";
 
 command sql.round( v:bte, d:int, s:int, r:bte) :bte
-address bte_round_wrap;
+address bte_round_wrap
+comment "round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)";
 command batsql.round( v:bat[:oid,:bte], d:int, s:int, r:bte) :bat[:oid,:bte]
 address bte_bat_round_wrap
 comment "round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)";
@@ -559,13 +580,15 @@ address bte_dec2second_interval
 comment "cast bte decimal to a second_interval";
 
 command sql.dec_round( v:sht, r:sht ) :sht 
-address sht_dec_round_wrap;
+address sht_dec_round_wrap
+comment "round off the value v to nearests multiple of r";
 command batsql.dec_round( v:bat[:oid,:sht], r:sht ) :bat[:oid,:sht] 
 address sht_bat_dec_round_wrap
 comment "round off the value v to nearests multiple of r";
 
 command sql.round( v:sht, d:int, s:int, r:bte) :sht
-address sht_round_wrap;
+address sht_round_wrap
+comment "round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)";
 command batsql.round( v:bat[:oid,:sht], d:int, s:int, r:bte) :bat[:oid,:sht]
 address sht_bat_round_wrap
 comment "round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)";
@@ -575,13 +598,15 @@ address sht_dec2second_interval
 comment "cast sht decimal to a second_interval";
 
 command sql.dec_round( v:int, r:int ) :int 
-address int_dec_round_wrap;
+address int_dec_round_wrap
+comment "round off the value v to nearests multiple of r";
 command batsql.dec_round( v:bat[:oid,:int], r:int ) :bat[:oid,:int] 
 address int_bat_dec_round_wrap
 comment "round off the value v to nearests multiple of r";
 
 command sql.round( v:int, d:int, s:int, r:bte) :int
-address int_round_wrap;
+address int_round_wrap
+comment "round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)";
 command batsql.round( v:bat[:oid,:int], d:int, s:int, r:bte) :bat[:oid,:int]
 address int_bat_round_wrap
 comment "round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)";
@@ -591,13 +616,15 @@ address int_dec2second_interval
 comment "cast int decimal to a second_interval";
 
 command sql.dec_round( v:lng, r:lng ) :lng 
-address lng_dec_round_wrap;
+address lng_dec_round_wrap
+comment "round off the value v to nearests multiple of r";
 command batsql.dec_round( v:bat[:oid,:lng], r:lng ) :bat[:oid,:lng] 
 address lng_bat_dec_round_wrap
 comment "round off the value v to nearests multiple of r";
 
 command sql.round( v:lng, d:int, s:int, r:bte) :lng
-address lng_round_wrap;
+address lng_round_wrap
+comment "round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)";
 command batsql.round( v:bat[:oid,:lng], d:int, s:int, r:bte) :bat[:oid,:lng]
 address lng_bat_round_wrap
 comment "round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)";
@@ -659,81 +686,105 @@ address SQLcst_alpha_bat
 comment "BAT implementation of astronomy alpha function";
 
 command calc.bte( v:void, digits:int ) :bte 
-address nil_2num_bte;
+address nil_2num_bte
+comment "cast to bte and check for overflow";
 command calc.bte( v:void, digits:int, scale:int ) :bte 
-address nil_2dec_bte;
+address nil_2dec_bte
+comment "cast to dec(bte) and check for overflow";
 command batcalc.bte( v:bat[:oid,:void], digits:int ) :bat[:oid,:bte] 
-address batnil_2num_bte;
+address batnil_2num_bte
+comment "cast to bte and check for overflow";
 command batcalc.bte( v:bat[:oid,:void], digits:int, scale:int ) :bat[:oid,:bte] 
 address batnil_2dec_bte
 comment "cast to dec(bte) and check for overflow";
 
 command calc.bte( v:str, digits:int ) :bte 
-address str_2num_bte;
+address str_2num_bte
+comment "cast to bte and check for overflow";
 command calc.bte( v:str, digits:int, scale:int ) :bte 
-address str_2dec_bte;
+address str_2dec_bte
+comment "cast to dec(bte) and check for overflow";
 command batcalc.bte( v:bat[:oid,:str], digits:int ) :bat[:oid,:bte] 
-address batstr_2num_bte;
+address batstr_2num_bte
+comment "cast to bte and check for overflow";
 command batcalc.bte( v:bat[:oid,:str], digits:int, scale:int ) :bat[:oid,:bte] 
 address batstr_2dec_bte
 comment "cast to dec(bte) and check for overflow";
 
 command calc.sht( v:void, digits:int ) :sht 
-address nil_2num_sht;
+address nil_2num_sht
+comment "cast to sht and check for overflow";
 command calc.sht( v:void, digits:int, scale:int ) :sht 
-address nil_2dec_sht;
+address nil_2dec_sht
+comment "cast to dec(sht) and check for overflow";
 command batcalc.sht( v:bat[:oid,:void], digits:int ) :bat[:oid,:sht] 
-address batnil_2num_sht;
+address batnil_2num_sht
+comment "cast to sht and check for overflow";
 command batcalc.sht( v:bat[:oid,:void], digits:int, scale:int ) :bat[:oid,:sht] 
 address batnil_2dec_sht
 comment "cast to dec(sht) and check for overflow";
 
 command calc.sht( v:str, digits:int ) :sht 
-address str_2num_sht;
+address str_2num_sht
+comment "cast to sht and check for overflow";
 command calc.sht( v:str, digits:int, scale:int ) :sht 
-address str_2dec_sht;
+address str_2dec_sht
+comment "cast to dec(sht) and check for overflow";
 command batcalc.sht( v:bat[:oid,:str], digits:int ) :bat[:oid,:sht] 
-address batstr_2num_sht;
+address batstr_2num_sht
+comment "cast to sht and check for overflow";
 command batcalc.sht( v:bat[:oid,:str], digits:int, scale:int ) :bat[:oid,:sht] 
 address batstr_2dec_sht
 comment "cast to dec(sht) and check for overflow";
 
 command calc.int( v:void, digits:int ) :int 
-address nil_2num_int;
+address nil_2num_int
+comment "cast to int and check for overflow";
 command calc.int( v:void, digits:int, scale:int ) :int 
-address nil_2dec_int;
+address nil_2dec_int
+comment "cast to dec(int) and check for overflow";
 command batcalc.int( v:bat[:oid,:void], digits:int ) :bat[:oid,:int] 
-address batnil_2num_int;
+address batnil_2num_int
+comment "cast to int and check for overflow";
 command batcalc.int( v:bat[:oid,:void], digits:int, scale:int ) :bat[:oid,:int] 
 address batnil_2dec_int
 comment "cast to dec(int) and check for overflow";
 
 command calc.int( v:str, digits:int ) :int 
-address str_2num_int;
+address str_2num_int
+comment "cast to int and check for overflow";
 command calc.int( v:str, digits:int, scale:int ) :int 
-address str_2dec_int;
+address str_2dec_int
+comment "cast to dec(int) and check for overflow";
 command batcalc.int( v:bat[:oid,:str], digits:int ) :bat[:oid,:int] 
-address batstr_2num_int;
+address batstr_2num_int
+comment "cast to int and check for overflow";
 command batcalc.int( v:bat[:oid,:str], digits:int, scale:int ) :bat[:oid,:int] 
 address batstr_2dec_int
 comment "cast to dec(int) and check for overflow";
 
 command calc.lng( v:void, digits:int ) :lng 
-address nil_2num_lng;
+address nil_2num_lng
+comment "cast to lng and check for overflow";
 command calc.lng( v:void, digits:int, scale:int ) :lng 
-address nil_2dec_lng;
+address nil_2dec_lng
+comment "cast to dec(lng) and check for overflow";
 command batcalc.lng( v:bat[:oid,:void], digits:int ) :bat[:oid,:lng] 
-address batnil_2num_lng;
+address batnil_2num_lng
+comment "cast to lng and check for overflow";
 command batcalc.lng( v:bat[:oid,:void], digits:int, scale:int ) :bat[:oid,:lng] 
 address batnil_2dec_lng
 comment "cast to dec(lng) and check for overflow";
 
 command calc.lng( v:str, digits:int ) :lng 
-address str_2num_lng;
+address str_2num_lng
+comment "cast to lng and check for overflow";
 command calc.lng( v:str, digits:int, scale:int ) :lng 
-address str_2dec_lng;
+address str_2dec_lng
+comment "cast to dec(lng) and check for overflow";
 command batcalc.lng( v:bat[:oid,:str], digits:int ) :bat[:oid,:lng] 
-address batstr_2num_lng;
+address batstr_2num_lng
+comment "cast to lng and check for overflow";
 command batcalc.lng( v:bat[:oid,:str], digits:int, scale:int ) :bat[:oid,:lng] 
 address batstr_2dec_lng
 comment "cast to dec(lng) and check for overflow";
@@ -853,66 +904,6 @@ command calc.substring(s:str,offset:int):str
 address STRsubstringTail;
 command calc.substring(s:str,offset:int,count:int):str
 address STRsubstring;
-
-command calc.bte( v:flt, digits:int, scale:int ) :bte 
-address flt_num2dec_bte;
-command batcalc.bte( v:bat[:oid,:flt], digits:int, scale:int ) :bat[:oid,:bte] 
-address batflt_num2dec_bte
-comment "cast number to decimal(bte) and check for overflow";
-
-command calc.sht( v:flt, digits:int, scale:int ) :sht 
-address flt_num2dec_sht;
-command batcalc.sht( v:bat[:oid,:flt], digits:int, scale:int ) :bat[:oid,:sht] 
-address batflt_num2dec_sht
-comment "cast number to decimal(sht) and check for overflow";
-
-command calc.int( v:flt, digits:int, scale:int ) :int 
-address flt_num2dec_int;
-command batcalc.int( v:bat[:oid,:flt], digits:int, scale:int ) :bat[:oid,:int] 
-address batflt_num2dec_int
-comment "cast number to decimal(int) and check for overflow";
-
-command calc.wrd( v:flt, digits:int, scale:int ) :wrd 
-address flt_num2dec_wrd;
-command batcalc.wrd( v:bat[:oid,:flt], digits:int, scale:int ) :bat[:oid,:wrd] 
-address batflt_num2dec_wrd
-comment "cast number to decimal(wrd) and check for overflow";
-
-command calc.lng( v:flt, digits:int, scale:int ) :lng 
-address flt_num2dec_lng;
-command batcalc.lng( v:bat[:oid,:flt], digits:int, scale:int ) :bat[:oid,:lng] 
-address batflt_num2dec_lng
-comment "cast number to decimal(lng) and check for overflow";
-
-command calc.bte( v:dbl, digits:int, scale:int ) :bte 
-address dbl_num2dec_bte;
-command batcalc.bte( v:bat[:oid,:dbl], digits:int, scale:int ) :bat[:oid,:bte] 
-address batdbl_num2dec_bte
-comment "cast number to decimal(bte) and check for overflow";
-
-command calc.sht( v:dbl, digits:int, scale:int ) :sht 
-address dbl_num2dec_sht;
-command batcalc.sht( v:bat[:oid,:dbl], digits:int, scale:int ) :bat[:oid,:sht] 
-address batdbl_num2dec_sht
-comment "cast number to decimal(sht) and check for overflow";
-
-command calc.int( v:dbl, digits:int, scale:int ) :int 
-address dbl_num2dec_int;
-command batcalc.int( v:bat[:oid,:dbl], digits:int, scale:int ) :bat[:oid,:int] 
-address batdbl_num2dec_int
-comment "cast number to decimal(int) and check for overflow";
-
-command calc.wrd( v:dbl, digits:int, scale:int ) :wrd 
-address dbl_num2dec_wrd;
-command batcalc.wrd( v:bat[:oid,:dbl], digits:int, scale:int ) :bat[:oid,:wrd] 
-address batdbl_num2dec_wrd
-comment "cast number to decimal(wrd) and check for overflow";
-
-command calc.lng( v:dbl, digits:int, scale:int ) :lng 
-address dbl_num2dec_lng;
-command batcalc.lng( v:bat[:oid,:dbl], digits:int, scale:int ) :bat[:oid,:lng] 
-address batdbl_num2dec_lng
-comment "cast number to decimal(lng) and check for overflow";
 
 command calc.month_interval( v:str, ek:int, sk:int ) :int
 address month_interval_str

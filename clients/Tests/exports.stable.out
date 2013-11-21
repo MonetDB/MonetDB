@@ -1488,6 +1488,7 @@ str JSONisarray(bit *ret, json *j);
 str JSONisobject(bit *ret, json *j);
 str JSONisvalid(bit *ret, json *j);
 str JSONjson2str(str *ret, json *j);
+str JSONkeys(json *ret, json *arg);
 str JSONlength(int *ret, json *j);
 str JSONnames(int *ret, json *j);
 str JSONnest(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
