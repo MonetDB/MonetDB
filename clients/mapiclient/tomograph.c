@@ -70,8 +70,7 @@ static struct {
 	char *ptag;     /* which profiler group counter is needed */
 	char *name;     /* which logical counter is needed */
 	int status;     /* trace it or not */
-}
-profileCounter[] = {
+} profileCounter[] = {
 	/*  0  */ { 'a', "aggregate", "total count", 0 },
 	/*  1  */ { 'a', "aggregate", "total ticks", 0 },
 	/*  2  */ { 'e', "event", "event id", 0 },
@@ -199,7 +198,8 @@ usage(void)
 static void createTomogram(void);
 
 static int activated = 0;
-static void deactivateBeat(void)
+static void
+deactivateBeat(void)
 {
 	wthread *wthr;
 	char *id = "deactivateBeat";
@@ -208,7 +208,7 @@ static void deactivateBeat(void)
 	activated = 0;
 	if (debug)
 		fprintf(stderr, "Deactivate beat\n");
-	/* deactivate all connections  */
+	/* deactivate all connections */
 	for (wthr = thds; wthr != NULL; wthr = wthr->next)
 		if (wthr->dbh) {
 			doQ("profiler.deactivate(\"ping\");\n");
@@ -216,7 +216,7 @@ static void deactivateBeat(void)
 		}
 
 	return;
-stop_disconnect:
+  stop_disconnect:
 	;
 }
 
@@ -229,7 +229,7 @@ stopListening(int i)
 		fprintf(stderr, "Interrupt received\n");
 	batch = 0;
 	deactivateBeat();
-	/* kill all connections  */
+	/* kill all connections */
 	for (walk = thds; walk != NULL; walk = walk->next) {
 		if (walk->s != NULL) {
 			mnstr_close(walk->s);
@@ -256,7 +256,8 @@ setCounter(char *nme)
 	return k;
 }
 
-static void activateBeat(void)
+static void
+activateBeat(void)
 {
 	char buf[BUFSIZ];
 	char *id = "activateBeat";
@@ -268,14 +269,14 @@ static void activateBeat(void)
 		return;
 	activated = 1;
 	snprintf(buf, BUFSIZ, "profiler.activate(\"ping%d\");\n", beat);
-	/* activate all connections  */
+	/* activate all connections */
 	for (wthr = thds; wthr != NULL; wthr = wthr->next)
 		if (wthr->dbh) {
 			doQ(buf);
 		}
 
 	return;
-stop_disconnect:
+  stop_disconnect:
 	if (wthr) {
 		mapi_disconnect(wthr->dbh);
 		mapi_destroy(wthr->dbh);
@@ -314,13 +315,14 @@ int topbox = 0;
 lng totalclkticks = 0; /* number of clock ticks reported */
 lng totalexecticks = 0; /* number of ticks reported for processing */
 lng lastclktick = 0;
-lng totalticks = 0; 
+lng totalticks = 0;
 lng starttime = 0;
 int figures = 0;
 char *currentfunction= 0;
 int object = 1;
 
-static void dumpbox(int i)
+static void
+dumpbox(int i)
 {
 	printf("[%d] row %d color %d ", i, box[i].row, box[i].color);
 	if (box[i].fcn)
@@ -343,150 +345,149 @@ typedef struct {
 	int red, green, blue;
 } RGB;
 
-RGB
-dictionary[] = {
+RGB dictionary[] = {
 /* arbitrarily ordered by ascending R+G+B */
-/*   0 */	{ "black", "#000000", 0, 0, 0 },
-/* 100 */	{ "darkgreen", "#006400", 0, 100, 0 },
-/* 128 */	{ "green", "#008000", 0, 128, 0 },
-/* 128 */	{ "maroon", "#800000", 128, 0, 0 },
-/* 128 */	{ "navy", "#000080", 0, 0, 128 },
-/* 139 */	{ "darkblue", "#00008B", 0, 0, 139 },
-/* 139 */	{ "darkred", "#8B0000", 139, 0, 0 },
-/* 162 */	{ "midnightblue", "#191970", 25, 25, 112 },
-/* 205 */	{ "darkslategray", "#2F4F4F", 47, 79, 79 },
-/* 205 */	{ "indigo", "#4B0082", 75, 0, 130 },
-/* 205 */	{ "mediumblue", "#0000CD", 0, 0, 205 },
-/* 207 */	{ "forestgreen", "#228B22", 34, 139, 34 },
-/* 227 */	{ "saddlebrown", "#8B4513", 139, 69, 19 },
-/* 239 */	{ "darkolivegreen", "#556B2F", 85, 107, 47 },
-/* 246 */	{ "firebrick", "#B22222", 178, 34, 34 },
-/* 249 */	{ "brown", "#A52A2A", 165, 42, 42 },
-/* 255 */	{ "blue", "#0000FF", 0, 0, 255 },
-/* 255 */	{ "lime", "#00FF00", 0, 255, 0 },
-/* 255 */	{ "red", "#FF0000", 255, 0, 0 },
-/* 256 */	{ "olive", "#808000", 128, 128, 0 },
-/* 256 */	{ "purple", "#800080", 128, 0, 128 },
-/* 256 */	{ "teal", "#008080", 0, 128, 128 },
-/* 272 */	{ "darkslateblue", "#483D8B", 72, 61, 139 },
-/* 272 */	{ "seagreen", "#2E8B57", 46, 139, 87 },
-/* 278 */	{ "darkcyan", "#008B8B", 0, 139, 139 },
-/* 278 */	{ "darkmagenta", "#8B008B", 139, 0, 139 },
-/* 284 */	{ "olivedrab", "#6B8E23", 107, 142, 35 },
-/* 287 */	{ "sienna", "#A0522D", 160, 82, 45 },
-/* 300 */	{ "crimson", "#DC143C", 220, 20, 60 },
-/* 305 */	{ "limegreen", "#32CD32", 50, 205, 50 },
-/* 315 */	{ "dimgray", "#696969", 105, 105, 105 },
-/* 324 */	{ "orangered", "#FF4500", 255, 69, 0 },
-/* 329 */	{ "darkgoldenrod", "#B8860B", 184, 134, 11 },
-/* 345 */	{ "chocolate", "#D2691E", 210, 105, 30 },
-/* 352 */	{ "mediumseagreen", "#3CB371", 60, 179, 113 },
-/* 353 */	{ "mediumvioletred", "#C71585", 199, 21, 133 },
-/* 359 */	{ "darkviolet", "#9400D3", 148, 0, 211 },
-/* 376 */	{ "lawngreen", "#7CFC00", 124, 252, 0 },
-/* 380 */	{ "lightseagreen", "#20B2AA", 32, 178, 170 },
-/* 380 */	{ "steelblue", "#4682B4", 70, 130, 180 },
-/* 381 */	{ "gray", "#7F7F7F", 127, 127, 127 },
-/* 382 */	{ "chartreuse", "#7FFF00", 127, 255, 0 },
-/* 382 */	{ "springgreen", "#00FF7F", 0, 255, 127 },
-/* 384 */	{ "slategray", "#708090", 112, 128, 144 },
-/* 389 */	{ "indianred", "#CD5C5C", 205, 92, 92 },
-/* 394 */	{ "yellowgreen", "#9ACD32", 139, 205, 50 },
-/* 395 */	{ "darkorange", "#FF8C00", 255, 140, 0 },
-/* 395 */	{ "royalblue", "#4169E1", 65, 105, 225 },
-/* 401 */	{ "peru", "#CD853F", 205, 133, 63 },
-/* 401 */	{ "slateblue", "#6A5ACD", 106, 90, 205 },
-/* 404 */	{ "mediumspringgreen", "#00FA9A", 0, 250, 154 },
-/* 407 */	{ "blueviolet", "#8A2BE2", 138, 43, 226 },
-/* 407 */	{ "darkorchid", "#9932CC", 153, 50, 204 },
-/* 408 */	{ "lightslategray", "#778899", 119, 136, 153 },
-/* 413 */	{ "cadetblue", "#5F9EA0", 95, 158, 160 },
-/* 415 */	{ "darkturquoise", "#00CED1", 0, 206, 209 },
-/* 415 */	{ "goldenrod", "#DAA520", 218, 165, 32 },
-/* 420 */	{ "orange", "#FFA500", 255, 165, 0 },
-/* 422 */	{ "deeppink", "#FF1493", 255, 20, 147 },
-/* 425 */	{ "tomato", "#FF6347", 255, 99, 71 },
-/* 429 */	{ "dodgerblue", "#1E90FF", 30, 144, 255 },
-/* 446 */	{ "deepskyblue", "#00BFFF", 0, 191, 255 },
-/* 462 */	{ "coral", "#FF7F50", 255, 127, 80 },
-/* 465 */	{ "mediumslateblue", "#7B68EE", 123, 104, 238 },
-/* 470 */	{ "gold", "#FFD700", 255, 215, 0 },
-/* 474 */	{ "darkseagreen", "#8FBC8F", 143, 188, 143 },
-/* 474 */	{ "rosybrown", "#BC8F8F", 188, 143, 143 },
-/* 475 */	{ "greenyellow", "#ADFF2F", 173, 255, 47 },
-/* 477 */	{ "mediumaquamarine", "#66CDAA", 102, 205, 170 },
-/* 478 */	{ "mediumpurple", "#9370DB", 147, 112, 219 },
-/* 478 */	{ "palevioletred", "#DB7093", 219, 112, 147 },
-/* 479 */	{ "darkkhaki", "#BDB76B", 189, 183, 107 },
-/* 482 */	{ "mediumorchid", "#BA55D3", 186, 85, 211 },
-/* 485 */	{ "mediumturquoise", "#48D1CC", 72, 209, 204 },
-/* 486 */	{ "cornflowerblue", "#6495ED", 100, 149, 237 },
-/* 492 */	{ "salmon", "#FA8072", 250, 128, 114 },
-/* 496 */	{ "lightcoral", "#F08080", 240, 128, 128 },
-/* 496 */	{ "turquoise", "#40E0D0", 64, 224, 208 },
-/* 504 */	{ "sandybrown", "#F4A460", 244, 164, 96 },
-/* 505 */	{ "darksalmon", "#E9967A", 233, 150, 122 },
-/* 507 */	{ "darkgray", "#A9A9A9", 169, 169, 169 },
-/* 510 */	{ "aqua", "#00FFFF", 0, 255, 255 },
-/* 510 */	{ "cyan", "#00FFFF", 0, 255, 255 },
-/* 510 */	{ "fuchsia", "#FF00FF", 255, 0, 255 },
-/* 510 */	{ "magenta", "#FF00FF", 255, 0, 255 },
-/* 510 */	{ "yellow", "#FFFF00", 255, 255, 0 },
-/* 526 */	{ "lightgreen", "#90EE90", 144, 238, 144 },
-/* 530 */	{ "tan", "#D2B48C", 210, 180, 140 },
-/* 537 */	{ "lightsalmon", "#FFA07A", 255, 160, 122 },
-/* 540 */	{ "hotpink", "#FF69B4", 255, 105, 180 },
-/* 541 */	{ "burlywood", "#DEB887", 222, 184, 135 },
-/* 544 */	{ "orchid", "#DA70D6", 218, 112, 214 },
-/* 555 */	{ "palegreen", "#98FB98", 152, 251, 152 },
-/* 557 */	{ "navyblue", "#9FAFDF", 159, 175, 223 },
-/* 576 */	{ "silver", "#C0C0C0", 192, 192, 192 },
-/* 576 */	{ "skyblue", "#87CEEB", 135, 206, 235 },
-/* 591 */	{ "lightskyblue", "#87CEFA", 135, 206, 250 },
-/* 594 */	{ "aquamarine", "#7FFFD4", 127, 255, 212 },
-/* 594 */	{ "lightsteelblue", "#B0C4DE", 176, 196, 222 },
-/* 602 */	{ "plum", "#DDA0DD", 221, 160, 221 },
-/* 606 */	{ "violet", "#EE82EE", 238, 130, 238 },
-/* 610 */	{ "khaki", "#F0E68C", 240, 230, 140 },
-/* 619 */	{ "lightblue", "#ADD8E6", 173, 216, 230 },
-/* 623 */	{ "thistle", "#D8BFD8", 216, 191, 216 },
-/* 630 */	{ "lightpink", "#FFB6C1", 255, 182, 193 },
-/* 630 */	{ "powderblue", "#B0E0E6", 176, 224, 230 },
-/* 633 */	{ "lightgrey", "#D3D3D3", 211, 211, 211 },
-/* 640 */	{ "palegoldenrod", "#EEE8AA", 238, 232, 170 },
-/* 646 */	{ "wheat", "#F5DEB3", 245, 222, 179 },
-/* 650 */	{ "navajowhite", "#FFDEAD", 255, 222, 173 },
-/* 650 */	{ "pink", "#FFC0CB", 255, 192, 203 },
-/* 651 */	{ "paleturquoise", "#AFEEEE", 175, 238, 238 },
-/* 658 */	{ "peachpuff", "#FFDAB9", 255, 218, 185 },
-/* 660 */	{ "gainsboro", "#DCDCDC", 220, 220, 220 },
-/* 664 */	{ "moccasin", "#FFE4B5", 255, 228, 181 },
-/* 679 */	{ "bisque", "#FFE4C4", 255, 228, 196 },
-/* 695 */	{ "blanchedalmond", "#FFEBCD", 255, 235, 205 },
-/* 700 */	{ "antiquewhite", "#FAEBD7", 250, 235, 215 },
-/* 707 */	{ "papayawhip", "#FFEFD5", 255, 239, 213 },
-/* 708 */	{ "mistyrose", "#FFE4E1", 255, 228, 225 },
-/* 710 */	{ "beige", "#F5F5DC", 245, 245, 220 },
-/* 710 */	{ "lavender", "#E6E6FA", 230, 230, 250 },
-/* 710 */	{ "lemonchiffon", "#FFFACD", 255, 250, 205 },
-/* 710 */	{ "lightgoldenrodyellow", "#FAFAD2", 250, 250, 210 },
-/* 720 */	{ "linen", "#FAF0E6", 250, 240, 230 },
-/* 723 */	{ "cornsilk", "#FFF8DC", 255, 248, 220 },
-/* 728 */	{ "oldlace", "#FDF5E6", 253, 245, 230 },
-/* 734 */	{ "lightcyan", "#E0FFFF", 224, 255, 255 },
-/* 734 */	{ "lightyellow", "#FFFFE0", 255, 255, 224 },
-/* 735 */	{ "honeydew", "#F0FFF0", 240, 255, 240 },
-/* 735 */	{ "whitesmoke", "#F5F5F5", 245, 245, 245 },
-/* 738 */	{ "seashell", "#FFF5EE", 255, 245, 238 },
-/* 740 */	{ "lavenderblush", "#FFF0F5", 255, 240, 245 },
-/* 743 */	{ "aliceblue", "#F0F8FF", 240, 248, 255 },
-/* 745 */	{ "floralwhite", "#FFFAF0", 255, 250, 240 },
-/* 750 */	{ "azure", "#F0FFFF", 240, 255, 255 },
-/* 750 */	{ "ivory", "#FFFFF0", 255, 255, 240 },
-/* 750 */	{ "mintcream", "#F5FFFA", 245, 255, 250 },
-/* 751 */	{ "ghostwhite", "#F8F8FF", 248, 248, 255 },
-/* 755 */	{ "snow", "#FFFAFA", 255, 250, 250 },
-/* 765 */	{ "white", "#FFFFFF", 255, 255, 255 },
+	/*   0 */	{ "black", "#000000", 0, 0, 0 },
+	/* 100 */	{ "darkgreen", "#006400", 0, 100, 0 },
+	/* 128 */	{ "green", "#008000", 0, 128, 0 },
+	/* 128 */	{ "maroon", "#800000", 128, 0, 0 },
+	/* 128 */	{ "navy", "#000080", 0, 0, 128 },
+	/* 139 */	{ "darkblue", "#00008B", 0, 0, 139 },
+	/* 139 */	{ "darkred", "#8B0000", 139, 0, 0 },
+	/* 162 */	{ "midnightblue", "#191970", 25, 25, 112 },
+	/* 205 */	{ "darkslategray", "#2F4F4F", 47, 79, 79 },
+	/* 205 */	{ "indigo", "#4B0082", 75, 0, 130 },
+	/* 205 */	{ "mediumblue", "#0000CD", 0, 0, 205 },
+	/* 207 */	{ "forestgreen", "#228B22", 34, 139, 34 },
+	/* 227 */	{ "saddlebrown", "#8B4513", 139, 69, 19 },
+	/* 239 */	{ "darkolivegreen", "#556B2F", 85, 107, 47 },
+	/* 246 */	{ "firebrick", "#B22222", 178, 34, 34 },
+	/* 249 */	{ "brown", "#A52A2A", 165, 42, 42 },
+	/* 255 */	{ "blue", "#0000FF", 0, 0, 255 },
+	/* 255 */	{ "lime", "#00FF00", 0, 255, 0 },
+	/* 255 */	{ "red", "#FF0000", 255, 0, 0 },
+	/* 256 */	{ "olive", "#808000", 128, 128, 0 },
+	/* 256 */	{ "purple", "#800080", 128, 0, 128 },
+	/* 256 */	{ "teal", "#008080", 0, 128, 128 },
+	/* 272 */	{ "darkslateblue", "#483D8B", 72, 61, 139 },
+	/* 272 */	{ "seagreen", "#2E8B57", 46, 139, 87 },
+	/* 278 */	{ "darkcyan", "#008B8B", 0, 139, 139 },
+	/* 278 */	{ "darkmagenta", "#8B008B", 139, 0, 139 },
+	/* 284 */	{ "olivedrab", "#6B8E23", 107, 142, 35 },
+	/* 287 */	{ "sienna", "#A0522D", 160, 82, 45 },
+	/* 300 */	{ "crimson", "#DC143C", 220, 20, 60 },
+	/* 305 */	{ "limegreen", "#32CD32", 50, 205, 50 },
+	/* 315 */	{ "dimgray", "#696969", 105, 105, 105 },
+	/* 324 */	{ "orangered", "#FF4500", 255, 69, 0 },
+	/* 329 */	{ "darkgoldenrod", "#B8860B", 184, 134, 11 },
+	/* 345 */	{ "chocolate", "#D2691E", 210, 105, 30 },
+	/* 352 */	{ "mediumseagreen", "#3CB371", 60, 179, 113 },
+	/* 353 */	{ "mediumvioletred", "#C71585", 199, 21, 133 },
+	/* 359 */	{ "darkviolet", "#9400D3", 148, 0, 211 },
+	/* 376 */	{ "lawngreen", "#7CFC00", 124, 252, 0 },
+	/* 380 */	{ "lightseagreen", "#20B2AA", 32, 178, 170 },
+	/* 380 */	{ "steelblue", "#4682B4", 70, 130, 180 },
+	/* 381 */	{ "gray", "#7F7F7F", 127, 127, 127 },
+	/* 382 */	{ "chartreuse", "#7FFF00", 127, 255, 0 },
+	/* 382 */	{ "springgreen", "#00FF7F", 0, 255, 127 },
+	/* 384 */	{ "slategray", "#708090", 112, 128, 144 },
+	/* 389 */	{ "indianred", "#CD5C5C", 205, 92, 92 },
+	/* 394 */	{ "yellowgreen", "#9ACD32", 139, 205, 50 },
+	/* 395 */	{ "darkorange", "#FF8C00", 255, 140, 0 },
+	/* 395 */	{ "royalblue", "#4169E1", 65, 105, 225 },
+	/* 401 */	{ "peru", "#CD853F", 205, 133, 63 },
+	/* 401 */	{ "slateblue", "#6A5ACD", 106, 90, 205 },
+	/* 404 */	{ "mediumspringgreen", "#00FA9A", 0, 250, 154 },
+	/* 407 */	{ "blueviolet", "#8A2BE2", 138, 43, 226 },
+	/* 407 */	{ "darkorchid", "#9932CC", 153, 50, 204 },
+	/* 408 */	{ "lightslategray", "#778899", 119, 136, 153 },
+	/* 413 */	{ "cadetblue", "#5F9EA0", 95, 158, 160 },
+	/* 415 */	{ "darkturquoise", "#00CED1", 0, 206, 209 },
+	/* 415 */	{ "goldenrod", "#DAA520", 218, 165, 32 },
+	/* 420 */	{ "orange", "#FFA500", 255, 165, 0 },
+	/* 422 */	{ "deeppink", "#FF1493", 255, 20, 147 },
+	/* 425 */	{ "tomato", "#FF6347", 255, 99, 71 },
+	/* 429 */	{ "dodgerblue", "#1E90FF", 30, 144, 255 },
+	/* 446 */	{ "deepskyblue", "#00BFFF", 0, 191, 255 },
+	/* 462 */	{ "coral", "#FF7F50", 255, 127, 80 },
+	/* 465 */	{ "mediumslateblue", "#7B68EE", 123, 104, 238 },
+	/* 470 */	{ "gold", "#FFD700", 255, 215, 0 },
+	/* 474 */	{ "darkseagreen", "#8FBC8F", 143, 188, 143 },
+	/* 474 */	{ "rosybrown", "#BC8F8F", 188, 143, 143 },
+	/* 475 */	{ "greenyellow", "#ADFF2F", 173, 255, 47 },
+	/* 477 */	{ "mediumaquamarine", "#66CDAA", 102, 205, 170 },
+	/* 478 */	{ "mediumpurple", "#9370DB", 147, 112, 219 },
+	/* 478 */	{ "palevioletred", "#DB7093", 219, 112, 147 },
+	/* 479 */	{ "darkkhaki", "#BDB76B", 189, 183, 107 },
+	/* 482 */	{ "mediumorchid", "#BA55D3", 186, 85, 211 },
+	/* 485 */	{ "mediumturquoise", "#48D1CC", 72, 209, 204 },
+	/* 486 */	{ "cornflowerblue", "#6495ED", 100, 149, 237 },
+	/* 492 */	{ "salmon", "#FA8072", 250, 128, 114 },
+	/* 496 */	{ "lightcoral", "#F08080", 240, 128, 128 },
+	/* 496 */	{ "turquoise", "#40E0D0", 64, 224, 208 },
+	/* 504 */	{ "sandybrown", "#F4A460", 244, 164, 96 },
+	/* 505 */	{ "darksalmon", "#E9967A", 233, 150, 122 },
+	/* 507 */	{ "darkgray", "#A9A9A9", 169, 169, 169 },
+	/* 510 */	{ "aqua", "#00FFFF", 0, 255, 255 },
+	/* 510 */	{ "cyan", "#00FFFF", 0, 255, 255 },
+	/* 510 */	{ "fuchsia", "#FF00FF", 255, 0, 255 },
+	/* 510 */	{ "magenta", "#FF00FF", 255, 0, 255 },
+	/* 510 */	{ "yellow", "#FFFF00", 255, 255, 0 },
+	/* 526 */	{ "lightgreen", "#90EE90", 144, 238, 144 },
+	/* 530 */	{ "tan", "#D2B48C", 210, 180, 140 },
+	/* 537 */	{ "lightsalmon", "#FFA07A", 255, 160, 122 },
+	/* 540 */	{ "hotpink", "#FF69B4", 255, 105, 180 },
+	/* 541 */	{ "burlywood", "#DEB887", 222, 184, 135 },
+	/* 544 */	{ "orchid", "#DA70D6", 218, 112, 214 },
+	/* 555 */	{ "palegreen", "#98FB98", 152, 251, 152 },
+	/* 557 */	{ "navyblue", "#9FAFDF", 159, 175, 223 },
+	/* 576 */	{ "silver", "#C0C0C0", 192, 192, 192 },
+	/* 576 */	{ "skyblue", "#87CEEB", 135, 206, 235 },
+	/* 591 */	{ "lightskyblue", "#87CEFA", 135, 206, 250 },
+	/* 594 */	{ "aquamarine", "#7FFFD4", 127, 255, 212 },
+	/* 594 */	{ "lightsteelblue", "#B0C4DE", 176, 196, 222 },
+	/* 602 */	{ "plum", "#DDA0DD", 221, 160, 221 },
+	/* 606 */	{ "violet", "#EE82EE", 238, 130, 238 },
+	/* 610 */	{ "khaki", "#F0E68C", 240, 230, 140 },
+	/* 619 */	{ "lightblue", "#ADD8E6", 173, 216, 230 },
+	/* 623 */	{ "thistle", "#D8BFD8", 216, 191, 216 },
+	/* 630 */	{ "lightpink", "#FFB6C1", 255, 182, 193 },
+	/* 630 */	{ "powderblue", "#B0E0E6", 176, 224, 230 },
+	/* 633 */	{ "lightgrey", "#D3D3D3", 211, 211, 211 },
+	/* 640 */	{ "palegoldenrod", "#EEE8AA", 238, 232, 170 },
+	/* 646 */	{ "wheat", "#F5DEB3", 245, 222, 179 },
+	/* 650 */	{ "navajowhite", "#FFDEAD", 255, 222, 173 },
+	/* 650 */	{ "pink", "#FFC0CB", 255, 192, 203 },
+	/* 651 */	{ "paleturquoise", "#AFEEEE", 175, 238, 238 },
+	/* 658 */	{ "peachpuff", "#FFDAB9", 255, 218, 185 },
+	/* 660 */	{ "gainsboro", "#DCDCDC", 220, 220, 220 },
+	/* 664 */	{ "moccasin", "#FFE4B5", 255, 228, 181 },
+	/* 679 */	{ "bisque", "#FFE4C4", 255, 228, 196 },
+	/* 695 */	{ "blanchedalmond", "#FFEBCD", 255, 235, 205 },
+	/* 700 */	{ "antiquewhite", "#FAEBD7", 250, 235, 215 },
+	/* 707 */	{ "papayawhip", "#FFEFD5", 255, 239, 213 },
+	/* 708 */	{ "mistyrose", "#FFE4E1", 255, 228, 225 },
+	/* 710 */	{ "beige", "#F5F5DC", 245, 245, 220 },
+	/* 710 */	{ "lavender", "#E6E6FA", 230, 230, 250 },
+	/* 710 */	{ "lemonchiffon", "#FFFACD", 255, 250, 205 },
+	/* 710 */	{ "lightgoldenrodyellow", "#FAFAD2", 250, 250, 210 },
+	/* 720 */	{ "linen", "#FAF0E6", 250, 240, 230 },
+	/* 723 */	{ "cornsilk", "#FFF8DC", 255, 248, 220 },
+	/* 728 */	{ "oldlace", "#FDF5E6", 253, 245, 230 },
+	/* 734 */	{ "lightcyan", "#E0FFFF", 224, 255, 255 },
+	/* 734 */	{ "lightyellow", "#FFFFE0", 255, 255, 224 },
+	/* 735 */	{ "honeydew", "#F0FFF0", 240, 255, 240 },
+	/* 735 */	{ "whitesmoke", "#F5F5F5", 245, 245, 245 },
+	/* 738 */	{ "seashell", "#FFF5EE", 255, 245, 238 },
+	/* 740 */	{ "lavenderblush", "#FFF0F5", 255, 240, 245 },
+	/* 743 */	{ "aliceblue", "#F0F8FF", 240, 248, 255 },
+	/* 745 */	{ "floralwhite", "#FFFAF0", 255, 250, 240 },
+	/* 750 */	{ "azure", "#F0FFFF", 240, 255, 255 },
+	/* 750 */	{ "ivory", "#FFFFF0", 255, 255, 240 },
+	/* 750 */	{ "mintcream", "#F5FFFA", 245, 255, 250 },
+	/* 751 */	{ "ghostwhite", "#F8F8FF", 248, 248, 255 },
+	/* 755 */	{ "snow", "#FFFAFA", 255, 250, 250 },
+	/* 765 */	{ "white", "#FFFFFF", 255, 255, 255 },
 };
 
 #define NUM_COLORS ((int) (sizeof(dictionary) / sizeof(RGB)))
@@ -501,8 +502,7 @@ typedef struct COLOR {
 	char *mod, *fcn, *col;
 } Color;
 
-Color
-colors[NUM_COLORS] = {{0,0,0,0,0}};
+Color colors[NUM_COLORS] = {{0,0,0,0,0}};
 
 /*
  * The fixed color scheme is designed to keep the legend
@@ -518,11 +518,10 @@ colors[NUM_COLORS] = {{0,0,0,0,0}};
  * map file, which consists of mod\tfcn\tcol lines using
  * the color dictionary as a frame of reference.
  *
- * Use the adaptive scheme if you want distinct colors 
+ * Use the adaptive scheme if you want distinct colors
  * targeted for a single tomogram.
  */
-Color
-fixed_colors[] = {
+Color fixed_colors[] = {
 	{ 0, 0, "aggr", "count", "darkgreen" },
 	{ 0, 0, "aggr", "max", "lawngreen" },
 	{ 0, 0, "aggr", "min", "lawngreen" },
@@ -579,117 +578,117 @@ fixed_colors[] = {
 	{ 0, 0, 0, 0, 0 }
 };
 /* initial mod.fcn list for adaptive colormap */
-Color
-base_colors[] = {
+Color base_colors[] = {
 	/* reserve (base_)colors[0] for generic "*.*" */
-/* 99999 */	{ 0, 0, "*", "*", 0 },
+	/* 99999 */	{ 0, 0, "*", "*", 0 },
 /* arbitrarily ordered by descending frequency in TPCH SF-100 with 32 threads */
-/* 18169 */	{ 0, 0, "profiler", "ping", 0 },
-/* 11054 */	{ 0, 0, "algebra", "leftfetchjoin", 0 },
-/* 10355 */	{ 0, 0, "language", "pass", 0 },
-/*  5941 */	{ 0, 0, "sql", "bind", 0 },
-/*  5664 */	{ 0, 0, "mat", "packIncrement", 0 },
-/*  4796 */	{ 0, 0, "algebra", "subselect", 0 },
-/*  4789 */	{ 0, 0, "algebra", "join", 0 },
-/*  4281 */	{ 0, 0, "profiler", "wait", 0 },
-/*  2664 */	{ 0, 0, "sql", "projectdelta", 0 },
-/*  2112 */	{ 0, 0, "batcalc", "!=", 0 },
-/*  1886 */	{ 0, 0, "sql", "bind_idxbat", 0 },
-/*  1881 */	{ 0, 0, "algebra", "leftfetchjoinPath", 0 },
-/*  1013 */	{ 0, 0, "sql", "tid", 0 },
-/*   832 */	{ 0, 0, "bat", "mergecand", 0 },
-/*   813 */	{ 0, 0, "sql", "delta", 0 },
-/*   766 */	{ 0, 0, "aggr", "subsum", 0 },
-/*   610 */	{ 0, 0, "batcalc", "*", 0 },
-/*   577 */	{ 0, 0, "group", "subgroupdone", 0 },
-/*   481 */	{ 0, 0, "sql", "subdelta", 0 },
-/*   448 */	{ 0, 0, "batcalc", "-", 0 },
-/*   334 */	{ 0, 0, "bat", "mirror", 0 },
-/*   300 */	{ 0, 0, "group", "subgroup", 0 },
-/*   264 */	{ 0, 0, "batcalc", "==", 0 },
-/*   260 */	{ 0, 0, "batcalc", "ifthenelse", 0 },
-/*   209 */	{ 0, 0, "calc", "str", 0 },
-/*   207 */	{ 0, 0, "aggr", "sum", 0 },
-/*   200 */	{ 0, 0, "algebra", "thetasubselect", 0 },
-/*   200 */	{ 0, 0, "algebra", "selectNotNil", 0 },
-/*   197 */	{ 0, 0, "aggr", "subcount", 0 },
-/*   166 */	{ 0, 0, "batcalc", "dbl", 0 },
-/*   166 */	{ 0, 0, "algebra", "tinter", 0 },
-/*   131 */	{ 0, 0, "algebra", "leftjoin", 0 },
-/*   128 */	{ 0, 0, "batcalc", "isnil", 0 },
-/*    98 */	{ 0, 0, "aggr", "count", 0 },
-/*    97 */	{ 0, 0, "batcalc", ">", 0 },
-/*    96 */	{ 0, 0, "batmtime", "year", 0 },
-/*    96 */	{ 0, 0, "batcalc", "<", 0 },
-/*    79 */	{ 0, 0, "sql", "assert", 0 },
-/*    72 */	{ 0, 0, "sql", "rsColumn", 0 },
-/*    72 */	{ 0, 0, "sql", "mvc", 0 },
-/*    69 */	{ 0, 0, "mkey", "bulk_rotate_xor_hash", 0 },
-/*    69 */	{ 0, 0, "calc", "lng", 0 },
-/*    69 */	{ 0, 0, "batcalc", "hash", 0 },
-/*    66 */	{ 0, 0, "pqueue", "utopn_max", 0 },
-/*    66 */	{ 0, 0, "algebra", "tdiff", 0 },
-/*    53 */	{ 0, 0, "calc", "int", 0 },
-/*    47 */	{ 0, 0, "algebra", "likesubselect", 0 },
-/*    44 */	{ 0, 0, "sql", "exportOperation", 0 },
-/*    42 */	{ 0, 0, "algebra", "subslice", 0 },
-/*    36 */	{ 0, 0, "pqueue", "utopn_min", 0 },
-/*    36 */	{ 0, 0, "pqueue", "topn_max", 0 },
-/*    33 */	{ 0, 0, "aggr", "submin", 0 },
-/*    32 */	{ 0, 0, "batstr", "like", 0 },
-/*    32 */	{ 0, 0, "batcalc", "or", 0 },
-/*    32 */	{ 0, 0, "batcalc", "and", 0 },
-/*    32 */	{ 0, 0, "batcalc", "+", 0 },
-/*    24 */	{ 0, 0, "sql", "setVariable", 0 },
-/*    23 */	{ 0, 0, "language", "dataflow", 0 },
-/*    21 */	{ 0, 0, "algebra", "subsort", 0 },
-/*    20 */	{ 0, 0, "sql", "catalog", 0 },
-/*    19 */	{ 0, 0, "calc", "ptr", 0 },
-/*    18 */	{ 0, 0, "sql", "resultSet", 0 },
-/*    18 */	{ 0, 0, "sql", "exportResult", 0 },
-/*    18 */	{ 0, 0, "io", "stdout", 0 },
-/*    18 */	{ 0, 0, "calc", "!=", 0 },
-/*    10 */	{ 0, 0, "sql", "update", 0 },
-/*     9 */	{ 0, 0, "mtime", "addmonths", 0 },
-/*     9 */	{ 0, 0, "calc", "ifthenelse", 0 },
-/*     8 */	{ 0, 0, "sql", "copy_from", 0 },
-/*     8 */	{ 0, 0, "sql", "affectedRows", 0 },
-/*     8 */	{ 0, 0, "calc", "wrd", 0 },
-/*     8 */	{ 0, 0, "calc", "isnil", 0 },
-/*     7 */	{ 0, 0, "bat", "append", 0 },
-/*     6 */	{ 0, 0, "mat", "pack", 0 },
-/*     6 */	{ 0, 0, "bat", "new", 0 },
-/*     5 */	{ 0, 0, "batcalc", "/", 0 },
-/*     4 */	{ 0, 0, "sql", "exportValue", 0 },
-/*     4 */	{ 0, 0, "calc", "date", 0 },
-/*     4 */	{ 0, 0, "calc", "+", 0 },
-/*     3 */	{ 0, 0, "calc", "/", 0 },
-/*     3 */	{ 0, 0, "batstr", "substring", 0 },
-/*     3 */	{ 0, 0, "batcalc", "lng", 0 },
-/*     2 */	{ 0, 0, "calc", "min", 0 },
-/*     2 */	{ 0, 0, "calc", "max", 0 },
-/*     2 */	{ 0, 0, "calc", "bit", 0 },
-/*     2 */	{ 0, 0, "calc", "*", 0 },
-/*     2 */	{ 0, 0, "algebra", "thetajoin", 0 },
-/*     1 */	{ 0, 0, "sql", "dec_round", 0 },
-/*     1 */	{ 0, 0, "pqueue", "topn_min", 0 },
-/*     1 */	{ 0, 0, "mtime", "date_sub_msec_interval", 0 },
-/*     1 */	{ 0, 0, "iterator", "next", 0 },
-/*     1 */	{ 0, 0, "iterator", "new", 0 },
-/*     1 */	{ 0, 0, "calc", "dbl", 0 },
-/*     1 */	{ 0, 0, "calc", "-", 0 },
-/*     1 */	{ 0, 0, "calc", "==", 0 },
-/*     1 */	{ 0, 0, "bat", "reverse", 0 },
-/*     1 */	{ 0, 0, "bat", "insert", 0 },
-/*     1 */	{ 0, 0, "algebra", "project", 0 },
-/*     1 */	{ 0, 0, "algebra", "fetch", 0 },
-/*     1 */	{ 0, 0, "aggr", "max", 0 },
-/*     ? */	{ 0, 0, "aggr", "avg", 0 },
-/*     ? */	{ 0, 0, "aggr", "subavg", 0 },
-/*     0 */	{ 0, 0, 0, 0, 0 }
+	/* 18169 */	{ 0, 0, "profiler", "ping", 0 },
+	/* 11054 */	{ 0, 0, "algebra", "leftfetchjoin", 0 },
+	/* 10355 */	{ 0, 0, "language", "pass", 0 },
+	/*  5941 */	{ 0, 0, "sql", "bind", 0 },
+	/*  5664 */	{ 0, 0, "mat", "packIncrement", 0 },
+	/*  4796 */	{ 0, 0, "algebra", "subselect", 0 },
+	/*  4789 */	{ 0, 0, "algebra", "join", 0 },
+	/*  4281 */	{ 0, 0, "profiler", "wait", 0 },
+	/*  2664 */	{ 0, 0, "sql", "projectdelta", 0 },
+	/*  2112 */	{ 0, 0, "batcalc", "!=", 0 },
+	/*  1886 */	{ 0, 0, "sql", "bind_idxbat", 0 },
+	/*  1881 */	{ 0, 0, "algebra", "leftfetchjoinPath", 0 },
+	/*  1013 */	{ 0, 0, "sql", "tid", 0 },
+	/*   832 */	{ 0, 0, "bat", "mergecand", 0 },
+	/*   813 */	{ 0, 0, "sql", "delta", 0 },
+	/*   766 */	{ 0, 0, "aggr", "subsum", 0 },
+	/*   610 */	{ 0, 0, "batcalc", "*", 0 },
+	/*   577 */	{ 0, 0, "group", "subgroupdone", 0 },
+	/*   481 */	{ 0, 0, "sql", "subdelta", 0 },
+	/*   448 */	{ 0, 0, "batcalc", "-", 0 },
+	/*   334 */	{ 0, 0, "bat", "mirror", 0 },
+	/*   300 */	{ 0, 0, "group", "subgroup", 0 },
+	/*   264 */	{ 0, 0, "batcalc", "==", 0 },
+	/*   260 */	{ 0, 0, "batcalc", "ifthenelse", 0 },
+	/*   209 */	{ 0, 0, "calc", "str", 0 },
+	/*   207 */	{ 0, 0, "aggr", "sum", 0 },
+	/*   200 */	{ 0, 0, "algebra", "thetasubselect", 0 },
+	/*   200 */	{ 0, 0, "algebra", "selectNotNil", 0 },
+	/*   197 */	{ 0, 0, "aggr", "subcount", 0 },
+	/*   166 */	{ 0, 0, "batcalc", "dbl", 0 },
+	/*   166 */	{ 0, 0, "algebra", "tinter", 0 },
+	/*   131 */	{ 0, 0, "algebra", "leftjoin", 0 },
+	/*   128 */	{ 0, 0, "batcalc", "isnil", 0 },
+	/*    98 */	{ 0, 0, "aggr", "count", 0 },
+	/*    97 */	{ 0, 0, "batcalc", ">", 0 },
+	/*    96 */	{ 0, 0, "batmtime", "year", 0 },
+	/*    96 */	{ 0, 0, "batcalc", "<", 0 },
+	/*    79 */	{ 0, 0, "sql", "assert", 0 },
+	/*    72 */	{ 0, 0, "sql", "rsColumn", 0 },
+	/*    72 */	{ 0, 0, "sql", "mvc", 0 },
+	/*    69 */	{ 0, 0, "mkey", "bulk_rotate_xor_hash", 0 },
+	/*    69 */	{ 0, 0, "calc", "lng", 0 },
+	/*    69 */	{ 0, 0, "batcalc", "hash", 0 },
+	/*    66 */	{ 0, 0, "pqueue", "utopn_max", 0 },
+	/*    66 */	{ 0, 0, "algebra", "tdiff", 0 },
+	/*    53 */	{ 0, 0, "calc", "int", 0 },
+	/*    47 */	{ 0, 0, "algebra", "likesubselect", 0 },
+	/*    44 */	{ 0, 0, "sql", "exportOperation", 0 },
+	/*    42 */	{ 0, 0, "algebra", "subslice", 0 },
+	/*    36 */	{ 0, 0, "pqueue", "utopn_min", 0 },
+	/*    36 */	{ 0, 0, "pqueue", "topn_max", 0 },
+	/*    33 */	{ 0, 0, "aggr", "submin", 0 },
+	/*    32 */	{ 0, 0, "batstr", "like", 0 },
+	/*    32 */	{ 0, 0, "batcalc", "or", 0 },
+	/*    32 */	{ 0, 0, "batcalc", "and", 0 },
+	/*    32 */	{ 0, 0, "batcalc", "+", 0 },
+	/*    24 */	{ 0, 0, "sql", "setVariable", 0 },
+	/*    23 */	{ 0, 0, "language", "dataflow", 0 },
+	/*    21 */	{ 0, 0, "algebra", "subsort", 0 },
+	/*    20 */	{ 0, 0, "sql", "catalog", 0 },
+	/*    19 */	{ 0, 0, "calc", "ptr", 0 },
+	/*    18 */	{ 0, 0, "sql", "resultSet", 0 },
+	/*    18 */	{ 0, 0, "sql", "exportResult", 0 },
+	/*    18 */	{ 0, 0, "io", "stdout", 0 },
+	/*    18 */	{ 0, 0, "calc", "!=", 0 },
+	/*    10 */	{ 0, 0, "sql", "update", 0 },
+	/*     9 */	{ 0, 0, "mtime", "addmonths", 0 },
+	/*     9 */	{ 0, 0, "calc", "ifthenelse", 0 },
+	/*     8 */	{ 0, 0, "sql", "copy_from", 0 },
+	/*     8 */	{ 0, 0, "sql", "affectedRows", 0 },
+	/*     8 */	{ 0, 0, "calc", "wrd", 0 },
+	/*     8 */	{ 0, 0, "calc", "isnil", 0 },
+	/*     7 */	{ 0, 0, "bat", "append", 0 },
+	/*     6 */	{ 0, 0, "mat", "pack", 0 },
+	/*     6 */	{ 0, 0, "bat", "new", 0 },
+	/*     5 */	{ 0, 0, "batcalc", "/", 0 },
+	/*     4 */	{ 0, 0, "sql", "exportValue", 0 },
+	/*     4 */	{ 0, 0, "calc", "date", 0 },
+	/*     4 */	{ 0, 0, "calc", "+", 0 },
+	/*     3 */	{ 0, 0, "calc", "/", 0 },
+	/*     3 */	{ 0, 0, "batstr", "substring", 0 },
+	/*     3 */	{ 0, 0, "batcalc", "lng", 0 },
+	/*     2 */	{ 0, 0, "calc", "min", 0 },
+	/*     2 */	{ 0, 0, "calc", "max", 0 },
+	/*     2 */	{ 0, 0, "calc", "bit", 0 },
+	/*     2 */	{ 0, 0, "calc", "*", 0 },
+	/*     2 */	{ 0, 0, "algebra", "thetajoin", 0 },
+	/*     1 */	{ 0, 0, "sql", "dec_round", 0 },
+	/*     1 */	{ 0, 0, "pqueue", "topn_min", 0 },
+	/*     1 */	{ 0, 0, "mtime", "date_sub_msec_interval", 0 },
+	/*     1 */	{ 0, 0, "iterator", "next", 0 },
+	/*     1 */	{ 0, 0, "iterator", "new", 0 },
+	/*     1 */	{ 0, 0, "calc", "dbl", 0 },
+	/*     1 */	{ 0, 0, "calc", "-", 0 },
+	/*     1 */	{ 0, 0, "calc", "==", 0 },
+	/*     1 */	{ 0, 0, "bat", "reverse", 0 },
+	/*     1 */	{ 0, 0, "bat", "insert", 0 },
+	/*     1 */	{ 0, 0, "algebra", "project", 0 },
+	/*     1 */	{ 0, 0, "algebra", "fetch", 0 },
+	/*     1 */	{ 0, 0, "aggr", "max", 0 },
+	/*     ? */	{ 0, 0, "aggr", "avg", 0 },
+	/*     ? */	{ 0, 0, "aggr", "subavg", 0 },
+	/*     0 */	{ 0, 0, 0, 0, 0 }
 };
 
-static char *getRGB(char *name)
+static char *
+getRGB(char *name)
 {
 	int i;
 	for (i = 0; dictionary[i].name; i++)
@@ -698,16 +697,17 @@ static char *getRGB(char *name)
 	return 0;
 }
 
-static int cmp_clr ( const void * _one , const void * _two )
+static int
+cmp_clr(const void * _one , const void * _two)
 {
 	Color *one = (Color*) _one, *two = (Color*) _two;
 
 	/* "*.*" should always be smallest / first */
-	if (one->mod && one->fcn && 
+	if (one->mod && one->fcn &&
 	    one->mod[0] == '*' && one->mod[1] == '\0' &&
 	    one->fcn[0] == '*' && one->fcn[1] == '\0')
 		return -1;
-	if (two->mod && two->fcn && 
+	if (two->mod && two->fcn &&
 	    two->mod[0] == '*' && two->mod[1] == '\0' &&
 	    two->fcn[0] == '*' && two->fcn[1] == '\0')
 		return 1;
@@ -720,35 +720,34 @@ static int cmp_clr ( const void * _one , const void * _two )
 		   0))));
 }
 
-static void initcolors(FILE *map)
+static void
+initcolors(FILE *map)
 {
 	int i = 0;
 	char *c;
 	char buf[3][128];
 
-	if ( map){
+	if (map) {
 		/* read the color map */
-		while ( fscanf(map,"%s\t%s\t%s\n", buf[0],buf[1],buf[2])== 3 && i< NUM_COLORS){
+		while (fscanf(map,"%s\t%s\t%s\n", buf[0],buf[1],buf[2])== 3 && i< NUM_COLORS) {
 			colors[i].mod = strdup(buf[0]);
 			colors[i].fcn = strdup(buf[1]);
 			colors[i].freq = 0;
 			colors[i].timeused = 0;
-			c  = getRGB(buf[2]);
+			c = getRGB(buf[2]);
 			if (c)
 				colors[i].col = c;
 			else
 				fprintf(stderr, " %s.%s color '%s' not found\n", buf[0],buf[1],buf[2]);
 			i++;
 		}
-			
-	} else
-	if (fixedmap) {
-		for ( i = 0; fixed_colors[i].mod; i++){
+	} else if (fixedmap) {
+		for (i = 0; fixed_colors[i].mod; i++) {
 			colors[i].mod = fixed_colors[i].mod;
 			colors[i].fcn = fixed_colors[i].fcn;
 			colors[i].freq = 0;
 			colors[i].timeused = 0;
-			c  = getRGB(fixed_colors[i].col);
+			c = getRGB(fixed_colors[i].col);
 			if (c)
 				colors[i].col = c;
 			else
@@ -772,7 +771,8 @@ static void initcolors(FILE *map)
 	}
 }
 
-static void dumpboxes(void)
+static void
+dumpboxes(void)
 {
 	FILE *f = 0;
 	FILE *fcpu = 0;
@@ -798,10 +798,9 @@ static void dumpboxes(void)
 				//io counters are zero at start of instruction !
 				//fprintf(f,""LLFMT" %f 0 0 \n", box[i].clkstart, (box[i].memstart/1024.0));
 				fprintf(f, ""LLFMT" %f %f 0 0\n", box[i].clkend, (box[i].memend / 1024.0), box[i].footend/1024.0);
-			} else 
-			if (box[i].state >= PING) {
+			} else if (box[i].state >= PING) {
 				/* cpu stat events may arrive out of order, drop those */
-				if ( box[i].clkstart <= e)
+				if (box[i].clkstart <= e)
 					continue;
 				e = box[i].clkstart;
 				fprintf(f, ""LLFMT" %f %f "LLFMT" "LLFMT"\n", box[i].clkstart, (box[i].memend / 1024.0), box[i].footend/1024.0, box[i].reads, box[i].writes);
@@ -831,7 +830,8 @@ static void dumpboxes(void)
 }
 
 /* produce memory thread trace */
-static void showmemory(void)
+static void
+showmemory(void)
 {
 	int i;
 	lng max = 0, min = LLONG_MAX;
@@ -903,7 +903,8 @@ static void showmemory(void)
 }
 
 /* produce memory thread trace */
-static void showcpu(void)
+static void
+showcpu(void)
 {
 	int i;
 
@@ -926,14 +927,15 @@ static void showcpu(void)
 		fprintf(gnudata, "plot ");
 	for (i = 0; i < cpus; i++)
 		fprintf(gnudata, "\"%s_cpu.dat\" using 1:($%d+(%d*1.1)) notitle with lines linecolor rgb \"%s\"%s",
-				(tracefile ? "scratch" : filename), i + 2, i, (i % 2 == 0 ? "blue" : "red"), (i < cpus - 1 ? ",\\\n" : "\n"));
+			(tracefile ? "scratch" : filename), i + 2, i, (i % 2 == 0 ? "blue" : "red"), (i < cpus - 1 ? ",\\\n" : "\n"));
 	fprintf(gnudata, "unset yrange\n");
 	fprintf(gnudata, "unset ytics\n");
 	fprintf(gnudata, "unset grid\n");
 }
 
 /* produce memory thread trace */
-static void showio(void)
+static void
+showio(void)
 {
 	int i;
 	lng max = 0;
@@ -962,7 +964,7 @@ static void showio(void)
 	fprintf(gnudata, "set y2tics in (0, "LLFMT".0) nomirror\n", max / beat);
 	fprintf(gnudata, "set y2label \"IO per ms\"\n");
 	fprintf(gnudata, "plot \"%s.dat\" using 1:(($4+$5)/%d.0) title \"reads\" with boxes fs solid linecolor rgb \"gray\" ,\\\n", (tracefile ? "scratch" : filename), beat);
-	fprintf(gnudata, "\"%s.dat\" using 1:($5/%d.0) title \"writes\" with boxes fs solid linecolor rgb \"red\"  \n", (tracefile ? "scratch" : filename), beat);
+	fprintf(gnudata, "\"%s.dat\" using 1:($5/%d.0) title \"writes\" with boxes fs solid linecolor rgb \"red\"\n", (tracefile ? "scratch" : filename), beat);
 	fprintf(gnudata, "unset y2label\n");
 	fprintf(gnudata, "unset y2tics\n");
 	fprintf(gnudata, "unset y2range\n");
@@ -984,7 +986,8 @@ static void showio(void)
 
 /* print time (given in microseconds) in human-readable form
  * showing the highest two relevant units */
-static void fprintf_time ( FILE *f, lng time )
+static void
+fprintf_time(FILE *f, lng time)
 {
 	int TME = TME_DD|TME_HH|TME_MM|TME_SS|TME_MS|TME_US;
 	int tail = 0;
@@ -1033,7 +1036,8 @@ static void fprintf_time ( FILE *f, lng time )
 
 /* print time (given in microseconds) in compact human-readable form
  * showing the units specified via TME */
-static void fprintf_tm ( FILE *f, lng time, int TME )
+static void
+fprintf_tm(FILE *f, lng time, int TME)
 {
 	int tail = 0, digits = 1, scale = 1;
 	const char *fmt = NULL;
@@ -1100,7 +1104,8 @@ static void fprintf_tm ( FILE *f, lng time, int TME )
 }
 
 /* produce a legenda image for the color map */
-static void showcolormap(char *filename, int all)
+static void
+showcolormap(char *filename, int all)
 {
 	FILE *f = 0;
 	char buf[BUFSIZ];
@@ -1145,13 +1150,13 @@ static void showcolormap(char *filename, int all)
 		fprintf(f, "unset title\n");
 		fprintf(f, "unset ylabel\n");
 	}
-	if ( !fixedmap ){
+	if (!fixedmap) {
 		/* create copy of colormap and sort in ascending order of timeused;
 		 * "*.*" stays first (colors[0]) */
-		_clrs_ = (Color*) malloc (sizeof(colors));
+		_clrs_ = (Color*) malloc(sizeof(colors));
 		if (_clrs_) {
-			memcpy (_clrs_, colors, sizeof(colors));
-			qsort (_clrs_, NUM_COLORS, sizeof(Color), cmp_clr);
+			memcpy(_clrs_, colors, sizeof(colors));
+			qsort(_clrs_, NUM_COLORS, sizeof(Color), cmp_clr);
 			clrs = _clrs_;
 		}
 		/* show colormap / legend in descending order of timeused;
@@ -1166,14 +1171,14 @@ static void showcolormap(char *filename, int all)
 					if (k % 3 == 0)
 						h -= 45;
 					fprintf(f, "set object %d rectangle from %f, %f to %f, %f fillcolor rgb \"%s\" fillstyle solid 1.0\n",
-							object++, (double) (k % 3) * w, (double) h - 40, (double) ((k % 3) * w + 0.15 * w), (double) h - 5, clrs[i].col);
+						object++, (double) (k % 3) * w, (double) h - 40, (double) ((k % 3) * w + 0.15 * w), (double) h - 5, clrs[i].col);
 					fprintf(f, "set label %d \"%s.%s \" at %d,%d\n",
-							object++, clrs[i].mod, clrs[i].fcn, (int) ((k % 3) * w + 0.2 * w), h - 15);
+						object++, clrs[i].mod, clrs[i].fcn, (int) ((k % 3) * w + 0.2 * w), h - 15);
 					fprintf(f, "set label %d \"%d calls: ",
-							object++, clrs[i].freq);
+						object++, clrs[i].freq);
 					fprintf_time(f, clrs[i].timeused);
 					fprintf(f, "\" at %f,%f\n",
-							(double) ((k % 3) * w + 0.2 * w), (double) h - 35);
+						(double) ((k % 3) * w + 0.2 * w), (double) h - 35);
 					k++;
 				} else {
 					clrs[0].timeused += clrs[i].timeused;
@@ -1188,7 +1193,7 @@ static void showcolormap(char *filename, int all)
 	} else {
 		/* use a heuristic fixed map to highlight the important operations */
 		/* limit the legend to the most important ones <MAX_LEGEND_SHORT and > 1% */
-		int	map[MAX_LEGEND_SHORT], n, m=0, j;
+		int map[MAX_LEGEND_SHORT], n, m=0, j;
 		for (i = 0; i < MAX_LEGEND_SHORT; i++)
 			map[i] = -1;
 		for (i = 0; i < NUM_COLORS - 1; i++) {
@@ -1197,56 +1202,58 @@ static void showcolormap(char *filename, int all)
 		}
 		/* filter out the top N interesting elements */
 		for (i = 0; i < NUM_COLORS - 1; i++)
-		if (clrs[i].col && clrs[i].mod  && (clrs[i].freq > 0 || all))
-		{
-			if (clrs[i].timeused > PERCENTAGE * duration || clrs[i].freq > PERCENTAGE *  totfreq) {
-				for ( j = 0; j < m && clrs[map[j]].timeused > clrs[i].timeused; j++)
+			if (clrs[i].col &&
+			    clrs[i].mod &&
+			    (clrs[i].freq > 0 || all) &&
+			    (clrs[i].timeused > PERCENTAGE * duration ||
+			     clrs[i].freq > PERCENTAGE * totfreq)) {
+				for (j = 0; j < m && clrs[map[j]].timeused > clrs[i].timeused; j++)
 					;
-				if ( m < MAX_LEGEND_SHORT){
-					for( n = m-1; n > j; n--)
+				if (m < MAX_LEGEND_SHORT) {
+					for (n = m-1; n > j; n--)
 						map[n] = map[n-1];
 					map[j] = i;
 					m++;
 				}
 			}
-		}
 		/* sort them back into the color map order */
-		for ( i = 0; i < m; i++)
-		for ( j = i+1; j< m; j++)
-		if ( map[i] > map[j] ){
-			n = map[i];
-			map[i]= map[j];
-			map[j] = n;
-		}
+		for (i = 0; i < m; i++)
+			for (j = i+1; j< m; j++)
+				if (map[i] > map[j]) {
+					n = map[i];
+					map[i]= map[j];
+					map[j] = n;
+				}
 
 		for (i = 0; i < m; i++)
-		if ( clrs[map[i]].col){
+			if (clrs[map[i]].col) {
 				if (k % 3 == 0)
 					h -= 45;
 				fprintf(f, "set object %d rectangle from %f, %f to %f, %f fillcolor rgb \"%s\" fillstyle solid 1.0\n",
-						object++, (double) (k % 3) * w, (double) h - 40, (double) ((k % 3) * w + 0.15 * w), (double) h - 5, clrs[map[i]].col);
+					object++, (double) (k % 3) * w, (double) h - 40, (double) ((k % 3) * w + 0.15 * w), (double) h - 5, clrs[map[i]].col);
 				fprintf(f, "set label %d \"%s.%s \" at %d,%d\n",
-						object++, clrs[map[i]].mod, clrs[map[i]].fcn, (int) ((k % 3) * w + 0.2 * w), h - 15);
+					object++, clrs[map[i]].mod, clrs[map[i]].fcn, (int) ((k % 3) * w + 0.2 * w), h - 15);
 				fprintf(f, "set label %d \"%d calls: ",
-						object++, clrs[map[i]].freq);
+					object++, clrs[map[i]].freq);
 				fprintf_time(f, clrs[map[i]].timeused);
 				fprintf(f, "\" at %f,%f\n",
-						(double) ((k % 3) * w + 0.2 * w), (double) h - 35);
+					(double) ((k % 3) * w + 0.2 * w), (double) h - 35);
 				k++;
 			}
 	}
 
 	h -= 45;
 	fprintf(f, "set label %d \" "LLFMT" MAL instructions executed; total CPU core time: ",
-			object++, totfreq);
+		object++, totfreq);
 	fprintf_time(f, tottime);
 	fprintf(f, "; parallelism usage %.1f %%", totalclkticks / (totalticks / 100.0));
 	fprintf(f, "\" at %d,%d\n",
-			(int) (0.2 * w), h - 35);
+		(int) (0.2 * w), h - 35);
 	fprintf(f, "plot 0 notitle with lines linecolor rgb \"white\"\n");
 }
 
-static void updmap(int idx)
+static void
+updmap(int idx)
 {
 	char *mod, *fcn, buf[BUFSIZ], *call = buf;
 	int i, fnd = 0;
@@ -1271,11 +1278,10 @@ static void updmap(int idx)
 	} else {
 		/* find "mod.fcn" */
 		for (i = 1; i < NUM_COLORS && colors[i].mod; i++)
-			if (strcmp(mod, colors[i].mod) == 0) {
-				if (strcmp(fcn, colors[i].fcn) == 0) {
-					fnd = i;
-					break;
-				}
+			if (strcmp(mod, colors[i].mod) == 0 &&
+			    strcmp(fcn, colors[i].fcn) == 0) {
+				fnd = i;
+				break;
 			}
 		if (fnd == 0 && i < NUM_COLORS) {
 			/* not found, but still free slot: add new one */
@@ -1292,7 +1298,8 @@ static void updmap(int idx)
 }
 
 /* keep the data around for re-painting with range filters*/
-static void keepdata(char *filename)
+static void
+keepdata(char *filename)
 {
 	int i;
 	FILE *f;
@@ -1306,7 +1313,7 @@ static void keepdata(char *filename)
 
 	for (i = 0; i < topbox; i++)
 		if (box[i].clkend && box[i].fcn) {
-			//if ( debug)
+			//if (debug)
 			//fprintf(stderr,"%3d\t%8ld\t%5ld\t%s\n", box[i].thread, box[i].clkstart, box[i].clkend-box[i].clkstart, box[i].fcn);
 
 			fprintf(f, "%d\t"LLFMT"\t"LLFMT"\t", box[i].thread, box[i].clkstart, box[i].clkend);
@@ -1319,7 +1326,8 @@ static void keepdata(char *filename)
 	(void) fclose(f);
 }
 
-static void scandata(char *filename)
+static void
+scandata(char *filename)
 {
 	FILE *f;
 	char line[2*BUFSIZ], buf[BUFSIZ], buf2[BUFSIZ];
@@ -1338,13 +1346,13 @@ static void scandata(char *filename)
 
 	while (!feof(f)) {
 		int x;
-		if ( fgets(line,2 * BUFSIZ,f) == NULL) {
+		if (fgets(line,2 * BUFSIZ,f) == NULL) {
 			fprintf(stderr, "scandata read error\n");
 		}
-		x = sscanf(line, "%d\t"LLFMT"\t"LLFMT"\t"LLFMT"\t"LLFMT"\t"LLFMT"\t%d\t"LLFMT"\t"LLFMT"\t%s\t%s\n", 
-			&box[i].thread, &box[i].clkstart, &box[i].clkend,
-			&box[i].ticks, &box[i].memstart, &box[i].memend,
-			&box[i].state, &box[i].reads, &box[i].writes, buf, buf2);
+		x = sscanf(line, "%d\t"LLFMT"\t"LLFMT"\t"LLFMT"\t"LLFMT"\t"LLFMT"\t%d\t"LLFMT"\t"LLFMT"\t%s\t%s\n",
+			   &box[i].thread, &box[i].clkstart, &box[i].clkend,
+			   &box[i].ticks, &box[i].memstart, &box[i].memend,
+			   &box[i].state, &box[i].reads, &box[i].writes, buf, buf2);
 		if (x != 11) {
 			fprintf(stderr, "scandata: sscanf() matched %d instead of 11 items in\n'%s'\n", x, line);
 		}
@@ -1377,7 +1385,8 @@ static void scandata(char *filename)
 /* gnuplot defaults */
 static int height = 160;
 
-static void gnuplotheader(char *filename)
+static void
+gnuplotheader(char *filename)
 {
 	time_t tm;
 	char *date, *c;
@@ -1396,20 +1405,21 @@ static void gnuplotheader(char *filename)
 	fprintf(gnudata, "set multiplot\n");
 }
 
-static void resetTomograph(void){
+static void
+resetTomograph(void) {
 	static char buf[128];
 	int i;
-	if(atlas) {
+	if (atlas) {
 		snprintf(buf,128,"%s_%02d",basefilename, ++atlaspage);
 		filename = buf;
-	} 
+	}
 	if (debug)
 		fprintf(stderr, "RESET tomograph %d\n", atlaspage);
-	for(i=0; i< NUM_COLORS;i++){
+	for (i=0; i< NUM_COLORS;i++) {
 		colors[i].freq=0;
 		colors[i].timeused = 0;
 	}
-	for(i=0; i< MAXTHREADS; i++)
+	for (i=0; i< MAXTHREADS; i++)
 		lastclk[i]=0;
 	topbox =0;
 	for (i = 0; i < MAXTHREADS; i++)
@@ -1419,8 +1429,8 @@ static void resetTomograph(void){
 	maxio = 0;
 	cpus = 0;
 	batch = batchsize;
-	totalclkticks = 0; 
-	totalticks = 0; 
+	totalclkticks = 0;
+	totalticks = 0;
 	totalexecticks = 0;
 	lastclktick = 0;
 	figures = 0;
@@ -1428,7 +1438,8 @@ static void resetTomograph(void){
 	object = 1;
 }
 
-static void createTomogram(void)
+static void
+createTomogram(void)
 {
 	char buf[BUFSIZ];
 	int rows[MAXTHREADS] = {0};
@@ -1559,24 +1570,24 @@ static void createTomogram(void)
 	/* mark duration of each thread */
 	for (i = 0; i < top; i++)
 		fprintf(gnudata, "set object %d rectangle from %d, %d to "LLFMT".0, %d\n",
-				object++, 0, i * 2 * h + h/3, lastclk[rows[i]], i * 2 * h + h - h/3);
+			object++, 0, i * 2 * h + h/3, lastclk[rows[i]], i * 2 * h + h - h/3);
 
 	/* fill the duration of each instruction encountered that fit our range constraint */
 	for (i = 0; i < topbox; i++)
-	if ( box[i].clkend)
-		switch (box[i].state ) {
-		default:
-			if (debug)
-				dumpbox(i);
-			fprintf(gnudata, "set object %d rectangle from "LLFMT".0, %d to "LLFMT".0, %d fillcolor rgb \"%s\" fillstyle solid 1.0\n",
+		if (box[i].clkend)
+			switch (box[i].state) {
+			default:
+				if (debug)
+					dumpbox(i);
+				fprintf(gnudata, "set object %d rectangle from "LLFMT".0, %d to "LLFMT".0, %d fillcolor rgb \"%s\" fillstyle solid 1.0\n",
 					object++, box[i].clkstart, box[i].row * 2 * h, box[i].clkend, box[i].row * 2 * h + h, colors[box[i].color].col);
-			break;
-		case PING:
-			break;
-		case WAIT:
-			fprintf(gnudata, "set object %d rectangle from "LLFMT".0, %d to %f,%f front fillcolor rgb \"red\" fillstyle solid 1.0\n",
+				break;
+			case PING:
+				break;
+			case WAIT:
+				fprintf(gnudata, "set object %d rectangle from "LLFMT".0, %d to %f,%f front fillcolor rgb \"red\" fillstyle solid 1.0\n",
 					object++, box[i].clkstart, box[i].row * 2 * h+h-h/3, box[i].clkstart + w /50.0, box[i].row *2 *h + 1.3 * h);
-		}
+			}
 
 
 	fprintf(gnudata, "plot 0 notitle with lines\n");
@@ -1589,22 +1600,22 @@ static void createTomogram(void)
 	gnudata = 0;
 
 	// show follow up action only once
-	if (atlas && atlaspage == atlas-1){
+	if (atlas && atlaspage == atlas-1) {
 		fprintf(stderr, "Created tomogram atlas\n");
-		for( i = 0; i<= atlaspage;  i++)
+		for (i = 0; i<= atlaspage; i++)
 			fprintf(stderr, "gnuplot %s_%02d.gpl\n",basefilename,i);
 		fprintf(stderr, "gs -dNOPAUSE -sDEVICE=pdfwrite -sOUTPUTFILE=%s.pdf -dBATCH %s_??.pdf\n",basefilename,basefilename);
 		exit(0);
 	} else
-	if (!atlas && figures++ == 0) {
-		fprintf(stderr, "Created tomogram '%s'\n", buf);
+		if (!atlas && figures++ == 0) {
+			fprintf(stderr, "Created tomogram '%s'\n", buf);
 			fprintf(stderr, "Run: 'gnuplot %s.gpl' to create the '%s.pdf' file\n", buf, filename);
-		if (tracefile == 0) {
-			fprintf(stderr, "The memory map is stored in '%s.dat'\n", filename);
-			fprintf(stderr, "The trace is saved in '%s.trace' for use with --trace option\n", filename);
+			if (tracefile == 0) {
+				fprintf(stderr, "The memory map is stored in '%s.dat'\n", filename);
+				fprintf(stderr, "The trace is saved in '%s.trace' for use with --trace option\n", filename);
+			}
+			exit(0);
 		}
-		exit(0);
-	}
 }
 
 /* the main issue to deal with in the analyse is
@@ -1613,10 +1624,10 @@ static void createTomogram(void)
  * receiving 'done' events without matching 'start'
  *
  * A secondary issue is to properly count the functions
- * being monitored. 
+ * being monitored.
  */
 
-static void 
+static void
 update(int state, int thread, lng clkticks, lng ticks, lng memory, lng footprint, lng reads, lng writes, char *fcn, char *stmt)
 {
 	int idx;
@@ -1629,7 +1640,7 @@ update(int state, int thread, lng clkticks, lng ticks, lng memory, lng footprint
 	}
 	if (starttime == 0) {
 		/* ignore all instructions up to the first function call, unless input comes from a file */
-		if ( inputfile == NULL && (state >= PING || fcn == 0 || strncmp(fcn, "function", 8) )){
+		if (inputfile == NULL && (state >= PING || fcn == 0 || strncmp(fcn, "function", 8))) {
 			return;
 		}
 		if (debug)
@@ -1639,27 +1650,29 @@ update(int state, int thread, lng clkticks, lng ticks, lng memory, lng footprint
 	}
 
 	/* monitor top level function brackets */
-	if (state == START && fcn && strncmp(fcn, "function", 8) == 0 ){
+	if (state == START && fcn && strncmp(fcn, "function", 8) == 0) {
 		capturing++;
 		starttime = clkticks;
-		if ( currentfunction == 0) 
+		if (currentfunction == 0)
 			currentfunction = strdup(fcn+9);
 		if (debug)
 			fprintf(stderr, "Enter function %s capture %d\n", currentfunction, capturing);
 		return;
 	}
-	if (state == DONE && fcn && strncmp(fcn, "function", 8) == 0 ){
-		if ( currentfunction  && strcmp(currentfunction, fcn+9) == 0){
+	if (state == DONE && fcn && strncmp(fcn, "function", 8) == 0) {
+		if (currentfunction && strcmp(currentfunction, fcn+9) == 0) {
 			capturing--;
 			if (debug)
 				fprintf(stderr, "Leave function %s capture %d\n", currentfunction, capturing);
 			free(currentfunction);
 			currentfunction = 0;
-		} else return;
+		} else
+			return;
 
-		if ( batch -- > 1)  return;
+		if (batch-- > 1)
+			return;
 
-		if (atlas == atlaspage){
+		if (atlas == atlaspage) {
 			deactivateBeat();
 			createTomogram();
 			totalclkticks = 0; /* number of clock ticks reported */
@@ -1672,7 +1685,7 @@ update(int state, int thread, lng clkticks, lng ticks, lng memory, lng footprint
 		createTomogram();
 		totalclkticks = 0; /* number of clock ticks reported */
 		totalexecticks = 0; /* number of ticks reported for processing */
-		if (fcn )
+		if (fcn)
 			title = strdup(fcn + 9);
 		resetTomograph();
 		return;
@@ -1680,18 +1693,18 @@ update(int state, int thread, lng clkticks, lng ticks, lng memory, lng footprint
 
 	if (state == DONE && strncmp(fcn, "profiler.tomograph", 18) == 0) {
 		if (debug)
-			fprintf(stderr, "Profiler.tomograph ends  %d\n", batch);
-		if (atlas == atlaspage){
+			fprintf(stderr, "Profiler.tomograph ends %d\n", batch);
+		if (atlas == atlaspage) {
 			deactivateBeat();
 			createTomogram();
 			totalclkticks = 0; /* number of clock ticks reported */
 			totalexecticks = 0; /* number of ticks reported for processing */
 			return;
-		} 
+		}
 		createTomogram();
 		totalclkticks = 0; /* number of clock ticks reported */
 		totalexecticks = 0; /* number of ticks reported for processing */
-		if (fcn )
+		if (fcn)
 			title = strdup(fcn + 9);
 		resetTomograph();
 		return;
@@ -1788,7 +1801,8 @@ update(int state, int thread, lng clkticks, lng ticks, lng memory, lng footprint
  * Beware the UDP protocol may cause some loss
  * Incomplete records from previous runs may also appear
  */
-static int parser(char *row)
+static int
+parser(char *row)
 {
 #ifdef HAVE_STRPTIME
 	char *c, *cc;
@@ -1805,7 +1819,7 @@ static int parser(char *row)
 	/* check basic validaty first */
 	if (row[0] != '[')
 		return -1;
-	if ( (cc= strrchr(row,']')) == 0 || *(cc+1) !=0)
+	if ((cc= strrchr(row,']')) == 0 || *(cc+1) !=0)
 		return -1;
 
 	c = strchr(row, (int) '"');
@@ -1826,7 +1840,7 @@ static int parser(char *row)
 	} else {
 		state = 0;
 		c = strchr(c + 1, (int) '"');
-		if ( c == 0)
+		if (c == 0)
 			return -2;
 	}
 
@@ -1873,7 +1887,7 @@ static int parser(char *row)
 	if (debug && state < PING)
 		fprintf(stderr, "%s\n", row);
 	c = strchr(c + 1, (int) ',');
-	if (c == 0 && state >= PING) 
+	if (c == 0 && state >= PING)
 		goto wrapup;
 #endif
 
@@ -1884,7 +1898,7 @@ static int parser(char *row)
 	writes = strtoll(c + 1, NULL, 10);
 
 	/* check basic validity */
-	if ( (cc= strrchr(row,']')) == 0 || *(cc+1) !=0)
+	if ((cc= strrchr(row,']')) == 0 || *(cc+1) !=0)
 		return -1;
 	c = strchr(c + 1, (int) ',');
 	if (c == 0)
@@ -1913,7 +1927,7 @@ static int parser(char *row)
 		*strchr(fcn, (int) '(') = 0;
 
 #ifdef FOOTPRINT
-wrapup:
+  wrapup:
 #endif
 	update(state, thread, clkticks, ticks, memory, footprint, reads, writes, fcn, stmt);
 #else
@@ -1922,7 +1936,8 @@ wrapup:
 	return 0;
 }
 
-static void processFile(char *fname)
+static void
+processFile(char *fname)
 {
 	size_t len;
 	ssize_t n;
@@ -1930,9 +1945,9 @@ static void processFile(char *fname)
 	char buf[BUFSIZ + 1];
 	char *e, *response;
 	stream *s;
-	
+
 	s = open_rstream(fname);
-	if ( s == NULL || mnstr_errnr(s)){
+	if (s == NULL || mnstr_errnr(s)) {
 		fprintf(stderr,"ERROR Can not access '%s'\n",fname);
 		return;
 	}
@@ -1943,7 +1958,7 @@ static void processFile(char *fname)
 		while ((e = strchr(response, '\n')) != NULL) {
 			*e = 0;
 			i = parser(response);
-			if (debug )
+			if (debug)
 				fprintf(stderr, "ERROR %d:%s\n", i, response);
 			response = e + 1;
 		}
@@ -2084,11 +2099,11 @@ doProfile(void *d)
 			continue;
 		/* deactivate any left over counter first */
 		snprintf(buf, BUFSIZ, "profiler.deactivate(\"%s\");",
-				profileCounter[i].ptag);
+			 profileCounter[i].ptag);
 		doQ(buf);
 		if (profileCounter[i].status) {
 			snprintf(buf, BUFSIZ, "profiler.activate(\"%s\");",
-					profileCounter[i].ptag);
+				 profileCounter[i].ptag);
 			doQ(buf);
 #ifdef _DEBUG_TOMOGRAPH_
 			printf("-- %s%s\n", id, buf);
@@ -2103,15 +2118,15 @@ doProfile(void *d)
 	}
 	if (wthr->s == NULL) {
 		fprintf(stderr, "!! %sopening stream failed: no free ports available\n",
-				id);
+			id);
 		goto stop_cleanup;
 	}
 
 	printf("-- %sopened UDP profile stream %s:%d for %s\n",
-			id, hostname, portnr, host);
+	       id, hostname, portnr, host);
 
 	snprintf(buf, BUFSIZ, "port := profiler.openStream(\"%s\", %d);",
-			hostname, portnr);
+		 hostname, portnr);
 	doQ(buf);
 
 	/* Set Filters */
@@ -2169,7 +2184,7 @@ doProfile(void *d)
 			*e = 0;
 			/* TOMOGRAPH EXTENSIONS */
 			i = parser(response);
-			if (debug )
+			if (debug)
 				fprintf(stderr, "PARSE %d:%s\n", i, response);
 			response = e + 1;
 		}
@@ -2184,11 +2199,11 @@ doProfile(void *d)
 	}
 	fflush(NULL);
 
-stop_cleanup:
+  stop_cleanup:
 	doQ("profiler.setNone();");
 	doQ("profiler.stop();");
 	doQ("profiler.closeStream();");
-stop_disconnect:
+  stop_disconnect:
 	if (wthr->dbh) {
 		mapi_disconnect(wthr->dbh);
 		mapi_destroy(wthr->dbh);
@@ -2245,7 +2260,7 @@ main(int argc, char **argv)
 	while (1) {
 		int option_index = 0;
 		int c = getopt_long(argc, argv, "d:u:p:h:?T:i:t:r:o:Db:B:A:s:m:a",
-				long_options, &option_index);
+				    long_options, &option_index);
 		if (c == -1)
 			break;
 		switch (c) {
@@ -2280,7 +2295,7 @@ main(int argc, char **argv)
 			password = NULL;
 			break;
 		case 'm':
-			if ( optarg){
+			if (optarg) {
 				othermap = optarg;
 				colormap = 0;
 			} else colormap =1;
@@ -2346,10 +2361,10 @@ main(int argc, char **argv)
 	}
 
 	resetTomograph();
-	if ( othermap){
+	if (othermap) {
 		FILE *map ;
 		map = fopen(othermap,"r");
-		if ( map == NULL){
+		if (map == NULL) {
 			printf("Could not open color map %s\n",othermap);
 			exit(-1);
 		}
@@ -2360,8 +2375,7 @@ main(int argc, char **argv)
 		initcolors(0);
 
 	if (dbname == NULL && optind != argc && argv[optind][0] != '+' &&
-		(stat(argv[optind], &statb) != 0 || !S_ISREG(statb.st_mode)))
-	{
+	    (stat(argv[optind], &statb) != 0 || !S_ISREG(statb.st_mode))) {
 		dbname = argv[optind];
 		optind++;
 	}
@@ -2378,7 +2392,7 @@ main(int argc, char **argv)
 	} else
 		k = setCounter(COUNTERSDEFAULT);
 
-	if (inputfile){
+	if (inputfile) {
 		processFile(inputfile);
 		createTomogram();
 		exit(0);
