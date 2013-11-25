@@ -181,16 +181,25 @@ usage(void)
 }
 
 
-#define die(dbh, hdl) while (1) { (hdl ? mapi_explain_query(hdl, stderr) :	\
-								   dbh ? mapi_explain(dbh, stderr) :		\
-								   fprintf(stderr, "!! %scommand failed\n", id)); \
-								  goto stop_disconnect; }
-#define doQ(X) \
-	if ((wthr->hdl = mapi_query(wthr->dbh, X)) == NULL || mapi_error(wthr->dbh) != MOK)	\
-		die(wthr->dbh, wthr->hdl);
-#define doQsql(X) \
-	if ((hdlsql = mapi_query(dbhsql, X)) == NULL || mapi_error(dbhsql) != MOK) \
-		die(dbhsql, hdlsql);
+#define die(dbh, hdl)						\
+	do {							\
+		(hdl ? mapi_explain_query(hdl, stderr) :	\
+		 dbh ? mapi_explain(dbh, stderr) :		\
+		 fprintf(stderr, "!! %scommand failed\n", id));	\
+		goto stop_disconnect;				\
+	} while (0)
+#define doQ(X)								\
+	do {								\
+		if ((wthr->hdl = mapi_query(wthr->dbh, X)) == NULL ||	\
+		    mapi_error(wthr->dbh) != MOK)			\
+			die(wthr->dbh, wthr->hdl);			\
+	} while (0)
+#define doQsql(X)						\
+	do {							\
+		if ((hdlsql = mapi_query(dbhsql, X)) == NULL ||	\
+		    mapi_error(dbhsql) != MOK)			\
+			die(dbhsql, hdlsql);			\
+	} while (0)
 
 
 /* Any signal should be captured and turned into a graceful
