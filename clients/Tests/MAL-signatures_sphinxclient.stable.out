@@ -39704,9 +39704,13 @@ command json.isvalid(val:str):bit
 address JSONisvalid;
 comment Validate the string as a valid JSON document
 
-command json.keys(val:json):str 
+command json.keys(val:json):bat[:oid,:str] 
 address JSONkeys;
-comment Expands the outermost JSON object keys into an array.
+comment Expands the outermost JSON object names.
+
+command json.keyArray(val:json):str 
+address JSONkeyArray;
+comment Expands the outermost JSON object keys into a JSON array.
 
 command json.load(nme:str) (kind:bat[:oid,:bte],string:bat[:oid,:str],integer:bat[:oid,:lng],double:bat[:oid,:dbl],array:bat[:oid,:oid],object:bat[:oid,:oid],name:bat[:oid,:str]) 
 address JSONload;
@@ -39719,10 +39723,6 @@ comment Returns the number of elements in the outermost JSON object.
 command json.nextid(kind:bat[:oid,:bte]):oid 
 address JSONnextid;
 comment Returns the next free id for the kind BAT
-
-command json.names(val:json):bat[:oid,:str] 
-address JSONnames;
-comment Expands the outermost JSON object names.
 
 pattern json.nest(k:bat[:oid,:dbl]):json 
 address JSONnest;
@@ -39816,6 +39816,10 @@ comment Expands the outermost JSON object into key-value pairs with object ident
 command json.values(val:json):bat[:oid,:json] 
 address JSONvalues;
 comment Expands the outermost JSON values.
+
+command json.valueArray(val:json):str 
+address JSONvalueArray;
+comment Expands the outermost JSON object values into a JSON array.
 
 command json.wrap(elems:bat[:oid,:any]) (kind:bat[:oid,:bte],string:bat[:oid,:str],integer:bat[:oid,:lng],double:bat[:oid,:dbl],array:bat[:oid,:oid],object:bat[:oid,:oid],name:bat[:oid,:str]) 
 address JSONwrap;
@@ -40349,7 +40353,7 @@ comment Set the kernel debugging bit-set and return its previous value.
 
 command mdb.setDebug(flg:str):int 
 address MDBsetDebugStr;
-comment Set the kernel debugging bit-set and return its previous value.The recognized options are: threads, memory, properties,io, transactions, modules, algorithms, estimates, xproperties.
+comment Set the kernel debugging bit-set and return its previous value.The recognized options are: threads, memory, properties,io, transactions, modules, algorithms, estimates.
 
 pattern mdb.setCatch(b:bit):void 
 address MDBsetCatch;
