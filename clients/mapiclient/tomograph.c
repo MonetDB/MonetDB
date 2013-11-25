@@ -2430,6 +2430,26 @@ main(int argc, char **argv)
 	if (password == NULL)
 		password = simple_prompt("password", BUFSIZ, 0, NULL);
 
+#ifdef HAVE_SIGACTION
+	{
+		struct sigaction action;
+
+		action.sa_handler = stopListening;
+		sigemptyset(&action.sa_mask);
+		action.sa_flags = 0;
+#ifdef SIGPIPE
+		sigaction(SIGPIPE, &action, NULL);
+#endif
+#ifdef SIGHUP
+		sigaction(SIGHUP, &action, NULL);
+#endif
+#ifdef SIGQUIT
+		sigaction(SIGQUIT, &action, NULL);
+#endif
+		sigaction(SIGINT, &action, NULL);
+		sigaction(SIGTERM, &action, NULL);
+	}
+#else
 #ifdef SIGPIPE
 	signal(SIGPIPE, stopListening);
 #endif
@@ -2441,6 +2461,7 @@ main(int argc, char **argv)
 #endif
 	signal(SIGINT, stopListening);
 	signal(SIGTERM, stopListening);
+#endif
 
 	close(0); /* get rid of stdin */
 
@@ -2463,6 +2484,7 @@ main(int argc, char **argv)
 	walk->next = NULL;
 	walk->dbh = NULL;
 	walk->hdl = NULL;
+#ifndef HAVE_SIGACTION
 	/* In principle we could do this without a thread, but it seems
 	 * that if we do it that way, ctrl-c (or any other signal)
 	 * doesn't interrupt the read inside this function, and hence
@@ -2474,6 +2496,11 @@ main(int argc, char **argv)
 #else
 	pthread_create(&walk->id, NULL, &doProfile, walk);
 	pthread_join(walk->id, NULL);
+#endif
+#else
+	/* when using sigaction, we can (and do) just interrupt the
+	 * system call */
+	doProfile(walk);
 #endif
 	free(walk);
 	free(user);
