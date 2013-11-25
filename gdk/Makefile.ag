@@ -23,7 +23,8 @@ lib_gdk = {
 	VERSION = $(GDK_VERSION)
 	NAME = bat
 	SOURCES = \
-		gdk.h gdk_atomic.h gdk_batop.c gdk_select.c \
+		gdk.h gdk_atomic.h gdk_batop.c \
+		gdk_select.c gdk_select_legacy.c \
 		gdk_search.c gdk_search.h gdk_tm.c \
 		gdk_align.c gdk_bbp.c gdk_bbp.h \
 		gdk_heap.c gdk_setop.c gdk_utils.c gdk_utils.h \
