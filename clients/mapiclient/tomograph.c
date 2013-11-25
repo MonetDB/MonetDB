@@ -1219,7 +1219,7 @@ showcolormap(char *filename, int all)
 				for (j = 0; j < m && clrs[map[j]].timeused > clrs[i].timeused; j++)
 					;
 				if (m < MAX_LEGEND_SHORT) {
-					for (n = m-1; n > j; n--)
+					for (n = m; n > j; n--)
 						map[n] = map[n-1];
 					map[j] = i;
 					m++;
