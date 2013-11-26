@@ -10,45 +10,57 @@ stdout of test 'set_sql_debug_64__breaking_the_DB.SF-1906287` in directory 'sql/
 # MonetDB server v5.6.0, based on kernel v1.24.0
 # Serving database 'mTests_src_test_BugTracker'
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
-# Copyright (c) 1993-2008 CWI, all rights reserved
-# Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://alviss.ins.cwi.nl:30471/
-# MonetDB/SQL module v2.24.0 loaded
-#Stack 's0_1' size=32 top=9
-#[0]  s0_1 = 0@0 :void   not used 
-#[1]    _1 = "INSERT INTO \"sys\".\"db_user_info\" VALUES('skyserver','sky server',979);" :str  constant  
-#[2]    _2 = 0@0 :void   not used 
-#[3]    _3 = "INSERT INTO \"sys\".\"auths\" VALUES(3855, 'skyserver', 3);" :str  constant  
-#[4]    _4 = 0@0 :void   not used 
-#[5]    _5 = 0@0 :void   not used 
-#[6]    _6 = "" :str  constant  
-#[7]    _7 = nil :str   not used 
-#[8]    _8 = 0@0 :void   not used 
-# MonetDB server v5.6.0, based on kernel v1.24.0
-# Serving database 'mTests_src_test_BugTracker'
-# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
-# Copyright (c) 1993-2008 CWI, all rights reserved
-# Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:37754/
-# MonetDB/SQL module v2.27.0 loaded
-% .users,	.users,	.users # table_name
-% name,	fullname,	default_schema # name
-% varchar,	varchar,	int # type
-% 9,	10,	4 # length
-[ "skyserver",	"sky server",	7893	]
-#alter user "skyserver" set schema "sys";
-#drop schema sky;
-#drop user skyserver;
-# MonetDB 5 server v11.16.0
-# This is an unreleased version
-# Serving database 'mTests_sql_test_BugTracker', using 4 threads
-# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
-# Found 3.778 GiB available main-memory.
+# Found 15.591 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
 # Copyright (c) August 2008-2013 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
-# Listening for connection requests on mapi:monetdb://niels.nesco.mine.nu:38269/
-# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-31748/.s.monetdb.38269
+# Listening for connection requests on mapi:monetdb://madrid.ins.cwi.nl:35816/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-3515/.s.monetdb.35816
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_history.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_compress.sql
+# loading sql script: 18_dictionary.sql
+# loading sql script: 19_cluster.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 24_zorder.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 99_system.sql
+#select u.name, u.fullname, s.name as default_schema from sys.users u, sys.schemas s where u.default_schema = s.id and u.name like '%skyserver%';
+% .u,	.u,	sys.L # table_name
+% name,	fullname,	default_schema # name
+% varchar,	varchar,	varchar # type
+% 9,	10,	3 # length
+[ "skyserver",	"sky server",	"sky"	]
+#alter user "skyserver" set schema "sys";
+#drop schema sky;
+#drop user skyserver;
+# MonetDB 5 server v11.15.20 (hg id: 8b230663af61+)
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.591 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2013 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://madrid.ins.cwi.nl:35816/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-3515/.s.monetdb.35816
 # MonetDB/GIS module loaded
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded

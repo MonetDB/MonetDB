@@ -1627,7 +1627,7 @@ createTomogram(void)
 		}
 }
 
-/* the main issue to deal with in the analyse is
+/* the main issue to deal with in the analysis is
  * that the tomograph start can appear while the
  * system is already processing. This leads to
  * receiving 'done' events without matching 'start'

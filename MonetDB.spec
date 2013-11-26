@@ -581,8 +581,13 @@ systemd-tmpfiles --create %{_sysconfdir}/tmpfiles.d/monetdbd.conf
 %{_libdir}/monetdb5/sql*.mal
 %doc %{_mandir}/man1/monetdb.1.gz
 %doc %{_mandir}/man1/monetdbd.1.gz
+%if (0%{?fedora} >= 20)
+%docdir %{_datadir}/doc/MonetDB-SQL
+%{_datadir}/doc/MonetDB-SQL/*
+%else
 %docdir %{_datadir}/doc/MonetDB-SQL-%{version}
 %{_datadir}/doc/MonetDB-SQL-%{version}/*
+%endif
 
 %package -n python-monetdb
 Summary: Native MonetDB client Python API
@@ -746,6 +751,10 @@ rm -f $RPM_BUILD_ROOT%{_libdir}/*.la
 rm -f $RPM_BUILD_ROOT%{_libdir}/monetdb5/*.la
 # internal development stuff
 rm -f $RPM_BUILD_ROOT%{_bindir}/Maddlog
+
+%if 0%{?fedora} >= 20
+mv $RPM_BUILD_ROOT%{_datadir}/doc/MonetDB-SQL-%{version} $RPM_BUILD_ROOT%{_datadir}/doc/MonetDB-SQL
+%endif
 
 %post -p /sbin/ldconfig
 
