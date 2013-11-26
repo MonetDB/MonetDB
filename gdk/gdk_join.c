@@ -2832,7 +2832,8 @@ project_any(BAT *bn, BAT *l, BAT *r, int nilcheck)
 	BATiter ri, bni;
 	int (*cmp)(const void *, const void *) = BATatoms[r->ttype].atomCmp;
 	const void *nil = ATOMnilptr(r->ttype);
-	const void *v, *prev = NULL;
+	const void *v;
+	BUN prev = BUN_NONE;
 	const oid *o;
 	int c;
 
@@ -2859,8 +2860,9 @@ project_any(BAT *bn, BAT *l, BAT *r, int nilcheck)
 				bn->T->nonil = 0;
 				bn->T->nil = 1;
 			}
-			if (prev && (bn->trevsorted | bn->tsorted | bn->tkey)) {
-				c = cmp(prev, v);
+			if (prev != BUN_NONE &&
+			    (bn->trevsorted | bn->tsorted | bn->tkey)) {
+				c = cmp(BUNtail(bni, prev), v);
 				if (c < 0) {
 					bn->trevsorted = 0;
 					if (!bn->tsorted)
@@ -2873,7 +2875,7 @@ project_any(BAT *bn, BAT *l, BAT *r, int nilcheck)
 					bn->tkey = 0; /* definitely */
 				}
 			}
-			prev = BUNtail(bni, n);
+			prev = n;
 		}
 	}
 	assert(n == BATcount(l));
