@@ -1,0 +1,6 @@
+# ChangeLog file for clients
+# This file is updated with Maddlog
+
+* Fri Sep  6 2013 Sjoerd Mullender <sjoerd@acm.org>
+- ODBC: Implemented {fn scalar()} and {interval ...} escapes.
+

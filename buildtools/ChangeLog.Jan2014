@@ -1,0 +1,6 @@
+# ChangeLog file for buildtools
+# This file is updated with Maddlog
+
+* Thu Jun 20 2013 Sjoerd Mullender <sjoerd@acm.org>
+- We no longer install the .la files in our Fedora/Debian/Ubuntu packages.
+

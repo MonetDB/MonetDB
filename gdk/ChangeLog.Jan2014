@@ -1,0 +1,12 @@
+# ChangeLog file for MonetDB
+# This file is updated with Maddlog
+
+* Wed Oct  2 2013 Sjoerd Mullender <sjoerd@acm.org>
+- Removed some unused fields in the atomDesc structure.  This change
+  requires a complete recompilation of the whole suite.
+
+* Tue Jan 22 2013 Sjoerd Mullender <sjoerd@acm.org>
+- Replaced the mutex implementation for both GNU C and Visual Studio with
+  a home-grown implementation that uses atomic instructions (__sync_*()
+  in gcc, _Interlocked*() in VS).
+
