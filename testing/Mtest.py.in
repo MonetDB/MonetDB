@@ -1336,7 +1336,7 @@ def ApproveOutput (env, TST) :
             if os.path.getsize(patch + ".0"):
                 print "Approving  %s  ->  stable.%s%s   (%s file)" % (os.path.join(TSTDIR, "%s.test.%s" % (TST, WHAT)), WHAT, SYSTEM, oc)
 
-                f = open(patch + ".1", "w")
+                f = open(patch + ".1", "wb")
                 for l in open(patch + ".0"):
                     if TO.search(l):
                         f.write(l[:1] + '\n')
@@ -1356,7 +1356,9 @@ def ApproveOutput (env, TST) :
                         sem = 1
                 f.flush()
                 f.close()
-                shutil.copy(stableOUTPUT, stableOUTPUT + ".ORG")
+                o = open(stableOUTPUT).read()
+                open(stableOUTPUT + ".ORG", 'wb').write(o)
+                open(stableOUTPUT, 'wb').write(o)
                 proc = process.Popen(['patch', stableOUTPUT, patch + '.1'])
                 proc.wait()
                 f = open(patch, 'w')
@@ -1367,6 +1369,9 @@ def ApproveOutput (env, TST) :
                 f.close()
                 remove(stableOUTPUT + ".ORG")
                 remove(patch + ".1")
+                o = open(stableOUTPUT).read()
+                open(stableOUTPUT, 'w').write(o)
+                o = None
             else:
                 print "No differences detected between  %s and  stable.%s%s  that are not ignored by Mtest.py." % (os.path.join(TSTDIR, "%s.test.%s" % (TST, WHAT)), WHAT, SYSTEM)
             remove(patch + ".0")
