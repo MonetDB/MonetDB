@@ -3245,6 +3245,78 @@ command batmmath.tan(x:bat[:oid,:flt]):bat[:oid,:flt]
 address CMDscience_bat_flt_tan;
 command batmmath.tan(x:bat[:oid,:dbl]):bat[:oid,:dbl] 
 address CMDscience_bat_dbl_tan;
+command batxml.attribute(name:str,val:bat[:oid,:str]):bat[:oid,:xml] 
+address BATXMLattribute;
+comment Construct an attribute value pair.
+
+command batxml.concat(left:bat[:oid,:xml],right:bat[:oid,:xml]):bat[:oid,:xml] 
+address BATXMLconcat;
+comment Concatenate the XML values.
+
+command batxml.comment(val:bat[:oid,:str]):bat[:oid,:xml] 
+address BATXMLcomment;
+comment Create an XML comment element.
+
+command batxml.content(src:bat[:oid,:str]):bat[:oid,:xml] 
+address BATXMLcontent;
+comment Parse the string as XML element content.
+
+command batxml.document(src:bat[:oid,:str]):bat[:oid,:xml] 
+address BATXMLdocument;
+comment Parse the string as an XML document.
+
+command batxml.element(name:str,ns:xml,attr:xml,s:bat[:oid,:xml]):bat[:oid,:xml] 
+address BATXMLelement;
+comment The basic building block for XML elements are namespaces, attributes and a sequence of XML elements. The name space and the attributes may be left unspecified(=nil).
+
+command batxml.element(name:str,s:bat[:oid,:xml]):bat[:oid,:xml] 
+address BATXMLelementSmall;
+comment The basic building block for XML elements are namespaces, attributes and a sequence of XML elements. The name space and the attributes may be left unspecified.
+
+pattern batxml.forest(val:bat[:oid,:xml]...):bat[:oid,:xml] 
+address BATXMLforest;
+comment Construct an element list.
+
+command batxml.isdocument(val:bat[:oid,:str]):bat[:oid,:bit] 
+address BATXMLisdocument;
+comment Validate the string as a XML document.
+
+command batxml.options(tag:str,option:str,left:bat[:oid,:xml]):bat[:oid,:xml] 
+address BATXMLoptions;
+comment Create the components including NULL conversions.
+
+command batxml.pi(target:str,val:bat[:oid,:xml]):bat[:oid,:xml] 
+address BATXMLpi;
+comment Construct a processing instruction.
+
+command batxml.parse(doccont:str,val:bat[:oid,:str],option:str):bat[:oid,:xml] 
+address BATXMLparse;
+comment Parse the XML document or element string values.
+
+command batxml.root(val:bat[:oid,:xml],version:str,standalone:str):bat[:oid,:xml] 
+address BATXMLroot;
+comment Contruct the root nodes.
+
+command batxml.serialize(val:bat[:oid,:xml]):bat[:oid,:str] 
+address BATXMLxml2str;
+comment Serialize the XML object to a string.
+
+command batxml.str(src:bat[:oid,:xml]):bat[:oid,:str] 
+address BATXMLxml2str;
+comment Cast the xml to a string.
+
+command batxml.text(val:bat[:oid,:xml]):bat[:oid,:str] 
+address BATXMLxmltext;
+comment Serialize the XML object to a string.
+
+command batxml.xquery(val:bat[:oid,:str],expr:str):bat[:oid,:xml] 
+address BATXMLxquery;
+comment Execute the XQuery against the elements.
+
+command batxml.xml(src:bat[:oid,:str]):bat[:oid,:xml] 
+address BATXMLstr2xml;
+comment Cast the string to an xml compliant string.
+
 pattern batcalc.!=(v:timestamp,b:bat[:oid,:timestamp],s:bat[:oid,:oid]):bat[:oid,:bit] 
 address CMDbatNE;
 comment Return V != B with candidates list
@@ -24636,6 +24708,12 @@ pattern batcalc.div_noerror(b1:bat[:oid,:bte],b2:bat[:oid,:bte]):bat[:oid,:bte]
 address CMDbatDIV;
 comment Return B1 / B2, overflow causes NIL value
 
+command batcalc.daytime(t:bat[:oid,:timestamp]):bat[:oid,:daytime] 
+address MTIMEtimestamp_extract_daytime_default_bulk;
+command batcalc.daytime(s:bat[:oid,:lng]):bat[:oid,:daytime] 
+address MTIMEsecs2daytime_bulk;
+command batcalc.date(t:bat[:oid,:timestamp]):bat[:oid,:date] 
+address MTIMEtimestamp_extract_date_default_bulk;
 command batcalc.flt(s1:int,v:bat[:oid,:lng],d2:int,s2:int):bat[:oid,:flt] 
 address batlng_dec2dec_flt;
 comment cast decimal(lng) to decimal(flt) and check for overflow
@@ -31226,6 +31304,12 @@ command batcalc.timestamp(v:bat[:oid,:void]):bat[:oid,:timestamp]
 address batnil_2_timestamp;
 comment Cast to timestamp
 
+command batcalc.timestamp(msecs:bat[:oid,:lng]):bat[:oid,:timestamp] 
+address MTIMEtimestamp_lng_bulk;
+command batcalc.timestamp(secs:bat[:oid,:int]):bat[:oid,:timestamp] 
+address MTIMEtimestamp_bulk;
+command batcalc.timestamp(d:bat[:oid,:date]):bat[:oid,:timestamp] 
+address MTIMEtimestamp_create_from_date_bulk;
 command batcalc.wrd(s1:int,v:bat[:oid,:lng],d2:int,s2:int):bat[:oid,:wrd] 
 address batlng_dec2dec_wrd;
 comment cast decimal(lng) to decimal(wrd) and check for overflow
@@ -31616,78 +31700,6 @@ comment Return B1 XOR B2
 
 command batcalc.xml(src:bat[:oid,:str]):bat[:oid,:xml] 
 address BATXMLstr2xml;
-command batxml.attribute(name:str,val:bat[:oid,:str]):bat[:oid,:xml] 
-address BATXMLattribute;
-comment Construct an attribute value pair.
-
-command batxml.concat(left:bat[:oid,:xml],right:bat[:oid,:xml]):bat[:oid,:xml] 
-address BATXMLconcat;
-comment Concatenate the XML values.
-
-command batxml.comment(val:bat[:oid,:str]):bat[:oid,:xml] 
-address BATXMLcomment;
-comment Create an XML comment element.
-
-command batxml.content(src:bat[:oid,:str]):bat[:oid,:xml] 
-address BATXMLcontent;
-comment Parse the string as XML element content.
-
-command batxml.document(src:bat[:oid,:str]):bat[:oid,:xml] 
-address BATXMLdocument;
-comment Parse the string as an XML document.
-
-command batxml.element(name:str,ns:xml,attr:xml,s:bat[:oid,:xml]):bat[:oid,:xml] 
-address BATXMLelement;
-comment The basic building block for XML elements are namespaces, attributes and a sequence of XML elements. The name space and the attributes may be left unspecified(=nil).
-
-command batxml.element(name:str,s:bat[:oid,:xml]):bat[:oid,:xml] 
-address BATXMLelementSmall;
-comment The basic building block for XML elements are namespaces, attributes and a sequence of XML elements. The name space and the attributes may be left unspecified.
-
-pattern batxml.forest(val:bat[:oid,:xml]...):bat[:oid,:xml] 
-address BATXMLforest;
-comment Construct an element list.
-
-command batxml.isdocument(val:bat[:oid,:str]):bat[:oid,:bit] 
-address BATXMLisdocument;
-comment Validate the string as a XML document.
-
-command batxml.options(tag:str,option:str,left:bat[:oid,:xml]):bat[:oid,:xml] 
-address BATXMLoptions;
-comment Create the components including NULL conversions.
-
-command batxml.pi(target:str,val:bat[:oid,:xml]):bat[:oid,:xml] 
-address BATXMLpi;
-comment Construct a processing instruction.
-
-command batxml.parse(doccont:str,val:bat[:oid,:str],option:str):bat[:oid,:xml] 
-address BATXMLparse;
-comment Parse the XML document or element string values.
-
-command batxml.root(val:bat[:oid,:xml],version:str,standalone:str):bat[:oid,:xml] 
-address BATXMLroot;
-comment Contruct the root nodes.
-
-command batxml.serialize(val:bat[:oid,:xml]):bat[:oid,:str] 
-address BATXMLxml2str;
-comment Serialize the XML object to a string.
-
-command batxml.str(src:bat[:oid,:xml]):bat[:oid,:str] 
-address BATXMLxml2str;
-comment Cast the xml to a string.
-
-command batxml.text(val:bat[:oid,:xml]):bat[:oid,:str] 
-address BATXMLxmltext;
-comment Serialize the XML object to a string.
-
-command batxml.xquery(val:bat[:oid,:str],expr:str):bat[:oid,:xml] 
-address BATXMLxquery;
-comment Execute the XQuery against the elements.
-
-command batxml.xml(src:bat[:oid,:str]):bat[:oid,:xml] 
-address BATXMLstr2xml;
-comment Cast the string to an xml compliant string.
-
 command batmtime.diff(b1:bat[:oid,:timestamp],b2:bat[:oid,:timestamp]):bat[:oid,:lng] 
 address MTIMEtimestamp_diff_bulk;
 comment Difference of two sets of timestamp.
