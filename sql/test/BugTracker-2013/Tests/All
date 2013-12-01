@@ -54,3 +54,4 @@ unop_vs_aggr.Bug-3885
 singleton-median.Bug-3389
 case_when.Bug-3395
 syntaxerror.Bug-3399
+timestamp.Bug-3401

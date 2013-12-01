@@ -4594,7 +4594,7 @@ rel_value_exp2(mvc *sql, sql_rel **rel, symbol *se, int f, exp_kind ek, int *is_
 			*rel = r = rel_subquery(sql, *rel, se, ek, f == sql_sel?APPLY_LOJ:APPLY_JOIN);
 			if (r) {
 				rs = rel_lastexp(sql, r);
-				if (f == sql_sel && r->card > CARD_ATOM) {
+				if (f == sql_sel && r->card > CARD_ATOM && r->r) {
 					sql_subaggr *zero_or_one = sql_bind_aggr(sql->sa, sql->session->schema, "zero_or_one", exp_subtype(rs));
 					rs = exp_aggr1(sql->sa, rs, zero_or_one, 0, 0, CARD_ATOM, 0);
 
@@ -4602,6 +4602,8 @@ rel_value_exp2(mvc *sql, sql_rel **rel, symbol *se, int f, exp_kind ek, int *is_
 					r->r = rel_groupby(sql, r->r, NULL);
 					rs = rel_groupby_add_aggr(sql, r->r, rs);
 					rs = exp_column(sql->sa, exp_relname(rs), exp_name(rs), exp_subtype(rs), exp_card(rs), has_nil(rs), is_intern(rs));
+				} else if (f == sql_sel) {
+					*rel = rel_project(sql->sa, *rel, new_exp_list(sql->sa));
 				}
 			}
 			return rs;

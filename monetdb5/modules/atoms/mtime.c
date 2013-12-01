@@ -626,6 +626,8 @@ date_fromstr(str buf, int *len, date **d)
 	}
 	/* handle semantic error here (returns nil in that case) */
 	**d = todate(day, month, yearneg ? -year : year);
+	if (**d == date_nil)
+		return 0;
 	return pos;
 }
 
