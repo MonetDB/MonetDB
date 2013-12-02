@@ -1955,7 +1955,7 @@ processFile(char *fname)
 	char *e, *response;
 	stream *s;
 
-	s = open_rstream(fname);
+	s = open_rastream(fname);
 	if (s == NULL || mnstr_errnr(s)) {
 		fprintf(stderr,"ERROR Can not access '%s'\n",fname);
 		return;
