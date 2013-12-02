@@ -1966,7 +1966,7 @@ processFile(char *fname)
 		while ((e = strchr(response, '\n')) != NULL) {
 			*e = 0;
 			i = parser(response);
-			if (debug)
+			if (debug && i)
 				fprintf(stderr, "ERROR %d:%s\n", i, response);
 			response = e + 1;
 		}
