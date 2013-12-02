@@ -772,3 +772,20 @@ command daytime(s:str):daytime address MTIMEdaytime_fromstr;
 command daytime(d:daytime):daytime address MTIMEdaytime2daytime;
 command daytime(s:lng):daytime address MTIMEsecs2daytime;
 command daytime(t:timestamp) :daytime address MTIMEtimestamp_extract_daytime_default;
+
+module batcalc;
+
+command date(t:bat[:oid,:timestamp]) :bat[:oid,:date]
+address MTIMEtimestamp_extract_date_default_bulk;
+
+command timestamp(d:bat[:oid,:date]) :bat[:oid,:timestamp]
+address MTIMEtimestamp_create_from_date_bulk;
+command timestamp(secs:bat[:oid,:int]) :bat[:oid,:timestamp]
+address MTIMEtimestamp_bulk;
+command timestamp(msecs:bat[:oid,:lng]) :bat[:oid,:timestamp]
+address MTIMEtimestamp_lng_bulk;
+
+command daytime(s:bat[:oid,:lng]) :bat[:oid,:daytime]
+address MTIMEsecs2daytime_bulk;
+command daytime(t:bat[:oid,:timestamp]) :bat[:oid,:daytime]
+address MTIMEtimestamp_extract_daytime_default_bulk;

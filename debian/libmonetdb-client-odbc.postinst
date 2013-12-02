@@ -4,7 +4,7 @@ set -e
 
 if [ "$1" = configure ]; then
     # install driver if first install of package or if driver not installed yet
-    if [ ! "$2" ] || ! [ ! "`odbcinst -d -q | grep MonetDB`" ]; then
+    if [ ! "$2" ] || ! odbcinst -d -q -n MonetDB >& /dev/null >& /dev/null; then
 	odbcinst -i -d -r <<EOF
 [MonetDB]
 Description = ODBC for MonetDB

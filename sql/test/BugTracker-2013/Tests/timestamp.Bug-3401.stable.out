@@ -1,0 +1,53 @@
+stdout of test 'timestamp.Bug-3401` in directory 'sql/test/BugTracker-2013` itself:
+
+
+# 13:17:08 >  
+# 13:17:08 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=36170" "--set" "mapi_usock=/var/tmp/mtest-12887/.s.monetdb.36170" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/niels/scratch/rc-monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2013" "--set" "mal_listing=0"
+# 13:17:08 >  
+
+# MonetDB 5 server v11.17.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2013', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 3.775 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2013 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://niels.nesco.mine.nu:36170/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-12887/.s.monetdb.36170
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 13:17:08 >  
+# 13:17:08 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-12887" "--port=36170"
+# 13:17:08 >  
+
+#create table datebug (time timestamp, foo INT);
+#insert into datebug values ('2013-01-01 00:00:00', 1);
+[ 1	]
+#insert into datebug values ('2013-02-01 00:00:00', 2);
+[ 1	]
+#insert into datebug values ('2013-03-01 00:00:00', 3);
+[ 1	]
+#insert into datebug values ('2013-04-01 00:00:00', 4);
+[ 1	]
+#insert into datebug values ('2013-05-01 00:00:00', 5);
+[ 1	]
+#insert into datebug values ('2013-06-01 00:00:00', 6);
+[ 1	]
+#select * from datebug where time < '2013-02-28';
+% sys.datebug,	sys.datebug # table_name
+% time,	foo # name
+% timestamp,	int # type
+% 26,	1 # length
+[ 2013-01-01 00:00:00.000000,	1	]
+[ 2013-02-01 00:00:00.000000,	2	]
+#drop table datebug;
+
+# 13:17:09 >  
+# 13:17:09 >  "Done."
+# 13:17:09 >  
+

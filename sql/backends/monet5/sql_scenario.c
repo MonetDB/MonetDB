@@ -652,7 +652,7 @@ sql_update_feb2013_sp3(Client c)
 }
 
 static str
-sql_update_oct2013(Client c)
+sql_update_jan2014(Client c)
 {
 	size_t bufsize = 12800, pos = 0;
 	char *buf = GDKmalloc(bufsize), *err = NULL;
@@ -986,7 +986,7 @@ SQLinitClient(Client c)
 		/* if function sys.querylog_catalog() does not exist, we
 		 * need to update */
 		if (!sql_bind_func(m->sa, mvc_bind_schema(m, "sys"), "querylog_catalog", NULL, NULL, F_FUNC)) {
-			if ((err = sql_update_oct2013(c)) !=NULL) {
+			if ((err = sql_update_jan2014(c)) !=NULL) {
 				fprintf(stderr, "!%s\n", err);
 				GDKfree(err);
 			}
@@ -1483,6 +1483,10 @@ SQLreader(Client c)
 				go = FALSE;
 				break;
 			} else if (go && !be->console && language == 0) {
+				if (in->buf[in->pos] == 's' && !in->eof) {
+					while ((rd = bstream_next(in)) > 0)
+						;
+				}
 				be->language = in->buf[in->pos++];
 				if (be->language == 's') {
 					be->language = 'S';

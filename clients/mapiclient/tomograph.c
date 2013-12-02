@@ -1043,75 +1043,6 @@ fprintf_time(FILE *f, lng time)
 	}
 }
 
-/* print time (given in microseconds) in compact human-readable form
- * showing the units specified via TME */
-static void
-fprintf_tm(FILE *f, lng time, int TME)
-{
-	int tail = 0, digits = 1, scale = 1;
-	const char *fmt = NULL;
-
-	if (TME & TME_DD && (tail || time >= US_DD)) {
-		fmt = LLFMT"%s";
-		fprintf(f, fmt, time / US_DD, "d");
-		time %= US_DD;
-		TME &= TME_HH;
-		tail = 1;
-	}
-	if (TME & TME_HH && (tail || time >= US_HH)) {
-		fmt = tail ? "%02d%s" : "%d%s";
-		fprintf(f, fmt, (int) (time / US_HH), "h");
-		time %= US_HH;
-		TME &= TME_MM;
-		tail = 1;
-	}
-	if (TME & TME_MM && (tail || time >= US_MM)) {
-		fmt = tail ? "%02d%s" : "%d%s";
-		fprintf(f, fmt, (int) (time / US_MM), "m");
-		time %= US_MM;
-		TME &= TME_SS;
-		tail = 1;
-	}
-	if (TME & TME_SS && (tail || time >= US_SS)) {
-		fmt = tail ? "%02d%s" : "%d%s";
-		fprintf(f, fmt, (int) (time / US_SS), (TME & TME_MS) ? "." : "s");
-		if (time / US_SS > 99) {
-			digits = 1;
-			scale = 100;
-		} else if (time / US_SS > 9) {
-			digits = 2;
-			scale = 10;
-		} else {
-			digits = 3;
-			scale = 1;
-		}
-		time %= US_SS;
-		TME &= TME_MS;
-		tail = 1;
-	}
-	if (TME & TME_MS && (tail || time >= US_MS)) {
-		fmt = tail ? "%0*d%s" : "%*d%s";
-		fprintf(f, fmt, digits, (int) (time / US_MS / scale), (TME & TME_US) ? "." : tail ? "s" : "ms");
-		if (time / US_MS > 99) {
-			digits = 1;
-			scale = 100;
-		} else if (time / US_MS > 9) {
-			digits = 2;
-			scale = 10;
-		} else {
-			digits = 3;
-			scale = 1;
-		}
-		time %= US_MS;
-		TME &= TME_US;
-		tail = 1;
-	}
-	if (TME & TME_US) {
-		fmt = tail ? "%0*d%s" : "%*d%s";
-		fprintf(f, fmt, digits, (int) (time / scale), tail ? "ms" : "us");
-	}
-}
-
 /* produce a legenda image for the color map */
 static void
 showcolormap(char *filename, int all)
@@ -1456,10 +1387,10 @@ createTomogram(void)
 	int i, j;
 	int h, prevobject = 1;
 	lng w = lastclktick - starttime;
+	lng tw;
 	lng scale;
 	char *scalename = "\0\0\0\0";
 	int digits;
-	int TME;
 
 	snprintf(buf, BUFSIZ, "%s.gpl", filename);
 	gnudata = fopen(buf, "w");
@@ -1502,63 +1433,45 @@ createTomogram(void)
 	fprintf(gnudata, "unset colorbox\n");
 	fprintf(gnudata, "unset title\n");
 
-	if (fixedmap) {
-		if (w >= 10 * US_DD) {
-			scale = US_DD;
-			scalename = "d\0\0days";
-		} else if (w >= 10 * US_HH) {
-			scale = US_HH;
-			scalename = "h\0\0hours";
-		} else if (w >= 10 * US_MM) {
-			scale = US_MM;
-			scalename = "m\0\0minutes";
-		} else if (w >= US_SS) {
-			scale = US_SS;
-			scalename = "s\0\0seconds";
-		} else if (w >= US_MS) {
-			scale = US_MS;
-			scalename = "ms\0milliseconds";
-		} else {
-			scale = 1;
-			scalename = "us\0microseconds";
-		}
-		if (w / scale >= 1000)
-			digits = 0;
-		else if (w / scale >= 100)
-			digits = 1;
-		else if (w / scale >= 10)
-			digits = 2;
-		else
-			digits = 3;
-		w /= 10;
-		fprintf(gnudata, "set xtics (\"0\" 0,");
-		for (i = 1; i < 10; i++)
-			fprintf(gnudata, "\"%.*f\" "LLFMT".0,", digits, (double) i * w / scale, i * w);
-		fprintf(gnudata, "\"%.*f %s\" "LLFMT".0", digits, (double) i * w / scale, scalename, i * w);
-		fprintf(gnudata, ")\n");
+	if (w >= 10 * US_DD) {
+		scale = US_DD;
+		scalename = "d\0\0days";
+	} else if (w >= 10 * US_HH) {
+		scale = US_HH;
+		scalename = "h\0\0hours";
+	} else if (w >= 10 * US_MM) {
+		scale = US_MM;
+		scalename = "m\0\0minutes";
+	} else if (w >= US_SS) {
+		scale = US_SS;
+		scalename = "s\0\0seconds";
+	} else if (w >= US_MS) {
+		scale = US_MS;
+		scalename = "ms\0milliseconds";
 	} else {
-		if (w >= US_DD) {
-			TME = TME_DD|TME_HH;
-		} else if (w >= US_HH) {
-			TME = TME_HH|TME_MM;
-		} else if (w >= US_MM) {
-			TME = TME_MM|TME_SS;
-		} else if (w >= US_SS) {
-			TME = TME_SS|TME_MS;
-		} else if (w >= US_MS) {
-			TME = TME_MS|TME_US;
-		} else {
-			TME = TME_US;
-		}
-		w /= 10;
-		fprintf(gnudata, "set xtics (\"0\" 0,\"");
-		for (i = 1; i < 10; i++) {
-			fprintf_tm(gnudata, i * w, TME);
-			fprintf(gnudata, "\" "LLFMT".0,\"", i * w);
-		}
-		fprintf_tm(gnudata, i * w, TME);
-		fprintf(gnudata, "\" "LLFMT".0)\n", i * w);
+		scale = 1;
+		scalename = "us\0microseconds";
 	}
+	for (tw = scale / 10; 15 * tw < w; tw *= 10)
+		;
+	if (3 * tw > w)
+		tw /= 4;
+	else if (6 * tw > w)
+		tw /= 2;
+	if (w / scale >= 1000)
+		digits = 0;
+	else if (w / scale >= 100)
+		digits = 1;
+	else if (w / scale >= 10)
+		digits = 2;
+	else
+		digits = 3;
+	fprintf(gnudata, "set xtics (\"0\" 0,");
+	for (i = 1; i * tw < w - 2 * tw / 3; i++)
+		fprintf(gnudata, "\"%g\" "LLFMT".0,", (double) i * tw / scale, i * tw);
+	fprintf(gnudata, "\"%.*f %s\" "LLFMT".0", digits, (double) w / scale, scalename, w);
+	fprintf(gnudata, ")\n");
+	w /= 10;
 
 	fprintf(gnudata, "set grid xtics\n");
 
@@ -1615,16 +1528,15 @@ createTomogram(void)
 			fprintf(stderr, "gnuplot %s_%02d.gpl\n",basefilename,i);
 		fprintf(stderr, "gs -dNOPAUSE -sDEVICE=pdfwrite -sOUTPUTFILE=%s.pdf -dBATCH %s_??.pdf\n",basefilename,basefilename);
 		exit(0);
-	} else
-		if (!atlas && figures++ == 0) {
-			fprintf(stderr, "Created tomogram '%s'\n", buf);
-			fprintf(stderr, "Run: 'gnuplot %s.gpl' to create the '%s.pdf' file\n", buf, filename);
-			if (tracefile == 0) {
-				fprintf(stderr, "The memory map is stored in '%s.dat'\n", filename);
-				fprintf(stderr, "The trace is saved in '%s.trace' for use with --trace option\n", filename);
-			}
-			exit(0);
+	} else if (!atlas && figures++ == 0) {
+		fprintf(stderr, "Created tomogram '%s'\n", buf);
+		fprintf(stderr, "Run: 'gnuplot %s.gpl' to create the '%s.pdf' file\n", buf, filename);
+		if (tracefile == 0) {
+			fprintf(stderr, "The memory map is stored in '%s.dat'\n", filename);
+			fprintf(stderr, "The trace is saved in '%s.trace' for use with --trace option\n", filename);
 		}
+		exit(0);
+	}
 }
 
 /* the main issue to deal with in the analysis is
@@ -1955,7 +1867,7 @@ processFile(char *fname)
 	char *e, *response;
 	stream *s;
 
-	s = open_rstream(fname);
+	s = open_rastream(fname);
 	if (s == NULL || mnstr_errnr(s)) {
 		fprintf(stderr,"ERROR Can not access '%s'\n",fname);
 		return;
@@ -1967,7 +1879,7 @@ processFile(char *fname)
 		while ((e = strchr(response, '\n')) != NULL) {
 			*e = 0;
 			i = parser(response);
-			if (debug)
+			if (debug && i)
 				fprintf(stderr, "ERROR %d:%s\n", i, response);
 			response = e + 1;
 		}

@@ -1188,10 +1188,10 @@ PQtopn_sorted_max( BAT **bn, BAT *b, wrd NN )
 		if ((a=BATdescriptor(*aid)) == NULL || (b=BATdescriptor(*bid)) == NULL)	\
 			throw(MAL, "pqueue.topN", RUNTIME_OBJECT_MISSING);			\
 		if (a->ttype == 0) { 			\
-			assert(0);			\
 			*ret= a->batCacheid;		\
 			BBPkeepref(*ret);		\
 			BBPreleaseref(b->batCacheid);	\
+			return MAL_SUCCEED;		\
 		}					\
 		id = a->hseqbase;			\
 		cnt = n = BATcount(a);			\
@@ -1241,10 +1241,10 @@ PQtopn_sorted_max( BAT **bn, BAT *b, wrd NN )
 		if ((a=BATdescriptor(*aid)) == NULL || (b=BATdescriptor(*bid)) == NULL)	\
 			throw(MAL, "pqueue.topN", RUNTIME_OBJECT_MISSING);			\
 		if (a->ttype == 0) { 			\
-			assert(0);			\
 			*ret= a->batCacheid;		\
 			BBPkeepref(*ret);		\
 			BBPreleaseref(b->batCacheid);	\
+			return MAL_SUCCEED;		\
 		}					\
 		id = a->hseqbase;			\
 		cnt = n = BATcount(a);			\

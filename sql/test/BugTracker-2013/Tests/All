@@ -59,3 +59,4 @@ Cannot_Find_Column_Type.Bug-3394
 case_when.Bug-3395
 udf_error.Bug-3396
 syntaxerror.Bug-3399
+timestamp.Bug-3401

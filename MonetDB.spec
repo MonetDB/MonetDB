@@ -16,7 +16,7 @@
 %define oidsuf .oid32
 %endif
 
-%define release %{buildno}%{?dist}%{?oidsuf:.oidsuf}
+%define release %{buildno}%{?dist}%{?oidsuf}
 
 Name: %{name}
 Version: %{version}
@@ -73,7 +73,9 @@ accelerators.  It also has an SQL frontend.
 
 This package contains the core components of MonetDB in the form of a
 single shared library.  If you want to use MonetDB, you will certainly
-need this package, but you will also need one of the server packages.
+need this package, but you will also need at least the MonetDB5-server
+package, and most likely also %{name}-SQL-server5, as well as one or
+more client packages.
 
 %files
 %defattr(-,root,root)
@@ -154,8 +156,8 @@ automatic index management, extensibility of data types and search
 accelerators.  It also has an SQL frontend.
 
 This package contains mclient, the main client program to communicate
-with the database server, and msqldump, a program to dump the SQL
-database so that it can be loaded back later.  If you want to use
+with the MonetDB database server, and msqldump, a program to dump the
+SQL database so that it can be loaded back later.  If you want to use
 MonetDB, you will very likely need this package.
 
 %files client
@@ -177,7 +179,8 @@ main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
 accelerators.  It also has an SQL frontend.
 
-This package contains stethoscope and tomograph.
+This package contains stethoscope and tomograph.  These tools can be
+used to monitor the MonetDB database server.
 
 %files client-tools
 %defattr(-,root,root)
@@ -223,7 +226,7 @@ This package contains the MonetDB ODBC driver.
 
 %post client-odbc
 # install driver if first install of package or if driver not installed yet
-if [ "$1" -eq 1 ] || ! grep -q MonetDB /etc/odbcinst.ini; then
+if [ "$1" -eq 1 ] || ! odbcinst -d -q -n MonetDB >& /dev/null; then
 odbcinst -i -d -r <<EOF
 [MonetDB]
 Description = ODBC for MonetDB
@@ -388,7 +391,7 @@ automatic index management, extensibility of data types and search
 accelerators.  It also has an SQL frontend.
 
 This package contains the GIS (Geographic Information System)
-extensions for MonetDB-SQL-server5.
+extensions for %{name}-SQL-server5.
 
 %files geom-MonetDB5
 %defattr(-,root,root)
@@ -409,7 +412,7 @@ main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
 accelerators.  It also has an SQL frontend.
 
-This package contains the JAQL extension for MonetDB5.  JAQL is a
+This package contains the JAQL extension for MonetDB.  JAQL is a
 querly language for JavaScript Object Notation (JSON).
 
 %files jaql
@@ -433,10 +436,9 @@ main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
 accelerators.  It also has an SQL frontend.
 
-This package contains the MonetDB5 server component.  You need this
-package if you want to work using the MAL language, or if you want to
-use the SQL frontend (in which case you need MonetDB-SQL-server5 as
-well).
+This package contains the MonetDB server component.  You need this
+package if you want to use the MonetDB database system.  If you want
+to use the SQL frontend, you also need %{name}-SQL-server5.
 
 %pre -n MonetDB5-server
 getent group monetdb >/dev/null || groupadd -r monetdb
@@ -547,7 +549,7 @@ main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
 accelerators.  It also has an SQL frontend.
 
-This package contains the SQL frontend for MonetDB5.  If you want to
+This package contains the SQL frontend for MonetDB.  If you want to
 use SQL with MonetDB, you will need to install this package.
 
 %if %{?rhel:0}%{!?rhel:1}
@@ -603,7 +605,8 @@ automatic index management, extensibility of data types and search
 accelerators.  It also has an SQL frontend.
 
 This package contains the files needed to use MonetDB from a Python
-program.
+program.  This package is for Python version 2.  If you want to use
+Python version 3, you need %{name}-python3-monetdb.
 
 %files -n python-monetdb
 %defattr(-,root,root)
@@ -626,7 +629,8 @@ automatic index management, extensibility of data types and search
 accelerators.  It also has an SQL frontend.
 
 This package contains the files needed to use MonetDB from a Python3
-program.
+program.  This package is for Python version 3.  If you want to use
+Python version 2, you need %{name}-python-monetdb.
 
 %files -n python3-monetdb
 %defattr(-,root,root)
