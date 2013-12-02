@@ -1483,6 +1483,10 @@ SQLreader(Client c)
 				go = FALSE;
 				break;
 			} else if (go && !be->console && language == 0) {
+				if (in->buf[in->pos] == 's' && !in->eof) {
+					while ((rd = bstream_next(in)) > 0)
+						;
+				}
 				be->language = in->buf[in->pos++];
 				if (be->language == 's') {
 					be->language = 'S';
