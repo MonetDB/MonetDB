@@ -1615,16 +1615,15 @@ createTomogram(void)
 			fprintf(stderr, "gnuplot %s_%02d.gpl\n",basefilename,i);
 		fprintf(stderr, "gs -dNOPAUSE -sDEVICE=pdfwrite -sOUTPUTFILE=%s.pdf -dBATCH %s_??.pdf\n",basefilename,basefilename);
 		exit(0);
-	} else
-		if (!atlas && figures++ == 0) {
-			fprintf(stderr, "Created tomogram '%s'\n", buf);
-			fprintf(stderr, "Run: 'gnuplot %s.gpl' to create the '%s.pdf' file\n", buf, filename);
-			if (tracefile == 0) {
-				fprintf(stderr, "The memory map is stored in '%s.dat'\n", filename);
-				fprintf(stderr, "The trace is saved in '%s.trace' for use with --trace option\n", filename);
-			}
-			exit(0);
+	} else if (!atlas && figures++ == 0) {
+		fprintf(stderr, "Created tomogram '%s'\n", buf);
+		fprintf(stderr, "Run: 'gnuplot %s.gpl' to create the '%s.pdf' file\n", buf, filename);
+		if (tracefile == 0) {
+			fprintf(stderr, "The memory map is stored in '%s.dat'\n", filename);
+			fprintf(stderr, "The trace is saved in '%s.trace' for use with --trace option\n", filename);
 		}
+		exit(0);
+	}
 }
 
 /* the main issue to deal with in the analysis is
