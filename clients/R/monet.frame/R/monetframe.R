@@ -609,7 +609,7 @@ summary.monet.frame <- function (object, maxsum = 7, digits = max(3, getOption("
 	doneSth <- FALSE
 	value <- if (attr(col,"rtypes")[[1]] == "numeric") {
 		qq <- quantile(nncol,printDots=FALSE)
-		qq <- signif(c(qq[1L:3L], mean(nncol), qq[4L:5L]), digits)
+		qq <- signif(unlist(c(qq[1L:3L], mean(nncol), qq[4L:5L])), digits)
 		names(qq) <- c("Min.", "1st Qu.", "Median", "Mean", "3rd Qu.", 
 				"Max.")
 		
@@ -1143,7 +1143,18 @@ quantile.monet.frame <- function(x, probs = seq(0, 1, 0.25), na.rm = FALSE,
 		# TODO: move this to generic functions, like wrapSelect etc.
 		query <- getQuery(x)
 		col <- sub("(select )(.*?)( from.*)","\\2",query,ignore.case=TRUE)
-		nexpr <- paste0("QUANTILE((",col,"),",probs,")",collapse=",")
+		#nexpr <- paste0("QUANTILE((",col,"),",probs,")",collapse=",")
+		# sprintf because of the slightly braindamaged way the value is interpreted without a decimal
+
+		# very dirty hack, this will use min/max for quantiles 0 and 1, respectively
+		nexpr <- paste0(
+			ifelse(probs == 0,
+				paste0("MIN(\"",col,"\")"),
+				ifelse(probs==1,
+					paste0("MAX(\"",col,"\")"),
+				sprintf("QUANTILE(\"%s\",%.02f)",col, probs)))
+			,collapse=",")
+		
 		nquery <- sub("select (.*?) from",paste0("SELECT ",nexpr," FROM"),query,ignore.case=TRUE)
 		if (.is.debug(x)) cat(paste0("EX: '",nquery,"'\n",sep=""))	
 		ret <- as.vector(dbGetQuery(attr(x,"conn"),nquery)[1,])
