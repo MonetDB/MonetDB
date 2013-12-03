@@ -547,8 +547,12 @@ _ASCIIadt_toStr(void *extra, char **buf, int *len, int type, const void *a)
 		Column *c = extra;
 		char *dst;
 		const char *src = a;
-		int l = (c->quote) ? escapedStrlen(src) : (int) strlen(src), l2 = 0;
+		int l = escapedStrlen(src, c->sep, c->rsep, c->quote), l2 = 0;
 
+		if (c->quote)
+			l = escapedStrlen(src, NULL, NULL, c->quote);
+		else
+			l = escapedStrlen(src, c->sep, c->rsep, 0);
 		if (l + 3 > *len) {
 			GDKfree(*buf);
 			*len = 2 * l + 3;
@@ -558,9 +562,9 @@ _ASCIIadt_toStr(void *extra, char **buf, int *len, int type, const void *a)
 		if (c->quote) {
 			dst[0] = c->quote;
 			l2 = 1;
-			l = escapedStr(dst + l2, src, *len - l2);
+			l = escapedStr(dst + l2, src, *len - l2, NULL, NULL, c->quote);
 		} else {
-			strncpy(dst + l2, src, l);
+			l = escapedStr(dst + l2, src, *len - l2, c->sep, c->rsep, 0);
 		}
 		if (l2) {
 			dst[l + l2] = c->quote;
@@ -648,6 +652,7 @@ mvc_import_table(Client cntxt, mvc *m, bstream *bs, char *sname, char *tname, ch
 
 			fmt[i].name = col->base.name;
 			fmt[i].sep = (n->next) ? sep : rsep;
+			fmt[i].rsep = rsep;
 			fmt[i].seplen = _strlen(fmt[i].sep);
 			fmt[i].type = sql_subtype_string(&col->type);
 			fmt[i].adt = ATOMindex(col->type.type->base.name);
@@ -726,6 +731,7 @@ mvc_import_table(Client cntxt, mvc *m, bstream *bs, char *sname, char *tname, ch
 			sql_error(m, 500, "%s", as.error);
 		for (n = t->columns.set->h, i = 0; n; n = n->next, i++) {
 			fmt[i].sep = NULL;
+			fmt[i].rsep = NULL;
 			fmt[i].nullstr = NULL;
 		}
 		TABLETdestroy_format(&as);
@@ -1127,6 +1133,7 @@ mvc_export_table(backend *b, stream *s, res_table *t, BAT *order, BUN offset, BU
 
 	fmt[0].c = NULL;
 	fmt[0].sep = (csv) ? btag : "";
+	fmt[0].rsep = rsep;
 	fmt[0].seplen = _strlen(fmt[0].sep);
 	fmt[0].ws = 0;
 	fmt[0].nullstr = NULL;
@@ -1143,6 +1150,7 @@ mvc_export_table(backend *b, stream *s, res_table *t, BAT *order, BUN offset, BU
 		if (csv) {
 			fmt[i].sep = ((i - 1) < (t->nr_cols - 1)) ? sep : rsep;
 			fmt[i].seplen = _strlen(fmt[i].sep);
+			fmt[i].rsep = rsep;
 		}
 		if (json) {
 			res_col *p = t->cols + (i - 1);
@@ -1156,13 +1164,16 @@ mvc_export_table(backend *b, stream *s, res_table *t, BAT *order, BUN offset, BU
 				snprintf(bj, strlen(p->name) + 6, "{ %s , ", p->name);
 				fmt[i - 1].sep = bj;
 				fmt[i - 1].seplen = _strlen(fmt[i - 1].sep);
+				fmt[i - 1].rsep = NULL;
 			} else if (i <= t->nr_cols) {
 				fmt[i - 1].sep = p->name;
 				fmt[i - 1].seplen = _strlen(fmt[i - 1].sep);
+				fmt[i - 1].rsep = NULL;
 			}
 			if (i == t->nr_cols) {
 				fmt[i].sep = " }\n";
 				fmt[i].seplen = _strlen(fmt[i].sep);
+				fmt[i].rsep = NULL;
 			}
 		}
 		fmt[i].type = ATOMname(fmt[i].c->ttype);
@@ -1211,6 +1222,7 @@ mvc_export_table(backend *b, stream *s, res_table *t, BAT *order, BUN offset, BU
 	}
 	for (i = 0; i <= t->nr_cols; i++) {
 		fmt[i].sep = NULL;
+		fmt[i].rsep = NULL;
 		fmt[i].type = NULL;
 		fmt[i].nullstr = NULL;
 	}
