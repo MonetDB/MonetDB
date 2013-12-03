@@ -50,6 +50,7 @@
 typedef struct Column_t {
 	const char *name;			/* column title */
 	const char *sep;
+	const char *rsep;
 	int seplen;
 	char *type;
 	int adt;					/* type index */
