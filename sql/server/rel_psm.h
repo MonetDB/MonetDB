@@ -39,6 +39,7 @@
 #define GET_PSM_LEVEL(level)	(level>>8)
 
 extern sql_rel *rel_psm(mvc *sql, symbol *sym);
+extern sql_rel *rel_select_with_into( mvc *sql, symbol *sq);
 extern list *sequential_block(mvc *sql, sql_subtype *res, dlist *blk, char *opt_name, int is_func);
 
 #endif /*_REL_PSM_H_*/
