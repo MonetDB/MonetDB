@@ -252,7 +252,7 @@ profilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc, int start)
 		return;
 	p = getInstrPtr(mb,pc);
 	if ( !start && p && p->token == ENDsymbol)
-		profilerHeartbeatEvent("ping");
+		profilerHeartbeatEvent("ping", 0);
 	if (myname == 0)
 		myname = putName("profiler", 8);
 	if (getModuleId(getInstrPtr(mb, pc)) == myname)
@@ -1390,7 +1390,7 @@ void profilerGetCPUStat(lng *user, lng *nice, lng *sys, lng *idle, lng *iowait)
 	*iowait = corestat[255].iowait;
 }
 
-void profilerHeartbeatEvent(str msg)
+void profilerHeartbeatEvent(str msg, lng ticks)
 {
 	char logbuffer[LOGLEN], *logbase;
 	char cpuload[BUFSIZ];
@@ -1464,7 +1464,7 @@ void profilerHeartbeatEvent(str msg)
 	if (profileCounter[PROFpc].status) 
 		logadd("0,\t");
 	if (profileCounter[PROFticks].status) 
-		logadd("0,\t");
+		logadd(LLFMT",\t", ticks);
 #ifdef HAVE_TIMES
 	if (profileCounter[PROFcpu].status && delayswitch < 0) {
 		logadd(LLFMT",\t", (lng) (newTms.tms_utime - prevtimer.tms_utime));
@@ -1534,7 +1534,7 @@ static void profilerHeartbeat(void *dummy)
 			if (!hbrunning)
 				return;
 		}
-		profilerHeartbeatEvent("ping");
+		profilerHeartbeatEvent("ping", 0);
 	}
 	hbdelay = 0;
 }

@@ -301,6 +301,7 @@ activateBeat(void)
 #define ACTION 2
 #define PING 4
 #define WAIT 5
+#define GCOLLECT 6
 
 typedef struct BOX {
 	int row;
@@ -1507,6 +1508,11 @@ createTomogram(void)
 			case WAIT:
 				fprintf(gnudata, "set object %d rectangle from "LLFMT".0, %d to %f,%f front fillcolor rgb \"red\" fillstyle solid 1.0\n",
 					object++, box[i].clkstart, box[i].row * 2 * h+h-h/3, box[i].clkstart + w /50.0, box[i].row *2 *h + 1.3 * h);
+				break;
+			case GCOLLECT:
+				fprintf(gnudata, "set object %d rectangle from "LLFMT".0, %d to "LLFMT".0,%f front fillcolor rgb \"green\" fillstyle solid 1.0\n",
+					object++, box[i].clkstart, box[i].row * 2 * h+h-h/3, box[i].clkend, box[i].row *2 *h + 1.3 * h);
+				break;
 			}
 
 
@@ -1651,6 +1657,8 @@ update(int state, int thread, lng clkticks, lng ticks, lng memory, lng footprint
 		box[idx].thread = thread;
 		lastclk[thread] = clkticks;
 		box[idx].clkend = box[idx].clkstart = clkticks;
+		if (state == GCOLLECT)
+			box[idx].clkstart -= ticks;
 		box[idx].memend = box[idx].memstart = memory;
 		box[idx].footstart = box[idx].footend = footprint;
 		box[idx].reads = reads;
@@ -1756,6 +1764,9 @@ parser(char *row)
 	} else if (strncmp(c + 1, "wait", 4) == 0) {
 		state = WAIT;
 		c += 5;
+	} else if (strncmp(c + 1, "gcollect", 8) == 0) {
+		state = GCOLLECT;
+		c += 9;
 	} else {
 		state = 0;
 		c = strchr(c + 1, (int) '"');

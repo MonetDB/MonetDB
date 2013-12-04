@@ -793,6 +793,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 
 				/* general garbage collection */
 				if (ret == MAL_SUCCEED && garbageControl(pci)) {
+					lng u0 = GDKusec(), u1;
 					for (i = 0; i < pci->argc; i++) {
 						int a = getArg(pci, i);
 
@@ -827,6 +828,9 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 							}
 						}
 					}
+					u1 = GDKusec();
+					if (u1 - u0 > 100)
+						profilerHeartbeatEvent("gcollect", u1 - u0);
 				}
 			}
 

@@ -65,7 +65,7 @@ mal_export str closeProfilerStream(void);
 
 mal_export void initProfiler(MalBlkPtr mb);
 mal_export void profilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc, int start);
-mal_export void profilerHeartbeatEvent(str msg);
+mal_export void profilerHeartbeatEvent(str msg, lng ticks);
 mal_export str setLogFile(stream *fd, Module cntxt, str fname);
 mal_export str setLogStream(Module cntxt, str host, int port);
 mal_export str setLogStreamStream(Module cntxt, stream *s);
