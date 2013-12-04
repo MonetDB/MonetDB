@@ -1449,7 +1449,7 @@ void profilerHeartbeatEvent(str msg)
 #endif
 #endif
 		if (tbuf)
-			logadd("\"%s.%06ld\",\t", tbuf + 11, (long) tv.tv_usec);
+			logadd("\"%.8s.%06ld\",\t", tbuf + 11, (long) tv.tv_usec);
 		else
 			logadd("%s,\t", "nil");
 	}
