@@ -55,3 +55,4 @@ singleton-median.Bug-3389
 case_when.Bug-3395
 syntaxerror.Bug-3399
 timestamp.Bug-3401
+not_null.Bug-3403

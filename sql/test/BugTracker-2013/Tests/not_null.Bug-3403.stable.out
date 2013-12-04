@@ -1,0 +1,39 @@
+stdout of test 'not_null.Bug-3403` in directory 'sql/test/BugTracker-2013` itself:
+
+
+# 11:21:51 >  
+# 11:21:51 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38824" "--set" "mapi_usock=/var/tmp/mtest-18545/.s.monetdb.38824" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/niels/scratch/rc-clean/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2013" "--set" "mal_listing=0"
+# 11:21:51 >  
+
+# MonetDB 5 server v11.15.20
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2013', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 3.775 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2013 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://niels.nesco.mine.nu:38824/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-18545/.s.monetdb.38824
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 11:21:51 >  
+# 11:21:51 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-18545" "--port=38824"
+# 11:21:51 >  
+
+#CREATE TABLE foo (i INT);
+#INSERT INTO foo (i) VALUES (NULL);
+[ 1	]
+#DELETE from foo where i IS NULL;
+[ 1	]
+#ALTER TABLE foo ALTER COLUMN i SET NOT NULL;
+#DROP TABLE foo;
+
+# 11:21:51 >  
+# 11:21:51 >  "Done."
+# 11:21:51 >  
+
