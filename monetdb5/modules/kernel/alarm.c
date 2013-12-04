@@ -181,19 +181,17 @@ str
 ALARMctime(str *res)
 {
 	time_t t = time(0);
-	char *base, *c;
+	char *base;
 
 #ifdef HAVE_CTIME_R3
 	char buf[26];
 
-	ctime_r(&t, buf, sizeof(buf));
-	base = buf;
+	base = ctime_r(&t, buf, sizeof(buf));
 #else
 #ifdef HAVE_CTIME_R
 	char buf[26];
 
-	ctime_r(&t, buf);
-	base = buf;
+	base = ctime_r(&t, buf);
 #else
 	base = ctime(&t);
 #endif
@@ -202,9 +200,7 @@ ALARMctime(str *res)
 		/* very unlikely to happen... */
 		throw(MAL, "alarm.ctime", "failed to format time");
 
-	c = strchr(base, '\n');
-	if (c)
-		*c = 0;
+	base[24] = 0;				/* squash final newline */
 	*res = GDKstrdup(base);
 	return MAL_SUCCEED;
 }

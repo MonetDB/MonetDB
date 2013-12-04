@@ -1336,12 +1336,10 @@ gnuplotheader(char *filename)
 	fprintf(gnudata, "set tics front\n");
 	tm = time(0);
 	date = ctime(&tm);
-	if (strchr(date, (int) '\n'))
-		*strchr(date, (int) '\n') = 0;
 	for (c = title; c && *c; c++)
 		if (*c == '_')
 			*c = '-';
-	fprintf(gnudata, "set title \"%s\t\t%s\"\n", (title ? title : "Tomogram"), date);
+	fprintf(gnudata, "set title \"%s\t\t%.24s\"\n", (title ? title : "Tomogram"), date);
 	fprintf(gnudata, "set multiplot\n");
 }
 
