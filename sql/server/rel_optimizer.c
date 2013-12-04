@@ -419,15 +419,6 @@ exp_keyvalue(sql_exp *e)
 	return cnt;
 }
 
-static sql_rel *
-find_rel(list *rels, sql_exp *e)
-{
-	node *n = list_find(rels, e, (fcmp)&rel_has_exp);
-	if (n) 
-		return n->data;
-	return NULL;
-}
-
 static int
 joinexp_cmp(list *rels, sql_exp *h, sql_exp *key)
 {
@@ -654,7 +645,7 @@ find_fk( mvc *sql, list *rels, list *exps)
 	list *sdje, *aje, *dje;
 
 	/* first find the distinct join expressions */
-	aje = list_select(exps, (void*)1, (fcmp) &exp_is_join, (fdup)NULL);
+	aje = list_select(exps, rels, (fcmp) &exp_is_join, (fdup)NULL);
 	dje = list_distinct2(aje, rels, (fcmp2) &joinexp_cmp, (fdup)NULL);
 	for(djn=dje->h; djn; djn = djn->next) {
 		/* equal join expressions */

@@ -748,27 +748,4 @@ rel_planner(mvc *sql, list *rels, list *sdje)
 	return top;
 }
 
-int
-rel_has_exp(sql_rel *rel, sql_exp *e) 
-{
-	if (rel_find_exp(rel, e) != NULL) 
-		return 0;
-	return -1;
-}
-
-sql_rel *
-find_one_rel(list *rels, sql_exp *e)
-{
-	node *n;
-	sql_rel *fnd = NULL;
-
-	for(n = rels->h; n; n = n->next) {
-		if (rel_has_exp(n->data, e) == 0) {
-			if (fnd)
-				return NULL;
-			fnd = n->data;
-		}
-	}
-	return fnd;
-}
 

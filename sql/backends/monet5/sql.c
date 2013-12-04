@@ -546,15 +546,9 @@ alter_table(mvc *sql, char *sname, sql_table *t)
 			mvc_null(sql, nc, c->null);
 			/* for non empty check for nulls */
 			if (c->null == 0) {
-				BAT *b = store_funcs.bind_col(sql->session->tr, nc, 0);
-
-				/* TODO also check updates and inserts */
-				if (BATcount(b) && b->T->nonil != TRUE) {
-					BUN bun = BUNfnd(BATmirror(b), ATOMnilptr(b->ttype));
-					if (bun != BUN_NONE)
-						return sql_message("40002!ALTER TABLE: NOT NULL constraint violated for column %s.%s", c->t->base.name, c->base.name);
-				}
-				BBPunfix(b->batCacheid);
+				void *nilptr = ATOMnilptr(c->type.type->localtype);
+				if (table_funcs.column_find_row(sql->session->tr, nc, nilptr, NULL) != oid_nil)
+					return sql_message("40002!ALTER TABLE: NOT NULL constraint violated for column %s.%s", c->t->base.name, c->base.name);
 			}
 		}
 		if (c->def != nc->def)
