@@ -418,23 +418,6 @@ exp_keyvalue(sql_exp *e)
 	return cnt;
 }
 
-static int
-rel_has_exp(sql_rel *rel, sql_exp *e) 
-{
-	if (rel_find_exp(rel, e) != NULL) 
-		return 0;
-	return -1;
-}
-
-static sql_rel *
-find_rel(list *rels, sql_exp *e)
-{
-	node *n = list_find(rels, e, (fcmp)&rel_has_exp);
-	if (n) 
-		return n->data;
-	return NULL;
-}
-
 static sql_rel *
 find_one_rel(list *rels, sql_exp *e)
 {
@@ -649,7 +632,7 @@ find_fk(sql_allocator *sa, list *rels, list *exps)
 	list *sdje, *aje, *dje;
 
 	/* first find the distinct join expressions */
-	aje = list_select(exps, (void*)1, (fcmp) &exp_is_join, (fdup)NULL);
+	aje = list_select(exps, rels, (fcmp) &exp_is_join, (fdup)NULL);
 	dje = list_distinct2(aje, rels, (fcmp2) &joinexp_cmp, (fdup)NULL);
 	for(djn=dje->h; djn; djn = djn->next) {
 		/* equal join expressions */

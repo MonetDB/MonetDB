@@ -796,7 +796,7 @@ exps_are_joins( list *l )
 int
 exp_is_join_exp(sql_exp *e)
 {
-	if (exp_is_join(e) == 0)
+	if (exp_is_join(e, NULL) == 0)
 		return 0;
 	if (e->type == e_cmp && e->flag == cmp_or && e->card >= CARD_AGGR)
 		if (exps_are_joins(e->l) == 0 && exps_are_joins(e->r) == 0)
@@ -883,8 +883,27 @@ distinct_rel(sql_exp *e, char **rname)
 	}
 	return 0;
 }
+
+int
+rel_has_exp(sql_rel *rel, sql_exp *e) 
+{
+	if (rel_find_exp(rel, e) != NULL) 
+		return 0;
+	return -1;
+}
+
+sql_rel *
+find_rel(list *rels, sql_exp *e)
+{
+	node *n = list_find(rels, e, (fcmp)&rel_has_exp);
+	if (n) 
+		return n->data;
+	return NULL;
+}
+
+
 static int 
-exp_is_rangejoin(sql_exp *e)
+exp_is_rangejoin(sql_exp *e, list *rels)
 {
 	/* assume e is a e_cmp with 3 args 
 	 * Need to check e->r and e->f only touch one table.
@@ -893,11 +912,17 @@ exp_is_rangejoin(sql_exp *e)
 
 	if (distinct_rel(e->r, &rname) && distinct_rel(e->f, &rname))
 		return 0;
+	if (rels) { 
+		sql_rel *r = find_rel(rels, e->r);
+		sql_rel *f = find_rel(rels, e->f);
+		if (r && f && r == f)
+			return 0;
+	}
 	return -1;
 }
 
 int
-exp_is_join(sql_exp *e)
+exp_is_join(sql_exp *e, list *rels)
 {
 	/* only simple compare expressions, ie not or lists
 		or range expressions (e->f)
@@ -908,7 +933,7 @@ exp_is_join(sql_exp *e)
 		return 0;
 	/* range expression */
 	if (e->type == e_cmp && !is_complex_exp(e->flag) && e->l && e->r && e->f && e->card >= CARD_AGGR && !complex_select(e)) 
-		return exp_is_rangejoin(e);
+		return exp_is_rangejoin(e, rels);
 	return -1;
 }
 
