@@ -403,7 +403,7 @@ DFLOWworker(void *T)
 		q_enqueue(flow->done, fe);
 		if ( fnxt == 0) {
 			if (todo->last == 0)
-				profilerHeartbeatEvent("wait");
+				profilerHeartbeatEvent("wait", 0);
 		}
 	}
 	GDKfree(GDKerrbuf);

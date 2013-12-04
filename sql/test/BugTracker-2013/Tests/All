@@ -61,3 +61,4 @@ case_when.Bug-3395
 udf_error.Bug-3396
 syntaxerror.Bug-3399
 timestamp.Bug-3401
+not_null.Bug-3403

@@ -486,6 +486,16 @@ rel_select_into( mvc *sql, symbol *sq, exp_kind ek)
 	return nl;
 }
 
+extern sql_rel *
+rel_select_with_into(mvc *sql, symbol *sq)
+{
+	exp_kind ek = {type_value, card_row, TRUE};
+	list *reslist = rel_select_into(sql, sq, ek);
+	if (!reslist)
+		return NULL;
+	return rel_psm_block(sql->sa, reslist);
+}
+
 static int has_return( list *l );
 
 static int

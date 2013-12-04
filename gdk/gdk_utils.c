@@ -197,6 +197,10 @@ GDKlog(const char *format, ...)
 	char *p = 0, buf[1024];
 	int mustopen = GDKgetHome();
 	time_t tm = time(0);
+#if defined(HAVE_CTIME_R3) || defined(HAVE_CTIME_R)
+	char tbuf[26];
+#endif
+	char *ctm;
 
 	if (MT_pagesize() == 0)
 		return;
@@ -215,7 +219,16 @@ GDKlog(const char *format, ...)
 #ifndef HAVE_GETUID
 #define getuid() 0
 #endif
-	fprintf(GDKlockFile, "USR=%d PID=%d TIME=%.24s @ %s\n", (int) getuid(), (int) getpid(), ctime(&tm), buf);
+#ifdef HAVE_CTIME_R3
+	ctm = ctime_r(&tm, tbuf, sizeof(tbuf));
+#else
+#ifdef HAVE_CTIME_R
+	ctm = ctime_r(&tm, tbuf);
+#else
+	ctm = ctime(&tm);
+#endif
+#endif
+	fprintf(GDKlockFile, "USR=%d PID=%d TIME=%.24s @ %s\n", (int) getuid(), (int) getpid(), ctm, buf);
 	fflush(GDKlockFile);
 
 	if (mustopen)
