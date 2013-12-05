@@ -2865,7 +2865,7 @@ str prodRef;
 int profilerAvailable(void);
 void profilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc, int start);
 void profilerGetCPUStat(lng *user, lng *nice, lng *sys, lng *idle, lng *iowait);
-void profilerHeartbeatEvent(str msg);
+void profilerHeartbeatEvent(str msg, lng ticks);
 str profilerRef;
 str projectRef;
 str projectdeltaRef;
