@@ -108,7 +108,7 @@
 /* Define if you have ctime_r(time_t*,char *buf,size_t s) */
 #define HAVE_CTIME_R3 1
 /* there is something very similar to ctime_r on Windows: */
-#define ctime_r(t,b,s)	ctime_s(b,s,t)
+#define ctime_r(t,b,s)	(ctime_s(b,s,t) ? NULL : (b))
 
 /* Define if you have the cURL library */
 /* #undef HAVE_CURL */
