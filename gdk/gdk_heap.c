@@ -130,7 +130,7 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 		}
 	}
 
-	if (h->filename == NULL || (h->size < minsize)) {
+	if (h->filename == NULL || h->size < minsize) {
 		h->storage = STORE_MEM;
 		h->base = (char *) GDKmallocmax(h->size, &h->size, 0);
 		HEAPDEBUG fprintf(stderr, "#HEAPalloc " SZFMT " " PTRFMT "\n", h->size, PTRFMTCAST h->base);
@@ -140,7 +140,7 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 
 		h->filename = NULL;
 
-		if (stat(nme, &st) != 0) {
+		if (stat(nme, &st) < 0) {
 			h->storage = STORE_MMAP;
 			h->base = HEAPcreatefile(&h->size, of, h->storage);
 			h->filename = of;
@@ -191,7 +191,7 @@ int
 HEAPextend(Heap *h, size_t size)
 {
 	char nme[PATHLENGTH], *ext = NULL;
-	char *failure = "None";
+	const char *failure = "None";
 
 	if (h->filename) {
 		strncpy(nme, h->filename, sizeof(nme));
@@ -199,9 +199,9 @@ HEAPextend(Heap *h, size_t size)
 		ext = decompose_filename(nme);
 	}
 	if (size <= h->size)
-		return 0;
-	else
-		failure = "size > h->size";
+		return 0;	/* nothing to do */
+
+	failure = "size > h->size";
 
  	if (h->storage != STORE_MEM) {
 		char *p;
@@ -219,10 +219,9 @@ HEAPextend(Heap *h, size_t size)
 		if (p) {
 			h->size = size;
 			h->base = p;
- 			return 0;
- 		} else {
- 			failure = "MT_mremap() failed";
+ 			return 0; /* success */
  		}
+		failure = "MT_mremap() failed";
 	} else {
 		/* extend a malloced heap, possibly switching over to
 		 * file-mapped storage */
@@ -245,9 +244,8 @@ HEAPextend(Heap *h, size_t size)
 			h->base = GDKreallocmax(h->base, size, &h->size, 0);
 			HEAPDEBUG fprintf(stderr, "#HEAPextend: extending malloced heap " SZFMT " " SZFMT " " PTRFMT " " PTRFMT "\n", size, h->size, PTRFMTCAST p, PTRFMTCAST h->base);
 			if (h->base)
-				return 0;
-			else
-				failure = "h->storage == STORE_MEM && !must_map && !h->base";
+				return 0; /* success */
+			failure = "h->storage == STORE_MEM && !must_map && !h->base";
 		}
 		/* too big: convert it to a disk-based temporary heap */
 		if (can_mmap) {
@@ -281,9 +279,8 @@ HEAPextend(Heap *h, size_t size)
 					memcpy(h->base, bak.base, bak.free);
 					HEAPfree(&bak);
 					return 0;
-				} else {
-					failure = "h->storage == STORE_MEM && can_map && !h->base";
 				}
+				failure = "h->storage == STORE_MEM && can_map && !h->base";
 			}
 			fd = GDKfdlocate(nme, "wb", ext);
 			if (fd >= 0) {
@@ -305,9 +302,8 @@ HEAPextend(Heap *h, size_t size)
 					memcpy(h->base, bak.base, bak.free);
 					HEAPfree(&bak);
 					return 0;
-				} else {
-					failure = "h->storage == STORE_MEM && can_map && fd >= 0 && HEAPload() < 0";
 				}
+				failure = "h->storage == STORE_MEM && can_map && fd >= 0 && HEAPload() < 0";
 				/* couldn't allocate, now first save
 				 * data to file */
 				if (HEAPsave_intern(&bak, nme, ext, ".tmp") < 0) {
@@ -322,9 +318,8 @@ HEAPextend(Heap *h, size_t size)
 					/* success! */
 					GDKclrerr();	/* don't leak errors from e.g. HEAPload */
 					return 0;
-				} else {
-					failure = "h->storage == STORE_MEM && can_map && fd >= 0 && HEAPload_intern() < 0";
 				}
+				failure = "h->storage == STORE_MEM && can_map && fd >= 0 && HEAPload_intern() < 0";
 				/* we failed */
 			} else {
 				failure = "h->storage == STORE_MEM && can_map && fd < 0";
