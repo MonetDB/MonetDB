@@ -1576,8 +1576,8 @@ update(int state, int thread, lng clkticks, lng ticks, lng memory, lng footprint
 
 	/* monitor top level function brackets */
 	if (state == START && fcn && strncmp(fcn, "function", 8) == 0) {
-		capturing++;
-		starttime = clkticks;
+		if (capturing++ == 0)
+			starttime = clkticks;
 		if (currentfunction == 0)
 			currentfunction = strdup(fcn+9);
 		if (debug)
