@@ -215,18 +215,15 @@ deactivateBeat(void)
 	char *id = "deactivateBeat";
 	if (activated == 0)
 		return;
-	if ( atlas > atlaspage)
-		return;
-	activated = 0;
-	if (debug)
-		fprintf(stderr, "Deactivate beat\n");
 	/* deactivate all connections */
 	for (wthr = thds; wthr != NULL; wthr = wthr->next)
 		if (wthr->dbh) {
 			doQ("profiler.deactivate(\"ping\");\n");
 			doQ("profiler.stop();");
 		}
-
+	if ( atlas > atlaspage)
+		return;
+	activated = 0;
 	return;
 stop_disconnect:
 	;
@@ -1394,6 +1391,8 @@ static void createTomogram(void)
 	char *scalename = "\0\0\0\0";
 	int digits;
 
+	if( debug)
+		fprintf(stderr,"create tomogram\n");
 	snprintf(buf, BUFSIZ, "%s.gpl", filename);
 	gnudata = fopen(buf, "w");
 	if (gnudata == 0) {
