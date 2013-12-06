@@ -215,6 +215,8 @@ deactivateBeat(void)
 	char *id = "deactivateBeat";
 	if (activated == 0)
 		return;
+	if ( atlas > atlaspage)
+		return;
 	activated = 0;
 	if (debug)
 		fprintf(stderr, "Deactivate beat\n");
@@ -1511,9 +1513,8 @@ static void createTomogram(void)
 					object++, box[i].clkstart, box[i].row * 2 * h+h-h/3, box[i].clkstart + w /50.0, box[i].row *2 *h + 1.3 * h);
 				break;
 			case GCOLLECT:
-				fprintf(gnudata, "set object %d rectangle from "LLFMT".0, %d to "LLFMT".0,%f front fillcolor rgb \"green\" fillstyle solid 1.0\n",
-					//object++, box[i].clkstart, box[i].row * 2 * h+h-h/3, box[i].clkend, box[i].row *2 *h + 1.15 * h);
-					object++, box[i].clkstart, box[i].row * 2 * h, box[i].clkend, box[i].row * 2 * h + h);
+				fprintf(gnudata, "set object %d rectangle from "LLFMT".0, %d to "LLFMT".0, %d fillcolor rgb \"green\" fillstyle solid 1.0\n",
+					object++, box[i].clkstart, box[i].row * 2 * h +h/3, box[i].clkend, box[i].row * 2 * h + h-h/3);
 				break;
 			}
 
