@@ -3165,7 +3165,6 @@ do_backup(const char *srcdir, const char *nme, const char *extbase,
 	  * and a backup already exists in the main backup directory
 	  * (see GDKupgradevarheap), move the file */
 	if (subcommit && file_exists(BAKDIR, nme, extbase)) {
-		assert(h->storage == STORE_MMAP);
 		if (file_move(BAKDIR, SUBDIR, nme, extbase))
 			return -1;
 	} else if (h->storage != STORE_MMAP) {
