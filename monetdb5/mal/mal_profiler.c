@@ -216,16 +216,17 @@ deactivateCounter(str name)
 	} while (0)
 
 static void logsend(char *logbuffer)
-{
+{ int error=0;
 	if (eventstream) {
 		MT_lock_set(&mal_profileLock, "logsend");
 		eventcounter++;
 		if (profileCounter[PROFevent].status && eventcounter)
-			mnstr_printf(eventstream,"[ %d,\t%s", eventcounter, logbuffer);
+			error= mnstr_printf(eventstream,"[ %d,\t%s", eventcounter, logbuffer);
 		else
-			mnstr_printf(eventstream,"[ %s", logbuffer);
-		mnstr_flush(eventstream);
+			error= mnstr_printf(eventstream,"[ %s", logbuffer);
+		error= mnstr_flush(eventstream);
 		MT_lock_unset(&mal_profileLock, "logsend");
+		if ( error) stopProfiling();
 	}
 }
 
