@@ -215,14 +215,14 @@ deactivateBeat(void)
 	char *id = "deactivateBeat";
 	if (activated == 0)
 		return;
+	if ( atlas && atlas > atlaspage + 1)
+		return;
 	/* deactivate all connections */
 	for (wthr = thds; wthr != NULL; wthr = wthr->next)
 		if (wthr->dbh) {
 			doQ("profiler.deactivate(\"ping\");\n");
 			doQ("profiler.stop();");
 		}
-	if ( atlas > atlaspage)
-		return;
 	activated = 0;
 	return;
 stop_disconnect:
@@ -827,9 +827,9 @@ dumpboxes(void)
 		snprintf(buf, BUFSIZ, "scratch_cpu.dat");
 		fcpu = fopen(buf, "w");
 	} else {
-		snprintf(buf, BUFSIZ, "%s.dat", (filename ? filename : "tomograph"));
+		snprintf(buf, BUFSIZ, "%s.dat", filename);
 		f = fopen(buf, "w");
-		snprintf(buf, BUFSIZ, "%s_cpu.dat", (filename ? filename : "tomograph"));
+		snprintf(buf, BUFSIZ, "%s_cpu.dat", filename);
 		fcpu = fopen(buf, "w");
 	}
 
@@ -1453,7 +1453,7 @@ static void createTomogram(void)
 		scale = 1;
 		scalename = "us\0microseconds";
 	}
-	for (tw = scale / 10; 15 * tw < w; tw *= 10)
+	for (tw = (scale / 10 > 0)? scale/10:1; 15 * tw < w; tw *= 10)
 		;
 	if (3 * tw > w)
 		tw /= 4;
@@ -2282,6 +2282,11 @@ main(int argc, char **argv)
 			usage();
 			exit(-1);
 		}
+	}
+	if( atlas)
+	{ char buf[128];
+		snprintf(buf,128,"%s_00",basefilename);
+		filename = buf;
 	}
 	if ( othermap){
 		FILE *map ;
