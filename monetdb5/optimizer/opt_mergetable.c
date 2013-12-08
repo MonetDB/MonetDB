@@ -217,7 +217,7 @@ mat_set_prop( MalBlkPtr mb, InstrPtr p)
 static InstrPtr
 mat_delta(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int n, int o, int e, int mvar, int nvar, int ovar, int evar)
 {
-	int tpe, k, is_subdelta = (getFunctionId(p) == subdeltaRef);
+	int tpe, k, j, is_subdelta = (getFunctionId(p) == subdeltaRef);
 	InstrPtr r = NULL;
 
 	//printf("# %s.%s(%d,%d,%d,%d)", getModuleId(p), getFunctionId(p), m, n, o, e);
@@ -228,27 +228,60 @@ mat_delta(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int n, int o, int e, int 
 	getArg(r, 0) = getArg(p,0);
 	tpe = getArgType(mb,p,0);
 
-	for(k=1; k < mat[m].mi->argc; k++) {
-		InstrPtr q = copyInstruction(p);
+	/* Handle like mat_leftfetchjoin, ie overlapping partitions */
+	if (evar == 1 && mat[e].mi->argc != mat[m].mi->argc) {
+		int nr = 1;
+		for(k=1; k < mat[e].mi->argc; k++) {
+			for(j=1; j < mat[m].mi->argc; j++) {
+				if (overlap(mb, getArg(mat[e].mi, k), getArg(mat[m].mi, j), k, j, 0)){
+					InstrPtr q = copyInstruction(p);
 
-		/* remove last argument */
-		if (k < mat[m].mi->argc-1)
-			q->argc--;
-		/* make sure to resolve again */
-		q->token = ASSIGNsymbol; 
-		q->typechk = TYPE_UNKNOWN;
-        	q->fcn = NULL;
-        	q->blk = NULL;
+					/* remove last argument */
+					if (k < mat[m].mi->argc-1)
+						q->argc--;
+					/* make sure to resolve again */
+					q->token = ASSIGNsymbol; 
+					q->typechk = TYPE_UNKNOWN;
+        				q->fcn = NULL;
+        				q->blk = NULL;
 
-		getArg(q, 0) = newTmpVariable(mb, tpe);
-		getArg(q, mvar) = getArg(mat[m].mi, k);
-		getArg(q, nvar) = getArg(mat[n].mi, k);
-		getArg(q, ovar) = getArg(mat[o].mi, k);
-		if (e >= 0)
-			getArg(q, evar) = getArg(mat[e].mi, k);
-		pushInstruction(mb, q);
-		setPartnr(mb, is_subdelta?getArg(mat[m].mi, k):-1, getArg(q,0), k);
-		r = pushArgument(mb, r, getArg(q, 0));
+					getArg(q, 0) = newTmpVariable(mb, tpe);
+					getArg(q, mvar) = getArg(mat[m].mi, j);
+					getArg(q, nvar) = getArg(mat[n].mi, j);
+					getArg(q, ovar) = getArg(mat[o].mi, j);
+					getArg(q, evar) = getArg(mat[e].mi, k);
+					pushInstruction(mb, q);
+					setPartnr(mb, getArg(mat[m].mi, j), getArg(q,0), nr);
+					r = pushArgument(mb, r, getArg(q, 0));
+
+					nr++;
+					break;
+				}
+			}
+		}
+	} else {
+		for(k=1; k < mat[m].mi->argc; k++) {
+			InstrPtr q = copyInstruction(p);
+
+			/* remove last argument */
+			if (k < mat[m].mi->argc-1)
+				q->argc--;
+			/* make sure to resolve again */
+			q->token = ASSIGNsymbol; 
+			q->typechk = TYPE_UNKNOWN;
+        		q->fcn = NULL;
+        		q->blk = NULL;
+
+			getArg(q, 0) = newTmpVariable(mb, tpe);
+			getArg(q, mvar) = getArg(mat[m].mi, k);
+			getArg(q, nvar) = getArg(mat[n].mi, k);
+			getArg(q, ovar) = getArg(mat[o].mi, k);
+			if (e >= 0)
+				getArg(q, evar) = getArg(mat[e].mi, k);
+			pushInstruction(mb, q);
+			setPartnr(mb, is_subdelta?getArg(mat[m].mi, k):-1, getArg(q,0), k);
+			r = pushArgument(mb, r, getArg(q, 0));
+		}
 	}
 	return r;
 }
