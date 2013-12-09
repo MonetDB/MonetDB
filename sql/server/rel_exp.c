@@ -1073,6 +1073,8 @@ exp_is_atom( sql_exp *e )
 {
 	switch (e->type) {
 	case e_atom:
+		if (e->f) /* values list */
+			return 0;
 		return 1;
 	case e_convert:
 		return exp_is_atom(e->l);
@@ -1094,6 +1096,17 @@ exp_is_atom( sql_exp *e )
 		return 0;
 	}
 	return 0;
+}
+
+int
+exps_are_atoms( list *exps)
+{
+	node *n;
+	int atoms = 1;
+
+	for(n=exps->h; n && atoms; n=n->next) 
+		atoms &= exp_is_atom(n->data);
+	return atoms;
 }
 
 static int
