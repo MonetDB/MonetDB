@@ -871,23 +871,23 @@ GDKmmap(const char *path, int mode, size_t len)
 {
 	void *ret = MT_mmap(path, mode, len);
 
-	if (ret == (void *) -1L) {
+	if (ret == NULL) {
 		GDKmemfail("GDKmmap", len);
 		ret = MT_mmap(path, mode, len);
-		if (ret != (void *) -1L) {
+		if (ret != NULL) {
 			THRprintf(GDKstdout, "#GDKmmap: recovery ok. Continuing..\n");
 		}
 	}
 #ifndef GDKMALLOC_DEBUG
 	ALLOCDEBUG fprintf(stderr, "#GDKmmap " SZFMT " " PTRFMT "\n", len, PTRFMTCAST ret);
 #endif
-	if (ret != (void *) -1L) {
+	if (ret != NULL) {
 		/* since mmap directly have content we say it's zero-ed
 		 * memory */
 		VALGRIND_MALLOCLIKE_BLOCK(ret, len, 0, 1);
 		meminc(len, "GDKmmap");
 	}
-	return (void *) ret;
+	return ret;
 }
 
 #undef GDKmunmap

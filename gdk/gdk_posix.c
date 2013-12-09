@@ -359,7 +359,7 @@ void *
 MT_mmap(const char *path, int mode, size_t len)
 {
 	int fd = open(path, O_CREAT | ((mode & MMAP_WRITE) ? O_RDWR : O_RDONLY), MONETDB_MODE);
-	void *ret = (void *) -1L;
+	void *ret = MAP_FAILED;
 
 	if (fd >= 0) {
 		ret = mmap(NULL,
@@ -370,7 +370,7 @@ MT_mmap(const char *path, int mode, size_t len)
 			   0);
 		close(fd);
 	}
-	return ret;
+	return ret == MAP_FAILED ? NULL : ret;
 }
 
 int
@@ -721,7 +721,7 @@ MT_mmap(const char *path, int mode, size_t len)
 		if (h1 == INVALID_HANDLE_VALUE) {
 			GDKsyserror("MT_mmap: CreateFile('%s', %lu, %lu, &sa, %lu, %lu, NULL) failed\n",
 				    path, mode0, mode1, (DWORD) OPEN_ALWAYS, mode2);
-			return (void *) -1;
+			return NULL;
 		}
 	}
 
@@ -732,14 +732,14 @@ MT_mmap(const char *path, int mode, size_t len)
 			    (DWORD) (((__int64) len >> 32) & LL_CONSTANT(0xFFFFFFFF)),
 			    (DWORD) (len & LL_CONSTANT(0xFFFFFFFF)));
 		CloseHandle(h1);
-		return (void *) -1;
+		return NULL;
 	}
 	CloseHandle(h1);
 
 	ret = MapViewOfFileEx(h2, mode4, (DWORD) 0, (DWORD) 0, len, NULL);
 	CloseHandle(h2);
 
-	return ret ? ret : (void *) -1;
+	return ret;
 }
 
 int
@@ -772,7 +772,7 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 	if (path && !(mode & MMAP_COPY))
 		MT_munmap(old_address, old_size);
 	p = MT_mmap(path, mode, *new_size);
-	if ((path == NULL || (mode & MMAP_COPY)) && p != (void *) -1) {
+	if (p != NULL && (path == NULL || (mode & MMAP_COPY))) {
 		memcpy(p, old_address, old_size);
 		MT_munmap(old_address, old_size);
 	}

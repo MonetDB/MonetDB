@@ -763,7 +763,7 @@ IOimport(int *ret, int *bid, str *fnme)
 		}
 #endif
 		base = cur = (char *) MT_mmap(*fnme, MMAP_SEQUENTIAL, (size_t) st.st_size);
-		if (cur == (char *) -1) {
+		if (cur == NULL) {
 			BBPunfix(b->batCacheid);
 			throw(MAL, "io.mport", OPERATION_FAILED "MT_mmap()");
 		}
