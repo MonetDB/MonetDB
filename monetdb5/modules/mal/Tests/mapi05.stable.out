@@ -11,7 +11,6 @@ stdout of test 'mapi05` in directory 'monetdb5/modules/mal` itself:
 # Copyright (c) 1993-July 2008 CWI.
 # Copyright (c) August 2008- MonetDB B.V., all rights reserved
 # Visit http://monetdb.cwi.nl/ for further information
-#WARNING: LoaderException:loadLibrary:mal_octopus: file not found
 # Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:32356/
 function user.main():void;
 # Checking correctness of mapi library 

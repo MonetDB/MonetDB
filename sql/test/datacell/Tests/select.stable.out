@@ -12,7 +12,6 @@ stdout of test 'select` in directory 'sql/test/datacell` itself:
 # Copyright (c) 1993-July 2008 CWI.
 # Copyright (c) August 2008-2013 MonetDB B.V., all rights reserved
 # Visit http://monetdb.cwi.nl/ for further information
-#WARNING: MALException:malInclude:could not open file: geom
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:31795/
 # MonetDB/SQL module v2.39.0 loaded
 # MonetDB/SQL module v2.39.0 loaded
