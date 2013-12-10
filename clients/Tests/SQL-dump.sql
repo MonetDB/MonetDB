@@ -42,6 +42,7 @@
 \dSv sys.querylog_catalog
 \dSv sys.querylog_history
 \dSv sys.queue
+\dSv sys.sessions
 \dSv sys.storage
 \dSv sys.storagemodel
 \dSv sys.tables
@@ -49,6 +50,7 @@
 \dSv sys.tracelog
 \dSv sys.users
 
+-- select distinct name from sys.functions where sql = true order by name;
 \dSf sys.Intersect
 \dSf sys.Union
 \dSf sys.abbrev
@@ -165,6 +167,7 @@
 \dSf sys.pointfromtext
 \dSf sys.polyfromtext
 \dSf sys.polygonfromtext
+\dSf sys.quantile
 \dSf sys.querycache
 \dSf sys.querylog
 \dSf sys.querylog_calls
@@ -178,9 +181,12 @@
 \dSf sys.resume
 \dSf sys.reuse
 \dSf sys.reverse
+\dSf sys.sessions
 \dSf sys.setmasklen
+\dSf sys.setsession
 \dSf sys.settimeout
 \dSf sys.shrink
+\dSf sys.shutdown
 \dSf sys.srid
 \dSf sys.stddev_pop
 \dSf sys.stddev_samp

@@ -654,47 +654,17 @@ sql_update_feb2013_sp3(Client c)
 static str
 sql_update_jan2014(Client c)
 {
-	size_t bufsize = 12800, pos = 0;
+	size_t bufsize = 15000, pos = 0;
 	char *buf = GDKmalloc(bufsize), *err = NULL;
 	char *fullname;
-	FILE *fp1 = NULL, *fp2 = NULL, *fp3 = NULL;
+	FILE *fp = NULL;
 	ValRecord *schvar = stack_get_var(((backend *) c->sqlcontext)->mvc, "current_schema");
 	char *schema = NULL;
 
 	if (schvar)
 		schema = strdup(schvar->val.sval);
 
-	snprintf(buf, bufsize, "createdb%c15_querylog", DIR_SEP);
-	if ((fullname = MSP_locate_sqlscript(buf, 1)) != NULL) {
-		fp1 = fopen(fullname, "r");
-		GDKfree(fullname);
-	}
-	snprintf(buf, bufsize, "createdb%c26_sysmon", DIR_SEP);
-	if ((fullname = MSP_locate_sqlscript(buf, 1)) != NULL) {
-		fp2 = fopen(fullname, "r");
-		GDKfree(fullname);
-	}
-	snprintf(buf, bufsize, "createdb%c40_json", DIR_SEP);
-	if ((fullname = MSP_locate_sqlscript(buf, 1)) != NULL) {
-		fp3 = fopen(fullname, "r");
-		GDKfree(fullname);
-	}
-
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
-
-	/* new entry in 16_tracelog.sql */
-	pos += snprintf(buf + pos, bufsize - pos, "create view sys.tracelog as select * from sys.tracelog();\n");
-
-	/* deleted entry from 22_clients.sql */
-	pos += snprintf(buf + pos, bufsize - pos, "drop function sys.clients;\n");
-
-	/* added entry in 25_debug.sql */
-	pos += snprintf(buf + pos, bufsize - pos, "create view sys.optimizers as select * from sys.optimizers();\n");
-	pos += snprintf(buf + pos, bufsize - pos, "create view sys.environment as select * from sys.environment();\n");
-
-	/* added entry in 75_storagemodel.sql */
-	pos += snprintf(buf + pos, bufsize - pos, "create view sys.storage as select * from sys.storage();\n");
-	pos += snprintf(buf + pos, bufsize - pos, "create view sys.storagemodel as select * from sys.storagemodel();\n");
 
 	/* replaced 15_history.sql by 15_querylog.sql */
 	pos += snprintf(buf + pos, bufsize - pos, "drop procedure sys.resetHistory;\n");
@@ -721,36 +691,50 @@ sql_update_jan2014(Client c)
 			}
 		}
 	}
-	pos += snprintf(buf + pos, bufsize - pos, "update sys._tables set system = false where name in ('querylog','callhistory','queryhistory') and schema_id = (select id from sys.schemas where name = 'sys');\n");
+	pos += snprintf(buf + pos, bufsize - pos, "update sys._tables set system = false where name in ('callhistory','queryhistory','querylog') and schema_id = (select id from sys.schemas where name = 'sys');\n");
 	pos += snprintf(buf + pos, bufsize - pos, "drop view sys.queryLog;\n");
 	pos += snprintf(buf + pos, bufsize - pos, "drop table sys.callHistory;\n");
 	pos += snprintf(buf + pos, bufsize - pos, "drop table sys.queryHistory;\n");
-	if (fp1) {
-		pos += fread(buf + pos, 1, bufsize - pos, fp1);
-		fclose(fp1);
+	snprintf(buf + pos, bufsize - pos, "createdb%c15_querylog", DIR_SEP);
+	if ((fullname = MSP_locate_sqlscript(buf + pos, 1)) != NULL) {
+		fp = fopen(fullname, "r");
+		GDKfree(fullname);
 	}
+	if (fp) {
+		pos += fread(buf + pos, 1, bufsize - pos, fp);
+		fclose(fp);
+	}
+
+	/* new entry in 16_tracelog.sql */
+	pos += snprintf(buf + pos, bufsize - pos, "create view sys.tracelog as select * from sys.tracelog();\n");
+
+	/* deleted entry from and new entries in 22_clients.sql */
+	pos += snprintf(buf + pos, bufsize - pos, "drop function sys.clients;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "create function sys.sessions() returns table(\"user\" string, \"login\" timestamp, \"sessiontimeout\" bigint, \"lastcommand\" timestamp, \"querytimeout\" bigint, \"active\" bool) external name sql.sessions;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "create view sys.sessions as select * from sys.sessions();\n");
+	pos += snprintf(buf + pos, bufsize - pos, "create procedure sys.shutdown(delay tinyint) external name sql.shutdown;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "create procedure sys.shutdown(delay tinyint, force bool) external name sql.shutdown;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "create procedure sys.settimeout(\"query\" bigint) external name sql.settimeout;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "create procedure sys.settimeout(\"query\" bigint, \"session\" bigint) external name sql.settimeout;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "create procedure sys.setsession(\"timeout\" bigint) external name sql.setsession;\n");
+
+	/* added entry in 25_debug.sql */
+	pos += snprintf(buf + pos, bufsize - pos, "create view sys.optimizers as select * from sys.optimizers();\n");
+	pos += snprintf(buf + pos, bufsize - pos, "create view sys.environment as select * from sys.environment();\n");
 
 	/* new file 26_sysmon.sql */
-	if (fp2) {
-		pos += fread(buf + pos, 1, bufsize - pos, fp2);
-		fclose(fp2);
+	snprintf(buf + pos, bufsize - pos, "createdb%c26_sysmon", DIR_SEP);
+	if ((fullname = MSP_locate_sqlscript(buf + pos, 1)) != NULL) {
+		fp = fopen(fullname, "r");
+		GDKfree(fullname);
+	}
+	if (fp) {
+		pos += fread(buf + pos, 1, bufsize - pos, fp);
+		fclose(fp);
 	}
 
-	/* new file 40_json.sql */
-	if (fp3) {
-		pos += fread(buf + pos, 1, bufsize - pos, fp3);
-		fclose(fp3);
-	}
-
-	pos += snprintf(buf + pos, bufsize - pos,
-			"insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('querylog_catalog', 'querylog_calls', 'queue', 'json_filter', 'json_filter_all', 'json_path', 'json_text', 'json_isvalid', 'json_isvalidobject', 'json_isvalidarray', 'json_length') and f.type = %d and f.schema_id = s.id and s.name = 'sys');\n",
-			F_FUNC);
-	pos += snprintf(buf + pos, bufsize - pos,
-			"insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('querylog_empty', 'querylog_enable', 'querylog_disable', 'pause', 'resume', 'sysmon_resume', 'stop') and f.type = %d and f.schema_id = s.id and s.name = 'sys');\n",
-			F_PROC);
-	pos += snprintf(buf + pos, bufsize - pos, "update sys._tables set system = true where name in ('tracelog', 'optimizers', 'environment', 'storage', 'storagemodel') and schema_id = (select id from sys.schemas where name = 'sys');\n");
-
-	/* new entries in 39_analytics.sql for quantiles and one previously missing median */
+	/* new entries in 39_analytics.sql for quantiles and one
+	 * previously missing median */
 	pos += snprintf(buf + pos, bufsize - pos, "create aggregate quantile(val TINYINT, q DOUBLE) returns TINYINT external name \"aggr\".\"quantile\";\n");
 	pos += snprintf(buf + pos, bufsize - pos, "create aggregate quantile(val SMALLINT, q DOUBLE) returns SMALLINT external name \"aggr\".\"quantile\";\n");
 	pos += snprintf(buf + pos, bufsize - pos, "create aggregate quantile(val INTEGER, q DOUBLE) returns INTEGER external name \"aggr\".\"quantile\";\n");
@@ -762,9 +746,51 @@ sql_update_jan2014(Client c)
 	pos += snprintf(buf + pos, bufsize - pos, "create aggregate quantile(val DATE, q DOUBLE) returns DATE external name \"aggr\".\"quantile\";\n");
 	pos += snprintf(buf + pos, bufsize - pos, "create aggregate quantile(val TIME, q DOUBLE) returns TIME external name \"aggr\".\"quantile\";\n");
 	pos += snprintf(buf + pos, bufsize - pos, "create aggregate quantile(val TIMESTAMP, q DOUBLE) returns TIMESTAMP external name \"aggr\".\"quantile\";\n");
-
 	pos += snprintf(buf + pos, bufsize - pos, "create aggregate median(val DECIMAL) returns DECIMAL external name \"aggr\".\"median\";\n");
+
+	/* new file 40_json.sql */
+	snprintf(buf + pos, bufsize - pos, "createdb%c40_json", DIR_SEP);
+	if ((fullname = MSP_locate_sqlscript(buf + pos, 1)) != NULL) {
+		fp = fopen(fullname, "r");
+		GDKfree(fullname);
+	}
+	if (fp) {
+		pos += fread(buf + pos, 1, bufsize - pos, fp);
+		fclose(fp);
+	}
+
+	/* new file 41_jsonstore.sql */
+	pos += snprintf(buf + pos, bufsize - pos, "create function sys.md5(v string) returns string external name clients.md5sum;\n");
+
+	/* new file 45_uuid.sql */
+	pos += snprintf(buf + pos, bufsize - pos, "create type uuid external name uuid;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "create function sys.uuid() returns uuid external name uuid.\"new\";\n");
+	pos += snprintf(buf + pos, bufsize - pos, "create function sys.isaUUID(u uuid) returns uuid external name uuid.\"isaUUID\";\n");
+
+	/* added entry in 75_storagemodel.sql */
+	pos += snprintf(buf + pos, bufsize - pos, "create view sys.storage as select * from sys.storage();\n");
+	pos += snprintf(buf + pos, bufsize - pos, "create view sys.storagemodel as select * from sys.storagemodel();\n");
+
+	/* new file 80_statistics.sql */
+	snprintf(buf + pos, bufsize - pos, "createdb%c80_statistics", DIR_SEP);
+	if ((fullname = MSP_locate_sqlscript(buf + pos, 1)) != NULL) {
+		fp = fopen(fullname, "r");
+		GDKfree(fullname);
+	}
+	if (fp) {
+		pos += fread(buf + pos, 1, bufsize - pos, fp);
+		fclose(fp);
+	}
+
+	pos += snprintf(buf + pos, bufsize - pos,
+			"insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('isauuid', 'json_filter', 'json_filter_all', 'json_isvalid', 'json_isvalidarray', 'json_isvalidobject', 'json_length', 'json_path', 'json_text', 'md5', 'querylog_calls', 'querylog_catalog', 'queue', 'sessions', 'uuid') and f.type = %d and f.schema_id = s.id and s.name = 'sys');\n",
+			F_FUNC);
+	pos += snprintf(buf + pos, bufsize - pos,
+			"insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('analyze', 'pause', 'querylog_disable', 'querylog_empty', 'querylog_enable', 'resume', 'setsession', 'settimeout', 'shutdown', 'stop', 'sysmon_resume') and f.type = %d and f.schema_id = s.id and s.name = 'sys');\n",
+			F_PROC);
 	pos += snprintf(buf + pos, bufsize - pos, "insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('quantile', 'median') and f.type = %d and f.schema_id = s.id and s.name = 'sys');\n", F_AGGR);
+
+	pos += snprintf(buf + pos, bufsize - pos, "update sys._tables set system = true where name in ('environment', 'optimizers', 'queue', 'sessions', 'statistics', 'storage', 'storagemodel', 'tracelog') and schema_id = (select id from sys.schemas where name = 'sys');\n");
 
 	if (schema) {
 		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
