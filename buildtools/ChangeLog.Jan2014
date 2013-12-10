@@ -1,6 +1,10 @@
 # ChangeLog file for buildtools
 # This file is updated with Maddlog
 
+* Tue Dec 10 2013 Sjoerd Mullender <sjoerd@acm.org>
+- Created packages for RPM based systems and Debian/Ubunty containing
+  the MonetDB interface to the GNU Scientific Library (gsl).
+
 * Thu Jun 20 2013 Sjoerd Mullender <sjoerd@acm.org>
 - We no longer install the .la files in our Fedora/Debian/Ubuntu packages.
 

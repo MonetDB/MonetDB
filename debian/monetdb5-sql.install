@@ -6,7 +6,7 @@ debian/tmp/usr/lib/monetdb5/sql*.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/lib_sql.so usr/lib/monetdb5
 debian/tmp/var/monetdb5/dbfarm/.merovingian_properties var/monetdb5/dbfarm
 
-# usr/lib/monetdb5/createdb/*.sql EXCEPT: *_geom.sql
+# usr/lib/monetdb5/createdb/*.sql EXCEPT: *_geom.sql, *_gsl.sql
 debian/tmp/usr/lib/monetdb5/createdb/09_like.sql usr/lib/monetdb5/createdb
 debian/tmp/usr/lib/monetdb5/createdb/10_math.sql usr/lib/monetdb5/createdb
 debian/tmp/usr/lib/monetdb5/createdb/11_times.sql usr/lib/monetdb5/createdb
