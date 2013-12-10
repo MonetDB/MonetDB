@@ -13,7 +13,6 @@ stdout of test 'json_is_null.Bug-3406` in directory 'sql/test/BugTracker-2013` i
 # Copyright (c) 1993-July 2008 CWI.
 # Copyright (c) August 2008-2013 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
-#WARNING: MALException:malInclude:could not open file: batgsl
 # Listening for connection requests on mapi:monetdb://rotterdam.ins.cwi.nl:36037/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-26873/.s.monetdb.36037
 # MonetDB/GIS module loaded
