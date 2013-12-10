@@ -1083,18 +1083,20 @@ parseInclude(Client cntxt)
 	if (currChar(cntxt) != ';') {
 		parseError(cntxt, "';' expected\n");
 		skipToEnd(cntxt);
-		return "";
+		return 0;
 	}
 	skipToEnd(cntxt);
 
 	s = loadLibrary(modnme, FALSE);
 	if (s) {
-		mnstr_printf(cntxt->fdout, "#WARNING: %s\n", s);
+		parseError(cntxt, s);
 		GDKfree(s);
+		return 0;
 	}
 	if ((s = malInclude(cntxt, modnme, 0))) {
-		mnstr_printf(cntxt->fdout, "#WARNING: %s\n", s);
+		parseError(cntxt, s);
 		GDKfree(s);
+		return 0;
 	}
 	return "";
 }
