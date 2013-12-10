@@ -1154,24 +1154,29 @@ mvc_export_table(backend *b, stream *s, res_table *t, BAT *order, BUN offset, BU
 		}
 		if (json) {
 			res_col *p = t->cols + (i - 1);
+			ssep = "";
 
-			/* TODO name: 
-			 * if i == 1 -> { name :
-			 * if i > 1 -> , name :
+			/*  
+			 * We define the "proper" way of returning
+			 * a relational table in json format as a
+			 * json array of objects, where each row is
+			 * represented as a json object.
 			 */
 			if (i == 1) {
-				bj = SA_NEW_ARRAY(m->sa, char, strlen(p->name) + 6);
-				snprintf(bj, strlen(p->name) + 6, "{ %s , ", p->name);
+				bj = SA_NEW_ARRAY(m->sa, char, strlen(p->name) + 11);
+				snprintf(bj, strlen(p->name) + 11, "\t{\n\t\t\"%s\" : ", p->name);
 				fmt[i - 1].sep = bj;
 				fmt[i - 1].seplen = _strlen(fmt[i - 1].sep);
 				fmt[i - 1].rsep = NULL;
 			} else if (i <= t->nr_cols) {
-				fmt[i - 1].sep = p->name;
+				bj = SA_NEW_ARRAY(m->sa, char, strlen(p->name) + 10);
+				snprintf(bj, strlen(p->name) + 10, ",\n\t\t\"%s\" : ", p->name);
+				fmt[i - 1].sep = bj;
 				fmt[i - 1].seplen = _strlen(fmt[i - 1].sep);
 				fmt[i - 1].rsep = NULL;
 			}
 			if (i == t->nr_cols) {
-				fmt[i].sep = " }\n";
+				fmt[i].sep = "\n\t}\n";
 				fmt[i].seplen = _strlen(fmt[i].sep);
 				fmt[i].rsep = NULL;
 			}
@@ -1594,6 +1599,7 @@ mvc_export_result(backend *b, stream *s, int res_id)
 	BUN count;
 	res_table *t = res_tables_find(m->results, res_id);
 	BAT *order = NULL;
+	int json = (b->output_format == OFMT_JSON);
 
 	if (!s || !t)
 		return 0;
@@ -1603,7 +1609,9 @@ mvc_export_result(backend *b, stream *s, int res_id)
 	if (t->tsep)
 		return mvc_export_file(b, s, t);
 
-	mvc_export_head(b, s, res_id, TRUE);
+	if (!json) {
+		mvc_export_head(b, s, res_id, TRUE);
+	}
 
 	if (!t->order)
 		return mvc_export_row(b, s, t, "[ ", ",\t", "\t]\n", "\"", "NULL");
