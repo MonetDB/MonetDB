@@ -13,7 +13,6 @@ stdout of test 'nested_concat_query.Bug-3408` in directory 'sql/test/BugTracker-
 # Copyright (c) 1993-July 2008 CWI.
 # Copyright (c) August 2008-2013 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
-#WARNING: MALException:malInclude:could not open file: batgsl
 # Listening for connection requests on mapi:monetdb://rotterdam.ins.cwi.nl:34396/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-25374/.s.monetdb.34396
 # MonetDB/GIS module loaded

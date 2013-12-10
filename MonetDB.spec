@@ -37,6 +37,7 @@ BuildRequires: flex
 # no geos library on RedHat Enterprise Linux and derivatives
 BuildRequires: geos-devel >= 2.2.0
 %endif
+BuildRequires: gsl-devel
 BuildRequires: libcurl-devel
 BuildRequires: libuuid-devel
 BuildRequires: libxml2-devel
@@ -401,6 +402,27 @@ extensions for %{name}-SQL-server5.
 %{_libdir}/monetdb5/lib_geom.so
 %endif
 
+%package gsl-MonetDB5
+Summary: MonetDB5 SQL interface to the gsl library
+Group: Applications/Databases
+Requires: MonetDB5-server = %{version}-%{release}
+
+%description gsl-MonetDB5
+MonetDB is a database management system that is developed from a
+main-memory perspective with use of a fully decomposed storage model,
+automatic index management, extensibility of data types and search
+accelerators.  It also has an SQL frontend.
+
+This package contains the interface to the GNU Scientific Library for
+numerical analysis (gsl).
+
+%files gsl-MonetDB5
+%defattr(-,root,root)
+%{_libdir}/monetdb5/autoload/*_gsl.mal
+%{_libdir}/monetdb5/createdb/*_gsl.sql
+%{_libdir}/monetdb5/gsl.mal
+%{_libdir}/monetdb5/lib_gsl.so
+
 %package jaql
 Summary: MonetDB5 JAQL
 Group: Applications/Databases
@@ -471,6 +493,7 @@ fi
 %if %{?rhel:0}%{!?rhel:1}
 %exclude %{_libdir}/monetdb5/geom.mal
 %endif
+%exclude %{_libdir}/monetdb5/gsl.mal
 # %exclude %{_libdir}/monetdb5/rdf.mal
 %exclude %{_libdir}/monetdb5/sql.mal
 %exclude %{_libdir}/monetdb5/jaql*.mal
@@ -484,6 +507,7 @@ fi
 %if %{?rhel:0}%{!?rhel:1}
 %exclude %{_libdir}/monetdb5/lib_geom.so
 %endif
+%exclude %{_libdir}/monetdb5/lib_gsl.so
 # %exclude %{_libdir}/monetdb5/lib_rdf.so
 %exclude %{_libdir}/monetdb5/lib_sql.so
 %exclude %{_libdir}/monetdb5/lib_jaql.so
@@ -578,6 +602,7 @@ systemd-tmpfiles --create %{_sysconfdir}/tmpfiles.d/monetdbd.conf
 %if %{?rhel:0}%{!?rhel:1}
 %exclude %{_libdir}/monetdb5/createdb/*_geom.sql
 %endif
+%exclude %{_libdir}/monetdb5/createdb/*_gsl.sql
 # %exclude %{_libdir}/monetdb5/createdb/*_rdf.sql
 %{_libdir}/monetdb5/createdb/*
 %{_libdir}/monetdb5/sql*.mal
@@ -706,6 +731,7 @@ developer, but if you do want to test, this is the package you need.
 	--enable-fits=no \
 	--enable-gdk=yes \
 	--enable-geom=%{?rhel:no}%{!?rhel:yes} \
+	--enable-gsl=yes \
 	--enable-instrument=no \
 	--enable-jaql=yes \
 	--enable-jdbc=no \
