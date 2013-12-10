@@ -1036,6 +1036,13 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				 * value */
 				nr = 1;
 			}
+			if (lcand &&
+			    nl > 1 &&
+			    lcand[-1] != lcand[-1 - nl] + nl) {
+				/* not all values in the range are
+				 * candidates */
+				lskipped = 1;
+			}
 		}
 		/* make space: nl values in l match nr values in r, so
 		 * we need to add nl * nr values in the results */

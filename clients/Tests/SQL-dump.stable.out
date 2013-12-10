@@ -423,6 +423,7 @@ select qd.*, ql."start",ql."stop", ql.arguments, ql.tuples, ql.run, ql.ship, ql.
 from sys.querylog_catalog() qd, sys.querylog_calls() ql
 where qd.id = ql.id and qd.owner = user;
 create view sys.queue as select * from sys.queue();
+create view sys.sessions as select * from sys.sessions();
 create view sys.storage as select * from sys.storage();
 create view sys.storagemodel as select * from sys.storagemodel();
 SELECT * FROM (SELECT p.*, 0 AS "temporary" FROM "sys"."_tables" AS p UNION ALL SELECT t.*, 1 AS "temporary" FROM "tmp"."_tables" AS t) AS tables where tables.type <> 2;
@@ -984,6 +985,28 @@ create function pointfromtext(wkt string, srid smallint) returns point external 
 create function polyfromtext(wkt string, srid smallint) returns polygon external name geom."PolyFromText";
 -- alias
 create function polygonfromtext(wkt string, srid smallint) returns polygon external name geom."PolyFromText";
+create aggregate quantile(val tinyint, q double) returns tinyint
+ 	external name "aggr"."quantile";
+create aggregate quantile(val smallint, q double) returns smallint
+ 	external name "aggr"."quantile";
+create aggregate quantile(val integer, q double) returns integer
+ 	external name "aggr"."quantile";
+create aggregate quantile(val wrd, q double) returns wrd
+	external name "aggr"."quantile";
+create aggregate quantile(val bigint, q double) returns bigint
+	external name "aggr"."quantile";
+create aggregate quantile(val decimal, q double) returns decimal
+ 	external name "aggr"."quantile";
+create aggregate quantile(val real, q double) returns real
+	external name "aggr"."quantile";
+create aggregate quantile(val double, q double) returns double
+	external name "aggr"."quantile";
+create aggregate quantile(val date, q double) returns date
+	external name "aggr"."quantile";
+create aggregate quantile(val time, q double) returns time
+	external name "aggr"."quantile";
+create aggregate quantile(val timestamp, q double) returns timestamp
+	external name "aggr"."quantile";
 -- SQL QUERY CACHE
 -- The SQL query cache returns a table with the query plans kept
 
@@ -1130,8 +1153,13 @@ All Rights Reserved.
 -- Reverse a string
 create function reverse(src string)
 returns string external name udf.reverse;
+create function sys.sessions()
+returns table("user" string, "login" timestamp, "sessiontimeout" bigint, "lastcommand" timestamp, "querytimeout" bigint, "active" bool)
+external name sql.sessions;
 create function "setmasklen" (p inet, mask int) returns inet
 	external name inet."setmasklen";
+create procedure sys.setsession("timeout" bigint)
+	external name sql.setsession;
 -- control the query and session time out 
 create procedure sys.settimeout("query" bigint)
 	external name sql.settimeout;
@@ -1162,6 +1190,10 @@ create procedure sys.settimeout("query" bigint, "session" bigint)
 
 create procedure shrink(sys string, tab string)
 	external name sql.shrink;
+create procedure sys.shutdown(delay tinyint) 
+external name sql.shutdown;
+create procedure sys.shutdown(delay tinyint, force bool) 
+external name sql.shutdown;
 create function srid(g geometry) returns integer external name geom."SRID";
 create aggregate stddev_pop(val tinyint) returns double
 	external name "aggr"."stdevp";

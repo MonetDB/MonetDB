@@ -3984,6 +3984,139 @@ split_aggr_and_project(mvc *sql, list *aexps, sql_exp *e)
 	return NULL;
 }
 
+static sql_exp *
+exp_use_consts(mvc *sql, sql_exp *e, list *consts);
+
+static list *
+exps_use_consts(mvc *sql, list *exps, list *consts)
+{
+	node *n;
+	list *nl = new_exp_list(sql->sa);
+
+	if (!exps)
+		return sa_list(sql->sa);
+	for(n = exps->h; n; n = n->next) {
+		sql_exp *arg = n->data, *narg = NULL;
+
+		narg = exp_use_consts(sql, arg, consts);
+		if (!narg) 
+			return NULL;
+		if (arg->p)
+			narg->p = prop_copy(sql->sa, arg->p);
+		append(nl, narg);
+	}
+	return nl;
+}
+
+static sql_exp *
+exp_use_consts(mvc *sql, sql_exp *e, list *consts) 
+{
+	sql_exp *ne = NULL, *l, *r, *r2;
+
+	switch(e->type) {
+	case e_column:
+		if (e->l) 
+			ne = exps_bind_column2(consts, e->l, e->r);
+		if (!ne && !e->l)
+			ne = exps_bind_column(consts, e->r, NULL);
+		if (!ne)
+			return e;
+		return ne;
+	case e_cmp: 
+		if (e->flag == cmp_or) {
+			list *l = exps_use_consts(sql, e->l, consts);
+			list *r = exps_use_consts(sql, e->r, consts);
+
+			if (!l || !r) 
+				return NULL;
+			return exp_or(sql->sa, l, r);
+		} else if (e->flag == cmp_in || e->flag == cmp_notin || get_cmp(e) == cmp_filter) {
+			sql_exp *l = exp_use_consts(sql, e->l, consts);
+			list *r = exps_use_consts(sql, e->r, consts);
+
+			if (!l || !r) 
+				return NULL;
+			if (get_cmp(e) == cmp_filter) 
+				return exp_filter(sql->sa, l, r, e->f, is_anti(e));
+			return exp_in(sql->sa, l, r, e->flag);
+		} else {
+			l = exp_use_consts(sql, e->l, consts);
+			r = exp_use_consts(sql, e->r, consts);
+			if (e->f) {
+				r2 = exp_use_consts(sql, e->f, consts);
+				if (l && r && r2)
+					return exp_compare2(sql->sa, l, r, r2, e->flag);
+			} else if (l && r) {
+				return exp_compare(sql->sa, l, r, e->flag);
+			}
+		}
+		return NULL;
+	case e_convert:
+		l = exp_use_consts(sql, e->l, consts);
+		if (l)
+			return exp_convert(sql->sa, l, exp_fromtype(e), exp_totype(e));
+		return NULL;
+	case e_aggr:
+	case e_func: {
+		list *l = e->l, *nl = NULL;
+
+		if (!l) {
+			return e;
+		} else {
+			nl = exps_use_consts(sql, l, consts);
+			if (!nl)
+				return NULL;
+		}
+		if (e->type == e_func)
+			return exp_op(sql->sa, nl, e->f);
+		else 
+			return exp_aggr(sql->sa, nl, e->f, need_distinct(e), need_no_nil(e), e->card, has_nil(e));
+	}	
+	case e_atom:
+	case e_psm:
+		return e;
+	}
+	return NULL;
+}
+
+static sql_rel *
+rel_remove_join(int *changes, mvc *sql, sql_rel *rel)
+{
+	if (is_join(rel->op)) {
+		sql_rel *l = rel->l;
+		sql_rel *r = rel->r;
+		int lconst = 0, rconst = 0;
+
+
+		if (!l || rel_is_ref(l) || !r || rel_is_ref(r) ||
+		   (l->op != op_project && r->op != op_project)) 
+			return rel;
+		if (l->op == op_project && exps_are_atoms(l->exps))
+			lconst = 1;
+		if (r->op == op_project && exps_are_atoms(r->exps))
+			rconst = 1;
+		if (!lconst && !rconst)
+			return rel;
+		(*changes)++;
+		/* use constant (instead of alias) in expressions */
+		if (lconst) {
+			sql_rel *s = l;
+			l = r;
+			r = s;
+		}
+		rel->exps = exps_use_consts(sql, rel->exps, r->exps);
+		/* change into select */
+		rel->op = op_select;
+		rel->l = l;
+		rel->r = NULL;
+		/* wrap in a project including, the constant columns */
+		l->subquery = 0;
+		rel = rel_project(sql->sa, rel, rel_projections(sql, l, NULL, 1, 1));
+		list_merge(rel->exps, r->exps, (fdup)NULL);
+	}
+	return rel;
+}
+
 /* Pushing projects up the tree. Done very early in the optimizer.
  * Makes later steps easier. 
  */
@@ -6194,6 +6327,11 @@ _rel_optimizer(mvc *sql, sql_rel *rel, int level)
 	/* push (simple renaming) projections up */
 	if (gp.cnt[op_project])
 		rel = rewrite(sql, rel, &rel_push_project_up, &changes); 
+
+	/* join's/crossproducts between a relation and a constant (row).
+	 * could be rewritten */
+	if (gp.cnt[op_join] && gp.cnt[op_project])
+		rel = rewrite(sql, rel, &rel_remove_join, &changes); 
 
 	if (gp.cnt[op_join] || 
 	    gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full] || 
