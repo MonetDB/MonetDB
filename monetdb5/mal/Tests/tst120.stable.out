@@ -15,9 +15,6 @@ stdout of test 'tst120` in directory 'monetdb5/mal` itself:
 # Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:37254/
 # MonetDB/SQL module v2.39.0 loaded
 # MonetDB/GIS module v0.19.0 loaded
-#WARNING: MALException:malInclude:could not open file: tst120a
-#WARNING: MALException:malInclude:could not open file: tst120b
-#WARNING: MALException:malInclude:could not open file: tst120a
 !TypeException:user.main[4]:'bottom.second' undefined in: a:any := bottom.second(_5:str)
 
 !TypeException:user.main[5]:'top.first' undefined in: b:any := top.first(_7:int)

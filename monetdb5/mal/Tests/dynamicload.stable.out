@@ -13,7 +13,6 @@ stdout of test 'dynamicload` in directory 'monetdb5/mal` itself:
 # Visit http://monetdb.cwi.nl/ for further information
 # Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:33388/
 command user.wrong():void address UNKOWNaddress;
-#WARNING: LoaderException:loadLibrary:File not found:UNKNOWlib
 !TypeException:user.main[2]:object code for command user.wrong missing
 !TypeException:user.main[2]:'user.wrong' undefined in: _2:void := user.wrong()
 function user.main():void;
