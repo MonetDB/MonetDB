@@ -36705,6 +36705,10 @@ pattern calc.isnil(v:date):bit
 address CMDvarISNIL;
 comment Nil test for date value
 
+pattern calc.isnil(v:json):bit 
+address CMDvarISNIL;
+comment Nil test for json value
+
 command calc.isnil(v:sqlblob):bit 
 address BLOB_isnil;
 comment Nil test for blob value
@@ -43159,6 +43163,10 @@ command url.url(s:str):url
 address URLnew;
 comment Create an URL from a string literal
 
+command uuid.#fromstr():uuid 
+address UUIDfromString;
+comment Convert string to uuid
+
 command uuid.isaUUID(u:uuid):bit 
 address UUIDisaUUID;
 comment Test a string for a UUID format
@@ -43171,7 +43179,7 @@ command uuid.str(u:uuid):str
 address UUIDuuid2str;
 comment Coerce a uuid to its string type
 
-command uuid.#tostr():void 
+command uuid.#tostr():str 
 address UUIDtoString;
 comment Convert uuid to string equivalent
 

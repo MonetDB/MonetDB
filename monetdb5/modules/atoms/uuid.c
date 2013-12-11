@@ -39,19 +39,37 @@
 int
 UUIDtoString(str *retval, int *len, str value)
 {
-        if (*len < UUID_LEN) {
-                if (*retval != NULL)
-                        GDKfree(*retval);
-                *retval = GDKmalloc(sizeof(str) * (*len = UUID_LEN));
-        }
-        if (value == str_nil) {
-                *len = snprintf(*retval, *len, "(nil)");
+	if (*len < UUID_LEN) {
+		if (*retval != NULL)
+			GDKfree(*retval);
+		*retval = GDKmalloc(sizeof(str) * (*len = UUID_LEN));
+	}
+	if (value == str_nil) {
+		*len = snprintf(*retval, *len, "(nil)");
 	} else {
 		strncpy(*retval, value, UUID_LEN);
 		(*retval)[UUID_LEN] = 0;
 		*len = UUID_LEN;
-        }
-        return(*len);
+	}
+	return(*len);
+}
+
+int
+UUIDfromString(char *svalue, int *len, str *retval)
+{
+	str msg;
+
+	if (*retval)
+		GDKfree(*retval);
+	*retval = NULL;
+	msg = UUIDstr2uuid(retval, &svalue);
+	if (msg != MAL_SUCCEED) {
+		GDKfree(msg);
+		*retval = GDKstrdup(str_nil);
+		return 0;
+	}
+	*len = UUID_LEN;
+	return UUID_LEN;
 }
 
 static str

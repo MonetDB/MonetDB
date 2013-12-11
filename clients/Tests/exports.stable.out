@@ -2323,6 +2323,7 @@ str URLnew4(str *url, str *protocol, str *server, int *port, str *file);
 str URLnoop(str *url, str *val);
 int URLtoString(str *s, int *len, str src);
 str UUIDequal(bit *retval, str *l, str *r);
+int UUIDfromString(char *svalue, int *len, str *retval);
 str UUIDgenerateUuid(str *retval);
 str UUIDisaUUID(bit *retval, str *s);
 str UUIDstr2uuid(str *retval, str *s);
