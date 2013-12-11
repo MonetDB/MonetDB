@@ -136,4 +136,8 @@ command text(js:json,e:str):str
 address JSONtext
 comment "Simple JSON path accessor, returning the concatenated string";
 
+pattern calc.isnil(v:json):bit
+address CMDvarISNIL
+comment "Nil test for json value";
+
 json.prelude();
