@@ -942,6 +942,7 @@ create_trigger(mvc *sql, char *sname, char *tname, char *triggername, int time, 
 		sql->sa = sa_create();
 		buf = sa_strdup(sql->sa, query);
 		r = rel_parse(sql, buf, m_deps);
+		/* TODO use relational part to find dependencies */
 		if (r) {
 			stmt *sqs = rel_bin(sql, r);
 			list *col_l = stmt_list_dependencies(sql->sa, sqs, COLUMN_DEPENDENCY);
@@ -1633,7 +1634,9 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 		return MAL_SUCCEED;
 	}
-	throw(SQL, "sql.bind", "unable to find %s.%s(%s)", *sname, *tname, *cname);
+	if (*sname)
+		throw(SQL, "sql.bind", "unable to find %s.%s(%s)", *sname, *tname, *cname);
+	throw(SQL, "sql.bind", "unable to find %s(%s)", *tname, *cname);
 }
 
 /* str mvc_bind_idxbat_wrap(int *bid, str *sname, str *tname, str *iname, int *access); */
@@ -1696,7 +1699,9 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 		return MAL_SUCCEED;
 	}
-	throw(SQL, "sql.idxbind", "unable to find index %s for %s.%s", *iname, *sname, *tname);
+	if (*sname)
+		throw(SQL, "sql.idxbind", "unable to find index %s for %s.%s", *iname, *sname, *tname);
+	throw(SQL, "sql.idxbind", "unable to find index %s for %s", *iname, *tname);
 }
 
 /*mvc_append_wrap(int *bid, str *sname, str *tname, str *cname, ptr d) */
