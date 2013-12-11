@@ -36705,6 +36705,10 @@ pattern calc.isnil(v:date):bit
 address CMDvarISNIL;
 comment Nil test for date value
 
+pattern calc.isnil(v:json):bit 
+address CMDvarISNIL;
+comment Nil test for json value
+
 command calc.isnil(v:sqlblob):bit 
 address BLOB_isnil;
 comment Nil test for blob value

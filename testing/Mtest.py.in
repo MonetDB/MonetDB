@@ -1295,7 +1295,7 @@ def ApproveOutput (env, TST) :
 #       filter = re.compile( "^!WARNING: TCPlisten\([0-9]*\): stopped.$"        "|"
 #                            "^!WARNING: TCPepilogue: terminate [01] listeners$", re.MULTILINE)
 
-    TO = re.compile("(^\+(|[^#]*[\t ])((Memory|Segmentation) [Ff]ault|Bus [Ee]rror|Abort(|ed)|Assertion (|.* )failed[:\.]|!FATAL: BATSIGabort:|ERROR = !Connection terminated|!Mtimeout: Timeout:)([ \t]|$)|aborted too deep recursion)", re.MULTILINE)
+    TO = re.compile("(^\+(|[^#]*[\t ])((Memory|Segmentation) [Ff]ault|Bus [Ee]rror|Aborted|Assertion (|.* )failed[:\.]|!FATAL: BATSIGabort:|ERROR = !Connection terminated|!Mtimeout: Timeout:)([ \t]|$)|aborted too deep recursion)", re.MULTILINE)
 
     for WHAT in EXTENSIONS:
         testOUTPUT = os.path.join(TSTTRGDIR, "%s.test.%s" % (TST, WHAT))
@@ -2959,7 +2959,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
         return None
 
     # Try to detect segfaults and the like
-    TO = re.compile("(^(|[^#]*[\t ])((Memory|Segmentation) [Ff]ault|Bus [Ee]rror|Abort(|ed)|Assertion (|.* )failed[:\.]|!FATAL: BATSIGabort:)([ \t]|$))", re.MULTILINE)
+    TO = re.compile("(^(|[^#]*[\t ])((Memory|Segmentation) [Ff]ault|Bus [Ee]rror|Aborted|Assertion (|.* )failed[:\.]|!FATAL: BATSIGabort:)([ \t]|$))", re.MULTILINE)
     # FIXME: this begs for a much nicer solution (100% copy of below)
     for f in (TestErrFile, TestOutFile):
         if os.path.isfile(f):
