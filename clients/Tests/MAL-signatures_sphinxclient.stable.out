@@ -43192,6 +43192,10 @@ command url.url(s:str):url
 address URLnew;
 comment Create an URL from a string literal
 
+command uuid.#fromstr():uuid 
+address UUIDfromString;
+comment Convert string to uuid
+
 command uuid.isaUUID(u:uuid):bit 
 address UUIDisaUUID;
 comment Test a string for a UUID format
@@ -43204,7 +43208,7 @@ command uuid.str(u:uuid):str
 address UUIDuuid2str;
 comment Coerce a uuid to its string type
 
-command uuid.#tostr():void 
+command uuid.#tostr():str 
 address UUIDtoString;
 comment Convert uuid to string equivalent
 

@@ -2,9 +2,13 @@ module uuid;
 
 atom uuid:str;
 
-command tostr()
+command tostr() :str
 address UUIDtoString
 comment "Convert uuid to string equivalent";
+
+command fromstr() :uuid
+address UUIDfromString
+comment "Convert string to uuid";
 
 command new() :uuid
 address UUIDgenerateUuid
