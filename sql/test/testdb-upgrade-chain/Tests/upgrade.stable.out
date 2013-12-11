@@ -22,16 +22,10 @@ Ready.
 
 Running database upgrade commands:
 set schema "sys";
-create view sys.tracelog as select * from sys.tracelog();
-drop function sys.clients;
-create view sys.optimizers as select * from sys.optimizers();
-create view sys.environment as select * from sys.environment();
-create view sys.storage as select * from sys.storage();
-create view sys.storagemodel as select * from sys.storagemodel();
 drop procedure sys.resetHistory;
 drop procedure sys.keepCall;
 drop procedure sys.keepQuery;
-update sys._tables set system = false where name in ('querylog','callhistory','queryhistory') and schema_id = (select id from sys.schemas where name = 'sys');
+update sys._tables set system = false where name in ('callhistory','queryhistory','querylog') and schema_id = (select id from sys.schemas where name = 'sys');
 drop view sys.queryLog;
 drop table sys.callHistory;
 drop table sys.queryHistory;
@@ -121,6 +115,17 @@ create procedure sys.querylog_enable(threshold smallint)
 external name sql.querylog_enable_threshold;
 create procedure sys.querylog_disable()
 external name sql.querylog_disable;
+create view sys.tracelog as select * from sys.tracelog();
+drop function sys.clients;
+create function sys.sessions() returns table("user" string, "login" timestamp, "sessiontimeout" bigint, "lastcommand" timestamp, "querytimeout" bigint, "active" bool) external name sql.sessions;
+create view sys.sessions as select * from sys.sessions();
+create procedure sys.shutdown(delay tinyint) external name sql.shutdown;
+create procedure sys.shutdown(delay tinyint, force bool) external name sql.shutdown;
+create procedure sys.settimeout("query" bigint) external name sql.settimeout;
+create procedure sys.settimeout("query" bigint, "session" bigint) external name sql.settimeout;
+create procedure sys.setsession("timeout" bigint) external name sql.setsession;
+create view sys.optimizers as select * from sys.optimizers();
+create view sys.environment as select * from sys.environment();
 -- The contents of this file are subject to the MonetDB Public License
 -- Version 1.1 (the "License"); you may not use this file except in
 -- compliance with the License. You may obtain a copy of the License at
@@ -178,6 +183,18 @@ external name sql.sysmon_stop;
 --returns table(
 --)
 --external name sql.sql_sysmon_connections;
+create aggregate quantile(val TINYINT, q DOUBLE) returns TINYINT external name "aggr"."quantile";
+create aggregate quantile(val SMALLINT, q DOUBLE) returns SMALLINT external name "aggr"."quantile";
+create aggregate quantile(val INTEGER, q DOUBLE) returns INTEGER external name "aggr"."quantile";
+create aggregate quantile(val WRD, q DOUBLE) returns WRD external name "aggr"."quantile";
+create aggregate quantile(val BIGINT, q DOUBLE) returns BIGINT external name "aggr"."quantile";
+create aggregate quantile(val DECIMAL, q DOUBLE) returns DECIMAL external name "aggr"."quantile";
+create aggregate quantile(val REAL, q DOUBLE) returns REAL external name "aggr"."quantile";
+create aggregate quantile(val DOUBLE, q DOUBLE) returns DOUBLE external name "aggr"."quantile";
+create aggregate quantile(val DATE, q DOUBLE) returns DATE external name "aggr"."quantile";
+create aggregate quantile(val TIME, q DOUBLE) returns TIME external name "aggr"."quantile";
+create aggregate quantile(val TIMESTAMP, q DOUBLE) returns TIMESTAMP external name "aggr"."quantile";
+create aggregate median(val DECIMAL) returns DECIMAL external name "aggr"."median";
 
 -- The contents of this file are subject to the MonetDB Public License
 -- Version 1.1 (the "License"); you may not use this file except in
@@ -257,22 +274,82 @@ returns integer external name json.length;
 -- returns json external name json.objectrender;
 -- create function sys.json_array(*)
 -- returns json external name json.arrayrender;
-insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('querylog_catalog', 'querylog_calls', 'queue', 'json_filter', 'json_filter_all', 'json_path', 'json_text', 'json_isvalid', 'json_isvalidobject', 'json_isvalidarray', 'json_length') and f.type = 1 and f.schema_id = s.id and s.name = 'sys');
-insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('querylog_empty', 'querylog_enable', 'querylog_disable', 'pause', 'resume', 'sysmon_resume', 'stop') and f.type = 2 and f.schema_id = s.id and s.name = 'sys');
-update sys._tables set system = true where name in ('tracelog', 'optimizers', 'environment', 'storage', 'storagemodel') and schema_id = (select id from sys.schemas where name = 'sys');
-create aggregate quantile(val TINYINT, q DOUBLE) returns TINYINT external name "aggr"."quantile";
-create aggregate quantile(val SMALLINT, q DOUBLE) returns SMALLINT external name "aggr"."quantile";
-create aggregate quantile(val INTEGER, q DOUBLE) returns INTEGER external name "aggr"."quantile";
-create aggregate quantile(val WRD, q DOUBLE) returns WRD external name "aggr"."quantile";
-create aggregate quantile(val BIGINT, q DOUBLE) returns BIGINT external name "aggr"."quantile";
-create aggregate quantile(val DECIMAL, q DOUBLE) returns DECIMAL external name "aggr"."quantile";
-create aggregate quantile(val REAL, q DOUBLE) returns REAL external name "aggr"."quantile";
-create aggregate quantile(val DOUBLE, q DOUBLE) returns DOUBLE external name "aggr"."quantile";
-create aggregate quantile(val DATE, q DOUBLE) returns DATE external name "aggr"."quantile";
-create aggregate quantile(val TIME, q DOUBLE) returns TIME external name "aggr"."quantile";
-create aggregate quantile(val TIMESTAMP, q DOUBLE) returns TIMESTAMP external name "aggr"."quantile";
-create aggregate median(val DECIMAL) returns DECIMAL external name "aggr"."median";
+create function sys.md5(v string) returns string external name clients.md5sum;
+create type uuid external name uuid;
+create function sys.uuid() returns uuid external name uuid."new";
+create function sys.isaUUID(u uuid) returns uuid external name uuid."isaUUID";
+create view sys.storage as select * from sys.storage();
+create view sys.storagemodel as select * from sys.storagemodel();
+-- The contents of this file are subject to the MonetDB Public License
+-- Version 1.1 (the "License"); you may not use this file except in
+-- compliance with the License. You may obtain a copy of the License at
+-- http://www.monetdb.org/Legal/MonetDBLicense
+--
+-- Software distributed under the License is distributed on an "AS IS"
+-- basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+-- License for the specific language governing rights and limitations
+-- under the License.
+--
+-- The Original Code is the MonetDB Database System.
+--
+-- The Initial Developer of the Original Code is CWI.
+-- Copyright August 2008-2013 MonetDB B.V.
+-- All Rights Reserved.
+
+
+-- Author M.Kersten
+-- This script gives the database administrator insight in the actual
+-- value distribution over all tables in the database.
+
+
+CREATE TABLE sys.statistics(
+	"schema" string, 
+	"table" string, 
+	"column" string, 
+	"type" string, 
+	width integer,
+	stamp timestamp, 
+	"sample" bigint, 
+	"count" bigint, 
+	"unique" bigint, 
+	"nils" bigint, 
+	minval string, 
+	maxval string,
+	sorted boolean);
+
+update sys._tables
+	set system = true
+	where name = 'statistics'
+		and schema_id = (select id from sys.schemas where name = 'sys');
+
+create procedure analyze()
+external name sql.analyze;
+
+create procedure analyze(tbl string)
+external name sql.analyze;
+
+create procedure analyze(sch string, tbl string)
+external name sql.analyze;
+
+create procedure analyze(sch string, tbl string, col string)
+external name sql.analyze;
+
+-- control the sample size
+create procedure analyze("sample" bigint)
+external name sql.analyze;
+
+create procedure analyze(tbl string, "sample" bigint)
+external name sql.analyze;
+
+create procedure analyze(sch string, tbl string, "sample" bigint)
+external name sql.analyze;
+
+create procedure analyze(sch string, tbl string, col string, "sample" bigint)
+external name sql.analyze;
+insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('isauuid', 'json_filter', 'json_filter_all', 'json_isvalid', 'json_isvalidarray', 'json_isvalidobject', 'json_length', 'json_path', 'json_text', 'md5', 'querylog_calls', 'querylog_catalog', 'queue', 'sessions', 'uuid') and f.type = 1 and f.schema_id = s.id and s.name = 'sys');
+insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('analyze', 'pause', 'querylog_disable', 'querylog_empty', 'querylog_enable', 'resume', 'setsession', 'settimeout', 'shutdown', 'stop', 'sysmon_resume') and f.type = 2 and f.schema_id = s.id and s.name = 'sys');
 insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('quantile', 'median') and f.type = 3 and f.schema_id = s.id and s.name = 'sys');
+update sys._tables set system = true where name in ('environment', 'optimizers', 'queue', 'sessions', 'statistics', 'storage', 'storagemodel', 'tracelog') and schema_id = (select id from sys.schemas where name = 'sys');
 set schema "testschema";
 
 
