@@ -55,11 +55,14 @@ Ready.
 # 13:09:26 >  
 
 #create table testjsonisnull(js json);
+#insert into testjsonisnull values (NULL);
+[ 1	]
 #select * from testjsonisnull where js is null;
 % sys.testjsonisnull # table_name
-% boolean # type
-% 5 # length
-[ true	]
+% js # name
+% json # type
+% 0 # length
+[ NULL	]
 #drop table testjsonisnull;
 
 # 13:09:26 >  
