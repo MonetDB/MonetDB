@@ -1225,19 +1225,19 @@ RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in)
 
 	if (bb.headsize > 0) {
 		/* HEAPextend is cheap if already done */
-		if (HEAPextend(&b->H->heap, bb.headsize) < 0 ||
+		if (HEAPextend(&b->H->heap, bb.headsize, TRUE) < 0 ||
 			mnstr_read(in, b->H->heap.base, bb.headsize, 1) < 0)
 			goto bailout;
 		b->H->heap.dirty = TRUE;
 	}
 	if (bb.tailsize > 0) {
-		if (HEAPextend(&b->T->heap, bb.tailsize) < 0 ||
+		if (HEAPextend(&b->T->heap, bb.tailsize, TRUE) < 0 ||
 			mnstr_read(in, b->T->heap.base, bb.tailsize, 1) < 0)
 			goto bailout;
 		b->T->heap.dirty = TRUE;
 	}
 	if (bb.theapsize > 0) {
-		if (HEAPextend(b->T->vheap, bb.theapsize) < 0 ||
+		if (HEAPextend(b->T->vheap, bb.theapsize, TRUE) < 0 ||
 			mnstr_read(in, b->T->vheap->base, bb.theapsize, 1) < 0)
 			goto bailout;
 		b->T->vheap->free = bb.theapsize;

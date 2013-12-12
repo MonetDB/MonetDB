@@ -55,7 +55,7 @@ int GDKextendf(int fd, off_t size);
 #endif
 int GDKfdlocate(const char *nme, const char *mode, const char *ext);
 FILE *GDKfilelocate(const char *nme, const char *mode, const char *ext);
-char *GDKload(const char *nme, const char *ext, size_t size, size_t chunk, storage_t mode);
+char *GDKload(const char *nme, const char *ext, size_t size, size_t *maxsize, storage_t mode);
 void GDKlog(_In_z_ _Printf_format_string_ const char *format, ...)
 	__attribute__((__format__(__printf__, 1, 2)));
 void *GDKmallocmax(size_t size, size_t *maxsize, int emergency);
@@ -117,6 +117,7 @@ extern int BBP_dirty;	/* BBP table dirty? */
 extern batlock_t GDKbatLock[BBP_BATMASK + 1];
 extern bbplock_t GDKbbpLock[BBP_THREADMASK + 1];
 extern size_t GDK_mmap_minsize;	/* size after which we use memory mapped files */
+extern size_t GDK_mmap_pagesize; /* mmap granularity */
 extern MT_Lock GDKnameLock;
 extern MT_Lock GDKthreadLock;
 extern MT_Lock GDKtmLock;

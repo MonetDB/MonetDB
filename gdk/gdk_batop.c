@@ -63,7 +63,7 @@
  * using BATins (BATdel).
  */
 static BAT *
-insert_string_bat(BAT *b, BAT *n, int append)
+insert_string_bat(BAT *b, BAT *n, int append, int force)
 {
 	BATiter ni;		/* iterator */
 	int tt;			/* tail type */
@@ -110,7 +110,9 @@ insert_string_bat(BAT *b, BAT *n, int append)
 		/* make sure we get alignment right */
 		toff = (toff + GDK_VARALIGN - 1) & ~(GDK_VARALIGN - 1);
 		assert(((toff >> GDK_VARSHIFT) << GDK_VARSHIFT) == toff);
-		if (HEAPextend(b->T->vheap, toff + n->T->vheap->size) < 0) {
+		/* if in "force" mode, the heap may be shared when
+		 * memory mapped */
+		if (HEAPextend(b->T->vheap, toff + n->T->vheap->size, force) < 0) {
 			toff = ~(size_t) 0;
 			goto bunins_failed;
 		}
@@ -121,7 +123,7 @@ insert_string_bat(BAT *b, BAT *n, int append)
 		if (b->T->width < SIZEOF_VAR_T &&
 		    ((size_t) 1 << 8 * b->T->width) < (b->T->width <= 2 ? (b->T->vheap->size >> GDK_VARSHIFT) - GDK_VAROFFSET : (b->T->vheap->size >> GDK_VARSHIFT))) {
 			/* offsets aren't going to fit */
-			if (GDKupgradevarheap(b->T, (var_t) (b->T->vheap->size >> GDK_VARSHIFT), 0) == GDK_FAIL) {
+			if (GDKupgradevarheap(b->T, (var_t) (b->T->vheap->size >> GDK_VARSHIFT), 0, force) == GDK_FAIL) {
 				toff = ~(size_t) 0;
 				goto bunins_failed;
 			}
@@ -398,7 +400,7 @@ BATins(BAT *b, BAT *n, bit force)
 			    !GDK_ELIMDOUBLES(n->T->vheap) &&
 			    b->T->vheap->hashash == n->T->vheap->hashash &&
 			    VIEWtparent(n) == 0)) {
-			b = insert_string_bat(b, n, 0);
+			b = insert_string_bat(b, n, 0, force);
 		} else if (b->htype == TYPE_void) {
 			if (!ATOMvarsized(b->ttype) &&
 			    BATatoms[b->ttype].atomFix == NULL &&
@@ -600,7 +602,7 @@ BATappend(BAT *b, BAT *n, bit force)
 		    !GDK_ELIMDOUBLES(n->T->vheap) &&
 		    b->T->vheap->hashash == n->T->vheap->hashash &&
 		    VIEWtparent(n) == 0) {
-			b = insert_string_bat(b, n, 1);
+			b = insert_string_bat(b, n, 1, force);
 			if (b == NULL)
 				return NULL;
 		} else if (b->htype == TYPE_void) {

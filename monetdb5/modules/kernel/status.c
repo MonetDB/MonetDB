@@ -88,9 +88,7 @@ SYSsetmem_maxsize(int *ret, lng *num)
 			throw(ILLARG, "status.mem_maxsize", "new size must not be > " LLFMT, size_t_max);
 	}
 #endif
-	if (sze < GDK_mem_bigsize)
-		GDK_mem_bigsize = MAX(32768, sze);
-	GDK_mem_maxsize = MAX(GDK_mem_bigsize, sze);
+	GDK_mem_maxsize = sze;
 	return MAL_SUCCEED;
 }
 

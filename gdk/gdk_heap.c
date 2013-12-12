@@ -60,19 +60,16 @@
 #include "gdk_private.h"
 
 static void *
-HEAPcreatefile(size_t *maxsz, char *fn, storage_t mode)
+HEAPcreatefile(size_t *maxsz, const char *fn)
 {
-	size_t size = *maxsz;
 	void *base = NULL;
 	int fd;
 
-	size = (*maxsz + (size_t) 0xFFFF) & ~ (size_t) 0xFFFF; /* round up to 64k */
+	/* round up to mulitple of GDK_mmap_pagesize */
 	fd = GDKfdlocate(fn, "wb", NULL);
 	if (fd >= 0) {
 		close(fd);
-		base = GDKload(fn, NULL, size, size, mode);
-		if (base)
-			*maxsz = size;
+		base = GDKload(fn, NULL, *maxsz, maxsz, STORE_MMAP);
 	}
 	return base;
 }
@@ -118,18 +115,6 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 	if (itemsize && nitems > (h->size / itemsize))
 		return -1;
 
-	if (h->filename) {
-		GDKfilepath(nme, BATDIR, h->filename, NULL);
-		/* if we're going to use mmap anyway (size >=
-		 * GDK_mem_bigsize -- see GDKmallocmax), and the file
-		 * we want to use already exists and is large enough
-		 * for the size we want, force non-anonymous mmap */
-		if (h->size >= GDK_mem_bigsize &&
-		    stat(nme, &st) == 0 && st.st_size >= (off_t) h->size) {
-			minsize = GDK_mem_bigsize; /* force mmap */
-		}
-	}
-
 	if (h->filename == NULL || h->size < minsize) {
 		h->storage = STORE_MEM;
 		h->base = (char *) GDKmallocmax(h->size, &h->size, 0);
@@ -142,7 +127,7 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 
 		if (stat(nme, &st) < 0) {
 			h->storage = STORE_MMAP;
-			h->base = HEAPcreatefile(&h->size, of, h->storage);
+			h->base = HEAPcreatefile(&h->size, of);
 			h->filename = of;
 		} else {
 			char *ext;
@@ -188,7 +173,7 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
  * it.
  */
 int
-HEAPextend(Heap *h, size_t size)
+HEAPextend(Heap *h, size_t size, int mayshare)
 {
 	char nme[PATHLENGTH], *ext = NULL;
 	const char *failure = "None";
@@ -210,7 +195,10 @@ HEAPextend(Heap *h, size_t size)
 		HEAPDEBUG fprintf(stderr, "#HEAPextend: extending %s mmapped heap (%s)\n", h->storage == STORE_MMAP ? "shared" : "privately", h->filename);
 		/* extend memory mapped file */
 		GDKfilepath(path, BATDIR, nme, ext);
-		size = (1 + ((size - 1) >> REMAP_PAGE_MAXBITS)) << REMAP_PAGE_MAXBITS;
+		size = (size + GDK_mmap_pagesize - 1) & ~(GDK_mmap_pagesize - 1);
+		if (size == 0)
+			size = GDK_mmap_pagesize;
+
 		p = MT_mremap(path,
 			      h->storage == STORE_PRIV ?
 				MMAP_COPY | MMAP_READ | MMAP_WRITE :
@@ -228,11 +216,7 @@ HEAPextend(Heap *h, size_t size)
 		Heap bak = *h;
 		size_t cur = GDKmem_cursize(), tot = GDK_mem_maxsize;
 		int exceeds_swap = size > (tot + tot - MIN(tot + tot, cur));
-		int can_mmap = h->filename && (size >= GDK_mem_bigsize || h->newstorage != STORE_MEM);
-		int small_cpy = (h->size * 4 < size) && (size >= GDK_mmap_minsize);
-		/* the last condition is to use explicit MMAP instead
-		 * of anonymous MMAP in GDKmalloc */
-		int must_mmap = can_mmap && (small_cpy || exceeds_swap || h->newstorage != STORE_MEM || size >= GDK_mem_bigsize);
+		int must_mmap = h->filename != NULL && (exceeds_swap || h->newstorage != STORE_MEM || size >= GDK_mmap_minsize);
 
 		h->size = size;
 
@@ -248,7 +232,7 @@ HEAPextend(Heap *h, size_t size)
 			failure = "h->storage == STORE_MEM && !must_map && !h->base";
 		}
 		/* too big: convert it to a disk-based temporary heap */
-		if (can_mmap) {
+		if (h->filename != NULL) {
 			int fd;
 			int existing = 0;
 
@@ -273,7 +257,7 @@ HEAPextend(Heap *h, size_t size)
 					goto failed;
 				}
 				sprintf(h->filename, "%s.%s", nme, ext);
-				h->base = HEAPcreatefile(&h->size, h->filename, STORE_MMAP);
+				h->base = HEAPcreatefile(&h->size, h->filename);
 				if (h->base) {
 					h->newstorage = h->storage = STORE_MMAP;
 					memcpy(h->base, bak.base, bak.free);
@@ -285,7 +269,7 @@ HEAPextend(Heap *h, size_t size)
 			fd = GDKfdlocate(nme, "wb", ext);
 			if (fd >= 0) {
 				close(fd);
-				h->storage = h->newstorage == STORE_MMAP && existing && !h->forcemap ? STORE_PRIV : h->newstorage;
+				h->storage = h->newstorage == STORE_MMAP && existing && !h->forcemap && !mayshare ? STORE_PRIV : h->newstorage;
 				/* make sure we really MMAP */
 				if (must_mmap && h->newstorage == STORE_MEM)
 					h->storage = STORE_MMAP;
@@ -359,8 +343,11 @@ HEAPshrink(Heap *h, size_t size)
 		}
 		/* shrink memory mapped file */
 		GDKfilepath(path, BATDIR, nme, ext);
-		size = MAX(size, MT_pagesize()); /* at least one page */
-		size = (size + MT_pagesize() - 1) & ~(MT_pagesize() - 1);
+		/* round up to multiple of GDK_mmap_pagesize with
+		 * minimum of one */
+		size = (size + GDK_mmap_pagesize - 1) & ~(GDK_mmap_pagesize - 1);
+		if (size == 0)
+			size = GDK_mmap_pagesize;
 		if (size >= h->size) {
 			/* don't grow */
 			return 0;
@@ -400,7 +387,7 @@ file_exists(const char *dir, const char *name, const char *ext)
 }
 
 int
-GDKupgradevarheap(COLrec *c, var_t v, int copyall)
+GDKupgradevarheap(COLrec *c, var_t v, int copyall, int mayshare)
 {
 	bte shift = c->shift;
 	unsigned short width = c->width;
@@ -490,7 +477,7 @@ GDKupgradevarheap(COLrec *c, var_t v, int copyall)
 	savefree = c->heap.free;
 	if (copyall)
 		c->heap.free = c->heap.size;
-	if (HEAPextend(&c->heap, (c->heap.size >> c->shift) << shift) < 0)
+	if (HEAPextend(&c->heap, (c->heap.size >> c->shift) << shift, mayshare) < 0)
 		return GDK_FAIL;
 	if (copyall)
 		c->heap.free = savefree;
@@ -613,8 +600,7 @@ HEAPfree(Heap *h)
 static int
 HEAPload_intern(Heap *h, const char *nme, const char *ext, const char *suffix, int trunc)
 {
-	size_t truncsize = (1 + (((size_t) (h->free * 1.05)) >> REMAP_PAGE_MAXBITS)) << REMAP_PAGE_MAXBITS;
-	size_t minsize = (1 + ((h->size - 1) >> REMAP_PAGE_MAXBITS)) << REMAP_PAGE_MAXBITS;
+	size_t minsize;
 	int ret = 0, desc_status = 0;
 	long_str srcpath, dstpath;
 	struct stat st;
@@ -626,18 +612,26 @@ HEAPload_intern(Heap *h, const char *nme, const char *ext, const char *suffix, i
 		return -1;
 	sprintf(h->filename, "%s.%s", nme, ext);
 
-	/* round up mmap heap sizes to REMAP_PAGE_MAXSIZE (usually
-	 * 512KB) segments */
+	minsize = (h->size + GDK_mmap_pagesize - 1) & ~(GDK_mmap_pagesize - 1);
 	if (h->storage != STORE_MEM && minsize != h->size)
 		h->size = minsize;
 
 	/* when a bat is made read-only, we can truncate any unused
 	 * space at the end of the heap */
-	if (trunc && truncsize < h->size) {
-		int fd = GDKfdlocate(nme, "mrb+", ext);
-		if (fd >= 0) {
+	if (trunc) {
+		/* round up mmap heap sizes to GDK_mmap_pagesize
+		 * segments, also add some slack */
+		size_t truncsize = ((size_t) (h->free * 1.05) + GDK_mmap_pagesize - 1) & ~(GDK_mmap_pagesize - 1);
+		int fd;
+
+		if (truncsize == 0)
+			truncsize = GDK_mmap_pagesize; /* minimum of one page */
+		if (truncsize < h->size &&
+		    (fd = GDKfdlocate(nme, "mrb+", ext)) >= 0) {
 			ret = ftruncate(fd, (off_t) truncsize);
-			HEAPDEBUG fprintf(stderr, "#ftruncate(file=%s.%s, size=" SZFMT ") = %d\n", nme, ext, truncsize, ret);
+			HEAPDEBUG fprintf(stderr,
+					  "#ftruncate(file=%s.%s, size=" SZFMT
+					  ") = %d\n", nme, ext, truncsize, ret);
 			close(fd);
 			if (ret == 0) {
 				h->size = truncsize;
@@ -646,9 +640,10 @@ HEAPload_intern(Heap *h, const char *nme, const char *ext, const char *suffix, i
 		}
 	}
 
-	HEAPDEBUG {
-		fprintf(stderr, "#HEAPload(%s.%s,storage=%d,free=" SZFMT ",size=" SZFMT ")\n", nme, ext, (int) h->storage, h->free, h->size);
-	}
+	HEAPDEBUG fprintf(stderr, "#HEAPload(%s.%s,storage=%d,free=" SZFMT
+			  ",size=" SZFMT ")\n", nme, ext,
+			  (int) h->storage, h->free, h->size);
+
 	/* On some OSs (WIN32,Solaris), it is prohibited to write to a
 	 * file that is open in MAP_PRIVATE (FILE_MAP_COPY) solution:
 	 * we write to a file named .ext.new.  This file, if present,
@@ -674,7 +669,7 @@ HEAPload_intern(Heap *h, const char *nme, const char *ext, const char *suffix, i
 		HEAPDEBUG fprintf(stderr, "#rename %s %s = %d (%dms)\n", srcpath, dstpath, ret, GDKms() - t0);
 	}
 
-	h->base = (char *) GDKload(nme, ext, h->free, h->size, h->newstorage);
+	h->base = GDKload(nme, ext, h->free, &h->size, h->newstorage);
 	if (h->base == NULL)
 		return -1;	/* file could  not be read satisfactorily */
 
@@ -1014,9 +1009,9 @@ HEAP_malloc(Heap *heap, size_t nbytes)
 #endif
 
 		/* Double the size of the heap.
-		 * TUNE: increase heap by diffent amount. */
+		 * TUNE: increase heap by different amount. */
 		HEAPDEBUG fprintf(stderr, "#HEAPextend in HEAP_malloc %s " SZFMT " " SZFMT "\n", heap->filename, heap->size, newsize);
-		if (HEAPextend(heap, newsize) < 0)
+		if (HEAPextend(heap, newsize, FALSE) < 0)
 			return 0;
 		heap->free = newsize;
 		hheader = HEAP_index(heap, 0, HEADER);

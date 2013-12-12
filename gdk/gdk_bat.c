@@ -364,7 +364,7 @@ BATattach(int tt, const char *heapfile)
 	}
 	bn->batRestricted = BAT_READ;
 	bn->T->heap.size = (size_t) st.st_size;
-	bn->T->heap.newstorage = bn->T->heap.storage = (bn->T->heap.size < REMAP_PAGE_MAXSIZE) ? STORE_MEM : STORE_MMAP;
+	bn->T->heap.newstorage = bn->T->heap.storage = (bn->T->heap.size < GDK_mmap_minsize) ? STORE_MEM : STORE_MMAP;
 	if (HEAPload(&bn->T->heap, BBP_physical(bn->batCacheid), "tail", TRUE) < 0) {
 		HEAPfree(&bn->T->heap);
 		GDKfree(bs);
@@ -479,12 +479,14 @@ BATextend(BAT *b, BUN newcap)
 	hheap_size *= Hsize(b);
 	if (b->H->heap.base && GDKdebug & HEAPMASK)
 		fprintf(stderr, "#HEAPextend in BATextend %s " SZFMT " " SZFMT "\n", b->H->heap.filename, b->H->heap.size, hheap_size);
-	if (b->H->heap.base && HEAPextend(&b->H->heap, hheap_size) < 0)
+	if (b->H->heap.base &&
+	    HEAPextend(&b->H->heap, hheap_size, b->batRestricted == BAT_READ) < 0)
 		return NULL;
 	theap_size *= Tsize(b);
 	if (b->T->heap.base && GDKdebug & HEAPMASK)
 		fprintf(stderr, "#HEAPextend in BATextend %s " SZFMT " " SZFMT "\n", b->T->heap.filename, b->T->heap.size, theap_size);
-	if (b->T->heap.base && HEAPextend(&b->T->heap, theap_size) < 0)
+	if (b->T->heap.base &&
+	    HEAPextend(&b->T->heap, theap_size, b->batRestricted == BAT_READ) < 0)
 		return NULL;
 	HASHdestroy(b);
 	IMPSdestroy(b);
@@ -837,13 +839,13 @@ BATcopy(BAT *b, int ht, int tt, int writable)
 		if (bn->hvarsized && bn->htype) {
 			bn->H->shift = b->H->shift;
 			bn->H->width = b->H->width;
-			if (HEAPextend(&bn->H->heap, BATcapacity(bn) << bn->H->shift) < 0)
+			if (HEAPextend(&bn->H->heap, BATcapacity(bn) << bn->H->shift, TRUE) < 0)
 				goto bunins_failed;
 		}
 		if (bn->tvarsized && bn->ttype) {
 			bn->T->shift = b->T->shift;
 			bn->T->width = b->T->width;
-			if (HEAPextend(&bn->T->heap, BATcapacity(bn) << bn->T->shift) < 0)
+			if (HEAPextend(&bn->T->heap, BATcapacity(bn) << bn->T->shift, TRUE) < 0)
 				goto bunins_failed;
 		}
 

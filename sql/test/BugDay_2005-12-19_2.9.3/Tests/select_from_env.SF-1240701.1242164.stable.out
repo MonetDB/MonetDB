@@ -27,12 +27,11 @@ Ready.
 % .env # table_name
 % name # name
 % varchar # type
-% 16 # length
+% 17 # length
 [ "gdk_dbname"	]
 [ "gdk_dbpath"	]
 [ "gdk_debug"	]
-[ "gdk_mem_bigsize"	]
-[ "gdk_mem_pagebits"	]
+[ "gdk_mmap_pagesize"	]
 [ "gdk_nr_threads"	]
 [ "gdk_vmtrim"	]
 [ "mal_listing"	]

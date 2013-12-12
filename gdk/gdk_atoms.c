@@ -942,7 +942,7 @@ strHeap(Heap *d, size_t cap)
 
 	cap = MAX(cap, BATTINY);
 	size = GDK_STRHASHTABLE * sizeof(stridx_t) + MIN(GDK_ELIMLIMIT, cap * GDK_VARALIGN);
-	if (HEAPalloc(d, size, 1) >= 0) {
+	if (HEAPalloc(d, size, 1) == 0) {
 		d->free = GDK_STRHASHTABLE * sizeof(stridx_t);
 		memset(d->base, 0, d->free);
 		d->hashash = 1;	/* new string heaps get the hash value (and length) stored */
@@ -1119,7 +1119,7 @@ strPut(Heap *h, var_t *dst, const char *v)
 			return 0;
 		}
 		HEAPDEBUG fprintf(stderr, "#HEAPextend in strPut %s " SZFMT " " SZFMT "\n", h->filename, h->size, newsize);
-		if (HEAPextend(h, newsize) < 0) {
+		if (HEAPextend(h, newsize, TRUE) < 0) {
 			return 0;
 		}
 #ifndef NDEBUG
