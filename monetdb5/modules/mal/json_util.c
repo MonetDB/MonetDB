@@ -58,8 +58,7 @@ JSONresultSet(str *res, bat *uuid, bat *rev, bat *js)
 		BBPreleaseref(bj->batCacheid);
 		throw(MAL, "json.resultset", MAL_MALLOC_FAIL);
 	}
-	snprintf(result,sz,"[");
-	len += strlen(result);
+	len += snprintf(result,sz,"[");
 	/* here the dirty work follows */
 	/* loop over the triple store */
 	snprintf(result+len,sz-len,"]");

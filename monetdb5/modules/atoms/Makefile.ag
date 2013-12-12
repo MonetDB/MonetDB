@@ -36,7 +36,7 @@ lib_atoms = {
 		str.c str.h \
 		url.c url.h \
 		json_atom.c json_atom.h \
-		uuid.c uuid.h \
+		uuid.c \
 		mcurl.c \
 		xml.c xml.h
 }
