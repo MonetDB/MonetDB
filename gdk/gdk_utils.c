@@ -1123,7 +1123,18 @@ GDKinit(opt *set, int setlen)
 		GDKsetenv("monet_pid", buf);
 	}
 
-	if ((p = mo_find_option(set, setlen, "gdk_vmtrim")) == NULL ||
+	/* only start vmtrim thread when explicitly asked to do so or
+	 * when on a 32 bit architecture and not told to not start
+	 * it */
+	p = mo_find_option(set, setlen, "gdk_vmtrim");
+	if (
+#if SIZEOF_VOID_P == 4
+	    /* 32 bit architecture */
+	    p == NULL ||	/* default is yes */
+#else
+	    /* 64 bit architecture */
+	    p != NULL &&	/* default is no */
+#endif
 	    strcasecmp(p, "yes") == 0)
 		MT_create_thread(&GDKvmtrim_id, GDKvmtrim, &GDK_mem_maxsize,
 				 MT_THR_JOINABLE);
