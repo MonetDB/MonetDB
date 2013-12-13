@@ -274,10 +274,6 @@ returns integer external name json.length;
 -- returns json external name json.objectrender;
 -- create function sys.json_array(*)
 -- returns json external name json.arrayrender;
-create function sys.md5(v string) returns string external name clients.md5sum;
-create type uuid external name uuid;
-create function sys.uuid() returns uuid external name uuid."new";
-create function sys.isaUUID(u uuid) returns uuid external name uuid."isaUUID";
 create view sys.storage as select * from sys.storage();
 create view sys.storagemodel as select * from sys.storagemodel();
 -- The contents of this file are subject to the MonetDB Public License
@@ -346,10 +342,19 @@ external name sql.analyze;
 
 create procedure analyze(sch string, tbl string, col string, "sample" bigint)
 external name sql.analyze;
-insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('isauuid', 'json_filter', 'json_filter_all', 'json_isvalid', 'json_isvalidarray', 'json_isvalidobject', 'json_length', 'json_path', 'json_text', 'md5', 'querylog_calls', 'querylog_catalog', 'queue', 'sessions', 'uuid') and f.type = 1 and f.schema_id = s.id and s.name = 'sys');
+insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('json_filter', 'json_filter_all', 'json_isvalid', 'json_isvalidarray', 'json_isvalidobject', 'json_length', 'json_path', 'json_text', 'querylog_calls', 'querylog_catalog', 'queue', 'sessions') and f.type = 1 and f.schema_id = s.id and s.name = 'sys');
 insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('analyze', 'pause', 'querylog_disable', 'querylog_empty', 'querylog_enable', 'resume', 'setsession', 'settimeout', 'shutdown', 'stop', 'sysmon_resume') and f.type = 2 and f.schema_id = s.id and s.name = 'sys');
 insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('quantile', 'median') and f.type = 3 and f.schema_id = s.id and s.name = 'sys');
 update sys._tables set system = true where name in ('environment', 'optimizers', 'queue', 'sessions', 'statistics', 'storage', 'storagemodel', 'tracelog') and schema_id = (select id from sys.schemas where name = 'sys');
+set schema "testschema";
+
+Running database upgrade commands:
+set schema "sys";
+create function sys.md5(v string) returns string external name clients.md5sum;
+create type uuid external name uuid;
+create function sys.uuid() returns uuid external name uuid."new";
+create function sys.isaUUID(u uuid) returns uuid external name uuid."isaUUID";
+insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('isauuid', 'md5', 'uuid') and f.type = 1 and f.schema_id = s.id and s.name = 'sys');
 set schema "testschema";
 
 
