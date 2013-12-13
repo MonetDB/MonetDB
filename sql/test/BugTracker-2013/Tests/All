@@ -56,3 +56,6 @@ case_when.Bug-3395
 syntaxerror.Bug-3399
 timestamp.Bug-3401
 not_null.Bug-3403
+rangejoin_optimizer.Bug-3411
+boolean_column_predicate.Bug-3412
+
