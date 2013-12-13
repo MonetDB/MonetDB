@@ -261,6 +261,7 @@ keyphrase2(Client cntxt, str kw)
 	return 0;
 }
 
+#if 0							/* unused */
 static inline int
 keyphrase(Client cntxt, str kw, int length)
 {
@@ -271,6 +272,7 @@ keyphrase(Client cntxt, str kw, int length)
 	}
 	return 0;
 }
+#endif
 
 /*
  * A similar approach is used for string literals.
