@@ -53,12 +53,6 @@
 # include <sys/user.h>
 #endif
 
-#ifdef WIN32
-int GDK_mem_pagebits = 16;	/* on windows, the mmap addresses can be set by the 64KB */
-#else
-int GDK_mem_pagebits = 14;	/* on linux, 4KB pages can be addressed (but we use 16KB) */
-#endif
-
 #ifndef MAP_NORESERVE
 # define MAP_NORESERVE		MAP_PRIVATE
 #endif
@@ -92,9 +86,6 @@ setenv(const char *name, const char *value, int overwrite)
 	return ret;
 }
 #endif
-
-char *MT_heapbase = NULL;
-
 
 /* Crude VM buffer management that keep a list of all memory mapped
  * regions.
@@ -273,7 +264,6 @@ char *MT_heapbase = NULL;
 void
 MT_init_posix(void)
 {
-	MT_heapbase = 0;
 }
 
 /* return RSS in bytes */
@@ -395,6 +385,9 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 	int fd = -1;
 	int flags = mode & MMAP_COPY ? MAP_PRIVATE : MAP_SHARED;
 	int prot = PROT_WRITE | PROT_READ;
+
+	/* round up to multiple of page size */
+	*new_size = (*new_size + GDK_mmap_pagesize - 1) & ~(GDK_mmap_pagesize - 1);
 
 	/* doesn't make sense for us to extend read-only memory map */
 	assert(mode & MMAP_WRITABLE);
@@ -660,7 +653,6 @@ MT_ignore_exceptions(struct _EXCEPTION_POINTERS *ExceptionInfo)
 void
 MT_init_posix(void)
 {
-	MT_heapbase = 0;
 	SetUnhandledExceptionFilter(MT_ignore_exceptions);
 }
 
@@ -760,6 +752,9 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 
 	/* doesn't make sense for us to extend read-only memory map */
 	assert(mode & MMAP_WRITABLE);
+
+	/* round up to multiple of page size */
+	*new_size = (*new_size + GDK_mmap_pagesize - 1) & ~(GDK_mmap_pagesize - 1);
 
 	if (old_size >= *new_size) {
 		*new_size = old_size;

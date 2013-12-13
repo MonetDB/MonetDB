@@ -990,7 +990,7 @@ typedef int (*GDKfcn) ();
  *  HEAPfree (Heap *h);
  * @item int
  * @tab
- *  HEAPextend (Heap *h, size_t size);
+ *  HEAPextend (Heap *h, size_t size, int mayshare);
  * @item int
  * @tab
  *  HEAPload (Heap *h, str nme,ext, int trunc);
@@ -1013,7 +1013,7 @@ typedef int (*GDKfcn) ();
  * isolate you from the different ways heaps can be accessed.
  */
 gdk_export int HEAPfree(Heap *h);
-gdk_export int HEAPextend(Heap *h, size_t size);
+gdk_export int HEAPextend(Heap *h, size_t size, int mayshare);
 gdk_export int HEAPcopy(Heap *dst, Heap *src);
 gdk_export size_t HEAPvmsize(Heap *h);
 gdk_export size_t HEAPmemsize(Heap *h);
@@ -1187,7 +1187,7 @@ gdk_export bte ATOMelmshift(int sz);
 			if ((b)->HT->width < SIZEOF_VAR_T &&		\
 			    ((b)->HT->width <= 2 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 * (b)->HT->width))) { \
 				/* doesn't fit in current heap, upgrade it */ \
-				if (GDKupgradevarheap((b)->HT, _d, (copyall)) == GDK_FAIL) \
+				if (GDKupgradevarheap((b)->HT, _d, (copyall), (b)->batRestricted == BAT_READ) == GDK_FAIL) \
 					goto bunins_failed;		\
 			}						\
 			_ptr = (p);					\
@@ -1235,7 +1235,7 @@ gdk_export bte ATOMelmshift(int sz);
 			if ((b)->HT->width < SIZEOF_VAR_T &&		\
 			    ((b)->HT->width <= 2 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 * (b)->HT->width))) { \
 				/* doesn't fit in current heap, upgrade it */ \
-				if (GDKupgradevarheap((b)->HT, _d, 0) == GDK_FAIL) \
+				if (GDKupgradevarheap((b)->HT, _d, 0, (b)->batRestricted == BAT_READ) == GDK_FAIL) \
 					goto bunins_failed;		\
 			}						\
 			_ptr = (p);					\
@@ -1297,7 +1297,7 @@ gdk_export bte ATOMelmshift(int sz);
 
 #define bunfastins_check(b, p, h, t) bunfastins(b, h, t)
 
-gdk_export int GDKupgradevarheap(COLrec *c, var_t v, int copyall);
+gdk_export int GDKupgradevarheap(COLrec *c, var_t v, int copyall, int mayshare);
 gdk_export BAT *BUNfastins(BAT *b, const void *left, const void *right);
 gdk_export BAT *BUNins(BAT *b, const void *left, const void *right, bit force);
 gdk_export BAT *BUNappend(BAT *b, const void *right, bit force);
@@ -1589,12 +1589,6 @@ gdk_export gdk_return BATgroup(BAT **groups, BAT **extents, BAT **histo, BAT *b,
  * system call it issues buffer management advice to the OS kernel, as
  * for the expected usage pattern of the memory in a heap.
  */
-
-gdk_export int GDK_mem_pagebits;	/* page size for non-linear mmaps */
-
-#define REMAP_PAGE_BITS	GDK_mem_pagebits
-#define REMAP_PAGE_MAXBITS (REMAP_PAGE_BITS+3)
-#define REMAP_PAGE_MAXSIZE ((size_t) 1 << REMAP_PAGE_MAXBITS) /* max page bytesize of unary BUN heap (8-byte atom) */
 
 /* Buffer management advice for heaps */
 #define BUF_NORMAL	0	/* No further special treatment */
@@ -2189,7 +2183,6 @@ gdk_export BAT *BATimprints(BAT *b);
 /* we prefer to use vm_alloc routines on size > GDKmmap */
 gdk_export void *GDKmmap(const char *path, int mode, size_t len);
 
-gdk_export size_t GDK_mem_bigsize;	/* size after which we use anonymous VM rather than malloc */
 gdk_export size_t GDK_mem_maxsize;	/* max allowed size of committed memory */
 gdk_export size_t GDK_vm_maxsize;	/* max allowed size of reserved vm */
 gdk_export int	GDK_vm_trim;		/* allow trimming */

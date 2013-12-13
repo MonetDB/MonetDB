@@ -187,10 +187,6 @@ gdk_export void MT_sleep_ms(unsigned int ms);
 /* in order to be sure of madvise and msync modes, pass them to mmap()
  * call as well */
 
-/* a hook function to add any initialization required for the MT_
- * functionality */
-gdk_export char *MT_heapbase;
-
 gdk_export size_t MT_getrss(void);
 
 gdk_export void *MT_mmap(const char *path, int mode, size_t len);

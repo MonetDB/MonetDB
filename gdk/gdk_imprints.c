@@ -729,7 +729,7 @@ do {                                                              \
 	}
 	assert(b->batCapacity >= BATcount(b));
 	return b;
-};
+}
 
 int
 IMPSgetbin(int tpe, bte bits, char *inbins, const void *v)

@@ -67,8 +67,6 @@ void_bat_create(int adt, BUN nr)
 	if (BATmirror(b))
 		BATseqbase(b, 0);
 	BATsetaccess(b, BAT_APPEND);
-	if (nr > (BUN) REMAP_PAGE_MAXSIZE)
-		BATmmap(b, STORE_MMAP, STORE_MMAP, STORE_MMAP, STORE_MMAP, 0);
 	if (nr > BATTINY && adt)
 		b = BATextend(b, nr);
 	if (b == NULL)

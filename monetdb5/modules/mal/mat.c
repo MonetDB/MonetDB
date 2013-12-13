@@ -162,7 +162,7 @@ MATpackIncrement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		/* allocate enough space for the strings */
 		if ( b->T->vheap && bn->T->vheap ){
 			newsize =  b->T->vheap->size * pieces;
-			if (HEAPextend(bn->T->vheap, newsize) < 0) 
+			if (HEAPextend(bn->T->vheap, newsize, TRUE) < 0)
 				throw(MAL, "mat.pack", MAL_MALLOC_FAIL);
 		}
 		BATseqbase(bn, b->H->seq);

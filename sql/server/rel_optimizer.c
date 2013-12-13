@@ -3943,6 +3943,50 @@ rel_reduce_groupby_exps(int *changes, mvc *sql, sql_rel *rel)
 	return rel;
 }
 
+/* Rewrite group by expressions with distinct 
+ *
+ * ie select a, count(distinct b) from c where ... groupby a;
+ * No other aggregations should be present
+ */
+
+static sql_rel *
+rel_groupby_distinct(int *changes, mvc *sql, sql_rel *rel) 
+{
+	if (is_groupby(rel->op) && rel->r && !rel_is_ref(rel)) {
+		node *n;
+		int nr = 0;
+		list *gbe, *arg, *exps;
+		sql_exp *distinct = NULL, *darg;
+		sql_rel *l = NULL;
+
+		for (n=rel->exps->h; n && nr <= 2; n = n->next) {
+			sql_exp *e = n->data;
+			if (need_distinct(e)) {
+				distinct = n->data;
+				nr++;
+			}
+		}
+		if (nr != 1 || list_length(rel->r) + nr != list_length(rel->exps)) 
+			return rel;
+		arg = distinct->l;
+		if (distinct->type != e_aggr || list_length(arg) != 1)
+			return rel;
+		darg = arg->h->data;
+		exp_label(sql->sa, darg, ++sql->label);
+		gbe = list_dup(rel->r, (fdup)NULL);
+		exps = list_dup(rel->r, (fdup)NULL);
+		list_append(gbe, exp_copy(sql->sa, darg));
+		darg = exp_column(sql->sa, exp_find_rel_name(darg), exp_name(darg), exp_subtype(darg), darg->card, has_nil(darg), is_intern(darg));
+		list_append(exps, exp_copy(sql->sa, darg));
+		arg->h->data = darg;
+		l = rel->l = rel_groupby(sql, rel->l, gbe);
+		l->exps = exps;
+		set_nodistinct(distinct);
+		(*changes)++;
+	}
+	return rel;
+}
+
 static sql_exp *split_aggr_and_project(mvc *sql, list *aexps, sql_exp *e);
 
 static void
@@ -6401,6 +6445,7 @@ _rel_optimizer(mvc *sql, sql_rel *rel, int level)
 		rel = rewrite_topdown(sql, rel, &rel_push_aggr_down, &changes);
 		rel = rewrite(sql, rel, &rel_groupby_order, &changes); 
 		rel = rewrite(sql, rel, &rel_reduce_groupby_exps, &changes); 
+		rel = rewrite(sql, rel, &rel_groupby_distinct, &changes); 
 	}
 
 	if (gp.cnt[op_join] || gp.cnt[op_left] || 

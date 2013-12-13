@@ -170,7 +170,6 @@
 			hashelim(a1,a2,loc,a3);				\
 		}							\
 		(void) cmp;						\
-		break;							\
 	}
 #define elim_doubles(a1)						\
 	switch (ATOMstorage(b->htype)) {				\
