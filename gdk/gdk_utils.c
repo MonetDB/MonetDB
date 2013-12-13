@@ -296,7 +296,6 @@ BATSIGinit(void)
  * set in GDKinit() */
 size_t GDK_mmap_minsize = (size_t) 1 << 18;
 size_t GDK_mmap_pagesize = (size_t) 1 << 16; /* mmap granularity */
-static size_t GDK_mem_maxsize_max = GDK_VM_MAXSIZE;
 size_t GDK_mem_maxsize = GDK_VM_MAXSIZE;
 size_t GDK_vm_maxsize = GDK_VM_MAXSIZE;
 
@@ -1027,7 +1026,7 @@ GDKinit(opt *set, int setlen)
 	GDKlockHome();
 
 	/* Mserver by default takes 80% of all memory as a default */
-	GDK_mem_maxsize = GDK_mem_maxsize_max = (size_t) ((double) MT_npages() * (double) MT_pagesize() * 0.815);
+	GDK_mem_maxsize = (size_t) ((double) MT_npages() * (double) MT_pagesize() * 0.815);
 	GDKremovedir(DELDIR);
 	BBPinit();
 
