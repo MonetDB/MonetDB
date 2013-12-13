@@ -52,7 +52,7 @@ generateUUID(void)
 
 	/* generate something like this:
 	 * cefa7a9c-1dd2-11b2-8350-880020adbeef ("%08x-%04x-%04x-%04x-%012x") */
-	snprintf(out, "%04x%04x-%04x-%04x-%04x-%04x%04x%04x",
+	snprintf(out, sizeof(out), "%04x%04x-%04x-%04x-%04x-%04x%04x%04x",
 		 rand() % 65536, rand() % 65536,
 		 rand() % 65536, rand() % 65536,
 		 rand() % 65536, rand() % 65536,
