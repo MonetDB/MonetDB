@@ -345,13 +345,6 @@ pattern optimizer.matpack(mod:str, fcn:str):str
 address OPTwrapper
 comment "Unroll the mat.pack operation";
 
-#opt_json
-pattern optimizer.json():str
-address OPTwrapper;
-pattern optimizer.json(mod:str, fcn:str):str
-address OPTwrapper
-comment "Unroll the mat.pack operation";
-
 #opt_octopus.mal
 module octopus;
 pattern optimizer.octopus():str

@@ -128,7 +128,6 @@
 \dSf sys.initializedictionary
 \dSf sys.intersection
 \dSf sys.isaurl
-\dSf sys.isauuid
 \dSf sys.isempty
 \dSf sys.issimple
 \dSf sys.json_filter
@@ -145,7 +144,6 @@
 \dSf sys.masklen
 \dSf sys.mbr
 \dSf sys.mbroverlaps
-\dSf sys.md5
 \dSf sys.median
 \dSf sys.mlinefromtext
 \dSf sys.mpointfromtext
@@ -200,7 +198,6 @@
 \dSf sys.times
 \dSf sys.touches
 \dSf sys.tracelog
-\dSf sys.uuid
 \dSf sys.vacuum
 \dSf sys.var
 \dSf sys.var_pop

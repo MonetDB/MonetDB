@@ -63,7 +63,6 @@ lib_mal = {
 		urlbox.c urlbox.h \
 		zorder.c zorder.h \
 		sample.c sample.h \
-		json_util.c json_util.h \
 		calc.c batcalc.c
 }
 
@@ -79,14 +78,14 @@ headers_mal = {
 		mal_mapi.mal sabaoth.mal remote.mal  \
 		txtsim.mal recycle.mal \
 		cluster.mal trader.mal \
-		tokenizer.mal zorder.mal sample.mal json_util.mal \
+		tokenizer.mal zorder.mal sample.mal \
 		calc.mal batcalc.mal batmtime.mal querylog.mal sysmon.mal
 }
 
 EXTRA_DIST = batExtensions.mal iterator.mal constraints.mal \
 	groupby.mal mal_init.mal manual.mal mkey.mal pcre.mal \
 	profiler.mal recycle.mal remote.mal sabaoth.mal trader.mal \
-	transaction.mal txtsim.mal tablet.mal tablet.h sample.mal json_util.mal \
+	transaction.mal txtsim.mal tablet.mal tablet.h sample.mal \
 	mal_mapi.mal mat.mal tokenizer.mal pqueue.mal calc.mal \
 	batcalc.mal batmtime.mal querylog.mal sysmon.mal
 

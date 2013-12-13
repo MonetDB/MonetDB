@@ -27,8 +27,6 @@ debian/tmp/usr/lib/monetdb5/createdb/25_debug.sql usr/lib/monetdb5/createdb
 debian/tmp/usr/lib/monetdb5/createdb/26_sysmon.sql usr/lib/monetdb5/createdb
 debian/tmp/usr/lib/monetdb5/createdb/39_analytics.sql usr/lib/monetdb5/createdb
 debian/tmp/usr/lib/monetdb5/createdb/40_json.sql usr/lib/monetdb5/createdb
-debian/tmp/usr/lib/monetdb5/createdb/41_jsonstore.sql usr/lib/monetdb5/createdb
-debian/tmp/usr/lib/monetdb5/createdb/45_uuid.sql usr/lib/monetdb5/createdb
 debian/tmp/usr/lib/monetdb5/createdb/75_storagemodel.sql usr/lib/monetdb5/createdb
 debian/tmp/usr/lib/monetdb5/createdb/80_statistics.sql usr/lib/monetdb5/createdb
 debian/tmp/usr/lib/monetdb5/createdb/80_udf.sql usr/lib/monetdb5/createdb

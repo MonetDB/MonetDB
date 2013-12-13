@@ -34726,10 +34726,6 @@ pattern calc.==(v:date,w:date):bit
 address CMDvarEQ;
 comment Equality of two dates
 
-command calc.==(l:uuid,r:uuid):bit 
-address UUIDequal;
-comment Compare two UUID values for equality
-
 pattern calc.==(v1:dbl,v2:dbl):bit 
 address CMDvarEQ;
 comment Return V1 == V2
@@ -38484,14 +38480,6 @@ command calc.timestamp(t:timestamp):timestamp
 address MTIMEtimestamp2timestamp;
 command calc.timestamp(s:str):timestamp 
 address MTIMEtimestamp_fromstr;
-command calc.uuid(s:uuid):str 
-address UUIDuuid2str;
-comment Coerce a uuid to a string type
-
-command calc.uuid(s:str):uuid 
-address UUIDstr2uuid;
-comment Coerce a string to a uuid, validating its format
-
 command calc.url(s:url):url 
 address URLnoop;
 comment Create an URL from a string literal
@@ -39793,10 +39781,6 @@ comment Simple JSON path accessor
 
 command json.prelude():void 
 address JSONprelude;
-command json.resultSet(u:bat[:oid,:uuid],rev:bat[:oid,:lng],js:bat[:oid,:json]):json 
-address JSONresultSet;
-comment Converts the json store into a single json string:
-
 pattern json.renderarray(val:any...):json 
 address JSONrenderarray;
 pattern json.renderobject(val:any...):json 
@@ -41133,12 +41117,6 @@ address OPTwrapper;
 comment Expand inline functions
 
 pattern optimizer.inline():str 
-address OPTwrapper;
-pattern optimizer.json(mod:str,fcn:str):str 
-address OPTwrapper;
-comment Unroll the mat.pack operation
-
-pattern optimizer.json():str 
 address OPTwrapper;
 pattern optimizer.joinselect(mod:str,fcn:str):str 
 address OPTwrapper;
@@ -43202,30 +43180,6 @@ comment Create an URL from a string literal
 command url.url(s:str):url 
 address URLnew;
 comment Create an URL from a string literal
-
-command uuid.#fromstr():uuid 
-address UUIDfromString;
-comment Convert string to uuid
-
-command uuid.isaUUID(u:uuid):bit 
-address UUIDisaUUID;
-comment Test a string for a UUID format
-
-command uuid.new():uuid 
-address UUIDgenerateUuid;
-comment Generate uuid
-
-command uuid.str(u:uuid):str 
-address UUIDuuid2str;
-comment Coerce a uuid to its string type
-
-command uuid.#tostr():str 
-address UUIDtoString;
-comment Convert uuid to string equivalent
-
-command uuid.uuid(s:str):uuid 
-address UUIDstr2uuid;
-comment Coerce a string to a uuid, validating its format
 
 command wkb.FromText{unsafe}(w:str,type:int):wkb 
 address wkbFromText;

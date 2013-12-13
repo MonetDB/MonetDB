@@ -759,14 +759,6 @@ sql_update_jan2014(Client c)
 		fclose(fp);
 	}
 
-	/* new file 41_jsonstore.sql */
-	pos += snprintf(buf + pos, bufsize - pos, "create function sys.md5(v string) returns string external name clients.md5sum;\n");
-
-	/* new file 45_uuid.sql */
-	pos += snprintf(buf + pos, bufsize - pos, "create type uuid external name uuid;\n");
-	pos += snprintf(buf + pos, bufsize - pos, "create function sys.uuid() returns uuid external name uuid.\"new\";\n");
-	pos += snprintf(buf + pos, bufsize - pos, "create function sys.isaUUID(u uuid) returns uuid external name uuid.\"isaUUID\";\n");
-
 	/* added entry in 75_storagemodel.sql */
 	pos += snprintf(buf + pos, bufsize - pos, "create view sys.storage as select * from sys.storage();\n");
 	pos += snprintf(buf + pos, bufsize - pos, "create view sys.storagemodel as select * from sys.storagemodel();\n");
@@ -783,7 +775,7 @@ sql_update_jan2014(Client c)
 	}
 
 	pos += snprintf(buf + pos, bufsize - pos,
-			"insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('isauuid', 'json_filter', 'json_filter_all', 'json_isvalid', 'json_isvalidarray', 'json_isvalidobject', 'json_length', 'json_path', 'json_text', 'md5', 'querylog_calls', 'querylog_catalog', 'queue', 'sessions', 'uuid') and f.type = %d and f.schema_id = s.id and s.name = 'sys');\n",
+			"insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('json_filter', 'json_filter_all', 'json_isvalid', 'json_isvalidarray', 'json_isvalidobject', 'json_length', 'json_path', 'json_text', 'querylog_calls', 'querylog_catalog', 'queue', 'sessions') and f.type = %d and f.schema_id = s.id and s.name = 'sys');\n",
 			F_FUNC);
 	pos += snprintf(buf + pos, bufsize - pos,
 			"insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('analyze', 'pause', 'querylog_disable', 'querylog_empty', 'querylog_enable', 'resume', 'setsession', 'settimeout', 'shutdown', 'stop', 'sysmon_resume') and f.type = %d and f.schema_id = s.id and s.name = 'sys');\n",
