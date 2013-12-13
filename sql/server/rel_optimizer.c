@@ -849,7 +849,7 @@ order_joins(mvc *sql, list *rels, list *exps)
 			if (exp_is_join_exp(e) == 0)
 				rel_join_add_exp(sql->sa, top->l, e);
 			else
-				rel_select_add_exp(top, e);
+				rel_select_add_exp(sql->sa, top, e);
 		}
 	}
 	return top;
@@ -2780,12 +2780,12 @@ rel_push_select_down(int *changes, mvc *sql, sql_rel *rel)
 				ne = exp_push_down(sql, e, jl, jl);
 			if (ne && ne != e) {
 				done = 1; 
-				rel_select_add_exp(jl, ne);
+				rel_select_add_exp(sql->sa, jl, ne);
 			} else if (right) {
 				ne = exp_push_down(sql, e, jr, jr);
 				if (ne && ne != e) {
 					done = 1; 
-					rel_select_add_exp(jr, ne);
+					rel_select_add_exp(sql->sa, jr, ne);
 				}
 			}
 			if (!done)
@@ -2841,7 +2841,7 @@ rel_push_select_down(int *changes, mvc *sql, sql_rel *rel)
 
 				/* can we move it down */
 				if (ne && ne != e) {
-					rel_select_add_exp(pl, ne);
+					rel_select_add_exp(sql->sa, pl, ne);
 					(*changes)++;
 				} else {
 					append(rel->exps, (ne)?ne:e);
@@ -5162,22 +5162,33 @@ exp_merge_range(sql_allocator *sa, list *exps)
 
 				if (f->type == e_cmp && f->flag < cmp_equal && !f->f  &&
 				    rf->card > CARD_ATOM) {
-					sql_exp *ne;
+					sql_exp *ne, *t;
 					int swap = 0, lt = 0, gt = 0;
 					comp_type ef = (comp_type) e->flag, ff = (comp_type) f->flag;
 				
+					/* both swapped ? */
+				     	if (exp_match_exp(re, rf)) {
+						t = re; 
+						re = le;
+						le = t;
+						ef = swap_compare(ef);
+						t = rf;
+						rf = lf;
+						lf = t;
+						ff = swap_compare(ff);
+					}
+
 					/* is left swapped ? */
 				     	if (exp_match_exp(re, lf)) {
-						sql_exp *t = re; 
-
+						t = re; 
 						re = le;
 						le = t;
 						ef = swap_compare(ef);
 					}
+
 					/* is right swapped ? */
 				     	if (exp_match_exp(le, rf)) {
-						sql_exp *t = rf; 
-
+						t = rf; 
 						rf = lf;
 						lf = t;
 						ff = swap_compare(ff);
