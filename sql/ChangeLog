@@ -1,3 +1,8 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Fri Dec 13 2013 Sjoerd Mullender <sjoerd@acm.org>
+- Stop support for upgrading directly from a database created with a
+  server from the Oct2012 release or older.  You can upgrade via the
+  Feb2013 or Jan2014 release.
+
