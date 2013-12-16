@@ -37,34 +37,29 @@
 inline
 ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k)
 {
+	ValRecord *v = &stk->stk[pci->argv[k]];
+
 #ifdef STRUCT_ALIGNED
-	return (ptr) & stk->stk[pci->argv[k]].val.ival;
+	return (ptr) &v->val.ival;
 #else
-	int j = 0;
-	ValRecord *v = 0;
 	ptr ret = NULL;
 
-	j = pci->argv[k];
-	v = &stk->stk[j];
-
 	switch (ATOMstorage(v->vtype)) {
-	case TYPE_void: ret = (ptr) & v->val.ival; break;
-	case TYPE_bit: ret = (ptr) & v->val.btval; break;
-	case TYPE_sht: ret = (ptr) & v->val.shval; break;
-	case TYPE_bat: ret = (ptr) & v->val.bval; break;
-	case TYPE_int: ret = (ptr) & v->val.ival; break;
-	case TYPE_wrd: ret = (ptr) & v->val.wval; break;
-	case TYPE_bte: ret = (ptr) & v->val.btval; break;
-	case TYPE_oid: ret = (ptr) & v->val.oval; break;
-	case TYPE_ptr: ret = (ptr) & v->val.pval; break;
-	case TYPE_flt: ret = (ptr) & v->val.fval; break;
-	case TYPE_dbl: ret = (ptr) & v->val.dval; break;
-	case TYPE_lng: ret = (ptr) & v->val.lval; break;
-	case TYPE_str: ret = (ptr) & v->val.sval; break;
-	default:
-		ret = (ptr) & v->val.pval;
+	case TYPE_void: return (ptr) &v->val.ival;
+	case TYPE_bit:  return (ptr) &v->val.btval;
+	case TYPE_sht:  return (ptr) &v->val.shval;
+	case TYPE_bat:  return (ptr) &v->val.bval;
+	case TYPE_int:  return (ptr) &v->val.ival;
+	case TYPE_wrd:  return (ptr) &v->val.wval;
+	case TYPE_bte:  return (ptr) &v->val.btval;
+	case TYPE_oid:  return (ptr) &v->val.oval;
+	case TYPE_ptr:  return (ptr) &v->val.pval;
+	case TYPE_flt:  return (ptr) &v->val.fval;
+	case TYPE_dbl:  return (ptr) &v->val.dval;
+	case TYPE_lng:  return (ptr) &v->val.lval;
+	case TYPE_str:  return (ptr) &v->val.sval;
+	default:        return (ptr) &v->val.pval;
 	}
-	return ret;
 #endif
 }
 
