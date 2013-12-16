@@ -812,9 +812,13 @@ rel_find_lastexp(sql_rel *rel )
 }
 
 void
-rel_select_add_exp(sql_rel *l, sql_exp *e)
+rel_select_add_exp(sql_allocator *sa, sql_rel *l, sql_exp *e)
 {
 	assert(l->op == op_select || is_outerjoin(l->op));
+	if (e->type != e_cmp && e->card > CARD_ATOM) {
+		sql_exp *t = exp_atom_bool(sa, 1);
+		e = exp_compare(sa, e, t, cmp_equal);
+	}
 	append(l->exps, e);
 }
 
@@ -834,7 +838,7 @@ rel_select(sql_allocator *sa, sql_rel *l, sql_exp *e)
 		
 	if (l && l->op == op_select && !rel_is_ref(l)) { /* refine old select */
 		if (e)
-			rel_select_add_exp(l, e);
+			rel_select_add_exp(sa, l, e);
 		return l;
 	}
 	rel = rel_create(sa);
@@ -843,7 +847,7 @@ rel_select(sql_allocator *sa, sql_rel *l, sql_exp *e)
 	rel->op = op_select;
 	rel->exps = new_exp_list(sa);
 	if (e)
-		append(rel->exps, e);
+		rel_select_add_exp(sa, rel, e);
 	rel->card = CARD_ATOM; /* no relation */
 	if (l) {
 		rel->card = l->card;
@@ -1036,7 +1040,7 @@ rel_push_select(sql_allocator *sa, sql_rel *rel, sql_exp *ls, sql_exp *e)
 	if (!lrel) 
 		return NULL;
 	if (p && p->op == op_select && !rel_is_ref(p)) { /* refine old select */
-		rel_select_add_exp(p, e);
+		rel_select_add_exp(sa, p, e);
 	} else {
 		sql_rel *n = rel_select(sa, lrel, e);
 
@@ -1132,9 +1136,9 @@ rel_push_join(sql_allocator *sa, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp
 	/* filter on columns of this relation */
 	if ((lrel == rrel && (!r2 || lrel == rrel2) && lrel->op != op_join) || rel_is_ref(p)) {
 		if (lrel->op == op_select && !rel_is_ref(lrel)) {
-			rel_select_add_exp(lrel, e);
+			rel_select_add_exp(sa, lrel, e);
 		} else if (p && p->op == op_select && !rel_is_ref(p)) {
-			rel_select_add_exp(p, e);
+			rel_select_add_exp(sa, p, e);
 		} else {
 			sql_rel *n = rel_select(sa, lrel, e);
 
@@ -2898,7 +2902,7 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 			if (!is_select(rel->op) && !rel_is_ref(rel))
 				left = rel = rel_select(sql->sa, rel, e);
 			else
-				rel_select_add_exp(rel, e);
+				rel_select_add_exp(sql->sa, rel, e);
 		}
 
 		/* list of values or subqueries */
