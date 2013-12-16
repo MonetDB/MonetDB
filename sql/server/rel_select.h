@@ -42,7 +42,7 @@ extern sql_exp *rel_column_exp(mvc *sql, sql_rel **rel, symbol *column_e, int f)
 
 extern void rel_add_intern(mvc *sql, sql_rel *rel);
 
-extern void rel_select_add_exp(sql_rel *l, sql_exp *e);
+extern void rel_select_add_exp(sql_allocator *sa, sql_rel *l, sql_exp *e);
 extern sql_rel *rel_select(sql_allocator *sa, sql_rel *l, sql_exp *e);
 extern sql_rel *rel_select_copy(sql_allocator *sa, sql_rel *l, list *exps);
 extern sql_rel *rel_basetable(mvc *sql, sql_table *t, char *tname);

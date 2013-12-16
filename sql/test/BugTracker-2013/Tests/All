@@ -65,3 +65,5 @@ not_null.Bug-3403
 nested_concat_query.Bug-3408
 json_is_null.Bug-3406
 restore-uuid.Bug-3407
+rangejoin_optimizer.Bug-3411
+boolean_column_predicate.Bug-3412

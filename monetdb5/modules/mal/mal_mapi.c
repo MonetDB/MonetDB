@@ -1585,9 +1585,9 @@ SERVERputLocal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	case TYPE_bat:
 	case TYPE_ptr:
 		throw(MAL, "mapi.glue","Unsupported type");
-        case TYPE_str:
-                snprintf(buf,BUFSIZ,"%s:=%s;",*nme,*(char**)val);
-                break;
+	case TYPE_str:
+		snprintf(buf,BUFSIZ,"%s:=%s;",*nme,*(char**)val);
+		break;
 	default:
 		ATOMformat(tpe,val,&w);
 		snprintf(buf,BUFSIZ,"%s:=%s;",*nme,w);
