@@ -163,6 +163,7 @@ opt_export	str mitosisRef;
 opt_export  str mkeyRef;
 opt_export  str mmathRef;
 opt_export  str multiplexRef;
+opt_export  str manifoldRef;
 opt_export  str multicolumnsRef;
 opt_export  str mvcRef;
 opt_export  str newRef;

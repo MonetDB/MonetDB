@@ -164,6 +164,7 @@ str mitosisRef;
 str mkeyRef;
 str mmathRef;
 str multiplexRef;
+str manifoldRef;
 str multicolumnsRef;
 str mvcRef;
 str newRef;
@@ -435,6 +436,7 @@ void optimizerInit(void){
 		mkeyRef = putName("mkey", 4);
 		mmathRef = putName("mmath", 5);
 		multiplexRef = putName("multiplex", 9);
+		manifoldRef = putName("manifold", 8);
 		multicolumnsRef = putName("multicolumns", 12);
 		mvcRef = putName("mvc", 3);
 		newRef = putName("new",3);

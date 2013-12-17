@@ -455,12 +455,3 @@ OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		chkTypes(cntxt->fdout, cntxt->nspace,mb,TRUE);
 	return mb->errors? 0: doit;
 }
-
-str
-OPTremapMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
-	char buf[BUFSIZ];
-	(void) mb;
-	(void) cntxt;
-	snprintf(buf,BUFSIZ,"Function '%s.%s' not defined", (char *)getArgReference(stk,p,p->retc), (char *)getArgReference(stk,p,p->retc+1));
-	throw(MAL, "opt.remap", "%s",buf);
-}

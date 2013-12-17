@@ -39939,10 +39939,6 @@ command lsst.xmatch(l:bat[:oid,:lng],r:bat[:oid,:lng],depth:int) (lr:bat[:oid,:o
 address LSSTxmatch;
 comment Return the HtmID pairs that lie within the same triangle at level depth
 
-pattern mal.multiplex(a:any...):any 
-address OPTremapMultiplex;
-pattern mal.multiplex(a:any...):any... 
-address OPTremapMultiplex;
 command mapreduce.getCloud(nme:str):bat[:oid,:str] 
 address MRgetCloud;
 comment Localize the elements of a named cloud
@@ -40251,6 +40247,10 @@ pattern mat.slice(first:wrd,last:wrd,b:bat[:oid,:any_2]...):bat[:oid,:any_2]
 address MATpackSlice;
 comment Materialize a sliced MAT into a BAT
 
+pattern mal.manifold(mod:str,fcn:str,a:any...):bat[:oid,:any] 
+address MANIFOLDevaluate;
+pattern mal.multiplex(mod:str,fcn:str,a:any...):any... 
+address OPTremapMultiplex;
 command mbr.#cmp():int 
 address mbrCOMP;
 command mbr.#fromstr():mbr 

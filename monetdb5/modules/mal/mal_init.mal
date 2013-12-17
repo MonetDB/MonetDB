@@ -85,6 +85,7 @@ include bbp;
 include const;
 include box;
 include mal_io;
+include manifold;
 include factories;
 include recycle;
 include remote;

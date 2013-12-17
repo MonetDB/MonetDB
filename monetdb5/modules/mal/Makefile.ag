@@ -47,6 +47,7 @@ lib_mal = {
 		mat.c mat.h \
 		mdb.c mdb.h \
 		mkey.c mkey.h \
+		manifold.c manifold.h \
 		pcre.c \
 		pqueue.c pqueue.h \
 		profiler.c profiler.h \
@@ -72,7 +73,7 @@ headers_mal = {
 	DIR = libdir/monetdb5
 	SOURCES = language.mal constraints.mal mal_init.mal box.mal bbp.mal \
 		profiler.mal const.mal batExtensions.mal \
-		inspect.mal manual.mal mal_io.mal pqueue.mal mkey.mal \
+		inspect.mal manual.mal mal_io.mal pqueue.mal mkey.mal manifold.mal \
 		iterator.mal clients.mal \
 		factories.mal groupby.mal mdb.mal pcre.mal mat.mal \
 		urlbox.mal transaction.mal \
@@ -84,7 +85,7 @@ headers_mal = {
 }
 
 EXTRA_DIST = batExtensions.mal iterator.mal constraints.mal \
-	groupby.mal mal_init.mal manual.mal mkey.mal pcre.mal \
+	groupby.mal mal_init.mal manual.mal mkey.mal manifold.mal pcre.mal \
 	profiler.mal recycle.mal remote.mal sabaoth.mal trader.mal \
 	transaction.mal txtsim.mal tablet.mal tablet.h sample.mal json_util.mal \
 	mal_mapi.mal mat.mal tokenizer.mal pqueue.mal calc.mal \

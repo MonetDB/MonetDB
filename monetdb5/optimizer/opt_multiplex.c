@@ -18,6 +18,7 @@
  */
 #include "monetdb_config.h"
 #include "opt_multiplex.h"
+#include "manifold.h"
 #include "mal_interpreter.h"
 
 /*
@@ -225,16 +226,24 @@ OPTmultiplexImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 
 	for (i = 0; i < limit; i++) {
 		p = old[i];
-		if (msg == MAL_SUCCEED &&
-                    getModuleId(p) == malRef &&
+		if (msg == MAL_SUCCEED && getModuleId(p) == malRef &&
 		    getFunctionId(p) == multiplexRef) {
+
+
 			msg = OPTexpandMultiplex(cntxt, mb, stk, p);
 			if( msg== MAL_SUCCEED){
 				freeInstruction(p);
 				old[i]=0;
-			} else {
-				pushInstruction(mb, p);
+				actions++;
+				continue;
+			} 
+			if ( MANIFOLDtypecheck(cntxt,mb,stk,p) != NULL){
+				setFunctionId(p, manifoldRef);
+				actions++;
+				continue;
 			}
+
+			pushInstruction(mb, p);
 			actions++;
 		} else if( old[i])
 			pushInstruction(mb, p);
