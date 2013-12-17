@@ -1,18 +1,21 @@
-module uuid;
+atom uuid;
 
-atom uuid:str;
+# the atom functions
+command cmp() :int address UUIDcompare;
+command fromstr() :uuid address UUIDfromString;
+command hash() :int address UUIDhash;
+command null() :uuid address UUIDnull;
+command read() :uuid address UUIDread;
+command tostr() :str address UUIDtoString;
+command write() :int address UUIDwrite;
 
-command tostr() :str
-address UUIDtoString
-comment "Convert uuid to string equivalent";
-
-command fromstr() :uuid
-address UUIDfromString
-comment "Convert string to uuid";
+# fix up the rest of the atom definition
+command prelude():void address UUIDprelude;
+uuid.prelude();
 
 command new() :uuid
 address UUIDgenerateUuid
-comment "Generate uuid";
+comment "Generate a new uuid";
 
 command uuid(s:str):uuid
 address UUIDstr2uuid
@@ -26,11 +29,11 @@ command str(u:uuid):str
 address UUIDuuid2str
 comment "Coerce a uuid to its string type";
 
-command calc.uuid(s:uuid):str
+command calc.str(s:uuid):str
 address UUIDuuid2str
 comment "Coerce a uuid to a string type";
 
-command isaUUID(u:uuid):bit
+command isaUUID(u:str):bit
 address UUIDisaUUID
 comment "Test a string for a UUID format";
 

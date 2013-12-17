@@ -61,7 +61,7 @@ Ready.
 % sys.json_first,	sys.json_first,	sys.json_first,	sys.json_first # table_name
 % _id,	_rev,	deleted,	js # name
 % uuid,	varchar,	boolean,	json # type
-% 36,	34,	5,	2 # length
+% 0,	34,	5,	2 # length
 [ 4b5b0c91-61f3-46db-b279-1535c8e2bd41,	"1-99914b932bd37a50b983c5e7c90ae93b",	false,	"{}"	]
 #WITH curr_first(maxrev, _id) AS (
 #  SELECT MAX(CAST(SUBSTRING(_rev,1,POSITION('-' IN _rev) - 1) AS INT)), 
@@ -79,13 +79,13 @@ Ready.
 % sys.json_first,	sys.json_first,	sys.json_first # table_name
 % _id,	_rev,	js # name
 % uuid,	varchar,	json # type
-% 36,	34,	2 # length
+% 0,	34,	2 # length
 [ 4b5b0c91-61f3-46db-b279-1535c8e2bd41,	"1-99914b932bd37a50b983c5e7c90ae93b",	"{}"	]
 #SELECT * FROM json_first WHERE _id = '4b5b0c91-61f3-46db-b279-1535c8e2bd41';
 % sys.json_first,	sys.json_first,	sys.json_first,	sys.json_first # table_name
 % _id,	_rev,	deleted,	js # name
 % uuid,	varchar,	boolean,	json # type
-% 36,	34,	5,	2 # length
+% 0,	34,	5,	2 # length
 [ 4b5b0c91-61f3-46db-b279-1535c8e2bd41,	"1-99914b932bd37a50b983c5e7c90ae93b",	false,	"{}"	]
 #WITH curr_first(maxrev, _id) AS (
 #  SELECT MAX(CAST(SUBSTRING(_rev,1,POSITION('-' IN _rev) - 1) AS INT)), 
@@ -104,7 +104,7 @@ Ready.
 % sys.json_first,	sys.json_first,	sys.json_first # table_name
 % _id,	_rev,	js # name
 % uuid,	varchar,	json # type
-% 36,	34,	2 # length
+% 0,	34,	2 # length
 [ 4b5b0c91-61f3-46db-b279-1535c8e2bd41,	"1-99914b932bd37a50b983c5e7c90ae93b",	"{}"	]
 #SELECT * FROM first_update_doc ('4b5b0c91-61f3-46db-b279-1535c8e2bd41', '{"message":"hello world"}');
 % . # table_name
@@ -121,7 +121,7 @@ Ready.
 % sys.json_first,	sys.json_first,	sys.json_first,	sys.json_first # table_name
 % _id,	_rev,	deleted,	js # name
 % uuid,	varchar,	boolean,	json # type
-% 36,	34,	5,	25 # length
+% 0,	34,	5,	25 # length
 [ 4b5b0c91-61f3-46db-b279-1535c8e2bd41,	"1-99914b932bd37a50b983c5e7c90ae93b",	true,	"{}"	]
 [ 4b5b0c91-61f3-46db-b279-1535c8e2bd41,	"2-6306a02bc4305282f30cfe7c1fa24572",	true,	"{\"message\":\"hello world\"}"	]
 [ 4b5b0c91-61f3-46db-b279-1535c8e2bd42,	"1-99914b932bd37a50b983c5e7c90ae93b",	false,	"{}"	]
@@ -141,13 +141,13 @@ Ready.
 % sys.json_first,	sys.json_first,	sys.json_first # table_name
 % _id,	_rev,	js # name
 % uuid,	varchar,	json # type
-% 36,	34,	2 # length
+% 0,	34,	2 # length
 [ 4b5b0c91-61f3-46db-b279-1535c8e2bd42,	"1-99914b932bd37a50b983c5e7c90ae93b",	"{}"	]
 #SELECT * FROM json_first WHERE _id = '4b5b0c91-61f3-46db-b279-1535c8e2bd41';
 % sys.json_first,	sys.json_first,	sys.json_first,	sys.json_first # table_name
 % _id,	_rev,	deleted,	js # name
 % uuid,	varchar,	boolean,	json # type
-% 36,	34,	5,	25 # length
+% 0,	34,	5,	25 # length
 [ 4b5b0c91-61f3-46db-b279-1535c8e2bd41,	"1-99914b932bd37a50b983c5e7c90ae93b",	true,	"{}"	]
 [ 4b5b0c91-61f3-46db-b279-1535c8e2bd41,	"2-6306a02bc4305282f30cfe7c1fa24572",	true,	"{\"message\":\"hello world\"}"	]
 #WITH curr_first(maxrev, _id) AS (

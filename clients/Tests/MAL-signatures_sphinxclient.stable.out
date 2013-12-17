@@ -38116,6 +38116,10 @@ address bte_dec2second_interval;
 comment cast bte decimal to a second_interval
 
 function calc.surface{unsafe}(wkt:str):wkb;
+command calc.str(s:uuid):str 
+address UUIDuuid2str;
+comment Coerce a uuid to a string type
+
 command calc.sqlblob(s:str):sqlblob 
 address BLOBsqlblob_fromstr;
 command calc.sqlblob(b:sqlblob):sqlblob 
@@ -38472,10 +38476,6 @@ command calc.timestamp(t:timestamp):timestamp
 address MTIMEtimestamp2timestamp;
 command calc.timestamp(s:str):timestamp 
 address MTIMEtimestamp_fromstr;
-command calc.uuid(s:uuid):str 
-address UUIDuuid2str;
-comment Coerce a uuid to a string type
-
 command calc.uuid(s:str):uuid 
 address UUIDstr2uuid;
 comment Coerce a string to a uuid, validating its format
@@ -43196,30 +43196,38 @@ command url.url(s:str):url
 address URLnew;
 comment Create an URL from a string literal
 
+command uuid.#cmp():int 
+address UUIDcompare;
 command uuid.#fromstr():uuid 
 address UUIDfromString;
-comment Convert string to uuid
-
-command uuid.isaUUID(u:uuid):bit 
+command uuid.#hash():int 
+address UUIDhash;
+command uuid.isaUUID(u:str):bit 
 address UUIDisaUUID;
 comment Test a string for a UUID format
 
 command uuid.new():uuid 
 address UUIDgenerateUuid;
-comment Generate uuid
+comment Generate a new uuid
 
+command uuid.#null():uuid 
+address UUIDnull;
+command uuid.prelude():void 
+address UUIDprelude;
+command uuid.#read():uuid 
+address UUIDread;
 command uuid.str(u:uuid):str 
 address UUIDuuid2str;
 comment Coerce a uuid to its string type
 
 command uuid.#tostr():str 
 address UUIDtoString;
-comment Convert uuid to string equivalent
-
 command uuid.uuid(s:str):uuid 
 address UUIDstr2uuid;
 comment Coerce a string to a uuid, validating its format
 
+command uuid.#write():int 
+address UUIDwrite;
 command wkb.FromText{unsafe}(w:str,type:int):wkb 
 address wkbFromText;
 command wkb.#cmp():int 

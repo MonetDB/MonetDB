@@ -21,10 +21,10 @@ stdout of test 'uuid00` in directory 'monetdb5/modules/atoms` itself:
 function user.main():void;
     b := uuid.new();
 #io.print(b); 
-    x := uuid.isaUUID(b);
-    io.print(x);
     s:str  := uuid.str(b);
 #io.print(s); 
+    x := uuid.isaUUID(s);
+    io.print(x);
     z:uuid  := uuid.uuid(s);
 #io.print(z); 
     t := calc.==(z,b);

@@ -65,7 +65,7 @@ Ready.
 % sys.testuuid # table_name
 % column1 # name
 % uuid # type
-% 36 # length
+% 0 # length
 [ 38fded43-79ef-41b0-a2af-05d20d7c4d51	]
 #ROLLBACK;
 
