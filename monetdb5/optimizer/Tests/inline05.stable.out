@@ -31,8 +31,8 @@ end main;
 function user.qry():void;               #  0 qry:void := user.qry() {G}
     b := bat.new(:oid,:int);            #  1 b:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}
     bat.insert(b,0@0,1);                #  2 _4:bat[:oid,:int] := BKCinsert_bun(b:bat[:oid,:int], _5:oid, _6:int) {G}
-    z:bat[:oid,:dbl] {inline} := mal.multiplex("user","foo",b,b);#  3 z:bat[:oid,:dbl] := OPTremapMultiplex(_8:str, _9:str, b:bat[:oid,:int], b:bat[:oid,:int]) {G}
-    z:bat[:oid,:dbl] {inline} := mal.multiplex("user","foo",b,2);#  4 z:bat[:oid,:dbl] := OPTremapMultiplex(_8:str, _9:str, b:bat[:oid,:int], _10:int) {G}
+    z:bat[:oid,:dbl] {inline} := mal.multiplex("user","foo",b,b);#  3 z:bat[:oid,:dbl] := MANIFOLDremapMultiplex(_8:str, _9:str, b:bat[:oid,:int], b:bat[:oid,:int]) {G}
+    z:bat[:oid,:dbl] {inline} := mal.multiplex("user","foo",b,2);#  4 z:bat[:oid,:dbl] := MANIFOLDremapMultiplex(_8:str, _9:str, b:bat[:oid,:int], _10:int) {G}
 end qry;                                #  5  
 
 # 18:00:44 >  
