@@ -42,8 +42,6 @@ ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k)
 #ifdef STRUCT_ALIGNED
 	return (ptr) &v->val.ival;
 #else
-	ptr ret = NULL;
-
 	switch (ATOMstorage(v->vtype)) {
 	case TYPE_void: return (ptr) &v->val.ival;
 	case TYPE_bit:  return (ptr) &v->val.btval;
