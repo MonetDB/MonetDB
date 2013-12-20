@@ -544,9 +544,11 @@ systemd-tmpfiles --create %{_sysconfdir}/tmpfiles.d/monetdbd.conf
 %doc %{_mandir}/man1/monetdb.1.gz
 %doc %{_mandir}/man1/monetdbd.1.gz
 %if (0%{?fedora} >= 20)
+%dir %{_datadir}/doc/MonetDB-SQL
 %docdir %{_datadir}/doc/MonetDB-SQL
 %{_datadir}/doc/MonetDB-SQL/*
 %else
+%dir %{_datadir}/doc/MonetDB-SQL-%{version}
 %docdir %{_datadir}/doc/MonetDB-SQL-%{version}
 %{_datadir}/doc/MonetDB-SQL-%{version}/*
 %endif
