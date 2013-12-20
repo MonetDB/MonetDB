@@ -454,7 +454,7 @@ ODBCLength(ODBCDescRec *rec, int lengthtype)
 			6;
 	case SQL_GUID:
 		if (lengthtype == SQL_DESC_OCTET_LENGTH)
-			return 16;
+			return 16; /* sizeof(SQLGUID) */
 		/* strlen("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee") */
 		return 36;
 	default:

@@ -3208,6 +3208,19 @@ ODBCStore(ODBCStmt *stmt,
 			}
 			break;
 		case SQL_C_GUID:
+			snprintf(data, sizeof(data), "%08lx-%04x-%04x-%02x%02x-"
+				 "%02x%02x%02x%02x%02x%02x",
+				 (unsigned long) ((SQLGUID *) ptr)->Data1,
+				 (unsigned int) ((SQLGUID *) ptr)->Data2,
+				 (unsigned int) ((SQLGUID *) ptr)->Data3,
+				 (unsigned int) ((SQLGUID *) ptr)->Data4[0],
+				 (unsigned int) ((SQLGUID *) ptr)->Data4[1],
+				 (unsigned int) ((SQLGUID *) ptr)->Data4[2],
+				 (unsigned int) ((SQLGUID *) ptr)->Data4[3],
+				 (unsigned int) ((SQLGUID *) ptr)->Data4[4],
+				 (unsigned int) ((SQLGUID *) ptr)->Data4[5],
+				 (unsigned int) ((SQLGUID *) ptr)->Data4[6],
+				 (unsigned int) ((SQLGUID *) ptr)->Data4[7]);
 			break;
 		}
 		assign(buf, bufpos, buflen, '\'', stmt);
@@ -3706,6 +3719,52 @@ ODBCStore(ODBCStmt *stmt,
 			snprintf(data, sizeof(data), "%.*e", i, fval);
 			if (fval == strtod(data, NULL))
 				break;
+		}
+		assigns(buf, bufpos, buflen, data, stmt);
+		break;
+	case SQL_GUID:
+		switch (ctype) {
+		case SQL_C_CHAR:
+		case SQL_C_WCHAR:
+			if (slen != 36) {
+				/* not sure this is the correct error */
+				/* Invalid character value for cast
+				 * specification */
+				addStmtError(stmt, "22018", NULL, 0);
+				goto failure;
+			}
+			for (i = 0; i < 36; i++) {
+				if (strchr("0123456789abcdefABCDEF-",
+					   sval[i]) == NULL) {
+					/* not sure this is the
+					 * correct error */
+					/* Invalid character value for
+					 * cast specification */
+					addStmtError(stmt, "22018", NULL, 0);
+					goto failure;
+				}
+			}
+			snprintf(data, sizeof(data), "%.36s", sval);
+			break;
+		case SQL_C_GUID:
+			snprintf(data, sizeof(data), "%08lx-%04x-%04x-%02x%02x-"
+				 "%02x%02x%02x%02x%02x%02x",
+				 (unsigned long) ((SQLGUID *) ptr)->Data1,
+				 (unsigned int) ((SQLGUID *) ptr)->Data2,
+				 (unsigned int) ((SQLGUID *) ptr)->Data3,
+				 (unsigned int) ((SQLGUID *) ptr)->Data4[0],
+				 (unsigned int) ((SQLGUID *) ptr)->Data4[1],
+				 (unsigned int) ((SQLGUID *) ptr)->Data4[2],
+				 (unsigned int) ((SQLGUID *) ptr)->Data4[3],
+				 (unsigned int) ((SQLGUID *) ptr)->Data4[4],
+				 (unsigned int) ((SQLGUID *) ptr)->Data4[5],
+				 (unsigned int) ((SQLGUID *) ptr)->Data4[6],
+				 (unsigned int) ((SQLGUID *) ptr)->Data4[7]);
+			break;
+		default:
+			/* Restricted data type attribute violation */
+			addStmtError(stmt, "07006", NULL, 0);
+			goto failure;
 		}
 		assigns(buf, bufpos, buflen, data, stmt);
 		break;
