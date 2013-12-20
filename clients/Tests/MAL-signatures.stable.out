@@ -40250,7 +40250,7 @@ comment Materialize a sliced MAT into a BAT
 pattern mal.manifold(mod:str,fcn:str,a:any...):bat[:oid,:any] 
 address MANIFOLDevaluate;
 pattern mal.multiplex(mod:str,fcn:str,a:any...):any... 
-address OPTremapMultiplex;
+address MANIFOLDremapMultiplex;
 command mbr.#cmp():int 
 address mbrCOMP;
 command mbr.#fromstr():mbr 
