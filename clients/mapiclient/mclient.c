@@ -1141,6 +1141,11 @@ SQLrenderer(MapiHdl hdl, char singleinstr)
 			 * NULL or empty string, so MINCOLSIZE (below)
 			 * will work great */
 			len[i] = pagewidth <= 0 ? DEFWIDTH : pagewidth;
+		} else if (len[i] == 0 &&
+			   strcmp(mapi_get_type(hdl, i), "uuid") == 0) {
+			/* we know how large the UUID representation
+			 * is, even if the server doesn't */
+			len[i] = 36;
 		}
 		if (len[i] < MINCOLSIZE)
 			len[i] = MINCOLSIZE;
