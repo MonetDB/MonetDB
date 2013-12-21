@@ -8388,6 +8388,11 @@ BATcalcbetween_intern(const void *src, int incr1, const char *hp1, int wd1,
 
 	CANDLOOP(dst, l, bit_nil, 0, start);
 
+	if (tp != ATOMstorage(tp) &&
+	    ATOMnilptr(ATOMstorage(tp)) == ATOMnilptr(tp) &&
+	    BATatoms[ATOMstorage(tp)].atomCmp == BATatoms[tp].atomCmp)
+		tp = ATOMstorage(tp);
+
 	switch (tp) {
 	case TYPE_bte:
 		BETWEEN_LOOP_TYPE(bte);

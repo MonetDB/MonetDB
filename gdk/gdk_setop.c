@@ -172,42 +172,49 @@
 		(void) cmp;						\
 	}
 #define elim_doubles(a1)						\
-	switch (ATOMstorage(b->htype)) {				\
-	case TYPE_bte:							\
-		elim(a1,loc,_bte,simple_CMP(h,BUNhloc(bi,r),bte));	\
-		break;							\
-	case TYPE_sht:							\
-		elim(a1,loc,_sht,simple_CMP(h,BUNhloc(bi,r),sht));	\
-		break;							\
-	case TYPE_int:							\
-		elim(a1,loc,_int,simple_CMP(h,BUNhloc(bi,r),int));	\
-		break;							\
-	case TYPE_flt:							\
-		elim(a1,loc,_flt,simple_CMP(h,BUNhloc(bi,r),flt));	\
-		break;							\
-	case TYPE_dbl:							\
-		elim(a1,loc,_dbl,simple_CMP(h,BUNhloc(bi,r),dbl));	\
-		break;							\
-	case TYPE_lng:							\
-		elim(a1,loc,_lng,simple_CMP(h,BUNhloc(bi,r),lng));	\
-		break;							\
-	case TYPE_str:							\
-		if (b->H->vheap->hashash) {				\
-			elim(a1,var,_str_hv,GDK_STRCMP(h,BUNhvar(bi,r))); \
+	do {								\
+		int tpe = ATOMtype(b->htype);				\
+		if (tpe != ATOMstorage(tpe) &&				\
+		    ATOMnilptr(ATOMstorage(tpe)) == ATOMnilptr(tpe) &&	\
+		    BATatoms[ATOMstorage(tpe)].atomCmp == BATatoms[tpe].atomCmp) \
+			tpe = ATOMstorage(tpe);				\
+		switch (tpe) {						\
+		case TYPE_bte:						\
+			elim(a1,loc,_bte,simple_CMP(h,BUNhloc(bi,r),bte)); \
+			break;						\
+		case TYPE_sht:						\
+			elim(a1,loc,_sht,simple_CMP(h,BUNhloc(bi,r),sht)); \
+			break;						\
+		case TYPE_int:						\
+			elim(a1,loc,_int,simple_CMP(h,BUNhloc(bi,r),int)); \
+			break;						\
+		case TYPE_flt:						\
+			elim(a1,loc,_flt,simple_CMP(h,BUNhloc(bi,r),flt)); \
+			break;						\
+		case TYPE_dbl:						\
+			elim(a1,loc,_dbl,simple_CMP(h,BUNhloc(bi,r),dbl)); \
+			break;						\
+		case TYPE_lng:						\
+			elim(a1,loc,_lng,simple_CMP(h,BUNhloc(bi,r),lng)); \
+			break;						\
+		case TYPE_str:						\
+			if (b->H->vheap->hashash) {			\
+				elim(a1,var,_str_hv,GDK_STRCMP(h,BUNhvar(bi,r))); \
+				break;					\
+			}						\
+			/* fall through */				\
+		default: {						\
+			int (*merge)(const void *, const void *) = BATatoms[b->htype].atomCmp; \
+									\
+			if (b->hvarsized) {				\
+				elim(a1,var,var,((*merge)(h,BUNhvar(bi,r)))); \
+			} else {					\
+				elim(a1,loc,loc,((*merge)(h,BUNhloc(bi,r)))); \
+			}						\
 			break;						\
 		}							\
-		/* fall through */					\
-	default: {							\
-		int (*merge)(const void *, const void *) = BATatoms[b->htype].atomCmp; \
-									\
-		if (b->hvarsized) {					\
-			elim(a1,var,var,((*merge)(h,BUNhvar(bi,r))));	\
-		} else {						\
-			elim(a1,loc,loc,((*merge)(h,BUNhloc(bi,r))));	\
 		}							\
-		break;							\
-	}								\
-	}
+	} while (0)
 
 static BAT *
 BATins_kunique(BAT *bn, BAT *b)
@@ -742,7 +749,12 @@ BATins_##a1##a2(BAT *bn, BAT *l, BAT *r)				\
 			}						\
 		}							\
 	} else {							\
-		switch(ATOMstorage(r->htype)) {				\
+		int tpe = ATOMtype(r->htype);				\
+		if (tpe != ATOMstorage(tpe) &&				\
+		    ATOMnilptr(ATOMstorage(tpe)) == ATOMnilptr(tpe) &&	\
+		    BATatoms[ATOMstorage(tpe)].atomCmp == BATatoms[tpe].atomCmp) \
+			tpe = ATOMstorage(tpe);				\
+		switch(tpe) {						\
 		case TYPE_bte:						\
 			check(a2,loc,bte,simple_CMP(h,h2,bte),a1,bte_EQ); \
 			break;						\

@@ -610,6 +610,7 @@ BAT_scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 #ifndef NDEBUG
 	int (*cmp)(const void *, const void *);
 #endif
+	int t;
 	BUN p, q, cnt;
 	oid o, *dst;
 	/* off must be signed as it can be negative,
@@ -646,6 +647,12 @@ BAT_scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 	dst = (oid *) Tloc(bn, BUNfirst(bn));
 	cnt = 0;
 
+	t = b->ttype;
+	if (t != ATOMstorage(t) &&
+	    ATOMnilptr(ATOMstorage(t)) == ATOMnilptr(t) &&
+	    BATatoms[ATOMstorage(t)].atomCmp == BATatoms[t].atomCmp)
+		t = ATOMstorage(t);
+
 	if (s && !BATtdense(s)) {
 
 		assert(s->tsorted);
@@ -661,7 +668,7 @@ BAT_scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 		/* call type-specific core scan select function */
 		assert(b->batCapacity >= BATcount(b));
 		assert(s->batCapacity >= BATcount(s));
-		switch (ATOMstorage(b->ttype)) {
+		switch (t) {
 		case TYPE_bte:
 			cnt = candscan_bte(scanargs);
 			break;
@@ -703,7 +710,7 @@ BAT_scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 		}
 		candlist = NULL;
 		/* call type-specific core scan select function */
-		switch (ATOMstorage(b->ttype)) {
+		switch (t) {
 		case TYPE_bte:
 			cnt = fullscan_bte(scanargs);
 			break;
