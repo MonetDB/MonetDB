@@ -2185,6 +2185,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, 
 	oid lo, ro;
 	int c;
 	int lskipped = 0;
+	int type = ATOMtype(l->ttype);
 	wrd loff = 0;
 	oid lval = oid_nil, rlval = oid_nil, rhval = oid_nil;
 
@@ -2196,6 +2197,8 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, 
 	assert(sl == NULL || sl->tsorted);
 	assert(sr == NULL || sr->tsorted);
 
+	if (cmp == BATatoms[ATOMstorage(l->ttype)].atomCmp)
+		type = ATOMstorage(l->ttype);
 	ALGODEBUG fprintf(stderr, "#rangejoin(l=%s#" BUNFMT "[%s]%s%s,"
 			  "rl=%s#" BUNFMT "[%s]%s%s,rh=%s#" BUNFMT "[%s]%s%s,"
 			  "sl=%s#" BUNFMT "%s%s,sr=%s#" BUNFMT "%s%s)\n",
@@ -2316,7 +2319,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, 
 				}
 				ro = n++ + rl->hseqbase;
 			}
-			switch (ATOMtype(l->ttype)) {
+			switch (type) {
 			case TYPE_bte:
 				if (*(const bte*)vrl == bte_nil ||
 				    *(const bte*)vrh == bte_nil ||
