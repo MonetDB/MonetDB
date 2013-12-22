@@ -127,10 +127,7 @@ UUIDfromString(const char *svalue, int *len, uuid **retval)
 		return 3;
 	}
 	for (i = 0; i < UUID_SIZE; i++) {
-		if (s - svalue == 8 ||
-			s - svalue == 13 ||
-			s - svalue == 18 ||
-			s - svalue == 23) {
+		if (i == 8 || i == 12 || i == 16 || i == 20) {
 			if (*s != '-')
 				goto bailout;
 			s++;

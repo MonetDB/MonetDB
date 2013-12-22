@@ -1201,6 +1201,8 @@ ODBCFetch(ODBCStmt *stmt,
 			return SQL_ERROR;
 		}
 		break;
+	case SQL_GUID:
+		/* nothing special to do here */
 	default:
 		/* any other type can only be converted to SQL_C_CHAR */
 		break;
@@ -1255,6 +1257,7 @@ ODBCFetch(ODBCStmt *stmt,
 		case SQL_WCHAR:
 		case SQL_WVARCHAR:
 		case SQL_WLONGVARCHAR:
+		case SQL_GUID:
 			if (irdrec->already_returned > datalen) {
 				data += datalen;
 				datalen = 0;
@@ -2692,6 +2695,52 @@ ODBCFetch(ODBCStmt *stmt,
 		if (lenp)
 			*lenp = sizeof(SQL_INTERVAL_STRUCT);
 		break;
+	case SQL_C_GUID:
+		if (datalen != 36) {
+			/* Restricted data type attribute violation */
+			addStmtError(stmt, "07006", NULL, 0);
+			return SQL_ERROR;
+		}
+		for (i = 0; i < 16; i++) {
+			if (i == 8 || i == 12 || i == 16 || i == 20) {
+				if (*data != '-') {
+					/* Restricted data type
+					 * attribute violation */
+					addStmtError(stmt, "07006", NULL, 0);
+					return SQL_ERROR;
+				}
+				data++;
+			}
+			if ('0' <= *data && *data <= '9')
+				* (unsigned char *) ptr = *data - '0';
+			else if ('a' <= *data && *data <= 'f')
+				* (unsigned char *) ptr = *data - 'a' + 10;
+			else if ('A' <= *data && *data <= 'F')
+				* (unsigned char *) ptr = *data - 'A' + 10;
+			else {
+				/* Restricted data type attribute
+				 * violation */
+				addStmtError(stmt, "07006", NULL, 0);
+				return SQL_ERROR;
+			}
+			* (unsigned char *) ptr <<= 4;
+			data++;
+			if ('0' <= *data && *data <= '9')
+				* (unsigned char *) ptr |= *data - '0';
+			else if ('a' <= *data && *data <= 'f')
+				* (unsigned char *) ptr |= *data - 'a' + 10;
+			else if ('A' <= *data && *data <= 'F')
+				* (unsigned char *) ptr |= *data - 'A' + 10;
+			else {
+				/* Restricted data type attribute
+				 * violation */
+				addStmtError(stmt, "07006", NULL, 0);
+				return SQL_ERROR;
+			}
+			data++;
+			ptr = (SQLPOINTER) ((char *) ptr + 1);
+		}
+		break;
 	default:
 		/* Invalid application buffer type */
 		addStmtError(stmt, "HY003", NULL, 0);
@@ -3208,19 +3257,25 @@ ODBCStore(ODBCStmt *stmt,
 			}
 			break;
 		case SQL_C_GUID:
-			snprintf(data, sizeof(data), "%08lx-%04x-%04x-%02x%02x-"
-				 "%02x%02x%02x%02x%02x%02x",
-				 (unsigned long) ((SQLGUID *) ptr)->Data1,
-				 (unsigned int) ((SQLGUID *) ptr)->Data2,
-				 (unsigned int) ((SQLGUID *) ptr)->Data3,
-				 (unsigned int) ((SQLGUID *) ptr)->Data4[0],
-				 (unsigned int) ((SQLGUID *) ptr)->Data4[1],
-				 (unsigned int) ((SQLGUID *) ptr)->Data4[2],
-				 (unsigned int) ((SQLGUID *) ptr)->Data4[3],
-				 (unsigned int) ((SQLGUID *) ptr)->Data4[4],
-				 (unsigned int) ((SQLGUID *) ptr)->Data4[5],
-				 (unsigned int) ((SQLGUID *) ptr)->Data4[6],
-				 (unsigned int) ((SQLGUID *) ptr)->Data4[7]);
+			snprintf(data, sizeof(data),
+				 "%02x%02x%02x%02x-%02x%02x-%02x%02x-"
+				 "%02x%02x-%02x%02x%02x%02x%02x%02x",
+				 ((unsigned char *) ptr)[0],
+				 ((unsigned char *) ptr)[1],
+				 ((unsigned char *) ptr)[2],
+				 ((unsigned char *) ptr)[3],
+				 ((unsigned char *) ptr)[4],
+				 ((unsigned char *) ptr)[5],
+				 ((unsigned char *) ptr)[6],
+				 ((unsigned char *) ptr)[7],
+				 ((unsigned char *) ptr)[8],
+				 ((unsigned char *) ptr)[9],
+				 ((unsigned char *) ptr)[10],
+				 ((unsigned char *) ptr)[11],
+				 ((unsigned char *) ptr)[12],
+				 ((unsigned char *) ptr)[13],
+				 ((unsigned char *) ptr)[14],
+				 ((unsigned char *) ptr)[15]);
 			break;
 		}
 		assign(buf, bufpos, buflen, '\'', stmt);
