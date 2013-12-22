@@ -842,6 +842,11 @@ GDKssortimpl(void *h, void *t, const void *heap, size_t nitems,
 	if (nremaining < 2)
 		goto succeed;
 
+	if (tpe != ATOMstorage(tpe) &&
+	    ATOMnilptr(ATOMstorage(tpe)) == ATOMnilptr(tpe) &&
+	    BATatoms[ATOMstorage(tpe)].atomCmp == ms.compare)
+		tpe = ATOMstorage(tpe);
+
 	/* March over the array once, left to right, finding natural
 	 * runs, and extending short natural runs to minrun
 	 * elements. */

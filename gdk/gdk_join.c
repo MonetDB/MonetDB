@@ -1450,7 +1450,14 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, in
 						break;
 				}
 			} else {
-				switch (r->htype) {
+				int t = r->htype;
+				if (t != ATOMstorage(t) &&
+				    ATOMnilptr(ATOMstorage(t)) == ATOMnilptr(t) &&
+				    BATatoms[ATOMstorage(t)].atomCmp == BATatoms[t].atomCmp &&
+				    BATatoms[ATOMstorage(t)].atomHash == BATatoms[t].atomHash)
+					t = ATOMstorage(t);
+
+				switch (t) {
 				case TYPE_int:
 #if SIZEOF_OID == SIZEOF_INT
 				case TYPE_oid:
@@ -1832,6 +1839,7 @@ bandjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	const oid *rcand = NULL, *rcandend = NULL;
 	const char *lvals, *rvals;
 	int lwidth, rwidth;
+	int t;
 	const void *nil = ATOMnilptr(l->ttype);
 	int (*cmp)(const void *, const void *) = BATatoms[l->ttype].atomCmp;
 	const char *vl, *vr;
@@ -1865,7 +1873,13 @@ bandjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	assert(sl == NULL || sl->tsorted);
 	assert(sr == NULL || sr->tsorted);
 
-	switch (ATOMtype(l->ttype)) {
+	t = ATOMtype(l->ttype);
+	if (t != ATOMstorage(t) &&
+	    ATOMnilptr(ATOMstorage(t)) == nil &&
+	    BATatoms[ATOMstorage(t)].atomCmp == cmp)
+		t = ATOMstorage(t);
+
+	switch (t) {
 	case TYPE_bte:
 		if (*(const bte *)c1 == bte_nil ||
 		    *(const bte *)c2 == bte_nil ||
@@ -2178,6 +2192,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, 
 	int lwidth, rlwidth, rhwidth;
 	const void *nil = ATOMnilptr(l->ttype);
 	int (*cmp)(const void *, const void *) = BATatoms[l->ttype].atomCmp;
+	int t;
 	const char *vl, *vrl, *vrh;
 	const oid *p;
 	oid lastr = 0;
@@ -2251,6 +2266,12 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, 
 		loff = (wrd) l->tseqbase - (wrd) l->hseqbase;
 	}
 
+	t = ATOMtype(l->ttype);
+	if (t != ATOMstorage(t) &&
+	    ATOMnilptr(ATOMstorage(t)) == nil &&
+	    BATatoms[ATOMstorage(t)].atomCmp == cmp)
+		t = ATOMstorage(t);
+
 	/* nested loop implementation for range join */
 	for (;;) {
 		if (lcand) {
@@ -2316,7 +2337,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, 
 				}
 				ro = n++ + rl->hseqbase;
 			}
-			switch (ATOMtype(l->ttype)) {
+			switch (t) {
 			case TYPE_bte:
 				if (*(const bte*)vrl == bte_nil ||
 				    *(const bte*)vrh == bte_nil ||
