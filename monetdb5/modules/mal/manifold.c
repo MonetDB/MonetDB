@@ -41,6 +41,10 @@ typedef struct{
 	void *first;
 	void *last;
 	int	size;
+	int type;
+	BATiter bi;
+	BUN  o;
+	str *s;
 } MULTIarg;
 
 typedef struct{
@@ -55,13 +59,17 @@ typedef struct{
 
 #define ManifoldLoop(Type, ...) \
 { Type *v = (Type*) mut->args[0].first;\
-	for( ; p< q && msg == MAL_SUCCEED; ){\
+	for( ; p< q && msg == MAL_SUCCEED; p += mut->args[mut->fvar].size){\
 		msg = (*mut->pci->fcn)(v, __VA_ARGS__);\
-		for( i = mut->fvar; i<= mut->lvar; i++){\
+		for( i = mut->fvar; i<= mut->lvar; i++)\
+		if( mut->args[i].type < TYPE_str){\
 			args[i] += mut->args[i].size;\
+		} else {\
+			mut->args[i].o++;\
+			mut->args[i].s = (str *) BUNtail(mut->args[i].bi, mut->args[i].o);\
+			args[i] = (void*)  &mut->args[i].s;\
 		}\
 		v++;\
-		p += mut->args[mut->fvar].size;\
 	}\
 }
 
@@ -74,6 +82,22 @@ case TYPE_lng: ManifoldLoop(lng,__VA_ARGS__); break;\
 case TYPE_oid: ManifoldLoop(oid,__VA_ARGS__); break;\
 case TYPE_flt: ManifoldLoop(flt,__VA_ARGS__); break;\
 case TYPE_dbl: ManifoldLoop(dbl,__VA_ARGS__); break;\
+case TYPE_str: { \
+	for( ; p< q && msg == MAL_SUCCEED; p += mut->args[mut->fvar].size){\
+		h = BUNhead(mut->args[0].bi, mut->args[0].o);\
+		msg = (*mut->pci->fcn)(&y, __VA_ARGS__);\
+		bunfastins(mut->args[0].b, (void*) h, (void*) y);\
+		for( i = mut->fvar; i<= mut->lvar; i++)\
+		if( mut->args[i].type < TYPE_str){\
+			args[i] += mut->args[i].size;\
+		} else {\
+			mut->args[i].s = (str*) BUNtail(mut->args[i].bi, mut->args[i].o);\
+			args[i] =  (void*) & mut->args[i].s; \
+			mut->args[i].o++;\
+		}\
+		mut->args[0].o++;\
+	}\
+	break;}\
 default:\
 	msg= createException(MAL,"mal.manifold","manifold call limitation ");\
 }
@@ -84,16 +108,22 @@ MANIFOLDjob(const MULTItask *mut)
 {	int i;
 	char *p, *q;
 	char **args;
-	str msg= MAL_SUCCEED;
+	str y, msg= MAL_SUCCEED;
+	ptr h;
 
 	args = (char**) GDKzalloc(sizeof(char*) * mut->pci->argc);
 	if( args == NULL)
 		throw(MAL,"mal.manifold",MAL_MALLOC_FAIL);
 	
 	for( i = mut->pci->retc+2; i< mut->pci->argc; i++)
-	if ( mut->args[i].b )
-		args[i] = (char*) mut->args[i].first;
-	else
+	if ( mut->args[i].b ){
+		if (mut->args[i].type < TYPE_str)
+			args[i] = (char*) mut->args[i].first;
+		else {
+			mut->args[i].s = (str*) BUNtail(mut->args[i].bi, mut->args[i].o);
+			args[i] =  (void*) & mut->args[i].s; 
+		}
+	} else
 		args[i] = (char*) getArgReference(mut->stk,mut->pci,i);
 
 	p = (char*)  mut->args[mut->fvar].first;
@@ -107,6 +137,7 @@ MANIFOLDjob(const MULTItask *mut)
 	default:
 		msg= createException(MAL,"mal.manifold","manifold call limitation ");
 	}
+bunins_failed:
 	GDKfree(args);
 	return msg;
 }
@@ -132,7 +163,7 @@ MANIFOLDtypecheck(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 
 	// Prepare the single result variable
 	tpe =getTailType(getArgType(mb,pci,0));
-	if (tpe >= TYPE_str){
+	if ( ATOMstorage(tpe) > TYPE_str){
 		freeMalBlk(nmb);
 		return NULL;
 	}
@@ -143,7 +174,7 @@ MANIFOLDtypecheck(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	// extract their argument type
 	for ( i = pci->retc+2; i < pci->argc; i++){
 		tpe = ATOMstorage(getTailType(getArgType(mb,pci,i)));
-		if (tpe >= TYPE_str){
+		if (tpe > TYPE_str){
 			freeMalBlk(nmb);
 			return NULL;
 		}
@@ -203,22 +234,24 @@ MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 				msg = createException(MAL,"mal.manifold", MAL_MALLOC_FAIL);
 				goto wrapup;
 			}
-			tpe = mat[i].b->ttype;
-			mat[i].size = BATatoms[ ATOMstorage(tpe)].size;
+			mat[i].type = tpe = mat[i].b->ttype;
 			if ( mut.fvar == 0){
-				mut.fvar = mut.lvar= i;
+				mut.fvar = i;
 				cnt = BATcount(mat[i].b);
-				mat[i].first = (void *)  Tloc(mat[i].b, BUNfirst(mat[i].b));
-				mat[i].last = (void *)  Tloc(mat[i].b, BUNlast(mat[i].b));
 			} else
 			if ( BATcount(mat[i].b)!= cnt){
 				msg = createException(MAL,"mal.manifold","Columns must be of same length");
 				goto wrapup;
-			} else {
-				mut.lvar = i;
-				mat[i].first = (void*)  Tloc(mat[i].b, BUNfirst(mat[i].b));
-				mat[i].last = (void*)  Tloc(mat[i].b, BUNlast(mat[i].b));
-			}
+			} 
+			mut.lvar = i;
+			if ( tpe == TYPE_str) 
+				mat[i].size = Tsize(mat[i].b);
+			else
+				mat[i].size = BATatoms[ ATOMstorage(tpe)].size;
+			mat[i].first = (void*)  Tloc(mat[i].b, BUNfirst(mat[i].b));
+			mat[i].last = (void*)  Tloc(mat[i].b, BUNlast(mat[i].b));
+			mat[i].bi = bat_iterator(mat[i].b);
+			mat[i].o = BUNfirst(mat[i].b);
 		} else {
 			mat[i].last = mat[i].first = (void*) getArgReference(stk,pci,i);
 		}
@@ -230,6 +263,7 @@ MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		msg= createException(MAL,"mal.manifold",MAL_MALLOC_FAIL);
 		goto wrapup;
 	}
+	mat[0].bi = bat_iterator(mat[0].b);
 	mat[0].first = (void *)  Tloc(mat[0].b, BUNfirst(mat[0].b));
 	mat[0].last = (void *)  Tloc(mat[0].b, BUNlast(mat[0].b));
 	BATseqbase(mat[0].b,0);
