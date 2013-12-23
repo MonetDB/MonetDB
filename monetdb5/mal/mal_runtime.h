@@ -50,6 +50,7 @@ mal_export void runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk);
 mal_export void runtimeProfileFinish(Client cntxt, MalBlkPtr mb);
 mal_export void runtimeProfileBegin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int stkpc, RuntimeProfile prof, int start);
 mal_export void runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, RuntimeProfile prof);
+mal_export void finishSessionProfiler(Client cntxt);
 mal_export lng getVolume(MalStkPtr stk, InstrPtr pci, int rd);
 mal_export void displayVolume(Client cntxt, lng vol);
 mal_export void updateFootPrint(MalBlkPtr mb, MalStkPtr stk, int varid);

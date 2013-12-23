@@ -57,6 +57,7 @@
 #include "mal_parser.h"
 #include "mal_namespace.h"
 #include "mal_private.h"
+#include "mal_runtime.h"
 #include <mapi.h> /* for PROMPT1 */
 
 
@@ -186,6 +187,7 @@ MCexitClient(Client c)
 #ifdef MAL_CLIENT_DEBUG
 	printf("# Exit client %d\n", c->idx);
 #endif
+    finishSessionProfiler(c);
 	MPresetProfiler(c->fdout);
 	if (c->father == NULL) { /* normal client */
 		if (c->fdout && c->fdout != GDKstdout) {
