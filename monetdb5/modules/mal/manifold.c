@@ -24,6 +24,7 @@
 #include "manifold.h"
 #include "mal_resolve.h"
 #include "mal_builder.h"
+#define _DEBUG_MANIFOLD_
 
 /* The default iterator over known scalar commands.
  * It can be less efficient then the vector based implementations,
@@ -163,18 +164,14 @@ MANIFOLDtypecheck(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 
 	// Prepare the single result variable
 	tpe =getTailType(getArgType(mb,pci,0));
-	if ( ATOMstorage(tpe) > TYPE_str){
-		freeMalBlk(nmb);
-		return NULL;
-	}
 	k= getArg(q,0) = newTmpVariable(nmb, tpe);
 	setVarFixed(nmb,k);
 	setVarUDFtype(nmb,k);
 	
 	// extract their argument type
 	for ( i = pci->retc+2; i < pci->argc; i++){
-		tpe = ATOMstorage(getTailType(getArgType(mb,pci,i)));
-		if (tpe > TYPE_str){
+		tpe = getTailType(getArgType(mb,pci,i));
+		if (ATOMstorage(tpe) > TYPE_str){
 			freeMalBlk(nmb);
 			return NULL;
 		}
@@ -280,6 +277,12 @@ MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 
 	// consolidate the properties
 	BATsetcount(mat[0].b,cnt);
+	mat[0].b->tkey= 0;
+	mat[0].b->tsorted =0;
+	mat[0].b->trevsorted = 0;
+	mat[0].b->hkey= 0;
+	mat[0].b->hsorted =0;
+	mat[0].b->hrevsorted = 0;
 	BATderiveProps(mat[0].b, TRUE);
 	BBPkeepref(*(int*) getArgReference(stk,pci,0)=mat[0].b->batCacheid);
 wrapup:
