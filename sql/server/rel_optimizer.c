@@ -1953,7 +1953,7 @@ rel_distinct_project2groupby(int *changes, mvc *sql, sql_rel *rel)
 	if (rel->op == op_project && rel->l && !rel->r /* no order by */ && need_distinct(rel) &&
 	    exps_card(rel->exps) <= CARD_ATOM) {
 		set_nodistinct(rel);
-		rel->l = NULL;
+		rel->l = rel_topn(sql->sa, rel->l, append(sa_list(sql->sa), exp_atom_wrd(sql->sa, 1)));
 	}
 
 	/* rewrite distinct project [ pk ] ( select ( table ) [ e op val ]) 
@@ -1963,8 +1963,8 @@ rel_distinct_project2groupby(int *changes, mvc *sql, sql_rel *rel)
 		set_nodistinct(rel);
 	/* rewrite distinct project [ gbe ] ( select ( groupby [ gbe ] [ gbe, e ] )[ e op val ]) 
 	 * into project [ gbe ] ( select ( group etc ) */
-	if (rel->op == op_project && rel->l && !rel->r /* no order by */ && need_distinct(rel) &&
-	    l->op == op_select) {
+	if (rel->op == op_project && rel->l && !rel->r /* no order by */ && 
+	    need_distinct(rel) && l->op == op_select){ 
 		sql_rel *g = l->l;
 		if (is_groupby(g->op)) {
 			list *gbe = g->r;
@@ -1989,7 +1989,8 @@ rel_distinct_project2groupby(int *changes, mvc *sql, sql_rel *rel)
 				set_nodistinct(rel);
 		}
 	}
-	if (rel->op == op_project && rel->l && !rel->r /* no order by */ && need_distinct(rel)) {
+	if (rel->op == op_project && rel->l && !rel->r /* no order by */ && 
+	    need_distinct(rel) && exps_card(rel->exps) > CARD_ATOM) {
 		node *n;
 		list *exps = new_exp_list(sql->sa), *gbe = new_exp_list(sql->sa);
 
