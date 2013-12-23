@@ -172,7 +172,7 @@ SYSMONresume(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	for ( i = 0; QRYqueue[i].tag; i++)
 	if( QRYqueue[i].tag == tag && (QRYqueue[i].cntxt->user == cntxt->user || cntxt->idx ==0)){
 		QRYqueue[i].stk->status = 0;
-		QRYqueue[i].status = "QRYqueue";
+		QRYqueue[i].status = "running";
 	}
 	MT_lock_unset(&mal_delayLock, "sysmon");
 	return MAL_SUCCEED;
