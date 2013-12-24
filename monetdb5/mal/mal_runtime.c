@@ -130,6 +130,32 @@ runtimeProfileFinish(Client cntxt, MalBlkPtr mb)
 }
 
 void
+finishSessionProfiler(Client cntxt)
+{
+    int i,j;
+
+    (void) cntxt;
+
+    MT_lock_set(&mal_delayLock, "sysmon");
+    for( i=j=0; i< qtop; i++)
+    if ( QRYqueue[i].cntxt != cntxt)
+        QRYqueue[j++] = QRYqueue[i];
+    else  {
+         //reset entry
+		 if (QRYqueue[i].query)
+		 GDKfree(QRYqueue[i].query);
+		 QRYqueue[i].cntxt = 0;
+		 QRYqueue[i].tag = 0;
+		 QRYqueue[i].query = 0;
+		 QRYqueue[i].status =0;
+		 QRYqueue[i].stk =0;
+		 QRYqueue[i].mb =0;
+	 }
+	 qtop = j;
+	 MT_lock_unset(&mal_delayLock, "sysmon");
+}
+
+void
 runtimeProfileBegin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int stkpc, RuntimeProfile prof, int start)
 {
 	if ( mb->profiler == NULL)
