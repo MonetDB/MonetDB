@@ -68,17 +68,19 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 	return GDK_SUCCEED;
 }
 
-#define CHECKCAND(dst, i, candoff, NIL)				\
-	/* cannot use do/while trick because of continue */	\
-	if (cand) {						\
-		if ((i) < *cand - (candoff)) {			\
-			nils++;					\
-			(dst)[i] = (NIL);			\
-			continue;				\
-		}						\
-		assert((i) == *cand - (candoff));		\
-		if (++cand == (candend))			\
-			end = (i) + 1;				\
+#define CHECKCAND(dst, i, candoff, NIL)					\
+	/* cannot use do/while trick because of continue */		\
+	/* NOTE: because of the continue, you *must* use the */		\
+	/* index (i) to index src/dst */				\
+	if (cand) {							\
+		if ((i) < *cand - (candoff)) {				\
+			nils++;						\
+			(dst)[i] = (NIL);				\
+			continue;					\
+		}							\
+		assert((i) == *cand - (candoff));			\
+		if (++cand == (candend))				\
+			end = (i) + 1;					\
 	}
 
 #define CANDLOOP(dst, i, NIL, low, high)		\
@@ -8948,13 +8950,11 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *dst, BUN cnt,	\
 	CANDLOOP(dst, i, TYPE2##_nil, 0, start);			\
 	for (i = start; i < end; i++) {					\
 		CHECKCAND(dst, i, candoff, TYPE2##_nil);		\
-		if (*src == TYPE1##_nil) {				\
-			*dst = TYPE2##_nil;				\
+		if (src[i] == TYPE1##_nil) {				\
+			dst[i] = TYPE2##_nil;				\
 			nils++;						\
 		} else							\
-			*dst = (TYPE2) *src;				\
-		src++;							\
-		dst++;							\
+			dst[i] = (TYPE2) src[i];			\
 	}								\
 	CANDLOOP(dst, i, TYPE2##_nil, end, cnt);			\
 	return nils;							\
@@ -8979,19 +8979,17 @@ convert_##TYPE1##_oid(const TYPE1 *src, oid *dst, BUN cnt,		\
 	CANDLOOP(dst, i, oid_nil, 0, start);				\
 	for (i = start; i < end; i++) {					\
 		CHECKCAND(dst, i, candoff, oid_nil);			\
-		if (*src == TYPE1##_nil) {				\
-			*dst = oid_nil;					\
+		if (src[i] == TYPE1##_nil) {				\
+			dst[i] = oid_nil;				\
 			nils++;						\
-		} else if (*src < 0) {					\
+		} else if (src[i] < 0) {				\
 			if (abort_on_error)				\
-				CONV_OVERFLOW(TYPE1, "oid", *src);	\
-			*dst = oid_nil;					\
+				CONV_OVERFLOW(TYPE1, "oid", src[i]);	\
+			dst[i] = oid_nil;				\
 			nils++;						\
-		} else if ((*dst = (oid) *src) == oid_nil &&		\
+		} else if ((dst[i] = (oid) src[i]) == oid_nil &&	\
 			   abort_on_error)				\
-			CONV_OVERFLOW(TYPE1, "oid", *src);		\
-		src++;							\
-		dst++;							\
+			CONV_OVERFLOW(TYPE1, "oid", src[i]);		\
 	}								\
 	CANDLOOP(dst, i, oid_nil, end, cnt);				\
 	return nils;							\
@@ -9009,20 +9007,18 @@ convert_##TYPE1##_oid(const TYPE1 *src, oid *dst, BUN cnt,		\
 	CANDLOOP(dst, i, oid_nil, 0, start);				\
 	for (i = start; i < end; i++) {					\
 		CHECKCAND(dst, i, candoff, oid_nil);			\
-		if (*src == TYPE1##_nil) {				\
-			*dst = oid_nil;					\
+		if (src[i] == TYPE1##_nil) {				\
+			dst[i] = oid_nil;				\
 			nils++;						\
-		} else if (*src < 0 ||					\
-			   *src > (TYPE1) GDK_oid_max) {		\
+		} else if (src[i] < 0 ||				\
+			   src[i] > (TYPE1) GDK_oid_max) {		\
 			if (abort_on_error)				\
-				CONV_OVERFLOW(TYPE1, "oid", *src);	\
-			*dst = oid_nil;					\
+				CONV_OVERFLOW(TYPE1, "oid", src[i]);	\
+			dst[i] = oid_nil;				\
 			nils++;						\
-		} else if ((*dst = (oid) *src) == oid_nil &&		\
+		} else if ((dst[i] = (oid) src[i]) == oid_nil &&	\
 			   abort_on_error)				\
-			CONV_OVERFLOW(TYPE1, "oid", *src);		\
-		src++;							\
-		dst++;							\
+			CONV_OVERFLOW(TYPE1, "oid", src[i]);		\
 	}								\
 	CANDLOOP(dst, i, oid_nil, end, cnt);				\
 	return nils;							\
@@ -9040,19 +9036,17 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *dst, BUN cnt,	\
 	CANDLOOP(dst, i, TYPE2##_nil, 0, start);			\
 	for (i = start; i < end; i++) {					\
 		CHECKCAND(dst, i, candoff, TYPE2##_nil);		\
-		if (*src == TYPE1##_nil) {				\
-			*dst = TYPE2##_nil;				\
-			nils++;						\
-		} else if (*src <= (TYPE1) GDK_##TYPE2##_min ||		\
-			   *src > (TYPE1) GDK_##TYPE2##_max) {		\
+		if (src[i] == TYPE1##_nil) {				\
+			dst[i] = TYPE2##_nil;				\
+				nils++;					\
+		} else if (src[i] <= (TYPE1) GDK_##TYPE2##_min ||	\
+			   src[i] > (TYPE1) GDK_##TYPE2##_max) {	\
 			if (abort_on_error)				\
-				CONV_OVERFLOW(TYPE1, #TYPE2, *src);	\
-			*dst = TYPE2##_nil;				\
+				CONV_OVERFLOW(TYPE1, #TYPE2, src[i]);	\
+			dst[i] = TYPE2##_nil;				\
 			nils++;						\
 		} else							\
-			*dst = (TYPE2) *src;				\
-		src++;							\
-		dst++;							\
+			dst[i] = (TYPE2) src[i];			\
 	}								\
 	CANDLOOP(dst, i, TYPE2##_nil, end, cnt);			\
 	return nils;							\
@@ -9073,20 +9067,18 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *dst, BUN cnt,	\
 	CANDLOOP(dst, i, TYPE2##_nil, 0, start);			\
 	for (i = start; i < end; i++) {					\
 		CHECKCAND(dst, i, candoff, TYPE2##_nil);		\
-		if (*src == TYPE1##_nil) {				\
-			*dst = TYPE2##_nil;				\
+		if (src[i] == TYPE1##_nil) {				\
+			dst[i] = TYPE2##_nil;				\
 			nils++;						\
-		} else if (*src <= (TYPE1) GDK_##TYPE2##_min ||		\
-			   *src > (TYPE1) GDK_##TYPE2##_max) {		\
+		} else if (src[i] <= (TYPE1) GDK_##TYPE2##_min ||	\
+			   src[i] > (TYPE1) GDK_##TYPE2##_max) {	\
 			if (abort_on_error)				\
-				CONV_OVERFLOW(TYPE1, #TYPE2, *src);	\
-			*dst = TYPE2##_nil;				\
+				CONV_OVERFLOW(TYPE1, #TYPE2, src[i]);	\
+			dst[i] = TYPE2##_nil;				\
 			nils++;						\
-		} else if ((*dst = (TYPE2) *src) == TYPE2##_nil &&	\
+		} else if ((dst[i] = (TYPE2) src[i]) == TYPE2##_nil &&	\
 			   abort_on_error)				\
-			CONV_OVERFLOW(TYPE1, #TYPE2, *src);		\
-		src++;							\
-		dst++;							\
+			CONV_OVERFLOW(TYPE1, #TYPE2, src[i]);		\
 	}								\
 	CANDLOOP(dst, i, TYPE2##_nil, end, cnt);			\
 	return nils;							\
@@ -9103,13 +9095,11 @@ convert_##TYPE##_bit(const TYPE *src, bit *dst, BUN cnt,	\
 	CANDLOOP(dst, i, bit_nil, 0, start);			\
 	for (i = start; i < end; i++) {				\
 		CHECKCAND(dst, i, candoff, bit_nil);		\
-		if (*src == TYPE##_nil) {			\
-			*dst = bit_nil;				\
+		if (src[i] == TYPE##_nil) {			\
+			dst[i] = bit_nil;			\
 			nils++;					\
 		} else						\
-			*dst = (bit) (*src != 0);		\
-		src++;						\
-		dst++;						\
+			dst[i] = (bit) (src[i] != 0);		\
 	}							\
 	CANDLOOP(dst, i, bit_nil, end, cnt);			\
 	return nils;						\
