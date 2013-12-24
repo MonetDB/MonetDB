@@ -24,7 +24,8 @@
 #include "manifold.h"
 #include "mal_resolve.h"
 #include "mal_builder.h"
-#define _DEBUG_MANIFOLD_
+
+//#define _DEBUG_MANIFOLD_
 
 /* The default iterator over known scalar commands.
  * It can be less efficient then the vector based implementations,
@@ -263,7 +264,14 @@ MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	mat[0].bi = bat_iterator(mat[0].b);
 	mat[0].first = (void *)  Tloc(mat[0].b, BUNfirst(mat[0].b));
 	mat[0].last = (void *)  Tloc(mat[0].b, BUNlast(mat[0].b));
-	BATseqbase(mat[0].b,0);
+	BATseqbase(mat[0].b, mat[mut.fvar].b->hseqbase);
+	if( ATOMstorage(mat[0].b->ttype) != TYPE_str)
+		BATsetcount(mat[0].b,cnt);
+	mat[0].b->hsorted= mat[mut.fvar].b->hsorted;
+	mat[0].b->hrevsorted= mat[mut.fvar].b->hrevsorted;
+	mat[0].b->tsorted=0;
+	mat[0].b->trevsorted=0;
+
 
 	pci->fcn = fcn;
 
@@ -276,21 +284,13 @@ MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	msg = MANIFOLDjob(&mut);
 
 	// consolidate the properties
-	BATsetcount(mat[0].b,cnt);
-	mat[0].b->tkey= 0;
-	mat[0].b->tsorted =0;
-	mat[0].b->trevsorted = 0;
-	mat[0].b->hkey= 0;
-	mat[0].b->hsorted =0;
-	mat[0].b->hrevsorted = 0;
 	BATderiveProps(mat[0].b, TRUE);
 	BBPkeepref(*(int*) getArgReference(stk,pci,0)=mat[0].b->batCacheid);
 wrapup:
 	// restore the argument types
 	for( i = pci->retc; i < pci->argc; i++){
-		if ( mat[i].b){
+		if ( mat[i].b)
 			BBPreleaseref(mat[i].b->batCacheid);
-		}
 	}
 	GDKfree(mat);
 	return msg;

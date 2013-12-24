@@ -1,0 +1,146 @@
+stdout of test 'json08` in directory 'monetdb5/modules/atoms` itself:
+
+
+# 10:44:11 >  
+# 10:44:11 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=33195" "--set" "mapi_usock=/var/tmp/mtest-29940/.s.monetdb.33195" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/current//Linux/var/MonetDB/mTests_monetdb5_modules_atoms" "json08.mal"
+# 10:44:11 >  
+
+# MonetDB 5 server v11.18.0
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_modules_atoms', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.591 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2013 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:33195/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-29940/.s.monetdb.33195
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+function user.main():void;
+#validity tests 
+    j := bat.new(:oid,:json);
+    b := json.new("{}");
+    bat.append(j,b);
+    b := json.new("{\"f1\":1}");
+    bat.append(j,b);
+    b := json.new("{\"f1\":1,\"f2\":2}");
+    bat.append(j,b);
+    b := json.new("{\"f1\":1,\"f2\":2,\"f1\":3}");
+    bat.append(j,b);
+    b := json.new("{\"f1\":{\"f12\":3},\"f2\":[2,3,4]}");
+    bat.append(j,b);
+    b := json.new("[1,\"f2\", 2]");
+    bat.append(j,b);
+    f:bat[:oid,:json]  := mal.manifold("json","filter",j,"f1");
+    io.print(f);
+    f:bat[:oid,:json]  := mal.manifold("json","filter",j,"f1");
+    io.print(f);
+    f:bat[:oid,:json]  := mal.manifold("json","filter",j,"f2");
+    io.print(f);
+    f:bat[:oid,:json]  := mal.manifold("json","filter",j,"f1");
+    io.print(f);
+    f:bat[:oid,:json]  := mal.manifold("json","filter",j,"f1");
+    io.print(f);
+    f:bat[:oid,:json]  := mal.manifold("json","filter",j,"f12");
+    io.print(f);
+    io.printf("#next batch\n");
+    i := bat.new(:oid,:json);
+    b := json.new("[1,\"f2\", 2]");
+    bat.append(i,b);
+    f:bat[:oid,:json]  := mal.manifold("json","filter",i,0);
+    io.print(f);
+    f:bat[:oid,:json]  := mal.manifold("json","filter",i,1);
+    io.print(f);
+    f:bat[:oid,:json]  := mal.manifold("json","filter",i,2);
+    io.print(f);
+    f:bat[:oid,:json]  := mal.manifold("json","filter",i,3);
+    io.print(f);
+end main;
+#--------------------------#
+# h	t  # name
+# void	json  # type
+#--------------------------#
+[ 0@0,	"[]"  ]
+[ 1@0,	"[]"  ]
+[ 2@0,	"[1]"  ]
+[ 3@0,	"[1]"  ]
+[ 4@0,	"[1]"  ]
+[ 5@0,	"[{\"f12\":3}]"  ]
+#--------------------------#
+# h	t  # name
+# void	json  # type
+#--------------------------#
+[ 0@0,	"[]"  ]
+[ 1@0,	"[]"  ]
+[ 2@0,	"[1]"  ]
+[ 3@0,	"[1]"  ]
+[ 4@0,	"[1]"  ]
+[ 5@0,	"[{\"f12\":3}]"  ]
+#--------------------------#
+# h	t  # name
+# void	json  # type
+#--------------------------#
+[ 0@0,	"[]"  ]
+[ 1@0,	"[]"  ]
+[ 2@0,	"[]"  ]
+[ 3@0,	"[2]"  ]
+[ 4@0,	"[2]"  ]
+[ 5@0,	"[[2,3,4]]"  ]
+#--------------------------#
+# h	t  # name
+# void	json  # type
+#--------------------------#
+[ 0@0,	"[]"  ]
+[ 1@0,	"[]"  ]
+[ 2@0,	"[1]"  ]
+[ 3@0,	"[1]"  ]
+[ 4@0,	"[1]"  ]
+[ 5@0,	"[{\"f12\":3}]"  ]
+#--------------------------#
+# h	t  # name
+# void	json  # type
+#--------------------------#
+[ 0@0,	"[]"  ]
+[ 1@0,	"[]"  ]
+[ 2@0,	"[1]"  ]
+[ 3@0,	"[1]"  ]
+[ 4@0,	"[1]"  ]
+[ 5@0,	"[{\"f12\":3}]"  ]
+#--------------------------#
+# h	t  # name
+# void	json  # type
+#--------------------------#
+[ 0@0,	"[]"  ]
+[ 1@0,	"[]"  ]
+[ 2@0,	"[1]"  ]
+[ 3@0,	"[1]"  ]
+[ 4@0,	"[1]"  ]
+[ 5@0,	"[{\"f12\":3}]"  ]
+#next batch
+#--------------------------#
+# h	t  # name
+# void	json  # type
+#--------------------------#
+[ 0@0,	"[1]"  ]
+#--------------------------#
+# h	t  # name
+# void	json  # type
+#--------------------------#
+[ 0@0,	"[\"f2\"]"  ]
+#--------------------------#
+# h	t  # name
+# void	json  # type
+#--------------------------#
+[ 0@0,	"[2]"  ]
+#--------------------------#
+# h	t  # name
+# void	json  # type
+#--------------------------#
+[ 0@0,	"[]"  ]
+
+# 10:44:11 >  
+# 10:44:11 >  "Done."
+# 10:44:11 >  
+

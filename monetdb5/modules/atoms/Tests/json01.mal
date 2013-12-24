@@ -17,7 +17,6 @@ io.print(f);
 f:= json.filter(b,"f12");
 io.print(f);
 
-b:= json.new("[]");
 b:= json.new("[1,\"f2\", 2]");
 f:= json.filter(b,0);
 io.print(f);
@@ -27,5 +26,3 @@ f:= json.filter(b,2);
 io.print(f);
 f:= json.filter(b,3);
 io.print(f);
-b:= json.new("[1,2 ]");
-b:= json.new("[\"\\/\" , 2 ]");
