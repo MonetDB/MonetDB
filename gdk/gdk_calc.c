@@ -8401,7 +8401,7 @@ BATcalcbetween_intern(const void *src, int incr1, const char *hp1, int wd1,
 {
 	BAT *bn;
 	BUN nils = 0;
-	BUN i, j, k, l;
+	BUN i, j, k, l, soff = 0, loff = 0, hoff = 0;
 	bit *dst;
 	const void *nil;
 	int (*atomcmp)(const void *, const void *);
@@ -8453,12 +8453,13 @@ BATcalcbetween_intern(const void *src, int incr1, const char *hp1, int wd1,
 			     k = start * incr3,
 			     l = start;
 		     l < end;
-		     i += incr1, j += incr2, k += incr3, l++) {
+		     i += incr1, j += incr2, k += incr3, l++, 
+		     soff+=wd1, loff+= wd2, hoff+= wd3 ) {
 			const void *p1, *p2, *p3;
 			CHECKCAND(dst, l, seqbase, bit_nil);
-			p1 = hp1 ? (const void *) (hp1 + VarHeapVal(src, i, wd1)) : src;
-			p2 = hp2 ? (const void *) (hp2 + VarHeapVal(lo, j, wd2)) : lo;
-			p3 = hp3 ? (const void *) (hp3 + VarHeapVal(hi, k, wd3)) : hi;
+			p1 = hp1 ? (const void *) (hp1 + VarHeapVal(src, i, wd1)) : (const void *) ((const char *) src + soff);
+			p2 = hp2 ? (const void *) (hp2 + VarHeapVal(lo, j, wd2)) : (const void *) ((const char *) lo + loff);
+			p3 = hp3 ? (const void *) (hp3 + VarHeapVal(hi, k, wd3)) : (const void *) ((const char *) hi + hoff);
 			if (p1 == NULL || p2 == NULL || p3 == NULL ||
 			    (*atomcmp)(p1, nil) == 0 ||
 			    (*atomcmp)(p2, nil) == 0 ||
@@ -8469,12 +8470,6 @@ BATcalcbetween_intern(const void *src, int incr1, const char *hp1, int wd1,
 				dst[l] = (bit) ((*atomcmp)(p1, p2) >= 0 &&
 						(*atomcmp)(p1, p3) <= 0);
 			}
-			if (hp1 == NULL && incr1)
-				src = (const void *) ((const char *) src + wd1);
-			if (hp2 == NULL && incr2)
-				lo = (const void *) ((const char *) lo + wd2);
-			if (hp3 == NULL && incr3)
-				hi = (const void *) ((const char *) hi + wd3);
 		}
 		break;
 	}

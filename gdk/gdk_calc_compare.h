@@ -26,7 +26,7 @@ op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		  const oid *candend, oid candoff, int nonil, const char *func)
 {
 	BUN nils = 0;
-	BUN i, j, k;
+	BUN i, j, k, loff = 0, roff = 0;
 	const void *nil;
 	int (*atomcmp)(const void *, const void *);
 
@@ -433,11 +433,12 @@ op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		nil = ATOMnilptr(tp1);
 		CANDLOOP(dst, k, TPE_nil, 0, start);
 		for (i = start * incr1, j = start * incr2, k = start;
-		     k < end; i += incr1, j += incr2, k++) {
+		     k < end; i += incr1, j += incr2, k++,
+		     loff+= wd1, roff+= wd2) {
 			const void *p1, *p2;
 			CHECKCAND(dst, k, candoff, TPE_nil);
-			p1 = hp1 ? (const void *) (hp1 + VarHeapVal(lft, i, wd1)) : lft;
-			p2 = hp2 ? (const void *) (hp2 + VarHeapVal(rgt, i, wd2)) : rgt;
+			p1 = hp1 ? (const void *) (hp1 + VarHeapVal(lft, i, wd1)) : (const void *) ((const char *) lft + loff);
+			p2 = hp2 ? (const void *) (hp2 + VarHeapVal(rgt, j, wd2)) : (const void *) ((const char *) rgt + roff);
 			if (p1 == NULL || p2 == NULL ||
 			    (*atomcmp)(p1, nil) == 0 ||
 			    (*atomcmp)(p2, nil) == 0) {
@@ -447,10 +448,6 @@ op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				int x = (*atomcmp)(p1, p2);
 				dst[k] = OP(x, 0);
 			}
-			if (hp1 == NULL && incr1)
-				lft = (const void *) ((const char *) lft + wd1);
-			if (hp2 == NULL && incr2)
-				rgt = (const void *) ((const char *) rgt + wd2);
 		}
 		CANDLOOP(dst, k, TPE_nil, end, cnt);
 		break;

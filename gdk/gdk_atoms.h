@@ -29,7 +29,7 @@
  * code in one CPP macro we use the following #defines for comparing
  * atoms:
  */
-#define simple_CMP(x,y,tpe)     (simple_LT(x,y,tpe)?-1:simple_GT(x,y,tpe))
+#define simple_CMP(x,y,tpe)     (simple_GT(x,y,tpe) - simple_LT(x,y,tpe))
 #define simple_EQ(x,y,tpe)      ((*(const tpe*) (x)) == (*(const tpe*) (y)))
 #define simple_NE(x,y,tpe,nl)   ((*(const tpe*)(y)) != nl && (*(const tpe*) (x)) != (*(const tpe*) (y)))
 #define simple_LT(x,y,tpe)      ((*(const tpe*) (x))  < (*(const tpe*) (y)))
