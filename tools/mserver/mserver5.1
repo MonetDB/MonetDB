@@ -68,10 +68,6 @@ impact performance if set wrongly.  The kernel tries to choose the
 values for optimal performance.  Changing these parameters is
 discouraged.
 .P 
-.IP "gdk_mem_bigsize"
-Memory chunks of size >= gdk_mem_bigsize (in bytes) will be mmaped
-anonymously.  Default: 1<<20 == 1024576 == 1 MiB
-.\" for 32 bit systems try to claim 3G of (virtual) memory; ???
 .IP "gdk_vmtrim"
 Enable or disable the vmtrim thread which tries to unload memory that is
 not in use.  Default: yes
