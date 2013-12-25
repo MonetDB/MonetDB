@@ -74,7 +74,6 @@ class BuiltinOptions:
     gdk_dbname = 'demo'
     gdk_dbfarm = os.path.join('@QXlocalstatedir@','MonetDB')
     gdk_debug = '0'
-    gdk_mem_bigsize = '1024576'
     monet_admin = 'adm'
     monet_prompt = '>'
     monet_welcome = 'yes'
