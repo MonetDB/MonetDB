@@ -187,7 +187,7 @@ MCexitClient(Client c)
 #ifdef MAL_CLIENT_DEBUG
 	printf("# Exit client %d\n", c->idx);
 #endif
-    finishSessionProfiler(c);
+	finishSessionProfiler(c);
 	MPresetProfiler(c->fdout);
 	if (c->father == NULL) { /* normal client */
 		if (c->fdout && c->fdout != GDKstdout) {
