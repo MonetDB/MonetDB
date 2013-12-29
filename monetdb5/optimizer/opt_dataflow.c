@@ -23,6 +23,7 @@
 #include "opt_dataflow.h"
 #include "mal_instruction.h"
 #include "mal_interpreter.h"
+#include "manifold.h"
 
 /*
  * dataflow processing incurs overhead and is only
@@ -155,9 +156,9 @@ dflowAssignConflict(InstrPtr p, int pc, int *assigned, int *eolife)
 */
 
 /* a limited set of MAL instructions may appear in the dataflow block*/
-int
-dataflowConflict(InstrPtr p) {
-	if ( p->token == ENDsymbol || getFunctionId(p) == multiplexRef || blockCntrl(p) || blockStart(p) || blockExit(p))	
+static int
+dataflowConflict(Client cntxt, MalBlkPtr mb,InstrPtr p) {
+	if ( p->token == ENDsymbol || (getFunctionId(p) == multiplexRef && MANIFOLDtypecheck(cntxt,mb,p)== NULL) || blockCntrl(p) || blockStart(p) || blockExit(p))	
 		return TRUE;
 	switch(p->token){
 	case ASSIGNsymbol:
@@ -240,7 +241,7 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		assert(p);
 		conflict = 0;
 
-		if ( dataflowConflict(p) || (conflict = dflowAssignConflict(p,i,assigned,eolife)) )  {
+		if ( dataflowConflict(cntxt,mb,p) || (conflict = dflowAssignConflict(p,i,assigned,eolife)) )  {
 			/* close previous flow block */
 			if ( !(simple = simpleFlow(old,start,i))){
 				for( j=start ; j<i; j++){

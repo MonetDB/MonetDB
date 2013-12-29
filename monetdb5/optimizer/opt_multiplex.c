@@ -229,7 +229,12 @@ OPTmultiplexImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 		if (msg == MAL_SUCCEED && getModuleId(p) == malRef &&
 		    getFunctionId(p) == multiplexRef) {
 
-
+			if ( MANIFOLDtypecheck(cntxt,mb,p) != NULL){
+				setFunctionId(p, manifoldRef);
+				pushInstruction(mb, p);
+				actions++;
+				continue;
+			}
 			msg = OPTexpandMultiplex(cntxt, mb, stk, p);
 			if( msg== MAL_SUCCEED){
 				freeInstruction(p);
@@ -237,11 +242,6 @@ OPTmultiplexImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 				actions++;
 				continue;
 			} 
-			if ( MANIFOLDtypecheck(cntxt,mb,stk,p) != NULL){
-				setFunctionId(p, manifoldRef);
-				actions++;
-				continue;
-			}
 
 			pushInstruction(mb, p);
 			actions++;
