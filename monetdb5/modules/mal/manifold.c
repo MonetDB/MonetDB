@@ -93,6 +93,7 @@ case TYPE_str: { \
 	for( ; p< q ; p += mut->args[mut->fvar].size){\
 		msg = (*mut->pci->fcn)(&y, __VA_ARGS__);\
 		bunfastins(mut->args[0].b, (void*) 0, (void*) y);\
+		if( msg == MAL_SUCCEED && y) GDKfree(y);\
 		if( lastmsg) GDKfree(msg); lastmsg = msg; \
 		for( i = mut->fvar; i<= mut->lvar; i++)\
 		if( ATOMstorage(mut->args[i].type) !=  TYPE_str){\
@@ -164,7 +165,7 @@ MANIFOLDtypecheck(Client cntxt, MalBlkPtr mb, InstrPtr pci){
 	MalBlkPtr nmb;
 	MALfcn fcn;
 
-	if ( pci > 8) // limitation on MANIFOLDjob
+	if ( pci->argc > 8) // limitation on MANIFOLDjob
 		return NULL;
 	// We need a private MAL context to resolve the function call
 	nmb = newMalBlk(MAXVARS, STMT_INCREMENT);
