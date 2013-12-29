@@ -42,7 +42,7 @@
 #define manifoldplex_export extern
 #endif
 
-manifoldplex_export MALfcn MANIFOLDtypecheck(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+manifoldplex_export MALfcn MANIFOLDtypecheck(Client cntxt, MalBlkPtr mb, InstrPtr pci);
 manifoldplex_export str MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 manifoldplex_export str MANIFOLDremapMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 

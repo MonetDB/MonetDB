@@ -46,6 +46,7 @@ typedef struct{
 	int type;
 	BATiter bi;
 	BUN  o;
+	BUN  q;
 	str *s;
 } MULTIarg;
 
@@ -59,12 +60,15 @@ typedef struct{
 } MULTItask;
 
 
+// Loop through the first BAT
+// keep the last error message received
 #define ManifoldLoop(Type, ...) \
-{ Type *v = (Type*) mut->args[0].first;\
-	for( ; p< q && msg == MAL_SUCCEED; p += mut->args[mut->fvar].size){\
+{ Type *v = (Type*) mut->args[0].first; \
+	for( ; p< q ; p += mut->args[mut->fvar].size){\
 		msg = (*mut->pci->fcn)(v, __VA_ARGS__);\
+		if( lastmsg) GDKfree(msg); lastmsg = msg;\
 		for( i = mut->fvar; i<= mut->lvar; i++)\
-		if( mut->args[i].type < TYPE_str){\
+		if( ATOMstorage(mut->args[i].type) != TYPE_str){\
 			args[i] += mut->args[i].size;\
 		} else {\
 			mut->args[i].o++;\
@@ -75,6 +79,7 @@ typedef struct{
 	}\
 }
 
+// The target BAT tail type determines the result variable
 #define Manifoldbody(...) \
 switch(ATOMstorage(mut->args[0].b->ttype)){\
 case TYPE_bit: ManifoldLoop(bit,__VA_ARGS__); break;\
@@ -85,19 +90,18 @@ case TYPE_oid: ManifoldLoop(oid,__VA_ARGS__); break;\
 case TYPE_flt: ManifoldLoop(flt,__VA_ARGS__); break;\
 case TYPE_dbl: ManifoldLoop(dbl,__VA_ARGS__); break;\
 case TYPE_str: { \
-	for( ; p< q && msg == MAL_SUCCEED; p += mut->args[mut->fvar].size){\
-		h = BUNhead(mut->args[0].bi, mut->args[0].o);\
+	for( ; p< q ; p += mut->args[mut->fvar].size){\
 		msg = (*mut->pci->fcn)(&y, __VA_ARGS__);\
-		bunfastins(mut->args[0].b, (void*) h, (void*) y);\
+		bunfastins(mut->args[0].b, (void*) 0, (void*) y);\
+		if( lastmsg) GDKfree(msg); lastmsg = msg; \
 		for( i = mut->fvar; i<= mut->lvar; i++)\
-		if( mut->args[i].type < TYPE_str){\
+		if( ATOMstorage(mut->args[i].type) !=  TYPE_str){\
 			args[i] += mut->args[i].size;\
 		} else {\
 			mut->args[i].s = (str*) BUNtail(mut->args[i].bi, mut->args[i].o);\
 			args[i] =  (void*) & mut->args[i].s; \
 			mut->args[i].o++;\
 		}\
-		mut->args[0].o++;\
 	}\
 	break;}\
 default:\
@@ -105,21 +109,23 @@ default:\
 }
 
 // single argument is preparatory step for GDK_mapreduce
+// Only the last error message is returned, the value of
+// an erroneous call depends on the operator itself.
 static str
-MANIFOLDjob(const MULTItask *mut)
+MANIFOLDjob(MULTItask *mut)
 {	int i;
 	char *p, *q;
 	char **args;
-	str y, msg= MAL_SUCCEED;
-	ptr h;
+	str y, lastmsg = MAL_SUCCEED, msg= MAL_SUCCEED;
 
 	args = (char**) GDKzalloc(sizeof(char*) * mut->pci->argc);
 	if( args == NULL)
 		throw(MAL,"mal.manifold",MAL_MALLOC_FAIL);
 	
+	// the mod.fcn arguments are ignored from the call
 	for( i = mut->pci->retc+2; i< mut->pci->argc; i++)
 	if ( mut->args[i].b ){
-		if (mut->args[i].type < TYPE_str)
+		if ( ATOMstorage(mut->args[i].type) != TYPE_str)
 			args[i] = (char*) mut->args[i].first;
 		else {
 			mut->args[i].s = (str*) BUNtail(mut->args[i].bi, mut->args[i].o);
@@ -128,8 +134,12 @@ MANIFOLDjob(const MULTItask *mut)
 	} else
 		args[i] = (char*) getArgReference(mut->stk,mut->pci,i);
 
+#ifdef _DEBUG_MANIFOLD_
+	mnstr_printf(mut->cntxt->fdout,"#MANIFOLDjob fvar %d lvar %d type %d\n",mut->fvar,mut->lvar, ATOMstorage(mut->args[mut->fvar].b->ttype));
+#endif
 	p = (char*)  mut->args[mut->fvar].first;
 	q = (char*)  mut->args[mut->fvar].last;
+	// use limited argument list expansion.
 	switch(mut->pci->argc){
 	case 4: Manifoldbody(args[3]); break;
 	case 5: Manifoldbody(args[3],args[4]); break;
@@ -141,20 +151,21 @@ MANIFOLDjob(const MULTItask *mut)
 	}
 bunins_failed:
 	GDKfree(args);
-	return msg;
+	return lastmsg;
 }
 
 /* The manifold optimizer should check for the possibility
  * to use this implementation instead of the MAL loop.
  */
 MALfcn
-MANIFOLDtypecheck(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+MANIFOLDtypecheck(Client cntxt, MalBlkPtr mb, InstrPtr pci){
 	int i, k, tpe= 0;
 	InstrPtr q=0;
 	MalBlkPtr nmb;
 	MALfcn fcn;
-	(void) stk;
 
+	if ( pci > 8) // limitation on MANIFOLDjob
+		return NULL;
 	// We need a private MAL context to resolve the function call
 	nmb = newMalBlk(MAXVARS, STMT_INCREMENT);
 	if( nmb == NULL)
@@ -183,18 +194,19 @@ MANIFOLDtypecheck(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 
 #ifdef _DEBUG_MANIFOLD_
 	mnstr_printf(cntxt->fdout,"#MANIFOLD operation\n");
-	printInstruction(cntxt->fdout,mb,stk,pci,LIST_MAL_ALL);
-	printInstruction(cntxt->fdout,nmb,stk,q,LIST_MAL_ALL);
+	printInstruction(cntxt->fdout,mb,0,pci,LIST_MAL_ALL);
+	printInstruction(cntxt->fdout,nmb,0,q,LIST_MAL_ALL);
 #endif
 	// Localize the underlying opertor
 	typeChecker(cntxt->fdout, cntxt->nspace, nmb, q, TRUE);
-#ifdef _DEBUG_MANIFOLD_
-	printInstruction(cntxt->fdout,nmb,stk,q,LIST_MAL_ALL);
-#endif
 	if ( nmb->errors || q->fcn == NULL || q->token != CMDcall)
 		fcn = NULL;
 	else
 		fcn = q->fcn;
+#ifdef _DEBUG_MANIFOLD_
+	mnstr_printf(cntxt->fdout,"success? %s\n",(fcn == NULL? "no":"yes"));
+	printInstruction(cntxt->fdout,nmb,0,q,LIST_MAL_ALL);
+#endif
 	freeMalBlk(nmb);
 	return fcn;
 }
@@ -208,7 +220,7 @@ MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	str msg = MAL_SUCCEED;
 	MALfcn fcn;
 
-	fcn= MANIFOLDtypecheck(cntxt,mb,stk,pci);
+	fcn= MANIFOLDtypecheck(cntxt,mb,pci);
 	if( fcn == NULL)
 		throw(MAL, "mal.manifold", "Illegal manifold function call");
 
@@ -232,7 +244,7 @@ MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 				msg = createException(MAL,"mal.manifold", MAL_MALLOC_FAIL);
 				goto wrapup;
 			}
-			mat[i].type = tpe = mat[i].b->ttype;
+			mat[i].type = tpe = getTailType(getArgType(mb,pci,i));
 			if ( mut.fvar == 0){
 				mut.fvar = i;
 				cnt = BATcount(mat[i].b);
@@ -242,7 +254,7 @@ MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 				goto wrapup;
 			} 
 			mut.lvar = i;
-			if ( tpe == TYPE_str) 
+			if ( ATOMstorage(tpe) == TYPE_str) 
 				mat[i].size = Tsize(mat[i].b);
 			else
 				mat[i].size = BATatoms[ ATOMstorage(tpe)].size;
@@ -250,6 +262,7 @@ MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 			mat[i].last = (void*)  Tloc(mat[i].b, BUNlast(mat[i].b));
 			mat[i].bi = bat_iterator(mat[i].b);
 			mat[i].o = BUNfirst(mat[i].b);
+			mat[i].q = BUNlast(mat[i].b);
 		} else {
 			mat[i].last = mat[i].first = (void*) getArgReference(stk,pci,i);
 		}
@@ -261,19 +274,16 @@ MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		msg= createException(MAL,"mal.manifold",MAL_MALLOC_FAIL);
 		goto wrapup;
 	}
+	BATseqbase(mat[0].b, 0);
+    mat[0].b->hsorted= 0;
+    mat[0].b->hrevsorted= 0;
+    mat[0].b->T->nonil=0;
+    mat[0].b->tsorted=0;
+    mat[0].b->trevsorted=0;
 	mat[0].bi = bat_iterator(mat[0].b);
 	mat[0].first = (void *)  Tloc(mat[0].b, BUNfirst(mat[0].b));
 	mat[0].last = (void *)  Tloc(mat[0].b, BUNlast(mat[0].b));
-	BATseqbase(mat[0].b, mat[mut.fvar].b->hseqbase);
-	if( ATOMstorage(mat[0].b->ttype) != TYPE_str)
-		BATsetcount(mat[0].b,cnt);
-	mat[0].b->hsorted= mat[mut.fvar].b->hsorted;
-	mat[0].b->hrevsorted= mat[mut.fvar].b->hrevsorted;
-	mat[0].b->tsorted=0;
-	mat[0].b->trevsorted=0;
 
-
-	pci->fcn = fcn;
 
 	// Then iterator over all BATs
 	if( mut.fvar ==0){
@@ -281,9 +291,15 @@ MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		goto wrapup;
 	}
 
+	mut.pci = copyInstruction(pci);
+	mut.pci->fcn = fcn;
 	msg = MANIFOLDjob(&mut);
+	freeInstruction(mut.pci);
 
 	// consolidate the properties
+	if ( ATOMstorage(mat[0].b->ttype)  != TYPE_str)
+		BATsetcount(mat[0].b,cnt);
+    BATsettrivprop(mat[0].b);
 	BATderiveProps(mat[0].b, TRUE);
 	BBPkeepref(*(int*) getArgReference(stk,pci,0)=mat[0].b->batCacheid);
 wrapup:
