@@ -97,7 +97,7 @@ Ready.
 % 127 # length
 [ <project id = "1"><custid>1</custid><custname>WoodWorks</custname><projid>1</projid><projname>Medusa</projname></project>	]
 [ <project id = "2"><custid>4</custid><custname>Hardware Shop</custname><projid>2</projid><projname>Pegasus</projname></project>	]
-[ <project id = "8"><custid>4</custid><custname>Hardware Shop</custname><projid>8</projid><projname>Typhon</projname></project>	]
+[ <project id = "2"><custid>4</custid><custname>Hardware Shop</custname><projid>2</projid><projname>Pegasus</projname></project>	]
 [ <project id = "10"><custid>5</custid><custname>Books Inc</custname><projid>10</projid><projname>Sphinx</projname></project>	]
 #select 
 #  xmlelement(name "Customer",
@@ -116,10 +116,10 @@ Ready.
 % xml # type
 % 196 # length
 [ <Customer id = "1"><name>WoodWorks</name><city>Baltimore</city><projects><project id = "1"><name>Medusa</name></project></projects></Customer>	]
-[ <Customer id = "2"><name>Software Solutions</name><city>Boston</city></Customer>	]
-[ <Customer id = "3"><name>Food Supplies</name><city>New York</city></Customer>	]
-[ <Customer id = "4"><name>Hardware Shop</name><city>Washington</city><projects><project id = "2"><name>Pegasus</name></project><project id = "8"><name>Typhon</name></project></projects></Customer>	]
-[ <Customer id = "5"><name>Books Inc</name><city>New Orleans</city><projects><project id = "10"><name>Sphinx</name></project></projects></Customer>	]
+[ <Customer id = "5"><name>Books Inc</name><city>New Orleans</city><projects><project id = "8"><name>Typhon</name></project></projects></Customer>	]
+[ <Customer id = "2"><name>Software Solutions</name><city>Boston</city><projects><project id = "10"><name>Sphinx</name></project></projects></Customer>	]
+[ <Customer id = "1"><name>WoodWorks</name><city>Baltimore</city><projects><project id = "1"><name>Medusa</name></project></projects></Customer>	]
+[ <Customer id = "4"><name>Hardware Shop</name><city>Washington</city><projects><project id = "1"><name>Medusa</name></project><project id = "2"><name>Pegasus</name></project></projects></Customer>	]
 #select 
 #  xmlelement(name "Customer",
 #  xmlattributes(c.CustId as "id"), 

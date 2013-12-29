@@ -34,7 +34,7 @@ Ready.
 [ 1	]
 #SELECT  json_path(b,'f1') AS f1, json_path(b,'f3') FROM jsonTbl WHERE a =1;
 % sys.L,	sys.L # table_name
-% f1,	json_path_b # name
+% f1,	path_b # name
 % json,	json # type
 % 3,	20 # length
 [ "[1]",	"[\"Hi I'm \\\"Daisy\\\"\"]"	]
@@ -52,13 +52,13 @@ Ready.
 [ "[[1,\"Robert \\\"M\\\"\",true]]"	]
 #SELECT  json_path(b,'f3') AS f1, json_text(b,'f3') FROM jsonTbl WHERE a =1;
 % sys.L,	sys.L # table_name
-% f1,	json_text_b # name
+% f1,	text_b # name
 % json,	clob # type
 % 20,	14 # length
 [ "[\"Hi I'm \\\"Daisy\\\"\"]",	"Hi I'm \"Daisy\""	]
 #SELECT json_path(b,'f1[0]') as f1_0 , json_text(b,'f1[0]')FROM jsonTbl WHERE a = 3;
 % sys.L,	sys.L # table_name
-% f1_0,	json_text_b # name
+% f1_0,	text_b # name
 % json,	clob # type
 % 25,	15 # length
 [ "[[1,\"Robert \\\"M\\\"\",true]]",	"1Robert \"M\"true"	]

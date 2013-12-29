@@ -28,6 +28,7 @@ Ready.
 #msqldump tables Wed Sep  8 10:50:27 2010
 
 START TRANSACTION;
+CREATE SCHEMA "json" AUTHORIZATION "monetdb";
 COMMIT;
 
 # 10:50:28 >  

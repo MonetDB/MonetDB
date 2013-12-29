@@ -66,13 +66,13 @@ Ready.
 [ "{\"message\" : \"indoorDeviceLocation\", \"id\" : \"00:1b:21:02:30:cd\", \"dateTime\" : \"2007-04-05T14:30\", \"position\" : {\"X\" : \"10\", \"Y\" : \"10\" }}"	]
 #select json_text(js, 'message') from txt;
 % sys.L # table_name
-% json_text_js # name
+% text_js # name
 % clob # type
 % 20 # length
 [ "indoorDeviceLocation"	]
 #select json_text(js, 'message') = 'indoorDeviceLocation' from txt;
 % sys.L # table_name
-% =_json_text_js # name
+% =_text_js # name
 % boolean # type
 % 5 # length
 [ true	]

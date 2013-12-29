@@ -54,6 +54,7 @@ TABLE_TYPE
 mTests_sql_jdbc_tests	
 Resultset with 3 columns
 TABLE_SCHEM	TABLE_CATALOG	TABLE_CAT	
+json	mTests_sql_jdbc_tests	mTests_sql_jdbc_tests	
 sys	mTests_sql_jdbc_tests	mTests_sql_jdbc_tests	
 tmp	mTests_sql_jdbc_tests	mTests_sql_jdbc_tests	
 Resultset with 3 columns

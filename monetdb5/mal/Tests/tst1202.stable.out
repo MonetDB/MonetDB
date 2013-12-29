@@ -283,37 +283,13 @@ function user.main():void;
     io.print("tzone_bat");
     io.print(tzone_bat);
 #io.print(tzone_bat.bat.setColumn("tzone")); 
-    X_179 := bat.reverse(tzone_bat);
-    X_181 := bat.new(nil:oid,nil:int);
-barrier (X_185,X_186) := iterator.new(tzone_bat);
-    X_188 := mtime.minutes(X_186);
-    X_189 := algebra.fetch(X_179,X_185);
-    bat.insert(X_181,X_189,X_188);
-    redo (X_185,X_186) := iterator.next(tzone_bat);
-exit (X_185,X_186);
-    kd_a:bat[:oid,:int]  := X_181;
+    kd_a:bat[:oid,:int]  := mal.manifold("mtime","minutes",tzone_bat);
     bat.setColumn(kd_a,"minutes");
 #io.print([minutes](tzone_bat).bat.setColumn("minutes"), 
-    X_195 := bat.reverse(tzone_bat);
-    X_197 := bat.new(nil:oid,nil:zrule);
-barrier (X_200,X_201) := iterator.new(tzone_bat);
-    X_203 := mtime.start_dst(X_201);
-    X_204 := algebra.fetch(X_195,X_200);
-    bat.insert(X_197,X_204,X_203);
-    redo (X_200,X_201) := iterator.next(tzone_bat);
-exit (X_200,X_201);
-    md_a:bat[:oid,:zrule]  := X_197;
+    md_a:bat[:oid,:zrule]  := mal.manifold("mtime","start_dst",tzone_bat);
     bat.setColumn(md_a,"start_dst");
 #      [start_dst](tzone_bat).bat.setColumn("start_dst"), 
-    X_210 := bat.reverse(tzone_bat);
-    X_212 := bat.new(nil:oid,nil:zrule);
-barrier (X_214,X_215) := iterator.new(tzone_bat);
-    X_217 := mtime.end_dst(X_215);
-    X_218 := algebra.fetch(X_210,X_214);
-    bat.insert(X_212,X_218,X_217);
-    redo (X_214,X_215) := iterator.next(tzone_bat);
-exit (X_214,X_215);
-    od_a:bat[:oid,:zrule]  := X_212;
+    od_a:bat[:oid,:zrule]  := mal.manifold("mtime","end_dst",tzone_bat);
     bat.setColumn(od_a,"end_dst");
     io.print("print(kd_a,md_a,od_a)");
     qd_a := io.print(kd_a,md_a,od_a);
@@ -358,7 +334,7 @@ end main;
 [ 11@0,	  1439,		  nil,						  nil						  ]
 [ 12@0,	  60,		  nil,						  nil						  ]
 [ 13@0,	  nil,		  nil,						  nil						  ]
-[ 15@0,	  nil,		  nil,						  nil						  ]
+[ 14@0,	nil,	nil,	nil  ]
 
 # 07:59:02 >  
 # 07:59:02 >  Done.

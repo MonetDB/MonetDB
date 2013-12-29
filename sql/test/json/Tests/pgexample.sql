@@ -7,18 +7,18 @@ INSERT INTO jsonTbl VALUES (3, '{"f1":[1,"Robert \\"M\\"",true],"f2":[2,"Kevin \
 
 --The first operator is “->”, that can be used to fetch field values directly from JSON data. It can be used with a text value identifying the key of field.
 -- SELECT b->'f1' AS f1, b->'f3' AS f3 FROM jsonTbl WHERE a = 1;
-SELECT  json_path(b,'f1') AS f1, json_path(b,'f3') FROM jsonTbl WHERE a =1;
+SELECT  json.path(b,'f1') AS f1, json.path(b,'f3') FROM jsonTbl WHERE a =1;
 
 --Multiple keys can also be used in chain to retrieve data or another JSON subset of data.
 -- SELECT b->'f1'->'f12' AS f12 FROM jsonTbl WHERE a = 2;
- SELECT json_path(b,'f1.f12') AS f12 FROM jsonTbl WHERE a = 2;
+ SELECT json.path(b,'f1.f12') AS f12 FROM jsonTbl WHERE a = 2;
 
 --When an integer is used as key, you can fetch data directly in a stored array, like that for example:
 -- SELECT b->'f1'->0 as f1_0 FROM jsonTbl WHERE a = 3;
-SELECT json_path(b,'f1[0]') as f1_0 FROM jsonTbl WHERE a = 3;
+SELECT json.path(b,'f1[0]') as f1_0 FROM jsonTbl WHERE a = 3;
 
 --The second operator added is “->>”. Contrary to “->” that returns a JSON legal text, “->>” returns plain text.
-SELECT  json_path(b,'f3') AS f1, json_text(b,'f3') FROM jsonTbl WHERE a =1;
-SELECT json_path(b,'f1[0]') as f1_0 , json_text(b,'f1[0]')FROM jsonTbl WHERE a = 3;
+SELECT  json.path(b,'f3') AS f1, json.text(b,'f3') FROM jsonTbl WHERE a =1;
+SELECT json.path(b,'f1[0]') as f1_0 , json.text(b,'f1[0]')FROM jsonTbl WHERE a = 3;
 
 drop table jsonTbl;

@@ -31,9 +31,10 @@ Ready.
 % .ftf # table_name
 % sch # name
 % varchar # type
-% 3 # length
+% 4 # length
 [ "sys"	]
 [ "tmp"	]
+[ "json"	]
 [ "ft"	]
 
 # 15:58:57 >  

@@ -22,18 +22,18 @@ insert into minitable values('
 
 select * from minitable;
 
-select json_filter(j,'_id') from minitable;
-select json_filter(j,'name') from minitable;
-select json_filter(j,'contribs') from minitable;
-select json_filter(j,'awards') from minitable;
+select json.filter(j,'_id') from minitable;
+select json.filter(j,'name') from minitable;
+select json.filter(j,'contribs') from minitable;
+select json.filter(j,'awards') from minitable;
 
 -- returns a table with two json columns
-select json_filter(j,'name'), json_filter(j,'contribs') from minitable;
+select json.filter(j,'name'), json_filter(j,'contribs') from minitable;
 
 -- returns a table with a single json column
 
-select json_keys(j) from minitable;
-select json_names(j) from minitable;
-select json_values(j) from minitable;
+select json.keys(j) from minitable;
+select json.names(j) from minitable;
+select json.values(j) from minitable;
 
 drop table minitable;

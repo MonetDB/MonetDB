@@ -58,7 +58,7 @@ Ready.
 #	) AS L1
 #) AS L2;
 % sys.L # table_name
-% json_filter_all_j # name
+% filter_all_j # name
 % json # type
 % 66 # length
 [ "[\"Nigel Rees\",\"Evelyn Waugh\",\"Herman Melville\",\"J. R. R. Tolkien\"]"	]
@@ -68,31 +68,31 @@ Ready.
 #	) AS L1
 #) AS L2;
 % sys.L # table_name
-% json_filter_j # name
+% filter_j # name
 % json # type
 % 14 # length
 [ "[\"Nigel Rees\"]"	]
 #SELECT json_path(j,'..author') FROM books;
 % sys.L # table_name
-% json_path_j # name
+% path_j # name
 % json # type
 % 66 # length
 [ "[\"Nigel Rees\",\"Evelyn Waugh\",\"Herman Melville\",\"J. R. R. Tolkien\"]"	]
 #SELECT json_path(j,'store.book[*].author') FROM books;
 % sys.L # table_name
-% json_path_j # name
+% path_j # name
 % json # type
 % 66 # length
 [ "[\"Nigel Rees\",\"Evelyn Waugh\",\"Herman Melville\",\"J. R. R. Tolkien\"]"	]
 #SELECT json_path(j,'..bicycle.price') FROM books;
 % sys.L # table_name
-% json_path_j # name
+% path_j # name
 % json # type
 % 7 # length
 [ "[19.95]"	]
 #SELECT json_path(j,'store.book.author[1]') FROM books;
 % sys.L # table_name
-% json_path_j # name
+% path_j # name
 % json # type
 % 16 # length
 [ "[\"Evelyn Waugh\"]"	]

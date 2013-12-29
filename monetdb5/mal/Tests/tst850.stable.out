@@ -27,15 +27,7 @@ function user.main():void;
     bat.append(t,"hello world");
     bat.append(t,"sleep well");
     io.print(t);
-    X_15 := bat.reverse(t);
-    X_17 := bat.new(nil:oid,nil:bit);
-barrier (X_21,X_22) := iterator.new(t);
-    X_24 := str.startsWith(X_22,"");
-    X_25 := algebra.fetch(X_15,X_21);
-    bat.insert(X_17,X_25,X_24);
-    redo (X_21,X_22) := iterator.next(t);
-exit (X_21,X_22);
-    b:bat[:oid,:bit]  := X_17;
+    b:bat[:oid,:bit]  := mal.manifold("str","startsWith",t,"");
     io.print(b);
 end main;
 #-------------------------#

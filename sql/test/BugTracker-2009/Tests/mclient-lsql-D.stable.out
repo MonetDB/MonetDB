@@ -30,6 +30,7 @@ Ready.
 # 21:51:00 >  
 
 START TRANSACTION;
+CREATE SCHEMA "json" AUTHORIZATION "monetdb";
 SET SCHEMA "sys";
 CREATE TABLE "sys"."table_a" (
 	"table_a_id" INTEGER       NOT NULL,
