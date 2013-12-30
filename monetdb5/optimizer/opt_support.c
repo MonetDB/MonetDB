@@ -710,6 +710,9 @@ hasSideEffects(InstrPtr p, int strict)
 	if (getFunctionId(p) == depositRef)
 		return TRUE;
 
+	if (getModuleId(p) == malRef && getFunctionId(p) == multiplexRef)
+		return FALSE;
+
 	if( getModuleId(p) == ioRef ||
 		getModuleId(p) == streamsRef ||
 		getModuleId(p) == bstreamRef ||
@@ -722,7 +725,7 @@ hasSideEffects(InstrPtr p, int strict)
 		getModuleId(p) == semaRef ||
 		getModuleId(p) == recycleRef ||
 		getModuleId(p) == alarmRef)
-			return TRUE;
+		return TRUE;
 
 	if (getModuleId(p) == sqlRef){
 		if (getFunctionId(p) == tidRef) return FALSE;

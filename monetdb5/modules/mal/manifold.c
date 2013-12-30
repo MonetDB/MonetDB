@@ -66,9 +66,8 @@ typedef struct{
 	Type *v = (Type*) mut->args[0].first; 		\
 	for( ; p<q ; p += mut->args[mut->fvar].size){ 	\
 		msg = (*mut->pci->fcn)(v, __VA_ARGS__); \
-		if (lastmsg) 				\
-			GDKfree(msg); 			\
-		lastmsg = msg;				\
+		if (msg) 				\
+			break;				\
 		for( i = mut->fvar; i<= mut->lvar; i++) {	\
 			if( ATOMstorage(mut->args[i].type) != TYPE_str){ \
 				args[i] += mut->args[i].size;		 \
@@ -93,22 +92,23 @@ case TYPE_oid: ManifoldLoop(oid,__VA_ARGS__); break;\
 case TYPE_flt: ManifoldLoop(flt,__VA_ARGS__); break;\
 case TYPE_dbl: ManifoldLoop(dbl,__VA_ARGS__); break;\
 case TYPE_str: \
-	for( ; p< q ; p += mut->args[mut->fvar].size){\
-		msg = (*mut->pci->fcn)(&y, __VA_ARGS__);\
-		bunfastins(mut->args[0].b, (void*) 0, (void*) y);\
-		if( msg == MAL_SUCCEED && y) GDKfree(y);\
-		if( lastmsg) GDKfree(msg); lastmsg = msg; \
-		for( i = mut->fvar; i<= mut->lvar; i++)\
-		if( ATOMstorage(mut->args[i].type) !=  TYPE_str){\
-			args[i] += mut->args[i].size;\
-		} else {\
-			mut->args[i].s = (str*) BUNtail(mut->args[i].bi, mut->args[i].o);\
-			args[i] =  (void*) & mut->args[i].s; \
-			mut->args[i].o++;\
-		}\
-	}\
-	break;\
-default:\
+	for( ; p< q ; p += mut->args[mut->fvar].size){ 		\
+		msg = (*mut->pci->fcn)(&y, __VA_ARGS__); 	\
+		if (msg)					\
+			break;					\
+		bunfastins(mut->args[0].b, (void*) 0, (void*) y);	\
+		for( i = mut->fvar; i<= mut->lvar; i++) {	\
+			if( ATOMstorage(mut->args[i].type) !=  TYPE_str){\
+				args[i] += mut->args[i].size;	\
+			} else {				\
+				mut->args[i].s = (str*) BUNtail(mut->args[i].bi, mut->args[i].o);\
+				args[i] =  (void*) & mut->args[i].s; 	\
+				mut->args[i].o++;		\
+			}					\
+		}						\
+	}							\
+	break;							\
+default:							\
 	msg= createException(MAL,"mal.manifold","manifold call limitation (unknown type?) ");\
 }
 
@@ -120,7 +120,7 @@ MANIFOLDjob(MULTItask *mut)
 {	int i;
 	char *p, *q;
 	char **args;
-	str y, lastmsg = MAL_SUCCEED, msg= MAL_SUCCEED;
+	str y, msg= MAL_SUCCEED;
 
 	args = (char**) GDKzalloc(sizeof(char*) * mut->pci->argc);
 	if( args == NULL)
