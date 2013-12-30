@@ -113,7 +113,7 @@ int
 UUIDfromString(const char *svalue, int *len, uuid **retval)
 {
 	const char *s = svalue;
-	int i;
+	int i, j;
 
 	if (*len < UUID_SIZE || *retval == NULL) {
 		if (*retval != NULL)
@@ -126,8 +126,8 @@ UUIDfromString(const char *svalue, int *len, uuid **retval)
 		**retval = uuid_nil;
 		return 3;
 	}
-	for (i = 0; i < UUID_SIZE; i++) {
-		if (i == 8 || i == 12 || i == 16 || i == 20) {
+	for (i = 0, j = 0; i < UUID_SIZE; i++) {
+		if (j == 8 || j == 12 || j == 16 || j == 20) {
 			if (*s != '-')
 				goto bailout;
 			s++;
@@ -141,6 +141,7 @@ UUIDfromString(const char *svalue, int *len, uuid **retval)
 		else
 			goto bailout;
 		s++;
+		j++;
 		(*retval)->u[i] <<= 4;
 		if ('0' <= *s && *s <= '9')
 			(*retval)->u[i] |= *s - '0';
@@ -151,6 +152,7 @@ UUIDfromString(const char *svalue, int *len, uuid **retval)
 		else
 			goto bailout;
 		s++;
+		j++;
 	}
 	return s - svalue;
 
