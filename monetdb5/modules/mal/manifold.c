@@ -62,34 +62,37 @@ typedef struct{
 
 // Loop through the first BAT
 // keep the last error message received
-#define ManifoldLoop(Type, ...) \
-{ Type *v = (Type*) mut->args[0].first; \
-	for( ; p< q ; p += mut->args[mut->fvar].size){\
-		msg = (*mut->pci->fcn)(v, __VA_ARGS__);\
-		if( lastmsg) GDKfree(msg); lastmsg = msg;\
-		for( i = mut->fvar; i<= mut->lvar; i++)\
-		if( ATOMstorage(mut->args[i].type) != TYPE_str){\
-			args[i] += mut->args[i].size;\
-		} else {\
-			mut->args[i].o++;\
-			mut->args[i].s = (str *) BUNtail(mut->args[i].bi, mut->args[i].o);\
-			args[i] = (void*)  &mut->args[i].s;\
-		}\
-		v++;\
-	}\
+#define ManifoldLoop(Type, ...) {			\
+	Type *v = (Type*) mut->args[0].first; 		\
+	for( ; p<q ; p += mut->args[mut->fvar].size){ 	\
+		msg = (*mut->pci->fcn)(v, __VA_ARGS__); \
+		if (lastmsg) 				\
+			GDKfree(msg); 			\
+		lastmsg = msg;				\
+		for( i = mut->fvar; i<= mut->lvar; i++) {	\
+			if( ATOMstorage(mut->args[i].type) != TYPE_str){ \
+				args[i] += mut->args[i].size;		 \
+			} else {			\
+				mut->args[i].o++;	\
+				mut->args[i].s = (str *) BUNtail(mut->args[i].bi, mut->args[i].o); \
+				args[i] = (void*)  &mut->args[i].s;	 \
+			}				\
+		}					\
+		v++;					\
+	}						\
 }
 
 // The target BAT tail type determines the result variable
 #define Manifoldbody(...) \
-switch(ATOMstorage(mut->args[0].b->ttype)){\
-case TYPE_bit: ManifoldLoop(bit,__VA_ARGS__); break;\
+switch(ATOMstorage(mut->args[0].b->T->type)){\
+case TYPE_bte: ManifoldLoop(bit,__VA_ARGS__); break;\
 case TYPE_sht: ManifoldLoop(sht,__VA_ARGS__); break;\
 case TYPE_int: ManifoldLoop(int,__VA_ARGS__); break;\
 case TYPE_lng: ManifoldLoop(lng,__VA_ARGS__); break;\
 case TYPE_oid: ManifoldLoop(oid,__VA_ARGS__); break;\
 case TYPE_flt: ManifoldLoop(flt,__VA_ARGS__); break;\
 case TYPE_dbl: ManifoldLoop(dbl,__VA_ARGS__); break;\
-case TYPE_str: { \
+case TYPE_str: \
 	for( ; p< q ; p += mut->args[mut->fvar].size){\
 		msg = (*mut->pci->fcn)(&y, __VA_ARGS__);\
 		bunfastins(mut->args[0].b, (void*) 0, (void*) y);\
@@ -104,9 +107,9 @@ case TYPE_str: { \
 			mut->args[i].o++;\
 		}\
 	}\
-	break;}\
+	break;\
 default:\
-	msg= createException(MAL,"mal.manifold","manifold call limitation ");\
+	msg= createException(MAL,"mal.manifold","manifold call limitation (unknown type?) ");\
 }
 
 // single argument is preparatory step for GDK_mapreduce
@@ -152,7 +155,7 @@ MANIFOLDjob(MULTItask *mut)
 	}
 bunins_failed:
 	GDKfree(args);
-	return lastmsg;
+	return msg;
 }
 
 /* The manifold optimizer should check for the possibility
@@ -240,27 +243,26 @@ MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	// prepare iterators
 	for( i = pci->retc+2; i < pci->argc; i++){
 		if ( isaBatType(getArgType(mb,pci,i)) ){
-			mat[i].b = BATdescriptor( * (int*) getArgReference(stk,pci,i));
+			mat[i].b = BATdescriptor( *(int*) getArgReference(stk,pci,i));
 			if ( mat[i].b == NULL){
 				msg = createException(MAL,"mal.manifold", MAL_MALLOC_FAIL);
 				goto wrapup;
 			}
 			mat[i].type = tpe = getTailType(getArgType(mb,pci,i));
-			if ( mut.fvar == 0){
+			if (mut.fvar == 0){
 				mut.fvar = i;
 				cnt = BATcount(mat[i].b);
-			} else
-			if ( BATcount(mat[i].b)!= cnt){
+			} else if (BATcount(mat[i].b)!= cnt){
 				msg = createException(MAL,"mal.manifold","Columns must be of same length");
 				goto wrapup;
 			} 
 			mut.lvar = i;
-			if ( ATOMstorage(tpe) == TYPE_str) 
+			if (ATOMstorage(tpe) == TYPE_str) 
 				mat[i].size = Tsize(mat[i].b);
 			else
-				mat[i].size = BATatoms[ ATOMstorage(tpe)].size;
+				mat[i].size = BATatoms[ATOMstorage(tpe)].size;
 			mat[i].first = (void*)  Tloc(mat[i].b, BUNfirst(mat[i].b));
-			mat[i].last = (void*)  Tloc(mat[i].b, BUNlast(mat[i].b));
+			mat[i].last = (void*) Tloc(mat[i].b, BUNlast(mat[i].b));
 			mat[i].bi = bat_iterator(mat[i].b);
 			mat[i].o = BUNfirst(mat[i].b);
 			mat[i].q = BUNlast(mat[i].b);
@@ -276,11 +278,11 @@ MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		goto wrapup;
 	}
 	BATseqbase(mat[0].b, 0);
-    mat[0].b->hsorted= 0;
-    mat[0].b->hrevsorted= 0;
-    mat[0].b->T->nonil=0;
-    mat[0].b->tsorted=0;
-    mat[0].b->trevsorted=0;
+	mat[0].b->hsorted= 0;
+	mat[0].b->hrevsorted= 0;
+	mat[0].b->T->nonil=0;
+	mat[0].b->tsorted=0;
+	mat[0].b->trevsorted=0;
 	mat[0].bi = bat_iterator(mat[0].b);
 	mat[0].first = (void *)  Tloc(mat[0].b, BUNfirst(mat[0].b));
 	mat[0].last = (void *)  Tloc(mat[0].b, BUNlast(mat[0].b));
@@ -300,7 +302,7 @@ MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	// consolidate the properties
 	if ( ATOMstorage(mat[0].b->ttype)  != TYPE_str)
 		BATsetcount(mat[0].b,cnt);
-    BATsettrivprop(mat[0].b);
+	BATsettrivprop(mat[0].b);
 	BATderiveProps(mat[0].b, TRUE);
 	BBPkeepref(*(int*) getArgReference(stk,pci,0)=mat[0].b->batCacheid);
 wrapup:
