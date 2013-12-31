@@ -113,6 +113,7 @@ opt_export int hasCommonResults(InstrPtr p, InstrPtr q);
 opt_export int isProcedure(MalBlkPtr mb, InstrPtr p);
 opt_export int isUpdateInstruction(InstrPtr p);
 opt_export int hasSideEffects(InstrPtr p, int strict);
+opt_export int mayhaveSideEffects(Client cntxt, MalBlkPtr mb, InstrPtr p, int strict);
 opt_export int isSideEffectFree(MalBlkPtr mb);
 opt_export int isBlocking(InstrPtr p);
 opt_export int isAllScalar(MalBlkPtr mb, InstrPtr p);

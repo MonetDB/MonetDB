@@ -157,8 +157,12 @@ dflowAssignConflict(InstrPtr p, int pc, int *assigned, int *eolife)
 
 /* a limited set of MAL instructions may appear in the dataflow block*/
 static int
-dataflowConflict(Client cntxt, MalBlkPtr mb,InstrPtr p) {
-	if ( p->token == ENDsymbol || (getFunctionId(p) == multiplexRef && MANIFOLDtypecheck(cntxt,mb,p)== NULL) || blockCntrl(p) || blockStart(p) || blockExit(p))	
+dataflowConflict(Client cntxt, MalBlkPtr mb,InstrPtr p) 
+{
+	if (p->token == ENDsymbol || 
+	    (getFunctionId(p) == multiplexRef && 
+	     MANIFOLDtypecheck(cntxt,mb,p) == NULL) || 
+	    blockCntrl(p) || blockStart(p) || blockExit(p))
 		return TRUE;
 	switch(p->token){
 	case ASSIGNsymbol:

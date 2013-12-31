@@ -117,7 +117,7 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 		mnstr_printf(cntxt->fdout,"#CANDIDATE[%d] ",i);
 		printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_ALL);
 #endif
-		prop = hasSideEffects(p,TRUE) || isUpdateInstruction(p);
+		prop = mayhaveSideEffects(cntxt, mb, p,TRUE) || isUpdateInstruction(p);
 		j =	isVarConstant(mb, getArg(p,p->argc-1))? cstlist: candidate;
 				
 		cnt = mb->stop / 128 < 32? 32 : mb->stop/128;	/* limit search depth */
@@ -133,7 +133,7 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 					q->token != ASSIGNsymbol ,
 					list[getArg(q,q->argc-1)],i,
 					!hasCommonResults(p, q), 
-					!hasSideEffects(q, TRUE),
+					!mayhaveSideEffects(cntxt, mb, q, TRUE),
 					!isUpdateInstruction(q),
 					isLinearFlow(q),
 					isLinearFlow(p));
@@ -175,8 +175,8 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 				}
 			}
 #ifdef DEBUG_OPT_COMMONTERMS_MORE
-			else if ( hasSideEffects(q, TRUE) || isUpdateInstruction(p)){
-				mnstr_printf(cntxt->fdout, "COMMON SKIPPED %d %d\n", hasSideEffects(q, TRUE) , isUpdateInstruction(p));
+			else if ( mayhaveSideEffects(cntxt, mb, q, TRUE) || isUpdateInstruction(p)){
+				mnstr_printf(cntxt->fdout, "COMMON SKIPPED %d %d\n", mayhaveSideEffects(cntxt, mb, q, TRUE) , isUpdateInstruction(p));
 				printInstruction(cntxt->fdout, mb, 0, q, LIST_MAL_ALL);
 			}
 #endif

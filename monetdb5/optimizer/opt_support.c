@@ -128,6 +128,7 @@
 #include "mal_listing.h"
 #include "mal_debugger.h"
 #include "opt_multiplex.h"
+#include "manifold.h"
 
 /*
  * @-
@@ -778,6 +779,17 @@ hasSideEffects(InstrPtr p, int strict)
 		return TRUE;
 	return FALSE;
 }
+
+int
+mayhaveSideEffects(Client cntxt, MalBlkPtr mb, InstrPtr p, int strict)
+{
+	if (getModuleId(p) != malRef || getFunctionId(p) != multiplexRef) 
+		return hasSideEffects( p, strict);
+	if (MANIFOLDtypecheck(cntxt,mb,p) == NULL)
+		return TRUE;
+	return FALSE;
+}
+
 /*
  * @-
  * Side-effect free functions are crucial for several operators.
