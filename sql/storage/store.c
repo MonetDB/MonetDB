@@ -29,8 +29,8 @@
 #include <bat/bat_table.h>
 #include <bat/bat_logger.h>
 
-/* version 05.20.01 of catalog */
-#define CATALOG_VERSION 52001
+/* version 05.20.02 of catalog */
+#define CATALOG_VERSION 52002
 int catalog_version = 0;
 
 static MT_Lock bs_lock MT_LOCK_INITIALIZER("bs_lock");
@@ -852,6 +852,9 @@ load_schema(sql_trans *tr, sqlid id, oid rid)
 		v = table_funcs.column_find_value(tr, 
 			find_sql_column(ss, "authorization"), rid);
 		s->auth_id = *(sqlid *)v; 	_DELETE(v);
+		v = table_funcs.column_find_value(tr, 
+			find_sql_column(tables, "system"), rid);
+		s->system = *(bit *)v;		_DELETE(v);
 		v = table_funcs.column_find_value(tr, find_sql_column(ss, "owner"), rid);
 		s->owner = *(sqlid *)v;		_DELETE(v);
 		s->keys = list_new(tr->sa, (fdestroy) NULL);
@@ -972,7 +975,7 @@ insert_schemas(sql_trans *tr)
 
 		if (isDeclaredSchema(s))
 			continue;
-		table_funcs.table_insert(tr, sysschema, &s->base.id, s->base.name, &s->auth_id, &s->owner);
+		table_funcs.table_insert(tr, sysschema, &s->base.id, s->base.name, &s->auth_id, &s->owner, &s->system);
 		for (m = s->tables.set->h; m; m = m->next) {
 			sql_table *t = m->data;
 			sht ca = t->commit_action;
@@ -1235,6 +1238,7 @@ bootstrap_create_schema(sql_trans *tr, char *name, int auth_id, int owner)
 	base_init(tr->sa, &s->base, next_oid(), TR_NEW, name);
 	s->auth_id = auth_id;
 	s->owner = owner;
+	s->system = TRUE;
 	cs_new(&s->tables, tr->sa, (fdestroy) &table_destroy);
 	cs_new(&s->types, tr->sa, (fdestroy) NULL);
 	cs_new(&s->funcs, tr->sa, (fdestroy) NULL);
@@ -1323,6 +1327,7 @@ store_init(int debug, store_type store, int readonly, int singleuser, char *logd
 	bootstrap_create_column(tr, t, "name", "varchar", 1024);
 	bootstrap_create_column(tr, t, "authorization", "int", 32);
 	bootstrap_create_column(tr, t, "owner", "int", 32);
+	bootstrap_create_column(tr, t, "system", "boolean", 1);
 
 	types = t = bootstrap_create_table(tr, s, "types");
 	bootstrap_create_column(tr, t, "id", "int", 32);
@@ -2148,6 +2153,7 @@ schema_dup(sql_trans *tr, int flag, sql_schema *os, sql_trans *o)
 
 	s->auth_id = os->auth_id;
 	s->owner = os->owner;
+	s->system = os->system;
 	cs_new(&s->tables, sa, (fdestroy) &table_destroy);
 	cs_new(&s->types, sa, (fdestroy) NULL);
 	cs_new(&s->funcs, sa, (fdestroy) NULL);
@@ -3800,6 +3806,7 @@ sql_trans_create_schema(sql_trans *tr, char *name, int auth_id, int owner)
 	base_init(tr->sa, &s->base, next_oid(), TR_NEW, name);
 	s->auth_id = auth_id;
 	s->owner = owner;
+	s->system = FALSE;
 	cs_new(&s->tables, tr->sa, (fdestroy) &table_destroy);
 	cs_new(&s->types, tr->sa, (fdestroy) NULL);
 	cs_new(&s->funcs, tr->sa, (fdestroy) NULL);
@@ -3810,7 +3817,7 @@ sql_trans_create_schema(sql_trans *tr, char *name, int auth_id, int owner)
 	s->tr = tr;
 
 	cs_add(&tr->schemas, s, TR_NEW);
-	table_funcs.table_insert(tr, sysschema, &s->base.id, s->base.name, &s->auth_id, &s->owner);
+	table_funcs.table_insert(tr, sysschema, &s->base.id, s->base.name, &s->auth_id, &s->owner, &s->system);
 	s->base.wtime = tr->wtime = tr->wstime;
 	tr->schema_updates ++;
 	return s;

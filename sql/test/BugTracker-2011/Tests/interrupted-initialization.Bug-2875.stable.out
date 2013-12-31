@@ -17,7 +17,6 @@ stdout of test 'interrupted-initialization.Bug-2875` in directory 'sql/test/BugT
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 START TRANSACTION;
-CREATE SCHEMA "json" AUTHORIZATION "monetdb";
 COMMIT;
 # MonetDB 5 server v11.5.8
 # This is an unreleased version

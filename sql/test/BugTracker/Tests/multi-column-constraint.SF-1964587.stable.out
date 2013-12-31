@@ -26,7 +26,6 @@ Ready.
 # 16:17:36 >  
 
 START TRANSACTION;
-CREATE SCHEMA "json" AUTHORIZATION "monetdb";
 SET SCHEMA "sys";
 CREATE TABLE "sys"."test_property" (
 	"subject" INTEGER,

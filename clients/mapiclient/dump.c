@@ -1489,14 +1489,14 @@ dump_database(Mapi mid, stream *toConsole, int describe, const char useInserts)
 		"FROM \"sys\".\"schemas\" \"s\", "
 		     "\"sys\".\"auths\" \"a\" "
 		"WHERE \"s\".\"authorization\" = \"a\".\"id\" AND "
-		      "\"s\".\"name\" NOT IN ('sys', 'tmp') "
+		      "\"s\".\"system\" = FALSE "
 		"ORDER BY \"s\".\"name\"";
 	/* alternative, but then need to handle NULL in second column:
 	   SELECT "s"."name", "a"."name"
 	   FROM "sys"."schemas" "s"
 		LEFT OUTER JOIN "sys"."auths" "a"
 		     ON "s"."authorization" = "a"."id" AND
-		"s"."name" NOT IN ('sys', 'tmp')
+		        "s"."system" = FALSE 
 	   ORDER BY "s"."name"
 
 	   This may be needed after a sequence:

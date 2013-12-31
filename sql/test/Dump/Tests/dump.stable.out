@@ -25,7 +25,6 @@ Ready.
 # 17:06:37 >  
 
 START TRANSACTION;
-CREATE SCHEMA "json" AUTHORIZATION "monetdb";
 CREATE SEQUENCE "sys"."test_seq" AS INTEGER;
 SET SCHEMA "sys";
 CREATE TABLE "sys"."test" (

@@ -219,7 +219,8 @@ typedef struct sql_schema {
 	sql_base base;
 	int auth_id;
 	int owner;
-	// TODO? int type;		/* persistent, session local, transaction local */
+	bit system;		/* system or user schema */
+	// TODO? int type;	/* persistent, session local, transaction local */
 
 	changeset tables;
 	changeset types;
