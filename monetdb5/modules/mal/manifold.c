@@ -101,9 +101,9 @@ case TYPE_str: \
 			if( ATOMstorage(mut->args[i].type) !=  TYPE_str){\
 				args[i] += mut->args[i].size;	\
 			} else {				\
+				mut->args[i].o++;		\
 				mut->args[i].s = (str*) BUNtail(mut->args[i].bi, mut->args[i].o);\
 				args[i] =  (void*) & mut->args[i].s; 	\
-				mut->args[i].o++;		\
 			}					\
 		}						\
 	}							\
@@ -300,14 +300,14 @@ MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	freeInstruction(mut.pci);
 
 	// consolidate the properties
-	if ( ATOMstorage(mat[0].b->ttype)  != TYPE_str)
+	if (ATOMstorage(mat[0].b->ttype) != TYPE_str)
 		BATsetcount(mat[0].b,cnt);
 	BATsettrivprop(mat[0].b);
 	BATderiveProps(mat[0].b, TRUE);
 	BBPkeepref(*(int*) getArgReference(stk,pci,0)=mat[0].b->batCacheid);
 wrapup:
 	// restore the argument types
-	for( i = pci->retc; i < pci->argc; i++){
+	for (i = pci->retc; i < pci->argc; i++){
 		if ( mat[i].b)
 			BBPreleaseref(mat[i].b->batCacheid);
 	}
