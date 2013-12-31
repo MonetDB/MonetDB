@@ -157,7 +157,7 @@ static str
 url_getDirectory(BAT **retval, /* put pointer to BAT[int,str] record here. */
 		url t)
 {
-	static char buf[1024];
+	char buf[1024];
 	char *s;
 	int i = 0, k = 0;
 	BAT *b = NULL;
@@ -209,7 +209,7 @@ getDir_done:
 str
 URLgetDomain(str *retval, str *u)
 {
-	static char buf[1024];
+	char buf[1024];
 	char *b, *d, *s = buf;
 	int i = 0;
 	url t= *u;
@@ -301,7 +301,7 @@ url_getFile(str *retval, url t)
 static str
 url_getHost(str *retval, url t)
 {
-	static char buf[1024];
+	char buf[1024];
 	char *b, *d, *s;
 	int i = 0;
 
@@ -338,7 +338,7 @@ getHost_done:
 static str
 url_getPort(str *retval, url t)
 {
-	static char buf[1024];
+	char buf[1024];
 	char *b, *d = 0, *s = buf;
 	int i = 0;
 
@@ -381,7 +381,7 @@ static str
 url_getProtocol(str *retval, /* put string: pointer to char here. */
 		url t)
 {
-	static char buf[1024];
+	char buf[1024];
 	char *b, *d = 0;
 	int i = 0;
 
@@ -471,7 +471,7 @@ static str
 url_getRobotURL(str *retval, /* put string: pointer to char here. */
 		url t)               /* string: pointer to char. */
 {
-	static char buf[1024];
+	char buf[1024];
 	char *b, *d, *s = buf;
 	int i = 0;
 
@@ -513,7 +513,7 @@ getRobot_done:
 static str
 url_getUser(str *retval, url t)
 {
-	static char buf[1024];
+	char buf[1024];
 	char *b, *d = 0, *s;
 	int i = 0;
 
