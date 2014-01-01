@@ -9,7 +9,7 @@ stdout of test 'operator_-_vs_sign_-.SF-1120397` in directory 'monetdb5/tests/Bu
 # Serving database 'mTests_tests_BugDay_2005-10-06_4.9.3', using 4 threads
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2013 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:34219/
 # MonetDB/GIS module loaded

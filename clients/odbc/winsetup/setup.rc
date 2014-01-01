@@ -82,7 +82,7 @@ BEGIN
             VALUE "FileDescription", "MonetDB ODBC Setup DLL"
             VALUE "FileVersion", "11.18.0"
             VALUE "InternalName", "libMonetODBCs.dll"
-            VALUE "LegalCopyright", "Copyright (c) MonetDB BV 2008-2013"
+            VALUE "LegalCopyright", "Copyright © MonetDB B.V. 2008-2014"
             VALUE "OriginalFilename", "libMonetODBCs.dll"
             VALUE "ProductName", "MonetDB SQL Server"
             VALUE "ProductVersion", "11.18.0"

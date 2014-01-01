@@ -10,7 +10,7 @@ stdout of test 'correlated_update_type_mismatch.SF-2947841` in directory 'sql/te
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Found 7.754 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2013 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
 # Visit http://monetdb.cwi.nl/ for further information
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:32228/
 # MonetDB/SQL module v2.36.1 loaded

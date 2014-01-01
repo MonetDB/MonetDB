@@ -11,7 +11,7 @@ stdout of test 'rand-with-seed.Bug-2900` in directory 'sql/test/BugTracker-2011`
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Found 7.749 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2013 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://rig.ins.cwi.nl:35012/
 # MonetDB/GIS module loaded

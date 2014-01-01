@@ -11,7 +11,7 @@ stdout of test 'kunion-and-nil.Bug-1667` in directory 'monetdb5/tests/BugTracker
 # Compiled for x86_64-apple-darwin12.2.1/64bit with 64bit OIDs dynamically linked
 # Found 8.000 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2013 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://dhcp-89.eduroam.cwi.nl:30334/
 # MonetDB/SQL module loaded

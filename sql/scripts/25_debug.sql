@@ -11,7 +11,7 @@
 -- The Original Code is the MonetDB Database System.
 --
 -- The Initial Developer of the Original Code is CWI.
--- Copyright August 2008-2013 MonetDB B.V.
+-- Copyright August 2008-2014 MonetDB B.V.
 -- All Rights Reserved.
 
 -- show the optimizer statistics maintained by the SQL frontend
