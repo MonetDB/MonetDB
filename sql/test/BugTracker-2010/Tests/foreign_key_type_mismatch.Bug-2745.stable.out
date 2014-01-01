@@ -11,7 +11,7 @@ stdout of test 'foreign_key_type_mismatch.Bug-2745` in directory 'sql/test/BugTr
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Found 7.753 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2013 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
 # Visit http://monetdb.cwi.nl/ for further information
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:37743/
 # MonetDB/SQL module v2.40.0 loaded

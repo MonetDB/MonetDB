@@ -10,7 +10,7 @@ stdout of test 'string-insert-default-null-crash.Bug-3168` in directory 'sql/tes
 # Compiled for i686-apple-darwin9/32bit with 32bit OIDs dynamically linked
 # Found 2.000 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2013 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://dhcp-171.eduroam.cwi.nl:34618/
 # MonetDB/JAQL module loaded

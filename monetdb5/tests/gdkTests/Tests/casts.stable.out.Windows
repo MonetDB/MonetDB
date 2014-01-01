@@ -11,7 +11,7 @@ stdout of test 'casts` in directory 'monetdb5/tests/gdkTests` itself:
 # Compiled for i686-pc-winnt/32bit with 32bit OIDs dynamically linked
 # Found 3.991 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2013 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://lab03:31338/
 # MonetDB/GIS module loaded

@@ -11,7 +11,7 @@ stdout of test 'udf_error.Bug-3396` in directory 'sql/test/BugTracker-2013` itse
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Found 3.775 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2013 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://niels.nesco.mine.nu:37280/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-18528/.s.monetdb.37280

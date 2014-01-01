@@ -11,7 +11,7 @@ stdout of test 'shift_with_cast.Bug-2638` in directory 'sql/test/BugTracker-2010
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Found 7.751 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2013 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
 # Visit http://monetdb.cwi.nl/ for further information
 # Listening for connection requests on mapi:monetdb://jarl.ins.cwi.nl:39470/
 # MonetDB/SQL module v2.38.4 loaded
