@@ -154,7 +154,7 @@ UUIDfromString(const char *svalue, int *len, uuid **retval)
 		s++;
 		j++;
 	}
-	return s - svalue;
+	return (int)(s - svalue);
 
   bailout:
 	**retval = uuid_nil;
