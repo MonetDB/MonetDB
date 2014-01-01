@@ -11,7 +11,7 @@ stdout of test 'crash_in_push_exp_down.Bug-2811` in directory 'sql/test/BugTrack
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Found 7.752 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2013 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
 # Visit http://monetdb.cwi.nl/ for further information
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:34980/
 # MonetDB/GIS module loaded
