@@ -28,7 +28,10 @@ stderr of test 'pivot.Bug-3339` in directory 'sql/test/BugTracker-2013` itself:
 # 09:16:37 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-21191" "--port=32634"
 # 09:16:37 >  
 
-?DO WE EXPECT THIS ERROR HERE?
+MAPI  = (monetdb) /var/tmp/mtest-20269/.s.monetdb.36091
+QUERY = SELECT (SELECT * FROM groupElements(pivot.x))
+        FROM (SELECT * FROM tmp) as pivot;
+ERROR = !cardinality violation (2>1)
 
 # 09:16:37 >  
 # 09:16:37 >  "Done."

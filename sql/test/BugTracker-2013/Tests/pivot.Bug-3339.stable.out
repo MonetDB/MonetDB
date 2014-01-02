@@ -49,12 +49,9 @@ Ready.
 # loading sql script: 80_udf.sql
 # loading sql script: 99_system.sql
 
-# 09:16:37 >  
-# 09:16:37 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-21191" "--port=32634"
-# 09:16:37 >  
-
-
-!OUTPUT BELOW NEEDS TO BE VALIDATED OR FIXED!
+# 13:34:05 >  
+# 13:34:05 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-20269" "--port=36091"
+# 13:34:05 >  
 
 #CREATE FUNCTION groupElements(beg INTEGER)
 #RETURNS TABLE (x INTEGER)
@@ -84,10 +81,7 @@ Ready.
 #DROP TABLE tmp;
 #DROP FUNCTION groupElements;
 
-!OUTPUT ABOVE NEEDS TO BE VALIDATED OR FIXED!
-
-
-# 09:16:37 >  
-# 09:16:37 >  "Done."
-# 09:16:37 >  
+# 13:34:05 >  
+# 13:34:05 >  "Done."
+# 13:34:05 >  
 
