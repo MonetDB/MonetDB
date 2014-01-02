@@ -272,13 +272,18 @@ MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		}
 	}
 
+	// Then iterator over all BATs
+	if( mut.fvar ==0){
+		msg= createException(MAL,"mal.manifold","At least one column required");
+		goto wrapup;
+	}
+
 	// prepare result variable
 	mat[0].b =BATnew(TYPE_void, getTailType(getArgType(mb,pci,0)), cnt);
 	if ( mat[0].b == NULL){
 		msg= createException(MAL,"mal.manifold",MAL_MALLOC_FAIL);
 		goto wrapup;
 	}
-	BATseqbase(mat[0].b, 0);
 	mat[0].b->hsorted= 0;
 	mat[0].b->hrevsorted= 0;
 	mat[0].b->T->nonil=0;
@@ -287,13 +292,7 @@ MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	mat[0].bi = bat_iterator(mat[0].b);
 	mat[0].first = (void *)  Tloc(mat[0].b, BUNfirst(mat[0].b));
 	mat[0].last = (void *)  Tloc(mat[0].b, BUNlast(mat[0].b));
-
-
-	// Then iterator over all BATs
-	if( mut.fvar ==0){
-		msg= createException(MAL,"mal.manifold","At least one column required");
-		goto wrapup;
-	}
+	BATseqbase(mat[0].b, mat[mut.fvar].b->H->seq);
 
 	mut.pci = copyInstruction(pci);
 	mut.pci->fcn = fcn;
