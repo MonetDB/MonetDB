@@ -17,7 +17,6 @@
  * All Rights Reserved.
  */
 
-
 #ifndef _SQL_SCAN_H_
 #define _SQL_SCAN_H_
 

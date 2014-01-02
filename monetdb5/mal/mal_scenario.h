@@ -17,7 +17,6 @@
  * All Rights Reserved.
  */
 
-
 #ifndef _MAL_SCENARIO_H
 #define _MAL_SCENARIO_H
 

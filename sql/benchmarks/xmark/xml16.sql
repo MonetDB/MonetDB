@@ -1,4 +1,3 @@
-
 -- query 16 
 
 select X01250.tail

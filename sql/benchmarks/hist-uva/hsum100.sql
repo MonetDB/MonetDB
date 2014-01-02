@@ -1,4 +1,3 @@
-
 select
 sum(bin1)+sum(bin2)+sum(bin3)+sum(bin4)+sum(bin5)+
 sum(bin6)+sum(bin7)+sum(bin8)+sum(bin9)+sum(bin10)+

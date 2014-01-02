@@ -15,7 +15,7 @@
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
  * Copyright August 2008-2014 MonetDB B.V.
  * All Rights Reserved.
-*/
+ */
 
 /*
  * Author M. Kersten

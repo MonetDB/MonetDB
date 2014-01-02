@@ -1,4 +1,3 @@
-
 START TRANSACTION;
 
 -- Victim / scene

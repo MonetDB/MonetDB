@@ -1,4 +1,3 @@
-
 CREATE TABLE earth (
    id  INTEGER NOT NULL,
    x   INTEGER NOT NULL,

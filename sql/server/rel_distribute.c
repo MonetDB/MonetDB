@@ -17,7 +17,6 @@
  * All Rights Reserved.
  */
 
-
 /*#define DEBUG*/
 
 #include "monetdb_config.h"

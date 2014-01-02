@@ -1,5 +1,4 @@
 
-
 -- Test Comment / Drop
 create domain domaindroptest int4;
 comment on domain domaindroptest is 'About to drop this..';

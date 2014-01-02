@@ -1,4 +1,3 @@
-
 -- query 6
 
 select ((select count(*) from X00003) +

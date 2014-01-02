@@ -1,4 +1,3 @@
-
 -- query 3 
 
 select increase_string_fst.tail, increase_string_lst.tail

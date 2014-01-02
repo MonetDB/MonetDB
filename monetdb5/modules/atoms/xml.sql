@@ -15,7 +15,6 @@
 -- Copyright August 2008-2014 MonetDB B.V.
 -- All Rights Reserved.
 
-
 CREATE TYPE xml EXTERNAL NAME xml;
 CREATE FUNCTION xml (s STRING) RETURNS xml external name xml.xml;
 CREATE FUNCTION str (s XML) RETURNS STRING external name xml.str;

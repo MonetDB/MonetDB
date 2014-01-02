@@ -1,4 +1,3 @@
-
 insert into example values( 1, 'test', 0.1 );
 insert into example values( 5, 'xtest', 0.9 );
 insert into example values( 9, 'testx', 9.1 );

@@ -1,4 +1,3 @@
-
 CREATE TABLE victim (
 name VARCHAR(50) PRIMARY KEY NOT NULL,
 date_of_birth VARCHAR(10),
