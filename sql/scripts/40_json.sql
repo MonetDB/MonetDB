@@ -26,7 +26,13 @@ create type json external name json;
 create function json.filter(js json, name string)
 returns json external name json.filter;
 
+create function json.filter(js json, name tinyint)
+returns json external name json.filter;
+
 create function json.filter(js json, name integer)
+returns json external name json.filter;
+
+create function json.filter(js json, name bigint)
 returns json external name json.filter;
 
 create function json.filter_all(js json, name string)

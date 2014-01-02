@@ -10,8 +10,6 @@ b:= json.new("{\"f1\":1,\"f2\":2,\"f1\":3}");
 bat.append(j,b);
 b:= json.new("{\"f1\":{\"f12\":3},\"f2\":[2,3,4]}");
 bat.append(j,b);
-b:= json.new("[1,\"f2\", 2]");
-bat.append(j,b);
 
 f:bat[:oid,:json]:= mal.manifold("json","filter",j,"f1");
 io.print(f);
