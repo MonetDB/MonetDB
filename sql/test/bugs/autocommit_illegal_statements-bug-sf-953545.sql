@@ -1,4 +1,3 @@
-
 -- the following statements should all fail
 ROLLBACK;
 

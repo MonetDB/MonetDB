@@ -15,7 +15,6 @@
 # Copyright August 2008-2014 MonetDB B.V.
 # All Rights Reserved.
 
-
 import time
 
 #configure the logger, so we can see what is happening

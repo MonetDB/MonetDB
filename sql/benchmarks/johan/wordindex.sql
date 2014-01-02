@@ -1,4 +1,3 @@
-
 create table wordindex (position int, term varchar(100));
 insert into wordindex values (2, "a");
 insert into wordindex values (3, "b");

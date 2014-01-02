@@ -17,7 +17,6 @@
  * All Rights Reserved.
  */
 
-
 /* multi version catalog */
 
 #include "monetdb_config.h"

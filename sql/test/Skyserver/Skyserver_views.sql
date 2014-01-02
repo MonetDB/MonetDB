@@ -1,4 +1,3 @@
-
 CREATE VIEW SpecObj 
 ---------------------------------------------------------------
 --/H A view of Spectro objects that just has the clean spectra.

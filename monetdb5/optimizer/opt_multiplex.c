@@ -16,6 +16,7 @@
  * Copyright August 2008-2014 MonetDB B.V.
  * All Rights Reserved.
  */
+
 #include "monetdb_config.h"
 #include "opt_multiplex.h"
 #include "manifold.h"

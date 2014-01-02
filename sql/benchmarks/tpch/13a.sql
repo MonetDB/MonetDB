@@ -1,5 +1,4 @@
 
-
 select
 	c_count,
 	count(*) as custdist

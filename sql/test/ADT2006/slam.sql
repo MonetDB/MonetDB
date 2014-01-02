@@ -1,4 +1,3 @@
-
 CREATE TABLE Jtr_scene (
 	scene_id int PRIMARY KEY NOT NULL, 
 	victim varchar(50) NOT NULL

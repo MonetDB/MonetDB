@@ -1,4 +1,3 @@
-
 select *
 from (select distinct X01070.tail
       from X01070) as interests,

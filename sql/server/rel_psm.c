@@ -17,7 +17,6 @@
  * All Rights Reserved.
  */
 
-
 #include "monetdb_config.h"
 #include "rel_psm.h"
 #include "rel_semantic.h"

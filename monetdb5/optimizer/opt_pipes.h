@@ -17,7 +17,6 @@
  * All Rights Reserved.
  */
 
-
 #ifndef _OPT_PIPES_
 #define _OPT_PIPES_
 #include "opt_prelude.h"

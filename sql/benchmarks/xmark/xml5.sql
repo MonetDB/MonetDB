@@ -1,4 +1,3 @@
-
 -- query 5
 
 select count(*)

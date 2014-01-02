@@ -1,4 +1,3 @@
-
 -- query 20
 
 select

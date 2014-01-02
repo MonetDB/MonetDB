@@ -15,7 +15,6 @@
 # Copyright August 2008-2014 MonetDB B.V.
 # All Rights Reserved.
 
-
 # @+ Date atom
 # Monet atoms can have multiple @emph{parse formats}. One of these formats is
 # chosen as the @emph{print format}.

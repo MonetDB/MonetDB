@@ -17,7 +17,6 @@
  * All Rights Reserved.
  */
 
-
 #ifndef _MAL_SABAOTH_DEF
 #define _MAL_SABAOTH_DEF
 

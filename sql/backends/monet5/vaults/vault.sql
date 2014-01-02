@@ -16,7 +16,6 @@
 -- All Rights Reserved.
 
 
-
 CREATE SEQUENCE sys.vaultid AS int;
 
 CREATE TABLE sys.vault (

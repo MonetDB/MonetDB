@@ -497,6 +497,7 @@ create function buffer(a geometry, distance float) returns geometry external nam
 -- The Original Code is the MonetDB Database System.
 --
 -- The Initial Developer of the Original Code is CWI.
+-- Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
 -- Copyright August 2008-2014 MonetDB B.V.
 -- All Rights Reserved.
 
@@ -569,6 +570,7 @@ CREATE FUNCTION db_users () RETURNS TABLE( name varchar(2048)) EXTERNAL NAME sql
 -- The Original Code is the MonetDB Database System.
 --
 -- The Initial Developer of the Original Code is CWI.
+-- Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
 -- Copyright August 2008-2014 MonetDB B.V.
 -- All Rights Reserved.
 
@@ -624,6 +626,7 @@ return table (select a.name, s.name, 'DEP_SCHEMA' from schemas as s, auths a whe
 -- The Original Code is the MonetDB Database System.
 --
 -- The Initial Developer of the Original Code is CWI.
+-- Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
 -- Copyright August 2008-2014 MonetDB B.V.
 -- All Rights Reserved.
 
@@ -735,6 +738,7 @@ create function getuser(theurl url) returns string
 -- The Original Code is the MonetDB Database System.
 --
 -- The Initial Developer of the Original Code is CWI.
+-- Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
 -- Copyright August 2008-2014 MonetDB B.V.
 -- All Rights Reserved.
 
@@ -804,6 +808,23 @@ returns json external name json.path;
 create function sys.json_text(js json, e string)
 returns string external name json.text;
 create function length(g geometry) returns float external name geom."Length";
+-- The contents of this file are subject to the MonetDB Public License
+-- Version 1.1 (the "License"); you may not use this file except in
+-- compliance with the License. You may obtain a copy of the License at
+-- http://www.monetdb.org/Legal/MonetDBLicense
+--
+-- Software distributed under the License is distributed on an "AS IS"
+-- basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+-- License for the specific language governing rights and limitations
+-- under the License.
+--
+-- The Original Code is the MonetDB Database System.
+--
+-- The Initial Developer of the Original Code is CWI.
+-- Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+-- Copyright August 2008-2014 MonetDB B.V.
+-- All Rights Reserved.
+
 create filter function "like"(val string, pat string, esc string) external name algebra.likesubselect;
 create function linefromtext(wkt string, srid smallint) returns linestring external name geom."LineFromText";
 create function "masklen" (p inet) returns int
@@ -887,6 +908,7 @@ end;
 -- The Original Code is the MonetDB Database System.
 --
 -- The Initial Developer of the Original Code is CWI.
+-- Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
 -- Copyright August 2008-2014 MonetDB B.V.
 -- All Rights Reserved.
 
@@ -928,6 +950,7 @@ create function "network" (p inet) returns inet
 -- The Original Code is the MonetDB Database System.
 --
 -- The Initial Developer of the Original Code is CWI.
+-- Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
 -- Copyright August 2008-2014 MonetDB B.V.
 -- All Rights Reserved.
 
@@ -952,6 +975,7 @@ create function newurl(protocol string, hostname string, file string)
 -- The Original Code is the MonetDB Database System.
 --
 -- The Initial Developer of the Original Code is CWI.
+-- Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
 -- Copyright August 2008-2014 MonetDB B.V.
 -- All Rights Reserved.
 
@@ -978,6 +1002,7 @@ create function overlaps(a geometry, b geometry) returns boolean external name g
 -- The Original Code is the MonetDB Database System.
 --
 -- The Initial Developer of the Original Code is CWI.
+-- Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
 -- Copyright August 2008-2014 MonetDB B.V.
 -- All Rights Reserved.
 
@@ -1066,6 +1091,7 @@ external name sql.querylog_calls;
 -- The Original Code is the MonetDB Database System.
 --
 -- The Initial Developer of the Original Code is CWI.
+-- Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
 -- Copyright August 2008-2014 MonetDB B.V.
 -- All Rights Reserved.
 
@@ -1108,6 +1134,7 @@ external name sql.querylog_enable_threshold;
 -- The Original Code is the MonetDB Database System.
 --
 -- The Initial Developer of the Original Code is CWI.
+-- Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
 -- Copyright August 2008-2014 MonetDB B.V.
 -- All Rights Reserved.
 
@@ -1136,25 +1163,22 @@ create procedure sys.resume(tag bigint)
 external name sql.sysmon_resume;
 create procedure reuse(sys string, tab string)
 	external name sql.reuse;
-/*
-The contents of this file are subject to the MonetDB Public License
-Version 1.1 (the "License"); you may not use this file except in
-compliance with the License. You may obtain a copy of the License at
-http://www.monetdb.org/Legal/MonetDBLicense
-
-Software distributed under the License is distributed on an "AS IS"
-basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
-License for the specific language governing rights and limitations
-under the License.
-
-The Original Code is the MonetDB Database System.
-
-The Initial Developer of the Original Code is CWI.
-Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-Copyright August 2008-2014 MonetDB B.V.
-All Rights Reserved.
-*/
-
+-- The contents of this file are subject to the MonetDB Public License
+-- Version 1.1 (the "License"); you may not use this file except in
+-- compliance with the License. You may obtain a copy of the License at
+-- http://www.monetdb.org/Legal/MonetDBLicense
+--
+-- Software distributed under the License is distributed on an "AS IS"
+-- basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+-- License for the specific language governing rights and limitations
+-- under the License.
+--
+-- The Original Code is the MonetDB Database System.
+--
+-- The Initial Developer of the Original Code is CWI.
+-- Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+-- Copyright August 2008-2014 MonetDB B.V.
+-- All Rights Reserved.
 
 -- add function signatures to SQL catalog
 
@@ -1187,6 +1211,7 @@ create procedure sys.settimeout("query" bigint, "session" bigint)
 -- The Original Code is the MonetDB Database System.
 --
 -- The Initial Developer of the Original Code is CWI.
+-- Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
 -- Copyright August 2008-2014 MonetDB B.V.
 -- All Rights Reserved.
 
@@ -1224,6 +1249,23 @@ create aggregate stddev_pop(val time) returns double
 	external name "aggr"."stdevp";
 create aggregate stddev_pop(val timestamp) returns double
 	external name "aggr"."stdevp";
+-- The contents of this file are subject to the MonetDB Public License
+-- Version 1.1 (the "License"); you may not use this file except in
+-- compliance with the License. You may obtain a copy of the License at
+-- http://www.monetdb.org/Legal/MonetDBLicense
+--
+-- Software distributed under the License is distributed on an "AS IS"
+-- basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+-- License for the specific language governing rights and limitations
+-- under the License.
+--
+-- The Original Code is the MonetDB Database System.
+--
+-- The Initial Developer of the Original Code is CWI.
+-- Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+-- Copyright August 2008-2014 MonetDB B.V.
+-- All Rights Reserved.
+
 create aggregate stddev_samp(val tinyint) returns double
 	external name "aggr"."stdev";
 create aggregate stddev_samp(val smallint) returns double
@@ -1261,6 +1303,7 @@ external name sql.sysmon_stop;
 -- The Original Code is the MonetDB Database System.
 --
 -- The Initial Developer of the Original Code is CWI.
+-- Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
 -- Copyright August 2008-2014 MonetDB B.V.
 -- All Rights Reserved.
 
@@ -1341,6 +1384,7 @@ end;
 -- The Original Code is the MonetDB Database System.
 --
 -- The Initial Developer of the Original Code is CWI.
+-- Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
 -- Copyright August 2008-2014 MonetDB B.V.
 -- All Rights Reserved.
 
@@ -1362,6 +1406,7 @@ create function "text" (p inet) returns clob
 -- The Original Code is the MonetDB Database System.
 --
 -- The Initial Developer of the Original Code is CWI.
+-- Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
 -- Copyright August 2008-2014 MonetDB B.V.
 -- All Rights Reserved.
 
@@ -1384,6 +1429,7 @@ create function touches(a geometry, b geometry) returns boolean external name ge
 -- The Original Code is the MonetDB Database System.
 --
 -- The Initial Developer of the Original Code is CWI.
+-- Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
 -- Copyright August 2008-2014 MonetDB B.V.
 -- All Rights Reserved.
 
@@ -1470,6 +1516,7 @@ create function zorder_decode_y(z oid) returns integer
 -- The Original Code is the MonetDB Database System.
 --
 -- The Initial Developer of the Original Code is CWI.
+-- Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
 -- Copyright August 2008-2014 MonetDB B.V.
 -- All Rights Reserved.
 
@@ -6714,11 +6761,11 @@ COPY 1267 RECORDS INTO "sys"."functions" FROM stdin USING DELIMITERS '\t','\n','
 5101	"env"	"CREATE FUNCTION env () RETURNS TABLE( name varchar(1024), value varchar(2048)) EXTERNAL NAME sql.sql_environment;"	"sql"	true	1	false	2000
 5105	"var"	"CREATE FUNCTION var() RETURNS TABLE( name varchar(1024)) EXTERNAL NAME sql.sql_variables;"	"sql"	true	1	false	2000
 5113	"db_users"	"CREATE FUNCTION db_users () RETURNS TABLE( name varchar(2048)) EXTERNAL NAME sql.db_users;"	"sql"	true	1	false	2000
-5133	"like"	"create filter function \"like\"(val string, pat string, esc string) external name algebra.likesubselect;"	"algebra"	true	4	false	2000
+5133	"like"	"-- The contents of this file are subject to the MonetDB Public License\n-- Version 1.1 (the \"License\"); you may not use this file except in\n-- compliance with the License. You may obtain a copy of the License at\n-- http://www.monetdb.org/Legal/MonetDBLicense\n--\n-- Software distributed under the License is distributed on an \"AS IS\"\n-- basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the\n-- License for the specific language governing rights and limitations\n-- under the License.\n--\n-- The Original Code is the MonetDB Database System.\n--\n-- The Initial Developer of the Original Code is CWI.\n-- Portions created by CWI are Copyright (C) 1997-July 2008 CWI.\n-- Copyright August 2008-2014 MonetDB B.V.\n-- All Rights Reserved.\n\ncreate filter function \"like\"(val string, pat string, esc string) external name algebra.likesubselect;"	"algebra"	true	4	false	2000
 5138	"ilike"	"create filter function \"ilike\"(val string, pat string, esc string) external name algebra.ilikesubselect;"	"algebra"	true	4	false	2000
-5143	"degrees"	"-- The contents of this file are subject to the MonetDB Public License\n-- Version 1.1 (the \"License\"); you may not use this file except in\n-- compliance with the License. You may obtain a copy of the License at\n-- http://www.monetdb.org/Legal/MonetDBLicense\n--\n-- Software distributed under the License is distributed on an \"AS IS\"\n-- basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the\n-- License for the specific language governing rights and limitations\n-- under the License.\n--\n-- The Original Code is the MonetDB Database System.\n--\n-- The Initial Developer of the Original Code is CWI.\n-- Copyright August 2008-2014 MonetDB B.V.\n-- All Rights Reserved.\n\ncreate function degrees(r double) \nreturns double\n\treturn r*180/pi();"	"user"	true	1	false	2000
+5143	"degrees"	"-- The contents of this file are subject to the MonetDB Public License\n-- Version 1.1 (the \"License\"); you may not use this file except in\n-- compliance with the License. You may obtain a copy of the License at\n-- http://www.monetdb.org/Legal/MonetDBLicense\n--\n-- Software distributed under the License is distributed on an \"AS IS\"\n-- basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the\n-- License for the specific language governing rights and limitations\n-- under the License.\n--\n-- The Original Code is the MonetDB Database System.\n--\n-- The Initial Developer of the Original Code is CWI.\n-- Portions created by CWI are Copyright (C) 1997-July 2008 CWI.\n-- Copyright August 2008-2014 MonetDB B.V.\n-- All Rights Reserved.\n\ncreate function degrees(r double) \nreturns double\n\treturn r*180/pi();"	"user"	true	1	false	2000
 5147	"radians"	"create function radians(d double) \nreturns double\n\treturn d*pi()/180;"	"user"	true	1	false	2000
-5151	"times"	"-- The contents of this file are subject to the MonetDB Public License\n-- Version 1.1 (the \"License\"); you may not use this file except in\n-- compliance with the License. You may obtain a copy of the License at\n-- http://www.monetdb.org/Legal/MonetDBLicense\n--\n-- Software distributed under the License is distributed on an \"AS IS\"\n-- basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the\n-- License for the specific language governing rights and limitations\n-- under the License.\n--\n-- The Original Code is the MonetDB Database System.\n--\n-- The Initial Developer of the Original Code is CWI.\n-- Copyright August 2008-2014 MonetDB B.V.\n-- All Rights Reserved.\n\n-- Provide a simple equivalent for the UNIX times command\n-- times 0 ms user 0 ms system 0 ms 0 reads 0 writes\n\ncreate procedure times()\nexternal name sql.times;"	"sql"	true	2	false	2000
+5151	"times"	"-- The contents of this file are subject to the MonetDB Public License\n-- Version 1.1 (the \"License\"); you may not use this file except in\n-- compliance with the License. You may obtain a copy of the License at\n-- http://www.monetdb.org/Legal/MonetDBLicense\n--\n-- Software distributed under the License is distributed on an \"AS IS\"\n-- basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the\n-- License for the specific language governing rights and limitations\n-- under the License.\n--\n-- The Original Code is the MonetDB Database System.\n--\n-- The Initial Developer of the Original Code is CWI.\n-- Portions created by CWI are Copyright (C) 1997-July 2008 CWI.\n-- Copyright August 2008-2014 MonetDB B.V.\n-- All Rights Reserved.\n\n-- Provide a simple equivalent for the UNIX times command\n-- times 0 ms user 0 ms system 0 ms 0 reads 0 writes\n\ncreate procedure times()\nexternal name sql.times;"	"sql"	true	2	false	2000
 5154	"getanchor"	"create function getanchor( theurl url ) returns string \n\texternal name url.\"getAnchor\";"	"url"	true	1	false	2000
 5158	"getbasename"	"create function getbasename(theurl url) returns string       \n\texternal name url.\"getBasename\";"	"url"	true	1	false	2000
 5162	"getcontent"	"create function getcontent(theurl url)   returns string       \n\texternal name url.\"getContent\";"	"url"	true	1	false	2000
@@ -6735,7 +6782,7 @@ COPY 1267 RECORDS INTO "sys"."functions" FROM stdin USING DELIMITERS '\t','\n','
 5206	"isaurl"	"create function isaurl(theurl url) returns bool\n\texternal name url.\"isaURL\";"	"url"	true	1	false	2000
 5210	"newurl"	"create function newurl(protocol string, hostname string, \"port\" int, file string) \n\treturns url       \n\texternal name url.\"new\";"	"url"	true	1	false	2000
 5217	"newurl"	"create function newurl(protocol string, hostname string, file string) \n\treturns url \n\texternal name url.\"new\";"	"url"	true	1	false	2000
-5223	"str_to_date"	"\n-- The contents of this file are subject to the MonetDB Public License\n-- Version 1.1 (the \"License\"); you may not use this file except in\n-- compliance with the License. You may obtain a copy of the License at\n-- http://www.monetdb.org/Legal/MonetDBLicense\n--\n-- Software distributed under the License is distributed on an \"AS IS\"\n-- basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the\n-- License for the specific language governing rights and limitations\n-- under the License.\n--\n-- The Original Code is the MonetDB Database System.\n--\n-- The Initial Developer of the Original Code is CWI.\n-- Copyright August 2008-2014 MonetDB B.V.\n-- All Rights Reserved.\n\ncreate function str_to_date(s string, format string) returns date\n\texternal name mtime.\"str_to_date\";"	"mtime"	true	1	false	2000
+5223	"str_to_date"	"-- The contents of this file are subject to the MonetDB Public License\n-- Version 1.1 (the \"License\"); you may not use this file except in\n-- compliance with the License. You may obtain a copy of the License at\n-- http://www.monetdb.org/Legal/MonetDBLicense\n--\n-- Software distributed under the License is distributed on an \"AS IS\"\n-- basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the\n-- License for the specific language governing rights and limitations\n-- under the License.\n--\n-- The Original Code is the MonetDB Database System.\n--\n-- The Initial Developer of the Original Code is CWI.\n-- Portions created by CWI are Copyright (C) 1997-July 2008 CWI.\n-- Copyright August 2008-2014 MonetDB B.V.\n-- All Rights Reserved.\n\ncreate function str_to_date(s string, format string) returns date\n\texternal name mtime.\"str_to_date\";"	"mtime"	true	1	false	2000
 5228	"date_to_str"	"create function date_to_str(d date, format string) returns string\n\texternal name mtime.\"date_to_str\";"	"mtime"	true	1	false	2000
 5234	"broadcast"	"create function \"broadcast\" (p inet) returns inet \n\texternal name inet.\"broadcast\";"	"inet"	true	1	false	2000
 5238	"host"	"create function \"host\" (p inet) returns clob\n\texternal name inet.\"host\";"	"inet"	true	1	false	2000
@@ -6746,26 +6793,26 @@ COPY 1267 RECORDS INTO "sys"."functions" FROM stdin USING DELIMITERS '\t','\n','
 5259	"network"	"create function \"network\" (p inet) returns inet\n\texternal name inet.\"network\";"	"inet"	true	1	false	2000
 5263	"text"	"create function \"text\" (p inet) returns clob\n\texternal name inet.\"text\";"	"inet"	true	1	false	2000
 5267	"abbrev"	"create function \"abbrev\" (p inet) returns clob\n\texternal name inet.\"abbrev\";"	"inet"	true	1	false	2000
-5279	"querylog_catalog"	"-- The contents of this file are subject to the MonetDB Public License\n-- Version 1.1 (the \"License\"); you may not use this file except in\n-- compliance with the License. You may obtain a copy of the License at\n-- http://www.monetdb.org/Legal/MonetDBLicense\n--\n-- Software distributed under the License is distributed on an \"AS IS\"\n-- basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the\n-- License for the specific language governing rights and limitations\n-- under the License.\n--\n-- The Original Code is the MonetDB Database System.\n--\n-- The Initial Developer of the Original Code is CWI.\n-- Copyright August 2008-2014 MonetDB B.V.\n-- All Rights Reserved.\n\n-- QUERY HISTORY\n-- The query history mechanism of MonetDB/SQL relies on a few hooks.\n-- The most important one is a global system variable which controls\n--  monitoring of all sessions. \n\ncreate function sys.querylog_catalog()\nreturns table(\n\tid oid,\n\towner string,\n\tdefined timestamp,\n\tquery string,\n\tpipe string,\n\tmal int,\t\t\t-- size of MAL plan\n\toptimize bigint \t-- time in usec\n)\nexternal name sql.querylog_catalog;"	"sql"	true	1	false	2000
+5279	"querylog_catalog"	"-- The contents of this file are subject to the MonetDB Public License\n-- Version 1.1 (the \"License\"); you may not use this file except in\n-- compliance with the License. You may obtain a copy of the License at\n-- http://www.monetdb.org/Legal/MonetDBLicense\n--\n-- Software distributed under the License is distributed on an \"AS IS\"\n-- basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the\n-- License for the specific language governing rights and limitations\n-- under the License.\n--\n-- The Original Code is the MonetDB Database System.\n--\n-- The Initial Developer of the Original Code is CWI.\n-- Portions created by CWI are Copyright (C) 1997-July 2008 CWI.\n-- Copyright August 2008-2014 MonetDB B.V.\n-- All Rights Reserved.\n\n-- QUERY HISTORY\n-- The query history mechanism of MonetDB/SQL relies on a few hooks.\n-- The most important one is a global system variable which controls\n--  monitoring of all sessions. \n\ncreate function sys.querylog_catalog()\nreturns table(\n\tid oid,\n\towner string,\n\tdefined timestamp,\n\tquery string,\n\tpipe string,\n\tmal int,\t\t\t-- size of MAL plan\n\toptimize bigint \t-- time in usec\n)\nexternal name sql.querylog_catalog;"	"sql"	true	1	false	2000
 5293	"querylog_calls"	"-- Each query call is stored in the table calls\n-- At regular intervals the query history table should be cleaned.\n-- This can be done manually on the SQL console, or be integrated\n-- in the keepQuery and keepCall upon need.\n-- The parameters are geared at understanding the resource claims\n-- They reflect the effect of the total workload mix during execution.\n-- The 'cpu' gives the average cpu load percentage over all cores on the \n-- server during execution phase. \n-- increasing cpu load indicates better use of multi-cores.\n-- The 'io' indicate IOs during complete query run.\n-- The 'space' is the total amount of intermediates created in MB.\n-- Reducing the space component improves performance/\n-- All timing in usec and all storage in bytes.\n\ncreate function sys.querylog_calls()\nreturns table(\n\tid oid,\t\t\t\t -- references query plan\n\t\"start\" timestamp,\t-- time the statement was started\n\t\"stop\" timestamp,\t-- time the statement was completely finished\n\targuments string,\t-- actual call structure\n\ttuples wrd,\t\t\t-- number of tuples in the result set\n\trun bigint,\t\t-- time spent (in usec)  until the result export\n\tship bigint,\t\t-- time spent (in usec)  to ship the result set\n\tcpu int,  \t\t-- average cpu load percentage during execution\n\tio int,\t\t\t-- percentage time waiting for IO to finish \n\tspace bigint\t\t-- total storage size of intermediates created (in MB)\n)\nexternal name sql.querylog_calls;"	"sql"	true	1	false	2000
 5335	"querylog_empty"	"-- reset history for a particular user\ncreate procedure sys.querylog_empty()\nexternal name sql.querylog_empty;"	"sql"	true	2	false	2000
 5337	"querylog_enable"	"-- manipulate the query logger\ncreate procedure sys.querylog_enable()\nexternal name sql.querylog_enable;"	"sql"	true	2	false	2000
 5339	"querylog_enable"	"create procedure sys.querylog_enable(threshold smallint)\nexternal name sql.querylog_enable_threshold;"	"sql"	true	2	false	2000
 5342	"querylog_disable"	"create procedure sys.querylog_disable()\nexternal name sql.querylog_disable;"	"sql"	true	2	false	2000
-5357	"tracelog"	"-- The contents of this file are subject to the MonetDB Public License\n-- Version 1.1 (the \"License\"); you may not use this file except in\n-- compliance with the License. You may obtain a copy of the License at\n-- http://www.monetdb.org/Legal/MonetDBLicense\n--\n-- Software distributed under the License is distributed on an \"AS IS\"\n-- basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the\n-- License for the specific language governing rights and limitations\n-- under the License.\n--\n-- The Original Code is the MonetDB Database System.\n--\n-- The Initial Developer of the Original Code is CWI.\n-- Copyright August 2008-2014 MonetDB B.V.\n-- All Rights Reserved.\n\n-- make the offline tracing table available for inspection\ncreate function sys.tracelog() \n\treturns table (\n\t\tevent integer,\t\t-- event counter\n\t\tclk varchar(20), \t-- wallclock, no mtime in kernel\n\t\tpc varchar(50), \t-- module.function[nr]\n\t\tthread int, \t\t-- thread identifier\n\t\t\"user\" int, \t\t-- user identifier\n\t\tticks bigint, \t\t-- time in microseconds\n\t\treads bigint, \t\t-- number of blocks read\n\t\twrites bigint, \t-- number of blocks written\n\t\trbytes bigint,\t\t-- amount of bytes touched\n\t\twbytes bigint,\t\t-- amount of bytes written\n\t\ttype string,\t\t-- return types\n\t\tstmt string\t\t\t-- actual statement executed\n\t)\n\texternal name sql.dump_trace;"	"sql"	true	1	false	2000
-5374	"gzcompress"	"-- The contents of this file are subject to the MonetDB Public License\n-- Version 1.1 (the \"License\"); you may not use this file except in\n-- compliance with the License. You may obtain a copy of the License at\n-- http://www.monetdb.org/Legal/MonetDBLicense\n--\n-- Software distributed under the License is distributed on an \"AS IS\"\n-- basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the\n-- License for the specific language governing rights and limitations\n-- under the License.\n--\n-- The Original Code is the MonetDB Database System.\n--\n-- The Initial Developer of the Original Code is CWI.\n-- Copyright August 2008-2014 MonetDB B.V.\n-- All Rights Reserved.\n\n-- Perform LZ-compression over a specific table;\ncreate procedure gzcompress (s string, t string)\n    external name sql.gzcompress;"	"sql"	true	2	false	2000
+5357	"tracelog"	"-- The contents of this file are subject to the MonetDB Public License\n-- Version 1.1 (the \"License\"); you may not use this file except in\n-- compliance with the License. You may obtain a copy of the License at\n-- http://www.monetdb.org/Legal/MonetDBLicense\n--\n-- Software distributed under the License is distributed on an \"AS IS\"\n-- basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the\n-- License for the specific language governing rights and limitations\n-- under the License.\n--\n-- The Original Code is the MonetDB Database System.\n--\n-- The Initial Developer of the Original Code is CWI.\n-- Portions created by CWI are Copyright (C) 1997-July 2008 CWI.\n-- Copyright August 2008-2014 MonetDB B.V.\n-- All Rights Reserved.\n\n-- make the offline tracing table available for inspection\ncreate function sys.tracelog() \n\treturns table (\n\t\tevent integer,\t\t-- event counter\n\t\tclk varchar(20), \t-- wallclock, no mtime in kernel\n\t\tpc varchar(50), \t-- module.function[nr]\n\t\tthread int, \t\t-- thread identifier\n\t\t\"user\" int, \t\t-- user identifier\n\t\tticks bigint, \t\t-- time in microseconds\n\t\treads bigint, \t\t-- number of blocks read\n\t\twrites bigint, \t-- number of blocks written\n\t\trbytes bigint,\t\t-- amount of bytes touched\n\t\twbytes bigint,\t\t-- amount of bytes written\n\t\ttype string,\t\t-- return types\n\t\tstmt string\t\t\t-- actual statement executed\n\t)\n\texternal name sql.dump_trace;"	"sql"	true	1	false	2000
+5374	"gzcompress"	"-- The contents of this file are subject to the MonetDB Public License\n-- Version 1.1 (the \"License\"); you may not use this file except in\n-- compliance with the License. You may obtain a copy of the License at\n-- http://www.monetdb.org/Legal/MonetDBLicense\n--\n-- Software distributed under the License is distributed on an \"AS IS\"\n-- basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the\n-- License for the specific language governing rights and limitations\n-- under the License.\n--\n-- The Original Code is the MonetDB Database System.\n--\n-- The Initial Developer of the Original Code is CWI.\n-- Portions created by CWI are Copyright (C) 1997-July 2008 CWI.\n-- Copyright August 2008-2014 MonetDB B.V.\n-- All Rights Reserved.\n\n-- Perform LZ-compression over a specific table;\ncreate procedure gzcompress (s string, t string)\n    external name sql.gzcompress;"	"sql"	true	2	false	2000
 5378	"gzdecompress"	"create procedure gzdecompress (s string, t string)\n    external name sql.gzdecompress;"	"sql"	true	2	false	2000
 5382	"gztruncate"	"-- Truncate the storage for columns with a compressed image\ncreate procedure gztruncate (s string, t string)\n    external name sql.gztruncate;"	"sql"	true	2	false	2000
 5386	"gzexpand"	"-- Remove the compressed images\ncreate procedure gzexpand (s string, t string)\n    external name sql.gzexpand;"	"sql"	true	2	false	2000
-5390	"newdictionary"	"-- The contents of this file are subject to the MonetDB Public License\n-- Version 1.1 (the \"License\"); you may not use this file except in\n-- compliance with the License. You may obtain a copy of the License at\n-- http://www.monetdb.org/Legal/MonetDBLicense\n--\n-- Software distributed under the License is distributed on an \"AS IS\"\n-- basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the\n-- License for the specific language governing rights and limitations\n-- under the License.\n--\n-- The Original Code is the MonetDB Database System.\n--\n-- The Initial Developer of the Original Code is CWI.\n-- Copyright August 2008-2014 MonetDB B.V.\n-- All Rights Reserved.\n\ncreate procedure newdictionary (s string, t string)\n    external name sql.newdictionary;"	"sql"	true	2	false	2000
+5390	"newdictionary"	"-- The contents of this file are subject to the MonetDB Public License\n-- Version 1.1 (the \"License\"); you may not use this file except in\n-- compliance with the License. You may obtain a copy of the License at\n-- http://www.monetdb.org/Legal/MonetDBLicense\n--\n-- Software distributed under the License is distributed on an \"AS IS\"\n-- basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the\n-- License for the specific language governing rights and limitations\n-- under the License.\n--\n-- The Original Code is the MonetDB Database System.\n--\n-- The Initial Developer of the Original Code is CWI.\n-- Portions created by CWI are Copyright (C) 1997-July 2008 CWI.\n-- Copyright August 2008-2014 MonetDB B.V.\n-- All Rights Reserved.\n\ncreate procedure newdictionary (s string, t string)\n    external name sql.newdictionary;"	"sql"	true	2	false	2000
 5394	"dropdictionary"	"create procedure dropdictionary (s string, t string)\n    external name sql.dropdictionary;"	"sql"	true	2	false	2000
 5398	"initializedictionary"	"create procedure initializedictionary ()\n    external name dictionary.initialize;"	"dictionary"	true	2	false	2000
-5400	"cluster1"	"-- The contents of this file are subject to the MonetDB Public License\n-- Version 1.1 (the \"License\"); you may not use this file except in\n-- compliance with the License. You may obtain a copy of the License at\n-- http://www.monetdb.org/Legal/MonetDBLicense\n--\n-- Software distributed under the License is distributed on an \"AS IS\"\n-- basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the\n-- License for the specific language governing rights and limitations\n-- under the License.\n--\n-- The Original Code is the MonetDB Database System.\n--\n-- The Initial Developer of the Original Code is CWI.\n-- Copyright August 2008-2014 MonetDB B.V.\n-- All Rights Reserved.\n\n-- Clustering a relational table should be done with care.\n-- For, the oid's are used in join-indices.\n\n-- Clustering of tables may improve IO performance\n-- The foreign key constraints should be dropped before\n-- and re-established after the cluster operation.\n\ncreate procedure cluster1(sys string, tab string)\n\texternal name sql.cluster1;"	"sql"	true	2	false	2000
+5400	"cluster1"	"-- The contents of this file are subject to the MonetDB Public License\n-- Version 1.1 (the \"License\"); you may not use this file except in\n-- compliance with the License. You may obtain a copy of the License at\n-- http://www.monetdb.org/Legal/MonetDBLicense\n--\n-- Software distributed under the License is distributed on an \"AS IS\"\n-- basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the\n-- License for the specific language governing rights and limitations\n-- under the License.\n--\n-- The Original Code is the MonetDB Database System.\n--\n-- The Initial Developer of the Original Code is CWI.\n-- Portions created by CWI are Copyright (C) 1997-July 2008 CWI.\n-- Copyright August 2008-2014 MonetDB B.V.\n-- All Rights Reserved.\n\n-- Clustering a relational table should be done with care.\n-- For, the oid's are used in join-indices.\n\n-- Clustering of tables may improve IO performance\n-- The foreign key constraints should be dropped before\n-- and re-established after the cluster operation.\n\ncreate procedure cluster1(sys string, tab string)\n\texternal name sql.cluster1;"	"sql"	true	2	false	2000
 5404	"cluster2"	"create procedure cluster2(sys string, tab string)\n\texternal name sql.cluster2;"	"sql"	true	2	false	2000
-5408	"shrink"	"-- The contents of this file are subject to the MonetDB Public License\n-- Version 1.1 (the \"License\"); you may not use this file except in\n-- compliance with the License. You may obtain a copy of the License at\n-- http://www.monetdb.org/Legal/MonetDBLicense\n--\n-- Software distributed under the License is distributed on an \"AS IS\"\n-- basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the\n-- License for the specific language governing rights and limitations\n-- under the License.\n--\n-- The Original Code is the MonetDB Database System.\n--\n-- The Initial Developer of the Original Code is CWI.\n-- Copyright August 2008-2014 MonetDB B.V.\n-- All Rights Reserved.\n\n-- Vacuum a relational table should be done with care.\n-- For, the oid's are used in join-indices.\n\n-- Vacuum of tables may improve IO performance and disk footprint.\n-- The foreign key constraints should be dropped before\n-- and re-established after the cluster operation.\n\ncreate procedure shrink(sys string, tab string)\n\texternal name sql.shrink;"	"sql"	true	2	false	2000
+5408	"shrink"	"-- The contents of this file are subject to the MonetDB Public License\n-- Version 1.1 (the \"License\"); you may not use this file except in\n-- compliance with the License. You may obtain a copy of the License at\n-- http://www.monetdb.org/Legal/MonetDBLicense\n--\n-- Software distributed under the License is distributed on an \"AS IS\"\n-- basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the\n-- License for the specific language governing rights and limitations\n-- under the License.\n--\n-- The Original Code is the MonetDB Database System.\n--\n-- The Initial Developer of the Original Code is CWI.\n-- Portions created by CWI are Copyright (C) 1997-July 2008 CWI.\n-- Copyright August 2008-2014 MonetDB B.V.\n-- All Rights Reserved.\n\n-- Vacuum a relational table should be done with care.\n-- For, the oid's are used in join-indices.\n\n-- Vacuum of tables may improve IO performance and disk footprint.\n-- The foreign key constraints should be dropped before\n-- and re-established after the cluster operation.\n\ncreate procedure shrink(sys string, tab string)\n\texternal name sql.shrink;"	"sql"	true	2	false	2000
 5412	"reuse"	"create procedure reuse(sys string, tab string)\n\texternal name sql.reuse;"	"sql"	true	2	false	2000
 5416	"vacuum"	"create procedure vacuum(sys string, tab string)\n\texternal name sql.vacuum;"	"sql"	true	2	false	2000
-5424	"dependencies_schemas_on_users"	"-- The contents of this file are subject to the MonetDB Public License\n-- Version 1.1 (the \"License\"); you may not use this file except in\n-- compliance with the License. You may obtain a copy of the License at\n-- http://www.monetdb.org/Legal/MonetDBLicense\n--\n-- Software distributed under the License is distributed on an \"AS IS\"\n-- basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the\n-- License for the specific language governing rights and limitations\n-- under the License.\n--\n-- The Original Code is the MonetDB Database System.\n--\n-- The Initial Developer of the Original Code is CWI.\n-- Copyright August 2008-2014 MonetDB B.V.\n-- All Rights Reserved.\n\n--Schema s has a dependency on user u\ncreate function dependencies_schemas_on_users()\nreturns table (sch varchar(100), usr varchar(100), dep_type varchar(32))\nreturn table (select s.name, u.name, 'DEP_USER' from schemas as s, users u where u.default_schema = s.id);"	"user"	true	1	false	2000
+5424	"dependencies_schemas_on_users"	"-- The contents of this file are subject to the MonetDB Public License\n-- Version 1.1 (the \"License\"); you may not use this file except in\n-- compliance with the License. You may obtain a copy of the License at\n-- http://www.monetdb.org/Legal/MonetDBLicense\n--\n-- Software distributed under the License is distributed on an \"AS IS\"\n-- basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the\n-- License for the specific language governing rights and limitations\n-- under the License.\n--\n-- The Original Code is the MonetDB Database System.\n--\n-- The Initial Developer of the Original Code is CWI.\n-- Portions created by CWI are Copyright (C) 1997-July 2008 CWI.\n-- Copyright August 2008-2014 MonetDB B.V.\n-- All Rights Reserved.\n\n--Schema s has a dependency on user u\ncreate function dependencies_schemas_on_users()\nreturns table (sch varchar(100), usr varchar(100), dep_type varchar(32))\nreturn table (select s.name, u.name, 'DEP_USER' from schemas as s, users u where u.default_schema = s.id);"	"user"	true	1	false	2000
 5431	"dependencies_owners_on_schemas"	"--User (owner) has a dependency in schema s\ncreate function dependencies_owners_on_schemas()\nreturns table (sch varchar(100), usr varchar(100), dep_type varchar(32))\nreturn table (select a.name, s.name, 'DEP_SCHEMA' from schemas as s, auths a where s.owner = a.id);"	"user"	true	1	false	2000
 5438	"dependencies_tables_on_views"	"--Table t has a dependency on view v\ncreate function dependencies_tables_on_views()\nreturns table (sch varchar(100), usr varchar(100), dep_type varchar(32))\nreturn table (select t.name, v.name, 'DEP_VIEW' from tables as t, tables as v, dependencies as dep where t.id = dep.id and v.id = dep.depend_id and dep.depend_type = 5 and v.type = 1);"	"user"	true	1	false	2000
 5445	"dependencies_tables_on_indexes"	"--Table t has a dependency on index  i\ncreate function dependencies_tables_on_indexes()\nreturns table (sch varchar(100), usr varchar(100), dep_type varchar(32))\nreturn table (select t.name, i.name, 'DEP_INDEX' from tables as t, idxs as i where i.table_id = t.id and i.name not in (select name from keys) and t.type = 0);"	"user"	true	1	false	2000
@@ -6782,36 +6829,36 @@ COPY 1267 RECORDS INTO "sys"."functions" FROM stdin USING DELIMITERS '\t','\n','
 5522	"dependencies_functions_on_functions"	"--Function f1 has a dependency on function f2\ncreate function dependencies_functions_on_functions()\nreturns table (sch varchar(100), usr varchar(100), dep_type varchar(32))\nreturn table (select f1.name, f2.name, 'DEP_FUNC' from functions as f1, functions as f2, dependencies as dep where f1.id = dep.id and f2.id = dep.depend_id and dep.depend_type = 7);"	"user"	true	1	false	2000
 5529	"dependencies_functions_os_triggers"	"--Function f1 has a dependency on trigger tri\ncreate function dependencies_functions_os_triggers()\nreturns table (sch varchar(100), usr varchar(100), dep_type varchar(32))\nreturn table (select f.name, tri.name, 'DEP_TRIGGER' from functions as f, triggers as tri, dependencies as dep where dep.id = f.id and dep.depend_id =tri.id and dep.depend_type = 8);"	"user"	true	1	false	2000
 5536	"dependencies_keys_on_foreignkeys"	"--Key k has a dependency on foreign key fk\ncreate function dependencies_keys_on_foreignkeys()\nreturns table (sch varchar(100), usr varchar(100), dep_type varchar(32))\nreturn table (select k.name, fk.name, 'DEP_FKEY' from keys as k, keys as fk where fk.rkey = k.id);"	"user"	true	1	false	2000
-5539	"password_hash"	"-- The contents of this file are subject to the MonetDB Public License\n-- Version 1.1 (the \"License\"); you may not use this file except in\n-- compliance with the License. You may obtain a copy of the License at\n-- http://www.monetdb.org/Legal/MonetDBLicense\n--\n-- Software distributed under the License is distributed on an \"AS IS\"\n-- basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the\n-- License for the specific language governing rights and limitations\n-- under the License.\n--\n-- The Original Code is the MonetDB Database System.\n--\n-- The Initial Developer of the Original Code is CWI.\n-- Copyright August 2008-2014 MonetDB B.V.\n-- All Rights Reserved.\n\ncreate function sys.password_hash (username string) \n\treturns string \n\texternal name sql.password;"	"sql"	true	1	false	2000
+5539	"password_hash"	"-- The contents of this file are subject to the MonetDB Public License\n-- Version 1.1 (the \"License\"); you may not use this file except in\n-- compliance with the License. You may obtain a copy of the License at\n-- http://www.monetdb.org/Legal/MonetDBLicense\n--\n-- Software distributed under the License is distributed on an \"AS IS\"\n-- basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the\n-- License for the specific language governing rights and limitations\n-- under the License.\n--\n-- The Original Code is the MonetDB Database System.\n--\n-- The Initial Developer of the Original Code is CWI.\n-- Portions created by CWI are Copyright (C) 1997-July 2008 CWI.\n-- Copyright August 2008-2014 MonetDB B.V.\n-- All Rights Reserved.\n\ncreate function sys.password_hash (username string) \n\treturns string \n\texternal name sql.password;"	"sql"	true	1	false	2000
 5550	"sessions"	"create function sys.sessions()\nreturns table(\"user\" string, \"login\" timestamp, \"sessiontimeout\" bigint, \"lastcommand\" timestamp, \"querytimeout\" bigint, \"active\" bool)\nexternal name sql.sessions;"	"sql"	true	1	false	2000
 5561	"shutdown"	"create procedure sys.shutdown(delay tinyint) \nexternal name sql.shutdown;"	"sql"	true	2	false	2000
 5564	"shutdown"	"create procedure sys.shutdown(delay tinyint, force bool) \nexternal name sql.shutdown;"	"sql"	true	2	false	2000
 5568	"settimeout"	"-- control the query and session time out \ncreate procedure sys.settimeout(\"query\" bigint)\n\texternal name sql.settimeout;"	"sql"	true	2	false	2000
 5571	"settimeout"	"create procedure sys.settimeout(\"query\" bigint, \"session\" bigint)\n\texternal name sql.settimeout;"	"sql"	true	2	false	2000
 5575	"setsession"	"create procedure sys.setsession(\"timeout\" bigint)\n\texternal name sql.setsession;"	"sql"	true	2	false	2000
-5578	"ms_stuff"	"-- The contents of this file are subject to the MonetDB Public License\n-- Version 1.1 (the \"License\"); you may not use this file except in\n-- compliance with the License. You may obtain a copy of the License at\n-- http://www.monetdb.org/Legal/MonetDBLicense\n--\n-- Software distributed under the License is distributed on an \"AS IS\"\n-- basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the\n-- License for the specific language governing rights and limitations\n-- under the License.\n--\n-- The Original Code is the MonetDB Database System.\n--\n-- The Initial Developer of the Original Code is CWI.\n-- Copyright August 2008-2014 MonetDB B.V.\n-- All Rights Reserved.\n\ncreate function ms_stuff( s1 varchar(32), st int, len int, s3 varchar(32))\nreturns varchar(32)\nbegin\n\tdeclare res varchar(32), aux varchar(32);\n\tdeclare ofset int;\n\n    if ( st < 0 or st > length(s1))\n        then return '';\n    end if;\n\n    set ofset = 1;\n    set res = substring(s1,ofset,st-1);\n    set res = res || s3;\n    set ofset = st + len;\n    set aux = substring(s1,ofset,length(s1)-ofset+1);\n\tset res = res || aux;\n\treturn res;\nend;"	"user"	true	1	false	2000
+5578	"ms_stuff"	"-- The contents of this file are subject to the MonetDB Public License\n-- Version 1.1 (the \"License\"); you may not use this file except in\n-- compliance with the License. You may obtain a copy of the License at\n-- http://www.monetdb.org/Legal/MonetDBLicense\n--\n-- Software distributed under the License is distributed on an \"AS IS\"\n-- basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the\n-- License for the specific language governing rights and limitations\n-- under the License.\n--\n-- The Original Code is the MonetDB Database System.\n--\n-- The Initial Developer of the Original Code is CWI.\n-- Portions created by CWI are Copyright (C) 1997-July 2008 CWI.\n-- Copyright August 2008-2014 MonetDB B.V.\n-- All Rights Reserved.\n\ncreate function ms_stuff( s1 varchar(32), st int, len int, s3 varchar(32))\nreturns varchar(32)\nbegin\n\tdeclare res varchar(32), aux varchar(32);\n\tdeclare ofset int;\n\n    if ( st < 0 or st > length(s1))\n        then return '';\n    end if;\n\n    set ofset = 1;\n    set res = substring(s1,ofset,st-1);\n    set res = res || s3;\n    set ofset = st + len;\n    set aux = substring(s1,ofset,length(s1)-ofset+1);\n\tset res = res || aux;\n\treturn res;\nend;"	"user"	true	1	false	2000
 5585	"ms_trunc"	"create function ms_trunc(num double, prc int)\nreturns double\nexternal name sql.ms_trunc;"	"sql"	true	1	false	2000
 5590	"ms_round"	"create function ms_round(num double, prc int, truncat int)\nreturns double\nbegin\n\tif (truncat = 0)\n\t\tthen return round(num, prc);\n\t\telse return ms_trunc(num, prc);\n\tend if;\nend;"	"user"	true	1	false	2000
 5596	"ms_str"	"create function ms_str(num float, prc int, truncat int)\nreturns string\nbegin\n        return cast(num as string);\nend;"	"user"	true	1	false	2000
 5602	"alpha"	"create function alpha(pdec double, pradius double)\nreturns double external name sql.alpha;"	"sql"	true	1	false	2000
-5607	"zorder_encode"	"-- The contents of this file are subject to the MonetDB Public License\n-- Version 1.1 (the \"License\"); you may not use this file except in\n-- compliance with the License. You may obtain a copy of the License at\n-- http://www.monetdb.org/Legal/MonetDBLicense\n--\n-- Software distributed under the License is distributed on an \"AS IS\"\n-- basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the\n-- License for the specific language governing rights and limitations\n-- under the License.\n--\n-- The Original Code is the MonetDB Database System.\n--\n-- The Initial Developer of the Original Code is CWI.\n-- Copyright August 2008-2014 MonetDB B.V.\n-- All Rights Reserved.\n\ncreate function zorder_encode(x integer, y integer) returns oid\n    external name zorder.encode;"	"zorder"	true	1	false	2000
+5607	"zorder_encode"	"-- The contents of this file are subject to the MonetDB Public License\n-- Version 1.1 (the \"License\"); you may not use this file except in\n-- compliance with the License. You may obtain a copy of the License at\n-- http://www.monetdb.org/Legal/MonetDBLicense\n--\n-- Software distributed under the License is distributed on an \"AS IS\"\n-- basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the\n-- License for the specific language governing rights and limitations\n-- under the License.\n--\n-- The Original Code is the MonetDB Database System.\n--\n-- The Initial Developer of the Original Code is CWI.\n-- Portions created by CWI are Copyright (C) 1997-July 2008 CWI.\n-- Copyright August 2008-2014 MonetDB B.V.\n-- All Rights Reserved.\n\ncreate function zorder_encode(x integer, y integer) returns oid\n    external name zorder.encode;"	"zorder"	true	1	false	2000
 5612	"zorder_decode_x"	"create function zorder_decode_x(z oid) returns integer\n    external name zorder.decode_x;"	"zorder"	true	1	false	2000
 5616	"zorder_decode_y"	"create function zorder_decode_y(z oid) returns integer\n    external name zorder.decode_y;"	"zorder"	true	1	false	2000
-5623	"optimizer_stats"	"-- The contents of this file are subject to the MonetDB Public License\n-- Version 1.1 (the \"License\"); you may not use this file except in\n-- compliance with the License. You may obtain a copy of the License at\n-- http://www.monetdb.org/Legal/MonetDBLicense\n--\n-- Software distributed under the License is distributed on an \"AS IS\"\n-- basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the\n-- License for the specific language governing rights and limitations\n-- under the License.\n--\n-- The Original Code is the MonetDB Database System.\n--\n-- The Initial Developer of the Original Code is CWI.\n-- Copyright August 2008-2014 MonetDB B.V.\n-- All Rights Reserved.\n\n-- show the optimizer statistics maintained by the SQL frontend\ncreate function sys.optimizer_stats () \n\treturns table (rewrite string, count int) \n\texternal name sql.dump_opt_stats;"	"sql"	true	1	false	2000
+5623	"optimizer_stats"	"-- The contents of this file are subject to the MonetDB Public License\n-- Version 1.1 (the \"License\"); you may not use this file except in\n-- compliance with the License. You may obtain a copy of the License at\n-- http://www.monetdb.org/Legal/MonetDBLicense\n--\n-- Software distributed under the License is distributed on an \"AS IS\"\n-- basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the\n-- License for the specific language governing rights and limitations\n-- under the License.\n--\n-- The Original Code is the MonetDB Database System.\n--\n-- The Initial Developer of the Original Code is CWI.\n-- Portions created by CWI are Copyright (C) 1997-July 2008 CWI.\n-- Copyright August 2008-2014 MonetDB B.V.\n-- All Rights Reserved.\n\n-- show the optimizer statistics maintained by the SQL frontend\ncreate function sys.optimizer_stats () \n\treturns table (rewrite string, count int) \n\texternal name sql.dump_opt_stats;"	"sql"	true	1	false	2000
 5629	"querycache"	"-- SQL QUERY CACHE\n-- The SQL query cache returns a table with the query plans kept\n\ncreate function sys.querycache() \n\treturns table (query string, count int) \n\texternal name sql.dump_cache;"	"sql"	true	1	false	2000
 5632	"querylog"	"-- Trace the SQL input\ncreate procedure sys.querylog(filename string) \n\texternal name sql.logfile;"	"sql"	true	2	false	2000
 5639	"optimizers"	"-- MONETDB KERNEL SECTION\n-- optimizer pipe catalog\ncreate function sys.optimizers () \n\treturns table (name string, def string, status string)\n\texternal name sql.optimizers;"	"sql"	true	1	false	2000
 5650	"environment"	"-- The environment table\ncreate function sys.environment()\n\treturns table (\"name\" string, value string)\n\texternal name sql.sql_environment;"	"sql"	true	1	false	2000
 5670	"bbp"	"-- The BAT buffer pool overview\ncreate function sys.bbp () \n\treturns table (id int, name string, htype string, \n\t\tttype string, count bigint, refcnt int, lrefcnt int, \n\t\tlocation string, heat int, dirty string, \n\t\tstatus string, kind string) \n\texternal name sql.bbp;"	"sql"	true	1	false	2000
 5673	"evalalgebra"	"create procedure sys.evalalgebra( ra_stmt string, opt bool)\n\texternal name sql.\"evalAlgebra\";"	"sql"	true	2	false	2000
-5686	"queue"	"-- The contents of this file are subject to the MonetDB Public License\n-- Version 1.1 (the \"License\"); you may not use this file except in\n-- compliance with the License. You may obtain a copy of the License at\n-- http://www.monetdb.org/Legal/MonetDBLicense\n--\n-- Software distributed under the License is distributed on an \"AS IS\"\n-- basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the\n-- License for the specific language governing rights and limitations\n-- under the License.\n--\n-- The Original Code is the MonetDB Database System.\n--\n-- The Initial Developer of the Original Code is CWI.\n-- Copyright August 2008-2014 MonetDB B.V.\n-- All Rights Reserved.\n\n-- System monitoring\n\n-- show status of all active SQL queries.\ncreate function sys.queue()\nreturns table(\n\tqtag bigint,\n\t\"user\" string,\n\tstarted timestamp,\n\testimate timestamp,\n\tprogress int,\n\tstatus string,\n\ttag oid,\n\tquery string\n)\nexternal name sql.sysmon_queue;"	"sql"	true	1	false	2000
+5686	"queue"	"-- The contents of this file are subject to the MonetDB Public License\n-- Version 1.1 (the \"License\"); you may not use this file except in\n-- compliance with the License. You may obtain a copy of the License at\n-- http://www.monetdb.org/Legal/MonetDBLicense\n--\n-- Software distributed under the License is distributed on an \"AS IS\"\n-- basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the\n-- License for the specific language governing rights and limitations\n-- under the License.\n--\n-- The Original Code is the MonetDB Database System.\n--\n-- The Initial Developer of the Original Code is CWI.\n-- Portions created by CWI are Copyright (C) 1997-July 2008 CWI.\n-- Copyright August 2008-2014 MonetDB B.V.\n-- All Rights Reserved.\n\n-- System monitoring\n\n-- show status of all active SQL queries.\ncreate function sys.queue()\nreturns table(\n\tqtag bigint,\n\t\"user\" string,\n\tstarted timestamp,\n\testimate timestamp,\n\tprogress int,\n\tstatus string,\n\ttag oid,\n\tquery string\n)\nexternal name sql.sysmon_queue;"	"sql"	true	1	false	2000
 5699	"pause"	"-- operations to manipulate the state of havoc queries\ncreate procedure sys.pause(tag int)\nexternal name sql.sysmon_pause;"	"sql"	true	2	false	2000
 5702	"resume"	"create procedure sys.resume(tag int)\nexternal name sql.sysmon_resume;"	"sql"	true	2	false	2000
 5705	"stop"	"create procedure sys.stop(tag int)\nexternal name sql.sysmon_stop;"	"sql"	true	2	false	2000
 5708	"pause"	"create procedure sys.pause(tag bigint)\nexternal name sql.sysmon_pause;"	"sql"	true	2	false	2000
 5711	"resume"	"create procedure sys.resume(tag bigint)\nexternal name sql.sysmon_resume;"	"sql"	true	2	false	2000
 5714	"stop"	"create procedure sys.stop(tag bigint)\nexternal name sql.sysmon_stop;"	"sql"	true	2	false	2000
-5717	"stddev_samp"	"create aggregate stddev_samp(val tinyint) returns double\n\texternal name \"aggr\".\"stdev\";"	"aggr"	true	3	false	2000
+5717	"stddev_samp"	"-- The contents of this file are subject to the MonetDB Public License\n-- Version 1.1 (the \"License\"); you may not use this file except in\n-- compliance with the License. You may obtain a copy of the License at\n-- http://www.monetdb.org/Legal/MonetDBLicense\n--\n-- Software distributed under the License is distributed on an \"AS IS\"\n-- basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the\n-- License for the specific language governing rights and limitations\n-- under the License.\n--\n-- The Original Code is the MonetDB Database System.\n--\n-- The Initial Developer of the Original Code is CWI.\n-- Portions created by CWI are Copyright (C) 1997-July 2008 CWI.\n-- Copyright August 2008-2014 MonetDB B.V.\n-- All Rights Reserved.\n\ncreate aggregate stddev_samp(val tinyint) returns double\n\texternal name \"aggr\".\"stdev\";"	"aggr"	true	3	false	2000
 5721	"stddev_samp"	"create aggregate stddev_samp(val smallint) returns double\n\texternal name \"aggr\".\"stdev\";"	"aggr"	true	3	false	2000
 5725	"stddev_samp"	"create aggregate stddev_samp(val integer) returns double\n\texternal name \"aggr\".\"stdev\";"	"aggr"	true	3	false	2000
 5729	"stddev_samp"	"create aggregate stddev_samp(val wrd) returns double\n\texternal name \"aggr\".\"stdev\";"	"aggr"	true	3	false	2000

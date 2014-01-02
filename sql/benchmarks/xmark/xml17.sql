@@ -1,4 +1,3 @@
-
 select person.head, name_string.tail
 from   X01050 person, X01052 name, X01053 name_cdata, X01054 name_string
 where  person.tail = name.head

@@ -1,4 +1,3 @@
-
 SELECT * FROM version;
 
 insert into version (name ,i) values ('test2' ,2) ;

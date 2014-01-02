@@ -1,4 +1,3 @@
-
 -- query 9
 
 select person.head, name_string.tail, item_name_string.tail

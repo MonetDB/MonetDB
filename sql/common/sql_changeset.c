@@ -17,7 +17,6 @@
  * All Rights Reserved.
  */
 
-
 #include "monetdb_config.h"
 #include "sql_catalog.h"
 

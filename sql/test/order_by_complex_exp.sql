@@ -1,4 +1,3 @@
-
 CREATE TABLE test02 (
 id    INTEGER      NOT NULL,
 col1  VARCHAR(10)  NOT NULL,

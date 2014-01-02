@@ -1,4 +1,3 @@
-
 -- query 4
 
 select reserve_string.tail

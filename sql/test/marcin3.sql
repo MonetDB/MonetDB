@@ -1,4 +1,3 @@
-
 start transaction;
 create table nutki(id int,val int);
 insert into nutki values(1,1);

@@ -1,4 +1,3 @@
-
 -- query 15
 
 select txt.tail

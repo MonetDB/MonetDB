@@ -1,4 +1,3 @@
-
 create table m ( c number  NOT NULL, p double NOT NULL);
 
 insert into m values (1, 0.1);

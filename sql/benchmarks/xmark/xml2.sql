@@ -1,4 +1,3 @@
-
 -- query 2
 
 select increase_string.tail 
