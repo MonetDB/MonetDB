@@ -33,11 +33,11 @@ Ready.
 % .plan # table_name
 % rel # name
 % clob # type
-% 98 # length
+% 64 # length
 project (
 | join (
-| | table(sys.t4311) [ t4311.a as t2.a, t4311.%TID% NOT NULL as t2.%TID% ] COUNT ,
-| | table(sys.t4311) [ t4311.a as t1.a, t4311.b as t1.b, t4311.%TID% NOT NULL as t1.%TID% ] COUNT 
+| | table(sys.t4311) [ t4311.a as t2.a ] COUNT ,
+| | table(sys.t4311) [ t4311.a as t1.a, t4311.b as t1.b ] COUNT 
 | ) [ t1.a <= t2.a <= t1.b ]
 ) [ t2.a ]
 #plan 
@@ -48,11 +48,11 @@ project (
 % .plan # table_name
 % rel # name
 % clob # type
-% 98 # length
+% 64 # length
 project (
 | join (
-| | table(sys.t4311) [ t4311.a as t2.a, t4311.%TID% NOT NULL as t2.%TID% ] COUNT ,
-| | table(sys.t4311) [ t4311.a as t1.a, t4311.b as t1.b, t4311.%TID% NOT NULL as t1.%TID% ] COUNT 
+| | table(sys.t4311) [ t4311.a as t2.a ] COUNT ,
+| | table(sys.t4311) [ t4311.a as t1.a, t4311.b as t1.b ] COUNT 
 | ) [ t1.a <= t2.a <= t1.b ]
 ) [ t2.a ]
 #plan 
@@ -63,11 +63,11 @@ project (
 % .plan # table_name
 % rel # name
 % clob # type
-% 98 # length
+% 64 # length
 project (
 | join (
-| | table(sys.t4311) [ t4311.a as t2.a, t4311.%TID% NOT NULL as t2.%TID% ] COUNT ,
-| | table(sys.t4311) [ t4311.a as t1.a, t4311.b as t1.b, t4311.%TID% NOT NULL as t1.%TID% ] COUNT 
+| | table(sys.t4311) [ t4311.a as t2.a ] COUNT ,
+| | table(sys.t4311) [ t4311.a as t1.a, t4311.b as t1.b ] COUNT 
 | ) [ t1.a <= t2.a <= t1.b ]
 ) [ t2.a ]
 #drop table t4311;
