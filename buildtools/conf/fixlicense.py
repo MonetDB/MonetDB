@@ -443,6 +443,11 @@ def dellicense(file, pre = None, post = None, start = None, end = None, verbose 
     f.close()
     g.close()
     try:
+        st = os.stat(file)
+        os.chmod(file + '.new', stat.S_IMODE(st.st_mode))
+    except OSError:
+        pass
+    try:
         os.rename(file, file + '~')     # make backup
     except OSError:
         print >> sys.stderr, 'Cannot make backup for %s' % file
