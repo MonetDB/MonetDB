@@ -2517,6 +2517,7 @@ int findVariable(MalBlkPtr mb, str name);
 int findVariableLength(MalBlkPtr mb, str name, int len);
 void finishNamespace(void);
 str finishRef;
+void finishSessionProfiler(Client cntxt);
 Module fixModule(Module scope, str nme);
 int fndConstant(MalBlkPtr mb, const ValRecord *cst, int depth);
 void formatVolume(str buf, int len, lng vol);
