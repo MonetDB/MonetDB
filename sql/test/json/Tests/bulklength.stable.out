@@ -1,0 +1,151 @@
+stdout of test 'bulklength` in directory 'sql/test/json` itself:
+
+
+# 09:29:24 >  
+# 09:29:24 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=33813" "--set" "mapi_usock=/var/tmp/mtest-27090/.s.monetdb.33813" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/current//Linux/var/MonetDB/mTests_sql_test_json" "--set" "mal_listing=0"
+# 09:29:24 >  
+
+# MonetDB 5 server v11.18.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_json', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.591 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:33813/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-27090/.s.monetdb.33813
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_compress.sql
+# loading sql script: 18_dictionary.sql
+# loading sql script: 19_cluster.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 24_zorder.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 40_json.sql
+# loading sql script: 41_jsonstore.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 99_system.sql
+
+# 09:29:25 >  
+# 09:29:25 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-27090" "--port=33813"
+# 09:29:25 >  
+
+#create table nosql(j json);
+#insert into  nosql values
+#	('{}'),
+#	('{"f1":1}'),
+#	('{"f1":1,"f2":2}'),
+#	('{"f1":1,"f2":2,"f1":3}'),
+#	('{"f1":{"f12":3},"f2":[2,3,4]}');
+[ 5	]
+#insert into nosql values('[1,"f2", 2]');
+[ 1	]
+#select * from nosql;
+% sys.nosql # table_name
+% j # name
+% json # type
+% 29 # length
+[ "{}"	]
+[ "{\"f1\":1}"	]
+[ "{\"f1\":1,\"f2\":2}"	]
+[ "{\"f1\":1,\"f2\":2,\"f1\":3}"	]
+[ "{\"f1\":{\"f12\":3},\"f2\":[2,3,4]}"	]
+[ "[1,\"f2\", 2]"	]
+#explain select json.length(j) from nosql;
+% .explain # table_name
+% mal # name
+% clob # type
+% 90 # length
+function user.s5_1{autoCommit=true}():void;
+barrier X_94 := language.dataflow();
+    X_2 := sql.mvc();
+    X_35:bat[:oid,:oid]  := sql.tid(X_2,"sys","nosql",0,6);
+    X_46:bat[:oid,:json]  := sql.bind(X_2,"sys","nosql","j",0,0,6);
+    (X_52:bat[:oid,:oid] ,X_53:bat[:oid,:json] ) := sql.bind(X_2,"sys","nosql","j",2,0,6);
+    X_64 := sql.delta(X_46,X_52,X_53);
+    X_71 := algebra.leftfetchjoin(X_35,X_64);
+    X_82 := mal.manifold("json","length",X_71);
+    X_37:bat[:oid,:oid]  := sql.tid(X_2,"sys","nosql",1,6);
+    X_47:bat[:oid,:json]  := sql.bind(X_2,"sys","nosql","j",0,1,6);
+    (X_54:bat[:oid,:oid] ,X_55:bat[:oid,:json] ) := sql.bind(X_2,"sys","nosql","j",2,1,6);
+    X_65 := sql.delta(X_47,X_54,X_55);
+    X_73 := algebra.leftfetchjoin(X_37,X_65);
+    X_83 := mal.manifold("json","length",X_73);
+    X_39:bat[:oid,:oid]  := sql.tid(X_2,"sys","nosql",2,6);
+    X_48:bat[:oid,:json]  := sql.bind(X_2,"sys","nosql","j",0,2,6);
+    (X_56:bat[:oid,:oid] ,X_57:bat[:oid,:json] ) := sql.bind(X_2,"sys","nosql","j",2,2,6);
+    X_66 := sql.delta(X_48,X_56,X_57);
+    X_75 := algebra.leftfetchjoin(X_39,X_66);
+    X_84 := mal.manifold("json","length",X_75);
+    X_41:bat[:oid,:oid]  := sql.tid(X_2,"sys","nosql",3,6);
+    X_49:bat[:oid,:json]  := sql.bind(X_2,"sys","nosql","j",0,3,6);
+    (X_58:bat[:oid,:oid] ,X_59:bat[:oid,:json] ) := sql.bind(X_2,"sys","nosql","j",2,3,6);
+    X_67 := sql.delta(X_49,X_58,X_59);
+    X_77 := algebra.leftfetchjoin(X_41,X_67);
+    X_85 := mal.manifold("json","length",X_77);
+    X_43:bat[:oid,:oid]  := sql.tid(X_2,"sys","nosql",4,6);
+    X_50:bat[:oid,:json]  := sql.bind(X_2,"sys","nosql","j",0,4,6);
+    (X_60:bat[:oid,:oid] ,X_61:bat[:oid,:json] ) := sql.bind(X_2,"sys","nosql","j",2,4,6);
+    X_68 := sql.delta(X_50,X_60,X_61);
+    X_79 := algebra.leftfetchjoin(X_43,X_68);
+    X_86 := mal.manifold("json","length",X_79);
+    X_45:bat[:oid,:oid]  := sql.tid(X_2,"sys","nosql",5,6);
+    X_51:bat[:oid,:json]  := sql.bind(X_2,"sys","nosql","j",0,5,6);
+    (X_62:bat[:oid,:oid] ,X_63:bat[:oid,:json] ) := sql.bind(X_2,"sys","nosql","j",2,5,6);
+    X_8 := sql.bind(X_2,"sys","nosql","j",1);
+    X_69 := sql.delta(X_51,X_62,X_63,X_8);
+    X_81 := algebra.leftfetchjoin(X_45,X_69);
+    X_87 := mal.manifold("json","length",X_81);
+    X_88 := mat.packIncrement(X_82,6);
+    X_89 := mat.packIncrement(X_88,X_83);
+    X_90 := mat.packIncrement(X_89,X_84);
+    X_91 := mat.packIncrement(X_90,X_85);
+    X_92 := mat.packIncrement(X_91,X_86);
+    X_10:bat[:oid,:int]  := mat.packIncrement(X_92,X_87);
+exit X_94;
+    X_13 := sql.resultSet(1,1,X_10);
+    sql.rsColumn(X_13,"sys.L","length_j","int",32,0,X_10);
+    X_19 := io.stdout();
+    sql.exportResult(X_19,X_13);
+end s5_1;
+# querylog.define("explain select json.length(j) from nosql;","default_pipe")
+#select json.length(j) from nosql;
+% sys.L # table_name
+% length_j # name
+% int # type
+% 1 # length
+[ 0	]
+[ 1	]
+[ 2	]
+[ 3	]
+[ 2	]
+[ 3	]
+#drop table nosql;
+
+# 09:29:25 >  
+# 09:29:25 >  "Done."
+# 09:29:25 >  
+

@@ -65,7 +65,7 @@ command filter(name:json, i:lng) :json
 address JSONfilterArray
 comment "Extract a single element from an array";
 
-command isvalid(val:str):bit
+command isvalid(val:json):bit
 address JSONisvalid
 comment "Validate the string as a valid JSON document";
 
@@ -74,6 +74,18 @@ address JSONisobject
 comment "Validate the string as a valid JSON object";
 
 command isvalidarray(val:json):bit
+address JSONisarray
+comment "Validate the string as a valid JSON array";
+
+command isvalid(val:str):bit
+address JSONisvalid
+comment "Validate the string as a valid JSON document";
+
+command isvalidobject(val:str):bit
+address JSONisobject
+comment "Validate the string as a valid JSON object";
+
+command isvalidarray(val:str):bit
 address JSONisarray
 comment "Validate the string as a valid JSON array";
 

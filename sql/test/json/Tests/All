@@ -3,3 +3,6 @@ parsing
 books
 pgexample
 bulkjson
+bulklength
+bulkvalid
+coercions

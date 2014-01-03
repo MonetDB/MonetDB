@@ -56,12 +56,24 @@ returns bool external name json.isvalidobject;
 create function json.isvalidarray(js string)
 returns bool external name json.isvalidarray;
 
+create function json.isvalid(js json)
+returns bool external name json.isvalid;
+
+create function json.isvalidobject(js json)
+returns bool external name json.isvalidobject;
+
+create function json.isvalidarray(js json)
+returns bool external name json.isvalidarray;
+
 -- return the number of primary components
 create function json.length(js json)
 returns integer external name json.length;
 
--- The remainder awaits the implementation of
--- proper functions with table type arguments.
+-- The remainder awaits the implementation 
+
+-- create function json.object(*) returns json external name json.objectrender;
+
+-- create function json.array(*) returns json external name json.arrayrender;
 
 -- unnesting the JSON structure
 
@@ -83,8 +95,3 @@ returns integer external name json.length;
 -- create function json.values(js json)
 -- returns table ( val string) external name json."values";
 
--- rendering functions
--- create function json.object(*)
--- returns json external name json.objectrender;
--- create function json.array(*)
--- returns json external name json.arrayrender;
