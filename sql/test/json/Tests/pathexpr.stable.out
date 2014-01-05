@@ -1,0 +1,156 @@
+stdout of test 'pathexpr` in directory 'sql/test/json` itself:
+
+
+# 21:07:13 >  
+# 21:07:13 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=32764" "--set" "mapi_usock=/var/tmp/mtest-28618/.s.monetdb.32764" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/current//Linux/var/MonetDB/mTests_sql_test_json" "--set" "mal_listing=0"
+# 21:07:13 >  
+
+# MonetDB 5 server v11.18.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_json', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.591 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:32764/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-28618/.s.monetdb.32764
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 21:07:14 >  
+# 21:07:14 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-28618" "--port=32764"
+# 21:07:14 >  
+
+#create table jspath(js json);
+#insert into jspath values('{"book":{ "category": "reference", "author": "Nigel Rees", "title": "Sayings of the Century", "price": 8.95 }, "book":{ "category": "fiction", "author": "Evelyn Waugh", "title": "Sword of Honour", "price": 12.99 }, "book":{ "category": "fiction", "author": "Herman Melville", "title": "Moby Dick", "isbn": "0-553-21311-3", "price": 8.99 }, "book":{ "category": "fiction", "author": "J. R. R. Tolkien", "title": "The Lord of the Rings", "isbn": "0-395-19395-8", "price": 22.99 }, "pencil":{ "color": "red", "price": 19.95 }}');
+[ 1	]
+#select * from jspath;
+% sys.jspath # table_name
+% js # name
+% json # type
+% 523 # length
+[ "{\"book\":{ \"category\": \"reference\", \"author\": \"Nigel Rees\", \"title\": \"Sayings of the Century\", \"price\": 8.95 }, \"book\":{ \"category\": \"fiction\", \"author\": \"Evelyn Waugh\", \"title\": \"Sword of Honour\", \"price\": 12.99 }, \"book\":{ \"category\": \"fiction\", \"author\": \"Herman Melville\", \"title\": \"Moby Dick\", \"isbn\": \"0-553-21311-3\", \"price\": 8.99 }, \"book\":{ \"category\": \"fiction\", \"author\": \"J. R. R. Tolkien\", \"title\": \"The Lord of the Rings\", \"isbn\": \"0-395-19395-8\", \"price\": 22.99 }, \"pencil\":{ \"color\": \"red\", \"price\": 19.95 }}"	]
+#select json.filter(js,'.book') from jspath;
+% sys.L # table_name
+% filter_js # name
+% json # type
+% 447 # length
+[ "[{ \"category\": \"reference\", \"author\": \"Nigel Rees\", \"title\": \"Sayings of the Century\", \"price\": 8.95 },{ \"category\": \"fiction\", \"author\": \"Evelyn Waugh\", \"title\": \"Sword of Honour\", \"price\": 12.99 },{ \"category\": \"fiction\", \"author\": \"Herman Melville\", \"title\": \"Moby Dick\", \"isbn\": \"0-553-21311-3\", \"price\": 8.99 },{ \"category\": \"fiction\", \"author\": \"J. R. R. Tolkien\", \"title\": \"The Lord of the Rings\", \"isbn\": \"0-395-19395-8\", \"price\": 22.99 }]"	]
+#select json.filter(js,'.pencil') from jspath;
+% sys.L # table_name
+% filter_js # name
+% json # type
+% 36 # length
+[ "[{ \"color\": \"red\", \"price\": 19.95 }]"	]
+#select json.filter(js,'pencil') from jspath;
+% sys.L # table_name
+% filter_js # name
+% json # type
+% 36 # length
+[ "[{ \"color\": \"red\", \"price\": 19.95 }]"	]
+#select json.filter(js,'..author') from jspath;
+% sys.L # table_name
+% filter_js # name
+% json # type
+% 66 # length
+[ "[\"Nigel Rees\",\"Evelyn Waugh\",\"Herman Melville\",\"J. R. R. Tolkien\"]"	]
+#select json.filter(js,'..category') from jspath;
+% sys.L # table_name
+% filter_js # name
+% json # type
+% 43 # length
+[ "[\"reference\",\"fiction\",\"fiction\",\"fiction\"]"	]
+#select json.filter(js,'.book[0]') from jspath;
+% sys.L # table_name
+% filter_js # name
+% json # type
+% 103 # length
+[ "[{ \"category\": \"reference\", \"author\": \"Nigel Rees\", \"title\": \"Sayings of the Century\", \"price\": 8.95 }]"	]
+#select json.filter(js,'.book[1]') from jspath;
+% sys.L # table_name
+% filter_js # name
+% json # type
+% 97 # length
+[ "[{ \"category\": \"fiction\", \"author\": \"Evelyn Waugh\", \"title\": \"Sword of Honour\", \"price\": 12.99 }]"	]
+#select json.filter(js,'.book[2]') from jspath;
+% sys.L # table_name
+% filter_js # name
+% json # type
+% 118 # length
+[ "[{ \"category\": \"fiction\", \"author\": \"Herman Melville\", \"title\": \"Moby Dick\", \"isbn\": \"0-553-21311-3\", \"price\": 8.99 }]"	]
+#select json.filter(js,'.book[3]') from jspath;
+% sys.L # table_name
+% filter_js # name
+% json # type
+% 132 # length
+[ "[{ \"category\": \"fiction\", \"author\": \"J. R. R. Tolkien\", \"title\": \"The Lord of the Rings\", \"isbn\": \"0-395-19395-8\", \"price\": 22.99 }]"	]
+#select json.filter(js,'.book.category') from jspath;
+% sys.L # table_name
+% filter_js # name
+% json # type
+% 43 # length
+[ "[\"reference\",\"fiction\",\"fiction\",\"fiction\"]"	]
+#declare s json;
+#select json.filter(s,'..name');
+% .L # table_name
+% filter_single_value # name
+% json # type
+% 15 # length
+[ "[\"john\",\"mary\"]"	]
+#select  json.filter(s,'.name');
+% .L # table_name
+% filter_single_value # name
+% json # type
+% 8 # length
+[ "[\"mary\"]"	]
+#select  json.filter(s,'.name[0]');
+% .L # table_name
+% filter_single_value # name
+% json # type
+% 8 # length
+[ "[\"mary\"]"	]
+#select  json.filter(s,'.name[1]');
+% .L # table_name
+% filter_single_value # name
+% json # type
+% 2 # length
+[ "[]"	]
+#select json.filter(js,'.book[-1]') from jspath;
+% sys.L # table_name
+% filter_js # name
+% json # type
+% 2 # length
+[ "[]"	]
+#select json.filter(js,'.book[4]') from jspath;
+% sys.L # table_name
+% filter_js # name
+% json # type
+% 2 # length
+[ "[]"	]
+#select json.filter(js,'$$$') from jspath;
+% sys.L # table_name
+% filter_js # name
+% json # type
+% 2 # length
+[ "[]"	]
+#select json.filter(js,'...') from jspath;
+% sys.L # table_name
+% filter_js # name
+% json # type
+% 2 # length
+[ "[]"	]
+#select json.filter(js,'[[2]]') from jspath;
+% sys.L # table_name
+% filter_js # name
+% json # type
+% 2 # length
+[ "[]"	]
+
+# 21:07:14 >  
+# 21:07:14 >  "Done."
+# 21:07:14 >  
+

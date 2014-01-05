@@ -23,7 +23,7 @@ create schema json;
 create type json external name json;
 
 -- access the top level key by name, return its value
-create function json.filter(js json, name string)
+create function json.filter(js json, pathexpr string)
 returns json external name json.filter;
 
 create function json.filter(js json, name tinyint)
@@ -35,14 +35,6 @@ returns json external name json.filter;
 create function json.filter(js json, name bigint)
 returns json external name json.filter;
 
-create function json.filter_all(js json, name string)
-returns json external name json.filterall;
-
--- a simple path extractor
-create function json.path(js json, e string)
-returns json external name json.path;
-
--- a simple path extractor as plain text
 create function json.text(js json, e string)
 returns string external name json.text;
 
@@ -50,24 +42,33 @@ returns string external name json.text;
 create function json.isvalid(js string)
 returns bool external name json.isvalid;
 
-create function json.isvalidobject(js string)
-returns bool external name json.isvalidobject;
+create function json.isobject(js string)
+returns bool external name json.isobject;
 
-create function json.isvalidarray(js string)
-returns bool external name json.isvalidarray;
+create function json.isarray(js string)
+returns bool external name json.isarray;
 
 create function json.isvalid(js json)
 returns bool external name json.isvalid;
 
-create function json.isvalidobject(js json)
-returns bool external name json.isvalidobject;
+create function json.isobject(js json)
+returns bool external name json.isobject;
 
-create function json.isvalidarray(js json)
-returns bool external name json.isvalidarray;
+create function json.isarray(js json)
+returns bool external name json.isarray;
 
 -- return the number of primary components
 create function json.length(js json)
 returns integer external name json.length;
+
+create function json.keyarray(js json)
+returns table ( nme json) external name json.keyarray;
+
+create function json.valuearray(js json)
+returns table ( val json) external name json.valuearray;
+
+create function json.text(js json)
+returns string external name json.text;
 
 -- The remainder awaits the implementation 
 
@@ -89,9 +90,4 @@ returns integer external name json.length;
 -- create function json.nest table( id integer, k string, v string)
 -- returns json external name json.nest;
 
--- create function json.names(js json)
--- returns table ( nme string) external name json.names;
-
--- create function json.values(js json)
--- returns table ( val string) external name json."values";
 

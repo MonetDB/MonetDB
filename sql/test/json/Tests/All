@@ -6,3 +6,5 @@ bulkjson
 bulklength
 bulkvalid
 coercions
+pathexpr
+components

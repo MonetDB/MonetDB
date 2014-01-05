@@ -37,22 +37,22 @@ select * from books;
 
 -- Queries to be compiled into SQL/JSON
 -- all authors of single book in the single store
-SELECT json.filter_all(j,'author') FROM (
-	SELECT json.filter(j,'book') AS j FROM (
-		SELECT json.filter(j,'store') AS j FROM books
-	) AS L1
-) AS L2;
-
--- a single author from the book store
 SELECT json.filter(j,'author') FROM (
 	SELECT json.filter(j,'book') AS j FROM (
 		SELECT json.filter(j,'store') AS j FROM books
 	) AS L1
 ) AS L2;
 
-SELECT json.path(j,'..author') FROM books;
-SELECT json.path(j,'store.book[*].author') FROM books;
-SELECT json.path(j,'..bicycle.price') FROM books;
-SELECT json.path(j,'store.book.author[1]') FROM books;
+-- a single author from the book store
+SELECT json.filter(j,'author[0]') FROM (
+	SELECT json.filter(j,'book') AS j FROM (
+		SELECT json.filter(j,'store') AS j FROM books
+	) AS L1
+) AS L2;
+
+SELECT json.filter(j,'..author') FROM books;
+SELECT json.filter(j,'store.book[*].author') FROM books;
+SELECT json.filter(j,'..bicycle.price') FROM books;
+SELECT json.filter(j,'store.book.author[1]') FROM books;
 
 drop table books;

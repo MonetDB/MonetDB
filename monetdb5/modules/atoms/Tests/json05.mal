@@ -2,42 +2,42 @@ js:= calc.json("[{\"book\":{ \"category\": \"reference\", \"author\": \"Nigel Re
 
 io.print(js);
 
-p:= json.path(js,".book");
+p:= json.filter(js,".book");
 io.print(p);
-p:= json.path(js,".pencil");
+p:= json.filter(js,".pencil");
 io.print(p);
-p:= json.path(js,"pencil");
+p:= json.filter(js,"pencil");
 io.print(p);
-p:= json.path(js,"..author");
+p:= json.filter(js,"..author");
 io.print(p);
-p:= json.path(js,"..category");
+p:= json.filter(js,"..category");
 io.print(p);
 
-p:= json.path(js,".book[0]");
+p:= json.filter(js,".book[0]");
 io.print(p);
-p:= json.path(js,".book[1]");
+p:= json.filter(js,".book[1]");
 io.print(p);
-p:= json.path(js,".book[2]");
+p:= json.filter(js,".book[2]");
 io.print(p);
-p:= json.path(js,".book[3]");
+p:= json.filter(js,".book[3]");
 io.print(p);
-p:= json.path(js,".book.category");
+p:= json.filter(js,".book.category");
 io.print(p);
 
 js := calc.json("[[{\"name\":\"john\"}], {\"name\":\"mary\"}]");
-p := json.path(js,"..name");
+p := json.filter(js,"..name");
 io.print(p);
-p := json.path(js,".name");
+p := json.filter(js,".name");
 io.print(p);
 
 #empty lists
-p:= json.path(js,".book[-1]");
+p:= json.filter(js,".book[-1]");
 io.print(p);
-p:= json.path(js,".book[4]");
+p:= json.filter(js,".book[4]");
 io.print(p);
-p:= json.path(js,"$$$");
+p:= json.filter(js,"$$$");
 io.print(p);
-p:= json.path(js,"...");
+p:= json.filter(js,"...");
 io.print(p);
-p:= json.path(js,"[[2]]");
+p:= json.filter(js,"[[2]]");
 io.print(p);

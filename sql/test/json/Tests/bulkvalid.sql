@@ -11,11 +11,11 @@ select * from nosql;
 explain select json.isvalid(j) from nosql;
 select json.isvalid(j) from nosql;
 
-explain select json.isvalidobject(j) from nosql;
-select json.isvalidobject(j) from nosql;
+explain select json.isobject(j) from nosql;
+select json.isobject(j) from nosql;
 
-explain select json.isvalidarray(j) from nosql;
-select json.isvalidarray(j) from nosql;
+explain select json.isarray(j) from nosql;
+select json.isarray(j) from nosql;
 
 -- consider them as initial strings
 create table tmpsql(j string);
@@ -31,11 +31,11 @@ select * from tmpsql;
 explain select json.isvalid(j) from nosql;
 select json.isvalid(j) from nosql;
 
-explain select json.isvalidobject(j) from nosql;
-select json.isvalidobject(j) from nosql;
+explain select json.isobject(j) from nosql;
+select json.isobject(j) from nosql;
 
-explain select json.isvalidarray(j) from nosql;
-select json.isvalidarray(j) from nosql;
+explain select json.isarray(j) from nosql;
+select json.isarray(j) from nosql;
 
 drop table tmpsql;
 drop table nosql;

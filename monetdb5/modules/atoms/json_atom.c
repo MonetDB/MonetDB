@@ -466,117 +466,6 @@ JSONlength(int *ret, json *js)
 //single nested array of objects ([{object},..]
 //any structure violation leads to an early abort
 //The keys should be unique in an object
-static str
-JSONfilterObjectInternal(json *ret, json *js, str *pat, int flag)
-{
-	char *namebegin, *nameend;
-	char *valuebegin, *valueend, *msg = MAL_SUCCEED;
-	char *result = NULL;
-	size_t l, lim, len;
-	int nesting = 0;
-	char *j = *js;
-
-	skipblancs;
-	while (*j == '[') {
-		nesting++;
-		j++;
-		skipblancs;
-	}
-
-	if (*j != '{')
-		throw(MAL, "json.filter", "JSON object expected");
-
-	// the result is an array of values
-	result = (char *) GDKmalloc(BUFSIZ);
-	if (result == 0)
-		throw(MAL, "json.filter", MAL_MALLOC_FAIL);
-	result[0] = '[';
-	result[1] = 0;
-	len = 1;
-	lim = BUFSIZ;
-
-	for (j++; *j && *j != '}'; j++) {
-		skipblancs;
-		if (*j == ']' && nesting) {
-			nesting--;
-			continue;
-		}
-		if (*j == '}' || *j == 0)
-			break;
-		if (*j != '"') {
-			msg = createException(MAL, "json.filter", "Name expected");
-			goto wrapup;
-		}
-		namebegin = j + 1;
-		msg = JSONstringParser(j + 1, &j);
-		if (msg)
-			goto wrapup;
-		nameend = j - 1;
-		skipblancs;
-		if (*j != ':') {
-			msg = createException(MAL, "json.filter", "Value expected");
-			goto wrapup;
-		}
-		j++;
-		skipblancs;
-		valuebegin = j;
-		msg = JSONvalueParser(j, &j);
-		if (msg)
-			goto wrapup;
-		valueend = j;
-
-		// test for candidate member
-		if (strncmp(*pat, namebegin, (l = nameend - namebegin)) == 0) {
-			if (l + 2 > lim)
-				result = GDKrealloc(result, lim += BUFSIZ);
-			if (strcmp("null", result) == 0) {
-				strncpy(result + len, "nil", 3);
-				len += 3;
-			} else {
-				strncpy(result + len, valuebegin, valueend - valuebegin);
-				len += valueend - valuebegin;
-			}
-			result[len++] = ',';
-			result[len] = 0;
-			if (flag == 0)
-				goto found;
-		}
-		skipblancs;
-		if (*j == '}') {
-			if (nesting) {
-				while (*j && *j != '{' && *j != ']')
-					j++;
-				if (*j != '{')
-					j--;
-			}
-			continue;
-		}
-
-		if (*j != ',')
-			msg = createException(MAL, "json.filter", "',' expected");
-	}
-      found:
-	if (result[1] == 0) {
-		result[1] = ']';
-		result[2] = 0;
-	} else
-		result[len - 1] = ']';
-      wrapup:;
-	*ret = result;
-	return msg;
-}
-
-str
-JSONfilterObject(json *ret, json *js, str *pat)
-{
-	return JSONfilterObjectInternal(ret, js, pat, 0);
-}
-
-str
-JSONfilterObjectAll(json *ret, json *js, str *pat)
-{
-	return JSONfilterObjectInternal(ret, js, pat, 1);
-}
 
 str
 JSONfilterArray(json *ret, json *js, int *index)
@@ -960,7 +849,7 @@ JSONunnestGrouped(int *grp, int *key, int *val, json *js)
 }
 
 str
-JSONkeys(int *ret, json *js)
+JSONkeyTable(int *ret, json *js)
 {
 	BAT *bn;
 	char *namebegin, *nameend;
@@ -1228,7 +1117,7 @@ JSONarrayvalues(int *ret, BAT *bn, char *j)
 }
 
 str
-JSONvalues(int *ret, json *js)
+JSONvalueTable(int *ret, json *js)
 {
 	BAT *bn;
 	char *valuebegin, *valueend;
@@ -1862,12 +1751,16 @@ JSONpathInternal(json *ret, json *js, str *expr,int flag)
 	return msg;
 }
 str
-JSONpath(json *ret, json *js, str *expr)
+JSONfilter(json *ret, json *js, str *expr)
 {
 	return JSONpathInternal(ret,js,expr,FALSE);
 }
+
 str
-JSONtext(json *ret, json *js, str *expr)
+JSONjson2text(str *ret, json *js)
 {
-	return JSONpathInternal(ret,js,expr,TRUE);
+	str expr = GDKstrdup(*js);
+	JSONtextInternal(expr, expr, strchr(expr,0));
+	*ret = expr;
+	return MAL_SUCCEED;
 }

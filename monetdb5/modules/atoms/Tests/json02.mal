@@ -1,4 +1,4 @@
-#validity tests
+#ity tests
 b:= json.new("{\"f1\":1}");
 f:= json.keys(b);
 io.print(f);
@@ -26,7 +26,7 @@ i:= json.length(b);
 io.print(i);
 
 b:= json.new("[]");
-z:= json.isvalidarray(b);
+z:= json.isarray(b);
 io.print(z);
 ff:= json.values(b);
 io.print(ff);
@@ -34,13 +34,13 @@ i:= json.length(b);
 io.print(i);
 
 b:= json.new("[1,\"f2\", 2]");
-z:= json.isvalidarray(b);
+z:= json.isarray(b);
 io.print(z);
 ff:= json.values(b);
 io.print(ff);
 
 b:= json.new("[1,2,null,true,false ]");
-z:= json.isvalidarray(b);
+z:= json.isarray(b);
 io.print(z);
 ff:= json.values(b);
 io.print(ff);
@@ -48,7 +48,7 @@ i:= json.length(b);
 io.print(i);
 
 b:= json.new("[\"\\/\" , 2 ]");
-z:= json.isvalidarray(b);
+z:= json.isarray(b);
 io.print(z);
 ff:= json.values(b);
 io.print(ff);

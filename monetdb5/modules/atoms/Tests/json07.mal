@@ -1,8 +1,8 @@
 js:= json.new("{\"myBoolean\":true,\"myList\":[\"a\",\"b\"],\"myMap\":{\"c\":\"d\",\"a\":\"b\"},\"myObject\":\"myClass\",\"myJsonObject\":{\"myString\":\"myStringValue\"}}");
  
-j1:=json.keyArray(js);
+j1:=json.keyarray(js);
 io.print(j1);
-a1:=json.valueArray(js);
+a1:=json.valuearray(js);
 io.print(a1);
 n1:=json.keys(js);
 io.print(n1);
