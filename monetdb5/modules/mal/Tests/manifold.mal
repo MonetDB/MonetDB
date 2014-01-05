@@ -30,8 +30,15 @@ s:= aggr.sum(z);
 io.printf("#sum %f\n",s);
 
 
+#x:bat[:oid,:dbl]:= mal.multiplex("mmath","sin",b);
 t0:= alarm.usec();
-x:bat[:oid,:dbl]:= mal.multiplex("mmath","sin",b);
+x:= bat.new(:oid,:dbl);
+barrier i:= 0:lng;
+	ii:= algebra.fetch(b,i);
+	d:= mmath.sin(ii);
+	bat.append(x,d);
+	redo i:= iterator.next(1:lng,1000000:lng);
+exit i;
 t1:= alarm.usec();
 d0:= t1-t0;
 io.printf("#mal.multiplex(sin) %d\n",d0);

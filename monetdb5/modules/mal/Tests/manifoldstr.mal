@@ -13,29 +13,37 @@ mdb.setDebug(dbgmsk_set);
 r:= mmath.srand(0);
 barrier i:= 0:lng;
 	bat.append(b,"The quick brown fox");
-	redo i:= iterator.next(1:lng,10:lng);
+	redo i:= iterator.next(1:lng,100000:lng);
 exit i;
 
 mdb.setDebug(dbgmsk_restore);
 mdb.setDebug(dbgmsk_set);
 
-io.print(b);
+#io.print(b);
 t0:= alarm.usec();
 z:bat[:oid,:str]:= mal.manifold("str","toUpper",b);
 t1:= alarm.usec();
 d0:= t1-t0;
 io.printf("#mal.manifold(str,toUpper) %d\n",d0);
-io.print(z);
+#io.print(z);
 
 
+# x:bat[:oid,:str]:= mal.multiplex("str","toUpper",b);
 t0:= alarm.usec();
-x:bat[:oid,:str]:= mal.multiplex("str","toUpper",b);
+x:= bat.new(:oid,:str);
+barrier i:= 0:lng;
+	ii:= algebra.fetch(b,i);
+	d:= str.toUpper(ii);
+	bat.append(x,d);
+	redo i:= iterator.next(1:lng,100000:lng);
+exit i;
 t1:= alarm.usec();
 d0:= t1-t0;
 io.printf("#mal.multiplex(str,toUpper) %d\n",d0);
-io.print(x);
+#io.print(x);
 
 
+# No column version available
 #t0:= alarm.usec();
 #x:= str.toUpper(b);
 #t1:= alarm.usec();
