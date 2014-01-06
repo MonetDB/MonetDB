@@ -39738,7 +39738,7 @@ command json.keys(val:json):bat[:oid,:str]
 address JSONkeyTable;
 comment Expands the outermost JSON object names.
 
-command json.keyarray(val:json):str 
+command json.keyarray(val:json):json 
 address JSONkeyArray;
 comment Expands the outermost JSON object keys into a JSON array.
 
@@ -39843,7 +39843,7 @@ command json.values(val:json):bat[:oid,:json]
 address JSONvalueTable;
 comment Expands the outermost JSON values.
 
-command json.valuearray(val:json):str 
+command json.valuearray(val:json):json 
 address JSONvalueArray;
 comment Expands the outermost JSON object values into a JSON array.
 
