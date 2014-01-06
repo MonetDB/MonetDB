@@ -74,6 +74,11 @@ static volatile ATOMIC_FLAG GDKstopped = ATOMIC_FLAG_INIT;
 static void GDKunlockHome(void);
 static int GDKgetHome(void);
 
+#undef malloc
+#undef calloc
+#undef realloc
+#undef free
+
 /*
  * @+ Monet configuration file
  * Parse a possible MonetDB config file (if specified by command line
@@ -697,9 +702,6 @@ void *
 GDKmalloc(size_t size)
 {
 	void *p = GDKmallocmax(size, &size, 0);
-#ifndef GDKMALLOC_DEBUG
-	ALLOCDEBUG fprintf(stderr, "#GDKmalloc " SZFMT " " PTRFMT "\n", size, PTRFMTCAST p);
-#endif
 #ifndef NDEBUG
 	DEADBEEFCHK if (p)
 		memset(p, 0xBD, size);
@@ -713,9 +715,6 @@ GDKzalloc(size_t size)
 {
 	size_t maxsize = size;
 	void *p = GDKmallocmax(size, &maxsize, 0);
-#ifndef GDKMALLOC_DEBUG
-	ALLOCDEBUG fprintf(stderr, "#GDKzalloc " SZFMT " " SZFMT " " PTRFMT "\n", size, maxsize, PTRFMTCAST p);
-#endif
 	if (p) {
 		memset(p, 0, size);
 #ifndef NDEBUG
@@ -727,8 +726,9 @@ GDKzalloc(size_t size)
 	return p;
 }
 
-static void
-GDKfree_(void *blk)
+#undef GDKfree
+void
+GDKfree(void *blk)
 {
 	ssize_t size = 0, *s = (ssize_t *) blk;
 
@@ -763,16 +763,6 @@ GDKfree_(void *blk)
 	heapdec(size);
 }
 
-#undef GDKfree
-void
-GDKfree(void *blk)
-{
-#ifndef GDKMALLOC_DEBUG
-	ALLOCDEBUG fprintf(stderr, "#GDKfree " PTRFMT "\n", PTRFMTCAST blk);
-#endif
-	GDKfree_(blk);
-}
-
 #undef GDKreallocmax
 ptr
 GDKreallocmax(void *blk, size_t size, size_t *maxsize, int emergency)
@@ -786,7 +776,7 @@ GDKreallocmax(void *blk, size_t size, size_t *maxsize, int emergency)
 	}
 	if (size == 0) {
 #ifdef GDK_MEM_NULLALLOWED
-		GDKfree_(blk);
+		GDKfree(blk);
 		*maxsize = 0;
 		return NULL;
 #else
@@ -840,9 +830,6 @@ GDKrealloc(void *blk, size_t size)
 	void *p;
 
 	p = GDKreallocmax(blk, sz, &size, 0);
-#ifndef GDKMALLOC_DEBUG
-	ALLOCDEBUG fprintf(stderr, "#GDKrealloc " SZFMT " " SZFMT " " PTRFMT " " PTRFMT "\n", sz, size, PTRFMTCAST blk, PTRFMTCAST p);
-#endif
 	return p;
 }
 
@@ -877,9 +864,6 @@ GDKmmap(const char *path, int mode, size_t len)
 			THRprintf(GDKstdout, "#GDKmmap: recovery ok. Continuing..\n");
 		}
 	}
-#ifndef GDKMALLOC_DEBUG
-	ALLOCDEBUG fprintf(stderr, "#GDKmmap " SZFMT " " PTRFMT "\n", len, PTRFMTCAST ret);
-#endif
 	if (ret != NULL) {
 		/* since mmap directly have content we say it's zero-ed
 		 * memory */
@@ -895,9 +879,6 @@ GDKmunmap(void *addr, size_t size)
 {
 	int ret;
 
-#ifndef GDKMALLOC_DEBUG
-	ALLOCDEBUG fprintf(stderr, "#GDKmunmap " SZFMT " " PTRFMT "\n", size, PTRFMTCAST addr);
-#endif
 	ret = MT_munmap(addr, size);
 	VALGRIND_FREELIKE_BLOCK(addr, 0);
 	if (ret == 0)
