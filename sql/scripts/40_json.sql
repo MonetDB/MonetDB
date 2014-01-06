@@ -62,10 +62,10 @@ create function json.length(js json)
 returns integer external name json.length;
 
 create function json.keyarray(js json)
-returns table ( nme json) external name json.keyarray;
+returns json external name json.keyarray;
 
 create function json.valuearray(js json)
-returns table ( val json) external name json.valuearray;
+returns  json external name json.valuearray;
 
 create function json.text(js json)
 returns string external name json.text;

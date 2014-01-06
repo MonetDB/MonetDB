@@ -121,11 +121,11 @@ pattern nest(k:bat[:oid,:dbl]):json
 address JSONnest
 comment "Combine the value list into a single json array object.";
 
-command keyarray(val:json):str
+command keyarray(val:json):json
 address JSONkeyArray
 comment "Expands the outermost JSON object keys into a JSON array.";
 
-command valuearray(val:json):str
+command valuearray(val:json):json
 address JSONvalueArray
 comment "Expands the outermost JSON object values into a JSON array.";
 
