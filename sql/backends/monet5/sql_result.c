@@ -1152,7 +1152,6 @@ mvc_export_table(backend *b, stream *s, res_table *t, BAT *order, BUN offset, BU
 		}
 		if (json) {
 			res_col *p = t->cols + (i - 1);
-			ssep = "";
 
 			/*  
 			 * We define the "proper" way of returning
@@ -1161,20 +1160,20 @@ mvc_export_table(backend *b, stream *s, res_table *t, BAT *order, BUN offset, BU
 			 * represented as a json object.
 			 */
 			if (i == 1) {
-				bj = SA_NEW_ARRAY(m->sa, char, strlen(p->name) + 11);
-				snprintf(bj, strlen(p->name) + 11, "\t{\n\t\t\"%s\" : ", p->name);
+				bj = SA_NEW_ARRAY(m->sa, char, strlen(p->name) + strlen(btag));
+				snprintf(bj, strlen(p->name) + strlen(btag), btag, p->name);
 				fmt[i - 1].sep = bj;
 				fmt[i - 1].seplen = _strlen(fmt[i - 1].sep);
 				fmt[i - 1].rsep = NULL;
 			} else if (i <= t->nr_cols) {
-				bj = SA_NEW_ARRAY(m->sa, char, strlen(p->name) + 10);
-				snprintf(bj, strlen(p->name) + 10, ",\n\t\t\"%s\" : ", p->name);
+				bj = SA_NEW_ARRAY(m->sa, char, strlen(p->name) + strlen(sep));
+				snprintf(bj, strlen(p->name) + 10, sep, p->name);
 				fmt[i - 1].sep = bj;
 				fmt[i - 1].seplen = _strlen(fmt[i - 1].sep);
 				fmt[i - 1].rsep = NULL;
 			}
 			if (i == t->nr_cols) {
-				fmt[i].sep = "\n\t}\n";
+				fmt[i].sep = rsep;
 				fmt[i].seplen = _strlen(fmt[i].sep);
 				fmt[i].rsep = NULL;
 			}
@@ -1622,7 +1621,26 @@ mvc_export_result(backend *b, stream *s, int res_id)
 		count = BATcount(order);
 		clean = 1;
 	}
-	res = mvc_export_table(b, s, t, order, 0, count, "[ ", ",\t", "\t]\n", "\"", "NULL");
+	if (json) {
+	 	switch(count) {
+		case 0:
+			res = mvc_export_table(b, s, t, order, 0, count, "{\t", "", "}\n", "\"", "null");
+			break;
+		case 1:
+			res = mvc_export_table(b, s, t, order, 0, count, "{\n\t\"%s\" : ", ",\n\t\"%s\" : ", "\n}\n", "\"", "null");
+			break;
+		case 2:
+			res = mvc_export_table(b, s, t, order, 0, 1, "[\n\t{\n\t\t\"%s\" : ", ",\n\t\t\"%s\" : ", "\n\t},\n", "\"", "null");
+			res = mvc_export_table(b, s, t, order, 1, count - 1, "\t{\n\t\t\"%s\" : ", ",\n\t\t\"%s\" : ", "\n\t}\n]\n", "\"", "null");
+			 break;
+		default:
+			res = mvc_export_table(b, s, t, order, 0, 1, "[\n\t{\n\t\t\"%s\" : ", ",\n\t\t\"%s\" : ", "\n\t},\n", "\"", "null");
+			res = mvc_export_table(b, s, t, order, 1, count - 2, "\t{\n\t\t\"%s\" : ", ",\n\t\t\"%s\" : ", "\n\t},\n", "\"", "null");
+			res = mvc_export_table(b, s, t, order, count - 1, 1, "\t{\n\t\t\"%s\" : ", ",\n\t\t\"%s\" : ", "\n\t}\n]\n", "\"", "null");
+		}
+	} else {
+		res = mvc_export_table(b, s, t, order, 0, count, "[ ", ",\t", "\t]\n", "\"", "NULL");
+	}
 	BBPunfix(order->batCacheid);
 	if (clean)
 		m->results = res_tables_remove(m->results, t);
