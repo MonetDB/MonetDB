@@ -38,6 +38,7 @@ drop table sys.queryHistory;
 -- The Original Code is the MonetDB Database System.
 --
 -- The Initial Developer of the Original Code is CWI.
+-- Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
 -- Copyright August 2008-2014 MonetDB B.V.
 -- All Rights Reserved.
 
@@ -135,6 +136,7 @@ create view sys.environment as select * from sys.environment();
 -- The Original Code is the MonetDB Database System.
 --
 -- The Initial Developer of the Original Code is CWI.
+-- Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
 -- Copyright August 2008-2014 MonetDB B.V.
 -- All Rights Reserved.
 
@@ -205,6 +207,7 @@ create aggregate median(val DECIMAL) returns DECIMAL external name "aggr"."media
 -- The Original Code is the MonetDB Database System.
 --
 -- The Initial Developer of the Original Code is CWI.
+-- Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
 -- Copyright August 2008-2014 MonetDB B.V.
 -- All Rights Reserved.
 
@@ -285,6 +288,7 @@ create view sys.storagemodel as select * from sys.storagemodel();
 -- The Original Code is the MonetDB Database System.
 --
 -- The Initial Developer of the Original Code is CWI.
+-- Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
 -- Copyright August 2008-2014 MonetDB B.V.
 -- All Rights Reserved.
 
