@@ -537,7 +537,7 @@ str RESTgetDesign(char ** result, char * dbname, const char * doc_id)
 	char * begin_query;
 	char * end_query;
 	size_t query_len;
-	char * viewquery;
+	char * viewquery = NULL;
 
 	querytext = malloc(len);
 	snprintf(querytext, len, "SELECT json_text(json_path(design, 'views.foo'), 'query') AS query FROM jsondesign_%s WHERE _id = '%s' LIMIT 1;", dbname, doc_id);

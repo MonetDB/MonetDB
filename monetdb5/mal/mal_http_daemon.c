@@ -162,7 +162,7 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
                       size_t *upload_data_size, void **con_cls)
 {
 	char * page = NULL;
-	struct connection_info_struct *con_info;
+	struct connection_info_struct *con_info = NULL;
 	int *done = cls;
 	char *answerstring = NULL;
 	char *errorpage =
@@ -229,6 +229,10 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
 
 	if ((strcmp (method, "GET") == 0) ||
 	    (strcmp (method, "DELETE") == 0)) {
+		// TODO: double check if this is needed
+		if (con_info == NULL) {
+			con_info = malloc (sizeof (struct connection_info_struct));
+		}
 		return send_page(connection, url, method, page,
 				 con_info->answerstring);
 	}
