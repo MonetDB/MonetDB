@@ -434,6 +434,84 @@
 #endif
 
 /*
+   See `man mserver5` or tools/mserver/mserver5.1
+   for a documentation of the following debug options.
+*/
+
+#define THRDMASK	(1)
+#define CHECKMASK	(1<<1)
+#define CHECKDEBUG	if (GDKdebug & CHECKMASK)
+#define MEMMASK		(1<<2)
+#define MEMDEBUG	if (GDKdebug & MEMMASK)
+#define PROPMASK	(1<<3)
+#define PROPDEBUG	if (GDKdebug & PROPMASK)
+#define IOMASK		(1<<4)
+#define IODEBUG		if (GDKdebug & IOMASK)
+#define BATMASK		(1<<5)
+#define BATDEBUG	if (GDKdebug & BATMASK)
+/* PARSEMASK not used anymore
+#define PARSEMASK	(1<<6)
+#define PARSEDEBUG	if (GDKdebug & PARSEMASK)
+*/
+#define PARMASK		(1<<7)
+#define PARDEBUG	if (GDKdebug & PARMASK)
+#define HEADLESSMASK	(1<<8)
+#define HEADLESSDEBUG	if ( GDKdebug & HEADLESSMASK)
+#define TMMASK		(1<<9)
+#define TMDEBUG		if (GDKdebug & TMMASK)
+#define TEMMASK		(1<<10)
+#define TEMDEBUG	if (GDKdebug & TEMMASK)
+/* DLMASK not used anymore
+#define DLMASK		(1<<11)
+#define DLDEBUG		if (GDKdebug & DLMASK)
+*/
+#define PERFMASK	(1<<12)
+#define PERFDEBUG	if (GDKdebug & PERFMASK)
+#define DELTAMASK	(1<<13)
+#define DELTADEBUG	if (GDKdebug & DELTAMASK)
+#define LOADMASK	(1<<14)
+#define LOADDEBUG	if (GDKdebug & LOADMASK)
+/* YACCMASK not used anymore
+#define YACCMASK	(1<<15)
+#define YACCDEBUG	if (GDKdebug & YACCMASK)
+*/
+/*
+#define ?tcpip?		if (GDKdebug&(1<<16))
+#define ?monet_multiplex?	if (GDKdebug&(1<<17))
+#define ?ddbench?	if (GDKdebug&(1<<18))
+#define ?ddbench?	if (GDKdebug&(1<<19))
+#define ?ddbench?	if (GDKdebug&(1<<20))
+*/
+#define ALGOMASK	(1<<21)
+#define ALGODEBUG	if (GDKdebug & ALGOMASK)
+#define ESTIMASK	(1<<22)
+#define ESTIDEBUG	if (GDKdebug & ESTIMASK)
+/* XPROPMASK not used anymore
+#define XPROPMASK	(1<<23)
+#define XPROPDEBUG	if (GDKdebug & XPROPMASK)
+*/
+
+#define JOINPROPMASK	(1<<24)
+#define JOINPROPCHK	if (!(GDKdebug & JOINPROPMASK))
+#define DEADBEEFMASK	(1<<25)
+#define DEADBEEFCHK	if (!(GDKdebug & DEADBEEFMASK))
+
+#define ALLOCMASK	(1<<26)
+#define ALLOCDEBUG	if (GDKdebug & ALLOCMASK)
+
+/* M5, only; cf.,
+ * monetdb5/mal/mal.h
+ */
+#define OPTMASK		(1<<27)
+#define OPTDEBUG	if (GDKdebug & OPTMASK)
+
+#define HEAPMASK	(1<<28)
+#define HEAPDEBUG	if (GDKdebug & HEAPMASK)
+
+#define FORCEMITOMASK	(1<<29)
+#define FORCEMITODEBUG	if (GDKdebug & FORCEMITOMASK)
+
+/*
  * @- GDK session handling
  * @multitable @columnfractions 0.08 0.7
  * @item int
@@ -2195,10 +2273,16 @@ gdk_export void *GDKzalloc(size_t size);
 gdk_export void *GDKrealloc(void *pold, size_t size);
 gdk_export void GDKfree(void *blk);
 gdk_export str GDKstrdup(const char *s);
-#if !defined(NDEBUG) && defined(__GNUC__)
-#define GDKMALLOC_DEBUG
-#endif
-#ifdef GDKMALLOC_DEBUG
+
+#ifndef NDEBUG
+/* In debugging mode, replace GDKmalloc and other functions with a
+ * version that optionally prints calling information.
+ *
+ * We have two versions of this code: one using a GNU C extension, and
+ * one using traditional C.  The GNU C version also prints the name of
+ * the calling function.
+ */
+#ifdef __GNUC__
 #define GDKmalloc(s)							\
 	({								\
 		size_t _size = (s);					\
@@ -2223,11 +2307,11 @@ gdk_export str GDKstrdup(const char *s);
 				__func__, __FILE__, __LINE__);		\
 		_res;							\
 	})
-#define GDKrealloc(p,s)							\
+#define GDKrealloc(p, s)						\
 	({								\
 		void *_ptr = (p);					\
 		size_t _size = (s);					\
-		void *_res = GDKrealloc(_ptr,_size);			\
+		void *_res = GDKrealloc(_ptr, _size);			\
 		ALLOCDEBUG						\
 			fprintf(stderr,					\
 				"#GDKrealloc(" PTRFMT "," SZFMT ") -> " PTRFMT \
@@ -2275,6 +2359,160 @@ gdk_export str GDKstrdup(const char *s);
 				__func__, __FILE__, __LINE__);		\
 		_res;							\
 	 })
+#define malloc(s)							\
+	({								\
+		size_t _size = (s);					\
+		void *_res = malloc(_size);				\
+		ALLOCDEBUG						\
+			fprintf(stderr,					\
+				"#malloc(" SZFMT ") -> " PTRFMT		\
+				" %s[%s:%d]\n",				\
+				_size, PTRFMTCAST _res,			\
+				__func__, __FILE__, __LINE__);		\
+		_res;							\
+	})
+#define calloc(n, s)							\
+	({								\
+		size_t _nmemb = (n);					\
+		size_t _size = (s);					\
+		void *_res = calloc(_nmemb,_size);			\
+		ALLOCDEBUG						\
+			fprintf(stderr,					\
+				"#calloc(" SZFMT "," SZFMT ") -> " PTRFMT \
+				" %s[%s:%d]\n",				\
+				_nmemb, _size, PTRFMTCAST _res,		\
+				__func__, __FILE__, __LINE__);		\
+		_res;							\
+	})
+#define realloc(p, s)							\
+	({								\
+		void *_ptr = (p);					\
+		size_t _size = (s);					\
+		void *_res = realloc(_ptr, _size);			\
+		ALLOCDEBUG						\
+			fprintf(stderr,					\
+				"#realloc(" PTRFMT "," SZFMT ") -> " PTRFMT \
+				" %s[%s:%d]\n",				\
+				PTRFMTCAST _ptr, _size, PTRFMTCAST _res, \
+				__func__, __FILE__, __LINE__);		\
+		_res;							\
+	 })
+#define free(p)								\
+	({								\
+		void *_ptr = (p);					\
+		ALLOCDEBUG						\
+			fprintf(stderr,					\
+				"#free(" PTRFMT ")"			\
+				" %s[%s:%d]\n",				\
+				PTRFMTCAST _ptr,			\
+				__func__, __FILE__, __LINE__);		\
+		free(_ptr);						\
+	})
+#else
+static inline void *
+GDKmalloc_debug(size_t size, const char *filename, int lineno)
+{
+	void *res = GDKmalloc(size);
+	ALLOCDEBUG fprintf(stderr,
+			   "#GDKmalloc(" SZFMT ") -> " PTRFMT " [%s:%d]\n",
+			   size, PTRFMTCAST res, filename, lineno);
+	return res;
+}
+#define GDKmalloc(s)	GDKmalloc_debug((s), __FILE__, __LINE__)
+static inline void *
+GDKzalloc_debug(size_t size, const char *filename, int lineno)
+{
+	void *res = GDKzalloc(size);
+	ALLOCDEBUG fprintf(stderr,
+			   "#GDKzalloc(" SZFMT ") -> " PTRFMT " [%s:%d]\n",
+			   size, PTRFMTCAST res, filename, lineno);
+	return res;
+}
+#define GDKzalloc(s)	GDKzalloc_debug((s), __FILE__, __LINE__)
+static inline void *
+GDKrealloc_debug(void *ptr, size_t size, const char *filename, int lineno)
+{
+	void *res = GDKrealloc(ptr, size);
+	ALLOCDEBUG fprintf(stderr,
+			   "#GDKrealloc(" PTRFMT "," SZFMT ") -> "
+			   PTRFMT " [%s:%d]\n",
+			   PTRFMTCAST ptr, size, PTRFMTCAST res,
+			   filename, lineno);
+	return res;
+}
+#define GDKrealloc(p, s)	GDKrealloc_debug((p), (s), __FILE__, __LINE__)
+static inline void
+GDKfree_debug(void *ptr, const char *filename, int lineno)
+{
+	ALLOCDEBUG fprintf(stderr, "#GDKfree(" PTRFMT ") [%s:%d]\n",
+			   PTRFMTCAST ptr, filename, lineno);
+	GDKfree(ptr);
+}
+#define GDKfree(p)	GDKfree_debug((p), __FILE__, __LINE__)
+static inline char *
+GDKstrdup_debug(const char *str, const char *filename, int lineno)
+{
+	void *res = GDKstrdup(str);
+	ALLOCDEBUG fprintf(stderr, "#GDKstrdup(len=" SZFMT ") -> "
+			   PTRFMT " [%s:%d]\n",
+			   strlen(str), PTRFMTCAST res, filename, lineno);
+	return res;
+}
+#define GDKstrdup(s)	GDKstrdup_debug((s), __FILE__, __LINE__)
+static inline void *
+GDKmmap_debug(const char *path, int mode, size_t len, const char *filename, int lineno)
+{
+	void *res = GDKmmap(path, mode, len);
+	ALLOCDEBUG fprintf(stderr,
+			   "#GDKmmap(%s,0x%x," SZFMT ") -> "
+			   PTRFMT " [%s:%d]\n",
+			   path ? path : "NULL", mode, len,
+			   PTRFMTCAST res, filename, lineno);
+	return res;
+}
+#define GDKmmap(p, m, l)	GDKmmap_debug((p), (m), (l), __FILE__, __LINE__)
+static inline void *
+malloc_debug(size_t size, const char *filename, int lineno)
+{
+	void *res = malloc(size);
+	ALLOCDEBUG fprintf(stderr,
+			   "#malloc(" SZFMT ") -> " PTRFMT " [%s:%d]\n",
+			   size, PTRFMTCAST res, filename, lineno);
+	return res;
+}
+#define malloc(s)	malloc_debug((s), __FILE__, __LINE__)
+static inline void *
+calloc_debug(size_t nmemb, size_t size, const char *filename, int lineno)
+{
+	void *res = calloc(nmemb, size);
+	ALLOCDEBUG fprintf(stderr,
+			   "#calloc(" SZFMT "," SZFMT ") -> "
+			   PTRFMT " [%s:%d]\n",
+			   nmemb, size, PTRFMTCAST res, filename, lineno);
+	return res;
+}
+#define calloc(n, s)	calloc_debug((n), (s), __FILE__, __LINE__)
+static inline void *
+realloc_debug(void *ptr, size_t size, const char *filename, int lineno)
+{
+	void *res = realloc(ptr, size);
+	ALLOCDEBUG fprintf(stderr,
+			   "#realloc(" PTRFMT "," SZFMT ") -> "
+			   PTRFMT " [%s:%d]\n",
+			   PTRFMTCAST ptr, size, PTRFMTCAST res,
+			   filename, lineno);
+	return res;
+}
+#define realloc(p, s)	realloc_debug((p), (s), __FILE__, __LINE__)
+static inline void
+free_debug(void *ptr, const char *filename, int lineno)
+{
+	ALLOCDEBUG fprintf(stderr, "#free(" PTRFMT ") [%s:%d]\n",
+			   PTRFMTCAST ptr, filename, lineno);
+	free(ptr);
+}
+#define free(p)	free_debug((p), __FILE__, __LINE__)
+#endif
 #endif
 
 /*
@@ -2374,84 +2612,6 @@ VALptr(const ValRecord *v)
 	default:       return (const void *) v->val.pval;
 	}
 }
-
-/*
-   See `man mserver5` or tools/mserver/mserver5.1
-   for a documentation of the following debug options.
-*/
-
-#define THRDMASK	(1)
-#define CHECKMASK	(1<<1)
-#define CHECKDEBUG	if (GDKdebug & CHECKMASK)
-#define MEMMASK		(1<<2)
-#define MEMDEBUG	if (GDKdebug & MEMMASK)
-#define PROPMASK	(1<<3)
-#define PROPDEBUG	if (GDKdebug & PROPMASK)
-#define IOMASK		(1<<4)
-#define IODEBUG		if (GDKdebug & IOMASK)
-#define BATMASK		(1<<5)
-#define BATDEBUG	if (GDKdebug & BATMASK)
-/* PARSEMASK not used anymore
-#define PARSEMASK	(1<<6)
-#define PARSEDEBUG	if (GDKdebug & PARSEMASK)
-*/
-#define PARMASK		(1<<7)
-#define PARDEBUG	if (GDKdebug & PARMASK)
-#define HEADLESSMASK	(1<<8)
-#define HEADLESSDEBUG	if ( GDKdebug & HEADLESSMASK)
-#define TMMASK		(1<<9)
-#define TMDEBUG		if (GDKdebug & TMMASK)
-#define TEMMASK		(1<<10)
-#define TEMDEBUG	if (GDKdebug & TEMMASK)
-/* DLMASK not used anymore
-#define DLMASK		(1<<11)
-#define DLDEBUG		if (GDKdebug & DLMASK)
-*/
-#define PERFMASK	(1<<12)
-#define PERFDEBUG	if (GDKdebug & PERFMASK)
-#define DELTAMASK	(1<<13)
-#define DELTADEBUG	if (GDKdebug & DELTAMASK)
-#define LOADMASK	(1<<14)
-#define LOADDEBUG	if (GDKdebug & LOADMASK)
-/* YACCMASK not used anymore
-#define YACCMASK	(1<<15)
-#define YACCDEBUG	if (GDKdebug & YACCMASK)
-*/
-/*
-#define ?tcpip?		if (GDKdebug&(1<<16))
-#define ?monet_multiplex?	if (GDKdebug&(1<<17))
-#define ?ddbench?	if (GDKdebug&(1<<18))
-#define ?ddbench?	if (GDKdebug&(1<<19))
-#define ?ddbench?	if (GDKdebug&(1<<20))
-*/
-#define ALGOMASK	(1<<21)
-#define ALGODEBUG	if (GDKdebug & ALGOMASK)
-#define ESTIMASK	(1<<22)
-#define ESTIDEBUG	if (GDKdebug & ESTIMASK)
-/* XPROPMASK not used anymore
-#define XPROPMASK	(1<<23)
-#define XPROPDEBUG	if (GDKdebug & XPROPMASK)
-*/
-
-#define JOINPROPMASK	(1<<24)
-#define JOINPROPCHK	if (!(GDKdebug & JOINPROPMASK))
-#define DEADBEEFMASK	(1<<25)
-#define DEADBEEFCHK	if (!(GDKdebug & DEADBEEFMASK))
-
-#define ALLOCMASK	(1<<26)
-#define ALLOCDEBUG	if (GDKdebug & ALLOCMASK)
-
-/* M5, only; cf.,
- * monetdb5/mal/mal.h
- */
-#define OPTMASK		(1<<27)
-#define OPTDEBUG	if (GDKdebug & OPTMASK)
-
-#define HEAPMASK	(1<<28)
-#define HEAPDEBUG	if (GDKdebug & HEAPMASK)
-
-#define FORCEMITOMASK	(1<<29)
-#define FORCEMITODEBUG	if (GDKdebug & FORCEMITOMASK)
 
 /*
  * The kernel maintains a central table of all active threads.  They

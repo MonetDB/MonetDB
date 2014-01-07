@@ -168,7 +168,9 @@ extern MT_Lock MT_system_lock;
 
 #define SORTloop_bit(b,p,q,tl,th) SORTloop_bte(b,p,q,tl,th)
 
-#ifdef GDKMALLOC_DEBUG
+#ifndef NDEBUG
+/* see comment in gdk.h */
+#ifdef __GNUC__
 #define GDKmallocmax(s,ps,e)						\
 	({								\
 		size_t _size = (s);					\
@@ -209,4 +211,41 @@ extern MT_Lock MT_system_lock;
 				__func__, __FILE__, __LINE__);		\
 		_res;							\
 	 })
+#else
+static inline void *
+GDKmallocmax_debug(size_t size, size_t *psize, int emergency,
+		   const char *filename, int lineno)
+{
+	void *res = GDKmallocmax(size, psize, emergency);
+	ALLOCDEBUG fprintf(stderr,
+			   "#GDKmallocmax(" SZFMT ",(" SZFMT ")) -> "
+			   PTRFMT " [%s:%d]\n",
+			   size, *psize, PTRFMTCAST res, filename, lineno);
+	return res;
+}
+#define GDKmallocmax(s, ps, e)	GDKmallocmax_debug((s), (ps), (e), __FILE__, __LINE__)
+static inline int
+GDKmunmap_debug(void *ptr, size_t len, const char *filename, int lineno)
+{
+	int res = GDKmunmap(ptr, len);
+	ALLOCDEBUG fprintf(stderr,
+			   "#GDKmunmap(" PTRFMT "," SZFMT ") -> %d [%s:%d]\n",
+			   PTRFMTCAST ptr, len, res, filename, lineno);
+	return res;
+}
+#define GDKmunmap(p, l)		GDKmunmap_debug((p), (l), __FILE__, __LINE__)
+static inline void *
+GDKreallocmax_debug(void *ptr, size_t size, size_t *psize, int emergency,
+		    const char *filename, int lineno)
+{
+	void *res = GDKreallocmax(ptr, size, psize, emergency);
+	ALLOCDEBUG fprintf(stderr,
+			   "#GDKreallocmax(" PTRFMT "," SZFMT
+			   ",(" SZFMT ")) -> " PTRFMT " [%s:%d]\n",
+			   PTRFMTCAST ptr, size, *psize, PTRFMTCAST res,
+			   filename, lineno);
+	return res;
+}
+#define GDKreallocmax(p, s, ps, e)	GDKreallocmax_debug((p), (s), (ps), (e), __FILE__, __LINE__)
+#endif
 #endif
