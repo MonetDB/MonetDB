@@ -41,7 +41,7 @@ int
 JSONfromString(str src, int *len, json *j)
 {
 	ssize_t slen = (ssize_t) strlen(src);
-	if ((ssize_t) *len < slen)
+	if ((ssize_t) *len <= slen)
 		*j = GDKrealloc(*j, slen + 1);
 	*len = (int) slen;
 	if (GDKstrFromStr((unsigned char *) *j, (const unsigned char *) src, slen) < 0) {
@@ -56,34 +56,38 @@ JSONfromString(str src, int *len, json *j)
 int
 JSONtoString(str *s, int *len, json src)
 {
-	size_t ll;
-	int l, cnt = 0;
+	size_t cnt;
 	char *c, *dst;
 
 	if (GDK_STRNIL(src)) {
 		*s = GDKstrdup("null");
 		return 0;
 	}
+	/* count how much space we need for the output string */
+	cnt = 3;					/* two time " plus \0 */
 	for (c = src; *c; c++)
 		switch (*c) {
 		case '"':
 		case '\\':
 		case '\n':
 			cnt++;
+			/* fall through */
+		default:
+			cnt++;
+			break;
 		}
-	ll = strlen(src);
-	assert(ll <= (size_t) INT_MAX);
-	l = (int) ll + cnt + 3;
+	assert(cnt <= (size_t) INT_MAX);
 
-	if (l >= *len) {
+	if (cnt > (size_t) *len) {
 		GDKfree(*s);
-		*s = (str) GDKmalloc(l);
+		*s = (str) GDKmalloc(cnt);
 		if (*s == NULL)
 			return 0;
+		*len = (int) cnt;
 	}
 	dst = *s;
 	*dst++ = '"';
-	for (c = src; *c; c++)
+	for (c = src; *c; c++) {
 		switch (*c) {
 		case '"':
 		case '\\':
@@ -97,10 +101,11 @@ JSONtoString(str *s, int *len, json src)
 			*dst++ = 'n';
 			break;
 		}
+	}
 	*dst++ = '"';
-	*dst = 0;
-	*len = l - 1;
-	return *len;
+	*dst++ = 0;
+	assert((size_t) (dst - *s) == cnt);
+	return (int) (cnt - 1);		/* length without \0 */
 }
 
 str
@@ -508,7 +513,7 @@ JSONfilterObjectInternal(json *ret, json *js, str *pat, int flag)
 			goto wrapup;
 		}
 		namebegin = j + 1;
-		msg = JSONstringParser(j + 1, &j);
+		msg = JSONstringParser(namebegin, &j);
 		if (msg)
 			goto wrapup;
 		nameend = j - 1;
@@ -526,15 +531,16 @@ JSONfilterObjectInternal(json *ret, json *js, str *pat, int flag)
 		valueend = j;
 
 		// test for candidate member
-		if (strncmp(*pat, namebegin, (l = nameend - namebegin)) == 0) {
-			if (l + 2 > lim)
+		if (strncmp(*pat, namebegin, nameend - namebegin) == 0) {
+			l = valueend - valuebegin;
+			while (len + l + 2 > lim)
 				result = GDKrealloc(result, lim += BUFSIZ);
-			if (strcmp("null", result) == 0) {
-				strncpy(result + len, "nil", 3);
+			if (l == 4 && strncmp("null", valuebegin, 4) == 0) {
+				strcpy(result + len, "nil");
 				len += 3;
 			} else {
-				strncpy(result + len, valuebegin, valueend - valuebegin);
-				len += valueend - valuebegin;
+				strncpy(result + len, valuebegin, l);
+				len += l;
 			}
 			result[len++] = ',';
 			result[len] = 0;
@@ -555,7 +561,7 @@ JSONfilterObjectInternal(json *ret, json *js, str *pat, int flag)
 		if (*j != ',')
 			msg = createException(MAL, "json.filter", "',' expected");
 	}
-      found:
+  found:
 	if (result[1] == 0) {
 		result[1] = ']';
 		result[2] = 0;
@@ -612,14 +618,14 @@ JSONfilterArray(json *ret, json *js, int *index)
 		// test for candidate member
 		if (idx == 0) {
 			l = valueend - valuebegin;
-			if (l + 2 > lim - len)
+			while (len + l + 2 > lim)
 				result = GDKrealloc(result, lim += BUFSIZ);
-			if (strcmp("null", result) == 0) {
-				strncpy(result + len, "nil", 3);
+			if (l == 4 && strncmp("null", valuebegin, 4) == 0) {
+				strcpy(result + len, "nil");
 				len += 3;
 			} else {
-				strncpy(result + len, valuebegin, valueend - valuebegin);
-				len += valueend - valuebegin;
+				strncpy(result + len, valuebegin, l);
+				len += l;
 			}
 			result[len++] = ']';
 			result[len] = 0;
@@ -714,9 +720,12 @@ JSONunnest(int *key, int *val, json *js)
 				goto wrapup;
 			nameend = j - 1;
 			l = nameend - namebegin;
-			if (l + 2 > lim)
-				result = GDKrealloc(result, lim += BUFSIZ);
-			strncpy(result, namebegin, nameend - namebegin);
+			if (l + 2 > lim) {
+				GDKfree(result);
+				lim = l + 2;
+				result = GDKmalloc(lim);
+			}
+			strncpy(result, namebegin, l);
 			result[l] = 0;
 			BUNappend(bk, result, FALSE);
 
@@ -734,8 +743,11 @@ JSONunnest(int *key, int *val, json *js)
 			goto wrapup;
 		valueend = j;
 		l = valueend - valuebegin;
-		if (l + 2 > lim)
-			result = GDKrealloc(result, lim += BUFSIZ);
+		if (l + 2 > lim) {
+			GDKfree(result);
+			lim = l + 2;
+			result = GDKmalloc(lim);
+		}
 		strncpy(result, valuebegin, l);
 		result[l] = 0;
 		BUNappend(bv, result, FALSE);
@@ -806,8 +818,11 @@ JSONunnestOne(int *val, json *js)
 			goto wrapup;
 		valueend = j;
 		l = valueend - valuebegin;
-		if (l + 2 > lim)
-			result = GDKrealloc(result, lim += BUFSIZ);
+		if (l + 2 > lim) {
+			GDKfree(result);
+			lim = l + 2;
+			result = GDKmalloc(lim);
+		}
 		strncpy(result, valuebegin, l);
 		result[l] = 0;
 		BUNappend(bv, result, FALSE);
@@ -909,8 +924,11 @@ JSONunnestGrouped(int *grp, int *key, int *val, json *js)
 			goto wrapup;
 		nameend = j - 1;
 		l = nameend - namebegin;
-		if (l + 2 > lim)
-			result = GDKrealloc(result, lim += BUFSIZ);
+		if (l + 2 > lim) {
+			GDKfree(result);
+			lim = l + 2;
+			result = GDKmalloc(lim);
+		}
 		strncpy(result, namebegin, nameend - namebegin);
 		result[l] = 0;
 		BUNappend(bk, result, FALSE);
@@ -928,8 +946,11 @@ JSONunnestGrouped(int *grp, int *key, int *val, json *js)
 			goto wrapup;
 		valueend = j;
 		l = valueend - valuebegin;
-		if (l + 2 > lim)
-			result = GDKrealloc(result, lim += BUFSIZ);
+		if (l + 2 > lim) {
+			GDKfree(result);
+			lim = l + 2;
+			result = GDKmalloc(lim);
+		}
 		strncpy(result, valuebegin, l);
 		result[l] = 0;
 		BUNappend(bv, result, FALSE);
@@ -1002,9 +1023,12 @@ JSONkeys(int *ret, json *js)
 			goto wrapup;
 		nameend = j - 1;
 		l = nameend - namebegin;
-		if (l + 2 > lim)
-			result = GDKrealloc(result, lim += BUFSIZ);
-		strncpy(result, namebegin, nameend - namebegin);
+		if (l + 2 > lim) {
+			GDKfree(result);
+			lim = l + 2;
+			result = GDKmalloc(lim);
+		}
+		strncpy(result, namebegin, l);
 		result[l] = 0;
 		BUNappend(bn, result, FALSE);
 
@@ -1068,7 +1092,7 @@ JSONkeyArray(json *ret, json *js)
 		if (msg)
 			goto wrapup;
 		nameend = j - 1;
-		if (l + (size_t)(nameend-namebegin) + 5 > lim){
+		while (l + (size_t)(nameend-namebegin) + 5 > lim){
 			result = GDKrealloc(result, lim += BUFSIZ);
 			if ( result == NULL)
 				goto wrapup;
@@ -1153,7 +1177,7 @@ JSONvalueArray(json *ret, json *js)
 		if (msg)
 			goto wrapup;
 		nameend = j - 1;
-		if (l + (size_t)(nameend-namebegin) + 5 > lim){
+		while (l + (size_t)(nameend-namebegin) + 5 > lim){
 			result = GDKrealloc(result, lim += BUFSIZ);
 			if ( result == NULL)
 				goto wrapup;
@@ -1207,8 +1231,11 @@ JSONarrayvalues(int *ret, BAT *bn, char *j)
 
 		// test for candidate member
 		l = valueend - valuebegin;
-		if (l + 2 > lim)
-			result = GDKrealloc(result, lim += BUFSIZ);
+		if (l + 2 > lim) {
+			GDKfree(result);
+			lim = l + 2;
+			result = GDKmalloc(lim);
+		}
 		strncpy(result, valuebegin, l);
 		result[l] = 0;
 		if (strcmp("null", result) == 0)
@@ -1282,9 +1309,12 @@ JSONvalues(int *ret, json *js)
 			goto wrapup;
 		valueend = j;
 		l = valueend - valuebegin;
-		if (l + 2 > lim)
-			result = GDKrealloc(result, lim += BUFSIZ);
-		strncpy(result, valuebegin, valueend - valuebegin);
+		if (l + 2 > lim) {
+			GDKfree(result);
+			lim = l + 2;
+			result = GDKmalloc(lim);
+		}
+		strncpy(result, valuebegin, l);
 		result[l] = 0;
 		if (strcmp("null", result) == 0)
 			BUNappend(bn, str_nil, FALSE);
@@ -1349,7 +1379,7 @@ JSONrenderRowObject(BAT **bl, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, BUN idx
 		if (strncmp(val, "nil", 3) == 0)
 			strcpy(val, "null");
 		l = strlen(name) + strlen(val);
-		if (l > lim - len)
+		while (l > lim - len)
 			row = (char *) GDKrealloc(row, lim += BUFSIZ);
 		snprintf(row + len, lim - len, "\"%s\":%s,", name, val);
 		len += l + 4;
@@ -1391,9 +1421,9 @@ JSONrenderobject(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	for (j = 0; j < cnt; j++) {
 		row = JSONrenderRowObject(bl, mb, stk, pci, j);
 		l = strlen(row);
-		if (l + 2 > lim - len)
+		while (l + 2 > lim - len)
 			row = (char *) GDKrealloc(row, lim = cnt * l <= lim ? cnt * l : lim + BUFSIZ);
-		strncpy(result + len, row, l + 1);
+		strcpy(result + len, row);
 		GDKfree(row);
 		len += l;
 		result[len++] = ',';
@@ -1427,7 +1457,7 @@ JSONrenderRowArray(BAT **bl, MalBlkPtr mb, InstrPtr pci, BUN idx)
 		if (strncmp(val, "nil", 3) == 0)
 			strcpy(val, "null");
 		l = strlen(val);
-		if (l > lim - len)
+		while (l > lim - len)
 			row = (char *) GDKrealloc(row, lim += BUFSIZ);
 		snprintf(row + len, lim - len, "%s,", val);
 		len += l + 1;
@@ -1465,9 +1495,9 @@ JSONrenderarray(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	for (j = 0; j < cnt; j++) {
 		row = JSONrenderRowArray(bl, mb, pci, j);
 		l = strlen(row);
-		if (l + 2 > lim - len)
+		while (l + 2 > lim - len)
 			row = (char *) GDKrealloc(row, lim = cnt * l <= lim ? cnt * l : lim + BUFSIZ);
-		strncpy(result + len, row, l + 1);
+		strcpy(result + len, row);
 		GDKfree(row);
 		len += l;
 		result[len++] = ',';
@@ -1548,7 +1578,7 @@ JSONnestKeyValue(str *ret, int *id, int *key, int *values)
 		if (bk) {
 			nme = (str) BUNtail(bki, BUNfirst(bk) + i);
 			l = strlen(nme);
-			if (l + 3 > lim - len)
+			while (l + 3 > lim - len)
 				row = (char *) GDKrealloc(row, lim = (lim / (i + 1)) * cnt + BUFSIZ + l + 3);
 			snprintf(row + len, lim - len, "\"%s\":", nme);
 			len += l + 3;
@@ -1560,7 +1590,7 @@ JSONnestKeyValue(str *ret, int *id, int *key, int *values)
 		if (strncmp(val, "nil", 3) == 0)
 			strcpy(val, "null");
 		l = strlen(val);
-		if (l > lim - len)
+		while (l > lim - len)
 			row = (char *) GDKrealloc(row, lim = (lim / (i + 1)) * cnt + BUFSIZ + l + 3);
 		if (tpe == TYPE_json && *val == '"') {
 			l -= 5;
@@ -1822,12 +1852,12 @@ JSONpathInternal(json *ret, json *js, str *expr,int flag)
 				if (copying == 1) {
 					valueend = j;
 					l = valueend - valuebegin;
-					if (len + l + 3 > lim)
+					while (len + l + 3 > lim)
 						result = GDKrealloc(result, lim += BUFSIZ);
 					if ( !flag ){
-						strncpy(result + len, valuebegin, valueend - valuebegin);
+						strncpy(result + len, valuebegin, l);
 						len += l;
-						strncpy(result + len, ",", 2);
+						strcpy(result + len, ",");
 						len++;
 					} else {
 						JSONtextInternal(result + len, valuebegin, valueend);
