@@ -1093,7 +1093,6 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		if (lscan == 0) {
 			/* deduce relative positions of r matches for
 			 * this and previous value in v */
-			assert(prev != v);
 			if (prev) {
 				if (rordering * cmp(prev, v) < 0) {
 					/* previous value in l was
