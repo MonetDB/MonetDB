@@ -775,8 +775,8 @@ logger_readlog(logger *lg, char *filename)
 		if (t1 - t0 > 10) {
 			t0 = t1;
 			/* not more than once every 10 seconds */
-			if (mnstr_fgetpos(lg->log, &fpos) == 0){
-				printf("# still reading write-ahead log \"%s\" (%d%% done)\n", filename, (int) (((off_t) fpos * 100 + 50) / sb.st_size));
+			if (mnstr_fgetpos(lg->log, &fpos) == 0) {
+				printf("# still reading write-ahead log \"%s\" (%d%% done)\n", filename, (int) ((fpos * 100 + 50) / sb.st_size));
 				fflush(stdout);
 			}
 		}

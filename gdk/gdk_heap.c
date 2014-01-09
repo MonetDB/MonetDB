@@ -628,7 +628,7 @@ HEAPload_intern(Heap *h, const char *nme, const char *ext, const char *suffix, i
 			truncsize = GDK_mmap_pagesize; /* minimum of one page */
 		if (truncsize < h->size &&
 		    (fd = GDKfdlocate(nme, "mrb+", ext)) >= 0) {
-			ret = ftruncate(fd, (off_t) truncsize);
+			ret = ftruncate(fd, truncsize);
 			HEAPDEBUG fprintf(stderr,
 					  "#ftruncate(file=%s.%s, size=" SZFMT
 					  ") = %d\n", nme, ext, truncsize, ret);
