@@ -337,7 +337,7 @@ BATattach(int tt, const char *heapfile)
 	ERRORcheck(st.st_nlink != 1, "BATattach: heapfile must have only one link\n");
 	atomsize = ATOMsize(tt);
 	ERRORcheck(st.st_size % atomsize != 0, "BATattach: heapfile size not integral number of atoms\n");
-	ERRORcheck(st.st_size / atomsize > (off_t) BUN_MAX, "BATattach: heapfile too large\n");
+	ERRORcheck((size_t) (st.st_size / atomsize) > (size_t) BUN_MAX, "BATattach: heapfile too large\n");
 	cap = (BUN) (st.st_size / atomsize);
 	bs = BATcreatedesc(TYPE_void, tt, 1);
 	if (bs == NULL)
