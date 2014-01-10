@@ -931,6 +931,10 @@ rel_create_view(mvc *sql, sql_schema *ss, dlist *qname, dlist *column_spec, symb
 		t = mvc_bind_table(sql, s, name);
 		if (!persistent && column_spec) 
 			sq = view_rename_columns( sql, name, sq, column_spec);
+		if (sq->op == op_project && sq->l && sq->exps && sq->card == CARD_AGGR) {
+			exps_setcard(sq->exps, CARD_MULTI);
+			sq->card = CARD_MULTI;
+		}
 		return sq;
 	}
 	return NULL;

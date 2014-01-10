@@ -121,6 +121,7 @@ extern sql_exp *exps_bind_alias( list *exps, char *rname, char *cname);
 
 extern int exps_card( list *l );
 extern void exps_fix_card( list *exps, int card);
+extern void exps_setcard( list *exps, int card);
 extern int exps_intern(list *exps);
 
 extern char *compare_func( comp_type t );
