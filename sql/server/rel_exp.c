@@ -1300,6 +1300,19 @@ exps_fix_card( list *exps, int card)
 	}
 }
 
+void
+exps_setcard( list *exps, int card)
+{
+	node *n;
+
+	for (n = exps->h; n; n = n->next) {
+		sql_exp *e = n->data;
+
+		if (e->card != CARD_ATOM)
+			e->card = card;
+	}
+}
+
 int
 exps_intern(list *exps)
 {
