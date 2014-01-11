@@ -36701,10 +36701,6 @@ pattern calc.isnil(v:date):bit
 address CMDvarISNIL;
 comment Nil test for date value
 
-pattern calc.isnil(v:json):bit 
-address CMDvarISNIL;
-comment Nil test for json value
-
 command calc.isnil(v:sqlblob):bit 
 address BLOB_isnil;
 comment Nil test for blob value
@@ -36884,14 +36880,6 @@ comment Unary check for zero of V
 pattern calc.iszero(v:bte):bit 
 address CMDvarISZERO;
 comment Unary check for zero of V
-
-command calc.json(j:json):json 
-address JSONstr2json;
-comment Convert JSON to JSON. Dealing with escape characters
-
-command calc.json(j:str):json 
-address JSONstr2json;
-comment Convert string to its JSON. Dealing with escape characters
 
 command calc.lng(s1:int,v:lng,d2:int,s2:int):lng 
 address lng_dec2dec_lng;
@@ -39680,95 +39668,19 @@ command json.exportResult(o:streams,kind:bat[:oid,:bte],string:bat[:oid,:str],in
 address JSONexportResult;
 comment Serialise the given JSON pointer into JSON format, respecting the MAPI protocol
 
-command json.filter(name:json,i:int):json 
-address JSONfilterArray;
-comment Extract a single element from an array
-
-command json.filterall(name:json,s:str):json 
-address JSONfilterObjectAll;
-comment Filter the members of an object by name
-
-command json.filter(name:json,s:str):json 
-address JSONfilterObject;
-comment Filter the members of an object by name
-
-command json.#fromstr():json 
-address JSONfromString;
-comment Validate a string to be JSON compliant. A NOOP if valid json, NULL otherwise.
-
-command json.isvalidarray(val:json):bit 
-address JSONisarray;
-comment Validate the string as a valid JSON array
-
-command json.isvalidobject(val:json):bit 
-address JSONisobject;
-comment Validate the string as a valid JSON object
-
-command json.isvalid(val:str):bit 
-address JSONisvalid;
-comment Validate the string as a valid JSON document
-
-command json.keys(val:json):bat[:oid,:str] 
-address JSONkeys;
-comment Expands the outermost JSON object names.
-
-command json.keyArray(val:json):str 
-address JSONkeyArray;
-comment Expands the outermost JSON object keys into a JSON array.
-
 command json.load(nme:str) (kind:bat[:oid,:bte],string:bat[:oid,:str],integer:bat[:oid,:lng],double:bat[:oid,:dbl],array:bat[:oid,:oid],object:bat[:oid,:oid],name:bat[:oid,:str]) 
 address JSONload;
 comment Load the JSON object name from the database
 
-command json.length(val:json):int 
-address JSONlength;
-comment Returns the number of elements in the outermost JSON object.
-
 command json.nextid(kind:bat[:oid,:bte]):oid 
 address JSONnextid;
 comment Returns the next free id for the kind BAT
-
-pattern json.nest(k:bat[:oid,:dbl]):json 
-address JSONnest;
-comment Combine the value list into a single json array object.
-
-pattern json.nest(k:bat[:oid,:flt]):json 
-address JSONnest;
-pattern json.nest(k:bat[:oid,:lng]):json 
-address JSONnest;
-pattern json.nest(k:bat[:oid,:int]):json 
-address JSONnest;
-pattern json.nest(k:bat[:oid,:sht]):json 
-address JSONnest;
-pattern json.nest(k:bat[:oid,:str]):json 
-address JSONnest;
-pattern json.nest(k:bat[:oid,:str],v:bat[:oid,:any]):json 
-address JSONnest;
-comment Combine the key-value pairs into a single json object list.
-
-pattern json.nest(o:bat[:oid,:oid],k:bat[:oid,:str],v:bat[:oid,:any]):json 
-address JSONnest;
-comment Nest the key-value pairs with object identity into a list of JSON objects 
-
-command json.new(j:str):json 
-address JSONstr2json;
-comment Convert string to its JSON. Dealing with escape characters
 
 function json.print(o:streams,kind:bat[:oid,:bte],string:bat[:oid,:str],integer:bat[:oid,:lng],double:bat[:oid,:dbl],array:bat[:oid,:oid],object:bat[:oid,:oid],name:bat[:oid,:str]):void;
 command json.print(o:streams,kind:bat[:oid,:bte],string:bat[:oid,:str],integer:bat[:oid,:lng],double:bat[:oid,:dbl],array:bat[:oid,:oid],object:bat[:oid,:oid],name:bat[:oid,:str],start:oid,pretty:bit):void 
 address JSONprint;
 comment Serialise the given JSON pointer into JSON format
 
-command json.path(js:json,e:str):json 
-address JSONpath;
-comment Simple JSON path accessor
-
-command json.prelude():void 
-address JSONprelude;
-pattern json.renderarray(val:any...):json 
-address JSONrenderarray;
-pattern json.renderobject(val:any...):json 
-address JSONrenderobject;
 command json.store(nme:str,kind:bat[:oid,:bte],string:bat[:oid,:str],integer:bat[:oid,:lng],double:bat[:oid,:dbl],array:bat[:oid,:oid],object:bat[:oid,:oid],name:bat[:oid,:str]):void 
 address JSONstore;
 comment Store the JSON object in the database as name
@@ -39781,18 +39693,6 @@ command json.shred(json:str) (kind:bat[:oid,:bte],string:bat[:oid,:str],integer:
 address JSONshred;
 comment Parse the given JSON object into internal shredded representation
 
-command json.str(j:json):str 
-address JSONjson2str;
-comment Convert JSON to its string equivalent. Dealing with escape characters
-
-command json.text(js:json,e:str):str 
-address JSONtext;
-comment Simple JSON path accessor, returning the concatenated string
-
-command json.#tostr():str 
-address JSONtoString;
-comment Convert JSON to its string equivalent. Dealing with escape characters
-
 pattern json.unwrap(kind:bat[:oid,:bte],string:bat[:oid,:str],integer:bat[:oid,:lng],double:bat[:oid,:dbl],array:bat[:oid,:oid],object:bat[:oid,:oid],name:bat[:oid,:str],arrid:oid,tpe:any_1):bat[:oid,:any_1] 
 address JSONunwrap;
 comment Return the JSON array with oid arrid elements as BAT with tail type tpe performing the necessary casts
@@ -39800,26 +39700,6 @@ comment Return the JSON array with oid arrid elements as BAT with tail type tpe 
 pattern json.unwraptype(kind:bat[:oid,:bte],string:bat[:oid,:str],integer:bat[:oid,:lng],double:bat[:oid,:dbl],array:bat[:oid,:oid],object:bat[:oid,:oid],name:bat[:oid,:str],arrid:oid):str 
 address JSONunwrap;
 comment Retrieve the type necessary to unwrap the given JSON array to
-
-command json.unnest(val:json):bat[:oid,:json] 
-address JSONunnestOne;
-comment Expands a JSON list to its elements.
-
-command json.unnest(val:json) (k:bat[:oid,:str],v:bat[:oid,:json]) 
-address JSONunnest;
-comment Expands the outermost JSON object into key-value pairs.
-
-command json.unnest(val:json) (o:bat[:oid,:oid],k:bat[:oid,:str],v:bat[:oid,:json]) 
-address JSONunnestGrouped;
-comment Expands the outermost JSON object into key-value pairs with object identity.
-
-command json.values(val:json):bat[:oid,:json] 
-address JSONvalues;
-comment Expands the outermost JSON values.
-
-command json.valueArray(val:json):str 
-address JSONvalueArray;
-comment Expands the outermost JSON object values into a JSON array.
 
 command json.wrap(elems:bat[:oid,:any]) (kind:bat[:oid,:bte],string:bat[:oid,:str],integer:bat[:oid,:lng],double:bat[:oid,:dbl],array:bat[:oid,:oid],object:bat[:oid,:oid],name:bat[:oid,:str]) 
 address JSONwrap;

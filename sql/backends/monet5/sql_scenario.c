@@ -748,17 +748,6 @@ sql_update_jan2014(Client c)
 	pos += snprintf(buf + pos, bufsize - pos, "create aggregate quantile(val TIMESTAMP, q DOUBLE) returns TIMESTAMP external name \"aggr\".\"quantile\";\n");
 	pos += snprintf(buf + pos, bufsize - pos, "create aggregate median(val DECIMAL) returns DECIMAL external name \"aggr\".\"median\";\n");
 
-	/* new file 40_json.sql */
-	snprintf(buf + pos, bufsize - pos, "createdb%c40_json", DIR_SEP);
-	if ((fullname = MSP_locate_sqlscript(buf + pos, 1)) != NULL) {
-		fp = fopen(fullname, "r");
-		GDKfree(fullname);
-	}
-	if (fp) {
-		pos += fread(buf + pos, 1, bufsize - pos, fp);
-		fclose(fp);
-	}
-
 	/* added entry in 75_storagemodel.sql */
 	pos += snprintf(buf + pos, bufsize - pos, "create view sys.storage as select * from sys.storage();\n");
 	pos += snprintf(buf + pos, bufsize - pos, "create view sys.storagemodel as select * from sys.storagemodel();\n");
@@ -775,7 +764,7 @@ sql_update_jan2014(Client c)
 	}
 
 	pos += snprintf(buf + pos, bufsize - pos,
-			"insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('json_filter', 'json_filter_all', 'json_isvalid', 'json_isvalidarray', 'json_isvalidobject', 'json_length', 'json_path', 'json_text', 'querylog_calls', 'querylog_catalog', 'queue', 'sessions') and f.type = %d and f.schema_id = s.id and s.name = 'sys');\n",
+			"insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('querylog_calls', 'querylog_catalog', 'queue', 'sessions') and f.type = %d and f.schema_id = s.id and s.name = 'sys');\n",
 			F_FUNC);
 	pos += snprintf(buf + pos, bufsize - pos,
 			"insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('analyze', 'pause', 'querylog_disable', 'querylog_empty', 'querylog_enable', 'resume', 'setsession', 'settimeout', 'shutdown', 'stop', 'sysmon_resume') and f.type = %d and f.schema_id = s.id and s.name = 'sys');\n",
@@ -1141,7 +1130,6 @@ SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output)
 	m->type = Q_PARSE;
 	be = sql;
 	sql = backend_create(m, c);
-	sql->output_format = be->output_format;
 	m->qc = NULL;
 	m->caching = 0;
 	m->user_id = m->role_id = USER_MONETDB;

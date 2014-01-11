@@ -111,7 +111,6 @@ opt_export  str intRef;
 opt_export  str ioRef;
 opt_export  str iteratorRef;
 opt_export  str joinPathRef;
-opt_export  str jsonRef;
 opt_export  str joinRef;
 opt_export  str antijoinRef;
 opt_export  str bandjoinRef;

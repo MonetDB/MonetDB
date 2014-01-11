@@ -130,14 +130,6 @@
 \dSf sys.isaurl
 \dSf sys.isempty
 \dSf sys.issimple
-\dSf sys.json_filter
-\dSf sys.json_filter_all
-\dSf sys.json_isvalid
-\dSf sys.json_isvalidarray
-\dSf sys.json_isvalidobject
-\dSf sys.json_length
-\dSf sys.json_path
-\dSf sys.json_text
 \dSf sys.length
 \dSf sys.like
 \dSf sys.linefromtext

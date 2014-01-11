@@ -1071,19 +1071,13 @@ mvc_export_row(backend *b, stream *s, res_table *t, str btag, str sep, str rsep,
 	char *buf = NULL;
 	int len = 0;
 	int i, ok = 1;
-	int csv = (b->output_format == OFMT_CSV);
-	int json = (b->output_format == OFMT_JSON);
 
 	if (!s)
 		return 0;
 
 	(void) ssep;
-	if (csv && btag[0])
+	if (btag[0])
 		ok = (mnstr_write(s, btag, strlen(btag), 1) == 1);
-	if (json) {
-		sep = ", ";
-		seplen = strlen(sep);
-	}
 	for (i = 0; i < t->nr_cols && ok; i++) {
 		res_col *c = t->cols + i;
 
@@ -1091,10 +1085,6 @@ mvc_export_row(backend *b, stream *s, res_table *t, str btag, str sep, str rsep,
 			ok = (mnstr_write(s, sep, seplen, 1) == 1);
 			if (!ok)
 				break;
-		}
-		if (json) {
-			mnstr_write(s, c->name, strlen(c->name), 1);
-			mnstr_write(s, ": ", 2, 1);
 		}
 		ok = export_value(m, s, c->type.type->eclass, c->type.type->sqlname, c->type.digits, c->type.scale, c->p, c->mtype, &buf, &len, ns);
 	}
@@ -1114,9 +1104,6 @@ mvc_export_table(backend *b, stream *s, res_table *t, BAT *order, BUN offset, BU
 	Column *fmt;
 	int i;
 	struct time_res *tres;
-	int csv = (b->output_format == OFMT_CSV);
-	int json = (b->output_format == OFMT_JSON);
-	char *bj;
 
 	if (!t)
 		return -1;
@@ -1130,7 +1117,7 @@ mvc_export_table(backend *b, stream *s, res_table *t, BAT *order, BUN offset, BU
 	tres = GDKmalloc(sizeof(struct time_res) * (as.nr_attrs));
 
 	fmt[0].c = NULL;
-	fmt[0].sep = (csv) ? btag : "";
+	fmt[0].sep = btag;
 	fmt[0].rsep = rsep;
 	fmt[0].seplen = _strlen(fmt[0].sep);
 	fmt[0].ws = 0;
@@ -1145,35 +1132,9 @@ mvc_export_table(backend *b, stream *s, res_table *t, BAT *order, BUN offset, BU
 		fmt[i].c = BATdescriptor(c->b);
 		fmt[i].ci = bat_iterator(fmt[i].c);
 		fmt[i].name = NULL;
-		if (csv) {
-			fmt[i].sep = ((i - 1) < (t->nr_cols - 1)) ? sep : rsep;
-			fmt[i].seplen = _strlen(fmt[i].sep);
-			fmt[i].rsep = rsep;
-		}
-		if (json) {
-			res_col *p = t->cols + (i - 1);
-
-			/* TODO name: 
-			 * if i == 1 -> { name :
-			 * if i > 1 -> , name :
-			 */
-			if (i == 1) {
-				bj = SA_NEW_ARRAY(m->sa, char, strlen(p->name) + 6);
-				snprintf(bj, strlen(p->name) + 6, "{ %s , ", p->name);
-				fmt[i - 1].sep = bj;
-				fmt[i - 1].seplen = _strlen(fmt[i - 1].sep);
-				fmt[i - 1].rsep = NULL;
-			} else if (i <= t->nr_cols) {
-				fmt[i - 1].sep = p->name;
-				fmt[i - 1].seplen = _strlen(fmt[i - 1].sep);
-				fmt[i - 1].rsep = NULL;
-			}
-			if (i == t->nr_cols) {
-				fmt[i].sep = " }\n";
-				fmt[i].seplen = _strlen(fmt[i].sep);
-				fmt[i].rsep = NULL;
-			}
-		}
+		fmt[i].sep = ((i - 1) < (t->nr_cols - 1)) ? sep : rsep;
+		fmt[i].seplen = _strlen(fmt[i].sep);
+		fmt[i].rsep = rsep;
 		fmt[i].type = ATOMname(fmt[i].c->ttype);
 		fmt[i].adt = fmt[i].c->ttype;
 		fmt[i].tostr = &_ASCIIadt_toStr;

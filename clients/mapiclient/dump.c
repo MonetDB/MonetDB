@@ -1105,8 +1105,7 @@ dump_table_data(Mapi mid, char *schema, char *tname, stream *toConsole,
 		string[i] = 0;
 		if (strcmp(mapi_get_type(hdl, i), "char") == 0 ||
 		    strcmp(mapi_get_type(hdl, i), "varchar") == 0 ||
-		    strcmp(mapi_get_type(hdl, i), "clob") == 0 ||
-		    strcmp(mapi_get_type(hdl, i), "json") == 0) {
+		    strcmp(mapi_get_type(hdl, i), "clob") == 0) {
 			string[i] = 1;
 		}
 	}
