@@ -582,17 +582,6 @@ sql_update_jan2014(Client c)
 	pos += snprintf(buf + pos, bufsize - pos, "create aggregate quantile(val TIMESTAMP, q DOUBLE) returns TIMESTAMP external name \"aggr\".\"quantile\";\n");
 	pos += snprintf(buf + pos, bufsize - pos, "create aggregate median(val DECIMAL) returns DECIMAL external name \"aggr\".\"median\";\n");
 
-	/* new file 40_json.sql */
-	snprintf(buf + pos, bufsize - pos, "createdb%c40_json", DIR_SEP);
-	if ((fullname = MSP_locate_sqlscript(buf + pos, 1)) != NULL) {
-		fp = fopen(fullname, "r");
-		GDKfree(fullname);
-	}
-	if (fp) {
-		pos += fread(buf + pos, 1, bufsize - pos, fp);
-		fclose(fp);
-	}
-
 	/* added entry in 75_storagemodel.sql */
 	pos += snprintf(buf + pos, bufsize - pos, "create view sys.storage as select * from sys.storage();\n");
 	pos += snprintf(buf + pos, bufsize - pos, "create view sys.storagemodel as select * from sys.storagemodel();\n");
@@ -634,15 +623,27 @@ sql_update_jan2014(Client c)
 static str
 sql_update_default(Client c)
 {
-	size_t bufsize = 2048, pos = 0;
+	size_t bufsize = 4096, pos = 0;
 	char *buf = GDKmalloc(bufsize), *err = NULL;
 	ValRecord *schvar = stack_get_var(((backend *) c->sqlcontext)->mvc, "current_schema");
 	char *schema = NULL;
+	char *fullname;
+	FILE *fp;
 
 	if (schvar)
 		schema = strdup(schvar->val.sval);
 
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
+
+	/* new file 40_json.sql */
+	snprintf(buf + pos, bufsize - pos, "createdb%c40_json", DIR_SEP);
+	if ((fullname = MSP_locate_sqlscript(buf + pos, 1)) != NULL) {
+		if ((fp = fopen(fullname, "r")) != NULL) {
+			pos += fread(buf + pos, 1, bufsize - pos, fp);
+			fclose(fp);
+		}
+		GDKfree(fullname);
+	}
 
 	/* new file 41_jsonstore.sql */
 	pos += snprintf(buf + pos, bufsize - pos, "create function sys.md5(v string) returns string external name clients.md5sum;\n");
