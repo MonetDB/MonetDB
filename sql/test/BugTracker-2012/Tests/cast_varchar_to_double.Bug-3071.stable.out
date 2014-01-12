@@ -46,16 +46,16 @@ Ready.
 # 12:41:05 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=riga" "--port=31763"
 # 12:41:05 >  
 
-#create table t (s varchar(100));
-#insert into t values ('42.42');
+#create table t3071 (s varchar(100));
+#insert into t3071 values ('42.42');
 [ 1	]
-#select avg ( cast (s as double)) from t;
+#select avg ( cast (s as double)) from t3071;
 % sys.L1 # table_name
 % L1 # name
 % double # type
 % 24 # length
 [ 42.42	]
-#drop table t;
+#drop table t3071;
 
 # 12:41:05 >  
 # 12:41:05 >  "Done."
