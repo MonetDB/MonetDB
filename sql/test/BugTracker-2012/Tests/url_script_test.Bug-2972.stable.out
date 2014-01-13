@@ -79,9 +79,9 @@ Ready.
 % sys.L # table_name
 % getdomain_u # name
 % clob # type
-% 7 # length
+% 3 # length
 [ "nl"	]
-[ "com?x=2"	]
+[ "com"	]
 [ "org"	]
 #select getExtension(u) from t2972;
 % sys.L # table_name
@@ -103,10 +103,10 @@ Ready.
 % sys.L # table_name
 % gethost_u # name
 % clob # type
-% 20 # length
+% 15 # length
 [ "www.cwi.nl"	]
-[ "www.monetdb.com?x=2"	]
-[ "www.monetdb.org:8080"	]
+[ "www.monetdb.com"	]
+[ "www.monetdb.org"	]
 #select getPort(u) from t2972;
 % sys.L # table_name
 % getport_u # name
@@ -137,7 +137,7 @@ Ready.
 % clob # type
 % 38 # length
 [ "http://www.cwi.nl/robots.txt"	]
-[ "http://www.monetdb.com?x=2/robots.txt"	]
+[ "http://www.monetdb.com/robots.txt"	]
 [ "http://www.monetdb.org:8080/robots.txt"	]
 #select isaURL(u) from t2972;
 % sys.L # table_name
