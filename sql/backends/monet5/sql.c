@@ -1634,7 +1634,7 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 		return MAL_SUCCEED;
 	}
-	if (*sname)
+	if (*sname && strcmp(*sname, str_nil) != 0)
 		throw(SQL, "sql.bind", "unable to find %s.%s(%s)", *sname, *tname, *cname);
 	throw(SQL, "sql.bind", "unable to find %s(%s)", *tname, *cname);
 }
