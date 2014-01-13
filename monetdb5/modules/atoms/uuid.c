@@ -37,7 +37,7 @@
 #else
 #define UUID_SIZE	16			/* size of a UUID */
 #endif
-#define UUID_LEN	36			/* length of string representation */
+#define UUID_STRLEN	36			/* length of string representation */
 
 typedef struct {
 #ifdef HAVE_UUID
@@ -88,12 +88,12 @@ UUIDprelude(void)
 int
 UUIDtoString(str *retval, int *len, const uuid *value)
 {
-	if (*len <= UUID_LEN) {
+	if (*len <= UUID_STRLEN) {
 		if (*retval != NULL)
 			GDKfree(*retval);
-		if ((*retval = GDKmalloc(UUID_LEN + 1)) == NULL)
+		if ((*retval = GDKmalloc(UUID_STRLEN + 1)) == NULL)
 			return 0;
-		*len = UUID_LEN + 1;
+		*len = UUID_STRLEN + 1;
 	}
 	if (UUIDisnil(value)) {
 		snprintf(*retval, *len, "nil");
@@ -105,8 +105,8 @@ UUIDtoString(str *retval, int *len, const uuid *value)
 			 value->u[4], value->u[5], value->u[6], value->u[7],
 			 value->u[8], value->u[9], value->u[10], value->u[11],
 			 value->u[12], value->u[13], value->u[14], value->u[15]);
-	assert(strlen(*retval) == UUID_LEN);
-	return UUID_LEN;
+	assert(strlen(*retval) == UUID_STRLEN);
+	return UUID_STRLEN;
 }
 
 int
@@ -197,7 +197,7 @@ UUIDisaUUID(bit *retval, str *s)
 	uuid u;
 	uuid *pu = &u;
 	int l = UUID_SIZE;
-	*retval = UUIDfromString(*s, &l, &pu) == UUID_LEN;
+	*retval = UUIDfromString(*s, &l, &pu) == UUID_STRLEN;
 	return MAL_SUCCEED;
 }
 
@@ -206,7 +206,7 @@ UUIDstr2uuid(uuid **retval, str *s)
 {
 	int l = *retval ? UUID_SIZE : 0;
 
-	if (UUIDfromString(*s, &l, retval) == UUID_LEN) {
+	if (UUIDfromString(*s, &l, retval) == UUID_STRLEN) {
 		return MAL_SUCCEED;
 	}
 	throw(MAL, "uuid.uuid", "Not a UUID");
