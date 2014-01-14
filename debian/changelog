@@ -1,3 +1,94 @@
+monetdb (11.17.1-20140114) unstable; urgency=low
+
+  * Rebuilt.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 14 Jan 2014 14:39:05 +0100
+
+monetdb (11.17.1-20140114) unstable; urgency=low
+
+  * Rebuilt.
+  * BZ#3040: Wrong NULL behavior in EXCEPT and INTERSECT
+  * BZ#3092: ODBC client doesn't support scalar function escape
+  * BZ#3198: SIGSEGV insert_string_bat (b=0x7fffe419d0a0, n=0x7fffc4006010,
+    append=0) at gdk_batop.c:196
+  * BZ#3210: Unexpected concurrency conflict when inserting to 2 tables
+    simultaneously and querying one of them
+  * BZ#3273: Add support to Python DBAPI package for timetz, inet and
+    url types
+  * BZ#3285: no such table 'queryHistory'
+  * BZ#3298: GDKmmap messages and monetdb start db takes very long
+  * BZ#3354: Introduce query time-out
+  * BZ#3371: (i)like generates batloop instead of algebra.likesubselect
+  * BZ#3372: Large group by queries never complete - server at 100%
+    cpu(all cores) until MonetDB stopped
+  * BZ#3383: Bad performance with DISTINCT GROUP BY
+  * BZ#3391: Bad performance with GROUP BY and FK with out aggregate
+    function
+  * BZ#3393: "COPY .. INTO ..." - escape of string quotes
+  * BZ#3399: server crashed on simple (malformed) query
+  * BZ#3401: inconsistent/strange handling of invalid dates
+    (e.g. 2013-02-29) in where clause
+  * BZ#3403: NOT NULL constraint can't be applied after deleting rows with
+    null values
+  * BZ#3404: Assertion `h->storage == STORE_MMAP' failed.
+  * BZ#3408: nested concat query crashed server
+  * BZ#3411: (disguised) BETWEEN clause not recognised. Hence no rangejoin.
+  * BZ#3412: Boolean expressions in WHERE clause, result in incorrect
+    resulsts
+  * BZ#3417: Nested Common Table Expressions Crash
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 14 Jan 2014 14:39:02 +0100
+
+monetdb (11.17.1-20140114) unstable; urgency=low
+
+  * buildtools: Created packages for RPM based systems and Debian/Ubunty containing
+    the MonetDB interface to the GNU Scientific Library (gsl).
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 10 Dec 2013 14:39:02 +0100
+
+monetdb (11.17.1-20140114) unstable; urgency=low
+
+  * gdk: Removed some unused fields in the atomDesc structure.  This change
+    requires a complete recompilation of the whole suite.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 20 Nov 2013 14:39:02 +0100
+
+monetdb (11.17.1-20140114) unstable; urgency=low
+
+  * clients: ODBC: Implemented {fn scalar()} and {interval ...} escapes.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 20 Nov 2013 14:39:02 +0100
+
+monetdb (11.17.1-20140114) unstable; urgency=low
+
+  * python2: Changed defaults for connecting (defaults to unix socket now).
+  * python2: Unix sockets partially working for control protocol.
+  * python2: Add support for unix socket.
+
+ -- Gijs Molenaar <g.j.molenaar@uva.nl>  Wed, 20 Nov 2013 14:39:02 +0100
+
+monetdb (11.17.1-20140114) unstable; urgency=low
+
+  * python3: Changed defaults for connecting (defaults to unix socket now).
+  * python3: Unix sockets partially working for control protocol.
+  * python3: Add support for unix socket.
+
+ -- Gijs Molenaar <g.j.molenaar@uva.nl>  Wed, 20 Nov 2013 14:39:02 +0100
+
+monetdb (11.17.1-20140114) unstable; urgency=low
+
+  * buildtools: We no longer install the .la files in our Fedora/Debian/Ubuntu packages.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 20 Nov 2013 14:39:02 +0100
+
+monetdb (11.17.1-20140114) unstable; urgency=low
+
+  * gdk: Replaced the mutex implementation for both GNU C and Visual Studio with
+    a home-grown implementation that uses atomic instructions (__sync_*()
+    in gcc, _Interlocked*() in VS).
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 20 Nov 2013 14:39:02 +0100
+
 monetdb (11.15.19-20131120) unstable; urgency=low
 
   * Rebuilt.
