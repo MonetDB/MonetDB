@@ -552,8 +552,10 @@ atom_cast(atom *a, sql_subtype *tp)
 					return 0;
 				break;
 			case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
+#if SIZEOF_OID == SIZEOF_INT
 			case TYPE_oid:
+#endif
+#if SIZEOF_WRD == SIZEOF_INT
 			case TYPE_wrd:
 #endif
 				if (at->type->localtype == TYPE_bte) 
@@ -564,8 +566,10 @@ atom_cast(atom *a, sql_subtype *tp)
 					return 0;
 				break;
 			case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
+#if SIZEOF_OID == SIZEOF_LNG
 			case TYPE_oid:
+#endif
+#if SIZEOF_WRD == SIZEOF_LNG
 			case TYPE_wrd:
 #endif
 				if (at->type->localtype == TYPE_bte) 
@@ -602,8 +606,10 @@ atom_cast(atom *a, sql_subtype *tp)
 					return 0;
 				break;
 			case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
+#if SIZEOF_OID == SIZEOF_INT
 			case TYPE_oid:
+#endif
+#if SIZEOF_WRD == SIZEOF_INT
 			case TYPE_wrd:
 #endif
 				if (at->type->localtype == TYPE_bte) 
@@ -614,8 +620,10 @@ atom_cast(atom *a, sql_subtype *tp)
 					return 0;
 				break;
 			case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
+#if SIZEOF_OID == SIZEOF_LNG
 			case TYPE_oid:
+#endif
+#if SIZEOF_WRD == SIZEOF_LNG
 			case TYPE_wrd:
 #endif
 				if (at->type->localtype == TYPE_bte) 
@@ -731,8 +739,10 @@ atom_cast(atom *a, sql_subtype *tp)
 					return 0;
 				break;
 			case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
+#if SIZEOF_OID == SIZEOF_INT
 			case TYPE_oid:
+#endif
+#if SIZEOF_WRD == SIZEOF_INT
 			case TYPE_wrd:
 #endif
 				if (at->type->localtype == TYPE_bte) 
@@ -743,8 +753,10 @@ atom_cast(atom *a, sql_subtype *tp)
 					return 0;
 				break;
 			case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
+#if SIZEOF_OID == SIZEOF_LNG
 			case TYPE_oid:
+#endif
+#if SIZEOF_WRD == SIZEOF_LNG
 			case TYPE_wrd:
 #endif
 				if (at->type->localtype == TYPE_bte) 

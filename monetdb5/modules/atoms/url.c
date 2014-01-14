@@ -229,11 +229,9 @@ URLgetDomain(str *retval, str *u)
 	t++;
 	b = buf;
 	d = 0;
-	for (; *t && *t != '/'; t++) {
+	for (; *t && *t != '/' && *t != ':' && *t != '?' && *t != '#'; t++) {
 		if (*t == '.')
 			d = b;
-		if (*t == ':')
-			break;
 		*b++ = *t;
 		if (i++ == 1023)
 			throw(PARSE, "url.getDomain", "server name too long\n");
@@ -319,7 +317,7 @@ url_getHost(str *retval, url t)
 	t++;
 	b = buf;
 	s = buf;
-	for (; *t && *t != '/'; t++) {
+	for (; *t && *t != '/' && *t != ':' && *t != '?' && *t != '#'; t++) {
 		*b++ = *t;
 		if (i++ == 1023)
 			throw(PARSE, "url.getHost", "server name too long");
@@ -487,7 +485,7 @@ url_getRobotURL(str *retval, /* put string: pointer to char here. */
 	if (*t != '/')
 		goto getRobot_done;
 	*b++ = *t++;
-	for (; *t && *t != '/'; t++) {
+	for (; *t && *t && *t != '/' && *t != '?' && *t != '#'; t++) {
 		*b++ = *t;
 		if (i++ == 1000)
 			throw(PARSE, "url.getRobotURL", "server name too long");
