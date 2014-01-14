@@ -27,7 +27,7 @@ Vendor: MonetDB BV <info@monetdb.org>
 Group: Applications/Databases
 License: MPL - http://www.monetdb.org/Legal/MonetDBLicense
 URL: http://www.monetdb.org/
-Source: http://dev.monetdb.org/downloads/sources/Feb2013-SP6/%{name}-%{version}.tar.bz2
+Source: http://dev.monetdb.org/downloads/sources/Jan2014/%{name}-%{version}.tar.bz2
 
 BuildRequires: bison
 BuildRequires: bzip2-devel
@@ -796,6 +796,67 @@ mv $RPM_BUILD_ROOT%{_datadir}/doc/MonetDB-SQL-%{version} $RPM_BUILD_ROOT%{_datad
 rm -fr $RPM_BUILD_ROOT
 
 %changelog
+* Tue Jan 14 2014 Sjoerd Mullender <sjoerd@acm.org> - 11.17.1-20140114
+- Rebuilt.
+- BZ#3040: Wrong NULL behavior in EXCEPT and INTERSECT
+- BZ#3092: ODBC client doesn't support scalar function escape
+- BZ#3198: SIGSEGV insert_string_bat (b=0x7fffe419d0a0, n=0x7fffc4006010,
+  append=0) at gdk_batop.c:196
+- BZ#3210: Unexpected concurrency conflict when inserting to 2 tables
+  simultaneously and querying one of them
+- BZ#3273: Add support to Python DBAPI package for timetz, inet and
+  url types
+- BZ#3285: no such table 'queryHistory'
+- BZ#3298: GDKmmap messages and monetdb start db takes very long
+- BZ#3354: Introduce query time-out
+- BZ#3371: (i)like generates batloop instead of algebra.likesubselect
+- BZ#3372: Large group by queries never complete - server at 100%
+  cpu(all cores) until MonetDB stopped
+- BZ#3383: Bad performance with DISTINCT GROUP BY
+- BZ#3391: Bad performance with GROUP BY and FK with out aggregate
+  function
+- BZ#3393: "COPY .. INTO ..." - escape of string quotes
+- BZ#3399: server crashed on simple (malformed) query
+- BZ#3401: inconsistent/strange handling of invalid dates
+  (e.g. 2013-02-29) in where clause
+- BZ#3403: NOT NULL constraint can't be applied after deleting rows with
+  null values
+- BZ#3404: Assertion `h->storage == STORE_MMAP' failed.
+- BZ#3408: nested concat query crashed server
+- BZ#3411: (disguised) BETWEEN clause not recognised. Hence no rangejoin.
+- BZ#3412: Boolean expressions in WHERE clause, result in incorrect
+  resulsts
+- BZ#3417: Nested Common Table Expressions Crash
+
+* Tue Dec 10 2013 Sjoerd Mullender <sjoerd@acm.org> - 11.17.1-20140114
+- buildtools: Created packages for RPM based systems and Debian/Ubunty containing
+  the MonetDB interface to the GNU Scientific Library (gsl).
+
+* Wed Nov 20 2013 Sjoerd Mullender <sjoerd@acm.org> - 11.17.1-20140114
+- gdk: Removed some unused fields in the atomDesc structure.  This change
+  requires a complete recompilation of the whole suite.
+
+* Wed Nov 20 2013 Sjoerd Mullender <sjoerd@acm.org> - 11.17.1-20140114
+- clients: ODBC: Implemented {fn scalar()} and {interval ...} escapes.
+
+* Wed Nov 20 2013 Gijs Molenaar <g.j.molenaar@uva.nl> - 11.17.1-20140114
+- python2: Changed defaults for connecting (defaults to unix socket now).
+- python2: Unix sockets partially working for control protocol.
+- python2: Add support for unix socket.
+
+* Wed Nov 20 2013 Gijs Molenaar <g.j.molenaar@uva.nl> - 11.17.1-20140114
+- python3: Changed defaults for connecting (defaults to unix socket now).
+- python3: Unix sockets partially working for control protocol.
+- python3: Add support for unix socket.
+
+* Wed Nov 20 2013 Sjoerd Mullender <sjoerd@acm.org> - 11.17.1-20140114
+- buildtools: We no longer install the .la files in our Fedora/Debian/Ubuntu packages.
+
+* Wed Nov 20 2013 Sjoerd Mullender <sjoerd@acm.org> - 11.17.1-20140114
+- gdk: Replaced the mutex implementation for both GNU C and Visual Studio with
+  a home-grown implementation that uses atomic instructions (__sync_*()
+  in gcc, _Interlocked*() in VS).
+
 * Wed Nov 20 2013 Sjoerd Mullender <sjoerd@acm.org> - 11.15.19-20131120
 - Rebuilt.
 - BZ#3243: Segmentation fault (possible data corruption) after clean
