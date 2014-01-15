@@ -424,14 +424,6 @@ sql_update_feb2013_sp1(Client c)
 {
 	size_t bufsize = 10240, pos = 0;
 	char *buf = GDKmalloc(bufsize), *err = NULL;
-	char *fullname;
-	FILE *fp = NULL;
-
-	snprintf(buf, bufsize, "createdb%c75_storagemodel", DIR_SEP);
-	if ((fullname = MSP_locate_sqlscript(buf, 1)) != NULL) {
-		fp = fopen(fullname, "r");
-		GDKfree(fullname);
-	}
 
 	/* sys.stddev functions */
 	pos += snprintf(buf + pos, bufsize - pos, "drop filter function sys.\"like\"(string, string, string);\n");
@@ -440,10 +432,125 @@ sql_update_feb2013_sp1(Client c)
 	pos += snprintf(buf + pos, bufsize - pos, "create filter function sys.\"ilike\"(val string, pat string, esc string) external name algebra.ilikesubselect;\n");
 
 	pos += snprintf(buf + pos, bufsize - pos, "drop function sys.storage;\n");
-	if (fp) {
-		pos += fread(buf + pos, 1, bufsize - pos, fp);
-		fclose(fp);
-	}
+
+	/* 75_storagemodel.sql */
+	pos += snprintf(buf + pos, bufsize - pos, "\
+create function sys.storage()\n\
+returns table (\"schema\" string, \"table\" string, \"column\" string, \"type\" string, location string, \"count\" bigint, typewidth int, columnsize bigint, heapsize bigint, indices bigint, sorted boolean)\n\
+external name sql.storage;\n\
+\n\
+create table sys.storagemodelinput(\n\
+	\"schema\" string,\n\
+	\"table\" string,\n\
+	\"column\" string,\n\
+	\"type\" string,\n\
+	\"typewidth\" int,\n\
+	\"count\"	bigint,\n\
+	\"distinct\" bigint,\n\
+	\"atomwidth\" int,\n\
+	\"reference\" boolean,\n\
+	\"sorted\" boolean\n\
+);\n\
+update sys._tables\n\
+	set system = true\n\
+	where name = 'storagemodelinput'\n\
+		and schema_id = (select id from sys.schemas where name = 'sys');\n\
+\n\
+create procedure sys.storagemodelinit()\n\
+begin\n\
+	delete from sys.storagemodelinput;\n\
+	insert into sys.storagemodelinput\n\
+	select X.\"schema\", X.\"table\", X.\"column\", X.\"type\", X.typewidth, X.count, 0, X.typewidth, false, X.sorted from sys.storage() X;\n\
+	update sys.storagemodelinput\n\
+	set reference = true\n\
+	where concat(concat(\"schema\",\"table\"), \"column\") in (\n\
+		SELECT concat( concat(\"fkschema\".\"name\", \"fktable\".\"name\"), \"fkkeycol\".\"name\" )\n\
+		FROM	\"sys\".\"keys\" AS    \"fkkey\",\n\
+				\"sys\".\"objects\" AS \"fkkeycol\",\n\
+				\"sys\".\"tables\" AS  \"fktable\",\n\
+				\"sys\".\"schemas\" AS \"fkschema\"\n\
+		WHERE   \"fktable\".\"id\" = \"fkkey\".\"table_id\"\n\
+			AND \"fkkey\".\"id\" = \"fkkeycol\".\"id\"\n\
+			AND \"fkschema\".\"id\" = \"fktable\".\"schema_id\"\n\
+			AND \"fkkey\".\"rkey\" > -1);\n\
+	update sys.storagemodelinput\n\
+	set \"distinct\" = \"count\"\n\
+	where \"type\" = 'varchar' or \"type\"='clob';\n\
+end;\n\
+\n\
+create function sys.columnsize(nme string, i bigint, d bigint)\n\
+returns bigint\n\
+begin\n\
+	case\n\
+	when nme = 'boolean' then return i;\n\
+	when nme = 'char' then return 2*i;\n\
+	when nme = 'smallint' then return 2 * i;\n\
+	when nme = 'int'	 then return 4 * i;\n\
+	when nme = 'bigint'	 then return 8 * i;\n\
+	when nme = 'timestamp' then return 8 * i;\n\
+	when  nme = 'varchar' then\n\
+		case\n\
+		when cast(d as bigint) << 8 then return i;\n\
+		when cast(d as bigint) << 16 then return 2 * i;\n\
+		when cast(d as bigint) << 32 then return 4 * i;\n\
+		else return 8 * i;\n\
+		end case;\n\
+	else return 8 * i;\n\
+	end case;\n\
+end;\n\
+\n\
+create function sys.heapsize(tpe string, i bigint, w int)\n\
+returns bigint\n\
+begin\n\
+	if  tpe <> 'varchar' and tpe <> 'clob'\n\
+	then\n\
+		return 0;\n\
+	end if;\n\
+	return 10240 + i * w;\n\
+end;\n\
+\n\
+create function sys.indexsize(b boolean, i bigint)\n\
+returns bigint\n\
+begin\n\
+\n\
+	if  b = true\n\
+	then\n\
+		return 8 * i;\n\
+	end if;\n\
+	return 0;\n\
+end;\n\
+\n\
+create function sys.storagemodel()\n\
+returns table (\n\
+	\"schema\" string,\n\
+	\"table\" string,\n\
+	\"column\" string,\n\
+	\"type\" string,\n\
+	\"count\"	bigint,\n\
+	columnsize bigint,\n\
+	heapsize bigint,\n\
+	indices bigint,\n\
+	sorted boolean)\n\
+begin\n\
+	return select I.\"schema\", I.\"table\", I.\"column\", I.\"type\", I.\"count\",\n\
+	columnsize(I.\"type\", I.count, I.\"distinct\"),\n\
+	heapsize(I.\"type\", I.\"distinct\", I.\"atomwidth\"),\n\
+	indexsize(I.\"reference\", I.\"count\"),\n\
+	I.sorted\n\
+	from sys.storagemodelinput I;\n\
+end;\n\
+\n\
+create view sys.tablestoragemodel\n\
+as select \"schema\",\"table\",max(count) as \"count\",\n\
+	sum(columnsize) as columnsize,\n\
+	sum(heapsize) as heapsize,\n\
+	sum(indices) as indices,\n\
+	sum(case when sorted = false then 8 * count else 0 end) as auxillary\n\
+from sys.storagemodel() group by \"schema\",\"table\";\n\
+update sys._tables\n\
+	set system = true\n\
+	where name = 'tablestoragemodel'\n\
+		and schema_id = (select id from sys.schemas where name = 'sys');\n");
 
 	pos += snprintf(buf + pos, bufsize - pos, "insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('like', 'ilike') and f.type = %d and f.schema_id = s.id and s.name = 'sys');\n", F_FILT);
 	pos += snprintf(buf + pos, bufsize - pos,
@@ -490,8 +597,6 @@ sql_update_jan2014(Client c)
 {
 	size_t bufsize = 15000, pos = 0;
 	char *buf = GDKmalloc(bufsize), *err = NULL;
-	char *fullname;
-	FILE *fp = NULL;
 	ValRecord *schvar = stack_get_var(((backend *) c->sqlcontext)->mvc, "current_schema");
 	char *schema = NULL;
 
@@ -529,15 +634,55 @@ sql_update_jan2014(Client c)
 	pos += snprintf(buf + pos, bufsize - pos, "drop view sys.queryLog;\n");
 	pos += snprintf(buf + pos, bufsize - pos, "drop table sys.callHistory;\n");
 	pos += snprintf(buf + pos, bufsize - pos, "drop table sys.queryHistory;\n");
-	snprintf(buf + pos, bufsize - pos, "createdb%c15_querylog", DIR_SEP);
-	if ((fullname = MSP_locate_sqlscript(buf + pos, 1)) != NULL) {
-		fp = fopen(fullname, "r");
-		GDKfree(fullname);
-	}
-	if (fp) {
-		pos += fread(buf + pos, 1, bufsize - pos, fp);
-		fclose(fp);
-	}
+	pos += snprintf(buf + pos, bufsize - pos, "\
+create function sys.querylog_catalog()\n\
+returns table(\n\
+	id oid,\n\
+	owner string,\n\
+	defined timestamp,\n\
+	query string,\n\
+	pipe string,\n\
+	mal int,			-- size of MAL plan\n\
+	optimize bigint 	-- time in usec\n\
+)\n\
+external name sql.querylog_catalog;\n\
+\n\
+create function sys.querylog_calls()\n\
+returns table(\n\
+	id oid,				 -- references query plan\n\
+	\"start\" timestamp,	-- time the statement was started\n\
+	\"stop\" timestamp,	-- time the statement was completely finished\n\
+	arguments string,	-- actual call structure\n\
+	tuples wrd,			-- number of tuples in the result set\n\
+	run bigint,		-- time spent (in usec)  until the result export\n\
+	ship bigint,		-- time spent (in usec)  to ship the result set\n\
+	cpu int,  		-- average cpu load percentage during execution\n\
+	io int,			-- percentage time waiting for IO to finish \n\
+	space bigint		-- total storage size of intermediates created (in MB)\n\
+)\n\
+external name sql.querylog_calls;\n\
+\n\
+create view sys.querylog_catalog as select * from sys.querylog_catalog();\n\
+create view sys.querylog_calls as select * from sys.querylog_calls();\n\
+create view sys.querylog_history as\n\
+select qd.*, ql.\"start\",ql.\"stop\", ql.arguments, ql.tuples, ql.run, ql.ship, ql.cpu, ql.space, ql.io \n\
+from sys.querylog_catalog() qd, sys.querylog_calls() ql\n\
+where qd.id = ql.id and qd.owner = user;\n\
+\n\
+update sys._tables\n\
+    set system = true\n\
+    where name in ('querylog_history', 'querylog_calls', 'querylog_catalog')\n\
+        and schema_id = (select id from sys.schemas where name = 'sys');\n\
+\n\
+create procedure sys.querylog_empty()\n\
+external name sql.querylog_empty;\n\
+\n\
+create procedure sys.querylog_enable()\n\
+external name sql.querylog_enable;\n\
+create procedure sys.querylog_enable(threshold smallint)\n\
+external name sql.querylog_enable_threshold;\n\
+create procedure sys.querylog_disable()\n\
+external name sql.querylog_disable;\n");
 
 	/* new entry in 16_tracelog.sql */
 	pos += snprintf(buf + pos, bufsize - pos, "create view sys.tracelog as select * from sys.tracelog();\n");
@@ -557,15 +702,39 @@ sql_update_jan2014(Client c)
 	pos += snprintf(buf + pos, bufsize - pos, "create view sys.environment as select * from sys.environment();\n");
 
 	/* new file 26_sysmon.sql */
-	snprintf(buf + pos, bufsize - pos, "createdb%c26_sysmon", DIR_SEP);
-	if ((fullname = MSP_locate_sqlscript(buf + pos, 1)) != NULL) {
-		fp = fopen(fullname, "r");
-		GDKfree(fullname);
-	}
-	if (fp) {
-		pos += fread(buf + pos, 1, bufsize - pos, fp);
-		fclose(fp);
-	}
+	pos += snprintf(buf + pos, bufsize - pos, "\
+create function sys.queue()\n\
+returns table(\n\
+	qtag bigint,\n\
+	\"user\" string,\n\
+	started timestamp,\n\
+	estimate timestamp,\n\
+	progress int,\n\
+	status string,\n\
+	tag oid,\n\
+	query string\n\
+)\n\
+external name sql.sysmon_queue;\n\
+\n\
+create view sys.queue as select * from sys.queue();\n\
+update sys._tables\n\
+    set system = true\n\
+    where name = 'queue'\n\
+        and schema_id = (select id from sys.schemas where name = 'sys');\n\
+\n\
+create procedure sys.pause(tag int)\n\
+external name sql.sysmon_pause;\n\
+create procedure sys.resume(tag int)\n\
+external name sql.sysmon_resume;\n\
+create procedure sys.stop(tag int)\n\
+external name sql.sysmon_stop;\n\
+\n\
+create procedure sys.pause(tag bigint)\n\
+external name sql.sysmon_pause;\n\
+create procedure sys.resume(tag bigint)\n\
+external name sql.sysmon_resume;\n\
+create procedure sys.stop(tag bigint)\n\
+external name sql.sysmon_stop;\n");
 
 	/* new entries in 39_analytics.sql for quantiles and one
 	 * previously missing median */
@@ -587,15 +756,50 @@ sql_update_jan2014(Client c)
 	pos += snprintf(buf + pos, bufsize - pos, "create view sys.storagemodel as select * from sys.storagemodel();\n");
 
 	/* new file 80_statistics.sql */
-	snprintf(buf + pos, bufsize - pos, "createdb%c80_statistics", DIR_SEP);
-	if ((fullname = MSP_locate_sqlscript(buf + pos, 1)) != NULL) {
-		fp = fopen(fullname, "r");
-		GDKfree(fullname);
-	}
-	if (fp) {
-		pos += fread(buf + pos, 1, bufsize - pos, fp);
-		fclose(fp);
-	}
+	pos += snprintf(buf + pos, bufsize - pos, "\
+CREATE TABLE sys.statistics(\n\
+	\"schema\" string,\n\
+	\"table\" string,\n\
+	\"column\" string,\n\
+	\"type\" string,\n\
+	width integer,\n\
+	stamp timestamp,\n\
+	\"sample\" bigint,\n\
+	\"count\" bigint,\n\
+	\"unique\" bigint,\n\
+	\"nils\" bigint,\n\
+	minval string,\n\
+	maxval string,\n\
+	sorted boolean);\n\
+\n\
+update sys._tables\n\
+	set system = true\n\
+	where name = 'statistics'\n\
+		and schema_id = (select id from sys.schemas where name = 'sys');\n\
+\n\
+create procedure analyze()\n\
+external name sql.analyze;\n\
+\n\
+create procedure analyze(tbl string)\n\
+external name sql.analyze;\n\
+\n\
+create procedure analyze(sch string, tbl string)\n\
+external name sql.analyze;\n\
+\n\
+create procedure analyze(sch string, tbl string, col string)\n\
+external name sql.analyze;\n\
+\n\
+create procedure analyze(\"sample\" bigint)\n\
+external name sql.analyze;\n\
+\n\
+create procedure analyze(tbl string, \"sample\" bigint)\n\
+external name sql.analyze;\n\
+\n\
+create procedure analyze(sch string, tbl string, \"sample\" bigint)\n\
+external name sql.analyze;\n\
+\n\
+create procedure analyze(sch string, tbl string, col string, \"sample\" bigint)\n\
+external name sql.analyze;\n");
 
 	pos += snprintf(buf + pos, bufsize - pos,
 			"insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('json_filter', 'json_filter_all', 'json_isvalid', 'json_isvalidarray', 'json_isvalidobject', 'json_length', 'json_path', 'json_text', 'querylog_calls', 'querylog_catalog', 'queue', 'sessions') and f.type = %d and f.schema_id = s.id and s.name = 'sys');\n",
