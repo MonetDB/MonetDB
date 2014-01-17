@@ -826,10 +826,7 @@ BATslice(BAT *b, BUN l, BUN h)
 	if (BAThrestricted(b) == BAT_READ && BATtrestricted(b) == BAT_READ) {
 		BUN cnt = h - l;
 
-		if (BAThdense(b))
-			bn = BATmirror(VIEWhead(BATmirror(b)));
-		else
-			bn = VIEWcreate_(b, b, TRUE);
+		bn = VIEWcreate_(b, b, TRUE);
 		bn->batFirst = bn->batDeleted = bn->batInserted = 0;
 		bn->H->heap.base = (bn->htype) ? BUNhloc(bi, l) : NULL;
 		bn->T->heap.base = (bn->ttype) ? BUNtloc(bi, l) : NULL;
