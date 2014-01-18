@@ -535,19 +535,11 @@ range_join_convertable(stmt *s, stmt **base, stmt **L, stmt **H)
 
 	if (tt > TYPE_lng)
 		return 0;
-	/*
-	if (s->op2->type == st_binop) {
-		bl = s->op2->op1;
-		l = s->op2->op2;
-	} else */if (s->op2->type == st_Nop && list_length(s->op2->op1->op4.lval) == 2) {
+	if (s->op2->type == st_Nop && list_length(s->op2->op1->op4.lval) == 2) {
 		bl = s->op2->op1->op4.lval->h->data;
 		l = s->op2->op1->op4.lval->t->data;
 	}
-/*
-	if (s->op3->type == st_binop) {
-		bh = s->op3->op1;
-		h = s->op3->op2;
-	} else */ if (s->op3->type == st_Nop && list_length(s->op3->op1->op4.lval) == 2) {
+	if (s->op3->type == st_Nop && list_length(s->op3->op1->op4.lval) == 2) {
 		bh = s->op3->op1->op4.lval->h->data;
 		h = s->op3->op1->op4.lval->t->data;
 	}
@@ -1578,88 +1570,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			s->nr = getDestVar(q);
 			break;
 		}
-#if 0
-		case st_unop:{
-			char *mod, *fimp;
-			int l = _dumpstmt(sql, mb, s->op1);
-
-			if (backend_create_subfunc(sql, s->op4.funcval) < 0)
-				return -1;
-			mod = sql_func_mod(s->op4.funcval->func);
-			fimp = sql_func_imp(s->op4.funcval->func);
-			if (s->op1->nrcols && strcmp(fimp, "not_uniques") == 0) {
-				sql_subtype *res = s->op4.funcval->res->h->data;
-				int rtype = res->type->localtype;
-
-				q = newStmt(mb, mod, fimp);
-				setVarType(mb, getArg(q, 0), newBatType(TYPE_oid, rtype));
-				setVarUDFtype(mb, getArg(q, 0));
-				q = pushArgument(mb, q, l);
-			} else if (s->op1->nrcols) {
-				sql_subtype *res = s->op4.funcval->res->h->data;
-				int rtype = res->type->localtype;
-
-				q = newStmt(mb, "mal", "multiplex");
-				setVarType(mb, getArg(q, 0), newBatType(TYPE_oid, rtype));
-				setVarUDFtype(mb, getArg(q, 0));
-				q = pushStr(mb, q, convertMultiplexMod(mod, fimp));
-				q = pushStr(mb, q, convertMultiplexFcn(fimp));
-				q = pushArgument(mb, q, l);
-			} else {
-				q = newStmt(mb, mod, fimp);
-				q = pushArgument(mb, q, l);
-			}
-			s->nr = getDestVar(q);
-		}
-			break;
-		case st_binop:{
-			/* TODO use the rewriter to fix the 'round' function */
-			sql_subtype *tpe = tail_type(s->op1);
-			sql_subfunc *f = s->op4.funcval;
-			int special = 0;
-			char *mod, *fimp;
-			int l = _dumpstmt(sql, mb, s->op1);
-			int r = _dumpstmt(sql, mb, s->op2);
-
-			if (backend_create_subfunc(sql, s->op4.funcval) < 0)
-				return -1;
-			mod = sql_func_mod(s->op4.funcval->func);
-			fimp = sql_func_imp(s->op4.funcval->func);
-
-			if (strcmp(fimp, "round") == 0 && tpe->type->eclass == EC_DEC)
-				special = 1;
-
-			if (s->op1->nrcols || s->op2->nrcols) {
-				sql_subtype *res = f->res->h->data;
-				if (!special) {
-					q = multiplex2(mb, mod, convertOperator(fimp), l, r, res->type->localtype);
-				} else {
-					mod = convertMultiplexMod(mod, fimp);
-					fimp = convertMultiplexFcn(fimp);
-					q = newStmt(mb, "mal", "multiplex");
-					setVarType(mb, getArg(q, 0), newBatType(TYPE_oid, res->type->localtype));
-					setVarUDFtype(mb, getArg(q, 0));
-					q = pushStr(mb, q, mod);
-					q = pushStr(mb, q, fimp);
-					q = pushArgument(mb, q, l);
-					q = pushInt(mb, q, tpe->digits);
-					q = pushInt(mb, q, tpe->scale);
-					q = pushArgument(mb, q, r);
-				}
-				s->nr = getDestVar(q);
-			} else {
-				q = newStmt(mb, mod, convertOperator(fimp));
-				q = pushArgument(mb, q, l);
-				if (special) {
-					q = pushInt(mb, q, tpe->digits);
-					q = pushInt(mb, q, tpe->scale);
-				}
-				q = pushArgument(mb, q, r);
-			}
-			s->nr = getDestVar(q);
-		}
-			break;
-#endif
 		case st_Nop:{
 			char *mod, *fimp;
 			sql_subtype *tpe = NULL;

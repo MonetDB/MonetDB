@@ -97,10 +97,6 @@ typedef enum stmt_type {
 	st_group,
 	st_unique,
 	st_convert,
-	/*
-	st_unop,
-	st_binop,
-	*/
 	st_Nop,
 	st_func,
 	st_aggr,
