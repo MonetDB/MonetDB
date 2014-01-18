@@ -1779,19 +1779,6 @@ func_def:
 				append_list(f, NULL);
 				append_int(f, F_FUNC);
 			  $$ = _symbol_create_list( SQL_CREATE_FUNC, f ); }
- /* table in / table out functions */
- |  create UNION FUNCTION qname
-	'(' opt_paramlist ')'
-    RETURNS func_data_type
-    EXTERNAL sqlNAME external_function_name 	
-			{ dlist *f = L();
-				append_list(f, $4);
-				append_list(f, $6);
-				append_symbol(f, $9);
-				append_list(f, $12);
-				append_list(f, NULL);
-				append_int(f, F_UNION);
-			  $$ = _symbol_create_list( SQL_CREATE_FUNC, f ); }
  |  create FUNCTION qname
 	'(' opt_paramlist ')'
     RETURNS func_data_type
@@ -2106,6 +2093,10 @@ func_data_type:
 
 opt_paramlist:
     paramlist
+ |  '*'			{ dlist *vararg = L();
+			  append_string(vararg, "*");
+			  append_type(vararg, NULL);
+			  $$ = append_list(L(), vararg); }
  |			{ $$ = NULL; }
  ;
 
@@ -2263,14 +2254,6 @@ drop_statement:
 	  append_int(l, $5 );
 	  append_int(l, F_FUNC );
 	  $$ = _symbol_create_list( SQL_DROP_FUNC, l ); }
- | drop UNION FUNCTION qname opt_typelist drop_action
-	{ dlist *l = L();
-	  append_list(l, $4 );
-	  append_int(l, 0 );
-	  append_list(l, $5 );
-	  append_int(l, $6 );
-	  append_int(l, F_UNION );
-	  $$ = _symbol_create_list( SQL_DROP_FUNC, l ); }
  | drop FILTER FUNCTION qname opt_typelist drop_action
 	{ dlist *l = L();
 	  append_list(l, $4 );
@@ -2302,14 +2285,6 @@ drop_statement:
 	  append_list(l, NULL );
 	  append_int(l, $5 );
 	  append_int(l, F_FUNC );
-	  $$ = _symbol_create_list( SQL_DROP_FUNC, l ); }
- | drop ALL UNION FUNCTION qname drop_action
-	{ dlist *l = L();
-	  append_list(l, $5 );
-	  append_int(l, 1 );
-	  append_list(l, NULL );
-	  append_int(l, $6 );
-	  append_int(l, F_UNION );
 	  $$ = _symbol_create_list( SQL_DROP_FUNC, l ); }
  | drop ALL FILTER FUNCTION qname drop_action
 	{ dlist *l = L();

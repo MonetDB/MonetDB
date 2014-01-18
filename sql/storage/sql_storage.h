@@ -306,7 +306,7 @@ extern int sql_trans_commit(sql_trans *tr);
 
 extern sql_type *sql_trans_create_type(sql_trans *tr, sql_schema * s, char *sqlname, int digits, int scale, int radix, char *impl);
 
-extern sql_func *sql_trans_create_func(sql_trans *tr, sql_schema * s, char *func, list *args, sql_subtype *res, int type, char *mod, char *impl, char *query);
+extern sql_func *sql_trans_create_func(sql_trans *tr, sql_schema * s, char *func, list *args, list *res, int type, char *mod, char *impl, char *query, bit varres, bit vararg);
 
 extern void sql_trans_drop_func(sql_trans *tr, sql_schema *s, int id, int drop_action);
 extern void sql_trans_drop_all_func(sql_trans *tr, sql_schema *s, list *list_func, int drop_action);
@@ -379,7 +379,7 @@ extern sql_key * key_create_done(sql_allocator *sa, sql_key *k);
 
 extern sql_idx *create_sql_idx(sql_allocator *sa, sql_table *t, char *nme, idx_type it);
 extern sql_idx *create_sql_ic(sql_allocator *sa, sql_idx *i, sql_column *c);
-extern sql_func *create_sql_func(sql_allocator *sa, char *func, list *args, sql_subtype *res, int type, char *mod, char *impl, char *query);
+extern sql_func *create_sql_func(sql_allocator *sa, char *func, list *args, list *res, int type, char *mod, char *impl, char *query, bit varres, bit vararg);
 
 /* for alter we need to duplicate a table */
 extern sql_table *dup_sql_table(sql_allocator *sa, sql_table *t);

@@ -8,7 +8,6 @@ insert into  nosql values
 	('[1,"f2", 2]');
 select * from nosql;
 
-explain select cast (j as string) from nosql;
 select cast (j as string) from nosql;
 
 -- consider them as initial strings
@@ -22,7 +21,6 @@ insert into  tmpsql values
 	('[1,"f2", 2]');
 select * from tmpsql;
 
-explain select cast (j as json) from nosql;
 select cast (j as json) from nosql;
 
 drop table tmpsql;

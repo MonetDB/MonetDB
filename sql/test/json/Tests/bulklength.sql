@@ -8,7 +8,6 @@ insert into  nosql values
 insert into nosql values('[1,"f2", 2]');
 select * from nosql;
 
-explain select json.length(j) from nosql;
 select json.length(j) from nosql;
 
 drop table nosql;

@@ -841,8 +841,6 @@ drop_func(mvc *sql, char *sname, char *name, int fid, int type, int action)
 			if (!action && mvc_check_dependency(sql, func->base.id, !IS_PROC(func) ? FUNC_DEPENDENCY : PROC_DEPENDENCY, NULL))
 				 return sql_message("DROP %s%s: there are database objects dependent on %s%s %s;", KF, F, kf, f, func->base.name);
 
-			if (is_func && func->res.comp_type)
-				mvc_drop_table(sql, func->res.comp_type->s, func->res.comp_type, 0);
 			mvc_drop_func(sql, s, func, action);
 		}
 	} else {
@@ -881,7 +879,7 @@ create_func(mvc *sql, char *sname, sql_func *f)
 		return sql_message("3F000!CREATE %s%s: no such schema '%s'", KF, F, sname);
 	if (!s)
 		s = cur_schema(sql);
-	nf = mvc_create_func(sql, NULL, s, f->base.name, f->ops, &f->res, f->type, f->mod, f->imp, f->query);
+	nf = mvc_create_func(sql, NULL, s, f->base.name, f->ops, f->res, f->type, f->mod, f->imp, f->query, f->varres, f->vararg);
 	if (nf && nf->query) {
 		char *buf;
 		sql_rel *r = NULL;
@@ -1323,7 +1321,7 @@ sql_variables(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (vars == NULL)
 		throw(SQL, "sql.variables", MAL_MALLOC_FAIL);
 	BATseqbase(vars, 0);
-	for (i = 0; i < m->topvars && m->vars[i].s; i++)
+	for (i = 0; i < m->topvars && !m->vars[i].frame; i++)
 		BUNappend(vars, m->vars[i].name, FALSE);
 	*res = vars->batCacheid;
 	BBPkeepref(vars->batCacheid);

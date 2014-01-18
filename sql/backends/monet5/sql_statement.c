@@ -124,8 +124,10 @@ st_type2string(st_type type)
 
 		ST(unique);
 		ST(convert);
+		/*
 		ST(unop);
 		ST(binop);
+		*/
 		ST(Nop);
 		ST(func);
 		ST(aggr);
@@ -396,8 +398,10 @@ stmt_deps(list *dep_list, stmt *s, int depend_type, int dir)
 					dep_list = cond_append(dep_list, &s->op4.aggrval->aggr->base.id);
 				}
 				break;
+				/*
 			case st_unop:
 			case st_binop:
+			*/
 			case st_Nop:
 			case st_func:
 				if (s->op1)
@@ -458,6 +462,18 @@ stmt_var(sql_allocator *sa, char *varname, sql_subtype *t, int declare, int leve
 		s->op4.typeval = *t;
 	else
 		s->op4.typeval.type = NULL;
+	s->flag = declare + (level << 1);
+	s->key = 1;
+	return s;
+}
+
+stmt *
+stmt_vars(sql_allocator *sa, char *varname, sql_table *t, int declare, int level)
+{
+	stmt *s = stmt_create(sa, st_var);
+
+	s->op1 = stmt_atom_string(sa, varname);
+	s->op3 = (stmt*)t; /* ugh */
 	s->flag = declare + (level << 1);
 	s->key = 1;
 	return s;
@@ -616,8 +632,9 @@ push_project(sql_allocator *sa, stmt *rows, stmt *val)
 			if (n) {
 				n->data = stmt_const_(sa, rows, n->data);
 			} else {	/* no args, ie. change into a st_unop */
-				val->type = st_unop;
-				val->op1 = stmt_const_(sa, rows, stmt_atom_int(sa, 0));
+				//val->type = st_unop;
+				//val->op1 = stmt_const_(sa, rows, stmt_atom_int(sa, 0));
+				l->op4.lval = list_append(sa_list(sa), stmt_const_(sa, rows, stmt_atom_int(sa, 0)));
 			}
 		} else {
 			/* push through arguments of Nop */
@@ -628,6 +645,7 @@ push_project(sql_allocator *sa, stmt *rows, stmt *val)
 				n->data = push_project(sa, rows, n->data);
 		}
 		break;
+		/*
 	case st_binop:
 		if (val->op4.funcval->func->side_effect) {
 			val->op1 = stmt_const_(sa, rows, val->op1);
@@ -643,6 +661,7 @@ push_project(sql_allocator *sa, stmt *rows, stmt *val)
 			val->op1 = push_project(sa, rows, val->op1);
 		}
 		break;
+		*/
 	default:
 		if (!val->nrcols)
 			val = stmt_const_(sa, rows, val);
@@ -670,6 +689,7 @@ has_side_effect(stmt *val)
 				se += has_side_effect(n->data);
 		}
 		break;
+		/*
 	case st_binop:
 		se = val->op4.funcval->func->side_effect;
 		if (!se)
@@ -680,6 +700,7 @@ has_side_effect(stmt *val)
 		if (!se)
 			se = has_side_effect(val->op1);
 		break;
+		*/
 	default:
 		return se;
 	}
@@ -1192,6 +1213,10 @@ stmt_convert(sql_allocator *sa, stmt *v, sql_subtype *from, sql_subtype *to)
 stmt *
 stmt_unop(sql_allocator *sa, stmt *op1, sql_subfunc *op)
 {
+	list *ops = sa_list(sa);
+	list_append(ops, op1);
+	return stmt_Nop(sa, stmt_list(sa, ops), op);
+	/*
 	stmt *s = stmt_create(sa, st_unop);
 
 	s->op1 = op1;
@@ -1201,11 +1226,17 @@ stmt_unop(sql_allocator *sa, stmt *op1, sql_subfunc *op)
 	s->key = op1->key;
 	s->aggr = op1->aggr;
 	return s;
+	*/
 }
 
 stmt *
 stmt_binop(sql_allocator *sa, stmt *op1, stmt *op2, sql_subfunc *op)
 {
+	list *ops = sa_list(sa);
+	list_append(ops, op1);
+	list_append(ops, op2);
+	return stmt_Nop(sa, stmt_list(sa, ops), op);
+	/*
 	stmt *s = stmt_create(sa, st_binop);
 	int aggr = 0;
 
@@ -1225,6 +1256,7 @@ stmt_binop(sql_allocator *sa, stmt *op1, stmt *op2, sql_subfunc *op)
 	}
 	s->aggr = aggr;
 	return s;
+	*/
 }
 
 stmt *
@@ -1372,12 +1404,23 @@ tail_type(stmt *st)
 	case st_table_clear:
 		return sql_bind_localtype("lng");
 
-	case st_aggr:
-		return &st->op4.aggrval->res;
+	case st_aggr: {
+		list *res = st->op4.aggrval->res; 
+
+		if (res && list_length(res) == 1)
+			return res->h->data;
+		
+	} 	break;
+		      /*
 	case st_unop:
 	case st_binop:
-	case st_Nop:
-		return &st->op4.funcval->res;
+	*/
+	case st_Nop: {
+		list *res = st->op4.funcval->res; 
+
+		if (res && list_length(res) == 1)
+			return res->h->data;
+	} break;
 	case st_atom:
 		return atom_type(st->op4.aval);
 	case st_convert:
@@ -1399,6 +1442,7 @@ tail_type(stmt *st)
 		assert(0);
 		return NULL;
 	}
+	return NULL;
 }
 
 int
@@ -1411,12 +1455,14 @@ stmt_has_null(stmt *s)
 	case st_uselect2:
 	case st_atom:
 		return 0;
-	case st_unop:
+	//case st_unop:
 	case st_reverse:
 	case st_mark:
 		return stmt_has_null(s->op1);
+		/*
 	case st_binop:
 		return stmt_has_null(s->op1) + stmt_has_null(s->op2);
+		*/
 	case st_join:
 		return stmt_has_null(s->op2);
 	case st_bat:
@@ -1501,8 +1547,10 @@ _column_name(sql_allocator *sa, stmt *st)
 	case st_convert:
 		return column_name(sa, st->op1);
 
+		/*
 	case st_unop:
 	case st_binop:
+	*/
 	case st_Nop:
 	{
 		char *cn = column_name(sa, st->op1);
@@ -1638,8 +1686,10 @@ schema_name(sql_allocator *sa, stmt *st)
 	case st_union:
 	case st_unique:
 	case st_convert:
+		/*
 	case st_unop:
 	case st_binop:
+	*/
 	case st_Nop:
 	case st_aggr:
 		return schema_name(sa, st->op1);
@@ -1898,10 +1948,12 @@ print_stmt(sql_allocator *sa, stmt *s)
 			sql_subtype *t = s->op4.lval->t->data;
 			printf("%s, %s", f->type->base.name, t->type->base.name);
 		} break;
+			/*
 		case st_unop:
 			printf("%s", s->op4.funcval->func->base.name);
 			break;
 		case st_binop:
+			*/
 		case st_Nop:
 			printf("%s, ", s->op4.funcval->func->base.name);
 			break;

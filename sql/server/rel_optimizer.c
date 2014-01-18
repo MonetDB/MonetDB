@@ -5356,8 +5356,9 @@ rel_project_reduce_casts(int *changes, mvc *sql, sql_rel *rel)
 
 			if (e && e->type == e_func) {
 				sql_subfunc *f = e->f;
+				sql_subtype *res = f->res->h->data; 
 
-				if (!f->func->s && !strcmp(f->func->base.name, "sql_mul") && f->res.scale > 0) {
+				if (!f->func->s && !strcmp(f->func->base.name, "sql_mul") && res->scale > 0) {
 					list *args = e->l;
 					sql_exp *h = args->h->data;
 					sql_exp *t = args->t->data;
@@ -5367,7 +5368,7 @@ rel_project_reduce_casts(int *changes, mvc *sql, sql_rel *rel)
 					    (is_atom(t->type) && (a = exp_value(t, sql->args, sql->argc)) != NULL)) {
 						int rs = reduce_scale(a);
 
-						f->res.scale -= rs; 
+						res->scale -= rs; 
 						if (rs)
 							(*changes)+= rs;
 					}

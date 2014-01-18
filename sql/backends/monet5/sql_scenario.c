@@ -592,6 +592,14 @@ sql_update_feb2013_sp3(Client c)
 	return err;		/* usually MAL_SUCCEED */
 }
 
+/*
+ * TODO
+ * 	rewrite agrs table, ie add vararg and inout columns
+ * 	update all table functions, ie make them type F_UNION
+ *	update columns view, ie change storage_type-int into storage - varchar
+ *	remove table return types (#..), ie tt_generated from _tables
+ *	drop declared schema.
+ */
 static str
 sql_update_jan2014(Client c)
 {
@@ -1003,7 +1011,8 @@ SQLinitClient(Client c)
 		}
 		/* if function sys.storagemodel() does not exist, we
 		 * need to update */
-		if (!sql_bind_func(m->sa, mvc_bind_schema(m, "sys"), "storagemodel", NULL, NULL, F_FUNC)) {
+		if (!sql_bind_func(m->sa, mvc_bind_schema(m, "sys"), "storagemodel", NULL, NULL, F_FUNC) && 
+		    !sql_bind_func(m->sa, mvc_bind_schema(m, "sys"), "storagemodel", NULL, NULL, F_UNION)) {
 			if ((err = sql_update_feb2013_sp1(c)) !=NULL) {
 				fprintf(stderr, "!%s\n", err);
 				GDKfree(err);
@@ -1020,7 +1029,8 @@ SQLinitClient(Client c)
 		}
 		/* if function sys.querylog_catalog() does not exist, we
 		 * need to update */
-		if (!sql_bind_func(m->sa, mvc_bind_schema(m, "sys"), "querylog_catalog", NULL, NULL, F_FUNC)) {
+		if (!sql_bind_func(m->sa, mvc_bind_schema(m, "sys"), "querylog_catalog", NULL, NULL, F_FUNC) &&
+		    !sql_bind_func(m->sa, mvc_bind_schema(m, "sys"), "querylog_catalog", NULL, NULL, F_UNION)) {
 			if ((err = sql_update_jan2014(c)) !=NULL) {
 				fprintf(stderr, "!%s\n", err);
 				GDKfree(err);

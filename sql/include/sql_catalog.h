@@ -252,12 +252,13 @@ typedef struct sql_alias {
 	char *alias;
 } sql_alias;
 
+#define ARG_IN 1
+#define ARG_OUT 0
+
 typedef struct sql_subtype {
 	sql_type *type;
 	unsigned int digits;
 	unsigned int scale;
-
-	struct sql_table *comp_type;	
 } sql_subtype;
 
 /* sql_func need type transform rules types are equal if underlying
@@ -267,6 +268,7 @@ typedef struct sql_subtype {
 
 typedef struct sql_arg {
 	char *name;
+	bte inout;
 	sql_subtype type;
 } sql_arg;
 
@@ -289,14 +291,16 @@ typedef struct sql_func {
 	char *mod;
 	int type;
 	list *ops;	/* param list */
-	sql_subtype res;
+	list *res;	/* list of results */
 	int nr;
 	int sql;	/* 0 native implementation
 			   1 sql 
 			   2 sql instantiated proc 
 			*/
 	char *query;	/* sql code */
-	int side_effect;
+	bit side_effect;
+	bit varres;	/* variable output result */
+	bit vararg;	/* variable input arguments */
 	int fix_scale;
 			/*
 	   		   SCALE_NOFIX/SCALE_NONE => nothing
@@ -315,12 +319,12 @@ typedef struct sql_func {
 
 typedef struct sql_subfunc {
 	sql_func *func;
-	sql_subtype res;
+	list *res;
 } sql_subfunc;
 
 typedef struct sql_subaggr {
 	sql_func *aggr;
-	sql_subtype res;
+	list *res;
 } sql_subaggr;
 
 typedef enum key_type {
@@ -432,7 +436,6 @@ typedef struct sql_column {
 typedef enum table_types {
 	tt_table = 0, 		/* table */
 	tt_view = 1, 		/* view */
-	tt_generated = 2,	/* generated (functions can be sql or c-code) */
 	tt_merge_table = 3,	/* multiple tables form one table */
 	tt_stream = 4,		/* stream */
 	tt_remote = 5,		/* stored on a remote server */
@@ -441,7 +444,6 @@ typedef enum table_types {
 
 #define isTable(x) 	  (x->type==tt_table)
 #define isView(x)  	  (x->type==tt_view)
-#define isGenerated(x)    (x->type==tt_generated)
 #define isMergeTable(x)   (x->type==tt_merge_table)
 #define isStream(x)  	  (x->type==tt_stream)
 #define isRemote(x)  	  (x->type==tt_remote)
@@ -450,16 +452,12 @@ typedef enum table_types {
 
 typedef struct sql_table {
 	sql_base base;
-	sht type;		/* table, view or generated */
+	sht type;		/* table, view, etc */
 	bit system;		/* system or user table */
 	temp_t persistence;	/* persistent, global or local temporary */
 	ca_t commit_action;  	/* on commit action */
 	bit readonly;	
-	char *query;		/* views and generated may require some query 
-
-				   A generated without a query is simply 
-					a type definition
-				*/
+	char *query;		/* views may require some query */
 	int  sz;
 
 	sql_ukey *pkey;

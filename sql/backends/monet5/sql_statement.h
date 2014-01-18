@@ -97,8 +97,10 @@ typedef enum stmt_type {
 	st_group,
 	st_unique,
 	st_convert,
+	/*
 	st_unop,
 	st_binop,
+	*/
 	st_Nop,
 	st_func,
 	st_aggr,
@@ -154,6 +156,7 @@ extern stmt *stmt_none(sql_allocator *sa);
 #define VAR_DECLARE 1
 #define VAR_GLOBAL(f) ((f>>1)==1)
 extern stmt *stmt_var(sql_allocator *sa, char *varname, sql_subtype *t, int declare, int level);
+extern stmt *stmt_vars(sql_allocator *sa, char *varname, sql_table *t, int declare, int level);
 extern stmt *stmt_varnr(sql_allocator *sa, int nr, sql_subtype *t);
 
 extern stmt *stmt_table(sql_allocator *sa, stmt *cols, int temp);

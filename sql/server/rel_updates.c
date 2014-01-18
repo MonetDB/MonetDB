@@ -799,11 +799,8 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_where)
 		t = mvc_bind_table(sql, s, tname);
 		if (!t) 
 			t = mvc_bind_table(sql, NULL, tname);
-		if (!t) {
-			sql_subtype *tpe = stack_find_type(sql, tname);
-			if (tpe)
-				t = tpe->comp_type;
-		}
+		if (!t) 
+			t = stack_find_table(sql, tname);
 	}
 	if (!t) {
 		return sql_error(sql, 02, "42S02!UPDATE: no such table '%s'", tname);
@@ -960,11 +957,8 @@ delete_table(mvc *sql, dlist *qname, symbol *opt_where)
 		t = mvc_bind_table(sql, schema, tname);
 		if (!t) 
 			t = mvc_bind_table(sql, NULL, tname);
-		if (!t) {
-			sql_subtype *tpe = stack_find_type(sql, tname);
-			if (tpe)
-				t = tpe->comp_type;
-		}
+		if (!t) 
+			t = stack_find_table(sql, tname);
 	}
 	if (!t) {
 		return sql_error(sql, 02, "42S02!DELETE FROM: no such table '%s'", tname);
@@ -1010,6 +1004,19 @@ delete_table(mvc *sql, dlist *qname, symbol *opt_where)
 	}
 }
 
+static list *
+table_column_types(sql_allocator *sa, sql_table *t)
+{
+	node *n;
+	list *types = sa_list(sa);
+
+	if (t->columns.set) for (n = t->columns.set->h; n; n = n->next) {
+		sql_column *c = n->data;
+		append(types, &c->type);
+	}
+	return types;
+}
+
 static sql_rel *
 rel_import(mvc *sql, sql_table *t, char *tsep, char *rsep, char *ssep, char *ns, char *filename, lng nr, lng offset, int locked)
 {
@@ -1020,9 +1027,9 @@ rel_import(mvc *sql, sql_table *t, char *tsep, char *rsep, char *ssep, char *ns,
 	sql_exp *import;
 	sql_schema *sys = mvc_bind_schema(sql, "sys");
 	int len = 7 + (filename?1:0);
-	sql_subfunc *f = sql_find_func(sql->sa, sys, "copyfrom", len, F_FUNC); 
+	sql_subfunc *f = sql_find_func(sql->sa, sys, "copyfrom", len, F_UNION); 
 	
-	f->res.comp_type = t;
+	f->res = table_column_types(sql->sa, t);
  	sql_find_subtype(&tpe, "varchar", 0, 0);
 	args = append( append( append( append( append( append( new_exp_list(sql->sa), 
 		exp_atom_str(sql->sa, t->s?t->s->base.name:NULL, &tpe)), 
@@ -1078,11 +1085,8 @@ copyfrom(mvc *sql, dlist *qname, dlist *files, dlist *seps, dlist *nr_offset, st
 	if (!t && !sname) {
 		s = tmp_schema(sql);
 		t = mvc_bind_table(sql, s, tname);
-		if (!t) {
-			sql_subtype *tpe = stack_find_type(sql, tname);
-			if (tpe)
-				t = tpe->comp_type;
-		}
+		if (!t) 
+			t = stack_find_table(sql, tname);
 	}
 	if (!t) 
 		return sql_error(sql, 02, "42S02!COPY INTO: no such table '%s'", tname);
@@ -1173,7 +1177,7 @@ bincopyfrom(mvc *sql, dlist *qname, dlist *files, int constraint)
 	sql_subtype tpe;
 	sql_exp *import;
 	sql_schema *sys = mvc_bind_schema(sql, "sys");
-	sql_subfunc *f = sql_find_func(sql->sa, sys, "copyfrom", 2, F_FUNC); 
+	sql_subfunc *f = sql_find_func(sql->sa, sys, "copyfrom", 2, F_UNION); 
 
 	if (sql->user_id != USER_MONETDB) {
 		(void) sql_error(sql, 02, "COPY INTO: insufficient privileges: "
@@ -1191,11 +1195,8 @@ bincopyfrom(mvc *sql, dlist *qname, dlist *files, int constraint)
 	if (!t && !sname) {
 		s = tmp_schema(sql);
 		t = mvc_bind_table(sql, s, tname);
-		if (!t) {
-			sql_subtype *tpe = stack_find_type(sql, tname);
-			if (tpe)
-				t = tpe->comp_type;
-		}
+		if (!t) 
+			t = stack_find_table(sql, tname);
 	}
 	if (!t) 
 		return sql_error(sql, 02, "42S02!COPY INTO: no such table '%s'", tname);
@@ -1206,7 +1207,7 @@ bincopyfrom(mvc *sql, dlist *qname, dlist *files, int constraint)
 	if (files == NULL)
 		return sql_error(sql, 02, "COPY INTO: must specify files");
 
-	f->res.comp_type = t;
+	f->res = table_column_types(sql->sa, t);
  	sql_find_subtype(&tpe, "varchar", 0, 0);
 	args = append( append( new_exp_list(sql->sa), 
 		exp_atom_str(sql->sa, t->s?t->s->base.name:NULL, &tpe)), 

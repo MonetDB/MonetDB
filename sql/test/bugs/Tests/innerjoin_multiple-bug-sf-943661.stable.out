@@ -27,9 +27,10 @@ Ready.
 % sys.schemas,	.tables,	.columns # table_name
 % name,	name,	name # name
 % varchar,	varchar,	varchar # type
-% 3,	9,	12 # length
+% 3,	9,	11 # length
 [ "sys",	"args",	"func_id"	]
 [ "sys",	"args",	"id"	]
+[ "sys",	"args",	"inout"	]
 [ "sys",	"args",	"name"	]
 [ "sys",	"args",	"number"	]
 [ "sys",	"args",	"type"	]
@@ -40,7 +41,7 @@ Ready.
 [ "sys",	"columns",	"name"	]
 [ "sys",	"columns",	"null"	]
 [ "sys",	"columns",	"number"	]
-[ "sys",	"columns",	"storage_type"	]
+[ "sys",	"columns",	"storage"	]
 [ "sys",	"columns",	"table_id"	]
 [ "sys",	"columns",	"type"	]
 [ "sys",	"columns",	"type_digits"	]
@@ -53,6 +54,8 @@ Ready.
 [ "sys",	"functions",	"side_effect"	]
 [ "sys",	"functions",	"sql"	]
 [ "sys",	"functions",	"type"	]
+[ "sys",	"functions",	"vararg"	]
+[ "sys",	"functions",	"varres"	]
 [ "sys",	"idxs",	"id"	]
 [ "sys",	"idxs",	"name"	]
 [ "sys",	"idxs",	"table_id"	]
@@ -102,9 +105,10 @@ Ready.
 % sys.s,	.t,	.c # table_name
 % name,	name,	name # name
 % varchar,	varchar,	varchar # type
-% 3,	9,	12 # length
+% 3,	9,	11 # length
 [ "sys",	"args",	"func_id"	]
 [ "sys",	"args",	"id"	]
+[ "sys",	"args",	"inout"	]
 [ "sys",	"args",	"name"	]
 [ "sys",	"args",	"number"	]
 [ "sys",	"args",	"type"	]
@@ -115,7 +119,7 @@ Ready.
 [ "sys",	"columns",	"name"	]
 [ "sys",	"columns",	"null"	]
 [ "sys",	"columns",	"number"	]
-[ "sys",	"columns",	"storage_type"	]
+[ "sys",	"columns",	"storage"	]
 [ "sys",	"columns",	"table_id"	]
 [ "sys",	"columns",	"type"	]
 [ "sys",	"columns",	"type_digits"	]
@@ -128,6 +132,8 @@ Ready.
 [ "sys",	"functions",	"side_effect"	]
 [ "sys",	"functions",	"sql"	]
 [ "sys",	"functions",	"type"	]
+[ "sys",	"functions",	"vararg"	]
+[ "sys",	"functions",	"varres"	]
 [ "sys",	"idxs",	"id"	]
 [ "sys",	"idxs",	"name"	]
 [ "sys",	"idxs",	"table_id"	]

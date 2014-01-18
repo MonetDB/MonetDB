@@ -43,6 +43,7 @@ CREATE TABLE "sys"."args" (
 	"type"        VARCHAR(1024),
 	"type_digits" INTEGER,
 	"type_scale"  INTEGER,
+	"inout"       TINYINT,
 	"number"      INTEGER
 );
 % sys.node_tags # table_name

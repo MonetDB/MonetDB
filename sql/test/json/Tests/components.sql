@@ -4,7 +4,7 @@ insert into jsoncomp values( '{"myBoolean":true,"myList":["a","b"],"myMap":{"c":
 select * from jsoncomp;
 
 declare js json;
-set js:= '{"myBoolean":true,"myList":["a","b"],"myMap":{"c":"d","a":"b"},"myObject":"myClass","myJsonObject":{"myString":"myStringValue"}}';
+set js = '{"myBoolean":true,"myList":["a","b"],"myMap":{"c":"d","a":"b"},"myObject":"myClass","myJsonObject":{"myString":"myStringValue"}}';
 
 select json.keyarray(js);
 select json.valuearray(js);

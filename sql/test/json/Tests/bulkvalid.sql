@@ -8,13 +8,10 @@ insert into  nosql values
 	('[1,"f2", 2]');
 select * from nosql;
 
-explain select json.isvalid(j) from nosql;
 select json.isvalid(j) from nosql;
 
-explain select json.isobject(j) from nosql;
 select json.isobject(j) from nosql;
 
-explain select json.isarray(j) from nosql;
 select json.isarray(j) from nosql;
 
 -- consider them as initial strings
@@ -28,10 +25,8 @@ insert into  tmpsql values
 	('[1,"f2", 2]');
 select * from tmpsql;
 
-explain select json.isvalid(j) from nosql;
 select json.isvalid(j) from nosql;
 
-explain select json.isobject(j) from nosql;
 select json.isobject(j) from nosql;
 
 explain select json.isarray(j) from nosql;

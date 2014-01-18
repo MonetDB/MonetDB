@@ -67,64 +67,6 @@ Ready.
 [ "{\"f1\":1,\"f2\":2,\"f1\":3}"	]
 [ "{\"f1\":{\"f12\":3},\"f2\":[2,3,4]}"	]
 [ "[1,\"f2\", 2]"	]
-#explain select json.isvalid(j) from nosql;
-% .explain # table_name
-% mal # name
-% clob # type
-% 90 # length
-function user.s4_1{autoCommit=true}():void;
-barrier X_93 := language.dataflow();
-    X_2 := sql.mvc();
-    X_34:bat[:oid,:oid]  := sql.tid(X_2,"sys","nosql",0,6);
-    X_45:bat[:oid,:json]  := sql.bind(X_2,"sys","nosql","j",0,0,6);
-    (X_51:bat[:oid,:oid] ,X_52:bat[:oid,:json] ) := sql.bind(X_2,"sys","nosql","j",2,0,6);
-    X_63 := sql.delta(X_45,X_51,X_52);
-    X_70 := algebra.leftfetchjoin(X_34,X_63);
-    X_81 := mal.manifold("json","isvalid",X_70);
-    X_36:bat[:oid,:oid]  := sql.tid(X_2,"sys","nosql",1,6);
-    X_46:bat[:oid,:json]  := sql.bind(X_2,"sys","nosql","j",0,1,6);
-    (X_53:bat[:oid,:oid] ,X_54:bat[:oid,:json] ) := sql.bind(X_2,"sys","nosql","j",2,1,6);
-    X_64 := sql.delta(X_46,X_53,X_54);
-    X_72 := algebra.leftfetchjoin(X_36,X_64);
-    X_82 := mal.manifold("json","isvalid",X_72);
-    X_38:bat[:oid,:oid]  := sql.tid(X_2,"sys","nosql",2,6);
-    X_47:bat[:oid,:json]  := sql.bind(X_2,"sys","nosql","j",0,2,6);
-    (X_55:bat[:oid,:oid] ,X_56:bat[:oid,:json] ) := sql.bind(X_2,"sys","nosql","j",2,2,6);
-    X_65 := sql.delta(X_47,X_55,X_56);
-    X_74 := algebra.leftfetchjoin(X_38,X_65);
-    X_83 := mal.manifold("json","isvalid",X_74);
-    X_40:bat[:oid,:oid]  := sql.tid(X_2,"sys","nosql",3,6);
-    X_48:bat[:oid,:json]  := sql.bind(X_2,"sys","nosql","j",0,3,6);
-    (X_57:bat[:oid,:oid] ,X_58:bat[:oid,:json] ) := sql.bind(X_2,"sys","nosql","j",2,3,6);
-    X_66 := sql.delta(X_48,X_57,X_58);
-    X_76 := algebra.leftfetchjoin(X_40,X_66);
-    X_84 := mal.manifold("json","isvalid",X_76);
-    X_42:bat[:oid,:oid]  := sql.tid(X_2,"sys","nosql",4,6);
-    X_49:bat[:oid,:json]  := sql.bind(X_2,"sys","nosql","j",0,4,6);
-    (X_59:bat[:oid,:oid] ,X_60:bat[:oid,:json] ) := sql.bind(X_2,"sys","nosql","j",2,4,6);
-    X_67 := sql.delta(X_49,X_59,X_60);
-    X_78 := algebra.leftfetchjoin(X_42,X_67);
-    X_85 := mal.manifold("json","isvalid",X_78);
-    X_44:bat[:oid,:oid]  := sql.tid(X_2,"sys","nosql",5,6);
-    X_50:bat[:oid,:json]  := sql.bind(X_2,"sys","nosql","j",0,5,6);
-    (X_61:bat[:oid,:oid] ,X_62:bat[:oid,:json] ) := sql.bind(X_2,"sys","nosql","j",2,5,6);
-    X_8 := sql.bind(X_2,"sys","nosql","j",1);
-    X_68 := sql.delta(X_50,X_61,X_62,X_8);
-    X_80 := algebra.leftfetchjoin(X_44,X_68);
-    X_86 := mal.manifold("json","isvalid",X_80);
-    X_87 := mat.packIncrement(X_81,6);
-    X_88 := mat.packIncrement(X_87,X_82);
-    X_89 := mat.packIncrement(X_88,X_83);
-    X_90 := mat.packIncrement(X_89,X_84);
-    X_91 := mat.packIncrement(X_90,X_85);
-    X_10:bat[:oid,:bit]  := mat.packIncrement(X_91,X_86);
-exit X_93;
-    X_13 := sql.resultSet(1,1,X_10);
-    sql.rsColumn(X_13,"sys.L","isvalid_j","boolean",1,0,X_10);
-    X_18 := io.stdout();
-    sql.exportResult(X_18,X_13);
-end s4_1;
-# querylog.define("explain select json.isvalid(j) from nosql;","default_pipe")
 #select json.isvalid(j) from nosql;
 % sys.L # table_name
 % isvalid_j # name
@@ -136,65 +78,7 @@ end s4_1;
 [ true	]
 [ true	]
 [ true	]
-#explain select json.isvalidobject(j) from nosql;
-% .explain # table_name
-% mal # name
-% clob # type
-% 90 # length
-function user.s5_1{autoCommit=true}():void;
-barrier X_93 := language.dataflow();
-    X_2 := sql.mvc();
-    X_34:bat[:oid,:oid]  := sql.tid(X_2,"sys","nosql",0,6);
-    X_45:bat[:oid,:json]  := sql.bind(X_2,"sys","nosql","j",0,0,6);
-    (X_51:bat[:oid,:oid] ,X_52:bat[:oid,:json] ) := sql.bind(X_2,"sys","nosql","j",2,0,6);
-    X_63 := sql.delta(X_45,X_51,X_52);
-    X_70 := algebra.leftfetchjoin(X_34,X_63);
-    X_81 := mal.manifold("json","isobject",X_70);
-    X_36:bat[:oid,:oid]  := sql.tid(X_2,"sys","nosql",1,6);
-    X_46:bat[:oid,:json]  := sql.bind(X_2,"sys","nosql","j",0,1,6);
-    (X_53:bat[:oid,:oid] ,X_54:bat[:oid,:json] ) := sql.bind(X_2,"sys","nosql","j",2,1,6);
-    X_64 := sql.delta(X_46,X_53,X_54);
-    X_72 := algebra.leftfetchjoin(X_36,X_64);
-    X_82 := mal.manifold("json","isobject",X_72);
-    X_38:bat[:oid,:oid]  := sql.tid(X_2,"sys","nosql",2,6);
-    X_47:bat[:oid,:json]  := sql.bind(X_2,"sys","nosql","j",0,2,6);
-    (X_55:bat[:oid,:oid] ,X_56:bat[:oid,:json] ) := sql.bind(X_2,"sys","nosql","j",2,2,6);
-    X_65 := sql.delta(X_47,X_55,X_56);
-    X_74 := algebra.leftfetchjoin(X_38,X_65);
-    X_83 := mal.manifold("json","isobject",X_74);
-    X_40:bat[:oid,:oid]  := sql.tid(X_2,"sys","nosql",3,6);
-    X_48:bat[:oid,:json]  := sql.bind(X_2,"sys","nosql","j",0,3,6);
-    (X_57:bat[:oid,:oid] ,X_58:bat[:oid,:json] ) := sql.bind(X_2,"sys","nosql","j",2,3,6);
-    X_66 := sql.delta(X_48,X_57,X_58);
-    X_76 := algebra.leftfetchjoin(X_40,X_66);
-    X_84 := mal.manifold("json","isobject",X_76);
-    X_42:bat[:oid,:oid]  := sql.tid(X_2,"sys","nosql",4,6);
-    X_49:bat[:oid,:json]  := sql.bind(X_2,"sys","nosql","j",0,4,6);
-    (X_59:bat[:oid,:oid] ,X_60:bat[:oid,:json] ) := sql.bind(X_2,"sys","nosql","j",2,4,6);
-    X_67 := sql.delta(X_49,X_59,X_60);
-    X_78 := algebra.leftfetchjoin(X_42,X_67);
-    X_85 := mal.manifold("json","isobject",X_78);
-    X_44:bat[:oid,:oid]  := sql.tid(X_2,"sys","nosql",5,6);
-    X_50:bat[:oid,:json]  := sql.bind(X_2,"sys","nosql","j",0,5,6);
-    (X_61:bat[:oid,:oid] ,X_62:bat[:oid,:json] ) := sql.bind(X_2,"sys","nosql","j",2,5,6);
-    X_8 := sql.bind(X_2,"sys","nosql","j",1);
-    X_68 := sql.delta(X_50,X_61,X_62,X_8);
-    X_80 := algebra.leftfetchjoin(X_44,X_68);
-    X_86 := mal.manifold("json","isobject",X_80);
-    X_87 := mat.packIncrement(X_81,6);
-    X_88 := mat.packIncrement(X_87,X_82);
-    X_89 := mat.packIncrement(X_88,X_83);
-    X_90 := mat.packIncrement(X_89,X_84);
-    X_91 := mat.packIncrement(X_90,X_85);
-    X_10:bat[:oid,:bit]  := mat.packIncrement(X_91,X_86);
-exit X_93;
-    X_13 := sql.resultSet(1,1,X_10);
-    sql.rsColumn(X_13,"sys.L","isobject_j","boolean",1,0,X_10);
-    X_18 := io.stdout();
-    sql.exportResult(X_18,X_13);
-end s5_1;
-# querylog.define("explain select json.isvalidobject(j) from nosql;","default_pipe")
-#select json.isvalidobject(j) from nosql;
+#select json.isobject(j) from nosql;
 % sys.L # table_name
 % isobject_j # name
 % boolean # type
@@ -205,65 +89,7 @@ end s5_1;
 [ true	]
 [ true	]
 [ false	]
-#explain select json.isvalidarray(j) from nosql;
-% .explain # table_name
-% mal # name
-% clob # type
-% 90 # length
-function user.s6_1{autoCommit=true}():void;
-barrier X_93 := language.dataflow();
-    X_2 := sql.mvc();
-    X_34:bat[:oid,:oid]  := sql.tid(X_2,"sys","nosql",0,6);
-    X_45:bat[:oid,:json]  := sql.bind(X_2,"sys","nosql","j",0,0,6);
-    (X_51:bat[:oid,:oid] ,X_52:bat[:oid,:json] ) := sql.bind(X_2,"sys","nosql","j",2,0,6);
-    X_63 := sql.delta(X_45,X_51,X_52);
-    X_70 := algebra.leftfetchjoin(X_34,X_63);
-    X_81 := mal.manifold("json","isarray",X_70);
-    X_36:bat[:oid,:oid]  := sql.tid(X_2,"sys","nosql",1,6);
-    X_46:bat[:oid,:json]  := sql.bind(X_2,"sys","nosql","j",0,1,6);
-    (X_53:bat[:oid,:oid] ,X_54:bat[:oid,:json] ) := sql.bind(X_2,"sys","nosql","j",2,1,6);
-    X_64 := sql.delta(X_46,X_53,X_54);
-    X_72 := algebra.leftfetchjoin(X_36,X_64);
-    X_82 := mal.manifold("json","isarray",X_72);
-    X_38:bat[:oid,:oid]  := sql.tid(X_2,"sys","nosql",2,6);
-    X_47:bat[:oid,:json]  := sql.bind(X_2,"sys","nosql","j",0,2,6);
-    (X_55:bat[:oid,:oid] ,X_56:bat[:oid,:json] ) := sql.bind(X_2,"sys","nosql","j",2,2,6);
-    X_65 := sql.delta(X_47,X_55,X_56);
-    X_74 := algebra.leftfetchjoin(X_38,X_65);
-    X_83 := mal.manifold("json","isarray",X_74);
-    X_40:bat[:oid,:oid]  := sql.tid(X_2,"sys","nosql",3,6);
-    X_48:bat[:oid,:json]  := sql.bind(X_2,"sys","nosql","j",0,3,6);
-    (X_57:bat[:oid,:oid] ,X_58:bat[:oid,:json] ) := sql.bind(X_2,"sys","nosql","j",2,3,6);
-    X_66 := sql.delta(X_48,X_57,X_58);
-    X_76 := algebra.leftfetchjoin(X_40,X_66);
-    X_84 := mal.manifold("json","isarray",X_76);
-    X_42:bat[:oid,:oid]  := sql.tid(X_2,"sys","nosql",4,6);
-    X_49:bat[:oid,:json]  := sql.bind(X_2,"sys","nosql","j",0,4,6);
-    (X_59:bat[:oid,:oid] ,X_60:bat[:oid,:json] ) := sql.bind(X_2,"sys","nosql","j",2,4,6);
-    X_67 := sql.delta(X_49,X_59,X_60);
-    X_78 := algebra.leftfetchjoin(X_42,X_67);
-    X_85 := mal.manifold("json","isarray",X_78);
-    X_44:bat[:oid,:oid]  := sql.tid(X_2,"sys","nosql",5,6);
-    X_50:bat[:oid,:json]  := sql.bind(X_2,"sys","nosql","j",0,5,6);
-    (X_61:bat[:oid,:oid] ,X_62:bat[:oid,:json] ) := sql.bind(X_2,"sys","nosql","j",2,5,6);
-    X_8 := sql.bind(X_2,"sys","nosql","j",1);
-    X_68 := sql.delta(X_50,X_61,X_62,X_8);
-    X_80 := algebra.leftfetchjoin(X_44,X_68);
-    X_86 := mal.manifold("json","isarray",X_80);
-    X_87 := mat.packIncrement(X_81,6);
-    X_88 := mat.packIncrement(X_87,X_82);
-    X_89 := mat.packIncrement(X_88,X_83);
-    X_90 := mat.packIncrement(X_89,X_84);
-    X_91 := mat.packIncrement(X_90,X_85);
-    X_10:bat[:oid,:bit]  := mat.packIncrement(X_91,X_86);
-exit X_93;
-    X_13 := sql.resultSet(1,1,X_10);
-    sql.rsColumn(X_13,"sys.L","isarray_j","boolean",1,0,X_10);
-    X_18 := io.stdout();
-    sql.exportResult(X_18,X_13);
-end s6_1;
-# querylog.define("explain select json.isvalidarray(j) from nosql;","default_pipe")
-#select json.isvalidarray(j) from nosql;
+#select json.isarray(j) from nosql;
 % sys.L # table_name
 % isarray_j # name
 % boolean # type
@@ -294,64 +120,6 @@ end s6_1;
 [ "{\"f1\":1,\"f2\":2,\"f1\":3}"	]
 [ "{\"f1\":{\"f12\":3},\"f2\":[2,3,4]}"	]
 [ "[1,\"f2\", 2]"	]
-#explain select json.isvalid(j) from nosql;
-% .explain # table_name
-% mal # name
-% clob # type
-% 90 # length
-function user.s10_1{autoCommit=true}():void;
-barrier X_93 := language.dataflow();
-    X_2 := sql.mvc();
-    X_34:bat[:oid,:oid]  := sql.tid(X_2,"sys","nosql",0,6);
-    X_45:bat[:oid,:json]  := sql.bind(X_2,"sys","nosql","j",0,0,6);
-    (X_51:bat[:oid,:oid] ,X_52:bat[:oid,:json] ) := sql.bind(X_2,"sys","nosql","j",2,0,6);
-    X_63 := sql.delta(X_45,X_51,X_52);
-    X_70 := algebra.leftfetchjoin(X_34,X_63);
-    X_81 := mal.manifold("json","isvalid",X_70);
-    X_36:bat[:oid,:oid]  := sql.tid(X_2,"sys","nosql",1,6);
-    X_46:bat[:oid,:json]  := sql.bind(X_2,"sys","nosql","j",0,1,6);
-    (X_53:bat[:oid,:oid] ,X_54:bat[:oid,:json] ) := sql.bind(X_2,"sys","nosql","j",2,1,6);
-    X_64 := sql.delta(X_46,X_53,X_54);
-    X_72 := algebra.leftfetchjoin(X_36,X_64);
-    X_82 := mal.manifold("json","isvalid",X_72);
-    X_38:bat[:oid,:oid]  := sql.tid(X_2,"sys","nosql",2,6);
-    X_47:bat[:oid,:json]  := sql.bind(X_2,"sys","nosql","j",0,2,6);
-    (X_55:bat[:oid,:oid] ,X_56:bat[:oid,:json] ) := sql.bind(X_2,"sys","nosql","j",2,2,6);
-    X_65 := sql.delta(X_47,X_55,X_56);
-    X_74 := algebra.leftfetchjoin(X_38,X_65);
-    X_83 := mal.manifold("json","isvalid",X_74);
-    X_40:bat[:oid,:oid]  := sql.tid(X_2,"sys","nosql",3,6);
-    X_48:bat[:oid,:json]  := sql.bind(X_2,"sys","nosql","j",0,3,6);
-    (X_57:bat[:oid,:oid] ,X_58:bat[:oid,:json] ) := sql.bind(X_2,"sys","nosql","j",2,3,6);
-    X_66 := sql.delta(X_48,X_57,X_58);
-    X_76 := algebra.leftfetchjoin(X_40,X_66);
-    X_84 := mal.manifold("json","isvalid",X_76);
-    X_42:bat[:oid,:oid]  := sql.tid(X_2,"sys","nosql",4,6);
-    X_49:bat[:oid,:json]  := sql.bind(X_2,"sys","nosql","j",0,4,6);
-    (X_59:bat[:oid,:oid] ,X_60:bat[:oid,:json] ) := sql.bind(X_2,"sys","nosql","j",2,4,6);
-    X_67 := sql.delta(X_49,X_59,X_60);
-    X_78 := algebra.leftfetchjoin(X_42,X_67);
-    X_85 := mal.manifold("json","isvalid",X_78);
-    X_44:bat[:oid,:oid]  := sql.tid(X_2,"sys","nosql",5,6);
-    X_50:bat[:oid,:json]  := sql.bind(X_2,"sys","nosql","j",0,5,6);
-    (X_61:bat[:oid,:oid] ,X_62:bat[:oid,:json] ) := sql.bind(X_2,"sys","nosql","j",2,5,6);
-    X_8 := sql.bind(X_2,"sys","nosql","j",1);
-    X_68 := sql.delta(X_50,X_61,X_62,X_8);
-    X_80 := algebra.leftfetchjoin(X_44,X_68);
-    X_86 := mal.manifold("json","isvalid",X_80);
-    X_87 := mat.packIncrement(X_81,6);
-    X_88 := mat.packIncrement(X_87,X_82);
-    X_89 := mat.packIncrement(X_88,X_83);
-    X_90 := mat.packIncrement(X_89,X_84);
-    X_91 := mat.packIncrement(X_90,X_85);
-    X_10:bat[:oid,:bit]  := mat.packIncrement(X_91,X_86);
-exit X_93;
-    X_13 := sql.resultSet(1,1,X_10);
-    sql.rsColumn(X_13,"sys.L","isvalid_j","boolean",1,0,X_10);
-    X_18 := io.stdout();
-    sql.exportResult(X_18,X_13);
-end s10_1;
-# querylog.define("explain select json.isvalid(j) from nosql;","default_pipe")
 #select json.isvalid(j) from nosql;
 % sys.L # table_name
 % isvalid_j # name
@@ -363,65 +131,7 @@ end s10_1;
 [ true	]
 [ true	]
 [ true	]
-#explain select json.isvalidobject(j) from nosql;
-% .explain # table_name
-% mal # name
-% clob # type
-% 90 # length
-function user.s11_1{autoCommit=true}():void;
-barrier X_93 := language.dataflow();
-    X_2 := sql.mvc();
-    X_34:bat[:oid,:oid]  := sql.tid(X_2,"sys","nosql",0,6);
-    X_45:bat[:oid,:json]  := sql.bind(X_2,"sys","nosql","j",0,0,6);
-    (X_51:bat[:oid,:oid] ,X_52:bat[:oid,:json] ) := sql.bind(X_2,"sys","nosql","j",2,0,6);
-    X_63 := sql.delta(X_45,X_51,X_52);
-    X_70 := algebra.leftfetchjoin(X_34,X_63);
-    X_81 := mal.manifold("json","isobject",X_70);
-    X_36:bat[:oid,:oid]  := sql.tid(X_2,"sys","nosql",1,6);
-    X_46:bat[:oid,:json]  := sql.bind(X_2,"sys","nosql","j",0,1,6);
-    (X_53:bat[:oid,:oid] ,X_54:bat[:oid,:json] ) := sql.bind(X_2,"sys","nosql","j",2,1,6);
-    X_64 := sql.delta(X_46,X_53,X_54);
-    X_72 := algebra.leftfetchjoin(X_36,X_64);
-    X_82 := mal.manifold("json","isobject",X_72);
-    X_38:bat[:oid,:oid]  := sql.tid(X_2,"sys","nosql",2,6);
-    X_47:bat[:oid,:json]  := sql.bind(X_2,"sys","nosql","j",0,2,6);
-    (X_55:bat[:oid,:oid] ,X_56:bat[:oid,:json] ) := sql.bind(X_2,"sys","nosql","j",2,2,6);
-    X_65 := sql.delta(X_47,X_55,X_56);
-    X_74 := algebra.leftfetchjoin(X_38,X_65);
-    X_83 := mal.manifold("json","isobject",X_74);
-    X_40:bat[:oid,:oid]  := sql.tid(X_2,"sys","nosql",3,6);
-    X_48:bat[:oid,:json]  := sql.bind(X_2,"sys","nosql","j",0,3,6);
-    (X_57:bat[:oid,:oid] ,X_58:bat[:oid,:json] ) := sql.bind(X_2,"sys","nosql","j",2,3,6);
-    X_66 := sql.delta(X_48,X_57,X_58);
-    X_76 := algebra.leftfetchjoin(X_40,X_66);
-    X_84 := mal.manifold("json","isobject",X_76);
-    X_42:bat[:oid,:oid]  := sql.tid(X_2,"sys","nosql",4,6);
-    X_49:bat[:oid,:json]  := sql.bind(X_2,"sys","nosql","j",0,4,6);
-    (X_59:bat[:oid,:oid] ,X_60:bat[:oid,:json] ) := sql.bind(X_2,"sys","nosql","j",2,4,6);
-    X_67 := sql.delta(X_49,X_59,X_60);
-    X_78 := algebra.leftfetchjoin(X_42,X_67);
-    X_85 := mal.manifold("json","isobject",X_78);
-    X_44:bat[:oid,:oid]  := sql.tid(X_2,"sys","nosql",5,6);
-    X_50:bat[:oid,:json]  := sql.bind(X_2,"sys","nosql","j",0,5,6);
-    (X_61:bat[:oid,:oid] ,X_62:bat[:oid,:json] ) := sql.bind(X_2,"sys","nosql","j",2,5,6);
-    X_8 := sql.bind(X_2,"sys","nosql","j",1);
-    X_68 := sql.delta(X_50,X_61,X_62,X_8);
-    X_80 := algebra.leftfetchjoin(X_44,X_68);
-    X_86 := mal.manifold("json","isobject",X_80);
-    X_87 := mat.packIncrement(X_81,6);
-    X_88 := mat.packIncrement(X_87,X_82);
-    X_89 := mat.packIncrement(X_88,X_83);
-    X_90 := mat.packIncrement(X_89,X_84);
-    X_91 := mat.packIncrement(X_90,X_85);
-    X_10:bat[:oid,:bit]  := mat.packIncrement(X_91,X_86);
-exit X_93;
-    X_13 := sql.resultSet(1,1,X_10);
-    sql.rsColumn(X_13,"sys.L","isobject_j","boolean",1,0,X_10);
-    X_18 := io.stdout();
-    sql.exportResult(X_18,X_13);
-end s11_1;
-# querylog.define("explain select json.isvalidobject(j) from nosql;","default_pipe")
-#select json.isvalidobject(j) from nosql;
+#select json.isobject(j) from nosql;
 % sys.L # table_name
 % isobject_j # name
 % boolean # type
@@ -438,52 +148,38 @@ end s11_1;
 % clob # type
 % 90 # length
 function user.s12_1{autoCommit=true}():void;
-barrier X_93 := language.dataflow();
+barrier X_70 := language.dataflow();
     X_2 := sql.mvc();
-    X_34:bat[:oid,:oid]  := sql.tid(X_2,"sys","nosql",0,6);
-    X_45:bat[:oid,:json]  := sql.bind(X_2,"sys","nosql","j",0,0,6);
-    (X_51:bat[:oid,:oid] ,X_52:bat[:oid,:json] ) := sql.bind(X_2,"sys","nosql","j",2,0,6);
-    X_63 := sql.delta(X_45,X_51,X_52);
-    X_70 := algebra.leftfetchjoin(X_34,X_63);
-    X_81 := mal.manifold("json","isarray",X_70);
-    X_36:bat[:oid,:oid]  := sql.tid(X_2,"sys","nosql",1,6);
-    X_46:bat[:oid,:json]  := sql.bind(X_2,"sys","nosql","j",0,1,6);
-    (X_53:bat[:oid,:oid] ,X_54:bat[:oid,:json] ) := sql.bind(X_2,"sys","nosql","j",2,1,6);
-    X_64 := sql.delta(X_46,X_53,X_54);
-    X_72 := algebra.leftfetchjoin(X_36,X_64);
-    X_82 := mal.manifold("json","isarray",X_72);
-    X_38:bat[:oid,:oid]  := sql.tid(X_2,"sys","nosql",2,6);
-    X_47:bat[:oid,:json]  := sql.bind(X_2,"sys","nosql","j",0,2,6);
-    (X_55:bat[:oid,:oid] ,X_56:bat[:oid,:json] ) := sql.bind(X_2,"sys","nosql","j",2,2,6);
-    X_65 := sql.delta(X_47,X_55,X_56);
-    X_74 := algebra.leftfetchjoin(X_38,X_65);
-    X_83 := mal.manifold("json","isarray",X_74);
-    X_40:bat[:oid,:oid]  := sql.tid(X_2,"sys","nosql",3,6);
-    X_48:bat[:oid,:json]  := sql.bind(X_2,"sys","nosql","j",0,3,6);
-    (X_57:bat[:oid,:oid] ,X_58:bat[:oid,:json] ) := sql.bind(X_2,"sys","nosql","j",2,3,6);
-    X_66 := sql.delta(X_48,X_57,X_58);
-    X_76 := algebra.leftfetchjoin(X_40,X_66);
-    X_84 := mal.manifold("json","isarray",X_76);
-    X_42:bat[:oid,:oid]  := sql.tid(X_2,"sys","nosql",4,6);
-    X_49:bat[:oid,:json]  := sql.bind(X_2,"sys","nosql","j",0,4,6);
-    (X_59:bat[:oid,:oid] ,X_60:bat[:oid,:json] ) := sql.bind(X_2,"sys","nosql","j",2,4,6);
-    X_67 := sql.delta(X_49,X_59,X_60);
-    X_78 := algebra.leftfetchjoin(X_42,X_67);
-    X_85 := mal.manifold("json","isarray",X_78);
-    X_44:bat[:oid,:oid]  := sql.tid(X_2,"sys","nosql",5,6);
-    X_50:bat[:oid,:json]  := sql.bind(X_2,"sys","nosql","j",0,5,6);
-    (X_61:bat[:oid,:oid] ,X_62:bat[:oid,:json] ) := sql.bind(X_2,"sys","nosql","j",2,5,6);
+    X_34:bat[:oid,:oid]  := sql.tid(X_2,"sys","nosql",0,4);
+    X_41:bat[:oid,:json]  := sql.bind(X_2,"sys","nosql","j",0,0,4);
+    (X_45:bat[:oid,:oid] ,X_46:bat[:oid,:json] ) := sql.bind(X_2,"sys","nosql","j",2,0,4);
+    X_53 := sql.delta(X_41,X_45,X_46);
+    X_57 := algebra.leftfetchjoin(X_34,X_53);
+    X_61 := mal.manifold("json","isarray",X_57);
+    X_36:bat[:oid,:oid]  := sql.tid(X_2,"sys","nosql",1,4);
+    X_42:bat[:oid,:json]  := sql.bind(X_2,"sys","nosql","j",0,1,4);
+    (X_47:bat[:oid,:oid] ,X_48:bat[:oid,:json] ) := sql.bind(X_2,"sys","nosql","j",2,1,4);
+    X_54 := sql.delta(X_42,X_47,X_48);
+    X_58 := algebra.leftfetchjoin(X_36,X_54);
+    X_62 := mal.manifold("json","isarray",X_58);
+    X_38:bat[:oid,:oid]  := sql.tid(X_2,"sys","nosql",2,4);
+    X_43:bat[:oid,:json]  := sql.bind(X_2,"sys","nosql","j",0,2,4);
+    (X_49:bat[:oid,:oid] ,X_50:bat[:oid,:json] ) := sql.bind(X_2,"sys","nosql","j",2,2,4);
+    X_55 := sql.delta(X_43,X_49,X_50);
+    X_59 := algebra.leftfetchjoin(X_38,X_55);
+    X_63 := mal.manifold("json","isarray",X_59);
+    X_40:bat[:oid,:oid]  := sql.tid(X_2,"sys","nosql",3,4);
+    X_44:bat[:oid,:json]  := sql.bind(X_2,"sys","nosql","j",0,3,4);
+    (X_51:bat[:oid,:oid] ,X_52:bat[:oid,:json] ) := sql.bind(X_2,"sys","nosql","j",2,3,4);
     X_8 := sql.bind(X_2,"sys","nosql","j",1);
-    X_68 := sql.delta(X_50,X_61,X_62,X_8);
-    X_80 := algebra.leftfetchjoin(X_44,X_68);
-    X_86 := mal.manifold("json","isarray",X_80);
-    X_87 := mat.packIncrement(X_81,6);
-    X_88 := mat.packIncrement(X_87,X_82);
-    X_89 := mat.packIncrement(X_88,X_83);
-    X_90 := mat.packIncrement(X_89,X_84);
-    X_91 := mat.packIncrement(X_90,X_85);
-    X_10:bat[:oid,:bit]  := mat.packIncrement(X_91,X_86);
-exit X_93;
+    X_56 := sql.delta(X_44,X_51,X_52,X_8);
+    X_60 := algebra.leftfetchjoin(X_40,X_56);
+    X_64 := mal.manifold("json","isarray",X_60);
+    X_65 := mat.packIncrement(X_61,4);
+    X_67 := mat.packIncrement(X_65,X_62);
+    X_68 := mat.packIncrement(X_67,X_63);
+    X_10:bat[:oid,:bit]  := mat.packIncrement(X_68,X_64);
+exit X_70;
     X_13 := sql.resultSet(1,1,X_10);
     sql.rsColumn(X_13,"sys.L","isarray_j","boolean",1,0,X_10);
     X_18 := io.stdout();
