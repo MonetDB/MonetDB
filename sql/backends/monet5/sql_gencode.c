@@ -629,7 +629,7 @@ multiplexN(MalBlkPtr mb, char *mod, char *name)
 	return q;
 }
 
-static int backend_create_subfunc(backend *be, sql_subfunc *f);
+static int backend_create_subfunc(backend *be, sql_subfunc *f, list *ops);
 static int backend_create_subaggr(backend *be, sql_subaggr *f);
 
 #define SMALLBUFSIZ 64
@@ -641,7 +641,7 @@ dump_joinN(backend *sql, MalBlkPtr mb, stmt *s)
 	int op1, op2, op3 = 0;
 	bit swapped = (s->flag & SWAPPED) ? TRUE : FALSE;
 
-	if (backend_create_subfunc(sql, s->op4.funcval) < 0)
+	if (backend_create_subfunc(sql, s->op4.funcval, NULL) < 0)
 		return -1;
 	mod = sql_func_mod(s->op4.funcval->func);
 	fimp = sql_func_imp(s->op4.funcval->func);
@@ -1074,7 +1074,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					node *n;
 					char *mod, *fimp;
 
-					if (backend_create_subfunc(sql, s->op4.funcval) < 0)
+					if (backend_create_subfunc(sql, s->op4.funcval, NULL) < 0)
 						return -1;
 					mod = sql_func_mod(s->op4.funcval->func);
 					fimp = sql_func_imp(s->op4.funcval->func);
@@ -1579,7 +1579,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			/* dump operands */
 			_dumpstmt(sql, mb, s->op1);
 
-			if (backend_create_subfunc(sql, f) < 0)
+			if (backend_create_subfunc(sql, f, s->op1->op4.lval) < 0)
 				return -1;
 			mod = sql_func_mod(f->func);
 			fimp = sql_func_imp(f->func);
@@ -2361,7 +2361,7 @@ monet5_resolve_function(ptr M, sql_func *f)
 
 /* TODO handle aggr */
 static int
-backend_create_func(backend *be, sql_func *f, list *restypes)
+backend_create_func(backend *be, sql_func *f, list *restypes, list *ops)
 {
 	mvc *m = be->mvc;
 	sql_schema *schema = m->session->schema;
@@ -2370,13 +2370,14 @@ backend_create_func(backend *be, sql_func *f, list *restypes)
 	Client c = be->client;
 	Symbol backup = NULL;
 	stmt *s;
-	int i, retseen = 0, sideeffects = 0;
+	int i, retseen = 0, sideeffects = 0, vararg = (f->varres || f->vararg);
 	sql_allocator *sa, *osa = m->sa;
 
 	/* nothing to do for internal and ready (not recompiling) functions */
-	if (!f->sql || f->sql > 1)
+	if (!f->sql || (!vararg && f->sql > 1))
 		return 0;
-	f->sql++;
+	if (!vararg)
+		f->sql++;
 	sa = sa_create();
 	m->session->schema = f->s;
 	s = sql_parse(m, sa, f->query, m_instantiate);
@@ -2388,7 +2389,8 @@ backend_create_func(backend *be, sql_func *f, list *restypes)
 	}
 
 	if (!s) {
-		f->sql--;
+		if (!vararg)
+			f->sql--;
 		sa_destroy(sa);
 		return -1;
 	}
@@ -2411,6 +2413,23 @@ backend_create_func(backend *be, sql_func *f, list *restypes)
 	}
 	setVarUDFtype(curBlk, 0);
 
+	if (f->vararg && ops) {
+		int argc = 0;
+		node *n;
+
+		for (n = ops->h; n; n = n->next, argc++) {
+			stmt *s = n->data;
+			int type = tail_type(s)->type->localtype;
+			int varid = 0;
+			char *buf = GDKmalloc(MAXIDENTLEN);
+
+			(void) snprintf(buf, MAXIDENTLEN, "A%d", argc);
+			varid = newVariable(curBlk, buf, type);
+			curInstr = pushArgument(curBlk, curInstr, varid);
+			setVarType(curBlk, varid, type);
+			setVarUDFtype(curBlk, varid);
+		}
+	} else
 	if (f->ops) {
 		int argc = 0;
 		node *n;
@@ -2465,13 +2484,13 @@ backend_create_func(backend *be, sql_func *f, list *restypes)
 }
 
 static int
-backend_create_subfunc(backend *be, sql_subfunc *f)
+backend_create_subfunc(backend *be, sql_subfunc *f, list *ops)
 {
-	return backend_create_func(be, f->func, f->res);
+	return backend_create_func(be, f->func, f->res, ops);
 }
 
 static int
 backend_create_subaggr(backend *be, sql_subaggr *f)
 {
-	return backend_create_func(be, f->aggr, f->res);
+	return backend_create_func(be, f->aggr, f->res, NULL);
 }
