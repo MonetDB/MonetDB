@@ -28,8 +28,6 @@ stderr of test 'groupby.Bug-3421` in directory 'sql/test/BugTracker-2014` itself
 # 10:34:33 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-29232" "--port=30277"
 # 10:34:33 >  
 
-CREATE FILTER FUNCTION: name 'like' (clob, clob, clob) already in use
-ParseException:SQLparser:CREATE FILTER FUNCTION: name 'like' (clob, clob, clob) already in use
 
 
 # 10:34:33 >  
