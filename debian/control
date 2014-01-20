@@ -16,7 +16,7 @@ Standards-Version: 3.8.0
 X-Python-Version: >= 2.6
 X-Python3-Version: >= 3.0
 
-Package: libmonetdb9
+Package: libmonetdb10
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Conflicts: libmonetdb1, libmonetdb2
@@ -35,7 +35,7 @@ Description: MonetDB core library
 
 Package: libmonetdb-dev
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, libmonetdb9
+Depends: ${shlibs:Depends}, ${misc:Depends}, libmonetdb10
 Description: MonetDB development files
  MonetDB is a database management system that is developed from a
  main-memory perspective with use of a fully decomposed storage model,
@@ -45,7 +45,7 @@ Description: MonetDB development files
  This package contains files needed to develop extensions to the core
  functionality of MonetDB.
 
-Package: libmonetdb-stream3
+Package: libmonetdb-stream5
 Conflicts: libmonetdb-stream2
 Replaces: libmonetdb-stream2
 Architecture: any
@@ -61,7 +61,7 @@ Description: MonetDB stream library
 
 Package: libmonetdb-stream-dev
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, libmonetdb-stream3
+Depends: ${shlibs:Depends}, ${misc:Depends}, libmonetdb-stream5
 Description: MonetDB stream library development files
  MonetDB is a database management system that is developed from a
  main-memory perspective with use of a fully decomposed storage model,
@@ -69,7 +69,7 @@ Description: MonetDB stream library development files
  accelerators.  It also has an SQL frontend.
  .
  This package contains the files to develop with the
- libmonetdb-stream3 library.
+ libmonetdb-stream5 library.
 
 Package: libmonetdb-client6
 Architecture: any
