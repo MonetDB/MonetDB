@@ -48,6 +48,12 @@ Ready.
 # 16:59:35 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-696" "--port=38407"
 # 16:59:35 >  
 
+#CREATE TABLE wtf(a int, b int, c int);
+#INSERT INTO wtf VALUES(1, 2, 3);
+[ 1	]
+#INSERT INTO wtf VALUES(4, 5, 6);
+[ 1	]
+#drop table wtf;
 
 # 16:59:36 >  
 # 16:59:36 >  "Done."
