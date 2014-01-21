@@ -1,7 +1,6 @@
 # tests related to bug reports:
 # <descriptive-name>.SF-<bug-report-id>[.<ext>]
 
-cardinality_violation.SF-1240701
 rank_over.SF-1691098
 with_only_once.SF-1720293
 multi-column-constraint.SF-1964587
