@@ -512,7 +512,7 @@ INSPECTgetEnvironmentKey(str *ret, str *key)
 {
 	str s = GDKgetenv(*key);
 	if (s == 0)
-		throw(MAL, "inspect.getEnvironment", MAL_MALLOC_FAIL);
+		throw(MAL, "inspect.getEnvironment", "environment variable '%s' not found", *key);
 	*ret = GDKstrdup(s);
 	return MAL_SUCCEED;
 }

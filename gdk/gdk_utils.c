@@ -1084,6 +1084,18 @@ GDKinit(opt *set, int setlen)
 		GDKsetenv("gdk_dbname", p + 1);
 #endif
 	}
+	if (GDKgetenv("gdk_vm_maxsize") == NULL) {
+		snprintf(buf, sizeof(buf), SZFMT, GDK_vm_maxsize);
+		GDKsetenv("gdk_vm_maxsize", buf);
+	}
+	if (GDKgetenv("gdk_mem_maxsize") == NULL) {
+		snprintf(buf, sizeof(buf), SZFMT, GDK_mem_maxsize);
+		GDKsetenv("gdk_mem_maxsize", buf);
+	}
+	if (GDKgetenv("gdk_mmap_minsize") == NULL) {
+		snprintf(buf, sizeof(buf), SZFMT, GDK_mmap_minsize);
+		GDKsetenv("gdk_mmap_minsize", buf);
+	}
 	if (GDKgetenv("gdk_mmap_pagesize") == NULL) {
 		snprintf(buf, sizeof(buf), SZFMT, GDK_mmap_pagesize);
 		GDKsetenv("gdk_mmap_pagesize", buf);

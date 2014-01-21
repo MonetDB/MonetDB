@@ -28,7 +28,12 @@ stderr of test 'nested_common_table_exp.Bug-3417` in directory 'sql/test/BugTrac
 # 16:59:35 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-696" "--port=38407"
 # 16:59:35 >  
 
-0D000!CREATE TYPE: unknown external type 'json'
+MAPI  = (monetdb) /var/tmp/mtest-24212/.s.monetdb.35205
+QUERY = WITH 	a AS (SELECT a, b FROM wtf WHERE a IN (1, 4)),
+              	b AS (SELECT a, b, count(*) AS d FROM a GROUP BY a, b),
+        	c AS (SELECT a, count(*) AS e FROM b GROUP BY b) 
+        SELECT * FROM c;
+ERROR = !SELECT: cannot use non GROUP BY column 'a' in query results without an aggregate function
 
 # 16:59:36 >  
 # 16:59:36 >  "Done."

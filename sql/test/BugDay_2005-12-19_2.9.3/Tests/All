@@ -6,7 +6,7 @@ in_operator.SF-1211925
 prepare_doesnot_like_LIKE.SF-1234205
 prepare-where.SF-1238867.1238959.1238965.1240124
 delete_where_1_equals_1.SF-1240162
-select_from_env.SF-1240701.1242164
+subselect_cardinality.SF-1240701.1242164
 default_next_value_for_non_ex_seq.SF.1246631
 cast_interval.SF.1280682
 interval_times_int.SF-1281996
