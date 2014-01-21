@@ -1,6 +1,6 @@
 Package: monet.frame
 Version: 0.1
-Date: 2013-10-16
+Date: 2013-01-21
 Title: Connect MonetDB to R
 Authors@R: c(person("Hannes Muehleisen", role = c("aut", "cre"),email = "hannes@cwi.nl"),
 	person("Thomas Lumley", role = "ctb"),

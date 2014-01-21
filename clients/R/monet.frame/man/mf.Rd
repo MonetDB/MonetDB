@@ -28,7 +28,7 @@
 }
 
 \seealso{
-  \code{\link[MonetDB.R]{monet.frame}}
+  \code{\link[monet.frame]{monet.frame}}
 }
 \examples{
 \dontrun{
