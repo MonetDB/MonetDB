@@ -10,7 +10,8 @@
 }
 \usage{
    monetdb.read.csv (conn, files, tablename, nrows, header=TRUE, 
-  locked=FALSE, na.strings="", ..., nrow.check=500, delim=",")
+  locked=FALSE, na.strings="", nrow.check=500, delim=",",
+  newline = "\\\\n", quote = "\"", ...)
 }
 \arguments{
   \item{conn}{A MonetDB.R database connection. Created using \code{\link[DBI]{dbConnect}} with the 
@@ -26,6 +27,8 @@
    \item{nrow.check}{Amount of rows that should be read from the CSV when the 
    table is being created to determine column types.}
    \item{delim}{Field separator in CSV file.}
+   \item{newline}{Newline in CSV file, usually \\n for UNIX-like systems and \\r\\r on Windows.}
+   \item{quote}{Quote character(s) in CSV file.}
  }
  
 \value{

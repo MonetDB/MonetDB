@@ -27,21 +27,24 @@ MonetR <- MonetDB <- MonetDBR <- MonetDB.R <- function() {
 
 setMethod("dbGetInfo", "MonetDBDriver", def=function(dbObj, ...)
 			list(name="MonetDBDriver", 
-					driver.version="0.8.0",
+					driver.version="0.9",
 					DBI.version="0.2-5",
 					client.version=NA,
 					max.connections=NA)
 )
 
 # shorthand for connecting to the DB, very handy, e.g. dbListTables(mc("acs"))
-mc <- function(dbname="demo", user="monetdb", password="monetdb", host="localhost",port=50000, timeout=86400, wait=FALSE,...) {
+mc <- function(dbname="demo", user="monetdb", password="monetdb", host="localhost",port=50000L, timeout=86400L, wait=FALSE,...) {
 	dbConnect(MonetDB.R(),dbname,user,password,host,port,timeout,wait,...)
 }
 
-setMethod("dbConnect", "MonetDBDriver", def=function(drv,dbname="demo", user="monetdb", password="monetdb", host="localhost",port=50000, timeout=86400, wait=FALSE,...,url="") {
+setMethod("dbConnect", "MonetDBDriver", def=function(drv,dbname="demo", user="monetdb", password="monetdb", host="localhost",port=50000L, timeout=86400L, wait=FALSE,...,url="") {
 			if (substring(url,1,10) == "monetdb://") {
 				dbname <- url
 			}
+			port <- as.integer(port)
+			timeout <- as.integer(timeout)
+			
 			if (substring(dbname,1,10) == "monetdb://") {
 				#warning("MonetDB.R: Using 'monetdb://...' URIs in dbConnect() is deprecated. Please switch to dbname, host, port named arguments.")
 				rest <- substring(dbname,11,nchar(dbname))
@@ -239,7 +242,7 @@ setMethod("dbWriteTable", "MonetDBConnection", def=function(conn, name, value, o
 		})
 
 
-setMethod("dbDataType", signature(dbObj="MonetDBConnection", obj = "ANY"), def=function(dbObj, obj, ...) {
+setMethod("dbDataType", signature(dbObj="MonetDBConnection", obj = "ANY"), def = function(dbObj, obj, ...) {
 			if (is.logical(obj)) "BOOLEAN"
 			else if (is.integer(obj)) "INTEGER"
 			else if (is.numeric(obj)) "DOUBLE PRECISION"
@@ -412,7 +415,7 @@ setMethod("fetch", signature(res="MonetDBResult", n="numeric"), def=function(res
 			#parts[parts=="NULL"] <- NA
 			
 			# call to a faster C implementation for the hard and annoying task of splitting everyting into fields
-			parts <- .Call("mapiSplit", res@env$data[1:n],info$cols, PACKAGE=C_LIBRARY)
+			parts <- .Call("mapiSplit", res@env$data[1:n],as.integer(info$cols), PACKAGE=C_LIBRARY)
 			
 			# convert values column by column
 			for (j in seq.int(info$cols)) {	
@@ -642,8 +645,8 @@ REPLY_SIZE    <- 100 # Apparently, -1 means unlimited, but we will start with a 
 			env$types	<- env$dbtypes <- toupper(.mapiParseTableHeader(lines[4]))
 			env$lengths	<- .mapiParseTableHeader(lines[5])
 			
-			env$tuples <-lines[6:length(lines)]
-
+			if (env$rows > 0) env$tuples <- lines[6:length(lines)]
+			
 			stopifnot(length(env$tuples) == header$index)
 			return(env)
 		}
@@ -779,13 +782,21 @@ REPLY_SIZE    <- 100 # Apparently, -1 means unlimited, but we will start with a 
 	
 }
 
+.hasColFunc <- function(conn,func) {
+	tryCatch({
+				r <- dbSendQuery(conn,paste0("SELECT ",func,"(1);"))
+				TRUE
+			}, error = function(e) {
+				FALSE
+			})
+}
 
 # copied from RMonetDB, no java-specific things in here...
 # TODO: read first few rows with read.table and check types etc.
 
-monet.read.csv <- monetdb.read.csv <- function(conn,files,tablename,nrows,header=TRUE,locked=FALSE,na.strings="",...,nrow.check=500,delim=","){
+monet.read.csv <- monetdb.read.csv <- function(conn,files,tablename,nrows,header=TRUE,locked=FALSE,na.strings="",nrow.check=500,delim=",",newline="\\n",quote="\"",...){
 	if (length(na.strings)>1) stop("na.strings must be of length 1")
-	headers<-lapply(files,read.csv,na.strings="NA",...,nrows=nrow.check)
+	headers<-lapply(files,read.csv,na.strings="NA",quote=quote,nrows=nrow.check,...)
 	
 	if (length(files)>1){
 		nn<-sapply(headers,ncol)
@@ -797,17 +808,19 @@ monet.read.csv <- monetdb.read.csv <- function(conn,files,tablename,nrows,header
 	} 
 	
 	dbWriteTable(conn, tablename, headers[[1]][FALSE,])
+
+	delimspec <- paste0("USING DELIMITERS '",delim,"','",newline,"','",quote,"'")
 	
 	if(header || !missing(nrows)){
 		if (length(nrows)==1) nrows<-rep(nrows,length(files))
 		for(i in seq_along(files)) {
 			cat(files[i],thefile<-normalizePath(files[i]),"\n")
-			dbSendUpdate(conn, paste("copy",format(nrows[i],scientific=FALSE),"offset 2 records into", tablename,"from",paste("'",thefile,"'",sep=""),"using delimiters ',','\\n','\"' NULL as",paste("'",na.strings[1],"'",sep=""),if(locked) "LOCKED"))
+			dbSendUpdate(conn, paste("COPY",format(nrows[i],scientific=FALSE),"OFFSET 2 RECORDS INTO", tablename,"FROM",paste("'",thefile,"'",sep=""),delimspec,"NULL as",paste("'",na.strings[1],"'",sep=""),if(locked) "LOCKED"))
 		}
 	} else {
 		for(i in seq_along(files)) {
 			cat(files[i],thefile<-normalizePath(files[i]),"\n")
-			dbSendUpdate(conn, paste0("copy into ", tablename," from ",paste("'",thefile,"'",sep="")," using delimiters '",delim,"','\\n','\"' NULL as ",paste("'",na.strings[1],"'",sep=""),if(locked) " LOCKED "))
+			dbSendUpdate(conn, paste0("COPY INTO ", tablename," FROM ",paste("'",thefile,"'",sep=""),delimspec,"NULL as ",paste("'",na.strings[1],"'",sep=""),if(locked) " LOCKED "))
 		}
 	}
 	dbGetQuery(conn,paste("select count(*) from",tablename))

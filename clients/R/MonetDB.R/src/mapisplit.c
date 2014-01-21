@@ -131,7 +131,6 @@ SEXP mapiSplit(SEXP mapiLinesVector, SEXP numCols) {
 				break;
 			}
 		}
-		assert(cCol == cols - 1);
 	}
 	free(valPtr);
 
