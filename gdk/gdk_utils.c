@@ -1107,7 +1107,9 @@ GDKinit(opt *set, int setlen)
 
 	/* only start vmtrim thread when explicitly asked to do so or
 	 * when on a 32 bit architecture and not told to not start
-	 * it */
+	 * it;
+	 * see also mo_builtin_settings() in common/options/monet_options.c
+	 */
 	p = mo_find_option(set, setlen, "gdk_vmtrim");
 	if (
 #if SIZEOF_VOID_P == 4

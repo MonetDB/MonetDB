@@ -250,6 +250,10 @@ mo_builtin_settings(opt **Set)
 	i++;
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("gdk_vmtrim");
+	/* default for gdk_vmtrim is
+	 * "yes" on 32 bit architectures and
+	 * "no"  on 64 bit architectures;
+	 * see also GDKinit() in gdk/gdk_utils.c */
 #if SIZEOF_VOID_P == 4
 	/* 32 bit architecture */
 	set[i].value = strdup("yes");
