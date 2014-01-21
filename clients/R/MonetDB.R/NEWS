@@ -1,6 +1,18 @@
+0.8.5
+- added parameters newline and quote to monetdb.write.csv
+
+0.8.4
+- fixed bug when reading empty table (Thanks, Anthony)
+- removed assertion in mapisplit.c that triggered sometimes for unclear reasons
+
+0.8.3
+- fixed a problem where integer SEXPs turned to double somehow
+
+0.8.2
+- fixed bug in dbConnect() where port and timeout were not always integer values
+
 0.8.1
 - fixed bug in dbWriteTable() where VARCHAR(255) was used for character data instead of STRING
-- moved monet.frame into separate package
 
 0.8
 - New All-C socket code (Thanks, Windows)
