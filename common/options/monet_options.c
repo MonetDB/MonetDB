@@ -250,7 +250,13 @@ mo_builtin_settings(opt **Set)
 	i++;
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("gdk_vmtrim");
+#if SIZEOF_VOID_P == 4
+	/* 32 bit architecture */
 	set[i].value = strdup("yes");
+#else
+	/* 64 bit architecture */
+	set[i].value = strdup("no");
+#endif
 	i++;
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("monet_prompt");
