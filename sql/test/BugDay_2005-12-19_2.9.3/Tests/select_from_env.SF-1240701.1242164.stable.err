@@ -12,7 +12,7 @@ stderr of test 'select_from_env.SF-1240701.1242164` in directory 'sql/test/BugDa
 
 MAPI  = (monetdb) /var/tmp/mtest-28498/.s.monetdb.30263
 QUERY = select * from env() as env where name = ( select 'prefix' from env() as env );
-ERROR = !cardinality violation (20>1)
+ERROR = !cardinality violation (23>1)
 
 # 13:22:15 >  
 # 13:22:15 >  Done.
