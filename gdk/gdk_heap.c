@@ -100,10 +100,6 @@ decompose_filename(str nme)
 int
 HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 {
-	char nme[PATHLENGTH];
-	size_t minsize = GDK_mmap_minsize;
-	struct stat st;
-
 	h->base = NULL;
 	h->size = 1;
 	h->copied = 0;
@@ -115,16 +111,19 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 	if (itemsize && nitems > (h->size / itemsize))
 		return -1;
 
-	if (h->filename == NULL || h->size < minsize) {
+	if (h->filename == NULL || h->size < GDK_mmap_minsize) {
 		h->storage = STORE_MEM;
 		h->base = (char *) GDKmallocmax(h->size, &h->size, 0);
 		HEAPDEBUG fprintf(stderr, "#HEAPalloc " SZFMT " " PTRFMT "\n", h->size, PTRFMTCAST h->base);
 	}
 	if (h->filename && h->base == NULL) {
-		char *of = h->filename;
+		char nme[PATHLENGTH];
+		struct stat st;
+		char *of;
 
+		of = h->filename;
 		h->filename = NULL;
-
+		GDKfilepath(nme, BATDIR, of, NULL);
 		if (stat(nme, &st) < 0) {
 			h->storage = STORE_MMAP;
 			h->base = HEAPcreatefile(&h->size, of);

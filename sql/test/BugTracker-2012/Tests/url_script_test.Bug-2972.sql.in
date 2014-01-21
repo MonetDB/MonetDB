@@ -1,3 +1,5 @@
+start transaction;
+
 create table t2972(u url);
 insert into t2972 values('http://www.cwi.nl/~mk/vision2011.pdf');
 insert into t2972 values('http://www.monetdb.com?x=2');
@@ -44,3 +46,5 @@ insert into t2972 values ('$UTSTSRCDIR/url_script_test.Bug-2972.txt');
 select getContent(u) from t2972;
 
 drop table t2972;
+
+rollback;

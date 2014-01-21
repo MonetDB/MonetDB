@@ -1,9 +1,9 @@
 # tests related to bug reports:
 # <descriptive-name>.Bug-<bug-report-id>
 #
+aggregate_vs_positional_column_crash.Bug-3085
 time-export-bug.Bug-2963
 sticky-precision.Bug-2969
-url_script_test.Bug-2972
 date_script_test.Bug-2973
 nested-select-crash.Bug-3009
 combination_of_theta_and_equijoins.Bug-3004
@@ -39,7 +39,6 @@ grant_on_qname.Bug-2958
 bug_large-insert-Bug.2960
 any_null.Bug-2594
 float-mod.Bug-3086
-aggregate_vs_positional_column_crash.Bug-3085
 predicate_select.Bug-3090
 hash_join_crash.Bug-3089
 row-number-nyi.Bug-3087
@@ -84,3 +83,4 @@ inet-casts.Bug-3205
 fixed_limit_for_prepare.Bug-3208
 exp_bin_assertion.Bug-3209
 querycache.Bug-3212.sql
+url_script_test.Bug-2972
