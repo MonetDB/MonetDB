@@ -77,7 +77,7 @@ project (
 | | | | | ) [ supplier.s_suppkey NOT NULL HASHCOL  as L3.L2 ]
 | | | | ) [ partsupp.ps_suppkey NOT NULL = L3.L2 NOT NULL HASHCOL  ]
 | | | ) [ partsupp.ps_suppkey NOT NULL, part.p_brand NOT NULL, part.p_type NOT NULL, part.p_size NOT NULL ]
-| | ) [ partsupp.ps_suppkey NOT NULL as L5.L5, part.p_size NOT NULL, part.p_brand NOT NULL, part.p_type NOT NULL ] [ part.p_size NOT NULL, part.p_brand NOT NULL, part.p_type NOT NULL, L5.L5 NOT NULL ]
+| | ) [ partsupp.ps_suppkey NOT NULL as L5.L5, part.p_size NOT NULL, part.p_brand NOT NULL, part.p_type NOT NULL ] [ part.p_brand NOT NULL, part.p_type NOT NULL, part.p_size NOT NULL, L5.L5 NOT NULL ]
 | ) [ part.p_size NOT NULL, part.p_brand NOT NULL, part.p_type NOT NULL ] [ part.p_brand NOT NULL, part.p_type NOT NULL, part.p_size NOT NULL, sys.count no nil (L5.L5 NOT NULL) NOT NULL as L4.L4 ]
 ) [ part.p_brand NOT NULL, part.p_type NOT NULL, part.p_size NOT NULL, L4 NOT NULL as L4.supplier_cnt ] [ L4.supplier_cnt NOT NULL, part.p_brand ASC NOT NULL, part.p_type ASC NOT NULL, part.p_size ASC NOT NULL ]
 
