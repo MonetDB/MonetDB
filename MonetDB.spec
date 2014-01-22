@@ -441,7 +441,8 @@ querly language for JavaScript Object Notation (JSON).
 %defattr(-,root,root)
 %{_libdir}/monetdb5/autoload/*_jaql.mal
 %{_libdir}/monetdb5/jaql*.mal
-%{_libdir}/monetdb5/json*.mal
+%{_libdir}/monetdb5/json.mal
+%{_libdir}/monetdb5/json_util.mal
 %{_libdir}/monetdb5/lib_jaql.so
 %{_libdir}/monetdb5/lib_json.so
 
@@ -497,7 +498,8 @@ fi
 # %exclude %{_libdir}/monetdb5/rdf.mal
 %exclude %{_libdir}/monetdb5/sql.mal
 %exclude %{_libdir}/monetdb5/jaql*.mal
-%exclude %{_libdir}/monetdb5/json*.mal
+%exclude %{_libdir}/monetdb5/json.mal
+%exclude %{_libdir}/monetdb5/json_util.mal
 %{_libdir}/monetdb5/*.mal
 # %{_libdir}/monetdb5/autoload/*_fits.mal
 %{_libdir}/monetdb5/autoload/*_lsst.mal
