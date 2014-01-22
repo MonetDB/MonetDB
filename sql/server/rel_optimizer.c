@@ -3955,7 +3955,7 @@ rel_groupby_distinct(int *changes, mvc *sql, sql_rel *rel)
 	if (is_groupby(rel->op) && rel->r && !rel_is_ref(rel)) {
 		node *n;
 		int nr = 0;
-		list *gbe, *arg, *exps;
+		list *gbe, *ngbe, *arg, *exps, *nexps;
 		sql_exp *distinct = NULL, *darg;
 		sql_rel *l = NULL;
 
@@ -3971,17 +3971,35 @@ rel_groupby_distinct(int *changes, mvc *sql, sql_rel *rel)
 		arg = distinct->l;
 		if (distinct->type != e_aggr || list_length(arg) != 1)
 			return rel;
+
 		darg = arg->h->data;
 		exp_label(sql->sa, darg, ++sql->label);
-		gbe = list_dup(rel->r, (fdup)NULL);
-		exps = list_dup(rel->r, (fdup)NULL);
+
+		gbe = rel->r;
+		ngbe = sa_list(sql->sa);
+		exps = sa_list(sql->sa);
+		nexps = sa_list(sql->sa);
+		for (n=rel->exps->h; n; n = n->next) {
+			sql_exp *e = n->data;
+			if (e != distinct) {
+				e = exp_column(sql->sa, exp_find_rel_name(e), exp_name(e), exp_subtype(e), e->card, has_nil(e), is_intern(e));
+				append(ngbe, e);
+				append(exps, e);
+				e = exp_column(sql->sa, exp_find_rel_name(e), exp_name(e), exp_subtype(e), e->card, has_nil(e), is_intern(e));
+				append(nexps, e);
+			}
+		}
+
 		list_append(gbe, exp_copy(sql->sa, darg));
 		darg = exp_column(sql->sa, exp_find_rel_name(darg), exp_name(darg), exp_subtype(darg), darg->card, has_nil(darg), is_intern(darg));
 		list_append(exps, exp_copy(sql->sa, darg));
 		arg->h->data = darg;
 		l = rel->l = rel_groupby(sql, rel->l, gbe);
 		l->exps = exps;
+		rel->r = ngbe;
+		rel->exps = nexps;
 		set_nodistinct(distinct);
+		append(nexps, distinct);
 		(*changes)++;
 	}
 	return rel;
