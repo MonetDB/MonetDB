@@ -15,6 +15,7 @@ select * from jsonparse;
 -- some errors
 insert into jsonparse values('{');
 insert into jsonparse values('}');
+insert into jsonparse values('{}  k');
 insert into jsonparse values('{:1}');
 insert into jsonparse values('{"k"}');
 insert into jsonparse values('{[}]');

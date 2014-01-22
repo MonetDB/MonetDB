@@ -43,20 +43,36 @@ comment "Convert JSON to its string equivalent. Dealing with escape characters";
 
 command text(j:json):str
 address JSONjson2text
-comment "Convert JSON to its plain string equivalent.";
+comment "Convert JSON values to their plain string equivalent.";
+
+command text(j:json,s:str):str
+address JSONjson2textSeparator
+comment "Convert JSON values to their plain string equivalent.";
+
+command dump(j:json):void
+address JSONdump;
 
 command filter(name:json, pathexpr:str) :json
 address JSONfilter
-comment "Filter all members of an object by path expression";
+comment "Filter all members of an object by a path expression, returning an array.
+Non-matching elements are skipped.";
 
 command filter(name:json, idx:bte) :json
 address JSONfilterArray;
+command filter(name:json, idx:bte,other:str) :json
+address JSONfilterArrayDefault;
 command filter(name:json, idx:sht) :json
 address JSONfilterArray;
+command filter(name:json, idx:sht,other:str) :json
+address JSONfilterArrayDefault;
 command filter(name:json, idx:int) :json
 address JSONfilterArray;
+command filter(name:json, idx:int, other:str) :json
+address JSONfilterArrayDefault;
 command filter(name:json, idx:lng) :json
-address JSONfilterArray
+address JSONfilterArray;
+command filter(name:json, idx:lng, other:str) :json
+address JSONfilterArrayDefault
 comment "Extract a single array element";
 
 command isvalid(val:json):bit
@@ -87,47 +103,33 @@ command length(val:json):int
 address JSONlength
 comment "Returns the number of elements in the outermost JSON object.";
 
-command unnest(val:json)(o:bat[:oid,:oid],k:bat[:oid,:str],v:bat[:oid,:json])
-address JSONunnestGrouped
-comment "Expands the outermost JSON object into key-value pairs with object identity.";
-
-command unnest(val:json)(k:bat[:oid,:str],v:bat[:oid,:json])
-address JSONunnest
+pattern unfold(val:json)(k:bat[:oid,:str],v:bat[:oid,:json])
+address JSONunfold
 comment "Expands the outermost JSON object into key-value pairs.";
 
-command unnest(val:json):bat[:oid,:json]
-address JSONunnestOne
-comment "Expands a JSON list to its elements.";
+pattern unfold(val:json)(o:bat[:oid,:oid],k:bat[:oid,:str],v:bat[:oid,:json])
+address JSONunfold
+comment "Expands the outermost JSON object into key-value pairs.";
 
-pattern nest(o:bat[:oid,:oid],k:bat[:oid,:str],v:bat[:oid,:any]):json
-address JSONnest
-comment "Nest the key-value pairs with object identity into a list of JSON objects ";
-
-pattern nest(k:bat[:oid,:str],v:bat[:oid,:any]):json
-address JSONnest
+pattern fold(o:bat[:oid,:oid],k:bat[:oid,:str],v:bat[:oid,:any]):json
+address JSONfold
 comment "Combine the key-value pairs into a single json object list.";
 
-pattern nest(k:bat[:oid,:str]):json
-address JSONnest;
-pattern nest(k:bat[:oid,:sht]):json
-address JSONnest;
-pattern nest(k:bat[:oid,:int]):json
-address JSONnest;
-pattern nest(k:bat[:oid,:lng]):json
-address JSONnest;
-pattern nest(k:bat[:oid,:flt]):json
-address JSONnest;
-pattern nest(k:bat[:oid,:dbl]):json
-address JSONnest
+pattern fold(k:bat[:oid,:str],v:bat[:oid,:any]):json
+address JSONfold
+comment "Combine the key-value pairs into a single json object list.";
+
+pattern fold(k:bat[:oid,:any]):json
+address JSONfold
 comment "Combine the value list into a single json array object.";
 
 command keyarray(val:json):json
 address JSONkeyArray
-comment "Expands the outermost JSON object keys into a JSON array.";
+comment "Expands the outermost JSON object keys into a JSON value array.";
 
 command valuearray(val:json):json
 address JSONvalueArray
-comment "Expands the outermost JSON object values into a JSON array.";
+comment "Expands the outermost JSON object values into a JSON value array.";
 
 command keys(val:json):bat[:oid,:str]
 address JSONkeyTable

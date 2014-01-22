@@ -19,6 +19,15 @@ stdout of test 'json07` in directory 'monetdb5/modules/atoms` itself:
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
 function user.main():void;
+    js := json.new("{\"myList\":23,\"yours\":[\"a\",\"b\"]}");
+    j1 := json.keyarray(js);
+    io.print(j1);
+    a1 := json.valuearray(js);
+    io.print(a1);
+    n1 := json.keys(js);
+    io.print(n1);
+    v1 := json.values(js);
+    io.print(v1);
     js := json.new("{\"myBoolean\":true,\"myList\":[\"a\",\"b\"],\"myMap\":{\"c\":\"d\",\"a\":\"b\"},\"myObject\":\"myClass\",\"myJsonObject\":{\"myString\":\"myStringValue\"}}");
     j1 := json.keyarray(js);
     io.print(j1);
@@ -29,7 +38,21 @@ function user.main():void;
     v1 := json.values(js);
     io.print(v1);
 end main;
-[ "[\"myBoolean\",\"myList\",\"myMap\",\"myObject\",\"myJsonObject\"]" ]
+[ "[myList,yours]" ]
+[ "[23,[\"a\",\"b\"]]" ]
+#--------------------------#
+# h	t  # name
+# void	str  # type
+#--------------------------#
+[ 0@0,	"myList"  ]
+[ 1@0,	"yours"  ]
+#--------------------------#
+# h	t  # name
+# void	str  # type
+#--------------------------#
+[ 0@0,	"23"  ]
+[ 1@0,	"[\"a\",\"b\"]"  ]
+[ "[myBoolean,myList,myMap,myObject,myJsonObject]" ]
 [ "[true,[\"a\",\"b\"],{\"c\":\"d\",\"a\":\"b\"},\"myClass\",{\"myString\":\"myStringValue\"}]" ]
 #--------------------------#
 # h	t  # name

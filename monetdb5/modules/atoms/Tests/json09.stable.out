@@ -1,0 +1,62 @@
+stdout of test 'json09` in directory 'monetdb5/modules/atoms` itself:
+
+
+# 20:32:43 >  
+# 20:32:43 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=34786" "--set" "mapi_usock=/var/tmp/mtest-8335/.s.monetdb.34786" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/current//Linux/var/MonetDB/mTests_monetdb5_modules_atoms" "json09.mal"
+# 20:32:43 >  
+
+# MonetDB 5 server v11.18.0
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_modules_atoms', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.591 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:34786/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-8335/.s.monetdb.34786
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+function user.main():void;
+#validity tests on erroneous calls 
+    j := bat.new(:oid,:json);
+    b := json.new("[1,\"f2\", 2]");
+    bat.append(j,b);
+    b := json.new("[]");
+    bat.append(j,b);
+    b := json.new("[1,\"f2\", 2]");
+    bat.append(j,b);
+    f:bat[:oid,:json]  := mal.manifold("json","filter",j,0);
+    io.print(f);
+    f:bat[:oid,:json]  := mal.manifold("json","filter",j,1);
+    io.print(f);
+    f:bat[:oid,:json]  := mal.manifold("json","filter",j,2);
+    io.print(f);
+end main;
+#--------------------------#
+# h	t  # name
+# void	json  # type
+#--------------------------#
+[ 0@0,	"[1]"  ]
+[ 1@0,	"[]"  ]
+[ 2@0,	"[1]"  ]
+#--------------------------#
+# h	t  # name
+# void	json  # type
+#--------------------------#
+[ 0@0,	"[\"f2\"]"  ]
+[ 1@0,	"[]"  ]
+[ 2@0,	"[\"f2\"]"  ]
+#--------------------------#
+# h	t  # name
+# void	json  # type
+#--------------------------#
+[ 0@0,	"[2]"  ]
+[ 1@0,	"[]"  ]
+[ 2@0,	"[2]"  ]
+
+# 20:32:44 >  
+# 20:32:44 >  "Done."
+# 20:32:44 >  
+

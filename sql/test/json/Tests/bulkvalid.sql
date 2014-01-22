@@ -29,7 +29,7 @@ select json.isvalid(j) from nosql;
 
 select json.isobject(j) from nosql;
 
-explain select json.isarray(j) from nosql;
+--explain select json.isarray(j) from nosql;
 select json.isarray(j) from nosql;
 
 drop table tmpsql;
