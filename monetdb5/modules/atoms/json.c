@@ -977,7 +977,7 @@ JSONunfoldContainer(JSON *jt, int idx, BAT *bo, BAT *bk, BAT *bv, oid *o)
 static str
 JSONunfoldInternal(int *od, int *key, int *val, json *js)
 {
-	BAT *bo, *bk, *bv;
+	BAT *bo = NULL, *bk, *bv;
 	oid o= 0;
 	str msg = MAL_SUCCEED;
 
