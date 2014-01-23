@@ -311,7 +311,6 @@ int yydebug=1;
 	column_ref
 	atom_commalist
 	value_commalist
-	pred_exp_list
 	row_commalist
 	qname
 	qfunc
@@ -3285,23 +3284,6 @@ in_predicate:
 		  append_symbol(l, $1);
 		  append_list(l, $4);
 		  $$ = _symbol_create_list(SQL_IN, l ); }
- |  '(' pred_exp_list ')' NOT sqlIN '(' value_commalist ')'
-		{ dlist *l = L();
-		  append_list(l, $2);
-		  append_list(l, $7);
-		  $$ = _symbol_create_list(SQL_NOT_IN, l ); }
- |  '(' pred_exp_list ')' sqlIN '(' value_commalist ')'
-		{ dlist *l = L();
-		  append_list(l, $2);
-		  append_list(l, $6);
-		  $$ = _symbol_create_list(SQL_IN, l ); }
- ;
-
-pred_exp_list:
-    pred_exp
-			{ $$ = append_symbol( L(), $1);}
- |  pred_exp_list ',' pred_exp
-			{ $$ = append_symbol( $1, $3); }
  ;
 
 all_or_any_predicate:
