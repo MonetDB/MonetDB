@@ -172,9 +172,9 @@ CMDinfo(BAT **ret1, BAT **ret2, BAT *b)
 	BAT *bk, *bv;
 	const char *mode, *accessmode;
 
-	if (!(bk = BATnew(TYPE_oid, TYPE_str, 128)))
+	if (!(bk = BATnew(TYPE_void, TYPE_str, 128)))
 		return GDK_FAIL;
-	if (!(bv = BATnew(TYPE_oid, TYPE_str, 128)))
+	if (!(bv = BATnew(TYPE_void, TYPE_str, 128)))
 		return GDK_FAIL;
 	BATseqbase(bk,0);
 	BATseqbase(bv,0);
