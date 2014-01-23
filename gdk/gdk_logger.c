@@ -130,13 +130,12 @@ logbat_destroy(BAT *b)
 }
 
 static BAT *
-logbat_new(int ht, int tt, BUN size)
+logbat_new(int tt, BUN size)
 {
-	BAT *nb = BATnew(ht, tt, size);
+	BAT *nb = BATnew(TYPE_void, tt, size);
 
 	if (nb) {
-		if (ht == TYPE_void)
-			BATseqbase(nb, 0);
+		BATseqbase(nb, 0);
 		nb->batDirty |= 2;
 	}
 	return nb;
@@ -1095,8 +1094,8 @@ logger_new(int debug, char *fn, char *logdir, int version, preversionfix_fptr pr
 
 		if ( b == 0)
 			logger_fatal("Logger_new: inconsistent database, '%s' does not exist",bak,0,0);
-		lg->catalog_bid = logbat_new(TYPE_void, TYPE_int, BATSIZE);
-		lg->catalog_nme = logbat_new(TYPE_void, TYPE_str, BATSIZE);
+		lg->catalog_bid = logbat_new(TYPE_int, BATSIZE);
+		lg->catalog_nme = logbat_new(TYPE_str, BATSIZE);
 
 		v = BATmark(b, 0);
 		BATappend(lg->catalog_bid, BATmirror(v), FALSE);
@@ -1127,7 +1126,7 @@ logger_new(int debug, char *fn, char *logdir, int version, preversionfix_fptr pr
 		if ( b == 0)
 			logger_fatal("Logger_new: inconsistent database, '%s' snapshots does not exist",bak,0,0);
 
-		lg->snapshots_bid = logbat_new(TYPE_void, TYPE_int, 1);
+		lg->snapshots_bid = logbat_new(TYPE_int, 1);
 		v = BATmark(b, 0);
 		BATappend(lg->snapshots_bid, BATmirror(v), FALSE);
 		BBPunfix(v->batCacheid);
@@ -1136,7 +1135,7 @@ logger_new(int debug, char *fn, char *logdir, int version, preversionfix_fptr pr
 		BBPrename(lg->snapshots_bid->batCacheid, bak);
 		logger_add_bat(lg, lg->snapshots_bid, "snapshots_bid");
 
-		lg->snapshots_tid = logbat_new(TYPE_void, TYPE_int, 1);
+		lg->snapshots_tid = logbat_new(TYPE_int, 1);
 		v = BATmark(BATmirror(b), 0);
 		BATappend(lg->snapshots_tid, BATmirror(v), FALSE);
 		BBPunfix(v->batCacheid);
@@ -1153,7 +1152,7 @@ logger_new(int debug, char *fn, char *logdir, int version, preversionfix_fptr pr
 		if ( b == 0)
 			logger_fatal("Logger_new: inconsistent database, '%s' seqs does not exist",bak,0,0);
 
-		lg->seqs_id = logbat_new(TYPE_void, TYPE_int, 1);
+		lg->seqs_id = logbat_new(TYPE_int, 1);
 		v = BATmark(b, 0);
 		BATappend(lg->seqs_id, BATmirror(v), FALSE);
 		BBPunfix(v->batCacheid);
@@ -1162,7 +1161,7 @@ logger_new(int debug, char *fn, char *logdir, int version, preversionfix_fptr pr
 		BBPrename(lg->seqs_id->batCacheid, bak);
 		logger_add_bat(lg, lg->seqs_id, "seqs_id");
 
-		lg->seqs_val = logbat_new(TYPE_void, TYPE_lng, 1);
+		lg->seqs_val = logbat_new(TYPE_lng, 1);
 		v = BATmark(BATmirror(b), 0);
 		BATappend(lg->seqs_val, BATmirror(v), FALSE);
 		BBPunfix(v->batCacheid);
@@ -1204,8 +1203,8 @@ logger_new(int debug, char *fn, char *logdir, int version, preversionfix_fptr pr
 			goto error;
 		}
 
-		lg->catalog_bid = logbat_new(TYPE_void, TYPE_int, BATSIZE);
-		lg->catalog_nme = logbat_new(TYPE_void, TYPE_str, BATSIZE);
+		lg->catalog_bid = logbat_new(TYPE_int, BATSIZE);
+		lg->catalog_nme = logbat_new(TYPE_str, BATSIZE);
 		if (debug & 1)
 			fprintf(stderr, "create %s catalog\n", fn);
 
@@ -1281,13 +1280,13 @@ logger_new(int debug, char *fn, char *logdir, int version, preversionfix_fptr pr
 	}
 	seqs_id = logger_find_bat(lg, "seqs_id");
 	if (seqs_id == 0) {
-		lg->seqs_id = logbat_new(TYPE_void, TYPE_int, 1);
+		lg->seqs_id = logbat_new(TYPE_int, 1);
 		BATmode(lg->seqs_id, PERSISTENT);
 		snprintf(bak, BUFSIZ, "%s_seqs_id", fn);
 		BBPrename(lg->seqs_id->batCacheid, bak);
 		logger_add_bat(lg, lg->seqs_id, "seqs_id");
 
-		lg->seqs_val = logbat_new(TYPE_void, TYPE_lng, 1);
+		lg->seqs_val = logbat_new(TYPE_lng, 1);
 		BATmode(lg->seqs_val, PERSISTENT);
 		snprintf(bak, BUFSIZ, "%s_seqs_val", fn);
 		BBPrename(lg->seqs_val->batCacheid, bak);
@@ -1296,13 +1295,13 @@ logger_new(int debug, char *fn, char *logdir, int version, preversionfix_fptr pr
 		BUNappend(lg->seqs_id, &id, FALSE);
 		BUNappend(lg->seqs_val, &lg->id, FALSE);
 
-		lg->snapshots_bid = logbat_new(TYPE_void, TYPE_int, 1);
+		lg->snapshots_bid = logbat_new(TYPE_int, 1);
 		BATmode(lg->snapshots_bid, PERSISTENT);
 		snprintf(bak, BUFSIZ, "%s_snapshots_bid", fn);
 		BBPrename(lg->snapshots_bid->batCacheid, bak);
 		logger_add_bat(lg, lg->snapshots_bid, "snapshots_bid");
 
-		lg->snapshots_tid = logbat_new(TYPE_void, TYPE_int, 1);
+		lg->snapshots_tid = logbat_new(TYPE_int, 1);
 		BATmode(lg->snapshots_tid, PERSISTENT);
 		snprintf(bak, BUFSIZ, "%s_snapshots_tid", fn);
 		BBPrename(lg->snapshots_tid->batCacheid, bak);
@@ -1992,7 +1991,7 @@ bm_commit(logger *lg)
 {
 	BUN p, q;
 	BAT *b = lg->catalog_bid;
-	BAT *n = logbat_new(TYPE_void, TYPE_str, BATcount(lg->freed));
+	BAT *n = logbat_new(TYPE_str, BATcount(lg->freed));
 	int res;
 
 	/* remove the destroyed bats */
