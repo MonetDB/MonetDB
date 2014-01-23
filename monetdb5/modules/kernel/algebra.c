@@ -2166,26 +2166,6 @@ ALGmark_grp_2(int *result, int *bid, int *gid, oid *base)
 }
 
 str
-ALGhistogram_rev(int *result, int *bid)
-{
-	BAT *b, *bn = NULL;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "algebra.histogram", RUNTIME_OBJECT_MISSING);
-	}
-	bn = BAThistogram(b);
-	if (bn) {
-		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
-		*result = bn->batCacheid;
-		BBPkeepref(*result);
-		BBPreleaseref(b->batCacheid);
-		return MAL_SUCCEED;
-	}
-	BBPreleaseref(b->batCacheid);
-	throw(MAL, "algebra.histogram", GDK_EXCEPTION);
-}
-
-str
 ALGlike(int *ret, int *bid, str *k)
 {
 	BAT *b, *bn = NULL;

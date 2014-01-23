@@ -141,7 +141,6 @@ algebra_export str ALGmarkHead_default(int *result, int *bid);
 algebra_export str ALGhmarkp(int *result, int *bid, int *nr_parts, int *part_nr);
 algebra_export str ALGmark_grp_1(int *result, int *bid, int *gid);
 algebra_export str ALGmark_grp_2(int *result, int *bid, int *gid, oid *base);
-algebra_export str ALGhistogram_rev(int *result, int *bid);
 algebra_export str ALGlike(int *ret, int *bid, str *k);
 algebra_export str ALGslice(int *ret, bat *bid, lng *start, lng *end);
 algebra_export str ALGslice_int(int *ret, bat *bid, int *start, int *end);

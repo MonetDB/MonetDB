@@ -756,7 +756,6 @@ str ALGfind(ptr ret, int *bid, ptr val);
 str ALGfragment(int *result, int *bid, ptr hlow, ptr hhigh, ptr tlow, ptr thigh);
 str ALGgroupby(int *res, int *gids, int *cnts);
 str ALGhistogram(int *result, int *bid);
-str ALGhistogram_rev(int *result, int *bid);
 str ALGhmarkp(int *result, int *bid, int *nr_parts, int *part_nr);
 str ALGhsort(int *result, int *bid);
 str ALGhsort_rev(int *result, int *bid);
