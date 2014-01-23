@@ -296,69 +296,6 @@ CMDexistBUN(bit *ret, BAT *b, ptr val, ptr tval)
 	return GDK_SUCCEED;
 }
 
-static BAT *
-BATmerge(BAT *b)
-{
-	BUN n = BATcount(b);
-	BAT *bn = BATnew(TYPE_lng, TYPE_void, n);
-	BATiter bni = bat_iterator(bn), bi = bat_iterator(b);
-	BUN p, q;
-	lng *r = (lng *) BUNhead(bni, BUNfirst(bn));
-
-	BATloop(b, p, q) {
-		oid hp = *(oid *) BUNhead(bi, p);
-		oid tp = *(oid *) BUNtail(bi, p);
-
-		*r++ = (((lng) hp) << 32) + tp;
-	}
-	BATsetcount(bn, p);
-	if (!bn->batDirty)
-		bn->batDirty = TRUE;
-
-	bn->hsorted = BAThordered(b) && (BATtordered(b) || BAThkey(b));
-	bn->hrevsorted = BAThrevordered(b) && (BATtrevordered(b) || BAThkey(b));
-	bn->tsorted = FALSE ;
-	bn->trevsorted = FALSE ;
-	bn->tdense = FALSE ;
-	BATkey(bn, BAThkey(b) || BATtkey(b)) ;
-	BATkey(BATmirror(bn), FALSE) ;
-
-	return bn;
-}
-
-static BAT *
-BATsplit(BAT *b)
-{
-	BATiter bi = bat_iterator(b);
-	BUN n = BATcount(b);
-	BAT *bn = BATnew(TYPE_oid, TYPE_oid, n);
-	BUN i;
-	lng *r = (lng *) BUNhead(bi, BUNfirst(b));
-
-	for (i = 0; i < n; i++, r++) {
-		oid hp = (int) (*r >> 32);
-		oid tp = (int) *r;
-
-		bunfastins(bn, &hp, &tp);
-	}
-
-	bn->hsorted = BAThordered(b) ;
-	bn->hrevsorted = BAThrevordered(b) ;
-	bn->tsorted = FALSE ;
-	bn->trevsorted = FALSE ;
-	bn->hdense = FALSE ;
-	bn->tdense = FALSE ;
-	bn->H->nonil = FALSE ;
-	bn->T->nonil = FALSE ;
-	BATkey(bn, FALSE) ;
-	BATkey(BATmirror(bn), FALSE) ;
-
-	return bn;
-bunins_failed:
-	BBPreclaim(bn);
-	return NULL;
-}
-
 /*
  * @- Wrapper
  * The remainder of this file contains the wrapper around the V4 code base
@@ -1223,18 +1160,6 @@ str
 ALGhistogram(bat *result, bat *bid)
 {
 	return ALGunary(result, bid, BAThistogram, "algebra.histogram");
-}
-
-str
-ALGmerge(bat *result, bat *bid)
-{
-	return ALGunary(result, bid, BATmerge, "algebra.merge");
-}
-
-str
-ALGsplit(bat *result, bat *bid)
-{
-	return ALGunary(result, bid, BATsplit, "algebra.split");
 }
 
 static BAT *

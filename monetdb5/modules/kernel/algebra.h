@@ -83,8 +83,6 @@ algebra_export str ALGsubouterjoin(bat *r1, bat *r2, bat *l, bat *r, bat *sl, ba
 algebra_export str ALGsubthetajoin(bat *r1, bat *r2, bat *l, bat *r, bat *sl, bat *sr, int *op, bit *nil_matches, lng *estimate);
 
 algebra_export str ALGhistogram(int *result, int *bid);
-algebra_export str ALGmerge(int *result, int *bid);
-algebra_export str ALGsplit(int *result, int *bid);
 algebra_export str ALGcopy(int *result, int *bid);
 algebra_export str ALGkunique(int *result, int *bid);
 algebra_export str ALGsunique(int *result, int *bid);
