@@ -551,7 +551,7 @@ BATimprints(BAT *b) {
 	MT_lock_set(&GDKimprintsLock(ABS(b->batCacheid)), "BATimprints");
 	if (b->T->imprints == NULL) {
 		Imprints *imprints;
-		BAT *smp;
+		BAT *smp, *t;
 		BUN cnt;
 		str nme = BBP_physical(b->batCacheid);
 
@@ -569,8 +569,9 @@ BATimprints(BAT *b) {
 
 #define SMP_SIZE 2048
 		smp = BATsample(b, SMP_SIZE);
-		smp = BATmirror(BATorder(BATmirror(smp)));
-		smp = BATmirror(BATkunique(BATmirror(smp)));
+		t = BATmirror(BATorder(BATmirror(smp)));
+		smp = BATmirror(BATkunique(BATmirror(t)));
+		BBPunfix(t->batCacheid);
 		/* sample now is ordered and unique on tail */
 		assert(smp->tkey && smp->tsorted);
 		cnt = BATcount(smp);
