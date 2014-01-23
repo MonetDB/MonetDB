@@ -198,11 +198,10 @@ JSONdumpInternal(JSON *jt, int depth)
 	for( i = je->next; i; i = jt->elm[i].next)
 		mnstr_printf(fd,"%d ",i);
 	if ( je->name){
-		for(i=0; i< je->namelen; i++) mnstr_printf(fd,"%c",je->name[i]);
-		mnstr_printf(fd," : ");
+		mnstr_printf(fd, "%.*s : ", (int) je->namelen, je->name);
 	}
 	if ( je->value)
-		for(i=0; i< je->valuelen; i++) mnstr_printf(fd,"%c",je->value[i]);
+		mnstr_printf(fd, "%.*s", (int) je->valuelen, je->value);
 	mnstr_printf(fd,"\n");
 	}
 }
@@ -340,7 +339,7 @@ JSONappend(JSON *jt, int idx, int nxt){
 typedef struct {
 	int token;
 	char *name;
-	int namelen;
+	size_t namelen;
 	int index;
 	int first, last;
 } pattern;
@@ -433,7 +432,7 @@ JSONgetValue(JSON *jt, int idx)
 static str
 JSONglue(str res, str r, char sep)
 {
-	int len,l;
+	size_t len, l;
 	str n;
 	if( r== 0 || *r == 0)
 		return res;
@@ -863,6 +862,7 @@ static char *
 JSONplaintext(char *r, JSON *jt, int idx, char sep)
 {
 	int i;
+	size_t j;
 	switch(jt->elm[idx].kind){
 	case JSON_OBJECT:
 		for( i= jt->elm[idx].next; i; i= jt->elm[i].next)
@@ -879,19 +879,19 @@ JSONplaintext(char *r, JSON *jt, int idx, char sep)
 			r = JSONplaintext(r, jt,jt->elm[idx].child,sep);
 		break;
 	case JSON_STRING:
-		for(i=1; i< jt->elm[idx].valuelen-1; i++){
-			if ( jt->elm[idx].value[i] == '\\')
-				*r = jt->elm[idx].value[++i];
+		for(j=1; j< jt->elm[idx].valuelen-1; j++){
+			if ( jt->elm[idx].value[j] == '\\')
+				*r = jt->elm[idx].value[++j];
 			else
-				*r = jt->elm[idx].value[i];
+				*r = jt->elm[idx].value[j];
 			r++;
 		}
 		if(sep)
 			*r++= sep;
 		break;
 	default:
-		for(i=0; i< jt->elm[idx].valuelen; i++){
-			*r = jt->elm[idx].value[i];
+		for(j=0; j< jt->elm[idx].valuelen; j++){
+			*r = jt->elm[idx].value[j];
 			r++;
 		}
 		if(sep)

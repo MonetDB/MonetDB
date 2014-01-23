@@ -39,9 +39,9 @@
 typedef struct JSONterm {
     short kind;
     char *name; /* exclude the quotes */
-    int namelen;
+    size_t namelen;
     char *value; /* start of string rep */
-    int valuelen;
+    size_t valuelen;
     int child, next, tail; /* next offsets allow you to walk array/object chains and append quickly */
     /* An array or object item has a number of components */
 } JSONterm; 
