@@ -50,9 +50,7 @@ void BBPtrim(size_t delta);
 void BBPunshare(bat b);
 void GDKclrerr(void);
 int GDKextend(const char *fn, size_t size);
-#ifndef NATIVE_WIN32
-int GDKextendf(int fd, off_t size);
-#endif
+int GDKextendf(int fd, size_t size);
 int GDKfdlocate(const char *nme, const char *mode, const char *ext);
 FILE *GDKfilelocate(const char *nme, const char *mode, const char *ext);
 char *GDKload(const char *nme, const char *ext, size_t size, size_t *maxsize, storage_t mode);
