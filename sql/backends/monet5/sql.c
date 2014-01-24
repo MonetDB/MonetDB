@@ -2896,11 +2896,13 @@ not_unique_oids(bat *ret, bat *bid)
 
 	assert(b->htype == TYPE_oid);
 	if (BATtkey(b) || BATtdense(b) || BATcount(b) <= 1) {
-		bn = BATnew(TYPE_oid, TYPE_oid, 0);
+		bn = BATnew(TYPE_void, TYPE_void, 0);
 		if (bn == NULL) {
 			BBPreleaseref(b->batCacheid);
 			throw(SQL, "sql.not_uniques", MAL_MALLOC_FAIL);
 		}
+		BATseqbase(bn, 0);
+		BATseqbase(BATmirror(bn), 0);
 	} else if (b->tsorted) {	/* ugh handle both wrd and oid types */
 		oid c = *(oid *) Tloc(b, BUNfirst(b)), *rf, *rh, *rt;
 		oid *h = (oid *) Hloc(b, 0), *vp, *ve;

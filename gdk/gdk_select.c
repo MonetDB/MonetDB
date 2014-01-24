@@ -60,7 +60,6 @@ BATslice2(BAT *b, BUN l1, BUN h1, BUN l2, BUN h2)
 	BUN p, q;
 	BAT *bn;
 	BATiter bi = bat_iterator(b);
-	int tt = b->ttype;
 
 	BATcheck(b, "BATslice");
 	if (h2 > BATcount(b))
@@ -79,31 +78,21 @@ BATslice2(BAT *b, BUN l1, BUN h1, BUN l2, BUN h2)
 		return NULL;
 	}
 
-	if (tt == TYPE_void && b->T->seq != oid_nil)
-		tt = TYPE_oid;
-	bn = BATnew(ATOMtype(b->htype), tt, h1 - l1 + h2 - l2);
+	bn = BATnew(TYPE_void, ATOMtype(b->htype), h1 - l1 + h2 - l2);
 	if (bn == NULL)
 		return bn;
 	for (p = (BUN) l1, q = (BUN) h1; p < q; p++) {
-		bunfastins(bn, BUNhead(bi, p), BUNtail(bi, p));
+		bunfastins(bn, NULL, BUNhead(bi, p));
 	}
 	for (p = (BUN) l2, q = (BUN) h2; p < q; p++) {
-		bunfastins(bn, BUNhead(bi, p), BUNtail(bi, p));
+		bunfastins(bn, NULL, BUNhead(bi, p));
 	}
-	bn->hsorted = BAThordered(b);
-	bn->tsorted = BATtordered(b);
-	bn->hrevsorted = BAThrevordered(b);
-	bn->trevsorted = BATtrevordered(b);
-	BATkey(bn, BAThkey(b));
-	BATkey(BATmirror(bn), BATtkey(b));
-	bn->H->nonil = b->H->nonil;
-	bn->T->nonil = b->T->nonil;
-	if (bn->hkey && bn->htype == TYPE_oid) {
-		if (BATcount(bn) == 0) {
-			bn->hdense = TRUE;
-			BATseqbase(bn, 0);
-		}
-	}
+	BATseqbase(bn, 0);
+	bn->tsorted = BAThordered(b);
+	bn->trevsorted = BAThrevordered(b);
+	BATkey(BATmirror(bn), BAThkey(b));
+	bn->T->nonil = b->H->nonil;
+	bn->T->nil = 0;
 	if (bn->tkey && bn->ttype == TYPE_oid) {
 		if (BATcount(bn) == 0) {
 			bn->tdense = TRUE;
@@ -1225,10 +1214,9 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 			} else {
 				v = VIEWhead(b);	/* [oid,nil] */
 			}
-			bn = BATslice(v, low, high);
+			bn = BATmirror(BATslice(v, low, high));
 		}
 		BBPunfix(v->batCacheid);
-		bn = BATmirror(bn);
 		bn->hseqbase = 0;
 		bn->hkey = 1;
 		bn->hsorted = 1;

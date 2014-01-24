@@ -456,7 +456,7 @@ URLBOXgetCount(int *r){
 	int i;
 	lng cnt;
 
-	b= BATnew(TYPE_oid,TYPE_lng, urlDepth+1);
+	b= BATnew(TYPE_void,TYPE_lng, urlDepth+1);
 	if( b== NULL)
 		throw(MAL, "urlbox.getNames", MAL_MALLOC_FAIL);
 	BATseqbase(b,0);

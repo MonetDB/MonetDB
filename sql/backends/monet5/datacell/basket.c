@@ -584,40 +584,40 @@ BSKTtable(int *nameId, int *thresholdId, int * winsizeId, int *winstrideId, int 
 	BAT *timeslice = NULL, *timestride = NULL;
 	int i;
 
-	name = BATnew(TYPE_oid, TYPE_str, BATTINY);
+	name = BATnew(TYPE_void, TYPE_str, BATTINY);
 	if (name == 0)
 		goto wrapup;
 	BATseqbase(name, 0);
-	threshold = BATnew(TYPE_oid, TYPE_int, BATTINY);
+	threshold = BATnew(TYPE_void, TYPE_int, BATTINY);
 	if (threshold == 0)
 		goto wrapup;
 	BATseqbase(threshold, 0);
-	winsize = BATnew(TYPE_oid, TYPE_int, BATTINY);
+	winsize = BATnew(TYPE_void, TYPE_int, BATTINY);
 	if (winsize == 0)
 		goto wrapup;
 	BATseqbase(winsize, 0);
-	winstride = BATnew(TYPE_oid, TYPE_int, BATTINY);
+	winstride = BATnew(TYPE_void, TYPE_int, BATTINY);
 	if (winstride == 0)
 		goto wrapup;
 	BATseqbase(winstride, 0);
-	beat = BATnew(TYPE_oid, TYPE_int, BATTINY);
+	beat = BATnew(TYPE_void, TYPE_int, BATTINY);
 	if (beat == 0)
 		goto wrapup;
 	BATseqbase(beat, 0);
-	seen = BATnew(TYPE_oid, TYPE_timestamp, BATTINY);
+	seen = BATnew(TYPE_void, TYPE_timestamp, BATTINY);
 	if (seen == 0)
 		goto wrapup;
 	BATseqbase(seen, 0);
-	events = BATnew(TYPE_oid, TYPE_int, BATTINY);
+	events = BATnew(TYPE_void, TYPE_int, BATTINY);
 	if (events == 0)
 		goto wrapup;
 	BATseqbase(events, 0);
 
-	timeslice = BATnew(TYPE_oid, TYPE_int, BATTINY);
+	timeslice = BATnew(TYPE_void, TYPE_int, BATTINY);
 	if (timeslice == 0)
 		goto wrapup;
 	BATseqbase(timeslice, 0);
-	timestride = BATnew(TYPE_oid, TYPE_int, BATTINY);
+	timestride = BATnew(TYPE_void, TYPE_int, BATTINY);
 	if (timestride == 0)
 		goto wrapup;
 	BATseqbase(timestride, 0);
