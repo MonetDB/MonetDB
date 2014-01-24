@@ -1153,55 +1153,95 @@ str CMDbbpType( int *ret){
 	return MAL_SUCCEED;
 }
 
-str CMDbbp( int *NS, int *HT, int *TT, int *CNT, int *REFCNT, int *LREFCNT, int *LOCATION, int *HEAT, int *DIRTY, int *STATUS, int *KIND)
+str CMDbbp(bat *ID, bat *NS, bat *HT, bat *TT, bat *CNT, bat *REFCNT, bat *LREFCNT, bat *LOCATION, bat *HEAT, bat *DIRTY, bat *STATUS, bat *KIND)
 {
-	BAT	*ns, *ht, *tt, *cnt, *refcnt, *lrefcnt, *location, *heat, *dirty, *status, *kind, *bn;
+	BAT *id, *ns, *ht, *tt, *cnt, *refcnt, *lrefcnt, *location, *heat, *dirty, *status, *kind, *bn;
 	int	i;
 	char buf[MAXPATHLEN];
 
-	ns = BATnew(TYPE_int,TYPE_str,BBPsize);
-	ht = BATnew(TYPE_int,TYPE_str,BBPsize);
-	tt = BATnew(TYPE_int,TYPE_str,BBPsize);
-	cnt = BATnew(TYPE_int,TYPE_lng,BBPsize);
-	refcnt = BATnew(TYPE_int,TYPE_int,BBPsize);
-	lrefcnt = BATnew(TYPE_int,TYPE_int,BBPsize);
-	location = BATnew(TYPE_int,TYPE_str,BBPsize);
-	heat = BATnew(TYPE_int,TYPE_int,BBPsize);
-	dirty = BATnew(TYPE_int,TYPE_str,BBPsize);
-	status = BATnew(TYPE_int,TYPE_str,BBPsize);
-	kind = BATnew(TYPE_int,TYPE_str,BBPsize);
+	id = BATnew(TYPE_void, TYPE_int, BBPsize);
+	ns = BATnew(TYPE_void, TYPE_str, BBPsize);
+	ht = BATnew(TYPE_void, TYPE_str, BBPsize);
+	tt = BATnew(TYPE_void, TYPE_str, BBPsize);
+	cnt = BATnew(TYPE_void, TYPE_lng, BBPsize);
+	refcnt = BATnew(TYPE_void, TYPE_int, BBPsize);
+	lrefcnt = BATnew(TYPE_void, TYPE_int, BBPsize);
+	location = BATnew(TYPE_void, TYPE_str, BBPsize);
+	heat = BATnew(TYPE_void, TYPE_int, BBPsize);
+	dirty = BATnew(TYPE_void, TYPE_str, BBPsize);
+	status = BATnew(TYPE_void, TYPE_str, BBPsize);
+	kind = BATnew(TYPE_void, TYPE_str, BBPsize);
 
-	if (!ns || !ht || !tt || !cnt || !refcnt || !lrefcnt || !location || !heat || !dirty || !status || !kind) 
+	if (!id || !ns || !ht || !tt || !cnt || !refcnt || !lrefcnt || !location || !heat || !dirty || !status || !kind) {
+		if (id)
+			BBPreclaim(id);
+		if (ns)
+			BBPreclaim(ns);
+		if (ht)
+			BBPreclaim(ht);
+		if (tt)
+			BBPreclaim(tt);
+		if (cnt)
+			BBPreclaim(cnt);
+		if (refcnt)
+			BBPreclaim(refcnt);
+		if (lrefcnt)
+			BBPreclaim(lrefcnt);
+		if (location)
+			BBPreclaim(location);
+		if (heat)
+			BBPreclaim(heat);
+		if (dirty)
+			BBPreclaim(dirty);
+		if (status)
+			BBPreclaim(status);
+		if (kind)
+			BBPreclaim(kind);
 		throw(MAL, "catalog.bbp", MAL_MALLOC_FAIL);
+	}
+	BATseqbase(id, 0);
+	BATseqbase(ns, 0);
+	BATseqbase(ht, 0);
+	BATseqbase(tt, 0);
+	BATseqbase(cnt, 0);
+	BATseqbase(refcnt, 0);
+	BATseqbase(lrefcnt, 0);
+	BATseqbase(location, 0);
+	BATseqbase(heat, 0);
+	BATseqbase(dirty, 0);
+	BATseqbase(status, 0);
+	BATseqbase(kind, 0);
+	for (i = 1; i < BBPsize; i++) {
+		if (BBP_logical(i) && (BBP_refs(i) || BBP_lrefs(i))) {
+			bn = BATdescriptor(i);
+			if (bn) {
+				lng l = BATcount(bn);
+				int heat_ = BBP_lastused(i);
+				char *loc = BBP_cache(i) ? "load" : "disk";
+				char *mode = "persistent";
+				int refs = BBP_refs(i);
+				int lrefs = BBP_lrefs(i);
 
-	for(i=1; i < BBPsize; i++) 
-	if (BBP_logical(i) && (BBP_refs(i) || BBP_lrefs(i))) {
-		bn = BATdescriptor(i);
-		if (bn) {
-			lng l = BATcount(bn);
-			int heat_ = BBP_lastused(i);
-			char *loc = BBP_cache(i) ? "load" : "disk";
-			char *mode = "persistent";
-			int refs = BBP_refs(i);
-			int lrefs = BBP_lrefs(i);
-
-			if ((BBP_status(i) & BBPDELETED) || !(BBP_status(i) & BBPPERSISTENT))
-				mode = "transient";
-			snprintf(buf,MAXPATHLEN,"%s",BBP_physical(i));
-			BUNins(ns, &i, BBP_logical(i), FALSE);
-			BUNins(ht, &i, BATatoms[BAThtype(bn)].name, FALSE);
-			BUNins(tt, &i, BATatoms[BATttype(bn)].name, FALSE);
-			BUNins(cnt, &i, &l, FALSE);
-			BUNins(refcnt, &i, &refs, FALSE);
-			BUNins(lrefcnt, &i, &lrefs, FALSE);
-			BUNins(location, &i, buf, FALSE);
-			BUNins(heat, &i, &heat_, FALSE);
-			BUNins(dirty, &i, bn ? BATdirty(bn) ? "dirty" : DELTAdirty(bn) ? "diffs" : "clean" : (BBP_status(i) & BBPSWAPPED) ? "diffs" : "clean", FALSE);
-			BUNins(status, &i, loc, FALSE);
-			BUNins(kind, &i, mode, FALSE);
-			BBPunfix(bn->batCacheid);
+				if ((BBP_status(i) & BBPDELETED) || !(BBP_status(i) & BBPPERSISTENT))
+					mode = "transient";
+				snprintf(buf, MAXPATHLEN, "%s", BBP_physical(i));
+				BUNappend(id, &i, FALSE);
+				BUNappend(ns, BBP_logical(i), FALSE);
+				BUNappend(ht, BATatoms[BAThtype(bn)].name, FALSE);
+				BUNappend(tt, BATatoms[BATttype(bn)].name, FALSE);
+				BUNappend(cnt, &l, FALSE);
+				BUNappend(refcnt, &refs, FALSE);
+				BUNappend(lrefcnt, &lrefs, FALSE);
+				BUNappend(location, buf, FALSE);
+				BUNappend(heat, &heat_, FALSE);
+				BUNappend(dirty, bn ? BATdirty(bn) ? "dirty" : DELTAdirty(bn) ? "diffs" : "clean" : (BBP_status(i) & BBPSWAPPED) ? "diffs" : "clean", FALSE);
+				BUNappend(status, loc, FALSE);
+				BUNappend(kind, mode, FALSE);
+				BBPunfix(bn->batCacheid);
+			}
 		}
 	}
+	BBPkeepref(*ID = id->batCacheid);
 	BBPkeepref(*NS = ns->batCacheid);
 	BBPkeepref(*HT = ht->batCacheid);
 	BBPkeepref(*TT = tt->batCacheid);

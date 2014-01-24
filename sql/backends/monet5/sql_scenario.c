@@ -847,6 +847,10 @@ sql_update_default(Client c)
 
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
 
+	/* change in 25_debug.sql */
+	pos += snprintf(buf + pos, bufsize - pos, "drop function sys.bbp;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "create function sys.bbp() returns table (id int, name string, htype string, ttype string, count BIGINT, refcnt int, lrefcnt int, location string, heat int, dirty string, status string, kind string) external name bbp.get;\n");
+
 	/* new file 40_json.sql */
 	snprintf(buf + pos, bufsize - pos, "createdb%c40_json", DIR_SEP);
 	if ((fullname = MSP_locate_sqlscript(buf + pos, 1)) != NULL) {

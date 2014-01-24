@@ -119,10 +119,12 @@ command getRNames() :bat[:oid,:str]
 address CMDbbpRNames
 comment "Map a BAT into its bbp physical name";
 
-command get() (ns:bat[:any_1,:any_2], ht:bat[:int,:str], tt:bat[:int,:str],
-	     cnt:bat[:int,:lng], refcnt:bat[:int,:int], lrefcnt:bat[:int,:int],
-	     location:bat[:int,:str], heat:bat[:int,:int], dirty:bat[:int,:str], 
-	     status:bat[:int,:str], kind:bat[:int,:str]) 
+command get() (id:bat[:oid,:int], ns:bat[:oid,:str],
+	       ht:bat[:oid,:str], tt:bat[:oid,:str],
+	       cnt:bat[:oid,:lng], refcnt:bat[:oid,:int],
+	       lrefcnt:bat[:oid,:int], location:bat[:oid,:str],
+	       heat:bat[:oid,:int], dirty:bat[:oid,:str],
+	       status:bat[:oid,:str], kind:bat[:oid,:str])
 address CMDbbp
 comment "bpp";
 
