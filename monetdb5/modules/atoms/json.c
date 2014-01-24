@@ -357,7 +357,7 @@ JSONcompile(char *expr, pattern terms[])
 			if( t )
 				throw(MAL,"json.compile","Root node must be first");
 			terms[t].token = ROOT_STEP;
-			if ( !(*(s+1) == '.' || *(s+1) =='[' || *s == 0) )
+			if ( !(*(s+1) == '.' || *(s+1) =='[' || *(s+1) == 0) )
 				throw(MAL,"json.compile","Root node must be first");
 		}
 		if (*s == '.' && *(s + 1) == '.') {
@@ -612,12 +612,6 @@ JSONnumberParser(char *j, char **next, int silent)
 		*next =j;
 		if(!silent)
 			throw(MAL, "json.parser", "Number expected");
-		return MAL_SUCCEED;
-	}
-	if (*j == '0' && *(j + 1) != '.'){
-		*next =j;
-		if(! silent)
-			throw(MAL, "json.parser", "Decimal expected");
 		return MAL_SUCCEED;
 	}
 	for (; *j; j++)

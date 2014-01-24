@@ -3,8 +3,6 @@ js:= json.new("{ \"store\": { \"book\": [ { \"category\": \"reference\", \"autho
 
 json.dump(js);
 
-p:= json.filter(js,"$");
-io.print(p);
 p:= json.filter(js,".store.book[*]..author");
 io.print(p);
 p:= json.filter(js,".store.book..author");
@@ -24,6 +22,8 @@ io.print(p);
 p:= json.filter(js,"store.book.[1].author");
 io.print(p);
 p:= json.filter(js,"store.book[1]..author");
+io.print(p);
+p:= json.filter(js,"$");
 io.print(p);
 #p:= json.filter(js,"..book[-1:]");
 #io.print(p);

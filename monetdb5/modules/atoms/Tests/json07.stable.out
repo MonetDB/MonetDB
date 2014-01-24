@@ -38,7 +38,7 @@ function user.main():void;
     v1 := json.values(js);
     io.print(v1);
 end main;
-[ "[myList,yours]" ]
+[ "[\"myList\",\"yours\"]" ]
 [ "[23,[\"a\",\"b\"]]" ]
 #--------------------------#
 # h	t  # name
@@ -52,7 +52,7 @@ end main;
 #--------------------------#
 [ 0@0,	"23"  ]
 [ 1@0,	"[\"a\",\"b\"]"  ]
-[ "[myBoolean,myList,myMap,myObject,myJsonObject]" ]
+[ "[\"myBoolean\",\"myList\",\"myMap\",\"myObject\",\"myJsonObject\"]" ]
 [ "[true,[\"a\",\"b\"],{\"c\":\"d\",\"a\":\"b\"},\"myClass\",{\"myString\":\"myStringValue\"}]" ]
 #--------------------------#
 # h	t  # name
