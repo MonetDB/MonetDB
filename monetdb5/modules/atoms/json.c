@@ -85,13 +85,10 @@ JSONfromString(str src, int *len, json *j)
 {
 	ssize_t slen = (ssize_t) strlen(src);
 
-	if ((ssize_t) *len <= slen)
-		j = GDKrealloc(*j, slen + 1);
-	if ( j == NULL){
-		// raise global error
-		GDKerror("JSONfromstring failed");
-		return 0;
-	}
+	if ( *j)
+		GDKfree(j);
+
+	j = GDKstrdup(src);
 	*len = (int) slen;
 	if (GDKstrFromStr((unsigned char *) *j, (const unsigned char *) src, slen) < 0) {
 		GDKfree(*j);
