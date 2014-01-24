@@ -13,6 +13,6 @@ copy 10 records  into jstmp from stdin;
 {"nested_obj": {"num": 5, "str": "GBRDCMBR"}, "sparse_008": "GBRDA===", "sparse_009": "GBRDA===", "dyn2": false, "dyn1": "GBRDA===", "nested_arr": [], "sparse_007": "GBRDA===", "str2": "GBRDCMBR", "str1": "GBRDA===", "sparse_004": "GBRDA===", "sparse_003": "GBRDA===", "sparse_002": "GBRDA===", "sparse_001": "GBRDA===", "sparse_000": "GBRDA===", "num": 0, "bool": false, "sparse_006": "GBRDA===", "thousandth": 0, "sparse_005": "GBRDA==="}
 {"nested_obj": {"num": 1, "str": "GBRDC==="}, "dyn2": false, "dyn1": 6, "nested_arr": ["to", "interrupted", "some", "daily", "has", "averages"], "str2": "GBRDC===", "str1": "GBRDCMJQ", "thousandth": 6, "sparse_069": "GBRDCMJQ", "sparse_068": "GBRDCMJQ", "num": 6, "bool": false, "sparse_061": "GBRDCMJQ", "sparse_060": "GBRDCMJQ", "sparse_063": "GBRDCMJQ", "sparse_062": "GBRDCMJQ", "sparse_065": "GBRDCMJQ", "sparse_064": "GBRDCMJQ", "sparse_067": "GBRDCMJQ", "sparse_066": "GBRDCMJQ"}
 
-select json.filter(j,"..num") from jstmp;
+select json.filter(j,'..num') from jstmp;
 
 drop table jstmp;
