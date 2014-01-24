@@ -62,7 +62,7 @@ static int JSONnew(JSON *js){
 			js->error = createException(MAL,"json.new",MAL_MALLOC_FAIL);
 			return js->free -1;
 		}
-		else js->elm = term;
+		js->elm = term;
 		memset( ((char*)term) + sizeof(JSONterm)*js->size, 0, 8 * sizeof(JSONterm));
         js->size += 8;
         if ( jsonhint < js->size)
@@ -86,9 +86,9 @@ JSONfromString(str src, int *len, json *j)
 	ssize_t slen = (ssize_t) strlen(src);
 
 	if ( *j)
-		GDKfree(j);
+		GDKfree(*j);
 
-	j = GDKstrdup(src);
+	*j = GDKstrdup(src);
 	*len = (int) slen;
 	if (GDKstrFromStr((unsigned char *) *j, (const unsigned char *) src, slen) < 0) {
 		GDKfree(*j);
@@ -210,6 +210,7 @@ JSONdump(int *ret, json *val)
 
 	(void) ret;
 	JSONdumpInternal(jt,0);
+	JSONfree(jt);
 	return MAL_SUCCEED;
 }
 
@@ -581,8 +582,8 @@ JSONstringParser(char *j, char **next, int silent)
 				hex(j); hex(j); hex(j); hex(j);
 				break;
 			default:
+				*next =j;
 				if ( silent) {
-					*next = j;
 					return MAL_SUCCEED;
 				}
 				throw(MAL, "json.parser", "illegal escape char");
@@ -593,6 +594,7 @@ JSONstringParser(char *j, char **next, int silent)
 			*next = j;
 			return MAL_SUCCEED;
 		}
+	*next =j;
 	if( !silent) 
 		throw(MAL, "json.parser", "Nonterminated string");
 	return MAL_SUCCEED;
@@ -607,11 +609,13 @@ JSONnumberParser(char *j, char **next, int silent)
 		j++;
 	skipblancs(j);
 	if (*j < '0' || *j > '9'){
+		*next =j;
 		if(!silent)
 			throw(MAL, "json.parser", "Number expected");
 		return MAL_SUCCEED;
 	}
 	if (*j == '0' && *(j + 1) != '.'){
+		*next =j;
 		if(! silent)
 			throw(MAL, "json.parser", "Decimal expected");
 		return MAL_SUCCEED;
@@ -788,12 +792,12 @@ JSONtoken(JSON *jt, char *j, char **next, int silent)
 		return idx;
 	default:
 		if (*j == '-' || (*j >= '0' && *j <= '9')){
+			jt->elm[idx].value = j;
 			msg =JSONnumberParser(j, next,silent);
 			if ( !silent)
 				jt->error = msg;
 			jt->elm[idx].kind = JSON_NUMBER;
-			jt->elm[idx].value = j;
-			jt->elm[idx].valuelen = *next -j;
+			jt->elm[idx].valuelen = *next - jt->elm[idx].value;
 			return idx;
 		}
 		if( !silent)
