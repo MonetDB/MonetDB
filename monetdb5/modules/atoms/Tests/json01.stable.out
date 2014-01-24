@@ -29,6 +29,8 @@ function user.main():void;
     b := json.new("{\"f1\":1,\"f2\":2}");
     f := json.filter(b,"f2");
     io.print(f);
+    f := json.filter(b,"f1,f2");
+    io.print(f);
     b := json.new("{\"f1\":1,\"f2\":2,\"f1\":3}");
     f := json.filter(b,"f1[0]");
     io.print(f);
@@ -77,6 +79,7 @@ end main;
 [ "[]" ]
 [ "[1]" ]
 [ "[2]" ]
+[ "[1,2]" ]
 [ "[1]" ]
 [ "[3]" ]
 [ "[]" ]

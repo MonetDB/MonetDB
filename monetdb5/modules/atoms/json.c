@@ -371,7 +371,7 @@ JSONcompile(char *expr, pattern terms[])
 		// child step
 		if (*s != '[') {
 			for (beg = s; *s; s++)
-				if (*s == '.' || *s == '[')
+				if (*s == '.' || *s == '[' || *s == ',')
 					break;
 			terms[t].name = GDKzalloc(s - beg + 1);
 			terms[t].namelen = s - beg;
@@ -404,6 +404,11 @@ JSONcompile(char *expr, pattern terms[])
 			if (*s != ']')
 				throw(MAL, "json.path", "] expected");
 		} 
+		if ( *s == ','){
+			if (++t == MAXTERMS)
+				throw(MAL, "json.path", "too many terms");
+			terms[t].token = END_STEP;
+		}
 		if (++t == MAXTERMS)
 			throw(MAL, "json.path", "too many terms");
 	}
@@ -524,6 +529,7 @@ static str
 JSONfilterInternal(json *ret, json *js, str *expr, str other)
 {
 	pattern terms[MAXTERMS];
+	int tidx = 0;
 	JSON *jt;
 	str j = *js, msg = MAL_SUCCEED, s;
 	json result = 0;
@@ -545,20 +551,26 @@ JSONfilterInternal(json *ret, json *js, str *expr, str other)
 		return msg;
 	}
 
-	// unwrap the outer brackets before matching
-	s = JSONmatch(jt, 0, terms, 0);
-	if ( s ) {
-		result = (char *) GDKzalloc(l = strlen(s) + 4);
-		if (result )
-			snprintf(result,l,"[%s]",s);
-		else
-			msg = createException(MAL, "json.path", MAL_MALLOC_FAIL);
-	} else result = (char*) GDKstrdup("[]");
+	result = s= JSONmatch(jt, 0, terms, tidx);
+	// process all other PATH expression
+	for(tidx++; tidx <MAXTERMS && terms[tidx].token ; tidx++)
+	if ( terms[tidx].token == END_STEP && tidx+1 < MAXTERMS && terms[tidx+1].token){
+		s = JSONmatch(jt, 0, terms, ++tidx);
+		result = JSONglue(result,s,',');
+	}
+	if ( s) {
+		l = strlen(s);
+		if( s[l-1] == ',') 
+			s[l-1]=0;
+	} else l= 3;
+	s = GDKzalloc(l+3);
+	snprintf(s,l+3,"[%s]", (result?result:""));
+	
 	for (l = 0; terms[l].token; l++)
 		if (terms[l].name)
 			GDKfree(terms[l].name);
 	JSONfree(jt);
-	*ret = result;
+	*ret = s;
 	return msg;
 }
 
