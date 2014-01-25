@@ -1591,6 +1591,14 @@ tr_update_delta( sql_trans *tr, sql_delta *obat, sql_delta *cbat, int unique)
 		temp_dup(cbat->bid);
 	}
 
+	if (obat->cached) {
+		bat_destroy(obat->cached);
+		obat->cached = NULL;
+	}
+	if (cbat->cached) {
+		bat_destroy(cbat->cached);
+		cbat->cached = NULL;
+	}
 	if (obat->bid)
 		cur = temp_descriptor(obat->bid);
 	ins = temp_descriptor(cbat->ibid);

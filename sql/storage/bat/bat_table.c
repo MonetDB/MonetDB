@@ -73,8 +73,8 @@ delta_full_bat_( sql_column *c, sql_delta *bat, int temp, BAT *d, BAT *s)
 		r = BATkdiff(b,BATmirror(d)); bat_destroy(b); b = r;
 	}
 	(void)c;
-	//if (!bat->cached && !c->base.wtime && !c->base.allocated && !s) 
-		//bat->cached = temp_descriptor(b->batCacheid);
+	if (!bat->cached && !s) 
+		bat->cached = temp_descriptor(b->batCacheid);
 	return b;
 }
 
