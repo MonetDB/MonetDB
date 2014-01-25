@@ -75,6 +75,8 @@ json_export str JSONstr2json(json *ret, str *j);
 json_export str JSONjson2str(str *ret, json *j);
 json_export str JSONjson2text(str *ret, json *arg);
 json_export str JSONjson2textSeparator(str *ret, json *arg, str *sep);
+json_export str JSONjson2number(dbl *ret, json *arg);
+json_export str JSONjson2integer(lng *ret, json *arg);
 
 json_export str JSONfilter( json *ret, json *js, str *expr);
 json_export str JSONfilterArray(json *ret, json *j, int *index);

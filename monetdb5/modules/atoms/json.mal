@@ -47,7 +47,15 @@ comment "Convert JSON values to their plain string equivalent.";
 
 command text(j:json,s:str):str
 address JSONjson2textSeparator
-comment "Convert JSON values to their plain string equivalent.";
+comment "Convert JSON values to their plain string equivalent, injecting a separator.";
+
+command number(j:json):dbl
+address JSONjson2number
+comment "Convert sinple JSON values to a double, return nil upon error.";
+
+command integer(j:json):lng
+address JSONjson2integer
+comment "Convert sinple JSON values to an integer, return nil upon error.";
 
 command dump(j:json):void
 address JSONdump;

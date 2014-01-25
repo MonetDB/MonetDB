@@ -354,11 +354,13 @@ JSONcompile(char *expr, pattern terms[])
 		terms[t].first = INT_MAX;
 		terms[t].last = INT_MAX;
 		if ( *s == '$'){
-			if( t )
+			if( t  && terms[t-1].token != END_STEP)
 				throw(MAL,"json.compile","Root node must be first");
-			terms[t].token = ROOT_STEP;
 			if ( !(*(s+1) == '.' || *(s+1) =='[' || *(s+1) == 0) )
 				throw(MAL,"json.compile","Root node must be first");
+			s++;
+			if( *s == 0)
+				terms[t].token = ROOT_STEP;
 		}
 		if (*s == '.' && *(s + 1) == '.') {
 			terms[t].token = ANY_STEP;
@@ -558,10 +560,10 @@ JSONfilterInternal(json *ret, json *js, str *expr, str other)
 		s = JSONmatch(jt, 0, terms, ++tidx);
 		result = JSONglue(result,s,',');
 	}
-	if ( s) {
-		l = strlen(s);
-		if( s[l-1] == ',') 
-			s[l-1]=0;
+	if ( result) {
+		l = strlen(result);
+		if( result[l-1] == ',') 
+			result[l-1]=0;
 	} else l= 3;
 	s = GDKzalloc(l+3);
 	snprintf(s,l+3,"[%s]", (result?result:""));
@@ -922,6 +924,7 @@ JSONjson2text(str *ret, json *js)
 	l = strlen(s);
 	if ( l) s[l-1]= 0;
 	*ret = s;
+	JSONfree(jt);
 	return MAL_SUCCEED;
 }
 
@@ -939,6 +942,71 @@ JSONjson2textSeparator(str *ret, json *js, str *sep)
 	l = strlen(s);
 	if ( l) s[l-1]= 0;
 	*ret = s;
+	JSONfree(jt);
+	return MAL_SUCCEED;
+}
+
+str
+JSONjson2number(dbl *ret, json *js)
+{	
+	JSON *jt;
+	char *rest;
+
+	*ret = dbl_nil;
+	jt = JSONparse(*js,0);
+	switch( jt->elm[0].kind ){
+	case JSON_NUMBER:
+		*ret =  strtod(jt->elm[0].value, &rest);
+		if (rest && (size_t)(rest- jt->elm[0].value) != jt->elm[0].valuelen)
+			*ret = dbl_nil;
+		break;
+	case JSON_ARRAY:
+		if ( jt->free == 2){
+			*ret =  strtod(jt->elm[1].value, &rest);
+			if (rest && (size_t)(rest- jt->elm[1].value) != jt->elm[1].valuelen)
+				*ret = dbl_nil;
+		}
+		break;
+	case JSON_OBJECT:
+		if ( jt->free == 3){
+			*ret =  strtod(jt->elm[2].value, &rest);
+			if (rest && (size_t)(rest- jt->elm[2].value) != jt->elm[2].valuelen)
+				*ret = dbl_nil;
+		}
+	}
+	JSONfree (jt);
+	return MAL_SUCCEED;
+}
+
+str
+JSONjson2integer(lng *ret, json *js)
+{	
+	JSON *jt;
+	char *rest;
+
+	*ret = lng_nil;
+	jt = JSONparse(*js,0);
+	switch( jt->elm[0].kind ){
+	case JSON_NUMBER:
+		*ret =  strtol(jt->elm[0].value, &rest,0);
+		if (rest && (size_t)(rest- jt->elm[0].value) != jt->elm[0].valuelen)
+			*ret = lng_nil;
+		break;
+	case JSON_ARRAY:
+		if ( jt->free == 2){
+			*ret =  strtol(jt->elm[1].value, &rest,0);
+			if (rest && (size_t)(rest- jt->elm[1].value) != jt->elm[1].valuelen)
+				*ret = lng_nil;
+		}
+		break;
+	case JSON_OBJECT:
+		if ( jt->free == 3){
+			*ret =  strtol(jt->elm[2].value, &rest,0);
+			if (rest && (size_t)(rest- jt->elm[2].value) != jt->elm[2].valuelen)
+				*ret = lng_nil;
+		}
+	}
+	JSONfree (jt);
 	return MAL_SUCCEED;
 }
 
