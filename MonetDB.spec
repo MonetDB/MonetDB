@@ -798,6 +798,41 @@ mv $RPM_BUILD_ROOT%{_datadir}/doc/MonetDB-SQL-%{version} $RPM_BUILD_ROOT%{_datad
 rm -fr $RPM_BUILD_ROOT
 
 %changelog
+* Sat Jan 25 2014 Sjoerd Mullender <sjoerd@acm.org> - 11.17.3-20140125
+- Rebuilt.
+- BZ#3040: Wrong NULL behavior in EXCEPT and INTERSECT
+- BZ#3092: ODBC client doesn't support scalar function escape
+- BZ#3198: SIGSEGV insert_string_bat (b=0x7fffe419d0a0, n=0x7fffc4006010,
+  append=0) at gdk_batop.c:196
+- BZ#3210: Unexpected concurrency conflict when inserting to 2 tables
+  simultaneously and querying one of them
+- BZ#3273: Add support to Python DBAPI package for timetz, inet and
+  url types
+- BZ#3285: no such table 'queryHistory'
+- BZ#3298: GDKmmap messages and monetdb start db takes very long
+- BZ#3354: Introduce query time-out
+- BZ#3371: (i)like generates batloop instead of algebra.likesubselect
+- BZ#3372: Large group by queries never complete - server at 100%
+  cpu(all cores) until MonetDB stopped
+- BZ#3383: Bad performance with DISTINCT GROUP BY
+- BZ#3391: Bad performance with GROUP BY and FK with out aggregate
+  function
+- BZ#3393: "COPY .. INTO ..." - escape of string quotes
+- BZ#3399: server crashed on simple (malformed) query
+- BZ#3401: inconsistent/strange handling of invalid dates
+  (e.g. 2013-02-29) in where clause
+- BZ#3403: NOT NULL constraint can't be applied after deleting rows with
+  null values
+- BZ#3404: Assertion `h->storage == STORE_MMAP' failed.
+- BZ#3408: nested concat query crashed server
+- BZ#3411: (disguised) BETWEEN clause not recognised. Hence no rangejoin.
+- BZ#3412: Boolean expressions in WHERE clause, result in incorrect
+  resulsts
+- BZ#3417: Nested Common Table Expressions Crash
+- BZ#3418: Segmentation fault on a query from table expression
+- BZ#3419: Database does not start after upgrade
+- BZ#3423: Group by alias with distinct count doesn't work
+
 * Tue Jan 14 2014 Sjoerd Mullender <sjoerd@acm.org> - 11.17.1-20140114
 - Rebuilt.
 - BZ#3040: Wrong NULL behavior in EXCEPT and INTERSECT
