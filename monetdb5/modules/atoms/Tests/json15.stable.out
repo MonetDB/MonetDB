@@ -1,0 +1,68 @@
+stdout of test 'json15` in directory 'monetdb5/modules/atoms` itself:
+
+
+# 11:57:32 >  
+# 11:57:32 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=37511" "--set" "mapi_usock=/var/tmp/mtest-3805/.s.monetdb.37511" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/current//Linux/var/MonetDB/mTests_monetdb5_modules_atoms" "json15.mal"
+# 11:57:32 >  
+
+# MonetDB 5 server v11.18.0
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_modules_atoms', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.591 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:37511/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-3805/.s.monetdb.37511
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+function user.main():void;
+    j1 := json.new("3.14");
+#json.dump(j1); 
+    d := json.number(j1);
+    io.print(d);
+    j1 := json.new("[3.14]");
+#json.dump(j1); 
+    d := json.number(j1);
+    io.print(d);
+    j1 := json.new("{\"tag\":3.14}");
+    json.dump(j1);
+    d := json.number(j1);
+    io.print(d);
+    j1 := json.new("[3.14,2.1]");
+    d := json.number(j1);
+    io.print(d);
+    j1 := json.new("314");
+#json.dump(j1); 
+    i := json.integer(j1);
+    io.print(i);
+    j1 := json.new("{\"tag\":314}");
+#json.dump(j1); 
+    i := json.integer(j1);
+    io.print(i);
+    j1 := json.new("[314]");
+#json.dump(j1); 
+    i := json.integer(j1);
+    io.print(i);
+    j1 := json.new("[314,2.1]");
+    i := json.integer(j1);
+    io.print(i);
+end main;
+[ 3.1400000000000001 ]
+[ 3.1400000000000001 ]
+[0] object child 0 list 1 {"tag":3.14}
+[1] element child 2 list tag
+[2] number child 0 list 3.14
+[ 3.1400000000000001 ]
+[ nil ]
+[ 314 ]
+[ 314 ]
+[ 314 ]
+[ nil ]
+
+# 11:57:32 >  
+# 11:57:32 >  "Done."
+# 11:57:32 >  
+

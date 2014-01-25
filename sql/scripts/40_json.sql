@@ -38,6 +38,12 @@ returns json external name json.filter;
 create function json.text(js json, e string)
 returns string external name json.text;
 
+create function json.number(js json)
+returns float external name json.number;
+
+create function json."integer"(js json)
+returns bigint external name json."integer";
+
 -- test string for JSON compliancy
 create function json.isvalid(js string)
 returns bool external name json.isvalid;

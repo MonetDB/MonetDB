@@ -20,6 +20,8 @@ io.print(f);
 f:= json.filter(b,"*");
 io.print(f);
 b:= json.new("{\"f1\":{\"f12\":3},\"f2\":[2,3,4]}");
+f:= json.filter(b,"..f12,$..f2[1]");
+io.print(f);
 f:= json.filter(b,"f1");
 io.print(f);
 f:= json.filter(b,"f1.f12");

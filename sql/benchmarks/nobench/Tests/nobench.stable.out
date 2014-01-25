@@ -1,0 +1,251 @@
+stdout of test 'nobench` in directory 'sql/benchmarks/nobench` itself:
+
+
+# 13:08:13 >  
+# 13:08:13 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=33349" "--set" "mapi_usock=/var/tmp/mtest-28559/.s.monetdb.33349" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/current//Linux/var/MonetDB/mTests_sql_benchmarks_nobench" "--set" "mal_listing=0"
+# 13:08:13 >  
+
+# MonetDB 5 server v11.18.0
+# This is an unreleased version
+# Serving database 'mTests_sql_benchmarks_nobench', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.591 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:33349/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-28559/.s.monetdb.33349
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_compress.sql
+# loading sql script: 18_dictionary.sql
+# loading sql script: 19_cluster.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 24_zorder.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 40_json.sql
+# loading sql script: 41_jsonstore.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 99_system.sql
+
+# 13:08:13 >  
+# 13:08:13 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-28559" "--port=33349"
+# 13:08:13 >  
+
+#create table bench10(js json);
+#copy 10 records into bench10 from stdin;
+#{"nested_obj": {"num": 4, "str": "GBRDCMBQ"}, "dyn2": true, "dyn1": 9, "nested_arr": ["especially"], "str2": "GBRDCMBQ", "str1": "GBRDCMBQGE======", "sparse_093": "GBRDCMBQGE======", "thousandth": 9, "sparse_090": "GBRDCMBQGE======", "sparse_091": "GBRDCMBQGE======", "sparse_092": "GBRDCMBQGE======", "num": 9, "bool": true, "sparse_095": "GBRDCMBQGE======", "sparse_096": "GBRDCMBQGE======", "sparse_097": "GBRDCMBQGE======", "sparse_098": "GBRDCMBQGE======", "sparse_094": "GBRDCMBQGE======", "sparse_099": "GBRDCMBQGE======"},
+[ 10	]
+#select count(*) from bench10;
+% sys.L1 # table_name
+% L1 # name
+% wrd # type
+% 2 # length
+[ 10	]
+#select json.filter(js, '$..str1,$..num') from bench10;
+% sys.L # table_name
+% filter_js # name
+% json # type
+% 24 # length
+[ "[\"GBRDCMBQGE======\",4,9]"	]
+[ "[\"GBRDCMJR\",2,7]"	]
+[ "[\"GBRDCMBQGA======\",3,8]"	]
+[ "[\"GBRDCMBR\",0,5]"	]
+[ "[\"GBRDCMI=\",8,3]"	]
+[ "[\"GBRDCMBQ\",9,4]"	]
+[ "[\"GBRDC===\",6,1]"	]
+[ "[\"GBRDCMA=\",7,2]"	]
+[ "[\"GBRDA===\",5,0]"	]
+[ "[\"GBRDCMJQ\",1,6]"	]
+#select json.filter(js,'.nested_obj.str,.nested_obj.num') from bench10;
+% sys.L # table_name
+% filter_js # name
+% json # type
+% 22 # length
+[ "[\"GBRDCMBQ\",4]"	]
+[ "[\"GBRDCMA=\",2]"	]
+[ "[\"GBRDCMI=\",3]"	]
+[ "[\"GBRDA===\",0]"	]
+[ "[\"GBRDCMBQGA======\",8]"	]
+[ "[\"GBRDCMBQGE======\",9]"	]
+[ "[\"GBRDCMJQ\",6]"	]
+[ "[\"GBRDCMJR\",7]"	]
+[ "[\"GBRDCMBR\",5]"	]
+[ "[\"GBRDC===\",1]"	]
+#select json.filter(js,'..sparse_000,..sparse_001') from bench10;
+% sys.L # table_name
+% filter_js # name
+% json # type
+% 23 # length
+[ "[]"	]
+[ "[]"	]
+[ "[]"	]
+[ "[]"	]
+[ "[]"	]
+[ "[]"	]
+[ "[]"	]
+[ "[]"	]
+[ "[\"GBRDA===\",\"GBRDA===\"]"	]
+[ "[]"	]
+#select json.filter(js,'str1') from bench10;
+% sys.L # table_name
+% filter_js # name
+% json # type
+% 20 # length
+[ "[\"GBRDCMBQGE======\"]"	]
+[ "[\"GBRDCMJR\"]"	]
+[ "[\"GBRDCMBQGA======\"]"	]
+[ "[\"GBRDCMBR\"]"	]
+[ "[\"GBRDCMI=\"]"	]
+[ "[\"GBRDCMBQ\"]"	]
+[ "[\"GBRDC===\"]"	]
+[ "[\"GBRDCMA=\"]"	]
+[ "[\"GBRDA===\"]"	]
+[ "[\"GBRDCMJQ\"]"	]
+#select json.text(json.filter(js,'str1')) from bench10;
+% sys.L # table_name
+% text_filter_js # name
+% clob # type
+% 16 # length
+[ "GBRDCMBQGE======"	]
+[ "GBRDCMJR"	]
+[ "GBRDCMBQGA======"	]
+[ "GBRDCMBR"	]
+[ "GBRDCMI="	]
+[ "GBRDCMBQ"	]
+[ "GBRDC==="	]
+[ "GBRDCMA="	]
+[ "GBRDA==="	]
+[ "GBRDCMJQ"	]
+#select * from bench10 where json.text(json.filter(js,'str1')) = 'GBRDCMBR';
+% sys.bench10 # table_name
+% js # name
+% json # type
+% 463 # length
+[ "{\"nested_obj\": {\"num\": 0, \"str\": \"GBRDA===\"}, \"dyn2\": 5, \"dyn1\": 5, \"nested_arr\": [\"the\", \"state\", \"aware\", \"''\", \"the\"], \"str2\": \"GBRDA===\", \"str1\": \"GBRDCMBR\", \"sparse_058\": \"GBRDCMBR\", \"thousandth\": 5, \"num\": 5, \"bool\": true, \"sparse_059\": \"GBRDCMBR\", \"sparse_054\": \"GBRDCMBR\", \"sparse_055\": \"GBRDCMBR\", \"sparse_056\": \"GBRDCMBR\", \"sparse_057\": \"GBRDCMBR\", \"sparse_050\": \"GBRDCMBR\", \"sparse_051\": \"GBRDCMBR\", \"sparse_052\": \"GBRDCMBR\", \"sparse_053\": \"GBRDCMBR\"},"	]
+#select json.number(json.filter(js,'num')) from bench10;
+% sys.L # table_name
+% number_filter_js # name
+% double # type
+% 24 # length
+[ 9	]
+[ 7	]
+[ 8	]
+[ 5	]
+[ 3	]
+[ 4	]
+[ 1	]
+[ 2	]
+[ 0	]
+[ 6	]
+#select json."integer"(json.filter(js,'num')) from bench10;
+% sys.L # table_name
+% integer_filter_js # name
+% bigint # type
+% 1 # length
+[ 9	]
+[ 7	]
+[ 8	]
+[ 5	]
+[ 3	]
+[ 4	]
+[ 1	]
+[ 2	]
+[ 0	]
+[ 6	]
+#select cast(json.text(json.filter(js,'num')) as integer) from bench10;
+% sys.L # table_name
+% text_filter_js # name
+% int # type
+% 1 # length
+[ 9	]
+[ 7	]
+[ 8	]
+[ 5	]
+[ 3	]
+[ 4	]
+[ 1	]
+[ 2	]
+[ 0	]
+[ 6	]
+#select * from bench10 where json.number(json.filter(js,'num')) between 0.0 and 3.0;
+% sys.bench10 # table_name
+% js # name
+% json # type
+% 466 # length
+[ "{\"nested_obj\": {\"num\": 8, \"str\": \"GBRDCMBQGA======\"}, \"sparse_035\": \"GBRDCMI=\", \"dyn2\": true, \"dyn1\": 3, \"nested_arr\": [\"check\", \"it\", \"the\"], \"str2\": \"GBRDCMBQGA======\", \"str1\": \"GBRDCMI=\", \"thousandth\": 3, \"sparse_036\": \"GBRDCMI=\", \"sparse_037\": \"GBRDCMI=\", \"sparse_034\": \"GBRDCMI=\", \"num\": 3, \"bool\": true, \"sparse_033\": \"GBRDCMI=\", \"sparse_030\": \"GBRDCMI=\", \"sparse_031\": \"GBRDCMI=\", \"sparse_032\": \"GBRDCMI=\", \"sparse_038\": \"GBRDCMI=\", \"sparse_039\": \"GBRDCMI=\"},"	]
+[ "{\"sparse_018\": \"GBRDC===\", \"nested_obj\": {\"num\": 6, \"str\": \"GBRDCMJQ\"}, \"dyn2\": \"GBRDC===\", \"dyn1\": 1, \"nested_arr\": [\"button-down\"], \"sparse_010\": \"GBRDC===\", \"str2\": \"GBRDCMJQ\", \"str1\": \"GBRDC===\", \"sparse_013\": \"GBRDC===\", \"sparse_014\": \"GBRDC===\", \"sparse_015\": \"GBRDC===\", \"sparse_016\": \"GBRDC===\", \"sparse_017\": \"GBRDC===\", \"num\": 1, \"bool\": true, \"sparse_011\": \"GBRDC===\", \"thousandth\": 1, \"sparse_019\": \"GBRDC===\", \"sparse_012\": \"GBRDC===\"},"	]
+[ "{\"nested_obj\": {\"num\": 7, \"str\": \"GBRDCMJR\"}, \"dyn2\": 2, \"dyn1\": 2, \"nested_arr\": [\"she\", \"beyond\"], \"str2\": \"GBRDCMJR\", \"str1\": \"GBRDCMA=\", \"thousandth\": 2, \"sparse_025\": \"GBRDCMA=\", \"sparse_024\": \"GBRDCMA=\", \"sparse_027\": \"GBRDCMA=\", \"num\": 2, \"bool\": false, \"sparse_020\": \"GBRDCMA=\", \"sparse_023\": \"GBRDCMA=\", \"sparse_022\": \"GBRDCMA=\", \"sparse_021\": \"GBRDCMA=\", \"sparse_029\": \"GBRDCMA=\", \"sparse_028\": \"GBRDCMA=\", \"sparse_026\": \"GBRDCMA=\"},"	]
+[ "{\"nested_obj\": {\"num\": 5, \"str\": \"GBRDCMBR\"}, \"sparse_008\": \"GBRDA===\", \"sparse_009\": \"GBRDA===\", \"dyn2\": false, \"dyn1\": \"GBRDA===\", \"nested_arr\": [], \"sparse_007\": \"GBRDA===\", \"str2\": \"GBRDCMBR\", \"str1\": \"GBRDA===\", \"sparse_004\": \"GBRDA===\", \"sparse_003\": \"GBRDA===\", \"sparse_002\": \"GBRDA===\", \"sparse_001\": \"GBRDA===\", \"sparse_000\": \"GBRDA===\", \"num\": 0, \"bool\": false, \"sparse_006\": \"GBRDA===\", \"thousandth\": 0, \"sparse_005\": \"GBRDA===\"},"	]
+#select json.number(json.filter(js,'dyn1')) from bench10;
+% sys.L # table_name
+% number_filter_js # name
+% double # type
+% 24 # length
+[ 9	]
+[ 7	]
+[ 8	]
+[ 5	]
+[ 3	]
+[ 4	]
+[ 1	]
+[ 2	]
+[ NULL	]
+[ 6	]
+#select json."integer"(json.filter(js,'dyn1')) from bench10;
+% sys.L # table_name
+% integer_filter_js # name
+% bigint # type
+% 1 # length
+[ 9	]
+[ 7	]
+[ 8	]
+[ 5	]
+[ 3	]
+[ 4	]
+[ 1	]
+[ 2	]
+[ NULL	]
+[ 6	]
+#select json.text(json.filter(js,'dyn1')) from bench10;
+% sys.L # table_name
+% text_filter_js # name
+% clob # type
+% 8 # length
+[ "9"	]
+[ "7"	]
+[ "8"	]
+[ "5"	]
+[ "3"	]
+[ "4"	]
+[ "1"	]
+[ "2"	]
+[ "GBRDA==="	]
+[ "6"	]
+#drop table bench10;
+
+# 13:08:14 >  
+# 13:08:14 >  "Done."
+# 13:08:14 >  
+

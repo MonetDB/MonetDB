@@ -1483,6 +1483,8 @@ int JSONfromString(str src, int *len, json *x);
 str JSONisarray(bit *ret, json *j);
 str JSONisobject(bit *ret, json *j);
 str JSONisvalid(bit *ret, json *j);
+str JSONjson2integer(lng *ret, json *arg);
+str JSONjson2number(dbl *ret, json *arg);
 str JSONjson2str(str *ret, json *j);
 str JSONjson2text(str *ret, json *arg);
 str JSONjson2textSeparator(str *ret, json *arg, str *sep);
