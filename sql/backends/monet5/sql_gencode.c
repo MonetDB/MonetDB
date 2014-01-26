@@ -739,10 +739,14 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				}
 			} else {
 				char *buf = GDKmalloc(SMALLBUFSIZ);
-
-				(void) snprintf(buf, SMALLBUFSIZ, "A%d", s->flag);
+				
 				q = newAssignment(mb);
-				q = pushArgumentId(mb, q, buf);
+				if (sql->mvc->argc && sql->mvc->args[s->flag]->varid >= 0) {
+					q = pushArgument(mb, q, sql->mvc->args[s->flag]->varid);
+				} else {
+					(void) snprintf(buf, SMALLBUFSIZ, "A%d", s->flag);
+					q = pushArgumentId(mb, q, buf);
+				}
 			}
 			s->nr = getDestVar(q);
 		} break;
@@ -2228,7 +2232,7 @@ backend_callinline(backend *be, Client c, stmt *s)
 
 	curInstr = getInstrPtr(curBlk, 0);
 
-	if (m->argc) {		/* we shouldn't come here as we aren't caching statements */
+	if (m->argc) {	
 		int argc = 0;
 
 		for (; argc < m->argc; argc++) {
@@ -2237,7 +2241,7 @@ backend_callinline(backend *be, Client c, stmt *s)
 			int varid = 0;
 
 			curInstr = newAssignment(curBlk);
-			varid = getDestVar(curInstr);
+			a->varid = varid = getDestVar(curInstr);
 			renameVariable(curBlk, varid, "A%d", argc);
 			setVarType(curBlk, varid, type);
 			setVarUDFtype(curBlk, varid);
@@ -2292,7 +2296,7 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 			int varid = 0;
 
 			snprintf(arg, SMALLBUFSIZ, "A%d", argc);
-			varid = newVariable(mb, _STRDUP(arg), type);
+			a->varid = varid = newVariable(mb, _STRDUP(arg), type);
 			curInstr = pushArgument(mb, curInstr, varid);
 			setVarType(mb, varid, type);
 			setVarUDFtype(mb, 0);
