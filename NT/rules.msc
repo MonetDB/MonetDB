@@ -426,11 +426,6 @@ create_winconfig_conds_new_py:
 !ELSE
 	$(ECHO) HAVE_JAQL_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
-!IFDEF HAVE_JSONSTORE
-	$(ECHO) HAVE_JSONSTORE_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ELSE
-	$(ECHO) HAVE_JSONSTORE_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ENDIF
 !IFDEF HAVE_TESTING
 	$(ECHO) HAVE_TESTING_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
