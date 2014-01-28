@@ -28,6 +28,7 @@ typedef struct atom {
 	sql_subtype tpe;
 	ValRecord data;
 	dbl d;
+	int varid;/* used during code generation only */
 } atom;
 
 #define atom_null(a) (((atom*)a)->isnull)

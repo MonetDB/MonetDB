@@ -32,6 +32,7 @@ atom_create( sql_allocator *sa )
 
 	memset(&a->data, 0, sizeof(a->data));
 	a->d = dbl_nil;
+	a->varid = -1;
 	return a;
 }
 
