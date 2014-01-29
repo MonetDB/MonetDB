@@ -2120,7 +2120,7 @@ VARcalcadd(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
 }
 
 static BAT *
-BATcaclincrdecr(BAT *b, BAT *s, int abort_on_error,
+BATcalcincrdecr(BAT *b, BAT *s, int abort_on_error,
 		BUN (*typeswitchloop)(const void *, int, int, const void *,
 				      int, int, void *, int, BUN, BUN, BUN,
 				      const oid *, const oid *, oid, int,
@@ -2184,7 +2184,7 @@ BATcaclincrdecr(BAT *b, BAT *s, int abort_on_error,
 BAT *
 BATcalcincr(BAT *b, BAT *s, int abort_on_error)
 {
-	return BATcaclincrdecr(b, s, abort_on_error, add_typeswitchloop,
+	return BATcalcincrdecr(b, s, abort_on_error, add_typeswitchloop,
 			       "BATcalcincr");
 }
 
@@ -3340,7 +3340,7 @@ VARcalcsub(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
 BAT *
 BATcalcdecr(BAT *b, BAT *s, int abort_on_error)
 {
-	return BATcaclincrdecr(b, s, abort_on_error, sub_typeswitchloop,
+	return BATcalcincrdecr(b, s, abort_on_error, sub_typeswitchloop,
 			       "BATcalcdecr");
 }
 
