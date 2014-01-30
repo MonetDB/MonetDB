@@ -603,7 +603,7 @@ HEAPload_intern(Heap *h, const char *nme, const char *ext, const char *suffix, i
 	long_str srcpath, dstpath;
 	struct stat st;
 
-	h->storage = h->newstorage;
+	h->storage = h->newstorage = h->size < GDK_mmap_minsize ? STORE_MEM : STORE_MMAP;
 	if (h->filename == NULL)
 		h->filename = (char *) GDKmalloc(strlen(nme) + strlen(ext) + 2);
 	if (h->filename == NULL)
