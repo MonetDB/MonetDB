@@ -139,8 +139,10 @@ delta_bind_bat( sql_delta *bat, int access, int temp)
 {
 	BAT *b;
 
-	assert(access == RDONLY || access == RD_INS);
+	assert(access == RDONLY || access == RD_INS || access == QUICK);
 	assert(bat != NULL);
+	if (access == QUICK)
+		return quick_descriptor(bat->bid);
 	if (temp || access == RD_INS) {
 		assert(bat->ibid);
 		b = temp_descriptor(bat->ibid);
@@ -761,10 +763,10 @@ sorted_col(sql_trans *tr, sql_column *col)
 	}
 
 	if (col && col->data) {
-		BAT *b = bind_col(tr, col, RDONLY);
+		BAT *b = bind_col(tr, col, QUICK);
 
-		sorted = BATtordered(b);
-		bat_destroy(b);
+		if (b)
+			sorted = BATtordered(b);
 	}
 	return sorted;
 }
