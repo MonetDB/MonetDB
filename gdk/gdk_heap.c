@@ -247,9 +247,8 @@ HEAPextend(Heap *h, size_t size, int mayshare)
 				existing = 1;
 				close(fd);
 			} else {
-				/* no pre-existing heap file, attempt
-				 * to use a file from the cache (or
-				 * create a new one) */
+				/* no pre-existing heap file, so
+				 * create a new one */
 				h->filename = GDKmalloc(strlen(nme) + strlen(ext) + 2);
 				if (h->filename == NULL) {
 					failure = "h->storage == STORE_MEM && can_map && h->filename == NULL";
