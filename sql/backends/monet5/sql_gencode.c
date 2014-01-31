@@ -2433,8 +2433,7 @@ backend_create_func(backend *be, sql_func *f, list *restypes, list *ops)
 			setVarType(curBlk, varid, type);
 			setVarUDFtype(curBlk, varid);
 		}
-	} else
-	if (f->ops) {
+	} else if (f->ops) {
 		int argc = 0;
 		node *n;
 

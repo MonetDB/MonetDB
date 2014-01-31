@@ -2674,18 +2674,20 @@ assignment_commalist:
 
 assignment:
    column '=' search_condition
-
 	{ dlist *l = L();
 	  append_symbol(l, $3 );
 	  append_string(l, $1);
 	  $$ = _symbol_create_list( SQL_ASSIGN, l); }
-
  | column '=' sqlNULL
-
 	{ dlist *l = L();
 	  append_symbol(l, NULL );
 	  append_string(l, $1);
 	  $$ = _symbol_create_list( SQL_ASSIGN, l); }
+ |  column_commalist_parens '=' subquery
+	{ dlist *l = L();
+	  append_symbol(l, $3);
+	  append_list(l, $1);
+	  $$ = _symbol_create_list( SQL_ASSIGN, l ); }
  ;
 
 opt_where_clause:
