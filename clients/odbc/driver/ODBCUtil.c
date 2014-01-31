@@ -521,7 +521,7 @@ ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLUINTEGER 
 			free(nquery);
 			nquery = q;
 			q += n;
-		} else if (strncasecmp(p, "interval", 8) == 0 && p[8] == ' ') {
+		} else if (strncasecmp(p, "interval ", 9) == 0) {
 			const char *intv = p;
 			size_t intvl;
 

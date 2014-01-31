@@ -247,9 +247,8 @@ HEAPextend(Heap *h, size_t size, int mayshare)
 				existing = 1;
 				close(fd);
 			} else {
-				/* no pre-existing heap file, attempt
-				 * to use a file from the cache (or
-				 * create a new one) */
+				/* no pre-existing heap file, so
+				 * create a new one */
 				h->filename = GDKmalloc(strlen(nme) + strlen(ext) + 2);
 				if (h->filename == NULL) {
 					failure = "h->storage == STORE_MEM && can_map && h->filename == NULL";
@@ -604,7 +603,7 @@ HEAPload_intern(Heap *h, const char *nme, const char *ext, const char *suffix, i
 	long_str srcpath, dstpath;
 	struct stat st;
 
-	h->storage = h->newstorage;
+	h->storage = h->newstorage = h->size < GDK_mmap_minsize ? STORE_MEM : STORE_MMAP;
 	if (h->filename == NULL)
 		h->filename = (char *) GDKmalloc(strlen(nme) + strlen(ext) + 2);
 	if (h->filename == NULL)

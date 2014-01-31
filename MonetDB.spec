@@ -435,7 +435,7 @@ automatic index management, extensibility of data types and search
 accelerators.  It also has an SQL frontend.
 
 This package contains the JAQL extension for MonetDB.  JAQL is a
-querly language for JavaScript Object Notation (JSON).
+query language for JavaScript Object Notation (JSON).
 
 %files jaql
 %defattr(-,root,root)
