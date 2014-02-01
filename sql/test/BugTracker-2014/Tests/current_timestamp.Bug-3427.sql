@@ -23,8 +23,13 @@ drop table x;
 declare t timestamp;
 declare tt time;
 set t = now();
+set t = current_timestamp;
 set t = current_time;
 set tt = now();
 set tt = current_time;
+set tt = current_timestamp;
 
 create table d(t timestamp default current_time, i integer);
+drop table d;
+create table d(t time default current_timestamp, i integer);
+drop table d;
