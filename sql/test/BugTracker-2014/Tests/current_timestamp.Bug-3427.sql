@@ -6,7 +6,7 @@ td timestamp default now(),
 tc timestamp default current_timestamp);
 
 insert into x(i,t) values(0,now());
-select * from x;
+select i, tn, td - t, tc - t from x;
 drop table x;
 
 create table x(
@@ -17,7 +17,7 @@ td time default now(),
 tc time default current_time);
 
 insert into x(i,t) values(0,now());
-select * from x;
+select i, tn, td - t, tc - t from x;
 drop table x;
 
 declare t timestamp;
