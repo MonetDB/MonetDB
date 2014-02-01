@@ -1,0 +1,104 @@
+stdout of test 'current_timestamp.Bug-3427` in directory 'sql/test/BugTracker-2014` itself:
+
+
+# 14:58:53 >  
+# 14:58:53 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=32929" "--set" "mapi_usock=/var/tmp/mtest-29380/.s.monetdb.32929" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/manegold/_/Monet/HG/Jan2014/prefix/--disable-debug_--enable-assert_--enable-optimize/var/MonetDB/mTests_sql_test_BugTracker-2014" "--set" "mal_listing=0"
+# 14:58:53 >  
+
+# MonetDB 5 server v11.17.4
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2014', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.591 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://rome.ins.cwi.nl:32929/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-29380/.s.monetdb.32929
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_compress.sql
+# loading sql script: 18_dictionary.sql
+# loading sql script: 19_cluster.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 24_zorder.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 46_gsl.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 99_system.sql
+#Bulk operator required for calc.second_interval
+#Bulk operator required for mtime.time_sub_msec_interval
+#Bulk operator required for calc.second_interval
+#Bulk operator required for mtime.time_sub_msec_interval
+
+# 14:58:53 >  
+# 14:58:53 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-29380" "--port=32929"
+# 14:58:53 >  
+
+#create table x(
+#i integer,
+#t timestamp,
+#tn timestamp default null,
+#td timestamp default now(),
+#tc timestamp default current_timestamp);
+#insert into x(i,t) values(0,now());
+[ 1	]
+#select i, tn, td - t, tc - t from x;
+% sys.x,	sys.x,	sys.L1,	sys.L1 # table_name
+% i,	tn,	L1,	sql_sub_tc # name
+% int,	timestamp,	bigint,	bigint # type
+% 1,	26,	1,	1 # length
+[ 0,	NULL,	0,	0	]
+#drop table x;
+#create table x(
+#i integer,
+#t time,
+#tn time default null,
+#td time default now(),
+#tc time default current_time);
+#insert into x(i,t) values(0,now());
+[ 1	]
+#select i, tn, td - t, tc - t from x;
+% sys.x,	sys.x,	sys.L1,	sys.L1 # table_name
+% i,	tn,	L1,	sql_sub_tc # name
+% int,	time,	time,	time # type
+% 1,	8,	15,	15 # length
+[ 0,	NULL,	00:00:00.000000,	00:00:00.000000	]
+#drop table x;
+#declare t timestamp;
+#declare tt time;
+#set t = now();
+#set t = current_timestamp;
+#set t = current_time;
+#set tt = now();
+#set tt = current_time;
+#set tt = current_timestamp;
+#create table d(t timestamp default current_time, i integer);
+#drop table d;
+#create table d(t time default current_timestamp, i integer);
+#drop table d;
+
+# 14:58:53 >  
+# 14:58:53 >  "Done."
+# 14:58:53 >  
+
