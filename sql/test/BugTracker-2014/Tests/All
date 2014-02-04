@@ -3,4 +3,5 @@ nested_common_table_exp.Bug-3417
 query-crash.Bug-3418
 groupby.Bug-3421
 groupby_distict.Bug-3423
-current_timestamp.Bug-3427.sql
+current_timestamp.Bug-3427
+two-column-aggr-with-null.Bug-3428
