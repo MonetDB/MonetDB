@@ -1,3 +1,4 @@
+create-view-crash.Bug-3414
 nested_common_table_exp.Bug-3417
 query-crash.Bug-3418
 groupby.Bug-3421
