@@ -71,6 +71,7 @@ zorder
 
 manifold
 manifoldstr
+manifoldaggr
 
 #HAVE_RAPTOR?rdf
 
