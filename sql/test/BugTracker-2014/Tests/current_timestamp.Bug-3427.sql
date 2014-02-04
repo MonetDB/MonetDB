@@ -1,3 +1,5 @@
+start transaction;
+
 create table x(
 i integer,
 t timestamp,
@@ -33,3 +35,5 @@ create table d(t timestamp default current_time, i integer);
 drop table d;
 create table d(t time default current_timestamp, i integer);
 drop table d;
+
+rollback;
