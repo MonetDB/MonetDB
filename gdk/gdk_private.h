@@ -70,6 +70,7 @@ BUN HASHmask(BUN cnt);
 Hash *HASHnew(Heap *hp, int tpe, BUN size, BUN mask);
 void HASHremove(BAT *b);
 int HEAPalloc(Heap *h, size_t nitems, size_t itemsize);
+int HEAPcopy(Heap *dst, Heap *src);
 int HEAPdelete(Heap *h, const char *o, const char *ext);
 int HEAPload(Heap *h, const char *nme, const char *ext, int trunc);
 int HEAPsave(Heap *h, const char *nme, const char *ext);
