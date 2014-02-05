@@ -31844,6 +31844,20 @@ command bat.hasAppendMode(b:bat[:any_1,:any_2]):bit
 address BKChasAppendMode;
 comment return true if to this BAT is append only.
 
+command bat.imprintsize(b:bat[:oid,:dbl]):lng 
+address CMDBATimprintsize;
+comment Return the size of the imprints
+
+command bat.imprintsize(b:bat[:oid,:flt]):lng 
+address CMDBATimprintsize;
+command bat.imprintsize(b:bat[:oid,:lng]):lng 
+address CMDBATimprintsize;
+command bat.imprintsize(b:bat[:oid,:int]):lng 
+address CMDBATimprintsize;
+command bat.imprintsize(b:bat[:oid,:sht]):lng 
+address CMDBATimprintsize;
+command bat.imprintsize(b:bat[:oid,:bte]):lng 
+address CMDBATimprintsize;
 command bat.imprints(b:bat[:oid,:dbl]):void 
 address CMDBATimprints;
 comment Check/create an imprint index on the BAT
@@ -42493,7 +42507,7 @@ pattern sql.sysmon_pause(tag:sht):void
 address SYSMONpause;
 pattern sql.sysmon_queue() (qtag:bat[:oid,:lng],user:bat[:oid,:str],started:bat[:oid,:timestamp],estimate:bat[:oid,:timestamp],progress:bat[:oid,:int],status:bat[:oid,:str],tag:bat[:oid,:oid],query:bat[:oid,:str]) 
 address SYSMONqueue;
-pattern sql.storage() (schema:bat[:oid,:str],table:bat[:oid,:str],column:bat[:oid,:str],type:bat[:oid,:str],location:bat[:oid,:str],count:bat[:oid,:lng],atomwidth:bat[:oid,:int],columnsize:bat[:oid,:lng],heap:bat[:oid,:lng],indices:bat[:oid,:lng],sorted:bat[:oid,:bit]) 
+pattern sql.storage() (schema:bat[:oid,:str],table:bat[:oid,:str],column:bat[:oid,:str],type:bat[:oid,:str],location:bat[:oid,:str],count:bat[:oid,:lng],atomwidth:bat[:oid,:int],columnsize:bat[:oid,:lng],heap:bat[:oid,:lng],hashes:bat[:oid,:lng],imprints:bat[:oid,:lng],sorted:bat[:oid,:bit]) 
 address sql_storage;
 comment return a table with storage information 
 
