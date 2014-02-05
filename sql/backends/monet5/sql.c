@@ -462,6 +462,8 @@ create_table_or_view(mvc *sql, char *sname, sql_table *t, int temp)
 
 		sql->sa = sa_create();
 		r = rel_parse(sql, nt->query, m_deps);
+		if (r)
+			r = rel_optimizer(sql, r);
 		if (r) {
 			stmt *sqs = rel_bin(sql, r);
 			list *view_id_l = stmt_list_dependencies(sql->sa, sqs, VIEW_DEPENDENCY);
@@ -942,6 +944,8 @@ create_trigger(mvc *sql, char *sname, char *tname, char *triggername, int time, 
 		sql->sa = sa_create();
 		buf = sa_strdup(sql->sa, query);
 		r = rel_parse(sql, buf, m_deps);
+		if (r)
+			r = rel_optimizer(sql, r);
 		/* TODO use relational part to find dependencies */
 		if (r) {
 			stmt *sqs = rel_bin(sql, r);
