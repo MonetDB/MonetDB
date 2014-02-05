@@ -911,18 +911,24 @@ tokenize(mvc * c, int cur)
 	}
 }
 
+/* SQL 'quoted' idents consist of a set of any character of 
+ * the source language character set other than a 'quote' 
+ *
+ * MonetDB has 2 restrictions:
+ * 	1 we disallow '%' as the first character.
+ * 	2 the length is reduced to 1024 characters 
+ */
 static int
 valid_ident(char *s, char *dst)
 {
 	int escaped = 0;
 	int p = 0;
 	
-	if (*s != '_' && !(isascii((int) *s) && isalnum((int) *s)) && *s != ' ' &&
-	    *s != '(' && *s != ')') 
+	if (*s == '%')
 		return 0;
 	/* do unescaping in the loop */
 	while (*s && (*s != '"' || escaped)) {
-		if (*s == '\\') {
+		if (*s == '\\' || (*s == '"' && s[1] == '"')) {
 			escaped = !escaped;
 			if (!escaped) {
 				dst[p++] = *s;
@@ -930,9 +936,6 @@ valid_ident(char *s, char *dst)
 		} else if (*s == '"' && escaped) {
 			escaped = 0;
 			dst[p++] = *s;
-		} else if (*s != '_' && !(isascii((int) *s) && isalnum((int) *s)) && *s != ' ' &&
-			   *s != '(' && *s != ')') {
-			return 0;
 		} else {
 			escaped = 0;
 			dst[p++] = *s;
@@ -989,7 +992,6 @@ sql_get_next_token(YYSTYPE *yylval, void *parm) {
 
 		lc->rs->buf[lc->rs->pos+lc->yycur- 1] = 0; 
 		if (quote == '"') {
-			/* Todo check if what valid 'quoted' idents are */
 			if (valid_ident(yylval->sval+1,str)) {
 				token = IDENT;
 			} else {
