@@ -861,6 +861,8 @@ roundup_num(size_t number, int alignment)
 	return rval;
 }
 
+#define HEAP_index(HEAP,INDEX,TYPE)	((TYPE *)((char *) (HEAP)->base + (INDEX)))
+
 #ifdef TRACE
 static void
 HEAP_printstatus(Heap *heap)

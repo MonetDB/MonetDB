@@ -1134,8 +1134,6 @@ gdk_export void HEAP_initialize(
 gdk_export var_t HEAP_malloc(Heap *heap, size_t nbytes);
 gdk_export void HEAP_free(Heap *heap, var_t block);
 
-#define HEAP_index(HEAP,INDEX,TYPE)	((TYPE *)((char *) (HEAP)->base + (INDEX)))
-
 /*
  * @- BAT construction
  * @multitable @columnfractions 0.08 0.7
