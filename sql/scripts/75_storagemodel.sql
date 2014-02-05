@@ -29,7 +29,7 @@
 -- For strings we take a sample to determine their average length.
 
 create function sys.storage()
-returns table ("schema" string, "table" string, "column" string, "type" string, location string, "count" bigint, typewidth int, columnsize bigint, heapsize bigint, indices bigint, sorted boolean)
+returns table ("schema" string, "table" string, "column" string, "type" string, location string, "count" bigint, typewidth int, columnsize bigint, heapsize bigint, hashes bigint, imprints bigint, sorted boolean)
 external name sql.storage;
 
 create view sys.storage as select * from sys.storage();

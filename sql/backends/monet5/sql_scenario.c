@@ -886,6 +886,24 @@ sql_update_default(Client c)
 	return err;		/* usually MAL_SUCCEED */
 }
 
+static str
+sql_update_default_storage(Client c)
+{
+	size_t bufsize = 4096, pos = 0;
+	char *buf = GDKmalloc(bufsize), *err = NULL;
+
+	/* change to storage functions */
+	pos += snprintf(buf + pos, bufsize - pos, "drop view sys.storage;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "drop function sys.storage();\n");
+	pos += snprintf(buf + pos, bufsize - pos, "create function sys.storage() returns table (\"schema\" string, \"table\" string, \"column\" string, \"type\" string, location string, \"count\" bigint, typewidth int, columnsize bigint, heapsize bigint, hashes bigint, imprints bigint, sorted boolean) external name sql.storage;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "create view sys.storage as select * from sys.storage();\n");
+
+	printf("Running database upgrade commands:\n%s\n", buf);
+	err = SQLstatementIntern(c, &buf, "update", 1, 0);
+	GDKfree(buf);
+	return err;		/* usually MAL_SUCCEED */
+}
+
 str
 SQLinitClient(Client c)
 {
@@ -1048,6 +1066,10 @@ SQLinitClient(Client c)
 				fprintf(stderr, "!%s\n", err);
 				GDKfree(err);
 			}
+		}
+		if (0  && (err = sql_update_default_storage(c)) !=NULL) {
+			fprintf(stderr, "!%s\n", err);
+			GDKfree(err);
 		}
 	}
 	fflush(stdout);
