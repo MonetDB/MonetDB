@@ -2890,6 +2890,7 @@ InstrPtr pushNil(MalBlkPtr mb, InstrPtr q, int tpe);
 InstrPtr pushNilType(MalBlkPtr mb, InstrPtr q, char *tpe);
 InstrPtr pushOid(MalBlkPtr mb, InstrPtr q, oid val);
 InstrPtr pushReturn(MalBlkPtr mb, InstrPtr p, int varid);
+InstrPtr pushSht(MalBlkPtr mb, InstrPtr q, sht val);
 InstrPtr pushStr(MalBlkPtr mb, InstrPtr q, const char *val);
 InstrPtr pushType(MalBlkPtr mb, InstrPtr q, int tpe);
 InstrPtr pushValue(MalBlkPtr mb, InstrPtr q, ValPtr cst);
