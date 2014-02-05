@@ -4415,6 +4415,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 								sz = bn->T->hash ? bn->T->hash->heap->size : 0;
 								sz += bn->H->hash ? bn->H->hash->heap->size : 0;
+								sz += IMPSimprintsize(bn);
 								indices = BUNappend(indices, &sz, FALSE);
 								/*printf(" indices "BUNFMT, bn->T->hash?bn->T->hash->heap->size:0); */
 								/*printf("\n"); */

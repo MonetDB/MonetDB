@@ -2215,6 +2215,7 @@ gdk_export BAT *BAThash(BAT *b, BUN masksize);
 
 gdk_export void IMPSdestroy(BAT *b);
 gdk_export BAT *BATimprints(BAT *b);
+gdk_export lng IMPSimprintsize(BAT *b);
 
 /*
  * @- Multilevel Storage Modes

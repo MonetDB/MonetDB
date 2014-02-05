@@ -784,6 +784,18 @@ IMPSgetbin(int tpe, bte bits, char *inbins, const void *v)
 	return ret;
 }
 
+#define heapinfo(X) if ((X) && (X)->base) vol = (X)->free; else vol = 0;
+
+lng
+IMPSimprintsize(BAT *b)
+{
+	lng sz=0;
+	if( b->T->imprints){
+		sz = b->T->imprints->impcnt * sizeof(IMPS_PAGE/8);
+		sz += b->T->imprints->dictcnt * sizeof(cchdc_t);
+	}
+	return sz;
+}
 
 static void
 IMPSremove(BAT *b) {

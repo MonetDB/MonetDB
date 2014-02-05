@@ -31844,6 +31844,20 @@ command bat.hasAppendMode(b:bat[:any_1,:any_2]):bit
 address BKChasAppendMode;
 comment return true if to this BAT is append only.
 
+command bat.imprints(b:bat[:oid,:dbl]):void 
+address CMDBATimprints;
+comment Check/create an imprint index on the BAT
+
+command bat.imprints(b:bat[:oid,:flt]):void 
+address CMDBATimprints;
+command bat.imprints(b:bat[:oid,:lng]):void 
+address CMDBATimprints;
+command bat.imprints(b:bat[:oid,:int]):void 
+address CMDBATimprints;
+command bat.imprints(b:bat[:oid,:sht]):void 
+address CMDBATimprints;
+command bat.imprints(b:bat[:oid,:bte]):void 
+address CMDBATimprints;
 command bat.intersectcand(a:bat[:oid,:oid],b:bat[:oid,:oid]):bat[:oid,:oid] 
 address BKCintersectcand;
 comment Intersect two candidate lists into one
@@ -31953,11 +31967,11 @@ address BKCorder;
 comment Sorts the BAT itself on the head, in place. 
 
 pattern bat.partition(b:bat[:oid,:any_1],pieces:int,n:int):bat[:oid,:any_1] 
-address CMDbatpartition2;
+address CMDBATpartition2;
 comment Create the n-th slice over the BAT broken into severral pieces.
 
 pattern bat.partition(b:bat[:oid,:any_1]):bat[:oid,:any_1]... 
-address CMDbatpartition;
+address CMDBATpartition;
 comment Create a serie of slices over the BAT argument. The BUNs are distributed evenly.
 
 command bat.reuseMap(b:bat[:oid,:any_1],del:bat[:oid,:oid]):bat[:oid,:oid] 

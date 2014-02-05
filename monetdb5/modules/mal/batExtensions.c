@@ -189,7 +189,7 @@ CMDBATnewint(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 
 /* If the optimizer has not determined the partition bounds we derive one here.  */
 str
-CMDbatpartition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+CMDBATpartition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *b,*bn;
 	int *ret,i,bid;
@@ -234,7 +234,7 @@ CMDbatpartition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 str
-CMDbatpartition2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+CMDBATpartition2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *b,*bn;
 	int *ret,bid;
@@ -269,6 +269,31 @@ CMDbatpartition2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	ret= (int *) getArgReference(stk,pci,0);
 	BBPkeepref(*ret = bn->batCacheid);
+	BBPreleaseref(b->batCacheid);
+	return MAL_SUCCEED;
+}
+
+str
+CMDBATimprints(int *ret, int *bid)
+{
+	BAT *b;
+
+	if ((b = BATdescriptor(*bid)) == NULL) 
+		throw(MAL, "bat.imprints", INTERNAL_BAT_ACCESS);
+
+	BATimprints(b);
+	BBPkeepref(*ret = b->batCacheid);
+	return MAL_SUCCEED;
+}
+str
+CMDBATimprintsize(lng *ret, int *bid)
+{
+	BAT *b;
+
+	if ((b = BATdescriptor(*bid)) == NULL) 
+		throw(MAL, "bat.imprints", INTERNAL_BAT_ACCESS);
+
+	*ret = IMPSimprintsize(b);
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
