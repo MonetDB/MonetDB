@@ -1099,8 +1099,14 @@ cachedProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc)
 {
 	/* static struct Mallinfo prevMalloc; */
 	char buf[1024];
+	char ctm[27]={0}, *tbuf;
 	int tid = (int)THRgettid();
-	lng v = 0;
+	char abuf[BUFSIZ], *tpe;
+	int i, j;
+	lng v1 = 0, v2= 0;
+	str stmt, c;
+	InstrPtr pci = getInstrPtr(mb, pc);
+	time_t clock;
 
 #ifdef HAVE_TIMES
 	struct tms newTms;
@@ -1111,8 +1117,6 @@ cachedProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc)
 	struct rusage infoUsage;
 	static struct rusage prevUsage;
 #endif
-	str stmt, c;
-	InstrPtr pci = getInstrPtr(mb, pc);
 
 	if (delayswitch > 0) {
 		/* first call to profiled */
@@ -1139,41 +1143,22 @@ cachedProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc)
 		getModuleId(getInstrPtr(mb, 0)),
 		getFunctionId(getInstrPtr(mb, 0)), getPC(mb, pci));
 
-	MT_lock_set(&mal_profileLock, "cachedProfilerEvent");
-	TRACE_id_pc = BUNappend(TRACE_id_pc, buf, FALSE);
-
-	TRACE_id_thread = BUNappend(TRACE_id_thread, &tid, FALSE);
-
-	TRACE_id_user = BUNappend(TRACE_id_user, &idx, FALSE);
-
-	TRACE_id_tag = BUNappend(TRACE_id_tag, &mb->tag, FALSE);
-	TRACE_id_event = BUNappend(TRACE_id_event, &TRACE_event, FALSE);
-	TRACE_event++;
-
-	{
-		char *tbuf;
-
-		/* without this cast, compilation on Windows fails with
-		 * argument of type "long *" is incompatible with parameter of type "const time_t={__time64_t={__int64}} *"
-		 */
-		time_t clock = (time_t) mb->profiler[pc].clock.tv_sec;
+	/* without this cast, compilation on Windows fails with
+	 * argument of type "long *" is incompatible with parameter of type "const time_t={__time64_t={__int64}} *"
+	 */
+	clock = (time_t) mb->profiler[pc].clock.tv_sec;
 #ifdef HAVE_CTIME_R3
-		char ctm[26];
-		tbuf = ctime_r(&clock, ctm, sizeof(ctm));
+	tbuf = ctime_r(&clock, ctm, sizeof(ctm));
 #else
 #ifdef HAVE_CTIME_R
-		char ctm[26];
-		tbuf = ctime_r(&clock, ctm);
+	tbuf = ctime_r(&clock, ctm);
 #else
-		tbuf = ctime(&clock);
+	tbuf = ctime(&clock);
 #endif
 #endif
-		/* sneakily overwrite year with second fraction */
-		snprintf(tbuf + 19, 6, ".%03d", (int)mb->profiler[pc].clock.tv_usec / 1000);
-		TRACE_id_time = BUNappend(TRACE_id_time, tbuf, FALSE);
-	}
-
-	TRACE_id_ticks = BUNappend(TRACE_id_ticks, &mb->profiler[pc].ticks, FALSE);
+	strncpy(ctm, (tbuf?tbuf:""),26);
+	/* sneakily overwrite year with second fraction */
+	snprintf(ctm + 19, 6, ".%03d", (int)mb->profiler[pc].clock.tv_usec / 1000);
 
 	/* generate actual call statement */
 	stmt = instruction2str(mb, stk, pci, LIST_MAL_DEBUG);
@@ -1181,39 +1166,41 @@ cachedProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc)
 
 	while (c && *c && (isspace((int)*c) || *c == '!'))
 		c++;
-	TRACE_id_stmt = BUNappend(TRACE_id_stmt, c, FALSE);
 
-	{
-		char abuf[BUFSIZ], *tpe;
-		int i, j;
-		abuf[0] = 0;
-		for (i = 0; i < pci->retc; i++)
-			if (getArgType(mb, pci, i) != TYPE_void) {
-				j = (int)strlen(abuf);
-				tpe = getTypeName(getArgType(mb, pci, i));
-				snprintf(abuf + j, BUFSIZ - j, "%s:%s%s", getVarName(mb, getArg(pci, i)), tpe, (i < pci->retc - 1 ? ", " : ""));
-				GDKfree(tpe);
-			}
-		TRACE_id_type = BUNappend(TRACE_id_type, &abuf, FALSE);
-	}
-	if (stmt) GDKfree(stmt);
+	abuf[0] = 0;
+	for (i = 0; i < pci->retc; i++)
+		if (getArgType(mb, pci, i) != TYPE_void) {
+			j = (int)strlen(abuf);
+			tpe = getTypeName(getArgType(mb, pci, i));
+			snprintf(abuf + j, BUFSIZ - j, "%s:%s%s", getVarName(mb, getArg(pci, i)), tpe, (i < pci->retc - 1 ? ", " : ""));
+			GDKfree(tpe);
+		}
 
 #ifdef HAVE_SYS_RESOURCE_H
-	v = infoUsage.ru_inblock - prevUsage.ru_inblock;
-	TRACE_id_reads = BUNappend(TRACE_id_reads, &v, FALSE);
-	v = infoUsage.ru_oublock - prevUsage.ru_oublock;
-	TRACE_id_writes = BUNappend(TRACE_id_writes, &v, FALSE);
+	v1 = infoUsage.ru_inblock - prevUsage.ru_inblock;
+	v2 = infoUsage.ru_oublock - prevUsage.ru_oublock;
 	prevUsage = infoUsage;
-#else
-	TRACE_id_reads = BUNappend(TRACE_id_reads, &v, FALSE);
-	TRACE_id_writes = BUNappend(TRACE_id_writes, &v, FALSE);
 #endif
 
+	// keep it a short transaction
+	MT_lock_set(&mal_profileLock, "cachedProfilerEvent");
+	TRACE_id_pc = BUNappend(TRACE_id_pc, buf, FALSE);
+	TRACE_id_thread = BUNappend(TRACE_id_thread, &tid, FALSE);
+	TRACE_id_user = BUNappend(TRACE_id_user, &idx, FALSE);
+	TRACE_id_tag = BUNappend(TRACE_id_tag, &mb->tag, FALSE);
+	TRACE_id_event = BUNappend(TRACE_id_event, &TRACE_event, FALSE);
+	TRACE_id_time = BUNappend(TRACE_id_time, ctm, FALSE);
+	TRACE_id_ticks = BUNappend(TRACE_id_ticks, &mb->profiler[pc].ticks, FALSE);
+	TRACE_id_stmt = BUNappend(TRACE_id_stmt, c, FALSE);
+	TRACE_id_type = BUNappend(TRACE_id_type, &abuf, FALSE);
+	TRACE_id_reads = BUNappend(TRACE_id_reads, &v1, FALSE);
+	TRACE_id_writes = BUNappend(TRACE_id_writes, &v2, FALSE);
 	TRACE_id_rbytes = BUNappend(TRACE_id_rbytes, &mb->profiler[pc].rbytes, FALSE);
 	TRACE_id_wbytes = BUNappend(TRACE_id_wbytes, &mb->profiler[pc].wbytes, FALSE);
-
+	TRACE_event++;
 	eventcounter++;
 	MT_lock_unset(&mal_profileLock, "cachedProfilerEvent");
+	if (stmt) GDKfree(stmt);
 }
 /*
  * The profile vector is added to the MAL block the first time we
