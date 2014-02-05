@@ -3324,12 +3324,12 @@ month_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 second_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	lng *ret = (lng *) getArgReference(stk, pci, 0);
-	int k = digits2ek(*(int *) getArgReference(stk, pci, 2));
-	lng r;
+	lng *ret = (lng *) getArgReference(stk, pci, 0), r;
+	int k = digits2ek(*(int *) getArgReference(stk, pci, 2)), scale = 0;
 
 	(void) cntxt;
-	(void) mb;
+	if (pci->argc > 3) 
+		scale = *(int*) getArgReference(stk, pci, 3);
 	switch (getArgType(mb, pci, 1)) {
 	case TYPE_bte:
 		r = stk->stk[getArg(pci, 1)].val.btval;
@@ -3362,6 +3362,8 @@ second_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	default:
 		throw(ILLARG, "calc.sec_interval", "illegal argument");
 	}
+	if (scale) 
+		r /= scales[scale];
 	*ret = r;
 	return MAL_SUCCEED;
 }

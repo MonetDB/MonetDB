@@ -913,7 +913,7 @@ makeVarSpace(MalBlkPtr mb)
 {
 	if (mb->vtop >= mb->vsize) {
 		VarPtr *new;
-		int s = mb->vtop + MAXVARS;
+		int s = mb->vsize * 2;
 
 		new = (VarPtr *) GDKzalloc(s * sizeof(VarPtr));
 		if (new == NULL) {
