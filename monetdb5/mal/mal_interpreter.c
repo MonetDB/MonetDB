@@ -511,7 +511,17 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 		throw(MAL, "mal.interpreter", MAL_STACK_FAIL);
 
 	/* prepare extended backup and garbage structures */
-	if ( mb->maxarg > 16 ){
+	if (startpc+1 == stoppc) {
+		pci = getInstrPtr(mb, startpc);
+		if (pci->argc > 16) {
+			backup = GDKzalloc(pci->argc * sizeof(ValRecord));
+			garbage = (int*)GDKzalloc(pci->argc * sizeof(int));
+		} else {
+			backup = backups;
+			garbage = garbages;
+			memset((char*) garbages, 0, 16 * sizeof(int));
+		}
+	} else if ( mb->maxarg > 16 ){
 		backup = GDKzalloc(mb->maxarg * sizeof(ValRecord));
 		garbage = (int*)GDKzalloc(mb->maxarg * sizeof(int));
 	} else {

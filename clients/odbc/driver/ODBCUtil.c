@@ -335,7 +335,7 @@ static struct scalars {
 	{"sin", 1, "\"sin\"(\1)", },
 	{"sqrt", 1, "\"sqrt\"(\1)", },
 	{"tan", 1, "\"tan\"(\1)", },
-	{"truncate", 2, "\"truncate\"(\1,\2)", },
+	/* {"truncate", 2, "\"truncate\"(\1,\2)", }, */
 	{"current_date", 0, "\"current_date\"()", },
 	{"current_time", 0, "\"current_time\"()", },
 	{"current_time", 1, NULL, },

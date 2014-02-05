@@ -2576,29 +2576,6 @@ BATcheckmodes(BAT *b, int existing)
 	return 0;
 }
 
-#define heap_unshare(heap, heapname, id)				\
-	do {								\
-		if ((heap)->copied) {					\
-			Heap hp;					\
-									\
-			memset(&hp, 0, sizeof(Heap));			\
-			if (HEAPcopy(&hp, (heap)) < 0) {		\
-				GDKerror("%s: remapped " #heapname	\
-					 " of %s could not be copied.\n", \
-					 fcn, BATgetId(b));		\
-				return -1;				\
-									\
-			}						\
-			hp.parentid = (id);				\
-			if ((heap)->parentid == (id))			\
-				HEAPfree(heap);				\
-			else						\
-				BBPunshare((heap)->parentid);		\
-			* (heap) = hp;					\
-			(heap)->copied = 0;				\
-		}							\
-	} while (0)
-
 BAT *
 BATsetaccess(BAT *b, int newmode)
 {

@@ -1659,7 +1659,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			sql_subtype *res = s->op4.aggrval->res->h->data;
 			int restype = res->type->localtype;
 			int complex_aggr = 0;
-			int abort_on_error;
+			int abort_on_error, i, *stmt_nr = NULL;
 
 			if (backend_create_subaggr(sql, s->op4.aggrval) < 0)
 				return -1;
@@ -1688,12 +1688,13 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 						q = pushArgument(mb, q, l);
 						l = getDestVar(q);
 					} else {
-						for (n = s->op1->op4.lval->h; n; n = n->next) {
+						stmt_nr = SA_NEW_ARRAY(sql->mvc->sa, int, list_length(s->op1->op4.lval));
+						for (i=0, n = s->op1->op4.lval->h; n; n = n->next, i++) {
 							stmt *op = n->data;
 
 							q = newStmt2(mb, algebraRef, selectNotNilRef);
 							q = pushArgument(mb, q, op->nr);
-							op->nr = getDestVar(q);
+							stmt_nr[i] = getDestVar(q);
 						}
 					}
 				}
@@ -1706,10 +1707,13 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			if (s->op1->type != st_list) {
 				q = pushArgument(mb, q, l);
 			} else {
-				for (n = s->op1->op4.lval->h; n; n = n->next) {
+				for (i=0, n = s->op1->op4.lval->h; n; n = n->next, i++) {
 					stmt *op = n->data;
 
-					q = pushArgument(mb, q, op->nr);
+					if (stmt_nr)
+						q = pushArgument(mb, q, stmt_nr[i]);
+					else
+						q = pushArgument(mb, q, op->nr);
 				}
 			}
 			if (g) {
@@ -2179,7 +2183,6 @@ backend_callinline(backend *be, Client c, stmt *s)
 
 			curInstr = newAssignment(curBlk);
 			a->varid = varid = getDestVar(curInstr);
-			renameVariable(curBlk, varid, "A%d", argc);
 			setVarType(curBlk, varid, type);
 			setVarUDFtype(curBlk, varid);
 
