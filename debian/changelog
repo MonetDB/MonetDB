@@ -1,3 +1,26 @@
+monetdb (11.17.5-20140206) unstable; urgency=low
+
+  * Rebuilt.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 06 Feb 2014 10:27:38 +0100
+
+monetdb (11.17.5-20140206) unstable; urgency=low
+
+  * Rebuilt.
+  * BZ#3390: Missing definition for pushSht in monetdb5/mal/mal_builder.h
+  * BZ#3402: We should have a C implementation of mal.multiplex.
+  * BZ#3420: Database does not start after upgrade
+  * BZ#3425: Temporal extraction glitches
+  * BZ#3427: Consistent use of current_timestamp and now()
+  * BZ#3428: Aggregation over two columns is broken
+  * BZ#3429: SAMPLE on JOIN result crashes server
+  * BZ#3430: Wrong temporary handling
+  * BZ#3431: SQLGetInfo returns incorrect value for SQL_FN_NUM_TRUNCATE
+  * BZ#3432: MonetDB SQL syntax incompatible with SQL-92 <delimited
+    identifier> syntax
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 06 Feb 2014 10:27:36 +0100
+
 monetdb (11.17.3-20140125) unstable; urgency=low
 
   * Rebuilt.

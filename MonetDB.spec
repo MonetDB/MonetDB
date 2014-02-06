@@ -798,6 +798,20 @@ mv $RPM_BUILD_ROOT%{_datadir}/doc/MonetDB-SQL-%{version} $RPM_BUILD_ROOT%{_datad
 rm -fr $RPM_BUILD_ROOT
 
 %changelog
+* Thu Feb 06 2014 Sjoerd Mullender <sjoerd@acm.org> - 11.17.5-20140206
+- Rebuilt.
+- BZ#3390: Missing definition for pushSht in monetdb5/mal/mal_builder.h
+- BZ#3402: We should have a C implementation of mal.multiplex.
+- BZ#3420: Database does not start after upgrade
+- BZ#3425: Temporal extraction glitches
+- BZ#3427: Consistent use of current_timestamp and now()
+- BZ#3428: Aggregation over two columns is broken
+- BZ#3429: SAMPLE on JOIN result crashes server
+- BZ#3430: Wrong temporary handling
+- BZ#3431: SQLGetInfo returns incorrect value for SQL_FN_NUM_TRUNCATE
+- BZ#3432: MonetDB SQL syntax incompatible with SQL-92 <delimited
+  identifier> syntax
+
 * Sat Jan 25 2014 Sjoerd Mullender <sjoerd@acm.org> - 11.17.3-20140125
 - Rebuilt.
 - BZ#3418: Segmentation fault on a query from table expression
