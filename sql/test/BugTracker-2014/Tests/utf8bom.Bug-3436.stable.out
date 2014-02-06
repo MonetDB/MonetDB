@@ -1,0 +1,49 @@
+stdout of test 'utf8bom.Bug-3436` in directory 'sql/test/BugTracker-2014` itself:
+
+
+# 16:38:43 >  
+# 16:38:43 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=31135" "--set" "mapi_usock=/var/tmp/mtest-23480/.s.monetdb.31135" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/sjoerd/Monet-candidate/var/MonetDB/mTests_sql_test_BugTracker-2014" "--set" "mal_listing=0"
+# 16:38:43 >  
+
+# MonetDB 5 server v11.17.6 (hg id: f65c0c865e47+)
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2014', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.591 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://madrid.ins.cwi.nl:31135/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-23480/.s.monetdb.31135
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 16:46:05 >  
+# 16:46:05 >  "/usr/bin/python2" "utf8bom.Bug-3436.SQL.py" "utf8bom.Bug-3436"
+# 16:46:05 >  
+
+Archive:  utf8bom.Bug-3436.zip
+  inflating: utf8bom.csv
+#start transaction;
+#create table utf8bom (
+#    city string,
+#    id integer
+#);
+#copy into utf8bom from '/net/madrid/export/scratch2/sjoerd/bin/candidate/mTests/sql/test/BugTracker-2014/utf8bom.csv' using delimiters ',','\r\n','"';
+[ 2	]
+#select * from utf8bom order by id;
+% sys.utf8bom,	sys.utf8bom # table_name
+% city,	id # name
+% clob,	int # type
+% 8,	4 # length
+[ "Montréal",	1621	]
+[ "New York",	8392	]
+#rollback;
+
+# 16:46:05 >  
+# 16:46:05 >  "Done."
+# 16:46:05 >  
+
