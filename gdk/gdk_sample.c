@@ -168,7 +168,7 @@ BATsample_(BAT *b, BUN n)
 		}
 		/* 1 left */
 		p += (BUN) rand() % cnt;
-		o[smp] = (oid) p;
+		o[smp] = (oid) p+1;
 
 		/* property management */
 		BATsetcount(bn, n);
