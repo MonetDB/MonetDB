@@ -928,11 +928,10 @@ valid_ident(char *s, char *dst)
 		return 0;
 	/* do unescaping in the loop */
 	while (*s && (*s != '"' || escaped)) {
-		if (*s == '\\' || (*s == '"' && s[1] == '"')) {
+		if (*s == '"' && s[1] == '"') {
 			escaped = !escaped;
-			if (!escaped) {
+			if (!escaped) 
 				dst[p++] = *s;
-			}
 		} else if (*s == '"' && escaped) {
 			escaped = 0;
 			dst[p++] = *s;
@@ -940,10 +939,14 @@ valid_ident(char *s, char *dst)
 			escaped = 0;
 			dst[p++] = *s;
 		}
+		//if (*s == '\\') 
+			//dst[p++] = *s;
 		s++;
 		if (p >= 1024)
 			return 0;
 	}
+	if (*s)
+		return 0;
 	dst[p] = '\0';
 	return 1;
 }
@@ -987,7 +990,7 @@ sql_get_next_token(YYSTYPE *yylval, void *parm) {
 		yylval->sval = sa_strndup(c->sa, yylval->sval, lc->yycur-lc->yysval);
 	else if (token == STRING) {
 		char quote = *yylval->sval;
-		char *str = sa_alloc( c->sa, (lc->yycur-lc->yysval-2)*2 +1 );
+		char *str = sa_alloc( c->sa, (lc->yycur-lc->yysval-2)*2 + 1 );
 		assert(quote == '"' || quote == '\'');
 
 		lc->rs->buf[lc->rs->pos+lc->yycur- 1] = 0; 

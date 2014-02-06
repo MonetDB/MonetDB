@@ -28,8 +28,6 @@ stderr of test 'sample-crash.Bug-3429` in directory 'sql/test/BugTracker-2014` i
 # 20:54:49 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-31548" "--port=33290"
 # 20:54:49 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-31984/.s.monetdb.34383
-QUERY = rollback;
 
 
 

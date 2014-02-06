@@ -448,7 +448,12 @@ delta_append_bat( sql_delta *bat, BAT *i )
 			bat_destroy(b);
 			b = temp_descriptor(bat->ibid);
 		}
-		BATappend(b, i, TRUE);
+		if (isVIEW(i) && b->batCacheid == ABS(VIEWtparent(i))) {
+			BAT *ic = BATcopy(i, TYPE_void, i->ttype, TRUE);
+			BATappend(b, ic, TRUE);
+			bat_destroy(ic);
+		} else 
+			BATappend(b, i, TRUE);
 		assert(BUNlast(b) > b->batInserted);
 		bat_destroy(b);
 	}

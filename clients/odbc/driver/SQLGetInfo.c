@@ -519,7 +519,7 @@ SQLGetInfo_(ODBCDbc *dbc,
 			SQL_FN_NUM_SIGN |
 			SQL_FN_NUM_SIN |
 			SQL_FN_NUM_SQRT |
-			/* SQL_FN_NUM_TRUNCATE | */
+			SQL_FN_NUM_TRUNCATE |
 			SQL_FN_NUM_TAN;
 		len = sizeof(SQLUINTEGER);
 		break;
