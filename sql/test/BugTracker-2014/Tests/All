@@ -6,3 +6,4 @@ groupby_distict.Bug-3423
 current_timestamp.Bug-3427
 two-column-aggr-with-null.Bug-3428
 sample-crash.Bug-3429
+indices.Bug-3435
