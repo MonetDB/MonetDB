@@ -649,7 +649,8 @@ open_stream(const char *filename, const char *flags)
 	/* if file is opened for reading, and it starts with the UTF-8
 	 * encoding of the Unicode Byte Order Mark, skip the mark, and
 	 * mark the stream as being a UTF-8 stream */
-	if (flags[0] == 'r' &&
+	if (fp != NULL &&
+	    flags[0] == 'r' &&
 	    file_fgetpos(s, &pos) == 0) {
 		if (file_read(s, buf, 1, UTF8BOMLENGTH) == 3 &&
 		    strncmp(buf, UTF8BOM, UTF8BOMLENGTH) == 0)
