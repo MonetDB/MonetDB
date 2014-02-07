@@ -835,7 +835,7 @@ external name sql.analyze;\n");
 static str
 sql_update_default(Client c)
 {
-	size_t bufsize = 4096, pos = 0;
+	size_t bufsize = 8192, pos = 0;
 	char *buf = GDKmalloc(bufsize), *err = NULL;
 	ValRecord *schvar = stack_get_var(((backend *) c->sqlcontext)->mvc, "current_schema");
 	char *schema = NULL;
@@ -878,25 +878,41 @@ sql_update_default(Client c)
 		free(schema);
 	}
 
-	assert(pos < bufsize);
-
-	printf("Running database upgrade commands:\n%s\n", buf);
-	err = SQLstatementIntern(c, &buf, "update", 1, 0);
-	GDKfree(buf);
-	return err;		/* usually MAL_SUCCEED */
-}
-
-static str
-sql_update_default_storage(Client c)
-{
-	size_t bufsize = 4096, pos = 0;
-	char *buf = GDKmalloc(bufsize), *err = NULL;
-
-	/* change to storage functions */
+	/* change to 75_storage functions */
+	pos += snprintf(buf + pos, bufsize - pos, "update sys._tables set system = false where name in ('storage','storagemodel','tablestoragemodel') and schema_id = (select id from sys.schemas where name = 'sys');\n");
 	pos += snprintf(buf + pos, bufsize - pos, "drop view sys.storage;\n");
 	pos += snprintf(buf + pos, bufsize - pos, "drop function sys.storage();\n");
+	pos += snprintf(buf + pos, bufsize - pos, "drop view sys.storagemodel;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "drop view sys.tablestoragemodel;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "drop function sys.storagemodel();\n");
+
 	pos += snprintf(buf + pos, bufsize - pos, "create function sys.storage() returns table (\"schema\" string, \"table\" string, \"column\" string, \"type\" string, location string, \"count\" bigint, typewidth int, columnsize bigint, heapsize bigint, hashes bigint, imprints bigint, sorted boolean) external name sql.storage;\n");
 	pos += snprintf(buf + pos, bufsize - pos, "create view sys.storage as select * from sys.storage();\n");
+
+	pos += snprintf(buf + pos, bufsize - pos, "create function sys.storagemodel() returns table ("
+"    \"schema\" string, \"table\" string, \"column\" string, \"type\" string, \"count\" bigint,"
+"    columnsize bigint, heapsize bigint, hashes bigint, imprints bigint, sorted boolean)"
+"	begin return select I.\"schema\", I.\"table\", I.\"column\", I.\"type\", I.\"count\","
+"		columnsize(I.\"type\", I.count, I.\"distinct\"),"
+"		heapsize(I.\"type\", I.\"distinct\", I.\"atomwidth\"),"
+"		hashsize(I.\"reference\", I.\"count\"),"
+"		imprintsize(I.\"count\",I.\"type\"),"
+"		I.sorted"
+"		from sys.storagemodelinput I;"
+"	end;\n");
+	pos += snprintf(buf + pos, bufsize - pos, 
+"create view sys.tablestoragemodel"
+" as select \"schema\",\"table\",max(count) as \"count\","
+"    sum(columnsize) as columnsize,"
+"    sum(heapsize) as heapsize,"
+"    sum(hashes) as hashes,"
+"    sum(imprints) as imprints,"
+"    sum(case when sorted = false then 8 * count else 0 end) as auxillary"
+"from sys.storagemodel() group by \"schema\",\"table\";\n");
+	pos += snprintf(buf + pos, bufsize - pos, "create view sys.storagemodel as select * from sys.storagemodel();\n");
+	pos += snprintf(buf + pos, bufsize - pos, "update sys._tables set system = true where name in ('storage','storagemodel','tablestoragemodel') and schema_id = (select id from sys.schemas where name = 'sys');\n");
+
+	assert(pos < bufsize);
 
 	printf("Running database upgrade commands:\n%s\n", buf);
 	err = SQLstatementIntern(c, &buf, "update", 1, 0);
@@ -1066,10 +1082,6 @@ SQLinitClient(Client c)
 				fprintf(stderr, "!%s\n", err);
 				GDKfree(err);
 			}
-		}
-		if (0  && (err = sql_update_default_storage(c)) !=NULL) {
-			fprintf(stderr, "!%s\n", err);
-			GDKfree(err);
 		}
 	}
 	fflush(stdout);
