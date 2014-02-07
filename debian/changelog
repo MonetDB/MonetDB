@@ -1,3 +1,17 @@
+monetdb (11.17.7-20140207) unstable; urgency=low
+
+  * Rebuilt.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 07 Feb 2014 12:53:25 +0100
+
+monetdb (11.17.7-20140207) unstable; urgency=low
+
+  * Rebuilt.
+  * BZ#3436: COPY INTO from file containing leading Byte Order Mark (BOM)
+    causes corruption
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 07 Feb 2014 12:53:23 +0100
+
 monetdb (11.17.5-20140206) unstable; urgency=low
 
   * Rebuilt.

@@ -798,6 +798,11 @@ mv $RPM_BUILD_ROOT%{_datadir}/doc/MonetDB-SQL-%{version} $RPM_BUILD_ROOT%{_datad
 rm -fr $RPM_BUILD_ROOT
 
 %changelog
+* Fri Feb 07 2014 Sjoerd Mullender <sjoerd@acm.org> - 11.17.7-20140207
+- Rebuilt.
+- BZ#3436: COPY INTO from file containing leading Byte Order Mark (BOM)
+  causes corruption
+
 * Thu Feb 06 2014 Sjoerd Mullender <sjoerd@acm.org> - 11.17.5-20140206
 - Rebuilt.
 - BZ#3420: Database does not start after upgrade
