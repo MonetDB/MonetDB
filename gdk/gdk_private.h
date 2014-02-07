@@ -50,9 +50,7 @@ void BBPtrim(size_t delta);
 void BBPunshare(bat b);
 void GDKclrerr(void);
 int GDKextend(const char *fn, size_t size);
-#ifndef NATIVE_WIN32
-int GDKextendf(int fd, off_t size);
-#endif
+int GDKextendf(int fd, size_t size);
 int GDKfdlocate(const char *nme, const char *mode, const char *ext);
 FILE *GDKfilelocate(const char *nme, const char *mode, const char *ext);
 char *GDKload(const char *nme, const char *ext, size_t size, size_t *maxsize, storage_t mode);
@@ -72,6 +70,7 @@ BUN HASHmask(BUN cnt);
 Hash *HASHnew(Heap *hp, int tpe, BUN size, BUN mask);
 void HASHremove(BAT *b);
 int HEAPalloc(Heap *h, size_t nitems, size_t itemsize);
+int HEAPcopy(Heap *dst, Heap *src);
 int HEAPdelete(Heap *h, const char *o, const char *ext);
 int HEAPload(Heap *h, const char *nme, const char *ext, int trunc);
 int HEAPsave(Heap *h, const char *nme, const char *ext);

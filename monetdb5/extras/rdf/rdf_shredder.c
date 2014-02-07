@@ -33,7 +33,6 @@
 typedef struct graphBATdef {
 	graphBATType batType;    /* BAT type             */
 	str name;                /* name of the BAT      */
-	int headType;            /* type of left column  */
 	int tailType;            /* type of right column */
 } graphBATdef;
 
@@ -42,33 +41,33 @@ static BUN batsz = 10000000;
 /* this list should be kept alligned with the graphBATType enum */
 #if STORE == TRIPLE_STORE
  static graphBATdef graphdef[N_GRAPH_BAT] = {
-	{S_sort,   "_s_sort",   TYPE_void, TYPE_oid},
-	{P_sort,   "_p_sort",   TYPE_void, TYPE_oid},
-	{O_sort,   "_o_sort",   TYPE_void, TYPE_oid},
+	{S_sort,   "_s_sort",   TYPE_oid},
+	{P_sort,   "_p_sort",   TYPE_oid},
+	{O_sort,   "_o_sort",   TYPE_oid},
 
-	{P_PO,     "_p_po",     TYPE_void, TYPE_oid},
-	{O_PO,     "_o_po",     TYPE_void, TYPE_oid},
-	{P_OP,     "_p_op",     TYPE_void, TYPE_oid},
-	{O_OP,     "_o_op",     TYPE_void, TYPE_oid},
+	{P_PO,     "_p_po",     TYPE_oid},
+	{O_PO,     "_o_po",     TYPE_oid},
+	{P_OP,     "_p_op",     TYPE_oid},
+	{O_OP,     "_o_op",     TYPE_oid},
 
-	{S_SO,     "_s_so",     TYPE_void, TYPE_oid},
-	{O_SO,     "_o_so",     TYPE_void, TYPE_oid},
-	{S_OS,     "_s_os",     TYPE_void, TYPE_oid},
-	{O_OS,     "_o_os",     TYPE_void, TYPE_oid},
+	{S_SO,     "_s_so",     TYPE_oid},
+	{O_SO,     "_o_so",     TYPE_oid},
+	{S_OS,     "_s_os",     TYPE_oid},
+	{O_OS,     "_o_os",     TYPE_oid},
 
-	{S_SP,     "_s_sp",     TYPE_void, TYPE_oid},
-	{P_SP,     "_p_sp",     TYPE_void, TYPE_oid},
-	{S_PS,     "_s_ps",     TYPE_void, TYPE_oid},
-	{P_PS,     "_p_ps",     TYPE_void, TYPE_oid},
+	{S_SP,     "_s_sp",     TYPE_oid},
+	{P_SP,     "_p_sp",     TYPE_oid},
+	{S_PS,     "_s_ps",     TYPE_oid},
+	{P_PS,     "_p_ps",     TYPE_oid},
 
-	{MAP_LEX, "_map_lex",   TYPE_void, TYPE_str}
+	{MAP_LEX, "_map_lex",   TYPE_str}
  };
 #elif STORE == MLA_STORE
  static graphBATdef graphdef[N_GRAPH_BAT] = {
-	{S_sort,   "_s_sort",   TYPE_void, TYPE_oid},
-	{P_sort,   "_p_sort",   TYPE_void, TYPE_oid},
-	{O_sort,   "_o_sort",   TYPE_void, TYPE_oid},
-	{MAP_LEX, "_map_lex",   TYPE_void, TYPE_str}
+	{S_sort,   "_s_sort",   TYPE_oid},
+	{P_sort,   "_p_sort",   TYPE_oid},
+	{O_sort,   "_o_sort",   TYPE_oid},
+	{MAP_LEX, "_map_lex",   TYPE_str}
  };
 #endif /* STORE */
 
@@ -259,9 +258,9 @@ tripleHandler(void* user_data, const raptor_statement* triple)
  */
 /* creates a BAT for the triple table */
 static BAT*
-create_BAT(int ht, int tt, int size)
+create_BAT(int tt, int size)
 {
-	BAT *b = BATnew(ht, tt, size);
+	BAT *b = BATnew(TYPE_void, tt, size);
 	if (b == NULL) {
 		return b;
 	}
@@ -303,7 +302,6 @@ parserData_create (str location, BAT** graph)
 	 */
 	for (i = 0; i <= O_sort; i++) {
 		pdata->graph[i] = create_BAT (
-				graphdef[i].headType,
 				graphdef[i].tailType,
 				batsz);                       /* DOTO: estimate size */
 		if (pdata->graph[i] == NULL) {
@@ -313,7 +311,6 @@ parserData_create (str location, BAT** graph)
 
 	/* create the MAP_LEX BAT */
 	pdata->graph[MAP_LEX] = create_BAT (
-			graphdef[MAP_LEX].headType,
 			graphdef[MAP_LEX].tailType,
 			batsz);                           /* DOTO: estimate size */
 	if (pdata->graph[MAP_LEX] == NULL) {

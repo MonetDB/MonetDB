@@ -20,6 +20,8 @@ qgram
 
 groupby00
 
+imprints
+
 # statistics00
 #statistics01
 
@@ -71,6 +73,7 @@ zorder
 
 manifold
 manifoldstr
+manifoldaggr
 
 #HAVE_RAPTOR?rdf
 

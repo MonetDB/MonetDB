@@ -393,20 +393,20 @@ BAThash(BAT *b, BUN masksize)
 		case TYPE_int:
 		case TYPE_flt:
 #if SIZEOF_OID == SIZEOF_INT
-			case TYPE_oid:
+		case TYPE_oid:
 #endif
 #if SIZEOF_WRD == SIZEOF_INT
-			case TYPE_wrd:
+		case TYPE_wrd:
 #endif
 			finishhash(int);
 			break;
 		case TYPE_dbl:
 		case TYPE_lng:
 #if SIZEOF_OID == SIZEOF_LNG
-			case TYPE_oid:
+		case TYPE_oid:
 #endif
 #if SIZEOF_WRD == SIZEOF_LNG
-			case TYPE_wrd:
+		case TYPE_wrd:
 #endif
 			finishhash(lng);
 			break;

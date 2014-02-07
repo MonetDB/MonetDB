@@ -1092,7 +1092,6 @@ typedef int (*GDKfcn) ();
  */
 gdk_export int HEAPfree(Heap *h);
 gdk_export int HEAPextend(Heap *h, size_t size, int mayshare);
-gdk_export int HEAPcopy(Heap *dst, Heap *src);
 gdk_export size_t HEAPvmsize(Heap *h);
 gdk_export size_t HEAPmemsize(Heap *h);
 
@@ -1134,8 +1133,6 @@ gdk_export void HEAP_initialize(
 
 gdk_export var_t HEAP_malloc(Heap *heap, size_t nbytes);
 gdk_export void HEAP_free(Heap *heap, var_t block);
-
-#define HEAP_index(HEAP,INDEX,TYPE)	((TYPE *)((char *) (HEAP)->base + (INDEX)))
 
 /*
  * @- BAT construction
@@ -2218,6 +2215,7 @@ gdk_export BAT *BAThash(BAT *b, BUN masksize);
 
 gdk_export void IMPSdestroy(BAT *b);
 gdk_export BAT *BATimprints(BAT *b);
+gdk_export lng IMPSimprintsize(BAT *b);
 
 /*
  * @- Multilevel Storage Modes

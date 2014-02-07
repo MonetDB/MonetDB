@@ -83,8 +83,6 @@ algebra_export str ALGsubouterjoin(bat *r1, bat *r2, bat *l, bat *r, bat *sl, ba
 algebra_export str ALGsubthetajoin(bat *r1, bat *r2, bat *l, bat *r, bat *sl, bat *sr, int *op, bit *nil_matches, lng *estimate);
 
 algebra_export str ALGhistogram(int *result, int *bid);
-algebra_export str ALGmerge(int *result, int *bid);
-algebra_export str ALGsplit(int *result, int *bid);
 algebra_export str ALGcopy(int *result, int *bid);
 algebra_export str ALGkunique(int *result, int *bid);
 algebra_export str ALGsunique(int *result, int *bid);
@@ -141,7 +139,6 @@ algebra_export str ALGmarkHead_default(int *result, int *bid);
 algebra_export str ALGhmarkp(int *result, int *bid, int *nr_parts, int *part_nr);
 algebra_export str ALGmark_grp_1(int *result, int *bid, int *gid);
 algebra_export str ALGmark_grp_2(int *result, int *bid, int *gid, oid *base);
-algebra_export str ALGhistogram_rev(int *result, int *bid);
 algebra_export str ALGlike(int *ret, int *bid, str *k);
 algebra_export str ALGslice(int *ret, bat *bid, lng *start, lng *end);
 algebra_export str ALGslice_int(int *ret, bat *bid, int *start, int *end);

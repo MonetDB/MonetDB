@@ -1,0 +1,7 @@
+j:= json.new("[{\"boter\":1},{\"kaas\":2},{\"eieren\":3}]");
+b:= json.text(j);
+io.print(b);
+
+j:= json.new("{\"f1\":{\"f12\":3},\"f2\":[2,3,4]}");
+b:= json.text(j);
+io.print(b);

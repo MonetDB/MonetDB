@@ -2752,13 +2752,15 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                 pSrvr.stdin.close()
                 CollectIt(pSrvr.stdout, SrvrOut)
                 pSrvr.wait()
-                time.sleep(120)
-                pSrvr, pSrvrTimer = LaunchIt(Srvr, '\nio.printf("\\nReady.\\n");\n', SrvrOut, SrvrErr, TIMEOUT)
-                ln="dummy"
-                while 0 < len(ln) and ln[:6] != 'Ready.':
-                    ln=pSrvr.stdout.readline()
-                    SrvrOut.write(ln)
-                    SrvrOut.flush()
+                pSrvrTimer.cancel()
+                if returnCode(pSrvr) == 'error':
+                    time.sleep(120)
+                    pSrvr, pSrvrTimer = LaunchIt(Srvr, '\nio.printf("\\nReady.\\n");\n', SrvrOut, SrvrErr, TIMEOUT)
+                    ln="dummy"
+                    while 0 < len(ln) and ln[:6] != 'Ready.':
+                        ln=pSrvr.stdout.readline()
+                        SrvrOut.write(ln)
+                        SrvrOut.flush()
                 if ln[:6] != 'Ready.':
                     ServerReady = False
 
@@ -2769,14 +2771,16 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                     pSrvr.stdin.close()
                     CollectIt(pSrvr.stdout, SrvrOut)
                     pSrvr.wait()
-                    time.sleep(120)
-                    ServerReady = True
-                    pSrvr, pSrvrTimer = LaunchIt(Srvr, '\nio.printf("\\nReady.\\n");\n', SrvrOut, SrvrErr, TIMEOUT)
-                    ln="dummy"
-                    while 0 < len(ln) and ln[:6] != 'Ready.':
-                        ln=pSrvr.stdout.readline()
-                        SrvrOut.write(ln)
-                        SrvrOut.flush()
+                    pSrvrTimer.cancel()
+                    if returnCode(pSrvr) == 'error':
+                        time.sleep(120)
+                        ServerReady = True
+                        pSrvr, pSrvrTimer = LaunchIt(Srvr, '\nio.printf("\\nReady.\\n");\n', SrvrOut, SrvrErr, TIMEOUT)
+                        ln="dummy"
+                        while 0 < len(ln) and ln[:6] != 'Ready.':
+                            ln=pSrvr.stdout.readline()
+                            SrvrOut.write(ln)
+                            SrvrOut.flush()
                     if ln[:6] != 'Ready.':
                         ServerReady = False
 
@@ -2882,15 +2886,16 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                 SrvrOut.flush()
                 EPILOGUE.close()
 
-            try:
-                pSrvr.stdin.write('clients.quit();\n')
-                pSrvr.stdin.flush()
-            except IOError:
-                pass
-            try:
-                pSrvr.stdin.close()
-            except IOError, (IOerrNo, IOerrStr):
-                Warn("Closing input pipe in DoIt failed with #%d: '%s'." % (IOerrNo, IOerrStr))
+            if ServerReady:
+                try:
+                    pSrvr.stdin.write('clients.quit();\n')
+                    pSrvr.stdin.flush()
+                except IOError:
+                    pass
+                try:
+                    pSrvr.stdin.close()
+                except IOError, (IOerrNo, IOerrStr):
+                    Warn("Closing input pipe in DoIt failed with #%d: '%s'." % (IOerrNo, IOerrStr))
 
             CollectIt(pSrvr.stdout, SrvrOut)
             pSrvr.wait()

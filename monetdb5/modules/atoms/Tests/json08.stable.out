@@ -37,7 +37,7 @@ function user.main():void;
     io.print(f);
     f:bat[:oid,:json]  := mal.manifold("json","filter",j,"f1[0]");
     io.print(f);
-    f:bat[:oid,:json]  := mal.manifold("json","filter",j,"f12");
+    f:bat[:oid,:json]  := mal.manifold("json","filter",j,"..f12");
     io.print(f);
     io.printf("#next batch\n");
     i := bat.new(:oid,:json);
@@ -84,10 +84,10 @@ end main;
 # void	json  # type
 #--------------------------#
 [ 0@0,	"[]"  ]
-[ 1@0,	"[1]"  ]
-[ 2@0,	"[1]"  ]
-[ 3@0,	"[1,3]"  ]
-[ 4@0,	"[{\"f12\":3}]"  ]
+[ 1@0,	"[]"  ]
+[ 2@0,	"[]"  ]
+[ 3@0,	"[]"  ]
+[ 4@0,	"[3]"  ]
 #next batch
 #--------------------------#
 # h	t  # name

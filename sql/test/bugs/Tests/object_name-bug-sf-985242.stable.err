@@ -10,15 +10,6 @@ stderr of test 'object_name-bug-sf-985242` in directory 'sql/test/bugs` itself:
 # 14:52:48 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=stem --port=54903  < object_name-bug-sf-985242.sql
 # 14:52:48 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
-QUERY = create table "\t" (id int);
-ERROR = !Invalid identifier '\t'
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
-QUERY = create table x ("\t" int);
-ERROR = !Invalid identifier '\t'
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
-QUERY = select * from x;
-ERROR = !SELECT: no such table 'x'
 
 # 14:52:48 >  
 # 14:52:48 >  Done.

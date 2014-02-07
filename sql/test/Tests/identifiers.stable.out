@@ -55,13 +55,6 @@ Ready.
 % tinyint # type
 % 1 # length
 [ 1	]
-#CREATE TABLE "B\"la\"" (id int); -- succeeds
-#SELECT 1 AS "B\"la\""; -- should succeed, gives B"la"
-% .L # table_name
-% B"la" # name
-% tinyint # type
-% 1 # length
-[ 1	]
 
 # 11:50:07 >  
 # 11:50:07 >  Done.

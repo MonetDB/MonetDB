@@ -435,13 +435,14 @@ automatic index management, extensibility of data types and search
 accelerators.  It also has an SQL frontend.
 
 This package contains the JAQL extension for MonetDB.  JAQL is a
-querly language for JavaScript Object Notation (JSON).
+query language for JavaScript Object Notation (JSON).
 
 %files jaql
 %defattr(-,root,root)
 %{_libdir}/monetdb5/autoload/*_jaql.mal
 %{_libdir}/monetdb5/jaql*.mal
-%{_libdir}/monetdb5/json*.mal
+%{_libdir}/monetdb5/json.mal
+%{_libdir}/monetdb5/json_util.mal
 %{_libdir}/monetdb5/lib_jaql.so
 %{_libdir}/monetdb5/lib_json.so
 
@@ -497,7 +498,8 @@ fi
 # %exclude %{_libdir}/monetdb5/rdf.mal
 %exclude %{_libdir}/monetdb5/sql.mal
 %exclude %{_libdir}/monetdb5/jaql*.mal
-%exclude %{_libdir}/monetdb5/json*.mal
+%exclude %{_libdir}/monetdb5/json.mal
+%exclude %{_libdir}/monetdb5/json_util.mal
 %{_libdir}/monetdb5/*.mal
 # %{_libdir}/monetdb5/autoload/*_fits.mal
 %{_libdir}/monetdb5/autoload/*_lsst.mal
@@ -796,6 +798,29 @@ mv $RPM_BUILD_ROOT%{_datadir}/doc/MonetDB-SQL-%{version} $RPM_BUILD_ROOT%{_datad
 rm -fr $RPM_BUILD_ROOT
 
 %changelog
+* Fri Feb 07 2014 Sjoerd Mullender <sjoerd@acm.org> - 11.17.7-20140207
+- Rebuilt.
+- BZ#3436: COPY INTO from file containing leading Byte Order Mark (BOM)
+  causes corruption
+
+* Thu Feb 06 2014 Sjoerd Mullender <sjoerd@acm.org> - 11.17.5-20140206
+- Rebuilt.
+- BZ#3420: Database does not start after upgrade
+- BZ#3425: Temporal extraction glitches
+- BZ#3427: Consistent use of current_timestamp and now()
+- BZ#3428: Aggregation over two columns is broken
+- BZ#3429: SAMPLE on JOIN result crashes server
+- BZ#3430: Wrong temporary handling
+- BZ#3431: SQLGetInfo returns incorrect value for SQL_FN_NUM_TRUNCATE
+- BZ#3432: MonetDB SQL syntax incompatible with SQL-92 <delimited
+  identifier> syntax
+
+* Sat Jan 25 2014 Sjoerd Mullender <sjoerd@acm.org> - 11.17.3-20140125
+- Rebuilt.
+- BZ#3418: Segmentation fault on a query from table expression
+- BZ#3419: Database does not start after upgrade
+- BZ#3423: Group by alias with distinct count doesn't work
+
 * Tue Jan 14 2014 Sjoerd Mullender <sjoerd@acm.org> - 11.17.1-20140114
 - Rebuilt.
 - BZ#3040: Wrong NULL behavior in EXCEPT and INTERSECT

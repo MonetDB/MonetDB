@@ -29,6 +29,8 @@ function user.main():void;
     b := json.new("{\"f1\":1,\"f2\":2}");
     f := json.filter(b,"f2");
     io.print(f);
+    f := json.filter(b,"f1,f2");
+    io.print(f);
     b := json.new("{\"f1\":1,\"f2\":2,\"f1\":3}");
     f := json.filter(b,"f1[0]");
     io.print(f);
@@ -36,32 +38,70 @@ function user.main():void;
     io.print(f);
     f := json.filter(b,"f1[2]");
     io.print(f);
+    f := json.filter(b,"*");
+    io.print(f);
     b := json.new("{\"f1\":{\"f12\":3},\"f2\":[2,3,4]}");
+    f := json.filter(b,"..f12,$..f2[1]");
+    io.print(f);
     f := json.filter(b,"f1");
     io.print(f);
-    f := json.filter(b,"f12");
+    f := json.filter(b,"f1.f12");
+    io.print(f);
+    f := json.filter(b,"$.f1.f12");
+    io.print(f);
+    f := json.filter(b,"..f12");
     io.print(f);
     b := json.new("[1,\"f2\", 2]");
-    f := json.filter(b,0);
+    f := json.filter(b,"[0]");
     io.print(f);
-    f := json.filter(b,1);
+    f := json.filter(b,"[1]");
     io.print(f);
-    f := json.filter(b,2);
+    f := json.filter(b,"[2]");
     io.print(f);
-    f := json.filter(b,3);
+    f := json.filter(b,"[3]");
+    io.print(f);
+    b := json.new("[{\"boter\":1},{\"kaas\":2},{\"eieren\":3}]");
+    f := json.filter(b,"[*].*");
+    io.print(f);
+    f := json.filter(b,"[0]");
+    io.print(f);
+    f := json.filter(b,"[0].boter");
+    io.print(f);
+    f := json.filter(b,"[1]");
+    io.print(f);
+    f := json.filter(b,"[1].kaas");
+    io.print(f);
+    f := json.filter(b,"[2]");
+    io.print(f);
+    f := json.filter(b,"[2].eieren");
+    io.print(f);
+    f := json.filter(b,"[3]");
     io.print(f);
 end main;
 [ "[]" ]
 [ "[1]" ]
 [ "[2]" ]
+[ "[1,2]" ]
 [ "[1]" ]
 [ "[3]" ]
 [ "[]" ]
+[ "[1,2,3]" ]
+[ "[3,[2,3,4]]" ]
 [ "[{\"f12\":3}]" ]
-[ "[{\"f12\":3}]" ]
+[ "[3]" ]
+[ "[3]" ]
+[ "[3]" ]
 [ "[1]" ]
 [ "[\"f2\"]" ]
 [ "[2]" ]
+[ "[]" ]
+[ "[1,2,3]" ]
+[ "[{\"boter\":1}]" ]
+[ "[1]" ]
+[ "[{\"kaas\":2}]" ]
+[ "[2]" ]
+[ "[{\"eieren\":3}]" ]
+[ "[3]" ]
 [ "[]" ]
 
 # 22:41:31 >  

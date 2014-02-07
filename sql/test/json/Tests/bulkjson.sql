@@ -9,7 +9,7 @@ select * from nosql;
 
 select json.filter(j,'f1') from nosql;
 select json.filter(j,'f2') from nosql;
-select json.filter(j,'f12') from nosql;
+select json.filter(j,'..f12') from nosql;
 
 delete from nosql;
 select * from nosql;

@@ -228,9 +228,8 @@ GDKmove(const char *dir1, const char *nme1, const char *ext1, const char *dir2, 
 	return ret;
 }
 
-#ifndef NATIVE_WIN32
 int
-GDKextendf(int fd, off_t size)
+GDKextendf(int fd, size_t size)
 {
 	struct stat stb;
 
@@ -239,35 +238,31 @@ GDKextendf(int fd, off_t size)
 		return -1;
 	}
 	/* if necessary, extend the underlying file */
-	if (stb.st_size < size)
-		return ftruncate(fd, size);
+	if (stb.st_size < (off_t) size) {
+#ifdef WIN32
+		return -(_chsize_s(fd, (__int64) size) != 0);
+#else
+		return ftruncate(fd, (off_t) size);
+#endif
+	}
 	return 0;
 }
-#endif
 
 int
 GDKextend(const char *fn, size_t size)
 {
 	int t0 = 0;
+	int rt = -1, fd;
 
 	IODEBUG t0 = GDKms();
-#ifdef WIN32
-	{
-		int fd, rt;
-
-		if ((fd = open(fn, O_RDWR)) < 0)
-			return -1;
-		rt = _chsize_s(fd, (__int64) size);
+	rt = -1;
+	if ((fd = open(fn, O_RDWR)) >= 0) {
+		rt = GDKextendf(fd, size);
 		close(fd);
-		if (rt != 0)
-			return -1;
 	}
-#else
-	if (truncate(fn, (off_t) size) < 0)
-		return -1;
-#endif
-	IODEBUG fprintf(stderr, "#GDKextend %s " SZFMT " %dms\n", fn, size, GDKms() - t0);
-	return 0;
+	IODEBUG fprintf(stderr, "#GDKextend %s " SZFMT " %dms%s\n", fn, size,
+			GDKms() - t0, rt < 0 ? " (failed)" : "");
+	return rt;
 }
 
 /*
@@ -418,7 +413,6 @@ GDKload(const char *nme, const char *ext, size_t size, size_t *maxsize, storage_
 		}
 	} else {
 		char path[PATHLENGTH];
-		struct stat st;
 
 		/* round up to multiple of GDK_mmap_pagesize with a
 		 * minimum of one */
@@ -426,10 +420,7 @@ GDKload(const char *nme, const char *ext, size_t size, size_t *maxsize, storage_
 		if (size == 0)
 			size = GDK_mmap_pagesize;
 		GDKfilepath(path, BATDIR, nme, ext);
-		if (stat(path, &st) >= 0 &&
-		    (size <= (size_t) st.st_size ||
-		     /* mmap storage is auto-extended here */
-		     GDKextend(path, size) == 0)) {
+		if (GDKextend(path, size) == 0) {
 			int mod = MMAP_READ | MMAP_WRITE | MMAP_SEQUENTIAL | MMAP_SYNC;
 
 			if (mode == STORE_PRIV)

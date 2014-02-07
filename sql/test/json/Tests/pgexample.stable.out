@@ -60,8 +60,8 @@ Ready.
 % sys.L,	sys.L # table_name
 % f1_0,	text_filter_b # name
 % json,	clob # type
-% 25,	15 # length
-[ "[[1,\"Robert \\\"M\\\"\",true]]",	"1Robert \"M\"true"	]
+% 25,	17 # length
+[ "[[1,\"Robert \\\"M\\\"\",true]]",	"1 Robert \"M\" true"	]
 #drop table jsonTbl;
 
 # 02:53:37 >  

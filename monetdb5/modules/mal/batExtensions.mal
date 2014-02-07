@@ -37,10 +37,38 @@ address CMDBATderivedByName
 comment "Localize a bat by name and produce a clone.";
 
 pattern bat.partition(b:bat[:oid,:any_1]):bat[:oid,:any_1]...
-address CMDbatpartition
+address CMDBATpartition
 comment "Create a serie of slices over the BAT argument. The BUNs are distributed evenly.";
 
 pattern bat.partition(b:bat[:oid,:any_1], pieces:int, n:int):bat[:oid,:any_1]
-address CMDbatpartition2
+address CMDBATpartition2
 comment "Create the n-th slice over the BAT broken into severral pieces.";
+
+command bat.imprints(b:bat[:oid,:bte])
+address CMDBATimprints;
+command bat.imprints(b:bat[:oid,:sht])
+address CMDBATimprints;
+command bat.imprints(b:bat[:oid,:int])
+address CMDBATimprints;
+command bat.imprints(b:bat[:oid,:lng])
+address CMDBATimprints;
+command bat.imprints(b:bat[:oid,:flt])
+address CMDBATimprints;
+command bat.imprints(b:bat[:oid,:dbl])
+address CMDBATimprints
+comment "Check/create an imprint index on the BAT";
+
+command bat.imprintsize(b:bat[:oid,:bte]):lng
+address CMDBATimprintsize;
+command bat.imprintsize(b:bat[:oid,:sht]):lng
+address CMDBATimprintsize;
+command bat.imprintsize(b:bat[:oid,:int]):lng
+address CMDBATimprintsize;
+command bat.imprintsize(b:bat[:oid,:lng]):lng
+address CMDBATimprintsize;
+command bat.imprintsize(b:bat[:oid,:flt]):lng
+address CMDBATimprintsize;
+command bat.imprintsize(b:bat[:oid,:dbl]):lng
+address CMDBATimprintsize
+comment "Return the size of the imprints";
 

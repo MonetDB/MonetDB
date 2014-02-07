@@ -19,12 +19,12 @@ stdout of test 'date_script_test.Bug-2973` in directory 'sql/test/BugTracker-201
 
 Ready.
 
-# 16:56:48 >  
-# 16:56:48 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=LAB03" "--port=39057"
-# 16:56:48 >  
+# 14:12:34 >  
+# 14:12:34 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=rome" "--port=36122"
+# 14:12:34 >  
 
 
-# 16:56:48 >  
-# 16:56:48 >  "Done."
-# 16:56:48 >  
+# 14:12:34 >  
+# 14:12:34 >  "Done."
+# 14:12:34 >  
 

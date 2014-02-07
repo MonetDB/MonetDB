@@ -2,7 +2,7 @@
 create table books(i integer, j json);
 
 insert into books values( 1, ' { "store": {
-    "book": [ 
+    "books": [ 
       { "category": "reference",
         "author": "Nigel Rees",
         "title": "Sayings of the Century",
@@ -37,22 +37,17 @@ select * from books;
 
 -- Queries to be compiled into SQL/JSON
 -- all authors of single book in the single store
-SELECT json.filter(j,'author') FROM (
-	SELECT json.filter(j,'book') AS j FROM (
-		SELECT json.filter(j,'store') AS j FROM books
-	) AS L1
-) AS L2;
+SELECT json.filter(j,'store.books.[1]..author') FROM books;
 
 -- a single author from the book store
-SELECT json.filter(j,'author[0]') FROM (
-	SELECT json.filter(j,'book') AS j FROM (
-		SELECT json.filter(j,'store') AS j FROM books
-	) AS L1
-) AS L2;
+SELECT json.filter(j,'..books..author[1]') AS j FROM (
+	SELECT json.filter(j,'store') AS j FROM books
+) AS L1;
 
 SELECT json.filter(j,'..author') FROM books;
-SELECT json.filter(j,'store.book[*].author') FROM books;
+SELECT json.filter(j,'store.books[*]..author') FROM books;
+SELECT json.filter(j,'store.books..author') FROM books;
+SELECT json.filter(j,'store.books..author[1]') FROM books;
 SELECT json.filter(j,'..bicycle.price') FROM books;
-SELECT json.filter(j,'store.book.author[1]') FROM books;
 
 drop table books;

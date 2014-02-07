@@ -100,10 +100,6 @@ decompose_filename(str nme)
 int
 HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 {
-	char nme[PATHLENGTH];
-	size_t minsize = GDK_mmap_minsize;
-	struct stat st;
-
 	h->base = NULL;
 	h->size = 1;
 	h->copied = 0;
@@ -115,16 +111,19 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 	if (itemsize && nitems > (h->size / itemsize))
 		return -1;
 
-	if (h->filename == NULL || h->size < minsize) {
+	if (h->filename == NULL || h->size < GDK_mmap_minsize) {
 		h->storage = STORE_MEM;
 		h->base = (char *) GDKmallocmax(h->size, &h->size, 0);
 		HEAPDEBUG fprintf(stderr, "#HEAPalloc " SZFMT " " PTRFMT "\n", h->size, PTRFMTCAST h->base);
 	}
 	if (h->filename && h->base == NULL) {
-		char *of = h->filename;
+		char nme[PATHLENGTH];
+		struct stat st;
+		char *of;
 
+		of = h->filename;
 		h->filename = NULL;
-
+		GDKfilepath(nme, BATDIR, of, NULL);
 		if (stat(nme, &st) < 0) {
 			h->storage = STORE_MMAP;
 			h->base = HEAPcreatefile(&h->size, of);
@@ -248,9 +247,8 @@ HEAPextend(Heap *h, size_t size, int mayshare)
 				existing = 1;
 				close(fd);
 			} else {
-				/* no pre-existing heap file, attempt
-				 * to use a file from the cache (or
-				 * create a new one) */
+				/* no pre-existing heap file, so
+				 * create a new one */
 				h->filename = GDKmalloc(strlen(nme) + strlen(ext) + 2);
 				if (h->filename == NULL) {
 					failure = "h->storage == STORE_MEM && can_map && h->filename == NULL";
@@ -605,7 +603,7 @@ HEAPload_intern(Heap *h, const char *nme, const char *ext, const char *suffix, i
 	long_str srcpath, dstpath;
 	struct stat st;
 
-	h->storage = h->newstorage;
+	h->storage = h->newstorage = h->size < GDK_mmap_minsize ? STORE_MEM : STORE_MMAP;
 	if (h->filename == NULL)
 		h->filename = (char *) GDKmalloc(strlen(nme) + strlen(ext) + 2);
 	if (h->filename == NULL)
@@ -862,6 +860,8 @@ roundup_num(size_t number, int alignment)
 	rval -= (rval % (size_t) alignment);
 	return rval;
 }
+
+#define HEAP_index(HEAP,INDEX,TYPE)	((TYPE *)((char *) (HEAP)->base + (INDEX)))
 
 #ifdef TRACE
 static void

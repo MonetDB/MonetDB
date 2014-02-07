@@ -146,7 +146,7 @@ BATsample_(BAT *b, BUN n)
 		wrd top = b->hseqbase + cnt - n;
 		wrd p = ((wrd) b->hseqbase) - 1;
 		oid *o;
-		bn = BATnew(TYPE_void, TYPE_oid, smp);
+		bn = BATnew(TYPE_void, TYPE_oid, n);
 		if (bn == NULL) {
 			GDKerror("#BATsample: memory allocation error");
 			return NULL;
@@ -168,7 +168,7 @@ BATsample_(BAT *b, BUN n)
 		}
 		/* 1 left */
 		p += (BUN) rand() % cnt;
-		o[smp] = (oid) p;
+		o[smp] = (oid) p+1;
 
 		/* property management */
 		BATsetcount(bn, n);

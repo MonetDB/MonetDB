@@ -50,29 +50,23 @@ Ready.
 % sys.books,	sys.books # table_name
 % i,	j # name
 % int,	json # type
-% 1,	716 # length
-[ 1,	" { \"store\": {\n    \"book\": [ \n      { \"category\": \"reference\",\n        \"author\": \"Nigel Rees\",\n        \"title\": \"Sayings of the Century\",\n        \"price\": 8.95\n      },\n      { \"category\": \"fiction\",\n        \"author\": \"Evelyn Waugh\",\n        \"title\": \"Sword of Honour\",\n        \"price\": 12.99\n      },\n      { \"category\": \"fiction\",\n        \"author\": \"Herman Melville\",\n        \"title\": \"Moby Dick\",\n        \"isbn\": \"0-553-21311-3\",\n        \"price\": 8.99\n      },\n      { \"category\": \"fiction\",\n        \"author\": \"J. R. R. Tolkien\",\n        \"title\": \"The Lord of the Rings\",\n        \"isbn\": \"0-395-19395-8\",\n        \"price\": 22.99\n      }\n    ],\n    \"bicycle\": {\n      \"color\": \"red\",\n      \"price\": 19.95\n    }\n  }\n}"	]
-#SELECT json_filter_all(j,'author') FROM (
-#	SELECT json_filter(j,'book') AS j FROM (
-#		SELECT json_filter(j,'store') AS j FROM books
-#	) AS L1
-#) AS L2;
+% 1,	717 # length
+[ 1,	" { \"store\": {\n    \"books\": [ \n      { \"category\": \"reference\",\n        \"author\": \"Nigel Rees\",\n        \"title\": \"Sayings of the Century\",\n        \"price\": 8.95\n      },\n      { \"category\": \"fiction\",\n        \"author\": \"Evelyn Waugh\",\n        \"title\": \"Sword of Honour\",\n        \"price\": 12.99\n      },\n      { \"category\": \"fiction\",\n        \"author\": \"Herman Melville\",\n        \"title\": \"Moby Dick\",\n        \"isbn\": \"0-553-21311-3\",\n        \"price\": 8.99\n      },\n      { \"category\": \"fiction\",\n        \"author\": \"J. R. R. Tolkien\",\n        \"title\": \"The Lord of the Rings\",\n        \"isbn\": \"0-395-19395-8\",\n        \"price\": 22.99\n      }\n    ],\n    \"bicycle\": {\n      \"color\": \"red\",\n      \"price\": 19.95\n    }\n  }\n}"	]
+#SELECT json.filter(j,'store.books.[1]..author') FROM books;
 % sys.L # table_name
 % filter_j # name
 % json # type
-% 66 # length
-[ "[\"Nigel Rees\",\"Evelyn Waugh\",\"Herman Melville\",\"J. R. R. Tolkien\"]"	]
-#SELECT json_filter(j,'author') FROM (
-#	SELECT json_filter(j,'book') AS j FROM (
-#		SELECT json_filter(j,'store') AS j FROM books
-#	) AS L1
-#) AS L2;
+% 16 # length
+[ "[\"Evelyn Waugh\"]"	]
+#SELECT json.filter(j,'..books..author[1]') AS j FROM (
+#	SELECT json.filter(j,'store') AS j FROM books
+#) AS L1;
 % sys.L # table_name
-% filter_j # name
+% j # name
 % json # type
-% 14 # length
-[ "[\"Nigel Rees\"]"	]
-#SELECT json_path(j,'..author') FROM books;
+% 16 # length
+[ "[\"Evelyn Waugh\"]"	]
+#SELECT json.filter(j,'..author') FROM books;
 % sys.L # table_name
 % filter_j # name
 % json # type
@@ -88,14 +82,20 @@ Ready.
 % sys.L # table_name
 % filter_j # name
 % json # type
-% 7 # length
-[ "[19.95]"	]
-#SELECT json_path(j,'store.book.author[1]') FROM books;
+% 66 # length
+[ "[\"Nigel Rees\",\"Evelyn Waugh\",\"Herman Melville\",\"J. R. R. Tolkien\"]"	]
+#SELECT json.filter(j,'store.books..author[1]') FROM books;
 % sys.L # table_name
 % filter_j # name
 % json # type
 % 16 # length
 [ "[\"Evelyn Waugh\"]"	]
+#SELECT json.filter(j,'..bicycle.price') FROM books;
+% sys.L # table_name
+% filter_j # name
+% json # type
+% 7 # length
+[ "[19.95]"	]
 #drop table books;
 
 # 19:34:44 >  

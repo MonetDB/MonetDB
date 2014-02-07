@@ -2509,10 +2509,6 @@ command algebra.materialize(b:bat[:oid,:any_1]):bat[:oid,:any_1]
 address ALGmaterialize;
 comment Materialize the void column
 
-command algebra.merge(b:bat[:oid,:oid]):bat[:lng,:oid] 
-address ALGmerge;
-comment Merge head and tail into a single value
-
 command algebra.mark_grp(b:bat[:any_1,:oid],g:bat[:oid,:any_2],s:oid):bat[:any_1,:oid] 
 address ALGmark_grp_2;
 comment "grouped mark": Produces a new BAT with per group a locally unique dense ascending sequense of OIDs in the tail. The tail of the first BAT (b) identifies the group that each BUN of b belongs to. The second BAT (g) represents the group extent, i.e., the head is the unique list of group IDs from b's tail. The third argument (s) gives the base value for the new OID sequence of each group.
@@ -2594,10 +2590,6 @@ comment Returns a BAT copy with buns in reverse order
 pattern algebra.semijoinPath(l:bat[:any,:any]...):bat[:any,:any] 
 address ALGjoinPath;
 comment Routine to handle join paths.  The type analysis is rather tricky.
-
-command algebra.split(b:bat[:lng,:oid]):bat[:oid,:oid] 
-address ALGsplit;
-comment Split head into two values
 
 command algebra.subthetajoin(l:bat[:oid,:any_1],r:bat[:oid,:any_1],sl:bat[:oid,:oid],sr:bat[:oid,:oid],op:int,nil_matches:bit,estimate:lng) (X_8:bat[:oid,:oid],X_9:bat[:oid,:oid]) 
 address ALGsubthetajoin;
@@ -31852,6 +31844,34 @@ command bat.hasAppendMode(b:bat[:any_1,:any_2]):bit
 address BKChasAppendMode;
 comment return true if to this BAT is append only.
 
+command bat.imprintsize(b:bat[:oid,:dbl]):lng 
+address CMDBATimprintsize;
+comment Return the size of the imprints
+
+command bat.imprintsize(b:bat[:oid,:flt]):lng 
+address CMDBATimprintsize;
+command bat.imprintsize(b:bat[:oid,:lng]):lng 
+address CMDBATimprintsize;
+command bat.imprintsize(b:bat[:oid,:int]):lng 
+address CMDBATimprintsize;
+command bat.imprintsize(b:bat[:oid,:sht]):lng 
+address CMDBATimprintsize;
+command bat.imprintsize(b:bat[:oid,:bte]):lng 
+address CMDBATimprintsize;
+command bat.imprints(b:bat[:oid,:dbl]):void 
+address CMDBATimprints;
+comment Check/create an imprint index on the BAT
+
+command bat.imprints(b:bat[:oid,:flt]):void 
+address CMDBATimprints;
+command bat.imprints(b:bat[:oid,:lng]):void 
+address CMDBATimprints;
+command bat.imprints(b:bat[:oid,:int]):void 
+address CMDBATimprints;
+command bat.imprints(b:bat[:oid,:sht]):void 
+address CMDBATimprints;
+command bat.imprints(b:bat[:oid,:bte]):void 
+address CMDBATimprints;
 command bat.intersectcand(a:bat[:oid,:oid],b:bat[:oid,:oid]):bat[:oid,:oid] 
 address BKCintersectcand;
 comment Intersect two candidate lists into one
@@ -31961,11 +31981,11 @@ address BKCorder;
 comment Sorts the BAT itself on the head, in place. 
 
 pattern bat.partition(b:bat[:oid,:any_1],pieces:int,n:int):bat[:oid,:any_1] 
-address CMDbatpartition2;
+address CMDBATpartition2;
 comment Create the n-th slice over the BAT broken into severral pieces.
 
 pattern bat.partition(b:bat[:oid,:any_1]):bat[:oid,:any_1]... 
-address CMDbatpartition;
+address CMDBATpartition;
 comment Create a serie of slices over the BAT argument. The BUNs are distributed evenly.
 
 command bat.reuseMap(b:bat[:oid,:any_1],del:bat[:oid,:oid]):bat[:oid,:oid] 
@@ -32208,7 +32228,7 @@ command bbp.getName(b:bat[:oid,:any_2]):str
 address CMDbbpName;
 comment Map a BAT into its internal name
 
-command bbp.get() (ns:bat[:any_1,:any_2],ht:bat[:int,:str],tt:bat[:int,:str],cnt:bat[:int,:lng],refcnt:bat[:int,:int],lrefcnt:bat[:int,:int],location:bat[:int,:str],heat:bat[:int,:int],dirty:bat[:int,:str],status:bat[:int,:str],kind:bat[:int,:str]) 
+command bbp.get() (id:bat[:oid,:int],ns:bat[:oid,:str],ht:bat[:oid,:str],tt:bat[:oid,:str],cnt:bat[:oid,:lng],refcnt:bat[:oid,:int],lrefcnt:bat[:oid,:int],location:bat[:oid,:str],heat:bat[:oid,:int],dirty:bat[:oid,:str],status:bat[:oid,:str],kind:bat[:oid,:str]) 
 address CMDbbp;
 comment bpp
 
@@ -39660,6 +39680,8 @@ command json.drop(nme:str):void
 address JSONdrop;
 comment Drop the JSON object name from the database
 
+command json.dump(j:json):void 
+address JSONdump;
 command json.extract(k:bat[:oid,:bte],s:bat[:oid,:str],i:bat[:oid,:lng],d:bat[:oid,:dbl],a:bat[:oid,:oid],o:bat[:oid,:oid],n:bat[:oid,:str],elems:bat[:oid,:oid],start:oid) (kind:bat[:oid,:bte],string:bat[:oid,:str],integer:bat[:oid,:lng],double:bat[:oid,:dbl],array:bat[:oid,:oid],object:bat[:oid,:oid],name:bat[:oid,:str]) 
 address JSONextract;
 comment Extract the given elems (kind id) from the given JSON object
@@ -39668,27 +39690,49 @@ command json.exportResult(o:streams,kind:bat[:oid,:bte],string:bat[:oid,:str],in
 address JSONexportResult;
 comment Serialise the given JSON pointer into JSON format, respecting the MAPI protocol
 
-command json.filter(name:json,i:int):json 
+pattern json.fold(k:bat[:oid,:any]):json 
+address JSONfold;
+comment Combine the value list into a single json array object.
+
+pattern json.fold(k:bat[:oid,:str],v:bat[:oid,:any]):json 
+address JSONfold;
+comment Combine the key-value pairs into a single json object list.
+
+pattern json.fold(o:bat[:oid,:oid],k:bat[:oid,:str],v:bat[:oid,:any]):json 
+address JSONfold;
+comment Combine the key-value pairs into a single json object list.
+
+command json.filter(name:json,idx:lng,other:str):json 
+address JSONfilterArrayDefault;
+comment Extract a single array element
+
+command json.filter(name:json,idx:lng):json 
 address JSONfilterArray;
-comment Extract a single element from an array
-
-command json.filterall(name:json,s:str):json 
-address JSONfilterObjectAll;
-comment Filter the members of an object by name
-
-command json.filter(name:json,s:str):json 
-address JSONfilterObject;
-comment Filter the members of an object by name
+command json.filter(name:json,idx:int,other:str):json 
+address JSONfilterArrayDefault;
+command json.filter(name:json,idx:int):json 
+address JSONfilterArray;
+command json.filter(name:json,idx:sht,other:str):json 
+address JSONfilterArrayDefault;
+command json.filter(name:json,idx:sht):json 
+address JSONfilterArray;
+command json.filter(name:json,idx:bte,other:str):json 
+address JSONfilterArrayDefault;
+command json.filter(name:json,idx:bte):json 
+address JSONfilterArray;
+command json.filter(name:json,pathexpr:str):json 
+address JSONfilter;
+comment Filter all members of an object by a path expression, returning an array.Non-matching elements are skipped.
 
 command json.#fromstr():json 
 address JSONfromString;
 comment Validate a string to be JSON compliant. A NOOP if valid json, NULL otherwise.
 
-command json.isvalidarray(val:json):bit 
+command json.isarray(val:str):bit 
 address JSONisarray;
 comment Validate the string as a valid JSON array
 
-command json.isvalidobject(val:json):bit 
+command json.isobject(val:str):bit 
 address JSONisobject;
 comment Validate the string as a valid JSON object
 
@@ -39696,13 +39740,29 @@ command json.isvalid(val:str):bit
 address JSONisvalid;
 comment Validate the string as a valid JSON document
 
+command json.isarray(val:json):bit 
+address JSONisarray;
+comment Validate the string as a valid JSON array
+
+command json.isobject(val:json):bit 
+address JSONisobject;
+comment Validate the string as a valid JSON object
+
+command json.isvalid(val:json):bit 
+address JSONisvalid;
+comment Validate the string as a valid JSON document
+
+command json.integer(j:json):lng 
+address JSONjson2integer;
+comment Convert sinple JSON values to an integer, return nil upon error.
+
 command json.keys(val:json):bat[:oid,:str] 
-address JSONkeys;
+address JSONkeyTable;
 comment Expands the outermost JSON object names.
 
-command json.keyArray(val:json):str 
+command json.keyarray(val:json):json 
 address JSONkeyArray;
-comment Expands the outermost JSON object keys into a JSON array.
+comment Expands the outermost JSON object keys into a JSON value array.
 
 command json.load(nme:str) (kind:bat[:oid,:bte],string:bat[:oid,:str],integer:bat[:oid,:lng],double:bat[:oid,:dbl],array:bat[:oid,:oid],object:bat[:oid,:oid],name:bat[:oid,:str]) 
 address JSONload;
@@ -39716,27 +39776,9 @@ command json.nextid(kind:bat[:oid,:bte]):oid
 address JSONnextid;
 comment Returns the next free id for the kind BAT
 
-pattern json.nest(k:bat[:oid,:dbl]):json 
-address JSONnest;
-comment Combine the value list into a single json array object.
-
-pattern json.nest(k:bat[:oid,:flt]):json 
-address JSONnest;
-pattern json.nest(k:bat[:oid,:lng]):json 
-address JSONnest;
-pattern json.nest(k:bat[:oid,:int]):json 
-address JSONnest;
-pattern json.nest(k:bat[:oid,:sht]):json 
-address JSONnest;
-pattern json.nest(k:bat[:oid,:str]):json 
-address JSONnest;
-pattern json.nest(k:bat[:oid,:str],v:bat[:oid,:any]):json 
-address JSONnest;
-comment Combine the key-value pairs into a single json object list.
-
-pattern json.nest(o:bat[:oid,:oid],k:bat[:oid,:str],v:bat[:oid,:any]):json 
-address JSONnest;
-comment Nest the key-value pairs with object identity into a list of JSON objects 
+command json.number(j:json):dbl 
+address JSONjson2number;
+comment Convert sinple JSON values to a double, return nil upon error.
 
 command json.new(j:str):json 
 address JSONstr2json;
@@ -39746,10 +39788,6 @@ function json.print(o:streams,kind:bat[:oid,:bte],string:bat[:oid,:str],integer:
 command json.print(o:streams,kind:bat[:oid,:bte],string:bat[:oid,:str],integer:bat[:oid,:lng],double:bat[:oid,:dbl],array:bat[:oid,:oid],object:bat[:oid,:oid],name:bat[:oid,:str],start:oid,pretty:bit):void 
 address JSONprint;
 comment Serialise the given JSON pointer into JSON format
-
-command json.path(js:json,e:str):json 
-address JSONpath;
-comment Simple JSON path accessor
 
 command json.prelude():void 
 address JSONprelude;
@@ -39777,9 +39815,13 @@ command json.str(j:json):str
 address JSONjson2str;
 comment Convert JSON to its string equivalent. Dealing with escape characters
 
-command json.text(js:json,e:str):str 
-address JSONtext;
-comment Simple JSON path accessor, returning the concatenated string
+command json.text(j:json,s:str):str 
+address JSONjson2textSeparator;
+comment Convert JSON values to their plain string equivalent, injecting a separator.
+
+command json.text(j:json):str 
+address JSONjson2text;
+comment Convert JSON values to their plain string equivalent.
 
 command json.#tostr():str 
 address JSONtoString;
@@ -39793,25 +39835,21 @@ pattern json.unwraptype(kind:bat[:oid,:bte],string:bat[:oid,:str],integer:bat[:o
 address JSONunwrap;
 comment Retrieve the type necessary to unwrap the given JSON array to
 
-command json.unnest(val:json):bat[:oid,:json] 
-address JSONunnestOne;
-comment Expands a JSON list to its elements.
-
-command json.unnest(val:json) (k:bat[:oid,:str],v:bat[:oid,:json]) 
-address JSONunnest;
+pattern json.unfold(val:json) (o:bat[:oid,:oid],k:bat[:oid,:str],v:bat[:oid,:json]) 
+address JSONunfold;
 comment Expands the outermost JSON object into key-value pairs.
 
-command json.unnest(val:json) (o:bat[:oid,:oid],k:bat[:oid,:str],v:bat[:oid,:json]) 
-address JSONunnestGrouped;
-comment Expands the outermost JSON object into key-value pairs with object identity.
+pattern json.unfold(val:json) (k:bat[:oid,:str],v:bat[:oid,:json]) 
+address JSONunfold;
+comment Expands the outermost JSON object into key-value pairs.
 
 command json.values(val:json):bat[:oid,:json] 
-address JSONvalues;
+address JSONvalueTable;
 comment Expands the outermost JSON values.
 
-command json.valueArray(val:json):str 
+command json.valuearray(val:json):json 
 address JSONvalueArray;
-comment Expands the outermost JSON object values into a JSON array.
+comment Expands the outermost JSON object values into a JSON value array.
 
 command json.wrap(elems:bat[:oid,:any]) (kind:bat[:oid,:bte],string:bat[:oid,:str],integer:bat[:oid,:lng],double:bat[:oid,:dbl],array:bat[:oid,:oid],object:bat[:oid,:oid],name:bat[:oid,:str]) 
 address JSONwrap;
@@ -42017,7 +42055,6 @@ pattern sql.abort():void
 address SQLabort;
 comment Trigger the abort operation for a MAL block
 
-function sql.bbp() (id:bat[:oid,:int],name:bat[:oid,:str],htype:bat[:oid,:str],ttype:bat[:oid,:str],count:bat[:oid,:lng],refcnt:bat[:oid,:int],lrefcnt:bat[:oid,:int],location:bat[:oid,:str],heat:bat[:oid,:int],dirty:bat[:oid,:str],status:bat[:oid,:str],kind:bat[:oid,:str]);
 pattern sql.bind(mvc:int,schema:str,table:str,column:str,access:int,part_nr:int,nr_parts:int) (uid:bat[:oid,:oid],uval:bat[:oid,:any_1]) 
 address mvc_bind_wrap;
 comment Bind the 'schema.table.column' BAT with access kind:	0 - base table	1 - inserts	2 - updates
@@ -42446,7 +42483,7 @@ pattern sql.sysmon_pause(tag:sht):void
 address SYSMONpause;
 pattern sql.sysmon_queue() (qtag:bat[:oid,:lng],user:bat[:oid,:str],started:bat[:oid,:timestamp],estimate:bat[:oid,:timestamp],progress:bat[:oid,:int],status:bat[:oid,:str],tag:bat[:oid,:oid],query:bat[:oid,:str]) 
 address SYSMONqueue;
-pattern sql.storage() (schema:bat[:oid,:str],table:bat[:oid,:str],column:bat[:oid,:str],type:bat[:oid,:str],location:bat[:oid,:str],count:bat[:oid,:lng],atomwidth:bat[:oid,:int],columnsize:bat[:oid,:lng],heap:bat[:oid,:lng],indices:bat[:oid,:lng],sorted:bat[:oid,:bit]) 
+pattern sql.storage() (schema:bat[:oid,:str],table:bat[:oid,:str],column:bat[:oid,:str],type:bat[:oid,:str],location:bat[:oid,:str],count:bat[:oid,:lng],atomwidth:bat[:oid,:int],columnsize:bat[:oid,:lng],heap:bat[:oid,:lng],hashes:bat[:oid,:lng],imprints:bat[:oid,:lng],sorted:bat[:oid,:bit]) 
 address sql_storage;
 comment return a table with storage information 
 

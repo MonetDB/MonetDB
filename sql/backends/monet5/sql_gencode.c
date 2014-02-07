@@ -752,10 +752,14 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				}
 			} else {
 				char *buf = GDKmalloc(SMALLBUFSIZ);
-
-				(void) snprintf(buf, SMALLBUFSIZ, "A%d", s->flag);
+				
 				q = newAssignment(mb);
-				q = pushArgumentId(mb, q, buf);
+				if (sql->mvc->argc && sql->mvc->args[s->flag]->varid >= 0) {
+					q = pushArgument(mb, q, sql->mvc->args[s->flag]->varid);
+				} else {
+					(void) snprintf(buf, SMALLBUFSIZ, "A%d", s->flag);
+					q = pushArgumentId(mb, q, buf);
+				}
 			}
 			s->nr = getDestVar(q);
 		} break;
@@ -1655,7 +1659,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			sql_subtype *res = s->op4.aggrval->res->h->data;
 			int restype = res->type->localtype;
 			int complex_aggr = 0;
-			int abort_on_error;
+			int abort_on_error, i, *stmt_nr = NULL;
 
 			if (backend_create_subaggr(sql, s->op4.aggrval) < 0)
 				return -1;
@@ -1684,12 +1688,13 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 						q = pushArgument(mb, q, l);
 						l = getDestVar(q);
 					} else {
-						for (n = s->op1->op4.lval->h; n; n = n->next) {
+						stmt_nr = SA_NEW_ARRAY(sql->mvc->sa, int, list_length(s->op1->op4.lval));
+						for (i=0, n = s->op1->op4.lval->h; n; n = n->next, i++) {
 							stmt *op = n->data;
 
 							q = newStmt2(mb, algebraRef, selectNotNilRef);
 							q = pushArgument(mb, q, op->nr);
-							op->nr = getDestVar(q);
+							stmt_nr[i] = getDestVar(q);
 						}
 					}
 				}
@@ -1702,10 +1707,13 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			if (s->op1->type != st_list) {
 				q = pushArgument(mb, q, l);
 			} else {
-				for (n = s->op1->op4.lval->h; n; n = n->next) {
+				for (i=0, n = s->op1->op4.lval->h; n; n = n->next, i++) {
 					stmt *op = n->data;
 
-					q = pushArgument(mb, q, op->nr);
+					if (stmt_nr)
+						q = pushArgument(mb, q, stmt_nr[i]);
+					else
+						q = pushArgument(mb, q, op->nr);
 				}
 			}
 			if (g) {
@@ -2165,7 +2173,7 @@ backend_callinline(backend *be, Client c, stmt *s)
 
 	curInstr = getInstrPtr(curBlk, 0);
 
-	if (m->argc) {		/* we shouldn't come here as we aren't caching statements */
+	if (m->argc) {	
 		int argc = 0;
 
 		for (; argc < m->argc; argc++) {
@@ -2174,8 +2182,7 @@ backend_callinline(backend *be, Client c, stmt *s)
 			int varid = 0;
 
 			curInstr = newAssignment(curBlk);
-			varid = getDestVar(curInstr);
-			renameVariable(curBlk, varid, "A%d", argc);
+			a->varid = varid = getDestVar(curInstr);
 			setVarType(curBlk, varid, type);
 			setVarUDFtype(curBlk, varid);
 
@@ -2229,7 +2236,7 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 			int varid = 0;
 
 			snprintf(arg, SMALLBUFSIZ, "A%d", argc);
-			varid = newVariable(mb, _STRDUP(arg), type);
+			a->varid = varid = newVariable(mb, _STRDUP(arg), type);
 			curInstr = pushArgument(mb, curInstr, varid);
 			setVarType(mb, varid, type);
 			setVarUDFtype(mb, 0);
@@ -2429,8 +2436,7 @@ backend_create_func(backend *be, sql_func *f, list *restypes, list *ops)
 			setVarType(curBlk, varid, type);
 			setVarUDFtype(curBlk, varid);
 		}
-	} else
-	if (f->ops) {
+	} else if (f->ops) {
 		int argc = 0;
 		node *n;
 

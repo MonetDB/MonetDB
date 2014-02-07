@@ -7,13 +7,14 @@ debian/tmp/usr/lib/monetdb5/lib_opt_sql_append.so usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/lib_udf.so usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/lib_vault.so usr/lib/monetdb5
 
-# usr/lib/monetdb5/*.mal EXCEPT: geom.mal, gsl.mal, jaql*.mal, json*.mal, sql*.mal
+# usr/lib/monetdb5/*.mal EXCEPT: geom.mal, gsl.mal, jaql*.mal, json.mal, json_util.mal, sql*.mal
 debian/tmp/usr/lib/monetdb5/a*.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/b*.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/c*.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/f*.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/gr*.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/i*.mal usr/lib/monetdb5
+debian/tmp/usr/lib/monetdb5/json_atom.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/l*.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/m*.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/o*.mal usr/lib/monetdb5

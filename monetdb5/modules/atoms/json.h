@@ -26,6 +26,33 @@
 #include "mal_instruction.h"
 #include "mal_exception.h"
 
+#define JSON_OBJECT 1
+#define JSON_ARRAY 2
+#define JSON_ELEMENT 3
+#define JSON_VALUE 4
+#define JSON_STRING 5
+#define JSON_NUMBER 6
+#define JSON_BOOL 7
+#define JSON_NULL 8
+
+/* The JSON index structure is meant for short lived versions */
+typedef struct JSONterm {
+    short kind;
+    char *name; /* exclude the quotes */
+    size_t namelen;
+    char *value; /* start of string rep */
+    size_t valuelen;
+    int child, next, tail; /* next offsets allow you to walk array/object chains and append quickly */
+    /* An array or object item has a number of components */
+} JSONterm; 
+
+typedef struct JSON{
+    JSONterm *elm;
+    str error;
+    int size;
+    int free;
+} JSON;
+
 typedef str json;
 
 #ifdef WIN32
@@ -43,27 +70,31 @@ json_export int TYPE_json;
 json_export int JSONfromString(str src, int *len, json *x);
 json_export int JSONtoString(str *s, int *len, json src);
 
+
 json_export str JSONstr2json(json *ret, str *j);
 json_export str JSONjson2str(str *ret, json *j);
 json_export str JSONjson2text(str *ret, json *arg);
+json_export str JSONjson2textSeparator(str *ret, json *arg, str *sep);
+json_export str JSONjson2number(dbl *ret, json *arg);
+json_export str JSONjson2integer(lng *ret, json *arg);
 
 json_export str JSONfilter( json *ret, json *js, str *expr);
 json_export str JSONfilterArray(json *ret, json *j, int *index);
+json_export str JSONfilterArrayDefault(json *ret, json *j, int *index, str *other);
 
 json_export str JSONisvalid(bit *ret, json *j);
 json_export str JSONisobject(bit *ret, json *j);
 json_export str JSONisarray(bit *ret, json *j);
 
 json_export str JSONlength(int *ret, json *j);
-json_export str JSONunnest(int *key, int *val, json *j);
-json_export str JSONunnestOne(int *val, json *j);
-json_export str JSONunnestGrouped(int *grp, int *key, int *val, json *j);
-json_export str JSONnest(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+json_export str JSONunfold(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+json_export str JSONfold(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 json_export str JSONkeyTable(int *ret, json *j);
 json_export str JSONvalueTable(int *ret, json *j);
 json_export str JSONkeyArray(json *ret, json *arg);
 json_export str JSONvalueArray(json *ret, json *arg);
 
+json_export str JSONdump(int *ret, json *val);
 json_export str JSONprelude(int *ret);
 
 json_export str JSONrenderobject(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);

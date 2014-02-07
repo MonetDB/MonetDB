@@ -728,14 +728,6 @@ comment "\"grouped mark\": Produces a new BAT with per group a locally unique de
  from b's tail. The third argument (s) gives the base value for the new
  OID sequence of each group.";
 
-command merge(b:bat[:oid,:oid]):bat[:lng,:oid]
-address ALGmerge
-comment "Merge head and tail into a single value";
-
-command split(b:bat[:lng,:oid]):bat[:oid,:oid]
-address ALGsplit
-comment "Split head into two values";
-
 # @+ BAT fragmentation commands
 # Various operations for splitting BATs into useful fragments.
 #

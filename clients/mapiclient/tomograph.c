@@ -142,7 +142,7 @@ static char *tracefile = 0;
 static lng startrange = 0, endrange = 0;
 static char *inputfile = NULL;
 static char *title = 0;
-static int debug = 1;
+static int debug = 0;
 static int colormap = 0;
 static int fixedmap=1;
 static int beat = 50;

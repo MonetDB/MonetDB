@@ -139,8 +139,10 @@ delta_bind_bat( sql_delta *bat, int access, int temp)
 {
 	BAT *b;
 
-	assert(access == RDONLY || access == RD_INS);
+	assert(access == RDONLY || access == RD_INS || access == QUICK);
 	assert(bat != NULL);
+	if (access == QUICK)
+		return quick_descriptor(bat->bid);
 	if (temp || access == RD_INS) {
 		assert(bat->ibid);
 		b = temp_descriptor(bat->ibid);
@@ -446,7 +448,12 @@ delta_append_bat( sql_delta *bat, BAT *i )
 			bat_destroy(b);
 			b = temp_descriptor(bat->ibid);
 		}
-		BATappend(b, i, TRUE);
+		if (isVIEW(i) && b->batCacheid == ABS(VIEWtparent(i))) {
+			BAT *ic = BATcopy(i, TYPE_void, i->ttype, TRUE);
+			BATappend(b, ic, TRUE);
+			bat_destroy(ic);
+		} else 
+			BATappend(b, i, TRUE);
 		assert(BUNlast(b) > b->batInserted);
 		bat_destroy(b);
 	}
@@ -761,10 +768,10 @@ sorted_col(sql_trans *tr, sql_column *col)
 	}
 
 	if (col && col->data) {
-		BAT *b = bind_col(tr, col, RDONLY);
+		BAT *b = bind_col(tr, col, QUICK);
 
-		sorted = BATtordered(b);
-		bat_destroy(b);
+		if (b)
+			sorted = BATtordered(b);
 	}
 	return sorted;
 }
@@ -1591,6 +1598,14 @@ tr_update_delta( sql_trans *tr, sql_delta *obat, sql_delta *cbat, int unique)
 		temp_dup(cbat->bid);
 	}
 
+	if (obat->cached) {
+		bat_destroy(obat->cached);
+		obat->cached = NULL;
+	}
+	if (cbat->cached) {
+		bat_destroy(cbat->cached);
+		cbat->cached = NULL;
+	}
 	if (obat->bid)
 		cur = temp_descriptor(obat->bid);
 	ins = temp_descriptor(cbat->ibid);

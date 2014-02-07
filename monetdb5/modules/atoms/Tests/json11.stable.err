@@ -1,9 +1,9 @@
-stderr of test 'json06` in directory 'monetdb5/modules/atoms` itself:
+stderr of test 'json11` in directory 'monetdb5/modules/atoms` itself:
 
 
-# 23:31:57 >  
-# 23:31:57 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38640" "--set" "mapi_usock=/var/tmp/mtest-5537/.s.monetdb.38640" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/current//Linux/var/MonetDB/mTests_monetdb5_modules_atoms" "json06.mal"
-# 23:31:57 >  
+# 12:06:13 >  
+# 12:06:13 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30369" "--set" "mapi_usock=/var/tmp/mtest-23440/.s.monetdb.30369" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/current//Linux/var/MonetDB/mTests_monetdb5_modules_atoms" "json11.mal"
+# 12:06:13 >  
 
 # builtin opt 	gdk_dbpath = /export/scratch1/mk/current//Linux/var/monetdb5/dbfarm/demo
 # builtin opt 	gdk_debug = 0
@@ -17,13 +17,13 @@ stderr of test 'json06` in directory 'monetdb5/modules/atoms` itself:
 # builtin opt 	sql_debug = 0
 # cmdline opt 	gdk_nr_threads = 0
 # cmdline opt 	mapi_open = true
-# cmdline opt 	mapi_port = 38640
-# cmdline opt 	mapi_usock = /var/tmp/mtest-5537/.s.monetdb.38640
+# cmdline opt 	mapi_port = 30369
+# cmdline opt 	mapi_usock = /var/tmp/mtest-23440/.s.monetdb.30369
 # cmdline opt 	monet_prompt = 
 # cmdline opt 	mal_listing = 2
 # cmdline opt 	gdk_dbpath = /export/scratch1/mk/current//Linux/var/MonetDB/mTests_monetdb5_modules_atoms
 
-# 23:31:57 >  
-# 23:31:57 >  "Done."
-# 23:31:57 >  
+# 12:06:13 >  
+# 12:06:13 >  "Done."
+# 12:06:13 >  
 

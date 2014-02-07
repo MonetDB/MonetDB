@@ -29,28 +29,6 @@ update sys._tables set system = false where name in ('callhistory','queryhistory
 drop view sys.queryLog;
 drop table sys.callHistory;
 drop table sys.queryHistory;
--- The contents of this file are subject to the MonetDB Public License
--- Version 1.1 (the "License"); you may not use this file except in
--- compliance with the License. You may obtain a copy of the License at
--- http://www.monetdb.org/Legal/MonetDBLicense
---
--- Software distributed under the License is distributed on an "AS IS"
--- basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
--- License for the specific language governing rights and limitations
--- under the License.
---
--- The Original Code is the MonetDB Database System.
---
--- The Initial Developer of the Original Code is CWI.
--- Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
--- Copyright August 2008-2014 MonetDB B.V.
--- All Rights Reserved.
-
--- QUERY HISTORY
--- The query history mechanism of MonetDB/SQL relies on a few hooks.
--- The most important one is a global system variable which controls
---  monitoring of all sessions. 
-
 create function sys.querylog_catalog()
 returns table(
 	id oid,
@@ -62,20 +40,6 @@ returns table(
 	optimize bigint 	-- time in usec
 )
 external name sql.querylog_catalog;
-
--- Each query call is stored in the table calls
--- At regular intervals the query history table should be cleaned.
--- This can be done manually on the SQL console, or be integrated
--- in the keepQuery and keepCall upon need.
--- The parameters are geared at understanding the resource claims
--- They reflect the effect of the total workload mix during execution.
--- The 'cpu' gives the average cpu load percentage over all cores on the 
--- server during execution phase. 
--- increasing cpu load indicates better use of multi-cores.
--- The 'io' indicate IOs during complete query run.
--- The 'space' is the total amount of intermediates created in MB.
--- Reducing the space component improves performance/
--- All timing in usec and all storage in bytes.
 
 create function sys.querylog_calls()
 returns table(
@@ -92,7 +56,6 @@ returns table(
 )
 external name sql.querylog_calls;
 
--- create table views for convenience
 create view sys.querylog_catalog as select * from sys.querylog_catalog();
 create view sys.querylog_calls as select * from sys.querylog_calls();
 create view sys.querylog_history as
@@ -105,11 +68,9 @@ update sys._tables
     where name in ('querylog_history', 'querylog_calls', 'querylog_catalog')
         and schema_id = (select id from sys.schemas where name = 'sys');
 
--- reset history for a particular user
 create procedure sys.querylog_empty()
 external name sql.querylog_empty;
 
--- manipulate the query logger
 create procedure sys.querylog_enable()
 external name sql.querylog_enable;
 create procedure sys.querylog_enable(threshold smallint)
@@ -127,26 +88,6 @@ create procedure sys.settimeout("query" bigint, "session" bigint) external name 
 create procedure sys.setsession("timeout" bigint) external name sql.setsession;
 create view sys.optimizers as select * from sys.optimizers();
 create view sys.environment as select * from sys.environment();
--- The contents of this file are subject to the MonetDB Public License
--- Version 1.1 (the "License"); you may not use this file except in
--- compliance with the License. You may obtain a copy of the License at
--- http://www.monetdb.org/Legal/MonetDBLicense
---
--- Software distributed under the License is distributed on an "AS IS"
--- basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
--- License for the specific language governing rights and limitations
--- under the License.
---
--- The Original Code is the MonetDB Database System.
---
--- The Initial Developer of the Original Code is CWI.
--- Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
--- Copyright August 2008-2014 MonetDB B.V.
--- All Rights Reserved.
-
--- System monitoring
-
--- show status of all active SQL queries.
 create function sys.queue()
 returns table(
 	qtag bigint,
@@ -166,7 +107,6 @@ update sys._tables
     where name = 'queue'
         and schema_id = (select id from sys.schemas where name = 'sys');
 
--- operations to manipulate the state of havoc queries
 create procedure sys.pause(tag int)
 external name sql.sysmon_pause;
 create procedure sys.resume(tag int)
@@ -180,11 +120,6 @@ create procedure sys.resume(tag bigint)
 external name sql.sysmon_resume;
 create procedure sys.stop(tag bigint)
 external name sql.sysmon_stop;
-
---create function sysmon.connections()
---returns table(
---)
---external name sql.sql_sysmon_connections;
 create aggregate quantile(val TINYINT, q DOUBLE) returns TINYINT external name "aggr"."quantile";
 create aggregate quantile(val SMALLINT, q DOUBLE) returns SMALLINT external name "aggr"."quantile";
 create aggregate quantile(val INTEGER, q DOUBLE) returns INTEGER external name "aggr"."quantile";
@@ -199,29 +134,6 @@ create aggregate quantile(val TIMESTAMP, q DOUBLE) returns TIMESTAMP external na
 create aggregate median(val DECIMAL) returns DECIMAL external name "aggr"."median";
 create view sys.storage as select * from sys.storage();
 create view sys.storagemodel as select * from sys.storagemodel();
--- The contents of this file are subject to the MonetDB Public License
--- Version 1.1 (the "License"); you may not use this file except in
--- compliance with the License. You may obtain a copy of the License at
--- http://www.monetdb.org/Legal/MonetDBLicense
---
--- Software distributed under the License is distributed on an "AS IS"
--- basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
--- License for the specific language governing rights and limitations
--- under the License.
---
--- The Original Code is the MonetDB Database System.
---
--- The Initial Developer of the Original Code is CWI.
--- Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
--- Copyright August 2008-2014 MonetDB B.V.
--- All Rights Reserved.
-
-
--- Author M.Kersten
--- This script gives the database administrator insight in the actual
--- value distribution over all tables in the database.
-
-
 CREATE TABLE sys.statistics(
 	"schema" string, 
 	"table" string, 
@@ -254,7 +166,6 @@ external name sql.analyze;
 create procedure analyze(sch string, tbl string, col string)
 external name sql.analyze;
 
--- control the sample size
 create procedure analyze("sample" bigint)
 external name sql.analyze;
 

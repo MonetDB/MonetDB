@@ -1,5 +1,6 @@
 debian/tmp/usr/lib/monetdb5/autoload/*_jaql.mal usr/lib/monetdb5/autoload
 debian/tmp/usr/lib/monetdb5/jaql*.mal usr/lib/monetdb5
-debian/tmp/usr/lib/monetdb5/json*.mal usr/lib/monetdb5
+debian/tmp/usr/lib/monetdb5/json.mal usr/lib/monetdb5
+debian/tmp/usr/lib/monetdb5/json_util.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/lib_jaql.so usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/lib_json.so usr/lib/monetdb5

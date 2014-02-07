@@ -25,7 +25,7 @@
 #include "jaql.h"
 #include "mal_client.h"
 #include "jaqlgencode.h"
-#include "json.h"
+#include "json_jaql.h"
 #include "gdk.h"
 #include "mal.h"
 #include "mal_exception.h"

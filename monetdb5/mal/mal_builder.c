@@ -223,6 +223,18 @@ pushLng(MalBlkPtr mb, InstrPtr q, lng val)
 }
 
 InstrPtr
+pushSht(MalBlkPtr mb, InstrPtr q, sht val)
+{
+	int _t;
+	ValRecord cst;
+
+	cst.vtype= TYPE_sht;
+	cst.val.shval= val;
+	_t = defConstant(mb,TYPE_sht,&cst);
+	return pushArgument(mb, q, _t);
+}
+
+InstrPtr
 pushDbl(MalBlkPtr mb, InstrPtr q, dbl val)
 {
 	int _t;

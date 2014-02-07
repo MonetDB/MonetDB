@@ -92,5 +92,5 @@ bbp_export str CMDbbpdecompress(int *ret, int *bid, str *fnme);
 bbp_export str CMDbbptruncate(int *ret, int *bid, str *fnme);
 bbp_export str CMDbbpexpand(int *ret, int *bid, str *fnme);
 bbp_export str CMDbbpType( int *ret);
-bbp_export str CMDbbp( int *NS, int *HT, int *TT, int *CNT, int *REFCNT, int *LREFCNT, int *LOCATION, int *HEAT, int *DIRTY, int *STATUS, int *KIND);
+bbp_export str CMDbbp(bat *ID, bat *NS, bat *HT, bat *TT, bat *CNT, bat *REFCNT, bat *LREFCNT, bat *LOCATION, bat *HEAT, bat *DIRTY, bat *STATUS, bat *KIND);
 #endif /* _BBP_H_*/

@@ -142,51 +142,7 @@ Ready.
 [ true	]
 [ true	]
 [ false	]
-#explain select json.isvalidarray(j) from nosql;
-% .explain # table_name
-% mal # name
-% clob # type
-% 90 # length
-function user.s12_1{autoCommit=true}():void;
-barrier X_70 := language.dataflow();
-    X_2 := sql.mvc();
-    X_34:bat[:oid,:oid]  := sql.tid(X_2,"sys","nosql",0,4);
-    X_41:bat[:oid,:json]  := sql.bind(X_2,"sys","nosql","j",0,0,4);
-    (X_45:bat[:oid,:oid] ,X_46:bat[:oid,:json] ) := sql.bind(X_2,"sys","nosql","j",2,0,4);
-    X_53 := sql.delta(X_41,X_45,X_46);
-    X_57 := algebra.leftfetchjoin(X_34,X_53);
-    X_61 := mal.manifold("json","isarray",X_57);
-    X_36:bat[:oid,:oid]  := sql.tid(X_2,"sys","nosql",1,4);
-    X_42:bat[:oid,:json]  := sql.bind(X_2,"sys","nosql","j",0,1,4);
-    (X_47:bat[:oid,:oid] ,X_48:bat[:oid,:json] ) := sql.bind(X_2,"sys","nosql","j",2,1,4);
-    X_54 := sql.delta(X_42,X_47,X_48);
-    X_58 := algebra.leftfetchjoin(X_36,X_54);
-    X_62 := mal.manifold("json","isarray",X_58);
-    X_38:bat[:oid,:oid]  := sql.tid(X_2,"sys","nosql",2,4);
-    X_43:bat[:oid,:json]  := sql.bind(X_2,"sys","nosql","j",0,2,4);
-    (X_49:bat[:oid,:oid] ,X_50:bat[:oid,:json] ) := sql.bind(X_2,"sys","nosql","j",2,2,4);
-    X_55 := sql.delta(X_43,X_49,X_50);
-    X_59 := algebra.leftfetchjoin(X_38,X_55);
-    X_63 := mal.manifold("json","isarray",X_59);
-    X_40:bat[:oid,:oid]  := sql.tid(X_2,"sys","nosql",3,4);
-    X_44:bat[:oid,:json]  := sql.bind(X_2,"sys","nosql","j",0,3,4);
-    (X_51:bat[:oid,:oid] ,X_52:bat[:oid,:json] ) := sql.bind(X_2,"sys","nosql","j",2,3,4);
-    X_8 := sql.bind(X_2,"sys","nosql","j",1);
-    X_56 := sql.delta(X_44,X_51,X_52,X_8);
-    X_60 := algebra.leftfetchjoin(X_40,X_56);
-    X_64 := mal.manifold("json","isarray",X_60);
-    X_65 := mat.packIncrement(X_61,4);
-    X_67 := mat.packIncrement(X_65,X_62);
-    X_68 := mat.packIncrement(X_67,X_63);
-    X_10:bat[:oid,:bit]  := mat.packIncrement(X_68,X_64);
-exit X_70;
-    X_13 := sql.resultSet(1,1,X_10);
-    sql.rsColumn(X_13,"sys.L","isarray_j","boolean",1,0,X_10);
-    X_18 := io.stdout();
-    sql.exportResult(X_18,X_13);
-end s12_1;
-# querylog.define("explain select json.isvalidarray(j) from nosql;","default_pipe")
-#select json.isvalidarray(j) from nosql;
+#select json.isarray(j) from nosql;
 % sys.L # table_name
 % isarray_j # name
 % boolean # type

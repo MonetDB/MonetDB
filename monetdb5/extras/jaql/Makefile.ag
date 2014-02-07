@@ -26,10 +26,10 @@ INCLUDES = ../../mal \
 		   ../../../common/utils \
 		   ../../../gdk
 
-lib__json = {
+lib__json_jaql = {
 	MODULE
 	DIR = libdir/monetdb5
-	SOURCES = json.c json.h
+	SOURCES = json_jaql.c json_jaql.h
 
 	LIBS = ../../tools/libmonetdb5 \
 		   ../../../gdk/libbat \
@@ -52,10 +52,10 @@ lib__jaql = {
 		   $(MALLOC_LIBS)
 }
 
-headers_json_mal = {
+headers_json_jaql_mal = {
 	HEADERS = mal
 	DIR = libdir/monetdb5
-	SOURCES = json.mal
+	SOURCES = json_jaql.mal
 }
 
 headers_jaql_mal = {
@@ -70,5 +70,5 @@ headers_autoload = {
 	SOURCES = 30_jaql.mal
 }
 
-EXTRA_DIST = json.mal jaql.mal 30_jaql.mal
+EXTRA_DIST = json_jaql.mal jaql.mal 30_jaql.mal
 EXTRA_DIST_DIR = jaqltests Tests

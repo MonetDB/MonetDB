@@ -462,6 +462,8 @@ create_table_or_view(mvc *sql, char *sname, sql_table *t, int temp)
 
 		sql->sa = sa_create();
 		r = rel_parse(sql, nt->query, m_deps);
+		if (r)
+			r = rel_optimizer(sql, r);
 		if (r) {
 			stmt *sqs = rel_bin(sql, r);
 			list *view_id_l = stmt_list_dependencies(sql->sa, sqs, VIEW_DEPENDENCY);
@@ -940,6 +942,8 @@ create_trigger(mvc *sql, char *sname, char *tname, char *triggername, int time, 
 		sql->sa = sa_create();
 		buf = sa_strdup(sql->sa, query);
 		r = rel_parse(sql, buf, m_deps);
+		if (r)
+			r = rel_optimizer(sql, r);
 		/* TODO use relational part to find dependencies */
 		if (r) {
 			stmt *sqs = rel_bin(sql, r);
@@ -2894,11 +2898,13 @@ not_unique_oids(bat *ret, bat *bid)
 
 	assert(b->htype == TYPE_oid);
 	if (BATtkey(b) || BATtdense(b) || BATcount(b) <= 1) {
-		bn = BATnew(TYPE_oid, TYPE_oid, 0);
+		bn = BATnew(TYPE_void, TYPE_void, 0);
 		if (bn == NULL) {
 			BBPreleaseref(b->batCacheid);
 			throw(SQL, "sql.not_uniques", MAL_MALLOC_FAIL);
 		}
+		BATseqbase(bn, 0);
+		BATseqbase(BATmirror(bn), 0);
 	} else if (b->tsorted) {	/* ugh handle both wrd and oid types */
 		oid c = *(oid *) Tloc(b, BUNfirst(b)), *rf, *rh, *rt;
 		oid *h = (oid *) Hloc(b, 0), *vp, *ve;
@@ -3320,12 +3326,12 @@ month_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 second_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	lng *ret = (lng *) getArgReference(stk, pci, 0);
-	int k = digits2ek(*(int *) getArgReference(stk, pci, 2));
-	lng r;
+	lng *ret = (lng *) getArgReference(stk, pci, 0), r;
+	int k = digits2ek(*(int *) getArgReference(stk, pci, 2)), scale = 0;
 
 	(void) cntxt;
-	(void) mb;
+	if (pci->argc > 3) 
+		scale = *(int*) getArgReference(stk, pci, 3);
 	switch (getArgType(mb, pci, 1)) {
 	case TYPE_bte:
 		r = stk->stk[getArg(pci, 1)].val.btval;
@@ -3358,6 +3364,8 @@ second_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	default:
 		throw(ILLARG, "calc.sec_interval", "illegal argument");
 	}
+	if (scale) 
+		r /= scales[scale];
 	*ret = r;
 	return MAL_SUCCEED;
 }
@@ -4281,7 +4289,7 @@ SQLoptimizersUpdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	BAT *sch, *tab, *col, *type, *loc, *cnt, *atom, *size, *heap, *indices, *sort;
+	BAT *sch, *tab, *col, *type, *loc, *cnt, *atom, *size, *heap, *indices, *sort, *imprints;
 	mvc *m = NULL;
 	str msg = getSQLContext(cntxt, mb, &m, NULL);
 	sql_trans *tr = m->session->tr;
@@ -4297,7 +4305,8 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int *rsize = (int *) getArgReference(stk, pci, 7);
 	int *rheap = (int *) getArgReference(stk, pci, 8);
 	int *rindices = (int *) getArgReference(stk, pci, 9);
-	int *rsort = (int *) getArgReference(stk, pci, 10);
+	int *rimprints = (int *) getArgReference(stk, pci, 10);
+	int *rsort = (int *) getArgReference(stk, pci, 11);
 
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
@@ -4322,9 +4331,11 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BATseqbase(heap, 0);
 	indices = BATnew(TYPE_void, TYPE_lng, 0);
 	BATseqbase(indices, 0);
+	imprints = BATnew(TYPE_void, TYPE_lng, 0);
+	BATseqbase(imprints, 0);
 	sort = BATnew(TYPE_void, TYPE_bit, 0);
 	BATseqbase(sort, 0);
-	if (sch == NULL || tab == NULL || col == NULL || type == NULL || loc == NULL || sort == NULL || cnt == NULL || atom == NULL || size == NULL || heap == NULL || indices == NULL) {
+	if (sch == NULL || tab == NULL || col == NULL || type == NULL || loc == NULL || imprints == NULL || sort == NULL || cnt == NULL || atom == NULL || size == NULL || heap == NULL || indices == NULL) {
 		if (sch)
 			BBPreleaseref(sch->batCacheid);
 		if (tab)
@@ -4345,6 +4356,8 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			BBPreleaseref(heap->batCacheid);
 		if (indices)
 			BBPreleaseref(indices->batCacheid);
+		if (imprints)
+			BBPreleaseref(imprints->batCacheid);
 		if (sort)
 			BBPreleaseref(sort->batCacheid);
 		throw(SQL, "sql.storage", MAL_MALLOC_FAIL);
@@ -4412,6 +4425,8 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								sz = bn->T->hash ? bn->T->hash->heap->size : 0;
 								sz += bn->H->hash ? bn->H->hash->heap->size : 0;
 								indices = BUNappend(indices, &sz, FALSE);
+								sz = IMPSimprintsize(bn);
+								imprints = BUNappend(imprints, &sz, FALSE);
 								/*printf(" indices "BUNFMT, bn->T->hash?bn->T->hash->heap->size:0); */
 								/*printf("\n"); */
 
@@ -4475,6 +4490,8 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 									sz = bn->T->hash ? bn->T->hash->heap->size : 0;
 									sz += bn->H->hash ? bn->H->hash->heap->size : 0;
 									indices = BUNappend(indices, &sz, FALSE);
+									sz = IMPSimprintsize(bn);
+									imprints = BUNappend(imprints, &sz, FALSE);
 									/*printf(" indices "BUNFMT, bn->T->hash?bn->T->hash->heap->size:0); */
 									/*printf("\n"); */
 									w = BATtordered(bn);
@@ -4496,6 +4513,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPkeepref(*rsize = size->batCacheid);
 	BBPkeepref(*rheap = heap->batCacheid);
 	BBPkeepref(*rindices = indices->batCacheid);
+	BBPkeepref(*rimprints = imprints->batCacheid);
 	BBPkeepref(*rsort = sort->batCacheid);
 	return MAL_SUCCEED;
 }

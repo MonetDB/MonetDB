@@ -65,7 +65,7 @@ Ready.
 % clob # type
 % 16 # length
 [ "vision2011"	]
-[ "www"	]
+[ NULL	]
 [ "Datamanipulation"	]
 #select getContext(u) from t2972;
 % sys.L # table_name
@@ -87,17 +87,17 @@ Ready.
 % sys.L # table_name
 % getextension_u # name
 % clob # type
-% 15 # length
+% 3 # length
 [ "pdf"	]
-[ "monetdb.com?x=2"	]
+[ NULL	]
 [ NULL	]
 #select getFile(u) from t2972;
 % sys.L # table_name
 % getfile_u # name
 % clob # type
-% 19 # length
+% 16 # length
 [ "vision2011.pdf"	]
-[ "www.monetdb.com?x=2"	]
+[ NULL	]
 [ "Datamanipulation"	]
 #select getHost(u) from t2972;
 % sys.L # table_name

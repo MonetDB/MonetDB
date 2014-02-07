@@ -26,7 +26,7 @@
 #include "mal_interpreter.h"
 
 #ifdef WIN32
-#ifndef LIBJSON
+#ifndef LIBJSON_JAQL
 #define json_export extern __declspec(dllimport)
 #else
 #define json_export extern __declspec(dllexport)

@@ -17,7 +17,7 @@ f:bat[:oid,:json]:= mal.manifold("json","filter",j,"f2");
 io.print(f);
 f:bat[:oid,:json]:= mal.manifold("json","filter",j,"f1[0]");
 io.print(f);
-f:bat[:oid,:json]:= mal.manifold("json","filter",j,"f12");
+f:bat[:oid,:json]:= mal.manifold("json","filter",j,"..f12");
 io.print(f);
 
 io.printf("#next batch\n");
