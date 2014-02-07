@@ -31,7 +31,6 @@ lib_gdk = {
 		gdk_qsort.c gdk_qsort_impl.h gdk_ssort.c gdk_ssort_impl.h \
 		gdk_storage.c gdk_bat.c \
 		gdk_delta.c gdk_cross.c gdk_system.c gdk_value.c \
-		gdk_rangejoin.mx \
 		gdk_posix.c gdk_logger.c gdk_sample.c \
 		gdk_private.h gdk_delta.h gdk_logger.h gdk_posix.h \
 		gdk_system.h gdk_tm.h gdk_storage.h \

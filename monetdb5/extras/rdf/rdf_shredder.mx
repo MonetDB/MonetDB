@@ -367,7 +367,6 @@ post_processing (parserData *pdata)
 	P = graph[P_sort];
 	O = graph[O_sort];
 #else
-	BUN cnt;
 	/* order MAP_LEX */
 	BATorder(BATmirror(graph[MAP_LEX]));
 	map_oid = BATmark(graph[MAP_LEX], 0);   /* BATmark will create a copy */
@@ -378,14 +377,13 @@ post_processing (parserData *pdata)
 	graph[MAP_LEX] = BATmirror(BATmark(BATmirror(graph[MAP_LEX]), 0));
 
 	/* convert old oids of S_sort, P_sort, O_sort to new ones */
-	cnt = BATcount(graph[S_sort]);
-	S = BATleftfetchjoin(graph[S_sort], map_oid, cnt);
+	S = BATproject(graph[S_sort], map_oid);
 	if (S == NULL) goto bailout;
 	BBPreclaim(graph[S_sort]);
-	P = BATleftfetchjoin(graph[P_sort], map_oid, cnt);
+	P = BATproject(graph[P_sort], map_oid);
 	if (P == NULL) goto bailout;
 	BBPreclaim(graph[P_sort]);
-	O = BATleftfetchjoin(graph[O_sort], map_oid, cnt);
+	O = BATproject(graph[O_sort], map_oid);
 	if (O == NULL) goto bailout;
 	BBPreclaim(graph[O_sort]);
 	BBPreclaim(map_oid);
