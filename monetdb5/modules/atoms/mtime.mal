@@ -676,15 +676,6 @@ address MTIMEsynonyms
 comment "Allow synonyms for the parse format of
 	date/timestamp.";
 
-command olddate (format:str) :date
-address MTIMEolddate
-comment "create a date from the old instant
-	format.";
-command oldduration(format:str) :int
-address MTIMEoldduration
-comment "parse the old duration format and
-	return an (estimated) number of days.";
-
 command str_to_date(s:str, format:str) :date
 address MTIMEstrptime
 comment "create a date from the string, using the specified format (see man strptime)";

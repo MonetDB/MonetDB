@@ -1253,7 +1253,8 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 				if (rseplen == 1) {
 					for (; *e; e++) {
 						if (*e == '\\') {
-							e++;
+							if (*++e == 0)
+								break;
 							continue;
 						}
 						if (*e == *rsep)
@@ -1262,7 +1263,8 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 				} else if (rseplen == 2) {
 					for (; *e; e++) {
 						if (*e == '\\') {
-							e++;
+							if (*++e == 0)
+								break;
 							continue;
 						}
 						if (*e == *rsep && e[1] == rsep[1])
@@ -1271,7 +1273,8 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 				} else {
 					for (; *e; e++) {
 						if (*e == '\\') {
-							e++;
+							if (*++e == 0)
+								break;
 							continue;
 						}
 						if (*e == *rsep && strncmp(e, rsep, rseplen) == 0)
@@ -1287,8 +1290,8 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 					else if (*e == quote)
 						q = *e;
 					else if (*e == '\\') {
-						if (e[1])
-							e++;
+						if (*++e == 0)
+							break;
 					} else if (!q && *e == *rsep)
 						break;
 				}
@@ -1315,8 +1318,8 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 					else if (*e == quote)
 						q = *e;
 					else if (*e == '\\') {
-						if (e[1])
-							e++;
+						if (*++e == 0)
+							break;
 					} else if (!q && *e == *rsep && strncmp(e, rsep, rseplen) == 0)
 						break;
 				}

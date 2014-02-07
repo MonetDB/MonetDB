@@ -22,7 +22,7 @@
  * @a Peter Boncz, Martin van Dinther
  * @v 1.0
  *
- * @+ Temporal Module
+ * Temporal Module
  * The goal of this module is to provide adequate functionality for
  * storing and manipulated time-related data. The minimum requirement
  * is that data can easily be imported from all common commercial
@@ -71,7 +71,7 @@
  * default value of the local timezone is plain GMT).
  * @end table
  *
- * @+ Limitations
+ * Limitations
  * The valid ranges of the various data types are as follows:
  *
  * @table @samp
@@ -196,7 +196,7 @@
  * dynamic in this structure. The timezone_setlocal would just set the
  * string name of the timezone.
  *
- * @+ Time/date comparison
+ * Time/date comparison
  */
 
 #include "monetdb_config.h"
@@ -224,9 +224,6 @@
 
 tzone tzone_local;
 
-/*
- * @+ Defines
- */
 static const char *MONTHS[13] = {
 	NULL, "january", "february", "march", "april", "may", "june",
 	"july", "august", "september", "october", "november", "december"
@@ -242,25 +239,28 @@ static const char *COUNT1[7] = {
 static const char *COUNT2[7] = {
 	NULL, "1st", "2nd", "3rd", "4th", "5th", "last"
 };
-static int NODAYS[13] = {
+static int LEAPDAYS[13] = {
 	0, 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31
 };
 static int CUMDAYS[13] = {
 	0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365
+};
+static int CUMLEAPDAYS[13] = {
+	0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335, 366
 };
 
 static date DATE_MAX, DATE_MIN;		/* often used dates; computed once */
 
 #define YEAR_MAX		5867411
 #define YEAR_MIN		(-YEAR_MAX)
-#define MONTHDAYS(m,y)	((m) != 2 ? NODAYS[m] : leapyear(y) ? 29 : 28)
+#define MONTHDAYS(m,y)	((m) != 2 ? LEAPDAYS[m] : leapyear(y) ? 29 : 28)
 #define YEARDAYS(y)		(leapyear(y) ? 366 : 365)
-#define DATE(d,m,y)		((m) > 0 && (m) <= 12 && (d) > 0&& (y) != 0 && (y) >= YEAR_MIN && (y) <= YEAR_MAX && (d) <= MONTHDAYS(m, y))
+#define DATE(d,m,y)		((m) > 0 && (m) <= 12 && (d) > 0 && (y) != 0 && (y) >= YEAR_MIN && (y) <= YEAR_MAX && (d) <= MONTHDAYS(m, y))
 #define TIME(h,m,s,x)	((h) >= 0 && (h) < 24 && (m) >= 0 && (m) < 60 && (s) >= 0 && (s) < 60 && (x) >= 0 && (x) < 1000)
 #define LOWER(c)		((c) >= 'A' && (c) <= 'Z' ? (c) + 'a' - 'A' : (c))
 
 /*
- * @+ auxiliary functions
+ * auxiliary functions
  */
 
 static union {
@@ -273,8 +273,6 @@ static union {
 } tz_nil;
 timestamp *timestamp_nil = NULL;
 static tzone *tzone_nil = NULL;
-
-static void date_prelude(void);
 
 int TYPE_date;
 int TYPE_daytime;
@@ -320,11 +318,21 @@ todate(int day, int month, int year)
 }
 
 static void
-fromdate(int n, int *d, int *m, int *y)
+fromdate(date n, int *d, int *m, int *y)
 {
-	int month, year = n / 365;
-	int day = (n - year * 365) - leapyears(year >= 0 ? year - 1 : year);
+	int day, month, year;
 
+	if (n == date_nil) {
+		if (d)
+			*d = int_nil;
+		if (m)
+			*m = int_nil;
+		if (y)
+			*y = int_nil;
+		return;
+	}
+	year = n / 365;
+	day = (n - year * 365) - leapyears(year >= 0 ? year - 1 : year);
 	if (n < 0) {
 		year--;
 		while (day >= 0) {
@@ -338,21 +346,40 @@ fromdate(int n, int *d, int *m, int *y)
 			day += YEARDAYS(year);
 		}
 	}
-	day++;
-	for (month = 1; month <= 12; month++) {
-		int days = MONTHDAYS(month, year);
+	if (d == 0 && m == 0) {
+		if (y)
+			*y = (year <= 0) ? year - 1 : year;	/* HACK: hide year 0 */
+		return;
+	}
 
-		if (day <= days)
-			break;
-		day -= days;
-	}
-	if (n != int_nil) {
-		*d = day;
-		*m = month;
-		*y = (year <= 0) ? year - 1 : year;	/* HACK: hide year 0 */
+	day++;
+	if (leapyear(year)) {
+		for (month = day / 31 == 0 ? 1 : day / 31; month <= 12; month++)
+			if (day > CUMLEAPDAYS[month - 1] && day <= CUMLEAPDAYS[month]) {
+				if (m)
+					*m = month;
+				if (d == 0)
+					return;
+				break;
+			}
+		day -= CUMLEAPDAYS[month - 1];
 	} else {
-		*d = *m = *y = int_nil;
+		for (month = day / 31 == 0 ? 1 : day / 31; month <= 12; month++)
+			if (day > CUMDAYS[month - 1] && day <= CUMDAYS[month]) {
+				if (m)
+					*m = month;
+				if (d == 0)
+					return;
+				break;
+			}
+		day -= CUMDAYS[month - 1];
 	}
+	if (d)
+		*d = day;
+	if (m)
+		*m = month;
+	if (y)
+		*y = (year <= 0) ? year - 1 : year;	/* HACK: hide year 0 */
 }
 
 static daytime
@@ -365,19 +392,29 @@ totime(int hour, int min, int sec, int msec)
 }
 
 static void
-fromtime(int n, int *hour, int *min, int *sec, int *msec)
+fromtime(daytime n, int *hour, int *min, int *sec, int *msec)
 {
-	if (n != int_nil) {
-		*hour = n / 3600000;
-		n -= (*hour) * 3600000;
-		*min = n / 60000;
-		n -= (*min) * 60000;
-		*sec = n / 1000;
-		n -= (*sec) * 1000;
-		*msec = n;
+	int h, m, s, ms;
+
+	if (n != daytime_nil) {
+		h = n / 3600000;
+		n -= h * 3600000;
+		m = n / 60000;
+		n -= m * 60000;
+		s = n / 1000;
+		n -= s * 1000;
+		ms = n;
 	} else {
-		*hour = *min = *sec = *msec = int_nil;
+		h = m = s = ms = int_nil;
 	}
+	if (hour)
+		*hour = h;
+	if (min)
+		*min = m;
+	if (sec)
+		*sec = s;
+	if (msec)
+		*msec = ms;
 }
 
 /* matches regardless of case and extra spaces */
@@ -475,7 +512,7 @@ compute_rule(const rule *val, int y)
 	return d;
 }
 
-#define BEFORE(d1, m1, d2, m2)	((d1) < (d2) || ((d1) == (d2) && (m1) <= (m2)))
+#define BEFORE(d1, m1, d2, m2) ((d1) < (d2) || ((d1) == (d2) && (m1) <= (m2)))
 
 static int
 timestamp_inside(timestamp *ret, const timestamp *t, const tzone *z, lng offset)
@@ -484,7 +521,6 @@ timestamp_inside(timestamp *ret, const timestamp *t, const tzone *z, lng offset)
 	lng add = (offset != (lng) 0) ? offset : (get_offset(z)) * (lng) 60000;
 	int start_days, start_msecs, end_days, end_msecs, year;
 	rule start, end;
-	int dummy;
 
 	MTIMEtimestamp_add(ret, t, &add);
 
@@ -497,7 +533,7 @@ timestamp_inside(timestamp *ret, const timestamp *t, const tzone *z, lng offset)
 	start_msecs = start.s.minutes * 60000;
 	end_msecs = end.s.minutes * 60000;
 
-	fromdate((int) ret->days, &dummy, &dummy, &year);
+	fromdate(ret->days, NULL, NULL, &year);
 	start_days = compute_rule(&start, year);
 	end_days = compute_rule(&end, year);
 
@@ -509,7 +545,7 @@ timestamp_inside(timestamp *ret, const timestamp *t, const tzone *z, lng offset)
 }
 
 /*
- * @+ ADT implementations
+ * ADT implementations
  * @- date
  */
 int
@@ -598,7 +634,7 @@ date_tostr(str *buf, int *len, const date *val)
 {
 	int day, month, year;
 
-	fromdate((int) *val, &day, &month, &year);
+	fromdate(*val, &day, &month, &year);
 	/* longest possible string: "-5867411-01-01" i.e. 14 chars
 	   without NUL (see definition of YEAR_MIN/YEAR_MAX above) */
 	if (*len < 15) {
@@ -707,7 +743,7 @@ daytime_tostr(str *buf, int *len, const daytime *val)
 {
 	int hour, min, sec, msec;
 
-	fromtime((int) *val, &hour, &min, &sec, &msec);
+	fromtime(*val, &hour, &min, &sec, &msec);
 	if (*len < 12) {
 		if (*buf)
 			GDKfree(*buf);
@@ -964,7 +1000,7 @@ rule_fromstr(const char *buf, int *len, rule **d)
 	}
 
 	/* assign if semantically ok */
-	if (day >= 1 && day <= NODAYS[month] &&
+	if (day >= 1 && day <= LEAPDAYS[month] &&
 		hours >= 0 && hours < 60 &&
 		minutes >= 0 && minutes < 60) {
 		(*d)->s.month = month;
@@ -1091,20 +1127,8 @@ tzone_tostr(str *buf, int *len, const tzone *z)
 }
 
 /*
- * @+ operator implementations
+ * operator implementations
  */
-static void
-date_prelude(void)
-{
-	MONTHS[0] = (str) str_nil;
-	DAYS[0] = (str) str_nil;
-	NODAYS[0] = int_nil;
-	DATE_MAX = todate(31, 12, YEAR_MAX);
-	DATE_MIN = todate(1, 1, YEAR_MIN);
-	tzone_local.dst = 0;
-	set_offset(&tzone_local, 0);
-}
-
 static str
 tzone_set_local(const tzone *z)
 {
@@ -1243,7 +1267,14 @@ MTIMEprelude(void)
 	TYPE_timestamp = ATOMindex("timestamp");
 	TYPE_tzone = ATOMindex("timezone");
 	TYPE_rule = ATOMindex("rule");
-	date_prelude();
+
+	MONTHS[0] = (str) str_nil;
+	DAYS[0] = (str) str_nil;
+	LEAPDAYS[0] = int_nil;
+	DATE_MAX = todate(31, 12, YEAR_MAX);
+	DATE_MIN = todate(1, 1, YEAR_MIN);
+	tzone_local.dst = 0;
+	set_offset(&tzone_local, 0);
 
 	tz = *tzone_nil;			/* to ensure initialized variables */
 
@@ -1317,95 +1348,6 @@ MTIMEsynonyms(const bit *allow)
 {
 	if (*allow != bit_nil)
 		synonyms = *allow;
-	return MAL_SUCCEED;
-}
-
-str
-MTIMEoldduration(int *ndays, const char * const *s)
-{
-	int year = 0, month = 0, day = 0;
-	int hour = 0 /*, min=0 */ ;
-	const char *snew = *s;
-	int v = 0;
-
-	while (*snew != '\0') {
-		if (GDKisdigit(*snew)) {
-			v = 0;
-			while (GDKisdigit(*snew)) {
-				v = v * 10 + (*snew) - '0';
-				snew++;
-			}
-		} else if (isupper((int) (*snew)) || islower((int) (*snew))) {
-			switch (*snew++) {
-			case 'y':
-			case 'Y':
-				year = v;
-				v = 0;
-				break;
-			case 'm':
-			case 'M':
-				if (month || day || hour)	/*min = v */
-					;
-				else
-					month = v;
-				v = 0;
-				break;
-			case 'd':
-			case 'D':
-				day = v;
-				v = 0;
-				break;
-			case 'h':
-			case 'H':
-				hour = v;
-				v = 0;
-				break;
-			case 's':
-			case 'S':
-				v = 0;
-				break;
-			default:
-				/* GDKerror("duration_fromstr: wrong duration '%s'!\n",*s); */
-				*ndays = int_nil;
-				return MAL_SUCCEED;
-			}
-		} else {
-			snew++;
-		}
-	}
-	*ndays = year * 365 + month * 30 + day;
-	return MAL_SUCCEED;
-}
-
-str
-MTIMEolddate(date *d, const char * const *buf)
-{
-	int day = 0, month, year, yearneg = ((*buf)[0] == '-'), pos = yearneg;
-
-	*d = date_nil;
-	if (!GDKisdigit((*buf)[pos])) {
-		throw(MAL, "mtime.olddate", "syntax error");
-	}
-	for (year = 0; GDKisdigit((*buf)[pos]); pos++) {
-		year = ((*buf)[pos] - '0') + year * 10;
-		if (year > YEAR_MAX)
-			break;
-	}
-	pos += parse_substr(&month, (*buf) + pos, 3, MONTHS, 12);
-	if (month == int_nil) {
-		throw(MAL, "mtime.olddate", "syntax error");
-	}
-	if (!GDKisdigit((*buf)[pos])) {
-		throw(MAL, "mtime.olddate", "syntax error");
-	}
-	while (GDKisdigit((*buf)[pos])) {
-		day = ((*buf)[pos] - '0') + day * 10;
-		pos++;
-		if (day > 31)
-			break;
-	}
-	/* handle semantic error here (returns nil in that case) */
-	*d = todate(day, month, yearneg ? -year : year);
 	return MAL_SUCCEED;
 }
 
@@ -1613,8 +1555,7 @@ MTIMEdate_extract_year(int *ret, const date *v)
 	if (*v == date_nil) {
 		*ret = int_nil;
 	} else {
-		int dummy;
-		fromdate((int) *v, &dummy, &dummy, ret);
+		fromdate(*v, NULL, NULL, ret);
 	}
 	return MAL_SUCCEED;
 }
@@ -1626,8 +1567,7 @@ MTIMEdate_extract_month(int *ret, const date *v)
 	if (*v == date_nil) {
 		*ret = int_nil;
 	} else {
-		int dummy;
-		fromdate((int) *v, &dummy, ret, &dummy);
+		fromdate(*v, NULL, ret, NULL);
 	}
 	return MAL_SUCCEED;
 }
@@ -1639,8 +1579,7 @@ MTIMEdate_extract_day(int *ret, const date *v)
 	if (*v == date_nil) {
 		*ret = int_nil;
 	} else {
-		int dummy;
-		fromdate((int) *v, ret, &dummy, &dummy);
+		fromdate(*v, ret, NULL, NULL);
 	}
 	return MAL_SUCCEED;
 }
@@ -1653,9 +1592,8 @@ MTIMEdate_extract_dayofyear(int *ret, const date *v)
 		*ret = int_nil;
 	} else {
 		int year;
-		int dummy;
 
-		fromdate((int) *v, &dummy, &dummy, &year);
+		fromdate(*v, NULL, NULL, &year);
 		*ret = (int) (1 + *v - todate(1, 1, year));
 	}
 	return MAL_SUCCEED;
@@ -1668,7 +1606,6 @@ MTIMEdate_extract_weekofyear(int *ret, const date *v)
 	if (*v == date_nil) {
 		*ret = int_nil;
 	} else {
-		int dummy;
 		int year;
 		date thd;
 		date thd1;
@@ -1676,7 +1613,7 @@ MTIMEdate_extract_weekofyear(int *ret, const date *v)
 		/* find the Thursday in the same week as the given date */
 		thd = *v + 4 - date_dayofweek(*v);
 		/* extract the year (may be different from year of the given date!) */
-		fromdate((int) thd, &dummy, &dummy, &year);
+		fromdate(thd, NULL, NULL, &year);
 		/* find January 4 of that year */
 		thd1 = todate(4, 1, year);
 		/* find the Thursday of the week in which January 4 falls */
@@ -1706,8 +1643,7 @@ MTIMEdaytime_extract_hours(int *ret, const daytime *v)
 	if (*v == daytime_nil) {
 		*ret = int_nil;
 	} else {
-		int dummy;
-		fromtime((int) *v, ret, &dummy, &dummy, &dummy);
+		fromtime(*v, ret, NULL, NULL, NULL);
 	}
 	return MAL_SUCCEED;
 }
@@ -1719,8 +1655,7 @@ MTIMEdaytime_extract_minutes(int *ret, const daytime *v)
 	if (*v == daytime_nil) {
 		*ret = int_nil;
 	} else {
-		int dummy;
-		fromtime((int) *v, &dummy, ret, &dummy, &dummy);
+		fromtime(*v, NULL, ret, NULL, NULL);
 	}
 	return MAL_SUCCEED;
 }
@@ -1732,8 +1667,7 @@ MTIMEdaytime_extract_seconds(int *ret, const daytime *v)
 	if (*v == daytime_nil) {
 		*ret = int_nil;
 	} else {
-		int dummy;
-		fromtime((int) *v, &dummy, &dummy, ret, &dummy);
+		fromtime(*v, NULL, NULL, ret, NULL);
 	}
 	return MAL_SUCCEED;
 }
@@ -1743,11 +1677,11 @@ str
 MTIMEdaytime_extract_sql_seconds(int *ret, const daytime *v)
 {
 	int sec, milli;
+
 	if (*v == daytime_nil) {
 		*ret = int_nil;
 	} else {
-		int dummy;
-		fromtime((int) *v, &dummy, &dummy, &sec, &milli);
+		fromtime(*v, NULL, NULL, &sec, &milli);
 		*ret = sec * 1000 + milli;
 	}
 	return MAL_SUCCEED;
@@ -1760,8 +1694,7 @@ MTIMEdaytime_extract_milliseconds(int *ret, const daytime *v)
 	if (*v == daytime_nil) {
 		*ret = int_nil;
 	} else {
-		int dummy;
-		fromtime((int) *v, &dummy, &dummy, &dummy, ret);
+		fromtime(*v, NULL, NULL, NULL, ret);
 	}
 	return MAL_SUCCEED;
 }
@@ -1834,7 +1767,7 @@ MTIMEdate_addyears(date *ret, const date *v, const int *delta)
 	} else {
 		int d, m, y, x, z = *delta;
 
-		fromdate((int) *v, &d, &m, &y);
+		fromdate(*v, &d, &m, &y);
 		if (m >= 3) {
 			y++;
 		}
@@ -1881,7 +1814,7 @@ MTIMEdate_addmonths(date *ret, const date *v, const int *delta)
 	} else {
 		int d, m, y, x, z = *delta;
 
-		fromdate((int) *v, &d, &m, &y);
+		fromdate(*v, &d, &m, &y);
 		*ret = *v;
 		while (z > 0) {
 			z--;
@@ -2111,7 +2044,7 @@ MTIMErule_create(rule *ret, const int *month, const int *day, const int *weekday
 	if (*month != int_nil && *month >= 1 && *month <= 12 &&
 		*weekday != int_nil && ABS(*weekday) <= 7 &&
 		*minutes != int_nil && *minutes >= 0 && *minutes < 24 * 60 &&
-		*day != int_nil && ABS(*day) >= 1 && ABS(*day) <= NODAYS[*month] &&
+		*day != int_nil && ABS(*day) >= 1 && ABS(*day) <= LEAPDAYS[*month] &&
 		(*weekday || *day > 0)) {
 		ret->s.month = *month;
 		ret->s.day = DAY_ZERO + *day;
@@ -2727,43 +2660,53 @@ str
 MTIMEdate_extract_year_bulk(bat *ret, const bat *bid)
 {
 	BAT *b, *bn;
-	int v;
-	date d;
-	BUN p, q;
-	BATiter bi;
+	BUN i,n;
+	int *y;
+	date *t;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "bbp.getdate", "Cannot access descriptor");
+		throw(MAL, "batmtime.year", "Cannot access descriptor");
+	n = BATcount(b);
 
 	bn = BATnew(TYPE_void, TYPE_int, BATcount(b));
-	if (bn == NULL)
+	if (bn == NULL) {
+		BBPreleaseref(b->batCacheid);
 		throw(MAL, "batmtime.year", "memory allocation failure");
+	}
 	BATseqbase(bn, b->H->seq);
+	bn->T->nonil = 1;
+	bn->T->nil = 0;
 
-	bi = bat_iterator(b);
-	BATloop(b, p, q) {
-		d = *(date *) BUNtail(bi, p);
-		MTIMEdate_extract_year(&v, &d);
-		if (BUNappend(bn, &v, FALSE) == NULL) {
-			BBPunfix(bn->batCacheid);
-			throw(MAL, "batmtime.year", "inserting value failed");
+	t = (date *) Tloc(b, BUNfirst(b));
+	y = (int *) Tloc(bn, BUNfirst(bn));
+	for (i = 0; i < n; i++) {
+		if (*t == date_nil) {
+			*y = int_nil;
+		} else
+			MTIMEdate_extract_year(y, t);
+		if (*y == int_nil) {
+			bn->T->nonil = 0;
+			bn->T->nil = 1;
 		}
+		y++;
+		t++;
 	}
 
 	if (b->htype != bn->htype) {
 		BAT *r = VIEWcreate(b,bn);
-
 		BBPreleaseref(bn->batCacheid);
 		bn = r;
 	}
+	BATsetcount(bn, (BUN) (y - (int *) Tloc(bn, BUNfirst(bn))));
 
 	bn->H->nonil = b->H->nonil;
+	bn->H->nil = b->H->nil;
 	bn->hsorted = b->hsorted;
 	bn->hrevsorted = b->hrevsorted;
 	BATkey(bn, BAThkey(b));
-	bn->tsorted = FALSE;
-	bn->trevsorted = FALSE;
-	bn->T->nonil = FALSE;
+
+	bn->tsorted = BATcount(bn)<2;
+	bn->trevsorted = BATcount(bn)<2;
 
 	BBPkeepref(*ret = bn->batCacheid);
 	BBPunfix(b->batCacheid);
@@ -2774,43 +2717,52 @@ str
 MTIMEdate_extract_month_bulk(bat *ret, const bat *bid)
 {
 	BAT *b, *bn;
-	int v;
-	date d;
-	BUN p, q;
-	BATiter bi;
+	BUN i,n;
+	int *m;
+	date *t;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "bbp.getdate", "Cannot access descriptor");
+		throw(MAL, "batmtime.year", "Cannot access descriptor");
+	n = BATcount(b);
 
 	bn = BATnew(TYPE_void, TYPE_int, BATcount(b));
-	if (bn == NULL)
+	if (bn == NULL) {
+		BBPreleaseref(b->batCacheid);
 		throw(MAL, "batmtime.month", "memory allocation failure");
-	BATseqbase(bn, b->H->seq);
-
-	bi = bat_iterator(b);
-	BATloop(b, p, q) {
-		d = *(date *) BUNtail(bi, p);
-		MTIMEdate_extract_month(&v, &d);
-		if (BUNappend(bn, &v, FALSE) == NULL) {
-			BBPunfix(bn->batCacheid);
-			throw(MAL, "batmtime.month", "inserting value failed");
-		}
 	}
+	BATseqbase(bn, b->H->seq);
+	bn->T->nonil = 1;
+	bn->T->nil = 0;
 
+	t = (date *) Tloc(b, BUNfirst(b));
+	m = (int *) Tloc(bn, BUNfirst(bn));
+	for (i = 0; i < n; i++) {
+		if (*t == date_nil) {
+			*m = int_nil;
+		} else
+			MTIMEdate_extract_month(m, t);
+		if (*m == int_nil) {
+			bn->T->nonil = 0;
+			bn->T->nil = 1;
+		}
+		m++;
+		t++;
+	}
 	if (b->htype != bn->htype) {
 		BAT *r = VIEWcreate(b,bn);
-
 		BBPreleaseref(bn->batCacheid);
 		bn = r;
 	}
+	BATsetcount(bn, (BUN) (m - (int *) Tloc(bn, BUNfirst(bn))));
 
 	bn->H->nonil = b->H->nonil;
+	bn->H->nil = b->H->nil;
 	bn->hsorted = b->hsorted;
 	bn->hrevsorted = b->hrevsorted;
 	BATkey(bn, BAThkey(b));
-	bn->tsorted = FALSE;
-	bn->trevsorted = FALSE;
-	bn->T->nonil = FALSE;
+
+	bn->tsorted = BATcount(bn) < 2;
+	bn->trevsorted = BATcount(bn) < 2;
 
 	BBPkeepref(*ret = bn->batCacheid);
 	BBPunfix(b->batCacheid);
@@ -2821,43 +2773,53 @@ str
 MTIMEdate_extract_day_bulk(bat *ret, const bat *bid)
 {
 	BAT *b, *bn;
-	int v;
-	date d;
-	BUN p, q;
-	BATiter bi;
+	BUN i,n;
+	int *d;
+	date *t;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "bbp.getdate", "Cannot access descriptor");
+		throw(MAL, "batmtime.day", "Cannot access descriptor");
+	n = BATcount(b);
 
 	bn = BATnew(TYPE_void, TYPE_int, BATcount(b));
-	if (bn == NULL)
+	if (bn == NULL) {
+		BBPreleaseref(b->batCacheid);
 		throw(MAL, "batmtime.day", "memory allocation failure");
+	}
 	BATseqbase(bn, b->H->seq);
+	bn->T->nonil = 1;
+	bn->T->nil = 0;
 
-	bi = bat_iterator(b);
-	BATloop(b, p, q) {
-		d = *(date *) BUNtail(bi, p);
-		MTIMEdate_extract_day(&v, &d);
-		if (BUNappend(bn, &v, FALSE) == NULL) {
-			BBPunfix(bn->batCacheid);
-			throw(MAL, "batmtime.day", "inserting value failed");
+	t = (date *) Tloc(b, BUNfirst(b));
+	d = (int *) Tloc(bn, BUNfirst(bn));
+	for (i = 0; i < n; i++) {
+		if (*t == date_nil) {
+			*d = int_nil;
+		} else
+			MTIMEdate_extract_day(d, t);
+		if (*d == int_nil) {
+			bn->T->nonil = 0;
+			bn->T->nil = 1;
 		}
+		d++;
+		t++;
 	}
 
 	if (b->htype != bn->htype) {
 		BAT *r = VIEWcreate(b,bn);
-
 		BBPreleaseref(bn->batCacheid);
 		bn = r;
 	}
+	BATsetcount(bn, (BUN) (d - (int *) Tloc(bn, BUNfirst(bn))));
 
 	bn->H->nonil = b->H->nonil;
+	bn->H->nil = b->H->nil;
 	bn->hsorted = b->hsorted;
 	bn->hrevsorted = b->hrevsorted;
 	BATkey(bn, BAThkey(b));
-	bn->tsorted = FALSE;
-	bn->trevsorted = FALSE;
-	bn->T->nonil = FALSE;
+
+	bn->tsorted = BATcount(bn) <2;
+	bn->trevsorted = BATcount(bn) <2;
 
 	BBPkeepref(*ret = bn->batCacheid);
 	BBPunfix(b->batCacheid);
@@ -2868,43 +2830,52 @@ str
 MTIMEdaytime_extract_hours_bulk(bat *ret, const bat *bid)
 {
 	BAT *b, *bn;
-	int v;
-	date d;
-	BUN p, q;
-	BATiter bi;
+	BUN i, n;
+	int *h;
+	date *t;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "bbp.getdaytime", "Cannot access descriptor");
+		throw(MAL, "batmtime.hourse", "Cannot access descriptor");
+	n = BATcount(b);
 
 	bn = BATnew(TYPE_void, TYPE_int, BATcount(b));
-	if (bn == NULL)
+	if (bn == NULL) {
+		BBPreleaseref(b->batCacheid);
 		throw(MAL, "batmtime.hours", "memory allocation failure");
-	BATseqbase(bn, b->H->seq);
-
-	bi = bat_iterator(b);
-	BATloop(b, p, q) {
-		d = *(date *) BUNtail(bi, p);
-		MTIMEdaytime_extract_hours(&v, &d);
-		if (BUNappend(bn, &v, FALSE) == NULL) {
-			BBPunfix(bn->batCacheid);
-			throw(MAL, "batmtime.hours", "inserting value failed");
-		}
 	}
+	BATseqbase(bn, b->H->seq);
+	bn->T->nonil = 1;
+	bn->T->nil = 0;
 
+	t = (date *) Tloc(b, BUNfirst(b));
+	h = (int *) Tloc(bn, BUNfirst(bn));
+	for (i = 0; i < n; i++) {
+		if (*t == date_nil) {
+			*h = int_nil;
+		} else
+			MTIMEdaytime_extract_hours(h, t);
+		if (*h == int_nil) {
+			bn->T->nonil = 0;
+			bn->T->nil = 1;
+		}
+		h++;
+		t++;
+	}
 	if (b->htype != bn->htype) {
 		BAT *r = VIEWcreate(b,bn);
-
 		BBPreleaseref(bn->batCacheid);
 		bn = r;
 	}
+	BATsetcount(bn, (BUN) (h - (int *) Tloc(bn, BUNfirst(bn))));
 
 	bn->H->nonil = b->H->nonil;
+	bn->H->nil = b->H->nil;
 	bn->hsorted = b->hsorted;
 	bn->hrevsorted = b->hrevsorted;
 	BATkey(bn, BAThkey(b));
-	bn->tsorted = FALSE;
-	bn->trevsorted = FALSE;
-	bn->T->nonil = FALSE;
+
+	bn->tsorted = BATcount(bn) <2;;
+	bn->trevsorted = BATcount(bn) <2;;
 
 	BBPkeepref(*ret = bn->batCacheid);
 	BBPunfix(b->batCacheid);
@@ -2915,43 +2886,50 @@ str
 MTIMEdaytime_extract_minutes_bulk(bat *ret, const bat *bid)
 {
 	BAT *b, *bn;
-	int v;
-	date d;
-	BUN p, q;
-	BATiter bi;
+	BUN i, n;
+	date *t;
+	int *m;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "bbp.getdaytime", "Cannot access descriptor");
+		throw(MAL, "batmtime.minutes", "Cannot access descriptor");
+	n = BATcount(b);
 
 	bn = BATnew(TYPE_void, TYPE_int, BATcount(b));
-	if (bn == NULL)
+	if (bn == NULL) {
+		BBPreleaseref(b->batCacheid);
 		throw(MAL, "batmtime.minutes", "memory allocation failure");
+	}
 	BATseqbase(bn, b->H->seq);
 
-	bi = bat_iterator(b);
-	BATloop(b, p, q) {
-		d = *(date *) BUNtail(bi, p);
-		MTIMEdaytime_extract_minutes(&v, &d);
-		if (BUNappend(bn, &v, FALSE) == NULL) {
-			BBPunfix(bn->batCacheid);
-			throw(MAL, "batmtime.minutes", "inserting value failed");
+	t = (date *) Tloc(b, BUNfirst(b));
+	m = (int *) Tloc(bn, BUNfirst(bn));
+	for (i = 0; i < n; i++) {
+		if (*t == date_nil) {
+			*m = int_nil;
+		} else
+			MTIMEdaytime_extract_minutes(m, t);
+		if (*m == int_nil) {
+			bn->T->nonil = 0;
+			bn->T->nil = 1;
 		}
+		m++;
+		t++;
 	}
-
 	if (b->htype != bn->htype) {
 		BAT *r = VIEWcreate(b,bn);
-
 		BBPreleaseref(bn->batCacheid);
 		bn = r;
 	}
+	BATsetcount(bn, (BUN) (m - (int *) Tloc(bn, BUNfirst(bn))));
 
 	bn->H->nonil = b->H->nonil;
+	bn->H->nil = b->H->nil;
 	bn->hsorted = b->hsorted;
 	bn->hrevsorted = b->hrevsorted;
 	BATkey(bn, BAThkey(b));
+
 	bn->tsorted = FALSE;
 	bn->trevsorted = FALSE;
-	bn->T->nonil = FALSE;
 
 	BBPkeepref(*ret = bn->batCacheid);
 	BBPunfix(b->batCacheid);
@@ -2962,43 +2940,48 @@ str
 MTIMEdaytime_extract_seconds_bulk(bat *ret, const bat *bid)
 {
 	BAT *b, *bn;
-	int v;
-	date d;
-	BUN p, q;
-	BATiter bi;
+	BUN i, n;
+	date *t;
+	int *s;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "bbp.getdaytime", "Cannot access descriptor");
+		throw(MAL, "batmtime.seconds", "Cannot access descriptor");
+	n = BATcount(b);
 
 	bn = BATnew(TYPE_void, TYPE_int, BATcount(b));
-	if (bn == NULL)
+	if (bn == NULL) {
+		BBPreleaseref(b->batCacheid);
 		throw(MAL, "batmtime.seconds", "memory allocation failure");
+	}
 	BATseqbase(bn, b->H->seq);
 
-	bi = bat_iterator(b);
-	BATloop(b, p, q) {
-		d = *(date *) BUNtail(bi, p);
-		MTIMEdaytime_extract_seconds(&v, &d);
-		if (BUNappend(bn, &v, FALSE) == NULL) {
-			BBPunfix(bn->batCacheid);
-			throw(MAL, "batmtime.seconds", "inserting value failed");
+	t = (date *) Tloc(b, BUNfirst(b));
+	s = (int *) Tloc(bn, BUNfirst(bn));
+	for (i = 0; i < n; i++) {
+		if (*t == date_nil) {
+			*s = int_nil;
+		} else
+			MTIMEdaytime_extract_seconds(s, t);
+		if (*s == int_nil) {
+			bn->T->nonil = 0;
+			bn->T->nil = 1;
 		}
+		s++; t++;
 	}
-
 	if (b->htype != bn->htype) {
 		BAT *r = VIEWcreate(b,bn);
-
 		BBPreleaseref(bn->batCacheid);
 		bn = r;
 	}
+	BATsetcount(bn, (BUN) (s - (int *) Tloc(bn, BUNfirst(bn))));
 
 	bn->H->nonil = b->H->nonil;
+	bn->H->nil = b->H->nil;
 	bn->hsorted = b->hsorted;
 	bn->hrevsorted = b->hrevsorted;
 	BATkey(bn, BAThkey(b));
 	bn->tsorted = FALSE;
 	bn->trevsorted = FALSE;
-	bn->T->nonil = FALSE;
 
 	BBPkeepref(*ret = bn->batCacheid);
 	BBPunfix(b->batCacheid);
@@ -3009,43 +2992,50 @@ str
 MTIMEdaytime_extract_sql_seconds_bulk(bat *ret, const bat *bid)
 {
 	BAT *b, *bn;
-	int v;
-	date d;
-	BUN p, q;
-	BATiter bi;
+	BUN i, n;
+	date *t;
+	int *s;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "bbp.getdaytime", "Cannot access descriptor");
+		throw(MAL, "batmtime.sql_seconds", "Cannot access descriptor");
+	n = BATcount(b);
 
 	bn = BATnew(TYPE_void, TYPE_int, BATcount(b));
-	if (bn == NULL)
+	if (bn == NULL) {
+		BBPreleaseref(b->batCacheid);
 		throw(MAL, "batmtime.sql_seconds", "memory allocation failure");
+	}
 	BATseqbase(bn, b->H->seq);
 
-	bi = bat_iterator(b);
-	BATloop(b, p, q) {
-		d = *(date *) BUNtail(bi, p);
-		MTIMEdaytime_extract_sql_seconds(&v, &d);
-		if (BUNappend(bn, &v, FALSE) == NULL) {
-			BBPunfix(bn->batCacheid);
-			throw(MAL, "batmtime.sql_seconds", "inserting value failed");
+	t = (date *) Tloc(b, BUNfirst(b));
+	s = (int *) Tloc(bn, BUNfirst(bn));
+	for (i = 0; i < n; i++) {
+		if (*t == date_nil) {
+			*s = int_nil;
+		} else
+			MTIMEdaytime_extract_sql_seconds(s, t);
+		if (*s == int_nil) {
+			bn->T->nonil = 0;
+			bn->T->nil = 1;
 		}
+		s++;
+		t++;
 	}
 
 	if (b->htype != bn->htype) {
 		BAT *r = VIEWcreate(b,bn);
-
 		BBPreleaseref(bn->batCacheid);
 		bn = r;
 	}
+	BATsetcount(bn, (BUN) (s - (int *) Tloc(bn, BUNfirst(bn))));
 
 	bn->H->nonil = b->H->nonil;
+	bn->H->nil = b->H->nil;
 	bn->hsorted = b->hsorted;
 	bn->hrevsorted = b->hrevsorted;
 	BATkey(bn, BAThkey(b));
-	bn->tsorted = FALSE;
-	bn->trevsorted = FALSE;
-	bn->T->nonil = FALSE;
+	bn->tsorted = BATcount(bn) <2;
+	bn->trevsorted = BATcount(bn) <2;
 
 	BBPkeepref(*ret = bn->batCacheid);
 	BBPunfix(b->batCacheid);
@@ -3056,43 +3046,49 @@ str
 MTIMEdaytime_extract_milliseconds_bulk(bat *ret, const bat *bid)
 {
 	BAT *b, *bn;
-	int v;
-	date d;
-	BUN p, q;
-	BATiter bi;
+	BUN i, n;
+	date *t;
+	int *s;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "bbp.getdaytime", "Cannot access descriptor");
+		throw(MAL, "batmtime.milliseconds", "Cannot access descriptor");
+	n = BATcount(b);
 
 	bn = BATnew(TYPE_void, TYPE_int, BATcount(b));
-	if (bn == NULL)
+	if (bn == NULL) {
+		BBPreleaseref(b->batCacheid);
 		throw(MAL, "batmtime.milliseconds", "memory allocation failure");
+	}
 	BATseqbase(bn, b->H->seq);
 
-	bi = bat_iterator(b);
-	BATloop(b, p, q) {
-		d = *(date *) BUNtail(bi, p);
-		MTIMEdaytime_extract_milliseconds(&v, &d);
-		if (BUNappend(bn, &v, FALSE) == NULL) {
-			BBPunfix(bn->batCacheid);
-			throw(MAL, "batmtime.milliseconds", "inserting value failed");
+	t = (date *) Tloc(b, BUNfirst(b));
+	s = (int *) Tloc(bn, BUNfirst(bn));
+	for (i = 0; i < n; i++) {
+		if (*t == date_nil) {
+			*s = int_nil;
+		} else
+			MTIMEdaytime_extract_milliseconds(s, t);
+		if (*s == int_nil) {
+			bn->T->nonil = 0;
+			bn->T->nil = 1;
 		}
+		s++;
+		t++;
 	}
-
 	if (b->htype != bn->htype) {
 		BAT *r = VIEWcreate(b,bn);
-
 		BBPreleaseref(bn->batCacheid);
 		bn = r;
 	}
+	BATsetcount(bn, (BUN) (s - (int *) Tloc(bn, BUNfirst(bn))));
 
 	bn->H->nonil = b->H->nonil;
+	bn->H->nil = b->H->nil;
 	bn->hsorted = b->hsorted;
 	bn->hrevsorted = b->hrevsorted;
 	BATkey(bn, BAThkey(b));
 	bn->tsorted = FALSE;
 	bn->trevsorted = FALSE;
-	bn->T->nonil = FALSE;
 
 	BBPkeepref(*ret = bn->batCacheid);
 	BBPunfix(b->batCacheid);
@@ -3133,7 +3129,7 @@ MTIMEstrftime(str *s, const date *d, const char * const *format)
 		return MAL_SUCCEED;
 	}
 	memset(&t, 0, sizeof(struct tm));
-	fromdate((int) *d, &t.tm_mday, &mon, &year);
+	fromdate(*d, &t.tm_mday, &mon, &year);
 	t.tm_mon = mon - 1;
 	t.tm_year = year - 1900;
 	if ((sz = strftime(buf, BUFSIZ, *format, &t)) == 0)

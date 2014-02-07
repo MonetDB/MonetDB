@@ -1193,7 +1193,7 @@ gdk_export bte ATOMelmshift(int sz);
 		if ((b)->HT->varsized && (b)->HT->type) {		\
 			var_t _d;					\
 			ptr _ptr;					\
-			ATOMput((b)->HT->type, (b)->HT->vheap, &_d, v);	\
+			ATOMputVAR((b)->HT->type, (b)->HT->vheap, &_d, v); \
 			if ((b)->HT->width < SIZEOF_VAR_T &&		\
 			    ((b)->HT->width <= 2 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 * (b)->HT->width))) { \
 				/* doesn't fit in current heap, upgrade it */ \
@@ -1215,8 +1215,9 @@ gdk_export bte ATOMelmshift(int sz);
 				* (var_t *) _ptr = _d;			\
 				break;					\
 			}						\
-		} else							\
-			ATOMput((b)->HT->type, (b)->HT->vheap, (p), v);	\
+		} else {						\
+			ATOMputFIX((b)->HT->type, (b)->HT->vheap, (p), v); \
+		}							\
 	} while (0)
 #define Hputvalue(b, p, v, copyall)	HTputvalue(b, p, v, copyall, H)
 #define Tputvalue(b, p, v, copyall)	HTputvalue(b, p, v, copyall, T)
@@ -1240,7 +1241,7 @@ gdk_export bte ATOMelmshift(int sz);
 				_d = * (var_t *) _ptr;			\
 				break;					\
 			}						\
-			ATOMreplace((b)->HT->type, (b)->HT->vheap, &_d, v); \
+			ATOMreplaceVAR((b)->HT->type, (b)->HT->vheap, &_d, v); \
 			if ((b)->HT->width < SIZEOF_VAR_T &&		\
 			    ((b)->HT->width <= 2 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 * (b)->HT->width))) { \
 				/* doesn't fit in current heap, upgrade it */ \
@@ -1262,8 +1263,9 @@ gdk_export bte ATOMelmshift(int sz);
 				* (var_t *) _ptr = _d;			\
 				break;					\
 			}						\
-		} else							\
-			ATOMreplace((b)->HT->type, (b)->HT->vheap, (p), v); \
+		} else {						\
+			ATOMreplaceFIX((b)->HT->type, (b)->HT->vheap, (p), v); \
+		}							\
 	} while (0)
 #define Hreplacevalue(b, p, v)		HTreplacevalue(b, p, v, H)
 #define Treplacevalue(b, p, v)		HTreplacevalue(b, p, v, T)
@@ -1601,8 +1603,6 @@ gdk_export gdk_return BATgroup(BAT **groups, BAT **extents, BAT **histo, BAT *b,
 gdk_export int GDK_mem_pagebits;	/* page size for non-linear mmaps */
 
 #define REMAP_PAGE_BITS	GDK_mem_pagebits
-#define REMAP_PAGE_SIZE	((size_t) 1 << REMAP_PAGE_BITS)
-#define REMAP_PAGE_MASK	(REMAP_PAGE_SIZE - 1)
 #define REMAP_PAGE_MAXBITS (REMAP_PAGE_BITS+3)
 #define REMAP_PAGE_MAXSIZE ((size_t) 1 << REMAP_PAGE_MAXBITS) /* max page bytesize of unary BUN heap (8-byte atom) */
 
@@ -1913,7 +1913,7 @@ gdk_export BAT *BBPquickdesc(bat b, int delaccess);
  * are described by an atom descriptor.
  *  @multitable @columnfractions 0.08 0.7
  * @item void
- * @tab ATOMproperty    (str   nme, char *property, int (*fcn)(), int val);
+ * @tab ATOMallocate    (str   nme);
  * @item int
  * @tab ATOMindex       (char *nme);
  * @item int
@@ -1965,11 +1965,8 @@ gdk_export BAT *BBPquickdesc(bat b, int delaccess);
  * following interface:.
  *
  * @itemize
- * @item @emph{ATOMproperty()} registers a new atom definition, if
- * there is no atom registered yet under that name.  It then installs
- * the attribute of the named property.  Valid names are "size",
- * "align", "null", "fromstr", "tostr", "cmp", "hash", "put", "get",
- * "del", "length" and "heap".
+ * @item @emph{ATOMallocate()} registers a new atom definition if
+ * there is no atom registered yet under that name.
  *
  * @item @emph{ATOMdelete()} unregisters an atom definition.
  *
@@ -2061,8 +2058,6 @@ typedef struct {
 	short linear;		/* atom can be ordered linearly */
 	short size;		/* fixed size of atom */
 	short align;		/* alignment condition for values */
-	short deleting;		/* set if unloading */
-	int varsized;		/* variable-size or fixed-sized */
 
 	/* automatically generated fields */
 	ptr atomNull;		/* global nil value */
@@ -2088,8 +2083,8 @@ typedef struct {
 gdk_export atomDesc BATatoms[];
 gdk_export int GDKatomcnt;
 
-gdk_export void ATOMproperty(char *nme, char *property, GDKfcn fcn, int val);
-gdk_export int ATOMindex(char *nme);
+gdk_export int ATOMallocate(const char *nme);
+gdk_export int ATOMindex(const char *nme);
 
 gdk_export str ATOMname(int id);
 gdk_export int ATOMlen(int id, const void *v);
@@ -2209,7 +2204,6 @@ gdk_export size_t GDK_mem_maxsize;	/* max allowed size of committed memory */
 gdk_export size_t GDK_vm_maxsize;	/* max allowed size of reserved vm */
 gdk_export int	GDK_vm_trim;		/* allow trimming */
 
-gdk_export size_t GDKmem_inuse(void);	/* RAM/swapmem that MonetDB is really using now */
 gdk_export size_t GDKmem_cursize(void);	/* RAM/swapmem that MonetDB has claimed from OS */
 gdk_export size_t GDKvm_cursize(void);	/* current MonetDB VM address space usage */
 
@@ -2291,7 +2285,7 @@ gdk_export str GDKstrdup(const char *s);
 		void *_res = GDKmmap(_path, _mode, _len);		\
 		ALLOCDEBUG						\
 			fprintf(stderr,					\
-				"#GDKmmap(%s,0x%x," SZFMT ") -> " SZFMT \
+				"#GDKmmap(%s,0x%x," SZFMT ") -> " PTRFMT \
 				" %s[%s:%d]\n",				\
 				_path ? _path : "NULL", _mode, _len,	\
 				PTRFMTCAST _res,			\
@@ -3025,7 +3019,7 @@ gdk_export int ALIGNsetH(BAT *b1, BAT *b2);
 		if (ATOMcmp(h->type, v, BUNhvar(bi, hb)) == 0)
 
 #define HASHloop_TYPE(bi, h, hb, v, TYPE)			\
-	for (hb = HASHget(h, hash_##TYPE(h, v));			\
+	for (hb = HASHget(h, hash_##TYPE(h, v));		\
 	     hb != HASHnil(h);					\
 	     hb = HASHgetlink(h,hb))				\
 		if (simple_EQ(v, BUNhloc(bi, hb), TYPE))
@@ -3203,6 +3197,7 @@ gdk_export int BATtopN(BAT *b, BUN topN);	/* used in monet5/src/modules/kernel/a
 #define JOIN_GT		1
 #define JOIN_GE		2
 #define JOIN_BAND	3
+#define JOIN_NE		(-3)
 
 gdk_export BAT *BATsubselect(BAT *b, BAT *s, const void *tl, const void *th, int li, int hi, int anti);
 gdk_export BAT *BATthetasubselect(BAT *b, BAT *s, const void *val, const char *op);
@@ -3224,13 +3219,15 @@ gdk_export BAT *BATouterjoin(BAT *l, BAT *r, BUN estimate);
 gdk_export gdk_return BATcross1(BAT **r1p, BAT **r2p, BAT *l, BAT *r);
 gdk_export gdk_return BATsubcross(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr);
 gdk_export BAT *BATcross(BAT *l, BAT *r);
+gdk_export BAT *BATbandjoin(BAT *l, BAT *r, const void *mnus, const void *plus, bit li, bit hi);
 
 gdk_export gdk_return BATsubleftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate);
 gdk_export gdk_return BATsubouterjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate);
-gdk_export gdk_return BATsubthetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, const char *op, int nil_matches, BUN estimate);
+gdk_export gdk_return BATsubthetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int op, int nil_matches, BUN estimate);
 gdk_export gdk_return BATsubsemijoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate);
 gdk_export gdk_return BATsubjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate);
 gdk_export gdk_return BATsubleftfetchjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate);
+gdk_export gdk_return BATsubbandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, const void *c1, const void *c2, int li, int hi, BUN estimate);
 gdk_export BAT *BATproject(BAT *l, BAT *r);
 
 gdk_export BAT *BATslice(BAT *b, BUN low, BUN high);

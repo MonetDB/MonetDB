@@ -34,10 +34,6 @@
 #include <unistd.h>		/* sbrk on Solaris */
 #include <string.h>     /* strncpy */
 
-#ifdef __hpux
-extern char *sbrk(int);
-#endif
-
 #ifdef HAVE_FCNTL_H
 # include <fcntl.h>
 #endif
@@ -277,7 +273,7 @@ char *MT_heapbase = NULL;
 void
 MT_init_posix(void)
 {
-	MT_heapbase = (char *) sbrk(0);
+	MT_heapbase = 0;
 }
 
 /* return RSS in bytes */
@@ -358,12 +354,6 @@ MT_getrss(void)
 	return 0;
 }
 
-
-char *
-MT_heapcur(void)
-{
-	return (char *) sbrk(0);
-}
 
 void *
 MT_mmap(const char *path, int mode, size_t len)
@@ -682,12 +672,6 @@ MT_getrss(void)
 	if (GetProcessMemoryInfo(GetCurrentProcess(), &ctr, sizeof(ctr)))
 		return ctr.WorkingSetSize;
 	return 0;
-}
-
-char *
-MT_heapcur(void)
-{
-	return (char *) 0;
 }
 
 /* Windows mmap keeps a global list of base addresses for complex

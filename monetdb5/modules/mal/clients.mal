@@ -91,16 +91,17 @@ comment "A query is aborted after q milliseconds (q=0 means run undisturbed).
 The session timeout aborts the connection after spending too
 many seconds on query processing.";
 
-command shutdown(forced:bit):void
-address CLTshutdown
-comment "Close all client connections. If forced=false the
-clients are moved into FINISHING mode, which means that
-the process stops at the next cycle of the scenario.
-If forced=true all client processes are immediately killed";
-
 # @+ User administration
 # These commands (except changePassword, changeUsername and
 # checkPermission) can only be executed by the administrator.
+
+pattern shutdown(delay:int):str
+address CLTshutdown;
+pattern shutdown(delay:int, forced:bit):str
+address CLTshutdown
+comment "Close all other client connections. Return if it succeeds.
+If forced is set then always stop the system the hard way";
+
 command md5sum(pw:str):str
 address CLTmd5sum
 comment "Return hex string representation of the MD5 hash of the given string";

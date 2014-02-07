@@ -227,7 +227,7 @@ HEAPextend(Heap *h, size_t size)
 		/* extend a malloced heap, possibly switching over to
 		 * file-mapped storage */
 		Heap bak = *h;
-		size_t cur = GDKmem_inuse(), tot = GDK_mem_maxsize;
+		size_t cur = GDKmem_cursize(), tot = GDK_mem_maxsize;
 		int exceeds_swap = size > (tot + tot - MIN(tot + tot, cur));
 		int can_mmap = h->filename && (size >= GDK_mem_bigsize || h->newstorage != STORE_MEM);
 		int small_cpy = (h->size * 4 < size) && (size >= GDK_mmap_minsize);
@@ -390,6 +390,20 @@ HEAPshrink(Heap *h, size_t size)
 	return -1;
 }
 
+/* returns 1 if the file exists */
+static int
+file_exists(const char *dir, const char *name, const char *ext)
+{
+	long_str path;
+	struct stat st;
+	int ret;
+
+	GDKfilepath(path, dir, name, ext);
+	ret = stat(path, &st);
+	IODEBUG THRprintf(GDKstdout, "#stat(%s) = %d\n", path, ret);
+	return (ret == 0);
+}
+
 int
 GDKupgradevarheap(COLrec *c, var_t v, int copyall)
 {
@@ -403,6 +417,7 @@ GDKupgradevarheap(COLrec *c, var_t v, int copyall)
 #endif
 	size_t i, n;
 	size_t savefree;
+	const char *filename;
 
 	assert(c->heap.parentid == 0);
 	assert(width != 0);
@@ -414,11 +429,65 @@ GDKupgradevarheap(COLrec *c, var_t v, int copyall)
 	}
 	assert(c->width < width);
 	assert(c->shift < shift);
+
 	/* if copyall is set, we need to convert the whole heap, since
 	 * we may be in the middle of an insert loop that adjusts the
 	 * free value at the end; otherwise only copy the area
 	 * indicated by the "free" pointer */
 	n = (copyall ? c->heap.size : c->heap.free) >> c->shift;
+
+	/* for memory mapped files, create a backup copy before widening
+	 *
+	 * this solves a problem that we don't control what's in the
+	 * actual file until the next commit happens, so a crash might
+	 * otherwise leave the file (and the database) in an
+	 * inconsistent state
+	 *
+	 * also see do_backup in gdk_bbp.c */
+	filename = strrchr(c->heap.filename, DIR_SEP);
+	if (filename == NULL)
+		filename = c->heap.filename;
+	else
+		filename++;
+	if (c->heap.storage == STORE_MMAP && !file_exists(BAKDIR, filename, NULL)) {
+		int fd;
+		ssize_t ret = 0;
+		size_t size = n << c->shift;
+		const char *base = c->heap.base;
+
+		/* first save heap in file with extra .tmp extension */
+		if ((fd = GDKfdlocate(c->heap.filename, "wb", "tmp")) < 0)
+			return GDK_FAIL;
+		while (size > 0) {
+			ret = write(fd, base, (unsigned) MIN(1 << 30, size));
+			if (ret < 0)
+				size = 0;
+			size -= ret;
+			base += ret;
+		}
+		if (ret < 0 ||
+#if defined(NATIVE_WIN32)
+		    _commit(fd) < 0 ||
+#elif defined(HAVE_FDATASYNC)
+		    fdatasync(fd) < 0 ||
+#elif defined(HAVE_FSYNC)
+		    fsync(fd) < 0 ||
+#endif
+		    close(fd) < 0) {
+			/* something went wrong: abandon ship */
+			close(fd);
+			GDKunlink(BATDIR, c->heap.filename, "tmp");
+			return GDK_FAIL;
+		}
+		/* move tmp file to backup directory (without .tmp
+		 * extension) */
+		if (GDKmove(BATDIR, c->heap.filename, "tmp", BAKDIR, filename, NULL) < 0) {
+			/* backup failed */
+			GDKunlink(BATDIR, c->heap.filename, "tmp");
+			return GDK_FAIL;
+		}
+	}
+
 	savefree = c->heap.free;
 	if (copyall)
 		c->heap.free = c->heap.size;

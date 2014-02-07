@@ -74,9 +74,6 @@ mal_export str runScenario(Client c);
 mal_export str getScenarioLanguage(Client c);
 mal_export Scenario getFreeScenario(void);
 
-mal_export str defaultScenario(Client c);	/* used in src/mal/mal_session.c */
-mal_export void exitScenario(Client c);	/* used in src/mal/mal_session.c */
-
 mal_export void showCurrentScenario(void);
 mal_export void showScenarioByName(stream *f, str s);
 mal_export void showScenario(stream *f, Scenario s);

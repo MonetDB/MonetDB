@@ -169,6 +169,11 @@ ALGjoinPathBody(Client cntxt, int top, BAT **joins, int flag)
 	int *postpone= (int*) GDKzalloc(sizeof(int) *top);
 	int postponed=0;
 
+	if(postpone == NULL){
+		GDKerror("joinPathBody" MAL_MALLOC_FAIL);
+		return NULL;
+	}
+
 	/* solve the join by pairing the smallest first */
 	while (top > 1) {
 		j = 0;
@@ -187,7 +192,6 @@ ALGjoinPathBody(Client cntxt, int top, BAT **joins, int flag)
 			}
 		}
 		/*
-		 * @-
 		 * BEWARE. you may not use a size estimation, because it
 		 * may fire a BATproperty check in a few cases.
 		 * In case a join fails, we may try another order first before
@@ -210,7 +214,8 @@ ALGjoinPathBody(Client cntxt, int top, BAT **joins, int flag)
 			b = BATsemijoin(joins[j], joins[j + 1]);
 			break;
 		case 3:
-			b = BATleftfetchjoin(joins[j], joins[j + 1], BATcount(joins[j]));
+			b = BATproject(joins[j], joins[j + 1]);
+			break;
 		}
 		if (b==NULL){
 			if ( postpone[j] && postpone[j+1]){

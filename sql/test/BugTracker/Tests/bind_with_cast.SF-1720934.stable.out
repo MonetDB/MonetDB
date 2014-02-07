@@ -27,7 +27,8 @@ Ready.
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	str,	str,	str # type
-% 3,	2,	1,	0,	0,	0 # length
+% 3,	3,	1,	0,	12,	2 # length
+[ "int",	32,	0,	"",	"data_1mto10m",	"id"	]
 [ "int",	32,	0,	NULL,	NULL,	NULL	]
 
 # 12:37:58 >  

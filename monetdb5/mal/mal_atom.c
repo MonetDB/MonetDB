@@ -19,7 +19,7 @@
 
 /*
  * @a M.L.Kersten
- * @- User Defined Types
+ *  User Defined Types
  * MonetDB supports an extensible type system to accomodate a wide
  * spectrum of database kernels and application needs.
  * The type administration keeps track of their properties and
@@ -46,7 +46,7 @@
  * A concrete example is the 'blob' datatype in the MonetDB atom module
  * library(see ../modules/atoms/blob.mx)
  *
- * @- Defining your own types
+ * Defining your own types
  * For the courageous at heart, you may enter the difficult world
  * of extending the kernel library. The easiest way is to derive
  * the atom modules from one shipped in the source distributed.
@@ -55,18 +55,18 @@
  * because you have to develop a handful routines complying with the
  * signatures required in the kernel library.
  * They are registered upon loading the @sc{atom} module.
- * @-
+ * 
  * The atom registration functions perform the necessary
  * type checks, but relies on the user to comply with this signature in
  * its C-implementation. The ruler calls are part of a module
  * initialization routine.
- * @-
+ * 
  * Functions passed to the GDK kernel are not directly accessible
  * as MAL routines, because their implementation requires a
  * GDK-specific signature. (See GDK documentation)
  * They are renamed to an non-parseable function, effectively shielding
  * them from the MAL programmer.
- * @-
+ * 
  * This feature is of particular interest to system experts.
  * It is not meant for end-users trying to intruduce record- or
  * struct-like objects in the database. They better decompose
@@ -85,9 +85,11 @@
  * They should be implemented with parameter-less functions.
  */
 #include "monetdb_config.h"
+#include "mal_instruction.h"
 #include "mal_atom.h"
 #include "mal_namespace.h"
 #include "mal_exception.h"
+#include "mal_private.h"
 
 #ifndef MAXPATHLEN
 #define MAXPATHLEN 1024
@@ -144,7 +146,6 @@ int malAtomProperty(MalBlkPtr mb, InstrPtr pci)
 			/* heap function makes an atom varsized */
 			BATatoms[tpe].size = sizeof(var_t);
 			assert_shift_width(ATOMelmshift(BATatoms[tpe].size), BATatoms[tpe].size);
-			BATatoms[tpe].varsized = 1;
 			BATatoms[tpe].align = sizeof(var_t);
 			BATatoms[tpe].atomHeap = (void (*)(Heap *, size_t))pci->fcn;
 			setAtomName(pci);
@@ -205,13 +206,6 @@ int malAtomProperty(MalBlkPtr mb, InstrPtr pci)
 			return 1;
 		}
 		break;
-	case 'v':
-		if (idcmp("varsized", name) == 0 && pci->argc == 1) {
-			BATatoms[tpe].varsized = (*(long (*)(void))pci->fcn)();
-			setAtomName(pci);
-			return 1;
-		}
-		break;
 	case 'r':
 		if (idcmp("read", name) == 0 && pci->argc == 1) {
 			BATatoms[tpe].atomRead = (void *(*)(void *, stream *, size_t))pci->fcn;
@@ -230,9 +224,8 @@ int malAtomProperty(MalBlkPtr mb, InstrPtr pci)
 	return 0;
 }
 /*
- * @-
  * Atoms are constructed incrementally in the kernel using the
- * ATOMproperty function. It takes an existing type as a base
+ * ATOMallocate function. It takes an existing type as a base
  * to derive a new one.
  * The most tedisous work is to check the signature types of the functions
  * acceptable for the kernel.
@@ -255,10 +248,9 @@ void malAtomDefinition(stream *out, str name, int tpe)
 		return;
 	}
 
-	ATOMproperty(name, "", (int (*)()) 0, 0);
 	if (strlen(name) >= sizeof(BATatoms[0].name))
 		return;
-	i = ATOMindex(name);
+	i = ATOMallocate(name);
 	/* overload atom ? */
 	if (tpe) {
 		BATatoms[i] = BATatoms[tpe];
@@ -271,28 +263,9 @@ void malAtomDefinition(stream *out, str name, int tpe)
 	}
 }
 /*
- * @-
  * User defined modules may introduce fixed sized types
  * to store information in BATs.
  */
-int malAtomFixed(int size, int align, char *name)
-{
-	int i = 0;
-
-	ATOMproperty(name, "", (int (*)()) 0, 0);
-	if (strlen(name) >= sizeof(BATatoms[0].name))
-		return -1;
-	i = ATOMindex(name);
-	BATatoms[i] = BATatoms[TYPE_bte];
-	strncpy(BATatoms[i].name, name, sizeof(BATatoms[i].name));
-	BATatoms[i].name[sizeof(BATatoms[i].name) - 1] = 0;
-	BATatoms[i].storage = i;
-	BATatoms[i].size = size;
-	assert_shift_width(ATOMelmshift(BATatoms[i].size), BATatoms[i].size);
-	BATatoms[i].align = align;
-	BATatoms[i].linear = FALSE;
-	return i;
-}
 int malAtomSize(int size, int align, char *name)
 {
 	int i = 0;

@@ -283,8 +283,11 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
 
 		c = MCinitClient(uid, fin, fout);
 		if (c == NULL) {
-			mnstr_printf(fout, "!maximum concurrent client limit reached "
-							   "(%d), please try again later\n", MAL_MAXCLIENTS);
+			if ( MCshutdowninprogress())
+				mnstr_printf(fout, "!system shutdown in progress, please try again later\n");
+			else
+				mnstr_printf(fout, "!maximum concurrent client limit reached "
+								   "(%d), please try again later\n", MAL_MAXCLIENTS);
 			exit_streams(fin, fout);
 			GDKfree(command);
 			return;
@@ -299,7 +302,7 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
 			mnstr_printf(c->fdout, "!%s\n", s);
 			mnstr_flush(c->fdout);
 			GDKfree(s);
-			c->mode = FINISHING;
+			c->mode = FINISHCLIENT;
 		}
 	}
 
@@ -324,7 +327,7 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
 		mnstr_printf(fout, "!internal server error (cannot fork new "
 						   "client thread), please try again later\n");
 		mnstr_flush(fout);
-		c->mode = FINISHING;
+		c->mode = FINISHCLIENT;
 		MCexitClient(c);
 		showException(c->fdout, MAL, "initClient", "cannot fork new client thread");
 		return;
@@ -375,6 +378,10 @@ MSresetVariables(Client cntxt, MalBlkPtr mb, MalStkPtr glb, int start)
 {
 	int i, k;
 	bit *used = GDKzalloc(mb->vtop * sizeof(bit));
+	if( used == NULL){
+		GDKerror("MSresetVariables" MAL_MALLOC_FAIL);
+		return;
+	}
 
 	for (i = 0; i < start && start < mb->vtop; i++)
 		used[i] = 1;
@@ -429,7 +436,7 @@ MSserveClient(void *dummy)
 		c->glb = newGlobalStack(MAXGLOBALS + mb->vsize);
 	if (c->glb == NULL) {
 		showException(c->fdout, MAL, "serveClient", MAL_MALLOC_FAIL);
-		c->mode = FINISHING + 1; /* == CLAIMED */
+		c->mode = FINISHCLIENT + 1; /* == RUNCLIENT */
 	} else {
 		c->glb->stktop = mb->vtop;
 		c->glb->blk = mb;
@@ -439,16 +446,16 @@ MSserveClient(void *dummy)
 		msg = defaultScenario(c);
 	if (msg) {
 		showException(c->fdout, MAL, "serveClient", "could not initialize default scenario");
-		c->mode = FINISHING + 1; /* == CLAIMED */
+		c->mode = FINISHCLIENT + 1; /* == RUNCLIENT */
 	} else {
 		do {
 			do {
 				runScenario(c);
-				if (c->mode == FINISHING)
+				if (c->mode == FINISHCLIENT)
 					break;
 				resetScenario(c);
 			} while (c->scenario && !GDKexiting());
-		} while (c->scenario && c->mode != FINISHING && !GDKexiting());
+		} while (c->scenario && c->mode != FINISHCLIENT && !GDKexiting());
 	}
 	/* pre announce our exiting: cleaning up may take a while and we
 	 * don't want to get killed during that time for fear of
@@ -460,7 +467,7 @@ MSserveClient(void *dummy)
 	freeMalBlk(c->curprg->def);
 	c->curprg->def = 0;
 
-	if (c->mode > FINISHING) {
+	if (c->mode > FINISHCLIENT) {
 		if (isAdministrator(c) /* && moreClients(0)==0 */) {
 			if (c->scenario) {
 				exitScenario(c);
@@ -497,7 +504,7 @@ MALexitClient(Client c)
 		garbageCollector(c, c->curprg->def, c->glb, TRUE);
 	if (c->bak)
 		return NULL;
-	c->mode = FINISHING;
+	c->mode = FINISHCLIENT;
 	return NULL;
 }
 
@@ -514,7 +521,7 @@ MALreader(Client c)
 			return MAL_SUCCEED;
 	} else if (MCreadClient(c) > 0)
 		return MAL_SUCCEED;
-	c->mode = FINISHING;
+	c->mode = FINISHCLIENT;
 	if (c->fdin)
 		c->fdin->buf[c->fdin->pos] = 0;
 	else
@@ -617,8 +624,11 @@ MALengine(Client c)
 	if (prg->def->stop == 1 || MALcommentsOnly(prg->def))
 		return 0;   /* empty block */
 	if (c->glb) {
-		if (prg->def && c->glb->stksize < prg->def->vsize)
+		if (prg->def && c->glb->stksize < prg->def->vsize){
 			c->glb = reallocGlobalStack(c->glb, prg->def->vsize);
+			if( c->glb == NULL)
+				throw(MAL, "mal.engine", MAL_MALLOC_FAIL);
+		}
 		c->glb->stktop = prg->def->vtop;
 		c->glb->blk = prg->def;
 		c->glb->cmd = (c->itrace && c->itrace != 'C') ? 'n' : 0;

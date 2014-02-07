@@ -203,7 +203,7 @@ deactivateCounter(str name)
  * Offline processing
  * The offline processing structure is the easiest. We merely have to
  * produce a correct tuple format for the front-end.
- * To avoid unnecessary locks we first built the event as a string
+ * To avoid unnecessary locks we first build the event as a string
  * It uses a local logbuffer[LOGLEN] and logbase, logtop, loglen
  */
 #define LOGLEN 8192
@@ -215,17 +215,17 @@ deactivateCounter(str name)
 		loglen += (int) strlen(logbase+loglen);					\
 	} while (0)
 
-static void logsent(char *logbuffer)
+static void logsend(char *logbuffer)
 {
 	if (eventstream) {
-		MT_lock_set(&mal_profileLock, "profileLock");
+		MT_lock_set(&mal_profileLock, "logsend");
 		eventcounter++;
 		if (profileCounter[PROFevent].status && eventcounter)
 			mnstr_printf(eventstream,"[ %d,\t%s", eventcounter, logbuffer);
 		else
 			mnstr_printf(eventstream,"[ %s", logbuffer);
 		mnstr_flush(eventstream);
-		MT_lock_unset(&mal_profileLock, "profileLock");
+		MT_lock_unset(&mal_profileLock, "logsend");
 	}
 }
 
@@ -243,9 +243,9 @@ profilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc, int start)
 	if (mb->profiler == NULL) return;
 	if (profileCounter[PROFdot].status == 1 && start && pc == 0){
 		if (mb->dotfile == 0){
-			MT_lock_set(&mal_profileLock, "profileLock");
+			MT_lock_set(&mal_profileLock, "profilerEvent");
 			showFlowGraph(mb,stk,"stethoscope");
-			MT_lock_unset(&mal_profileLock, "profileLock");
+			MT_lock_unset(&mal_profileLock, "profilerEvent");
 		}
 	}
 	if (profileCounter[PROFstart].status == 0 && start)
@@ -522,7 +522,7 @@ offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc, int start)
 		logadd(" %d", idx);
 	}
 	logadd("]\n");
-	logsent(logbuffer);
+	logsend(logbuffer);
 }
 /*
  * Postprocessing events
@@ -535,9 +535,9 @@ str
 setLogFile(stream *fd, Module mod, str fname)
 {
 	(void)mod;      /* still unused */
-	MT_lock_set(&mal_profileLock, "profileLock");
+	MT_lock_set(&mal_profileLock, "setLogFile");
 	if (eventstream ) {
-		MT_lock_unset(&mal_profileLock, "profileLock");
+		MT_lock_unset(&mal_profileLock, "setLogFile");
 		throw(IO, "mal.profiler", "Log file already set");
 	}
 	if (strcmp(fname, "console") == 0)
@@ -547,10 +547,10 @@ setLogFile(stream *fd, Module mod, str fname)
 	else
 		eventstream = open_wastream(fname);
 	if (eventstream == NULL) {
-		MT_lock_unset(&mal_profileLock, "profileLock");
+		MT_lock_unset(&mal_profileLock, "setLogFile");
 		throw(IO, "mal.profiler", RUNTIME_STREAM_FAILED);
 	}
-	MT_lock_unset(&mal_profileLock, "profileLock");
+	MT_lock_unset(&mal_profileLock, "setLogFile");
 	return MAL_SUCCEED;
 }
 
@@ -558,13 +558,13 @@ str
 setLogStream(Module cntxt, str host, int port)
 {
 	(void)cntxt;        /* still unused */
-	MT_lock_set(&mal_profileLock, "profileLock");
+	MT_lock_set(&mal_profileLock, "setLogStream");
 	if ((eventstream = udp_wastream(host, port, "profileStream")) == NULL) {
-		MT_lock_unset(&mal_profileLock, "profileLock");
+		MT_lock_unset(&mal_profileLock, "setLogStream");
 		throw(IO, "mal.profiler", RUNTIME_STREAM_FAILED);
 	}
 	eventstream = wbstream(eventstream, BUFSIZ);
-	MT_lock_unset(&mal_profileLock, "profileLock");
+	MT_lock_unset(&mal_profileLock, "setLogStream");
 	return MAL_SUCCEED;
 }
 
@@ -572,13 +572,13 @@ str
 setLogStreamStream(Module cntxt, stream *s)
 {
 	(void)cntxt;        /* still unused */
-	MT_lock_set(&mal_profileLock, "profileLock");
+	MT_lock_set(&mal_profileLock, "setLogStreamStream");
 	if ((eventstream = s) == NULL) {
-		MT_lock_unset(&mal_profileLock, "profileLock");
+		MT_lock_unset(&mal_profileLock, "setLogStreamStream");
 		throw(ILLARG, "mal.profiler", "stream must not be NULL");
 	}
 	eventstream = wbstream(eventstream, BUFSIZ);
-	MT_lock_unset(&mal_profileLock, "profileLock");
+	MT_lock_unset(&mal_profileLock, "setLogStreamStream");
 	return MAL_SUCCEED;
 }
 
@@ -594,7 +594,6 @@ openProfilerStream(stream *fd)
 str
 closeProfilerStream(void)
 {
-	profilerHeartbeatEvent("ping");
 	if (eventstream && eventstream != GDKout && eventstream != GDKerr) {
 		(void)mnstr_close(eventstream);
 		(void)mnstr_destroy(eventstream);
@@ -610,14 +609,14 @@ setStartPoint(Module cntxt, str mod, str fcn)
 	(void)cntxt;
 	(void)mod;
 	(void)fcn;      /* still unused */
-	MT_lock_set(&mal_profileLock, "profileLock");
+	MT_lock_set(&mal_profileLock, "setStartPoint");
 	if (eventstream == NULL) {
-		MT_lock_unset(&mal_profileLock, "profileLock");
+		MT_lock_unset(&mal_profileLock, "setStartPoint");
 		return MAL_SUCCEED ;
 	}
 	mnstr_printf(GDKout, "# start point not set\n");
 	flushLog();
-	MT_lock_unset(&mal_profileLock, "profileLock");
+	MT_lock_unset(&mal_profileLock, "setStartPoint");
 	return MAL_SUCCEED;
 }
 
@@ -627,14 +626,14 @@ setEndPoint(Module cntxt, str mod, str fcn)
 	(void)cntxt;
 	(void)mod;
 	(void)fcn;      /* still unused */
-	MT_lock_set(&mal_profileLock, "profileLock");
+	MT_lock_set(&mal_profileLock, "setEndPoint");
 	if (eventstream == NULL) {
-		MT_lock_unset(&mal_profileLock, "profileLock");
+		MT_lock_unset(&mal_profileLock, "setEndPoint");
 		return MAL_SUCCEED ;
 	}
 	mnstr_printf(GDKout, "# end point not set\n");
 	flushLog();
-	MT_lock_unset(&mal_profileLock, "profileLock");
+	MT_lock_unset(&mal_profileLock, "setEndPoint");
 	return MAL_SUCCEED;
 }
 
@@ -647,7 +646,7 @@ static int TRACE_init = 0;
 str
 startProfiling(void)
 {
-	MT_lock_set(&mal_profileLock, "profileLock");
+	MT_lock_set(&mal_profileLock, "startProfiling");
 	if (eventstream != NULL) {
 		offlineProfiling = TRUE;
 		delayswitch = 1;
@@ -657,19 +656,19 @@ startProfiling(void)
 		_initTrace();
 	malProfileMode = TRUE;
 	eventcounter = 0;
-	MT_lock_unset(&mal_profileLock, "profileLock");
+	MT_lock_unset(&mal_profileLock, "startProfiling");
 	return MAL_SUCCEED;
 }
 
 str
 stopProfiling(void)
 {
-	MT_lock_set(&mal_profileLock, "profileLock");
+	MT_lock_set(&mal_profileLock, "stopProfiling");
 	malProfileMode = FALSE;
 	offlineProfiling = FALSE;
 	cachedProfiling = FALSE;
 	closeProfilerStream();
-	MT_lock_unset(&mal_profileLock, "profileLock");
+	MT_lock_unset(&mal_profileLock, "stopProfiling");
 	return MAL_SUCCEED;
 }
 
@@ -684,9 +683,9 @@ MPresetProfiler(stream *fdout)
 		return;
 	if (mal_trace)
 		return;
-	MT_lock_set(&mal_profileLock, "profileLock");
+	MT_lock_set(&mal_profileLock, "MPresetProfiler");
 	eventstream = 0;
-	MT_lock_unset(&mal_profileLock, "profileLock");
+	MT_lock_unset(&mal_profileLock, "MPresetProfiler");
 }
 
 void setFilterAll(void){
@@ -766,7 +765,7 @@ setFilter(Module cntxt, str mod, str fcn)
 		fcn = matchall;
 	profileAll = strcmp(mod, "*") == 0 && strcmp(fcn, "*") == 0;
 
-	MT_lock_set(&mal_profileLock, "profileLock");
+	MT_lock_set(&mal_profileLock, "setFilter");
 	if (mod && fcn && topFilter < 32) {
 		modFilter[topFilter] = putName(mod, strlen(mod));
 		fcnFilter[topFilter++] = putName(fcn, strlen(fcn));
@@ -782,7 +781,7 @@ setFilter(Module cntxt, str mod, str fcn)
 				}
 		s = s->outer;
 	}
-	MT_lock_unset(&mal_profileLock, "profileLock");
+	MT_lock_unset(&mal_profileLock, "setFilter");
 }
 
 /*
@@ -801,7 +800,7 @@ clrFilter(Module cntxt, str mod, str fcn)
 	(void)mod;
 	(void)fcn;      /* still unused */
 
-	MT_lock_set(&mal_profileLock, "profileLock");
+	MT_lock_set(&mal_profileLock, "clrFilter");
 	for (j = 0; j < topFilter; j++) {
 		modFilter[j] = NULL;
 		fcnFilter[j] = NULL;
@@ -822,7 +821,7 @@ clrFilter(Module cntxt, str mod, str fcn)
 				}
 		s = s->outer;
 	}
-	MT_lock_unset(&mal_profileLock, "profileLock");
+	MT_lock_unset(&mal_profileLock, "clrFilter");
 }
 /*
  * The instructions to be monitored can also be identified
@@ -892,7 +891,7 @@ TRACEtable(BAT **r)
 {
 	if (initTrace())
 		return ;
-	MT_lock_set(&mal_profileLock, "profileLock");
+	MT_lock_set(&mal_profileLock, "TRACEtable");
 	r[0] = BATcopy(TRACE_id_tag, TRACE_id_tag->htype, TRACE_id_tag->ttype, 0);
 	r[0] = BATcopy(TRACE_id_event, TRACE_id_event->htype, TRACE_id_event->ttype, 0);
 	r[1] = BATcopy(TRACE_id_time, TRACE_id_time->htype, TRACE_id_time->ttype, 0);
@@ -906,7 +905,7 @@ TRACEtable(BAT **r)
 	r[9] = BATcopy(TRACE_id_wbytes, TRACE_id_wbytes->htype, TRACE_id_wbytes->ttype, 0);
 	r[10] = BATcopy(TRACE_id_type, TRACE_id_type->htype, TRACE_id_type->ttype, 0);
 	r[11] = BATcopy(TRACE_id_stmt, TRACE_id_stmt->htype, TRACE_id_stmt->ttype, 0);
-	MT_lock_unset(&mal_profileLock, "profileLock");
+	MT_lock_unset(&mal_profileLock, "TRACEtable");
 }
 
 static BAT *
@@ -994,9 +993,9 @@ initTrace(void)
 {
 	if (TRACE_init)
 		return 0;       /* already initialized */
-	MT_lock_set(&mal_contextLock, "profileLock");
+	MT_lock_set(&mal_contextLock, "initTrace");
 	_initTrace();
-	MT_lock_unset(&mal_contextLock, "profileLock");
+	MT_lock_unset(&mal_contextLock, "initTrace");
 	return TRACE_init ? 0 : -1;
 }
 
@@ -1135,7 +1134,7 @@ cachedProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc)
 		getModuleId(getInstrPtr(mb, 0)),
 		getFunctionId(getInstrPtr(mb, 0)), getPC(mb, pci));
 
-	MT_lock_set(&mal_profileLock, "profileLock");
+	MT_lock_set(&mal_profileLock, "cachedProfilerEvent");
 	TRACE_id_pc = BUNappend(TRACE_id_pc, buf, FALSE);
 
 	TRACE_id_thread = BUNappend(TRACE_id_thread, &tid, FALSE);
@@ -1200,7 +1199,7 @@ cachedProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc)
 	TRACE_id_wbytes = BUNappend(TRACE_id_wbytes, &mb->profiler[pc].wbytes, FALSE);
 
 	eventcounter++;
-	MT_lock_unset(&mal_profileLock, "profileLock");
+	MT_lock_unset(&mal_profileLock, "cachedProfilerEvent");
 }
 /*
  * The profile vector is added to the MAL block the first time we
@@ -1493,7 +1492,7 @@ void profilerHeartbeatEvent(str msg)
 	//if (profileCounter[PROFuser].status)
 		//logadd(" 0");
 	logadd("]\n");
-	logsent(logbuffer);
+	logsend(logbuffer);
 }
 
 static MT_Id hbthread;

@@ -212,6 +212,11 @@ _cluster_orderby(MalBlkPtr mb, int *ord, int ol, int *prj, int pl)
 		
 		/* order these parts then pack2 */
 		no = (InstrPtr*)GDKzalloc(sizeof(InstrPtr)*nr_parts);
+		if( no == NULL){
+			GDKerror("cluster" MAL_MALLOC_FAIL);
+			mb->stmt = old;
+			return 0;
+		}
 		o = old[ord[0]];
 		for (p = 0; p<nr_parts; p++) {
 			no[p] = copyInstruction(o);

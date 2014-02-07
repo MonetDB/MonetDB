@@ -68,6 +68,7 @@
 #include "mal_interpreter.h"	/* for showErrors() */
 #include "mal_listing.h"
 #include "mal_namespace.h"
+#include "mal_private.h"
 
 Symbol newFunction(str mod, str nme,int kind){
 	Symbol s;
@@ -87,15 +88,6 @@ Symbol newFunction(str mod, str nme,int kind){
 	pushInstruction(s->def,p);
 	return s;
 }
-InstrPtr newCall(Module scope, str fcnname, int kind){
-	InstrPtr p;
-	p= newInstruction(NULL,kind);
-	if (p == NULL)
-		return NULL;
-	setModuleScope(p, scope);
-	setFunctionId(p, putName(fcnname,strlen(fcnname)));
-	return p;
-}
 /*
  * @-
  * Optimizers may be interested in the function definition
@@ -109,9 +101,10 @@ Symbol  getFunctionSymbol(Module scope, InstrPtr p){
 
 	for(m= findModule(scope,getModuleId(p)); m; m= m->outer)
 		if(idcmp(m->name, getModuleId(p))==0 ) {
-				s= m->subscope[(int)(getSubScope(getFunctionId(p)))];
-				for(; s; s= s->peer)
-				if( getSignature(s)->fcn == p->fcn) return s;
+			s= m->subscope[(int)(getSubScope(getFunctionId(p)))];
+			for(; s; s= s->peer)
+				if( getSignature(s)->fcn == p->fcn)
+					return s;
 		}
 	return 0;
 }
@@ -699,6 +692,10 @@ setLifespan(MalBlkPtr mb)
 	prop = PropertyIndex("transparent");
 
 	blk= (int *) GDKzalloc(sizeof(int)*mb->vtop);
+	if( blk == NULL){
+		GDKerror("setLifeSpan" MAL_MALLOC_FAIL);
+		return NULL;
+	}
 
 	for (pc = 0; pc < mb->stop; pc++) {
 		p = getInstrPtr(mb, pc);

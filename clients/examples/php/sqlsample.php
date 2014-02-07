@@ -8,7 +8,7 @@ $tables = monetdb_query('SELECT name FROM tables');
 for ($i = 0; $line = @monetdb_fetch_assoc($tables); $i++) {
 	print($line['name']."\n");
 }
-$result = monetdb_query('SELECT * FROM tables');
+$result = monetdb_query('SELECT name, schema_id, query, type, system, commit_action, readonly, temporary FROM tables');
 $cols = monetdb_num_fields($result);
 for ($i = 0; $i < $cols; $i++) {
 	print(monetdb_field_name($result, $i)."\t");

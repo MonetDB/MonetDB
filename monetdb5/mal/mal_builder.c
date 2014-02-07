@@ -18,11 +18,9 @@
  */
 
 /*
- * @f mal_builder
- * @a M. Kersten
- * @v 1.0
+ * author M. Kersten
  *
- * @* The MAL builder
+ * MAL builder
  * The MAL builder library containst the primitives to simplify construction
  * of programs by compilers. It has grown out of the MonetDB/SQL code generator.
  * The strings being passed as arguments are copied in the process.
@@ -36,16 +34,6 @@ newAssignment(MalBlkPtr mb)
 	InstrPtr q = newInstruction(mb,ASSIGNsymbol);
 
 	getArg(q,0)= newTmpVariable(mb,TYPE_any);
-	pushInstruction(mb, q);
-	return q;
-}
-
-InstrPtr
-newAssignmentId(MalBlkPtr mb, str nme)
-{
-	InstrPtr q = newInstruction(mb,ASSIGNsymbol);
-
-	getArg(q,0)= newVariable(mb, GDKstrdup(nme), TYPE_any);
 	pushInstruction(mb, q);
 	return q;
 }
@@ -83,18 +71,6 @@ newStmt2(MalBlkPtr mb, str module, char *name)
 	setFunctionId(q, name);
 	setDestVar(q, newTmpVariable(mb, TYPE_any));
 	pushInstruction(mb, q);
-	return q;
-}
-InstrPtr
-newStmtId(MalBlkPtr mb, char *id, char *module, char *name)
-{
-	InstrPtr q = newInstruction(mb,ASSIGNsymbol);
-
-	setModuleId(q, (module) ? putName(module, strlen(module)) : NULL);
-	setFunctionId(q, (name) ? putName(name, strlen(name)) : NULL);
-	setDestVar(q, newVariable(mb, GDKstrdup(id), TYPE_any));
-	pushInstruction(mb, q);
-
 	return q;
 }
 

@@ -141,11 +141,8 @@ batUnfix(const bat *b)
  * support the BAT administration.
  *
  * A new type is incrementally build using the routine
- * ATOMproperty(id, property, function, value).  The parameter id
- * denotes the type name; an entry is created if the type is so far
- * unknown. The property argument is a string identifying the type
- * description property to be updated. Valid property names are size,
- * tostr, fromstr, put, get, cmp, eq, del, hash, null, new, and heap.
+ * ATOMallocate(id).  The parameter id denotes the type name; an entry
+ * is created if the type is so far unknown.
  *
  * The size describes the amount of space to be reserved in the BUN.
  *
@@ -169,36 +166,12 @@ batUnfix(const bat *b)
  * The incremental atom construction uses hardwired properties.  This
  * should be improved later on.
  */
-static int
-align(int n)
-{
-	if (n == 0)
-		return 0;
-	/* successively check bits from the bottom to see if one is set */
-	if (n & 1)
-		return 1;
-	if (n & 2)
-		return 2;
-	if (n & 4)
-		return 4;
-#ifdef HAVE_HGE
-	/* Do we indeed need 16-byte alignment
-	 * for 128-bit integers ?
-	 * I.e., does this indeed make sense ? */
-	if (n & 8)
-		return 8;
-	return 16;
-#else
-	return 8;
-#endif
-}
-
-void
-ATOMproperty(str id, str property, GDKfcn arg, int val)
+int
+ATOMallocate(const char *id)
 {
 	int t;
 
-	MT_lock_set(&GDKthreadLock, "ATOMproperty");
+	MT_lock_set(&GDKthreadLock, "ATOMallocate");
 	t = ATOMindex(id);
 
 	if (t < 0) {
@@ -207,93 +180,22 @@ ATOMproperty(str id, str property, GDKfcn arg, int val)
 			GDKatomcnt++;
 		}
 		if (GDKatomcnt == MAXATOMS)
-			GDKfatal("ATOMproperty: too many types");
+			GDKfatal("ATOMallocate: too many types");
 		if (strlen(id) >= IDLENGTH)
-			GDKfatal("ATOMproperty: name too long");
+			GDKfatal("ATOMallocate: name too long");
 		memset(BATatoms + t, 0, sizeof(atomDesc));
 		strncpy(BATatoms[t].name, id, IDLENGTH);
 		BATatoms[t].size = sizeof(int);		/* default */
-		assert_shift_width(ATOMelmshift(BATatoms[t].size), BATatoms[t].size);
 		BATatoms[t].align = sizeof(int);	/* default */
 		BATatoms[t].linear = 1;			/* default */
 		BATatoms[t].storage = t;		/* default */
-		BATatoms[t].deleting = 1;		/* not yet usable */
 	}
-	if (strcmp("size", property) == 0) {
-		if (val) {
-			assert(val <= SHRT_MAX);
-			BATatoms[t].size = val;
-			assert_shift_width(ATOMelmshift(BATatoms[t].size), BATatoms[t].size);
-			BATatoms[t].varsized = 0;
-			BATatoms[t].align = align(val);
-		} else {
-			BATatoms[t].size = sizeof(var_t);
-			assert_shift_width(ATOMelmshift(BATatoms[t].size), BATatoms[t].size);
-			BATatoms[t].varsized = 1;
-			BATatoms[t].align = sizeof(var_t);
-		}
-	} else if (strcmp("linear", property) == 0) {
-		BATatoms[t].linear = val;
-	} else if (strcmp("align", property) == 0) {
-		BATatoms[t].align = val;
-	} else if (strcmp("storage", property) == 0) {
-		BATatoms[t] = BATatoms[val];	/* copy from example */
-		strncpy(BATatoms[t].name, id, IDLENGTH); /* restore name */
-		BATatoms[t].name[IDLENGTH - 1] = 0;
-	} else if (strcmp("fromstr", property) == 0) {
-		BATatoms[t].atomFromStr = (int (*)(const char *, int *, void **)) arg;
-	} else if (strcmp("tostr", property) == 0) {
-		BATatoms[t].atomToStr = (int (*)(char **, int *, const void *)) arg;
-	} else if (strcmp("read", property) == 0) {
-		BATatoms[t].atomRead = (void *(*)(void *, stream *, size_t)) arg;
-	} else if (strcmp("write", property) == 0) {
-		BATatoms[t].atomWrite = (int (*)(const void *, stream *, size_t)) arg;
-	} else if (strcmp("fix", property) == 0) {
-		BATatoms[t].atomFix = (int (*)(const void *)) arg;
-	} else if (strcmp("unfix", property) == 0) {
-		BATatoms[t].atomUnfix = (int (*)(const void *)) arg;
-	} else {
-#define atomset(dst,val) oldval = (ptr) dst; if (val == NULL || dst == val) goto out; dst = val;
-		ptr oldval = NULL;
-
-		if (strcmp("heap", property) == 0) {
-			BATatoms[t].size = sizeof(var_t);
-			assert_shift_width(ATOMelmshift(BATatoms[t].size), BATatoms[t].size);
-			BATatoms[t].varsized = 1;
-			BATatoms[t].align = sizeof(var_t);
-			atomset(BATatoms[t].atomHeap, (void (*)(Heap *, size_t)) arg);
-		} else if (strcmp("del", property) == 0) {
-			atomset(BATatoms[t].atomDel, (void (*)(Heap *, var_t *)) arg);
-		} else if (strcmp("put", property) == 0) {
-			atomset(BATatoms[t].atomPut, (var_t (*)(Heap *, var_t *, const void *)) arg);
-		} else if (strcmp("null", property) == 0) {
-			ptr atmnull = ((ptr (*)(void)) arg) ();
-
-			atomset(BATatoms[t].atomNull, atmnull);
-		}
-		if (oldval)
-			goto out;
-
-		/* these ADT functions *must* be equal for overloaded types */
-		if (strcmp("cmp", property) == 0) {
-			atomset(BATatoms[t].atomCmp, (int (*)(const void *, const void *)) arg);
-		} else if (strcmp("hash", property) == 0) {
-			atomset(BATatoms[t].atomHash, (BUN (*)(const void *)) arg);
-		} else if (strcmp("length", property) == 0) {
-			atomset(BATatoms[t].atomLen, (int (*)(const void *)) arg);
-		}
-		if (BATatoms[t].storage != t)
-			GDKerror("ATOMproperty: %s overload of %s violates "
-				 "inheritance from %s.\n", ATOMname(t),
-				 property, ATOMname(BATatoms[t].storage));
-		BATatoms[t].storage = t;	/* critical redefine: undo remapping */
-	}
-      out:
-	MT_lock_unset(&GDKthreadLock, "ATOMproperty");
+	MT_lock_unset(&GDKthreadLock, "ATOMallocate");
+	return t;
 }
 
 int
-ATOMindex(str nme)
+ATOMindex(const char *nme)
 {
 	int t, j = GDKatomcnt;
 
@@ -1141,6 +1043,9 @@ strHash(const char *s)
 	return res;
 }
 
+/* if at least (2*SIZEOF_BUN), also store length (heaps are then
+ * incompatible) */
+#define EXTRALEN ((SIZEOF_BUN + GDK_VARALIGN - 1) & ~(GDK_VARALIGN - 1))
 
 void
 strCleanHash(Heap *h, int rebuild)
@@ -1149,6 +1054,50 @@ strCleanHash(Heap *h, int rebuild)
 	if (!GDK_ELIMDOUBLES(h)) {
 		/* flush hash table for security */
 		memset(h->base, 0, GDK_STRHASHSIZE);
+	} else {
+		/* rebuild hash table for double elimination
+		 *
+		 * If appending strings to the BAT was aborted, if the
+		 * heap was memory mapped, the hash in the string heap
+		 * may well be incorrect.  Therefore we don't trust it
+		 * when we read in a string heap and we rebuild the
+		 * complete table (it is small, so this won't take any
+		 * time at all). */
+		size_t pad, pos;
+		const size_t extralen = h->hashash ? EXTRALEN : 0;
+		stridx_t *bucket;
+		BUN off, strhash;
+		const char *s;
+
+		memset(h->base, 0, GDK_STRHASHSIZE);
+		pos = GDK_STRHASHSIZE;
+		while (pos < h->free) {
+			pad = GDK_VARALIGN - (pos & (GDK_VARALIGN - 1));
+			if (pad < sizeof(stridx_t))
+				pad += GDK_VARALIGN;
+			pos += pad + extralen;
+			s = h->base + pos;
+			if (h->hashash)
+				strhash = ((const BUN *) s)[-1];
+			else
+				GDK_STRHASH(s, strhash);
+			off = strhash & GDK_STRHASHMASK;
+			bucket = ((stridx_t *) h->base) + off;
+			*bucket = (stridx_t) (pos - extralen - sizeof(stridx_t));
+			pos += GDK_STRLEN(s);
+		}
+#ifndef NDEBUG
+		pos = GDK_STRHASHSIZE;
+		while (pos < h->free) {
+			pad = GDK_VARALIGN - (pos & (GDK_VARALIGN - 1));
+			if (pad < sizeof(stridx_t))
+				pad += GDK_VARALIGN;
+			pos += pad + extralen;
+			s = h->base + pos;
+			assert(strLocate(h, s) != 0);
+			pos += GDK_STRLEN(s);
+		}
+#endif
 	}
 }
 
@@ -1157,15 +1106,11 @@ strCleanHash(Heap *h, int rebuild)
  * the location of a string in the heap if it exists. Otherwise it
  * returns zero.
  */
-/* if at least (2*SIZEOF_BUN), also store length (heaps are then
- * incompatible) */
-#define EXTRALEN ((SIZEOF_BUN + GDK_VARALIGN - 1) & ~(GDK_VARALIGN - 1))
-
 var_t
 strLocate(Heap *h, const char *v)
 {
 	stridx_t *ref, *next;
-	size_t extralen = h->hashash ? EXTRALEN : 0;
+	const size_t extralen = h->hashash ? EXTRALEN : 0;
 
 	/* search hash-table, if double-elimination is still in place */
 	BUN off;
@@ -1190,7 +1135,7 @@ strPut(Heap *h, var_t *dst, const char *v)
 	size_t elimbase = GDK_ELIMBASE(h->free);
 	size_t pad = GDK_VARALIGN - (h->free & (GDK_VARALIGN - 1));
 	size_t pos, len = GDK_STRLEN(v);
-	size_t extralen = h->hashash ? EXTRALEN : 0;
+	const size_t extralen = h->hashash ? EXTRALEN : 0;
 	stridx_t *bucket, *ref, *next;
 	BUN off, strhash;
 
@@ -1199,24 +1144,30 @@ strPut(Heap *h, var_t *dst, const char *v)
 	off &= GDK_STRHASHMASK;
 	bucket = ((stridx_t *) h->base) + off;
 
-	/* search hash-table, if double-elimination is still in place */
-	if (elimbase == 0) {	/* small string heap (<64KB) -- fully double eliminated */
-		for (ref = bucket; *ref; ref = next) {	/* search the linked list */
+	/* if double-elimination is still in place, search hash-table */
+	if (elimbase == 0) {
+		/* small string heap (<64KB) -- fully double eliminated */
+		for (ref = bucket; *ref; ref = next) {
+			/* search the linked list */
 			next = (stridx_t *) (h->base + *ref);
-			if (GDK_STRCMP(v, (str) (next + 1) + extralen) == 0) {	/* found */
+			if (GDK_STRCMP(v, (str) (next + 1) + extralen) == 0) {
+				/* found */
 				pos = sizeof(stridx_t) + *ref + extralen;
 				return *dst = (var_t) (pos >> GDK_VARSHIFT);
 			}
 		}
 		/* is there room for the next pointer in the padding space? */
-		if (pad < sizeof(stridx_t))
-			pad += GDK_VARALIGN;	/* if not, pad more */
+		if (pad < sizeof(stridx_t)) {
+			/* if not, pad more */
+			pad += GDK_VARALIGN;
+		}
 	} else if (*bucket) {
 		/* large string heap (>=64KB) --
 		 * opportunistic/probabilistic double elimination */
 		pos = elimbase + *bucket + extralen;
 		if (GDK_STRCMP(v, h->base + pos) == 0) {
-			return *dst = (var_t) (pos >> GDK_VARSHIFT);	/* already in heap; do not insert! */
+			/* already in heap; do not insert! */
+			return *dst = (var_t) (pos >> GDK_VARSHIFT);
 		}
 #if SIZEOF_VAR_T >= SIZEOF_VOID_P /* in fact SIZEOF_VAR_T == SIZEOF_VOID_P */
 		if (extralen == 0)
@@ -1653,16 +1604,11 @@ strWrite(const char *a, stream *s, size_t cnt)
  * BUNhead(b,p)/BUNtail(b,p) instantiate a value on-the-fly by looking
  * at the position p in BAT b.
  */
-oid	GDKoid, GDKflushed;
-/*
- * Init the shared array of oid bases.
- */
-int
-OIDinit(void)
-{
-	GDKflushed = GDKoid = 0;
-	return 0;
-}
+static volatile ATOMIC_TYPE GDKoid;
+#ifdef ATOMIC_LOCK
+static MT_Lock GDKoidLock MT_LOCK_INITIALIZER("GDKoidLock");
+#endif
+static oid GDKflushed;		/* protected by MT_system_lock */
 
 /*
  * Make up some new OID for a specified database, based on the current
@@ -1675,29 +1621,39 @@ OIDrand(void)
 }
 
 /*
+ * Init the shared array of oid bases.
+ */
+int
+OIDinit(void)
+{
+#ifdef NEED_MT_LOCK_INIT
+	ATOMIC_INIT(GDKoidLock, "GDKoidLock");
+#endif
+	GDKflushed = 0;
+	GDKoid = OIDrand();
+	return 0;
+}
+
+/*
  * Initialize the current OID number to be starting at 'o'.
  */
 oid
 OIDbase(oid o)
 {
-	MT_lock_set(&MT_system_lock, "OIDbase");
-	GDKoid = o;
-	MT_lock_unset(&MT_system_lock, "OIDbase");
+	ATOMIC_SET(GDKoid, (ATOMIC_TYPE) o, GDKoidLock, "OIDbase");
 	return o;
 }
 
 static oid
 OIDseed(oid o)
 {
-	oid t, p = GDKoid;
+	oid t, p = (oid) ATOMIC_GET(GDKoid, GDKoidLock, "OIDseed");
 
-	MT_lock_set(&MT_system_lock, "OIDseed");
 	t = OIDrand();
 	if (o > t)
 		t = o;
 	if (p >= t)
 		t = p;
-	MT_lock_unset(&MT_system_lock, "OIDseed");
 	return t;
 }
 
@@ -1729,10 +1685,12 @@ int
 OIDwrite(stream *s)
 {
 	int ret = 0;
+	ATOMIC_TYPE o;
 
 	MT_lock_set(&MT_system_lock, "OIDwrite");
-	if (GDKoid) {
-		GDKflushed = GDKoid;
+	o = ATOMIC_GET(GDKoid, GDKoidLock, "OIDwrite");
+	if (o) {
+		GDKflushed = (oid) o;
 		ATOMprint(TYPE_oid, &GDKflushed, s);
 		if (mnstr_errnr(s) ||
 		    mnstr_write(s, " ", 1, 1) <= 0)
@@ -1745,10 +1703,11 @@ OIDwrite(stream *s)
 int
 OIDdirty(void)
 {
-	if (GDKoid && GDKoid > GDKflushed) {
-		return TRUE;
-	}
-	return FALSE;
+	int ret;
+	MT_lock_set(&MT_system_lock, "OIDdirty");
+	ret = (oid) ATOMIC_GET(GDKoid, GDKoidLock, "OIDdirty") > GDKflushed;
+	MT_lock_unset(&MT_system_lock, "OIDdirty");
+	return ret;
 }
 
 /*
@@ -1757,15 +1716,7 @@ OIDdirty(void)
 oid
 OIDnew(oid inc)
 {
-	oid ret;
-
-	MT_lock_set(&MT_system_lock, "OIDnew");
-	if (!GDKoid)
-		GDKoid = OIDrand();
-	ret = GDKoid;
-	GDKoid += inc;
-	MT_lock_unset(&MT_system_lock, "OIDnew");
-	return ret;
+	return (oid) ATOMIC_ADD(GDKoid, (ATOMIC_TYPE) inc, GDKoidLock, "OIDnew");
 }
 
 /*
@@ -1821,156 +1772,309 @@ OIDtoStr(char **dst, int *len, const oid *src)
 }
 
 atomDesc BATatoms[MAXATOMS] = {
-	{"void",
+	{"void",		/* name */
+	 TYPE_void,		/* storage */
+	 1,			/* linear */
+	 0,			/* size */
+	 0,			/* align */
+	 (ptr) &oid_nil,	/* atomNull */
+	 (int (*)(const char *, int *, ptr *)) OIDfromStr,    /* atomFromStr */
+	 (int (*)(str *, int *, const void *)) OIDtoStr,      /* atomToStr */
+	 (void *(*)(void *, stream *, size_t)) voidRead,      /* atomRead */
+	 (int (*)(const void *, stream *, size_t)) voidWrite, /* atomWrite */
 #if SIZEOF_OID == SIZEOF_INT
-	 TYPE_void, 1, 0, /* sizeof(void) */ 0, 0, 1, (ptr) &oid_nil,
-	 (int (*)(const char *, int *, ptr *)) OIDfromStr, (int (*)(str *, int *, const void *)) OIDtoStr,
-	 (void *(*)(void *, stream *, size_t)) voidRead, (int (*)(const void *, stream *, size_t)) voidWrite,
-	 (int (*)(const void *, const void *)) intCmp,
-	 (BUN (*)(const void *)) intHash,
+	 (int (*)(const void *, const void *)) intCmp,	      /* atomCmp */
+	 (BUN (*)(const void *)) intHash,		      /* atomHash */
 #else
-	 TYPE_void, 1, 0, /* sizeof(void) */ 0, 0, 1, (ptr) &oid_nil,
-	 (int (*)(const char *, int *, ptr *)) OIDfromStr, (int (*)(str *, int *, const void *)) OIDtoStr,
-	 (void *(*)(void *, stream *, size_t)) voidRead, (int (*)(const void *, stream *, size_t)) voidWrite,
-	 (int (*)(const void *, const void *)) lngCmp,
-	 (BUN (*)(const void *)) lngHash,
+	 (int (*)(const void *, const void *)) lngCmp,	      /* atomCmp */
+	 (BUN (*)(const void *)) lngHash,		      /* atomHash */
 #endif
-	 0, 0,
-	 0, 0,
-	 0, 0},
-	{"bit", TYPE_bte, 1, sizeof(bit), sizeof(bit), 0, 0, (ptr) &bte_nil,
-	 (int (*)(const char *, int *, ptr *)) bitFromStr, (int (*)(str *, int *, const void *)) bitToStr,
-	 (void *(*)(void *, stream *, size_t)) bitRead, (int (*)(const void *, stream *, size_t)) bitWrite,
-	 (int (*)(const void *, const void *)) bteCmp,
-	 (BUN (*)(const void *)) bteHash,
-	 0, 0,
-	 0, 0,
-	 0, 0},
-	{"bte", TYPE_bte, 1, sizeof(bte), sizeof(bte), 0, 0, (ptr) &bte_nil,
-	 (int (*)(const char *, int *, ptr *)) bteFromStr, (int (*)(str *, int *, const void *)) bteToStr,
-	 (void *(*)(void *, stream *, size_t)) bteRead, (int (*)(const void *, stream *, size_t)) bteWrite,
-	 (int (*)(const void *, const void *)) bteCmp,
-	 (BUN (*)(const void *)) bteHash,
-	 0, 0,
-	 0, 0,
-	 0, 0},
-	{"sht", TYPE_sht, 1, sizeof(sht), sizeof(sht), 0, 0, (ptr) &sht_nil,
-	 (int (*)(const char *, int *, ptr *)) shtFromStr, (int (*)(str *, int *, const void *)) shtToStr,
-	 (void *(*)(void *, stream *, size_t)) shtRead, (int (*)(const void *, stream *, size_t)) shtWrite,
-	 (int (*)(const void *, const void *)) shtCmp,
-	 (BUN (*)(const void *)) shtHash,
-	 0, 0,
-	 0, 0,
-	 0, 0},
-	{"BAT", TYPE_int, 1, sizeof(bat), sizeof(bat), 0, 0, (ptr) &int_nil,
-	 (int (*)(const char *, int *, ptr *)) batFromStr, (int (*)(str *, int *, const void *)) batToStr,
-	 (void *(*)(void *, stream *, size_t)) batRead, (int (*)(const void *, stream *, size_t)) batWrite,
-	 (int (*)(const void *, const void *)) intCmp,
-	 (BUN (*)(const void *)) intHash,
-	 (int (*)(const void *)) batFix, (int (*)(const void *)) batUnfix,
-	 0, 0,
-	 0, 0},
-	{"int", TYPE_int, 1, sizeof(int), sizeof(int), 0, 0, (ptr) &int_nil,
-	 (int (*)(const char *, int *, ptr *)) intFromStr, (int (*)(str *, int *, const void *)) intToStr,
-	 (void *(*)(void *, stream *, size_t)) intRead, (int (*)(const void *, stream *, size_t)) intWrite,
-	 (int (*)(const void *, const void *)) intCmp,
-	 (BUN (*)(const void *)) intHash,
-	 0, 0,
-	 0, 0,
-	 0, 0},
-	{"oid",
+	 0,			/* atomFix */
+	 0,			/* atomUnfix */
+	 0,			/* atomPut */
+	 0,			/* atomDel */
+	 0,			/* atomLen */
+	 0,			/* atomHeap */
+	},
+	{"bit",			/* name */
+	 TYPE_bte,		/* storage */
+	 1,			/* linear */
+	 sizeof(bit),		/* size */
+	 sizeof(bit),		/* align */
+	 (ptr) &bte_nil,	/* atomNull */
+	 (int (*)(const char *, int *, ptr *)) bitFromStr,   /* atomFromStr */
+	 (int (*)(str *, int *, const void *)) bitToStr,     /* atomToStr */
+	 (void *(*)(void *, stream *, size_t)) bitRead,	     /* atomRead */
+	 (int (*)(const void *, stream *, size_t)) bitWrite, /* atomWrite */
+	 (int (*)(const void *, const void *)) bteCmp,	     /* atomCmp */
+	 (BUN (*)(const void *)) bteHash,		     /* atomHash */
+	 0,			/* atomFix */
+	 0,			/* atomUnfix */
+	 0,			/* atomPut */
+	 0,			/* atomDel */
+	 0,			/* atomLen */
+	 0,			/* atomHeap */
+	},
+	{"bte",			/* name */
+	 TYPE_bte,		/* storage */
+	 1,			/* linear */
+	 sizeof(bte),		/* size */
+	 sizeof(bte),		/* align */
+	 (ptr) &bte_nil,	/* atomNull */
+	 (int (*)(const char *, int *, ptr *)) bteFromStr,   /* atomFromStr */
+	 (int (*)(str *, int *, const void *)) bteToStr,     /* atomToStr */
+	 (void *(*)(void *, stream *, size_t)) bteRead,	     /* atomRead */
+	 (int (*)(const void *, stream *, size_t)) bteWrite, /* atomWrite */
+	 (int (*)(const void *, const void *)) bteCmp,	     /* atomCmp */
+	 (BUN (*)(const void *)) bteHash,		     /* atomHash */
+	 0,			/* atomFix */
+	 0,			/* atomUnfix */
+	 0,			/* atomPut */
+	 0,			/* atomDel */
+	 0,			/* atomLen */
+	 0,			/* atomHeap */
+	},
+	{"sht",			/* name */
+	 TYPE_sht,		/* storage */
+	 1,			/* linear */
+	 sizeof(sht),		/* size */
+	 sizeof(sht),		/* align */
+	 (ptr) &sht_nil,	/* atomNull */
+	 (int (*)(const char *, int *, ptr *)) shtFromStr,   /* atomFromStr */
+	 (int (*)(str *, int *, const void *)) shtToStr,     /* atomToStr */
+	 (void *(*)(void *, stream *, size_t)) shtRead,	     /* atomRead */
+	 (int (*)(const void *, stream *, size_t)) shtWrite, /* atomWrite */
+	 (int (*)(const void *, const void *)) shtCmp,	     /* atomCmp */
+	 (BUN (*)(const void *)) shtHash,		     /* atomHash */
+	 0,			/* atomFix */
+	 0,			/* atomUnfix */
+	 0,			/* atomPut */
+	 0,			/* atomDel */
+	 0,			/* atomLen */
+	 0,			/* atomHeap */
+	},
+	{"BAT",			/* name */
+	 TYPE_int,		/* storage */
+	 1,			/* linear */
+	 sizeof(bat),		/* size */
+	 sizeof(bat),		/* align */
+	 (ptr) &int_nil,	/* atomNull */
+	 (int (*)(const char *, int *, ptr *)) batFromStr,   /* atomFromStr */
+	 (int (*)(str *, int *, const void *)) batToStr,     /* atomToStr */
+	 (void *(*)(void *, stream *, size_t)) batRead,	     /* atomRead */
+	 (int (*)(const void *, stream *, size_t)) batWrite, /* atomWrite */
+	 (int (*)(const void *, const void *)) intCmp,	     /* atomCmp */
+	 (BUN (*)(const void *)) intHash,		     /* atomHash */
+	 (int (*)(const void *)) batFix,		     /* atomFix */
+	 (int (*)(const void *)) batUnfix,		     /* atomUnfix */
+	 0,			/* atomPut */
+	 0,			/* atomDel */
+	 0,			/* atomLen */
+	 0,			/* atomHeap */
+	},
+	{"int",			/* name */
+	 TYPE_int,		/* storage */
+	 1,			/* linear */
+	 sizeof(int),		/* size */
+	 sizeof(int),		/* align */
+	 (ptr) &int_nil,	/* atomNull */
+	 (int (*)(const char *, int *, ptr *)) intFromStr,   /* atomFromStr */
+	 (int (*)(str *, int *, const void *)) intToStr,     /* atomToStr */
+	 (void *(*)(void *, stream *, size_t)) intRead,	     /* atomRead */
+	 (int (*)(const void *, stream *, size_t)) intWrite, /* atomWrite */
+	 (int (*)(const void *, const void *)) intCmp,	     /* atomCmp */
+	 (BUN (*)(const void *)) intHash,		     /* atomHash */
+	 0,			/* atomFix */
+	 0,			/* atomUnfix */
+	 0,			/* atomPut */
+	 0,			/* atomDel */
+	 0,			/* atomLen */
+	 0,			/* atomHeap */
+	},
+	{"oid",			/* name */
 #if SIZEOF_OID == SIZEOF_INT
-	 TYPE_int, 1, sizeof(oid), sizeof(oid), 0, 0, (ptr) &oid_nil,
-	 (int (*)(const char *, int *, ptr *)) OIDfromStr, (int (*)(str *, int *, const void *)) OIDtoStr,
-	 (void *(*)(void *, stream *, size_t)) intRead, (int (*)(const void *, stream *, size_t)) intWrite,
-	 (int (*)(const void *, const void *)) intCmp,
-	 (BUN (*)(const void *)) intHash,
+	 TYPE_int,		/* storage */
 #else
-	 TYPE_lng, 1, sizeof(oid), sizeof(oid), 0, 0, (ptr) &oid_nil,
-	 (int (*)(const char *, int *, ptr *)) OIDfromStr, (int (*)(str *, int *, const void *)) OIDtoStr,
-	 (void *(*)(void *, stream *, size_t)) lngRead, (int (*)(const void *, stream *, size_t)) lngWrite,
-	 (int (*)(const void *, const void *)) lngCmp,
-	 (BUN (*)(const void *)) lngHash,
+	 TYPE_lng,		/* storage */
 #endif
-	 0, 0,
-	 0, 0,
-	 0, 0},
-	{"wrd",
+	 1,			/* linear */
+	 sizeof(oid),		/* size */
+	 sizeof(oid),		/* align */
+	 (ptr) &oid_nil,	/* atomNull */
+	 (int (*)(const char *, int *, ptr *)) OIDfromStr,   /* atomFromStr */
+	 (int (*)(str *, int *, const void *)) OIDtoStr,     /* atomToStr */
+#if SIZEOF_OID == SIZEOF_INT
+	 (void *(*)(void *, stream *, size_t)) intRead,	     /* atomRead */
+	 (int (*)(const void *, stream *, size_t)) intWrite, /* atomWrite */
+	 (int (*)(const void *, const void *)) intCmp,	     /* atomCmp */
+	 (BUN (*)(const void *)) intHash,		     /* atomHash */
+#else
+	 (void *(*)(void *, stream *, size_t)) lngRead,	     /* atomRead */
+	 (int (*)(const void *, stream *, size_t)) lngWrite, /* atomWrite */
+	 (int (*)(const void *, const void *)) lngCmp,	     /* atomCmp */
+	 (BUN (*)(const void *)) lngHash,		     /* atomHash */
+#endif
+	 0,			/* atomFix */
+	 0,			/* atomUnfix */
+	 0,			/* atomPut */
+	 0,			/* atomDel */
+	 0,			/* atomLen */
+	 0,			/* atomHeap */
+	},
+	{"wrd",			/* name */
 #if SIZEOF_WRD == SIZEOF_INT
-	 TYPE_int, 1, sizeof(wrd), sizeof(wrd), 0, 0, (ptr) &int_nil,
-	 (int (*)(const char *, int *, ptr *)) intFromStr, (int (*)(str *, int *, const void *)) intToStr,
-	 (void *(*)(void *, stream *, size_t)) intRead, (int (*)(const void *, stream *, size_t)) intWrite,
-	 (int (*)(const void *, const void *)) intCmp,
-	 (BUN (*)(const void *)) intHash,
+	 TYPE_int,		/* storage */
 #else
-	 TYPE_lng, 1, sizeof(wrd), sizeof(wrd), 0, 0, (ptr) &lng_nil,
-	 (int (*)(const char *, int *, ptr *)) lngFromStr, (int (*)(str *, int *, const void *)) lngToStr,
-	 (void *(*)(void *, stream *, size_t)) lngRead, (int (*)(const void *, stream *, size_t)) lngWrite,
-	 (int (*)(const void *, const void *)) lngCmp,
-	 (BUN (*)(const void *)) lngHash,
+	 TYPE_lng,		/* storage */
 #endif
-	 0, 0,
-	 0, 0,
-	 0, 0},
-	{"ptr",
+	 1,			/* linear */
+	 sizeof(wrd),		/* size */
+	 sizeof(wrd),		/* align */
+#if SIZEOF_WRD == SIZEOF_INT
+	 (ptr) &int_nil,	/* atomNull */
+	 (int (*)(const char *, int *, ptr *)) intFromStr,   /* atomFromStr */
+	 (int (*)(str *, int *, const void *)) intToStr,     /* atomToStr */
+	 (void *(*)(void *, stream *, size_t)) intRead,	     /* atomRead */
+	 (int (*)(const void *, stream *, size_t)) intWrite, /* atomWrite */
+	 (int (*)(const void *, const void *)) intCmp,	     /* atomCmp */
+	 (BUN (*)(const void *)) intHash,		     /* atomHash */
+#else
+	 (ptr) &lng_nil,	/* atomNull */
+	 (int (*)(const char *, int *, ptr *)) lngFromStr,   /* atomFromStr */
+	 (int (*)(str *, int *, const void *)) lngToStr,     /* atomToStr */
+	 (void *(*)(void *, stream *, size_t)) lngRead,	     /* atomRead */
+	 (int (*)(const void *, stream *, size_t)) lngWrite, /* atomWrite */
+	 (int (*)(const void *, const void *)) lngCmp,	     /* atomCmp */
+	 (BUN (*)(const void *)) lngHash,		     /* atomHash */
+#endif
+	 0,			/* atomFix */
+	 0,			/* atomUnfix */
+	 0,			/* atomPut */
+	 0,			/* atomDel */
+	 0,			/* atomLen */
+	 0,			/* atomHeap */
+	},
+	{"ptr",			/* name */
+	 TYPE_ptr,		/* storage */
+	 1,			/* linear */
+	 sizeof(ptr),		/* size */
+	 sizeof(ptr),		/* align */
+	 (ptr) &ptr_nil,	/* atomNull */
+	 (int (*)(const char *, int *, ptr *)) ptrFromStr,   /* atomFromStr */
+	 (int (*)(str *, int *, const void *)) ptrToStr,     /* atomToStr */
+	 (void *(*)(void *, stream *, size_t)) ptrRead,	     /* atomRead */
+	 (int (*)(const void *, stream *, size_t)) ptrWrite, /* atomWrite */
 #if SIZEOF_VOID_P == SIZEOF_INT
-	 TYPE_ptr, 1, sizeof(ptr), sizeof(ptr), 0, 0, (ptr) &ptr_nil,
-	 (int (*)(const char *, int *, ptr *)) ptrFromStr, (int (*)(str *, int *, const void *)) ptrToStr,
-	 (void *(*)(void *, stream *, size_t)) ptrRead, (int (*)(const void *, stream *, size_t)) ptrWrite,
-	 (int (*)(const void *, const void *)) intCmp,
-	 (BUN (*)(const void *)) intHash,
+	 (int (*)(const void *, const void *)) intCmp,       /* atomCmp */
+	 (BUN (*)(const void *)) intHash,	             /* atomHash */
 #else /* SIZEOF_VOID_P == SIZEOF_LNG */
-	 TYPE_ptr, 1, sizeof(ptr), sizeof(ptr), 0, 0, (ptr) &ptr_nil,
-	 (int (*)(const char *, int *, ptr *)) ptrFromStr, (int (*)(str *, int *, const void *)) ptrToStr,
-	 (void *(*)(void *, stream *, size_t)) ptrRead, (int (*)(const void *, stream *, size_t)) ptrWrite,
-	 (int (*)(const void *, const void *)) lngCmp,
-	 (BUN (*)(const void *)) lngHash,
+	 (int (*)(const void *, const void *)) lngCmp,	     /* atomCmp */
+	 (BUN (*)(const void *)) lngHash,		     /* atomHash */
 #endif
-	 0, 0,
-	 0, 0,
-	 0, 0},
-	{"flt", TYPE_flt, 1, sizeof(flt), sizeof(flt), 0, 0, (ptr) &flt_nil,
-	 (int (*)(const char *, int *, ptr *)) fltFromStr, (int (*)(str *, int *, const void *)) fltToStr,
-	 (void *(*)(void *, stream *, size_t)) fltRead, (int (*)(const void *, stream *, size_t)) fltWrite,
-	 (int (*)(const void *, const void *)) fltCmp,
-	 (BUN (*)(const void *)) intHash,
-	 0, 0,
-	 0, 0,
-	 0, 0},
-	{"dbl", TYPE_dbl, 1, sizeof(dbl), sizeof(dbl), 0, 0, (ptr) &dbl_nil,
-	 (int (*)(const char *, int *, ptr *)) dblFromStr, (int (*)(str *, int *, const void *)) dblToStr,
-	 (void *(*)(void *, stream *, size_t)) dblRead, (int (*)(const void *, stream *, size_t)) dblWrite,
-	 (int (*)(const void *, const void *)) dblCmp,
-	 (BUN (*)(const void *)) lngHash,
-	 0, 0,
-	 0, 0,
-	 0, 0},
-	{"lng", TYPE_lng, 1, sizeof(lng), sizeof(lng), 0, 0, (ptr) &lng_nil,
-	 (int (*)(const char *, int *, ptr *)) lngFromStr, (int (*)(str *, int *, const void *)) lngToStr,
-	 (void *(*)(void *, stream *, size_t)) lngRead, (int (*)(const void *, stream *, size_t)) lngWrite,
-	 (int (*)(const void *, const void *)) lngCmp,
-	 (BUN (*)(const void *)) lngHash,
-	 0, 0,
-	 0, 0,
-	 0, 0},
+	 0,			/* atomFix */
+	 0,			/* atomUnfix */
+	 0,			/* atomPut */
+	 0,			/* atomDel */
+	 0,			/* atomLen */
+	 0,			/* atomHeap */
+	},
+	{"flt",			/* name */
+	 TYPE_flt,		/* storage */
+	 1,			/* linear */
+	 sizeof(flt),		/* size */
+	 sizeof(flt),		/* align */
+	 (ptr) &flt_nil,	/* atomNull */
+	 (int (*)(const char *, int *, ptr *)) fltFromStr,   /* atomFromStr */
+	 (int (*)(str *, int *, const void *)) fltToStr,     /* atomToStr */
+	 (void *(*)(void *, stream *, size_t)) fltRead,	     /* atomRead */
+	 (int (*)(const void *, stream *, size_t)) fltWrite, /* atomWrite */
+	 (int (*)(const void *, const void *)) fltCmp,	     /* atomCmp */
+	 (BUN (*)(const void *)) intHash,		     /* atomHash */
+	 0,			/* atomFix */
+	 0,			/* atomUnfix */
+	 0,			/* atomPut */
+	 0,			/* atomDel */
+	 0,			/* atomLen */
+	 0,			/* atomHeap */
+	},
+	{"dbl",			/* name */
+	 TYPE_dbl,		/* storage */
+	 1,			/* linear */
+	 sizeof(dbl),		/* size */
+	 sizeof(dbl),		/* align */
+	 (ptr) &dbl_nil,	/* atomNull */
+	 (int (*)(const char *, int *, ptr *)) dblFromStr,   /* atomFromStr */
+	 (int (*)(str *, int *, const void *)) dblToStr,     /* atomToStr */
+	 (void *(*)(void *, stream *, size_t)) dblRead,	     /* atomRead */
+	 (int (*)(const void *, stream *, size_t)) dblWrite, /* atomWrite */
+	 (int (*)(const void *, const void *)) dblCmp,	     /* atomCmp */
+	 (BUN (*)(const void *)) lngHash,		     /* atomHash */
+	 0,			/* atomFix */
+	 0,			/* atomUnfix */
+	 0,			/* atomPut */
+	 0,			/* atomDel */
+	 0,			/* atomLen */
+	 0,			/* atomHeap */
+	},
+	{"lng",			/* name */
+	 TYPE_lng,		/* storage */
+	 1,			/* linear */
+	 sizeof(lng),		/* size */
+	 sizeof(lng),		/* align */
+	 (ptr) &lng_nil,	/* atomNull */
+	 (int (*)(const char *, int *, ptr *)) lngFromStr,   /* atomFromStr */
+	 (int (*)(str *, int *, const void *)) lngToStr,     /* atomToStr */
+	 (void *(*)(void *, stream *, size_t)) lngRead,	     /* atomRead */
+	 (int (*)(const void *, stream *, size_t)) lngWrite, /* atomWrite */
+	 (int (*)(const void *, const void *)) lngCmp,	     /* atomCmp */
+	 (BUN (*)(const void *)) lngHash,		     /* atomHash */
+	 0,			/* atomFix */
+	 0,			/* atomUnfix */
+	 0,			/* atomPut */
+	 0,			/* atomDel */
+	 0,			/* atomLen */
+	 0,			/* atomHeap */
+	},
 #ifdef HAVE_HGE
-	{"hge", TYPE_hge, 1, sizeof(hge), sizeof(hge), 0, 0, (ptr) &hge_nil,
-	 (int (*)(const char *, int *, ptr *)) hgeFromStr, (int (*)(str *, int *, const void *)) hgeToStr,
-	 (void *(*)(void *, stream *, size_t)) hgeRead, (int (*)(const void *, stream *, size_t)) hgeWrite,
-	 (int (*)(const void *, const void *)) hgeCmp,
-	 (BUN (*)(const void *)) hgeHash,
-	 0, 0,
-	 0, 0,
-	 0, 0},
+	{"hge",			/* name */
+	 TYPE_hge,		/* storage */
+	 1,			/* linear */
+	 sizeof(hge),		/* size */
+	 sizeof(hge),		/* align */
+	 (ptr) &hge_nil,	/* atomNull */
+	 (int (*)(const char *, int *, ptr *)) hgeFromStr,   /* atomFromStr */
+	 (int (*)(str *, int *, const void *)) hgeToStr,     /* atomToStr */
+	 (void *(*)(void *, stream *, size_t)) hgeRead,	     /* atomRead */
+	 (int (*)(const void *, stream *, size_t)) hgeWrite, /* atomWrite */
+	 (int (*)(const void *, const void *)) hgeCmp,	     /* atomCmp */
+	 (BUN (*)(const void *)) hgeHash,		     /* atomHash */
+	 0,			/* atomFix */
+	 0,			/* atomUnfix */
+	 0,			/* atomPut */
+	 0,			/* atomDel */
+	 0,			/* atomLen */
+	 0,			/* atomHeap */
+	},
 #endif
-	{"str", TYPE_str, 1, sizeof(var_t), sizeof(var_t), 0, 1, (ptr) str_nil,
-	 (int (*)(const char *, int *, ptr *)) strFromStr, (int (*)(str *, int *, const void *)) strToStr,
-	 (void *(*)(void *, stream *, size_t)) strRead, (int (*)(const void *, stream *, size_t)) strWrite,
-	 (int (*)(const void *, const void *)) strCmp,
-	 (BUN (*)(const void *)) strHash,
-	 0, 0,
-	 (var_t (*)(Heap *, var_t *, const void *)) strPut, 0,
-	 (int (*)(const void *)) strLen, strHeap},
+	{"str",			/* name */
+	 TYPE_str,		/* storage */
+	 1,			/* linear */
+	 sizeof(var_t),		/* size */
+	 sizeof(var_t),		/* align */
+	 (ptr) str_nil,		/* atomNull */
+	 (int (*)(const char *, int *, ptr *)) strFromStr,   /* atomFromStr */
+	 (int (*)(str *, int *, const void *)) strToStr,     /* atomToStr */
+	 (void *(*)(void *, stream *, size_t)) strRead,	     /* atomRead */
+	 (int (*)(const void *, stream *, size_t)) strWrite, /* atomWrite */
+	 (int (*)(const void *, const void *)) strCmp,	     /* atomCmp */
+	 (BUN (*)(const void *)) strHash,		     /* atomHash */
+	 0,			/* atomFix */
+	 0,			/* atomUnfix */
+	 (var_t (*)(Heap *, var_t *, const void *)) strPut,  /* atomPut */
+	 0,			/* atomDel */
+	 (int (*)(const void *)) strLen,		     /* atomLen */
+	 strHeap,		/* atomHeap */
+	},
 };
 
 int GDKatomcnt = TYPE_str + 1;

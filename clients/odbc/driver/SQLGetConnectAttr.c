@@ -93,6 +93,9 @@ SQLGetConnectAttr_(ODBCDbc *dbc,
 			   BufferLength, StringLengthPtr, SQLINTEGER,
 			   addDbcError, dbc, return SQL_ERROR);
 		break;
+	case SQL_ATTR_TXN_ISOLATION:
+		*(SQLUINTEGER *) ValuePtr = SQL_TXN_SERIALIZABLE;
+		break;
 
 /* TODO: implement all the other Connection Attributes */
 	case SQL_ATTR_DISCONNECT_BEHAVIOR:
@@ -103,7 +106,6 @@ SQLGetConnectAttr_(ODBCDbc *dbc,
 	case SQL_ATTR_TRACEFILE:
 	case SQL_ATTR_TRANSLATE_LIB:
 	case SQL_ATTR_TRANSLATE_OPTION:
-	case SQL_ATTR_TXN_ISOLATION:
 		/* Optional feature not implemented */
 		addDbcError(dbc, "HYC00", NULL, 0);
 		return SQL_ERROR;

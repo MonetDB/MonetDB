@@ -72,6 +72,11 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 	else
 	if ( qtop +1 == qsize )
 		QRYqueue = (QueryQueue) GDKrealloc( QRYqueue, sizeof (struct QRYQUEUE) * (qsize +=256));
+	if ( QRYqueue == NULL){
+		GDKerror("runtimeProfileInit" MAL_MALLOC_FAIL);
+		MT_lock_unset(&mal_delayLock, "sysmon");
+		return;
+	}
 	for( i = 0; i < qtop; i++)
 		if ( QRYqueue[i].mb == mb)
 			break;

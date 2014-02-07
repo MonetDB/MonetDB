@@ -69,7 +69,6 @@ static void newSubScope(Module scope){
 	scope->subscope = (Symbol *) GDKzalloc(len);
 }
 /*
- * @-
  * Definition of a new module scope may interfere with concurrent
  * actions of multiple threads. This calls for a secure update
  * of the scope tree structure.
@@ -120,7 +119,6 @@ Module newModule(Module scope, str nme){
 	return cur;
 }
 /*
- * @-
  * The scope can be fixed. This is used by the parser to avoid creation of
  * a string structure when possible. Subsequently we can
  * replace the module name in the instructions to become a pointer
@@ -140,7 +138,6 @@ Module fixModule(Module scope, str nme){
 	return newModule(scope, nme);
 }
 /*
- * @-
  * A derived module inherits copies of all known
  * functions in the parent module. These can be
  * refined or expanded.
@@ -160,7 +157,6 @@ deriveModule(Module scope, str nme){
 	}
 }
 /*
- * @-
  * The freeModule operation throws away a symbol without
  * concerns on it whereabouts in the scope structure.
  * This routine therefore assumes care in use.
@@ -252,7 +248,6 @@ void insertSymbol(Module scope, Symbol prg){
 	assert(prg != prg->peer);
 }
 /*
- * @-
  * Removal of elements from the symbol table should be
  * done with care. For, it should be assured that
  * there are no references to the definition at the
@@ -377,7 +372,6 @@ int isModuleDefined(Module scope, str name){
 	return FALSE;
 }
 /*
- * @-
  * The routine findSymbolInModule starts at a MAL scope level and searches
  * an element amongst the peers. If it fails, it will recursively
  * inspect the outer scopes.
@@ -443,9 +437,7 @@ int displayModule(stream *f, Module v, str fcn, int listing){
 	}
 	return k;
 }
-/*
- * @- Utilities
- */
+ 
 static void  printModuleScope(stream *fd, Module scope, int tab, int outer)
 {
 	int j;
@@ -496,7 +488,6 @@ void debugModule(stream *f, Module start, str nme){
 	}
 }
 /*
- * @-
  * The commands and operators come with a short description.
  * The dumpManual() command produces a single XML file for post
  * processing and producing a system manual.
@@ -611,7 +602,6 @@ void dumpManualSection(stream *f, Module s){
 	mnstr_printf(f,"@end table\n");
 }
 /*
- * @-
  * The manual overview merely lists the mod.function names
  * in texi format for inclusion in the documetation.
  */
@@ -669,7 +659,10 @@ void dumpManualOverview(stream *f, Module s, int recursive){
 			x_sze = 2 * cols * rows;
 			x = (int*) GDKrealloc(x, x_sze * sizeof(int));
 		}
-		assert(x != NULL);
+		if( x == NULL){
+			GDKerror("dumpManualOverview"MAL_MALLOC_FAIL);
+			return;
+		}
 		for (z = 0; z < rows; z++) {
 			x[cols * z] = z;
 		}
@@ -703,7 +696,6 @@ void dumpManualOverview(stream *f, Module s, int recursive){
 		GDKfree(x);
 }
 /*
- * @-
  * The manual help overview merely lists the mod.function names
  * together with the help oneliner in texi format for inclusion in the documentation.
  */
@@ -802,7 +794,6 @@ void dumpManualHelp(stream *f, Module s, int recursive){
 		GDKfree(hlp_texi);
 }
 /*
- * @-
  * Summarize the type resolution table.
  */
 
@@ -839,7 +830,6 @@ void showModuleStatistics(stream *f,Module s){
 	showModuleStat(f,s,cnt);
 }
 /*
- * @-
  * Some primitives to aid online help and completions.
  * Note that pattern matching is on string prefix.
  */
@@ -862,7 +852,7 @@ char **getHelp(Module m, str inputpat, int completion)
 	Symbol s;
 	size_t len1 = 0,len2 = 0;
 	int fnd=0;
-	char *t, **msg, buf[BUFSIZ];
+	char *t, **msg, buf[1024];
 	int top=0, i,j,k, sig = 0, doc = 0;
 	int maxhelp= MAXHELP;
 
@@ -870,6 +860,10 @@ char **getHelp(Module m, str inputpat, int completion)
 	printf("showHelp: %s",pat);
 #endif
 	msg= (char **) GDKmalloc( MAXHELP * sizeof(str));
+	if( msg == NULL){
+		GDKerror("getHelp"MAL_MALLOC_FAIL);
+		return NULL;
+	}
 	msg[top]=0;
 
 	if (!inputpat)
@@ -954,7 +948,7 @@ char **getHelp(Module m, str inputpat, int completion)
 			if( strncmp(fcnnme,s->name,len2)==0 || *fcnnme=='*') {
 				fnd=0;
 				if( completion ) {
-					snprintf(buf,BUFSIZ," %s.%s",
+					snprintf(buf,sizeof(buf)," %s.%s",
 						((*modnme=='*' || *modnme==0)? m->name:modnme),s->name);
 					if( tstDuplicate(msg,buf+1) ) {
 						fnd=1;
@@ -964,7 +958,7 @@ char **getHelp(Module m, str inputpat, int completion)
 				if( doc) {
 					char *v;
 
-					fcnDefinition(s->def,s->def->stmt[0],buf,FALSE,buf,BUFSIZ);
+					fcnDefinition(s->def,s->def->stmt[0],buf,FALSE,buf,sizeof(buf));
 					buf[0]=' ';
 
 					v= strstr(buf,"address");
@@ -983,7 +977,7 @@ char **getHelp(Module m, str inputpat, int completion)
 						char *w;
 						strcpy(buf+1,"comment ");
 						v= buf+1+8;
-						for( w= s->def->help; *w && v <buf+BUFSIZ-2; w++)
+						for( w= s->def->help; *w && v <buf+sizeof(buf)-2; w++)
 						if( *w == '\n'){
 							/*ignore */
 						} else *v++ = *w;
@@ -995,7 +989,7 @@ char **getHelp(Module m, str inputpat, int completion)
 					}
 				} else if( strncmp(fcnnme,s->name,strlen(fcnnme))==0 ||
 							*fcnnme=='*' ) {
-					fcnDefinition(s->def,s->def->stmt[0],buf,FALSE,buf,BUFSIZ);
+					fcnDefinition(s->def,s->def->stmt[0],buf,FALSE,buf,sizeof(buf));
 					buf[0]=' ';
 					t= strstr(buf,"address");
 					if( t) *t= 0;
@@ -1016,19 +1010,22 @@ char **getHelp(Module m, str inputpat, int completion)
 	return msg;
 }
 /*
- * @-
  * The second primitive of relevance is to find documentation matching
  * a keyword. Since we can not assume pcre to be everywhere, we keep
  * it simple.
  */
 char **getHelpMatch(char *pat){
-	char **msg, buf[BUFSIZ];
+	char **msg, buf[1024];
 	Module m;
 	Symbol s;
 	int top = 0, i,j,k;
 	int maxhelp= MAXHELP;
 
 	msg= (char **) GDKmalloc( maxhelp * sizeof(str));
+	if( msg == NULL){
+		GDKerror("getHelpMatch" MAL_MALLOC_FAIL);
+		return NULL;
+	}
 	msg[top]=0;
 
 	if (!pat)
@@ -1044,7 +1041,7 @@ char **getHelpMatch(char *pat){
 				if( strstr(m->name,pat) || strstr(s->name,pat) ||
 					(s->def->help && strstr(s->def->help,pat))) {
 					char *v,*w;
-					fcnDefinition(s->def,s->def->stmt[0],buf,FALSE,buf,BUFSIZ);
+					fcnDefinition(s->def,s->def->stmt[0],buf,FALSE,buf,sizeof(buf));
 					buf[0]=' ';
 					if( s->def->help ){
 						v= strchr(buf,0);
@@ -1052,7 +1049,7 @@ char **getHelpMatch(char *pat){
 						*v++ = '\\';
 						*v++ = 'n';
 						*v++ = '#';
-						for( w= s->def->help; *w && v <buf+BUFSIZ-3; w++)
+						for( w= s->def->help; *w && v <buf+sizeof(buf)-3; w++)
 						if( *w == '\n'){
 							*v++ = '\\';
 							*v++ = 'n';
@@ -1084,6 +1081,8 @@ void
 showHelp(Module m, str txt, stream *fs){
 	int i;
 	char **msg = getHelp(m,txt,TRUE);
+	if( msg == NULL)
+		return;
 	for(i=0; msg[i]; i++)
 		mnstr_printf(fs,"%s\n",msg[i]);
 	if( i == 0){
@@ -1093,7 +1092,6 @@ showHelp(Module m, str txt, stream *fs){
 	}
 }
 /*
- * @-
  * The tags file is used by the mclient frontend to
  * enable language specific word completion.
  */
@@ -1102,6 +1100,8 @@ void dumpHelpTable(stream *f, Module s, str text, int flag){
 	int j,m;
 
 	msg= getHelp(s,text,flag);
+	if( msg == NULL)
+		return;
 	for(m=0; msg[m]; m++ ) ;
 
 	mnstr_printf(f,"&1 0 %d 1 %d\n",m,m);
@@ -1120,6 +1120,8 @@ void dumpSearchTable(stream *f, str text){
 	int j,m;
 
 	msg= getHelpMatch(text);
+	if( msg == NULL)
+		return;
 	for(m=0; msg[m]; m++ ) ;
 
 	mnstr_printf(f,"&1 0 %d 1 %d\n",m,m);

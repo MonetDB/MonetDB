@@ -239,13 +239,13 @@ setMethod("dbWriteTable", "MonetDBConnection", def=function(conn, name, value, o
 		})
 
 
-setMethod("dbDataType", signature(dbObj="MonetDBConnection", obj = "ANY"), def = function(dbObj, obj, ...) {
+setMethod("dbDataType", signature(dbObj="MonetDBConnection", obj = "ANY"), def=function(dbObj, obj, ...) {
 			if (is.logical(obj)) "BOOLEAN"
 			else if (is.integer(obj)) "INTEGER"
 			else if (is.numeric(obj)) "DOUBLE PRECISION"
 			else if (is.raw(obj)) "BLOB"
 			
-			else "VARCHAR(255)"
+			else "STRING"
 		}, valueClass = "character")
 
 
@@ -779,14 +779,6 @@ REPLY_SIZE    <- 100 # Apparently, -1 means unlimited, but we will start with a 
 	
 }
 
-.hasColFunc <- function(conn,func) {
-	tryCatch({
-				r <- dbSendQuery(conn,paste0("SELECT ",func,"(1);"))
-				TRUE
-			}, error = function(e) {
-				FALSE
-			})
-}
 
 # copied from RMonetDB, no java-specific things in here...
 # TODO: read first few rows with read.table and check types etc.

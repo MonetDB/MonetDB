@@ -29,6 +29,7 @@
 #include "mal_debugger.h"   /* for mdbStep() */
 #include "mal_recycle.h"
 #include "mal_type.h"
+#include "mal_private.h"
 
 /*
  * The struct alignment leads to 40% gain in simple instructions when set.
@@ -346,6 +347,8 @@ str runMAL(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr env)
 	 * allocate space for value stack the global stack should be large
 	 * enough
 	 */
+	cntxt->lastcmd= time(0);
+	cntxt->active = TRUE;
 	if (env != NULL) {
 		stk = env;
 		if (mb != stk->blk)
@@ -383,6 +386,7 @@ str runMAL(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr env)
 		stk->cmd = env->cmd;
 	ret = runMALsequence(cntxt, mb, 1, 0, stk, env, 0);
 
+	cntxt->active = FALSE;
 	/* pass the new debug mode to the caller */
 	if (stk->cmd && env && stk->cmd != 'f')
 		env->cmd = stk->cmd;
@@ -443,6 +447,8 @@ callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[], char debug)
 	 * variable. It is initially set equal to the number of cores,
 	 * which may be too coarse.
 	 */
+	cntxt->lastcmd= time(0);
+	cntxt->active = TRUE;
 	MT_sema_down(&mal_parallelism,"callMAL");
 #ifdef DEBUG_CALLMAL
 	mnstr_printf(cntxt->fdout, "callMAL\n");
@@ -482,6 +488,7 @@ callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[], char debug)
 		throw(MAL, "mal.interpreter", RUNTIME_UNKNOWN_INSTRUCTION);
 	}
 	MT_sema_up(&mal_parallelism,"callMAL");
+	cntxt->active = FALSE;
 	if (cntxt->qtimeout && GDKusec()- mb->starttime > cntxt->qtimeout)
 		throw(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
 	return ret;
@@ -536,6 +543,11 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 
 	while (stkpc < mb->stop && stkpc != stoppc) {
 		pci = getInstrPtr(mb, stkpc);
+		if (cntxt->mode == FINISHCLIENT){
+			stkpc = stoppc;
+			ret= createException(MAL, "mal.interpreter", "premature stopped client");
+			break;
+		}
 		if (cntxt->itrace || mb->trap || stk->status) {
 			if (stk->status == 'p'){
 				// execution is paused
@@ -549,7 +561,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			if (stk->cmd == 0)
 				stk->cmd = cntxt->itrace;
 			mdbStep(cntxt, mb, stk, stkpc);
-			if (stk->cmd == 'x' || cntxt->mode == FINISHING) {
+			if (stk->cmd == 'x' ) {
 				stk->cmd = 0;
 				stkpc = mb->stop;
 				continue;
@@ -657,7 +669,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 						if (stk->cmd == 0)
 							stk->cmd = cntxt->itrace;
 						mdbStep(cntxt, pci->blk, stk, 0);
-						if (stk->cmd == 'x' || cntxt->mode == FINISHING) {
+						if (stk->cmd == 'x') {
 							stk->cmd = 0;
 							stkpc = mb->stop;
 						}
@@ -836,7 +848,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 					mnstr_printf(cntxt->fdout, "!ERROR: %s\n", ret);
 					stk->cmd = '\n'; /* in debugging go to step mode */
 					mdbStep(cntxt, mb, stk, stkpc);
-					if (stk->cmd == 'x' || stk->cmd == 'q' || cntxt->mode == FINISHING) {
+					if (stk->cmd == 'x' || stk->cmd == 'q' ) {
 						stkpc = mb->stop;
 						continue;
 					}
@@ -871,8 +883,6 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 
 				/* unknown exceptions lead to propagation */
 				if (exceptionVar == -1) {
-					runtimeProfileExit(cntxt, mb, stk, pci, &runtimeProfile);
-					runtimeProfileFinish(cntxt, mb);
 					if (cntxt->qtimeout && GDKusec()- mb->starttime > cntxt->qtimeout)
 						ret= createException(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
 					stkpc = mb->stop;
@@ -899,7 +909,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				if (stk->cmd == 'C' || mb->trap) {
 					stk->cmd = 'n';
 					mdbStep(cntxt, mb, stk, stkpc);
-					if (stk->cmd == 'x' || cntxt->mode == FINISHING) {
+					if (stk->cmd == 'x' ) {
 						stkpc = mb->stop;
 						continue;
 					}
@@ -1092,7 +1102,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			if (stk->cmd == 'C' || mb->trap) {
 				stk->cmd = 'n';
 				mdbStep(cntxt, mb, stk, stkpc);
-				if (stk->cmd == 'x' || cntxt->mode == FINISHING) {
+				if (stk->cmd == 'x' ) {
 					stkpc = mb->stop;
 					continue;
 				}

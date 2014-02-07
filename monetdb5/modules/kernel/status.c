@@ -206,7 +206,7 @@ SYScpuStatistics(int *ret, int *ret2)
 	return MAL_SUCCEED;
 }
 
-static char *memincr = NULL;
+static size_t memincr;
 str
 SYSmemStatistics(int *ret, int *ret2)
 {
@@ -227,12 +227,8 @@ SYSmemStatistics(int *ret, int *ret2)
 	BATseqbase(bn,0);
 
 	/* store counters, ignore errors */
-	if (memincr == NULL)
-		memincr = MT_heapbase;
-
-	i = (wrd) (MT_heapcur() - memincr);
-
-	memincr = MT_heapcur();
+	i = (wrd) (GDKmem_cursize() - memincr);
+	memincr = GDKmem_cursize();
 	bn = BUNappend(bn, "memincr", FALSE);
 	b = BUNappend(b, &i, FALSE);
 	i = (wrd) m.arena;
@@ -380,7 +376,7 @@ SYSmem_usage(int *ret, int *ret2, lng *minsize)
 	BUNappend(b, &sz, FALSE);
 
 	/* measure actual heap size, includes wasted fragmented space and anon mmap space used by malloc() */
-	sz = GDKmem_inuse();
+	sz = GDKmem_cursize();
 	BUNappend(bn, "_tot/heap", FALSE);
 	BUNappend(b, &sz, FALSE);
 

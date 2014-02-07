@@ -742,6 +742,18 @@ CMDbatMULenlarge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						 calctypeenlarge, 1, "batcalc.mul_enlarge");
 }
 
+batcalc_export str CMDbatDIV(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+
+str
+CMDbatDIV(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	(void) mb;
+
+	return CMDbatBINARY2(stk, pci, BATcalcdiv, BATcalcdivcst, BATcalccstdiv,
+						 calcdivtype, 0, "batcalc.div_noerror");
+}
+
 batcalc_export str CMDbatDIVsignal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 str

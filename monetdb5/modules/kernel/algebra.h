@@ -69,18 +69,18 @@ algebra_export str ALGantijoin2(int *l, int *r, int *lid, int *rid);
 algebra_export str ALGjoin2(int *l, int *r, int *lid, int *rid);
 algebra_export str ALGthetajoin2(int *l, int *r, int *lid, int *rid, int *opc);
 algebra_export str ALGcrossproduct2(int *l, int *r, int *lid, int *rid);
-algebra_export str ALGbandjoin2(int *l, int *r, int *lid, int *rid, ptr *minus, ptr *plus, bit *li, bit *hi);
+algebra_export str ALGbandjoin2(int *l, int *r, int *lid, int *rid, const void *minus, const void *plus, bit *li, bit *hi);
 algebra_export str ALGrangejoin2(int *l, int *r, int *lid, int *rlid, int *rhid, bit *li, bit *hi);
 
 algebra_export str ALGthetajoinEstimate(int *result, int *lid, int *rid, int *opc, lng *estimate);
 algebra_export str ALGthetajoin(int *result, int *lid, int *rid, int *opc);
-algebra_export str ALGbandjoin_default(int *result, int *lid, int *rid, ptr *minus, ptr *plus);
-algebra_export str ALGbandjoin(int *result, int *lid, int *rid, ptr *minus, ptr *plus, bit *li, bit *hi);
+algebra_export str ALGbandjoin_default(int *result, int *lid, int *rid, const void *minus, const void *plus);
+algebra_export str ALGbandjoin(int *result, int *lid, int *rid, const void *minus, const void *plus, bit *li, bit *hi);
 algebra_export str ALGrangejoin(int *result, int *lid, int *rlid, int *rhid, bit *li, bit *hi);
 algebra_export str ALGsubjoin(bat *r1, bat *r2, bat *l, bat *r, bat *sl, bat *sr, bit *nil_matches, lng *estimate);
 algebra_export str ALGsubleftjoin(bat *r1, bat *r2, bat *l, bat *r, bat *sl, bat *sr, bit *nil_matches, lng *estimate);
 algebra_export str ALGsubouterjoin(bat *r1, bat *r2, bat *l, bat *r, bat *sl, bat *sr, bit *nil_matches, lng *estimate);
-algebra_export str ALGsubthetajoin(bat *r1, bat *r2, bat *l, bat *r, bat *sl, bat *sr, str *op, bit *nil_matches, lng *estimate);
+algebra_export str ALGsubthetajoin(bat *r1, bat *r2, bat *l, bat *r, bat *sl, bat *sr, int *op, bit *nil_matches, lng *estimate);
 
 algebra_export str ALGhistogram(int *result, int *bid);
 algebra_export str ALGmerge(int *result, int *bid);

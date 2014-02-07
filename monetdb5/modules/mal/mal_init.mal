@@ -42,20 +42,19 @@ include sema;
 include alarm;
 include mmath;
 include streams;
-# @-
 # The kernel stuff to make it work
 include bat5;
 include batExtensions;
 include algebra;
 #include calc; --- moved to autoload/01_calc
 include status;
+include groupby;
 include group;
 include aggr;
 include array;
 include pqueue;
 include mkey;
 
-# @-
 # Atom extensions
 include blob;
 include color;
@@ -71,7 +70,6 @@ include identifier;
 include xml;
 include batxml;
 
-# @-
 # The hardwired multiplex extensions
 include batmmath;
 #include batcalc; -- moved to autoload/01_batcalc
@@ -79,7 +77,6 @@ include batmtime;
 include batstr;
 include batcolor;
 
-# @-
 # MAL related extensions
 include sabaoth;
 include pcre;
@@ -114,12 +111,10 @@ include txtsim;
 include tokenizer;
 include zorder;
 
-# @-
 # library logger;
 # include logger;
 include transaction;
 
-# @-
 # scheduler components
 include run_isolate;
 include run_memo;

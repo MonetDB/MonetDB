@@ -338,6 +338,11 @@ OCTnewTentacle(Client cntxt, MalBlkPtr mb, bte tidx, int v2, int *cl)
 	int *alias= (int*) GDKzalloc(mb->vtop * sizeof(int));
 	int i, j, k, conn= 0, last = mb->stop-1, tpe;
 	str nm;
+	
+	if( alias == NULL){
+		GDKerror("octopus"MAL_MALLOC_FAIL);
+		return NULL;
+	}
 
 	ocl = &octCluster[tidx];
 
@@ -505,6 +510,11 @@ OCTnewOctBlk(MalBlkPtr mb, InstrPtr *old, int v2)
 	tnm = (int*) GDKzalloc(sizeof(int) * tcnt);
 	bid = (int**) GDKzalloc(sizeof(int*) * tcnt);
 	res = (int**) GDKzalloc(sizeof(int*) * tcnt);
+
+	if( wnm == NULL || wvar == NULL || tnm == NULL || bid == NULL || res == NULL){
+		GDKerror("octopus"MAL_MALLOC_FAIL);
+		return ;
+	}
 
 	for ( j= 0; j < tcnt; j++){
 		snprintf(buf,BUFSIZ,"worker_%d",j); 

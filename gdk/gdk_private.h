@@ -94,8 +94,9 @@ var_t strLocate(Heap *h, const char *v);
 void VIEWdestroy(BAT *b);
 BAT *VIEWreset(BAT *b);
 int IMPSgetbin(int tpe, bte bits, char *bins, const void *v);
-void IMPSremove(BAT *b);
+#ifndef NDEBUG
 void IMPSprint(BAT *b);
+#endif
 
 #define BBP_BATMASK	511
 #define BBP_THREADMASK	63
@@ -128,9 +129,14 @@ extern MT_Lock MT_system_lock;
 #define GDKswapLock(x)  GDKbatLock[(x)&BBP_BATMASK].swap
 #define GDKhashLock(x)  GDKbatLock[(x)&BBP_BATMASK].hash
 #define GDKimprintsLock(x)  GDKbatLock[(x)&BBP_BATMASK].imprints
-#define GDKtrimLock(y)  GDKbbpLock[(y)&BBP_THREADMASK].trim
-#define GDKcacheLock(y) GDKbbpLock[(y)&BBP_THREADMASK].alloc
-#define BBP_free(y)	GDKbbpLock[(y)&BBP_THREADMASK].free
+#if SIZEOF_SIZE_T == 8
+#define threadmask(y)	((int) ((mix_int((unsigned int) y) ^ mix_int((unsigned int) (y >> 32))) & BBP_THREADMASK))
+#else
+#define threadmask(y)	((int) (mix_int(y) & BBP_THREADMASK))
+#endif
+#define GDKtrimLock(y)	GDKbbpLock[y].trim
+#define GDKcacheLock(y)	GDKbbpLock[y].alloc
+#define BBP_free(y)	GDKbbpLock[y].free
 
 #define SORTloop_TYPE(b, p, q, tl, th, TYPE)				\
 	if (!BATtordered(b))						\

@@ -648,8 +648,8 @@ sql_update_feb2013_sp3(Client c)
 static str
 sql_update_oct2013(Client c)
 {
-	char *buf = GDKmalloc(10240), *err = NULL;
-	size_t bufsize = 10240, pos = 0;
+	size_t bufsize = 12800, pos = 0;
+	char *buf = GDKmalloc(bufsize), *err = NULL;
 	char *fullname;
 	FILE *fp1 = NULL, *fp2 = NULL, *fp3 = NULL;
 	ValRecord *schvar = stack_get_var(((backend *) c->sqlcontext)->mvc, "current_schema");
@@ -740,12 +740,28 @@ sql_update_oct2013(Client c)
 	pos += snprintf(buf+pos, bufsize-pos, "insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('querylog_empty', 'querylog_enable', 'querylog_disable', 'pause', 'resume', 'sysmon_resume', 'stop') and f.type = %d and f.schema_id = s.id and s.name = 'sys');\n", F_PROC);
 	pos += snprintf(buf+pos, bufsize-pos, "update sys._tables set system = true where name in ('tracelog', 'optimizers', 'environment', 'storage', 'storagemodel') and schema_id = (select id from sys.schemas where name = 'sys');\n");
 
+	/* new entries in 39_analytics.sql for quantiles and one previously missing median */
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate quantile(val TINYINT, q DOUBLE) returns TINYINT external name \"aggr\".\"quantile\";\n");
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate quantile(val SMALLINT, q DOUBLE) returns SMALLINT external name \"aggr\".\"quantile\";\n");
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate quantile(val INTEGER, q DOUBLE) returns INTEGER external name \"aggr\".\"quantile\";\n");
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate quantile(val WRD, q DOUBLE) returns WRD external name \"aggr\".\"quantile\";\n");
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate quantile(val BIGINT, q DOUBLE) returns BIGINT external name \"aggr\".\"quantile\";\n");
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate quantile(val DECIMAL, q DOUBLE) returns DECIMAL external name \"aggr\".\"quantile\";\n");
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate quantile(val REAL, q DOUBLE) returns REAL external name \"aggr\".\"quantile\";\n");
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate quantile(val DOUBLE, q DOUBLE) returns DOUBLE external name \"aggr\".\"quantile\";\n");
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate quantile(val DATE, q DOUBLE) returns DATE external name \"aggr\".\"quantile\";\n");
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate quantile(val TIME, q DOUBLE) returns TIME external name \"aggr\".\"quantile\";\n");
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate quantile(val TIMESTAMP, q DOUBLE) returns TIMESTAMP external name \"aggr\".\"quantile\";\n");
+
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate median(val DECIMAL) returns DECIMAL external name \"aggr\".\"median\";\n");
+	pos += snprintf(buf + pos, bufsize-pos, "insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('quantile', 'median') and f.type = %d and f.schema_id = s.id and s.name = 'sys');\n", F_AGGR);
+
 	if (schema) {
 		pos += snprintf(buf+pos, bufsize-pos, "set schema \"%s\";\n", schema);
 		free(schema);
 	}
 
-	assert(pos < 10240);
+	assert(pos < bufsize);
 
 	printf("Running database upgrade commands:\n%s\n", buf);
 	err = SQLstatementIntern(c, &buf, "update", 1, 0);
@@ -1361,14 +1377,14 @@ SQLreader(Client c)
 	int blocked = isa_block_stream(in->s);
 
 	if (SQLinitialized == FALSE) {
-		c->mode = FINISHING;
+		c->mode = FINISHCLIENT;
 		return NULL;
 	}
-	if (!be || c->mode <= FINISHING) {
+	if (!be || c->mode <= FINISHCLIENT) {
 #ifdef _SQL_READER_DEBUG
 		mnstr_printf(GDKout, "#SQL client finished\n");
 #endif
-		c->mode = FINISHING;
+		c->mode = FINISHCLIENT;
 		return NULL;
 	}
 #ifdef _SQL_READER_DEBUG
@@ -1472,7 +1488,7 @@ SQLreader(Client c)
 	}
 	if (!go || (strncmp(CURRENT(c), "\\q", 2) == 0)) {
 		in->pos = in->len;  /* skip rest of the input */
-		c->mode = FINISHING;
+		c->mode = FINISHCLIENT;
 		return NULL;
 	}
 	return 0;
@@ -1665,7 +1681,7 @@ SQLparser(Client c)
 		fprintf(stderr, "SQL state descriptor missing, cannot handle client!\n");
 		/* stop here, instead of printing the exception below to the
 		 * client in an endless loop */
-		c->mode = FINISHING;
+		c->mode = FINISHCLIENT;
 		throw(SQL, "SQLparser", "State descriptor missing");
 	}
 	oldvtop = c->curprg->def->vtop;
@@ -1758,7 +1774,7 @@ SQLparser(Client c)
 			return MAL_SUCCEED;
 		}
 		if (strncmp(in->buf + in->pos, "quit", 4) == 0) {
-			c->mode = FINISHING;
+			c->mode = FINISHCLIENT;
 			return MAL_SUCCEED;
 		}
 		mnstr_printf(out, "!unrecognized X command: %s\n", in->buf + in->pos);

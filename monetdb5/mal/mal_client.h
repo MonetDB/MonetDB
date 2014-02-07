@@ -30,9 +30,10 @@
 #define CONSOLE     0
 #define isAdministrator(X) (X==mal_clients)
 
-#define FREECLIENT  0
-#define FINISHING   1   
-#define CLAIMED     2
+#define FREECLIENT  	0
+#define FINISHCLIENT	1   
+#define RUNCLIENT		2
+#define BLOCKCLIENT     3
 
 #define PROCESSTIMEOUT  2   /* seconds */
 
@@ -94,6 +95,7 @@ typedef struct CLIENT {
 
 	time_t      login;  
 	time_t      lastcmd;	/* set when input is received */
+	bit			active;		/* processing a query or not */
 	lng 		session;	/* usec since start of server */
 	lng 	    qtimeout;	/* query abort after x usec*/
 	lng	        stimeout;	/* session abort after x usec */
@@ -190,16 +192,12 @@ mal_export Client  MCgetClient(int id);
 mal_export Client  MCinitClient(oid user, bstream *fin, stream *fout);
 mal_export Client  MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout);
 mal_export int     MCinitClientThread(Client c);
+mal_export void	   MCstopClients(Client c);
+mal_export int     MCshutdowninprogress(void);
+mal_export int	   MCactiveClients(void);
 mal_export void    MCcloseClient(Client c);
-mal_export Client  MCforkClient(Client c);
-mal_export int     MCcountClients(void);
-mal_export int     MCreadClient(Client c);
 mal_export str     MCsuspendClient(int id);
 mal_export str     MCawakeClient(int id);
-mal_export void    MCcleanupClients(void);
-mal_export void    MCtraceAllClients(int flag);
-mal_export void    MCtraceClient(oid which, int flag);
 mal_export int     MCpushClientInput(Client c, bstream *new_input, int listing, char *prompt);
-mal_export void    MCpopClientInput(Client c);
 
 #endif /* _MAL_CLIENT_H_ */

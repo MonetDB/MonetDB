@@ -3,7 +3,7 @@ RETURNS integer
 BEGIN
 	if ( i = 0) THEN RETURN 0; END IF;
 	if ( i = 1) THEN RETURN 1; END IF;
-	RETURN f(CAST(i-1 AS INTEGER))+f(CAST(i-2 AS INTEGER));
+	RETURN fibonacci(CAST(i-1 AS INTEGER))+fibonacci(CAST(i-2 AS INTEGER));
 END;
 
 SELECT fibonacci(0);

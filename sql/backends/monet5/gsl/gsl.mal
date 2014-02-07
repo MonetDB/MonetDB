@@ -1,0 +1,18 @@
+module gsl;
+module batgsl;
+
+command gsl.chi2prob(d:dbl,i:dbl):dbl
+address GSLchisqProb
+comment "Chi Squared probability";
+
+command batgsl.chi2prob(d:bat[:oid,:dbl],i:dbl):bat[:oid,:dbl]
+address GSLbat_chisqProb_cst
+comment "Chi Squared probability";
+
+command batgsl.chi2prob(d:dbl,i:bat[:oid,:dbl]):bat[:oid,:dbl]
+address GSLcst_chisqProb_bat
+comment "Chi Squared probability";
+
+command batgsl.chi2prob(d:bat[:oid,:dbl],i:bat[:oid,:dbl]):bat[:oid,:dbl]
+address GSLbat_chisqProb_bat
+comment "Chi Squared probability";

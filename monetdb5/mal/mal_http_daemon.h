@@ -25,7 +25,5 @@ typedef int (*http_request_handler)
     (const char *url, const char *method, char **page, const char *);
 
 mal_export void register_http_handler(http_request_handler handler);
-mal_export void startHttpdaemon(void);
-mal_export void stopHttpdaemon(void);
 
 #endif

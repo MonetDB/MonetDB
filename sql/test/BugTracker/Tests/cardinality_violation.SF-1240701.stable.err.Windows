@@ -85,7 +85,7 @@ QUERY = select * from env() as env where name = ( select 'prefix' from env() as 
 ERROR = !cardinality violation (20>1)
 MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
 QUERY = select * from columns where name = (select columns.name from _tables, columns where _tables.id = columns.table_id);
-ERROR = !cardinality violation (406>1)
+ERROR = !cardinality violation (412>1)
 
 
 # 21:00:43 >  

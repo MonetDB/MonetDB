@@ -1582,8 +1582,8 @@ gtr_minmax( sql_trans *tr )
 	return _gtr_update(tr, &gtr_minmax_table);
 }
 
-int 
-tr_update_delta( sql_trans *tr, sql_delta *obat, sql_delta *cbat)
+static int 
+tr_update_delta( sql_trans *tr, sql_delta *obat, sql_delta *cbat, int unique)
 {
 	int ok = LOG_OK;
 	BAT *ups, *ins, *cur = NULL;
@@ -1605,12 +1605,16 @@ tr_update_delta( sql_trans *tr, sql_delta *obat, sql_delta *cbat)
 	if (obat->bid)
 		cur = temp_descriptor(obat->bid);
 	ins = temp_descriptor(cbat->ibid);
+	if (unique)
+		BATkey(BATmirror(cur), TRUE);
 	/* any inserts */
 	if (BUNlast(ins) > BUNfirst(ins) || cleared) {
 		if ((!obat->ibase && BATcount(ins) > SNAPSHOT_MINSIZE)){
 			/* swap cur and ins */
 			BAT *newcur = ins;
 
+			if (unique)
+				BATkey(BATmirror(newcur), TRUE);
 			temp_destroy(cbat->bid);
 			temp_destroy(obat->bid);
 			obat->bid = cbat->ibid;
@@ -1663,7 +1667,7 @@ tr_update_delta( sql_trans *tr, sql_delta *obat, sql_delta *cbat)
 	return ok;
 }
 
-int
+static int
 tr_update_dbat(sql_trans *tr, sql_dbat *tdb, sql_dbat *fdb, int cleared)
 {
 	int ok = LOG_OK;
@@ -1750,6 +1754,7 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 			cc->base.allocated = cc->base.rtime = cc->base.wtime = 0;
 			continue;
 		}
+
 		assert(oc->base.wtime < cc->base.wtime);
 		if (store_nr_active > 1) { /* move delta */
 			sql_delta *b = cc->data, *p = NULL;
@@ -1767,8 +1772,15 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 			}
 		} else {
 			assert(oc->base.allocated);
-			tr_update_delta(tr, oc->data, cc->data);
+			tr_update_delta(tr, oc->data, cc->data, cc->unique == 1);
 		}
+
+		oc->null = cc->null;
+		oc->unique = cc->unique;
+		if (cc->storage_type && (!cc->storage_type || strcmp(cc->storage_type, oc->storage_type) != 0))
+			oc->storage_type = sa_strdup(tr->sa, cc->storage_type);
+		if (cc->def && (!cc->def || strcmp(cc->def, oc->def) != 0))
+			oc->def = sa_strdup(tr->sa, cc->def);
 
 		if (oc->base.rtime < cc->base.rtime)
 			oc->base.rtime = cc->base.rtime;
@@ -1805,7 +1817,7 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 				}
 			} else {
 				assert(oi->base.allocated);
-				tr_update_delta(tr, oi->data, ci->data);
+				tr_update_delta(tr, oi->data, ci->data, 0);
 			}
 
 			if (oi->base.rtime < ci->base.rtime)
@@ -1827,7 +1839,7 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 	return ok;
 }
 
-int 
+static int 
 tr_log_delta( sql_trans *tr, sql_delta *cbat, int cleared)
 {
 	int ok = LOG_OK;
@@ -1863,7 +1875,7 @@ tr_log_delta( sql_trans *tr, sql_delta *cbat, int cleared)
 	return ok;
 }
 
-int
+static int
 tr_log_dbat(sql_trans *tr, sql_dbat *fdb, int cleared)
 {
 	int ok = LOG_OK;

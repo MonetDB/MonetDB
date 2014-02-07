@@ -15,29 +15,8 @@
 # Copyright August 2008-2013 MonetDB B.V.
 # All Rights Reserved.
 
-module groupby;
+module group;
 
-pattern id(pivot:bat[:oid,:any_1],b:bat[:oid,:any]...) :bat[:oid,:oid]
-address GROUPid
-comment "Derive the grouping of all tuples in the BATs.";
-
-pattern count(pivot:bat[:oid,:any_1],b:bat[:oid,:any]...) :bat[:oid,:wrd]
-address GROUPcount
-comment "Derive the grouping of all tuples in the BATs and count them. The group
-oid is materialized.";
-
-pattern max(pivot:bat[:oid,:any_1],b:bat[:oid,:any_2]...) :bat[:oid,:any_2]
-address GROUPmax
-comment "Derive the grouping of all tuples in the BATs and determine maximum value.
-The group oid is materialized.";
-
-pattern min(pivot:bat[:oid,:any_1],b:bat[:oid,:any_2]...) :bat[:oid,:any_2]
-address GROUPmin
-comment "Derive the grouping of all tuples in the BATs and determine minimum value.
-The group oid is materialized.";
-
-pattern avg(pivot:bat[:oid,:any_1],b:bat[:oid,:any_2]...) :bat[:oid,:any_2]
-address GROUPavg
-comment "Derive the grouping of all tuples in the BATs and determine average value.
-The group oid is materialized.";
-
+pattern group.subgroup(b:bat[:oid,:any]...)(ref:bat[:oid,:oid], grp:bat[:oid,:oid], hist:bat[:oid,:any])
+address GROUPmulticolumn
+comment "Derivation of a group index over multiple columns.";

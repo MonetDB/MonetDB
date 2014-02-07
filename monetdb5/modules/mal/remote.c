@@ -204,6 +204,9 @@ str RMTconnectScen(
 
 	/* connection established, add to list */
 	c = GDKzalloc(sizeof(struct _connection));
+	if ( c == NULL){
+		throw(MAL,"remote.connect",MAL_MALLOC_FAIL);
+	}
 	c->mconn = m;
 	c->name = GDKstrdup(conn);
 	c->nextid = 0;

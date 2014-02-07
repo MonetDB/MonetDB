@@ -35,6 +35,8 @@
 #include "mal_instruction.h"
 #include "mal_client.h"
 #include "mal_authorize.h"
+#include "mal_private.h"
+#include "mtime.h"
 
 #ifdef HAVE_LIBREADLINE
 #include <readline/readline.h>
@@ -196,7 +198,7 @@ CLTLogin(int *nme, int *ret)
 
 	for (i = 0; i < MAL_MAXCLIENTS; i++) {
 		Client c = mal_clients+i;
-		if (c->mode >= CLAIMED && c->user != oid_nil) {
+		if (c->mode >= RUNCLIENT && c->user != oid_nil) {
 			CLTtimeConvert((time_t) c->login,s);
 			BUNappend(b, s, FALSE);
 			BUNappend(u, &c->user, FALSE);
@@ -221,7 +223,7 @@ CLTLastCommand(int *ret)
 	BATseqbase(b,0);
 	for (i = 0; i < MAL_MAXCLIENTS; i++) {
 		Client c = mal_clients+i;
-		if (c->mode >= CLAIMED && c->user != oid_nil) {
+		if (c->mode >= RUNCLIENT && c->user != oid_nil) {
 			CLTtimeConvert((time_t) c->lastcmd,s);
 			BUNappend(b, s, FALSE);
 		}
@@ -242,7 +244,7 @@ CLTActions(int *ret)
 	BATseqbase(b,0);
 	for (i = 0; i < MAL_MAXCLIENTS; i++) {
 		Client c = mal_clients+i;
-		if (c->mode >= CLAIMED && c->user != oid_nil) {
+		if (c->mode >= RUNCLIENT && c->user != oid_nil) {
 			BUNappend(b, &c->actions, FALSE);
 		}
 	}
@@ -261,7 +263,7 @@ CLTTime(int *ret)
 	BATseqbase(b,0);
 	for (i = 0; i < MAL_MAXCLIENTS; i++) {
 		Client c = mal_clients+i;
-		if (c->mode >= CLAIMED && c->user != oid_nil) {
+		if (c->mode >= RUNCLIENT && c->user != oid_nil) {
 			BUNappend(b, &c->totaltime, FALSE);
 		}
 	}
@@ -284,7 +286,7 @@ CLTusers(int *ret)
 	BATseqbase(b,0);
 	for (i = 0; i < MAL_MAXCLIENTS; i++) {
 		Client c = mal_clients+i;
-		if (c->mode >= CLAIMED && c->user != oid_nil)
+		if (c->mode >= RUNCLIENT && c->user != oid_nil)
 			BUNappend(b, &i, FALSE);
 	}
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
@@ -330,7 +332,7 @@ CLTquit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (id == 0 && cntxt->fdout != GDKout )
 		throw(MAL, "client.quit", INVCRED_ACCESS_DENIED);
 	if ( cntxt->idx == mal_clients[id].idx)
-		mal_clients[id].mode = FINISHING;
+		mal_clients[id].mode = FINISHCLIENT;
 	/* the console should be finished with an exception */
 	if (id == 0)
 		throw(MAL,"client.quit",SERVER_STOPPED);
@@ -544,8 +546,105 @@ str CLTgetUsers(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	return(MAL_SUCCEED);
 }
 
-str CLTshutdown(int *ret, bit *forced) {
-	(void) ret;
-	(void) forced;
-	throw(MAL,"clients.shutdown", PROGRAM_NYI);
+str
+CLTshutdown(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+	str *ret  = (str*) getArgReference(stk,pci,0);
+	int delay = *(int*) getArgReference(stk,pci,1);
+	bit force = FALSE;
+	int leftover;
+	char buf[1024]={"safe to stop last connection"};
+
+	if ( pci->argc == 3) 
+		force = *(bit*) getArgReference(stk,pci,2);
+
+	(void) mb;
+	switch( getArgType(mb,pci,1)){
+	case TYPE_bte:
+	case TYPE_sht:
+		delay = *(sht*) getArgReference(stk,pci,1);
+		break;
+	default:
+		delay = *(int*) getArgReference(stk,pci,1);
+	}
+
+	if ( cntxt->user != mal_clients[0].user)
+		throw(MAL,"mal.shutdown", "Administrator rights required");
+	MCstopClients(cntxt);
+	do{
+		if ( (leftover = MCactiveClients()) )
+			MT_sleep_ms(1000);
+		delay --;
+	} while (delay > 0 && leftover > 1);
+	if( delay == 0 && leftover > 1)
+		snprintf(buf, 1024,"%d client sessions still running",leftover);
+	*ret = GDKstrdup(buf);
+	if ( force)
+		mal_exit();
+	return MAL_SUCCEED;
+}
+
+str
+CLTsessions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	BAT *user = NULL, *login = NULL, *stimeout = NULL, *qtimeout = NULL, *last= NULL, *active= NULL;
+	int *userId = (int*) getArgReference(stk,pci,0);
+	int *loginId = (int*) getArgReference(stk,pci,1);
+	int *stimeoutId = (int*) getArgReference(stk,pci,2);
+	int *lastId = (int*) getArgReference(stk,pci,3);
+	int *qtimeoutId = (int*) getArgReference(stk,pci,4);
+	int *activeId = (int*) getArgReference(stk,pci,5);
+    Client c;
+	char usrname[256]= {"monetdb"};
+	timestamp ts, ret;
+	lng clk;
+
+	(void) cntxt;
+	(void) mb;
+
+	user = BATnew(TYPE_void, TYPE_str, 0);
+	BATseqbase(user,0);
+	login = BATnew(TYPE_void, TYPE_lng, 0);
+	BATseqbase(login,0);
+	stimeout = BATnew(TYPE_void, TYPE_lng, 0);
+	BATseqbase(stimeout,0);
+	last = BATnew(TYPE_void, TYPE_lng, 0);
+	BATseqbase(last,0);
+	qtimeout = BATnew(TYPE_void, TYPE_lng, 0);
+	BATseqbase(qtimeout,0);
+	active = BATnew(TYPE_void, TYPE_bit, 0);
+	BATseqbase(active,0);
+	if ( user == NULL || login == NULL || stimeout == NULL || qtimeout == NULL || active == NULL){
+		if ( login) BBPreleaseref(login->batCacheid);
+		if ( stimeout) BBPreleaseref(stimeout->batCacheid);
+		if ( qtimeout) BBPreleaseref(qtimeout->batCacheid);
+		if ( last) BBPreleaseref(last->batCacheid);
+		if ( active) BBPreleaseref(active->batCacheid);
+		throw(SQL,"sql.sessions",MAL_MALLOC_FAIL);
+	}
+	
+    MT_lock_set(&mal_contextLock, "clients.sessions");
+	
+    for (c = mal_clients + (GDKgetenv_isyes("monet_daemon")?1:0); c < mal_clients + MAL_MAXCLIENTS; c++) 
+	if (c->mode == RUNCLIENT) {
+		BUNappend(user, &usrname, FALSE);
+		(void) MTIMEunix_epoch(&ts);
+		clk = c->login * 1000;
+		(void) MTIMEtimestamp_add(&ret,&ts, &clk);
+		BUNappend(login, &ret, FALSE);
+		BUNappend(stimeout, &c->stimeout, FALSE);
+		(void) MTIMEunix_epoch(&ts);
+		clk = c->lastcmd * 1000;
+		(void) MTIMEtimestamp_add(&ret,&ts, &clk);
+		BUNappend(last, &ret, FALSE);
+		BUNappend(qtimeout, &c->qtimeout, FALSE);
+		BUNappend(active, &c->active, FALSE);
+    }
+    MT_lock_unset(&mal_contextLock, "clients.sessions");
+	BBPkeepref(*userId = user->batCacheid);
+	BBPkeepref(*loginId = login->batCacheid);
+	BBPkeepref(*stimeoutId = stimeout->batCacheid);
+	BBPkeepref(*qtimeoutId = qtimeout->batCacheid);
+	BBPkeepref(*lastId = last->batCacheid);
+	BBPkeepref(*activeId = active->batCacheid);
+	return MAL_SUCCEED;
 }

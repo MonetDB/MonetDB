@@ -794,14 +794,15 @@ mvc_export_prepare(mvc *c, stream *out, cq *q, str w)
 	int len2 = 1, len3 = 1;
 	sql_arg *a;
 	sql_subtype *t;
+	sql_rel *r = q->rel;
 
 	if (!out)
 		return 0;
 
-	if (is_project(q->rel->op) && q->rel->exps) {
+	if (is_topn(r->op))
+		r = r->l;
+	if (r && is_project(r->op) && r->exps) {
 		unsigned int max2 = 10, max3 = 10; /* to help calculate widths */
-		sql_rel *r = q->rel;
-
 		nrows += list_length(r->exps);
 
 		for (n = r->exps->h; n; n = n->next) {
@@ -870,9 +871,7 @@ mvc_export_prepare(mvc *c, stream *out, cq *q, str w)
 		return -1;
 	}
 
-	if (is_project(q->rel->op) && q->rel->exps) {
-		sql_rel *r = q->rel;
-
+	if (r && is_project(r->op) && r->exps) {
 		for (n = r->exps->h; n; n = n->next) {
 			const char *name, *rname, *schema = NULL;
 			sql_exp *e = n->data;

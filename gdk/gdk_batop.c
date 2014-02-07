@@ -400,11 +400,21 @@ BATins(BAT *b, BAT *n, bit force)
 			    VIEWtparent(n) == 0)) {
 			b = insert_string_bat(b, n, 0);
 		} else if (b->htype == TYPE_void) {
-			BATiter ni = bat_iterator(n);
+			if (!ATOMvarsized(b->ttype) &&
+			    BATatoms[b->ttype].atomFix == NULL &&
+			    n->ttype != TYPE_void) {
+				/* use fast memcpy if we can */
+				memcpy(Tloc(b, BUNlast(b)),
+				       Tloc(n, BUNfirst(n)),
+				       BATcount(n) * Tsize(n));
+				BATsetcount(b, BATcount(b) + BATcount(n));
+			} else {
+				BATiter ni = bat_iterator(n);
 
-			BATloop(n, p, q) {
-				bunfastins_nocheck(b, r, NULL, BUNtail(ni, p), 0, Tsize(b));
-				r++;
+				BATloop(n, p, q) {
+					bunfastins_nocheck(b, r, NULL, BUNtail(ni, p), 0, Tsize(b));
+					r++;
+				}
 			}
 		} else if (b->H->hash) {
 			BUN i = BUNlast(b);
@@ -418,6 +428,20 @@ BATins(BAT *b, BAT *n, bit force)
 				r++;
 				i++;
 			}
+		} else if (!ATOMvarsized(b->htype) &&
+			   BATatoms[b->htype].atomFix == NULL &&
+			   !ATOMvarsized(b->ttype) &&
+			   BATatoms[b->ttype].atomFix == NULL &&
+			   n->htype != TYPE_void &&
+			   n->ttype != TYPE_void) {
+			/* use fast memcpy if we can */
+			memcpy(Hloc(b, BUNlast(b)),
+			       Hloc(n, BUNfirst(n)),
+			       BATcount(n) * Hsize(n));
+			memcpy(Tloc(b, BUNlast(b)),
+			       Tloc(n, BUNfirst(n)),
+			       BATcount(n) * Tsize(n));
+			BATsetcount(b, BATcount(b) + BATcount(n));
 		} else {
 			BATiter ni = bat_iterator(n);
 
@@ -580,11 +604,21 @@ BATappend(BAT *b, BAT *n, bit force)
 			if (b == NULL)
 				return NULL;
 		} else if (b->htype == TYPE_void) {
-			BATiter ni = bat_iterator(n);
+			if (!ATOMvarsized(b->ttype) &&
+			    BATatoms[b->ttype].atomFix == NULL &&
+			    b->ttype != TYPE_void && n->ttype != TYPE_void) {
+				/* use fast memcpy if we can */
+				memcpy(Tloc(b, BUNlast(b)),
+				       Tloc(n, BUNfirst(n)),
+				       BATcount(n) * Tsize(n));
+				BATsetcount(b, BATcount(b) + BATcount(n));
+			} else {
+				BATiter ni = bat_iterator(n);
 
-			BATloop(n, p, q) {
-				bunfastins_nocheck(b, r, NULL, BUNtail(ni, p), 0, Tsize(b));
-				r++;
+				BATloop(n, p, q) {
+					bunfastins_nocheck(b, r, NULL, BUNtail(ni, p), 0, Tsize(b));
+					r++;
+				}
 			}
 			if (b->hseqbase != oid_nil)
 				b->hrevsorted = 0;
@@ -805,14 +839,27 @@ BATslice(BAT *b, BUN l, BUN h)
 	 * We have to do it: create a new BAT and put everything into it.
 	 */
 	} else {
-		BUN p = (BUN) l;
-		BUN q = (BUN) h;
+		BUN p = l;
+		BUN q = h;
 
 		bn = BATnew((BAThdense(b)?TYPE_void:b->htype), b->ttype, h - l);
 		if (bn == NULL) {
 			return bn;
 		}
-		if (BAThdense(b) && b->ttype) {
+		if ((bn->htype == TYPE_void || !bn->hvarsized) &&
+		    BATatoms[bn->htype].atomPut == NULL &&
+		    BATatoms[bn->htype].atomFix == NULL &&
+		    (bn->ttype == TYPE_void || !bn->tvarsized) &&
+		    BATatoms[bn->ttype].atomPut == NULL &&
+		    BATatoms[bn->ttype].atomFix == NULL) {
+			if (bn->htype)
+				memcpy(Hloc(bn, BUNfirst(bn)), Hloc(b, p),
+				       (q - p) * Hsize(bn));
+			if (bn->ttype)
+				memcpy(Tloc(bn, BUNfirst(bn)), Tloc(b, p),
+				       (q - p) * Tsize(bn));
+			BATsetcount(bn, h - l);
+		} else if (BAThdense(b) && b->ttype) {
 			for (; p < q; p++) {
 				bunfastins(bn, NULL, BUNtail(bi, p));
 			}
@@ -823,6 +870,14 @@ BATslice(BAT *b, BUN l, BUN h)
 		} else {
 			BATsetcount(bn, h - l);
 		}
+		bn->hsorted = b->hsorted;
+		bn->hrevsorted = b->hrevsorted;
+		bn->hkey = b->hkey & 1;
+		bn->H->nonil = b->H->nonil;
+		bn->tsorted = b->tsorted;
+		bn->trevsorted = b->trevsorted;
+		bn->tkey = b->tkey & 1;
+		bn->T->nonil = b->T->nonil;
 	}
 	bni = bat_iterator(bn);
 	if (BAThdense(b)) {
@@ -1330,8 +1385,14 @@ BATsubsort(BAT **sorted, BAT **order, BAT **groups,
 		/* no place to put result, so we're done quickly */
 		return GDK_SUCCEED;
 	}
-	if (BATcount(b) <= 1 || (BATtordered(b) && o == NULL && g == NULL && groups == NULL)) {
-		/* trivially (sub)sorted */
+	if (BATcount(b) <= 1 ||
+	    ((reverse ? BATtrevordered(b) : BATtordered(b)) &&
+	     o == NULL && g == NULL &&
+	     (groups == NULL || BATtkey(b) ||
+	      (reverse ? BATtordered(b) : BATtrevordered(b))))) {
+		/* trivially (sub)sorted, and either we don't need to
+		 * return group information, or we can trivially
+		 * deduce the groups */
 		if (sorted) {
 			BBPfix(b->batCacheid);
 			bn = b;
@@ -1347,12 +1408,23 @@ BATsubsort(BAT **sorted, BAT **order, BAT **groups,
 			*order = on;
 		}
 		if (groups) {
-			gn = BATnew(TYPE_void, TYPE_void, BATcount(b));
-			if (gn == NULL)
-				goto error;
-			BATsetcount(gn, BATcount(b));
+			if (BATtkey(b)) {
+				/* singleton groups */
+				gn = BATnew(TYPE_void, TYPE_void, BATcount(b));
+				if (gn == NULL)
+					goto error;
+				BATsetcount(gn, BATcount(b));
+				BATseqbase(BATmirror(gn), 0);
+			} else {
+				/* single group */
+				const oid *o = 0;
+				assert(BATcount(b) == 1 ||
+				       (BATtordered(b) && BATtrevordered(b)));
+				gn = BATconstant(TYPE_oid, &o, BATcount(b));
+				if (gn == NULL)
+					goto error;
+			}
 			BATseqbase(gn, 0);
-			BATseqbase(BATmirror(gn), 0);
 			*groups = gn;
 		}
 		return GDK_SUCCEED;
@@ -1395,6 +1467,7 @@ BATsubsort(BAT **sorted, BAT **order, BAT **groups,
 		}
 		BATseqbase(on, 0);
 		on->tsorted = on->trevsorted = 0;
+		on->tdense = 0;
 		*order = on;
 	}
 	if (g) {
@@ -1449,7 +1522,7 @@ BATsubsort(BAT **sorted, BAT **order, BAT **groups,
 		} else if (b->U->count <= 1) {
 			b->tsorted = b->trevsorted = 1;
 		}
-		if ((!(reverse && bn->trevsorted) && !(!reverse && bn->tsorted)) &&
+		if (!(reverse ? bn->trevsorted : bn->tsorted) &&
 		    do_sort(Tloc(bn, BUNfirst(bn)),
 			    on ? Tloc(on, BUNfirst(on)) : NULL,
 			    bn->T->vheap ? bn->T->vheap->base : NULL,

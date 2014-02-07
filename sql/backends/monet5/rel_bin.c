@@ -391,7 +391,7 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, stm
 					nrcols = es->nrcols;
 				list_append(l,es);
 			}
-			if (sel && strcmp(sql_func_mod(f->func), "calc") == 0 && nrcols)
+			if (sel && strcmp(sql_func_mod(f->func), "calc") == 0 && nrcols && strcmp(sql_func_imp(f->func), "ifthenelse") != 0)
 				list_append(l,sel);
 		}
 		/* Window expressions are handled differently.
@@ -2239,7 +2239,7 @@ rel2bin_project( mvc *sql, sql_rel *rel, list *refs, sql_rel *topn)
 	/* In case of a topn 
 		if both order by and distinct: then get first order by col 
 		do topn on it. Project all again! Then rest
-		*/
+	*/
 	if (topn && rel->r) {
 		list *oexps = rel->r, *npl = sa_list(sql->sa);
 		/* distinct, topn returns atleast N (unique) */

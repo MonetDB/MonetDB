@@ -15,7 +15,7 @@
 # Copyright August 2008-2013 MonetDB B.V.
 # All Rights Reserved.
 
-SUBDIRS = NOT_WIN32?vaults UDF LSST ENABLE_DATACELL?datacell HAVE_JSONSTORE?rest
+SUBDIRS = NOT_WIN32?vaults UDF LSST ENABLE_DATACELL?datacell HAVE_JSONSTORE?rest HAVE_GSL?gsl
 
 INCLUDES = ../../include ../../common ../../storage ../../server \
 		   ../../../monetdb5/modules/atoms \

@@ -38,12 +38,10 @@ mal_export str AUTHgetUsers(BAT **ret, Client *c);
 mal_export str AUTHgetPasswordHash(str *ret, Client *c, str *username);
 
 mal_export str AUTHrequireAdmin(Client *c);
-mal_export str AUTHrequireAdminOrUser(Client *c, str *username);
 mal_export str AUTHinitTables(void);
 
 
 /*
- * @-
  * Authorisation is based on a password.  The passwords are stored hashed
  * in a BAT.  Access to this BAT is ok from the MAL level, and in
  * particular SQL needs it to dump (and later restore) users.

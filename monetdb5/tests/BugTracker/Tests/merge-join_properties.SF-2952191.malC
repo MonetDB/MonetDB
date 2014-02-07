@@ -1,10 +1,9 @@
 include microbenchmark;
-
-l0 := microbenchmark.uniform(0:oid, 1000, 10);
+l0 := microbenchmark.uniform(0:oid, 1000:wrd, 10);
 l1 := algebra.sortTail(l0);
 l2 := algebra.markH(l1);
 
-r0 := microbenchmark.uniform(0:oid, 10, 10);
+r0 := microbenchmark.uniform(0:oid, 10:wrd, 10);
 r1 := bat.reverse(r0);
 
 j := algebra.join(l2,r1);

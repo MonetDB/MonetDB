@@ -331,8 +331,8 @@ static MT_Lock mbyteslock MT_LOCK_INITIALIZER("mbyteslock");
 static MT_Lock GDKstoppedLock MT_LOCK_INITIALIZER("GDKstoppedLock");
 #endif
 
-size_t _MT_pagesize = 0;	/* variable holding memory size */
-size_t _MT_npages = 0;		/* variable holding page size */
+size_t _MT_pagesize = 0;	/* variable holding page size */
+size_t _MT_npages = 0;		/* variable holding memory size in pages */
 
 void
 MT_init(void)
@@ -433,24 +433,15 @@ MT_init(void)
 size_t
 GDKmem_cursize(void)
 {
-	/* RAM/swapmem that Monet has claimed from OS */
-	size_t heapsize = MT_heapcur() - MT_heapbase;
-
-	return (size_t) SEG_SIZE(heapsize, MT_VMUNITLOG);
-}
-
-size_t
-GDKmem_inuse(void)
-{
 	/* RAM/swapmem that Monet is really using now */
-	return (size_t) ATOMIC_GET(GDK_mallocedbytes_estimate, mbyteslock, "GDKmem_inuse");
+	return (size_t) ATOMIC_GET(GDK_mallocedbytes_estimate, mbyteslock, "GDKmem_cursize");
 }
 
 size_t
 GDKvm_cursize(void)
 {
 	/* current Monet VM address space usage */
-	return (size_t) ATOMIC_GET(GDK_vm_cursize, mbyteslock, "GDKvm_cursize") + GDKmem_inuse();
+	return (size_t) ATOMIC_GET(GDK_vm_cursize, mbyteslock, "GDKvm_cursize") + GDKmem_cursize();
 }
 
 #ifdef GDK_MEM_KEEPHISTO
@@ -600,8 +591,8 @@ GDKmemfail(str s, size_t len)
 
 	/* bumped your nose against the wall; try to prevent
 	 * repetition by adjusting maxsizes
-	   if (memtarget < 0.3 * GDKmem_inuse()) {
-		   size_t newmax = (size_t) (0.7 * (double) GDKmem_inuse());
+	   if (memtarget < 0.3 * GDKmem_cursize()) {
+		   size_t newmax = (size_t) (0.7 * (double) GDKmem_cursize());
 
 		   if (newmax < GDK_mem_maxsize)
 		   GDK_mem_maxsize = newmax;
@@ -614,14 +605,14 @@ GDKmemfail(str s, size_t len)
 	   }
 	 */
 
-	THRprintf(GDKstdout, "#%s(" SZFMT ") fails, try to free up space [memory in use=" SZFMT ",virtual memory in use=" SZFMT "]\n", s, len, GDKmem_inuse(), GDKvm_cursize());
+	THRprintf(GDKstdout, "#%s(" SZFMT ") fails, try to free up space [memory in use=" SZFMT ",virtual memory in use=" SZFMT "]\n", s, len, GDKmem_cursize(), GDKvm_cursize());
 	GDKmemdump();
 /*	GDKdebug |= MEMMASK;  avoid debugging output */
 
 	BBPtrim(BBPTRIM_ALL);
 
 	GDKdebug = MIN(GDKdebug, bak);
-	THRprintf(GDKstdout, "#%s(" SZFMT ") result [mem=" SZFMT ",vm=" SZFMT "]\n", s, len, GDKmem_inuse(), GDKvm_cursize());
+	THRprintf(GDKstdout, "#%s(" SZFMT ") result [mem=" SZFMT ",vm=" SZFMT "]\n", s, len, GDKmem_cursize(), GDKvm_cursize());
 	GDKmemdump();
 }
 
@@ -639,15 +630,18 @@ GDKmemfail(str s, size_t len)
 
 /* allocate 8 bytes extra (so it stays 8-bytes aligned) and put
  * realsize in front */
-#define GDKmalloc_prefixsize(s,size)					\
-	do {								\
-		s = (ssize_t *) malloc(size + MALLOC_EXTRA_SPACE + GLIBC_BUG); \
-		if (s != NULL) {					\
-			assert((((size_t) s)&7) == 0); /* no MISALIGN */ \
-			s = (ssize_t*) ((char*) s + MALLOC_EXTRA_SPACE); \
-			s[-1] = (ssize_t) (size + MALLOC_EXTRA_SPACE);	\
-		}							\
-	} while (0)
+static inline void *
+GDKmalloc_prefixsize(size_t size)
+{
+	ssize_t *s;
+
+	if ((s = malloc(size + MALLOC_EXTRA_SPACE + GLIBC_BUG)) != NULL) {
+		assert((((size_t) s) & 7) == 0); /* no MISALIGN */
+		s = (ssize_t*) ((char*) s + MALLOC_EXTRA_SPACE);
+		s[-1] = (ssize_t) (size + MALLOC_EXTRA_SPACE);
+	}
+	return s;
+}
 
 /*
  * The emergency flag can be set to force a fatal error if needed.
@@ -657,7 +651,7 @@ GDKmemfail(str s, size_t len)
 void *
 GDKmallocmax(size_t size, size_t *maxsize, int emergency)
 {
-	ssize_t *s = NULL;
+	void *s;
 
 	if (size == 0) {
 #ifdef GDK_MEM_NULLALLOWED
@@ -667,10 +661,10 @@ GDKmallocmax(size_t size, size_t *maxsize, int emergency)
 #endif
 	}
 	size = (size + 7) & ~7;	/* round up to a multiple of eight */
-	GDKmalloc_prefixsize(s, size);
+	s = GDKmalloc_prefixsize(size);
 	if (s == NULL) {
 		GDKmemfail("GDKmalloc", size);
-		GDKmalloc_prefixsize(s, size);
+		s = GDKmalloc_prefixsize(size);
 		if (s == NULL) {
 			if (emergency == 0) {
 				GDKerror("GDKmallocmax: failed for " SZFMT " bytes", size);
@@ -683,7 +677,7 @@ GDKmallocmax(size_t size, size_t *maxsize, int emergency)
 	}
 	*maxsize = size;
 	heapinc(size + MALLOC_EXTRA_SPACE);
-	return (void *) s;
+	return s;
 }
 
 #undef GDKmalloc
@@ -1027,12 +1021,6 @@ GDKinit(opt *set, int setlen)
 
 	/* Mserver by default takes 80% of all memory as a default */
 	GDK_mem_maxsize = GDK_mem_maxsize_max = (size_t) ((double) MT_npages() * (double) MT_pagesize() * 0.815);
-#ifdef NATIVE_WIN32
-	GDK_mmap_minsize = GDK_mem_maxsize_max;
-#else
-	GDK_mmap_minsize = MIN( 1<<30 , GDK_mem_maxsize_max/6 );
-	/*   per op:  2 args + 1 res, each with head & tail  =>  (2+1)*2 = 6  ^ */
-#endif
 	GDK_mem_bigsize = 1024*1024;
 	GDKremovedir(DELDIR);
 	BBPinit();
@@ -1075,6 +1063,10 @@ GDKinit(opt *set, int setlen)
 		GDKsetenv(n[i].name, n[i].value);
 	free(n);
 
+	GDKnr_threads = GDKgetenv_int("gdk_nr_threads", 0);
+	if (GDKnr_threads == 0)
+		GDKnr_threads = MT_check_nr_cores();
+
 	if ((p = GDKgetenv("gdk_dbpath")) != NULL &&
 	    (p = strrchr(p, DIR_SEP)) != NULL) {
 		GDKsetenv("gdk_dbname", p + 1);
@@ -1100,6 +1092,13 @@ GDKinit(opt *set, int setlen)
 	}
 	if ((p = GDKgetenv("gdk_mmap_minsize"))) {
 		GDK_mmap_minsize = MAX(REMAP_PAGE_MAXSIZE, (size_t) strtoll(p, NULL, 10));
+	} else {
+#ifdef NATIVE_WIN32
+		GDK_mmap_minsize = GDK_mem_maxsize_max / (GDKnr_threads ? GDKnr_threads : 1);
+#else
+		GDK_mmap_minsize = MIN(1 << 30, (GDK_mem_maxsize_max / 6) / (GDKnr_threads ? GDKnr_threads : 1));
+		/* per op: 2 args + 1 res, each with head & tail => (2+1)*2 = 6 */
+#endif
 	}
 	if (GDKgetenv("gdk_mem_pagebits") == NULL) {
 		snprintf(buf, sizeof(buf), "%d", GDK_mem_pagebits);
@@ -1113,18 +1112,6 @@ GDKinit(opt *set, int setlen)
 		snprintf(buf, sizeof(buf), "%d", (int) getpid());
 		GDKsetenv("monet_pid", buf);
 	}
-
-	GDKnr_threads = GDKgetenv_int("gdk_nr_threads", 0);
-	if (GDKnr_threads == 0)
-		GDKnr_threads = MT_check_nr_cores();
-#ifdef NATIVE_WIN32
-	GDK_mmap_minsize /= (GDKnr_threads ? GDKnr_threads : 1);
-#else
-	/* WARNING: This unconditionally overwrites above settings, */
-	/* incl. setting via MonetDB env. var. "gdk_mmap_minsize" ! */
-	GDK_mmap_minsize = MIN( 1<<30 , (GDK_mem_maxsize_max/6) / (GDKnr_threads ? GDKnr_threads : 1) );
-	/*    per op:  2 args + 1 res, each with head & tail  =>  (2+1)*2 = 6  ^ */
-#endif
 
 	if ((p = mo_find_option(set, setlen, "gdk_vmtrim")) == NULL ||
 	    strcasecmp(p, "yes") == 0)

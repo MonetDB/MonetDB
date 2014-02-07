@@ -2157,7 +2157,7 @@ doProfile(void *d)
 	for (i = 0; i < MAXTHREADS; i++)
 		threads[i] = topbox++;
 
-	/* sent single query */
+	/* send single query */
 	if (sqlstatement) {
 		doRequest(dbhsql, sqlstatement);
 	}

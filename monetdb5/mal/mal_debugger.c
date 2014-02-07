@@ -31,6 +31,7 @@
 #include "mal_module.h"		/* for showModuleStatistics() */
 #include "mal_parser.h"
 #include "mal_namespace.h"
+#include "mal_private.h"
 
 int MDBdelay;			/* do not immediately react */
 
@@ -41,6 +42,11 @@ int MDBdelay;			/* do not immediately react */
 
 static void printStackElm(stream *f, MalBlkPtr mb, ValPtr v, int index, BUN cnt, BUN first);
 static void printStackHdr(stream *f, MalBlkPtr mb, ValPtr v, int index);
+static void printBATelm(stream *f, int i, BUN cnt, BUN first);
+static void printBatDetails(stream *f, int bid);
+static void printBatInfo(stream *f, VarPtr n, ValPtr v);
+static void printBatProperties(stream *f, VarPtr n, ValPtr v, str props);
+static void mdbHelp(stream *f);
 
 static mdbStateRecord *mdbTable;
 
@@ -48,7 +54,7 @@ static mdbStateRecord *mdbTable;
  * The debugger flags overview
  */
 
-void
+int
 mdbInit(void)
 {
 	/*
@@ -58,6 +64,11 @@ mdbInit(void)
 	 * space in each instruction.
 	 */
 	mdbTable = GDKzalloc(sizeof(mdbStateRecord) * MAL_MAXCLIENTS);
+	if (mdbTable == NULL) {
+		showException(GDKout,MAL, "mdbInit",MAL_MALLOC_FAIL);
+		return -1;
+	}
+	return 0;
 }
 
 static char
@@ -158,7 +169,7 @@ mdbSetBreakRequest(Client cntxt, MalBlkPtr mb, str request, char cmd)
 }
 
 /* A breakpoint should be set once for each combination */
-void
+static void
 mdbSetBreakpoint(Client cntxt, MalBlkPtr mb, int pc, char cmd)
 {
 	mdbState mdb = mdbTable + cntxt->idx;
@@ -176,7 +187,7 @@ mdbSetBreakpoint(Client cntxt, MalBlkPtr mb, int pc, char cmd)
 		mdb->brkTop++;
 }
 
-void
+static void
 mdbShowBreakpoints(Client cntxt)
 {
 	int i;
@@ -210,7 +221,7 @@ mdbClrBreakpoint(Client cntxt, int pc)
 	mdb->brkTop = j;
 }
 
-void
+static void
 mdbClrBreakRequest(Client cntxt, str request)
 {
 	int i, j = 0;
@@ -262,7 +273,7 @@ printCall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 }
 
 /* utility to display instruction and dispose of structure */
-void
+static void
 printTraceCall(stream *out, MalBlkPtr mb, MalStkPtr stk, int pc, int flags)
 {
 	str msg;
@@ -351,7 +362,7 @@ mdbLocateMalBlk(Client cntxt, MalBlkPtr mb, str b, stream *out)
 }
 
 
-void
+static void
 mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stkbase, InstrPtr p, int pc)
 {
 	int m = 1;
@@ -385,7 +396,7 @@ retryRead:
 			b = (char *) (*cntxt->phase[MAL_SCENARIO_READER])(cntxt);
 			if (b != 0)
 				break;
-			if (cntxt->mode == FINISHING)
+			if (cntxt->mode == FINISHCLIENT)
 				break;
 			/* SQL patch, it should only react to Smessages, Xclose requests to be ignored */
 			if (strncmp(cntxt->fdin->buf, "Xclose", 6) == 0) {
@@ -466,8 +477,10 @@ retryRead:
 		case 's':   /* step */
 			if (strncmp("span", b, 4) == 0) {
 				Lifespan span = setLifespan(mb);
-				debugLifespan(cntxt, mb, span);
-				GDKfree(span);
+				if ( span){
+					debugLifespan(cntxt, mb, span);
+					GDKfree(span);
+				}
 				continue;
 			} else if (strncmp("scenarios", b, 9) == 0) {
 				showAllScenarios(out);
@@ -1196,7 +1209,7 @@ printStack(stream *f, MalBlkPtr mb, MalStkPtr s)
 			printStackElm(f, mb, 0, i, 0, 0);
 }
 
-void
+static void
 printBATelm(stream *f, int i, BUN cnt, BUN first)
 {
 	BAT *b, *bs;
@@ -1323,7 +1336,7 @@ printStackElm(stream *f, MalBlkPtr mb, ValPtr v, int index, BUN cnt, BUN first)
 	}
 }
 
-void
+static void
 printBatDetails(stream *f, int bid)
 {
 	BAT *b[2];
@@ -1346,14 +1359,15 @@ printBatDetails(stream *f, int bid)
 		BBPunfix(b[1]->batCacheid);
 	}
 }
-void
+
+static void
 printBatInfo(stream *f, VarPtr n, ValPtr v)
 {
 	if (isaBatType(n->type) && v->val.ival)
 		printBatDetails(f, v->val.ival);
 }
 
-void
+static void
 printBatProperties(stream *f, VarPtr n, ValPtr v, str props)
 {
 	if (isaBatType(n->type) && v->val.ival) {
@@ -1395,6 +1409,7 @@ printBatProperties(stream *f, VarPtr n, ValPtr v, str props)
 	}
 }
 
+#if 0							/* these are not referenced anywhere */
 /*
  * The memory positions for the BATs is useful information to
  * assess for memory fragmentation.
@@ -1474,8 +1489,9 @@ printBBPinfo(stream *out)
 	mnstr_printf(out, "#BBP VM history not available\n");
 #endif
 }
+#endif
 
-void
+static void
 mdbHelp(stream *f)
 {
 	mnstr_printf(f, "next             -- Advance to next statement\n");

@@ -377,6 +377,7 @@ handle_http_request (const char *url, const char *method, char **page,
 		break;
 	default:
 		/* error, unknown command */
+		RESTunknown(page);	  
 		ret = 1;
 	}
 

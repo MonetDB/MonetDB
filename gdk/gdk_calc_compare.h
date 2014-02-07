@@ -81,6 +81,7 @@ op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 	case TYPE_bte:
 		switch (tp2) {
 		case TYPE_bte:
+		btebte:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(bte, bte, TPE, OP);
 			else
@@ -143,6 +144,7 @@ op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(sht, bte, TPE, OP);
 			break;
 		case TYPE_sht:
+		shtsht:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(sht, sht, TPE, OP);
 			else
@@ -211,6 +213,7 @@ op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 #if SIZEOF_WRD == SIZEOF_INT
 		case TYPE_wrd:
 #endif
+		intint:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(int, int, TPE, OP);
 			else
@@ -279,6 +282,7 @@ op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 #if SIZEOF_WRD == SIZEOF_LNG
 		case TYPE_wrd:
 #endif
+		lnglng:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(lng, lng, TPE, OP);
 			else
@@ -405,6 +409,7 @@ op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 			break;
 #endif
 		case TYPE_flt:
+		fltflt:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(flt, flt, TPE, OP);
 			else
@@ -467,6 +472,7 @@ op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(dbl, flt, TPE, OP);
 			break;
 		case TYPE_dbl:
+		dbldbl:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(dbl, dbl, TPE, OP);
 			else
@@ -534,6 +540,23 @@ op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		    !BATatoms[tp1].linear ||
 		    (atomcmp = BATatoms[tp1].atomCmp) == NULL)
 			goto unsupported;
+		/* a bit of a hack: for inherited types, use
+		 * type-expanded version if comparison function is
+		 * equal to the inherited-from comparison function,
+		 * and yes, we jump right into the middle of a switch,
+		 * but that is legal (although not encouraged) C */
+		if (atomcmp == BATatoms[TYPE_bte].atomCmp)
+			goto btebte;
+		if (atomcmp == BATatoms[TYPE_sht].atomCmp)
+			goto shtsht;
+		if (atomcmp == BATatoms[TYPE_int].atomCmp)
+			goto intint;
+		if (atomcmp == BATatoms[TYPE_lng].atomCmp)
+			goto lnglng;
+		if (atomcmp == BATatoms[TYPE_flt].atomCmp)
+			goto fltflt;
+		if (atomcmp == BATatoms[TYPE_dbl].atomCmp)
+			goto dbldbl;
 		nil = ATOMnilptr(tp1);
 		CANDLOOP(dst, k, TPE_nil, 0, start);
 		for (i = start * incr1, j = start * incr2, k = start;

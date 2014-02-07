@@ -925,6 +925,11 @@ command aggr.prod(b:bat[:oid,:bte],e:bat[:oid,:any_1]):bat[:oid,:bte]
 address AGGRprod2_bte;
 comment Product over grouped tail product on bte
 
+function aggr.quantile(b:bat[:oid,:any_1],q:bat[:oid,:dbl]):any_1;
+command aggr.quantile(b:bat[:oid,:any_1],g:bat[:oid,:oid],e:bat[:oid,:any_2],q:bat[:oid,:dbl]):bat[:oid,:any_1] 
+address AGGRquantile3;
+comment Grouped quantile aggregate
+
 pattern aggr.sum(b:bat[:oid,:dbl],s:bat[:oid,:oid],nil_if_empty:bit):dbl 
 address CMDBATsum;
 comment Calculate aggregate sum of B with candidate list.
@@ -1612,6 +1617,18 @@ comment Grouped tail sum on bte
 command aggr.sum(b:bat[:oid,:bte],e:bat[:oid,:any_1]):bat[:oid,:hge] 
 address AGGRsum2_hge;
 comment Sum over grouped tail sum on bte
+
+command aggr.subquantile(b:bat[:oid,:any_1],q:bat[:oid,:dbl],g:bat[:oid,:oid],e:bat[:oid,:any_2],s:bat[:oid,:oid],skip_nils:bit):bat[:oid,:any_1] 
+address AGGRsubquantilecand;
+comment Grouped median quantile with candidate list
+
+command aggr.subquantile(b:bat[:oid,:any_1],q:bat[:oid,:dbl],g:bat[:oid,:oid],e:bat[:oid,:any_2],skip_nils:bit):bat[:oid,:any_1] 
+address AGGRsubquantile;
+comment Grouped quantile aggregate
+
+command aggr.subquantile(b:bat[:oid,:any_1],q:bat[:oid,:dbl],skip_nils:bit):bat[:oid,:any_1] 
+address AGGRquantile;
+comment Quantile aggregate
 
 command aggr.submedian(b:bat[:oid,:any_1],g:bat[:oid,:oid],e:bat[:oid,:any_2],s:bat[:oid,:oid],skip_nils:bit):bat[:oid,:any_1] 
 address AGGRsubmediancand;
@@ -2978,7 +2995,7 @@ command algebra.split(b:bat[:lng,:oid]):bat[:oid,:oid]
 address ALGsplit;
 comment Split head into two values
 
-command algebra.subthetajoin(l:bat[:oid,:any_1],r:bat[:oid,:any_1],sl:bat[:oid,:oid],sr:bat[:oid,:oid],op:str,nil_matches:bit,estimate:lng) (X_8:bat[:oid,:oid],X_9:bat[:oid,:oid]) 
+command algebra.subthetajoin(l:bat[:oid,:any_1],r:bat[:oid,:any_1],sl:bat[:oid,:oid],sr:bat[:oid,:oid],op:int,nil_matches:bit,estimate:lng) (X_8:bat[:oid,:oid],X_9:bat[:oid,:oid]) 
 address ALGsubthetajoin;
 comment Theta join with candidate lists
 
@@ -3295,6 +3312,18 @@ comment fuse two (1-byte) bte values into one (2-byte) sht value
 command batudf.reverse(b:bat[:oid,:str]):bat[:oid,:str] 
 address UDFBATreverse;
 comment Reverse a BAT of strings
+
+command batgsl.chi2prob(d:bat[:oid,:dbl],i:bat[:oid,:dbl]):bat[:oid,:dbl] 
+address GSLbat_chisqProb_bat;
+comment Chi Squared probability
+
+command batgsl.chi2prob(d:dbl,i:bat[:oid,:dbl]):bat[:oid,:dbl] 
+address GSLcst_chisqProb_bat;
+comment Chi Squared probability
+
+command batgsl.chi2prob(d:bat[:oid,:dbl],i:dbl):bat[:oid,:dbl] 
+address GSLbat_chisqProb_cst;
+comment Chi Squared probability
 
 command batsql.alpha(dec:dbl,theta:bat[:oid,:dbl]):bat[:oid,:dbl] 
 address SQLcst_alpha_bat;
@@ -42496,31 +42525,31 @@ address CMDvarADDsignal;
 comment Return V1 + V2, guarantee no overflow by returning larger type
 
 pattern calc.++(v:dbl):dbl 
-address CMDvarINCR;
+address CMDvarINCRsignal;
 comment Unary V + 1
 
 pattern calc.++(v:flt):flt 
-address CMDvarINCR;
+address CMDvarINCRsignal;
 comment Unary V + 1
 
 pattern calc.++(v:lng):lng 
-address CMDvarINCR;
+address CMDvarINCRsignal;
 comment Unary V + 1
 
 pattern calc.++(v:wrd):wrd 
-address CMDvarINCR;
+address CMDvarINCRsignal;
 comment Unary V + 1
 
 pattern calc.++(v:int):int 
-address CMDvarINCR;
+address CMDvarINCRsignal;
 comment Unary V + 1
 
 pattern calc.++(v:sht):sht 
-address CMDvarINCR;
+address CMDvarINCRsignal;
 comment Unary V + 1
 
 pattern calc.++(v:bte):bte 
-address CMDvarINCR;
+address CMDvarINCRsignal;
 comment Unary V + 1
 
 pattern calc.+(v1:dbl,v2:hge):dbl 
@@ -42936,31 +42965,31 @@ address CMDvarSUBsignal;
 comment Return V1 - V2, guarantee no overflow by returning larger type
 
 pattern calc.--(v:dbl):dbl 
-address CMDvarDECR;
+address CMDvarDECRsignal;
 comment Unary V - 1
 
 pattern calc.--(v:flt):flt 
-address CMDvarDECR;
+address CMDvarDECRsignal;
 comment Unary V - 1
 
 pattern calc.--(v:lng):lng 
-address CMDvarDECR;
+address CMDvarDECRsignal;
 comment Unary V - 1
 
 pattern calc.--(v:wrd):wrd 
-address CMDvarDECR;
+address CMDvarDECRsignal;
 comment Unary V - 1
 
 pattern calc.--(v:int):int 
-address CMDvarDECR;
+address CMDvarDECRsignal;
 comment Unary V - 1
 
 pattern calc.--(v:sht):sht 
-address CMDvarDECR;
+address CMDvarDECRsignal;
 comment Unary V - 1
 
 pattern calc.--(v:bte):bte 
-address CMDvarDECR;
+address CMDvarDECRsignal;
 comment Unary V - 1
 
 pattern calc.-(v:dbl):dbl 
@@ -47264,6 +47293,11 @@ command calc.isnil(v:blob):bit
 address BLOB_isnil;
 comment Nil test for blob value
 
+command calc.json(j:json):json 
+address JSONstr2json;
+comment Convert JSON to JSON. Dealing with escape characters
+
+#>>>>>>> /tmp/MAL-signatures.stable.out~other.EGfNcE
 command calc.json(j:str):json 
 address JSONstr2json;
 comment Convert string to its JSON. Dealing with escape characters
@@ -49387,10 +49421,6 @@ command calc.xml(src:xml):xml
 address XMLxml2xml;
 command calc.xml(src:str):xml 
 address XMLstr2xml;
-command centipede.materialize(b:bat[:any_1,:any_2],low:any_2,high:any_2):bat[:any_1,:any_2] 
-address OPTcentipedeMaterialize;
-comment Implement the centipede partition operation. Throw an exception if the partition was empty,because then the subquery should produce a NIL 
-
 pattern centipede.vector(b:bat[:oid,:any_1]) (X_2:oid,X_3:oid...) 
 address OPTvectorOid;
 comment Derive a series of slices values based on sampling
@@ -49559,10 +49589,12 @@ command clients.sha1sum(pw:str):str
 address CLTsha1sum;
 comment Return hex string representation of the SHA-1 hash of the given string
 
-command clients.shutdown(forced:bit):void 
+pattern clients.shutdown(delay:int,forced:bit):str 
 address CLTshutdown;
-comment Close all client connections. If forced=false theclients are moved into FINISHING mode, which means thatthe process stops at the next cycle of the scenario.If forced=true all client processes are immediately killed
+comment Close all other client connections. Return if it succeeds.If forced is set then always stop the system the hard way
 
+pattern clients.shutdown(delay:int):str 
+address CLTshutdown;
 pattern clients.setTimeout(q:lng,s:lng):void 
 address CLTsetTimeout;
 comment Abort a query after q seconds (q=0 means run undisturbed).The session timeout aborts the connection after spending toomany seconds on query processing.
@@ -50017,10 +50049,6 @@ command geom.point(x:dbl,y:dbl):wkb
 address wkbcreatepoint;
 comment Construct a point from two geometries
 
-pattern group.multicolumns(l:bat[:oid,:any]...) (ref:bat[:oid,:oid],grp:bat[:oid,:any],ext:bat[:oid,:any]) 
-address GRPmulticolumngroup;
-comment Derive a group index over multiple columns.
-
 command group.subgroupdone(b:bat[:oid,:any_1],g:bat[:oid,:oid],e:bat[:oid,:oid],h:bat[:oid,:wrd]) (groups:bat[:oid,:oid],extents:bat[:oid,:oid],histo:bat[:oid,:wrd]) 
 address GRPsubgroup4;
 command group.subgroupdone(b:bat[:oid,:any_1],g:bat[:oid,:oid]) (groups:bat[:oid,:oid],extents:bat[:oid,:oid],histo:bat[:oid,:wrd]) 
@@ -50033,6 +50061,14 @@ command group.subgroup(b:bat[:oid,:any_1],g:bat[:oid,:oid]) (groups:bat[:oid,:oi
 address GRPsubgroup2;
 command group.subgroup(b:bat[:oid,:any_1]) (groups:bat[:oid,:oid],extents:bat[:oid,:oid],histo:bat[:oid,:wrd]) 
 address GRPsubgroup1;
+pattern group.subgroup(b:bat[:oid,:any]...) (ref:bat[:oid,:oid],grp:bat[:oid,:oid],hist:bat[:oid,:any]) 
+address GROUPmulticolumn;
+comment Derivation of a group index over multiple columns.
+
+command gsl.chi2prob(d:dbl,i:dbl):dbl 
+address GSLchisqProb;
+comment Chi Squared probability
+
 command identifier.#fromstr():void 
 address IDfromString;
 comment Convert a string to an identifier without any check
@@ -50998,10 +51034,6 @@ pattern mdb.List():void
 address MDBlistDetail;
 comment Dump the current routine on standard out.
 
-pattern mdb.collect(v:any_1):void 
-address OPTtraceCall;
-comment Dump the previous instruction to a temporary file
-
 pattern mdb.dump():void 
 address MDBdump;
 comment Dump instruction, stacktrace, and stack
@@ -51556,14 +51588,6 @@ comment extracts minutes from daytime
 command mtime.month(d:date):int 
 address MTIMEdate_extract_month;
 comment extracts month from date
-
-command mtime.oldduration(format:str):int 
-address MTIMEoldduration;
-comment parse the old duration format and	return an (estimated) number of days.
-
-command mtime.olddate(format:str):date 
-address MTIMEolddate;
-comment create a date from the old instant	format.
 
 command mtime.prelude():void 
 address MTIMEprelude;
@@ -52599,14 +52623,6 @@ pattern recycle.dump():void
 address RECYCLEdumpWrap;
 comment Dump summary of recycle table
 
-pattern recycle.epilogue():void 
-address RECYCLEepilogueWrap;
-comment To be called when recycler is not needed anymore
-
-pattern recycle.prologue():void 
-address RECYCLEprologueWrap;
-comment Called at the start of a recycle controlled function
-
 pattern recycle.reset(bid:bat[:oid,:any]):void 
 address RECYCLEresetBATwrap;
 comment Reset a recycled bat variable
@@ -53115,7 +53131,7 @@ comment Return column bat with delta's applied.
 command sql.querylog_disable():void 
 address QLOGdisable;
 command sql.querylog_enable(thres:int):void 
-address QLOGenablehreshold;
+address QLOGenableThreshold;
 command sql.querylog_enable():void 
 address QLOGenable;
 pattern sql.querylog_empty():void 
@@ -53239,6 +53255,10 @@ pattern sql.settimeout(s:lng):void
 address CLTsetTimeout;
 comment Abort query after s seconds
 
+pattern sql.sessions() (user:bat[:oid,:str],start:bat[:oid,:timestamp],stimeout:bat[:oid,:lng],lastcmd:bat[:oid,:timestamp],qtimeout:bat[:oid,:lng],idle:bat[:oid,:bit]) 
+address sql_sessions_wrap;
+comment SQL export table of active sessions, their timeouts and idle status
+
 pattern sql.sql_variables():bat[:oid,:str] 
 address sql_variables;
 comment return the table with session variables
@@ -53257,6 +53277,18 @@ pattern sql.setVariable(mvc:int,varname:str,value:any_1):int
 address setVariable;
 comment Set the value of a session variable
 
+pattern sql.shutdown(delay:int):str 
+address SQLshutdown_wrap;
+pattern sql.shutdown(delay:sht):str 
+address SQLshutdown_wrap;
+pattern sql.shutdown(delay:bte):str 
+address SQLshutdown_wrap;
+pattern sql.shutdown(delay:int,force:bit):str 
+address SQLshutdown_wrap;
+pattern sql.shutdown(delay:sht,force:bit):str 
+address SQLshutdown_wrap;
+pattern sql.shutdown(delay:bte,force:bit):str 
+address SQLshutdown_wrap;
 pattern sql.start2():void 
 address SQLsession2;
 comment Switch to processing precompiled sql statements

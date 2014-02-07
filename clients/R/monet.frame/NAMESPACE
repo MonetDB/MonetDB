@@ -1,0 +1,65 @@
+import(MonetDB.R,utils,stats,methods)
+
+# monet.frame things, this is an S3 class
+# constructors
+export(monet.frame)
+export(mf)
+export(set.debug)
+
+# conversion to native R
+S3method(as.list,monet.frame)
+S3method(as.data.frame,monet.frame)
+S3method(as.vector,monet.frame)
+export(av)
+export(adf)
+
+# inspection
+S3method(str,monet.frame)
+S3method(print,monet.frame)
+S3method(Summary,monet.frame)
+S3method(summary,monet.frame)
+S3method(names,monet.frame)
+S3method(dim,monet.frame)
+S3method(length,monet.frame)
+S3method(na.fail,monet.frame)
+
+# subsetting
+S3method(head,monet.frame)
+S3method(tail,monet.frame)
+S3method("[",monet.frame)
+S3method("$",monet.frame)
+S3method(subset,monet.frame)
+S3method(na.omit,monet.frame)
+S3method(sample, monet.frame)
+S3method(sample, default)
+export(sample)
+
+
+
+# math/stats
+S3method(Ops,monet.frame)
+S3method(Math,monet.frame)
+S3method(mean,monet.frame)
+S3method(sd, monet.frame)
+S3method(sd, default)
+export(sd)
+S3method(var, monet.frame)
+S3method(var, default)
+export(var)
+S3method(quantile,monet.frame)
+S3method(median,monet.frame)
+S3method(aggregate,monet.frame)
+export(aggregatef) # temp!
+
+export(tabulate)
+S3method(tabulate, monet.frame)
+S3method(tabulate, default)
+
+S3method(unique, monet.frame)
+S3method(range, monet.frame)
+
+# reorganization
+S3method(rbind,monet.frame)
+S3method(merge,monet.frame)
+S3method(sort,monet.frame)
+

@@ -117,7 +117,7 @@ JSONjson2str(str *ret, json *j)
 }
 
 str
-JSONstr2json(str *ret, json *j)
+JSONstr2json(json *ret, str *j)
 {
 	str msg = JSONparse(*j);
 

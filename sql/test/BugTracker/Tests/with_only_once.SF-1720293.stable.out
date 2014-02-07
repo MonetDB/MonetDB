@@ -28,13 +28,13 @@ Ready.
 % L1 # name
 % wrd # type
 % 2 # length
-[ 39	]
+[ 40	]
 #WITH t AS ( SELECT count(*) FROM tables ) SELECT * FROM t;
 % .t # table_name
 % L1 # name
 % wrd # type
 % 2 # length
-[ 39	]
+[ 40	]
 
 # 22:41:45 >  
 # 22:41:45 >  Done.

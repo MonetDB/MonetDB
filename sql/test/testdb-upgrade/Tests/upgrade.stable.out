@@ -1,25 +1,21 @@
 stdout of test 'upgrade` in directory 'sql/test/testdb-upgrade` itself:
 
 
-# 14:40:54 >  
-# 14:40:54 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "gdk_dbfarm=/ufs/sjoerd/Monet-stable/var/MonetDB" "--set" "mapi_open=true" "--set" "mapi_port=36219" "--set" "monet_prompt=" "--trace" "--forcemito" "--set" "mal_listing=2" "--dbname=mTests_test_testdb-upgrade" "--set" "mal_listing=0"
-# 14:40:54 >  
+# 21:49:40 >  
+# 21:49:40 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30515" "--set" "mapi_usock=/var/tmp/mtest-14642/.s.monetdb.30515" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/sjoerd/Monet-devel/var/MonetDB/mTests_sql_test_testdb-upgrade" "--set" "mal_listing=0"
+# 21:49:40 >  
 
-# MonetDB 5 server v11.11.8 (hg id: 34fcf4e7226d+)
+# MonetDB 5 server v11.16.0 (hg id: fd9db07674cf+)
 # This is an unreleased version
-# Serving database 'mTests_test_testdb-upgrade', using 8 threads
+# Serving database 'mTests_sql_test_testdb-upgrade', using 8 threads
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
-# Found 15.629 GiB available main-memory.
+# Found 15.591 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
 # Copyright (c) August 2008-2013 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
-# Listening for connection requests on mapi:monetdb://madrid.ins.cwi.nl:36219/
-# MonetDB/GIS module loaded
-# MonetDB/JAQL module loaded
-# MonetDB/SQL module loaded
+
 
 Ready.
-
 Running database upgrade commands:
 set schema "sys";
 create view sys.tracelog as select * from sys.tracelog();
@@ -260,12 +256,25 @@ returns integer external name json.length;
 insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('querylog_catalog', 'querylog_calls', 'queue', 'json_filter', 'json_filter_all', 'json_path', 'json_text', 'json_isvalid', 'json_isvalidobject', 'json_isvalidarray', 'json_length') and f.type = 1 and f.schema_id = s.id and s.name = 'sys');
 insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('querylog_empty', 'querylog_enable', 'querylog_disable', 'pause', 'resume', 'sysmon_resume', 'stop') and f.type = 2 and f.schema_id = s.id and s.name = 'sys');
 update sys._tables set system = true where name in ('tracelog', 'optimizers', 'environment', 'storage', 'storagemodel') and schema_id = (select id from sys.schemas where name = 'sys');
+create aggregate quantile(val TINYINT, q DOUBLE) returns TINYINT external name "aggr"."quantile";
+create aggregate quantile(val SMALLINT, q DOUBLE) returns SMALLINT external name "aggr"."quantile";
+create aggregate quantile(val INTEGER, q DOUBLE) returns INTEGER external name "aggr"."quantile";
+create aggregate quantile(val WRD, q DOUBLE) returns WRD external name "aggr"."quantile";
+create aggregate quantile(val BIGINT, q DOUBLE) returns BIGINT external name "aggr"."quantile";
+create aggregate quantile(val DECIMAL, q DOUBLE) returns DECIMAL external name "aggr"."quantile";
+create aggregate quantile(val REAL, q DOUBLE) returns REAL external name "aggr"."quantile";
+create aggregate quantile(val DOUBLE, q DOUBLE) returns DOUBLE external name "aggr"."quantile";
+create aggregate quantile(val DATE, q DOUBLE) returns DATE external name "aggr"."quantile";
+create aggregate quantile(val TIME, q DOUBLE) returns TIME external name "aggr"."quantile";
+create aggregate quantile(val TIMESTAMP, q DOUBLE) returns TIMESTAMP external name "aggr"."quantile";
+create aggregate median(val DECIMAL) returns DECIMAL external name "aggr"."median";
+insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('quantile', 'median') and f.type = 3 and f.schema_id = s.id and s.name = 'sys');
 set schema "testschema";
 
 
-# 11:08:55 >  
-# 11:08:55 >  "/usr/bin/python2" "upgrade.SQL.py" "upgrade"
-# 11:08:55 >  
+# 21:49:41 >  
+# 21:49:41 >  "/usr/bin/python2" "upgrade.SQL.py" "upgrade"
+# 21:49:41 >  
 
 #select count(*) from testschema.smallstring;
 % testschema.L1 # table_name
@@ -274,7 +283,7 @@ set schema "testschema";
 % 2 # length
 [ 66	]
 
-# 14:40:54 >  
-# 14:40:54 >  "Done."
-# 14:40:54 >  
+# 21:49:42 >  
+# 21:49:42 >  "Done."
+# 21:49:42 >  
 

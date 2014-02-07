@@ -55,6 +55,7 @@
  */
 #include "monetdb_config.h"
 #include "mal_properties.h"
+#include "mal_exception.h"
 #include "mal_type.h"		/* for idcmp() */
 
 static str *properties = NULL;
@@ -80,6 +81,11 @@ PropertyIndex(str name)
 	if (i >= max_properties) {
 		max_properties += 256;
 		properties = GDKrealloc(properties, max_properties * sizeof(str));
+		if( properties == NULL){
+			GDKerror("PropertyIndex" MAL_MALLOC_FAIL);
+			MT_lock_unset(&mal_contextLock, "propertyIndex");
+			return nr_properties;
+		}
 	}
 	properties[nr_properties] = GDKstrdup(name);
 	MT_lock_unset(&mal_contextLock, "propertyIndex");

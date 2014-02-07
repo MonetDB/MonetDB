@@ -3278,7 +3278,7 @@ rel_push_semijoin_down(int *changes, mvc *sql, sql_rel *rel)
 			l = l->l;
 		*/
 
-		if (!is_join(l->op)  
+		if (!is_join(l->op))
 			return rel;
 
 		ll = l->l;
@@ -4168,7 +4168,7 @@ rel_push_project_up(int *changes, mvc *sql, sql_rel *rel)
 				break;
 			case e_convert: 
 				list_append(pexps, e);
-				split_aggr_and_project(sql, aexps, e->l);
+				e->l = split_aggr_and_project(sql, aexps, e->l);
 				break;
 			default: /* simple alias */
 				list_append(aexps, e);

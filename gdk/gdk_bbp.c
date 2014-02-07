@@ -707,7 +707,7 @@ heapinit(COLrec *col, const char *buf, int *hashash, const char *HT, int oidsize
 		strcpy(type, "bte");
 	if ((t = ATOMindex(type)) < 0)
 		t = ATOMunknown_find(type);
-	else if (BATatoms[t].varsized != var)
+	else if (var != (t == TYPE_void || BATatoms[t].atomPut != NULL))
 		GDKfatal("BBPinit: inconsistent entry in BBP.dir: %s.varsized mismatch for BAT " LLFMT "\n", HT, batid);
 	else if (var && t != 0 ?
 		 BATatoms[t].size < width ||
@@ -1623,7 +1623,7 @@ BBPinsert(BATstore *bs)
 	const char *s;
 	long_str dirname;
 	bat i;
-	int idx = (int) (pid & BBP_THREADMASK);
+	int idx = threadmask(pid);
 
 	assert(bs->B.H != NULL);
 	assert(bs->B.T != NULL);
@@ -1832,7 +1832,7 @@ BBPclear(bat i)
 	int lock = locked_by ? pid != locked_by : 1;
 
 	if (BBPcheck(i, "BBPclear")) {
-		bbpclear(ABS(i), (int) (pid & BBP_THREADMASK), lock ? "BBPclear" : NULL);
+		bbpclear(ABS(i), threadmask(pid), lock ? "BBPclear" : NULL);
 	}
 }
 
@@ -1881,7 +1881,7 @@ BBPrename(bat bid, const char *nme)
 	if (strlen(dirname) + strLen(nme) + 1 >= IDLENGTH) {
 		return BBPRENAME_LONG;
 	}
-	idx = (int) (MT_getpid() & BBP_THREADMASK);
+	idx = threadmask(MT_getpid());
 	MT_lock_set(&GDKtrimLock(idx), "BBPrename");
 	MT_lock_set(&GDKnameLock, "BBPrename");
 	i = BBP_find(nme, FALSE);
@@ -2805,7 +2805,7 @@ BBPtrim(size_t target)
 	}
 	MEMDEBUG THRprintf(GDKstdout,
 			   "#BBPTRIM_ENTER: memsize=" SZFMT ",vmsize=" SZFMT "\n",
-			   GDKmem_inuse(), GDKvm_cursize());
+			   GDKmem_cursize(), GDKvm_cursize());
 
 	MEMDEBUG THRprintf(GDKstdout, "#BBPTRIM: target=" SZFMT "\n", target);
 	PERFDEBUG THRprintf(GDKstdout, "#BBPtrim(mem=%d)\n", target > 0);
@@ -2915,9 +2915,10 @@ BBPcold(bat i)
 		i = -i;
 	if (BBPcheck(i, "BBPcold")) {
 		MT_Id pid = MT_getpid();
+		int idx = threadmask(pid);
 		int lock = locked_by ? pid != locked_by : 1;
 
-		MT_lock_set(&GDKtrimLock(pid), "BBPcold");
+		MT_lock_set(&GDKtrimLock(idx), "BBPcold");
 		if (lock)
 			MT_lock_set(&GDKswapLock(i), "BBPcold");
 		/* make very cold and insert on top of trim list */
@@ -2930,7 +2931,7 @@ BBPcold(bat i)
 		}
 		if (lock)
 			MT_lock_unset(&GDKswapLock(i), "BBPcold");
-		MT_lock_unset(&GDKtrimLock(pid), "BBPcold");
+		MT_lock_unset(&GDKtrimLock(idx), "BBPcold");
 	}
 }
 
@@ -3164,8 +3165,14 @@ do_backup(const char *srcdir, const char *nme, const char *extbase,
 	int ret = 0;
 
 	 /* direct mmap is unprotected (readonly usage, or has WAL
-	  * protection)  */
-	if (h->storage != STORE_MMAP) {
+	  * protection); however, if we're backing up for subcommit
+	  * and a backup already exists in the main backup directory
+	  * (see GDKupgradevarheap), move the file */
+	if (subcommit && file_exists(BAKDIR, nme, extbase)) {
+		assert(h->storage == STORE_MMAP);
+		if (file_move(BAKDIR, SUBDIR, nme, extbase))
+			return -1;
+	} else if (h->storage != STORE_MMAP) {
 		/* STORE_PRIV saves into X.new files. Two cases could
 		 * happen. The first is when a valid X.new exists
 		 * because of an access change or a previous

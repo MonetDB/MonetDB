@@ -29,7 +29,7 @@
  * code in one CPP macro we use the following #defines for comparing
  * atoms:
  */
-#define simple_CMP(x,y,tpe)     (simple_LT(x,y,tpe)?-1:simple_GT(x,y,tpe))
+#define simple_CMP(x,y,tpe)     (simple_GT(x,y,tpe) - simple_LT(x,y,tpe))
 #define simple_EQ(x,y,tpe)      ((*(const tpe*) (x)) == (*(const tpe*) (y)))
 #define simple_NE(x,y,tpe,nl)   ((*(const tpe*)(y)) != nl && (*(const tpe*) (x)) != (*(const tpe*) (y)))
 #define simple_LT(x,y,tpe)      ((*(const tpe*) (x))  < (*(const tpe*) (y)))
@@ -193,7 +193,7 @@ gdk_export const ptr ptr_nil;
  * @code{ ptr} types to @code{ lng} instead of @code{ int}.
  *
  * Derived types mimic their fathers in many ways. They inherit the
- * @code{ size}, @code{ varsized}, @code{ linear}, @code{ null} and
+ * @code{ size}, @code{ linear}, @code{ null} and
  * @code{ align} properties of their father.  The same goes for the
  * ADT functions HASH, CMP, PUT, NULL, DEL, LEN, and HEAP. So, a
  * derived type differs in only two ways from its father:
@@ -215,14 +215,11 @@ gdk_export const ptr ptr_nil;
 #define ATOMnilptr(t)		BATatoms[t].atomNull
 #define ATOMhash(t,src)		BATatoms[t].atomHash(src)
 #define ATOMdel(t,hp,src)	do if (BATatoms[t].atomDel) BATatoms[t].atomDel(hp,src); while (0)
-#define ATOMvarsized(t)		((t != TYPE_void) && BATatoms[t].varsized)
+#define ATOMvarsized(t)		(BATatoms[t].atomPut != NULL)
 #define ATOMlinear(t)		BATatoms[t].linear
 #define ATOMtype(t)		((t == TYPE_void)?TYPE_oid:t)
 #define ATOMfix(t,v)		do if (BATatoms[t].atomFix) BATatoms[t].atomFix(v); while (0)
 #define ATOMunfix(t,v)		do if (BATatoms[t].atomUnfix) BATatoms[t].atomUnfix(v); while (0)
-
-#define CONV_HTON               1
-#define CONV_NTOH               0
 
 /*
  * In case that atoms are added to a bat, their logical reference
@@ -233,86 +230,93 @@ gdk_export const ptr ptr_nil;
  */
 #ifdef HAVE_HGE
 #define ATOM_CASE_16_hge						\
-			case 16:					\
-				* (hge *) d_ = * (hge *) s_;		\
-				break
+		case 16:						\
+			* (hge *) d_ = * (hge *) s_;			\
+			break
 #else
 #define ATOM_CASE_16_hge
 #endif
 
-#define ATOMput(type, heap, dst, src)					\
+#define ATOMputVAR(type, heap, dst, src)				\
+	do {								\
+		assert(BATatoms[type].atomPut != NULL);			\
+		if ((*BATatoms[type].atomPut)(heap, dst, src) == 0)	\
+			goto bunins_failed;				\
+	} while (0)
+#define ATOMputFIX(type, heap, dst, src)				\
 	do {								\
 		int t_ = (type);					\
-		ptr d_ = (ptr) (dst);					\
-		ptr s_ = (ptr) (src);					\
+		void *d_ = (dst);					\
+		const void *s_ = (src);					\
 									\
-		if (BATatoms[t_].atomPut) {				\
-			if ((*BATatoms[t_].atomPut)((heap), (var_t *) d_, s_) == 0) \
-				goto bunins_failed;			\
-		} else {						\
-			ATOMfix(t_, s_);				\
-			switch (BATatoms[t_].size) {			\
-			case 0:		/* void */			\
-				break;					\
-			case 1:						\
-				* (bte *) d_ = * (bte *) s_;		\
-				break;					\
-			case 2:						\
-				* (sht *) d_ = * (sht *) s_;		\
-				break;					\
-			case 4:						\
-				* (int *) d_ = * (int *) s_;		\
-				break;					\
-			case 8:						\
-				* (lng *) d_ = * (lng *) s_;		\
-				break;					\
-			ATOM_CASE_16_hge;				\
-			default:					\
-				memcpy(d_, s_, (size_t) BATatoms[t_].size); \
-				break;					\
-			}						\
+		assert(BATatoms[t_].atomPut == NULL);			\
+		ATOMfix(t_, s_);					\
+		switch (BATatoms[t_].size) {				\
+		case 0:		/* void */				\
+			break;						\
+		case 1:							\
+			* (bte *) d_ = * (bte *) s_;			\
+			break;						\
+		case 2:							\
+			* (sht *) d_ = * (sht *) s_;			\
+			break;						\
+		case 4:							\
+			* (int *) d_ = * (int *) s_;			\
+			break;						\
+		case 8:							\
+			* (lng *) d_ = * (lng *) s_;			\
+			break;						\
+		ATOM_CASE_16_hge;					\
+		default:						\
+			memcpy(d_, s_, (size_t) BATatoms[t_].size);	\
+			break;						\
 		}							\
 	} while (0)
 
-#define ATOMreplace(type, heap, dst, src)				\
+#define ATOMreplaceVAR(type, heap, dst, src)				\
 	do {								\
 		int t_ = (type);					\
-		ptr d_ = (ptr) (dst);					\
-		ptr s_ = (ptr) (src);					\
+		var_t *d_ = (var_t *) (dst);				\
+		const void *s_ = (src);					\
+		var_t loc_ = *d_;					\
+		Heap *h_ = (heap);					\
 									\
-		if (BATatoms[t_].atomPut) {				\
-			var_t loc_ = * (var_t *) d_;			\
-			Heap *h_ = (heap);				\
+		assert(BATatoms[t_].atomPut != NULL);			\
+		if ((*BATatoms[t_].atomPut)(h_, &loc_, s_) == 0)	\
+			goto bunins_failed;				\
+		ATOMunfix(t_, d_);					\
+		ATOMdel(t_, h_, d_);					\
+		*d_ = loc_;						\
+		ATOMfix(t_, s_);					\
+	} while (0)
+#define ATOMreplaceFIX(type, heap, dst, src)				\
+	do {								\
+		int t_ = (type);					\
+		void *d_ = (dst);					\
+		const void *s_ = (src);					\
 									\
-			if ((*BATatoms[t_].atomPut)(h_, &loc_, s_) == 0) \
-				goto bunins_failed;			\
-			ATOMunfix(t_, d_);				\
-			ATOMdel(t_, h_, d_);				\
-			* (var_t *) d_ = loc_;				\
-			ATOMfix(t_, s_);				\
-		} else {						\
-			ATOMfix(t_, s_);				\
-			ATOMunfix(t_, d_);				\
-			switch (BATatoms[t_].size) {			\
-			case 0:		/* void */			\
-				break;					\
-			case 1:						\
-				* (bte *) d_ = * (bte *) s_;		\
-				break;					\
-			case 2:						\
-				* (sht *) d_ = * (sht *) s_;		\
-				break;					\
-			case 4:						\
-				* (int *) d_ = * (int *) s_;		\
-				break;					\
-			case 8:						\
-				* (lng *) d_ = * (lng *) s_;		\
-				break;					\
-			ATOM_CASE_16_hge;				\
-			default:					\
-				memcpy(d_, s_, (size_t) BATatoms[t_].size); \
-				break;					\
-			}						\
+		assert(BATatoms[t_].atomPut == NULL);			\
+		ATOMfix(t_, s_);					\
+		ATOMunfix(t_, d_);					\
+		switch (BATatoms[t_].size) {				\
+		case 0:	     /* void */					\
+			break;						\
+		case 1:							\
+			* (bte *) d_ = * (bte *) s_;			\
+			break;						\
+		case 2:							\
+			* (sht *) d_ = * (sht *) s_;			\
+			break;						\
+		case 4:							\
+			* (int *) d_ = * (int *) s_;			\
+			break;						\
+		case 8:							\
+			* (lng *) d_ = * (lng *) s_;			\
+			break;						\
+		ATOM_CASE_16_hge;					\
+		default:						\
+			memcpy(d_, s_, (size_t) BATatoms[t_].size);	\
+			break;						\
 		}							\
 	} while (0)
 

@@ -33,6 +33,20 @@ PushArgument(MalBlkPtr mb, InstrPtr p, int arg, int pos)
 }
 
 static InstrPtr
+PushNil(MalBlkPtr mb, InstrPtr p, int pos, int tpe)
+{
+	int i, arg;
+
+	p = pushNil(mb, p, tpe); /* push at end */
+	arg = getArg(p, p->argc-1);
+	for (i = p->argc-1; i > pos; i--) 
+		getArg(p, i) = getArg(p, i-1);
+	getArg(p, pos) = arg;
+	return p;
+}
+
+
+static InstrPtr
 RemoveArgument(InstrPtr p, int pos)
 {
 	int i;
@@ -115,6 +129,9 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	(void) stk;
 	(void) pci;
 	vars= (int*) GDKmalloc(sizeof(int)* mb->vtop);
+	if( vars == NULL)
+		return 0;
+
 	limit = mb->stop;
 	slimit= mb->ssize;
 	old = mb->stmt;
@@ -191,6 +208,66 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				return 0;
 			}
 		}
+		/* left hand side */
+		if ( (GDKdebug & (1<<15)) &&
+		     isMatJoinOp(p) && p->retc == 2) { 
+			int i1 = getArg(p, 2), tid = 0;
+			InstrPtr q = old[vars[i1]];
+
+			/* find the table ids */
+			while(!tid) {
+				if (getModuleId(q) == algebraRef && getFunctionId(q) == leftfetchjoinRef) {
+					int i1 = getArg(q, 1);
+					InstrPtr s = old[vars[i1]];
+	
+					if (getModuleId(s) == sqlRef && getFunctionId(s) == tidRef) 
+						tid = getArg(q, 1);
+					break;
+				} else if (isMapOp(q) && q->argc >= 2 && isaBatType(getArgType(mb, q, 1))) {
+					int i1 = getArg(q, 1);
+					q = old[vars[i1]];
+				} else if (isMapOp(q) && q->argc >= 3 && isaBatType(getArgType(mb, q, 2))) {
+					int i2 = getArg(q, 2);
+					q = old[vars[i2]];
+				} else {
+					break;
+				}
+			}
+			if (tid && subselect_add(&subselects, tid, getArg(p, 0)) < 0) {
+				GDKfree(vars);
+				return 0;
+			}
+		}
+		/* right hand side */
+		if ( (GDKdebug & (1<<15)) &&
+		     isMatJoinOp(p) && p->retc == 2) { 
+			int i1 = getArg(p, 3), tid = 0;
+			InstrPtr q = old[vars[i1]];
+
+			/* find the table ids */
+			while(!tid) {
+				if (getModuleId(q) == algebraRef && getFunctionId(q) == leftfetchjoinRef) {
+					int i1 = getArg(q, 1);
+					InstrPtr s = old[vars[i1]];
+	
+					if (getModuleId(s) == sqlRef && getFunctionId(s) == tidRef) 
+						tid = getArg(q, 1);
+					break;
+				} else if (isMapOp(q) && q->argc >= 2 && isaBatType(getArgType(mb, q, 1))) {
+					int i1 = getArg(q, 1);
+					q = old[vars[i1]];
+				} else if (isMapOp(q) && q->argc >= 3 && isaBatType(getArgType(mb, q, 2))) {
+					int i2 = getArg(q, 2);
+					q = old[vars[i2]];
+				} else {
+					break;
+				}
+			}
+			if (tid && subselect_add(&subselects, tid, getArg(p, 1)) < 0) {
+				GDKfree(vars);
+				return 0;
+			}
+		}
 	}
 
 	if ((!subselects.nr && !nr_topn && !nr_likes) || newMalBlkStmt(mb, mb->ssize+20) <0 ) {
@@ -240,6 +317,53 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 
 			if ((tid = subselect_find_tids(&subselects, getArg(p, 0))) >= 0) {
 				p = PushArgument(mb, p, tid, 2);
+				/* make sure to resolve again */
+				p->token = ASSIGNsymbol; 
+				p->typechk = TYPE_UNKNOWN;
+        			p->fcn = NULL;
+        			p->blk = NULL;
+				actions++;
+			}
+		}
+		else if ( (GDKdebug & (1<<15)) &&
+			 isMatJoinOp(p) && p->retc == 2
+			 && !(getFunctionId(p) == joinRef && p->argc > 4)
+			 ) { 
+			int ltid = 0, rtid = 0, done = 0;
+			int range = 0;
+
+			if(getFunctionId(p) == joinRef)
+				range = (p->argc >= 4);
+
+			if ((ltid = subselect_find_tids(&subselects, getArg(p, 0))) >= 0 && 
+			    (rtid = subselect_find_tids(&subselects, getArg(p, 1))) >= 0) {
+				p = PushArgument(mb, p, ltid, 4+range);
+				p = PushArgument(mb, p, rtid, 5+range);
+				done = 1;
+			} else if ((ltid = subselect_find_tids(&subselects, getArg(p, 0))) >= 0) { 
+				p = PushArgument(mb, p, ltid, 4+range);
+				p = PushNil(mb, p, 5+range, TYPE_bat); 
+				done = 1;
+			} else if ((rtid = subselect_find_tids(&subselects, getArg(p, 1))) >= 0) {
+				p = PushNil(mb, p, 4+range, TYPE_bat); 
+				p = PushArgument(mb, p, rtid, 5+range);
+				done = 1;
+			}
+			if (done) {
+				if(getFunctionId(p) == antijoinRef)
+					p = pushInt(mb, p, JOIN_NE); 
+				p = pushBit(mb, p, FALSE); /* do not match nils */
+				p = pushNil(mb, p, TYPE_lng); /* no estimate */
+
+				/* TODO join* -> subjoin* */
+				if(getFunctionId(p) == joinRef)
+					getFunctionId(p) = subjoinRef;
+				else if(getFunctionId(p) == antijoinRef)
+					getFunctionId(p) = subthetajoinRef;
+				else if(getFunctionId(p) == thetajoinRef)
+					getFunctionId(p) = subthetajoinRef;
+				else if(getFunctionId(p) == bandjoinRef)
+					getFunctionId(p) = subbandjoinRef;
 				/* make sure to resolve again */
 				p->token = ASSIGNsymbol; 
 				p->typechk = TYPE_UNKNOWN;

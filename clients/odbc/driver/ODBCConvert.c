@@ -1985,9 +1985,9 @@ ODBCFetch(ODBCStmt *stmt,
 		case SQL_C_LONG:
 			maxval <<= 31;
 			if (lenp)
-				*lenp = sizeof(long);
+				*lenp = sizeof(int);
 			if (ardrec && row > 0)
-				ptr = (SQLPOINTER) ((char *) ptr + row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(long) : bind_type));
+				ptr = (SQLPOINTER) ((char *) ptr + row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(int) : bind_type));
 			break;
 		case SQL_C_SBIGINT:
 			maxval <<= 63;
@@ -2047,7 +2047,7 @@ ODBCFetch(ODBCStmt *stmt,
 				break;
 			case SQL_C_SLONG:
 			case SQL_C_LONG:
-				*(long *) ptr = nval.sign ? (long) nval.val : -(long) nval.val;
+				*(int *) ptr = nval.sign ? (int) nval.val : -(int) nval.val;
 				break;
 			case SQL_C_SBIGINT:
 				*(SQLBIGINT *) ptr = nval.sign ? (SQLBIGINT) nval.val : -(SQLBIGINT) nval.val;
@@ -2086,9 +2086,9 @@ ODBCFetch(ODBCStmt *stmt,
 		case SQL_C_ULONG:
 			maxval <<= 32;
 			if (lenp)
-				*lenp = sizeof(unsigned long);
+				*lenp = sizeof(unsigned int);
 			if (ardrec && row > 0)
-				ptr = (SQLPOINTER) ((char *) ptr + row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(unsigned long) : bind_type));
+				ptr = (SQLPOINTER) ((char *) ptr + row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(unsigned int) : bind_type));
 			break;
 		case SQL_C_UBIGINT:
 			if (lenp)
@@ -2145,7 +2145,7 @@ ODBCFetch(ODBCStmt *stmt,
 				*(unsigned short *) ptr = (unsigned short) nval.val;
 				break;
 			case SQL_C_ULONG:
-				*(unsigned long *) ptr = (unsigned long) nval.val;
+				*(unsigned int *) ptr = (unsigned int) nval.val;
 				break;
 			case SQL_C_UBIGINT:
 				*(SQLUBIGINT *) ptr = (SQLUBIGINT) nval.val;

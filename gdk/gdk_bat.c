@@ -223,8 +223,8 @@ BATsetdims(BAT *b)
 	b->T->shift = ATOMelmshift(Tsize(b));
 	assert_shift_width(b->H->shift, b->H->width);
 	assert_shift_width(b->T->shift, b->T->width);
-	b->H->varsized = BATatoms[b->htype].varsized;
-	b->T->varsized = BATatoms[b->ttype].varsized;
+	b->H->varsized = b->htype == TYPE_void || BATatoms[b->htype].atomPut != NULL;
+	b->T->varsized = b->ttype == TYPE_void || BATatoms[b->ttype].atomPut != NULL;
 }
 
 /*
@@ -928,52 +928,15 @@ BATcopy(BAT *b, int ht, int tt, int writable)
 			}
 		} else {
 			/* case (4): optimized for simple array copy */
-			int tpe = ATOMstorage(ht | tt);
 			BUN p = BUNfirst(b);
-			char *cur = (ht ? Hloc(b, p) : Tloc(b, p));
-			char *d = (ht ? Hloc(bn, 0) : Tloc(bn, 0));
 
 			bn->H->heap.free = bn->T->heap.free = 0;
-			if (ht)
+			if (ht) {
 				bn->H->heap.free = bunstocopy * Hsize(bn);
-			else
-				bn->T->heap.free = bunstocopy * Tsize(bn);
-
-			if (tpe == TYPE_bte) {
-				bte *src = (bte *) cur, *dst = (bte *) d;
-
-				while (bunstocopy--) {
-					*dst++ = *src++;
-				}
-			} else if (tpe == TYPE_sht) {
-				sht *src = (sht *) cur, *dst = (sht *) d;
-
-				while (bunstocopy--) {
-					*dst++ = *src++;
-				}
-			} else if ((tpe == TYPE_int) || (tpe == TYPE_flt)) {
-				int *src = (int *) cur, *dst = (int *) d;
-
-				while (bunstocopy--) {
-					*dst++ = *src++;
-				}
-			} else if ((tpe == TYPE_lng) || (tpe == TYPE_dbl)) {
-				lng *src = (lng *) cur, *dst = (lng *) d;
-
-				while (bunstocopy--) {
-					*dst++ = *src++;
-				}
+				memcpy(Hloc(bn, 0), Hloc(b, p), bn->H->heap.free);
 			} else {
-#ifdef HAVE_HGE
-				hge *src = (hge *) cur, *dst = (hge *) d;
-
-				while (bunstocopy--) {
-					*dst++ = *src++;
-				}
-#else
-				assert(0);
-#endif
-
+				bn->T->heap.free = bunstocopy * Tsize(bn);
+				memcpy(Tloc(bn, 0), Tloc(b, p), bn->T->heap.free);
 			}
 		}
 		/* copy all properties (size+other) from the source bat */

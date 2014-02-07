@@ -141,8 +141,7 @@ static void RECYCLEspace(void)
 {
 	if (recycleBlk == NULL) {
 		recycleBlk = newMalBlk(MAXVARS, STMT_INCREMENT);
-		recycleBlk->profiler = (ProfPtr) GDKzalloc(
-			recycleBlk->ssize*sizeof(ProfRecord));
+		recycleBlk->profiler = (ProfPtr) GDKzalloc( recycleBlk->ssize*sizeof(ProfRecord));
 	}
 }
 
@@ -301,6 +300,10 @@ newpass:
 		return;
 
 	used = (bte*)GDKzalloc(recycleBlk->vtop);
+	if( used == NULL){
+		GDKerror("RECYCLEcleanCache" MAL_MALLOC_FAIL);
+		return;
+	}
 
 	/* set all variables used */
 	for (i = 0; i < recycleBlk->stop; i++){
@@ -311,6 +314,11 @@ newpass:
 
 	/* find the leafs */
 	lmask = (bit*)GDKzalloc(recycleBlk->stop);
+	if( lmask == NULL){
+		GDKfree(used);
+		GDKerror("RECYCLEcleanCache"MAL_MALLOC_FAIL);
+		return;
+	}
 	ltop = 0; 
 	for (i = 0; i < recycleBlk->stop; i++){
 		p = recycleBlk->stmt[i];
@@ -326,13 +334,16 @@ newpass:
 #ifdef _DEBUG_RESET_
 		mnstr_printf(cntxt->fdout,"#CACHE NOTHING TO CLEANUP %d\n",recycleCacheLimit);
 		RECYCLEdumpInternal(cntxt->fdout);
-		assert(0);
 #endif
 		GDKfree(lmask);
 		GDKfree(used);
 		return;
 	}
 	leaves = (int *)GDKzalloc(sizeof(int)*ltop);
+	if( leaves == NULL){
+		GDKerror("RECYCLEcleanCache" MAL_MALLOC_FAIL);
+		return;
+	}
 	l = 0;
 	for (i = 0; i < recycleBlk->stop; i++)
 		if (lmask[i]) 
@@ -365,6 +376,12 @@ newpass:
 
 	/* drop victims in one pass */
 	dmask = (bit *)GDKzalloc(recycleBlk->stop);
+	if( dmask == NULL){
+		GDKerror("RECYCLEcleanCache" MAL_MALLOC_FAIL);
+		GDKfree(leaves);
+		GDKfree(used);
+		return;
+	}
 	for (v = 0; v < vtop; v++)
 		dmask[leaves[v]] = 1;
 	(void) newstmt;
@@ -374,7 +391,7 @@ newpass:
 
     newstmt = (InstrPtr *) GDKzalloc(sizeof(InstrPtr) * recycleBlk->ssize);
     if (newstmt == NULL){
-        GDKerror("newMalBlk:"MAL_MALLOC_FAIL);
+		GDKerror("RECYCLEcleanCache" MAL_MALLOC_FAIL);
 		GDKfree(leaves);
 		GDKfree(used);
 		GDKfree(dmask);
@@ -913,6 +930,10 @@ RECYCLEdrop(Client cntxt){
 
 	MT_lock_set(&recycleLock, "recycle");
 	used = (bte*)GDKzalloc(recycleBlk->vtop);
+	if ( used == NULL){
+		GDKerror("RECYCLEdrop" MAL_MALLOC_FAIL);
+		return;
+	}
 #ifdef _DEBUG_RECYCLE_
 	if( cntxt) {
 		mnstr_printf(cntxt->fdout,"#RECYCLE drop\n");
@@ -953,6 +974,10 @@ RECYCLEcolumn(Client cntxt,str sch,str tbl, str col)
 	//RECYCLEdumpInternal(cntxt->fdout);
 #endif
 	release= (char*) GDKzalloc(recycleBlk->vtop);
+	if ( release == NULL){
+		GDKerror("RECYCLEcolumn" MAL_MALLOC_FAIL);
+		return MAL_SUCCEED;
+	}
 	vr.vtype = TYPE_str;
 	vr.len  = (int) strlen(sch);
 	vr.val.sval = sch;
@@ -1038,6 +1063,10 @@ RECYCLEresetBAT(Client cntxt, int bid)
 	//RECYCLEdumpInternal(cntxt->fdout);
 #endif
 	release= (char*) GDKzalloc(recycleBlk->vtop);
+	if(release == NULL){
+		GDKerror("RECYCLEresetBAT" MAL_MALLOC_FAIL);
+		return MAL_SUCCEED;
+	}
 	limit= recycleBlk->stop;
 	old= recycleBlk->stmt;
 	if( newMalBlkStmt(recycleBlk,recycleBlk->ssize) < 0){

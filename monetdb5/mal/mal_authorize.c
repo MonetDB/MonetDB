@@ -18,10 +18,8 @@
  */
 
 /*
- * @f mal_authorize
  * @a M. Kersten, F. Groffen
- * @v 0.3
- * @+ Authorisation adminstration management
+ * Authorisation adminstration management
  * Authorisation of users is a key concept in protecting the server from
  * malicious and unauthorised users.  This file contains a number of
  * functions that administrate a set of BATs backing the authorisation
@@ -31,11 +29,9 @@
  * usernames, passwords and allowed scenarios for users of the server.
  *
  */
-/*
- * @-
- */
 #include "monetdb_config.h"
 #include "mal_authorize.h"
+#include "mal_private.h"
 #include "mcrypt.h"
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -113,7 +109,6 @@ AUTHcommit(void)
 }
 
 /*
- * @-
  * Localize the authorization tables in the database.  The authorization
  * tables are a set of aligned BATs that store username, password (hashed)
  * and scenario permissions.
@@ -654,6 +649,8 @@ AUTHdecypherValue(str *ret, str *value) {
 	 * (a space would only uppercase the password) */
 	int keylen = 0;
 
+	if( r == NULL)
+		throw(MAL, "decypherValue", MAL_MALLOC_FAIL);
 	if (vaultKey == NULL)
 		throw(MAL, "decypherValue", "The vault is still locked!");
 
@@ -693,6 +690,8 @@ AUTHcypherValue(str *ret, str *value) {
 	 * (a space would only uppercase the password) */
 	int keylen = 0;
 
+	if( r == NULL)
+		throw(MAL, "cypherValue", MAL_MALLOC_FAIL);
 	if (vaultKey == NULL)
 		throw(MAL, "cypherValue", "The vault is still locked!");
 

@@ -212,6 +212,7 @@
 #include "mal_box.h"
 #include "mal_interpreter.h"	/* for garbageCollector() & garbageElement() */
 #include "mal_client.h"
+#include "mal_private.h"
 
 #if defined(_MSC_VER) && _MSC_VER >= 1400
 #define access _access
@@ -223,6 +224,8 @@ static Box malbox[MAXSPACES];
 static int topbox=0;
 
 static str boxFileName(Box box, str extension);
+static int saveBox(Box box, int flag);
+static void loadBox(str name);
 
 static Box
 newBox(str name)
@@ -245,11 +248,17 @@ newBox(str name)
 	for (i = 0; i < topbox; i++)
 		if (malbox[i] == NULL) {
 			obj= (Box) GDKzalloc(sizeof(BoxRecord));
+			if( obj == NULL){
+				showException(GDKout, MAL,"box.new", MAL_MALLOC_FAIL);
+				return NULL;
+			}
 			obj->name= GDKstrdup(name);
 			obj->sym=  newMalBlk(MAXVARS,STMT_INCREMENT);
 			obj->val = newGlobalStack(MAXVARS);
-			if ( obj->val == NULL)
+			if ( obj->val == NULL || obj->sym == NULL){
 				showException(GDKout, MAL,"box.new", MAL_MALLOC_FAIL);
+				return NULL;
+			}
 			MT_lock_init(&obj->lock,"M5_box_lock");
 			malbox[i] = obj;
 			break;
@@ -258,11 +267,17 @@ newBox(str name)
 	if (i == topbox) {
 		if ( topbox < MAXSPACES){
 			obj= (Box) GDKzalloc(sizeof(BoxRecord));
+			if( obj == NULL){
+				showException(GDKout, MAL,"box.new", MAL_MALLOC_FAIL);
+				return NULL;
+			}
 			obj->name= GDKstrdup(name);
 			obj->sym=  newMalBlk(MAXVARS,STMT_INCREMENT);
 			obj->val = newGlobalStack(MAXVARS);
-			if ( obj->val == NULL)
+			if ( obj->val == NULL || obj->sym == NULL){
 				showException(GDKout, MAL,"box.new", MAL_MALLOC_FAIL);
+				return NULL;
+			}
 			MT_lock_init(&obj->lock,"M5_box_lock");
 			malbox[topbox++] = obj;
 		} else
@@ -539,8 +554,16 @@ discardBox(Box box, str name)
 	return 0;
 }
 
+static str
+getBoxName(Box box, lng i)
+{
+	str s;
+
+	s = getVarName(box->sym, (int) i);
+	return GDKstrdup(s);
+}
+
 /*
- * @-
  * The elements can be obtained using iterator, which returns the name
  * of the next element in the box.
  */
@@ -557,15 +580,6 @@ nextBoxElement(Box box, oid *cursor, ValPtr v)
 	v->val.sval = getBoxName(box, *cursor);
 	*cursor = *cursor + 1;
 	return 0;
-}
-
-str
-getBoxName(Box box, lng i)
-{
-	str s;
-
-	s = getVarName(box->sym, (int) i);
-	return GDKstrdup(s);
 }
 
 str
@@ -665,7 +679,7 @@ prepareSaveBox(Box box, str *boxfile, str *boxfilebak)
 	return f;
 }
 
-int
+static int
 saveBox(Box box, int flag)
 {
 	int i;
@@ -726,7 +740,7 @@ saveBox(Box box, int flag)
  * Loading a box is equivalent to reading a script.
  * Beware to execute it into its own context.
  */
-void
+static void
 loadBox(str name)
 {
 	char boxfile[PATHLENGTH];

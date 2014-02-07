@@ -1,1 +1,1 @@
-@call %MSERVER% --dbpath=%GDK_DBFARM%\%TSTDB%
+@call %MSERVER% "--dbpath=%GDK_DBFARM%\%TSTDB%"

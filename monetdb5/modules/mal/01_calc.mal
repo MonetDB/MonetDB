@@ -259,60 +259,60 @@ comment "Unary negation of V";
 
 
 pattern ++(v:bte) :bte
-address CMDvarINCR
+address CMDvarINCRsignal
 comment "Unary V + 1";
 
 pattern ++(v:sht) :sht
-address CMDvarINCR
+address CMDvarINCRsignal
 comment "Unary V + 1";
 
 pattern ++(v:int) :int
-address CMDvarINCR
+address CMDvarINCRsignal
 comment "Unary V + 1";
 
 pattern ++(v:wrd) :wrd
-address CMDvarINCR
+address CMDvarINCRsignal
 comment "Unary V + 1";
 
 pattern ++(v:lng) :lng
-address CMDvarINCR
+address CMDvarINCRsignal
 comment "Unary V + 1";
 
 pattern ++(v:flt) :flt
-address CMDvarINCR
+address CMDvarINCRsignal
 comment "Unary V + 1";
 
 pattern ++(v:dbl) :dbl
-address CMDvarINCR
+address CMDvarINCRsignal
 comment "Unary V + 1";
 
 
 pattern --(v:bte) :bte
-address CMDvarDECR
+address CMDvarDECRsignal
 comment "Unary V - 1";
 
 pattern --(v:sht) :sht
-address CMDvarDECR
+address CMDvarDECRsignal
 comment "Unary V - 1";
 
 pattern --(v:int) :int
-address CMDvarDECR
+address CMDvarDECRsignal
 comment "Unary V - 1";
 
 pattern --(v:wrd) :wrd
-address CMDvarDECR
+address CMDvarDECRsignal
 comment "Unary V - 1";
 
 pattern --(v:lng) :lng
-address CMDvarDECR
+address CMDvarDECRsignal
 comment "Unary V - 1";
 
 pattern --(v:flt) :flt
-address CMDvarDECR
+address CMDvarDECRsignal
 comment "Unary V - 1";
 
 pattern --(v:dbl) :dbl
-address CMDvarDECR
+address CMDvarDECRsignal
 comment "Unary V - 1";
 
 

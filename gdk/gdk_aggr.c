@@ -158,6 +158,7 @@ BATgroupaggrinit(const BAT *b, const BAT *g, const BAT *e, const BAT *s,
 		TYPE1 x;						\
 		const TYPE1 *vals = (const TYPE1 *) values;		\
 		if (ngrp == 1 && cand == NULL) {			\
+			/* single group, no candidate list */		\
 			TYPE2 sum;					\
 			ALGODEBUG fprintf(stderr,			\
 					  "#%s: no candidates, no groups; " \
@@ -196,6 +197,7 @@ BATgroupaggrinit(const BAT *b, const BAT *g, const BAT *e, const BAT *s,
 			if (*seen)					\
 				*sums = sum;				\
 		} else if (ngrp == 1) {					\
+			/* single group, with candidate list */		\
 			TYPE2 sum;					\
 			int seenval = 0;				\
 			ALGODEBUG fprintf(stderr,			\
@@ -204,7 +206,7 @@ BATgroupaggrinit(const BAT *b, const BAT *g, const BAT *e, const BAT *s,
 					  "\n",				\
 					  func, start, end);		\
 			sum = 0;					\
-			while (cand < candend) {			\
+			while (cand < candend && nils == 0) {		\
 				i = *cand++ - seqb;			\
 				if (i >= end)				\
 					break;				\
@@ -225,6 +227,7 @@ BATgroupaggrinit(const BAT *b, const BAT *g, const BAT *e, const BAT *s,
 			if (seenval)					\
 				*sums = sum;				\
 		} else if (cand == NULL) {				\
+			/* multiple groups, no candidate list */	\
 			ALGODEBUG fprintf(stderr,			\
 					  "#%s: no candidates, with groups; " \
 					  "start " BUNFMT ", end " BUNFMT \
@@ -234,28 +237,33 @@ BATgroupaggrinit(const BAT *b, const BAT *g, const BAT *e, const BAT *s,
 				if (gids == NULL ||			\
 				    (gids[i] >= min && gids[i] <= max)) { \
 					gid = gids ? gids[i] - min : (oid) i; \
-					if (nil_if_empty &&		\
-					    !(seen[gid >> 5] & (1 << (gid & 0x1F)))) { \
-						seen[gid >> 5] |= 1 << (gid & 0x1F); \
-						sums[gid] = 0;		\
-					}				\
 					x = vals[i];			\
 					if (x == TYPE1##_nil) {		\
 						if (!skip_nils) {	\
 							sums[gid] = TYPE2##_nil; \
-							nils++;		\
+							nils++;	\
 						}			\
-					} else if (sums[gid] != TYPE2##_nil) { \
-						ADD_WITH_CHECK(TYPE1, x, \
-							       TYPE2,	\
-							       sums[gid], \
-							       TYPE2,	\
-							       sums[gid], \
-							       goto overflow); \
+					} else {			\
+						if (nil_if_empty &&	\
+						    !(seen[gid >> 5] & (1 << (gid & 0x1F)))) { \
+							seen[gid >> 5] |= 1 << (gid & 0x1F); \
+							sums[gid] = 0;	\
+						}			\
+						if (sums[gid] != TYPE2##_nil) { \
+							ADD_WITH_CHECK(	\
+								TYPE1,	\
+								x,	\
+								TYPE2,	\
+								sums[gid], \
+								TYPE2,	\
+								sums[gid], \
+								goto overflow); \
+						}			\
 					}				\
 				}					\
 			}						\
 		} else {						\
+			/* multiple groups, with candidate list */	\
 			ALGODEBUG fprintf(stderr,			\
 					  "#%s: with candidates, with " \
 					  "groups; start " BUNFMT ", "	\
@@ -268,24 +276,28 @@ BATgroupaggrinit(const BAT *b, const BAT *g, const BAT *e, const BAT *s,
 				if (gids == NULL ||			\
 				    (gids[i] >= min && gids[i] <= max)) {	\
 					gid = gids ? gids[i] - min : (oid) i; \
-					if (nil_if_empty &&		\
-					    !(seen[gid >> 5] & (1 << (gid & 0x1F)))) { \
-						seen[gid >> 5] |= 1 << (gid & 0x1F); \
-						sums[gid] = 0;		\
-					}				\
 					x = vals[i];			\
 					if (x == TYPE1##_nil) {		\
 						if (!skip_nils) {	\
 							sums[gid] = TYPE2##_nil; \
 							nils++;		\
 						}			\
-					} else if (sums[gid] != TYPE2##_nil) { \
-						ADD_WITH_CHECK(TYPE1, x, \
-							       TYPE2,	\
-							       sums[gid], \
-							       TYPE2,	\
-							       sums[gid], \
-							       goto overflow); \
+					} else {			\
+						if (nil_if_empty &&	\
+						    !(seen[gid >> 5] & (1 << (gid & 0x1F)))) { \
+							seen[gid >> 5] |= 1 << (gid & 0x1F); \
+							sums[gid] = 0;	\
+						}			\
+						if (sums[gid] != TYPE2##_nil) { \
+							ADD_WITH_CHECK(	\
+								TYPE1,	\
+								x,	\
+								TYPE2,	\
+								sums[gid], \
+								TYPE2,	\
+								sums[gid], \
+								goto overflow); \
+						}			\
 					}				\
 				}					\
 			}						\
@@ -671,22 +683,25 @@ BATsum(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, int
 					else				\
 						gid = (oid) i;		\
 				}					\
-				if (nil_if_empty &&			\
-				    !(seen[gid >> 5] & (1 << (gid & 0x1F)))) { \
-					seen[gid >> 5] |= 1 << (gid & 0x1F); \
-					prods[gid] = 1;			\
-				}					\
 				if (vals[i] == TYPE1##_nil) {		\
 					if (!skip_nils) {		\
 						prods[gid] = TYPE2##_nil; \
 						nils++;			\
 					}				\
-				} else if (prods[gid] != TYPE2##_nil) {	\
-					MUL4_WITH_CHECK(TYPE1, vals[i],	\
+				} else {				\
+					if (nil_if_empty &&		\
+					    !(seen[gid >> 5] & (1 << (gid & 0x1F)))) { \
+						seen[gid >> 5] |= 1 << (gid & 0x1F); \
+						prods[gid] = 1;		\
+					}				\
+					if (prods[gid] != TYPE2##_nil) { \
+						MUL4_WITH_CHECK(	\
+							TYPE1, vals[i],	\
 							TYPE2, prods[gid], \
 							TYPE2, prods[gid], \
 							TYPE3,		\
 							goto overflow);	\
+					}				\
 				}					\
 			}						\
 		}							\
@@ -763,21 +778,24 @@ BATsum(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, int
 					else				\
 						gid = (oid) i;		\
 				}					\
-				if (nil_if_empty &&			\
-				    !(seen[gid >> 5] & (1 << (gid & 0x1F)))) { \
-					seen[gid >> 5] |= 1 << (gid & 0x1F); \
-					prods[gid] = 1;			\
-				}					\
 				if (vals[i] == TYPE##_nil) {		\
 					if (!skip_nils) {		\
 						prods[gid] = lng_nil;	\
 						nils++;			\
 					}				\
-				} else if (prods[gid] != lng_nil) {	\
-					LNGMUL_CHECK(TYPE, vals[i],	\
-						     lng, prods[gid],	\
-						     prods[gid],	\
-						     goto overflow);	\
+				} else {				\
+					if (nil_if_empty &&		\
+					    !(seen[gid >> 5] & (1 << (gid & 0x1F)))) { \
+						seen[gid >> 5] |= 1 << (gid & 0x1F); \
+						prods[gid] = 1;		\
+					}				\
+					if (prods[gid] != lng_nil) {	\
+						LNGMUL_CHECK(		\
+							TYPE, vals[i],	\
+							lng, prods[gid], \
+							prods[gid],	\
+							goto overflow); \
+					}				\
 				}					\
 			}						\
 		}							\
@@ -809,25 +827,27 @@ BATsum(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, int
 					else				\
 						gid = (oid) i;		\
 				}					\
-				if (nil_if_empty &&			\
-				    !(seen[gid >> 5] & (1 << (gid & 0x1F)))) { \
-					seen[gid >> 5] |= 1 << (gid & 0x1F); \
-					prods[gid] = 1;			\
-				}					\
 				if (vals[i] == TYPE1##_nil) {		\
 					if (!skip_nils) {		\
 						prods[gid] = TYPE2##_nil; \
 						nils++;			\
 					}				\
-				} else if (prods[gid] != TYPE2##_nil) {	\
-					if (ABSOLUTE(vals[i]) > 1 &&	\
-					    GDK_##TYPE2##_max / ABSOLUTE(vals[i]) < ABSOLUTE(prods[gid])) { \
-						if (abort_on_error)	\
-							goto overflow;	\
-						prods[gid] = TYPE2##_nil; \
-						nils++;			\
-					} else {			\
-						prods[gid] *= vals[i];	\
+				} else {				\
+					if (nil_if_empty && \
+					    !(seen[gid >> 5] & (1 << (gid & 0x1F)))) { \
+						seen[gid >> 5] |= 1 << (gid & 0x1F); \
+						prods[gid] = 1;		\
+					}				\
+					if (prods[gid] != TYPE2##_nil) { \
+						if (ABSOLUTE(vals[i]) > 1 && \
+						    GDK_##TYPE2##_max / ABSOLUTE(vals[i]) < ABSOLUTE(prods[gid])) { \
+							if (abort_on_error) \
+								goto overflow; \
+							prods[gid] = TYPE2##_nil; \
+								nils++;	\
+						} else {		\
+							prods[gid] *= vals[i]; \
+						}			\
 					}				\
 				}					\
 			}						\
@@ -1868,18 +1888,18 @@ BATgroupsize(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on
 
 	bits = (const bit *) Tloc(b, BUNfirst(b));
 
-		for (;;) {
-			if (cand) {
-				if (cand == candend)
-					break;
-				i = *cand++ - b->hseqbase;
-				if (i >= end)
-					break;
-			} else {
-				i = start++;
-				if (i == end)
-					break;
-			}
+	for (;;) {
+		if (cand) {
+			if (cand == candend)
+				break;
+			i = *cand++ - b->hseqbase;
+			if (i >= end)
+				break;
+		} else {
+			i = start++;
+			if (i == end)
+				break;
+		}
 		if (bits[i] == 1 &&
 		    (gids == NULL || (gids[i] >= min && gids[i] <= max))) {
 			cnts[gids ? gids[i] - min : (oid) i]++;
@@ -2342,10 +2362,18 @@ BATmax(BAT *b, void *aggr)
 
 
 /* ---------------------------------------------------------------------- */
-/* median */
+/* quantiles/median */
 
 BAT *
-BATgroupmedian(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_error)
+BATgroupmedian(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
+	       int skip_nils, int abort_on_error)
+{
+	return BATgroupquantile(b,g,e,s,tp,0.5,skip_nils,abort_on_error);
+}
+
+BAT *
+BATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
+		 int skip_nils, int abort_on_error)
 {
 	int freeb = 0, freeg = 0;
 	oid min, max;
@@ -2360,49 +2388,58 @@ BATgroupmedian(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_
 	const void *nil;
 	int (*atomcmp)(const void *, const void *);
 	const char *err;
-
 	(void) abort_on_error;
 
 	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &start, &end,
 				    &cnt, &cand, &candend)) != NULL) {
-		GDKerror("BATgroupmedian: %s\n", err);
+		GDKerror("BATgroupquantile: %s\n", err);
 		return NULL;
 	}
 	assert(tp == b->ttype);
 	if (!ATOMlinear(b->ttype)) {
-		GDKerror("BATgroupmedian: cannot determine median on "
+		GDKerror("BATgroupquantile: cannot determine quantile on "
 			 "non-linear type %s\n", ATOMname(b->ttype));
 		return NULL;
 	}
+	if (quantile < 0 || quantile > 1) {
+		GDKerror("BATgroupquantile: cannot determine quantile for "
+			 "p=%f (p has to be in [0,1])\n", quantile);
+		return NULL;
+	}
+	assert(quantile >=0 && quantile <=1);
 
 	if (BATcount(b) == 0 || ngrp == 0) {
-		/* trivial: no medians, so return bat aligned with e with
-		 * nil in the tail */
+		/* trivial: no values, thus also no quantiles,
+		 * so return bat aligned with e with nil in the tail */
 		bn = BATconstant(tp, ATOMnilptr(tp), ngrp);
 		BATseqbase(bn, ngrp == 0 ? 0 : min);
 		return bn;
 	}
 
 	if (s) {
-		b = BATleftjoin(s, b, BATcount(s));
-		if (b->htype != TYPE_void) {
-			t1 = BATmirror(BATmark(BATmirror(b), 0));
-			BBPunfix(b->batCacheid);
-			b = t1;
-		}
+		/* there is a candidate list, replace b (and g, if
+		 * given) with just the values we're interested in */
+		b = BATproject(s, b);
 		freeb = 1;
 		if (g) {
-			g = BATleftjoin(s, g, BATcount(s));
-			if (g->htype != TYPE_void) {
-				t1 = BATmirror(BATmark(BATmirror(g), 0));
-				BBPunfix(g->batCacheid);
-				g = t1;
-			}
+			g = BATproject(s, g);
 			freeg = 1;
 		}
 	}
 
+	/* we want to sort b so that we can figure out the quantile, but
+	 * if g is given, sort g and subsort b so that we can get the
+	 * quantile for each group */
 	if (g) {
+		if (BATtdense(g)) {
+			/* singleton groups, so calculating quantile is
+			 * easy */
+			bn = BATcopy(b, TYPE_void, b->ttype, 0);
+			BATseqbase(bn, g->tseqbase);
+			if (freeg)
+				BBPunfix(g->batCacheid);
+			return bn;
+		}
 		BATsubsort(&t1, &t2, NULL, g, NULL, NULL, 0, 0);
 		if (freeg)
 			BBPunfix(g->batCacheid);
@@ -2427,15 +2464,19 @@ BATgroupmedian(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_
 	nil = ATOMnilptr(b->ttype);
 	atomcmp = BATatoms[b->ttype].atomCmp;
 
-	if (g) {
+	if (g) { /* we have to do this by group */
 		const oid *grps;
 		oid prev;
 		BUN p, q, r;
 
 		grps = (const oid *) Tloc(g, BUNfirst(g));
 		prev = grps[0];
+		 /* for each group (r and p are the beginning and end
+		  * of the current group, respectively) */
 		for (r = 0, p = 1, q = BATcount(g); p <= q; p++) {
-			if (p == q || grps[p] != prev) {
+			assert(r < p);
+			if ( p == q || grps[p] != prev) {
+				BUN qindex;
 				if (skip_nils) {
 					while (r < p && (*atomcmp)(BUNtail(bi, BUNfirst(b) + r), nil) == 0)
 						r++;
@@ -2445,16 +2486,14 @@ BATgroupmedian(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_
 							   nil, 0, Tsize(bn));
 					nils++;
 				}
-				if (r == p) {
-					bunfastins_nocheck(bn, BUNlast(bn), 0,
-							   nil, 0, Tsize(bn));
-					nils++;
-				} else {
-					v = BUNtail(bi, BUNfirst(b) + (r + p - 1) / 2);
-					bunfastins_nocheck(bn, BUNlast(bn), 0,
-							   v, 0, Tsize(bn));
-					nils += (*atomcmp)(v, nil) == 0;
-				}
+				qindex = BUNfirst(b) + (BUN) (r + (p-r-1) * quantile);
+				/* be a little paranoid about the index */
+				assert(qindex >= (BUNfirst(b) + r ));
+				assert(qindex <  (BUNfirst(b) + p));
+				v = BUNtail(bi, qindex);
+				bunfastins_nocheck(bn, BUNlast(bn), 0, v, 0, Tsize(bn));
+				nils += (*atomcmp)(v, nil) == 0;
+
 				r = p;
 				if (p < q)
 					prev = grps[p];
@@ -2465,8 +2504,10 @@ BATgroupmedian(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_
 					   nil, 0, Tsize(bn));
 		}
 		BATseqbase(bn, min);
-	} else {
-		v = BUNtail(bi, BUNfirst(b) + (BATcount(b) - 1) / 2);
+	} else { /* quantiles for entire BAT b, EZ */
+
+		BUN index = BUNfirst(b) + (BUN) ((BATcount(b) - 1)  * quantile);
+		v = BUNtail(bi, index);
 		BUNappend(bn, v, FALSE);
 		BATseqbase(bn, 0);
 		nils += (*atomcmp)(v, nil) == 0;

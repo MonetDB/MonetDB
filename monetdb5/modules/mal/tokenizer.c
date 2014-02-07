@@ -122,6 +122,9 @@ TKNZRopen(int *ret, str *in)
 
 	snprintf(name, 128, "%s", *in);
 	batname = (str) GDKmalloc(134 * sizeof(char));
+	if( batname == NULL)
+		throw(MAL, "tokenizer.open", MAL_MALLOC_FAIL);
+	
 	snprintf(batname, 134, "%s_index", name);
 	idx = BBPindex(batname);
 
@@ -224,8 +227,7 @@ TKNZRappend(oid *pos, str *s)
 		throw(MAL, "tokenizer", "no tokenizer store open");
 
 	if ((url = GDKstrdup(*s)) == NULL) {
-		throw(MAL, "tokenizer.append",
-				OPERATION_FAILED "could not allocate memory");
+		throw(MAL, "tokenizer.append", OPERATION_FAILED MAL_MALLOC_FAIL);
 	}
 
 	depth = TKNZRtokenize(url, parts, '/');
@@ -409,7 +411,7 @@ TKNZRlocate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	url = (str) GDKmalloc(sizeof(char) *
 			(strlen(*(str *) getArgReference(stk, pci, 1)) + 1));
 	if (url == NULL) {
-		throw(MAL, "tokenizer.locate", OPERATION_FAILED "memory allocation");
+		throw(MAL, "tokenizer.locate", MAL_MALLOC_FAIL);
 	}
 	strcpy(url, *(str *) getArgReference(stk, pci, 1));
 
@@ -473,6 +475,8 @@ takeOid(oid id, str *val)
 	}
 
 	*val = (str) GDKmalloc(lngth+depth+1);
+	if( *val == NULL)
+		throw(MAL, "tokenizer.takeOid", MAL_MALLOC_FAIL);
 	s = *val;
 
 	for (i = 0; i < depth; i++) {

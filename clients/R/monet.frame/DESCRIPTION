@@ -1,0 +1,13 @@
+Package: monet.frame
+Version: 0.1
+Date: 2013-10-16
+Title: Connect MonetDB to R
+Authors@R: c(person("Hannes Muehleisen", role = c("aut", "cre"),email = "hannes@cwi.nl"),
+	person("Thomas Lumley", role = "ctb"),
+	person("Anthony Damico", role = "ctb"))
+Depends: MonetDB.R (>= 0.8.2), methods, utils, stats
+Description: Virtual Data Object for MonetDB
+License: MPL (== 1.1)
+URL: http://monetr.r-forge.r-project.org
+Maintainer: Hannes Muehleisen <hannes@cwi.nl>
+SystemRequirements: MonetDB installation, available at http://www.monetdb.org

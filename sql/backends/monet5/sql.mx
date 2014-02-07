@@ -45,6 +45,20 @@ pattern init():void
 address SQLinitEnvironment
 comment "Initialize the environment for MAL";
 
+pattern shutdown(delay:bte, force:bit):str
+address SQLshutdown_wrap;
+pattern shutdown(delay:sht, force:bit):str
+address SQLshutdown_wrap;
+pattern shutdown(delay:int, force:bit):str
+address SQLshutdown_wrap;
+
+pattern shutdown(delay:bte):str
+address SQLshutdown_wrap;
+pattern shutdown(delay:sht):str
+address SQLshutdown_wrap;
+pattern shutdown(delay:int):str
+address SQLshutdown_wrap;
+
 pattern mvc():int
 address SQLmvc
 comment "get the multiversion catalog context, needed for correct statement dependencies (ie sql.update, should be after sql.bind in concurrent execution)";
@@ -472,6 +486,10 @@ pattern sql_variables():bat[:oid,:str]
 address sql_variables
 comment "return the table with session variables";
 
+pattern sessions() ( user:bat[:oid,:str], start:bat[:oid,:timestamp],stimeout:bat[:oid,:lng], lastcmd:bat[:oid,:timestamp], qtimeout:bat[:oid,:lng], idle:bat[:oid,:bit])
+address sql_sessions_wrap
+comment "SQL export table of active sessions, their timeouts and idle status";
+
 pattern db_users() :bat[:oid,:str]
 address db_users_wrap
 comment "return table of users with sql scenario";
@@ -593,7 +611,7 @@ address sql_querylog_empty;
 command querylog_enable()
 address QLOGenable;
 command querylog_enable(thres:int)
-address QLOGenablehreshold;
+address QLOGenableThreshold;
 command querylog_disable()
 address QLOGdisable;
 
@@ -1365,6 +1383,7 @@ sql5_export str SQLmvc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLtransaction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLcommit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLabort(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str SQLshutdown_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLtransaction2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
@@ -1434,6 +1453,7 @@ sql5_export str second_interval_str( lng *res, str *s, int *ek, int *sk );
 sql5_export str dump_cache(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str dump_opt_stats(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str dump_trace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str sql_sessions_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str sql_querylog_catalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str sql_querylog_calls(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -1668,6 +1688,7 @@ sql5_export void freeVariables(Client c, MalBlkPtr mb, MalStkPtr glb, int start)
 #include <cluster.h>
 #include <opt_dictionary.h>
 #include <opt_pipes.h>
+#include "clients.h"
 #ifdef HAVE_RAPTOR
 # include <rdf.h>
 #endif
@@ -2003,6 +2024,18 @@ SQLabort(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		mvc_rollback(sql, 0, NULL);
 	}
 	return msg;
+}
+
+str
+SQLshutdown_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	str answ = *(str*) getArgReference(stk,pci,0);
+
+	CLTshutdown(cntxt, mb, stk, pci);
+
+	// administer the shutdown
+	mnstr_printf(GDKstdout,"#%s\n",answ);
+	return MAL_SUCCEED;
 }
 
 str
@@ -3999,12 +4032,13 @@ mvc_declared_table_column_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 	str msg = getSQLContext(cntxt,mb, &m, NULL);
 	sql_schema *s = NULL;
 	sql_table *t = NULL;
+	sql_type *type = NULL;
 	sql_subtype tpe;
 	int *ret  = (int *) getArgReference(stk, pci, 0);
 	int *rs = (int *) getArgReference(stk, pci, 1);
 	str *tname = (str *) getArgReference(stk, pci, 2);
 	str *name = (str *) getArgReference(stk, pci, 3);
-	str *type = (str *) getArgReference(stk, pci, 4);
+	str *typename = (str *) getArgReference(stk, pci, 4);
 	int *digits = (int *) getArgReference(stk, pci, 5);
 	int *scale = (int *) getArgReference(stk, pci, 6);
 
@@ -4012,8 +4046,11 @@ mvc_declared_table_column_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 		return msg;
 	if (*rs != 0)
 		throw(SQL, "sql.dtColumn", "Cannot access declared table");
-	if (!sql_find_subtype(&tpe, *type, *digits, *scale))
+	if (!sql_find_subtype(&tpe, *typename, *digits, *scale) &&
+	    (type = mvc_bind_type(m, *typename)) == NULL)
 		throw(SQL, "sql.dtColumn", "Cannot find column type");
+	if (type)
+		sql_init_subtype(&tpe, type, 0, 0);
 	s = mvc_bind_schema(m, dt_schema);
 	if ( s == NULL)
 		throw(SQL,"sql.declared_table_column","3F000!Schema missing");
@@ -5248,8 +5285,10 @@ bat@2_2time_@1( int *res, int *bid, int *digits )
 @c
 @:bat2time(timestamp,str,char,&v)@
 @:bat2time(timestamp,timestamp,timestamp,v)@
+@:bat2time(timestamp,nil,void,v)@
 @:bat2time(daytime,str,char,&v)@
 @:bat2time(daytime,daytime,daytime,v)@
+@:bat2time(daytime,nil,void,v)@
 
 @= fround
 static inline @1
@@ -6872,6 +6911,12 @@ dump_trace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPkeepref(id);
 	}
 	return MAL_SUCCEED;
+}
+
+str
+sql_sessions_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	return CLTsessions(cntxt,mb,stk,pci);
 }
 
 str

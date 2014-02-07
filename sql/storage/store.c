@@ -1797,7 +1797,7 @@ sql_trans_copy_idx( sql_trans *tr, sql_table *t, sql_idx *i )
 	sql_table *sysidx = find_sql_table(syss, "idxs");
 	sql_table *sysic = find_sql_table(syss, "objects");
 	node *n;
-	int nr;
+	int nr, unique = 0;
 	sql_idx *ni = SA_ZNEW(tr->sa, sql_idx);
 
 	base_init(tr->sa, &ni->base, i->base.id, TR_NEW, i->base.name);
@@ -1807,10 +1807,16 @@ sql_trans_copy_idx( sql_trans *tr, sql_table *t, sql_idx *i )
 	ni->type = i->type;
 	ni->key = NULL;
 
+	if (i->type == hash_idx && list_length(i->columns) == 1)
+		unique = 1;
 	for (n = i->columns->h, nr = 0; n; n = n->next, nr++) {
 		sql_kc *okc = n->data, *ic;
 
 		list_append(ni->columns, ic = kc_dup_(tr, TR_NEW, okc, t, 1));
+		if (ic->c->unique != (unique & !okc->c->null)) {
+			ic->c->base.wtime = tr->wstime;
+			okc->c->unique = ic->c->unique = (unique & (!okc->c->null));
+		}
 
 		table_funcs.table_insert(tr, sysic, &ni->base.id, ic->c->base.name, &nr);
 		sysic->base.wtime = sysic->s->base.wtime = tr->wtime = tr->wstime;
@@ -2459,7 +2465,6 @@ rollforward_create_seq(sql_trans *tr, sql_sequence *k, int mode)
 	(void) mode;
 	return k;
 }
-
 
 static sql_column *
 rollforward_create_column(sql_trans *tr, sql_column *c, int mode)

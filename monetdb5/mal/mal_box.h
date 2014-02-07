@@ -36,8 +36,6 @@ mal_export Box findBox(str name);
 mal_export Box openBox(str name);
 mal_export int closeBox(str name, int flag);
 mal_export void destroyBox(str name);
-mal_export int saveBox(Box box, int flag);
-mal_export void loadBox(str nme);
 mal_export int releaseAllBox(Box box);
 
 mal_export int depositBox(Box box, str name, int type, ValPtr val);
@@ -46,7 +44,6 @@ mal_export int takeBox(Box box, str name, ValPtr val, int tpe);
 mal_export int bindBAT(Box box, str name, str location);
 mal_export int releaseBox(Box box, str name);
 mal_export int discardBox(Box box, str name);
-mal_export str getBoxName(Box box, lng i);
 mal_export str getBoxNames(int *bid);
 mal_export str toString(Box box, lng i);
 mal_export oid nextBoxElement(Box box, oid *cursor, ValPtr v);

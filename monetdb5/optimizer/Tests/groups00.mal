@@ -23,7 +23,7 @@ function tst();
 	io.print(xb);
 	io.print(ext3);
 	io.print(grp3);
-    (xb,ext3,grp3) := group.multicolumns(b,c,d);
+    (xb,ext3,grp3) := group.subgroup(b,c,d);
 	io.print(xb);
 	io.print(ext3);
 	io.print(grp3);

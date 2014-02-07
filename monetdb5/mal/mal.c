@@ -18,9 +18,6 @@
  */
 
 /*
- * @f mal
- * @-
- * @node  Design Considerations, Architecture Overview, Design Overview, Design Overview
  * @+ Design Considerations
  * Redesign of the MonetDB software stack was driven by the need to
  * reduce the effort to extend the system into novel directions
@@ -73,7 +70,7 @@
  * Moreover, a textual interface reduces the programming
  * effort otherwise needed to develop test and application programs.
  * The XML trend as the language for tool interaction supports our decision.
- * @-
+ * 
  * @node Architecture Overview, MAL Synopsis, Design Considerations, Design  Overview
  * @+ Architecture Overview
  * The architecture is built around a few independent components:
@@ -106,7 +103,7 @@
  * @image{base00,,,,.pdf}
  * @emph{Figure 2.1}
  * @end iftex
- * @-
+ * 
  * @node MAL Synopsis, Execution Engine, Architecture Overview,  Design  Overview
  * @+ MonetDB Assembly Language (MAL)
  * The target language for a query compiler is
@@ -160,7 +157,6 @@
  * function modules.
  * @end itemize
  *
- * @-
  * @+ Critical sections and semaphores
  * MonetDB Version 5 is implemented as a collection of threads.
  * This calls for extreme
@@ -185,7 +181,6 @@ char *mal_trace;		/* enable profile events on console */
 #include "mal_parser.h"
 #include "mal_interpreter.h"
 #include "mal_namespace.h"  /* for initNamespace() */
-#include "mal_debugger.h" /* for mdbInit() */
 #include "mal_client.h"
 #include "mal_sabaoth.h"
 #include "mal_recycle.h"
@@ -252,7 +247,8 @@ int mal_init(void){
 
 	tstAligned();
 	MCinit();
-	mdbInit();
+	if (mdbInit()) 
+		return -1;
 	if (monet_memory == 0)
 		monet_memory = MT_npages() * MT_pagesize();
 	initNamespace();
@@ -298,60 +294,46 @@ int mal_init(void){
 	return 0;
 }
 /*
- * @-
  * Upon exit we should attempt to remove all allocated memory explicitly.
  * This seemingly superflous action is necessary to simplify analyis of
  * memory leakage problems later on.
  */
-int
-moreClients(int reruns)
-{
-	int freeclient=0, finishing=0, claimed=0;
-	Client cntxt = mal_clients;
 
-	freeclient=0; finishing=0; claimed=0;
-	for(cntxt= mal_clients+1;  cntxt<mal_clients+MAL_MAXCLIENTS; cntxt++){
-		freeclient += (cntxt->mode == FREECLIENT);
-		finishing += (cntxt->mode == FINISHING);
-		claimed += (cntxt->mode == CLAIMED);
-		if( cntxt->mode & FINISHING)
-			printf("#Client %d %d\n",(int)(cntxt - mal_clients), cntxt->idx);
-	}
-	if( reruns == 3){
-		mnstr_printf(mal_clients->fdout,"#MALexit: server forced exit"
-			" %d finishing %d claimed\n",
-				finishing,claimed);
-		return 0;
-	}
-	return finishing+claimed;
-}
+/* stopping clients should be done with care, as they may be in the mids of
+ * transactions. One safe place is between MAL instructions, which would
+ * abort the transaction by raising an exception. All non-console sessions are
+ * terminate this way.
+ * We should also ensure that no new client enters the scene while shutting down.
+ * For this we mark the client records as BLOCKCLIENT.
+ *
+ * Beware, mal_exit is also called during a SIGTERM from the monetdb tool
+ */
+
 void mal_exit(void){
 	str err;
 
 	/*
-	 * @-
 	 * Before continuing we should make sure that all clients
 	 * (except the console) have left the scene.
 	 */
-	RECYCLEdrop(mal_clients); /* remove any left over intermediates */
-	stopProfiling();
+	MCstopClients(0);
+#if 0
+{
+	int reruns=0, go_on;
+	do{
+		if ( (go_on = MCactiveClients()) )
+			MT_sleep_ms(1000);
+		mnstr_printf(mal_clients->fdout,"#MALexit: %d clients still active\n", go_on);
+	} while (++reruns < SERVERSHUTDOWNDELAY && go_on > 1);
+}
+#endif
 	stopHeartbeat();
 #ifdef HAVE_JSONSTORE
 	stopHttpdaemon();
 #endif
 	stopMALdataflow();
-
-#if 0
-{
-	int reruns=0, goon;
-	do{
-		if ( (goon=moreClients(reruns)) )
-			MT_sleep_ms(1000);
-		if(reruns)
-			mnstr_printf(mal_clients->fdout,"#MALexit: clients still active\n");
-	} while (++reruns<3 && goon);
-}
-#endif
+	stopProfiling();
+	RECYCLEdrop(mal_clients); /* remove any left over intermediates */
 	unloadLibraries();
 #if 0
 	/* skip this to solve random crashes, needs work */

@@ -70,12 +70,14 @@ sql_tablename_generator(const char *text, int state)
 
 	static int seekpos, len, rowcount;
 	static MapiHdl table_hdl;
-	char *name;
 
 	if (!state) {
+		char query[512];
+
 		seekpos = 0;
 		len = strlen(text);
-		if ((table_hdl = mapi_query(_mid, "SELECT t.\"name\", s.\"name\" FROM \"sys\".\"tables\" t, \"sys\".\"schemas\" s where t.schema_id = s.id")) == NULL || mapi_error(_mid)) {
+		snprintf(query, sizeof(query), "SELECT t.\"name\", s.\"name\" FROM \"sys\".\"tables\" t, \"sys\".\"schemas\" s where t.schema_id = s.id AND t.\"name\" like '%s%%'", text);
+		if ((table_hdl = mapi_query(_mid, query)) == NULL || mapi_error(_mid)) {
 			if (table_hdl) {
 				mapi_explain_query(table_hdl, stderr);
 				mapi_close_handle(table_hdl);
@@ -88,18 +90,18 @@ sql_tablename_generator(const char *text, int state)
 	}
 
 	while (seekpos < rowcount) {
+		const char *name;
+
 		mapi_seek_row(table_hdl, seekpos++, MAPI_SEEK_SET);
 		mapi_fetch_row(table_hdl);
 		name = mapi_fetch_field(table_hdl, 0);
 		if (strncmp(name, text, len) == 0) {
-			char *s, *schema = mapi_fetch_field(table_hdl, 1);
-			int l1 = strlen(name), l2 = strlen(schema);
+			char *s;
+			const char *schema = mapi_fetch_field(table_hdl, 1);
+			size_t l1 = strlen(name), l2 = strlen(schema);
 
-			s = malloc(l1 + l2 + 2);
-			s[0] = 0;
-			strcat(s, schema); 
-			strcat(s, ".");
-			strcat(s, name);
+			s = malloc(l1 + l2 + 6);
+			snprintf(s, l1 + l2 + 6, "\"%s\".\"%s\"", schema, name);
 			return s;
 		}
 	}
@@ -228,7 +230,7 @@ static char *mal_commands[] = {
 static int
 mal_help(int cnt, int key)
 {
-	char *name, *c, buf[BUFSIZ];
+	char *name, *c, buf[512];
 	int seekpos = 0, rowcount;
 	MapiHdl table_hdl;
 
@@ -240,7 +242,7 @@ mal_help(int cnt, int key)
 		c--;
 	while (c > rl_line_buffer && !isspace(*c))
 		c--;
-	snprintf(buf, BUFSIZ, "manual.help(\"%s\");", c);
+	snprintf(buf, sizeof(buf), "manual.help(\"%s\");", c);
 	if ((table_hdl = mapi_query(_mid, buf)) == NULL || mapi_error(_mid)) {
 		if (table_hdl) {
 			mapi_explain_query(table_hdl, stderr);
@@ -271,7 +273,7 @@ mal_command_generator(const char *text, int state)
 	static int idx;
 	static int seekpos, len, rowcount;
 	static MapiHdl table_hdl;
-	char *name, buf[BUFSIZ];
+	char *name, buf[512];
 
 	/* we pick our own portion of the linebuffer */
 	text = rl_line_buffer + strlen(rl_line_buffer) - 1;
@@ -295,20 +297,19 @@ mal_command_generator(const char *text, int state)
 	}
 	/* try the server to answer */
 	if (!state) {
-		char cmd[BUFSIZ], *c;
+		char *c;
 		c = strstr(text, ":=");
 		if (c)
 			text = c + 2;
 		while (isspace((int) *text))
 			text++;
-		c = strchr(text, '.');
-		if (c == NULL)
-			snprintf(cmd, BUFSIZ, "%s.*(", text);
+		if (strchr(text, '.') == NULL)
+			snprintf(buf, sizeof(buf),
+				 "manual.completion(\"%s.*(\");", text);
 		else
-			snprintf(cmd, BUFSIZ, "%s(", text);
+			snprintf(buf, sizeof(buf),
+				 "manual.completion(\"%s(\");", text);
 		seekpos = 0;
-		len = strlen(cmd);
-		snprintf(buf, BUFSIZ, "manual.completion(\"%s\");", cmd);
 		if ((table_hdl = mapi_query(_mid, buf)) == NULL || mapi_error(_mid)) {
 			if (table_hdl) {
 				mapi_explain_query(table_hdl, stderr);
@@ -365,7 +366,8 @@ init_readline(Mapi mid, char *lang, int save_history)
 	_mid = mid;
 	/* Allow conditional parsing of the ~/.inputrc file. */
 	rl_readline_name = "MapiClient";
-	/* Tell the completer that we want to try our own completion before std completion (filename) kicks in. */
+	/* Tell the completer that we want to try our own completion
+	 * before std completion (filename) kicks in. */
 	if (strcmp(language, "sql") == 0) {
 		rl_attempted_completion_function = sql_completion;
 	} else if (strcmp(language, "mil") == 0) {
@@ -401,7 +403,7 @@ init_readline(Mapi mid, char *lang, int save_history)
 			case ENOENT:
 				/* history file didn't exist, so try to create
 				 * it and then try again */
-				if ((f = fopen(_history_file, "w")) != NULL) {
+				if ((f = fopen(_history_file, "w")) == NULL) {
 					/* failed to create, don't
 					 * bother saving */
 					_save_history = 0;

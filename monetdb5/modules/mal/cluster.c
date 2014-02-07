@@ -603,6 +603,11 @@ CLS_create_bte( bat *rpsum, bat *rcmap, bat *B, unsigned int *Bits, unsigned int
 
 	/* convert histogram into prefix sum */
 	pos = (wrd*)GDKzalloc(sizeof(wrd) * (mask+1)); 
+	if( pos == NULL){
+		BBPunfix(*B);
+		BBPunfix(psum->batCacheid);
+		throw(MAL, "cluster.new", MAL_MALLOC_FAIL);
+	}
 	for (sum = 0, i=0 ; i <= mask; i++) {
 		wrd psum = sum;
 
@@ -683,6 +688,11 @@ CLS_create_sht( bat *rpsum, bat *rcmap, bat *B, unsigned int *Bits, unsigned int
 
 	/* convert histogram into prefix sum */
 	pos = (wrd*)GDKzalloc(sizeof(wrd) * (mask+1)); 
+	if( pos == NULL){
+		BBPunfix(*B);
+		BBPunfix(psum->batCacheid);
+		throw(MAL, "cluster.new", MAL_MALLOC_FAIL);
+	}
 	for (sum = 0, i=0 ; i <= mask; i++) {
 		wrd psum = sum;
 
@@ -763,6 +773,11 @@ CLS_create_int( bat *rpsum, bat *rcmap, bat *B, unsigned int *Bits, unsigned int
 
 	/* convert histogram into prefix sum */
 	pos = (wrd*)GDKzalloc(sizeof(wrd) * (mask+1)); 
+	if( pos == NULL){
+		BBPunfix(*B);
+		BBPunfix(psum->batCacheid);
+		throw(MAL, "cluster.new", MAL_MALLOC_FAIL);
+	}
 	for (sum = 0, i=0 ; i <= mask; i++) {
 		wrd psum = sum;
 
@@ -843,6 +858,11 @@ CLS_create_wrd( bat *rpsum, bat *rcmap, bat *B, unsigned int *Bits, unsigned int
 
 	/* convert histogram into prefix sum */
 	pos = (wrd*)GDKzalloc(sizeof(wrd) * (mask+1)); 
+	if( pos == NULL){
+		BBPunfix(*B);
+		BBPunfix(psum->batCacheid);
+		throw(MAL, "cluster.new", MAL_MALLOC_FAIL);
+	}
 	for (sum = 0, i=0 ; i <= mask; i++) {
 		wrd psum = sum;
 
@@ -923,6 +943,11 @@ CLS_create_lng( bat *rpsum, bat *rcmap, bat *B, unsigned int *Bits, unsigned int
 
 	/* convert histogram into prefix sum */
 	pos = (wrd*)GDKzalloc(sizeof(wrd) * (mask+1)); 
+	if( pos == NULL){
+		BBPunfix(*B);
+		BBPunfix(psum->batCacheid);
+		throw(MAL, "cluster.new", MAL_MALLOC_FAIL);
+	}
 	for (sum = 0, i=0 ; i <= mask; i++) {
 		wrd psum = sum;
 
@@ -1085,6 +1110,11 @@ CLS_create_dbl( bat *rpsum, bat *rcmap, bat *B, unsigned int *Bits, unsigned int
 
 	/* convert histogram into prefix sum */
 	pos = (wrd*)GDKzalloc(sizeof(wrd) * (mask+1)); 
+	if( pos == NULL){
+		BBPunfix(*B);
+		BBPunfix(psum->batCacheid);
+		throw(MAL, "cluster.new", MAL_MALLOC_FAIL);
+	}
 	for (sum = 0, i=0 ; i <= mask; i++) {
 		wrd psum = sum;
 
@@ -1164,6 +1194,11 @@ CLS_create_flt( bat *rpsum, bat *rcmap, bat *B, unsigned int *Bits, unsigned int
 
 	/* convert histogram into prefix sum */
 	pos = (wrd*)GDKzalloc(sizeof(wrd) * (mask+1)); 
+	if( pos == NULL){
+		BBPunfix(*B);
+		BBPunfix(psum->batCacheid);
+		throw(MAL, "cluster.new", MAL_MALLOC_FAIL);
+	}
 	for (sum = 0, i=0 ; i <= mask; i++) {
 		wrd psum = sum;
 

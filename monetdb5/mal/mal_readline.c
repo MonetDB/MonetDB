@@ -61,7 +61,7 @@
  * using the commands @sc{manual.help}.
  * Keyword based lookup is supported by the operation @sc{manual.search};
  * Additional routines are available in the @sc{inspect}
- * module to built reflexive code.
+ * module to build reflexive code.
  *
  * For console input the @sc{readline} library linked with
  * the system provides a history mechanism and also name completion.
@@ -333,6 +333,10 @@ getConsoleInput(Client c, const char *prompt, int linemode, int exit_on_error)
 				add_history(buf);
 				length = strlen(buf);
 				buf = realloc(buf, length + 2);
+				if( buf == NULL){
+					GDKerror("getConsoleInput"MAL_MALLOC_FAIL);
+					return buf;
+				}
 				buf[length++] = '\n';
 				buf[length] = 0;
 			}
@@ -348,6 +352,10 @@ getConsoleInput(Client c, const char *prompt, int linemode, int exit_on_error)
 #endif
 			if (buf == NULL)
 				buf= malloc(BUFSIZ);
+				if( buf == NULL){
+					GDKerror("getConsoleInput"MAL_MALLOC_FAIL);
+					return buf;
+				}
 			line = fgets(buf, BUFSIZ, stdin);
 		}
 
@@ -476,6 +484,8 @@ readConsole(Client cntxt)
 		if( len >= cntxt->fdin->size) {
 			/* extremly dirty inplace buffer overwriting */
 			cntxt->fdin->buf= realloc(cntxt->fdin->buf, len+1);
+			if( cntxt->fdin->buf == NULL)
+				GDKerror("readConsole" MAL_MALLOC_FAIL);
 			cntxt->fdin->size = len;
 		}
 		strcpy(cntxt->fdin->buf, buf);

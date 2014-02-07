@@ -1,0 +1,69 @@
+stdout of test 'udf_error.Bug-3396` in directory 'sql/test/BugTracker-2013` itself:
+
+
+# 10:07:53 >  
+# 10:07:53 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=37280" "--set" "mapi_usock=/var/tmp/mtest-18528/.s.monetdb.37280" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/niels/scratch/monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2013" "--set" "mal_listing=0"
+# 10:07:53 >  
+
+# MonetDB 5 server v11.16.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2013', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 3.775 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2013 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://niels.nesco.mine.nu:37280/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-18528/.s.monetdb.37280
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 10:07:54 >  
+# 10:07:54 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-18528" "--port=37280"
+# 10:07:54 >  
+
+#CREATE TABLE TEST_UDF (
+#x float,
+#y float
+#);
+#COPY 5 RECORDS INTO TEST_UDF from stdin USING DELIMITERS ',','\n','"' NULL AS '';
+#0.1,0.2
+#0.118605379902,0.933008230218
+#0.504782158934,0.0927420819153
+#0.36667111241,0.216447762367
+#0.538823741129,0.794452784083
+#
+[ 5	]
+#CREATE FUNCTION MY_UDF (x float, y float)
+#RETURNS float
+#BEGIN
+#DECLARE ret float;
+#set ret = LOG(x/y);
+#RETURN ret;
+#END;
+#SELECT 'udf alone',MY_UDF(0.1,0.2);
+% .L1,	.L1 # table_name
+% L1,	my_udf_single_value # name
+% char,	double # type
+% 9,	24 # length
+[ "udf alone",	-0.6931471806	]
+#SELECT 'udf from table',MY_UDF(t.x,t.y) FROM TEST_UDF as t;
+% .L1,	sys.L1 # table_name
+% L1,	my_udf_x # name
+% char,	double # type
+% 14,	24 # length
+[ "udf from table",	-0.6931471806	]
+[ "udf from table",	-2.062612175	]
+[ "udf from table",	1.69430464	]
+[ "udf from table",	0.5271160588	]
+[ "udf from table",	-0.3882650492	]
+#DROP FUNCTION MY_UDF;
+#DROP TABLE TEST_UDF;
+
+# 10:07:54 >  
+# 10:07:54 >  "Done."
+# 10:07:54 >  
+

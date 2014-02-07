@@ -190,7 +190,6 @@ gdk_export void MT_sleep_ms(unsigned int ms);
 /* a hook function to add any initialization required for the MT_
  * functionality */
 gdk_export char *MT_heapbase;
-gdk_export char *MT_heapcur(void);
 
 gdk_export size_t MT_getrss(void);
 

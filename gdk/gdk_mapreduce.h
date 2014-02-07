@@ -20,11 +20,6 @@
 #ifndef _GDK_MAPREDUCE_H_
 #define _GDK_MAPREDUCE_H_
 
-typedef struct {
-	MT_Sema *sema;			/* micro scheduler handle */
-	void (*cmd) (void *);		/* the function to be executed */
-} MRtask;
-
 gdk_export void MRschedule(int taskcnt, void **arg, void (*cmd) (void *p));
 
 #endif /* _GDK_MAPREDUCE_H_ */

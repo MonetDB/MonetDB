@@ -40,6 +40,7 @@
 #include "mal_interpreter.h"	/* for showErrors() */
 #include "mal_linker.h"		/* for loadModuleLibrary() */
 #include "mal_parser.h"
+#include "mal_private.h"
 
 void
 slash_2_dir_sep(str fname)
@@ -87,7 +88,7 @@ malOpenSource(str file)
  * to find out how long the input is.
  * For the time being, we assume at most 1Mb.
 */
-str
+static str
 malLoadScript(Client c, str name, bstream **fdin)
 {
 	stream *fd;

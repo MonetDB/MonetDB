@@ -223,7 +223,7 @@ do {									    \
 	bte rpp    = ATOMelmshift(IMPS_PAGE >> b->T->shift);		    \
 	CAND;								    \
 	for (i=0, dcnt=0, icnt=0;					    \
-	     (dcnt < imprints->dictcnt) && (i+off < w+pr_off);		    \
+	     (dcnt < imprints->dictcnt) && (i+off < w+pr_off) && (p<q);		    \
 	     dcnt++) {							    \
 		limit = ((BUN) d[dcnt].cnt) << rpp;			    \
 		while ((i+limit+off) <= (o+pr_off)) {			    \
@@ -1379,11 +1379,11 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 		bn = BAT_hashselect(b, s, bn, tl, maximum);
 	} else {
 		int use_imprints = 0;
-		if (((b->batPersistence == PERSISTENT) ||
-		    ((parent = VIEWtparent(b)) &&
-		     (BBPquickdesc(ABS(parent),0)->batPersistence == PERSISTENT)))
-		   && !equi
-		   && !ATOMvarsized(b->ttype)) {
+		if (!equi &&
+		    !b->tvarsized &&
+		    (b->batPersistence == PERSISTENT ||
+		     ((parent = VIEWtparent(b)) != 0 &&
+		      BBPquickdesc(ABS(parent),0)->batPersistence == PERSISTENT))) {
 			/* use imprints if
 			 *   i) bat is persistent, or parent is persistent
 			 *  ii) it is not an equi-select, and
@@ -1467,66 +1467,80 @@ BATthetasubselect(BAT *b, BAT *s, const void *val, const char *op)
 
 static BAT *
 BAT_select_(BAT *b, const void *tl, const void *th,
-            bit li, bit hi, bit tail, bit anti)
+            bit li, bit hi, bit tail, bit anti, const char *name)
 {
 	BAT *bn;
 	BAT *bn1 = NULL;
 	BAT *map;
 	BAT *b1;
 
+	ALGODEBUG fprintf(stderr, "#Legacy %s(b=%s#" BUNFMT "[%s,%s]%s%s%s,"
+			  "li=%s,hi=%s,tail=%s,anti=%s)\n", name,
+			  BATgetId(b), BATcount(b), ATOMname(b->htype), ATOMname(b->ttype),
+			  BAThdense(b) ? "-hdense" : "",
+			  b->tsorted ? "-sorted" : "",
+			  b->trevsorted ? "-revsorted" : "",
+			  li ? "true" : "false",
+			  hi ? "true" : "false",
+			  tail ? "true" : "false",
+			  anti ? "true" : "false");
 	BATcheck(b, "BAT_select_");
 	/* b is a [any_1,any_2] BAT */
 	if (!BAThdense(b)) {
 		ALGODEBUG fprintf(stderr, "#BAT_select_(b=%s#" BUNFMT
 				  ",tail=%d): make map\n",
 				  BATgetId(b), BATcount(b), tail);
-		map = BATmirror(BATmark(b, 0)); /* [dense,any_1] */
-		b1 = BATmirror(BATmark(BATmirror(b), 0)); /* dense,any_2] */
+		map = BATmirror(BATmark(b, 0)); /* [dense1,any_1] */
+		b1 = BATmirror(BATmark(BATmirror(b), 0)); /* dense1,any_2] */
 	} else {
 		ALGODEBUG fprintf(stderr, "#BAT_select_(b=%s#" BUNFMT
 				  ",tail=%d): dense head\n",
 				  BATgetId(b), BATcount(b), tail);
 		map = NULL;
-		b1 = b;		/* [dense,any_2] (any_1==dense) */
+		b1 = b;		/* [dense1,any_2] (any_1==dense1) */
 	}
-	/* b1 is a [dense,any_2] BAT, map (if set) is a [dense,any_1] BAT */
+	/* b1 is a [dense1,any_2] BAT, map (if set) is a [dense1,any_1] BAT */
 	bn = BATsubselect(b1, NULL, tl, th, li, hi, anti);
 	if (bn == NULL)
 		goto error;
-	/* bn is a [dense,oid] BAT */
+	/* bn is a [dense2,oid] BAT, if b was hdense, oid==any_1 */
 	if (tail) {
 		/* we want to return a [any_1,any_2] subset of b */
 		if (map) {
 			bn1 = BATproject(bn, map);
 			if (bn1 == NULL)
 				goto error;
-			/* bn1 is [dense,any_1] */
+			/* bn1 is [dense2,any_1] */
 			BBPunfix(map->batCacheid);
 			map = BATmirror(bn1);
-			/* map is [any_1,dense] */
+			/* map is [any_1,dense2] */
 			bn1 = BATproject(bn, b1);
 			if (bn1 == NULL)
 				goto error;
-			/* bn1 is [dense,any_2] */
+			/* bn1 is [dense2,any_2] */
 			BBPunfix(b1->batCacheid);
 			b1 = NULL;
 			BBPunfix(bn->batCacheid);
-			bn = BATleftfetchjoin(map, bn1, BATcount(map));
+			bn = VIEWcreate(map, bn1);
 			if (bn == NULL)
 				goto error;
 			/* bn is [any_1,any_2] */
-			BBPunfix(map->batCacheid);
 			BBPunfix(bn1->batCacheid);
-			map = bn1 = NULL;
+			BBPunfix(map->batCacheid);
+			bn1 = map = NULL;
 		} else {
-			/* b was [dense,any_2] */
-			bn1 = VIEWcombine(BATmirror(bn));
-			/* bn1 is [oid,oid] */
-			BBPunfix(bn->batCacheid);
-			bn = BATleftfetchjoin(bn1, b, BATcount(bn1));
-			if (bn == NULL)
+			bn1 = BATproject(bn, b);
+			if (bn1 == NULL)
 				goto error;
-			/* bn is [oid,any_2] */
+			/* bn1 is [dense2,any_2] */
+			/* bn was [dense2,any_1] since b was hdense */
+			b1 = VIEWcreate(BATmirror(bn), bn1);
+			if (b1 == NULL)
+				goto error;
+			/* b1 is [any_1,any_2] */
+			BBPunfix(bn->batCacheid);
+			bn = b1;
+			b1 = NULL;
 			BBPunfix(bn1->batCacheid);
 			bn1 = NULL;
 		}
@@ -1547,7 +1561,7 @@ BAT_select_(BAT *b, const void *tl, const void *th,
 			bn1 = BATproject(bn, map);
 			if (bn1 == NULL)
 				goto error;
-			/* bn1 is [dense,any_1] */
+			/* bn1 is [dense2,any_1] */
 			BBPunfix(map->batCacheid);
 			BBPunfix(bn->batCacheid);
 			bn = bn1;
@@ -1575,27 +1589,31 @@ BAT_select_(BAT *b, const void *tl, const void *th,
 BAT *
 BATselect_(BAT *b, const void *h, const void *t, bit li, bit hi)
 {
-	return BAT_select_(b, h, t, li, hi, TRUE, FALSE);
+	return BAT_select_(b, h, t, li, hi, TRUE, FALSE, "BATselect_");
 }
 
 BAT *
 BATuselect_(BAT *b, const void *h, const void *t, bit li, bit hi)
 {
-	return BAT_select_(b, h, t, li, hi, FALSE, FALSE);
+	return BAT_select_(b, h, t, li, hi, FALSE, FALSE, "BATuselect_");
 }
 
 BAT *
 BATantiuselect_(BAT *b, const void *h, const void *t, bit li, bit hi)
 {
-	return BAT_select_(b, h, t, li, hi, FALSE, TRUE);
+	return BAT_select_(b, h, t, li, hi, FALSE, TRUE, "BATantiuselect");
 }
 
+/* Return a BAT which is a subset of b with just the qualifying
+ * tuples. */
 BAT *
 BATselect(BAT *b, const void *h, const void *t)
 {
 	return BATselect_(b, h, t, TRUE, TRUE);
 }
 
+/* Return a BAT with in its head a subset of qualifying head values
+ * from b, and void-nil in its tail. */
 BAT *
 BATuselect(BAT *b, const void *h, const void *t)
 {

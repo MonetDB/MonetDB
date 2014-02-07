@@ -29,6 +29,7 @@
 
 #include "mal_client.h"
 #include "mal_http_daemon.h"
+#include "mal_private.h"
 #include <microhttpd.h>
 
 static MT_Id hdthread;
@@ -36,7 +37,7 @@ static int volatile hdrunning;
 struct MHD_Daemon *http_daemon;
 #define PORT 8998
 #define POSTBUFFERSIZE  512
-#define MAXNAMESIZE     20
+#define MAXNAMESIZE     512
 #define MAXANSWERSIZE   512
 
 #define GET             0

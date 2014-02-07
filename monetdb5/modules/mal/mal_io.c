@@ -591,7 +591,7 @@ IOtableAll(stream *f, Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, i
 		if (b == NULL) {
 			for (k = 0; k < nbats; k++)
 				BBPunfix(piv[k]->batCacheid);
-			throw(MAL, "io.table", MAL_MALLOC_FAIL);
+			throw(MAL, "io.table", ILLEGAL_ARGUMENT " null BAT encountered");
 		}
 		piv[nbats++] = b;
 	}
