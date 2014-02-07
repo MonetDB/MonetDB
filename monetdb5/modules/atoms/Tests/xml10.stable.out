@@ -54,11 +54,7 @@ function user.main():void;
     io.print(l);
     ag := xml.agg(te,g);
     io.print(ag);
-    gr := bat.reverse(g);
-    j2 := algebra.join(gr,ax);
-    k2 := algebra.kunique(j2);
-    io.print(k2);
-    cc := batxml.concat(k2,ag);
+    cc := batxml.concat(ax,te);
     io.print(cc);
     io.print("author construction");
     ae := batxml.element("author",cc);
@@ -89,28 +85,24 @@ end main;
 #---------------------------------------------------------#
 [ 0@0,	  <title>spring</title><title>summer</title>	  ]
 [ 1@0,	  <title>autum</title>				  ]
-#-----------------#
-# h	t	  # name
-# oid	xml	  # type
-#-----------------#
-[ 0@0,	  john	  ]
-[ 1@0,	  marie	  ]
-#---------------------------------------------------------#
+#--------------------------#
 # h	t						  # name
-# oid	xml						  # type
-#---------------------------------------------------------#
-[ 0@0,	  john<title>spring</title><title>summer</title>  ]
-[ 1@0,	  marie<title>autum</title>			  ]
+# void	xml  # type
+#--------------------------#
+[ 0@0,	john<title>spring</title>  ]
+[ 1@0,	john<title>summer</title>  ]
+[ 2@0,	marie<title>autum</title>  ]
 [ "author construction" ]
 #---------------------------------------------------------------------------------#
 # h	t									  # name
-# oid	xml									  # type
-#---------------------------------------------------------------------------------#
-[ 0@0,	  <author>john<title>spring</title><title>summer</title></author>	  ]
-[ 1@0,	  <author>marie<title>autum</title></author>				  ]
+# void	xml  # type
+#--------------------------#
+[ 0@0,	<author>john<title>spring</title></author>  ]
+[ 1@0,	<author>john<title>summer</title></author>  ]
+[ 2@0,	<author>marie<title>autum</title></author>  ]
 [ "book construction" ]
-[ <author>john<title>spring</title><title>summer</title></author><author>marie<title>autum</title></author> ]
-[ <books><author>john<title>spring</title><title>summer</title></author><author>marie<title>autum</title></author></books> ]
+[ <author>john<title>spring</title></author><author>john<title>summer</title></author><author>marie<title>autum</title></author> ]
+[ <books><author>john<title>spring</title></author><author>john<title>summer</title></author><author>marie<title>autum</title></author></books> ]
 
 # 23:09:29 >  
 # 23:09:29 >  Done.

@@ -1158,7 +1158,7 @@ BATXMLagg3(bat *ret, const bat *bid, const bat *grp, const bat *ext)
 		throw(MAL, "xml.agg", RUNTIME_OBJECT_MISSING);
 	}
 
-	bn = BATnew(TYPE_oid, b->ttype, BATcount(e));
+	bn = BATnew(TYPE_void, b->ttype, BATcount(e));
 	if (bn == NULL) {
 		GDKfree(buf);
 		BBPunfix(b->batCacheid);
@@ -1167,6 +1167,7 @@ BATXMLagg3(bat *ret, const bat *bid, const bat *grp, const bat *ext)
 		throw(MAL, "xml.agg", INTERNAL_OBJ_CREATE);
 	}
 	bn->T->nonil = 1;
+	BATseqbase(bn,0);
 
 	/* this will not work as it will corrupt the order of the column, ie
 	   the order in which the data will be generated */
@@ -1276,7 +1277,7 @@ BATXMLagg(bat *ret, const bat *bid, const bat *grp)
 		throw(MAL, "xml.agg", RUNTIME_OBJECT_MISSING);
 	}
 
-	bn = BATnew(TYPE_oid, b->ttype, BATcount(g));
+	bn = BATnew(TYPE_void, b->ttype, BATcount(g));
 	if (bn == NULL) {
 		GDKfree(buf);
 		BBPunfix(b->batCacheid);
@@ -1284,6 +1285,7 @@ BATXMLagg(bat *ret, const bat *bid, const bat *grp)
 		throw(MAL, "xml.agg", INTERNAL_OBJ_CREATE);
 	}
 	bn->T->nonil = 1;
+	BATseqbase(bn,0);
 
 	j = BATjoin(BATmirror(g), b, BUN_NONE);
 	BBPreleaseref(b->batCacheid);
