@@ -122,12 +122,7 @@ monetdb.server.setup <-
     
     # determine that the monetdb.program.path has been correctly specified #
     
-    # first find the alleged path of mclient.exe
-    mcl <- file.path( monetdb.program.path , "bin" )
-    
-    # then confirm it exists
-    if( !file.exists( mcl ) ) stop( paste( mcl , "does not exist.  are you sure monetdb.program.path has been specified correctly?" ) )
-    
+
     
     # confirm that the database directory is either empty or does not exist
     
@@ -162,8 +157,13 @@ monetdb.server.setup <-
     dir.create( dbfl )
     if ( .Platform$OS.type == "windows" ) {
       bfl <- paste0(bfl,".bat")
-      
-      
+
+      # first find the alleged path of mclient.exe
+      mcl <- file.path( monetdb.program.path , "bin" )
+    
+      # then confirm it exists
+      if( !file.exists( mcl ) ) stop( paste( mcl , "does not exist.  are you sure monetdb.program.path has been specified correctly?" ) )
+            
       # store all file lines for the .bat into a character vector
       bat.contents <-
         c(
@@ -222,16 +222,14 @@ monetdb.server.setup <-
       bfl <- paste0(bfl,".sh")
       bat.contents <- c('#!/bin/sh',
                         paste0( monetdb.program.path,
-                                '/bin/mserver5 --set prefix=',monetdb.program.path,' --set exec_prefix=',monetdb.program.path,' --dbpath ',paste0(database.directory,"/",dbname),' --set mapi_port=' ,
+                                'mserver5 --set prefix=',monetdb.program.path,' --set exec_prefix=',monetdb.program.path,' --dbpath ',paste0(database.directory,"/",dbname),' --set mapi_port=' ,
                                 dbport, " --daemon yes > /dev/null &" 
                         ),paste0("echo $! > ",database.directory,"/mserver5.started.from.R.pid"))
-      
-      
     }
     
     # write the .bat contents to a file on the local disk
     writeLines( bat.contents , bfl )
-    if ( .Platform$OS.type == "unix" ) {
+    if (.Platform$OS.type == "unix" ) {
       Sys.chmod(bfl,mode="755")
     }
     # return the filepath to the batch file

@@ -83,11 +83,12 @@ dbRemoveTable(con,"monetdbtest")
 stopifnot(identical(dbExistsTable(con,"monetdbtest"),FALSE))
 
 
-
+#thrice to catch null pointer errors
 stopifnot(identical(dbDisconnect(con),TRUE))
 stopifnot(identical(dbDisconnect(con),TRUE))
 stopifnot(identical(dbDisconnect(con),TRUE))
 
-#thrice to catch pointer errors
+#test merovingian control code
+stopifnot("monetdbrtest" %in% monetdbd.liststatus("monetdb")$dbname)
 
 print("SUCCESS")

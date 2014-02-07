@@ -12,8 +12,6 @@ C_LIBRARY <- "MonetDB.R"
 DEBUG_IO      <- FALSE
 DEBUG_QUERY   <- FALSE
 
-
-
 # Make S4 aware of S3 classes
 setOldClass(c("sockconn","connection","monetdb_mapi_conn"))
 
@@ -34,11 +32,11 @@ setMethod("dbGetInfo", "MonetDBDriver", def=function(dbObj, ...)
 )
 
 # shorthand for connecting to the DB, very handy, e.g. dbListTables(mc("acs"))
-mc <- function(dbname="demo", user="monetdb", password="monetdb", host="localhost",port=50000L, timeout=86400L, wait=FALSE,...) {
-	dbConnect(MonetDB.R(),dbname,user,password,host,port,timeout,wait,...)
+mc <- function(dbname="demo", user="monetdb", password="monetdb", host="localhost",port=50000L, timeout=86400L, wait=FALSE,language="sql",...) {
+	dbConnect(MonetDB.R(),dbname,user,password,host,port,timeout,wait,language,...)
 }
 
-setMethod("dbConnect", "MonetDBDriver", def=function(drv,dbname="demo", user="monetdb", password="monetdb", host="localhost",port=50000L, timeout=86400L, wait=FALSE,...,url="") {
+setMethod("dbConnect", "MonetDBDriver", def=function(drv,dbname="demo", user="monetdb", password="monetdb", host="localhost",port=50000L, timeout=86400L, wait=FALSE,language="sql",...,url="") {
 			if (substring(url,1,10) == "monetdb://") {
 				dbname <- url
 			}
@@ -76,7 +74,7 @@ setMethod("dbConnect", "MonetDBDriver", def=function(drv,dbname="demo", user="mo
 								# this goes to src/mapi.c
 								socket <- socket <<- .Call("mapiConnect",host,port,5,PACKAGE=C_LIBRARY)
 								# authenticate
-								.monetAuthenticate(socket,dbname,user,password)
+								.monetAuthenticate(socket,dbname,user,password,language=language)
 								# test the connection to make sure it works before
 								.mapiWrite(socket,"sSELECT 42;"); .mapiRead(socket)
 								#close(socket)
@@ -97,7 +95,7 @@ setMethod("dbConnect", "MonetDBDriver", def=function(drv,dbname="demo", user="mo
 			#socket <- socket <<- socketConnection(host = host, port = port, 
 			#	blocking = TRUE, open="r+b",timeout = timeout) 
 			socket <- socket <<- .Call("mapiConnect",host,port,timeout,PACKAGE=C_LIBRARY)
-			.monetAuthenticate(socket,dbname,user,password)
+			.monetAuthenticate(socket,dbname,user,password,language=language)
 			connenv <- new.env(parent=emptyenv())
 			connenv$lock <- 0
 			connenv$deferred <- list()
@@ -113,7 +111,7 @@ setClass("MonetDBConnection", representation("DBIConnection",socket="externalptr
 
 setMethod("dbDisconnect", "MonetDBConnection", def=function(conn, ...) {
 			.Call("mapiDisconnect",conn@socket,PACKAGE=C_LIBRARY)
-			TRUE
+			return(invisible(TRUE))
 		})
 
 setMethod("dbListTables", "MonetDBConnection", def=function(conn, ...) {
@@ -129,7 +127,7 @@ setMethod("dbListFields", "MonetDBConnection", def=function(conn, name, ...) {
 		})
 
 setMethod("dbExistsTable", "MonetDBConnection", def=function(conn, name, ...) {
-			name %in% dbListTables(conn)
+			tolower(name) %in% dbListTables(conn)
 		})
 
 
@@ -156,7 +154,11 @@ setMethod("dbSendQuery", signature(conn="MonetDBConnection", statement="characte
 			if(!is.null(list) || length(list(...))){
 				if (length(list(...))) statement <- .bindParameters(statement, list(...))
 				if (!is.null(list)) statement <- .bindParameters(statement, list)
-			}		
+			}	
+
+# removeme
+#write(statement,file="/export/scratch2/hannes/anthony-joinbug/log.sql",append=TRUE)
+
 			conn@connenv$exception <- list()
 			env <- NULL
 			if (DEBUG_QUERY)  cat(paste("QQ: '",statement,"'\n",sep=""))
@@ -238,7 +240,7 @@ setMethod("dbWriteTable", "MonetDBConnection", def=function(conn, name, value, o
 				dbSendQuery(conn,"COMMIT")
 				.mapiRequest(conn, "Xauto_commit 1")
 			}
-			TRUE
+			return(invisible(TRUE))
 		})
 
 
@@ -253,10 +255,11 @@ setMethod("dbDataType", signature(dbObj="MonetDBConnection", obj = "ANY"), def =
 
 
 setMethod("dbRemoveTable", "MonetDBConnection", def=function(conn, name, ...) {
-			if (dbExistsTable(conn,name)) 
-				dbSendUpdate(conn, paste("DROP TABLE", name))
-			return(TRUE)
-			return(FALSE)
+			if (dbExistsTable(conn,name)) {
+				dbSendUpdate(conn, paste("DROP TABLE", tolower(name)))
+				return(invisible(TRUE))
+			}
+			return(invisible(FALSE))
 		})
 
 # for compatibility with RMonetDB (and dbWriteTable support), we will allow parameters to this method, but will not use prepared statements internally
@@ -270,7 +273,7 @@ setMethod("dbSendUpdate", signature(conn="MonetDBConnection", statement="charact
 			if (!res@env$success) {
 				stop(paste(statement,"failed!\nServer says:",res@env$message))
 			}
-			TRUE
+			return(invisible(TRUE))
 		})
 
 # this can be used in finalizers to not mess up the socket
@@ -714,7 +717,7 @@ REPLY_SIZE    <- 100 # Apparently, -1 means unlimited, but we will start with a 
 # on each connection. The server starts by sending a challenge, to which we respond by
 # hashing our login information using the server-requested hashing algorithm and its salt.
 
-.monetAuthenticate <- function(con,dbname,user="monetdb",password="monetdb",endhashfunc="sha512") {
+.monetAuthenticate <- function(con,dbname,user="monetdb",password="monetdb",endhashfunc="sha512",language="sql") {
 	endhashfunc <- tolower(endhashfunc)
 	# read challenge from server, it looks like this
 	# oRzY7XZr1EfNWETqU6b2:merovingian:9:RIPEMD160,SHA256,SHA1,MD5:LIT:SHA512:
@@ -733,7 +736,7 @@ REPLY_SIZE    <- 100 # Apparently, -1 means unlimited, but we will start with a 
 	salt <- credentials[[1]][1]
 	
 	if (!(endhashfunc %in% HASH_ALGOS)) {
-		stop(paste("Hash function",pwhashfunc,"is not available on server"))
+	  stop(paste("Server-requested end hash function",endhashfunc,"is not available"))
 	}
 	
 	if (!(pwhashfunc %in% HASH_ALGOS)) {
@@ -749,8 +752,8 @@ REPLY_SIZE    <- 100 # Apparently, -1 means unlimited, but we will start with a 
 	
 	# we respond to the authentication challeng with something like
 	# LIT:monetdb:{SHA512}eec43c24242[...]cc33147:sql:acs
-	# endianness:username:passwordhash:scenario:databasename
-	authString <- paste("LIT:",user,":{",toupper(endhashfunc),"}",hashsum,":sql:",dbname,":",sep="")
+	# endianness:username:passwordhash:language:databasename
+	authString <- paste0("LIT:",user,":{",toupper(endhashfunc),"}",hashsum,":",language,":",dbname,":")
 	.mapiWrite(con,authString)
 	authResponse <- .mapiRead(con)
 	respKey <- substring(authResponse,1,1)
@@ -792,11 +795,9 @@ REPLY_SIZE    <- 100 # Apparently, -1 means unlimited, but we will start with a 
 }
 
 # copied from RMonetDB, no java-specific things in here...
-# TODO: read first few rows with read.table and check types etc.
-
 monet.read.csv <- monetdb.read.csv <- function(conn,files,tablename,nrows,header=TRUE,locked=FALSE,na.strings="",nrow.check=500,delim=",",newline="\\n",quote="\"",...){
 	if (length(na.strings)>1) stop("na.strings must be of length 1")
-	headers<-lapply(files,read.csv,na.strings="NA",quote=quote,nrows=nrow.check,...)
+	headers<-lapply(files,read.csv,sep=delim,na.strings=na.strings,quote=quote,nrows=nrow.check,...)
 	
 	if (length(files)>1){
 		nn<-sapply(headers,ncol)
@@ -831,6 +832,48 @@ counterenv$bytes.in <-  	counterenv$bytes.out <- numeric(1)
 
 monetdbGetTransferredBytes <- function() {
 	ret <- list(bytes.in=counterenv$bytes.in,bytes.out=counterenv$bytes.out)
-	counterenv$bytes.in <-  	counterenv$bytes.out <- numeric(1)
+	counterenv$bytes.in <- counterenv$bytes.out <- numeric(1)
 	ret
+}
+
+monetdbd.liststatus <- function(passphrase,host="localhost",port=50000L,timeout=86400L) {
+  socket <- .Call("mapiConnect",host,port,timeout,PACKAGE=C_LIBRARY)
+  .monetAuthenticate(socket,"merovingian","monetdb",passphrase,language="control")
+  .mapiWrite(socket,"#all status\n")
+  ret <- .mapiRead(socket)
+  .Call("mapiDisconnect",socket,PACKAGE=C_LIBRARY)
+  
+  lines <- strsplit(ret,"\n",fixed=T)[[1]] # split by newline, first line is "=OK", so skip
+  lines <- lines[grepl("^=sabdb:2:",lines)] # make sure we get a db list here, protocol v.2
+  lines <- sub("=sabdb:2:","",lines[2:length(lines)],fixed=T)
+  # convert value into propert types etc
+  dbdf <- as.data.frame(do.call("rbind",strsplit(lines,",",fixed=T)),stringsAsFactors=F)
+  names(dbdf) <- c("dbname","uri","locked","state","scenarios","startCounter","stopCounter","crashCounter","avgUptime","maxUptime","minUptime","lastCrash","lastStart","lastStop","crashAvg1","crashAvg10","crashAvg30")
+  
+  dbdf$locked <- dbdf$locked=="1"
+  
+  states <- c("illegal","running","crashed","inactive","starting")
+  dbdf$state <- factor(states[as.integer(dbdf$state)+1])
+  
+  dbdf$startCounter <- as.numeric(dbdf$startCounter)
+  dbdf$stopCounter <- as.numeric(dbdf$stopCounter)
+  dbdf$crashCounter <- as.numeric(dbdf$crashCounter)
+  
+  dbdf$avgUptime <- as.numeric(dbdf$avgUptime)
+  dbdf$maxUptime <- as.numeric(dbdf$maxUptime)
+  dbdf$minUptime <- as.numeric(dbdf$minUptime)
+  
+  convertts <- function(col) {
+    col[col=="-1"] <- NA
+    return(as.POSIXct(as.numeric(col), origin="1970-01-01"))
+  }
+  dbdf$lastCrash <- convertts(dbdf$lastCrash)
+  dbdf$lastStart <- convertts(dbdf$lastStart)
+  dbdf$lastStop <- convertts(dbdf$lastStop)
+  
+  dbdf$crashAvg1 <- dbdf$crashAvg1=="1"
+  dbdfcrashAvg10 <- as.numeric(dbdf$crashAvg10)
+  dbdf$crashAvg30 <- as.numeric(dbdf$crashAvg30)
+  
+  return( dbdf)
 }

@@ -15,6 +15,7 @@ export(mc)
 export(monetdb.server.setup)
 export(monetdb.server.start)
 export(monetdb.server.stop)
+export(monetdbd.liststatus)
 
 useDynLib(MonetDB.R)
 

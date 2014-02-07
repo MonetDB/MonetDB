@@ -9,7 +9,7 @@
 }
 \usage{
 mc(dbname="demo", user="monetdb", password="monetdb", host="localhost", port=50000, 
-  timeout=86400, wait=FALSE,...) 
+  timeout=86400, wait=FALSE,language="sql",...) 
 }
 \arguments{
   \item{dbname}{Database name}
@@ -19,6 +19,7 @@ mc(dbname="demo", user="monetdb", password="monetdb", host="localhost", port=500
   \item{port}{TCP Port number of database server}
   \item{timeout}{Database connection and query timeout}
   \item{wait}{Wait for DB to become available or not}
+  \item{language}{Database language to be used (probably "sql")}
   \item{...}{Unused}
 
   }
