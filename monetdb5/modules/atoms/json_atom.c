@@ -1554,7 +1554,6 @@ JSONtextInternal(char *result, char *valuebegin, char *valueend)
 		if ( *s =='[' || *s ==']' ||  *s == '{' || *s == '}' || *s == ',')
 			continue;
 		if ( *s == '"'){
-			*result++ = ' ';
 			for(s++; *s && *s != '"'; s++)
 				if ( *s == '\\')
 					switch (*++s){
@@ -1573,7 +1572,6 @@ JSONtextInternal(char *result, char *valuebegin, char *valueend)
 					}
 				else
 					*result++ = *s;
-			*result++ = ' ';
 		} else 
 			*result++ = *s;
 	} 

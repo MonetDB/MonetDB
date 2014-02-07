@@ -1,6 +1,11 @@
 # ChangeLog file for clients
 # This file is updated with Maddlog
 
+* Tue Nov 19 2013 Sjoerd Mullender <sjoerd@acm.org>
+- mclient: Fixed a bug where the -H option only worked if the readline
+  history file already existed.  Now we properly create and use the
+  history file.
+
 * Wed Nov  6 2013 Sjoerd Mullender <sjoerd@acm.org>
 - ODBC: Fixed interpretation SQL_C_SLONG/SQL_C_ULONG/SQL_C_LONG to
   refer to a 32 bit integer always (i.e. "int" on 64 bit architectures

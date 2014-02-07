@@ -68,7 +68,7 @@ Ready.
 % sys.L # table_name
 % json_text_js # name
 % clob # type
-% 22 # length
+% 20 # length
 [ "indoorDeviceLocation"	]
 #select json_text(js, 'message') = 'indoorDeviceLocation' from txt;
 % sys.L # table_name
