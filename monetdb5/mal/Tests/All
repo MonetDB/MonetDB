@@ -160,8 +160,6 @@ tst3050
 tst3060
 tst307
 tst308
-#tst350
-#tst380
 tst400
 tst401
 tst500
@@ -181,7 +179,6 @@ tst660
 tst661
 tst662
 tst670
-tst680
 tst700
 tst710
 tst750
@@ -220,16 +217,10 @@ tst960
 
 #tests for garbage collection of strings
 tst920
-#
-# Microbenchmarks
-tst400a
-#tst400bHuge
-#tst400cHuge
 tst400d
 tst400e
 tst901a
 tst901b
-#
 
 recycle00
 recycle01

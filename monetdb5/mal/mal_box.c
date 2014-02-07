@@ -596,12 +596,12 @@ getBoxNames(int *bid)
 	BAT *b;
 	int i;
 
-	b = BATnew(TYPE_int, TYPE_str, (BUN) MAXSPACES);
+	b = BATnew(TYPE_void, TYPE_str, (BUN) MAXSPACES);
 	if (b == NULL)
 		throw(MAL, "box.getBoxNames", MAL_MALLOC_FAIL);
 	for (i = 0; i < topbox; i++)
 		if (malbox[i] != NULL) {
-			BUNins(b, &i, malbox[i]->name, FALSE);
+			BUNappend(b, malbox[i]->name, FALSE);
 		}
 	BBPkeepref(*bid = b->batCacheid);
 	return MAL_SUCCEED;
