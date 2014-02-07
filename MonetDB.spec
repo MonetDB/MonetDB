@@ -800,8 +800,6 @@ rm -fr $RPM_BUILD_ROOT
 %changelog
 * Thu Feb 06 2014 Sjoerd Mullender <sjoerd@acm.org> - 11.17.5-20140206
 - Rebuilt.
-- BZ#3390: Missing definition for pushSht in monetdb5/mal/mal_builder.h
-- BZ#3402: We should have a C implementation of mal.multiplex.
 - BZ#3420: Database does not start after upgrade
 - BZ#3425: Temporal extraction glitches
 - BZ#3427: Consistent use of current_timestamp and now()

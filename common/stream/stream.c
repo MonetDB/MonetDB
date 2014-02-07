@@ -115,6 +115,9 @@
 #define pclose _pclose
 #endif
 
+#define UTF8BOM		"\xEF\xBB\xBF" /* UTF-8 encoding of Unicode BOM */
+#define UTF8BOMLENGTH	3	       /* length of above */
+
 #define short_int_SWAP(s) ((short)(((0x00ff&(s))<<8) | ((0xff00&(s))>>8)))
 
 #define normal_int_SWAP(i) (((0x000000ff&(i))<<24) | ((0x0000ff00&(i))<<8) | \
@@ -127,7 +130,8 @@
 
 struct stream {
 	short byteorder;
-	short access;		/* read/write */
+	char access;		/* read/write */
+	char isutf8;		/* known to be UTF-8 due to BOM */
 	short type;		/* ascii/binary */
 	char *name;
 	unsigned int timeout;
@@ -463,6 +467,7 @@ create_stream(const char *name)
 		return NULL;
 	s->byteorder = 1234;
 	s->access = ST_READ;
+	s->isutf8 = 0;		/* not known for sure */
 	s->type = ST_ASCII;
 	s->name = strdup(name);
 	s->stream_data.p = NULL;
@@ -625,6 +630,8 @@ open_stream(const char *filename, const char *flags)
 {
 	stream *s;
 	FILE *fp;
+	lng pos;
+	char buf[4];
 
 	if ((s = create_stream(filename)) == NULL)
 		return NULL;
@@ -639,6 +646,18 @@ open_stream(const char *filename, const char *flags)
 	s->fgetpos = file_fgetpos;
 	s->fsetpos = file_fsetpos;
 	s->stream_data.p = (void *) fp;
+	/* if file is opened for reading, and it starts with the UTF-8
+	 * encoding of the Unicode Byte Order Mark, skip the mark, and
+	 * mark the stream as being a UTF-8 stream */
+	if (fp != NULL &&
+	    flags[0] == 'r' &&
+	    file_fgetpos(s, &pos) == 0) {
+		if (file_read(s, buf, 1, UTF8BOMLENGTH) == 3 &&
+		    strncmp(buf, UTF8BOM, UTF8BOMLENGTH) == 0)
+			s->isutf8 = 1;
+		else
+			file_fsetpos(s, pos);
+	}
 	return s;
 }
 
@@ -2157,6 +2176,8 @@ ic_open(iconv_t cd, stream *ss, const char *name)
 	stream *s;
 	struct icstream *ic;
 
+	if (ss->isutf8)
+		return ss;
 	if ((s = create_stream(name)) == NULL)
 		return NULL;
 	s->read = ic_read;
@@ -2191,6 +2212,7 @@ iconv_rstream(stream *ss, const char *charset, const char *name)
 		return NULL;
 	s = ic_open(cd, ss, name);
 	s->access = ST_READ;
+	s->isutf8 = 1;
 	return s;
 }
 

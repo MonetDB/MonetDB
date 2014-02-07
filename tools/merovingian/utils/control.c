@@ -113,7 +113,7 @@ char* control_send(
 		if (len == 2)
 			len += recv(sock, rbuf + len, sizeof(rbuf) - len, 0);
 		/* perform login ritual */
-		if (len <= 0) {
+		if (len <= 2) {
 			snprintf(sbuf, sizeof(sbuf), "no response from monetdbd");
 			close(sock);
 			return(strdup(sbuf));
