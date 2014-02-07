@@ -78,13 +78,13 @@ batxml_export str AGGRsubxml(bat *retval, bat *bid, bat *gid, bat *eid, bit *ski
 
 
 #define prepareResult(X,Y,tpe,Z)					\
-    (X) = BATnew((Y)->htype, (tpe), BATcount(Y));	\
+	assert((Y)->htype == TYPE_void);				\
+    (X) = BATnew(TYPE_void, (tpe), BATcount(Y));	\
     if ((X) == NULL) {								\
         BBPreleaseref((Y)->batCacheid);				\
         throw(MAL, "xml." Z, MAL_MALLOC_FAIL); \
     }												\
-    if ((Y)->htype == TYPE_void)					\
-        BATseqbase((X), (Y)->hseqbase);				\
+	BATseqbase((X), (Y)->hseqbase);					\
     (X)->hsorted = (Y)->hsorted;					\
     (X)->hrevsorted = (Y)->hrevsorted;				\
     (X)->tsorted =  0;								\

@@ -431,8 +431,8 @@ CMDbbpdecompress(int *ret, int *bid, str *fnme)
 	if (b == 0)
 		throw(MAL, "bbp.decompress", INTERNAL_BAT_ACCESS);
 	if (BATcount(b) ){
-
-		bn = BATnew(b->htype,b->ttype,0);
+		assert(b->htype == TYPE_void);
+		bn = BATnew(TYPE_void,b->ttype,0);
 		/* copy the properties of the source */
 		bn->hsorted = b->hsorted;
 		bn->hrevsorted = b->hrevsorted;
