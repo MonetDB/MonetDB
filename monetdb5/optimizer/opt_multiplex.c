@@ -72,7 +72,9 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	mod = putName(mod,strlen(mod));
 	fcn = VALget(&getVar(mb, getArg(pci, pci->retc+1))->value);
 	fcn = putName(fcn,strlen(fcn));
+#ifndef NDEBUG
 	mnstr_printf(GDKstdout,"#Bulk operator required for %s.%s\n", mod,fcn);
+#endif
 
 	/* search the iterator bat */
 	for (i = pci->retc+2; i < pci->argc; i++)
