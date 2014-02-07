@@ -842,10 +842,9 @@ monetdbd.liststatus <- function(passphrase,host="localhost",port=50000L,timeout=
   .mapiWrite(socket,"#all status\n")
   ret <- .mapiRead(socket)
   .Call("mapiDisconnect",socket,PACKAGE=C_LIBRARY)
-  
   lines <- strsplit(ret,"\n",fixed=T)[[1]] # split by newline, first line is "=OK", so skip
   lines <- lines[grepl("^=sabdb:2:",lines)] # make sure we get a db list here, protocol v.2
-  lines <- sub("=sabdb:2:","",lines[2:length(lines)],fixed=T)
+  lines <- sub("=sabdb:2:","",lines,fixed=T)
   # convert value into propert types etc
   dbdf <- as.data.frame(do.call("rbind",strsplit(lines,",",fixed=T)),stringsAsFactors=F)
   names(dbdf) <- c("dbname","uri","locked","state","scenarios","startCounter","stopCounter","crashCounter","avgUptime","maxUptime","minUptime","lastCrash","lastStart","lastStop","crashAvg1","crashAvg10","crashAvg30")
@@ -874,6 +873,7 @@ monetdbd.liststatus <- function(passphrase,host="localhost",port=50000L,timeout=
   dbdf$crashAvg1 <- dbdf$crashAvg1=="1"
   dbdfcrashAvg10 <- as.numeric(dbdf$crashAvg10)
   dbdf$crashAvg30 <- as.numeric(dbdf$crashAvg30)
+  dbdf$scenarios <- gsub("'",",",dbdf$scenarios,fixed=T)
   
-  return( dbdf)
+  return(dbdf[order(dbdf$dbname),])
 }
