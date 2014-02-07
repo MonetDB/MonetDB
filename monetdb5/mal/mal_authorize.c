@@ -134,9 +134,10 @@ AUTHinitTables(void) {
 	/* load/create users BAT */
 	bid = BBPindex("M5system_auth_user");
 	if (!bid) {
-		b = BATnew(TYPE_oid, TYPE_str, 256);
+		b = BATnew(TYPE_void, TYPE_str, 256);
 		if (b == NULL)
 			throw(MAL, "initTables.user", MAL_MALLOC_FAIL " user table");
+		BATseqbase(b,0);
 
 		BATkey(BATmirror(b), TRUE);
 		BBPrename(BBPcacheid(b), "M5system_auth_user");
@@ -151,9 +152,10 @@ AUTHinitTables(void) {
 	/* load/create password BAT */
 	bid = BBPindex("M5system_auth_passwd_v2");
 	if (!bid) {
-		b = BATnew(TYPE_oid, TYPE_str, 256);
+		b = BATnew(TYPE_void, TYPE_str, 256);
 		if (b == NULL)
 			throw(MAL, "initTables.passwd", MAL_MALLOC_FAIL " password table");
+		BATseqbase(b,0);
 
 		BBPrename(BBPcacheid(b), "M5system_auth_passwd_v2");
 		BATmode(b, PERSISTENT);
