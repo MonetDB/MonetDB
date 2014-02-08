@@ -1242,11 +1242,13 @@ SERVERfetch_field_bat(int *bid, int *key){
 	int i,j,cnt;
 	Mapi mid;
 	char *fld;
-	int o=0;
 	BAT *b;
 
 	accessTest(*key, "rpc");
-	b= BATnew(TYPE_oid,TYPE_str,256);
+	b= BATnew(TYPE_void,TYPE_str,256);
+	if( b == NULL)
+		throw(MAL,"mapi.fetch",MAL_MALLOC_FAIL);
+	BATseqbase(b,0);
 	cnt= mapi_get_field_count(SERVERsessions[i].hdl);
 	for(j=0; j< cnt; j++){
 		fld= mapi_fetch_field(SERVERsessions[i].hdl,j);
@@ -1256,8 +1258,7 @@ SERVERfetch_field_bat(int *bid, int *key){
 			throw(MAL, "mapi.fetch_field_bat", "%s",
 				mapi_result_error(SERVERsessions[i].hdl));
 		}
-		BUNins(b,&o,fld, FALSE);
-		o++;
+		BUNappend(b,fld, FALSE);
 	}
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	*bid = b->batCacheid;
@@ -1472,7 +1473,11 @@ SERVERmapi_rpc_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	hdl= mapi_query(mid, *qry);
 	catchErrors("mapi.rpc");
 
-	b= BATnew(ht,tt,256);
+	assert(ht == TYPE_void || ht== TYPE_oid);
+	b= BATnew(TYPE_void,tt,256);
+	if ( b == NULL)
+		throw(MAL,"mapi.rpc",MAL_MALLOC_FAIL);
+	BATseqbase(b,0);
 	i= 0;
 	if ( mapi_fetch_row(hdl)){
 		int oht = ht, ott = tt;
