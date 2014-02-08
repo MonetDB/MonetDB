@@ -1206,9 +1206,9 @@ BATorder_internal(BAT *b, int stable, int reverse, int copy, const char *func)
 	 * it's cheap) */
 	if (b->htype == TYPE_void) {
 		b->hsorted = 1;
-		b->hrevsorted = b->hseqbase == oid_nil || b->U->count <= 1;
+		b->hrevsorted = b->hseqbase == oid_nil || b->batCount <= 1;
 		b->hkey |= b->hseqbase != oid_nil;
-	} else if (b->U->count <= 1) {
+	} else if (b->batCount <= 1) {
 		b->hsorted = b->hrevsorted = 1;
 	}
 	if (reverse ? b->hrevsorted : b->hsorted) {
@@ -1248,10 +1248,10 @@ BATorder_internal(BAT *b, int stable, int reverse, int copy, const char *func)
 	}
 	if (reverse) {
 		b->hrevsorted = 1;
-		b->hsorted = b->U->count <= 1;
+		b->hsorted = b->batCount <= 1;
 	} else {
 		b->hsorted = 1;
-		b->hrevsorted = b->U->count <= 1;
+		b->hrevsorted = b->batCount <= 1;
 	}
 	b->tsorted = b->trevsorted = 0;
 	HASHdestroy(b);
@@ -1501,9 +1501,9 @@ BATsubsort(BAT **sorted, BAT **order, BAT **groups,
 	} else {
 		if (b->ttype == TYPE_void) {
 			b->tsorted = 1;
-			b->trevsorted = b->tseqbase == oid_nil || b->U->count <= 1;
+			b->trevsorted = b->tseqbase == oid_nil || b->batCount <= 1;
 			b->tkey |= b->tseqbase != oid_nil;
-		} else if (b->U->count <= 1) {
+		} else if (b->batCount <= 1) {
 			b->tsorted = b->trevsorted = 1;
 		}
 		if (!(reverse ? bn->trevsorted : bn->tsorted) &&
@@ -1876,7 +1876,7 @@ BATconstant(int tailtype, const void *v, BUN n)
 	bn = BATnew(TYPE_void, tailtype, n);
 	if (bn == NULL)
 		return NULL;
-	p = Tloc(bn, bn->U->first);
+	p = Tloc(bn, bn->batFirst);
 	switch (ATOMstorage(tailtype)) {
 	case TYPE_void:
 		v = &oid_nil;
@@ -2230,7 +2230,7 @@ BATcount_no_nil(BAT *b)
 	n = BATcount(b);
 	if (b->T->nonil)
 		return n;
-	p = Tloc(b, b->U->first);
+	p = Tloc(b, b->batFirst);
 	t = b->ttype;
 	if (t != ATOMstorage(t) &&
 	    ATOMnilptr(ATOMstorage(t)) == ATOMnilptr(t) &&

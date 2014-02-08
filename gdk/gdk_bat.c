@@ -254,7 +254,7 @@ BATnewstorage(int ht, int tt, BUN cap)
 	bn = &bs->B;
 
 	BATsetdims(bn);
-	bn->U->capacity = cap;
+	bn->batCapacity = cap;
 
 	/* alloc the main heaps */
 	if (ht && HEAPalloc(&bn->H->heap, cap, bn->H->width) < 0) {
@@ -890,11 +890,11 @@ BATcopy(BAT *b, int ht, int tt, int writable)
 			hcap = (BUN) (bn->htype ? bn->H->heap.size >> bn->H->shift : 0);
 			tcap = (BUN) (bn->ttype ? bn->T->heap.size >> bn->T->shift : 0);
 			if (hcap && tcap)
-				bn->U->capacity = MIN(hcap, tcap);
+				bn->batCapacity = MIN(hcap, tcap);
 			else if (hcap)
-				bn->U->capacity = hcap;
+				bn->batCapacity = hcap;
 			else
-				bn->U->capacity = tcap;
+				bn->batCapacity = tcap;
 
 
 			/* first/inserted must point equally far into
@@ -2046,7 +2046,7 @@ BUNlocate(BAT *b, const void *x, const void *y)
 void
 BATsetcapacity(BAT *b, BUN cnt)
 {
-	b->U->capacity = cnt;
+	b->batCapacity = cnt;
 	assert(b->batCount <= cnt);
 }
 
@@ -2171,9 +2171,9 @@ BATseqbase(BAT *b, oid o)
 		/* adapt keyness */
 		if (BAThvoid(b)) {
 			if (o == oid_nil) {
-				b->hkey = b->U->count <= 1;
-				b->H->nonil = b->U->count == 0;
-				b->H->nil = b->U->count > 0;
+				b->hkey = b->batCount <= 1;
+				b->H->nonil = b->batCount == 0;
+				b->H->nil = b->batCount > 0;
 				b->hsorted = b->hrevsorted = 1;
 			} else {
 				if (!b->hkey) {
@@ -2183,7 +2183,7 @@ BATseqbase(BAT *b, oid o)
 				b->H->nonil = 1;
 				b->H->nil = 0;
 				b->hsorted = 1;
-				b->hrevsorted = b->U->count <= 1;
+				b->hrevsorted = b->batCount <= 1;
 			}
 		}
 	}
@@ -2994,7 +2994,7 @@ BATassertProps(BAT *b)
 	assert(b->batFirst >= b->batDeleted);
 	assert(b->batInserted >= b->batFirst);
 	assert(b->batFirst + b->batCount >= b->batInserted);
-	assert(b->U->first == 0);
+	assert(b->batFirst == 0);
 	bbpstatus = BBP_status(b->batCacheid);
 	/* only at most one of BBPDELETED, BBPEXISTING, BBPNEW may be set */
 	assert(((bbpstatus & BBPDELETED) != 0) +

@@ -230,10 +230,10 @@ la_bat_clear(logger *lg, logaction *la)
 
 	b = BATdescriptor(bid);
 	if (b) {
-		int access = b->P->restricted;
-		b->P->restricted = BAT_WRITE;
+		int access = b->batRestricted;
+		b->batRestricted = BAT_WRITE;
 		BATclear(b, TRUE);
-		b->P->restricted = access;
+		b->batRestricted = access;
 		logbat_destroy(b);
 	}
 }
@@ -2033,7 +2033,7 @@ bm_commit(logger *lg)
 		BAT *lb = BATdescriptor(bid);
 
 		BATmode(lb, PERSISTENT);
-assert(lb->P->restricted > BAT_WRITE);
+assert(lb->batRestricted > BAT_WRITE);
 		logbat_destroy(lb);
 
 		if (lg->debug & 1)
@@ -2052,7 +2052,7 @@ logger_add_bat(logger *lg, BAT *b, char *name)
 {
 	log_bid bid = logger_find_bat(lg, name);
 
-	assert(b->P->restricted > 0 || (b == lg->snapshots_bid || b == lg->snapshots_tid || b == lg->catalog_bid || b == lg->catalog_nme || b == lg->seqs_id || b == lg->seqs_val));
+	assert(b->batRestricted > 0 || (b == lg->snapshots_bid || b == lg->snapshots_tid || b == lg->catalog_bid || b == lg->catalog_nme || b == lg->seqs_id || b == lg->seqs_val));
 	if (bid) {
 		if (bid != b->batCacheid) {
 			logger_del_bat(lg, bid);

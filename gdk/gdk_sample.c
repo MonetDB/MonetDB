@@ -172,15 +172,15 @@ BATsample_(BAT *b, BUN n)
 
 		/* property management */
 		BATsetcount(bn, n);
-		bn->trevsorted = bn->U->count <= 1;
+		bn->trevsorted = bn->batCount <= 1;
 		bn->tkey = 1;
-		bn->tdense = bn->U->count <= 1;
-		if (bn->U->count == 1)
+		bn->tdense = bn->batCount <= 1;
+		if (bn->batCount == 1)
 			bn->tseqbase = * (oid *) Tloc(bn, BUNfirst(bn));
 		bn->hdense = 1;
 		bn->hseqbase = 0;
 		bn->hkey = 1;
-		bn->hrevsorted = bn->U->count <= 1;
+		bn->hrevsorted = bn->batCount <= 1;
 	}
 
 	return bn;

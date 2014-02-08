@@ -604,7 +604,7 @@ BATimprints(BAT *b) {
 #define FILL_HISTOGRAM(TYPE)                                      \
 do {                                                              \
 	BUN k;                                                    \
-	TYPE *s = (TYPE *)Tloc(smp, smp->U->first);               \
+	TYPE *s = (TYPE *)Tloc(smp, smp->batFirst);               \
 	TYPE *h = (TYPE *)imprints->bins->base;                   \
 	if (cnt < 64-1) {                                         \
 		TYPE max = GDK_##TYPE##_max;                      \
