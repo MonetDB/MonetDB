@@ -427,36 +427,6 @@ INSPECTgetSource(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-INSPECTsymbolType(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	int *ret = (int*) getArgReference(stk,pci,0);
-	str *mod = (str*) getArgReference(stk,pci,1);
-	str *fcn = (str*) getArgReference(stk,pci,2);
-	Symbol s;
-	BAT *b;
-	(void) mb;
-
-	s = findSymbol( cntxt->nspace, getName(*mod,strlen(*mod)), putName(*fcn, strlen(*fcn)));
-	if (s == 0)
-		throw(MAL, "inspect.getSignature", RUNTIME_SIGNATURE_MISSING);
-	b = BATnew(TYPE_str, TYPE_str, 256);
-	if (b == 0)
-		throw(MAL, "inspect.getType", MAL_MALLOC_FAIL);
-	while (s != NULL) {
-		if (idcmp(s->name, *fcn) == 0) {
-			str t = getTypeName(getDestType(s->def, getSignature(s)));
-
-			BUNins(b, s->name, t, FALSE);
-			GDKfree(t);
-		}
-		s = s->peer;
-	}
-	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
-	pseudo(ret,b,"view","fcn","type");
-	return MAL_SUCCEED;
-}
-
-str
 INSPECTatom_names(int *ret)
 {
 	int i;
@@ -511,7 +481,7 @@ str
 INSPECTatom_sup_names(int *ret)
 {
 	int i, k;
-	BAT *b = BATnew(TYPE_oid, TYPE_str, 256);
+	BAT *b = BATnew(TYPE_void, TYPE_str, 256);
 
 	if (b == 0)
 		throw(MAL, "inspect.getAtomSuper", MAL_MALLOC_FAIL);
