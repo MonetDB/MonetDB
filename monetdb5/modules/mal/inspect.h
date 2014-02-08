@@ -57,7 +57,6 @@ inspect_export str INSPECTgetFunctionSize(Client cntxt, MalBlkPtr mb, MalStkPtr 
 inspect_export str INSPECTgetSize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 inspect_export str INSPECTgetEnvironment(int *ret, int *ret2);
 inspect_export str INSPECTgetEnvironmentKey(str *ret, str *key);
-inspect_export str INSPECTsymbolType(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 inspect_export str INSPECTatom_names(int *ret);
 inspect_export str INSPECTatom_sup_names(int *ret);
 inspect_export str INSPECTatom_sizes(int *ret);
