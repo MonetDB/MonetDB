@@ -19,7 +19,7 @@ r:= mmath.srand(0);
 barrier i:= 0:lng;
 	k:= mmath.rand();
 	l:= calc.lng(k);
-	bat.insert(b,nil:oid,l);
+	bat.append(b,l);
 	redo i:= iterator.next(1:lng,100000:lng);
 exit i;
 
