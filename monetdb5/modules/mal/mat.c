@@ -288,12 +288,12 @@ MATpackSliceInternal(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		cap -= fst;
 	cnt = MIN(cnt, cap);
 
-	bn = BATnew(ht, tt, cnt);
+	assert(ht== TYPE_void);
+	bn = BATnew(TYPE_void, tt, cnt);
 	if (bn == NULL)
 		throw(MAL, "mat.packSlice", MAL_MALLOC_FAIL);
 	/* must set seqbase or else BATins will not materialize column */
-	if (ht == TYPE_void)
-		BATseqbase(bn, 0);
+	BATseqbase(bn, 0);
 	if (tt == TYPE_void)
 		BATseqbase(BATmirror(bn), 0);
 
