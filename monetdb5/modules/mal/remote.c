@@ -110,9 +110,10 @@ str RMTresolve(int *ret, str *pat) {
 		throw(MAL, "remote.resolve", "this function needs the mserver "
 				"have been started by merovingian");
 
-	list = BATnew(TYPE_oid, TYPE_str, 20);
+	list = BATnew(TYPE_void, TYPE_str, 20);
 	if (list == NULL)
 		throw(MAL, "remote.resolve", MAL_MALLOC_FAIL);
+	BATseqbase(list,0);
 
 	/* extract port from mero_uri, let mapi figure out the rest */
 	mero_uri+=strlen("mapi:monetdb://");
@@ -959,6 +960,7 @@ str RMTbatload(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	t = getArgType(mb, pci, 2); /* tail type */
 	size = *(int *)getArgReference(stk, pci, 3); /* size */
 
+	assert(h==TYPE_void || h==TYPE_oid);
 	b = BATnew(h, t, size);
 
 	/* grab the input stream and start reading */
@@ -1214,6 +1216,7 @@ RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in)
 	}
 
 	/* the BAT we will return */
+	assert(bb.Htype==TYPE_void || bb.Htype==TYPE_oid);
 	b = BATnew(bb.Htype, bb.Ttype, bb.size);
 
 	/* for strings, the width may not match, fix it to match what we
