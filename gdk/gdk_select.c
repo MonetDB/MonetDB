@@ -112,7 +112,7 @@ BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl, BUN maximum)
 	BUN i, cnt;
 	oid o, *dst;
 	/* off must be signed as it can be negative,
-	 * e.g., if b->hseqbase == 0 and b->U->first > 0;
+	 * e.g., if b->hseqbase == 0 and b->batFirst > 0;
 	 * instead of wrd, we could also use ssize_t or int/lng with
 	 * 32/64-bit OIDs */
 	wrd off;
@@ -120,7 +120,7 @@ BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl, BUN maximum)
 	assert(bn->htype == TYPE_void);
 	assert(bn->ttype == TYPE_oid);
 	assert(BAThdense(b));
-	off = b->hseqbase - b->U->first;
+	off = b->hseqbase - b->batFirst;
 	b = BATmirror(b);	/* BATprepareHash works on HEAD column */
 	if (BATprepareHash(b)) {
 		BBPreclaim(bn);
@@ -152,8 +152,8 @@ BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl, BUN maximum)
 	}
 	BATsetcount(bn, cnt);
 	bn->tkey = 1;
-	bn->tdense = bn->tsorted = bn->trevsorted = bn->U->count <= 1;
-	if (bn->U->count == 1)
+	bn->tdense = bn->tsorted = bn->trevsorted = bn->batCount <= 1;
+	if (bn->batCount == 1)
 		bn->tseqbase = *(oid *) Tloc(bn, BUNfirst(bn));
 	/* temporarily set head to nil so that BATorder doesn't materialize */
 	bn->hseqbase = oid_nil;
@@ -163,7 +163,7 @@ BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl, BUN maximum)
 	bn->hseqbase = 0;
 	bn->hkey = 1;
 	bn->hsorted = 1;
-	bn->hrevsorted = bn->U->count <= 1;
+	bn->hrevsorted = bn->batCount <= 1;
 	return bn;
 }
 
@@ -603,7 +603,7 @@ BAT_scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 	BUN p, q, cnt;
 	oid o, *dst;
 	/* off must be signed as it can be negative,
-	 * e.g., if b->hseqbase == 0 and b->U->first > 0;
+	 * e.g., if b->hseqbase == 0 and b->batFirst > 0;
 	 * instead of wrd, we could also use ssize_t or int/lng with
 	 * 32/64-bit OIDs */
 	wrd off;
@@ -727,16 +727,16 @@ BAT_scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 	}
 	BATsetcount(bn, cnt);
 	bn->tsorted = 1;
-	bn->trevsorted = bn->U->count <= 1;
+	bn->trevsorted = bn->batCount <= 1;
 	bn->tkey = 1;
-	bn->tdense = bn->U->count <= 1;
-	if (bn->U->count == 1)
+	bn->tdense = bn->batCount <= 1;
+	if (bn->batCount == 1)
 		bn->tseqbase = *(oid *) Tloc(bn, BUNfirst(bn));
 	bn->hsorted = 1;
 	bn->hdense = 1;
 	bn->hseqbase = 0;
 	bn->hkey = 1;
-	bn->hrevsorted = bn->U->count <= 1;
+	bn->hrevsorted = bn->batCount <= 1;
 
 	return bn;
 }
@@ -961,8 +961,8 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 		return NULL;
 	}
 
-	if (b->U->count == 0 ||
-	    (s && (s->U->count == 0 ||
+	if (b->batCount == 0 ||
+	    (s && (s->batCount == 0 ||
 		   (BATtdense(s) &&
 		    (s->tseqbase >= b->hseqbase + BATcount(b) ||
 		     s->tseqbase + BATcount(s) <= b->hseqbase))))) {
@@ -1113,7 +1113,7 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 	if (b->tsorted || b->trevsorted) {
 		BAT *v;
 		BUN low = 0;
-		BUN high = b->U->count;
+		BUN high = b->batCount;
 
 		if (BATtdense(b)) {
 			/* positional */
@@ -1220,7 +1220,7 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 		bn->hseqbase = 0;
 		bn->hkey = 1;
 		bn->hsorted = 1;
-		bn->hrevsorted = bn->U->count <= 1;
+		bn->hrevsorted = bn->batCount <= 1;
 		bn->H->nonil = 1;
 		bn->H->nil = 0;
 		return bn;

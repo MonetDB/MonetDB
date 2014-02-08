@@ -31,7 +31,7 @@ typedef struct sql_bat {
 	BAT *cached;		/* cached copy, used for schema bats only */
 } sql_bat;
 
-#define bat_set_access(b,access) b->P->restricted = access
+#define bat_set_access(b,access) b->batRestricted = access
 #define bat_clear(b) bat_set_access(b,BAT_WRITE);BATclear(b,TRUE);bat_set_access(b,BAT_READ)
 
 /* initialize bat storage call back functions interface */

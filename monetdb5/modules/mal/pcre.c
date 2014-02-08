@@ -492,16 +492,16 @@ pcre_likesubselect(BAT **bnp, BAT *b, BAT *s, const char *pat, int caseignore, i
 	my_pcre_free(re);
 	my_pcre_free(pe);
 	bn->tsorted = 1;
-	bn->trevsorted = bn->U->count <= 1;
+	bn->trevsorted = bn->batCount <= 1;
 	bn->tkey = 1;
-	bn->tdense = bn->U->count <= 1;
-	if (bn->U->count == 1)
+	bn->tdense = bn->batCount <= 1;
+	if (bn->batCount == 1)
 		bn->tseqbase =  * (oid *) Tloc(bn, BUNfirst(bn));
 	bn->hsorted = 1;
 	bn->hdense = 1;
 	bn->hseqbase = 0;
 	bn->hkey = 1;
-	bn->hrevsorted = bn->U->count <= 1;
+	bn->hrevsorted = bn->batCount <= 1;
 	*bnp = bn;
 	return MAL_SUCCEED;
 
@@ -598,16 +598,16 @@ re_likesubselect(BAT **bnp, BAT *b, BAT *s, const char *pat, int caseignore, int
 		}
 	}
 	bn->tsorted = 1;
-	bn->trevsorted = bn->U->count <= 1;
+	bn->trevsorted = bn->batCount <= 1;
 	bn->tkey = 1;
-	bn->tdense = bn->U->count <= 1;
-	if (bn->U->count == 1)
+	bn->tdense = bn->batCount <= 1;
+	if (bn->batCount == 1)
 		bn->tseqbase =  * (oid *) Tloc(bn, BUNfirst(bn));
 	bn->hsorted = 1;
 	bn->hdense = 1;
 	bn->hseqbase = 0;
 	bn->hkey = 1;
-	bn->hrevsorted = bn->U->count <= 1;
+	bn->hrevsorted = bn->batCount <= 1;
 	*bnp = bn;
 	re_destroy(re);
 	return MAL_SUCCEED;

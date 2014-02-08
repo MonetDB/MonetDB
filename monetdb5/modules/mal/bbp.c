@@ -474,7 +474,7 @@ CMDbbpdecompress(int *ret, int *bid, str *fnme)
 		}
 		BATsetcapacity(bn, BATcount(b));
 		BATsetcount(bn, BATcount(b));
-		BATsetaccess(bn, b->P->restricted);
+		BATsetaccess(bn, b->batRestricted);
 		BBPreleaseref(b->batCacheid);
 		BBPkeepref(*ret = bn->batCacheid);
 		return MAL_SUCCEED;

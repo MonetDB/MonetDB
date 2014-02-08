@@ -279,9 +279,9 @@ VIEWcreate_(BAT *h, BAT *t, int slice_view)
 	 * data, though. */
 	*bn->U = *h->U;
 	*bn->H = *h->H;
-	if (bn->U->first > 0) {
-		bn->H->heap.base += h->U->first * h->H->width;
-		bn->U->first = 0;
+	if (bn->batFirst > 0) {
+		bn->H->heap.base += h->batFirst * h->H->width;
+		bn->batFirst = 0;
 	}
 	if (h->H == t->T) {
 		vc = 1;
@@ -289,11 +289,11 @@ VIEWcreate_(BAT *h, BAT *t, int slice_view)
 		bn->T = bn->H;
 	} else {
 		*bn->T = *t->T;
-		if (bn->U->capacity > t->U->capacity)
-			bn->U->capacity = t->U->capacity;
-		if (t->U->first > 0)
-			bn->T->heap.base += t->U->first * t->T->width;
-		if (bn->U->count < t->U->count) {
+		if (bn->batCapacity > t->batCapacity)
+			bn->batCapacity = t->batCapacity;
+		if (t->batFirst > 0)
+			bn->T->heap.base += t->batFirst * t->T->width;
+		if (bn->batCount < t->batCount) {
 			/* we can't be sure anymore there are nils */
 			bn->T->nil = 0;
 		}
@@ -725,7 +725,7 @@ VIEWreset(BAT *b)
 		/* make the BAT empty and insert all again */
 		DELTAinit(n);
 		/* reset capacity */
-		n->U->capacity = cnt;
+		n->batCapacity = cnt;
 
 		/* swap n and v in case the original input was reversed, because
 		 * BATins demands (v)oid-headed input */
