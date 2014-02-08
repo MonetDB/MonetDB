@@ -28,6 +28,8 @@
 str
 FCTgetPlants(int *ret, int *ret2)
 {
+	(void) ret;
+	(void) ret2;
 	throw(MAL, "factories.getPlants", PROGRAM_NYI);
 }
 
