@@ -61,14 +61,13 @@ INSPECTgetAllFunctions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	Module s;
 	Symbol t;
 	int i;
-	oid k = 0;
-	BAT *b = BATnew(TYPE_oid, TYPE_str, 256);
+	BAT *b = BATnew(TYPE_void, TYPE_str, 256);
 	int *ret = (int *) getArgReference(stk,pci,0);
 
 	(void) mb;
 	if (b == 0)
 		throw(MAL, "inspect.getgetFunctionId", MAL_MALLOC_FAIL );
-	BATseqbase(b, k);
+	BATseqbase(b, 0);
 	s = cntxt->nspace;
 	while (s) {
 		for (i = 0; s && i < MAXSCOPE; i++)
@@ -76,8 +75,7 @@ INSPECTgetAllFunctions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				for (t = s->subscope[i]; t; t = t->peer) {
 					InstrPtr sig = getSignature(t);
 
-					BUNins(b, &k, getFunctionId(sig), FALSE);
-					k++;
+					BUNappend(b, getFunctionId(sig), FALSE);
 				}
 			}
 		s = s->outer;
@@ -94,14 +92,13 @@ INSPECTgetAllModules(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	Module s;
 	Symbol t;
 	int i;
-	oid k = 0;
-	BAT *b = BATnew(TYPE_oid, TYPE_str, 256);
+	BAT *b = BATnew(TYPE_void, TYPE_str, 256);
 	int *ret = (int *) getArgReference(stk,pci,0);
 
 	(void) mb;
 	if (b == 0)
 		throw(MAL, "inspect.getmodule", MAL_MALLOC_FAIL);
-	BATseqbase(b, k);
+	BATseqbase(b, 0);
 	s = cntxt->nspace;
 	while (s) {
 		for (i = 0; s && i < MAXSCOPE; i++)
@@ -109,8 +106,7 @@ INSPECTgetAllModules(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				for (t = s->subscope[i]; t; t = t->peer) {
 					InstrPtr sig = getSignature(t);
 
-					BUNins(b, &k, getModuleId(sig), FALSE);
-					k++;
+					BUNappend(b, getModuleId(sig), FALSE);
 				}
 			}
 		s = s->outer;
@@ -127,14 +123,13 @@ INSPECTgetkind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	Module s;
 	Symbol t;
 	int i;
-	oid k = 0;
-	BAT *b = BATnew(TYPE_oid, TYPE_str, 256);
+	BAT *b = BATnew(TYPE_void, TYPE_str, 256);
 	int *ret = (int *) getArgReference(stk,pci,0);
 
 	(void)mb;
 	if (b == 0)
 		throw(MAL, "inspect.get", MAL_MALLOC_FAIL);
-	BATseqbase(b, k);
+	BATseqbase(b, 0);
 	s = cntxt->nspace;
 	while (s) {
 		for (i = 0; s && i < MAXSCOPE; i++)
@@ -143,8 +138,7 @@ INSPECTgetkind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					InstrPtr sig = getSignature(t);
 					str kind = operatorName(sig->token);
 
-					BUNins(b, &k, kind, FALSE);
-					k++;
+					BUNappend(b, kind, FALSE);
 				}
 			}
 		s = s->outer;
@@ -162,8 +156,7 @@ INSPECTgetAllSignatures(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	Module s;
 	Symbol t;
 	int i;
-	oid k = 0;
-	BAT *b = BATnew(TYPE_oid, TYPE_str, 256);
+	BAT *b = BATnew(TYPE_void, TYPE_str, 256);
 	char sig[BLOCK],*a;
 	int *ret = (int *) getArgReference(stk,pci,0);
 
@@ -171,7 +164,7 @@ INSPECTgetAllSignatures(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (b == 0)
 		throw(MAL, "inspect.get", MAL_MALLOC_FAIL);
-	BATseqbase(b, k);
+	BATseqbase(b, 0);
 	s = cntxt->nspace;
 	while (s) {
 		for (i = 0; s && i < MAXSCOPE; i++)
@@ -180,8 +173,7 @@ INSPECTgetAllSignatures(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					fcnDefinition(t->def, getSignature(t), sig, 0,sig,BLOCK);
 					a= strstr(sig,"address");
 					if(a) *a = 0;
-					BUNins(b, &k, strchr(sig, '('), FALSE);
-					k++;
+					BUNappend(b, strchr(sig, '('), FALSE);
 				}
 			}
 		s = s->outer;
@@ -197,8 +189,7 @@ INSPECTgetAllAddresses(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	Module s;
 	Symbol t;
 	int i;
-	oid k = 0;
-	BAT *b = BATnew(TYPE_oid, TYPE_str, 256);
+	BAT *b = BATnew(TYPE_void, TYPE_str, 256);
 	char sig[BLOCK],*a;
 	int *ret = (int *) getArgReference(stk,pci,0);
 
@@ -206,7 +197,7 @@ INSPECTgetAllAddresses(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (b == 0)
 		throw(MAL, "inspect.get", MAL_MALLOC_FAIL);
-	BATseqbase(b, k);
+	BATseqbase(b, 0);
 	s = cntxt->nspace;
 	while (s) {
 		for (i = 0; s && i < MAXSCOPE; i++)
@@ -217,8 +208,7 @@ INSPECTgetAllAddresses(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					if( a)
 						for( a=a+7; isspace((int) *a); a++)
 							;
-					BUNins(b, &k, (a? a: "nil"), FALSE);
-					k++;
+					BUNappend(b, (a? a: "nil"), FALSE);
 				}
 			}
 		s = s->outer;
