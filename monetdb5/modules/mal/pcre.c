@@ -246,6 +246,7 @@ re_uselect(RE *pattern, BAT *strs, int ignore)
 	BAT *r;
 	BUN p, q;
 
+	assert(strs->htype==TYPE_void);
 	if (strs->htype == TYPE_void)
 		r = BATnew(TYPE_oid, TYPE_void, BATcount(strs));
 	else
@@ -293,6 +294,7 @@ re_select(RE *pattern, BAT *strs, int ignore)
 	BAT *r;
 	BUN p, q;
 
+	assert(strs->htype==TYPE_void);
 	if (strs->htype == TYPE_void)
 		r = BATnew(TYPE_oid, TYPE_str, BATcount(strs));
 	else
@@ -632,6 +634,7 @@ pcre_select(BAT **res, const char *pattern, BAT *strs, bit insensitive)
 	if (insensitive)
 		options |= PCRE_CASELESS;
 
+	assert(strs->htype==TYPE_void);
 	if (strs->htype == TYPE_void)
 		r = BATnew(TYPE_oid, TYPE_str, BATcount(strs));
 	else
@@ -667,6 +670,7 @@ pcre_uselect(BAT **res, const char *pattern, BAT *strs, bit insensitive)
 	if (insensitive)
 		options |= PCRE_CASELESS;
 
+	assert(strs->htype==TYPE_void);
 	if (strs->htype == TYPE_void)
 		r = BATnew(TYPE_oid, TYPE_void, BATcount(strs));
 	else
@@ -866,7 +870,10 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, const char *pattern, const char *r
 		throw(MAL, "pcre_replace_bat", MAL_MALLOC_FAIL);
 	}
 
+	assert(origin_strs->htype==TYPE_void);
 	tmpbat = BATnew(origin_strs->htype, TYPE_str, BATcount(origin_strs));
+	if( tmpbat==NULL)
+		throw(MAL,"pcre.replace",MAL_MALLOC_FAIL);
 	BATloop(origin_strs, p, q) {
 		origin_str = BUNtail(origin_strsi, p);
 		len_origin_str = (int) strlen(origin_str);
@@ -1469,6 +1476,8 @@ BATPCRElike3(bat *ret, int *bid, str *pat, str *esc, bit *isens, bit *not)
 			throw(MAL, "batstr.like", OPERATION_FAILED);
 
 		r = BATnew(TYPE_void, TYPE_bit, BATcount(strs));
+		if( r==NULL)
+			throw(MAL,"pcre.like3",MAL_MALLOC_FAIL);
 		br = (bit*)Tloc(r, BUNfirst(r));
 		strsi = bat_iterator(strs);
 
@@ -1800,6 +1809,8 @@ PCRElike_join(int *l, int *r, int *b, int *pat, str *esc, int case_sensitive)
 	BAT *tr, *x, *j = BATnew(TYPE_oid, TYPE_oid, BATcount(B) * BATcount(Bpat));
 	BATiter pati = bat_iterator(Bpat);
 
+	if( j==NULL)
+		throw(MAL,"pcre.likejoin",MAL_MALLOC_FAIL);
 	for(p = 0; p < BATcount(Bpat); p++) {
 		char *ppat = (str)BUNtail(pati, p);
 		int r;
