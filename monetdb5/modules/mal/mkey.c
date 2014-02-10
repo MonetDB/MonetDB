@@ -18,21 +18,16 @@
  */
 
 /*
- * @f mkey
- * @a Peter Boncz, Stefan Manegold, Niels Nes
- * @-
- * @v 1.1
- * @+ Multi-Attribute Equi-Join
- */
-/*
- * @-
- * new functionality for the low-resource-consumption ds_link. It will
+ * (c) Peter Boncz, Stefan Manegold, Niels Nes
+ *
+ * new functionality for the low-resource-consumption. It will
  * first one by one create a hash value out of the multiple attributes.
  * This hash value is computed by xoring and rotating individual hash
  * values together. We create a hash and rotate command to do this.
  */
 #include "monetdb_config.h"
 #include "mkey.h"
+
 /* TODO: nil handling. however; we do not want to lose time in bulk_rotate_xor_hash with that */
 static int
 CMDrotate(wrd *res, wrd *val, int *n)
@@ -41,109 +36,69 @@ CMDrotate(wrd *res, wrd *val, int *n)
 	return GDK_SUCCEED;
 }
 
-static int
-CMDhash_bte(wrd *res, bte *val)
+str
+MKEYhash_bte(wrd *ret, bte *val)
 {
-	*res = *val;
-	return GDK_SUCCEED;
+	*ret = *val;
+	return MAL_SUCCEED;
 }
 
-static int
-CMDhash_sht(wrd *res, sht *val)
+str
+MKEYhash_sht(wrd *res, sht *val)
 {
 	*res = *val;
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
-static int
-CMDhash_int(wrd *res, int *val)
+str
+MKEYhash_int(wrd *res, int *val)
 {
 	*res = *val;
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
-static int
-CMDhash_flt(wrd *res, flt *val)
+str
+MKEYhash_flt(wrd *res, flt *val)
 {
 	*res = *(int*) val;
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
-static int
-CMDhash_wrd(wrd *res, wrd *val)
+str
+MKEYhash_wrd(wrd *res, wrd *val)
 {
 	*res = *val;
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
-static int
-CMDhash_lng(wrd *res, lng *val)
+str
+MKEYhash_lng(wrd *res, lng *val)
 {
 #if SIZEOF_WRD == SIZEOF_LNG
 	*res = (wrd) *val;
 #else
 	*res = ((wrd *) val)[0] ^ ((wrd *) val)[1];
 #endif
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
-static int
-CMDhash_dbl(wrd *res, dbl *val)
+str
+MKEYhash_dbl(wrd *res, dbl *val)
 {
 #if SIZEOF_WRD == SIZEOF_LNG
 	*res = (wrd) *val;
 #else
 	*res = ((wrd *) val)[0] ^ ((wrd *) val)[1];
 #endif
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
-static int
-CMDhash_str(wrd *res, str val)
+str
+MKEYhash_str(wrd *res, str *val)
 {
-	BUN h = strHash(val);
+	BUN h = strHash(*val);
 	*res = h;
-	return GDK_SUCCEED;
-}
-
-static int
-CMDhash(wrd *res, ptr val, int tpe)
-{
-	wrd code;
-	BUN h;
-
-	switch (ATOMstorage(tpe)) {
-	case TYPE_void:
-		code = int_nil;
-		break;
-	case TYPE_bte:
-		code = *(bte *) val;
-		break;
-	case TYPE_sht:
-		code = *(sht *) val;
-		break;
-	case TYPE_int:
-	case TYPE_flt:
-		code = *(int *) val;
-		break;
-	case TYPE_lng:
-	case TYPE_dbl:
-#if SIZEOF_WRD == SIZEOF_LNG
-		code = *(wrd *) val;
-#else
-		code = ((wrd *) val)[0] ^ ((wrd *) val)[1];
-#endif
-		break;
-	case TYPE_str:
-		h = strHash((char*)val);
-		code = h;
-		break;
-	default:
-		h = (*BATatoms[tpe].atomHash)(val);
-		code = h;
-	}
-	*res = code;
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
 static str
@@ -156,7 +111,7 @@ voidbathash(BAT **res, BAT *b )
 
 	dst = BATnew(TYPE_void, TYPE_wrd, BATcount(b));
 	if (!dst)
-		throw(SQL, "bathash", "can not create bat");
+		throw(SQL, "mkey.bathash", MAL_MALLOC_FAIL);
 	BATseqbase(dst, b->hseqbase);
 
 	dsti = bat_iterator(dst);
@@ -220,9 +175,9 @@ MKEYbathash(bat *res, bat *bid )
 	str msg;
 	BAT *b, *dst = 0;
 
-	if( (b = BATdescriptor(*bid)) == NULL ){
-		throw(SQL, "bathash", "Cannot access descriptor");
-	}
+	if( (b = BATdescriptor(*bid)) == NULL )
+		throw(SQL, "mkey.bathash", RUNTIME_OBJECT_MISSING);
+	
 	assert(BAThvoid(b) || BAThrestricted(b));
 
 	msg = voidbathash(&dst, b);
@@ -232,7 +187,7 @@ MKEYbathash(bat *res, bat *bid )
 		dst = x;
 	}
 	BBPkeepref( *res = dst->batCacheid);
-	BBPunfix(b->batCacheid);
+	BBPreleaseref(b->batCacheid);
 	return msg;
 }
 
@@ -305,33 +260,21 @@ CMDconstbulk_rotate_xor_hash(BAT **res, wrd *hsh, int *rotate, BAT *b)
 	BATseqbase(br, b->hseqbase);
 	dst = (wrd *) Tloc(br, BUNfirst(br));
 
-	if (tpe == TYPE_bte) {
-		bte *cur = (bte *) BUNtloc(bi, BUNfirst(b));
-		bte *end = (bte *) BUNtloc(bi, BUNlast(b));
-
-		while (cur < end) {
-			*dst = GDK_ROTATE(*hsh, lbit, rbit, mask) ^ *cur;
-			cur++;
-			dst++;
-		}
-	} else if (tpe == TYPE_sht) {
-		sht *cur = (sht *) BUNtloc(bi, BUNfirst(b));
-		sht *end = (sht *) BUNtloc(bi, BUNlast(b));
-
-		while (cur < end) {
-			*dst = GDK_ROTATE(*hsh, lbit, rbit, mask) ^ *cur;
-			cur++;
-			dst++;
-		}
+#define COL_ROTATE(TYPE) \
+TYPE *cur = (TYPE *) BUNtloc(bi, BUNfirst(b));\
+TYPE *end = (TYPE *) BUNtloc(bi, BUNlast(b));\
+\
+while (cur < end) {\
+	*dst = GDK_ROTATE(*hsh, lbit, rbit, mask) ^ *cur;\
+	cur++;\
+	dst++;\
+}
+	if (tpe == TYPE_bte){
+		COL_ROTATE(bte);
+	} else if (tpe == TYPE_sht){
+		COL_ROTATE(sht);
 	} else if (tpe == TYPE_int || tpe == TYPE_flt) {
-		int *cur = (int *) BUNtloc(bi, BUNfirst(b));
-		int *end = (int *) BUNtloc(bi, BUNlast(b));
-
-		while (cur < end) {
-			*dst = GDK_ROTATE(*hsh, lbit, rbit, mask) ^ *cur;
-			cur++;
-			dst++;
-		}
+		COL_ROTATE(int);
 	} else if (tpe == TYPE_lng || tpe == TYPE_dbl) {
 		lng *cur = (lng *) BUNtloc(bi, BUNfirst(b));
 		lng *end = (lng *) BUNtloc(bi, BUNlast(b));
@@ -423,9 +366,8 @@ MKEYbulkconst_rotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 	wrd cur = 0;
 	BAT *br, *hn;
 
-	if ((hn = BATdescriptor(*hid)) == NULL) {
+	if ((hn = BATdescriptor(*hid)) == NULL)
         	throw(MAL, "mkey.bulk_rotate_xor_hash", RUNTIME_OBJECT_MISSING);
-    	}
 
 	(void) cntxt;
 	if (tpe == TYPE_bte) {
@@ -627,68 +569,9 @@ CMDbulk_rotate_xor_hash(BAT **res, BAT *bn, int *rotate, BAT *b)
 	return MAL_SUCCEED;
 }
 /*
- * @+ MAL wrapper
  * The remainder contains the wrapping needed for M5
  */
-str
-MKEYhash_bit(wrd *ret, bit *v)
-{
-	CMDhash_bte(ret,v);
-	return MAL_SUCCEED;
-}
-str
-MKEYhash_bte(wrd *ret, bte *v)
-{
-	CMDhash_bte(ret,v);
-	return MAL_SUCCEED;
-}
-str
-MKEYhash_sht(wrd *ret, sht *v)
-{
-	CMDhash_sht(ret,v);
-	return MAL_SUCCEED;
-}
-str
-MKEYhash_int(wrd *ret, int *v)
-{
-	CMDhash_int(ret,v);
-	return MAL_SUCCEED;
-}
 
-str
-MKEYhash_flt(wrd *ret, flt *v)
-{
-	CMDhash_flt(ret,v);
-	return MAL_SUCCEED;
-}
-
-str
-MKEYhash_wrd(wrd *ret, wrd *v)
-{
-	CMDhash_wrd(ret,v);
-	return MAL_SUCCEED;
-}
-
-str
-MKEYhash_dbl(wrd *ret, dbl *v)
-{
-	CMDhash_dbl(ret,v);
-	return MAL_SUCCEED;
-}
-
-str
-MKEYhash_lng(wrd *ret, lng *v)
-{
-	CMDhash_lng(ret,v);
-	return MAL_SUCCEED;
-}
-
-str
-MKEYhash_str(wrd *ret, str *v)
-{
-	CMDhash_str(ret,*v);
-	return MAL_SUCCEED;
-}
 
 str
 MKEYrotate(wrd *res, wrd *val, int *n){
@@ -708,7 +591,9 @@ MKEYhash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	val= (ptr) getArgReference(stk,p,1);
 	if (ATOMextern(tpe))
 		val = *(ptr*)val;
-	CMDhash(ret, val, tpe);
+	else if (tpe == TYPE_str)
+		val = *(str*)val;
+	*ret  = (*BATatoms[tpe].atomHash)(val);
 	return MAL_SUCCEED;
 }
 
@@ -717,13 +602,12 @@ MKEYconstbulk_rotate_xor_hash(int *ret, wrd *h, int *nbits, int *bid){
 	BAT *b, *bn=0;
 	str msg;
 
-	if ((b = BATdescriptor(*bid)) == NULL) {
+	if ((b = BATdescriptor(*bid)) == NULL)
        	    throw(MAL, "mkey.bulk_rotate_xor_hash",  RUNTIME_OBJECT_MISSING);
-    	}
 
 	if( (msg= CMDconstbulk_rotate_xor_hash(&bn,h,nbits,b)) != MAL_SUCCEED){
 	    BBPreleaseref(b->batCacheid);
-            throw(MAL, "mkey.bulk_rotate_xor_hash", OPERATION_FAILED "%s", msg);
+		throw(MAL, "mkey.bulk_rotate_xor_hash", OPERATION_FAILED "%s", msg);
 	}
 	BBPreleaseref(b->batCacheid);
 	*ret= bn->batCacheid;
@@ -736,9 +620,9 @@ MKEYbulk_rotate_xor_hash(int *ret, int *hid, int *nbits, int *bid){
 	BAT *hn, *b, *bn=0;
 	str msg;
 
-	if ((hn = BATdescriptor(*hid)) == NULL) {
+	if ((hn = BATdescriptor(*hid)) == NULL)
         throw(MAL, "mkey.bulk_rotate_xor_hash", RUNTIME_OBJECT_MISSING);
-    }
+
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		BBPreleaseref(hn->batCacheid);
         throw(MAL, "mkey.bulk_rotate_xor_hash",  RUNTIME_OBJECT_MISSING);

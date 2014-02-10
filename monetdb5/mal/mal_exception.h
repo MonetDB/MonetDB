@@ -49,7 +49,7 @@ enum malexception {
 #define throw \
 	return createException
 #define rethrow(FCN, TMP, PRV) \
-	if ((TMP = PRV) != MAL_SUCCEED) return(TMP);
+	{if ((TMP = PRV) != MAL_SUCCEED) return(TMP);}
 
 mal_export str	createException(enum malexception, const char *,
 	_In_z_ _Printf_format_string_ const char *, ...)
