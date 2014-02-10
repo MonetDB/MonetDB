@@ -135,44 +135,6 @@ pattern optimizer.derivePath(mod:str, fcn:str):str
 address OPTwrapper
 comment "Join path constructor";
 
-#opt_dictionary.mal
-
-module dictionary;
-
-command initialize()
-address DICTinitialize
-comment "Intialize the dictionary catalog if needed";
-
-command bind(nme:str) (idx:bat[:oid,:any_1], val:bat[:any_1,:any_2])
-address DICTbind
-comment "Localise the dictionary";
-
-command expand(val:bat[:any_1,:any_2], b:bat[:oid,:any_2]):bat[:any_1,:any_2]
-address DICTexpand
-comment "Extend the dictionary with the values in b. This may trigger a partial recompilation of the MAL program when the storage type :any_1
-is not sufficient anymore.";
-
-command encode(val:bat[:any_1,:any_2], b:bat[:oid,:any_2]):bat[:oid,:any_1]
-address DICTencode
-comment "Use the dictionary to encode a table b.";
-
-pattern compress{unsafe}(s:str, b:bat[:any_1,:any_2])
-address DICTcompress
-comment "Try to replace a table by its dictionary equivalent.";
-
-command decompress{unsafe}(nme:str)
-address DICTdecompress
-comment "Remove the dictionary entry";
-
-command group(idx:bat[:oid,:any_1], val:bat[:any_1,:any_2]) :bat[:oid,:any_2]
-address DICTgroupid
-comment "Obtain a representative oid per value from the index";
-
-pattern optimizer.dictionary():str
-address OPTwrapper;
-pattern optimizer.dictionary(mod:str, fcn:str):str
-address OPTwrapper;
-
 #opt_emptySet.mal
 
 pattern optimizer.emptySet():str

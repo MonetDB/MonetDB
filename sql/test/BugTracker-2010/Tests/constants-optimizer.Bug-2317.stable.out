@@ -28,8 +28,8 @@ Ready.
 % .L # table_name
 % single_value # name
 % varchar # type
-% 15 # length
-[ "dictionary_pipe"	]
+% 12 # length
+[ "default_pipe"	]
 #create table x( id serial, a varchar(1000));
 #drop table x;
 

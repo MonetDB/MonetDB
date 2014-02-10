@@ -39102,34 +39102,6 @@ comment Nil test for date value
 
 command date.#tostr():str 
 address date_tostr;
-command dictionary.bind(nme:str) (idx:bat[:oid,:any_1],val:bat[:any_1,:any_2]) 
-address DICTbind;
-comment Localise the dictionary
-
-pattern dictionary.compress{unsafe}(s:str,b:bat[:any_1,:any_2]):void 
-address DICTcompress;
-comment Try to replace a table by its dictionary equivalent.
-
-command dictionary.decompress{unsafe}(nme:str):void 
-address DICTdecompress;
-comment Remove the dictionary entry
-
-command dictionary.encode(val:bat[:any_1,:any_2],b:bat[:oid,:any_2]):bat[:oid,:any_1] 
-address DICTencode;
-comment Use the dictionary to encode a table b.
-
-command dictionary.expand(val:bat[:any_1,:any_2],b:bat[:oid,:any_2]):bat[:any_1,:any_2] 
-address DICTexpand;
-comment Extend the dictionary with the values in b. This may trigger a partial recompilation of the MAL program when the storage type :any_1is not sufficient anymore.
-
-command dictionary.group(idx:bat[:oid,:any_1],val:bat[:any_1,:any_2]):bat[:oid,:any_2] 
-address DICTgroupid;
-comment Obtain a representative oid per value from the index
-
-command dictionary.initialize():void 
-address DICTinitialize;
-comment Intialize the dictionary catalog if needed
-
 command factories.getDeparture():bat[:oid,:timestamp] 
 address FCTgetDeparture;
 comment Retrieve the time stamp the last answer was returned.
@@ -41092,10 +41064,6 @@ comment Produce an indented tree visualisation
 
 pattern optimizer.dumpQEP():void 
 address OPTwrapper;
-pattern optimizer.dictionary(mod:str,fcn:str):str 
-address OPTwrapper;
-pattern optimizer.dictionary():str 
-address OPTwrapper;
 pattern optimizer.derivePath(mod:str,fcn:str):str 
 address OPTwrapper;
 comment Join path constructor
@@ -42191,10 +42159,6 @@ command sql.dense_rank_grp(b:bat[:oid,:any_1],gp:bat[:oid,:oid],gpe:bat[:oid,:oi
 address sql_dense_rank_grp;
 comment return the densely ranked groups
 
-pattern sql.dropdictionary(sch:str,tbl:str):void 
-address SQLdropDictionary;
-comment Perform dictionary decompression on a table
-
 pattern sql.drop_hash(sch:str,tbl:str):void 
 address SQLdrop_hash;
 comment Drop hash indices for the given table
@@ -42358,10 +42322,6 @@ comment truncate the floating point v to r digits behind the dot (if r < 0, befo
 pattern sql.mvc():int 
 address SQLmvc;
 comment Get the multiversion catalog context. Needed for correct statement dependencies(ie sql.update, should be after sql.bind in concurrent execution)
-
-pattern sql.newdictionary(sch:str,tbl:str):void 
-address SQLnewDictionary;
-comment Perform dictionary compression on a table
 
 command sql.not_uniques(b:bat[:oid,:wrd]):bat[:oid,:oid] 
 address not_unique_oids;

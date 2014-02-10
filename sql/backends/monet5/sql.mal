@@ -982,13 +982,6 @@ pattern drop_hash(sch:str, tbl:str)
 address SQLdrop_hash
 comment "Drop hash indices for the given table";
 
-pattern newdictionary(sch:str, tbl:str):void
-address SQLnewDictionary
-comment "Perform dictionary compression on a table";
-pattern dropdictionary(sch:str, tbl:str):void
-address SQLdropDictionary
-comment "Perform dictionary decompression on a table";
-
 pattern gzcompress(sch:str, tbl:str):void
 address SQLgzcompress
 comment "Perform LZ compression on a table";

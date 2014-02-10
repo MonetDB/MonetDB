@@ -48,7 +48,6 @@
 #include "opt_costModel.h"
 #include "opt_dataflow.h"
 #include "opt_deadcode.h"
-#include "opt_dictionary.h"
 #include "opt_emptySet.h"
 #include "opt_evaluate.h"
 #include "opt_factorize.h"
@@ -92,7 +91,6 @@ struct{
 	{"costModel", &OPTcostModelImplementation},
 	{"dataflow", &OPTdataflowImplementation},
 	{"deadcode", &OPTdeadcodeImplementation},
-	{"dictionary", &OPTdictionaryImplementation},
 	{"dumpQEP", &OPTdumpQEPImplementation},
 	{"emptySet", &OPTemptySetImplementation},
 	{"evaluate", &OPTevaluateImplementation},

@@ -155,7 +155,6 @@ struct OPTcatalog {
 {"datacyclotron",0,	0,	0,	DEBUG_OPT_DATACYCLOTRON},
 {"dataflow",	0,	0,	0,	DEBUG_OPT_DATAFLOW},
 {"deadcode",	0,	0,	0,	DEBUG_OPT_DEADCODE},
-{"dictionary",	0,	0,	0,	DEBUG_OPT_DICTIONARY},
 {"emptySet",	0,	0,	0,	DEBUG_OPT_EMPTYSET},
 {"evaluate",	0,	0,	0,	DEBUG_OPT_EVALUATE},
 {"factorize",	0,	0,	0,	DEBUG_OPT_FACTORIZE},

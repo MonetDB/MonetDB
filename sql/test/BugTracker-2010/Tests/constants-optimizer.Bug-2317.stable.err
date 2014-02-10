@@ -32,6 +32,9 @@ stderr of test 'constants-optimizer.Bug-2317` in directory 'sql/test/BugTracker-
 # 00:10:51 >  mclient -lsql -ftest -i -e --host=eir --port=37160 
 # 00:10:51 >  
 
+MAPI  = (monetdb) /var/tmp/mtest-29390/.s.monetdb.36773
+QUERY = set optimizer='dictionary_pipe';
+
 
 # 00:10:51 >  
 # 00:10:51 >  Done.

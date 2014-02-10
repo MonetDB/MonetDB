@@ -41,7 +41,6 @@
 #include <rel_bin.h>
 #include <bbp.h>
 #include <cluster.h>
-#include <opt_dictionary.h>
 #include <opt_pipes.h>
 #include "clients.h"
 #ifdef HAVE_RAPTOR
@@ -4113,85 +4112,6 @@ SQLdrop_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-/*
- * Take a SQL table and compress its columns using the dictionary
- * compression scheme.
- */
-static str
-compression(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int compr)
-{
-	str *sch = (str *) getArgReference(stk, pci, 1);
-	str *tbl = (str *) getArgReference(stk, pci, 2);
-	sql_schema *s;
-	sql_table *t;
-	mvc *m = NULL;
-	str msg = getSQLContext(cntxt, mb, &m, NULL);
-	sql_trans *tr = m->session->tr;
-	node *o;
-	char buf[BUFSIZ], *nme = buf;
-	int ret;
-
-	if ((msg = checkSQLContext(cntxt)) != NULL)
-		return msg;
-	s = mvc_bind_schema(m, *sch);
-	if (s == NULL)
-		throw(SQL, "sql.cluster", "3F000!Schema missing");
-	t = mvc_bind_table(m, s, *tbl);
-	if (t == NULL)
-		throw(SQL, "sql.cluster", "42S02!Table missing");
-
-	/* actually build the hash on the multi-column primary key */
-
-	for (o = t->columns.set->h; msg == MAL_SUCCEED && o; o = o->next) {
-		BAT *b, *e;
-		sql_delta *d;
-		sql_column *c = o->data;
-
-		b = store_funcs.bind_col(tr, c, 0);
-		if (b == NULL)
-			throw(SQL, "sql.compress", "Can not access descriptor");
-		e = BATnew(b->htype, b->ttype, 0);
-		if (e == NULL) {
-			BBPreleaseref(b->batCacheid);
-			throw(SQL, "sql.compression", MAL_MALLOC_FAIL);
-		}
-		BATsetaccess(e, BAT_READ);
-		d = c->data;
-		if (d->bid)
-			BBPdecref(d->bid, TRUE);
-		if (d->ibid)
-			BBPdecref(d->ibid, TRUE);
-		d->bid = 0;
-		d->ibase = 0;
-		d->ibid = e->batCacheid;	/* use the insert bat */
-		c->base.wtime = tr->wstime;
-		c->base.rtime = tr->stime;
-		snprintf(buf, BUFSIZ, "%s/%s/%s/0", *sch, *tbl, c->base.name);
-		if (compr)
-			msg = DICTcompress(&ret, &nme, &b->batCacheid);
-		else
-			msg = DICTdecompress(&ret, &nme);
-		BBPkeepref(e->batCacheid);
-		BBPreleaseref(b->batCacheid);
-	}
-	/* bat was cleared */
-	t->cleared = 1;
-	t->base.wtime = s->base.wtime = tr->wtime = tr->wstime;
-	t->base.rtime = s->base.rtime = tr->rtime = tr->stime;
-	return msg;
-}
-
-str
-SQLnewDictionary(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	return compression(cntxt, mb, stk, pci, 1);
-}
-
-str
-SQLdropDictionary(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	return compression(cntxt, mb, stk, pci, 0);
-}
 
 /*
  * LZ compression is inherited from the underlying stream implementation.
