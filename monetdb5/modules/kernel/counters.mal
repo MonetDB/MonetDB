@@ -29,7 +29,7 @@ command stop(c:int) :void
 address CNTRSstop
 comment "Stop the counting for the handle identified";
 
-command bat(c:int) :bat[:str,:lng]
+command bat(c:int) (k:bat[:oid,:str],v:bat[:oid,:lng]
 address CNTRScounter2bat
 comment "Store the retrieved results in a BAT";
 

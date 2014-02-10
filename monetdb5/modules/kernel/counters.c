@@ -18,9 +18,10 @@
  */
 
 /*
- * @f counters
- * @a S. Manegold, P. Boncz
- * @+ Performance Counters
+ * S. Manegold, P. Boncz
+ * Performance Counters
+ *
+ * Keeping around some old code interfaces.
  *
  * This is a memory/cpu performance measurement tool for
  * the following processor (families).
@@ -46,15 +47,6 @@
  * only two events can be monitored at a time.
  * On non-Linux/x86, non-Solaris/UltraSparc, and non-IRIX/R1x000 systems,
  * only the elapsed time in microseconds is measured.
- *
- * @+ Module Definition
- * The major difference with the M4 library is that it does not
- * expose the counter structure to the language level.
- * This is possible, because the M4 scheme for their decomposition
- * right now is limited to turn it into a BAT or string.
- *
- * Instead an integer handle is return to designate a counter.
- * We provide some BAT views over the counter table
  */
 #include "monetdb_config.h"
 #include "counters.h"
@@ -3000,7 +2992,7 @@ stop_count(counter *retval, counter *c)
 
 
 static int
-counter2bat(BAT **ret, counter *c)
+counter2bat(BAT **key, BAT **val, counter *c)
 {
 	lng ms;
 
@@ -3012,39 +3004,62 @@ counter2bat(BAT **ret, counter *c)
 		return GDK_FAIL;
 	}
 	ms = c->usec / 1000;
-	*ret = BATnew(TYPE_str, TYPE_lng, 8);
-	if (*ret == NULL)
+	*key = BATnew(TYPE_void, TYPE_str, 8);
+	if (*key == NULL)
 		return GDK_FAIL;
-	BUNins(*ret, "status", &c->status, FALSE);
-	BUNins(*ret, "generation", &c->generation, FALSE);
-	BUNins(*ret, "microsecs", &c->usec, FALSE);
-	BUNins(*ret, "millisecs", &ms, FALSE);
-	BUNins(*ret, "clock_ticks", &c->clocks, FALSE);
+	*val = BATnew(TYPE_void, TYPE_lng, 8);
+	if (*val == NULL){
+		BBPreleaseref((*key)->batCacheid);
+		*key = NULL;
+		return GDK_FAIL;
+	}
+	BATseqbase(*key,0);
+	BATseqbase(*val,0);
+
+	BUNappend(*key, "status", FALSE);
+	BUNappend(*val, &c->status, FALSE);
+	BUNappend(*key, "generation", FALSE);
+	BUNappend(*val, &c->generation, FALSE);
+	BUNappend(*key, "microsecs", FALSE);
+	BUNappend(*val, &c->usec, FALSE);
+	BUNappend(*key, "millisecs", FALSE);
+	BUNappend(*val, &ms, FALSE);
+	BUNappend(*key, "clock_ticks", FALSE);
+	BUNappend(*val, &c->clocks, FALSE);
 #if defined(HWCOUNTERS)
-	BUNins(*ret, event[(int) (c->event0)].native, &c->count0, FALSE);
-	BUNins(*ret, event[(int) (c->event1)].native, &c->count1, FALSE);
+	BUNappend(*key, event[(int) (c->event0)].native, FALSE);
+	BUNappend(*val, &c->count0, FALSE);
+	BUNappend(*key, event[(int) (c->event1)].native, FALSE);
+	BUNappend(*val, &c->count1, FALSE);
 #if defined(HW_SunOS)
 	diff = c->count0 - c->count1;
 	if ((event[c->event0].id0 == 4) && (event[c->event1].id1 == 16)) {
-		BUNins(*ret, "L1_inst_misses = IC_REF - IC_HIT", &diff, FALSE);
+		BUNappend(*key, "L1_inst_misses = IC_REF - IC_HIT", FALSE);
+		BUNappend(*val, &diff, FALSE);
 	} else if ((event[c->event0].id0 == 5) && (event[c->event1].id1 == 17)) {
-		BUNins(*ret, "L1_read_misses = DC_READ - DC_READ_HIT", &diff, FALSE);
+		BUNappend(*key, "L1_read_misses = DC_READ - DC_READ_HIT", FALSE);
+		BUNappend(*val, &diff, FALSE);
 	} else if ((event[c->event0].id0 == 6) && (event[c->event1].id1 == 18)) {
-		BUNins(*ret, "L1_write_misses = DC_WRITE - DC_WRITE_HIT", &diff, FALSE);
+		BUNappend(*key, "L1_write_misses = DC_WRITE - DC_WRITE_HIT", FALSE);
+		BUNappend(*val, &diff, FALSE);
 	} else if ((event[c->event0].id0 == 8) && (event[c->event1].id1 == 20)) {
-		BUNins(*ret, "L2_data_misses = EC_REF - EC_HIT", &diff, FALSE);
+		BUNappend(*key, "L2_data_misses = EC_REF - EC_HIT", FALSE);
+		BUNappend(*val, &diff, FALSE);
 	} else {
-		BUNins(*ret, str_nil, &lng_nil, FALSE);
+		BUNappend(*key, str_nil, FALSE);
+		BUNappend(*val, &lng_nil, FALSE);
 	}
 #else
-	BUNins(*ret, str_nil, (ptr)&lng_nil, FALSE);
+	BUNins(*key, str_nil, FALSE);
+	BUNins(*val, (ptr)&lng_nil, FALSE);
 #endif
 #endif
 /*
 	(*ret)->halign = 3928437;
 	BATkey(*ret, TRUE);
 */
-	BATname(*ret, "counter");
+	BATname(*key, "counter_key");
+	BATname(*val, "counter_value");
 	return GDK_SUCCEED;
 }
 
@@ -3090,8 +3105,7 @@ show_unified_events(BAT **ret)
 }
 
 /*
- * @- MonetDB Version 5 wrappers
- * The remainder wraps around the M4 library.
+ * The remainder wraps around the old library.
  */
 #include "mal.h"
 #include "mal_exception.h"
@@ -3134,19 +3148,21 @@ CNTRSstop(int *ret, int *idx){
 	return MAL_SUCCEED;
 }
 
-counters_export str CNTRScounter2bat(int *bid, int *idx);
+counters_export str CNTRScounter2bat(int *kid, int *vid, int *idx);
 str
-CNTRScounter2bat(int *bid, int *idx){
-	BAT *bn=NULL;
+CNTRScounter2bat(int *kid, int *vid, int *idx){
+	BAT *bk=NULL, *bv= NULL;
 	if( *idx <0 || *idx>= 32)
 		throw(MAL, "counters.bat", ILLEGAL_ARGUMENT " Counter handle out of range");
 	if (cntrs[*idx].status != 2)
 		throw(MAL, "counters.bat", ILLEGAL_ARGUMENT " Counter not yet stopped ");
-	counter2bat(&bn, cntrs + *idx);
-	if( bn == NULL)
+	counter2bat(&bk, &bv, cntrs + *idx);
+	if( bk == NULL )
 		throw(MAL, "counters.bat", ILLEGAL_ARGUMENT " Could not create object");
-	*bid= bn->batCacheid;
-	BBPkeepref(*bid);
+	*kid= bk->batCacheid;
+	*vid= bv->batCacheid;
+	BBPkeepref(*kid);
+	BBPkeepref(*vid);
 	return MAL_SUCCEED;
 }
 

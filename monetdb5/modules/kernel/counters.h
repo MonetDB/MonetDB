@@ -17,9 +17,6 @@
  * All Rights Reserved.
  */
 
-/*
- * @+ Implementation
- */
 #include "gdk.h"
 
 typedef struct {
