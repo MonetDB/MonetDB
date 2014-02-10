@@ -223,7 +223,11 @@ VIEWhcreate(BAT *h)
 	if (hp)
 		BBPshare(hp);
 	*bn->H = *h->H;
-	*bn->U = *h->U;
+	bn->batDeleted = h->batDeleted;
+	bn->batFirst = h->batFirst;
+	bn->batInserted = h->batInserted;
+	bn->batCount = h->batCount;
+	bn->batCapacity = h->batCapacity;
 	if (bn->H->vheap) {
 		assert(bn->H->vheap->parentid != 0);
 		BBPshare(bn->H->vheap->parentid);
@@ -237,8 +241,7 @@ VIEWhcreate(BAT *h)
 	if (hp && isVIEW(h))
 		bn->H->hash = NULL;
 	BATinit_idents(bn);
-	/* The b->P structure cannot be shared and must be copied
-	 * individually. */
+	/* some bits must be copied individually. */
 	bn->batSet = h->batSet;
 	bn->batDirty = BATdirty(h);
 	bn->batRestricted = BAT_READ;
@@ -277,8 +280,12 @@ VIEWcreate_(BAT *h, BAT *t, int slice_view)
 	 * copies because in case of a mark, we are going to override
 	 * a column with a void. Take care to zero the accelerator
 	 * data, though. */
-	*bn->U = *h->U;
 	*bn->H = *h->H;
+	bn->batDeleted = h->batDeleted;
+	bn->batFirst = h->batFirst;
+	bn->batInserted = h->batInserted;
+	bn->batCount = h->batCount;
+	bn->batCapacity = h->batCapacity;
 	if (bn->batFirst > 0) {
 		bn->H->heap.base += h->batFirst * h->H->width;
 		bn->batFirst = 0;
@@ -325,16 +332,10 @@ VIEWcreate_(BAT *h, BAT *t, int slice_view)
 	if (tp)
 		bn->T->heap.parentid = tp;
 	BATinit_idents(bn);
-	/* The b->P structure cannot be shared and must be copied
-	 * individually. */
+	/* Some bits must be copied individually. */
 	bn->batSet = h->batSet;
 	bn->batDirty = BATdirty(h);
 	bn->batRestricted = BAT_READ;
-	/* The U record may be shared with the parent; in that case,
-	 * the search accelerators of the parent can be used. If,
-	 * however, we want to take a horizontal fragment
-	 * (stable=false), this cannot be done, and we need to put
-	 * different information in U (so we can't use a copy. */
 	if (slice_view || !hp || isVIEW(h))
 		/* slices are unequal to their parents; cannot use accs */
 		bn->H->hash = NULL;
@@ -668,8 +669,7 @@ VIEWreset(BAT *b)
 		}
 
 		/* make sure everything points there */
-		m->U = n->U = &bs->U;
-		m->P = n->P = &bs->P;
+		m->S = n->S = &bs->S;
 		m->T = n->H = &bs->H;
 		m->H = n->T = &bs->T;
 

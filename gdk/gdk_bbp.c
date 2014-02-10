@@ -846,28 +846,26 @@ BBPreadEntries(FILE *fp, int *min_stamp, int *max_stamp, int oidsize, int bbpver
 			GDKfatal("BBPinit: cannot allocate memory for BATstore.");
 		bs->B.H = &bs->H;
 		bs->B.T = &bs->T;
-		bs->B.P = &bs->P;
-		bs->B.U = &bs->U;
+		bs->B.S = &bs->S;
 		bs->B.batCacheid = bid;
 		bs->BM.H = &bs->T;
 		bs->BM.T = &bs->H;
-		bs->BM.P = &bs->P;
-		bs->BM.U = &bs->U;
+		bs->BM.S = &bs->S;
 		bs->BM.batCacheid = -bid;
 		BATroles(&bs->B, NULL, NULL);
-		bs->P.persistence = PERSISTENT;
-		bs->P.copiedtodisk = 1;
-		bs->P.set = properties & 0x01;
-		bs->P.restricted = (properties & 0x06) >> 1;
-		bs->U.inserted = (BUN) inserted;
-		bs->U.deleted = (BUN) deleted;
-		bs->U.first = (BUN) first;
-		bs->U.count = (BUN) count;
-		bs->U.capacity = (BUN) capacity;
-		bs->P.map_head = (char) map_head;
-		bs->P.map_tail = (char) map_tail;
-		bs->P.map_hheap = (char) map_hheap;
-		bs->P.map_theap = (char) map_theap;
+		bs->S.persistence = PERSISTENT;
+		bs->S.copiedtodisk = 1;
+		bs->S.set = properties & 0x01;
+		bs->S.restricted = (properties & 0x06) >> 1;
+		bs->S.inserted = (BUN) inserted;
+		bs->S.deleted = (BUN) deleted;
+		bs->S.first = (BUN) first;
+		bs->S.count = (BUN) count;
+		bs->S.capacity = (BUN) capacity;
+		bs->S.map_head = (char) map_head;
+		bs->S.map_tail = (char) map_tail;
+		bs->S.map_hheap = (char) map_hheap;
+		bs->S.map_theap = (char) map_theap;
 
 		nread += heapinit(&bs->H, buf + nread, &Hhashash, "H", oidsize, bbpversion, batid);
 		nread += heapinit(&bs->T, buf + nread, &Thashash, "T", oidsize, bbpversion, batid);
@@ -1156,16 +1154,16 @@ new_bbpentry(stream *s, bat i)
 			  BBP_logical(-i) ? BBP_logical(-i) : BBPNONAME,
 			  BBP_physical(i),
 			  BBP_lastused(i),
-			  (BBP_desc(i)->P.restricted << 1) | BBP_desc(i)->P.set,
-			  BBP_desc(i)->U.inserted,
-			  BBP_desc(i)->U.deleted,
-			  BBP_desc(i)->U.first,
-			  BBP_desc(i)->U.count,
-			  BBP_desc(i)->U.capacity,
-			  (unsigned char) BBP_desc(i)->P.map_head,
-			  (unsigned char) BBP_desc(i)->P.map_tail,
-			  (unsigned char) BBP_desc(i)->P.map_hheap,
-			  (unsigned char) BBP_desc(i)->P.map_theap) < 0)
+			  (BBP_desc(i)->S.restricted << 1) | BBP_desc(i)->S.set,
+			  BBP_desc(i)->S.inserted,
+			  BBP_desc(i)->S.deleted,
+			  BBP_desc(i)->S.first,
+			  BBP_desc(i)->S.count,
+			  BBP_desc(i)->S.capacity,
+			  (unsigned char) BBP_desc(i)->S.map_head,
+			  (unsigned char) BBP_desc(i)->S.map_tail,
+			  (unsigned char) BBP_desc(i)->S.map_hheap,
+			  (unsigned char) BBP_desc(i)->S.map_theap) < 0)
 		return -1;
 	t = BBP_desc(i)->H.type;
 	if (mnstr_printf(s, " %s %u %u %u " BUNFMT " " BUNFMT " " BUNFMT " "
@@ -1680,8 +1678,8 @@ BBPinsert(BATstore *bs)
 		BBP_curstamp = 0;
 	bs->B.batCacheid = i;
 	bs->BM.batCacheid = -i;
-	bs->P.stamp = BBP_curstamp;
-	bs->P.tid = MT_getpid();
+	bs->S.stamp = BBP_curstamp;
+	bs->S.tid = MT_getpid();
 
 	BBP_status_set(i, BBPDELETING, "BBPentry");
 	BBP_cache(i) = NULL;
@@ -2088,7 +2086,7 @@ decref(bat i, int logical, int releaseShare, int lock)
 		MT_lock_set(&GDKswapLock(i), "BBPdecref");
 	assert(!BBP_cache(i) || BBP_cache(i)->batSharecnt >= releaseShare);
 	if (releaseShare) {
-		--BBP_desc(i)->P.sharecnt;
+		--BBP_desc(i)->S.sharecnt;
 		if (lock)
 			MT_lock_unset(&GDKswapLock(i), "BBPdecref");
 		return refs;

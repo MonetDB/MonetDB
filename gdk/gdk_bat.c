@@ -101,12 +101,10 @@ BATcreatedesc(int ht, int tt, int heapnames)
 	assert(ht >= 0 && tt >= 0);
 	bs->BM.H = &bs->T;
 	bs->BM.T = &bs->H;
-	bs->BM.P = &bs->P;
-	bs->BM.U = &bs->U;
+	bs->BM.S = &bs->S;
 	bs->B.H = &bs->H;
 	bs->B.T = &bs->T;
-	bs->B.P = &bs->P;
-	bs->B.U = &bs->U;
+	bs->B.S = &bs->S;
 
 	bn = &bs->B;
 
@@ -2988,8 +2986,7 @@ BATassertProps(BAT *b)
 	assert(bm != NULL);
 	assert(b->H == bm->T);
 	assert(b->T == bm->H);
-	assert(b->U == bm->U);
-	assert(b->P == bm->P);
+	assert(b->S == bm->S);
 	assert(b->batDeleted < BUN_MAX);
 	assert(b->batFirst >= b->batDeleted);
 	assert(b->batInserted >= b->batFirst);

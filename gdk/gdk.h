@@ -909,6 +909,7 @@ gdk_export int VALisnil(const ValRecord *v);
  */
 
 typedef struct {
+	/* dynamic bat properties */
 	MT_Id tid;		/* which thread created it */
 	int stamp;		/* BAT recent creation stamp */
 	unsigned int
@@ -925,16 +926,14 @@ typedef struct {
 	char map_tail;		/* mmap mode for tail bun heap */
 	char map_hheap;		/* mmap mode for head atom heap */
 	char map_theap;		/* mmap mode for tail atom heap */
-} BATrec;
 
-typedef struct {
 	/* delta status administration */
 	BUN deleted;		/* start of deleted elements */
 	BUN first;		/* to store next deletion */
 	BUN inserted;		/* start of inserted elements */
 	BUN count;		/* tuple count */
 	BUN capacity;		/* tuple capacity */
-} BUNrec;
+} BATrec;
 
 typedef struct PROPrec {
 	int id;
@@ -989,9 +988,7 @@ typedef struct BAT {
 	COLrec *H;		/* column info */
 	COLrec *T;		/* column info */
 
-	/* dynamic bat properties */
-	BATrec *P;		/* cache and sort info */
-	BUNrec *U;		/* cache and sort info */
+	BATrec *S;		/* the BAT properties */
 } BAT;
 
 typedef struct BATiter {
@@ -1003,34 +1000,33 @@ typedef struct BATiter {
  * The different parts of which a BAT consists are physically stored
  * next to each other in the BATstore type.
  */
-typedef struct {
+typedef struct BATstore {
 	BAT B;			/* storage for BAT descriptor */
 	BAT BM;			/* mirror (reverse) BAT */
 	COLrec H;		/* storage for head column */
 	COLrec T;		/* storage for tail column */
-	BATrec P;		/* storage for BATrec */
-	BUNrec U;		/* storage for BUNrec */
+	BATrec S;		/* the BAT properties */
 } BATstore;
 
 typedef int (*GDKfcn) ();
 
 /* macros's to hide complexity of BAT structure */
-#define batPersistence	P->persistence
-#define batCopiedtodisk	P->copiedtodisk
-#define batSet		P->set
-#define batDirty	P->dirty
-#define batConvert	P->convert
-#define batDirtyflushed	P->dirtyflushed
-#define batDirtydesc	P->descdirty
-#define batFirst	U->first
-#define batInserted	U->inserted
-#define batDeleted	U->deleted
-#define batCount	U->count
-#define batCapacity	U->capacity
-#define batStamp	P->stamp
-#define batSharecnt	P->sharecnt
-#define batRestricted	P->restricted
-#define creator_tid	P->tid
+#define batPersistence	S->persistence
+#define batCopiedtodisk	S->copiedtodisk
+#define batSet		S->set
+#define batDirty	S->dirty
+#define batConvert	S->convert
+#define batDirtyflushed	S->dirtyflushed
+#define batDirtydesc	S->descdirty
+#define batFirst	S->first
+#define batInserted	S->inserted
+#define batDeleted	S->deleted
+#define batCount	S->count
+#define batCapacity	S->capacity
+#define batStamp	S->stamp
+#define batSharecnt	S->sharecnt
+#define batRestricted	S->restricted
+#define creator_tid	S->tid
 #define htype		H->type
 #define ttype		T->type
 #define hkey		H->key
@@ -1050,10 +1046,10 @@ typedef int (*GDKfcn) ();
 #define halign		H->align
 #define talign		T->align
 
-#define batMaphead	P->map_head
-#define batMaptail	P->map_tail
-#define batMaphheap	P->map_hheap
-#define batMaptheap	P->map_theap
+#define batMaphead	S->map_head
+#define batMaptail	S->map_tail
+#define batMaphheap	S->map_hheap
+#define batMaptheap	S->map_theap
 /*
  * @- Heap Management
  * Heaps are the low-level entities of mass storage in
