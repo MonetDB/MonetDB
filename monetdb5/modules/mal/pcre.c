@@ -1711,7 +1711,7 @@ PCRElike_pcre(int *ret, int *b, str *pat, str *esc, bit us, bit ignore)
 		BAT *res = NULL;
 
 		if (bp == NULL)
-			throw(MAL, "pcre.like", OPERATION_FAILED);
+			throw(MAL, "pcre.like", RUNTIME_OBJECT_MISSING);
 		if (us)
 			res = re_uselect(re, bp, ignore);
 		else
@@ -1805,10 +1805,24 @@ static str
 PCRElike_join(int *l, int *r, int *b, int *pat, str *esc, int case_sensitive)
 {
 	BUN p;
-	BAT *B = BATdescriptor(*b), *Bpat = BATdescriptor(*pat), *L, *R;
-	BAT *tr, *x, *j = BATnew(TYPE_oid, TYPE_oid, BATcount(B) * BATcount(Bpat));
-	BATiter pati = bat_iterator(Bpat);
+	BAT *B, *Bpat, *L, *R;
+	BAT *tr, *x, *j;
+	BATiter pati;
 
+	B = BATdescriptor(*b);
+	if (B == NULL)
+		throw(MAL,"pcre.like_join", RUNTIME_OBJECT_MISSING);
+	Bpat = BATdescriptor(*pat);
+	if ( Bpat == NULL){
+		BBPreleaseref(B->batCacheid);
+		throw(MAL,"pcre.like_join", RUNTIME_OBJECT_MISSING);
+	}
+
+	j = BATnew(TYPE_oid, TYPE_oid, BATcount(B) * BATcount(Bpat));
+	if( j == NULL)
+		throw(MAL,"pcre.like_join", MAL_MALLOC_FAIL);
+
+	pati = bat_iterator(Bpat);
 	if( j==NULL)
 		throw(MAL,"pcre.likejoin",MAL_MALLOC_FAIL);
 	for(p = 0; p < BATcount(Bpat); p++) {
