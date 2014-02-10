@@ -40498,7 +40498,7 @@ address MKEYhash_sht;
 command mkey.hash(v:bte):wrd 
 address MKEYhash_bte;
 command mkey.hash(v:bit):wrd 
-address MKEYhash_bit;
+address MKEYhash_bte;
 pattern mkey.hash(v:any):wrd 
 address MKEYhash;
 comment compute a hash int number from any value
