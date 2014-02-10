@@ -37,11 +37,11 @@ command str(c:int) :str
 address CNTRScounter2str
 comment "Store the retrieved results in a str";
 
-command nativeEvents() :bat[:int,:str]
+command nativeEvents() :bat[:oid,:str]
 address CNTRSnativeEvents
 comment "All available events";
 
-command unifiedEvents() :bat[:int,:str]
+command unifiedEvents() :bat[:oid,:str]
 address CNTRSunifiedEvents
 comment "All unified event names";
 

@@ -3071,12 +3071,13 @@ show_native_events(BAT **ret)
 	int i = 0;
 #endif
 
-	*ret = BATnew(TYPE_int, TYPE_str, NumEvents);
+	*ret = BATnew(TYPE_void, TYPE_str, NumEvents);
 	if (*ret == NULL)
 		return GDK_FAIL;
+	BATseqbase(*ret,0);
 #if defined(HWCOUNTERS)
 	for (i = 0; i < NumEvents; i++)
-		BUNins(*ret, &i, event[i].native, FALSE);
+		BUNappend(*ret, event[i].native, FALSE);
 #endif
 	BATkey(*ret, TRUE);
 	BATname(*ret, "native_events");
@@ -3091,13 +3092,14 @@ show_unified_events(BAT **ret)
 	int i = 0;
 #endif
 
-	*ret = BATnew(TYPE_int, TYPE_str, NumEvents);
+	*ret = BATnew(TYPE_oid, TYPE_str, NumEvents);
 	if (*ret == NULL)
 		return GDK_FAIL;
+	BATseqbase(*ret,0);
 #if defined(HWCOUNTERS)
 	for (i = 0; i < NumEvents; i++)
 		if (event[i].unified != str_nil)
-			BUNins(*ret, &i, event[i].unified, FALSE);
+			BUNappend(*ret, event[i].unified, FALSE);
 #endif
 	BATkey(*ret, TRUE);
 	BATname(*ret, "unified_events");
