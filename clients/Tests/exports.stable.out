@@ -1346,7 +1346,7 @@ str CMDvarSIGN(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str CMDvarSUB(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str CMDvarSUBsignal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str CMDvarXOR(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-str CNTRScounter2bat(int *bid, int *idx);
+str CNTRScounter2bat(int *kid, int *vid, int *idx);
 str CNTRScounter2str(str *ret, int *idx);
 str CNTRSeventName(str *ret, int *nr);
 str CNTRSeventNumber(int *ret, str *nme);
