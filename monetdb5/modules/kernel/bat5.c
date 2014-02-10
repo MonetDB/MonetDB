@@ -1892,7 +1892,7 @@ BKCheat(int *res, str *input)
 	int bid = BBPindex(*input);
 
 	if (bid) {
-		*res = BBP_lastused(bid) & 0x7fffffff;
+		*res = BBPLASTUSED(BBP_lastused(bid));
 	}
 	throw(MAL, "bat", PROGRAM_NYI);
 }
