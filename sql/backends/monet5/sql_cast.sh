@@ -46,8 +46,7 @@ numeric="$integer flt dbl"  # all numeric types
 
 for tp1 in 1:bte 2:sht 4:int 8:wrd 8:lng; do
     for tp2 in 1:bte 2:sht 4:int 8:wrd 8:lng; do
-	if [ ${tp1%:*} -le ${tp2%:*} -o ${tp1#*:} = ${tp2#*:} ]; then
-	    cat <<EOF
+	cat <<EOF
 sql5_export str ${tp2#*:}_2_${tp1#*:}(${tp1#*:} *res, ${tp2#*:} *v);
 sql5_export str bat${tp2#*:}_2_${tp1#*:}(int *res, int *v);
 
@@ -59,7 +58,6 @@ sql5_export str bat${tp2#*:}_dec2dec_${tp1#*:}(int *res, int *S1, int *v, int *d
 sql5_export str bat${tp2#*:}_num2dec_${tp1#*:}(int *res, int *v, int *d2, int *s2);
 
 EOF
-	fi
     done
 done
 
@@ -92,29 +90,9 @@ for tp1 in flt dbl ; do
 	cat <<EOF
 sql5_export str ${tp2}_dec2_${tp1}(${tp1} *res, int *s1, ${tp2} *v);
 sql5_export str ${tp2}_dec2dec_${tp1}(${tp1} *res, int *S1, ${tp2} *v, int *d2, int *S2);
-sql5_export str ${tp2}_num2dec_${tp1}(${tp1} *res, ${tp2} *v, int *d2, int *s2);
 sql5_export str bat${tp2}_dec2_${tp1}(int *res, int *s1, int *v);
 sql5_export str bat${tp2}_dec2dec_${tp1}(int *res, int *S1, int *v, int *d2, int *S2);
-sql5_export str bat${tp2}_num2dec_${tp1}(int *res, int *v, int *d2, int *s2);
 
 EOF
-    done
-done
-
-for tp1 in 1:bte 2:sht 4:int ; do
-    for tp2 in 1:bte 2:sht 4:int 8:wrd 8:lng; do
-	if [ ${tp1%:*} -le ${tp2%:*} -o ${tp1#*:} = ${tp2#*:} ]; then
-	    cat <<EOF
-sql5_export str ${tp1#*:}_2_${tp2#*:}(${tp2#*:} *res, ${tp1#*:} *v);
-sql5_export str bat${tp1#*:}_2_${tp2#*:}(int *res, int *v);
-sql5_export str ${tp1#*:}_dec2_${tp2#*:}(${tp2#*:} *res, int *s1, ${tp1#*:} *v);
-sql5_export str ${tp1#*:}_dec2dec_${tp2#*:}(${tp2#*:} *res, int *S1, ${tp1#*:} *v, int *d2, int *S2);
-sql5_export str ${tp1#*:}_num2dec_${tp2#*:}(${tp2#*:} *res, ${tp1#*:} *v, int *d2, int *s2);
-sql5_export str bat${tp1#*:}_dec2_${tp2#*:}(int *res, int *s1, int *v);
-sql5_export str bat${tp1#*:}_dec2dec_${tp2#*:}(int *res, int *S1, int *v, int *d2, int *S2);
-sql5_export str bat${tp1#*:}_num2dec_${tp2#*:}(int *res, int *v, int *d2, int *s2);
-
-EOF
-	fi
     done
 done
