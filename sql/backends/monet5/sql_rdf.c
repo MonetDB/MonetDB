@@ -34,7 +34,6 @@
 #include <rel_bin.h>
 #include <bbp.h>
 #include <cluster.h>
-#include <opt_dictionary.h>
 #include <opt_pipes.h>
 #include "clients.h"
 #ifdef HAVE_RAPTOR
