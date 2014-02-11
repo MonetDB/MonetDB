@@ -292,33 +292,6 @@ wrapup:
 }
 
 str
-MseedLoadSQL(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	int *ret = (int*) getArgReference(stk,pci,0);
-	str *targetfile = (str*) getArgReference(stk,pci,1);
-	str msg = MAL_SUCCEED;
-	BAT *btime, *bdata, *table;
-
-	(void) cntxt;
-	(void) mb;
-
-/* XXX: BATs of BATs are no longer allowed and this code hasn't worked
- * for quite some time anyway */
-	table = BATnew(TYPE_str,TYPE_bat,0);
-	if ( table == NULL)
-		throw(MAL, "mseed.load", MAL_MALLOC_FAIL);
-	msg = MseedLoadIntern(&btime, &bdata, *targetfile);
-	if ( msg == MAL_SUCCEED){
-		BUNins(table, (ptr)"time", (ptr)&btime->batCacheid, FALSE);
-		BUNins(table, (ptr)"data", (ptr)&bdata->batCacheid, FALSE);
-		BBPreleaseref(btime->batCacheid);
-		BBPreleaseref(bdata->batCacheid);
-		BBPkeepref(*ret= table->batCacheid);
-	}
-	return msg;
-}
-
-str
 MseedLoad(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int *ret0 = (int*) getArgReference(stk,pci,0);
