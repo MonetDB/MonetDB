@@ -1696,7 +1696,7 @@ AM_CONDITIONAL(HAVE_JAVAMEROCONTROL,test x$have_java_control != xno)
 if test x$have_java_jdbc = xno -a x$have_java_control = xno; then
 	# no point doing anything with Java if all Java packages are disabled
 	have_java=no
-	if test x$why_have_java = x ; then
+	if test "x$why_have_java" = x ; then
 		why_have_java="(have_java_jdbc = no && have_java_control = no)"
 	fi
 fi
