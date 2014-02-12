@@ -1602,7 +1602,6 @@ gdk_export int BATgetaccess(BAT *b);
  * @item BAT *
  * @tab BATmirror (BAT *b)
  * @item BAT *
- * @tab BATreset (BAT *b)
  * @end multitable
  *
  * The routine BATclear removes the binary associations, leading to an
@@ -3334,7 +3333,6 @@ gdk_export BAT *BATuselect_(BAT *b, const void *tl, const void *th, bit li, bit 
 gdk_export BAT *BATantiuselect_(BAT *b, const void *tl, const void *th, bit li, bit hi);
 gdk_export BAT *BATselect(BAT *b, const void *tl, const void *th);
 gdk_export BAT *BATuselect(BAT *b, const void *tl, const void *th);
-gdk_export BAT *BATrestrict(BAT *b, const void *hl, const void *hh, const void *tl, const void *th);
 
 gdk_export BAT *BATconstant(int tt, const void *val, BUN cnt);
 gdk_export BAT *BATconst(BAT *l, int tt, const void *val);

@@ -857,30 +857,6 @@ ALGantiuselectInclusive(int *result, int *bid, ptr low, ptr high, bit *lin, bit 
 }
 
 str
-ALGfragment(int *result, int *bid, ptr hlow, ptr hhigh, ptr tlow, ptr thigh)
-{
-	BAT *b, *bn = NULL;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "algebra.fragment", RUNTIME_OBJECT_MISSING);
-	}
-	derefStr(b, h, hlow);
-	derefStr(b, h, hhigh);
-	derefStr(b, t, tlow);
-	derefStr(b, t, thigh);
-	bn = BATrestrict(b, hlow, hhigh, tlow, thigh);
-	if (bn) {
-		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
-		*result = bn->batCacheid;
-		BBPkeepref(*result);
-		BBPreleaseref(b->batCacheid);
-		return MAL_SUCCEED;
-	}
-	BBPreleaseref(b->batCacheid);
-	throw(MAL, "algebra.fragment", GDK_EXCEPTION);
-}
-
-str
 ALGthetajoinEstimate(int *result, int *lid, int *rid, int *opc, lng *estimate)
 {
 	BAT *left, *right, *bn = NULL;

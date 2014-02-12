@@ -170,11 +170,6 @@ address ALGselectInclusiveHead;
 
 # The second group uses the head to perform the range selection
 
-command fragment ( b:bat[:any_1,:any_2], hlow:any_1, hhigh:any_1,
-		tlow:any_2, thigh:any_2 ) :bat[:any_1,:any_2]
-address ALGfragment
-comment "Select both on head and tail range.";
-
 command slice(b:bat[:any_1,:any_2], x:oid, y:oid) :bat[:any_1,:any_2]
 address ALGslice_oid
 comment "Return the slice based on head oid x till y (exclusive).";
@@ -229,7 +224,7 @@ command antiuselect(b:bat[:any_1,:any_2], low:any_2, high:any_2,
 address ALGantiuselectInclusive
 comment "See select() but limited to head values";
 # @- Pattern matching
-command like(b:bat[:any_1,:str], substr:str) :bat[:any_1,:str]
+command like(b:bat[:oid,:str], substr:str) :bat[:oid,:str]
 address ALGlike
 comment "Selects all elements that have 'substr' as in the tail.";
 

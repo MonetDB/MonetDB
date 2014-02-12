@@ -79,7 +79,7 @@ str_2_timestamp(timestamp *res, str *val)
 	if (e < 0 || !p || (ATOMcmp(TYPE_timestamp, p, ATOMnilptr(TYPE_timestamp)) == 0 && ATOMcmp(TYPE_str, *val, ATOMnilptr(TYPE_str)) != 0)) {
 		if (p)
 			GDKfree(p);
-		snprintf(buf, BUFSIZ, "conversion of string '%s' failed", *val);
+		snprintf(buf, BUFSIZ, "conversion of string '%s' failed", *val? *val:"");
 		throw(SQL, "timestamp", "%s", buf);
 	}
 	*res = *(timestamp *) p;
@@ -177,7 +177,7 @@ str_2_daytime(daytime *res, str *val)
 	if (e < 0 || !p || (ATOMcmp(TYPE_daytime, p, ATOMnilptr(TYPE_daytime)) == 0 && ATOMcmp(TYPE_str, *val, ATOMnilptr(TYPE_str)) != 0)) {
 		if (p)
 			GDKfree(p);
-		snprintf(buf, BUFSIZ, "conversion of string '%s' failed", *val);
+		snprintf(buf, BUFSIZ, "conversion of string '%s' failed", *val? *val:"");
 		throw(SQL, "daytime", "%s", buf);
 	}
 	*res = *(daytime *) p;
@@ -275,7 +275,7 @@ str_2_date(date *res, str *val)
 	if (e < 0 || !p || (ATOMcmp(TYPE_date, p, ATOMnilptr(TYPE_date)) == 0 && ATOMcmp(TYPE_str, *val, ATOMnilptr(TYPE_str)) != 0)) {
 		if (p)
 			GDKfree(p);
-		snprintf(buf, BUFSIZ, "conversion of string '%s' failed", *val);
+		snprintf(buf, BUFSIZ, "conversion of string '%s' failed", *val? *val:"");
 		throw(SQL, "date", "%s", buf);
 	}
 	*res = *(date *) p;
@@ -373,7 +373,7 @@ str_2_sqlblob(sqlblob * *res, str *val)
 	if (e < 0 || !p || (ATOMcmp(TYPE_sqlblob, p, ATOMnilptr(TYPE_sqlblob)) == 0 && ATOMcmp(TYPE_str, *val, ATOMnilptr(TYPE_str)) != 0)) {
 		if (p)
 			GDKfree(p);
-		snprintf(buf, BUFSIZ, "conversion of string '%s' failed", *val);
+		snprintf(buf, BUFSIZ, "conversion of string '%s' failed", *val? *val:"");
 		throw(SQL, "sqlblob", "%s", buf);
 	}
 	*res = (sqlblob *) p;

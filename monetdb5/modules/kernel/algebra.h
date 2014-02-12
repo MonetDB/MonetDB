@@ -63,7 +63,6 @@ algebra_export str ALGselectInclusive(int *result, int *bid, ptr low, ptr high, 
 algebra_export str ALGselectInclusiveHead(int *result, int *bid, ptr low, ptr high, bit *lin, bit *rin);
 algebra_export str ALGuselectInclusive(int *result, int *bid, ptr low, ptr high, bit *lin, bit *rin);
 algebra_export str ALGantiuselectInclusive(int *result, int *bid, ptr low, ptr high, bit *lin, bit *rin);
-algebra_export str ALGfragment(int *result, int *bid, ptr hlow, ptr hhigh, ptr tlow, ptr thigh);
 
 algebra_export str ALGantijoin2(int *l, int *r, int *lid, int *rid);
 algebra_export str ALGjoin2(int *l, int *r, int *lid, int *rid);
