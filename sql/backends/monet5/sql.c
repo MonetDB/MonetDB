@@ -503,7 +503,7 @@ alter_table(mvc *sql, char *sname, sql_table *t)
 		if (nt->pkey) {
 			for (n = t->idxs.nelm; n; n = n->next) {
 				sql_idx *i = n->data;
-				if (i->key->type == pkey)
+				if (i->key && i->key->type == pkey)
 					return sql_message("40000!CONSTRAINT PRIMARY KEY: a table can have only one PRIMARY KEY\n");
 			}
 		}
@@ -1184,6 +1184,7 @@ SQLcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		int itype = *(int *) getArgReference(stk, pci, 3);
 		char *ssname = *(str *) getArgReference(stk, pci, 4);
 		char *tname = *(str *) getArgReference(stk, pci, 5);
+		assert(0); /* not used anymore */
 		msg = create_index(sql, sname, itype, ssname, tname, stk, pci);
 		break;
 	}
