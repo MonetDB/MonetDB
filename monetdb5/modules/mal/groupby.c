@@ -162,7 +162,7 @@ GROUPdelete(AGGRtask *a){
  */
 
 str
-GROUPmulticolumn(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+GROUPmulticolumngroup(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bat *grp = (bat *) getArgReference(stk, pci, 0);
 	bat *ext = (bat *) getArgReference(stk, pci, 1);

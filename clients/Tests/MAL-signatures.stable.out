@@ -39292,6 +39292,10 @@ command geom.point(x:dbl,y:dbl):wkb
 address wkbcreatepoint;
 comment Construct a point from two geometries
 
+pattern group.multicolumn(b:bat[:oid,:any]...) (ref:bat[:oid,:oid],grp:bat[:oid,:oid],hist:bat[:oid,:any]) 
+address GROUPmulticolumngroup;
+comment Derivation of a group index over multiple columns.
+
 command group.subgroupdone(b:bat[:oid,:any_1],g:bat[:oid,:oid],e:bat[:oid,:oid],h:bat[:oid,:wrd]) (groups:bat[:oid,:oid],extents:bat[:oid,:oid],histo:bat[:oid,:wrd]) 
 address GRPsubgroup4;
 command group.subgroupdone(b:bat[:oid,:any_1],g:bat[:oid,:oid]) (groups:bat[:oid,:oid],extents:bat[:oid,:oid],histo:bat[:oid,:wrd]) 
@@ -39304,10 +39308,6 @@ command group.subgroup(b:bat[:oid,:any_1],g:bat[:oid,:oid]) (groups:bat[:oid,:oi
 address GRPsubgroup2;
 command group.subgroup(b:bat[:oid,:any_1]) (groups:bat[:oid,:oid],extents:bat[:oid,:oid],histo:bat[:oid,:wrd]) 
 address GRPsubgroup1;
-pattern group.subgroup(b:bat[:oid,:any]...) (ref:bat[:oid,:oid],grp:bat[:oid,:oid],hist:bat[:oid,:any]) 
-address GROUPmulticolumn;
-comment Derivation of a group index over multiple columns.
-
 command identifier.#fromstr():void 
 address IDfromString;
 comment Convert a string to an identifier without any check

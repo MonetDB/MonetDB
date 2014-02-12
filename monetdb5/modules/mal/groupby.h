@@ -35,6 +35,6 @@
 #define group_by_export extern
 #endif
 
-group_by_export str GROUPmulticolumn(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+group_by_export str GROUPmulticolumngroup(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #endif /* _GROUPBY_H */
