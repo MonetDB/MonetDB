@@ -1936,13 +1936,16 @@ gdk_export BBPrec *BBP[N_BBPINIT];
 #define BBPcurstamp()	BBP_curstamp
 #define BBPrefs(i)	(BBPcheck((i),"BBPrefs")?BBP_refs(i):-1)
 #define BBPcache(i)	(BBPcheck((i),"BBPcache")?BBP_cache(i):(BAT*) NULL)
+/* we use ABS(i) instead of -(i) here because of a bug in gcc 4.8.2
+ * (at least) with optimization enabled; it incorrectly complains
+ * about an array bound error in monetdb5/modules/kernel/status.c */
 #define BBPname(i)							\
 	(BBPcheck((i), "BBPname") ?					\
 	 ((i) > 0 ?							\
 	  BBP[(i) >> BBPINITLOG][(i) & (BBPINIT - 1)].logical[0] :	\
-	  (BBP[-(i) >> BBPINITLOG][-(i) & (BBPINIT - 1)].logical[1] ?	\
-	   BBP[-(i) >> BBPINITLOG][-(i) & (BBPINIT - 1)].logical[1] :	\
-	   BBP[-(i) >> BBPINITLOG][-(i) & (BBPINIT - 1)].logical[0])) : \
+	  (BBP[ABS(i) >> BBPINITLOG][ABS(i) & (BBPINIT - 1)].logical[1] ? \
+	   BBP[ABS(i) >> BBPINITLOG][ABS(i) & (BBPINIT - 1)].logical[1] : \
+	   BBP[ABS(i) >> BBPINITLOG][ABS(i) & (BBPINIT - 1)].logical[0])) : \
 	 "")
 #define BBPvalid(i)	(BBP_logical(i) != NULL && *BBP_logical(i) != '.')
 #define BATgetId(b)	BBPname((b)->batCacheid)
