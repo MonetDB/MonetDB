@@ -107,7 +107,6 @@ typedef struct expression {
 #define DDL_CREATE_TYPE 30 
 #define DDL_DROP_TYPE   31 
 
-#define DDL_CREATE_INDEX  32	/* not used anymore */
 #define DDL_DROP_INDEX    33
 
 #define DDL_CREATE_FUNCTION 41 
