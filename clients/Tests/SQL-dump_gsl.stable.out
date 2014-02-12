@@ -685,6 +685,29 @@ returns integer external name udf.fuse;
 -- fuse two (4-byte) integer values into one (8-byte) bigint value
 create function fuse(one integer, two integer)
 returns bigint external name udf.fuse;
+-- The contents of this file are subject to the MonetDB Public License
+-- Version 1.1 (the "License"); you may not use this file except in
+-- compliance with the License. You may obtain a copy of the License at
+-- http://www.monetdb.org/Legal/MonetDBLicense
+--
+-- Software distributed under the License is distributed on an "AS IS"
+-- basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+-- License for the specific language governing rights and limitations
+-- under the License.
+--
+-- The Original Code is the MonetDB Database System.
+--
+-- The Initial Developer of the Original Code is CWI.
+-- Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+-- Copyright August 2008-2014 MonetDB B.V.
+-- All Rights Reserved.
+
+-- add function signatures to SQL catalog
+
+
+-- fuse two (8-byte) integer values into one (16-byte) bigint value
+create function fuse(one bigint, two bigint)
+returns hugeint external name udf.fuse;
 create function geomcollectionfromtext(wkt string, srid smallint) returns multipolygon external name geom."GeomCollectionFromText";
 create function geometrytypeid(g geometry) returns integer external name geom."GeometryTypeId";
 -- The srid in the *FromText Functions is currently not used
@@ -1924,7 +1947,7 @@ COPY 418 RECORDS INTO "sys"."_columns" FROM stdin USING DELIMITERS '\t','\n','"'
 6801	"minval"	"clob"	0	0	6804	NULL	true	10	NULL
 6802	"maxval"	"clob"	0	0	6804	NULL	true	11	NULL
 6803	"sorted"	"boolean"	1	0	6804	NULL	true	12	NULL
-6857	"function_id"	"int"	32	0	6858	NULL	true	0	NULL
+6862	"function_id"	"int"	32	0	6863	NULL	true	0	NULL
 COMMIT;
 START TRANSACTION;
 CREATE TABLE "sys"."_tables" (
@@ -2009,7 +2032,7 @@ COPY 72 RECORDS INTO "sys"."_tables" FROM stdin USING DELIMITERS '\t','\n','"';
 6780	"storagemodel"	2000	"create view sys.storagemodel as select * from sys.storagemodel();"	1	true	0	false
 6789	"tablestoragemodel"	2000	"-- A summary of the table storage requirement is is available as a table view.\n-- The auxillary column denotes the maximum space if all non-sorted columns\n-- would be augmented with a hash (rare situation)\ncreate view sys.tablestoragemodel\nas select \"schema\",\"table\",max(count) as \"count\",\n\tsum(columnsize) as columnsize,\n\tsum(heapsize) as heapsize,\n\tsum(indices) as indices,\n\tsum(case when sorted = false then 8 * count else 0 end) as auxillary\nfrom sys.storagemodel() group by \"schema\",\"table\";"	1	true	0	false
 6804	"statistics"	2000	NULL	0	true	0	false
-6858	"systemfunctions"	2000	NULL	0	true	0	false
+6863	"systemfunctions"	2000	NULL	0	true	0	false
 COMMIT;
 START TRANSACTION;
 CREATE TABLE "sys"."args" (
@@ -2021,7 +2044,7 @@ CREATE TABLE "sys"."args" (
 	"type_scale"  INTEGER,
 	"number"      INTEGER
 );
-COPY 3870 RECORDS INTO "sys"."args" FROM stdin USING DELIMITERS '\t','\n','"';
+COPY 3873 RECORDS INTO "sys"."args" FROM stdin USING DELIMITERS '\t','\n','"';
 2151	30	"result"	"oid"	63	0	0
 2152	30	"arg_1"	"wrd"	64	0	1
 2153	31	"result"	"oid"	63	0	0
@@ -5892,6 +5915,9 @@ COPY 3870 RECORDS INTO "sys"."args" FROM stdin USING DELIMITERS '\t','\n','"';
 6853	6852	"result"	"bigint"	64	0	0
 6854	6852	"one"	"int"	32	0	1
 6855	6852	"two"	"int"	32	0	2
+6858	6857	"result"	"hugeint"	128	0	0
+6859	6857	"one"	"bigint"	64	0	1
+6860	6857	"two"	"bigint"	64	0	2
 COMMIT;
 START TRANSACTION;
 CREATE TABLE "sys"."auths" (
@@ -6145,7 +6171,7 @@ CREATE TABLE "sys"."functions" (
 	"side_effect" BOOLEAN,
 	"schema_id"   INTEGER
 );
-COPY 1418 RECORDS INTO "sys"."functions" FROM stdin USING DELIMITERS '\t','\n','"';
+COPY 1419 RECORDS INTO "sys"."functions" FROM stdin USING DELIMITERS '\t','\n','"';
 30	"not_uniques"	"not_uniques"	"sql"	false	1	false	0
 31	"not_uniques"	"not_uniques"	"sql"	false	1	false	0
 32	"hash"	"hash"	"calc"	false	1	false	0
@@ -7564,6 +7590,7 @@ COPY 1418 RECORDS INTO "sys"."functions" FROM stdin USING DELIMITERS '\t','\n','
 6842	"fuse"	"-- fuse two (1-byte) tinyint values into one (2-byte) smallint value\ncreate function fuse(one tinyint, two tinyint)\nreturns smallint external name udf.fuse;"	"udf"	true	1	false	2000
 6847	"fuse"	"-- fuse two (2-byte) smallint values into one (4-byte) integer value\ncreate function fuse(one smallint, two smallint)\nreturns integer external name udf.fuse;"	"udf"	true	1	false	2000
 6852	"fuse"	"-- fuse two (4-byte) integer values into one (8-byte) bigint value\ncreate function fuse(one integer, two integer)\nreturns bigint external name udf.fuse;"	"udf"	true	1	false	2000
+6857	"fuse"	"-- The contents of this file are subject to the MonetDB Public License\n-- Version 1.1 (the \"License\"); you may not use this file except in\n-- compliance with the License. You may obtain a copy of the License at\n-- http://www.monetdb.org/Legal/MonetDBLicense\n--\n-- Software distributed under the License is distributed on an \"AS IS\"\n-- basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the\n-- License for the specific language governing rights and limitations\n-- under the License.\n--\n-- The Original Code is the MonetDB Database System.\n--\n-- The Initial Developer of the Original Code is CWI.\n-- Portions created by CWI are Copyright (C) 1997-July 2008 CWI.\n-- Copyright August 2008-2014 MonetDB B.V.\n-- All Rights Reserved.\n\n-- add function signatures to SQL catalog\n\n\n-- fuse two (8-byte) integer values into one (16-byte) bigint value\ncreate function fuse(one bigint, two bigint)\nreturns hugeint external name udf.fuse;"	"udf"	true	1	false	2000
 COMMIT;
 START TRANSACTION;
 CREATE TABLE "sys"."idxs" (
@@ -7617,7 +7644,7 @@ COPY 19 RECORDS INTO "sys"."privileges" FROM stdin USING DELIMITERS '\t','\n','"
 5572	1	1	0	0
 5575	1	1	0	0
 5579	1	1	0	0
-6858	1	1	3	0
+6863	1	1	3	0
 COMMIT;
 START TRANSACTION;
 CREATE TABLE "sys"."schemas" (
@@ -7678,7 +7705,7 @@ START TRANSACTION;
 CREATE TABLE "sys"."systemfunctions" (
 	"function_id" INTEGER
 );
-COPY 1418 RECORDS INTO "sys"."systemfunctions" FROM stdin USING DELIMITERS '\t','\n','"';
+COPY 1419 RECORDS INTO "sys"."systemfunctions" FROM stdin USING DELIMITERS '\t','\n','"';
 30
 31
 32
@@ -9097,6 +9124,7 @@ COPY 1418 RECORDS INTO "sys"."systemfunctions" FROM stdin USING DELIMITERS '\t',
 6842
 6847
 6852
+6857
 COMMIT;
 START TRANSACTION;
 CREATE TABLE "sys"."triggers" (

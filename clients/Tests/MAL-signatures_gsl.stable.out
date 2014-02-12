@@ -3297,6 +3297,10 @@ command array.product(b:bat[:any_3,:any_1],c:bat[:any_4,:any_2]):bat[:any_1,:any
 address ARRAYproduct;
 comment Produce an array product
 
+command batudf.fuse(one:bat[:oid,:lng],two:bat[:oid,:lng]):bat[:oid,:hge] 
+address UDFBATfuse;
+comment fuse two (8-byte) lng values into one (16-byte) hge value
+
 command batudf.fuse(one:bat[:oid,:int],two:bat[:oid,:int]):bat[:oid,:lng] 
 address UDFBATfuse;
 comment fuse two (4-byte) int values into one (8-byte) lng value
@@ -53794,6 +53798,10 @@ comment Normalized edit distance between two strings
 command txtsim.similarity(string1:str,string2:str,minimum:dbl):dbl 
 address fstrcmp_impl;
 comment Normalized edit distance between two strings
+
+command udf.fuse(one:lng,two:lng):hge 
+address UDFfuse_lng_hge;
+comment fuse two (8-byte) lng values into one (16-byte) hge value
 
 command udf.fuse(one:int,two:int):lng 
 address UDFfuse_int_lng;

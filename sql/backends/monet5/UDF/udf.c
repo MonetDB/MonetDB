@@ -197,6 +197,22 @@ UDFBATreverse(bat *ret, const bat *arg)
 #undef UU
 #undef UO
 
+#ifdef HAVE_HGE
+#define UI lng
+#ifdef HAVE_LONG_LONG
+#define UU unsigned long long
+#else
+#ifdef HAVE___INT64
+#define UU unsigned __int64
+#endif
+#endif
+#define UO hge
+#include "udf_impl.h"
+#undef UI
+#undef UU
+#undef UO
+#endif
+
 /* BAT fuse */
 
 /* actual implementation */
@@ -243,9 +259,18 @@ UDFBATfuse_(BAT **ret, const BAT *bone, const BAT *btwo)
 	case TYPE_int:
 		bres = BATnew(TYPE_void, TYPE_lng, n);
 		break;
+#ifdef HAVE_HGE
+	case TYPE_lng:
+		bres = BATnew(TYPE_void, TYPE_hge, n);
+		break;
+#endif
 	default:
 		throw(MAL, "batudf.fuse",
-		      "tails of input BATs must be one of {bte, sht, int}");
+		      "tails of input BATs must be one of {bte, sht, int"
+#ifdef HAVE_HGE
+		      ", lng"
+#endif
+		      "}");
 	}
 	if (bres == NULL)
 		throw(MAL, "batudf.fuse", MAL_MALLOC_FAIL);
@@ -264,10 +289,20 @@ UDFBATfuse_(BAT **ret, const BAT *bone, const BAT *btwo)
 		msg = UDFBATfuse_int_lng ( bres, bone, btwo, n,
 			&two_tail_sorted_unsigned, &two_tail_revsorted_unsigned );
 		break;
+#ifdef HAVE_HGE
+	case TYPE_lng:
+		msg = UDFBATfuse_lng_hge ( bres, bone, btwo, n,
+			&two_tail_sorted_unsigned, &two_tail_revsorted_unsigned );
+		break;
+#endif
 	default:
 		BBPreleaseref(bres->batCacheid);
 		throw(MAL, "batudf.fuse",
-		      "tails of input BATs must be one of {bte, sht, int}");
+		      "tails of input BATs must be one of {bte, sht, int"
+#ifdef HAVE_HGE
+		      ", lng"
+#endif
+		      "}");
 	}
 
 	if (msg != MAL_SUCCEED) {
