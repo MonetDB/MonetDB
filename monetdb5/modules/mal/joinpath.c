@@ -72,10 +72,10 @@ ALGjoinCost(Client cntxt, BAT *l, BAT *r, int flag)
 	/* The sampling method */
 	if(flag < 2 && ( lc > 100000 || rc > 100000)){
 		lsize= MIN(lc/100, (1<<SAMPLE_THRESHOLD_lOG)/3);
-		lsample= BATsample(l,lsize);
+		lsample= BATsample_(l,lsize);
 		BBPreclaim(lsample);
 		rsize= MIN(rc/100, (1<<SAMPLE_THRESHOLD_lOG)/3);
-		rsample= BATsample(r,rsize);
+		rsample= BATsample_(r,rsize);
 		BBPreclaim(rsample);
 		j= BATjoin(l,r, MAX(lsize,rsize));
 		lsize= BATcount(j);
