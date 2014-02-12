@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2013 MonetDB B.V.
+ * Copyright August 2008-2014 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -907,7 +907,6 @@ TESTrenderer(MapiHdl hdl)
 				 strcmp(tp, "char") == 0 ||
 				 strcmp(tp, "clob") == 0 ||
 				 strcmp(tp, "str") == 0 ||
-				 strcmp(tp, "json") == 0 ||
 				 /* NULL byte in string? */
 				 strlen(s) < l ||
 				 /* start or end with white space? */
@@ -1132,8 +1131,7 @@ SQLrenderer(MapiHdl hdl, char singleinstr)
 		     (strcmp(s, "varchar") != 0 &&
 		      strcmp(s, "clob") != 0 &&
 		      strcmp(s, "char") != 0 &&
-		      strcmp(s, "str") != 0 &&
-		      strcmp(s, "json") != 0))) {
+		      strcmp(s, "str") != 0))) {
 			/* no table width known, use maximum, rely on
 			 * squeezing later on to fix it to whatever is
 			 * available; note that for a column type of
@@ -1160,6 +1158,9 @@ SQLrenderer(MapiHdl hdl, char singleinstr)
 			(strcmp(s, "int") == 0 ||
 			 strcmp(s, "tinyint") == 0 ||
 			 strcmp(s, "bigint") == 0 ||
+#ifdef HAVE_HGE
+			 strcmp(s, "hugeint") == 0 ||
+#endif
 			 strcmp(s, "wrd") == 0 ||
 			 strcmp(s, "oid") == 0 ||
 			 strcmp(s, "smallint") == 0 ||

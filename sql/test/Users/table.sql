@@ -1,4 +1,3 @@
-
 SET ROLE my_role;
 
 CREATE TABLE my_schema.my_table (

@@ -1,4 +1,3 @@
-
 -- query 11
 
 select name_string.tail, cnt

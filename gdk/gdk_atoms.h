@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2013 MonetDB B.V.
+ * Copyright August 2008-2014 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -112,8 +112,8 @@ gdk_export int strToStr(str *dst, int *len, const char *src);
 gdk_export BUN strHash(const char *s);
 gdk_export int strLen(const char *s);
 gdk_export int strNil(const char *s);
-gdk_export int escapedStrlen(const char *src);
-gdk_export int escapedStr(char *dst, const char *src, int dstlen);
+gdk_export int escapedStrlen(const char *src, const char *sep1, const char *sep2, int quote);
+gdk_export int escapedStr(char *dst, const char *src, int dstlen, const char *sep1, const char *sep2, int quote);
 /*
  * @- nil values
  * All types have a single value designated as a NIL value. It

@@ -11,7 +11,7 @@ stdout of test 'case-orderby.Bug-3388` in directory 'sql/test/BugTracker-2013` i
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Found 7.735 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2013 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://gaai.mullender.nl:31400/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-3042/.s.monetdb.31400
@@ -71,7 +71,7 @@ Ready.
 #select sum(b) from table3388 group by k order by case when sum(b) is null then 1 else 0 end,sum(b);
 % sys.L1 # table_name
 % L1 # name
-% bigint # type
+% hugeint # type
 % 2 # length
 [ 2	]
 [ 2	]

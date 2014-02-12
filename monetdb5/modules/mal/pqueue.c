@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2013 MonetDB B.V.
+ * Copyright August 2008-2014 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -1192,10 +1192,10 @@ PQtopn_sorted_max( BAT **bn, BAT *b, wrd NN )
 		if ((a=BATdescriptor(*aid)) == NULL || (b=BATdescriptor(*bid)) == NULL)	\
 			throw(MAL, "pqueue.topN", RUNTIME_OBJECT_MISSING);			\
 		if (a->ttype == 0) { 			\
-			assert(0);			\
 			*ret= a->batCacheid;		\
 			BBPkeepref(*ret);		\
 			BBPreleaseref(b->batCacheid);	\
+			return MAL_SUCCEED;		\
 		}					\
 		id = a->hseqbase;			\
 		cnt = n = BATcount(a);			\
@@ -1245,10 +1245,10 @@ PQtopn_sorted_max( BAT **bn, BAT *b, wrd NN )
 		if ((a=BATdescriptor(*aid)) == NULL || (b=BATdescriptor(*bid)) == NULL)	\
 			throw(MAL, "pqueue.topN", RUNTIME_OBJECT_MISSING);			\
 		if (a->ttype == 0) { 			\
-			assert(0);			\
 			*ret= a->batCacheid;		\
 			BBPkeepref(*ret);		\
 			BBPreleaseref(b->batCacheid);	\
+			return MAL_SUCCEED;		\
 		}					\
 		id = a->hseqbase;			\
 		cnt = n = BATcount(a);			\

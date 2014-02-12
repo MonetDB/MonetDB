@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2013 MonetDB B.V.
+ * Copyright August 2008-2014 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -815,7 +815,7 @@ exps_are_joins( list *l )
 int
 exp_is_join_exp(sql_exp *e)
 {
-	if (exp_is_join(e) == 0)
+	if (exp_is_join(e, NULL) == 0)
 		return 0;
 	if (e->type == e_cmp && e->flag == cmp_or && e->card >= CARD_AGGR)
 		if (exps_are_joins(e->l) == 0 && exps_are_joins(e->r) == 0)
@@ -902,8 +902,42 @@ distinct_rel(sql_exp *e, char **rname)
 	}
 	return 0;
 }
+
+int
+rel_has_exp(sql_rel *rel, sql_exp *e) 
+{
+	if (rel_find_exp(rel, e) != NULL) 
+		return 0;
+	return -1;
+}
+
+sql_rel *
+find_rel(list *rels, sql_exp *e)
+{
+	node *n = list_find(rels, e, (fcmp)&rel_has_exp);
+	if (n) 
+		return n->data;
+	return NULL;
+}
+
+sql_rel *
+find_one_rel(list *rels, sql_exp *e)
+{
+	node *n;
+	sql_rel *fnd = NULL;
+
+	for(n = rels->h; n; n = n->next) {
+		if (rel_has_exp(n->data, e) == 0) {
+			if (fnd)
+				return NULL;
+			fnd = n->data;
+		}
+	}
+	return fnd;
+}
+
 static int 
-exp_is_rangejoin(sql_exp *e)
+exp_is_rangejoin(sql_exp *e, list *rels)
 {
 	/* assume e is a e_cmp with 3 args 
 	 * Need to check e->r and e->f only touch one table.
@@ -912,11 +946,17 @@ exp_is_rangejoin(sql_exp *e)
 
 	if (distinct_rel(e->r, &rname) && distinct_rel(e->f, &rname))
 		return 0;
+	if (rels) { 
+		sql_rel *r = find_rel(rels, e->r);
+		sql_rel *f = find_rel(rels, e->f);
+		if (r && f && r == f)
+			return 0;
+	}
 	return -1;
 }
 
 int
-exp_is_join(sql_exp *e)
+exp_is_join(sql_exp *e, list *rels)
 {
 	/* only simple compare expressions, ie not or lists
 		or range expressions (e->f)
@@ -927,7 +967,7 @@ exp_is_join(sql_exp *e)
 		return 0;
 	/* range expression */
 	if (e->type == e_cmp && !is_complex_exp(e->flag) && e->l && e->r && e->f && e->card >= CARD_AGGR && !complex_select(e)) 
-		return exp_is_rangejoin(e);
+		return exp_is_rangejoin(e, rels);
 	return -1;
 }
 
@@ -1052,6 +1092,8 @@ exp_is_atom( sql_exp *e )
 {
 	switch (e->type) {
 	case e_atom:
+		if (e->f) /* values list */
+			return 0;
 		return 1;
 	case e_convert:
 		return exp_is_atom(e->l);
@@ -1073,6 +1115,17 @@ exp_is_atom( sql_exp *e )
 		return 0;
 	}
 	return 0;
+}
+
+int
+exps_are_atoms( list *exps)
+{
+	node *n;
+	int atoms = 1;
+
+	for(n=exps->h; n && atoms; n=n->next) 
+		atoms &= exp_is_atom(n->data);
+	return atoms;
 }
 
 static int
@@ -1262,6 +1315,19 @@ exps_fix_card( list *exps, int card)
 		sql_exp *e = n->data;
 
 		if (e->card > card)
+			e->card = card;
+	}
+}
+
+void
+exps_setcard( list *exps, int card)
+{
+	node *n;
+
+	for (n = exps->h; n; n = n->next) {
+		sql_exp *e = n->data;
+
+		if (e->card != CARD_ATOM)
 			e->card = card;
 	}
 }

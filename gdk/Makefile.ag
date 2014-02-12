@@ -12,7 +12,7 @@
 #
 # The Initial Developer of the Original Code is CWI.
 # Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-# Copyright August 2008-2013 MonetDB B.V.
+# Copyright August 2008-2014 MonetDB B.V.
 # All Rights Reserved.
 
 MTSAFE
@@ -23,10 +23,11 @@ lib_gdk = {
 	VERSION = $(GDK_VERSION)
 	NAME = bat
 	SOURCES = \
-		gdk.h gdk_atomic.h gdk_batop.c gdk_select.c \
+		gdk.h gdk_atomic.h gdk_batop.c \
+		gdk_select.c gdk_select_legacy.c \
 		gdk_search.c gdk_search.h gdk_tm.c \
 		gdk_align.c gdk_bbp.c gdk_bbp.h \
-		gdk_heap.c gdk_setop.mx gdk_utils.c gdk_utils.h \
+		gdk_heap.c gdk_setop.c gdk_utils.c gdk_utils.h \
 		gdk_atoms.c gdk_atoms.h \
 		gdk_qsort.c gdk_qsort_impl.h gdk_ssort.c gdk_ssort_impl.h \
 		gdk_storage.c gdk_bat.c \

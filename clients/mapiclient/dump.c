@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2013 MonetDB B.V.
+ * Copyright August 2008-2014 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -392,6 +392,10 @@ dump_type(Mapi mid, stream *toConsole, char *c_type, char *c_type_digits, char *
 		space = mnstr_printf(toConsole, "TINYINT");
 	} else if (strcmp(c_type, "bigint") == 0) {
 		space = mnstr_printf(toConsole, "BIGINT");
+#ifdef HAVE_HGE
+	} else if (strcmp(c_type, "hugeint") == 0) {
+		space = mnstr_printf(toConsole, "HUGEINT");
+#endif
 	} else if (strcmp(c_type, "date") == 0) {
 		space = mnstr_printf(toConsole, "DATE");
 	} else if (strcmp(c_type, "month_interval") == 0) {
@@ -1105,8 +1109,7 @@ dump_table_data(Mapi mid, char *schema, char *tname, stream *toConsole,
 		string[i] = 0;
 		if (strcmp(mapi_get_type(hdl, i), "char") == 0 ||
 		    strcmp(mapi_get_type(hdl, i), "varchar") == 0 ||
-		    strcmp(mapi_get_type(hdl, i), "clob") == 0 ||
-		    strcmp(mapi_get_type(hdl, i), "json") == 0) {
+		    strcmp(mapi_get_type(hdl, i), "clob") == 0) {
 			string[i] = 1;
 		}
 	}

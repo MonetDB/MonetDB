@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2013 MonetDB B.V.
+ * Copyright August 2008-2014 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -228,9 +228,8 @@ GDKmove(const char *dir1, const char *nme1, const char *ext1, const char *dir2, 
 	return ret;
 }
 
-#ifndef NATIVE_WIN32
 int
-GDKextendf(int fd, off_t size)
+GDKextendf(int fd, size_t size)
 {
 	struct stat stb;
 
@@ -239,35 +238,31 @@ GDKextendf(int fd, off_t size)
 		return -1;
 	}
 	/* if necessary, extend the underlying file */
-	if (stb.st_size < size)
-		return ftruncate(fd, size);
+	if (stb.st_size < (off_t) size) {
+#ifdef WIN32
+		return -(_chsize_s(fd, (__int64) size) != 0);
+#else
+		return ftruncate(fd, (off_t) size);
+#endif
+	}
 	return 0;
 }
-#endif
 
 int
 GDKextend(const char *fn, size_t size)
 {
 	int t0 = 0;
+	int rt = -1, fd;
 
 	IODEBUG t0 = GDKms();
-#ifdef WIN32
-	{
-		int fd, rt;
-
-		if ((fd = open(fn, O_RDWR)) < 0)
-			return -1;
-		rt = _chsize_s(fd, (__int64) size);
+	rt = -1;
+	if ((fd = open(fn, O_RDWR)) >= 0) {
+		rt = GDKextendf(fd, size);
 		close(fd);
-		if (rt != 0)
-			return -1;
 	}
-#else
-	if (truncate(fn, (off_t) size) < 0)
-		return -1;
-#endif
-	IODEBUG fprintf(stderr, "#GDKextend %s " SZFMT " %dms\n", fn, size, GDKms() - t0);
-	return 0;
+	IODEBUG fprintf(stderr, "#GDKextend %s " SZFMT " %dms%s\n", fn, size,
+			GDKms() - t0, rt < 0 ? " (failed)" : "");
+	return rt;
 }
 
 /*
@@ -370,14 +365,14 @@ GDKsave(const char *nme, const char *ext, void *buf, size_t size, storage_t mode
  * defined in their implementation.
  *
  * size -- how much to read
- * maxsize -- how much to allocate
+ * *maxsize -- (in/out) how much to allocate / how much was allocated
  */
 char *
-GDKload(const char *nme, const char *ext, size_t size, size_t maxsize, storage_t mode)
+GDKload(const char *nme, const char *ext, size_t size, size_t *maxsize, storage_t mode)
 {
 	char *ret = NULL;
 
-	assert(size <= maxsize);
+	assert(size <= *maxsize);
 	IODEBUG {
 		THRprintf(GDKstdout, "#GDKload: name=%s, ext=%s, mode %d\n", nme, ext ? ext : "", (int) mode);
 	}
@@ -385,7 +380,7 @@ GDKload(const char *nme, const char *ext, size_t size, size_t maxsize, storage_t
 		int fd = GDKfdlocate(nme, "rb", ext);
 
 		if (fd >= 0) {
-			char *dst = ret = (char *) GDKmalloc(maxsize);
+			char *dst = ret = GDKmalloc(*maxsize);
 			ssize_t n_expected, n = 0;
 
 			if (ret) {
@@ -408,8 +403,8 @@ GDKload(const char *nme, const char *ext, size_t size, size_t maxsize, storage_t
 #ifndef NDEBUG
 				/* just to make valgrind happy, we
 				 * initialize the whole thing */
-				if (ret && maxsize > size)
-					memset(ret + size, 0, maxsize - size);
+				if (ret && *maxsize > size)
+					memset(ret + size, 0, *maxsize - size);
 #endif
 			}
 			close(fd);
@@ -418,22 +413,24 @@ GDKload(const char *nme, const char *ext, size_t size, size_t maxsize, storage_t
 		}
 	} else {
 		char path[PATHLENGTH];
-		struct stat st;
 
+		/* round up to multiple of GDK_mmap_pagesize with a
+		 * minimum of one */
+		size = (*maxsize + GDK_mmap_pagesize - 1) & ~(GDK_mmap_pagesize - 1);
+		if (size == 0)
+			size = GDK_mmap_pagesize;
 		GDKfilepath(path, BATDIR, nme, ext);
-		if (stat(path, &st) >= 0 &&
-		    (maxsize <= (size_t) st.st_size ||
-		     /* mmap storage is auto-extended here */
-		     GDKextend(path, maxsize) == 0)) {
+		if (GDKextend(path, size) == 0) {
 			int mod = MMAP_READ | MMAP_WRITE | MMAP_SEQUENTIAL | MMAP_SYNC;
 
 			if (mode == STORE_PRIV)
 				mod |= MMAP_COPY;
-			ret = (char *) GDKmmap(path, mod, maxsize);
-			if (ret == (char *) -1L) {
-				ret = NULL;
+			ret = GDKmmap(path, mod, size);
+			if (ret != NULL) {
+				/* success: update allocated size */
+				*maxsize = size;
 			}
-			IODEBUG THRprintf(GDKstdout, "#mmap(NULL, 0, maxsize " SZFMT ", mod %d, path %s, 0) = " PTRFMT "\n", maxsize, mod, path, PTRFMTCAST(void *)ret);
+			IODEBUG THRprintf(GDKstdout, "#mmap(NULL, 0, maxsize " SZFMT ", mod %d, path %s, 0) = " PTRFMT "\n", size, mod, path, PTRFMTCAST(void *)ret);
 		}
 	}
 	return ret;
@@ -632,13 +629,13 @@ BATsave(BAT *bd)
 		DESCclean(bd);
 		if (bd->htype && bd->H->heap.storage == STORE_MMAP) {
 			HEAPshrink(&bd->H->heap, bd->H->heap.free);
-			if (bd->U->capacity > bd->H->heap.size >> bd->H->shift)
-				bd->U->capacity = (BUN) (bd->H->heap.size >> bd->H->shift);
+			if (bd->batCapacity > bd->H->heap.size >> bd->H->shift)
+				bd->batCapacity = (BUN) (bd->H->heap.size >> bd->H->shift);
 		}
 		if (bd->ttype && bd->T->heap.storage == STORE_MMAP) {
 			HEAPshrink(&bd->T->heap, bd->T->heap.free);
-			if (bd->U->capacity > bd->T->heap.size >> bd->T->shift)
-				bd->U->capacity = (BUN) (bd->T->heap.size >> bd->T->shift);
+			if (bd->batCapacity > bd->T->heap.size >> bd->T->shift)
+				bd->batCapacity = (BUN) (bd->T->heap.size >> bd->T->shift);
 		}
 		if (bd->H->vheap && bd->H->vheap->storage == STORE_MMAP)
 			HEAPshrink(bd->H->vheap, bd->H->vheap->free);
@@ -692,11 +689,11 @@ BATload_intern(bat i, int lock)
 			if (cap < (b->T->heap.size >> b->T->shift)) {
 				cap = (BUN) (b->T->heap.size >> b->T->shift);
 				HEAPDEBUG fprintf(stderr, "#HEAPextend in BATload_inter %s " SZFMT " " SZFMT "\n", b->H->heap.filename, b->H->heap.size, headsize(b, cap));
-				HEAPextend(&b->H->heap, headsize(b, cap));
+				HEAPextend(&b->H->heap, headsize(b, cap), b->batRestricted == BAT_READ);
 				b->batCapacity = cap;
 			} else {
 				HEAPDEBUG fprintf(stderr, "#HEAPextend in BATload_intern %s " SZFMT " " SZFMT "\n", b->T->heap.filename, b->T->heap.size, tailsize(b, cap));
-				HEAPextend(&b->T->heap, tailsize(b, cap));
+				HEAPextend(&b->T->heap, tailsize(b, cap), b->batRestricted == BAT_READ);
 			}
 		}
 	} else {

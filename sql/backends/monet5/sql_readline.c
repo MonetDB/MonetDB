@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2013 MonetDB B.V.
+ * Copyright August 2008-2014 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -71,6 +71,7 @@ static const char *sql_commands[] = {
 	"WHERE",
 	0
 };
+
 static int sqlcommandlimit = 13;
 
 #ifdef HAVE_STRNCASECMP
@@ -86,22 +87,22 @@ sql_command_generator(const char *text, int state)
 	const char *name;
 
 #ifdef _SQL_READLINE_DEBUG
-	printf("expand:%d [%d] %s \n",state,(int)strlen(text),text);
+	printf("expand:%d [%d] %s \n", state, (int) strlen(text), text);
 #endif
 	if (!state) {
 		index = 0;
 		len = strlen(text);
 	}
-	if( mdbSession() ){
-		while ( (name = sql_commands[index++]) ){
-				if( STR_EQUAL(name, text, len) )
-					return strdup(name);
+	if (mdbSession()) {
+		while ((name = sql_commands[index++])) {
+			if (STR_EQUAL(name, text, len))
+				return strdup(name);
 		}
 		return NULL;
 	}
 	while (index < sqlcommandlimit && (name = sql_commands[index++])) {
-			if( STR_EQUAL(name, text, len) )
-				return strdup(name);
+		if (STR_EQUAL(name, text, len))
+			return strdup(name);
 	}
 	return NULL;
 }
@@ -119,7 +120,7 @@ sql_completion(const char *text, int start, int end)
 void
 init_sql_readline(void)
 {
-	str history = MCgetClient(CONSOLE)->history; /* only for console */
+	str history = MCgetClient(CONSOLE)->history;	/* only for console */
 
 	/* Allow conditional parsing of the ~/.inputrc file. */
 	rl_readline_name = "MonetDB";
@@ -131,7 +132,7 @@ init_sql_readline(void)
 void
 deinit_sql_readline(void)
 {
-	str history = MCgetClient(CONSOLE)->history; /* only for console */
+	str history = MCgetClient(CONSOLE)->history;	/* only for console */
 	if (history) {
 		write_history(history);
 	}
@@ -151,30 +152,31 @@ deinit_sql_readline(void)
 static int initsqlReadline;
 
 int
-SQLreadConsole(Client cntxt){
+SQLreadConsole(Client cntxt)
+{
 	/* execute from stdin */
 	struct stat statb;
 	char *buf;
 
-	if( cntxt->promptlength == 0)
+	if (cntxt->promptlength == 0)
 		return -1;
-	if ( !(fstat(fileno(stdin), &statb) == 0 && S_ISCHR(statb.st_mode))  )
+	if (!(fstat(fileno(stdin), &statb) == 0 && S_ISCHR(statb.st_mode)))
 		return -1;
 
 	/* read lines and move string to client buffer. */
-	if( initsqlReadline ==0){
+	if (initsqlReadline == 0) {
 		init_sql_readline();
 		using_history();
 		stifle_history(1000);
-		initsqlReadline =1 ;
+		initsqlReadline = 1;
 	}
-	buf= getConsoleInput(cntxt, cntxt->prompt, 0, 1);
-	if( buf) {
+	buf = getConsoleInput(cntxt, cntxt->prompt, 0, 1);
+	if (buf) {
 		size_t len = strlen(buf);
-		if( len >= cntxt->fdin->size) {
+		if (len >= cntxt->fdin->size) {
 			/* extremly dirty inplace buffer overwriting */
 			assert(cntxt->fdin->buf);
-			cntxt->fdin->buf= realloc(cntxt->fdin->buf, len+1);
+			cntxt->fdin->buf = realloc(cntxt->fdin->buf, len + 1);
 			if (cntxt->fdin->buf == NULL) {
 				cntxt->fdin->len = 0;
 				cntxt->fdin->size = 0;
@@ -190,9 +192,9 @@ SQLreadConsole(Client cntxt){
 		return 1;
 	} else {
 		cntxt->fdin->eof = 1;
-		if( initsqlReadline ){
+		if (initsqlReadline) {
 			deinit_sql_readline();
-			initsqlReadline= 0;
+			initsqlReadline = 0;
 		}
 	}
 	return -1;
@@ -201,7 +203,8 @@ SQLreadConsole(Client cntxt){
 #else
 
 int
-SQLreadConsole(Client cntxt){
+SQLreadConsole(Client cntxt)
+{
 	(void) cntxt;
 	return -1;
 }

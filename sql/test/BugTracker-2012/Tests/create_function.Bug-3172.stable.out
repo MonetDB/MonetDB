@@ -11,7 +11,7 @@ stdout of test 'create_function.Bug-3172` in directory 'sql/test/BugTracker-2012
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Found 15.629 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2013 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://lodz.ins.cwi.nl:38620/
 # MonetDB/GIS module loaded

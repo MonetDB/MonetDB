@@ -14,7 +14,7 @@
 #
 # The Initial Developer of the Original Code is CWI.
 # Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-# Copyright August 2008-2013 MonetDB B.V.
+# Copyright August 2008-2014 MonetDB B.V.
 # All Rights Reserved.
 
 # This script requires Python 2.2 or later.
@@ -59,7 +59,7 @@ license = [
     '',
     'The Initial Developer of the Original Code is CWI.',
     'Portions created by CWI are Copyright (C) 1997-July 2008 CWI.',
-    'Copyright August 2008-2013 MonetDB B.V.',
+    'Copyright August 2008-2014 MonetDB B.V.',
     'All Rights Reserved.',
     ]
 
@@ -138,7 +138,6 @@ suffixrules = {
     '.mil':  ('',      '',    '# ',   ''),
     '.mk':   ('',      '',    '# ',   ''),
     '.msc':  ('',      '',    '# ',   ''),
-    '.mx':   ('@/',    '@',   '',     ''),
     '.php':  ('<?php', '?>',  '# ',   ''),
     '.pc':   ('',      '',    '# ',   ''),
     '.pl':   ('',      '',    '# ',   ''),
@@ -443,6 +442,11 @@ def dellicense(file, pre = None, post = None, start = None, end = None, verbose 
         g.write(f.read())
     f.close()
     g.close()
+    try:
+        st = os.stat(file)
+        os.chmod(file + '.new', stat.S_IMODE(st.st_mode))
+    except OSError:
+        pass
     try:
         os.rename(file, file + '~')     # make backup
     except OSError:

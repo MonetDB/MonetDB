@@ -13,10 +13,9 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2013 MonetDB B.V.
+ * Copyright August 2008-2014 MonetDB B.V.
  * All Rights Reserved.
  */
-
 
 /*#define DEBUG*/
 
@@ -419,15 +418,6 @@ exp_keyvalue(sql_exp *e)
 	return cnt;
 }
 
-static sql_rel *
-find_rel(list *rels, sql_exp *e)
-{
-	node *n = list_find(rels, e, (fcmp)&rel_has_exp);
-	if (n) 
-		return n->data;
-	return NULL;
-}
-
 static int
 joinexp_cmp(list *rels, sql_exp *h, sql_exp *key)
 {
@@ -654,7 +644,7 @@ find_fk( mvc *sql, list *rels, list *exps)
 	list *sdje, *aje, *dje;
 
 	/* first find the distinct join expressions */
-	aje = list_select(exps, (void*)1, (fcmp) &exp_is_join, (fdup)NULL);
+	aje = list_select(exps, rels, (fcmp) &exp_is_join, (fdup)NULL);
 	dje = list_distinct2(aje, rels, (fcmp2) &joinexp_cmp, (fdup)NULL);
 	for(djn=dje->h; djn; djn = djn->next) {
 		/* equal join expressions */
@@ -896,7 +886,7 @@ order_joins(mvc *sql, list *rels, list *exps)
 			if (exp_is_join_exp(e) == 0)
 				rel_join_add_exp(sql->sa, top->l, e);
 			else
-				rel_select_add_exp(top, e);
+				rel_select_add_exp(sql->sa, top, e);
 		}
 	}
 	return top;
@@ -1962,7 +1952,7 @@ rel_distinct_project2groupby(int *changes, mvc *sql, sql_rel *rel)
 	if (rel->op == op_project && rel->l && !rel->r /* no order by */ && need_distinct(rel) &&
 	    exps_card(rel->exps) <= CARD_ATOM) {
 		set_nodistinct(rel);
-		rel->l = NULL;
+		rel->l = rel_topn(sql->sa, rel->l, append(sa_list(sql->sa), exp_atom_wrd(sql->sa, 1)));
 	}
 
 	/* rewrite distinct project [ pk ] ( select ( table ) [ e op val ]) 
@@ -1972,8 +1962,8 @@ rel_distinct_project2groupby(int *changes, mvc *sql, sql_rel *rel)
 		set_nodistinct(rel);
 	/* rewrite distinct project [ gbe ] ( select ( groupby [ gbe ] [ gbe, e ] )[ e op val ]) 
 	 * into project [ gbe ] ( select ( group etc ) */
-	if (rel->op == op_project && rel->l && !rel->r /* no order by */ && need_distinct(rel) &&
-	    l->op == op_select) {
+	if (rel->op == op_project && rel->l && !rel->r /* no order by */ && 
+	    need_distinct(rel) && l->op == op_select){ 
 		sql_rel *g = l->l;
 		if (is_groupby(g->op)) {
 			list *gbe = g->r;
@@ -1998,7 +1988,8 @@ rel_distinct_project2groupby(int *changes, mvc *sql, sql_rel *rel)
 				set_nodistinct(rel);
 		}
 	}
-	if (rel->op == op_project && rel->l && !rel->r /* no order by */ && need_distinct(rel)) {
+	if (rel->op == op_project && rel->l && !rel->r /* no order by */ && 
+	    need_distinct(rel) && exps_card(rel->exps) > CARD_ATOM) {
 		node *n;
 		list *exps = new_exp_list(sql->sa), *gbe = new_exp_list(sql->sa);
 
@@ -3013,12 +3004,12 @@ rel_push_select_down(int *changes, mvc *sql, sql_rel *rel)
 				ne = exp_push_down(sql, e, jl, jl);
 			if (ne && ne != e) {
 				done = 1; 
-				rel_select_add_exp(jl, ne);
+				rel_select_add_exp(sql->sa, jl, ne);
 			} else if (right) {
 				ne = exp_push_down(sql, e, jr, jr);
 				if (ne && ne != e) {
 					done = 1; 
-					rel_select_add_exp(jr, ne);
+					rel_select_add_exp(sql->sa, jr, ne);
 				}
 			}
 			if (!done)
@@ -3074,7 +3065,7 @@ rel_push_select_down(int *changes, mvc *sql, sql_rel *rel)
 
 				/* can we move it down */
 				if (ne && ne != e) {
-					rel_select_add_exp(pl, ne);
+					rel_select_add_exp(sql->sa, pl, ne);
 					(*changes)++;
 				} else {
 					append(rel->exps, (ne)?ne:e);
@@ -3952,6 +3943,68 @@ rel_reduce_groupby_exps(int *changes, mvc *sql, sql_rel *rel)
 	return rel;
 }
 
+/* Rewrite group by expressions with distinct 
+ *
+ * ie select a, count(distinct b) from c where ... groupby a;
+ * No other aggregations should be present
+ */
+
+static sql_rel *
+rel_groupby_distinct(int *changes, mvc *sql, sql_rel *rel) 
+{
+	if (is_groupby(rel->op) && rel->r && !rel_is_ref(rel)) {
+		node *n;
+		int nr = 0;
+		list *gbe, *ngbe, *arg, *exps, *nexps;
+		sql_exp *distinct = NULL, *darg;
+		sql_rel *l = NULL;
+
+		for (n=rel->exps->h; n && nr <= 2; n = n->next) {
+			sql_exp *e = n->data;
+			if (need_distinct(e)) {
+				distinct = n->data;
+				nr++;
+			}
+		}
+		if (nr != 1 || list_length(rel->r) + nr != list_length(rel->exps)) 
+			return rel;
+		arg = distinct->l;
+		if (distinct->type != e_aggr || list_length(arg) != 1)
+			return rel;
+
+		darg = arg->h->data;
+		exp_label(sql->sa, darg, ++sql->label);
+
+		gbe = rel->r;
+		ngbe = sa_list(sql->sa);
+		exps = sa_list(sql->sa);
+		nexps = sa_list(sql->sa);
+		for (n=rel->exps->h; n; n = n->next) {
+			sql_exp *e = n->data;
+			if (e != distinct) {
+				e = exp_column(sql->sa, exp_find_rel_name(e), exp_name(e), exp_subtype(e), e->card, has_nil(e), is_intern(e));
+				append(ngbe, e);
+				append(exps, e);
+				e = exp_column(sql->sa, exp_find_rel_name(e), exp_name(e), exp_subtype(e), e->card, has_nil(e), is_intern(e));
+				append(nexps, e);
+			}
+		}
+
+		list_append(gbe, exp_copy(sql->sa, darg));
+		darg = exp_column(sql->sa, exp_find_rel_name(darg), exp_name(darg), exp_subtype(darg), darg->card, has_nil(darg), is_intern(darg));
+		list_append(exps, exp_copy(sql->sa, darg));
+		arg->h->data = darg;
+		l = rel->l = rel_groupby(sql, rel->l, gbe);
+		l->exps = exps;
+		rel->r = ngbe;
+		rel->exps = nexps;
+		set_nodistinct(distinct);
+		append(nexps, distinct);
+		(*changes)++;
+	}
+	return rel;
+}
+
 static sql_exp *split_aggr_and_project(mvc *sql, list *aexps, sql_exp *e);
 
 static void
@@ -3991,6 +4044,139 @@ split_aggr_and_project(mvc *sql, list *aexps, sql_exp *e)
 		return e;
 	}
 	return NULL;
+}
+
+static sql_exp *
+exp_use_consts(mvc *sql, sql_exp *e, list *consts);
+
+static list *
+exps_use_consts(mvc *sql, list *exps, list *consts)
+{
+	node *n;
+	list *nl = new_exp_list(sql->sa);
+
+	if (!exps)
+		return sa_list(sql->sa);
+	for(n = exps->h; n; n = n->next) {
+		sql_exp *arg = n->data, *narg = NULL;
+
+		narg = exp_use_consts(sql, arg, consts);
+		if (!narg) 
+			return NULL;
+		if (arg->p)
+			narg->p = prop_copy(sql->sa, arg->p);
+		append(nl, narg);
+	}
+	return nl;
+}
+
+static sql_exp *
+exp_use_consts(mvc *sql, sql_exp *e, list *consts) 
+{
+	sql_exp *ne = NULL, *l, *r, *r2;
+
+	switch(e->type) {
+	case e_column:
+		if (e->l) 
+			ne = exps_bind_column2(consts, e->l, e->r);
+		if (!ne && !e->l)
+			ne = exps_bind_column(consts, e->r, NULL);
+		if (!ne)
+			return e;
+		return ne;
+	case e_cmp: 
+		if (e->flag == cmp_or) {
+			list *l = exps_use_consts(sql, e->l, consts);
+			list *r = exps_use_consts(sql, e->r, consts);
+
+			if (!l || !r) 
+				return NULL;
+			return exp_or(sql->sa, l, r);
+		} else if (e->flag == cmp_in || e->flag == cmp_notin || get_cmp(e) == cmp_filter) {
+			sql_exp *l = exp_use_consts(sql, e->l, consts);
+			list *r = exps_use_consts(sql, e->r, consts);
+
+			if (!l || !r) 
+				return NULL;
+			if (get_cmp(e) == cmp_filter) 
+				return exp_filter(sql->sa, l, r, e->f, is_anti(e));
+			return exp_in(sql->sa, l, r, e->flag);
+		} else {
+			l = exp_use_consts(sql, e->l, consts);
+			r = exp_use_consts(sql, e->r, consts);
+			if (e->f) {
+				r2 = exp_use_consts(sql, e->f, consts);
+				if (l && r && r2)
+					return exp_compare2(sql->sa, l, r, r2, e->flag);
+			} else if (l && r) {
+				return exp_compare(sql->sa, l, r, e->flag);
+			}
+		}
+		return NULL;
+	case e_convert:
+		l = exp_use_consts(sql, e->l, consts);
+		if (l)
+			return exp_convert(sql->sa, l, exp_fromtype(e), exp_totype(e));
+		return NULL;
+	case e_aggr:
+	case e_func: {
+		list *l = e->l, *nl = NULL;
+
+		if (!l) {
+			return e;
+		} else {
+			nl = exps_use_consts(sql, l, consts);
+			if (!nl)
+				return NULL;
+		}
+		if (e->type == e_func)
+			return exp_op(sql->sa, nl, e->f);
+		else 
+			return exp_aggr(sql->sa, nl, e->f, need_distinct(e), need_no_nil(e), e->card, has_nil(e));
+	}	
+	case e_atom:
+	case e_psm:
+		return e;
+	}
+	return NULL;
+}
+
+static sql_rel *
+rel_remove_join(int *changes, mvc *sql, sql_rel *rel)
+{
+	if (is_join(rel->op)) {
+		sql_rel *l = rel->l;
+		sql_rel *r = rel->r;
+		int lconst = 0, rconst = 0;
+
+
+		if (!l || rel_is_ref(l) || !r || rel_is_ref(r) ||
+		   (l->op != op_project && r->op != op_project)) 
+			return rel;
+		if (l->op == op_project && exps_are_atoms(l->exps))
+			lconst = 1;
+		if (r->op == op_project && exps_are_atoms(r->exps))
+			rconst = 1;
+		if (!lconst && !rconst)
+			return rel;
+		(*changes)++;
+		/* use constant (instead of alias) in expressions */
+		if (lconst) {
+			sql_rel *s = l;
+			l = r;
+			r = s;
+		}
+		rel->exps = exps_use_consts(sql, rel->exps, r->exps);
+		/* change into select */
+		rel->op = op_select;
+		rel->l = l;
+		rel->r = NULL;
+		/* wrap in a project including, the constant columns */
+		l->subquery = 0;
+		rel = rel_project(sql->sa, rel, rel_projections(sql, l, NULL, 1, 1));
+		list_merge(rel->exps, r->exps, (fdup)NULL);
+	}
+	return rel;
 }
 
 /* Pushing projects up the tree. Done very early in the optimizer.
@@ -5060,22 +5246,33 @@ exp_merge_range(sql_allocator *sa, list *exps)
 
 				if (f->type == e_cmp && f->flag < cmp_equal && !f->f  &&
 				    rf->card > CARD_ATOM) {
-					sql_exp *ne;
+					sql_exp *ne, *t;
 					int swap = 0, lt = 0, gt = 0;
 					comp_type ef = (comp_type) e->flag, ff = (comp_type) f->flag;
 				
+					/* both swapped ? */
+				     	if (exp_match_exp(re, rf)) {
+						t = re; 
+						re = le;
+						le = t;
+						ef = swap_compare(ef);
+						t = rf;
+						rf = lf;
+						lf = t;
+						ff = swap_compare(ff);
+					}
+
 					/* is left swapped ? */
 				     	if (exp_match_exp(re, lf)) {
-						sql_exp *t = re; 
-
+						t = re; 
 						re = le;
 						le = t;
 						ef = swap_compare(ef);
 					}
+
 					/* is right swapped ? */
 				     	if (exp_match_exp(le, rf)) {
-						sql_exp *t = rf; 
-
+						t = rf; 
 						rf = lf;
 						lf = t;
 						ff = swap_compare(ff);
@@ -6226,6 +6423,11 @@ _rel_optimizer(mvc *sql, sql_rel *rel, int level)
 	if (gp.cnt[op_project])
 		rel = rewrite(sql, rel, &rel_push_project_up, &changes); 
 
+	/* join's/crossproducts between a relation and a constant (row).
+	 * could be rewritten */
+	if (gp.cnt[op_join] && gp.cnt[op_project])
+		rel = rewrite(sql, rel, &rel_remove_join, &changes); 
+
 	if (gp.cnt[op_join] || 
 	    gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full] || 
 	    gp.cnt[op_semi] || gp.cnt[op_anti] ||
@@ -6294,6 +6496,7 @@ _rel_optimizer(mvc *sql, sql_rel *rel, int level)
 		rel = rewrite_topdown(sql, rel, &rel_push_aggr_down, &changes);
 		rel = rewrite(sql, rel, &rel_groupby_order, &changes); 
 		rel = rewrite(sql, rel, &rel_reduce_groupby_exps, &changes); 
+		rel = rewrite(sql, rel, &rel_groupby_distinct, &changes); 
 	}
 
 	if (gp.cnt[op_join] || gp.cnt[op_left] || 

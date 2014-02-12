@@ -1,0 +1,51 @@
+stdout of test 'substring_limit_bug` in directory 'sql/test/bugs` itself:
+
+
+# 15:26:55 >  
+# 15:26:55 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=35479" "--set" "mapi_usock=/var/tmp/mtest-5917/.s.monetdb.35479" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/niels/scratch/rc-clean/Linux-x86_64/var/MonetDB/mTests_sql_test_bugs" "--set" "mal_listing=0"
+# 15:26:55 >  
+
+# MonetDB 5 server v11.17.2
+# This is an unreleased version
+# Serving database 'mTests_sql_test_bugs', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 3.777 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.localdomain:35479/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-5917/.s.monetdb.35479
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 15:26:55 >  
+# 15:26:55 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-5917" "--port=35479"
+# 15:26:55 >  
+
+#CREATE TABLE "source1" (
+#	"source" CHARACTER LARGE OBJECT,
+#	"id"     INTEGER
+#);
+#COPY 5 RECORDS INTO "source1" FROM stdin USING DELIMITERS '\t','\n','"';
+#"0499999999999"	1
+#"0499999999999"	1
+#"0499999999999"	1
+#"0499999999999"	1
+#"0499999999999"	1
+#
+[ 5	]
+#select * from source1 where substring(source,1,2) = '04' limit 1 offset 4;
+% sys.source1,	sys.source1 # table_name
+% source,	id # name
+% clob,	int # type
+% 13,	1 # length
+[ "0499999999999",	1	]
+#drop table source1;
+
+# 15:26:55 >  
+# 15:26:55 >  "Done."
+# 15:26:55 >  
+

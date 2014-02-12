@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2013 MonetDB B.V.
+ * Copyright August 2008-2014 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -57,6 +57,7 @@
 #include "mal_parser.h"
 #include "mal_namespace.h"
 #include "mal_private.h"
+#include "mal_runtime.h"
 #include <mapi.h> /* for PROMPT1 */
 
 
@@ -186,6 +187,7 @@ MCexitClient(Client c)
 #ifdef MAL_CLIENT_DEBUG
 	printf("# Exit client %d\n", c->idx);
 #endif
+	finishSessionProfiler(c);
 	MPresetProfiler(c->fdout);
 	if (c->father == NULL) { /* normal client */
 		if (c->fdout && c->fdout != GDKstdout) {

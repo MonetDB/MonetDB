@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2013 MonetDB B.V.
+ * Copyright August 2008-2014 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -172,9 +172,9 @@ CMDinfo(BAT **ret1, BAT **ret2, BAT *b)
 	BAT *bk, *bv;
 	const char *mode, *accessmode;
 
-	if (!(bk = BATnew(TYPE_oid, TYPE_str, 128)))
+	if (!(bk = BATnew(TYPE_void, TYPE_str, 128)))
 		return GDK_FAIL;
-	if (!(bv = BATnew(TYPE_oid, TYPE_str, 128)))
+	if (!(bv = BATnew(TYPE_void, TYPE_str, 128)))
 		return GDK_FAIL;
 	BATseqbase(bk,0);
 	BATseqbase(bv,0);
@@ -1892,7 +1892,7 @@ BKCheat(int *res, str *input)
 	int bid = BBPindex(*input);
 
 	if (bid) {
-		*res = BBP_lastused(bid) & 0x7fffffff;
+		*res = BBPLASTUSED(BBP_lastused(bid));
 	}
 	throw(MAL, "bat", PROGRAM_NYI);
 }

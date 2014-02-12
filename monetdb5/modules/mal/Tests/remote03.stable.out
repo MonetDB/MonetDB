@@ -66,7 +66,7 @@ exit MALException:str ;
     remote.disconnect(conn);
 end main;
 [ "Received first error from the remote site" ]
-!SyntaxException:remote.exec:(mapi:monetdb://monetdb@vienna.ins.cwi.nl/mTests_monetdb5_modules_mal) rmt0__8_void := io.print.bla();
+
 SyntaxException:parseError:                    ^'(' expected
 
 [ "rmt1_bn_bat_oid_str" ]
@@ -97,19 +97,17 @@ SyntaxException:parseError:                    ^'(' expected
 [ 19@0,	  "sqlblob"	  ]
 [ 20@0,	  "color"	  ]
 [ 21@0,	  "url"		  ]
-[ 22@0,	"uuid"  ]
-[ 23@0,	"json"  ]
-[ 24@0,	"date"  ]
-[ 25@0,	"daytime"  ]
-[ 26@0,	"timestamp"  ]
-[ 27@0,	"timezone"  ]
-[ 28@0,	"zrule"  ]
-[ 29@0,	"inet"  ]
-[ 30@0,	"identifier"  ]
-[ 31@0,	"xml"  ]
-[ 32@0,	"pcre"  ]
-[ 33@0,	"mbr"  ]
-[ 34@0,	"wkb"  ]
+[ 22@0,	"date"  ]
+[ 23@0,	"daytime"  ]
+[ 24@0,	"timestamp"  ]
+[ 25@0,	"timezone"  ]
+[ 26@0,	"zrule"  ]
+[ 27@0,	"inet"  ]
+[ 28@0,	"identifier"  ]
+[ 29@0,	"xml"  ]
+[ 30@0,	"pcre"  ]
+[ 31@0,	"mbr"  ]
+[ 32@0,	"wkb"  ]
 [ "rmt2__8_void" ]
 [ nil ]
 

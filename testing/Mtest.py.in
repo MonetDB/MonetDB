@@ -14,7 +14,7 @@
 #
 # The Initial Developer of the Original Code is CWI.
 # Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-# Copyright August 2008-2013 MonetDB B.V.
+# Copyright August 2008-2014 MonetDB B.V.
 # All Rights Reserved.
 
 #TODO:
@@ -318,7 +318,6 @@ CONDITIONALS = {
     'HAVE_JAVAJDBC'        : "@HAVE_JAVAJDBC_FALSE@",
     'HAVE_JAVAMEROCONTROL' : "@HAVE_JAVAMEROCONTROL_FALSE@",
     'HAVE_JAQL'            : "@HAVE_JAQL_FALSE@",
-    'HAVE_JSONSTORE'       : "@HAVE_JSONSTORE_FALSE@",
     'HAVE_LIBBZ2'          : "@HAVE_LIBBZ2_FALSE@",
     'HAVE_LIBZ'            : "@HAVE_LIBZ_FALSE@",
     'HAVE_MONETDB5'        : "@HAVE_MONETDB5_FALSE@",
@@ -1296,7 +1295,7 @@ def ApproveOutput (env, TST) :
 #       filter = re.compile( "^!WARNING: TCPlisten\([0-9]*\): stopped.$"        "|"
 #                            "^!WARNING: TCPepilogue: terminate [01] listeners$", re.MULTILINE)
 
-    TO = re.compile("(^\+(|[^#]*[\t ])((Memory|Segmentation) [Ff]ault|Bus [Ee]rror|Abort(|ed)|Assertion (|.* )failed[:\.]|!FATAL: BATSIGabort:|ERROR = !Connection terminated|!Mtimeout: Timeout:)([ \t]|$)|aborted too deep recursion)", re.MULTILINE)
+    TO = re.compile("(^\+(|[^#]*[\t ])((Memory|Segmentation) [Ff]ault|Bus [Ee]rror|Aborted|Assertion (|.* )failed[:\.]|!FATAL: BATSIGabort:|ERROR = !Connection terminated|!Mtimeout: Timeout:)([ \t]|$)|aborted too deep recursion)", re.MULTILINE)
 
     for WHAT in EXTENSIONS:
         testOUTPUT = os.path.join(TSTTRGDIR, "%s.test.%s" % (TST, WHAT))
@@ -1340,7 +1339,7 @@ def ApproveOutput (env, TST) :
             if os.path.getsize(patch + ".0"):
                 print "Approving  %s  ->  stable.%s%s   (%s file)" % (os.path.join(TSTDIR, "%s.test.%s" % (TST, WHAT)), WHAT, SYSTEM, oc)
 
-                f = open(patch + ".1", "w")
+                f = open(patch + ".1", "wb")
                 for l in open(patch + ".0"):
                     if TO.search(l):
                         f.write(l[:1] + '\n')
@@ -1360,7 +1359,9 @@ def ApproveOutput (env, TST) :
                         sem = 1
                 f.flush()
                 f.close()
-                shutil.copy(stableOUTPUT, stableOUTPUT + ".ORG")
+                o = open(stableOUTPUT).read()
+                open(stableOUTPUT + ".ORG", 'wb').write(o)
+                open(stableOUTPUT, 'wb').write(o)
                 proc = process.Popen(['patch', stableOUTPUT, patch + '.1'])
                 proc.wait()
                 f = open(patch, 'w')
@@ -1371,6 +1372,9 @@ def ApproveOutput (env, TST) :
                 f.close()
                 remove(stableOUTPUT + ".ORG")
                 remove(patch + ".1")
+                o = open(stableOUTPUT).read()
+                open(stableOUTPUT, 'w').write(o)
+                o = None
             else:
                 print "No differences detected between  %s and  stable.%s%s  that are not ignored by Mtest.py." % (os.path.join(TSTDIR, "%s.test.%s" % (TST, WHAT)), WHAT, SYSTEM)
             remove(patch + ".0")
@@ -2748,13 +2752,15 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                 pSrvr.stdin.close()
                 CollectIt(pSrvr.stdout, SrvrOut)
                 pSrvr.wait()
-                time.sleep(120)
-                pSrvr, pSrvrTimer = LaunchIt(Srvr, '\nio.printf("\\nReady.\\n");\n', SrvrOut, SrvrErr, TIMEOUT)
-                ln="dummy"
-                while 0 < len(ln) and ln[:6] != 'Ready.':
-                    ln=pSrvr.stdout.readline()
-                    SrvrOut.write(ln)
-                    SrvrOut.flush()
+                pSrvrTimer.cancel()
+                if returnCode(pSrvr) == 'error':
+                    time.sleep(120)
+                    pSrvr, pSrvrTimer = LaunchIt(Srvr, '\nio.printf("\\nReady.\\n");\n', SrvrOut, SrvrErr, TIMEOUT)
+                    ln="dummy"
+                    while 0 < len(ln) and ln[:6] != 'Ready.':
+                        ln=pSrvr.stdout.readline()
+                        SrvrOut.write(ln)
+                        SrvrOut.flush()
                 if ln[:6] != 'Ready.':
                     ServerReady = False
 
@@ -2765,14 +2771,16 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                     pSrvr.stdin.close()
                     CollectIt(pSrvr.stdout, SrvrOut)
                     pSrvr.wait()
-                    time.sleep(120)
-                    ServerReady = True
-                    pSrvr, pSrvrTimer = LaunchIt(Srvr, '\nio.printf("\\nReady.\\n");\n', SrvrOut, SrvrErr, TIMEOUT)
-                    ln="dummy"
-                    while 0 < len(ln) and ln[:6] != 'Ready.':
-                        ln=pSrvr.stdout.readline()
-                        SrvrOut.write(ln)
-                        SrvrOut.flush()
+                    pSrvrTimer.cancel()
+                    if returnCode(pSrvr) == 'error':
+                        time.sleep(120)
+                        ServerReady = True
+                        pSrvr, pSrvrTimer = LaunchIt(Srvr, '\nio.printf("\\nReady.\\n");\n', SrvrOut, SrvrErr, TIMEOUT)
+                        ln="dummy"
+                        while 0 < len(ln) and ln[:6] != 'Ready.':
+                            ln=pSrvr.stdout.readline()
+                            SrvrOut.write(ln)
+                            SrvrOut.flush()
                     if ln[:6] != 'Ready.':
                         ServerReady = False
 
@@ -2878,15 +2886,16 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                 SrvrOut.flush()
                 EPILOGUE.close()
 
-            try:
-                pSrvr.stdin.write('clients.quit();\n')
-                pSrvr.stdin.flush()
-            except IOError:
-                pass
-            try:
-                pSrvr.stdin.close()
-            except IOError, (IOerrNo, IOerrStr):
-                Warn("Closing input pipe in DoIt failed with #%d: '%s'." % (IOerrNo, IOerrStr))
+            if ServerReady:
+                try:
+                    pSrvr.stdin.write('clients.quit();\n')
+                    pSrvr.stdin.flush()
+                except IOError:
+                    pass
+                try:
+                    pSrvr.stdin.close()
+                except IOError, (IOerrNo, IOerrStr):
+                    Warn("Closing input pipe in DoIt failed with #%d: '%s'." % (IOerrNo, IOerrStr))
 
             CollectIt(pSrvr.stdout, SrvrOut)
             pSrvr.wait()
@@ -2955,7 +2964,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
         return None
 
     # Try to detect segfaults and the like
-    TO = re.compile("(^(|[^#]*[\t ])((Memory|Segmentation) [Ff]ault|Bus [Ee]rror|Abort(|ed)|Assertion (|.* )failed[:\.]|!FATAL: BATSIGabort:)([ \t]|$))", re.MULTILINE)
+    TO = re.compile("(^(|[^#]*[\t ])((Memory|Segmentation) [Ff]ault|Bus [Ee]rror|Aborted|Assertion (|.* )failed[:\.]|!FATAL: BATSIGabort:)([ \t]|$))", re.MULTILINE)
     # FIXME: this begs for a much nicer solution (100% copy of below)
     for f in (TestErrFile, TestOutFile):
         if os.path.isfile(f):

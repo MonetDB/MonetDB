@@ -1,4 +1,3 @@
-
 create table t_8_1 (id int, name varchar(1024));
 create table t_8_2 (id int);
 

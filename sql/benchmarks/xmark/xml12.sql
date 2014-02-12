@@ -1,4 +1,3 @@
-
 -- query 12
 
 -- use shred1

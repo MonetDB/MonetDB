@@ -1,5 +1,5 @@
 %define name MonetDB
-%define version 11.16.0
+%define version 11.17.8
 %{!?buildno: %define buildno %(date +%Y%m%d)}
 
 # groups of related archs
@@ -16,7 +16,7 @@
 %define oidsuf .oid32
 %endif
 
-%define release %{buildno}%{?dist}%{?oidsuf:.oidsuf}
+%define release %{buildno}%{?dist}%{?oidsuf}
 
 Name: %{name}
 Version: %{version}
@@ -27,7 +27,7 @@ Vendor: MonetDB BV <info@monetdb.org>
 Group: Applications/Databases
 License: MPL - http://www.monetdb.org/Legal/MonetDBLicense
 URL: http://www.monetdb.org/
-Source: http://dev.monetdb.org/downloads/sources/Feb2013-SP5/%{name}-%{version}.tar.bz2
+Source: http://dev.monetdb.org/downloads/sources/Jan2014/%{name}-%{version}.tar.bz2
 
 BuildRequires: bison
 BuildRequires: bzip2-devel
@@ -37,6 +37,7 @@ BuildRequires: flex
 # no geos library on RedHat Enterprise Linux and derivatives
 BuildRequires: geos-devel >= 2.2.0
 %endif
+BuildRequires: gsl-devel
 BuildRequires: libcurl-devel
 BuildRequires: libuuid-devel
 BuildRequires: libxml2-devel
@@ -73,7 +74,9 @@ accelerators.  It also has an SQL frontend.
 
 This package contains the core components of MonetDB in the form of a
 single shared library.  If you want to use MonetDB, you will certainly
-need this package, but you will also need one of the server packages.
+need this package, but you will also need at least the MonetDB5-server
+package, and most likely also %{name}-SQL-server5, as well as one or
+more client packages.
 
 %files
 %defattr(-,root,root)
@@ -154,8 +157,8 @@ automatic index management, extensibility of data types and search
 accelerators.  It also has an SQL frontend.
 
 This package contains mclient, the main client program to communicate
-with the database server, and msqldump, a program to dump the SQL
-database so that it can be loaded back later.  If you want to use
+with the MonetDB database server, and msqldump, a program to dump the
+SQL database so that it can be loaded back later.  If you want to use
 MonetDB, you will very likely need this package.
 
 %files client
@@ -177,7 +180,8 @@ main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
 accelerators.  It also has an SQL frontend.
 
-This package contains stethoscope and tomograph.
+This package contains stethoscope and tomograph.  These tools can be
+used to monitor the MonetDB database server.
 
 %files client-tools
 %defattr(-,root,root)
@@ -223,7 +227,7 @@ This package contains the MonetDB ODBC driver.
 
 %post client-odbc
 # install driver if first install of package or if driver not installed yet
-if [ "$1" -eq 1 ] || ! grep -q MonetDB /etc/odbcinst.ini; then
+if [ "$1" -eq 1 ] || ! odbcinst -d -q -n MonetDB >& /dev/null; then
 odbcinst -i -d -r <<EOF
 [MonetDB]
 Description = ODBC for MonetDB
@@ -388,7 +392,7 @@ automatic index management, extensibility of data types and search
 accelerators.  It also has an SQL frontend.
 
 This package contains the GIS (Geographic Information System)
-extensions for MonetDB-SQL-server5.
+extensions for %{name}-SQL-server5.
 
 %files geom-MonetDB5
 %defattr(-,root,root)
@@ -397,6 +401,27 @@ extensions for MonetDB-SQL-server5.
 %{_libdir}/monetdb5/geom.mal
 %{_libdir}/monetdb5/lib_geom.so
 %endif
+
+%package gsl-MonetDB5
+Summary: MonetDB5 SQL interface to the gsl library
+Group: Applications/Databases
+Requires: MonetDB5-server = %{version}-%{release}
+
+%description gsl-MonetDB5
+MonetDB is a database management system that is developed from a
+main-memory perspective with use of a fully decomposed storage model,
+automatic index management, extensibility of data types and search
+accelerators.  It also has an SQL frontend.
+
+This package contains the interface to the GNU Scientific Library for
+numerical analysis (gsl).
+
+%files gsl-MonetDB5
+%defattr(-,root,root)
+%{_libdir}/monetdb5/autoload/*_gsl.mal
+%{_libdir}/monetdb5/createdb/*_gsl.sql
+%{_libdir}/monetdb5/gsl.mal
+%{_libdir}/monetdb5/lib_gsl.so
 
 %package jaql
 Summary: MonetDB5 JAQL
@@ -409,8 +434,8 @@ main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
 accelerators.  It also has an SQL frontend.
 
-This package contains the JAQL extension for MonetDB5.  JAQL is a
-querly language for JavaScript Object Notation (JSON).
+This package contains the JAQL extension for MonetDB.  JAQL is a
+query language for JavaScript Object Notation (JSON).
 
 %files jaql
 %defattr(-,root,root)
@@ -433,10 +458,9 @@ main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
 accelerators.  It also has an SQL frontend.
 
-This package contains the MonetDB5 server component.  You need this
-package if you want to work using the MAL language, or if you want to
-use the SQL frontend (in which case you need MonetDB-SQL-server5 as
-well).
+This package contains the MonetDB server component.  You need this
+package if you want to use the MonetDB database system.  If you want
+to use the SQL frontend, you also need %{name}-SQL-server5.
 
 %pre -n MonetDB5-server
 getent group monetdb >/dev/null || groupadd -r monetdb
@@ -469,6 +493,7 @@ fi
 %if %{?rhel:0}%{!?rhel:1}
 %exclude %{_libdir}/monetdb5/geom.mal
 %endif
+%exclude %{_libdir}/monetdb5/gsl.mal
 # %exclude %{_libdir}/monetdb5/rdf.mal
 %exclude %{_libdir}/monetdb5/sql.mal
 %exclude %{_libdir}/monetdb5/jaql*.mal
@@ -484,6 +509,7 @@ fi
 %if %{?rhel:0}%{!?rhel:1}
 %exclude %{_libdir}/monetdb5/lib_geom.so
 %endif
+%exclude %{_libdir}/monetdb5/lib_gsl.so
 # %exclude %{_libdir}/monetdb5/lib_rdf.so
 %exclude %{_libdir}/monetdb5/lib_sql.so
 %exclude %{_libdir}/monetdb5/lib_jaql.so
@@ -549,7 +575,7 @@ main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
 accelerators.  It also has an SQL frontend.
 
-This package contains the SQL frontend for MonetDB5.  If you want to
+This package contains the SQL frontend for MonetDB.  If you want to
 use SQL with MonetDB, you will need to install this package.
 
 %if %{?rhel:0}%{!?rhel:1}
@@ -579,13 +605,21 @@ systemd-tmpfiles --create %{_sysconfdir}/tmpfiles.d/monetdbd.conf
 %if %{?rhel:0}%{!?rhel:1}
 %exclude %{_libdir}/monetdb5/createdb/*_geom.sql
 %endif
+%exclude %{_libdir}/monetdb5/createdb/*_gsl.sql
 # %exclude %{_libdir}/monetdb5/createdb/*_rdf.sql
 %{_libdir}/monetdb5/createdb/*
 %{_libdir}/monetdb5/sql*.mal
 %doc %{_mandir}/man1/monetdb.1.gz
 %doc %{_mandir}/man1/monetdbd.1.gz
+%if (0%{?fedora} >= 20)
+%dir %{_datadir}/doc/MonetDB-SQL
+%docdir %{_datadir}/doc/MonetDB-SQL
+%{_datadir}/doc/MonetDB-SQL/*
+%else
+%dir %{_datadir}/doc/MonetDB-SQL-%{version}
 %docdir %{_datadir}/doc/MonetDB-SQL-%{version}
 %{_datadir}/doc/MonetDB-SQL-%{version}/*
+%endif
 
 %package -n python-monetdb
 Summary: Native MonetDB client Python API
@@ -601,7 +635,8 @@ automatic index management, extensibility of data types and search
 accelerators.  It also has an SQL frontend.
 
 This package contains the files needed to use MonetDB from a Python
-program.
+program.  This package is for Python version 2.  If you want to use
+Python version 3, you need %{name}-python3-monetdb.
 
 %files -n python-monetdb
 %defattr(-,root,root)
@@ -624,7 +659,8 @@ automatic index management, extensibility of data types and search
 accelerators.  It also has an SQL frontend.
 
 This package contains the files needed to use MonetDB from a Python3
-program.
+program.  This package is for Python version 3.  If you want to use
+Python version 2, you need %{name}-python-monetdb.
 
 %files -n python3-monetdb
 %defattr(-,root,root)
@@ -700,6 +736,7 @@ developer, but if you do want to test, this is the package you need.
 	--enable-fits=no \
 	--enable-gdk=yes \
 	--enable-geom=%{?rhel:no}%{!?rhel:yes} \
+	--enable-gsl=yes \
 	--enable-instrument=no \
 	--enable-jaql=yes \
 	--enable-jdbc=no \
@@ -750,6 +787,10 @@ rm -f $RPM_BUILD_ROOT%{_libdir}/monetdb5/*.la
 # internal development stuff
 rm -f $RPM_BUILD_ROOT%{_bindir}/Maddlog
 
+%if 0%{?fedora} >= 20
+mv $RPM_BUILD_ROOT%{_datadir}/doc/MonetDB-SQL-%{version} $RPM_BUILD_ROOT%{_datadir}/doc/MonetDB-SQL
+%endif
+
 %post -p /sbin/ldconfig
 
 %postun -p /sbin/ldconfig
@@ -758,6 +799,153 @@ rm -f $RPM_BUILD_ROOT%{_bindir}/Maddlog
 rm -fr $RPM_BUILD_ROOT
 
 %changelog
+* Fri Feb 07 2014 Sjoerd Mullender <sjoerd@acm.org> - 11.17.7-20140207
+- Rebuilt.
+- BZ#3436: COPY INTO from file containing leading Byte Order Mark (BOM)
+  causes corruption
+
+* Thu Feb 06 2014 Sjoerd Mullender <sjoerd@acm.org> - 11.17.5-20140206
+- Rebuilt.
+- BZ#3420: Database does not start after upgrade
+- BZ#3425: Temporal extraction glitches
+- BZ#3427: Consistent use of current_timestamp and now()
+- BZ#3428: Aggregation over two columns is broken
+- BZ#3429: SAMPLE on JOIN result crashes server
+- BZ#3430: Wrong temporary handling
+- BZ#3431: SQLGetInfo returns incorrect value for SQL_FN_NUM_TRUNCATE
+- BZ#3432: MonetDB SQL syntax incompatible with SQL-92 <delimited
+  identifier> syntax
+
+* Sat Jan 25 2014 Sjoerd Mullender <sjoerd@acm.org> - 11.17.3-20140125
+- Rebuilt.
+- BZ#3418: Segmentation fault on a query from table expression
+- BZ#3419: Database does not start after upgrade
+- BZ#3423: Group by alias with distinct count doesn't work
+
+* Tue Jan 14 2014 Sjoerd Mullender <sjoerd@acm.org> - 11.17.1-20140114
+- Rebuilt.
+- BZ#3040: Wrong NULL behavior in EXCEPT and INTERSECT
+- BZ#3092: ODBC client doesn't support scalar function escape
+- BZ#3198: SIGSEGV insert_string_bat (b=0x7fffe419d0a0, n=0x7fffc4006010,
+  append=0) at gdk_batop.c:196
+- BZ#3210: Unexpected concurrency conflict when inserting to 2 tables
+  simultaneously and querying one of them
+- BZ#3273: Add support to Python DBAPI package for timetz, inet and
+  url types
+- BZ#3285: no such table 'queryHistory'
+- BZ#3298: GDKmmap messages and monetdb start db takes very long
+- BZ#3354: Introduce query time-out
+- BZ#3371: (i)like generates batloop instead of algebra.likesubselect
+- BZ#3372: Large group by queries never complete - server at 100%
+  cpu(all cores) until MonetDB stopped
+- BZ#3383: Bad performance with DISTINCT GROUP BY
+- BZ#3391: Bad performance with GROUP BY and FK with out aggregate
+  function
+- BZ#3393: "COPY .. INTO ..." - escape of string quotes
+- BZ#3399: server crashed on simple (malformed) query
+- BZ#3401: inconsistent/strange handling of invalid dates
+  (e.g. 2013-02-29) in where clause
+- BZ#3403: NOT NULL constraint can't be applied after deleting rows with
+  null values
+- BZ#3404: Assertion `h->storage == STORE_MMAP' failed.
+- BZ#3408: nested concat query crashed server
+- BZ#3411: (disguised) BETWEEN clause not recognised. Hence no rangejoin.
+- BZ#3412: Boolean expressions in WHERE clause, result in incorrect
+  resulsts
+- BZ#3417: Nested Common Table Expressions Crash
+
+* Tue Dec 10 2013 Sjoerd Mullender <sjoerd@acm.org> - 11.17.1-20140114
+- buildtools: Created packages for RPM based systems and Debian/Ubunty containing
+  the MonetDB interface to the GNU Scientific Library (gsl).
+
+* Wed Nov 20 2013 Sjoerd Mullender <sjoerd@acm.org> - 11.17.1-20140114
+- gdk: Removed some unused fields in the atomDesc structure.  This change
+  requires a complete recompilation of the whole suite.
+
+* Wed Nov 20 2013 Sjoerd Mullender <sjoerd@acm.org> - 11.17.1-20140114
+- clients: ODBC: Implemented {fn scalar()} and {interval ...} escapes.
+
+* Wed Nov 20 2013 Gijs Molenaar <g.j.molenaar@uva.nl> - 11.17.1-20140114
+- python2: Changed defaults for connecting (defaults to unix socket now).
+- python2: Unix sockets partially working for control protocol.
+- python2: Add support for unix socket.
+
+* Wed Nov 20 2013 Gijs Molenaar <g.j.molenaar@uva.nl> - 11.17.1-20140114
+- python3: Changed defaults for connecting (defaults to unix socket now).
+- python3: Unix sockets partially working for control protocol.
+- python3: Add support for unix socket.
+
+* Wed Nov 20 2013 Sjoerd Mullender <sjoerd@acm.org> - 11.17.1-20140114
+- buildtools: We no longer install the .la files in our Fedora/Debian/Ubuntu packages.
+
+* Wed Nov 20 2013 Sjoerd Mullender <sjoerd@acm.org> - 11.17.1-20140114
+- gdk: Replaced the mutex implementation for both GNU C and Visual Studio with
+  a home-grown implementation that uses atomic instructions (__sync_*()
+  in gcc, _Interlocked*() in VS).
+
+* Wed Nov 20 2013 Sjoerd Mullender <sjoerd@acm.org> - 11.15.19-20131120
+- Rebuilt.
+- BZ#3243: Segmentation fault (possible data corruption) after clean
+  shutdown
+- BZ#3258: Scheduling issues
+- BZ#3368: BAT sortedness info ignored on ORDER BY and TOPN
+- BZ#3374: UNIQUE constraint does not set tkey property on the
+  corresponding BAT
+- BZ#3382: Response to PREPARE emtpy if query contains a LIMIT
+- BZ#3385: Simple query fails with 'identifier not found'
+- BZ#3387: mclient does not properly double quote schema names when
+  using autofill tab
+- BZ#3388: case statement in "order by" clause doesn't work when used
+  together with "group by"
+- BZ#3389: median function with "group by"  - SIGSEGV
+- BZ#3392: ODBC datatype conversion for INTEGER not working properly
+- BZ#3394: "Cannot find column type" error in temporary tables in
+  functions
+- BZ#3395: error occurred during a query: "'CASE WHEN" sentence
+- BZ#3396: Improper UDF expansion
+- BZ#3397: Error in ODBC-Driver when using Prepared Statements
+- BZ#3398: Cannot stop monetdbd after erroneously starting an
+  uninitialized dbfarm
+
+* Tue Nov 19 2013 Sjoerd Mullender <sjoerd@acm.org> - 11.15.19-20131120
+- clients: mclient: Fixed a bug where the -H option only worked if the readline
+  history file already existed.  Now we properly create and use the
+  history file.
+
+* Tue Nov 19 2013 Sjoerd Mullender <sjoerd@acm.org> - 11.15.19-20131120
+- gdk: Stopped using the deprecated sbrk() system call.
+- gdk: Fixed a problem when reverse sorting a sorted column.
+- gdk: Fixed bugs that deal with problems that could possibly occur when
+  transactions are aborted and the server is restarted.  See bug #3243.
+- gdk: A bug was fixed in the handling of grouped aggregates when all values
+  in a group are null.  See bug #3388.
+
+* Tue Nov 19 2013 Sjoerd Mullender <sjoerd@acm.org> - 11.15.19-20131120
+- monetdb5: Fixed a possible buffer overflow in the COPY INTO code.
+- monetdb5: Fixed a problem that when the server is using all available threads
+  for a query, it was not possible to attach another client and have
+  it execute even the smallest query.  This is fixed by creating extra
+  threads for each client entering the fray at the cost of having more
+  threads that execute queries.  But at least there is guaranteed progress
+  for all clients (modulo the operating system scheduler).  See bug #3258.
+
+* Tue Nov 19 2013 Sjoerd Mullender <sjoerd@acm.org> - 11.15.19-20131120
+- sql: Fixed a bug where the server at some point stopped saving compiled
+  queries in the SQL query cache.
+
+* Fri Nov 15 2013 Fabian Groffen <fabian@monetdb.org> - 11.15.19-20131120
+- merovingian: monetdbd(1) now refuses to startup if it cannot read the properties
+  from the dbfarm, bug #3398
+
+* Wed Nov  6 2013 Sjoerd Mullender <sjoerd@acm.org> - 11.15.19-20131120
+- clients: ODBC: Fixed interpretation SQL_C_SLONG/SQL_C_ULONG/SQL_C_LONG to
+  refer to a 32 bit integer always (i.e. "int" on 64 bit architectures
+  despite the name and the Microsoft documentation).  This seems to be
+  the consensus.
+- clients: ODBC: Fixed transaction level: MonetDB only supports the highest level
+  (SQL_TXN_SERIALIZABLE), so setting the transaction level can be accepted
+  and ignored.
+
 * Tue Oct 08 2013 Hannes Muehleisen <hannes@cwi.nl> - 11.15.17-20131008
 - Rebuilt.
 - BZ#3323: Heapcache bugs/performance issues

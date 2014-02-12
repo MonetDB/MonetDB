@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2013 MonetDB B.V.
+ * Copyright August 2008-2014 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -93,6 +93,7 @@
 #define RDONLY 0
 #define RD_INS 1
 #define RD_UPD 2
+#define QUICK  3
 
 #define FRAME_ROWS  0 
 #define FRAME_RANGE 1

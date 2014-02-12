@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2013 MonetDB B.V.
+ * Copyright August 2008-2014 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -128,6 +128,7 @@ mtime_export str MTIMEnil2date(date *ret, const int *src);
 mtime_export str MTIMEdate2date(date *ret, const date *src);
 mtime_export str MTIMEdaytime2daytime(daytime *ret, const daytime *src);
 mtime_export str MTIMEsecs2daytime(daytime *ret, const lng *src);
+mtime_export str MTIMEsecs2daytime_bulk(bat *ret, bat *bid);
 mtime_export str MTIMEtimestamp2timestamp(timestamp *ret, const timestamp *src);
 mtime_export str MTIMEprelude(void);
 mtime_export str MTIMEepilogue(void);
@@ -151,6 +152,7 @@ mtime_export str MTIMEtimestamp_timestamp(timestamp *d, const timestamp *s);
 mtime_export str MTIMEtimestamp_create(timestamp *ret, const date *d, const daytime *t, const tzone *z);
 mtime_export str MTIMEtimestamp_create_default(timestamp *ret, const date *d, const daytime *t);
 mtime_export str MTIMEtimestamp_create_from_date(timestamp *ret, const date *d);
+mtime_export str MTIMEtimestamp_create_from_date_bulk(bat *ret, bat *bid);
 mtime_export str MTIMEdate_extract_year(int *ret, const date *v);
 mtime_export str MTIMEdate_extract_month(int *ret, const date *v);
 mtime_export str MTIMEdate_extract_day(int *ret, const date *v);
@@ -164,8 +166,10 @@ mtime_export str MTIMEdaytime_extract_sql_seconds(int *ret, const daytime *v);
 mtime_export str MTIMEdaytime_extract_milliseconds(int *ret, const daytime *v);
 mtime_export str MTIMEtimestamp_extract_daytime(daytime *ret, const timestamp *t, const tzone *z);
 mtime_export str MTIMEtimestamp_extract_daytime_default(daytime *ret, const timestamp *t);
+mtime_export str MTIMEtimestamp_extract_daytime_default_bulk(bat *ret, bat *bid);
 mtime_export str MTIMEtimestamp_extract_date(date *ret, const timestamp *t, const tzone *z);
 mtime_export str MTIMEtimestamp_extract_date_default(date *ret, const timestamp *t);
+mtime_export str MTIMEtimestamp_extract_date_default_bulk(bat *ret, bat *bid);
 mtime_export str MTIMEdate_addyears(date *ret, const date *v, const int *delta);
 mtime_export str MTIMEdate_adddays(date *ret, const date *v, const int *delta);
 mtime_export str MTIMEdate_addmonths(date *ret, const date *v, const int *delta);
@@ -229,7 +233,9 @@ mtime_export str MTIMEdaytime3(daytime *ret, const int *h, const int *m, const i
 mtime_export str MTIMEunix_epoch(timestamp *ret);
 mtime_export str MTIMEepoch2int(int *res, const timestamp *ts);
 mtime_export str MTIMEtimestamp(timestamp *ret, const int *sec);
+mtime_export str MTIMEtimestamp_bulk(bat *ret, bat *bid);
 mtime_export str MTIMEtimestamp_lng(timestamp *ret, const lng *msecs);
+mtime_export str MTIMEtimestamp_lng_bulk(bat *ret, bat *bid);
 mtime_export str MTIMEruleDef0(rule *ret, const int *m, const int *d, const int *w, const int *h, const int *mint);
 mtime_export str MTIMEruleDef1(rule *ret, const int *m, const char * const *dnme, const int *w, const int *h, const int *mint);
 mtime_export str MTIMEruleDef2(rule *ret, const int *m, const char * const *dnme, const int *w, const int *mint);

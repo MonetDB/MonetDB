@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2013 MonetDB B.V.
+ * Copyright August 2008-2014 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -2353,6 +2353,10 @@ doALGfetch(ptr ret, BAT *b, BUN pos)
 			*(sht*) ret = *(sht*) Tloc(b, pos);
 		} else if (_s == 8) {
 			*(lng*) ret = *(lng*) Tloc(b, pos);
+#ifdef HAVE_HGE
+		} else if (_s == 16) {
+			*(hge*) ret = *(hge*) Tloc(b, pos);
+#endif
 		} else {
 			memcpy(ret, Tloc(b, pos), _s);
 		}

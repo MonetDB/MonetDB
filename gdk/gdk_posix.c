@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2013 MonetDB B.V.
+ * Copyright August 2008-2014 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -53,12 +53,6 @@
 # include <sys/user.h>
 #endif
 
-#ifdef WIN32
-int GDK_mem_pagebits = 16;	/* on windows, the mmap addresses can be set by the 64KB */
-#else
-int GDK_mem_pagebits = 14;	/* on linux, 4KB pages can be addressed (but we use 16KB) */
-#endif
-
 #ifndef MAP_NORESERVE
 # define MAP_NORESERVE		MAP_PRIVATE
 #endif
@@ -92,9 +86,6 @@ setenv(const char *name, const char *value, int overwrite)
 	return ret;
 }
 #endif
-
-char *MT_heapbase = NULL;
-
 
 /* Crude VM buffer management that keep a list of all memory mapped
  * regions.
@@ -273,7 +264,6 @@ char *MT_heapbase = NULL;
 void
 MT_init_posix(void)
 {
-	MT_heapbase = 0;
 }
 
 /* return RSS in bytes */
@@ -359,7 +349,7 @@ void *
 MT_mmap(const char *path, int mode, size_t len)
 {
 	int fd = open(path, O_CREAT | ((mode & MMAP_WRITE) ? O_RDWR : O_RDONLY), MONETDB_MODE);
-	void *ret = (void *) -1L;
+	void *ret = MAP_FAILED;
 
 	if (fd >= 0) {
 		ret = mmap(NULL,
@@ -370,7 +360,7 @@ MT_mmap(const char *path, int mode, size_t len)
 			   0);
 		close(fd);
 	}
-	return ret;
+	return ret == MAP_FAILED ? NULL : ret;
 }
 
 int
@@ -396,6 +386,9 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 	int flags = mode & MMAP_COPY ? MAP_PRIVATE : MAP_SHARED;
 	int prot = PROT_WRITE | PROT_READ;
 
+	/* round up to multiple of page size */
+	*new_size = (*new_size + GDK_mmap_pagesize - 1) & ~(GDK_mmap_pagesize - 1);
+
 	/* doesn't make sense for us to extend read-only memory map */
 	assert(mode & MMAP_WRITABLE);
 
@@ -406,7 +399,7 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 			fprintf(stderr, "= %s:%d: MT_mremap(%s,"PTRFMT","SZFMT","SZFMT"): munmap() failed\n", __FILE__, __LINE__, path?path:"NULL", PTRFMTCAST old_address, old_size, *new_size);
 			return NULL;
 		}
-		if (truncate(path, (off_t) *new_size) < 0)
+		if (truncate(path, *new_size) < 0)
 			fprintf(stderr, "#MT_mremap(%s): truncate failed\n", path);
 #ifdef MMAP_DEBUG
 		fprintf(stderr, "MT_mremap(%s,"PTRFMT","SZFMT","SZFMT") -> shrinking\n", path?path:"NULL", PTRFMTCAST old_address, old_size, *new_size);
@@ -660,7 +653,6 @@ MT_ignore_exceptions(struct _EXCEPTION_POINTERS *ExceptionInfo)
 void
 MT_init_posix(void)
 {
-	MT_heapbase = 0;
 	SetUnhandledExceptionFilter(MT_ignore_exceptions);
 }
 
@@ -721,7 +713,7 @@ MT_mmap(const char *path, int mode, size_t len)
 		if (h1 == INVALID_HANDLE_VALUE) {
 			GDKsyserror("MT_mmap: CreateFile('%s', %lu, %lu, &sa, %lu, %lu, NULL) failed\n",
 				    path, mode0, mode1, (DWORD) OPEN_ALWAYS, mode2);
-			return (void *) -1;
+			return NULL;
 		}
 	}
 
@@ -732,14 +724,14 @@ MT_mmap(const char *path, int mode, size_t len)
 			    (DWORD) (((__int64) len >> 32) & LL_CONSTANT(0xFFFFFFFF)),
 			    (DWORD) (len & LL_CONSTANT(0xFFFFFFFF)));
 		CloseHandle(h1);
-		return (void *) -1;
+		return NULL;
 	}
 	CloseHandle(h1);
 
 	ret = MapViewOfFileEx(h2, mode4, (DWORD) 0, (DWORD) 0, len, NULL);
 	CloseHandle(h2);
 
-	return ret ? ret : (void *) -1;
+	return ret;
 }
 
 int
@@ -761,6 +753,9 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 	/* doesn't make sense for us to extend read-only memory map */
 	assert(mode & MMAP_WRITABLE);
 
+	/* round up to multiple of page size */
+	*new_size = (*new_size + GDK_mmap_pagesize - 1) & ~(GDK_mmap_pagesize - 1);
+
 	if (old_size >= *new_size) {
 		*new_size = old_size;
 		return old_address;	/* don't bother shrinking */
@@ -772,7 +767,7 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 	if (path && !(mode & MMAP_COPY))
 		MT_munmap(old_address, old_size);
 	p = MT_mmap(path, mode, *new_size);
-	if ((path == NULL || (mode & MMAP_COPY)) && p != (void *) -1) {
+	if (p != NULL && (path == NULL || (mode & MMAP_COPY))) {
 		memcpy(p, old_address, old_size);
 		MT_munmap(old_address, old_size);
 	}

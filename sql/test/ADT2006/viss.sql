@@ -1,4 +1,3 @@
-
 CREATE TABLE "timeline"(
 	"name"				varchar(40) PRIMARY KEY NOT NULL,
 	"event"				varchar(2000),

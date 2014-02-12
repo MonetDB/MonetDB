@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2013 MonetDB B.V.
+ * Copyright August 2008-2014 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -76,7 +76,7 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 		return GDK_FAIL;
 	}
 	if (b2 != NULL) {
-		if (b1->U->count != b2->U->count) {
+		if (b1->batCount != b2->batCount) {
 			GDKerror("%s: inputs not the same size.\n", func);
 			return GDK_FAIL;
 		}
@@ -84,17 +84,19 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 	return GDK_SUCCEED;
 }
 
-#define CHECKCAND(dst, i, candoff, NIL)				\
-	/* cannot use do/while trick because of continue */	\
-	if (cand) {						\
-		if ((i) < *cand - (candoff)) {			\
-			nils++;					\
-			(dst)[i] = (NIL);			\
-			continue;				\
-		}						\
-		assert((i) == *cand - (candoff));		\
-		if (++cand == (candend))			\
-			end = (i) + 1;				\
+#define CHECKCAND(dst, i, candoff, NIL)					\
+	/* cannot use do/while trick because of continue */		\
+	/* NOTE: because of the continue, you *must* use the */		\
+	/* index (i) to index src/dst */				\
+	if (cand) {							\
+		if ((i) < *cand - (candoff)) {				\
+			nils++;						\
+			(dst)[i] = (NIL);				\
+			continue;					\
+		}							\
+		assert((i) == *cand - (candoff));			\
+		if (++cand == (candend))				\
+			end = (i) + 1;					\
 	}
 
 /* fill in NILs from low to high, used to write NILs before and after
@@ -108,8 +110,8 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 
 #define UNARY_2TYPE_FUNC(TYPE1, TYPE2, FUNC)				\
 	do {								\
-		const TYPE1 *src = (const TYPE1 *) Tloc(b, b->U->first); \
-		TYPE2 *dst = (TYPE2 *) Tloc(bn, bn->U->first);		\
+		const TYPE1 *src = (const TYPE1 *) Tloc(b, b->batFirst); \
+		TYPE2 *dst = (TYPE2 *) Tloc(bn, bn->batFirst);		\
 		CANDLOOP(dst, i, TYPE2##_nil, 0, start);		\
 		if (b->T->nonil && cand == NULL) {			\
 			for (i = start; i < end; i++)			\
@@ -250,11 +252,11 @@ BATcalcnot(BAT *b, BAT *s)
 
 	if (nils != 0 && !b->T->nil) {
 		b->T->nil = 1;
-		b->P->descdirty = 1;
+		b->batDirtydesc = 1;
 	}
 	if (nils == 0 && !b->T->nonil) {
 		b->T->nonil = 1;
-		b->P->descdirty = 1;
+		b->batDirtydesc = 1;
 	}
 
 	return bn;
@@ -377,11 +379,11 @@ BATcalcnegate(BAT *b, BAT *s)
 
 	if (nils != 0 && !b->T->nil) {
 		b->T->nil = 1;
-		b->P->descdirty = 1;
+		b->batDirtydesc = 1;
 	}
 	if (nils == 0 && !b->T->nonil) {
 		b->T->nonil = 1;
-		b->P->descdirty = 1;
+		b->batDirtydesc = 1;
 	}
 
 	return bn;
@@ -509,11 +511,11 @@ BATcalcabsolute(BAT *b, BAT *s)
 
 	if (nils && !b->T->nil) {
 		b->T->nil = 1;
-		b->P->descdirty = 1;
+		b->batDirtydesc = 1;
 	}
 	if (nils == 0 && !b->T->nonil) {
 		b->T->nonil = 1;
-		b->P->descdirty = 1;
+		b->batDirtydesc = 1;
 	}
 
 	return bn;
@@ -640,11 +642,11 @@ BATcalciszero(BAT *b, BAT *s)
 
 	if (nils != 0 && !b->T->nil) {
 		b->T->nil = 1;
-		b->P->descdirty = 1;
+		b->batDirtydesc = 1;
 	}
 	if (nils == 0 && !b->T->nonil) {
 		b->T->nonil = 1;
-		b->P->descdirty = 1;
+		b->batDirtydesc = 1;
 	}
 
 	return bn;
@@ -775,11 +777,11 @@ BATcalcsign(BAT *b, BAT *s)
 
 	if (nils != 0 && !b->T->nil) {
 		b->T->nil = 1;
-		b->P->descdirty = 1;
+		b->batDirtydesc = 1;
 	}
 	if (nils == 0 && !b->T->nonil) {
 		b->T->nonil = 1;
-		b->P->descdirty = 1;
+		b->batDirtydesc = 1;
 	}
 
 	return bn;
@@ -847,7 +849,7 @@ VARcalcsign(ValPtr ret, const ValRecord *v)
 
 #define ISNIL_TYPE(TYPE)						\
 	do {								\
-		const TYPE *src = (const TYPE *) Tloc(b, b->U->first);	\
+		const TYPE *src = (const TYPE *) Tloc(b, b->batFirst);	\
 		for (i = start; i < end; i++) {				\
 			CHECKCAND(dst, i, b->H->seq, bit_nil);		\
 			dst[i] = (bit) (src[i] == TYPE##_nil);		\
@@ -891,7 +893,7 @@ BATcalcisnil(BAT *b, BAT *s)
 	if (bn == NULL)
 		return NULL;
 
-	dst = (bit *) Tloc(bn, bn->U->first);
+	dst = (bit *) Tloc(bn, bn->batFirst);
 
 	CANDLOOP(dst, i, bit_nil, 0, start);
 
@@ -2571,11 +2573,11 @@ BATcalcadd(BAT *b1, BAT *b2, BAT *s, int tp, int abort_on_error)
 		nils = addstr_loop(b1, NULL, b2, NULL, bn,
 				   cnt, start, end, cand, candend);
 	} else {
-		nils = add_typeswitchloop(Tloc(b1, b1->U->first),
+		nils = add_typeswitchloop(Tloc(b1, b1->batFirst),
 					  b1->T->type, 1,
-					  Tloc(b2, b2->U->first),
+					  Tloc(b2, b2->batFirst),
 					  b2->T->type, 1,
-					  Tloc(bn, bn->U->first), tp,
+					  Tloc(bn, bn->batFirst), tp,
 					  cnt, start, end,
 					  cand, candend, b1->H->seq,
 					  abort_on_error, "BATcalcadd");
@@ -2626,9 +2628,9 @@ BATcalcaddcst(BAT *b, const ValRecord *v, BAT *s, int tp, int abort_on_error)
 		nils = addstr_loop(b, NULL, NULL, v->val.sval, bn,
 				   cnt, start, end, cand, candend);
 	} else {
-		nils = add_typeswitchloop(Tloc(b, b->U->first), b->T->type, 1,
+		nils = add_typeswitchloop(Tloc(b, b->batFirst), b->T->type, 1,
 					  VALptr(v), v->vtype, 0,
-					  Tloc(bn, bn->U->first), tp,
+					  Tloc(bn, bn->batFirst), tp,
 					  cnt, start, end,
 					  cand, candend, b->H->seq,
 					  abort_on_error, "BATcalcaddcst");
@@ -2680,8 +2682,8 @@ BATcalccstadd(const ValRecord *v, BAT *b, BAT *s, int tp, int abort_on_error)
 				   cnt, start, end, cand, candend);
 	} else {
 		nils = add_typeswitchloop(VALptr(v), v->vtype, 0,
-					  Tloc(b, b->U->first), b->T->type, 1,
-					  Tloc(bn, bn->U->first), tp,
+					  Tloc(b, b->batFirst), b->T->type, 1,
+					  Tloc(bn, bn->batFirst), tp,
 					  cnt, start, end,
 					  cand, candend, b->H->seq,
 					  abort_on_error, "BATcalccstadd");
@@ -2723,7 +2725,7 @@ VARcalcadd(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
 }
 
 static BAT *
-BATcaclincrdecr(BAT *b, BAT *s, int abort_on_error,
+BATcalcincrdecr(BAT *b, BAT *s, int abort_on_error,
 		BUN (*typeswitchloop)(const void *, int, int, const void *,
 				      int, int, void *, int, BUN, BUN, BUN,
 				      const oid *, const oid *, oid, int,
@@ -2746,9 +2748,9 @@ BATcaclincrdecr(BAT *b, BAT *s, int abort_on_error,
 	if (bn == NULL)
 		return NULL;
 
-	nils = (*typeswitchloop)(Tloc(b, b->U->first), b->T->type, 1,
+	nils = (*typeswitchloop)(Tloc(b, b->batFirst), b->T->type, 1,
 				 &one, TYPE_bte, 0,
-				 Tloc(bn, bn->U->first), bn->T->type,
+				 Tloc(bn, bn->batFirst), bn->T->type,
 				 cnt, start, end,
 				 cand, candend, b->H->seq,
 				 abort_on_error, func);
@@ -2774,11 +2776,11 @@ BATcaclincrdecr(BAT *b, BAT *s, int abort_on_error,
 
 	if (nils && !b->T->nil) {
 		b->T->nil = 1;
-		b->P->descdirty = 1;
+		b->batDirtydesc = 1;
 	}
 	if (nils == 0 && !b->T->nonil) {
 		b->T->nonil = 1;
-		b->P->descdirty = 1;
+		b->batDirtydesc = 1;
 	}
 
 	return bn;
@@ -2787,7 +2789,7 @@ BATcaclincrdecr(BAT *b, BAT *s, int abort_on_error,
 BAT *
 BATcalcincr(BAT *b, BAT *s, int abort_on_error)
 {
-	return BATcaclincrdecr(b, s, abort_on_error, add_typeswitchloop,
+	return BATcalcincrdecr(b, s, abort_on_error, add_typeswitchloop,
 			       "BATcalcincr");
 }
 
@@ -4325,9 +4327,9 @@ BATcalcsub(BAT *b1, BAT *b2, BAT *s, int tp, int abort_on_error)
 	if (bn == NULL)
 		return NULL;
 
-	nils = sub_typeswitchloop(Tloc(b1, b1->U->first), b1->T->type, 1,
-				  Tloc(b2, b2->U->first), b2->T->type, 1,
-				  Tloc(bn, bn->U->first), tp,
+	nils = sub_typeswitchloop(Tloc(b1, b1->batFirst), b1->T->type, 1,
+				  Tloc(b2, b2->batFirst), b2->T->type, 1,
+				  Tloc(bn, bn->batFirst), tp,
 				  cnt, start, end,
 				  cand, candend, b1->H->seq,
 				  abort_on_error, "BATcalcsub");
@@ -4368,9 +4370,9 @@ BATcalcsubcst(BAT *b, const ValRecord *v, BAT *s, int tp, int abort_on_error)
 	if (bn == NULL)
 		return NULL;
 
-	nils = sub_typeswitchloop(Tloc(b, b->U->first), b->T->type, 1,
+	nils = sub_typeswitchloop(Tloc(b, b->batFirst), b->T->type, 1,
 				  VALptr(v), v->vtype, 0,
-				  Tloc(bn, bn->U->first), tp,
+				  Tloc(bn, bn->batFirst), tp,
 				  cnt, start, end,
 				  cand, candend, b->H->seq,
 				  abort_on_error, "BATcalcsubcst");
@@ -4417,8 +4419,8 @@ BATcalccstsub(const ValRecord *v, BAT *b, BAT *s, int tp, int abort_on_error)
 		return NULL;
 
 	nils = sub_typeswitchloop(VALptr(v), v->vtype, 0,
-				  Tloc(b, b->U->first), b->T->type, 1,
-				  Tloc(bn, bn->U->first), tp,
+				  Tloc(b, b->batFirst), b->T->type, 1,
+				  Tloc(bn, bn->batFirst), tp,
 				  cnt, start, end,
 				  cand, candend, b->H->seq,
 				  abort_on_error, "BATcalccstsub");
@@ -4462,7 +4464,7 @@ VARcalcsub(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
 BAT *
 BATcalcdecr(BAT *b, BAT *s, int abort_on_error)
 {
-	return BATcaclincrdecr(b, s, abort_on_error, sub_typeswitchloop,
+	return BATcalcincrdecr(b, s, abort_on_error, sub_typeswitchloop,
 			       "BATcalcdecr");
 }
 
@@ -6183,9 +6185,9 @@ BATcalcmuldivmod(BAT *b1, BAT *b2, BAT *s, int tp, int abort_on_error,
 	if (bn == NULL)
 		return NULL;
 
-	nils = (*typeswitchloop)(Tloc(b1, b1->U->first), b1->T->type, 1,
-				 Tloc(b2, b2->U->first), b2->T->type, 1,
-				 Tloc(bn, bn->U->first), tp,
+	nils = (*typeswitchloop)(Tloc(b1, b1->batFirst), b1->T->type, 1,
+				 Tloc(b2, b2->batFirst), b2->T->type, 1,
+				 Tloc(bn, bn->batFirst), tp,
 				 cnt, start, end,
 				 cand, candend, b1->H->seq,
 				 abort_on_error, func);
@@ -6233,9 +6235,9 @@ BATcalcmulcst(BAT *b, const ValRecord *v, BAT *s, int tp, int abort_on_error)
 	if (bn == NULL)
 		return NULL;
 
-	nils = mul_typeswitchloop(Tloc(b, b->U->first), b->T->type, 1,
+	nils = mul_typeswitchloop(Tloc(b, b->batFirst), b->T->type, 1,
 				  VALptr(v), v->vtype, 0,
-				  Tloc(bn, bn->U->first), tp,
+				  Tloc(bn, bn->batFirst), tp,
 				  cnt, start, end,
 				  cand, candend, b->H->seq,
 				  abort_on_error, "BATcalcmulcst");
@@ -6292,8 +6294,8 @@ BATcalccstmul(const ValRecord *v, BAT *b, BAT *s, int tp, int abort_on_error)
 		return NULL;
 
 	nils = mul_typeswitchloop(VALptr(v), v->vtype, 0,
-				  Tloc(b, b->U->first), b->T->type, 1,
-				  Tloc(bn, bn->U->first), tp,
+				  Tloc(b, b->batFirst), b->T->type, 1,
+				  Tloc(bn, bn->batFirst), tp,
 				  cnt, start, end,
 				  cand, candend, b->H->seq,
 				  abort_on_error, "BATcalccstmul");
@@ -8097,9 +8099,9 @@ BATcalcdivcst(BAT *b, const ValRecord *v, BAT *s, int tp, int abort_on_error)
 	if (bn == NULL)
 		return NULL;
 
-	nils = div_typeswitchloop(Tloc(b, b->U->first), b->T->type, 1,
+	nils = div_typeswitchloop(Tloc(b, b->batFirst), b->T->type, 1,
 				  VALptr(v), v->vtype, 0,
-				  Tloc(bn, bn->U->first), tp,
+				  Tloc(bn, bn->batFirst), tp,
 				  cnt, start, end,
 				  cand, candend, b->H->seq,
 				  abort_on_error, "BATcalcdivcst");
@@ -8159,8 +8161,8 @@ BATcalccstdiv(const ValRecord *v, BAT *b, BAT *s, int tp, int abort_on_error)
 		return NULL;
 
 	nils = div_typeswitchloop(VALptr(v), v->vtype, 0,
-				  Tloc(b, b->U->first), b->T->type, 1,
-				  Tloc(bn, bn->U->first), tp,
+				  Tloc(b, b->batFirst), b->T->type, 1,
+				  Tloc(bn, bn->batFirst), tp,
 				  cnt, start, end,
 				  cand, candend, b->H->seq,
 				  abort_on_error, "BATcalccstdiv");
@@ -9678,9 +9680,9 @@ BATcalcmodcst(BAT *b, const ValRecord *v, BAT *s, int tp, int abort_on_error)
 	if (bn == NULL)
 		return NULL;
 
-	nils = mod_typeswitchloop(Tloc(b, b->U->first), b->T->type, 1,
+	nils = mod_typeswitchloop(Tloc(b, b->batFirst), b->T->type, 1,
 				  VALptr(v), v->vtype, 0,
-				  Tloc(bn, bn->U->first), tp,
+				  Tloc(bn, bn->batFirst), tp,
 				  cnt, start, end,
 				  cand, candend, b->H->seq,
 				  abort_on_error, "BATcalcmodcst");
@@ -9722,8 +9724,8 @@ BATcalccstmod(const ValRecord *v, BAT *b, BAT *s, int tp, int abort_on_error)
 		return NULL;
 
 	nils = mod_typeswitchloop(VALptr(v), v->vtype, 0,
-				  Tloc(b, b->U->first), b->T->type, 1,
-				  Tloc(bn, bn->U->first), tp,
+				  Tloc(b, b->batFirst), b->T->type, 1,
+				  Tloc(bn, bn->batFirst), tp,
 				  cnt, start, end,
 				  cand, candend, b->H->seq,
 				  abort_on_error, "BATcalccstmod");
@@ -9848,9 +9850,9 @@ BATcalcxor(BAT *b1, BAT *b2, BAT *s)
 	if (bn == NULL)
 		return NULL;
 
-	nils = xor_typeswitchloop(Tloc(b1, b1->U->first), 1,
-				  Tloc(b2, b2->U->first), 1,
-				  Tloc(bn, bn->U->first),
+	nils = xor_typeswitchloop(Tloc(b1, b1->batFirst), 1,
+				  Tloc(b2, b2->batFirst), 1,
+				  Tloc(bn, bn->batFirst),
 				  b1->T->type, cnt,
 				  start, end, cand, candend, b1->H->seq,
 				  cand == NULL && b1->T->nonil && b2->T->nonil,
@@ -9897,9 +9899,9 @@ BATcalcxorcst(BAT *b, const ValRecord *v, BAT *s)
 	if (bn == NULL)
 		return NULL;
 
-	nils = xor_typeswitchloop(Tloc(b, b->U->first), 1,
+	nils = xor_typeswitchloop(Tloc(b, b->batFirst), 1,
 				  VALptr(v), 0,
-				  Tloc(bn, bn->U->first), b->T->type,
+				  Tloc(bn, bn->batFirst), b->T->type,
 				  cnt,
 				  start, end, cand, candend, b->H->seq,
 				  cand == NULL && b->T->nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
@@ -9947,8 +9949,8 @@ BATcalccstxor(const ValRecord *v, BAT *b, BAT *s)
 		return NULL;
 
 	nils = xor_typeswitchloop(VALptr(v), 0,
-				  Tloc(b, b->U->first), 1,
-				  Tloc(bn, bn->U->first), b->T->type,
+				  Tloc(b, b->batFirst), 1,
+				  Tloc(bn, bn->batFirst), b->T->type,
 				  cnt,
 				  start, end, cand, candend, b->H->seq,
 				  cand == NULL && b->T->nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
@@ -10095,9 +10097,9 @@ BATcalcor(BAT *b1, BAT *b2, BAT *s)
 	if (bn == NULL)
 		return NULL;
 
-	nils = or_typeswitchloop(Tloc(b1, b1->U->first), 1,
-				 Tloc(b2, b2->U->first), 1,
-				 Tloc(bn, bn->U->first),
+	nils = or_typeswitchloop(Tloc(b1, b1->batFirst), 1,
+				 Tloc(b2, b2->batFirst), 1,
+				 Tloc(bn, bn->batFirst),
 				 b1->T->type, cnt,
 				 start, end, cand, candend, b1->H->seq,
 				 b1->T->nonil && b2->T->nonil,
@@ -10144,9 +10146,9 @@ BATcalcorcst(BAT *b, const ValRecord *v, BAT *s)
 	if (bn == NULL)
 		return NULL;
 
-	nils = or_typeswitchloop(Tloc(b, b->U->first), 1,
+	nils = or_typeswitchloop(Tloc(b, b->batFirst), 1,
 				 VALptr(v), 0,
-				 Tloc(bn, bn->U->first), b->T->type,
+				 Tloc(bn, bn->batFirst), b->T->type,
 				 cnt,
 				 start, end, cand, candend, b->H->seq,
 				 cand == NULL && b->T->nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
@@ -10194,8 +10196,8 @@ BATcalccstor(const ValRecord *v, BAT *b, BAT *s)
 		return NULL;
 
 	nils = or_typeswitchloop(VALptr(v), 0,
-				 Tloc(b, b->U->first), 1,
-				 Tloc(bn, bn->U->first), b->T->type,
+				 Tloc(b, b->batFirst), 1,
+				 Tloc(bn, bn->batFirst), b->T->type,
 				 cnt,
 				 start, end, cand, candend, b->H->seq,
 				 cand == NULL && b->T->nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
@@ -10339,9 +10341,9 @@ BATcalcand(BAT *b1, BAT *b2, BAT *s)
 	if (bn == NULL)
 		return NULL;
 
-	nils = and_typeswitchloop(Tloc(b1, b1->U->first), 1,
-				  Tloc(b2, b2->U->first), 1,
-				  Tloc(bn, bn->U->first),
+	nils = and_typeswitchloop(Tloc(b1, b1->batFirst), 1,
+				  Tloc(b2, b2->batFirst), 1,
+				  Tloc(bn, bn->batFirst),
 				  b1->T->type, cnt,
 				  start, end, cand, candend, b1->H->seq,
 				  b1->T->nonil && b2->T->nonil,
@@ -10388,9 +10390,9 @@ BATcalcandcst(BAT *b, const ValRecord *v, BAT *s)
 	if (bn == NULL)
 		return NULL;
 
-	nils = and_typeswitchloop(Tloc(b, b->U->first), 1,
+	nils = and_typeswitchloop(Tloc(b, b->batFirst), 1,
 				  VALptr(v), 0,
-				  Tloc(bn, bn->U->first), b->T->type,
+				  Tloc(bn, bn->batFirst), b->T->type,
 				  cnt, start, end, cand, candend, b->H->seq,
 				  b->T->nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 				  "BATcalcandcst");
@@ -10437,8 +10439,8 @@ BATcalccstand(const ValRecord *v, BAT *b, BAT *s)
 		return NULL;
 
 	nils = and_typeswitchloop(VALptr(v), 0,
-				  Tloc(b, b->U->first), 1,
-				  Tloc(bn, bn->U->first), b->T->type,
+				  Tloc(b, b->batFirst), 1,
+				  Tloc(bn, bn->batFirst), b->T->type,
 				  cnt, start, end, cand, candend, b->H->seq,
 				  b->T->nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 				  "BATcalccstand");
@@ -10670,9 +10672,9 @@ BATcalclsh(BAT *b1, BAT *b2, BAT *s, int abort_on_error)
 	if (bn == NULL)
 		return NULL;
 
-	nils = lsh_typeswitchloop(Tloc(b1, b1->U->first), b1->T->type, 1,
-				  Tloc(b2, b2->U->first), b2->T->type, 1,
-				  Tloc(bn, bn->U->first),
+	nils = lsh_typeswitchloop(Tloc(b1, b1->batFirst), b1->T->type, 1,
+				  Tloc(b2, b2->batFirst), b2->T->type, 1,
+				  Tloc(bn, bn->batFirst),
 				  cnt, start, end, cand, candend, b1->H->seq,
 				  abort_on_error, "BATcalclsh");
 
@@ -10712,9 +10714,9 @@ BATcalclshcst(BAT *b, const ValRecord *v, BAT *s, int abort_on_error)
 	if (bn == NULL)
 		return NULL;
 
-	nils = lsh_typeswitchloop(Tloc(b, b->U->first), b->T->type, 1,
+	nils = lsh_typeswitchloop(Tloc(b, b->batFirst), b->T->type, 1,
 				  VALptr(v), v->vtype, 0,
-				  Tloc(bn, bn->U->first),
+				  Tloc(bn, bn->batFirst),
 				  cnt, start, end, cand, candend, b->H->seq,
 				  abort_on_error, "BATcalclshcst");
 
@@ -10755,8 +10757,8 @@ BATcalccstlsh(const ValRecord *v, BAT *b, BAT *s, int abort_on_error)
 		return NULL;
 
 	nils = lsh_typeswitchloop(VALptr(v), v->vtype, 0,
-				  Tloc(b, b->U->first), b->T->type, 1,
-				  Tloc(bn, bn->U->first),
+				  Tloc(b, b->batFirst), b->T->type, 1,
+				  Tloc(bn, bn->batFirst),
 				  cnt, start, end, cand, candend, b->H->seq,
 				  abort_on_error, "BATcalccstlsh");
 
@@ -10980,9 +10982,9 @@ BATcalcrsh(BAT *b1, BAT *b2, BAT *s, int abort_on_error)
 	if (bn == NULL)
 		return NULL;
 
-	nils = rsh_typeswitchloop(Tloc(b1, b1->U->first), b1->T->type, 1,
-				  Tloc(b2, b2->U->first), b2->T->type, 1,
-				  Tloc(bn, bn->U->first),
+	nils = rsh_typeswitchloop(Tloc(b1, b1->batFirst), b1->T->type, 1,
+				  Tloc(b2, b2->batFirst), b2->T->type, 1,
+				  Tloc(bn, bn->batFirst),
 				  cnt, start, end, cand, candend, b1->H->seq,
 				  abort_on_error, "BATcalcrsh");
 
@@ -11022,9 +11024,9 @@ BATcalcrshcst(BAT *b, const ValRecord *v, BAT *s, int abort_on_error)
 	if (bn == NULL)
 		return NULL;
 
-	nils = rsh_typeswitchloop(Tloc(b, b->U->first), b->T->type, 1,
+	nils = rsh_typeswitchloop(Tloc(b, b->batFirst), b->T->type, 1,
 				  VALptr(v), v->vtype, 0,
-				  Tloc(bn, bn->U->first),
+				  Tloc(bn, bn->batFirst),
 				  cnt, start, end, cand, candend, b->H->seq,
 				  abort_on_error, "BATcalcrshcst");
 
@@ -11065,8 +11067,8 @@ BATcalccstrsh(const ValRecord *v, BAT *b, BAT *s, int abort_on_error)
 		return NULL;
 
 	nils = rsh_typeswitchloop(VALptr(v), v->vtype, 0,
-				  Tloc(b, b->U->first), b->T->type, 1,
-				  Tloc(bn, bn->U->first),
+				  Tloc(b, b->batFirst), b->T->type, 1,
+				  Tloc(bn, bn->batFirst),
 				  cnt, start, end, cand, candend, b->H->seq,
 				  abort_on_error, "BATcalccstrsh");
 
@@ -11365,7 +11367,7 @@ BATcalcbetween_intern(const void *src, int incr1, const char *hp1, int wd1,
 {
 	BAT *bn;
 	BUN nils = 0;
-	BUN i, j, k, l;
+	BUN i, j, k, l, soff = 0, loff = 0, hoff = 0;
 	bit *dst;
 	const void *nil;
 	int (*atomcmp)(const void *, const void *);
@@ -11374,9 +11376,14 @@ BATcalcbetween_intern(const void *src, int incr1, const char *hp1, int wd1,
 	if (bn == NULL)
 		return NULL;
 
-	dst = (bit *) Tloc(bn, bn->U->first);
+	dst = (bit *) Tloc(bn, bn->batFirst);
 
 	CANDLOOP(dst, l, bit_nil, 0, start);
+
+	if (tp != ATOMstorage(tp) &&
+	    ATOMnilptr(ATOMstorage(tp)) == ATOMnilptr(tp) &&
+	    BATatoms[ATOMstorage(tp)].atomCmp == BATatoms[tp].atomCmp)
+		tp = ATOMstorage(tp);
 
 	switch (tp) {
 	case TYPE_bte:
@@ -11422,12 +11429,13 @@ BATcalcbetween_intern(const void *src, int incr1, const char *hp1, int wd1,
 			     k = start * incr3,
 			     l = start;
 		     l < end;
-		     i += incr1, j += incr2, k += incr3, l++) {
+		     i += incr1, j += incr2, k += incr3, l++, 
+		     soff+=wd1, loff+= wd2, hoff+= wd3 ) {
 			const void *p1, *p2, *p3;
 			CHECKCAND(dst, l, seqbase, bit_nil);
-			p1 = hp1 ? (const void *) (hp1 + VarHeapVal(src, i, wd1)) : src;
-			p2 = hp2 ? (const void *) (hp2 + VarHeapVal(lo, j, wd2)) : lo;
-			p3 = hp3 ? (const void *) (hp3 + VarHeapVal(hi, k, wd3)) : hi;
+			p1 = hp1 ? (const void *) (hp1 + VarHeapVal(src, i, wd1)) : (const void *) ((const char *) src + soff);
+			p2 = hp2 ? (const void *) (hp2 + VarHeapVal(lo, j, wd2)) : (const void *) ((const char *) lo + loff);
+			p3 = hp3 ? (const void *) (hp3 + VarHeapVal(hi, k, wd3)) : (const void *) ((const char *) hi + hoff);
 			if (p1 == NULL || p2 == NULL || p3 == NULL ||
 			    (*atomcmp)(p1, nil) == 0 ||
 			    (*atomcmp)(p2, nil) == 0 ||
@@ -11438,12 +11446,6 @@ BATcalcbetween_intern(const void *src, int incr1, const char *hp1, int wd1,
 				dst[l] = (bit) ((*atomcmp)(p1, p2) >= 0 &&
 						(*atomcmp)(p1, p3) <= 0);
 			}
-			if (hp1 == NULL && incr1)
-				src = (const void *) ((const char *) src + wd1);
-			if (hp2 == NULL && incr2)
-				lo = (const void *) ((const char *) lo + wd2);
-			if (hp3 == NULL && incr3)
-				hi = (const void *) ((const char *) hi + wd3);
 		}
 		break;
 	}
@@ -11497,13 +11499,13 @@ BATcalcbetween(BAT *b, BAT *lo, BAT *hi, BAT *s)
 		return BATconst(b, TYPE_bit, &res);
 	}
 
-	bn = BATcalcbetween_intern(Tloc(b, b->U->first), 1,
+	bn = BATcalcbetween_intern(Tloc(b, b->batFirst), 1,
 				   b->T->vheap ? b->T->vheap->base : NULL,
 				   b->T->width,
-				   Tloc(lo, lo->U->first), 1,
+				   Tloc(lo, lo->batFirst), 1,
 				   lo->T->vheap ? lo->T->vheap->base : NULL,
 				   lo->T->width,
-				   Tloc(hi, hi->U->first), 1,
+				   Tloc(hi, hi->batFirst), 1,
 				   hi->T->vheap ? hi->T->vheap->base : NULL,
 				   hi->T->width,
 				   b->T->type, cnt,
@@ -11533,7 +11535,7 @@ BATcalcbetweencstcst(BAT *b, const ValRecord *lo, const ValRecord *hi, BAT *s)
 
 	CANDINIT(b, s, start, end, cnt, cand, candend);
 
-	bn = BATcalcbetween_intern(Tloc(b, b->U->first), 1,
+	bn = BATcalcbetween_intern(Tloc(b, b->batFirst), 1,
 				   b->T->vheap ? b->T->vheap->base : NULL,
 				   b->T->width,
 				   VALptr(lo), 0, NULL, 0,
@@ -11564,10 +11566,10 @@ BATcalcbetweenbatcst(BAT *b, BAT *lo, const ValRecord *hi, BAT *s)
 
 	CANDINIT(b, s, start, end, cnt, cand, candend);
 
-	bn = BATcalcbetween_intern(Tloc(b, b->U->first), 1,
+	bn = BATcalcbetween_intern(Tloc(b, b->batFirst), 1,
 				   b->T->vheap ? b->T->vheap->base : NULL,
 				   b->T->width,
-				   Tloc(lo, lo->U->first), 1,
+				   Tloc(lo, lo->batFirst), 1,
 				   lo->T->vheap ? lo->T->vheap->base : NULL,
 				   lo->T->width,
 				   VALptr(hi), 0, NULL, 0,
@@ -11597,11 +11599,11 @@ BATcalcbetweencstbat(BAT *b, const ValRecord *lo, BAT *hi, BAT *s)
 
 	CANDINIT(b, s, start, end, cnt, cand, candend);
 
-	bn = BATcalcbetween_intern(Tloc(b, b->U->first), 1,
+	bn = BATcalcbetween_intern(Tloc(b, b->batFirst), 1,
 				   b->T->vheap ? b->T->vheap->base : NULL,
 				   b->T->width,
 				   VALptr(lo), 0, NULL, 0,
-				   Tloc(hi, hi->U->first), 1,
+				   Tloc(hi, hi->batFirst), 1,
 				   hi->T->vheap ? hi->T->vheap->base : NULL,
 				   hi->T->width,
 				   b->T->type, cnt,
@@ -11697,7 +11699,7 @@ BATcalcifthenelse_intern(BAT *b,
 	const void *p;
 	const bit *src;
 	oid off = BAThdense(b) ? b->H->seq : 0;
-	BUN cnt = b->U->count;
+	BUN cnt = b->batCount;
 
 	assert(col2 != NULL || incr2 == 0);
 
@@ -11705,11 +11707,11 @@ BATcalcifthenelse_intern(BAT *b,
 	if (bn == NULL)
 		return NULL;
 
-	src = (const bit *) Tloc(b, b->U->first);
+	src = (const bit *) Tloc(b, b->batFirst);
 
 	nil = ATOMnilptr(tpe);
-	dst = (void *) Tloc(bn, bn->U->first);
-	hd = col2 || off == oid_nil ? NULL : (oid *) Hloc(bn, bn->U->first);
+	dst = (void *) Tloc(bn, bn->batFirst);
+	hd = col2 || off == oid_nil ? NULL : (oid *) Hloc(bn, bn->batFirst);
 	j = k = l = 0;
 	if (bn->T->varsized) {
 		assert((heap1 != NULL && width1 > 0) || (width1 == 0 && incr1 == 0));
@@ -11826,8 +11828,8 @@ BATcalcifthenelse(BAT *b, BAT *b1, BAT *b2)
 		return NULL;
 	}
 	return BATcalcifthenelse_intern(b,
-					Tloc(b1, b1->U->first), 1, b1->T->vheap ? b1->T->vheap->base : NULL, b1->T->width, b1->T->nonil,
-					b2 ? Tloc(b2, b2->U->first) : NULL, b2 != NULL, b2 && b2->T->vheap ? b2->T->vheap->base : NULL, b2 ? b2->T->width : 0, b2 && b2->T->nonil,
+					Tloc(b1, b1->batFirst), 1, b1->T->vheap ? b1->T->vheap->base : NULL, b1->T->width, b1->T->nonil,
+					b2 ? Tloc(b2, b2->batFirst) : NULL, b2 != NULL, b2 && b2->T->vheap ? b2->T->vheap->base : NULL, b2 ? b2->T->width : 0, b2 && b2->T->nonil,
 					b1->T->type);
 }
 
@@ -11845,7 +11847,7 @@ BATcalcifthenelsecst(BAT *b, BAT *b1, const ValRecord *c2)
 		return NULL;
 	}
 	return BATcalcifthenelse_intern(b,
-					Tloc(b1, b1->U->first), 1, b1->T->vheap ? b1->T->vheap->base : NULL, b1->T->width, b1->T->nonil,
+					Tloc(b1, b1->batFirst), 1, b1->T->vheap ? b1->T->vheap->base : NULL, b1->T->width, b1->T->nonil,
 					VALptr(c2), 0, NULL, 0, !VALisnil(c2),
 					b1->T->type);
 }
@@ -11866,7 +11868,7 @@ BATcalcifthencstelse(BAT *b, const ValRecord *c1, BAT *b2)
 	}
 	return BATcalcifthenelse_intern(b,
 					VALptr(c1), 0, NULL, 0, !VALisnil(c1),
-					b2 ? Tloc(b2, b2->U->first) : NULL, b2 != NULL, b2 && b2->T->vheap ? b2->T->vheap->base : NULL, b2 ? b2->T->width : 0, b2 && b2->T->nonil,
+					b2 ? Tloc(b2, b2->batFirst) : NULL, b2 != NULL, b2 && b2->T->vheap ? b2->T->vheap->base : NULL, b2 ? b2->T->width : 0, b2 && b2->T->nonil,
 					c1->vtype);
 }
 
@@ -11932,13 +11934,11 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *dst, BUN cnt,	\
 	CANDLOOP(dst, i, TYPE2##_nil, 0, start);			\
 	for (i = start; i < end; i++) {					\
 		CHECKCAND(dst, i, candoff, TYPE2##_nil);		\
-		if (*src == TYPE1##_nil) {				\
-			*dst = TYPE2##_nil;				\
+		if (src[i] == TYPE1##_nil) {				\
+			dst[i] = TYPE2##_nil;				\
 			nils++;						\
 		} else							\
-			*dst = (TYPE2) *src;				\
-		src++;							\
-		dst++;							\
+			dst[i] = (TYPE2) src[i];			\
 	}								\
 	CANDLOOP(dst, i, TYPE2##_nil, end, cnt);			\
 	return nils;							\
@@ -11963,19 +11963,17 @@ convert_##TYPE1##_oid(const TYPE1 *src, oid *dst, BUN cnt,		\
 	CANDLOOP(dst, i, oid_nil, 0, start);				\
 	for (i = start; i < end; i++) {					\
 		CHECKCAND(dst, i, candoff, oid_nil);			\
-		if (*src == TYPE1##_nil) {				\
-			*dst = oid_nil;					\
+		if (src[i] == TYPE1##_nil) {				\
+			dst[i] = oid_nil;				\
 			nils++;						\
-		} else if (*src < 0) {					\
+		} else if (src[i] < 0) {				\
 			if (abort_on_error)				\
-				CONV_OVERFLOW(TYPE1, "oid", *src);	\
-			*dst = oid_nil;					\
+				CONV_OVERFLOW(TYPE1, "oid", src[i]);	\
+			dst[i] = oid_nil;				\
 			nils++;						\
-		} else if ((*dst = (oid) *src) == oid_nil &&		\
+		} else if ((dst[i] = (oid) src[i]) == oid_nil &&	\
 			   abort_on_error)				\
-			CONV_OVERFLOW(TYPE1, "oid", *src);		\
-		src++;							\
-		dst++;							\
+			CONV_OVERFLOW(TYPE1, "oid", src[i]);		\
 	}								\
 	CANDLOOP(dst, i, oid_nil, end, cnt);				\
 	return nils;							\
@@ -11993,20 +11991,18 @@ convert_##TYPE1##_oid(const TYPE1 *src, oid *dst, BUN cnt,		\
 	CANDLOOP(dst, i, oid_nil, 0, start);				\
 	for (i = start; i < end; i++) {					\
 		CHECKCAND(dst, i, candoff, oid_nil);			\
-		if (*src == TYPE1##_nil) {				\
-			*dst = oid_nil;					\
+		if (src[i] == TYPE1##_nil) {				\
+			dst[i] = oid_nil;				\
 			nils++;						\
-		} else if (*src < 0 ||					\
-			   *src > (TYPE1) GDK_oid_max) {		\
+		} else if (src[i] < 0 ||				\
+			   src[i] > (TYPE1) GDK_oid_max) {		\
 			if (abort_on_error)				\
-				CONV_OVERFLOW(TYPE1, "oid", *src);	\
-			*dst = oid_nil;					\
+				CONV_OVERFLOW(TYPE1, "oid", src[i]);	\
+			dst[i] = oid_nil;				\
 			nils++;						\
-		} else if ((*dst = (oid) *src) == oid_nil &&		\
+		} else if ((dst[i] = (oid) src[i]) == oid_nil &&	\
 			   abort_on_error)				\
-			CONV_OVERFLOW(TYPE1, "oid", *src);		\
-		src++;							\
-		dst++;							\
+			CONV_OVERFLOW(TYPE1, "oid", src[i]);		\
 	}								\
 	CANDLOOP(dst, i, oid_nil, end, cnt);				\
 	return nils;							\
@@ -12024,19 +12020,17 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *dst, BUN cnt,	\
 	CANDLOOP(dst, i, TYPE2##_nil, 0, start);			\
 	for (i = start; i < end; i++) {					\
 		CHECKCAND(dst, i, candoff, TYPE2##_nil);		\
-		if (*src == TYPE1##_nil) {				\
-			*dst = TYPE2##_nil;				\
-			nils++;						\
-		} else if (*src <= (TYPE1) GDK_##TYPE2##_min ||		\
-			   *src > (TYPE1) GDK_##TYPE2##_max) {		\
+		if (src[i] == TYPE1##_nil) {				\
+			dst[i] = TYPE2##_nil;				\
+				nils++;					\
+		} else if (src[i] <= (TYPE1) GDK_##TYPE2##_min ||	\
+			   src[i] > (TYPE1) GDK_##TYPE2##_max) {	\
 			if (abort_on_error)				\
-				CONV_OVERFLOW(TYPE1, #TYPE2, *src);	\
-			*dst = TYPE2##_nil;				\
+				CONV_OVERFLOW(TYPE1, #TYPE2, src[i]);	\
+			dst[i] = TYPE2##_nil;				\
 			nils++;						\
 		} else							\
-			*dst = (TYPE2) *src;				\
-		src++;							\
-		dst++;							\
+			dst[i] = (TYPE2) src[i];			\
 	}								\
 	CANDLOOP(dst, i, TYPE2##_nil, end, cnt);			\
 	return nils;							\
@@ -12057,20 +12051,18 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *dst, BUN cnt,	\
 	CANDLOOP(dst, i, TYPE2##_nil, 0, start);			\
 	for (i = start; i < end; i++) {					\
 		CHECKCAND(dst, i, candoff, TYPE2##_nil);		\
-		if (*src == TYPE1##_nil) {				\
-			*dst = TYPE2##_nil;				\
+		if (src[i] == TYPE1##_nil) {				\
+			dst[i] = TYPE2##_nil;				\
 			nils++;						\
-		} else if (*src <= (TYPE1) GDK_##TYPE2##_min ||		\
-			   *src > (TYPE1) GDK_##TYPE2##_max) {		\
+		} else if (src[i] <= (TYPE1) GDK_##TYPE2##_min ||	\
+			   src[i] > (TYPE1) GDK_##TYPE2##_max) {	\
 			if (abort_on_error)				\
-				CONV_OVERFLOW(TYPE1, #TYPE2, *src);	\
-			*dst = TYPE2##_nil;				\
+				CONV_OVERFLOW(TYPE1, #TYPE2, src[i]);	\
+			dst[i] = TYPE2##_nil;				\
 			nils++;						\
-		} else if ((*dst = (TYPE2) *src) == TYPE2##_nil &&	\
+		} else if ((dst[i] = (TYPE2) src[i]) == TYPE2##_nil &&	\
 			   abort_on_error)				\
-			CONV_OVERFLOW(TYPE1, #TYPE2, *src);		\
-		src++;							\
-		dst++;							\
+			CONV_OVERFLOW(TYPE1, #TYPE2, src[i]);		\
 	}								\
 	CANDLOOP(dst, i, TYPE2##_nil, end, cnt);			\
 	return nils;							\
@@ -12087,13 +12079,11 @@ convert_##TYPE##_bit(const TYPE *src, bit *dst, BUN cnt,	\
 	CANDLOOP(dst, i, bit_nil, 0, start);			\
 	for (i = start; i < end; i++) {				\
 		CHECKCAND(dst, i, candoff, bit_nil);		\
-		if (*src == TYPE##_nil) {			\
-			*dst = bit_nil;				\
+		if (src[i] == TYPE##_nil) {			\
+			dst[i] = bit_nil;			\
 			nils++;					\
 		} else						\
-			*dst = (bit) (*src != 0);		\
-		src++;						\
-		dst++;						\
+			dst[i] = (bit) (src[i] != 0);		\
 	}							\
 	CANDLOOP(dst, i, bit_nil, end, cnt);			\
 	return nils;						\
@@ -12300,7 +12290,7 @@ convert_void_any(oid seq, BUN cnt, BAT *bn,
 	BUN nils = 0;
 	BUN i = 0;
 	int tp = bn->T->type;
-	void *dst = Tloc(bn, bn->U->first);
+	void *dst = Tloc(bn, bn->batFirst);
 	int (*atomtostr)(str *, int *, const void *) = BATatoms[TYPE_oid].atomToStr;
 	str s = 0;
 	int len = 0;
@@ -12896,26 +12886,26 @@ BATconvert(BAT *b, BAT *s, int tp, int abort_on_error)
 	if (s == NULL && tp != TYPE_bit && ATOMstorage(b->T->type) == ATOMstorage(tp))
 		return BATcopy(b, b->H->type, tp, 0);
 
-	bn = BATnew(TYPE_void, tp, b->U->count);
+	bn = BATnew(TYPE_void, tp, b->batCount);
 	if (bn == NULL)
 		return NULL;
 
 	if (b->T->type == TYPE_void)
-		nils = convert_void_any(b->T->seq, b->U->count, bn,
+		nils = convert_void_any(b->T->seq, b->batCount, bn,
 					start, end, cand, candend, b->H->seq,
 					abort_on_error);
 	else if (tp == TYPE_str)
-		nils = convert_any_str(b->T->type, Tloc(b, b->U->first), bn,
+		nils = convert_any_str(b->T->type, Tloc(b, b->batFirst), bn,
 				       cnt, start, end, cand, candend,
 				       b->H->seq);
 	else if (b->T->type == TYPE_str)
-		nils = convert_str_any(b, tp, Tloc(bn, bn->U->first),
+		nils = convert_str_any(b, tp, Tloc(bn, bn->batFirst),
 				       start, end, cand, candend, b->H->seq,
 				       abort_on_error);
 	else
-		nils = convert_typeswitchloop(Tloc(b, b->U->first), b->T->type,
-					      Tloc(bn, bn->U->first), tp,
-					      b->U->count, start, end,
+		nils = convert_typeswitchloop(Tloc(b, b->batFirst), b->T->type,
+					      Tloc(bn, bn->batFirst), tp,
+					      b->batCount, start, end,
 					      cand, candend, b->H->seq,
 					      abort_on_error);
 
@@ -12931,7 +12921,7 @@ BATconvert(BAT *b, BAT *s, int tp, int abort_on_error)
 		return NULL;
 	}
 
-	BATsetcount(bn, b->U->count);
+	BATsetcount(bn, b->batCount);
 	bn = BATseqbase(bn, b->H->seq);
 
 	bn->T->nil = nils != 0;

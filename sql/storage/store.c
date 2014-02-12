@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2013 MonetDB B.V.
+ * Copyright August 2008-2014 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -1267,7 +1267,7 @@ store_init(int debug, store_type store, int readonly, int singleuser, char *logd
 	int v = 1;
 	sql_allocator *sa;
 
-	bs_debug = debug;
+	bs_debug = debug&2;
 
 #ifdef NEED_MT_LOCK_INIT
 	MT_lock_init(&bs_lock, "SQL_bs_lock");
@@ -1284,7 +1284,7 @@ store_init(int debug, store_type store, int readonly, int singleuser, char *logd
 	}
 	active_store_type = store;
 	if (!logger_funcs.create ||
-	    logger_funcs.create(logdir, CATALOG_VERSION*v) == LOG_ERR) {
+	    logger_funcs.create(debug, logdir, CATALOG_VERSION*v) == LOG_ERR) {
 		MT_lock_unset(&bs_lock, "store_init");
 		return -1;
 	}

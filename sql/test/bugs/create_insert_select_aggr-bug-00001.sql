@@ -1,4 +1,3 @@
-
 select 1;
 CREATE TABLE foo (id INTEGER, name VARCHAR(20));
 INSERT INTO foo VALUES (1, 'Tim');

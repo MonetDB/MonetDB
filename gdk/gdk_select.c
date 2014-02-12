@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2013 MonetDB B.V.
+ * Copyright August 2008-2014 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -60,7 +60,6 @@ BATslice2(BAT *b, BUN l1, BUN h1, BUN l2, BUN h2)
 	BUN p, q;
 	BAT *bn;
 	BATiter bi = bat_iterator(b);
-	int tt = b->ttype;
 
 	BATcheck(b, "BATslice");
 	if (h2 > BATcount(b))
@@ -79,31 +78,21 @@ BATslice2(BAT *b, BUN l1, BUN h1, BUN l2, BUN h2)
 		return NULL;
 	}
 
-	if (tt == TYPE_void && b->T->seq != oid_nil)
-		tt = TYPE_oid;
-	bn = BATnew(ATOMtype(b->htype), tt, h1 - l1 + h2 - l2);
+	bn = BATnew(TYPE_void, ATOMtype(b->htype), h1 - l1 + h2 - l2);
 	if (bn == NULL)
 		return bn;
 	for (p = (BUN) l1, q = (BUN) h1; p < q; p++) {
-		bunfastins(bn, BUNhead(bi, p), BUNtail(bi, p));
+		bunfastins(bn, NULL, BUNhead(bi, p));
 	}
 	for (p = (BUN) l2, q = (BUN) h2; p < q; p++) {
-		bunfastins(bn, BUNhead(bi, p), BUNtail(bi, p));
+		bunfastins(bn, NULL, BUNhead(bi, p));
 	}
-	bn->hsorted = BAThordered(b);
-	bn->tsorted = BATtordered(b);
-	bn->hrevsorted = BAThrevordered(b);
-	bn->trevsorted = BATtrevordered(b);
-	BATkey(bn, BAThkey(b));
-	BATkey(BATmirror(bn), BATtkey(b));
-	bn->H->nonil = b->H->nonil;
-	bn->T->nonil = b->T->nonil;
-	if (bn->hkey && bn->htype == TYPE_oid) {
-		if (BATcount(bn) == 0) {
-			bn->hdense = TRUE;
-			BATseqbase(bn, 0);
-		}
-	}
+	BATseqbase(bn, 0);
+	bn->tsorted = BAThordered(b);
+	bn->trevsorted = BAThrevordered(b);
+	BATkey(BATmirror(bn), BAThkey(b));
+	bn->T->nonil = b->H->nonil;
+	bn->T->nil = 0;
 	if (bn->tkey && bn->ttype == TYPE_oid) {
 		if (BATcount(bn) == 0) {
 			bn->tdense = TRUE;
@@ -123,7 +112,7 @@ BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl, BUN maximum)
 	BUN i, cnt;
 	oid o, *dst;
 	/* off must be signed as it can be negative,
-	 * e.g., if b->hseqbase == 0 and b->U->first > 0;
+	 * e.g., if b->hseqbase == 0 and b->batFirst > 0;
 	 * instead of wrd, we could also use ssize_t or int/lng with
 	 * 32/64-bit OIDs */
 	wrd off;
@@ -131,7 +120,7 @@ BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl, BUN maximum)
 	assert(bn->htype == TYPE_void);
 	assert(bn->ttype == TYPE_oid);
 	assert(BAThdense(b));
-	off = b->hseqbase - b->U->first;
+	off = b->hseqbase - b->batFirst;
 	b = BATmirror(b);	/* BATprepareHash works on HEAD column */
 	if (BATprepareHash(b)) {
 		BBPreclaim(bn);
@@ -163,8 +152,8 @@ BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl, BUN maximum)
 	}
 	BATsetcount(bn, cnt);
 	bn->tkey = 1;
-	bn->tdense = bn->tsorted = bn->trevsorted = bn->U->count <= 1;
-	if (bn->U->count == 1)
+	bn->tdense = bn->tsorted = bn->trevsorted = bn->batCount <= 1;
+	if (bn->batCount == 1)
 		bn->tseqbase = *(oid *) Tloc(bn, BUNfirst(bn));
 	/* temporarily set head to nil so that BATorder doesn't materialize */
 	bn->hseqbase = oid_nil;
@@ -174,7 +163,7 @@ BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl, BUN maximum)
 	bn->hseqbase = 0;
 	bn->hkey = 1;
 	bn->hsorted = 1;
-	bn->hrevsorted = bn->U->count <= 1;
+	bn->hrevsorted = bn->batCount <= 1;
 	return bn;
 }
 
@@ -629,10 +618,11 @@ BAT_scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 #ifndef NDEBUG
 	int (*cmp)(const void *, const void *);
 #endif
+	int t;
 	BUN p, q, cnt;
 	oid o, *dst;
 	/* off must be signed as it can be negative,
-	 * e.g., if b->hseqbase == 0 and b->U->first > 0;
+	 * e.g., if b->hseqbase == 0 and b->batFirst > 0;
 	 * instead of wrd, we could also use ssize_t or int/lng with
 	 * 32/64-bit OIDs */
 	wrd off;
@@ -665,6 +655,12 @@ BAT_scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 	dst = (oid *) Tloc(bn, BUNfirst(bn));
 	cnt = 0;
 
+	t = b->ttype;
+	if (t != ATOMstorage(t) &&
+	    ATOMnilptr(ATOMstorage(t)) == ATOMnilptr(t) &&
+	    BATatoms[ATOMstorage(t)].atomCmp == BATatoms[t].atomCmp)
+		t = ATOMstorage(t);
+
 	if (s && !BATtdense(s)) {
 
 		assert(s->tsorted);
@@ -680,7 +676,7 @@ BAT_scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 		/* call type-specific core scan select function */
 		assert(b->batCapacity >= BATcount(b));
 		assert(s->batCapacity >= BATcount(s));
-		switch (ATOMstorage(b->ttype)) {
+		switch (t) {
 		case TYPE_bte:
 			cnt = candscan_bte(scanargs);
 			break;
@@ -727,7 +723,7 @@ BAT_scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 		}
 		candlist = NULL;
 		/* call type-specific core scan select function */
-		switch (ATOMstorage(b->ttype)) {
+		switch (t) {
 		case TYPE_bte:
 			cnt = fullscan_bte(scanargs);
 			break;
@@ -760,16 +756,16 @@ BAT_scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 	}
 	BATsetcount(bn, cnt);
 	bn->tsorted = 1;
-	bn->trevsorted = bn->U->count <= 1;
+	bn->trevsorted = bn->batCount <= 1;
 	bn->tkey = 1;
-	bn->tdense = bn->U->count <= 1;
-	if (bn->U->count == 1)
+	bn->tdense = bn->batCount <= 1;
+	if (bn->batCount == 1)
 		bn->tseqbase = *(oid *) Tloc(bn, BUNfirst(bn));
 	bn->hsorted = 1;
 	bn->hdense = 1;
 	bn->hseqbase = 0;
 	bn->hkey = 1;
-	bn->hrevsorted = bn->U->count <= 1;
+	bn->hrevsorted = bn->batCount <= 1;
 
 	return bn;
 }
@@ -997,8 +993,8 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 		return NULL;
 	}
 
-	if (b->U->count == 0 ||
-	    (s && (s->U->count == 0 ||
+	if (b->batCount == 0 ||
+	    (s && (s->batCount == 0 ||
 		   (BATtdense(s) &&
 		    (s->tseqbase >= b->hseqbase + BATcount(b) ||
 		     s->tseqbase + BATcount(s) <= b->hseqbase))))) {
@@ -1154,7 +1150,7 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 	if (b->tsorted || b->trevsorted) {
 		BAT *v;
 		BUN low = 0;
-		BUN high = b->U->count;
+		BUN high = b->batCount;
 
 		if (BATtdense(b)) {
 			/* positional */
@@ -1255,14 +1251,13 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 			} else {
 				v = VIEWhead(b);	/* [oid,nil] */
 			}
-			bn = BATslice(v, low, high);
+			bn = BATmirror(BATslice(v, low, high));
 		}
 		BBPunfix(v->batCacheid);
-		bn = BATmirror(bn);
 		bn->hseqbase = 0;
 		bn->hkey = 1;
 		bn->hsorted = 1;
-		bn->hrevsorted = bn->U->count <= 1;
+		bn->hrevsorted = bn->batCount <= 1;
 		bn->H->nonil = 1;
 		bn->H->nil = 0;
 		return bn;
@@ -1461,161 +1456,4 @@ BATthetasubselect(BAT *b, BAT *s, const void *val, const char *op)
 	}
 	GDKerror("BATthetasubselect: unknown operator.\n");
 	return NULL;
-}
-
-/* The rest of this file contains backward-compatible interfaces */
-
-static BAT *
-BAT_select_(BAT *b, const void *tl, const void *th,
-            bit li, bit hi, bit tail, bit anti, const char *name)
-{
-	BAT *bn;
-	BAT *bn1 = NULL;
-	BAT *map;
-	BAT *b1;
-
-	ALGODEBUG fprintf(stderr, "#Legacy %s(b=%s#" BUNFMT "[%s,%s]%s%s%s,"
-			  "li=%s,hi=%s,tail=%s,anti=%s)\n", name,
-			  BATgetId(b), BATcount(b), ATOMname(b->htype), ATOMname(b->ttype),
-			  BAThdense(b) ? "-hdense" : "",
-			  b->tsorted ? "-sorted" : "",
-			  b->trevsorted ? "-revsorted" : "",
-			  li ? "true" : "false",
-			  hi ? "true" : "false",
-			  tail ? "true" : "false",
-			  anti ? "true" : "false");
-	BATcheck(b, "BAT_select_");
-	/* b is a [any_1,any_2] BAT */
-	if (!BAThdense(b)) {
-		ALGODEBUG fprintf(stderr, "#BAT_select_(b=%s#" BUNFMT
-				  ",tail=%d): make map\n",
-				  BATgetId(b), BATcount(b), tail);
-		map = BATmirror(BATmark(b, 0)); /* [dense1,any_1] */
-		b1 = BATmirror(BATmark(BATmirror(b), 0)); /* dense1,any_2] */
-	} else {
-		ALGODEBUG fprintf(stderr, "#BAT_select_(b=%s#" BUNFMT
-				  ",tail=%d): dense head\n",
-				  BATgetId(b), BATcount(b), tail);
-		map = NULL;
-		b1 = b;		/* [dense1,any_2] (any_1==dense1) */
-	}
-	/* b1 is a [dense1,any_2] BAT, map (if set) is a [dense1,any_1] BAT */
-	bn = BATsubselect(b1, NULL, tl, th, li, hi, anti);
-	if (bn == NULL)
-		goto error;
-	/* bn is a [dense2,oid] BAT, if b was hdense, oid==any_1 */
-	if (tail) {
-		/* we want to return a [any_1,any_2] subset of b */
-		if (map) {
-			bn1 = BATproject(bn, map);
-			if (bn1 == NULL)
-				goto error;
-			/* bn1 is [dense2,any_1] */
-			BBPunfix(map->batCacheid);
-			map = BATmirror(bn1);
-			/* map is [any_1,dense2] */
-			bn1 = BATproject(bn, b1);
-			if (bn1 == NULL)
-				goto error;
-			/* bn1 is [dense2,any_2] */
-			BBPunfix(b1->batCacheid);
-			b1 = NULL;
-			BBPunfix(bn->batCacheid);
-			bn = VIEWcreate(map, bn1);
-			if (bn == NULL)
-				goto error;
-			/* bn is [any_1,any_2] */
-			BBPunfix(bn1->batCacheid);
-			BBPunfix(map->batCacheid);
-			bn1 = map = NULL;
-		} else {
-			bn1 = BATproject(bn, b);
-			if (bn1 == NULL)
-				goto error;
-			/* bn1 is [dense2,any_2] */
-			/* bn was [dense2,any_1] since b was hdense */
-			b1 = VIEWcreate(BATmirror(bn), bn1);
-			if (b1 == NULL)
-				goto error;
-			/* b1 is [any_1,any_2] */
-			BBPunfix(bn->batCacheid);
-			bn = b1;
-			b1 = NULL;
-			BBPunfix(bn1->batCacheid);
-			bn1 = NULL;
-		}
-		if (th == NULL && !anti && BATcount(bn) > 0 &&
-		    ATOMcmp(b->ttype, tl, ATOMnilptr(b->ttype)) == 0) {
-			/* this was the only way to get nils, so we
-			 * have nils if there are any values at all */
-			bn->T->nil = 1;
-		} else {
-			/* we can't have nils */
-			bn->T->nonil = 1;
-		}
-	} else {
-		/* we want to return a [any_1,nil] BAT */
-		if (map) {
-			BBPunfix(b1->batCacheid);
-			b1 = NULL;
-			bn1 = BATproject(bn, map);
-			if (bn1 == NULL)
-				goto error;
-			/* bn1 is [dense2,any_1] */
-			BBPunfix(map->batCacheid);
-			BBPunfix(bn->batCacheid);
-			bn = bn1;
-			map = bn1 = NULL;
-		}
-		BATseqbase(bn, oid_nil);
-		/* bn is [nil,any_1] */
-		bn = BATmirror(bn);
-		/* bn is [any_1,nil] */
-	}
-	return bn;
-
-  error:
-	if (map)
-		BBPunfix(map->batCacheid);
-	if (b1 && b1 != b)
-		BBPunfix(b1->batCacheid);
-	if (bn1)
-		BBPunfix(bn1->batCacheid);
-	if (bn)
-		BBPunfix(bn->batCacheid);
-	return NULL;
-}
-
-BAT *
-BATselect_(BAT *b, const void *h, const void *t, bit li, bit hi)
-{
-	return BAT_select_(b, h, t, li, hi, TRUE, FALSE, "BATselect_");
-}
-
-BAT *
-BATuselect_(BAT *b, const void *h, const void *t, bit li, bit hi)
-{
-	return BAT_select_(b, h, t, li, hi, FALSE, FALSE, "BATuselect_");
-}
-
-BAT *
-BATantiuselect_(BAT *b, const void *h, const void *t, bit li, bit hi)
-{
-	return BAT_select_(b, h, t, li, hi, FALSE, TRUE, "BATantiuselect");
-}
-
-/* Return a BAT which is a subset of b with just the qualifying
- * tuples. */
-BAT *
-BATselect(BAT *b, const void *h, const void *t)
-{
-	return BATselect_(b, h, t, TRUE, TRUE);
-}
-
-/* Return a BAT with in its head a subset of qualifying head values
- * from b, and void-nil in its tail. */
-BAT *
-BATuselect(BAT *b, const void *h, const void *t)
-{
-	return BATuselect_(b, h, t, TRUE, TRUE);
 }

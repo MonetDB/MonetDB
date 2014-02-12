@@ -11,9 +11,9 @@
 -- The Original Code is the MonetDB Database System.
 --
 -- The Initial Developer of the Original Code is CWI.
--- Copyright August 2008-2013 MonetDB B.V.
+-- Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+-- Copyright August 2008-2014 MonetDB B.V.
 -- All Rights Reserved.
-
 
 -- Author M.Kersten
 -- This script gives the database administrator insight in the actual

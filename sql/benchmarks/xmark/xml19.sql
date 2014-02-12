@@ -1,4 +1,3 @@
-
 -- query 19
 
 select * from (

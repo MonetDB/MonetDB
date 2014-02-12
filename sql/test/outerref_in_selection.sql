@@ -1,4 +1,3 @@
-
 create table capediff (
         cape_date date,
         num_at_cape integer

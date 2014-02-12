@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2013 MonetDB B.V.
+ * Copyright August 2008-2014 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -113,7 +113,7 @@ char* control_send(
 		if (len == 2)
 			len += recv(sock, rbuf + len, sizeof(rbuf) - len, 0);
 		/* perform login ritual */
-		if (len <= 0) {
+		if (len <= 2) {
 			snprintf(sbuf, sizeof(sbuf), "no response from monetdbd");
 			close(sock);
 			return(strdup(sbuf));

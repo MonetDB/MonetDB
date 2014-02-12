@@ -68,13 +68,9 @@ impact performance if set wrongly.  The kernel tries to choose the
 values for optimal performance.  Changing these parameters is
 discouraged.
 .P 
-.IP "gdk_mem_bigsize"
-Memory chunks of size >= gdk_mem_bigsize (in bytes) will be mmaped
-anonymously.  Default: 1<<20 == 1024576 == 1 MiB
-.\" for 32 bit systems try to claim 3G of (virtual) memory; ???
 .IP "gdk_vmtrim"
 Enable or disable the vmtrim thread which tries to unload memory that is
-not in use.  Default: yes
+not in use.  Default: yes on 32 bit platforms, no on 64 bit platforms
 .IP "gdk_debug"
 You can enable debug output for specific kernel operations.  By default
 debug is switched off for obvious reasons.  The value of gdk_debug is an
@@ -138,7 +134,6 @@ one or more of these debug flags as well:
   --transactions  (TMMASK | DELTAMASK | TEMMASK)
   --modules       (LOADMASK)
   --algorithms    (ALGOMASK | ESTIMASK)
-.\"  --xproperties   (XPROPMASK )
   --performance   (JOINPROPMASK | DEADBEEFMASK)
   --optimizers    (OPTMASK)
   --forcemito     (FORCEMITOMASK)

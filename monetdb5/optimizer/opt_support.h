@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2013 MonetDB B.V.
+ * Copyright August 2008-2014 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -91,7 +91,6 @@
 #define DEBUG_OPT_HEURISTIC			49
 #define DEBUG_OPT_CENTIPEDE			50
 #define DEBUG_OPT_PUSHSELECT		51
-#define DEBUG_OPT_JSON				54
 
 #define DEBUG_OPT(X) ((lng) 1 << (X))
 opt_export lng optDebug;

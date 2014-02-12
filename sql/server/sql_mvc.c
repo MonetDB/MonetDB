@@ -13,10 +13,9 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2013 MonetDB B.V.
+ * Copyright August 2008-2014 MonetDB B.V.
  * All Rights Reserved.
  */
-
 
 /* multi version catalog */
 
@@ -1246,13 +1245,15 @@ mvc_is_sorted(mvc *m, sql_column *col)
 void 
 stack_push_var(mvc *sql, char *name, sql_subtype *type)
 {
+	int tpe = type->type->localtype;
+
 	if (sql->topvars == sql->sizevars) {
 		sql->sizevars <<= 1;
 		sql->vars = RENEW_ARRAY(sql_var,sql->vars,sql->sizevars);
 	}
 	sql->vars[sql->topvars].s = (void*)1;
 	sql->vars[sql->topvars].name = _STRDUP(name);
-	sql->vars[sql->topvars].value.vtype = 0;
+	VALinit(&sql->vars[sql->topvars].value, tpe, ATOMnil(tpe));
 	sql->vars[sql->topvars].type = *type;
 	assert(sql->vars[sql->topvars].type.comp_type == NULL);
 	sql->vars[sql->topvars].view = 0;
@@ -1270,6 +1271,7 @@ stack_push_rel_var(mvc *sql, char *name, sql_rel *var, sql_subtype *type)
 	sql->vars[sql->topvars].name = _STRDUP(name);
 	sql->vars[sql->topvars].value.vtype = 0;
 	sql->vars[sql->topvars].type = *type;
+
 	assert(sql->vars[sql->topvars].type.comp_type != NULL);
 	sql->vars[sql->topvars].view = 0;
 	sql->topvars++;

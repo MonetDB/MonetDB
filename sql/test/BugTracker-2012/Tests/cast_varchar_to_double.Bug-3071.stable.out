@@ -11,7 +11,7 @@ stdout of test 'cast_varchar_to_double.Bug-3071` in directory 'sql/test/BugTrack
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Found 15.629 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2013 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://riga.ins.cwi.nl:31763/
 # MonetDB/GIS module loaded
@@ -46,16 +46,16 @@ Ready.
 # 12:41:05 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=riga" "--port=31763"
 # 12:41:05 >  
 
-#create table t (s varchar(100));
-#insert into t values ('42.42');
+#create table t3071 (s varchar(100));
+#insert into t3071 values ('42.42');
 [ 1	]
-#select avg ( cast (s as double)) from t;
+#select avg ( cast (s as double)) from t3071;
 % sys.L1 # table_name
 % L1 # name
 % double # type
 % 24 # length
 [ 42.42	]
-#drop table t;
+#drop table t3071;
 
 # 12:41:05 >  
 # 12:41:05 >  "Done."

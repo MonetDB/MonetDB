@@ -1,5 +1,4 @@
 
-
 select
 	supp_nation,
 	cust_nation,

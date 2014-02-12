@@ -12,7 +12,7 @@
 #
 # The Initial Developer of the Original Code is CWI.
 # Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-# Copyright August 2008-2013 MonetDB B.V.
+# Copyright August 2008-2014 MonetDB B.V.
 # All Rights Reserved.
 
 import os
@@ -30,7 +30,7 @@ automake_ext = ['', 'c', 'def', 'h', 'lo', 'o', 'pm.c',
 # buildtools/conf.  The generated sources should therefore be included
 # in the tar ball and not be removed with `make distclean' when
 # running "in" said tar ball.
-buildtools_ext = ['brg', 'l', 'mx', 'pm.i', 'syms', 't', 'y']
+buildtools_ext = ['brg', 'l', 'pm.i', 'syms', 't', 'y']
 
 am_assign = "+="
 

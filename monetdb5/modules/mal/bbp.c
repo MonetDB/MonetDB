@@ -3,19 +3,20 @@
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  * http://www.monetdb.org/Legal/MonetDBLicense
- * 
+ *
  * Software distributed under the License is distributed on an "AS IS"
  * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
  * License for the specific language governing rights and limitations
  * under the License.
- * 
+ *
  * The Original Code is the MonetDB Database System.
- * 
+ *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2013 MonetDB B.V.
+ * Copyright August 2008-2014 MonetDB B.V.
  * All Rights Reserved.
-*/
+ */
+
 /*
  * author M.L.Kersten, P. Boncz
  * BAT Buffer Pool
@@ -373,7 +374,7 @@ CMDdecompressheap(Heap *h, Heap *hn, str fnme)
 	GDKfilepath(buf, BATDIR, buf2, "gz");
 	fp = open_gzrstream(buf);
 	if ( fp && !mnstr_errnr(fp)){
-		if ( HEAPextend(hn,h->size) < 0)
+		if ( HEAPextend(hn,h->size,0) < 0)
 			return -999;
 		/* skip header */
 		if ((ssize_t) h->size != mnstr_read(fp, (void*) hn->base,1, h->size))
@@ -473,7 +474,7 @@ CMDbbpdecompress(int *ret, int *bid, str *fnme)
 		}
 		BATsetcapacity(bn, BATcount(b));
 		BATsetcount(bn, BATcount(b));
-		BATsetaccess(bn, b->P->restricted);
+		BATsetaccess(bn, b->batRestricted);
 		BBPreleaseref(b->batCacheid);
 		BBPkeepref(*ret = bn->batCacheid);
 		return MAL_SUCCEED;

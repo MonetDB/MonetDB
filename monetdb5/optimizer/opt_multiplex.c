@@ -13,9 +13,10 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2013 MonetDB B.V.
+ * Copyright August 2008-2014 MonetDB B.V.
  * All Rights Reserved.
  */
+
 #include "monetdb_config.h"
 #include "opt_multiplex.h"
 #include "mal_interpreter.h"
@@ -71,7 +72,9 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	mod = putName(mod,strlen(mod));
 	fcn = VALget(&getVar(mb, getArg(pci, pci->retc+1))->value);
 	fcn = putName(fcn,strlen(fcn));
+#ifndef NDEBUG
 	mnstr_printf(GDKstdout,"#Bulk operator required for %s.%s\n", mod,fcn);
+#endif
 
 	/* search the iterator bat */
 	for (i = pci->retc+2; i < pci->argc; i++)

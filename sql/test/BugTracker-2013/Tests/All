@@ -55,6 +55,12 @@ python-explain.Bug-3380
 case-orderby.Bug-3388
 unop_vs_aggr.Bug-3885
 singleton-median.Bug-3389
-Cannot_Find_Column_Type.Bug-3394
+copy-out-quote.Bug-3393
 case_when.Bug-3395
 udf_error.Bug-3396
+syntaxerror.Bug-3399
+timestamp.Bug-3401
+not_null.Bug-3403
+rangejoin_optimizer.Bug-3411
+boolean_column_predicate.Bug-3412
+

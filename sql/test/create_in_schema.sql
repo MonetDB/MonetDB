@@ -10,7 +10,7 @@ create table bla.bla3(id int);
 select * from bla3;	-- should fail
 select * from bla.bla3;
 
-create temporary table sys.bla4(id int);
+create temporary table tmp.bla4(id int);
 select * from bla4;
 
 create table tmp.bla5(id int);

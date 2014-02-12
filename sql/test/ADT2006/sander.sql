@@ -1,4 +1,3 @@
-
 create table suspect ( name varchar(100), picture_uri
 varchar(200), notes varchar(500), victim_name
 varchar(100), primary key (name));

@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2013 MonetDB B.V.
+ * Copyright August 2008-2014 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -50,12 +50,10 @@ void BBPtrim(size_t delta);
 void BBPunshare(bat b);
 void GDKclrerr(void);
 int GDKextend(const char *fn, size_t size);
-#ifndef NATIVE_WIN32
-int GDKextendf(int fd, off_t size);
-#endif
+int GDKextendf(int fd, size_t size);
 int GDKfdlocate(const char *nme, const char *mode, const char *ext);
 FILE *GDKfilelocate(const char *nme, const char *mode, const char *ext);
-char *GDKload(const char *nme, const char *ext, size_t size, size_t chunk, storage_t mode);
+char *GDKload(const char *nme, const char *ext, size_t size, size_t *maxsize, storage_t mode);
 void GDKlog(_In_z_ _Printf_format_string_ const char *format, ...)
 	__attribute__((__format__(__printf__, 1, 2)));
 void *GDKmallocmax(size_t size, size_t *maxsize, int emergency);
@@ -117,6 +115,7 @@ extern int BBP_dirty;	/* BBP table dirty? */
 extern batlock_t GDKbatLock[BBP_BATMASK + 1];
 extern bbplock_t GDKbbpLock[BBP_THREADMASK + 1];
 extern size_t GDK_mmap_minsize;	/* size after which we use memory mapped files */
+extern size_t GDK_mmap_pagesize; /* mmap granularity */
 extern MT_Lock GDKnameLock;
 extern MT_Lock GDKthreadLock;
 extern MT_Lock GDKtmLock;
@@ -170,7 +169,9 @@ extern MT_Lock MT_system_lock;
 
 #define SORTloop_bit(b,p,q,tl,th) SORTloop_bte(b,p,q,tl,th)
 
-#ifdef GDKMALLOC_DEBUG
+#ifndef NDEBUG
+/* see comment in gdk.h */
+#ifdef __GNUC__
 #define GDKmallocmax(s,ps,e)						\
 	({								\
 		size_t _size = (s);					\
@@ -211,4 +212,41 @@ extern MT_Lock MT_system_lock;
 				__func__, __FILE__, __LINE__);		\
 		_res;							\
 	 })
+#else
+static inline void *
+GDKmallocmax_debug(size_t size, size_t *psize, int emergency,
+		   const char *filename, int lineno)
+{
+	void *res = GDKmallocmax(size, psize, emergency);
+	ALLOCDEBUG fprintf(stderr,
+			   "#GDKmallocmax(" SZFMT ",(" SZFMT ")) -> "
+			   PTRFMT " [%s:%d]\n",
+			   size, *psize, PTRFMTCAST res, filename, lineno);
+	return res;
+}
+#define GDKmallocmax(s, ps, e)	GDKmallocmax_debug((s), (ps), (e), __FILE__, __LINE__)
+static inline int
+GDKmunmap_debug(void *ptr, size_t len, const char *filename, int lineno)
+{
+	int res = GDKmunmap(ptr, len);
+	ALLOCDEBUG fprintf(stderr,
+			   "#GDKmunmap(" PTRFMT "," SZFMT ") -> %d [%s:%d]\n",
+			   PTRFMTCAST ptr, len, res, filename, lineno);
+	return res;
+}
+#define GDKmunmap(p, l)		GDKmunmap_debug((p), (l), __FILE__, __LINE__)
+static inline void *
+GDKreallocmax_debug(void *ptr, size_t size, size_t *psize, int emergency,
+		    const char *filename, int lineno)
+{
+	void *res = GDKreallocmax(ptr, size, psize, emergency);
+	ALLOCDEBUG fprintf(stderr,
+			   "#GDKreallocmax(" PTRFMT "," SZFMT
+			   ",(" SZFMT ")) -> " PTRFMT " [%s:%d]\n",
+			   PTRFMTCAST ptr, size, *psize, PTRFMTCAST res,
+			   filename, lineno);
+	return res;
+}
+#define GDKreallocmax(p, s, ps, e)	GDKreallocmax_debug((p), (s), (ps), (e), __FILE__, __LINE__)
+#endif
 #endif

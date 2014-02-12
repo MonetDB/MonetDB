@@ -13,10 +13,9 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2013 MonetDB B.V.
+ * Copyright August 2008-2014 MonetDB B.V.
  * All Rights Reserved.
  */
-
 
 #include "monetdb_config.h"
 #include "rel_psm.h"
@@ -484,6 +483,16 @@ rel_select_into( mvc *sql, symbol *sq, exp_kind ek)
 		list_append(nl, v);
 	}
 	return nl;
+}
+
+extern sql_rel *
+rel_select_with_into(mvc *sql, symbol *sq)
+{
+	exp_kind ek = {type_value, card_row, TRUE};
+	list *reslist = rel_select_into(sql, sq, ek);
+	if (!reslist)
+		return NULL;
+	return rel_psm_block(sql->sa, reslist);
 }
 
 static int has_return( list *l );

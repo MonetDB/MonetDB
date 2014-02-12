@@ -3,19 +3,19 @@
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  * http://www.monetdb.org/Legal/MonetDBLicense
- * 
+ *
  * Software distributed under the License is distributed on an "AS IS"
  * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
  * License for the specific language governing rights and limitations
  * under the License.
- * 
+ *
  * The Original Code is the MonetDB Database System.
- * 
+ *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2013 MonetDB B.V.
+ * Copyright August 2008-2014 MonetDB B.V.
  * All Rights Reserved.
-*/
+ */
 
 /*
  * Performance tracing
@@ -207,25 +207,26 @@ deactivateCounter(str name)
  * It uses a local logbuffer[LOGLEN] and logbase, logtop, loglen
  */
 #define LOGLEN 8192
-#define lognew()  loglen = 0; logbase = logbuffer; *logbase = 0;\
+#define lognew()  loglen = 0; logbase = logbuffer; *logbase = 0;
 
-#define logadd(...) 											\
-	do {														\
-		(void) snprintf(logbase+loglen, LOGLEN -1 - loglen, __VA_ARGS__);					\
-		loglen += (int) strlen(logbase+loglen);					\
+#define logadd(...)														\
+	do {																\
+		(void) snprintf(logbase+loglen, LOGLEN -1 - loglen, __VA_ARGS__); \
+		loglen += (int) strlen(logbase+loglen);							\
 	} while (0)
 
 static void logsend(char *logbuffer)
-{
+{ int error=0;
 	if (eventstream) {
 		MT_lock_set(&mal_profileLock, "logsend");
 		eventcounter++;
 		if (profileCounter[PROFevent].status && eventcounter)
-			mnstr_printf(eventstream,"[ %d,\t%s", eventcounter, logbuffer);
+			error= mnstr_printf(eventstream,"[ %d,\t%s", eventcounter, logbuffer);
 		else
-			mnstr_printf(eventstream,"[ %s", logbuffer);
-		mnstr_flush(eventstream);
+			error= mnstr_printf(eventstream,"[ %s", logbuffer);
+		error= mnstr_flush(eventstream);
 		MT_lock_unset(&mal_profileLock, "logsend");
+		if ( error) stopProfiling();
 	}
 }
 
@@ -252,7 +253,7 @@ profilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc, int start)
 		return;
 	p = getInstrPtr(mb,pc);
 	if ( !start && p && p->token == ENDsymbol)
-		profilerHeartbeatEvent("ping");
+		profilerHeartbeatEvent("ping", 0);
 	if (myname == 0)
 		myname = putName("profiler", 8);
 	if (getModuleId(getInstrPtr(mb, pc)) == myname)
@@ -401,22 +402,26 @@ offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc, int start)
 		}
 	}
 	if (profileCounter[PROFtime].status) {
-		char *tbuf, *c;
+		char *tbuf;
 
 		/* without this cast, compilation on Windows fails with
 		 * argument of type "long *" is incompatible with parameter of type "const time_t={__time64_t={__int64}} *"
 		 */
 		time_t clock = (time_t) mb->profiler[pc].clock.tv_sec;
+#ifdef HAVE_CTIME_R3
+		char ctm[26];
+		tbuf = ctime_r(&clock, ctm, sizeof(ctm));
+#else
+#ifdef HAVE_CTIME_R
+		char ctm[26];
+		tbuf = ctime_r(&clock, ctm);
+#else
 		tbuf = ctime(&clock);
-		if (tbuf) {
-			c = strchr(tbuf, '\n');
-			if (c) {
-				c[-5] = 0;
-			}
-			tbuf[10] = '"';
-			logadd("%s", tbuf + 10);
-			logadd(".%06d\",\t", (int)mb->profiler[pc].clock.tv_usec);
-		} else
+#endif
+#endif
+		if (tbuf)
+			logadd("\"%.8s.%06ld\",\t", tbuf + 11, (long) mb->profiler[pc].clock.tv_usec);
+		else
 			logadd("%s,\t", "nil");
 	}
 	if (profileCounter[PROFthread].status) {
@@ -1146,16 +1151,25 @@ cachedProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc)
 	TRACE_event++;
 
 	{
-		char *tbuf, *c;
+		char *tbuf;
 
 		/* without this cast, compilation on Windows fails with
 		 * argument of type "long *" is incompatible with parameter of type "const time_t={__time64_t={__int64}} *"
 		 */
 		time_t clock = (time_t) mb->profiler[pc].clock.tv_sec;
+#ifdef HAVE_CTIME_R3
+		char ctm[26];
+		tbuf = ctime_r(&clock, ctm, sizeof(ctm));
+#else
+#ifdef HAVE_CTIME_R
+		char ctm[26];
+		tbuf = ctime_r(&clock, ctm);
+#else
 		tbuf = ctime(&clock);
-		c = strchr(tbuf, '\n');
-		if (c)
-			snprintf(c-5, 6, ".%03d", (int)mb->profiler[pc].clock.tv_usec / 1000);
+#endif
+#endif
+		/* sneakily overwrite year with second fraction */
+		snprintf(tbuf + 19, 6, ".%03d", (int)mb->profiler[pc].clock.tv_usec / 1000);
 		TRACE_id_time = BUNappend(TRACE_id_time, tbuf, FALSE);
 	}
 
@@ -1377,7 +1391,7 @@ void profilerGetCPUStat(lng *user, lng *nice, lng *sys, lng *idle, lng *iowait)
 	*iowait = corestat[255].iowait;
 }
 
-void profilerHeartbeatEvent(str msg)
+void profilerHeartbeatEvent(str msg, lng ticks)
 {
 	char logbuffer[LOGLEN], *logbase;
 	char cpuload[BUFSIZ];
@@ -1423,17 +1437,21 @@ void profilerHeartbeatEvent(str msg)
 	if (profileCounter[PROFstart].status) 
 		logadd("\"%s\",\t",msg);
 	if (profileCounter[PROFtime].status) {
-		char *tbuf, *c;
+		char *tbuf;
+#ifdef HAVE_CTIME_R3
+		char ctm[26];
+		tbuf = ctime_r(&clock, ctm, sizeof(ctm));
+#else
+#ifdef HAVE_CTIME_R
+		char ctm[26];
+		tbuf = ctime_r(&clock, ctm);
+#else
 		tbuf = ctime(&clock);
-		if (tbuf) {
-			c = strchr(tbuf, '\n');
-			if (c) {
-				c[-5] = 0;
-			}
-			tbuf[10] = '"';
-			logadd("%s", tbuf + 10);
-			logadd(".%06d\",\t", (int)tv.tv_usec);
-		} else
+#endif
+#endif
+		if (tbuf)
+			logadd("\"%.8s.%06ld\",\t", tbuf + 11, (long) tv.tv_usec);
+		else
 			logadd("%s,\t", "nil");
 	}
 	if (profileCounter[PROFthread].status)
@@ -1447,7 +1465,7 @@ void profilerHeartbeatEvent(str msg)
 	if (profileCounter[PROFpc].status) 
 		logadd("0,\t");
 	if (profileCounter[PROFticks].status) 
-		logadd("0,\t");
+		logadd(LLFMT",\t", ticks);
 #ifdef HAVE_TIMES
 	if (profileCounter[PROFcpu].status && delayswitch < 0) {
 		logadd(LLFMT",\t", (lng) (newTms.tms_utime - prevtimer.tms_utime));
@@ -1517,7 +1535,7 @@ static void profilerHeartbeat(void *dummy)
 			if (!hbrunning)
 				return;
 		}
-		profilerHeartbeatEvent("ping");
+		profilerHeartbeatEvent("ping", 0);
 	}
 	hbdelay = 0;
 }

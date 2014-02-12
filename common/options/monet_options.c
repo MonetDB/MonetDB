@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2013 MonetDB B.V.
+ * Copyright August 2008-2014 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -250,7 +250,17 @@ mo_builtin_settings(opt **Set)
 	i++;
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("gdk_vmtrim");
+	/* default for gdk_vmtrim is
+	 * "yes" on 32 bit architectures and
+	 * "no"  on 64 bit architectures;
+	 * see also GDKinit() in gdk/gdk_utils.c */
+#if SIZEOF_VOID_P == 4
+	/* 32 bit architecture */
 	set[i].value = strdup("yes");
+#else
+	/* 64 bit architecture */
+	set[i].value = strdup("no");
+#endif
 	i++;
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("monet_prompt");

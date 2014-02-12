@@ -36,7 +36,11 @@ Ready.
 % L1 # name
 % wrd # type
 % 3 # length
+!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/sql/test/leaks/Tests/select1.stable.out
 [ 335	]
+!=======
+[ 346	]
+!>>>>>>> /tmp/select1.stable.out~other.K23Z3f
 #select 1; 
 % .L # table_name
 % single_value # name
@@ -48,7 +52,11 @@ Ready.
 % L1 # name
 % wrd # type
 % 3 # length
+!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/sql/test/leaks/Tests/select1.stable.out
 [ 335	]
+!=======
+[ 346	]
+!>>>>>>> /tmp/select1.stable.out~other.K23Z3f
 
 # 22:03:05 >  
 # 22:03:05 >  Done.

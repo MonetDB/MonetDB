@@ -35,8 +35,13 @@ Ready.
 [ "oid",	"bit",	74	]
 [ "oid",	"bit",	74	]
 [ "oid",	"bit",	422	]
+!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/sql/test/leaks/Tests/check5.stable.out
 [ "oid",	"bit",	1428	]
 [ "oid",	"bit",	1428	]
+!=======
+[ "oid",	"bit",	1255	]
+[ "oid",	"bit",	1255	]
+!>>>>>>> /tmp/check5.stable.out~other.PqdtD8
 [ "oid",	"int",	0	]
 [ "oid",	"int",	0	]
 [ "oid",	"int",	0	]
@@ -74,12 +79,21 @@ Ready.
 [ "oid",	"int",	19	]
 [ "oid",	"int",	19	]
 [ "oid",	"int",	19	]
+!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/sql/test/leaks/Tests/check5.stable.out
 [ "oid",	"int",	46	]
 [ "oid",	"int",	46	]
 [ "oid",	"int",	46	]
 [ "oid",	"int",	46	]
 [ "oid",	"int",	46	]
 [ "oid",	"int",	46	]
+!=======
+[ "oid",	"int",	42	]
+[ "oid",	"int",	42	]
+[ "oid",	"int",	42	]
+[ "oid",	"int",	42	]
+[ "oid",	"int",	42	]
+[ "oid",	"int",	42	]
+!>>>>>>> /tmp/check5.stable.out~other.PqdtD8
 [ "oid",	"int",	74	]
 [ "oid",	"int",	74	]
 [ "oid",	"int",	149	]
@@ -90,6 +104,7 @@ Ready.
 [ "oid",	"int",	422	]
 [ "oid",	"int",	422	]
 [ "oid",	"int",	422	]
+!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/sql/test/leaks/Tests/check5.stable.out
 [ "oid",	"int",	1428	]
 [ "oid",	"int",	1428	]
 [ "oid",	"int",	1428	]
@@ -99,6 +114,17 @@ Ready.
 [ "oid",	"int",	3892	]
 [ "oid",	"int",	3892	]
 [ "oid",	"int",	3892	]
+!=======
+[ "oid",	"int",	1255	]
+[ "oid",	"int",	1255	]
+[ "oid",	"int",	1255	]
+[ "oid",	"int",	1255	]
+[ "oid",	"int",	3398	]
+[ "oid",	"int",	3398	]
+[ "oid",	"int",	3398	]
+[ "oid",	"int",	3398	]
+[ "oid",	"int",	3398	]
+!>>>>>>> /tmp/check5.stable.out~other.PqdtD8
 [ "oid",	"lng",	0	]
 [ "oid",	"lng",	0	]
 [ "oid",	"lng",	0	]
@@ -170,8 +196,13 @@ Ready.
 [ "oid",	"str",	1	]
 [ "oid",	"str",	2	]
 [ "oid",	"str",	3	]
+!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/sql/test/leaks/Tests/check5.stable.out
 [ "oid",	"str",	46	]
 [ "oid",	"str",	46	]
+!=======
+[ "oid",	"str",	42	]
+[ "oid",	"str",	42	]
+!>>>>>>> /tmp/check5.stable.out~other.PqdtD8
 [ "oid",	"str",	74	]
 [ "oid",	"str",	74	]
 [ "oid",	"str",	149	]
@@ -179,18 +210,30 @@ Ready.
 [ "oid",	"str",	422	]
 [ "oid",	"str",	422	]
 [ "oid",	"str",	422	]
+!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/sql/test/leaks/Tests/check5.stable.out
 [ "oid",	"str",	1428	]
 [ "oid",	"str",	1428	]
 [ "oid",	"str",	1428	]
 [ "oid",	"str",	3892	]
 [ "oid",	"str",	3892	]
+!=======
+[ "oid",	"str",	1255	]
+[ "oid",	"str",	1255	]
+[ "oid",	"str",	1255	]
+[ "oid",	"str",	3398	]
+[ "oid",	"str",	3398	]
+!>>>>>>> /tmp/check5.stable.out~other.PqdtD8
 [ "oid",	"timestamp",	0	]
 #select 'transient', count(*) from bbp() as bbp where kind like 'tran%';
 % .L1,	.L2 # table_name
 % L1,	L2 # name
 % char,	wrd # type
 % 9,	3 # length
+!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/sql/test/leaks/Tests/check5.stable.out
 [ "transient",	178	]
+!=======
+[ "transient",	189	]
+!>>>>>>> /tmp/check5.stable.out~other.PqdtD8
 #select 'persistent', count(*) from bbp() as bbp where kind like 'pers%';
 % .L1,	.L2 # table_name
 % L1,	L2 # name

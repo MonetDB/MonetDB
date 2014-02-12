@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2013 MonetDB B.V.
+ * Copyright August 2008-2014 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -108,12 +108,17 @@ extern int exp_match_exp( sql_exp *e1, sql_exp *e2);
 /* match just the column (cmp equality) expressions */
 extern int exp_match_col_exps( sql_exp *e, list *l);
 extern int exps_match_col_exps( sql_exp *e1, sql_exp *e2);
-extern int exp_is_join(sql_exp *e);
+extern int exp_is_join(sql_exp *e, list *rels);
 extern int exp_is_eqjoin(sql_exp *e);
 extern int exp_is_correlation(sql_exp *e, sql_rel *r );
 extern int exp_is_join_exp(sql_exp *e);
 extern int exp_is_atom(sql_exp *e);
+extern int exps_are_atoms(list *exps);
 extern int exp_has_func(sql_exp *e);
+
+extern int rel_has_exp(sql_rel *rel, sql_exp *e);
+extern sql_rel *find_rel(list *rels, sql_exp *e);
+extern sql_rel *find_one_rel(list *rels, sql_exp *e);
 
 extern sql_exp *exps_bind_column( list *exps, char *cname, int *ambiguous);
 extern sql_exp *exps_bind_column2( list *exps, char *rname, char *cname);
@@ -121,6 +126,7 @@ extern sql_exp *exps_bind_alias( list *exps, char *rname, char *cname);
 
 extern int exps_card( list *l );
 extern void exps_fix_card( list *exps, int card);
+extern void exps_setcard( list *exps, int card);
 extern int exps_intern(list *exps);
 
 extern char *compare_func( comp_type t );

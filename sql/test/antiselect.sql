@@ -1,4 +1,3 @@
-
 CREATE TABLE antitest01 (
 id    INTEGER      NOT NULL,
 col1  VARCHAR(10)  NOT NULL,

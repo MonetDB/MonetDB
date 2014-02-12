@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2013 MonetDB B.V.
+ * Copyright August 2008-2014 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -1611,9 +1611,9 @@ SERVERputLocal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	case TYPE_bat:
 	case TYPE_ptr:
 		throw(MAL, "mapi.glue","Unsupported type");
-        case TYPE_str:
-                snprintf(buf,BUFSIZ,"%s:=%s;",*nme,*(char**)val);
-                break;
+	case TYPE_str:
+		snprintf(buf,BUFSIZ,"%s:=%s;",*nme,*(char**)val);
+		break;
 	default:
 		ATOMformat(tpe,val,&w);
 		snprintf(buf,BUFSIZ,"%s:=%s;",*nme,w);

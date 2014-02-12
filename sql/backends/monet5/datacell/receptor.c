@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2013 MonetDB B.V.
+ * Copyright August 2008-2014 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -903,44 +903,44 @@ RCtable(int *nameId, int *hostId, int *portId, int *protocolId, int *modeId, int
 	BAT *protocol = NULL, *mode = NULL, *status = NULL, *port = NULL, *host = NULL;
 	Receptor rc = rcAnchor;
 
-	name = BATnew(TYPE_oid, TYPE_str, BATTINY);
+	name = BATnew(TYPE_void, TYPE_str, BATTINY);
 	if (name == 0)
 		goto wrapup;
 	BATseqbase(name, 0);
-	host = BATnew(TYPE_oid, TYPE_str, BATTINY);
+	host = BATnew(TYPE_void, TYPE_str, BATTINY);
 	if (host == 0)
 		goto wrapup;
 	BATseqbase(host, 0);
-	port = BATnew(TYPE_oid, TYPE_int, BATTINY);
+	port = BATnew(TYPE_void, TYPE_int, BATTINY);
 	if (port == 0)
 		goto wrapup;
 	BATseqbase(port, 0);
-	protocol = BATnew(TYPE_oid, TYPE_str, BATTINY);
+	protocol = BATnew(TYPE_void, TYPE_str, BATTINY);
 	if (protocol == 0)
 		goto wrapup;
 	BATseqbase(protocol, 0);
-	mode = BATnew(TYPE_oid, TYPE_str, BATTINY);
+	mode = BATnew(TYPE_void, TYPE_str, BATTINY);
 	if (mode == 0)
 		goto wrapup;
 	BATseqbase(mode, 0);
 
-	seen = BATnew(TYPE_oid, TYPE_timestamp, BATTINY);
+	seen = BATnew(TYPE_void, TYPE_timestamp, BATTINY);
 	if (seen == 0)
 		goto wrapup;
 	BATseqbase(seen, 0);
-	cycles = BATnew(TYPE_oid, TYPE_int, BATTINY);
+	cycles = BATnew(TYPE_void, TYPE_int, BATTINY);
 	if (cycles == 0)
 		goto wrapup;
 	BATseqbase(cycles, 0);
-	pending = BATnew(TYPE_oid, TYPE_int, BATTINY);
+	pending = BATnew(TYPE_void, TYPE_int, BATTINY);
 	if (pending == 0)
 		goto wrapup;
 	BATseqbase(pending, 0);
-	received = BATnew(TYPE_oid, TYPE_int, BATTINY);
+	received = BATnew(TYPE_void, TYPE_int, BATTINY);
 	if (received == 0)
 		goto wrapup;
 	BATseqbase(received, 0);
-	status = BATnew(TYPE_oid, TYPE_str, BATTINY);
+	status = BATnew(TYPE_void, TYPE_str, BATTINY);
 	if (status == 0)
 		goto wrapup;
 	BATseqbase(status, 0);

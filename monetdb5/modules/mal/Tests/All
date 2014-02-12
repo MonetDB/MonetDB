@@ -5,7 +5,7 @@ clients01
 
 bigsum
 
-compress
+NOT_WIN32?compress
 
 inspect00
 inspect05

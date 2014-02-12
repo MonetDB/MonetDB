@@ -1,4 +1,3 @@
-
 select 0.01;
 select .01;
 select .1;

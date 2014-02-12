@@ -1,4 +1,3 @@
-
 set schema "my_schema";
 
 create table version 

@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2013 MonetDB B.V.
+ * Copyright August 2008-2014 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -130,13 +130,12 @@ logbat_destroy(BAT *b)
 }
 
 static BAT *
-logbat_new(int ht, int tt, BUN size)
+logbat_new(int tt, BUN size)
 {
-	BAT *nb = BATnew(ht, tt, size);
+	BAT *nb = BATnew(TYPE_void, tt, size);
 
 	if (nb) {
-		if (ht == TYPE_void)
-			BATseqbase(nb, 0);
+		BATseqbase(nb, 0);
 		nb->batDirty |= 2;
 	}
 	return nb;
@@ -231,10 +230,10 @@ la_bat_clear(logger *lg, logaction *la)
 
 	b = BATdescriptor(bid);
 	if (b) {
-		int access = b->P->restricted;
-		b->P->restricted = BAT_WRITE;
+		int access = b->batRestricted;
+		b->batRestricted = BAT_WRITE;
 		BATclear(b, TRUE);
-		b->P->restricted = access;
+		b->batRestricted = access;
 		logbat_destroy(b);
 	}
 }
@@ -775,8 +774,8 @@ logger_readlog(logger *lg, char *filename)
 		if (t1 - t0 > 10) {
 			t0 = t1;
 			/* not more than once every 10 seconds */
-			if (mnstr_fgetpos(lg->log, &fpos) == 0){
-				printf("# still reading write-ahead log \"%s\" (%d%% done)\n", filename, (int) (((off_t) fpos * 100 + 50) / sb.st_size));
+			if (mnstr_fgetpos(lg->log, &fpos) == 0) {
+				printf("# still reading write-ahead log \"%s\" (%d%% done)\n", filename, (int) ((fpos * 100 + 50) / sb.st_size));
 				fflush(stdout);
 			}
 		}
@@ -1095,8 +1094,8 @@ logger_new(int debug, char *fn, char *logdir, int version, preversionfix_fptr pr
 
 		if ( b == 0)
 			logger_fatal("Logger_new: inconsistent database, '%s' does not exist",bak,0,0);
-		lg->catalog_bid = logbat_new(TYPE_void, TYPE_int, BATSIZE);
-		lg->catalog_nme = logbat_new(TYPE_void, TYPE_str, BATSIZE);
+		lg->catalog_bid = logbat_new(TYPE_int, BATSIZE);
+		lg->catalog_nme = logbat_new(TYPE_str, BATSIZE);
 
 		v = BATmark(b, 0);
 		BATappend(lg->catalog_bid, BATmirror(v), FALSE);
@@ -1127,7 +1126,7 @@ logger_new(int debug, char *fn, char *logdir, int version, preversionfix_fptr pr
 		if ( b == 0)
 			logger_fatal("Logger_new: inconsistent database, '%s' snapshots does not exist",bak,0,0);
 
-		lg->snapshots_bid = logbat_new(TYPE_void, TYPE_int, 1);
+		lg->snapshots_bid = logbat_new(TYPE_int, 1);
 		v = BATmark(b, 0);
 		BATappend(lg->snapshots_bid, BATmirror(v), FALSE);
 		BBPunfix(v->batCacheid);
@@ -1136,7 +1135,7 @@ logger_new(int debug, char *fn, char *logdir, int version, preversionfix_fptr pr
 		BBPrename(lg->snapshots_bid->batCacheid, bak);
 		logger_add_bat(lg, lg->snapshots_bid, "snapshots_bid");
 
-		lg->snapshots_tid = logbat_new(TYPE_void, TYPE_int, 1);
+		lg->snapshots_tid = logbat_new(TYPE_int, 1);
 		v = BATmark(BATmirror(b), 0);
 		BATappend(lg->snapshots_tid, BATmirror(v), FALSE);
 		BBPunfix(v->batCacheid);
@@ -1153,7 +1152,7 @@ logger_new(int debug, char *fn, char *logdir, int version, preversionfix_fptr pr
 		if ( b == 0)
 			logger_fatal("Logger_new: inconsistent database, '%s' seqs does not exist",bak,0,0);
 
-		lg->seqs_id = logbat_new(TYPE_void, TYPE_int, 1);
+		lg->seqs_id = logbat_new(TYPE_int, 1);
 		v = BATmark(b, 0);
 		BATappend(lg->seqs_id, BATmirror(v), FALSE);
 		BBPunfix(v->batCacheid);
@@ -1162,7 +1161,7 @@ logger_new(int debug, char *fn, char *logdir, int version, preversionfix_fptr pr
 		BBPrename(lg->seqs_id->batCacheid, bak);
 		logger_add_bat(lg, lg->seqs_id, "seqs_id");
 
-		lg->seqs_val = logbat_new(TYPE_void, TYPE_lng, 1);
+		lg->seqs_val = logbat_new(TYPE_lng, 1);
 		v = BATmark(BATmirror(b), 0);
 		BATappend(lg->seqs_val, BATmirror(v), FALSE);
 		BBPunfix(v->batCacheid);
@@ -1204,8 +1203,8 @@ logger_new(int debug, char *fn, char *logdir, int version, preversionfix_fptr pr
 			goto error;
 		}
 
-		lg->catalog_bid = logbat_new(TYPE_void, TYPE_int, BATSIZE);
-		lg->catalog_nme = logbat_new(TYPE_void, TYPE_str, BATSIZE);
+		lg->catalog_bid = logbat_new(TYPE_int, BATSIZE);
+		lg->catalog_nme = logbat_new(TYPE_str, BATSIZE);
 		if (debug & 1)
 			fprintf(stderr, "create %s catalog\n", fn);
 
@@ -1281,13 +1280,13 @@ logger_new(int debug, char *fn, char *logdir, int version, preversionfix_fptr pr
 	}
 	seqs_id = logger_find_bat(lg, "seqs_id");
 	if (seqs_id == 0) {
-		lg->seqs_id = logbat_new(TYPE_void, TYPE_int, 1);
+		lg->seqs_id = logbat_new(TYPE_int, 1);
 		BATmode(lg->seqs_id, PERSISTENT);
 		snprintf(bak, BUFSIZ, "%s_seqs_id", fn);
 		BBPrename(lg->seqs_id->batCacheid, bak);
 		logger_add_bat(lg, lg->seqs_id, "seqs_id");
 
-		lg->seqs_val = logbat_new(TYPE_void, TYPE_lng, 1);
+		lg->seqs_val = logbat_new(TYPE_lng, 1);
 		BATmode(lg->seqs_val, PERSISTENT);
 		snprintf(bak, BUFSIZ, "%s_seqs_val", fn);
 		BBPrename(lg->seqs_val->batCacheid, bak);
@@ -1296,13 +1295,13 @@ logger_new(int debug, char *fn, char *logdir, int version, preversionfix_fptr pr
 		BUNappend(lg->seqs_id, &id, FALSE);
 		BUNappend(lg->seqs_val, &lg->id, FALSE);
 
-		lg->snapshots_bid = logbat_new(TYPE_void, TYPE_int, 1);
+		lg->snapshots_bid = logbat_new(TYPE_int, 1);
 		BATmode(lg->snapshots_bid, PERSISTENT);
 		snprintf(bak, BUFSIZ, "%s_snapshots_bid", fn);
 		BBPrename(lg->snapshots_bid->batCacheid, bak);
 		logger_add_bat(lg, lg->snapshots_bid, "snapshots_bid");
 
-		lg->snapshots_tid = logbat_new(TYPE_void, TYPE_int, 1);
+		lg->snapshots_tid = logbat_new(TYPE_int, 1);
 		BATmode(lg->snapshots_tid, PERSISTENT);
 		snprintf(bak, BUFSIZ, "%s_snapshots_tid", fn);
 		BBPrename(lg->snapshots_tid->batCacheid, bak);
@@ -1992,7 +1991,7 @@ bm_commit(logger *lg)
 {
 	BUN p, q;
 	BAT *b = lg->catalog_bid;
-	BAT *n = logbat_new(TYPE_void, TYPE_str, BATcount(lg->freed));
+	BAT *n = logbat_new(TYPE_str, BATcount(lg->freed));
 	int res;
 
 	/* remove the destroyed bats */
@@ -2034,9 +2033,7 @@ bm_commit(logger *lg)
 		BAT *lb = BATdescriptor(bid);
 
 		BATmode(lb, PERSISTENT);
-assert(lb->P->restricted > BAT_WRITE);
-		if (BATcount(lb) > (BUN) REMAP_PAGE_MAXSIZE)
-			BATmmap(lb, STORE_MMAP, STORE_MMAP, STORE_MMAP, STORE_MMAP, 0);
+assert(lb->batRestricted > BAT_WRITE);
 		logbat_destroy(lb);
 
 		if (lg->debug & 1)
@@ -2055,7 +2052,7 @@ logger_add_bat(logger *lg, BAT *b, char *name)
 {
 	log_bid bid = logger_find_bat(lg, name);
 
-	assert(b->P->restricted > 0 || (b == lg->snapshots_bid || b == lg->snapshots_tid || b == lg->catalog_bid || b == lg->catalog_nme || b == lg->seqs_id || b == lg->seqs_val));
+	assert(b->batRestricted > 0 || (b == lg->snapshots_bid || b == lg->snapshots_tid || b == lg->catalog_bid || b == lg->catalog_nme || b == lg->seqs_id || b == lg->seqs_val));
 	if (bid) {
 		if (bid != b->batCacheid) {
 			logger_del_bat(lg, bid);

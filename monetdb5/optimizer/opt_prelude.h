@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2013 MonetDB B.V.
+ * Copyright August 2008-2014 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -111,7 +111,6 @@ opt_export  str intRef;
 opt_export  str ioRef;
 opt_export  str iteratorRef;
 opt_export  str joinPathRef;
-opt_export  str jsonRef;
 opt_export  str joinRef;
 opt_export  str antijoinRef;
 opt_export  str bandjoinRef;

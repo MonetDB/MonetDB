@@ -12,9 +12,8 @@
 #
 # The Initial Developer of the Original Code is CWI.
 # Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-# Copyright August 2008-2013 MonetDB B.V.
+# Copyright August 2008-2014 MonetDB B.V.
 # All Rights Reserved.
-
 
 # A typical sequence of events is as follows:
 # Fire a query using the database handle to send the statement to the server and get back a result set object.

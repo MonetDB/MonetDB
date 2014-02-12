@@ -14,12 +14,11 @@
 #
 # The Initial Developer of the Original Code is CWI.
 # Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-# Copyright August 2008-2013 MonetDB B.V.
+# Copyright August 2008-2014 MonetDB B.V.
 # All Rights Reserved.
 
 CP=cp
 MV=mv
-MX = $(top_builddir)/buildtools/Mx/Mx
 
 %.tab.c: %.y
 	touch waiting.$$$$ && until ln waiting.$$$$ waiting 2>/dev/null; do sleep 1; done && rm waiting.$$$$
@@ -49,25 +48,6 @@ MX = $(top_builddir)/buildtools/Mx/Mx
 
 %.def: %.syms
 	case `(uname -s) 2> /dev/null || echo unknown` in CYGWIN*) cat $<;; *) grep -v DllMain $<;; esac > $@
-
-%.h: %.mx
-	$(MX) $(MXFLAGS) -l -x h $<
-
-%.c: %.mx
-	$(MX) $(MXFLAGS) -x c $<
-
-%.y: %.mx
-	$(MX) $(MXFLAGS) -x y $< 
-
-%.mal: %.mx
-	$(MX) $(MXFLAGS) -l -x mal $<
-
-%.sql: %.mx
-	$(MX) $(MXFLAGS) -l -x sql $<
-
-%: %.mx 
-	$(MX) $(MXFLAGS) -l -x sh $<
-	chmod a+x $@
 
 SUFFIXES-local: $(BUILT_SOURCES)
 

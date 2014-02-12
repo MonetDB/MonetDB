@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2013 MonetDB B.V.
+ * Copyright August 2008-2014 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -63,7 +63,7 @@
  * using BATins (BATdel).
  */
 static BAT *
-insert_string_bat(BAT *b, BAT *n, int append)
+insert_string_bat(BAT *b, BAT *n, int append, int force)
 {
 	BATiter ni;		/* iterator */
 	int tt;			/* tail type */
@@ -110,7 +110,9 @@ insert_string_bat(BAT *b, BAT *n, int append)
 		/* make sure we get alignment right */
 		toff = (toff + GDK_VARALIGN - 1) & ~(GDK_VARALIGN - 1);
 		assert(((toff >> GDK_VARSHIFT) << GDK_VARSHIFT) == toff);
-		if (HEAPextend(b->T->vheap, toff + n->T->vheap->size) < 0) {
+		/* if in "force" mode, the heap may be shared when
+		 * memory mapped */
+		if (HEAPextend(b->T->vheap, toff + n->T->vheap->size, force) < 0) {
 			toff = ~(size_t) 0;
 			goto bunins_failed;
 		}
@@ -121,7 +123,7 @@ insert_string_bat(BAT *b, BAT *n, int append)
 		if (b->T->width < SIZEOF_VAR_T &&
 		    ((size_t) 1 << 8 * b->T->width) < (b->T->width <= 2 ? (b->T->vheap->size >> GDK_VARSHIFT) - GDK_VAROFFSET : (b->T->vheap->size >> GDK_VARSHIFT))) {
 			/* offsets aren't going to fit */
-			if (GDKupgradevarheap(b->T, (var_t) (b->T->vheap->size >> GDK_VARSHIFT), 0) == GDK_FAIL) {
+			if (GDKupgradevarheap(b->T, (var_t) (b->T->vheap->size >> GDK_VARSHIFT), 0, force) == GDK_FAIL) {
 				toff = ~(size_t) 0;
 				goto bunins_failed;
 			}
@@ -398,7 +400,7 @@ BATins(BAT *b, BAT *n, bit force)
 			    !GDK_ELIMDOUBLES(n->T->vheap) &&
 			    b->T->vheap->hashash == n->T->vheap->hashash &&
 			    VIEWtparent(n) == 0)) {
-			b = insert_string_bat(b, n, 0);
+			b = insert_string_bat(b, n, 0, force);
 		} else if (b->htype == TYPE_void) {
 			if (!ATOMvarsized(b->ttype) &&
 			    BATatoms[b->ttype].atomFix == NULL &&
@@ -600,7 +602,7 @@ BATappend(BAT *b, BAT *n, bit force)
 		    !GDK_ELIMDOUBLES(n->T->vheap) &&
 		    b->T->vheap->hashash == n->T->vheap->hashash &&
 		    VIEWtparent(n) == 0) {
-			b = insert_string_bat(b, n, 1);
+			b = insert_string_bat(b, n, 1, force);
 			if (b == NULL)
 				return NULL;
 		} else if (b->htype == TYPE_void) {
@@ -824,10 +826,7 @@ BATslice(BAT *b, BUN l, BUN h)
 	if (BAThrestricted(b) == BAT_READ && BATtrestricted(b) == BAT_READ) {
 		BUN cnt = h - l;
 
-		if (BAThdense(b))
-			bn = BATmirror(VIEWhead(BATmirror(b)));
-		else
-			bn = VIEWcreate_(b, b, TRUE);
+		bn = VIEWcreate_(b, b, TRUE);
 		bn->batFirst = bn->batDeleted = bn->batInserted = 0;
 		bn->H->heap.base = (bn->htype) ? BUNhloc(bi, l) : NULL;
 		bn->T->heap.base = (bn->ttype) ? BUNtloc(bi, l) : NULL;
@@ -1222,9 +1221,9 @@ BATorder_internal(BAT *b, int stable, int reverse, int copy, const char *func)
 	 * it's cheap) */
 	if (b->htype == TYPE_void) {
 		b->hsorted = 1;
-		b->hrevsorted = b->hseqbase == oid_nil || b->U->count <= 1;
+		b->hrevsorted = b->hseqbase == oid_nil || b->batCount <= 1;
 		b->hkey |= b->hseqbase != oid_nil;
-	} else if (b->U->count <= 1) {
+	} else if (b->batCount <= 1) {
 		b->hsorted = b->hrevsorted = 1;
 	}
 	if (reverse ? b->hrevsorted : b->hsorted) {
@@ -1264,10 +1263,10 @@ BATorder_internal(BAT *b, int stable, int reverse, int copy, const char *func)
 	}
 	if (reverse) {
 		b->hrevsorted = 1;
-		b->hsorted = b->U->count <= 1;
+		b->hsorted = b->batCount <= 1;
 	} else {
 		b->hsorted = 1;
-		b->hrevsorted = b->U->count <= 1;
+		b->hrevsorted = b->batCount <= 1;
 	}
 	b->tsorted = b->trevsorted = 0;
 	HASHdestroy(b);
@@ -1517,9 +1516,9 @@ BATsubsort(BAT **sorted, BAT **order, BAT **groups,
 	} else {
 		if (b->ttype == TYPE_void) {
 			b->tsorted = 1;
-			b->trevsorted = b->tseqbase == oid_nil || b->U->count <= 1;
+			b->trevsorted = b->tseqbase == oid_nil || b->batCount <= 1;
 			b->tkey |= b->tseqbase != oid_nil;
-		} else if (b->U->count <= 1) {
+		} else if (b->batCount <= 1) {
 			b->tsorted = b->trevsorted = 1;
 		}
 		if (!(reverse ? bn->trevsorted : bn->tsorted) &&
@@ -1892,7 +1891,7 @@ BATconstant(int tailtype, const void *v, BUN n)
 	bn = BATnew(TYPE_void, tailtype, n);
 	if (bn == NULL)
 		return NULL;
-	p = Tloc(bn, bn->U->first);
+	p = Tloc(bn, bn->batFirst);
 	switch (ATOMstorage(tailtype)) {
 	case TYPE_void:
 		v = &oid_nil;
@@ -2256,14 +2255,20 @@ BATcount_no_nil(BAT *b)
 	BUN i, n;
 	const void *p, *nil;
 	const char *base;
+	int t;
 	int (*cmp)(const void *, const void *);
 
 	BATcheck(b, "BATcnt");
 	n = BATcount(b);
 	if (b->T->nonil)
 		return n;
-	p = Tloc(b, b->U->first);
-	switch (ATOMstorage(b->ttype)) {
+	p = Tloc(b, b->batFirst);
+	t = b->ttype;
+	if (t != ATOMstorage(t) &&
+	    ATOMnilptr(ATOMstorage(t)) == ATOMnilptr(t) &&
+	    BATatoms[ATOMstorage(t)].atomCmp == BATatoms[t].atomCmp)
+		t = ATOMstorage(t);
+	switch (t) {
 	case TYPE_void:
 		cnt = b->tseqbase == oid_nil ? 0 : n;
 		break;
@@ -2321,8 +2326,8 @@ BATcount_no_nil(BAT *b)
 		}
 		break;
 	default:
-		nil = ATOMnilptr(b->ttype);
-		cmp = BATatoms[b->ttype].atomCmp;
+		nil = ATOMnilptr(t);
+		cmp = BATatoms[t].atomCmp;
 		if (b->tvarsized) {
 			base = b->T->vheap->base;
 			for (i = 0; i < n; i++)

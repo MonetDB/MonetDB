@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2013 MonetDB B.V.
+ * Copyright August 2008-2014 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -254,7 +254,7 @@ BATnewstorage(int ht, int tt, BUN cap)
 	bn = &bs->B;
 
 	BATsetdims(bn);
-	bn->U->capacity = cap;
+	bn->batCapacity = cap;
 
 	/* alloc the main heaps */
 	if (ht && HEAPalloc(&bn->H->heap, cap, bn->H->width) < 0) {
@@ -337,7 +337,7 @@ BATattach(int tt, const char *heapfile)
 	ERRORcheck(st.st_nlink != 1, "BATattach: heapfile must have only one link\n");
 	atomsize = ATOMsize(tt);
 	ERRORcheck(st.st_size % atomsize != 0, "BATattach: heapfile size not integral number of atoms\n");
-	ERRORcheck(st.st_size / atomsize > (off_t) BUN_MAX, "BATattach: heapfile too large\n");
+	ERRORcheck((size_t) (st.st_size / atomsize) > (size_t) BUN_MAX, "BATattach: heapfile too large\n");
 	cap = (BUN) (st.st_size / atomsize);
 	bs = BATcreatedesc(TYPE_void, tt, 1);
 	if (bs == NULL)
@@ -364,7 +364,7 @@ BATattach(int tt, const char *heapfile)
 	}
 	bn->batRestricted = BAT_READ;
 	bn->T->heap.size = (size_t) st.st_size;
-	bn->T->heap.newstorage = bn->T->heap.storage = (bn->T->heap.size < REMAP_PAGE_MAXSIZE) ? STORE_MEM : STORE_MMAP;
+	bn->T->heap.newstorage = bn->T->heap.storage = (bn->T->heap.size < GDK_mmap_minsize) ? STORE_MEM : STORE_MMAP;
 	if (HEAPload(&bn->T->heap, BBP_physical(bn->batCacheid), "tail", TRUE) < 0) {
 		HEAPfree(&bn->T->heap);
 		GDKfree(bs);
@@ -479,12 +479,14 @@ BATextend(BAT *b, BUN newcap)
 	hheap_size *= Hsize(b);
 	if (b->H->heap.base && GDKdebug & HEAPMASK)
 		fprintf(stderr, "#HEAPextend in BATextend %s " SZFMT " " SZFMT "\n", b->H->heap.filename, b->H->heap.size, hheap_size);
-	if (b->H->heap.base && HEAPextend(&b->H->heap, hheap_size) < 0)
+	if (b->H->heap.base &&
+	    HEAPextend(&b->H->heap, hheap_size, b->batRestricted == BAT_READ) < 0)
 		return NULL;
 	theap_size *= Tsize(b);
 	if (b->T->heap.base && GDKdebug & HEAPMASK)
 		fprintf(stderr, "#HEAPextend in BATextend %s " SZFMT " " SZFMT "\n", b->T->heap.filename, b->T->heap.size, theap_size);
-	if (b->T->heap.base && HEAPextend(&b->T->heap, theap_size) < 0)
+	if (b->T->heap.base &&
+	    HEAPextend(&b->T->heap, theap_size, b->batRestricted == BAT_READ) < 0)
 		return NULL;
 	HASHdestroy(b);
 	IMPSdestroy(b);
@@ -837,13 +839,13 @@ BATcopy(BAT *b, int ht, int tt, int writable)
 		if (bn->hvarsized && bn->htype) {
 			bn->H->shift = b->H->shift;
 			bn->H->width = b->H->width;
-			if (HEAPextend(&bn->H->heap, BATcapacity(bn) << bn->H->shift) < 0)
+			if (HEAPextend(&bn->H->heap, BATcapacity(bn) << bn->H->shift, TRUE) < 0)
 				goto bunins_failed;
 		}
 		if (bn->tvarsized && bn->ttype) {
 			bn->T->shift = b->T->shift;
 			bn->T->width = b->T->width;
-			if (HEAPextend(&bn->T->heap, BATcapacity(bn) << bn->T->shift) < 0)
+			if (HEAPextend(&bn->T->heap, BATcapacity(bn) << bn->T->shift, TRUE) < 0)
 				goto bunins_failed;
 		}
 
@@ -888,11 +890,11 @@ BATcopy(BAT *b, int ht, int tt, int writable)
 			hcap = (BUN) (bn->htype ? bn->H->heap.size >> bn->H->shift : 0);
 			tcap = (BUN) (bn->ttype ? bn->T->heap.size >> bn->T->shift : 0);
 			if (hcap && tcap)
-				bn->U->capacity = MIN(hcap, tcap);
+				bn->batCapacity = MIN(hcap, tcap);
 			else if (hcap)
-				bn->U->capacity = hcap;
+				bn->batCapacity = hcap;
 			else
-				bn->U->capacity = tcap;
+				bn->batCapacity = tcap;
 
 
 			/* first/inserted must point equally far into
@@ -2079,7 +2081,7 @@ BUNlocate(BAT *b, const void *x, const void *y)
 void
 BATsetcapacity(BAT *b, BUN cnt)
 {
-	b->U->capacity = cnt;
+	b->batCapacity = cnt;
 	assert(b->batCount <= cnt);
 }
 
@@ -2204,9 +2206,9 @@ BATseqbase(BAT *b, oid o)
 		/* adapt keyness */
 		if (BAThvoid(b)) {
 			if (o == oid_nil) {
-				b->hkey = b->U->count <= 1;
-				b->H->nonil = b->U->count == 0;
-				b->H->nil = b->U->count > 0;
+				b->hkey = b->batCount <= 1;
+				b->H->nonil = b->batCount == 0;
+				b->H->nil = b->batCount > 0;
 				b->hsorted = b->hrevsorted = 1;
 			} else {
 				if (!b->hkey) {
@@ -2216,7 +2218,7 @@ BATseqbase(BAT *b, oid o)
 				b->H->nonil = 1;
 				b->H->nil = 0;
 				b->hsorted = 1;
-				b->hrevsorted = b->U->count <= 1;
+				b->hrevsorted = b->batCount <= 1;
 			}
 		}
 	}
@@ -2608,29 +2610,6 @@ BATcheckmodes(BAT *b, int existing)
 	}
 	return 0;
 }
-
-#define heap_unshare(heap, heapname, id)				\
-	do {								\
-		if ((heap)->copied) {					\
-			Heap hp;					\
-									\
-			memset(&hp, 0, sizeof(Heap));			\
-			if (HEAPcopy(&hp, (heap)) < 0) {		\
-				GDKerror("%s: remapped " #heapname	\
-					 " of %s could not be copied.\n", \
-					 fcn, BATgetId(b));		\
-				return -1;				\
-									\
-			}						\
-			hp.parentid = (id);				\
-			if ((heap)->parentid == (id))			\
-				HEAPfree(heap);				\
-			else						\
-				BBPunshare((heap)->parentid);		\
-			* (heap) = hp;					\
-			(heap)->copied = 0;				\
-		}							\
-	} while (0)
 
 BAT *
 BATsetaccess(BAT *b, int newmode)
@@ -3050,7 +3029,7 @@ BATassertProps(BAT *b)
 	assert(b->batFirst >= b->batDeleted);
 	assert(b->batInserted >= b->batFirst);
 	assert(b->batFirst + b->batCount >= b->batInserted);
-	assert(b->U->first == 0);
+	assert(b->batFirst == 0);
 	bbpstatus = BBP_status(b->batCacheid);
 	/* only at most one of BBPDELETED, BBPEXISTING, BBPNEW may be set */
 	assert(((bbpstatus & BBPDELETED) != 0) +

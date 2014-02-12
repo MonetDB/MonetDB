@@ -42,6 +42,7 @@
 \dSv sys.querylog_catalog
 \dSv sys.querylog_history
 \dSv sys.queue
+\dSv sys.sessions
 \dSv sys.storage
 \dSv sys.storagemodel
 \dSv sys.tables
@@ -49,6 +50,7 @@
 \dSv sys.tracelog
 \dSv sys.users
 
+-- select distinct name from sys.functions where sql = true order by name;
 \dSf sys.Intersect
 \dSf sys.Union
 \dSf sys.abbrev
@@ -126,24 +128,14 @@
 \dSf sys.initializedictionary
 \dSf sys.intersection
 \dSf sys.isaurl
-\dSf sys.isauuid
 \dSf sys.isempty
 \dSf sys.issimple
-\dSf sys.json_filter
-\dSf sys.json_filter_all
-\dSf sys.json_isvalid
-\dSf sys.json_isvalidarray
-\dSf sys.json_isvalidobject
-\dSf sys.json_length
-\dSf sys.json_path
-\dSf sys.json_text
 \dSf sys.length
 \dSf sys.like
 \dSf sys.linefromtext
 \dSf sys.masklen
 \dSf sys.mbr
 \dSf sys.mbroverlaps
-\dSf sys.md5
 \dSf sys.median
 \dSf sys.mlinefromtext
 \dSf sys.mpointfromtext
@@ -165,6 +157,7 @@
 \dSf sys.pointfromtext
 \dSf sys.polyfromtext
 \dSf sys.polygonfromtext
+\dSf sys.quantile
 \dSf sys.querycache
 \dSf sys.querylog
 \dSf sys.querylog_calls
@@ -178,9 +171,12 @@
 \dSf sys.resume
 \dSf sys.reuse
 \dSf sys.reverse
+\dSf sys.sessions
 \dSf sys.setmasklen
+\dSf sys.setsession
 \dSf sys.settimeout
 \dSf sys.shrink
+\dSf sys.shutdown
 \dSf sys.srid
 \dSf sys.stddev_pop
 \dSf sys.stddev_samp
@@ -194,7 +190,6 @@
 \dSf sys.times
 \dSf sys.touches
 \dSf sys.tracelog
-\dSf sys.uuid
 \dSf sys.vacuum
 \dSf sys.var
 \dSf sys.var_pop

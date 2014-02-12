@@ -13,10 +13,9 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2013 MonetDB B.V.
+ * Copyright August 2008-2014 MonetDB B.V.
  * All Rights Reserved.
  */
-
 
 #include "monetdb_config.h"
 #include "rel_select.h"
@@ -28,6 +27,7 @@
 #include "rel_xml.h"
 #include "rel_dump.h"
 #include "rel_prop.h"
+#include "rel_psm.h"
 #include "rel_schema.h"
 #include "rel_sequence.h"
 
@@ -811,9 +811,13 @@ rel_find_lastexp(sql_rel *rel )
 }
 
 void
-rel_select_add_exp(sql_rel *l, sql_exp *e)
+rel_select_add_exp(sql_allocator *sa, sql_rel *l, sql_exp *e)
 {
 	assert(l->op == op_select || is_outerjoin(l->op));
+	if (e->type != e_cmp && e->card > CARD_ATOM) {
+		sql_exp *t = exp_atom_bool(sa, 1);
+		e = exp_compare(sa, e, t, cmp_equal);
+	}
 	append(l->exps, e);
 }
 
@@ -833,7 +837,7 @@ rel_select(sql_allocator *sa, sql_rel *l, sql_exp *e)
 		
 	if (l && l->op == op_select && !rel_is_ref(l)) { /* refine old select */
 		if (e)
-			rel_select_add_exp(l, e);
+			rel_select_add_exp(sa, l, e);
 		return l;
 	}
 	rel = rel_create(sa);
@@ -842,7 +846,7 @@ rel_select(sql_allocator *sa, sql_rel *l, sql_exp *e)
 	rel->op = op_select;
 	rel->exps = new_exp_list(sa);
 	if (e)
-		append(rel->exps, e);
+		rel_select_add_exp(sa, rel, e);
 	rel->card = CARD_ATOM; /* no relation */
 	if (l) {
 		rel->card = l->card;
@@ -1035,7 +1039,7 @@ rel_push_select(sql_allocator *sa, sql_rel *rel, sql_exp *ls, sql_exp *e)
 	if (!lrel) 
 		return NULL;
 	if (p && p->op == op_select && !rel_is_ref(p)) { /* refine old select */
-		rel_select_add_exp(p, e);
+		rel_select_add_exp(sa, p, e);
 	} else {
 		sql_rel *n = rel_select(sa, lrel, e);
 
@@ -1131,9 +1135,9 @@ rel_push_join(sql_allocator *sa, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp
 	/* filter on columns of this relation */
 	if ((lrel == rrel && (!r2 || lrel == rrel2) && lrel->op != op_join) || rel_is_ref(p)) {
 		if (lrel->op == op_select && !rel_is_ref(lrel)) {
-			rel_select_add_exp(lrel, e);
+			rel_select_add_exp(sa, lrel, e);
 		} else if (p && p->op == op_select && !rel_is_ref(p)) {
-			rel_select_add_exp(p, e);
+			rel_select_add_exp(sa, p, e);
 		} else {
 			sql_rel *n = rel_select(sa, lrel, e);
 
@@ -2931,7 +2935,7 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 			if (!is_select(rel->op) && !rel_is_ref(rel))
 				left = rel = rel_select(sql->sa, rel, e);
 			else
-				rel_select_add_exp(rel, e);
+				rel_select_add_exp(sql->sa, rel, e);
 		}
 
 		/* list of values or subqueries */
@@ -3331,11 +3335,11 @@ rel_unop(mvc *sql, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 		return _rel_aggr(sql, rel, 0, s, fname, l->next, fs);
 
 	if (f && type_has_tz(t) && f->func->fix_scale == SCALE_FIX) {
-		/* set timezone (using msec) */
-		sql_subtype *intsec = sql_bind_subtype(sql->sa, "sec_interval", 10 /*hour to second */, 0);
-		sql_exp *tz = exp_atom_lng(sql->sa, sql->timezone);
+		/* set timezone (using msec (.3)) */
+		sql_subtype *intsec = sql_bind_subtype(sql->sa, "sec_interval", 10 /*hour to second */, 3);
+		atom *a = atom_int(sql->sa, intsec, sql->timezone);
+		sql_exp *tz = exp_atom(sql->sa, a);
 
-		tz = exp_convert(sql->sa, tz, exp_subtype(tz), intsec); 
 		e = rel_binop_(sql, e, tz, NULL, "sql_add", ek.card);
 		if (!e)
 			return NULL;
@@ -4629,7 +4633,7 @@ rel_value_exp2(mvc *sql, sql_rel **rel, symbol *se, int f, exp_kind ek, int *is_
 			*rel = r = rel_subquery(sql, *rel, se, ek, f == sql_sel?APPLY_LOJ:APPLY_JOIN);
 			if (r) {
 				rs = rel_lastexp(sql, r);
-				if (f == sql_sel && r->card > CARD_ATOM) {
+				if (f == sql_sel && r->card > CARD_ATOM && r->r) {
 					sql_subaggr *zero_or_one = sql_bind_aggr(sql->sa, sql->session->schema, "zero_or_one", exp_subtype(rs));
 					rs = exp_aggr1(sql->sa, rs, zero_or_one, 0, 0, CARD_ATOM, 0);
 
@@ -4637,6 +4641,8 @@ rel_value_exp2(mvc *sql, sql_rel **rel, symbol *se, int f, exp_kind ek, int *is_
 					r->r = rel_groupby(sql, r->r, NULL);
 					rs = rel_groupby_add_aggr(sql, r->r, rs);
 					rs = exp_column(sql->sa, exp_relname(rs), exp_name(rs), exp_subtype(rs), exp_card(rs), has_nil(rs), is_intern(rs));
+				} else if (f == sql_sel) {
+					*rel = rel_project(sql->sa, *rel, new_exp_list(sql->sa));
 				}
 			}
 			return rs;
@@ -5543,6 +5549,12 @@ rel_selects(mvc *sql, symbol *s)
 	switch (s->token) {
 	case SQL_SELECT: {
 		exp_kind ek = {type_value, card_relation, TRUE};
+ 		SelectNode *sn = (SelectNode *) s;
+
+		if (sn->into) {
+			sql->type = Q_SCHEMA;
+			return rel_select_with_into(sql, s);
+		}
 		ret = rel_subquery(sql, NULL, s, ek, APPLY_JOIN);
 		sql->type = Q_TABLE;
 	}	break;
@@ -5562,6 +5574,10 @@ rel_selects(mvc *sql, symbol *s)
 		break;
 	default:
 		return NULL;
+	}
+	if (mvc_debug_on(sql,32768)) {
+		rel_print(sql, ret, 0);
+		printf("\n");
 	}
 	if (!ret && sql->errstr[0] == 0)
 		(void) sql_error(sql, 02, "relational query without result");

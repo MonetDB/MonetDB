@@ -1,0 +1,78 @@
+stdout of test 'rangejoin_optimizer.Bug-3411` in directory 'sql/test/BugTracker-2013` itself:
+
+
+# 16:06:14 >  
+# 16:06:14 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=39442" "--set" "mapi_usock=/var/tmp/mtest-16327/.s.monetdb.39442" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/niels/scratch/rc-clean/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2013" "--set" "mal_listing=0"
+# 16:06:14 >  
+
+# MonetDB 5 server v11.15.20
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2013', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 3.775 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://niels.nesco.mine.nu:39442/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-16327/.s.monetdb.39442
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 16:06:14 >  
+# 16:06:14 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16327" "--port=39442"
+# 16:06:14 >  
+
+#CREATE TABLE t4311 ( "a"    INT, "b"    INT);
+#plan 
+#SELECT t2.a
+#FROM  t4311 t1, t4311 t2
+#WHERE t2.a between t1.a and t1.b;
+% .plan # table_name
+% rel # name
+% clob # type
+% 64 # length
+project (
+| join (
+| | table(sys.t4311) [ t4311.a as t2.a ] COUNT ,
+| | table(sys.t4311) [ t4311.a as t1.a, t4311.b as t1.b ] COUNT 
+| ) [ t1.a <= t2.a <= t1.b ]
+) [ t2.a ]
+#plan 
+#SELECT t2.a
+#FROM  t4311 t1, t4311 t2
+#WHERE t2.a >= t1.a 
+#AND   t2.a <= t1.b;
+% .plan # table_name
+% rel # name
+% clob # type
+% 64 # length
+project (
+| join (
+| | table(sys.t4311) [ t4311.a as t2.a ] COUNT ,
+| | table(sys.t4311) [ t4311.a as t1.a, t4311.b as t1.b ] COUNT 
+| ) [ t1.a <= t2.a <= t1.b ]
+) [ t2.a ]
+#plan 
+#SELECT t2.a
+#FROM  t4311 t1, t4311 t2
+#WHERE t1.a <= t2.a 
+#AND   t1.b >= t2.a;
+% .plan # table_name
+% rel # name
+% clob # type
+% 64 # length
+project (
+| join (
+| | table(sys.t4311) [ t4311.a as t2.a ] COUNT ,
+| | table(sys.t4311) [ t4311.a as t1.a, t4311.b as t1.b ] COUNT 
+| ) [ t1.a <= t2.a <= t1.b ]
+) [ t2.a ]
+#drop table t4311;
+
+# 16:06:14 >  
+# 16:06:14 >  "Done."
+# 16:06:14 >  
+

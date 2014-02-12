@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2013 MonetDB B.V.
+ * Copyright August 2008-2014 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -147,12 +147,12 @@ static int colormap = 0;
 static int fixedmap=1;
 static int beat = 50;
 static char *sqlstatement = NULL;
-static int batchsize = 1; /* number of queries to combine in one run */
-static int batch = 1; /* number of queries to combine in one run */
+static int batchsize = 1; /* number of queries to combine in one tomogram */
+static int batch = 1; /* number of queries to combine in one tomogram */
 static lng maxio = 0;
 static int cpus = 0;
 static int atlas= 0;
-static int atlaspage = -1;
+static int atlaspage = 0;
 static FILE *gnudata;
 
 static int capturing=0;
@@ -182,16 +182,25 @@ usage(void)
 }
 
 
-#define die(dbh, hdl) while (1) { (hdl ? mapi_explain_query(hdl, stderr) :	\
-								   dbh ? mapi_explain(dbh, stderr) :		\
-								   fprintf(stderr, "!! %scommand failed\n", id)); \
-								  goto stop_disconnect; }
-#define doQ(X) \
-	if ((wthr->hdl = mapi_query(wthr->dbh, X)) == NULL || mapi_error(wthr->dbh) != MOK)	\
-		die(wthr->dbh, wthr->hdl);
-#define doQsql(X) \
-	if ((hdlsql = mapi_query(dbhsql, X)) == NULL || mapi_error(dbhsql) != MOK) \
-		die(dbhsql, hdlsql);
+#define die(dbh, hdl)						\
+	do {							\
+		(hdl ? mapi_explain_query(hdl, stderr) :	\
+		 dbh ? mapi_explain(dbh, stderr) :		\
+		 fprintf(stderr, "!! %scommand failed\n", id));	\
+		goto stop_disconnect;				\
+	} while (0)
+#define doQ(X)								\
+	do {								\
+		if ((wthr->hdl = mapi_query(wthr->dbh, X)) == NULL ||	\
+		    mapi_error(wthr->dbh) != MOK)			\
+			die(wthr->dbh, wthr->hdl);			\
+	} while (0)
+#define doQsql(X)						\
+	do {							\
+		if ((hdlsql = mapi_query(dbhsql, X)) == NULL ||	\
+		    mapi_error(dbhsql) != MOK)			\
+			die(dbhsql, hdlsql);			\
+	} while (0)
 
 
 /* Any signal should be captured and turned into a graceful
@@ -199,22 +208,22 @@ usage(void)
 static void createTomogram(void);
 
 static int activated = 0;
-static void deactivateBeat(void)
+static void
+deactivateBeat(void)
 {
 	wthread *wthr;
 	char *id = "deactivateBeat";
 	if (activated == 0)
 		return;
-	activated = 0;
-	if (debug)
-		fprintf(stderr, "Deactivate beat\n");
-	/* deactivate all connections  */
+	if ( atlas && atlas > atlaspage + 1)
+		return;
+	/* deactivate all connections */
 	for (wthr = thds; wthr != NULL; wthr = wthr->next)
 		if (wthr->dbh) {
 			doQ("profiler.deactivate(\"ping\");\n");
 			doQ("profiler.stop();");
 		}
-
+	activated = 0;
 	return;
 stop_disconnect:
 	;
@@ -229,7 +238,7 @@ stopListening(int i)
 		fprintf(stderr, "Interrupt received\n");
 	batch = 0;
 	deactivateBeat();
-	/* kill all connections  */
+	/* kill all connections */
 	for (walk = thds; walk != NULL; walk = walk->next) {
 		if (walk->s != NULL) {
 			mnstr_close(walk->s);
@@ -256,19 +265,20 @@ setCounter(char *nme)
 	return k;
 }
 
-static void activateBeat(void)
+static void
+activateBeat(void)
 {
 	char buf[BUFSIZ];
 	char *id = "activateBeat";
 	wthread *wthr;
 
 	if (debug)
-		fprintf(stderr, "Activate beat\n");
+		fprintf(stderr, "Activate beat %s\n", filename);
 	if (activated == 1)
 		return;
 	activated = 1;
 	snprintf(buf, BUFSIZ, "profiler.activate(\"ping%d\");\n", beat);
-	/* activate all connections  */
+	/* activate all connections */
 	for (wthr = thds; wthr != NULL; wthr = wthr->next)
 		if (wthr->dbh) {
 			doQ(buf);
@@ -286,11 +296,12 @@ stop_disconnect:
 #define MAXTHREADS 2048
 #define MAXBOX 32678	 /* should be > MAXTHREADS */
 
-#define START 0
-#define DONE 1
-#define ACTION 2
+#define START 1
+#define DONE 2
+#define ACTION 3
 #define PING 4
 #define WAIT 5
+#define GCOLLECT 6
 
 typedef struct BOX {
 	int row;
@@ -314,11 +325,38 @@ int topbox = 0;
 lng totalclkticks = 0; /* number of clock ticks reported */
 lng totalexecticks = 0; /* number of ticks reported for processing */
 lng lastclktick = 0;
-lng totalticks = 0; 
+lng totalticks = 0;
 lng starttime = 0;
 int figures = 0;
 char *currentfunction= 0;
 int object = 1;
+
+static void resetTomograph(void){
+	static char buf[128];
+	int i;
+	if(atlas) {
+		snprintf(buf,128,"%s_%02d",basefilename,++atlaspage);
+		filename = buf;
+	} 
+	if (debug)
+		fprintf(stderr, "RESET tomograph %d\n", atlaspage);
+	for(i=0; i< MAXTHREADS; i++)
+		lastclk[i]=0;
+	topbox =0;
+	for (i = 0; i < MAXTHREADS; i++)
+		threads[i] = topbox++;
+
+	startrange = 0, endrange = 0;
+	maxio = 0;
+	cpus = 0;
+	batch = batchsize;
+	totalclkticks = 0; 
+	totalexecticks = 0;
+	lastclktick = 0;
+	figures = 0;
+	currentfunction = 0;
+	object = 1;
+}
 
 static void dumpbox(int i)
 {
@@ -518,7 +556,7 @@ colors[NUM_COLORS] = {{0,0,0,0,0}};
  * map file, which consists of mod\tfcn\tcol lines using
  * the color dictionary as a frame of reference.
  *
- * Use the adaptive scheme if you want distinct colors 
+ * Use the adaptive scheme if you want distinct colors
  * targeted for a single tomogram.
  */
 Color
@@ -689,7 +727,8 @@ base_colors[] = {
 /*     0 */	{ 0, 0, 0, 0, 0 }
 };
 
-static char *getRGB(char *name)
+static char *
+getRGB(char *name)
 {
 	int i;
 	for (i = 0; dictionary[i].name; i++)
@@ -698,16 +737,17 @@ static char *getRGB(char *name)
 	return 0;
 }
 
-static int cmp_clr ( const void * _one , const void * _two )
+static int
+cmp_clr(const void * _one , const void * _two)
 {
 	Color *one = (Color*) _one, *two = (Color*) _two;
 
 	/* "*.*" should always be smallest / first */
-	if (one->mod && one->fcn && 
+	if (one->mod && one->fcn &&
 	    one->mod[0] == '*' && one->mod[1] == '\0' &&
 	    one->fcn[0] == '*' && one->fcn[1] == '\0')
 		return -1;
-	if (two->mod && two->fcn && 
+	if (two->mod && two->fcn &&
 	    two->mod[0] == '*' && two->mod[1] == '\0' &&
 	    two->fcn[0] == '*' && two->fcn[1] == '\0')
 		return 1;
@@ -720,27 +760,27 @@ static int cmp_clr ( const void * _one , const void * _two )
 		   0))));
 }
 
-static void initcolors(FILE *map)
+static void
+initcolors(FILE *map)
 {
 	int i = 0;
 	char *c;
 	char buf[3][128];
 
-	if ( map){
+	if (map) {
 		/* read the color map */
-		while ( fscanf(map,"%s\t%s\t%s\n", buf[0],buf[1],buf[2])== 3 && i< NUM_COLORS){
+		while (fscanf(map,"%s\t%s\t%s\n", buf[0],buf[1],buf[2])== 3 && i< NUM_COLORS) {
 			colors[i].mod = strdup(buf[0]);
 			colors[i].fcn = strdup(buf[1]);
 			colors[i].freq = 0;
 			colors[i].timeused = 0;
-			c  = getRGB(buf[2]);
+			c = getRGB(buf[2]);
 			if (c)
 				colors[i].col = c;
 			else
 				fprintf(stderr, " %s.%s color '%s' not found\n", buf[0],buf[1],buf[2]);
 			i++;
 		}
-			
 	} else
 	if (fixedmap) {
 		for ( i = 0; fixed_colors[i].mod; i++){
@@ -748,7 +788,7 @@ static void initcolors(FILE *map)
 			colors[i].fcn = fixed_colors[i].fcn;
 			colors[i].freq = 0;
 			colors[i].timeused = 0;
-			c  = getRGB(fixed_colors[i].col);
+			c = getRGB(fixed_colors[i].col);
 			if (c)
 				colors[i].col = c;
 			else
@@ -772,7 +812,8 @@ static void initcolors(FILE *map)
 	}
 }
 
-static void dumpboxes(void)
+static void
+dumpboxes(void)
 {
 	FILE *f = 0;
 	FILE *fcpu = 0;
@@ -786,9 +827,9 @@ static void dumpboxes(void)
 		snprintf(buf, BUFSIZ, "scratch_cpu.dat");
 		fcpu = fopen(buf, "w");
 	} else {
-		snprintf(buf, BUFSIZ, "%s.dat", (filename ? filename : "tomograph"));
+		snprintf(buf, BUFSIZ, "%s.dat", filename);
 		f = fopen(buf, "w");
-		snprintf(buf, BUFSIZ, "%s_cpu.dat", (filename ? filename : "tomograph"));
+		snprintf(buf, BUFSIZ, "%s_cpu.dat", filename);
 		fcpu = fopen(buf, "w");
 	}
 
@@ -801,7 +842,7 @@ static void dumpboxes(void)
 			} else 
 			if (box[i].state >= PING) {
 				/* cpu stat events may arrive out of order, drop those */
-				if ( box[i].clkstart <= e)
+				if (box[i].clkstart <= e)
 					continue;
 				e = box[i].clkstart;
 				fprintf(f, ""LLFMT" %f %f "LLFMT" "LLFMT"\n", box[i].clkstart, (box[i].memend / 1024.0), box[i].footend/1024.0, box[i].reads, box[i].writes);
@@ -831,7 +872,8 @@ static void dumpboxes(void)
 }
 
 /* produce memory thread trace */
-static void showmemory(void)
+static void
+showmemory(void)
 {
 	int i;
 	lng max = 0, min = LLONG_MAX;
@@ -903,7 +945,8 @@ static void showmemory(void)
 }
 
 /* produce memory thread trace */
-static void showcpu(void)
+static void
+showcpu(void)
 {
 	int i;
 
@@ -926,14 +969,15 @@ static void showcpu(void)
 		fprintf(gnudata, "plot ");
 	for (i = 0; i < cpus; i++)
 		fprintf(gnudata, "\"%s_cpu.dat\" using 1:($%d+(%d*1.1)) notitle with lines linecolor rgb \"%s\"%s",
-				(tracefile ? "scratch" : filename), i + 2, i, (i % 2 == 0 ? "blue" : "red"), (i < cpus - 1 ? ",\\\n" : "\n"));
+			(tracefile ? "scratch" : filename), i + 2, i, (i % 2 == 0 ? "blue" : "red"), (i < cpus - 1 ? ",\\\n" : "\n"));
 	fprintf(gnudata, "unset yrange\n");
 	fprintf(gnudata, "unset ytics\n");
 	fprintf(gnudata, "unset grid\n");
 }
 
 /* produce memory thread trace */
-static void showio(void)
+static void
+showio(void)
 {
 	int i;
 	lng max = 0;
@@ -984,7 +1028,8 @@ static void showio(void)
 
 /* print time (given in microseconds) in human-readable form
  * showing the highest two relevant units */
-static void fprintf_time ( FILE *f, lng time )
+static void
+fprintf_time(FILE *f, lng time)
 {
 	int TME = TME_DD|TME_HH|TME_MM|TME_SS|TME_MS|TME_US;
 	int tail = 0;
@@ -1031,76 +1076,9 @@ static void fprintf_time ( FILE *f, lng time )
 	}
 }
 
-/* print time (given in microseconds) in compact human-readable form
- * showing the units specified via TME */
-static void fprintf_tm ( FILE *f, lng time, int TME )
-{
-	int tail = 0, digits = 1, scale = 1;
-	const char *fmt = NULL;
-
-	if (TME & TME_DD && (tail || time >= US_DD)) {
-		fmt = LLFMT"%s";
-		fprintf(f, fmt, time / US_DD, "d");
-		time %= US_DD;
-		TME &= TME_HH;
-		tail = 1;
-	}
-	if (TME & TME_HH && (tail || time >= US_HH)) {
-		fmt = tail ? "%02d%s" : "%d%s";
-		fprintf(f, fmt, (int) (time / US_HH), "h");
-		time %= US_HH;
-		TME &= TME_MM;
-		tail = 1;
-	}
-	if (TME & TME_MM && (tail || time >= US_MM)) {
-		fmt = tail ? "%02d%s" : "%d%s";
-		fprintf(f, fmt, (int) (time / US_MM), "m");
-		time %= US_MM;
-		TME &= TME_SS;
-		tail = 1;
-	}
-	if (TME & TME_SS && (tail || time >= US_SS)) {
-		fmt = tail ? "%02d%s" : "%d%s";
-		fprintf(f, fmt, (int) (time / US_SS), (TME & TME_MS) ? "." : "s");
-		if (time / US_SS > 99) {
-			digits = 1;
-			scale = 100;
-		} else if (time / US_SS > 9) {
-			digits = 2;
-			scale = 10;
-		} else {
-			digits = 3;
-			scale = 1;
-		}
-		time %= US_SS;
-		TME &= TME_MS;
-		tail = 1;
-	}
-	if (TME & TME_MS && (tail || time >= US_MS)) {
-		fmt = tail ? "%0*d%s" : "%*d%s";
-		fprintf(f, fmt, digits, (int) (time / US_MS / scale), (TME & TME_US) ? "." : tail ? "s" : "ms");
-		if (time / US_MS > 99) {
-			digits = 1;
-			scale = 100;
-		} else if (time / US_MS > 9) {
-			digits = 2;
-			scale = 10;
-		} else {
-			digits = 3;
-			scale = 1;
-		}
-		time %= US_MS;
-		TME &= TME_US;
-		tail = 1;
-	}
-	if (TME & TME_US) {
-		fmt = tail ? "%0*d%s" : "%*d%s";
-		fprintf(f, fmt, digits, (int) (time / scale), tail ? "ms" : "us");
-	}
-}
-
 /* produce a legenda image for the color map */
-static void showcolormap(char *filename, int all)
+static void
+showcolormap(char *filename, int all)
 {
 	FILE *f = 0;
 	char buf[BUFSIZ];
@@ -1145,13 +1123,13 @@ static void showcolormap(char *filename, int all)
 		fprintf(f, "unset title\n");
 		fprintf(f, "unset ylabel\n");
 	}
-	if ( !fixedmap ){
+	if (!fixedmap){
 		/* create copy of colormap and sort in ascending order of timeused;
 		 * "*.*" stays first (colors[0]) */
-		_clrs_ = (Color*) malloc (sizeof(colors));
+		_clrs_ = (Color*) malloc(sizeof(colors));
 		if (_clrs_) {
-			memcpy (_clrs_, colors, sizeof(colors));
-			qsort (_clrs_, NUM_COLORS, sizeof(Color), cmp_clr);
+			memcpy(_clrs_, colors, sizeof(colors));
+			qsort(_clrs_, NUM_COLORS, sizeof(Color), cmp_clr);
 			clrs = _clrs_;
 		}
 		/* show colormap / legend in descending order of timeused;
@@ -1166,14 +1144,14 @@ static void showcolormap(char *filename, int all)
 					if (k % 3 == 0)
 						h -= 45;
 					fprintf(f, "set object %d rectangle from %f, %f to %f, %f fillcolor rgb \"%s\" fillstyle solid 1.0\n",
-							object++, (double) (k % 3) * w, (double) h - 40, (double) ((k % 3) * w + 0.15 * w), (double) h - 5, clrs[i].col);
+						object++, (double) (k % 3) * w, (double) h - 40, (double) ((k % 3) * w + 0.15 * w), (double) h - 5, clrs[i].col);
 					fprintf(f, "set label %d \"%s.%s \" at %d,%d\n",
-							object++, clrs[i].mod, clrs[i].fcn, (int) ((k % 3) * w + 0.2 * w), h - 15);
+						object++, clrs[i].mod, clrs[i].fcn, (int) ((k % 3) * w + 0.2 * w), h - 15);
 					fprintf(f, "set label %d \"%d calls: ",
-							object++, clrs[i].freq);
+						object++, clrs[i].freq);
 					fprintf_time(f, clrs[i].timeused);
 					fprintf(f, "\" at %f,%f\n",
-							(double) ((k % 3) * w + 0.2 * w), (double) h - 35);
+						(double) ((k % 3) * w + 0.2 * w), (double) h - 35);
 					k++;
 				} else {
 					clrs[0].timeused += clrs[i].timeused;
@@ -1197,56 +1175,58 @@ static void showcolormap(char *filename, int all)
 		}
 		/* filter out the top N interesting elements */
 		for (i = 0; i < NUM_COLORS - 1; i++)
-		if (clrs[i].col && clrs[i].mod  && (clrs[i].freq > 0 || all))
-		{
-			if (clrs[i].timeused > PERCENTAGE * duration || clrs[i].freq > PERCENTAGE *  totfreq) {
-				for ( j = 0; j < m && clrs[map[j]].timeused > clrs[i].timeused; j++)
+			if (clrs[i].col &&
+			    clrs[i].mod &&
+			    (clrs[i].freq > 0 || all) &&
+			    (clrs[i].timeused > PERCENTAGE * duration ||
+			     clrs[i].freq > PERCENTAGE * totfreq)) {
+				for (j = 0; j < m && clrs[map[j]].timeused > clrs[i].timeused; j++)
 					;
-				if ( m < MAX_LEGEND_SHORT){
-					for( n = m-1; n > j; n--)
+				if (m < MAX_LEGEND_SHORT) {
+					for (n = m; n > j; n--)
 						map[n] = map[n-1];
 					map[j] = i;
 					m++;
 				}
 			}
-		}
 		/* sort them back into the color map order */
-		for ( i = 0; i < m; i++)
-		for ( j = i+1; j< m; j++)
-		if ( map[i] > map[j] ){
-			n = map[i];
-			map[i]= map[j];
-			map[j] = n;
-		}
+		for (i = 0; i < m; i++)
+			for (j = i+1; j< m; j++)
+				if (map[i] > map[j]) {
+					n = map[i];
+					map[i]= map[j];
+					map[j] = n;
+				}
 
 		for (i = 0; i < m; i++)
-		if ( clrs[map[i]].col){
+			if (clrs[map[i]].col) {
 				if (k % 3 == 0)
 					h -= 45;
 				fprintf(f, "set object %d rectangle from %f, %f to %f, %f fillcolor rgb \"%s\" fillstyle solid 1.0\n",
-						object++, (double) (k % 3) * w, (double) h - 40, (double) ((k % 3) * w + 0.15 * w), (double) h - 5, clrs[map[i]].col);
+					object++, (double) (k % 3) * w, (double) h - 40, (double) ((k % 3) * w + 0.15 * w), (double) h - 5, clrs[map[i]].col);
 				fprintf(f, "set label %d \"%s.%s \" at %d,%d\n",
-						object++, clrs[map[i]].mod, clrs[map[i]].fcn, (int) ((k % 3) * w + 0.2 * w), h - 15);
+					object++, clrs[map[i]].mod, clrs[map[i]].fcn, (int) ((k % 3) * w + 0.2 * w), h - 15);
 				fprintf(f, "set label %d \"%d calls: ",
-						object++, clrs[map[i]].freq);
+					object++, clrs[map[i]].freq);
 				fprintf_time(f, clrs[map[i]].timeused);
 				fprintf(f, "\" at %f,%f\n",
-						(double) ((k % 3) * w + 0.2 * w), (double) h - 35);
+					(double) ((k % 3) * w + 0.2 * w), (double) h - 35);
 				k++;
 			}
 	}
 
 	h -= 45;
 	fprintf(f, "set label %d \" "LLFMT" MAL instructions executed; total CPU core time: ",
-			object++, totfreq);
+		object++, totfreq);
 	fprintf_time(f, tottime);
 	fprintf(f, "; parallelism usage %.1f %%", totalclkticks / (totalticks / 100.0));
 	fprintf(f, "\" at %d,%d\n",
-			(int) (0.2 * w), h - 35);
+		(int) (0.2 * w), h - 35);
 	fprintf(f, "plot 0 notitle with lines linecolor rgb \"white\"\n");
 }
 
-static void updmap(int idx)
+static void
+updmap(int idx)
 {
 	char *mod, *fcn, buf[BUFSIZ], *call = buf;
 	int i, fnd = 0;
@@ -1271,11 +1251,10 @@ static void updmap(int idx)
 	} else {
 		/* find "mod.fcn" */
 		for (i = 1; i < NUM_COLORS && colors[i].mod; i++)
-			if (strcmp(mod, colors[i].mod) == 0) {
-				if (strcmp(fcn, colors[i].fcn) == 0) {
-					fnd = i;
-					break;
-				}
+			if (strcmp(mod, colors[i].mod) == 0 &&
+			    strcmp(fcn, colors[i].fcn) == 0) {
+				fnd = i;
+				break;
 			}
 		if (fnd == 0 && i < NUM_COLORS) {
 			/* not found, but still free slot: add new one */
@@ -1292,7 +1271,8 @@ static void updmap(int idx)
 }
 
 /* keep the data around for re-painting with range filters*/
-static void keepdata(char *filename)
+static void
+keepdata(char *filename)
 {
 	int i;
 	FILE *f;
@@ -1306,7 +1286,7 @@ static void keepdata(char *filename)
 
 	for (i = 0; i < topbox; i++)
 		if (box[i].clkend && box[i].fcn) {
-			//if ( debug)
+			//if (debug)
 			//fprintf(stderr,"%3d\t%8ld\t%5ld\t%s\n", box[i].thread, box[i].clkstart, box[i].clkend-box[i].clkstart, box[i].fcn);
 
 			fprintf(f, "%d\t"LLFMT"\t"LLFMT"\t", box[i].thread, box[i].clkstart, box[i].clkend);
@@ -1319,7 +1299,8 @@ static void keepdata(char *filename)
 	(void) fclose(f);
 }
 
-static void scandata(char *filename)
+static void
+scandata(char *filename)
 {
 	FILE *f;
 	char line[2*BUFSIZ], buf[BUFSIZ], buf2[BUFSIZ];
@@ -1338,13 +1319,13 @@ static void scandata(char *filename)
 
 	while (!feof(f)) {
 		int x;
-		if ( fgets(line,2 * BUFSIZ,f) == NULL) {
+		if (fgets(line,2 * BUFSIZ,f) == NULL) {
 			fprintf(stderr, "scandata read error\n");
 		}
-		x = sscanf(line, "%d\t"LLFMT"\t"LLFMT"\t"LLFMT"\t"LLFMT"\t"LLFMT"\t%d\t"LLFMT"\t"LLFMT"\t%s\t%s\n", 
-			&box[i].thread, &box[i].clkstart, &box[i].clkend,
-			&box[i].ticks, &box[i].memstart, &box[i].memend,
-			&box[i].state, &box[i].reads, &box[i].writes, buf, buf2);
+		x = sscanf(line, "%d\t"LLFMT"\t"LLFMT"\t"LLFMT"\t"LLFMT"\t"LLFMT"\t%d\t"LLFMT"\t"LLFMT"\t%s\t%s\n",
+			   &box[i].thread, &box[i].clkstart, &box[i].clkend,
+			   &box[i].ticks, &box[i].memstart, &box[i].memend,
+			   &box[i].state, &box[i].reads, &box[i].writes, buf, buf2);
 		if (x != 11) {
 			fprintf(stderr, "scandata: sscanf() matched %d instead of 11 items in\n'%s'\n", x, line);
 		}
@@ -1377,7 +1358,8 @@ static void scandata(char *filename)
 /* gnuplot defaults */
 static int height = 160;
 
-static void gnuplotheader(char *filename)
+static void
+gnuplotheader(char *filename)
 {
 	time_t tm;
 	char *date, *c;
@@ -1396,38 +1378,6 @@ static void gnuplotheader(char *filename)
 	fprintf(gnudata, "set multiplot\n");
 }
 
-static void resetTomograph(void){
-	static char buf[128];
-	int i;
-	if(atlas) {
-		snprintf(buf,128,"%s_%02d",basefilename, ++atlaspage);
-		filename = buf;
-	} 
-	if (debug)
-		fprintf(stderr, "RESET tomograph %d\n", atlaspage);
-	for(i=0; i< NUM_COLORS;i++){
-		colors[i].freq=0;
-		colors[i].timeused = 0;
-	}
-	for(i=0; i< MAXTHREADS; i++)
-		lastclk[i]=0;
-	topbox =0;
-	for (i = 0; i < MAXTHREADS; i++)
-		threads[i] = topbox++;
-
-	startrange = 0, endrange = 0;
-	maxio = 0;
-	cpus = 0;
-	batch = batchsize;
-	totalclkticks = 0; 
-	totalticks = 0; 
-	totalexecticks = 0;
-	lastclktick = 0;
-	figures = 0;
-	currentfunction = 0;
-	object = 1;
-}
-
 static void createTomogram(void)
 {
 	char buf[BUFSIZ];
@@ -1436,11 +1386,13 @@ static void createTomogram(void)
 	int i, j;
 	int h, prevobject = 1;
 	lng w = lastclktick - starttime;
+	lng tw;
 	lng scale;
 	char *scalename = "\0\0\0\0";
 	int digits;
-	int TME;
 
+	if( debug)
+		fprintf(stderr,"create tomogram\n");
 	snprintf(buf, BUFSIZ, "%s.gpl", filename);
 	gnudata = fopen(buf, "w");
 	if (gnudata == 0) {
@@ -1482,63 +1434,45 @@ static void createTomogram(void)
 	fprintf(gnudata, "unset colorbox\n");
 	fprintf(gnudata, "unset title\n");
 
-	if (fixedmap) {
-		if (w >= 10 * US_DD) {
-			scale = US_DD;
-			scalename = "d\0\0days";
-		} else if (w >= 10 * US_HH) {
-			scale = US_HH;
-			scalename = "h\0\0hours";
-		} else if (w >= 10 * US_MM) {
-			scale = US_MM;
-			scalename = "m\0\0minutes";
-		} else if (w >= US_SS) {
-			scale = US_SS;
-			scalename = "s\0\0seconds";
-		} else if (w >= US_MS) {
-			scale = US_MS;
-			scalename = "ms\0milliseconds";
-		} else {
-			scale = 1;
-			scalename = "us\0microseconds";
-		}
-		if (w / scale >= 1000)
-			digits = 0;
-		else if (w / scale >= 100)
-			digits = 1;
-		else if (w / scale >= 10)
-			digits = 2;
-		else
-			digits = 3;
-		w /= 10;
-		fprintf(gnudata, "set xtics (\"0\" 0,");
-		for (i = 1; i < 10; i++)
-			fprintf(gnudata, "\"%.*f\" "LLFMT".0,", digits, (double) i * w / scale, i * w);
-		fprintf(gnudata, "\"%.*f %s\" "LLFMT".0", digits, (double) i * w / scale, scalename, i * w);
-		fprintf(gnudata, ")\n");
+	if (w >= 10 * US_DD) {
+		scale = US_DD;
+		scalename = "d\0\0days";
+	} else if (w >= 10 * US_HH) {
+		scale = US_HH;
+		scalename = "h\0\0hours";
+	} else if (w >= 10 * US_MM) {
+		scale = US_MM;
+		scalename = "m\0\0minutes";
+	} else if (w >= US_SS) {
+		scale = US_SS;
+		scalename = "s\0\0seconds";
+	} else if (w >= US_MS) {
+		scale = US_MS;
+		scalename = "ms\0milliseconds";
 	} else {
-		if (w >= US_DD) {
-			TME = TME_DD|TME_HH;
-		} else if (w >= US_HH) {
-			TME = TME_HH|TME_MM;
-		} else if (w >= US_MM) {
-			TME = TME_MM|TME_SS;
-		} else if (w >= US_SS) {
-			TME = TME_SS|TME_MS;
-		} else if (w >= US_MS) {
-			TME = TME_MS|TME_US;
-		} else {
-			TME = TME_US;
-		}
-		w /= 10;
-		fprintf(gnudata, "set xtics (\"0\" 0,\"");
-		for (i = 1; i < 10; i++) {
-			fprintf_tm(gnudata, i * w, TME);
-			fprintf(gnudata, "\" "LLFMT".0,\"", i * w);
-		}
-		fprintf_tm(gnudata, i * w, TME);
-		fprintf(gnudata, "\" "LLFMT".0)\n", i * w);
+		scale = 1;
+		scalename = "us\0microseconds";
 	}
+	for (tw = (scale / 10 > 0)? scale/10:1; 15 * tw < w; tw *= 10)
+		;
+	if (3 * tw > w)
+		tw /= 4;
+	else if (6 * tw > w)
+		tw /= 2;
+	if (w / scale >= 1000)
+		digits = 0;
+	else if (w / scale >= 100)
+		digits = 1;
+	else if (w / scale >= 10)
+		digits = 2;
+	else
+		digits = 3;
+	fprintf(gnudata, "set xtics (\"0\" 0,");
+	for (i = 1; i * tw < w - 2 * tw / 3; i++)
+		fprintf(gnudata, "\"%g\" "LLFMT".0,", (double) i * tw / scale, i * tw);
+	fprintf(gnudata, "\"%.*f %s\" "LLFMT".0", digits, (double) w / scale, scalename, w);
+	fprintf(gnudata, ")\n");
+	w /= 10;
 
 	fprintf(gnudata, "set grid xtics\n");
 
@@ -1559,24 +1493,29 @@ static void createTomogram(void)
 	/* mark duration of each thread */
 	for (i = 0; i < top; i++)
 		fprintf(gnudata, "set object %d rectangle from %d, %d to "LLFMT".0, %d\n",
-				object++, 0, i * 2 * h + h/3, lastclk[rows[i]], i * 2 * h + h - h/3);
+			object++, 0, i * 2 * h + h/3, lastclk[rows[i]], i * 2 * h + h - h/3);
 
 	/* fill the duration of each instruction encountered that fit our range constraint */
 	for (i = 0; i < topbox; i++)
-	if ( box[i].clkend)
-		switch (box[i].state ) {
-		default:
-			if (debug)
-				dumpbox(i);
-			fprintf(gnudata, "set object %d rectangle from "LLFMT".0, %d to "LLFMT".0, %d fillcolor rgb \"%s\" fillstyle solid 1.0\n",
+		if (box[i].clkend)
+			switch (box[i].state) {
+			default:
+				if (debug)
+					dumpbox(i);
+				fprintf(gnudata, "set object %d rectangle from "LLFMT".0, %d to "LLFMT".0, %d fillcolor rgb \"%s\" fillstyle solid 1.0\n",
 					object++, box[i].clkstart, box[i].row * 2 * h, box[i].clkend, box[i].row * 2 * h + h, colors[box[i].color].col);
-			break;
-		case PING:
-			break;
-		case WAIT:
-			fprintf(gnudata, "set object %d rectangle from "LLFMT".0, %d to %f,%f front fillcolor rgb \"red\" fillstyle solid 1.0\n",
+				break;
+			case PING:
+				break;
+			case WAIT:
+				fprintf(gnudata, "set object %d rectangle from "LLFMT".0, %d to %f,%f front fillcolor rgb \"red\" fillstyle solid 1.0\n",
 					object++, box[i].clkstart, box[i].row * 2 * h+h-h/3, box[i].clkstart + w /50.0, box[i].row *2 *h + 1.3 * h);
-		}
+				break;
+			case GCOLLECT:
+				fprintf(gnudata, "set object %d rectangle from "LLFMT".0, %d to "LLFMT".0, %d fillcolor rgb \"green\" fillstyle solid 1.0\n",
+					object++, box[i].clkstart, box[i].row * 2 * h +h/3, box[i].clkend, box[i].row * 2 * h + h-h/3);
+				break;
+			}
 
 
 	fprintf(gnudata, "plot 0 notitle with lines\n");
@@ -1589,16 +1528,16 @@ static void createTomogram(void)
 	gnudata = 0;
 
 	// show follow up action only once
-	if (atlas && atlaspage == atlas-1){
+	if (atlas && atlaspage == atlas-1) {
 		fprintf(stderr, "Created tomogram atlas\n");
-		for( i = 0; i<= atlaspage;  i++)
-			fprintf(stderr, "gnuplot %s_%02d.gpl\n",basefilename,i);
-		fprintf(stderr, "gs -dNOPAUSE -sDEVICE=pdfwrite -sOUTPUTFILE=%s.pdf -dBATCH %s_??.pdf\n",basefilename,basefilename);
+		for (i = 0; i<= atlas-1;  i++)
+			fprintf(stderr, "gnuplot atlas_%02d.gpl\n",i);
+		fprintf(stderr, "gs -dNOPAUSE -sDEVICE=pdfwrite -sOUTPUTFILE=atlas.pdf -dBATCH %s_??.pdf\n",filename);
 		exit(0);
 	} else
 	if (!atlas && figures++ == 0) {
 		fprintf(stderr, "Created tomogram '%s'\n", buf);
-			fprintf(stderr, "Run: 'gnuplot %s.gpl' to create the '%s.pdf' file\n", buf, filename);
+		fprintf(stderr, "Run: 'gnuplot %s.gpl' to create the '%s.pdf' file\n", buf, filename);
 		if (tracefile == 0) {
 			fprintf(stderr, "The memory map is stored in '%s.dat'\n", filename);
 			fprintf(stderr, "The trace is saved in '%s.trace' for use with --trace option\n", filename);
@@ -1607,16 +1546,16 @@ static void createTomogram(void)
 	}
 }
 
-/* the main issue to deal with in the analyse is
+/* the main issue to deal with in the analysis is
  * that the tomograph start can appear while the
  * system is already processing. This leads to
  * receiving 'done' events without matching 'start'
  *
  * A secondary issue is to properly count the functions
- * being monitored. 
+ * being monitored.
  */
 
-static void 
+static void
 update(int state, int thread, lng clkticks, lng ticks, lng memory, lng footprint, lng reads, lng writes, char *fcn, char *stmt)
 {
 	int idx;
@@ -1629,7 +1568,7 @@ update(int state, int thread, lng clkticks, lng ticks, lng memory, lng footprint
 	}
 	if (starttime == 0) {
 		/* ignore all instructions up to the first function call, unless input comes from a file */
-		if ( inputfile == NULL && (state >= PING || fcn == 0 || strncmp(fcn, "function", 8) )){
+		if (inputfile == NULL && (state >= PING || fcn == 0 || strncmp(fcn, "function", 8))) {
 			return;
 		}
 		if (debug)
@@ -1639,59 +1578,48 @@ update(int state, int thread, lng clkticks, lng ticks, lng memory, lng footprint
 	}
 
 	/* monitor top level function brackets */
-	if (state == START && fcn && strncmp(fcn, "function", 8) == 0 ){
-		capturing++;
-		starttime = clkticks;
-		if ( currentfunction == 0) 
+	if (state == START && fcn && strncmp(fcn, "function", 8) == 0) {
+		if (capturing++ == 0)
+			starttime = clkticks;
+		if (currentfunction == 0)
 			currentfunction = strdup(fcn+9);
 		if (debug)
 			fprintf(stderr, "Enter function %s capture %d\n", currentfunction, capturing);
 		return;
 	}
-	if (state == DONE && fcn && strncmp(fcn, "function", 8) == 0 ){
-		if ( currentfunction  && strcmp(currentfunction, fcn+9) == 0){
+	if (state == DONE && fcn && strncmp(fcn, "function", 8) == 0) {
+		if (currentfunction && strcmp(currentfunction, fcn+9) == 0) {
 			capturing--;
-			if (debug)
-				fprintf(stderr, "Leave function %s capture %d\n", currentfunction, capturing);
+#ifdef _DEBUG_TOMOGRAPH_
+			fprintf(stderr, "Leave function %s capture %d\n", currentfunction, capturing);
+#endif
 			free(currentfunction);
 			currentfunction = 0;
-		} else return;
-
-		if ( batch -- > 1)  return;
-
-		if (atlas == atlaspage){
-			deactivateBeat();
-			createTomogram();
-			totalclkticks = 0; /* number of clock ticks reported */
-			totalexecticks = 0; /* number of ticks reported for processing */
-			if (fcn && title == 0)
-				title = strdup(fcn + 9);
+		} else
 			return;
-		}
-		// create a new atlas page
+
+		if (batch-- > 1)
+			return;
+
+		deactivateBeat();
 		createTomogram();
 		totalclkticks = 0; /* number of clock ticks reported */
 		totalexecticks = 0; /* number of ticks reported for processing */
-		if (fcn )
+		if (fcn)
 			title = strdup(fcn + 9);
 		resetTomograph();
 		return;
 	}
 
 	if (state == DONE && strncmp(fcn, "profiler.tomograph", 18) == 0) {
-		if (debug)
-			fprintf(stderr, "Profiler.tomograph ends  %d\n", batch);
-		if (atlas == atlaspage){
-			deactivateBeat();
-			createTomogram();
-			totalclkticks = 0; /* number of clock ticks reported */
-			totalexecticks = 0; /* number of ticks reported for processing */
-			return;
-		} 
+#ifdef _DEBUG_TOMOGRAPH_
+		fprintf(stderr, "Profiler.tomograph ends %d\n", batch);
+#endif
+		deactivateBeat();
 		createTomogram();
 		totalclkticks = 0; /* number of clock ticks reported */
 		totalexecticks = 0; /* number of ticks reported for processing */
-		if (fcn )
+		if (fcn)
 			title = strdup(fcn + 9);
 		resetTomograph();
 		return;
@@ -1719,6 +1647,8 @@ update(int state, int thread, lng clkticks, lng ticks, lng memory, lng footprint
 		box[idx].thread = thread;
 		lastclk[thread] = clkticks;
 		box[idx].clkend = box[idx].clkstart = clkticks;
+		if (state == GCOLLECT)
+			box[idx].clkstart -= ticks;
 		box[idx].memend = box[idx].memstart = memory;
 		box[idx].footstart = box[idx].footend = footprint;
 		box[idx].reads = reads;
@@ -1740,8 +1670,9 @@ update(int state, int thread, lng clkticks, lng ticks, lng memory, lng footprint
 	idx = threads[thread];
 	/* start of instruction box */
 	if (state == START && thread < MAXTHREADS) {
-		if (debug)
-			fprintf(stderr, "Start box %s thread %d idx %d box %d\n", currentfunction, thread,idx,topbox);
+#ifdef _DEBUG_TOMOGRAPH_
+		fprintf(stderr, "Start box %s thread %d idx %d box %d\n", currentfunction, thread,idx,topbox);
+#endif
 		box[idx].state = state;
 		box[idx].thread = thread;
 		box[idx].clkstart = clkticks;
@@ -1752,8 +1683,9 @@ update(int state, int thread, lng clkticks, lng ticks, lng memory, lng footprint
 	}
 	/* end the instruction box */
 	if (state == DONE && thread < MAXTHREADS && fcn && box[idx].fcn && strcmp(fcn, box[idx].fcn) == 0) {
-		if (debug)
-			fprintf(stderr, "End box %s thread %d idx %d box %d\n", currentfunction, thread,idx,topbox);
+#ifdef _DEBUG_TOMOGRAPH_
+		fprintf(stderr, "End box %s thread %d idx %d box %d\n", currentfunction, thread,idx,topbox);
+#endif
 		lastclk[thread] = clkticks;
 		box[idx].clkend = clkticks;
 		box[idx].memend = memory;
@@ -1788,7 +1720,8 @@ update(int state, int thread, lng clkticks, lng ticks, lng memory, lng footprint
  * Beware the UDP protocol may cause some loss
  * Incomplete records from previous runs may also appear
  */
-static int parser(char *row)
+static int
+parser(char *row)
 {
 #ifdef HAVE_STRPTIME
 	char *c, *cc;
@@ -1805,7 +1738,7 @@ static int parser(char *row)
 	/* check basic validaty first */
 	if (row[0] != '[')
 		return -1;
-	if ( (cc= strrchr(row,']')) == 0 || *(cc+1) !=0)
+	if ((cc= strrchr(row,']')) == 0 || *(cc+1) !=0)
 		return -1;
 
 	c = strchr(row, (int) '"');
@@ -1823,10 +1756,13 @@ static int parser(char *row)
 	} else if (strncmp(c + 1, "wait", 4) == 0) {
 		state = WAIT;
 		c += 5;
+	} else if (strncmp(c + 1, "gcollect", 8) == 0) {
+		state = GCOLLECT;
+		c += 9;
 	} else {
 		state = 0;
 		c = strchr(c + 1, (int) '"');
-		if ( c == 0)
+		if (c == 0)
 			return -2;
 	}
 
@@ -1873,7 +1809,7 @@ static int parser(char *row)
 	if (debug && state < PING)
 		fprintf(stderr, "%s\n", row);
 	c = strchr(c + 1, (int) ',');
-	if (c == 0 && state >= PING) 
+	if (c == 0 && state >= PING)
 		goto wrapup;
 #endif
 
@@ -1884,7 +1820,7 @@ static int parser(char *row)
 	writes = strtoll(c + 1, NULL, 10);
 
 	/* check basic validity */
-	if ( (cc= strrchr(row,']')) == 0 || *(cc+1) !=0)
+	if ((cc= strrchr(row,']')) == 0 || *(cc+1) !=0)
 		return -1;
 	c = strchr(c + 1, (int) ',');
 	if (c == 0)
@@ -1922,7 +1858,8 @@ wrapup:
 	return 0;
 }
 
-static void processFile(char *fname)
+static void
+processFile(char *fname)
 {
 	size_t len;
 	ssize_t n;
@@ -1930,9 +1867,10 @@ static void processFile(char *fname)
 	char buf[BUFSIZ + 1];
 	char *e, *response;
 	stream *s;
-	
-	s = open_rstream(fname);
-	if ( s == NULL || mnstr_errnr(s)){
+
+//FIX to rstream?
+	s = open_rastream(fname);
+	if (s == NULL || mnstr_errnr(s)) {
 		fprintf(stderr,"ERROR Can not access '%s'\n",fname);
 		return;
 	}
@@ -1943,7 +1881,7 @@ static void processFile(char *fname)
 		while ((e = strchr(response, '\n')) != NULL) {
 			*e = 0;
 			i = parser(response);
-			if (debug )
+			if (debug && i >= 0 )
 				fprintf(stderr, "ERROR %d:%s\n", i, response);
 			response = e + 1;
 		}
@@ -2084,11 +2022,11 @@ doProfile(void *d)
 			continue;
 		/* deactivate any left over counter first */
 		snprintf(buf, BUFSIZ, "profiler.deactivate(\"%s\");",
-				profileCounter[i].ptag);
+			profileCounter[i].ptag);
 		doQ(buf);
 		if (profileCounter[i].status) {
 			snprintf(buf, BUFSIZ, "profiler.activate(\"%s\");",
-					profileCounter[i].ptag);
+				profileCounter[i].ptag);
 			doQ(buf);
 #ifdef _DEBUG_TOMOGRAPH_
 			printf("-- %s%s\n", id, buf);
@@ -2103,7 +2041,7 @@ doProfile(void *d)
 	}
 	if (wthr->s == NULL) {
 		fprintf(stderr, "!! %sopening stream failed: no free ports available\n",
-				id);
+			id);
 		goto stop_cleanup;
 	}
 
@@ -2111,7 +2049,7 @@ doProfile(void *d)
 			id, hostname, portnr, host);
 
 	snprintf(buf, BUFSIZ, "port := profiler.openStream(\"%s\", %d);",
-			hostname, portnr);
+		hostname, portnr);
 	doQ(buf);
 
 	/* Set Filters */
@@ -2169,7 +2107,7 @@ doProfile(void *d)
 			*e = 0;
 			/* TOMOGRAPH EXTENSIONS */
 			i = parser(response);
-			if (debug )
+			if (debug && i >= 0)
 				fprintf(stderr, "PARSE %d:%s\n", i, response);
 			response = e + 1;
 		}
@@ -2245,7 +2183,7 @@ main(int argc, char **argv)
 	while (1) {
 		int option_index = 0;
 		int c = getopt_long(argc, argv, "d:u:p:h:?T:i:t:r:o:Db:B:A:s:m:a",
-				long_options, &option_index);
+					long_options, &option_index);
 		if (c == -1)
 			break;
 		switch (c) {
@@ -2280,7 +2218,7 @@ main(int argc, char **argv)
 			password = NULL;
 			break;
 		case 'm':
-			if ( optarg){
+			if (optarg) {
 				othermap = optarg;
 				colormap = 0;
 			} else colormap =1;
@@ -2307,7 +2245,8 @@ main(int argc, char **argv)
 				tracefile = optarg;
 			break;
 		case 'o':
-			basefilename = filename = optarg;
+			basefilename = filename= optarg;
+			printf("-- Output directed towards %s\n", basefilename);
 			break;
 		case 'r':
 		{
@@ -2344,12 +2283,15 @@ main(int argc, char **argv)
 			exit(-1);
 		}
 	}
-
-	resetTomograph();
+	if( atlas)
+	{ char buf[128];
+		snprintf(buf,128,"%s_00",basefilename);
+		filename = buf;
+	}
 	if ( othermap){
 		FILE *map ;
 		map = fopen(othermap,"r");
-		if ( map == NULL){
+		if (map == NULL) {
 			printf("Could not open color map %s\n",othermap);
 			exit(-1);
 		}
@@ -2360,11 +2302,14 @@ main(int argc, char **argv)
 		initcolors(0);
 
 	if (dbname == NULL && optind != argc && argv[optind][0] != '+' &&
-		(stat(argv[optind], &statb) != 0 || !S_ISREG(statb.st_mode)))
+	    (stat(argv[optind], &statb) != 0 || !S_ISREG(statb.st_mode)))
 	{
 		dbname = argv[optind];
 		optind++;
 	}
+
+	if(debug)
+		printf("Tomograph: db %s filename %s\n",dbname,filename);
 
 	if (dbname != NULL && strncmp(dbname, "mapi:monetdb://", 15) == 0) {
 		uri = dbname;
@@ -2378,7 +2323,7 @@ main(int argc, char **argv)
 	} else
 		k = setCounter(COUNTERSDEFAULT);
 
-	if (inputfile){
+	if (inputfile) {
 		processFile(inputfile);
 		createTomogram();
 		exit(0);
@@ -2407,6 +2352,26 @@ main(int argc, char **argv)
 	if (password == NULL)
 		password = simple_prompt("password", BUFSIZ, 0, NULL);
 
+#ifdef HAVE_SIGACTION
+	{
+		struct sigaction action;
+
+		action.sa_handler = stopListening;
+		sigemptyset(&action.sa_mask);
+		action.sa_flags = 0;
+#ifdef SIGPIPE
+		sigaction(SIGPIPE, &action, NULL);
+#endif
+#ifdef SIGHUP
+		sigaction(SIGHUP, &action, NULL);
+#endif
+#ifdef SIGQUIT
+		sigaction(SIGQUIT, &action, NULL);
+#endif
+		sigaction(SIGINT, &action, NULL);
+		sigaction(SIGTERM, &action, NULL);
+	}
+#else
 #ifdef SIGPIPE
 	signal(SIGPIPE, stopListening);
 #endif
@@ -2418,6 +2383,7 @@ main(int argc, char **argv)
 #endif
 	signal(SIGINT, stopListening);
 	signal(SIGTERM, stopListening);
+#endif
 
 	close(0); /* get rid of stdin */
 
@@ -2440,6 +2406,7 @@ main(int argc, char **argv)
 	walk->next = NULL;
 	walk->dbh = NULL;
 	walk->hdl = NULL;
+#ifndef HAVE_SIGACTION
 	/* In principle we could do this without a thread, but it seems
 	 * that if we do it that way, ctrl-c (or any other signal)
 	 * doesn't interrupt the read inside this function, and hence
@@ -2451,6 +2418,11 @@ main(int argc, char **argv)
 #else
 	pthread_create(&walk->id, NULL, &doProfile, walk);
 	pthread_join(walk->id, NULL);
+#endif
+#else
+	/* when using sigaction, we can (and do) just interrupt the
+	 * system call */
+	doProfile(walk);
 #endif
 	free(walk);
 	free(user);

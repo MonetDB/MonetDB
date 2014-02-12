@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2013 MonetDB B.V.
+ * Copyright August 2008-2014 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -112,7 +112,6 @@ str intRef;
 str ioRef;
 str iteratorRef;
 str joinPathRef;
-str jsonRef;
 str joinRef;
 str antijoinRef;
 str bandjoinRef;
@@ -393,7 +392,6 @@ void optimizerInit(void){
 		subthetajoinRef = putName("subthetajoin",12);
 		thetauselectRef = putName("thetauselect",12);
 		thetaselectRef = putName("thetaselect",11);
-		jsonRef = putName("json",4);
 		kdifferenceRef= putName("kdifference",11);
 		kunionRef= putName("kunion",6);
 		kuniqueRef= putName("kunique",7);

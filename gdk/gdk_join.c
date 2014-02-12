@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2013 MonetDB B.V.
+ * Copyright August 2008-2014 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -1044,6 +1044,13 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				 * value */
 				nr = 1;
 			}
+			if (lcand &&
+			    nl > 1 &&
+			    lcand[-1] != lcand[-1 - nl] + nl) {
+				/* not all values in the range are
+				 * candidates */
+				lskipped = 1;
+			}
 		}
 		/* make space: nl values in l match nr values in r, so
 		 * we need to add nl * nr values in the results */
@@ -1094,7 +1101,6 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		if (lscan == 0) {
 			/* deduce relative positions of r matches for
 			 * this and previous value in v */
-			assert(prev != v);
 			if (prev) {
 				if (rordering * cmp(prev, v) < 0) {
 					/* previous value in l was
@@ -1451,7 +1457,14 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, in
 						break;
 				}
 			} else {
-				switch (r->htype) {
+				int t = r->htype;
+				if (t != ATOMstorage(t) &&
+				    ATOMnilptr(ATOMstorage(t)) == ATOMnilptr(t) &&
+				    BATatoms[ATOMstorage(t)].atomCmp == BATatoms[t].atomCmp &&
+				    BATatoms[ATOMstorage(t)].atomHash == BATatoms[t].atomHash)
+					t = ATOMstorage(t);
+
+				switch (t) {
 				case TYPE_int:
 #if SIZEOF_OID == SIZEOF_INT
 				case TYPE_oid:
@@ -1839,6 +1852,7 @@ bandjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	const oid *rcand = NULL, *rcandend = NULL;
 	const char *lvals, *rvals;
 	int lwidth, rwidth;
+	int t;
 	const void *nil = ATOMnilptr(l->ttype);
 	int (*cmp)(const void *, const void *) = BATatoms[l->ttype].atomCmp;
 	const char *vl, *vr;
@@ -1872,7 +1886,13 @@ bandjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	assert(sl == NULL || sl->tsorted);
 	assert(sr == NULL || sr->tsorted);
 
-	switch (ATOMtype(l->ttype)) {
+	t = ATOMtype(l->ttype);
+	if (t != ATOMstorage(t) &&
+	    ATOMnilptr(ATOMstorage(t)) == nil &&
+	    BATatoms[ATOMstorage(t)].atomCmp == cmp)
+		t = ATOMstorage(t);
+
+	switch (t) {
 	case TYPE_bte:
 		if (*(const bte *)c1 == bte_nil ||
 		    *(const bte *)c2 == bte_nil ||
@@ -2241,6 +2261,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, 
 	int lwidth, rlwidth, rhwidth;
 	const void *nil = ATOMnilptr(l->ttype);
 	int (*cmp)(const void *, const void *) = BATatoms[l->ttype].atomCmp;
+	int t;
 	const char *vl, *vrl, *vrh;
 	const oid *p;
 	oid lastr = 0;
@@ -2314,6 +2335,12 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, 
 		loff = (wrd) l->tseqbase - (wrd) l->hseqbase;
 	}
 
+	t = ATOMtype(l->ttype);
+	if (t != ATOMstorage(t) &&
+	    ATOMnilptr(ATOMstorage(t)) == nil &&
+	    BATatoms[ATOMstorage(t)].atomCmp == cmp)
+		t = ATOMstorage(t);
+
 	/* nested loop implementation for range join */
 	for (;;) {
 		if (lcand) {
@@ -2379,7 +2406,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, 
 				}
 				ro = n++ + rl->hseqbase;
 			}
-			switch (ATOMtype(l->ttype)) {
+			switch (t) {
 			case TYPE_bte:
 				if (*(const bte*)vrl == bte_nil ||
 				    *(const bte*)vrh == bte_nil ||
@@ -2917,7 +2944,8 @@ project_any(BAT *bn, BAT *l, BAT *r, int nilcheck)
 	BATiter ri, bni;
 	int (*cmp)(const void *, const void *) = BATatoms[r->ttype].atomCmp;
 	const void *nil = ATOMnilptr(r->ttype);
-	const void *v, *prev = NULL;
+	const void *v;
+	BUN prev = BUN_NONE;
 	const oid *o;
 	int c;
 
@@ -2944,8 +2972,9 @@ project_any(BAT *bn, BAT *l, BAT *r, int nilcheck)
 				bn->T->nonil = 0;
 				bn->T->nil = 1;
 			}
-			if (prev && (bn->trevsorted | bn->tsorted | bn->tkey)) {
-				c = cmp(prev, v);
+			if (prev != BUN_NONE &&
+			    (bn->trevsorted | bn->tsorted | bn->tkey)) {
+				c = cmp(BUNtail(bni, prev), v);
 				if (c < 0) {
 					bn->trevsorted = 0;
 					if (!bn->tsorted)
@@ -2958,7 +2987,7 @@ project_any(BAT *bn, BAT *l, BAT *r, int nilcheck)
 					bn->tkey = 0; /* definitely */
 				}
 			}
-			prev = BUNtail(bni, n);
+			prev = n;
 		}
 	}
 	assert(n == BATcount(l));

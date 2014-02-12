@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2013 MonetDB B.V.
+ * Copyright August 2008-2014 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -36,7 +36,7 @@ static BAT *qotStat[4] = { NULL };
 static MT_Lock qotlock MT_LOCK_INITIALIZER("qotlock");
 
 static BAT *
-QOT_create(str hnme, str tnme, int ht, int tt)
+QOT_create(str hnme, str tnme, int tt)
 {
 	BAT *b;
 	char buf[128];
@@ -46,7 +46,7 @@ QOT_create(str hnme, str tnme, int ht, int tt)
 	if (b)
 		return b;
 
-	b = BATnew(ht, tt, 256);
+	b = BATnew(TYPE_void, tt, 256);
 	if (b == NULL)
 		return NULL;
 
@@ -66,13 +66,13 @@ static void QOTstatisticsInit(void){
 #endif
 
 	MT_lock_set(&qotlock, "QOT statistics");
-	qotStat[QOTnames]= QOT_create("opt","names",TYPE_void,TYPE_str);
+	qotStat[QOTnames]= QOT_create("opt","names",TYPE_str);
 	BATseqbase(qotStat[QOTnames],o);
-	qotStat[QOTcalls]= QOT_create("opt","calls",TYPE_void,TYPE_int);
+	qotStat[QOTcalls]= QOT_create("opt","calls",TYPE_int);
 	BATseqbase(qotStat[QOTcalls],o);
-	qotStat[QOTactions]= QOT_create("opt","actions",TYPE_void,TYPE_int);
+	qotStat[QOTactions]= QOT_create("opt","actions",TYPE_int);
 	BATseqbase(qotStat[QOTactions],o);
-	qotStat[QOTtimings]= QOT_create("opt","timings",TYPE_void,TYPE_lng);
+	qotStat[QOTtimings]= QOT_create("opt","timings",TYPE_lng);
 	BATseqbase(qotStat[QOTtimings],o);
 
 	/* recover from errors */

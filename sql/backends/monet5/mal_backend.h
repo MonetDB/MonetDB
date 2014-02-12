@@ -1,3 +1,22 @@
+/*
+ * The contents of this file are subject to the MonetDB Public License
+ * Version 1.1 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ * http://www.monetdb.org/Legal/MonetDBLicense
+ *
+ * Software distributed under the License is distributed on an "AS IS"
+ * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+ * License for the specific language governing rights and limitations
+ * under the License.
+ *
+ * The Original Code is the MonetDB Database System.
+ *
+ * The Initial Developer of the Original Code is CWI.
+ * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+ * Copyright August 2008-2014 MonetDB B.V.
+ * All Rights Reserved.
+ */
+
 #ifndef MAL_BACKEND_H
 #define MAL_BACKEND_H
 
@@ -16,17 +35,11 @@
  * freeing the stack and code segment.
  */
 
-typedef enum output_format {
-	OFMT_CSV  = 	0,
-	OFMT_JSON =	1
-} ofmt;
-
 typedef struct backend {
 	int 	console;
 	char 	language;		/* 'S' or 's' or 'X' */
 	mvc 	*mvc;
 	stream 	*out;
-	ofmt	output_format;	/* csv, json */
 	Client 	client;
 	int 	mvc_var;	
 	int	vtop;		/* top of the variable stack before the current function */

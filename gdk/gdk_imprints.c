@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2013 MonetDB B.V.
+ * Copyright August 2008-2014 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -559,7 +559,7 @@ BATimprints(BAT *b) {
 	MT_lock_set(&GDKimprintsLock(ABS(b->batCacheid)), "BATimprints");
 	if (b->T->imprints == NULL) {
 		Imprints *imprints;
-		BAT *smp;
+		BAT *smp, *t;
 		BUN cnt;
 		str nme = BBP_physical(b->batCacheid);
 
@@ -577,8 +577,9 @@ BATimprints(BAT *b) {
 
 #define SMP_SIZE 2048
 		smp = BATsample(b, SMP_SIZE);
-		smp = BATmirror(BATorder(BATmirror(smp)));
-		smp = BATmirror(BATkunique(BATmirror(smp)));
+		t = BATmirror(BATorder(BATmirror(smp)));
+		smp = BATmirror(BATkunique(BATmirror(t)));
+		BBPunfix(t->batCacheid);
 		/* sample now is ordered and unique on tail */
 		assert(smp->tkey && smp->tsorted);
 		cnt = BATcount(smp);
@@ -611,7 +612,7 @@ BATimprints(BAT *b) {
 #define FILL_HISTOGRAM(TYPE)                                      \
 do {                                                              \
 	BUN k;                                                    \
-	TYPE *s = (TYPE *)Tloc(smp, smp->U->first);               \
+	TYPE *s = (TYPE *)Tloc(smp, smp->batFirst);               \
 	TYPE *h = (TYPE *)imprints->bins->base;                   \
 	if (cnt < 64-1) {                                         \
 		TYPE max = GDK_##TYPE##_max;                      \
@@ -742,7 +743,7 @@ do {                                                              \
 	}
 	assert(b->batCapacity >= BATcount(b));
 	return b;
-};
+}
 
 int
 IMPSgetbin(int tpe, bte bits, char *inbins, const void *v)

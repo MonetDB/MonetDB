@@ -10,7 +10,7 @@ stdout of test 'url_script_test.Bug-2972` in directory 'sql/test/BugTracker-2012
 # Compiled for sparc-sun-solaris2.10/32bit with 32bit OIDs dynamically linked
 # Found 4.000 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2013 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://zonnestraal:38767/
 # MonetDB/GIS module loaded
@@ -44,14 +44,14 @@ Ready.
 # 06:50:54 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=zonnestraal" "--port=38767"
 # 06:50:54 >  
 
-#create table t(u url);
-#insert into t values('http://www.cwi.nl/~mk/vision2011.pdf');
+#create table t2972(u url);
+#insert into t2972 values('http://www.cwi.nl/~mk/vision2011.pdf');
 [ 1	]
-#insert into t values('http://www.monetdb.com?x=2');
+#insert into t2972 values('http://www.monetdb.com?x=2');
 [ 1	]
-#insert into t values('http://www.monetdb.org:8080/Documentation/Manuals/SQLreference/Datamanipulation');
+#insert into t2972 values('http://www.monetdb.org:8080/Documentation/Manuals/SQLreference/Datamanipulation');
 [ 1	]
-#select getAnchor(u) from t;
+#select getAnchor(u) from t2972;
 % sys.L # table_name
 % getanchor_u # name
 % clob # type
@@ -59,15 +59,15 @@ Ready.
 [ NULL	]
 [ NULL	]
 [ NULL	]
-#select getBasename(u) from t;
+#select getBasename(u) from t2972;
 % sys.L # table_name
 % getbasename_u # name
 % clob # type
 % 16 # length
 [ "vision2011"	]
-[ "www"	]
+[ NULL	]
 [ "Datamanipulation"	]
-#select getContext(u) from t;
+#select getContext(u) from t2972;
 % sys.L # table_name
 % getcontext_u # name
 % clob # type
@@ -75,39 +75,39 @@ Ready.
 [ "/~mk/vision2011.pdf"	]
 [ NULL	]
 [ "/Documentation/Manuals/SQLreference/Datamanipulation"	]
-#select getDomain(u) from t;
+#select getDomain(u) from t2972;
 % sys.L # table_name
 % getdomain_u # name
 % clob # type
-% 7 # length
+% 3 # length
 [ "nl"	]
-[ "com?x=2"	]
+[ "com"	]
 [ "org"	]
-#select getExtension(u) from t;
+#select getExtension(u) from t2972;
 % sys.L # table_name
 % getextension_u # name
 % clob # type
-% 15 # length
+% 3 # length
 [ "pdf"	]
-[ "monetdb.com?x=2"	]
 [ NULL	]
-#select getFile(u) from t;
+[ NULL	]
+#select getFile(u) from t2972;
 % sys.L # table_name
 % getfile_u # name
 % clob # type
-% 19 # length
+% 16 # length
 [ "vision2011.pdf"	]
-[ "www.monetdb.com?x=2"	]
+[ NULL	]
 [ "Datamanipulation"	]
-#select getHost(u) from t;
+#select getHost(u) from t2972;
 % sys.L # table_name
 % gethost_u # name
 % clob # type
-% 20 # length
+% 15 # length
 [ "www.cwi.nl"	]
-[ "www.monetdb.com?x=2"	]
-[ "www.monetdb.org:8080"	]
-#select getPort(u) from t;
+[ "www.monetdb.com"	]
+[ "www.monetdb.org"	]
+#select getPort(u) from t2972;
 % sys.L # table_name
 % getport_u # name
 % clob # type
@@ -115,7 +115,7 @@ Ready.
 [ NULL	]
 [ NULL	]
 [ "8080"	]
-#select getQuery(u) from t;
+#select getQuery(u) from t2972;
 % sys.L # table_name
 % getquery_u # name
 % clob # type
@@ -123,7 +123,7 @@ Ready.
 [ NULL	]
 [ "x=2"	]
 [ NULL	]
-#select getUser(u) from t;
+#select getUser(u) from t2972;
 % sys.L # table_name
 % getuser_u # name
 % clob # type
@@ -131,15 +131,15 @@ Ready.
 [ "mk"	]
 [ NULL	]
 [ NULL	]
-#select getRobotURL(u) from t;
+#select getRobotURL(u) from t2972;
 % sys.L # table_name
 % getroboturl_u # name
 % clob # type
 % 38 # length
 [ "http://www.cwi.nl/robots.txt"	]
-[ "http://www.monetdb.com?x=2/robots.txt"	]
+[ "http://www.monetdb.com/robots.txt"	]
 [ "http://www.monetdb.org:8080/robots.txt"	]
-#select isaURL(u) from t;
+#select isaURL(u) from t2972;
 % sys.L # table_name
 % isaurl_u # name
 % boolean # type
@@ -177,17 +177,17 @@ Ready.
 % url # type
 % 21 # length
 [ https://localhost/boe	]
-#drop table t;
-#create table t(u url);
-#insert into t values ('file:///export/home/fabian/monetdb/Apr2012/hgrepo/sql/test/BugTracker-2012/Tests/url_script_test.Bug-2972.txt');
+#drop table t2972;
+#create table t2972(u url);
+#insert into t2972 values ('file:///export/home/fabian/monetdb/Apr2012/hgrepo/sql/test/BugTracker-2012/Tests/url_script_test.Bug-2972.txt');
 [ 1	]
-#select getContent(u) from t;
+#select getContent(u) from t2972;
 % sys.L # table_name
 % getcontent_u # name
 % clob # type
 % 141 # length
 [ "This file is read by the url_script_test.Bug-2972 test.\nIf you change this, you likely want to change the stable output of the\ntest as well.\n"	]
-#drop table t;
+#drop table t2972;
 
 # 06:50:55 >  
 # 06:50:55 >  "Done."

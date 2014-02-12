@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2013 MonetDB B.V.
+ * Copyright August 2008-2014 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -62,7 +62,7 @@ sql_find_auth_schema(mvc *m, str auth)
 static int
 monet5_drop_user(ptr _mvc, str user)
 {
-	mvc *m = (mvc *)_mvc;
+	mvc *m = (mvc *) _mvc;
 	oid rid;
 	sql_schema *sys;
 	sql_table *users;
@@ -71,8 +71,8 @@ monet5_drop_user(ptr _mvc, str user)
 	Client c = MCgetClient(m->clientid);
 
 	err = AUTHremoveUser(&c, &user);
-	if (err != MAL_SUCCEED) {
-		(void)sql_error(m, 02, "DROP USER: %s", getExceptionMessage(err));
+	if (err !=MAL_SUCCEED) {
+		(void) sql_error(m, 02, "DROP USER: %s", getExceptionMessage(err));
 		_DELETE(err);
 		return FALSE;
 	}
@@ -83,11 +83,11 @@ monet5_drop_user(ptr _mvc, str user)
 	rid = table_funcs.column_find_row(m->session->tr, users_name, user, NULL);
 	if (rid != oid_nil)
 		table_funcs.table_delete(m->session->tr, users, rid);
-		/* FIXME: We have to ignore this inconsistency here, because the
-		 * user was already removed from the system authorisation. Once
-		 * we have warnings, we could issue a warning about this
-		 * (seemingly) inconsistency between system and sql shadow
-		 * administration. */
+	/* FIXME: We have to ignore this inconsistency here, because the
+	 * user was already removed from the system authorisation. Once
+	 * we have warnings, we could issue a warning about this
+	 * (seemingly) inconsistency between system and sql shadow
+	 * administration. */
 
 	return TRUE;
 }
@@ -95,7 +95,7 @@ monet5_drop_user(ptr _mvc, str user)
 static str
 monet5_create_user(ptr _mvc, str user, str passwd, char enc, str fullname, sqlid schema_id, sqlid grantorid)
 {
-	mvc *m = (mvc *)_mvc;
+	mvc *m = (mvc *) _mvc;
 	oid uid = 0;
 	bat bid = 0;
 	str ret;
@@ -137,7 +137,7 @@ db_users(Client c)
 
 	if ((tmp = AUTHgetUsers(&b, &c)) != MAL_SUCCEED) {
 		GDKfree(tmp);
-		return(NULL);
+		return (NULL);
 	}
 	return b;
 }
@@ -147,7 +147,7 @@ monet5_find_user(ptr mp, str user)
 {
 	BAT *users;
 	BUN p;
-	mvc *m = (mvc *)mp;
+	mvc *m = (mvc *) mp;
 	Client c = MCgetClient(m->clientid);
 
 	users = db_users(c);
@@ -157,17 +157,17 @@ monet5_find_user(ptr mp, str user)
 	BBPunfix(users->batCacheid);
 
 	/* yeah, I would prefer to return something different too */
-	return(p == BUN_NONE ? -1 : 1);
+	return (p == BUN_NONE ? -1 : 1);
 }
 
 str
 db_users_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	bat *r = (bat *)getArgReference(stk, pci, 0);
+	bat *r = (bat *) getArgReference(stk, pci, 0);
 	BAT *b = db_users(cntxt);
 	BAT *bm = BATmirror(BATmark(BATmirror(b), 0));
 
-	(void)mb;
+	(void) mb;
 	BBPunfix(b->batCacheid);
 	*r = bm->batCacheid;
 	BBPkeepref(*r);
@@ -178,9 +178,9 @@ str
 db_password_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str ret = NULL;
-	str *hash = (str *)getArgReference(stk, pci, 0);
-	str *user = (str *)getArgReference(stk, pci, 1);
-	(void)mb;
+	str *hash = (str *) getArgReference(stk, pci, 0);
+	str *user = (str *) getArgReference(stk, pci, 1);
+	(void) mb;
 
 	ret = AUTHgetPasswordHash(hash, &cntxt, user);
 	return ret;
@@ -190,7 +190,7 @@ static void
 monet5_create_privileges(ptr _mvc, sql_schema *s)
 {
 	sql_table *t, *uinfo;
-	mvc *m = (mvc *)_mvc;
+	mvc *m = (mvc *) _mvc;
 	char *err = NULL;
 	int schema_id = 0;
 	str monetdbuser = "monetdb";
@@ -204,13 +204,13 @@ monet5_create_privileges(ptr _mvc, sql_schema *s)
 	mvc_create_column_(m, t, "default_schema", "int", 9);
 	uinfo = t;
 
-	(void)err;
+	(void) err;
 	t = mvc_create_generated(m, s, "#db_users", NULL, 1);
 	mvc_create_column_(m, t, "name", "varchar", 2048);
 
 	sql_find_subtype(&tpe, "table", 0, 0);
 	tpe.comp_type = t;
-	tpe.digits = t->base.id; /* pass the table through digits */
+	tpe.digits = t->base.id;	/* pass the table through digits */
 
 	/* add function */
 	l = sa_list(m->sa);
@@ -220,13 +220,7 @@ monet5_create_privileges(ptr _mvc, sql_schema *s)
 	if (m->sa == NULL)
 		_DELETE(l);
 
-	t = mvc_create_view(m, s, "users", SQL_PERSIST,
-			"SELECT u.\"name\" AS \"name\", "
-				"ui.\"fullname\", ui.\"default_schema\" "
-			"FROM db_users() AS u LEFT JOIN "
-				"\"sys\".\"db_user_info\" AS ui "
-				"ON u.\"name\" = ui.\"name\" "
-			";", 1);
+	t = mvc_create_view(m, s, "users", SQL_PERSIST, "SELECT u.\"name\" AS \"name\", " "ui.\"fullname\", ui.\"default_schema\" " "FROM db_users() AS u LEFT JOIN " "\"sys\".\"db_user_info\" AS ui " "ON u.\"name\" = ui.\"name\" " ";", 1);
 	mvc_create_column_(m, t, "name", "varchar", 1024);
 	mvc_create_column_(m, t, "fullname", "varchar", 2024);
 	mvc_create_column_(m, t, "default_schema", "int", 9);
@@ -240,7 +234,7 @@ monet5_create_privileges(ptr _mvc, sql_schema *s)
 static int
 monet5_schema_has_user(ptr _mvc, sql_schema *s)
 {
-	mvc *m = (mvc *)_mvc;
+	mvc *m = (mvc *) _mvc;
 	oid rid;
 	sql_schema *sys = find_sql_schema(m->session->tr, "sys");
 	sql_table *users = find_sql_table(sys, "db_user_info");
@@ -254,10 +248,9 @@ monet5_schema_has_user(ptr _mvc, sql_schema *s)
 }
 
 static int
-monet5_alter_user(ptr _mvc, str user, str passwd, char enc,
-		sqlid schema_id, str oldpasswd)
+monet5_alter_user(ptr _mvc, str user, str passwd, char enc, sqlid schema_id, str oldpasswd)
 {
-	mvc *m = (mvc *)_mvc;
+	mvc *m = (mvc *) _mvc;
 	Client c = MCgetClient(m->clientid);
 	str err;
 
@@ -267,14 +260,14 @@ monet5_alter_user(ptr _mvc, str user, str passwd, char enc,
 		if (!enc) {
 			pwd = mcrypt_BackendSum(passwd, strlen(passwd));
 			if (pwd == NULL) {
-				(void)sql_error(m, 02, "ALTER USER: crypt backend hash not found");
+				(void) sql_error(m, 02, "ALTER USER: crypt backend hash not found");
 				return FALSE;
 			}
 			if (oldpasswd != NULL) {
 				opwd = mcrypt_BackendSum(oldpasswd, strlen(oldpasswd));
 				if (opwd == NULL) {
 					free(pwd);
-					(void)sql_error(m, 02, "ALTER USER: crypt backend hash not found");
+					(void) sql_error(m, 02, "ALTER USER: crypt backend hash not found");
 					return FALSE;
 				}
 			}
@@ -288,21 +281,21 @@ monet5_alter_user(ptr _mvc, str user, str passwd, char enc,
 				free(pwd);
 				free(opwd);
 			}
-			if (err != MAL_SUCCEED) {
-				(void)sql_error(m, 02, "ALTER USER: %s", getExceptionMessage(err));
+			if (err !=MAL_SUCCEED) {
+				(void) sql_error(m, 02, "ALTER USER: %s", getExceptionMessage(err));
 				GDKfree(err);
-				return(FALSE);
+				return (FALSE);
 			}
 		} else {
 			str username = NULL;
-			if ((err = AUTHresolveUser(&username, &c->user)) != MAL_SUCCEED) {
+			if ((err = AUTHresolveUser(&username, &c->user)) !=MAL_SUCCEED) {
 				if (!enc) {
 					free(pwd);
 					free(opwd);
 				}
-				(void)sql_error(m, 02, "ALTER USER: %s", getExceptionMessage(err));
+				(void) sql_error(m, 02, "ALTER USER: %s", getExceptionMessage(err));
 				GDKfree(err);
-				return(FALSE);
+				return (FALSE);
 			}
 			if (strcmp(username, user) == 0) {
 				/* avoid message about changePassword (from MAL level) */
@@ -310,21 +303,18 @@ monet5_alter_user(ptr _mvc, str user, str passwd, char enc,
 					free(pwd);
 					free(opwd);
 				}
-				(void)sql_error(m, 02, "ALTER USER: "
-						"use 'ALTER USER SET [ ENCRYPTED ] PASSWORD xxx "
-						"USING OLD PASSWORD yyy' "
-						"when changing your own password");
-				return(FALSE);
+				(void) sql_error(m, 02, "ALTER USER: " "use 'ALTER USER SET [ ENCRYPTED ] PASSWORD xxx " "USING OLD PASSWORD yyy' " "when changing your own password");
+				return (FALSE);
 			}
 			err = AUTHsetPassword(&c, &user, &pwd);
 			if (!enc) {
 				free(pwd);
 				free(opwd);
 			}
-			if (err != MAL_SUCCEED) {
-				(void)sql_error(m, 02, "ALTER USER: %s", getExceptionMessage(err));
+			if (err !=MAL_SUCCEED) {
+				(void) sql_error(m, 02, "ALTER USER: %s", getExceptionMessage(err));
 				GDKfree(err);
-				return(FALSE);
+				return (FALSE);
 			}
 		}
 	}
@@ -350,7 +340,7 @@ monet5_alter_user(ptr _mvc, str user, str passwd, char enc,
 static int
 monet5_rename_user(ptr _mvc, str olduser, str newuser)
 {
-	mvc *m = (mvc *)_mvc;
+	mvc *m = (mvc *) _mvc;
 	Client c = MCgetClient(m->clientid);
 	str err;
 	oid rid;
@@ -360,34 +350,30 @@ monet5_rename_user(ptr _mvc, str olduser, str newuser)
 	sql_table *auths = find_sql_table(sys, "auths");
 	sql_column *auths_name = find_sql_column(auths, "name");
 
-	if ((err = AUTHchangeUsername(&c, &olduser, &newuser)) != MAL_SUCCEED) {
-		(void)sql_error(m, 02, "ALTER USER: %s", getExceptionMessage(err));
+	if ((err = AUTHchangeUsername(&c, &olduser, &newuser)) !=MAL_SUCCEED) {
+		(void) sql_error(m, 02, "ALTER USER: %s", getExceptionMessage(err));
 		GDKfree(err);
-		return(FALSE);
+		return (FALSE);
 	}
 
-	rid = table_funcs.column_find_row(m->session->tr, users_name,
-			olduser, NULL);
+	rid = table_funcs.column_find_row(m->session->tr, users_name, olduser, NULL);
 	if (rid == oid_nil) {
-		(void)sql_error(m, 02, "ALTER USER: local inconsistency, "
-				"your database is damaged, user not found in SQL catalog");
-		return(FALSE);
+		(void) sql_error(m, 02, "ALTER USER: local inconsistency, " "your database is damaged, user not found in SQL catalog");
+		return (FALSE);
 	}
 	table_funcs.column_update_value(m->session->tr, users_name, rid, newuser);
 
-	rid = table_funcs.column_find_row(m->session->tr, auths_name,
-			olduser, NULL);
+	rid = table_funcs.column_find_row(m->session->tr, auths_name, olduser, NULL);
 	if (rid == oid_nil) {
-		(void)sql_error(m, 02, "ALTER USER: local inconsistency, "
-				"your database is damaged, auth not found in SQL catalog");
-		return(FALSE);
+		(void) sql_error(m, 02, "ALTER USER: local inconsistency, " "your database is damaged, auth not found in SQL catalog");
+		return (FALSE);
 	}
 	table_funcs.column_update_value(m->session->tr, auths_name, rid, newuser);
 
-	return(TRUE);
+	return (TRUE);
 }
 
-static void*
+static void *
 monet5_schema_user_dependencies(ptr _trans, int schema_id)
 {
 	rids *A, *U;
@@ -414,14 +400,14 @@ monet5_schema_user_dependencies(ptr _trans, int schema_id)
 void
 monet5_user_init(backend_functions *be_funcs)
 {
-	be_funcs->fcuser        = &monet5_create_user;
-	be_funcs->fduser        = &monet5_drop_user;
-	be_funcs->ffuser        = &monet5_find_user;
-	be_funcs->fcrpriv       = &monet5_create_privileges;
-	be_funcs->fshuser       = &monet5_schema_has_user;
-	be_funcs->fauser        = &monet5_alter_user;
-	be_funcs->fruser        = &monet5_rename_user;
-	be_funcs->fschuserdep   = &monet5_schema_user_dependencies;
+	be_funcs->fcuser = &monet5_create_user;
+	be_funcs->fduser = &monet5_drop_user;
+	be_funcs->ffuser = &monet5_find_user;
+	be_funcs->fcrpriv = &monet5_create_privileges;
+	be_funcs->fshuser = &monet5_schema_has_user;
+	be_funcs->fauser = &monet5_alter_user;
+	be_funcs->fruser = &monet5_rename_user;
+	be_funcs->fschuserdep = &monet5_schema_user_dependencies;
 }
 
 str
@@ -439,18 +425,18 @@ monet5_user_get_def_schema(mvc *m, oid user)
 	sql_table *auths = NULL;
 	sql_column *auths_name = NULL;
 
-	void *p=0;
+	void *p = 0;
 
 	str schema = NULL;
 	str username = NULL;
 	str err = NULL;
 
-	if (m->debug&1)
+	if (m->debug &1)
 		fprintf(stderr, "monet5_user_get_def_schema " OIDFMT "\n", user);
 
-	if ((err = AUTHresolveUser(&username, &user)) != MAL_SUCCEED) {
+	if ((err = AUTHresolveUser(&username, &user)) !=MAL_SUCCEED) {
 		GDKfree(err);
-		return(NULL);	/* don't reveal that the user doesn't exist */
+		return (NULL);	/* don't reveal that the user doesn't exist */
 	}
 
 	mvc_trans(m);
@@ -464,7 +450,7 @@ monet5_user_get_def_schema(mvc *m, oid user)
 		p = table_funcs.column_find_value(m->session->tr, users_schema, rid);
 
 	assert(p);
-	schema_id = *(sqlid*)p;
+	schema_id = *(sqlid *) p;
 	_DELETE(p);
 
 	schemas = find_sql_table(sys, "schemas");

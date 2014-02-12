@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2013 MonetDB B.V.
+ * Copyright August 2008-2014 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -47,22 +47,16 @@ generateUUID(void)
 	uuid_unparse(uuid, out);
 #else
 	/* try to do some pseudo interesting stuff, and stash it in the
-	 * format of an UUID to at least return some uniform answer */
+	 * format of a UUID to at least return some uniform answer */
 	char out[37];
-	char *p = out;
 
 	/* generate something like this:
 	 * cefa7a9c-1dd2-11b2-8350-880020adbeef ("%08x-%04x-%04x-%04x-%012x") */
-	p += snprintf(p, 5, "%04x", rand() % 65536);
-	p += snprintf(p, 6, "%04x-", rand() % 65536);
-	p += snprintf(p, 6, "%04x-", rand() % 65536);
-	p += snprintf(p, 6, "%04x-", rand() % 65536);
-	p += snprintf(p, 6, "%04x-", rand() % 65536);
-	p += snprintf(p, 5, "%04x", rand() % 65536);
-	p += snprintf(p, 5, "%04x", rand() % 65536);
-	p += snprintf(p, 5, "%04x", rand() % 65536);
+	snprintf(out, sizeof(out), "%04x%04x-%04x-%04x-%04x-%04x%04x%04x",
+		 rand() % 65536, rand() % 65536,
+		 rand() % 65536, rand() % 65536,
+		 rand() % 65536, rand() % 65536,
+		 rand() % 65536, rand() % 65536);
 #endif
-	return(strdup(out));
+	return strdup(out);
 }
-
-/* vim:set ts=4 sw=4 noexpandtab: */

@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2013 MonetDB B.V.
+ * Copyright August 2008-2014 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -1022,7 +1022,7 @@ strHeap(Heap *d, size_t cap)
 
 	cap = MAX(cap, BATTINY);
 	size = GDK_STRHASHTABLE * sizeof(stridx_t) + MIN(GDK_ELIMLIMIT, cap * GDK_VARALIGN);
-	if (HEAPalloc(d, size, 1) >= 0) {
+	if (HEAPalloc(d, size, 1) == 0) {
 		d->free = GDK_STRHASHTABLE * sizeof(stridx_t);
 		memset(d->base, 0, d->free);
 		d->hashash = 1;	/* new string heaps get the hash value (and length) stored */
@@ -1199,7 +1199,7 @@ strPut(Heap *h, var_t *dst, const char *v)
 			return 0;
 		}
 		HEAPDEBUG fprintf(stderr, "#HEAPextend in strPut %s " SZFMT " " SZFMT "\n", h->filename, h->size, newsize);
-		if (HEAPextend(h, newsize) < 0) {
+		if (HEAPextend(h, newsize, TRUE) < 0) {
 			return 0;
 		}
 #ifndef NDEBUG
@@ -1471,15 +1471,18 @@ strFromStr(const char *src, int *len, char **dst)
 #endif
 
 int
-escapedStrlen(const char *src)
+escapedStrlen(const char *src, const char *sep1, const char *sep2, int quote)
 {
 	int end, sz = 0;
+	size_t sep1len, sep2len;
 
+	sep1len = sep1 ? strlen(sep1) : 0;
+	sep2len = sep2 ? strlen(sep2) : 0;
 	for (end = 0; src[end]; end++)
-		if (src[end] == '\t' ||
-		    src[end] == '\n' ||
-		    src[end] == '\\' ||
-		    src[end] == '"') {
+		if (src[end] == '\\' ||
+		    src[end] == quote ||
+		    (sep1len && strncmp(src + end, sep1, sep1len) == 0) ||
+		    (sep2len && strncmp(src + end, sep2, sep2len) == 0)) {
 			sz += 2;
 #ifndef ASCII_CHR
 		} else if (src[end] == (char) '\302' &&
@@ -1503,36 +1506,50 @@ escapedStrlen(const char *src)
 }
 
 int
-escapedStr(char *dst, const char *src, int dstlen)
+escapedStr(char *dst, const char *src, int dstlen, const char *sep1, const char *sep2, int quote)
 {
 	int cur = 0, l = 0;
+	size_t sep1len, sep2len;
 
+	sep1len = sep1 ? strlen(sep1) : 0;
+	sep2len = sep2 ? strlen(sep2) : 0;
 	for (; src[cur] && l < dstlen; cur++)
-		if (src[cur] == '\t') {
-			dst[l++] = '\\';
-			dst[l++] = 't';
-		} else if (src[cur] == '\n') {
-			dst[l++] = '\\';
-			dst[l++] = 'n';
-		} else if (src[cur] == '\\') {
-			dst[l++] = '\\';
-			dst[l++] = '\\';
-		} else if (src[cur] == '"') {
-			dst[l++] = '\\';
-			dst[l++] = '"';
-		} else if (!printable_chr(src[cur])
+		if (!printable_chr(src[cur])
 #ifndef ASCII_CHR
-			   || (src[cur] == '\302' &&
-			       0200 <= (src[cur + 1] & 0377) &&
-			       ((int) src[cur + 1] & 0377) <= 0237)
-			   || (cur > 0 &&
-			       src[cur - 1] == '\302' &&
-			       0200 <= (src[cur] & 0377) &&
-			       (src[cur] & 0377) <= 0237)
+		    || (src[cur] == '\302' &&
+			0200 <= (src[cur + 1] & 0377) &&
+			((int) src[cur + 1] & 0377) <= 0237)
+		    || (cur > 0 &&
+			src[cur - 1] == '\302' &&
+			0200 <= (src[cur] & 0377) &&
+			(src[cur] & 0377) <= 0237)
 #endif
-		    ) {
-			snprintf(dst + l, dstlen - l, "\\%03o", (unsigned char) src[cur]);
-			l += 4;
+			) {
+			dst[l++] = '\\';
+			switch (src[cur]) {
+			case '\t':
+				dst[l++] = 't';
+				break;
+			case '\n':
+				dst[l++] = 'n';
+				break;
+			case '\r':
+				dst[l++] = 'r';
+				break;
+			case '\f':
+				dst[l++] = 'f';
+				break;
+			default:
+				snprintf(dst + l, dstlen - l, "%03o", (unsigned char) src[cur]);
+				l += 3;
+				break;
+			}
+		} else if (src[cur] == '\\' ||
+			   src[cur] == quote ||
+			   (sep1len && strncmp(src + cur, sep1, sep1len) == 0) ||
+			   (sep2len && strncmp(src + cur, sep2, sep2len) == 0)) {
+			dst[l++] = '\\';
+			dst[l++] = src[cur];
 		} else {
 			dst[l++] = src[cur];
 		}
@@ -1552,9 +1569,9 @@ strToStr(char **dst, int *len, const char *src)
 		strncpy(*dst, "nil", *len);
 		return 3;
 	} else {
-		int sz = escapedStrlen(src);
+		int sz = escapedStrlen(src, NULL, NULL, '"');
 		atommem(char, sz + 3);
-		l = escapedStr((*dst) + 1, src, *len - 1);
+		l = escapedStr((*dst) + 1, src, *len - 1, NULL, NULL, '"');
 		l++;
 		(*dst)[0] = (*dst)[l++] = '"';
 		(*dst)[l] = 0;

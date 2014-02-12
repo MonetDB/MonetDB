@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2013 MonetDB B.V.
+ * Copyright August 2008-2014 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -134,7 +134,98 @@ static struct types {
 	const int interval_precision;
 	const char **tuple;
 } types[] = {
-	/* this table is sorted on the value of data_type */
+	/* this table is sorted on the value of data_type and then on
+	 * how "close" the type maps to the corresponding ODBC SQL
+	 * type (i.e. in the order SQLGetTypeInfo wants it) */
+	/* SQL_GUID */
+	{
+		"character large object", /* type_name */
+		SQL_WLONGVARCHAR,      /* data_type */
+		1000000,	       /* column_size */
+		"'",		       /* literal_prefix */
+		"'",		       /* literal_suffix */
+		NULL,		       /* create_params */
+		SQL_NULLABLE,	       /* nullable */
+		SQL_TRUE,	       /* case_sensitive */
+		SQL_SEARCHABLE,	       /* searchable */
+		-1,		       /* unsigned_attribute */
+		SQL_FALSE,	       /* fixed_prec_scale */
+		SQL_FALSE,	       /* auto_unique_value */
+		NULL,		       /* local_type_name */
+		-1,		       /* minimum_scale */
+		-1,		       /* maximum_scale */
+		SQL_WLONGVARCHAR,      /* sql_data_type */
+		-1,		       /* sql_datetime_sub */
+		-1,		       /* num_prec_radix */
+		-1,		       /* interval_precision */
+		NULL		       /* tuple */
+	},
+	{
+		"varchar",	       /* type_name */
+		SQL_WVARCHAR,	       /* data_type */
+		1000000,	       /* column_size */
+		"'",		       /* literal_prefix */
+		"'",		       /* literal_suffix */
+		"length",	       /* create_params */
+		SQL_NULLABLE,	       /* nullable */
+		SQL_TRUE,	       /* case_sensitive */
+		SQL_SEARCHABLE,	       /* searchable */
+		-1,		       /* unsigned_attribute */
+		SQL_FALSE,	       /* fixed_prec_scale */
+		-1,		       /* auto_unique_value */
+		NULL,		       /* local_type_name */
+		-1,		       /* minimum_scale */
+		-1,		       /* maximum_scale */
+		SQL_WVARCHAR,	       /* sql_data_type */
+		-1,		       /* sql_datetime_sub */
+		-1,		       /* num_prec_radix */
+		-1,		       /* interval_precision */
+		NULL		       /* tuple */
+	},
+	{
+		"character",	       /* type_name */
+		SQL_WCHAR,	       /* data_type */
+		1000000,	       /* column_size */
+		"'",		       /* literal_prefix */
+		"'",		       /* literal_suffix */
+		"length",	       /* create_params */
+		SQL_NULLABLE,	       /* nullable */
+		SQL_TRUE,	       /* case_sensitive */
+		SQL_SEARCHABLE,	       /* searchable */
+		-1,		       /* unsigned_attribute */
+		SQL_FALSE,	       /* fixed_prec_scale */
+		SQL_FALSE,	       /* auto_unique_value */
+		NULL,		       /* local_type_name */
+		-1,		       /* minimum_scale */
+		-1,		       /* maximum_scale */
+		SQL_WCHAR,	       /* sql_data_type */
+		-1,		       /* sql_datetime_sub */
+		-1,		       /* num_prec_radix */
+		-1,		       /* interval_precision */
+		NULL		       /* tuple */
+	},
+	{
+		"char",		       /* type_name */
+		SQL_WCHAR,	       /* data_type */
+		1000000,	       /* column_size */
+		"'",		       /* literal_prefix */
+		"'",		       /* literal_suffix */
+		"length",	       /* create_params */
+		SQL_NULLABLE,	       /* nullable */
+		SQL_TRUE,	       /* case_sensitive */
+		SQL_SEARCHABLE,	       /* searchable */
+		-1,		       /* unsigned_attribute */
+		SQL_FALSE,	       /* fixed_prec_scale */
+		SQL_FALSE,	       /* auto_unique_value */
+		NULL,		       /* local_type_name */
+		-1,		       /* minimum_scale */
+		-1,		       /* maximum_scale */
+		SQL_WCHAR,	       /* sql_data_type */
+		-1,		       /* sql_datetime_sub */
+		-1,		       /* num_prec_radix */
+		-1,		       /* interval_precision */
+		NULL		       /* tuple */
+	},
 	{
 		"boolean",	       /* type_name */
 		SQL_BIT,	       /* data_type */
@@ -245,73 +336,7 @@ static struct types {
 		-1,		       /* interval_precision */
 		NULL		       /* tuple */
 	},
-	/* binary */
-	{
-		"character large object", /* type_name */
-		SQL_WLONGVARCHAR,      /* data_type */
-		1000000,	       /* column_size */
-		"'",		       /* literal_prefix */
-		"'",		       /* literal_suffix */
-		NULL,		       /* create_params */
-		SQL_NULLABLE,	       /* nullable */
-		SQL_TRUE,	       /* case_sensitive */
-		SQL_SEARCHABLE,	       /* searchable */
-		-1,		       /* unsigned_attribute */
-		SQL_FALSE,	       /* fixed_prec_scale */
-		SQL_FALSE,	       /* auto_unique_value */
-		NULL,		       /* local_type_name */
-		-1,		       /* minimum_scale */
-		-1,		       /* maximum_scale */
-		SQL_WLONGVARCHAR,      /* sql_data_type */
-		-1,		       /* sql_datetime_sub */
-		-1,		       /* num_prec_radix */
-		-1,		       /* interval_precision */
-		NULL		       /* tuple */
-	},
-	{
-		"character",	       /* type_name */
-		SQL_WCHAR,	       /* data_type */
-		1000000,	       /* column_size */
-		"'",		       /* literal_prefix */
-		"'",		       /* literal_suffix */
-		"length",	       /* create_params */
-		SQL_NULLABLE,	       /* nullable */
-		SQL_TRUE,	       /* case_sensitive */
-		SQL_SEARCHABLE,	       /* searchable */
-		-1,		       /* unsigned_attribute */
-		SQL_FALSE,	       /* fixed_prec_scale */
-		SQL_FALSE,	       /* auto_unique_value */
-		NULL,		       /* local_type_name */
-		-1,		       /* minimum_scale */
-		-1,		       /* maximum_scale */
-		SQL_WCHAR,	       /* sql_data_type */
-		-1,		       /* sql_datetime_sub */
-		-1,		       /* num_prec_radix */
-		-1,		       /* interval_precision */
-		NULL		       /* tuple */
-	},
-	{
-		"char",		       /* type_name */
-		SQL_WCHAR,	       /* data_type */
-		1000000,	       /* column_size */
-		"'",		       /* literal_prefix */
-		"'",		       /* literal_suffix */
-		"length",	       /* create_params */
-		SQL_NULLABLE,	       /* nullable */
-		SQL_TRUE,	       /* case_sensitive */
-		SQL_SEARCHABLE,	       /* searchable */
-		-1,		       /* unsigned_attribute */
-		SQL_FALSE,	       /* fixed_prec_scale */
-		SQL_FALSE,	       /* auto_unique_value */
-		NULL,		       /* local_type_name */
-		-1,		       /* minimum_scale */
-		-1,		       /* maximum_scale */
-		SQL_WCHAR,	       /* sql_data_type */
-		-1,		       /* sql_datetime_sub */
-		-1,		       /* num_prec_radix */
-		-1,		       /* interval_precision */
-		NULL		       /* tuple */
-	},
+	/* SQL_BINARY */
 	{
 		"numeric",	       /* type_name */
 		SQL_NUMERIC,	       /* data_type */
@@ -357,7 +382,7 @@ static struct types {
 		NULL		       /* tuple */
 	},
 	{
-		"int",		       /* type_name */
+		"integer",	       /* type_name */
 		SQL_INTEGER,	       /* data_type */
 		9,		       /* column_size */
 		NULL,		       /* literal_prefix */
@@ -379,7 +404,7 @@ static struct types {
 		NULL		       /* tuple */
 	},
 	{
-		"integer",	       /* type_name */
+		"int",		       /* type_name */
 		SQL_INTEGER,	       /* data_type */
 		9,		       /* column_size */
 		NULL,		       /* literal_prefix */
@@ -507,28 +532,6 @@ static struct types {
 		SQL_DOUBLE,	       /* sql_data_type */
 		-1,		       /* sql_datetime_sub */
 		2,		       /* num_prec_radix */
-		-1,		       /* interval_precision */
-		NULL		       /* tuple */
-	},
-	{
-		"varchar",	       /* type_name */
-		SQL_WVARCHAR,	       /* data_type */
-		1000000,	       /* column_size */
-		"'",		       /* literal_prefix */
-		"'",		       /* literal_suffix */
-		"length",	       /* create_params */
-		SQL_NULLABLE,	       /* nullable */
-		SQL_TRUE,	       /* case_sensitive */
-		SQL_SEARCHABLE,	       /* searchable */
-		-1,		       /* unsigned_attribute */
-		SQL_FALSE,	       /* fixed_prec_scale */
-		-1,		       /* auto_unique_value */
-		NULL,		       /* local_type_name */
-		-1,		       /* minimum_scale */
-		-1,		       /* maximum_scale */
-		SQL_WVARCHAR,	       /* sql_data_type */
-		-1,		       /* sql_datetime_sub */
-		-1,		       /* num_prec_radix */
 		-1,		       /* interval_precision */
 		NULL		       /* tuple */
 	},
@@ -883,7 +886,7 @@ static struct types {
 		-1,		       /* num_prec_radix */
 		10,		       /* interval_precision */
 		NULL		       /* tuple */
-	}
+	},
 };
 
 /* find some info about a type given the concise type */

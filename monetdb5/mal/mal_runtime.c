@@ -2,7 +2,7 @@
  * The contents of this file are subject to the MonetDB Public License
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdbuorg/Legal/MonetDBtxtLicense
+ * http://www.monetdb.org/Legal/MonetDBLicense
  *
  * Software distributed under the License is distributed on an "AS IS"
  * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2013 MonetDB B.V.
+ * Copyright August 2008-2014 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -125,6 +125,32 @@ runtimeProfileFinish(Client cntxt, MalBlkPtr mb)
 		QRYqueue[i].mb =0;
 	}
 
+	qtop = j;
+	MT_lock_unset(&mal_delayLock, "sysmon");
+}
+
+void
+finishSessionProfiler(Client cntxt)
+{
+	int i,j;
+
+	(void) cntxt;
+
+	MT_lock_set(&mal_delayLock, "sysmon");
+	for( i=j=0; i< qtop; i++)
+	if ( QRYqueue[i].cntxt != cntxt)
+		QRYqueue[j++] = QRYqueue[i];
+	else  {
+		//reset entry
+		if (QRYqueue[i].query)
+			GDKfree(QRYqueue[i].query);
+		QRYqueue[i].cntxt = 0;
+		QRYqueue[i].tag = 0;
+		QRYqueue[i].query = 0;
+		QRYqueue[i].status =0;
+		QRYqueue[i].stk =0;
+		QRYqueue[i].mb =0;
+	}
 	qtop = j;
 	MT_lock_unset(&mal_delayLock, "sysmon");
 }

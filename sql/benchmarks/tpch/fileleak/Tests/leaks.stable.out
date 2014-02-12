@@ -11,7 +11,7 @@ stdout of test 'leaks` in directory 'sql/benchmarks/tpch/fileleak` itself:
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Found 3.775 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2013 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://niels.nesco.mine.nu:35740/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-3945/.s.monetdb.35740
@@ -25,22 +25,22 @@ Ready.
 # 16:01:26 >  "/usr/bin/python2" "leaks.SQL.py" "leaks"
 # 16:01:26 >  
 
-(u'l_comment', 0, 0)
-(u'l_commitdate', 0, 0)
-(u'l_discount', 0, 0)
-(u'l_extendedprice', 0, 0)
-(u'l_linenumber', 0, 0)
+(u'l_comment', 65536, 0)
+(u'l_commitdate', 65536, 0)
+(u'l_discount', 65536, 0)
+(u'l_extendedprice', 65536, 0)
+(u'l_linenumber', 65536, 0)
 (u'l_linestatus', 0, 0)
-(u'l_orderkey', 0, 0)
-(u'l_partkey', 0, 0)
-(u'l_quantity', 0, 0)
-(u'l_receiptdate', 0, 0)
+(u'l_orderkey', 65536, 0)
+(u'l_partkey', 65536, 0)
+(u'l_quantity', 65536, 0)
+(u'l_receiptdate', 65536, 0)
 (u'l_returnflag', 0, 0)
-(u'l_shipdate', 0, 0)
+(u'l_shipdate', 65536, 0)
 (u'l_shipinstruct', 0, 0)
 (u'l_shipmode', 0, 0)
-(u'l_suppkey', 0, 0)
-(u'l_tax', 0, 0)
+(u'l_suppkey', 65536, 0)
+(u'l_tax', 65536, 0)
 
 # 16:01:26 >  
 # 16:01:26 >  "Done."

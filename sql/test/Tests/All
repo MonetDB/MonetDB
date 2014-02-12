@@ -1,5 +1,6 @@
-HAVE_GEOM?systemfunctions
-!HAVE_GEOM?systemfunctions_nogeom
+HAVE_GEOM&!HAVE_GSL?systemfunctions
+HAVE_GEOM&HAVE_GSL?systemfunctions_gsl
+!HAVE_GEOM&!HAVE_GSL?systemfunctions_nogeom
 example
 example-queries
 example-drop

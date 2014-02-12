@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2013 MonetDB B.V.
+ * Copyright August 2008-2014 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -26,7 +26,7 @@ op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		  const oid *candend, oid candoff, int nonil, const char *func)
 {
 	BUN nils = 0;
-	BUN i, j, k;
+	BUN i, j, k, loff = 0, roff = 0;
 	const void *nil;
 	int (*atomcmp)(const void *, const void *);
 
@@ -346,6 +346,7 @@ op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(hge, lng, TPE, OP);
 			break;
 		case TYPE_hge:
+		hgehge:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(hge, hge, TPE, OP);
 			else
@@ -553,6 +554,10 @@ op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 			goto intint;
 		if (atomcmp == BATatoms[TYPE_lng].atomCmp)
 			goto lnglng;
+#ifdef HAVE_HGE
+		if (atomcmp == BATatoms[TYPE_hge].atomCmp)
+			goto hgehge;
+#endif
 		if (atomcmp == BATatoms[TYPE_flt].atomCmp)
 			goto fltflt;
 		if (atomcmp == BATatoms[TYPE_dbl].atomCmp)
@@ -560,11 +565,12 @@ op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		nil = ATOMnilptr(tp1);
 		CANDLOOP(dst, k, TPE_nil, 0, start);
 		for (i = start * incr1, j = start * incr2, k = start;
-		     k < end; i += incr1, j += incr2, k++) {
+		     k < end; i += incr1, j += incr2, k++,
+		     loff+= wd1, roff+= wd2) {
 			const void *p1, *p2;
 			CHECKCAND(dst, k, candoff, TPE_nil);
-			p1 = hp1 ? (const void *) (hp1 + VarHeapVal(lft, i, wd1)) : lft;
-			p2 = hp2 ? (const void *) (hp2 + VarHeapVal(rgt, i, wd2)) : rgt;
+			p1 = hp1 ? (const void *) (hp1 + VarHeapVal(lft, i, wd1)) : (const void *) ((const char *) lft + loff);
+			p2 = hp2 ? (const void *) (hp2 + VarHeapVal(rgt, j, wd2)) : (const void *) ((const char *) rgt + roff);
 			if (p1 == NULL || p2 == NULL ||
 			    (*atomcmp)(p1, nil) == 0 ||
 			    (*atomcmp)(p2, nil) == 0) {
@@ -574,10 +580,6 @@ op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				int x = (*atomcmp)(p1, p2);
 				dst[k] = OP(x, 0);
 			}
-			if (hp1 == NULL && incr1)
-				lft = (const void *) ((const char *) lft + wd1);
-			if (hp2 == NULL && incr2)
-				rgt = (const void *) ((const char *) rgt + wd2);
 		}
 		CANDLOOP(dst, k, TPE_nil, end, cnt);
 		break;
@@ -606,7 +608,7 @@ BATcalcop_intern(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 	if (bn == NULL)
 		return NULL;
 
-	dst = (TPE *) Tloc(bn, bn->U->first);
+	dst = (TPE *) Tloc(bn, bn->batFirst);
 
 	nils = op_typeswitchloop(lft, tp1, incr1, hp1, wd1,
 				 rgt, tp2, incr2, hp2, wd2,
@@ -658,10 +660,10 @@ BATcalcop(BAT *b1, BAT *b2, BAT *s)
 		return bn;
 	}
 
-	bn = BATcalcop_intern(b1->T->type == TYPE_void ? (void *) &b1->T->seq : (void *) Tloc(b1, b1->U->first), b1->T->type, 1,
+	bn = BATcalcop_intern(b1->T->type == TYPE_void ? (void *) &b1->T->seq : (void *) Tloc(b1, b1->batFirst), b1->T->type, 1,
 			      b1->T->vheap ? b1->T->vheap->base : NULL,
 			      b1->T->width,
-			      b2->T->type == TYPE_void ? (void *) &b2->T->seq : (void *) Tloc(b2, b2->U->first), b2->T->type, 1,
+			      b2->T->type == TYPE_void ? (void *) &b2->T->seq : (void *) Tloc(b2, b2->batFirst), b2->T->type, 1,
 			      b2->T->vheap ? b2->T->vheap->base : NULL,
 			      b2->T->width,
 			      cnt, start, end, cand, candend, b1->hseqbase,
@@ -685,7 +687,7 @@ BATcalcopcst(BAT *b, const ValRecord *v, BAT *s)
 
 	CANDINIT(b, s, start, end, cnt, cand, candend);
 
-	bn = BATcalcop_intern(Tloc(b, b->U->first), b->T->type, 1,
+	bn = BATcalcop_intern(Tloc(b, b->batFirst), b->T->type, 1,
 			      b->T->vheap ? b->T->vheap->base : NULL,
 			      b->T->width,
 			      VALptr(v), v->vtype, 0,
@@ -713,7 +715,7 @@ BATcalccstop(const ValRecord *v, BAT *b, BAT *s)
 
 	bn = BATcalcop_intern(VALptr(v), v->vtype, 0,
 			      NULL, 0,
-			      Tloc(b, b->U->first), b->T->type, 1,
+			      Tloc(b, b->batFirst), b->T->type, 1,
 			      b->T->vheap ? b->T->vheap->base : NULL,
 			      b->T->width,
 			      cnt, start, end, cand, candend, b->hseqbase,

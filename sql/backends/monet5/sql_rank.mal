@@ -1,0 +1,133 @@
+# The contents of this file are subject to the MonetDB Public License
+# Version 1.1 (the "License"); you may not use this file except in
+# compliance with the License. You may obtain a copy of the License at
+# http://www.monetdb.org/Legal/MonetDBLicense
+#
+# Software distributed under the License is distributed on an "AS IS"
+# basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+# License for the specific language governing rights and limitations
+# under the License.
+#
+# The Original Code is the MonetDB Database System.
+#
+# The Initial Developer of the Original Code is CWI.
+# Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+# Copyright August 2008-2014 MonetDB B.V.
+# All Rights Reserved.
+
+module sql;
+
+command sql.rank_grp(b:bat[:oid,:any_1], gp:bat[:oid,:oid], gpe:bat[:oid,:oid]) :bat[:oid,:int] 
+address sql_rank_grp
+comment "return the ranked groups";
+
+command sql.rank(b:bat[:oid,:any_1]) :bat[:oid,:int] 
+address sql_rank
+comment "return the rank bat";
+
+command sql.dense_rank_grp(b:bat[:oid,:any_1], gp:bat[:oid,:oid], gpe:bat[:oid,:oid]) :bat[:oid,:int] 
+address sql_dense_rank_grp
+comment "return the densely ranked groups";
+
+command sql.dense_rank(b:bat[:oid,:any_1]) :bat[:oid,:int] 
+address sql_dense_rank
+comment "return the densely ranked bat";
+
+command aggr.exist(b:bat[:any_1,:any_2], h:any_1):bit 
+address ALGexist;
+
+function batcalc.mark_grp{inline}( b:bat[:oid,:any_1], ord:bat[:oid,:oid], grp:bat[:oid,:oid], ext:bat[:oid,:oid]) :bat[:oid,:int]; 
+	# order is based on ord
+	og := algebra.leftfetchjoin(ord, grp);
+	x := algebra.mark_grp(og,ext,1:oid);
+	mg := batcalc.int(x);
+
+	# restore the order based on grp 
+	or := bat.reverse(ord);
+	gg := bat.mirror(grp);
+	go := algebra.leftjoin(gg, or);
+	return mark_grp := algebra.leftfetchjoin(go, mg);
+end batcalc.mark_grp;
+
+function batcalc.mark_grp{inline}( b:bat[:oid,:any_1], ord:bat[:oid,:oid], orig:bat[:oid,:any_2]) :bat[:oid,:int]; 
+	x := algebra.markT(b,1:oid);
+	mg := batcalc.int(x);
+
+	# restore the order based on grp 
+	or := bat.reverse(ord);
+	gg := bat.mirror(orig);
+	go := algebra.leftjoin(gg, or);
+	return mark_grp := algebra.leftfetchjoin(go, mg);
+end batcalc.mark_grp;
+
+function batcalc.mark_grp{inline}( b:bat[:oid,:any_1] ) :bat[:oid,:int]; 
+	x := algebra.markT(b,1:oid);
+	return mark_grp:= batcalc.int(x);
+end batcalc.mark_grp;
+
+function batcalc.rank_grp{inline}( b:bat[:oid,:any_1], ord:bat[:oid,:oid], grp:bat[:oid,:oid], ext:bat[:oid,:oid]) :bat[:oid,:int]; 
+	# order is based on ord
+	og := algebra.leftfetchjoin(ord, grp);
+	rg := sql.rank_grp(b, og, ext);
+
+	# restore the order based on grp 
+	or := bat.reverse(ord);
+	gg := bat.mirror(grp);
+	go := algebra.leftjoin(gg, or);
+	return rank_grp := algebra.leftfetchjoin(go, rg);
+end batcalc.rank_grp;
+
+function batcalc.rank_grp{inline}( b:bat[:oid,:any_1], ord:bat[:oid,:oid], orig:bat[:oid,:any_2]) :bat[:oid,:int]; 
+	rg := sql.rank(b);
+
+	# restore the order based on grp 
+	or := bat.reverse(ord);
+	gg := bat.mirror(orig);
+	go := algebra.leftjoin(gg, or);
+	return rank_grp := algebra.leftfetchjoin(go, rg);
+end batcalc.rank_grp;
+
+function batcalc.rank_grp{inline}( b:bat[:oid,:any_1]) :bat[:oid,:int]; 
+	return rank_grp:= sql.rank(b);
+end batcalc.rank_grp;
+
+function batcalc.dense_rank_grp{inline}( b:bat[:oid,:any_1], ord:bat[:oid,:oid], grp:bat[:oid,:oid], ext:bat[:oid,:oid]) :bat[:oid,:int]; 
+	# order is based on ord
+	og := algebra.leftfetchjoin(ord, grp);
+	drg := sql.dense_rank_grp(b, og, ext);
+
+	# restore the order based on grp 
+	or := bat.reverse(ord);
+	gg := bat.mirror(grp);
+	go := algebra.leftjoin(gg, or);
+	return rank_grp := algebra.leftfetchjoin(go, drg);
+end batcalc.dense_rank_grp;
+
+function batcalc.dense_rank_grp{inline}( b:bat[:oid,:any_1], ord:bat[:oid,:oid], orig:bat[:oid,:any_2]) :bat[:oid,:int]; 
+	drg := sql.dense_rank(b);
+
+	# restore the order based on grp 
+	or := bat.reverse(ord);
+	gg := bat.mirror(orig);
+	go := algebra.leftjoin(gg, or);
+	return rank_grp := algebra.leftfetchjoin(go, drg);
+end batcalc.dense_rank_grp;
+
+function batcalc.dense_rank_grp{inline}( b:bat[:oid,:any_1]) :bat[:oid,:int]; 
+	return dense_rank_grp:= sql.dense_rank(b);
+end batcalc.dense_rank_grp;
+
+function sql.subzero_or_one{inline}( b:bat[:oid,:any_1], gp:bat[:oid,:oid], gpe:bat[:oid,:oid], no_nil:bit) :bat[:oid,:any_1];
+	(g,e,h) := group.subgroup(gp);
+	m := aggr.max(h);
+	c0 := calc.isnil(m);
+	c01 := calc.not(c0);
+	c1 := calc.>(m,1:wrd);
+	c11 := calc.and(c01,c1);
+	ms := calc.str(m); 
+	msg := str.+("21000!zero_or_one: cardinality violation (", ms);
+	msg1 := str.+(msg, ">1)");
+	sql.assert(c11, msg1);
+	return zero_or_one := b;
+end sql.subzero_or_one;
+

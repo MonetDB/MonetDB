@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2013 MonetDB B.V.
+ * Copyright August 2008-2014 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -362,6 +362,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		  BAT *b, BAT *g, BAT *e, BAT *h, int subsorted)
 {
 	BAT *gn = NULL, *en = NULL, *hn = NULL;
+	int t;
 	int (*cmp)(const void *, const void *);
 	const oid *grps = NULL;
 	oid *ngrps, ngrp, prev = 0;
@@ -543,6 +544,16 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	BATseqbase(gn, b->hseqbase);
 	if (g)
 		grps = (const oid *) Tloc(g, BUNfirst(g));
+
+	/* figure out if we can use the storage type also for
+	 * comparing values */
+	t = b->ttype;
+	if (t != ATOMstorage(t) &&
+	    ATOMnilptr(ATOMstorage(t)) == ATOMnilptr(t) &&
+	    BATatoms[ATOMstorage(t)].atomCmp == cmp &&
+	    BATatoms[ATOMstorage(t)].atomHash == BATatoms[t].atomHash)
+		t = ATOMstorage(t);
+
 	if (((b->tsorted || b->trevsorted) &&
 	     (g == NULL || g->tsorted || g->trevsorted)) ||
 	    subsorted) {
@@ -566,7 +577,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		if (histo)
 			cnts[0] = 1;
 
-		switch (ATOMstorage(b->ttype)) {
+		switch (t) {
 		case TYPE_bte:
 			GRP_compare_consecutive_values_tpe(bte);
 			break;
@@ -644,7 +655,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		ngrp++;		/* the next group to be assigned */
 		gn->tsorted = 1; /* be optimistic */
 
-		switch (ATOMstorage(b->ttype)) {
+		switch (t) {
 		case TYPE_bte:
 			GRP_subscan_old_groups_tpe(bte);
 			break;
@@ -688,7 +699,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		hs = b->T->hash;
 		gn->tsorted = 1; /* be optimistic */
 
-		switch (ATOMstorage(b->ttype)) {
+		switch (t) {
 		case TYPE_bte:
 			GRP_use_existing_hash_table_tpe(bte);
 			break;
@@ -770,7 +781,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		}
 		gn->tsorted = 1; /* be optimistic */
 
-		switch (ATOMstorage(b->ttype)) {
+		switch (t) {
 		case TYPE_bte:
 			GRP_create_partial_hash_table_tpe(bte);
 			break;

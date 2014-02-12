@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2013 MonetDB B.V.
+ * Copyright August 2008-2014 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -32,7 +32,7 @@
  * @'
  * @' The Initial Developer of the Original Code is CWI.
  * @' Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * @' Copyright August 2008-2013 MonetDB B.V.
+ * @' Copyright August 2008-2014 MonetDB B.V.
  * @' All Rights Reserved.
  *
  * @a M. Ivanova, M. Kersten, N. Nes
@@ -944,8 +944,6 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			throw(MAL,"fits.load", MAL_MALLOC_FAIL);
 		}
 		BATseqbase(tmp, 0);
-		if (rows > (long)REMAP_PAGE_MAXSIZE)
-			BATmmap(tmp, STORE_MMAP, STORE_MMAP, STORE_MMAP, STORE_MMAP, 0);
 		if (mtype != TYPE_str) {
 			fits_read_col(fptr, tpcode[j - 1], j, 1, 1, rows, nilptr, (void *)BUNtloc(bat_iterator(tmp), BUNfirst(tmp)), &anynull, &status);
 			BATsetcount(tmp, rows);

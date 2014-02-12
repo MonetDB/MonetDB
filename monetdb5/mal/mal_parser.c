@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2013 MonetDB B.V.
+ * Copyright August 2008-2014 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -261,6 +261,7 @@ keyphrase2(Client cntxt, str kw)
 	return 0;
 }
 
+#if 0							/* unused */
 static inline int
 keyphrase(Client cntxt, str kw, int length)
 {
@@ -271,6 +272,7 @@ keyphrase(Client cntxt, str kw, int length)
 	}
 	return 0;
 }
+#endif
 
 /*
  * A similar approach is used for string literals.
@@ -1089,18 +1091,20 @@ parseInclude(Client cntxt)
 	if (currChar(cntxt) != ';') {
 		parseError(cntxt, "';' expected\n");
 		skipToEnd(cntxt);
-		return "";
+		return 0;
 	}
 	skipToEnd(cntxt);
 
 	s = loadLibrary(modnme, FALSE);
 	if (s) {
-		mnstr_printf(cntxt->fdout, "#WARNING: %s\n", s);
+		parseError(cntxt, s);
 		GDKfree(s);
+		return 0;
 	}
 	if ((s = malInclude(cntxt, modnme, 0))) {
-		mnstr_printf(cntxt->fdout, "#WARNING: %s\n", s);
+		parseError(cntxt, s);
 		GDKfree(s);
+		return 0;
 	}
 	return "";
 }

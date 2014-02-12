@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2013 MonetDB B.V.
+ * Copyright August 2008-2014 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -50,7 +50,8 @@ SQLParamOptions(SQLHSTMT StatementHandle,
 #endif
 
 	/* use mapping as described in ODBC 3 SDK Help file */
-	rc = SQLSetStmtAttr_(stmt, SQL_ATTR_PARAMSET_SIZE, &RowNumber, 0);
+	rc = SQLSetStmtAttr_(stmt, SQL_ATTR_PARAMSET_SIZE,
+			     (SQLPOINTER) (size_t) RowNumber, 0);
 
 	if (SQL_SUCCEEDED(rc)) {
 		rc = SQLSetStmtAttr_(stmt, SQL_ATTR_PARAMS_PROCESSED_PTR,

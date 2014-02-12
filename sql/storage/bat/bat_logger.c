@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2013 MonetDB B.V.
+ * Copyright August 2008-2014 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -242,11 +242,11 @@ bl_postversion( void *lg)
 }
 
 static int 
-bl_create(char *logdir, int cat_version)
+bl_create(int debug, char *logdir, int cat_version)
 {
 	if (bat_logger)
 		return LOG_ERR;
-	bat_logger = logger_create(0, "sql", logdir, cat_version, bl_preversion, bl_postversion);
+	bat_logger = logger_create(debug, "sql", logdir, cat_version, bl_preversion, bl_postversion);
 	if (bat_logger)
 		return LOG_OK;
 	return LOG_ERR;

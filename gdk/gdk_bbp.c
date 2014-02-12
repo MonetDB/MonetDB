@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2013 MonetDB B.V.
+ * Copyright August 2008-2014 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -494,7 +494,7 @@ fixoidheapcolumn(BAT *b, const char *srcdir, const char *nme,
 		w = b->H->width; /* remember old width */
 		b->H->width = 1;
 		b->H->shift = 0;
-		if (HEAPalloc(&b->H->heap, b->U->capacity, SIZEOF_OID) < 0)
+		if (HEAPalloc(&b->H->heap, b->batCapacity, SIZEOF_OID) < 0)
 			GDKfatal("fixoidheap: allocating new %s heap "
 				 "for BAT %d failed\n", headtail, bid);
 
@@ -503,7 +503,7 @@ fixoidheapcolumn(BAT *b, const char *srcdir, const char *nme,
 		if (b->H->vheap->filename == NULL)
 			GDKfatal("fixoidheap: GDKmalloc failed\n");
 		GDKfilepath(b->H->vheap->filename, NULL, nme, htheap);
-		if (ATOMheap(TYPE_str, b->H->vheap, b->U->capacity))
+		if (ATOMheap(TYPE_str, b->H->vheap, b->batCapacity))
 			GDKfatal("fixoidheap: initializing new string "
 				 "heap for BAT %d failed\n", bid);
 		b->H->vheap->parentid = bid;
@@ -511,7 +511,7 @@ fixoidheapcolumn(BAT *b, const char *srcdir, const char *nme,
 		/* do the conversion */
 		b->H->heap.dirty = TRUE;
 		b->H->vheap->dirty = TRUE;
-		for (i = 0; i < b->U->count; i++) {
+		for (i = 0; i < b->batCount; i++) {
 			/* s = h2.base + VarHeapVal(h1.base, i, w); */
 			switch (w) {
 			case 1:
@@ -557,18 +557,18 @@ fixoidheapcolumn(BAT *b, const char *srcdir, const char *nme,
 		b->H->width = SIZEOF_OID;
 		b->H->shift = 3;
 		assert(b->H->width == (1 << b->H->shift));
-		if (HEAPalloc(&b->H->heap, b->U->capacity, SIZEOF_OID) < 0)
+		if (HEAPalloc(&b->H->heap, b->batCapacity, SIZEOF_OID) < 0)
 			GDKfatal("fixoidheap: allocating new %s heap "
 				 "for BAT %d failed\n", headtail, bid);
 
 		b->H->heap.dirty = TRUE;
-		old = (int *) h1.base + b->U->first;
-		new = (oid *) b->H->heap.base + b->U->first;
+		old = (int *) h1.base + b->batFirst;
+		new = (oid *) b->H->heap.base + b->batFirst;
 		if (b->H->varsized)
-			for (i = 0; i < b->U->count; i++)
+			for (i = 0; i < b->batCount; i++)
 				new[i] = (oid) old[i] << 3;
 		else
-			for (i = 0; i < b->U->count; i++)
+			for (i = 0; i < b->batCount; i++)
 				new[i] = old[i] == int_nil ? oid_nil : (oid) old[i];
 		b->H->heap.free = h1.free << 1;
 		HEAPfree(&h1);
@@ -1430,7 +1430,7 @@ BBPdump(void)
 			  BBP_refs(i),
 			  BBP_lrefs(i),
 			  BBP_status(i),
-			  b->U->count,
+			  b->batCount,
 			  HEAPmemsize(&b->H->heap),
 			  HEAPvmsize(&b->H->heap),
 			  HEAPmemsize(b->H->vheap),
@@ -3169,7 +3169,6 @@ do_backup(const char *srcdir, const char *nme, const char *extbase,
 	  * and a backup already exists in the main backup directory
 	  * (see GDKupgradevarheap), move the file */
 	if (subcommit && file_exists(BAKDIR, nme, extbase)) {
-		assert(h->storage == STORE_MMAP);
 		if (file_move(BAKDIR, SUBDIR, nme, extbase))
 			return -1;
 	} else if (h->storage != STORE_MMAP) {

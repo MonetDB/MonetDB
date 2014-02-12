@@ -1,4 +1,3 @@
-
 declare epsilon double;
 set epsilon=0.00001;
 

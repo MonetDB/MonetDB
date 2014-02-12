@@ -1,4 +1,3 @@
-
 select debug;
 select current_schema;
 select current_user;

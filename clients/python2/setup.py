@@ -14,7 +14,7 @@
 #
 # The Initial Developer of the Original Code is CWI.
 # Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-# Copyright August 2008-2013 MonetDB B.V.
+# Copyright August 2008-2014 MonetDB B.V.
 # All Rights Reserved.
 
 import os
@@ -24,14 +24,14 @@ def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
 setup(name='python-monetdb',
-    version='11.16.0',
+    version='11.17.8',
     description='Native MonetDB client Python API',
     long_description=read('README.rst'),
     author='MonetDB BV',
     author_email='info@monetdb.org',
     url='http://www.monetdb.org/',
     packages=['monetdb', 'monetdb.sql'],
-    download_url='<will be filled in before a release>/python2-monetdb-11.16.0.tar.gz',
+    download_url='<will be filled in before a release>/python2-monetdb-11.17.8.tar.gz',
     classifiers=[
         "Topic :: Database",
         "Topic :: Database :: Database Engines/Servers",

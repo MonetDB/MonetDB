@@ -1,4 +1,3 @@
-
 CREATE function table_id( tname char ) RETURNS INT AS 
 	SELECT id from tables where name = tname;
 

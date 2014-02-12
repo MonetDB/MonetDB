@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2013 MonetDB B.V.
+ * Copyright August 2008-2014 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -841,6 +841,11 @@ GDKssortimpl(void *h, void *t, const void *heap, size_t nitems,
 
 	if (nremaining < 2)
 		goto succeed;
+
+	if (tpe != ATOMstorage(tpe) &&
+	    ATOMnilptr(ATOMstorage(tpe)) == ATOMnilptr(tpe) &&
+	    BATatoms[ATOMstorage(tpe)].atomCmp == ms.compare)
+		tpe = ATOMstorage(tpe);
 
 	/* March over the array once, left to right, finding natural
 	 * runs, and extending short natural runs to minrun

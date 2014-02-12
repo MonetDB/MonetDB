@@ -1,0 +1,66 @@
+# The contents of this file are subject to the MonetDB Public License
+# Version 1.1 (the "License"); you may not use this file except in
+# compliance with the License. You may obtain a copy of the License at
+# http://www.monetdb.org/Legal/MonetDBLicense
+#
+# Software distributed under the License is distributed on an "AS IS"
+# basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+# License for the specific language governing rights and limitations
+# under the License.
+#
+# The Original Code is the MonetDB Database System.
+#
+# The Initial Developer of the Original Code is CWI.
+# Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+# Copyright August 2008-2014 MonetDB B.V.
+# All Rights Reserved.
+
+function aggr.covar(e1:bat[:oid,:flt], e2:bat[:oid,:flt]):flt;
+	e0:bat[:oid,:flt] := batcalc.*(e1,e2);
+	s0:flt := aggr.sum(e0);
+	s1:flt := aggr.sum(e1);
+	s2:flt := aggr.sum(e2);
+	v2:flt := calc.*(s1,s2);
+	c := aggr.count(e1);
+	n:flt := calc.flt(c);
+	v3:flt := calc./(v2,n);
+	v1:flt := calc.-(s0,v3);
+	v:flt := calc./(v1,n);
+	return v;
+end aggr.covar;
+
+function aggr.corr(e1:bat[:oid,:flt], e2:bat[:oid,:flt]):flt;
+	cv:flt := aggr.covar(e1,e2);
+	sd1 := aggr.stdev(e1);
+	sd2 := aggr.stdev(e2);
+	sd := calc.*(sd1,sd2);
+	r := calc./(cv,sd);
+	res := calc.flt(r);
+	return res;
+end aggr.corr;
+
+function aggr.covar(e1:bat[:oid,:flt], e2:bat[:oid,:flt], g:bat[:oid,:oid], e:bat[:oid,:any_2]):bat[:oid,:flt];
+	e0:bat[:oid,:flt] := batcalc.*(e1,e2);
+	s0:bat[:oid,:flt] := aggr.sum(e0,g,e);
+	s1:bat[:oid,:flt] := aggr.sum(e1,g,e);
+	s2:bat[:oid,:flt] := aggr.sum(e2,g,e);
+	v2:bat[:oid,:flt] := batcalc.*(s1,s2);
+	c := aggr.count(e1,g,e);
+	n:bat[:oid,:flt] := batcalc.flt(c);
+	v3:bat[:oid,:flt] := batcalc./(v2,n);
+	v1:bat[:oid,:flt] := batcalc.-(s0,v3);
+	v:bat[:oid,:flt] := batcalc./(v1,n);
+	return v;
+end aggr.covar;
+
+function aggr.corr(e1:bat[:oid,:flt], e2:bat[:oid,:flt], g:bat[:oid,:oid],e:bat[:oid,:any_2]):bat[:oid,:flt];
+	cv:bat[:oid,:flt] := aggr.covar(e1,e2,g,e);
+	sd1 := aggr.stdevp(e1,g,e);
+	sd2 := aggr.stdevp(e2,g,e);
+	sd := batcalc.*(sd1,sd2);
+	sdn := batcalc.==(sd,0:flt);
+	sds := batcalc.ifthenelse(sdn,1:flt,sd);
+	r := batcalc./(cv,sds);
+	res := batcalc.flt(r);
+	return res;
+end aggr.corr;

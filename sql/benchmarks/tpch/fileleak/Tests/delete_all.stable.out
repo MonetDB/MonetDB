@@ -11,7 +11,7 @@ stdout of test 'delete_all` in directory 'sql/benchmarks/tpch/fileleak` itself:
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Found 3.775 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2013 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://niels.nesco.mine.nu:30091/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-24961/.s.monetdb.30091
@@ -30,15 +30,15 @@ Ready.
 (u'l_discount', 524288, 60175)
 (u'l_extendedprice', 524288, 60175)
 (u'l_linenumber', 262144, 60175)
-(u'l_linestatus', 60175, 60175)
+(u'l_linestatus', 65536, 60175)
 (u'l_orderkey', 262144, 60175)
 (u'l_partkey', 262144, 60175)
 (u'l_quantity', 262144, 60175)
 (u'l_receiptdate', 262144, 60175)
-(u'l_returnflag', 60175, 60175)
+(u'l_returnflag', 65536, 60175)
 (u'l_shipdate', 262144, 60175)
-(u'l_shipinstruct', 60175, 60175)
-(u'l_shipmode', 60175, 60175)
+(u'l_shipinstruct', 65536, 60175)
+(u'l_shipmode', 65536, 60175)
 (u'l_suppkey', 262144, 60175)
 (u'l_tax', 524288, 60175)
 [(u'l_comment', 0), (u'l_commitdate', 0), (u'l_discount', 0), (u'l_extendedprice', 0), (u'l_linenumber', 0), (u'l_linestatus', 0), (u'l_orderkey', 0), (u'l_partkey', 0), (u'l_quantity', 0), (u'l_receiptdate', 0), (u'l_returnflag', 0), (u'l_shipdate', 0), (u'l_shipinstruct', 0), (u'l_shipmode', 0), (u'l_suppkey', 0), (u'l_tax', 0)]
@@ -47,15 +47,15 @@ Ready.
 (u'l_discount', 524288, 0)
 (u'l_extendedprice', 524288, 0)
 (u'l_linenumber', 262144, 0)
-(u'l_linestatus', 60175, 0)
+(u'l_linestatus', 65536, 0)
 (u'l_orderkey', 262144, 0)
 (u'l_partkey', 262144, 0)
 (u'l_quantity', 262144, 0)
 (u'l_receiptdate', 262144, 0)
-(u'l_returnflag', 60175, 0)
+(u'l_returnflag', 65536, 0)
 (u'l_shipdate', 262144, 0)
-(u'l_shipinstruct', 60175, 0)
-(u'l_shipmode', 60175, 0)
+(u'l_shipinstruct', 65536, 0)
+(u'l_shipmode', 65536, 0)
 (u'l_suppkey', 262144, 0)
 (u'l_tax', 524288, 0)
 

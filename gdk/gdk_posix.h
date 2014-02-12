@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2013 MonetDB B.V.
+ * Copyright August 2008-2014 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -186,10 +186,6 @@ gdk_export void MT_sleep_ms(unsigned int ms);
 
 /* in order to be sure of madvise and msync modes, pass them to mmap()
  * call as well */
-
-/* a hook function to add any initialization required for the MT_
- * functionality */
-gdk_export char *MT_heapbase;
 
 gdk_export size_t MT_getrss(void);
 

@@ -11,7 +11,7 @@ stdout of test 'date_script_test.Bug-2973` in directory 'sql/test/BugTracker-201
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Found 15.662 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2013 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://rome.ins.cwi.nl:36122/
 # MonetDB/GIS module loaded
@@ -19,12 +19,12 @@ stdout of test 'date_script_test.Bug-2973` in directory 'sql/test/BugTracker-201
 
 Ready.
 
-# 16:56:48 >  
-# 16:56:48 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=LAB03" "--port=39057"
-# 16:56:48 >  
+# 14:12:34 >  
+# 14:12:34 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=rome" "--port=36122"
+# 14:12:34 >  
 
 
-# 16:56:48 >  
-# 16:56:48 >  "Done."
-# 16:56:48 >  
+# 14:12:34 >  
+# 14:12:34 >  "Done."
+# 14:12:34 >  
 

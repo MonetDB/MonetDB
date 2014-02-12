@@ -1,4 +1,3 @@
-
  --show tables like '_t%';
  SELECT * FROM MOA_DD WHERE name='Video' AND type='match';
 

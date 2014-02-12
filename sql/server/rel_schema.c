@@ -13,10 +13,9 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2013 MonetDB B.V.
+ * Copyright August 2008-2014 MonetDB B.V.
  * All Rights Reserved.
  */
-
 
 #include "monetdb_config.h"
 #include "rel_trans.h"
@@ -816,6 +815,8 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, char *sname, char *name, sy
 	if (temp != SQL_DECLARED_TABLE) {
 		if (temp != SQL_PERSIST && tt == tt_table) {
 			s = mvc_bind_schema(sql, "tmp");
+			if (temp == SQL_LOCAL_TEMP && sname && strcmp(sname, s->base.name) != 0)
+				return sql_error(sql, 02, "3F000!CREATE TABLE: local tempory tables should be stored in the '%s' schema", s->base.name);
 		} else if (s == NULL) {
 			s = ss;
 		}
@@ -931,6 +932,10 @@ rel_create_view(mvc *sql, sql_schema *ss, dlist *qname, dlist *column_spec, symb
 		t = mvc_bind_table(sql, s, name);
 		if (!persistent && column_spec) 
 			sq = view_rename_columns( sql, name, sq, column_spec);
+		if (sq->op == op_project && sq->l && sq->exps && sq->card == CARD_AGGR) {
+			exps_setcard(sq->exps, CARD_MULTI);
+			sq->card = CARD_MULTI;
+		}
 		return sq;
 	}
 	return NULL;

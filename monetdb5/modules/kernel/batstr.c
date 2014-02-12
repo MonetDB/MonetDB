@@ -13,9 +13,9 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2013 MonetDB B.V.
+ * Copyright August 2008-2014 MonetDB B.V.
  * All Rights Reserved.
-*/
+ */
 
 /*
  *  M.L. Kersten
@@ -835,7 +835,7 @@ STRbatsubstringcst(bat *ret, bat *bid, int *start, int *length)
 	if( (b= BATdescriptor(*bid)) == NULL)
 		throw(MAL, "batstr.substring",RUNTIME_OBJECT_MISSING);
 	bn= BATnew(TYPE_void, TYPE_str, BATcount(b)/10+5);
-	BATseqbase(bn, 0);
+	BATseqbase(bn, b->hseqbase);
 	bn->hsorted = b->hsorted;
 	bn->hrevsorted = b->hrevsorted;
 	bn->tsorted = b->tsorted;
@@ -891,7 +891,7 @@ str STRbatsubstring(bat *ret, bat *l, bat *r, bat *t)
 		throw(MAL, "batstr.substring", ILLEGAL_ARGUMENT " Requires bats of identical size");
 
 	bn= BATnew(TYPE_void, TYPE_str,BATcount(left));
-	BATseqbase(bn, 0);
+	BATseqbase(bn, left->hseqbase);
 	if( bn == NULL){
 		BBPreleaseref(left->batCacheid);
 		BBPreleaseref(start->batCacheid);
@@ -938,7 +938,7 @@ str STRbatreplace(bat *ret, bat *l, str *pat, str *s2)
 	if( (left= BATdescriptor(*l)) == NULL )
 		throw(MAL, "batstr.replace" , RUNTIME_OBJECT_MISSING);
 	bn= BATnew(TYPE_void, TYPE_str,BATcount(left));
-	BATseqbase(bn, 0);
+	BATseqbase(bn, left->hseqbase);
 	if (bn == NULL){
 		BBPreleaseref(left->batCacheid);
 		throw(MAL, "batstr.replace", MAL_MALLOC_FAIL);

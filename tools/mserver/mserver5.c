@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2013 MonetDB B.V.
+ * Copyright August 2008-2014 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -102,9 +102,6 @@ usage(char *prog, int xit)
 	fprintf(stderr, "     --transactions\n");
 	fprintf(stderr, "     --modules\n");
 	fprintf(stderr, "     --algorithms\n");
-#if 0
-	fprintf(stderr, "     --xproperties\n");
-#endif
 	fprintf(stderr, "     --performance\n");
 	fprintf(stderr, "     --optimizers\n");
 	fprintf(stderr, "     --trace[=<stethoscope flags>]\n");
@@ -152,7 +149,7 @@ monet_hello(void)
 	printf("# Module path:%s\n", GDKgetenv("monet_mod_path"));
 #endif
 	printf("# Copyright (c) 1993-July 2008 CWI.\n");
-	printf("# Copyright (c) August 2008-2013 MonetDB B.V., all rights reserved\n");
+	printf("# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved\n");
 	printf("# Visit http://www.monetdb.org/ for further information\n");
 }
 
@@ -237,9 +234,6 @@ main(int argc, char **av)
 		{ "algorithms", 0, 0, 0 },
 		{ "optimizers", 0, 0, 0 },
 		{ "performance", 0, 0, 0 },
-#if 0
-		{ "xproperties", 0, 0, 0 },
-#endif
 		{ "forcemito", 0, 0, 0 },
 		{ "recycler", 0, 0, 0 },
 		{ "heaps", 0, 0, 0 },
@@ -339,12 +333,6 @@ main(int argc, char **av)
 				grpdebug |= GRPoptimizers;
 				break;
 			}
-#if 0
-			if (strcmp(long_options[option_index].name, "xproperties") == 0) {
-				grpdebug |= GRPxproperties;
-				break;
-			}
-#endif
 			if (strcmp(long_options[option_index].name, "forcemito") == 0) {
 				grpdebug |= GRPforcemito;
 				break;

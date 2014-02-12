@@ -13,9 +13,9 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2013 MonetDB B.V.
+ * Copyright August 2008-2014 MonetDB B.V.
  * All Rights Reserved.
-*/
+ */
 
 /*
  * Author M. Kersten
@@ -37,37 +37,30 @@
 inline
 ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k)
 {
+	ValRecord *v = &stk->stk[pci->argv[k]];
+
 #ifdef STRUCT_ALIGNED
-	return (ptr) & stk->stk[pci->argv[k]].val.ival;
+	return (ptr) &v->val.ival;
 #else
-	int j = 0;
-	ValRecord *v = 0;
-	ptr ret = NULL;
-
-	j = pci->argv[k];
-	v = &stk->stk[j];
-
 	switch (ATOMstorage(v->vtype)) {
-	case TYPE_void: ret = (ptr) & v->val.ival; break;
-	case TYPE_bit: ret = (ptr) & v->val.btval; break;
-	case TYPE_sht: ret = (ptr) & v->val.shval; break;
-	case TYPE_bat: ret = (ptr) & v->val.bval; break;
-	case TYPE_int: ret = (ptr) & v->val.ival; break;
-	case TYPE_wrd: ret = (ptr) & v->val.wval; break;
-	case TYPE_bte: ret = (ptr) & v->val.btval; break;
-	case TYPE_oid: ret = (ptr) & v->val.oval; break;
-	case TYPE_ptr: ret = (ptr) & v->val.pval; break;
-	case TYPE_flt: ret = (ptr) & v->val.fval; break;
-	case TYPE_dbl: ret = (ptr) & v->val.dval; break;
-	case TYPE_lng: ret = (ptr) & v->val.lval; break;
+	case TYPE_void: return (ptr) &v->val.ival;
+	case TYPE_bit:  return (ptr) &v->val.btval;
+	case TYPE_sht:  return (ptr) &v->val.shval;
+	case TYPE_bat:  return (ptr) &v->val.bval;
+	case TYPE_int:  return (ptr) &v->val.ival;
+	case TYPE_wrd:  return (ptr) &v->val.wval;
+	case TYPE_bte:  return (ptr) &v->val.btval;
+	case TYPE_oid:  return (ptr) &v->val.oval;
+	case TYPE_ptr:  return (ptr) &v->val.pval;
+	case TYPE_flt:  return (ptr) &v->val.fval;
+	case TYPE_dbl:  return (ptr) &v->val.dval;
+	case TYPE_lng:  return (ptr) &v->val.lval;
 #ifdef HAVE_HGE
-	case TYPE_hge: ret = (ptr) & v->val.hval; break;
+	case TYPE_hge:  return (ptr) &v->val.hval;
 #endif
-	case TYPE_str: ret = (ptr) & v->val.sval; break;
-	default:
-		ret = (ptr) & v->val.pval;
+	case TYPE_str:  return (ptr) &v->val.sval;
+	default:        return (ptr) &v->val.pval;
 	}
-	return ret;
 #endif
 }
 
@@ -521,7 +514,17 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 		throw(MAL, "mal.interpreter", MAL_STACK_FAIL);
 
 	/* prepare extended backup and garbage structures */
-	if ( mb->maxarg > 16 ){
+	if (startpc+1 == stoppc) {
+		pci = getInstrPtr(mb, startpc);
+		if (pci->argc > 16) {
+			backup = GDKzalloc(pci->argc * sizeof(ValRecord));
+			garbage = (int*)GDKzalloc(pci->argc * sizeof(int));
+		} else {
+			backup = backups;
+			garbage = garbages;
+			memset((char*) garbages, 0, 16 * sizeof(int));
+		}
+	} else if ( mb->maxarg > 16 ){
 		backup = GDKzalloc(mb->maxarg * sizeof(ValRecord));
 		garbage = (int*)GDKzalloc(mb->maxarg * sizeof(int));
 	} else {
@@ -796,6 +799,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 
 				/* general garbage collection */
 				if (ret == MAL_SUCCEED && garbageControl(pci)) {
+					lng u0 = GDKusec(), u1;
 					for (i = 0; i < pci->argc; i++) {
 						int a = getArg(pci, i);
 
@@ -830,6 +834,9 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 							}
 						}
 					}
+					u1 = GDKusec();
+					if (u1 - u0 > 100)
+						profilerHeartbeatEvent("gcollect", u1 - u0);
 				}
 			}
 

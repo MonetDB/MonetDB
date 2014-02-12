@@ -1,0 +1,40 @@
+# The contents of this file are subject to the MonetDB Public License
+# Version 1.1 (the "License"); you may not use this file except in
+# compliance with the License. You may obtain a copy of the License at
+# http://www.monetdb.org/Legal/MonetDBLicense
+#
+# Software distributed under the License is distributed on an "AS IS"
+# basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+# License for the specific language governing rights and limitations
+# under the License.
+#
+# The Original Code is the MonetDB Database System.
+#
+# The Initial Developer of the Original Code is CWI.
+# Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+# Copyright August 2008-2014 MonetDB B.V.
+# All Rights Reserved.
+
+function sql_environment{inline}()(name:bat[:oid,:str],value:bat[:oid,:str]);
+	(name,value):= inspect.getEnvironment();
+	return (name,value) := (name,value);
+end sql_environment;
+
+function bbp{inline}()( id:bat[:oid,:int], name:bat[:oid,:str], htype:bat[:oid,:str], ttype:bat[:oid,:str], count:bat[:oid,:lng], refcnt:bat[:oid,:int], lrefcnt:bat[:oid,:int], location:bat[:oid,:str], heat:bat[:oid,:int], dirty:bat[:oid,:str], status:bat[:oid,:str], kind:bat[:oid,:str]);
+
+	(ns,iht,itt,icnt,irefcnt,ilrefcnt,ilocation,iheat,idirty,istatus,ikind) := bbp.get();
+	ri := algebra.markT(ns, 0:oid);
+	i := bat.reverse(ri);
+	n := algebra.markH(ns, 0:oid);
+	ht := algebra.markH(iht, 0:oid);
+	tt := algebra.markH(itt, 0:oid);
+	cnt := algebra.markH(icnt, 0:oid);
+	refcnt := algebra.markH(irefcnt, 0:oid);
+	lrefcnt := algebra.markH(ilrefcnt, 0:oid);
+	location := algebra.markH(ilocation, 0:oid);
+	heat := algebra.markH(iheat, 0:oid);
+	dirty := algebra.markH(idirty, 0:oid);
+	status := algebra.markH(istatus, 0:oid);
+	kind := algebra.markH(ikind, 0:oid);
+	return (i,n,ht,tt,cnt,refcnt,lrefcnt,location,heat,dirty,status,kind);
+end bbp;
