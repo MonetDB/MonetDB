@@ -268,47 +268,6 @@ exit MALException:str ;
     v45 := algebra.slice(b,v43,v44);
     v46 := io.print(v45);
 #b.select(int(nil),int(nil)).print; 
-## A 2-dimensional cut 
-    v47 := algebra.fragment(b,1@0,5@0,"fox","quick");
-    bns := v47;
-    v48 := io.print(bns);
-#bns:=b.fragment("fox","quick",1,5);bns.print; 
-    v49 := calc.str(nil);
-    v50 := algebra.fragment(b,1@0,5@0,"fox",v49);
-    v51 := io.print(v50);
-#b.fragment("fox",str(nil),1,5).print; 
-    v52 := calc.str(nil);
-    v53 := calc.oid(nil);
-    v54 := calc.oid(nil);
-    v55 := algebra.fragment(b,v53,v54,"fox",v52);
-    v56 := io.print(v55);
-#b.fragment("fox",str(nil),int(nil),int(nil)).print; 
-    v57 := calc.str(nil);
-    v58 := calc.oid(nil);
-    v59 := calc.oid(nil);
-    v60 := algebra.fragment(b,v58,v59,v57,"f");
-    v61 := io.print(v60);
-#b.fragment(str(nil),"f",int(nil),int(nil)).print; 
-    v62 := bat.reverse(b);
-    v63 := calc.oid(nil);
-    v64 := calc.oid(nil);
-    v65 := calc.str(nil);
-    v66 := algebra.fragment(b,v63,v64,v65,"f");
-    v67 := io.print(v66);
-#b.reverse.fragment(int(nil),int(nil),str(nil),"f").print; 
-    brr := bat.reverse(br);
-    bnsr := bat.reverse(bns);
-    v69 := algebra.join(brr,bnsr);
-    bnj := v69;
-#bnj:= b.join(bns.reverse); 
-    v70 := io.print(bnj);
-#bnj.print; 
-    v71 := bat.reverse(bnj);
-    v72 := algebra.semijoin(brr,v71);
-    bnk := v72;
-#bnk:= b.semijoin(bnj.reverse); 
-    v73 := io.print(bnk);
-#bnk.print; 
 ## testing the algebra.like command 
     v75 := algebra.like(b,"ox");
     v76 := io.print(v75);
@@ -390,78 +349,20 @@ end main;
 [ 12@0,	  "fox"		  ]
 [ 13@0,	  "the"		  ]
 [ 14@0,	  "."		  ]
-#-------------------------#
+#--------------------------#
 # h		t	  # name
-# str		oid	  # type
-#-------------------------#
-[ 1@0,	  "quick"	  ]
-[ 4@0,	  "jumps"	  ]
-[ 5@0,	  "over"	  ]
-#-------------------------#
-# h		t	  # name
-# str		oid	  # type
-#-------------------------#
-[ 1@0,	  "quick"	  ]
-[ 4@0,	  "jumps"	  ]
-[ 5@0,	  "over"	  ]
-#-------------------------#
-# h		t	  # name
-# str		oid	  # type
-#-------------------------#
-[ 1@0,	  "quick"	  ]
-[ 4@0,	  "jumps"	  ]
-[ 5@0,	  "over"	  ]
-[ 6@0,	  "lazy"	  ]
+# oid	str  # type
+#--------------------------#
 [ 12@0,	  "fox"		  ]
-[ 13@0,	  "the"		  ]
-#-------------------------#
-# h		t	  # name
-# str		oid	  # type
-#-------------------------#
-[ 10@0,	  ""		  ]
-[ 2@0,	  "brown"	  ]
-[ 11@0,	  nil		  ]
-[ 7@0,	  "dog"		  ]
-[ 8@0,	  nil		  ]
-[ 14@0,	  "."		  ]
-#-------------------------#
+#--------------------------#
 # h	t		  # name
 # oid	str		  # type
-#-------------------------#
-[ 10@0,	  ""		  ]
-[ 2@0,	  "brown"	  ]
-[ 11@0,	  nil		  ]
-[ 7@0,	  "dog"		  ]
-[ 8@0,	  nil		  ]
-[ 14@0,	  "."		  ]
-#-----------------#
-# h	t	  # name
-# oid	oid	  # type
-#-----------------#
-[ 1@0,	  1@0	  ]
-[ 4@0,	  4@0	  ]
-[ 5@0,	  5@0	  ]
-#-------------------------#
-# h		tmp_14	  # name
-# str		int	  # type
-#-------------------------#
-[ 1@0,	  "quick"	  ]
-[ 4@0,	  "jumps"	  ]
-[ 5@0,	  "over"	  ]
-#-----------------#
-# h	tmp_15	  # name
-# int	str	  # type
-#-----------------#
+#--------------------------#
 [ 12@0,	  "fox"	  ]
-#-----------------#
-# h	tmp_16	  # name
-# int	str	  # type
-#-----------------#
-[ 12@0,	  "fox"	  ]
-#-----------------#
-# h	tmp_17	  # name
-# int	str	  # type
-#-----------------#
+#--------------------------#
+# h	t  # name
+# oid	str  # type
+#--------------------------#
 [ 12@0,	  "fox"	  ]
 #-----------------#
 # h	tmp_18	  # name

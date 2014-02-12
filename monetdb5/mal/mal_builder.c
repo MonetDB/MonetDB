@@ -364,7 +364,7 @@ pushEmptyBAT(MalBlkPtr mb, InstrPtr q, int tpe)
 	getModuleId(q) = getName("bat",3);
 	getFunctionId(q) = getName("new",3);
 
-	q = pushArgument(mb, q, newTypeVariable(mb,getHeadType(tpe)));
+	q = pushArgument(mb, q, newTypeVariable(mb,TYPE_void));
 	q = pushArgument(mb, q, newTypeVariable(mb,getTailType(tpe)));
 	q = pushZero(mb,q,TYPE_lng);
 	return q;
