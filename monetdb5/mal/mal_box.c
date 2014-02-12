@@ -708,12 +708,10 @@ saveBox(Box box, int flag)
 			BAT *b = (BAT *) BATdescriptor(v->val.bval);
 			if (b) {
 				if (b->batPersistence == PERSISTENT){
-					str ht = getTypeName(getHeadType(getVarType(box->sym,i)));
 					str tt = getTypeName(getTailType(getVarType(box->sym,i)));
-					mnstr_printf(f, "%s:bat[:%s,:%s]:= %s.bind(%d);\n",
-						getVarName(box->sym, i),  ht, tt,
+					mnstr_printf(f, "%s:bat[:void,:%s]:= %s.bind(%d);\n",
+						getVarName(box->sym, i),  tt,
 						box->name, b->batCacheid);
-					GDKfree(ht);
 					GDKfree(tt);
 					BATsave(b);
 				}
