@@ -65,10 +65,10 @@ getTypeName(malType tpe)
 		k = getTailIndex(tpe);
 		if (k)
 			snprintf(s, l, ":any%c%d]",TMPMARKER,  k);
-		else if (getTailType(tpe) == TYPE_any)
+		else if (getColType(tpe) == TYPE_any)
 			snprintf(s, l, ":any]");
 		else
-			snprintf(s, l, ":%s]", ATOMname(getTailType(tpe)));
+			snprintf(s, l, ":%s]", ATOMname(getColType(tpe)));
 		return GDKstrdup(buf);
 	}
 	if (isAnyExpression(tpe)) {

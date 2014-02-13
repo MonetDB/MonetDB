@@ -708,7 +708,7 @@ saveBox(Box box, int flag)
 			BAT *b = (BAT *) BATdescriptor(v->val.bval);
 			if (b) {
 				if (b->batPersistence == PERSISTENT){
-					str tt = getTypeName(getTailType(getVarType(box->sym,i)));
+					str tt = getTypeName(getColType(getVarType(box->sym,i)));
 					mnstr_printf(f, "%s:bat[:void,:%s]:= %s.bind(%d);\n",
 						getVarName(box->sym, i),  tt,
 						box->name, b->batCacheid);

@@ -1076,21 +1076,21 @@ getTraceType(str nme)
 	if (initTrace())
 		return TYPE_any;
 	if (strcmp(nme, "time") == 0)
-		return newBatType(TYPE_void, TYPE_str);
+		return newColType( TYPE_str);
 	if (strcmp(nme, "ticks") == 0)
-		return newBatType(TYPE_void, TYPE_lng);
+		return newColType( TYPE_lng);
 	if (strcmp(nme, "pc") == 0)
-		return newBatType(TYPE_void, TYPE_str);
+		return newColType( TYPE_str);
 	if (strcmp(nme, "thread") == 0)
-		return newBatType(TYPE_void, TYPE_int);
+		return newColType( TYPE_int);
 	if (strcmp(nme, "stmt") == 0)
-		return newBatType(TYPE_void, TYPE_str);
+		return newColType( TYPE_str);
 	if (strcmp(nme, "rbytes") == 0)
-		return newBatType(TYPE_void, TYPE_lng);
+		return newColType( TYPE_lng);
 	if (strcmp(nme, "wbytes") == 0)
-		return newBatType(TYPE_void, TYPE_lng);
+		return newColType( TYPE_lng);
 	if (strcmp(nme, "reads") == 0 || strcmp(nme, "writes") == 0)
-		return newBatType(TYPE_void, TYPE_lng);
+		return newColType( TYPE_lng);
 	return TYPE_any;
 }
 

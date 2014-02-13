@@ -440,7 +440,7 @@ static void replaceTypeVar(MalBlkPtr mb, InstrPtr p, int v, malType t){
 			int head,tail;
 			int hx,tx;
 			head = getHeadType(x);
-			tail = getTailType(x);
+			tail = getColType(x);
 			hx = getHeadIndex(x);
 			tx = getTailIndex(x);
 			if(v && hx == v && head == TYPE_any){
@@ -551,7 +551,7 @@ cloneFunction(stream *out, Module scope, Symbol proc, MalBlkPtr mb, InstrPtr p)
 				if (getHeadIndex(v))
 					replaceTypeVar(new->def, pp, getHeadIndex(v), getHeadType(t));
 				if (getTailIndex(v))
-					replaceTypeVar(new->def, pp, getTailIndex(v), getTailType(t));
+					replaceTypeVar(new->def, pp, getTailIndex(v), getColType(t));
 			} else
 				replaceTypeVar(new->def, pp, getTailIndex(v), t);
 		}

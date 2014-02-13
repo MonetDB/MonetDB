@@ -23,7 +23,6 @@
 
 /* #define DEBUG_MAL_TYPE 1 */
 
-
 typedef int malType;
 
 #define malVARG " malVARG"
@@ -31,7 +30,6 @@ typedef int malType;
 #define REFMARKER 'X'
 
 #define newBatType(H,T)  (1<<16 | (((H & 0377) <<8) | (T & 0377) ))
-#define newColType(T)  (1<<25 | (((TYPE_void & 0377) <<8) | (T & 0377) ))
 #define getHeadType(X)  ((X>>8) & 0377 )
 #define getTailType(X)  ((X) & 0377 )
 #define isaBatType(X)   ((1<<16) & (X) && (X)!= TYPE_any)
@@ -44,8 +42,17 @@ typedef int malType;
 
 #define getHeadIndex(X)  (((X)>>22) & 017)
 #define getTailIndex(X)  (((X)>>18) & 017)
+
+/* introduce gradually the column type macros, sharing the
+ * representation with BAT type
+ */
+#define newColType(T)  (1<<16 | (T & 0377) )
+#define getColType(X)  ((X) & 0377 )
+#define isaColType(X)   ((1<<16) & (X) && (X)!= TYPE_any)
+#define setAnyColIndex(X,I) X |= ((I & 017)<<18);
+#define getColIndex(X)  (((X)>>18) & 017)
+
 /*
- * @-
  * The symbol/instruction kinds are introduced here instead of reusing the defines
  * derived from the parser to avoid a loop in the define-structure.
  */
