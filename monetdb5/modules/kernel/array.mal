@@ -53,7 +53,7 @@ address ARRAYgridBATshift_lng
 comment  "Fills an index BAT, (grpcount,grpsize,clustersize,offset)
 and shift all elemenets with a factor s";
 
-command product(b:bat[:any_3,:any_1],c:bat[:any_4,:any_2]):bat[:any_1,:any_2]
+command product(b:bat[:oid,:any_1],c:bat[:oid,:any_2])(:bat[:oid,:any_1], c:bat[:oid,:any_2])
 address ARRAYproduct
 comment "Produce an array product";
 

@@ -35,7 +35,7 @@
 #define array_export extern
 #endif
 
-array_export str ARRAYproduct(int *ret, int *bid, int *rid);
+array_export str ARRAYproduct(int *ret, int *ret2, int *bid, int *rid);
 array_export str ARRAYproject(int *ret, int *bid, int *cst);
 
 array_export str ARRAYgrid_int(int *ret, int *groups, int *groupsize, int *clustersize, int *offset);
