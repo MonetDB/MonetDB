@@ -1842,10 +1842,7 @@ bam_loader_repos(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
     }
     else
     {
-        _threads_data d = {
-            .max_nr_threads = nr_threads,
-            .thread_available = (bit *)GDKmalloc(nr_threads * sizeof(bit))
-        };
+        _threads_data d;
         pthread_t *threads = (pthread_t *)GDKzalloc(nr_threads * sizeof(pthread_t));
         _reader_thread_data *data = (_reader_thread_data *)GDKmalloc(nr_threads * sizeof(_reader_thread_data));
         
@@ -1855,6 +1852,7 @@ bam_loader_repos(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
         void **ret = GDKmalloc(MIN(nr_threads, nr_file_paths) * sizeof(str));
         
         int i;
+
         
         if(threads == NULL || d.thread_available == NULL || data == NULL || ret == NULL)
             throw(MAL, "bam_loader_repos", MAL_MALLOC_FAIL);
@@ -1862,6 +1860,8 @@ bam_loader_repos(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
         if(pthread_mutex_init(&current_file_lock, NULL) != 0 || pthread_mutex_init(&client_lock, NULL) != 0 || pthread_mutex_init(&d.threads_data_lock, NULL) != 0)
             throw(MAL, "bam_loader_repos", "Error on initializing mutex\n");
             
+        d.max_nr_threads = nr_threads;
+        d.thread_available = (bit *)GDKmalloc(nr_threads * sizeof(bit));
         for(i=0; i<nr_threads; ++i)
             d.thread_available[i] = TRUE;
             

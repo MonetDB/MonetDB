@@ -2311,6 +2311,45 @@ AC_SUBST(MSEED_CFLAGS, $MSEED_CFLAGS)
 AC_SUBST(MSEED_LIBS, $MSEED_LIBS)
 AM_CONDITIONAL(HAVE_MSEED, test x"$have_mseed" != xno)
 
+# samtools, only used by sql
+have_samtools="auto"
+AC_ARG_WITH(samtools,
+    AS_HELP_STRING([--with-samtools=DIR],[samtools (providing bam library) are installed in DIR]),
+    [have_samtools="$withval"], [have_samtools="auto"])
+if test "x$have_samtools" != xno; then
+
+	case "$have_samtools" in
+	auto|yes)
+	    ;;
+	*)
+	    SAMTOOLS_CFLAGS="-I$have_samtools/include"
+	    SAMTOOLS_LIBS="-L$have_samtools/lib -lbam"
+	    ;;
+	esac
+
+	save_CPPFLAGS="$CPPFLAGS"
+	save_LDFLAGS="$LDFLAGS"
+	CPPFLAGS="$CPPFLAGS $SAMTOOLS_CFLAGS"
+	LDFLAGS="$LDFLAGS $SAMTOOLS_LIBS"
+	AC_CHECK_HEADER(bam.h,
+		AC_CHECK_HEADER(bgzf.h,
+			AC_CHECK_LIB(bam, bam_header_read,
+				AC_DEFINE(HAVE_SAMTOOLS, 1, [Define if you have the samtools (providing the bam library)]),
+				[ if test "x$have_samtoouls" != xauto; then AC_MSG_ERROR([-lbam library not found]); fi; have_samtools=no ],
+				[-lpthread -lz]),
+			[ if test "x$have_samtools" != xauto; then AC_MSG_ERROR([bgzf.h header not found]); fi; have_samtools=no ]),
+		[ if test "x$have_samtools" != xauto; then AC_MSG_ERROR([bam.h header not found]); fi; have_samtools=no ])
+	LDFLAGS="$save_LDFLAGS"
+	CPPFLAGS="$save_CPPFLAGS"
+  if test "x$have_samtools" = "xyes" -o "x$have_samtools" = "xauto"; then
+	    SAMTOOLS_CFLAGS=
+	    SAMTOOLS_LIBS="-lbam"
+  fi
+fi
+AC_SUBST(SAMTOOLS_CFLAGS, $SAMTOOLS_CFLAGS)
+AC_SUBST(SAMTOOLS_LIBS, $SAMTOOLS_LIBS)
+AM_CONDITIONAL(HAVE_SAMTOOLS, test x"$have_samtools" != xno)
+
 # geos, only used in geom module
 org_have_geos=auto
 have_geos=$org_have_geos
