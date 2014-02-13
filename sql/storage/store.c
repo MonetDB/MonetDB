@@ -1817,6 +1817,8 @@ sql_trans_copy_idx( sql_trans *tr, sql_table *t, sql_idx *i )
 
 		table_funcs.table_insert(tr, sysic, &ni->base.id, ic->c->base.name, &nr);
 		sysic->base.wtime = sysic->s->base.wtime = tr->wtime = tr->wstime;
+
+		sql_trans_create_dependency(tr, ic->c->base.id, i->base.id, INDEX_DEPENDENCY);
 	}
 	list_append(t->s->idxs, ni);
 	cs_add(&t->idxs, ni, TR_NEW);
@@ -4617,8 +4619,12 @@ void
 sql_trans_drop_idx(sql_trans *tr, sql_schema *s, int id, int drop_action)
 {
 	node *n = list_find_base_id(s->idxs, id);
-	sql_idx *i = n->data;
-	
+	sql_idx *i;
+       
+	if (!n) /* allready dropped */
+		return;
+
+	i = n->data;
 	if (drop_action == DROP_CASCADE_START || drop_action == DROP_CASCADE) {
 		int *local_id = NEW(int);
 

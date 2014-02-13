@@ -740,14 +740,7 @@ typedef struct {
 	Heap *heap;		/* heap where the hash is stored */
 } Hash;
 
-typedef struct {
-	bte bits;        /* how many bits in imprints */
-	Heap *bins;      /* ranges of bins */
-	Heap *imps;      /* heap of imprints */
-	BUN impcnt;      /* counter for imprints*/
-	Heap *dict;      /* cache dictionary for compressing imprints */
-	BUN dictcnt;     /* counter for cache dictionary */
-} Imprints;
+typedef struct Imprints Imprints;
 
 
 /*
@@ -935,11 +928,7 @@ typedef struct {
 	BUN capacity;		/* tuple capacity */
 } BATrec;
 
-typedef struct PROPrec {
-	int id;
-	ValRecord v;
-	struct PROPrec *next;	/* simple chain of properties */
-} PROPrec;
+typedef struct PROPrec PROPrec;
 
 /* see also comment near BATassertProps() for more information about
  * the properties */
@@ -996,17 +985,8 @@ typedef struct BATiter {
 	oid hvid, tvid;
 } BATiter;
 
-/*
- * The different parts of which a BAT consists are physically stored
- * next to each other in the BATstore type.
- */
-typedef struct BATstore {
-	BAT B;			/* storage for BAT descriptor */
-	BAT BM;			/* mirror (reverse) BAT */
-	COLrec H;		/* storage for head column */
-	COLrec T;		/* storage for tail column */
-	BATrec S;		/* the BAT properties */
-} BATstore;
+typedef struct BATstore BATstore;
+#define BATSTORESIZE	(2 * (sizeof(BAT) + sizeof(COLrec)) + sizeof(BATrec))
 
 typedef int (*GDKfcn) ();
 
@@ -1928,13 +1908,16 @@ gdk_export BBPrec *BBP[N_BBPINIT];
 #define BBPcurstamp()	BBP_curstamp
 #define BBPrefs(i)	(BBPcheck((i),"BBPrefs")?BBP_refs(i):-1)
 #define BBPcache(i)	(BBPcheck((i),"BBPcache")?BBP_cache(i):(BAT*) NULL)
+/* we use ABS(i) instead of -(i) here because of a bug in gcc 4.8.2
+ * (at least) with optimization enabled; it incorrectly complains
+ * about an array bound error in monetdb5/modules/kernel/status.c */
 #define BBPname(i)							\
 	(BBPcheck((i), "BBPname") ?					\
 	 ((i) > 0 ?							\
 	  BBP[(i) >> BBPINITLOG][(i) & (BBPINIT - 1)].logical[0] :	\
-	  (BBP[-(i) >> BBPINITLOG][-(i) & (BBPINIT - 1)].logical[1] ?	\
-	   BBP[-(i) >> BBPINITLOG][-(i) & (BBPINIT - 1)].logical[1] :	\
-	   BBP[-(i) >> BBPINITLOG][-(i) & (BBPINIT - 1)].logical[0])) : \
+	  (BBP[ABS(i) >> BBPINITLOG][ABS(i) & (BBPINIT - 1)].logical[1] ? \
+	   BBP[ABS(i) >> BBPINITLOG][ABS(i) & (BBPINIT - 1)].logical[1] : \
+	   BBP[ABS(i) >> BBPINITLOG][ABS(i) & (BBPINIT - 1)].logical[0])) : \
 	 "")
 #define BBPvalid(i)	(BBP_logical(i) != NULL && *BBP_logical(i) != '.')
 #define BATgetId(b)	BBPname((b)->batCacheid)
@@ -1954,7 +1937,6 @@ gdk_export void BBPunlock(const char *s);
 gdk_export str BBPlogical(bat b, str buf);
 gdk_export str BBPphysical(bat b, str buf);
 gdk_export int BBP_curstamp;
-gdk_export BATstore *BBPgetdesc(bat i);
 gdk_export BAT *BBPquickdesc(bat b, int delaccess);
 
 /*
@@ -3218,7 +3200,7 @@ gdk_export int ALIGNsetH(BAT *b1, BAT *b2);
 #define GDK_MAX_VALUE 4
 
 gdk_export void PROPdestroy(PROPrec *p);
-gdk_export PROPrec * BATgetprop(BAT *b, int idx);
+gdk_export PROPrec *BATgetprop(BAT *b, int idx);
 gdk_export void BATsetprop(BAT *b, int idx, int type, void *v);
 gdk_export BAT *BAThistogram(BAT *b);
 gdk_export int BATtopN(BAT *b, BUN topN);	/* used in monet5/src/modules/kernel/algebra.mx */

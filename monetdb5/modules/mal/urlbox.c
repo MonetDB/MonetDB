@@ -505,7 +505,7 @@ URLBOXgetSize(int *r){
 	BATseqbase(b,0);
 	for(i=0; i<urlDepth; i++){
 		bn= urlBAT[i];
-		size = ROUND_UP(sizeof(BATstore), blksize);
+		size = ROUND_UP(BATSTORESIZE, blksize);
 		if (!isVIEW(bn)) {
 			BUN cnt = BATcapacity(bn);
 

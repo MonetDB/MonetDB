@@ -195,7 +195,7 @@ CMDbbpbind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (lhs->vtype == TYPE_bat) {
 			BAT *b;
 
-			b = (BAT *) BBPgetdesc(lhs->val.bval);
+			b = BBPquickdesc(lhs->val.bval, 0);
 			if (b == NULL)
 				throw(MAL, "bbp.bind", INTERNAL_BAT_ACCESS);
 			BBPincref(b->batCacheid, TRUE);

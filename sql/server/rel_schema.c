@@ -1491,36 +1491,55 @@ rel_revoke_privs(mvc *sql, sql_schema *cur, dlist *privs, dlist *grantees, int g
 
 /* iname, itype, sname.tname (col1 .. coln) */
 static sql_rel *
-rel_create_index(mvc *sql, sql_schema *ss, char *iname, int itype, dlist *qname, dlist *column_list)
+rel_create_index(mvc *sql, char *iname, int itype, dlist *qname, dlist *column_list)
 {
-	sql_allocator *sa = sql->sa;
-	sql_rel *rel = rel_create(sa);
-	list *exps = new_exp_list(sa);
-	char *tname = qname_table(qname);
+	sql_schema *s = NULL;
+	sql_table *t, *nt;
+	sql_rel *r, *res;
+	sql_exp ** updates, *e;
+	sql_idx *i;
+	dnode *n;
 	char *sname = qname_schema(qname);
-	dnode *n = column_list->h;
-
-	if (!sname && ss)
-		sname = ss->base.name;
-
-	append(exps, exp_atom_clob(sa, iname));
-	append(exps, exp_atom_int(sa, itype));
-	append(exps, exp_atom_clob(sa, sname));
-	append(exps, exp_atom_clob(sa, tname));
-
-	for (; n; n = n->next) {
-		char *cname = n->data.sval;
-
-		append(exps, exp_atom_clob(sa, cname));
+	char *tname = qname_table(qname);
+	       
+	if (sname && !(s = mvc_bind_schema(sql, sname))) 
+		return sql_error(sql, 02, "3F000!CREATE INDEX: no such schema '%s'", sname);
+	if (!s) 
+		s = cur_schema(sql);
+	i = mvc_bind_idx(sql, s, iname);
+	if (i) 
+		return sql_error(sql, 02, "42S11!CREATE INDEX: name '%s' already in use", iname);
+	t = mvc_bind_table(sql, s, tname);
+	if (!t) {
+		return sql_error(sql, 02, "42S02!CREATE INDEX: no such table '%s'", tname);
+	} else if (isView(t)) {
+		return sql_error(sql, 02, "42S02!CREATE INDEX: cannot create index on view '%s'", tname);
 	}
-	rel->l = NULL;
-	rel->r = NULL;
-	rel->op = op_ddl;
-	rel->flag = DDL_CREATE_INDEX;
-	rel->exps = exps;
-	rel->card = 0;
-	rel->nrcols = 0;
-	return rel;
+	sname = get_schema_name( sql, sname, tname);
+	nt = dup_sql_table(sql->sa, t);
+
+	if (t->persistence != SQL_DECLARED_TABLE && s)
+		sname = s->base.name;
+	if (t->s && !nt->s)
+		nt->s = t->s;
+
+	/* add index here */
+	i = mvc_create_idx(sql, nt, iname, itype);
+	for (n = column_list->h; n; n = n->next) {
+		sql_column *c = mvc_bind_column(sql, nt, n->data.sval);
+
+		if (!c) 
+			return sql_error(sql, 02, "42S22!CREATE INDEX: no such column '%s'", n->data.sval);
+		mvc_create_ic(sql, i, c);
+	}
+
+	/* new columns need update with default values */
+	updates = table_update_array(sql, nt); 
+	e = exp_column(sql->sa, nt->base.name, "%TID%", sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
+	res = rel_table(sql, DDL_ALTER_TABLE, sname, nt, 0);
+	r = rel_project(sql->sa, res, append(new_exp_list(sql->sa),e));
+	res = rel_update(sql, res, r, updates, NULL); 
+	return res;
 }
 
 static sql_rel *
@@ -1704,7 +1723,7 @@ rel_schemas(mvc *sql, symbol *s)
 		dlist *l = s->data.lval;
 
 		assert(l->h->next->type == type_int);
-		ret = rel_create_index(sql, cur_schema(sql), l->h->data.sval, l->h->next->data.i_val, l->h->next->next->data.lval, l->h->next->next->next->data.lval);
+		ret = rel_create_index(sql, l->h->data.sval, l->h->next->data.i_val, l->h->next->next->data.lval, l->h->next->next->next->data.lval);
 	} 	break;
 	case SQL_DROP_INDEX: {
 		dlist *l = s->data.lval;

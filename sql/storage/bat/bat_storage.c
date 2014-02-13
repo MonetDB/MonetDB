@@ -1894,13 +1894,8 @@ tr_log_dbat(sql_trans *tr, sql_dbat *fdb, int cleared)
 	db = temp_descriptor(fdb->dbid);
 	if (BUNlast(db) > BUNfirst(db)) {
 		assert(store_nr_active>0);
-		if (BUNlast(db) > db->batInserted && (store_nr_active != 1 || BATcount(db) <= SNAPSHOT_MINSIZE))
+		if (BUNlast(db) > db->batInserted) 
 			ok = log_bat(bat_logger, db, fdb->dname);
-		if (store_nr_active == 1 && BATcount(db) > SNAPSHOT_MINSIZE) {
-			/* log new snapshot */
-			logger_add_bat(bat_logger, db, fdb->dname);
-			ok = log_bat_persists(bat_logger, db, fdb->dname);
-		}
 	}
 	bat_destroy(db);
 	return ok;

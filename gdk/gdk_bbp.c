@@ -2961,7 +2961,7 @@ complexatom(int t, int delaccess)
 BAT *
 BBPquickdesc(bat bid, int delaccess)
 {
-	BAT *b = BBP_cache(bid);
+	BAT *b;
 
 	if ( bid == 0)
 		return NULL;
@@ -2970,9 +2970,8 @@ BBPquickdesc(bat bid, int delaccess)
 		assert(0);
 		return NULL;
 	}
-	if (b) {
+	if ((b = BBP_cache(bid)) != NULL)
 		return b;	/* already cached */
-	}
 	b = (BAT *) BBPgetdesc(bid);
 	if (b == NULL ||
 	    complexatom(b->htype, delaccess) ||
