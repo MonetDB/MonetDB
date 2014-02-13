@@ -2022,7 +2022,7 @@ BKCsetHash(bit *ret, int *bid, bit *prop)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.setHash", RUNTIME_OBJECT_MISSING);
 	}
-	BAThash(b, 0);
+	BAThash(BATmirror(b), 0);
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
