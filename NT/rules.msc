@@ -17,7 +17,7 @@
 # Copyright August 2008-2014 MonetDB B.V.
 # All Rights Reserved.
 
-VERSION=11.17.8
+VERSION=11.17.9
 #       ^^^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
