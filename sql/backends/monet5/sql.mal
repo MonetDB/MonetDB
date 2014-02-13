@@ -355,7 +355,7 @@ pattern importTable{unsafe}( sname:str, tname:str, fname:str... )(:bat[:oid,:any
 address mvc_bin_import_table_wrap
 comment "Import a table from the files (fname)";
 
-command zero_or_one( col:bat[:any_2,:any_1]) :any_1
+command zero_or_one( col:bat[:oid,:any_1]) :any_1
 address zero_or_one
 comment "if col contains exactly one value return this. Incase of more raise an exception else return nil";
 

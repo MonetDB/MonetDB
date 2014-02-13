@@ -33,7 +33,7 @@ command sql.dense_rank(b:bat[:oid,:any_1]) :bat[:oid,:int]
 address sql_dense_rank
 comment "return the densely ranked bat";
 
-command aggr.exist(b:bat[:any_1,:any_2], h:any_1):bit 
+command aggr.exist(b:bat[:oid,:any_2], h:any_1):bit 
 address ALGexist;
 
 function batcalc.mark_grp{inline}( b:bat[:oid,:any_1], ord:bat[:oid,:oid], grp:bat[:oid,:oid], ext:bat[:oid,:oid]) :bat[:oid,:int]; 
