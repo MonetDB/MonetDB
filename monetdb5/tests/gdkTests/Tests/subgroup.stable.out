@@ -185,8 +185,7 @@ function user.main():void;
     io.print(a4,g,g4);
     io.print(e4,h4);
 # group random values with preexisting hash 
-    a4m := bat.reverse(a4);
-    bat.setHash(a4m,true);
+    bat.setHash(a4,true);
     (g4,e4,h4) := group.subgroup(a4);
     io.print(a4,g4);
     io.print(e4,h4);
