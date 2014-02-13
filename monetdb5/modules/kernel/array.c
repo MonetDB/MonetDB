@@ -422,7 +422,7 @@ ARRAYproduct(int *ret, int *ret2, int *bid, int *rid)
 	bm->trevsorted = 0;
 	bm->T->nonil = b->T->nonil & r->T->nonil;
 	if (!(bm->batDirty&2)) bm = BATsetaccess(bm, BAT_READ); \
-	*ret = bm->batCacheid;
+	*ret2 = bm->batCacheid;
 
 	BBPkeepref(*ret);
 	BBPkeepref(*ret2);

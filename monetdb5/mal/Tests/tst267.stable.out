@@ -40,8 +40,8 @@ function user.main():void;
     bat.append(b,8);
     io.print(a);
     io.print(b);
-    g := array.product(a,b);
-    io.print(g);
+    (g,h) := array.product(a,b);
+    io.print(g,h);
 end main;
 #-----------------#
 # h	tmp_13	  # name
@@ -57,14 +57,14 @@ end main;
 [ 1@0,	  6	  ]
 [ 2@0,	  7	  ]
 [ 3@0,	  8	  ]
-#-----------------#
-# h	tmp_15	  # name
-# void	int	  # type
-#-----------------#
-[ 1,	  5	  ]
-[ 2,	  6	  ]
-[ 1,	  7	  ]
-[ 2,	  8	  ]
+#--------------------------#
+# h	t	t  # name
+# void	int	int  # type
+#--------------------------#
+[ 0@0,	1,	5  ]
+[ 1@0,	2,	6  ]
+[ 2@0,	1,	7  ]
+[ 3@0,	2,	8  ]
 
 # 20:55:59 >  
 # 20:55:59 >  Done.
