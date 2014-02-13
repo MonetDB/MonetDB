@@ -418,7 +418,7 @@ comment "Selection cracking";
 
 #opt_statistics.mal
 
-command inspect.getStatistics(nme:str):bat[:any_1,:any_2]
+command inspect.getStatistics(nme:str):bat[:oid,:any_2]
 address QOTgetStatistics
 comment "Get optimizer property statistics 
 such as #calls, #total actions, #total time";
