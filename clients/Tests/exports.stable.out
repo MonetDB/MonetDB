@@ -174,7 +174,6 @@ gdk_return BATprod(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_o
 BAT *BATproject(BAT *l, BAT *r);
 BAT *BATrangejoin(BAT *l, BAT *rl, BAT *rh, bit li, bit hi);
 BAT *BATreplace(BAT *b, BAT *n, bit force);
-BAT *BATrestrict(BAT *b, const void *hl, const void *hh, const void *tl, const void *th);
 BAT *BATrevert(BAT *b);
 BAT *BATroles(BAT *b, const char *hnme, const char *tnme);
 BAT *BATsample(BAT *b, BUN n);
@@ -753,7 +752,6 @@ str ALGfetch(ptr ret, int *bid, lng *pos);
 str ALGfetchint(int *ret, int *bid, int *pos);
 str ALGfetchoid(int *ret, int *bid, oid *pos);
 str ALGfind(ptr ret, int *bid, ptr val);
-str ALGfragment(int *result, int *bid, ptr hlow, ptr hhigh, ptr tlow, ptr thigh);
 str ALGgroupby(int *res, int *gids, int *cnts);
 str ALGhistogram(int *result, int *bid);
 str ALGhmarkp(int *result, int *bid, int *nr_parts, int *part_nr);

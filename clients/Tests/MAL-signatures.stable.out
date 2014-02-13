@@ -230,7 +230,7 @@ command aggr.count(b:bat[:any_1,:any]):wrd
 address ALGcount_bat;
 comment Return the current size (in number of elements) in a BAT.
 
-command aggr.exist(b:bat[:any_1,:any_2],h:any_1):bit 
+command aggr.exist(b:bat[:oid,:any_2],h:any_1):bit 
 address ALGexist;
 command aggr.histogram(b:bat[:any_1,:any_2]):bat[:any_2,:int] 
 address ALGhistogram;
@@ -2404,10 +2404,6 @@ command algebra.exist(b:bat[:any_1,:any_2],h:any_1):bit
 address ALGexist;
 comment Returns whether 'h' occurs as a head value in b.
 
-command algebra.fragment(b:bat[:any_1,:any_2],hlow:any_1,hhigh:any_1,tlow:any_2,thigh:any_2):bat[:any_1,:any_2] 
-address ALGfragment;
-comment Select both on head and tail range.
-
 command algebra.fetch(b:bat[:any_2,:any_1],x:int):any_1 
 address ALGfetchint;
 comment Returns the tail value of the BUN at x-th position 	with 0 <= x < b.count
@@ -2501,7 +2497,7 @@ command algebra.leftjoin(left:bat[:any_1,:any_2],right:bat[:any_2,:any_3],estima
 address ALGleftjoinestimate;
 command algebra.leftjoin(left:bat[:any_1,:any_2],right:bat[:any_2,:any_3]):bat[:any_1,:any_3] 
 address ALGleftjoin;
-command algebra.like(b:bat[:any_1,:str],substr:str):bat[:any_1,:str] 
+command algebra.like(b:bat[:oid,:str],substr:str):bat[:oid,:str] 
 address ALGlike;
 comment Selects all elements that have 'substr' as in the tail.
 
@@ -42544,7 +42540,7 @@ pattern sql.vacuum(sch:str,tbl:str):void
 address SQLvacuum;
 comment Choose an approach to consolidate the deletions
 
-command sql.zero_or_one(col:bat[:any_2,:any_1]):any_1 
+command sql.zero_or_one(col:bat[:oid,:any_1]):any_1 
 address zero_or_one;
 comment if col contains exactly one value return this. Incase of more raise an exception else return nil
 
