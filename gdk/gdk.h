@@ -601,8 +601,6 @@ typedef char *str;
 #	define LL_CONSTANT(val)	(val##i64)
 #endif
 
-typedef char long_str[IDLENGTH];	/* standard GDK static string */
-
 typedef oid var_t;		/* type used for heap index of var-sized BAT */
 #define SIZEOF_VAR_T	SIZEOF_OID
 #define VARFMT		OIDFMT

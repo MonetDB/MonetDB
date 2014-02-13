@@ -418,12 +418,12 @@ main(int argc, char **av)
 		usage(prog, -1);
 
 	if (debug || grpdebug) {
-		long_str buf;
+		char buf[16];
 
 		if (debug)
 			mo_print_options(set, setlen);
 		debug |= grpdebug;  /* add the algorithm tracers */
-		snprintf(buf, sizeof(long_str) - 1, "%d", debug);
+		snprintf(buf, sizeof(buf) - 1, "%d", debug);
 		setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_debug", buf);
 	}
 

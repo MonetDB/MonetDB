@@ -140,6 +140,8 @@ typedef struct {
 	bat free;
 } bbplock_t;
 
+typedef char long_str[IDLENGTH];	/* standard GDK static string */
+
 extern int BBP_dirty;	/* BBP table dirty? */
 extern batlock_t GDKbatLock[BBP_BATMASK + 1];
 extern bbplock_t GDKbbpLock[BBP_THREADMASK + 1];
