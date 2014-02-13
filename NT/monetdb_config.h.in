@@ -777,13 +777,13 @@
 #define PACKAGE_NAME "MonetDB"
 
 /* Define to the full name and version of this package. */
-#define PACKAGE_STRING "MonetDB 11.17.8"
+#define PACKAGE_STRING "MonetDB 11.17.10"
 
 /* Define to the one symbol short name of this package. */
 #define PACKAGE_TARNAME "MonetDB"
 
 /* Define to the version of this package. */
-#define PACKAGE_VERSION "11.17.8"
+#define PACKAGE_VERSION "11.17.10"
 
 /* Define to the home page for this package. */
 #define PACKAGE_URL ""

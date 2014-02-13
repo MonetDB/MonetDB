@@ -258,24 +258,19 @@ TABLETcollect_parts(Tablet *as, BUN offset)
 		BAT *bv = NULL;
 
 		BATsetaccess(b, BAT_READ);
-		bv = BATslice(b, offset, BATcount(b));
+		bv = BATslice(b, (offset>0)?offset-1:0, BATcount(b));
 		bats[i] = bv;
 		BATderiveProps(bv, 1);
 
-		b->hkey &= bv->hkey;
-		b->tkey &= bv->tkey;
-		b->H->nonil &= bv->H->nonil;
+		b->tkey = (offset>0)?FALSE:bv->tkey; 
 		b->T->nonil &= bv->T->nonil;
-		b->hdense &= bv->hdense;
 		b->tdense &= bv->tdense;
-		if (b->hsorted != bv->hsorted)
-			b->hsorted = 0;
-		if (b->hrevsorted != bv->hrevsorted)
-			b->hrevsorted = 0;
 		if (b->tsorted != bv->tsorted)
 			b->tsorted = 0;
 		if (b->trevsorted != bv->trevsorted)
 			b->trevsorted = 0;
+		if (b->tdense)
+			b->tkey = TRUE;
 		b->batDirty = TRUE;
 
 		if (cnt != BATcount(b)) {

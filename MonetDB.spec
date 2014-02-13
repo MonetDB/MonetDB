@@ -1,5 +1,5 @@
 %define name MonetDB
-%define version 11.17.8
+%define version 11.17.10
 %{!?buildno: %define buildno %(date +%Y%m%d)}
 
 # groups of related archs
@@ -799,6 +799,10 @@ mv $RPM_BUILD_ROOT%{_datadir}/doc/MonetDB-SQL-%{version} $RPM_BUILD_ROOT%{_datad
 rm -fr $RPM_BUILD_ROOT
 
 %changelog
+* Thu Feb 13 2014 Sjoerd Mullender <sjoerd@acm.org> - 11.17.9-20140213
+- Rebuilt.
+- BZ#3435: INDEX prevents JOIN from discovering matches
+
 * Fri Feb 07 2014 Sjoerd Mullender <sjoerd@acm.org> - 11.17.7-20140207
 - Rebuilt.
 - BZ#3436: COPY INTO from file containing leading Byte Order Mark (BOM)

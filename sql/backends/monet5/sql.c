@@ -503,7 +503,7 @@ alter_table(mvc *sql, char *sname, sql_table *t)
 		if (nt->pkey) {
 			for (n = t->idxs.nelm; n; n = n->next) {
 				sql_idx *i = n->data;
-				if (i->key->type == pkey)
+				if (i->key && i->key->type == pkey)
 					return sql_message("40000!CONSTRAINT PRIMARY KEY: a table can have only one PRIMARY KEY\n");
 			}
 		}
@@ -693,46 +693,6 @@ drop_key(mvc *sql, char *sname, char *kname, int drop_action)
 		 return sql_message("42000!ALTER TABLE: cannot drop constraint '%s': there are database objects which depend on it", key->base.name);
 	mvc_drop_key(sql, ss, key, drop_action);
 	return MAL_SUCCEED;
-}
-
-static str
-create_index(mvc *sql, char *iname, int itype, char *sname, char *tname, MalStkPtr stk, InstrPtr pci)
-{
-	sql_schema *s = NULL;
-	sql_table *t = NULL;
-	sql_idx *i = NULL;
-
-	if (!(s = mvc_bind_schema(sql, sname)))
-		return sql_message("3F000!CREATE INDEX: no such schema '%s'", sname);
-
-	i = mvc_bind_idx(sql, s, iname);
-	t = mvc_bind_table(sql, s, tname);
-	if (i) {
-		return sql_message("42S11!CREATE INDEX: name '%s' already in use", iname);
-	} else if (!t) {
-		return sql_message("42S02!CREATE INDEX: no such table '%s'", tname);
-	} else if (isView(t)) {
-		return sql_message("42S02!CREATE INDEX: cannot create index on view '%s'", tname);
-	} else {
-		int n;
-		sql_idx *i = mvc_create_idx(sql, t, iname, (idx_type) itype);
-
-		if (!i)
-			return sql_message("40000!CREATE INDEX: failed to create index '%s'", iname);
-
-		for (n = 6; n < pci->argc; n++) {
-			char *cname = *(str *) getArgReference(stk, pci, n);
-			sql_column *c = mvc_bind_column(sql, t, cname);
-
-			if (!c) {
-				return sql_message("42S22!CREATE INDEX: no such column '%s'", cname);
-			} else {
-				mvc_create_ic(sql, i, c);
-				mvc_create_dependency(sql, c->base.id, i->base.id, INDEX_DEPENDENCY);
-			}
-		}
-	}
-	return NULL;
 }
 
 static str
@@ -1178,13 +1138,6 @@ SQLcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	case DDL_DROP_ROLE:{
 		char *role = sname;
 		msg = sql_drop_role(sql, role);
-		break;
-	}
-	case DDL_CREATE_INDEX:{
-		int itype = *(int *) getArgReference(stk, pci, 3);
-		char *ssname = *(str *) getArgReference(stk, pci, 4);
-		char *tname = *(str *) getArgReference(stk, pci, 5);
-		msg = create_index(sql, sname, itype, ssname, tname, stk, pci);
 		break;
 	}
 	case DDL_DROP_INDEX:{
