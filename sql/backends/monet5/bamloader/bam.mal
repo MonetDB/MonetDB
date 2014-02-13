@@ -1,0 +1,56 @@
+module bam;
+
+
+# Bam_loader related signatures
+
+pattern bam_loader_repos(bam_repos_list:str, dbschema:int, storage_mask:str, nr_threads:int):void
+address bam_loader_repos
+comment "Read the files in the given list of bam files and store them in the database";
+
+pattern bam_loader_file(bam_file:str, dbschema:int, storage_mask:str):void
+address bam_loader_file
+comment "Read the bam file given as the first parameter and store it in the database";
+
+pattern bam_drop_file(file_id:sht, dbschema:sht):void
+address bam_drop_file
+comment "Drop alignment tables and header data for the given file"
+
+
+# Scalar signatures for bam_lib
+
+command bam_flag(flag:sht, name:str):bit
+address bam_flag
+comment "Get bam flag by name."
+
+command reverse_seq(seq:str):str
+address reverse_seq
+comment "Reverse a DNA sequence."
+
+command reverse_qual(qual:str):str
+address reverse_qual
+comment "Reverse a DNA Quality string."
+
+command seq_length(cigar:str):int
+address seq_length_bat
+comment "Calculate the real length of a DNA sequence, given its CIGAR string."
+
+
+# BAT signatures for bam_lib
+
+module batbam;
+
+command bam_flag(flags:bat[:oid,:sht], name:str):bat[:oid,:bit]
+address bam_flag_bat
+comment "Get bat of bam flags by name."
+
+command reverse_seq(seqs:bat[:oid,:str]):bat[:oid,:str]
+address reverse_seq_bat
+comment "Reverse a bat of DNA sequences."
+
+command reverse_qual(seqs:bat[:oid,:str]):bat[:oid,:str]
+address reverse_qual_bat
+comment "Reverse a bat of DNA Quality strings."
+
+command seq_length(cigars:bat[:oid,:str]):bat[:oid,:int]
+address seq_length_bat
+comment "Calculate the real length of a bat of DNA sequences, given their CIGAR string."
