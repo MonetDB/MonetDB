@@ -514,7 +514,7 @@ LSSTxmatch(int *lres, int *rres, int *lid, int *rid, int *delta)
 			if ( lhtm == rhtm){
 				/* match */
 				BUNappend(xl,&lo, FALSE);
-				BUNappend(xl,&ro, FALSE);
+				BUNappend(xr,&ro, FALSE);
 			} else if ( lhtm < rhtm ) {
 				lhtm = lhtm << shift;
 				for ( ; *l < lhtm && l < lend; lo++, l++)
