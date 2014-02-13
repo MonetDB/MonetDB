@@ -732,7 +732,7 @@ command materialize(b:bat[:oid,:any_1]):bat[:oid,:any_1]
 address ALGmaterialize
 comment "Materialize the void column";
 
-command reuse(b:bat[:any_1,:any_2]):bat[:any_1,:any_2]
+command reuse(b:bat[:oid,:any_2]):bat[:oid,:any_2]
 address ALGreuse
 comment "Reuse a temporary BAT if you can. Otherwise,
 	allocate enough storage to accept result of an
@@ -765,15 +765,15 @@ comment "Produce a BAT containing the histogram over the tail values.";
 # @emph{min()} and @emph{max()} routines below catch any tail-type.
 # The type-specific routines defined later are faster, and will
 # override these any implementations.
-command cardinality( b:bat[:any_1,:any_2] ) :lng
+command cardinality( b:bat[:oid,:any_2] ) :lng
 address ALGcard
 comment "Return the cardinality of the BAT tail values.";
-
 # Implementations a generic Min and Max routines get declared first. The
 # @emph{ min()} and @emph{ max()} routines below catch any tail-type.
 # The type-specific routines defined later are faster, and will
 # override these any implementations.
 
+#JAQL uses variable head types
 command min(b:bat[:any_1,:any_2]):any_2
 address ALGminany
 comment "Return the lowest tail value or nil.";
@@ -782,134 +782,134 @@ command max(b:bat[:any_1,:any_2]):any_2
 address ALGmaxany
 comment "Return the highest tail value or nil.";
 
-command avg (b:bat[:any_1,:bte] ) :dbl
+command avg (b:bat[:oid,:bte] ) :dbl
 address ALGavg
 comment "Gives the avg of all tail values";
 
-command avg (b:bat[:any_1,:sht] ) :dbl
+command avg (b:bat[:oid,:sht] ) :dbl
 address ALGavg
 comment "Gives the avg of all tail values";
 
-command avg (b:bat[:any_1,:int] ) :dbl
+command avg (b:bat[:oid,:int] ) :dbl
 address ALGavg
 comment "Gives the avg of all tail values";
 
-command avg (b:bat[:any_1,:wrd] ) :dbl
+command avg (b:bat[:oid,:wrd] ) :dbl
 address ALGavg
 comment "Gives the avg of all tail values";
 
-command avg (b:bat[:any_1,:lng] ) :dbl
+command avg (b:bat[:oid,:lng] ) :dbl
 address ALGavg
 comment "Gives the avg of all tail values";
 
-command avg (b:bat[:any_1,:flt] ) :dbl
+command avg (b:bat[:oid,:flt] ) :dbl
 address ALGavg
 comment "Gives the avg of all tail values";
 
-command avg (b:bat[:any_1,:dbl] ) :dbl
+command avg (b:bat[:oid,:dbl] ) :dbl
 address ALGavg
 comment "Gives the avg of all tail values";
 
-# @- Standard deviation
+# Standard deviation
 # The standard deviation of a set is the square root of its variance.
 # The variance is the sum of squares of the deviation of each value in the set
 # from the mean (average) value, divided by the population of the set.
-command stdev(b:bat[:any_1,:bte]) :dbl
+command stdev(b:bat[:oid,:bte]) :dbl
 address ALGstdev
 comment "Gives the standard deviation of all tail values";
-command stdevp(b:bat[:any_1,:bte]) :dbl
+command stdevp(b:bat[:oid,:bte]) :dbl
 address ALGstdevp
 comment "Gives the standard deviation of all tail values";
-command variance(b:bat[:any_1,:bte]) :dbl
+command variance(b:bat[:oid,:bte]) :dbl
 address ALGvariance
 comment "Gives the variance of all tail values";
-command variancep(b:bat[:any_1,:bte]) :dbl
+command variancep(b:bat[:oid,:bte]) :dbl
 address ALGvariancep
 comment "Gives the variance of all tail values";
 
-command stdev(b:bat[:any_1,:sht]) :dbl
+command stdev(b:bat[:oid,:sht]) :dbl
 address ALGstdev
 comment "Gives the standard deviation of all tail values";
-command stdevp(b:bat[:any_1,:sht]) :dbl
+command stdevp(b:bat[:oid,:sht]) :dbl
 address ALGstdevp
 comment "Gives the standard deviation of all tail values";
-command variance(b:bat[:any_1,:sht]) :dbl
+command variance(b:bat[:oid,:sht]) :dbl
 address ALGvariance
 comment "Gives the variance of all tail values";
-command variancep(b:bat[:any_1,:sht]) :dbl
+command variancep(b:bat[:oid,:sht]) :dbl
 address ALGvariancep
 comment "Gives the variance of all tail values";
 
-command stdev(b:bat[:any_1,:int]) :dbl
+command stdev(b:bat[:oid,:int]) :dbl
 address ALGstdev
 comment "Gives the standard deviation of all tail values";
-command stdevp(b:bat[:any_1,:int]) :dbl
+command stdevp(b:bat[:oid,:int]) :dbl
 address ALGstdevp
 comment "Gives the standard deviation of all tail values";
-command variance(b:bat[:any_1,:int]) :dbl
+command variance(b:bat[:oid,:int]) :dbl
 address ALGvariance
 comment "Gives the variance of all tail values";
-command variancep(b:bat[:any_1,:int]) :dbl
+command variancep(b:bat[:oid,:int]) :dbl
 address ALGvariancep
 comment "Gives the variance of all tail values";
 
-command stdev(b:bat[:any_1,:wrd]) :dbl
+command stdev(b:bat[:oid,:wrd]) :dbl
 address ALGstdev
 comment "Gives the standard deviation of all tail values";
-command stdevp(b:bat[:any_1,:wrd]) :dbl
+command stdevp(b:bat[:oid,:wrd]) :dbl
 address ALGstdevp
 comment "Gives the standard deviation of all tail values";
-command variance(b:bat[:any_1,:wrd]) :dbl
+command variance(b:bat[:oid,:wrd]) :dbl
 address ALGvariance
 comment "Gives the variance of all tail values";
-command variancep(b:bat[:any_1,:wrd]) :dbl
+command variancep(b:bat[:oid,:wrd]) :dbl
 address ALGvariancep
 comment "Gives the variance of all tail values";
 
-command stdev(b:bat[:any_1,:lng]) :dbl
+command stdev(b:bat[:oid,:lng]) :dbl
 address ALGstdev
 comment "Gives the standard deviation of all tail values";
-command stdevp(b:bat[:any_1,:lng]) :dbl
+command stdevp(b:bat[:oid,:lng]) :dbl
 address ALGstdevp
 comment "Gives the standard deviation of all tail values";
-command variance(b:bat[:any_1,:lng]) :dbl
+command variance(b:bat[:oid,:lng]) :dbl
 address ALGvariance
 comment "Gives the variance of all tail values";
-command variancep(b:bat[:any_1,:lng]) :dbl
+command variancep(b:bat[:oid,:lng]) :dbl
 address ALGvariancep
 comment "Gives the variance of all tail values";
 
-command stdev(b:bat[:any_1,:flt]) :dbl
+command stdev(b:bat[:oid,:flt]) :dbl
 address ALGstdev
 comment "Gives the standard deviation of all tail values";
-command stdevp(b:bat[:any_1,:flt]) :dbl
+command stdevp(b:bat[:oid,:flt]) :dbl
 address ALGstdevp
 comment "Gives the standard deviation of all tail values";
-command variance(b:bat[:any_1,:flt]) :dbl
+command variance(b:bat[:oid,:flt]) :dbl
 address ALGvariance
 comment "Gives the variance of all tail values";
-command variancep(b:bat[:any_1,:flt]) :dbl
+command variancep(b:bat[:oid,:flt]) :dbl
 address ALGvariancep
 comment "Gives the variance of all tail values";
 
-command stdev(b:bat[:any_1,:dbl]) :dbl
+command stdev(b:bat[:oid,:dbl]) :dbl
 address ALGstdev
 comment "Gives the standard deviation of all tail values";
-command stdevp(b:bat[:any_1,:dbl]) :dbl
+command stdevp(b:bat[:oid,:dbl]) :dbl
 address ALGstdevp
 comment "Gives the standard deviation of all tail values";
-command variance(b:bat[:any_1,:dbl]) :dbl
+command variance(b:bat[:oid,:dbl]) :dbl
 address ALGvariance
 comment "Gives the variance of all tail values";
-command variancep(b:bat[:any_1,:dbl]) :dbl
+command variancep(b:bat[:oid,:dbl]) :dbl
 address ALGvariancep
 comment "Gives the variance of all tail values";
 
 
-# @+ Exented selection predicates
+# Exented selection predicates
 # For SQL convenience we provide a serie of interval selectors.
 module algebra;
-# @+ Modeling With Properties
+# Modeling With Properties
 # The Monet kernel performs run-time optimizations. To choose between
 # alternative algorithms in a sensible way, it maintains knowledge about
 # each BAT, sometimes as a BAT property, sometimes as two
@@ -923,7 +923,7 @@ module algebra;
 # column (ordered(BAT)). Tail columns can be described by
 # using the mirror BAT with the minus operator (ordered(-BAT)).
 #
-# @- Column Properties
+# Column Properties
 # @table @code
 # @item [ordered(BAT) :bit]
 # 	TRUE if the head column is stored in ascending order, else FALSE.

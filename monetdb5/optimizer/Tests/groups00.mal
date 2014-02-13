@@ -19,7 +19,7 @@ function tst();
 	io.print(xc);
 	io.print(ext2);
 	io.print(grp2);
-    (xb,ext3,grp3) := group.multicolumndone(b,xc);
+    (xb,ext3,grp3) := group.multicolumn(b,xc);
 	io.print(xb);
 	io.print(ext3);
 	io.print(grp3);

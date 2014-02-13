@@ -9,14 +9,14 @@ function dir():void;
 	io.table(ds,d,dl);
 end dir;
 
-function createBAT(name:str):bat;
+function createBAT(name:str):bat[:oid,:int];
     res:= bat.new(:oid,:int);
     bat.setName(res,name);
     i:= calc.getBATidentifier(res);
 	j:= i; # now res should have 3 lrefs
 	z:= bbp.getLRefCount(res);
 	io.print(z);
-    return i;
+    return res;
 end createBAT;
 
 d:= user.createBAT("one");
