@@ -309,7 +309,7 @@ SYSmem_usage(int *ret, int *ret2, lng *minsize)
 		s = BBPname(i);
 		sz = 0;
 		if (BBP_desc(i))
-			sz += sizeof(BATstore);
+			sz += BATSTORESIZE;
 		if (BBP_logical(i))
 			n += strLen(BBP_logical(i));
 		if (BBP_logical(-i))

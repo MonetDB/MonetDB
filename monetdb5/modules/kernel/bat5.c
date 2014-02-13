@@ -51,7 +51,7 @@ static BAT *
 lock_desc(bat bid)
 {
 	BBPfix(bid);
-	return &BBPgetdesc(bid)->B;
+	return BBPquickdesc(bid, 0);
 }
 
 static void
@@ -979,7 +979,7 @@ CMDdestroy(bit *res, const char *input)
 	if (bid) {
 		BBPfix(bid);
 		if (BBPindex(input) == bid) {
-			BAT *b = &BBPgetdesc(ABS(bid))->B;
+			BAT *b = BBPquickdesc(ABS(bid), 0);
 
 			BATmode(b, TRANSIENT);
 			*res = TRUE;
@@ -1668,7 +1668,7 @@ str
 BKCgetSpaceUsed(lng *tot, int *bid)
 {
 	BAT *b;
-	size_t size = sizeof(BATstore);
+	size_t size = BATSTORESIZE;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "bat.getSpaceUsed", RUNTIME_OBJECT_MISSING);

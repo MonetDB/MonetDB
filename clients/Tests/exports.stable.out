@@ -223,7 +223,6 @@ void BBPcold(bat b);
 int BBPdecref(bat b, int logical);
 BAT *BBPdescriptor(bat b);
 int BBPdir(int cnt, bat *subcommit);
-BATstore *BBPgetdesc(bat i);
 void BBPhot(bat b);
 int BBPin;
 int BBPincref(bat b, int logical);
