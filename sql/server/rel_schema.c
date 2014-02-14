@@ -1491,7 +1491,7 @@ rel_revoke_privs(mvc *sql, sql_schema *cur, dlist *privs, dlist *grantees, int g
 
 /* iname, itype, sname.tname (col1 .. coln) */
 static sql_rel *
-rel_create_index(mvc *sql, char *iname, int itype, dlist *qname, dlist *column_list)
+rel_create_index(mvc *sql, char *iname, idx_type itype, dlist *qname, dlist *column_list)
 {
 	sql_schema *s = NULL;
 	sql_table *t, *nt;
@@ -1723,7 +1723,7 @@ rel_schemas(mvc *sql, symbol *s)
 		dlist *l = s->data.lval;
 
 		assert(l->h->next->type == type_int);
-		ret = rel_create_index(sql, l->h->data.sval, l->h->next->data.i_val, l->h->next->next->data.lval, l->h->next->next->next->data.lval);
+		ret = rel_create_index(sql, l->h->data.sval, (idx_type) l->h->next->data.i_val, l->h->next->next->data.lval, l->h->next->next->next->data.lval);
 	} 	break;
 	case SQL_DROP_INDEX: {
 		dlist *l = s->data.lval;
