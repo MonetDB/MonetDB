@@ -22,7 +22,7 @@ stdout of test 'tst610` in directory 'monetdb5/mal` itself:
 #end refs;
 function user.refs():void;
     g := bbp.getNames();
-    gs := algebra.sort(g);
+    gs := algebra.subsort(g,false,false);
     gr := bbp.getRefCount();
     gl := bbp.getLRefCount();
     io.table(gs,gr,gl);
