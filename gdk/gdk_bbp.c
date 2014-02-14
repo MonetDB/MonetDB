@@ -908,11 +908,17 @@ BBPreadEntries(FILE *fp, int *min_stamp, int *max_stamp, int oidsize, int bbpver
 	}
 }
 
+#ifdef HAVE_HGE
+#define SIZEOF_MAX_INT SIZEOF_HGE
+#else
+#define SIZEOF_MAX_INT SIZEOF_LNG
+#endif
+
 static int
 BBPheader(FILE *fp, oid *BBPoid, int *OIDsize)
 {
 	char buf[BUFSIZ];
-	int sz, bbpversion, ptrsize, oidsize;
+	int sz, bbpversion, ptrsize, oidsize, intsize;
 	char *s;
 
 	if (fgets(buf, sizeof(buf), fp) == NULL) {
@@ -925,6 +931,7 @@ BBPheader(FILE *fp, oid *BBPoid, int *OIDsize)
 		exit(1);
 	}
 	if (bbpversion != GDKLIBRARY &&
+	    bbpversion != GDKLIBRARY_64_BIT_INT &&
 	    bbpversion != GDKLIBRARY_SORTED_BYTE &&
 	    bbpversion != GDKLIBRARY_CHR &&
 	    bbpversion != GDKLIBRARY_PRE_VARWIDTH) {
@@ -933,8 +940,15 @@ BBPheader(FILE *fp, oid *BBPoid, int *OIDsize)
 	if (fgets(buf, sizeof(buf), fp) == NULL) {
 		GDKfatal("BBPinit: short BBP");
 	}
-	if (sscanf(buf, "%d %d", &ptrsize, &oidsize) != 2) {
-		GDKfatal("BBPinit: BBP.dir has incompatible format: pointer and OID sizes are missing");
+	if (bbpversion <= GDKLIBRARY_64_BIT_INT) {
+		if (sscanf(buf, "%d %d", &ptrsize, &oidsize) != 2) {
+			GDKfatal("BBPinit: BBP.dir has incompatible format: pointer and OID sizes are missing");
+		}
+		intsize = SIZEOF_LNG;
+	} else {
+		if (sscanf(buf, "%d %d %d", &ptrsize, &oidsize, &intsize) != 3) {
+			GDKfatal("BBPinit: BBP.dir has incompatible format: pointer, OID, and max. integer sizes are missing");
+		}
 	}
 	if (ptrsize != SIZEOF_SIZE_T || oidsize != SIZEOF_OID) {
 #if SIZEOF_SIZE_T == 8 && SIZEOF_OID == 8
@@ -942,7 +956,12 @@ BBPheader(FILE *fp, oid *BBPoid, int *OIDsize)
 #endif
 		GDKfatal("BBPinit: database created with incompatible server:\n"
 			 "expected pointer size %d, got %d, expected OID size %d, got %d.",
-			 (int) SIZEOF_SIZE_T, ptrsize, (int) SIZEOF_OID, oidsize);
+			 SIZEOF_SIZE_T, ptrsize, SIZEOF_OID, oidsize);
+	}
+	if (intsize != SIZEOF_MAX_INT) {
+		GDKfatal("BBPinit: database created with incompatible server:\n"
+			 "expected max. integer size %d, got %d.",
+			 SIZEOF_MAX_INT, intsize);
 	}
 	if (OIDsize)
 		*OIDsize = oidsize;
@@ -1226,7 +1245,7 @@ static int
 BBPdir_header(stream *s, int n)
 {
 	if (mnstr_printf(s, "BBP.dir, GDKversion %d\n", GDKLIBRARY) < 0 ||
-	    mnstr_printf(s, "%d %d\n", SIZEOF_SIZE_T, SIZEOF_OID) < 0 ||
+	    mnstr_printf(s, "%d %d %d\n", SIZEOF_SIZE_T, SIZEOF_OID, SIZEOF_MAX_INT) < 0 ||
 	    OIDwrite(s) != 0 ||
 	    mnstr_printf(s, " BBPsize=%d\n", n) < 0)
 		return -1;
@@ -1263,7 +1282,7 @@ BBPdir_subcommit(int cnt, bat *subcommit)
 	}
 	/* read first three lines */
 	if (fgets(buf, sizeof(buf), fp) == NULL || /* BBP.dir, GDKversion %d */
-	    fgets(buf, sizeof(buf), fp) == NULL || /* SIZEOF_SIZE_T SIZEOF_OID */
+	    fgets(buf, sizeof(buf), fp) == NULL || /* SIZEOF_SIZE_T SIZEOF_OID SIZEOF_MAX_INT */
 	    fgets(buf, sizeof(buf), fp) == NULL) /* BBPsize=%d */
 		GDKfatal("BBPdir: subcommit attempted with invalid backup BBP.dir.");
 	/* third line contains BBPsize */
