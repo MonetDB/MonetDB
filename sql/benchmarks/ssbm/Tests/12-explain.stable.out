@@ -141,7 +141,7 @@ function user.s2_1{autoCommit=true}(A0:str,A1:str,A2:int,A3:int,A4:str,A5:str):v
     X_180:bat[:oid,:int]  := algebra.leftfetchjoinPath(X_246,X_65,X_36,X_9,X_179);
     X_181 := batcalc.lng(X_180);
     X_182:bat[:oid,:lng]  := batcalc.-(X_173,X_181);
-    X_183:bat[:oid,:hge]  := aggr.subsum(X_182,X_142,r1_165,true,true);
+    X_183:bat[:oid,:lng]  := aggr.subsum(X_182,X_142,r1_165,true,true);
     (X_148,r1_171,r2_171) := algebra.subsort(X_147,false,false);
     (X_152,r1_175,r2_175) := algebra.subsort(X_146,r1_171,r2_171,false,false);
     (X_155,r1_178,r2_178) := algebra.subsort(X_145,r1_175,r2_175,false,false);
@@ -153,7 +153,7 @@ function user.s2_1{autoCommit=true}(A0:str,A1:str,A2:int,A3:int,A4:str,A5:str):v
     sql.rsColumn(X_186,"sys.dwdate","d_year","int",32,0,X_158);
     sql.rsColumn(X_186,"sys.supplier","s_nation","clob",0,0,X_159);
     sql.rsColumn(X_186,"sys.part","p_category","clob",0,0,X_160);
-    sql.rsColumn(X_186,"sys.L1","profit1","hugeint",64,0,X_185);
+    sql.rsColumn(X_186,"sys.L1","profit1","bigint",64,0,X_185);
     X_206 := io.stdout();
     sql.exportResult(X_206,X_186);
 end s2_1;

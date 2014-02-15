@@ -1,0 +1,96 @@
+stdout of test '03-explain` in directory 'sql/benchmarks/ssbm` itself:
+
+
+# 23:10:45 >  
+# 23:10:45 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=35257" "--set" "mapi_usock=/var/tmp/mtest-17595/.s.monetdb.35257" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/manegold/_/Monet/HG/Feb2013/prefix/--disable-debug_--enable-assert_--enable-optimize/var/MonetDB/mTests_sql_benchmarks_ssbm" "--set" "mal_listing=0"
+# 23:10:45 >  
+
+# MonetDB 5 server v11.15.12
+# This is an unreleased version
+# Serving database 'mTests_sql_benchmarks_ssbm', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.591 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://rome.ins.cwi.nl:35257/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-17595/.s.monetdb.35257
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 23:10:45 >  
+# 23:10:45 >  "/usr/bin/python2" "03-explain.SQL.py" "03-explain"
+# 23:10:45 >  
+
+#set optimizer = 'sequential_pipe';
+#explain
+#select sum(lo_extendedprice*lo_discount) as revenue
+#	from lineorder, dwdate
+#	where lo_orderdate = d_datekey
+#		and d_weeknuminyear = 6 and d_year = 1994
+#		and lo_discount between 5 and 7
+#		and lo_quantity between 36 and 40;
+% .explain # table_name
+% mal # name
+% clob # type
+% 283 # length
+function user.s2_1{autoCommit=true}(A0:int,A1:int,A2:int,A3:int,A4:int,A5:int):void;
+    X_8 := sql.mvc();
+    X_12 := sql.bind(X_8,"sys","lineorder","lo_discount",0);
+    X_20 := sql.bind(X_8,"sys","lineorder","lo_quantity",0);
+    X_9:bat[:oid,:oid]  := sql.tid(X_8,"sys","lineorder");
+    X_101 := algebra.subselect(X_20,X_9,A4,A5,true,true,false);
+    (X_22,r1_26) := sql.bind(X_8,"sys","lineorder","lo_quantity",2);
+    X_102 := algebra.subselect(r1_26,A4,A5,true,true,false);
+    X_24 := sql.bind(X_8,"sys","lineorder","lo_quantity",1);
+    X_103 := algebra.subselect(X_24,X_9,A4,A5,true,true,false);
+    X_25 := sql.subdelta(X_101,X_9,X_22,X_102,X_103);
+    X_104 := algebra.subselect(X_12,X_25,A2,A3,true,true,false);
+    (X_15,r1_15) := sql.bind(X_8,"sys","lineorder","lo_discount",2);
+    X_105 := algebra.subselect(r1_15,A2,A3,true,true,false);
+    X_18 := sql.bind(X_8,"sys","lineorder","lo_discount",1);
+    X_106 := algebra.subselect(X_18,X_25,A2,A3,true,true,false);
+    X_27 := sql.subdelta(X_104,X_25,X_15,X_105,X_106);
+    X_28 := sql.bind_idxbat(X_8,"sys","lineorder","lineorder_lo_orderdate_fkey",0);
+    (X_30,r1_38) := sql.bind_idxbat(X_8,"sys","lineorder","lineorder_lo_orderdate_fkey",2);
+    X_32 := sql.bind_idxbat(X_8,"sys","lineorder","lineorder_lo_orderdate_fkey",1);
+    X_33 := sql.projectdelta(X_27,X_28,X_30,r1_38,X_32);
+    X_37 := sql.bind(X_8,"sys","dwdate","d_weeknuminyear",0);
+    X_45 := sql.bind(X_8,"sys","dwdate","d_year",0);
+    X_34:bat[:oid,:oid]  := sql.tid(X_8,"sys","dwdate");
+    X_107 := algebra.subselect(X_45,X_34,A1,A1,true,true,false);
+    (X_47,r1_60) := sql.bind(X_8,"sys","dwdate","d_year",2);
+    X_108 := algebra.subselect(r1_60,A1,A1,true,true,false);
+    X_49 := sql.bind(X_8,"sys","dwdate","d_year",1);
+    X_109 := algebra.subselect(X_49,X_34,A1,A1,true,true,false);
+    X_50 := sql.subdelta(X_107,X_34,X_47,X_108,X_109);
+    X_110 := algebra.subselect(X_37,X_50,A0,A0,true,true,false);
+    (X_40,r1_50) := sql.bind(X_8,"sys","dwdate","d_weeknuminyear",2);
+    X_111 := algebra.subselect(r1_50,A0,A0,true,true,false);
+    X_43 := sql.bind(X_8,"sys","dwdate","d_weeknuminyear",1);
+    X_112 := algebra.subselect(X_43,X_50,A0,A0,true,true,false);
+    X_53 := sql.subdelta(X_110,X_50,X_40,X_111,X_112);
+    X_54 := X_53;
+    (X_55,r1_71) := algebra.join(X_33,X_54);
+    X_57 := sql.bind(X_8,"sys","lineorder","lo_extendedprice",0);
+    (X_60,r1_76) := sql.bind(X_8,"sys","lineorder","lo_extendedprice",2);
+    X_63 := sql.bind(X_8,"sys","lineorder","lo_extendedprice",1);
+    X_64 := sql.projectdelta(X_27,X_57,X_60,r1_76,X_63);
+    X_65 := algebra.leftfetchjoin(X_55,X_64);
+    X_66 := batcalc.lng(X_65);
+    X_67 := sql.projectdelta(X_27,X_12,X_15,r1_15,X_18);
+    X_68 := algebra.leftfetchjoin(X_55,X_67);
+    X_69:bat[:oid,:lng]  := batcalc.*(X_66,X_68);
+    X_70 := algebra.selectNotNil(X_69);
+    X_71:hge  := aggr.sum(X_70);
+    sql.exportValue(1,"sys.L1","revenue","hugeint",53,0,6,X_71,"");
+end s2_1;
+# querylog.define("explain\nselect sum(lo_extendedprice*lo_discount) as revenue\n\tfrom lineorder, dwdate\n\twhere lo_orderdate = d_datekey\n\t\tand d_weeknuminyear = 6 and d_year = 1994\n\t\tand lo_discount between 5 and 7\n\t\tand lo_quantity between 36 and 40;","sequential_pipe")
+
+# 23:10:45 >  
+# 23:10:45 >  "Done."
+# 23:10:45 >  
+

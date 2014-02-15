@@ -31,7 +31,7 @@ Ready.
 #		and lo_quantity between 26 and 35;
 % sys.L1 # table_name
 % revenue # name
-% hugeint # type
+% bigint # type
 % 9 # length
 [ 927530712	]
 

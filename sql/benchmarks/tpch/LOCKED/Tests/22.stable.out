@@ -55,7 +55,7 @@ Ready.
 #				select
 #					*
 #				from
-% sys.custsale,	sys.L2,	sys.L3 # table_name
+% sys.custsale,	sys.L4,	sys.L5 # table_name
 % cntrycode,	numcust,	totacctbal # name
 % varchar,	wrd,	decimal # type
 % 2,	2,	17 # length

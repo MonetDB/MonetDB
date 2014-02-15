@@ -37,7 +37,7 @@ Ready.
 #	order by d_year, s_nation, p_category;
 % sys.dwdate,	sys.supplier,	sys.part,	sys.L1 # table_name
 % d_year,	s_nation,	p_category,	profit1 # name
-% int,	clob,	clob,	hugeint # type
+% int,	clob,	clob,	bigint # type
 % 4,	13,	7,	8 # length
 [ 1997,	"ARGENTINA",	"MFGR#11",	6011959	]
 [ 1997,	"ARGENTINA",	"MFGR#12",	10930453	]

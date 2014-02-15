@@ -1,0 +1,117 @@
+stdout of test 'remote03` in directory 'monetdb5/modules/mal` itself:
+
+
+# 15:28:56 >  
+# 15:28:56 >  Mtimeout -timeout 60  mserver5 "--config=/ufs/fabian/scratch/monetdb/current/program-x86_64/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/fabian/scratch/monetdb/current/program-x86_64/lib64/MonetDB5:/ufs/fabian/scratch/monetdb/current/program-x86_64/lib64/MonetDB5/lib:/ufs/fabian/scratch/monetdb/current/program-x86_64/lib64/MonetDB5/bin" --set "gdk_dbfarm=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-current-pegasus.ins.cwi.nl/five/dbfarm" --set "sql_logdir=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-current-pegasus.ins.cwi.nl/five/sqllog" --set "xquery_logdir=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-current-pegasus.ins.cwi.nl/five/xquerylog" --set mapi_open=true --set mapi_port=34439 --set xrpc_port=43409 --set monet_prompt= --trace --dbname=mTests_modules_mal  remote03.mal
+# 15:28:56 >  
+
+
+
+
+
+# MonetDB server v5.7.0, based on kernel v1.25.0
+# Serving database 'mTests_modules_mal', using 2 threads
+# Compiled for x86_64-pc-linux-gnu/64bit with 64bit OIDs dynamically linked
+# dbname:mTests_modules_mal
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:37931/
+function user.main():void;
+# let connect figure out itself how to connect to the running db 
+    uri := sabaoth.getLocalConnectionURI();
+    conn:str  := remote.connect(uri,"monetdb","monetdb");
+# this is invalid, as io.print is an invalid module, and bla will be 
+# taken as function 
+    res:str  := remote.put(conn,:void);
+    res:str  := remote.exec(conn,"io.print","bla");
+catch SyntaxException:str ;
+    io.print("Received first error from the remote site");
+    io.printf("!%s\n",SyntaxException);
+exit SyntaxException:str ;
+# now do it with a function that returns something (a BAT in this case) 
+    bn := bat.new(:oid,:str);
+    b := remote.put(conn,bn);
+catch MALException:str ;
+    io.print("Received second init error from the remote site");
+    io.printf("!%s\n",MALException);
+exit MALException:str ;
+    io.print(b);
+    b := remote.exec(conn,"inspect","getAtomNames");
+catch MALException:str ;
+    io.print("Received second error from the remote site");
+    io.printf("!%s\n",MALException);
+exit MALException:str ;
+    io.print(b);
+    c:bat[:oid,:str]  := remote.get(conn,b);
+    io.print(c);
+catch MALException:str ;
+    io.print("Received third error from the remote site");
+    io.printf("!%s\n",MALException);
+exit MALException:str ;
+# io.print only outputs things, but returns nothing 
+    ah:str  := remote.put(conn,:void);
+    io.print(ah);
+    ah:str  := remote.exec(conn,"io","print",b);
+catch MALException:str ;
+    io.print("Received fourth error from the remote site");
+    io.printf("!%s\n",MALException);
+exit MALException:str ;
+    d:void  := remote.get(conn,ah);
+    io.print(d);
+catch MALException:str ;
+    io.print("Received fifth error from the remote site");
+    io.printf("!%s\n",MALException);
+exit MALException:str ;
+# help testweb a bit, since currently no cleanup is done on server 
+# shutdown 
+    remote.disconnect(conn);
+end main;
+[ "Received first error from the remote site" ]
+!SyntaxException:remote.exec:(mapi:monetdb://monetdb@madrid.ins.cwi.nl/mTests_monetdb5_modules_mal) rmt0__8_void := io.print.bla();
+SyntaxException:parseError:                    ^'(' expected
+
+[ "rmt1_bn_bat_oid_str" ]
+[ "rmt1_bn_bat_oid_str" ]
+#-------------------------#
+# h	t		  # name
+# int	str		  # type
+#-------------------------#
+[ 0@0,	  "void"	  ]
+[ 1@0,	  "bit"		  ]
+[ 2@0,	  "bte"		  ]
+[ 3@0,	  "sht"		  ]
+[ 4@0,	  "BAT"		  ]
+[ 5@0,	  "int"		  ]
+[ 6@0,	  "oid"		  ]
+[ 7@0,	  "wrd"		  ]
+[ 8@0,	  "ptr"		  ]
+[ 9@0,	  "flt"		  ]
+[ 10@0,	  "dbl"		  ]
+[ 11@0,	  "lng"		  ]
+[ 12@0,	  "hge"		  ]
+[ 13@0,	  "str"		  ]
+[ 14@0,	  "lock"	  ]
+[ 15@0,	  "sema"	  ]
+[ 16@0,	  "streams"	  ]
+[ 17@0,	  "bstream"	  ]
+[ 18@0,	  "blob"	  ]
+[ 19@0,	  "sqlblob"	  ]
+[ 20@0,	  "color"	  ]
+[ 21@0,	  "url"		  ]
+[ 22@0,	"date"  ]
+[ 23@0,	"daytime"  ]
+[ 24@0,	"timestamp"  ]
+[ 25@0,	"timezone"  ]
+[ 26@0,	"zrule"  ]
+[ 27@0,	"inet"  ]
+[ 28@0,	"identifier"  ]
+[ 29@0,	"xml"  ]
+[ 30@0,	"pcre"  ]
+[ 31@0,	"mbr"  ]
+[ 32@0,	"wkb"  ]
+[ "rmt2__8_void" ]
+[ nil ]
+
+# 19:22:53 >  
+# 19:22:53 >  Done.
+# 19:22:53 >  
+

@@ -35,8 +35,8 @@ Ready.
 #;
 % .L1 # table_name
 % suma # name
-% hugeint # type
-% 40 # length
+% bigint # type
+% 20 # length
 [ NULL	]
 #SELECT SUM(a) AS suma
 #FROM ( 
@@ -50,7 +50,7 @@ Ready.
 #;
 % .L1 # table_name
 % suma # name
-% hugeint # type
+% bigint # type
 % 1 # length
 [ NULL	]
 #SELECT SUM(a) AS suma
@@ -65,7 +65,7 @@ Ready.
 #;
 % .L1 # table_name
 % suma # name
-% hugeint # type
+% bigint # type
 % 1 # length
 #SELECT SUM(a) AS suma
 #FROM ( 
@@ -79,17 +79,17 @@ Ready.
 #;
 % .L1 # table_name
 % suma # name
-% hugeint # type
+% bigint # type
 % 1 # length
 
 % .sub3,	.sub3 # table_name
 % suma,	mynull # name
-% hugeint,	char # type
+% bigint,	char # type
 % 1,	0 # length
 
 % .sub3,	.sub3 # table_name
 % suma,	mynull # name
-% hugeint,	char # type
+% bigint,	char # type
 % 1,	0 # length
 
 % .sub,	.sub # table_name

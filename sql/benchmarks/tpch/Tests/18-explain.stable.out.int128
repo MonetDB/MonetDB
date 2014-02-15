@@ -1,0 +1,174 @@
+stdout of test '18-explain` in directory 'sql/benchmarks/tpch` itself:
+
+
+# 22:53:30 >  
+# 22:53:30 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=34581" "--set" "mapi_usock=/var/tmp/mtest-9096/.s.monetdb.34581" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/manegold/_/Monet/HG/Feb2013/prefix/--disable-debug_--enable-assert_--enable-optimize/var/MonetDB/mTests_sql_benchmarks_tpch" "--set" "mal_listing=0"
+# 22:53:30 >  
+
+# MonetDB 5 server v11.15.12
+# This is an unreleased version
+# Serving database 'mTests_sql_benchmarks_tpch', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.591 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://rome.ins.cwi.nl:34581/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-9096/.s.monetdb.34581
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 22:53:30 >  
+# 22:53:30 >  "/usr/bin/python2" "18-explain.SQL.py" "18-explain"
+# 22:53:30 >  
+
+#set optimizer = 'sequential_pipe';
+#explain select
+#	c_name,
+#	c_custkey,
+#	o_orderkey,
+#	o_orderdate,
+#	o_totalprice,
+#	sum(l_quantity)
+#from
+#	customer,
+#	orders,
+#	lineitem
+#where
+#	o_orderkey in (
+#		select
+#			l_orderkey
+#		from
+#			lineitem
+#		group by
+#			l_orderkey having
+#				sum(l_quantity) > 300
+#	)
+#	and c_custkey = o_custkey
+#	and o_orderkey = l_orderkey
+#group by
+#	c_name,
+#	c_custkey,
+#	o_orderkey,
+#	o_orderdate,
+#	o_totalprice
+#order by
+#	o_totalprice desc,
+#	o_orderdate
+#limit 100;
+% .explain # table_name
+% mal # name
+% clob # type
+% 545 # length
+function user.s2_1{autoCommit=true}(A0:hge):void;
+    X_3 := sql.mvc();
+    X_4:bat[:oid,:oid]  := sql.tid(X_3,"sys","orders");
+    X_7 := sql.bind_idxbat(X_3,"sys","orders","orders_o_custkey_fkey",0);
+    (X_10,r1_10) := sql.bind_idxbat(X_3,"sys","orders","orders_o_custkey_fkey",2);
+    X_13 := sql.bind_idxbat(X_3,"sys","orders","orders_o_custkey_fkey",1);
+    X_15 := sql.delta(X_7,X_10,r1_10,X_13);
+    X_16 := algebra.leftfetchjoin(X_4,X_15);
+    X_17:bat[:oid,:oid]  := sql.tid(X_3,"sys","customer");
+    (X_19,r1_19) := algebra.join(X_16,X_17);
+    X_21 := algebra.leftfetchjoin(X_19,X_4);
+    X_22:bat[:oid,:oid]  := sql.tid(X_3,"sys","lineitem");
+    X_24 := sql.bind_idxbat(X_3,"sys","lineitem","lineitem_l_orderkey_fkey",0);
+    (X_26,r1_26) := sql.bind_idxbat(X_3,"sys","lineitem","lineitem_l_orderkey_fkey",2);
+    X_28 := sql.bind_idxbat(X_3,"sys","lineitem","lineitem_l_orderkey_fkey",1);
+    X_29 := sql.delta(X_24,X_26,r1_26,X_28);
+    X_30 := algebra.leftfetchjoin(X_22,X_29);
+    (X_31,r1_31) := algebra.join(X_21,X_30);
+    X_33 := sql.bind(X_3,"sys","orders","o_orderkey",0);
+    (X_35,r1_35) := sql.bind(X_3,"sys","orders","o_orderkey",2);
+    X_37 := sql.bind(X_3,"sys","orders","o_orderkey",1);
+    X_40 := sql.delta(X_33,X_35,r1_35,X_37);
+    X_41 := algebra.leftfetchjoin(X_4,X_40);
+    X_42:bat[:oid,:int]  := algebra.leftfetchjoinPath(X_31,X_19,X_41);
+    X_43 := bat.mirror(X_42);
+    X_44 := sql.bind(X_3,"sys","lineitem","l_quantity",0);
+    (X_47,r1_49) := sql.bind(X_3,"sys","lineitem","l_quantity",2);
+    X_50 := sql.bind(X_3,"sys","lineitem","l_quantity",1);
+    X_52 := sql.delta(X_44,X_47,r1_49,X_50);
+    X_53 := algebra.leftfetchjoin(X_22,X_52);
+    X_54 := sql.bind(X_3,"sys","lineitem","l_orderkey",0);
+    (X_57,r1_59) := sql.bind(X_3,"sys","lineitem","l_orderkey",2);
+    X_59 := sql.bind(X_3,"sys","lineitem","l_orderkey",1);
+    X_60 := sql.delta(X_54,X_57,r1_59,X_59);
+    X_61 := algebra.leftfetchjoin(X_22,X_60);
+    (X_62,r1_64,r2_64) := group.subgroupdone(X_61);
+    X_65:bat[:oid,:hge]  := aggr.subsum(X_53,X_62,r1_64,true,true);
+    X_67 := algebra.thetasubselect(X_65,A0,">");
+    X_69:bat[:oid,:int]  := algebra.leftfetchjoinPath(X_67,r1_64,X_61);
+    (X_70,r1_74) := algebra.join(X_42,X_69);
+    X_72 := algebra.tinter(X_43,X_70);
+    X_217 := algebra.leftfetchjoin(X_31,r1_19);
+    X_73 := sql.bind(X_3,"sys","customer","c_custkey",0);
+    (X_78,r1_82) := sql.bind(X_3,"sys","customer","c_custkey",2);
+    X_81 := sql.bind(X_3,"sys","customer","c_custkey",1);
+    X_83 := sql.delta(X_73,X_78,r1_82,X_81);
+    X_84 := algebra.leftfetchjoin(X_17,X_83);
+    X_85:bat[:oid,:int]  := algebra.leftfetchjoinPath(X_72,X_217,X_84);
+    X_86 := algebra.leftfetchjoin(X_72,X_42);
+    (X_87,r1_93,r2_93) := group.subgroup(X_86);
+    (X_90,r1_96,r2_96) := group.subgroupdone(X_85,X_87);
+    X_93 := algebra.leftfetchjoin(r1_96,X_85);
+    (X_94,r1_107) := algebra.join(X_93,X_84);
+    X_96:bat[:oid,:int]  := algebra.leftfetchjoinPath(X_94,r1_96,X_86);
+    X_221 := algebra.leftfetchjoin(r1_31,X_22);
+    X_145 := sql.bind(X_3,"sys","lineitem","l_quantity",0);
+    (X_150,r1_197) := sql.bind(X_3,"sys","lineitem","l_quantity",2);
+    X_153 := sql.bind(X_3,"sys","lineitem","l_quantity",1);
+    X_155 := sql.delta(X_145,X_150,r1_197,X_153);
+    X_156:bat[:oid,:int]  := algebra.leftfetchjoinPath(X_72,X_221,X_155);
+    X_157:bat[:oid,:hge]  := aggr.subsum(X_156,X_90,r1_96,true,true);
+    (X_102,r1_124) := algebra.join(X_96,X_41);
+    X_218 := algebra.leftfetchjoin(r1_124,X_4);
+    X_104 := sql.bind(X_3,"sys","orders","o_totalprice",0);
+    (X_106,r1_128) := sql.bind(X_3,"sys","orders","o_totalprice",2);
+    X_108 := sql.bind(X_3,"sys","orders","o_totalprice",1);
+    X_109 := sql.delta(X_104,X_106,r1_128,X_108);
+    X_110:bat[:oid,:lng]  := algebra.leftfetchjoin(X_218,X_109);
+    X_111 := pqueue.utopn_min(X_110,100:wrd);
+    X_112 := bat.mirror(X_111);
+    X_113 := sql.bind(X_3,"sys","orders","o_orderdate",0);
+    (X_115,r1_143) := sql.bind(X_3,"sys","orders","o_orderdate",2);
+    X_119 := sql.bind(X_3,"sys","orders","o_orderdate",1);
+    X_120 := sql.delta(X_113,X_115,r1_143,X_119);
+    X_121:bat[:oid,:date]  := algebra.leftfetchjoin(X_218,X_120);
+    X_122 := algebra.leftjoin(X_112,X_121);
+    X_123 := pqueue.topn_max(X_111,X_122,100:wrd);
+    X_125 := algebra.markT(X_123,0@0);
+    X_126 := bat.reverse(X_125);
+    X_219 := algebra.leftfetchjoin(X_126,X_102);
+    X_127 := sql.bind(X_3,"sys","customer","c_name",0);
+    (X_131,r1_163) := sql.bind(X_3,"sys","customer","c_name",2);
+    X_134 := sql.bind(X_3,"sys","customer","c_name",1);
+    X_136 := sql.delta(X_127,X_131,r1_163,X_134);
+    X_137:bat[:oid,:str]  := algebra.leftfetchjoinPath(X_219,r1_107,X_17,X_136);
+    X_139 := algebra.subslice(X_137,0:wrd,99:wrd);
+    X_140 := algebra.leftfetchjoin(X_139,X_137);
+    X_220 := algebra.leftfetchjoin(X_139,X_126);
+    X_159:bat[:oid,:hge]  := algebra.leftfetchjoinPath(X_220,X_102,X_94,X_157);
+    X_144:bat[:oid,:lng]  := algebra.leftfetchjoin(X_220,X_110);
+    X_143:bat[:oid,:date]  := algebra.leftfetchjoin(X_220,X_121);
+    X_142:bat[:oid,:int]  := algebra.leftfetchjoinPath(X_220,X_102,X_96);
+    X_141:bat[:oid,:int]  := algebra.leftfetchjoinPath(X_220,X_102,X_94,X_93);
+    X_160 := sql.resultSet(6,1,X_140);
+    sql.rsColumn(X_160,"sys.customer","c_name","varchar",25,0,X_140);
+    sql.rsColumn(X_160,"sys.customer","c_custkey","int",32,0,X_141);
+    sql.rsColumn(X_160,"sys.orders","o_orderkey","int",32,0,X_142);
+    sql.rsColumn(X_160,"sys.orders","o_orderdate","date",0,0,X_143);
+    sql.rsColumn(X_160,"sys.orders","o_totalprice","decimal",15,2,X_144);
+    sql.rsColumn(X_160,"sys.L6","L6","hugeint",32,0,X_159);
+    X_187 := io.stdout();
+    sql.exportResult(X_187,X_160);
+end s2_1;
+# querylog.define("explain select\n\tc_name,\n\tc_custkey,\n\to_orderkey,\n\to_orderdate,\n\to_totalprice,\n\tsum(l_quantity)\nfrom\n\tcustomer,\n\torders,\n\tlineitem\nwhere\n\to_orderkey in (\n\t\tselect\n\t\t\tl_orderkey\n\t\tfrom\n\t\t\tlineitem\n\t\tgroup by\n\t\t\tl_orderkey having\n\t\t\t\tsum(l_quantity) > 300\n\t)\n\tand c_custkey = o_custkey\n\tand o_orderkey = l_orderkey\ngroup by\n\tc_name,\n\tc_custkey,\n\to_orderkey,\n\to_orderdate,\n\to_totalprice\norder by\n\to_totalprice desc,\n\to_orderdate\nlimit 100;","sequential_pipe")
+
+# 22:53:30 >  
+# 22:53:30 >  "Done."
+# 22:53:30 >  
+

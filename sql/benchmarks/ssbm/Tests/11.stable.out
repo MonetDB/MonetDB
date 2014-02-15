@@ -36,7 +36,7 @@ Ready.
 #	order by d_year, c_nation;
 % sys.dwdate,	sys.customer,	sys.L1 # table_name
 % d_year,	c_nation,	profit1 # name
-% int,	clob,	hugeint # type
+% int,	clob,	bigint # type
 % 4,	9,	9 # length
 [ 1992,	"ARGENTINA",	60236596	]
 [ 1992,	"BRAZIL",	50116740	]

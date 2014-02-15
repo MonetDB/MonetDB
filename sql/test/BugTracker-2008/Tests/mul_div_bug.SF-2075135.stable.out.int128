@@ -1,0 +1,37 @@
+stdout of test 'mul_div_bug.SF-2075135` in directory 'sql/test/BugTracker-2008` itself:
+
+
+# 13:00:43 >  
+# 13:00:43 >   mserver5 "--config=/ufs/niels/scratch/rc/Linux-x86_64/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5/lib:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=37919 --set xrpc_port=45857 --set monet_prompt= --trace  "--dbname=mTests_src_test_BugTracker-2008" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
+# 13:00:43 >  
+
+# MonetDB server v5.6.1, based on kernel v1.24.1
+# Serving database 'mTests_src_test_BugTracker-2008'
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-2008 CWI, all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:37919/
+# MonetDB/SQL module v2.24.1 loaded
+
+Ready.
+#function user.main():void;
+#    clients.quit();
+#end main;
+
+
+# 13:00:43 >  
+# 13:00:43 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=37919 
+# 13:00:43 >  
+
+[ 1	]
+[ 1	]
+% sys.c,	sys.c,	sys.c # table_name
+% unit_price,	price,	units # name
+% decimal,	decimal,	decimal # type
+% 30,	19,	26 # length
+[ 0.1603,	1411.5000,	8800.0000	]
+
+# 13:00:43 >  
+# 13:00:43 >  Done.
+# 13:00:43 >  
+

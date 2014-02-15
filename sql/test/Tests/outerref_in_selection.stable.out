@@ -38,7 +38,7 @@ Ready.
 #    FROM capediff AS b;
 % .b,	.L2 # table_name
 % cape_date,	numppl # name
-% date,	hugeint # type
+% date,	bigint # type
 % 10,	1 # length
 
 # 11:50:11 >  

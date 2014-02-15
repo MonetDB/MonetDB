@@ -83,7 +83,7 @@ top N (
 | | | | | | | | | | | group by (
 | | | | | | | | | | | | table(sys.lineitem) [ lineitem.l_orderkey NOT NULL HASHCOL , lineitem.l_quantity NOT NULL ] COUNT 
 | | | | | | | | | | | ) [ lineitem.l_orderkey NOT NULL HASHCOL  ] [ lineitem.l_orderkey NOT NULL HASHCOL , sys.sum no nil (lineitem.l_quantity NOT NULL) NOT NULL as L3.L3 ]
-| | | | | | | | | | ) [ L3 NOT NULL > hugeint[smallint "300"] ]
+| | | | | | | | | | ) [ L3 NOT NULL > bigint[smallint "300"] ]
 | | | | | | | | | ) [ lineitem.l_orderkey NOT NULL as L5.L4 ]
 | | | | | | | | ) [ orders.o_orderkey NOT NULL HASHCOL  = L5.L4 NOT NULL ]
 | | | | | | | ) [ customer.c_custkey NOT NULL HASHCOL , orders.o_orderkey NOT NULL HASHCOL , lineitem.l_quantity NOT NULL ]

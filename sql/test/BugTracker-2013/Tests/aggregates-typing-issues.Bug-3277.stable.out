@@ -86,7 +86,7 @@ Ready.
 #select prod( prob1 ) from mtcars2;
 % sys.L1 # table_name
 % L1 # name
-% hugeint # type
+% bigint # type
 % 1 # length
 [ 0	]
 #select stddev_pop( prob1 ) from mtcars2;
@@ -134,7 +134,7 @@ Ready.
 #select prod( prob1 ) from mtcars2;
 % sys.L1 # table_name
 % L1 # name
-% hugeint # type
+% bigint # type
 % 1 # length
 [ 0	]
 #select stddev_pop( prob1 ) from mtcars2;
@@ -182,7 +182,7 @@ Ready.
 #select prod( prob1 ) from mtcars2;
 % sys.L1 # table_name
 % L1 # name
-% hugeint # type
+% bigint # type
 % 1 # length
 [ 0	]
 #select stddev_pop( prob1 ) from mtcars2;
@@ -230,7 +230,7 @@ Ready.
 #select prod( prob1 ) from mtcars2;
 % sys.L1 # table_name
 % L1 # name
-% hugeint # type
+% bigint # type
 % 1 # length
 [ 0	]
 #select stddev_pop( prob1 ) from mtcars2;
@@ -278,7 +278,7 @@ Ready.
 #select prod( prob1 ) from mtcars2;
 % sys.L1 # table_name
 % L1 # name
-% hugeint # type
+% bigint # type
 % 1 # length
 [ 0	]
 #select stddev_pop( prob1 ) from mtcars2;

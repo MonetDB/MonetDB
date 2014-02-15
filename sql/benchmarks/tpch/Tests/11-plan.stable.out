@@ -55,7 +55,7 @@ Ready.
 % .plan # table_name
 % rel # name
 % clob # type
-% 250 # length
+% 231 # length
 project (
 | semijoin (
 | | group by (
@@ -68,7 +68,7 @@ project (
 | | | | ) [ supplier.%supplier_s_nationkey_fkey NOT NULL = nation.%TID% NOT NULL JOINIDX sys.supplier.supplier_s_nationkey_fkey ],
 | | | | table(sys.partsupp) [ partsupp.ps_partkey NOT NULL HASHCOL , partsupp.ps_availqty NOT NULL, partsupp.ps_supplycost NOT NULL, partsupp.%partsupp_ps_suppkey_fkey NOT NULL JOINIDX sys.partsupp.partsupp_ps_suppkey_fkey ] COUNT 
 | | | ) [ partsupp.%partsupp_ps_suppkey_fkey NOT NULL = supplier.%TID% NOT NULL JOINIDX sys.partsupp.partsupp_ps_suppkey_fkey ]
-| | ) [ partsupp.ps_partkey NOT NULL HASHCOL  ] [ partsupp.ps_partkey NOT NULL HASHCOL , sys.sum no nil (sys.sql_mul(decimal(39,2)[partsupp.ps_supplycost NOT NULL] as partsupp.ps_supplycost, partsupp.ps_availqty NOT NULL)) as L1.L1, L1.L1 as L2.L2 ],
+| | ) [ partsupp.ps_partkey NOT NULL HASHCOL  ] [ partsupp.ps_partkey NOT NULL HASHCOL , sys.sum no nil (sys.sql_mul(partsupp.ps_supplycost NOT NULL, partsupp.ps_availqty NOT NULL)) as L1.L1, L1.L1 as L2.L2 ],
 | | project (
 | | | group by (
 | | | | join (
@@ -80,9 +80,9 @@ project (
 | | | | | ) [ supplier.%supplier_s_nationkey_fkey NOT NULL = nation.%TID% NOT NULL JOINIDX sys.supplier.supplier_s_nationkey_fkey ],
 | | | | | table(sys.partsupp) [ partsupp.ps_availqty NOT NULL, partsupp.ps_supplycost NOT NULL, partsupp.%partsupp_ps_suppkey_fkey NOT NULL JOINIDX sys.partsupp.partsupp_ps_suppkey_fkey ] COUNT 
 | | | | ) [ partsupp.%partsupp_ps_suppkey_fkey NOT NULL = supplier.%TID% NOT NULL JOINIDX sys.partsupp.partsupp_ps_suppkey_fkey ]
-| | | ) [  ] [ sys.sum no nil (sys.sql_mul(decimal(39,2)[partsupp.ps_supplycost NOT NULL] as partsupp.ps_supplycost, partsupp.ps_availqty NOT NULL)) as L3.L3 ]
+| | | ) [  ] [ sys.sum no nil (sys.sql_mul(partsupp.ps_supplycost NOT NULL, partsupp.ps_availqty NOT NULL)) as L3.L3 ]
 | | ) [ sys.sql_mul(L3, decimal(11,10) "1") as L4.L4 ]
-| ) [ L2 > sys.scale_down(L4.L4, hugeint "100") ]
+| ) [ L2 > sys.scale_down(L4.L4, bigint "100") ]
 ) [ partsupp.ps_partkey NOT NULL, L1 as L1.value ] [ L1.value ]
 
 # 22:46:31 >  

@@ -1,0 +1,50 @@
+stdout of test 'trace` in directory 'sql/test` itself:
+
+
+# 11:14:41 >  
+# 11:14:41 >   mserver5 "--config=/ufs/alink/opt/MonetDB-Nov2009/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=0 --set "monet_mod_path=/ufs/alink/opt/MonetDB-Nov2009/lib/MonetDB5:/ufs/alink/opt/MonetDB-Nov2009/lib/MonetDB5/lib:/ufs/alink/opt/MonetDB-Nov2009/lib/MonetDB5/bin" --set "gdk_dbfarm=/export/scratch0/roberto/wouter/dbfarm-MonetDB-Nov2009"  --set mapi_open=true --set xrpc_open=true --set mapi_port=30924 --set xrpc_port=45771 --set monet_prompt= --trace  "--dbname=mTests_src_test" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
+# 11:14:41 >  
+
+# MonetDB server v5.16.0, based on kernel v1.34.0
+# Serving database 'mTests_src_test', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Detected 7.753 GiB (8324390912 bytes) main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2009 MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://loki.ins.cwi.nl:30924/
+# MonetDB/SQL module v2.34.0 loaded
+
+Ready.
+#function user.main():void;
+#    clients.quit();
+#end main;
+
+
+# 11:14:41 >  
+# 11:14:41 >  mclient -lsql -i -umonetdb -Pmonetdb --host=loki --port=30924 
+# 11:14:41 >  
+
+# 11:43:05 >  
+# 11:43:05 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-23209" "--port=33225"
+# 11:43:05 >  
+
+#set optimizer='sequential_pipe';
+#set trace = 'none'; -- non-documented feature to not get any trace output
+#TRACE SELECT count(*) FROM types;
+% sys.L1 # table_name
+% L1 # name
+% wrd # type
+% 2 # length
+[ 44	]
+#SELECT COUNT(*) FROM tracelog();
+% .L1 # table_name
+% L1 # name
+% wrd # type
+% 2 # length
+[ 14	]
+
+# 11:14:41 >  
+# 11:14:41 >  Done.
+# 11:14:41 >  
+

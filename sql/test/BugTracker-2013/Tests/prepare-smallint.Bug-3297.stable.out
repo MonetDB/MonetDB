@@ -54,9 +54,9 @@ Ready.
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	str,	str,	str # type
-% 7,	3,	1,	0,	0,	0 # length
-[ "hugeint",	128,	0,	NULL,	NULL,	NULL	]
-#exec  2(1000);
+% 6,	2,	1,	0,	0,	0 # length
+[ "bigint",	64,	0,	NULL,	NULL,	NULL	]
+#exec  0(1000);
 [ 1	]
 #select * from ints;
 % sys.ints # table_name

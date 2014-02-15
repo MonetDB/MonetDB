@@ -37,7 +37,7 @@ Ready.
 #	order by d_year, s_city, p_brand1;
 % sys.dwdate,	sys.supplier,	sys.part,	sys.L1 # table_name
 % d_year,	s_city,	p_brand1,	profit1 # name
-% int,	clob,	clob,	hugeint # type
+% int,	clob,	clob,	bigint # type
 % 4,	10,	9,	7 # length
 [ 1997,	"UNITED ST2",	"MFGR#1433",	2636841	]
 [ 1997,	"UNITED ST6",	"MFGR#1415",	5022945	]

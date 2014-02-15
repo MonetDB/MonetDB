@@ -33,7 +33,7 @@ Ready.
 #select coalesce(f1,'EMPTY') as bug_alias, sum(f2) from a group by bug_alias;
 % sys.L,	sys.L1 # table_name
 % bug_alias,	L1 # name
-% varchar,	hugeint # type
+% varchar,	bigint # type
 % 0,	1 # length
 
 # 11:54:20 >  

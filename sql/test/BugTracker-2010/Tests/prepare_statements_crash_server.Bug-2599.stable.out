@@ -27,37 +27,37 @@ Ready.
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	str,	str,	str # type
-% 7,	4,	1,	0,	6,	1 # length
+% 6,	3,	1,	0,	6,	1 # length
 [ "int",	32,	0,	"",	"t_2599",	"a"	]
 [ "int",	32,	0,	"",	"t_2599",	"b"	]
-[ "hugeint",	128,	0,	NULL,	NULL,	NULL	]
+[ "bigint",	64,	0,	NULL,	NULL,	NULL	]
 #prepare select * from t_2599 where a>2*?+1;
 #prepare select * from t_2599 where a>2*?+1;
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	str,	str,	str # type
-% 7,	4,	1,	0,	6,	1 # length
+% 6,	3,	1,	0,	6,	1 # length
 [ "int",	32,	0,	"",	"t_2599",	"a"	]
 [ "int",	32,	0,	"",	"t_2599",	"b"	]
-[ "hugeint",	128,	0,	NULL,	NULL,	NULL	]
+[ "bigint",	64,	0,	NULL,	NULL,	NULL	]
 #prepare select * from t_2599 where a>?+1;
 #prepare select * from t_2599 where a>?+1;
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	str,	str,	str # type
-% 7,	4,	1,	0,	6,	1 # length
+% 6,	3,	1,	0,	6,	1 # length
 [ "int",	32,	0,	"",	"t_2599",	"a"	]
 [ "int",	32,	0,	"",	"t_2599",	"b"	]
-[ "hugeint",	128,	0,	NULL,	NULL,	NULL	]
+[ "bigint",	64,	0,	NULL,	NULL,	NULL	]
 #prepare select * from t_2599 where a>1+?*2;
 #prepare select * from t_2599 where a>1+?*2;
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	str,	str,	str # type
-% 7,	4,	1,	0,	6,	1 # length
+% 6,	3,	1,	0,	6,	1 # length
 [ "int",	32,	0,	"",	"t_2599",	"a"	]
 [ "int",	32,	0,	"",	"t_2599",	"b"	]
-[ "hugeint",	128,	0,	NULL,	NULL,	NULL	]
+[ "bigint",	64,	0,	NULL,	NULL,	NULL	]
 #drop table t_2599;
 
 # 12:42:06 >  

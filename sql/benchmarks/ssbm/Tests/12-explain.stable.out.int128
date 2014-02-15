@@ -1,0 +1,165 @@
+stdout of test '12-explain` in directory 'sql/benchmarks/ssbm` itself:
+
+
+# 23:10:48 >  
+# 23:10:48 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=35257" "--set" "mapi_usock=/var/tmp/mtest-17595/.s.monetdb.35257" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/manegold/_/Monet/HG/Feb2013/prefix/--disable-debug_--enable-assert_--enable-optimize/var/MonetDB/mTests_sql_benchmarks_ssbm" "--set" "mal_listing=0"
+# 23:10:48 >  
+
+# MonetDB 5 server v11.15.12
+# This is an unreleased version
+# Serving database 'mTests_sql_benchmarks_ssbm', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.591 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://rome.ins.cwi.nl:35257/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-17595/.s.monetdb.35257
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 23:10:48 >  
+# 23:10:48 >  "/usr/bin/python2" "12-explain.SQL.py" "12-explain"
+# 23:10:48 >  
+
+#set optimizer = 'sequential_pipe';
+#explain
+#select d_year, s_nation, p_category, sum(lo_revenue-lo_supplycost) as profit1
+#	from dwdate, customer, supplier, part, lineorder
+#	where lo_custkey = c_custkey
+#		and lo_suppkey = s_suppkey
+#		and lo_partkey = p_partkey
+#		and lo_orderdate = d_datekey
+#		and c_region = 'AMERICA'
+#		and s_region = 'AMERICA'
+#		and (d_year = 1997 or d_year = 1998)
+#		and (p_mfgr = 'MFGR#1' or p_mfgr = 'MFGR#2')
+#	group by d_year, s_nation, p_category
+#	order by d_year, s_nation, p_category;
+% .explain # table_name
+% mal # name
+% clob # type
+% 558 # length
+function user.s2_1{autoCommit=true}(A0:str,A1:str,A2:int,A3:int,A4:str,A5:str):void;
+    X_8 := sql.mvc();
+    X_9:bat[:oid,:oid]  := sql.tid(X_8,"sys","lineorder");
+    X_12 := sql.bind_idxbat(X_8,"sys","lineorder","lineorder_lo_orderdate_fkey",0);
+    (X_15,r1_15) := sql.bind_idxbat(X_8,"sys","lineorder","lineorder_lo_orderdate_fkey",2);
+    X_18 := sql.bind_idxbat(X_8,"sys","lineorder","lineorder_lo_orderdate_fkey",1);
+    X_20 := sql.delta(X_12,X_15,r1_15,X_18);
+    X_21 := algebra.leftfetchjoin(X_9,X_20);
+    X_22:bat[:oid,:oid]  := sql.tid(X_8,"sys","dwdate");
+    X_24 := sql.bind(X_8,"sys","dwdate","d_year",0);
+    (X_26,r1_26) := sql.bind(X_8,"sys","dwdate","d_year",2);
+    X_28 := sql.bind(X_8,"sys","dwdate","d_year",1);
+    X_29 := sql.delta(X_24,X_26,r1_26,X_28);
+    X_30 := algebra.leftfetchjoin(X_22,X_29);
+    X_31 := algebra.subselect(X_30,A2,A2,true,true,false);
+    X_33 := algebra.subselect(X_30,A3,A3,true,true,false);
+    X_34 := bat.mergecand(X_31,X_33);
+    X_35 := algebra.leftfetchjoin(X_34,X_22);
+    (X_36,r1_38) := algebra.join(X_21,X_35);
+    X_243 := algebra.leftfetchjoin(X_36,X_9);
+    X_38 := sql.bind_idxbat(X_8,"sys","lineorder","lineorder_lo_partkey_fkey",0);
+    (X_40,r1_42) := sql.bind_idxbat(X_8,"sys","lineorder","lineorder_lo_partkey_fkey",2);
+    X_44 := sql.bind_idxbat(X_8,"sys","lineorder","lineorder_lo_partkey_fkey",1);
+    X_45 := sql.delta(X_38,X_40,r1_42,X_44);
+    X_46:bat[:oid,:oid]  := algebra.leftfetchjoin(X_243,X_45);
+    X_47:bat[:oid,:oid]  := sql.tid(X_8,"sys","part");
+    X_49 := sql.bind(X_8,"sys","part","p_mfgr",0);
+    (X_52,r1_55) := sql.bind(X_8,"sys","part","p_mfgr",2);
+    X_55 := sql.bind(X_8,"sys","part","p_mfgr",1);
+    X_57 := sql.delta(X_49,X_52,r1_55,X_55);
+    X_58 := algebra.leftfetchjoin(X_47,X_57);
+    X_59 := algebra.subselect(X_58,A4,A4,true,true,false);
+    X_61 := algebra.subselect(X_58,A5,A5,true,true,false);
+    X_63 := bat.mergecand(X_59,X_61);
+    X_64 := algebra.leftfetchjoin(X_63,X_47);
+    (X_65,r1_70) := algebra.join(X_46,X_64);
+    X_244 := algebra.leftfetchjoin(X_65,X_36);
+    X_67 := sql.bind_idxbat(X_8,"sys","lineorder","lineorder_lo_suppkey_fkey",0);
+    (X_69,r1_74) := sql.bind_idxbat(X_8,"sys","lineorder","lineorder_lo_suppkey_fkey",2);
+    X_71 := sql.bind_idxbat(X_8,"sys","lineorder","lineorder_lo_suppkey_fkey",1);
+    X_74 := sql.delta(X_67,X_69,r1_74,X_71);
+    X_75:bat[:oid,:oid]  := algebra.leftfetchjoinPath(X_244,X_9,X_74);
+    X_76:bat[:oid,:oid]  := sql.tid(X_8,"sys","supplier");
+    X_78 := sql.bind(X_8,"sys","supplier","s_region",0);
+    (X_81,r1_88) := sql.bind(X_8,"sys","supplier","s_region",2);
+    X_84 := sql.bind(X_8,"sys","supplier","s_region",1);
+    X_86 := sql.delta(X_78,X_81,r1_88,X_84);
+    X_87 := algebra.leftfetchjoin(X_76,X_86);
+    X_88 := algebra.subselect(X_87,A1,A1,true,true,false);
+    X_90 := algebra.leftfetchjoin(X_88,X_76);
+    (X_91,r1_99) := algebra.join(X_75,X_90);
+    X_245 := algebra.leftfetchjoin(X_91,X_65);
+    X_93 := sql.bind_idxbat(X_8,"sys","lineorder","lineorder_lo_custkey_fkey",0);
+    (X_95,r1_103) := sql.bind_idxbat(X_8,"sys","lineorder","lineorder_lo_custkey_fkey",2);
+    X_97 := sql.bind_idxbat(X_8,"sys","lineorder","lineorder_lo_custkey_fkey",1);
+    X_98 := sql.delta(X_93,X_95,r1_103,X_97);
+    X_99:bat[:oid,:oid]  := algebra.leftfetchjoinPath(X_245,X_36,X_9,X_98);
+    X_100:bat[:oid,:oid]  := sql.tid(X_8,"sys","customer");
+    X_103 := sql.bind(X_8,"sys","customer","c_region",0);
+    (X_105,r1_116) := sql.bind(X_8,"sys","customer","c_region",2);
+    X_107 := sql.bind(X_8,"sys","customer","c_region",1);
+    X_108 := sql.delta(X_103,X_105,r1_116,X_107);
+    X_109 := algebra.leftfetchjoin(X_100,X_108);
+    X_110 := algebra.subselect(X_109,A0,A0,true,true,false);
+    X_112 := algebra.leftfetchjoin(X_110,X_100);
+    (X_113,r1_125) := algebra.join(X_99,X_112);
+    X_246 := algebra.leftfetchjoin(X_113,X_91);
+    X_115 := sql.bind(X_8,"sys","part","p_category",0);
+    (X_119,r1_131) := sql.bind(X_8,"sys","part","p_category",2);
+    X_122 := sql.bind(X_8,"sys","part","p_category",1);
+    X_124 := sql.delta(X_115,X_119,r1_131,X_122);
+    X_125:bat[:oid,:str]  := algebra.leftfetchjoinPath(X_246,r1_70,X_63,X_47,X_124);
+    X_247 := algebra.leftfetchjoin(r1_99,X_88);
+    X_126 := sql.bind(X_8,"sys","supplier","s_nation",0);
+    (X_129,r1_145) := sql.bind(X_8,"sys","supplier","s_nation",2);
+    X_132 := sql.bind(X_8,"sys","supplier","s_nation",1);
+    X_133 := sql.delta(X_126,X_129,r1_145,X_132);
+    X_134:bat[:oid,:str]  := algebra.leftfetchjoinPath(X_113,X_247,X_76,X_133);
+    X_135:bat[:oid,:int]  := algebra.leftfetchjoinPath(X_246,X_65,r1_38,X_34,X_30);
+    (X_136,r1_159,r2_159) := group.subgroup(X_135);
+    (X_139,r1_162,r2_162) := group.subgroup(X_134,X_136);
+    (X_142,r1_165,r2_165) := group.subgroupdone(X_125,X_139);
+    X_145 := algebra.leftfetchjoin(r1_165,X_125);
+    X_146 := algebra.leftfetchjoin(r1_165,X_134);
+    X_147 := algebra.leftfetchjoin(r1_165,X_135);
+    X_161 := sql.bind(X_8,"sys","lineorder","lo_revenue",0);
+    (X_166,r1_189) := sql.bind(X_8,"sys","lineorder","lo_revenue",2);
+    X_169 := sql.bind(X_8,"sys","lineorder","lo_revenue",1);
+    X_171 := sql.delta(X_161,X_166,r1_189,X_169);
+    X_172:bat[:oid,:int]  := algebra.leftfetchjoinPath(X_246,X_65,X_36,X_9,X_171);
+    X_173 := batcalc.lng(X_172);
+    X_174 := sql.bind(X_8,"sys","lineorder","lo_supplycost",0);
+    (X_176,r1_203) := sql.bind(X_8,"sys","lineorder","lo_supplycost",2);
+    X_178 := sql.bind(X_8,"sys","lineorder","lo_supplycost",1);
+    X_179 := sql.delta(X_174,X_176,r1_203,X_178);
+    X_180:bat[:oid,:int]  := algebra.leftfetchjoinPath(X_246,X_65,X_36,X_9,X_179);
+    X_181 := batcalc.lng(X_180);
+    X_182:bat[:oid,:lng]  := batcalc.-(X_173,X_181);
+    X_183:bat[:oid,:hge]  := aggr.subsum(X_182,X_142,r1_165,true,true);
+    (X_148,r1_171,r2_171) := algebra.subsort(X_147,false,false);
+    (X_152,r1_175,r2_175) := algebra.subsort(X_146,r1_171,r2_171,false,false);
+    (X_155,r1_178,r2_178) := algebra.subsort(X_145,r1_175,r2_175,false,false);
+    X_158 := algebra.leftfetchjoin(r1_178,X_147);
+    X_185 := algebra.leftfetchjoin(r1_178,X_183);
+    X_160 := algebra.leftfetchjoin(r1_178,X_145);
+    X_159 := algebra.leftfetchjoin(r1_178,X_146);
+    X_186 := sql.resultSet(4,1,X_158);
+    sql.rsColumn(X_186,"sys.dwdate","d_year","int",32,0,X_158);
+    sql.rsColumn(X_186,"sys.supplier","s_nation","clob",0,0,X_159);
+    sql.rsColumn(X_186,"sys.part","p_category","clob",0,0,X_160);
+    sql.rsColumn(X_186,"sys.L1","profit1","hugeint",64,0,X_185);
+    X_206 := io.stdout();
+    sql.exportResult(X_206,X_186);
+end s2_1;
+# querylog.define("explain\nselect d_year, s_nation, p_category, sum(lo_revenue-lo_supplycost) as profit1\n\tfrom dwdate, customer, supplier, part, lineorder\n\twhere lo_custkey = c_custkey\n\t\tand lo_suppkey = s_suppkey\n\t\tand lo_partkey = p_partkey\n\t\tand lo_orderdate = d_datekey\n\t\tand c_region = \\'AMERICA\\'\n\t\tand s_region = \\'AMERICA\\'\n\t\tand (d_year = 1997 or d_year = 1998)\n\t\tand (p_mfgr = \\'MFGR#1\\' or p_mfgr = \\'MFGR#2\\')\n\tgroup by d_year, s_nation, p_category\n\torder by d_year, s_nation, p_category;","sequential_pipe")
+
+# 23:10:48 >  
+# 23:10:48 >  "Done."
+# 23:10:48 >  
+

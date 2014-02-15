@@ -60,7 +60,7 @@ Ready.
 % sys.table2894,	.L # table_name
 % i,	sql_div_single_value # name
 % int,	decimal # type
-% 1,	23 # length
+% 1,	21 # length
 [ 2,	1.000	]
 [ 3,	0.500	]
 [ 4,	0.333	]

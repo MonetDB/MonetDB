@@ -31,8 +31,8 @@ Ready.
 #SELECT SUM(a) FROM casebug;
 % sys.L1 # table_name
 % L1 # name
-% hugeint # type
-% 40 # length
+% bigint # type
+% 20 # length
 [ NULL	]
 #SELECT MIN(a) FROM casebug;
 % sys.L1 # table_name

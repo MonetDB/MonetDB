@@ -1,0 +1,78 @@
+stdout of test '18` in directory 'sql/benchmarks/tpch` itself:
+
+
+# 21:08:05 >  
+# 21:08:05 >   mserver5 "--config=/ufs/niels/scratch/monetdb/Linux-x86_64/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=4 --set "monet_mod_path=/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5/lib:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=31756 --set xrpc_port=46905 --set monet_prompt= --trace  "--dbname=mTests_src_benchmarks_tpch" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
+# 21:08:05 >  
+
+# MonetDB server v5.7.0, based on kernel v1.25.0
+# Serving database 'mTests_src_benchmarks_tpch', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-2008 CWI, all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:31756/
+# MonetDB/SQL module v2.25.0 loaded
+
+Ready.
+#function user.main():void;
+#    clients.quit();
+#end main;
+
+
+# 11:48:03 >  
+# 11:48:03 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < 18.sql
+# 11:48:03 >  
+
+# 14:36:26 >  
+# 14:36:26 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-4866" "--port=32517"
+# 14:36:26 >  
+
+#select
+#	c_name,
+#	c_custkey,
+#	o_orderkey,
+#	o_orderdate,
+#	o_totalprice,
+#	sum(l_quantity)
+#from
+#	customer,
+#	orders,
+#	lineitem
+#where
+#	o_orderkey in (
+#		select
+#			l_orderkey
+#		from
+#			lineitem
+#		group by
+#			l_orderkey having
+#				sum(l_quantity) > 300
+#	)
+#	and c_custkey = o_custkey
+#	and o_orderkey = l_orderkey
+#group by
+#	c_name,
+#	c_custkey,
+#	o_orderkey,
+#	o_orderdate,
+#	o_totalprice
+#order by
+#	o_totalprice desc,
+#	o_orderdate
+#limit 100;
+% sys.customer,	sys.customer,	sys.orders,	sys.orders,	sys.orders,	sys.L6 # table_name
+% c_name,	c_custkey,	o_orderkey,	o_orderdate,	o_totalprice,	L6 # name
+% varchar,	int,	int,	date,	decimal,	hugeint # type
+% 18,	3,	5,	10,	17,	3 # length
+[ "Customer#000000667",	667,	29158,	1995-10-21,	439687.23,	305	]
+[ "Customer#000000178",	178,	6882,	1997-04-09,	422359.65,	303	]
+% .stats,	.stats # table_name
+% rewrite,	count # name
+% clob,	int # type
+% 7,	1 # length
+[ "joinidx",	2	]
+
+# 09:17:20 >  
+# 09:17:20 >  Done.
+# 09:17:20 >  
+

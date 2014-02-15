@@ -71,7 +71,7 @@ Ready.
 #select sum(b) from table3388 group by k order by case when sum(b) is null then 1 else 0 end,sum(b);
 % sys.L1 # table_name
 % L1 # name
-% hugeint # type
+% bigint # type
 % 2 # length
 [ 2	]
 [ 2	]

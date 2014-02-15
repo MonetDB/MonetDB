@@ -32,7 +32,7 @@ Ready.
 % sys.L # table_name
 % sql_mul_second_fips2 # name
 % decimal # type
-% 41 # length
+% 21 # length
 [ -990.000000	]
 #select EXTRACT (SECOND FROM FIPS2) FROM A;
 % sys.L # table_name

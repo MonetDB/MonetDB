@@ -85,8 +85,8 @@ function user.s2_1{autoCommit=true}(A0:int,A1:int,A2:int,A3:int,A4:int,A5:int):v
     X_68 := algebra.leftfetchjoin(X_55,X_67);
     X_69:bat[:oid,:lng]  := batcalc.*(X_66,X_68);
     X_70 := algebra.selectNotNil(X_69);
-    X_71:hge  := aggr.sum(X_70);
-    sql.exportValue(1,"sys.L1","revenue","hugeint",53,0,6,X_71,"");
+    X_71:lng  := aggr.sum(X_70);
+    sql.exportValue(1,"sys.L1","revenue","bigint",53,0,6,X_71,"");
 end s2_1;
 # querylog.define("explain\nselect sum(lo_extendedprice*lo_discount) as revenue\n\tfrom lineorder, dwdate\n\twhere lo_orderdate = d_datekey\n\t\tand d_weeknuminyear = 6 and d_year = 1994\n\t\tand lo_discount between 5 and 7\n\t\tand lo_quantity between 36 and 40;","sequential_pipe")
 

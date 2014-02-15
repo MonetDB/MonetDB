@@ -1,0 +1,229 @@
+stdout of test '19-explain` in directory 'sql/benchmarks/tpch` itself:
+
+
+# 22:53:30 >  
+# 22:53:30 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=34581" "--set" "mapi_usock=/var/tmp/mtest-9096/.s.monetdb.34581" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/manegold/_/Monet/HG/Feb2013/prefix/--disable-debug_--enable-assert_--enable-optimize/var/MonetDB/mTests_sql_benchmarks_tpch" "--set" "mal_listing=0"
+# 22:53:30 >  
+
+# MonetDB 5 server v11.15.12
+# This is an unreleased version
+# Serving database 'mTests_sql_benchmarks_tpch', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.591 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://rome.ins.cwi.nl:34581/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-9096/.s.monetdb.34581
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 22:53:30 >  
+# 22:53:30 >  "/usr/bin/python2" "19-explain.SQL.py" "19-explain"
+# 22:53:30 >  
+
+#set optimizer = 'sequential_pipe';
+#explain select
+#	sum(l_extendedprice* (1 - l_discount)) as revenue
+#from
+#	lineitem,
+#	part
+#where
+#	(
+#		p_partkey = l_partkey
+#		and p_brand = 'Brand#12'
+#		and p_container in ('SM CASE', 'SM BOX', 'SM PACK', 'SM PKG')
+#		and l_quantity >= 1 and l_quantity <= 1 + 10
+#		and p_size between 1 and 5
+#		and l_shipmode in ('AIR', 'AIR REG')
+#		and l_shipinstruct = 'DELIVER IN PERSON'
+#	)
+#	or
+#	(
+#		p_partkey = l_partkey
+#		and p_brand = 'Brand#23'
+#		and p_container in ('MED BAG', 'MED BOX', 'MED PKG', 'MED PACK')
+#		and l_quantity >= 10 and l_quantity <= 10 + 10
+% .explain # table_name
+% mal # name
+% clob # type
+% 1170 # length
+function user.s2_1{autoCommit=true}(A0:bte,A1:str,A2:str,A3:str,A4:str,A5:str,A6:int,A7:sht,A8:sht,A9:int,A10:int,A11:str,A12:str,A13:str,A14:str,A15:str,A16:str,A17:str,A18:str,A19:int,A20:sht,A21:sht,A22:int,A23:int,A24:str,A25:str,A26:str,A27:str,A28:str,A29:str,A30:str,A31:str,A32:int,A33:sht,A34:sht,A35:int,A36:int,A37:str,A38:str,A39:str):void;
+    X_42 := sql.mvc();
+    X_43:bat[:oid,:oid]  := sql.tid(X_42,"sys","lineitem");
+    X_46 := sql.bind(X_42,"sys","lineitem","l_shipmode",0);
+    (X_49,r1_49) := sql.bind(X_42,"sys","lineitem","l_shipmode",2);
+    X_52 := sql.bind(X_42,"sys","lineitem","l_shipmode",1);
+    X_54 := sql.delta(X_46,X_49,r1_49,X_52);
+    X_55 := algebra.leftfetchjoin(X_43,X_54);
+    X_56 := sql.bind(X_42,"sys","lineitem","l_shipinstruct",0);
+    (X_58,r1_59) := sql.bind(X_42,"sys","lineitem","l_shipinstruct",2);
+    X_60 := sql.bind(X_42,"sys","lineitem","l_shipinstruct",1);
+    X_61 := sql.delta(X_56,X_58,r1_59,X_60);
+    X_62 := algebra.leftfetchjoin(X_43,X_61);
+    X_63 := algebra.subselect(X_62,A13,A13,true,true,false);
+    X_65 := algebra.subselect(X_62,A26,A26,true,true,false);
+    X_66 := bat.mergecand(X_63,X_65);
+    X_67 := algebra.subselect(X_62,A39,A39,true,true,false);
+    X_68 := bat.mergecand(X_66,X_67);
+    X_69 := algebra.subselect(X_55,X_68,A11,A11,true,true,false);
+    X_71 := algebra.subselect(X_55,X_68,A12,A12,true,true,false);
+    X_72 := bat.mergecand(X_69,X_71);
+    X_73 := algebra.subselect(X_55,X_68,A24,A24,true,true,false);
+    X_74 := bat.mergecand(X_72,X_73);
+    X_75 := algebra.subselect(X_55,X_68,A25,A25,true,true,false);
+    X_76 := bat.mergecand(X_74,X_75);
+    X_77 := algebra.subselect(X_55,X_68,A37,A37,true,true,false);
+    X_78 := bat.mergecand(X_76,X_77);
+    X_79 := algebra.subselect(X_55,X_68,A38,A38,true,true,false);
+    X_80 := bat.mergecand(X_78,X_79);
+    X_296 := algebra.leftfetchjoin(X_80,X_43);
+    X_81 := sql.bind_idxbat(X_42,"sys","lineitem","lineitem_l_partkey_fkey",0);
+    (X_86,r1_95) := sql.bind_idxbat(X_42,"sys","lineitem","lineitem_l_partkey_fkey",2);
+    X_89 := sql.bind_idxbat(X_42,"sys","lineitem","lineitem_l_partkey_fkey",1);
+    X_91 := sql.delta(X_81,X_86,r1_95,X_89);
+    X_92:bat[:oid,:oid]  := algebra.leftfetchjoin(X_296,X_91);
+    X_93:bat[:oid,:oid]  := sql.tid(X_42,"sys","part");
+    X_95 := sql.bind(X_42,"sys","part","p_container",0);
+    (X_97,r1_107) := sql.bind(X_42,"sys","part","p_container",2);
+    X_99 := sql.bind(X_42,"sys","part","p_container",1);
+    X_100 := sql.delta(X_95,X_97,r1_107,X_99);
+    X_101 := algebra.leftfetchjoin(X_93,X_100);
+    X_102 := sql.bind(X_42,"sys","part","p_brand",0);
+    (X_104,r1_115) := sql.bind(X_42,"sys","part","p_brand",2);
+    X_106 := sql.bind(X_42,"sys","part","p_brand",1);
+    X_107 := sql.delta(X_102,X_104,r1_115,X_106);
+    X_108 := algebra.leftfetchjoin(X_93,X_107);
+    X_109 := sql.bind(X_42,"sys","part","p_size",0);
+    (X_111,r1_123) := sql.bind(X_42,"sys","part","p_size",2);
+    X_114 := sql.bind(X_42,"sys","part","p_size",1);
+    X_115 := sql.delta(X_109,X_111,r1_123,X_114);
+    X_116 := algebra.leftfetchjoin(X_93,X_115);
+    X_117 := calc.min(A22,A35);
+    X_118 := calc.min(A9,X_117);
+    X_119 := calc.max(A23,A36);
+    X_120 := calc.max(A10,X_119);
+    X_121 := algebra.subselect(X_116,X_118,X_120,true,true,false);
+    X_124 := algebra.subselect(X_108,X_121,A1,A1,true,true,false);
+    X_125 := algebra.subselect(X_108,X_121,A14,A14,true,true,false);
+    X_126 := bat.mergecand(X_124,X_125);
+    X_127 := algebra.subselect(X_108,X_121,A27,A27,true,true,false);
+    X_128 := bat.mergecand(X_126,X_127);
+    X_129 := algebra.subselect(X_101,X_128,A2,A2,true,true,false);
+    X_130 := algebra.subselect(X_101,X_128,A3,A3,true,true,false);
+    X_131 := bat.mergecand(X_129,X_130);
+    X_132 := algebra.subselect(X_101,X_128,A4,A4,true,true,false);
+    X_133 := bat.mergecand(X_131,X_132);
+    X_134 := algebra.subselect(X_101,X_128,A5,A5,true,true,false);
+    X_135 := bat.mergecand(X_133,X_134);
+    X_136 := algebra.subselect(X_101,X_128,A15,A15,true,true,false);
+    X_137 := bat.mergecand(X_135,X_136);
+    X_138 := algebra.subselect(X_101,X_128,A16,A16,true,true,false);
+    X_139 := bat.mergecand(X_137,X_138);
+    X_140 := algebra.subselect(X_101,X_128,A17,A17,true,true,false);
+    X_141 := bat.mergecand(X_139,X_140);
+    X_142 := algebra.subselect(X_101,X_128,A18,A18,true,true,false);
+    X_143 := bat.mergecand(X_141,X_142);
+    X_144 := algebra.subselect(X_101,X_128,A28,A28,true,true,false);
+    X_147 := bat.mergecand(X_143,X_144);
+    X_148 := algebra.subselect(X_101,X_128,A29,A29,true,true,false);
+    X_149 := bat.mergecand(X_147,X_148);
+    X_150 := algebra.subselect(X_101,X_128,A30,A30,true,true,false);
+    X_151 := bat.mergecand(X_149,X_150);
+    X_152 := algebra.subselect(X_101,X_128,A31,A31,true,true,false);
+    X_153 := bat.mergecand(X_151,X_152);
+    X_154 := algebra.leftfetchjoin(X_153,X_93);
+    (X_155,r1_186) := algebra.join(X_92,X_154);
+    X_297 := algebra.leftfetchjoin(X_155,X_80);
+    X_157:bat[:oid,:str]  := algebra.leftfetchjoin(X_297,X_62);
+    X_158:bat[:oid,:str]  := algebra.leftfetchjoin(X_297,X_55);
+    X_298 := algebra.leftfetchjoin(r1_186,X_153);
+    X_159:bat[:oid,:int]  := algebra.leftfetchjoin(X_298,X_116);
+    X_160 := sql.bind(X_42,"sys","lineitem","l_quantity",0);
+    (X_165,r1_203) := sql.bind(X_42,"sys","lineitem","l_quantity",2);
+    X_168 := sql.bind(X_42,"sys","lineitem","l_quantity",1);
+    X_170 := sql.delta(X_160,X_165,r1_203,X_168);
+    X_171:bat[:oid,:int]  := algebra.leftfetchjoinPath(X_297,X_43,X_170);
+    X_174:bat[:oid,:str]  := algebra.leftfetchjoin(X_298,X_101);
+    X_175:bat[:oid,:str]  := algebra.leftfetchjoin(X_298,X_108);
+    X_176 := algebra.subselect(X_175,A1,A1,true,true,false);
+    X_179 := algebra.subselect(X_174,X_176,A2,A2,true,true,false);
+    X_180 := algebra.subselect(X_174,X_176,A3,A3,true,true,false);
+    X_181 := bat.mergecand(X_179,X_180);
+    X_182 := algebra.subselect(X_174,X_176,A4,A4,true,true,false);
+    X_183 := bat.mergecand(X_181,X_182);
+    X_184 := algebra.subselect(X_174,X_176,A5,A5,true,true,false);
+    X_185 := bat.mergecand(X_183,X_184);
+    X_186 := algebra.thetasubselect(X_171,X_185,A6,">=");
+    X_172 := calc.+(A7,A8);
+    X_173 := calc.int(X_172);
+    X_188 := algebra.thetasubselect(X_171,X_186,X_173,"<=");
+    X_190 := algebra.subselect(X_159,X_188,A9,A10,true,true,false);
+    X_191 := algebra.subselect(X_158,X_190,A11,A11,true,true,false);
+    X_192 := algebra.subselect(X_158,X_190,A12,A12,true,true,false);
+    X_193 := bat.mergecand(X_191,X_192);
+    X_194 := algebra.subselect(X_157,X_193,A13,A13,true,true,false);
+    X_197 := algebra.subselect(X_175,A14,A14,true,true,false);
+    X_200 := algebra.subselect(X_174,X_197,A15,A15,true,true,false);
+    X_201 := algebra.subselect(X_174,X_197,A16,A16,true,true,false);
+    X_202 := bat.mergecand(X_200,X_201);
+    X_203 := algebra.subselect(X_174,X_197,A17,A17,true,true,false);
+    X_204 := bat.mergecand(X_202,X_203);
+    X_205 := algebra.subselect(X_174,X_197,A18,A18,true,true,false);
+    X_206 := bat.mergecand(X_204,X_205);
+    X_207 := algebra.thetasubselect(X_171,X_206,A19,">=");
+    X_195 := calc.+(A20,A21);
+    X_196 := calc.int(X_195);
+    X_209 := algebra.thetasubselect(X_171,X_207,X_196,"<=");
+    X_211 := algebra.subselect(X_159,X_209,A22,A23,true,true,false);
+    X_212 := algebra.subselect(X_158,X_211,A24,A24,true,true,false);
+    X_213 := algebra.subselect(X_158,X_211,A25,A25,true,true,false);
+    X_214 := bat.mergecand(X_212,X_213);
+    X_215 := algebra.subselect(X_157,X_214,A26,A26,true,true,false);
+    X_218 := algebra.subselect(X_175,A27,A27,true,true,false);
+    X_221 := algebra.subselect(X_174,X_218,A28,A28,true,true,false);
+    X_222 := algebra.subselect(X_174,X_218,A29,A29,true,true,false);
+    X_223 := bat.mergecand(X_221,X_222);
+    X_224 := algebra.subselect(X_174,X_218,A30,A30,true,true,false);
+    X_225 := bat.mergecand(X_223,X_224);
+    X_226 := algebra.subselect(X_174,X_218,A31,A31,true,true,false);
+    X_227 := bat.mergecand(X_225,X_226);
+    X_228 := algebra.thetasubselect(X_171,X_227,A32,">=");
+    X_216 := calc.+(A33,A34);
+    X_217 := calc.int(X_216);
+    X_230 := algebra.thetasubselect(X_171,X_228,X_217,"<=");
+    X_232 := algebra.subselect(X_159,X_230,A35,A36,true,true,false);
+    X_233 := algebra.subselect(X_158,X_232,A37,A37,true,true,false);
+    X_234 := algebra.subselect(X_158,X_232,A38,A38,true,true,false);
+    X_235 := bat.mergecand(X_233,X_234);
+    X_236 := algebra.subselect(X_157,X_235,A39,A39,true,true,false);
+    X_237 := bat.mergecand(X_215,X_236);
+    X_238 := bat.mergecand(X_194,X_237);
+    X_299 := algebra.leftfetchjoin(X_238,X_155);
+    X_239 := sql.bind(X_42,"sys","lineitem","l_extendedprice",0);
+    (X_244,r1_321) := sql.bind(X_42,"sys","lineitem","l_extendedprice",2);
+    X_247 := sql.bind(X_42,"sys","lineitem","l_extendedprice",1);
+    X_249 := sql.delta(X_239,X_244,r1_321,X_247);
+    X_250:bat[:oid,:lng]  := algebra.leftfetchjoinPath(X_299,X_80,X_43,X_249);
+    X_251:bat[:oid,:hge]  := batcalc.hge(2,X_250,33,2);
+    X_253 := calc.lng(A0,15,2);
+    X_255 := sql.bind(X_42,"sys","lineitem","l_discount",0);
+    (X_257,r1_340) := sql.bind(X_42,"sys","lineitem","l_discount",2);
+    X_259 := sql.bind(X_42,"sys","lineitem","l_discount",1);
+    X_260 := sql.delta(X_255,X_257,r1_340,X_259);
+    X_261:bat[:oid,:lng]  := algebra.leftfetchjoinPath(X_299,X_80,X_43,X_260);
+    X_262:bat[:oid,:lng]  := batcalc.-(X_253,X_261);
+    X_263:bat[:oid,:hge]  := batcalc.*(X_251,X_262);
+    X_264 := algebra.selectNotNil(X_263);
+    X_265:hge  := aggr.sum(X_264);
+    sql.exportValue(1,"sys.L1","revenue","decimal",33,4,8,X_265,"");
+end s2_1;
+# querylog.define("explain select\n\tsum(l_extendedprice* (1 - l_discount)) as revenue\nfrom\n\tlineitem,\n\tpart\nwhere\n\t(\n\t\tp_partkey = l_partkey\n\t\tand p_brand = \\'Brand#12\\'\n\t\tand p_container in (\\'SM CASE\\', \\'SM BOX\\', \\'SM PACK\\', \\'SM PKG\\')\n\t\tand l_quantity >= 1 and l_quantity <= 1 + 10\n\t\tand p_size between 1 and 5\n\t\tand l_shipmode in (\\'AIR\\', \\'AIR REG\\')\n\t\tand l_shipinstruct = \\'DELIVER IN PERSON\\'\n\t)\n\tor\n\t(\n\t\tp_partkey = l_partkey\n\t\tand p_brand = \\'Brand#23\\'\n\t\tand p_container in (\\'MED BAG\\', \\'MED BOX\\', \\'MED PKG\\', \\'MED PACK\\')\n\t\tand l_quantity >= 10 and l_quantity <= 10 + 10\n\t\tand p_size between 1 and 10\n\t\tand l_shipmode in (\\'AIR\\', \\'AIR REG\\')\n\t\tand l_shipinstruct = \\'DELIVER IN PERSON\\'\n\t)\n\tor\n\t(\n\t\tp_partkey = l_partkey\n\t\tand p_brand = \\'Brand#34\\'\n\t\tand p_container in (\\'LG CASE\\', \\'LG BOX\\', \\'LG PACK\\', \\'LG PKG\\')\n\t\tand l_quantity >= 20 and l_quantity <= 20 + 10\n\t\tand p_size between 1 and 15\n\t\tand l_shipmode in (\\'AIR\\', \\'AIR REG\\')\n\t\tand l_shipinstruct = \\'DELIVER IN PERSON\\'\n\t);","sequential_pipe")
+
+# 22:53:30 >  
+# 22:53:30 >  "Done."
+# 22:53:30 >  
+

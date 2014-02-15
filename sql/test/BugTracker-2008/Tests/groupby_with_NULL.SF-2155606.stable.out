@@ -28,7 +28,7 @@ Ready.
 #select color, null, sum(count) from testola group by color;
 % sys.testola,	.L1,	sys.L2 # table_name
 % color,	L1,	L2 # name
-% varchar,	char,	hugeint # type
+% varchar,	char,	bigint # type
 % 4,	0,	2 # length
 [ "blue",	NULL,	12	]
 [ "red",	NULL,	2	]

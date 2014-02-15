@@ -1,0 +1,105 @@
+stdout of test '18-plan` in directory 'sql/benchmarks/tpch` itself:
+
+
+# 22:46:33 >  
+# 22:46:33 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=31690" "--set" "mapi_usock=/var/tmp/mtest-6004/.s.monetdb.31690" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/manegold/_/Monet/HG/Feb2013/prefix/--disable-debug_--enable-assert_--enable-optimize/var/MonetDB/mTests_sql_benchmarks_tpch" "--set" "mal_listing=0"
+# 22:46:33 >  
+
+# MonetDB 5 server v11.15.12
+# This is an unreleased version
+# Serving database 'mTests_sql_benchmarks_tpch', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.591 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://rome.ins.cwi.nl:31690/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-6004/.s.monetdb.31690
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 22:46:33 >  
+# 22:46:33 >  "/usr/bin/python2" "18-plan.SQL.py" "18-plan"
+# 22:46:33 >  
+
+#plan select
+#	c_name,
+#	c_custkey,
+#	o_orderkey,
+#	o_orderdate,
+#	o_totalprice,
+#	sum(l_quantity)
+#from
+#	customer,
+#	orders,
+#	lineitem
+#where
+#	o_orderkey in (
+#		select
+#			l_orderkey
+#		from
+#			lineitem
+#		group by
+#			l_orderkey having
+#				sum(l_quantity) > 300
+#	)
+#	and c_custkey = o_custkey
+#	and o_orderkey = l_orderkey
+#group by
+#	c_name,
+#	c_custkey,
+#	o_orderkey,
+#	o_orderdate,
+#	o_totalprice
+#order by
+#	o_totalprice desc,
+#	o_orderdate
+#limit 100;
+% .plan # table_name
+% rel # name
+% clob # type
+% 236 # length
+top N (
+| project (
+| | project (
+| | | join (
+| | | | project (
+| | | | | join (
+| | | | | | group by (
+| | | | | | | project (
+| | | | | | | | semijoin (
+| | | | | | | | | join (
+| | | | | | | | | | join (
+| | | | | | | | | | | table(sys.orders) [ orders.o_orderkey NOT NULL HASHCOL , orders.%TID% NOT NULL, orders.%orders_o_custkey_fkey NOT NULL JOINIDX sys.orders.orders_o_custkey_fkey ] COUNT ,
+| | | | | | | | | | | table(sys.customer) [ customer.c_custkey NOT NULL HASHCOL , customer.%TID% NOT NULL ] COUNT 
+| | | | | | | | | | ) [ orders.%orders_o_custkey_fkey NOT NULL = customer.%TID% NOT NULL JOINIDX sys.orders.orders_o_custkey_fkey ],
+| | | | | | | | | | table(sys.lineitem) [ lineitem.l_quantity NOT NULL, lineitem.%lineitem_l_orderkey_fkey NOT NULL JOINIDX sys.lineitem.lineitem_l_orderkey_fkey ] COUNT 
+| | | | | | | | | ) [ lineitem.%lineitem_l_orderkey_fkey NOT NULL = orders.%TID% NOT NULL JOINIDX sys.lineitem.lineitem_l_orderkey_fkey ],
+| | | | | | | | | project (
+| | | | | | | | | | select (
+| | | | | | | | | | | group by (
+| | | | | | | | | | | | table(sys.lineitem) [ lineitem.l_orderkey NOT NULL HASHCOL , lineitem.l_quantity NOT NULL ] COUNT 
+| | | | | | | | | | | ) [ lineitem.l_orderkey NOT NULL HASHCOL  ] [ lineitem.l_orderkey NOT NULL HASHCOL , sys.sum no nil (lineitem.l_quantity NOT NULL) NOT NULL as L3.L3 ]
+| | | | | | | | | | ) [ L3 NOT NULL > hugeint[smallint "300"] ]
+| | | | | | | | | ) [ lineitem.l_orderkey NOT NULL as L5.L4 ]
+| | | | | | | | ) [ orders.o_orderkey NOT NULL HASHCOL  = L5.L4 NOT NULL ]
+| | | | | | | ) [ customer.c_custkey NOT NULL HASHCOL , orders.o_orderkey NOT NULL HASHCOL , lineitem.l_quantity NOT NULL ]
+| | | | | | ) [ orders.o_orderkey NOT NULL HASHCOL , customer.c_custkey NOT NULL HASHCOL  ] [ customer.c_custkey NOT NULL HASHCOL , orders.o_orderkey NOT NULL HASHCOL , sys.sum no nil (lineitem.l_quantity NOT NULL) NOT NULL as L6.L6 ],
+| | | | | | table(sys.customer) [ customer.c_custkey NOT NULL HASHCOL  as L10.c_custkey, customer.c_name NOT NULL as L10.c_name ] COUNT 
+| | | | | ) [ customer.c_custkey NOT NULL = L10.c_custkey NOT NULL HASHCOL  FETCH  ]
+| | | | ) [ L10.c_name NOT NULL as customer.c_name, customer.c_custkey NOT NULL, orders.o_orderkey NOT NULL, L6.L6 NOT NULL ],
+| | | | project (
+| | | | | table(sys.orders) [ orders.o_orderkey NOT NULL HASHCOL  as L7.o_orderkey, orders.o_totalprice NOT NULL as L7.o_totalprice, orders.o_orderdate NOT NULL as L7.o_orderdate ] COUNT 
+| | | | ) [ L7.o_orderkey NOT NULL, L7.o_orderdate NOT NULL as orders.o_orderdate, L7.o_totalprice NOT NULL as orders.o_totalprice ]
+| | | ) [ orders.o_orderkey NOT NULL = L7.o_orderkey NOT NULL FETCH  ]
+| | ) [ customer.c_name NOT NULL, customer.c_custkey NOT NULL, orders.o_orderkey NOT NULL, orders.o_orderdate NOT NULL, orders.o_totalprice NOT NULL, L6.L6 NOT NULL ]
+| ) [ customer.c_name NOT NULL, customer.c_custkey NOT NULL, orders.o_orderkey NOT NULL, orders.o_orderdate NOT NULL, orders.o_totalprice NOT NULL, L6 NOT NULL as L6.L6 ] [ orders.o_totalprice NOT NULL, orders.o_orderdate ASC NOT NULL ]
+) [ wrd "100" ]
+
+# 22:46:33 >  
+# 22:46:33 >  "Done."
+# 22:46:33 >  
+
