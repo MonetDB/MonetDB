@@ -1,20 +1,22 @@
 stdout of test 'systemfunctions` in directory 'sql/test` itself:
 
 
-# 16:39:08 >  
-# 16:39:08 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "gdk_dbfarm=/ufs/sjoerd/Monet-candidate/var/MonetDB" "--set" "mapi_open=true" "--set" "mapi_port=37784" "--set" "monet_prompt=" "--trace" "--forcemito" "--set" "mal_listing=2" "--dbname=mTests_." "--set" "mal_listing=0"
-# 16:39:08 >  
+# 16:20:24 >  
+# 16:20:24 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=36066" "--set" "mapi_usock=/var/tmp/mtest-26153/.s.monetdb.36066" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/sjoerd/Monet-candidate/var/MonetDB/mTests_sql_test" "--set" "mal_listing=0"
+# 16:20:24 >  
 
-# MonetDB 5 server v11.9.2 (hg id: 98699895d8d4+)
+# MonetDB 5 server v11.17.0 (hg id: d91089635868)
 # This is an unreleased version
-# Serving database 'mTests_.', using 8 threads
+# Serving database 'mTests_sql_test', using 8 threads
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
-# Found 15.629 GiB available main-memory.
+# Found 15.591 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
 # Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
-# Listening for connection requests on mapi:monetdb://madrid.ins.cwi.nl:37784/
+# Listening for connection requests on mapi:monetdb://madrid.ins.cwi.nl:36066/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-26153/.s.monetdb.36066
 # MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
 
 Ready.
@@ -25,7 +27,7 @@ Ready.
 # loading sql script: 12_url.sql
 # loading sql script: 13_date.sql
 # loading sql script: 14_inet.sql
-# loading sql script: 15_history.sql
+# loading sql script: 15_querylog.sql
 # loading sql script: 16_tracelog.sql
 # loading sql script: 17_compress.sql
 # loading sql script: 18_dictionary.sql
@@ -36,14 +38,19 @@ Ready.
 # loading sql script: 23_skyserver.sql
 # loading sql script: 24_zorder.sql
 # loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
 # loading sql script: 39_analytics.sql
 # loading sql script: 40_geom.sql
+# loading sql script: 40_json.sql
+# loading sql script: 46_gsl.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
 # loading sql script: 80_udf.sql
 # loading sql script: 99_system.sql
 
-# 16:39:08 >  
-# 16:39:08 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=madrid" "--port=37784"
-# 16:39:08 >  
+# 16:20:25 >  
+# 16:20:25 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-26153" "--port=36066"
+# 16:20:25 >  
 
 #select s.name as "schema", f.name as "function", a.number as "argno", a.type as "argtype", case a.number when 0 then f.func else '' end as "definition" from sys.functions f, sys.schemas s, sys.args a where s.id = f.schema_id and f.id = a.func_id and f.id in (select * from sys.systemfunctions) order by s.name, f.name, f.id, a.number;
 % sys.L3,	sys.L3,	sys.L3,	sys.L3,	sys.L3 # table_name
@@ -540,7 +547,7 @@ Ready.
 [ "sys",	"zorder_encode",	1,	"int",	""	]
 [ "sys",	"zorder_encode",	2,	"int",	""	]
 
-# 16:39:08 >  
-# 16:39:08 >  "Done."
-# 16:39:08 >  
+# 16:20:25 >  
+# 16:20:25 >  "Done."
+# 16:20:25 >  
 
