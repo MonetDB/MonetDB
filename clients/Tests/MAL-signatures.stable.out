@@ -2771,7 +2771,7 @@ command algebra.thetauselect(b:bat[:any_1,:any_2],val:any_2,op:str):bat[:any_1,:
 address ALGthetauselect;
 comment The theta (<=,<,=,>,>=) select() limited to head values
 
-command algebra.topN(b:bat[:any_1,:any_2],top:lng):bat[:any_1,:any_2] 
+command algebra.topN(b:bat[:oid,:any_1],top:lng):bat[:oid,:any_1] 
 address ALGtopN;
 comment Trim all but the top N tuples.
 
