@@ -77,11 +77,7 @@ Ready.
 % L1,	L2 # name
 % char,	wrd # type
 % 9,	3 # length
-!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/sql/test/leaks/Tests/check0.stable.out
-[ "transient",	398	]
-!=======
-[ "transient",	392	]
-!>>>>>>> /tmp/check0.stable.out~other.zMs5Gq
+[ "transient",	394	]
 #select 'persistent', count(*) from bbp() as bbp where kind like 'pers%';
 % .L1,	.L2 # table_name
 % L1,	L2 # name

@@ -32,11 +32,7 @@ Ready.
 % L1,	L2 # name
 % char,	wrd # type
 % 9,	3 # length
-!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/sql/test/leaks/Tests/drop3.stable.out
-[ "transient",	178	]
-!=======
-[ "transient",	171	]
-!>>>>>>> /tmp/drop3.stable.out~other.x9WNjJ
+[ "transient",	173	]
 #select 'persistent', count(*) from bbp() as bbp where kind like 'pers%';
 % .L1,	.L2 # table_name
 % L1,	L2 # name

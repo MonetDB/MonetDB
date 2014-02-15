@@ -3297,6 +3297,10 @@ command array.product(b:bat[:any_3,:any_1],c:bat[:any_4,:any_2]):bat[:any_1,:any
 address ARRAYproduct;
 comment Produce an array product
 
+command batudf.fuse(one:bat[:oid,:lng],two:bat[:oid,:lng]):bat[:oid,:hge] 
+address UDFBATfuse;
+comment fuse two (8-byte) lng values into one (16-byte) hge value
+
 command batudf.fuse(one:bat[:oid,:int],two:bat[:oid,:int]):bat[:oid,:lng] 
 address UDFBATfuse;
 comment fuse two (4-byte) int values into one (8-byte) lng value
@@ -3312,18 +3316,6 @@ comment fuse two (1-byte) bte values into one (2-byte) sht value
 command batudf.reverse(b:bat[:oid,:str]):bat[:oid,:str] 
 address UDFBATreverse;
 comment Reverse a BAT of strings
-
-command batgsl.chi2prob(d:bat[:oid,:dbl],i:bat[:oid,:dbl]):bat[:oid,:dbl] 
-address GSLbat_chisqProb_bat;
-comment Chi Squared probability
-
-command batgsl.chi2prob(d:dbl,i:bat[:oid,:dbl]):bat[:oid,:dbl] 
-address GSLcst_chisqProb_bat;
-comment Chi Squared probability
-
-command batgsl.chi2prob(d:bat[:oid,:dbl],i:dbl):bat[:oid,:dbl] 
-address GSLbat_chisqProb_cst;
-comment Chi Squared probability
 
 command batsql.alpha(dec:dbl,theta:bat[:oid,:dbl]):bat[:oid,:dbl] 
 address SQLcst_alpha_bat;
@@ -3665,187 +3657,150 @@ command batmmath.tan(x:bat[:oid,:flt]):bat[:oid,:flt]
 address CMDscience_bat_flt_tan;
 command batmmath.tan(x:bat[:oid,:dbl]):bat[:oid,:dbl] 
 address CMDscience_bat_dbl_tan;
-!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/clients/Tests/MAL-signatures.stable.out
-pattern batcalc.!=(v:dbl,b:bat[:oid,:dbl],s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatNE;
-comment Return V != B with candidates list
-!=======
 command batxml.attribute(name:str,val:bat[:oid,:str]):bat[:oid,:xml] 
 address BATXMLattribute;
 comment Construct an attribute value pair.
-!>>>>>>> /tmp/MAL-signatures.stable.out~other.Mz16J4
 
-!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/clients/Tests/MAL-signatures.stable.out
-pattern batcalc.!=(v:dbl,b:bat[:oid,:dbl]):bat[:oid,:bit] 
-address CMDbatNE;
-comment Return V != B
-!=======
 command batxml.concat(left:bat[:oid,:xml],right:bat[:oid,:xml]):bat[:oid,:xml] 
 address BATXMLconcat;
 comment Concatenate the XML values.
-!>>>>>>> /tmp/MAL-signatures.stable.out~other.Mz16J4
 
-!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/clients/Tests/MAL-signatures.stable.out
-pattern batcalc.!=(b:bat[:oid,:dbl],v:dbl,s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatNE;
-comment Return B != V with candidates list
-!=======
 command batxml.comment(val:bat[:oid,:str]):bat[:oid,:xml] 
 address BATXMLcomment;
 comment Create an XML comment element.
-!>>>>>>> /tmp/MAL-signatures.stable.out~other.Mz16J4
 
-!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/clients/Tests/MAL-signatures.stable.out
-pattern batcalc.!=(b:bat[:oid,:dbl],v:dbl):bat[:oid,:bit] 
-address CMDbatNE;
-comment Return B != V
-!=======
 command batxml.content(src:bat[:oid,:str]):bat[:oid,:xml] 
 address BATXMLcontent;
 comment Parse the string as XML element content.
-!>>>>>>> /tmp/MAL-signatures.stable.out~other.Mz16J4
 
-!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/clients/Tests/MAL-signatures.stable.out
-pattern batcalc.!=(b1:bat[:oid,:dbl],b2:bat[:oid,:dbl],s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatNE;
-comment Return B1 != B2 with candidates list
-!=======
 command batxml.document(src:bat[:oid,:str]):bat[:oid,:xml] 
 address BATXMLdocument;
 comment Parse the string as an XML document.
-!>>>>>>> /tmp/MAL-signatures.stable.out~other.Mz16J4
 
-!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/clients/Tests/MAL-signatures.stable.out
-pattern batcalc.!=(b1:bat[:oid,:dbl],b2:bat[:oid,:dbl]):bat[:oid,:bit] 
-address CMDbatNE;
-comment Return B1 != B2
-!=======
 command batxml.element(name:str,ns:xml,attr:xml,s:bat[:oid,:xml]):bat[:oid,:xml] 
 address BATXMLelement;
 comment The basic building block for XML elements are namespaces, attributes and a sequence of XML elements. The name space and the attributes may be left unspecified(=nil).
-!>>>>>>> /tmp/MAL-signatures.stable.out~other.Mz16J4
 
-!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/clients/Tests/MAL-signatures.stable.out
-pattern batcalc.!=(v:dbl,b:bat[:oid,:flt],s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatNE;
-comment Return V != B with candidates list
-!=======
 command batxml.element(name:str,s:bat[:oid,:xml]):bat[:oid,:xml] 
 address BATXMLelementSmall;
 comment The basic building block for XML elements are namespaces, attributes and a sequence of XML elements. The name space and the attributes may be left unspecified.
-!>>>>>>> /tmp/MAL-signatures.stable.out~other.Mz16J4
 
-!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/clients/Tests/MAL-signatures.stable.out
-pattern batcalc.!=(v:dbl,b:bat[:oid,:flt]):bat[:oid,:bit] 
-address CMDbatNE;
-comment Return V != B
-!=======
 pattern batxml.forest(val:bat[:oid,:xml]...):bat[:oid,:xml] 
 address BATXMLforest;
 comment Construct an element list.
-!>>>>>>> /tmp/MAL-signatures.stable.out~other.Mz16J4
 
-!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/clients/Tests/MAL-signatures.stable.out
-pattern batcalc.!=(b:bat[:oid,:dbl],v:flt,s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatNE;
-comment Return B != V with candidates list
-!=======
 command batxml.isdocument(val:bat[:oid,:str]):bat[:oid,:bit] 
 address BATXMLisdocument;
 comment Validate the string as a XML document.
-!>>>>>>> /tmp/MAL-signatures.stable.out~other.Mz16J4
 
-!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/clients/Tests/MAL-signatures.stable.out
-pattern batcalc.!=(b:bat[:oid,:dbl],v:flt):bat[:oid,:bit] 
-address CMDbatNE;
-comment Return B != V
-!=======
 command batxml.options(tag:str,option:str,left:bat[:oid,:xml]):bat[:oid,:xml] 
 address BATXMLoptions;
 comment Create the components including NULL conversions.
-!>>>>>>> /tmp/MAL-signatures.stable.out~other.Mz16J4
 
-!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/clients/Tests/MAL-signatures.stable.out
-pattern batcalc.!=(b1:bat[:oid,:dbl],b2:bat[:oid,:flt],s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatNE;
-comment Return B1 != B2 with candidates list
-!=======
 command batxml.pi(target:str,val:bat[:oid,:xml]):bat[:oid,:xml] 
 address BATXMLpi;
 comment Construct a processing instruction.
-!>>>>>>> /tmp/MAL-signatures.stable.out~other.Mz16J4
 
-!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/clients/Tests/MAL-signatures.stable.out
-pattern batcalc.!=(b1:bat[:oid,:dbl],b2:bat[:oid,:flt]):bat[:oid,:bit] 
-address CMDbatNE;
-comment Return B1 != B2
-!=======
 command batxml.parse(doccont:str,val:bat[:oid,:str],option:str):bat[:oid,:xml] 
 address BATXMLparse;
 comment Parse the XML document or element string values.
-!>>>>>>> /tmp/MAL-signatures.stable.out~other.Mz16J4
 
-!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/clients/Tests/MAL-signatures.stable.out
-pattern batcalc.!=(v:dbl,b:bat[:oid,:lng],s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatNE;
-comment Return V != B with candidates list
-!=======
 command batxml.root(val:bat[:oid,:xml],version:str,standalone:str):bat[:oid,:xml] 
 address BATXMLroot;
 comment Contruct the root nodes.
-!>>>>>>> /tmp/MAL-signatures.stable.out~other.Mz16J4
 
-!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/clients/Tests/MAL-signatures.stable.out
-pattern batcalc.!=(v:dbl,b:bat[:oid,:lng]):bat[:oid,:bit] 
-address CMDbatNE;
-comment Return V != B
-!=======
 command batxml.serialize(val:bat[:oid,:xml]):bat[:oid,:str] 
 address BATXMLxml2str;
 comment Serialize the XML object to a string.
-!>>>>>>> /tmp/MAL-signatures.stable.out~other.Mz16J4
 
-!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/clients/Tests/MAL-signatures.stable.out
-pattern batcalc.!=(b:bat[:oid,:dbl],v:lng,s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatNE;
-comment Return B != V with candidates list
-!=======
 command batxml.str(src:bat[:oid,:xml]):bat[:oid,:str] 
 address BATXMLxml2str;
 comment Cast the xml to a string.
-!>>>>>>> /tmp/MAL-signatures.stable.out~other.Mz16J4
 
-!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/clients/Tests/MAL-signatures.stable.out
-pattern batcalc.!=(b:bat[:oid,:dbl],v:lng):bat[:oid,:bit] 
-address CMDbatNE;
-comment Return B != V
-!=======
 command batxml.text(val:bat[:oid,:xml]):bat[:oid,:str] 
 address BATXMLxmltext;
 comment Serialize the XML object to a string.
-!>>>>>>> /tmp/MAL-signatures.stable.out~other.Mz16J4
 
-!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/clients/Tests/MAL-signatures.stable.out
-pattern batcalc.!=(b1:bat[:oid,:dbl],b2:bat[:oid,:lng],s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatNE;
-comment Return B1 != B2 with candidates list
-!=======
 command batxml.xquery(val:bat[:oid,:str],expr:str):bat[:oid,:xml] 
 address BATXMLxquery;
 comment Execute the XQuery against the elements.
-!>>>>>>> /tmp/MAL-signatures.stable.out~other.Mz16J4
 
-!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/clients/Tests/MAL-signatures.stable.out
-pattern batcalc.!=(b1:bat[:oid,:dbl],b2:bat[:oid,:lng]):bat[:oid,:bit] 
-address CMDbatNE;
-comment Return B1 != B2
-!=======
 command batxml.xml(src:bat[:oid,:str]):bat[:oid,:xml] 
 address BATXMLstr2xml;
 comment Cast the string to an xml compliant string.
-!>>>>>>> /tmp/MAL-signatures.stable.out~other.Mz16J4
 
-!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/clients/Tests/MAL-signatures.stable.out
+pattern batcalc.!=(v:dbl,b:bat[:oid,:dbl],s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatNE;
+comment Return V != B with candidates list
+
+pattern batcalc.!=(v:dbl,b:bat[:oid,:dbl]):bat[:oid,:bit] 
+address CMDbatNE;
+comment Return V != B
+
+pattern batcalc.!=(b:bat[:oid,:dbl],v:dbl,s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatNE;
+comment Return B != V with candidates list
+
+pattern batcalc.!=(b:bat[:oid,:dbl],v:dbl):bat[:oid,:bit] 
+address CMDbatNE;
+comment Return B != V
+
+pattern batcalc.!=(b1:bat[:oid,:dbl],b2:bat[:oid,:dbl],s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatNE;
+comment Return B1 != B2 with candidates list
+
+pattern batcalc.!=(b1:bat[:oid,:dbl],b2:bat[:oid,:dbl]):bat[:oid,:bit] 
+address CMDbatNE;
+comment Return B1 != B2
+
+pattern batcalc.!=(v:dbl,b:bat[:oid,:flt],s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatNE;
+comment Return V != B with candidates list
+
+pattern batcalc.!=(v:dbl,b:bat[:oid,:flt]):bat[:oid,:bit] 
+address CMDbatNE;
+comment Return V != B
+
+pattern batcalc.!=(b:bat[:oid,:dbl],v:flt,s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatNE;
+comment Return B != V with candidates list
+
+pattern batcalc.!=(b:bat[:oid,:dbl],v:flt):bat[:oid,:bit] 
+address CMDbatNE;
+comment Return B != V
+
+pattern batcalc.!=(b1:bat[:oid,:dbl],b2:bat[:oid,:flt],s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatNE;
+comment Return B1 != B2 with candidates list
+
+pattern batcalc.!=(b1:bat[:oid,:dbl],b2:bat[:oid,:flt]):bat[:oid,:bit] 
+address CMDbatNE;
+comment Return B1 != B2
+
+pattern batcalc.!=(v:dbl,b:bat[:oid,:lng],s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatNE;
+comment Return V != B with candidates list
+
+pattern batcalc.!=(v:dbl,b:bat[:oid,:lng]):bat[:oid,:bit] 
+address CMDbatNE;
+comment Return V != B
+
+pattern batcalc.!=(b:bat[:oid,:dbl],v:lng,s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatNE;
+comment Return B != V with candidates list
+
+pattern batcalc.!=(b:bat[:oid,:dbl],v:lng):bat[:oid,:bit] 
+address CMDbatNE;
+comment Return B != V
+
+pattern batcalc.!=(b1:bat[:oid,:dbl],b2:bat[:oid,:lng],s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatNE;
+comment Return B1 != B2 with candidates list
+
+pattern batcalc.!=(b1:bat[:oid,:dbl],b2:bat[:oid,:lng]):bat[:oid,:bit] 
+address CMDbatNE;
+comment Return B1 != B2
+
 pattern batcalc.!=(v:dbl,b:bat[:oid,:wrd],s:bat[:oid,:oid]):bat[:oid,:bit] 
 address CMDbatNE;
 comment Return V != B with candidates list
@@ -5382,8 +5337,6 @@ pattern batcalc.!=(b1:bat[:oid,:bte],b2:bat[:oid,:hge]):bat[:oid,:bit]
 address CMDbatNE;
 comment Return B1 != B2
 
-!=======
-!>>>>>>> /tmp/MAL-signatures.stable.out~other.Mz16J4
 pattern batcalc.!=(v:timestamp,b:bat[:oid,:timestamp],s:bat[:oid,:oid]):bat[:oid,:bit] 
 address CMDbatNE;
 comment Return V != B with candidates list
@@ -31183,7 +31136,6 @@ pattern batcalc.div_noerror(b1:bat[:oid,:bte],b2:bat[:oid,:bte]):bat[:oid,:bte]
 address CMDbatDIV;
 comment Return B1 / B2, overflow causes NIL value
 
-!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/clients/Tests/MAL-signatures.stable.out
 pattern batcalc.dbl_noerror(b:bat[:oid,:hge],s:bat[:oid,:oid]):bat[:oid,:dbl] 
 address CMDconvert_dbl;
 comment cast from hge to dbl with candidates list
@@ -31560,6 +31512,12 @@ pattern batcalc.div_noerror(b1:bat[:oid,:bte],b2:bat[:oid,:hge]):bat[:oid,:bte]
 address CMDbatDIV;
 comment Return B1 / B2, overflow causes NIL value
 
+command batcalc.daytime(t:bat[:oid,:timestamp]):bat[:oid,:daytime] 
+address MTIMEtimestamp_extract_daytime_default_bulk;
+command batcalc.daytime(s:bat[:oid,:lng]):bat[:oid,:daytime] 
+address MTIMEsecs2daytime_bulk;
+command batcalc.date(t:bat[:oid,:timestamp]):bat[:oid,:date] 
+address MTIMEtimestamp_extract_date_default_bulk;
 command batcalc.flt(s1:int,v:bat[:oid,:hge],d2:int,s2:int):bat[:oid,:flt] 
 address bathge_dec2dec_flt;
 comment cast decimal(hge) to decimal(flt) and check for overflow
@@ -31572,14 +31530,6 @@ command batcalc.flt(v:bat[:oid,:hge],digits:int,scale:int):bat[:oid,:flt]
 address bathge_num2dec_flt;
 comment cast number to decimal(flt) and check for overflow
 
-!=======
-command batcalc.daytime(t:bat[:oid,:timestamp]):bat[:oid,:daytime] 
-address MTIMEtimestamp_extract_daytime_default_bulk;
-command batcalc.daytime(s:bat[:oid,:lng]):bat[:oid,:daytime] 
-address MTIMEsecs2daytime_bulk;
-command batcalc.date(t:bat[:oid,:timestamp]):bat[:oid,:date] 
-address MTIMEtimestamp_extract_date_default_bulk;
-!>>>>>>> /tmp/MAL-signatures.stable.out~other.Mz16J4
 command batcalc.flt(s1:int,v:bat[:oid,:lng],d2:int,s2:int):bat[:oid,:flt] 
 address batlng_dec2dec_flt;
 comment cast decimal(lng) to decimal(flt) and check for overflow
@@ -40262,6 +40212,18 @@ command batcalc.timestamp(secs:bat[:oid,:int]):bat[:oid,:timestamp]
 address MTIMEtimestamp_bulk;
 command batcalc.timestamp(d:bat[:oid,:date]):bat[:oid,:timestamp] 
 address MTIMEtimestamp_create_from_date_bulk;
+command batcalc.wrd(s1:int,v:bat[:oid,:hge],d2:int,s2:int):bat[:oid,:wrd] 
+address bathge_dec2dec_wrd;
+comment cast decimal(hge) to decimal(wrd) and check for overflow
+
+command batcalc.wrd(s1:int,v:bat[:oid,:hge]):bat[:oid,:wrd] 
+address bathge_dec2_wrd;
+comment cast decimal(hge) to wrd and check for overflow
+
+command batcalc.wrd(v:bat[:oid,:hge],digits:int,scale:int):bat[:oid,:wrd] 
+address bathge_num2dec_wrd;
+comment cast number to decimal(wrd) and check for overflow
+
 command batcalc.wrd(s1:int,v:bat[:oid,:lng],d2:int,s2:int):bat[:oid,:wrd] 
 address batlng_dec2dec_wrd;
 comment cast decimal(lng) to decimal(wrd) and check for overflow
@@ -44818,517 +44780,206 @@ pattern calc.==(v:date,w:date):bit
 address CMDvarEQ;
 comment Equality of two dates
 
-!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/clients/Tests/MAL-signatures.stable.out
-command calc.==(l:uuid,r:uuid):bit 
-address UUIDequal;
-comment Compare two UUID values for equality
-!=======
-pattern calc.==(v1:dbl,v2:dbl):bit 
-address CMDvarEQ;
-comment Return V1 == V2
-!>>>>>>> /tmp/MAL-signatures.stable.out~other.Mz16J4
-
-!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/clients/Tests/MAL-signatures.stable.out
 pattern calc.>=(v1:dbl,v2:dbl):bit 
 address CMDvarGE;
 comment Return V1 >= V2
-!=======
-pattern calc.==(v1:dbl,v2:flt):bit 
-address CMDvarEQ;
-comment Return V1 == V2
-!>>>>>>> /tmp/MAL-signatures.stable.out~other.Mz16J4
 
-!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/clients/Tests/MAL-signatures.stable.out
 pattern calc.>=(v1:dbl,v2:flt):bit 
 address CMDvarGE;
 comment Return V1 >= V2
-!=======
-pattern calc.==(v1:dbl,v2:lng):bit 
-address CMDvarEQ;
-comment Return V1 == V2
-!>>>>>>> /tmp/MAL-signatures.stable.out~other.Mz16J4
 
-!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/clients/Tests/MAL-signatures.stable.out
 pattern calc.>=(v1:dbl,v2:lng):bit 
 address CMDvarGE;
 comment Return V1 >= V2
-!=======
-pattern calc.==(v1:dbl,v2:wrd):bit 
-address CMDvarEQ;
-comment Return V1 == V2
-!>>>>>>> /tmp/MAL-signatures.stable.out~other.Mz16J4
 
-!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/clients/Tests/MAL-signatures.stable.out
 pattern calc.>=(v1:dbl,v2:wrd):bit 
 address CMDvarGE;
 comment Return V1 >= V2
-!=======
-pattern calc.==(v1:dbl,v2:int):bit 
-address CMDvarEQ;
-comment Return V1 == V2
-!>>>>>>> /tmp/MAL-signatures.stable.out~other.Mz16J4
 
-!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/clients/Tests/MAL-signatures.stable.out
 pattern calc.>=(v1:dbl,v2:int):bit 
 address CMDvarGE;
 comment Return V1 >= V2
-!=======
-pattern calc.==(v1:dbl,v2:sht):bit 
-address CMDvarEQ;
-comment Return V1 == V2
-!>>>>>>> /tmp/MAL-signatures.stable.out~other.Mz16J4
 
-!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/clients/Tests/MAL-signatures.stable.out
 pattern calc.>=(v1:dbl,v2:sht):bit 
 address CMDvarGE;
 comment Return V1 >= V2
-!=======
-pattern calc.==(v1:dbl,v2:bte):bit 
-address CMDvarEQ;
-comment Return V1 == V2
-!>>>>>>> /tmp/MAL-signatures.stable.out~other.Mz16J4
 
-!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/clients/Tests/MAL-signatures.stable.out
 pattern calc.>=(v1:dbl,v2:bte):bit 
 address CMDvarGE;
 comment Return V1 >= V2
-!=======
-pattern calc.==(v1:flt,v2:dbl):bit 
-address CMDvarEQ;
-comment Return V1 == V2
-!>>>>>>> /tmp/MAL-signatures.stable.out~other.Mz16J4
 
-!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/clients/Tests/MAL-signatures.stable.out
 pattern calc.>=(v1:flt,v2:dbl):bit 
 address CMDvarGE;
 comment Return V1 >= V2
-!=======
-pattern calc.==(v1:flt,v2:flt):bit 
-address CMDvarEQ;
-comment Return V1 == V2
-!>>>>>>> /tmp/MAL-signatures.stable.out~other.Mz16J4
 
-!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/clients/Tests/MAL-signatures.stable.out
 pattern calc.>=(v1:flt,v2:flt):bit 
 address CMDvarGE;
 comment Return V1 >= V2
-!=======
-pattern calc.==(v1:flt,v2:lng):bit 
-address CMDvarEQ;
-comment Return V1 == V2
-!>>>>>>> /tmp/MAL-signatures.stable.out~other.Mz16J4
 
-!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/clients/Tests/MAL-signatures.stable.out
 pattern calc.>=(v1:flt,v2:lng):bit 
 address CMDvarGE;
 comment Return V1 >= V2
-!=======
-pattern calc.==(v1:flt,v2:wrd):bit 
-address CMDvarEQ;
-comment Return V1 == V2
-!>>>>>>> /tmp/MAL-signatures.stable.out~other.Mz16J4
 
-!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/clients/Tests/MAL-signatures.stable.out
 pattern calc.>=(v1:flt,v2:wrd):bit 
 address CMDvarGE;
 comment Return V1 >= V2
-!=======
-pattern calc.==(v1:flt,v2:int):bit 
-address CMDvarEQ;
-comment Return V1 == V2
-!>>>>>>> /tmp/MAL-signatures.stable.out~other.Mz16J4
 
-!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/clients/Tests/MAL-signatures.stable.out
 pattern calc.>=(v1:flt,v2:int):bit 
 address CMDvarGE;
 comment Return V1 >= V2
-!=======
-pattern calc.==(v1:flt,v2:sht):bit 
-address CMDvarEQ;
-comment Return V1 == V2
-!>>>>>>> /tmp/MAL-signatures.stable.out~other.Mz16J4
 
-!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/clients/Tests/MAL-signatures.stable.out
 pattern calc.>=(v1:flt,v2:sht):bit 
 address CMDvarGE;
 comment Return V1 >= V2
-!=======
-pattern calc.==(v1:flt,v2:bte):bit 
-address CMDvarEQ;
-comment Return V1 == V2
-!>>>>>>> /tmp/MAL-signatures.stable.out~other.Mz16J4
 
-!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/clients/Tests/MAL-signatures.stable.out
 pattern calc.>=(v1:flt,v2:bte):bit 
 address CMDvarGE;
 comment Return V1 >= V2
-!=======
-pattern calc.==(v1:lng,v2:dbl):bit 
-address CMDvarEQ;
-comment Return V1 == V2
-!>>>>>>> /tmp/MAL-signatures.stable.out~other.Mz16J4
 
-!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/clients/Tests/MAL-signatures.stable.out
 pattern calc.>=(v1:lng,v2:dbl):bit 
 address CMDvarGE;
 comment Return V1 >= V2
-!=======
-pattern calc.==(v1:lng,v2:flt):bit 
-address CMDvarEQ;
-comment Return V1 == V2
-!>>>>>>> /tmp/MAL-signatures.stable.out~other.Mz16J4
 
-!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/clients/Tests/MAL-signatures.stable.out
 pattern calc.>=(v1:lng,v2:flt):bit 
 address CMDvarGE;
 comment Return V1 >= V2
-!=======
-pattern calc.==(v1:lng,v2:lng):bit 
-address CMDvarEQ;
-comment Return V1 == V2
-!>>>>>>> /tmp/MAL-signatures.stable.out~other.Mz16J4
 
-!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/clients/Tests/MAL-signatures.stable.out
 pattern calc.>=(v1:lng,v2:lng):bit 
 address CMDvarGE;
 comment Return V1 >= V2
-!=======
-pattern calc.==(v1:lng,v2:wrd):bit 
-address CMDvarEQ;
-comment Return V1 == V2
-!>>>>>>> /tmp/MAL-signatures.stable.out~other.Mz16J4
 
-!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/clients/Tests/MAL-signatures.stable.out
 pattern calc.>=(v1:lng,v2:wrd):bit 
 address CMDvarGE;
 comment Return V1 >= V2
-!=======
-pattern calc.==(v1:lng,v2:int):bit 
-address CMDvarEQ;
-comment Return V1 == V2
-!>>>>>>> /tmp/MAL-signatures.stable.out~other.Mz16J4
 
-!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/clients/Tests/MAL-signatures.stable.out
 pattern calc.>=(v1:lng,v2:int):bit 
 address CMDvarGE;
 comment Return V1 >= V2
-!=======
-pattern calc.==(v1:lng,v2:sht):bit 
-address CMDvarEQ;
-comment Return V1 == V2
-!>>>>>>> /tmp/MAL-signatures.stable.out~other.Mz16J4
 
-!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/clients/Tests/MAL-signatures.stable.out
 pattern calc.>=(v1:lng,v2:sht):bit 
 address CMDvarGE;
 comment Return V1 >= V2
-!=======
-pattern calc.==(v1:lng,v2:bte):bit 
-address CMDvarEQ;
-comment Return V1 == V2
-!>>>>>>> /tmp/MAL-signatures.stable.out~other.Mz16J4
 
-!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/clients/Tests/MAL-signatures.stable.out
 pattern calc.>=(v1:lng,v2:bte):bit 
 address CMDvarGE;
 comment Return V1 >= V2
-!=======
-pattern calc.==(v1:wrd,v2:dbl):bit 
-address CMDvarEQ;
-comment Return V1 == V2
-!>>>>>>> /tmp/MAL-signatures.stable.out~other.Mz16J4
 
-!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/clients/Tests/MAL-signatures.stable.out
 pattern calc.>=(v1:wrd,v2:dbl):bit 
 address CMDvarGE;
 comment Return V1 >= V2
-!=======
-pattern calc.==(v1:wrd,v2:flt):bit 
-address CMDvarEQ;
-comment Return V1 == V2
-!>>>>>>> /tmp/MAL-signatures.stable.out~other.Mz16J4
 
-!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/clients/Tests/MAL-signatures.stable.out
 pattern calc.>=(v1:wrd,v2:flt):bit 
 address CMDvarGE;
 comment Return V1 >= V2
-!=======
-pattern calc.==(v1:wrd,v2:lng):bit 
-address CMDvarEQ;
-comment Return V1 == V2
-!>>>>>>> /tmp/MAL-signatures.stable.out~other.Mz16J4
 
-!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/clients/Tests/MAL-signatures.stable.out
 pattern calc.>=(v1:wrd,v2:lng):bit 
 address CMDvarGE;
 comment Return V1 >= V2
-!=======
-pattern calc.==(v1:wrd,v2:wrd):bit 
-address CMDvarEQ;
-comment Return V1 == V2
-!>>>>>>> /tmp/MAL-signatures.stable.out~other.Mz16J4
 
-!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/clients/Tests/MAL-signatures.stable.out
 pattern calc.>=(v1:wrd,v2:wrd):bit 
 address CMDvarGE;
 comment Return V1 >= V2
-!=======
-pattern calc.==(v1:wrd,v2:int):bit 
-address CMDvarEQ;
-comment Return V1 == V2
-!>>>>>>> /tmp/MAL-signatures.stable.out~other.Mz16J4
 
-!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/clients/Tests/MAL-signatures.stable.out
 pattern calc.>=(v1:wrd,v2:int):bit 
 address CMDvarGE;
 comment Return V1 >= V2
-!=======
-pattern calc.==(v1:wrd,v2:sht):bit 
-address CMDvarEQ;
-comment Return V1 == V2
-!>>>>>>> /tmp/MAL-signatures.stable.out~other.Mz16J4
 
-!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/clients/Tests/MAL-signatures.stable.out
 pattern calc.>=(v1:wrd,v2:sht):bit 
 address CMDvarGE;
 comment Return V1 >= V2
-!=======
-pattern calc.==(v1:wrd,v2:bte):bit 
-address CMDvarEQ;
-comment Return V1 == V2
-!>>>>>>> /tmp/MAL-signatures.stable.out~other.Mz16J4
 
-!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/clients/Tests/MAL-signatures.stable.out
 pattern calc.>=(v1:wrd,v2:bte):bit 
 address CMDvarGE;
 comment Return V1 >= V2
-!=======
-pattern calc.==(v1:int,v2:dbl):bit 
-address CMDvarEQ;
-comment Return V1 == V2
-!>>>>>>> /tmp/MAL-signatures.stable.out~other.Mz16J4
 
-!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/clients/Tests/MAL-signatures.stable.out
 pattern calc.>=(v1:int,v2:dbl):bit 
 address CMDvarGE;
 comment Return V1 >= V2
-!=======
-pattern calc.==(v1:int,v2:flt):bit 
-address CMDvarEQ;
-comment Return V1 == V2
-!>>>>>>> /tmp/MAL-signatures.stable.out~other.Mz16J4
 
-!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/clients/Tests/MAL-signatures.stable.out
 pattern calc.>=(v1:int,v2:flt):bit 
 address CMDvarGE;
 comment Return V1 >= V2
-!=======
-pattern calc.==(v1:int,v2:lng):bit 
-address CMDvarEQ;
-comment Return V1 == V2
-!>>>>>>> /tmp/MAL-signatures.stable.out~other.Mz16J4
 
-!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/clients/Tests/MAL-signatures.stable.out
 pattern calc.>=(v1:int,v2:lng):bit 
 address CMDvarGE;
 comment Return V1 >= V2
-!=======
-pattern calc.==(v1:int,v2:wrd):bit 
-address CMDvarEQ;
-comment Return V1 == V2
-!>>>>>>> /tmp/MAL-signatures.stable.out~other.Mz16J4
 
-!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/clients/Tests/MAL-signatures.stable.out
 pattern calc.>=(v1:int,v2:wrd):bit 
 address CMDvarGE;
 comment Return V1 >= V2
-!=======
-pattern calc.==(v1:int,v2:int):bit 
-address CMDvarEQ;
-comment Return V1 == V2
-!>>>>>>> /tmp/MAL-signatures.stable.out~other.Mz16J4
 
-!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/clients/Tests/MAL-signatures.stable.out
 pattern calc.>=(v1:int,v2:int):bit 
 address CMDvarGE;
 comment Return V1 >= V2
-!=======
-pattern calc.==(v1:int,v2:sht):bit 
-address CMDvarEQ;
-comment Return V1 == V2
-!>>>>>>> /tmp/MAL-signatures.stable.out~other.Mz16J4
 
-!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/clients/Tests/MAL-signatures.stable.out
 pattern calc.>=(v1:int,v2:sht):bit 
 address CMDvarGE;
 comment Return V1 >= V2
-!=======
-pattern calc.==(v1:int,v2:bte):bit 
-address CMDvarEQ;
-comment Return V1 == V2
-!>>>>>>> /tmp/MAL-signatures.stable.out~other.Mz16J4
 
-!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/clients/Tests/MAL-signatures.stable.out
 pattern calc.>=(v1:int,v2:bte):bit 
 address CMDvarGE;
 comment Return V1 >= V2
-!=======
-pattern calc.==(v1:sht,v2:dbl):bit 
-address CMDvarEQ;
-comment Return V1 == V2
-!>>>>>>> /tmp/MAL-signatures.stable.out~other.Mz16J4
 
-!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/clients/Tests/MAL-signatures.stable.out
 pattern calc.>=(v1:sht,v2:dbl):bit 
 address CMDvarGE;
 comment Return V1 >= V2
-!=======
-pattern calc.==(v1:sht,v2:flt):bit 
-address CMDvarEQ;
-comment Return V1 == V2
-!>>>>>>> /tmp/MAL-signatures.stable.out~other.Mz16J4
 
-!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/clients/Tests/MAL-signatures.stable.out
 pattern calc.>=(v1:sht,v2:flt):bit 
 address CMDvarGE;
 comment Return V1 >= V2
-!=======
-pattern calc.==(v1:sht,v2:lng):bit 
-address CMDvarEQ;
-comment Return V1 == V2
-!>>>>>>> /tmp/MAL-signatures.stable.out~other.Mz16J4
 
-!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/clients/Tests/MAL-signatures.stable.out
 pattern calc.>=(v1:sht,v2:lng):bit 
 address CMDvarGE;
 comment Return V1 >= V2
-!=======
-pattern calc.==(v1:sht,v2:wrd):bit 
-address CMDvarEQ;
-comment Return V1 == V2
-!>>>>>>> /tmp/MAL-signatures.stable.out~other.Mz16J4
 
-!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/clients/Tests/MAL-signatures.stable.out
 pattern calc.>=(v1:sht,v2:wrd):bit 
 address CMDvarGE;
 comment Return V1 >= V2
-!=======
-pattern calc.==(v1:sht,v2:int):bit 
-address CMDvarEQ;
-comment Return V1 == V2
-!>>>>>>> /tmp/MAL-signatures.stable.out~other.Mz16J4
 
-!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/clients/Tests/MAL-signatures.stable.out
 pattern calc.>=(v1:sht,v2:int):bit 
 address CMDvarGE;
 comment Return V1 >= V2
-!=======
-pattern calc.==(v1:sht,v2:sht):bit 
-address CMDvarEQ;
-comment Return V1 == V2
-!>>>>>>> /tmp/MAL-signatures.stable.out~other.Mz16J4
 
-!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/clients/Tests/MAL-signatures.stable.out
 pattern calc.>=(v1:sht,v2:sht):bit 
 address CMDvarGE;
 comment Return V1 >= V2
-!=======
-pattern calc.==(v1:sht,v2:bte):bit 
-address CMDvarEQ;
-comment Return V1 == V2
-!>>>>>>> /tmp/MAL-signatures.stable.out~other.Mz16J4
 
-!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/clients/Tests/MAL-signatures.stable.out
 pattern calc.>=(v1:sht,v2:bte):bit 
 address CMDvarGE;
 comment Return V1 >= V2
-!=======
-pattern calc.==(v1:bte,v2:dbl):bit 
-address CMDvarEQ;
-comment Return V1 == V2
-!>>>>>>> /tmp/MAL-signatures.stable.out~other.Mz16J4
 
-!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/clients/Tests/MAL-signatures.stable.out
 pattern calc.>=(v1:bte,v2:dbl):bit 
 address CMDvarGE;
 comment Return V1 >= V2
-!=======
-pattern calc.==(v1:bte,v2:flt):bit 
-address CMDvarEQ;
-comment Return V1 == V2
-!>>>>>>> /tmp/MAL-signatures.stable.out~other.Mz16J4
 
-!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/clients/Tests/MAL-signatures.stable.out
 pattern calc.>=(v1:bte,v2:flt):bit 
 address CMDvarGE;
 comment Return V1 >= V2
-!=======
-pattern calc.==(v1:bte,v2:lng):bit 
-address CMDvarEQ;
-comment Return V1 == V2
-!>>>>>>> /tmp/MAL-signatures.stable.out~other.Mz16J4
 
-!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/clients/Tests/MAL-signatures.stable.out
 pattern calc.>=(v1:bte,v2:lng):bit 
 address CMDvarGE;
 comment Return V1 >= V2
-!=======
-pattern calc.==(v1:bte,v2:wrd):bit 
-address CMDvarEQ;
-comment Return V1 == V2
-!>>>>>>> /tmp/MAL-signatures.stable.out~other.Mz16J4
 
-!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/clients/Tests/MAL-signatures.stable.out
 pattern calc.>=(v1:bte,v2:wrd):bit 
 address CMDvarGE;
 comment Return V1 >= V2
-!=======
-pattern calc.==(v1:bte,v2:int):bit 
-address CMDvarEQ;
-comment Return V1 == V2
-!>>>>>>> /tmp/MAL-signatures.stable.out~other.Mz16J4
 
-!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/clients/Tests/MAL-signatures.stable.out
 pattern calc.>=(v1:bte,v2:int):bit 
 address CMDvarGE;
 comment Return V1 >= V2
-!=======
-pattern calc.==(v1:bte,v2:sht):bit 
-address CMDvarEQ;
-comment Return V1 == V2
-!>>>>>>> /tmp/MAL-signatures.stable.out~other.Mz16J4
 
-!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/clients/Tests/MAL-signatures.stable.out
 pattern calc.>=(v1:bte,v2:sht):bit 
 address CMDvarGE;
 comment Return V1 >= V2
-!=======
-pattern calc.==(v1:bte,v2:bte):bit 
-address CMDvarEQ;
-comment Return V1 == V2
-!>>>>>>> /tmp/MAL-signatures.stable.out~other.Mz16J4
 
-!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/clients/Tests/MAL-signatures.stable.out
 pattern calc.>=(v1:bte,v2:bte):bit 
 address CMDvarGE;
 comment Return V1 >= V2
-!=======
-pattern calc.==(v1:oid,v2:oid):bit 
-address CMDvarEQ;
-comment Return V1 == V2
-!>>>>>>> /tmp/MAL-signatures.stable.out~other.Mz16J4
 
-!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/clients/Tests/MAL-signatures.stable.out
 pattern calc.>=(v1:oid,v2:oid):bit 
 address CMDvarGE;
 comment Return V1 >= V2
-!=======
-pattern calc.==(v1:str,v2:str):bit 
-address CMDvarEQ;
-comment Return V1 == V2
-!>>>>>>> /tmp/MAL-signatures.stable.out~other.Mz16J4
 
-!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/clients/Tests/MAL-signatures.stable.out
 pattern calc.>=(v1:str,v2:str):bit 
 address CMDvarGE;
 comment Return V1 >= V2
@@ -45808,11 +45459,6 @@ comment Return V1 >> V2, raise error on out of range second operand
 pattern calc.>>(v1:bte,v2:hge):bte 
 address CMDvarRSHsignal;
 comment Return V1 >> V2, raise error on out of range second operand
-!=======
-pattern calc.==(v1:bit,v2:bit):bit 
-address CMDvarEQ;
-comment Return V1 == V2
-!>>>>>>> /tmp/MAL-signatures.stable.out~other.Mz16J4
 
 command calc.>=(v:inet,w:inet):bit 
 address INET_comp_GE;
@@ -46567,27 +46213,14 @@ pattern calc.cmp(v1:bit,v2:bit):bte
 address CMDvarCMP;
 comment Return -1/0/1 if V1 </==/> V2
 
-!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/clients/Tests/MAL-signatures.stable.out
 pattern calc.cmp(v1:dbl,v2:hge):bte 
 address CMDvarCMP;
 comment Return -1/0/1 if V1 </==/> V2
-!=======
-command calc.dbl(s1:int,v:lng,d2:int,s2:int):dbl 
-address lng_dec2dec_dbl;
-comment cast decimal(lng) to decimal(dbl) and check for overflow
-!>>>>>>> /tmp/MAL-signatures.stable.out~other.Mz16J4
 
-!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/clients/Tests/MAL-signatures.stable.out
 pattern calc.cmp(v1:flt,v2:hge):bte 
 address CMDvarCMP;
 comment Return -1/0/1 if V1 </==/> V2
-!=======
-command calc.dbl(s1:int,v:lng):dbl 
-address lng_dec2_dbl;
-comment cast decimal(lng) to dbl and check for overflow
-!>>>>>>> /tmp/MAL-signatures.stable.out~other.Mz16J4
 
-!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/clients/Tests/MAL-signatures.stable.out
 pattern calc.cmp(v1:hge,v2:dbl):bte 
 address CMDvarCMP;
 comment Return -1/0/1 if V1 </==/> V2
@@ -46650,14 +46283,20 @@ comment cast decimal(hge) to dbl and check for overflow
 
 command calc.dbl(v:hge,digits:int,scale:int):dbl 
 address hge_num2dec_dbl;
-!=======
-command calc.dbl(v:lng,digits:int,scale:int):dbl 
-address lng_num2dec_dbl;
-!>>>>>>> /tmp/MAL-signatures.stable.out~other.Mz16J4
 comment cast number to decimal(dbl) and check for overflow
 
-!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/clients/Tests/MAL-signatures.stable.out
-!=======
+command calc.dbl(s1:int,v:lng,d2:int,s2:int):dbl 
+address lng_dec2dec_dbl;
+comment cast decimal(lng) to decimal(dbl) and check for overflow
+
+command calc.dbl(s1:int,v:lng):dbl 
+address lng_dec2_dbl;
+comment cast decimal(lng) to dbl and check for overflow
+
+command calc.dbl(v:lng,digits:int,scale:int):dbl 
+address lng_num2dec_dbl;
+comment cast number to decimal(dbl) and check for overflow
+
 command calc.dbl(s1:int,v:wrd,d2:int,s2:int):dbl 
 address wrd_dec2dec_dbl;
 comment cast decimal(wrd) to decimal(dbl) and check for overflow
@@ -46706,7 +46345,6 @@ command calc.dbl(v:bte,digits:int,scale:int):dbl
 address bte_num2dec_dbl;
 comment cast number to decimal(dbl) and check for overflow
 
-!>>>>>>> /tmp/MAL-signatures.stable.out~other.Mz16J4
 command calc.daytime(v:timestamp,d:int):daytime 
 address timestamp_2_daytime;
 comment cast timestamp to a daytime and check for overflow
@@ -47679,212 +47317,18 @@ command calc.isnil(v:blob):bit
 address BLOB_isnil;
 comment Nil test for blob value
 
-!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/clients/Tests/MAL-signatures.stable.out
-command calc.json(j:json):json 
-address JSONstr2json;
-comment Convert JSON to JSON. Dealing with escape characters
-!=======
-pattern calc.ifthenelse(b:bit,t:any_1,f:any_1):any_1 
-address CALCswitchbit;
-comment If VALUE is true return MIDDLE else RIGHT
-!>>>>>>> /tmp/MAL-signatures.stable.out~other.Mz16J4
-
-!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/clients/Tests/MAL-signatures.stable.out
-#>>>>>>> /tmp/MAL-signatures.stable.out~other.EGfNcE
-command calc.json(j:str):json 
-address JSONstr2json;
-comment Convert string to its JSON. Dealing with escape characters
-!=======
-pattern calc.int(v:str):int 
-address CMDvarCONVERT;
-comment Cast VALUE to int
-!>>>>>>> /tmp/MAL-signatures.stable.out~other.Mz16J4
-
-!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/clients/Tests/MAL-signatures.stable.out
 command calc.lng(s1:int,v:hge,d2:int,s2:int):lng 
 address hge_dec2dec_lng;
 comment cast decimal(hge) to decimal(lng) and check for overflow
-!=======
-pattern calc.int(v:oid):int 
-address CMDvarCONVERT;
-comment Cast VALUE to int
-!>>>>>>> /tmp/MAL-signatures.stable.out~other.Mz16J4
 
-!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/clients/Tests/MAL-signatures.stable.out
 command calc.lng(s1:int,v:hge):lng 
 address hge_dec2_lng;
 comment cast decimal(hge) to lng and check for overflow
-!=======
-pattern calc.int(v:dbl):int 
-address CMDvarCONVERT;
-comment Cast VALUE to int
-!>>>>>>> /tmp/MAL-signatures.stable.out~other.Mz16J4
 
-!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/clients/Tests/MAL-signatures.stable.out
 command calc.lng(v:hge,digits:int,scale:int):lng 
 address hge_num2dec_lng;
 comment cast number to decimal(lng) and check for overflow
-!=======
-pattern calc.int(v:flt):int 
-address CMDvarCONVERT;
-comment Cast VALUE to int
-!>>>>>>> /tmp/MAL-signatures.stable.out~other.Mz16J4
 
-!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/clients/Tests/MAL-signatures.stable.out
-!=======
-pattern calc.int(v:lng):int 
-address CMDvarCONVERT;
-comment Cast VALUE to int
-
-pattern calc.int(v:wrd):int 
-address CMDvarCONVERT;
-comment Cast VALUE to int
-
-pattern calc.int(v:int):int 
-address CMDvarCONVERT;
-comment Cast VALUE to int
-
-pattern calc.int(v:sht):int 
-address CMDvarCONVERT;
-comment Cast VALUE to int
-
-pattern calc.int(v:bte):int 
-address CMDvarCONVERT;
-comment Cast VALUE to int
-
-pattern calc.int(v:bit):int 
-address CMDvarCONVERT;
-comment Cast VALUE to int
-
-pattern calc.int(v:void):int 
-address CMDvarCONVERT;
-comment Cast VALUE to int
-
-pattern calc.isnotnil(v:BAT):bit 
-address CMDvarISNOTNIL;
-comment Unary check for notnil of V
-
-pattern calc.isnotnil(v:str):bit 
-address CMDvarISNOTNIL;
-comment Unary check for notnil of V
-
-pattern calc.isnotnil(v:oid):bit 
-address CMDvarISNOTNIL;
-comment Unary check for notnil of V
-
-pattern calc.isnotnil(v:dbl):bit 
-address CMDvarISNOTNIL;
-comment Unary check for notnil of V
-
-pattern calc.isnotnil(v:flt):bit 
-address CMDvarISNOTNIL;
-comment Unary check for notnil of V
-
-pattern calc.isnotnil(v:lng):bit 
-address CMDvarISNOTNIL;
-comment Unary check for notnil of V
-
-pattern calc.isnotnil(v:wrd):bit 
-address CMDvarISNOTNIL;
-comment Unary check for notnil of V
-
-pattern calc.isnotnil(v:int):bit 
-address CMDvarISNOTNIL;
-comment Unary check for notnil of V
-
-pattern calc.isnotnil(v:sht):bit 
-address CMDvarISNOTNIL;
-comment Unary check for notnil of V
-
-pattern calc.isnotnil(v:bte):bit 
-address CMDvarISNOTNIL;
-comment Unary check for notnil of V
-
-pattern calc.isnotnil(v:bit):bit 
-address CMDvarISNOTNIL;
-comment Unary check for notnil of V
-
-pattern calc.isnotnil(v:void):bit 
-address CMDvarISNOTNIL;
-comment Unary check for notnil of V
-
-pattern calc.isnil(v:BAT):bit 
-address CMDvarISNIL;
-comment Unary check for nil of V
-
-pattern calc.isnil(v:str):bit 
-address CMDvarISNIL;
-comment Unary check for nil of V
-
-pattern calc.isnil(v:oid):bit 
-address CMDvarISNIL;
-comment Unary check for nil of V
-
-pattern calc.isnil(v:dbl):bit 
-address CMDvarISNIL;
-comment Unary check for nil of V
-
-pattern calc.isnil(v:flt):bit 
-address CMDvarISNIL;
-comment Unary check for nil of V
-
-pattern calc.isnil(v:lng):bit 
-address CMDvarISNIL;
-comment Unary check for nil of V
-
-pattern calc.isnil(v:wrd):bit 
-address CMDvarISNIL;
-comment Unary check for nil of V
-
-pattern calc.isnil(v:int):bit 
-address CMDvarISNIL;
-comment Unary check for nil of V
-
-pattern calc.isnil(v:sht):bit 
-address CMDvarISNIL;
-comment Unary check for nil of V
-
-pattern calc.isnil(v:bte):bit 
-address CMDvarISNIL;
-comment Unary check for nil of V
-
-pattern calc.isnil(v:bit):bit 
-address CMDvarISNIL;
-comment Unary check for nil of V
-
-pattern calc.isnil(v:void):bit 
-address CMDvarISNIL;
-comment Unary check for nil of V
-
-pattern calc.iszero(v:dbl):bit 
-address CMDvarISZERO;
-comment Unary check for zero of V
-
-pattern calc.iszero(v:flt):bit 
-address CMDvarISZERO;
-comment Unary check for zero of V
-
-pattern calc.iszero(v:lng):bit 
-address CMDvarISZERO;
-comment Unary check for zero of V
-
-pattern calc.iszero(v:wrd):bit 
-address CMDvarISZERO;
-comment Unary check for zero of V
-
-pattern calc.iszero(v:int):bit 
-address CMDvarISZERO;
-comment Unary check for zero of V
-
-pattern calc.iszero(v:sht):bit 
-address CMDvarISZERO;
-comment Unary check for zero of V
-
-pattern calc.iszero(v:bte):bit 
-address CMDvarISZERO;
-comment Unary check for zero of V
-
-!>>>>>>> /tmp/MAL-signatures.stable.out~other.Mz16J4
 command calc.lng(s1:int,v:lng,d2:int,s2:int):lng 
 address lng_dec2dec_lng;
 comment cast decimal(lng) to decimal(lng) and check for overflow
@@ -48165,6 +47609,10 @@ comment Return V1 << V2, out of range second operand causes NIL value
 pattern calc.lsh_noerror(v1:bte,v2:hge):bte 
 address CMDvarLSH;
 comment Return V1 << V2, out of range second operand causes NIL value
+
+pattern calc.month_interval(v:hge,ek:int,sk:int):int 
+address month_interval;
+comment cast hge to a month_interval and check for overflow
 
 pattern calc.month_interval(v:lng,ek:int,sk:int):int 
 address month_interval;
@@ -49151,27 +48599,14 @@ pattern calc.rsh_noerror(v1:bte,v2:bte):bte
 address CMDvarRSH;
 comment Return V1 >> V2, out of range second operand causes NIL value
 
-!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/clients/Tests/MAL-signatures.stable.out
 pattern calc.rsh_noerror(v1:hge,v2:hge):hge 
 address CMDvarRSH;
 comment Return V1 >> V2, out of range second operand causes NIL value
-!=======
-command calc.sht(s1:int,v:lng,d2:int,s2:int):sht 
-address lng_dec2dec_sht;
-comment cast decimal(lng) to decimal(sht) and check for overflow
-!>>>>>>> /tmp/MAL-signatures.stable.out~other.Mz16J4
 
-!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/clients/Tests/MAL-signatures.stable.out
 pattern calc.rsh_noerror(v1:hge,v2:lng):hge 
 address CMDvarRSH;
 comment Return V1 >> V2, out of range second operand causes NIL value
-!=======
-command calc.sht(s1:int,v:lng):sht 
-address lng_dec2_sht;
-comment cast decimal(lng) to sht and check for overflow
-!>>>>>>> /tmp/MAL-signatures.stable.out~other.Mz16J4
 
-!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/clients/Tests/MAL-signatures.stable.out
 pattern calc.rsh_noerror(v1:hge,v2:wrd):hge 
 address CMDvarRSH;
 comment Return V1 >> V2, out of range second operand causes NIL value
@@ -49218,24 +48653,32 @@ comment cast decimal(hge) to sht and check for overflow
 
 command calc.sht(v:hge,digits:int,scale:int):sht 
 address hge_num2dec_sht;
-!=======
-command calc.sht(v:lng,digits:int,scale:int):sht 
-address lng_num2dec_sht;
-!>>>>>>> /tmp/MAL-signatures.stable.out~other.Mz16J4
 comment cast number to decimal(sht) and check for overflow
 
-!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/clients/Tests/MAL-signatures.stable.out
+pattern calc.second_interval(v:hge,ek:int,sk:int):lng 
+address second_interval;
+comment cast hge to a second_interval and check for overflow
+
 command calc.second_interval(sc:int,v:hge,ek:int,sk:int):lng 
 address hge_dec2second_interval;
 comment cast hge decimal to a second_interval
-!=======
+
+command calc.sht(s1:int,v:lng,d2:int,s2:int):sht 
+address lng_dec2dec_sht;
+comment cast decimal(lng) to decimal(sht) and check for overflow
+
+command calc.sht(s1:int,v:lng):sht 
+address lng_dec2_sht;
+comment cast decimal(lng) to sht and check for overflow
+
+command calc.sht(v:lng,digits:int,scale:int):sht 
+address lng_num2dec_sht;
+comment cast number to decimal(sht) and check for overflow
+
 command calc.sht(s1:int,v:wrd,d2:int,s2:int):sht 
 address wrd_dec2dec_sht;
 comment cast decimal(wrd) to decimal(sht) and check for overflow
-!>>>>>>> /tmp/MAL-signatures.stable.out~other.Mz16J4
 
-!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/clients/Tests/MAL-signatures.stable.out
-!=======
 command calc.sht(s1:int,v:wrd):sht 
 address wrd_dec2_sht;
 comment cast decimal(wrd) to sht and check for overflow
@@ -49288,7 +48731,6 @@ command calc.sht(v:flt,digits:int,scale:int):sht
 address flt_num2dec_sht;
 comment cast number to decimal(sht) and check for overflow
 
-!>>>>>>> /tmp/MAL-signatures.stable.out~other.Mz16J4
 command calc.second_interval(v:daytime,ek:int,sk:int):lng 
 address second_interval_daytime;
 comment cast daytime to a second_interval and check for overflow
@@ -49850,18 +49292,26 @@ pattern calc.void(v:void):void
 address CMDvarCONVERT;
 comment Cast VALUE to void
 
-!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/clients/Tests/MAL-signatures.stable.out
 pattern calc.void(v:hge):void 
 address CMDvarCONVERT;
 comment Cast VALUE to void
-!=======
+
+command calc.wrd(s1:int,v:hge,d2:int,s2:int):wrd 
+address hge_dec2dec_wrd;
+comment cast decimal(hge) to decimal(wrd) and check for overflow
+
+command calc.wrd(s1:int,v:hge):wrd 
+address hge_dec2_wrd;
+comment cast decimal(hge) to wrd and check for overflow
+
+command calc.wrd(v:hge,digits:int,scale:int):wrd 
+address hge_num2dec_wrd;
+comment cast number to decimal(wrd) and check for overflow
+
 command calc.wrd(s1:int,v:lng,d2:int,s2:int):wrd 
 address lng_dec2dec_wrd;
 comment cast decimal(lng) to decimal(wrd) and check for overflow
-!>>>>>>> /tmp/MAL-signatures.stable.out~other.Mz16J4
 
-!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/clients/Tests/MAL-signatures.stable.out
-!=======
 command calc.wrd(s1:int,v:lng):wrd 
 address lng_dec2_wrd;
 comment cast decimal(lng) to wrd and check for overflow
@@ -49870,7 +49320,6 @@ command calc.wrd(v:lng,digits:int,scale:int):wrd
 address lng_num2dec_wrd;
 comment cast number to decimal(wrd) and check for overflow
 
-!>>>>>>> /tmp/MAL-signatures.stable.out~other.Mz16J4
 command calc.wrd(s1:int,v:wrd,d2:int,s2:int):wrd 
 address wrd_dec2dec_wrd;
 comment cast decimal(wrd) to decimal(wrd) and check for overflow
@@ -50655,10 +50104,6 @@ pattern group.subgroup(b:bat[:oid,:any]...) (ref:bat[:oid,:oid],grp:bat[:oid,:oi
 address GROUPmulticolumn;
 comment Derivation of a group index over multiple columns.
 
-command gsl.chi2prob(d:dbl,i:dbl):dbl 
-address GSLchisqProb;
-comment Chi Squared probability
-
 command identifier.#fromstr():void 
 address IDfromString;
 comment Convert a string to an identifier without any check
@@ -51045,29 +50490,6 @@ command json.nextid(kind:bat[:oid,:bte]):oid
 address JSONnextid;
 comment Returns the next free id for the kind BAT
 
-!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/clients/Tests/MAL-signatures.stable.out
-command json.names(val:json):bat[:oid,:str] 
-address JSONnames;
-comment Expands the outermost JSON object names.
-
-pattern json.nest(v:bat[:oid,:any]):json 
-address JSONnest;
-comment Combine the value list into a single json array object.
-
-pattern json.nest(k:bat[:oid,:str],v:bat[:oid,:any]):json 
-address JSONnest;
-comment Combine the key-value pairs into a single json object list.
-
-pattern json.nest(o:bat[:oid,:oid],k:bat[:oid,:str],v:bat[:oid,:any]):json 
-address JSONnest;
-comment Nest the key-value pairs with object identity into a list of JSON objects 
-
-command json.new(j:str):json 
-address JSONstr2json;
-comment Convert string to its JSON. Dealing with escape characters
-
-!=======
-!>>>>>>> /tmp/MAL-signatures.stable.out~other.Mz16J4
 function json.print(o:streams,kind:bat[:oid,:bte],string:bat[:oid,:str],integer:bat[:oid,:lng],double:bat[:oid,:dbl],array:bat[:oid,:oid],object:bat[:oid,:oid],name:bat[:oid,:str]):void;
 command json.print(o:streams,kind:bat[:oid,:bte],string:bat[:oid,:str],integer:bat[:oid,:lng],double:bat[:oid,:dbl],array:bat[:oid,:oid],object:bat[:oid,:oid],name:bat[:oid,:str],start:oid,pretty:bit):void 
 address JSONprint;
@@ -53259,10 +52681,6 @@ command sema.up(s:sema):void
 address SEMAup;
 comment Increment the semaphore
 
-pattern sql.assert(b:hge,msg:str):void 
-address SQLassertHge;
-comment Generate an exception when b!=0
-
 command sql.alpha(dec:dbl,theta:dbl):dbl 
 address SQLcst_alpha_cst;
 comment Implementation of astronomy alpha function: expands the radius theta depending on the declination
@@ -53428,23 +52846,18 @@ pattern sql.commit():void
 address SQLcommit;
 comment Trigger the commit operation for a MAL block
 
-!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/clients/Tests/MAL-signatures.stable.out
 command sql.dec_round(v:hge,r:hge):hge 
 address hge_dec_round_wrap;
 comment round off the value v to nearests multiple of r
-!=======
+
 command sql.dense_rank(b:bat[:oid,:any_1]):bat[:oid,:int] 
 address sql_dense_rank;
 comment return the densely ranked bat
-!>>>>>>> /tmp/MAL-signatures.stable.out~other.Mz16J4
 
-!<<<<<<< /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/Feb128/source/int128/clients/Tests/MAL-signatures.stable.out
-!=======
 command sql.dense_rank_grp(b:bat[:oid,:any_1],gp:bat[:oid,:oid],gpe:bat[:oid,:oid]):bat[:oid,:int] 
 address sql_dense_rank_grp;
 comment return the densely ranked groups
 
-!>>>>>>> /tmp/MAL-signatures.stable.out~other.Mz16J4
 pattern sql.dropdictionary(sch:str,tbl:str):void 
 address SQLdropDictionary;
 comment Perform dictionary decompression on a table
@@ -54369,6 +53782,10 @@ comment Normalized edit distance between two strings
 command txtsim.similarity(string1:str,string2:str,minimum:dbl):dbl 
 address fstrcmp_impl;
 comment Normalized edit distance between two strings
+
+command udf.fuse(one:lng,two:lng):hge 
+address UDFfuse_lng_hge;
+comment fuse two (8-byte) lng values into one (16-byte) hge value
 
 command udf.fuse(one:int,two:int):lng 
 address UDFfuse_int_lng;
