@@ -30,16 +30,6 @@ address ALGfind
 comment "Returns the tail value 't' for which some [h,t] BUN
 	exists in b.  If no such BUN exists, an error occurs." ;
 
-command position(b:bat[:any_1,:any_2], v:any_1):wrd
-address ALGposition
-comment "Returns BAT position [0.. b.count] of 'v' in the head
-	column of b. It Return an error if 'v' does not exist.";
-
-command position(b:bat[:any_1,:any_2], val:any_1, tval:any_2) :wrd
-address ALGpositionBUN
-comment "Returns the position of the value pair It returns an
-	error if 'val' does not exist.";
-
 command fetch(b:bat[:any_2,:any_1], x:oid) :any_1
 address ALGfetchoid;
 command fetch(b:bat[:any_2,:any_1], x:lng) :any_1

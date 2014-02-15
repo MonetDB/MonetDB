@@ -144,8 +144,6 @@ algebra_export str ALGslice_int(int *ret, bat *bid, int *start, int *end);
 algebra_export str ALGslice_wrd(int *ret, bat *bid, wrd *start, wrd *end);
 algebra_export str ALGslice_oid(int *ret, bat *bid, oid *start, oid *end);
 algebra_export str ALGsubslice_wrd(int *ret, bat *bid, wrd *start, wrd *end);
-algebra_export str ALGposition(wrd *retval, int *bid, ptr val);
-algebra_export str ALGpositionBUN(wrd *retval, int *bid, ptr val, ptr tval);
 algebra_export str ALGfetch(ptr ret, int *bid, lng *pos);
 algebra_export str ALGfetchoid(int *ret, int *bid, oid *pos);
 algebra_export str ALGfetchint(int *ret, int *bid, int *pos);

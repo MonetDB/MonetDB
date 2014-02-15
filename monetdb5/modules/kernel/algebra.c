@@ -18,9 +18,8 @@
  */
 
 /*
- * @a Peter Boncz, Martin Kersten, Niels Nes, Sjoerd Mullender
- * @v 2.0
- * @+ BAT Algebra
+ * (c) Peter Boncz, Martin Kersten, Niels Nes, Sjoerd Mullender
+ * BAT Algebra
  * This modules contains the most common algebraic BAT manipulation
  * commands. We call them algebra, because all operations take
  * values as parameters, and produce new result values, but
@@ -54,11 +53,11 @@
 #include <math.h>
 
 /*
- * @* Command Implementations in C
+ * Command Implementations in C
  * This module contains just a wrapper implementations; since all described
  * operations are part of the GDK kernel.
  *
- * @+ BAT sum operation
+ * BAT sum operation
  * The sum aggregate only works for int and float fields.
  * The routines below assumes that the caller knows what type
  * is large enough to prevent overflow.
@@ -161,7 +160,6 @@ CMDgen_group(BAT **result, BAT *gids, BAT *cnts )
 
 
 /*
- * @- Substring Select
  * The string pattern matching routine has been added. It should be
  * dynamically linked.
  * A simple string matcher is included. It should be refined later on
@@ -233,9 +231,6 @@ CMDlike(BAT **ret, BAT *b, str s)
 	return GDK_SUCCEED;
 }
 
-/*
- * @- BAT slice
- */
 static int
 slice(BAT **retval, BAT *b, lng start, lng end)
 {
@@ -253,40 +248,13 @@ slice(BAT **retval, BAT *b, lng start, lng end)
 
 	return (*retval = BATslice(b, (BUN) start, (BUN) end + 1)) ? GDK_SUCCEED : GDK_FAIL;
 }
-
 /*
- * @- BUN Get/Fetch
- */
-static int
-CMDposition(wrd *retval, BAT *b, ptr val)
-{
-	BUN v = BUNfnd(b, val);
-
-	if (v == BUN_NONE)
-		return GDK_FAIL;
-	*retval = (wrd) (v - BUNfirst(b));
-	return GDK_SUCCEED;
-}
-
-static int
-CMDpositionBUN(wrd *retval, BAT *b, ptr val, ptr tval)
-{
-	BUN v = BUNlocate(b, val, tval);
-
-	if (v == BUN_NONE)
-		return GDK_FAIL;
-	*retval = (wrd) (v - BUNfirst(b));
-	return GDK_SUCCEED;
-}
-
-
-/*
- * @- Wrapper
+ * 
  * The remainder of this file contains the wrapper around the V4 code base
  * The BAT identifiers passed through this module may indicate
  * that the 'reverse' view applies. This should be taken into
  * account while resolving them.
- * @+ BAT sum and product aggregation
+ * 
  * The sum aggregate only works for int and float fields.
  * The routines below assumes that the caller knows what type
  * is large enough to prevent overflow.
@@ -2153,42 +2121,8 @@ ALGsubslice_wrd(int *ret, bat *bid, wrd *start, wrd *end)
 }
 
 /*
- * @- BUN Get/Fetch
+ * BUN Get/Fetch
  */
-str
-ALGposition(wrd *retval, int *bid, ptr val)
-{
-	BAT *b;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "algebra.position", RUNTIME_OBJECT_MISSING);
-	}
-	derefStr(b, h, val);
-	if (CMDposition(retval, b, val) == GDK_FAIL){
-		BBPreleaseref(b->batCacheid);
-		throw(MAL, "algebra.position", GDK_EXCEPTION "Item not found");
-	}
-	BBPreleaseref(b->batCacheid);
-	return MAL_SUCCEED;
-}
-
-str
-ALGpositionBUN(wrd *retval, int *bid, ptr val, ptr tval)
-{
-	BAT *b;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "algebra.position", RUNTIME_OBJECT_MISSING);
-	}
-	derefStr(b, h, val);
-	derefStr(b, t, tval);
-	if( (CMDpositionBUN(retval, b, val, tval) == GDK_FAIL) ){
-		BBPreleaseref(b->batCacheid);
-		throw(MAL, "algebra.position", GDK_EXCEPTION "Item not found");
-	}
-	BBPreleaseref(b->batCacheid);
-	return MAL_SUCCEED;
-}
 
 static str
 doALGfetch(ptr ret, BAT *b, BUN pos)
@@ -2456,7 +2390,6 @@ str ALGreuse(int *ret, int *bid)
 }
 
 /*
- * @+ BAT avg operation
  * The avg aggregate only works for int and float fields.
  */
 str
@@ -2479,7 +2412,7 @@ ALGavg(dbl *res, int *bid)
 }
 
 /*
- * @+ BAT standard deviation
+ * BAT standard deviation
  */
 str
 ALGstdev(dbl *res, int *bid)
@@ -2514,7 +2447,7 @@ ALGstdevp(dbl *res, int *bid)
 }
 
 /*
- * @+ BAT variance
+ * BAT variance
  */
 str
 ALGvariance(dbl *res, int *bid)
