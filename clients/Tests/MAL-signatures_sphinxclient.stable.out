@@ -38832,7 +38832,7 @@ comment Abort a query after  n seconds.
 
 pattern clients.setsession(n:lng):void 
 address CLTsetSessionTimeout;
-comment Abort a session after n seconds.
+comment Abort a session after  n seconds.
 
 pattern clients.suspend(id:int):void 
 address CLTsuspend;
