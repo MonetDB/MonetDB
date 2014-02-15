@@ -49,8 +49,6 @@ Ready.
 # loading sql script: 80_statistics.sql
 # loading sql script: 80_udf.sql
 # loading sql script: 99_system.sql
-#Bulk operator required for str.stringleft
-#Bulk operator required for str.stringleft
 
 # 15:01:36 >  
 # 15:01:36 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-13451" "--port=34237"
@@ -8389,7 +8387,7 @@ CREATE TABLE "sys"."user_role" (
 );
 COMMIT;
 
-# 15:01:41 >  
-# 15:01:41 >  "Done."
-# 15:01:41 >  
+# 13:32:07 >  
+# 13:32:07 >  "Done."
+# 13:32:07 >  
 
