@@ -216,11 +216,11 @@ comment Return the cardinality of the BAT tail values.
 
 command aggr.count_no_nil(b:bat[:any_1,:any_2]):wrd 
 address ALGcount_no_nil;
-comment Return the number of elements currently	in a BAT ignoring BUNs with nil-tail
+comment Return the number of elements currently 	in a BAT ignoring BUNs with nil-tail
 
 command aggr.count(b:bat[:any_1,:any],ignore_nils:bit):wrd 
 address ALGcount_nil;
-comment Return the number of elements currently in a BAT ignores		BUNs with nil-tail iff ignore_nils==TRUE.
+comment Return the number of elements currently in a BAT ignores 		BUNs with nil-tail iff ignore_nils==TRUE.
 
 command aggr.count(b:bat[:any_1,:any]):wrd 
 address ALGcount_bat;
@@ -2756,7 +2756,7 @@ comment Returns the antijoin
 
 command algebra.antijoin(left:bat[:oid,:any_1],right:bat[:oid,:any_1]) (l:bat[:oid,:oid],r:bat[:oid,:oid]) 
 address ALGantijoin2;
-comment Returns 2 columns with all BUNs, consisting of the head-oids	  from 'left' and 'right' for which there are BUNs in 'left'	  and 'right' with equal tails
+comment Returns 2 columns with all BUNs, consisting of the head-oids 	  from 'left' and 'right' for which there are BUNs in 'left' 	  and 'right' with equal tails
 
 command algebra.antiuselect(b:bat[:any_1,:any_2],low:any_2,high:any_2,li:bit,hi:bit):bat[:any_1,:void] 
 address ALGantiuselectInclusive;
@@ -2764,19 +2764,19 @@ comment See select() but limited to head values
 
 command algebra.antiuselect(b:bat[:any_1,:any_2],value:any_2):bat[:any_1,:void] 
 address ALGantiuselect1;
-comment Value select, but returning only the	head values. SEE ALSO:select(bat,val)
+comment Value select, but returning only the 	head values. SEE ALSO:select(bat,val)
 
 command algebra.bandjoin(outer:bat[:any_1,:any_2],inner:bat[:any_2,:any_3],minus:any_2,plus:any_2,li:bit,hi:bit):bat[:any_1,:any_3] 
 address ALGbandjoin;
-comment This is a join() for which the predicate is that two BUNs match		if the left-tail value is within the range [right-head - minus,		right-head + plus], depending on (l_in/h_in), the bounds		are included. Works only for the builtin numerical types,		and their derivates.
+comment This is a join() for which the predicate is that two BUNs match 		if the left-tail value is within the range [right-head - minus, 		right-head + plus], depending on (l_in/h_in), the bounds 		are included. Works only for the builtin numerical types, 		and their derivates.
 
 command algebra.bandjoin(outer:bat[:any_1,:any_2],inner:bat[:any_2,:any_3],minus:any_2,plus:any_2):bat[:any_1,:any_3] 
 address ALGbandjoin_default;
-comment This is a join() for which the predicate is that two BUNs match		if the left-tail value is within the range [right-head - minus,		right-head + plus]. Works only for the builtin numerical types,		and their derivates.
+comment This is a join() for which the predicate is that two BUNs match 		if the left-tail value is within the range [right-head - minus, 		right-head + plus]. Works only for the builtin numerical types, 		and their derivates.
 
 command algebra.bandjoin(outer:bat[:oid,:any_2],inner:bat[:oid,:any_2],minus:any_2,plus:any_2,li:bit,hi:bit) (l:bat[:oid,:oid],r:bat[:oid,:oid]) 
 address ALGbandjoin2;
-comment This is a join() for which the predicate is that two BUNs match		if the left-tail value is within the range [right-head - minus,		right-head + plus], depending on (l_in/h_in), the bounds		are included. Works only for the builtin numerical types,		and their derivates.
+comment This is a join() for which the predicate is that two BUNs match 		if the left-tail value is within the range [right-head - minus, 		right-head + plus], depending on (l_in/h_in), the bounds 		are included. Works only for the builtin numerical types, 		and their derivates.
 
 command algebra.crossproduct(left:bat[:any_1,:any_2],right:bat[:any_3,:any_4]):bat[:any_1,:any_4] 
 address ALGcross;
@@ -2784,7 +2784,7 @@ comment Returns the cross product
 
 command algebra.crossproduct(left:bat[:oid,:any_1],right:bat[:oid,:any_2]) (l:bat[:oid,:oid],r:bat[:oid,:oid]) 
 address ALGcrossproduct2;
-comment Returns 2 columns with all BUNs, consisting of the head-oids	  from 'left' and 'right' for which there are BUNs in 'left'	  and 'right' with equal tails
+comment Returns 2 columns with all BUNs, consisting of the head-oids 	  from 'left' and 'right' for which there are BUNs in 'left' 	  and 'right' with equal tails
 
 command algebra.copy(b:bat[:any_1,:any_2]):bat[:any_1,:any_2] 
 address ALGcopy;
@@ -2806,7 +2806,7 @@ comment Select both on head and tail range.
 
 command algebra.fetch(b:bat[:any_2,:any_1],x:int):any_1 
 address ALGfetchint;
-comment Returns the tail value of the BUN at x-th position	with 0 <= x < b.count
+comment Returns the tail value of the BUN at x-th position 	with 0 <= x < b.count
 
 command algebra.fetch(b:bat[:any_2,:any_1],x:lng):any_1 
 address ALGfetch;
@@ -2814,7 +2814,7 @@ command algebra.fetch(b:bat[:any_2,:any_1],x:oid):any_1
 address ALGfetchoid;
 command algebra.find(b:bat[:any_1,:any_2],h:any_1):any_2 
 address ALGfind;
-comment Returns the tail value 't' for which some [h,t] BUN	exists in b.  If no such BUN exists, an error occurs.
+comment Returns the tail value 't' for which some [h,t] BUN 	exists in b.  If no such BUN exists, an error occurs.
 
 command algebra.groupby(gids:bat[:oid,:oid],cnts:bat[:oid,:wrd]):bat[:oid,:oid] 
 address ALGgroupby;
@@ -2842,29 +2842,29 @@ command algebra.join(left:bat[:any_1,:any_2],right:bat[:any_2,:any_3]):bat[:any_
 address ALGjoin;
 command algebra.join(left:bat[:any_1,:any_2],right:bat[:any_2,:any_3]):bat[:any_1,:any_3] 
 address ALGjoin;
-comment Returns all BUNs, consisting of a head-value from 'left' and		a tail-value from 'right' for which there are BUNs in 'left'		and 'right' with equal tail- resp. head-value (i.e. the join	columns are projected out).
+comment Returns all BUNs, consisting of a head-value from 'left' and 		a tail-value from 'right' for which there are BUNs in 'left' 		and 'right' with equal tail- resp. head-value (i.e. the join	columns are projected out).
 
 command algebra.join(left:bat[:oid,:any_2],rl:bat[:oid,:any_2],rh:bat[:oid,:any_2],li:bit,hi:bit) (l:bat[:oid,:oid],r:bat[:oid,:oid]) 
 address ALGrangejoin2;
 command algebra.join(left:bat[:oid,:any_1],right:bat[:oid,:any_1]) (l:bat[:oid,:oid],r:bat[:oid,:oid]) 
 address ALGjoin2;
-comment Returns 2 columns with all BUNs, consisting of the head-oids	  from 'left' and 'right' for which there are BUNs in 'left'	  and 'right' with equal tails
+comment Returns 2 columns with all BUNs, consisting of the head-oids 	  from 'left' and 'right' for which there are BUNs in 'left' 	  and 'right' with equal tails
 
 command algebra.kunion(left:bat[:any_1,:any_2],right:bat[:any_1,:any_2]):bat[:any_1,:any_2] 
 address ALGkunion;
-comment Returns the union of two BATs; looking at head-columns only.		Results in all BUNs of 'left' that are  not in 'right', plus	all BUNs of 'right'.  *no* double-elimination is done.		If you want this, do:	'kunion(left.kunique,right.kunique)'	or: 'sunion(left,right).kunique'.
+comment Returns the union of two BATs; looking at head-columns only. 		Results in all BUNs of 'left' that are  not in 'right', plus 	all BUNs of 'right'.  *no* double-elimination is done. 		If you want this, do:	'kunion(left.kunique,right.kunique)' 	or: 'sunion(left,right).kunique'.
 
 command algebra.kdifference(left:bat[:any_1,:any_2],right:bat[:any_1,:any]):bat[:any_1,:any_2] 
 address ALGkdiff;
-comment Returns the difference taken over only the *head* columns of two BATs.		Results in all BUNs of 'left' that are *not* in 'right'.		It does *not* do double-elimination over the 'left' BUNs.		If you want this, use:	 'kdifference(left.kunique,right.kunique)'	or: 'kdifference(left,right).kunique'.
+comment Returns the difference taken over only the *head* columns of two BATs. 		Results in all BUNs of 'left' that are *not* in 'right'. 		It does *not* do double-elimination over the 'left' BUNs. 		If you want this, use:	 'kdifference(left.kunique,right.kunique)' 	or: 'kdifference(left,right).kunique'.
 
 command algebra.kintersect(left:bat[:any_1,:any_2],right:bat[:any_1,:any]):bat[:any_1,:any_2] 
 address ALGsemijoin;
-comment Returns the intersection taken over only the *head* columns of two BATs.	Results in all BUNs of 'left' that are also in 'right'.		Does *not* do double- elimination over the 'left' BUNs.		If you want this, use: 'kintersect(kunique(left),kunique(right))'	or: 'kunique(kintersect(left,right))'.
+comment Returns the intersection taken over only the *head* columns of two BATs. 	Results in all BUNs of 'left' that are also in 'right'. 		Does *not* do double- elimination over the 'left' BUNs.		If you want this, use: 'kintersect(kunique(left),kunique(right))' 	or: 'kunique(kintersect(left,right))'.
 
 command algebra.kunique(b:bat[:any_1,:any_2]):bat[:any_1,:any_2] 
 address ALGkunique;
-comment Select unique tuples from the input BAT.  Double elimination is		done only looking at the head column. The result is a BAT with		property hkeyed() == true.
+comment Select unique tuples from the input BAT.  Double elimination is 		done only looking at the head column. The result is a BAT with		property hkeyed() == true.
 
 pattern algebra.leftfetchjoinPath(l:bat[:any,:any]...):bat[:any,:any] 
 address ALGjoinPath;
@@ -2919,11 +2919,11 @@ comment "grouped mark": Produces a new BAT with per group a locally unique dense
 
 command algebra.markH(b:bat[:any_1,:any_2],nr_parts:int,part_nr:int):bat[:oid,:any_2] 
 address ALGhmarkp;
-comment Produces a BAT with fresh unique dense sequense of OIDs in	the head that starts at base (i.e. [base,..base+b.count()-1] ).	The base is uniquely defined by the part_nr (ie we set the highest	bits based on the part_nr/nr_parts) 
+comment Produces a BAT with fresh unique dense sequense of OIDs in 	the head that starts at base (i.e. [base,..base+b.count()-1] ).	The base is uniquely defined by the part_nr (ie we set the highest	bits based on the part_nr/nr_parts) 
 
 command algebra.markH(b:bat[:any_1,:any_2],base:oid):bat[:oid,:any_2] 
 address ALGmarkHead;
-comment Produces a new BAT with fresh unique dense sequense of OIDs in		the head that starts at base (i.e. [base,..base+b.count()-1] ).
+comment Produces a new BAT with fresh unique dense sequense of OIDs in 		the head that starts at base (i.e. [base,..base+b.count()-1] ).
 
 command algebra.markH(b:bat[:any_1,:any_2]):bat[:oid,:any_2] 
 address ALGmarkHead_default;
@@ -2931,7 +2931,7 @@ comment Produces a BAT with fresh OIDs in the head starting at 0@0.
 
 command algebra.markT(b:bat[:any_1,:any_2],nr_parts:int,part_nr:int):bat[:any_1,:oid] 
 address ALGtmarkp;
-comment Produces a BAT with fresh unique dense sequense of OIDs in	the tail that starts at base (i.e. [base,..base+b.count()-1] ).	The base is uniquely defined by the part_nr (ie we set the highest	bits based on the part_nr/nr_parts) 
+comment Produces a BAT with fresh unique dense sequense of OIDs in 	the tail that starts at base (i.e. [base,..base+b.count()-1] ).	The base is uniquely defined by the part_nr (ie we set the highest	bits based on the part_nr/nr_parts) 
 
 command algebra.markT(b:bat[:any_1,:any_2]):bat[:any_1,:oid] 
 address ALGtmark_default;
@@ -2939,21 +2939,21 @@ comment Produces a BAT with fresh unique OIDs in the tail starting at 0@0.
 
 command algebra.markT(b:bat[:any_1,:any_2],base:oid):bat[:any_1,:oid] 
 address ALGtmark;
-comment Produces a BAT with fresh unique dense sequense of OIDs in		the tail that starts at base (i.e. [base,..base+b.count()-1] ).
+comment Produces a BAT with fresh unique dense sequense of OIDs in 		the tail that starts at base (i.e. [base,..base+b.count()-1] ).
 
 command algebra.outerjoin(outer:bat[:any_1,:any_2],inner:bat[:any_2,:any_3],estimate:lng):bat[:any_1,:any_3] 
 address ALGouterjoinestimate;
 command algebra.outerjoin(outer:bat[:any_1,:oid],inner:bat[:oid,:any_3]):bat[:any_1,:any_3] 
 address ALGouterjoin;
-comment Returns all the result of a join, plus the BUNS formed NIL in		the tail and the head-values of 'outer' whose tail-value does		not match an head-value in 'inner'.
+comment Returns all the result of a join, plus the BUNS formed NIL in 		the tail and the head-values of 'outer' whose tail-value does 		not match an head-value in 'inner'.
 
 command algebra.outerjoin(outer:bat[:any_1,:oid],inner:bat[:oid,:any_3]):bat[:any_1,:any_3] 
 address ALGouterjoin;
-comment Returns all the result of a join, plus the BUNS formed NIL in		the tail and the head-values of 'outer' whose tail-value does		not match an head-value in 'inner'.
+comment Returns all the result of a join, plus the BUNS formed NIL in 		the tail and the head-values of 'outer' whose tail-value does 		not match an head-value in 'inner'.
 
 command algebra.outerjoin(outer:bat[:any_1,:any_2],inner:bat[:any_2,:any_3]):bat[:any_1,:any_3] 
 address ALGouterjoin;
-comment Returns all the result of a join, plus the BUNS formed NIL in		the tail and the head-values of 'outer' whose tail-value does		not match an head-value in 'inner'.
+comment Returns all the result of a join, plus the BUNS formed NIL in 		the tail and the head-values of 'outer' whose tail-value does 		not match an head-value in 'inner'.
 
 command algebra.prejoin(a:bat[:oid,:oid],b:bat[:oid,:any_1]) (c:bat[:oid,:oid],d:bat[:oid,:any_1]) 
 address ALGprejoin;
@@ -2973,11 +2973,11 @@ comment Extract the head of a BAT.
 
 command algebra.position(b:bat[:any_1,:any_2],val:any_1,tval:any_2):wrd 
 address ALGpositionBUN;
-comment Returns the position of the value pair It returns an	error if 'val' does not exist.
+comment Returns the position of the value pair It returns an 	error if 'val' does not exist.
 
 command algebra.position(b:bat[:any_1,:any_2],v:any_1):wrd 
 address ALGposition;
-comment Returns BAT position [0.. b.count] of 'v' in the head	column of b. It Return an error if 'v' does not exist.
+comment Returns BAT position [0.. b.count] of 'v' in the head 	column of b. It Return an error if 'v' does not exist.
 
 command algebra.reuse(b:bat[:any_1,:any_2]):bat[:any_1,:any_2] 
 address ALGreuse;
@@ -3013,23 +3013,23 @@ comment Join
 
 command algebra.sunion(left:bat[:any_1,:any_2],right:bat[:any_1,:any_2]):bat[:any_1,:any_2] 
 address ALGsunion;
-comment Returns the union of two BATs; looking at both columns of both BATs.		Results in all BUNs of 'left' that are  not in 'right', plus all		BUNs of 'right'.  *no* double-elimination is done.		If you want this, do:	 'sunion(left.sunique,right.sunique)'	or: 'sunion(left,right).sunique'.
+comment Returns the union of two BATs; looking at both columns of both BATs.		Results in all BUNs of 'left' that are  not in 'right', plus all 		BUNs of 'right'.  *no* double-elimination is done. 		If you want this, do:	 'sunion(left.sunique,right.sunique)' 	or: 'sunion(left,right).sunique'.
 
 command algebra.sdifference(left:bat[:any_1,:any_2],right:bat[:any_1,:any_2]):bat[:any_1,:any_2] 
 address ALGsdiff;
-comment Returns the difference taken over *both* columns of two BATs.		Results in all BUNs of 'left' that are *not* in 'right'.		Does *not* do double-elimination over the 'left' BUNs.		If you want this, use:		 'sdifference(left.sunique,right.sunique)'	or: 'sdifference(left,right).sunique'.
+comment Returns the difference taken over *both* columns of two BATs. 		Results in all BUNs of 'left' that are *not* in 'right'. 		Does *not* do double-elimination over the 'left' BUNs. 		If you want this, use:		 'sdifference(left.sunique,right.sunique)' 	or: 'sdifference(left,right).sunique'.
 
 command algebra.semijoin(left:bat[:any_1,:any_2],right:bat[:any_1,:any]):bat[:any_1,:any_2] 
 address ALGsemijoin;
-comment Returns the intersection taken over only the *head* columns of		two BATs.  Results in all BUNs of 'left' that are also in 'right'.		Does *not* do double-elimination over the 'left' BUNs.		If you want this, use: 'kintersect(kunique(left),kunique(right))'	or: 'kunique(kintersect(left,right))'.
+comment Returns the intersection taken over only the *head* columns of 		two BATs.  Results in all BUNs of 'left' that are also in 'right'. 		Does *not* do double-elimination over the 'left' BUNs. 		If you want this, use: 'kintersect(kunique(left),kunique(right))' 	or: 'kunique(kintersect(left,right))'.
 
 command algebra.sintersect(left:bat[:any_1,:any_2],right:bat[:any_1,:any_2]):bat[:any_1,:any_2] 
 address ALGsintersect;
-comment Returns the intersection taken over *both* columns of two BATs.		Results in all BUNs of 'left' that are also in 'right'. Does *not*		do double-elimination over the 'left' BUNs, If you want this, use:	 'sintersect(sunique(left),sunique(right))'	or: 'sunique(sintersect(left,right))'.
+comment Returns the intersection taken over *both* columns of two BATs. 		Results in all BUNs of 'left' that are also in 'right'. Does *not* 		do double-elimination over the 'left' BUNs, If you want this, use:	 'sintersect(sunique(left),sunique(right))' 	or: 'sunique(sintersect(left,right))'.
 
 command algebra.sunique(b:bat[:any_1,:any_2]):bat[:any_1,:any_2] 
 address ALGsunique;
-comment Select unique tuples from the input BAT. Double elimination is		done over BUNs as a whole (head and tail).  Result is a BAT	with real set() semantics.
+comment Select unique tuples from the input BAT. Double elimination is 		done over BUNs as a whole (head and tail).  Result is a BAT 	with real set() semantics.
 
 command algebra.subsort(b:bat[:oid,:any_1],o:bat[:oid,:oid],g:bat[:oid,:oid],reverse:bit,stable:bit) (X_6:bat[:oid,:any_1],X_7:bat[:oid,:oid],X_8:bat[:oid,:oid]) 
 address ALGsubsort33;
@@ -3145,7 +3145,7 @@ comment Select all not-nil values
 
 command algebra.select(b:bat[:any_1,:any_2],value:any_2):bat[:any_1,:any_2] 
 address ALGselect1;
-comment Select all BUNs of a BAT with a certain	tail value. Selection on NIL is also	possible (it should be properly casted,	e.g.:int(nil)).
+comment Select all BUNs of a BAT with a certain 	tail value. Selection on NIL is also 	possible (it should be properly casted, 	e.g.:int(nil)).
 
 command algebra.select(b:bat[:any_1,:any_2],low:any_2,high:any_2,li:bit,hi:bit):bat[:any_1,:any_2] 
 address ALGselectInclusive;
@@ -3153,7 +3153,7 @@ comment Select all BUNs that have tail values: {v| low <{=} v <{=} high}.	Bounda
 
 command algebra.select(b:bat[:any_1,:any_2],low:any_2,high:any_2):bat[:any_1,:any_2] 
 address ALGselect;
-comment Select all BUNs that have tail values: {v| low <= v <= high}.	NIL boundary values have a special meaning.		+ low  == nil means: no lower bound		+ high == nil means: no upper bound.		NOTE 1: you should cast the nil to the appropriate type,				e.g. int(nil) in order to circumvent type clashes.		NOTE 2: as the 'nil' element has no clear place in the				ordered domain of values, tuples with 'nil' values				are NEVER returned by the range select.
+comment Select all BUNs that have tail values: {v| low <= v <= high}.	NIL boundary values have a special meaning.		+ low  == nil means: no lower bound		+ high == nil means: no upper bound.		NOTE 1: you should cast the nil to the appropriate type, 				e.g. int(nil) in order to circumvent type clashes.		NOTE 2: as the 'nil' element has no clear place in the 				ordered domain of values, tuples with 'nil' values 				are NEVER returned by the range select.
 
 command algebra.subselect(b:bat[:oid,:any_1],s:bat[:oid,:oid],low:any_1,high:any_1,li:bit,hi:bit,anti:bit):bat[:oid,:oid] 
 address ALGsubselect2;
@@ -3167,11 +3167,11 @@ command algebra.thetajoin(left:bat[:any_1,:any_2],right:bat[:any_2,:any_3],opnam
 address ALGthetajoinEstimate;
 command algebra.thetajoin(left:bat[:any_1,:any_2],right:bat[:any_2,:any_3],opname:int):bat[:any_1,:any_3] 
 address ALGthetajoin;
-comment Theta join on for 'mode' in { LE, LT, EQ, GT, GE }.  JOIN_EQ is		just the same as join(). All other options do merge algorithms.		Either using the fact that they are ordered() already (left on tail,	right on head), or by using/creating binary search trees on the		join columns. 
+comment Theta join on for 'mode' in { LE, LT, EQ, GT, GE }.  JOIN_EQ is 		just the same as join(). All other options do merge algorithms. 		Either using the fact that they are ordered() already (left on tail, 	right on head), or by using/creating binary search trees on the 		join columns. 
 
 command algebra.thetajoin(left:bat[:oid,:any_1],right:bat[:oid,:any_1],opname:int) (l:bat[:oid,:oid],r:bat[:oid,:oid]) 
 address ALGthetajoin2;
-comment Returns 2 columns with all BUNs, consisting of the head-oids	  from 'left' and 'right' for which there are BUNs in 'left'	  and 'right' with equal tails
+comment Returns 2 columns with all BUNs, consisting of the head-oids 	  from 'left' and 'right' for which there are BUNs in 'left' 	  and 'right' with equal tails
 
 command algebra.tunion(left:bat[:any_1,:any_2],right:bat[:any_1,:any_2]):bat[:any_1,:any_2] 
 address ALGtunion;
@@ -3185,7 +3185,7 @@ command algebra.tintersect(left:bat[:any_1,:any_2],right:bat[:any_1,:any]):bat[:
 address ALGtintersect;
 command algebra.tunique(b:bat[:any_1,:any_2]):bat[:any_1,:any_2] 
 address ALGtunique;
-comment Select unique tuples from the input BAT. Double elimination is		done over the BUNs tail. The result is a BAT with property		tkeyd()== true
+comment Select unique tuples from the input BAT. Double elimination is 		done over the BUNs tail. The result is a BAT with property		tkeyd()== true
 
 command algebra.thetauselect(b:bat[:any_1,:any_2],val:any_2,op:str):bat[:any_1,:void] 
 address ALGthetauselect;
@@ -3213,7 +3213,7 @@ command algebra.unique(b:bat[:any_1,:any_2]):bat[:any_1,:any_2]
 address ALGsunique;
 command algebra.uselect(b:bat[:any_1,:any_2],value:any_2):bat[:any_1,:void] 
 address ALGuselect1;
-comment Value select, but returning only the	head values. SEE ALSO:select(bat,val)
+comment Value select, but returning only the 	head values. SEE ALSO:select(bat,val)
 
 command algebra.uselect(b:bat[:any_1,:any_2],low:any_2,high:any_2):bat[:any_1,:void] 
 address ALGuselect;
@@ -49652,11 +49652,11 @@ comment Abort a query after q seconds (q=0 means run undisturbed).The session ti
 
 pattern clients.settimeout(n:lng):void 
 address CLTsetTimeout;
-comment Abort a query after n seconds.
+comment Abort a query after  n seconds.
 
 pattern clients.setsession(n:lng):void 
 address CLTsetSessionTimeout;
-comment Abort a session after n seconds.
+comment Abort a session after  n seconds.
 
 pattern clients.suspend(id:int):void 
 address CLTsuspend;
