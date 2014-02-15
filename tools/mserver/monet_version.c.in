@@ -40,9 +40,15 @@ monet_version(void)
 	printf("MonetDB 5 server v" VERSION " ");
 	if (strcmp(MONETDB_RELEASE, "unreleased") != 0)
 		printf("\"%s\" ", MONETDB_RELEASE);
-	printf("(" SZFMT "-bit, " SZFMT "-bit oids)\n",
+	printf("(" SZFMT "-bit, " SZFMT "-bit oids%s)\n",
 			(size_t) (sizeof(ptr) * 8),
-			(size_t) (sizeof(oid) * 8));
+			(size_t) (sizeof(oid) * 8),
+#ifdef HAVE_HGE
+			", 128-bit integers"
+#else
+			""
+#endif
+	);
 	if (strcmp(MONETDB_RELEASE, "unreleased") == 0)
 		printf("This is an unreleased version\n");
 	printf("Copyright (c) 1993-July 2008 CWI\n"

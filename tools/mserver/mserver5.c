@@ -140,8 +140,14 @@ monet_hello(void)
 	printf("\n# Serving database '%s', using %d thread%s\n",
 			GDKgetenv("gdk_dbname"),
 			GDKnr_threads, (GDKnr_threads != 1) ? "s" : "");
-	printf("# Compiled for %s/" SZFMT "bit with " SZFMT "bit OIDs %s linked\n",
-			HOST, sizeof(ptr) * 8, sizeof(oid) * 8, linkinfo);
+	printf("# Compiled for %s/" SZFMT "bit with " SZFMT "bit OIDs %s%s linked\n",
+			HOST, sizeof(ptr) * 8, sizeof(oid) * 8,
+#ifdef HAVE_HGE
+			"and 128bit integers ",
+#else
+			"",
+#endif
+			linkinfo);
 	printf("# Found %.3f %ciB available main-memory.\n",
 			sz_mem_h, qc[qi]);
 #ifdef MONET_GLOBAL_DEBUG
