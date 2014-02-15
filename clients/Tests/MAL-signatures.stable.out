@@ -2396,13 +2396,9 @@ comment Returns physical copy of a BAT.
 
 command algebra.difference(left:bat[:any_1,:any_2],right:bat[:any_1,:any_2]):bat[:any_1,:any_2] 
 address ALGsdiff;
-command algebra.exist(b:bat[:any_1,:any_2],h:any_1,t:any_2):bit 
-address ALGexistBUN;
-comment Returns true when 'h,t' occurs as a bun in b.
-
-command algebra.exist(b:bat[:any_1,:any_2],h:any_1):bit 
+command algebra.exist(b:bat[:oid,:any_1],val:any_1):bit 
 address ALGexist;
-comment Returns whether 'h' occurs as a head value in b.
+comment Returns whether 'val' occurs in b.
 
 command algebra.fetch(b:bat[:any_2,:any_1],x:int):any_1 
 address ALGfetchint;

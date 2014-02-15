@@ -21,13 +21,9 @@
 # @+ Value Selections
 module algebra;
 
-command exist(b:bat[:any_1,:any_2], h:any_1):bit
+command exist(b:bat[:oid,:any_1], val:any_1):bit
 address ALGexist
-comment "Returns whether 'h' occurs as a head value in b.";
-
-command exist(b:bat[:any_1,:any_2], h:any_1, t:any_2):bit
-address ALGexistBUN
-comment "Returns true when 'h,t' occurs as a bun in b.";
+comment "Returns whether 'val' occurs in b.";
 
 command find(b:bat[:any_1,:any_2], h:any_1):any_2
 address ALGfind

@@ -746,7 +746,6 @@ str ALGcount_no_nil(wrd *result, int *bid);
 str ALGcross(int *result, int *lid, int *rid);
 str ALGcrossproduct2(int *l, int *r, int *lid, int *rid);
 str ALGexist(bit *ret, int *bid, ptr val);
-str ALGexistBUN(bit *ret, int *bid, ptr val, ptr tval);
 str ALGfetch(ptr ret, int *bid, lng *pos);
 str ALGfetchint(int *ret, int *bid, int *pos);
 str ALGfetchoid(int *ret, int *bid, oid *pos);

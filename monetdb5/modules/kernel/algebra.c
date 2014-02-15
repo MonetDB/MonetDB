@@ -279,22 +279,6 @@ CMDpositionBUN(wrd *retval, BAT *b, ptr val, ptr tval)
 	return GDK_SUCCEED;
 }
 
-static int
-CMDexist(bit *ret, BAT *b, ptr val)
-{
-	BUN q = BUNfnd(b, val);
-
-	*ret = (q != BUN_NONE) ? 1 : 0;
-	return GDK_SUCCEED;
-}
-static int
-CMDexistBUN(bit *ret, BAT *b, ptr val, ptr tval)
-{
-	BUN q = BUNlocate(b, val, tval);
-
-	*ret = (q != BUN_NONE) ? 1 : 0;
-	return GDK_SUCCEED;
-}
 
 /*
  * @- Wrapper
@@ -2277,27 +2261,14 @@ str
 ALGexist(bit *ret, int *bid, ptr val)
 {
 	BAT *b;
+	BUN q;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "algebra.exist", RUNTIME_OBJECT_MISSING);
 	}
 	derefStr(b, h, val);
-	CMDexist(ret, b, val);
-	BBPreleaseref(b->batCacheid);
-	return MAL_SUCCEED;
-}
-
-str
-ALGexistBUN(bit *ret, int *bid, ptr val, ptr tval)
-{
-	BAT *b;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "algebra.exist", RUNTIME_OBJECT_MISSING);
-	}
-	derefStr(b, h, val);
-	derefStr(b, t, tval);
-	CMDexistBUN(ret, b, val, tval);
+	q = BUNfnd(BATmirror(b), val);
+	*ret = (q != BUN_NONE) ? 1 : 0;
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }

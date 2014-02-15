@@ -150,7 +150,6 @@ algebra_export str ALGfetch(ptr ret, int *bid, lng *pos);
 algebra_export str ALGfetchoid(int *ret, int *bid, oid *pos);
 algebra_export str ALGfetchint(int *ret, int *bid, int *pos);
 algebra_export str ALGexist(bit *ret, int *bid, ptr val);
-algebra_export str ALGexistBUN(bit *ret, int *bid, ptr val, ptr tval);
 algebra_export str ALGfind(ptr ret, int *bid, ptr val);
 algebra_export str ALGindexjoin(int *result, int *lid, int *rid);
 algebra_export str ALGprojectNIL(int *ret, int *bid);
