@@ -1268,9 +1268,10 @@ sqltypeinit( sql_allocator *sa)
 	*t++ = sql_create_type(sa, "DECIMAL",  9, SCALE_FIX, 10, EC_DEC, "int");
 #ifndef HAVE_HGE
 	LargestDEC =
+	*t++ = sql_create_type(sa, "DECIMAL", 19, SCALE_FIX, 10, EC_DEC, "lng");
 #endif
-	*t++ = sql_create_type(sa, "DECIMAL", 18, SCALE_FIX, 10, EC_DEC, "lng");
 #ifdef HAVE_HGE
+	*t++ = sql_create_type(sa, "DECIMAL", 18, SCALE_FIX, 10, EC_DEC, "lng");
 	LargestDEC =
 	*t++ = sql_create_type(sa, "DECIMAL", 39, SCALE_FIX, 10, EC_DEC, "hge");
 #endif
