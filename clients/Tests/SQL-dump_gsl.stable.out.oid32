@@ -42,13 +42,13 @@ Ready.
 # loading sql script: 39_analytics.sql
 # loading sql script: 40_geom.sql
 # loading sql script: 40_json.sql
+# loading sql script: 41_jsonstore.sql
+# loading sql script: 45_uuid.sql
 # loading sql script: 46_gsl.sql
 # loading sql script: 75_storagemodel.sql
 # loading sql script: 80_statistics.sql
 # loading sql script: 80_udf.sql
 # loading sql script: 99_system.sql
-#Bulk operator required for str.stringleft
-#Bulk operator required for str.stringleft
 
 # 15:01:36 >  
 # 15:01:36 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-13451" "--port=34237"
