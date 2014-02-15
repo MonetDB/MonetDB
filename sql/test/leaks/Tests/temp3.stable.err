@@ -1,17 +1,35 @@
 stderr of test 'temp3` in directory 'sql/test/leaks` itself:
 
 
-# 14:39:34 >  
-# 14:39:34 >  Mtimeout -timeout 180 Mserver "--config=/ufs/niels/scratch/rc/Linux-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/rc/Linux-x86_64/lib64/MonetDB:/ufs/niels/scratch/rc/Linux-x86_64/lib64/MonetDB/lib:/ufs/niels/scratch/rc/Linux-x86_64/lib64/MonetDB/bin" --set "gdk_dbfarm=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB/sql_logs" --set "sql_logdir=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB/xquery_logs" --set mapi_port=32289 --set monet_prompt= --trace "--dbname=mTests_src_test_leaks" --dbinit=" module(sql_server);" ; echo ; echo Over..
-# 14:39:34 >  
+# 16:21:17 >  
+# 16:21:17 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30577" "--set" "mapi_usock=/var/tmp/mtest-27819/.s.monetdb.30577" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/sjoerd/Monet-candidate/var/MonetDB/mTests_sql_test_leaks" "--set" "mal_listing=0"
+# 16:21:17 >  
+
+# builtin opt 	gdk_dbpath = /ufs/sjoerd/Monet-candidate/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = yes
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 30577
+# cmdline opt 	mapi_usock = /var/tmp/mtest-27819/.s.monetdb.30577
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbpath = /ufs/sjoerd/Monet-candidate/var/MonetDB/mTests_sql_test_leaks
+# cmdline opt 	mal_listing = 0
+
+# 16:21:18 >  
+# 16:21:18 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-27819" "--port=30577"
+# 16:21:18 >  
 
 
-# 14:39:34 >  
-# 14:39:34 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=32289  < temp3.sql
-# 14:39:34 >  
-
-
-# 14:39:34 >  
-# 14:39:34 >  Done.
-# 14:39:34 >  
+# 16:21:18 >  
+# 16:21:18 >  "Done."
+# 16:21:18 >  
 

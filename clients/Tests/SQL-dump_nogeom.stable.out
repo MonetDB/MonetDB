@@ -1,11 +1,11 @@
 stdout of test 'SQL-dump_nogeom` in directory 'clients` itself:
 
 
-# 20:08:35 >  
-# 20:08:35 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=33437" "--set" "mapi_usock=/var/tmp/mtest-1201/.s.monetdb.33437" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/manegold/_/Monet/HG/Feb2013/prefix/--disable-debug_--enable-assert_--enable-optimize/var/MonetDB/mTests_clients" "--set" "mal_listing=0"
-# 20:08:35 >  
+# 15:01:36 >  
+# 15:01:36 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=34237" "--set" "mapi_usock=/var/tmp/mtest-13451/.s.monetdb.34237" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/sjoerd/Monet-candidate/var/MonetDB/mTests_clients" "--set" "mal_listing=0"
+# 15:01:36 >  
 
-# MonetDB 5 server v11.15.12
+# MonetDB 5 server v11.17.0 (hg id: 51cced809df4)
 # This is an unreleased version
 # Serving database 'mTests_clients', using 8 threads
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
@@ -13,8 +13,8 @@ stdout of test 'SQL-dump_nogeom` in directory 'clients` itself:
 # Copyright (c) 1993-July 2008 CWI.
 # Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
-# Listening for connection requests on mapi:monetdb://rome.ins.cwi.nl:33437/
-# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-1201/.s.monetdb.33437
+# Listening for connection requests on mapi:monetdb://madrid.ins.cwi.nl:34237/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-13451/.s.monetdb.34237
 # MonetDB/GIS module loaded
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
@@ -27,7 +27,7 @@ Ready.
 # loading sql script: 12_url.sql
 # loading sql script: 13_date.sql
 # loading sql script: 14_inet.sql
-# loading sql script: 15_history.sql
+# loading sql script: 15_querylog.sql
 # loading sql script: 16_tracelog.sql
 # loading sql script: 17_compress.sql
 # loading sql script: 18_dictionary.sql
@@ -38,17 +38,21 @@ Ready.
 # loading sql script: 23_skyserver.sql
 # loading sql script: 24_zorder.sql
 # loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
 # loading sql script: 39_analytics.sql
 # loading sql script: 40_geom.sql
+# loading sql script: 40_json.sql
+# loading sql script: 46_gsl.sql
 # loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
 # loading sql script: 80_udf.sql
 # loading sql script: 99_system.sql
 
-# 20:08:35 >  
-# 20:08:35 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1201" "--port=33437"
-# 20:08:35 >  
+# 15:01:36 >  
+# 15:01:36 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-13451" "--port=34237"
+# 15:01:36 >  
 
-SCHEMA           tmp
+SCHEMA  tmp
 SCHEMA         tmp
 SYSTEM SCHEMA  sys
 SYSTEM TABLE  sys._columns
@@ -8042,7 +8046,7 @@ CREATE TABLE "sys"."user_role" (
 );
 COMMIT;
 
-# 20:26:19 >  
-# 20:26:19 >  "Done."
-# 20:26:19 >  
+# 13:32:07 >  
+# 13:32:07 >  "Done."
+# 13:32:07 >  
 
