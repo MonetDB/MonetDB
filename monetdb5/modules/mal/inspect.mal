@@ -62,23 +62,10 @@ pattern getSize(mod:str,fcn:str):lng
 address INSPECTgetFunctionSize
 comment "Return the storage size for a function (in bytes).";
 
+
 pattern getType(v:any_1) :str 
 address INSPECTtypeName
 comment "Return the concrete type of a variable (expression).";
-pattern getType(v:bat[:oid,:any_2]) (ht:str, tt:str)
-address INSPECTtypeName
-comment "Return the concrete type of a variable (expression).";
-
-command getTypeName(v:int):str 
-address INSPECTtypename
-comment "Get the type name associated with a type id.";
-pattern getTypeIndex(v:bat[:oid,:any_2]) (ht:int, tt:int)
-address INSPECTtypeIndex
-comment "Return the type index of a BAT head and tail.";
-pattern getTypeIndex(v:any_1):int 
-address INSPECTtypeIndex
-comment "Return the type index of a variable. For BATs, return
-the type index for its tail.";
 
 pattern equalType(l:any, r:any):bit
 address INSPECTequalType

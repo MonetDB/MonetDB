@@ -593,29 +593,6 @@ INSPECTshowFunction3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 }
 
 str
-INSPECTtypename(str *ret, int *tpe)
-{
-	*ret = getTypeName(*tpe);
-	return MAL_SUCCEED;
-}
-str
-INSPECTtypeIndex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	int *ret;
-
-	(void) cntxt;
-	if( pci->retc== 2){
-		ret = (int *) getArgReference(stk, pci, 0);
-		*ret = getHeadType(getArgType(mb, pci, 2));
-		ret = (int *) getArgReference(stk, pci, 1);
-		*ret = getTailType(getArgType(mb, pci, 2));
-	}else {
-		ret = (int *) getArgReference(stk, pci, 0);
-		*ret = getTailType(getArgType(mb, pci, 1));
-	}
-	return MAL_SUCCEED;
-}
-str
 INSPECTequalType(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bit *ret;
@@ -650,5 +627,3 @@ INSPECTtypeName(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		*hn = getTypeName(getArgType(mb, pci, 1));
 	return MAL_SUCCEED;
 }
-
-
