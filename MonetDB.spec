@@ -505,6 +505,7 @@ fi
 %{_libdir}/monetdb5/autoload/*_lsst.mal
 %{_libdir}/monetdb5/autoload/*_opt_sql_append.mal
 %{_libdir}/monetdb5/autoload/*_udf.mal
+%{_libdir}/monetdb5/autoload/*_udf_hge.mal
 %{_libdir}/monetdb5/autoload/*_vault.mal
 %if %{?rhel:0}%{!?rhel:1}
 %exclude %{_libdir}/monetdb5/lib_geom.so
