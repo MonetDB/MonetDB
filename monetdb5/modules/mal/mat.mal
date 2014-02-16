@@ -38,10 +38,6 @@ pattern pack2(b:bat[:oid,:any_2]...):bat[:oid,:any_2]
 address MATpack2
 comment "Materialize the MAT into a BAT (by an append all)";
 
-pattern pack3(b:bat[:oid,:any_2]...):bat[:oid,:any_2]
-address MATpack3
-comment "Materialize the MAT into a BAT by considering the heads as void. (used in centipede)";
-
 pattern packIncrement(b:bat[:oid,:any_2],pieces:int):bat[:oid,:any_2]
 address MATpackIncrement
 comment "Prepare incremental mat pack";
