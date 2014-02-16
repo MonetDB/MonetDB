@@ -2429,13 +2429,13 @@ AC_ARG_WITH(liburiparser,
 		[liburiparser library is installed in DIR]),
 	have_liburiparser="$withval")
 
-    if test "x$have_liburiparser" == xauto; then
+    if test "x$have_liburiparser" = xauto; then
       PKG_CHECK_MODULES([liburiparser], [liburiparser],
       		[have_liburiparser=yes],
 		[have_liburiparser=no; why_have_liburiparser="(liburiparser not found)"])
     fi
 
-    if test "x$have_libmicrohttpd" == xauto; then
+    if test "x$have_libmicrohttpd" = xauto; then
       PKG_CHECK_MODULES([libmicrohttpd], [libmicrohttpd],
       		[have_libmicrohttpd=yes],
 		[have_libmicrohttpd=no; why_have_libmicrohttpd="(libmicrohttpd not found)"])
