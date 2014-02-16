@@ -45,50 +45,22 @@ stdout of test 'tst1004` in directory 'monetdb5/mal` itself:
 function user.main():void;
 # the first of a series of BBP test cases 
     io.print("Start test");
-    bbp.open();
     b := bat.new(:oid,:int);
+    bat.setName(b,"myfirstbat");
     bat.append(b,2);
-    bbp.deposit("myfirstbat",b);
-    c := bbp.take("myfirstbat");
+    c:bat[:oid,:int]  := bbp.bind("myfirstbat");
 catch MALException:str ;
     io.print(MALException);
 exit MALException:str ;
     io.print("FIRST ROUND");
     io.print(c);
-    bbp.close();
-# at the end of the session, the BBP should have discarded 
-# the temporary bats of the user 
-    bbp.open();
-    io.print("SECOND ROUND");
-    y := bbp.getObjects();
-    yr := bat.reverse(y);
-    yp := algebra.project(yr);
-    io.print(yp);
-    v := bbp.take("myfirstbat");
-catch MALException:str ;
-    io.print(MALException);
-exit MALException:str ;
-    io.print("got myfirstbat?");
-    io.print(v);
 end main;
 [ "Start test" ]
 [ "FIRST ROUND" ]
-#-----------------#
-# h	tmp_4	  # name
-# int	int	  # type
-#-----------------#
-[ 0@0,	  2	  ]
-[ "SECOND ROUND" ]
-#-------------------------#
-# bbp	objects		  # name
-# int	str		  # type
-#-------------------------#
-[ "myfirstbat",	  nil	  ]
-[ "got myfirstbat?" ]
-#-----------------#
-# h	tmp_4	  # name
-# int	int	  # type
-#-----------------#
+#--------------------------#
+# h	t  # name
+# void	int  # type
+#--------------------------#
 [ 0@0,	  2	  ]
 
 # 07:58:53 >  

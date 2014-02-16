@@ -32102,14 +32102,6 @@ command bat.unload(name:str):bit
 address BKCunload;
 comment Swapout a BAT to disk. Transient BATs can also be swapped out.             Returns whether the unload indeed happened. 
 
-pattern bbp.bind(idx:int):bat[:oid,:any_2] 
-address CMDbbpbindindex;
-comment Locate the BAT using its BBP index in the BAT buffer pool
-
-pattern bbp.bind(head:str,tail:str):bat[:oid,:any_2] 
-address CMDbbpbind2;
-comment Locate the BAT using the head and tail names in the BAT buffer pool
-
 pattern bbp.bind(name:str):bat[:oid,:any_2] 
 address CMDbbpbind;
 comment Locate the BAT using its logical name
@@ -32118,45 +32110,9 @@ command bbp.compress(b:bat[:oid,:any_2],fnme:str):bat[:oid,:any_2]
 address CMDbbpcompress;
 comment Generate a compressed image of the BAT on a specific file
 
-pattern bbp.commit():void 
-address CMDbbpReleaseAll;
-comment Commit updates for this client.
-
-command bbp.commit(b:bat[:oid,:any_2]):void 
-address CMDbbpSubCommit;
-comment Commit updates for single BAT.
-
-command bbp.close():void 
-address CMDbbpclose;
-comment Close the bbp box.
-
 command bbp.decompress(b:bat[:oid,:any_2],fnme:str):bat[:oid,:any_2] 
 address CMDbbpdecompress;
 comment Obtain a temporary decompressed image of a BAT from a specific file
-
-pattern bbp.discard(name:str):void 
-address CMDbbpdiscard;
-comment Remove the BAT from the box.
-
-pattern bbp.destroy(b:bat[:oid,:any_2],immediate:bit):void 
-address CMDbbpdestroyBAT;
-comment Schedule a BAT for removal at session end or immediately.
-
-pattern bbp.destroy(b:bat[:oid,:any_2]):void 
-address CMDbbpdestroyBAT1;
-comment Schedule a BAT for removal at session end.
-
-pattern bbp.deposit(name:str,loc:str):bat[:oid,:any_2] 
-address CMDbbpbindDefinition;
-comment Relate a logical name to a physical BAT in the buffer pool.
-
-pattern bbp.deposit(name:str,v:bat[:oid,:any_2]):void 
-address CMDbbpdeposit;
-comment Enter a new bat into the bbp box.
-
-command bbp.destroy():void 
-address CMDbbpdestroy;
-comment Destroy the box
 
 command bbp.expand(b:bat[:oid,:any_2],fnme:str):bat[:oid,:any_2] 
 address CMDbbpexpand;
@@ -32218,61 +32174,21 @@ command bbp.get() (id:bat[:oid,:int],ns:bat[:oid,:str],ht:bat[:oid,:str],tt:bat[
 address CMDbbp;
 comment bpp
 
-command bbp.getRNames():bat[:oid,:str] 
-address CMDbbpRNames;
-comment Map a BAT into its bbp physical name
-
 command bbp.getNames():bat[:oid,:str] 
 address CMDbbpNames;
 comment Map BAT into its bbp name
-
-command bbp.getType():bat[:oid,:str] 
-address CMDbbpType;
-comment Map a BAT into its tail type
 
 command bbp.getIndex(b:bat[:oid,:any_2]):int 
 address CMDbbpgetIndex;
 comment Retrieve the index in the BBP
 
-pattern bbp.getObjects():bat[:oid,:str] 
-address CMDbbpGetObjects;
-comment View of the box content.
-
-pattern bbp.iterator(nme:str):lng 
-address CMDbbpiterator;
-comment Locate the next element in the box.
-
-command bbp.open():void 
-address CMDbbpopen;
-comment Locate the bbp box and open it.
-
 pattern bbp.prelude():void 
 address CMDbbpprelude;
 comment Initialize the bbp box.
 
-pattern bbp.release(b:bat[:oid,:any_2]):void 
-address CMDbbpreleaseBAT;
-comment Remove the BAT from further consideration
-
-pattern bbp.release(name:str,val:bat[:oid,:any_2]):void 
-address CMDbbprelease;
-comment Commit updates and release this BAT.
-
-pattern bbp.releaseAll():void 
-address CMDbbpReleaseAll;
-comment Commit updates for this client.
-
 command bbp.truncate(b:bat[:oid,:any_2],fnme:str):bat[:oid,:any_2] 
 address CMDbbptruncate;
 comment Truncate the heaps if a compressed image exist
-
-pattern bbp.toString(name:str):str 
-address CMDbbptoStr;
-comment Get the string representation of an element in the box.
-
-pattern bbp.take(name:str):bat[:oid,:any_2] 
-address CMDbbptake;
-comment Load a particular bat.
 
 command blob.blob(s:str):blob 
 address BLOBblob_fromstr;

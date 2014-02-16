@@ -28,15 +28,13 @@ stdout of test 'tst1002` in directory 'monetdb5/mal` itself:
 function user.main():void;
 # the first of a series of BBP test cases 
 # the temporary bat produced in tst1000 should not exist anymore 
-    bbp.open();
-    c := bbp.take("myfirstbat");
+    c:bat[:oid,:int]  := bbp.bind("myfirstbat");
     io.print(c);
-    bbp.close();
 catch MALException:str ;
     io.printf("%s\n",MALException);
 exit MALException:str ;
 end main;
-MALException:bbp.take:Object not found
+MALException:bbp.bind:Object not found
 
 # 07:58:52 >  
 # 07:58:52 >  Done.
