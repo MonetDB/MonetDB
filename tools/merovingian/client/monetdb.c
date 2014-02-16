@@ -1559,6 +1559,17 @@ command_destroy(int argc, char *argv[])
 			printf("aborted\n");
 			exit(1);
 		}
+	} else {
+		char *ret;
+		char *out;
+		for (stats = orig; stats != NULL; stats = stats->next) {
+			if (stats->state == SABdbRunning) {
+				ret = control_send(&out, mero_host, mero_port,
+						stats->dbname, "stop", 0, mero_pass);
+				if (ret != NULL)
+					free(ret);
+			}
+		}
 	}
 
 	simple_argv_cmd(argv[0], orig, "destroy", "destroyed database", NULL);

@@ -1,3 +1,6 @@
 # ChangeLog file for sql/src/backends/monet5/merovingian
 # This file is updated with mchangelog
 
+* Sun Feb 16 2014 Fabian Groffen <fabian@monetdb.org>
+- monetdb destroy -f now also works on running databases
+
