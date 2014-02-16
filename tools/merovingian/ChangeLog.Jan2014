@@ -2,5 +2,7 @@
 # This file is updated with mchangelog
 
 * Sun Feb 16 2014 Fabian Groffen <fabian@monetdb.org>
+- monetdb create: add -p flag to set monetdb user password on creation,
+  and therefore allow creating the database in unlocked state
 - monetdb destroy -f now also works on running databases
 
