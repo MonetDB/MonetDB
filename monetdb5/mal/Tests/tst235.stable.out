@@ -29,9 +29,6 @@ end dir;
 function user.createBAT(name:str):bat[:oid,:int];
     res := bat.new(:oid,:int);
     bat.setName(res,name);
-    i := calc.getBATidentifier(res);
-    j := i;
-# now res should have 3 lrefs 
     z := bbp.getLRefCount(res);
     io.print(z);
     return createBAT := res;
@@ -50,8 +47,8 @@ function user.main():void;
     io.print(i);
 # bat d should have 1 lref 
 end main;
-[ 2 ]
-[ 2 ]
+[ 1 ]
+[ 1 ]
 
 # 11:58:33 >  
 # 11:58:33 >  Done.

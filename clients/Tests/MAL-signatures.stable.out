@@ -2771,7 +2771,7 @@ command algebra.thetauselect(b:bat[:any_1,:any_2],val:any_2,op:str):bat[:any_1,:
 address ALGthetauselect;
 comment The theta (<=,<,=,>,>=) select() limited to head values
 
-command algebra.topN(b:bat[:oid,:any_1],top:lng):bat[:oid,:any_1] 
+command algebra.topN(b:bat[:any_1,:any_2],top:lng):bat[:any_1,:any_2] 
 address ALGtopN;
 comment Trim all but the top N tuples.
 
@@ -36569,14 +36569,6 @@ comment Cast VALUE to flt
 
 function calc.geomcollection{unsafe}(wkt:str):wkb;
 function calc.geometry{unsafe}(wkt:str):wkb;
-command calc.getBAT(b:int):bat[:any_1,:any_2] 
-address CALCbat2int;
-comment Coerce bat to BAT identifier
-
-command calc.getBATidentifier(b:bat[:any_1,:any_2]):int 
-address CALCbat2int;
-comment Coerce bat to BAT identifier
-
 pattern calc.hash(v:any):wrd 
 address MKEYhash;
 pattern calc.hash(v:dbl):wrd 

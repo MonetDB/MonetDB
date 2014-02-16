@@ -635,25 +635,6 @@ CMDsetoid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-calc_export str CALCbat2int(int *ret, bat *b);
-
-str
-CALCbat2int(int *ret, bat *bid)
-{
-	BAT *b;
-
-	if (*bid == bat_nil) {
-		*ret = bat_nil;
-		return MAL_SUCCEED;
-	}
-	b = BATdescriptor(*bid);
-	if (b == 0)
-		return mythrow(MAL, "calc.getBAT", RUNTIME_OBJECT_MISSING);
-	*ret = b->batCacheid;
-	BBPkeepref(b->batCacheid);
-	return MAL_SUCCEED;
-}
-
 calc_export str CALCswitchbit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
 str
