@@ -16,7 +16,7 @@ user.typetest(p);
 
 # more fun with a BAT
 b := bat.new(:oid, :int);
-(h,t) := inspect.getType(b);
+t := inspect.getType(b);
 # here it is what we expect
 io.print(t);
 # now it is "any" even though the above problem was fixed
@@ -25,26 +25,9 @@ user.typetest(b);
 # even cooler, now suddenly a string is "any" too
 user.typetest(p);
 
-# extended
-i:=1:int;
-d:=bat.new(:oid, :flt);
-tii:=inspect.getTypeIndex(i);
-io.print(tii);
-tni:=inspect.getTypeName(tii);
-io.print(tni);
-
-tib:=inspect.getTypeIndex(d);
-io.print(tib);
-(ht,tt):= inspect.getTypeIndex(d);
-io.print(ht,tt);
-tnb:=inspect.getTypeName(tib);
-io.print(tnb);
-rev:= bat.reverse(d);
-rid:= inspect.getTypeIndex(rev);
-tns:=inspect.getTypeName(rid);
-io.print(tns);
-
 #type tests
+i:=1:int;
+d:=i;
 z1:= inspect.equalType(i,:int);
 io.print(z1);
 z1:= inspect.equalType(d,:bat[:str,:flt]);

@@ -56,8 +56,7 @@ function user.main():void;
     io.printf("%s\n",wt);
     Bt := inspect.getType(B);
     io.printf("%s\n",Bt);
-    (ht,tt) := inspect.getType(bb);
-    io.printf("bat  head %s\n",ht);
+    tt := inspect.getType(bb);
     io.printf("bat  head %s\n",tt);
 end main;
 str
@@ -66,8 +65,7 @@ flt
 bit
 wrd
 bte
-bat  head oid
-bat  head str
+bat  head bat[:oid,:str]
 
 # 07:58:44 >  
 # 07:58:44 >  Done.

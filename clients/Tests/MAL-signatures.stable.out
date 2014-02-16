@@ -39330,22 +39330,6 @@ command inspect.getAtomNames():bat[:oid,:str]
 address INSPECTatom_names;
 comment Collect a BAT with the atom names.
 
-pattern inspect.getTypeIndex(v:any_1):int 
-address INSPECTtypeIndex;
-comment Return the type index of a variable. For BATs, returnthe type index for its tail.
-
-pattern inspect.getTypeIndex(v:bat[:oid,:any_2]) (ht:int,tt:int) 
-address INSPECTtypeIndex;
-comment Return the type index of a BAT head and tail.
-
-command inspect.getTypeName(v:int):str 
-address INSPECTtypename;
-comment Get the type name associated with a type id.
-
-pattern inspect.getType(v:bat[:oid,:any_2]) (ht:str,tt:str) 
-address INSPECTtypeName;
-comment Return the concrete type of a variable (expression).
-
 pattern inspect.getType(v:any_1):str 
 address INSPECTtypeName;
 comment Return the concrete type of a variable (expression).
@@ -40198,10 +40182,6 @@ comment Prepare incremental mat pack
 pattern mat.packIncrement(b:bat[:oid,:any_2],pieces:int):bat[:oid,:any_2] 
 address MATpackIncrement;
 comment Prepare incremental mat pack
-
-pattern mat.pack3(b:bat[:oid,:any_2]...):bat[:oid,:any_2] 
-address MATpack3;
-comment Materialize the MAT into a BAT by considering the heads as void. (used in centipede)
 
 pattern mat.pack2(b:bat[:oid,:any_2]...):bat[:oid,:any_2] 
 address MATpack2;
