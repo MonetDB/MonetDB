@@ -1751,7 +1751,7 @@ BUNfnd(BAT *b, const void *v)
 	}
 	if (!b->H->hash) {
 		if (BAThordered(b) || BAThrevordered(b))
-			return SORTfnd(b, v);
+			return SORTfnd(BATmirror(b), v);
 	}
 	switch (ATOMstorage(b->htype)) {
 	case TYPE_bte:

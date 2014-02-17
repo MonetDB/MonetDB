@@ -693,8 +693,7 @@ SORTfndwhich(BAT *b, const void *v, int which)
 BUN
 SORTfnd(BAT *b, const void *v)
 {
-	/* works on HEAD column! */
-	return SORTfndwhich(BATmirror(b), v, 0);
+	return SORTfndwhich(b, v, 0);
 }
 
 BUN

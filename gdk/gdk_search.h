@@ -383,12 +383,11 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
  * BUNlast(b), in case all tail values are smaller than 'v'.
  *
  * From the above routines we now also defined the SORTfnd function
- * that looks for a certain value in the HEAD and returns a (not
+ * that looks for a certain value in the TAIL and returns a (not
  * necessarily the first or last) reference to it, or hash BUN_NONE (if the
  * value does not exist).
  *
- * Note: of the SORTfnd, only SORTfndfirst(b,v) and
- * SORTfndlast(b,v) work on the tail of a bat!
+ * Note: the SORTfnd functions work on the tail of a bat!
  */
 
 gdk_export BUN SORTfnd(BAT *b, const void *v);
