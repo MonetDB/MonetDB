@@ -1038,8 +1038,13 @@ if test "x$enable_optimize" = xyes; then
 	changedCFLAGS="`echo $changedCFLAGS | sed -e 's|^, ||'`"
 	AC_MSG_RESULT([yes: $changedCFLAGS])
 
-	# The default configure invocation when doing an rpmbuild also uses this
-	MCHECK_ADD_FLAG([-Wp,-D_FORTIFY_SOURCE=2])
+	# The default configure invocation when doing an rpmbuild also uses this.
+	# In fact, rpmbuild uses -Wp,-D_FORTIFY_SOURCE=2 (cf. /usr/lib/rpm/redhat/macros),
+	# but clang (3.3/4.2.1) complains about "argument unused during compilation";
+	# hence, we resort to plain "-D_FORTIFY_SOURCE=2", which appears to work fine
+	# also with `make rpm`. Well, worst case is that we miss a check that during
+	# "normal" build, that is then caught by '-Wp,-D_FORTIFY_SOURCE=2' during `make rpm`.
+	MCHECK_ADD_FLAG([-D_FORTIFY_SOURCE=2])
 else
 	AC_MSG_RESULT([no])
 fi
