@@ -21,6 +21,7 @@
 #define _MAL_BUILDER_
 
 #include "mal.h"
+#include "mal_instruction.h"
 #include "mal_function.h"
 #include "mal_namespace.h"
 

@@ -23,8 +23,6 @@
 
 /* #define DEBUG_MAL_TYPE 1 */
 
-typedef int malType;
-
 #define malVARG " malVARG"
 #define TMPMARKER '_'
 #define REFMARKER 'X'

@@ -19,7 +19,6 @@
 
 #ifndef _MAL_SCOPE_H_
 #define _MAL_SCOPE_H_
-#include "mal_box.h"
 #include "mal_xml.h"
 
 /* #define MAL_SCOPE_DEBUG  */
@@ -32,7 +31,6 @@ typedef struct SCOPEDEF {
 	str	    name;			/* index in namespace */
 	int		inheritance; 	/* set when it plays a role in inheritance */
 	Symbol *subscope; 		/* type dispatcher table */
-	Box box;    			/* module related objects */
 	int isAtomModule; 		/* atom module definition ? */
 	void *dll;				/* dlopen handle */
 	str help;   			/* short description of module functionality*/

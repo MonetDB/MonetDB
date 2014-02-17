@@ -30,7 +30,6 @@
 #define MAXGLOBALS  (4 * STACKINCR)
 #define MAXSHARES   8
 
-typedef str (*MALfcn) ();
 typedef int (*DFhook) (void *, void *, void *, void *);
 
 typedef struct MALSTK {
