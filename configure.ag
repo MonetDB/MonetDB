@@ -553,14 +553,16 @@ yes-*-*)
 	MCHECK_ADD_FLAG([-Wmissing-include-dirs])
 	MCHECK_ADD_FLAG([-Wlogical-op])
 
-	dnl  With clang 2.8 (no other tested) and gcc < 4.5 (tested
+	dnl  With clang 2.8 & 3.3 (which reports as 4.2.1 with -dumpversion)
+	dnl (no other tested) and gcc < 4.5 (tested
 	dnl  3.4.6, 4.2.1, 4.3.2, 4.4.4, 4.4.5, 4.5.1, 4.5.2),
 	dnl  "-Wunreachable-code" triggers numerous "will never be
 	dnl  executed" (at least) in our stream code, mostly (if
-	dnl  not all) false positives, though; thus, we do not use
+	dnl  not all) false positives, though, as well as in
+	dnl  YACC/BISON-generated code; thus, we do not use
 	dnl  "-Wunreachable-code" with clang 2.8 and gcc < 4.5 .
 	case "$CC-$gcc_ver" in
-	*clang*-2.8|*gcc*-[[0-3]].*|*gcc*-4.[[0-4]].*)
+	*clang*-2.8|*clang*-3.3|*clang*-4.2.1|*gcc*-[[0-3]].*|*gcc*-4.[[0-4]].*)
 		;;
 	*)
 		MCHECK_ADD_FLAG([-Wunreachable-code])
