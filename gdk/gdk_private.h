@@ -23,13 +23,13 @@
  * The different parts of which a BAT consists are physically stored
  * next to each other in the BATstore type.
  */
-typedef struct BATstore {
+struct BATstore {
 	BAT B;			/* storage for BAT descriptor */
 	BAT BM;			/* mirror (reverse) BAT */
 	COLrec H;		/* storage for head column */
 	COLrec T;		/* storage for tail column */
 	BATrec S;		/* the BAT properties */
-} BATstore;
+};
 
 int ALIGNcommit(BAT *b);
 int ALIGNundo(BAT *b);
@@ -113,20 +113,20 @@ void IMPSprint(BAT *b);
 #define BBP_BATMASK	511
 #define BBP_THREADMASK	63
 
-typedef struct PROPrec {
+struct PROPrec {
 	int id;
 	ValRecord v;
 	struct PROPrec *next;	/* simple chain of properties */
-} PROPrec;
+};
 
-typedef struct Imprints {
+struct Imprints {
 	bte bits;        /* how many bits in imprints */
 	Heap *bins;      /* ranges of bins */
 	Heap *imps;      /* heap of imprints */
 	BUN impcnt;      /* counter for imprints*/
 	Heap *dict;      /* cache dictionary for compressing imprints */
 	BUN dictcnt;     /* counter for cache dictionary */
-} Imprints;
+};
 
 typedef struct {
 	MT_Lock swap;
