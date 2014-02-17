@@ -881,7 +881,7 @@ str AUTHcheckCredentials(oid *ret, Client *c, str *user, str *passwd, str *chall
 str AUTHgetPasswordHash(str *ret, Client *c, str *username);
 str AUTHgetUsername(str *ret, Client *c);
 str AUTHgetUsers(BAT **ret, Client *c);
-str AUTHinitTables(str *passwd);
+str AUTHinitTables(void);
 str AUTHremoveUser(Client *c, str *username);
 str AUTHrequireAdmin(Client *c);
 str AUTHresolveUser(str *ret, oid *uid);

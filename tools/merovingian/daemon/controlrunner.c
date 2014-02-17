@@ -41,10 +41,6 @@
 #include <utils/database.h>
 #include <utils/control.h>
 
-#include "gdk.h"  /* these three for creation of dbs with password */
-#include "gdk_private.h"
-#include "mal_authorize.h"
-
 #include "merovingian.h"
 #include "discoveryrunner.h" /* broadcast, remotedb */
 #include "forkmserver.h"
@@ -358,15 +354,8 @@ static void ctl_handle_client(
 							"database is not running: %s\n", q);
 					send_client("!");
 				}
-			} else if (strcmp(p, "create") == 0 ||
-					strncmp(p, "create password=", strlen("create password=")) == 0) {
-				err e;
-
-				p += strlen("create");
-				if (*p == ' ')
-					p += strlen(" password=");
-
-				e = db_create(q);
+			} else if (strcmp(p, "create") == 0) {
+				err e = db_create(q);
 				if (e != NO_ERR) {
 					Mfprintf(_mero_ctlerr, "%s: failed to create "
 							"database '%s': %s\n", origin, q, getErrMsg(e));
@@ -375,43 +364,6 @@ static void ctl_handle_client(
 					send_client("!");
 					free(e);
 				} else {
-					if (*p != '\0') {
-						pid_t child;
-						if ((child = fork()) == 0) {
-							FILE *secretf;
-							size_t len;
-							char *err;
-							char *vaultkey;
-
-							/* the child, pollute scope by loading BBP */
-							chdir(q);
-
-							buf2[0] = '\0';
-							if ((secretf = fopen(".vaultkey", "r")) != NULL) {
-								len = fread(buf2, 1, sizeof(buf2), secretf);
-								buf2[len] = '\0';
-								len = strlen(buf2); /* secret can contain null-bytes */
-								fclose(secretf);
-							}
-							BBPinit();
-							vaultkey = buf2;
-							AUTHunlockVault(&vaultkey);
-							err = AUTHinitTables(&p);
-							if (err != NULL) {
-								Mfprintf(_mero_ctlerr, "%s: could not setup "
-										"database '%s': %s\n", origin, q, err);
-							} else {
-								/* don't start locked */
-								unlink(".maintenance");
-							}
-
-							exit(0); /* return to the parent */
-						} else {
-							/* wait for the child to finish */
-							waitpid(child, NULL, 0);
-						}
-					}
-
 					Mfprintf(_mero_ctlout, "%s: created database '%s'\n",
 							origin, q);
 					len = snprintf(buf2, sizeof(buf2), "OK\n");

@@ -27,10 +27,7 @@ monetdb_var_dbfarm_DATA = .merovingian_properties
 INCLUDES = .. \
 		   ../../../common/stream \
 		   ../../../common/utils \
-		   ../../../common/options \
 		   ../../../clients/mapilib \
-		   ../../../gdk \
-		   ../../../monetdb5/mal \
 		   $(MSGCONTROL_FLAGS)
 
 EXTRA_DIST = $(man_MANS) .merovingian_properties
@@ -57,8 +54,6 @@ bin_monetdbd = {
 		   ../../../common/utils/libmsabaoth \
 		   ../../../common/utils/libmuuid \
 		   ../../../common/utils/libmutils \
-		   ../../../monetdb5/tools/libmonetdb5 \
-		   ../../../gdk/libbat \
 		   $(UUID_LIBS) \
 		   $(curl_LIBS) \
 		   $(SOCKET_LIBS) \

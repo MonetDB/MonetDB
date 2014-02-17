@@ -114,7 +114,7 @@ start_sql_server(void *arg)
 				return 0;
 		}
 		/* make sure the authorisation BATs are loaded */
-		if (AUTHinitTables(NULL) != MAL_SUCCEED)
+		if (AUTHinitTables() != MAL_SUCCEED)
 			return 0;
 		MSinitClientPrg(mal_clients, "user","main");
 		initialized = 1;

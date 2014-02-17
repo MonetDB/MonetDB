@@ -38,7 +38,7 @@ mal_export str AUTHgetUsers(BAT **ret, Client *c);
 mal_export str AUTHgetPasswordHash(str *ret, Client *c, str *username);
 
 mal_export str AUTHrequireAdmin(Client *c);
-mal_export str AUTHinitTables(str *passwd);
+mal_export str AUTHinitTables(void);
 
 
 /*

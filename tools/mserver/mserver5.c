@@ -576,7 +576,7 @@ main(int argc, char **av)
 		}
 	}
 	/* make sure the authorisation BATs are loaded */
-	if ((err = AUTHinitTables(NULL)) != MAL_SUCCEED) {
+	if ((err = AUTHinitTables()) != MAL_SUCCEED) {
 		/* don't show this as a crash */
 		msab_registerStop();
 		GDKfatal("%s", err);

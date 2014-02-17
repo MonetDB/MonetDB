@@ -112,13 +112,12 @@ AUTHcommit(void)
  * Localize the authorization tables in the database.  The authorization
  * tables are a set of aligned BATs that store username, password (hashed)
  * and scenario permissions.
- * If the BATs do not exist, they are created, and the monetdb
- * administrator account is added with the given password (or 'monetdb'
- * if NULL).  Initialising the authorization tables can only be done
- * after the GDK kernel has been initialized.
+ * If the BATs do not exist, they are created, and the monetdb/monetdb
+ * administrator account is added.  Initialising the authorization tables
+ * can only be done after the GDK kernel has been initialized.
  */
 str
-AUTHinitTables(str *passwd) {
+AUTHinitTables(void) {
 	bat bid;
 	BAT *b;
 	int isNew = 1;
@@ -169,13 +168,12 @@ AUTHinitTables(str *passwd) {
 		/* insert the monetdb/monetdb administrator account on a
 		 * complete fresh and new auth tables system */
 		str user = "monetdb";
-		str pw = "monetdb";
+		str pw; /* will become the right hash for "monetdb" */
+		int len = (int) strlen(user);
 		oid uid;
 		Client c = &mal_clients[0];
 
-		if (passwd != NULL && *passwd != NULL)
-			pw = *passwd;
-		pw = mcrypt_BackendSum(pw, strlen(pw));
+		pw = mcrypt_BackendSum(user /* because user == pass */, len);
 		msg = AUTHaddUser(&uid, &c, &user, &pw);
 		free(pw);
 		if (msg)
