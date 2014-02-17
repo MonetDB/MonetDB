@@ -1249,7 +1249,6 @@ str
 MTIMEprelude(void)
 {
 	const char *msg = NULL;
-	Box box;
 	ValRecord vr;
 	int ticks;
 	union lng_tzone ltz;
@@ -1257,6 +1256,8 @@ MTIMEprelude(void)
 	const char *s1 = "first sunday from end of march@02:00";
 	const char *s2 = "first sunday from end of october@02:00";
 	tzone tz;
+	BAT *tzbatnme;
+	BAT *tzbatdef;
 
 	ts_nil.nilval = lng_nil;
 	tz_nil.nilval = lng_nil;
@@ -1280,60 +1281,52 @@ MTIMEprelude(void)
 
 	tz = *tzone_nil;			/* to ensure initialized variables */
 
-	/* here we should initialize the time box as well */
-	box = openBox("time");
-	if (box == 0)
-		throw(MAL, "time.prelude", "failed to open box");
-	/* if the box was already filled we can skip initialization */
-	if (box->sym->vtop == 0) {
-		BAT *tzbatnme = BATnew(TYPE_void, TYPE_str, 30);
-		BAT *tzbatdef = BATnew(TYPE_void, ATOMindex("timezone"), 30);
+	/* if it was already filled we can skip initialization */
+	if( timezone_name )
+		return MAL_SUCCEED;
+	tzbatnme = BATnew(TYPE_void, TYPE_str, 30);
+	tzbatdef = BATnew(TYPE_void, ATOMindex("timezone"), 30);
 
-		if (tzbatnme == NULL || tzbatdef == NULL)
-			throw(MAL, "time.prelude", "failed to create box");
-		BBPrename(tzbatnme->batCacheid, "timezone_name");
-		BBPrename(tzbatdef->batCacheid, "timezone_def");
-		BATseqbase(tzbatnme,0);
-		BATseqbase(tzbatdef,0);
-		timezone_name = tzbatnme;
-		timezone_def = tzbatdef;
+	if (tzbatnme == NULL || tzbatdef == NULL)
+		throw(MAL, "time.prelude", MAL_MALLOC_FAIL);
+	BBPrename(tzbatnme->batCacheid, "timezone_name");
+	BBPrename(tzbatdef->batCacheid, "timezone_def");
+	BATseqbase(tzbatnme,0);
+	BATseqbase(tzbatdef,0);
+	timezone_name = tzbatnme;
+	timezone_def = tzbatdef;
 
-		newVariable(box->sym, GDKstrdup("timezone_name"),
-					newBatType(TYPE_str, ATOMindex("timezone")));
-		if (bindBAT(box, "timezone_name", "timezone_name")) {
-			throw(MAL, "time.prelude", "could not bind timezone_name");
-		}
-		if (bindBAT(box, "timezone_def", "timezone_def")) {
-			throw(MAL, "time.prelude", "could not bind timezone_def");
-		}
-		vr.vtype = ATOMindex("timezone");
-		TIMEZONES("Wake Island", 12 * 60);
-		TIMEZONES("Melbourne/Australia", 11 * 60);
-		TIMEZONES("Brisbane/Australia", 10 * 60);
-		TIMEZONES("Japan", 9 * 60);
-		TIMEZONES("Singapore", 8 * 60);
-		TIMEZONES("Thailand", 7 * 60);
-		TIMEZONES("Pakistan", 5 * 60);
-		TIMEZONES("United Arab Emirates", 4 * 60);
-		TIMEZONES("GMT", 0 * 0);
-		TIMEZONES("Azore Islands", -1 * 60);
-		TIMEZONES("Hawaii/USA", -10 * 60);
-		TIMEZONES("American Samoa", -11 * 60);
-		MTIMErule_fromstr(&RULE_MAR, &s1);
-		MTIMErule_fromstr(&RULE_OCT, &s2);
-		TIMEZONES2("Kazakhstan", 6 * 60, RULE_MAR, RULE_OCT);
-		TIMEZONES2("Moscow/Russia", 3 * 60, RULE_MAR, RULE_OCT);
-		TIMEZONES2("East/Europe", 2 * 60, RULE_MAR, RULE_OCT);
-		TIMEZONES2("West/Europe", 1 * 60, RULE_MAR, RULE_OCT);
-		TIMEZONES2("UK", 0 * 0, RULE_MAR, RULE_OCT);
-		TIMEZONES2("Eastern/Brazil", -2 * 60, RULE_OCT, RULE_MAR);
-		TIMEZONES2("Western/Brazil", -3 * 60, RULE_OCT, RULE_MAR);
-		TIMEZONES2("Andes/Brazil", -4 * 60, RULE_OCT, RULE_MAR);
-		TIMEZONES2("East/USA", -5 * 60, RULE_MAR, RULE_OCT);
-		TIMEZONES2("Central/USA", -6 * 60, RULE_MAR, RULE_OCT);
-		TIMEZONES2("Mountain/USA", -7 * 60, RULE_MAR, RULE_OCT);
-		TIMEZONES2("Alaska/USA", -9 * 60, RULE_MAR, RULE_OCT);
-	}
+/* perhaps add the following to the global kvstore 
+* 	timezone_name
+* 	timezone_def
+*/
+	vr.vtype = ATOMindex("timezone");
+	TIMEZONES("Wake Island", 12 * 60);
+	TIMEZONES("Melbourne/Australia", 11 * 60);
+	TIMEZONES("Brisbane/Australia", 10 * 60);
+	TIMEZONES("Japan", 9 * 60);
+	TIMEZONES("Singapore", 8 * 60);
+	TIMEZONES("Thailand", 7 * 60);
+	TIMEZONES("Pakistan", 5 * 60);
+	TIMEZONES("United Arab Emirates", 4 * 60);
+	TIMEZONES("GMT", 0 * 0);
+	TIMEZONES("Azore Islands", -1 * 60);
+	TIMEZONES("Hawaii/USA", -10 * 60);
+	TIMEZONES("American Samoa", -11 * 60);
+	MTIMErule_fromstr(&RULE_MAR, &s1);
+	MTIMErule_fromstr(&RULE_OCT, &s2);
+	TIMEZONES2("Kazakhstan", 6 * 60, RULE_MAR, RULE_OCT);
+	TIMEZONES2("Moscow/Russia", 3 * 60, RULE_MAR, RULE_OCT);
+	TIMEZONES2("East/Europe", 2 * 60, RULE_MAR, RULE_OCT);
+	TIMEZONES2("West/Europe", 1 * 60, RULE_MAR, RULE_OCT);
+	TIMEZONES2("UK", 0 * 0, RULE_MAR, RULE_OCT);
+	TIMEZONES2("Eastern/Brazil", -2 * 60, RULE_OCT, RULE_MAR);
+	TIMEZONES2("Western/Brazil", -3 * 60, RULE_OCT, RULE_MAR);
+	TIMEZONES2("Andes/Brazil", -4 * 60, RULE_OCT, RULE_MAR);
+	TIMEZONES2("East/USA", -5 * 60, RULE_MAR, RULE_OCT);
+	TIMEZONES2("Central/USA", -6 * 60, RULE_MAR, RULE_OCT);
+	TIMEZONES2("Mountain/USA", -7 * 60, RULE_MAR, RULE_OCT);
+	TIMEZONES2("Alaska/USA", -9 * 60, RULE_MAR, RULE_OCT);
 	msg = "West/Europe";
 	return MTIMEtimezone(&tz, &msg);
 }
