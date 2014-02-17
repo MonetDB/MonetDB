@@ -32236,50 +32236,6 @@ command blob.#tostr():void
 address BLOBtostr;
 command blob.#write():void 
 address BLOBwrite;
-pattern box.close(bname:str):void 
-address BOXclose;
-comment Close the box.
-
-pattern box.discard(bname:str,name:str):void 
-address BOXdiscard;
-comment Release the BAT from the client pool.
-
-pattern box.deposit(bname:str,name:str,v:any_1):void 
-address BOXdeposit;
-comment Enter a new value into the box.
-
-pattern box.destroy(bname:str):void 
-address BOXdestroy;
-comment Destroy the box.
-
-command box.getBoxNames():bat[:int,:str] 
-address BOXgetBoxNames;
-comment Retrieve the names of all boxes.
-
-pattern box.iterator(nme:str):lng 
-address BOXiterator;
-comment Locates the next element in the box.
-
-pattern box.open(nme:str):any_1 
-address BOXopen;
-comment Locate the box and open it.
-
-pattern box.release(bname:str,nme:str,val:any_1):void 
-address BOXrelease;
-comment Release the BAT from the client pool.
-
-pattern box.releaseAll(bname:str):void 
-address BOXreleaseAll;
-comment Release all objects for this client.
-
-pattern box.toString(bname:str,name:str):str 
-address BOXtoString;
-comment Get the string representation of 	the i-th element in the box.
-
-pattern box.take(bnme:str,vnme:str):any_1 
-address BOXtake;
-comment Locate the typed value in the box.
-
 command bstream.create{unsafe}(s:streams,bufsize:int):bstream 
 address bstream_create_wrapwrap;
 comment create a buffered stream
@@ -38799,62 +38755,6 @@ comment Wakeup a client process
 command constraints.emptySet(b:bat[:oid,:any_2]):void 
 address CemptySet;
 comment Check if the BAT is empty.
-
-pattern const.close():void 
-address CSTclose;
-comment Close the constant box.
-
-pattern const.discard(name:any_1):void 
-address CSTdiscard;
-comment Release the const from the box.
-
-pattern const.deposit(name:str,val:any_1):void 
-address CSTdeposit;
-comment Add a variable to the box.
-
-pattern const.destroy():void 
-address CSTdestroy;
-comment Destroy the box.
-
-command const.epiloque():void 
-address CSTepilogue;
-comment Cleanup the const box
-
-pattern const.hasMoreElements() (X_1:oid,X_2:str) 
-address CSThasMoreElements;
-comment Locate next element in the box.
-
-pattern const.newIterator() (X_1:oid,X_2:str) 
-address CSTnewIterator;
-comment Locate next element in the box.
-
-pattern const.open():void 
-address CSTopen;
-comment Locate and open the constant box.
-
-pattern const.prelude():void 
-address CSTprelude;
-comment Initialize the const box
-
-pattern const.release(name:any_1):void 
-address CSTrelease;
-comment Release a constant value.
-
-pattern const.release(name:str):void 
-address CSTrelease;
-comment Release a constant value.
-
-pattern const.releaseAll():void 
-address CSTreleaseAll;
-comment Release all variables in the box.
-
-pattern const.toString(name:any_1):str 
-address CSTtoString;
-comment Get the string representation of an element in the box.
-
-pattern const.take(name:str):any_1 
-address CSTtake;
-comment Take a variable out of the box.
 
 command color.blue(c:color):int 
 address CLRblue;

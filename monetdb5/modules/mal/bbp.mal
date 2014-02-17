@@ -42,7 +42,7 @@ address CMDbbpexpand
 comment "Expand a compressed image of BAT heaps";
 
 
-# @+ BAT buffer pool
+# BAT buffer pool
 # The following list of operations permits inspection of the
 # buffer pool
 command getIndex(b:bat[:oid,:any_2]):int

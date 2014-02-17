@@ -30,7 +30,6 @@ lib_mal = {
 		mal.c mal.h \
 		mal_atom.c mal_atom.h \
 		mal_authorize.c mal_authorize.h \
-		mal_box.c mal_box.h \
 		mal_builder.c mal_builder.h \
 		mal_client.c mal_client.h \
 		mal_debugger.c mal_debugger.h \

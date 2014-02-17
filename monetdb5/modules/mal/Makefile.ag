@@ -30,10 +30,8 @@ lib_mal = {
 	SOURCES = \
 		batExtensions.c batExtensions.h \
 		bbp.c bbp.h \
-		box.c box.h \
 		clients.c clients.h \
 		cluster.c cluster.h \
-		const.c  const.h \
 		constraints.c constraints.h \
 		factories.c factories.h \
 		groupby.c groupby.h \
@@ -61,7 +59,6 @@ lib_mal = {
 		trader.c trader.h \
 		transaction.c \
 		txtsim.c txtsim.h \
-		urlbox.c urlbox.h \
 		zorder.c zorder.h \
 		sample.c sample.h \
 		json_util.c json_util.h \
@@ -71,12 +68,12 @@ lib_mal = {
 headers_mal = {
 	HEADERS = mal
 	DIR = libdir/monetdb5
-	SOURCES = language.mal constraints.mal mal_init.mal box.mal bbp.mal \
-		profiler.mal const.mal batExtensions.mal \
+	SOURCES = language.mal constraints.mal mal_init.mal bbp.mal \
+		profiler.mal batExtensions.mal \
 		inspect.mal manual.mal mal_io.mal pqueue.mal mkey.mal manifold.mal \
 		iterator.mal clients.mal \
 		factories.mal groupby.mal mdb.mal pcre.mal mat.mal \
-		urlbox.mal transaction.mal \
+		transaction.mal \
 		mal_mapi.mal sabaoth.mal remote.mal  \
 		txtsim.mal recycle.mal \
 		cluster.mal trader.mal \

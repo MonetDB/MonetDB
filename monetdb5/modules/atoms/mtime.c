@@ -1334,7 +1334,6 @@ MTIMEprelude(void)
 str
 MTIMEepilogue(void)
 {
-	closeBox("time", 0);
 	return MAL_SUCCEED;
 }
 

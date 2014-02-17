@@ -39,20 +39,8 @@ pseudo(int *ret, BAT *b, str X1,str X2) {
 	BBPkeepref(*ret);
 }
 
-/*
- * Access to a box calls for resolving the first parameter
- * to a named box. The bbp box is automatically opened.
- */
 #include "monetdb_config.h"
 #include "bbp.h"
-
-#define OpenBox(X) \
-	box= findBox("bbp");\
-	if(box == 0 )\
-		box= openBox("bbp");\
-	if( box ==0) \
-		throw(MAL, "bbp." X, BOX_CLOSED);
-
 
 str
 CMDbbpprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -61,8 +49,6 @@ CMDbbpprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) stk;
 	(void) pci;		/* fool compiler */
 	(void) cntxt;
-	if (openBox("bbp"))
-		return MAL_SUCCEED;
 	throw(MAL, "bbp.prelude", BOX_CLOSED);
 }
 
@@ -70,8 +56,7 @@ str
 CMDbbpbind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str name;
-	Box box;
-	ValPtr lhs, rhs;
+	ValPtr lhs;
 	int i = -1;
 	int ht,tt;
 	BAT *b;
@@ -82,20 +67,6 @@ CMDbbpbind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	name = *(str*) getArgReference(stk, pci, 1);
 	if (isIdentifier(name) < 0)
 		throw(MAL, "bbp.bind", IDENTIFIER_EXPECTED);
-	box = findBox("bbp");
-	if (box && (i = findVariable(box->sym, name)) >= 0) {
-		rhs = &box->val->stk[i];
-		VALcopy(lhs, rhs);
-		if (lhs->vtype == TYPE_bat) {
-			BAT *b;
-
-			b = BBPquickdesc(lhs->val.bval, 0);
-			if (b == NULL)
-				throw(MAL, "bbp.bind", INTERNAL_BAT_ACCESS);
-			BBPincref(b->batCacheid, TRUE);
-		}
-		return MAL_SUCCEED;
-	}
 	i = BBPindex(name);
 	if (i == 0)
 		throw(MAL, "bbp.bind", RUNTIME_OBJECT_MISSING);
