@@ -17,37 +17,14 @@
 
 module bbp;
 
-pattern prelude():void 
-address CMDbbpprelude
-comment "Initialize the bbp box.";
-
 pattern bind(name:str):bat[:oid,:any_2]
 address CMDbbpbind
 comment "Locate the BAT using its logical name";
 
-command compress(b:bat[:oid,:any_2],fnme:str):bat[:oid,:any_2]
-address CMDbbpcompress
-comment "Generate a compressed image of the BAT on a specific file";
-
-command decompress(b:bat[:oid,:any_2],fnme:str):bat[:oid,:any_2] 
-address CMDbbpdecompress
-comment "Obtain a temporary decompressed image of a BAT from a specific file";
-
-command truncate(b:bat[:oid,:any_2],fnme:str):bat[:oid,:any_2]
-address CMDbbptruncate
-comment "Truncate the heaps if a compressed image exist";
-
-command expand(b:bat[:oid,:any_2],fnme:str):bat[:oid,:any_2]
-address CMDbbpexpand
-comment "Expand a compressed image of BAT heaps";
-
-
-# BAT buffer pool
-# The following list of operations permits inspection of the
-# buffer pool
 command getIndex(b:bat[:oid,:any_2]):int
 address CMDbbpgetIndex
 comment "Retrieve the index in the BBP";
+
 command getNames() :bat[:oid,:str] 	
 address CMDbbpNames
 comment "Map BAT into its bbp name";
@@ -100,3 +77,20 @@ comment "Estimate the amount of disk space occupied by dbpath";
 command getPageSize():int
 address CMDgetPageSize
 comment "Obtain the memory page size";
+
+command compress(b:bat[:oid,:any_2],fnme:str):bat[:oid,:any_2]
+address CMDbbpcompress
+comment "Generate a compressed image of the BAT on a specific file";
+
+command decompress(b:bat[:oid,:any_2],fnme:str):bat[:oid,:any_2] 
+address CMDbbpdecompress
+comment "Obtain a temporary decompressed image of a BAT from a specific file";
+
+command truncate(b:bat[:oid,:any_2],fnme:str):bat[:oid,:any_2]
+address CMDbbptruncate
+comment "Truncate the heaps if a compressed image exist";
+
+command expand(b:bat[:oid,:any_2],fnme:str):bat[:oid,:any_2]
+address CMDbbpexpand
+comment "Expand a compressed image of BAT heaps";
+

@@ -18,7 +18,6 @@
  */
 
 /*
- * @+ Implementation section
  * In most cases we pass a BAT identifier, which should be unified
  * with a BAT descriptor. Upon failure we can simply abort the function.
  */
@@ -49,7 +48,6 @@
 #define getcwd _getcwd
 #endif
 
-bbp_export str CMDbbpprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 bbp_export str CMDbbpbind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 bbp_export str CMDbbpDiskSpace(lng *ret);
 bbp_export str CMDbbpDiskReads(lng *ret);

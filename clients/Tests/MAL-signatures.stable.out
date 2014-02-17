@@ -32182,10 +32182,6 @@ command bbp.getIndex(b:bat[:oid,:any_2]):int
 address CMDbbpgetIndex;
 comment Retrieve the index in the BBP
 
-pattern bbp.prelude():void 
-address CMDbbpprelude;
-comment Initialize the bbp box.
-
 command bbp.truncate(b:bat[:oid,:any_2],fnme:str):bat[:oid,:any_2] 
 address CMDbbptruncate;
 comment Truncate the heaps if a compressed image exist
@@ -38751,10 +38747,6 @@ comment Turn on/off echo of MAL instructions:	2 - show mal instruction,	4 - show
 command clients.wakeup(id:int):void 
 address CLTwakeup;
 comment Wakeup a client process
-
-command constraints.emptySet(b:bat[:oid,:any_2]):void 
-address CemptySet;
-comment Check if the BAT is empty.
 
 command color.blue(c:color):int 
 address CLRblue;

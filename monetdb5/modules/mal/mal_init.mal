@@ -15,9 +15,8 @@
 # Copyright August 2008-2014 MonetDB B.V.
 # All Rights Reserved.
 
-# @f mal_init
-# @a Martin Kersten
-# @* Mal Startup file
+# (c) Martin Kersten
+# MAL Startup file
 # Upon starting the Monet/MAL server we need to initialize the symbol table.
 # This encompasses loading the signatures of several key modules.
 # They are listed below.
@@ -94,7 +93,7 @@ include mat; 	# experimental
 include inspect;
 include manual;
 include language;
-include constraints; # experimental
+#include constraints; # experimental
 include mal_mapi;
 
 include profiler;
