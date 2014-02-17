@@ -525,8 +525,8 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	if (maxgrps < GROUPBATINCR)
 		maxgrps = GROUPBATINCR;
 	if (b->T->width <= 2 &&
-	    maxgrps > ((BUN) 1 << (8 << (b->T->width == 2 ? 1 : 0))))
-		maxgrps = (BUN) 1 << (8 << (b->T->width == 2 ? 1 : 0));
+	    maxgrps > ((BUN) 1 << (8 << (b->T->width == 2))))
+		maxgrps = (BUN) 1 << (8 << (b->T->width == 2));
 	if (extents) {
 		en = BATnew(TYPE_void, TYPE_oid, maxgrps);
 		if (en == NULL)
@@ -674,6 +674,52 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		}
 
 		GDKfree(pgrp);
+	} else if (g == NULL && ATOMstorage(b->ttype) == TYPE_bte) {
+		/* byte-sized values, use 256 entry array to keep
+		 * track of doled out group ids */
+		unsigned char *bgrps = GDKmalloc(256);
+		unsigned char v, *w = (unsigned char *) Tloc(b, BUNfirst(b));
+		memset(bgrps, 0xFF, 256);
+		if (histo)
+			memset(cnts, 0, maxgrps * sizeof(wrd));
+		ngrp = 0;
+		gn->tsorted = 1;
+		for (p = 0, q = BATcount(b); p < q; p++) {
+			if ((v = bgrps[w[p]]) == 0xFF && ngrp < 256) {
+				bgrps[w[p]] = v = ngrp++;
+				if (extents)
+					exts[v] = b->hseqbase + (oid) p;
+			}
+			ngrps[p] = v;
+			if (p > 0 &&v < ngrps[p - 1])
+				gn->tsorted = 0;
+			if (histo)
+				cnts[v]++;
+		}
+		GDKfree(bgrps);
+	} else if (g == NULL && ATOMstorage(b->ttype) == TYPE_sht) {
+		/* short-sized values, use 65536 entry array to keep
+		 * track of doled out group ids */
+		unsigned short *sgrps = GDKmalloc(65536 * sizeof(short));
+		unsigned short v, *w = (unsigned short *) Tloc(b, BUNfirst(b));
+		memset(sgrps, 0xFF, 65536 * sizeof(short));
+		if (histo)
+			memset(cnts, 0, maxgrps * sizeof(wrd));
+		ngrp = 0;
+		gn->tsorted = 1;
+		for (p = 0, q = BATcount(b); p < q; p++) {
+			if ((v = sgrps[w[p]]) == 0xFFFF && ngrp < 65536) {
+				sgrps[w[p]] = v = ngrp++;
+				if (extents)
+					exts[v] = b->hseqbase + (oid) p;
+			}
+			ngrps[p] = v;
+			if (p > 0 && v < ngrps[p - 1])
+				gn->tsorted = 0;
+			if (histo)
+				cnts[v]++;
+		}
+		GDKfree(sgrps);
 	} else if (b->T->hash) {
 		/* we already have a hash table on b */
 		ALGODEBUG fprintf(stderr, "#BATgroup(b=%s#" BUNFMT ","
