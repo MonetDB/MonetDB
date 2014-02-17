@@ -384,7 +384,23 @@ static void ctl_handle_client(
 							char *vaultkey;
 
 							/* the child, pollute scope by loading BBP */
-							chdir(q);
+							if (chdir(q) < 0) {
+								/* Fabian says "Ignore the output.
+								 * The idea is that the stuff below
+								 * will also fail, and therefore emit
+								 * some error, but if that happens,
+								 * the world already is in such a bad
+								 * shape that that most likely isn't
+								 * your biggest problem.
+								 * Hence a (void) probably does.
+								 * If not, a fake if.
+								 * (exit(0) should be fine)."
+								 * (https://www.monetdb.org/pipermail/developers-list/2014-February/004238.html)
+								 */
+								Mfprintf(_mero_ctlerr, "%s: could not chdir to "
+									"'%s': %d: %s\n", origin, q, errno, strerror(errno));
+								exit(0);
+							}
 
 							buf2[0] = '\0';
 							if ((secretf = fopen(".vaultkey", "r")) != NULL) {
