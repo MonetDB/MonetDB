@@ -52,12 +52,14 @@ stopping a database inside the MonetDB Database Server.
 For all commands, database arguments can be glob-like expressions.
 This allows to do wildcard matches.  For details on the syntax, see
 .IR EXPRESSIONS .
-.IP "create [\-m pattern] database [database ...]"
+.IP "create [\-m pattern] [\-p password] database [database ...]"
 Initialises a new database in the MonetDB Database Server.  A database
 created with this command makes it available under its database name,
 but not yet for use by clients, as the database is put into maintenance
 mode.  This allows the database administrator to perform initialisation
-steps before releasing it to users.  See also
+steps before releasing it to users, unless the
+.I \-p
+argument is supplied.  See also
 .BR "monetdb lock" .
 The name of the database must match the expression [A\-Za\-z0\-9\-_]+.
 .IP "  \-m pattern"
@@ -74,6 +76,14 @@ or discovery.  Each parallel target for the multiplex-funnel is given as
 sequence, separated by commas.  Here the pattern is an ordinary pattern
 as would be used for connecting to a database, and can hence also be
 just the name of a database.
+.IP "  \-p password"
+The
+.I \-p
+flag allows to create a database with the given password for the monetdb
+user.  Since this protects the database from being accessed via
+well-known credentials, the created database is not locked after
+creation.  This way, a new database can be created and used right away
+using the password supplied.
 .IP "destroy [\-f] database [database ...]"
 Removes the given database, including all its data and logfiles.  Once
 destroy has completed, all data is lost.  Be careful when using this
@@ -82,8 +92,8 @@ command.
 By default, a confirmation question is asked, however the
 .I \-f
 option, when provided, suppresses this question and removal is executed
-right away.  Note that you cannot destroy a running database, bring it
-down first using the
+right away.  Note that without this option you cannot destroy a running
+database, bring it down first using the
 .B stop
 command.
 .IP "lock database [database ...]"

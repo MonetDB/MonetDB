@@ -1435,6 +1435,7 @@ command_create(int argc, char *argv[])
 {
 	int i;
 	char *mfunnel = NULL;
+	char *password = NULL;
 	sabdb *orig = NULL;
 	sabdb *stats = NULL;
 
@@ -1461,6 +1462,19 @@ command_create(int argc, char *argv[])
 					argv[i] = NULL;
 				} else {
 					fprintf(stderr, "create: -m needs an argument\n");
+					command_help(2, &argv[-1]);
+					exit(1);
+				}
+			} else if (argv[i][1] == 'p') {
+				if (argv[i][2] != '\0') {
+					password = &argv[i][2];
+					argv[i] = NULL;
+				} else if (i + 1 < argc && argv[i + 1][0] != '-') {
+					argv[i] = NULL;
+					password = argv[++i];
+					argv[i] = NULL;
+				} else {
+					fprintf(stderr, "create: -p needs an argument\n");
 					command_help(2, &argv[-1]);
 					exit(1);
 				}
@@ -1491,6 +1505,13 @@ command_create(int argc, char *argv[])
 		snprintf(cmd, len, "create mfunnel=%s", mfunnel);
 		simple_argv_cmd(argv[0], orig, cmd, 
 				"created multiplex-funnel in maintenance mode", NULL);
+		free(cmd);
+	} else if (password != NULL) {
+		size_t len = strlen("create password=") + strlen(password) + 1;
+		char *cmd = malloc(len);
+		snprintf(cmd, len, "create password=%s", password);
+		simple_argv_cmd(argv[0], orig, cmd, 
+				"created database with password for monetdb user", NULL);
 		free(cmd);
 	} else {
 		simple_argv_cmd(argv[0], orig, "create", 
@@ -1558,6 +1579,17 @@ command_destroy(int argc, char *argv[])
 		} else {
 			printf("aborted\n");
 			exit(1);
+		}
+	} else {
+		char *ret;
+		char *out;
+		for (stats = orig; stats != NULL; stats = stats->next) {
+			if (stats->state == SABdbRunning) {
+				ret = control_send(&out, mero_host, mero_port,
+						stats->dbname, "stop", 0, mero_pass);
+				if (ret != NULL)
+					free(ret);
+			}
 		}
 	}
 
