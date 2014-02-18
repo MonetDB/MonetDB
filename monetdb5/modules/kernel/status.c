@@ -267,7 +267,8 @@ SYSmemStatistics(int *ret, int *ret2)
 		sz = HEAPmemsize(X2);\
 		if (sz > *minsize) {\
 			sprintf(buf, X4"/%s", s);\
-			BUNins(bn, buf, &sz, FALSE);\
+			BUNappend(bn, buf, FALSE);\
+			BUNappend(b, &sz, FALSE);\
 		}\
 		X3 += sz; tot += sz;\
 	}
@@ -276,7 +277,8 @@ SYSmemStatistics(int *ret, int *ret2)
 		sz = HEAPvmsize(X2);\
 		if (sz > *minsize) {\
 			sprintf(buf, X4"/%s", s);\
-			BUNins(bn, buf, &sz, FALSE);\
+			BUNappend(bn, buf, FALSE);\
+			BUNappend(b, &sz, FALSE);\
 		}\
 		X3 += sz; tot += sz;\
 	}
@@ -300,10 +302,10 @@ SYSmem_usage(int *ret, int *ret2, lng *minsize)
 	BATseqbase(bn,0);
 	BBPlock("SYSmem_usage");
 	for (i = 1; i < BBPsize; i++) {
-		BAT *b = BBP_cache(i);
+		BAT *c = BBPquickdesc(i,0);
 		str s;
 
-		if (!BBPvalid(i))
+		if( c == NULL  || !BBPvalid(i))
 			continue;
 
 		s = BBPname(i);
@@ -326,15 +328,15 @@ SYSmem_usage(int *ret, int *ret2, lng *minsize)
 		}
 		tot += (lng) sz;
 
-		if (b == NULL || isVIEW(b)) {
+		if (c == NULL || isVIEW(c)) {
 			continue;
 		}
-		heap(1,&b->H->heap,hbuns,"hbuns");
-		heap(1,&b->T->heap,tbuns,"tbuns");
-		heap(b->H->hash,b->H->hash->heap,hhsh,"hhsh");
-		heap(b->T->hash,b->T->hash->heap,thsh,"thsh");
-		heap(b->H->vheap,b->H->vheap,head,"head");
-		heap(b->T->vheap,b->T->vheap,tail,"tail");
+		heap(1,&c->H->heap,hbuns,"hbuns");
+		heap(1,&c->T->heap,tbuns,"tbuns");
+		heap(c->H->hash,c->H->hash->heap,hhsh,"hhsh");
+		heap(c->T->hash,c->T->hash->heap,thsh,"thsh");
+		heap(c->H->vheap,c->H->vheap,head,"head");
+		heap(c->T->vheap,c->T->vheap,tail,"tail");
 	}
 	/* totals per category */
 	BUNappend(bn, "_tot/hbuns", FALSE);
@@ -418,23 +420,23 @@ SYSvm_usage(int *ret, int *ret2, lng *minsize)
 	BATseqbase(bn,0);
 	BBPlock("SYSvm_usage");
 	for (i = 1; i < BBPsize; i++) {
-		BAT *b;
+		BAT *c;
 		str s;
 
 		if (!BBPvalid(i))
 			continue;
 
 		s = BBPname(i);
- 		b = BBP_cache(i);
-		if (b == NULL || isVIEW(b)) {
+ 		c = BBP_cache(i);
+		if (c == NULL || isVIEW(c)) {
 			continue;
 		}
-		heapvm(1,&b->H->heap,hbuns,"hbuns");
-		heapvm(1,&b->T->heap,tbuns,"tbuns");
-		heapvm(b->H->hash,b->H->hash->heap,hhsh,"hshh");
-		heapvm(b->T->hash,b->T->hash->heap,thsh,"thsh");
-		heapvm(b->H->vheap,b->H->vheap,head,"head");
-		heapvm(b->T->vheap,b->T->vheap,tail,"tail");
+		heapvm(1,&c->H->heap,hbuns,"hcuns");
+		heapvm(1,&c->T->heap,tbuns,"tcuns");
+		heapvm(c->H->hash,c->H->hash->heap,hhsh,"hshh");
+		heapvm(c->T->hash,c->T->hash->heap,thsh,"thsh");
+		heapvm(c->H->vheap,c->H->vheap,head,"head");
+		heapvm(c->T->vheap,c->T->vheap,tail,"tail");
 	}
 	/* totals per category */
 	BUNappend(bn, "_tot/hbuns", FALSE);
@@ -659,7 +661,7 @@ SYSgdkThread(int *ret, int *ret2)
 	for (i = 0; i < THREADS; i++) {
 		if (GDKthreads[i].pid){
 			BUNappend(bn, &GDKthreads[i].tid, FALSE);
-			BUNappend(b, GDKthreads[i].name, FALSE);
+			BUNappend(b, GDKthreads[i].name? GDKthreads[i].name:"", FALSE);
 		}
 	}
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
