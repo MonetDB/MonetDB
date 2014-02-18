@@ -1109,12 +1109,6 @@ ALGkunique(bat *result, bat *bid)
 }
 
 str
-ALGsunique(bat *result, bat *bid)
-{
-	return ALGunary(result, bid, BATsunique, "algebra.sunique");
-}
-
-str
 ALGsubunique2(bat *result, bat *bid, bat *sid)
 {
 	BAT *b, *s = NULL, *bn = NULL;
@@ -1385,27 +1379,9 @@ ALGsemijoin(bat *result, bat *lid, bat *rid)
 }
 
 str
-ALGsunion(bat *result, bat *lid, bat *rid)
-{
-	return ALGbinary(result, lid, rid, BATsunion, "algebra.sunion");
-}
-
-str
 ALGkunion(bat *result, bat *lid, bat *rid)
 {
 	return ALGbinary(result, lid, rid, BATkunion, "algebra.kunion");
-}
-
-str
-ALGsintersect(bat *result, bat *lid, bat *rid)
-{
-	return ALGbinary(result, lid, rid, BATsintersect, "algebra.sintersect");
-}
-
-str
-ALGsdiff(bat *result, bat *lid, bat *rid)
-{
-	return ALGbinary(result, lid, rid, BATsdiff, "algebra.sdiff");
 }
 
 str

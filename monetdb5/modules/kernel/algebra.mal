@@ -365,14 +365,6 @@ comment "Returns a BAT copy with buns in reverse order";
 #
 # The t-@emph{operand} series are cast into a k-@emph{operand}
 # expression enclosing it with a BATmirror.
-# @- Bun-unique elements
-command unique (b:bat[:any_1,:any_2] ) :bat[:any_1,:any_2]
-address ALGsunique;
-command sunique (b:bat[:any_1,:any_2] ) :bat[:any_1,:any_2]
-address ALGsunique
-comment "Select unique tuples from the input BAT. Double elimination is
-		done over BUNs as a whole (head and tail).  Result is a BAT
-	with real set() semantics.";
 # @- Head-unique elements
 command kunique ( b:bat[:any_1,:any_2] ) :bat[:any_1,:any_2]
 address ALGkunique
@@ -400,19 +392,6 @@ comment "Select all unique values from the tail of the input.
 	in the tail the head value of the input BAT that was selected.
 	The output BAT is sorted on the tail value.";
 
-# @- Bun-intersecting elements
-command intersect ( left:bat[:any_1,:any_2], right:bat[:any_1,:any_2])
-		:bat[:any_1,:any_2]
-address ALGsintersect;
-command sintersect ( left:bat[:any_1,:any_2], right:bat[:any_1,:any_2])
-		:bat[:any_1,:any_2]
-address ALGsintersect
-comment "Returns the intersection taken over *both* columns of two BATs.
-		Results in all BUNs of 'left' that are also in 'right'. Does *not*
-		do double-elimination over the 'left' BUNs, If you want this, use:
-	 'sintersect(sunique(left),sunique(right))'
-	or: 'sunique(sintersect(left,right))'.";
-
 # @- Head-intersecting elements (a.k.a. semijoin)
 command semijoin( left:bat[:any_1,:any_2], right:bat[:any_1,:any] )
 		:bat[:any_1,:any_2]
@@ -437,19 +416,6 @@ address ALGtintersect;
 command tinter( left:bat[:oid,:oid], right:bat[:oid,:oid] ) :bat[:oid,:oid]
 address ALGtinter;
 
-# @- Bun-differing elements
-command difference( left:bat[:any_1,:any_2], right:bat[:any_1,:any_2] )
-		:bat[:any_1,:any_2]
-address ALGsdiff;
-command sdifference( left:bat[:any_1,:any_2], right:bat[:any_1,:any_2] )
-		:bat[:any_1,:any_2]
-address ALGsdiff
-comment "Returns the difference taken over *both* columns of two BATs.
-		Results in all BUNs of 'left' that are *not* in 'right'.
-		Does *not* do double-elimination over the 'left' BUNs.
-		If you want this, use:
-		 'sdifference(left.sunique,right.sunique)'
-	or: 'sdifference(left,right).sunique'.";
 # @- Head-differing elements
 command kdifference ( left:bat[:any_1,:any_2], right:bat[:any_1,:any] )
 		:bat[:any_1,:any_2]
@@ -465,29 +431,13 @@ command tdifference ( left:bat[:any_1,:any_2], right:bat[:any_1,:any] )
 address ALGtdifference;
 command tdiff( left:bat[:oid,:oid], right:bat[:oid,:oid] ) :bat[:oid,:oid]
 address ALGtdiff;
-# @- Unions on bun
-command union ( left:bat[:any_1,:any_2], right:bat[:any_1,:any_2])
-		:bat[:any_1,:any_2]
-address ALGsunion;
-command sunion ( left:bat[:any_1,:any_2], right:bat[:any_1,:any_2])
-		:bat[:any_1,:any_2]
-address ALGsunion
-comment "Returns the union of two BATs; looking at both columns of both BATs.
-		Results in all BUNs of 'left' that are  not in 'right', plus all
-		BUNs of 'right'.  *no* double-elimination is done.
-		If you want this, do:
-	 'sunion(left.sunique,right.sunique)'
-	or: 'sunion(left,right).sunique'.";
 # @- Union on head
 command kunion ( left:bat[:any_1,:any_2], right:bat[:any_1,:any_2])
 		:bat[:any_1,:any_2]
 address ALGkunion
 comment "Returns the union of two BATs; looking at head-columns only.
 		Results in all BUNs of 'left' that are  not in 'right', plus
-	all BUNs of 'right'.  *no* double-elimination is done.
-		If you want this, do:
-	'kunion(left.kunique,right.kunique)'
-	or: 'sunion(left,right).kunique'.";
+	all BUNs of 'right'.  *no* double-elimination is done.";
 command tunion ( left:bat[:any_1,:any_2], right:bat[:any_1,:any_2])
 		:bat[:any_1,:any_2]
 address ALGtunion;

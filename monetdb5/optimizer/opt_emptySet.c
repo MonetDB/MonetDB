@@ -52,10 +52,6 @@ ESevaluate(Client cntxt, MalBlkPtr mb, char *empty)
 	int i, j, actions = 0;
 	InstrPtr p;
 	str existRef = putName("exist", 5);
-	str uniqueRef = putName("unique", 6);
-	str suniqueRef = putName("sunique", 7);
-	str intersectRef = putName("intersect", 9);
-	str sintersectRef = putName("sintersect", 10);
 	str kintersectRef = putName("kintersect", 10);
 	str fragmentRef = putName("fragment", 8);
 	int *alias;
@@ -164,12 +160,8 @@ ESevaluate(Client cntxt, MalBlkPtr mb, char *empty)
 					     f == sortTailRef  ||
 					     f == sortHTRef  || 
 					     f == sortTHRef  || 
-					     f == uniqueRef  || 
-					     f == suniqueRef  || 
 					     f == kuniqueRef  ||
-					     f == intersectRef  || 
 					     f == semijoinRef ||
-					     f == sintersectRef  || 
 					     f == kintersectRef  ||
 					     f == fragmentRef ){
 
@@ -182,9 +174,7 @@ ESevaluate(Client cntxt, MalBlkPtr mb, char *empty)
 						propagate(1);
 						break;
 					}
-					if ( f == sunionRef || 
-					     f == kunionRef || 
-					     f == unionRef) {
+					if ( f == kunionRef) {
 						/* copy non-empty argument */
 						if( j == 1) {
 							propagate(2);

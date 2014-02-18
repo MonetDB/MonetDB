@@ -3243,19 +3243,11 @@ gdk_export int BATtopN(BAT *b, BUN topN);	/* used in monet5/src/modules/kernel/a
  * @tab BATfragment (BAT *b, ptr l, ptr h, ptr L, ptr H)
  * @item
  * @item BAT *
- * @tab BATsunique (BAT *b)
- * @item BAT *
  * @tab BATkunique (BAT *b)
- * @item BAT *
- * @tab BATsunion (BAT *b, BAT *c)
  * @item BAT *
  * @tab BATkunion (BAT *b, BAT *c)
  * @item BAT *
- * @tab BATsintersect (BAT *b, BAT *c)
- * @item BAT *
  * @tab BATkintersect (BAT *b, BAT *c)
- * @item BAT *
- * @tab BATsdiff (BAT *b, BAT *c)
  * @item BAT *
  * @tab BATkdiff (BAT *b, BAT *c)
  * @end multitable
@@ -3287,16 +3279,10 @@ gdk_export int BATtopN(BAT *b, BUN topN);	/* used in monet5/src/modules/kernel/a
  * implementations.  TODO: add this for
  * semijoin/select/unique/diff/intersect
  *
- * The routine BATsunique considers both dimensions in the double
- * elimination it performs; it produces a set.  The routine BATtunique
- * considers only the head column, and produces a unique head column.
+ * The routine BATtunique considers only the head column, and produces
+ * a unique head column.
  *
- * BATs that satisfy the set property can be further processed with
- * the set operations BATsunion, BATsintersect, and BATsdiff.  The
- * same operations are also available in versions that only look at
- * the head column:BATkunion, BATkdiff, and BATkintersect (which
- * shares its implementation with BATsemijoin).  @- modes for
- * thethajoin
+ * @- modes for thethajoin
  */
 #define JOIN_EQ		0
 #define JOIN_LT		(-1)
@@ -3343,13 +3329,9 @@ gdk_export BAT *BATleftfetchjoin(BAT *b, BAT *s, BUN estimate);
 
 gdk_export BAT *BATsubunique(BAT *b, BAT *s);
 
-gdk_export BAT *BATsunique(BAT *b);
 gdk_export BAT *BATkunique(BAT *b);
-gdk_export BAT *BATsintersect(BAT *b, BAT *c);
 gdk_export BAT *BATkintersect(BAT *b, BAT *c);
-gdk_export BAT *BATsunion(BAT *b, BAT *c);
 gdk_export BAT *BATkunion(BAT *b, BAT *c);
-gdk_export BAT *BATsdiff(BAT *b, BAT *c);
 gdk_export BAT *BATkdiff(BAT *b, BAT *c);
 
 gdk_export BAT *BATmergecand(BAT *a, BAT *b);

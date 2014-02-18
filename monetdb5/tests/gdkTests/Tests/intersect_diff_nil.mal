@@ -21,17 +21,7 @@ io.print(ka);
 ka:= algebra.kintersect(b,a);
 io.print(ka);
 
-ka:= algebra.sintersect(a,b);
-io.print(ka);
-ka:= algebra.sintersect(b,a);
-io.print(ka);
-
 ka:= algebra.kdifference(a,b);
 io.print(ka);
 ka:= algebra.kdifference(b,a);
-io.print(ka);
-
-ka:= algebra.sdifference(a,b);
-io.print(ka);
-ka:= algebra.sdifference(b,a);
 io.print(ka);

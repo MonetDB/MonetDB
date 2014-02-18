@@ -31,12 +31,6 @@
 	cb_a := io.print(b);
 	db_a := bat.reverse(c);
 	eb_a := io.print(db_a);
-	d := algebra.intersect(c,b);
-	gb_a := io.print(d);
-	e := algebra.difference(c,d);
-	ib_a := io.print(e);
-	f := algebra.union(e,b);
-	jb_a := io.print(f);
 	marcel := algebra.kunion(b,b);
 	kb_a := io.print(marcel);
 	lb_a := clients.quit();

@@ -2394,8 +2394,6 @@ command algebra.copy(b:bat[:any_1,:any_2]):bat[:any_1,:any_2]
 address ALGcopy;
 comment Returns physical copy of a BAT.
 
-command algebra.difference(left:bat[:any_1,:any_2],right:bat[:any_1,:any_2]):bat[:any_1,:any_2] 
-address ALGsdiff;
 command algebra.exist(b:bat[:oid,:any_1],val:any_1):bit 
 address ALGexist;
 comment Returns whether 'val' occurs in b.
@@ -2424,8 +2422,6 @@ command algebra.indexjoin(left:bat[:any_1,:any_2],right:bat[:any_2,:any_3]):bat[
 address ALGindexjoin;
 comment Hook directly into the index implementation of the join.
 
-command algebra.intersect(left:bat[:any_1,:any_2],right:bat[:any_1,:any_2]):bat[:any_1,:any_2] 
-address ALGsintersect;
 pattern algebra.joinPath(l:bat[:any,:any]...):bat[:oid,:any] 
 address ALGjoinPath;
 comment Routine to handle join paths.  The type analysis is rather tricky.
@@ -2448,7 +2444,7 @@ comment Returns 2 columns with all BUNs, consisting of the head-oids 	  from 'le
 
 command algebra.kunion(left:bat[:any_1,:any_2],right:bat[:any_1,:any_2]):bat[:any_1,:any_2] 
 address ALGkunion;
-comment Returns the union of two BATs; looking at head-columns only. 		Results in all BUNs of 'left' that are  not in 'right', plus 	all BUNs of 'right'.  *no* double-elimination is done. 		If you want this, do:	'kunion(left.kunique,right.kunique)' 	or: 'sunion(left,right).kunique'.
+comment Returns the union of two BATs; looking at head-columns only.		Results in all BUNs of 'left' that are  not in 'right', plus	all BUNs of 'right'.  *no* double-elimination is done.
 
 command algebra.kdifference(left:bat[:any_1,:any_2],right:bat[:any_1,:any]):bat[:any_1,:any_2] 
 address ALGkdiff;
@@ -2591,21 +2587,9 @@ command algebra.subjoin(l:bat[:oid,:any_1],r:bat[:oid,:any_1],sl:bat[:oid,:oid],
 address ALGsubjoin;
 comment Join
 
-command algebra.sunion(left:bat[:any_1,:any_2],right:bat[:any_1,:any_2]):bat[:any_1,:any_2] 
-address ALGsunion;
-comment Returns the union of two BATs; looking at both columns of both BATs.		Results in all BUNs of 'left' that are  not in 'right', plus all 		BUNs of 'right'.  *no* double-elimination is done. 		If you want this, do:	 'sunion(left.sunique,right.sunique)' 	or: 'sunion(left,right).sunique'.
-
-command algebra.sdifference(left:bat[:any_1,:any_2],right:bat[:any_1,:any_2]):bat[:any_1,:any_2] 
-address ALGsdiff;
-comment Returns the difference taken over *both* columns of two BATs. 		Results in all BUNs of 'left' that are *not* in 'right'. 		Does *not* do double-elimination over the 'left' BUNs. 		If you want this, use:		 'sdifference(left.sunique,right.sunique)' 	or: 'sdifference(left,right).sunique'.
-
 command algebra.semijoin(left:bat[:any_1,:any_2],right:bat[:any_1,:any]):bat[:any_1,:any_2] 
 address ALGsemijoin;
 comment Returns the intersection taken over only the *head* columns of 		two BATs.  Results in all BUNs of 'left' that are also in 'right'. 		Does *not* do double-elimination over the 'left' BUNs. 		If you want this, use: 'kintersect(kunique(left),kunique(right))' 	or: 'kunique(kintersect(left,right))'.
-
-command algebra.sintersect(left:bat[:any_1,:any_2],right:bat[:any_1,:any_2]):bat[:any_1,:any_2] 
-address ALGsintersect;
-comment Returns the intersection taken over *both* columns of two BATs. 		Results in all BUNs of 'left' that are also in 'right'. Does *not* 		do double-elimination over the 'left' BUNs, If you want this, use:	 'sintersect(sunique(left),sunique(right))' 	or: 'sunique(sintersect(left,right))'.
 
 command algebra.subunique(b:bat[:oid,:any_1]):bat[:oid,:oid] 
 address ALGsubunique1;
@@ -2614,10 +2598,6 @@ comment Select all unique values from the tail of the input.	Input is a dense-he
 command algebra.subunique(b:bat[:oid,:any_1],s:bat[:oid,:oid]):bat[:oid,:oid] 
 address ALGsubunique2;
 comment Select all unique values from the tail of the first input.	Input is a dense-headed BAT, the second input is a	dense-headed BAT with sorted tail, output is a dense-headed	BAT with in the tail the head value of the input BAT that was	selected.  The output BAT is sorted on the tail value.  The	second input BAT is a list of candidates.
-
-command algebra.sunique(b:bat[:any_1,:any_2]):bat[:any_1,:any_2] 
-address ALGsunique;
-comment Select unique tuples from the input BAT. Double elimination is 		done over BUNs as a whole (head and tail).  Result is a BAT 	with real set() semantics.
 
 command algebra.subsort(b:bat[:oid,:any_1],o:bat[:oid,:oid],g:bat[:oid,:oid],reverse:bit,stable:bit) (X_6:bat[:oid,:any_1],X_7:bat[:oid,:oid],X_8:bat[:oid,:oid]) 
 address ALGsubsort33;
@@ -2795,10 +2775,6 @@ command algebra.thetasubselect(b:bat[:oid,:any_1],val:any_1,op:str):bat[:oid,:oi
 address ALGthetasubselect1;
 comment Select all head values for which the tail value obeys the relation	value OP VAL.	Input is a dense-headed BAT, output is a dense-headed BAT with in	the tail the head value of the input BAT for which the	relationship holds.  The output BAT is sorted on the tail value.
 
-command algebra.union(left:bat[:any_1,:any_2],right:bat[:any_1,:any_2]):bat[:any_1,:any_2] 
-address ALGsunion;
-command algebra.unique(b:bat[:any_1,:any_2]):bat[:any_1,:any_2] 
-address ALGsunique;
 command algebra.uselect(b:bat[:any_1,:any_2],value:any_2):bat[:any_1,:void] 
 address ALGuselect1;
 comment Value select, but returning only the 	head values. SEE ALSO:select(bat,val)
