@@ -51,7 +51,7 @@ static BAT *
 lock_desc(bat bid)
 {
 	BBPfix(bid);
-	return BBPquickdesc(bid, 0);
+	return BBPquickdesc(ABS(bid), 0);
 }
 
 static void
