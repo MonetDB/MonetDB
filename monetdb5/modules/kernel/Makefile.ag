@@ -42,20 +42,19 @@ lib_kernel = {
 		microbenchmark.c microbenchmark.h \
 		mmath.c mmath.h \
 		sema.c \
-		status.c status.h \
-		unix.c
+		status.c status.h 
 }
 
 headers_mal = {
 	HEADERS = mal
 	DIR = libdir/monetdb5
-	SOURCES = bat5.mal algebra.mal status.mal unix.mal \
+	SOURCES = bat5.mal algebra.mal status.mal \
 		mmath.mal lock.mal sema.mal alarm.mal batstr.mal \
 		batcolor.mal batmmath.mal \
 		group.mal aggr.mal array.mal \
 		counters.mal logger.mal microbenchmark.mal
 }
 
-EXTRA_DIST = alarm.mal counters.mal lock.mal logger.mal microbenchmark.mal sema.mal unix.mal aggr.mal group.mal algebra.mal
+EXTRA_DIST = alarm.mal counters.mal lock.mal logger.mal microbenchmark.mal sema.mal aggr.mal group.mal algebra.mal
 
 EXTRA_DIST_DIR = Tests

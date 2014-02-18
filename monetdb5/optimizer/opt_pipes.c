@@ -79,7 +79,7 @@ struct PIPELINES {
 	 "optimizer.mergetable();"
 	 "optimizer.deadcode();"
 	 "optimizer.commonTerms();"
-	 "optimizer.groups();"
+	 //"optimizer.groups();"
 	 "optimizer.joinPath();"
 	 "optimizer.reorder();"
 	 "optimizer.deadcode();"

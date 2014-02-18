@@ -74,7 +74,6 @@ INSPECTgetAllFunctions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if (s->subscope[i]) {
 				for (t = s->subscope[i]; t; t = t->peer) {
 					InstrPtr sig = getSignature(t);
-
 					BUNappend(b, getFunctionId(sig), FALSE);
 				}
 			}
@@ -137,7 +136,6 @@ INSPECTgetkind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				for (t = s->subscope[i]; t; t = t->peer) {
 					InstrPtr sig = getSignature(t);
 					str kind = operatorName(sig->token);
-
 					BUNappend(b, kind, FALSE);
 				}
 			}
@@ -161,7 +159,6 @@ INSPECTgetAllSignatures(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int *ret = (int *) getArgReference(stk,pci,0);
 
 	(void)mb;
-
 	if (b == 0)
 		throw(MAL, "inspect.get", MAL_MALLOC_FAIL);
 	BATseqbase(b, 0);
@@ -456,7 +453,7 @@ INSPECTgetEnvironment(int *ret, int *ret2)
 	if (bn == 0){
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "inspect.getEnvironment", MAL_MALLOC_FAIL);
-	}
+ 	}
 	b = BATmirror(b);
 	BATseqbase(b,0);
 	bn = BATmirror(bn);
@@ -470,7 +467,12 @@ INSPECTgetEnvironment(int *ret, int *ret2)
 str
 INSPECTgetEnvironmentKey(str *ret, str *key)
 {
-	str s = GDKgetenv(*key);
+	str s;
+	*ret = 0;
+
+	s= GDKgetenv(*key);
+	if (s == 0)
+		s= getenv(*key);
 	if (s == 0)
 		throw(MAL, "inspect.getEnvironment", "environment variable '%s' not found", *key);
 	*ret = GDKstrdup(s);
