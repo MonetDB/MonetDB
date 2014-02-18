@@ -1,0 +1,40 @@
+-- volatile status
+
+io.printf("#Global cpu usage information\n");
+(bs,bi):= status.cpuStatistics();
+io.print(bs,bi);
+
+io.printf("#Global memory usage information\n");
+(bs,bw):= status.memStatistics();
+io.print(bs,bw);
+
+io.printf("#Global IO activity information\n");
+(bs,bi):= status.ioStatistics();
+io.print(bs,bi);
+
+io.printf("#Get a split-up of how much virtual memory blocks are in use\n");
+(bs,bl):= status.vmStatistics(0:lng);
+io.print(bs,bl);
+
+io.print("#Get a split-up of how much memory blocks are in use\n");
+(bs,bl):=status.memUsage(0:lng);
+io.print(bs,bl);
+
+(bs,cs):= status.batStatistics();
+io.printf("#Show distribution of bats by kind\n");
+io.print(bs,cs);
+
+io.printf("#Produce overview of active threads\n");
+(bi,bs):= status.getThreads();
+io.print(bi,bs);
+
+l:= status.mem_cursize();
+io.printf("#The amount of physical swapspace in KB that is currently in use: %d\n",l);
+
+status.mem_maxsize(0:lng);
+
+l:= status.vm_cursize();
+io.printf("#The amount of logical VM space in KB that is currently in use :%d\n",l);
+
+status.vm_maxsize(0:lng);
+
