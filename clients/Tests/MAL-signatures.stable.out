@@ -2607,6 +2607,14 @@ command algebra.sintersect(left:bat[:any_1,:any_2],right:bat[:any_1,:any_2]):bat
 address ALGsintersect;
 comment Returns the intersection taken over *both* columns of two BATs. 		Results in all BUNs of 'left' that are also in 'right'. Does *not* 		do double-elimination over the 'left' BUNs, If you want this, use:	 'sintersect(sunique(left),sunique(right))' 	or: 'sunique(sintersect(left,right))'.
 
+command algebra.subunique(b:bat[:oid,:any_1]):bat[:oid,:oid] 
+address ALGsubunique1;
+comment Select all unique values from the tail of the input.	Input is a dense-headed BAT, output is a dense-headed BAT with	in the tail the head value of the input BAT that was selected.	The output BAT is sorted on the tail value.
+
+command algebra.subunique(b:bat[:oid,:any_1],s:bat[:oid,:oid]):bat[:oid,:oid] 
+address ALGsubunique2;
+comment Select all unique values from the tail of the first input.	Input is a dense-headed BAT, the second input is a	dense-headed BAT with sorted tail, output is a dense-headed	BAT with in the tail the head value of the input BAT that was	selected.  The output BAT is sorted on the tail value.  The	second input BAT is a list of candidates.
+
 command algebra.sunique(b:bat[:any_1,:any_2]):bat[:any_1,:any_2] 
 address ALGsunique;
 comment Select unique tuples from the input BAT. Double elimination is 		done over BUNs as a whole (head and tail).  Result is a BAT 	with real set() semantics.

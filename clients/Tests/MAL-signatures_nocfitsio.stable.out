@@ -138,31 +138,31 @@ command aggr.avg(b:bat[:oid,:bte],e:bat[:oid,:any_1]):bat[:oid,:dbl]
 address AGGRavg12_dbl;
 comment Grouped tail average on bte
 
-command aggr.avg(b:bat[:any_1,:dbl]):dbl 
+command aggr.avg(b:bat[:oid,:dbl]):dbl 
 address ALGavg;
 comment Gives the avg of all tail values
 
-command aggr.avg(b:bat[:any_1,:flt]):dbl 
+command aggr.avg(b:bat[:oid,:flt]):dbl 
 address ALGavg;
 comment Gives the avg of all tail values
 
-command aggr.avg(b:bat[:any_1,:lng]):dbl 
+command aggr.avg(b:bat[:oid,:lng]):dbl 
 address ALGavg;
 comment Gives the avg of all tail values
 
-command aggr.avg(b:bat[:any_1,:wrd]):dbl 
+command aggr.avg(b:bat[:oid,:wrd]):dbl 
 address ALGavg;
 comment Gives the avg of all tail values
 
-command aggr.avg(b:bat[:any_1,:int]):dbl 
+command aggr.avg(b:bat[:oid,:int]):dbl 
 address ALGavg;
 comment Gives the avg of all tail values
 
-command aggr.avg(b:bat[:any_1,:sht]):dbl 
+command aggr.avg(b:bat[:oid,:sht]):dbl 
 address ALGavg;
 comment Gives the avg of all tail values
 
-command aggr.avg(b:bat[:any_1,:bte]):dbl 
+command aggr.avg(b:bat[:oid,:bte]):dbl 
 address ALGavg;
 comment Gives the avg of all tail values
 
@@ -214,7 +214,7 @@ command aggr.count(b:bat[:oid,:any_1],e:bat[:oid,:any_2],ignorenils:bit):bat[:oi
 address AGGRcount2;
 comment Grouped count
 
-command aggr.cardinality(b:bat[:any_1,:any_2]):lng 
+command aggr.cardinality(b:bat[:oid,:any_2]):lng 
 address ALGcard;
 comment Return the cardinality of the BAT tail values.
 
@@ -230,7 +230,7 @@ command aggr.count(b:bat[:any_1,:any]):wrd
 address ALGcount_bat;
 comment Return the current size (in number of elements) in a BAT.
 
-command aggr.exist(b:bat[:any_1,:any_2],h:any_1):bit 
+command aggr.exist(b:bat[:oid,:any_2],h:any_1):bit 
 address ALGexist;
 command aggr.histogram(b:bat[:any_1,:any_2]):bat[:any_2,:int] 
 address ALGhistogram;
@@ -2130,59 +2130,59 @@ pattern aggr.sum(b:bat[:oid,:bte]):bte
 address CMDBATsum;
 comment Calculate aggregate sum of B.
 
-command aggr.stdevp(b:bat[:any_1,:dbl]):dbl 
+command aggr.stdevp(b:bat[:oid,:dbl]):dbl 
 address ALGstdevp;
 comment Gives the standard deviation of all tail values
 
-command aggr.stdev(b:bat[:any_1,:dbl]):dbl 
+command aggr.stdev(b:bat[:oid,:dbl]):dbl 
 address ALGstdev;
 comment Gives the standard deviation of all tail values
 
-command aggr.stdevp(b:bat[:any_1,:flt]):dbl 
+command aggr.stdevp(b:bat[:oid,:flt]):dbl 
 address ALGstdevp;
 comment Gives the standard deviation of all tail values
 
-command aggr.stdev(b:bat[:any_1,:flt]):dbl 
+command aggr.stdev(b:bat[:oid,:flt]):dbl 
 address ALGstdev;
 comment Gives the standard deviation of all tail values
 
-command aggr.stdevp(b:bat[:any_1,:lng]):dbl 
+command aggr.stdevp(b:bat[:oid,:lng]):dbl 
 address ALGstdevp;
 comment Gives the standard deviation of all tail values
 
-command aggr.stdev(b:bat[:any_1,:lng]):dbl 
+command aggr.stdev(b:bat[:oid,:lng]):dbl 
 address ALGstdev;
 comment Gives the standard deviation of all tail values
 
-command aggr.stdevp(b:bat[:any_1,:wrd]):dbl 
+command aggr.stdevp(b:bat[:oid,:wrd]):dbl 
 address ALGstdevp;
 comment Gives the standard deviation of all tail values
 
-command aggr.stdev(b:bat[:any_1,:wrd]):dbl 
+command aggr.stdev(b:bat[:oid,:wrd]):dbl 
 address ALGstdev;
 comment Gives the standard deviation of all tail values
 
-command aggr.stdevp(b:bat[:any_1,:int]):dbl 
+command aggr.stdevp(b:bat[:oid,:int]):dbl 
 address ALGstdevp;
 comment Gives the standard deviation of all tail values
 
-command aggr.stdev(b:bat[:any_1,:int]):dbl 
+command aggr.stdev(b:bat[:oid,:int]):dbl 
 address ALGstdev;
 comment Gives the standard deviation of all tail values
 
-command aggr.stdevp(b:bat[:any_1,:sht]):dbl 
+command aggr.stdevp(b:bat[:oid,:sht]):dbl 
 address ALGstdevp;
 comment Gives the standard deviation of all tail values
 
-command aggr.stdev(b:bat[:any_1,:sht]):dbl 
+command aggr.stdev(b:bat[:oid,:sht]):dbl 
 address ALGstdev;
 comment Gives the standard deviation of all tail values
 
-command aggr.stdevp(b:bat[:any_1,:bte]):dbl 
+command aggr.stdevp(b:bat[:oid,:bte]):dbl 
 address ALGstdevp;
 comment Gives the standard deviation of all tail values
 
-command aggr.stdev(b:bat[:any_1,:bte]):dbl 
+command aggr.stdev(b:bat[:oid,:bte]):dbl 
 address ALGstdev;
 comment Gives the standard deviation of all tail values
 
@@ -2298,59 +2298,59 @@ command aggr.variance(b:bat[:oid,:bte],e:bat[:oid,:any_1]):bat[:oid,:dbl]
 address AGGRvariance2_dbl;
 comment Grouped tail variance (sample/non-biased) on bte
 
-command aggr.variancep(b:bat[:any_1,:dbl]):dbl 
+command aggr.variancep(b:bat[:oid,:dbl]):dbl 
 address ALGvariancep;
 comment Gives the variance of all tail values
 
-command aggr.variance(b:bat[:any_1,:dbl]):dbl 
+command aggr.variance(b:bat[:oid,:dbl]):dbl 
 address ALGvariance;
 comment Gives the variance of all tail values
 
-command aggr.variancep(b:bat[:any_1,:flt]):dbl 
+command aggr.variancep(b:bat[:oid,:flt]):dbl 
 address ALGvariancep;
 comment Gives the variance of all tail values
 
-command aggr.variance(b:bat[:any_1,:flt]):dbl 
+command aggr.variance(b:bat[:oid,:flt]):dbl 
 address ALGvariance;
 comment Gives the variance of all tail values
 
-command aggr.variancep(b:bat[:any_1,:lng]):dbl 
+command aggr.variancep(b:bat[:oid,:lng]):dbl 
 address ALGvariancep;
 comment Gives the variance of all tail values
 
-command aggr.variance(b:bat[:any_1,:lng]):dbl 
+command aggr.variance(b:bat[:oid,:lng]):dbl 
 address ALGvariance;
 comment Gives the variance of all tail values
 
-command aggr.variancep(b:bat[:any_1,:wrd]):dbl 
+command aggr.variancep(b:bat[:oid,:wrd]):dbl 
 address ALGvariancep;
 comment Gives the variance of all tail values
 
-command aggr.variance(b:bat[:any_1,:wrd]):dbl 
+command aggr.variance(b:bat[:oid,:wrd]):dbl 
 address ALGvariance;
 comment Gives the variance of all tail values
 
-command aggr.variancep(b:bat[:any_1,:int]):dbl 
+command aggr.variancep(b:bat[:oid,:int]):dbl 
 address ALGvariancep;
 comment Gives the variance of all tail values
 
-command aggr.variance(b:bat[:any_1,:int]):dbl 
+command aggr.variance(b:bat[:oid,:int]):dbl 
 address ALGvariance;
 comment Gives the variance of all tail values
 
-command aggr.variancep(b:bat[:any_1,:sht]):dbl 
+command aggr.variancep(b:bat[:oid,:sht]):dbl 
 address ALGvariancep;
 comment Gives the variance of all tail values
 
-command aggr.variance(b:bat[:any_1,:sht]):dbl 
+command aggr.variance(b:bat[:oid,:sht]):dbl 
 address ALGvariance;
 comment Gives the variance of all tail values
 
-command aggr.variancep(b:bat[:any_1,:bte]):dbl 
+command aggr.variancep(b:bat[:oid,:bte]):dbl 
 address ALGvariancep;
 comment Gives the variance of all tail values
 
-command aggr.variance(b:bat[:any_1,:bte]):dbl 
+command aggr.variance(b:bat[:oid,:bte]):dbl 
 address ALGvariance;
 comment Gives the variance of all tail values
 
@@ -2396,17 +2396,9 @@ comment Returns physical copy of a BAT.
 
 command algebra.difference(left:bat[:any_1,:any_2],right:bat[:any_1,:any_2]):bat[:any_1,:any_2] 
 address ALGsdiff;
-command algebra.exist(b:bat[:any_1,:any_2],h:any_1,t:any_2):bit 
-address ALGexistBUN;
-comment Returns true when 'h,t' occurs as a bun in b.
-
-command algebra.exist(b:bat[:any_1,:any_2],h:any_1):bit 
+command algebra.exist(b:bat[:oid,:any_1],val:any_1):bit 
 address ALGexist;
-comment Returns whether 'h' occurs as a head value in b.
-
-command algebra.fragment(b:bat[:any_1,:any_2],hlow:any_1,hhigh:any_1,tlow:any_2,thigh:any_2):bat[:any_1,:any_2] 
-address ALGfragment;
-comment Select both on head and tail range.
+comment Returns whether 'val' occurs in b.
 
 command algebra.fetch(b:bat[:any_2,:any_1],x:int):any_1 
 address ALGfetchint;
@@ -2501,7 +2493,7 @@ command algebra.leftjoin(left:bat[:any_1,:any_2],right:bat[:any_2,:any_3],estima
 address ALGleftjoinestimate;
 command algebra.leftjoin(left:bat[:any_1,:any_2],right:bat[:any_2,:any_3]):bat[:any_1,:any_3] 
 address ALGleftjoin;
-command algebra.like(b:bat[:any_1,:str],substr:str):bat[:any_1,:str] 
+command algebra.like(b:bat[:oid,:str],substr:str):bat[:oid,:str] 
 address ALGlike;
 comment Selects all elements that have 'substr' as in the tail.
 
@@ -2571,15 +2563,7 @@ command algebra.project(b:bat[:any_1,:any_2]):bat[:any_1,:void]
 address ALGprojectNIL;
 comment Extract the head of a BAT.
 
-command algebra.position(b:bat[:any_1,:any_2],val:any_1,tval:any_2):wrd 
-address ALGpositionBUN;
-comment Returns the position of the value pair It returns an 	error if 'val' does not exist.
-
-command algebra.position(b:bat[:any_1,:any_2],v:any_1):wrd 
-address ALGposition;
-comment Returns BAT position [0.. b.count] of 'v' in the head 	column of b. It Return an error if 'v' does not exist.
-
-command algebra.reuse(b:bat[:any_1,:any_2]):bat[:any_1,:any_2] 
+command algebra.reuse(b:bat[:oid,:any_2]):bat[:oid,:any_2] 
 address ALGreuse;
 comment Reuse a temporary BAT if you can. Otherwise,	allocate enough storage to accept result of an 	operation (not involving the heap)
 
@@ -2622,6 +2606,14 @@ comment Returns the intersection taken over only the *head* columns of 		two BAT
 command algebra.sintersect(left:bat[:any_1,:any_2],right:bat[:any_1,:any_2]):bat[:any_1,:any_2] 
 address ALGsintersect;
 comment Returns the intersection taken over *both* columns of two BATs. 		Results in all BUNs of 'left' that are also in 'right'. Does *not* 		do double-elimination over the 'left' BUNs, If you want this, use:	 'sintersect(sunique(left),sunique(right))' 	or: 'sunique(sintersect(left,right))'.
+
+command algebra.subunique(b:bat[:oid,:any_1]):bat[:oid,:oid] 
+address ALGsubunique1;
+comment Select all unique values from the tail of the input.	Input is a dense-headed BAT, output is a dense-headed BAT with	in the tail the head value of the input BAT that was selected.	The output BAT is sorted on the tail value.
+
+command algebra.subunique(b:bat[:oid,:any_1],s:bat[:oid,:oid]):bat[:oid,:oid] 
+address ALGsubunique2;
+comment Select all unique values from the tail of the first input.	Input is a dense-headed BAT, the second input is a	dense-headed BAT with sorted tail, output is a dense-headed	BAT with in the tail the head value of the input BAT that was	selected.  The output BAT is sorted on the tail value.  The	second input BAT is a list of candidates.
 
 command algebra.sunique(b:bat[:any_1,:any_2]):bat[:any_1,:any_2] 
 address ALGsunique;
@@ -2889,7 +2881,7 @@ command array.project(b:bat[:oid,:any_1],i:int):bat[:oid,:int]
 address ARRAYproject;
 comment Fill an array representation with constants 
 
-command array.product(b:bat[:any_3,:any_1],c:bat[:any_4,:any_2]):bat[:any_1,:any_2] 
+command array.product(b:bat[:oid,:any_1],c:bat[:oid,:any_2]) (X_3:bat[:oid,:any_1],c:bat[:oid,:any_2]) 
 address ARRAYproduct;
 comment Produce an array product
 
@@ -31772,11 +31764,11 @@ command bat.densebat(size:wrd):bat[:void,:void]
 address BKCdensebat;
 comment Creates a new [void,void] BAT of size 'size'.
 
-command bat.getHeat(b:bat[:any_1,:any_2]):lng 
+command bat.getHeat(b:bat[:oid,:any_2]):lng 
 address BKCheat;
 comment Return the current BBP heat (LRU stamp)
 
-command bat.getName(b:bat[:any_1,:any_2]):str 
+command bat.getName(b:bat[:oid,:any_2]):str 
 address BKCgetBBPname;
 comment Gives back the logical name of a BAT.
 
@@ -31804,11 +31796,11 @@ command bat.getAccess(b:bat[:any_1,:any_2]):str
 address BKCgetAccess;
 comment return the access mode attached to this BAT as a character.
 
-command bat.getRole(bid:bat[:any_1,:any_2]):str 
+command bat.getRole(bid:bat[:oid,:any_2]):str 
 address BKCgetRole;
 comment Returns the rolename of the head column of a BAT.
 
-command bat.getTailType(b:bat[:any_1,:any_2]):str 
+command bat.getTailType(b:bat[:oid,:any_2]):str 
 address BKCgetTailType;
 comment Returns the type of the tail column of a BAT, as an integer type number.
 
@@ -31816,19 +31808,19 @@ command bat.getHeadType(b:bat[:any_1,:any_2]):str
 address BKCgetHeadType;
 comment Returns the type of the head column of a BAT, as an integer type number.
 
-command bat.getCapacity(b:bat[:any_1,:any_2]):lng 
+command bat.getCapacity(b:bat[:oid,:any_2]):lng 
 address BKCgetCapacity;
 comment Returns the current allocation size (in max number of elements) of a BAT.
 
-command bat.getDiskSize(b:bat[:any_1,:any_2]):lng 
+command bat.getDiskSize(b:bat[:oid,:any_2]):lng 
 address BKCbatdisksize;
 comment Approximate size of the (persistent) BAT heaps as stored on disk in pages of 512 bytes. Indices are not included, as they only live temporarilyin virtual memory.
 
-command bat.getMemorySize(b:bat[:any_1,:any_2]):lng 
+command bat.getMemorySize(b:bat[:oid,:any_2]):lng 
 address BKCbatvmsize;
 comment Calculate the size of the BAT heaps and indices in bytesrounded to the memory page size (see bbp.getPageSize()).
 
-command bat.getSize(b:bat[:any_1,:any_2]):lng 
+command bat.getSize(b:bat[:oid,:any_2]):lng 
 address BKCbatsize;
 comment Calculate the size of the BAT descriptor, heaps and indices in bytes.
 
@@ -31876,17 +31868,17 @@ command bat.intersectcand(a:bat[:oid,:oid],b:bat[:oid,:oid]):bat[:oid,:oid]
 address BKCintersectcand;
 comment Intersect two candidate lists into one
 
-command bat.isSynced(b1:bat[:any_1,:any_2],b2:bat[:any_3,:any_4]):bit 
+command bat.isSynced(b1:bat[:oid,:any_2],b2:bat[:oid,:any_4]):bit 
 address BKCisSynced;
 comment Tests whether two BATs are synced or not. 
 
-command bat.isCached(b:bat[:any_1,:any_2]):bit 
+command bat.isCached(b:bat[:oid,:any_2]):bit 
 address BKCisCached;
 comment Bat is stored in main memory.
 
-command bat.isPersistent(b:bat[:any_1,:any_2]):bit 
+command bat.isPersistent(b:bat[:oid,:any_2]):bit 
 address BKCisPersistent;
-command bat.isTransient(b:bat[:any_1,:any_2]):bit 
+command bat.isTransient(b:bat[:oid,:any_2]):bit 
 address BKCisTransient;
 command bat.inplace(o:bat[:any_1,:any_2],d:bat[:any_1,:any_2],force:bit):bat[:any_1,:any_2] 
 address BKCbat_inplace_force;
@@ -31936,11 +31928,11 @@ command bat.isaKey(b:bat[:any_1,:any_2]):bit
 address BKCgetKey;
 comment return whether the head column of a BAT is unique (key).
 
-command bat.info(b:bat[:any_1,:any_2]) (X_2:bat[:oid,:str],X_3:bat[:oid,:str]) 
+command bat.info(b:bat[:oid,:any_2]) (X_2:bat[:oid,:str],X_3:bat[:oid,:str]) 
 address BKCinfo;
 comment Produce a BAT containing info about a BAT in [attribute,value] format.         It contains all properties of the BAT record. See the BAT documentation         in GDK for more information.
 
-command bat.load(name:str):bat[:any_1,:any_2] 
+command bat.load(name:str):bat[:oid,:any_2] 
 address BKCload;
 comment Load a particular BAT from disk
 
@@ -32028,29 +32020,31 @@ command bat.shrink(b:bat[:oid,:any_1],del:bat[:oid,:oid]):bat[:oid,:any_1]
 address BKCshrinkBAT;
 comment Shrink the BAT based on a list of entries identified as to-be-deleted
 
-command bat.setHash(b:bat[:any_1,:any_2],prop:bit):bit 
+command bat.setHash(b:bat[:oid,:any_2],prop:bit):bit 
 address BKCsetHash;
-command bat.setMemoryAdvise(b:bat[:any_1,:any_2],mode:int):bit 
+comment Create a hash structure on the column
+
+command bat.setMemoryAdvise(b:bat[:oid,:any_2],mode:int):bit 
 address BKCmadvise2;
 comment alias for madvise(b, mode, mode, mode, mode)
 
-command bat.setMemoryAdvise(b:bat[:any_1,:any_2],head_mode:int,tail_mode:int,hheap_mode:int,theap_mode:int):bit 
+command bat.setMemoryAdvise(b:bat[:oid,:any_2],head_mode:int,tail_mode:int,hheap_mode:int,theap_mode:int):bit 
 address BKCmadvise;
 comment Modern Operating Systems allow users to influence the buffer         management policy of virtual memory. This is a crucial feature         for database systems, and eliminates the need to reimplement 	the OS in a database buffer manager.  The supported flags are         BUF_NORMAL (the normal adaptive kernel algorithm),	BUF_RANDOM (no page prefetching), 	BUF_SEQUENTIAL (prefetch and swapout),	BUF_WILLNEED (load everything with prefetch), 	BUF_DONTNEED (swapout).	These buffer management modes are not persistent. 	Returns the BAT operated upon.
 
-command bat.setMemoryMap(b:bat[:any_1,:any_2],mode:int):bit 
+command bat.setMemoryMap(b:bat[:oid,:any_2],mode:int):bit 
 address BKCmmap2;
 comment Alias for mmap(b, mode, mode, mode, mode)
 
-command bat.setMemoryMap(b:bat[:any_1,:any_2],head_mode:int,tail_mode:int,hheap_mode:int,theap_mode:int):bit 
+command bat.setMemoryMap(b:bat[:oid,:any_2],head_mode:int,tail_mode:int,hheap_mode:int,theap_mode:int):bit 
 address BKCmmap;
 comment For each individual heap, you can change the allocation mode         to either STORE_MEM or STORE_MMAP. Passing an int(nil) means:        no change.  Changing a dirty STORE_MEM heap into STORE_MMAP, 	will cause a BAT save (this has to happen before the heap can         be mapped into virtual memory). These modes are persistent. 
 
-command bat.setHot(b:bat[:any_1,:any_2]):void 
+command bat.setHot(b:bat[:oid,:any_2]):void 
 address BKChotBAT;
 comment Makes a BAT very hot for the BBP. The chance of being chosen for         swapout is small, afterwards.
 
-command bat.setCold(b:bat[:any_1,:any_1]):void 
+command bat.setCold(b:bat[:oid,:any_1]):void 
 address BKCcoldBAT;
 comment Makes a BAT very cold for the BBP. The chance of being choses         for swapout is big, afterwards.
 
@@ -32058,33 +32052,33 @@ command bat.save(nme:str):bit
 address BKCsave;
 comment Save a BAT to storage, if it was loaded and dirty.          Returns whether IO was necessary.  Please realize that 	calling this function violates the atomic commit protocol!!
 
-command bat.save(nme:bat[:any_1,:any_2]):void 
+command bat.save(nme:bat[:oid,:any_2]):void 
 address BKCsave2;
-command bat.setPersistent(b:bat[:any_1,:any_2]):void 
+command bat.setPersistent(b:bat[:oid,:any_2]):void 
 address BKCsetPersistent;
 comment Make the BAT persistent.
 
-command bat.setPersistent(b:bat[:any_1,:any_2],f:bit):void 
+command bat.setPersistent(b:bat[:oid,:any_2],f:bit):void 
 address BKCpersists;
 comment Backward compatibility
 
-command bat.setTransient(b:bat[:any_1,:any_2]):void 
+command bat.setTransient(b:bat[:oid,:any_2]):void 
 address BKCsetTransient;
 comment Make the BAT transient.  Returns 	boolean which indicates if theBAT administration has indeed changed.
 
-command bat.setColumn(b:bat[:any_1,:any_2],h:str,t:str):void 
+command bat.setColumn(b:bat[:oid,:any_2],h:str,t:str):void 
 address BKCsetColumns;
 comment Give both columns of a BAT a new name.
 
-command bat.setColumn(b:bat[:any_1,:any_2],t:str):void 
+command bat.setColumn(b:bat[:oid,:any_2],t:str):void 
 address BKCsetColumn;
 comment Give a logical name to the tail column of a BAT.
 
-command bat.setRole(b:bat[:any_1,:any_2],h:str,t:str):void 
+command bat.setRole(b:bat[:oid,:any_2],h:str,t:str):void 
 address BKCsetRole;
 comment Give a logical name to the columns of a BAT.
 
-command bat.setName(b:bat[:any_1,:any_2],s:str):void 
+command bat.setName(b:bat[:oid,:any_2],s:str):void 
 address BKCsetName;
 comment Give a logical name to a BAT. 
 
@@ -32116,14 +32110,6 @@ command bat.unload(name:str):bit
 address BKCunload;
 comment Swapout a BAT to disk. Transient BATs can also be swapped out.             Returns whether the unload indeed happened. 
 
-pattern bbp.bind(idx:int):bat[:oid,:any_2] 
-address CMDbbpbindindex;
-comment Locate the BAT using its BBP index in the BAT buffer pool
-
-pattern bbp.bind(head:str,tail:str):bat[:oid,:any_2] 
-address CMDbbpbind2;
-comment Locate the BAT using the head and tail names in the BAT buffer pool
-
 pattern bbp.bind(name:str):bat[:oid,:any_2] 
 address CMDbbpbind;
 comment Locate the BAT using its logical name
@@ -32132,45 +32118,9 @@ command bbp.compress(b:bat[:oid,:any_2],fnme:str):bat[:oid,:any_2]
 address CMDbbpcompress;
 comment Generate a compressed image of the BAT on a specific file
 
-pattern bbp.commit():void 
-address CMDbbpReleaseAll;
-comment Commit updates for this client.
-
-command bbp.commit(b:bat[:oid,:any_2]):void 
-address CMDbbpSubCommit;
-comment Commit updates for single BAT.
-
-command bbp.close():void 
-address CMDbbpclose;
-comment Close the bbp box.
-
 command bbp.decompress(b:bat[:oid,:any_2],fnme:str):bat[:oid,:any_2] 
 address CMDbbpdecompress;
 comment Obtain a temporary decompressed image of a BAT from a specific file
-
-pattern bbp.discard(name:str):void 
-address CMDbbpdiscard;
-comment Remove the BAT from the box.
-
-pattern bbp.destroy(b:bat[:oid,:any_2],immediate:bit):void 
-address CMDbbpdestroyBAT;
-comment Schedule a BAT for removal at session end or immediately.
-
-pattern bbp.destroy(b:bat[:oid,:any_2]):void 
-address CMDbbpdestroyBAT1;
-comment Schedule a BAT for removal at session end.
-
-pattern bbp.deposit(name:str,loc:str):bat[:oid,:any_2] 
-address CMDbbpbindDefinition;
-comment Relate a logical name to a physical BAT in the buffer pool.
-
-pattern bbp.deposit(name:str,v:bat[:oid,:any_2]):void 
-address CMDbbpdeposit;
-comment Enter a new bat into the bbp box.
-
-command bbp.destroy():void 
-address CMDbbpdestroy;
-comment Destroy the box
 
 command bbp.expand(b:bat[:oid,:any_2],fnme:str):bat[:oid,:any_2] 
 address CMDbbpexpand;
@@ -32184,11 +32134,11 @@ command bbp.getDiskSpace():lng
 address CMDbbpDiskSpace;
 comment Estimate the amount of disk space occupied by dbpath
 
-command bbp.getLRefCount(b:bat[:oid,:any_2]):int 
+command bbp.getLRefCount(b:bat[:oid,:any_1]):int 
 address CMDgetBATlrefcnt;
 comment Utility for debugging MAL interpreter
 
-command bbp.getRefCount(b:bat[:oid,:any_2]):int 
+command bbp.getRefCount(b:bat[:oid,:any_1]):int 
 address CMDgetBATrefcnt;
 comment Utility for debugging MAL interpreter
 
@@ -32224,7 +32174,7 @@ command bbp.getCount():bat[:oid,:lng]
 address CMDbbpCount;
 comment Create a BAT with the cardinalities of all known BATs
 
-command bbp.getName(b:bat[:oid,:any_2]):str 
+command bbp.getName(b:bat[:oid,:any_1]):str 
 address CMDbbpName;
 comment Map a BAT into its internal name
 
@@ -32232,61 +32182,17 @@ command bbp.get() (id:bat[:oid,:int],ns:bat[:oid,:str],ht:bat[:oid,:str],tt:bat[
 address CMDbbp;
 comment bpp
 
-command bbp.getRNames():bat[:oid,:str] 
-address CMDbbpRNames;
-comment Map a BAT into its bbp physical name
-
 command bbp.getNames():bat[:oid,:str] 
 address CMDbbpNames;
 comment Map BAT into its bbp name
-
-command bbp.getType():bat[:oid,:str] 
-address CMDbbpType;
-comment Map a BAT into its tail type
 
 command bbp.getIndex(b:bat[:oid,:any_2]):int 
 address CMDbbpgetIndex;
 comment Retrieve the index in the BBP
 
-pattern bbp.getObjects():bat[:oid,:str] 
-address CMDbbpGetObjects;
-comment View of the box content.
-
-pattern bbp.iterator(nme:str):lng 
-address CMDbbpiterator;
-comment Locate the next element in the box.
-
-command bbp.open():void 
-address CMDbbpopen;
-comment Locate the bbp box and open it.
-
-pattern bbp.prelude():void 
-address CMDbbpprelude;
-comment Initialize the bbp box.
-
-pattern bbp.release(b:bat[:oid,:any_2]):void 
-address CMDbbpreleaseBAT;
-comment Remove the BAT from further consideration
-
-pattern bbp.release(name:str,val:bat[:oid,:any_2]):void 
-address CMDbbprelease;
-comment Commit updates and release this BAT.
-
-pattern bbp.releaseAll():void 
-address CMDbbpReleaseAll;
-comment Commit updates for this client.
-
 command bbp.truncate(b:bat[:oid,:any_2],fnme:str):bat[:oid,:any_2] 
 address CMDbbptruncate;
 comment Truncate the heaps if a compressed image exist
-
-pattern bbp.toString(name:str):str 
-address CMDbbptoStr;
-comment Get the string representation of an element in the box.
-
-pattern bbp.take(name:str):bat[:oid,:any_2] 
-address CMDbbptake;
-comment Load a particular bat.
 
 command blob.blob(s:str):blob 
 address BLOBblob_fromstr;
@@ -32334,50 +32240,6 @@ command blob.#tostr():void
 address BLOBtostr;
 command blob.#write():void 
 address BLOBwrite;
-pattern box.close(bname:str):void 
-address BOXclose;
-comment Close the box.
-
-pattern box.discard(bname:str,name:str):void 
-address BOXdiscard;
-comment Release the BAT from the client pool.
-
-pattern box.deposit(bname:str,name:str,v:any_1):void 
-address BOXdeposit;
-comment Enter a new value into the box.
-
-pattern box.destroy(bname:str):void 
-address BOXdestroy;
-comment Destroy the box.
-
-command box.getBoxNames():bat[:int,:str] 
-address BOXgetBoxNames;
-comment Retrieve the names of all boxes.
-
-pattern box.iterator(nme:str):lng 
-address BOXiterator;
-comment Locates the next element in the box.
-
-pattern box.open(nme:str):any_1 
-address BOXopen;
-comment Locate the box and open it.
-
-pattern box.release(bname:str,nme:str,val:any_1):void 
-address BOXrelease;
-comment Release the BAT from the client pool.
-
-pattern box.releaseAll(bname:str):void 
-address BOXreleaseAll;
-comment Release all objects for this client.
-
-pattern box.toString(bname:str,name:str):str 
-address BOXtoString;
-comment Get the string representation of 	the i-th element in the box.
-
-pattern box.take(bnme:str,vnme:str):any_1 
-address BOXtake;
-comment Locate the typed value in the box.
-
 command bstream.create{unsafe}(s:streams,bufsize:int):bstream 
 address bstream_create_wrapwrap;
 comment create a buffered stream
@@ -36583,14 +36445,6 @@ comment Cast VALUE to flt
 
 function calc.geomcollection{unsafe}(wkt:str):wkb;
 function calc.geometry{unsafe}(wkt:str):wkb;
-command calc.getBAT(b:BAT):bat[:any_1,:any_2] 
-address CALCbat2batid;
-comment Coerce bat to BAT identifier
-
-command calc.getBATidentifier(b:bat[:any_1,:any_2]):BAT 
-address CALCbat2batid;
-comment Coerce bat to BAT identifier
-
 pattern calc.hash(v:any):wrd 
 address MKEYhash;
 pattern calc.hash(v:dbl):wrd 
@@ -38902,66 +38756,6 @@ command clients.wakeup(id:int):void
 address CLTwakeup;
 comment Wakeup a client process
 
-command constraints.emptySet(b:bat[:oid,:any_2]):void 
-address CemptySet;
-comment Check if the BAT is empty.
-
-pattern const.close():void 
-address CSTclose;
-comment Close the constant box.
-
-pattern const.discard(name:any_1):void 
-address CSTdiscard;
-comment Release the const from the box.
-
-pattern const.deposit(name:str,val:any_1):void 
-address CSTdeposit;
-comment Add a variable to the box.
-
-pattern const.destroy():void 
-address CSTdestroy;
-comment Destroy the box.
-
-command const.epiloque():void 
-address CSTepilogue;
-comment Cleanup the const box
-
-pattern const.hasMoreElements() (X_1:oid,X_2:str) 
-address CSThasMoreElements;
-comment Locate next element in the box.
-
-pattern const.newIterator() (X_1:oid,X_2:str) 
-address CSTnewIterator;
-comment Locate next element in the box.
-
-pattern const.open():void 
-address CSTopen;
-comment Locate and open the constant box.
-
-pattern const.prelude():void 
-address CSTprelude;
-comment Initialize the const box
-
-pattern const.release(name:any_1):void 
-address CSTrelease;
-comment Release a constant value.
-
-pattern const.release(name:str):void 
-address CSTrelease;
-comment Release a constant value.
-
-pattern const.releaseAll():void 
-address CSTreleaseAll;
-comment Release all variables in the box.
-
-pattern const.toString(name:any_1):str 
-address CSTtoString;
-comment Get the string representation of an element in the box.
-
-pattern const.take(name:str):any_1 
-address CSTtake;
-comment Take a variable out of the box.
-
 command color.blue(c:color):int 
 address CLRblue;
 comment Extracts blue component from a color atom
@@ -39102,34 +38896,6 @@ comment Nil test for date value
 
 command date.#tostr():str 
 address date_tostr;
-command dictionary.bind(nme:str) (idx:bat[:oid,:any_1],val:bat[:any_1,:any_2]) 
-address DICTbind;
-comment Localise the dictionary
-
-pattern dictionary.compress{unsafe}(s:str,b:bat[:any_1,:any_2]):void 
-address DICTcompress;
-comment Try to replace a table by its dictionary equivalent.
-
-command dictionary.decompress{unsafe}(nme:str):void 
-address DICTdecompress;
-comment Remove the dictionary entry
-
-command dictionary.encode(val:bat[:any_1,:any_2],b:bat[:oid,:any_2]):bat[:oid,:any_1] 
-address DICTencode;
-comment Use the dictionary to encode a table b.
-
-command dictionary.expand(val:bat[:any_1,:any_2],b:bat[:oid,:any_2]):bat[:any_1,:any_2] 
-address DICTexpand;
-comment Extend the dictionary with the values in b. This may trigger a partial recompilation of the MAL program when the storage type :any_1is not sufficient anymore.
-
-command dictionary.group(idx:bat[:oid,:any_1],val:bat[:any_1,:any_2]):bat[:oid,:any_2] 
-address DICTgroupid;
-comment Obtain a representative oid per value from the index
-
-command dictionary.initialize():void 
-address DICTinitialize;
-comment Intialize the dictionary catalog if needed
-
 command factories.getDeparture():bat[:oid,:timestamp] 
 address FCTgetDeparture;
 comment Retrieve the time stamp the last answer was returned.
@@ -39296,6 +39062,10 @@ command geom.point(x:dbl,y:dbl):wkb
 address wkbcreatepoint;
 comment Construct a point from two geometries
 
+pattern group.multicolumn(b:bat[:oid,:any]...) (ref:bat[:oid,:oid],grp:bat[:oid,:oid],hist:bat[:oid,:any]) 
+address GROUPmulticolumngroup;
+comment Derivation of a group index over multiple columns.
+
 command group.subgroupdone(b:bat[:oid,:any_1],g:bat[:oid,:oid],e:bat[:oid,:oid],h:bat[:oid,:wrd]) (groups:bat[:oid,:oid],extents:bat[:oid,:oid],histo:bat[:oid,:wrd]) 
 address GRPsubgroup4;
 command group.subgroupdone(b:bat[:oid,:any_1],g:bat[:oid,:oid]) (groups:bat[:oid,:oid],extents:bat[:oid,:oid],histo:bat[:oid,:wrd]) 
@@ -39308,10 +39078,6 @@ command group.subgroup(b:bat[:oid,:any_1],g:bat[:oid,:oid]) (groups:bat[:oid,:oi
 address GRPsubgroup2;
 command group.subgroup(b:bat[:oid,:any_1]) (groups:bat[:oid,:oid],extents:bat[:oid,:oid],histo:bat[:oid,:wrd]) 
 address GRPsubgroup1;
-pattern group.subgroup(b:bat[:oid,:any]...) (ref:bat[:oid,:oid],grp:bat[:oid,:oid],hist:bat[:oid,:any]) 
-address GROUPmulticolumn;
-comment Derivation of a group index over multiple columns.
-
 command identifier.#fromstr():void 
 address IDfromString;
 comment Convert a string to an identifier without any check
@@ -39332,7 +39098,7 @@ pattern inspect.equalType(l:any,r:any):bit
 address INSPECTequalType;
 comment Return true if both operands are of the same type
 
-command inspect.getStatistics(nme:str):bat[:any_1,:any_2] 
+command inspect.getStatistics(nme:str):bat[:oid,:any_2] 
 address QOTgetStatistics;
 comment Get optimizer property statistics such as #calls, #total actions, #total time
 
@@ -39355,22 +39121,6 @@ comment Collect a BAT with the atom names.
 command inspect.getAtomNames():bat[:oid,:str] 
 address INSPECTatom_names;
 comment Collect a BAT with the atom names.
-
-pattern inspect.getTypeIndex(v:any_1):int 
-address INSPECTtypeIndex;
-comment Return the type index of a variable. For BATs, returnthe type index for its tail.
-
-pattern inspect.getTypeIndex(v:bat[:oid,:any_2]) (ht:int,tt:int) 
-address INSPECTtypeIndex;
-comment Return the type index of a BAT head and tail.
-
-command inspect.getTypeName(v:int):str 
-address INSPECTtypename;
-comment Get the type name associated with a type id.
-
-pattern inspect.getType(v:bat[:oid,:any_2]) (ht:str,tt:str) 
-address INSPECTtypeName;
-comment Return the concrete type of a variable (expression).
 
 pattern inspect.getType(v:any_1):str 
 address INSPECTtypeName;
@@ -40225,10 +39975,6 @@ pattern mat.packIncrement(b:bat[:oid,:any_2],pieces:int):bat[:oid,:any_2]
 address MATpackIncrement;
 comment Prepare incremental mat pack
 
-pattern mat.pack3(b:bat[:oid,:any_2]...):bat[:oid,:any_2] 
-address MATpack3;
-comment Materialize the MAT into a BAT by considering the heads as void. (used in centipede)
-
 pattern mat.pack2(b:bat[:oid,:any_2]...):bat[:oid,:any_2] 
 address MATpack2;
 comment Materialize the MAT into a BAT (by an append all)
@@ -40474,7 +40220,7 @@ address MKEYhash_sht;
 command mkey.hash(v:bte):wrd 
 address MKEYhash_bte;
 command mkey.hash(v:bit):wrd 
-address MKEYhash_bit;
+address MKEYhash_bte;
 pattern mkey.hash(v:any):wrd 
 address MKEYhash;
 comment compute a hash int number from any value
@@ -41067,10 +40813,6 @@ address OPTwrapper;
 comment Produce an indented tree visualisation
 
 pattern optimizer.dumpQEP():void 
-address OPTwrapper;
-pattern optimizer.dictionary(mod:str,fcn:str):str 
-address OPTwrapper;
-pattern optimizer.dictionary():str 
 address OPTwrapper;
 pattern optimizer.derivePath(mod:str,fcn:str):str 
 address OPTwrapper;
@@ -42167,10 +41909,6 @@ command sql.dense_rank_grp(b:bat[:oid,:any_1],gp:bat[:oid,:oid],gpe:bat[:oid,:oi
 address sql_dense_rank_grp;
 comment return the densely ranked groups
 
-pattern sql.dropdictionary(sch:str,tbl:str):void 
-address SQLdropDictionary;
-comment Perform dictionary decompression on a table
-
 pattern sql.drop_hash(sch:str,tbl:str):void 
 address SQLdrop_hash;
 comment Drop hash indices for the given table
@@ -42334,10 +42072,6 @@ comment truncate the floating point v to r digits behind the dot (if r < 0, befo
 pattern sql.mvc():int 
 address SQLmvc;
 comment Get the multiversion catalog context. Needed for correct statement dependencies(ie sql.update, should be after sql.bind in concurrent execution)
-
-pattern sql.newdictionary(sch:str,tbl:str):void 
-address SQLnewDictionary;
-comment Perform dictionary compression on a table
 
 command sql.not_uniques(b:bat[:oid,:wrd]):bat[:oid,:oid] 
 address not_unique_oids;
@@ -42560,7 +42294,7 @@ pattern sql.vacuum(sch:str,tbl:str):void
 address SQLvacuum;
 comment Choose an approach to consolidate the deletions
 
-command sql.zero_or_one(col:bat[:any_2,:any_1]):any_1 
+command sql.zero_or_one(col:bat[:oid,:any_1]):any_1 
 address zero_or_one;
 comment if col contains exactly one value return this. Incase of more raise an exception else return nil
 
