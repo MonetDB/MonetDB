@@ -101,203 +101,6 @@
  * Comes in two flavors: looking at one column, or at two at-a-time.
  * Implementation is either merge- or hash-based.
  */
-#define mergeelim(a1,a2,a3,a4,a5)					\
-	do {								\
-		BATloop(b, p, q) {					\
-			ptr h = BUNh##a2(bi,p);				\
-			ptr t = BUNt##a3(bi,p);				\
-									\
-			for (r = p + 1; r < q && a4 == 0; r++) {	\
-				if (HIT##a1(t, BUNt##a3(bi, r)))	\
-					goto next##a2##a3##a5;		\
-			}						\
-			bunfastins(bn, h, t);				\
-		  next##a2##a3##a5:;					\
-		}							\
-	} while (0)
-#define hashelim(a1,a2,a3,a4)						\
-	do {								\
-		zz = BUNfirst(bn);					\
-		if (!bn->H->hash) {					\
-			if (BAThash(bn, BATcapacity(bn)) == NULL) {	\
-				BBPreclaim(bn);				\
-				return NULL;				\
-			}						\
-		}							\
-		BATloop(b, p, q) {					\
-			ptr h = BUNh##a2(bi, p);			\
-			ptr t = BUNt##a3(bi, p);			\
-			int ins = 1;					\
-			BUN yy;						\
-									\
-			if (BATprepareHash(bn)) {			\
-				BBPreclaim(bn);				\
-				return NULL;				\
-			}						\
-			HASHloop##a4(bni, bn->H->hash, yy, h) {		\
-				if (HIT##a1(t, BUNt##a3(bni, yy))) {	\
-					ins = 0;			\
-					break;				\
-				}					\
-			}						\
-			if (ins) {					\
-				bunfastins(bn, h, t);			\
-				if (bn->H->hash)			\
-					HASHins##a4(bn->H->hash, zz, h); \
-				zz++;					\
-			}						\
-		}							\
-	} while (0)
-#define elim(a1,a2,a3,a4)						\
-	{								\
-		int (*cmp)(const void *, const void *) = BATatoms[b->ttype].atomCmp; \
-		BUN zz;							\
-		BUN p, q, r;						\
-									\
-		if (BAThordered(b)) {					\
-			ALGODEBUG fprintf(stderr, "#BATins_%sunique: BAThordered(b)\n", #a1); \
-			ALGODEBUG fprintf(stderr, "#BATins_%sunique: mergeelim\n", #a1); \
-			if (b->tvarsized) {				\
-				mergeelim(a1,a2,var,a4,a3);		\
-			} else {					\
-				mergeelim(a1,a2,loc,a4,a3);		\
-			}						\
-		} else if (b->tvarsized) {				\
-			ALGODEBUG fprintf(stderr, "#BATins_%sunique: hashelim\n", #a1); \
-			hashelim(a1,a2,var,a3);				\
-		} else {						\
-			ALGODEBUG fprintf(stderr, "#BATins_%sunique: hashelim\n", #a1); \
-			hashelim(a1,a2,loc,a3);				\
-		}							\
-		(void) cmp;						\
-	}
-#define elim_doubles(a1)						\
-	do {								\
-		int tpe = ATOMtype(b->htype);				\
-		if (tpe != ATOMstorage(tpe) &&				\
-		    ATOMnilptr(ATOMstorage(tpe)) == ATOMnilptr(tpe) &&	\
-		    BATatoms[ATOMstorage(tpe)].atomCmp == BATatoms[tpe].atomCmp) \
-			tpe = ATOMstorage(tpe);				\
-		switch (tpe) {						\
-		case TYPE_bte:						\
-			elim(a1,loc,_bte,simple_CMP(h,BUNhloc(bi,r),bte)); \
-			break;						\
-		case TYPE_sht:						\
-			elim(a1,loc,_sht,simple_CMP(h,BUNhloc(bi,r),sht)); \
-			break;						\
-		case TYPE_int:						\
-			elim(a1,loc,_int,simple_CMP(h,BUNhloc(bi,r),int)); \
-			break;						\
-		case TYPE_flt:						\
-			elim(a1,loc,_flt,simple_CMP(h,BUNhloc(bi,r),flt)); \
-			break;						\
-		case TYPE_dbl:						\
-			elim(a1,loc,_dbl,simple_CMP(h,BUNhloc(bi,r),dbl)); \
-			break;						\
-		case TYPE_lng:						\
-			elim(a1,loc,_lng,simple_CMP(h,BUNhloc(bi,r),lng)); \
-			break;						\
-		case TYPE_str:						\
-			if (b->H->vheap->hashash) {			\
-				elim(a1,var,_str_hv,GDK_STRCMP(h,BUNhvar(bi,r))); \
-				break;					\
-			}						\
-			/* fall through */				\
-		default: {						\
-			int (*merge)(const void *, const void *) = BATatoms[b->htype].atomCmp; \
-									\
-			if (b->hvarsized) {				\
-				elim(a1,var,var,((*merge)(h,BUNhvar(bi,r)))); \
-			} else {					\
-				elim(a1,loc,loc,((*merge)(h,BUNhloc(bi,r)))); \
-			}						\
-			break;						\
-		}							\
-		}							\
-	} while (0)
-
-static BAT *
-BATins_kunique(BAT *bn, BAT *b)
-{
-	bit unique = FALSE;
-	BATiter bi = bat_iterator(b);
-	BATiter bni = bat_iterator(bn);
-
-	BATcheck(b, "BATins_kunique: src BAT required");
-	BATcheck(bn, "BATins_kunique: dst BAT required");
-	unique = (BATcount(bn) == 0);
-	elim_doubles(k);
-	if (unique && bn->hkey == FALSE) {
-		/* we inserted unique head-values into an empty BAT;
-		   hence, the resulting BAT's head is (now) unique/key ... */
-		BATkey(bn, TRUE);
-	}
-	bn->H->nonil = b->H->nonil;
-	bn->T->nonil = b->T->nonil;
-	return bn;
-      bunins_failed:
-	BBPreclaim(bn);
-	return NULL;
-}
-
-static BAT *
-BATins_sunique(BAT *bn, BAT *b)
-{
-	bit unique = FALSE;
-	BUN fst1, fst2, last1, last2;
-	BATiter bi = bat_iterator(b);
-	BATiter bni = bat_iterator(bn);
-
-	BATcheck(b, "BATins_sunique: src BAT required");
-	BATcheck(bn, "BATins_sunique: dst BAT required");
-
-	unique = (BATcount(bn) == 0);
-
-	fst1 = BUNfirst(bn);
-	fst2 = BUNfirst(b);
-
-	last1 = (BUNlast(bn) - 1);
-	last2 = (BUNlast(b) - 1);
-
-	if (BATcount(b) &&
-	    BAThordered(b) &&
-	    ATOMcmp(b->htype, BUNhead(bi, fst2), BUNhead(bi, last2)) == 0 &&
-	    (BATcount(bn) == 0 ||
-	     (ATOMcmp(bn->htype, BUNhead(bni, fst1), BUNhead(bi, fst2)) == 0 &&
-	      BAThordered(bn) &&
-	      ATOMcmp(bn->htype, BUNhead(bni, fst1), BUNhead(bni, last1)) == 0))) {
-		ALGODEBUG fprintf(stderr, "#BATins_sunique: BATins_kunique(BATmirror(bn), BATmirror(b))\n");
-		return BATins_kunique(BATmirror(bn), BATmirror(b));
-	}
-	if (BATcount(b) &&
-	    BATtordered(b) &&
-	    ATOMcmp(b->ttype, BUNtail(bi, fst2), BUNtail(bi, last2)) == 0 &&
-	    (BATcount(bn) == 0 ||
-	     (ATOMcmp(bn->ttype, BUNtail(bni, fst1), BUNtail(bi, fst2)) == 0 &&
-	      BATtordered(bn) &&
-	      ATOMcmp(bn->ttype, BUNtail(bni, fst1), BUNtail(bni, last1)) == 0))) {
-		ALGODEBUG fprintf(stderr, "#BATins_sunique: BATins_kunique(bn, b)\n");
-		return BATins_kunique(bn, b);
-	}
-	if (BATtordered(b) && ATOMstorage(b->ttype) < TYPE_str) {
-		bni.b = bn = BATmirror(bn);
-		bi.b = b = BATmirror(b);
-	}
-
-	elim_doubles(s);
-	if (unique && bn->batSet == FALSE) {
-		/* we inserted unique BUNs into an empty BAT;
-		   hence, the resulting BAT is (now) unique/set ... */
-		BATset(bn, TRUE);
-	}
-	bn->H->nonil = b->H->nonil;
-	bn->T->nonil = b->T->nonil;
-	return bn;
-      bunins_failed:
-	BBPreclaim(bn);
-	return NULL;
-}
-
 
 /*
  * @- Unique
@@ -308,86 +111,136 @@ BAT *
 BATkunique(BAT *b)
 {
 	BAT *bn;
+	BAT *bn1 = NULL;
+	BAT *map;
+	BAT *b1;
 
 	BATcheck(b, "BATkunique");
 
 	if (b->hkey) {
 		bn = BATcopy(b, b->htype, b->ttype, FALSE);
-		if (bn == NULL)
-			return NULL;
 	} else {
-		BUN cnt = BATcount(b);
-
-		if (cnt > 10000) {
-			BAT *tmp2 = NULL, *tmp1, *tmp0 = VIEWhead_(b, BAT_WRITE);
-
-			if (tmp0) {
-				tmp1 = BATsample(tmp0, 1000);
-				if (tmp1) {
-					tmp2 = BATkunique(tmp1);
-					if (tmp2) {
-						cnt = (BUN) ((((lng) BATcount(tmp2)) * cnt) / 900);
-						BBPreclaim(tmp2);
-					}
-					BBPreclaim(tmp1);
-				}
-				BBPreclaim(tmp0);
-			}
-			if (tmp2 == NULL)
-				return NULL;
+		b = BATmirror(b);	/* work on tail instead of head */
+		/* b is a [any_1,any_2] BAT */
+		if (!BAThdense(b)) {
+			map = BATmirror(BATmark(b, 0)); /* [dense1,any_1] */
+			b1 = BATmirror(BATmark(BATmirror(b), 0)); /* [dense1,any_2] */
+		} else {
+			map = NULL;
+			b1 = b;		/* [dense1,any_2] (any_1==dense1) */
 		}
-		bn = BATnew(BAThtype(b), BATttype(b), cnt);
-		if (bn == NULL || BATins_kunique(bn, b) == NULL)
-			return NULL;
+		bn = BATsubunique(b1, NULL);
+		if (bn == NULL)
+			goto error;
+		/* bn is a [dense2,oid1] BAT with oid1 a subset of dense1 */
+		/* we want to return a [any_1,any_2] subset of b */
+		if (map) {
+			bn1 = BATproject(bn, map);
+			if (bn1 == NULL)
+				goto error;
+			/* bn1 is [dense2,any_1] */
+			BBPunfix(map->batCacheid);
+			map = BATmirror(bn1);
+			/* map is [any_1,dense2] */
+			bn1 = BATproject(bn, b1);
+			if (bn1 == NULL)
+				goto error;
+			/* bn1 is [dense2,any_2] */
+			BBPunfix(b1->batCacheid);
+			b1 = NULL;
+			BBPunfix(bn->batCacheid);
+			bn = VIEWcreate(map, bn1);
+			if (bn == NULL)
+				goto error;
+			/* bn is [any_1,any_2] */
+			BBPunfix(bn1->batCacheid);
+			BBPunfix(map->batCacheid);
+			bn1 = map = NULL;
+		} else {
+			bn1 = BATproject(bn, b);
+			if (bn1 == NULL)
+				goto error;
+			/* bn1 is [dense2,any_2] */
+			/* bn was [dense2,any_1] since b was hdense */
+			b1 = VIEWcreate(BATmirror(bn), bn1);
+			if (b1 == NULL)
+				goto error;
+			/* b1 is [any_1,any_2] */
+			BBPunfix(bn->batCacheid);
+			bn = b1;
+			b1 = NULL;
+			BBPunfix(bn1->batCacheid);
+			bn1 = NULL;
+		}
+		bn = BATmirror(bn);
 	}
+	BATkey(bn, TRUE);
 
-	/* property management */
-	if (b->halign == 0) {
-		b->halign = OIDnew(1);
-	}
-	BATkey(BATmirror(bn), BATtkey(b));
-	bn->hsorted = BAThordered(b);
-	bn->hrevsorted = BAThrevordered(b);
-	bn->tsorted = BATtordered(b);
-	bn->trevsorted = BATtrevordered(b);
-	bn->H->nonil = b->H->nonil;
-	bn->T->nonil = b->T->nonil;
-	if (BATcount(bn) == BATcount(b)) {
-		ALIGNset(bn, b);
-	}
-	BATkey(bn, TRUE);	/* this we accomplished */
 	return bn;
+
+  error:
+	if (map)
+		BBPunfix(map->batCacheid);
+	if (b1 && b1 != b)
+		BBPunfix(b1->batCacheid);
+	if (bn1)
+		BBPunfix(bn1->batCacheid);
+	if (bn)
+		BBPunfix(bn->batCacheid);
+	return NULL;
 }
 
 BAT *
 BATsunique(BAT *b)
 {
 	BAT *bn;
+	gdk_return ret;
+	BAT *bn1, *bn2, *en1, *b1, *b2;
 
 	BATcheck(b, "BATsunique");
 
 	if (b->hkey || b->tkey || b->batSet) {
 		bn = BATcopy(b, b->htype, b->ttype, FALSE);
 	} else {
-		BUN cnt = BATcount(b);
-
-		if (cnt > 10000) {
-			BAT *tmp2 = NULL, *tmp1 = BATsample(b, 1000);
-
-			if (tmp1) {
-				tmp2 = BATkunique(tmp1);
-				if (tmp2) {
-					cnt = BATcount(tmp2) * (cnt / 1000);
-					BBPreclaim(tmp2);
-				}
-				BBPreclaim(tmp1);
-			}
-			if (tmp2 == NULL)
-				return NULL;
+		b1 = BATmirror(BATmark(b, 0)); /* [dense1,any_1] */
+		b2 = BATmirror(BATmark(BATmirror(b), 0)); /* [dense1,any_2] */
+		if (b1 == NULL || b2 == NULL)
+			goto error;
+		if (BATgroup(&bn1, &en1, NULL, b1, NULL, NULL, NULL) == GDK_FAIL) {
+			bn1 = en1 = NULL;
+			goto error;
 		}
-		bn = BATnew(BAThtype(b), BATttype(b), cnt);
-		if (bn == NULL || BATins_sunique(bn, b) == NULL)
-			return NULL;
+		ret = BATgroup(&bn2, &bn, NULL, b2, bn1, en1, NULL);
+		BBPunfix(bn1->batCacheid);
+		BBPunfix(en1->batCacheid);
+		bn1 = en1 = NULL;
+		if (ret == GDK_FAIL) {
+			bn2 = bn = NULL;
+			goto error;
+		}
+		BBPunfix(bn2->batCacheid);
+
+		bn1 = BATproject(bn, b1);
+		if (bn1 == NULL)
+			goto error;
+		/* bn1 is [dense2,any_1] */
+		BBPunfix(b1->batCacheid);
+		b1 = BATmirror(bn1);
+		/* b1 is [any_1,dense2] */
+		bn1 = BATproject(bn, b2);
+		if (bn1 == NULL)
+			goto error;
+		/* bn1 is [dense2,any_2] */
+		BBPunfix(b2->batCacheid);
+		b2 = NULL;
+		BBPunfix(bn->batCacheid);
+		bn = VIEWcreate(b1, bn1);
+		if (bn == NULL)
+			goto error;
+		/* bn is [any_1,any_2] */
+		BBPunfix(bn1->batCacheid);
+		BBPunfix(b1->batCacheid);
+		bn1 = b1 = NULL;
 	}
 
 	/* property management */
@@ -404,6 +257,16 @@ BATsunique(BAT *b)
 	}
 	BATset(bn, TRUE);	/* this we accomplished */
 	return bn;
+  error:
+	if (b1)
+		BBPunfix(b1->batCacheid);
+	if (b2)
+		BBPunfix(b2->batCacheid);
+	if (bn)
+		BBPunfix(bn->batCacheid);
+	if (bn1)
+		BBPunfix(bn1->batCacheid);
+	return NULL;
 }
 
 /*

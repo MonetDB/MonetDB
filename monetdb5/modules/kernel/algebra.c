@@ -1115,6 +1115,37 @@ ALGsunique(bat *result, bat *bid)
 }
 
 str
+ALGsubunique2(bat *result, bat *bid, bat *sid)
+{
+	BAT *b, *s = NULL, *bn = NULL;
+
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		throw(MAL, "algebra.subunique", RUNTIME_OBJECT_MISSING);
+	}
+	if (sid && *sid && (s = BATdescriptor(*sid)) == NULL) {
+		BBPreleaseref(b->batCacheid);
+		throw(MAL, "algebra.subunique", RUNTIME_OBJECT_MISSING);
+	}
+	bn = BATsubunique(b, s);
+	BBPreleaseref(b->batCacheid);
+	if (s)
+		BBPreleaseref(s->batCacheid);
+	if (bn == NULL)
+		throw(MAL, "algebra.subunique", GDK_EXCEPTION);
+	if (!(bn->batDirty & 2))
+		bn = BATsetaccess(bn, BAT_READ);
+	*result = bn->batCacheid;
+	BBPkeepref(*result);
+	return MAL_SUCCEED;
+}
+
+str
+ALGsubunique1(bat *result, bat *bid)
+{
+	return ALGsubunique2(result, bid, NULL);
+}
+
+str
 ALGcross(bat *result, bat *lid, bat *rid)
 {
 	return ALGbinary(result, lid, rid, BATcross, "algebra.cross");

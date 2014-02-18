@@ -56,10 +56,19 @@ typedef unsigned __int64 ulng;
 					start = (s)->T->seq;		\
 					end = start + BATcount(s);	\
 				} else {				\
-					cand = (const oid *) Tloc((s), BUNfirst(s)); \
-					candend = cand + BATcount(s);	\
-					start = *cand;			\
-					end = candend[-1] + 1;		\
+					oid x = (b)->H->seq;		\
+					start = SORTfndfirst((s), &x);	\
+					x += BATcount(b);		\
+					end = SORTfndfirst((s), &x);	\
+					cand = (const oid *) Tloc((s), start); \
+					candend = (const oid *) Tloc((s), end); \
+					if (cand == candend) {		\
+						start = end = 0;	\
+					} else {			\
+						assert(cand < candend);	\
+						start = *cand;		\
+						end = candend[-1] + 1;	\
+					}				\
 				}					\
 				assert(start <= end);			\
 				if (start <= (b)->H->seq)		\

@@ -70,7 +70,7 @@
  * selection.
  */
 const char *
-BATgroupaggrinit(const BAT *b, const BAT *g, const BAT *e, const BAT *s,
+BATgroupaggrinit(BAT *b, BAT *g, BAT *e, BAT *s,
 		 /* outputs: */
 		 oid *minp, oid *maxp, BUN *ngrpp, BUN *startp, BUN *endp,
 		 BUN *cntp, const oid **candp, const oid **candendp)

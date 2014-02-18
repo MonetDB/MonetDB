@@ -39,6 +39,7 @@ lib_gdk = {
 		gdk_aggr.c gdk_group.c gdk_mapreduce.c gdk_mapreduce.h \
 		gdk_imprints.c gdk_imprints.h \
 		gdk_join.c gdk_join_legacy.c \
+		gdk_unique.c \
 		bat.feps bat1.feps bat2.feps \
 		libbat.rc
 	LIBS = ../common/options/libmoptions \

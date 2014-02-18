@@ -86,6 +86,8 @@ algebra_export str ALGcopy(int *result, int *bid);
 algebra_export str ALGkunique(int *result, int *bid);
 algebra_export str ALGsunique(int *result, int *bid);
 algebra_export str ALGtunique(int *result, int *bid);
+algebra_export str ALGsubunique2(bat *result, bat *bid, bat *sid);
+algebra_export str ALGsubunique1(bat *result, bat *bid);
 algebra_export str ALGcross(int *result, int *lid, int *rid);
 algebra_export str ALGantijoin(int *result, int *lid, int *rid);
 algebra_export str ALGjoinestimate(int *result, int *lid, int *rid, lng *estimate);

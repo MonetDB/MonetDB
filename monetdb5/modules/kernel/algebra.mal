@@ -385,6 +385,20 @@ address ALGtunique
 comment "Select unique tuples from the input BAT. Double elimination is
 		done over the BUNs tail. The result is a BAT with property
 		tkeyd()== true";
+command subunique(b:bat[:oid,:any_1], s:bat[:oid,:oid]) :bat[:oid,:oid]
+address ALGsubunique2
+comment "Select all unique values from the tail of the first input.
+	Input is a dense-headed BAT, the second input is a
+	dense-headed BAT with sorted tail, output is a dense-headed
+	BAT with in the tail the head value of the input BAT that was
+	selected.  The output BAT is sorted on the tail value.  The
+	second input BAT is a list of candidates.";
+command subunique(b:bat[:oid,:any_1]) :bat[:oid,:oid]
+address ALGsubunique1
+comment "Select all unique values from the tail of the input.
+	Input is a dense-headed BAT, output is a dense-headed BAT with
+	in the tail the head value of the input BAT that was selected.
+	The output BAT is sorted on the tail value.";
 
 # @- Bun-intersecting elements
 command intersect ( left:bat[:any_1,:any_2], right:bat[:any_1,:any_2])

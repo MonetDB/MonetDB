@@ -3341,6 +3341,8 @@ gdk_export BAT *BATproject(BAT *l, BAT *r);
 gdk_export BAT *BATslice(BAT *b, BUN low, BUN high);
 gdk_export BAT *BATleftfetchjoin(BAT *b, BAT *s, BUN estimate);
 
+gdk_export BAT *BATsubunique(BAT *b, BAT *s);
+
 gdk_export BAT *BATsunique(BAT *b);
 gdk_export BAT *BATkunique(BAT *b);
 gdk_export BAT *BATsintersect(BAT *b, BAT *c);
