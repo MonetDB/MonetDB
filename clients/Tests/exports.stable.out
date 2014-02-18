@@ -119,7 +119,7 @@ BAT *BATfakeCommit(BAT *b);
 int BATgetaccess(BAT *b);
 PROPrec *BATgetprop(BAT *b, int idx);
 gdk_return BATgroup(BAT **groups, BAT **extents, BAT **histo, BAT *b, BAT *g, BAT *e, BAT *h);
-const char *BATgroupaggrinit(const BAT *b, const BAT *g, const BAT *e, const BAT *s, oid *minp, oid *maxp, BUN *ngrpp, BUN *startp, BUN *endp, BUN *cntp, const oid **candp, const oid **candendp);
+const char *BATgroupaggrinit(BAT *b, BAT *g, BAT *e, BAT *s, oid *minp, oid *maxp, BUN *ngrpp, BUN *startp, BUN *endp, BUN *cntp, const oid **candp, const oid **candendp);
 gdk_return BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_error);
 BAT *BATgroupcount(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_error);
 BAT *BATgroupmax(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_error);
@@ -206,6 +206,7 @@ BAT *BATsubselect(BAT *b, BAT *s, const void *tl, const void *th, int li, int hi
 gdk_return BATsubsemijoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate);
 gdk_return BATsubsort(BAT **sorted, BAT **order, BAT **groups, BAT *b, BAT *o, BAT *g, int reverse, int stable);
 gdk_return BATsubthetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int op, int nil_matches, BUN estimate);
+BAT *BATsubunique(BAT *b, BAT *s);
 gdk_return BATsum(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, int nil_if_empty);
 BAT *BATsunion(BAT *b, BAT *c);
 BAT *BATsunique(BAT *b);
@@ -823,6 +824,8 @@ str ALGsubsort31(bat *result, bat *bid, bat *order, bat *group, bit *reverse, bi
 str ALGsubsort32(bat *result, bat *norder, bat *bid, bat *order, bat *group, bit *reverse, bit *stable);
 str ALGsubsort33(bat *result, bat *norder, bat *ngroup, bat *bid, bat *order, bat *group, bit *reverse, bit *stable);
 str ALGsubthetajoin(bat *r1, bat *r2, bat *l, bat *r, bat *sl, bat *sr, int *op, bit *nil_matches, lng *estimate);
+str ALGsubunique1(bat *result, bat *bid);
+str ALGsubunique2(bat *result, bat *bid, bat *sid);
 str ALGsunion(int *result, int *lid, int *rid);
 str ALGsunique(int *result, int *bid);
 str ALGtdiff(int *result, int *lid, int *rid);
