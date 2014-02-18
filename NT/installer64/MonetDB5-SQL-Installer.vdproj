@@ -2327,10 +2327,10 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_61F2E1DDB1A9438CB4B77D04AAA04BFC"
             {
-            "SourcePath" = "8:lib\\monetdb5\\calc.mal"
-            "TargetName" = "8:calc.mal"
+            "SourcePath" = "8:lib\\monetdb5\\autoload\\01_calc.mal"
+            "TargetName" = "8:01_calc.mal"
             "Tag" = "8:"
-            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
+            "Folder" = "8:_A4A821D237B943CFACE8D54F3F3971E3"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -4087,10 +4087,10 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_EA9D18DF4AB5434C8EB5A75B8E8D65FD"
             {
-            "SourcePath" = "8:lib\\monetdb5\\batcalc.mal"
-            "TargetName" = "8:batcalc.mal"
+            "SourcePath" = "8:lib\\monetdb5\\autoload\\01_batcalc.mal"
+            "TargetName" = "8:01_batcalc.mal"
             "Tag" = "8:"
-            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
+            "Folder" = "8:_A4A821D237B943CFACE8D54F3F3971E3"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
