@@ -690,18 +690,26 @@ SORTfndwhich(BAT *b, const void *v, int which)
 	return cur;
 }
 
+/* Return the BUN of any tail value in b that is equal to v; if no
+ * match is found, return BUN_NONE.  b must be sorted (reverse of
+ * forward). */
 BUN
 SORTfnd(BAT *b, const void *v)
 {
 	return SORTfndwhich(b, v, 0);
 }
 
+/* Return the BUN of the first (lowest numbered) tail value that is
+ * equal to v; if no match is found, return the BUN of the next higher
+ * value in b.  b must be sorted (reverse of forward). */
 BUN
 SORTfndfirst(BAT *b, const void *v)
 {
 	return SORTfndwhich(b, v, -1);
 }
 
+/* Return the BUN of the first (lowest numbered) tail value beyond v.
+ * b must be sorted (reverse of forward). */
 BUN
 SORTfndlast(BAT *b, const void *v)
 {

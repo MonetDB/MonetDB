@@ -370,26 +370,9 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
 		}							\
 		HASHputlink(h,j, HASHgetlink(h,i));			\
 	} while (0)
-/*
- * @+ Binary Search on a Sorted BAT
- * We have two main routines, SORTfndfirst(b,v) and
- * SORTfndlast(b,v), that search for a TAIL value 'v' in a sorted
- * BAT. If the value is present, the first routine returns a pointer
- * to its first occurrence, while the second routine returns a pointer
- * to the BUN just after the last occurrence of 'v'.  In case value
- * 'v' does not occur in the tail of BAT b, both routines return a
- * pointer to the first BUN with a tail value larger than 'v' (i.e.,
- * BUNfirst(b), in case all tail values are larger than 'v'); or
- * BUNlast(b), in case all tail values are smaller than 'v'.
- *
- * From the above routines we now also defined the SORTfnd function
- * that looks for a certain value in the TAIL and returns a (not
- * necessarily the first or last) reference to it, or hash BUN_NONE (if the
- * value does not exist).
- *
- * Note: the SORTfnd functions work on the tail of a bat!
- */
 
+/* Functions to perform a binary search on a sorted BAT.
+ * See gdk_search.c for details. */
 gdk_export BUN SORTfnd(BAT *b, const void *v);
 gdk_export BUN SORTfndfirst(BAT *b, const void *v);
 gdk_export BUN SORTfndlast(BAT *b, const void *v);
