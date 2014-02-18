@@ -77,8 +77,6 @@ bat5_export str BKCgetHeadType(str *res, int *bid);
 bat5_export str BKCgetTailType(str *res, int *bid);
 bat5_export str BKCgetRole(str *res, int *bid);
 bat5_export str BKCsetkey(int *res, int *bid, bit *param);
-bat5_export str BKCsetSet(int *res, int *bid, bit *param);
-bat5_export str BKCisaSet(bit *res, int *bid);
 bat5_export str BKCisSorted(bit *res, int *bid);
 bat5_export str BKCisSortedReverse(bit *res, int *bid);
 bat5_export str BKCgetKey(bit *ret, int *bid);

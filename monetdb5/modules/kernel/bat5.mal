@@ -97,18 +97,6 @@ command isaKey( b:bat[:any_1,:any_2]) :bit
 address BKCgetKey
 comment "return whether the head column of a BAT is unique (key).";
 
-command setSet( b:bat[:any_1,:any_2], mode:bit) :bat[:any_1,:any_2] 
-address BKCsetSet
-comment "Sets the 'set' property on this BAT to 'mode'. In 'set' mode, 
-        the kernel will silently block insertions that cause a duplicate 
-        BUN [head,tail] entries in the BAT.  KNOWN BUG:when 'set' is set 
-        to TRUE, this function does not automatically eliminate duplicates. 
-        Use b := b.sunique; Returns the BAT itself.";
-
-command isaSet( b:bat[:any_1,:any_1]) :bit 
-address BKCisaSet
-comment "return whether the BAT mode is set to unique.";
-
 command setAccess( b:bat[:any_1,:any_2], mode:str) :bat[:any_1,:any_2]
 address BKCsetAccess
 comment "Try to change the update access priviliges 

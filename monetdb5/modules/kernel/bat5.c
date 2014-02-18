@@ -231,8 +231,6 @@ CMDinfo(BAT **ret1, BAT **ret2, BAT *b)
 	BUNappend(bv, local_itoa((ssize_t)(BBP_lrefs(b->batCacheid))),FALSE);
 	BUNappend(bk, "batDirty", FALSE);
 	BUNappend(bv, BATdirty(b) ? "dirty" : "clean",FALSE);
-	BUNappend(bk, "batSet", FALSE);
-	BUNappend(bv, local_itoa((ssize_t)(b->batSet)),FALSE);
 
 	BUNappend(bk, "hsorted", FALSE);
 	BUNappend(bv, local_itoa((ssize_t)BAThordered(b)),FALSE);
@@ -1325,33 +1323,6 @@ BKCsetkey(int *res, int *bid, bit *param)
 	BATkey(b, *param ? BOUND2BTRUE :FALSE);
 	*res = b->batCacheid;
 	BBPkeepref(b->batCacheid);
-	return MAL_SUCCEED;
-}
-
-str
-BKCsetSet(int *res, int *bid, bit *param)
-{
-	BAT *b;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "bat.setSet", RUNTIME_OBJECT_MISSING);
-	}
-	BATset(b, *param ? BOUND2BTRUE :FALSE);
-	*res = b->batCacheid;
-	BBPkeepref(b->batCacheid);
-	return MAL_SUCCEED;
-}
-
-str
-BKCisaSet(bit *res, int *bid)
-{
-	BAT *b;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "bat.isaSet", RUNTIME_OBJECT_MISSING);
-	}
-	*res = b->batSet;
-	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
 

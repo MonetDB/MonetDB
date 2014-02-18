@@ -1173,9 +1173,6 @@ BUNins(BAT *b, const void *h, const void *t, bit force)
 	void_materialize(b, h);
 	void_materialize(b, t);
 
-	if (b->batSet && BUNlocate(b, h, t) != BUN_NONE) {
-		return b;
-	}
 	if ((b->hkey & BOUND2BTRUE) && (p = BUNfnd(b, h)) != BUN_NONE) {
 		if (BUNinplace(b, p, h, t, force) == NULL)
 			return NULL;
@@ -2130,26 +2127,6 @@ BATkey(BAT *b, int flag)
 
 
 BAT *
-BATset(BAT *b, int flag)
-{
-	BATcheck(b, "BATset");
-	if (b->htype == TYPE_void) {
-		if (b->hseqbase == oid_nil && flag == BOUND2BTRUE)
-			BATkey(BATmirror(b), flag);
-	} else if (b->ttype == TYPE_void) {
-		if (b->tseqbase == oid_nil && flag == BOUND2BTRUE)
-			BATkey(b, flag);
-	} else {
-		if (flag)
-			flag = TRUE;
-		if (b->batSet != flag)
-			b->batDirtydesc = TRUE;
-		b->batSet = flag;
-	}
-	return b;
-}
-
-BAT *
 BATseqbase(BAT *b, oid o)
 {
 	BATcheck(b, "BATseqbase");
@@ -2939,8 +2916,7 @@ BATassertHeadProps(BAT *b)
  * A BAT can have a bunch of properties set.  Mostly, the property
  * bits are set if we *know* the property holds, and not set if we
  * don't know whether the property holds (or if we know it doesn't
- * hold).  Most properties are per column, only the "set" property is
- * over two columns.
+ * hold).  All properties are per column.
  *
  * The properties currently maintained are:
  *
@@ -2954,18 +2930,11 @@ BATassertHeadProps(BAT *b)
  *		then all values are equal.
  * revsorted	The column is reversely sorted (descending).  If
  *		also sorted, then all values are equal.
- * set		The combinations of head and tail values are distinct.
  *
  * The "key" property consists of two bits.  The lower bit, when set,
  * indicates that all values in the column are distinct.  The upper
  * bit, when set, indicates that all values must be distinct
  * (BOUND2BTRUE).
- *
- * Note also that the "set" property is somewhat confused.  On the one
- * hand, some comments suggest it is merely an indication of the
- * current state of affairs, i.e. all head/tail combinations are
- * distinct.  The code in BUNins suggests that it means that the
- * combinations must be distinct.
  *
  * Note that the functions BATseqbase and BATkey also set more
  * properties than you might suspect.  When setting properties on a

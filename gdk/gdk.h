@@ -839,7 +839,6 @@ gdk_export int VALisnil(const ValRecord *v);
  *           bat    batCacheid;       // bat id: index in BBPcache
  *           int    batPersistence;   // persistence mode
  *           bit    batCopiedtodisk;  // BAT is saved on disk?
- *           bit    batSet;           // all tuples in the BAT are unique?
  *           // dynamic BAT properties
  *           int    batHeat;          // heat of BAT in the BBP
  *           sht    batDirty;         // BAT modified after last commit?
@@ -908,7 +907,6 @@ typedef struct {
 	 dirty:2,		/* dirty wrt disk? */
 	 dirtyflushed:1,	/* was dirty before commit started? */
 	 descdirty:1,		/* bat descriptor dirty marker */
-	 set:1,			/* real set semantics */
 	 restricted:2,		/* access privileges */
 	 persistence:1,		/* should the BAT persist on disk? */
 	 unused:23;		/* value=0 for now */
@@ -991,7 +989,6 @@ typedef int (*GDKfcn) ();
 /* macros's to hide complexity of BAT structure */
 #define batPersistence	S->persistence
 #define batCopiedtodisk	S->copiedtodisk
-#define batSet		S->set
 #define batDirty	S->dirty
 #define batConvert	S->convert
 #define batDirtyflushed	S->dirtyflushed
@@ -1493,8 +1490,6 @@ bat_iterator(BAT *b)
  * @item BAT *
  * @tab BATkey (BAT *b, int onoff)
  * @item BAT *
- * @tab BATset (BAT *b, int onoff)
- * @item BAT *
  * @tab BATmode (BAT *b, int mode)
  * @item BAT *
  * @tab BATsetaccess (BAT *b, int mode)
@@ -1511,11 +1506,7 @@ bat_iterator(BAT *b)
  *
  * The integrity properties to be maintained for the BAT are
  * controlled separately.  A key property indicates that duplicates in
- * the association dimension are not permitted. The BAT is turned into
- * a set of associations using BATset. Key and set properties are
- * orthogonal integrity constraints.  The strongest reduction is
- * obtained by making the BAT a set with key restrictions on both
- * dimensions.
+ * the association dimension are not permitted.
  *
  * The persistency indicator tells the retention period of BATs.  The
  * system support three modes: PERSISTENT and TRANSIENT.
@@ -1524,7 +1515,7 @@ bat_iterator(BAT *b)
  * boundary.  All BATs are initially TRANSIENT unless their mode is
  * changed using the routine BATmode.
  *
- * The BAT properties may be changed at any time using BATkey, BATset,
+ * The BAT properties may be changed at any time using BATkey
  * and BATmode.
  *
  * Valid BAT access properties can be set with BATsetaccess and
@@ -1543,7 +1534,6 @@ gdk_export void BATsetcapacity(BAT *b, BUN cnt);
 gdk_export void BATsetcount(BAT *b, BUN cnt);
 gdk_export BUN BATgrows(BAT *b);
 gdk_export BAT *BATkey(BAT *b, int onoff);
-gdk_export BAT *BATset(BAT *b, int onoff);
 gdk_export BAT *BATmode(BAT *b, int onoff);
 gdk_export BAT *BATroles(BAT *b, const char *hnme, const char *tnme);
 gdk_export int BATname(BAT *b, const char *nme);

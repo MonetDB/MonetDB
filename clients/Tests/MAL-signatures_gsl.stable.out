@@ -31908,10 +31908,6 @@ command bat.isSorted(b:bat[:any_1,:any_2]):bit
 address BKCisSorted;
 comment Returns whether a BAT is ordered on head or not.
 
-command bat.isaSet(b:bat[:any_1,:any_1]):bit 
-address BKCisaSet;
-comment return whether the BAT mode is set to unique.
-
 command bat.isaKey(b:bat[:any_1,:any_2]):bit 
 address BKCgetKey;
 comment return whether the head column of a BAT is unique (key).
@@ -32085,10 +32081,6 @@ comment Change access privilige of BAT to append only
 command bat.setAccess(b:bat[:any_1,:any_2],mode:str):bat[:any_1,:any_2] 
 address BKCsetAccess;
 comment Try to change the update access priviliges 	to this BAT. Mode:	 r[ead-only]      - allow only read access.	 a[append-only]   - allow reads and update.	 w[riteable]      - allow all operations.	BATs are updatable by default. On making a BAT read-only,         all subsequent updates fail with an error message.Returns         the BAT itself.
-
-command bat.setSet(b:bat[:any_1,:any_2],mode:bit):bat[:any_1,:any_2] 
-address BKCsetSet;
-comment Sets the 'set' property on this BAT to 'mode'. In 'set' mode,         the kernel will silently block insertions that cause a duplicate         BUN [head,tail] entries in the BAT.  KNOWN BUG:when 'set' is set         to TRUE, this function does not automatically eliminate duplicates.         Use b := b.sunique; Returns the BAT itself.
 
 command bat.setKey(b:bat[:any_1,:any_2],mode:bit):bat[:any_1,:any_2] 
 address BKCsetkey;

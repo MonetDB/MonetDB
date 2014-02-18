@@ -855,7 +855,6 @@ BBPreadEntries(FILE *fp, int *min_stamp, int *max_stamp, int oidsize, int bbpver
 		BATroles(&bs->B, NULL, NULL);
 		bs->S.persistence = PERSISTENT;
 		bs->S.copiedtodisk = 1;
-		bs->S.set = properties & 0x01;
 		bs->S.restricted = (properties & 0x06) >> 1;
 		bs->S.inserted = (BUN) inserted;
 		bs->S.deleted = (BUN) deleted;
@@ -1154,7 +1153,7 @@ new_bbpentry(stream *s, bat i)
 			  BBP_logical(-i) ? BBP_logical(-i) : BBPNONAME,
 			  BBP_physical(i),
 			  BBP_lastused(i),
-			  (BBP_desc(i)->S.restricted << 1) | BBP_desc(i)->S.set,
+			  BBP_desc(i)->S.restricted << 1,
 			  BBP_desc(i)->S.inserted,
 			  BBP_desc(i)->S.deleted,
 			  BBP_desc(i)->S.first,

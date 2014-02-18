@@ -286,7 +286,7 @@ BATins(BAT *b, BAT *n, bit force)
 				return NULL;
 		}
 	}
-	if (b->T->hash == NULL && b->batSet == 0 &&
+	if (b->T->hash == NULL &&
 	    (b->tkey & BOUND2BTRUE) == 0 &&
 	    ((b->hkey & BOUND2BTRUE) == 0 || n->hkey) &&
 	    (b->H->hash == NULL || ATOMstorage(b->htype) == ATOMstorage(TYPE_oid))) {
@@ -528,7 +528,6 @@ BATappend(BAT *b, BAT *n, bit force)
 		HASHremove(BATmirror(b));
 	}
 	if (b->T->hash != NULL ||
-	    b->batSet ||
 	    (b->tkey & BOUND2BTRUE) != 0 ||
 	    (b->H->hash != NULL && ATOMstorage(b->htype) != ATOMstorage(TYPE_oid)))
 		fastpath = 0;

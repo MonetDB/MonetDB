@@ -242,7 +242,6 @@ VIEWhcreate(BAT *h)
 		bn->H->hash = NULL;
 	BATinit_idents(bn);
 	/* some bits must be copied individually. */
-	bn->batSet = h->batSet;
 	bn->batDirty = BATdirty(h);
 	bn->batRestricted = BAT_READ;
 
@@ -333,7 +332,6 @@ VIEWcreate_(BAT *h, BAT *t, int slice_view)
 		bn->T->heap.parentid = tp;
 	BATinit_idents(bn);
 	/* Some bits must be copied individually. */
-	bn->batSet = h->batSet;
 	bn->batDirty = BATdirty(h);
 	bn->batRestricted = BAT_READ;
 	if (slice_view || !hp || isVIEW(h))
