@@ -42847,22 +42847,6 @@ command udf.reverse(ra1:str):str
 address UDFreverse;
 comment Reverse a string
 
-command unix.getrss():lng 
-address UNIXgetRSS;
-comment Retrieve the current Resident Set Size.
-
-command unix.getenv(nme:str):str 
-address UNIXgetenv;
-comment Get the environment variable string.
-
-command unix.sync():void 
-address UNIXsync;
-comment Flush memory, expensive but sometimes needed
-
-command unix.setenv(nme:str,val:str):bit 
-address UNIXsetenv;
-comment Set the environment variable string.
-
 command url.#fromstr():url 
 address URLfromString;
 comment Convert a string to an url. 
