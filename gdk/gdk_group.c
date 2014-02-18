@@ -696,7 +696,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		gn->tsorted = 1;
 		for (p = 0, q = BATcount(b); p < q; p++) {
 			if ((v = bgrps[w[p]]) == 0xFF && ngrp < 256) {
-				bgrps[w[p]] = v = ngrp++;
+				bgrps[w[p]] = v = (unsigned char) ngrp++;
 				if (extents)
 					exts[v] = b->hseqbase + (oid) p;
 			}
@@ -719,7 +719,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		gn->tsorted = 1;
 		for (p = 0, q = BATcount(b); p < q; p++) {
 			if ((v = sgrps[w[p]]) == 0xFFFF && ngrp < 65536) {
-				sgrps[w[p]] = v = ngrp++;
+				sgrps[w[p]] = v = (unsigned short) ngrp++;
 				if (extents)
 					exts[v] = b->hseqbase + (oid) p;
 			}
