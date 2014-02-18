@@ -444,7 +444,7 @@ query language for JavaScript Object Notation (JSON).
 %{_libdir}/monetdb5/json.mal
 %{_libdir}/monetdb5/json_util.mal
 %{_libdir}/monetdb5/lib_jaql.so
-%{_libdir}/monetdb5/lib_json.so
+%{_libdir}/monetdb5/lib_json_jaql.so
 
 %package -n MonetDB5-server
 Summary: MonetDB - Monet Database Management System
@@ -513,7 +513,7 @@ fi
 # %exclude %{_libdir}/monetdb5/lib_rdf.so
 %exclude %{_libdir}/monetdb5/lib_sql.so
 %exclude %{_libdir}/monetdb5/lib_jaql.so
-%exclude %{_libdir}/monetdb5/lib_json.so
+%exclude %{_libdir}/monetdb5/lib_json_jaql.so
 %{_libdir}/monetdb5/*.so
 %doc %{_mandir}/man1/mserver5.1.gz
 
