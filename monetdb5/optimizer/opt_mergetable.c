@@ -1175,7 +1175,7 @@ mat_group_derive(MalBlkPtr mb, InstrPtr p, mat_t *mat, int mtop, int b, int g)
 	if (getFunctionId(p) == subgroupdoneRef)
 		push = 1;
 
-	if (mat[g].im == -1){ /* allready packed */
+	if (mat[g].im == -1){ /* already packed */
 		pushInstruction(mb, copyInstruction(p));
 		return mtop;
 	}
