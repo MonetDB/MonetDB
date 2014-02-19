@@ -446,17 +446,15 @@ INSPECTgetEnvironment(int *ret, int *ret2)
 {
 	BAT *b, *bn;
 
-	b= VIEWhead(BATmirror(GDKkey));
+	b = BATcopy(GDKkey, TYPE_void, GDKkey->ttype, 0);
 	if (b == 0)
 		throw(MAL, "inspect.getEnvironment", MAL_MALLOC_FAIL);
-	bn= VIEWhead(BATmirror(GDKval));
+	bn = BATcopy(GDKval, TYPE_void, GDKval->ttype, 0);
 	if (bn == 0){
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "inspect.getEnvironment", MAL_MALLOC_FAIL);
  	}
-	b = BATmirror(b);
 	BATseqbase(b,0);
-	bn = BATmirror(bn);
 	BATseqbase(bn,0);
 
 	BBPkeepref(*ret = b->batCacheid);

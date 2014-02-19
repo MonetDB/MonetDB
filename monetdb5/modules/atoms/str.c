@@ -1094,25 +1094,31 @@ struct UTF8_lower_upper {
 
 #define UTF8_CONVERSIONS (sizeof(UTF8_lower_upper) / sizeof(UTF8_lower_upper[0]))
 
-static BAT *UTF8_toupperBat = NULL, *UTF8_tolowerBat;
+static BAT *UTF8_upperBat = NULL, *UTF8_lowerBat;
 
 bat *
 strPrelude(void)
 {
-	if (!UTF8_toupperBat) {
+	if (UTF8_upperBat == NULL) {
 		int i = UTF8_CONVERSIONS;
 
-		UTF8_toupperBat = BATnew(TYPE_int, TYPE_int, UTF8_CONVERSIONS);
-		if (UTF8_toupperBat == NULL)
+		UTF8_upperBat = BATnew(TYPE_void, TYPE_int, UTF8_CONVERSIONS);
+		if (UTF8_upperBat == NULL)
 			return NULL;
-		while (--i >= 0) {
-			int lower = UTF8_lower_upper[i].lower;
-			int upper = UTF8_lower_upper[i].upper;
-
-			BUNins(UTF8_toupperBat, &lower, &upper, FALSE);
+		UTF8_lowerBat = BATnew(TYPE_void, TYPE_int, UTF8_CONVERSIONS);
+		if (UTF8_lowerBat == NULL) {
+			BBPreclaim(UTF8_upperBat);
+			UTF8_upperBat = NULL;
+			return NULL;
 		}
-		UTF8_tolowerBat = BATmirror(UTF8_toupperBat);
-		BATname(UTF8_toupperBat, "monet_unicode_case");
+		while (--i >= 0) {
+			BUNappend(UTF8_upperBat, &UTF8_lower_upper[i].upper, FALSE);
+			BUNappend(UTF8_lowerBat, &UTF8_lower_upper[i].lower, FALSE);
+		}
+		BATseqbase(UTF8_upperBat, 0);
+		BATseqbase(UTF8_lowerBat, 0);
+		BATname(UTF8_upperBat, "monet_unicode_toupper");
+		BATname(UTF8_lowerBat, "monet_unicode_tolower");
 	}
 	return NULL;
 }
@@ -1120,8 +1126,11 @@ strPrelude(void)
 str
 strEpilogue(void)
 {
-	if (UTF8_toupperBat)
-		BBPunfix(UTF8_toupperBat->batCacheid);
+	if (UTF8_upperBat)
+		BBPunfix(UTF8_upperBat->batCacheid);
+	if (UTF8_lowerBat)
+		BBPunfix(UTF8_lowerBat->batCacheid);
+	UTF8_upperBat = UTF8_lowerBat = NULL;
 	return MAL_SUCCEED;
 }
 
@@ -1536,12 +1545,14 @@ strSuffix(bit *res, str s, str suffix)
 	return GDK_SUCCEED;
 }
 
-int
-strLower(str *res, str s)
+static int
+convertCase(BAT *from, BAT *to, str *res, const char *s)
 {
-	BATiter UTF8_tolowerBati = bat_iterator(UTF8_tolowerBat);
+	BATiter toi = bat_iterator(to);
+	BATiter fromi = bat_iterator(BATmirror(from));	/* hashes work on head columns */
 	size_t len = strlen(s);
 	unsigned char *dst, *src = (unsigned char *) s, *end = (unsigned char *) (src + len);
+	BUN UTF8_CONV_r;
 
 	RETURN_NIL_IF(strNil(s), TYPE_str);
 	*res = GDKmalloc(len + 1);
@@ -1549,14 +1560,10 @@ strLower(str *res, str s)
 	while (src < end) {
 		int c;
 
-		UTF8_GETCHAR(c,src);
-		{
-			BUN UTF8_CONV_r;
-			int UTF8_CONV_v = (c);
-			HASHfnd_int(UTF8_CONV_r, UTF8_tolowerBati, &UTF8_CONV_v);
-			if (UTF8_CONV_r != BUN_NONE)
-				(c) = *(int*) BUNtloc(UTF8_tolowerBati, UTF8_CONV_r);
-		}
+		UTF8_GETCHAR(c, src);
+		HASHfnd_int(UTF8_CONV_r, fromi, &c);
+		if (UTF8_CONV_r != BUN_NONE)
+			c = *(int*) BUNtloc(toi, UTF8_CONV_r);
 		if (dst + 6 > (unsigned char *) *res + len) {
 			/* not guaranteed to fit, so allocate more space;
 			   also allocate enough for the rest of the source */
@@ -1565,45 +1572,22 @@ strLower(str *res, str s)
 			*res = GDKrealloc(*res, (len += 6 + (end - src)) + 1);
 			dst = (unsigned char *) *res + off;
 		}
-		UTF8_PUTCHAR(c,dst);
+		UTF8_PUTCHAR(c, dst);
 	}
 	*dst = 0;
 	return GDK_SUCCEED;
 }
 
 int
+strLower(str *res, str s)
+{
+	return convertCase(UTF8_upperBat, UTF8_lowerBat, res, s);
+}
+
+int
 strUpper(str *res, str s)
 {
-	BATiter UTF8_toupperBati = bat_iterator(UTF8_toupperBat);
-	size_t len = strlen(s);
-	unsigned char *dst, *src = (unsigned char *) s, *end = (unsigned char *) (src + len);
-
-	RETURN_NIL_IF(strNil(s), TYPE_str);
-	*res = GDKmalloc(len + 1);
-	dst = (unsigned char *) *res;
-	while (src < end) {
-		int c;
-
-		UTF8_GETCHAR(c,src);
-		{
-			BUN UTF8_CONV_r;
-			int UTF8_CONV_v = (c);
-			HASHfnd_int(UTF8_CONV_r, UTF8_toupperBati, &UTF8_CONV_v);
-			if (UTF8_CONV_r != BUN_NONE)
-				(c) = *(int*) BUNtloc(UTF8_toupperBati, UTF8_CONV_r);
-		}
-		if (dst + 6 > (unsigned char *) *res + len) {
-			/* not guaranteed to fit, so allocate more space;
-			   also allocate enough for the rest of the source */
-			size_t off = dst - (unsigned char *) *res;
-
-			*res = GDKrealloc(*res, (len += 6 + (end - src)) + 1);
-			dst = (unsigned char *) *res + off;
-		}
-		UTF8_PUTCHAR(c,dst);
-	}
-	*dst = 0;
-	return GDK_SUCCEED;
+	return convertCase(UTF8_lowerBat, UTF8_upperBat, res, s);
 }
 
 int
