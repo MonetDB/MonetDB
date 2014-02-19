@@ -62,7 +62,6 @@
 #include "opt_mitosis.h"
 #include "opt_multiplex.h"
 #include "opt_octopus.h"
-#include "opt_origin.h"
 #include "opt_prejoin.h"
 #include "opt_pushranges.h"
 #include "opt_pushselect.h"
@@ -106,7 +105,6 @@ struct{
 	{"mitosis", &OPTmitosisImplementation},
 	{"multiplex", &OPTmultiplexImplementation},
 	{"octopus", &OPToctopusImplementation},
-	{"origin", &OPToriginImplementation},
 	{"prejoin", &OPTprejoinImplementation},
 	{"pushranges", &OPTpushrangesImplementation},
 	{"pushselect", &OPTpushselectImplementation},
