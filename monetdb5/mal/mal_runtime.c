@@ -40,6 +40,20 @@ static int qtop, qsize;
 static int qtag= 1;
 
 
+static void 
+formatVolume(str buf, int len, lng vol){
+	if( vol <1024)
+		snprintf(buf,len,LLFMT,vol);
+	else
+	if( vol <1024*1024)
+		snprintf(buf,len,LLFMT "K",vol/1024);
+	else
+	if( vol <1024* 1024*1024)
+		snprintf(buf,len, LLFMT "M",vol/1024/1024);
+	else
+		snprintf(buf,len, "%6.1fG",vol/1024.0/1024/1024);
+}
+
 static str isaSQLquery(MalBlkPtr mb){
 	int i;
 	InstrPtr p;

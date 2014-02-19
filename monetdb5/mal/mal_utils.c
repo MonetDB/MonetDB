@@ -18,23 +18,12 @@
  */
 
 /*
- * @a M. Kersten
- * @v 0.0
- * @+ Some basic utiliteses
- * Passing strings between front-end and kernel often
- * require marshalling.
- */
-/*
- * @-
- * At any point we should be able to construct an ascii representation of
- * the type descriptor. Including the variable references.
- * Unquoting of a string is done in place. It returns the start
- * of the unquoted part section.
+ * (c) M. Kersten
+ * Passing strings between front-end and kernel often require marshalling.
  */
 #include "monetdb_config.h"
 #include "mal_utils.h"
 
-#define PLACEHOLDER '?'
 void
 mal_unquote(char *msg)
 {
@@ -120,17 +109,3 @@ mal_quote(const char *msg, size_t size)
 	*t = 0;
 	return s;
 }
-
-void formatVolume(str buf, int len, lng vol){
-	if( vol <1024)
-		snprintf(buf,len,LLFMT,vol);
-	else
-	if( vol <1024*1024)
-		snprintf(buf,len,LLFMT "K",vol/1024);
-	else
-	if( vol <1024* 1024*1024)
-		snprintf(buf,len, LLFMT "M",vol/1024/1024);
-	else
-		snprintf(buf,len, "%6.1fG",vol/1024.0/1024/1024);
-}
-

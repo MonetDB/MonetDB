@@ -23,6 +23,5 @@
 
 mal_export str mal_quote(const char *msg, size_t size);
 mal_export void mal_unquote(char *msg);
-mal_export void formatVolume(str buf, int len, lng vol);
 
 #endif /* MAL_UTILS_H */

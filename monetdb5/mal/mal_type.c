@@ -19,14 +19,13 @@
 
 /*
  * (c) M. Kersten
- * @+ Type implementation
  * MAL Type System
  * The MAL type module overloads the atom structure managed in the GDK library.
  * For the time being, we assume GDK to support at most 127 different atomic types.
- * Type composition is limited to at most two builtin types to form a BAT.
- * Furthermore, the polymorphic type :any can be qualified
- * with a type variable index any_I, where I is a digit (1-9).
- * Beware, the TYPE_any is a speudo type known within MAL only.
+ * Type composition is limited to the  builtin scalar type and a column type.
+ * Furthermore, the polymorphic MAL type :any can be qualified
+ * with a type variable index :any_I, where I is a digit (1-9).
+ * BEWARE, the TYPE_any is a speudo type known within MAL only.
  *
  * Within the MAL layer types are encoded in 32-bit integers using
  * bit stuffing to save some space.
@@ -117,6 +116,7 @@ getTypeIdentifier(malType tpe){
  * be integrated with the kernel.
  */
 #define qt(x) (nme[1]==x[1] && nme[2]==x[2] )
+
 int
 getTypeIndex(str nme, int len, int deftype)
 {
@@ -156,10 +156,6 @@ getTypeIndex(str nme, int len, int deftype)
 		case 'o':
 			if (qt("oid"))
 				return TYPE_oid;
-			break;
-		case 'p':
-			if (qt("ptr"))
-				return TYPE_ptr;
 			break;
 		case 's':
 			if (qt("str"))
