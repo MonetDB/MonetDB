@@ -4621,7 +4621,7 @@ sql_trans_drop_idx(sql_trans *tr, sql_schema *s, int id, int drop_action)
 	node *n = list_find_base_id(s->idxs, id);
 	sql_idx *i;
        
-	if (!n) /* allready dropped */
+	if (!n) /* already dropped */
 		return;
 
 	i = n->data;

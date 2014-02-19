@@ -3680,7 +3680,7 @@ rel_push_select_down_union(int *changes, mvc *sql, sql_rel *rel)
 static sql_rel *
 rel_push_project_down_union(int *changes, mvc *sql, sql_rel *rel) 
 {
-	/* first remove distinct if allready unique */
+	/* first remove distinct if already unique */
 	if (rel->op == op_project && need_distinct(rel) && rel->exps && exps_unique(rel->exps))
 		set_nodistinct(rel);
 
