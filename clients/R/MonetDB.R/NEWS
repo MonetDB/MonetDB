@@ -1,3 +1,7 @@
+0.9
+- various extensions to monetdb.read.csv
+- removed monet.frame from this package, moved to github
+
 0.8.5
 - added parameters newline and quote to monetdb.write.csv
 

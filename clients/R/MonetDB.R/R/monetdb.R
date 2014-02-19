@@ -72,6 +72,7 @@ setMethod("dbConnect", "MonetDBDriver", def=function(drv,dbname="demo", user="mo
 								#	blocking = TRUE, open="r+b",timeout = 5 )
 								
 								# this goes to src/mapi.c
+								# TODO: this ends up in the global environment. Bad.
 								socket <- socket <<- .Call("mapiConnect",host,port,5,PACKAGE=C_LIBRARY)
 								# authenticate
 								.monetAuthenticate(socket,dbname,user,password,language=language)
@@ -836,13 +837,18 @@ monetdbGetTransferredBytes <- function() {
 	ret
 }
 
-monetdbd.liststatus <- function(passphrase,host="localhost",port=50000L,timeout=86400L) {
+.monetdbd.command <- function(passphrase,host="localhost",port=50000L,timeout=86400L) {
   socket <- .Call("mapiConnect",host,port,timeout,PACKAGE=C_LIBRARY)
   .monetAuthenticate(socket,"merovingian","monetdb",passphrase,language="control")
   .mapiWrite(socket,"#all status\n")
   ret <- .mapiRead(socket)
   .Call("mapiDisconnect",socket,PACKAGE=C_LIBRARY)
-  lines <- strsplit(ret,"\n",fixed=T)[[1]] # split by newline, first line is "=OK", so skip
+  return (ret)
+}
+
+monetdbd.liststatus <- monetdb.liststatus <- function(passphrase,host="localhost",port=50000L,timeout=86400L) {
+  rawstr <- .monetdbd.command(passphrase,host,port,timeout)
+  lines <- strsplit(rawstr,"\n",fixed=T)[[1]] # split by newline, first line is "=OK", so skip
   lines <- lines[grepl("^=sabdb:2:",lines)] # make sure we get a db list here, protocol v.2
   lines <- sub("=sabdb:2:","",lines,fixed=T)
   # convert value into propert types etc
