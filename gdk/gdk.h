@@ -1359,7 +1359,6 @@ gdk_export BAT *BUNreplace(BAT *b, const void *left, const void *right, bit forc
 gdk_export BAT *BUNinplace(BAT *b, BUN p, const void *left, const void *right, bit force);
 gdk_export BAT *BATreplace(BAT *b, BAT *n, bit force);
 
-gdk_export BUN BUNlocate(BAT *b, const void *left, const void *right);
 gdk_export BUN BUNfnd(BAT *b, const void *left);
 
 #define BUNfndVOID(p,bi,v)						\

@@ -245,7 +245,6 @@ BAT *BUNfastins(BAT *b, const void *left, const void *right);
 BUN BUNfnd(BAT *b, const void *left);
 BAT *BUNinplace(BAT *b, BUN p, const void *left, const void *right, bit force);
 BAT *BUNins(BAT *b, const void *left, const void *right, bit force);
-BUN BUNlocate(BAT *b, const void *left, const void *right);
 BAT *BUNreplace(BAT *b, const void *left, const void *right, bit force);
 size_t GDK_mem_maxsize;
 size_t GDK_vm_maxsize;
