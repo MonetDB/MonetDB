@@ -560,7 +560,7 @@ HASHgonebad(BAT *b, const void *v)
 enum find_which {
 	FIND_FIRST,
 	FIND_ANY,
-	FIND_LAST,
+	FIND_LAST
 };
 
 static BUN
@@ -616,7 +616,7 @@ SORTfndwhich(BAT *b, const void *v, enum find_which which)
 			return hi;
 		}
 		break;
-	case FIND_ANY:
+	default: /* case FIND_ANY -- stupid compiler */
 		end = 0;	/* not used in this case */
 		if (lo >= hi) {
 			/* empty BAT: value not found */
@@ -703,7 +703,7 @@ SORTfndwhich(BAT *b, const void *v, enum find_which which)
 		}
 		cur += (cmp == 0);
 		break;
-	case FIND_ANY:
+	default: /* case FIND_ANY -- stupid compiler */
 		if (cmp) {
 			/* not found */
 			cur = BUN_NONE;
