@@ -1514,6 +1514,8 @@ BUNdelete(BAT *b, BUN p, bit force)
 	return BUNdelete_(b, p, force);
 }
 
+static BUN BUNlocate(BAT *b, const void *x, const void *y);
+
 BAT *
 BUNdel(BAT *b, const void *x, const void *y, bit force)
 {
@@ -1792,7 +1794,7 @@ BUNfnd(BAT *b, const void *v)
 			   (ATOMstorage(hp->type) != TYPE_str ||	\
 			    !GDK_ELIMDOUBLES(hp->vheap)))
 
-BUN
+static BUN
 BUNlocate(BAT *b, const void *x, const void *y)
 {
 	BATiter bi = bat_iterator(b);

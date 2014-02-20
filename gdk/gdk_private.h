@@ -61,7 +61,6 @@ void BBPinit(void);
 bat BBPinsert(BATstore *bs);
 void BBPtrim(size_t delta);
 void BBPunshare(bat b);
-BUN BUNlocate(BAT *b, const void *left, const void *right);
 void GDKclrerr(void);
 int GDKextend(const char *fn, size_t size);
 int GDKextendf(int fd, size_t size);
