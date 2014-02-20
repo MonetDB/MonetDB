@@ -49,13 +49,8 @@ mal_export Symbol   findSymbol(Module nspace, str mod, str fcn);
 mal_export int 		isModuleDefined(Module scope, str name);
 mal_export Symbol   findSymbolInModule(Module v, str fcn);
 mal_export int		findInstruction(Module scope, MalBlkPtr mb, InstrPtr pci);
-mal_export void     showModules(stream *f, Module v);
-mal_export void     dumpManual(stream *f, Module v, int recursive);
-mal_export void     dumpManualSection(stream *f, Module v);
-mal_export void 	dumpManualHelp(stream *f, Module s, int recursive);
 mal_export void 	dumpHelpTable(stream *f, Module s, str text, int flag);
 mal_export void 	dumpSearchTable(stream *f, str text);
-mal_export void     dumpManualOverview(stream *f, Module v, int recursive);
 mal_export void     showModuleStatistics(stream *f,Module s); /* used in src/mal/mal_debugger.c */
 mal_export char **getHelp(Module m, str pat, int flag);
 mal_export char **getHelpMatch(char *pat);
