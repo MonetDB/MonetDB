@@ -153,6 +153,10 @@ getTypeIndex(str nme, int len, int deftype)
 			if (qt("lng"))
 				return TYPE_lng;
 			break;
+		case 'p':
+			if (qt("ptr"))
+				return TYPE_ptr;
+			break;
 		case 'o':
 			if (qt("oid"))
 				return TYPE_oid;
