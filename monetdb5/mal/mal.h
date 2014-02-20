@@ -19,9 +19,8 @@
 
 /*
  * (c) Martin Kersten
- * @+ MonetDB Basic Definitions
- * Definitions that need to included in every file of the Monet system,
- * as well as in user defined module implementations.
+ *  MonetDB Basic Definitions
+ * Definitions that need to included in every file of the Monet system, as well as in user defined module implementations.
  */
 #ifndef _MAL_H
 #define _MAL_H
@@ -39,7 +38,7 @@
 #endif
 
 /*
- * @+ MonetDB Calling Options
+ * MonetDB Calling Options
  * The number of invocation arguments is kept to a minimum.
  * See `man mserver5` or tools/mserver/mserver5.1
  * for additional system variable settings.
@@ -70,46 +69,6 @@ mal_export char		*mal_trace;		/* enable profile events on console */
 #define GRPoptimizers  (OPTMASK)
 #define GRPforcemito (FORCEMITOMASK)
 #define GRPrecycler (1<<30)
-/*
- * @+ Execution Engine
- * The execution engine comes in several flavors. The default is a
- * simple, sequential MAL interpreter. For each MAL function call it creates
- * a stack frame, which is initialized with all constants found in the
- * function body. During interpretation the garbage collector
- * ensures freeing of space consumptive tables (BATs) and strings.
- * Furthermore, all temporary structures are garbage collected before
- * the funtion returns the result.
- *
- * This simple approach leads to an accumulation of temporary variables.
- * They can be freed earlier in the process using an explicit garbage collection
- * command, but the general intend is to leave such decisions to an optimizer
- * or scheduler.
- *
- * The execution engine is only called when all MAL instructions
- * can be resolved against the available libraries.
- * Most modules are loaded when the server starts using a
- * bootstrap script @sc{mal_init.mx}
- * Failure to find the startup-file terminates the session.
- * It most likely points to an error in the MonetDB configuration file.
- *
- * During the boot phase, the global symbol table is initialized
- * with MAL function and factory definitions, and
- * loading the pre-compiled commands and patterns.
- * The libraries are dynamically loaded by default.
- * Expect tens of modules and hundreds of operations to become readily available.
- *
- * Modules can not be dropped without restarting the server.
- * The rational behind this design decision is that a dynamic load/drop feature
- * is often hardly used and severely complicates the code base.
- * In particular, upon each access to the global symbol table we have to be
- * prepared that concurrent threads may be actively changing its structure.
- * Especially, dropping modules may cause severe problems by not being
- * able to detect all references kept around.
- * This danger required all accesses to global information to be packaged
- * in a critical section, which is known to be a severe performance hindrance.
- *
- */
-
 
 mal_export MT_Lock  mal_contextLock;
 mal_export MT_Lock  mal_remoteLock;
@@ -208,6 +167,7 @@ typedef struct {
  * mal_profiler.mx) The performance structures are separately
  * administered, because they are only used in limited
  * curcumstances. */
+
 typedef struct PERF {
 #ifdef HAVE_TIMES
 	struct tms timer;			/* timing information */

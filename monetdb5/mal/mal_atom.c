@@ -18,65 +18,10 @@
  */
 
 /*
- * @a M.L.Kersten
- *  User Defined Types
- * MonetDB supports an extensible type system to accomodate a wide
- * spectrum of database kernels and application needs.
- * The type administration keeps track of their properties and
- * provides access to the underlying implementations.
- *
- * MAL recognizes the definition of a new
- * type by replacing the @sc{module} keyword with @sc{atom}.
- * Atoms definitions require special care, because their definition and
- * properties should be communicated with the kernel library.
- * The commands defined in an @sc{atom } block are screened as of interest
- * to the library.
- *
- * MonetDB comes with the hardwired types @sc{bit, bte, sht, int, lng, oid, flt,
- * dbl, str} and @sc{bat}, the representation of a bat identifier.
- * The kernel code has been optimized to deal with these types efficiently,
- * i.e. without unnecessary function call overheads.
- *
- * A small collection of user-defined @sc{atom} types is shipped with the sysem.
- * They implement types considered essential for end-user applications,
- * such as @sc{color, date, daytime,  time, timestamp, timezone, blob},
- * and @sc{inet, url}.
- * They are implemented using the type extension mechanism described below.
- * As such, they provide examples for future extensions.
- * A concrete example is the 'blob' datatype in the MonetDB atom module
- * library(see ../modules/atoms/blob.mx)
- *
- * Defining your own types
- * For the courageous at heart, you may enter the difficult world
- * of extending the kernel library. The easiest way is to derive
- * the atom modules from one shipped in the source distributed.
- * More involved atomary types require a study of the
- * documentation associated with the atom structures (gdk_atoms),
- * because you have to develop a handful routines complying with the
- * signatures required in the kernel library.
- * They are registered upon loading the @sc{atom} module.
- * 
- * The atom registration functions perform the necessary
- * type checks, but relies on the user to comply with this signature in
- * its C-implementation. The ruler calls are part of a module
- * initialization routine.
- * 
- * Functions passed to the GDK kernel are not directly accessible
- * as MAL routines, because their implementation requires a
- * GDK-specific signature. (See GDK documentation)
- * They are renamed to an non-parseable function, effectively shielding
- * them from the MAL programmer.
- * 
- * This feature is of particular interest to system experts.
- * It is not meant for end-users trying to intruduce record- or
- * struct-like objects in the database. They better decompose
- * the complex object structure and represent the components in
- * different BATs.
- */
-/*
+ * (c) M.L.Kersten
  * Every MAL command introduced in an atom module should be checked
  * to detect overloading of a predefined function.
- * Subsequently, we update the BAT atom structure.
+ * Subsequently, we update the GDK atom structure.
  * The function signatures should be parameter-less, which
  * enables additional functions with the same name to appear
  * as ordinary mal operators.
