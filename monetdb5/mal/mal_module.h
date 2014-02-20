@@ -20,6 +20,7 @@
 #ifndef _MAL_SCOPE_H_
 #define _MAL_SCOPE_H_
 
+#include "mal.h"
 /* #define MAL_SCOPE_DEBUG  */
 
 #define MAXSCOPE 256
