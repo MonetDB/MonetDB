@@ -19,7 +19,6 @@
 
 #ifndef _MAL_SCOPE_H_
 #define _MAL_SCOPE_H_
-#include "mal_xml.h"
 
 /* #define MAL_SCOPE_DEBUG  */
 
