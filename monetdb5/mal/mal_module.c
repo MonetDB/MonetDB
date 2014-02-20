@@ -18,39 +18,7 @@
  */
 
 /*
- * @f mal_module
- * @a M. L. Kersten
- * @+ Module Management
- *
- * The operations are organized in separate MAL modules.
- * Each module contains a local symbol table of all function names
- * known to it so far. These names are stored in the global namespace
- * pool and never removed to guarantee stability of remote references.
- *
- * All dynamically loaded functions remain in existing
- * for the duration of the server session. Only the administrator can
- * load functions (upon system restart). Therefore, we do not have
- * to lock the dictionary table while traversing it for information.
- * Global (private) variables can be realized keeping the symbol table
- * and runtime stack around between requests.
- *
- * The symbol descriptors within a scope are organized in a list of subscopes
- * indexed by the first character of the function name.
- *
- * The modules are still collected in a linked list to ease access
- * and debug its content. It should be used with care for
- * resolving unknown modules.
- *
- * The function symbols are collected in a global name space table,
- * indexed by a small hash table. Once added, the name may not be removed
- * anymore.
- * Care should be taken not to generate many unique function names.
- */
-/*
- * @+ Module scope management
- * Upon system restart, the global scope is created. It is called "root" and
- * does not contain any symbol definitions. It merely functions as an anchor
- * point for the modules to be added later.
+ * (c) M. L. Kersten
  */
 
 #include "monetdb_config.h"
@@ -285,7 +253,7 @@ void deleteSymbol(Module scope, Symbol prg){
 }
 
 /*
- * @+ Inheritance
+ * Inheritance
  * The MAL type checker does not apply type inheritance. Such a functionality
  * can, however, be readily implemented with a MAL rewriter.
  *
@@ -340,7 +308,7 @@ Module setInheritance(Module h, Module f, Module s){
 	return h;
 }
 /*
- * @+ Searching the scope structure.
+ * Searching the scope structure.
  * Finding a scope is unrestricted. For modules we explicitly look for
  * the start of a new module scope.
  * All core modules are accessed through the jumptable.
@@ -502,13 +470,6 @@ void dumpManualFooter(stream *f){
 static int cmpModName(Module *f, Module *l){
 	return strcmp((*f)->name, (*l)->name);
 }
-#if 0
-int cmpFcnName(InstrPtr f, InstrPtr l){
-	if(getFunctionId(f) && getFunctionId(l))
-		return strcmp(getFunctionId(f), getFunctionId(l));
-	return 0;
-}
-#endif
 void dumpManual(stream *f, Module s, int recursive){
 	int j;
 	Symbol t;

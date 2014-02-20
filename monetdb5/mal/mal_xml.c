@@ -18,9 +18,8 @@
  */
 
 /*
- * @f mal_xml
- * @a M. Kersten
- * @+ XML interface
+ * (c) M. Kersten
+ *  XML interface
  * The primitives to manipulate XML objects and to prepare for XML output
  * is collected in this single file. It is expected to grow out into
  * all the primitives needed to support an XML front-end.
