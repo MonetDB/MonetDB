@@ -529,8 +529,15 @@ retryRead:
 					}
 				}
 				continue;
-			} else
-				showModules(out, cntxt->nspace);
+			} else{
+				Module s;
+				for( s= cntxt->nspace; s; s= s->outer) {
+					mnstr_printf(out,"%s",s->name);
+					if( s->subscope==0) mnstr_printf(out,"?");
+					if(s->outer) mnstr_printf(out,",");
+				}
+				mnstr_printf(out,"\n");
+			}
 		}
 		break;
 		case 'T':   /* debug type resolver for a function call */
