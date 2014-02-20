@@ -49,13 +49,14 @@ static void clrModuleJump(str nme, Module cur){
 		if( scopeJump[(int)(*nme)][(int)(*(nme+1))]== cur)
 			scopeJump[(int)(*nme)][(int)(*(nme+1))]= cur->sibling;
 }
+
 void setModuleJump(str nme, Module cur){
 		cur->sibling= scopeJump[(int)(*nme)][(int)(*(nme+1))];
 		scopeJump[(int)(*nme)][(int)(*(nme+1))]= cur;
 }
 
 /*
- * @+ Module scope management
+ * Module scope management
  * Upon system restart, the global scope is created. It is called "root" and
  * does not contain any symbol definitions. It merely functions as an anchor
  * point for the modules to be added later.
@@ -72,7 +73,6 @@ Module newModule(Module scope, str nme){
 		cur->name = nme;
 		cur->outer = NULL;
 		cur->sibling = NULL;
-		cur->inheritance = TRUE;
 		cur->subscope = NULL;
 		cur->isAtomModule = FALSE;
 	}
@@ -253,61 +253,6 @@ void deleteSymbol(Module scope, Symbol prg){
 }
 
 /*
- * Inheritance
- * The MAL type checker does not apply type inheritance. Such a functionality
- * can, however, be readily implemented with a MAL rewriter.
- *
- * An early version of the interpreter contained a simple inheritance scheme,
- * which quickly became too complex to manage properly.
- * The default inheritance sequence is derived from the include order.
- * Most recently modules shield older modules, unless the user has specified
- * an explicit module name. This dus not work for dynamically loaded modules,
- * which may cause existing programs to be falsely bound to new implementations.
- *
- * The mechanism to control the inheritance structure consists of three features.
- * First, a module can be excluded from automatic inheritance by setting a flag.
- * This leads to skipping it during function resoluation.
- * The second mechanism is to enforce a partial order among the scopes.
- * The routine setInheritance(F,S) ensures that module F is inspected
- * before module S. In case it does not hold, S is placed just after F.
- *
- * Since the modules are currently shared between all clients,
- * such reshufflings may have drastic side effects.
- * To circumvent this, we have to make a private copy of the Scope chain
- * and the lookup table. [TODO]
- */
-void setInheritanceMode(Module m,int flag){
-	(void) flag;
-	m->inheritance = 0;
-}
-
-Module setInheritance(Module h, Module f, Module s){
-	Module fp, sp;
-	int i=0, j=0;
-	sp= h;
-	while(sp->outer && sp->outer->outer !=s) {
-		sp= s;
-		i++;
-	}
-	fp= h;
-	while(fp->outer !=f) {
-		fp= f;
-		j++;
-	}
-	if( j<i) return h;
-
-	if(h==s){
-		h= s->outer;
-		s->outer= f->outer;
-		f->outer=s;
-	} else {
-		sp->outer=s->outer;
-		s->outer = f->outer;
-		f->outer =s;
-	}
-	return h;
-}
-/*
  * Searching the scope structure.
  * Finding a scope is unrestricted. For modules we explicitly look for
  * the start of a new module scope.
@@ -390,49 +335,6 @@ findInstruction(Module scope, MalBlkPtr mb, InstrPtr pci){
 	return 0;
 }
 
-int displayModule(stream *f, Module v, str fcn, int listing){
-	Symbol s;
-	int k=0;
-
-	if( v == NULL || fcn == NULL) return 0;
-	s= v->subscope[(int)(*fcn)];
-	while(s!=NULL){
-		if( idcmp(s->name,fcn)==0 ) {
-			printFunction(f,s->def,0,listing);
-			k++;
-		}
-		s= s->peer;
-	}
-	return k;
-}
- 
-static void  printModuleScope(stream *fd, Module scope, int tab, int outer)
-{
-	int j;
-	Module s=scope;
-	Symbol t;
-
-	mnstr_printf(fd,"%smodule %s",
-		(scope->isAtomModule?"atom ":""),s->name);
-	mnstr_printf(fd,"\n");
-	if( s->subscope)
-	for(j=0;j<MAXSCOPE;j++)
-	if(s->subscope[j]){
-		mnstr_printf(fd,"[%c]",j);
-		for(t= s->subscope[j];t!=NULL;t=t->peer) {
-			mnstr_printf(fd," %s",t->name);
-			if( getSignature(t)==NULL ||
-			    (getSignature(t)->fcn==0 &&
-			     getSignature(t)->token == COMMANDsymbol &&
-			     getSignature(t)->blk==0) )
-			    mnstr_printf(fd,"(?)");
-		}
-		mnstr_printf(fd,"\n");
-	}
-	mnstr_printf(fd,"\n");
-	if(outer && scope->outer) printModuleScope(fd,scope->outer,tab+1, outer);
-}
-
 void showModules(stream *f, Module s)
 {
 	for(; s; s= s->outer) {
@@ -443,125 +345,15 @@ void showModules(stream *f, Module s)
 	mnstr_printf(f,"\n");
 }
 
-void debugModule(stream *f, Module start, str nme){
-	Module m;
-	if( nme==0 || *nme ==0) printModuleScope(f, start,0,TRUE);
-	else{
-		char *s;
-		for(s=nme;*s && (isalnum((int) *s) ||*s=='_');s++);
-		*s = 0;
-		m= findModule(start,nme);
-		if( m== NULL) mnstr_printf(f,"Module '%s' not found\n",nme);
-		else printModuleScope(f,m,0,FALSE);
-	}
-}
 /*
  * The commands and operators come with a short description.
- * The dumpManual() command produces a single XML file for post
+ * The dumpManual() command produces a single file for post
  * processing and producing a system manual.
  */
-void dumpManualHeader(stream *f){
-	mnstr_printf(f,"<?xml version=\"1.0\"?>\n");
-	mnstr_printf(f,"<manual>\n");
-}
-void dumpManualFooter(stream *f){
-	mnstr_printf(f,"</manual>\n");
-}
 static int cmpModName(Module *f, Module *l){
 	return strcmp((*f)->name, (*l)->name);
 }
-void dumpManual(stream *f, Module s, int recursive){
-	int j;
-	Symbol t;
-	str ps, lnk, op=0, endtag=0;
-	InstrPtr sig;
-	Module list[256]; int k, top=0;
 
-
-	if(s==NULL || f==NULL){
-		return;
-	}
-	list[top++]=s;
-	while(s->outer && recursive){ list[top++]= s->outer;s=s->outer;}
-
-	if(top>1) qsort(list, top, sizeof(Module),
-		(int(*)(const void *, const void *))cmpModName);
-
-	for(k=0;k<top;k++){
-	s= list[k];
-	mnstr_printf(f,"<%smodule name=\"%s\">\n",
-		(s->isAtomModule?"atom":""),xmlChr(s->name));
-	if(s->help)
-		mnstr_printf(f,"%s\n",s->help);
-	if( s->subscope)
-	for(j=0;j<MAXSCOPE;j++)
-	if(s->subscope[j]){
-		for(t= s->subscope[j];t!=NULL;t=t->peer) {
-			sig= getSignature(t);
-
-			if(op==0 || strcmp(op,t->name)){
-			    if(endtag) mnstr_printf(f,"  </%s>\n",endtag);
-			    mnstr_printf(f,"  <%s",operatorName(sig->token));
-			    op = t->name;
-			    mnstr_printf(f,"  name=\"%s\">\n",xmlChr(op));
-			    if(t->def->help)
-			    mnstr_printf(f,"    <comment>%s</comment>\n",
-			        xmlChr(t->def->help));
-			    op= t->name;
-			    endtag= operatorName(sig->token);
-			}
-
-			ps= instruction2str(t->def,0,sig,0);
-			lnk= strrchr(ps,'=');
-			if(lnk && *(lnk+1)!='(') *lnk=0;
-
-			mnstr_printf(f,"  <instantiation>\n");
-			mnstr_printf(f,"    <signature>%s</signature>\n",
-			    xmlChr(strchr(ps,'(')));
-			if(lnk)
-			mnstr_printf(f,"    <implementation>%s</implementation>\n",xmlChr(lnk+1));
-			GDKfree(ps);
-			if(t->def->help){
-			    mnstr_printf(f,"    <comment>%s</comment>\n",
-			        xmlChr(t->def->help));
-			}
-			mnstr_printf(f,"  </instantiation>\n");
-		}
-	}
-	if(endtag) mnstr_printf(f,"  </%s>\n",endtag);
-	mnstr_printf(f,"</%smodule>\n", (s->isAtomModule?"atom":""));
-	endtag=0;
-	}
-}
-void dumpManualSection(stream *f, Module s){
-	int j;
-	Symbol t;
-	InstrPtr sig;
-	str ps;
-	char *pt;
-
-	if(s==NULL || f==NULL || s->subscope== NULL)
-		return;
-
-	mnstr_printf(f,"@table\n");
-	for(j=0;j<MAXSCOPE;j++)
-	if(s->subscope[j]){
-		for(t= s->subscope[j];t!=NULL;t=t->peer) {
-			sig= getSignature(t);
-			ps= instruction2str(t->def,0,sig,0);
-			pt= strchr(ps,')');
-			if(pt){
-				pt++;
-				*pt=0;
-				mnstr_printf(f,"@tab %s\n",ps+1);
-			} else
-			mnstr_printf(f,"@tab %s\n",t->name);
-			if( t->def->help)
-				mnstr_printf(f," %s\n",t->def->help);
-		}
-	}
-	mnstr_printf(f,"@end table\n");
-}
 /*
  * The manual overview merely lists the mod.function names
  * in texi format for inclusion in the documetation.
@@ -680,7 +472,6 @@ void dumpManualHelp(stream *f, Module s, int recursive){
 	if(top>1) qsort(list, top, sizeof(Module),
 		(int(*)(const void *, const void *))cmpModName);
 
-	mnstr_printf(f,"@multitable @columnfractions .2 .8 \n");
 	for(k=0;k<top;k++){
 		s= list[k];
 		ftop = 0;
@@ -704,16 +495,16 @@ void dumpManualHelp(stream *f, Module s, int recursive){
 				}
 			}
 		}
+
 		for(j=0; j<ftop; j++)
 		for(z=j+1; z<ftop; z++)
 		if( strcmp(getFunctionId(fcn[j]),getFunctionId(fcn[z]))  >0) {
 			msg= hlp[j]; hlp[j]=hlp[z]; hlp[z]= msg;
 			 sig= fcn[j]; fcn[j]=fcn[z]; fcn[z]= sig;
 		}
-		mnstr_printf(f,"@" "item\n");
+
 		for(z=0; z<ftop; z++){
-			mnstr_printf(f,"@" "item %s.%s\n",
-				getModuleId(fcn[z]), getFunctionId(fcn[z]));
+			mnstr_printf(f,"%s.%s", getModuleId(fcn[z]), getFunctionId(fcn[z]));
 			if( hlp[z] ) {
 				str hlp_ = hlp[z];
 				size_t hlp_len = 2*strlen(hlp[z]) + 1;
@@ -725,32 +516,28 @@ void dumpManualHelp(stream *f, Module s, int recursive){
 					hlp_texi_len = hlp_len;
 				}
 				if (hlp_texi != NULL) {
-					str i = hlp[z];
-					str o = hlp_texi;
-					char c;
-					while ((c = (*i++))) {
-						/* quote special texi characters with '@' */
-						switch (c) {
-						case '@':
-						case '{':
-						case '}':
-							*o++ = '@';
-							break;
-						}
-						*o++ = c;
+					str s, o = hlp_texi;
+					for ( s= hlp[z]; *s; s++){
+						if (*s == '\n' || *s == '\t')
+							*o++ = ' ';
+						else
+						if( *s == '\\') {
+							*o++ = ' ';
+							s++;
+						} else
+							*o++ = *s;
 					}
 					*o++ = '\0';
 					hlp_ = hlp_texi;
 				}
 				if (strlen(getModuleId(fcn[z])) + strlen(getFunctionId(fcn[z])) >= 20) {
 					/* HACK to avoid long names running into help text in printed version */
-					mnstr_printf(f,"@" "item\n");
 				}
-				mnstr_printf(f,"@" "tab %s\n", hlp_);
+				mnstr_printf(f," | %s", hlp_);
 			}
+			mnstr_printf(f,"\n");
 		}
 	}
-	mnstr_printf(f,"@end multitable\n");
 	if (hlp_texi != NULL)
 		GDKfree(hlp_texi);
 }
@@ -783,6 +570,7 @@ static void showModuleStat(stream *f, Module v,int cnt[256]){
 	}
 	if(v->outer) showModuleStat(f,v->outer,cnt);
 }
+
 void showModuleStatistics(stream *f,Module s){
 	int i,cnt[256];
 
@@ -790,6 +578,7 @@ void showModuleStatistics(stream *f,Module s){
 	for(i=0;i<256;i++) cnt[i]=0;
 	showModuleStat(f,s,cnt);
 }
+
 /*
  * Some primitives to aid online help and completions.
  * Note that pattern matching is on string prefix.
@@ -970,6 +759,7 @@ char **getHelp(Module m, str inputpat, int completion)
 	GDKfree(pat);
 	return msg;
 }
+
 /*
  * The second primitive of relevance is to find documentation matching
  * a keyword. Since we can not assume pcre to be everywhere, we keep

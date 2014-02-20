@@ -18,58 +18,15 @@
  */
 
 /*
- * @f manual
- * @a Martin Kersten
- * @v 1
- * @+ Manual Inspection
+ * (c) Martin Kersten
  * This module introduces a series of commands that provide access
  * to the help information stored in the runtime environment.
  *
  * The manual bulk operations ease offline inspection of all function definitions.
- * It includes an XML organized file, because we expect external
- * tools to massage it further for presentation.
  */
 #include "monetdb_config.h"
 #include "manual.h"
 
-/*
- * @+ Symbol table
- * Mal symbol table and environment analysis.
- */
-
-str
-MANUALcreateSection(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	str *mod = (str*) getArgReference(stk,pci,1);
-
-	(void) mb;
-	dumpManualSection(cntxt->fdout, findModule(cntxt->nspace, putName(*mod, strlen(*mod))));
-	return MAL_SUCCEED;
-}
-
-str
-MANUALcreate1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	str *mod = (str*) getArgReference(stk,pci,1);
-	(void) mb;		/* fool compiler */
-	dumpManualHeader(cntxt->fdout);
-	dumpManual(cntxt->fdout, findModule(cntxt->nspace, putName(*mod, strlen(*mod))), 0);
-	dumpManualFooter(cntxt->fdout);
-	return MAL_SUCCEED;
-}
-
-str
-MANUALcreate0(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	(void) cntxt;
-	(void) mb;
-	(void) stk;
-	(void) pci;
-	dumpManualHeader(cntxt->fdout);
-	dumpManual(cntxt->fdout, cntxt->nspace, 1);
-	dumpManualFooter(cntxt->fdout);
-	return MAL_SUCCEED;
-}
 str
 MANUALcreateIndex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -79,6 +36,7 @@ MANUALcreateIndex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	dumpManualOverview(cntxt->fdout, cntxt->nspace, 1);
 	return MAL_SUCCEED;
 }
+
 str
 MANUALcreateSummary(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -88,6 +46,7 @@ MANUALcreateSummary(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	dumpManualHelp(cntxt->fdout, cntxt->nspace, 1);
 	return MAL_SUCCEED;
 }
+
 str
 MANUALcompletion(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
