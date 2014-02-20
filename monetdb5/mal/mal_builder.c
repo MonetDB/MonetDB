@@ -18,7 +18,7 @@
  */
 
 /*
- * author M. Kersten
+ * (c) M. Kersten
  *
  * MAL builder
  * The MAL builder library containst the primitives to simplify construction

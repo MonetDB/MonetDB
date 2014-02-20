@@ -18,7 +18,7 @@
  */
 
 /*
- *  Author M. Kersten
+ * (c)  Author M. Kersten
  */
 #include "monetdb_config.h"
 #include "mal_instruction.h"
