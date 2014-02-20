@@ -34,7 +34,7 @@ create table utf8bom (
     city string,
     id integer
 );
-copy into utf8bom from '%s' using delimiters ',','\\r\\n','"';
+copy into utf8bom from '%s' using delimiters ',','\\n','"';
 select * from utf8bom order by id;
 rollback;
 '''
