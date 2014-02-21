@@ -767,8 +767,12 @@ mvc_import_table(Client cntxt, mvc *m, bstream *bs, char *sname, char *tname, ch
 				BBPunfix(b->batCacheid);
 			}
 		}
-		if (as.error)
+		if (as.error) {
 			sql_error(m, 500, "%s", as.error);
+			if (as.error != M5OutOfMemory)
+				GDKfree(as.error);
+			as.error = NULL;
+		}
 		for (n = t->columns.set->h, i = 0; n; n = n->next, i++) {
 			fmt[i].sep = NULL;
 			fmt[i].rsep = NULL;
