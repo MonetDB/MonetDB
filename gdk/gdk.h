@@ -3349,128 +3349,168 @@ gdk_export BAT *BATsample_(BAT *b, BUN n); /* version that expects void head and
 #define MAXPARAMS	32
 
 #ifndef NDEBUG
-#ifdef __GNUC__			/* need GNU C for __func__ macro */
+#ifdef __GNUC__
 /* in debug builds, complain (warn) about usage of legacy functions */
 
 #define BATselect_(b, h, t, li, hi)					\
-	(								\
+	({								\
+		BAT *_b = (b);						\
 		fprintf(stderr,						\
-			"#BATselect_ %s[%s:%d]\n",			\
-			__func__, __FILE__, __LINE__),			\
-		BATselect_((b), (h), (t), (li), (hi))			\
-	)
+			"#BATselect_([%s,%s]) %s[%s:%d]\n",		\
+			ATOMname(_b->htype), ATOMname(_b->ttype),	\
+			__func__, __FILE__, __LINE__);			\
+		BATselect_((b), (h), (t), (li), (hi));			\
+	})
 
 #define BATuselect_(b, h, t, li, hi)					\
-	(								\
+	({								\
+		BAT *_b = (b);						\
 		fprintf(stderr,						\
-			"#BATuselect_ %s[%s:%d]\n",			\
-			__func__, __FILE__, __LINE__),			\
-		BATuselect_((b), (h), (t), (li), (hi))			\
-	)
+			"#BATuselect_([%s,%s]) %s[%s:%d]\n",		\
+			ATOMname(_b->htype), ATOMname(_b->ttype),	\
+			__func__, __FILE__, __LINE__);			\
+		BATuselect_((b), (h), (t), (li), (hi));			\
+	})
 
 #define BATantiuselect_(b, h, t, li, hi)				\
-	(								\
+	({								\
+		BAT *_b = (b);						\
 		fprintf(stderr,						\
-			"#BATantiuselect_ %s[%s:%d]\n",			\
-			__func__, __FILE__, __LINE__),			\
-		BATantiuselect_((b), (h), (t), (li), (hi))		\
-	)
+			"#BATantiuselect_([%s,%s]) %s[%s:%d]\n",	\
+			ATOMname(_b->htype), ATOMname(_b->ttype),	\
+			__func__, __FILE__, __LINE__);			\
+		BATantiuselect_((b), (h), (t), (li), (hi));		\
+	})
 
 #define BATselect(b, h, t)						\
-	(								\
+	({								\
+		BAT *_b = (b);						\
 		fprintf(stderr,						\
-			"#BATselect %s[%s:%d]\n",			\
-			__func__, __FILE__, __LINE__),			\
-		BATselect((b), (h), (t))				\
-	)
+			"#BATselect([%s,%s]) %s[%s:%d]\n",		\
+			ATOMname(_b->htype), ATOMname(_b->ttype),	\
+			__func__, __FILE__, __LINE__);			\
+		BATselect((b), (h), (t));				\
+	})
 
 #define BATuselect(b, h, t)						\
-	(								\
+	({								\
+		BAT *_b = (b);						\
 		fprintf(stderr,						\
-			"#BATuselect %s[%s:%d]\n",			\
-			__func__, __FILE__, __LINE__),			\
-		BATuselect((b), (h), (t))				\
-	)
+			"#BATuselect([%s,%s]) %s[%s:%d]\n",		\
+			ATOMname(_b->htype), ATOMname(_b->ttype),	\
+			__func__, __FILE__, __LINE__);			\
+		BATuselect((b), (h), (t));				\
+	})
 
 #define BATsample(b, n)							\
-	(								\
+	({								\
+		BAT *_b = (b);						\
 		fprintf(stderr,						\
-			"#BATsample %s[%s:%d]\n",			\
-			__func__, __FILE__, __LINE__),			\
-		BATsample((b), (n))					\
-	)
+			"#BATsample([%s,%s]) %s[%s:%d]\n",		\
+			ATOMname(_b->htype), ATOMname(_b->ttype),	\
+			__func__, __FILE__, __LINE__);			\
+		BATsample((b), (n));					\
+	})
 
 #define BATsemijoin(l, r)						\
-	(								\
+	({								\
+		BAT *_l = (l), *_r = (r);				\
 		fprintf(stderr,						\
-			"#BATsemijoin %s[%s:%d]\n",			\
-			__func__, __FILE__, __LINE__),			\
-		BATsemijoin((l), (r))					\
-	)
+			"#BATsemijoin([%s,%s],[%s,%s]) %s[%s:%d]\n",	\
+			ATOMname(_l->htype), ATOMname(_l->ttype),	\
+			ATOMname(_r->htype), ATOMname(_r->ttype),	\
+			__func__, __FILE__, __LINE__);			\
+		BATsemijoin(_l, _r);					\
+	})
 
 #define BATjoin(l, r, estimate)						\
-	(								\
+	({								\
+		BAT *_l = (l), *_r = (r);				\
 		fprintf(stderr,						\
-			"#BATjoin %s[%s:%d]\n",				\
-			__func__, __FILE__, __LINE__),			\
-		BATjoin((l), (r), (estimate))				\
-	)
+			"#BATjoin([%s,%s],[%s,%s]) %s[%s:%d]\n",	\
+			ATOMname(_l->htype), ATOMname(_l->ttype),	\
+			ATOMname(_r->htype), ATOMname(_r->ttype),	\
+			__func__, __FILE__, __LINE__);			\
+		BATjoin(_l, _r, (estimate));				\
+	})
 
 #define BATleftjoin(l, r, estimate)					\
-	(								\
+	({								\
+		BAT *_l = (l), *_r = (r);				\
 		fprintf(stderr,						\
-			"#BATleftjoin %s[%s:%d]\n",			\
-			__func__, __FILE__, __LINE__),			\
-		BATleftjoin((l), (r), (estimate))			\
-	)
+			"#BATleftjoin([%s,%s],[%s,%s]) %s[%s:%d]\n",	\
+			ATOMname(_l->htype), ATOMname(_l->ttype),	\
+			ATOMname(_r->htype), ATOMname(_r->ttype),	\
+			__func__, __FILE__, __LINE__);			\
+		BATleftjoin(_l, _r, (estimate));			\
+	})
 
 #define BATthetajoin(l, r, op, estimate)				\
-	(								\
+	({								\
+		BAT *_l = (l), *_r = (r);				\
 		fprintf(stderr,						\
-			"#BATthetajoin %s[%s:%d]\n",			\
-			__func__, __FILE__, __LINE__),			\
-		BATthetajoin((l), (r), (op), (estimate))		\
-	)
+			"#BATthetajoin([%s,%s],[%s,%s]) %s[%s:%d]\n",	\
+			ATOMname(_l->htype), ATOMname(_l->ttype),	\
+			ATOMname(_r->htype), ATOMname(_r->ttype),	\
+			__func__, __FILE__, __LINE__);			\
+		BATthetajoin(_l, _r, (op), (estimate));			\
+	})
 
 #define BATouterjoin(l, r, estimate)					\
-	(								\
+	({								\
+		BAT *_l = (l), *_r = (r);				\
 		fprintf(stderr,						\
-			"#BATouterjoin %s[%s:%d]\n",			\
-			__func__, __FILE__, __LINE__),			\
-		BATouterjoin((l), (r), (estimate))			\
-	)
+			"#BATouterjoin([%s,%s],[%s,%s]) %s[%s:%d]\n",	\
+			ATOMname(_l->htype), ATOMname(_l->ttype),	\
+			ATOMname(_r->htype), ATOMname(_r->ttype),	\
+			__func__, __FILE__, __LINE__);			\
+		BATouterjoin(_l, _r, (estimate));			\
+	})
 
 #define BATleftfetchjoin(l, r, estimate)				\
-	(								\
+	({								\
+		BAT *_l = (l), *_r = (r);				\
 		fprintf(stderr,						\
-			"#BATleftfetchjoin %s[%s:%d]\n",		\
-			__func__, __FILE__, __LINE__),			\
-		BATleftfetchjoin((l), (r), (estimate))			\
-	)
+			"#BATleftfetchjoin([%s,%s],[%s,%s]) %s[%s:%d]\n", \
+			ATOMname(_l->htype), ATOMname(_l->ttype),	\
+			ATOMname(_r->htype), ATOMname(_r->ttype),	\
+			__func__, __FILE__, __LINE__);			\
+		BATleftfetchjoin(_l, _r, (estimate));			\
+	})
 
 #define BATantijoin(l, r)						\
-	(								\
+	({								\
+		BAT *_l = (l), *_r = (r);				\
 		fprintf(stderr,						\
-			"#BATantijoin %s[%s:%d]\n",			\
-			__func__, __FILE__, __LINE__),			\
-		BATantijoin((l), (r))					\
-	)
+			"#BATantijoin([%s,%s],[%s,%s]) %s[%s:%d]\n",	\
+			ATOMname(_l->htype), ATOMname(_l->ttype),	\
+			ATOMname(_r->htype), ATOMname(_r->ttype),	\
+			__func__, __FILE__, __LINE__);			\
+		BATantijoin(_l, _r);					\
+	})
 
 #define BATbandjoin(l, r, c1, c2, li, hi)				\
-	(								\
+	({								\
+		BAT *_l = (l), *_r = (r);				\
 		fprintf(stderr,						\
-			"#BATbandjoin %s[%s:%d]\n",			\
-			__func__, __FILE__, __LINE__),			\
-		BATbandjoin((l), (r), (c1), (c2), (li), (hi))		\
-	)
+			"#BATbandjoin([%s,%s],[%s,%s]) %s[%s:%d]\n",	\
+			ATOMname(_l->htype), ATOMname(_l->ttype),	\
+			ATOMname(_r->htype), ATOMname(_r->ttype),	\
+			__func__, __FILE__, __LINE__);			\
+		BATbandjoin(_l, _r, (c1), (c2), (li), (hi));		\
+	})
 
 #define BATrangejoin(l, rl, rh, li, hi)					\
-	(								\
+	({								\
+		BAT *_l = (l), *_rl = (rl), *_rh = (rh);		\
 		fprintf(stderr,						\
-			"#BATrangejoin %s[%s:%d]\n",			\
-			__func__, __FILE__, __LINE__),			\
-		BATrangejoin((l), (rl), (rh), (li), (hi))		\
-	)
+			"#BATrangejoin([%s,%s],[%s,%s],[%s,%s]) %s[%s:%d]\n", \
+			ATOMname(_l->htype), ATOMname(_l->ttype),	\
+			ATOMname(_rl->htype), ATOMname(_rl->ttype),	\
+			ATOMname(_rh->htype), ATOMname(_rh->ttype),	\
+			__func__, __FILE__, __LINE__);			\
+		BATrangejoin(_l, _rl, _rh, (li), (hi));			\
+	})
 #endif
 #endif
 
