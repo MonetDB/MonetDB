@@ -3348,4 +3348,130 @@ gdk_export BAT *BATsample_(BAT *b, BUN n); /* version that expects void head and
 #define ILLEGALVALUE	((ptr)-1L)
 #define MAXPARAMS	32
 
+#ifndef NDEBUG
+#ifdef __GNUC__			/* need GNU C for __func__ macro */
+/* in debug builds, complain (warn) about usage of legacy functions */
+
+#define BATselect_(b, h, t, li, hi)					\
+	(								\
+		fprintf(stderr,						\
+			"#BATselect_ %s[%s:%d]\n",			\
+			__func__, __FILE__, __LINE__),			\
+		BATselect_((b), (h), (t), (li), (hi))			\
+	)
+
+#define BATuselect_(b, h, t, li, hi)					\
+	(								\
+		fprintf(stderr,						\
+			"#BATuselect_ %s[%s:%d]\n",			\
+			__func__, __FILE__, __LINE__),			\
+		BATuselect_((b), (h), (t), (li), (hi))			\
+	)
+
+#define BATantiuselect_(b, h, t, li, hi)				\
+	(								\
+		fprintf(stderr,						\
+			"#BATantiuselect_ %s[%s:%d]\n",			\
+			__func__, __FILE__, __LINE__),			\
+		BATantiuselect_((b), (h), (t), (li), (hi))		\
+	)
+
+#define BATselect(b, h, t)						\
+	(								\
+		fprintf(stderr,						\
+			"#BATselect %s[%s:%d]\n",			\
+			__func__, __FILE__, __LINE__),			\
+		BATselect((b), (h), (t))				\
+	)
+
+#define BATuselect(b, h, t)						\
+	(								\
+		fprintf(stderr,						\
+			"#BATuselect %s[%s:%d]\n",			\
+			__func__, __FILE__, __LINE__),			\
+		BATuselect((b), (h), (t))				\
+	)
+
+#define BATsample(b, n)							\
+	(								\
+		fprintf(stderr,						\
+			"#BATsample %s[%s:%d]\n",			\
+			__func__, __FILE__, __LINE__),			\
+		BATsample((b), (n))					\
+	)
+
+#define BATsemijoin(l, r)						\
+	(								\
+		fprintf(stderr,						\
+			"#BATsemijoin %s[%s:%d]\n",			\
+			__func__, __FILE__, __LINE__),			\
+		BATsemijoin((l), (r))					\
+	)
+
+#define BATjoin(l, r, estimate)						\
+	(								\
+		fprintf(stderr,						\
+			"#BATjoin %s[%s:%d]\n",				\
+			__func__, __FILE__, __LINE__),			\
+		BATjoin((l), (r), (estimate))				\
+	)
+
+#define BATleftjoin(l, r, estimate)					\
+	(								\
+		fprintf(stderr,						\
+			"#BATleftjoin %s[%s:%d]\n",			\
+			__func__, __FILE__, __LINE__),			\
+		BATleftjoin((l), (r), (estimate))			\
+	)
+
+#define BATthetajoin(l, r, op, estimate)				\
+	(								\
+		fprintf(stderr,						\
+			"#BATthetajoin %s[%s:%d]\n",			\
+			__func__, __FILE__, __LINE__),			\
+		BATthetajoin((l), (r), (op), (estimate))		\
+	)
+
+#define BATouterjoin(l, r, estimate)					\
+	(								\
+		fprintf(stderr,						\
+			"#BATouterjoin %s[%s:%d]\n",			\
+			__func__, __FILE__, __LINE__),			\
+		BATouterjoin((l), (r), (estimate))			\
+	)
+
+#define BATleftfetchjoin(l, r, estimate)				\
+	(								\
+		fprintf(stderr,						\
+			"#BATleftfetchjoin %s[%s:%d]\n",		\
+			__func__, __FILE__, __LINE__),			\
+		BATleftfetchjoin((l), (r), (estimate))			\
+	)
+
+#define BATantijoin(l, r)						\
+	(								\
+		fprintf(stderr,						\
+			"#BATantijoin %s[%s:%d]\n",			\
+			__func__, __FILE__, __LINE__),			\
+		BATantijoin((l), (r))					\
+	)
+
+#define BATbandjoin(l, r, c1, c2, li, hi)				\
+	(								\
+		fprintf(stderr,						\
+			"#BATbandjoin %s[%s:%d]\n",			\
+			__func__, __FILE__, __LINE__),			\
+		BATbandjoin((l), (r), (c1), (c2), (li), (hi))		\
+	)
+
+#define BATrangejoin(l, rl, rh, li, hi)					\
+	(								\
+		fprintf(stderr,						\
+			"#BATrangejoin %s[%s:%d]\n",			\
+			__func__, __FILE__, __LINE__),			\
+		BATrangejoin((l), (rl), (rh), (li), (hi))		\
+	)
+#endif
+#endif
+
 #endif /* _GDK_H_ */
