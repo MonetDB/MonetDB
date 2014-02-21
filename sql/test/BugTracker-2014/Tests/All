@@ -8,3 +8,4 @@ two-column-aggr-with-null.Bug-3428
 sample-crash.Bug-3429
 indices.Bug-3435
 utf8bom.Bug-3436
+left-outer-join-with-and.Bug-3444
