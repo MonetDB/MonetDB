@@ -50,6 +50,9 @@ comment "The same as normal table print, but
 	enforces to use the order of BAT 
 	number [1..argc] to do the printing.";
 
+pattern table(b1:bat[:oid,:any]):void 
+address IOttable
+comment "Print an n-ary table. Like print, but does not print oid column";
 pattern table(b1:bat[:oid,:any], b2:bat[:oid,:any]...):void 
 address IOttable
 comment "Print an n-ary table. Like print, but does not print oid column";
@@ -66,7 +69,7 @@ address IOprint_val
 comment "Print a MAL value tuple .";
 pattern print(val:bat[:oid,:any_2]):void 
 address IOprint_val
-comment "Print a MAL value tuple .";
+comment "Print a MAL value column .";
 
 pattern prompt(val:any_1):void 
 address IOprompt_val
