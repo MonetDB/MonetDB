@@ -3098,9 +3098,9 @@ rel_push_select_down_join(int *changes, mvc *sql, sql_rel *rel)
 				sql_exp *re = e->r;
 
 				if (re->card >= CARD_AGGR) {
-					rel->l = rel_push_join(sql->sa, r, e->l, re, NULL, e);
+					rel->l = rel_push_join(sql, r, e->l, re, NULL, e);
 				} else {
-					rel->l = rel_push_select(sql->sa, r, e->l, e);
+					rel->l = rel_push_select(sql, r, e->l, e);
 				}
 				/* only pushed down selects are counted */
 				if (r == rel->l) {
