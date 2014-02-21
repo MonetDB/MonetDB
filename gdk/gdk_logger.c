@@ -1913,11 +1913,21 @@ log_tend(logger *lg)
 		/* sub commit all new snapshots */
 		BAT *tids, *bids;
 
+#if 0
+		/* We can't use this version because we still use
+		 * BUNdelete on lg->snapshots_tid, so it is not
+		 * necessarily dense-headed */
 		tids = BATsubselect(lg->snapshots_tid, NULL, &lg->tid, &lg->tid,
 				    TRUE, TRUE, FALSE);
 		if (tids == NULL)
 			return LOG_ERR;
 		bids = BATproject(tids, lg->snapshots_bid);
+#else
+                tids = BATuselect(lg->snapshots_tid, &lg->tid, &lg->tid);
+		if (tids == NULL)
+			return LOG_ERR;
+                bids = BATsemijoin(lg->snapshots_bid, tids);
+#endif
 		BBPunfix(tids->batCacheid);
 		if (bids == NULL)
 			return LOG_ERR;

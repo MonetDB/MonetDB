@@ -284,6 +284,10 @@ TABLETcollect_parts(Tablet *as, BUN offset)
 			b->tkey = TRUE;
 		b->batDirty = TRUE;
 
+		if (offset>0) {
+			BBPunfix(bv->batCacheid);
+			bats[i] = BATslice(b, offset, BATcount(b));
+		}
 		if (cnt != BATcount(b)) {
 			snprintf(errbuf, sizeof(errbuf), "Error: column " BUNFMT "  count " BUNFMT " differs from " BUNFMT "\n", i, BATcount(b), cnt);
 			MT_lock_set(&errorlock, "TABLETcollect_parts");
