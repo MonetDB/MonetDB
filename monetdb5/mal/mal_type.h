@@ -43,11 +43,16 @@
 /* introduce gradually the column type macros, sharing the
  * representation with BAT type
  */
-#define newColType(T)  (1<<16 | (T & 0377) )
-#define getColType(X)  ((X) & 0377 )
-#define isaColType(X)   ((1<<16) & (X) && (X)!= TYPE_any)
-#define setAnyColIndex(X,I) X |= ((I & 017)<<18);
-#define getColIndex(X)  (((X)>>18) & 017)
+#define newColumn(Var,Type,Tag, Undo...) \
+	Var = BATnew(TYPE_void, Type,0); \
+	if ( Var == NULL) { Undo ;throw(MAL,Tag,MAL_MALLOC_FAIL);}\
+	BATseqbase(Var,0);
+
+#define newColumnType(T)  (1<<16 | (T & 0377) )
+#define getColumnType(X)  ((X) & 0377 )
+#define isaColumnType(X)   ((1<<16) & (X) && (X)!= TYPE_any)
+#define setAnyColumnIndex(X,I) X |= ((I & 017)<<18);
+#define getColumnIndex(X)  (((X)>>18) & 017)
 
 /*
  * The symbol/instruction kinds are introduced here instead of reusing the defines
