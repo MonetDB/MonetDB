@@ -1001,7 +1001,7 @@ mdbSanityCheck(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 				b = BATmirror(b);
 			if (b) {
 				nme = getTypeName(n->type);
-				nmeOnStk = getTypeName(newColType(b->ttype));
+				nmeOnStk = getTypeName(newColumnType(b->ttype));
 				if (strcmp(nme, nmeOnStk)) {
 					printTraceCall(cntxt->fdout, mb, stk, pc, cntxt->flags);
 					mnstr_printf(cntxt->fdout, "!ERROR: %s != :%s\n",
@@ -1224,7 +1224,7 @@ printBATelm(stream *f, int i, BUN cnt, BUN first)
 
 	b = BATdescriptor(i);
 	if (b) {
-		tpe = getTypeName(newColType(b->ttype));
+		tpe = getTypeName(newColumnType(b->ttype));
 		mnstr_printf(f, ":%s ", tpe);
 		printBATproperties(f, b);
 		/* perform property checking */
@@ -1289,7 +1289,7 @@ printStackElm(stream *f, MalBlkPtr mb, ValPtr v, int index, BUN cnt, BUN first)
 		if (i < 0)
 			b = BATmirror(b);
 		if (b) {
-			nme = getTypeName(newColType(b->ttype));
+			nme = getTypeName(newColumnType(b->ttype));
 			mnstr_printf(f, " :%s rows="BUNFMT, nme, BATcount(b));
 		} else {
 			nme = getTypeName(n->type);

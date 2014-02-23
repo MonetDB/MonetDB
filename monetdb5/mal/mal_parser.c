@@ -694,7 +694,7 @@ parseTypeId(Client cntxt, int defaultType)
 	if (strncmp(s, ":col", 4) == 0 && !idCharacter[(int) s[4]]) {
 		/* parse default for :col[:any] */
 		advance(cntxt, 4);
-		return newColType(TYPE_any);
+		return newColumnType(TYPE_any);
 	}
 	if (currChar(cntxt) == ':') {
 		ht = simpleTypeId(cntxt);

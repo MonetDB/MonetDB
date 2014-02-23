@@ -365,7 +365,7 @@ pushEmptyBAT(MalBlkPtr mb, InstrPtr q, int tpe)
 	getFunctionId(q) = getName("new",3);
 
 	q = pushArgument(mb, q, newTypeVariable(mb,TYPE_void));
-	q = pushArgument(mb, q, newTypeVariable(mb,getColType(tpe)));
+	q = pushArgument(mb, q, newTypeVariable(mb,getColumnType(tpe)));
 	q = pushZero(mb,q,TYPE_lng);
 	return q;
 }
