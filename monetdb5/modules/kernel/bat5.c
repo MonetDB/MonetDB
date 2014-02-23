@@ -1283,11 +1283,11 @@ BKCgetHeadType(str *res, bat *bid)
 }
 
 str
-BKCgetTailType(str *res, int *bid)
+BKCgetColumnType(str *res, int *bid)
 {
 	const char *ret = str_nil;
 
-	if (BBPcheck(*bid, "bat.getTailType")) {
+	if (BBPcheck(*bid, "bat.getColumnType")) {
 		BAT *b = lock_desc(*bid);
 
 		if (b) {

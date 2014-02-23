@@ -65,7 +65,7 @@ CMDbbpbind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	/* check conformity of the actual type and the one requested */
 	ht= getHeadType(getArgType(mb,pci,0));
-	tt= getTailType(getArgType(mb,pci,0));
+	tt= getColumnType(getArgType(mb,pci,0));
 	if( b->htype == TYPE_void && ht== TYPE_oid) ht= TYPE_void;
 	if( b->ttype == TYPE_void && tt== TYPE_oid) tt= TYPE_void;
 

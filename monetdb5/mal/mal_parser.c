@@ -678,7 +678,7 @@ parseTypeId(Client cntxt, int defaultType)
 		if (kh > 0)
 			setAnyHeadIndex(i, kh);
 		if (kt > 0)
-			setAnyTailIndex(i, kt);
+			setAnyColumnIndex(i, kt);
 
 		if (currChar(cntxt) != ']')
 			parseError(cntxt, "']' expected\n");
@@ -700,7 +700,7 @@ parseTypeId(Client cntxt, int defaultType)
 		ht = simpleTypeId(cntxt);
 		kt = typeAlias(cntxt, ht);
 		if (kt > 0)
-			setAnyTailIndex(ht, kt);
+			setAnyColumnIndex(ht, kt);
 		return ht;
 	}
 	parseError(cntxt, "<type identifier> expected\n");

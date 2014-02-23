@@ -405,7 +405,7 @@ _create_relational_remote(mvc *m, char *name, sql_rel *rel, stmt *call, prop *pr
 		type = newBatType(TYPE_oid, type);
 		p = newFcnCall(curBlk, batRef, newRef);
 		p = pushType(curBlk, p, getHeadType(type));
-		p = pushType(curBlk, p, getTailType(type));
+		p = pushType(curBlk, p, getColumnType(type));
 		setArgType(curBlk, p, 0, type);
 		lret[i] = getArg(p, 0);
 	}

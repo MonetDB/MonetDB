@@ -515,7 +515,7 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 			MT_lock_unset(&c->lock, "remote.get");
 			throw(MAL, "remote.get", "%s", tmp);
 		}
-		t = getTailType(rtype);
+		t = getColumnType(rtype);
 		newColumn(b,t,"remote.get");
 
 		if (ATOMvarsized(t)) {
@@ -679,7 +679,7 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		str tailv;
 		stream *sout;
 
-		tail = getTypeIdentifier(getTailType(type));
+		tail = getTypeIdentifier(getColumnType(type));
 
 		bid = *(int *)value;
 		if (bid != 0 && (b = BATdescriptor(bid)) == NULL){
@@ -703,16 +703,16 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 			bi = bat_iterator(b);
 			BATloop(b, p, q) {
 				tailv = NULL;
-				ATOMformat(getTailType(type), BUNtail(bi, p), &tailv);
-				if (getTailType(type) <= TYPE_str &&
+				ATOMformat(getColumnType(type), BUNtail(bi, p), &tailv);
+				if (getColumnType(type) <= TYPE_str &&
 						getHeadType(type) <= TYPE_str)
 				{
 					mnstr_printf(sout, "%s\n", tailv);
-				} else if (getTailType(type) > TYPE_str &&
+				} else if (getColumnType(type) > TYPE_str &&
 						getHeadType(type) > TYPE_str)
 				{
 					mnstr_printf(sout, "\"%s\"\n", tailv);
-				} else if (getTailType(type) > TYPE_str) {
+				} else if (getColumnType(type) > TYPE_str) {
 					mnstr_printf(sout, "\"%s\"\n", tailv);
 				} else {
 					mnstr_printf(sout, "%s\n", tailv);

@@ -614,7 +614,7 @@ INSPECTtypeName(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if( pci->retc== 2){
 		tn = (str *) getArgReference(stk, pci, 1);
 		*hn = getTypeName(getHeadType(getArgType(mb, pci, 2)));
-		*tn = getTypeName(getTailType(getArgType(mb, pci, 2)));
+		*tn = getTypeName(getColumnType(getArgType(mb, pci, 2)));
 	} else if (isaBatType(getArgType(mb,pci,1) ) ){
 		int *bid= (int*) getArgReference(stk,pci,1);
 		BAT *b;

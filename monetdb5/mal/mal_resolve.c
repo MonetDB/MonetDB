@@ -594,8 +594,8 @@ resolveType(int dsttype, int srctype)
 #endif
 			return -1;
 		}
-		t1 = getTailType(dsttype);
-		t2 = getTailType(srctype);
+		t1 = getColumnType(dsttype);
+		t2 = getColumnType(srctype);
 		if (t1 == t2)
 			t3 = t1;
 		else if (t1 == TYPE_any)
@@ -612,7 +612,7 @@ resolveType(int dsttype, int srctype)
 #ifdef DEBUG_MAL_RESOLVE
 		if (tracefcn) {
 			int i1 = getHeadIndex(dsttype);
-			int i2 = getTailIndex(dsttype);
+			int i2 = getColumnIndex(dsttype);
 			mnstr_printf(GDKout, "resolved to bat[:%s,:%s] bat[:%s,:%s]->bat[%s:%d,%s:%d]\n",
 						 getTypeName(h1), getTypeName(t1),
 						 getTypeName(h2), getTypeName(t2),
@@ -910,11 +910,11 @@ getPolyType(malType t, int *polytype)
 	int hi, ti;
 	int head, tail;
 
-	ti = getTailIndex(t);
+	ti = getColumnIndex(t);
 	if (!isaBatType(t) && ti > 0)
 		return polytype[ti];
 
-	tail = ti == 0 ? getTailType(t) : polytype[ti];
+	tail = ti == 0 ? getColumnType(t) : polytype[ti];
 	if (isaBatType(t)) {
 		hi = getHeadIndex(t);
 		head = hi == 0 ? getHeadType(t) : polytype[hi];
@@ -945,14 +945,14 @@ updateTypeMap(int formal, int actual, int polytype[MAXTYPEVAR])
 	mnstr_printf(GDKout, "actual %s\n", getTypeName(actual));
 #endif
 
-	if ((h = getTailIndex(formal))) {
+	if ((h = getColumnIndex(formal))) {
 		if (isaBatType(actual) && !isaBatType(formal) &&
 			(polytype[h] == TYPE_any || polytype[h] == actual)) {
 			polytype[h] = actual;
 			ret = 0;
 			goto updLabel;
 		}
-		t = getTailType(actual);
+		t = getColumnType(actual);
 		if (t != polytype[h]) {
 			if (polytype[h] == TYPE_bat && isaBatType(actual))
 				ret = 0;

@@ -77,8 +77,8 @@ command getHeadType(b:bat[:any_1,:any_2] ) :str
 address BKCgetHeadType
 comment "Returns the type of the head column of a BAT, as an integer type number.";
 
-command getTailType( b:bat[:oid,:any_2] ) :str 
-address BKCgetTailType 
+command getColumnType( b:bat[:oid,:any_2] ) :str 
+address BKCgetColumnType 
 comment "Returns the type of the tail column of a BAT, as an integer type number.";
 
 command getRole ( bid:bat[:oid,:any_2] ) :str 

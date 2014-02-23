@@ -179,14 +179,14 @@ MANIFOLDtypecheck(Client cntxt, MalBlkPtr mb, InstrPtr pci){
 		getVarConstant(mb,getArg(pci,pci->retc+1)).val.sval);
 
 	// Prepare the single result variable
-	tpe =getTailType(getArgType(mb,pci,0));
+	tpe =getColumnType(getArgType(mb,pci,0));
 	k= getArg(q,0) = newTmpVariable(nmb, tpe);
 	setVarFixed(nmb,k);
 	setVarUDFtype(nmb,k);
 	
 	// extract their argument type
 	for ( i = pci->retc+2; i < pci->argc; i++){
-		tpe = getTailType(getArgType(mb,pci,i));
+		tpe = getColumnType(getArgType(mb,pci,i));
 		if (ATOMstorage(tpe) > TYPE_str){
 			freeMalBlk(nmb);
 			return NULL;
@@ -249,7 +249,7 @@ MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 				msg = createException(MAL,"mal.manifold", MAL_MALLOC_FAIL);
 				goto wrapup;
 			}
-			mat[i].type = tpe = getTailType(getArgType(mb,pci,i));
+			mat[i].type = tpe = getColumnType(getArgType(mb,pci,i));
 			if (mut.fvar == 0){
 				mut.fvar = i;
 				cnt = BATcount(mat[i].b);
@@ -279,7 +279,7 @@ MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	}
 
 	// prepare result variable
-	mat[0].b =BATnew(TYPE_void, getTailType(getArgType(mb,pci,0)), cnt);
+	mat[0].b =BATnew(TYPE_void, getColumnType(getArgType(mb,pci,0)), cnt);
 	if ( mat[0].b == NULL){
 		msg= createException(MAL,"mal.manifold",MAL_MALLOC_FAIL);
 		goto wrapup;

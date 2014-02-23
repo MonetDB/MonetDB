@@ -30,7 +30,7 @@
  * Within the MAL layer types are encoded in 32-bit integers using
  * bit stuffing to save some space.
  * The integer contains the following fields:
- * anyHeadIndex (bit 25-22), anyTailIndex (bit 21-18),
+ * anyHeadIndex (bit 25-22), anyColumnIndex (bit 21-18),
  * batType (bit 17) headType (16-9) and tailType(8-0)
  * This encoding scheme permits a limited number of different bat types.
  * The headless case assumes all head types are TYPE_void/TYPE_oid
@@ -61,7 +61,7 @@ getTypeName(malType tpe)
 			snprintf(buf, l, "bat[:%s,", ATOMname(getHeadType(tpe)));
 		l -= strlen(buf);
 		s = buf + strlen(buf);
-		k = getTailIndex(tpe);
+		k = getColumnIndex(tpe);
 		if (k)
 			snprintf(s, l, ":any%c%d]",TMPMARKER,  k);
 		else if (getColumnType(tpe) == TYPE_any)
@@ -74,7 +74,7 @@ getTypeName(malType tpe)
 		strncpy(buf, "any", 4);
 		if (isAnyExpression(tpe))
 			snprintf(buf + 3, PATHLENGTH - 3, "%c%d",
-					TMPMARKER, getTailIndex(tpe));
+					TMPMARKER, getColumnIndex(tpe));
 		return GDKstrdup(buf);
 	}
 	return GDKstrdup(ATOMname(tpe));

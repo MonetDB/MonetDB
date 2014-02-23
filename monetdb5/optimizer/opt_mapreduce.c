@@ -178,7 +178,7 @@ MRdistributework(
 		packs[j] = p = newFcnCall(reduce, batRef, newRef);
 		if (isaBatType(lcol->type)) {
 			p = pushType(reduce, p, getHeadType(lcol->type));
-			p = pushType(reduce, p, getTailType(lcol->type));
+			p = pushType(reduce, p, getColumnType(lcol->type));
 			setArgType(reduce, p, 0, lcol->type);
 		} else {
 			p = pushNil(reduce, p, TYPE_void);
@@ -193,7 +193,7 @@ MRdistributework(
 			if (isaBatType(lcol->type)) {
 				p = newFcnCall(reduce, batRef, newRef);
 				p = pushType(reduce, p, getHeadType(lcol->type));
-				p = pushType(reduce, p, getTailType(lcol->type));
+				p = pushType(reduce, p, getColumnType(lcol->type));
 			} else {
 				p = newAssignment(reduce);
 				p = pushNil(reduce, p, lcol->type);

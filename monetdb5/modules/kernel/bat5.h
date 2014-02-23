@@ -74,7 +74,7 @@ bat5_export str BKCbun_inplace_force(int *r, int *bid, oid *id, ptr t, bit *forc
 bat5_export str BKCbat_inplace_force(int *r, int *bid, int *rid, bit *force);
 bat5_export str BKCgetCapacity(lng *res, int *bid);
 bat5_export str BKCgetHeadType(str *res, int *bid);
-bat5_export str BKCgetTailType(str *res, int *bid);
+bat5_export str BKCgetColumnType(str *res, int *bid);
 bat5_export str BKCgetRole(str *res, int *bid);
 bat5_export str BKCsetkey(int *res, int *bid, bit *param);
 bat5_export str BKCisSorted(bit *res, int *bid);

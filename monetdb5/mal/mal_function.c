@@ -302,7 +302,7 @@ static void replaceTypeVar(MalBlkPtr mb, InstrPtr p, int v, malType t){
 			head = getHeadType(x);
 			tail = getColumnType(x);
 			hx = getHeadIndex(x);
-			tx = getTailIndex(x);
+			tx = getColumnIndex(x);
 			if(v && hx == v && head == TYPE_any){
 			    hx =0;
 			    head =t;
@@ -313,13 +313,13 @@ static void replaceTypeVar(MalBlkPtr mb, InstrPtr p, int v, malType t){
 			}
 			y= newBatType(head,tail);
 			setAnyHeadIndex(y,hx);
-			setAnyTailIndex(y,tx);
+			setAnyColumnIndex(y,tx);
 			setArgType(mb,p,i,y);
 #ifdef DEBUG_MAL_FCN
 		mnstr_printf(GDKout," %d replaced %s->%s \n",i,getTypeName(x),getTypeName(y));
 #endif
 		} else
-		if(getTailIndex(x) == v){
+		if(getColumnIndex(x) == v){
 #ifdef DEBUG_MAL_FCN
 		mnstr_printf(GDKout," replace x= %s polymorphic\n",getTypeName(x));
 #endif
@@ -327,7 +327,7 @@ static void replaceTypeVar(MalBlkPtr mb, InstrPtr p, int v, malType t){
 		}
 #ifdef DEBUG_MAL_FCN
 		else
-		mnstr_printf(GDKout," non x= %s %d\n",getTypeName(x),getTailIndex(x));
+		mnstr_printf(GDKout," non x= %s %d\n",getTypeName(x),getColumnIndex(x));
 #endif
 	}
 #ifdef DEBUG_MAL_FCN
@@ -410,10 +410,10 @@ cloneFunction(stream *out, Module scope, Symbol proc, MalBlkPtr mb, InstrPtr p)
 			if (isaBatType(v)) {
 				if (getHeadIndex(v))
 					replaceTypeVar(new->def, pp, getHeadIndex(v), getHeadType(t));
-				if (getTailIndex(v))
-					replaceTypeVar(new->def, pp, getTailIndex(v), getColumnType(t));
+				if (getColumnIndex(v))
+					replaceTypeVar(new->def, pp, getColumnIndex(v), getColumnType(t));
 			} else
-				replaceTypeVar(new->def, pp, getTailIndex(v), t);
+				replaceTypeVar(new->def, pp, getColumnIndex(v), t);
 		}
 #ifdef DEBUG_MAL_FCN
 		else

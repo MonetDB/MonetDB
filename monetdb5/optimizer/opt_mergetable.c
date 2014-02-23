@@ -207,7 +207,7 @@ mat_set_prop( MalBlkPtr mb, InstrPtr p)
 {
 	int k, tpe = getArgType(mb, p, 0);
 
-	tpe = getTailType(tpe);
+	tpe = getColumnType(tpe);
 	for(k=1; k < p->argc; k++) {
 		setPartnr(mb, -1, getArg(p,k), k);
 		if (tpe == TYPE_oid)
@@ -838,7 +838,7 @@ static int
 mat_group_project(MalBlkPtr mb, InstrPtr p, mat_t *mat, int mtop, int e, int a)
 {
 	int tp = getArgType(mb,p,0), k;
-	int tail = getTailType(tp);
+	int tail = getColumnType(tp);
 	InstrPtr ai1 = newInstruction(mb, ASSIGNsymbol), r;
 
 	setModuleId(ai1,matRef);

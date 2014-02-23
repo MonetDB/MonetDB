@@ -149,7 +149,7 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc )
 		if( !isaBatType( getArgType(mq,sig,i-2)) &&
 			isaBatType( getArgType(mb,p,i)) ){
 
-			if( getTailType(getArgType(mb,p,i)) != getArgType(mq,sig,i-2)){
+			if( getColumnType(getArgType(mb,p,i)) != getArgType(mq,sig,i-2)){
 				OPTDEBUGremap
 					mnstr_printf(cntxt->fdout,"#Type mismatch %d\n",i);
 				goto terminateMX;

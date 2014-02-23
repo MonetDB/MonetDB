@@ -1265,7 +1265,7 @@ JSONrenderRowObject(BAT **bl, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, BUN idx
 		name = stk->stk[getArg(pci, i)].val.sval;
 		bi = bat_iterator(bl[i + 1]);
 		p = BUNtail(bi, BUNfirst(bl[i + 1]) + idx);
-		tpe = getTailType(getArgType(mb, pci, i + 1));
+		tpe = getColumnType(getArgType(mb, pci, i + 1));
 		ATOMformat(tpe, p, &val);
 		if (strncmp(val, "nil", 3) == 0)
 			strcpy(val, "null");
@@ -1343,7 +1343,7 @@ JSONrenderRowArray(BAT **bl, MalBlkPtr mb, InstrPtr pci, BUN idx)
 	for (i = pci->retc; i < pci->argc; i++) {
 		bi = bat_iterator(bl[i]);
 		p = BUNtail(bi, BUNfirst(bl[i]) + idx);
-		tpe = getTailType(getArgType(mb, pci, i));
+		tpe = getColumnType(getArgType(mb, pci, i));
 		ATOMformat(tpe, p, &val);
 		if (strncmp(val, "nil", 3) == 0)
 			strcpy(val, "null");

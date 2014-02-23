@@ -1468,7 +1468,7 @@ SERVERmapi_rpc_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	qry= (str*) getArgReference(stk,pci,pci->retc+1);
 	accessTest(*key, "rpc");
 	ht= getHeadType(getVarType(mb,getArg(pci,0)));
-	tt= getTailType(getVarType(mb,getArg(pci,0)));
+	tt= getColumnType(getVarType(mb,getArg(pci,0)));
 
 	hdl= mapi_query(mid, *qry);
 	catchErrors("mapi.rpc");
@@ -1542,7 +1542,7 @@ SERVERput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 
 		/* reconstruct the object */
 		ht = getTypeName(getHeadType(tpe));
-		tt = getTypeName(getTailType(tpe));
+		tt = getTypeName(getColumnType(tpe));
 		snprintf(buf,BUFSIZ,"%s:= bat.new(:%s,%s);", *nme, ht,tt );
 		len = (int) strlen(buf);
 		snprintf(buf+len,BUFSIZ-len,"%s:= io.import(%s,tuples);", *nme, *nme);
@@ -1622,7 +1622,7 @@ SERVERbindBAT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		i= *(int*) getArgReference(stk,pci,pci->retc+4);
 		snprintf(buf,BUFSIZ,"%s:bat[:oid,:%s]:=sql.bind(\"%s\",\"%s\",\"%s\",%d);",
 			getVarName(mb,getDestVar(pci)),
-			getTypeName(getTailType(getVarType(mb,getDestVar(pci)))),
+			getTypeName(getColumnType(getVarType(mb,getDestVar(pci)))),
 			*nme, *tab,*col,i);
 	} else if( pci->argc == 5) {
 		tab= (str*) getArgReference(stk,pci,pci->retc+2);
@@ -1633,7 +1633,7 @@ SERVERbindBAT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		str hn,tn;
 		int target= getArgType(mb,pci,0);
 		hn= getTypeName(getHeadType(target));
-		tn= getTypeName(getTailType(target));
+		tn= getTypeName(getColumnType(target));
 		snprintf(buf,BUFSIZ,"%s:bat[:%s,:%s]:=bbp.bind(\"%s\");",
 			getVarName(mb,getDestVar(pci)), hn,tn, *nme);
 		GDKfree(hn);

@@ -206,7 +206,7 @@ ESevaluate(Client cntxt, MalBlkPtr mb, char *empty)
 					p= pushArgument(mb, p, 
 						newTypeVariable(mb, getHeadType(tpe)));
 					(void) pushArgument(mb, p, 
-						newTypeVariable(mb, getTailType(tpe)));
+						newTypeVariable(mb, getColumnType(tpe)));
 					actions++;
 					break;
 				}

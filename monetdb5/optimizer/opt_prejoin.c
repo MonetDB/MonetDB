@@ -81,7 +81,7 @@ OPTprejoinImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 		p= old[i];
 		if( getModuleId(p)== algebraRef && getFunctionId(p)== joinRef &&
 			getHeadType(getArgType(mb,p,1)) == TYPE_oid  &&
-			getTailType(getArgType(mb,p,1)) == TYPE_oid ){
+			getColumnType(getArgType(mb,p,1)) == TYPE_oid ){
 			q= newStmt(mb,algebraRef, "prejoin");
 			setArgType(mb,q,0,getArgType(mb,p,1));
 			q= pushReturn(mb,q,newTmpVariable(mb, getArgType(mb,p,2)));

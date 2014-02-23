@@ -1763,9 +1763,9 @@ setPolymorphic(InstrPtr p, int tpe, int force)
 		else if (getHeadType(tpe) == TYPE_any)
 			c1 = 1;
 	}
-	if (getTailIndex(tpe) > 0)
-		c2 = getTailIndex(tpe);
-	else if (getTailType(tpe) == TYPE_any)
+	if (getColumnIndex(tpe) > 0)
+		c2 = getColumnIndex(tpe);
+	else if (getColumnType(tpe) == TYPE_any)
 		c2 = 1;
 	c1 = c1 > c2 ? c1 : c2;
 	if (c1 > 0 && c1 >= p->polymorphic)
