@@ -17,6 +17,8 @@
  * All Rights Reserved.
  */
 
+/* (author) M.L. Kersten
+ */
 #include "monetdb_config.h"
 #include "mal_session.h"
 #include "mal_instruction.h" /* for pushEndInstruction() */

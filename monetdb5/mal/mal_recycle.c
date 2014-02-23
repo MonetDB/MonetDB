@@ -18,42 +18,10 @@
  */
 
 /*
- * (c) M. Ivanova, M. Kersten, N. Nes
- * mal_recycle
- * Query optimization and processing in off-the-shelf database systems is often
- * still focussed on individual queries. The queries are analysed in isolation
- * and ran against a kernel regardless opportunities offered by concurrent or
- * previous invocations.
- *
- * This approach is far from optimal and two directions to improve
- * are explored: materialized views and (partial) result-set reuse.
- * Materialized views are derived from query logs. They represent
- * common sub-queries, whose materialization improves
- * subsequent processing times.
- * Re-use of (partial) results is used in those cases where a
- * zooming-in or navigational application is at stake.
- *
- * The Recycler module extends it with a middle out approach.
- * It exploits the materialize-all-intermediate approach of MonetDB
- * by deciding to keep a hold on them as long as deemed benificial.
- *
- * The approach taken is to mark the instructions in a MAL program
- * using an optimizer call, such that their result is retained
- * in a global recycle cache. A reference into the cache makes
- * is used to access the latest known version quickly.
- *
- * Upon execution, the Recycler first checks for
- * an up to date result to be picked up at no cost,
- * other than matching the arguments.
- * Otherwise, it evaluates the instruction and calls upon
- * policy functions to decide if it is worthwhile to
- * keep.
- *
- * The Recycler comes with a few policy controlling operators
- * to experiment with its effect in concrete settings.
- *
+ * (author) M. Ivanova, M. Kersten, N. Nes
  * Caveats:
- * Updates in general should immediately invalidate the cache lines depending on the updated Bats. These are all instructions directly operating on the updates, as well as all instructions consuming the result of the first.
+ * Updates in general should immediately invalidate the cache lines depending on the updated Bats. 
+ * These are all instructions directly operating on the updates, as well as all instructions consuming the result of the first.
  * 
  * Unlike the background publication, we keep a single focus for the released functionality
  * ADM_ALL: infinite case, admission of all instructions subject to cache limits

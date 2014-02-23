@@ -19,6 +19,7 @@
 
 /*
  * (c) F. Groffen, M. Kersten
+ * For documentation see website
  */
 #include "monetdb_config.h"
 #include "mal_exception.h"

@@ -18,7 +18,7 @@
  */
 
 /*
- * @a M. Kersten, F. Groffen
+ * (authors) M. Kersten, F. Groffen
  * Authorisation adminstration management
  * Authorisation of users is a key concept in protecting the server from
  * malicious and unauthorised users.  This file contains a number of

@@ -18,7 +18,8 @@
  */
 
 /*
- * (c) M. Kersten
+ * (author) M. Kersten
+ * For documentation see website
  */
 #include "monetdb_config.h"
 #include "mal_module.h"

@@ -18,6 +18,7 @@
  */
 
 /*
+ * (author) M Kersten
  * Out of order execution
  * The alternative is to execute the instructions out of order
  * using dataflow dependencies and as an independent process.

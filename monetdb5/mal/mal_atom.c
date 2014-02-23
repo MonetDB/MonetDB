@@ -18,7 +18,7 @@
  */
 
 /*
- * (c) M.L.Kersten
+ * (author) M.L.Kersten
  * Every MAL command introduced in an atom module should be checked
  * to detect overloading of a predefined function.
  * Subsequently, we update the GDK atom structure.

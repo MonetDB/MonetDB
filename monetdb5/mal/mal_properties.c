@@ -18,7 +18,7 @@
  */
 
 /*
- * (c) M. Kersten
+ * (author) M. Kersten
  */
 #include "monetdb_config.h"
 #include "mal_properties.h"

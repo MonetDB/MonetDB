@@ -18,65 +18,8 @@
  */
 
 /*
- * @a M. Kersten
- * @v 1.0
- * @+ Type Resolution
- * Given the interpretative nature of many of the MAL instructions,
- * when and where type resolution takes place is a critical design issue.
- * Performing it too late, i.e. at each instruction call, leads to
- * performance problems if we derive the same information over and over again.
- * However, many built-in operators have polymorphic typed signatures,
- * so we cannot escape it altogether.
- *
- * Consider the small illustrative MAL program:
- * @example
- * function sample(nme:str, val:any_1):bit;
- *    c := 2 * 3;
- *    b := bbp.bind(nme);  #find a BAT
- *    h := algebra.select(b,val,val);
- *    t := aggr.count(h);
- *    x := io.print(t);
- *    y := io.print(val);
- * end sample;
- * @end example
- *
- * The function definition is polymorphic typed on the 2nd argument,
- * it becomes a concrete type upon invocation. The system could attempt
- * a type check, but quickly runs into assumptions that generally do not hold.
- * The first assignment can be type checked during parsing
- * and a symbolic optimizer could even evaluate the expression once.
- * Looking up a BAT in the buffer pool leads to
- * an element @sc{:bat[@emph{ht,tt}]} where @emph{ht} and @emph{tt}
- * are runtime dependent types, which means that the selection operation can
- * not be type-checked immediately. It is an example of an embedded
- * polypmorphic statement, which requires intervention of the user/optimizer
- * to make the type explicit before the type resolver becomes active.
- * The operation @sc{count} can be checked, if it is given a BAT argument.
- * This assumes that we can infer that 'h' is indeed a BAT, which requires
- * assurance that @sc{algebra.select} produces one. However, there are
- * no rules to avoid addition of new operators, or to differentiate among
- * different implementations based on the argument types.
- * Since @sc{print(t)} contains an undetermined typed
- * argument we should postpone typechecking as well.
- * The last print statement can be checked upon function invocation.
- *
- * Life becomes really complex if the body contains a loop with
- * variable types. For then we also have to keep track of the original
- * state of the function. Or alternatively, type checking should consider
- * the runtime stack rather than the function definition itself.
- *
- * These examples give little room to achieve our prime objective, i.e.
- * a fast and early type resolution scheme. Any non-polymorphic function
- * can be type checked and marked type-safe upon completion.
- * Type checking polymorphic functions are postponed until a concrete
- * type instance is known. It leads to a clone, which can be type checked
- * and is entered into the symbol table.
- * The type resolution status is marked in each instruction.
- * TYPE_RESOLVED implies that the type of the instruction is fully
- * resolved, it is marked TYPE_DYNAMIC otherwise.
- */
-/*
- * @- Function call resolution
+ * (author) M. Kersten
+ * 
  * Search the first definition of the operator in the current module
  * and check the parameter types.
  * For a polymorphic MAL function we make a fully instantiated clone.

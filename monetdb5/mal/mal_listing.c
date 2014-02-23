@@ -18,7 +18,7 @@
  */
 
 /*
- * M. Kersten
+ * (author) M. Kersten
 */
 
 #include "monetdb_config.h"

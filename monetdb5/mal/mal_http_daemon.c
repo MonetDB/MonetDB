@@ -17,6 +17,10 @@
  * All Rights Reserved.
 */
 
+/* (author) A. de Rijke
+ * For documentation see website
+ */
+
 #include "monetdb_config.h"
 
 #ifdef HAVE_MICROHTTPD

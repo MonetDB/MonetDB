@@ -17,7 +17,7 @@
  * All Rights Reserved.
  */
 
-/*
+/* (author) M.L. Kersten
  * Performance tracing
  * The interpreter comes with several variables to hold performance
  * related data.

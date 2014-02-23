@@ -18,8 +18,7 @@
  */
 
 /*
- * @f mal_stack
- * @a M. L. Kersten
+ * (author) M. L. Kersten
  * @node Stack Management, The MAL Optimizer, Garbage Collection, The MAL Interpreter
  * @+ MAL runtime stack
  * The runtime context of a MAL procedure is allocated on the runtime stack
