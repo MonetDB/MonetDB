@@ -42,9 +42,9 @@
 /* introduce gradually the column type macros, sharing the
  * representation with BAT type
  */
-#define newColumn(Var,Type,Tag, Undo...) \
+#define newColumn(Var,Type,Tag, ...) \
 	Var = BATnew(TYPE_void, Type,0); \
-	if ( Var == NULL) { Undo ;throw(MAL,Tag,MAL_MALLOC_FAIL);}\
+	if ( Var == NULL) { __VA_ARGS__ ;throw(MAL,Tag,MAL_MALLOC_FAIL);}\
 	BATseqbase(Var,0);
 
 #define newColumnType(T)  (1<<16 | (T & 0377) )
