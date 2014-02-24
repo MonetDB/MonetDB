@@ -31,6 +31,7 @@
 */
 #include "monetdb_config.h"
 #include "optimizer.h"
+#include "mal_debugger.h"
 /*
  * Upon loading the module it should inspect the scenario table
  * for any unresolved references to the MALoptimizer and set the 

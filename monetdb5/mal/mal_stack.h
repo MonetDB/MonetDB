@@ -20,48 +20,6 @@
 #ifndef _MAL_STACK_H_
 #define _MAL_STACK_H_
 #include "mal.h"
-#include "gdk.h"
-
-#ifdef HAVE_SYS_TIMES_H
-#include <sys/times.h>
-#endif
-
-#define STACKINCR   128
-#define MAXGLOBALS  (4 * STACKINCR)
-#define MAXSHARES   8
-
-typedef int (*DFhook) (void *, void *, void *, void *);
-
-typedef struct MALSTK {
-	int stksize;
-	int stktop;
-	int stkbot;			/* the first variable to be initialized */
-	int stkdepth;		/* to protect against runtime stack overflow */
-	int calldepth;		/* to protect against runtime stack overflow */
-	short keepAlive;	/* do not garbage collect when set */
-	short garbageCollect; /* stack needs garbage collection */
-	lng tmpspace;		/* amount of temporary space produced */
-	/*
-	 * Parallel processing is mostly driven by dataflow, but within this context
-	 * there may be different schemes to take instructions into execution.
-	 * The admission scheme (and wrapup) are the necessary scheduler hooks.
-	 */
-	DFhook admit;
-	DFhook wrapup;
-	MT_Lock stklock;	/* used for parallel processing */
-/*
- * @-
- * It is handy to administer the timing in the stack frame
- * for use in profiling and recylcing instructions.
- */
-	struct timeval clock;		/* time this stack was created */
-	char cmd;		/* debugger and runtime communication */
-	char status;	/* srunning 'R' uspended 'S', quiting 'Q' */
-	int pcup;		/* saved pc upon a recursive all */
-	struct MALSTK *up;	/* stack trace list */
-	struct MALBLK *blk;	/* associated definition */
-	ValRecord stk[1];
-} MalStack, *MalStkPtr;
 
 #define stackSize(CNT) (sizeof(ValRecord)*(CNT) + sizeof(MalStack))
 #define newStack(S,CNT) S= (MalStkPtr) GDKzalloc(stackSize(CNT));\

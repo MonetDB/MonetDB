@@ -23,6 +23,12 @@
  */
 #include "monetdb_config.h"
 #include "mal_factory.h"
+#include "mal_instruction.h"
+#include "mal_interpreter.h"
+#include "mal_function.h"
+#include "mal_exception.h"
+#include "mal_session.h"
+#include "mal_debugger.h"
 #include "mal_private.h"
 
 typedef struct {

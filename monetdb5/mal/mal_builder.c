@@ -28,6 +28,9 @@
  */
 #include "monetdb_config.h"
 #include "mal_builder.h"
+#include "mal_function.h"
+#include "mal_namespace.h"
+
 InstrPtr
 newAssignment(MalBlkPtr mb)
 {

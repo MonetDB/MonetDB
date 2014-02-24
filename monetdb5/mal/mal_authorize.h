@@ -22,7 +22,6 @@
 
 /* #define _DEBUG_AUTH_*/
 #include "mal.h"
-#include "mal_exception.h"
 #include "mal_instruction.h"
 #include "mal_client.h"
 

@@ -20,9 +20,8 @@
 #ifndef _MAL_DATAFLOW_H
 #define _MAL_DATAFLOW_H
 
-#include "mal_interpreter.h"
-#include "mal_runtime.h"
-#include "mal_resource.h"
+#include "mal.h"
+#include "mal_client.h"
 
 mal_export str runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr stk);
 

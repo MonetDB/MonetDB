@@ -24,15 +24,6 @@
 
 #include "mal.h"
 #include "mal_client.h"
-#include "mal_instruction.h"
-#include "mal_interpreter.h"
-#include "mal_function.h"
-#include "mal_exception.h"
-#include "mal_session.h"
-#include "mal_debugger.h"
-
-#define POLICYimmediate 1	/* let user wait for reply */
-#define POLICYprivate   2	/* each client its own plants */
 
 mal_export str shutdownFactory(Client cntxt, MalBlkPtr mb);
 mal_export str shutdownFactoryByName(Client cntxt, Module m,str nme);

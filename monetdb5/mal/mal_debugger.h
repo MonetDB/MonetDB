@@ -20,6 +20,7 @@
 #ifndef _MAL_DEBUGGER_H
 #define _MAL_DEBUGGER_H
 
+#include "mal.h"
 #include "mal_scenario.h"
 #include "mal_client.h"
 
@@ -28,23 +29,6 @@
 #define MAXBREAKS 32
 
 mal_export int MDBdelay;	/* do not immediately react */
-typedef struct {
-	MalBlkPtr brkBlock[MAXBREAKS];
-	int		brkPc[MAXBREAKS];
-	int		brkVar[MAXBREAKS];
-	str		brkMod[MAXBREAKS];
-	str		brkFcn[MAXBREAKS];
-	char	brkCmd[MAXBREAKS];
-	str		brkRequest[MAXBREAKS];
-	int		brkTop;
-} mdbStateRecord, *mdbState;
-
-typedef struct MDBSTATE{
-	MalBlkPtr mb;
-	MalStkPtr stk;
-	InstrPtr p;
-	int pc;
-} MdbState;
 
 mal_export void mdbSetBreakRequest(Client cntxt, MalBlkPtr mb, str request, char cmd);
 mal_export int mdbSetTrap(Client cntxt, str modnme, str fcnnme, int flag);

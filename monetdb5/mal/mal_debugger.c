@@ -22,6 +22,7 @@
  * For documentation see website.
  */
 #include "monetdb_config.h"
+#include "mal.h"
 #include "mal_readline.h"
 #include "mal_debugger.h"
 #include "mal_atom.h"		/* for showAtoms() */
@@ -34,6 +35,23 @@
 #include "mal_private.h"
 
 int MDBdelay;			/* do not immediately react */
+typedef struct {
+	MalBlkPtr brkBlock[MAXBREAKS];
+	int		brkPc[MAXBREAKS];
+	int		brkVar[MAXBREAKS];
+	str		brkMod[MAXBREAKS];
+	str		brkFcn[MAXBREAKS];
+	char	brkCmd[MAXBREAKS];
+	str		brkRequest[MAXBREAKS];
+	int		brkTop;
+} mdbStateRecord, *mdbState;
+
+typedef struct MDBSTATE{
+	MalBlkPtr mb;
+	MalStkPtr stk;
+	InstrPtr p;
+	int pc;
+} MdbState;
 
 #define skipBlanc(c, X)    while (*(X) && isspace((int) *X)) { X++; }
 #define skipNonBlanc(c, X) while (*(X) && !isspace((int) *X)) { X++; }

@@ -37,6 +37,11 @@
 #define mal_export extern
 #endif
 
+#ifdef HAVE_SYS_TIMES_H
+# include <sys/times.h>
+#endif
+
+#include <setjmp.h>
 /*
  * MonetDB Calling Options
  * The number of invocation arguments is kept to a minimum.
@@ -111,11 +116,28 @@ mal_export void mal_exit(void);
 #define MAXPATHLEN 1024
 #endif
 
-#ifdef HAVE_SYS_TIMES_H
-# include <sys/times.h>
-#endif
-
 /* The MAL instruction block type definitions */
+/* Variable properties */
+#define VAR_CONSTANT 	1
+#define VAR_TYPEVAR	2
+#define VAR_FIXTYPE	4
+#define VAR_UDFTYPE	8
+#define VAR_CLEANUP	16
+#define VAR_INIT	32
+#define VAR_USED	64
+#define VAR_DISABLED	128		/* used for comments and scheduler */
+
+/* type check status is kept around to improve type checking efficiency */
+#define TYPE_ERROR      -1
+#define TYPE_UNKNOWN     0
+#define TYPE_RESOLVED    2
+#define GARBAGECONTROL   3
+
+#define VARARGS 1				/* deal with variable arguments */
+#define VARRETS 2
+
+#define SERVERSHUTDOWNDELAY 5 /* seconds */
+
 typedef int malType;
 typedef str (*MALfcn) ();
 
@@ -216,25 +238,41 @@ typedef struct MALBLK {
 	lng optimize;				/* total optimizer time */
 } *MalBlkPtr, MalBlkRecord;
 
-/* Variable properties */
-#define VAR_CONSTANT 	1
-#define VAR_TYPEVAR	2
-#define VAR_FIXTYPE	4
-#define VAR_UDFTYPE	8
-#define VAR_CLEANUP	16
-#define VAR_INIT	32
-#define VAR_USED	64
-#define VAR_DISABLED	128		/* used for comments and scheduler */
+#define STACKINCR   128
+#define MAXGLOBALS  (4 * STACKINCR)
+#define MAXSHARES   8
 
-/* type check status is kept around to improve type checking efficiency */
-#define TYPE_ERROR      -1
-#define TYPE_UNKNOWN     0
-#define TYPE_RESOLVED    2
+typedef int (*DFhook) (void *, void *, void *, void *);
 
-#define GARBAGECONTROL   3
+typedef struct MALSTK {
+	int stksize;
+	int stktop;
+	int stkbot;			/* the first variable to be initialized */
+	int stkdepth;		/* to protect against runtime stack overflow */
+	int calldepth;		/* to protect against runtime stack overflow */
+	short keepAlive;	/* do not garbage collect when set */
+	short garbageCollect; /* stack needs garbage collection */
+	lng tmpspace;		/* amount of temporary space produced */
+	/*
+	 * Parallel processing is mostly driven by dataflow, but within this context
+	 * there may be different schemes to take instructions into execution.
+	 * The admission scheme (and wrapup) are the necessary scheduler hooks.
+	 */
+	DFhook admit;
+	DFhook wrapup;
+	MT_Lock stklock;	/* used for parallel processing */
 
-#define VARARGS 1				/* deal with variable arguments */
-#define VARRETS 2
+/*
+ * It is handy to administer the timing in the stack frame
+ * for use in profiling and recylcing instructions.
+ */
+	struct timeval clock;		/* time this stack was created */
+	char cmd;		/* debugger and runtime communication */
+	char status;	/* srunning 'R' uspended 'S', quiting 'Q' */
+	int pcup;		/* saved pc upon a recursive all */
+	struct MALSTK *up;	/* stack trace list */
+	struct MALBLK *blk;	/* associated definition */
+	ValRecord stk[1];
+} MalStack, *MalStkPtr;
 
-#define SERVERSHUTDOWNDELAY 5 /* seconds */
 #endif /*  _MAL_H*/

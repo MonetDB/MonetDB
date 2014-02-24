@@ -27,6 +27,7 @@
 #include "mal_exception.h"
 #include "mal_scenario.h"
 #include "mal_instruction.h"
+#include "mal_debugger.h"
 #include "optimizer.h"
 #include "opt_pipes.h"
 

@@ -22,8 +22,6 @@
 
 #include "mal.h"
 #include "mal_instruction.h"
-#include "mal_function.h"
-#include "mal_namespace.h"
 
 mal_export InstrPtr newStmt(MalBlkPtr mb, char *module, char *name);
 mal_export InstrPtr newStmt1(MalBlkPtr mb, str module, char *name);
