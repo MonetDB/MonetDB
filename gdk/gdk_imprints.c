@@ -569,13 +569,14 @@ BATimprints(BAT *b) {
 
 #define SMP_SIZE 2048
 		s = BATsample_(b, SMP_SIZE);
-		smp = BATproject(s,b);
+		smp = BATsubunique(b, s);
 		BBPunfix(s->batCacheid);
-		s = BATsort(BATmirror(smp));
+		s = BATproject(smp,b);
 		BBPunfix(smp->batCacheid);
-		smp = BATmirror(BATkunique(s));
+		s->tkey=1; /* we know is unique on tail now */
+		BATsubsort(&smp,NULL,NULL,s,NULL,NULL,0,0);
 		BBPunfix(s->batCacheid);
-		/* sample now is ordered and unique on tail */
+		/* smp now is ordered and unique on tail */
 		assert(smp->tkey && smp->tsorted);
 		cnt = BATcount(smp);
 
