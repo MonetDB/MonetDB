@@ -31776,8 +31776,8 @@ command bat.getRole(bid:bat[:oid,:any_2]):str
 address BKCgetRole;
 comment Returns the rolename of the head column of a BAT.
 
-command bat.getTailType(b:bat[:oid,:any_2]):str 
-address BKCgetTailType;
+command bat.getColumnType(b:bat[:oid,:any_2]):str 
+address BKCgetColumnType;
 comment Returns the type of the tail column of a BAT, as an integer type number.
 
 command bat.getHeadType(b:bat[:any_1,:any_2]):str 
@@ -39276,7 +39276,7 @@ comment Print a MAL value without brackets.
 
 pattern io.print(val:bat[:oid,:any_2]):void 
 address IOprint_val;
-comment Print a MAL value tuple .
+comment Print a MAL value column .
 
 pattern io.print(val:any_1):void 
 address IOprint_val;
@@ -39311,6 +39311,10 @@ address IOtotable;
 comment Print an n-ary table.
 
 pattern io.table(b1:bat[:oid,:any],b2:bat[:oid,:any]...):void 
+address IOttable;
+comment Print an n-ary table. Like print, but does not print oid column
+
+pattern io.table(b1:bat[:oid,:any]):void 
 address IOttable;
 comment Print an n-ary table. Like print, but does not print oid column
 
@@ -39881,29 +39885,13 @@ pattern manual.completion(pat:str):void
 address MANUALcompletion;
 comment Produces the wordcompletion table.
 
-pattern manual.createXML():void 
-address MANUALcreate0;
-comment Produces a XML-formatted manual over all modules loaded.
-
-pattern manual.createXML(mod:str):void 
-address MANUALcreate1;
-comment Generate a synopsis of a module
-
 pattern manual.help(text:str):void 
 address MANUALhelp;
 comment Produces a list of all <module>.<function> that match	the text pattern. The wildcard '*' can be used for <module>and <function>. Using the '(' asks for signature information andusing ')' asks for the complete help record.
 
-pattern manual.index():void 
-address MANUALcreateIndex;
-comment Produces an overview of all names grouped by module.
-
 pattern manual.summary():void 
 address MANUALcreateSummary;
-comment Produces a manual with help lines grouped by module.
-
-pattern manual.section(mod:str):void 
-address MANUALcreateSection;
-comment Generate a synopsis of a module for the reference manual
+comment Produces a manual summary with help lines grouped by module.
 
 pattern manual.search(text:str):void 
 address MANUALsearch;
@@ -41509,7 +41497,7 @@ pattern remote.batbincopy(b:BAT):void
 address RMTbincopyto;
 comment dump BAT b in binary form to the stream
 
-pattern remote.batload(ht:oid,tt:any_2,size:int):bat[:oid,:any_2] 
+pattern remote.batload(tt:any_1,size:int):bat[:oid,:any_1] 
 address RMTbatload;
 comment create a BAT of the given type and size, and load values from the input stream
 
