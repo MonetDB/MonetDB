@@ -1,0 +1,60 @@
+# The contents of this file are subject to the MonetDB Public License
+# Version 1.1 (the "License"); you may not use this file except in
+# compliance with the License. You may obtain a copy of the License at
+# http://www.monetdb.org/Legal/MonetDBLicense
+#
+# Software distributed under the License is distributed on an "AS IS"
+# basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+# License for the specific language governing rights and limitations
+# under the License.
+#
+# The Original Code is the MonetDB Database System.
+#
+# The Initial Developer of the Original Code is CWI.
+# Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+# Copyright August 2008-2014 MonetDB B.V.
+# All Rights Reserved.
+
+module tokenizer
+comment "The tokenizer provides fast access to a large collection of strings
+based on a vertical fragmented representation.";
+
+command open(name:str):void
+address TKNZRopen
+comment "open the named tokenizer store, a new one is created if the specified name does not exist";
+
+command close():void
+address TKNZRclose
+comment "close the current tokenizer store";
+
+pattern take(i:oid):str
+address TKNZRtakeOid
+comment "reconstruct and returns the i-th string";
+
+pattern locate(s:str):oid
+address TKNZRlocate
+comment "if the given string is in the store returns its oid, otherwise oid_nil";
+
+command append(u:str):oid
+address TKNZRappend
+comment "tokenize a new string and append it to the tokenizer (duplicate elimination is performed)";
+
+command depositFile(fnme:str):void
+address TKNZRdepositFile
+comment "batch insertion from a file of strings to tokenize, each string is separated by a new line";
+
+command getLevel(i:int):bat[:oid,:str]
+address TKNZRgetLevel
+comment "administrative function that returns the bat on level i";
+
+command getIndex():bat[:oid,:oid]
+address TKNZRgetIndex
+comment "administrative function that returns the INDEX bat";
+
+command getCount():bat[:oid,:wrd]
+address TKNZRgetCount
+comment "debugging function that returns the size of the bats at each level";
+
+command getCardinality():bat[:oid,:wrd]
+address TKNZRgetCardinality
+comment "debugging function that returns the unique tokens at each level";

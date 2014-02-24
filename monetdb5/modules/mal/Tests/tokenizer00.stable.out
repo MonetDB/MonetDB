@@ -1,0 +1,122 @@
+stdout of test 'tokenizer00` in directory 'monetdb5/modules/mal` itself:
+
+
+# 14:46:36 >  
+# 14:46:36 >   mserver5 "--config=/export/scratch0/lsidir/monet//prefix.current/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=0 --set "monet_mod_path=/export/scratch0/lsidir/monet//prefix.current/lib/MonetDB5:/export/scratch0/lsidir/monet//prefix.current/lib/MonetDB5/lib:/export/scratch0/lsidir/monet//prefix.current/lib/MonetDB5/bin" --set "gdk_dbfarm=/export/scratch0/lsidir/monet//prefix.current/var/MonetDB5/dbfarm"  --set mapi_open=true --set xrpc_open=true --set mapi_port=31265 --set xrpc_port=48059 --set monet_prompt= --trace  --dbname=mTests_src_modules_mal  tokenizer00.mal
+# 14:46:36 >  
+
+# MonetDB server v5.17.0, based on kernel v1.35.0
+# Serving database 'mTests_src_modules_mal', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Detected 7.753 GiB (8324386816 bytes) main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2009 MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://vili.ins.cwi.nl:31265/
+function user.main():void;
+#basic test for the tokenizer module 
+    tokenizer.open("test");
+    tokenizer.append("http://www.cwi.nl");
+    tokenizer.append("http://www.cwi.nl/");
+    tokenizer.append("http://www.cwi.nl/~lsidir");
+    tokenizer.append("http://www.cwi.nl/~mk");
+    tokenizer.append("http://www.cwi.nl/~mk");
+    tokenizer.append("http://www.ics.forth.gr");
+    tokenizer.append("http://www.ics.forth.gr/");
+    tokenizer.append("http://www.ics.forth.gr/~lsidir");
+    tokenizer.append("http://www.cook.gr/");
+    tokenizer.append("http://www.cook.gr/~lsidir");
+    tokenizer.append("http://www.cook.gr/~mk");
+    tokenizer.append("http://www.nocook.nl/~mk");
+    tokenizer.append("http://www.nocook.nl/");
+    tokenizer.append("ftp://thepiratebay.org");
+    id := 4@0:oid;
+    t := tokenizer.take(id);
+    io.print(t);
+    id := tokenizer.locate(t);
+    io.print(id);
+    d:bat[:oid,:oid]  := tokenizer.getIndex();
+    io.print(d);
+    level0:bat[:oid,:str]  := tokenizer.getLevel(0);
+    level1:bat[:oid,:str]  := tokenizer.getLevel(1);
+    level2:bat[:oid,:str]  := tokenizer.getLevel(2);
+    level3:bat[:oid,:str]  := tokenizer.getLevel(3);
+    io.print(level0);
+    io.print(level1);
+    io.print(level2);
+    io.print(level3);
+    cnt:bat[:oid,:wrd]  := tokenizer.getCount();
+    io.print(cnt);
+    cnt:bat[:oid,:wrd]  := tokenizer.getCardinality();
+    io.print(cnt);
+    tokenizer.close();
+end main;
+[ "http://www.ics.forth.gr/~lsidir/" ]
+[ 4@0 ]
+#-----------------#
+# h	t	  # name
+# void	oid	  # type
+#-----------------#
+[ 0@0,	  3@0	  ]
+[ 1@0,	  4@0	  ]
+[ 2@0,	  260@0	  ]
+[ 3@0,	  259@0	  ]
+[ 4@0,	  516@0	  ]
+[ 5@0,	  515@0	  ]
+[ 6@0,	  772@0	  ]
+[ 7@0,	  1028@0  ]
+[ 8@0,	  1284@0  ]
+[ 9@0,	  771@0	  ]
+[ 10@0,	  1027@0  ]
+#-------------------------#
+# h	t		  # name
+# oid	str		  # type
+#-------------------------#
+[ 0@0,	  "http:"	  ]
+[ 0@0,	  "ftp:"	  ]
+#-----------------#
+# h	t	  # name
+# oid	str	  # type
+#-----------------#
+[ 0@0,	  ""	  ]
+[ 1@0,	  ""	  ]
+#---------------------------------#
+# h	t			  # name
+# oid	str			  # type
+#---------------------------------#
+[ 0@0,	  "www.cwi.nl"		  ]
+[ 0@0,	  "www.ics.forth.gr"	  ]
+[ 0@0,	  "www.cook.gr"		  ]
+[ 0@0,	  "www.nocook.nl"	  ]
+[ 1@0,	  "thepiratebay.org"	  ]
+#-------------------------#
+# h	t		  # name
+# oid	str		  # type
+#-------------------------#
+[ 0@0,	  "~lsidir"	  ]
+[ 0@0,	  "~mk"		  ]
+[ 1@0,	  "~lsidir"	  ]
+[ 2@0,	  "~lsidir"	  ]
+[ 2@0,	  "~mk"		  ]
+[ 3@0,	  "~mk"		  ]
+#-----------------#
+# h	t	  # name
+# void	lng	  # type
+#-----------------#
+[ 0@0,	  2	  ]
+[ 1@0,	  2	  ]
+[ 2@0,	  5	  ]
+[ 3@0,	  6	  ]
+#-----------------#
+# h	t	  # name
+# void	lng	  # type
+#-----------------#
+[ 0@0,	  2	  ]
+[ 1@0,	  1	  ]
+[ 2@0,	  5	  ]
+[ 3@0,	  2	  ]
+
+# 14:46:36 >  
+# 14:46:36 >  Done.
+# 14:46:36 >  
+
