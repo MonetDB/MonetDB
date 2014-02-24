@@ -3352,12 +3352,18 @@ gdk_export BAT *BATsample_(BAT *b, BUN n); /* version that expects void head and
 #ifdef __GNUC__
 /* in debug builds, complain (warn) about usage of legacy functions */
 
+#define _COL_TYPE(c)	((c)->type == TYPE_void ?			\
+				(c)->seq == oid_nil ? "nil" : "void" :	\
+			 (c)->type == TYPE_oid ?			\
+				(c)->dense ? "dense" : "oid" :		\
+			 ATOMname((c)->type))
+
 #define BATselect_(b, h, t, li, hi)					\
 	({								\
 		BAT *_b = (b);						\
 		fprintf(stderr,						\
 			"#BATselect_([%s,%s]) %s[%s:%d]\n",		\
-			ATOMname(_b->htype), ATOMname(_b->ttype),	\
+			_COL_TYPE(_b->H), _COL_TYPE(_b->T),		\
 			__func__, __FILE__, __LINE__);			\
 		BATselect_((b), (h), (t), (li), (hi));			\
 	})
@@ -3367,7 +3373,7 @@ gdk_export BAT *BATsample_(BAT *b, BUN n); /* version that expects void head and
 		BAT *_b = (b);						\
 		fprintf(stderr,						\
 			"#BATuselect_([%s,%s]) %s[%s:%d]\n",		\
-			ATOMname(_b->htype), ATOMname(_b->ttype),	\
+			_COL_TYPE(_b->H), _COL_TYPE(_b->T),		\
 			__func__, __FILE__, __LINE__);			\
 		BATuselect_((b), (h), (t), (li), (hi));			\
 	})
@@ -3377,7 +3383,7 @@ gdk_export BAT *BATsample_(BAT *b, BUN n); /* version that expects void head and
 		BAT *_b = (b);						\
 		fprintf(stderr,						\
 			"#BATantiuselect_([%s,%s]) %s[%s:%d]\n",	\
-			ATOMname(_b->htype), ATOMname(_b->ttype),	\
+			_COL_TYPE(_b->H), _COL_TYPE(_b->T),		\
 			__func__, __FILE__, __LINE__);			\
 		BATantiuselect_((b), (h), (t), (li), (hi));		\
 	})
@@ -3387,7 +3393,7 @@ gdk_export BAT *BATsample_(BAT *b, BUN n); /* version that expects void head and
 		BAT *_b = (b);						\
 		fprintf(stderr,						\
 			"#BATselect([%s,%s]) %s[%s:%d]\n",		\
-			ATOMname(_b->htype), ATOMname(_b->ttype),	\
+			_COL_TYPE(_b->H), _COL_TYPE(_b->T),		\
 			__func__, __FILE__, __LINE__);			\
 		BATselect((b), (h), (t));				\
 	})
@@ -3397,7 +3403,7 @@ gdk_export BAT *BATsample_(BAT *b, BUN n); /* version that expects void head and
 		BAT *_b = (b);						\
 		fprintf(stderr,						\
 			"#BATuselect([%s,%s]) %s[%s:%d]\n",		\
-			ATOMname(_b->htype), ATOMname(_b->ttype),	\
+			_COL_TYPE(_b->H), _COL_TYPE(_b->T),		\
 			__func__, __FILE__, __LINE__);			\
 		BATuselect((b), (h), (t));				\
 	})
@@ -3407,7 +3413,7 @@ gdk_export BAT *BATsample_(BAT *b, BUN n); /* version that expects void head and
 		BAT *_b = (b);						\
 		fprintf(stderr,						\
 			"#BATsample([%s,%s]) %s[%s:%d]\n",		\
-			ATOMname(_b->htype), ATOMname(_b->ttype),	\
+			_COL_TYPE(_b->H), _COL_TYPE(_b->T),		\
 			__func__, __FILE__, __LINE__);			\
 		BATsample((b), (n));					\
 	})
@@ -3417,8 +3423,8 @@ gdk_export BAT *BATsample_(BAT *b, BUN n); /* version that expects void head and
 		BAT *_l = (l), *_r = (r);				\
 		fprintf(stderr,						\
 			"#BATsemijoin([%s,%s],[%s,%s]) %s[%s:%d]\n",	\
-			ATOMname(_l->htype), ATOMname(_l->ttype),	\
-			ATOMname(_r->htype), ATOMname(_r->ttype),	\
+			_COL_TYPE(_l->H), _COL_TYPE(_l->T),		\
+			_COL_TYPE(_r->H), _COL_TYPE(_r->T),		\
 			__func__, __FILE__, __LINE__);			\
 		BATsemijoin(_l, _r);					\
 	})
@@ -3428,8 +3434,8 @@ gdk_export BAT *BATsample_(BAT *b, BUN n); /* version that expects void head and
 		BAT *_l = (l), *_r = (r);				\
 		fprintf(stderr,						\
 			"#BATjoin([%s,%s],[%s,%s]) %s[%s:%d]\n",	\
-			ATOMname(_l->htype), ATOMname(_l->ttype),	\
-			ATOMname(_r->htype), ATOMname(_r->ttype),	\
+			_COL_TYPE(_l->H), _COL_TYPE(_l->T),		\
+			_COL_TYPE(_r->H), _COL_TYPE(_r->T),		\
 			__func__, __FILE__, __LINE__);			\
 		BATjoin(_l, _r, (estimate));				\
 	})
@@ -3439,8 +3445,8 @@ gdk_export BAT *BATsample_(BAT *b, BUN n); /* version that expects void head and
 		BAT *_l = (l), *_r = (r);				\
 		fprintf(stderr,						\
 			"#BATleftjoin([%s,%s],[%s,%s]) %s[%s:%d]\n",	\
-			ATOMname(_l->htype), ATOMname(_l->ttype),	\
-			ATOMname(_r->htype), ATOMname(_r->ttype),	\
+			_COL_TYPE(_l->H), _COL_TYPE(_l->T),		\
+			_COL_TYPE(_r->H), _COL_TYPE(_r->T),		\
 			__func__, __FILE__, __LINE__);			\
 		BATleftjoin(_l, _r, (estimate));			\
 	})
@@ -3450,8 +3456,8 @@ gdk_export BAT *BATsample_(BAT *b, BUN n); /* version that expects void head and
 		BAT *_l = (l), *_r = (r);				\
 		fprintf(stderr,						\
 			"#BATthetajoin([%s,%s],[%s,%s]) %s[%s:%d]\n",	\
-			ATOMname(_l->htype), ATOMname(_l->ttype),	\
-			ATOMname(_r->htype), ATOMname(_r->ttype),	\
+			_COL_TYPE(_l->H), _COL_TYPE(_l->T),		\
+			_COL_TYPE(_r->H), _COL_TYPE(_r->T),		\
 			__func__, __FILE__, __LINE__);			\
 		BATthetajoin(_l, _r, (op), (estimate));			\
 	})
@@ -3461,8 +3467,8 @@ gdk_export BAT *BATsample_(BAT *b, BUN n); /* version that expects void head and
 		BAT *_l = (l), *_r = (r);				\
 		fprintf(stderr,						\
 			"#BATouterjoin([%s,%s],[%s,%s]) %s[%s:%d]\n",	\
-			ATOMname(_l->htype), ATOMname(_l->ttype),	\
-			ATOMname(_r->htype), ATOMname(_r->ttype),	\
+			_COL_TYPE(_l->H), _COL_TYPE(_l->T),		\
+			_COL_TYPE(_r->H), _COL_TYPE(_r->T),		\
 			__func__, __FILE__, __LINE__);			\
 		BATouterjoin(_l, _r, (estimate));			\
 	})
@@ -3472,8 +3478,8 @@ gdk_export BAT *BATsample_(BAT *b, BUN n); /* version that expects void head and
 		BAT *_l = (l), *_r = (r);				\
 		fprintf(stderr,						\
 			"#BATleftfetchjoin([%s,%s],[%s,%s]) %s[%s:%d]\n", \
-			ATOMname(_l->htype), ATOMname(_l->ttype),	\
-			ATOMname(_r->htype), ATOMname(_r->ttype),	\
+			_COL_TYPE(_l->H), _COL_TYPE(_l->T),		\
+			_COL_TYPE(_r->H), _COL_TYPE(_r->T),		\
 			__func__, __FILE__, __LINE__);			\
 		BATleftfetchjoin(_l, _r, (estimate));			\
 	})
@@ -3483,8 +3489,8 @@ gdk_export BAT *BATsample_(BAT *b, BUN n); /* version that expects void head and
 		BAT *_l = (l), *_r = (r);				\
 		fprintf(stderr,						\
 			"#BATantijoin([%s,%s],[%s,%s]) %s[%s:%d]\n",	\
-			ATOMname(_l->htype), ATOMname(_l->ttype),	\
-			ATOMname(_r->htype), ATOMname(_r->ttype),	\
+			_COL_TYPE(_l->H), _COL_TYPE(_l->T),		\
+			_COL_TYPE(_r->H), _COL_TYPE(_r->T),		\
 			__func__, __FILE__, __LINE__);			\
 		BATantijoin(_l, _r);					\
 	})
@@ -3494,8 +3500,8 @@ gdk_export BAT *BATsample_(BAT *b, BUN n); /* version that expects void head and
 		BAT *_l = (l), *_r = (r);				\
 		fprintf(stderr,						\
 			"#BATbandjoin([%s,%s],[%s,%s]) %s[%s:%d]\n",	\
-			ATOMname(_l->htype), ATOMname(_l->ttype),	\
-			ATOMname(_r->htype), ATOMname(_r->ttype),	\
+			_COL_TYPE(_l->H), _COL_TYPE(_l->T),		\
+			_COL_TYPE(_r->H), _COL_TYPE(_r->T),		\
 			__func__, __FILE__, __LINE__);			\
 		BATbandjoin(_l, _r, (c1), (c2), (li), (hi));		\
 	})
@@ -3505,9 +3511,9 @@ gdk_export BAT *BATsample_(BAT *b, BUN n); /* version that expects void head and
 		BAT *_l = (l), *_rl = (rl), *_rh = (rh);		\
 		fprintf(stderr,						\
 			"#BATrangejoin([%s,%s],[%s,%s],[%s,%s]) %s[%s:%d]\n", \
-			ATOMname(_l->htype), ATOMname(_l->ttype),	\
-			ATOMname(_rl->htype), ATOMname(_rl->ttype),	\
-			ATOMname(_rh->htype), ATOMname(_rh->ttype),	\
+			_COL_TYPE(_l->H), _COL_TYPE(_l->T),		\
+			_COL_TYPE(_rl->H), _COL_TYPE(_rl->T),		\
+			_COL_TYPE(_rh->H), _COL_TYPE(_rh->T),		\
 			__func__, __FILE__, __LINE__);			\
 		BATrangejoin(_l, _rl, _rh, (li), (hi));			\
 	})
