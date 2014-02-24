@@ -42682,46 +42682,6 @@ command timestamp.unix_epoch{unsafe}():timestamp
 address MTIMEunix_epoch;
 comment The Unix epoch time (00:00:00 UTC on January 1, 1970)
 
-command tokenizer.append(u:str):oid 
-address TKNZRappend;
-comment tokenize a new string and append it to the tokenizer (duplicate elimination is performed)
-
-command tokenizer.close():void 
-address TKNZRclose;
-comment close the current tokenizer store
-
-command tokenizer.depositFile(fnme:str):void 
-address TKNZRdepositFile;
-comment batch insertion from a file of strings to tokenize, each string is separated by a new line
-
-command tokenizer.getCardinality():bat[:oid,:wrd] 
-address TKNZRgetCardinality;
-comment debugging function that returns the unique tokens at each level
-
-command tokenizer.getCount():bat[:oid,:wrd] 
-address TKNZRgetCount;
-comment debugging function that returns the size of the bats at each level
-
-command tokenizer.getIndex():bat[:oid,:oid] 
-address TKNZRgetIndex;
-comment administrative function that returns the INDEX bat
-
-command tokenizer.getLevel(i:int):bat[:oid,:str] 
-address TKNZRgetLevel;
-comment administrative function that returns the bat on level i
-
-pattern tokenizer.locate(s:str):oid 
-address TKNZRlocate;
-comment if the given string is in the store returns its oid, otherwise oid_nil
-
-command tokenizer.open(name:str):void 
-address TKNZRopen;
-comment open the named tokenizer store, a new one is created if the specified name does not exist
-
-pattern tokenizer.take(i:oid):str 
-address TKNZRtakeOid;
-comment reconstruct and returns the i-th string
-
 command transaction.alpha(b:bat[:oid,:any_1]):bat[:oid,:any_1] 
 address TRNtrans_alpha;
 comment List insertions since last commit.
