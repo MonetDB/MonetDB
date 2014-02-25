@@ -49,7 +49,7 @@
 #ifndef _GDK_ATOMIC_H_
 #define _GDK_ATOMIC_H_
 
-#ifdef HAVE_LIBATOMIC_OPS
+#if defined(HAVE_LIBATOMIC_OPS) && !defined(USE_PTHREAD_LOCKS)
 
 #include <atomic_ops.h>
 
@@ -71,7 +71,7 @@
 
 #else
 
-#if defined(_MSC_VER) && !defined(__INTEL_COMPILER)
+#if defined(_MSC_VER) && !defined(__INTEL_COMPILER) && !defined(USE_PTHREAD_LOCKS)
 
 #include <intrin.h>
 
@@ -118,7 +118,7 @@
 #define ATOMIC_TAS(var, lck, fcn)	_InterlockedCompareExchange(&var, 1, 0)
 #pragma intrinsic(_InterlockedCompareExchange)
 
-#elif (defined(__GNUC__) || defined(__INTEL_COMPILER)) && !(defined(__sun__) && SIZEOF_SIZE_T == SIZEOF_LNG) && !defined(_MSC_VER)
+#elif (defined(__GNUC__) || defined(__INTEL_COMPILER)) && !(defined(__sun__) && SIZEOF_SIZE_T == SIZEOF_LNG) && !defined(_MSC_VER) && !defined(USE_PTHREAD_LOCKS)
 
 #if SIZEOF_SSIZE_T == SIZEOF_LNG
 #define ATOMIC_TYPE			lng
