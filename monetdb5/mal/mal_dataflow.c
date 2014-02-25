@@ -360,7 +360,9 @@ DFLOWworker(void *T)
 			MALadmission(-fe->argclaim, -fe->hotclaim);
 #endif
 
+			MT_lock_set(&flow->flowlock, "DFLOWworker");
 			fe->state = DFLOWwrapup;
+			MT_lock_unset(&flow->flowlock, "DFLOWworker");
 			if (error) {
 				MT_lock_set(&flow->flowlock, "DFLOWworker");
 				/* only collect one error (from one thread, needed for stable testing) */
@@ -405,7 +407,11 @@ DFLOWworker(void *T)
 
 		q_enqueue(flow->done, fe);
 		if ( fnxt == 0) {
-			if (todo->last == 0)
+			int last;
+			MT_lock_set(&todo->l, "DFLOWworker");
+			last = todo->last;
+			MT_lock_unset(&todo->l, "DFLOWworker");
+			if (last == 0)
 				profilerHeartbeatEvent("wait", 0);
 		}
 	}

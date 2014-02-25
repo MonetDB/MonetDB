@@ -2864,8 +2864,10 @@ reset_changeset(sql_trans *tr, changeset * fs, changeset * pfs, sql_base *b, res
 		for (n = fs->nelm; n; ) {
 			node *nxt = n->next;
 			list_remove_node(fs->set, n);
+			MT_lock_set(&fs->set->ht_lock, "reset_changeset");
 			if(fs->set->ht)
 				hash_del(fs->set->ht, base_key(n->data), n->data);
+			MT_lock_unset(&fs->set->ht_lock, "reset_changeset");
 			n = nxt;
 		}
 		fs->nelm = NULL;
@@ -2898,8 +2900,11 @@ reset_changeset(sql_trans *tr, changeset * fs, changeset * pfs, sql_base *b, res
 					fprintf(stderr, "#reset_cs free %s\n", (b->name)?b->name:"help");
 				}
 				list_remove_node(fs->set, n);
+				MT_lock_set(&fs->set->ht_lock, "reset_changeset");
 				if(fs->set->ht)
 					hash_del(fs->set->ht, base_key(n->data), n->data);
+				MT_lock_unset(&fs->set->ht_lock, "reset_changeset");
+
 				n = t;
 			} else { /* a new id */
 				sql_base *r = fd(tr, TR_OLD, pfb,  b);
@@ -2930,8 +2935,10 @@ reset_changeset(sql_trans *tr, changeset * fs, changeset * pfs, sql_base *b, res
 					(b->name)?b->name:"help");
 			}
 			list_remove_node(fs->set, n);
+			MT_lock_set(&fs->set->ht_lock, "reset_changeset");
 			if(fs->set->ht)
 				hash_del(fs->set->ht, base_key(n->data), n->data);
+			MT_lock_unset(&fs->set->ht_lock, "reset_changeset");
 			n = t;
 		}
 	}
@@ -3049,8 +3056,10 @@ reset_schema(sql_trans *tr, sql_schema *fs, sql_schema *pfs)
 				node *nxt = n->next;
 
 				list_remove_node(fs->tables.set, n);
+				MT_lock_set(&fs->tables.set->ht_lock, "reset_schema");
 				if(fs->tables.set->ht)
 					hash_del(fs->tables.set->ht, base_key(n->data), n->data);
+				MT_lock_unset(&fs->tables.set->ht_lock, "reset_schema");
 				n = nxt;
 			}
 			fs->tables.nelm = NULL;

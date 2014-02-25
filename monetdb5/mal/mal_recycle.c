@@ -53,7 +53,10 @@ int recycleCacheLimit=0; /* No limit by default */
 static lng recyclerMemoryUsed = 0;
 static lng recyclerSavings = 0;
 static lng recycled=0;
-static lng statements =0;
+#ifdef ATOMIC_LOCK
+static MT_Lock statementsLock MT_LOCK_INITIALIZER("statementsLock");
+#endif
+static volatile ATOMIC_TYPE statements = 0;
 static lng recycleSearchTime =0;	/* cache search time in ms*/
 static lng recycleSearchCalls =0;	
 
@@ -116,6 +119,7 @@ static void RECYCLEspace(void)
 void RECYCLEinit(void){
 #ifdef NEED_MT_LOCK_INIT
 	MT_lock_init(&recycleLock,"recycleLock");
+	ATOMIC_INIT(statementsLock, "statementsLock");
 #endif
 	sqlRef = putName("sql",3);
 	bindRef = putName("bind",4);
@@ -830,7 +834,7 @@ RECYCLEentry(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, RuntimeProfi
 {
 	int i=0;
 
-	statements++;
+	ATOMIC_INC(statements, statementsLock, "RECYCLEentry");
 	if ( !RECYCLEinterest(p) )  /* don't scan RecyclerPool for non-monitored instructions */
 		return 0;
 	if ( recycleBlk == NULL ){
@@ -1095,7 +1099,7 @@ RECYCLEdumpInternal(stream *s)
 
     mnstr_printf(s,"#RECYCLER CATALOG cached %d instructions, ", recycleBlk->stop);
     mnstr_printf(s,"MAL recycled = "LLFMT" total MAL executed = "LLFMT" memory= "LLFMT" total searchtime=%5.2f(usec) savings="LLFMT"\n",
-         recycled- recycleBlk->stop, statements, recyclerMemoryUsed, ((double)recycleSearchTime)/recycleSearchCalls,  recyclerSavings);
+				 recycled- recycleBlk->stop, (lng) ATOMIC_GET(statements, statementsLock, "RECYCLEdumpInternal"), recyclerMemoryUsed, ((double)recycleSearchTime)/recycleSearchCalls,  recyclerSavings);
 
 #ifdef _DEBUG_CACHE_
     /* and dump the statistics per instruction*/

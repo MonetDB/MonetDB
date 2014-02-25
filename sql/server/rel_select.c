@@ -793,7 +793,9 @@ rel_lastexp(mvc *sql, sql_rel *rel )
 		rel = rel_parent(rel);
 	assert(list_length(rel->exps));
 	if (rel->op == op_project) {
+		MT_lock_set(&rel->exps->ht_lock, "rel_lastexp");
 		rel->exps->ht = NULL;
+		MT_lock_unset(&rel->exps->ht_lock, "rel_lastexp");
 		return exp_alias_or_copy(sql, NULL, NULL, rel, rel->exps->t->data);
 	}
 	assert(is_project(rel->op));

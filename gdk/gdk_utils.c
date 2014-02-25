@@ -1132,7 +1132,15 @@ static int GDKnrofthreads;
 int
 GDKexiting(void)
 {
-	return (int) GDKstopped;
+	int stopped;
+#ifdef ATOMIC_LOCK
+	pthread_mutex_lock(&GDKstoppedLock);
+#endif
+	stopped = GDKstopped != 0;
+#ifdef ATOMIC_LOCK
+	pthread_mutex_unlock(&GDKstoppedLock);
+#endif
+	return stopped;
 }
 
 /* coverity[+kill] */
