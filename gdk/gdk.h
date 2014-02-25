@@ -3348,6 +3348,7 @@ gdk_export BAT *BATsample_(BAT *b, BUN n); /* version that expects void head and
 #define ILLEGALVALUE	((ptr)-1L)
 #define MAXPARAMS	32
 
+#if 0				/* it's still too early to enable this */
 #ifndef NDEBUG
 #ifdef __GNUC__
 /* in debug builds, complain (warn) about usage of legacy functions */
@@ -3517,6 +3518,7 @@ gdk_export BAT *BATsample_(BAT *b, BUN n); /* version that expects void head and
 			__func__, __FILE__, __LINE__);			\
 		BATrangejoin(_l, _rl, _rh, (li), (hi));			\
 	})
+#endif
 #endif
 #endif
 
