@@ -118,6 +118,7 @@ typedef struct mvc {
 	sql_session *session;	
 
 	int type;		/* query type */
+	int pushdown;		/* AND or OR query handling */
 	int label;		/* numbers for relational projection labels */
 	list *cascade_action;  /* protection against recursive cascade actions */
 
