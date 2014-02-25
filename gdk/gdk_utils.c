@@ -1152,6 +1152,7 @@ GDKexit(int status)
 			MT_Id pid = MT_getpid();
 			Thread t, s;
 
+			MT_lock_set(&GDKthreadLock, "GDKexit");
 			for (t = GDKthreads, s = t + THREADS; t < s; t++) {
 				if (t->pid) {
 					MT_Id victim = t->pid;
@@ -1160,6 +1161,7 @@ GDKexit(int status)
 						MT_kill_thread(victim);
 				}
 			}
+			MT_lock_unset(&GDKthreadLock, "GDKexit");
 		}
 		(void) GDKgetHome();
 #if 0
@@ -1663,16 +1665,18 @@ THRhighwater(void)
 	size_t c;
 	Thread s;
 	size_t diff;
+	int rc = 0;
 
+	MT_lock_set(&GDKthreadLock, "THRhighwater");
 	s = GDK_find_thread(MT_getpid());
-	if (s == NULL)
-		return 0;
-	c = THRsp();
-	diff = (c < s->sp) ? s->sp - c : c - s->sp;
-	if (diff > (THREAD_STACK_SIZE - 16 * 1024)) {
-		return 1;
+	if (s != NULL) {
+		c = THRsp();
+		diff = c < s->sp ? s->sp - c : c - s->sp;
+		if (diff > THREAD_STACK_SIZE - 16 * 1024)
+			rc = 1;
 	}
-	return 0;
+	MT_lock_unset(&GDKthreadLock, "THRhighwater");
+	return rc;
 }
 
 /*
@@ -1696,26 +1700,39 @@ THRinit(void)
 void
 THRsetdata(int n, ptr val)
 {
-	Thread s = GDK_find_thread(MT_getpid());
+	Thread s;
 
+	MT_lock_set(&GDKthreadLock, "THRsetdata");
+	s = GDK_find_thread(MT_getpid());
 	if (s)
 		s->data[n] = val;
+	MT_lock_unset(&GDKthreadLock, "THRsetdata");
 }
 
 void *
 THRgetdata(int n)
 {
-	Thread s = GDK_find_thread(MT_getpid());
+	Thread s;
+	void *d;
 
-	return (s ? s->data[n] : THRdata[n]);
+	MT_lock_set(&GDKthreadLock, "THRgetdata");
+	s = GDK_find_thread(MT_getpid());
+	d = s ? s->data[n] : THRdata[n];
+	MT_lock_unset(&GDKthreadLock, "THRgetdata");
+	return d;
 }
 
 int
 THRgettid(void)
 {
-	Thread s = GDK_find_thread(MT_getpid());
+	Thread s;
+	int t;
 
-	return s ? s->tid : 1;
+	MT_lock_set(&GDKthreadLock, "THRgettid");
+	s = GDK_find_thread(MT_getpid());
+	t = s ? s->tid : 1;
+	MT_lock_unset(&GDKthreadLock, "THRgettid");
+	return t;
 }
 
 static char THRprintbuf[BUFSIZ];
