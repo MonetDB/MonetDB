@@ -1308,7 +1308,10 @@ getDiskSpace(void)
 }
 
 /* the heartbeat process produces a ping event once every X milliseconds */
-static int hbdelay = 0;
+#ifdef ATOMIC_LOCK
+static MT_Lock hbLock MT_LOCK_INITIALIZER("hbLock");
+#endif
+static volatile ATOMIC_TYPE hbdelay = 0;
 
 /* the processor statistics are gathered in Linux settings from the proc files.
  * Given the parsing involved, it should be used sparingly */
@@ -1406,7 +1409,7 @@ void profilerHeartbeatEvent(str msg, lng ticks)
 	struct tms newTms;
 	struct tms prevtimer;
 
-	if( hbdelay ==0 || eventstream  == NULL ) 
+	if (ATOMIC_GET(hbdelay, hbLock, "profilerHeatbeatEvent") == 0 || eventstream  == NULL)
 		return;
 	times(&prevtimer);
 #endif
@@ -1514,46 +1517,51 @@ void profilerHeartbeatEvent(str msg, lng ticks)
 }
 
 static MT_Id hbthread;
-static int volatile hbrunning;
+static volatile ATOMIC_TYPE hbrunning;
 
 static void profilerHeartbeat(void *dummy)
 {
 	int t;
 
 	(void) dummy;
-	while (hbrunning) {
+	while (ATOMIC_GET(hbrunning, hbLock, "profilerHeartbeat")) {
 		/* wait until you need this info */
-		while( hbdelay ==0 || eventstream  == NULL ) {
+		while (ATOMIC_GET(hbdelay, hbLock, "profilerHeatbeatEvent") == 0 || eventstream  == NULL) {
 			for (t = 1000; t > 0; t -= 50) {
 				MT_sleep_ms(50);
-				if (!hbrunning)
+				if (!ATOMIC_GET(hbrunning, hbLock, "profilerHeartbeat"))
 					return;
 			}
 		}
-		for (t = hbdelay; t > 0; t -= 50) {
+		for (t = ATOMIC_GET(hbdelay, hbLock, "profilerHeatbeatEvent"); t > 0; t -= 50) {
 			MT_sleep_ms(t > 50 ? 50 : t);
-			if (!hbrunning)
+			if (!ATOMIC_GET(hbrunning, hbLock, "profilerHeartbeat"))
 				return;
 		}
 		profilerHeartbeatEvent("ping", 0);
 	}
-	hbdelay = 0;
+	ATOMIC_SET(hbdelay, 0, hbLock, "profilerHeatbeat");
 }
 
-void startHeartbeat(int delay){
+void startHeartbeat(int delay)
+{
 	if ( delay < 0 )
 		return;
-	hbdelay = delay;
+	ATOMIC_SET(hbdelay, (ATOMIC_TYPE) delay, hbLock, "startHeatbeat");
 }
 
-void stopHeartbeat(void){
-	hbrunning = 0;
+void stopHeartbeat(void)
+{
+	ATOMIC_SET(hbrunning, 0, hbLock, "stopHeartbeat");
 	if (hbthread)
 		MT_join_thread(hbthread);
 }
 
 void initHeartbeat(void)
 {
+#ifdef NEED_MT_LOCK_INIT
+	ATOMIC_INIT(hbLock, "hbLock");
+#endif
 	hbrunning = 1;
 	if (MT_create_thread(&hbthread, profilerHeartbeat, NULL, MT_THR_JOINABLE) < 0) {
 		/* it didn't happen */
