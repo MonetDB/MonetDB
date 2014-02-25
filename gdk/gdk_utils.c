@@ -468,7 +468,7 @@ GDKvm_cursize(void)
 									\
 		ATOMIC_ADD(GDK_mallocedbytes_estimate, _memdelta, mbyteslock, "heapinc"); \
 		GDKmallidx(_idx, _memdelta);				\
-		ATOMIC_INC(GDK_nmallocs[_idx], mbyteslock, "heapinc");	\
+		(void) ATOMIC_INC(GDK_nmallocs[_idx], mbyteslock, "heapinc"); \
 	} while (0)
 #define heapdec(memdelta)						\
 	do {								\
@@ -477,7 +477,7 @@ GDKvm_cursize(void)
 									\
 		ATOMIC_SUB(GDK_mallocedbytes_estimate, _memdelta, mbyteslock, "heapdec"); \
 		GDKmallidx(_idx, _memdelta);				\
-		ATOMIC_DEC(GDK_nmallocs[_idx], mbyteslock, "heapdec");	\
+		(void) ATOMIC_DEC(GDK_nmallocs[_idx], mbyteslock, "heapdec"); \
 	} while (0)
 #else
 #define heapinc(_memdelta)						\
@@ -493,7 +493,7 @@ GDKvm_cursize(void)
 		int _idx;						\
 									\
 		GDKmallidx(_idx, _vmdelta);				\
-		ATOMIC_INC(GDK_vm_nallocs[_idx], mbyteslock, fcn);	\
+		(void) ATOMIC_INC(GDK_vm_nallocs[_idx], mbyteslock, fcn); \
 		ATOMIC_ADD(GDK_vm_cursize, _vmdelta, mbyteslock, fcn);	\
 	} while (0)
 #define memdec(vmdelta, fcn)						\
@@ -502,7 +502,7 @@ GDKvm_cursize(void)
 		int _idx;						\
 									\
 		GDKmallidx(_idx, _vmdelta);				\
-		ATOMIC_DEC(GDK_vm_nallocs[_idx], mbyteslock, fcn);	\
+		(void) ATOMIC_DEC(GDK_vm_nallocs[_idx], mbyteslock, fcn); \
 		ATOMIC_SUB(GDK_vm_cursize, _vmdelta, mbyteslock, fcn);	\
 	} while (0)
 #else
