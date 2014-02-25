@@ -65,46 +65,51 @@ list_find_column(sql_allocator *sa, list *l, char *rname, char *name )
 	stmt *res = NULL;
 	node *n;
 
-	if (l && !l->ht && list_length(l) > HASH_MIN_SIZE) {
-		l->ht = hash_new(l->sa, MAX(list_length(l), l->expected_cnt), (fkeyvalue)&stmt_key);
+	if (l) {
+		MT_lock_set(&l->ht_lock, "list_find_column");
+		if (!l->ht && list_length(l) > HASH_MIN_SIZE) {
+			l->ht = hash_new(l->sa, MAX(list_length(l), l->expected_cnt), (fkeyvalue)&stmt_key);
 
-		for (n = l->h; n; n = n->next) {
-			char *nme = column_name(sa, n->data);
-			int key = hash_key(nme);
-			
-			hash_add(l->ht, key, n->data);
+			for (n = l->h; n; n = n->next) {
+				char *nme = column_name(sa, n->data);
+				int key = hash_key(nme);
+
+				hash_add(l->ht, key, n->data);
+			}
 		}
-	}
-	if (l && l->ht) {
-		int key = hash_key(name);
-		sql_hash_e *e = l->ht->buckets[key&(l->ht->size-1)]; 
+		if (l->ht) {
+			int key = hash_key(name);
+			sql_hash_e *e = l->ht->buckets[key&(l->ht->size-1)];
 
-		if (rname) {
-			for (; e; e = e->chain) {
-				stmt *s = e->value;
-				char *rnme = table_name(sa, s);
-				char *nme = column_name(sa, s);
+			if (rname) {
+				for (; e; e = e->chain) {
+					stmt *s = e->value;
+					char *rnme = table_name(sa, s);
+					char *nme = column_name(sa, s);
 
-				if (rnme && strcmp(rnme, rname) == 0 && 
+					if (rnme && strcmp(rnme, rname) == 0 &&
 			 	            strcmp(nme, name) == 0) {
-					res = s;
-					break;
+						res = s;
+						break;
+					}
 				}
-			}
-		} else {
-			for (; e; e = e->chain) {
-				stmt *s = e->value;
-				char *nme = column_name(sa, s);
+			} else {
+				for (; e; e = e->chain) {
+					stmt *s = e->value;
+					char *nme = column_name(sa, s);
 
-				if (nme && strcmp(nme, name) == 0) {
-					res = s;
-					break;
+					if (nme && strcmp(nme, name) == 0) {
+						res = s;
+						break;
+					}
 				}
 			}
+			MT_lock_unset(&l->ht_lock, "list_find_column");
+			if (!res)
+				return NULL;
+			return res;
 		}
-		if (!res)
-			return NULL;
-		return res;
+		MT_lock_unset(&l->ht_lock, "list_find_column");
 	}
 	if (rname) {
 		for (n = l->h; n; n = n->next) {
