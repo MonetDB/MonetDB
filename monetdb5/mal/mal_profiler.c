@@ -1520,7 +1520,7 @@ static void profilerHeartbeat(void *dummy)
 					return;
 			}
 		}
-		for (t = ATOMIC_GET(hbdelay, hbLock, "profilerHeatbeatEvent"); t > 0; t -= 50) {
+		for (t = (int) ATOMIC_GET(hbdelay, hbLock, "profilerHeatbeatEvent"); t > 0; t -= 50) {
 			MT_sleep_ms(t > 50 ? 50 : t);
 			if (!ATOMIC_GET(hbrunning, hbLock, "profilerHeartbeat"))
 				return;
