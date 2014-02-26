@@ -287,8 +287,8 @@ str
 SYSmem_usage(int *ret, int *ret2, lng *minsize)
 {
 	lng hbuns = 0, tbuns = 0, hhsh = 0, thsh = 0, hind = 0, tind = 0, head = 0, tail = 0, tot = 0, n = 0, sz;
-	BAT *bn = BATnew(TYPE_void, TYPE_str, 2 * BBPsize);
-	BAT *b = BATnew(TYPE_void, TYPE_lng, 2 * BBPsize);
+	BAT *bn = BATnew(TYPE_void, TYPE_str, 2 * getBBPsize());
+	BAT *b = BATnew(TYPE_void, TYPE_lng, 2 * getBBPsize());
 	struct Mallinfo m;
 	char buf[1024];
 	bat i;
@@ -301,7 +301,7 @@ SYSmem_usage(int *ret, int *ret2, lng *minsize)
 	BATseqbase(b,0);
 	BATseqbase(bn,0);
 	BBPlock("SYSmem_usage");
-	for (i = 1; i < BBPsize; i++) {
+	for (i = 1; i < getBBPsize(); i++) {
 		BAT *c = BBPquickdesc(i,0);
 		str s;
 
@@ -406,8 +406,8 @@ str
 SYSvm_usage(int *ret, int *ret2, lng *minsize)
 {
 	lng hbuns = 0, tbuns = 0, hhsh = 0, thsh = 0, hind = 0, tind = 0, head = 0, tail = 0, tot = 0, sz;
-	BAT *bn = BATnew(TYPE_void, TYPE_str, 2 * BBPsize);
-	BAT *b = BATnew(TYPE_void, TYPE_lng, 2 * BBPsize);
+	BAT *bn = BATnew(TYPE_void, TYPE_str, 2 * getBBPsize());
+	BAT *b = BATnew(TYPE_void, TYPE_lng, 2 * getBBPsize());
 	char buf[1024];
 	bat i;
 
@@ -419,7 +419,7 @@ SYSvm_usage(int *ret, int *ret2, lng *minsize)
 	BATseqbase(b,0);
 	BATseqbase(bn,0);
 	BBPlock("SYSvm_usage");
-	for (i = 1; i < BBPsize; i++) {
+	for (i = 1; i < getBBPsize(); i++) {
 		BAT *c;
 		str s;
 
@@ -610,7 +610,7 @@ SYSgdkEnv(int *ret, int *ret2)
 	BATseqbase(b,0);
 	BATseqbase(bn,0);
 
-	for (i = 1; i < BBPsize; i++) {
+	for (i = 1; i < getBBPsize(); i++) {
 		if (BBPvalid(i)) {
 			pbat++;
 			if (BBP_cache(i)) {

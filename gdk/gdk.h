@@ -2630,7 +2630,7 @@ BBPcheck(register bat x, register const char *y)
 	if (x && x != bat_nil) {
 		register bat z = ABS(x);
 
-		if (z >= BBPsize || BBP_logical(z) == NULL) {
+		if (z >= getBBPsize() || BBP_logical(z) == NULL) {
 			CHECKDEBUG THRprintf(GDKstdout,"#%s: range error %d\n", y, (int) x);
 		} else {
 			return z;

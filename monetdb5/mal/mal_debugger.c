@@ -645,7 +645,7 @@ retryRead:
 				if (i)
 					limit = i + 1;
 				else {
-					limit = BBPsize;
+					limit = getBBPsize();
 					i = 1;
 				}
 				/* the 'dense' qualification only shows entries with a hard ref */
@@ -1455,7 +1455,7 @@ memProfileVector(stream *out, int cells)
 		v[i] = '.';
 	v[i] = 0;
 
-	for (i = 1; i < BBPsize; i++)
+	for (i = 1; i < getBBPsize(); i++)
 		if (BBP_status(i) & BBPLOADED) {
 			BAT *b = BATdescriptor(i);
 			Heap *hp;

@@ -234,7 +234,6 @@ void BBPreleaseref(bat i);
 int BBPrename(bat bid, const char *nme);
 int BBPsave(BAT *b);
 void BBPshare(bat b);
-bat BBPsize;
 int BBPsync(int cnt, bat *subcommit);
 void BBPunlock(const char *s);
 BAT *BUNappend(BAT *b, const void *right, bit force);
@@ -412,6 +411,7 @@ int escapedStrlen(const char *src, const char *sep1, const char *sep2, int quote
 int fltFromStr(const char *src, int *len, flt **dst);
 int fltToStr(str *dst, int *len, const flt *src);
 const flt flt_nil;
+bat getBBPsize(void);
 char *get_bin_path(void);
 int gettimeofday(struct timeval *tv, int *ignore_zone);
 int gprof_pthread_create(pthread_t *__restrict, __const pthread_attr_t *__restrict, void *( *fcn)(void *), void *__restrict);

@@ -1268,7 +1268,7 @@ getDiskSpace(void)
 	int i;
 	lng size = 0;
 
-	for (i = 1; i < BBPsize; i++)
+	for (i = 1; i < getBBPsize(); i++)
 		if (BBP_logical(i) && (BBP_refs(i) || BBP_lrefs(i))) {
 			b = BATdescriptor(i);
 			if (b) {
