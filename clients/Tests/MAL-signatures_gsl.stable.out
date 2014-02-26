@@ -2415,7 +2415,7 @@ address ALGgroupby;
 comment Produces a new BAT with groups identified by the head column. The result contains tail times the head value, ie the tail contains the result group sizes.
 
 command algebra.ilikesubselect(s:bat[:oid,:str],pat:bat[:oid,:str],esc:str) (l:bat[:oid,:oid],r:bat[:oid,:oid]) 
-address PCREilike_join_pcre;
+address PCREilike_join_pcr5;
 function algebra.ilikesubselect(b:bat[:oid,:str],cand:bat[:oid,:oid],pat:str,esc:str,anti:bit):bat[:oid,:oid];
 function algebra.ilikesubselect(b:bat[:oid,:str],pat:str,esc:str,anti:bit):bat[:oid,:oid];
 command algebra.indexjoin(left:bat[:any_1,:any_2],right:bat[:any_2,:any_3]):bat[:any_1,:any_3] 
@@ -39667,30 +39667,6 @@ pattern language.source(f:str):void
 address CMDevalFile;
 comment Merge the instructions stored in the file with the current program.
 
-command lock.create():lock 
-address LCKcreate;
-comment Create an unset lock
-
-command lock.destroy(l:lock):void 
-address LCKdestroy;
-comment Destroy a lock
-
-command lock.set(l:lock):void 
-address LCKset;
-comment Try to set a lock. If set, block till it is freed
-
-command lock.tostr(l:lock):void 
-address lockToStr;
-comment Overloaded atom function
-
-command lock.try(l:lock):int 
-address LCKtry;
-comment Try a lock. If free set it, if not return EBUSY
-
-command lock.unset(l:lock):void 
-address LCKunset;
-comment Unset a lock
-
 command lsst.angsep(ra1:dbl,dec1:dbl,ra2:dbl,dec2:dbl):dbl 
 address qserv_angSep;
 comment Returns the angular separation in degrees between two sphericalcoordinate pairs (ra1,dec1) and (ra2,dec2)
@@ -41054,57 +41030,22 @@ comment Collect trace of a specific operation
 
 pattern optimizer.trace():str 
 address OPTwrapper;
-command pcre.compile(pat:str):pcre 
-address PCREcompile_wrap;
-comment compile a pattern
-
-command pcre.#del():void 
-address pcre_del;
-command pcre.#fromstr():void 
-address pcre_fromstr;
-command pcre.#heap():void 
-address pcre_heap;
-command pcre.#hash():void 
-address pcre_hash;
 command pcre.imatch(s:str,pat:str):bit 
 address PCREimatch;
 comment Caseless Perl Compatible Regular Expression pattern matching against a string
 
-function pcre.ilike_filter(s:bat[:oid,:str],pat:str):bat[:oid,:str];
-command pcre.ilike_select(s:bat[:oid,:str],pat:str,esc:str):bat[:oid,:str] 
-address PCREilike_select_pcre;
 command pcre.ilikesubselect(s:bat[:oid,:str],pat:bat[:oid,:str],esc:str) (l:bat[:oid,:oid],r:bat[:oid,:oid]) 
 address PCREilike_join_pcre;
-command pcre.ilike_filter(s:bat[:oid,:str],pat:str,esc:str):bat[:oid,:oid] 
-address PCREilike_uselect_pcre;
-command pcre.ilike_uselect(s:bat[:oid,:str],pat:str,esc:str):bat[:oid,:oid] 
-address PCREilike_uselect_pcre;
 command pcre.index(pat:pcre,s:str):int 
 address PCREindex;
 comment match a pattern, return matched position (or 0 when not found)
 
-command pcre.like_select(s:bat[:oid,:str],pat:str,esc:str):bat[:oid,:str] 
-address PCRElike_select_pcre;
 command pcre.likesubselect(s:bat[:oid,:str],pat:bat[:oid,:str],esc:str) (l:bat[:oid,:oid],r:bat[:oid,:oid]) 
 address PCRElike_join_pcre;
-command pcre.like_filter(s:bat[:oid,:str],pat:str,esc:str):bat[:oid,:oid] 
-address PCRElike_uselect_pcre;
-command pcre.like_uselect(s:bat[:oid,:str],pat:str,esc:str):bat[:oid,:oid] 
-address PCRElike_uselect_pcre;
-command pcre.#length():void 
-address pcre_length;
 command pcre.match(s:str,pat:str):bit 
 address PCREmatch;
 comment Perl Compatible Regular Expression pattern matching against a string
 
-command pcre.match(pat:pcre,s:str):bit 
-address PCREexec_wrap;
-comment match a pattern
-
-command pcre.#null():void 
-address pcre_null;
-command pcre.#nequal():void 
-address pcre_nequal;
 pattern pcre.prelude():void 
 address pcre_init;
 comment Initialize pcre
@@ -41117,8 +41058,6 @@ command pcre.patindex(pat:str,s:str):int
 address PCREpatindex;
 comment Location of the first POSIX pattern matching against a string
 
-command pcre.#put():void 
-address pcre_put;
 command pcre.replace(orig:bat[:oid,:str],pat:str,repl:str,flag:str):bat[:oid,:str] 
 address PCREreplace_bat_wrap;
 command pcre.replace(origin:str,pat:str,repl:str,flags:str):str 
@@ -41132,12 +41071,6 @@ comment Convert a SQL like pattern with the given escape character into a PCRE p
 command pcre.select(pat:str,strs:bat[:oid,:str]):bat[:oid,:str] 
 address PCREselectDef;
 comment Select tuples based on the pattern
-
-command pcre.#tostr():void 
-address pcre_tostr;
-command pcre.uselect(pat:str,strs:bat[:oid,:str]):bat[:oid,:oid] 
-address PCREuselectDef;
-comment Select tuples based on the pattern, only returning the head
 
 command pqueue.dequeue_max(h:bat[:oid,:any_1]):void 
 address PQdequeue_anymax;
@@ -41716,22 +41649,6 @@ comment Run a program block in parallel.
 pattern scheduler.volumeCost(a:any):lng 
 address RUNvolumeCost;
 comment A sample cost function based on materialized results
-
-command sema.create(init:int):sema 
-address SEMAcreate;
-comment Create an unset sema, with an initial value
-
-command sema.destroy(s:sema):void 
-address SEMAdestroy;
-comment Destroy a semaphore
-
-command sema.down(s:sema):void 
-address SEMAdown;
-comment Decrement the semaphpore if >0; else block
-
-command sema.up(s:sema):void 
-address SEMAup;
-comment Increment the semaphore
 
 command sql.alpha(dec:dbl,theta:dbl):dbl 
 address SQLcst_alpha_cst;
