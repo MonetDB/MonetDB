@@ -26,3 +26,5 @@ returns uuid external name uuid."new";
 create function sys.isaUUID(u uuid)
 returns uuid external name uuid."isaUUID";
 
+create function sys.isaUUID(u string)
+returns uuid external name uuid."isaUUID";
