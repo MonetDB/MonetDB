@@ -1892,7 +1892,7 @@ gdk_export BBPrec *BBP[N_BBPINIT];
 /* macros that nicely check parameters */
 #define BBPcacheid(b)	((b)->batCacheid)
 #define BBPstatus(i)	(BBPcheck((i),"BBPstatus")?BBP_status(i):-1)
-#define BBPcurstamp()	BBP_curstamp
+gdk_export int BBPcurstamp(void);
 #define BBPrefs(i)	(BBPcheck((i),"BBPrefs")?BBP_refs(i):-1)
 #define BBPcache(i)	(BBPcheck((i),"BBPcache")?BBP_cache(i):(BAT*) NULL)
 /* we use ABS(i) instead of -(i) here because of a bug in gcc 4.8.2
@@ -1923,7 +1923,6 @@ gdk_export void BBPunlock(const char *s);
 
 gdk_export str BBPlogical(bat b, str buf);
 gdk_export str BBPphysical(bat b, str buf);
-gdk_export int BBP_curstamp;
 gdk_export BAT *BBPquickdesc(bat b, int delaccess);
 
 /*
