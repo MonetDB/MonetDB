@@ -63,7 +63,6 @@
 #define isTmpVar(M,I)		((M)->var[I]->tmpindex)
 #define getVarType(M,I)		((M)->var[I]->type)
 #define getVarGDKType(M,I)	getGDKType((M)->var[I]->type)
-#define ignoreVar(M,I)		((M)->var[I]->type == TYPE_ptr)
 #define getGDKType(T) 		( T <= TYPE_str ? T : (T == TYPE_any ? TYPE_void : findGDKtype(T)))
 
 #define clrVarFixed(M,I)		((M)->var[I]->flags &= ~VAR_FIXTYPE)
