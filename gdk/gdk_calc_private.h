@@ -19,6 +19,10 @@
 
 /* This file contains shared definitions for gdk_calc.c and gdk_aggr.c */
 
+#ifndef LIBGDK
+#error this file should not be included outside its source directory
+#endif
+
 #ifdef HAVE_LONG_LONG
 typedef unsigned long long ulng;
 #else
