@@ -161,7 +161,10 @@ BBP_delete(bat i)
 /*
  * other globals
  */
-int BBP_curstamp = 0;		/* unique stamp for creation of a bat */
+#ifdef ATOMIC_LOCK
+static MT_Lock BBP_curstampLock MT_LOCK_INITIALIZER("BBP_curstampLock");
+#endif
+static volatile ATOMIC_TYPE BBP_curstamp = 0; /* unique stamp for creation of a bat */
 MT_Id BBP_notrim = ~((MT_Id) 0);	/* avoids BBPtrim when we really do not want it */
 int BBP_dirty = 0;		/* BBP structures modified? */
 int BBPin = 0;			/* bats loaded statistic */
@@ -1612,6 +1615,12 @@ BBPgetsubdir(str s, bat i)
 	*s = 0;
 }
 
+int
+BBPcurstamp(void)
+{
+	return ATOMIC_GET(BBP_curstamp, BBP_curstampLock, "BBPcurstamp") & 0x7fffffff;
+}
+
 bat
 BBPinsert(BATstore *bs)
 {
@@ -1673,11 +1682,9 @@ BBPinsert(BATstore *bs)
 
 	/* fill in basic BBP fields for the new bat */
 
-	if (++BBP_curstamp < 0)
-		BBP_curstamp = 0;
+	bs->S.stamp = ATOMIC_INC(BBP_curstamp, BBP_curstampLock, "BBPinsert") & 0x7fffffff;
 	bs->B.batCacheid = i;
 	bs->BM.batCacheid = -i;
-	bs->S.stamp = BBP_curstamp;
 	bs->S.tid = MT_getpid();
 
 	BBP_status_set(i, BBPDELETING, "BBPentry");

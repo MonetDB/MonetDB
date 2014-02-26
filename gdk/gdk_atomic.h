@@ -59,8 +59,8 @@
 #define ATOMIC_SET(var, val, lck, fcn)	AO_store_full(&var, (val))
 #define ATOMIC_ADD(var, val, lck, fcn)	AO_fetch_and_add(&var, (val))
 #define ATOMIC_SUB(var, val, lck, fcn)	AO_fetch_and_add(&var, -(val))
-#define ATOMIC_INC(var, lck, fcn)	AO_fetch_and_add1(&var)
-#define ATOMIC_DEC(var, lck, fcn)	AO_fetch_and_sub1(&var)
+#define ATOMIC_INC(var, lck, fcn)	(AO_fetch_and_add1(&var) + 1)
+#define ATOMIC_DEC(var, lck, fcn)	(AO_fetch_and_sub1(&var) - 1)
 
 #define ATOMIC_INIT(lck, fcn)		((void) 0)
 
