@@ -57,16 +57,6 @@ pcre_export str PCREpatindex(int *ret, str *pat, str *val);
 pcre_export str PCREreplace_wrap(str *res, str *or, str *pat, str *repl, str *flags);
 pcre_export str PCREreplace_bat_wrap(int *res, int *or, str *pat, str *repl, str *flags);
 
-pcre_export str PCREcompile_wrap(pcre **res, str *pattern);
-pcre_export str PCREexec_wrap(bit *res, pcre *pattern, str *s);
-pcre_export int pcre_tostr(str *tostr, int *l, pcre *p);
-pcre_export int pcre_fromstr(const char *instr, int *l, pcre **val);
-pcre_export int pcre_nequal(pcre *l, pcre *r);
-pcre_export BUN pcre_hash(pcre *b);
-pcre_export pcre *pcre_null(void);
-pcre_export void pcre_del(Heap *h, var_t *index);
-pcre_export int pcre_length(pcre *p);
-pcre_export void pcre_heap(Heap *heap, size_t capacity);
 pcre_export var_t pcre_put(Heap *h, var_t *bun, pcre *val);
 pcre_export str PCREsql2pcre(str *ret, str *pat, str *esc);
 pcre_export str PCRElike3(bit *ret, str *s, str *pat, str *esc);
@@ -86,13 +76,8 @@ pcre_export str BATPCREilike2(int *ret, int *b, str *pat);
 pcre_export str BATPCREnotilike(int *ret, int *b, str *pat, str *esc);
 pcre_export str BATPCREnotilike2(int *ret, int *b, str *pat);
 pcre_export str PCREselectDef(int *res, str *pattern, int *bid);
-pcre_export str PCREuselectDef(int *res, str *pattern, int *bid);
-pcre_export str PCRElike_uselect_pcre(int *ret, int *b, str *pat, str *esc);
-pcre_export str PCREilike_uselect_pcre(int *ret, int *b, str *pat, str *esc);
 pcre_export str PCRElike_join_pcre(int *l, int *r, int *b, int *pat, str *esc);
 pcre_export str PCREilike_join_pcre(int *l, int *r, int *b, int *pat, str *esc);
-pcre_export str PCRElike_select_pcre(int *ret, int *b, str *pat, str *esc);
-pcre_export str PCREilike_select_pcre(int *ret, int *b, str *pat, str *esc);
 pcre_export str pcre_init(void);
 pcre_export str PCRElikesubselect1(bat *ret, bat *bid, str *pat, str *esc, bit *caseignore, bit *anti);
 pcre_export str PCRElikesubselect2(bat *ret, bat *bid, bat *sid, str *pat, str *esc, bit *caseignore, bit *anti);
@@ -996,83 +981,6 @@ pcre_match_with_flags(bit *ret, const char *val, const char *pat, const char *fl
 	return MAL_SUCCEED;
 }
 
-int
-pcre_tostr(str *tostr, int *l, pcre *p)
-{
-	(void) tostr;
-	(void) l;
-	(void) p;
-	return GDK_FAIL;
-}
-
-int
-pcre_fromstr(const char *instr, int *l, pcre **val)
-{
-	(void) instr;
-	(void) l;
-	(void) val;
-	return GDK_FAIL;
-}
-
-int
-pcre_nequal(pcre *l, pcre *r)
-{
-	if (l != r)
-		return 0;
-	else
-		return 1;
-}
-
-BUN
-pcre_hash(pcre *b)
-{
-	return *(sht *) b;
-}
-
-pcre *
-pcre_null(void)
-{
-	static sht nullval, *r;
-
-	nullval = ~(sht) 0;
-	r = &nullval;
-	return (pcre *) r;
-}
-
-void
-pcre_del(Heap *h, var_t *idx)
-{
-	HEAP_free(h, *idx);
-}
-
-#define pcresize(val) ((size_t*)val)[0]
-
-var_t
-pcre_put(Heap *h, var_t *bun, pcre *val)
-{
-	char *base;
-
-	assert(pcresize(val) <= VAR_MAX);
-	*bun = HEAP_malloc(h, (var_t) pcresize(val));
-	base = h->base;
-	if (*bun)
-		memcpy(&base[*bun << GDK_VARSHIFT], (char *) val, pcresize(val));
-	return *bun;
-}
-
-int
-pcre_length(pcre *p)
-{
-	assert(pcresize(p) <= GDK_int_max);
-	return (int) (pcresize(p));
-}
-
-void
-pcre_heap(Heap *heap, size_t capacity)
-{
-	HEAP_initialize(heap, capacity, 0, (int) sizeof(var_t));
-}
-
 /* change SQL LIKE pattern into PCRE pattern */
 static str
 sql2pcre(str *r, const char *pat, const char *esc_str)
@@ -1207,23 +1115,6 @@ PCREreplace_bat_wrap(int *res, int *bid, str *pat, str *repl, str *flags){
 	return msg;
 }
 
-str
-PCREcompile_wrap(pcre **res, str *pattern)
-{
-	return pcre_compile_wrap(res, *pattern, FALSE);
-}
-
-str
-PCREexec_wrap(bit *res, pcre *pattern, str *s)
-{
-	if (pcre_exec(m2p(pattern), NULL, *s, (int) strlen(*s), 0, 0, NULL, 0) >= 0) {
-		*res = TRUE;
-		return MAL_SUCCEED;
-	}
-	*res = FALSE;
-	throw(MAL, "pcre.exec", OPERATION_FAILED);
-}
-
 static str
 PCREselect(int *res, str *pattern, int *bid, bit *ignore)
 {
@@ -1271,13 +1162,6 @@ PCREuselect(int *res, str *pattern, int *bid, bit *ignore)
 	BBPkeepref(bn->batCacheid);
 	BBPunfix(strs->batCacheid);
 	return msg;
-}
-
-str
-PCREuselectDef(int *res, str *pattern, int *bid)
-{
-	bit ignore = FALSE;
-	return(PCREuselect(res, pattern, bid, &ignore));
 }
 
 str
@@ -1777,29 +1661,6 @@ PCRElike_pcre(int *ret, int *b, str *pat, str *esc, bit us, bit ignore)
 	return r;
 }
 
-str
-PCRElike_uselect_pcre(int *ret, int *b, str *pat, str *esc)
-{
-	return PCRElike_pcre(ret,b,pat,esc,TRUE,FALSE);
-}
-
-str
-PCREilike_uselect_pcre(int *ret, int *b, str *pat, str *esc)
-{
-	return PCRElike_pcre(ret,b,pat,esc,TRUE,TRUE);
-}
-
-str
-PCRElike_select_pcre(int *ret, int *b, str *pat, str *esc)
-{
-	return PCRElike_pcre(ret,b,pat,esc,FALSE,FALSE);
-}
-
-str
-PCREilike_select_pcre(int *ret, int *b, str *pat, str *esc)
-{
-	return PCRElike_pcre(ret,b,pat,esc,FALSE,TRUE);
-}
 
 static str
 PCRElike_join(int *l, int *r, int *b, int *pat, str *esc, int case_sensitive)
@@ -1831,10 +1692,10 @@ PCRElike_join(int *l, int *r, int *b, int *pat, str *esc, int case_sensitive)
 		str err;
 
 		if (case_sensitive) {
-			if ((err = PCRElike_uselect_pcre( &r, b, &ppat, esc)) != MAL_SUCCEED)
+			if ((err = PCRElike_pcre( &r, b, &ppat, esc, TRUE, FALSE)) != MAL_SUCCEED)
 				return err;
 		} else {
-			if ((err = PCREilike_uselect_pcre( &r, b, &ppat, esc)) != MAL_SUCCEED)
+			if ((err = PCRElike_pcre( &r, b, &ppat, esc, TRUE,TRUE)) != MAL_SUCCEED)
 				return err;
 		}
 

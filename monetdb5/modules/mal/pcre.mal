@@ -15,25 +15,7 @@
 # Copyright August 2008-2014 MonetDB B.V.
 # All Rights Reserved.
 
-atom pcre:ptr;
-command tostr()   address pcre_tostr;
-command fromstr() address pcre_fromstr;
-command nequal()  address pcre_nequal;
-command hash()    address pcre_hash;
-command null()    address pcre_null;
-command put()     address pcre_put;
-command del()     address pcre_del;
-command length()  address pcre_length;
-command heap()    address pcre_heap;
-
-command compile(pat:str):pcre
-address PCREcompile_wrap
-comment "compile a pattern";
-
-command match(pat:pcre, s:str) :bit
-address PCREexec_wrap
-comment "match a pattern";
-
+atom pcre;
 command index(pat:pcre, s:str) :int
 address PCREindex
 comment "match a pattern, return matched position (or 0 when not found)";
@@ -42,37 +24,11 @@ command select(pat:str, strs:bat[:oid,:str]):bat[:oid,:str]
 address PCREselectDef
 comment "Select tuples based on the pattern";
 
-command uselect(pat:str, strs:bat[:oid,:str]):bat[:oid,:oid]
-address PCREuselectDef
-comment "Select tuples based on the pattern, only returning the head";
-
-command like_uselect(s:bat[:oid,:str], pat:str, esc:str):bat[:oid,:oid]
-address PCRElike_uselect_pcre;
-
-command like_filter(s:bat[:oid,:str], pat:str, esc:str):bat[:oid,:oid]
-address PCRElike_uselect_pcre;
-
 command likesubselect(s:bat[:oid,:str], pat:bat[:oid,:str], esc:str) (l:bat[:oid,:oid],r:bat[:oid,:oid])
 address PCRElike_join_pcre;
 
-command ilike_uselect(s:bat[:oid,:str], pat:str, esc:str):bat[:oid,:oid]
-address PCREilike_uselect_pcre;
-
-command ilike_filter(s:bat[:oid,:str], pat:str, esc:str):bat[:oid,:oid]
-address PCREilike_uselect_pcre;
-
 command ilikesubselect(s:bat[:oid,:str], pat:bat[:oid,:str], esc:str) (l:bat[:oid,:oid],r:bat[:oid,:oid])
 address PCREilike_join_pcre;
-
-command like_select(s:bat[:oid,:str], pat:str, esc:str):bat[:oid,:str]
-address PCRElike_select_pcre;
-
-command ilike_select(s:bat[:oid,:str], pat:str, esc:str):bat[:oid,:str]
-address PCREilike_select_pcre;
-
-function ilike_filter(s:bat[:oid,:str], pat:str) :bat[:oid,:str];
-	return ilike_select(s, pat, "");
-end ilike_filter;
 
 command match(s:str, pat:str):bit
 address PCREmatch
@@ -215,4 +171,4 @@ command likesubselect(s:bat[:oid,:str], pat:bat[:oid,:str], esc:str) (l:bat[:oid
 address PCRElike_join_pcre;
 
 command ilikesubselect(s:bat[:oid,:str], pat:bat[:oid,:str], esc:str) (l:bat[:oid,:oid],r:bat[:oid,:oid])
-address PCREilike_join_pcre;
+address PCREilike_join_pcr5;

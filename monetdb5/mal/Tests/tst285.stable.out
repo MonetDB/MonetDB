@@ -26,22 +26,17 @@ function user.main():void;
     b := bat.new(:oid,:str);
     bat.append(b,"hello");
     bat.append(b,"goodbye");
-    z1 := batstr.like_uselect(b,"%hel%");
-    io.print(z1);
-    z2 := pcre.uselect(".*[ly].*",b);
-    io.print(z2);
+    o := bat.new(:oid,:oid);
+    p := bat.new(:oid,:str);
+    bat.append(p,"%hel%");
+    (z0,z1) := algebra.likesubselect(b,p,"");
+    io.print(z0,z1);
 end main;
-#-----------------#
-# h	tmp_5	  # name
-# int	bit	  # type
-#-----------------#
-[ 0@0,	  nil	  ]
-#-----------------#
-# h	tmp_6	  # name
-# int	bit	  # type
-#-----------------#
-[ 0@0,	  nil	  ]
-[ 1@0,	  nil	  ]
+#--------------------------#
+# t	h	h  # name
+# void	oid	oid  # type
+#--------------------------#
+[ 0@0,	0@0,	0@0  ]
 
 # 08:01:12 >  
 # 08:01:12 >  Done.
