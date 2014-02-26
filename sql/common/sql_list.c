@@ -42,7 +42,7 @@ list_create(fdestroy destroy)
 	l->cnt = 0;
 	l->expected_cnt = 0;
 	l->ht = NULL;
-	MT_lock_init(&l->ht_lock, "ht_lock");
+	MT_lock_init(&l->ht_lock, "sa_ht_lock");
 	return l;
 }
 
@@ -56,7 +56,7 @@ sa_list(sql_allocator *sa)
 	l->h = l->t = NULL;
 	l->cnt = 0;
 	l->ht = NULL;
-	MT_lock_init(&l->ht_lock, "ht_lock");
+	MT_lock_init(&l->ht_lock, "sa_ht_lock");
 	return l;
 }
 
@@ -70,7 +70,7 @@ list_new(sql_allocator *sa, fdestroy destroy)
 	l->h = l->t = NULL;
 	l->cnt = 0;
 	l->ht = NULL;
-	MT_lock_init(&l->ht_lock, "ht_lock");
+	MT_lock_init(&l->ht_lock, "sa_ht_lock");
 	return l;
 }
 
@@ -108,6 +108,7 @@ list_destroy(list *l)
 	if (l) {
 		node *n = l->h;
 
+		MT_lock_destroy(&l->ht_lock);
 		while (n && (l->destroy|| !l->sa)) {
 			node *t = n;
 

@@ -252,28 +252,42 @@ gdk_export ATOMIC_TYPE volatile GDKlocksleepcnt;
 		(l)->count = (l)->contention = (l)->sleep = 0;		\
 		(l)->name = (n);					\
 		_DBG_LOCK_LOCKER(l, NULL);				\
-		while (ATOMIC_TAS(GDKlocklistlock, dummy, "") != 0)	\
-			;						\
-		(l)->next = GDKlocklist;				\
-		GDKlocklist = (l);					\
-		ATOMIC_CLEAR(GDKlocklistlock, dummy, "");		\
+		/* if name starts with "sa_" don't link in GDKlocklist */ \
+		/* since the lock is in memory that is governed by the */ \
+		/* SQL storage allocator, and hence we have no control */ \
+		/* over when the lock is destroyed and the memory freed */ \
+		if (strncmp((n), "sa_", 3) != 0) {			\
+			while (ATOMIC_TAS(GDKlocklistlock, dummy, "") != 0) \
+				;					\
+			(l)->next = GDKlocklist;			\
+			GDKlocklist = (l);				\
+			ATOMIC_CLEAR(GDKlocklistlock, dummy, "");	\
+		} else {						\
+			(l)->next = NULL;				\
+		}							\
 	} while (0)
 #define _DBG_LOCK_DESTROY(l)						\
 	do {								\
-		MT_Lock * volatile _p;					\
-		/* save a copy for statistical purposes */		\
-		_p = GDKmalloc(sizeof(MT_Lock));			\
-		memcpy(_p, l, sizeof(MT_Lock));				\
-		while (ATOMIC_TAS(GDKlocklistlock, dummy, "") != 0)	\
-			;						\
-		_p->next = GDKlocklist;					\
-		GDKlocklist = _p;					\
-		for (_p = GDKlocklist; _p; _p = _p->next)		\
-			if (_p->next == (l)) {				\
-				_p->next = (l)->next;			\
-				break;					\
-			}						\
-		ATOMIC_CLEAR(GDKlocklistlock, dummy, "");		\
+		/* if name starts with "sa_" don't link in GDKlocklist */ \
+		/* since the lock is in memory that is governed by the */ \
+		/* SQL storage allocator, and hence we have no control */ \
+		/* over when the lock is destroyed and the memory freed */ \
+		if (strncmp((l)->name, "sa_", 3) != 0) {		\
+			MT_Lock * volatile _p;				\
+			/* save a copy for statistical purposes */	\
+			_p = GDKmalloc(sizeof(MT_Lock));		\
+			memcpy(_p, l, sizeof(MT_Lock));			\
+			while (ATOMIC_TAS(GDKlocklistlock, dummy, "") != 0) \
+				;					\
+			_p->next = GDKlocklist;				\
+			GDKlocklist = _p;				\
+			for (_p = GDKlocklist; _p; _p = _p->next)	\
+				if (_p->next == (l)) {			\
+					_p->next = (l)->next;		\
+					break;				\
+				}					\
+			ATOMIC_CLEAR(GDKlocklistlock, dummy, "");	\
+		}							\
 	} while (0)
 
 #else
