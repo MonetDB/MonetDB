@@ -35,8 +35,6 @@
 #
 # The order of the includes defines the dependencies.
 include mdb;
-include lock;
-include sema;
 include alarm;
 include mmath;
 include streams;
