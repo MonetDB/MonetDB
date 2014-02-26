@@ -42,7 +42,6 @@
 #include <utils/control.h>
 
 #include "gdk.h"  /* these three for creation of dbs with password */
-#include "gdk_private.h"
 #include "mal_authorize.h"
 
 #include "merovingian.h"
@@ -382,7 +381,15 @@ static void ctl_handle_client(
 							size_t len;
 							char *err;
 							char *vaultkey;
+							opt *set = malloc(sizeof(opt) * 2);
+							int setlen = 0;
+							char *sadbfarm;
 
+							msab_getDBfarm(&sadbfarm);
+							snprintf(buf2, sizeof(buf2), "%s/%s", sadbfarm, q);
+							free(sadbfarm);
+							setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_dbpath", buf2);
+							setlen = mo_system_config(&set, setlen);
 							/* the child, pollute scope by loading BBP */
 							if (chdir(q) < 0) {
 								/* Fabian says "Ignore the output.
@@ -409,7 +416,7 @@ static void ctl_handle_client(
 								len = strlen(buf2); /* secret can contain null-bytes */
 								fclose(secretf);
 							}
-							BBPinit();
+							GDKinit(set, setlen);
 							vaultkey = buf2;
 							AUTHunlockVault(&vaultkey);
 							err = AUTHinitTables(&p);
