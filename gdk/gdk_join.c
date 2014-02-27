@@ -124,8 +124,8 @@ joininitresults(BAT **r1p, BAT **r2p, BUN size, const char *func)
 {
 	BAT *r1, *r2;
 
-	r1 = BATnew(TYPE_void, TYPE_oid, size);
-	r2 = BATnew(TYPE_void, TYPE_oid, size);
+	r1 = BATnew(TYPE_void, TYPE_oid, size, TRANSIENT);
+	r2 = BATnew(TYPE_void, TYPE_oid, size, TRANSIENT);
 	if (r1 == NULL || r2 == NULL) {
 		if (r1)
 			BBPreclaim(r1);
@@ -2505,10 +2505,10 @@ subleftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matc
 	if (sr)
 		rcount = MIN(rcount, BATcount(sr));
 	if (lcount == 0 || rcount == 0) {
-		r1 = BATnew(TYPE_void, TYPE_void, 0);
+		r1 = BATnew(TYPE_void, TYPE_void, 0, TRANSIENT);
 		BATseqbase(r1, 0);
 		BATseqbase(BATmirror(r1), 0);
-		r2 = BATnew(TYPE_void, TYPE_void, 0);
+		r2 = BATnew(TYPE_void, TYPE_void, 0, TRANSIENT);
 		BATseqbase(r2, 0);
 		BATseqbase(BATmirror(r2), 0);
 		*r1p = r1;
@@ -2640,10 +2640,10 @@ BATsubjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_match
 	if (sr)
 		rcount = MIN(rcount, BATcount(sr));
 	if (lcount == 0 || rcount == 0) {
-		r1 = BATnew(TYPE_void, TYPE_void, 0);
+		r1 = BATnew(TYPE_void, TYPE_void, 0, TRANSIENT);
 		BATseqbase(r1, 0);
 		BATseqbase(BATmirror(r1), 0);
-		r2 = BATnew(TYPE_void, TYPE_void, 0);
+		r2 = BATnew(TYPE_void, TYPE_void, 0, TRANSIENT);
 		BATseqbase(r2, 0);
 		BATseqbase(BATmirror(r2), 0);
 		*r1p = r1;
@@ -2957,7 +2957,7 @@ BATproject(BAT *l, BAT *r)
 		const void *nil = ATOMnilptr(r->ttype);
 
 		bn = BATconstant(r->ttype == TYPE_oid ? TYPE_void : r->ttype,
-				 nil, BATcount(l));
+				 nil, BATcount(l), TRANSIENT);
 		if (bn != NULL) {
 			bn = BATseqbase(bn, l->hseqbase);
 			if (ATOMtype(bn->ttype) == TYPE_oid &&
@@ -2975,7 +2975,8 @@ BATproject(BAT *l, BAT *r)
 	assert(l->ttype == TYPE_oid);
 
 	if (ATOMstorage(tpe) == TYPE_str && (!rcount || (lcount << 3) > rcount)) {
-		/* insert double-eliminated strings as ints */
+		/* insert strings as ints, we need to copy the string
+		 * heap whole sale */
 		tpe = r->T->width == 1 ? TYPE_bte : (r->T->width == 2 ? TYPE_sht : (r->T->width == 4 ? TYPE_int : TYPE_lng));
 		/* int's nil representation is a valid offset, so
 		 * don't check for nils */
@@ -2983,7 +2984,7 @@ BATproject(BAT *l, BAT *r)
 		sortcheck = 0;
 		stringtrick = 1;
 	}
-	bn = BATnew(TYPE_void, tpe, BATcount(l));
+	bn = BATnew(TYPE_void, tpe, BATcount(l), TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 	if (stringtrick) {
@@ -3054,12 +3055,12 @@ BATproject(BAT *l, BAT *r)
 			if (bn->T->vheap == NULL)
 				goto bailout;
 			bn->T->vheap->parentid = bn->batCacheid;
+			bn->T->vheap->farmid = BBPselectfarm(bn->batRole, TYPE_str, varheap);
 			if (r->T->vheap->filename) {
 				char *nme = BBP_physical(bn->batCacheid);
-				bn->T->vheap->filename = (str) GDKmalloc(strlen(nme) + 12);
+				bn->T->vheap->filename = GDKfilepath(-1, NULL, nme, "theap");
 				if (bn->T->vheap->filename == NULL)
 					goto bailout;
-				GDKfilepath(bn->T->vheap->filename, NULL, nme, "theap");
 			}
 			if (HEAPcopy(bn->T->vheap, r->T->vheap) < 0)
 				goto bailout;

@@ -67,7 +67,7 @@ FUN(bat,TP1,_2_,TP2) (int *res, int *bid)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(SQL, "batcalc."STRNG(FUN(,TP1,_2_,TP2)), "Cannot access descriptor");
 	}
-	bn = BATnew(TYPE_void, TPE(TP2), BATcount(b));
+	bn = BATnew(TYPE_void, TPE(TP2), BATcount(b), TRANSIENT);
 	if (bn == NULL) {
 		BBPreleaseref(b->batCacheid);
 		throw(SQL, "sql."STRNG(FUN(,TP1,_2_,TP2)), MAL_MALLOC_FAIL);
@@ -207,7 +207,7 @@ FUN(bat,TP1,_dec2_,TP2) (int *res, int *s1, int *bid)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(SQL, "batcalc."STRNG(FUN(,TP1,_dec2_,TP2)), "Cannot access descriptor");
 	}
-	bn = BATnew(TYPE_void, TPE(TP2), BATcount(b));
+	bn = BATnew(TYPE_void, TPE(TP2), BATcount(b), TRANSIENT);
 	if (bn == NULL) {
 		BBPreleaseref(b->batCacheid);
 		throw(SQL, "sql."STRNG(FUN(dec,TP1,_2_,TP2)), MAL_MALLOC_FAIL);
@@ -289,7 +289,7 @@ FUN(bat,TP1,_dec2dec_,TP2) (int *res, int *S1, int *bid, int *d2, int *S2)
 		throw(SQL, "batcalc."STRNG(FUN(,TP1,_dec2dec_,TP2)), "Cannot access descriptor");
 	}
 	bi = bat_iterator(b);
-	dst = BATnew(b->htype, TPE(TP2), BATcount(b));
+	dst = BATnew(b->htype, TPE(TP2), BATcount(b), TRANSIENT);
 	if (dst == NULL) {
 		BBPreleaseref(b->batCacheid);
 		throw(SQL, "sql."STRNG(FUN(,TP1,_dec2dec_,TP2)), MAL_MALLOC_FAIL);
@@ -320,7 +320,7 @@ FUN(bat,TP1,_num2dec_,TP2) (int *res, int *bid, int *d2, int *s2)
 		throw(SQL, "batcalc."STRNG(FUN(,TP1,_num2dec_,TP2)), "Cannot access descriptor");
 	}
 	bi = bat_iterator(b);
-	dst = BATnew(b->htype, TPE(TP2), BATcount(b));
+	dst = BATnew(b->htype, TPE(TP2), BATcount(b), TRANSIENT);
 	if (dst == NULL) {
 		BBPreleaseref(b->batCacheid);
 		throw(SQL, "sql."STRNG(FUN(,TP1,_num2dec_,TP2)), MAL_MALLOC_FAIL);

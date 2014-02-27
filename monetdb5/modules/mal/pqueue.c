@@ -50,7 +50,7 @@ parent(BUN posel)
 static int
 do_pqueue_init(BAT **h, BAT *b, BUN maxsize)
 {
-	*h = BATnew(TYPE_oid, b->ttype, maxsize);
+	*h = BATnew(TYPE_oid, b->ttype, maxsize, TRANSIENT);
 	if (*h == NULL)
 		return GDK_FAIL;
 	(*h)->batDirty |= 2;
@@ -201,7 +201,7 @@ pqueue_init(BAT **h, BAT *b, wrd *maxsize)
 	static BAT *														\
 	heap2bat_##NAME(BAT *h)												\
 	{																	\
-		BAT *r, *n = BATnew(TYPE_oid, TYPE_oid, BATcount(h));			\
+		BAT *r, *n = BATnew(TYPE_oid, TYPE_oid, BATcount(h), TRANSIENT);			\
 		BUN f = BUNfirst(h);											\
 		oid *o = (oid*)Hloc(h, f), oo = *o;								\
 		TYPE *v = (TYPE*)Tloc(h, f), ov = *v;							\
@@ -285,7 +285,7 @@ pqueue_init(BAT **h, BAT *b, wrd *maxsize)
 			n = (BUN) *N;												\
 		if (do_pqueue_init(H,t,n) == GDK_FAIL)							\
 			return GDK_FAIL;											\
-		duplicates = BATnew(TYPE_oid, TYPE_oid, n);						\
+		duplicates = BATnew(TYPE_oid, TYPE_oid, n, TRANSIENT);					\
 		if (duplicates == NULL) {										\
 			BBPunfix((*H)->batCacheid);									\
 			return GDK_FAIL;											\
@@ -339,7 +339,7 @@ pqueue_init(BAT **h, BAT *b, wrd *maxsize)
 			n = (BUN) *N;												\
 		if (do_pqueue_init(H,t,n) == GDK_FAIL)							\
 			return GDK_FAIL;											\
-		duplicates = BATnew(TYPE_oid, TYPE_oid, n);						\
+		duplicates = BATnew(TYPE_oid, TYPE_oid, n, TRANSIENT);					\
 		if (duplicates == NULL) {										\
 			BBPunfix((*H)->batCacheid);									\
 			return GDK_FAIL;											\
@@ -529,7 +529,7 @@ static BAT *
 heap2bat_anymin(BAT *h)
 {
 	BATiter hi = bat_iterator(h);
-	BAT *r, *n = BATnew(TYPE_oid, TYPE_oid, BATcount(h));
+	BAT *r, *n = BATnew(TYPE_oid, TYPE_oid, BATcount(h), TRANSIENT);
 	BUN f = BUNfirst(h);
 	oid *o = (oid *) Hloc(h, f), oo = *o;
 	ptr v = (ptr) BUNtail(hi, f), ov = v;
@@ -619,7 +619,7 @@ pqueue_utopn_voidanymin(BAT **H, BAT *t, wrd *N)
 		n = (BUN) *N;
 	if (do_pqueue_init(H, t, n) == GDK_FAIL)
 		return GDK_FAIL;
-	duplicates = BATnew(TYPE_oid, TYPE_oid, n);
+	duplicates = BATnew(TYPE_oid, TYPE_oid, n, TRANSIENT);
 	if (duplicates == NULL) {
 		BBPunfix((*H)->batCacheid);
 		return GDK_FAIL;
@@ -680,7 +680,7 @@ pqueue_utopn_anymin(BAT **H, BAT *t, wrd *N)
 		n = (BUN) *N;
 	if (do_pqueue_init(H, t, n) == GDK_FAIL)
 		return GDK_FAIL;
-	duplicates = BATnew(TYPE_oid, TYPE_oid, n);
+	duplicates = BATnew(TYPE_oid, TYPE_oid, n, TRANSIENT);
 	if (duplicates == NULL) {
 		BBPunfix((*H)->batCacheid);
 		return GDK_FAIL;
@@ -856,7 +856,7 @@ static BAT *
 heap2bat_anymax(BAT *h)
 {
 	BATiter hi = bat_iterator(h);
-	BAT *r, *n = BATnew(TYPE_oid, TYPE_oid, BATcount(h));
+	BAT *r, *n = BATnew(TYPE_oid, TYPE_oid, BATcount(h), TRANSIENT);
 	BUN f = BUNfirst(h);
 	oid *o = (oid *) Hloc(h, f), oo = *o;
 	ptr v = (ptr) BUNtail(hi, f), ov = v;
@@ -946,7 +946,7 @@ pqueue_utopn_voidanymax(BAT **H, BAT *t, wrd *N)
 		n = (BUN) *N;
 	if (do_pqueue_init(H, t, n) == GDK_FAIL)
 		return GDK_FAIL;
-	duplicates = BATnew(TYPE_oid, TYPE_oid, n);
+	duplicates = BATnew(TYPE_oid, TYPE_oid, n, TRANSIENT);
 	if (duplicates == NULL) {
 		BBPunfix((*H)->batCacheid);
 		return GDK_FAIL;
@@ -1007,7 +1007,7 @@ pqueue_utopn_anymax(BAT **H, BAT *t, wrd *N)
 		n = (BUN) *N;
 	if (do_pqueue_init(H, t, n) == GDK_FAIL)
 		return GDK_FAIL;
-	duplicates = BATnew(TYPE_oid, TYPE_oid, n);
+	duplicates = BATnew(TYPE_oid, TYPE_oid, n, TRANSIENT);
 	if (duplicates == NULL) {
 		BBPunfix((*H)->batCacheid);
 		return GDK_FAIL;
@@ -1197,7 +1197,7 @@ PQtopn_sorted_max( BAT **bn, BAT *b, wrd NN )
 		cnt = n = BATcount(a);			\
 		if (*N != wrd_nil && *N >= 0 && *N <= (wrd) BUN_MAX && (BUN) *N < n) \
 			n = (BUN) *N;												\
-		bn = BATnew(TYPE_oid, TYPE_oid, n);								\
+		bn = BATnew(TYPE_oid, TYPE_oid, n, TRANSIENT);							\
 		for(i=0; i<n; id++) {												\
 			oid ov = * (oid *) Tloc(a, i);								\
 			for (j = i; j < cnt && * (oid *) Tloc(a, j) == ov; j++)		\
@@ -1250,7 +1250,7 @@ PQtopn_sorted_max( BAT **bn, BAT *b, wrd NN )
 		cnt = n = BATcount(a);			\
 		if (*N != wrd_nil && *N >= 0 && *N <= (wrd) BUN_MAX && (BUN) *N < n) \
 			n = (BUN) *N;												\
-		bn = BATnew(TYPE_oid, TYPE_oid, n);								\
+		bn = BATnew(TYPE_oid, TYPE_oid, n, TRANSIENT);							\
 		for(i=0; i<n; id++) {												\
 			oid ov = * (oid *) Tloc(a, i);								\
 			for (j = i; j < cnt && * (oid *) Tloc(a, j) == ov; j++)		\

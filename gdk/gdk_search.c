@@ -329,6 +329,7 @@ BAThash(BAT *b, BUN masksize)
 				sprintf(hp->filename, "%s.%chash", nme, b->batCacheid > 0 ? 'h' : 't');
 			if (hp == NULL ||
 			    hp->filename == NULL ||
+			    (hp->farmid = BBPselectfarm(TRANSIENT, b->htype, hashheap)) < 0 ||
 			    (h = HASHnew(hp, ATOMtype(b->htype), BATcapacity(b), mask)) == NULL) {
 
 				MT_lock_unset(&GDKhashLock(ABS(b->batCacheid)), "BAThash");

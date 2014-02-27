@@ -136,7 +136,7 @@ AUTHinitTables(str *passwd) {
 	/* load/create users BAT */
 	bid = BBPindex("M5system_auth_user");
 	if (!bid) {
-		b = BATnew(TYPE_void, TYPE_str, 256);
+		b = BATnew(TYPE_void, TYPE_str, 256, PERSISTENT);
 		if (b == NULL)
 			throw(MAL, "initTables.user", MAL_MALLOC_FAIL " user table");
 		BATseqbase(b,0);
@@ -154,7 +154,7 @@ AUTHinitTables(str *passwd) {
 	/* load/create password BAT */
 	bid = BBPindex("M5system_auth_passwd_v2");
 	if (!bid) {
-		b = BATnew(TYPE_void, TYPE_str, 256);
+		b = BATnew(TYPE_void, TYPE_str, 256, PERSISTENT);
 		if (b == NULL)
 			throw(MAL, "initTables.passwd", MAL_MALLOC_FAIL " password table");
 		BATseqbase(b,0);
@@ -559,7 +559,7 @@ AUTHgetUsers(BAT **ret, Client *c) {
 
 	rethrow("getUsers", tmp, AUTHrequireAdmin(c));
 
-	*ret = BATcopy(user, user->htype, user->ttype, FALSE);
+	*ret = BATcopy(user, user->htype, user->ttype, FALSE, TRANSIENT);
 	return(NULL);
 }
 

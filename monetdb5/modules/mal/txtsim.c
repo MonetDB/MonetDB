@@ -908,8 +908,8 @@ CMDqgramselfjoin(BAT **res, BAT **res2, BAT *qgram, BAT *id, BAT *pos, BAT *len,
 	ERRORcheck((Tsize(pos) != ATOMsize(pos->ttype)), "CMDqgramselfjoin: pos is not a true void bat");
 	ERRORcheck((Tsize(len) != ATOMsize(len->ttype)), "CMDqgramselfjoin: len is not a true void bat");
 
-	*res = bn = BATnew(TYPE_void, TYPE_int, n);
-	*res2 = bn2 = BATnew(TYPE_void, TYPE_int, n);
+	*res = bn = BATnew(TYPE_void, TYPE_int, n, TRANSIENT);
+	*res2 = bn2 = BATnew(TYPE_void, TYPE_int, n, TRANSIENT);
 	if (bn == NULL || bn2 == NULL){
 		if (bn) BBPreclaim(bn);
 		if (bn2) BBPreclaim(bn2);
@@ -974,7 +974,7 @@ CMDstr2qgrams(int *ret, str *val)
 	strcpy(s, "##");
 	strcpy(s + 2, *val);
 	strcpy(s + len - 3, "$$");
-	bn = BATnew(TYPE_void, TYPE_str, (BUN) strlen(*val));
+	bn = BATnew(TYPE_void, TYPE_str, (BUN) strlen(*val), TRANSIENT);
 	if (bn == NULL) {
 		GDKfree(s);
 		throw(MAL, "txtsim.str2qgram", MAL_MALLOC_FAIL);

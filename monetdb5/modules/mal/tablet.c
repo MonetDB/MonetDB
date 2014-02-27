@@ -60,7 +60,7 @@ static MT_Lock errorlock MT_LOCK_INITIALIZER("errorlock");
 static BAT *
 void_bat_create(int adt, BUN nr)
 {
-	BAT *b = BATnew(TYPE_void, adt, BATTINY);
+	BAT *b = BATnew(TYPE_void, adt, BATTINY, PERSISTENT);
 
 	/* check for correct structures */
 	if (b == NULL)

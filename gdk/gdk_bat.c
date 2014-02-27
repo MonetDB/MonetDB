@@ -78,14 +78,18 @@ BATinit_idents(BAT *bn)
 }
 
 BATstore *
-BATcreatedesc(int ht, int tt, int heapnames)
+BATcreatedesc(int ht, int tt, int heapnames, int role)
 {
 	BAT *bn;
+	BATstore *bs;
 
 	/*
 	 * Alloc space for the BAT and its dependent records.
 	 */
-	BATstore *bs = (BATstore *) GDKzalloc(sizeof(BATstore));
+	assert(ht >= 0 && tt >= 0);
+	assert(role >= 0 && role < 32);
+
+	bs = (BATstore *) GDKzalloc(sizeof(BATstore));
 
 	if (bs == NULL)
 		return NULL;
@@ -98,7 +102,6 @@ BATcreatedesc(int ht, int tt, int heapnames)
 	 * assert needed in the kernel to get symbol eprintf resolved.
 	 * Else modules using assert fail to load.
 	 */
-	assert(ht >= 0 && tt >= 0);
 	bs->BM.H = &bs->T;
 	bs->BM.T = &bs->H;
 	bs->BM.S = &bs->S;
@@ -126,6 +129,7 @@ BATcreatedesc(int ht, int tt, int heapnames)
 	bn->talign = bn->halign + 1;
 	bn->hseqbase = (ht == TYPE_void) ? oid_nil : 0;
 	bn->tseqbase = (tt == TYPE_void) ? oid_nil : 0;
+	bn->batRole = role;
 	bn->batPersistence = TRANSIENT;
 	bn->H->props = bn->T->props = NULL;
 	/*
@@ -139,6 +143,8 @@ BATcreatedesc(int ht, int tt, int heapnames)
 	assert(bn->batCacheid > 0);
 	bn->H->heap.filename = NULL;
 	bn->T->heap.filename = NULL;
+	bn->H->heap.farmid = BBPselectfarm(role, bn->htype, offheap);
+	bn->T->heap.farmid = BBPselectfarm(role, bn->ttype, offheap);
 	bn->batMaphead = 0;
 	bn->batMaptail = 0;
 	bn->batMaphheap = 0;
@@ -147,31 +153,31 @@ BATcreatedesc(int ht, int tt, int heapnames)
 		const char *nme = BBP_physical(bn->batCacheid);
 
 		if (ht) {
-			bn->H->heap.filename = GDKmalloc(strlen(nme) + 12);
+			bn->H->heap.filename = GDKfilepath(-1, NULL, nme, "head");
 			if (bn->H->heap.filename == NULL)
 				goto bailout;
-			GDKfilepath(bn->H->heap.filename, NULL, nme, "head");
 		}
 
 		if (tt) {
-			bn->T->heap.filename = GDKmalloc(strlen(nme) + 12);
+			bn->T->heap.filename = GDKfilepath(-1, NULL, nme, "tail");
 			if (bn->T->heap.filename == NULL)
 				goto bailout;
-			GDKfilepath(bn->T->heap.filename, NULL, nme, "tail");
 		}
 
 		if (ATOMneedheap(ht)) {
-			if ((bn->H->vheap = (Heap *) GDKzalloc(sizeof(Heap))) == NULL || (bn->H->vheap->filename = GDKmalloc(strlen(nme) + 12)) == NULL)
+			if ((bn->H->vheap = (Heap *) GDKzalloc(sizeof(Heap))) == NULL ||
+			    (bn->H->vheap->filename = GDKfilepath(-1, NULL, nme, "hheap")) == NULL)
 				goto bailout;
-			GDKfilepath(bn->H->vheap->filename, NULL, nme, "hheap");
 			bn->H->vheap->parentid = bn->batCacheid;
+			bn->H->vheap->farmid = BBPselectfarm(role, bn->htype, varheap);
 		}
 
 		if (ATOMneedheap(tt)) {
-			if ((bn->T->vheap = (Heap *) GDKzalloc(sizeof(Heap))) == NULL || (bn->T->vheap->filename = GDKmalloc(strlen(nme) + 12)) == NULL)
+			if ((bn->T->vheap = (Heap *) GDKzalloc(sizeof(Heap))) == NULL ||
+			    (bn->T->vheap->filename = GDKfilepath(-1, NULL, nme, "theap")) == NULL)
 				goto bailout;
-			GDKfilepath(bn->T->vheap->filename, NULL, nme, "theap");
 			bn->T->vheap->parentid = bn->batCacheid;
+			bn->T->vheap->farmid = BBPselectfarm(role, bn->ttype, varheap);
 		}
 	}
 	bn->batDirty = TRUE;
@@ -237,7 +243,7 @@ BATsetdims(BAT *b)
  * filenames.
  */
 static BATstore *
-BATnewstorage(int ht, int tt, BUN cap)
+BATnewstorage(int ht, int tt, BUN cap, int role)
 {
 	BATstore *bs;
 	BAT *bn;
@@ -246,7 +252,7 @@ BATnewstorage(int ht, int tt, BUN cap)
 	/* and in case we don't have assertions enabled: limit the size */
 	if (cap > BUN_MAX)
 		cap = BUN_MAX;
-	bs = BATcreatedesc(ht, tt, (ht || tt));
+	bs = BATcreatedesc(ht, tt, (ht || tt), role);
 	if (bs == NULL)
 		return NULL;
 	bn = &bs->B;
@@ -292,7 +298,7 @@ BATnewstorage(int ht, int tt, BUN cap)
 }
 
 BAT *
-BATnew(int ht, int tt, BUN cap)
+BATnew(int ht, int tt, BUN cap, int role)
 {
 	BATstore *bs;
 
@@ -301,6 +307,7 @@ BATnew(int ht, int tt, BUN cap)
 	assert(tt != TYPE_bat);
 	ERRORcheck((ht < 0) || (ht > GDKatomcnt), "BATnew:ht error\n");
 	ERRORcheck((tt < 0) || (tt > GDKatomcnt), "BATnew:tt error\n");
+	ERRORcheck(role < 0 || role >= 32, "BATnew:role error\n");
 
 	/* round up to multiple of BATTINY */
 	if (cap < BUN_MAX - BATTINY)
@@ -310,23 +317,24 @@ BATnew(int ht, int tt, BUN cap)
 	/* and in case we don't have assertions enabled: limit the size */
 	if (cap > BUN_MAX)
 		cap = BUN_MAX;
-	bs = BATnewstorage(ht, tt, cap);
+	bs = BATnewstorage(ht, tt, cap, role);
 	return bs == NULL ? NULL : &bs->B;
 }
 
 BAT *
-BATattach(int tt, const char *heapfile)
+BATattach(int tt, const char *heapfile, int role)
 {
 	BATstore *bs;
 	BAT *bn;
 	struct stat st;
 	int atomsize;
 	BUN cap;
-	char path[PATHLENGTH];
+	char *path;
 
 	ERRORcheck(tt <= 0 , "BATattach: bad tail type (<=0)\n");
 	ERRORcheck(ATOMvarsized(tt), "BATattach: bad tail type (varsized)\n");
 	ERRORcheck(heapfile == 0, "BATattach: bad heapfile name\n");
+	ERRORcheck(role < 0 || role >= 32, "BATattach: role error\n");
 	if (lstat(heapfile, &st) < 0) {
 		GDKerror("BATattach: cannot stat heapfile\n");
 		return 0;
@@ -337,19 +345,21 @@ BATattach(int tt, const char *heapfile)
 	ERRORcheck(st.st_size % atomsize != 0, "BATattach: heapfile size not integral number of atoms\n");
 	ERRORcheck((size_t) (st.st_size / atomsize) > (size_t) BUN_MAX, "BATattach: heapfile too large\n");
 	cap = (BUN) (st.st_size / atomsize);
-	bs = BATcreatedesc(TYPE_void, tt, 1);
+	bs = BATcreatedesc(TYPE_void, tt, 1, role);
 	if (bs == NULL)
 		return NULL;
 	bn = &bs->B;
 	BATsetdims(bn);
-	GDKfilepath(path, BATDIR, bn->T->heap.filename, "new");
+	path = GDKfilepath(bn->T->heap.farmid, BATDIR, bn->T->heap.filename, "new");
 	GDKcreatedir(path);
 	if (rename(heapfile, path) < 0) {
+		GDKfree(path);
 		GDKsyserror("BATattach: cannot rename heapfile\n");
 		HEAPfree(&bn->T->heap);
 		GDKfree(bs);
 		return NULL;
 	}
+	GDKfree(path);
 	bn->hseqbase = 0;
 	BATkey(bn, TRUE);
 	BATsetcapacity(bn, cap);
@@ -376,9 +386,9 @@ BATattach(int tt, const char *heapfile)
  * The routine BATclone creates a bat with the same types as b.
  */
 BAT *
-BATclone(BAT *b, BUN cap)
+BATclone(BAT *b, BUN cap, int role)
 {
-	BAT *c = BATnew(b->htype, b->ttype, cap);
+	BAT *c = BATnew(b->htype, b->ttype, cap, role);
 
 	if (c && c->htype == TYPE_void && b->hseqbase != oid_nil)
 		BATseqbase(c, b->hseqbase);
@@ -554,17 +564,21 @@ BATclear(BAT *b, int force)
 
 		memset(&hh, 0, sizeof(hh));
 		memset(&th, 0, sizeof(th));
-		if (b->H->vheap &&
-		    b->H->vheap->free > 0 &&
-		    ATOMheap(b->htype, &hh, cap) < 0) {
-			return NULL;
+		if (b->H->vheap) {
+			hh.farmid = b->H->vheap->farmid;
+			if (b->H->vheap->free > 0 &&
+			    ATOMheap(b->htype, &hh, cap) < 0) {
+				return NULL;
+			}
 		}
-		if (b->T->vheap &&
-		    b->T->vheap->free > 0 &&
-		    ATOMheap(b->ttype, &th, cap) < 0) {
-			if (b->H->vheap && b->H->vheap->free > 0)
-				HEAPfree(&hh);
-			return NULL;
+		if (b->T->vheap) {
+			th.farmid = b->T->vheap->farmid;
+			if (b->T->vheap->free > 0 &&
+			    ATOMheap(b->ttype, &th, cap) < 0) {
+				if (b->H->vheap && b->H->vheap->free > 0)
+					HEAPfree(&hh);
+				return NULL;
+			}
 		}
 		assert(b->H->vheap == NULL || b->H->vheap->parentid == ABS(b->batCacheid));
 		if (b->H->vheap && b->H->vheap->free > 0) {
@@ -715,9 +729,8 @@ heapcopy(BAT *bn, char *ext, Heap *dst, Heap *src)
 	if (src->filename && src->newstorage != STORE_MEM) {
 		const char *nme = BBP_physical(bn->batCacheid);
 
-		if ((dst->filename = GDKmalloc(strlen(nme) + 12)) == NULL)
+		if ((dst->filename = GDKfilepath(-1, NULL, nme, ext)) == NULL)
 			return -1;
-		GDKfilepath(dst->filename, NULL, nme, ext);
 	}
 	return HEAPcopy(dst, src);
 }
@@ -765,7 +778,7 @@ wrongtype(int t1, int t2)
  */
 /* TODO make it simpler, ie copy per column */
 BAT *
-BATcopy(BAT *b, int ht, int tt, int writable)
+BATcopy(BAT *b, int ht, int tt, int writable, int role)
 {
 	BUN bunstocopy = BUN_NONE;
 	BUN cnt;
@@ -792,7 +805,10 @@ BATcopy(BAT *b, int ht, int tt, int writable)
 	}
 
 	/* first try case (1); create a view, possibly with different atom-types */
-	if (BAThrestricted(b) == BAT_READ && BATtrestricted(b) == BAT_READ && !writable) {
+	if (role == b->batRole &&
+	    BAThrestricted(b) == BAT_READ &&
+	    BATtrestricted(b) == BAT_READ &&
+	    !writable) {
 		bn = VIEWcreate(b, b);
 		if (bn == NULL)
 			return NULL;
@@ -830,17 +846,17 @@ BATcopy(BAT *b, int ht, int tt, int writable)
 				bunstocopy = cnt;
 		}
 
-		bn = BATnew(ht, tt, MAX(1, bunstocopy == BUN_NONE ? 0 : bunstocopy));
+		bn = BATnew(ht, tt, MAX(1, bunstocopy == BUN_NONE ? 0 : bunstocopy), role);
 		if (bn == NULL)
 			return NULL;
 
-		if (bn->hvarsized && bn->htype) {
+		if (bn->hvarsized && bn->htype && bunstocopy == BUN_NONE) {
 			bn->H->shift = b->H->shift;
 			bn->H->width = b->H->width;
 			if (HEAPextend(&bn->H->heap, BATcapacity(bn) << bn->H->shift, TRUE) < 0)
 				goto bunins_failed;
 		}
-		if (bn->tvarsized && bn->ttype) {
+		if (bn->tvarsized && bn->ttype && bunstocopy == BUN_NONE) {
 			bn->T->shift = b->T->shift;
 			bn->T->width = b->T->width;
 			if (HEAPextend(&bn->T->heap, BATcapacity(bn) << bn->T->shift, TRUE) < 0)
@@ -862,6 +878,10 @@ BATcopy(BAT *b, int ht, int tt, int writable)
 			memset(&hhp, 0, sizeof(Heap));
 			memset(&thp, 0, sizeof(Heap));
 
+			bhhp.farmid = BBPselectfarm(role, b->htype, offheap);
+			bthp.farmid = BBPselectfarm(role, b->ttype, offheap);
+			hhp.farmid = BBPselectfarm(role, b->htype, varheap);
+			thp.farmid = BBPselectfarm(role, b->ttype, varheap);
 			if ((b->htype && heapcopy(bn, "head", &bhhp, &b->H->heap) < 0) ||
 			    (b->ttype && heapcopy(bn, "tail", &bthp, &b->T->heap) < 0) ||
 			    (bn->H->vheap && heapcopy(bn, "hheap", &hhp, b->H->vheap) < 0) ||
@@ -2435,7 +2455,7 @@ static int
 backup_new(Heap *hp, int lockbat)
 {
 	int batret, bakret, xx, ret = 0;
-	long_str batpath, bakpath;
+	char *batpath, *bakpath;
 	struct stat st;
 
 	/* file actions here interact with the global commits */
@@ -2443,8 +2463,8 @@ backup_new(Heap *hp, int lockbat)
 		MT_lock_set(&GDKtrimLock(xx), "TMsubcommit");
 
 	/* check for an existing X.new in BATDIR, BAKDIR and SUBDIR */
-	GDKfilepath(batpath, BATDIR, hp->filename, ".new");
-	GDKfilepath(bakpath, BAKDIR, hp->filename, ".new");
+	batpath = GDKfilepath(hp->farmid, BATDIR, hp->filename, ".new");
+	bakpath = GDKfilepath(hp->farmid, BAKDIR, hp->filename, ".new");
 	batret = stat(batpath, &st);
 	bakret = stat(bakpath, &st);
 
@@ -2458,6 +2478,8 @@ backup_new(Heap *hp, int lockbat)
 		ret = unlink(batpath);
 		IODEBUG THRprintf(GDKstdout, "#unlink(%s) = %d\n", batpath, ret);
 	}
+	GDKfree(batpath);
+	GDKfree(bakpath);
 	for (xx = lockbat; xx >= 0; xx--)
 		MT_lock_unset(&GDKtrimLock(xx), "TMsubcommit");
 	return ret;
@@ -2573,7 +2595,7 @@ BATsetaccess(BAT *b, int newmode)
 
 		if (b->batSharecnt && newmode != BAT_READ) {
 			BATDEBUG THRprintf(GDKout, "#BATsetaccess: %s has %d views; creating a copy\n", BATgetId(b), b->batSharecnt);
-			b = BATsetaccess(BATcopy(b, b->htype, b->ttype, TRUE), newmode);
+			b = BATsetaccess(BATcopy(b, b->htype, b->ttype, TRUE, TRANSIENT), newmode);
 			if (b && b->batStamp > 0)
 				b->batStamp = -b->batStamp;	/* prevent MIL setaccess */
 			return b;
@@ -2670,6 +2692,16 @@ BATmode(BAT *b, int mode)
 {
 	BATcheck(b, "BATmode");
 
+	/* can only make a bat PERSISTENT if its role is already
+	 * PERSISTENT */
+	assert(mode == PERSISTENT || mode == TRANSIENT);
+	assert(mode == TRANSIENT || b->batRole == PERSISTENT);
+
+	if (b->batRole == TRANSIENT && mode != TRANSIENT) {
+		GDKerror("cannot change mode of BAT in TRANSIENT farm.\n");
+		return NULL;
+	}
+
 	if (mode != b->batPersistence) {
 		bat bid = ABS(b->batCacheid);
 
@@ -2742,6 +2774,12 @@ BATassertHeadProps(BAT *b)
 	assert(b->htype >= TYPE_void);
 	assert(b->htype < GDKatomcnt);
 	assert(b->htype != TYPE_bat);
+	assert(isVIEW(b) ||
+	       b->htype == TYPE_void ||
+	       BBPfarms[b->H->heap.farmid].roles & (1 << b->batRole));
+	assert(isVIEW(b) ||
+	       b->H->vheap == NULL ||
+	       (BBPfarms[b->H->vheap->farmid].roles & (1 << b->batRole)));
 
 	cmpf = BATatoms[b->htype].atomCmp;
 	nilp = ATOMnilptr(b->htype);
@@ -2859,7 +2897,7 @@ BATassertHeadProps(BAT *b)
 			char *ext;
 			size_t nmelen = strlen(nme);
 			Heap *hp;
-			Hash *hs;
+			Hash *hs = NULL;
 
 			if ((hp = GDKzalloc(sizeof(Heap))) == NULL ||
 			    (hp->filename = GDKmalloc(nmelen + 30)) == NULL) {
@@ -2873,7 +2911,9 @@ BATassertHeadProps(BAT *b)
 			snprintf(hp->filename, nmelen + 30,
 				 "%s.hash" SZFMT, nme, MT_getpid());
 			ext = GDKstrdup(hp->filename + nmelen + 1);
-			if ((hs = HASHnew(hp, b->htype, BUNlast(b),
+			if ((hp->farmid = BBPselectfarm(TRANSIENT, b->htype,
+							hashheap)) < 0 ||
+			    (hs = HASHnew(hp, b->htype, BUNlast(b),
 					  HASHmask(b->batCount))) == NULL) {
 				GDKfree(ext);
 				GDKfree(hp->filename);
@@ -3079,6 +3119,7 @@ BATderiveHeadProps(BAT *b, int expensive)
 		nmelen = strlen(nme);
 		if ((hp = GDKzalloc(sizeof(Heap))) == NULL ||
 		    (hp->filename = GDKmalloc(nmelen + 30)) == NULL ||
+		    (hp->farmid = BBPselectfarm(TRANSIENT, b->htype, hashheap)) < 0 ||
 		    snprintf(hp->filename, nmelen + 30,
 			     "%s.hash" SZFMT, nme, MT_getpid()) < 0 ||
 		    (ext = GDKstrdup(hp->filename + nmelen + 1)) == NULL ||

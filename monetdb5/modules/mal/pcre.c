@@ -233,9 +233,9 @@ re_uselect(RE *pattern, BAT *strs, int ignore)
 
 	assert(strs->htype==TYPE_void);
 	if (strs->htype == TYPE_void)
-		r = BATnew(TYPE_oid, TYPE_void, BATcount(strs));
+		r = BATnew(TYPE_oid, TYPE_void, BATcount(strs), TRANSIENT);
 	else
-		r = BATnew(strs->htype, TYPE_void, BATcount(strs));
+		r = BATnew(strs->htype, TYPE_void, BATcount(strs), TRANSIENT);
 	if (r == NULL)
 		return NULL;
 
@@ -281,9 +281,9 @@ re_select(RE *pattern, BAT *strs, int ignore)
 
 	assert(strs->htype==TYPE_void);
 	if (strs->htype == TYPE_void)
-		r = BATnew(TYPE_oid, TYPE_str, BATcount(strs));
+		r = BATnew(TYPE_oid, TYPE_str, BATcount(strs), TRANSIENT);
 	else
-		r = BATnew(strs->htype, TYPE_str, BATcount(strs));
+		r = BATnew(strs->htype, TYPE_str, BATcount(strs), TRANSIENT);
 	if (r == NULL)
 		return NULL;
 
@@ -426,7 +426,7 @@ pcre_likesubselect(BAT **bnp, BAT *b, BAT *s, const char *pat, int caseignore, i
 		throw(MAL, "pcre.likesubselect",
 			  OPERATION_FAILED ": studying pattern \"%s\" failed\n", pat);
 	}
-	bn = BATnew(TYPE_void, TYPE_oid, s ? BATcount(s) : BATcount(b));
+	bn = BATnew(TYPE_void, TYPE_oid, s ? BATcount(s) : BATcount(b), TRANSIENT);
 	if (bn == NULL) {
 		my_pcre_free(re);
 		my_pcre_free(pe);
@@ -515,7 +515,7 @@ re_likesubselect(BAT **bnp, BAT *b, BAT *s, const char *pat, int caseignore, int
 	assert(ATOMstorage(b->ttype) == TYPE_str);
 	assert(anti == 0 || anti == 1);
 
-	bn = BATnew(TYPE_void, TYPE_oid, s ? BATcount(s) : BATcount(b));
+	bn = BATnew(TYPE_void, TYPE_oid, s ? BATcount(s) : BATcount(b), TRANSIENT);
 	if (bn == NULL)
 		throw(MAL, "pcre.likesubselect", MAL_MALLOC_FAIL);
 	off = b->hseqbase - BUNfirst(b);
@@ -621,9 +621,9 @@ pcre_select(BAT **res, const char *pattern, BAT *strs, bit insensitive)
 
 	assert(strs->htype==TYPE_void);
 	if (strs->htype == TYPE_void)
-		r = BATnew(TYPE_oid, TYPE_str, BATcount(strs));
+		r = BATnew(TYPE_oid, TYPE_str, BATcount(strs), TRANSIENT);
 	else
-		r = BATnew(strs->htype, TYPE_str, BATcount(strs));
+		r = BATnew(strs->htype, TYPE_str, BATcount(strs), TRANSIENT);
 	if ((re = pcre_compile(pattern, options, &err_p, &errpos, NULL)) == NULL) {
 		throw(MAL, "pcre_select", OPERATION_FAILED "pcre compile of pattern (%s) failed at %d with\n'%s'.",
 			pattern, errpos, err_p);
@@ -657,9 +657,9 @@ pcre_uselect(BAT **res, const char *pattern, BAT *strs, bit insensitive)
 
 	assert(strs->htype==TYPE_void);
 	if (strs->htype == TYPE_void)
-		r = BATnew(TYPE_oid, TYPE_void, BATcount(strs));
+		r = BATnew(TYPE_oid, TYPE_void, BATcount(strs), TRANSIENT);
 	else
-		r = BATnew(strs->htype, TYPE_void, BATcount(strs));
+		r = BATnew(strs->htype, TYPE_void, BATcount(strs), TRANSIENT);
 	if (r == NULL)
 		throw(MAL, "pcre_uselect", MAL_MALLOC_FAIL);
 	if ((re = pcre_compile(pattern, options, &err_p, &errpos, NULL)) == NULL) {
@@ -856,7 +856,7 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, const char *pattern, const char *r
 	}
 
 	assert(origin_strs->htype==TYPE_void);
-	tmpbat = BATnew(origin_strs->htype, TYPE_str, BATcount(origin_strs));
+	tmpbat = BATnew(origin_strs->htype, TYPE_str, BATcount(origin_strs), TRANSIENT);
 	if( tmpbat==NULL)
 		throw(MAL,"pcre.replace",MAL_MALLOC_FAIL);
 	BATloop(origin_strs, p, q) {
@@ -1359,7 +1359,7 @@ BATPCRElike3(bat *ret, int *bid, str *pat, str *esc, bit *isens, bit *not)
 		if (strs == NULL)
 			throw(MAL, "batstr.like", OPERATION_FAILED);
 
-		r = BATnew(TYPE_void, TYPE_bit, BATcount(strs));
+		r = BATnew(TYPE_void, TYPE_bit, BATcount(strs), TRANSIENT);
 		if( r==NULL)
 			throw(MAL,"pcre.like3",MAL_MALLOC_FAIL);
 		br = (bit*)Tloc(r, BUNfirst(r));
@@ -1679,7 +1679,7 @@ PCRElike_join(int *l, int *r, int *b, int *pat, str *esc, int case_sensitive)
 		throw(MAL,"pcre.like_join", RUNTIME_OBJECT_MISSING);
 	}
 
-	j = BATnew(TYPE_oid, TYPE_oid, BATcount(B) * BATcount(Bpat));
+	j = BATnew(TYPE_oid, TYPE_oid, BATcount(B) * BATcount(Bpat), TRANSIENT);
 	if( j == NULL)
 		throw(MAL,"pcre.like_join", MAL_MALLOC_FAIL);
 
@@ -1700,7 +1700,7 @@ PCRElike_join(int *l, int *r, int *b, int *pat, str *esc, int case_sensitive)
 		}
 
 		tr = BATdescriptor(r);
-		x = BATconst(tr, TYPE_oid, BUNhead(pati, p));
+		x = BATconst(tr, TYPE_oid, BUNhead(pati, p), TRANSIENT);
 		BATins(j, x, TRUE);
 		BBPreleaseref(tr->batCacheid);
 		BBPreleaseref(x->batCacheid);

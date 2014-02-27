@@ -79,7 +79,7 @@ batxml_export str AGGRsubxml(bat *retval, bat *bid, bat *gid, bat *eid, bit *ski
 
 #define prepareResult(X,Y,tpe,Z)					\
 	assert((Y)->htype == TYPE_void);				\
-    (X) = BATnew(TYPE_void, (tpe), BATcount(Y));	\
+    (X) = BATnew(TYPE_void, (tpe), BATcount(Y), TRANSIENT);	\
     if ((X) == NULL) {								\
         BBPreleaseref((Y)->batCacheid);				\
         throw(MAL, "xml." Z, MAL_MALLOC_FAIL); \
@@ -1158,7 +1158,7 @@ BATXMLagg3(bat *ret, const bat *bid, const bat *grp, const bat *ext)
 		throw(MAL, "xml.agg", RUNTIME_OBJECT_MISSING);
 	}
 
-	bn = BATnew(TYPE_void, b->ttype, BATcount(e));
+	bn = BATnew(TYPE_void, b->ttype, BATcount(e), TRANSIENT);
 	if (bn == NULL) {
 		GDKfree(buf);
 		BBPunfix(b->batCacheid);
@@ -1277,7 +1277,7 @@ BATXMLagg(bat *ret, const bat *bid, const bat *grp)
 		throw(MAL, "xml.agg", RUNTIME_OBJECT_MISSING);
 	}
 
-	bn = BATnew(TYPE_void, b->ttype, BATcount(g));
+	bn = BATnew(TYPE_void, b->ttype, BATcount(g), TRANSIENT);
 	if (bn == NULL) {
 		GDKfree(buf);
 		BBPunfix(b->batCacheid);
@@ -1458,7 +1458,7 @@ BATxmlaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 	}
 	assert(b->ttype == TYPE_xml);
 	if (BATcount(b) == 0 || ngrp == 0) {
-		bn = BATconstant(TYPE_xml, ATOMnilptr(TYPE_xml), ngrp);
+		bn = BATconstant(TYPE_xml, ATOMnilptr(TYPE_xml), ngrp, TRANSIENT);
 		if (bn == NULL)
 			return MAL_MALLOC_FAIL;
 		BATseqbase(bn, ngrp == 0 ? 0 : min);
@@ -1512,7 +1512,7 @@ BATxmlaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 		goto out;
 	}
 	buflen = 0;
-	bn = BATnew(TYPE_void, TYPE_xml, ngrp);
+	bn = BATnew(TYPE_void, TYPE_xml, ngrp, TRANSIENT);
 	if (bn == NULL) {
 		err = MAL_MALLOC_FAIL;
 		goto out;

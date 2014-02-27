@@ -98,7 +98,7 @@ batstr_export str STRbatreplace(bat *ret, bat *l, str *pat, str *s2);
 		throw(MAL, Z, RUNTIME_OBJECT_MISSING);	\
 	}
 #define prepareResult(X,Y,T,Z)					\
-	X= BATnew(Y->htype,T,BATcount(Y));			\
+	X= BATnew(Y->htype,T,BATcount(Y), TRANSIENT);			\
 	if( X == NULL){								\
 		BBPreleaseref(Y->batCacheid);			\
 		throw(MAL, Z, MAL_MALLOC_FAIL);			\
@@ -110,7 +110,7 @@ batstr_export str STRbatreplace(bat *ret, bat *l, str *pat, str *s2);
 	X->tsorted=0;								\
 	X->trevsorted=0;
 #define prepareResult2(X,Y,A,T,Z)				\
-	X= BATnew(Y->htype,T,BATcount(Y));			\
+	X= BATnew(Y->htype,T,BATcount(Y), TRANSIENT);			\
 	if( Y->htype== TYPE_void)					\
 		BATseqbase(X, Y->hseqbase);				\
 	if( X == NULL){								\
@@ -785,7 +785,7 @@ STRbatsubstringcst(bat *ret, bat *bid, int *start, int *length)
 
 	if( (b= BATdescriptor(*bid)) == NULL)
 		throw(MAL, "batstr.substring",RUNTIME_OBJECT_MISSING);
-	bn= BATnew(TYPE_void, TYPE_str, BATcount(b)/10+5);
+	bn= BATnew(TYPE_void, TYPE_str, BATcount(b)/10+5, TRANSIENT);
 	BATseqbase(bn, b->hseqbase);
 	bn->hsorted = b->hsorted;
 	bn->hrevsorted = b->hrevsorted;
@@ -841,7 +841,7 @@ str STRbatsubstring(bat *ret, bat *l, bat *r, bat *t)
 	if( BATcount(left) != BATcount(length) )
 		throw(MAL, "batstr.substring", ILLEGAL_ARGUMENT " Requires bats of identical size");
 
-	bn= BATnew(TYPE_void, TYPE_str,BATcount(left));
+	bn= BATnew(TYPE_void, TYPE_str,BATcount(left), TRANSIENT);
 	BATseqbase(bn, left->hseqbase);
 	if( bn == NULL){
 		BBPreleaseref(left->batCacheid);

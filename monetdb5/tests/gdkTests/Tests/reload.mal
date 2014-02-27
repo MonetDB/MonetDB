@@ -1,4 +1,4 @@
-MMO_location := bat.new(:oid,:str);
+MMO_location := bat.new_persistent(:oid,:str);
 bat.setName(MMO_location,"MMO_location");
 bat.setPersistent(MMO_location);
 

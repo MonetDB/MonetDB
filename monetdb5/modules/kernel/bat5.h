@@ -45,7 +45,7 @@ bat5_export char *BKCdelete_bun(int *r, int *bid, ptr h, ptr t);
 bat5_export char *BKCdestroy(signed char *r, int *bid);
 bat5_export char *BKCbat_append_void_bat_wrap(int *r, int *bid, int *uid);
 bat5_export char * BKCbat_append_val_wrap(int *r, int *bid, ptr u);
-bat5_export str BKCnewBAT(int *res, int *ht, int *tt, BUN *cap);
+bat5_export str BKCnewBAT(int *res, int *ht, int *tt, BUN *cap, int role);
 bat5_export str BKCattach(int *ret, int *tt, str *heapfile);
 bat5_export str BKCdensebat(int *ret, wrd *size);
 bat5_export str BKCreverse(int *ret, int *bid);

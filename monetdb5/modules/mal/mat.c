@@ -113,7 +113,7 @@ MATpackInternal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		return MAL_SUCCEED;
 	}
 
-	bn = BATnew(TYPE_void, tt, cap);
+	bn = BATnew(TYPE_void, tt, cap, TRANSIENT);
 	if (bn == NULL)
 		throw(MAL, "mat.pack", MAL_MALLOC_FAIL);
 
@@ -156,7 +156,7 @@ MATpackIncrement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	if ( getArgType(mb,p,2) == TYPE_int){
 		/* first step, estimate with some slack */
 		pieces = stk->stk[getArg(p,2)].val.ival;
-		bn = BATnew(TYPE_void, b->ttype?b->ttype:TYPE_oid, (BUN)(1.2 * BATcount(b) * pieces));
+		bn = BATnew(TYPE_void, b->ttype?b->ttype:TYPE_oid, (BUN)(1.2 * BATcount(b) * pieces), TRANSIENT);
 		if (bn == NULL)
 			throw(MAL, "mat.pack", MAL_MALLOC_FAIL);
 		/* allocate enough space for the strings */
@@ -289,7 +289,7 @@ MATpackSliceInternal(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	cnt = MIN(cnt, cap);
 
 	assert(ht== TYPE_void);
-	bn = BATnew(TYPE_void, tt, cnt);
+	bn = BATnew(TYPE_void, tt, cnt, TRANSIENT);
 	if (bn == NULL)
 		throw(MAL, "mat.packSlice", MAL_MALLOC_FAIL);
 	/* must set seqbase or else BATins will not materialize column */
@@ -333,7 +333,7 @@ MATpack2Internal(MalStkPtr stk, InstrPtr p)
 	b= BATdescriptor(stk->stk[getArg(p,1)].val.ival);
 	if( b == NULL)
 		throw(MAL, "mat.pack", RUNTIME_OBJECT_MISSING);
-	bn = BATcopy(b, b->htype, b->ttype, TRUE);
+	bn = BATcopy(b, b->htype, b->ttype, TRUE, TRANSIENT);
 	BBPunfix(b->batCacheid);
 	if( bn == NULL)
 		throw(MAL, "mat.pack", MAL_MALLOC_FAIL);
@@ -420,7 +420,7 @@ MATmergepack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		}
 	}
 
-	bn = BATnew(TYPE_void, TYPE_oid, cap);
+	bn = BATnew(TYPE_void, TYPE_oid, cap, TRANSIENT);
 	if (bn == NULL)
 		throw(MAL, "mat.pack", MAL_MALLOC_FAIL);
 	if ( cap == 0){
@@ -482,7 +482,7 @@ MATpackValues(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 	(void) cntxt;
 	type = getArgType(mb,p,first);
-	bn = BATnew(TYPE_void, type, p->argc);
+	bn = BATnew(TYPE_void, type, p->argc, TRANSIENT);
 	if( bn == NULL)
 		throw(MAL, "mat.pack", MAL_MALLOC_FAIL);
 
@@ -533,7 +533,7 @@ MATproject_any( BAT *map, BAT **bats, int len )
 	BUN *batsT;
 	bte *mapT;
 
-	res = BATnew(TYPE_void, bats[0]->ttype, cnt);
+	res = BATnew(TYPE_void, bats[0]->ttype, cnt, TRANSIENT);
 	batsT = (BUN*)GDKmalloc(sizeof(BUN) * len);
 	bats_i = (BATiter*)GDKmalloc(sizeof(BATiter) * len);
 	if (res == NULL || batsT == NULL || bats_i == NULL) {
@@ -568,7 +568,7 @@ MATproject_bte( BAT *map, BAT **bats, int len, int ttpe )
 	bte *resT, **batsT;
 	bte *mapT;
 
-	res = BATnew(TYPE_void, ttpe, cnt);
+	res = BATnew(TYPE_void, ttpe, cnt, TRANSIENT);
 	batsT = (bte**)GDKmalloc(sizeof(bte*) * len);
 	if (res == NULL || batsT == NULL) {
 		if (res)
@@ -599,7 +599,7 @@ MATproject_sht( BAT *map, BAT **bats, int len, int ttpe )
 	sht *resT, **batsT;
 	bte *mapT;
 
-	res = BATnew(TYPE_void, ttpe, cnt);
+	res = BATnew(TYPE_void, ttpe, cnt, TRANSIENT);
 	batsT = (sht**)GDKmalloc(sizeof(sht*) * len);
 	if (res == NULL || batsT == NULL) {
 		if (res)
@@ -630,7 +630,7 @@ MATproject_int( BAT *map, BAT **bats, int len, int ttpe )
 	int *resT, **batsT;
 	bte *mapT;
 
-	res = BATnew(TYPE_void, ttpe, cnt);
+	res = BATnew(TYPE_void, ttpe, cnt, TRANSIENT);
 	batsT = (int**)GDKmalloc(sizeof(int*) * len);
 	if (res == NULL || batsT == NULL) {
 		if (res)
@@ -661,7 +661,7 @@ MATproject_lng( BAT *map, BAT **bats, int len, int ttpe )
 	lng *resT, **batsT;
 	bte *mapT;
 
-	res = BATnew(TYPE_void, ttpe, cnt);
+	res = BATnew(TYPE_void, ttpe, cnt, TRANSIENT);
 	batsT = (lng**)GDKmalloc(sizeof(lng*) * len);
 	if (res == NULL || batsT == NULL) {
 		if (res)
@@ -842,7 +842,7 @@ MATsortloop_rev( bte *map_res, BAT *i1, bte *map_i1, BUN cnt_i1, BAT *i2, bte ma
 	BATiter bi_i1 = bat_iterator(i1); 
 	BATiter bi_i2 = bat_iterator(i2);
 	int (*cmp) (const void *, const void *) = BATatoms[i1->ttype].atomCmp;
-	BAT *res = BATnew(TYPE_void, i1->ttype, cnt_i1 + cnt_i2);
+	BAT *res = BATnew(TYPE_void, i1->ttype, cnt_i1 + cnt_i2, TRANSIENT);
 
 	BATseqbase(res, 0);
 	if (map_i1 == NULL) {
@@ -900,7 +900,7 @@ MATsortloop_( bte *map_res, BAT *i1, bte *map_i1, BUN cnt_i1, BAT *i2, bte map_i
 	BATiter bi_i1 = bat_iterator(i1); 
 	BATiter bi_i2 = bat_iterator(i2);
 	int (*cmp) (const void *, const void *) = BATatoms[i1->ttype].atomCmp;
-	BAT *res = BATnew(TYPE_void, i1->ttype, cnt_i1 + cnt_i2);
+	BAT *res = BATnew(TYPE_void, i1->ttype, cnt_i1 + cnt_i2, TRANSIENT);
 
 	BATseqbase(res, 0);
 	if (map_i1 == NULL) {
@@ -956,7 +956,7 @@ MATsort_any( BAT **map, BAT **bats, int len, BUN cnt, int rev )
 	BUN len1, len2;
 	bte *map_in = NULL;
 
-	*map = BATnew(TYPE_void, TYPE_bte, cnt);
+	*map = BATnew(TYPE_void, TYPE_bte, cnt, TRANSIENT);
 	BATseqbase(*map, 0);
 	mapT = (bte*)Tloc(*map, 0);
 	/* merge */
@@ -1342,8 +1342,8 @@ MATsort_lng( BAT **map, BAT **bats, int len, BUN cnt, int rev )
 	BUN len1, len2;
 	bte *map_in = NULL;
 
-	res = BATnew(TYPE_void, bats[0]->ttype, cnt);
-	*map = BATnew(TYPE_void, TYPE_bte, cnt);
+	res = BATnew(TYPE_void, bats[0]->ttype, cnt, TRANSIENT);
+	*map = BATnew(TYPE_void, TYPE_bte, cnt, TRANSIENT);
 	BATseqbase(res, 0);
 	BATseqbase(*map, 0);
 	resT = (lng*)Tloc(res, 0);
@@ -1390,8 +1390,8 @@ MATsort_int( BAT **map, BAT **bats, int len, BUN cnt, int rev )
 	BUN len1, len2;
 	bte *map_in = NULL;
 
-	res = BATnew(TYPE_void, bats[0]->ttype, cnt);
-	*map = BATnew(TYPE_void, TYPE_bte, cnt);
+	res = BATnew(TYPE_void, bats[0]->ttype, cnt, TRANSIENT);
+	*map = BATnew(TYPE_void, TYPE_bte, cnt, TRANSIENT);
 	BATseqbase(res, 0);
 	BATseqbase(*map, 0);
 	resT = (int*)Tloc(res, 0);
@@ -1438,8 +1438,8 @@ MATsort_sht( BAT **map, BAT **bats, int len, BUN cnt, int rev )
 	BUN len1, len2;
 	bte *map_in = NULL;
 
-	res = BATnew(TYPE_void, bats[0]->ttype, cnt);
-	*map = BATnew(TYPE_void, TYPE_bte, cnt);
+	res = BATnew(TYPE_void, bats[0]->ttype, cnt, TRANSIENT);
+	*map = BATnew(TYPE_void, TYPE_bte, cnt, TRANSIENT);
 	BATseqbase(res, 0);
 	BATseqbase(*map, 0);
 	resT = (sht*)Tloc(res, 0);
@@ -1486,8 +1486,8 @@ MATsort_bte( BAT **map, BAT **bats, int len, BUN cnt, int rev )
 	BUN len1, len2;
 	bte *map_in = NULL;
 
-	res = BATnew(TYPE_void, bats[0]->ttype, cnt);
-	*map = BATnew(TYPE_void, TYPE_bte, cnt);
+	res = BATnew(TYPE_void, bats[0]->ttype, cnt, TRANSIENT);
+	*map = BATnew(TYPE_void, TYPE_bte, cnt, TRANSIENT);
 	BATseqbase(res, 0);
 	BATseqbase(*map, 0);
 	resT = (bte*)Tloc(res, 0);

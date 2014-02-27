@@ -138,7 +138,7 @@ flt_bat_dec_round_wrap(bat *_res, bat *_v, flt *r)
 	cnt = BATcount(v);
 
 	/* allocate result BAT */
-	res = BATnew(TYPE_void, TYPE_flt, cnt);
+	res = BATnew(TYPE_void, TYPE_flt, cnt, TRANSIENT);
 	if (res == NULL) {
 		BBPreleaseref(v->batCacheid);
 		throw(MAL, "round", MAL_MALLOC_FAIL);
@@ -256,7 +256,7 @@ flt_bat_round_wrap(bat *_res, bat *_v, bte *r)
 	cnt = BATcount(v);
 
 	/* allocate result BAT */
-	res = BATnew(TYPE_void, TYPE_flt, cnt);
+	res = BATnew(TYPE_void, TYPE_flt, cnt, TRANSIENT);
 	if (res == NULL) {
 		BBPreleaseref(v->batCacheid);
 		throw(MAL, "round", MAL_MALLOC_FAIL);
@@ -378,7 +378,7 @@ dbl_bat_dec_round_wrap(bat *_res, bat *_v, dbl *r)
 	cnt = BATcount(v);
 
 	/* allocate result BAT */
-	res = BATnew(TYPE_void, TYPE_dbl, cnt);
+	res = BATnew(TYPE_void, TYPE_dbl, cnt, TRANSIENT);
 	if (res == NULL) {
 		BBPreleaseref(v->batCacheid);
 		throw(MAL, "round", MAL_MALLOC_FAIL);
@@ -496,7 +496,7 @@ dbl_bat_round_wrap(bat *_res, bat *_v, bte *r)
 	cnt = BATcount(v);
 
 	/* allocate result BAT */
-	res = BATnew(TYPE_void, TYPE_dbl, cnt);
+	res = BATnew(TYPE_void, TYPE_dbl, cnt, TRANSIENT);
 	if (res == NULL) {
 		BBPreleaseref(v->batCacheid);
 		throw(MAL, "round", MAL_MALLOC_FAIL);

@@ -71,6 +71,7 @@ gdk_export bat getBBPsize(void); /* current occupied size of BBP array */
 
 /* global calls */
 gdk_export int BBPdir(int cnt, bat *subcommit);
+gdk_export void BBPaddfarm(const char *dirname, int rolemask);
 
 /* update interface */
 gdk_export void BBPclear(bat bid);
@@ -88,6 +89,18 @@ gdk_export int BBPincref(bat b, int logical);
 gdk_export void BBPkeepref(bat i);
 gdk_export void BBPreleaseref(bat i);
 gdk_export int BBPdecref(bat b, int logical);
+#if 0
+#define BBPdecref(b, logical)						\
+	({								\
+		bat _b = (b);						\
+		int _l = (logical);					\
+		if (BBP_refs(_b) + BBP_lrefs(_b) == 1)			\
+			fprintf(stderr, "#final decref %d"		\
+				" %s[%s:%d]\n",				\
+				_b, __func__, __FILE__, __LINE__);	\
+		BBPdecref(_b, _l);					\
+	})
+#endif
 gdk_export void BBPshare(bat b);
 
 /* (strncmp(s, "tmp_", 4) == 0 || strncmp(s, "tmpr_", 5) == 0) */

@@ -99,13 +99,13 @@ QLOGcatalog(BAT **r)
 	if (initQlog())
 		return ;
 	MT_lock_set(&mal_profileLock, "querylogLock");
-	r[0] = BATcopy(QLOG_cat_id, TYPE_void, QLOG_cat_id->ttype, 0);
-	r[1] = BATcopy(QLOG_cat_user, TYPE_void, QLOG_cat_user->ttype,0);
-	r[2] = BATcopy(QLOG_cat_defined, TYPE_void, QLOG_cat_defined->ttype,0);
-	r[3] = BATcopy(QLOG_cat_query, TYPE_void, QLOG_cat_query->ttype,0);
-	r[4] = BATcopy(QLOG_cat_pipe, TYPE_void, QLOG_cat_pipe->ttype,0);
-	r[5] = BATcopy(QLOG_cat_mal, TYPE_void, QLOG_cat_mal->ttype,0);
-	r[6] = BATcopy(QLOG_cat_optimize, TYPE_void, QLOG_cat_optimize->ttype,0);
+	r[0] = BATcopy(QLOG_cat_id, TYPE_void, QLOG_cat_id->ttype, 0, TRANSIENT);
+	r[1] = BATcopy(QLOG_cat_user, TYPE_void, QLOG_cat_user->ttype,0, TRANSIENT);
+	r[2] = BATcopy(QLOG_cat_defined, TYPE_void, QLOG_cat_defined->ttype,0, TRANSIENT);
+	r[3] = BATcopy(QLOG_cat_query, TYPE_void, QLOG_cat_query->ttype,0, TRANSIENT);
+	r[4] = BATcopy(QLOG_cat_pipe, TYPE_void, QLOG_cat_pipe->ttype,0, TRANSIENT);
+	r[5] = BATcopy(QLOG_cat_mal, TYPE_void, QLOG_cat_mal->ttype,0, TRANSIENT);
+	r[6] = BATcopy(QLOG_cat_optimize, TYPE_void, QLOG_cat_optimize->ttype,0, TRANSIENT);
 	MT_lock_unset(&mal_profileLock, "querylogLock");
 }
 
@@ -118,16 +118,16 @@ QLOGcalls(BAT **r)
 	if (initQlog())
 		return ;
 	MT_lock_set(&mal_profileLock, "querylogLock");
-	r[0] = BATcopy(QLOG_calls_id, TYPE_void, QLOG_calls_id->ttype, 0);
-	r[1] = BATcopy(QLOG_calls_start, TYPE_void, QLOG_calls_start->ttype,0);
-	r[2] = BATcopy(QLOG_calls_stop, TYPE_void, QLOG_calls_stop->ttype,0);
-	r[3] = BATcopy(QLOG_calls_arguments, TYPE_void, QLOG_calls_arguments->ttype,0);
-	r[4] = BATcopy(QLOG_calls_tuples, TYPE_void, QLOG_calls_tuples->ttype,0);
-	r[5] = BATcopy(QLOG_calls_exec, TYPE_void, QLOG_calls_exec->ttype,0);
-	r[6] = BATcopy(QLOG_calls_result, TYPE_void, QLOG_calls_result->ttype,0);
-	r[7] = BATcopy(QLOG_calls_cpuload, TYPE_void, QLOG_calls_cpuload->ttype,0);
-	r[8] = BATcopy(QLOG_calls_iowait, TYPE_void, QLOG_calls_iowait->ttype,0);
-	r[9] = BATcopy(QLOG_calls_space, TYPE_void, QLOG_calls_space->ttype,0);
+	r[0] = BATcopy(QLOG_calls_id, TYPE_void, QLOG_calls_id->ttype, 0, TRANSIENT);
+	r[1] = BATcopy(QLOG_calls_start, TYPE_void, QLOG_calls_start->ttype,0, TRANSIENT);
+	r[2] = BATcopy(QLOG_calls_stop, TYPE_void, QLOG_calls_stop->ttype,0, TRANSIENT);
+	r[3] = BATcopy(QLOG_calls_arguments, TYPE_void, QLOG_calls_arguments->ttype,0, TRANSIENT);
+	r[4] = BATcopy(QLOG_calls_tuples, TYPE_void, QLOG_calls_tuples->ttype,0, TRANSIENT);
+	r[5] = BATcopy(QLOG_calls_exec, TYPE_void, QLOG_calls_exec->ttype,0, TRANSIENT);
+	r[6] = BATcopy(QLOG_calls_result, TYPE_void, QLOG_calls_result->ttype,0, TRANSIENT);
+	r[7] = BATcopy(QLOG_calls_cpuload, TYPE_void, QLOG_calls_cpuload->ttype,0, TRANSIENT);
+	r[8] = BATcopy(QLOG_calls_iowait, TYPE_void, QLOG_calls_iowait->ttype,0, TRANSIENT);
+	r[9] = BATcopy(QLOG_calls_space, TYPE_void, QLOG_calls_space->ttype,0, TRANSIENT);
 	MT_lock_unset(&mal_profileLock, "querylogLock");
 }
 
@@ -145,7 +145,7 @@ QLOGcreate(str hnme, str tnme, int tt)
 	if (b) 
 		return b;
 
-	b = BATnew(TYPE_void, tt, 1 << 16);
+	b = BATnew(TYPE_void, tt, 1 << 16, TRANSIENT);
 	if (b == NULL)
 		return NULL;
 

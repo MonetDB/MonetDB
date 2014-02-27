@@ -59,7 +59,7 @@ CMDBATclone(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	cap = BATcount(b) + 64;
 	/* Cloning should include copying of the properties.  */
 	BBPunfix(b->batCacheid);
-	bn= BATnew(ht,tt,cap);
+	bn= BATnew(ht,tt,cap, TRANSIENT);
 	if( bn == NULL){
 		BBPunfix(b->batCacheid);
 		throw(MAL,"bat.new", INTERNAL_OBJ_CREATE);
@@ -88,7 +88,16 @@ CMDBATnew(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	ht = getArgType(m, p, 1);
 	tt = getArgType(m, p, 2);
 	if (p->argc > 3) {
-		lng lcap = *(lng*) getArgReference(s, p, 3);
+		lng lcap;
+
+		if (getArgType(m, p, 3) == TYPE_lng)
+			lcap = *(lng*) getArgReference(s, p, 3);
+		else if (getArgType(m, p, 3) == TYPE_int)
+			lcap = (lng) *(int*) getArgReference(s, p, 3);
+		else if (getArgType(m, p, 3) == TYPE_wrd)
+			lcap = (lng) *(wrd*) getArgReference(s, p, 3);
+		else
+			throw(MAL, "bat.new", ILLEGAL_ARGUMENT " Incorrect type for size");
 		if (lcap < 0)
 			throw(MAL, "bat.new", POSITIVE_EXPECTED);
 		if (lcap > (lng) BUN_MAX)
@@ -98,7 +107,41 @@ CMDBATnew(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 
 	if (ht == TYPE_any || tt == TYPE_any || isaBatType(ht) || isaBatType(tt))
 		throw(MAL, "bat.new", SEMANTIC_TYPE_ERROR);
-	return (str) BKCnewBAT(res, &ht, &tt, &cap);
+	return (str) BKCnewBAT(res, &ht, &tt, &cap, TRANSIENT);
+}
+
+str
+CMDBATnew_persistent(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
+{
+	int ht, tt;
+	BUN cap = 0;
+	int *res;
+
+	(void) cntxt;
+	res = (int *) getArgReference(s, p, 0);
+	ht = getArgType(m, p, 1);
+	tt = getArgType(m, p, 2);
+	if (p->argc > 3) {
+		lng lcap;
+
+		if (getArgType(m, p, 3) == TYPE_lng)
+			lcap = *(lng*) getArgReference(s, p, 3);
+		else if (getArgType(m, p, 3) == TYPE_int)
+			lcap = (lng) *(int*) getArgReference(s, p, 3);
+		else if (getArgType(m, p, 3) == TYPE_wrd)
+			lcap = (lng) *(wrd*) getArgReference(s, p, 3);
+		else
+			throw(MAL, "bat.new", ILLEGAL_ARGUMENT " Incorrect type for size");
+		if (lcap < 0)
+			throw(MAL, "bat.new", POSITIVE_EXPECTED);
+		if (lcap > (lng) BUN_MAX)
+			throw(MAL, "bat.new", ILLEGAL_ARGUMENT " Capacity too large");
+		cap = (BUN) lcap;
+	}
+
+	if (ht == TYPE_any || tt == TYPE_any || isaBatType(ht) || isaBatType(tt))
+		throw(MAL, "bat.new", SEMANTIC_TYPE_ERROR);
+	return (str) BKCnewBAT(res, &ht, &tt, &cap, PERSISTENT);
 }
 
 str
@@ -141,7 +184,7 @@ CMDBATnewDerived(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 	BBPunfix(b->batCacheid);
 
 	res = (int *) getArgReference(s, p, 0);
-	msg = (str) BKCnewBAT(res, &ht, &tt, &cap);
+	msg = (str) BKCnewBAT(res, &ht, &tt, &cap, TRANSIENT);
 	if (msg == MAL_SUCCEED && ht == TYPE_void) {
 		b = BATdescriptor(*res);
 		if ( b == NULL )
@@ -165,26 +208,6 @@ CMDBATderivedByName(int *ret, str *nme)
 	BBPincref(*ret = bn->batCacheid, TRUE);
 	BBPunfix(bid);
 	return MAL_SUCCEED;
-}
-
-str
-CMDBATnewint(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
-{
-	int ht, tt, icap;
-	BUN cap = 0;
-	int *res;
-
-	(void) cntxt;
-	res = (int *) getArgReference(s, p, 0);
-	ht = getArgType(m, p, 1);
-	tt = getArgType(m, p, 2);
-	icap = *(int *) getArgReference(s, p, 3);
-	if (icap < 0)
-		throw(MAL, "bat.new", POSITIVE_EXPECTED);
-	cap = (BUN) icap;
-	res = (int *) getArgReference(s, p, 0);
-
-	return (str) BKCnewBAT(res, &ht, &tt, &cap);
 }
 
 /* If the optimizer has not determined the partition bounds we derive one here.  */

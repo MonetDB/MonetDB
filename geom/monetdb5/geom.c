@@ -765,7 +765,7 @@ wkbcreatepoint_bat(int *out, int *ix, int *iy)
 		throw(MAL, "geom.point", "both arguments must have dense and aligned heads");
 	}
 
-	if ((bo = BATnew(TYPE_void, ATOMindex("wkb"), BATcount(bx))) == NULL) {
+	if ((bo = BATnew(TYPE_void, ATOMindex("wkb"), BATcount(bx), TRANSIENT)) == NULL) {
 		BBPreleaseref(bx->batCacheid);
 		BBPreleaseref(by->batCacheid);
 		throw(MAL, "geom.point", MAL_MALLOC_FAIL);

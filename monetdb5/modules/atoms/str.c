@@ -1102,10 +1102,10 @@ strPrelude(void)
 	if (UTF8_upperBat == NULL) {
 		int i = UTF8_CONVERSIONS;
 
-		UTF8_upperBat = BATnew(TYPE_void, TYPE_int, UTF8_CONVERSIONS);
+		UTF8_upperBat = BATnew(TYPE_void, TYPE_int, UTF8_CONVERSIONS, TRANSIENT);
 		if (UTF8_upperBat == NULL)
 			return NULL;
-		UTF8_lowerBat = BATnew(TYPE_void, TYPE_int, UTF8_CONVERSIONS);
+		UTF8_lowerBat = BATnew(TYPE_void, TYPE_int, UTF8_CONVERSIONS, TRANSIENT);
 		if (UTF8_lowerBat == NULL) {
 			BBPreclaim(UTF8_upperBat);
 			UTF8_upperBat = NULL;

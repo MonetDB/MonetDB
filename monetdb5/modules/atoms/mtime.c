@@ -1283,8 +1283,8 @@ MTIMEprelude(void)
 	/* if it was already filled we can skip initialization */
 	if( timezone_name )
 		return MAL_SUCCEED;
-	tzbatnme = BATnew(TYPE_void, TYPE_str, 30);
-	tzbatdef = BATnew(TYPE_void, ATOMindex("timezone"), 30);
+	tzbatnme = BATnew(TYPE_void, TYPE_str, 30, TRANSIENT);
+	tzbatdef = BATnew(TYPE_void, ATOMindex("timezone"), 30, TRANSIENT);
 
 	if (tzbatnme == NULL || tzbatdef == NULL)
 		throw(MAL, "time.prelude", MAL_MALLOC_FAIL);
@@ -1553,7 +1553,7 @@ MTIMEtimestamp_create_from_date_bulk(bat *ret, bat *bid)
 
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "batcalc.timestamp", RUNTIME_OBJECT_MISSING);
-	if ((bn = BATnew(TYPE_void, TYPE_timestamp, BATcount(b))) == NULL) {
+	if ((bn = BATnew(TYPE_void, TYPE_timestamp, BATcount(b), TRANSIENT)) == NULL) {
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "batcalc.timestamp", MAL_MALLOC_FAIL);
 	}
@@ -1785,7 +1785,7 @@ MTIMEtimestamp_extract_daytime_default_bulk(bat *ret, bat *bid)
 
 	if (b == NULL)
 		throw(MAL, "batcalc.daytime", RUNTIME_OBJECT_MISSING);
-	bn = BATnew(TYPE_void, TYPE_daytime, BATcount(b));
+	bn = BATnew(TYPE_void, TYPE_daytime, BATcount(b), TRANSIENT);
 	if (bn == NULL) {
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "batcalc.daytime", MAL_MALLOC_FAIL);
@@ -1867,7 +1867,7 @@ MTIMEtimestamp_extract_date_default_bulk(bat *ret, bat *bid)
 
 	if (b == NULL)
 		throw(MAL, "batcalc.date", RUNTIME_OBJECT_MISSING);
-	bn = BATnew(TYPE_void, TYPE_date, BATcount(b));
+	bn = BATnew(TYPE_void, TYPE_date, BATcount(b), TRANSIENT);
 	if (bn == NULL) {
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "batcalc.date", MAL_MALLOC_FAIL);
@@ -2023,7 +2023,7 @@ MTIMEdate_diff_bulk(bat *ret, const bat *bid1, const bat *bid2)
 		BBPreleaseref(b2->batCacheid);
 		throw(MAL, "batmtime.diff", "inputs not the same size");
 	}
-	bn = BATnew(TYPE_void, TYPE_int, BATcount(b1));
+	bn = BATnew(TYPE_void, TYPE_int, BATcount(b1), TRANSIENT);
 	if (bn == NULL) {
 		BBPreleaseref(b1->batCacheid);
 		BBPreleaseref(b2->batCacheid);
@@ -2099,7 +2099,7 @@ MTIMEtimestamp_diff_bulk(bat *ret, const bat *bid1, const bat *bid2)
 		BBPreleaseref(b2->batCacheid);
 		throw(MAL, "batmtime.diff", "inputs not the same size");
 	}
-	bn = BATnew(TYPE_void, TYPE_lng, BATcount(b1));
+	bn = BATnew(TYPE_void, TYPE_lng, BATcount(b1), TRANSIENT);
 	if (bn == NULL) {
 		BBPreleaseref(b1->batCacheid);
 		BBPreleaseref(b2->batCacheid);
@@ -2499,7 +2499,7 @@ MTIMEsecs2daytime_bulk(bat *ret, bat *bid)
 
 	if (b == NULL)
 		throw(MAL, "batcalc.daytime", RUNTIME_OBJECT_MISSING);
-	bn = BATnew(TYPE_void, TYPE_daytime, BATcount(b));
+	bn = BATnew(TYPE_void, TYPE_daytime, BATcount(b), TRANSIENT);
 	if (bn == NULL) {
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "batcalc.daytime", MAL_MALLOC_FAIL);
@@ -2617,7 +2617,7 @@ MTIMEtimestamp_bulk(bat *ret, bat *bid)
 		return msg;
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "batcalc.timestamp", RUNTIME_OBJECT_MISSING);
-	if ((bn = BATnew(TYPE_void, TYPE_timestamp, BATcount(b))) == NULL) {
+	if ((bn = BATnew(TYPE_void, TYPE_timestamp, BATcount(b), TRANSIENT)) == NULL) {
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "batcalc.timestamp", MAL_MALLOC_FAIL);
 	}
@@ -2682,7 +2682,7 @@ MTIMEtimestamp_lng_bulk(bat *ret, bat *bid)
 		return msg;
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "batcalc.timestamp", RUNTIME_OBJECT_MISSING);
-	if ((bn = BATnew(TYPE_void, TYPE_timestamp, BATcount(b))) == NULL) {
+	if ((bn = BATnew(TYPE_void, TYPE_timestamp, BATcount(b), TRANSIENT)) == NULL) {
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "batcalc.timestamp", MAL_MALLOC_FAIL);
 	}
@@ -2973,7 +2973,7 @@ MTIMEdate_extract_year_bulk(bat *ret, const bat *bid)
 		throw(MAL, "batmtime.year", "Cannot access descriptor");
 	n = BATcount(b);
 
-	bn = BATnew(TYPE_void, TYPE_int, BATcount(b));
+	bn = BATnew(TYPE_void, TYPE_int, BATcount(b), TRANSIENT);
 	if (bn == NULL) {
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "batmtime.year", "memory allocation failure");
@@ -3030,7 +3030,7 @@ MTIMEdate_extract_month_bulk(bat *ret, const bat *bid)
 		throw(MAL, "batmtime.year", "Cannot access descriptor");
 	n = BATcount(b);
 
-	bn = BATnew(TYPE_void, TYPE_int, BATcount(b));
+	bn = BATnew(TYPE_void, TYPE_int, BATcount(b), TRANSIENT);
 	if (bn == NULL) {
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "batmtime.month", "memory allocation failure");
@@ -3086,7 +3086,7 @@ MTIMEdate_extract_day_bulk(bat *ret, const bat *bid)
 		throw(MAL, "batmtime.day", "Cannot access descriptor");
 	n = BATcount(b);
 
-	bn = BATnew(TYPE_void, TYPE_int, BATcount(b));
+	bn = BATnew(TYPE_void, TYPE_int, BATcount(b), TRANSIENT);
 	if (bn == NULL) {
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "batmtime.day", "memory allocation failure");
@@ -3143,7 +3143,7 @@ MTIMEdaytime_extract_hours_bulk(bat *ret, const bat *bid)
 		throw(MAL, "batmtime.hourse", "Cannot access descriptor");
 	n = BATcount(b);
 
-	bn = BATnew(TYPE_void, TYPE_int, BATcount(b));
+	bn = BATnew(TYPE_void, TYPE_int, BATcount(b), TRANSIENT);
 	if (bn == NULL) {
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "batmtime.hours", "memory allocation failure");
@@ -3199,7 +3199,7 @@ MTIMEdaytime_extract_minutes_bulk(bat *ret, const bat *bid)
 		throw(MAL, "batmtime.minutes", "Cannot access descriptor");
 	n = BATcount(b);
 
-	bn = BATnew(TYPE_void, TYPE_int, BATcount(b));
+	bn = BATnew(TYPE_void, TYPE_int, BATcount(b), TRANSIENT);
 	if (bn == NULL) {
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "batmtime.minutes", "memory allocation failure");
@@ -3253,7 +3253,7 @@ MTIMEdaytime_extract_seconds_bulk(bat *ret, const bat *bid)
 		throw(MAL, "batmtime.seconds", "Cannot access descriptor");
 	n = BATcount(b);
 
-	bn = BATnew(TYPE_void, TYPE_int, BATcount(b));
+	bn = BATnew(TYPE_void, TYPE_int, BATcount(b), TRANSIENT);
 	if (bn == NULL) {
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "batmtime.seconds", "memory allocation failure");
@@ -3305,7 +3305,7 @@ MTIMEdaytime_extract_sql_seconds_bulk(bat *ret, const bat *bid)
 		throw(MAL, "batmtime.sql_seconds", "Cannot access descriptor");
 	n = BATcount(b);
 
-	bn = BATnew(TYPE_void, TYPE_int, BATcount(b));
+	bn = BATnew(TYPE_void, TYPE_int, BATcount(b), TRANSIENT);
 	if (bn == NULL) {
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "batmtime.sql_seconds", "memory allocation failure");
@@ -3359,7 +3359,7 @@ MTIMEdaytime_extract_milliseconds_bulk(bat *ret, const bat *bid)
 		throw(MAL, "batmtime.milliseconds", "Cannot access descriptor");
 	n = BATcount(b);
 
-	bn = BATnew(TYPE_void, TYPE_int, BATcount(b));
+	bn = BATnew(TYPE_void, TYPE_int, BATcount(b), TRANSIENT);
 	if (bn == NULL) {
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "batmtime.milliseconds", "memory allocation failure");

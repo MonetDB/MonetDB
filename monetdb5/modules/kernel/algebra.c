@@ -118,7 +118,7 @@ static int
 CMDgen_group(BAT **result, BAT *gids, BAT *cnts )
 {
 	wrd j, gcnt = BATcount(gids);
-	BAT *r = BATnew(TYPE_void, TYPE_oid, BATcount(gids)*2);
+	BAT *r = BATnew(TYPE_void, TYPE_oid, BATcount(gids)*2, TRANSIENT);
 
 	BATseqbase(r, 0);
 	if (gids->ttype == TYPE_void) {
@@ -192,7 +192,7 @@ static int
 CMDlike(BAT **ret, BAT *b, str s)
 {
 	BATiter bi = bat_iterator(b);
-	BAT *c = BATnew(BAThtype(b), TYPE_str, BATcount(b) / 10);
+	BAT *c = BATnew(BAThtype(b), TYPE_str, BATcount(b) / 10, TRANSIENT);
 	str t;
 	BUN u, v;
 	BUN yy = 0;
@@ -567,7 +567,7 @@ ALGthetaselect(int *result, int *bid, ptr val, str *OP)
 	nilptr = ATOMnilptr(b->ttype);
 	derefStr(b, t, val);
 	if (ATOMcmp(b->ttype, val, nilptr) == 0) {
-		bn = BATnew(b->htype,b->ttype, 0);
+		bn = BATnew(b->htype,b->ttype, 0, TRANSIENT);
 	} else {
 		char *op = *OP;
 		bit lin = TRUE, rin = TRUE;
@@ -686,7 +686,7 @@ ALGthetauselect(int *result, int *bid, ptr val, str *OP)
 	nilptr = ATOMnilptr(b->ttype);
 	derefStr(b, t, val);
 	if (ATOMcmp(b->ttype, val, nilptr) == 0) {
-		bn = BATnew(b->htype,TYPE_void, 0);
+		bn = BATnew(b->htype,TYPE_void, 0, TRANSIENT);
 	} else {
 		char *op = *OP;
 		bit lin = TRUE, rin = TRUE;
@@ -1093,7 +1093,7 @@ ALGhistogram(bat *result, bat *bid)
 static BAT *
 BATwcopy(BAT *b)
 {
-	return BATcopy(b, b->htype, b->ttype, 1);
+	return BATcopy(b, b->htype, b->ttype, 1, TRANSIENT);
 }
 
 str
@@ -1834,7 +1834,7 @@ ALGrevert(int *result, int *bid)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "algebra.revert", RUNTIME_OBJECT_MISSING);
 	}
-	bn = BATcopy(b, b->htype, b->ttype, TRUE);
+	bn = BATcopy(b, b->htype, b->ttype, TRUE, TRANSIENT);
 	BATrevert(bn);
 	*result= bn->batCacheid;
 	BBPkeepref(bn->batCacheid);
@@ -2273,7 +2273,7 @@ ALGprojectNIL(int *ret, int *bid)
         throw(MAL, "algebra.project", RUNTIME_OBJECT_MISSING);
     }
 
-    bn = BATconst(b, TYPE_void, (ptr) &oid_nil);
+    bn = BATconst(b, TYPE_void, (ptr) &oid_nil, TRANSIENT);
     if (bn) {
         *ret = bn->batCacheid;
         BBPkeepref(bn->batCacheid);
@@ -2300,7 +2300,7 @@ ALGprojecthead(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ((b = BATdescriptor(bid)) == NULL)
 		throw(MAL, "algebra.project", RUNTIME_OBJECT_MISSING);
 	b = BATmirror(b);
-	bn = BATconst(b, v->vtype, VALptr(v));
+	bn = BATconst(b, v->vtype, VALptr(v), TRANSIENT);
 	if (bn == NULL) {
 		*ret = 0;
 		throw(MAL, "algebra.project", MAL_MALLOC_FAIL);
@@ -2326,7 +2326,7 @@ ALGprojecttail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	if ((b = BATdescriptor(bid)) == NULL)
 		throw(MAL, "algebra.project", RUNTIME_OBJECT_MISSING);
-	bn = BATconst(b, v->vtype, VALptr(v));
+	bn = BATconst(b, v->vtype, VALptr(v), TRANSIENT);
 	if (bn == NULL) {
 		*ret = 0;
 		throw(MAL, "algebra.project", MAL_MALLOC_FAIL);
@@ -2381,7 +2381,7 @@ str ALGreuse(int *ret, int *bid)
 		if( ATOMvarsized(b->ttype) || b->htype != TYPE_void){
 			bn= BATwcopy(b);
 		} else {
-			bn = BATnew(b->htype,b->ttype,BATcount(b));
+			bn = BATnew(b->htype,b->ttype,BATcount(b), TRANSIENT);
 			BATsetcount(bn,BATcount(b));
 			bn->tsorted = FALSE;
 			bn->trevsorted = FALSE;

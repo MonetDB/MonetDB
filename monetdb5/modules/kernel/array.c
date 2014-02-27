@@ -36,7 +36,7 @@
 
 #define new_bat(b, s, TYPE)										\
 		do {													\
-			(b) = BATnew(TYPE_void, TYPE_##TYPE, (BUN) (s));	\
+			(b) = BATnew(TYPE_void, TYPE_##TYPE, (BUN) (s), TRANSIENT);	\
 			if (b)												\
 				BATseqbase((b), 0);								\
 		} while (0)
@@ -337,7 +337,7 @@ ARRAYmultiply_##X1##_##X2(int *ret, int *bid, int *rid){\
 		BBPreleaseref(b->batCacheid);\
 		 throw(MAL, "array.*", RUNTIME_OBJECT_MISSING);\
 	}\
-	bn= BATnew(TYPE_void, TYPE_##X2, BATcount(b)*BATcount(r));\
+	bn= BATnew(TYPE_void, TYPE_##X2, BATcount(b)*BATcount(r), TRANSIENT);\
 	BATseqbase(bn,0);\
 	bi = bat_iterator(b);\
 	ri = bat_iterator(r);\
@@ -381,13 +381,13 @@ ARRAYproduct(int *ret, int *ret2, int *bid, int *rid)
 		BBPreleaseref(r->batCacheid);
 		throw(MAL, "array.product", "Illegal argument bounds");
 	}
-	bn = BATnew(TYPE_void,b->ttype, BATcount(r));
+	bn = BATnew(TYPE_void,b->ttype, BATcount(r), TRANSIENT);
 	if( bn == NULL){
 		BBPreleaseref(b->batCacheid);
 		BBPreleaseref(r->batCacheid);
 		throw(MAL, "array.product", "Illegal argument bounds");
 	}
-	bm = BATnew(TYPE_void,r->ttype, BATcount(r));
+	bm = BATnew(TYPE_void,r->ttype, BATcount(r), TRANSIENT);
 	if( bm == NULL){
 		BBPreleaseref(bn->batCacheid);
 		BBPreleaseref(b->batCacheid);

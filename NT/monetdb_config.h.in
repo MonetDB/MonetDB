@@ -738,8 +738,11 @@
 #undef fstat
 #endif
 #define fstat _fstat64
-#ifndef S_ISREG		 /* in case this file wasn't included first */
+#ifndef S_ISREG
 #define S_ISREG(mode)	(((mode) & _S_IFMT) == _S_IFREG)
+#endif
+#ifndef S_ISDIR
+#define S_ISDIR(mode)	(((mode) & _S_IFMT) == _S_IFDIR)
 #endif
 
 /* Define to the sub-directory in which libtool stores uninstalled libraries.

@@ -62,7 +62,7 @@ BATsubunique(BAT *b, BAT *s)
 			return BATsubselect(s, NULL, &lo, &hi, 1, 0, 0);
 		}
 		/* we can return all values */
-		bn = BATnew(TYPE_void, TYPE_void, BATcount(b));
+		bn = BATnew(TYPE_void, TYPE_void, BATcount(b), TRANSIENT);
 		if (bn == NULL)
 			return NULL;
 		BATsetcount(bn, BATcount(b));
@@ -75,7 +75,7 @@ BATsubunique(BAT *b, BAT *s)
 
 	if (start == end) {
 		/* trivial: empty result */
-		bn = BATnew(TYPE_void, TYPE_void, 0);
+		bn = BATnew(TYPE_void, TYPE_void, 0, TRANSIENT);
 		if (bn == NULL)
 			return NULL;
 		BATsetcount(bn, 0);
@@ -87,7 +87,7 @@ BATsubunique(BAT *b, BAT *s)
 	if ((b->tsorted && b->trevsorted) ||
 	    (b->ttype == TYPE_void && b->tseqbase == oid_nil)) {
 		/* trivial: all values are the same */
-		bn = BATnew(TYPE_void, TYPE_void, 1);
+		bn = BATnew(TYPE_void, TYPE_void, 1, TRANSIENT);
 		if (bn == NULL)
 			return NULL;
 		BATsetcount(bn, 1);
@@ -98,7 +98,7 @@ BATsubunique(BAT *b, BAT *s)
 
 	assert(b->ttype != TYPE_void);
 
-	bn = BATnew(TYPE_void, TYPE_oid, 1024);
+	bn = BATnew(TYPE_void, TYPE_oid, 1024, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 	BATseqbase(bn, 0);

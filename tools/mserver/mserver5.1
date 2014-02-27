@@ -42,6 +42,9 @@ client.
 Path where mserver5 should find a database.  Shorthand for option
 gdk_dbpath.  Default value:
 @localstatedir@/monetdb5/dbfarm/demo.
+.IP "--dbextra=<path>"
+Path where mserver5 should store transient data.  Default value is the
+value of the --dbpath option.
 .IP "--dbinit=<stmt>"
 MAL statement to execute as part of the startup of the server.
 .IP "--config=<file>"

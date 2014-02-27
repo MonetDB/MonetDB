@@ -500,14 +500,14 @@ shred_json(jsonbat *jb, int *kind, int *string, int *integer, int *doble, int *a
 	oid v = (oid)0; 
 
 	/* initialise all bats */
-	jb->kind = BATnew(TYPE_void, TYPE_bte, BATTINY);
+	jb->kind = BATnew(TYPE_void, TYPE_bte, BATTINY, PERSISTENT);
 	jb->kind = BATseqbase(jb->kind, (oid)0);
-	jb->string = BATnew(TYPE_oid, TYPE_str, BATTINY);
-	jb->doble = BATnew(TYPE_oid, TYPE_dbl, BATTINY);
-	jb->integer = BATnew(TYPE_oid, TYPE_lng, BATTINY);
-	jb->name = BATnew(TYPE_oid, TYPE_str, BATTINY);
-	jb->object = BATnew(TYPE_oid, TYPE_oid, BATTINY);
-	jb->array = BATnew(TYPE_oid, TYPE_oid, BATTINY);
+	jb->string = BATnew(TYPE_oid, TYPE_str, BATTINY, PERSISTENT);
+	jb->doble = BATnew(TYPE_oid, TYPE_dbl, BATTINY, PERSISTENT);
+	jb->integer = BATnew(TYPE_oid, TYPE_lng, BATTINY, PERSISTENT);
+	jb->name = BATnew(TYPE_oid, TYPE_str, BATTINY, PERSISTENT);
+	jb->object = BATnew(TYPE_oid, TYPE_oid, BATTINY, PERSISTENT);
+	jb->array = BATnew(TYPE_oid, TYPE_oid, BATTINY, PERSISTENT);
 
 	if (json == NULL) {
 		p = jb->streambuf;
@@ -1195,14 +1195,14 @@ JSONextract(int *rkind, int *rstring, int *rinteger, int *rdoble, int *rarray, i
 	memset(&jbr, 0, sizeof(jsonbat));
 
 	/* initialise all bats */
-	jbr.kind = BATnew(TYPE_void, TYPE_bte, BATTINY);
+	jbr.kind = BATnew(TYPE_void, TYPE_bte, BATTINY, PERSISTENT);
 	jbr.kind = BATseqbase(jbr.kind, *startoid);
-	jbr.string = BATnew(TYPE_oid, TYPE_str, BATTINY);
-	jbr.doble = BATnew(TYPE_oid, TYPE_dbl, BATTINY);
-	jbr.integer = BATnew(TYPE_oid, TYPE_lng, BATTINY);
-	jbr.name = BATnew(TYPE_oid, TYPE_str, BATTINY);
-	jbr.object = BATnew(TYPE_oid, TYPE_oid, BATTINY);
-	jbr.array = BATnew(TYPE_oid, TYPE_oid, BATTINY);
+	jbr.string = BATnew(TYPE_oid, TYPE_str, BATTINY, PERSISTENT);
+	jbr.doble = BATnew(TYPE_oid, TYPE_dbl, BATTINY, PERSISTENT);
+	jbr.integer = BATnew(TYPE_oid, TYPE_lng, BATTINY, PERSISTENT);
+	jbr.name = BATnew(TYPE_oid, TYPE_str, BATTINY, PERSISTENT);
+	jbr.object = BATnew(TYPE_oid, TYPE_oid, BATTINY, PERSISTENT);
+	jbr.array = BATnew(TYPE_oid, TYPE_oid, BATTINY, PERSISTENT);
 
 	/* return all elems as the outermost array */
 	BUNappend(jbr.kind, "a", FALSE);
@@ -1271,14 +1271,14 @@ JSONwrap(int *rkind, int *rstring, int *rinteger, int *rdoble, int *rarray, int 
 	memset(&jbr, 0, sizeof(jsonbat));
 
 	/* initialise all bats */
-	jbr.kind = BATnew(TYPE_void, TYPE_bte, BATTINY);
+	jbr.kind = BATnew(TYPE_void, TYPE_bte, BATTINY, PERSISTENT);
 	jbr.kind = BATseqbase(jbr.kind, (oid)0);
-	jbr.string = BATnew(TYPE_oid, TYPE_str, BATTINY);
-	jbr.doble = BATnew(TYPE_oid, TYPE_dbl, BATTINY);
-	jbr.integer = BATnew(TYPE_oid, TYPE_lng, BATTINY);
-	jbr.name = BATnew(TYPE_oid, TYPE_str, BATTINY);
-	jbr.object = BATnew(TYPE_oid, TYPE_oid, BATTINY);
-	jbr.array = BATnew(TYPE_oid, TYPE_oid, BATTINY);
+	jbr.string = BATnew(TYPE_oid, TYPE_str, BATTINY, PERSISTENT);
+	jbr.doble = BATnew(TYPE_oid, TYPE_dbl, BATTINY, PERSISTENT);
+	jbr.integer = BATnew(TYPE_oid, TYPE_lng, BATTINY, PERSISTENT);
+	jbr.name = BATnew(TYPE_oid, TYPE_str, BATTINY, PERSISTENT);
+	jbr.object = BATnew(TYPE_oid, TYPE_oid, BATTINY, PERSISTENT);
+	jbr.array = BATnew(TYPE_oid, TYPE_oid, BATTINY, PERSISTENT);
 
 	/* return all elems as the outermost array */
 	v = BUNlast(jbr.kind);
@@ -1413,13 +1413,13 @@ JSONunwrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		unloadbats();
 		switch (tpe->vtype) {
 			case TYPE_str:
-				r = BATnew(TYPE_oid, TYPE_str, 0);
+				r = BATnew(TYPE_oid, TYPE_str, 0, TRANSIENT);
 				break;
 			case TYPE_dbl:
-				r = BATnew(TYPE_oid, TYPE_dbl, 0);
+				r = BATnew(TYPE_oid, TYPE_dbl, 0, TRANSIENT);
 				break;
 			case TYPE_lng:
-				r = BATnew(TYPE_oid, TYPE_lng, 0);
+				r = BATnew(TYPE_oid, TYPE_lng, 0, TRANSIENT);
 				break;
 			default:
 				assert(0); /* should not happen, checked above */
@@ -1469,7 +1469,7 @@ JSONunwrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			switch (tpe->vtype) {
 				case TYPE_str:
 					if (r == NULL)
-						r = BATnew(TYPE_oid, TYPE_str, BATcount(b));
+						r = BATnew(TYPE_oid, TYPE_str, BATcount(b), TRANSIENT);
 					BATloop(b, p, q) {
 						switch (*(bte *)BUNtail(bi, p)) {
 							case 's':
@@ -1515,7 +1515,7 @@ JSONunwrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					break;
 				case TYPE_dbl:
 					if (r == NULL)
-						r = BATnew(TYPE_oid, TYPE_dbl, BATcount(b));
+						r = BATnew(TYPE_oid, TYPE_dbl, BATcount(b), TRANSIENT);
 					BATloop(b, p, q) {
 						switch (*(bte *)BUNtail(bi, p)) {
 							case 's':
@@ -1554,7 +1554,7 @@ JSONunwrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					break;
 				case TYPE_lng:
 					if (r == NULL)
-						r = BATnew(TYPE_oid, TYPE_lng, BATcount(b));
+						r = BATnew(TYPE_oid, TYPE_lng, BATcount(b), TRANSIENT);
 					BATloop(b, p, q) {
 						switch (*(bte *)BUNtail(bi, p)) {
 							case 's':

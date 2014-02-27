@@ -40,7 +40,7 @@ stdout of test 'tst1012` in directory 'monetdb5/mal` itself:
 #bbp.close();
 #
 function user.main():void;
-    b := bat.new(:oid,:int);
+    b := bat.new_persistent(:oid,:int);
     bat.append(b,2);
     bat.setPersistent(b);
     x := bat.isPersistent(b);

@@ -2179,7 +2179,7 @@ JAQLbatconcat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (left->ttype != TYPE_str || right->ttype != TYPE_str)
 		throw(MAL, "jaql.batconcat", "BAT tail types must be str");
 
-	b = BATnew(TYPE_oid, TYPE_str, BATcount(left));
+	b = BATnew(TYPE_oid, TYPE_str, BATcount(left), TRANSIENT);
 	if (b == NULL)
 		throw(MAL, "jaql.batconcat", "failed to create return BAT");
 

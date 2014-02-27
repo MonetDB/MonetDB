@@ -1058,7 +1058,7 @@ JSONunfoldInternal(int *od, int *key, int *val, json *js)
 
 	JSON *jt = JSONparse(*js,TRUE);
 
-	bk = BATnew(TYPE_void, TYPE_str, 64);
+	bk = BATnew(TYPE_void, TYPE_str, 64, TRANSIENT);
 	if (bk == NULL){
 		JSONfree(jt);
 		throw(MAL, "json.unfold", MAL_MALLOC_FAIL);
@@ -1072,7 +1072,7 @@ JSONunfoldInternal(int *od, int *key, int *val, json *js)
 	bk->T->nonil = 1;
 
 	if( od){
-		bo = BATnew(TYPE_void, TYPE_oid, 64);
+		bo = BATnew(TYPE_void, TYPE_oid, 64, TRANSIENT);
 		if (bo == NULL){
 			BBPreleaseref(bk->batCacheid);
 			JSONfree(jt);
@@ -1087,7 +1087,7 @@ JSONunfoldInternal(int *od, int *key, int *val, json *js)
 		bo->T->nonil = 1;
 	}
 
-	bv = BATnew(TYPE_void, TYPE_json, 64);
+	bv = BATnew(TYPE_void, TYPE_json, 64, TRANSIENT);
 	if (bv == NULL) {
 		JSONfree(jt);
 		if( od)
@@ -1126,7 +1126,7 @@ JSONkeyTable(int *ret, json *js)
 	JSON *jt;
 
 	jt= JSONparse(*js, TRUE); // already validated
-	bn = BATnew(TYPE_void, TYPE_str, 64);
+	bn = BATnew(TYPE_void, TYPE_str, 64, TRANSIENT);
 	BATseqbase(bn, 0);
 	bn->hsorted = 1;
 	bn->hrevsorted = 0;
@@ -1179,7 +1179,7 @@ JSONvalueTable(int *ret, json *js)
 	JSON *jt;
 
 	jt= JSONparse(*js, TRUE); // already validated
-	bn = BATnew(TYPE_void, TYPE_str, 64);
+	bn = BATnew(TYPE_void, TYPE_str, 64, TRANSIENT);
 	BATseqbase(bn, 0);
 	bn->hsorted = 1;
 	bn->hrevsorted = 0;

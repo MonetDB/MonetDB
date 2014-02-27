@@ -260,7 +260,7 @@ tripleHandler(void* user_data, const raptor_statement* triple)
 static BAT*
 create_BAT(int tt, int size)
 {
-	BAT *b = BATnew(TYPE_void, tt, size);
+	BAT *b = BATnew(TYPE_void, tt, size, TRANSIENT);
 	if (b == NULL) {
 		return b;
 	}

@@ -49,7 +49,7 @@ BATrandom(BAT **bn, oid *base, wrd *size, int *domain, int seed)
 		return GDK_FAIL;
 	}
 
-	b = BATnew(TYPE_void, TYPE_int, n);
+	b = BATnew(TYPE_void, TYPE_int, n, TRANSIENT);
 	if (b == NULL)
 		return GDK_FAIL;
 	if (n == 0) {
@@ -111,7 +111,7 @@ BATuniform(BAT **bn, oid *base, wrd *size, int *domain)
 		return GDK_FAIL;
 	}
 
-	b = BATnew(TYPE_void, TYPE_int, n);
+	b = BATnew(TYPE_void, TYPE_int, n, TRANSIENT);
 	if (b == NULL)
 		return GDK_FAIL;
 	if (n == 0) {
@@ -186,7 +186,7 @@ BATskewed(BAT **bn, oid *base, wrd *size, int *domain, int *skew)
 		return GDK_FAIL;
 	}
 
-	b = BATnew(TYPE_void, TYPE_int, n);
+	b = BATnew(TYPE_void, TYPE_int, n, TRANSIENT);
 	if (b == NULL)
 		return GDK_FAIL;
 	if (n == 0) {
@@ -273,7 +273,7 @@ BATnormal(BAT **bn, oid *base, wrd *size, int *domain, int *stddev, int *mean)
 		return GDK_FAIL;
 	}
 
-        b = BATnew(TYPE_void, TYPE_int, n);
+        b = BATnew(TYPE_void, TYPE_int, n, TRANSIENT);
 	if (b == NULL)
 		return GDK_FAIL;
 	if (n == 0) {

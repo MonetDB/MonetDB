@@ -172,9 +172,9 @@ CMDinfo(BAT **ret1, BAT **ret2, BAT *b)
 	BAT *bk, *bv;
 	const char *mode, *accessmode;
 
-	if (!(bk = BATnew(TYPE_void, TYPE_str, 128)))
+	if (!(bk = BATnew(TYPE_void, TYPE_str, 128, TRANSIENT)))
 		return GDK_FAIL;
-	if (!(bv = BATnew(TYPE_void, TYPE_str, 128)))
+	if (!(bv = BATnew(TYPE_void, TYPE_str, 128, TRANSIENT)))
 		return GDK_FAIL;
 	BATseqbase(bk,0);
 	BATseqbase(bv,0);
@@ -494,11 +494,11 @@ CMDsave(bit *res, str input)
 
 
 str
-BKCnewBAT(int *res, int *ht, int *tt, BUN *cap)
+BKCnewBAT(int *res, int *ht, int *tt, BUN *cap, int role)
 {
 	BAT *bn;
 
-	bn = BATnew(*ht == TYPE_oid ? TYPE_void : *ht, *tt, *cap);
+	bn = BATnew(*ht == TYPE_oid ? TYPE_void : *ht, *tt, *cap, role);
 	if (bn == NULL)
 		throw(MAL, "bat.new", GDK_EXCEPTION);
 	if (*ht == TYPE_oid)
@@ -513,7 +513,7 @@ BKCattach(int *ret, int *tt, str *heapfile)
 {
 	BAT *bn;
 
-	bn = BATattach(*tt, *heapfile);
+	bn = BATattach(*tt, *heapfile, TRANSIENT);
 	if (bn == NULL)
 		throw(MAL, "bat.attach", GDK_EXCEPTION);
 	*ret = bn->batCacheid;
@@ -530,7 +530,7 @@ BKCdensebat(int *ret, wrd *size)
 		*size = 0;
 	if (*size > (wrd) BUN_MAX)
 		*size = (wrd) BUN_MAX;
-	bn = BATnew(TYPE_void, TYPE_void, (BUN) *size);
+	bn = BATnew(TYPE_void, TYPE_void, (BUN) *size, TRANSIENT);
 	if (bn == NULL)
 		throw(MAL, "bat.densebat", GDK_EXCEPTION);
 	BATsetcount(bn, (BUN) *size);
@@ -569,7 +569,7 @@ BKCmirror(int *ret, int *bid)
 	if (bn != NULL) {
 		if (b->batRestricted == BAT_WRITE) {
 			BAT *bn1;
-			bn1 = BATcopy(bn, bn->htype, bn->ttype, FALSE);
+			bn1 = BATcopy(bn, bn->htype, bn->ttype, FALSE, TRANSIENT);
 			BBPreclaim(bn);
 			bn = bn1;
 		}
@@ -1391,7 +1391,10 @@ BKCpersists(int *r, int *bid, bit *flg)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.setPersistence", RUNTIME_OBJECT_MISSING);
 	}
-	BATmode(b, (*flg == TRUE) ? PERSISTENT : TRANSIENT);
+	if (BATmode(b, (*flg == TRUE) ? PERSISTENT : TRANSIENT) == NULL) {
+		BBPunfix(b->batCacheid);
+		throw(MAL, "bat.setPersistence", ILLEGAL_ARGUMENT);
+	}
 	BBPreleaseref(b->batCacheid);
 	*r = 0;
 	return MAL_SUCCEED;
@@ -2071,7 +2074,7 @@ BKCshrinkBAT(int *ret, int *bid, int *did)
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "bat.shrink", RUNTIME_OBJECT_MISSING);
 	}
-	bn= BATnew(b->htype, b->ttype, BATcount(b) - BATcount(d) );
+	bn= BATnew(b->htype, b->ttype, BATcount(b) - BATcount(d) , TRANSIENT);
 	if (bn == NULL) {
 		BBPreleaseref(b->batCacheid);
 		BBPreleaseref(d->batCacheid);
@@ -2163,7 +2166,7 @@ BKCshrinkBATmap(int *ret, int *bid, int *did)
 		throw(MAL, "bat.shrinkMap", SEMANTIC_TYPE_MISMATCH);
 	}
 
-	bn= BATnew(TYPE_void, TYPE_oid, BATcount(b) );
+	bn= BATnew(TYPE_void, TYPE_oid, BATcount(b) , TRANSIENT);
 	if (bn == NULL) {
 		BBPreleaseref(b->batCacheid);
 		BBPreleaseref(d->batCacheid);
@@ -2243,7 +2246,7 @@ BKCreuseBAT(int *ret, int *bid, int *did)
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "bat.reuse", RUNTIME_OBJECT_MISSING);
 	}
-	bn= BATnew(b->htype, b->ttype, BATcount(b) - BATcount(d) );
+	bn= BATnew(b->htype, b->ttype, BATcount(b) - BATcount(d) , TRANSIENT);
 	if (bn == NULL) {
 		BBPreleaseref(b->batCacheid);
 		BBPreleaseref(d->batCacheid);
@@ -2332,7 +2335,7 @@ BKCreuseBATmap(int *ret, int *bid, int *did)
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "bat.shrinkMap", RUNTIME_OBJECT_MISSING);
 	}
-	bn= BATnew(TYPE_void, TYPE_oid, BATcount(b) );
+	bn= BATnew(TYPE_void, TYPE_oid, BATcount(b) , TRANSIENT);
 	if (bn == NULL) {
 		BBPreleaseref(b->batCacheid);
 		BBPreleaseref(d->batCacheid);

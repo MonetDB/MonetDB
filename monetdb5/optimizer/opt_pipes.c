@@ -326,17 +326,17 @@ getPipeCatalog(int *nme, int *def, int *stat)
 	BAT *b, *bn, *bs;
 	int i;
 
-	b = BATnew(TYPE_void, TYPE_str, 20);
+	b = BATnew(TYPE_void, TYPE_str, 20, TRANSIENT);
 	if (b == NULL)
 		throw(MAL, "optimizer.getpipeDefinition", MAL_MALLOC_FAIL);
 
-	bn = BATnew(TYPE_void, TYPE_str, 20);
+	bn = BATnew(TYPE_void, TYPE_str, 20, TRANSIENT);
 	if (bn == NULL) {
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "optimizer.getpipeDefinition", MAL_MALLOC_FAIL);
 	}
 
-	bs = BATnew(TYPE_void, TYPE_str, 20);
+	bs = BATnew(TYPE_void, TYPE_str, 20, TRANSIENT);
 	if (bs == NULL) {
 		BBPreleaseref(b->batCacheid);
 		BBPreleaseref(bn->batCacheid);

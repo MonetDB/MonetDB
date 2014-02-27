@@ -46,14 +46,14 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	
 	(void) cntxt;
 	(void) mb;
-	tag = BATnew(TYPE_void, TYPE_lng, 256);
-	user = BATnew(TYPE_void, TYPE_str, 256);
-	started = BATnew(TYPE_void, TYPE_lng, 256);
-	estimate = BATnew(TYPE_void, TYPE_lng, 256);
-	progress = BATnew(TYPE_void, TYPE_int, 256);
-	activity = BATnew(TYPE_void, TYPE_str, 256);
-	oids = BATnew(TYPE_void, TYPE_oid, 256);
-	query = BATnew(TYPE_void, TYPE_str, 256);
+	tag = BATnew(TYPE_void, TYPE_lng, 256, TRANSIENT);
+	user = BATnew(TYPE_void, TYPE_str, 256, TRANSIENT);
+	started = BATnew(TYPE_void, TYPE_lng, 256, TRANSIENT);
+	estimate = BATnew(TYPE_void, TYPE_lng, 256, TRANSIENT);
+	progress = BATnew(TYPE_void, TYPE_int, 256, TRANSIENT);
+	activity = BATnew(TYPE_void, TYPE_str, 256, TRANSIENT);
+	oids = BATnew(TYPE_void, TYPE_oid, 256, TRANSIENT);
+	query = BATnew(TYPE_void, TYPE_str, 256, TRANSIENT);
 	if ( tag == NULL || query == NULL || started == NULL || estimate == NULL || progress == NULL || activity == NULL || oids == NULL){
 		if (tag) BBPreleaseref(tag->batCacheid);
 		if (user) BBPreleaseref(user->batCacheid);

@@ -1502,6 +1502,11 @@ def GetBitsAndOIDsAndModsAndStaticAndThreads(env) :
     rtrn = 0
     cmd = splitcommand(env['exe']['Mserver'][1])
     cmd.append('--dbpath=%s' % os.path.join(env['GDK_DBFARM'], TSTPREF))
+    if env.get('MULTIFARM'):
+        cmd.append('--dbextra=%s' % os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'))
+        shutil.rmtree(os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'),
+                      ignore_errors = True)
+        os.makedirs(os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'))
     if procdebug:
         print 'GetBitsAndOIDsAndModsAndStaticAndThreads: starting process "%s" (inpipe, outpipe, errpipe)\n' % '" "'.join(cmd)
     setpgrp = True
@@ -2721,7 +2726,13 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                 if dbinit:
                     DBINIT = ['--dbinit=%s' % dbinit]
 
-            Srvr = splitcommand(exe['Mserver'][1]) + LOCAL_CONF + ['--dbpath=%s' % os.path.join(env['GDK_DBFARM'], TSTDB)]
+            Srvr = splitcommand(exe['Mserver'][1]) + LOCAL_CONF
+            Srvr.append('--dbpath=%s' % os.path.join(env['GDK_DBFARM'], TSTDB))
+            if env.get('MULTIFARM'):
+                Srvr.append('--dbextra=%s' % os.path.join(env['GDK_DBFARM'], TSTDB + '_transient'))
+                shutil.rmtree(os.path.join(env['GDK_DBFARM'], TSTDB + '_transient'),
+                              ignore_errors = True)
+                os.makedirs(os.path.join(env['GDK_DBFARM'], TSTDB + '_transient'))
             lang=""
 
             if SERVER == "MAL":
@@ -2800,7 +2811,13 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                 cmd = splitcommand(exe['python'][1]) + [TST + EXT, TST] + PRELUDE
                 returncode = RunIt(cmd, "", ClntOut, ClntErr, CTIMEOUT)
             elif CALL in ["mal", "malXs"]:
-                cmd = splitcommand(exe['Mserver'][1]) + LOCAL_CONF + ['--dbpath=%s' % os.path.join(env['GDK_DBFARM'], TSTDB)] + PRELUDE
+                cmd = splitcommand(exe['Mserver'][1]) + LOCAL_CONF + PRELUDE
+                cmd.append('--dbpath=%s' % os.path.join(env['GDK_DBFARM'], TSTDB))
+                if env.get('MULTIFARM'):
+                    cmd.append('--dbextra=%s' % os.path.join(env['GDK_DBFARM'], TSTDB + '_transient'))
+                    shutil.rmtree(os.path.join(env['GDK_DBFARM'], TSTDB + '_transient'),
+                                  ignore_errors = True)
+                    os.makedirs(os.path.join(env['GDK_DBFARM'], TSTDB + '_transient'))
                 if CALL == "mal":
                     X=""
                 else:
@@ -3327,7 +3344,7 @@ else:
         HTMLTITLE = " for "+COMPBITSOIDSLINK
     HTMLTITLE = ""+THISFILE+" results"+HTMLTITLE+" on "+DISTVER       #"+ ("`date`")"
 
-URLPREFIX = 'http://dev.monetdb.org/hg/MonetDB/file/'
+URLPREFIX = 'http://dev.monetdb.org/hg/MonetDB-farms/file/'
 
 par = {}
 dft = {}
@@ -3426,6 +3443,8 @@ def main(argv) :
             ('testweb', None, 'testweb', None, 'Optimize testing for testweb'),
             ('releaserun', None, 'releaserun', None,
              'run tests as if for a release test'),
+            ('multifarm', None, 'multifarm', None,
+             'use multiple dbfarms (developers only)'),
             ]
 
     if THISFILE == 'Mtest.py':
@@ -3533,6 +3552,9 @@ def main(argv) :
         a = opts.get('no_clean')
         if a is not None:
             env['NOCLEAN'] = a
+        a = opts.get('multifarm')
+        if a is not None:
+            env['MULTIFARM'] = 'True'
     if THISFILE == 'Mapprove.py':
         a = opts.get('ext')
         if a is None:
@@ -3918,7 +3940,14 @@ def main(argv) :
         env['TST_OIDS'] = ""
         env['TST_SINGLE'] = ""
         env['TST_STATIC'] = ""
-        if Check(splitcommand(env['exe']['Mserver'][1]) + ['--dbpath=%s' % os.path.join(env['GDK_DBFARM'], TSTPREF)], 'clients.quit();\n'):
+        cmd = splitcommand(env['exe']['Mserver'][1])
+        cmd.append('--dbpath=%s' % os.path.join(env['GDK_DBFARM'], TSTPREF))
+        if env.get('MULTIFARM'):
+            cmd.append('--dbextra=%s' % os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'))
+            shutil.rmtree(os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'),
+                          ignore_errors = True)
+            os.makedirs(os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'))
+        if Check(cmd, 'clients.quit();\n'):
             sys.exit(1)
         if GetBitsAndOIDsAndModsAndStaticAndThreads(env):
             sys.exit(1)

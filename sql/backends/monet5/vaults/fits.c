@@ -935,7 +935,7 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		nilptr = ATOMnil(mtype);
 		col = mvc_bind_column(m, tbl, cname[j - 1]);
 
-		tmp = BATnew(TYPE_void, mtype, rows);
+		tmp = BATnew(TYPE_void, mtype, rows, TRANSIENT);
 		if ( tmp == NULL){
 			GDKfree(tpcode);
 			GDKfree(rep);

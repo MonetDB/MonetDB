@@ -410,7 +410,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				  h ? BATgetId(h) : "NULL", h ? BATcount(h) : 0,
 				  subsorted);
 		ngrp = BATcount(b) == 0 ? 0 : b->hseqbase;
-		gn = BATnew(TYPE_void, TYPE_void, BATcount(b));
+		gn = BATnew(TYPE_void, TYPE_void, BATcount(b), TRANSIENT);
 		if (gn == NULL)
 			goto error;
 		BATsetcount(gn, BATcount(b));
@@ -418,7 +418,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		BATseqbase(BATmirror(gn), 0);
 		*groups = gn;
 		if (extents) {
-			en = BATnew(TYPE_void, TYPE_void, BATcount(b));
+			en = BATnew(TYPE_void, TYPE_void, BATcount(b), TRANSIENT);
 			if (en == NULL)
 				goto error;
 			BATsetcount(en, BATcount(b));
@@ -429,7 +429,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		if (histo) {
 			wrd one = 1;
 
-			hn = BATconstant(TYPE_wrd, &one, BATcount(b));
+			hn = BATconstant(TYPE_wrd, &one, BATcount(b), TRANSIENT);
 			if (hn == NULL)
 				goto error;
 			*histo = hn;
@@ -451,14 +451,14 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				  h ? BATgetId(h) : "NULL", h ? BATcount(h) : 0,
 				  subsorted);
 			ngrp = 0;
-			gn = BATconstant(TYPE_oid, &ngrp, BATcount(b));
+			gn = BATconstant(TYPE_oid, &ngrp, BATcount(b), TRANSIENT);
 			if (gn == NULL)
 				goto error;
 			BATseqbase(gn, b->hseqbase);
 			*groups = gn;
 			if (extents) {
 				ngrp = gn->hseqbase;
-				en = BATconstant(TYPE_void, &ngrp, 1);
+				en = BATconstant(TYPE_void, &ngrp, 1, TRANSIENT);
 				if (en == NULL)
 					goto error;
 				BATseqbase(BATmirror(en), ngrp);
@@ -467,7 +467,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			if (histo) {
 				wrd cnt = (wrd) BATcount(b);
 
-				hn = BATconstant(TYPE_wrd, &cnt, 1);
+				hn = BATconstant(TYPE_wrd, &cnt, 1, TRANSIENT);
 				if (hn == NULL)
 					goto error;
 				*histo = hn;
@@ -491,18 +491,18 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				  e ? BATgetId(e) : "NULL", e ? BATcount(e) : 0,
 				  h ? BATgetId(h) : "NULL", h ? BATcount(h) : 0,
 				  subsorted);
-			gn = BATcopy(g, g->htype, g->ttype, 0);
+			gn = BATcopy(g, g->htype, g->ttype, 0, TRANSIENT);
 			if (gn == NULL)
 				goto error;
 			*groups = gn;
 			if (extents) {
-				en = BATcopy(e, e->htype, e->ttype, 0);
+				en = BATcopy(e, e->htype, e->ttype, 0, TRANSIENT);
 				if (en == NULL)
 					goto error;
 				*extents = en;
 			}
 			if (histo) {
-				hn = BATcopy(h, h->htype, h->ttype, 0);
+				hn = BATcopy(h, h->htype, h->ttype, 0, TRANSIENT);
 				if (hn == NULL)
 					goto error;
 				*histo = hn;
@@ -513,7 +513,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	assert(g == NULL || !BATtdense(g)); /* i.e. g->ttype == TYPE_oid */
 	bi = bat_iterator(b);
 	cmp = BATatoms[b->ttype].atomCmp;
-	gn = BATnew(TYPE_void, TYPE_oid, BATcount(b));
+	gn = BATnew(TYPE_void, TYPE_oid, BATcount(b), TRANSIENT);
 	if (gn == NULL)
 		goto error;
 	ngrps = (oid *) Tloc(gn, BUNfirst(gn));
@@ -528,13 +528,13 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	    maxgrps > ((BUN) 1 << (8 << (b->T->width == 2))))
 		maxgrps = (BUN) 1 << (8 << (b->T->width == 2));
 	if (extents) {
-		en = BATnew(TYPE_void, TYPE_oid, maxgrps);
+		en = BATnew(TYPE_void, TYPE_oid, maxgrps, TRANSIENT);
 		if (en == NULL)
 			goto error;
 		exts = (oid *) Tloc(en, BUNfirst(en));
 	}
 	if (histo) {
-		hn = BATnew(TYPE_void, TYPE_wrd, maxgrps);
+		hn = BATnew(TYPE_void, TYPE_wrd, maxgrps, TRANSIENT);
 		if (hn == NULL)
 			goto error;
 		cnts = (wrd *) Tloc(hn, BUNfirst(hn));
@@ -792,6 +792,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		nme = BBP_physical(b->batCacheid);
 		nmelen = strlen(nme);
 		if ((hp = GDKzalloc(sizeof(Heap))) == NULL ||
+		    (hp->farmid = BBPselectfarm(TRANSIENT, b->ttype, hashheap)) < 0 ||
 		    (hp->filename = GDKmalloc(nmelen + 30)) == NULL ||
 		    snprintf(hp->filename, nmelen + 30,
 			     "%s.hash" SZFMT, nme, MT_getpid()) < 0 ||

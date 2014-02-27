@@ -724,6 +724,7 @@ typedef struct {
 	storage_t storage;	/* storage mode (mmap/malloc). */
 	storage_t newstorage;	/* new desired storage mode at re-allocation. */
 	bte dirty;		/* specific heap dirty marker */
+	bte farmid;		/* id of farm where heap is located */
 	bat parentid;		/* cache id of VIEW parent bat */
 } Heap;
 
@@ -909,7 +910,8 @@ typedef struct {
 	 descdirty:1,		/* bat descriptor dirty marker */
 	 restricted:2,		/* access privileges */
 	 persistence:1,		/* should the BAT persist on disk? */
-	 unused:23;		/* value=0 for now */
+	 role:8,		/* role of the bat */
+	 unused:15;		/* value=0 for now */
 	int sharecnt;		/* incoming view count */
 	char map_head;		/* mmap mode for head bun heap */
 	char map_tail;		/* mmap mode for tail bun heap */
@@ -1001,6 +1003,7 @@ typedef int (*GDKfcn) ();
 #define batStamp	S->stamp
 #define batSharecnt	S->sharecnt
 #define batRestricted	S->restricted
+#define batRole		S->role
 #define creator_tid	S->tid
 #define htype		H->type
 #define ttype		T->type
@@ -1109,7 +1112,7 @@ gdk_export void HEAP_free(Heap *heap, var_t block);
  * @- BAT construction
  * @multitable @columnfractions 0.08 0.7
  * @item @code{BAT* }
- * @tab BATnew (int headtype, int tailtype, BUN cap)
+ * @tab BATnew (int headtype, int tailtype, BUN cap, int role)
  * @item @code{BAT* }
  * @tab BATextend (BAT *b, BUN newcap)
  * @end multitable
@@ -1127,7 +1130,7 @@ gdk_export void HEAP_free(Heap *heap, var_t block);
  */
 #define BATDELETE	(-9999)
 
-gdk_export BAT *BATnew(int hdtype, int tltype, BUN capacity);
+gdk_export BAT *BATnew(int hdtype, int tltype, BUN capacity, int role);
 gdk_export BAT *BATextend(BAT *b, BUN newcap);
 
 /* internal */
@@ -1561,7 +1564,7 @@ gdk_export int BATgetaccess(BAT *b);
  * @item BAT *
  * @tab BATclear (BAT *b, int force)
  * @item BAT *
- * @tab BATcopy (BAT *b, int ht, int tt, int writeable)
+ * @tab BATcopy (BAT *b, int ht, int tt, int writeable, int role)
  * @item BAT *
  * @tab BATmark (BAT *b, oid base)
  * @item BAT *
@@ -1585,7 +1588,7 @@ gdk_export int BATgetaccess(BAT *b);
  * exist at the same time.
  */
 gdk_export BAT *BATclear(BAT *b, int force);
-gdk_export BAT *BATcopy(BAT *b, int ht, int tt, int writeable);
+gdk_export BAT *BATcopy(BAT *b, int ht, int tt, int writeable, int role);
 gdk_export BAT *BATmark(BAT *b, oid base);
 gdk_export BAT *BATmark_grp(BAT *b, BAT *g, oid *base);
 
@@ -1647,7 +1650,7 @@ gdk_export int BATmadvise(BAT *b, int hb, int tb, int hh, int th);
 gdk_export int BATdelete(BAT *b);
 gdk_export size_t BATmemsize(BAT *b, int dirty);
 
-gdk_export void GDKfilepath(str path, const char *nme, const char *mode, const char *ext);
+gdk_export char *GDKfilepath(int farmid, const char *dir, const char *nme, const char *ext);
 gdk_export int GDKcreatedir(const char *nme);
 
 /*
@@ -2547,7 +2550,7 @@ gdk_export int GDKfatal(_In_z_ _Printf_format_string_ const char *format, ...)
 /* functions defined in gdk_bat.c */
 gdk_export BUN void_replace_bat(BAT *b, BAT *u, bit force);
 gdk_export int void_inplace(BAT *b, oid id, const void *val, bit force);
-gdk_export BAT *BATattach(int tt, const char *heapfile);
+gdk_export BAT *BATattach(int tt, const char *heapfile, int role);
 
 #ifdef NATIVE_WIN32
 #ifdef _MSC_VER
@@ -3288,8 +3291,8 @@ gdk_export BAT *BATantiuselect_(BAT *b, const void *tl, const void *th, bit li, 
 gdk_export BAT *BATselect(BAT *b, const void *tl, const void *th);
 gdk_export BAT *BATuselect(BAT *b, const void *tl, const void *th);
 
-gdk_export BAT *BATconstant(int tt, const void *val, BUN cnt);
-gdk_export BAT *BATconst(BAT *l, int tt, const void *val);
+gdk_export BAT *BATconstant(int tt, const void *val, BUN cnt, int role);
+gdk_export BAT *BATconst(BAT *l, int tt, const void *val, int role);
 gdk_export BAT *BATthetajoin(BAT *l, BAT *r, int mode, BUN estimate);
 gdk_export BAT *BATsemijoin(BAT *l, BAT *r);
 gdk_export BAT *BATjoin(BAT *l, BAT *r, BUN estimate);

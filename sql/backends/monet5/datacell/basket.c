@@ -146,7 +146,7 @@ BSKTnewbasket(sql_schema *s, sql_table *t, sql_trans *tr)
 		baskets[idx].colcount++;
 	baskets[idx].cols = GDKzalloc((baskets[idx].colcount + 1) * sizeof(str));
 	baskets[idx].primary = GDKzalloc((baskets[idx].colcount + 1) * sizeof(BAT *));
-	baskets[idx].errors = BATnew(TYPE_void, TYPE_str, BATTINY);
+	baskets[idx].errors = BATnew(TYPE_void, TYPE_str, BATTINY, TRANSIENT);
 
 	i = 0;
 	for (o = t->columns.set->h; msg == MAL_SUCCEED && o; o = o->next) {
@@ -354,7 +354,7 @@ BSKTgrab(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			ret = (int *) getArgReference(stk, pci, i);
 			b = baskets[bskt].primary[i];
 			if (BATcount(bo) == 0)
-				bn = BATnew(b->htype, b->ttype, BATTINY);
+				bn = BATnew(b->htype, b->ttype, BATTINY, TRANSIENT);
 			else
 				bn = BATjoin(BATmirror(bo), b, BUN_NONE);
 			*ret = bn->batCacheid;
@@ -584,40 +584,40 @@ BSKTtable(int *nameId, int *thresholdId, int * winsizeId, int *winstrideId, int 
 	BAT *timeslice = NULL, *timestride = NULL;
 	int i;
 
-	name = BATnew(TYPE_void, TYPE_str, BATTINY);
+	name = BATnew(TYPE_void, TYPE_str, BATTINY, TRANSIENT);
 	if (name == 0)
 		goto wrapup;
 	BATseqbase(name, 0);
-	threshold = BATnew(TYPE_void, TYPE_int, BATTINY);
+	threshold = BATnew(TYPE_void, TYPE_int, BATTINY, TRANSIENT);
 	if (threshold == 0)
 		goto wrapup;
 	BATseqbase(threshold, 0);
-	winsize = BATnew(TYPE_void, TYPE_int, BATTINY);
+	winsize = BATnew(TYPE_void, TYPE_int, BATTINY, TRANSIENT);
 	if (winsize == 0)
 		goto wrapup;
 	BATseqbase(winsize, 0);
-	winstride = BATnew(TYPE_void, TYPE_int, BATTINY);
+	winstride = BATnew(TYPE_void, TYPE_int, BATTINY, TRANSIENT);
 	if (winstride == 0)
 		goto wrapup;
 	BATseqbase(winstride, 0);
-	beat = BATnew(TYPE_void, TYPE_int, BATTINY);
+	beat = BATnew(TYPE_void, TYPE_int, BATTINY, TRANSIENT);
 	if (beat == 0)
 		goto wrapup;
 	BATseqbase(beat, 0);
-	seen = BATnew(TYPE_void, TYPE_timestamp, BATTINY);
+	seen = BATnew(TYPE_void, TYPE_timestamp, BATTINY, TRANSIENT);
 	if (seen == 0)
 		goto wrapup;
 	BATseqbase(seen, 0);
-	events = BATnew(TYPE_void, TYPE_int, BATTINY);
+	events = BATnew(TYPE_void, TYPE_int, BATTINY, TRANSIENT);
 	if (events == 0)
 		goto wrapup;
 	BATseqbase(events, 0);
 
-	timeslice = BATnew(TYPE_void, TYPE_int, BATTINY);
+	timeslice = BATnew(TYPE_void, TYPE_int, BATTINY, TRANSIENT);
 	if (timeslice == 0)
 		goto wrapup;
 	BATseqbase(timeslice, 0);
-	timestride = BATnew(TYPE_void, TYPE_int, BATTINY);
+	timestride = BATnew(TYPE_void, TYPE_int, BATTINY, TRANSIENT);
 	if (timestride == 0)
 		goto wrapup;
 	BATseqbase(timestride, 0);
@@ -675,10 +675,10 @@ BSKTtableerrors(int *nameId, int *errorId)
 	BATiter bi;
 	BUN p, q;
 	int i;
-	name = BATnew(TYPE_void, TYPE_str, BATTINY);
+	name = BATnew(TYPE_void, TYPE_str, BATTINY, TRANSIENT);
 	if (name == 0)
 		throw(SQL, "baskets.errors", MAL_MALLOC_FAIL);
-	error = BATnew(TYPE_void, TYPE_str, BATTINY);
+	error = BATnew(TYPE_void, TYPE_str, BATTINY, TRANSIENT);
 	if (error == 0) {
 		BBPreleaseref(name->batCacheid);
 		throw(SQL, "baskets.errors", MAL_MALLOC_FAIL);

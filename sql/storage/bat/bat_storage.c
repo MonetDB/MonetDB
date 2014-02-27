@@ -319,7 +319,7 @@ dup_delta(sql_trans *tr, sql_delta *obat, sql_delta *bat, int type, int oc_isnew
 			bat->ibid = temp_copy(bat->ibid, 1);
 		} else if (oc_isnew && !bat->bid) { 
 			/* move the bat to the new col, fixup the old col*/
-			b = bat_new(TYPE_void, type, sz);
+			b = bat_new(TYPE_void, type, sz, PERSISTENT);
 			bat_set_access(b, BAT_READ);
 			obat->ibid = temp_create(b);
 			obat->ibase = bat->ibase = (oid) obat->cnt;
@@ -332,7 +332,7 @@ dup_delta(sql_trans *tr, sql_delta *obat, sql_delta *bat, int type, int oc_isnew
 			} else if (!c_isnew) {  
 				bat->bid = bat->ibid;
 
-				b = bat_new(TYPE_void, type, sz);
+				b = bat_new(TYPE_void, type, sz, PERSISTENT);
 				bat_set_access(b, BAT_READ);
 				BATseqbase(b, bat->ibase);
 				bat->ibid = temp_create(b);
@@ -434,7 +434,7 @@ delta_append_bat( sql_delta *bat, BAT *i )
 		bat->cached = NULL;
 	}
 	assert(!c || BATcount(c) == bat->ibase);
-	if (!bat->ibase && BATcount(b) == 0 && BBP_refs(id) == 1 && BBP_lrefs(id) == 1 && !isVIEW(i) && i->ttype /* we need info if this is coming from copy into, like role == PERSISTENT */){
+	if (!bat->ibase && BATcount(b) == 0 && BBP_refs(id) == 1 && BBP_lrefs(id) == 1 && !isVIEW(i) && i->ttype && i->S->role == PERSISTENT){
 		temp_destroy(bat->ibid);
 		bat->ibid = id;
 		temp_dup(id);
@@ -449,7 +449,7 @@ delta_append_bat( sql_delta *bat, BAT *i )
 			b = temp_descriptor(bat->ibid);
 		}
 		if (isVIEW(i) && b->batCacheid == ABS(VIEWtparent(i))) {
-			BAT *ic = BATcopy(i, TYPE_void, i->ttype, TRUE);
+			BAT *ic = BATcopy(i, TYPE_void, i->ttype, TRUE, TRANSIENT);
 			BATappend(b, ic, TRUE);
 			bat_destroy(ic);
 		} else 
@@ -861,7 +861,7 @@ new_persistent_delta( sql_delta *bat, int sz )
 		bat->ucnt = 0;
 		bat_destroy(b);
 
-		i = bat_new(TYPE_void, type, sz);
+		i = bat_new(TYPE_void, type, sz, PERSISTENT);
 		bat_set_access(i, BAT_READ);
 		BATseqbase(i, bat->ibase);
 		bat->ibid = temp_create(i);
@@ -908,10 +908,10 @@ copyBat (bat i, int type, oid seq)
 	if (!i)
 		return i;
 	tb = temp_descriptor(i);
-	b = BATconst(tb, type, ATOMnilptr(type));
+	b = BATconst(tb, type, ATOMnilptr(type), PERSISTENT);
 	bat_destroy(tb);
 	if (isVIEW(b)) {
-		tb = BATcopy(b, TYPE_void, b->ttype, TRUE);
+		tb = BATcopy(b, TYPE_void, b->ttype, TRUE, PERSISTENT);
 		BATseqbase(b, 0); 
 		b->H->dense = 1;
 		bat_destroy(b);
@@ -964,7 +964,7 @@ create_col(sql_trans *tr, sql_column *c)
 			if (d->ubid)
 				bat->ubid = e_ubat(type);
 		} else {
-			BAT *b = bat_new(TYPE_void, type, c->t->sz);
+			BAT *b = bat_new(TYPE_void, type, c->t->sz, PERSISTENT);
 			if (!b) 
 				return LOG_ERR;
 			create_delta(c->data, NULL, b, 0);
@@ -1088,7 +1088,7 @@ create_del(sql_trans *tr, sql_table *t)
 	} else if (bat->dbid && !isTempTable(t)) {
 		return ok;
 	} else if (!bat->dbid) {
-		b = bat_new(TYPE_void, TYPE_oid, t->sz);
+		b = bat_new(TYPE_void, TYPE_oid, t->sz, PERSISTENT);
 		bat_set_access(b, BAT_READ);
 		bat->dbid = temp_create(b);
 		bat_destroy(b);

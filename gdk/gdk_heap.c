@@ -60,16 +60,16 @@
 #include "gdk_private.h"
 
 static void *
-HEAPcreatefile(size_t *maxsz, const char *fn)
+HEAPcreatefile(int farmid, size_t *maxsz, const char *fn)
 {
 	void *base = NULL;
 	int fd;
 
 	/* round up to mulitple of GDK_mmap_pagesize */
-	fd = GDKfdlocate(fn, "wb", NULL);
+	fd = GDKfdlocate(farmid, fn, "wb", NULL);
 	if (fd >= 0) {
 		close(fd);
-		base = GDKload(fn, NULL, *maxsz, maxsz, STORE_MMAP);
+		base = GDKload(farmid, fn, NULL, *maxsz, maxsz, STORE_MMAP);
 	}
 	return base;
 }
@@ -117,32 +117,30 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 		HEAPDEBUG fprintf(stderr, "#HEAPalloc " SZFMT " " PTRFMT "\n", h->size, PTRFMTCAST h->base);
 	}
 	if (h->filename && h->base == NULL) {
-		char nme[PATHLENGTH];
+		char *nme, *of;
 		struct stat st;
-		char *of;
 
 		of = h->filename;
 		h->filename = NULL;
-		GDKfilepath(nme, BATDIR, of, NULL);
+		nme = GDKfilepath(h->farmid, BATDIR, of, NULL);
 		if (stat(nme, &st) < 0) {
 			h->storage = STORE_MMAP;
-			h->base = HEAPcreatefile(&h->size, of);
+			h->base = HEAPcreatefile(h->farmid, &h->size, of);
 			h->filename = of;
 		} else {
 			char *ext;
 			int fd;
 
-			strncpy(nme, of, sizeof(nme));
-			nme[sizeof(nme) - 1] = 0;
-			ext = decompose_filename(nme);
-			fd = GDKfdlocate(nme, "wb", ext);
+			ext = decompose_filename(of);
+			fd = GDKfdlocate(h->farmid, of, "wb", ext);
 			if (fd >= 0) {
 				close(fd);
 				h->newstorage = STORE_MMAP;
-				HEAPload(h, nme, ext, FALSE);
+				HEAPload(h, of, ext, FALSE);
 			}
 			GDKfree(of);
 		}
+		GDKfree(nme);
 	}
 	if (h->base == NULL) {
 		GDKerror("HEAPalloc: Insufficient space for HEAP of " SZFMT " bytes.", h->size);
@@ -189,11 +187,14 @@ HEAPextend(Heap *h, size_t size, int mayshare)
 
  	if (h->storage != STORE_MEM) {
 		char *p;
-		long_str path;
+		char *path;
 
 		HEAPDEBUG fprintf(stderr, "#HEAPextend: extending %s mmapped heap (%s)\n", h->storage == STORE_MMAP ? "shared" : "privately", h->filename);
 		/* extend memory mapped file */
-		GDKfilepath(path, BATDIR, nme, ext);
+		if ((path = GDKfilepath(h->farmid, BATDIR, nme, ext)) == NULL) {
+			GDKerror("HEAPextend: out of memory\n");
+			return -1;
+		}
 		size = (size + GDK_mmap_pagesize - 1) & ~(GDK_mmap_pagesize - 1);
 		if (size == 0)
 			size = GDK_mmap_pagesize;
@@ -203,6 +204,7 @@ HEAPextend(Heap *h, size_t size, int mayshare)
 				MMAP_COPY | MMAP_READ | MMAP_WRITE :
 				MMAP_READ | MMAP_WRITE,
 			      h->base, h->size, &size);
+		GDKfree(path);
 		if (p) {
 			h->size = size;
 			h->base = p;
@@ -242,7 +244,7 @@ HEAPextend(Heap *h, size_t size, int mayshare)
 			 * mapped files), but if the heap file doesn't
 			 * exist yet, the BAT is new and we can use
 			 * STORE_MMAP */
-			fd = GDKfdlocate(nme, "rb", ext);
+			fd = GDKfdlocate(h->farmid, nme, "rb", ext);
 			if (fd >= 0) {
 				existing = 1;
 				close(fd);
@@ -255,7 +257,7 @@ HEAPextend(Heap *h, size_t size, int mayshare)
 					goto failed;
 				}
 				sprintf(h->filename, "%s.%s", nme, ext);
-				h->base = HEAPcreatefile(&h->size, h->filename);
+				h->base = HEAPcreatefile(h->farmid, &h->size, h->filename);
 				if (h->base) {
 					h->newstorage = h->storage = STORE_MMAP;
 					memcpy(h->base, bak.base, bak.free);
@@ -264,7 +266,7 @@ HEAPextend(Heap *h, size_t size, int mayshare)
 				}
 				failure = "h->storage == STORE_MEM && can_map && !h->base";
 			}
-			fd = GDKfdlocate(nme, "wb", ext);
+			fd = GDKfdlocate(h->farmid, nme, "wb", ext);
 			if (fd >= 0) {
 				close(fd);
 				h->storage = h->newstorage == STORE_MMAP && existing && !h->forcemap && !mayshare ? STORE_PRIV : h->newstorage;
@@ -332,7 +334,7 @@ HEAPshrink(Heap *h, size_t size)
 				  PTRFMTCAST h->base, PTRFMTCAST p);
 	} else {
 		char nme[PATHLENGTH], *ext = NULL;
-		long_str path;
+		char *path;
 
 		if (h->filename) {
 			strncpy(nme, h->filename, sizeof(nme));
@@ -340,7 +342,6 @@ HEAPshrink(Heap *h, size_t size)
 			ext = decompose_filename(nme);
 		}
 		/* shrink memory mapped file */
-		GDKfilepath(path, BATDIR, nme, ext);
 		/* round up to multiple of GDK_mmap_pagesize with
 		 * minimum of one */
 		size = (size + GDK_mmap_pagesize - 1) & ~(GDK_mmap_pagesize - 1);
@@ -350,11 +351,13 @@ HEAPshrink(Heap *h, size_t size)
 			/* don't grow */
 			return 0;
 		}
+		path = GDKfilepath(h->farmid, BATDIR, nme, ext);
 		p = MT_mremap(path,
 			      h->storage == STORE_PRIV ?
 				MMAP_COPY | MMAP_READ | MMAP_WRITE :
 				MMAP_READ | MMAP_WRITE,
 			      h->base, h->size, &size);
+		GDKfree(path);
 		HEAPDEBUG fprintf(stderr, "#HEAPshrink: shrinking %s mmapped "
 				  "heap (%s) " SZFMT " " SZFMT " " PTRFMT " "
 				  PTRFMT "\n",
@@ -372,15 +375,16 @@ HEAPshrink(Heap *h, size_t size)
 
 /* returns 1 if the file exists */
 static int
-file_exists(const char *dir, const char *name, const char *ext)
+file_exists(int farmid, const char *dir, const char *name, const char *ext)
 {
-	long_str path;
+	char *path;
 	struct stat st;
 	int ret;
 
-	GDKfilepath(path, dir, name, ext);
+	path = GDKfilepath(farmid, dir, name, ext);
 	ret = stat(path, &st);
 	IODEBUG THRprintf(GDKstdout, "#stat(%s) = %d\n", path, ret);
+	GDKfree(path);
 	return (ret == 0);
 }
 
@@ -433,14 +437,14 @@ GDKupgradevarheap(COLrec *c, var_t v, int copyall, int mayshare)
 	bid = strtol(filename, NULL, 8);
 	if (c->heap.storage == STORE_MMAP &&
 	    (BBP_status(bid) & (BBPEXISTING|BBPDELETED)) &&
-	    !file_exists(BAKDIR, filename, NULL)) {
+	    !file_exists(c->heap.farmid, BAKDIR, filename, NULL)) {
 		int fd;
 		ssize_t ret = 0;
 		size_t size = n << c->shift;
 		const char *base = c->heap.base;
 
 		/* first save heap in file with extra .tmp extension */
-		if ((fd = GDKfdlocate(c->heap.filename, "wb", "tmp")) < 0)
+		if ((fd = GDKfdlocate(c->heap.farmid, c->heap.filename, "wb", "tmp")) < 0)
 			return GDK_FAIL;
 		while (size > 0) {
 			ret = write(fd, base, (unsigned) MIN(1 << 30, size));
@@ -460,14 +464,14 @@ GDKupgradevarheap(COLrec *c, var_t v, int copyall, int mayshare)
 		    close(fd) < 0) {
 			/* something went wrong: abandon ship */
 			close(fd);
-			GDKunlink(BATDIR, c->heap.filename, "tmp");
+			GDKunlink(c->heap.farmid, BATDIR, c->heap.filename, "tmp");
 			return GDK_FAIL;
 		}
 		/* move tmp file to backup directory (without .tmp
 		 * extension) */
-		if (GDKmove(BATDIR, c->heap.filename, "tmp", BAKDIR, filename, NULL) < 0) {
+		if (GDKmove(c->heap.farmid, BATDIR, c->heap.filename, "tmp", BAKDIR, filename, NULL) < 0) {
 			/* backup failed */
-			GDKunlink(BATDIR, c->heap.filename, "tmp");
+			GDKunlink(c->heap.farmid, BATDIR, c->heap.filename, "tmp");
 			return GDK_FAIL;
 		}
 	}
@@ -600,7 +604,7 @@ HEAPload_intern(Heap *h, const char *nme, const char *ext, const char *suffix, i
 {
 	size_t minsize;
 	int ret = 0, desc_status = 0;
-	long_str srcpath, dstpath;
+	char *srcpath, *dstpath;
 	struct stat st;
 
 	h->storage = h->newstorage = h->size < GDK_mmap_minsize ? STORE_MEM : STORE_MMAP;
@@ -625,7 +629,7 @@ HEAPload_intern(Heap *h, const char *nme, const char *ext, const char *suffix, i
 		if (truncsize == 0)
 			truncsize = GDK_mmap_pagesize; /* minimum of one page */
 		if (truncsize < h->size &&
-		    (fd = GDKfdlocate(nme, "mrb+", ext)) >= 0) {
+		    (fd = GDKfdlocate(h->farmid, nme, "mrb+", ext)) >= 0) {
 			ret = ftruncate(fd, truncsize);
 			HEAPDEBUG fprintf(stderr,
 					  "#ftruncate(file=%s.%s, size=" SZFMT
@@ -646,9 +650,9 @@ HEAPload_intern(Heap *h, const char *nme, const char *ext, const char *suffix, i
 	 * file that is open in MAP_PRIVATE (FILE_MAP_COPY) solution:
 	 * we write to a file named .ext.new.  This file, if present,
 	 * takes precedence. */
-	GDKfilepath(srcpath, BATDIR, nme, ext);
-	GDKfilepath(dstpath, BATDIR, nme, ext);
-	assert(strlen(srcpath) + strlen(suffix) < sizeof(srcpath));
+	srcpath = GDKfilepath(h->farmid, BATDIR, nme, ext);
+	dstpath = GDKfilepath(h->farmid, BATDIR, nme, ext);
+	srcpath = GDKrealloc(srcpath, strlen(srcpath) + strlen(suffix) + 1);
 	strcat(srcpath, suffix);
 	ret = stat(dstpath, &st);
 	if (stat(srcpath, &st) == 0) {
@@ -666,8 +670,10 @@ HEAPload_intern(Heap *h, const char *nme, const char *ext, const char *suffix, i
 		}
 		HEAPDEBUG fprintf(stderr, "#rename %s %s = %d (%dms)\n", srcpath, dstpath, ret, GDKms() - t0);
 	}
+	GDKfree(srcpath);
+	GDKfree(dstpath);
 
-	h->base = GDKload(nme, ext, h->free, &h->size, h->newstorage);
+	h->base = GDKload(h->farmid, nme, ext, h->free, &h->size, h->newstorage);
 	if (h->base == NULL)
 		return -1;	/* file could  not be read satisfactorily */
 
@@ -716,7 +722,7 @@ HEAPsave_intern(Heap *h, const char *nme, const char *ext, const char *suffix)
 	HEAPDEBUG {
 		fprintf(stderr, "#HEAPsave(%s.%s,storage=%d,free=" SZFMT ",size=" SZFMT ")\n", nme, ext, (int) h->newstorage, h->free, h->size);
 	}
-	return GDKsave(nme, ext, h->base, h->free, store);
+	return GDKsave(h->farmid, nme, ext, h->base, h->free, store);
 }
 
 int
@@ -746,7 +752,7 @@ HEAPdelete(Heap *h, const char *o, const char *ext)
 	}
 	assert(strlen(ext) + strlen(".new") < sizeof(ext2));
 	snprintf(ext2, sizeof(ext2), "%s%s", ext, ".new");
-	return (GDKunlink(BATDIR, o, ext) == 0) | (GDKunlink(BATDIR, o, ext2) == 0) ? 0 : -1;
+	return (GDKunlink(h->farmid, BATDIR, o, ext) == 0) | (GDKunlink(h->farmid, BATDIR, o, ext2) == 0) ? 0 : -1;
 }
 
 int

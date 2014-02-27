@@ -666,35 +666,35 @@ PNtable(int *nameId, int *statusId, int *seenId, int *cyclesId, int *eventsId, i
 	BAT *name = NULL, *def = NULL, *status = NULL, *seen = NULL, *cycles = NULL, *events = NULL, *time = NULL, *error = NULL;
 	int i;
 
-	name = BATnew(TYPE_void, TYPE_str, BATTINY);
+	name = BATnew(TYPE_void, TYPE_str, BATTINY, TRANSIENT);
 	if (name == 0)
 		goto wrapup;
 	BATseqbase(name, 0);
-	def = BATnew(TYPE_void, TYPE_str, BATTINY);
+	def = BATnew(TYPE_void, TYPE_str, BATTINY, TRANSIENT);
 	if (def == 0)
 		goto wrapup;
 	BATseqbase(def, 0);
-	status = BATnew(TYPE_void, TYPE_str, BATTINY);
+	status = BATnew(TYPE_void, TYPE_str, BATTINY, TRANSIENT);
 	if (status == 0)
 		goto wrapup;
 	BATseqbase(status, 0);
-	seen = BATnew(TYPE_void, TYPE_timestamp, BATTINY);
+	seen = BATnew(TYPE_void, TYPE_timestamp, BATTINY, TRANSIENT);
 	if (seen == 0)
 		goto wrapup;
 	BATseqbase(seen, 0);
-	cycles = BATnew(TYPE_void, TYPE_int, BATTINY);
+	cycles = BATnew(TYPE_void, TYPE_int, BATTINY, TRANSIENT);
 	if (cycles == 0)
 		goto wrapup;
 	BATseqbase(cycles, 0);
-	events = BATnew(TYPE_void, TYPE_int, BATTINY);
+	events = BATnew(TYPE_void, TYPE_int, BATTINY, TRANSIENT);
 	if (events == 0)
 		goto wrapup;
 	BATseqbase(events, 0);
-	time = BATnew(TYPE_void, TYPE_lng, BATTINY);
+	time = BATnew(TYPE_void, TYPE_lng, BATTINY, TRANSIENT);
 	if (time == 0)
 		goto wrapup;
 	BATseqbase(time, 0);
-	error = BATnew(TYPE_void, TYPE_str, BATTINY);
+	error = BATnew(TYPE_void, TYPE_str, BATTINY, TRANSIENT);
 	if (error == 0)
 		goto wrapup;
 	BATseqbase(error, 0);

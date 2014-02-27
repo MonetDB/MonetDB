@@ -23,6 +23,12 @@
 #error this file should not be included outside its source directory
 #endif
 
+enum heaptype {
+	offheap,
+	varheap,
+	hashheap,
+};
+
 /*
  * The different parts of which a BAT consists are physically stored
  * next to each other in the BATstore type.
@@ -44,8 +50,8 @@ int ATOMunknown_del(int a);
 int ATOMunknown_find(const char *nme);
 str ATOMunknown_name(int a);
 int BATcheckmodes(BAT *b, int persistent);
-BAT *BATclone(BAT *b, BUN capacity);
-BATstore *BATcreatedesc(int ht, int tt, int heapnames);
+BAT *BATclone(BAT *b, BUN capacity, int role);
+BATstore *BATcreatedesc(int ht, int tt, int heapnames, int role);
 void BATdestroy(BATstore *bs);
 int BATfree(BAT *b);
 gdk_return BATgroup_internal(BAT **groups, BAT **extents, BAT **histo, BAT *b, BAT *g, BAT *e, BAT *h, int subsorted);
@@ -63,25 +69,26 @@ void BBPexit(void);
 BATstore *BBPgetdesc(bat i);
 void BBPinit(void);
 bat BBPinsert(BATstore *bs);
+int BBPselectfarm(int role, int type, enum heaptype hptype);
 void BBPtrim(size_t delta);
 void BBPunshare(bat b);
 void GDKclrerr(void);
 int GDKextend(const char *fn, size_t size);
 int GDKextendf(int fd, size_t size);
-int GDKfdlocate(const char *nme, const char *mode, const char *ext);
-FILE *GDKfilelocate(const char *nme, const char *mode, const char *ext);
-char *GDKload(const char *nme, const char *ext, size_t size, size_t *maxsize, storage_t mode);
+int GDKfdlocate(int farmid, const char *nme, const char *mode, const char *ext);
+FILE *GDKfilelocate(int farmid, const char *nme, const char *mode, const char *ext);
+char *GDKload(int farmid, const char *nme, const char *ext, size_t size, size_t *maxsize, storage_t mode);
 void GDKlog(_In_z_ _Printf_format_string_ const char *format, ...)
 	__attribute__((__format__(__printf__, 1, 2)));
 void *GDKmallocmax(size_t size, size_t *maxsize, int emergency);
-int GDKmove(const char *dir1, const char *nme1, const char *ext1, const char *dir2, const char *nme2, const char *ext2);
+int GDKmove(int farmid, const char *dir1, const char *nme1, const char *ext1, const char *dir2, const char *nme2, const char *ext2);
 int GDKmunmap(void *addr, size_t len);
 void *GDKreallocmax(void *pold, size_t size, size_t *maxsize, int emergency);
-int GDKremovedir(const char *nme);
-int GDKsave(const char *nme, const char *ext, void *buf, size_t size, storage_t mode);
+int GDKremovedir(int farmid, const char *nme);
+int GDKsave(int farmid, const char *nme, const char *ext, void *buf, size_t size, storage_t mode);
 int GDKssort_rev(void *h, void *t, const void *base, size_t n, int hs, int ts, int tpe);
 int GDKssort(void *h, void *t, const void *base, size_t n, int hs, int ts, int tpe);
-int GDKunlink(const char *dir, const char *nme, const char *extension);
+int GDKunlink(int farmid, const char *dir, const char *nme, const char *extension);
 int HASHgonebad(BAT *b, const void *v);
 BUN HASHmask(BUN cnt);
 Hash *HASHnew(Heap *hp, int tpe, BUN size, BUN mask);
@@ -145,6 +152,13 @@ typedef struct {
 } bbplock_t;
 
 typedef char long_str[IDLENGTH];	/* standard GDK static string */
+
+#define MAXFARMS       32
+
+extern struct BBPfarm_t {
+	unsigned int roles;	/* bitmask of allowed roles */
+	const char *dirname;	/* farm directory */
+} BBPfarms[MAXFARMS];
 
 extern int BBP_dirty;	/* BBP table dirty? */
 extern batlock_t GDKbatLock[BBP_BATMASK + 1];

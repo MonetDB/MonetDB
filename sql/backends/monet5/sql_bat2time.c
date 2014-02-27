@@ -47,7 +47,7 @@ batstr_2time_timestamp(int *res, int *bid, int *digits)
 		throw(SQL, "batcalc.str_2time_timestamp", "Cannot access descriptor");
 	}
 	bi = bat_iterator(b);
-	dst = BATnew(b->htype, TYPE_timestamp, BATcount(b));
+	dst = BATnew(b->htype, TYPE_timestamp, BATcount(b), TRANSIENT);
 	if (dst == NULL) {
 		BBPreleaseref(b->batCacheid);
 		throw(SQL, "sql.timestamp", MAL_MALLOC_FAIL);
@@ -81,7 +81,7 @@ battimestamp_2time_timestamp(int *res, int *bid, int *digits)
 		throw(SQL, "batcalc.timestamp_2time_timestamp", "Cannot access descriptor");
 	}
 	bi = bat_iterator(b);
-	dst = BATnew(b->htype, TYPE_timestamp, BATcount(b));
+	dst = BATnew(b->htype, TYPE_timestamp, BATcount(b), TRANSIENT);
 	if (dst == NULL) {
 		BBPreleaseref(b->batCacheid);
 		throw(SQL, "sql.timestamp", MAL_MALLOC_FAIL);
@@ -115,7 +115,7 @@ batnil_2time_timestamp(int *res, int *bid, int *digits)
 		throw(SQL, "batcalc.nil_2time_timestamp", "Cannot access descriptor");
 	}
 	bi = bat_iterator(b);
-	dst = BATnew(b->htype, TYPE_timestamp, BATcount(b));
+	dst = BATnew(b->htype, TYPE_timestamp, BATcount(b), TRANSIENT);
 	if (dst == NULL) {
 		BBPreleaseref(b->batCacheid);
 		throw(SQL, "sql.timestamp", MAL_MALLOC_FAIL);
@@ -149,7 +149,7 @@ batstr_2time_daytime(int *res, int *bid, int *digits)
 		throw(SQL, "batcalc.str_2time_daytime", "Cannot access descriptor");
 	}
 	bi = bat_iterator(b);
-	dst = BATnew(b->htype, TYPE_daytime, BATcount(b));
+	dst = BATnew(b->htype, TYPE_daytime, BATcount(b), TRANSIENT);
 	if (dst == NULL) {
 		BBPreleaseref(b->batCacheid);
 		throw(SQL, "sql.daytime", MAL_MALLOC_FAIL);
@@ -183,7 +183,7 @@ batdaytime_2time_daytime(int *res, int *bid, int *digits)
 		throw(SQL, "batcalc.daytime_2time_daytime", "Cannot access descriptor");
 	}
 	bi = bat_iterator(b);
-	dst = BATnew(b->htype, TYPE_daytime, BATcount(b));
+	dst = BATnew(b->htype, TYPE_daytime, BATcount(b), TRANSIENT);
 	if (dst == NULL) {
 		BBPreleaseref(b->batCacheid);
 		throw(SQL, "sql.daytime", MAL_MALLOC_FAIL);
@@ -217,7 +217,7 @@ batnil_2time_daytime(int *res, int *bid, int *digits)
 		throw(SQL, "batcalc.nil_2time_daytime", "Cannot access descriptor");
 	}
 	bi = bat_iterator(b);
-	dst = BATnew(b->htype, TYPE_daytime, BATcount(b));
+	dst = BATnew(b->htype, TYPE_daytime, BATcount(b), TRANSIENT);
 	if (dst == NULL) {
 		BBPreleaseref(b->batCacheid);
 		throw(SQL, "sql.daytime", MAL_MALLOC_FAIL);

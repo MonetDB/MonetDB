@@ -1245,7 +1245,7 @@ SERVERfetch_field_bat(int *bid, int *key){
 	BAT *b;
 
 	accessTest(*key, "rpc");
-	b= BATnew(TYPE_void,TYPE_str,256);
+	b= BATnew(TYPE_void,TYPE_str,256, TRANSIENT);
 	if( b == NULL)
 		throw(MAL,"mapi.fetch",MAL_MALLOC_FAIL);
 	BATseqbase(b,0);
@@ -1474,7 +1474,7 @@ SERVERmapi_rpc_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	catchErrors("mapi.rpc");
 
 	assert(ht == TYPE_void || ht== TYPE_oid);
-	b= BATnew(TYPE_void,tt,256);
+	b= BATnew(TYPE_void,tt,256, TRANSIENT);
 	if ( b == NULL)
 		throw(MAL,"mapi.rpc",MAL_MALLOC_FAIL);
 	BATseqbase(b,0);

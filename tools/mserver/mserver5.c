@@ -84,6 +84,7 @@ usage(char *prog, int xit)
 {
 	fprintf(stderr, "Usage: %s [options] [scripts]\n", prog);
 	fprintf(stderr, "    --dbpath=<directory>      Specify database location\n");
+	fprintf(stderr, "    --dbextra=<directory>     Directory for transient BATs\n");
 	fprintf(stderr, "    --dbinit=<stmt>           Execute statement at startup\n");
 	fprintf(stderr, "    --config=<config_file>    Use config_file to read options from\n");
 	fprintf(stderr, "    --daemon=yes|no           Do not read commands from standard input [no]\n");
@@ -212,11 +213,13 @@ main(int argc, char **av)
 	char *modpath = NULL;
 	char *binpath = NULL;
 	str *monet_script;
+	char *dbextra = NULL;
 
 	static struct option long_options[] = {
 		{ "config", 1, 0, 'c' },
 		{ "dbpath", 1, 0, 0 },
-		{ "dbinit", 1, 0, 0 },
+		{ "dbextra", 1, 0, 0 },
+		{ "dbinit", 1, 0, 0 } ,
 		{ "daemon", 1, 0, 0 },
 		{ "debug", 2, 0, 'd' },
 		{ "help", 0, 0, '?' },
@@ -297,6 +300,13 @@ main(int argc, char **av)
 					optarg[optarglen - 1] == '\\'))
 					optarg[--optarglen] = '\0';
 				setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_dbpath", optarg);
+				break;
+			}
+			if (strcmp(long_options[option_index].name, "dbextra") == 0) {
+				if (dbextra)
+					fprintf(stderr, "#warning: ignoring multiple --dbextra arguments\n");
+				else
+					dbextra = optarg;
 				break;
 			}
 			if (strcmp(long_options[option_index].name, "dbinit") == 0) {
@@ -438,6 +448,12 @@ main(int argc, char **av)
 		}
 	}
 
+	if (dbextra) {
+		BBPaddfarm(".", 1 << PERSISTENT);
+		BBPaddfarm(dbextra, 1 << TRANSIENT);
+	} else {
+		BBPaddfarm(".", (1 << PERSISTENT) | (1 << TRANSIENT));
+	}
 	if (monet_init(set, setlen) == 0) {
 		mo_free_options(set, setlen);
 		return 0;
