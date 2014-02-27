@@ -131,7 +131,6 @@ str OPTwrapper (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	char optimizer[256];
 	InstrPtr q= copyInstruction(p);
 
-	optimizerInit();
 	snprintf(optimizer,256,"%s", fcnnme = getFunctionId(p));
 	OPTIMIZERDEBUG 
 		mnstr_printf(cntxt->fdout,"=APPLY OPTIMIZER %s\n",fcnnme);

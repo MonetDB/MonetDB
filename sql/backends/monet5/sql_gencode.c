@@ -112,7 +112,6 @@ static str exportResultRef;
 void
 initSQLreferences(void)
 {
-	optimizerInit();
 	if (exportValueRef == NULL) {
 		exportValueRef = putName("exportValue", 11);
 		exportResultRef = putName("exportResult", 12);

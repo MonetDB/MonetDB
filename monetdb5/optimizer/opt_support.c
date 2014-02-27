@@ -271,7 +271,6 @@ optimizeMALBlock(Client cntxt, MalBlkPtr mb)
 	int cnt = 0;
 	lng clk = GDKusec();
 
-	optimizerInit();
 	/* assume the type and flow have been checked already */
 	/* SQL functions intended to be inlined should not be optimized */
 	if ( varGetProp( mb, getArg(getInstrPtr(mb,0),0), inlineProp ) != NULL &&
