@@ -456,7 +456,7 @@
 #define PARMASK		(1<<7)
 #define PARDEBUG	if (GDKdebug & PARMASK)
 #define HEADLESSMASK	(1<<8)
-#define HEADLESSDEBUG	if ( GDKdebug & HEADLESSMASK)
+#define HEADLESSDEBUG	if (GDKdebug & HEADLESSMASK)
 #define TMMASK		(1<<9)
 #define TMDEBUG		if (GDKdebug & TMMASK)
 #define TEMMASK		(1<<10)
@@ -3347,7 +3347,6 @@ gdk_export BAT *BATsample_(BAT *b, BUN n); /* version that expects void head and
 #define ILLEGALVALUE	((ptr)-1L)
 #define MAXPARAMS	32
 
-#if 0				/* it's still too early to enable this */
 #ifndef NDEBUG
 #ifdef __GNUC__
 /* in debug builds, complain (warn) about usage of legacy functions */
@@ -3361,7 +3360,7 @@ gdk_export BAT *BATsample_(BAT *b, BUN n); /* version that expects void head and
 #define BATselect_(b, h, t, li, hi)					\
 	({								\
 		BAT *_b = (b);						\
-		fprintf(stderr,						\
+		HEADLESSDEBUG fprintf(stderr,				\
 			"#BATselect_([%s,%s]) %s[%s:%d]\n",		\
 			_COL_TYPE(_b->H), _COL_TYPE(_b->T),		\
 			__func__, __FILE__, __LINE__);			\
@@ -3371,7 +3370,7 @@ gdk_export BAT *BATsample_(BAT *b, BUN n); /* version that expects void head and
 #define BATuselect_(b, h, t, li, hi)					\
 	({								\
 		BAT *_b = (b);						\
-		fprintf(stderr,						\
+		HEADLESSDEBUG fprintf(stderr,				\
 			"#BATuselect_([%s,%s]) %s[%s:%d]\n",		\
 			_COL_TYPE(_b->H), _COL_TYPE(_b->T),		\
 			__func__, __FILE__, __LINE__);			\
@@ -3381,7 +3380,7 @@ gdk_export BAT *BATsample_(BAT *b, BUN n); /* version that expects void head and
 #define BATantiuselect_(b, h, t, li, hi)				\
 	({								\
 		BAT *_b = (b);						\
-		fprintf(stderr,						\
+		HEADLESSDEBUG fprintf(stderr,				\
 			"#BATantiuselect_([%s,%s]) %s[%s:%d]\n",	\
 			_COL_TYPE(_b->H), _COL_TYPE(_b->T),		\
 			__func__, __FILE__, __LINE__);			\
@@ -3391,7 +3390,7 @@ gdk_export BAT *BATsample_(BAT *b, BUN n); /* version that expects void head and
 #define BATselect(b, h, t)						\
 	({								\
 		BAT *_b = (b);						\
-		fprintf(stderr,						\
+		HEADLESSDEBUG fprintf(stderr,				\
 			"#BATselect([%s,%s]) %s[%s:%d]\n",		\
 			_COL_TYPE(_b->H), _COL_TYPE(_b->T),		\
 			__func__, __FILE__, __LINE__);			\
@@ -3401,7 +3400,7 @@ gdk_export BAT *BATsample_(BAT *b, BUN n); /* version that expects void head and
 #define BATuselect(b, h, t)						\
 	({								\
 		BAT *_b = (b);						\
-		fprintf(stderr,						\
+		HEADLESSDEBUG fprintf(stderr,				\
 			"#BATuselect([%s,%s]) %s[%s:%d]\n",		\
 			_COL_TYPE(_b->H), _COL_TYPE(_b->T),		\
 			__func__, __FILE__, __LINE__);			\
@@ -3411,7 +3410,7 @@ gdk_export BAT *BATsample_(BAT *b, BUN n); /* version that expects void head and
 #define BATsample(b, n)							\
 	({								\
 		BAT *_b = (b);						\
-		fprintf(stderr,						\
+		HEADLESSDEBUG fprintf(stderr,				\
 			"#BATsample([%s,%s]) %s[%s:%d]\n",		\
 			_COL_TYPE(_b->H), _COL_TYPE(_b->T),		\
 			__func__, __FILE__, __LINE__);			\
@@ -3421,7 +3420,7 @@ gdk_export BAT *BATsample_(BAT *b, BUN n); /* version that expects void head and
 #define BATsemijoin(l, r)						\
 	({								\
 		BAT *_l = (l), *_r = (r);				\
-		fprintf(stderr,						\
+		HEADLESSDEBUG fprintf(stderr,				\
 			"#BATsemijoin([%s,%s],[%s,%s]) %s[%s:%d]\n",	\
 			_COL_TYPE(_l->H), _COL_TYPE(_l->T),		\
 			_COL_TYPE(_r->H), _COL_TYPE(_r->T),		\
@@ -3432,7 +3431,7 @@ gdk_export BAT *BATsample_(BAT *b, BUN n); /* version that expects void head and
 #define BATjoin(l, r, estimate)						\
 	({								\
 		BAT *_l = (l), *_r = (r);				\
-		fprintf(stderr,						\
+		HEADLESSDEBUG fprintf(stderr,				\
 			"#BATjoin([%s,%s],[%s,%s]) %s[%s:%d]\n",	\
 			_COL_TYPE(_l->H), _COL_TYPE(_l->T),		\
 			_COL_TYPE(_r->H), _COL_TYPE(_r->T),		\
@@ -3443,7 +3442,7 @@ gdk_export BAT *BATsample_(BAT *b, BUN n); /* version that expects void head and
 #define BATleftjoin(l, r, estimate)					\
 	({								\
 		BAT *_l = (l), *_r = (r);				\
-		fprintf(stderr,						\
+		HEADLESSDEBUG fprintf(stderr,				\
 			"#BATleftjoin([%s,%s],[%s,%s]) %s[%s:%d]\n",	\
 			_COL_TYPE(_l->H), _COL_TYPE(_l->T),		\
 			_COL_TYPE(_r->H), _COL_TYPE(_r->T),		\
@@ -3454,7 +3453,7 @@ gdk_export BAT *BATsample_(BAT *b, BUN n); /* version that expects void head and
 #define BATthetajoin(l, r, op, estimate)				\
 	({								\
 		BAT *_l = (l), *_r = (r);				\
-		fprintf(stderr,						\
+		HEADLESSDEBUG fprintf(stderr,				\
 			"#BATthetajoin([%s,%s],[%s,%s]) %s[%s:%d]\n",	\
 			_COL_TYPE(_l->H), _COL_TYPE(_l->T),		\
 			_COL_TYPE(_r->H), _COL_TYPE(_r->T),		\
@@ -3465,7 +3464,7 @@ gdk_export BAT *BATsample_(BAT *b, BUN n); /* version that expects void head and
 #define BATouterjoin(l, r, estimate)					\
 	({								\
 		BAT *_l = (l), *_r = (r);				\
-		fprintf(stderr,						\
+		HEADLESSDEBUG fprintf(stderr,				\
 			"#BATouterjoin([%s,%s],[%s,%s]) %s[%s:%d]\n",	\
 			_COL_TYPE(_l->H), _COL_TYPE(_l->T),		\
 			_COL_TYPE(_r->H), _COL_TYPE(_r->T),		\
@@ -3476,7 +3475,7 @@ gdk_export BAT *BATsample_(BAT *b, BUN n); /* version that expects void head and
 #define BATleftfetchjoin(l, r, estimate)				\
 	({								\
 		BAT *_l = (l), *_r = (r);				\
-		fprintf(stderr,						\
+		HEADLESSDEBUG fprintf(stderr,				\
 			"#BATleftfetchjoin([%s,%s],[%s,%s]) %s[%s:%d]\n", \
 			_COL_TYPE(_l->H), _COL_TYPE(_l->T),		\
 			_COL_TYPE(_r->H), _COL_TYPE(_r->T),		\
@@ -3487,7 +3486,7 @@ gdk_export BAT *BATsample_(BAT *b, BUN n); /* version that expects void head and
 #define BATantijoin(l, r)						\
 	({								\
 		BAT *_l = (l), *_r = (r);				\
-		fprintf(stderr,						\
+		HEADLESSDEBUG fprintf(stderr,				\
 			"#BATantijoin([%s,%s],[%s,%s]) %s[%s:%d]\n",	\
 			_COL_TYPE(_l->H), _COL_TYPE(_l->T),		\
 			_COL_TYPE(_r->H), _COL_TYPE(_r->T),		\
@@ -3498,7 +3497,7 @@ gdk_export BAT *BATsample_(BAT *b, BUN n); /* version that expects void head and
 #define BATbandjoin(l, r, c1, c2, li, hi)				\
 	({								\
 		BAT *_l = (l), *_r = (r);				\
-		fprintf(stderr,						\
+		HEADLESSDEBUG fprintf(stderr,				\
 			"#BATbandjoin([%s,%s],[%s,%s]) %s[%s:%d]\n",	\
 			_COL_TYPE(_l->H), _COL_TYPE(_l->T),		\
 			_COL_TYPE(_r->H), _COL_TYPE(_r->T),		\
@@ -3509,7 +3508,7 @@ gdk_export BAT *BATsample_(BAT *b, BUN n); /* version that expects void head and
 #define BATrangejoin(l, rl, rh, li, hi)					\
 	({								\
 		BAT *_l = (l), *_rl = (rl), *_rh = (rh);		\
-		fprintf(stderr,						\
+		HEADLESSDEBUG fprintf(stderr,				\
 			"#BATrangejoin([%s,%s],[%s,%s],[%s,%s]) %s[%s:%d]\n", \
 			_COL_TYPE(_l->H), _COL_TYPE(_l->T),		\
 			_COL_TYPE(_rl->H), _COL_TYPE(_rl->T),		\
@@ -3517,7 +3516,6 @@ gdk_export BAT *BATsample_(BAT *b, BUN n); /* version that expects void head and
 			__func__, __FILE__, __LINE__);			\
 		BATrangejoin(_l, _rl, _rh, (li), (hi));			\
 	})
-#endif
 #endif
 #endif
 
