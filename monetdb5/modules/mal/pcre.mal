@@ -86,6 +86,9 @@ address PCREnotlike3;
 command not_like(s:str, pat:str):bit
 address PCREnotlike2;
 
+command replace(origin:str,pat:str,repl:str,flags:str):str
+address PCREreplace_wrap;
+
 command batstr.like(s:bat[:oid,:str], pat:str, esc:str):bat[:oid,:bit]
 address BATPCRElike;
 

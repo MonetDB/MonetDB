@@ -5,8 +5,6 @@ clients01
 
 bigsum
 
-NOT_WIN32?compress
-
 inspect00
 inspect05
 inspect10
@@ -26,7 +24,6 @@ call00
 callstring
 callfunction
 
-#radix
 
 #ascii_io2 needs work
 

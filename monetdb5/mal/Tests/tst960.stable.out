@@ -65,7 +65,7 @@ function user.main():void;
     io.print(L);
     B := batcalc.==(S,"hello");
     io.print(B);
-    C := batstr.like_uselect(S,"hello");
+    C := batstr.like(S,"hello");
     io.print(C);
     U := batstr.toUpper(S);
     io.print(U);
@@ -117,13 +117,16 @@ end main;
 [ 1@0,	  false	  ]
 [ 2@0,	  false	  ]
 [ 3@0,	  false	  ]
-#-----------------#
-# h	tmp_16	  # name
-# oid	bit	  # type
-#-----------------#
-[ 0@0,	  nil	  ]
-#-------------------------#
-# h	tmp_14		  # name
+#--------------------------#
+# h	t  # name
+# void	bit  # type
+#--------------------------#
+[ 0@0,	true  ]
+[ 1@0,	false  ]
+[ 2@0,	false  ]
+[ 3@0,	false  ]
+#--------------------------#
+# h	t  # name
 # void	str		  # type
 #-------------------------#
 [ 0@0,	  "HELLO"	  ]

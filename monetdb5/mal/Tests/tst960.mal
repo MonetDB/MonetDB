@@ -15,7 +15,7 @@ io.print(L);
 B:= batcalc.==(S,"hello");
 io.print(B);
 
-C:= batstr.like_uselect(S,"hello");
+C:= batstr.like(S,"hello");
 io.print(C);
 
 U:= batstr.toUpper(S);
