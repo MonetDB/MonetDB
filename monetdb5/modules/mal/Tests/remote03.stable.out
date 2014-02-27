@@ -1,20 +1,23 @@
 stdout of test 'remote03` in directory 'monetdb5/modules/mal` itself:
 
 
-# 15:28:56 >  
-# 15:28:56 >  Mtimeout -timeout 60  mserver5 "--config=/ufs/fabian/scratch/monetdb/current/program-x86_64/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/fabian/scratch/monetdb/current/program-x86_64/lib64/MonetDB5:/ufs/fabian/scratch/monetdb/current/program-x86_64/lib64/MonetDB5/lib:/ufs/fabian/scratch/monetdb/current/program-x86_64/lib64/MonetDB5/bin" --set "gdk_dbfarm=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-current-pegasus.ins.cwi.nl/five/dbfarm" --set "sql_logdir=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-current-pegasus.ins.cwi.nl/five/sqllog" --set "xquery_logdir=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-current-pegasus.ins.cwi.nl/five/xquerylog" --set mapi_open=true --set mapi_port=34439 --set xrpc_port=43409 --set monet_prompt= --trace --dbname=mTests_modules_mal  remote03.mal
-# 15:28:56 >  
+# 22:17:31 >  
+# 22:17:31 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30468" "--set" "mapi_usock=/var/tmp/mtest-3813/.s.monetdb.30468" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/current//Linux/var/MonetDB/mTests_monetdb5_modules_mal" "remote03.mal"
+# 22:17:31 >  
 
-
-
-
-
-# MonetDB server v5.7.0, based on kernel v1.25.0
-# Serving database 'mTests_modules_mal', using 2 threads
-# Compiled for x86_64-pc-linux-gnu/64bit with 64bit OIDs dynamically linked
-# dbname:mTests_modules_mal
-# Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:37931/
+# MonetDB 5 server v11.18.0
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_modules_mal', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.591 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:30468/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-3813/.s.monetdb.30468
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
 function user.main():void;
 # let connect figure out itself how to connect to the running db 
     uri := sabaoth.getLocalConnectionURI();
@@ -67,27 +70,27 @@ exit MALException:str ;
 end main;
 [ "Received first error from the remote site" ]
 
-SyntaxException:parseError:                    ^'(' expected
+SyntaxException:parseError:                       ^'(' expected
 
 [ "rmt1_bn_bat_oid_str" ]
 [ "rmt1_bn_bat_oid_str" ]
-#-------------------------#
-# h	t		  # name
-# int	str		  # type
-#-------------------------#
-[ 0@0,	  "void"	  ]
-[ 1@0,	  "bit"		  ]
-[ 2@0,	  "bte"		  ]
-[ 3@0,	  "sht"		  ]
-[ 4@0,	  "BAT"		  ]
-[ 5@0,	  "int"		  ]
-[ 6@0,	  "oid"		  ]
-[ 7@0,	  "wrd"		  ]
-[ 8@0,	  "ptr"		  ]
-[ 9@0,	  "flt"		  ]
-[ 10@0,	  "dbl"		  ]
-[ 11@0,	  "lng"		  ]
-[ 12@0,	  "str"		  ]
+#--------------------------#
+# h	t  # name
+# void	str  # type
+#--------------------------#
+[ 0@0,	"void"  ]
+[ 1@0,	"bit"  ]
+[ 2@0,	"bte"  ]
+[ 3@0,	"sht"  ]
+[ 4@0,	"BAT"  ]
+[ 5@0,	"int"  ]
+[ 6@0,	"oid"  ]
+[ 7@0,	"wrd"  ]
+[ 8@0,	"ptr"  ]
+[ 9@0,	"flt"  ]
+[ 10@0,	"dbl"  ]
+[ 11@0,	"lng"  ]
+[ 12@0,	"str"  ]
 [ 13@0,	"streams"  ]
 [ 14@0,	"bstream"  ]
 [ 15@0,	"blob"  ]
@@ -110,7 +113,7 @@ SyntaxException:parseError:                    ^'(' expected
 [ "rmt2__8_void" ]
 [ nil ]
 
-# 19:22:53 >  
-# 19:22:53 >  Done.
-# 19:22:53 >  
+# 22:17:31 >  
+# 22:17:31 >  "Done."
+# 22:17:31 >  
 
