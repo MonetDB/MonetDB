@@ -34,7 +34,6 @@ lib_optimizer = {
 		opt_cluster.c opt_cluster.h \
 		opt_coercion.c opt_coercion.h \
 		opt_commonTerms.c opt_commonTerms.h \
-		opt_compression.c opt_compression.h \
 		opt_constants.c opt_constants.h \
 		opt_costModel.c opt_costModel.h \
 		opt_dataflow.c opt_dataflow.h \

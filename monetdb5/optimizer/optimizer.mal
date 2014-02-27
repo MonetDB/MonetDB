@@ -72,14 +72,6 @@ pattern optimizer.commonTerms(mod:any_1, fcn:any_2):str
 address OPTwrapper
 comment "Common sub-expression optimizer"
 
-#opt_compression.mal
-
-pattern optimizer.compression():str
-address OPTwrapper;
-pattern optimizer.compression(mod:str, fcn:str):str
-address OPTwrapper
-comment "Compression code injection";
-
 #opt_constants
 pattern optimizer.constants():str
 address OPTwrapper;
