@@ -67,9 +67,5 @@ bbp_export str CMDbbpLRefCount(int *ret);
 bbp_export str CMDbbpgetIndex(int *res, int *bid);
 bbp_export str CMDgetBATrefcnt(int *res, int *bid);
 bbp_export str CMDgetBATlrefcnt(int *res, int *bid);
-bbp_export str CMDbbpcompress(int *ret, int *bid, str *fnme);
-bbp_export str CMDbbpdecompress(int *ret, int *bid, str *fnme);
-bbp_export str CMDbbptruncate(int *ret, int *bid, str *fnme);
-bbp_export str CMDbbpexpand(int *ret, int *bid, str *fnme);
 bbp_export str CMDbbp(bat *ID, bat *NS, bat *HT, bat *TT, bat *CNT, bat *REFCNT, bat *LREFCNT, bat *LOCATION, bat *HEAT, bat *DIRTY, bat *STATUS, bat *KIND);
 #endif /* _BBP_H_*/
