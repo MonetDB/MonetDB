@@ -147,7 +147,6 @@ struct OPTcatalog {
 {"cluster",		0,	0,	0,	DEBUG_OPT_CLUSTER},
 {"coercions",	0,	0,	0,	DEBUG_OPT_COERCION},
 {"commonTerms",	0,	0,	0,	DEBUG_OPT_COMMONTERMS},
-{"compress",	0,	0,	0,	DEBUG_OPT_COMPRESS},
 {"constants",	0,	0,	0,	DEBUG_OPT_CONSTANTS},
 {"costModel",	0,	0,	0,	DEBUG_OPT_COSTMODEL},
 {"crack",		0,	0,	0,	DEBUG_OPT_CRACK},
