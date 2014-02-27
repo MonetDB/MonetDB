@@ -2693,7 +2693,6 @@ str operatorName(int i);
 lng optDebug;
 str optimizeMALBlock(Client cntxt, MalBlkPtr mb);
 str optimizerCheck(Client cntxt, MalBlkPtr mb, str name, int actions, lng usec, int flag);
-void optimizerInit(void);
 str optimizerRef;
 str optimizer_prelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 str pack2Ref;

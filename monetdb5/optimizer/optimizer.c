@@ -32,6 +32,8 @@
 #include "monetdb_config.h"
 #include "optimizer.h"
 #include "mal_debugger.h"
+#include "optimizer_private.h"
+
 /*
  * Upon loading the module it should inspect the scenario table
  * for any unresolved references to the MALoptimizer and set the 
@@ -45,6 +47,7 @@ optimizer_prelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	(void) mb;
 	(void) p;
 	updateScenario("mal", "MALoptimizer", (MALfcn) MALoptimizer);
+	optimizerInit();
 	return MAL_SUCCEED;
 }
 

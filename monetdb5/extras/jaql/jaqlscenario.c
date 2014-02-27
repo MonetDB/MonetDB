@@ -83,8 +83,6 @@ JAQLinitClient(Client c)
 	j = GDKzalloc(sizeof(jc));
 	jaqllex_init_extra(j, &j->scanner);
 
-	optimizerInit();  /* for all xxxRef vars in dumpcode */
-
 	/* Set state, this indicates an initialized client scenario */
 	c->state[MAL_SCENARIO_READER] = c;
 	c->state[MAL_SCENARIO_PARSER] = c;
