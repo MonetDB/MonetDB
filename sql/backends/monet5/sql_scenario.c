@@ -603,7 +603,7 @@ sql_update_feb2013_sp3(Client c)
 static str
 sql_update_jan2014(Client c)
 {
-	size_t bufsize = 15000, pos = 0;
+	size_t bufsize = 25000, pos = 0;
 	char *buf = GDKmalloc(bufsize), *err = NULL;
 	ValRecord *schvar = stack_get_var(((backend *) c->sqlcontext)->mvc, "current_schema");
 	char *schema = NULL;
@@ -818,6 +818,12 @@ external name sql.analyze;\n");
 	pos += snprintf(buf + pos, bufsize - pos, "insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('quantile', 'median') and f.type = %d and f.schema_id = s.id and s.name = 'sys');\n", F_AGGR);
 
 	pos += snprintf(buf + pos, bufsize - pos, "update sys._tables set system = true where name in ('environment', 'optimizers', 'queue', 'sessions', 'statistics', 'storage', 'storagemodel', 'tracelog') and schema_id = (select id from sys.schemas where name = 'sys');\n");
+
+	/* 17_compress script has been removed */
+	pos += snprintf(buf + pos, bufsize - pos, "drop procedure gzcompress;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "drop procedure gzcdeompress;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "drop procedure gzctruncate;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "drop procedure gzcexpand;\n");
 
 	if (schema) {
 		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
