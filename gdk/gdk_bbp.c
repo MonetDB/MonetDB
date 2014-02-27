@@ -850,8 +850,8 @@ BBPreadEntries(FILE *fp, int *min_stamp, int *max_stamp, int oidsize, int bbpver
 #endif
 
 		bid = (bat) batid;
-		if ((bat) batid >= (bat) ATOMIC_GET(BBPsize, BBPsizeLock, "BBPreadEntries")) {
-			ATOMIC_SET(BBPsize, batid + 1, BBPsizeLock, "BBPreadEntries");
+		if (batid >= (lng) ATOMIC_GET(BBPsize, BBPsizeLock, "BBPreadEntries")) {
+			ATOMIC_SET(BBPsize, (ATOMIC_TYPE) (batid + 1), BBPsizeLock, "BBPreadEntries");
 			if ((bat) ATOMIC_GET(BBPsize, BBPsizeLock, "BBPreadEntries") >= BBPlimit)
 				BBPextend(0, FALSE);
 		}
