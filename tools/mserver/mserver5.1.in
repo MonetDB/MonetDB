@@ -296,14 +296,14 @@ that optimizer mitosis is omitted.
 It is used mainly to make some tests work deterministically, and to
 check/debug whether "unexpected" problems are related to mitosis
 (and/or mergetable).
-no_mitosis_pipe=inline,remap,costModel,coercions,evaluate,emptySet,aliases,pushselect,mergetable,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,matpack,dataflow,querylog,multiplex,garbageCollector
+no_mitosis_pipe=inline,remap,costModel,coercions,evaluate,emptySet,aliases,pushselect,mergetable,deadcode,commonTerms,groups,joinPath,reorder,deadcode,reduce,matpack,dataflow,querylog,multiplex,garbageCollector
 .TP
 .B sequential_pipe
 The sequential pipe line is identical to the default pipeline, except
 that optimizers mitosis & dataflow are omitted.
 It is use mainly to make some tests work deterministically, i.e.,
 avoid ambigious output, by avoiding parallelism.
-sequential_pipe=inline,remap,costModel,coercions,evaluate,emptySet,aliases,pushselect,mergetable,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,matpack,querylog,multiplex,garbageCollector
+sequential_pipe=inline,remap,costModel,coercions,evaluate,emptySet,aliases,pushselect,mergetable,deadcode,commonTerms,groups,joinPath,reorder,deadcode,reduce,matpack,querylog,multiplex,garbageCollector
 .SH CONFIG FILE FORMAT
 The configuration file readable by
 .I mserver5
