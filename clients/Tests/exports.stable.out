@@ -774,7 +774,6 @@ str ALGmaxany(ptr result, int *bid);
 str ALGminany(ptr result, int *bid);
 str ALGouterjoin(int *result, int *lid, int *rid);
 str ALGouterjoinestimate(int *result, int *lid, int *rid, lng *estimate);
-str ALGprejoin(int *rl, int *rr, int *l, int *r);
 str ALGprojectNIL(int *ret, int *bid);
 str ALGprojecthead(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str ALGprojecttail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -1729,7 +1728,6 @@ int OPToctopusImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 str OPTorcam(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 int OPTorcamImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 str OPTpeers(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-int OPTprejoinImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 int OPTpushrangesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 int OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 int OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);

@@ -171,7 +171,6 @@ struct OPTcatalog {
 {"octopus",		0,	0,	0,	DEBUG_OPT_OCTOPUS},
 {"origin",		0,	0,	0,	DEBUG_OPT_ORIGIN},
 {"peephole",	0,	0,	0,	DEBUG_OPT_PEEPHOLE},
-{"prejoin",		0,	0,	0,	DEBUG_OPT_PREJOIN},
 {"pushranges",	0,	0,	0,	DEBUG_OPT_PUSHRANGES},
 {"recycler",	0,	0,	0,	DEBUG_OPT_RECYCLE},
 {"reduce",		0,	0,	0,	DEBUG_OPT_REDUCE},
