@@ -386,6 +386,9 @@ esac
 gcc_ver=""
 icc_ver=""
 case $GCC-$CC in
+yes-*clang*)
+	dnl  `clang -dumpversion` reports the original/old gcc version it is based on
+	gcc_ver="`$CC -v 2>&1 | grep -w '[[Vv]]ersion [[0-9]]\+\.[[0-9]]\+' | sed 's|^.*[[Vv]]ersion \([[0-9]]\+\(\.[[0-9]]\+\)\+\).*$|\1|'`";;
 yes-*)	gcc_ver="`$CC -dumpversion 2>/dev/null`";;
 -*icc*)	icc_ver="`$CC -dumpversion 2>/dev/null`";;
 esac
@@ -560,16 +563,15 @@ yes-*-*)
 	MCHECK_ADD_FLAG([-Wmissing-include-dirs])
 	MCHECK_ADD_FLAG([-Wlogical-op])
 
-	dnl  With clang 2.8 & 3.3 (which reports as 4.2.1 with -dumpversion)
-	dnl (no other tested) and gcc < 4.5 (tested
-	dnl  3.4.6, 4.2.1, 4.3.2, 4.4.4, 4.4.5, 4.5.1, 4.5.2),
+	dnl  With clang 2.8 & 3.3 dnl (no other tested) and gcc < 4.5
+	dnl  (tested 3.4.6, 4.2.1, 4.3.2, 4.4.4, 4.4.5, 4.5.1, 4.5.2),
 	dnl  "-Wunreachable-code" triggers numerous "will never be
 	dnl  executed" (at least) in our stream code, mostly (if
 	dnl  not all) false positives, though, as well as in
 	dnl  YACC/BISON-generated code; thus, we do not use
 	dnl  "-Wunreachable-code" with clang 2.8 and gcc < 4.5 .
 	case "$CC-$gcc_ver" in
-	*clang*-2.8|*clang*-3.3|*clang*-4.2.1|*gcc*-[[0-3]].*|*gcc*-4.[[0-4]].*)
+	*clang*-2.8|*clang*-3.3|*gcc*-[[0-3]].*|*gcc*-4.[[0-4]].*)
 		;;
 	*)
 		MCHECK_ADD_FLAG([-Wunreachable-code])
@@ -1047,7 +1049,7 @@ if test "x$enable_optimize" = xyes; then
 
 	# The default configure invocation when doing an rpmbuild also uses this.
 	# In fact, rpmbuild uses -Wp,-D_FORTIFY_SOURCE=2 (cf. /usr/lib/rpm/redhat/macros),
-	# but clang (3.3/4.2.1) complains about "argument unused during compilation";
+	# but clang 3.3 complains about "argument unused during compilation";
 	# hence, we resort to plain "-D_FORTIFY_SOURCE=2", which appears to work fine
 	# also with `make rpm`. Well, worst case is that we miss a check that during
 	# "normal" build, that is then caught by '-Wp,-D_FORTIFY_SOURCE=2' during `make rpm`.

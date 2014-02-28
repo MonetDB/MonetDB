@@ -2975,7 +2975,8 @@ BATproject(BAT *l, BAT *r)
 	assert(l->ttype == TYPE_oid);
 
 	if (ATOMstorage(tpe) == TYPE_str && (!rcount || (lcount << 3) > rcount)) {
-		/* insert double-eliminated strings as ints */
+		/* insert strings as ints, we need to copy the string
+		 * heap whole sale */
 		tpe = r->T->width == 1 ? TYPE_bte : (r->T->width == 2 ? TYPE_sht : (r->T->width == 4 ? TYPE_int : TYPE_lng));
 		/* int's nil representation is a valid offset, so
 		 * don't check for nils */
