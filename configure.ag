@@ -179,7 +179,7 @@ AC_ARG_ENABLE(fits,
 	enable_fits=$enableval,
 	enable_fits=$dft_fits)
 
-dft_sql=auto
+dft_sql=yes
 AC_ARG_ENABLE(sql,
 	AS_HELP_STRING([--enable-sql],
 		[enable support for MonetDB/SQL (default=auto)]),
