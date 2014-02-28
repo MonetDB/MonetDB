@@ -6,158 +6,223 @@
 monetdb \- control a MonetDB Database Server instance
 .SH SYNOPSIS
 .B monetdb
-[monetdb_options] command [command_options] [command_args]
+[
+.I monetdb_options
+]
+.I command
+[
+.I command_options
+] [
+.I command_args
+]
 .SH DESCRIPTION
-.B monetdb
+.I Monetdb
 allows an administrator of the MonetDB Database Server to perform
 various operations on the databases in the server.  It relies on
-.BR monetdbd (1)
+.IR monetdbd (1)
 running in the background for all operations.
 .SH OPTIONS
-.I monetdb_options
-affect all commands and control the general behaviour of
-.BR monetdb .
-.IP "\-q"
-Supresses all standard progress messages, only writing output to stderr
+.I Monetdb_options
+affect all commands and control the general behavior of
+.IR monetdb .
+.TP
+.B \-q
+Suppresses all standard progress messages, only writing output to stderr
 if an error occurred.
-.IP "\-h hostname"
+.TP
+\fB\-h\fP \fIhostname\fP
 Connect to
 .I hostname
 instead of attempting a connection over the local UNIX socket.  This
 allows
-.B monetdb
+.I monetdb
 to connect to a remote
-.BR monetdbd (1).
-The use of this option requires \-P (see below).
-.IP "\-p port"
+.IR monetdbd (1).
+The use of this option requires
+.B \-P
+(see below).
+.TP
+\fB\-p\fP \fIport\fP
 Connects to the given portnumber instead of the default (50000).
-Requires \-h to be given as option too.
-.IP "\-P passphrase"
+Requires
+.B \-h
+to be given as option too.
+.TP
+\fB\-P\fP \fIpassphrase\fP
 Specifies the passphrase necessary to login to a remote
-.BR monetdbd (1).
+.IR monetdbd (1).
 This option requires \-h to be given as well.  A bad passphrase causes
-.B monetdb
+.I monetdb
 to fail to login, and hence fail to perform any remote action.
-.IP "\-v"
+.TP
+.B \-v
 Show version, equal to
-.IR "monetdb version" .
+.BR "monetdb version" .
 .SH COMMANDS
 The commands for the
-.B monetdb
+.I monetdb
 utility are
-.BR create ", " destroy ", " lock ", " release ", " status ", " start ", " stop ", " kill ", " set ", " get ", " inherit ", " discover ", " help " and " version .
+.BR create ,
+.BR destroy ,
+.BR lock ,
+.BR release ,
+.BR status ,
+.BR start ,
+.BR stop ,
+.BR kill ,
+.BR set ,
+.BR get ,
+.BR inherit ,
+.BR discover ,
+.BR help ,
+and
+.BR version .
 The commands facilitate adding, removing, maintaining, starting and
 stopping a database inside the MonetDB Database Server.
 .P
 For all commands, database arguments can be glob-like expressions.
 This allows to do wildcard matches.  For details on the syntax, see
 .IR EXPRESSIONS .
-.IP "create [\-m pattern] database [database ...]"
-Initialises a new database in the MonetDB Database Server.  A database
+.TP
+\fBcreate\fP [\fB\-m\fP \fIpattern\fP] \fIdatabase\fP [\fIdatabase\fP ...]
+Initializes a new database in the MonetDB Database Server.  A database
 created with this command makes it available under its database name,
 but not yet for use by clients, as the database is put into maintenance
-mode.  This allows the database administrator to perform initialisation
+mode.  This allows the database administrator to perform initialization
 steps before releasing it to users.  See also
 .BR "monetdb lock" .
 The name of the database must match the expression [A\-Za\-z0\-9\-_]+.
-.IP "  \-m pattern"
+.TP
+\fB\-m\fP \fIpattern\fP
 With the
-.I \-m
+.B \-m
 flag, instead of creating a database, a multiplex-funnel is created.
 See section
 .I MULTIPLEX-FUNNEL
 in
-.BR monetdbd (1).
+.IR monetdbd (1).
 The pattern argument is not fully the same as a pattern for connecting
 or discovery.  Each parallel target for the multiplex-funnel is given as
-.IR username + password @ pattern
-sequence, separated by commas.  Here the pattern is an ordinary pattern
-as would be used for connecting to a database, and can hence also be
-just the name of a database.
-.IP "destroy [\-f] database [database ...]"
-Removes the given database, including all its data and logfiles.  Once
+\fIusername\fP\fB+\fP\fIpassword\fP\fB@\fP\fIpattern\fP
+sequence, separated by commas.  Here the
+.I pattern
+is an ordinary pattern as would be used for connecting to a database,
+and can hence also be just the name of a database.
+.TP
+\fBdestroy\fP [\fB\-f\fP] \fIdatabase\fP [\fIdatabase\fP ...]
+Removes the given
+.IR database ,
+including all its data and logfiles.  Once
 destroy has completed, all data is lost.  Be careful when using this
 command.
-.IP "  \-f"
+.TP
+.B \-f
 By default, a confirmation question is asked, however the
-.I \-f
+.B \-f
 option, when provided, suppresses this question and removal is executed
 right away.  Note that without this option you cannot destroy a running
 database, bring it down first using the
 .B stop
 command.
-.IP "lock database [database ...]"
+.TP
+\fBlock\fP \fIdatabase\fP [\fIdatabase\fP ...]
 Puts the given database in maintenance mode.  A database under
 maintenance can only be connected to by an administrator account
-(by default the 
+(by default the
 .I monetdb
 account).  A database which is under maintenance is not started
 automatically by
-.BR monetdbd (1),
+.IR monetdbd (1),
 the MonetDB Database Server, when clients request for it.  Use the
 .B release
 command to bring the database back for normal usage.  To start a
 database which is under maintenance for administrator access, the
 .B start
 command can be used.
-.IP "release database [database ...]"
+.TP
+\fBrelease\fP \fIdatabase\fP [\fIdatabase\fP ...]
 Brings back a database from maintenance mode.  A released database is
 available again for normal use by any client, and is started on demand.
 Use the
 .B lock
 command to take a database under maintenance.
-.IP "status [\-lc] [\-s states] [database ...]"
+.TP
+\fBstatus\fP [\fB\-lc\fP] [\fB\-s\fP \fIstates\fP] [\fIdatabase\fP ...]
 Shows the state of the given database, or, when none given, all known
 databases.
 Three modes control the level of detail in the displayed
 output.  By default a condensed one-line output per database format is
 used.  This output resembles pretty much the output of various
-.B xxxstat
+.I xxxstat
 programs, and is ideal for quickly gaining an overview of the system
 state.  The output is divided into four columns,
-.IR name ", " state ", " health " and " remarks .
-The state column contains two characters that identify the state of the
+.BR name ,
+.BR state ,
+.BR health ,
+and
+.BR remarks .
+The
+.B state
+column contains two characters that identify the state of the
 database, based on Booting (starting up), Running, Stopped, Crashed and
 Locked (under maintenance).  This is followed by the uptime when
-running.  The health column contains the percentage of successful starts
-and stops, followed by the average uptime.  The remarks column can
+running.  The
+.B health
+column contains the percentage of successful starts
+and stops, followed by the average uptime.  The
+.B remarks
+column can
 contain arbitrary information about the database state, but usually
 contains the URI the database can be connected to.
-.IP "  \-c"
+.RS
+.TP
+.B \-c
 The
-.I \-c
+.B \-c
 flag shows the most used properties of a database.  This includes the
 state of the database (running, crashed, stopped), whether it is under
 maintenance or not, the crash averages and uptime statistics.  The crash
 average is the number of times the database has crashed over the last 1,
 15 or 30 starts.  The lower the average, the healthier the database is.
-.IP "  \-l"
+.TP
+.B \-l
 Triggered by the
-.I \-l
+.B \-l
 flag, a long listing is used.  This listing spans many rows with on each
-row one property and its value separated by a colon (`:').  The long
-listing includes all information that is available.
-.IP "  \-s"
+row one property and its value separated by a colon
+.RB ( : ).
+The long listing includes all information that is available.
+.TP
+.B \-s
 The
-.I \-s
+.B \-s
 flag controls which databases are being shown, matching their state.
 The required argument to this flag can be a combination of any of the
 following characters.  Note that the order in which they are put also
 controls the order in which the databases are printed.
-.I b, r, s, c
+.BR b ,
+.BR r ,
+.BR s ,
+.BR c ,
 and
-.I l
+.B l
 are used to print a starting up (booting), started (running), stopped,
 crashed and locked database respectively.  The default order which is
 used when the
-.I \-s
+.B \-s
 flag is absent, is
-.I rbscl.
-.IP "start [\-a] database [database ...]"
-.IP "stop [\-a] database [database ...]"
-.IP "kill [\-a] database [database ...]"
+.B rbscl.
+.RE
+.TP
+\fBstart\fP [\fB\-a\fP] \fIdatabase\fP [\fIdatabase\fP ...]
+.PD 0
+.TP
+\fBstop\fP [\fB\-a\fP] \fIdatabase\fP [\fIdatabase\fP ...]
+.PD 0
+.TP
+\fBkill\fP [\fB\-a\fP] \fIdatabase\fP [\fIdatabase\fP ...]
 Starts, stops or kills the given database, or, when
-.I "  \-a"
+.B \-a
 is supplied, all known databases.  The
 .B kill
 command immediately sends a SIGKILL and should only be used as last
@@ -167,80 +232,89 @@ It is more common to use the
 .B stop
 command to stop a database.  It will first attempt to stop the database,
 waiting for
-.I mero_exittimeout
+.B mero_exittimeout
 seconds and if that fails, kill the database.
 When using the
 .B start
 command,
-.BR monetdb (1)
+.IR monetdb (1)
 will output diagnostic messages if the requested action failed.  When
 encountering an error, one should always consult the logfile of
-.BR monetdbd (1)
+.IR monetdbd (1)
 for more details.  For the
 .B kill
 command a diagnostic message indicating the database has crashed is
 always emitted, due to the nature of that command.
 Note that in combination with
-.I \-a
+.B \-a
 the return code of
-.BR monetdb (1)
+.IR monetdb (1)
 indicates failure if one of the databases had a failure, even though
 the operation on other databases was successful.
-.IP "get <all | property[,property[,..]]> [database ...]"
+.TP
+\fBget\fP <\fBall\fP | \fIproperty\fP[,\fIproperty\fP[,..]]> [\fIdatabase\fP ...]
 Prints the requested properties, or all known properties, for the given
 database.  For each property its source and value are printed.  Source
 indicates where the current value comes from, e.g. the configuration
 file, or a local override.
-.IP "set property=value database [database ...]"
+.TP
+\fBset\fP \fIproperty\fP\fB=\fP\fIvalue\fP \fIdatabase\fP [\fIdatabase\fP ...]
 Sets property to value for the given database.  For a list of
 properties, run
 .BR "monetdb get all" .
 Most properties require the database to be stopped when set.
-.IP "  shared=<yes|no|tag>"
+.TP
+\fBshared=\fP<\fByes\fP|\fBno\fP|\fItag\fP>
 Defines if and how the database is being announced to other monetdbds
 or not.  If not set to
-.I "yes"
+.B yes
 or
-.I "no
+.B no
 the database is simply announced or not.  Using a string, called
 .I tag
 the database is shared using that tag, allowing for more sophisticated
 usage.  For information about the tag format and use, see section
-.I "REMOTE DATABASES"
+.I REMOTE DATABASES
 in the
-.BR monetdbd (1)
+.IR monetdbd (1)
 manpage.  Note that this property can be set for a running database, and
 that a change takes immediate effect in the network.
-.IP "  nthreads=<number>"
+.TP
+\fBnthreads=\fP\fInumber\fP
 Defines how many worker threads the server should use to perform main
 processing.  Normally, this number equals the number of available CPU
 cores in the system.  Reducing this number forces the server to use less
 parallelism when executing queries, or none at all if set to
-.IR 1 .
-.IP "  optpipe=<string>"
-Each server operates with a given optimiser pipeline.  While the default
+.BR 1 .
+.TP
+\fBoptpipe=\fP\fIstring\fP
+Each server operates with a given optimizer pipeline.  While the default
 usually is the best setting, for some experimental uses the pipeline can
 be changed.  See the
-.BR mserver5 (1)
+.IR mserver5 (1)
 manpage for available pipelines.  Changing this setting is discouraged
 at all times.
-.IP "  readonly=<yes|no>"
+.TP
+.BR readonly= < yes | no >
 Defines if the database has to be started in readonly mode.  Updates are
 rejected in this mode, and the server employs some read-only
-optimisations that can lead to improved performance.
-.IP "  nclients=<number>"
+optimizations that can lead to improved performance.
+.TP
+\fBnclients=\fP\fInumber\fP
 Sets the maximum amount of clients that can connect to this database at
 the same time.  Setting this to a high value is discouraged.  A
 multiplex-funnel may be more performant, see
 .I MULTIPLEX-FUNNEL
 below.
-.IP "inherit property database [database ...]"
+.TP
+\fBinherit\fP \fIproperty\fP \fIdatabase\fP [\fIdatabase\fP ...]
 Like set, but unsets the database-local value, and reverts to inherit
 from the default again.
-.IP "discover [expression]"
+.TP
+\fBdiscover\fP [\fIexpression\fP]
 Returns a list of remote monetdbds and database URIs
 that were discovered by
-.BR monetdbd (1).
+.IR monetdbd (1).
 All databases listed can be connected to via the local MonetDB Database
 Server as if it were local databases using their database name.  The
 connection is redirected or proxied based on configuration settings.  If
@@ -258,15 +332,21 @@ e.g. a local cluster.  Note that for monetdbd to announce its control
 port, the
 .I mero_controlport
 setting for that monetdbd must be enabled in the configuration file.
-.IP \-h
-.IP "help [command]"
+.TP
+.B \-h
+.PD 0
+.TP
+\fBhelp\fP [\fIcommand\fP]
 Shows general help, or short help for a given command.
-.IP \-v
-.IP version
+.TP
+.B \-v
+.PD 0
+.TP
+.B version
 Shows the version of the
-.B monetdb
+.I monetdb
 utility.
-.SH "EXPRESSIONS"
+.SH EXPRESSIONS
 For various options, typically database names, expressions can be used.
 These expressions are
 limited shell-globbing like, where the * in any position is expanded to
@@ -274,10 +354,10 @@ an arbitrary string.  The * can occur multiple times in the expression,
 allowing for more advanced matches.  Note that the empty string also
 matches the *, hence "de*mo" can return "demo" as match.  To match the
 literal '*' character, one has to escape it using a backslash, e.g.
-"\\*".
-.SH "RETURN VALUE"
+"\e*".
+.SH RETURN VALUE
 The
-.B monetdb
+.I monetdb
 utility returns exit code
 .B 0
 if it successfully performed the requested command.  An error caused by
@@ -287,5 +367,5 @@ If an internal error in the utility occurs, exit code
 .B 2
 is returned.
 .SH "SEE ALSO"
-.BR monetdbd (1)
-.BR mserver5 (1)
+.IR monetdbd (1),
+.IR mserver5 (1)
