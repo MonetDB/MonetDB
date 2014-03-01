@@ -52,7 +52,7 @@ headers_mal = {
 		str.mal \
 		url.mal \
 		xml.mal \
-        mcurl.mal \
+		mcurl.mal \
 		mtime.mal
 }
 
