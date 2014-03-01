@@ -19,6 +19,10 @@
 
 /* This file should not be included in any file outside of this directory */
 
+#ifndef LIBGDK
+#error this file should not be included outside its source directory
+#endif
+
 int ALIGNcommit(BAT *b);
 int ALIGNundo(BAT *b);
 int ATOMheap(int id, Heap *hp, size_t cap);

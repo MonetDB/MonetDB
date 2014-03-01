@@ -6,180 +6,197 @@
 monetdbd \- the MonetDB Database Server daemon
 .SH SYNOPSIS
 .B monetdbd
-command [command_args] dbfarm
+.I command
+[
+.I command_args
+]
+.I dbfarm
 .SH DESCRIPTION
-.B monetdbd
+.I Monetdbd
 is the MonetDB Database Server daemon.  The program is mainly meant to
 be used as daemon, but it also allows to setup and change the
 configuration of a dbfarm.
 The use of
-.B monetdbd
+.I monetdbd
 is either as user-oriented way to configure, start and stop a database
 farm, or to be started from a startup script, such as from
 .I /etc/init.d/
 on Linux systems or
-.BR smf (5)
+.IR smf (5)
 on Solaris systems, as part of a system startup.
 .P
-.B monetdbd
+.I Monetdbd
 is the system formerly known as
-.BR merovingian .
+.IR merovingian .
 It was renamed to
-.B monetdbd
+.I monetdbd
 since the name
-.B merovingian
+.I merovingian
 proved to be confusing to most regular end-users.  Internally,
-.B monetdbd
+.I monetdbd
 uses the name
-.B merovingian
+.I merovingian
 at many places for historical reasons.
 .P
 A
-.B monetdbd
+.I monetdbd
 instance manages one local cluster based, which is a directory in the
 system, referred to as the
 .IR dbfarm .
 Nowadays, the dbfarm location always has to be given as argument
 to
-.BR monetdbd .
+.IR monetdbd .
 .P
 Within its local cluster
-.B monetdbd
+.I monetdbd
 takes care of starting up databases when necessary, and stopping them
 either upon request via
-.BR monetdb (1)
+.IR monetdb (1)
 or when being shut down.  Client database connections are made against
-.B monetdbd
+.I monetdbd
 initially which redirects or proxies the client to the appropriate
 database process, started on the fly when necessary.
 .P
 When started,
-.B monetdbd
+.I monetdbd
 runs by default in the background, sending log messages to
 .IR merovingian.log ,
 until being sent a stop, terminate or interrupt signal, possibly using
 the stop command of
-.BR monetdbd .
+.IR monetdbd .
 .P
-.B monetdbd
-uses a neighbour discovery scheme to detect other
-.B monetdbd
+.I monetdbd
+uses a neighbor discovery scheme to detect other
+.I monetdbd
 processes running in the local network.  Databases from those remote
 instances are made available to a locally connecting client.  Remote
 databases never override local databases, and their availability is
 controlled by the remote
-.B monetdbd
+.I monetdbd
 process.  See also the sharing capabilities of
-.BR monetdb (1)
+.IR monetdb (1)
 and the
 .I REMOTE DATABASES
 section below.
 .SH COMMANDS
 The commands for
-.B monetdbd
+.I monetdbd
 are
 .BR create ", " start ", " stop ", " get ", " set ", " version ", and " help .
-The commands facilitate initialising a dbfarm, starting and stopping the
+The commands facilitate initializing a dbfarm, starting and stopping the
 MonetDB Database Server, and retrieving or setting options.
-.IP "create dbfarm"
-Initialises a new database farm, such that a MonetDB Database Server can
+.TP
+.B create dbfarm
+Initializes a new database farm, such that a MonetDB Database Server can
 be started on that location.  All necessary directories are attempted to
 be created, and an initial properties file is created in the directory
 itself.
 .I dbfarm
 must be a location addressable in the local filesystem hierarchy.
-.IP "start [-n] <dbfarm>"
+.TP 
+\fBstart\fP [\fB\-n\fP] \fIdbfarm\fP
 Starts
-.BR monetdbd ,
+.IR monetdbd ,
 the MonetDB Database Server, on the given dbfarm.  When the
-.I -n
+.B \-n
 flag is given,
-.B monetdbd
+.I monetdbd
 will not fork into the background, but instead remain attached to the
 calling environment, until given a stop signal.
-.IP "stop <dbfarm>"
+.TP
+\fBstop\fP \fIdbfarm\fP
 Sends a stop signal to the
-.B monetdbd
+.I monetdbd
 process responsible for the given dbfarm.
-.IP "get <all | property[,property[,..]]> <dbfarm>"
+.IP
+\fBget\fP <\fBall\fP | \fIproperty\fP[,\fIproperty\fP[,..]]> \fIdbfarm\fP
 Prints the requested properties, or all known properties, for the given
 dbfarm.  For each property, its value is printed.  Some properties
 are virtual, and given for information purposes only, they cannot be
 modified using the
-.I set
+.B set
 command.
-.IP "set property=value <dbfarm>"
+.TP
+\fBset\fP \fIproperty\fP\fB=\fP\fIvalue\fP \fIdbfarm\fP
 Sets property to value for the given database.  For a list of
 properties, run
 .BR "monetdbd get all" .
 Some properties require a restart of the MonetDB Database Server in
 order to take effect.  The
-.I set
+.B set
 command, will however always write the property, and tell the running
-.B monetdbd
+.I monetdbd
 to reload the properties file (if running).  For an explanation of the
 properties, see the
 .I CONFIGURATION
 section below.
 .SH CONFIGURATION
-.B monetdbd
+.I Monetdbd
 reads its properties from the
 .I .merovingian_properties
 file inside the dbfarm.  This file is created by the
-.I create
-command.  This file is not meant to be editted manually, instead it
+.B create
+command.  This file is not meant to be edited manually, instead it
 should be updated using the
-.I set
+.B set
 command.  The following properties can be set:
-.IP logfile
+.TP
+.B logfile
 This property points to the file where all log messages are written to.
 It is relative to the dbfarm directory, but can be absolute to point to
 e.g. another medium.  Changing this property takes effect immediately at
 runtime.
-.IP pidfile
-.B monetdbd
+.TP
+.B pidfile
+.I Monetdbd
 stores the process ID of the background server in the file pointed to by
 this property.  The same rules apply as for the
-.I logfile
+.B logfile
 property.
-.IP sockdir
+.TP
+.B sockdir
 For faster access,
-.B monetdbd
+.I monetdbd
 uses UNIX domain sockets for its control mechanism and regular database
 connections.  The sockets are placed as files in the filesystem
 hierarchy.  The
-.I sockdir
+.B sockdir
 property controls in which directory they are placed.  In general this
 setting should not be changed.
-.IP port
+.TP
+.B port
 This property specifies which TCP port
-.B monetdbd
+.I monetdbd
 should listen to for connection requests.  Defaults to 50000.
-.IP control
+.TP
+.B control
 For remote management of
-.BR monetdbd,
+.IR monetdbd ,
 the
-.I control
+.B control
 property specifies whether or not to enable remote management.  Note
 that for remote management, a passphrase is required, see below.  It
 defaults to false for security reasons.  Changing this property takes
 effect immediately at runtime.
-.IP passphrase
+.TP
+.B passphrase
 To control
-.B monetdbd
+.I monetdbd
 from a remote machine, a passphrase is necessary, to be given to
-.BR monetdb (1).
+.IR monetdb (1).
 The passphrase can be either given as hashed value prefixed by the hash
 type in curly braces (e.g. {SHA512}xxx...) or as plain text value which
 will be hashed automatically.  Note that the only hash accepted is the
 one specified at configure time, which is @MONETDB5_PASSWDHASH@.
 Changing this property takes effect immediately at runtime.
-.IP discovery
-Specifies whether neighbour discovery is to be enabled using UDP
+.TP
+.B discovery
+Specifies whether neighbor discovery is to be enabled using UDP
 broadcasts or not.  The broadcasts are done on the same portnumber as
 the port setting.
-.IP discoveryttl
-.B monetdbd
+.TP
+.B discoveryttl
+.I Monetdbd
 publishes locally available databases to others periodically.  The
 interval used here, defined in seconds, depends on the time-to-live of
 the databases before they need to get refreshed.  The default is 600
@@ -188,78 +205,80 @@ low.  Additions and removals are processed immediately regardless of
 this timeout.  If you are in a network environment where physical
 network links disappear often, you may want to decrease this value to
 more quickly remove no longer reachable databases.
-.IP exittimeout
+.TP
+.B exittimeout
 mservers that were started by the MonetDB Database Server are shut down
 when
-.B monetdbd
+.I monetdbd
 is shut down.  Setting the
-.I exittimeout
+.B exittimeout
 property to a positive non-zero value will shut down each running
 mserver with the given time-out in seconds.  If the time-out expires,
 the mserver process is killed using the SIGKILL signal.  A time-out
 value of 0 means no mservers will be shut down, and hence they will
 continue to run after
-.B monetdbd
+.I monetdbd
 has shut down.  Note that this particular configuration is extremely
 inconvenient.  The default time-out is 60 seconds.  If your databases
 are rather large and find your databases consistently being killed by
-.B monetdbd
+.I monetdbd
 upon shutdown, you may want to increase this time-out.  Changing this
 property takes effect immediately at runtime.
-.IP forward
-.B monetdbd
+.TP
+.B forward
+.I monetdbd
 has two ways in which it can "attach" a connecting client to the target
 database.  The first method,
-.IR redirect ,
+.BR redirect ,
 uses a redirect sent to the client with the responsible mserver process.
 The second method,
-.IR proxy,
+.BR proxy,
 proxies the client to the mserver over
-.BR monetdbd .
+.IR monetdbd .
 While
-.I redirect
+.B redirect
 is more efficient, it requires the connecting client to be able to
 connect to the mserver.  In many settings this may be undesirable or
 even impossible, since a wide range of open ports and routing are
 necessary for this.  In such case the
-.I proxy
+.B proxy
 technique of
-.B monetdbd
+.I monetdbd
 is a good solution, which also allows a
-.B monetdbd
+.I monetdbd
 instance on the border of a network to serve requests to nodes in the
 local (unreachable) network.  Note that for local databases, the
-.I proxy
+.B proxy
 method uses a UNIX domain socket feature to pass file-descriptors to the
 local mserver.  This effectively is as efficient as the
 .I redirect
 approach, but still hides away the mservers properly behind
-.BR monetdbd .
+.IR monetdbd .
 Hence, in practice it is only relevant for connections to remote
 databases to use redirects instead of proxies.  Changing this property
 takes effect immediately at runtime.
-.SH "REMOTE DATABASES"
-The neighbour discovery capabilities of
-.B monetdbd
+.SH REMOTE DATABASES
+The neighbor discovery capabilities of
+.I monetdbd
 allow a user to contact a remote database transparently, as if it were a
 local database.  By default, all local databases are announced in the
-network, such that neighbours can pick them up to make them available
+network, such that neighbors can pick them up to make them available
 for their local users.  This feature can be disabled globally, or on
 database level.  For the latter, the
-.BR monetdb (1)
+.IR monetdb (1)
 utility can be used to change the share property of a database.
 .P
-While neighbour discovery in itself is sufficient to locate a database
+While neighbor discovery in itself is sufficient to locate a database
 in a cluster, it is limited in expressiveness.  For instance, database
 names are assumed to be unique throughout the entire system.  This means
 local databases overshadow remote ones, and duplicate remote entries
 cannot be distinguished.  To compensate for this,
-.B monetdbd
+.I monetdbd
 allows to adds a
-.I tag
+.B tag
 to each database that is being shared.  This tag is sent in addition to
 the database name, and only understood by other
-.BR monetdbd s.
+.IR monetdbd s.
 .P
 Tags are arbitrary ASCII-strings matching the pattern [A\-Za\-z0\-9./]+.
 There are no assumed semantics in the tag, which allows for multiple
@@ -267,7 +286,7 @@ approaches when using the tag.  The tag is always used in combination
 with the database name.  For this, the `/' character is used as
 separator, which hence suggests the user to use that character as
 separator for multilevel tags.
-.B monetdbd
+.I Monetdbd
 allows common path globbing using `*' on tags, which allows for many
 use-cases.  Consider for instance the following three databases with their
 tag:
@@ -300,7 +319,7 @@ In contrast, a database connect for
 .I */slave/tableQ
 matches with either
 .IR dbY " or " dbZ .
-.B monetdbd
+.I Monetdbd
 returns the two options to the client in a round-robin fashion, such
 that subsequent connects for the same pattern result in a load-balanced
 connect to either of both databases.
@@ -321,15 +340,17 @@ Connecting to
 would now return either of both databases even though they are not
 unique (apart from the host they are located on, which is not shown in
 the example).  While being confusing for humans, for
-.B monetdbd
+.I monetdbd
 it is the same situation as in the previous example.  However, because
 globbing allows to make things easier to understand, tags for both
 slaves could be changed to
-.IR slaveX " or " slave/X
+.I slaveX
+or
+.I slave/X
 and use the necessary pattern to match them.  It is up to the user to
 decide how to use the tags.
-.SH "MULTIPLEX-FUNNELS"
-.B monetdbd
+.SH MULTIPLEX-FUNNELS
+.I Monetdbd
 implements multiplex-funnel capabilities.  As the name suggests two
 techniques are combined, the multiplexer and the funnel.
 .P
@@ -337,7 +358,7 @@ The
 .I funnel
 capability limits the access to the database to one client at a time.
 That is, if multiple clients connect to the funnel, their queries will
-be serialised such that they are executed one after the other.  An
+be serialized such that they are executed one after the other.  An
 effect of this approach is that clients no longer have an exclusive
 channel to the database, which means that individual queries from one
 client may have been interleaved with queries from others.  This most
@@ -349,7 +370,7 @@ web-based query loads.
 When a funnel is defined to use multiple databases, the funnel adds a
 .I multiplexer
 to its query channel.  A multiplex-funnel sends each query to all of
-the defined databases.  This behaviour can be quite confusing at first,
+the defined databases.  This behavior can be quite confusing at first,
 but proves to be useful in typical sharding configurations, where in
 particular simple selection queries have to be performed on each of the
 shards.  The multiplexer combines the answers from all defined databases
@@ -358,12 +379,12 @@ combining is without any smart logic, that is, the multiplexer does not
 evaluate the query it is running, but just combines all answers it
 receives from the databases.  This results in e.g. as many return tuples
 for a
-.I SELECT COUNT(*)
+.B SELECT COUNT(*)
 query, as there are databases defined.
 .P
 Due to the two above mentioned characteristics, a multiplex-funnel has
 some limitations.  As mentioned before, transactions over multiple
-queries are likely not to result in the desired behaviour.  This is due
+queries are likely not to result in the desired behavior.  This is due
 to each query to the funnel is required to be self-contained.  Further,
 since for each query, the results from multiple servers have to be
 combined into one, that query must only return a single response, i.e.
@@ -377,37 +398,39 @@ limited query buffer.  Applications using the funnel should aim for
 short and single-statement queries that require no transactions.
 .P
 See the
-.I create
+.B create
 command in the
-.BR monetdb (1)
+.IR monetdb (1)
 man-page for details on how to setup a multiplex-funnel.
 .SH SIGNALS
-.B monetdbd
+.I Monetdbd
 acts upon a number of signals as is common for a daemon.
-.IP "SIGINT, SIGTERM, SIGQUIT"
+.TP
+.B SIGINT, SIGTERM, SIGQUIT
 Any of these signals make
-.B monetdbd
+.I monetdbd
 enter the shutdown sequence.  This sequence involves cleanly shutting
 down listener sockets, shutting down all started databases and finally
 terminating itself.
-.IP SIGHUP
+.TP
+.B SIGHUP
 When this signal is received by
-.B monetdbd
+.I monetdbd
 it will reopen the logfile as pointed to by the
-.I logfile
+.B logfile
 setting.  Before it reopens the logfile, it will re-read the properties
 file from the dbfarm, which might result in opening a different file to
 continue logging.
 .SH "RETURN VALUE"
-.B monetdbd
+.I Monetdbd
 returns exit code
 .B 0
 if it was able to successfully perform the requested action, e.g. start,
 stop, etc.  When an error occurs during the action, that prevents
-.B monetdbd
+.I monetdbd
 from successfully performing the action, the exit code
 .B 1
 is returned.
 .SH "SEE ALSO"
-.BR monetdb (1)
-.BR mserver5 (1)
+.IR monetdb (1),
+.IR mserver5 (1)

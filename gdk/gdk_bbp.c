@@ -120,17 +120,20 @@ static int BBPbackup(BAT *b, bit subcommit);
 
 #define BBPnamecheck(s) (BBPtmpcheck(s) ? ((s)[3] == '_' ? strtol((s) + 4, NULL, 8) : -strtol((s) + 5, NULL, 8)) : 0)
 
-static int stamp = 0;
+#ifdef ATOMIC_LOCK
+static MT_Lock stampLock MT_LOCK_INITIALIZER("stampLock");
+#endif
+static volatile ATOMIC_TYPE stamp = 0;
 static inline int
 BBPstamp(void)
 {
-	return ++stamp;
+	return (int) ATOMIC_INC(stamp, stampLock, "BBPstamp");
 }
 
 static void
 BBPsetstamp(int newstamp)
 {
-	stamp = newstamp;
+	ATOMIC_SET(stamp, newstamp, stampLock, "BBPsetstamp");
 }
 
 
@@ -992,6 +995,7 @@ BBPinit(void)
 
 #ifdef NEED_MT_LOCK_INIT
 	MT_lock_init(&GDKunloadLock, "GDKunloadLock");
+	ATOMIC_INIT(stampLock, "stampLock");
 #endif
 
 	/* first move everything from SUBDIR to BAKDIR (its parent) */

@@ -19,6 +19,10 @@
 
 /* This file should not be included in any file outside of this directory */
 
+#ifndef LIBMAL
+#error this file should not be included outside its source directory
+#endif
+
 #ifdef FREECLIENT
 /* FREECLIENT is defined in the same file as Client */
 extern void MCexitClient(Client c);

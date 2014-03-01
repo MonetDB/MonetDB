@@ -1182,35 +1182,41 @@ exps_bind_column( list *exps, char *cname, int *ambiguous )
 	if (exps && cname) {
 		node *en;
 
-		if (exps && !exps->ht && list_length(exps) > HASH_MIN_SIZE) {
-			exps->ht = hash_new(exps->sa, list_length(exps), (fkeyvalue)&exp_key);
+		if (exps) {
+			MT_lock_set(&exps->ht_lock, "exps_bind_column");
+			if (!exps->ht && list_length(exps) > HASH_MIN_SIZE) {
+				exps->ht = hash_new(exps->sa, list_length(exps), (fkeyvalue)&exp_key);
 
-			for (en = exps->h; en; en = en->next ) {
-				sql_exp *e = en->data;
-				if (e->name) {
-					int key = exp_key(e);
+				for (en = exps->h; en; en = en->next ) {
+					sql_exp *e = en->data;
+					if (e->name) {
+						int key = exp_key(e);
 
-					hash_add(exps->ht, key, e);
-				}
-			}
-		}
-		if (exps && exps->ht) {
-			int key = hash_key(cname);
-			sql_hash_e *he = exps->ht->buckets[key&(exps->ht->size-1)]; 
-
-			for (; he; he = he->chain) {
-				sql_exp *ce = he->value;
-
-				if (ce->name && strcmp(ce->name, cname) == 0) {
-					if (e) {
-						if (ambiguous)
-							*ambiguous = 1;
-						return NULL;
+						hash_add(exps->ht, key, e);
 					}
-					e = ce;
 				}
 			}
-			return e;
+			if (exps->ht) {
+				int key = hash_key(cname);
+				sql_hash_e *he = exps->ht->buckets[key&(exps->ht->size-1)]; 
+
+				for (; he; he = he->chain) {
+					sql_exp *ce = he->value;
+
+					if (ce->name && strcmp(ce->name, cname) == 0) {
+						if (e) {
+							if (ambiguous)
+								*ambiguous = 1;
+							MT_lock_unset(&exps->ht_lock, "exps_bind_column");
+							return NULL;
+						}
+						e = ce;
+					}
+				}
+				MT_lock_unset(&exps->ht_lock, "exps_bind_column");
+				return e;
+			}
+			MT_lock_unset(&exps->ht_lock, "exps_bind_column");
 		}
 		for (en = exps->h; en; en = en->next ) {
 			sql_exp *ce = en->data;
@@ -1233,31 +1239,37 @@ exps_bind_column2( list *exps, char *rname, char *cname )
 	if (exps) {
 		node *en;
 
-		if (exps && !exps->ht && list_length(exps) > HASH_MIN_SIZE) {
-			exps->ht = hash_new(exps->sa, list_length(exps), (fkeyvalue)&exp_key);
+		if (exps) {
+			MT_lock_set(&exps->ht_lock, "exps_bind_column2");
+			if (!exps->ht && list_length(exps) > HASH_MIN_SIZE) {
+				exps->ht = hash_new(exps->sa, list_length(exps), (fkeyvalue)&exp_key);
 
-			for (en = exps->h; en; en = en->next ) {
-				sql_exp *e = en->data;
-				if (e->name) {
-					int key = exp_key(e);
+				for (en = exps->h; en; en = en->next ) {
+					sql_exp *e = en->data;
+					if (e->name) {
+						int key = exp_key(e);
 
-					hash_add(exps->ht, key, e);
+						hash_add(exps->ht, key, e);
+					}
 				}
 			}
-		}
-		if (exps && exps->ht) {
-			int key = hash_key(cname);
-			sql_hash_e *he = exps->ht->buckets[key&(exps->ht->size-1)]; 
+			if (exps->ht) {
+				int key = hash_key(cname);
+				sql_hash_e *he = exps->ht->buckets[key&(exps->ht->size-1)]; 
 
-			for (; he; he = he->chain) {
-				sql_exp *e = he->value;
+				for (; he; he = he->chain) {
+					sql_exp *e = he->value;
 
-				if (e && is_column(e->type) && e->name && e->rname && strcmp(e->name, cname) == 0 && strcmp(e->rname, rname) == 0)
-					return e;
-				if (e && e->type == e_column && e->name && !e->rname && e->l && strcmp(e->name, cname) == 0 && strcmp(e->l, rname) == 0)
-					return e;
+					if ((e && is_column(e->type) && e->name && e->rname && strcmp(e->name, cname) == 0 && strcmp(e->rname, rname) == 0) ||
+					    (e && e->type == e_column && e->name && !e->rname && e->l && strcmp(e->name, cname) == 0 && strcmp(e->l, rname) == 0)) {
+						MT_lock_unset(&exps->ht_lock, "exps_bind_column2");
+						return e;
+					}
+				}
+				MT_lock_unset(&exps->ht_lock, "exps_bind_column2");
+				return NULL;
 			}
-			return NULL;
+			MT_lock_unset(&exps->ht_lock, "exps_bind_column2");
 		}
 		for (en = exps->h; en; en = en->next ) {
 			sql_exp *e = en->data;

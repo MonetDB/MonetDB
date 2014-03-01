@@ -5687,7 +5687,9 @@ rel_merge_table_rewrite(int *changes, mvc *sql, sql_rel *rel)
 					node *n, *m;
 
 					/* rename (mostly the idxs) */
+					MT_lock_set(&prel->exps->ht_lock, "rel_merge_table_rewrite");
 					prel->exps->ht = NULL;
+					MT_lock_unset(&prel->exps->ht_lock, "rel_merge_table_rewrite");
 					for (n = rel->exps->h, m = prel->exps->h; n && m; n = n->next, m = m->next ) {
 						sql_exp *e = n->data;
 						sql_exp *ne = m->data;

@@ -59,14 +59,19 @@ static memoitem*
 memo_find(list *memo, char *name)
 {
 	int key = hash_key(name);
-	sql_hash_e *he = memo->ht->buckets[key&(memo->ht->size-1)]; 
+	sql_hash_e *he;
 
+	MT_lock_set(&memo->ht_lock, "memo_find");
+	he = memo->ht->buckets[key&(memo->ht->size-1)]; 
 	for (; he; he = he->chain) {
 		memoitem *mi = he->value;
 
-		if (mi->name && strcmp(mi->name, name) == 0) 
+		if (mi->name && strcmp(mi->name, name) == 0) {
+			MT_lock_unset(&memo->ht_lock, "memo_find");
 			return mi;
+		}
 	}
+	MT_lock_unset(&memo->ht_lock, "memo_find");
 	return NULL;
 }
 
@@ -258,7 +263,9 @@ memo_create(mvc *sql, list *rels )
 	list *memo = sa_list(sql->sa);
 	node *n;
 
+	MT_lock_set(&memo->ht_lock, "memo_create");
 	memo->ht = hash_new(sql->sa, len*len, (fkeyvalue)&memoitem_key);
+	MT_lock_unset(&memo->ht_lock, "memo_create");
 	for(n = rels->h; n; n = n->next) {
 		sql_rel *r = n->data;
 		memoitem *mi = memoitem_create(memo, sql->sa, rel_name(r), NULL, 1);

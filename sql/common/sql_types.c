@@ -647,39 +647,52 @@ sql_find_func(sql_allocator *sa, sql_schema *s, char *sqlfname, int nrargs, int 
 {
 	sql_subfunc *fres;
 	int key = hash_key(sqlfname);
-	sql_hash_e *he = funcs->ht->buckets[key&(funcs->ht->size-1)]; 
+	sql_hash_e *he;
 
 	assert(nrargs);
+	MT_lock_set(&funcs->ht_lock, "sql_find_func");
+	he = funcs->ht->buckets[key&(funcs->ht->size-1)]; 
 	for (; he; he = he->chain) {
 		sql_func *f = he->value;
 
 		if (f->type != type) 
 			continue;
 		if ((fres = func_cmp(sa, f, sqlfname, nrargs )) != NULL) {
+			MT_lock_unset(&funcs->ht_lock, "sql_find_func");
 			return fres;
 		}
 	}
+	MT_lock_unset(&funcs->ht_lock, "sql_find_func");
 	if (s) {
 		node *n;
 		sql_func * f = find_sql_func(s, sqlfname);
 
-		if (f && f->type == type && (fres = func_cmp(sa, f, sqlfname, nrargs )) != NULL) 
+		if (f && f->type == type && (fres = func_cmp(sa, f, sqlfname, nrargs )) != NULL)
 			return fres;
-		if (s->funcs.set && s->funcs.set->ht) for (he=s->funcs.set->ht->buckets[key&(s->funcs.set->ht->size-1)]; he; he = he->chain) {
-			sql_func *f = he->value;
+		if (s->funcs.set) {
+			MT_lock_set(&s->funcs.set->ht_lock, "sql_find_func");
+			if (s->funcs.set->ht) {
+				for (he=s->funcs.set->ht->buckets[key&(s->funcs.set->ht->size-1)]; he; he = he->chain) {
+					sql_func *f = he->value;
 
-			if (f->type != type) 
-				continue;
-			if ((fres = func_cmp(sa, f, sqlfname, nrargs )) != NULL) {
-				return fres;
-			}
-		} else if (s->funcs.set && !s->funcs.set->ht) for (n=s->funcs.set->h; n; n = n->next) {
-			sql_func *f = n->data;
+					if (f->type != type)
+						continue;
+					if ((fres = func_cmp(sa, f, sqlfname, nrargs )) != NULL) {
+						MT_lock_unset(&s->funcs.set->ht_lock, "sql_find_func");
+						return fres;
+					}
+				}
+				MT_lock_unset(&s->funcs.set->ht_lock, "sql_find_func");
+			} else {
+				MT_lock_unset(&s->funcs.set->ht_lock, "sql_find_func");
+				for (n=s->funcs.set->h; n; n = n->next) {
+					sql_func *f = n->data;
 
-			if (f->type != type) 
-				continue;
-			if ((fres = func_cmp(sa, f, sqlfname, nrargs )) != NULL) {
-				return fres;
+					if (f->type != type)
+						continue;
+					if ((fres = func_cmp(sa, f, sqlfname, nrargs )) != NULL)
+						return fres;
+				}
 			}
 		}
 	}
@@ -1162,7 +1175,9 @@ sql_create_func_(sql_allocator *sa, char *name, char *mod, char *imp, list *ops,
 		list_append(aggrs, t);
 	} else {
 		list_append(funcs, t);
+		MT_lock_set(&funcs->ht_lock, "sql_create_func_");
 		hash_add(funcs->ht, base_key(&t->base), t);
+		MT_lock_unset(&funcs->ht_lock, "sql_create_func_");
 	}
 	return t;
 }
@@ -1188,7 +1203,9 @@ sql_create_sqlfunc(sql_allocator *sa, char *name, char *imp, list *ops, sql_subt
 	t->sql = 1;
 	t->side_effect = FALSE;
 	list_append(funcs, t);
+	MT_lock_set(&funcs->ht_lock, "sql_create_sqlfunc");
 	hash_add(funcs->ht, base_key(&t->base), t);
+	MT_lock_unset(&funcs->ht_lock, "sql_create_sqlfunc");
 	return t;
 }
 
@@ -1688,7 +1705,9 @@ types_init(sql_allocator *sa, int debug)
 	localtypes = sa_list(sa);
 	aggrs = sa_list(sa);
 	funcs = sa_list(sa);
+	MT_lock_set(&funcs->ht_lock, "types_init");
 	funcs->ht = hash_new(sa, 1024, (fkeyvalue)&base_key);
+	MT_lock_unset(&funcs->ht_lock, "types_init");
 	sqltypeinit( sa );
 }
 
