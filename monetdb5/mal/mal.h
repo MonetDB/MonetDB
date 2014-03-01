@@ -166,6 +166,11 @@ typedef struct VARRECORD {
 	int prps[];					/* property array */
 } *VarPtr, VarRecord;
 
+/* For performance analysis we keep track of the number of calls and
+ * the total time spent while executing the instruction. (See
+ * mal_profiler.mx) 
+ */
+
 typedef struct {
 	bit token;					/* instruction type */
 	bit barrier;				/* flow of control modifier takes:
@@ -178,31 +183,17 @@ typedef struct {
 	int jump;					/* controlflow program counter */
 	MALfcn fcn;					/* resolved function address */
 	struct MALBLK *blk;			/* resolved MAL function address */
+	/* inline statistics */
+	bit trace;
+	int calls;					/* number of calls made */
+	lng ticks;					/* total micro seconds spent */
+	lng rbytes,wbytes;			/* accumulated number of bytes touched */
+	/* the core admin */
 	str modname;				/* module context */
 	str fcnname;				/* function name */
 	int argc, retc, maxarg;		/* total and result argument count */
 	int argv[];					/* at least a few entries */
 } *InstrPtr, InstrRecord;
-
-/* For performance analysis we keep track of the number of calls and
- * the total time spent while executing the instruction. (See
- * mal_profiler.mx) The performance structures are separately
- * administered, because they are only used in limited
- * curcumstances. */
-
-typedef struct PERF {
-#ifdef HAVE_TIMES
-	struct tms timer;			/* timing information */
-#endif
-	struct timeval clock;		/* clock */
-	lng clk;					/* time when instruction started */
-	lng ticks;					/* micro seconds spent on last call */
-	lng totalticks;				/* accumulate micro seconds send on this instruction */
-	int calls;					/* number of calls seen */
-	bit trace;					/* facilitate filter-based profiling */
-	lng rbytes;					/* bytes read by an instruction */
-	lng wbytes;					/* bytes written by an instruction */
-} *ProfPtr, ProfRecord;
 
 typedef struct MALBLK {
 	str binding;				/* related C-function */
@@ -221,7 +212,6 @@ typedef struct MALBLK {
 	int errors;					/* left over errors */
 	int typefixed;				/* no undetermined instruction */
 	int flowfixed;				/* all flow instructions are fixed */
-	ProfPtr profiler;
 	struct MALBLK *history;		/* of optimizer actions */
 	short keephistory;			/* do we need the history at all */
 	short dotfile;				/* send dot file to stethoscope? */
