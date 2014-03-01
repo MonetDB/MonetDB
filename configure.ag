@@ -36,7 +36,7 @@ HOST=[$target]
 AC_DEFINE_UNQUOTED(HOST, "$HOST", [Host identifier])
 
 if test x"$target_os" = xcygwin; then
-        AC_DEFINE(WIN32, 1, [Define on Microsoft Windows (also under Cygwin)])
+	AC_DEFINE(WIN32, 1, [Define on Microsoft Windows (also under Cygwin)])
 fi
 AM_CONDITIONAL(NOT_WIN32, test x"$target_os" != xcygwin)
 AM_CONDITIONAL(NATIVE_WIN32, false)
@@ -478,7 +478,7 @@ AC_SUBST(LINUX_DIST)
 
 AC_DEFUN([MCHECK_ADD_FLAG],
 [
-    cache_var=AS_TR_SH([m_cv_cc_has_$1])
+	cache_var=AS_TR_SH([m_cv_cc_has_$1])
 	AC_CACHE_CHECK([whether ${CC} supports $1], [${cache_var}],
 	[
 	SAVE_FLAGS="${CFLAGS}"
@@ -608,7 +608,7 @@ yes-*-*)
 	;;
 -*icc*-linux*|-*ecc*-linux*)
 	dnl  Intel ([ie]cc/[ie]cpc on Linux)
- 	LDFLAGS="$LDFLAGS -i_dynamic"
+	LDFLAGS="$LDFLAGS -i_dynamic"
 	dnl  Let warning #140 "too many arguments in function call"
 	dnl  become an error to make configure tests work properly.
 	CFLAGS="$CFLAGS -we140"
@@ -913,11 +913,11 @@ if test "x$enable_optimize" = xyes; then
 	dnl  Optimization flags
 	JAVACFLAGS="$JAVACFLAGS -g:none -O"
 	case "$GCC-$CC" in
-    yes-*clang*)
+	yes-*clang*)
 	  CFLAGS="$CFLAGS -O3 -fomit-frame-pointer -finline-functions"
-      ;;
-    yes-*)
-      dnl -fomit-frame-pointer crashes memprof
+	  ;;
+	yes-*)
+	  dnl -fomit-frame-pointer crashes memprof
 	  # -O1 on gcc enables all slight optimisations:
 	  #   -fauto-inc-dec -fcprop-registers -fdce -fdefer-pop
 	  #   -fdelayed-branch -fdse -fguess-branch-probability
@@ -962,71 +962,71 @@ if test "x$enable_optimize" = xyes; then
 	  # - x86/x64: -fast switch results in json code producing wrong
 	  #   results, or segaults (when used with Mtest)
 	  ;;
-    *)
-      case "$host-$icc_ver" in
-      dnl handle non-Intel compilers ($icc_ver=""), first
-      *solaris*-)      CFLAGS="$CFLAGS -xO5"
-                       ;;
-      *-*-*-)          CFLAGS="$CFLAGS -O2"
-                       ;;
+	*)
+	      case "$host-$icc_ver" in
+	      dnl handle non-Intel compilers ($icc_ver=""), first
+	      *solaris*-)      CFLAGS="$CFLAGS -xO5"
+			       ;;
+	      *-*-*-)          CFLAGS="$CFLAGS -O2"
+			       ;;
 
-      dnl  With icc-8.*, Interprocedural (IP) Optimization does not seem to work with MonetDB:
-      dnl  With "-ipo -ipo_obj", pass-through linker options ("-Wl,...") are not handled correctly,
-      dnl  and with "-ip -ipo_obj", the resulting Mserver segfaults immediately.
-      dnl  Hence, we skip Interprocedural (IP) Optimization with icc-8.*.
-      x86_64-*-*-8.*)  CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll               -tpp7 -axWP   ";;
-      x86_64-*-*-9.*)  CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll               -tpp7 -axWP   ";;
+	      dnl  With icc-8.*, Interprocedural (IP) Optimization does not seem to work with MonetDB:
+	      dnl  With "-ipo -ipo_obj", pass-through linker options ("-Wl,...") are not handled correctly,
+	      dnl  and with "-ip -ipo_obj", the resulting Mserver segfaults immediately.
+	      dnl  Hence, we skip Interprocedural (IP) Optimization with icc-8.*.
+	      x86_64-*-*-8.*)  CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll               -tpp7 -axWP   ";;
+	      x86_64-*-*-9.*)  CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll               -tpp7 -axWP   ";;
 
-#     x86_64-*-*-10.*) CFLAGS="$CFLAGS -mp1 -O1 -restrict -unroll                     -axWPT  ";; # K.O.!
-#     x86_64-*-*-10.*) CFLAGS="$CFLAGS                                                        ";; # OK.
-#     x86_64-*-*-10.*) CFLAGS="$CFLAGS -mp1                                                   ";; # OK.
-#     x86_64-*-*-10.*) CFLAGS="$CFLAGS      -O1                                               ";; # K.O.!
-#     x86_64-*-*-10.*) CFLAGS="$CFLAGS      -O2                                               ";; # OK.
-      x86_64-*-*-10.*) CFLAGS="$CFLAGS      -O3                                               ";; # OK.
-#     x86_64-*-*-10.*) CFLAGS="$CFLAGS          -restrict                                     ";;
-#     x86_64-*-*-10.*) CFLAGS="$CFLAGS                    -unroll                             ";;
-#     x86_64-*-*-10.*) CFLAGS="$CFLAGS                                                -axWPT  ";;
+	#     x86_64-*-*-10.*) CFLAGS="$CFLAGS -mp1 -O1 -restrict -unroll                     -axWPT  ";; # K.O.!
+	#     x86_64-*-*-10.*) CFLAGS="$CFLAGS                                                        ";; # OK.
+	#     x86_64-*-*-10.*) CFLAGS="$CFLAGS -mp1                                                   ";; # OK.
+	#     x86_64-*-*-10.*) CFLAGS="$CFLAGS      -O1                                               ";; # K.O.!
+	#     x86_64-*-*-10.*) CFLAGS="$CFLAGS      -O2                                               ";; # OK.
+	      x86_64-*-*-10.*) CFLAGS="$CFLAGS      -O3                                               ";; # OK.
+	#     x86_64-*-*-10.*) CFLAGS="$CFLAGS          -restrict                                     ";;
+	#     x86_64-*-*-10.*) CFLAGS="$CFLAGS                    -unroll                             ";;
+	#     x86_64-*-*-10.*) CFLAGS="$CFLAGS                                                -axWPT  ";;
 
-      dnl  We need to use -mp instead of -mp1 as otherwise nextafter() & nextafterf() do not work correctly for 0
-      x86_64-*-*-11.*) CFLAGS="$CFLAGS -mp  -O3 -restrict -unroll                     -axSSE4.2	";; 
+	      dnl  We need to use -mp instead of -mp1 as otherwise nextafter() & nextafterf() do not work correctly for 0
+	      x86_64-*-*-11.*) CFLAGS="$CFLAGS -mp  -O3 -restrict -unroll                     -axSSE4.2	";; 
 
-      i*86-*-*-8.*)    CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll               -tpp6 -axKWNPB";;
-      i*86-*-*-9.*)    CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll               -tpp6 -axKWNPB";;
+	      i*86-*-*-8.*)    CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll               -tpp6 -axKWNPB";;
+	      i*86-*-*-9.*)    CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll               -tpp6 -axKWNPB";;
 
-#     i*86-*-*-10.*)   CFLAGS="$CFLAGS -mp1 -O1 -restrict -unroll                     -axWPT  ";; # K.O.!
-#     i*86-*-*-10.*)   CFLAGS="$CFLAGS                                                        ";; # OK.
-#     i*86-*-*-10.*)   CFLAGS="$CFLAGS -mp1                                                   ";; # OK.
-#     i*86-*-*-10.*)   CFLAGS="$CFLAGS      -O1                                               ";; # K.O.!
-#     i*86-*-*-10.*)   CFLAGS="$CFLAGS      -O2                                               ";; # OK.
-      i*86-*-*-10.*)   CFLAGS="$CFLAGS      -O3                                               ";; # OK.
-#     i*86-*-*-10.*)   CFLAGS="$CFLAGS          -restrict                                     ";;
-#     i*86-*-*-10.*)   CFLAGS="$CFLAGS                    -unroll                             ";;
-#     i*86-*-*-10.*)   CFLAGS="$CFLAGS                                                -axWPT  ";;
+	#     i*86-*-*-10.*)   CFLAGS="$CFLAGS -mp1 -O1 -restrict -unroll                     -axWPT  ";; # K.O.!
+	#     i*86-*-*-10.*)   CFLAGS="$CFLAGS                                                        ";; # OK.
+	#     i*86-*-*-10.*)   CFLAGS="$CFLAGS -mp1                                                   ";; # OK.
+	#     i*86-*-*-10.*)   CFLAGS="$CFLAGS      -O1                                               ";; # K.O.!
+	#     i*86-*-*-10.*)   CFLAGS="$CFLAGS      -O2                                               ";; # OK.
+	      i*86-*-*-10.*)   CFLAGS="$CFLAGS      -O3                                               ";; # OK.
+	#     i*86-*-*-10.*)   CFLAGS="$CFLAGS          -restrict                                     ";;
+	#     i*86-*-*-10.*)   CFLAGS="$CFLAGS                    -unroll                             ";;
+	#     i*86-*-*-10.*)   CFLAGS="$CFLAGS                                                -axWPT  ";;
 
-      ia64-*-*-8.*)    CFLAGS="$CFLAGS -mp1 -O2 -restrict -unroll               -tpp2 -mcpu=itanium2";;
-      ia64-*-*-9.*)    CFLAGS="$CFLAGS -mp1 -O2 -restrict -unroll               -tpp2 -mcpu=itanium2";;
+	      ia64-*-*-8.*)    CFLAGS="$CFLAGS -mp1 -O2 -restrict -unroll               -tpp2 -mcpu=itanium2";;
+	      ia64-*-*-9.*)    CFLAGS="$CFLAGS -mp1 -O2 -restrict -unroll               -tpp2 -mcpu=itanium2";;
 
-#     ia64-*-*-10.*)   CFLAGS="$CFLAGS -mp1 -O2 -restrict -unroll                     -mcpu=itanium2" # OK.
-      ia64-*-*-10.*)   CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll                     -mcpu=itanium2"
-#     ia64-*-*-10.*)   CFLAGS="$CFLAGS                                                              "
-#     ia64-*-*-10.*)   CFLAGS="$CFLAGS -mp1                                                         "
-#     ia64-*-*-10.*)   CFLAGS="$CFLAGS      -O1                                                     "
-#     ia64-*-*-10.*)   CFLAGS="$CFLAGS      -O2                                                     "
-#     ia64-*-*-10.*)   CFLAGS="$CFLAGS      -O3                                                     "
-#     ia64-*-*-10.*)   CFLAGS="$CFLAGS          -restrict                                           "
-#     ia64-*-*-10.*)   CFLAGS="$CFLAGS                    -unroll                                   "
-#     ia64-*-*-10.*)   CFLAGS="$CFLAGS                                                -mcpu=itanium2"
-                       ;;
+	#     ia64-*-*-10.*)   CFLAGS="$CFLAGS -mp1 -O2 -restrict -unroll                     -mcpu=itanium2" # OK.
+	      ia64-*-*-10.*)   CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll                     -mcpu=itanium2"
+	#     ia64-*-*-10.*)   CFLAGS="$CFLAGS                                                              "
+	#     ia64-*-*-10.*)   CFLAGS="$CFLAGS -mp1                                                         "
+	#     ia64-*-*-10.*)   CFLAGS="$CFLAGS      -O1                                                     "
+	#     ia64-*-*-10.*)   CFLAGS="$CFLAGS      -O2                                                     "
+	#     ia64-*-*-10.*)   CFLAGS="$CFLAGS      -O3                                                     "
+	#     ia64-*-*-10.*)   CFLAGS="$CFLAGS          -restrict                                           "
+	#     ia64-*-*-10.*)   CFLAGS="$CFLAGS                    -unroll                                   "
+	#     ia64-*-*-10.*)   CFLAGS="$CFLAGS                                                -mcpu=itanium2"
+			       ;;
 
-      i*86-*-*)        CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll -ipo -ipo_obj -tpp6 -axiMKW";;
-      ia64-*-*)        CFLAGS="$CFLAGS -mp1 -O2 -restrict -unroll -ipo -ipo_obj -tpp2 -mcpu=itanium2"
-                       dnl  With "-O3", ecc does not seem to produce stable/correct? binaries under Linux64
-                       dnl  (Mserver produces some incorrect BATpropcheck warnings);
-                       dnl  hence, we use only "-O2", here.
-                       ;;
-      esac   
-      ;;
-    esac
+	      i*86-*-*)        CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll -ipo -ipo_obj -tpp6 -axiMKW";;
+	      ia64-*-*)        CFLAGS="$CFLAGS -mp1 -O2 -restrict -unroll -ipo -ipo_obj -tpp2 -mcpu=itanium2"
+			       dnl  With "-O3", ecc does not seem to produce stable/correct? binaries under Linux64
+			       dnl  (Mserver produces some incorrect BATpropcheck warnings);
+			       dnl  hence, we use only "-O2", here.
+			       ;;
+	      esac   
+	  ;;
+	esac
 	# for stack-traces with assert, we DO want a frame-pointer
 	if test "x$enable_assert" = xyes ; then
 		CFLAGS="`echo $CFLAGS | sed 's:-fomit-frame-pointer::'`"
@@ -1477,14 +1477,14 @@ AC_MSG_CHECKING([$INSTALL --backup option])
 	inst=`echo $INSTALL | sed 's/ .*//'`
 	if test ! "`file $inst | grep 'shell script' 2>/dev/null`" ; then
 	    echo "" > c 2>/dev/null
-            $INSTALL --backup=nil c d 1>/dev/null 2>/dev/null
-            if test $? -eq 0; then
-                INSTALL_BACKUP="--backup=nil"
-            fi
-            $INSTALL -C --backup=nil c e 1>/dev/null 2>/dev/null
-            if test $? -eq 0; then
-                INSTALL_BACKUP="-C --backup=nil"
-       	    fi
+	    $INSTALL --backup=nil c d 1>/dev/null 2>/dev/null
+	    if test $? -eq 0; then
+	        INSTALL_BACKUP="--backup=nil"
+	    fi
+	    $INSTALL -C --backup=nil c e 1>/dev/null 2>/dev/null
+	    if test $? -eq 0; then
+	        INSTALL_BACKUP="-C --backup=nil"
+	    fi
 	fi
 	rm -f c d e 2>/dev/null
 fi ]
@@ -2311,10 +2311,10 @@ if test "x$have_mseed" != xno; then
 		  have_mseed=no; why_have_mseed="(libmseed.h header not found)" ])
 	LDFLAGS="$save_LDFLAGS"
 	CPPFLAGS="$save_CPPFLAGS"
-  if test "x$have_mseed" = "xyes" -o "x$have_mseed" = "xauto"; then
+	if test "x$have_mseed" = "xyes" -o "x$have_mseed" = "xauto"; then
 	    MSEED_CFLAGS=
 	    MSEED_LIBS="-lmseed"
-  fi
+	fi
 fi
 AC_SUBST(MSEED_CFLAGS, $MSEED_CFLAGS)
 AC_SUBST(MSEED_LIBS, $MSEED_LIBS)
@@ -3278,11 +3278,11 @@ echo "    LDFLAGS:  " ${LDFLAGS}
 echo
 echo "* Enabled/disabled build options:"
 for comp in \
-        'strict    ' \
-        'assert    ' \
-        'debug     ' \
-        'optimize  ' \
-        'developer ' \
+	'strict    ' \
+	'assert    ' \
+	'debug     ' \
+	'optimize  ' \
+	'developer ' \
 	'instrument' \
 	'profile   ' \
 ; do
