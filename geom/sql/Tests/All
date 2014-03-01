@@ -13,3 +13,10 @@ example
 
 null-mbr.Bug-2814
 geom-null-tests
+
+osgeo_schema
+osgeo_load
+osgeo_test
+osgeo_destroy
+osgeo_geometry
+
