@@ -15,8 +15,8 @@ automatic index management, extensibility of data types and search
 accelerators, SQL- and XML- frontends.
 .PP
 .I Msqldump
-is the program to dump an MonetDB/SQL database.  The dump can be used
-to populate a new MonetDB/SQL database.
+is the program to dump an MonetDB/SQL database.
+The dump can be used to populate a new MonetDB/SQL database.
 .SH OPTIONS
 .TP
 \fB\-\-help\fP (\fB\-?\fP)
@@ -36,19 +36,17 @@ localhost).
 Specify the portnumber of the server (default: 50000).
 .TP
 \fB\-\-user\fP\fB=\fP\fIuser\fP (\fB\-u\fP \fIuser\fP)
-Specify the user to connect as.  If this flag is absent, the client will
-ask for a user name.  Note that
-.I user
-must follow immediately after the option.
+Specify the user to connect as.
+If this flag is absent, the client will ask for a user name.
 .TP
 \fB\-\-describe\fP (\fB\-D\fP)
 Only dump the database schema.
 .TP
 \fB\-\-inserts\fP (\fB\-N\fP)
 When dumping the table data, use INSERT INTO statements, rather than
-COPY INTO + CSV values.  INSERT INTO statements are better portable, and
-necessary when the load of the dump is processed by e.g. a JDBC
-application.
+COPY INTO + CSV values.
+INSERT INTO statements are more portable, and necessary when the
+load of the dump is processed by e.g. a JDBC application.
 .TP
 \fB\-\-functions\fP (\fB\-f\fP)
 Only dump functions definitions.
@@ -64,4 +62,6 @@ Trace network interaction between
 .I mclient
 and the server.
 .SH SEE ALSO
-.IR mclient (1)
+.IR mclient (1),
+.IR mserver5 (1)
+

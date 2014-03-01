@@ -55,7 +55,6 @@ lib_optimizer = {
 		opt_multiplex.c opt_multiplex.h \
 		opt_octopus.c opt_octopus.h \
 		opt_pipes.c opt_pipes.h \
-		opt_prejoin.c opt_prejoin.h \
 		opt_prelude.c opt_prelude.h \
 		opt_pushranges.c opt_pushranges.h \
 		opt_qep.c opt_qep.h \
