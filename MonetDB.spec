@@ -27,7 +27,7 @@ Vendor: MonetDB BV <info@monetdb.org>
 Group: Applications/Databases
 License: MPL - http://www.monetdb.org/Legal/MonetDBLicense
 URL: http://www.monetdb.org/
-Source: http://dev.monetdb.org/downloads/sources/Jan2014/%{name}-%{version}.tar.bz2
+Source: http://dev.monetdb.org/downloads/sources/Jan2014-SP1/%{name}-%{version}.tar.bz2
 
 BuildRequires: bison
 BuildRequires: bzip2-devel
@@ -796,6 +796,20 @@ mv $RPM_BUILD_ROOT%{_datadir}/doc/MonetDB-SQL-%{version} $RPM_BUILD_ROOT%{_datad
 rm -fr $RPM_BUILD_ROOT
 
 %changelog
+* Mon Mar 03 2014 Sjoerd Mullender <sjoerd@acm.org> - 11.17.11-20140303
+- Rebuilt.
+- BZ#3442: COPY INTO ... LOCKED reports incorrect count
+- BZ#3443: DROP INDEX crashes server with BATsubselect: invalid argument:
+  b must have a dense head
+- BZ#3444: AND after ON () of LEFT OUTER JOIN with certain expressions
+  will cause crash
+
+* Fri Feb 28 2014 Sjoerd Mullender <sjoerd@acm.org> - 11.17.11-20140303
+- buildtools: Configure now enables the SQL front end by default.
+
+* Sun Feb 16 2014 Fabian Groffen <fabian@monetdb.org> - 11.17.11-20140303
+- merovingian: monetdb destroy -f now also works on running databases
+
 * Thu Feb 13 2014 Sjoerd Mullender <sjoerd@acm.org> - 11.17.9-20140213
 - Rebuilt.
 - BZ#3435: INDEX prevents JOIN from discovering matches
