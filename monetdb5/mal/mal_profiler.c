@@ -55,8 +55,8 @@ profilerAvailable(void)
 {
 	return 1;
 }
-static void offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc, int start);
-static void cachedProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc);
+static void offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc, int start);
+static void cachedProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc);
 static int initTrace(void);
 static void startHeartbeat(int delay);
 
@@ -238,11 +238,11 @@ static void logsend(char *logbuffer)
  * Note that the profiler itself should lead to event generations.
  */
 void
-profilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc, int start)
+profilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start)
 {
-	InstrPtr p;
-	if (mb->profiler == NULL) return;
-	if (profileCounter[PROFdot].status == 1 && start && pc == 0){
+	if (stk == NULL) return;
+	if (pci == NULL) return;
+	if (profileCounter[PROFdot].status == 1 && start && pci == NULL){
 		if (mb->dotfile == 0){
 			MT_lock_set(&mal_profileLock, "profilerEvent");
 			showFlowGraph(mb,stk,"stethoscope");
@@ -251,17 +251,16 @@ profilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc, int start)
 	}
 	if (profileCounter[PROFstart].status == 0 && start)
 		return;
-	p = getInstrPtr(mb,pc);
-	if ( !start && p && p->token == ENDsymbol)
+	if ( !start && pci && pci->token == ENDsymbol)
 		profilerHeartbeatEvent("ping", 0);
 	if (myname == 0)
 		myname = putName("profiler", 8);
-	if (getModuleId(getInstrPtr(mb, pc)) == myname)
+	if (getModuleId(pci) == myname)
 		return;
 	if (offlineProfiling)
-		offlineProfilerEvent(idx, mb, stk, pc,start);
+		offlineProfilerEvent(idx, mb, stk, pci,start);
 	if (cachedProfiling && !start)
-		cachedProfilerEvent(idx, mb, stk, pc);
+		cachedProfilerEvent(idx, mb, stk, pci);
 }
 
 static void
@@ -349,12 +348,14 @@ offlineProfilerHeader(void)
 }
 
 void
-offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc, int start)
+offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start)
 {
 	char logbuffer[LOGLEN], *logbase;
 	int loglen;
+	char ctm[26];
+	time_t clk;
+	struct timeval clock;
 	/*static struct Mallinfo prevMalloc;*/
-	InstrPtr pci = getInstrPtr(mb, pc);
 
 #ifdef HAVE_SYS_RESOURCE_H
 	static struct rusage prevUsage;
@@ -379,15 +380,14 @@ offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc, int start)
 	if (delayswitch == 0) {
 		delayswitch = -1;
 	}
-	if (!profileAll && mb->profiler[pc].trace == FALSE) {
+	if (!profileAll && pci->trace == FALSE) {
 		return;
 	}
+	gettimeofday(&clock, NULL);
+	clk = clock.tv_sec;
 #ifdef HAVE_TIMES
 	times(&newTms);
 #endif
-/*
-	infoMalloc = MT_mallinfo();
-*/
 #ifdef HAVE_SYS_RESOURCE_H
 	getrusage(RUSAGE_SELF, &infoUsage);
 #endif
@@ -407,20 +407,18 @@ offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc, int start)
 		/* without this cast, compilation on Windows fails with
 		 * argument of type "long *" is incompatible with parameter of type "const time_t={__time64_t={__int64}} *"
 		 */
-		time_t clock = (time_t) mb->profiler[pc].clock.tv_sec;
+
 #ifdef HAVE_CTIME_R3
-		char ctm[26];
-		tbuf = ctime_r(&clock, ctm, sizeof(ctm));
+		tbuf = ctime_r(&clk, ctm, sizeof(ctm));
 #else
 #ifdef HAVE_CTIME_R
-		char ctm[26];
-		tbuf = ctime_r(&clock, ctm);
+		tbuf = ctime_r(&clk, ctm);
 #else
-		tbuf = ctime(&clock);
+		tbuf = ctime(&clk);
 #endif
 #endif
 		if (tbuf)
-			logadd("\"%.8s.%06ld\",\t", tbuf + 11, (long) mb->profiler[pc].clock.tv_usec);
+			logadd("\"%.8s.%06ld\",\t", tbuf + 11, (long) clock.tv_usec);
 		else
 			logadd("%s,\t", "nil");
 	}
@@ -441,32 +439,22 @@ offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc, int start)
 		logadd("%d,\t", getPC(mb, pci));
 	}
 	if (profileCounter[PROFticks].status) {
-		logadd(LLFMT ",\t", start? 0: mb->profiler[pc].ticks);
+		logadd(LLFMT ",\t", start? 0: pci->ticks);
 	}
 #ifdef HAVE_TIMES
 	if (profileCounter[PROFcpu].status && delayswitch < 0) {
+// TODO
+/*
 		logadd(LLFMT",\t", (lng) (newTms.tms_utime - mb->profiler[pc].timer.tms_utime));
 		logadd(LLFMT",\t", (lng) (newTms.tms_cutime - mb->profiler[pc].timer.tms_cutime));
 		logadd(LLFMT",\t", (lng) (newTms.tms_stime - mb->profiler[pc].timer.tms_stime));
 		logadd(LLFMT",\t", (lng) (newTms.tms_cstime - mb->profiler[pc].timer.tms_cstime));
+*/
 	}
 #endif
 
 	if (profileCounter[PROFmemory].status && delayswitch < 0) {
 		logadd(SZFMT ",\t", MT_getrss()/1024/1024);
-/*
-#ifdef HAVE_SYS_RESOURCE_H
-		logadd("%ld,\t", infoUsage.ru_maxrss);
-#endif
-		logadd(SZFMT ",\t", (size_t)(infoMalloc.arena - prevMalloc.arena));
-		logadd(SZFMT ",\t", (size_t)(infoMalloc.ordblks - prevMalloc.ordblks));
-		logadd(SZFMT ",\t", (size_t)(infoMalloc.smblks - prevMalloc.smblks));
-		logadd(SZFMT ",\t", (size_t)(infoMalloc.hblkhd - prevMalloc.hblkhd));
-		logadd(SZFMT ",\t", (size_t)(infoMalloc.hblks - prevMalloc.hblks));
-		logadd(SZFMT ",\t", (size_t)(infoMalloc.fsmblks - prevMalloc.fsmblks));
-		logadd(SZFMT ",\t", (size_t)(infoMalloc.uordblks - prevMalloc.uordblks));
-		prevMalloc = infoMalloc;
-*/
 	}
 	if (profileCounter[PROFfootprint].status) {
 		logadd(LLFMT",\t", stk->tmpspace);
@@ -488,12 +476,12 @@ offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc, int start)
 	}
 #endif
 	if (profileCounter[PROFrbytes].status)
-		logadd(LLFMT ",\t", mb->profiler[pc].rbytes);
+		logadd(LLFMT ",\t", pci->rbytes);
 	if (profileCounter[PROFwbytes].status)
-		logadd(LLFMT ",\t", mb->profiler[pc].wbytes);
+		logadd(LLFMT ",\t", pci->wbytes);
 
 	if (profileCounter[PROFaggr].status)
-		logadd("%d,\t" LLFMT ",\t", mb->profiler[pc].calls, mb->profiler[pc].totalticks);
+		logadd("%d,\t" LLFMT ",\t", pci->calls, pci->ticks);
 
 	if (profileCounter[PROFstmt].status) {
 		/* generate actual call statement */
@@ -741,17 +729,17 @@ setFilterOnBlock(MalBlkPtr mb, str mod, str fcn)
 	int cnt, k, i;
 	InstrPtr p;
 
-	initProfiler(mb);
+	initTrace();
 	if ( profileAll )
 		for (k = 0; k < mb->stop; k++)
-			mb->profiler[k].trace = 1;
+			mb->stmt[k]->trace = 1;
 	else
 	for (k = 0; k < mb->stop; k++) {
 		p = getInstrPtr(mb, k);
 		cnt = 0;
 		for (i = 0; i < topFilter; i++)
 			cnt += instrFilter(p, modFilter[i], fcnFilter[i]);
-		mb->profiler[k].trace = cnt || (mod && fcn && instrFilter(p, mod, fcn));
+		mb->stmt[k]->trace = cnt || (mod && fcn && instrFilter(p, mod, fcn));
 	}
 }
 
@@ -800,7 +788,6 @@ clrFilter(Module cntxt, str mod, str fcn)
 	int j, k;
 	Module s = cntxt;
 	Symbol t;
-	MalBlkPtr mb;
 
 	(void)mod;
 	(void)fcn;      /* still unused */
@@ -817,10 +804,10 @@ clrFilter(Module cntxt, str mod, str fcn)
 			for (j = 0; j < MAXSCOPE; j++)
 				if (s->subscope[j]) {
 					for (t = s->subscope[j]; t != NULL; t = t->peer) {
-						if (t->def && (mb = t->def)->profiler)
+						if (t->def)
 							for (k = 0; k < t->def->stop; k++)
 								if (instrFilter(getInstrPtr(t->def, k), mod, fcn)) {
-									mb->profiler[k].trace = FALSE;
+									t->def->stmt[k]->trace = FALSE;
 								}
 					}
 				}
@@ -845,8 +832,8 @@ setFilterVariable(MalBlkPtr mb, int arg)
 		p = getInstrPtr(mb, i);
 		for (k = 0; k < p->argc; k++)
 			if (getArg(p, k) == arg) {
-				initProfiler(mb);
-				mb->profiler[i].trace = TRUE;
+				initTrace();
+				mb->stmt[i]->trace = TRUE;
 			}
 	}
 }
@@ -861,7 +848,7 @@ clrFilterVariable(MalBlkPtr mb, int arg)
 		p = getInstrPtr(mb, i);
 		for (k = 0; k < p->argc; k++)
 			if (getArg(p, k) == arg) {
-				mb->profiler[i].trace = FALSE;
+				mb->stmt[i]->trace = FALSE;
 			}
 	}
 }
@@ -1095,7 +1082,7 @@ getTraceType(str nme)
 }
 
 void
-cachedProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc)
+cachedProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	/* static struct Mallinfo prevMalloc; */
 	char buf[1024];
@@ -1105,8 +1092,8 @@ cachedProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc)
 	int i, j;
 	lng v1 = 0, v2= 0;
 	str stmt, c;
-	InstrPtr pci = getInstrPtr(mb, pc);
-	time_t clock;
+	time_t clk;
+	struct timeval clock;
 
 #ifdef HAVE_TIMES
 	struct tms newTms;
@@ -1126,8 +1113,10 @@ cachedProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc)
 	if (delayswitch == 0) {
 		delayswitch = -1;
 	}
-	if (!(profileAll || mb->profiler[pc].trace))
+	if (!(profileAll || pci->trace))
 		return;
+	gettimeofday(&clock, NULL);
+	clk= clock.tv_sec;
 #ifdef HAVE_TIMES
 	times(&newTms);
 #endif
@@ -1146,19 +1135,18 @@ cachedProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc)
 	/* without this cast, compilation on Windows fails with
 	 * argument of type "long *" is incompatible with parameter of type "const time_t={__time64_t={__int64}} *"
 	 */
-	clock = (time_t) mb->profiler[pc].clock.tv_sec;
 #ifdef HAVE_CTIME_R3
-	tbuf = ctime_r(&clock, ctm, sizeof(ctm));
+	tbuf = ctime_r(&clk, ctm, sizeof(ctm));
 #else
 #ifdef HAVE_CTIME_R
-	tbuf = ctime_r(&clock, ctm);
+	tbuf = ctime_r(&clk, ctm);
 #else
-	tbuf = ctime(&clock);
+	tbuf = ctime(&clk);
 #endif
 #endif
 	strncpy(ctm, (tbuf?tbuf:""),26);
 	/* sneakily overwrite year with second fraction */
-	snprintf(ctm + 19, 6, ".%03d", (int)mb->profiler[pc].clock.tv_usec / 1000);
+	snprintf(ctm + 19, 6, ".%03d", (int)(clock.tv_usec / 1000));
 
 	/* generate actual call statement */
 	stmt = instruction2str(mb, stk, pci, LIST_MAL_DEBUG);
@@ -1190,27 +1178,17 @@ cachedProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc)
 	TRACE_id_tag = BUNappend(TRACE_id_tag, &mb->tag, FALSE);
 	TRACE_id_event = BUNappend(TRACE_id_event, &TRACE_event, FALSE);
 	TRACE_id_time = BUNappend(TRACE_id_time, ctm, FALSE);
-	TRACE_id_ticks = BUNappend(TRACE_id_ticks, &mb->profiler[pc].ticks, FALSE);
+	TRACE_id_ticks = BUNappend(TRACE_id_ticks, &pci->ticks, FALSE);
 	TRACE_id_stmt = BUNappend(TRACE_id_stmt, c, FALSE);
 	TRACE_id_type = BUNappend(TRACE_id_type, &abuf, FALSE);
 	TRACE_id_reads = BUNappend(TRACE_id_reads, &v1, FALSE);
 	TRACE_id_writes = BUNappend(TRACE_id_writes, &v2, FALSE);
-	TRACE_id_rbytes = BUNappend(TRACE_id_rbytes, &mb->profiler[pc].rbytes, FALSE);
-	TRACE_id_wbytes = BUNappend(TRACE_id_wbytes, &mb->profiler[pc].wbytes, FALSE);
+	TRACE_id_rbytes = BUNappend(TRACE_id_rbytes, &pci->rbytes, FALSE);
+	TRACE_id_wbytes = BUNappend(TRACE_id_wbytes, &pci->wbytes, FALSE);
 	TRACE_event++;
 	eventcounter++;
 	MT_lock_unset(&mal_profileLock, "cachedProfilerEvent");
 	if (stmt) GDKfree(stmt);
-}
-/*
- * The profile vector is added to the MAL block the first time we
- * have to safe monitor information.
- */
-void initProfiler(MalBlkPtr mb)
-{
-	if (mb->profiler) return;
-	initTrace();
-	mb->profiler = (ProfPtr)GDKzalloc(mb->ssize * sizeof(ProfRecord));
 }
 
 lng

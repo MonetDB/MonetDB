@@ -596,7 +596,7 @@ CLTsessions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
     Client c;
 	char usrname[256]= {"monetdb"};
 	timestamp ts, ret;
-	lng clk;
+	lng clk,timeout;
 
 	(void) cntxt;
 	(void) mb;
@@ -631,12 +631,14 @@ CLTsessions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		clk = c->login * 1000;
 		(void) MTIMEtimestamp_add(&ret,&ts, &clk);
 		BUNappend(login, &ret, FALSE);
-		BUNappend(stimeout, &c->stimeout, FALSE);
+		timeout = c->stimeout / 1000000;
+		BUNappend(stimeout, &timeout, FALSE);
 		(void) MTIMEunix_epoch(&ts);
 		clk = c->lastcmd * 1000;
 		(void) MTIMEtimestamp_add(&ret,&ts, &clk);
 		BUNappend(last, &ret, FALSE);
-		BUNappend(qtimeout, &c->qtimeout, FALSE);
+		timeout = c->qtimeout / 1000000;
+		BUNappend(qtimeout, &timeout, FALSE);
 		BUNappend(active, &c->active, FALSE);
     }
     MT_lock_unset(&mal_contextLock, "clients.sessions");

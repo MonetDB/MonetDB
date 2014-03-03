@@ -1,3 +1,9 @@
+0.9.1
+- dplyr compatibility first iteration
+#- fixed leaking of socket variable
+#- fixed monetdb.server.setup for UNIX-like systems (Thanks, Enzo)
+- fixed issue in dbClearResult() which produced a protocol error
+
 0.9
 - various extensions to monetdb.read.csv
 - removed monet.frame from this package, moved to github

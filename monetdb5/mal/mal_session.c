@@ -667,10 +667,6 @@ MALengine(Client c)
 		/* for global stacks avoid reinitialization from this point */
 		c->glb->stkbot = prg->def->vtop;
 	}
-	if (prg->def->profiler) {
-		GDKfree(prg->def->profiler);
-		prg->def->profiler = NULL;
-	}
 	prg->def->errors = 0;
 	if (c->itrace)
 		mnstr_printf(c->fdout, "mdb>#EOD\n");

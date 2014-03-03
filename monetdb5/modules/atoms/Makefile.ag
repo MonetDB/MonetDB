@@ -56,7 +56,7 @@ headers_mal = {
 		json.mal \
 		uuid.mal \
 		xml.mal \
-        mcurl.mal \
+		mcurl.mal \
 		mtime.mal
 }
 
