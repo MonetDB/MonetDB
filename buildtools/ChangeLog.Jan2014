@@ -1,6 +1,3 @@
 # ChangeLog file for buildtools
 # This file is updated with Maddlog
 
-* Fri Feb 28 2014 Sjoerd Mullender <sjoerd@acm.org>
-- Configure now enables the SQL front end by default.
-
