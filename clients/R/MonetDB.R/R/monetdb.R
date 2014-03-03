@@ -110,6 +110,14 @@ setMethod("dbConnect", "MonetDBDriver", def=function(drv,dbname="demo", user="mo
 ### MonetDBConnection, #monetdb_mapi_conn
 setClass("MonetDBConnection", representation("DBIConnection",socket="externalptr",connenv="environment",fetchSize="integer"))
 
+setMethod("dbGetInfo", "MonetDBConnection", def=function(dbObj, ...) {
+			envdata <- dbGetQuery(dbObj,"SELECT name, value from env()")
+			ll <- as.list(envdata$value)
+			names(ll) <- envdata$name
+			ll$name <- "MonetDBConnection"
+			return(ll)
+		})
+
 setMethod("dbDisconnect", "MonetDBConnection", def=function(conn, ...) {
 			.Call("mapiDisconnect",conn@socket,PACKAGE=C_LIBRARY)
 			return(invisible(TRUE))
@@ -120,6 +128,18 @@ setMethod("dbListTables", "MonetDBConnection", def=function(conn, ...) {
 			df$name
 		})
 
+
+setMethod("dbCommit", "MonetDBConnection", def=function(conn, ...) {
+			dbSendQuery(conn,"commit")
+			invisible(TRUE)
+		})
+
+setMethod("dbRollback", "MonetDBConnection", def=function(conn, ...) {
+			dbSendQuery(conn,"rollback")
+			invisible(TRUE)
+
+		})
+
 setMethod("dbListFields", "MonetDBConnection", def=function(conn, name, ...) {
 			if (!dbExistsTable(conn,name))
 				stop(paste0("Unknown table: ",name));
@@ -128,7 +148,7 @@ setMethod("dbListFields", "MonetDBConnection", def=function(conn, name, ...) {
 		})
 
 setMethod("dbExistsTable", "MonetDBConnection", def=function(conn, name, ...) {
-			tolower(name) %in% dbListTables(conn)
+			tolower(name) %in% tolower(dbListTables(conn))
 		})
 
 
@@ -458,8 +478,11 @@ setMethod("fetch", signature(res="MonetDBResult", n="numeric"), def=function(res
 
 
 setMethod("dbClearResult", "MonetDBResult",	def = function(res, ...) {
-			.mapiRequest(res@env$conn,paste0("Xclose ",res@env$info$id),async=TRUE)
-			TRUE	
+			resid <- res@env$info$id
+			if (!is.null(resid) && !is.na(resid) && is.numeric(resid)) {
+				.mapiRequest(res@env$conn,paste0("Xclose ",resid),async=TRUE)
+			}
+			invisible(TRUE)
 		},valueClass = "logical")
 
 setMethod("dbHasCompleted", "MonetDBResult", def = function(res, ...) {
@@ -507,8 +530,6 @@ Q_CREATE      <- 3
 Q_TRANSACTION <- 4
 Q_PREPARE     <- 5
 Q_BLOCK       <- 6
-
-
 
 
 REPLY_SIZE    <- 100 # Apparently, -1 means unlimited, but we will start with a small result set. 
