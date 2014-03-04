@@ -232,7 +232,7 @@ lng getVolume(MalStkPtr stk, InstrPtr pci, int rd)
 	i = rd ? pci->retc : 0;
 
 	if (stk->stk[getArg(pci, 0)].vtype == TYPE_bat) {
-		b = BBPquickdesc(ABS(stk->stk[getArg(pci, 0)].val.bval), TRUE);
+		b = BBPquickdesc(abs(stk->stk[getArg(pci, 0)].val.bval), TRUE);
 		if (b)
 			isview = isVIEW(b);
 	}
@@ -240,7 +240,7 @@ lng getVolume(MalStkPtr stk, InstrPtr pci, int rd)
 		if (stk->stk[getArg(pci, i)].vtype == TYPE_bat) {
 			oid cnt = 0;
 
-			b = BBPquickdesc(ABS(stk->stk[getArg(pci, i)].val.bval), TRUE);
+			b = BBPquickdesc(abs(stk->stk[getArg(pci, i)].val.bval), TRUE);
 			if (b == NULL)
 				continue;
 			cnt = BATcount(b);

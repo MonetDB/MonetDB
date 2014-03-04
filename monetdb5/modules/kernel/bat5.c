@@ -445,7 +445,7 @@ CMDrename(bit *retval, BAT *b, str s)
 static int
 CMDunload(bit *res, str input)
 {
-	bat bid = ABS(BBPindex(input));
+	bat bid = abs(BBPindex(input));
 
 	*res = FALSE;
 	if (bid > 0) {
@@ -977,7 +977,7 @@ CMDdestroy(bit *res, const char *input)
 	if (bid) {
 		BBPfix(bid);
 		if (BBPindex(input) == bid) {
-			BAT *b = BBPquickdesc(ABS(bid), 0);
+			BAT *b = BBPquickdesc(abs(bid), 0);
 
 			BATmode(b, TRANSIENT);
 			*res = TRUE;
@@ -1595,7 +1595,7 @@ BKCinfo(int *ret1, int *ret2, int *bid)
 str
 BKCbatdisksize(lng *tot, int *bid){
 	BAT *b;
-	if ((b = BATdescriptor(ABS(*bid))) == NULL)
+	if ((b = BATdescriptor(abs(*bid))) == NULL)
 		throw(MAL, "bat.getDiskSize", RUNTIME_OBJECT_MISSING);
 	CMDbatdisksize(tot,b);
 	BBPreleaseref(*bid);

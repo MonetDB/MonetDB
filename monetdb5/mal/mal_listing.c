@@ -408,8 +408,8 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 					advance(t,base,len);
 					if (cv)
 						GDKfree(cv);
-					if ( ABS(stk->stk[getArg(p,i)].val.ival) ){
-						d= BBPquickdesc(ABS(stk->stk[getArg(p,i)].val.ival),TRUE);
+					if ( abs(stk->stk[getArg(p,i)].val.ival) ){
+						d= BBPquickdesc(abs(stk->stk[getArg(p,i)].val.ival),TRUE);
 						if( d){
 							snprintf(t,(len-(t-base)),"[" BUNFMT "]", BATcount(d));
 							advance(t,base,len);
@@ -567,9 +567,9 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 			if( flg & LIST_MAL_VALUE && isaBatType(getVarType(mb,getArg(p,i)) ) ){
 				BAT *d = 0;
 				if (stk && stk->stk[getArg(p,i)].vtype== TYPE_bat){
-					d= BBPquickdesc(ABS(stk->stk[getArg(p,i)].val.ival),TRUE);
+					d= BBPquickdesc(abs(stk->stk[getArg(p,i)].val.ival),TRUE);
 				} else
-					d= BBPquickdesc(ABS(getVarConstant(mb,getArg(p,i)).val.ival),TRUE);
+					d= BBPquickdesc(abs(getVarConstant(mb,getArg(p,i)).val.ival),TRUE);
 				if( d){
 					snprintf(t,(len-(t-base)),"[" BUNFMT "]", BATcount(d));
 					advance(t,base,len);

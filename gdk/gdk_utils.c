@@ -1042,10 +1042,12 @@ GDKinit(opt *set, int setlen)
 			GDK_mmap_minsize = (size_t) strtoll(n[i].value, NULL, 10);
 		} else if (strcmp("gdk_mmap_pagesize", n[i].name) == 0) {
 			GDK_mmap_pagesize = (size_t) strtoll(n[i].value, NULL, 10);
-			for (i = 12; i < 20; i++)
-				if (GDK_mmap_pagesize == ((size_t) 1 << i))
-					break;
-			if (i == 20)
+			if (GDK_mmap_pagesize < 1 << 12 ||
+			    GDK_mmap_pagesize > 1 << 20 ||
+			    /* x & (x - 1): turn off rightmost 1 bit;
+			     * i.e. if result is zero, x is power of
+			     * two */
+			    (GDK_mmap_pagesize & (GDK_mmap_pagesize - 1)) != 0)
 				GDKfatal("GDKinit: gdk_mmap_pagesize must be power of 2 between 2**12 and 2**20\n");
 		}
 	}

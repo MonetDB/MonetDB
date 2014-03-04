@@ -532,7 +532,7 @@
  * below.  The global variables should not be modified directly.
  */
 #define NEG(A)	(((int)(A))>0?-((int)(A)):((int)(A)))
-#define ABS(A)	(((int)(A))>0?((int)(A)):-((int)(A)))
+#define ABS(A)	abs(A)	/* use function since it may well be built in */
 
 #ifndef TRUE
 #define TRUE		1
@@ -1876,18 +1876,18 @@ gdk_export bat BBPlimit;
 gdk_export BBPrec *BBP[N_BBPINIT];
 
 /* fast defines without checks; internal use only  */
-#define BBP_cache(i)	BBP[ABS(i)>>BBPINITLOG][ABS(i)&(BBPINIT-1)].cache[(i)<0]
-#define BBP_logical(i)	BBP[ABS(i)>>BBPINITLOG][ABS(i)&(BBPINIT-1)].logical[(i)<0]
-#define BBP_bak(i)	BBP[ABS(i)>>BBPINITLOG][ABS(i)&(BBPINIT-1)].bak[(i)<0]
-#define BBP_next(i)	BBP[ABS(i)>>BBPINITLOG][ABS(i)&(BBPINIT-1)].next[(i)<0]
-#define BBP_physical(i)	BBP[ABS(i)>>BBPINITLOG][ABS(i)&(BBPINIT-1)].physical
-#define BBP_options(i)	BBP[ABS(i)>>BBPINITLOG][ABS(i)&(BBPINIT-1)].options
-#define BBP_desc(i)	BBP[ABS(i)>>BBPINITLOG][ABS(i)&(BBPINIT-1)].desc
-#define BBP_refs(i)	BBP[ABS(i)>>BBPINITLOG][ABS(i)&(BBPINIT-1)].refs
-#define BBP_lrefs(i)	BBP[ABS(i)>>BBPINITLOG][ABS(i)&(BBPINIT-1)].lrefs
-#define BBP_lastused(i)	BBP[ABS(i)>>BBPINITLOG][ABS(i)&(BBPINIT-1)].lastused
-#define BBP_status(i)	BBP[ABS(i)>>BBPINITLOG][ABS(i)&(BBPINIT-1)].status
-#define BBP_pid(i)	BBP[ABS(i)>>BBPINITLOG][ABS(i)&(BBPINIT-1)].pid
+#define BBP_cache(i)	BBP[abs(i)>>BBPINITLOG][abs(i)&(BBPINIT-1)].cache[(i)<0]
+#define BBP_logical(i)	BBP[abs(i)>>BBPINITLOG][abs(i)&(BBPINIT-1)].logical[(i)<0]
+#define BBP_bak(i)	BBP[abs(i)>>BBPINITLOG][abs(i)&(BBPINIT-1)].bak[(i)<0]
+#define BBP_next(i)	BBP[abs(i)>>BBPINITLOG][abs(i)&(BBPINIT-1)].next[(i)<0]
+#define BBP_physical(i)	BBP[abs(i)>>BBPINITLOG][abs(i)&(BBPINIT-1)].physical
+#define BBP_options(i)	BBP[abs(i)>>BBPINITLOG][abs(i)&(BBPINIT-1)].options
+#define BBP_desc(i)	BBP[abs(i)>>BBPINITLOG][abs(i)&(BBPINIT-1)].desc
+#define BBP_refs(i)	BBP[abs(i)>>BBPINITLOG][abs(i)&(BBPINIT-1)].refs
+#define BBP_lrefs(i)	BBP[abs(i)>>BBPINITLOG][abs(i)&(BBPINIT-1)].lrefs
+#define BBP_lastused(i)	BBP[abs(i)>>BBPINITLOG][abs(i)&(BBPINIT-1)].lastused
+#define BBP_status(i)	BBP[abs(i)>>BBPINITLOG][abs(i)&(BBPINIT-1)].status
+#define BBP_pid(i)	BBP[abs(i)>>BBPINITLOG][abs(i)&(BBPINIT-1)].pid
 
 /* macros that nicely check parameters */
 #define BBPcacheid(b)	((b)->batCacheid)
@@ -1895,16 +1895,16 @@ gdk_export BBPrec *BBP[N_BBPINIT];
 gdk_export int BBPcurstamp(void);
 #define BBPrefs(i)	(BBPcheck((i),"BBPrefs")?BBP_refs(i):-1)
 #define BBPcache(i)	(BBPcheck((i),"BBPcache")?BBP_cache(i):(BAT*) NULL)
-/* we use ABS(i) instead of -(i) here because of a bug in gcc 4.8.2
+/* we use abs(i) instead of -(i) here because of a bug in gcc 4.8.2
  * (at least) with optimization enabled; it incorrectly complains
  * about an array bound error in monetdb5/modules/kernel/status.c */
 #define BBPname(i)							\
 	(BBPcheck((i), "BBPname") ?					\
 	 ((i) > 0 ?							\
 	  BBP[(i) >> BBPINITLOG][(i) & (BBPINIT - 1)].logical[0] :	\
-	  (BBP[ABS(i) >> BBPINITLOG][ABS(i) & (BBPINIT - 1)].logical[1] ? \
-	   BBP[ABS(i) >> BBPINITLOG][ABS(i) & (BBPINIT - 1)].logical[1] : \
-	   BBP[ABS(i) >> BBPINITLOG][ABS(i) & (BBPINIT - 1)].logical[0])) : \
+	  (BBP[abs(i) >> BBPINITLOG][abs(i) & (BBPINIT - 1)].logical[1] ? \
+	   BBP[abs(i) >> BBPINITLOG][abs(i) & (BBPINIT - 1)].logical[1] : \
+	   BBP[abs(i) >> BBPINITLOG][abs(i) & (BBPINIT - 1)].logical[0])) : \
 	 "")
 #define BBPvalid(i)	(BBP_logical(i) != NULL && *BBP_logical(i) != '.')
 #define BATgetId(b)	BBPname((b)->batCacheid)
@@ -2628,7 +2628,7 @@ static inline bat
 BBPcheck(register bat x, register const char *y)
 {
 	if (x && x != bat_nil) {
-		register bat z = ABS(x);
+		register bat z = abs(x);
 
 		if (z >= getBBPsize() || BBP_logical(z) == NULL) {
 			CHECKDEBUG THRprintf(GDKstdout,"#%s: range error %d\n", y, (int) x);
@@ -2918,14 +2918,14 @@ gdk_export int ALIGNsetH(BAT *b1, BAT *b2);
 #define isVIEW(x)							\
 	((x)->H->heap.parentid ||					\
 	 (x)->T->heap.parentid ||					\
-	 ((x)->H->vheap && (x)->H->vheap->parentid != ABS((x)->batCacheid)) || \
-	 ((x)->T->vheap && (x)->T->vheap->parentid != ABS((x)->batCacheid)))
+	 ((x)->H->vheap && (x)->H->vheap->parentid != abs((x)->batCacheid)) || \
+	 ((x)->T->vheap && (x)->T->vheap->parentid != abs((x)->batCacheid)))
 
 #define isVIEWCOMBINE(x) ((x)->H == (x)->T)
 #define VIEWhparent(x)	((x)->H->heap.parentid)
-#define VIEWvhparent(x)	(((x)->H->vheap==NULL||(x)->H->vheap->parentid==ABS((x)->batCacheid))?0:(x)->H->vheap->parentid)
+#define VIEWvhparent(x)	(((x)->H->vheap==NULL||(x)->H->vheap->parentid==abs((x)->batCacheid))?0:(x)->H->vheap->parentid)
 #define VIEWtparent(x)	((x)->T->heap.parentid)
-#define VIEWvtparent(x)	(((x)->T->vheap==NULL||(x)->T->vheap->parentid==ABS((x)->batCacheid))?0:(x)->T->vheap->parentid)
+#define VIEWvtparent(x)	(((x)->T->vheap==NULL||(x)->T->vheap->parentid==abs((x)->batCacheid))?0:(x)->T->vheap->parentid)
 
 /* VIEWparentcol(b) tells whether the head column was inherited from
  * the parent "as is". We must check whether the type was not

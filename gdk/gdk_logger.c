@@ -976,7 +976,7 @@ bm_subcommit(BAT *list_bid, BAT *list_nme, BAT *catalog_bid, BAT *catalog_nme, B
 			fprintf(stderr, "commit deleted %s (%d) %s\n",
 				BBPname(col), col,
 				(list_bid == catalog_bid) ? BUNtail(iter, p) : "snapshot");
-		n[i++] = ABS(col);
+		n[i++] = abs(col);
 	}
 	BATloop(list_bid, p, q) {
 		bat col = *(log_bid *) Tloc(list_bid, p);
@@ -985,7 +985,7 @@ bm_subcommit(BAT *list_bid, BAT *list_nme, BAT *catalog_bid, BAT *catalog_nme, B
 			fprintf(stderr, "commit new %s (%d) %s\n",
 				BBPname(col), col,
 				(list_bid == catalog_bid) ? BUNtail(iter, p) : "snapshot");
-		n[i++] = ABS(col);
+		n[i++] = abs(col);
 	}
 	if (extra) {
 		iter = bat_iterator(extra);
@@ -996,12 +996,12 @@ bm_subcommit(BAT *list_bid, BAT *list_nme, BAT *catalog_bid, BAT *catalog_nme, B
 				fprintf(stderr, "commit extra %s %s\n",
 					name,
 					(list_bid == catalog_bid) ? BUNtail(iter, p) : "snapshot");
-			n[i++] = ABS(BBPindex(name));
+			n[i++] = abs(BBPindex(name));
 		}
 	}
 	/* now commit catalog, so it's also up to date on disk */
-	n[i++] = ABS(catalog_bid->batCacheid);
-	n[i++] = ABS(catalog_nme->batCacheid);
+	n[i++] = abs(catalog_bid->batCacheid);
+	n[i++] = abs(catalog_nme->batCacheid);
 	assert((BUN) i <= nn);
 	BATcommit(catalog_bid);
 	BATcommit(catalog_nme);

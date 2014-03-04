@@ -1854,9 +1854,9 @@ DELTAbat(bat *result, bat *col, bat *uid, bat *uval, bat *ins)
 {
 	BAT *c, *u_id, *u_val, *u, *i = NULL, *res;
 
-	if ((u_id = BBPquickdesc(ABS(*uid), 0)) == NULL)
+	if ((u_id = BBPquickdesc(abs(*uid), 0)) == NULL)
 		throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
-	if (ins && (i = BBPquickdesc(ABS(*ins), 0)) == NULL)
+	if (ins && (i = BBPquickdesc(abs(*ins), 0)) == NULL)
 		throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
 
 	/* no updates, no inserts */
@@ -1865,7 +1865,7 @@ DELTAbat(bat *result, bat *col, bat *uid, bat *uval, bat *ins)
 		return MAL_SUCCEED;
 	}
 
-	if ((c = BBPquickdesc(ABS(*col), 0)) == NULL)
+	if ((c = BBPquickdesc(abs(*col), 0)) == NULL)
 		throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
 
 	/* bat may change */
@@ -1904,9 +1904,9 @@ DELTAsub(bat *result, bat *col, bat *cid, bat *uid, bat *uval, bat *ins)
 {
 	BAT *c, *cminu, *u_id, *u_val, *u, *i = NULL, *res;
 
-	if ((u_id = BBPquickdesc(ABS(*uid), 0)) == NULL)
+	if ((u_id = BBPquickdesc(abs(*uid), 0)) == NULL)
 		throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
-	if (ins && (i = BBPquickdesc(ABS(*ins), 0)) == NULL)
+	if (ins && (i = BBPquickdesc(abs(*ins), 0)) == NULL)
 		throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
 
 	/* no updates, no inserts */
@@ -1915,7 +1915,7 @@ DELTAsub(bat *result, bat *col, bat *cid, bat *uid, bat *uval, bat *ins)
 		return MAL_SUCCEED;
 	}
 
-	if ((c = BBPquickdesc(ABS(*col), 0)) == NULL)
+	if ((c = BBPquickdesc(abs(*col), 0)) == NULL)
 		throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
 
 	/* bat may change */

@@ -1335,7 +1335,7 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 		    !b->tvarsized &&
 		    (b->batPersistence == PERSISTENT ||
 		     ((parent = VIEWtparent(b)) != 0 &&
-		      BBPquickdesc(ABS(parent),0)->batPersistence == PERSISTENT))) {
+		      BBPquickdesc(abs(parent),0)->batPersistence == PERSISTENT))) {
 			/* use imprints if
 			 *   i) bat is persistent, or parent is persistent
 			 *  ii) it is not an equi-select, and

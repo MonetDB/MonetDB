@@ -317,9 +317,9 @@ static void
 printBATproperties(stream *f, BAT *b)
 {
 	mnstr_printf(f, " count=" BUNFMT " lrefs=%d ",
-			BATcount(b), BBP_lrefs(ABS(b->batCacheid)));
-	if (BBP_refs(ABS(b->batCacheid)) - 1)
-		mnstr_printf(f, " refs=%d ", BBP_refs(ABS(b->batCacheid)));
+			BATcount(b), BBP_lrefs(abs(b->batCacheid)));
+	if (BBP_refs(abs(b->batCacheid)) - 1)
+		mnstr_printf(f, " refs=%d ", BBP_refs(abs(b->batCacheid)));
 	if (b->batSharecnt)
 		mnstr_printf(f, " views=%d", b->batSharecnt);
 	if (b->H->heap.parentid)
@@ -1014,7 +1014,7 @@ mdbSanityCheck(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 			int i = v->val.ival;
 			BAT *b;
 
-			b = BBPquickdesc(ABS(i), TRUE);
+			b = BBPquickdesc(abs(i), TRUE);
 			if (i < 0)
 				b = BATmirror(b);
 			if (b) {
@@ -1301,9 +1301,9 @@ printStackElm(stream *f, MalBlkPtr mb, ValPtr v, int index, BUN cnt, BUN first)
 
 	if (v && v->vtype == TYPE_bat) {
 		int i = v->val.ival;
-		BAT *b = BBPquickdesc(ABS(i), TRUE);
+		BAT *b = BBPquickdesc(abs(i), TRUE);
 
-		b = BBPquickdesc(ABS(i), TRUE);
+		b = BBPquickdesc(abs(i), TRUE);
 		if (i < 0)
 			b = BATmirror(b);
 		if (b) {
