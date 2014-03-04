@@ -1032,7 +1032,7 @@ str RMTbatload(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 str RMTbincopyto(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int bid = *(int *)getArgReference(stk, pci, 1);
-	BAT *b = BBPquickdesc(ABS(bid), FALSE);
+	BAT *b = BBPquickdesc(abs(bid), FALSE);
 	char sendhead = 0;
 	char sendtheap = 0;
 

@@ -609,7 +609,7 @@ BATsum(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, int
 				if (avg == dbl_nil)
 					*(flt *) res = flt_nil;
 				else if (cnt > 0 &&
-					 GDK_flt_max / cnt < ABS(avg)) {
+					 GDK_flt_max / cnt < fabs(avg)) {
 					if (abort_on_error) {
 						GDKerror("22003!overflow in calculation.\n");
 						return GDK_FAIL;
@@ -622,7 +622,7 @@ BATsum(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, int
 				if (avg == dbl_nil) {
 					*(dbl *) res = dbl_nil;
 				} else if (cnt > 0 &&
-					   GDK_dbl_max / cnt < ABS(avg)) {
+					   GDK_dbl_max / cnt < fabs(avg)) {
 					if (abort_on_error) {
 						GDKerror("22003!overflow in calculation.\n");
 						return GDK_FAIL;

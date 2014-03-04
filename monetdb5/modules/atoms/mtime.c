@@ -475,10 +475,10 @@ date_dayofweek(date v)
 static date
 compute_rule(const rule *val, int y)
 {
-	int m = val->s.month, cnt = ABS(val->s.day - DAY_ZERO);
+	int m = val->s.month, cnt = abs(val->s.day - DAY_ZERO);
 	date d = todate(1, m, y);
 	int dayofweek = date_dayofweek(d);
-	int w = ABS(val->s.weekday - WEEKDAY_ZERO);
+	int w = abs(val->s.weekday - WEEKDAY_ZERO);
 
 	if (val->s.weekday == WEEKDAY_ZERO || w == WEEKDAY_ZERO) {
 		/* cnt-th of month */
@@ -857,7 +857,7 @@ timestamp_tz_tostr(str *buf, int *len, const timestamp *val, const tzone *timezo
 		   strcpy(s, "GMT"); s += 3;
 		   if (off) {
 		   *s++ = (off>=0)?'+':'-';
-		   sprintf(s, "%02d%02d", ABS(off)/60, ABS(off)%60);
+		   sprintf(s, "%02d%02d", abs(off)/60, abs(off)%60);
 		   s += 4;
 		   }
 		 */
@@ -2201,9 +2201,9 @@ MTIMErule_create(rule *ret, const int *month, const int *day, const int *weekday
 {
 	ret->asint = int_nil;
 	if (*month != int_nil && *month >= 1 && *month <= 12 &&
-		*weekday != int_nil && ABS(*weekday) <= 7 &&
+		*weekday != int_nil && abs(*weekday) <= 7 &&
 		*minutes != int_nil && *minutes >= 0 && *minutes < 24 * 60 &&
-		*day != int_nil && ABS(*day) >= 1 && ABS(*day) <= LEAPDAYS[*month] &&
+		*day != int_nil && abs(*day) >= 1 && abs(*day) <= LEAPDAYS[*month] &&
 		(*weekday || *day > 0)) {
 		ret->s.month = *month;
 		ret->s.day = DAY_ZERO + *day;
@@ -2218,7 +2218,7 @@ str
 MTIMEtzone_create_dst(tzone *ret, const int *minutes, const rule *start, const rule *end)
 {
 	*ret = *tzone_nil;
-	if (*minutes != int_nil && ABS(*minutes) < 24 * 60 &&
+	if (*minutes != int_nil && abs(*minutes) < 24 * 60 &&
 		start->asint != int_nil && end->asint != int_nil) {
 		set_offset(ret, *minutes);
 		ret->dst = TRUE;
@@ -2233,7 +2233,7 @@ str
 MTIMEtzone_create(tzone *ret, const int *minutes)
 {
 	*ret = *tzone_nil;
-	if (*minutes != int_nil && ABS(*minutes) < 24 * 60) {
+	if (*minutes != int_nil && abs(*minutes) < 24 * 60) {
 		set_offset(ret, *minutes);
 		ret->dst = FALSE;
 	}

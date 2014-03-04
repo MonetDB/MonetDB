@@ -556,7 +556,7 @@ BATimprints(BAT *b) {
 		b = BATmirror(BATdescriptor(p));
 	}
 
-	MT_lock_set(&GDKimprintsLock(ABS(b->batCacheid)), "BATimprints");
+	MT_lock_set(&GDKimprintsLock(abs(b->batCacheid)), "BATimprints");
 	if (b->T->imprints == NULL) {
 		Imprints *imprints;
 		BAT *smp, *t;
@@ -570,7 +570,7 @@ BATimprints(BAT *b) {
 		imprints = (Imprints *) GDKzalloc(sizeof(Imprints));
 		if (imprints == NULL) {
 			GDKerror("#BATimprints: memory allocation error.\n");
-			MT_lock_unset(&GDKimprintsLock(ABS(b->batCacheid)),
+			MT_lock_unset(&GDKimprintsLock(abs(b->batCacheid)),
 			"BATimprints");
 			return NULL;
 		}
@@ -595,7 +595,7 @@ BATimprints(BAT *b) {
 			GDKerror("#BATimprints: memory allocation error.\n");
 			GDKfree(imprints);
 			BBPunfix(smp->batCacheid);
-			MT_lock_unset(&GDKimprintsLock(ABS(b->batCacheid)),
+			MT_lock_unset(&GDKimprintsLock(abs(b->batCacheid)),
 			"BATimprints");
 			return NULL;
 		}
@@ -604,7 +604,7 @@ BATimprints(BAT *b) {
 			GDKerror("#BATimprints: memory allocation error");
 			GDKfree(imprints->bins);
 			GDKfree(imprints);
-			MT_lock_unset(&GDKimprintsLock(ABS(b->batCacheid)),
+			MT_lock_unset(&GDKimprintsLock(abs(b->batCacheid)),
 					"BATimprints");
 			return NULL;
 		}
@@ -688,7 +688,7 @@ do {                                                              \
 				GDKfree(imprints->dict);
 			}
 			GDKfree(imprints);
-			MT_lock_unset(&GDKimprintsLock(ABS(b->batCacheid)),
+			MT_lock_unset(&GDKimprintsLock(abs(b->batCacheid)),
 					"BATimprints");
 			return NULL;
 		}
@@ -708,7 +708,7 @@ do {                                                              \
 			GDKfree(imprints->imps);
 			GDKfree(imprints->dict);
 			GDKfree(imprints);
-			MT_lock_unset(&GDKimprintsLock(ABS(b->batCacheid)),
+			MT_lock_unset(&GDKimprintsLock(abs(b->batCacheid)),
 					"BATimprints");
 			return NULL;
 		}
@@ -726,13 +726,13 @@ do {                                                              \
 			GDKfree(imprints->imps);
 			GDKfree(imprints->dict);
 			GDKfree(imprints);
-			MT_lock_unset(&GDKimprintsLock(ABS(b->batCacheid)),
+			MT_lock_unset(&GDKimprintsLock(abs(b->batCacheid)),
 					"BATimprints");
 			return NULL;
 		}
 		b->T->imprints = imprints;
 	}
-	MT_lock_unset(&GDKimprintsLock(ABS(b->batCacheid)), "BATimprints");
+	MT_lock_unset(&GDKimprintsLock(abs(b->batCacheid)), "BATimprints");
 
 	if (o != NULL) {
 		o->T->imprints = NULL; /* views always keep null pointer and
@@ -814,7 +814,7 @@ IMPSremove(BAT *b) {
 	assert(b->T->imprints != NULL);
 	assert(!VIEWtparent(b));
 
-	MT_lock_set(&GDKimprintsLock(ABS(b->batCacheid)),
+	MT_lock_set(&GDKimprintsLock(abs(b->batCacheid)),
 			"BATimprints");
 	imprints = b->T->imprints;
 	b->T->imprints = NULL;
@@ -840,7 +840,7 @@ IMPSremove(BAT *b) {
 	GDKfree(imprints->bins);
 	GDKfree(imprints);
 
-	MT_lock_unset(&GDKimprintsLock(ABS(b->batCacheid)),
+	MT_lock_unset(&GDKimprintsLock(abs(b->batCacheid)),
 			"BATimprints");
 
 	return;

@@ -468,16 +468,16 @@ BATcalcabsolute(BAT *b, BAT *s)
 
 	switch (ATOMstorage(b->T->type)) {
 	case TYPE_bte:
-		UNARY_2TYPE_FUNC(bte, bte, ABSOLUTE);
+		UNARY_2TYPE_FUNC(bte, bte, (bte) abs);
 		break;
 	case TYPE_sht:
-		UNARY_2TYPE_FUNC(sht, sht, ABSOLUTE);
+		UNARY_2TYPE_FUNC(sht, sht, (sht) abs);
 		break;
 	case TYPE_int:
-		UNARY_2TYPE_FUNC(int, int, ABSOLUTE);
+		UNARY_2TYPE_FUNC(int, int, abs);
 		break;
 	case TYPE_lng:
-		UNARY_2TYPE_FUNC(lng, lng, ABSOLUTE);
+		UNARY_2TYPE_FUNC(lng, lng, llabs);
 		break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
@@ -485,10 +485,10 @@ BATcalcabsolute(BAT *b, BAT *s)
 		break;
 #endif
 	case TYPE_flt:
-		UNARY_2TYPE_FUNC(flt, flt, ABSOLUTE);
+		UNARY_2TYPE_FUNC(flt, flt, fabsf);
 		break;
 	case TYPE_dbl:
-		UNARY_2TYPE_FUNC(dbl, dbl, ABSOLUTE);
+		UNARY_2TYPE_FUNC(dbl, dbl, fabs);
 		break;
 	default:
 		BBPunfix(bn->batCacheid);
@@ -530,25 +530,25 @@ VARcalcabsolute(ValPtr ret, const ValRecord *v)
 		if (v->val.btval == bte_nil)
 			ret->val.btval = bte_nil;
 		else
-			ret->val.btval = ABSOLUTE(v->val.btval);
+			ret->val.btval = (bte) abs(v->val.btval);
 		break;
 	case TYPE_sht:
 		if (v->val.shval == sht_nil)
 			ret->val.shval = sht_nil;
 		else
-			ret->val.shval = ABSOLUTE(v->val.shval);
+			ret->val.shval = (sht) abs(v->val.shval);
 		break;
 	case TYPE_int:
 		if (v->val.ival == int_nil)
 			ret->val.ival = int_nil;
 		else
-			ret->val.ival = ABSOLUTE(v->val.ival);
+			ret->val.ival = abs(v->val.ival);
 		break;
 	case TYPE_lng:
 		if (v->val.lval == lng_nil)
 			ret->val.lval = lng_nil;
 		else
-			ret->val.lval = ABSOLUTE(v->val.lval);
+			ret->val.lval = llabs(v->val.lval);
 		break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
@@ -562,13 +562,13 @@ VARcalcabsolute(ValPtr ret, const ValRecord *v)
 		if (v->val.fval == flt_nil)
 			ret->val.fval = flt_nil;
 		else
-			ret->val.fval = ABSOLUTE(v->val.fval);
+			ret->val.fval = fabsf(v->val.fval);
 		break;
 	case TYPE_dbl:
 		if (v->val.dval == dbl_nil)
 			ret->val.dval = dbl_nil;
 		else
-			ret->val.dval = ABSOLUTE(v->val.dval);
+			ret->val.dval = fabs(v->val.dval);
 		break;
 	default:
 		GDKerror("VARcalcabsolute: bad input type %s.\n",

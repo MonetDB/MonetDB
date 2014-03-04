@@ -102,9 +102,9 @@ AUTHcommit(void)
 	blist[0] = 0;
 
 	assert(user);
-	blist[1] = ABS(user->batCacheid);
+	blist[1] = abs(user->batCacheid);
 	assert(pass);
-	blist[2] = ABS(pass->batCacheid);
+	blist[2] = abs(pass->batCacheid);
 	TMsubcommit_list(blist, 3);
 }
 

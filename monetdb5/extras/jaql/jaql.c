@@ -2136,7 +2136,7 @@ JAQLcast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void)mb;
 	(void)cntxt;
 
-	in = BBPquickdesc(ABS(*b), FALSE);
+	in = BBPquickdesc(abs(*b), FALSE);
 	if (*b < 0)
 		in = BATmirror(in);
 
@@ -2163,10 +2163,10 @@ JAQLbatconcat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void)mb;
 	(void)cntxt;
 
-	left = BATdescriptor(ABS(*l));
+	left = BATdescriptor(abs(*l));
 	if (*l < 0)
 		left = BATmirror(left);
-	right = BATdescriptor(ABS(*r));
+	right = BATdescriptor(abs(*r));
 	if (*r < 0)
 		right = BATmirror(right);
 
