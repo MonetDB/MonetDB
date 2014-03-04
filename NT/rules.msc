@@ -209,10 +209,10 @@ CONFIGURE_PY = "$(TOPDIR)\..\NT\winconfig.py"
 WINCONFIG_INCS = "-I$(TOPDIR)\..\buildtools\conf"
 
 !IFDEF DEBUG
-COMPILERFLAGS = -GF -W3 $(W_CFLAGS) -MDd -nologo -Od -D_DEBUG -RTC1 -Zi
+COMPILERFLAGS = -GF -W3 $(W_CFLAGS) -MDd -nologo -Od -D_DEBUG -RTC1 -Zi -Oi
 !ELSE
 # add -Zi flag (implies -debug, not -D_DEBUG) to get symbol info in .pdb files
-COMPILERFLAGS = -GF -W3 $(W_CFLAGS) -MD -nologo -Ox -Zi
+COMPILERFLAGS = -GF -W3 $(W_CFLAGS) -MD -nologo -Ox -Zi -Oi
 !ENDIF
 CFLAGS = $(COMPILERFLAGS)  -I. -I$(TOPDIR) $(LIBC_INCS) $(INCLUDES) $(WINCONFIG_INCS) $(ICONV_CFLAGS) $(ATOMIC_OPS_CFLAGS)
 

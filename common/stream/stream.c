@@ -118,14 +118,21 @@
 #define UTF8BOM		"\xEF\xBB\xBF" /* UTF-8 encoding of Unicode BOM */
 #define UTF8BOMLENGTH	3	       /* length of above */
 
+#ifdef _MSC_VER
+/* use intrinsic functions on Windows */
+#define short_int_SWAP(s)	((short) _byteswap_ushort((unsigned short) (s)))
+/* on Windows, long is the same size as int */
+#define normal_int_SWAP(s)	((int) _byteswap_ulong((unsigned long) (s)))
+#define long_long_SWAP(l)	((lng) _byteswap_uint64((unsigned __int64) (s)))
+#else
 #define short_int_SWAP(s) ((short)(((0x00ff&(s))<<8) | ((0xff00&(s))>>8)))
 
 #define normal_int_SWAP(i) (((0x000000ff&(i))<<24) | ((0x0000ff00&(i))<<8) | \
 	               ((0x00ff0000&(i))>>8)  | ((0xff000000&(i))>>24))
-
 #define long_long_SWAP(l) \
 		((((lng)normal_int_SWAP(l))<<32) |\
 		 (0xffffffff&normal_int_SWAP(l>>32)))
+#endif
 
 
 struct stream {

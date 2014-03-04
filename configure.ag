@@ -2689,6 +2689,7 @@ LIBS="$LIBS $MATH_LIBS"
 AC_CHECK_FUNCS([\
 				asctime_r \
 				ctime_r \
+				fabsf \
 				fcntl \
 				fpclass \
 				fpclassify \
@@ -2703,6 +2704,7 @@ AC_CHECK_FUNCS([\
 				getuid \
 				isinf \
 				kill \
+				llabs \
 				localtime_r \
 				lockf \
 				madvise \

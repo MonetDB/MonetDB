@@ -568,13 +568,13 @@ BATclear(BAT *b, int force)
 				HEAPfree(&hh);
 			return NULL;
 		}
-		assert(b->H->vheap == NULL || b->H->vheap->parentid == ABS(b->batCacheid));
+		assert(b->H->vheap == NULL || b->H->vheap->parentid == abs(b->batCacheid));
 		if (b->H->vheap && b->H->vheap->free > 0) {
 			hh.parentid = b->H->vheap->parentid;
 			HEAPfree(b->H->vheap);
 			*b->H->vheap = hh;
 		}
-		assert(b->T->vheap == NULL || b->T->vheap->parentid == ABS(b->batCacheid));
+		assert(b->T->vheap == NULL || b->T->vheap->parentid == abs(b->batCacheid));
 		if (b->T->vheap && b->T->vheap->free > 0) {
 			th.parentid = b->T->vheap->parentid;
 			HEAPfree(b->T->vheap);
@@ -1906,11 +1906,11 @@ BUNlocate(BAT *b, const void *x, const void *y)
 				v = BATmirror(v);
 			}
 			if (v->H->hash) {
-				MT_lock_set(&GDKhashLock(ABS(b->batCacheid)), "BUNlocate");
+				MT_lock_set(&GDKhashLock(abs(b->batCacheid)), "BUNlocate");
 				if (b->H->hash == NULL) {	/* give it to the parent */
 					b->H->hash = v->H->hash;
 				}
-				MT_lock_unset(&GDKhashLock(ABS(b->batCacheid)), "BUNlocate");
+				MT_lock_unset(&GDKhashLock(abs(b->batCacheid)), "BUNlocate");
 			}
 			BBPreclaim(v);
 			v = NULL;
@@ -2694,7 +2694,7 @@ BATmode(BAT *b, int mode)
 	BATcheck(b, "BATmode");
 
 	if (mode != b->batPersistence) {
-		bat bid = ABS(b->batCacheid);
+		bat bid = abs(b->batCacheid);
 
 		if (mode == PERSISTENT) {
 			check_type(b->htype);

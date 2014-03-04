@@ -30,6 +30,10 @@
 #include <bat/bat_storage.h>
 #include <rel_exp.h>
 
+#ifndef HAVE_LLABS
+#define llabs(x)	((x) < 0 ? -(x) : (x))
+#endif
+
 #define DEC_TOSTR(X) \
 	char buf[32]; \
 	X v = *(const X*)a; \
@@ -152,7 +156,7 @@ sql_time_tostr(void *TS_RES, char **buf, int *len, int type, const void *A)
 	if (ts_res->has_tz) {
 		timezone = ts_res->timezone / 60000;
 		*s++ = (ts_res->timezone >= 0) ? '+' : '-';
-		sprintf(s, "%02d:%02d", ABS(timezone) / 60, ABS(timezone) % 60);
+		sprintf(s, "%02d:%02d", (int) (llabs(timezone) / 60), (int) (llabs(timezone) % 60));
 		s += 5;
 	}
 	return (int) (s - *buf);
@@ -202,7 +206,7 @@ sql_timestamp_tostr(void *TS_RES, char **buf, int *len, int type, const void *A)
 	if (ts_res->has_tz) {
 		timezone = ts_res->timezone / 60000;
 		*s++ = (ts_res->timezone >= 0) ? '+' : '-';
-		sprintf(s, "%02d:%02d", ABS(timezone) / 60, ABS(timezone) % 60);
+		sprintf(s, "%02d:%02d", (int) (llabs(timezone) / 60), (int) (llabs(timezone) % 60));
 		s += 5;
 	}
 	return (int) (s - *buf);
@@ -1437,7 +1441,7 @@ mvc_export_head(backend *b, stream *s, int res_id, int only_header)
 	/* tuple count */
 	if (only_header) {
 		if (t->order) {
-			order = BBPquickdesc(ABS(t->order), FALSE);
+			order = BBPquickdesc(abs(t->order), FALSE);
 			if (!order)
 				return -1;
 

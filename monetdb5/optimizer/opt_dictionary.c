@@ -458,13 +458,13 @@ DICTcommit(BAT *b1, BAT *b2, BAT *b3, BAT *b4 )
 
 	bl[i++] = 0;
 	if (b1)
-		bl[i++] = ABS(b1->batCacheid);
+		bl[i++] = abs(b1->batCacheid);
 	if (b2)
-		bl[i++] = ABS(b2->batCacheid);
+		bl[i++] = abs(b2->batCacheid);
 	if (b3)
-		bl[i++] = ABS(b3->batCacheid);
+		bl[i++] = abs(b3->batCacheid);
 	if (b4)
-		bl[i++] = ABS(b4->batCacheid);
+		bl[i++] = abs(b4->batCacheid);
 	TMsubcommit_list(bl, i);
 }
 
