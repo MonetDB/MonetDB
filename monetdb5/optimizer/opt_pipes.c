@@ -41,7 +41,7 @@
 
 #define MAXOPTPIPES 64
 
-struct PIPELINES {
+static struct PIPELINES {
 	char *name;
 	char *def;
 	char *status;
