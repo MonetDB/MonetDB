@@ -643,7 +643,7 @@ AGGRsubgroupedExt(bat *retval1, bat *retval2, bat *bid, bat *gid, bat *eid, bat 
 			   bat *quantile,
 			   const char *malfunc)
 {
-	BAT *b, *g, *e, *s, *bn, *cnts, *q = NULL;
+	BAT *b, *g, *e, *s, *bn = NULL, *cnts, *q = NULL;
 	double qvalue;
 
    /* one of grpfunc1, grpfunc2 and quantilefunc is non-NULL and the others are */
