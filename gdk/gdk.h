@@ -531,9 +531,6 @@
  * The interface definitions for the application programs are shown
  * below.  The global variables should not be modified directly.
  */
-#define NEG(A)	(((int)(A))>0?-((int)(A)):((int)(A)))
-#define ABS(A)	abs(A)	/* use function since it may well be built in */
-
 #ifndef TRUE
 #define TRUE		1
 #define FALSE		0
