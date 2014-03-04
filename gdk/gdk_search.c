@@ -258,7 +258,7 @@ BAThash(BAT *b, BUN masksize)
 			o = NULL;
 		}
 	}
-	MT_lock_set(&GDKhashLock(ABS(b->batCacheid)), "BAThash");
+	MT_lock_set(&GDKhashLock(abs(b->batCacheid)), "BAThash");
 	if (b->H->hash == NULL) {
 		unsigned int tpe = ATOMstorage(b->htype);
 		BUN cnt = BATcount(b);
@@ -277,7 +277,7 @@ BAThash(BAT *b, BUN masksize)
 
 		if (b->htype == TYPE_void) {
 			if (b->hseqbase == oid_nil) {
-				MT_lock_unset(&GDKhashLock(ABS(b->batCacheid)), "BAThash");
+				MT_lock_unset(&GDKhashLock(abs(b->batCacheid)), "BAThash");
 				ALGODEBUG fprintf(stderr, "#BAThash: cannot create hash-table on void-NIL column.\n");
 				return NULL;
 			}
@@ -332,7 +332,7 @@ BAThash(BAT *b, BUN masksize)
 			    (hp->farmid = BBPselectfarm(TRANSIENT, b->htype, hashheap)) < 0 ||
 			    (h = HASHnew(hp, ATOMtype(b->htype), BATcapacity(b), mask)) == NULL) {
 
-				MT_lock_unset(&GDKhashLock(ABS(b->batCacheid)), "BAThash");
+				MT_lock_unset(&GDKhashLock(abs(b->batCacheid)), "BAThash");
 				if (hp != NULL) {
 					GDKfree(hp->filename);
 					GDKfree(hp);
@@ -426,7 +426,7 @@ BAThash(BAT *b, BUN masksize)
 		ALGODEBUG fprintf(stderr, "#BAThash: hash construction " LLFMT " usec\n", t1 - t0);
 		ALGODEBUG HASHcollisions(b, b->H->hash);
 	}
-	MT_lock_unset(&GDKhashLock(ABS(b->batCacheid)), "BAThash");
+	MT_lock_unset(&GDKhashLock(abs(b->batCacheid)), "BAThash");
 	if (o != NULL) {
 		o->H->hash = b->H->hash;
 		BBPunfix(b->batCacheid);

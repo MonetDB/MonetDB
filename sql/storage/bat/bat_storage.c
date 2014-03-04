@@ -448,7 +448,7 @@ delta_append_bat( sql_delta *bat, BAT *i )
 			bat_destroy(b);
 			b = temp_descriptor(bat->ibid);
 		}
-		if (isVIEW(i) && b->batCacheid == ABS(VIEWtparent(i))) {
+		if (isVIEW(i) && b->batCacheid == abs(VIEWtparent(i))) {
 			BAT *ic = BATcopy(i, TYPE_void, i->ttype, TRUE, TRANSIENT);
 			BATappend(b, ic, TRUE);
 			bat_destroy(ic);
@@ -893,7 +893,7 @@ create_delta( sql_delta *d, BAT *b, BAT *i, bat u)
 	d->ubid = u;
 	d->ucnt = 0;
 	if (u) {
-		BAT *U = BBPquickdesc(ABS(u), 0);
+		BAT *U = BBPquickdesc(abs(u), 0);
 
 		d->ucnt = BATcount(U);
 	}

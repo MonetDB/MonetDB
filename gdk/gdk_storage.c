@@ -679,7 +679,7 @@ BATsave(BAT *bd)
 BAT *
 BATload_intern(bat i, int lock)
 {
-	bat bid = ABS(i);
+	bat bid = abs(i);
 	str nme = BBP_physical(bid);
 	BATstore *bs = DESCload(bid);
 	BAT *b;
@@ -790,7 +790,7 @@ BATload_intern(bat i, int lock)
 int
 BATdelete(BAT *b)
 {
-	bat bid = ABS(b->batCacheid);
+	bat bid = abs(b->batCacheid);
 	str o = BBP_physical(bid);
 	BAT *loaded = BBP_cache(bid);
 

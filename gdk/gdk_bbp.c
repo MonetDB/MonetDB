@@ -221,7 +221,7 @@ int BBPout = 0;			/* bats saved statistic */
  *
  * To reduce contention GDKswapLock was split into multiple locks; it
  * is now an array of lock pointers which is accessed by
- * GDKswapLock(ABS(bat))
+ * GDKswapLock(abs(bat))
  * @end table
  *
  * Routines that need both locks should first acquire the locks in the
@@ -464,7 +464,7 @@ fixoidheapcolumn(BAT *b, const char *srcdir, const char *nme,
 		 const char *filename, const char *headtail,
 		 const char *htheap)
 {
-	bat bid = ABS(b->batCacheid);
+	bat bid = abs(b->batCacheid);
 	Heap h1, h2;
 	int *old;
 	oid *new;
@@ -1604,7 +1604,7 @@ BBP_find(const char *nme, int lock)
 		/* for tmp_X and tmpr_X BATs, we already know X */
 		const char *s;
 
-		if (ABS(i) >= (bat) ATOMIC_GET(BBPsize, BBPsizeLock, "BBP_find") || (s = BBP_logical(i)) == NULL || strcmp(s, nme)) {
+		if (abs(i) >= (bat) ATOMIC_GET(BBPsize, BBPsizeLock, "BBP_find") || (s = BBP_logical(i)) == NULL || strcmp(s, nme)) {
 			i = 0;
 		}
 	} else if (*nme != '.') {
@@ -1659,7 +1659,7 @@ BBPphysical(bat bid, str buf)
 	if (buf == NULL) {
 		return NULL;
 	} else if (BBPcheck(bid, "BBPphysical")) {
-		strcpy(buf, BBP_physical(ABS(bid)));
+		strcpy(buf, BBP_physical(abs(bid)));
 	} else {
 		*buf = 0;
 	}
@@ -1919,7 +1919,7 @@ BBPclear(bat i)
 	int lock = locked_by ? pid != locked_by : 1;
 
 	if (BBPcheck(i, "BBPclear")) {
-		bbpclear(ABS(i), threadmask(pid), lock ? "BBPclear" : NULL);
+		bbpclear(abs(i), threadmask(pid), lock ? "BBPclear" : NULL);
 	}
 }
 
@@ -1960,7 +1960,7 @@ BBPrename(bat bid, const char *nme)
 	if (BBP_logical(bid) && strcmp(BBP_logical(bid), nme) == 0)
 		return 0;
 
-	BBPgetsubdir(dirname, ABS(bid));
+	BBPgetsubdir(dirname, abs(bid));
 
 	if ((tmpid = BBPnamecheck(nme)) && (bid < 0 || tmpid != bid)) {
 		return BBPRENAME_ILLEGAL;
@@ -1995,7 +1995,7 @@ BBPrename(bat bid, const char *nme)
 
 		if (lock)
 			MT_lock_set(&GDKswapLock(i), "BBPrename");
-		BBP_status_on(ABS(bid), BBPRENAMED, "BBPrename");
+		BBP_status_on(abs(bid), BBPRENAMED, "BBPrename");
 		if (lock)
 			MT_lock_unset(&GDKswapLock(i), "BBPrename");
 		BBPdirty(1);
@@ -2272,13 +2272,13 @@ decref(bat i, int logical, int releaseShare, int lock)
 		}
 	}
 	if (hp)
-		decref(ABS(hp), FALSE, FALSE, lock);
+		decref(abs(hp), FALSE, FALSE, lock);
 	if (tp)
-		decref(ABS(tp), FALSE, FALSE, lock);
+		decref(abs(tp), FALSE, FALSE, lock);
 	if (hvp)
-		decref(ABS(hvp), FALSE, FALSE, lock);
+		decref(abs(hvp), FALSE, FALSE, lock);
 	if (tvp)
-		decref(ABS(tvp), FALSE, FALSE, lock);
+		decref(abs(tvp), FALSE, FALSE, lock);
 	return refs;
 }
 
@@ -2369,7 +2369,7 @@ BBPreclaim(BAT *b)
 
 	if (b == NULL)
 		return -1;
-	i = ABS(b->batCacheid);
+	i = abs(b->batCacheid);
 
 	assert(BBP_refs(i) == 1);
 
@@ -2385,7 +2385,7 @@ static BAT *
 getBBPdescriptor(bat i, int lock)
 {
 	int load = FALSE;
-	bat j = ABS(i);
+	bat j = abs(i);
 	BAT *b = NULL;
 
 	if (!BBPcheck(i, "BBPdescriptor")) {
@@ -2445,7 +2445,7 @@ int
 BBPsave(BAT *b)
 {
 	int lock = locked_by ? MT_getpid() != locked_by : 1;
-	bat bid = ABS(b->batCacheid);
+	bat bid = abs(b->batCacheid);
 	int ret = 0;
 
 	if (BBP_lrefs(bid) == 0 || isVIEW(b) || !BATdirty(b))
@@ -2546,7 +2546,7 @@ BBPdestroy(BAT *b)
 static int
 BBPfree(BAT *b, const char *calledFrom)
 {
-	bat bid = ABS(b->batCacheid), hp = VIEWhparent(b), tp = VIEWtparent(b), vhp = VIEWvhparent(b), vtp = VIEWvtparent(b);
+	bat bid = abs(b->batCacheid), hp = VIEWhparent(b), tp = VIEWtparent(b), vhp = VIEWvhparent(b), vtp = VIEWvtparent(b);
 	int ret;
 
 	assert(BBPswappable(b));

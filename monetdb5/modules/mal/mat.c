@@ -95,7 +95,7 @@ MATpackInternal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 	for (i = 1; i < p->argc; i++) {
 		int bid = stk->stk[getArg(p,i)].val.ival;
-		b = BBPquickdesc(ABS(bid),FALSE);
+		b = BBPquickdesc(abs(bid),FALSE);
 		if (b && bid < 0)
 			b = BATmirror(b);
 		if( b ){
@@ -248,7 +248,7 @@ MATpackSliceInternal(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 	for (i = 3; i < p->argc && cap < lst; i++) {
 		int bid = stk->stk[getArg(p,i)].val.ival;
-		b = BBPquickdesc(ABS(bid),FALSE);
+		b = BBPquickdesc(abs(bid),FALSE);
 		if (b && bid < 0)
 			b = BATmirror(b);
 		if (b == NULL)
@@ -401,7 +401,7 @@ MATmergepack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	}
 	for (i = 1; i < p->argc; i++) {
 		int bid = stk->stk[getArg(p,i)].val.ival;
-		b = BATdescriptor(ABS(bid));
+		b = BATdescriptor(abs(bid));
 		if (b ){
 			cap += BATcount(b);
 			if ( BATcount(b) ){

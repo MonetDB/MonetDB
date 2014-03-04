@@ -470,7 +470,7 @@ parse_json_array(jsonbat *jb, oid *id, char *p)
 }
 
 #define loadbat(name) \
-	jb.name = BATdescriptor(ABS(*name)); \
+	jb.name = BATdescriptor(abs(*name)); \
 	if (*name < 0) \
 		jb.name = BATmirror(jb.name);
 #define loadbats() \
@@ -935,42 +935,42 @@ JSONstore(int *ret, str *nme, int *kind, int *string, int *integer, int *doble, 
 
 	BBPrename(jb.kind->batCacheid, buf);
 	BATmode(jb.kind, PERSISTENT);
-	blist[bcnt++] = ABS(jb.kind->batCacheid);
+	blist[bcnt++] = abs(jb.kind->batCacheid);
 	if (jb.string != NULL) {
 		snprintf(buf, sizeof(buf), "json_%s_string", *nme);
 		BBPrename(jb.string->batCacheid, buf);
 		BATmode(jb.string, PERSISTENT);
-		blist[bcnt++] = ABS(jb.string->batCacheid);
+		blist[bcnt++] = abs(jb.string->batCacheid);
 	}
 	if (jb.integer != NULL) {
 		snprintf(buf, sizeof(buf), "json_%s_integer", *nme);
 		BBPrename(jb.integer->batCacheid, buf);
 		BATmode(jb.integer, PERSISTENT);
-		blist[bcnt++] = ABS(jb.integer->batCacheid);
+		blist[bcnt++] = abs(jb.integer->batCacheid);
 	}
 	if (jb.doble != NULL) {
 		snprintf(buf, sizeof(buf), "json_%s_doble", *nme);
 		BBPrename(jb.doble->batCacheid, buf);
 		BATmode(jb.doble, PERSISTENT);
-		blist[bcnt++] = ABS(jb.doble->batCacheid);
+		blist[bcnt++] = abs(jb.doble->batCacheid);
 	}
 	if (jb.array != NULL) {
 		snprintf(buf, sizeof(buf), "json_%s_array", *nme);
 		BBPrename(jb.array->batCacheid, buf);
 		BATmode(jb.array, PERSISTENT);
-		blist[bcnt++] = ABS(jb.array->batCacheid);
+		blist[bcnt++] = abs(jb.array->batCacheid);
 	}
 	if (jb.object != NULL) {
 		snprintf(buf, sizeof(buf), "json_%s_object", *nme);
 		BBPrename(jb.object->batCacheid, buf);
 		BATmode(jb.object, PERSISTENT);
-		blist[bcnt++] = ABS(jb.object->batCacheid);
+		blist[bcnt++] = abs(jb.object->batCacheid);
 	}
 	if (jb.name != NULL) {
 		snprintf(buf, sizeof(buf), "json_%s_name", *nme);
 		BBPrename(jb.name->batCacheid, buf);
 		BATmode(jb.name, PERSISTENT);
-		blist[bcnt++] = ABS(jb.name->batCacheid);
+		blist[bcnt++] = abs(jb.name->batCacheid);
 	}
 
 	TMsubcommit_list(blist, bcnt);
@@ -1063,43 +1063,43 @@ JSONdrop(int *ret, str *name)
 				"no such JSON object with name: %s", *name);
 
 	BBPclear(bid);
-	blist[bcnt++] = ABS(bid);
+	blist[bcnt++] = abs(bid);
 
 	snprintf(buf, sizeof(buf), "json_%s_string", *name);
 	bid = BBPindex(buf);
 	if (bid) {
 		BBPclear(bid);
-		blist[bcnt++] = ABS(bid);
+		blist[bcnt++] = abs(bid);
 	}
 	snprintf(buf, sizeof(buf), "json_%s_integer", *name);
 	bid = BBPindex(buf);
 	if (bid) {
 		BBPclear(bid);
-		blist[bcnt++] = ABS(bid);
+		blist[bcnt++] = abs(bid);
 	}
 	snprintf(buf, sizeof(buf), "json_%s_doble", *name);
 	bid = BBPindex(buf);
 	if (bid) {
 		BBPclear(bid);
-		blist[bcnt++] = ABS(bid);
+		blist[bcnt++] = abs(bid);
 	}
 	snprintf(buf, sizeof(buf), "json_%s_array", *name);
 	bid = BBPindex(buf);
 	if (bid) {
 		BBPclear(bid);
-		blist[bcnt++] = ABS(bid);
+		blist[bcnt++] = abs(bid);
 	}
 	snprintf(buf, sizeof(buf), "json_%s_object", *name);
 	bid = BBPindex(buf);
 	if (bid) {
 		BBPclear(bid);
-		blist[bcnt++] = ABS(bid);
+		blist[bcnt++] = abs(bid);
 	}
 	snprintf(buf, sizeof(buf), "json_%s_name", *name);
 	bid = BBPindex(buf);
 	if (bid) {
 		BBPclear(bid);
-		blist[bcnt++] = ABS(bid);
+		blist[bcnt++] = abs(bid);
 	}
 
 	TMsubcommit_list(blist, bcnt);
@@ -1186,7 +1186,7 @@ JSONextract(int *rkind, int *rstring, int *rinteger, int *rdoble, int *rarray, i
 	bia = bat_iterator(jb.array);
 	bio = bat_iterator(jb.object);
 	bin = bat_iterator(jb.name);
-	e = BBPquickdesc(ABS(*elems), FALSE);
+	e = BBPquickdesc(abs(*elems), FALSE);
 	if (*elems < 0)
 		e = BATmirror(e);
 	BBPfix(*elems);
@@ -1250,7 +1250,7 @@ JSONwrap(int *rkind, int *rstring, int *rinteger, int *rdoble, int *rarray, int 
 	dbl d;
 	bit b;
 
-	e = BBPquickdesc(ABS(*elems), FALSE);
+	e = BBPquickdesc(abs(*elems), FALSE);
 	if (*elems < 0)
 		e = BATmirror(e);
 

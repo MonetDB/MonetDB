@@ -170,10 +170,10 @@ QOTstatisticsExit(void)
 		return;
 	MT_lock_set(&qotlock, "QOT statistics");
 	names[0] = 0;
-	names[1] = ABS(qotStat[QOTnames]->batCacheid);
-	names[2] = ABS(qotStat[QOTcalls]->batCacheid);
-	names[3] = ABS(qotStat[QOTactions]->batCacheid);
-	names[4] = ABS(qotStat[QOTtimings]->batCacheid);
+	names[1] = abs(qotStat[QOTnames]->batCacheid);
+	names[2] = abs(qotStat[QOTcalls]->batCacheid);
+	names[3] = abs(qotStat[QOTactions]->batCacheid);
+	names[4] = abs(qotStat[QOTtimings]->batCacheid);
 
 	TMsubcommit_list(names, 5);
 	MT_lock_unset(&qotlock, "QOT statistics");
