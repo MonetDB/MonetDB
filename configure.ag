@@ -598,8 +598,11 @@ yes-*-*)
 	dnl  not all) false positives, though, as well as in
 	dnl  YACC/BISON-generated code; thus, we do not use
 	dnl  "-Wunreachable-code" with clang and gcc < 4.5 .
+	dnl  At the same time, Apple deprecated OpenSSL in favour of
+	dnl  their own CommonCrypto API.  We don't mind about that.
 	case "$CC_ver" in
 	clang-*|gcc-[[0-3]].*|gcc-4.[[0-4]].*)
+		MCHECK_ADD_FLAG([-Wno-deprecated-declarations])
 		;;
 	*)
 		MCHECK_ADD_FLAG([-Wunreachable-code])
