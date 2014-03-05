@@ -843,7 +843,7 @@ BATslice(BAT *b, BUN l, BUN h)
 			BATsetcount(bn, h - l);
 		} else if (BAThdense(b) && b->ttype) {
 			for (; p < q; p++) {
-				bunfastins(bn, NULL, BUNtail(bi, p));
+				bunfastapp(bn, BUNtail(bi, p));
 			}
 		} else if (b->htype != b->ttype || b->htype != TYPE_void) {
 			for (; p < q; p++) {

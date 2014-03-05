@@ -82,10 +82,10 @@ BATslice2(BAT *b, BUN l1, BUN h1, BUN l2, BUN h2)
 	if (bn == NULL)
 		return bn;
 	for (p = (BUN) l1, q = (BUN) h1; p < q; p++) {
-		bunfastins(bn, NULL, BUNhead(bi, p));
+		bunfastapp(bn, BUNhead(bi, p));
 	}
 	for (p = (BUN) l2, q = (BUN) h2; p < q; p++) {
-		bunfastins(bn, NULL, BUNhead(bi, p));
+		bunfastapp(bn, BUNhead(bi, p));
 	}
 	BATseqbase(bn, 0);
 	bn->tsorted = BAThordered(b);

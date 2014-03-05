@@ -1338,7 +1338,26 @@ gdk_export bte ATOMelmshift(int sz);
 		bunfastins_nocheck(b, _p, h, t, Hsize(b), Tsize(b));	\
 	} while (0)
 
-#define bunfastins_check(b, p, h, t) bunfastins(b, h, t)
+#define bunfastapp_nocheck(b, p, t, ts)		\
+	do {					\
+		tfastins_nocheck(b, p, t, ts);	\
+		(b)->batCount++;		\
+	} while (0)
+
+#define bunfastapp(b, t)						\
+	do {								\
+		register BUN _p = BUNlast(b);				\
+		assert((b)->htype == TYPE_void);			\
+		if (_p == BUN_MAX || BATcount(b) == BUN_MAX) {		\
+			GDKerror("bunfastapp: too many elements to accomodate (INT_MAX)\n");	\
+			goto bunins_failed;				\
+		}							\
+		if (_p + 1 > BATcapacity(b)) {				\
+			if (BATextend((b), BATgrows(b)) == NULL)	\
+				goto bunins_failed;			\
+		}							\
+		bunfastapp_nocheck(b, _p, t, Tsize(b));			\
+	} while (0)
 
 gdk_export int GDKupgradevarheap(COLrec *c, var_t v, int copyall, int mayshare);
 gdk_export BAT *BUNfastins(BAT *b, const void *left, const void *right);
