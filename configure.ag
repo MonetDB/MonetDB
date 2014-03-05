@@ -1862,8 +1862,17 @@ if test "x$have_pthread" != xno; then
 
 	save_LIBS="$LIBS"
 	save_CPPFLAGS="$CPPFLAGS"
-	case $GCC-$have_pthread in
-		yes-auto|yes-yes)
+	case $GCC-$have_pthread-$CC_ver in
+		yes-auto-clang-*|yes-yes-clang-*)
+			# clang does not seem to have / require -pthread as
+			# compiler option; in fact, on Mac OSX Mavericks,
+			# "Apple LLVM version 5.0 (clang-500.2.79) (based on
+			# LLVM 3.3svn)" complains about "error: argument
+			# unused during compilation: '-pthread'"
+			PTHREAD_LIBS="-pthread"
+			LIBS="$LIBS $PTHREAD_LIBS"
+		;;
+		yes-auto-*|yes-yes-*)
 			# use GCC's knowledge about the target platform, sets flags
 			# for both the preprocessor as well as the linker
 			PTHREAD_INCS="-pthread"
