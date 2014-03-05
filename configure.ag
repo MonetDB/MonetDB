@@ -396,7 +396,7 @@ case "$CC_version" in
 	;;
 *clang*)
 	dnl  `clang -dumpversion` reports the original/old gcc version it is based on
-	gcc_ver="`$CC -v 2>&1 | grep -w '[[Vv]]ersion [[0-9]]\+\.[[0-9]]\+' | sed 's|^.*[[Vv]]ersion \([[0-9]]\+\(\.[[0-9]]\+\)\+\).*$|\1|'`"
+	gcc_ver="`$CC -v 2>&1 | grep -w '[[Vv]]ersion [[0-9]]\+\.[[0-9]]\+' | sed 's|^.*[[Vv]]ersion \([[0-9]][[0-9]]*\(\.[[0-9]][[0-9]]*\)\(\.[[0-9]][[0-9]]*\)*\).*$|\1|'`"
 	CC_ver="clang-$gcc_ver"
 	;;
 *)
