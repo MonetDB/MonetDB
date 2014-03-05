@@ -129,6 +129,7 @@ case "$CC" in
 	9.*)	CC="$CC -no-gcc";;
 	10.*)	CC="$CC -no-gcc";;
 	11.*)	CC="$CC -no-gcc";;
+	*)	AC_MSG_WARN([icc ($CC) $icc_ver not handled, yet]);;
 	esac
 	;;
 esac
