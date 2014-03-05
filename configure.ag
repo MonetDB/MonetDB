@@ -2287,6 +2287,8 @@ if test "x$enable_odbc" != xno; then
 	fi
 	if test "x$have_unixodbc" != xno; then
 		AC_MSG_CHECKING([checking whether SQLColAttribute uses SQLLEN * or SQLPOINTER])
+		save_CPPFLAGS="$CPPFLAGS"
+		CPPFLAGS="$CPPFLAGS $ODBC_INCS"
 		AC_COMPILE_IFELSE([
 			AC_LANG_PROGRAM([[
 				#include <sql.h>
@@ -2303,6 +2305,7 @@ if test "x$enable_odbc" != xno; then
 				[[SQLColAttribute(0,0,0,0,0,0,0);]])],
 			[lenp_or_pointer_t='SQLLEN *'],
 			[lenp_or_pointer_t=SQLPOINTER])
+		CPPFLAGS="$save_CPPFLAGS"
 		AC_MSG_RESULT([using "$lenp_or_pointer_t"])
 		AC_DEFINE_UNQUOTED(LENP_OR_POINTER_T, $lenp_or_pointer_t,
 			[Define as SQLLEN * or SQLPOINTER depending on the include file])
