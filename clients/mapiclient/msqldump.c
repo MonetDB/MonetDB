@@ -182,6 +182,7 @@ main(int argc, char **argv)
 			host = optarg;
 			break;
 		case 'p':
+			assert(optarg != NULL);
 			port = atoi(optarg);
 			break;
 		case 'd':
