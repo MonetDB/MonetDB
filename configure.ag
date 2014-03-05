@@ -377,14 +377,48 @@ case $host in
 	;;
 esac
 
+dnl  (try to) determine compiler type (gcc, icc, clang) (and version)
+dnl  independent of call ($CC) and result of AC_PROG_CC() ($GCC)
+dnl  (e.g., on OSX, Apple pretends its clang were gcc)
+AC_MSG_CHECKING(compiler type & version)
 gcc_ver=""
 icc_ver=""
-case $GCC-$CC in
-yes-*clang*)
+CC_ver=""
+CC_version="`$CC --version 2>&1`"
+case "$CC_version" in
+*gcc*GCC*)
+	gcc_ver="`$CC -dumpversion 2>/dev/null`"
+	CC_ver="gcc-$gcc_ver"
+	;;
+*icc*ICC*)
+	icc_ver="`$CC -dumpversion 2>/dev/null`"
+	CC_ver="icc-$icc_ver"
+	;;
+*clang*)
 	dnl  `clang -dumpversion` reports the original/old gcc version it is based on
-	gcc_ver="`$CC -v 2>&1 | grep -w '[[Vv]]ersion [[0-9]]\+\.[[0-9]]\+' | sed 's|^.*[[Vv]]ersion \([[0-9]]\+\(\.[[0-9]]\+\)\+\).*$|\1|'`";;
-yes-*)	gcc_ver="`$CC -dumpversion 2>/dev/null`";;
--*icc*)	icc_ver="`$CC -dumpversion 2>/dev/null`";;
+	gcc_ver="`$CC -v 2>&1 | grep -w '[[Vv]]ersion [[0-9]]\+\.[[0-9]]\+' | sed 's|^.*[[Vv]]ersion \([[0-9]]\+\(\.[[0-9]]\+\)\+\).*$|\1|'`"
+	CC_ver="clang-$gcc_ver"
+	;;
+*)
+	AC_MSG_WARN([compiler not recognized: `$CC --version` says
+$CC_version
+	]);;
+esac
+AC_MSG_RESULT($CC_ver)
+
+dnl  sanity/consistency check
+case "$GCC!$CC!$CC_ver" in
+yes!*clang*!clang-*)	;;
+yes!*gcc*!clang-*)	;;
+yes!*gcc*!gcc-*)	;;
+!*icc*!icc-*)	;;
+*)	AC_MSG_WARN([compiler potentially not (correctly) recognized:
+GCC=$GCC
+CC=$CC
+CC_ver=$CC_ver
+CC_version=
+$CC_version
+	]);;
 esac
 
 AC_ARG_WITH(bits,
@@ -564,8 +598,8 @@ yes-*-*)
 	dnl  not all) false positives, though, as well as in
 	dnl  YACC/BISON-generated code; thus, we do not use
 	dnl  "-Wunreachable-code" with clang 2.8 and gcc < 4.5 .
-	case "$CC-$gcc_ver" in
-	*clang*-2.8|*clang*-3.3|*gcc*-[[0-3]].*|*gcc*-4.[[0-4]].*)
+	case "$CC_ver" in
+	clang-2.8|clang-3.3|gcc-[[0-3]].*|gcc-4.[[0-4]].*)
 		;;
 	*)
 		MCHECK_ADD_FLAG([-Wunreachable-code])
@@ -906,8 +940,8 @@ if test "x$enable_optimize" = xyes; then
 	JAVACFLAGS="`echo "$JAVACFLAGS" | sed -e 's| -g | |g' -e 's| -g:[[a-z]]* | |g' -e 's|^ ||' -e 's| $||'`"
 	dnl  Optimization flags
 	JAVACFLAGS="$JAVACFLAGS -g:none -O"
-	case "$GCC-$CC" in
-	yes-*clang*)
+	case "$GCC-$CC_ver" in
+	yes-clang-*)
 	  CFLAGS="$CFLAGS -O3 -fomit-frame-pointer -finline-functions"
 	  ;;
 	yes-*)
