@@ -36,7 +36,7 @@ CREATE TABLE forests (
 CREATE TABLE bridges (
 	fid INTEGER NOT NULL PRIMARY KEY,
 	name VARCHAR(64),
-	position POINT);
+	"position" POINT);
 
 -- Streams
 CREATE TABLE streams (
@@ -48,7 +48,7 @@ CREATE TABLE streams (
 CREATE TABLE buildings (
 	fid INTEGER NOT NULL PRIMARY KEY,
 	address VARCHAR(64),
-	position POINT,
+	"position" POINT,
 	footprint POLYGON);
 
 -- Ponds
@@ -56,7 +56,7 @@ CREATE TABLE ponds (
 	fid INTEGER NOT NULL PRIMARY KEY,
 	name VARCHAR(64),
 	type VARCHAR(64),
-	shores MULTIPOYLGON);
+	shores MULTIPOLYGON);
 
 -- Named Places
 CREATE TABLE named_places (
@@ -121,22 +121,23 @@ INSERT INTO named_places VALUES(117, 'Ashton', PolyFromText( 'POLYGON( ( 62 48, 
 INSERT INTO named_places VALUES(118, 'Goose Island', PolyFromText( 'POLYGON( ( 67 13, 67 18, 59 18, 59 13, 67 13) )', 101));
 -- Map Neatlines
 INSERT INTO map_neatlines VALUES(115, PolyFromText( 'POLYGON( ( 0 0, 0 48, 84 48, 84 0, 0 0 ) )', 101));
+
 --C.3.3.3 Geometry types and functions schema test queries
 -- Conformance Item T1
-SELECT f_table_name
-FROM geometry_columns;
+-- SELECT f_table_name
+-- FROM geometry_columns;
 -- Conformance Item T2
-SELECT f_geometry_column
-FROM geometry_columns
-WHERE f_table_name = 'streams';
+-- SELECT f_geometry_column
+-- FROM geometry_columns
+-- WHERE f_table_name = 'streams';
 -- Conformance Item T3
-SELECT coord_dimension
-FROM geometry_columns
-WHERE f_table_name = 'streams';
+-- SELECT coord_dimension
+-- FROM geometry_columns
+-- WHERE f_table_name = 'streams';
 -- Conformance Item T4
-SELECT srid
-FROM geometry_columns
-WHERE f_table_name = 'streams';
+-- SELECT srid
+-- FROM geometry_columns
+-- WHERE f_table_name = 'streams';
 -- Conformance Item T5
 SELECT srtext
 FROM SPATIAL_REF_SYS
@@ -179,11 +180,11 @@ SELECT AsText(Envelope((boundary),101)
 FROM named_places
 WHERE name = 'Goose Island';
 -- Conformance Item T15
-SELECT X(position)
+SELECT X("position")
 FROM bridges
 WHERE name = ‘Cam Bridge’;
 -- Conformance Item T16
-SELECT Y(position)
+SELECT Y("position")
 FROM bridges
 WHERE name = 'Cam Bridge';
 -- Conformance Item T17
@@ -312,7 +313,7 @@ FROM forests, named_places
 WHERE forests.name = 'Green Forest'
 AND named_places.name = 'Ashton';
 -- Conformance Item T46
-SELECT Distance(position, boundary)
+SELECT Distance("position", boundary)
 FROM bridges, named_places
 WHERE bridges.name = 'Cam Bridge'
 AND named_places.name = 'Ashton';
@@ -339,7 +340,7 @@ AND named_places.name = 'Ashton';
 -- Conformance Item T51
 SELECT count(*)
 FROM buildings, bridges
-WHERE Contains(Buffer(bridges.position, 15.0), buildings.footprint) = 1;
+WHERE Contains(Buffer(bridges."position", 15.0), buildings.footprint) = 1;
 -- Conformance Item T52
 SELECT AsText(ConvexHull(shore))
 FROM lakes
