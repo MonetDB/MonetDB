@@ -1968,6 +1968,7 @@ dump_version(Mapi mid, stream *toConsole, const char *prefix)
 		if (dbname != NULL)
 			free(dbname);
 		dbname = uri;
+		uri = NULL;
 	}
 	if (dbname != NULL && dbver != NULL) {
 		mnstr_printf(toConsole, "%s MonetDB v%s%s%s%s, '%s'\n",
@@ -1986,6 +1987,8 @@ dump_version(Mapi mid, stream *toConsole, const char *prefix)
 		free(dbver);
 	if (dbrel != NULL)
 		free(dbrel);
+	if (uri != NULL)
+		free(uri);
 	if (hdl)
 		mapi_close_handle(hdl);
 }

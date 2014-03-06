@@ -1329,7 +1329,7 @@ gdk_export bte ATOMelmshift(int sz);
 		register BUN _p = BUNlast(b);				\
 		if (_p >= BATcapacity(b)) {				\
 			if (_p == BUN_MAX || BATcount(b) == BUN_MAX) {	\
-				GDKerror("bunfastins: too many elements to accomodate (BUN_MAX)\n"); \
+				GDKerror("bunfastins: too many elements to accomodate (" BUNFMT ")\n", BUN_MAX); \
 				goto bunins_failed;			\
 			}						\
 			if (BATextend((b), BATgrows(b)) == NULL)	\
@@ -1350,7 +1350,7 @@ gdk_export bte ATOMelmshift(int sz);
 		assert((b)->htype == TYPE_void);			\
 		if (_p >= BATcapacity(b)) {				\
 			if (_p == BUN_MAX || BATcount(b) == BUN_MAX) {	\
-				GDKerror("bunfastapp: too many elements to accomodate (BUN_MAX)\n"); \
+				GDKerror("bunfastapp: too many elements to accomodate (" BUNFMT ")\n", BUN_MAX); \
 				goto bunins_failed;			\
 			}						\
 			if (BATextend((b), BATgrows(b)) == NULL)	\
@@ -3373,12 +3373,72 @@ gdk_export BAT *BATsample_(BAT *b, BUN n); /* version that expects void head and
 				(c)->dense ? "dense" : "oid" :		\
 			 ATOMname((c)->type))
 
+#define BATorder(b)							\
+	({								\
+		BAT *_b = (b);						\
+		HEADLESSDEBUG fprintf(stderr,				\
+			"#BATorder([%s,%s]#"BUNFMT") %s[%s:%d]\n",	\
+			_COL_TYPE(_b->H), _COL_TYPE(_b->T), BATcount(_b), \
+			__func__, __FILE__, __LINE__);			\
+		BATorder(_b);						\
+	})
+
+#define BATorder_rev(b)							\
+	({								\
+		BAT *_b = (b);						\
+		HEADLESSDEBUG fprintf(stderr,				\
+			"#BATorder_rev([%s,%s]#"BUNFMT") %s[%s:%d]\n",	\
+			_COL_TYPE(_b->H), _COL_TYPE(_b->T), BATcount(_b), \
+			__func__, __FILE__, __LINE__);			\
+		BATorder_rev(_b);					\
+	})
+
+#define BATsort(b)							\
+	({								\
+		BAT *_b = (b);						\
+		HEADLESSDEBUG fprintf(stderr,				\
+			"#BATsort([%s,%s]#"BUNFMT") %s[%s:%d]\n",	\
+			_COL_TYPE(_b->H), _COL_TYPE(_b->T), BATcount(_b), \
+			__func__, __FILE__, __LINE__);			\
+		BATsort(_b);						\
+	})
+
+#define BATsort_rev(b)							\
+	({								\
+		BAT *_b = (b);						\
+		HEADLESSDEBUG fprintf(stderr,				\
+			"#BATsort_rev([%s,%s]#"BUNFMT") %s[%s:%d]\n",	\
+			_COL_TYPE(_b->H), _COL_TYPE(_b->T), BATcount(_b), \
+			__func__, __FILE__, __LINE__);			\
+		BATsort_rev(_b);					\
+	})
+
+#define BATssort(b)							\
+	({								\
+		BAT *_b = (b);						\
+		HEADLESSDEBUG fprintf(stderr,				\
+			"#BATssort([%s,%s]#"BUNFMT") %s[%s:%d]\n",	\
+			_COL_TYPE(_b->H), _COL_TYPE(_b->T), BATcount(_b), \
+			__func__, __FILE__, __LINE__);			\
+		BATssort(_b);						\
+	})
+
+#define BATssort_rev(b)							\
+	({								\
+		BAT *_b = (b);						\
+		HEADLESSDEBUG fprintf(stderr,				\
+			"#BATssort_rev([%s,%s]#"BUNFMT") %s[%s:%d]\n",	\
+			_COL_TYPE(_b->H), _COL_TYPE(_b->T), BATcount(_b), \
+			__func__, __FILE__, __LINE__);			\
+		BATssort_rev(_b);					\
+	})
+
 #define BATselect_(b, h, t, li, hi)					\
 	({								\
 		BAT *_b = (b);						\
 		HEADLESSDEBUG fprintf(stderr,				\
-			"#BATselect_([%s,%s]) %s[%s:%d]\n",		\
-			_COL_TYPE(_b->H), _COL_TYPE(_b->T),		\
+			"#BATselect_([%s,%s]#"BUNFMT") %s[%s:%d]\n",	\
+			_COL_TYPE(_b->H), _COL_TYPE(_b->T), BATcount(_b), \
 			__func__, __FILE__, __LINE__);			\
 		BATselect_(_b, (h), (t), (li), (hi));			\
 	})
@@ -3387,8 +3447,8 @@ gdk_export BAT *BATsample_(BAT *b, BUN n); /* version that expects void head and
 	({								\
 		BAT *_b = (b);						\
 		HEADLESSDEBUG fprintf(stderr,				\
-			"#BATuselect_([%s,%s]) %s[%s:%d]\n",		\
-			_COL_TYPE(_b->H), _COL_TYPE(_b->T),		\
+			"#BATuselect_([%s,%s]#"BUNFMT") %s[%s:%d]\n",	\
+			_COL_TYPE(_b->H), _COL_TYPE(_b->T), BATcount(_b), \
 			__func__, __FILE__, __LINE__);			\
 		BATuselect_(_b, (h), (t), (li), (hi));			\
 	})
@@ -3397,8 +3457,8 @@ gdk_export BAT *BATsample_(BAT *b, BUN n); /* version that expects void head and
 	({								\
 		BAT *_b = (b);						\
 		HEADLESSDEBUG fprintf(stderr,				\
-			"#BATantiuselect_([%s,%s]) %s[%s:%d]\n",	\
-			_COL_TYPE(_b->H), _COL_TYPE(_b->T),		\
+			"#BATantiuselect_([%s,%s]#"BUNFMT") %s[%s:%d]\n", \
+			_COL_TYPE(_b->H), _COL_TYPE(_b->T), BATcount(_b), \
 			__func__, __FILE__, __LINE__);			\
 		BATantiuselect_(_b, (h), (t), (li), (hi));		\
 	})
@@ -3407,8 +3467,8 @@ gdk_export BAT *BATsample_(BAT *b, BUN n); /* version that expects void head and
 	({								\
 		BAT *_b = (b);						\
 		HEADLESSDEBUG fprintf(stderr,				\
-			"#BATselect([%s,%s]) %s[%s:%d]\n",		\
-			_COL_TYPE(_b->H), _COL_TYPE(_b->T),		\
+			"#BATselect([%s,%s]#"BUNFMT") %s[%s:%d]\n",	\
+			_COL_TYPE(_b->H), _COL_TYPE(_b->T), BATcount(_b), \
 			__func__, __FILE__, __LINE__);			\
 		BATselect(_b, (h), (t));				\
 	})
@@ -3417,8 +3477,8 @@ gdk_export BAT *BATsample_(BAT *b, BUN n); /* version that expects void head and
 	({								\
 		BAT *_b = (b);						\
 		HEADLESSDEBUG fprintf(stderr,				\
-			"#BATuselect([%s,%s]) %s[%s:%d]\n",		\
-			_COL_TYPE(_b->H), _COL_TYPE(_b->T),		\
+			"#BATuselect([%s,%s]#"BUNFMT") %s[%s:%d]\n",	\
+			_COL_TYPE(_b->H), _COL_TYPE(_b->T), BATcount(_b), \
 			__func__, __FILE__, __LINE__);			\
 		BATuselect(_b, (h), (t));				\
 	})
@@ -3427,8 +3487,8 @@ gdk_export BAT *BATsample_(BAT *b, BUN n); /* version that expects void head and
 	({								\
 		BAT *_b = (b);						\
 		HEADLESSDEBUG fprintf(stderr,				\
-			"#BATsample([%s,%s]) %s[%s:%d]\n",		\
-			_COL_TYPE(_b->H), _COL_TYPE(_b->T),		\
+			"#BATsample([%s,%s]#"BUNFMT") %s[%s:%d]\n",	\
+			_COL_TYPE(_b->H), _COL_TYPE(_b->T), BATcount(_b), \
 			__func__, __FILE__, __LINE__);			\
 		BATsample(_b, (n));					\
 	})
@@ -3437,9 +3497,9 @@ gdk_export BAT *BATsample_(BAT *b, BUN n); /* version that expects void head and
 	({								\
 		BAT *_l = (l), *_r = (r);				\
 		HEADLESSDEBUG fprintf(stderr,				\
-			"#BATsemijoin([%s,%s],[%s,%s]) %s[%s:%d]\n",	\
-			_COL_TYPE(_l->H), _COL_TYPE(_l->T),		\
-			_COL_TYPE(_r->H), _COL_TYPE(_r->T),		\
+			"#BATsemijoin([%s,%s]#"BUNFMT",[%s,%s]#"BUNFMT") %s[%s:%d]\n", \
+			_COL_TYPE(_l->H), _COL_TYPE(_l->T), BATcount(_l), \
+			_COL_TYPE(_r->H), _COL_TYPE(_r->T), BATcount(_r), \
 			__func__, __FILE__, __LINE__);			\
 		BATsemijoin(_l, _r);					\
 	})
@@ -3448,9 +3508,9 @@ gdk_export BAT *BATsample_(BAT *b, BUN n); /* version that expects void head and
 	({								\
 		BAT *_l = (l), *_r = (r);				\
 		HEADLESSDEBUG fprintf(stderr,				\
-			"#BATjoin([%s,%s],[%s,%s]) %s[%s:%d]\n",	\
-			_COL_TYPE(_l->H), _COL_TYPE(_l->T),		\
-			_COL_TYPE(_r->H), _COL_TYPE(_r->T),		\
+			"#BATjoin([%s,%s]#"BUNFMT",[%s,%s]#"BUNFMT") %s[%s:%d]\n", \
+			_COL_TYPE(_l->H), _COL_TYPE(_l->T), BATcount(_l), \
+			_COL_TYPE(_r->H), _COL_TYPE(_r->T), BATcount(_r), \
 			__func__, __FILE__, __LINE__);			\
 		BATjoin(_l, _r, (estimate));				\
 	})
@@ -3459,9 +3519,9 @@ gdk_export BAT *BATsample_(BAT *b, BUN n); /* version that expects void head and
 	({								\
 		BAT *_l = (l), *_r = (r);				\
 		HEADLESSDEBUG fprintf(stderr,				\
-			"#BATleftjoin([%s,%s],[%s,%s]) %s[%s:%d]\n",	\
-			_COL_TYPE(_l->H), _COL_TYPE(_l->T),		\
-			_COL_TYPE(_r->H), _COL_TYPE(_r->T),		\
+			"#BATleftjoin([%s,%s]#"BUNFMT",[%s,%s]#"BUNFMT") %s[%s:%d]\n", \
+			_COL_TYPE(_l->H), _COL_TYPE(_l->T), BATcount(_l), \
+			_COL_TYPE(_r->H), _COL_TYPE(_r->T), BATcount(_r), \
 			__func__, __FILE__, __LINE__);			\
 		BATleftjoin(_l, _r, (estimate));			\
 	})
@@ -3470,9 +3530,9 @@ gdk_export BAT *BATsample_(BAT *b, BUN n); /* version that expects void head and
 	({								\
 		BAT *_l = (l), *_r = (r);				\
 		HEADLESSDEBUG fprintf(stderr,				\
-			"#BATthetajoin([%s,%s],[%s,%s]) %s[%s:%d]\n",	\
-			_COL_TYPE(_l->H), _COL_TYPE(_l->T),		\
-			_COL_TYPE(_r->H), _COL_TYPE(_r->T),		\
+			"#BATthetajoin([%s,%s]#"BUNFMT",[%s,%s]#"BUNFMT") %s[%s:%d]\n",	\
+			_COL_TYPE(_l->H), _COL_TYPE(_l->T), BATcount(_l), \
+			_COL_TYPE(_r->H), _COL_TYPE(_r->T), BATcount(_r), \
 			__func__, __FILE__, __LINE__);			\
 		BATthetajoin(_l, _r, (op), (estimate));			\
 	})
@@ -3481,9 +3541,9 @@ gdk_export BAT *BATsample_(BAT *b, BUN n); /* version that expects void head and
 	({								\
 		BAT *_l = (l), *_r = (r);				\
 		HEADLESSDEBUG fprintf(stderr,				\
-			"#BATouterjoin([%s,%s],[%s,%s]) %s[%s:%d]\n",	\
-			_COL_TYPE(_l->H), _COL_TYPE(_l->T),		\
-			_COL_TYPE(_r->H), _COL_TYPE(_r->T),		\
+			"#BATouterjoin([%s,%s]#"BUNFMT",[%s,%s]#"BUNFMT") %s[%s:%d]\n",	\
+			_COL_TYPE(_l->H), _COL_TYPE(_l->T), BATcount(_l), \
+			_COL_TYPE(_r->H), _COL_TYPE(_r->T), BATcount(_r), \
 			__func__, __FILE__, __LINE__);			\
 		BATouterjoin(_l, _r, (estimate));			\
 	})
@@ -3492,9 +3552,9 @@ gdk_export BAT *BATsample_(BAT *b, BUN n); /* version that expects void head and
 	({								\
 		BAT *_l = (l), *_r = (r);				\
 		HEADLESSDEBUG fprintf(stderr,				\
-			"#BATleftfetchjoin([%s,%s],[%s,%s]) %s[%s:%d]\n", \
-			_COL_TYPE(_l->H), _COL_TYPE(_l->T),		\
-			_COL_TYPE(_r->H), _COL_TYPE(_r->T),		\
+			"#BATleftfetchjoin([%s,%s]#"BUNFMT",[%s,%s]#"BUNFMT") %s[%s:%d]\n", \
+			_COL_TYPE(_l->H), _COL_TYPE(_l->T), BATcount(_l), \
+			_COL_TYPE(_r->H), _COL_TYPE(_r->T), BATcount(_r), \
 			__func__, __FILE__, __LINE__);			\
 		BATleftfetchjoin(_l, _r, (estimate));			\
 	})
@@ -3503,9 +3563,9 @@ gdk_export BAT *BATsample_(BAT *b, BUN n); /* version that expects void head and
 	({								\
 		BAT *_l = (l), *_r = (r);				\
 		HEADLESSDEBUG fprintf(stderr,				\
-			"#BATantijoin([%s,%s],[%s,%s]) %s[%s:%d]\n",	\
-			_COL_TYPE(_l->H), _COL_TYPE(_l->T),		\
-			_COL_TYPE(_r->H), _COL_TYPE(_r->T),		\
+			"#BATantijoin([%s,%s]#"BUNFMT",[%s,%s]#"BUNFMT") %s[%s:%d]\n", \
+			_COL_TYPE(_l->H), _COL_TYPE(_l->T), BATcount(_l), \
+			_COL_TYPE(_r->H), _COL_TYPE(_r->T), BATcount(_r), \
 			__func__, __FILE__, __LINE__);			\
 		BATantijoin(_l, _r);					\
 	})
@@ -3514,9 +3574,9 @@ gdk_export BAT *BATsample_(BAT *b, BUN n); /* version that expects void head and
 	({								\
 		BAT *_l = (l), *_r = (r);				\
 		HEADLESSDEBUG fprintf(stderr,				\
-			"#BATbandjoin([%s,%s],[%s,%s]) %s[%s:%d]\n",	\
-			_COL_TYPE(_l->H), _COL_TYPE(_l->T),		\
-			_COL_TYPE(_r->H), _COL_TYPE(_r->T),		\
+			"#BATbandjoin([%s,%s]#"BUNFMT",[%s,%s]#"BUNFMT") %s[%s:%d]\n", \
+			_COL_TYPE(_l->H), _COL_TYPE(_l->T), BATcount(_l), \
+			_COL_TYPE(_r->H), _COL_TYPE(_r->T), BATcount(_r), \
 			__func__, __FILE__, __LINE__);			\
 		BATbandjoin(_l, _r, (c1), (c2), (li), (hi));		\
 	})
@@ -3525,10 +3585,10 @@ gdk_export BAT *BATsample_(BAT *b, BUN n); /* version that expects void head and
 	({								\
 		BAT *_l = (l), *_rl = (rl), *_rh = (rh);		\
 		HEADLESSDEBUG fprintf(stderr,				\
-			"#BATrangejoin([%s,%s],[%s,%s],[%s,%s]) %s[%s:%d]\n", \
-			_COL_TYPE(_l->H), _COL_TYPE(_l->T),		\
-			_COL_TYPE(_rl->H), _COL_TYPE(_rl->T),		\
-			_COL_TYPE(_rh->H), _COL_TYPE(_rh->T),		\
+			"#BATrangejoin([%s,%s]#"BUNFMT",[%s,%s]#"BUNFMT",[%s,%s]#"BUNFMT") %s[%s:%d]\n", \
+			_COL_TYPE(_l->H), _COL_TYPE(_l->T), BATcount(_l), \
+			_COL_TYPE(_rl->H), _COL_TYPE(_rl->T), BATcount(_rl), \
+			_COL_TYPE(_rh->H), _COL_TYPE(_rh->T), BATcount(_rh), \
 			__func__, __FILE__, __LINE__);			\
 		BATrangejoin(_l, _rl, _rh, (li), (hi));			\
 	})

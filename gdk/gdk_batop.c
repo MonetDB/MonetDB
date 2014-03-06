@@ -1089,6 +1089,13 @@ BATorder_internal(BAT *b, int stable, int reverse, int copy, const char *func)
 	return b;
 }
 
+#undef BATorder
+#undef BATorder_rev
+#undef BATsort
+#undef BATsort_rev
+#undef BATssort
+#undef BATssort_rev
+
 BAT *
 BATorder(BAT *b)
 {

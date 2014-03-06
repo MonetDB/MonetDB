@@ -798,6 +798,11 @@ mv $RPM_BUILD_ROOT%{_datadir}/doc/MonetDB-SQL-%{version} $RPM_BUILD_ROOT%{_datad
 rm -fr $RPM_BUILD_ROOT
 
 %changelog
+* Thu Mar 06 2014 Sjoerd Mullender <sjoerd@acm.org> - 11.17.13-20140306
+- Rebuilt.
+- BZ#3452: ODBC driver build fails on Mac OS X due to a conflicting
+  types for the SQLColAttribute with the unixODBC library
+
 * Mon Mar 03 2014 Sjoerd Mullender <sjoerd@acm.org> - 11.17.11-20140303
 - Rebuilt.
 - BZ#3442: COPY INTO ... LOCKED reports incorrect count
