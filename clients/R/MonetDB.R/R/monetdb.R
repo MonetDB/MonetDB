@@ -25,7 +25,7 @@ MonetR <- MonetDB <- MonetDBR <- MonetDB.R <- function() {
 
 setMethod("dbGetInfo", "MonetDBDriver", def=function(dbObj, ...)
 			list(name="MonetDBDriver", 
-					driver.version="0.9",
+					driver.version="0.9.1",
 					DBI.version="0.2-5",
 					client.version=NA,
 					max.connections=NA)
@@ -101,14 +101,14 @@ setMethod("dbConnect", "MonetDBDriver", def=function(drv,dbname="demo", user="mo
 			connenv$lock <- 0
 			connenv$deferred <- list()
 			connenv$exception <- list()
-			
-			return(new("MonetDBConnection",socket=socket,connenv=connenv))
+
+			return(new("MonetDBConnection",socket=socket,connenv=connenv,Id=-1L))
 		},
 		valueClass="MonetDBConnection")
 
 
 ### MonetDBConnection, #monetdb_mapi_conn
-setClass("MonetDBConnection", representation("DBIConnection",socket="externalptr",connenv="environment",fetchSize="integer"))
+setClass("MonetDBConnection", representation("DBIConnection",socket="externalptr",connenv="environment",fetchSize="integer",Id="integer"))
 
 setMethod("dbGetInfo", "MonetDBConnection", def=function(dbObj, ...) {
 			envdata <- dbGetQuery(dbObj,"SELECT name, value from env()")
