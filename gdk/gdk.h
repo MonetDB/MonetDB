@@ -2277,7 +2277,7 @@ gdk_export void *GDKrealloc(void *pold, size_t size);
 gdk_export void GDKfree(void *blk);
 gdk_export str GDKstrdup(const char *s);
 
-#ifndef NDEBUG
+#if !defined(NDEBUG) && !defined(__clang_analyzer__)
 /* In debugging mode, replace GDKmalloc and other functions with a
  * version that optionally prints calling information.
  *

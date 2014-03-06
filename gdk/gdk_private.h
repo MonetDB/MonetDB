@@ -170,7 +170,7 @@ extern MT_Lock MT_system_lock;
 
 #define SORTloop_bit(b,p,q,tl,th) SORTloop_bte(b,p,q,tl,th)
 
-#ifndef NDEBUG
+#if !defined(NDEBUG) && !defined(__clang_analyzer__)
 /* see comment in gdk.h */
 #ifdef __GNUC__
 #define GDKmallocmax(s,ps,e)						\
