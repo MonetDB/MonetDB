@@ -95,13 +95,22 @@ iconv
 	On Ubuntu, you can search with `apt-file` what provides these
 	files:
 
-	$ apt-file search iconv.m4
+	``$ apt-file search iconv.m4``
 	gettext: /usr/share/aclocal/iconv.m4
 	gnulib: /usr/share/gnulib/m4/iconv.m4
 
 	The .m4 that usually works is in gettext. Simply run,
 
-	$ sudo apt-get install gettext
+	``$ sudo apt-get install gettext``
+
+	On Fedora, you can search with `yum`:
+
+	``$ yum provides /usr/share/aclocal/iconv.m4``
+
+	This shows the file is provided by the gettext-devel package.
+	Run
+
+	``$ sudo yum install gettext-devel``
 
 standard software development tools
 	To compile MonetDB, you also need to have the following
@@ -109,15 +118,14 @@ standard software development tools
 	use on you system:
 
 	- a C compiler (e.g. GNU's ``gcc``);
-	- GNU ``make`` (``gmake``) (native ``make`` on, e.g., IRIX and Solaris
-	  usually don't work).
-
-	The following are not needed when you start with the source
-	distribution:
-
-	- a C++ compiler (e.g. GNU's ``g++``);
+	- GNU ``make`` (``gmake``) (native ``make`` on, e.g., IRIX and
+	  Solaris usually don't work);
 	- a lexical analyzer generator (e.g., ``lex`` or ``flex``);
 	- a parser generator (e.g., ``yacc`` or ``bison``).
+
+	If ``lex`` and ``flex`` are missing, you won't be able to
+	build the jaql front end.  If ``yacc`` and ``bison`` are
+	missing, you won't be able to build the SQL front end.
 
 	The following are optional.  They are checked for during
 	configuration and if they are missing, the feature is just
@@ -127,21 +135,22 @@ standard software development tools
 	- php
 
 libxml2
-    The XML parsing library `libxml2`__ is used by
-    the xml module of monetdb5.
+	The XML parsing library `libxml2`__ is used by the xml module
+	of monetdb5.
 
-    MonetDB5 cannot be compiled without libxml2.  Current Linux
-    distributions all come with libxml2.
+	MonetDB5 cannot be compiled without libxml2.  Current Linux
+	distributions all come with libxml2.
 
 pcre
-    The Perl Compatible Regular Expressions library `pcre`__ is used by
-    monetdb5 and sql.  Most prominently, complex SQL LIKE expressions are
-    evaluated with help of the pcre library.
+	The Perl Compatible Regular Expressions library `pcre`__ is
+	used by monetdb5 and sql.  Most prominently, complex SQL LIKE
+	expressions are evaluated with help of the pcre library.
 
 openssl
-    The `OpenSSL`__ toolkit implementing SSL v2/v3 and TLS protocols is used
-    for its with full-strength world-wide cryptography functions.  The
-    client-server login procedures make use of these functions.
+	The `OpenSSL`__ toolkit implementing SSL v2/v3 and TLS
+	protocols is used for its with full-strength world-wide
+	cryptography functions.  The client-server login procedures
+	make use of these functions.
 
 __ http://dev.monetdb.org/downloads/sources/
 __ http://www.gnu.org/software/autoconf/
@@ -194,7 +203,7 @@ development sources on your computer.
  hg clone http://dev.monetdb.org/hg/MonetDB
 
 This will create the directory MonetDB in your current working directory
-with underneath all subcomponents.  
+with underneath all subcomponents.
 
 
 Bootstrap, Configure and Make
@@ -227,7 +236,9 @@ where ``...`` is replaced with the (absolute or relative) path to the
 
 The directory where you execute ``configure`` is the place where all
 intermediate source and object files are generated during compilation
-via ``make``.
+via ``make``.  It is useful to have this be a new directory so that
+there is an easy way to remove all intermediates in case you want to
+rebuild (just empty or remove the directory).
 
 By default, MonetDB is installed in ``/usr/local``.  To choose another
 target directory, you need to call
@@ -238,10 +249,18 @@ target directory, you need to call
 
 Some other useful ``configure`` options are:
 
---enable-debug          enable full debugging default=[see `Configure defaults and recommendations`_ below]
---enable-optimize       enable extra optimization default=[see `Configure defaults and recommendations`_ below]
---enable-assert         enable assertions in the code default=[see `Configure defaults and recommendations`_ below]
---enable-strict         enable strict compiler flags default=[see `Configure defaults and recommendations`_ below]
+--enable-debug          enable full debugging
+			default=[see `Configure defaults and
+			recommendations`_ below]
+--enable-optimize       enable extra optimization
+			default=[see `Configure defaults and
+			recommendations`_ below]
+--enable-assert         enable assertions in the code
+			default=[see `Configure defaults and
+			recommendations`_ below]
+--enable-strict         enable strict compiler flags
+			default=[see `Configure defaults and
+			recommendations`_ below]
 
 You can also add options such as ``CC=<compiler>`` to specify the
 compiler and compiler flags to use.
@@ -251,35 +270,21 @@ Use ``configure --help`` to find out more about ``configure`` options.
 Configure defaults and recommendations
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-For convenience of both developers and users as well as to comply even more
-with open source standards, we now set/use the following defaults for the
-configure options
+For convenience of both developers and users, we use the following
+defaults for the configure options.
 
-::
+When compiling from Mercurial sources (as mainly done by developers)::
 
- --enable-strict, --enable-assert, --enable-debug, --enable-optimize
+ --enable-strict --enable-assert --enable-debug --disable-optimize
 
-When compiling from Mercurial sources
-(as mainly done by developers):
+When compiling from the pre-packages source distribution::
 
-::
+ --disable-strict --disable-assert --disable-debug --disable-optimize
 
- strict=yes  assert=yes  debug=yes  optimize=no (*)
+When building a binary distribution, we use::
 
-When compiling from packaged/distributed sources (i.e., tarballs)
-(as mainly done by users):
+ --disable-strict --disable-assert --disable-debug --enable-optimize
 
-::
-
- strict=no   assert=no   debug=no   optimize=no (*)
-
-For building binary distributions (RPMs):
-
-::
-
- strict=no   assert=no   debug=no   optimize=yes
-
-``(*)``
 IMPORTANT NOTE:
 
 Since ``--enable-optimize=yes`` is not the default for any case except
@@ -290,7 +295,7 @@ scratch, *explicitly configured* with
 
  --enable-debug=no --enable-assert=no --enable-optimize=yes
 
-in case you want/need to run any performance experiments with MonetDB!
+in case you want to run any performance experiments with MonetDB!
 
 Please note:
 ``--enable-X=yes`` is equivalent to ``--enable-X``, and
@@ -307,24 +312,7 @@ command
  make
 
 to compile the source code.  Please note that parallel make
-runs (e.g. ``make -j2``) are currently known to be unsuccessful.
-
-Testing the Build
-~~~~~~~~~~~~~~~~~
-
-This step is optional and only relevant for the packages clients,
-MonetDB5 and sql.
-
-If ``make`` went successfully, you can try
-
-::
-
- make check
-
-This will perform a large number of tests, some are unfortunately
-still expected to fail, but most should go successfully.  At the end
-of the output there is a reference to an HTML file which is created by
-the test process that shows the test results.
+runs (e.g. ``make -j2``) are fully supported.
 
 Install
 ~~~~~~~
@@ -343,8 +331,7 @@ privileges.
 Testing the Installation
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-This step is optional and only relevant for the packages clients,
-MonetDB5 and sql.
+This step is optional.
 
 Make sure that *prefix*/bin is in your ``PATH``.  Then
 in the package top-level directory issue the command
@@ -363,13 +350,10 @@ using a Mercurial checkout; see
 
 for more options).
 
-This should produce much the same output as ``make check`` above, but
-uses the installed version of MonetDB.
-
 You need write permissions in part of the installation directory for
 this command: it will create subdirectories ``var/dbfarm`` and
-``Tests``.
-
+``Tests``, although there are options to ``Mtest.py`` to change the
+paths.
 
 Usage
 -----
@@ -402,8 +386,7 @@ for details.
 
 At the ``mclient`` prompt some extra commands are available.  Type
 a single question mark to get a list of options.  Note that one of the
-options is to read input from a file using ``<``.
-
+options is to read input from a file using ``\<``.
 
 Troubleshooting
 ---------------

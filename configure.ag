@@ -396,7 +396,7 @@ case "$CC_version" in
 	;;
 *clang*)
 	dnl  `clang -dumpversion` reports the original/old gcc version it is based on
-	gcc_ver="`$CC -v 2>&1 | grep -w '[[Vv]]ersion [[0-9]]\+\.[[0-9]]\+' | sed 's|^.*[[Vv]]ersion \([[0-9]]\+\(\.[[0-9]]\+\)\+\).*$|\1|'`"
+	gcc_ver="`$CC -v 2>&1 | grep -w '[[Vv]]ersion [[0-9]]\+\.[[0-9]]\+' | sed 's|^.*[[Vv]]ersion \([[0-9]][[0-9]]*\(\.[[0-9]][[0-9]]*\)\(\.[[0-9]][[0-9]]*\)*\).*$|\1|'`"
 	CC_ver="clang-$gcc_ver"
 	;;
 *)
@@ -591,15 +591,18 @@ yes-*-*)
 	MCHECK_ADD_FLAG([-Wmissing-include-dirs])
 	MCHECK_ADD_FLAG([-Wlogical-op])
 
-	dnl  With clang 2.8 & 3.3 (no other tested, yet) and gcc < 4.5
+	dnl  With clang 2.8, 3.3, 5.0 (no other tested) and gcc < 4.5
 	dnl  (tested 3.4.6, 4.2.1, 4.3.2, 4.4.4, 4.4.5, 4.5.1, 4.5.2),
 	dnl  "-Wunreachable-code" triggers numerous "will never be
 	dnl  executed" (at least) in our stream code, mostly (if
 	dnl  not all) false positives, though, as well as in
 	dnl  YACC/BISON-generated code; thus, we do not use
-	dnl  "-Wunreachable-code" with clang 2.8 and gcc < 4.5 .
+	dnl  "-Wunreachable-code" with clang and gcc < 4.5 .
+	dnl  At the same time, Apple deprecated OpenSSL in favour of
+	dnl  their own CommonCrypto API.  We don't mind about that.
 	case "$CC_ver" in
-	clang-2.8|clang-3.3|gcc-[[0-3]].*|gcc-4.[[0-4]].*)
+	clang-*|gcc-[[0-3]].*|gcc-4.[[0-4]].*)
+		MCHECK_ADD_FLAG([-Wno-deprecated-declarations])
 		;;
 	*)
 		MCHECK_ADD_FLAG([-Wunreachable-code])
@@ -1863,14 +1866,18 @@ if test "x$have_pthread" != xno; then
 	save_LIBS="$LIBS"
 	save_CPPFLAGS="$CPPFLAGS"
 	case $GCC-$have_pthread-$CC_ver in
-		yes-auto-clang-*|yes-yes-clang-*)
-			# clang does not seem to have / require -pthread as
-			# compiler option; in fact, on Mac OSX Mavericks,
-			# "Apple LLVM version 5.0 (clang-500.2.79) (based on
-			# LLVM 3.3svn)" complains about "error: argument
-			# unused during compilation: '-pthread'"
-			PTHREAD_LIBS="-pthread"
-			LIBS="$LIBS $PTHREAD_LIBS"
+		yes-auto-clang-5.0|yes-yes-clang-5.0)
+			# clang 5.0 (at least on Mac OSX Mavericks) does not
+			# seem to have / require -pthread as compiler
+			# option; on Mac OSX Mavericks, "Apple LLVM version
+			# 5.0 (clang-500.2.79) (based on LLVM 3.3svn)"
+			# complains about "error: argument unused during
+			# compilation: '-pthread'".
+			# However, disabling -pthread completely might be
+			# too redical/harsh; see also
+			# https://www.monetdb.org/pipermail/developers-list/2014-March/004264.html
+			# a better alternative might be required but is
+			# still pending ...
 		;;
 		yes-auto-*|yes-yes-*)
 			# use GCC's knowledge about the target platform, sets flags
