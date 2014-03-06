@@ -118,6 +118,7 @@ fatalHandler (void *user_data, raptor_locator* locator,
 	}
 }
 
+static void
 errorHandler (void *user_data, raptor_locator* locator,
 		const char *message)
 {
@@ -134,6 +135,7 @@ errorHandler (void *user_data, raptor_locator* locator,
 	}
 }
 
+static void
 warningHandler (void *user_data, raptor_locator* locator,
 		const char *message)
 {

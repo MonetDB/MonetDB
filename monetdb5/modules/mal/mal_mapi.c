@@ -318,7 +318,6 @@ SERVERlistenThread(SOCKET *Sock)
 					fprintf(stderr, "!mal_mapi.listen: "
 							"unknown command type in first byte\n");
 					continue;
-				break;
 			}
 #endif
 		} else {

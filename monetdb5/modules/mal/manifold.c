@@ -96,7 +96,7 @@ case TYPE_str: \
 		msg = (*mut->pci->fcn)(&y, __VA_ARGS__); 	\
 		if (msg)					\
 			break;					\
-		bunfastins(mut->args[0].b, (void*) 0, (void*) y);	\
+		bunfastapp(mut->args[0].b, (void*) y);	\
 		for( i = mut->fvar; i<= mut->lvar; i++) {	\
 			if( ATOMstorage(mut->args[i].type) !=  TYPE_str){\
 				args[i] += mut->args[i].size;	\
