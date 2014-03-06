@@ -327,6 +327,14 @@ load_idxcolumn(sql_trans *tr, sql_idx * i, oid rid)
 	list_append(i->columns, kc);
 	if (hash_index(i->type)) 
 		kc->c->unique = 1;
+	if (hash_index(i->type) && list_length(i->columns) > 1) {
+		/* Correct the unique flag of the keys first column */
+		kc->c->unique = list_length(i->columns); 
+		if (kc->c->unique == 2) {
+			sql_kc *ic1 = i->columns->h->data;
+			ic1->c->unique ++;
+		}
+	}
 }
 
 static sql_idx *
