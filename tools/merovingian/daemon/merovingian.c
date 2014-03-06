@@ -324,7 +324,6 @@ terminateProcess(void *p)
 		er = msab_getStatus(&stats, dbname);
 		if (er != NULL) {
 			Mfprintf(stderr, "unexpected problem: %s\n", er);
-			free(dbname);
 			free(er);
 			/* don't die, just continue, so we KILL in the end */
 		} else if (stats == NULL) {

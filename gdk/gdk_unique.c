@@ -129,7 +129,7 @@ BATsubunique(BAT *b, BAT *s)
 			v = VALUE(i);
 			if (prev == NULL || (*cmp)(v, prev) != 0) {
 				o = i + b->hseqbase;
-				bunfastins(bn, NULL, &o);
+				bunfastapp(bn, &o);
 			}
 			prev = v;
 		}
@@ -156,7 +156,7 @@ BATsubunique(BAT *b, BAT *s)
 			if (!(seen[val >> 4] & (1 << (val & 0xF)))) {
 				seen[val >> 4] |= 1 << (val & 0xF);
 				o = i + b->hseqbase;
-				bunfastins(bn, NULL, &o);
+				bunfastapp(bn, &o);
 			}
 		}
 		GDKfree(seen);
@@ -184,7 +184,7 @@ BATsubunique(BAT *b, BAT *s)
 			if (!(seen[val >> 4] & (1 << (val & 0xF)))) {
 				seen[val >> 4] |= 1 << (val & 0xF);
 				o = i + b->hseqbase;
-				bunfastins(bn, NULL, &o);
+				bunfastapp(bn, &o);
 			}
 		}
 		GDKfree(seen);
@@ -221,7 +221,7 @@ BATsubunique(BAT *b, BAT *s)
 			}
 			if (hb == HASHnil(hs)) {
 				o = i + b->hseqbase;
-				bunfastins(bn, NULL, &o);
+				bunfastapp(bn, &o);
 			}
 		}
 	} else {
@@ -273,7 +273,7 @@ BATsubunique(BAT *b, BAT *s)
 			if (hb == HASHnil(hs)) {
 				o = i + b->hseqbase;
 				p = i + BUNfirst(b);
-				bunfastins(bn, NULL, &o);
+				bunfastapp(bn, &o);
 				/* enter into hash table */
 				HASHputlink(hs, p, HASHget(hs, prb));
 				HASHput(hs, prb, p);

@@ -362,37 +362,37 @@ pcre_compile_wrap(pcre **res, const char *pattern, bit insensitive)
 /* these two defines are copies from gdk_select.c */
 
 /* scan select loop with candidates */
-#define candscanloop(TEST)							\
-	do {									\
-		ALGODEBUG fprintf(stderr,					\
+#define candscanloop(TEST)										\
+	do {														\
+		ALGODEBUG fprintf(stderr,								\
 			    "#BATsubselect(b=%s#"BUNFMT",s=%s,anti=%d): "	\
 			    "scanselect %s\n", BATgetId(b), BATcount(b),	\
-			    s ? BATgetId(s) : "NULL", anti, #TEST);		\
-		while (p < q) {							\
-			o = *candlist++;					\
-			r = (BUN) (o - off);					\
-			v = BUNtail(bi, r);					\
-			if (TEST)						\
-				bunfastins(bn, NULL, &o);			\
-			p++;							\
-		}								\
+			    s ? BATgetId(s) : "NULL", anti, #TEST);			\
+		while (p < q) {											\
+			o = *candlist++;									\
+			r = (BUN) (o - off);								\
+			v = BUNtail(bi, r);									\
+			if (TEST)											\
+				bunfastapp(bn, &o);								\
+			p++;												\
+		}														\
 	} while (0)
 
 /* scan select loop without candidates */
-#define scanloop(TEST)								\
-	do {									\
-		ALGODEBUG fprintf(stderr,					\
+#define scanloop(TEST)											\
+	do {														\
+		ALGODEBUG fprintf(stderr,								\
 			    "#BATsubselect(b=%s#"BUNFMT",s=%s,anti=%d): "	\
 			    "scanselect %s\n", BATgetId(b), BATcount(b),	\
-			    s ? BATgetId(s) : "NULL", anti, #TEST);		\
-		while (p < q) {							\
-			v = BUNtail(bi, p-off);					\
-			if (TEST) {						\
-				o = (oid) p;					\
-				bunfastins(bn, NULL, &o);			\
-			}							\
-			p++;							\
-		}								\
+			    s ? BATgetId(s) : "NULL", anti, #TEST);			\
+		while (p < q) {											\
+			v = BUNtail(bi, p-off);								\
+			if (TEST) {											\
+				o = (oid) p;									\
+				bunfastapp(bn, &o);								\
+			}													\
+			p++;												\
+		}														\
 	} while (0)
 
 static str

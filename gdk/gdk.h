@@ -1327,18 +1327,37 @@ gdk_export bte ATOMelmshift(int sz);
 #define bunfastins(b, h, t)						\
 	do {								\
 		register BUN _p = BUNlast(b);				\
-		if (_p == BUN_MAX || BATcount(b) == BUN_MAX) {		\
-			GDKerror("bunfastins: too many elements to accomodate (INT_MAX)\n");	\
-			goto bunins_failed;				\
-		}							\
-		if (_p + 1 > BATcapacity(b)) {				\
+		if (_p >= BATcapacity(b)) {				\
+			if (_p == BUN_MAX || BATcount(b) == BUN_MAX) {	\
+				GDKerror("bunfastins: too many elements to accomodate (BUN_MAX)\n"); \
+				goto bunins_failed;			\
+			}						\
 			if (BATextend((b), BATgrows(b)) == NULL)	\
 				goto bunins_failed;			\
 		}							\
 		bunfastins_nocheck(b, _p, h, t, Hsize(b), Tsize(b));	\
 	} while (0)
 
-#define bunfastins_check(b, p, h, t) bunfastins(b, h, t)
+#define bunfastapp_nocheck(b, p, t, ts)		\
+	do {					\
+		tfastins_nocheck(b, p, t, ts);	\
+		(b)->batCount++;		\
+	} while (0)
+
+#define bunfastapp(b, t)						\
+	do {								\
+		register BUN _p = BUNlast(b);				\
+		assert((b)->htype == TYPE_void);			\
+		if (_p >= BATcapacity(b)) {				\
+			if (_p == BUN_MAX || BATcount(b) == BUN_MAX) {	\
+				GDKerror("bunfastapp: too many elements to accomodate (BUN_MAX)\n"); \
+				goto bunins_failed;			\
+			}						\
+			if (BATextend((b), BATgrows(b)) == NULL)	\
+				goto bunins_failed;			\
+		}							\
+		bunfastapp_nocheck(b, _p, t, Tsize(b));			\
+	} while (0)
 
 gdk_export int GDKupgradevarheap(COLrec *c, var_t v, int copyall, int mayshare);
 gdk_export BAT *BUNfastins(BAT *b, const void *left, const void *right);
@@ -3361,7 +3380,7 @@ gdk_export BAT *BATsample_(BAT *b, BUN n); /* version that expects void head and
 			"#BATselect_([%s,%s]) %s[%s:%d]\n",		\
 			_COL_TYPE(_b->H), _COL_TYPE(_b->T),		\
 			__func__, __FILE__, __LINE__);			\
-		BATselect_((b), (h), (t), (li), (hi));			\
+		BATselect_(_b, (h), (t), (li), (hi));			\
 	})
 
 #define BATuselect_(b, h, t, li, hi)					\
@@ -3371,7 +3390,7 @@ gdk_export BAT *BATsample_(BAT *b, BUN n); /* version that expects void head and
 			"#BATuselect_([%s,%s]) %s[%s:%d]\n",		\
 			_COL_TYPE(_b->H), _COL_TYPE(_b->T),		\
 			__func__, __FILE__, __LINE__);			\
-		BATuselect_((b), (h), (t), (li), (hi));			\
+		BATuselect_(_b, (h), (t), (li), (hi));			\
 	})
 
 #define BATantiuselect_(b, h, t, li, hi)				\
@@ -3381,7 +3400,7 @@ gdk_export BAT *BATsample_(BAT *b, BUN n); /* version that expects void head and
 			"#BATantiuselect_([%s,%s]) %s[%s:%d]\n",	\
 			_COL_TYPE(_b->H), _COL_TYPE(_b->T),		\
 			__func__, __FILE__, __LINE__);			\
-		BATantiuselect_((b), (h), (t), (li), (hi));		\
+		BATantiuselect_(_b, (h), (t), (li), (hi));		\
 	})
 
 #define BATselect(b, h, t)						\
@@ -3391,7 +3410,7 @@ gdk_export BAT *BATsample_(BAT *b, BUN n); /* version that expects void head and
 			"#BATselect([%s,%s]) %s[%s:%d]\n",		\
 			_COL_TYPE(_b->H), _COL_TYPE(_b->T),		\
 			__func__, __FILE__, __LINE__);			\
-		BATselect((b), (h), (t));				\
+		BATselect(_b, (h), (t));				\
 	})
 
 #define BATuselect(b, h, t)						\
@@ -3401,7 +3420,7 @@ gdk_export BAT *BATsample_(BAT *b, BUN n); /* version that expects void head and
 			"#BATuselect([%s,%s]) %s[%s:%d]\n",		\
 			_COL_TYPE(_b->H), _COL_TYPE(_b->T),		\
 			__func__, __FILE__, __LINE__);			\
-		BATuselect((b), (h), (t));				\
+		BATuselect(_b, (h), (t));				\
 	})
 
 #define BATsample(b, n)							\
@@ -3411,7 +3430,7 @@ gdk_export BAT *BATsample_(BAT *b, BUN n); /* version that expects void head and
 			"#BATsample([%s,%s]) %s[%s:%d]\n",		\
 			_COL_TYPE(_b->H), _COL_TYPE(_b->T),		\
 			__func__, __FILE__, __LINE__);			\
-		BATsample((b), (n));					\
+		BATsample(_b, (n));					\
 	})
 
 #define BATsemijoin(l, r)						\
@@ -3513,6 +3532,7 @@ gdk_export BAT *BATsample_(BAT *b, BUN n); /* version that expects void head and
 			__func__, __FILE__, __LINE__);			\
 		BATrangejoin(_l, _rl, _rh, (li), (hi));			\
 	})
+
 #endif
 #endif
 

@@ -115,7 +115,6 @@ handleClient(int sock, char isusock)
 			MONETDB5_PASSWDHASH
 			);
 	mnstr_flush(fout);
-	free(algos);
 
 	/* get response */
 	buf[0] = '\0';
@@ -128,6 +127,7 @@ handleClient(int sock, char isusock)
 		mnstr_flush(fout);
 		close_stream(fout);
 		close_stream(fdin);
+		free(algos);
 		return(e);
 	}
 	buf[sizeof(buf) - 1] = '\0';
@@ -148,6 +148,7 @@ handleClient(int sock, char isusock)
 		mnstr_flush(fout);
 		close_stream(fout);
 		close_stream(fdin);
+		free(algos);
 		return(e);
 	}
 
@@ -163,6 +164,7 @@ handleClient(int sock, char isusock)
 			mnstr_flush(fout);
 			close_stream(fout);
 			close_stream(fdin);
+			free(algos);
 			return(e);
 		}
 		algo = passwd + 1;
@@ -173,6 +175,7 @@ handleClient(int sock, char isusock)
 			mnstr_flush(fout);
 			close_stream(fout);
 			close_stream(fdin);
+			free(algos);
 			return(e);
 		}
 		*s = 0;
@@ -183,6 +186,7 @@ handleClient(int sock, char isusock)
 		mnstr_flush(fout);
 		close_stream(fout);
 		close_stream(fdin);
+		free(algos);
 		return(e);
 	}
 
@@ -197,6 +201,7 @@ handleClient(int sock, char isusock)
 		mnstr_flush(fout);
 		close_stream(fout);
 		close_stream(fdin);
+		free(algos);
 		return(e);
 	}
 
@@ -214,6 +219,7 @@ handleClient(int sock, char isusock)
 			mnstr_flush(fout);
 			close_stream(fout);
 			close_stream(fdin);
+			free(algos);
 			return(e);
 		} else {
 			*s = '\0';
@@ -227,6 +233,7 @@ handleClient(int sock, char isusock)
 		mnstr_flush(fout);
 		close_stream(fout);
 		close_stream(fdin);
+		free(algos);
 		return(newErr("client %s specified no database", host));
 	}
 
@@ -236,6 +243,7 @@ handleClient(int sock, char isusock)
 			control_handleclient(host, sock, fdin, fout);
 		close_stream(fout);
 		close_stream(fdin);
+		free(algos);
 		return(NO_ERR);
 	}
 
@@ -264,6 +272,7 @@ handleClient(int sock, char isusock)
 		mnstr_flush(fout);
 		close_stream(fout);
 		close_stream(fdin);
+		free(algos);
 		return(e);
 	}
 	stat = top;
@@ -275,6 +284,7 @@ handleClient(int sock, char isusock)
 	{
 		multiplexAddClient(top->dbname, sock, fout, fdin, host);
 		msab_freeStatus(&top);
+		free(algos);
 		return(NO_ERR);
 	}
 
@@ -303,6 +313,7 @@ handleClient(int sock, char isusock)
 		close_stream(fout);
 		close_stream(fdin);
 		msab_freeStatus(&top);
+		free(algos);
 		return(e);
 	}
 
@@ -372,11 +383,13 @@ handleClient(int sock, char isusock)
 			close_stream(fdin);
 			Mfprintf(stdout, "starting a proxy failed: %s\n", e);
 			msab_freeStatus(&top);
+			free(algos);
 			return(e);
 		};
 	}
 
 	msab_freeStatus(&top);
+	free(algos);
 	return(NO_ERR);
 }
 
