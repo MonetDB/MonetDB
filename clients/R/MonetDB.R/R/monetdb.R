@@ -95,7 +95,7 @@ setMethod("dbConnect", "MonetDBDriver", def=function(drv,dbname="demo", user="mo
 			# make new socket with user-specified timeout
 			#socket <- socket <<- socketConnection(host = host, port = port, 
 			#	blocking = TRUE, open="r+b",timeout = timeout) 
-			socket <- socket <<- .Call("mapiConnect",host,port,timeout,PACKAGE=C_LIBRARY)
+			socket <- .Call("mapiConnect",host,port,timeout,PACKAGE=C_LIBRARY)
 			.monetAuthenticate(socket,dbname,user,password,language=language)
 			connenv <- new.env(parent=emptyenv())
 			connenv$lock <- 0
@@ -128,6 +128,11 @@ setMethod("dbListTables", "MonetDBConnection", def=function(conn, ...) {
 			df$name
 		})
 
+if (is.null(getGeneric("dbTransaction"))) setGeneric("dbTransaction", function(conn,...) standardGeneric("dbTransaction"))
+setMethod("dbTransaction", signature(conn="MonetDBConnection"),  def=function(conn, ...) {
+      dbSendQuery(conn,"start transaction")
+      invisible(TRUE)
+    })
 
 setMethod("dbCommit", "MonetDBConnection", def=function(conn, ...) {
 			dbSendQuery(conn,"commit")
@@ -137,7 +142,6 @@ setMethod("dbCommit", "MonetDBConnection", def=function(conn, ...) {
 setMethod("dbRollback", "MonetDBConnection", def=function(conn, ...) {
 			dbSendQuery(conn,"rollback")
 			invisible(TRUE)
-
 		})
 
 setMethod("dbListFields", "MonetDBConnection", def=function(conn, name, ...) {
@@ -151,11 +155,9 @@ setMethod("dbExistsTable", "MonetDBConnection", def=function(conn, name, ...) {
 			tolower(name) %in% tolower(dbListTables(conn))
 		})
 
-
 setMethod("dbGetException", "MonetDBConnection", def=function(conn, ...) {
 			conn@connenv$exception
 		})
-
 
 setMethod("dbReadTable", "MonetDBConnection", def=function(conn, name, ...) {
 			if (!dbExistsTable(conn,name))
@@ -176,10 +178,6 @@ setMethod("dbSendQuery", signature(conn="MonetDBConnection", statement="characte
 				if (length(list(...))) statement <- .bindParameters(statement, list(...))
 				if (!is.null(list)) statement <- .bindParameters(statement, list)
 			}	
-
-# removeme
-#write(statement,file="/export/scratch2/hannes/anthony-joinbug/log.sql",append=TRUE)
-
 			conn@connenv$exception <- list()
 			env <- NULL
 			if (DEBUG_QUERY)  cat(paste("QQ: '",statement,"'\n",sep=""))
@@ -263,7 +261,6 @@ setMethod("dbWriteTable", "MonetDBConnection", def=function(conn, name, value, o
 			}
 			return(invisible(TRUE))
 		})
-
 
 setMethod("dbDataType", signature(dbObj="MonetDBConnection", obj = "ANY"), def = function(dbObj, obj, ...) {
 			if (is.logical(obj)) "BOOLEAN"

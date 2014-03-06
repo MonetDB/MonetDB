@@ -100,7 +100,7 @@ monetdb.server.setup <-
     # must be empty or not exist
     
     # find the main path to the monetdb installation program
-    monetdb.program.path ,
+    monetdb.program.path ="",
     
     # choose a database name
     dbname = "demo" ,
@@ -111,21 +111,11 @@ monetdb.server.setup <-
     # cannot be accessed at the same time
     dbport = 50000
   ){
-    
-    
-    
-    
+
     # switch all slashes to match windows
     monetdb.program.path <- normalizePath( monetdb.program.path , mustWork = FALSE )
     database.directory <- normalizePath( database.directory , mustWork = FALSE )
-    
-    
-    # determine that the monetdb.program.path has been correctly specified #
-    
-
-    
-    # confirm that the database directory is either empty or does not exist
-    
+        
     # if the database directory does not exist, print that it's being created
     if ( !file.exists( database.directory ) ) {
       
@@ -145,7 +135,6 @@ monetdb.server.setup <-
       )
       
     }
-    
     
     # determine the batch file's location on the local disk
     bfl <- normalizePath( file.path( database.directory ,dbname  ) , mustWork = FALSE )
@@ -221,7 +210,7 @@ monetdb.server.setup <-
     if ( .Platform$OS.type == "unix" ) { # create shell script
       bfl <- paste0(bfl,".sh")
       bat.contents <- c('#!/bin/sh',
-                        paste0( monetdb.program.path,
+                        paste0( ifelse(monetdb.program.path=="","",paste0(monetdb.program.path,"/")) ,
                                 'mserver5 --set prefix=',monetdb.program.path,' --set exec_prefix=',monetdb.program.path,' --dbpath ',paste0(database.directory,"/",dbname),' --set mapi_port=' ,
                                 dbport, " --daemon yes > /dev/null &" 
                         ),paste0("echo $! > ",database.directory,"/mserver5.started.from.R.pid"))

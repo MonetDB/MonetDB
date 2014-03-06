@@ -1,6 +1,6 @@
 Package: MonetDB.R
 Version: 0.9.1
-Date: 2013-03-01
+Date: 2013-03-06
 Title: Connect MonetDB to R
 Authors@R: c(person("Hannes Muehleisen", role = c("aut", "cre"),email = "hannes@cwi.nl"),
 	person("Thomas Lumley", role = "ctb"),
@@ -12,7 +12,6 @@ URL: http://monetr.r-forge.r-project.org
 Maintainer: Hannes Muehleisen <hannes@cwi.nl>
 SystemRequirements: MonetDB installation, available at
         http://www.monetdb.org
-Packaged: 2014-03-01 14:13:44 UTC; hannes
 Author: Hannes Muehleisen [aut, cre],
   Thomas Lumley [ctb],
   Anthony Damico [ctb]
