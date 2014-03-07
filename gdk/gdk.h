@@ -2262,7 +2262,8 @@ gdk_export BAT *BATimprints(BAT *b);
 #define GDK_HISTO_MAX_BIT	((int) (sizeof(size_t)<<3))
 
 /* we prefer to use vm_alloc routines on size > GDKmmap */
-gdk_export void *GDKmmap(const char *path, int mode, size_t len);
+gdk_export void *GDKmmap(const char *path, int mode, size_t len)
+	__attribute__((__alloc_size__(3)));
 
 gdk_export size_t GDK_mem_maxsize;	/* max allowed size of committed memory */
 gdk_export size_t GDK_vm_maxsize;	/* max allowed size of reserved vm */
@@ -2271,9 +2272,12 @@ gdk_export int	GDK_vm_trim;		/* allow trimming */
 gdk_export size_t GDKmem_cursize(void);	/* RAM/swapmem that MonetDB has claimed from OS */
 gdk_export size_t GDKvm_cursize(void);	/* current MonetDB VM address space usage */
 
-gdk_export void *GDKmalloc(size_t size);
-gdk_export void *GDKzalloc(size_t size);
-gdk_export void *GDKrealloc(void *pold, size_t size);
+gdk_export void *GDKmalloc(size_t size)
+	__attribute__((__alloc_size__(1)));
+gdk_export void *GDKzalloc(size_t size)
+	__attribute__((__alloc_size__(1)));
+gdk_export void *GDKrealloc(void *pold, size_t size)
+	__attribute__((__alloc_size__(2)));
 gdk_export void GDKfree(void *blk);
 gdk_export str GDKstrdup(const char *s);
 
