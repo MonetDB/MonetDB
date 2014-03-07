@@ -23,6 +23,8 @@
 #error this file should not be included outside its source directory
 #endif
 
+#include "gdk_system_private.h"
+
 /*
  * The different parts of which a BAT consists are physically stored
  * next to each other in the BATstore type.
@@ -151,8 +153,6 @@ int HEAPwarm(Heap *h)
 	__attribute__((__visibility__("hidden")));
 oid MAXoid(BAT *i)
 	__attribute__((__visibility__("hidden")));
-__declspec(noreturn) void MT_exit_thread(int status)
-	__attribute__((__noreturn__));
 void MT_init_posix(void)
 	__attribute__((__visibility__("hidden")));
 void *MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t *new_size)

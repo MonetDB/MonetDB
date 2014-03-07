@@ -41,6 +41,7 @@
  */
 #include "monetdb_config.h"
 #include "gdk_system.h"
+#include "gdk_system_private.h"
 
 #ifdef TIME_WITH_SYS_TIME
 # include <sys/time.h>
