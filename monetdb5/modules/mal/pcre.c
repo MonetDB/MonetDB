@@ -1587,6 +1587,7 @@ PCRElike_pcre(int *ret, int *b, str *pat, str *esc, bit us, bit ignore)
 	str r = MAL_SUCCEED;
 	int nr;
 
+	assert(pat && *pat);
 	/* no escape, try if a simple list of keywords works */
 	if (strlen(*esc) == 0 && (nr = re_simple(*pat)) > 0) {
 		RE *re = re_create(*pat, nr);

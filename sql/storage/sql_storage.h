@@ -51,7 +51,8 @@ extern int store_readonly;
 extern int store_singleuser;
 
 /* relational interface */
-typedef oid (*column_find_row_fptr)(sql_trans *tr, sql_column *c, void *value, ...);
+typedef oid (*column_find_row_fptr)(sql_trans *tr, sql_column *c, void *value, ...)
+	__attribute__((__sentinel__));
 typedef void *(*column_find_value_fptr)(sql_trans *tr, sql_column *c, oid rid);
 typedef int (*column_update_value_fptr)(sql_trans *tr, sql_column *c, oid rid, void *value);
 typedef int (*table_insert_fptr)(sql_trans *tr, sql_table *t, ...);

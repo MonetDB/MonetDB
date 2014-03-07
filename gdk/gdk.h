@@ -2236,7 +2236,8 @@ gdk_export lng IMPSimprintsize(BAT *b);
 #define GDK_HISTO_MAX_BIT	((int) (sizeof(size_t)<<3))
 
 /* we prefer to use vm_alloc routines on size > GDKmmap */
-gdk_export void *GDKmmap(const char *path, int mode, size_t len);
+gdk_export void *GDKmmap(const char *path, int mode, size_t len)
+	__attribute__((__alloc_size__(3)));
 
 gdk_export size_t GDK_mem_maxsize;	/* max allowed size of committed memory */
 gdk_export size_t GDK_vm_maxsize;	/* max allowed size of reserved vm */
@@ -2245,13 +2246,16 @@ gdk_export int	GDK_vm_trim;		/* allow trimming */
 gdk_export size_t GDKmem_cursize(void);	/* RAM/swapmem that MonetDB has claimed from OS */
 gdk_export size_t GDKvm_cursize(void);	/* current MonetDB VM address space usage */
 
-gdk_export void *GDKmalloc(size_t size);
-gdk_export void *GDKzalloc(size_t size);
-gdk_export void *GDKrealloc(void *pold, size_t size);
+gdk_export void *GDKmalloc(size_t size)
+	__attribute__((__alloc_size__(1)));
+gdk_export void *GDKzalloc(size_t size)
+	__attribute__((__alloc_size__(1)));
+gdk_export void *GDKrealloc(void *pold, size_t size)
+	__attribute__((__alloc_size__(2)));
 gdk_export void GDKfree(void *blk);
 gdk_export str GDKstrdup(const char *s);
 
-#ifndef NDEBUG
+#if !defined(NDEBUG) && !defined(__clang_analyzer__)
 /* In debugging mode, replace GDKmalloc and other functions with a
  * version that optionally prints calling information.
  *
@@ -3072,17 +3076,17 @@ gdk_export int ALIGNsetH(BAT *b1, BAT *b2);
 	for (hb = HASHget(h, HASHprobe((h), v));		\
 	     hb != HASHnil(h);					\
 	     hb = HASHgetlink(h,hb))				\
-		if (ATOMcmp(h->type, v, BUNhead(bi, hb)) == 0)
+		if (ATOMcmp(h->type, v, BUNhead(bi, hb)) != 0); else
 #define HASHloop_str_hv(bi, h, hb, v)				\
 	for (hb = HASHget((h),((BUN *) (v))[-1]&(h)->mask);	\
 	     hb != HASHnil(h);					\
 	     hb = HASHgetlink(h,hb))				\
-		if (GDK_STREQ(v, BUNhvar(bi, hb)))
+		if (!GDK_STREQ(v, BUNhvar(bi, hb))); else
 #define HASHloop_str(bi, h, hb, v)			\
 	for (hb = HASHget((h),strHash(v)&(h)->mask);	\
 	     hb != HASHnil(h);				\
 	     hb = HASHgetlink(h,hb))			\
-		if (GDK_STREQ(v, BUNhvar(bi, hb)))
+		if (!GDK_STREQ(v, BUNhvar(bi, hb))); else
 
 /*
  * For string search, we can optimize if the string heap has
@@ -3094,7 +3098,7 @@ gdk_export int ALIGNsetH(BAT *b1, BAT *b2);
 #define HASHloop_fstr(bi, h, hb, idx, v)				\
 	for (hb = HASHget(h, strHash(v)&h->mask), idx = strLocate((bi.b)->H->vheap,v); \
 	     hb != HASHnil(h); hb = HASHgetlink(h,hb))				\
-		if (VarHeapValRaw((bi).b->H->heap.base, hb, (bi).b->H->width) == idx)
+		if (VarHeapValRaw((bi).b->H->heap.base, hb, (bi).b->H->width) != idx); else
 /*
  * The following example shows how the hashloop is used:
  *
@@ -3126,18 +3130,18 @@ gdk_export int ALIGNsetH(BAT *b1, BAT *b2);
 	for (hb = HASHget(h, HASHprobe(h, v));			\
 	     hb != HASHnil(h);					\
 	     hb = HASHgetlink(h,hb))				\
-		if (ATOMcmp(h->type, v, BUNhloc(bi, hb)) == 0)
+		if (ATOMcmp(h->type, v, BUNhloc(bi, hb)) != 0); else
 #define HASHloopvar(bi, h, hb, v)				\
 	for (hb = HASHget(h,HASHprobe(h, v));			\
 	     hb != HASHnil(h);					\
 	     hb = HASHgetlink(h,hb))				\
-		if (ATOMcmp(h->type, v, BUNhvar(bi, hb)) == 0)
+		if (ATOMcmp(h->type, v, BUNhvar(bi, hb)) != 0); else
 
 #define HASHloop_TYPE(bi, h, hb, v, TYPE)			\
 	for (hb = HASHget(h, hash_##TYPE(h, v));		\
 	     hb != HASHnil(h);					\
 	     hb = HASHgetlink(h,hb))				\
-		if (simple_EQ(v, BUNhloc(bi, hb), TYPE))
+		if (!simple_EQ(v, BUNhloc(bi, hb), TYPE)); else
 
 #define HASHloop_bit(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, bte)
 #define HASHloop_bte(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, bte)
@@ -3155,7 +3159,7 @@ gdk_export int ALIGNsetH(BAT *b1, BAT *b2);
 	for (hb = HASHget(h, hash_any(h, v));			\
 	     hb != HASHnil(h);					\
 	     hb = HASHgetlink(h,hb))				\
-		if (atom_EQ(v, BUNhead(bi, hb), (bi).b->htype))
+		if (!atom_EQ(v, BUNhead(bi, hb), (bi).b->htype)); else
 
 /*
  * @- loop over a BAT with ordered tail
