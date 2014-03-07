@@ -685,6 +685,8 @@ strlen_json_value(jsonbat *jb, oid id)
 	}
 
 	return ret;
+  hashfnd_failed:
+	GDKfatal("HASHfnd: hash build failed on %s.\n", BATgetId(bi.b));
 }
 
 static void
@@ -795,6 +797,9 @@ print_json_value(jsonbat *jb, stream *s, oid id, int indent)
 			break;
 		}
 	}
+	return;
+  hashfnd_failed:
+	GDKfatal("HASHfnd: hash build failed on %s.\n", BATgetId(bi.b));
 }
 
 str
@@ -869,6 +874,8 @@ JSONprint(int *ret, stream **s, int *kind, int *string, int *integer, int *doble
 
 	*ret = 0;
 	return MAL_SUCCEED;
+  hashfnd_failed:
+	GDKfatal("HASHfnd: hash build failed on %s.\n", BATgetId(bi.b));
 }
 
 str
@@ -1167,6 +1174,8 @@ json_copy_entry(BATiter bik, BATiter bis, BATiter bii, BATiter bid, BATiter bia,
 	}
 
 	return w;
+  hashfnd_failed:
+	GDKfatal("HASHfnd: hash build failed.\n");
 }
 
 str
@@ -1612,6 +1621,8 @@ JSONunwrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	return MAL_SUCCEED;
+  hashfnd_failed:
+	GDKfatal("HASHfnd: hash build failed.\n");
 }
 
 str

@@ -1185,6 +1185,7 @@ GDKexit(int status)
 #endif
 		MT_global_exit(status);
 	}
+	MT_exit_thread(-1);
 }
 
 /*
@@ -1518,7 +1519,7 @@ GDKclrerr(void)
 }
 
 /* coverity[+kill] */
-int
+void
 GDKfatal(const char *format, ...)
 {
 	char message[GDKERRLEN];
@@ -1558,7 +1559,6 @@ GDKfatal(const char *format, ...)
 		GDKexit(1);
 #endif
 	}
-	return -1;
 }
 
 

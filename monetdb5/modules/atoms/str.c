@@ -1576,6 +1576,8 @@ convertCase(BAT *from, BAT *to, str *res, const char *s)
 	}
 	*dst = 0;
 	return GDK_SUCCEED;
+  hashfnd_failed:
+	GDKfatal("HASHfnd: hash build failed on %s.\n", BATgetId(fromi.b));
 }
 
 int

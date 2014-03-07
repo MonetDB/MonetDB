@@ -94,8 +94,6 @@ int HEAPsave(Heap *h, const char *nme, const char *ext);
 int HEAPshrink(Heap *h, size_t size);
 int HEAPwarm(Heap *h);
 oid MAXoid(BAT *i);
-void MT_global_exit(int status)
-	__attribute__((__noreturn__));
 void MT_init_posix(void);
 void *MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t *new_size);
 int MT_msync(void *p, size_t len, int mode);

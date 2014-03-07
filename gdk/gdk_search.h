@@ -207,49 +207,49 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
 	do {								\
 		BUN _i;							\
 		(x) = BUN_NONE;						\
-		if ((y).b->H->hash || BAThash((y).b, 0) ||		\
-		    GDKfatal("HASHfnd_str: hash build failed on %s.\n",	\
-			     BATgetId((y).b)))				\
+		if ((y).b->H->hash || BAThash((y).b, 0)) {		\
 			HASHloop_str((y), (y).b->H->hash, _i, (z)) {	\
 				(x) = _i;				\
 				break;					\
 			}						\
+		} else							\
+			goto hashfnd_failed;				\
 	} while (0)
 #define HASHfnd_str_hv(x,y,z)						\
 	do {								\
 		BUN _i;							\
 		(x) = BUN_NONE;						\
-		if ((y).b->H->hash || BAThash((y).b, 0) ||		\
-		    GDKfatal("HASHfnd_str_hv: hash build failed on %s.\n", \
-			     BATgetId((y).b)))				\
+		if ((y).b->H->hash || BAThash((y).b, 0)) {		\
 			HASHloop_str_hv((y), (y).b->H->hash, _i, (z)) {	\
 				(x) = _i;				\
 				break;					\
 			}						\
+		} else							\
+			goto hashfnd_failed;				\
 	} while (0)
 #define HASHfnd(x,y,z)							\
 	do {								\
 		BUN _i;							\
-		(x) = BUN_NONE;					\
-		if ((y).b->H->hash || BAThash((y).b, 0) ||		\
-		    GDKfatal("HASHfnd: hash build failed on %s.\n",	\
-			     BATgetId((y).b)))				\
+		(x) = BUN_NONE;						\
+		if ((y).b->H->hash || BAThash((y).b, 0)) {		\
 			HASHloop((y), (y).b->H->hash, _i, (z)) {	\
 				(x) = _i;				\
 				break;					\
 			}						\
+		} else							\
+			goto hashfnd_failed;				\
 	} while (0)
 #define HASHfnd_TYPE(x,y,z,TYPE)					\
 	do {								\
 		BUN _i;							\
-		(x) = BUN_NONE;					\
-		if ((y).b->H->hash || BAThash((y).b, 0) ||		\
-		    GDKfatal("HASHfnd_" #TYPE ": hash build failed on %s.\n", \
-			     BATgetId((y).b)))				\
+		(x) = BUN_NONE;						\
+		if ((y).b->H->hash || BAThash((y).b, 0)) {		\
 			HASHloop_##TYPE((y), (y).b->H->hash, _i, (z)) {	\
 				(x) = _i;				\
 				break;					\
 			}						\
+		} else							\
+			goto hashfnd_failed;				\
 	} while (0)
 #define HASHfnd_bte(x,y,z)	HASHfnd_TYPE(x,y,z,bte)
 #define HASHfnd_sht(x,y,z)	HASHfnd_TYPE(x,y,z,sht)

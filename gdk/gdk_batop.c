@@ -1686,7 +1686,8 @@ BATmark_grp(BAT *b, BAT *g, oid *s)
 	if (gc)
 		BBPreclaim(gc);
 	return bn;
-      bunins_failed:
+  bunins_failed:
+  hashfnd_failed:
 	if (gc)
 		BBPreclaim(gc);
 	if (bn)
