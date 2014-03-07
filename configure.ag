@@ -3301,6 +3301,7 @@ typedef lng ptrdiff_t;
 #if !defined(_MSC_VER) && !defined(_In_z_)
 # define _In_z_
 # define _Printf_format_string_
+# define __declspec(x)
 #endif
 
 #endif /* _SEEN_MONETDB_CONFIG_H */
