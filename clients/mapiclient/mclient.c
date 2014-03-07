@@ -2598,7 +2598,7 @@ set_timezone(Mapi mid)
 	mapi_close_handle(hdl);
 }
 
-static void usage(const char *prog, int xit)
+__declspec(noreturn) static void usage(const char *prog, int xit)
 	__attribute__((__noreturn__));
 
 static void

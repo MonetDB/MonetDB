@@ -135,7 +135,7 @@ int HEAPwarm(Heap *h)
 	__attribute__((__visibility__("hidden")));
 oid MAXoid(BAT *i)
 	__attribute__((__visibility__("hidden")));
-void MT_global_exit(int status)
+__declspec(noreturn) void MT_global_exit(int status)
 	__attribute__((__noreturn__))
 	__attribute__((__visibility__("hidden")));
 void MT_init_posix(void)
