@@ -1542,10 +1542,10 @@ BATxmlaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 		for (p = 0, q = BATcount(g); p <= q; p++) {
 			if (p == q || grps[p] != prev) {
 				while (BATcount(bn) < prev - min) {
-					bunfastins_nocheck(bn, BUNlast(bn), 0, str_nil, 0, Tsize(bn));
+					bunfastapp_nocheck(bn, BUNlast(bn), str_nil, Tsize(bn));
 					nils++;
 				}
-				bunfastins_nocheck(bn, BUNlast(bn), 0, buf, 0, Tsize(bn));
+				bunfastapp_nocheck(bn, BUNlast(bn), buf, Tsize(bn));
 				nils += strNil(buf);
 				strncpy(buf, str_nil, maxlen);
 				buflen = 0;
@@ -1628,7 +1628,7 @@ BATxmlaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 				goto bunins_failed;
 			}
 		}
-		bunfastins_nocheck(bn, BUNlast(bn), 0, buf, 0, Tsize(bn));
+		bunfastapp_nocheck(bn, BUNlast(bn), buf, Tsize(bn));
 	}
 	BATseqbase(bn, min);
 	bn->T->nil = nils != 0;

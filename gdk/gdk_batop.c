@@ -398,7 +398,7 @@ BATins(BAT *b, BAT *n, bit force)
 				BATiter ni = bat_iterator(n);
 
 				BATloop(n, p, q) {
-					bunfastins_nocheck(b, r, NULL, BUNtail(ni, p), 0, Tsize(b));
+					bunfastapp_nocheck(b, r, BUNtail(ni, p), Tsize(b));
 					r++;
 				}
 			}
@@ -601,7 +601,7 @@ BATappend(BAT *b, BAT *n, bit force)
 				BATiter ni = bat_iterator(n);
 
 				BATloop(n, p, q) {
-					bunfastins_nocheck(b, r, NULL, BUNtail(ni, p), 0, Tsize(b));
+					bunfastapp_nocheck(b, r, BUNtail(ni, p), Tsize(b));
 					r++;
 				}
 			}
