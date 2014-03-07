@@ -32,7 +32,7 @@ srcdir = r'@SOURCE@'
 blddir = r'@BUILD@'
 
 cmtre = re.compile(r'/\*.*?\*/|//[^\n]*', re.DOTALL)
-expre = re.compile(r'^[ \t]*[a-zA-Z_0-9]*export\s+(?P<decl>[^;]*;)', re.MULTILINE)
+expre = re.compile(r'^[ \t]*(?:__declspec\(noreturn\)[ \t]+)?[a-zA-Z_0-9]*export\s+(?P<decl>[^;]*;)', re.MULTILINE)
 spcre = re.compile(r'\s+')
 nmere = re.compile(r'\b(?P<name>[a-zA-Z_][a-zA-Z_0-9]*)\s*[[(;]')
 strre = re.compile(r'([^ *])\*')
