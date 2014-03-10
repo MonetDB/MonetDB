@@ -462,7 +462,7 @@ SQLstr_cast_(str *res, mvc *m, int eclass, int d, int s, int has_tz, ptr p, int 
 		sz = convert2str(m, eclass, d, s, has_tz, p, tpe, &r, sz);
 	} else {
 		str v = (str) p;
-		strLength(&sz, v);
+		STRLength(&sz, &v);
 		if (len == 0 || (sz >= 0 && sz <= len))
 			r = GDKstrdup(v);
 	}

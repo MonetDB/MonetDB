@@ -222,7 +222,7 @@ bat_max_strlength(BAT *b)
 
 	BATloop(b, p, q) {
 		str v = (str) BUNtail(bi, p);
-		strLength(&l, v);
+		STRLength(&l, &v);
 
 		if (l == int_nil)
 			l = 0;
@@ -515,7 +515,8 @@ _ASCIIadt_frStr(Column *c, int type, const char *s, const char *e, char quote)
 			return NULL;
 		}
 		if (col->type.digits > 0 && len > 0 && len > (int) col->type.digits) {
-			strLength(&len, c->data);
+			str v = c->data;
+			STRLength(&len, &v);
 			if (len > (int) col->type.digits)
 				return NULL;
 		}
@@ -1276,7 +1277,7 @@ export_length(stream *s, int mtype, int eclass, int digits, int scale, int tz, b
 			} else if (p) {
 				str v = (str) p;
 
-				strLength(&l, v);
+				STRLength(&l, &v);
 				if (l == int_nil)
 					l = 0;
 			}
