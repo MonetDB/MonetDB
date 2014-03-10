@@ -3097,17 +3097,17 @@ gdk_export int ALIGNsetH(BAT *b1, BAT *b2);
 	for (hb = HASHget(h, HASHprobe((h), v));		\
 	     hb != HASHnil(h);					\
 	     hb = HASHgetlink(h,hb))				\
-		if (ATOMcmp(h->type, v, BUNhead(bi, hb)) != 0); else
+		if (ATOMcmp(h->type, v, BUNhead(bi, hb)) == 0)
 #define HASHloop_str_hv(bi, h, hb, v)				\
 	for (hb = HASHget((h),((BUN *) (v))[-1]&(h)->mask);	\
 	     hb != HASHnil(h);					\
 	     hb = HASHgetlink(h,hb))				\
-		if (!GDK_STREQ(v, BUNhvar(bi, hb))); else
+		if (GDK_STREQ(v, BUNhvar(bi, hb)))
 #define HASHloop_str(bi, h, hb, v)			\
 	for (hb = HASHget((h),strHash(v)&(h)->mask);	\
 	     hb != HASHnil(h);				\
 	     hb = HASHgetlink(h,hb))			\
-		if (!GDK_STREQ(v, BUNhvar(bi, hb))); else
+		if (GDK_STREQ(v, BUNhvar(bi, hb)))
 
 /*
  * For string search, we can optimize if the string heap has
@@ -3119,7 +3119,7 @@ gdk_export int ALIGNsetH(BAT *b1, BAT *b2);
 #define HASHloop_fstr(bi, h, hb, idx, v)				\
 	for (hb = HASHget(h, strHash(v)&h->mask), idx = strLocate((bi.b)->H->vheap,v); \
 	     hb != HASHnil(h); hb = HASHgetlink(h,hb))				\
-		if (VarHeapValRaw((bi).b->H->heap.base, hb, (bi).b->H->width) != idx); else
+		if (VarHeapValRaw((bi).b->H->heap.base, hb, (bi).b->H->width) == idx)
 /*
  * The following example shows how the hashloop is used:
  *
@@ -3151,18 +3151,18 @@ gdk_export int ALIGNsetH(BAT *b1, BAT *b2);
 	for (hb = HASHget(h, HASHprobe(h, v));			\
 	     hb != HASHnil(h);					\
 	     hb = HASHgetlink(h,hb))				\
-		if (ATOMcmp(h->type, v, BUNhloc(bi, hb)) != 0); else
+		if (ATOMcmp(h->type, v, BUNhloc(bi, hb)) == 0)
 #define HASHloopvar(bi, h, hb, v)				\
 	for (hb = HASHget(h,HASHprobe(h, v));			\
 	     hb != HASHnil(h);					\
 	     hb = HASHgetlink(h,hb))				\
-		if (ATOMcmp(h->type, v, BUNhvar(bi, hb)) != 0); else
+		if (ATOMcmp(h->type, v, BUNhvar(bi, hb)) == 0)
 
 #define HASHloop_TYPE(bi, h, hb, v, TYPE)			\
 	for (hb = HASHget(h, hash_##TYPE(h, v));		\
 	     hb != HASHnil(h);					\
 	     hb = HASHgetlink(h,hb))				\
-		if (!simple_EQ(v, BUNhloc(bi, hb), TYPE)); else
+		if (simple_EQ(v, BUNhloc(bi, hb), TYPE))
 
 #define HASHloop_bit(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, bte)
 #define HASHloop_bte(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, bte)
@@ -3180,7 +3180,7 @@ gdk_export int ALIGNsetH(BAT *b1, BAT *b2);
 	for (hb = HASHget(h, hash_any(h, v));			\
 	     hb != HASHnil(h);					\
 	     hb = HASHgetlink(h,hb))				\
-		if (!atom_EQ(v, BUNhead(bi, hb), (bi).b->htype)); else
+		if (atom_EQ(v, BUNhead(bi, hb), (bi).b->htype))
 
 /*
  * @- loop over a BAT with ordered tail
