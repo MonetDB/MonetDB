@@ -98,8 +98,7 @@ full_column(sql_trans *tr, sql_column *c, BAT *d, BAT *s )
 	return delta_full_bat(c, c->data, isTemp(c), d, s);
 }
 
-static oid column_find_row(sql_trans *tr, sql_column *c, void *value, ...)
-	__attribute__((__sentinel__));
+static oid column_find_row(sql_trans *tr, sql_column *c, void *value, ...);
 static oid
 column_find_row(sql_trans *tr, sql_column *c, void *value, ...)
 {
