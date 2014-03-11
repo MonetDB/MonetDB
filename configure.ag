@@ -1866,8 +1866,8 @@ if test "x$have_pthread" != xno; then
 	save_LIBS="$LIBS"
 	save_CPPFLAGS="$CPPFLAGS"
 	case $GCC-$have_pthread-$CC_ver in
-		yes-auto-clang-5.0|yes-yes-clang-5.0)
-			# clang 5.0 (at least on Mac OSX Mavericks) does not
+		yes-auto-clang-5.*|yes-yes-clang-5.*)
+			# clang 5.* (at least on Mac OSX Mavericks) does not
 			# seem to have / require -pthread as compiler
 			# option; on Mac OSX Mavericks, "Apple LLVM version
 			# 5.0 (clang-500.2.79) (based on LLVM 3.3svn)"
