@@ -380,7 +380,13 @@ main(int argc, char **av)
 			break;
 		case 'd':
 			if (optarg) {
-				debug |= strtol(optarg, NULL, 10);
+				char *endarg;
+				debug |= strtol(optarg, &endarg, 10);
+				if (*endarg != '\0') {
+					fprintf(stderr, "ERROR: wrong format for --debug=%s\n",
+							optarg);
+					usage(prog, -1);
+				}
 			} else {
 				debug |= 1;
 			}
