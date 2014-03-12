@@ -2955,6 +2955,9 @@ AC_SUBST(HWCOUNTERS_LIBS)
 AC_SUBST(HWCOUNTERS_INCS)
 
 dnl check dependencies (might need more than just SQL)
+if test x"$enable_sql" = xyes && test x"$enable_monetdb5" = x"no" ; then
+	AC_MSG_ERROR([MonetDB/SQL requires MonetDB5.])
+fi
 if test x"$enable_sql" = xauto && test x"$enable_monetdb5" = x"no" ; then
 	enable_sql=no
 	if test "x$disable_sql" = x; then
