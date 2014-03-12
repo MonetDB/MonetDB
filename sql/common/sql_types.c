@@ -1175,7 +1175,7 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_func(sa, "not_uniques", "sql", "not_uniques", OID, NULL, OID, SCALE_NONE);
 
 	/* functions needed for all types */
-	sql_create_func(sa, "hash", "calc", "hash", ANY, NULL, WRD, SCALE_FIX);
+	sql_create_func(sa, "hash", "mkey", "hash", ANY, NULL, WRD, SCALE_FIX);
 	sql_create_func3(sa, "rotate_xor_hash", "calc", "rotate_xor_hash", WRD, INT, ANY, WRD, SCALE_NONE);
 	sql_create_func(sa, "=", "calc", "=", ANY, ANY, BIT, SCALE_FIX);
 	sql_create_func(sa, "<>", "calc", "!=", ANY, ANY, BIT, SCALE_FIX);
