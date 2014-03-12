@@ -1,10 +1,13 @@
-CREATE PROCEDURE bam_loader_repos(bam_repos STRING, dbschema INT, storage_mask STRING, nr_threads INT)
+CREATE PROCEDURE bam_loader_repos(bam_repos STRING, dbschema SMALLINT, nr_threads SMALLINT)
 EXTERNAL NAME bam.bam_loader_repos;
 
-CREATE PROCEDURE bam_loader_file(bam_file STRING, dbschema INT, storage_mask STRING)
+CREATE PROCEDURE bam_loader_files(bam_files STRING, dbschema SMALLINT, nr_threads SMALLINT)
+EXTERNAL NAME bam.bam_loader_files;
+
+CREATE PROCEDURE bam_loader_file(bam_file STRING, dbschema SMALLINT)
 EXTERNAL NAME bam.bam_loader_file;
 
-CREATE PROCEDURE bam_drop_file(file_id SMALLINT, dbschema SMALLINT)
+CREATE PROCEDURE bam_drop_file(file_id BIGINT, dbschema SMALLINT)
 EXTERNAL NAME bam.bam_drop_file;
 
 

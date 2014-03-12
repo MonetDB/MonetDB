@@ -1,19 +1,23 @@
 module bam;
 
 
-# Bam_loader related signatures
+# Bam loader related signatures
 
-pattern bam_loader_repos(bam_repos_list:str, dbschema:int, storage_mask:str, nr_threads:int):void
+pattern bam_loader_repos(bam_repos:str, dbschema:sht, nr_threads:sht):void
 address bam_loader_repos
-comment "Read the files in the given list of bam files and store them in the database";
+comment "Read all bam files in the given bam_repos directory (non-recursive) and store them in the given dbschema";
 
-pattern bam_loader_file(bam_file:str, dbschema:int, storage_mask:str):void
+pattern bam_loader_files(bam_files:str, dbschema:sht, nr_threads:sht):void
+address bam_loader_files
+comment "Read all bam files in the file list stored in the file bam_files (separated by a newline) and store them in the given dbschema";
+
+pattern bam_loader_file(bam_file:str, dbschema:sht):void
 address bam_loader_file
-comment "Read the bam file given as the first parameter and store it in the database";
+comment "Read bam_file and store it in the given dbschema";
 
-pattern bam_drop_file(file_id:sht, dbschema:sht):void
+pattern bam_drop_file(file_id:lng, dbschema:sht):void
 address bam_drop_file
-comment "Drop alignment tables and header data for the given file"
+comment "Drop alignment tables and header data for the bam file with the given file_id"
 
 
 # Scalar signatures for bam_lib
