@@ -64,6 +64,28 @@
 char *BATstring_h = "h";
 char *BATstring_t = "t";
 
+static char *
+type2str(int type)
+{
+	switch (type) {
+		case 0:   return "void";   break;
+		case 1:   return "bit";    break;
+		case 2:   return "bte";    break;
+		case 3:   return "sht";    break;
+		case 4:   return "bat";    break;
+		case 5:   return "int";    break;
+		case 6:   return "oid";    break;
+		case 7:   return "wrd";    break;
+		case 8:   return "ptr";    break;
+		case 9:   return "flt";    break;
+		case 10:  return "dbl";    break;
+		case 11:  return "lng";    break;
+		case 12:  return "str";    break;
+		case 255: return "any";    break;
+		default:  return "???";    break;
+	}
+}
+
 static int
 default_ident(char *s)
 {
@@ -90,9 +112,8 @@ BATcreatedesc(int ht, int tt, int heapnames)
 	if (bs == NULL)
 		return NULL;
 	HEADLESSDEBUG {
-		if ( ht != TYPE_void && ht != TYPE_oid)
-			fprintf(stderr, "#headless violation in BATcreatedesc %d\n", ht);
-
+		if (ht != TYPE_void && ht != TYPE_oid)
+			fprintf(stderr, "#headless violation in BATcreatedesc for bat[:%s,:%s]\n", type2str(ht), type2str(tt));
 	}
 	/*
 	 * assert needed in the kernel to get symbol eprintf resolved.
