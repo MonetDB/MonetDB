@@ -78,5 +78,4 @@ str create_alignment_storage_1(Client cntxt, str descr, bam_wrapper *bw);
 str copy_into_db(Client cntxt, bam_wrapper *bw);
 str drop_file(Client cntxt, str descr, lng file_id, sht dbschema);
 
-/* TODO Consider creating something that truncates everything from the BAM schema */
 #endif

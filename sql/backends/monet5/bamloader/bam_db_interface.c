@@ -188,9 +188,6 @@ char buf_sql_copy_into[BUF_SIZE_COPY_INTO];
 
 
 
-
-/* TODO Find out if executed SQL queries get logged somewhere else already, since in that case we shouldn't log it again */
-
 str 
 create_schema_if_not_exists(Client cntxt, mvc *m, str schemaname, str descr, sql_schema **ret) {
     sql_schema *result;

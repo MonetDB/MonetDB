@@ -155,8 +155,6 @@ bam_loader(Client cntxt, MalBlkPtr mb, str *filenames, int nr_files, sht dbschem
     if((msg = create_table_if_not_exists(cntxt, m, s, "pg", SQL_CREATE_PG, "bam.create_pg", NULL)) != MAL_SUCCEED)                  goto cleanup;
     
     /* Get next file id */
-    /* TODO Find out if we can indeed reserve file ids here. This is only possible if it is impossible for other MAL instructions
-     * to get executed in parallel to the bam loader, since then changes could be made to the files table while we're calculating */
     TO_LOG("<bam_loader> Retrieving next file id...");
     if((msg = next_file_id(m, files_table, &cur_file_id)) != MAL_SUCCEED) {
         goto cleanup;

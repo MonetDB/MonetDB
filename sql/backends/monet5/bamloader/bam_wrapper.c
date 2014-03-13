@@ -51,7 +51,7 @@ bsopen(str filepath) {
  * Takes a bam_wrapper and initializes it. Note that in order for the accompanying clear function to work, the bam_wrapper
  * should be initialized to zero before the fields are filled in by the init function.
  *
- * TODO: Right now, binaries will be opened in dbfarm/bam, since that is the current working directory. Make sure this is OK.
+ * Binaries will be opened in dbfarm/bam, since that is the current working directory.
  */
 str
 init_bam_wrapper(bam_wrapper *bw, str file_location, lng file_id, sht dbschema) {
@@ -862,12 +862,8 @@ process_alignment(bam_wrapper *bw, lng virtual_offset, bam1_t *a_in, alignment *
     }
     
     /* First save the values in the alignment struct that we have to store in additional variables anyway */
-    a_out->flag = a_in->core.flag;
     a_out->pos = a_in->core.pos + 1;
-    a_out->mapq = a_in->core.qual;
-    a_out->pnext = a_in->core.mpos + 1;
-    /* TODO Try out if flag and mapq can be removed, since we would expect being able to directly access the address of something that is stored inside a struct */
-    
+    a_out->pnext = a_in->core.mpos + 1;    
         
     /* Construct cigar, seq and qual strings in the buffers provided in a_out */
     if(a_in->core.n_cigar == 0) {
@@ -910,7 +906,7 @@ process_alignment(bam_wrapper *bw, lng virtual_offset, bam1_t *a_in, alignment *
         ++bw->cnt_alignments;
         if(!APPEND_LNG(bw->alignments[0], virtual_offset)) WRITE_ERR_PROCESS_ALIGNMENT("virtual_offset");
         if(!APPEND_STR(bw->alignments[1], bam1_qname(a_in))) WRITE_ERR_PROCESS_ALIGNMENT("qname");    
-        if(!APPEND_SHT(bw->alignments[2], a_out->flag)) WRITE_ERR_PROCESS_ALIGNMENT("flag");
+        if(!APPEND_SHT(bw->alignments[2], a_in->core.flag)) WRITE_ERR_PROCESS_ALIGNMENT("flag");
         
         if(a_in->core.tid < 0) {
             if(!APPEND_STR(bw->alignments[3], "*")) WRITE_ERR_PROCESS_ALIGNMENT("rname");
@@ -919,7 +915,7 @@ process_alignment(bam_wrapper *bw, lng virtual_offset, bam1_t *a_in, alignment *
         }
         
         if(!APPEND_INT(bw->alignments[4], a_out->pos)) WRITE_ERR_PROCESS_ALIGNMENT("pos");
-        if(!APPEND_SHT(bw->alignments[5], a_out->mapq)) WRITE_ERR_PROCESS_ALIGNMENT("mapq");
+        if(!APPEND_SHT(bw->alignments[5], a_in->core.qual)) WRITE_ERR_PROCESS_ALIGNMENT("mapq");
         if(!APPEND_STR(bw->alignments[6], a_out->cigar)) WRITE_ERR_PROCESS_ALIGNMENT("cigar");
         
         if(a_in->core.mtid < 0) {
@@ -940,13 +936,14 @@ process_alignment(bam_wrapper *bw, lng virtual_offset, bam1_t *a_in, alignment *
         /* Complete the a_out struct */
         a_out->virtual_offset = virtual_offset;
         strcpy(a_out->qname, bam1_qname(a_in));
+        a_out->flag = a_in->core.flag;
         
         if(a_in->core.tid < 0) {
             a_out->rname = "*";
         } else {
             a_out->rname = bw->header->target_name[a_in->core.tid];
         }
-        
+        a_out->mapq = a_in->core.qual;
         if(a_in->core.mtid < 0) {
             a_out->rnext = "*";
         } else if(a_in->core.mtid == a_in->core.tid) {
