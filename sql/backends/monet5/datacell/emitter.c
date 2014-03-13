@@ -114,7 +114,7 @@ EMemitterStartInternal(int *ret, str *tbl, str *host, int *port, int mode, int p
 		throw(MAL, "emitter.new", "Group '%s' has no members", *tbl);
 
 	em->table.format = GDKzalloc(sizeof(Column) * (len + 1));
-	em->table.format[0].c[0] = NULL;
+	em->table.format[0].c = NULL;
 	em->table.format[0].name = NULL;
 	em->table.format[0].sep = "[ ";
 	em->table.format[0].seplen = (int) strlen(em->table.format[0].sep);
@@ -126,23 +126,22 @@ EMemitterStartInternal(int *ret, str *tbl, str *host, int *port, int mode, int p
 			throw(MAL, "receptor.new", "Could not access descriptor");
 		}
 
-		em->table.format[j].c[0] = BATcopy(b, b->htype, b->ttype, FALSE);
-		em->table.format[j].ci[0] = bat_iterator(em->table.format[j].c[0]);
+		em->table.format[j].c = BATcopy(b, b->htype, b->ttype, FALSE);
+		em->table.format[j].ci = bat_iterator(em->table.format[j].c);
 		em->table.format[j].name = baskets[idx].cols[i];
 		em->table.format[j].sep = ",";
 		em->table.format[j].seplen = (int) strlen(em->table.format[j].sep);
-		em->table.format[j].type = GDKstrdup(ATOMname(em->table.format[j].c[0]->ttype));
-		em->table.format[j].adt = em->table.format[j].c[0]->ttype;
+		em->table.format[j].type = GDKstrdup(ATOMname(em->table.format[j].c->ttype));
+		em->table.format[j].adt = em->table.format[j].c->ttype;
 		em->table.format[j].nullstr = "";
-		em->table.format[j].tostr = &TABLETadt_toStr;
-		em->table.format[j].frstr = &TABLETadt_frStr;
+		em->table.format[j].tostr = (void*) &TABLETadt_toStr;
+		em->table.format[j].frstr = (void*) &TABLETadt_frStr;
 		em->table.format[j].extra = em->table.format + j;
 		em->table.format[j].len = 0;
 		em->table.format[j].nillen = 0;
 		em->table.format[j].data = NULL;
 		j++;
 	}
-	GDKfree(em->table.format[j - 1].sep);
 	em->table.format[j - 1].sep = "\n";
 	em->table.format[j - 1].seplen = (int) strlen(em->table.format[j - 1].sep);
 	em->table.nr_attrs = j;
@@ -274,7 +273,6 @@ static void
 EMbody(Emitter em)
 {
 	BUN cnt;
-	size_t j;
 	int k, ret;
 	BAT *b;
 
@@ -326,27 +324,27 @@ bodyRestart:
 		 */
 		BSKTlock(&em->lck, &em->name, &em->delay);
 		for (k = 0; k < baskets[em->bskt].colcount; k++) {
-			if (em->table.format[k].c[0])
-				BBPunfix(em->table.format[k].c[0]->batCacheid);
+			if (em->table.format[k].c)
+				BBPunfix(em->table.format[k].c->batCacheid);
 			b = baskets[em->bskt].primary[k];
-			em->table.format[k].c[0] = BATcopy(b, b->htype, b->ttype, TRUE);
-			em->table.format[k].ci[0] = bat_iterator(b);
+			em->table.format[k].c = BATcopy(b, b->htype, b->ttype, TRUE);
+			em->table.format[k].ci = bat_iterator(b);
 			BATclear(b, FALSE);
 		}
 		BSKTunlock(&em->lck, &em->name);
-		if ((cnt = BATcount(em->table.format[0].c[0]))) {
+		if ((cnt = BATcount(em->table.format[0].c))) {
 			MTIMEcurrent_timestamp(&baskets[em->bskt].seen);
 			em->cycles++;
 
-			cnt = BATcount(em->table.format[1].c[0]);
+			cnt = BATcount(em->table.format[1].c);
 #ifdef _DEBUG_EMITTER_
 			mnstr_printf(EMout, "#Emit " BUNFMT " tuples \n", cnt);
 #endif
 			em->table.nr = cnt;
 
 			(void) MTIMEcurrent_timestamp(&em->lastseen);
-			ret = TABLEToutput_file(&em->table, em->table.format[1].c[0], em->emitter);
-			em->sent += (int) BATcount(em->table.format[1].c[0]);
+			ret = TABLEToutput_file(&em->table, em->table.format[1].c, em->emitter);
+			em->sent += (int) BATcount(em->table.format[1].c);
 #ifdef _DEBUG_EMITTER_
 			if (ret < 0)
 				mnstr_printf(EMout, "#Tuple emission failed\n");
@@ -491,7 +489,7 @@ EMtable(int *nameId, int *hostId, int *portId, int *protocolId, int *modeId, int
 	BATseqbase(status, 0);
 
 	for (; em; em = em->nxt)
-	if ( em->table.format[1].c[0]){
+	if ( em->table.format[1].c){
 		BUNappend(name, em->name, FALSE);
 		BUNappend(host, em->host, FALSE);
 		BUNappend(port, &em->port, FALSE);
@@ -500,7 +498,7 @@ EMtable(int *nameId, int *hostId, int *portId, int *protocolId, int *modeId, int
 		BUNappend(status, statusname[em->status], FALSE);
 		BUNappend(seen, &em->lastseen, FALSE);
 		BUNappend(cycles, &em->cycles, FALSE);
-		em->pending += (int) BATcount(em->table.format[1].c[0]);
+		em->pending += (int) BATcount(em->table.format[1].c);
 		BUNappend(pending, &em->pending, FALSE);
 		BUNappend(sent, &em->sent, FALSE);
 	}

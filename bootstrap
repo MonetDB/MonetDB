@@ -56,3 +56,6 @@ aclocal ${_m4_extra_dirs} &&
 autoheader  &&
 automake --add-missing --copy --foreign  &&
 autoconf
+if [ -f buildtools/conf/install-sh -a ! -x buildtools/conf/install-sh ]; then
+    chmod +x buildtools/conf/install-sh
+fi

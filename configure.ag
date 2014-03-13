@@ -407,9 +407,20 @@ case "$CC_version" in
 	CC_ver="clang-$gcc_ver"
 	;;
 *)
-	AC_MSG_WARN([compiler not recognized: `$CC --version` says
+	CC_version="`$CC -V 2>&1`"
+	case "$CC_version" in
+	*Sun\ Ceres\ C\ *|*Sun\ C\ *)
+		# developer/sunstudioexpress and
+		# developer/sunstudio12u1 respectively
+		CC_ver="suncc-`echo "$CC_version" | sed -n 's/.*Sun Ceres C \(.*\) SunOS.*/\1/p;s/.*Sun C \(.*\) SunOS.*/\1/p'`"
+		;;
+	*)
+		AC_MSG_WARN([compiler not recognized: `$CC --version` says
 $CC_version
-	]);;
+	])
+		;;
+	esac
+	;;
 esac
 AC_MSG_RESULT($CC_ver)
 
@@ -419,6 +430,7 @@ yes!*clang*!clang-*)	;;
 yes!*gcc*!clang-*)	;;
 yes!*gcc*!gcc-*)	;;
 !*icc*!icc-*)	;;
+*!*!suncc-*)	;;
 *)	AC_MSG_WARN([compiler potentially not (correctly) recognized:
 GCC=$GCC
 CC=$CC
@@ -1129,6 +1141,8 @@ AC_PATH_PROG(BASH,bash, /usr/bin/bash, $PATH)
 AC_CHECK_PROG(RM,rm,rm -f)
 AC_CHECK_PROG(MV,mv,mv -f)
 AC_PROG_LN_S
+AC_CHECK_PROGS(DIFF,gdiff diff)
+AC_DEFINE_UNQUOTED([DIFF], "$DIFF", [Program to perform diffs])
 
 AC_CHECK_PROGS(RPMBUILD,rpmbuild rpm)
 
@@ -1873,8 +1887,8 @@ if test "x$have_pthread" != xno; then
 	save_LIBS="$LIBS"
 	save_CPPFLAGS="$CPPFLAGS"
 	case $GCC-$have_pthread-$CC_ver in
-		yes-auto-clang-5.0|yes-yes-clang-5.0)
-			# clang 5.0 (at least on Mac OSX Mavericks) does not
+		yes-auto-clang-5.*|yes-yes-clang-5.*)
+			# clang 5.* (at least on Mac OSX Mavericks) does not
 			# seem to have / require -pthread as compiler
 			# option; on Mac OSX Mavericks, "Apple LLVM version
 			# 5.0 (clang-500.2.79) (based on LLVM 3.3svn)"
@@ -1900,7 +1914,7 @@ if test "x$have_pthread" != xno; then
 			LIBS="$LIBS $PTHREAD_LIBS"
 			pthread_found=yes
 			AC_SEARCH_LIBS([sem_init], [pthreadGC2 pthreadGC1 pthreadGC pthread],
-				[LIBS="$LIBS $ac_cv_search_sem_init"],
+				[test "$ac_cv_search_sem_init" = "none required" || LIBS="$LIBS $ac_cv_search_sem_init"],
 				[pthread_found=no])
 			if test x"$pthread_found" = xno ; then
 				pthread_found=yes
@@ -2467,9 +2481,21 @@ if test x"$have_atomic_ops" = x"yes" ; then
 		why_have_atomic_ops="(atomic_ops do not compile with Intel's icc)"
 		;;
 	*)
-		AC_DEFINE(HAVE_LIBATOMIC_OPS, 1, [Define if you have the libatomic_ops library])
+		# On some systems, notably OpenIndiana, atomic_ops may
+		# seem to be installed in that there is a pkg-config
+		# file for it, but that file contains incorrect
+		# information, and can not, in fact, be used.  The
+		# bogus pkg-config file for atomic_ops is part of the
+		# library/gc package.
+		save_CFLAGS="$CFLAGS"
 		CFLAGS="$CFLAGS $atomic_ops_CFLAGS"
-		LIBS="$LIBS $atomic_ops_LIBS"
+		AC_CHECK_HEADERS([atomic_ops.h],[have_atomic_ops=yes],[have_atomic_ops=no why_have_atomic_ops="(atomic_ops was incorrectly installed (happens on at least Solaris/OpenIndiana))"])
+		CFAGS="$save_CFLAGS"
+		if test x"$have_atomic_ops" = x"yes" ; then
+			AC_DEFINE(HAVE_LIBATOMIC_OPS, 1, [Define if you have the libatomic_ops library])
+			CFLAGS="$CFLAGS $atomic_ops_CFLAGS"
+			LIBS="$LIBS $atomic_ops_LIBS"
+		fi
 		;;
 	esac
 fi
@@ -2996,6 +3022,9 @@ AC_SUBST(HWCOUNTERS_LIBS)
 AC_SUBST(HWCOUNTERS_INCS)
 
 dnl check dependencies (might need more than just SQL)
+if test x"$enable_sql" = xyes && test x"$enable_monetdb5" = x"no" ; then
+	AC_MSG_ERROR([MonetDB/SQL requires MonetDB5${disable_monetdb5:+ $disable_monetdb5}.])
+fi
 if test x"$enable_sql" = xauto && test x"$enable_monetdb5" = x"no" ; then
 	enable_sql=no
 	if test "x$disable_sql" = x; then

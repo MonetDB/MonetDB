@@ -39,10 +39,14 @@ cs_new(changeset * cs, sql_allocator *sa, fdestroy destroy)
 void
 cs_destroy(changeset * cs)
 {
-	if (cs->set)
+	if (cs->set) {
 		list_destroy(cs->set);
-	if (cs->dset)
+		cs->set = NULL;
+	}
+	if (cs->dset) {
 		list_destroy(cs->dset);
+		cs->dset = NULL;
+	}
 }
 
 void

@@ -89,12 +89,12 @@ DCprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	MT_lock_init( &dcLock, "datacellLock");
 #endif
 	addPipeDefinition(cntxt, "datacell_pipe",
-		"optimizer.inline();optimizer.remap();optimizer.datacell();optimizer.garbageCollector();"
-		"optimizer.evaluate();optimizer.costModel();optimizer.coercions();optimizer.emptySet();"
-		"optimizer.aliases();optimizer.mitosis();optimizer.mergetable();optimizer.deadcode();"
-		"optimizer.commonTerms();optimizer.groups();optimizer.joinPath();optimizer.reorder();"
-		"optimizer.deadcode();optimizer.reduce();optimizer.dataflow();optimizer.history();"
-		"optimizer.multiplex();optimizer.accumulators();optimizer.garbageCollector();");
+	"optimizer.inline(); optimizer.remap();optimizer.datacell();optimizer.costModel();"
+	"optimizer.coercions(); optimizer.evaluate(); optimizer.emptySet(); optimizer.aliases();"
+	"optimizer.pushselect(); optimizer.mitosis(); optimizer.mergetable(); optimizer.deadcode();"
+	"optimizer.commonTerms(); optimizer.joinPath(); optimizer.reorder(); optimizer.deadcode();"
+	"optimizer.reduce(); optimizer.matpack(); optimizer.dataflow(); optimizer.querylog();"
+	"optimizer.multiplex(); optimizer.garbageCollector();");
 	return MAL_SUCCEED;
 }
 

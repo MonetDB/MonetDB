@@ -100,6 +100,7 @@ key_destroy(sql_key *k)
 		fk->rkey = NULL;
 	}
 	list_destroy(k->columns);
+	k->columns = NULL;
 	if ((k->type == pkey) && (k->t->pkey == (sql_ukey *) k))
 		k->t->pkey = NULL;
 }
@@ -110,6 +111,7 @@ idx_destroy(sql_idx * i)
 	/* remove idx from schema */
 	list_remove_data(i->t->s->idxs, i);
 	list_destroy(i->columns);
+	i->columns = NULL;
 	if (isTable(i->t))
 		store_funcs.destroy_idx(NULL, i);
 }
@@ -119,8 +121,10 @@ trigger_destroy(sql_trigger *tr)
 {
 	/* remove trigger from schema */
 	list_remove_data(tr->t->s->triggers, tr);
-	if (tr->columns)
+	if (tr->columns) {
 		list_destroy(tr->columns);
+		tr->columns = NULL;
+	}
 }
 
 void
@@ -151,6 +155,9 @@ schema_destroy(sql_schema *s)
 	list_destroy(s->keys);
 	list_destroy(s->idxs);
 	list_destroy(s->triggers);
+	s->keys = NULL;
+	s->idxs = NULL;
+	s->triggers = NULL;
 }
 
 /*#define STORE_DEBUG 1*/ 
@@ -2300,7 +2307,7 @@ rollforward_changeset_updates(sql_trans *tr, changeset * fs, changeset * ts, sql
 					ok = rollforward_deletes(tr, tb, mode);
 			}
 			list_destroy(ts->dset);
-			fs->dset = NULL;
+			ts->dset = NULL;
 		}
 	}
 	/* changes to the existing bases */
