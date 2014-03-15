@@ -1587,7 +1587,7 @@ socket_open(SOCKET sock, const char *name)
 #endif
 #if defined(SO_KEEPALIVE) && !defined(WIN32)
 	if (domain != PF_UNIX) {	/* not on UNIX sockets */
-		int opt = 0;
+		int opt = 1;
 		setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, (void *) &opt, sizeof(opt));
 	}
 #endif
