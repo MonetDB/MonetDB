@@ -1152,9 +1152,6 @@ sql_create_func_(sql_allocator *sa, char *name, char *mod, char *imp, list *ops,
 		list_append(aggrs, t);
 	} else {
 		list_append(funcs, t);
-		MT_lock_set(&funcs->ht_lock, "sql_create_func_");
-		hash_add(funcs->ht, base_key(&t->base), t);
-		MT_lock_unset(&funcs->ht_lock, "sql_create_func_");
 	}
 	return t;
 }
@@ -1180,9 +1177,6 @@ sql_create_sqlfunc(sql_allocator *sa, char *name, char *imp, list *ops, sql_subt
 	t->sql = 1;
 	t->side_effect = FALSE;
 	list_append(funcs, t);
-	MT_lock_set(&funcs->ht_lock, "sql_create_sqlfunc");
-	hash_add(funcs->ht, base_key(&t->base), t);
-	MT_lock_unset(&funcs->ht_lock, "sql_create_sqlfunc");
 	return t;
 }
 

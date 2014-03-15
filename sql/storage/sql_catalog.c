@@ -293,7 +293,7 @@ find_all_sql_func(sql_schema * s, char *name, int type)
 			if (f->type == type && name[0] == b->name[0] && strcmp(name, b->name) == 0) {
 				if (!res)
 					res = list_create((fdestroy)NULL);
-				list_append(res, n->data);
+				list_append(res, f);
 			}
 		}
 	}

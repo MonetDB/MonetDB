@@ -108,15 +108,15 @@ void
 list_destroy(list *l)
 {
 	if (l) {
-		node **n = &l->h;
+		node *n = l->h;
 
 		MT_lock_destroy(&l->ht_lock);
+		l->h = NULL;
 		if (l->destroy || l->sa == NULL) {
-			while (*n) {
-				node *t = *n;
+			while (n) {
+				node *t = n;
 
-				*n = NULL;
-				n = &t->next;
+				n = t->next;
 				node_destroy(l, t);
 			}
 		}
