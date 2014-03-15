@@ -53,6 +53,7 @@ override_dh_auto_configure:
 	--with-java=no \
 	--with-mseed=no \
 	--with-perl=yes \
+	--with-perl-libdir=lib/perl5 \
 	--with-pthread=yes \
 	--with-python2=yes \
 	--with-python3=yes \

@@ -47,11 +47,26 @@ hash_new(sql_allocator *sa, int size, fkeyvalue key)
 	return ht;
 }
 
+static
+int
+not_done(sql_hash *h, int key, void *value)
+{
+	sql_hash_e *e = h->buckets[key&(h->size-1)];
+
+	while(e && e->value != value) {
+		e = e->chain;
+	}
+	if (e)
+		return 0;
+	return 1;
+}
+
 sql_hash_e*
 hash_add(sql_hash *h, int key, void *value)
 {
 	sql_hash_e *e = SA_ZNEW(h->sa, sql_hash_e);
 
+	assert(not_done(h,key,value));
 	e->chain = h->buckets[key&(h->size-1)];
 	h->buckets[key&(h->size-1)] = e;
 	e->key = key;

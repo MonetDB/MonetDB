@@ -58,7 +58,6 @@ BuildRequires: rubygems-devel
 BuildRequires: unixODBC-devel
 BuildRequires: zlib-devel
 
-%define perl_libdir %(perl -MConfig -e '$x=$Config{installvendorarch}; $x =~ s|$Config{vendorprefix}/||; print $x;')
 # need to define python_sitelib on RHEL 5 and older
 # no need to define python3_sitelib: it's defined by python3-devel
 %if 0%{?rhel} && 0%{?rhel} <= 5
@@ -272,10 +271,15 @@ program.
 Summary: MonetDB perl interface
 Group: Applications/Databases
 Requires: %{name}-client = %{version}-%{release}
-Requires: perl
+Requires: perl(:MODULE_COMPAT_%(eval "`%{__perl} -V:version`"; echo $version))
 Requires: perl(DBI)
 Requires: perl(Digest::SHA)
 Requires: perl(Digest::MD5)
+# when not using BuildArch: noarch, globally replace perl_vendorlib by
+# perl_vendorarch
+BuildArch: noarch
+%{?perl_default_filter}
+%global __requires_exclude perl\\(DBD::monetdb|perl\\(MonetDB::|perl\\(Mapi\\)
 
 %description client-perl
 MonetDB is a database management system that is developed from a
@@ -288,7 +292,7 @@ program.
 
 %files client-perl
 %defattr(-,root,root)
-%{_prefix}/%{perl_libdir}/*
+%{perl_vendorlib}/*
 
 %package -n rubygem-monetdb-sql
 Summary: MonetDB ruby interface
@@ -756,6 +760,7 @@ developer, but if you do want to test, this is the package you need.
 	--with-java=no \
 	--with-mseed=no \
 	--with-perl=yes \
+	--with-perl-libdir=lib/perl5 \
 	--with-pthread=yes \
 	--with-python2=yes \
 	--with-python3=%{?rhel:no}%{!?rhel:yes} \
@@ -778,6 +783,10 @@ mkdir -p $RPM_BUILD_ROOT%{_localstatedir}/MonetDB
 mkdir -p $RPM_BUILD_ROOT%{_localstatedir}/monetdb5/dbfarm
 mkdir -p $RPM_BUILD_ROOT%{_localstatedir}/log/monetdb
 mkdir -p $RPM_BUILD_ROOT%{_localstatedir}/run/monetdb
+mkdir -p $RPM_BUILD_ROOT%{perl_vendorlib}
+if [ ! $RPM_BUILD_ROOT%{_prefix}/lib/perl5 -ef $RPM_BUILD_ROOT%{perl_vendorlib} ]; then
+    mv $RPM_BUILD_ROOT%{_prefix}/lib/perl5/* $RPM_BUILD_ROOT%{perl_vendorlib}
+fi
 
 # remove unwanted stuff
 # .la files
