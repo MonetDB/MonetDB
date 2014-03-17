@@ -18,6 +18,24 @@
 
 %define release %{buildno}%{?dist}%{?oidsuf}
 
+# On Fedora, the geos library is available, and so we can require it
+# and build the geom modules.  On RedHat Enterprise Linux and
+# derivatives (CentOS, Scientific Linux), the geos library is not
+# available.  However, the geos library is available in the Extra
+# Packages for Enterprise Linux (EPEL).  If the _with_epel macro is
+# set, we assume that EPEL is available, and so we enable building the
+# geom modules.  The _with_epel macro can be set when using mock by
+# passing it the flag --with epel.
+%if %{?rhel:1}%{!?rhel:0}
+%if %{?_with_epel:1}%{!?_with_epel:0}
+# RedHat Enterprise Linux and derivatives with EPEL enabled
+%define with_geos 1
+%endif
+%else
+# Fedora
+%define with_geos 1
+%endif
+
 Name: %{name}
 Version: %{version}
 Release: %{release}
@@ -33,8 +51,7 @@ BuildRequires: bison
 BuildRequires: bzip2-devel
 # BuildRequires: cfitsio-devel
 BuildRequires: flex
-%if %{?rhel:0}%{!?rhel:1}
-# no geos library on RedHat Enterprise Linux and derivatives
+%if %{?with_geos:1}%{!?with_geos:0}
 BuildRequires: geos-devel >= 2.2.0
 %endif
 BuildRequires: gsl-devel
@@ -50,9 +67,13 @@ BuildRequires: python3-devel
 %endif
 # BuildRequires: raptor-devel >= 1.4.16
 BuildRequires: readline-devel
+# On RedHat Enterprise Linux and derivatives (CentOS, Scientific
+# Linux), the rubygem-activerecord package is not available (also not
+# in the Extra Packages for Enterprise Linux EPEL), so it makes no
+# sense providing our ruby packages.
+%if %{?rhel:0}%{!?rhel:1}
 BuildRequires: ruby
 BuildRequires: rubygems
-%if %{?rhel:0}%{!?rhel:1}
 BuildRequires: rubygems-devel
 %endif
 BuildRequires: unixODBC-devel
@@ -63,7 +84,6 @@ BuildRequires: zlib-devel
 %if 0%{?rhel} && 0%{?rhel} <= 5
 %{!?python_sitelib: %global python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())")}
 %endif
-%{!?gem_dir: %global gem_dir %(ruby -rubygems -e 'puts Gem::dir' 2>/dev/null)}
 
 %description
 MonetDB is a database management system that is developed from a
@@ -294,10 +314,11 @@ program.
 %defattr(-,root,root)
 %{perl_vendorlib}/*
 
+%if %{?rhel:0}%{!?rhel:1}
 %package -n rubygem-monetdb-sql
 Summary: MonetDB ruby interface
 Group: Applications/Databases
-Requires: ruby
+Requires: ruby(release)
 Obsoletes: %{name}-client-ruby
 BuildArch: noarch
 
@@ -322,7 +343,7 @@ program.
 %package -n rubygem-activerecord-monetdb-adapter
 Summary: MonetDB ruby interface
 Group: Applications/Databases
-Requires: ruby
+Requires: ruby(release)
 Requires: rubygem-activerecord
 Requires: rubygem-monetdb-sql
 BuildArch: noarch
@@ -343,6 +364,7 @@ This package contains the activerecord adapter for MonetDB.
 # %dir %{gem_dir}/gems/activerecord-monetdb-adapter-0.1
 %{gem_dir}/gems/activerecord-monetdb-adapter-0.1
 %{gem_dir}/specifications/activerecord-monetdb-adapter-0.1.gemspec
+%endif
 
 %package client-tests
 Summary: MonetDB Client tests package
@@ -381,7 +403,7 @@ developer.
 %{_bindir}/sqlsample.php
 %{_bindir}/sqlsample.pl
 
-%if %{?rhel:0}%{!?rhel:1}
+%if %{?with_geos:1}%{!?with_geos:0}
 %package geom-MonetDB5
 Summary: MonetDB5 SQL GIS support module
 Group: Applications/Databases
@@ -494,7 +516,7 @@ fi
 %{_libdir}/libmonetdb5.so.*
 %dir %{_libdir}/monetdb5
 %dir %{_libdir}/monetdb5/autoload
-%if %{?rhel:0}%{!?rhel:1}
+%if %{?with_geos:1}%{!?with_geos:0}
 %exclude %{_libdir}/monetdb5/geom.mal
 %endif
 %exclude %{_libdir}/monetdb5/gsl.mal
@@ -508,7 +530,7 @@ fi
 %{_libdir}/monetdb5/autoload/*_opt_sql_append.mal
 %{_libdir}/monetdb5/autoload/*_udf.mal
 %{_libdir}/monetdb5/autoload/*_vault.mal
-%if %{?rhel:0}%{!?rhel:1}
+%if %{?with_geos:1}%{!?with_geos:0}
 %exclude %{_libdir}/monetdb5/lib_geom.so
 %endif
 %exclude %{_libdir}/monetdb5/lib_gsl.so
@@ -603,7 +625,7 @@ systemd-tmpfiles --create %{_sysconfdir}/tmpfiles.d/monetdbd.conf
 %{_libdir}/monetdb5/lib_sql.so
 %{_libdir}/monetdb5/*.sql
 %dir %{_libdir}/monetdb5/createdb
-%if %{?rhel:0}%{!?rhel:1}
+%if %{?with_geos:1}%{!?with_geos:0}
 %exclude %{_libdir}/monetdb5/createdb/*_geom.sql
 %endif
 %exclude %{_libdir}/monetdb5/createdb/*_gsl.sql
@@ -736,7 +758,7 @@ developer, but if you do want to test, this is the package you need.
 	--enable-developer=no \
 	--enable-fits=no \
 	--enable-gdk=yes \
-	--enable-geom=%{?rhel:no}%{!?rhel:yes} \
+	--enable-geom=%{?with_geos:yes}%{!?with_geos:no} \
 	--enable-gsl=yes \
 	--enable-instrument=no \
 	--enable-jaql=yes \
@@ -753,7 +775,7 @@ developer, but if you do want to test, this is the package you need.
 	--enable-testing=yes \
 	--with-ant=no \
 	--with-bz2=yes \
-	--with-geos=%{?rhel:no}%{!?rhel:yes} \
+	--with-geos=%{?with_geos:yes}%{!?with_geos:no} \
 	--with-hwcounters=no \
 	--with-java=no \
 	--with-mseed=no \
@@ -763,8 +785,8 @@ developer, but if you do want to test, this is the package you need.
 	--with-python2=yes \
 	--with-python3=%{?rhel:no}%{!?rhel:yes} \
 	--with-readline=yes \
-	--with-rubygem=yes \
-	--with-rubygem-dir="%{gem_dir}" \
+	--with-rubygem=%{?rhel:no}%{!?rhel:yes} \
+	--with-rubygem-dir=%{?rhel:no}%{!?rhel:"%{gem_dir}"} \
 	--with-sphinxclient=no \
 	--with-unixodbc=yes \
 	--with-valgrind=no \
