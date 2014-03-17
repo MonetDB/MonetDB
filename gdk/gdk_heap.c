@@ -238,6 +238,7 @@ HEAPextend(Heap *h, size_t size, int mayshare)
 			int existing = 0;
 
 			assert(h->storage == STORE_MEM);
+			assert(ext != NULL);
 			h->filename = NULL;
 			/* if the heap file already exists, we want to
 			 * switch to STORE_PRIV (copy-on-write memory

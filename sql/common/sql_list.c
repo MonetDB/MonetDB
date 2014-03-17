@@ -96,8 +96,10 @@ list_empty(list *l)
 static void
 node_destroy(list *l, node *n)
 {
-	if (n->data && l->destroy)
+	if (n->data && l->destroy) {
 		l->destroy(n->data);
+		n->data = NULL;
+	}
 	if (!l->sa)
 		_DELETE(n);
 }
@@ -109,11 +111,14 @@ list_destroy(list *l)
 		node *n = l->h;
 
 		MT_lock_destroy(&l->ht_lock);
-		while (n && (l->destroy|| !l->sa)) {
-			node *t = n;
+		l->h = NULL;
+		if (l->destroy || l->sa == NULL) {
+			while (n) {
+				node *t = n;
 
-			n = n->next;
-			node_destroy(l, t);
+				n = t->next;
+				node_destroy(l, t);
+			}
 		}
 		if (!l->sa)
 			_DELETE(l);

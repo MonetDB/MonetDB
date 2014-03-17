@@ -94,9 +94,8 @@ BATcreatedesc(int ht, int tt, int heapnames, int role)
 	if (bs == NULL)
 		return NULL;
 	HEADLESSDEBUG {
-		if ( ht != TYPE_void && ht != TYPE_oid)
-			fprintf(stderr, "#headless violation in BATcreatedesc %d\n", ht);
-
+		if (ht != TYPE_void && ht != TYPE_oid)
+			fprintf(stderr, "#headless violation in BATcreatedesc for bat[:%s,:%s]\n", ATOMname(ht), ATOMname(tt));
 	}
 	/*
 	 * assert needed in the kernel to get symbol eprintf resolved.
@@ -1755,6 +1754,20 @@ void_replace_bat(BAT *b, BAT *u, bit force)
  * known and a hash index is available, one should use the inline
  * functions to speed-up processing.
  */
+static BUN
+slowfnd(BAT *b, const void *v)
+{
+	BATiter bi = bat_iterator(b);
+	BUN p, q;
+	int (*cmp)(const void *, const void *) = BATatoms[b->htype].atomCmp;
+
+	BATloop(b, p, q) {
+		if ((*cmp)(v, BUNhead(bi, p)) == 0)
+			return p;
+	}
+	return BUN_NONE;
+}
+
 BUN
 BUNfnd(BAT *b, const void *v)
 {
@@ -1794,6 +1807,9 @@ BUNfnd(BAT *b, const void *v)
 		HASHfnd(r, bi, v);
 	}
 	return r;
+  hashfnd_failed:
+	/* can't build hash table, search the slow way */
+	return slowfnd(b, v);
 }
 
 #define usemirror()						\

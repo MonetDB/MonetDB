@@ -2553,6 +2553,7 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int *locked = (int *) getArgReference(stk, pci, pci->retc + 9);
 	bstream *s;
 	stream *ss;
+	str utf8 = "UTF-8";
 
 	(void) mb;		/* NOT USED */
 	if ((msg = checkSQLContext(cntxt)) != NULL)
@@ -2570,8 +2571,8 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		len = 0;
 	}
 
-	codeset(&cs);
-	strIconv(&filename, *fname, "UTF-8", cs);
+	STRcodeset(&cs);
+	STRIconv(&filename, fname, &utf8, &cs);
 	GDKfree(cs);
 	len = strlen((char *) (*N));
 	GDKstrFromStr(ns = GDKmalloc(len + 1), *N, len);

@@ -277,4 +277,31 @@ void stopHttpdaemon(void){
 		MT_join_thread(hdthread);
 }
 
+#else
+
+#include "mal.h"
+#include "mal_exception.h"
+#include "mal_private.h"
+#include "mal_http_daemon.h"
+
+/* dummy noop functions to implement the exported API, if these had been
+ * defined to return a str, we could have informed the caller no
+ * implementation was available */
+
+void
+register_http_handler(http_request_handler handler)
+{
+	(void)handler;
+}
+
+void
+startHttpdaemon(void)
+{
+}
+
+void
+stopHttpdaemon(void)
+{
+}
+
 #endif

@@ -129,13 +129,14 @@ batstr_export str STRbatreplace(bat *ret, bat *l, str *pat, str *s2);
 	BBPreleaseref(Z->batCacheid);
 
 static str
-do_batstr_int(bat *ret, bat *l, const char *name, int (*func)(int *, str))
+do_batstr_int(bat *ret, bat *l, const char *name, str (*func)(int *, str *))
 {
 	BATiter bi;
 	BAT *bn, *b;
 	BUN p, q;
 	str x;
 	int y;
+	str msg = MAL_SUCCEED;
 
 	prepareOperand(b, l, name);
 	prepareResult(bn, b, TYPE_int, name);
@@ -149,8 +150,9 @@ do_batstr_int(bat *ret, bat *l, const char *name, int (*func)(int *, str))
 			y = int_nil;
 			bn->T->nonil = 0;
 			bn->T->nil = 1;
-		} else
-			(*func)(&y, x);
+		} else if ((msg = (*func)(&y, &x)) != MAL_SUCCEED) {
+			goto bunins_failed;
+		}
 		bunfastins(bn, h, &y);
 	}
 	finalizeResult(ret, bn, b);
@@ -158,34 +160,37 @@ do_batstr_int(bat *ret, bat *l, const char *name, int (*func)(int *, str))
 bunins_failed:
 	BBPreleaseref(b->batCacheid);
 	BBPunfix(bn->batCacheid);
+	if (msg != MAL_SUCCEED)
+		return msg;
 	throw(MAL, name, OPERATION_FAILED " During bulk operation");
 }
 
 str
 STRbatLength(bat *ret, bat *l)
 {
-	return do_batstr_int(ret, l, "batstr.Length", strLength);
+	return do_batstr_int(ret, l, "batstr.Length", STRLength);
 }
 
 str
 STRbatstringLength(bat *ret, bat *l)
 {
-	return do_batstr_int(ret, l, "batstr.stringLength", strSQLLength);
+	return do_batstr_int(ret, l, "batstr.stringLength", STRSQLLength);
 }
 
 str
 STRbatBytes(bat *ret, bat *l)
 {
-	return do_batstr_int(ret, l, "batstr.Bytes", strBytes);
+	return do_batstr_int(ret, l, "batstr.Bytes", STRBytes);
 }
 
 static str
-do_batstr_str(bat *ret, bat *l, const char *name, int (*func)(str *, str))
+do_batstr_str(bat *ret, bat *l, const char *name, str (*func)(str *, str *))
 {
 	BATiter bi;
 	BAT *bn, *b;
 	BUN p, q;
 	str x;
+	str msg = MAL_SUCCEED;
 
 	prepareOperand(b, l, name);
 	prepareResult(bn, b, TYPE_str, name);
@@ -197,8 +202,9 @@ do_batstr_str(bat *ret, bat *l, const char *name, int (*func)(str *, str))
 		str y = NULL;
 
 		x = (str) BUNtail(bi, p);
-		if (x != 0 && strcmp(x, str_nil) != 0)
-			(*func)(&y, x);
+		if (x != 0 && strcmp(x, str_nil) != 0 &&
+			(msg = (*func)(&y, &x)) != MAL_SUCCEED)
+			goto bunins_failed;
 		if (y == NULL)
 			y = (str) str_nil;
 		bunfastins(bn, h, y);
@@ -213,37 +219,39 @@ do_batstr_str(bat *ret, bat *l, const char *name, int (*func)(str *, str))
 bunins_failed:
 	BBPreleaseref(b->batCacheid);
 	BBPunfix(bn->batCacheid);
+	if (msg != MAL_SUCCEED)
+		return msg;
 	throw(MAL, name, OPERATION_FAILED " During bulk operation");
 }
 
 str
 STRbatLower(bat *ret, bat *l)
 {
-	return do_batstr_str(ret, l, "batstr.Lower", strLower);
+	return do_batstr_str(ret, l, "batstr.Lower", STRLower);
 }
 
 str
 STRbatUpper(bat *ret, bat *l)
 {
-	return do_batstr_str(ret, l, "batstr.Upper", strUpper);
+	return do_batstr_str(ret, l, "batstr.Upper", STRUpper);
 }
 
 str
 STRbatStrip(bat *ret, bat *l)
 {
-	return do_batstr_str(ret, l, "batstr.Strip", strStrip);
+	return do_batstr_str(ret, l, "batstr.Strip", STRStrip);
 }
 
 str
 STRbatLtrim(bat *ret, bat *l)
 {
-	return do_batstr_str(ret, l, "batstr.Ltrim", strLtrim);
+	return do_batstr_str(ret, l, "batstr.Ltrim", STRLtrim);
 }
 
 str
 STRbatRtrim(bat *ret, bat *l)
 {
-	return do_batstr_str(ret, l, "batstr.Rtrim", strRtrim);
+	return do_batstr_str(ret, l, "batstr.Rtrim", STRRtrim);
 }
 
 /*
@@ -629,9 +637,9 @@ str STRbatTail(bat *ret, bat *l, bat *r)
 
 	BATloop(left, p, q) {
 		ptr h = BUNhead(lefti,p);
-		ptr tl = BUNtail(lefti,p);
-		ptr tr = BUNtail(righti,p);
-		strTail(&v, tl, tr);
+		str tl = (str) BUNtail(lefti,p);
+		int *tr = (int *) BUNtail(righti,p);
+		STRTail(&v, &tl, tr);
 		bunfastins(bn, h, v);
 		GDKfree(v);
 	}
@@ -661,8 +669,8 @@ str STRbatTailcst(bat *ret, bat *l, bat *cst)
 
 	BATloop(left, p, q) {
 		ptr h = BUNhead(lefti,p);
-		ptr tl = BUNtail(lefti,p);
-		strTail(&v, tl, cst);
+		str tl = (str) BUNtail(lefti,p);
+		STRTail(&v, &tl, cst);
 		bunfastins(bn, h, v);
 		GDKfree(v);
 	}
@@ -693,9 +701,9 @@ str STRbatWChrAt(bat *ret, bat *l, bat *r)
 
 	BATloop(left, p, q) {
 		ptr h = BUNhead(lefti,p);
-		ptr tl = BUNtail(lefti,p);
+		str tl = (str) BUNtail(lefti,p);
 		ptr tr = BUNtail(righti,p);
-		strWChrAt(vp, tl, tr);
+		STRWChrAt(vp, &tl, tr);
 		bunfastins(bn, h, vp);
 	}
 	bn->T->nonil = 0;
@@ -724,8 +732,8 @@ str STRbatWChrAtcst(bat *ret, bat *l, bat *cst)
 
 	BATloop(left, p, q) {
 		ptr h = BUNhead(lefti,p);
-		ptr tl = BUNtail(lefti,p);
-		strWChrAt(vp, tl, cst);
+		str tl = (str) BUNtail(lefti,p);
+		STRWChrAt(vp, &tl, cst);
 		bunfastins(bn, h, vp);
 	}
 	bn->T->nonil = 0;

@@ -1,3 +1,17 @@
+monetdb (11.17.13-20140306) unstable; urgency=low
+
+  * Rebuilt.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 06 Mar 2014 11:48:51 +0100
+
+monetdb (11.17.13-20140306) unstable; urgency=low
+
+  * Rebuilt.
+  * BZ#3452: ODBC driver build fails on Mac OS X due to a conflicting
+    types for the SQLColAttribute with the unixODBC library
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 06 Mar 2014 11:48:50 +0100
+
 monetdb (11.17.11-20140303) unstable; urgency=low
 
   * Rebuilt.

@@ -2,8 +2,8 @@
 SELECT f_table_name
 FROM geometry_columns;
 -- Conformance Item N2
-SELECT g_table_name
-FROM geometry_columns;
+--SELECT g_table_name
+--FROM geometry_columns;
 -- Conformance Item N3
 SELECT storage_type
 FROM geometry_columns

@@ -1,7 +1,8 @@
 0.9.1
-- dplyr compatibility first iteration
-#- fixed leaking of socket variable
-#- fixed monetdb.server.setup for UNIX-like systems (Thanks, Enzo)
+- dbGetInfo() now supported on MonetDBConnection (dplyr compatibility)
+- dbTransaction(), dbCommit() and dbRollback() support
+- fixed leaking of socket variable in dbConnect()
+- fixed monetdb.server.setup for UNIX-like systems (Thanks, Enzo)
 - fixed issue in dbClearResult() which produced a protocol error
 
 0.9

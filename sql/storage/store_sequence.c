@@ -45,6 +45,7 @@ void sequences_init(void)
 void sequences_exit(void)
 {
 	list_destroy(sql_seqs);
+	sql_seqs = NULL;
 }
 
 /* lock is held */

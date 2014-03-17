@@ -2303,8 +2303,8 @@ BATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 						r++;
 				}
 				while (BATcount(bn) < prev - min) {
-					bunfastins_nocheck(bn, BUNlast(bn), 0,
-							   nil, 0, Tsize(bn));
+					bunfastapp_nocheck(bn, BUNlast(bn),
+							   nil, Tsize(bn));
 					nils++;
 				}
 				qindex = BUNfirst(b) + (BUN) (r + (p-r-1) * quantile);
@@ -2312,7 +2312,7 @@ BATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 				assert(qindex >= (BUNfirst(b) + r ));
 				assert(qindex <  (BUNfirst(b) + p));
 				v = BUNtail(bi, qindex);
-				bunfastins_nocheck(bn, BUNlast(bn), 0, v, 0, Tsize(bn));
+				bunfastapp_nocheck(bn, BUNlast(bn), v, Tsize(bn));
 				nils += (*atomcmp)(v, nil) == 0;
 
 				r = p;
@@ -2321,8 +2321,7 @@ BATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 			}
 		}
 		while (BATcount(bn) < ngrp) {
-			bunfastins_nocheck(bn, BUNlast(bn), 0,
-					   nil, 0, Tsize(bn));
+			bunfastapp_nocheck(bn, BUNlast(bn), nil, Tsize(bn));
 		}
 		BATseqbase(bn, min);
 	} else { /* quantiles for entire BAT b, EZ */

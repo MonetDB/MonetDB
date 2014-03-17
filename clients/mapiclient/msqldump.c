@@ -50,7 +50,7 @@
 #include "msqldump.h"
 #include "mprompt.h"
 
-static void usage(const char *prog, int xit)
+__declspec(noreturn) static void usage(const char *prog, int xit)
 	__attribute__((__noreturn__));
 
 static void

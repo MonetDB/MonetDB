@@ -76,8 +76,8 @@ mserver_abort()
 }
 #endif
 
-static void usage(char *prog, int xit)
-__attribute__((__noreturn__));
+__declspec(noreturn) static void usage(char *prog, int xit)
+	__attribute__((__noreturn__));
 
 static void
 usage(char *prog, int xit)
@@ -390,7 +390,13 @@ main(int argc, char **av)
 			break;
 		case 'd':
 			if (optarg) {
-				debug |= strtol(optarg, NULL, 10);
+				char *endarg;
+				debug |= strtol(optarg, &endarg, 10);
+				if (*endarg != '\0') {
+					fprintf(stderr, "ERROR: wrong format for --debug=%s\n",
+							optarg);
+					usage(prog, -1);
+				}
 			} else {
 				debug |= 1;
 			}
@@ -429,12 +435,13 @@ main(int argc, char **av)
 
 	if (debug || grpdebug) {
 		char buf[16];
+		char wasdebug = debug != 0;
 
-		if (debug)
-			mo_print_options(set, setlen);
 		debug |= grpdebug;  /* add the algorithm tracers */
 		snprintf(buf, sizeof(buf) - 1, "%d", debug);
 		setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_debug", buf);
+		if (wasdebug)
+			mo_print_options(set, setlen);
 	}
 
 	monet_script = (str *) malloc(sizeof(str) * (argc + 1));
