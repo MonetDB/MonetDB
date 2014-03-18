@@ -26,7 +26,7 @@ MonetR <- MonetDB <- MonetDBR <- MonetDB.R <- function() {
 setMethod("dbGetInfo", "MonetDBDriver", def=function(dbObj, ...)
 			list(name="MonetDBDriver", 
 					driver.version="0.9.1",
-					DBI.version="0.2-5",
+					DBI.version="0.2-7",
 					client.version=NA,
 					max.connections=NA)
 )
@@ -34,6 +34,14 @@ setMethod("dbGetInfo", "MonetDBDriver", def=function(dbObj, ...)
 # shorthand for connecting to the DB, very handy, e.g. dbListTables(mc("acs"))
 mc <- function(dbname="demo", user="monetdb", password="monetdb", host="localhost",port=50000L, timeout=86400L, wait=FALSE,language="sql",...) {
 	dbConnect(MonetDB.R(),dbname,user,password,host,port,timeout,wait,language,...)
+}
+
+# TODO: document, export etc
+mq <- function(db,query,...) {
+  conn <- mc(db,...)
+  res <- dbGetQuery(conn,query)
+  dbDisconnect(conn)
+  return(res)
 }
 
 setMethod("dbConnect", "MonetDBDriver", def=function(drv,dbname="demo", user="monetdb", password="monetdb", host="localhost",port=50000L, timeout=86400L, wait=FALSE,language="sql",...,url="") {
@@ -68,17 +76,10 @@ setMethod("dbConnect", "MonetDBDriver", def=function(drv,dbname="demo", user="mo
 					continue <- FALSE
 					tryCatch ({
 								# open socket with 5-sec timeout so we can check whether everything works
-								#socket <- socket <<- socketConnection(host = host, port = port, 
-								#	blocking = TRUE, open="r+b",timeout = 5 )
-								
-								# this goes to src/mapi.c
-								# TODO: this ends up in the global environment. Bad.
 								socket <- socket <<- .Call("mapiConnect",host,port,5,PACKAGE=C_LIBRARY)
 								# authenticate
 								.monetAuthenticate(socket,dbname,user,password,language=language)
 								# test the connection to make sure it works before
-								.mapiWrite(socket,"sSELECT 42;"); .mapiRead(socket)
-								#close(socket)
 								.Call("mapiDisconnect",socket,PACKAGE=C_LIBRARY)
 								break
 							}, error = function(e) {
@@ -101,8 +102,14 @@ setMethod("dbConnect", "MonetDBDriver", def=function(drv,dbname="demo", user="mo
 			connenv$lock <- 0
 			connenv$deferred <- list()
 			connenv$exception <- list()
+      
+      conn <- new("MonetDBConnection",socket=socket,connenv=connenv,Id=-1L)
+      if (getOption("monetdb.sequential",F)) {
+        message("MonetDB: Switching to single-threaded query execution")
+        dbSendQuery(conn,"set optimizer='sequential_pipe'")
+      }
 
-			return(new("MonetDBConnection",socket=socket,connenv=connenv,Id=-1L))
+			return(conn)
 		},
 		valueClass="MonetDBConnection")
 
@@ -900,4 +907,20 @@ monetdbd.liststatus <- monetdb.liststatus <- function(passphrase,host="localhost
   dbdf$scenarios <- gsub("'",",",dbdf$scenarios,fixed=T)
   
   return(dbdf[order(dbdf$dbname),])
+}
+
+monetdb_queryinfo <- function(conn,query) {
+  info <- emptyenv()
+  tryCatch({
+    .mapiRequest(conn,"Xreply_size 1")
+    res <- dbSendQuery(conn,query)
+    info <- res@env$info
+    dbClearResult(res);
+  }, error = function(e) {
+    print(e)
+    warning("Failed to calculate result set size for ",query)
+  }, finally = {
+    .mapiRequest(conn, paste0("Xreply_size ",REPLY_SIZE))
+  })
+  info
 }

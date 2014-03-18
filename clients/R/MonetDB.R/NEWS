@@ -1,3 +1,7 @@
+0.9.2
+- monetdb_queryinfo method to find out things about an arbitrary query cheaply
+- new option monetdb.sequential
+
 0.9.1
 - dbGetInfo() now supported on MonetDBConnection (dplyr compatibility)
 - dbTransaction(), dbCommit() and dbRollback() support
