@@ -8,10 +8,6 @@ C_LIBRARY <- "MonetDB.R"
 	.Call("mapiInit",PACKAGE=C_LIBRARY)
 }
 
-# TODO: make these values configurable in the call to dbConnect
-DEBUG_IO      <- FALSE
-DEBUG_QUERY   <- FALSE
-
 # Make S4 aware of S3 classes
 setOldClass(c("sockconn","connection","monetdb_mapi_conn"))
 
@@ -25,7 +21,7 @@ MonetR <- MonetDB <- MonetDBR <- MonetDB.R <- function() {
 
 setMethod("dbGetInfo", "MonetDBDriver", def=function(dbObj, ...)
 			list(name="MonetDBDriver", 
-					driver.version="0.9.1",
+					driver.version="0.9.2",
 					DBI.version="0.2-7",
 					client.version=NA,
 					max.connections=NA)
@@ -69,7 +65,7 @@ setMethod("dbConnect", "MonetDBDriver", def=function(drv,dbname="demo", user="mo
 				}
 			}
 			
-			if (DEBUG_QUERY) cat(paste0("II: Connecting to MonetDB on host ",host," at port ",port, " to DB ", dbname, " with user ", user," and a non-printed password, timeout is ",timeout," seconds.\n"))
+			if (getOption("monetdb.debug.mapi",F)) message("II: Connecting to MonetDB on host ",host," at port ",port, " to DB ", dbname, " with user ", user," and a non-printed password, timeout is ",timeout," seconds.")
 			socket <- FALSE
 			if (wait) {
 				repeat {
@@ -86,7 +82,7 @@ setMethod("dbConnect", "MonetDBDriver", def=function(drv,dbname="demo", user="mo
 								if ("connection" %in% class(socket)) {
 									.Call("mapiDisconnect",socket,PACKAGE=C_LIBRARY)
 								}
-								cat(paste0("Server not ready(",e$message,"), retrying (ESC or CTRL+C to abort)\n"))
+								message("Server not ready(",e$message,"), retrying (ESC or CTRL+C to abort)")
 								Sys.sleep(1)
 								continue <<- TRUE
 							})
@@ -105,7 +101,7 @@ setMethod("dbConnect", "MonetDBDriver", def=function(drv,dbname="demo", user="mo
       
       conn <- new("MonetDBConnection",socket=socket,connenv=connenv,Id=-1L)
       if (getOption("monetdb.sequential",F)) {
-        message("MonetDB: Switching to single-threaded query execution")
+        message("MonetDB: Switching to single-threaded query execution.")
         dbSendQuery(conn,"set optimizer='sequential_pipe'")
       }
 
@@ -187,7 +183,7 @@ setMethod("dbSendQuery", signature(conn="MonetDBConnection", statement="characte
 			}	
 			conn@connenv$exception <- list()
 			env <- NULL
-			if (DEBUG_QUERY)  cat(paste("QQ: '",statement,"'\n",sep=""))
+			if (getOption("monetdb.debug.query",F))  message("QQ: '",statement)
 			resp <- .mapiParseResponse(.mapiRequest(conn,paste0("s",statement,";"),async=async))
 			
 			env <- new.env(parent=emptyenv())
@@ -224,11 +220,11 @@ setMethod("dbSendQuery", signature(conn="MonetDBConnection", statement="characte
 					errno <- as.numeric(sp[[2]])
 					errmsg <- sp[[3]]
 					conn@connenv$exception <- list(errNum=errno,errMsg=errmsg)
-					stop(paste0("Unable to execute statement '",statement,"'.\nServer says '",errmsg,"' [#",errno,"]."))
+					stop("Unable to execute statement '",statement,"'.\nServer says '",errmsg,"' [#",errno,"].")
 				}
 				else {
 					conn@connenv$exception <- list(errNum=-1,errMsg=env$message)
-					stop(paste0("Unable to execute statement '",statement,"'.\nServer says '",env$message,"'."))
+					stop("Unable to execute statement '",statement,"'.\nServer says '",env$message,"'.")
 				}
 			}
 			
@@ -373,7 +369,7 @@ monetdbRtype <- function(dbType) {
 # most of the heavy lifting here
 setMethod("fetch", signature(res="MonetDBResult", n="numeric"), def=function(res, n, ...) {
 			if (!res@env$success) {
-				stop(paste0("Cannot fetch results from error response, error was ",res@env$info$message))
+				stop("Cannot fetch results from error response, error was ",res@env$info$message)
 			}
 			
 			# okay, so we arrive here with the tuples from the first result in res@env$data as a list
@@ -558,11 +554,11 @@ REPLY_SIZE    <- 100 # Apparently, -1 means unlimited, but we will start with a 
 	# ugly effect of finalizers, sometimes, single-threaded R can get concurrent calls to this method.
 	if (conObj@connenv$lock > 0) {
 		if (async) {
-			if (DEBUG_IO) cat(paste0("II: Attempted parallel access to socket. Deferred query '",msg,"'\n"))
+			if (getOption("monetdb.debug.mapi",F)) message("II: Attempted parallel access to socket. Deferred query '",msg,"'")
 			conObj@connenv$deferred <- c(conObj@connenv$deferred,msg)
 			return("_")
 		} else {
-			stop("II: Attempted parallel access to socket. Use only dbSendUpdateAsync() from finalizers.\n")
+			stop("II: Attempted parallel access to socket. Use only dbSendUpdateAsync() from finalizers.")
 		}
 	}
 	
@@ -577,14 +573,14 @@ REPLY_SIZE    <- 100 # Apparently, -1 means unlimited, but we will start with a 
 	#.mapiWrite(conObj@socket,msg)
 	#resp <- .mapiRead(conObj@socket)
 	
-	if (DEBUG_IO)  cat(paste("TX: '",msg,"'\n",sep=""))	
+	if (getOption("monetdb.debug.mapi",F))  message("TX: '",msg,"'")
 	resp <- .Call("mapiRequest",conObj@socket,msg,PACKAGE=C_LIBRARY)
-	if (DEBUG_IO) {
+	if (getOption("monetdb.debug.mapi",F)) {
 		dstr <- resp
 		if (nchar(dstr) > 300) {
 			dstr <- paste0(substring(dstr,1,200),"...",substring(dstr,nchar(dstr)-100,nchar(dstr))) 
 		} 
-		cat(paste0("RX: '",dstr,"'\n"))
+		message("RX: '",dstr,"'")
 	}
 	
 	# get deferred statements from deferred list and execute
@@ -595,7 +591,7 @@ REPLY_SIZE    <- 100 # Apparently, -1 means unlimited, but we will start with a 
 		dresp <- .mapiParseResponse(.Call("mapiRequest",conObj@socket,dmesg,PACKAGE=C_LIBRARY))
 		if (dresp$type == MSG_MESSAGE) {
 			conObj@connenv$lock <- 0
-			warning(paste("II: Failed to execute deferred statement '",dmesg,"'. Server said: '",dresp$message,"'\n"))
+			warning(paste("II: Failed to execute deferred statement '",dmesg,"'. Server said: '",dresp$message,"'"))
 		}
 	}	
 	# release lock
@@ -606,7 +602,7 @@ REPLY_SIZE    <- 100 # Apparently, -1 means unlimited, but we will start with a 
 
 .mapiCleanup <- function(conObj) {
 	if (conObj@connenv$lock > 0) {
-		if (DEBUG_QUERY) cat("II: Interrupted query execution.\n")
+		if (getOption("monetdb.debug.query",F)) message("II: Interrupted query execution.")
 		conObj@connenv$lock <- 0
 	}
 }
@@ -615,12 +611,12 @@ REPLY_SIZE    <- 100 # Apparently, -1 means unlimited, but we will start with a 
 	if (!identical(class(con)[[1]],"externalptr"))
 		stop("I can only be called with a MonetDB connection object as parameter.")
 	respstr <- .Call("mapiRead",con,PACKAGE=C_LIBRARY)
-	if (DEBUG_IO) {
+	if (getOption("monetdb.debug.mapi",F)) {
 		dstr <- respstr
 		if (nchar(dstr) > 300) {
 			dstr <- paste0(substring(dstr,1,200),"...",substring(dstr,nchar(dstr)-100,nchar(dstr))) 
 		} 
-		cat(paste0("RX: '",dstr,"'\n"))
+		message("RX: '",dstr,"'")
 	}
 	return(respstr)
 }
@@ -629,7 +625,7 @@ REPLY_SIZE    <- 100 # Apparently, -1 means unlimited, but we will start with a 
 	if (!identical(class(con)[[1]],"externalptr"))
 		stop("I can only be called with a MonetDB connection object as parameter.")
 	
-	if (DEBUG_IO)  cat(paste("TX: '",msg,"'\n",sep=""))	
+	if (getOption("monetdb.debug.mapi",F))  message("TX: '",msg,"'")
 	.Call("mapiWrite",con,msg,PACKAGE=C_LIBRARY)
 	return (NULL)
 }
@@ -662,7 +658,7 @@ REPLY_SIZE    <- 100 # Apparently, -1 means unlimited, but we will start with a 
 		# Query results
 		if (typeKey == Q_TABLE || typeKey == Q_PREPARE) {
 			header <- .mapiParseHeader(lines[1])
-			if (DEBUG_QUERY) cat(paste("QQ: Query result for query ",header$id," with ",header$rows," rows and ",header$cols," cols, ",header$index," rows\n",sep=""))
+			if (getOption("monetdb.debug.query",F)) message("QQ: Query result for query ",header$id," with ",header$rows," rows and ",header$cols," cols, ",header$index," rows.")
 			
 			env$type	<- Q_TABLE
 			env$id		<- header$id
@@ -682,7 +678,7 @@ REPLY_SIZE    <- 100 # Apparently, -1 means unlimited, but we will start with a 
 		# Continuation of Q_TABLE without headers describing table structure
 		if (typeKey == Q_BLOCK) {
 			header <- .mapiParseHeader(lines[1],TRUE)
-			if (DEBUG_QUERY) cat(paste("QQ: Continuation for query ",header$id," with ",header$rows," rows and ",header$cols," cols, index ",header$index,"\n",sep=""))
+			if (getOption("monetdb.debug.query",F)) message("QQ: Continuation for query ",header$id," with ",header$rows," rows and ",header$cols," cols, index ",header$inde,".")
 			
 			env$type	<- Q_BLOCK
 			env$id		<- header$id
@@ -803,7 +799,7 @@ REPLY_SIZE    <- 100 # Apparently, -1 means unlimited, but we will start with a 
 			stop(paste("Authentication error:",authResponse))
 		}
 	} else {
-		if (DEBUG_QUERY) cat ("II: Authentication successful\n")
+		if (getOption("monetdb.debug.mapi",F)) message("II: Authentication successful.")
 		# setting some server parameters...not sure if this should happen here
 		.mapiWrite(con, paste0("Xreply_size ",REPLY_SIZE)); .mapiRead(con)
 		.mapiWrite(con, "Xauto_commit 1"); .mapiRead(con)
