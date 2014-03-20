@@ -1,3 +1,27 @@
+/*
+ * The contents of this file are subject to the MonetDB Public License
+ * Version 1.1 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ * http://www.monetdb.org/Legal/MonetDBLicense
+ *
+ * Software distributed under the License is distributed on an "AS IS"
+ * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+ * License for the specific language governing rights and limitations
+ * under the License.
+ *
+ * The Original Code is the MonetDB Database System.
+ *
+ * The Initial Developer of the Original Code is CWI.
+ * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+ * Copyright August 2008-2014 MonetDB B.V.
+ * All Rights Reserved.
+ */
+
+/*
+ * (author) R Cijvat
+ * The code in this file handles all communication that is done with the running database.
+ */
+
 #include "monetdb_config.h"
 #include "bam_globals.h"
 #include "bam_db_interface.h"
@@ -145,17 +169,17 @@
     "DELETE FROM bam.files WHERE file_id = "LLFMT";\n"
     
 #define SQL_DROP_STORAGE_0 \
-    "DROP TABLE bam.alignments_"LLFMT";\n" \
-    "DROP TABLE bam.alignments_extra_"LLFMT";\n"
+    "DROP TABLE bam.alignments_extra_"LLFMT";\n" \
+    "DROP TABLE bam.alignments_"LLFMT";\n"
 
 #define SQL_DROP_STORAGE_1 \
+    "DROP TABLE bam.alignments_extra_"LLFMT";\n" \
     "DROP VIEW bam.unpaired_all_alignments_"LLFMT";\n"\
     "DROP VIEW bam.unpaired_secondary_alignments_"LLFMT";\n"\
     "DROP VIEW bam.unpaired_primary_alignments_"LLFMT";\n"\
     "DROP TABLE bam.paired_primary_alignments_"LLFMT";\n" \
     "DROP TABLE bam.paired_secondary_alignments_"LLFMT";\n" \
-    "DROP TABLE bam.unpaired_alignments_"LLFMT";\n" \
-    "DROP TABLE bam.alignments_extra_"LLFMT";\n"
+    "DROP TABLE bam.unpaired_alignments_"LLFMT";\n"
     
     
 
@@ -353,7 +377,7 @@ copy_into_db(Client cntxt, bam_wrapper *bw)
     }
     
     if(bw->cnt_alignments > 0) {
-        step = snprintf(sql_copy_into + len, BUF_SIZE_COPY_INTO - len, SQL_COPY_INTO_ALIGNMENTS, (bw->dbschema == 1 ? "unpaired" : ""), bw->file_id,
+        step = snprintf(sql_copy_into + len, BUF_SIZE_COPY_INTO - len, SQL_COPY_INTO_ALIGNMENTS, (bw->dbschema == 1 ? "unpaired_" : ""), bw->file_id,
             bw->fp_alignments[0], bw->fp_alignments[1], bw->fp_alignments[2], bw->fp_alignments[3], bw->fp_alignments[4], bw->fp_alignments[5], 
             bw->fp_alignments[6], bw->fp_alignments[7], bw->fp_alignments[8], bw->fp_alignments[9], bw->fp_alignments[10], bw->fp_alignments[11]);
         CHECK_STEP(len, step, "alignments");

@@ -1,0 +1,3 @@
+/export/scratch2/robin/samtools/samtools-0.1.19/samtools sort -f -n -@ 32 /export/scratch2/robin/Monet_bamloader/SOURCE/MonetDB/sql/backends/monet5/bamloader/Tests/bam/toy.bam /export/scratch2/robin/Monet_bamloader/SOURCE/MonetDB/sql/backends/monet5/bamloader/Tests/bam/queryname/toy.bam
+
+/export/scratch2/robin/samtools/samtools-0.1.19/samtools index /export/scratch2/robin/Monet_bamloader/SOURCE/MonetDB/sql/backends/monet5/bamloader/Tests/bam/toy_coordinate.bam

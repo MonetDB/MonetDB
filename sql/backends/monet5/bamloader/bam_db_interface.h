@@ -1,3 +1,28 @@
+/*
+ * The contents of this file are subject to the MonetDB Public License
+ * Version 1.1 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ * http://www.monetdb.org/Legal/MonetDBLicense
+ *
+ * Software distributed under the License is distributed on an "AS IS"
+ * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+ * License for the specific language governing rights and limitations
+ * under the License.
+ *
+ * The Original Code is the MonetDB Database System.
+ *
+ * The Initial Developer of the Original Code is CWI.
+ * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+ * Copyright August 2008-2014 MonetDB B.V.
+ * All Rights Reserved.
+ */
+
+/*
+ * (author) R Cijvat
+ * The code in this file handles all communication that is done with the running database.
+ */
+ 
+
 #ifndef _BAM_DB_INTERFACE_H
 #define _BAM_DB_INTERFACE_H
 
@@ -6,6 +31,7 @@
 
 #include "bam_wrapper.h"
 
+
 /* macro to run SQL and incorporate logging; sql should be (char **) */
 #define RUN_SQL(cntxt, sql, descr, msg) { \
     TO_LOG("%s\n", *sql); \
@@ -13,7 +39,8 @@
 }
 
 
-/* SQL code for creating header tables; used to make calls to create_table_if_not_exists function */
+/* SQL code for creating header tables; Put in the header to enable other files to use these SQL queries
+ * as arguments for making calls to create_table_if_not_exists function */
 #define SQL_CREATE_FILES \
     "CREATE TABLE bam.files ( \n\
         file_id                        BIGINT      NOT NULL, \n\
