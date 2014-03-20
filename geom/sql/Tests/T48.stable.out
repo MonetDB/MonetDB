@@ -20,17 +20,12 @@ stdout of test 'T48` in directory 'geom/sql` itself:
 # MonetDB/SQL module loaded
 
 Ready.
-#WARNING To speedup geom.Difference a bulk operator implementation is needed
-#WARNING To speedup geom.AsText a bulk operator implementation is needed
 
 # 07:38:56 >  
 # 07:38:56 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-3079" "--port=37052"
 # 07:38:56 >  
 
-#SELECT AsText(Difference(named_places.boundary, forests.boundary))
-#FROM named_places, forests
-#WHERE named_places.name = 'Ashton'
-#AND forests.name = 'Green Forest';
+#SELECT AsText(Difference(named_places.boundary, forests.boundary)) FROM named_places, forests WHERE named_places.name = 'Ashton' AND forests.name = 'Green Forest';
 % sys.L # table_name
 % difference_boundary # name
 % clob # type

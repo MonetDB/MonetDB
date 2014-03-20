@@ -1,3 +1,2 @@
-SELECT GeometryType(centerlines)
-FROM lakes
-WHERE name = 'Route 75';
+-- Conformance Item T7
+SELECT GeometryType(centerlines) FROM divided_routes WHERE name = 'Route 75';

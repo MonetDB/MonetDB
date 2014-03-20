@@ -1,3 +1,2 @@
-SELECT Length(centerlines)
-FROM divided_routes
-WHERE name = 'Route 75';
+-- Conformance Item T33
+SELECT Length(centerlines) FROM divided_routes WHERE name = 'Route 75';

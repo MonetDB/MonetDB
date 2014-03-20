@@ -20,16 +20,12 @@ stdout of test 'T52` in directory 'geom/sql` itself:
 # MonetDB/SQL module loaded
 
 Ready.
-#WARNING To speedup geom.ConvexHull a bulk operator implementation is needed
-#WARNING To speedup geom.AsText a bulk operator implementation is needed
 
 # 21:30:30 >  
 # 21:30:30 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-21608" "--port=32618"
 # 21:30:30 >  
 
-#SELECT AsText(ConvexHull(shore))
-#FROM lakes
-#WHERE lakes.name = 'Blue Lake';
+#SELECT AsText(ConvexHull(shore)) FROM lakes WHERE lakes.name = 'Blue Lake';
 % sys.L # table_name
 % astext_convexhull_shore # name
 % clob # type

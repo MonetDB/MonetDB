@@ -20,15 +20,12 @@ stdout of test 'T16` in directory 'geom/sql` itself:
 # MonetDB/SQL module loaded
 
 Ready.
-#WARNING To speedup geom.Y a bulk operator implementation is needed
 
 # 07:38:50 >  
 # 07:38:50 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-3079" "--port=37052"
 # 07:38:50 >  
 
-#SELECT Y("position")
-#FROM bridges
-#WHERE name = 'Cam Bridge';
+#SELECT Y("position") FROM bridges WHERE name = 'Cam Bridge';
 % sys.L # table_name
 % y_position # name
 % double # type

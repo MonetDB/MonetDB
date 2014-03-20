@@ -20,17 +20,12 @@ stdout of test 'T50` in directory 'geom/sql` itself:
 # MonetDB/SQL module loaded
 
 Ready.
-#WARNING To speedup geom.SymDifference a bulk operator implementation is needed
-#WARNING To speedup geom.AsText a bulk operator implementation is needed
 
 # 07:38:57 >  
 # 07:38:57 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-3079" "--port=37052"
 # 07:38:57 >  
 
-#SELECT AsText(SymDifference(shore, boundary))
-#FROM lakes, named_places
-#WHERE lakes.name = 'Blue Lake'
-#AND named_places.name = 'Ashton';
+#SELECT AsText(SymDifference(shore, boundary)) FROM lakes, named_places WHERE lakes.name = 'Blue Lake' AND named_places.name = 'Ashton';
 % sys.L # table_name
 % symdifference_shore # name
 % clob # type

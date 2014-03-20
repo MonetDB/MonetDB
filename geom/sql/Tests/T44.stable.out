@@ -20,16 +20,12 @@ stdout of test 'T44` in directory 'geom/sql` itself:
 # MonetDB/SQL module loaded
 
 Ready.
-#WARNING To speedup geom.Contains a bulk operator implementation is needed
 
 # 07:38:55 >  
 # 07:38:55 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-3079" "--port=37052"
 # 07:38:55 >  
 
-#SELECT Contains(forests.boundary, named_places.boundary)
-#FROM forests, named_places
-#WHERE forests.name = 'Green Forest'
-#AND named_places.name = 'Ashton';
+#SELECT Contains(forests.boundary, named_places.boundary) FROM forests, named_places WHERE forests.name = 'Green Forest' AND named_places.name = 'Ashton';
 % sys.L # table_name
 % contains_boundary # name
 % boolean # type

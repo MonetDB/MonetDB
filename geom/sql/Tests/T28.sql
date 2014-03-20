@@ -1,3 +1,2 @@
-SELECT NumInteriorRing(shore)
-FROM lakes
-WHERE name = 'Blue Lake';
+-- Conformance Item T28
+SELECT NumInteriorRing(shore) FROM lakes WHERE name = 'Blue Lake';

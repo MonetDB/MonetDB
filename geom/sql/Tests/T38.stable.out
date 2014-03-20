@@ -20,16 +20,12 @@ stdout of test 'T38` in directory 'geom/sql` itself:
 # MonetDB/SQL module loaded
 
 Ready.
-#WARNING To speedup geom.Disjoint a bulk operator implementation is needed
 
 # 07:38:54 >  
 # 07:38:54 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-3079" "--port=37052"
 # 07:38:54 >  
 
-#SELECT Disjoint(centerlines, boundary)
-#FROM divided_routes, named_places
-#WHERE divided_routes.name = 'Route 75'
-#AND named_places.name = 'Ashton';
+#SELECT Disjoint(centerlines, boundary) FROM divided_routes, named_places WHERE divided_routes.name = 'Route 75' AND named_places.name = 'Ashton';
 % sys.L # table_name
 % disjoint_centerlines # name
 % boolean # type

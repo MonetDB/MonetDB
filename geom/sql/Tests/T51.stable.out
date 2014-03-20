@@ -20,16 +20,12 @@ stdout of test 'T51` in directory 'geom/sql` itself:
 # MonetDB/SQL module loaded
 
 Ready.
-#WARNING To speedup geom.Buffer a bulk operator implementation is needed
-#WARNING To speedup geom.Contains a bulk operator implementation is needed
 
 # 07:38:57 >  
 # 07:38:57 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-3079" "--port=37052"
 # 07:38:57 >  
 
-#SELECT count(*)
-#FROM buildings, bridges
-#WHERE Contains(Buffer(bridges."position", 15.0), buildings.footprint) = 1;
+#SELECT count(*) FROM buildings, bridges WHERE Contains(Buffer(bridges."position", 15.0), buildings.footprint) = 1;
 % sys.L1 # table_name
 % L1 # name
 % wrd # type
