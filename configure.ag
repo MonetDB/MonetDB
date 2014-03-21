@@ -2389,7 +2389,8 @@ AC_SUBST(MSEED_LIBS, $MSEED_LIBS)
 AM_CONDITIONAL(HAVE_MSEED, test x"$have_mseed" != xno)
 
 # samtools, only used by sql
-have_samtools="auto"
+org_have_samtools="auto"
+have_samtools=$org_have_samtools
 AC_ARG_WITH(samtools,
 	AS_HELP_STRING([--with-samtools=DIR],
 		[samtools (providing bam library) are installed in DIR]),
@@ -2408,14 +2409,17 @@ if test "x$have_samtools" != xno; then
 	save_LDFLAGS="$LDFLAGS"
 	CPPFLAGS="$CPPFLAGS $SAMTOOLS_CFLAGS"
 	LDFLAGS="$LDFLAGS $SAMTOOLS_LIBS"
-	AC_CHECK_HEADER(bam.h,
-		AC_CHECK_HEADER(bgzf.h,
+	AC_CHECK_HEADER(samtools/bam.h,
+		AC_CHECK_HEADER(samtools/bgzf.h,
 			AC_CHECK_LIB(bam, bam_header_read,
 				AC_DEFINE(HAVE_SAMTOOLS, 1, [Define if you have the samtools (providing the bam library)]),
-				[ if test "x$have_samtoouls" != xauto; then AC_MSG_ERROR([-lbam library not found]); fi; have_samtools=no ],
-				[-lpthread -lz]),
-			[ if test "x$have_samtools" != xauto; then AC_MSG_ERROR([bgzf.h header not found]); fi; have_samtools=no ]),
-		[ if test "x$have_samtools" != xauto; then AC_MSG_ERROR([bam.h header not found]); fi; have_samtools=no ])
+				[ if test "x$have_samtools" != xauto; then AC_MSG_ERROR([-lbam library not found]); fi
+				  have_samtools=no; why_have_samtools="(bam library not found)" ],
+				[-lm -lpthread -lz]),
+			[ if test "x$have_samtools" != xauto; then AC_MSG_ERROR([samtools/bgzf.h header not found]); fi
+			  have_samtools=no; why_have_samtools="(samtools/bgzf.h header not found)" ]),
+		[ if test "x$have_samtools" != xauto; then AC_MSG_ERROR([samtools/bam.h header not found]); fi
+		  have_samtools=no; why_have_samtools="(samtools/bam.h header not found)" ])
 	LDFLAGS="$save_LDFLAGS"
 	CPPFLAGS="$save_CPPFLAGS"
 	if test "x$have_samtools" = "xyes" -o "x$have_samtools" = "xauto"; then
@@ -3476,6 +3480,7 @@ for comp in \
 	'raptor       ' \
 	'readline     ' \
 	'rubygem      ' \
+	'samtools     ' \
 	'setsockopt   ' \
 	'sphinxclient ' \
 	'unixodbc     ' \

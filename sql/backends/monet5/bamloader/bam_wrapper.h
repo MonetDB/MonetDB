@@ -28,7 +28,7 @@
 
 #include "gdk.h"
 
-#include "bam.h"
+#include <samtools/bam.h>
 
 #define BW_FP_BUF_SIZE 128
 

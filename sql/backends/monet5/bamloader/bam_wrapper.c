@@ -25,8 +25,8 @@
 #include "mal_exception.h"
 #include "stream.h"
 
-#include "bam.h"
-#include "kstring.h"
+#include <samtools/bam.h>
+#include <samtools/kstring.h>
 #include "bam_globals.h"
 #include "bam_wrapper.h"
 
