@@ -844,8 +844,8 @@ check_alignment_buffers(alignment *alig, int cigar_size, int seq_size) {
         alig->qual = GDKrealloc(alig->qual, alig->seq_size * sizeof(char));
     }
     
-    if(resized[0]) TO_LOG("<bam_loader> Increased size of cigar buffer to %d characters", alig->cigar_size);
-    if(resized[1]) TO_LOG("<bam_loader> Increased size of seq and qual buffers to %d characters", alig->seq_size);
+    if(resized[0]) TO_LOG("#<bam_loader> Increased size of cigar buffer to %d characters\n", alig->cigar_size);
+    if(resized[1]) TO_LOG("#<bam_loader> Increased size of seq and qual buffers to %d characters\n", alig->seq_size);
     
     return (alig->cigar != NULL && alig->seq != NULL && alig->qual != NULL);
 }
@@ -1299,7 +1299,7 @@ process_bam_alignments(bam_wrapper *bw, bit *some_thread_failed) {
                         }
                     }
                     nr_aligs = new_nr_aligs;
-                    TO_LOG("<bam_loader> Increased size of alignment buffer to %d alignments", nr_aligs);
+                    TO_LOG("#<bam_loader> Increased size of alignment buffer to %d alignments\n", nr_aligs);
                 }
             }
         }

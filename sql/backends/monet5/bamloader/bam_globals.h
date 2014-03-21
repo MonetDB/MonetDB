@@ -31,10 +31,7 @@
 
 /* Macro that enables writing to a log. If the debug flag is not set, it does not do anything */
 #ifdef BAM_DEBUG
-#define TO_LOG(...) { \
-    fprintf(stderr, __VA_ARGS__); \
-    fprintf(stderr, "\n"); \
-}
+#define TO_LOG(...) fprintf(stderr, __VA_ARGS__)
 #else
 #define TO_LOG(...) (void)0
 #endif
