@@ -1407,3 +1407,172 @@ PQtopreplace_anymax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	pqueue_topreplace_anymax(h, idx, el, tpe);
 	return MAL_SUCCEED;
 }
+
+/* some new code for headless */
+#define QTOPN_shuffle(TYPE,OPER)\
+{	TYPE *val = (TYPE *) Tloc(b,BUNfirst(b)), v;\
+	for(o = 0; o < lim; o++){\
+		v = val[o];\
+		oo = o;\
+		for (i= 0; i<top; i++)\
+		if ( (TYPE) v OPER (TYPE) val[idx[i]]) {\
+			v= val[idx[i]];\
+			tmp = idx[i];\
+			idx[i]= oo;\
+			oo = tmp;\
+		} else \
+		if (elimdup && (TYPE) val[o] == (TYPE) val[idx[i]])\
+			goto skipit##TYPE;\
+		if( top < size)\
+			idx[top++] = oo;\
+		skipit##TYPE:;\
+	}\
+}
+
+str PQtopn_min(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int tpe, *ret;
+	int elimdup;
+	BAT *b,*bn;
+	BUN i, size,top = 0;
+	oid *idx, lim, o, oo, tmp;
+
+	(void) cntxt;
+	ret = (int*) getArgReference(stk, pci, 0);
+	tpe = ATOMstorage(getColumnType(getArgType(mb, pci, 1)));
+	size = (BUN) *(wrd*) getArgReference(stk,pci,2);
+	elimdup = *(bit*) getArgReference(stk,pci,3);
+
+	b = BATdescriptor(*(bat *) getArgReference(stk, pci, 1));
+	if (!b)
+		throw(MAL, "topn_min", RUNTIME_OBJECT_MISSING);
+	lim = BATcount(b);
+
+	if( b->tsorted){
+		bn = BATslice(b, BATcount(b) < size? BATcount(b):0, size);
+		BBPkeepref(*ret = bn->batCacheid);
+		BBPreleaseref(b->batCacheid);
+		return MAL_SUCCEED;
+	} 
+
+	bn = BATnew(TYPE_void, TYPE_oid, size+1);
+	BATseqbase(bn,0);
+	idx = (oid*) Tloc(bn,BUNfirst(bn));
+
+	if (!bn){
+		BBPreleaseref(b->batCacheid);
+		throw(MAL, "topn_min", RUNTIME_OBJECT_MISSING);
+	}
+	// shuffle insert new values, keep it simple!
+	if( size)
+	switch(tpe){
+	case TYPE_bte: QTOPN_shuffle(bte,<) break;
+	case TYPE_sht: QTOPN_shuffle(sht,<) break;
+	case TYPE_int: QTOPN_shuffle(int,<) break;
+	case TYPE_wrd: QTOPN_shuffle(wrd,<) break;
+	case TYPE_lng: QTOPN_shuffle(lng,<) break;
+	case TYPE_flt: QTOPN_shuffle(flt,<) break;
+	case TYPE_dbl: QTOPN_shuffle(dbl,<) break;
+	default:
+	{	void  *v;
+		int k;
+		for(o = 0; o < lim; o++){
+			v = (void*) Tloc(b,o);
+			oo = o;
+			for (i= 0; i<top; i++)
+			if ( (k = atom_CMP( v, Tloc(b,idx[i]), tpe)) < 0) {
+				v = Tloc(b,idx[i]);
+				tmp = idx[i];
+				idx[i]= oo;
+				oo = tmp;
+			} else 
+			if (elimdup && k == 0)
+				goto skipitdefault;
+			if( top < size)
+				idx[top++] = oo;
+			skipitdefault:;
+		}
+	}
+	}
+	
+	BATsetcount(bn, (BUN)  top);
+	BATderiveProps(bn, TRUE);
+
+	BBPkeepref(*ret = bn->batCacheid);
+	BBPreleaseref(b->batCacheid);
+	return MAL_SUCCEED;
+}
+
+str PQtopn_max(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int tpe, *ret;
+	int elimdup;
+	BAT *b,*bn;
+	BUN i, size,top = 0;
+	oid *idx, lim, o, oo, tmp;
+
+	(void) cntxt;
+	ret = (int*) getArgReference(stk, pci, 0);
+	tpe = ATOMstorage(getColumnType(getArgType(mb, pci, 1)));
+	size = (BUN) *(wrd*) getArgReference(stk,pci,2);
+	elimdup = *(bit*) getArgReference(stk,pci,3);
+
+	b = BATdescriptor(*(bat *) getArgReference(stk, pci, 1));
+	if (!b)
+		throw(MAL, "topn_min", RUNTIME_OBJECT_MISSING);
+	lim = BATcount(b);
+
+	if( b->tsorted){
+		bn = BATslice(b, BATcount(b) < size? BATcount(b):0, size);
+		BBPkeepref(*ret = bn->batCacheid);
+		BBPreleaseref(b->batCacheid);
+		return MAL_SUCCEED;
+	} 
+
+	bn = BATnew(TYPE_void, TYPE_oid, size+1);
+	BATseqbase(bn,0);
+	idx = (oid*) Tloc(bn,BUNfirst(bn));
+
+	if (!bn){
+		BBPreleaseref(b->batCacheid);
+		throw(MAL, "topn_min", RUNTIME_OBJECT_MISSING);
+	}
+	// shuffle insert new values, keep it simple!
+	if( size)
+	switch(tpe){
+	case TYPE_bte: QTOPN_shuffle(bte,>) break;
+	case TYPE_sht: QTOPN_shuffle(sht,>) break;
+	case TYPE_int: QTOPN_shuffle(int,>) break;
+	case TYPE_wrd: QTOPN_shuffle(wrd,>) break;
+	case TYPE_lng: QTOPN_shuffle(lng,>) break;
+	case TYPE_flt: QTOPN_shuffle(flt,>) break;
+	case TYPE_dbl: QTOPN_shuffle(dbl,>) break;
+	default:
+	{	void  *v;
+		int k;
+		for(o = 0; o < lim; o++){
+			v = (void*) Tloc(b,o);
+			oo = o;
+			for (i= 0; i<top; i++)
+			if ( (k = atom_CMP( v, Tloc(b,idx[i]), tpe)) > 0) {
+				v = Tloc(b,idx[i]);
+				tmp = idx[i];
+				idx[i]= oo;
+				oo = tmp;
+			} else 
+			if (elimdup && k == 0)
+				goto skipitdefault;
+			if( top < size)
+				idx[top++] = oo;
+			skipitdefault:;
+		}
+	}
+	}
+	
+	BATsetcount(bn, (BUN)  top);
+	BATderiveProps(bn, TRUE);
+
+	BBPkeepref(*ret = bn->batCacheid);
+	BBPreleaseref(b->batCacheid);
+	return MAL_SUCCEED;
+}

@@ -1,20 +1,20 @@
-stdout of test 'pqueue` in directory 'monetdb5/modules/mal` itself:
+stdout of test 'pqueueElim` in directory 'monetdb5/modules/mal` itself:
 
 
-# 21:06:19 >  
-# 21:06:19 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=31375" "--set" "mapi_usock=/var/tmp/mtest-9036/.s.monetdb.31375" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/current//Linux/var/MonetDB/mTests_monetdb5_modules_mal" "pqueue.mal"
-# 21:06:19 >  
+# 22:54:13 >  
+# 22:54:13 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38195" "--set" "mapi_usock=/var/tmp/mtest-25516/.s.monetdb.38195" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/current//Linux/var/MonetDB/mTests_monetdb5_modules_mal" "pqueueElim.mal"
+# 22:54:13 >  
 
-# MonetDB 5 server v11.16.0
+# MonetDB 5 server v11.18.0
 # This is an unreleased version
 # Serving database 'mTests_monetdb5_modules_mal', using 8 threads
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
-# Found 15.629 GiB available main-memory.
+# Found 15.591 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
 # Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
-# Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:31375/
-# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-9036/.s.monetdb.31375
+# Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:38195/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-25516/.s.monetdb.38195
 # MonetDB/GIS module loaded
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
@@ -29,23 +29,23 @@ function user.main():void;
     bat.append(b,5);
     bat.append(b,3);
     io.print(b);
-    bp := pqueue.topn_min(b,0:wrd,false);
+    bp := pqueue.topn_min(b,0:wrd,true);
     io.print(bp);
-    bp := pqueue.topn_min(b,1:wrd,false);
+    bp := pqueue.topn_min(b,1:wrd,true);
     io.print(bp);
-    bp := pqueue.topn_min(b,2:wrd,false);
+    bp := pqueue.topn_min(b,2:wrd,true);
     io.print(bp);
-    bp := pqueue.topn_min(b,3:wrd,false);
+    bp := pqueue.topn_min(b,3:wrd,true);
     io.print(bp);
-    bp := pqueue.topn_min(b,4:wrd,false);
+    bp := pqueue.topn_min(b,4:wrd,true);
     io.print(bp);
-    bp := pqueue.topn_min(b,5:wrd,false);
+    bp := pqueue.topn_min(b,5:wrd,true);
     io.print(bp);
-    bp := pqueue.topn_min(b,6:wrd,false);
+    bp := pqueue.topn_min(b,6:wrd,true);
     io.print(bp);
-    bp := pqueue.topn_min(b,7:wrd,false);
+    bp := pqueue.topn_min(b,7:wrd,true);
     io.print(bp);
-    bp := pqueue.topn_min(b,8:wrd,false);
+    bp := pqueue.topn_min(b,8:wrd,true);
     io.print(bp);
 end main;
 #--------------------------#
@@ -88,7 +88,7 @@ end main;
 [ 0@0,	1@0  ]
 [ 1@0,	0@0  ]
 [ 2@0,	2@0  ]
-[ 3@0,	3@0  ]
+[ 3@0,	6@0  ]
 #--------------------------#
 # h	t  # name
 # void	oid  # type
@@ -96,8 +96,8 @@ end main;
 [ 0@0,	1@0  ]
 [ 1@0,	0@0  ]
 [ 2@0,	2@0  ]
-[ 3@0,	3@0  ]
-[ 4@0,	6@0  ]
+[ 3@0,	6@0  ]
+[ 4@0,	4@0  ]
 #--------------------------#
 # h	t  # name
 # void	oid  # type
@@ -105,9 +105,8 @@ end main;
 [ 0@0,	1@0  ]
 [ 1@0,	0@0  ]
 [ 2@0,	2@0  ]
-[ 3@0,	3@0  ]
-[ 4@0,	6@0  ]
-[ 5@0,	5@0  ]
+[ 3@0,	6@0  ]
+[ 4@0,	4@0  ]
 #--------------------------#
 # h	t  # name
 # void	oid  # type
@@ -115,10 +114,8 @@ end main;
 [ 0@0,	1@0  ]
 [ 1@0,	0@0  ]
 [ 2@0,	2@0  ]
-[ 3@0,	3@0  ]
-[ 4@0,	6@0  ]
-[ 5@0,	5@0  ]
-[ 6@0,	4@0  ]
+[ 3@0,	6@0  ]
+[ 4@0,	4@0  ]
 #--------------------------#
 # h	t  # name
 # void	oid  # type
@@ -126,12 +123,10 @@ end main;
 [ 0@0,	1@0  ]
 [ 1@0,	0@0  ]
 [ 2@0,	2@0  ]
-[ 3@0,	3@0  ]
-[ 4@0,	6@0  ]
-[ 5@0,	5@0  ]
-[ 6@0,	4@0  ]
+[ 3@0,	6@0  ]
+[ 4@0,	4@0  ]
 
-# 21:06:19 >  
-# 21:06:19 >  "Done."
-# 21:06:19 >  
+# 22:54:13 >  
+# 22:54:13 >  "Done."
+# 22:54:13 >  
 
