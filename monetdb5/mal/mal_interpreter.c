@@ -505,7 +505,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 	int garbages[16], *garbage;
 	int stkpc = 0;
 	RuntimeProfileRecord runtimeProfile, runtimeProfileFunction;
-	runtimeProfile.stkpc = runtimeProfileFunction.stkpc = 0;
+	runtimeProfile.ticks = runtimeProfileFunction.ticks = 0;
 
 	if (stk == NULL)
 		throw(MAL, "mal.interpreter", MAL_STACK_FAIL);
@@ -533,7 +533,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 	/* also produce event record for start of function */
 	if ( startpc == 1 ){
 		runtimeProfileInit(cntxt, mb, stk);
-		runtimeProfileBegin(cntxt, mb, stk, 0, &runtimeProfileFunction, 1);
+		runtimeProfileBegin(cntxt, mb, stk, NULL, &runtimeProfileFunction);
 		mb->starttime = GDKusec();
 		if (cntxt->stimeout && cntxt->session && GDKusec()- cntxt->session > cntxt->stimeout)
 			throw(MAL, "mal.interpreter", RUNTIME_SESSION_TIMEOUT);
@@ -569,7 +569,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 		}
 
 		//Ensure we spread system resources over multiple users as well.
-		runtimeProfileBegin(cntxt, mb, stk, stkpc, &runtimeProfile, 1);
+		runtimeProfileBegin(cntxt, mb, stk, pci, &runtimeProfile);
         if (!RECYCLEentry(cntxt, mb, stk, pci,&runtimeProfile)){
 			/* The interpreter loop
 			 * The interpreter is geared towards execution a MAL
@@ -768,7 +768,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 					for (i = 0; i < pci->retc; i++) {
 						if (garbage[i] == -1 && stk->stk[getArg(pci, i)].vtype == TYPE_bat &&
 							stk->stk[getArg(pci, i)].val.bval) {
-							b = BBPquickdesc(ABS(stk->stk[getArg(pci, i)].val.bval), FALSE);
+							b = BBPquickdesc(abs(stk->stk[getArg(pci, i)].val.bval), FALSE);
 							if (b == NULL) {
 								ret = createException(MAL, "mal.propertyCheck", RUNTIME_OBJECT_MISSING);
 								continue;
@@ -810,7 +810,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 							}
 							if (garbage[i] >= 0) {
 								PARDEBUG mnstr_printf(GDKstdout, "#GC pc=%d bid=%d %s done\n", stkpc, bid, getVarName(mb, garbage[i]));
-								bid = ABS(stk->stk[garbage[i]].val.bval);
+								bid = abs(stk->stk[garbage[i]].val.bval);
 								stk->stk[garbage[i]].val.bval = 0;
 								BBPdecref(bid, TRUE);
 							}
@@ -1370,7 +1370,7 @@ void garbageElement(Client cntxt, ValPtr v)
 		 * allowed during the execution of a GDK operation.
 		 * All references should be logical.
 		 */
-		bat bid = ABS(v->val.bval);
+		bat bid = abs(v->val.bval);
 		/* printf("garbage collecting: %d lrefs=%d refs=%d\n",
 		   bid, BBP_lrefs(bid),BBP_refs(bid));*/
 		v->val.bval = 0;

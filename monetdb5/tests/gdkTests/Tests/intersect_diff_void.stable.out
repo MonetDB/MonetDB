@@ -28,14 +28,6 @@ function user.main():void;
     a0r := bat.reverse(a0);
     i := bat.getSequenceBase(a0r);
     io.print(i);
-    a0 := algebra.sintersect(a,b);
-    a0r := bat.reverse(a0);
-    i := bat.getSequenceBase(a0r);
-    io.print(i);
-    a0 := algebra.sintersect(b,a);
-    a0r := bat.reverse(a0);
-    i := bat.getSequenceBase(a0r);
-    io.print(i);
     a1 := algebra.kdifference(a,b);
     a1r := bat.reverse(a1);
     i := bat.getSequenceBase(a1r);
@@ -44,21 +36,9 @@ function user.main():void;
     a1r := bat.reverse(a1);
     i := bat.getSequenceBase(a1r);
     io.print(i);
-    a1 := algebra.sdifference(a,b);
-    a1r := bat.reverse(a1);
-    i := bat.getSequenceBase(a1r);
-    io.print(i);
-    a1 := algebra.sdifference(b,a);
-    a1r := bat.reverse(a1);
-    i := bat.getSequenceBase(a1r);
-    io.print(i);
 end main;
 [ 0@0 ]
 [ 0@0 ]
-[ 0@0 ]
-[ 0@0 ]
-[ 1@0 ]
-[ 2@0 ]
 [ 1@0 ]
 [ 2@0 ]
 

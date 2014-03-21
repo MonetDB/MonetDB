@@ -132,10 +132,8 @@ enum MT_thr_detach { MT_THR_JOINABLE, MT_THR_DETACHED };
 
 gdk_export int MT_create_thread(MT_Id *t, void (*function) (void *),
 				void *arg, enum MT_thr_detach d);
-gdk_export void MT_exit_thread(int status)
-	__attribute__((__noreturn__));
 gdk_export void MT_exiting_thread(void);
-gdk_export void MT_global_exit(int status)
+__declspec(noreturn) gdk_export void MT_global_exit(int status)
 	__attribute__((__noreturn__));
 gdk_export MT_Id MT_getpid(void);
 gdk_export int MT_join_thread(MT_Id t);
@@ -219,17 +217,17 @@ gdk_export ATOMIC_FLAG volatile GDKlocklistlock;
 gdk_export ATOMIC_TYPE volatile GDKlockcnt;
 gdk_export ATOMIC_TYPE volatile GDKlockcontentioncnt;
 gdk_export ATOMIC_TYPE volatile GDKlocksleepcnt;
-#define _DBG_LOCK_COUNT_0(l, n)		ATOMIC_INC(GDKlockcnt, dummy, n)
+#define _DBG_LOCK_COUNT_0(l, n)		(void) ATOMIC_INC(GDKlockcnt, dummy, n)
 #define _DBG_LOCK_LOCKER(l, n)		((l)->locker = (n))
 #define _DBG_LOCK_CONTENTION(l, n)					\
 	do {								\
 		TEMDEBUG fprintf(stderr, "#lock %s contention in %s\n", (l)->name, n); \
-		ATOMIC_INC(GDKlockcontentioncnt, dummy, n);		\
+		(void) ATOMIC_INC(GDKlockcontentioncnt, dummy, n);	\
 	} while (0)
-#define _DBG_LOCK_SLEEP(l, n)					\
-	do {							\
-		if (_spincnt == 1024)				\
-			ATOMIC_INC(GDKlocksleepcnt, dummy, n);	\
+#define _DBG_LOCK_SLEEP(l, n)						\
+	do {								\
+		if (_spincnt == 1024)					\
+			(void) ATOMIC_INC(GDKlocksleepcnt, dummy, n);	\
 	} while (0)
 #define _DBG_LOCK_COUNT_1(l)			\
 	do {					\
@@ -252,28 +250,42 @@ gdk_export ATOMIC_TYPE volatile GDKlocksleepcnt;
 		(l)->count = (l)->contention = (l)->sleep = 0;		\
 		(l)->name = (n);					\
 		_DBG_LOCK_LOCKER(l, NULL);				\
-		while (ATOMIC_TAS(GDKlocklistlock, dummy, "") != 0)	\
-			;						\
-		(l)->next = GDKlocklist;				\
-		GDKlocklist = (l);					\
-		ATOMIC_CLEAR(GDKlocklistlock, dummy, "");		\
+		/* if name starts with "sa_" don't link in GDKlocklist */ \
+		/* since the lock is in memory that is governed by the */ \
+		/* SQL storage allocator, and hence we have no control */ \
+		/* over when the lock is destroyed and the memory freed */ \
+		if (strncmp((n), "sa_", 3) != 0) {			\
+			while (ATOMIC_TAS(GDKlocklistlock, dummy, "") != 0) \
+				;					\
+			(l)->next = GDKlocklist;			\
+			GDKlocklist = (l);				\
+			ATOMIC_CLEAR(GDKlocklistlock, dummy, "");	\
+		} else {						\
+			(l)->next = NULL;				\
+		}							\
 	} while (0)
 #define _DBG_LOCK_DESTROY(l)						\
 	do {								\
-		MT_Lock * volatile _p;					\
-		/* save a copy for statistical purposes */		\
-		_p = GDKmalloc(sizeof(MT_Lock));			\
-		memcpy(_p, l, sizeof(MT_Lock));				\
-		while (ATOMIC_TAS(GDKlocklistlock, dummy, "") != 0)	\
-			;						\
-		_p->next = GDKlocklist;					\
-		GDKlocklist = _p;					\
-		for (_p = GDKlocklist; _p; _p = _p->next)		\
-			if (_p->next == (l)) {				\
-				_p->next = (l)->next;			\
-				break;					\
-			}						\
-		ATOMIC_CLEAR(GDKlocklistlock, dummy, "");		\
+		/* if name starts with "sa_" don't link in GDKlocklist */ \
+		/* since the lock is in memory that is governed by the */ \
+		/* SQL storage allocator, and hence we have no control */ \
+		/* over when the lock is destroyed and the memory freed */ \
+		if (strncmp((l)->name, "sa_", 3) != 0) {		\
+			MT_Lock * volatile _p;				\
+			/* save a copy for statistical purposes */	\
+			_p = GDKmalloc(sizeof(MT_Lock));		\
+			memcpy(_p, l, sizeof(MT_Lock));			\
+			while (ATOMIC_TAS(GDKlocklistlock, dummy, "") != 0) \
+				;					\
+			_p->next = GDKlocklist;				\
+			GDKlocklist = _p;				\
+			for (_p = GDKlocklist; _p; _p = _p->next)	\
+				if (_p->next == (l)) {			\
+					_p->next = (l)->next;		\
+					break;				\
+				}					\
+			ATOMIC_CLEAR(GDKlocklistlock, dummy, "");	\
+		}							\
 	} while (0)
 
 #else

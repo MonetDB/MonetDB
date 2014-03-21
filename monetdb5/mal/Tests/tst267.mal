@@ -10,5 +10,5 @@ bat.append(b,8);
 io.print(a);
 io.print(b);
 
-g:= array.product(a,b);
-io.print(g);
+(g,h):= array.product(a,b);
+io.print(g,h);

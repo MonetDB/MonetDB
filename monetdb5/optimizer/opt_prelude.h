@@ -59,7 +59,6 @@ opt_export  str catalogRef;
 opt_export  str centipedeRef;
 opt_export  str clear_tableRef;
 opt_export  str closeRef;
-opt_export  str compressRef;
 opt_export  str columnRef;
 opt_export  str commitRef;
 opt_export  str columnBindRef;
@@ -75,7 +74,6 @@ opt_export  str createRef;
 opt_export  str datacellRef;
 opt_export  str dataflowRef;
 opt_export  str datacyclotronRef;
-opt_export  str decompressRef;
 opt_export  str dblRef;
 opt_export  str deleteRef;
 opt_export  str depositRef;
@@ -238,7 +236,6 @@ opt_export  str sumRef;
 opt_export  str subsumRef;
 opt_export  str subavgRef;
 opt_export  str subsortRef;
-opt_export  str sunionRef;
 opt_export  str timestampRef;
 opt_export  str takeRef;
 opt_export  str topn_minRef;
@@ -247,7 +244,6 @@ opt_export  str utopn_minRef;
 opt_export  str utopn_maxRef;
 opt_export  str tuniqueRef;
 opt_export  str not_uniqueRef;
-opt_export  str unionRef;
 opt_export  str unpackRef;
 opt_export  str unpinRef;
 opt_export  str unlockRef;
@@ -291,6 +287,4 @@ opt_export int tlbProp;			/* any (tail lower bound) */
 opt_export int tubProp;			/* any (tail upper bound) */
 opt_export int horiginProp;		/* original oid source */
 opt_export int toriginProp;		/* original oid source */
-
-opt_export void optimizerInit(void);
 #endif

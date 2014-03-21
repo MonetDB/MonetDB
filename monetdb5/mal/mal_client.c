@@ -50,6 +50,7 @@
  * any interference from parallel actions to obtain client records.
  */
 
+/* (author) M.L. Kersten */
 #include "monetdb_config.h"
 #include "mal_client.h"
 #include "mal_readline.h"

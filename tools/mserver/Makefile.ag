@@ -29,7 +29,9 @@ INCLUDES = ../../monetdb5/mal \
 		   $(openssl_CFLAGS) $(pcre_CFLAGS) $(libxml2_CFLAGS)
 
 bin_mserver5 = {
-	SOURCES = mserver5.c monet_version.h monet_version.c.in
+	# hack: include mserver5.1.in here to get it expanded
+	SOURCES = mserver5.c monet_version.h monet_version.c.in \
+		mserver5.1.in
 	LIBS = ../../monetdb5/tools/libmonetdb5 \
 		../../gdk/libbat \
 		$(curl_LIBS) $(pcre_LIBS) $(openssl_LIBS) $(PSAPILIB) \

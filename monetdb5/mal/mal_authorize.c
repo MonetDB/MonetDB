@@ -18,7 +18,7 @@
  */
 
 /*
- * @a M. Kersten, F. Groffen
+ * (authors) M. Kersten, F. Groffen
  * Authorisation adminstration management
  * Authorisation of users is a key concept in protecting the server from
  * malicious and unauthorised users.  This file contains a number of
@@ -31,6 +31,7 @@
  */
 #include "monetdb_config.h"
 #include "mal_authorize.h"
+#include "mal_exception.h"
 #include "mal_private.h"
 #include "mcrypt.h"
 #ifdef HAVE_UNISTD_H
@@ -102,9 +103,9 @@ AUTHcommit(void)
 	blist[0] = 0;
 
 	assert(user);
-	blist[1] = ABS(user->batCacheid);
+	blist[1] = abs(user->batCacheid);
 	assert(pass);
-	blist[2] = ABS(pass->batCacheid);
+	blist[2] = abs(pass->batCacheid);
 	TMsubcommit_list(blist, 3);
 }
 
@@ -112,12 +113,13 @@ AUTHcommit(void)
  * Localize the authorization tables in the database.  The authorization
  * tables are a set of aligned BATs that store username, password (hashed)
  * and scenario permissions.
- * If the BATs do not exist, they are created, and the monetdb/monetdb
- * administrator account is added.  Initialising the authorization tables
- * can only be done after the GDK kernel has been initialized.
+ * If the BATs do not exist, they are created, and the monetdb
+ * administrator account is added with the given password (or 'monetdb'
+ * if NULL).  Initialising the authorization tables can only be done
+ * after the GDK kernel has been initialized.
  */
 str
-AUTHinitTables(void) {
+AUTHinitTables(str *passwd) {
 	bat bid;
 	BAT *b;
 	int isNew = 1;
@@ -170,12 +172,13 @@ AUTHinitTables(void) {
 		/* insert the monetdb/monetdb administrator account on a
 		 * complete fresh and new auth tables system */
 		str user = "monetdb";
-		str pw; /* will become the right hash for "monetdb" */
-		int len = (int) strlen(user);
+		str pw = "monetdb";
 		oid uid;
 		Client c = &mal_clients[0];
 
-		pw = mcrypt_BackendSum(user /* because user == pass */, len);
+		if (passwd != NULL && *passwd != NULL)
+			pw = *passwd;
+		pw = mcrypt_BackendSum(pw, strlen(pw));
 		msg = AUTHaddUser(&uid, &c, &user, &pw);
 		free(pw);
 		if (msg)

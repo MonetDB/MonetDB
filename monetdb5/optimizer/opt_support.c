@@ -147,7 +147,6 @@ struct OPTcatalog {
 {"cluster",		0,	0,	0,	DEBUG_OPT_CLUSTER},
 {"coercions",	0,	0,	0,	DEBUG_OPT_COERCION},
 {"commonTerms",	0,	0,	0,	DEBUG_OPT_COMMONTERMS},
-{"compress",	0,	0,	0,	DEBUG_OPT_COMPRESS},
 {"constants",	0,	0,	0,	DEBUG_OPT_CONSTANTS},
 {"costModel",	0,	0,	0,	DEBUG_OPT_COSTMODEL},
 {"crack",		0,	0,	0,	DEBUG_OPT_CRACK},
@@ -172,7 +171,6 @@ struct OPTcatalog {
 {"octopus",		0,	0,	0,	DEBUG_OPT_OCTOPUS},
 {"origin",		0,	0,	0,	DEBUG_OPT_ORIGIN},
 {"peephole",	0,	0,	0,	DEBUG_OPT_PEEPHOLE},
-{"prejoin",		0,	0,	0,	DEBUG_OPT_PREJOIN},
 {"pushranges",	0,	0,	0,	DEBUG_OPT_PUSHRANGES},
 {"recycler",	0,	0,	0,	DEBUG_OPT_RECYCLE},
 {"reduce",		0,	0,	0,	DEBUG_OPT_REDUCE},
@@ -271,7 +269,6 @@ optimizeMALBlock(Client cntxt, MalBlkPtr mb)
 	int cnt = 0;
 	lng clk = GDKusec();
 
-	optimizerInit();
 	/* assume the type and flow have been checked already */
 	/* SQL functions intended to be inlined should not be optimized */
 	if ( varGetProp( mb, getArg(getInstrPtr(mb,0),0), inlineProp ) != NULL &&

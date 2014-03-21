@@ -41,6 +41,7 @@
  */
 #include "monetdb_config.h"
 #include "gdk_system.h"
+#include "gdk_system_private.h"
 
 #ifdef TIME_WITH_SYS_TIME
 # include <sys/time.h>
@@ -503,7 +504,9 @@ thread_starter(void *arg)
 	struct posthread *p = (struct posthread *) arg;
 
 	(*p->func)(p->arg);
+	pthread_mutex_lock(&posthread_lock);
 	p->exited = 1;
+	pthread_mutex_unlock(&posthread_lock);
 }
 
 static void

@@ -18,6 +18,24 @@
 
 %define release %{buildno}%{?dist}%{?oidsuf}
 
+# On Fedora, the geos library is available, and so we can require it
+# and build the geom modules.  On RedHat Enterprise Linux and
+# derivatives (CentOS, Scientific Linux), the geos library is not
+# available.  However, the geos library is available in the Extra
+# Packages for Enterprise Linux (EPEL).  If the _with_epel macro is
+# set, we assume that EPEL is available, and so we enable building the
+# geom modules.  The _with_epel macro can be set when using mock by
+# passing it the flag --with epel.
+%if %{?rhel:1}%{!?rhel:0}
+%if %{?_with_epel:1}%{!?_with_epel:0}
+# RedHat Enterprise Linux and derivatives with EPEL enabled
+%define with_geos 1
+%endif
+%else
+# Fedora
+%define with_geos 1
+%endif
+
 Name: %{name}
 Version: %{version}
 Release: %{release}
@@ -27,14 +45,13 @@ Vendor: MonetDB BV <info@monetdb.org>
 Group: Applications/Databases
 License: MPL - http://www.monetdb.org/Legal/MonetDBLicense
 URL: http://www.monetdb.org/
-Source: http://dev.monetdb.org/downloads/sources/Jan2014/%{name}-%{version}.tar.bz2
+Source: http://dev.monetdb.org/downloads/sources/Jan2014-SP1/%{name}-%{version}.tar.bz2
 
 BuildRequires: bison
 BuildRequires: bzip2-devel
 # BuildRequires: cfitsio-devel
 BuildRequires: flex
-%if %{?rhel:0}%{!?rhel:1}
-# no geos library on RedHat Enterprise Linux and derivatives
+%if %{?with_geos:1}%{!?with_geos:0}
 BuildRequires: geos-devel >= 2.2.0
 %endif
 BuildRequires: gsl-devel
@@ -50,21 +67,23 @@ BuildRequires: python3-devel
 %endif
 # BuildRequires: raptor-devel >= 1.4.16
 BuildRequires: readline-devel
+# On RedHat Enterprise Linux and derivatives (CentOS, Scientific
+# Linux), the rubygem-activerecord package is not available (also not
+# in the Extra Packages for Enterprise Linux EPEL), so it makes no
+# sense providing our ruby packages.
+%if %{?rhel:0}%{!?rhel:1}
 BuildRequires: ruby
 BuildRequires: rubygems
-%if %{?rhel:0}%{!?rhel:1}
 BuildRequires: rubygems-devel
 %endif
 BuildRequires: unixODBC-devel
 BuildRequires: zlib-devel
 
-%define perl_libdir %(perl -MConfig -e '$x=$Config{installvendorarch}; $x =~ s|$Config{vendorprefix}/||; print $x;')
 # need to define python_sitelib on RHEL 5 and older
 # no need to define python3_sitelib: it's defined by python3-devel
 %if 0%{?rhel} && 0%{?rhel} <= 5
 %{!?python_sitelib: %global python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())")}
 %endif
-%{!?gem_dir: %global gem_dir %(ruby -rubygems -e 'puts Gem::dir' 2>/dev/null)}
 
 %description
 MonetDB is a database management system that is developed from a
@@ -272,10 +291,15 @@ program.
 Summary: MonetDB perl interface
 Group: Applications/Databases
 Requires: %{name}-client = %{version}-%{release}
-Requires: perl
+Requires: perl(:MODULE_COMPAT_%(eval "`%{__perl} -V:version`"; echo $version))
 Requires: perl(DBI)
 Requires: perl(Digest::SHA)
 Requires: perl(Digest::MD5)
+# when not using BuildArch: noarch, globally replace perl_vendorlib by
+# perl_vendorarch
+BuildArch: noarch
+%{?perl_default_filter}
+%global __requires_exclude perl\\(DBD::monetdb|perl\\(MonetDB::|perl\\(Mapi\\)
 
 %description client-perl
 MonetDB is a database management system that is developed from a
@@ -288,12 +312,13 @@ program.
 
 %files client-perl
 %defattr(-,root,root)
-%{_prefix}/%{perl_libdir}/*
+%{perl_vendorlib}/*
 
+%if %{?rhel:0}%{!?rhel:1}
 %package -n rubygem-monetdb-sql
 Summary: MonetDB ruby interface
 Group: Applications/Databases
-Requires: ruby
+Requires: ruby(release)
 Obsoletes: %{name}-client-ruby
 BuildArch: noarch
 
@@ -318,7 +343,7 @@ program.
 %package -n rubygem-activerecord-monetdb-adapter
 Summary: MonetDB ruby interface
 Group: Applications/Databases
-Requires: ruby
+Requires: ruby(release)
 Requires: rubygem-activerecord
 Requires: rubygem-monetdb-sql
 BuildArch: noarch
@@ -339,6 +364,7 @@ This package contains the activerecord adapter for MonetDB.
 # %dir %{gem_dir}/gems/activerecord-monetdb-adapter-0.1
 %{gem_dir}/gems/activerecord-monetdb-adapter-0.1
 %{gem_dir}/specifications/activerecord-monetdb-adapter-0.1.gemspec
+%endif
 
 %package client-tests
 Summary: MonetDB Client tests package
@@ -377,7 +403,7 @@ developer.
 %{_bindir}/sqlsample.php
 %{_bindir}/sqlsample.pl
 
-%if %{?rhel:0}%{!?rhel:1}
+%if %{?with_geos:1}%{!?with_geos:0}
 %package geom-MonetDB5
 Summary: MonetDB5 SQL GIS support module
 Group: Applications/Databases
@@ -444,7 +470,7 @@ query language for JavaScript Object Notation (JSON).
 %{_libdir}/monetdb5/json.mal
 %{_libdir}/monetdb5/json_util.mal
 %{_libdir}/monetdb5/lib_jaql.so
-%{_libdir}/monetdb5/lib_json.so
+%{_libdir}/monetdb5/lib_json_jaql.so
 
 %package -n MonetDB5-server
 Summary: MonetDB - Monet Database Management System
@@ -491,7 +517,7 @@ fi
 %{_libdir}/libmonetdb5.so.*
 %dir %{_libdir}/monetdb5
 %dir %{_libdir}/monetdb5/autoload
-%if %{?rhel:0}%{!?rhel:1}
+%if %{?with_geos:1}%{!?with_geos:0}
 %exclude %{_libdir}/monetdb5/geom.mal
 %endif
 %exclude %{_libdir}/monetdb5/gsl.mal
@@ -506,14 +532,14 @@ fi
 %{_libdir}/monetdb5/autoload/*_opt_sql_append.mal
 %{_libdir}/monetdb5/autoload/*_udf.mal
 %{_libdir}/monetdb5/autoload/*_vault.mal
-%if %{?rhel:0}%{!?rhel:1}
+%if %{?with_geos:1}%{!?with_geos:0}
 %exclude %{_libdir}/monetdb5/lib_geom.so
 %endif
 %exclude %{_libdir}/monetdb5/lib_gsl.so
 # %exclude %{_libdir}/monetdb5/lib_rdf.so
 %exclude %{_libdir}/monetdb5/lib_sql.so
 %exclude %{_libdir}/monetdb5/lib_jaql.so
-%exclude %{_libdir}/monetdb5/lib_json.so
+%exclude %{_libdir}/monetdb5/lib_json_jaql.so
 %{_libdir}/monetdb5/*.so
 %doc %{_mandir}/man1/mserver5.1.gz
 
@@ -601,7 +627,7 @@ systemd-tmpfiles --create %{_sysconfdir}/tmpfiles.d/monetdbd.conf
 %{_libdir}/monetdb5/lib_sql.so
 %{_libdir}/monetdb5/*.sql
 %dir %{_libdir}/monetdb5/createdb
-%if %{?rhel:0}%{!?rhel:1}
+%if %{?with_geos:1}%{!?with_geos:0}
 %exclude %{_libdir}/monetdb5/createdb/*_geom.sql
 %endif
 %exclude %{_libdir}/monetdb5/createdb/*_gsl.sql
@@ -734,7 +760,7 @@ developer, but if you do want to test, this is the package you need.
 	--enable-developer=no \
 	--enable-fits=no \
 	--enable-gdk=yes \
-	--enable-geom=%{?rhel:no}%{!?rhel:yes} \
+	--enable-geom=%{?with_geos:yes}%{!?with_geos:no} \
 	--enable-gsl=yes \
 	--enable-instrument=no \
 	--enable-jaql=yes \
@@ -751,17 +777,18 @@ developer, but if you do want to test, this is the package you need.
 	--enable-testing=yes \
 	--with-ant=no \
 	--with-bz2=yes \
-	--with-geos=%{?rhel:no}%{!?rhel:yes} \
+	--with-geos=%{?with_geos:yes}%{!?with_geos:no} \
 	--with-hwcounters=no \
 	--with-java=no \
 	--with-mseed=no \
 	--with-perl=yes \
+	--with-perl-libdir=lib/perl5 \
 	--with-pthread=yes \
 	--with-python2=yes \
 	--with-python3=%{?rhel:no}%{!?rhel:yes} \
 	--with-readline=yes \
-	--with-rubygem=yes \
-	--with-rubygem-dir="%{gem_dir}" \
+	--with-rubygem=%{?rhel:no}%{!?rhel:yes} \
+	--with-rubygem-dir=%{?rhel:no}%{!?rhel:"%{gem_dir}"} \
 	--with-sphinxclient=no \
 	--with-unixodbc=yes \
 	--with-valgrind=no \
@@ -778,6 +805,10 @@ mkdir -p $RPM_BUILD_ROOT%{_localstatedir}/MonetDB
 mkdir -p $RPM_BUILD_ROOT%{_localstatedir}/monetdb5/dbfarm
 mkdir -p $RPM_BUILD_ROOT%{_localstatedir}/log/monetdb
 mkdir -p $RPM_BUILD_ROOT%{_localstatedir}/run/monetdb
+mkdir -p $RPM_BUILD_ROOT%{perl_vendorlib}
+if [ ! $RPM_BUILD_ROOT%{_prefix}/lib/perl5 -ef $RPM_BUILD_ROOT%{perl_vendorlib} ]; then
+    mv $RPM_BUILD_ROOT%{_prefix}/lib/perl5/* $RPM_BUILD_ROOT%{perl_vendorlib}
+fi
 
 # remove unwanted stuff
 # .la files
@@ -798,6 +829,29 @@ mv $RPM_BUILD_ROOT%{_datadir}/doc/MonetDB-SQL-%{version} $RPM_BUILD_ROOT%{_datad
 rm -fr $RPM_BUILD_ROOT
 
 %changelog
+* Thu Mar 06 2014 Sjoerd Mullender <sjoerd@acm.org> - 11.17.13-20140306
+- Rebuilt.
+- BZ#3452: ODBC driver build fails on Mac OS X due to a conflicting
+  types for the SQLColAttribute with the unixODBC library
+
+* Mon Mar 03 2014 Sjoerd Mullender <sjoerd@acm.org> - 11.17.11-20140303
+- Rebuilt.
+- BZ#3442: COPY INTO ... LOCKED reports incorrect count
+- BZ#3443: DROP INDEX crashes server with BATsubselect: invalid argument:
+  b must have a dense head
+- BZ#3444: AND after ON () of LEFT OUTER JOIN with certain expressions
+  will cause crash
+
+* Fri Feb 28 2014 Sjoerd Mullender <sjoerd@acm.org> - 11.17.11-20140303
+- buildtools: Configure now enables the SQL front end by default.
+
+* Sun Feb 16 2014 Fabian Groffen <fabian@monetdb.org> - 11.17.11-20140303
+- merovingian: monetdb destroy -f now also works on running databases
+
+* Thu Feb 13 2014 Sjoerd Mullender <sjoerd@acm.org> - 11.17.9-20140213
+- Rebuilt.
+- BZ#3435: INDEX prevents JOIN from discovering matches
+
 * Fri Feb 07 2014 Sjoerd Mullender <sjoerd@acm.org> - 11.17.7-20140207
 - Rebuilt.
 - BZ#3436: COPY INTO from file containing leading Byte Order Mark (BOM)

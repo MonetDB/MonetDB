@@ -342,7 +342,7 @@ BSKTgrab(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		timestamp_tostr(&fptr, &i, &finish);
 		mnstr_printf(GDKout, "#range %s - %s\n", sbuf, fbuf);
 
-		bo = BATuselect(baskets[bskt].primary[k], &start, &finish);
+		bo = BATsubselect(basket[bskt].primary[k], NULL, &start, &finish, TRUE, TRUE, FALSE);
 		baskets[bskt].seen = finish;
 
 		/* remove all those before cutoff time from basket */

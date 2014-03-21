@@ -1,9 +1,11 @@
 b:= bat.new(:oid,:str);
 bat.append(b,"hello");
 bat.append(b,"goodbye");
+o:=bat.new(:oid,:oid);
 
-z1:= batstr.like_uselect(b,"%hel%");
-io.print(z1);
+p:= bat.new(:oid,:str);
+bat.append(p,"%hel%");
 
-z2:= pcre.uselect(".*[ly].*", b);
-io.print(z2);
+(z0,z1):= algebra.likesubselect(b,p,"");
+io.print(z0,z1);
+

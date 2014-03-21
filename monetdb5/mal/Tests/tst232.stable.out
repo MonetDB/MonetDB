@@ -35,7 +35,6 @@ stdout of test 'tst232` in directory 'monetdb5/mal` itself:
 #
 function user.main():void;
 # a test checking BAT reference counting under various situations 
-    bbp.open();
     b := bat.new(:oid,:str);
     i := bbp.getRefCount(b);
     io.printf("refcount =%d\n",i);
@@ -47,11 +46,6 @@ function user.main():void;
     io.printf("refcount =%d\n",i);
     j := bbp.getLRefCount(b);
     io.printf("lrefcount =%d\n",j);
-    bbp.destroy(b);
-    i := bbp.getRefCount(b);
-catch MALException:str ;
-    io.print("bat was destroyed");
-exit MALException:str ;
 end main;
 refcount =1
 lrefcount =1
@@ -62,7 +56,6 @@ lrefcount =1
 [ 0@0,	  "bat B"	  ]
 refcount =1
 lrefcount =2
-[ "bat was destroyed" ]
 
 # 08:01:03 >  
 # 08:01:03 >  Done.

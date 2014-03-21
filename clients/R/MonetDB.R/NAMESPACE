@@ -4,9 +4,10 @@ import(DBI,digest,methods)
 export(MonetDB,MonetR,MonetDBR,MonetDB.R)
 export(monet.read.csv,monetdb.read.csv)
 # this one is not in the DBI
-exportMethods(dbSendUpdate,dbSendUpdateAsync)
+exportMethods(dbSendUpdate,dbSendUpdateAsync,dbTransaction)
 export(monetdbGetTransferredBytes)
 export(monetdbRtype)
+export(monetdb_queryinfo)
 
 # shorthand for db connections
 export(mc)
@@ -16,8 +17,5 @@ export(monetdb.server.setup)
 export(monetdb.server.start)
 export(monetdb.server.stop)
 export(monetdbd.liststatus)
-
+export(monetdb.liststatus)
 useDynLib(MonetDB.R)
-
-
-

@@ -34,7 +34,6 @@ function user.main():void;
     j := "kk";
     k := "whatever";
     n := bat.new(:oid,:int);
-    m := bbp.take("person_name");
     j := "ll";
 # second one overwrites first 
     z := bat.new(:oid,:int);
@@ -46,7 +45,6 @@ function user.main():void;
 # k:= "whatever"; {k.blah:=true;k.freeze:=true;} 
 # n:= bat.new(int,int);{n.cost:=12;} 
 end main;
-!MALException:bbp.take:Object not found
 
 
 # 08:59:03 >  

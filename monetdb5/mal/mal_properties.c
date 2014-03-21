@@ -18,40 +18,7 @@
  */
 
 /*
- * @f mal_properties
- * @a M. Kersten
- * @+ Property Management
- * Properties can be associated with variables, MAL blocks, and MAL instructions.
- * The property list is initialized upon explicit request only, e.g. by
- * the frontend parser, a box manager, or as a triggered action.
- *
- * Every property should come with a function that accepts a reference to
- * the variable and updates the property record. This function is activated
- * either once or automatically upon each selection.
- *
- * @+ Property ADT implementation
- *
- *
- * addProperty(O,P) adds property P to the list associated with O. If O represents
- * a compound structure, e.g. a BAT, we should indicate the component as well. For
- * example, addProperty(O,P,Ia,...Ib) introduces a property shared by the
- * components Ia..Ib (indicated with an integer index.
- *
- * hasProperty(O,P) is a boolean function that merely checks existence
- * hasnotProperty(O,P) is the dual operation.
- *
- *
- * setProperty(O,P,V) changes the propety value to V. It may raise a
- * PropertyUpdateViolation exception when this can not be realized.
- * Note, the property value itself is changed, not the object referenced.
- *
- * getProperty(O,P) retrieves the current value of a property. This may involve
- * calling a function or running a database query.
- *
- * setPropertyAttribute(O,P,A) changes the behavior of the property. For example,
- * the attribute 'freeze' will result in a call to the underlying function only
- * once and to cache the result for the remainder of the objects life time.
- *
+ * (author) M. Kersten
  */
 #include "monetdb_config.h"
 #include "mal_properties.h"

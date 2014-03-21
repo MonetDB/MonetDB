@@ -1,5 +1,4 @@
 # a test checking BAT reference counting under various situations
-	bbp.open();
 	b:= bat.new(:oid,:str);
 	i:= bbp.getRefCount(b);
 	io.printf("refcount =%d\n",i);
@@ -12,9 +11,3 @@
 	io.printf("refcount =%d\n",i);
 	j:= bbp.getLRefCount(b);
 	io.printf("lrefcount =%d\n",j);
-
-	bbp.destroy(b);
-	i:= bbp.getRefCount(b);
-catch MALException:str;
-	io.print("bat was destroyed");
-exit MALException;

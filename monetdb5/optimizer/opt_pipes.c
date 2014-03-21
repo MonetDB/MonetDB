@@ -41,7 +41,7 @@
 
 #define MAXOPTPIPES 64
 
-struct PIPELINES {
+static struct PIPELINES {
 	char *name;
 	char *def;
 	char *status;
@@ -49,7 +49,12 @@ struct PIPELINES {
 	MalBlkPtr mb;
 	char builtin;
 } pipes[MAXOPTPIPES] = {
-/* The minimal pipeline necessary by the server to operate correctly*/
+/* The minimal pipeline necessary by the server to operate correctly
+ *
+ * NOTE:
+ * If you change the minimal pipe, please also update the man page
+ * (see tools/mserver/mserver5.1) accordingly!
+ */
 	{"minimal_pipe",
 	 "optimizer.inline();"
 	 "optimizer.remap();"
@@ -79,7 +84,7 @@ struct PIPELINES {
 	 "optimizer.mergetable();"
 	 "optimizer.deadcode();"
 	 "optimizer.commonTerms();"
-	 "optimizer.groups();"
+	 //"optimizer.groups();"
 	 "optimizer.joinPath();"
 	 "optimizer.reorder();"
 	 "optimizer.deadcode();"
@@ -95,6 +100,10 @@ struct PIPELINES {
  * used mainly to make some tests work deterministically, and to check
  * / debug whether "unexpected" problems are related to mitosis
  * (and/or mergetable).
+ *
+ * NOTE:
+ * If you change the no_mitosis pipe, please also update the man page
+ * (see tools/mserver/mserver5.1) accordingly!
  */
 	{"no_mitosis_pipe",
 	 "optimizer.inline();"
@@ -108,7 +117,7 @@ struct PIPELINES {
 	 "optimizer.mergetable();"
 	 "optimizer.deadcode();"
 	 "optimizer.commonTerms();"
-	 "optimizer.groups();"
+	 //"optimizer.groups();"
 	 "optimizer.joinPath();"
 	 "optimizer.reorder();"
 	 "optimizer.deadcode();"
@@ -124,6 +133,10 @@ struct PIPELINES {
  * omitted.  It is use mainly to make some tests work
  * deterministically, i.e., avoid ambigious output, by avoiding
  * parallelism.
+ *
+ * NOTE:
+ * If you change the sequential pipe, please also update the man page
+ * (see tools/mserver/mserver5.1) accordingly!
  */
 	{"sequential_pipe",
 	 "optimizer.inline();"
@@ -231,30 +244,6 @@ struct PIPELINES {
 	 "optimizer.garbageCollector();",
 	 "experimental", NULL, NULL, 1},
 #endif
-/* The default + compression */
-	{"compression_pipe",
-	 "optimizer.inline();"
-	 "optimizer.remap();"
-	 "optimizer.costModel();"
-	 "optimizer.coercions();"
-	 "optimizer.evaluate();"
-	 "optimizer.emptySet();"
-	 "optimizer.aliases();"
-	 "optimizer.mergetable();"
-	 "optimizer.deadcode();"
-	 "optimizer.constants();"
-	 "optimizer.commonTerms();"
-	 //"optimizer.groups();"
-	 "optimizer.joinPath();"
-	 "optimizer.deadcode();"
-	 "optimizer.reduce();"
-	 "optimizer.dataflow();"
-	 "optimizer.compression();"
-	 "optimizer.dataflow();"
-	 "optimizer.querylog();"
-	 "optimizer.multiplex();"
-	 "optimizer.garbageCollector();",
-	 "experimental", "OPTcompress", NULL, 1},
 /* sentinel */
 	{NULL, NULL, NULL, NULL, NULL, 0}
 };

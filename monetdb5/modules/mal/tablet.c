@@ -55,6 +55,7 @@
 
 tablet_export str CMDtablet_input(int *ret, int *nameid, int *sepid, int *typeid, stream *s, int *nr);
 
+static MT_Lock errorlock MT_LOCK_INITIALIZER("errorlock");
 
 static BAT *
 void_bat_create(int adt, BUN nr)
@@ -206,12 +207,17 @@ TABLETcreate_bats(Tablet *as, BUN est)
 {
 	Column *fmt = as->format;
 	BUN i;
+	char errbuf[42];
 
 	for (i = 0; i < as->nr_attrs; i++) {
 		fmt[i].c = void_bat_create(fmt[i].adt, est);
 		fmt[i].ci = bat_iterator(fmt[i].c);
 		if (!fmt[i].c) {
-			GDKerror("TABLETcreate_bats: Failed to create bat of size " BUNFMT "\n", as->nr);
+			snprintf(errbuf, sizeof(errbuf), "Failed to create bat of size " BUNFMT "\n", as->nr);
+			MT_lock_set(&errorlock, "TABLETcreate_bats");
+			if (as->error == NULL && (as->error = GDKstrdup(errbuf)) == NULL)
+				as->error = M5OutOfMemory;
+			MT_lock_unset(&errorlock, "TABLETcreate_bats");
 			return -1;
 		}
 	}
@@ -225,6 +231,7 @@ TABLETcollect(Tablet *as)
 	Column *fmt = as->format;
 	BUN i;
 	BUN cnt = BATcount(fmt[0].c);
+	char errbuf[42];
 
 	if (bats == NULL)
 		return NULL;
@@ -235,8 +242,11 @@ TABLETcollect(Tablet *as)
 		BATderiveProps(fmt[i].c, 1);
 
 		if (cnt != BATcount(fmt[i].c)) {
-			if (as->error == 0)	/* a new error */
-				GDKerror("Error: column " BUNFMT "  count " BUNFMT " differs from " BUNFMT "\n", i, BATcount(fmt[i].c), cnt);
+			snprintf(errbuf, sizeof(errbuf), "Error: column " BUNFMT "  count " BUNFMT " differs from " BUNFMT "\n", i, BATcount(fmt[i].c), cnt);
+			MT_lock_set(&errorlock, "TABLETcollect");
+			if (as->error == NULL && (as->error = GDKstrdup(errbuf)) == NULL)
+				as->error = M5OutOfMemory;
+			MT_lock_unset(&errorlock, "TABLETcollect");
 			return NULL;
 		}
 	}
@@ -250,6 +260,7 @@ TABLETcollect_parts(Tablet *as, BUN offset)
 	Column *fmt = as->format;
 	BUN i;
 	BUN cnt = BATcount(fmt[0].c);
+	char errbuf[42];
 
 	if (bats == NULL)
 		return NULL;
@@ -273,9 +284,16 @@ TABLETcollect_parts(Tablet *as, BUN offset)
 			b->tkey = TRUE;
 		b->batDirty = TRUE;
 
+		if (offset>0) {
+			BBPunfix(bv->batCacheid);
+			bats[i] = BATslice(b, offset, BATcount(b));
+		}
 		if (cnt != BATcount(b)) {
-			if (as->error == 0)	/* a new error */
-				GDKerror("Error: column " BUNFMT "  count " BUNFMT " differs from " BUNFMT "\n", i, BATcount(b), cnt);
+			snprintf(errbuf, sizeof(errbuf), "Error: column " BUNFMT "  count " BUNFMT " differs from " BUNFMT "\n", i, BATcount(b), cnt);
+			MT_lock_set(&errorlock, "TABLETcollect_parts");
+			if (as->error == NULL && (as->error = GDKstrdup(errbuf)) == NULL)
+				as->error = M5OutOfMemory;
+			MT_lock_unset(&errorlock, "TABLETcollect_parts");
 			return NULL;
 		}
 	}
@@ -701,11 +719,15 @@ SQLload_error(READERtask *task, int idx)
 		else
 			sz += task->seplen;
 
-	line = (str) GDKzalloc(sz + task->rseplen + 1);
+	line = (str) GDKmalloc(sz + task->rseplen + 1);
 	if (line == 0) {
-		task->as->error = M5OutOfMemory;
+		MT_lock_set(&errorlock, "SQLload_error");
+		if (task->as->error == NULL)
+			task->as->error = M5OutOfMemory;
+		MT_lock_unset(&errorlock, "SQLload_error");
 		return 0;
 	}
+	line[0] = 0;
 	for (i = 0; i < task->as->nr_attrs; i++) {
 		if (task->fields[i][idx])
 			strcat(line, task->fields[i][idx]);
@@ -803,8 +825,10 @@ SQLworker_column(READERtask *task, int col)
 	MT_lock_set(&mal_copyLock, "tablet insert value");
 	if (BATcapacity(fmt[col].c) < BATcount(fmt[col].c) + task->next) {
 		if ((fmt[col].c = BATextend(fmt[col].c, BATgrows(fmt[col].c) + task->limit)) == NULL) {
+			MT_lock_set(&errorlock, "SQLworker_column");
 			if (task->as->error == NULL)
-				task->as->error = GDKstrdup("Failed to extend the BAT, perhaps disk full");
+				task->as->error = GDKstrdup("Failed to extend the BAT, perhaps disk full\n");
+			MT_lock_unset(&errorlock, "SQLworker_column");
 			MT_lock_unset(&mal_copyLock, "tablet insert value");
 			mnstr_printf(GDKout, "Failed to extend the BAT, perhaps disk full");
 			return -1;
@@ -819,8 +843,10 @@ SQLworker_column(READERtask *task, int col)
 				MT_lock_set(&mal_copyLock, "tablet insert value");
 				if (!task->as->tryall) {
 					/* watch out for concurrent threads */
+					MT_lock_set(&errorlock, "SQLworker_column");
 					if (task->as->error == NULL)
 						task->as->error = err;	/* restore for upper layers */
+					MT_lock_unset(&errorlock, "SQLworker_column");
 				} else
 					BUNins(task->as->complaints, NULL, err, TRUE);
 				MT_lock_unset(&mal_copyLock, "tablet insert value");
@@ -831,8 +857,10 @@ SQLworker_column(READERtask *task, int col)
 	if (err) {
 		/* watch out for concurrent threads */
 		MT_lock_set(&mal_copyLock, "tablet insert value");
+		MT_lock_set(&errorlock, "SQLworker_column");
 		if (task->as->error == NULL)
 			task->as->error = err;	/* restore for upper layers */
+		MT_lock_unset(&errorlock, "SQLworker_column");
 		MT_lock_unset(&mal_copyLock, "tablet insert value");
 	}
 	return err ? -1 : 0;
@@ -870,8 +898,6 @@ SQLload_file_line(READERtask *task, int idx)
 						 " field " BUNFMT "\n",
 						 task->quote, (errline ? errline : ""),
 						 BATcount(as->format->c) + task->next + 1, i);
-				if (errline)
-					GDKerror("%s", errmsg);
 				GDKfree(errline);
 				goto errors;
 			}
@@ -898,12 +924,16 @@ SQLload_file_line(READERtask *task, int idx)
 			MT_lock_set(&mal_copyLock, "tablet line break");
 			if (as->tryall)
 				BUNins(as->complaints, NULL, errmsg, TRUE);
+			MT_lock_set(&errorlock, "SQLload_file_line");
 			if (as->error) {
 				str s = GDKstrdup(errmsg);
 				snprintf(errmsg, BUFSIZ, "%s%s", as->error, s);
 				GDKfree(s);
+				if (as->error != M5OutOfMemory)
+					GDKfree(as->error);
 			}
 			as->error = GDKstrdup(errmsg);
+			MT_lock_unset(&errorlock, "SQLload_file_line");
 			MT_lock_unset(&mal_copyLock, "tablet line break");
 			for (i = 0; i < as->nr_attrs; i++)
 				task->fields[i][idx] = NULL;
@@ -998,7 +1028,10 @@ SQLworkdivider(READERtask *task, READERtask *ptask, int nr_attrs, int threads)
 	}
 	loc = (lng *) GDKzalloc(sizeof(lng) * threads);
 	if (loc == 0) {
-		task->as->error = M5OutOfMemory;
+		MT_lock_set(&errorlock, "SQLworkdivider");
+		if (task->as->error == NULL)
+			task->as->error = M5OutOfMemory;
+		MT_lock_unset(&errorlock, "SQLworkdivider");
 		return;
 	}
 	/* use of load directives */
@@ -1080,7 +1113,10 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 		ptask[i].cols = 0;
 
 	if (task == 0) {
-		as->error = M5OutOfMemory;
+		MT_lock_set(&errorlock, "SQLload_file");
+		if (task->as->error == NULL)
+			as->error = M5OutOfMemory;
+		MT_lock_unset(&errorlock, "SQLload_file");
 		return BUN_NONE;
 	}
 
@@ -1100,7 +1136,10 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 	task->basesize = b->size + 2;
 
 	if (task->fields == 0 || task->cols == 0 || task->time == 0 || task->base == 0) {
-		as->error = M5OutOfMemory;
+		MT_lock_set(&errorlock, "SQLload_file");
+		if (task->as->error == NULL)
+			as->error = M5OutOfMemory;
+		MT_lock_unset(&errorlock, "SQLload_file");
 		goto bailout;
 	}
 
@@ -1126,7 +1165,9 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 	mlock(task->time, as->nr_attrs * sizeof(lng));
 	mlock(task->base, b->size + 2);
 #endif
+	MT_lock_set(&errorlock, "SQLload_file");
 	as->error = NULL;
+	MT_lock_unset(&errorlock, "SQLload_file");
 
 	/* there is no point in creating more threads than we have columns */
 	if (as->nr_attrs < (BUN) threads)
@@ -1138,7 +1179,10 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 	for (i = 0; i < as->nr_attrs; i++) {
 		task->fields[i] = GDKzalloc(sizeof(char *) * task->limit);
 		if (task->fields[i] == 0) {
-			as->error = M5OutOfMemory;
+			MT_lock_set(&errorlock, "SQLload_file");
+			if (task->as->error == NULL)
+				as->error = M5OutOfMemory;
+			MT_lock_unset(&errorlock, "SQLload_file");
 			goto bailout;
 		}
 #ifdef MLOCK_TST
@@ -1156,7 +1200,10 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 		ptask[j].id = j;
 		ptask[j].cols = (int *) GDKzalloc(as->nr_attrs * sizeof(int));
 		if (ptask[j].cols == 0) {
-			as->error = M5OutOfMemory;
+			MT_lock_set(&errorlock, "SQLload_file");
+			if (task->as->error == NULL)
+				as->error = M5OutOfMemory;
+			MT_lock_unset(&errorlock, "SQLload_file");
 			goto bailout;
 		}
 #ifdef MLOCK_TST
@@ -1185,8 +1232,14 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 		if (task->errbuf && task->errbuf[0]) {
 			msg = catchKernelException(cntxt, msg);
 			if (msg) {
-				showException(task->out, MAL, "copy_from", "%s", msg);
-				GDKfree(msg);
+				MT_lock_set(&errorlock, "SQLload_file");
+				if (as->error == NULL)
+					as->error = msg;
+				else {
+					showException(task->out, MAL, "copy_from", "%s", msg);
+					GDKfree(msg);
+				}
+				MT_lock_unset(&errorlock, "SQLload_file");
 				goto bailout;
 			}
 		}
@@ -1397,7 +1450,12 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 	}
 
 	if (task->b->pos < task->b->len && cnt < (BUN) maxrow && task->ateof) {
-		showException(task->out, MAL, "copy_from", "Incomplete record at end of file.\n");
+		MT_lock_set(&errorlock, "SQLload_file");
+		if (as->error == NULL)
+			as->error = GDKstrdup("Incomplete record at end of file.\n");
+		else
+			showException(task->out, MAL, "copy_from", "Incomplete record at end of file.\n");
+		MT_lock_unset(&errorlock, "SQLload_file");
 		/* indicate that we did read everything (even if we couldn't
 		 * deal with it */
 		task->b->pos = task->b->len;

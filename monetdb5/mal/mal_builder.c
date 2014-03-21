@@ -18,7 +18,7 @@
  */
 
 /*
- * author M. Kersten
+ * (authors) M. Kersten
  *
  * MAL builder
  * The MAL builder library containst the primitives to simplify construction
@@ -28,6 +28,9 @@
  */
 #include "monetdb_config.h"
 #include "mal_builder.h"
+#include "mal_function.h"
+#include "mal_namespace.h"
+
 InstrPtr
 newAssignment(MalBlkPtr mb)
 {
@@ -365,7 +368,7 @@ pushEmptyBAT(MalBlkPtr mb, InstrPtr q, int tpe)
 	getFunctionId(q) = getName("new",3);
 
 	q = pushArgument(mb, q, newTypeVariable(mb,TYPE_void));
-	q = pushArgument(mb, q, newTypeVariable(mb,getTailType(tpe)));
+	q = pushArgument(mb, q, newTypeVariable(mb,getColumnType(tpe)));
 	q = pushZero(mb,q,TYPE_lng);
 	return q;
 }

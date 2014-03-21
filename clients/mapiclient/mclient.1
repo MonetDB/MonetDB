@@ -19,7 +19,7 @@ main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
 accelerators, SQL- and JAQL- frontends.
 .PP
-.I mclient
+.I Mclient
 is the command-line interface to the MonetDB server.
 .PP
 If the
@@ -58,22 +58,30 @@ Before
 .I mclient
 starts parsing command line options, it reads a
 .I .monetdb
-file.  If the environment variable
+file.
+If the environment variable
 .B DOTMONETDBFILE
-is set, it reads the file pointed to by that variable instead.  When unset,
+is set, it reads the file pointed to by that variable instead.
+When unset,
 .I mclient
 searches for a
 .I .monetdb
 file in the current working directory, and if that doesn't exist, in the
-current user's home directory.  This file can contain defaults for the
-flags
-.BR user ", " password ", " language ", " save_history ", " format " and " width .
+current user's home directory.
+This file can contain defaults for the flags
+.BR user ,
+.BR password ,
+.BR language ,
+.BR save_history ,
+.BR format ,
+and
+.BR width .
 For example, an entry in a
 .I .monetdb
-file that sets the default language for 
+file that sets the default language for
 .I mclient
-to mal looks like this: 
-.IR "language=mal" .
+to mal looks like this:
+.BR language=mal .
 To disable reading the
 .I .monetdb
 file, set the variable
@@ -90,8 +98,8 @@ Print usage information and exit.
 Print version information and exit.
 .TP
 \fB\-\-encoding=\fP\fIencoding\fP (\fB\-E\fP \fIencoding\fP)
-Specify the character encoding of the input.  The option applies to
-both the standard input of
+Specify the character encoding of the input.
+The option applies to both the standard input of
 .I mclient
 and to the argument of the
 .B \-\-statement
@@ -101,11 +109,12 @@ option but not to the contents of files specified on the command line
 .B \-
 which refers to standard input) or files specified using the
 .B \e<
-command (those must be encoded using UTF-8).  The default encoding is
-taken from the locale.
+command (those must be encoded using UTF-8).
+The default encoding is taken from the locale.
 .TP
 \fB\-\-language=\fP\fIlanguage\fP (\fB\-l\fP \fIlanguage\fP)
-Specify the query language.  The following languages are recognized:
+Specify the query language.
+The following languages are recognized:
 .B mal
 and
 .BR sql .
@@ -117,21 +126,26 @@ option is omitted, the default of
 is assumed.
 .TP
 \fB\-\-database=\fP\fIdatabase\fP (\fB\-d\fP \fIdatabase\fP)
-Specify the name or URI of the database to connect to.  The \fB-d\fP can be
-omitted if an equally named file does not exist in the current
-directory.  As such, the first non-option argument will be interpreted
-as database to connect to if the argument does not exist as file.
-Valid URIs are as returned by
-.RB "`monetdb discover`, see " monetdb "(1), and look like " "mapi:monetdb://hostname:port/database" .
+Specify the name or URI of the database to connect to.
+The \fB-d\fP can be omitted if an equally named file does not exist in
+the current directory.
+As such, the first non-option argument will be interpreted as database
+to connect to if the argument does not exist as file.
+Valid URIs are as returned by `monetdb discover`, see
+.IR monetdb (1),
+and look like
+\fBmapi:monetdb://\fP\fIhostname\fP\fB:\fP\fIport\fP\fB/\fP\fIdatabase\fP.
 .TP
 \fB\-\-host=\fP\fIhostname\fP (\fB\-h\fP \fIhostname\fP)
 Specify the name of the host on which the server runs (default:
-localhost).  When the argument starts with a forward slash (/), host is
-assumed to be the directory where the UNIX sockets are stored for
-platforms where these are supported.
+.BR localhost ).
+When the argument starts with a forward slash (/), host is assumed to
+be the directory where the UNIX sockets are stored for platforms where
+these are supported.
 .TP
 \fB\-\-port=\fP\fIportnr\fP (\fB\-p\fP \fIportnr\fP)
-Specify the portnumber of the server (default: 50000).
+Specify the portnumber of the server (default:
+.BR 50000 ).
 .TP
 \fB\-\-interactive\fP[\fB=\fP\fItimermode\fP] (\fB\-i\fP[\fItimermode\fP])
 When reading from standard input, interpret lines starting with
@@ -140,21 +154,20 @@ When reading from standard input, interpret lines starting with
 See the section BACKSLASH COMMANDS below.
 This is the default if standard input is a terminal.
 The optional \fItimermode\fP argument controls the
-format of the time reported for queries.  Note that no space is
-allowed between
+format of the time reported for queries.
+Note that no space is allowed between
 .B \-i
 and
 .IR timermode .
 The default mode is
-\fBhuman\fP which adjusts the time precision to the measured value.  The
-modes \fBms\fP, \fBs\fP and \fBm\fP force millisecond, second and minute
-+ second precision respectively.
+\fBhuman\fP which adjusts the time precision to the measured value.
+The modes \fBms\fP, \fBs\fP and \fBm\fP force millisecond, second and
+minute + second precision respectively.
 .TP
 \fB\-\-user\fP\fB=\fP\fIuser\fP (\fB\-u\fP \fIuser\fP)
-Specify the user to connect as.  If this flag is absent, the client will
-ask for a user name, unless a default was found in .monetdb file.  Note that
-.I user
-must follow immediately after the option.
+Specify the user to connect as.
+If this flag is absent, the client will ask for a user name, unless a
+default was found in .monetdb file.
 .TP
 \fB\-\-format=\fP\fIformat\fP (\fB\-f\fP \fIformat\fP)
 Specify the output format.
@@ -192,8 +205,9 @@ Load and save the command line history (default off).
 Save client/server interaction in the specified file.
 .TP
 \fB\-\-statement=\fP\fIstmt\fP (\fB\-s\fP \fIstmt\fP)
-Execute the specified query.  The query is run before any queries from
-files specified on the command line are run.
+Execute the specified query.
+The query is run before any queries from files specified on the
+command line are run.
 .TP
 \fB\-\-timezone\fP (\fB\-z\fP)
 Do not tell the client's timezone to the server.
@@ -217,11 +231,12 @@ SQL Options
 .TP
 \fB\-\-null=\fP\fInullstr\fP (\fB\-n\fP \fInullstr\fP)
 Set the string to be used as NULL representation when using the
-sql, csv, or tab output formats.  If not used, NULL values are
-represented by the string "null" in the sql output format, and as the
-empty string in the csv and tab output formats.
+sql, csv, or tab output formats.
+If not used, NULL values are represented by the string \(dqnull\(dq in
+the sql output format, and as the empty string in the csv and tab
+output formats.
 Note that an argument is required, so in order to use the empty
-string, use \fB\-n ""\fP (with the space) or \fB\-\-null=\fP.
+string, use \fB\-n \(dq\(dq\fP (with the space) or \fB\-\-null=\fP.
 .TP
 \fB\-\-autocommit\fP (\fB\-a\fP)
 Switch autocommit mode off.
@@ -232,17 +247,18 @@ If specified, query results will be paged by an internal pager at the
 specified number of lines.
 .TP
 \fB\-\-width=\fP\fInr\fP (\fB\-w\fP \fInr\fP)
-Specify the width of the screen.  The default is the (initial) width
-of the terminal.
+Specify the width of the screen.
+The default is the (initial) width of the terminal.
 .TP
 \fB\-\-dump\fP (\fB\-D\fP)
 Create an SQL dump.
 .TP
 \fB\-\-inserts\fP (\fB\-N\fP)
 Use INSERT INTO statements instead of COPY INTO + CSV values when
-dumping the data of a table.  This option can be used when trying to
-load data from MonetDB into another database, or when e.g. JDBC
-applications are used to reload the dump.
+dumping the data of a table.
+This option can be used when trying to load data from MonetDB into
+another database, or when e.g. JDBC applications are used to reload
+the dump.
 .SH BACKSLASH COMMANDS
 .SS
 General Commands
@@ -345,32 +361,43 @@ Dump the given
 .IR table .
 .TP
 \fB\ed\fP
-Alias for \\dvt.
+Alias for \edvt.
 .TP
 \fB\ed[Stvsfn]+\fP
-List database objects of the given type.  Multiple type specifiers can
-be used at the same time.  The specifiers \fIS\fP, \fIt\fP, \fIv\fP,
-\fIs\fP, \fIf\fP and \fIn\fP stand for System, table, view, sequence,
-function and schema respectively.  Note that \fIS\fP simply switches on
-viewing system catalog objects, which is orthogonal on the other
-specifiers.
+List database objects of the given type.
+Multiple type specifiers can be used at the same time.
+The specifiers \fIS\fP, \fIt\fP, \fIv\fP, \fIs\fP, \fIf\fP and \fIn\fP
+stand for System, table, view, sequence, function and schema
+respectively.
+Note that \fIS\fP simply switches on viewing system catalog objects,
+which is orthogonal on the other specifiers.
 .TP
 \fB\ed[Stvsfn]+\fP \fIobject\fP
 Describe the given
 .I object
-in the database using SQL statements that reconstruct the object.  The
-same specifiers as above can be used, following the same rules.  When no
-specifiers are given, \fBvt\fP is assumed.
+in the database using SQL statements that reconstruct the object.
+The same specifiers as above can be used, following the same rules.
+When no specifiers are given,
+.B vt
+is assumed.
 The object can be given with or without a schema, separated by a dot.
-The object name
-can contain the wildcard characters \fB*\fP and \fB_\fP that represent
-zero or more, and exactly one character respectively.  An object
-name is converted to lowercase, unless the object name is quoted by
-double quotes (\fB"\fP).  Examples of this, are e.g. \fI*.mytable\fP,
-\fItabletype*\fP or \fI"myschema.FOO"\fP.  Note that wildcard characters
-do not work in quoted objects.  Quoting follows SQL quoting rules.
-Arbitrary parts can be quoted, and two quotes following each other in a
-quoted string represent the quote itself.
+The object name can contain the wildcard characters
+.B *
+and
+.B _
+that represent zero or more, and exactly one character respectively.
+An object name is converted to lowercase, unless the object name is
+quoted by double quotes
+.RB ( \(dq ).
+Examples of this, are e.g.
+.IR *.mytable ,
+.IR tabletype* ,
+or
+.IR \(dqmyschema.FOO\(dq .
+Note that wildcard characters do not work in quoted objects.
+Quoting follows SQL quoting rules.
+Arbitrary parts can be quoted, and two quotes following each other in
+a quoted string represent the quote itself.
 .TP
 \fB\eA\fP
 Enable auto commit mode.
@@ -379,25 +406,38 @@ Enable auto commit mode.
 Disable auto commit mode.
 .SH EXAMPLES
 Efficiently import data from a CSV (comma-separated values) file into
-a table.  The file must be readable by the server.  $file is the
-absolute path name of the file, $table is the name of the table, $db
+a table.
+The file must be readable by the server.
+.I $file
+is the
+absolute path name of the file,
+.I $table
+is the name of the table,
+.I $db
 is the name of the database.
 .PP
-mclient -d $db -s "COPY INTO $table FROM '$file' USING DELIMITERS ',','\e\en','\e"'"
+mclient -d $db -s \(dqCOPY INTO $table FROM '$file' USING DELIMITERS ',','\e\en','\e\(dq'\(dq
 .PP
 Efficiently import data from a CSV file into a table when the file is
 to be read by mclient (e.g. the server has no access to the file).
-$file is the (absolute or relative) path name of the file, $table is
-the name of the table, $db is the name of the database.
+.I $file
+is the (absolute or relative) path name of the file,
+.I $table
+is the name of the table,
+.I $db
+is the name of the database.
 .PP
-mclient -d $db -s "COPY INTO $table FROM STDIN USING DELIMITERS ',','\e\en','\e"'" - < $file
+mclient -d $db -s \(dqCOPY INTO $table FROM STDIN USING DELIMITERS ',','\e\en','\e\(dq'\(dq - < $file
 .PP
 Note that in this latter case, if a count of records is supplied, it
 should be at least as large as the number of records actually present
-in the CSV file.  This, because otherwise the remainder of the file
-will be interpreted as SQL queries.
+in the CSV file.
+This, because otherwise the remainder of the file will be interpreted
+as SQL queries.
 .PP
 See http://www.monetdb.org/Documentation/Manuals/SQLreference/CopyInto
 for more information about the COPY INTO query.
 .SH SEE ALSO
-.IR msqldump (1)
+.IR msqldump (1),
+.IR mserver5 (1)
+

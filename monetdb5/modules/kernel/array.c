@@ -363,9 +363,9 @@ arraymultiply(int,lng)
 arraymultiply(lng,lng)
 
 str
-ARRAYproduct(int *ret, int *bid, int *rid)
+ARRAYproduct(int *ret, int *ret2, int *bid, int *rid)
 {
-	BAT *bn, *b, *r;
+	BAT *bn, *bm, *b, *r;
 	BUN p, q, s, t;
 	BATiter bi, ri;
 
@@ -381,13 +381,28 @@ ARRAYproduct(int *ret, int *bid, int *rid)
 		BBPreleaseref(r->batCacheid);
 		throw(MAL, "array.product", "Illegal argument bounds");
 	}
-	bn = BATnew(b->ttype, r->ttype, BATcount(r));
+	bn = BATnew(TYPE_void,b->ttype, BATcount(r));
+	if( bn == NULL){
+		BBPreleaseref(b->batCacheid);
+		BBPreleaseref(r->batCacheid);
+		throw(MAL, "array.product", "Illegal argument bounds");
+	}
+	bm = BATnew(TYPE_void,r->ttype, BATcount(r));
+	if( bm == NULL){
+		BBPreleaseref(bn->batCacheid);
+		BBPreleaseref(b->batCacheid);
+		BBPreleaseref(r->batCacheid);
+		throw(MAL, "array.product", "Illegal argument bounds");
+	}
+	BATseqbase(bn,0);
+	BATseqbase(bm,0);
 
 	bi = bat_iterator(b);
 	ri = bat_iterator(r);
 	BATloop(r, s, t) {
 		BATloop(b, p, q) {
-			BUNfastins(bn, BUNtail(bi, p), BUNtail(ri, s));
+			BUNappend(bn, BUNtail(bi,p), FALSE);
+			BUNappend(bm, BUNtail(ri,s), FALSE);
 			s++;
 		}
 		s--;
@@ -400,7 +415,17 @@ ARRAYproduct(int *ret, int *bid, int *rid)
 	bn->T->nonil = b->T->nonil & r->T->nonil;
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \
 	*ret = bn->batCacheid;
+
+	bm->hsorted = 0;
+	bm->hrevsorted = 0;
+	bm->tsorted = 0;
+	bm->trevsorted = 0;
+	bm->T->nonil = b->T->nonil & r->T->nonil;
+	if (!(bm->batDirty&2)) bm = BATsetaccess(bm, BAT_READ); \
+	*ret2 = bm->batCacheid;
+
 	BBPkeepref(*ret);
+	BBPkeepref(*ret2);
 	BBPreleaseref(b->batCacheid);
 	BBPreleaseref(r->batCacheid);
 	return MAL_SUCCEED;

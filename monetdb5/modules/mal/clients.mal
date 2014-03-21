@@ -52,8 +52,6 @@ address CLTquit
 comment "Terminate the session for a single client using a soft error.
 It is the privilige of the console user.";
 
-# @-
-# Administrator operations
 command getLogins( )(user:bat[:oid,:oid],start:bat[:oid,:str] )
 address CLTLogin
 comment "Pseudo bat of client id and login time.";
@@ -107,10 +105,6 @@ address CLTgetTimeout
 comment "A query is aborted after q milliseconds (q=0 means run undisturbed).
 The session timeout aborts the connection after spending too
 many seconds on query processing.";
-
-# @+ User administration
-# These commands (except changePassword, changeUsername and
-# checkPermission) can only be executed by the administrator.
 
 pattern shutdown(delay:int):str
 address CLTshutdown;

@@ -70,8 +70,7 @@ OPTcostModelImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 				getFunctionId(p) == subsortRef  ||
 				getFunctionId(p) == projectRef  ){
 				newRows(1,1,c1,0);
-			} else if(getFunctionId(p) == unionRef ||
-				getFunctionId(p) == kunionRef) {
+			} else if(getFunctionId(p) == kunionRef) {
 				newRows(1,2,(c1+c2),0);
 			} else if (getFunctionId(p)== kdifferenceRef) {
 				newRows(1,2,(c1==0?0:c2==0?c1: c1 - c2 < 0 ? 1 : c1 - c2+1),0);

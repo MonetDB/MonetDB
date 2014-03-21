@@ -475,10 +475,10 @@ date_dayofweek(date v)
 static date
 compute_rule(const rule *val, int y)
 {
-	int m = val->s.month, cnt = ABS(val->s.day - DAY_ZERO);
+	int m = val->s.month, cnt = abs(val->s.day - DAY_ZERO);
 	date d = todate(1, m, y);
 	int dayofweek = date_dayofweek(d);
-	int w = ABS(val->s.weekday - WEEKDAY_ZERO);
+	int w = abs(val->s.weekday - WEEKDAY_ZERO);
 
 	if (val->s.weekday == WEEKDAY_ZERO || w == WEEKDAY_ZERO) {
 		/* cnt-th of month */
@@ -857,7 +857,7 @@ timestamp_tz_tostr(str *buf, int *len, const timestamp *val, const tzone *timezo
 		   strcpy(s, "GMT"); s += 3;
 		   if (off) {
 		   *s++ = (off>=0)?'+':'-';
-		   sprintf(s, "%02d%02d", ABS(off)/60, ABS(off)%60);
+		   sprintf(s, "%02d%02d", abs(off)/60, abs(off)%60);
 		   s += 4;
 		   }
 		 */
@@ -1211,7 +1211,6 @@ union lng_tzone {
  */
 #include "mal.h"
 #include "mal_exception.h"
-#include <mal_box.h>
 
 str
 MTIMEnil2date(date *ret, const int *src)
@@ -1249,7 +1248,6 @@ str
 MTIMEprelude(void)
 {
 	const char *msg = NULL;
-	Box box;
 	ValRecord vr;
 	int ticks;
 	union lng_tzone ltz;
@@ -1257,6 +1255,8 @@ MTIMEprelude(void)
 	const char *s1 = "first sunday from end of march@02:00";
 	const char *s2 = "first sunday from end of october@02:00";
 	tzone tz;
+	BAT *tzbatnme;
+	BAT *tzbatdef;
 
 	ts_nil.nilval = lng_nil;
 	tz_nil.nilval = lng_nil;
@@ -1280,60 +1280,52 @@ MTIMEprelude(void)
 
 	tz = *tzone_nil;			/* to ensure initialized variables */
 
-	/* here we should initialize the time box as well */
-	box = openBox("time");
-	if (box == 0)
-		throw(MAL, "time.prelude", "failed to open box");
-	/* if the box was already filled we can skip initialization */
-	if (box->sym->vtop == 0) {
-		BAT *tzbatnme = BATnew(TYPE_void, TYPE_str, 30);
-		BAT *tzbatdef = BATnew(TYPE_void, ATOMindex("timezone"), 30);
+	/* if it was already filled we can skip initialization */
+	if( timezone_name )
+		return MAL_SUCCEED;
+	tzbatnme = BATnew(TYPE_void, TYPE_str, 30);
+	tzbatdef = BATnew(TYPE_void, ATOMindex("timezone"), 30);
 
-		if (tzbatnme == NULL || tzbatdef == NULL)
-			throw(MAL, "time.prelude", "failed to create box");
-		BBPrename(tzbatnme->batCacheid, "timezone_name");
-		BBPrename(tzbatdef->batCacheid, "timezone_def");
-		BATseqbase(tzbatnme,0);
-		BATseqbase(tzbatdef,0);
-		timezone_name = tzbatnme;
-		timezone_def = tzbatdef;
+	if (tzbatnme == NULL || tzbatdef == NULL)
+		throw(MAL, "time.prelude", MAL_MALLOC_FAIL);
+	BBPrename(tzbatnme->batCacheid, "timezone_name");
+	BBPrename(tzbatdef->batCacheid, "timezone_def");
+	BATseqbase(tzbatnme,0);
+	BATseqbase(tzbatdef,0);
+	timezone_name = tzbatnme;
+	timezone_def = tzbatdef;
 
-		newVariable(box->sym, GDKstrdup("timezone_name"),
-					newBatType(TYPE_str, ATOMindex("timezone")));
-		if (bindBAT(box, "timezone_name", "timezone_name")) {
-			throw(MAL, "time.prelude", "could not bind timezone_name");
-		}
-		if (bindBAT(box, "timezone_def", "timezone_def")) {
-			throw(MAL, "time.prelude", "could not bind timezone_def");
-		}
-		vr.vtype = ATOMindex("timezone");
-		TIMEZONES("Wake Island", 12 * 60);
-		TIMEZONES("Melbourne/Australia", 11 * 60);
-		TIMEZONES("Brisbane/Australia", 10 * 60);
-		TIMEZONES("Japan", 9 * 60);
-		TIMEZONES("Singapore", 8 * 60);
-		TIMEZONES("Thailand", 7 * 60);
-		TIMEZONES("Pakistan", 5 * 60);
-		TIMEZONES("United Arab Emirates", 4 * 60);
-		TIMEZONES("GMT", 0 * 0);
-		TIMEZONES("Azore Islands", -1 * 60);
-		TIMEZONES("Hawaii/USA", -10 * 60);
-		TIMEZONES("American Samoa", -11 * 60);
-		MTIMErule_fromstr(&RULE_MAR, &s1);
-		MTIMErule_fromstr(&RULE_OCT, &s2);
-		TIMEZONES2("Kazakhstan", 6 * 60, RULE_MAR, RULE_OCT);
-		TIMEZONES2("Moscow/Russia", 3 * 60, RULE_MAR, RULE_OCT);
-		TIMEZONES2("East/Europe", 2 * 60, RULE_MAR, RULE_OCT);
-		TIMEZONES2("West/Europe", 1 * 60, RULE_MAR, RULE_OCT);
-		TIMEZONES2("UK", 0 * 0, RULE_MAR, RULE_OCT);
-		TIMEZONES2("Eastern/Brazil", -2 * 60, RULE_OCT, RULE_MAR);
-		TIMEZONES2("Western/Brazil", -3 * 60, RULE_OCT, RULE_MAR);
-		TIMEZONES2("Andes/Brazil", -4 * 60, RULE_OCT, RULE_MAR);
-		TIMEZONES2("East/USA", -5 * 60, RULE_MAR, RULE_OCT);
-		TIMEZONES2("Central/USA", -6 * 60, RULE_MAR, RULE_OCT);
-		TIMEZONES2("Mountain/USA", -7 * 60, RULE_MAR, RULE_OCT);
-		TIMEZONES2("Alaska/USA", -9 * 60, RULE_MAR, RULE_OCT);
-	}
+/* perhaps add the following to the global kvstore 
+* 	timezone_name
+* 	timezone_def
+*/
+	vr.vtype = ATOMindex("timezone");
+	TIMEZONES("Wake Island", 12 * 60);
+	TIMEZONES("Melbourne/Australia", 11 * 60);
+	TIMEZONES("Brisbane/Australia", 10 * 60);
+	TIMEZONES("Japan", 9 * 60);
+	TIMEZONES("Singapore", 8 * 60);
+	TIMEZONES("Thailand", 7 * 60);
+	TIMEZONES("Pakistan", 5 * 60);
+	TIMEZONES("United Arab Emirates", 4 * 60);
+	TIMEZONES("GMT", 0 * 0);
+	TIMEZONES("Azore Islands", -1 * 60);
+	TIMEZONES("Hawaii/USA", -10 * 60);
+	TIMEZONES("American Samoa", -11 * 60);
+	MTIMErule_fromstr(&RULE_MAR, &s1);
+	MTIMErule_fromstr(&RULE_OCT, &s2);
+	TIMEZONES2("Kazakhstan", 6 * 60, RULE_MAR, RULE_OCT);
+	TIMEZONES2("Moscow/Russia", 3 * 60, RULE_MAR, RULE_OCT);
+	TIMEZONES2("East/Europe", 2 * 60, RULE_MAR, RULE_OCT);
+	TIMEZONES2("West/Europe", 1 * 60, RULE_MAR, RULE_OCT);
+	TIMEZONES2("UK", 0 * 0, RULE_MAR, RULE_OCT);
+	TIMEZONES2("Eastern/Brazil", -2 * 60, RULE_OCT, RULE_MAR);
+	TIMEZONES2("Western/Brazil", -3 * 60, RULE_OCT, RULE_MAR);
+	TIMEZONES2("Andes/Brazil", -4 * 60, RULE_OCT, RULE_MAR);
+	TIMEZONES2("East/USA", -5 * 60, RULE_MAR, RULE_OCT);
+	TIMEZONES2("Central/USA", -6 * 60, RULE_MAR, RULE_OCT);
+	TIMEZONES2("Mountain/USA", -7 * 60, RULE_MAR, RULE_OCT);
+	TIMEZONES2("Alaska/USA", -9 * 60, RULE_MAR, RULE_OCT);
 	msg = "West/Europe";
 	return MTIMEtimezone(&tz, &msg);
 }
@@ -1341,7 +1333,6 @@ MTIMEprelude(void)
 str
 MTIMEepilogue(void)
 {
-	closeBox("time", 0);
 	return MAL_SUCCEED;
 }
 
@@ -2201,9 +2192,9 @@ MTIMErule_create(rule *ret, const int *month, const int *day, const int *weekday
 {
 	ret->asint = int_nil;
 	if (*month != int_nil && *month >= 1 && *month <= 12 &&
-		*weekday != int_nil && ABS(*weekday) <= 7 &&
+		*weekday != int_nil && abs(*weekday) <= 7 &&
 		*minutes != int_nil && *minutes >= 0 && *minutes < 24 * 60 &&
-		*day != int_nil && ABS(*day) >= 1 && ABS(*day) <= LEAPDAYS[*month] &&
+		*day != int_nil && abs(*day) >= 1 && abs(*day) <= LEAPDAYS[*month] &&
 		(*weekday || *day > 0)) {
 		ret->s.month = *month;
 		ret->s.day = DAY_ZERO + *day;
@@ -2218,7 +2209,7 @@ str
 MTIMEtzone_create_dst(tzone *ret, const int *minutes, const rule *start, const rule *end)
 {
 	*ret = *tzone_nil;
-	if (*minutes != int_nil && ABS(*minutes) < 24 * 60 &&
+	if (*minutes != int_nil && abs(*minutes) < 24 * 60 &&
 		start->asint != int_nil && end->asint != int_nil) {
 		set_offset(ret, *minutes);
 		ret->dst = TRUE;
@@ -2233,7 +2224,7 @@ str
 MTIMEtzone_create(tzone *ret, const int *minutes)
 {
 	*ret = *tzone_nil;
-	if (*minutes != int_nil && ABS(*minutes) < 24 * 60) {
+	if (*minutes != int_nil && abs(*minutes) < 24 * 60) {
 		set_offset(ret, *minutes);
 		ret->dst = FALSE;
 	}

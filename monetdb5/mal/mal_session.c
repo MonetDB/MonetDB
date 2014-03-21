@@ -17,6 +17,8 @@
  * All Rights Reserved.
  */
 
+/* (author) M.L. Kersten
+ */
 #include "monetdb_config.h"
 #include "mal_session.h"
 #include "mal_instruction.h" /* for pushEndInstruction() */
@@ -521,7 +523,9 @@ MALreader(Client c)
 			return MAL_SUCCEED;
 	} else if (MCreadClient(c) > 0)
 		return MAL_SUCCEED;
+	MT_lock_set(&mal_contextLock, "MALreader");
 	c->mode = FINISHCLIENT;
+	MT_lock_unset(&mal_contextLock, "MALreader");
 	if (c->fdin)
 		c->fdin->buf[c->fdin->pos] = 0;
 	else
@@ -662,10 +666,6 @@ MALengine(Client c)
 	if (c->glb) {
 		/* for global stacks avoid reinitialization from this point */
 		c->glb->stkbot = prg->def->vtop;
-	}
-	if (prg->def->profiler) {
-		GDKfree(prg->def->profiler);
-		prg->def->profiler = NULL;
 	}
 	prg->def->errors = 0;
 	if (c->itrace)

@@ -17,6 +17,8 @@
  * All Rights Reserved.
  */
 
+/* (author) M.L. Kersten 
+ */
 #include "monetdb_config.h"
 #include "mal_resource.h"
 #include "mal_private.h"
@@ -202,7 +204,7 @@ MALresourceFairness(lng usec)
 
 	if ( clk > DELAYUNIT ) {
 		PARDEBUG mnstr_printf(GDKstdout, "#delay initial "LLFMT"n", clk);
-		ATOMIC_DEC(running, runningLock, "MALresourceFairness");
+		(void) ATOMIC_DEC(running, runningLock, "MALresourceFairness");
 		/* always keep one running to avoid all waiting  */
 		while (clk > 0 && running >= 2 && delayed < MAX_DELAYS) {
 			/* speed up wake up when we have memory */
@@ -220,7 +222,7 @@ MALresourceFairness(lng usec)
 			} else break;
 			clk -= DELAYUNIT;
 		}
-		ATOMIC_INC(running, runningLock, "MALresourceFairness");
+		(void) ATOMIC_INC(running, runningLock, "MALresourceFairness");
 	}
 }
 

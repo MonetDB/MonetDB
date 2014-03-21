@@ -19,6 +19,10 @@
 
 /* This file contains shared definitions for gdk_calc.c and gdk_aggr.c */
 
+#ifndef LIBGDK
+#error this file should not be included outside its source directory
+#endif
+
 #ifdef HAVE_LONG_LONG
 typedef unsigned long long ulng;
 #else
@@ -38,6 +42,13 @@ typedef unsigned __int64 ulng;
 #endif
 #define ABSOLUTE(x)	((x) < 0 ? -(x) : (x))
 
+#ifndef HAVE_FABSF
+#define fabsf ABSOLUTE
+#endif
+#ifndef HAVE_LLABS
+#define llabs ABSOLUTE
+#endif
+
 #define LT(a, b)	((bit) ((a) < (b)))
 
 #define GT(a, b)	((bit) ((a) > (b)))
@@ -56,10 +67,19 @@ typedef unsigned __int64 ulng;
 					start = (s)->T->seq;		\
 					end = start + BATcount(s);	\
 				} else {				\
-					cand = (const oid *) Tloc((s), BUNfirst(s)); \
-					candend = cand + BATcount(s);	\
-					start = *cand;			\
-					end = candend[-1] + 1;		\
+					oid x = (b)->H->seq;		\
+					start = SORTfndfirst((s), &x);	\
+					x += BATcount(b);		\
+					end = SORTfndfirst((s), &x);	\
+					cand = (const oid *) Tloc((s), start); \
+					candend = (const oid *) Tloc((s), end); \
+					if (cand == candend) {		\
+						start = end = 0;	\
+					} else {			\
+						assert(cand < candend);	\
+						start = *cand;		\
+						end = candend[-1] + 1;	\
+					}				\
 				}					\
 				assert(start <= end);			\
 				if (start <= (b)->H->seq)		\

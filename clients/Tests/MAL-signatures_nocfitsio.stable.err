@@ -1,11 +1,11 @@
 stderr of test 'MAL-signatures_nocfitsio` in directory 'clients` itself:
 
 
-# 17:54:18 >  
-# 17:54:18 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=37265" "--set" "mapi_usock=/var/tmp/mtest-1146/.s.monetdb.37265" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/sjoerd/Monet-stable/var/MonetDB/mTests_clients" "--set" "mal_listing=2"
-# 17:54:18 >  
+# 14:24:10 >  
+# 14:24:10 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=31236" "--set" "mapi_usock=/var/tmp/mtest-21213/.s.monetdb.31236" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/sjoerd/Monet-candidate/var/MonetDB/mTests_clients" "--set" "mal_listing=2"
+# 14:24:10 >  
 
-# builtin opt 	gdk_dbpath = /home/sjoerd/Monet-stable/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_dbpath = /ufs/sjoerd/Monet-candidate/var/monetdb5/dbfarm/demo
 # builtin opt 	gdk_debug = 0
 # builtin opt 	gdk_vmtrim = yes
 # builtin opt 	monet_prompt = >
@@ -17,19 +17,19 @@ stderr of test 'MAL-signatures_nocfitsio` in directory 'clients` itself:
 # builtin opt 	sql_debug = 0
 # cmdline opt 	gdk_nr_threads = 0
 # cmdline opt 	mapi_open = true
-# cmdline opt 	mapi_port = 37265
-# cmdline opt 	mapi_usock = /var/tmp/mtest-1146/.s.monetdb.37265
+# cmdline opt 	mapi_port = 31236
+# cmdline opt 	mapi_usock = /var/tmp/mtest-21213/.s.monetdb.31236
 # cmdline opt 	monet_prompt = 
 # cmdline opt 	mal_listing = 2
-# cmdline opt 	gdk_dbpath = /home/sjoerd/Monet-stable/var/MonetDB/mTests_clients
+# cmdline opt 	gdk_dbpath = /ufs/sjoerd/Monet-candidate/var/MonetDB/mTests_clients
 # cmdline opt 	mal_listing = 2
 
-# 17:54:18 >  
-# 17:54:18 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1146" "--port=37265"
-# 17:54:18 >  
+# 14:24:10 >  
+# 14:24:10 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-21213" "--port=31236"
+# 14:24:10 >  
 
 
-# 17:54:23 >  
-# 17:54:23 >  "Done."
-# 17:54:23 >  
+# 14:24:13 >  
+# 14:24:13 >  "Done."
+# 14:24:13 >  
 

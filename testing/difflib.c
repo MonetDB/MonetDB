@@ -49,7 +49,9 @@
 #define getpid _getpid
 #define unlink _unlink
 #else
+#ifndef DIFF
 #define DIFF	"diff"
+#endif
 
 #ifndef DIR_SEP
 # define DIR_SEP '/'

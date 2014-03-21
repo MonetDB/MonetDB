@@ -20,6 +20,7 @@
 #ifndef _MAL_FCN_H
 #define _MAL_FCN_H
 
+#include "mal_instruction.h"
 #include "mal_module.h"
 #include "mal_resolve.h"
 

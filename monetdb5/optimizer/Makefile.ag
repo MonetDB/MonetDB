@@ -28,13 +28,12 @@ MTSAFE
 lib_optimizer = {
 	NOINST
 	SOURCES = \
-		optimizer.c optimizer.h \
+		optimizer.c optimizer.h optimizer_private.h \
 		opt_accumulators.c opt_accumulators.h \
 		opt_aliases.c opt_aliases.h \
 		opt_cluster.c opt_cluster.h \
 		opt_coercion.c opt_coercion.h \
 		opt_commonTerms.c opt_commonTerms.h \
-		opt_compression.c opt_compression.h \
 		opt_constants.c opt_constants.h \
 		opt_costModel.c opt_costModel.h \
 		opt_dataflow.c opt_dataflow.h \
@@ -55,9 +54,7 @@ lib_optimizer = {
 		opt_mitosis.c opt_mitosis.h \
 		opt_multiplex.c opt_multiplex.h \
 		opt_octopus.c opt_octopus.h \
-		opt_origin.c opt_origin.h \
 		opt_pipes.c opt_pipes.h \
-		opt_prejoin.c opt_prejoin.h \
 		opt_prelude.c opt_prelude.h \
 		opt_pushranges.c opt_pushranges.h \
 		opt_qep.c opt_qep.h \

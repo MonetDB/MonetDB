@@ -37,7 +37,7 @@ bat.insert(g,2@0,1@0);
 
 k:= algebra.join(g,te);
 io.print(k);
-l:= algebra.sort(k);
+l:= algebra.subsort(k,false,false);
 io.print(l);
 
 ag:= xml.agg(te,g);

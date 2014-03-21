@@ -468,7 +468,7 @@ GDKvm_cursize(void)
 									\
 		ATOMIC_ADD(GDK_mallocedbytes_estimate, _memdelta, mbyteslock, "heapinc"); \
 		GDKmallidx(_idx, _memdelta);				\
-		ATOMIC_INC(GDK_nmallocs[_idx], mbyteslock, "heapinc");	\
+		(void) ATOMIC_INC(GDK_nmallocs[_idx], mbyteslock, "heapinc"); \
 	} while (0)
 #define heapdec(memdelta)						\
 	do {								\
@@ -477,7 +477,7 @@ GDKvm_cursize(void)
 									\
 		ATOMIC_SUB(GDK_mallocedbytes_estimate, _memdelta, mbyteslock, "heapdec"); \
 		GDKmallidx(_idx, _memdelta);				\
-		ATOMIC_DEC(GDK_nmallocs[_idx], mbyteslock, "heapdec");	\
+		(void) ATOMIC_DEC(GDK_nmallocs[_idx], mbyteslock, "heapdec"); \
 	} while (0)
 #else
 #define heapinc(_memdelta)						\
@@ -493,7 +493,7 @@ GDKvm_cursize(void)
 		int _idx;						\
 									\
 		GDKmallidx(_idx, _vmdelta);				\
-		ATOMIC_INC(GDK_vm_nallocs[_idx], mbyteslock, fcn);	\
+		(void) ATOMIC_INC(GDK_vm_nallocs[_idx], mbyteslock, fcn); \
 		ATOMIC_ADD(GDK_vm_cursize, _vmdelta, mbyteslock, fcn);	\
 	} while (0)
 #define memdec(vmdelta, fcn)						\
@@ -502,7 +502,7 @@ GDKvm_cursize(void)
 		int _idx;						\
 									\
 		GDKmallidx(_idx, _vmdelta);				\
-		ATOMIC_DEC(GDK_vm_nallocs[_idx], mbyteslock, fcn);	\
+		(void) ATOMIC_DEC(GDK_vm_nallocs[_idx], mbyteslock, fcn); \
 		ATOMIC_SUB(GDK_vm_cursize, _vmdelta, mbyteslock, fcn);	\
 	} while (0)
 #else
@@ -1042,10 +1042,12 @@ GDKinit(opt *set, int setlen)
 			GDK_mmap_minsize = (size_t) strtoll(n[i].value, NULL, 10);
 		} else if (strcmp("gdk_mmap_pagesize", n[i].name) == 0) {
 			GDK_mmap_pagesize = (size_t) strtoll(n[i].value, NULL, 10);
-			for (i = 12; i < 20; i++)
-				if (GDK_mmap_pagesize == ((size_t) 1 << i))
-					break;
-			if (i == 20)
+			if (GDK_mmap_pagesize < 1 << 12 ||
+			    GDK_mmap_pagesize > 1 << 20 ||
+			    /* x & (x - 1): turn off rightmost 1 bit;
+			     * i.e. if result is zero, x is power of
+			     * two */
+			    (GDK_mmap_pagesize & (GDK_mmap_pagesize - 1)) != 0)
 				GDKfatal("GDKinit: gdk_mmap_pagesize must be power of 2 between 2**12 and 2**20\n");
 		}
 	}
@@ -1132,7 +1134,15 @@ static int GDKnrofthreads;
 int
 GDKexiting(void)
 {
-	return (int) GDKstopped;
+	int stopped;
+#ifdef ATOMIC_LOCK
+	pthread_mutex_lock(&GDKstoppedLock);
+#endif
+	stopped = GDKstopped != 0;
+#ifdef ATOMIC_LOCK
+	pthread_mutex_unlock(&GDKstoppedLock);
+#endif
+	return stopped;
 }
 
 /* coverity[+kill] */
@@ -1152,6 +1162,7 @@ GDKexit(int status)
 			MT_Id pid = MT_getpid();
 			Thread t, s;
 
+			MT_lock_set(&GDKthreadLock, "GDKexit");
 			for (t = GDKthreads, s = t + THREADS; t < s; t++) {
 				if (t->pid) {
 					MT_Id victim = t->pid;
@@ -1160,6 +1171,7 @@ GDKexit(int status)
 						MT_kill_thread(victim);
 				}
 			}
+			MT_lock_unset(&GDKthreadLock, "GDKexit");
 		}
 		(void) GDKgetHome();
 #if 0
@@ -1173,6 +1185,7 @@ GDKexit(int status)
 #endif
 		MT_global_exit(status);
 	}
+	MT_exit_thread(-1);
 }
 
 /*
@@ -1506,7 +1519,7 @@ GDKclrerr(void)
 }
 
 /* coverity[+kill] */
-int
+void
 GDKfatal(const char *format, ...)
 {
 	char message[GDKERRLEN];
@@ -1546,7 +1559,6 @@ GDKfatal(const char *format, ...)
 		GDKexit(1);
 #endif
 	}
-	return -1;
 }
 
 
@@ -1663,16 +1675,18 @@ THRhighwater(void)
 	size_t c;
 	Thread s;
 	size_t diff;
+	int rc = 0;
 
+	MT_lock_set(&GDKthreadLock, "THRhighwater");
 	s = GDK_find_thread(MT_getpid());
-	if (s == NULL)
-		return 0;
-	c = THRsp();
-	diff = (c < s->sp) ? s->sp - c : c - s->sp;
-	if (diff > (THREAD_STACK_SIZE - 16 * 1024)) {
-		return 1;
+	if (s != NULL) {
+		c = THRsp();
+		diff = c < s->sp ? s->sp - c : c - s->sp;
+		if (diff > THREAD_STACK_SIZE - 16 * 1024)
+			rc = 1;
 	}
-	return 0;
+	MT_lock_unset(&GDKthreadLock, "THRhighwater");
+	return rc;
 }
 
 /*
@@ -1696,26 +1710,39 @@ THRinit(void)
 void
 THRsetdata(int n, ptr val)
 {
-	Thread s = GDK_find_thread(MT_getpid());
+	Thread s;
 
+	MT_lock_set(&GDKthreadLock, "THRsetdata");
+	s = GDK_find_thread(MT_getpid());
 	if (s)
 		s->data[n] = val;
+	MT_lock_unset(&GDKthreadLock, "THRsetdata");
 }
 
 void *
 THRgetdata(int n)
 {
-	Thread s = GDK_find_thread(MT_getpid());
+	Thread s;
+	void *d;
 
-	return (s ? s->data[n] : THRdata[n]);
+	MT_lock_set(&GDKthreadLock, "THRgetdata");
+	s = GDK_find_thread(MT_getpid());
+	d = s ? s->data[n] : THRdata[n];
+	MT_lock_unset(&GDKthreadLock, "THRgetdata");
+	return d;
 }
 
 int
 THRgettid(void)
 {
-	Thread s = GDK_find_thread(MT_getpid());
+	Thread s;
+	int t;
 
-	return s ? s->tid : 1;
+	MT_lock_set(&GDKthreadLock, "THRgettid");
+	s = GDK_find_thread(MT_getpid());
+	t = s ? s->tid : 1;
+	MT_lock_unset(&GDKthreadLock, "THRgettid");
+	return t;
 }
 
 static char THRprintbuf[BUFSIZ];

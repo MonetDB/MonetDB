@@ -39,7 +39,7 @@ pattern optimizer.centipede(mod:str, fcn:str):str
 address OPTwrapper
 comment "Modify the plan to exploit parallel processing on multiple cores";
 
-# command centipede.materialize(b:bat[:any_1,:any_2], low:any_2, high:any_2) :bat[:any_1,:any_2]
+# command centipede.materialize(b:bat[:oid,:any_2], low:any_2, high:any_2) :bat[:oid,:any_2]
 # address OPTcentipedeMaterialize
 # comment "Implement the centipede partition operation. Throw an exception if the partition was empty,
 # because then the subquery should produce a NIL ";
@@ -71,14 +71,6 @@ address OPTwrapper;
 pattern optimizer.commonTerms(mod:any_1, fcn:any_2):str
 address OPTwrapper
 comment "Common sub-expression optimizer"
-
-#opt_compression.mal
-
-pattern optimizer.compression():str
-address OPTwrapper;
-pattern optimizer.compression(mod:str, fcn:str):str
-address OPTwrapper
-comment "Compression code injection";
 
 #opt_constants
 pattern optimizer.constants():str
@@ -418,7 +410,7 @@ comment "Selection cracking";
 
 #opt_statistics.mal
 
-command inspect.getStatistics(nme:str):bat[:any_1,:any_2]
+command inspect.getStatistics(nme:str):bat[:oid,:any_2]
 address QOTgetStatistics
 comment "Get optimizer property statistics 
 such as #calls, #total actions, #total time";

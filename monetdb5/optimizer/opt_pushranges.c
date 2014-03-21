@@ -161,7 +161,7 @@ OPTpushrangesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 					getModuleId(p)= batRef;
 					getFunctionId(p)= newRef;
 					p= pushArgument(mb,p, newTypeVariable(mb, getHeadType(x)));
-					(void) pushArgument(mb,p, newTypeVariable(mb, getTailType(x)));
+					(void) pushArgument(mb,p, newTypeVariable(mb, getColumnType(x)));
 					actions++;
 				}
 			}

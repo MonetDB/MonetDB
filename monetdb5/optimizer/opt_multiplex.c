@@ -63,7 +63,7 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	ht = getHeadType(getArgType(mb, pci, 0));
 	if (ht != TYPE_oid)
 		throw(MAL, "optimizer.multiplex", "Target head type is missing");
-	tt = getTailType(getArgType(mb, pci, 0));
+	tt = getColumnType(getArgType(mb, pci, 0));
 	if (tt== TYPE_any)
 		throw(MAL, "optimizer.multiplex", "Target tail type is missing");
 	if (isAnyExpression(getArgType(mb, pci, 0)))
@@ -105,7 +105,7 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return NULL;
 
 	/* x := bat.reverse(A1); */
-	x = newTmpVariable(mb, newBatType(getTailType(getVarType(mb,iter)),
+	x = newTmpVariable(mb, newBatType(getColumnType(getVarType(mb,iter)),
 									  getHeadType(getVarType(mb,iter))));
 	q = newFcnCall(mb, batRef, reverseRef);
 	getArg(q, 0) = x;
@@ -133,7 +133,7 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	for (i++; i < pci->argc; i++)
 		if (isaBatType(getArgType(mb, pci, i))) {
 			q = newFcnCall(mb, algebraRef, "fetch");
-			alias[i] = newTmpVariable(mb, getTailType(getArgType(mb, pci, i)));
+			alias[i] = newTmpVariable(mb, getColumnType(getArgType(mb, pci, i)));
 			getArg(q, 0) = alias[i];
 			q= pushArgument(mb, q, getArg(pci, i));
 			(void) pushArgument(mb, q, hvar);

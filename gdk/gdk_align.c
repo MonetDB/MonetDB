@@ -242,7 +242,6 @@ VIEWhcreate(BAT *h)
 		bn->H->hash = NULL;
 	BATinit_idents(bn);
 	/* some bits must be copied individually. */
-	bn->batSet = h->batSet;
 	bn->batDirty = BATdirty(h);
 	bn->batRestricted = BAT_READ;
 
@@ -333,7 +332,6 @@ VIEWcreate_(BAT *h, BAT *t, int slice_view)
 		bn->T->heap.parentid = tp;
 	BATinit_idents(bn);
 	/* Some bits must be copied individually. */
-	bn->batSet = h->batSet;
 	bn->batDirty = BATdirty(h);
 	bn->batRestricted = BAT_READ;
 	if (slice_view || !hp || isVIEW(h))
@@ -423,7 +421,7 @@ VIEWcombine(BAT *b)
 		if (bn->T->heap.parentid)
 			BBPshare(bn->T->heap.parentid);
 		if (bn->T->vheap) {
-			assert(bn->T->vheap->parentid != ABS(bn->batCacheid));
+			assert(bn->T->vheap->parentid != abs(bn->batCacheid));
 			assert(bn->T->vheap->parentid > 0);
 			BBPshare(bn->T->vheap->parentid);
 		}
@@ -550,9 +548,9 @@ VIEWunlink(BAT *b)
 		/* unlink heaps shared with parent */
 		assert(b->H->vheap == NULL || b->H->vheap->parentid > 0);
 		assert(b->T->vheap == NULL || b->T->vheap->parentid > 0);
-		if (b->H->vheap && b->H->vheap->parentid != ABS(b->batCacheid))
+		if (b->H->vheap && b->H->vheap->parentid != abs(b->batCacheid))
 			b->H->vheap = NULL;
-		if (b->T->vheap && b->T->vheap->parentid != ABS(b->batCacheid))
+		if (b->T->vheap && b->T->vheap->parentid != abs(b->batCacheid))
 			b->T->vheap = NULL;
 
 		/* unlink properties shared with parent */
@@ -599,7 +597,7 @@ VIEWreset(BAT *b)
 		memset(&hh, 0, sizeof(Heap));
 		memset(&th, 0, sizeof(Heap));
 
-		n = BATdescriptor(ABS(b->batCacheid)); /* normalized */
+		n = BATdescriptor(abs(b->batCacheid)); /* normalized */
 		if (n == NULL)
 			goto bailout;
 		m = BATmirror(n); /* mirror of normalized */

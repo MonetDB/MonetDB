@@ -9,3 +9,4 @@ sample-crash.Bug-3429
 temporary.Bug-3430
 indices.Bug-3435
 utf8bom.Bug-3436
+left-outer-join-with-and.Bug-3444

@@ -130,7 +130,7 @@ static lng estimateSavings(MalBlkPtr mb, sht bidtype)
 	            }
 
 				if ( bidtype == BID_TRANS )
-					savedKB += recycleBlk->profiler[i].wbytes;
+					savedKB += recycleBlk->stmt[i]->wbytes;
 				else savedInstr++;
 				break;
 			}
@@ -143,7 +143,7 @@ static lng estimateSavings(MalBlkPtr mb, sht bidtype)
 						&getVarConstant(recycleBlk, getArg(q,j))) )
 					goto nomatch;
 				nr_part = * (int*) getVarValue(mb, getArg(p,7));
-				savedKB += nr_part?recycleBlk->profiler[i].wbytes/nr_part : 0;
+				savedKB += nr_part?recycleBlk->stmt[i]->wbytes/nr_part : 0;
 			}
 
 			nomatch:

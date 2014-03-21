@@ -27,30 +27,34 @@ _list_find_name(list *l, char *name)
 {
 	node *n;
 
-	if (l && !l->ht && list_length(l) > HASH_MIN_SIZE && l->sa) {
-		l->ht = hash_new(l->sa, list_length(l), (fkeyvalue)&base_key);
+	if (l) {
+		MT_lock_set(&l->ht_lock, "_list_find_name");
+		if (!l->ht && list_length(l) > HASH_MIN_SIZE && l->sa) {
+			l->ht = hash_new(l->sa, list_length(l), (fkeyvalue)&base_key);
 
-		for (n = l->h; n; n = n->next ) {
-			sql_base *b = n->data;
-			int key = base_key(b);
+			for (n = l->h; n; n = n->next ) {
+				sql_base *b = n->data;
+				int key = base_key(b);
 
-			hash_add(l->ht, key, b);
+				hash_add(l->ht, key, b);
+			}
 		}
-	}
-	if (l && l->ht) {
-		int key = hash_key(name);
-		sql_hash_e *he = l->ht->buckets[key&(l->ht->size-1)]; 
+		if (l->ht) {
+			int key = hash_key(name);
+			sql_hash_e *he = l->ht->buckets[key&(l->ht->size-1)]; 
 
-		for (; he; he = he->chain) {
-			sql_base *b = he->value;
+			for (; he; he = he->chain) {
+				sql_base *b = he->value;
 
-			if (b->name && strcmp(b->name, name) == 0) 
-				return b;
+				if (b->name && strcmp(b->name, name) == 0) {
+					MT_lock_unset(&l->ht_lock, "_list_find_name");
+					return b;
+				}
+			}
+			MT_lock_unset(&l->ht_lock, "_list_find_name");
+			return NULL;
 		}
-		return NULL;
-	}
-
-	if (l)
+		MT_lock_unset(&l->ht_lock, "_list_find_name");
 		for (n = l->h; n; n = n->next) {
 			sql_base *b = n->data;
 
@@ -59,6 +63,7 @@ _list_find_name(list *l, char *name)
 				return b;
 			}
 		}
+	}
 	return NULL;
 }
 
@@ -288,7 +293,7 @@ find_all_sql_func(sql_schema * s, char *name, int type)
 			if (f->type == type && name[0] == b->name[0] && strcmp(name, b->name) == 0) {
 				if (!res)
 					res = list_create((fdestroy)NULL);
-				list_append(res, n->data);
+				list_append(res, f);
 			}
 		}
 	}

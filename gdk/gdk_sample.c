@@ -27,6 +27,8 @@
 #include "gdk.h"
 #include "gdk_private.h"
 
+#undef BATsample
+
 #define DRAND ((double)rand()/(double)RAND_MAX)
 
 /*

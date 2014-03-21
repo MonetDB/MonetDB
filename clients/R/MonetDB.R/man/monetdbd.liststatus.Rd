@@ -1,5 +1,7 @@
 \name{monetdbd.liststatus}
 \alias{monetdbd.liststatus}
+\alias{monetdb.liststatus}
+
 
 \title{
   Get list of available databases from monetdbd

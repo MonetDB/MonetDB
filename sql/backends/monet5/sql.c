@@ -1854,9 +1854,9 @@ DELTAbat(bat *result, bat *col, bat *uid, bat *uval, bat *ins)
 {
 	BAT *c, *u_id, *u_val, *u, *i = NULL, *res;
 
-	if ((u_id = BBPquickdesc(ABS(*uid), 0)) == NULL)
+	if ((u_id = BBPquickdesc(abs(*uid), 0)) == NULL)
 		throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
-	if (ins && (i = BBPquickdesc(ABS(*ins), 0)) == NULL)
+	if (ins && (i = BBPquickdesc(abs(*ins), 0)) == NULL)
 		throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
 
 	/* no updates, no inserts */
@@ -1865,7 +1865,7 @@ DELTAbat(bat *result, bat *col, bat *uid, bat *uval, bat *ins)
 		return MAL_SUCCEED;
 	}
 
-	if ((c = BBPquickdesc(ABS(*col), 0)) == NULL)
+	if ((c = BBPquickdesc(abs(*col), 0)) == NULL)
 		throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
 
 	/* bat may change */
@@ -1904,9 +1904,9 @@ DELTAsub(bat *result, bat *col, bat *cid, bat *uid, bat *uval, bat *ins)
 {
 	BAT *c, *cminu, *u_id, *u_val, *u, *i = NULL, *res;
 
-	if ((u_id = BBPquickdesc(ABS(*uid), 0)) == NULL)
+	if ((u_id = BBPquickdesc(abs(*uid), 0)) == NULL)
 		throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
-	if (ins && (i = BBPquickdesc(ABS(*ins), 0)) == NULL)
+	if (ins && (i = BBPquickdesc(abs(*ins), 0)) == NULL)
 		throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
 
 	/* no updates, no inserts */
@@ -1915,7 +1915,7 @@ DELTAsub(bat *result, bat *col, bat *cid, bat *uid, bat *uval, bat *ins)
 		return MAL_SUCCEED;
 	}
 
-	if ((c = BBPquickdesc(ABS(*col), 0)) == NULL)
+	if ((c = BBPquickdesc(abs(*col), 0)) == NULL)
 		throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
 
 	/* bat may change */
@@ -2553,6 +2553,7 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int *locked = (int *) getArgReference(stk, pci, pci->retc + 9);
 	bstream *s;
 	stream *ss;
+	str utf8 = "UTF-8";
 
 	(void) mb;		/* NOT USED */
 	if ((msg = checkSQLContext(cntxt)) != NULL)
@@ -2570,8 +2571,8 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		len = 0;
 	}
 
-	codeset(&cs);
-	strIconv(&filename, *fname, "UTF-8", cs);
+	STRcodeset(&cs);
+	STRIconv(&filename, fname, &utf8, &cs);
 	GDKfree(cs);
 	len = strlen((char *) (*N));
 	GDKstrFromStr(ns = GDKmalloc(len + 1), *N, len);
@@ -4065,74 +4066,6 @@ SQLdrop_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-
-/*
- * LZ compression is inherited from the underlying stream implementation.
- */
-static str
-gzcompression(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, str (*func) (int *, int *, str *), const char *name)
-{
-	str *sch = (str *) getArgReference(stk, pci, 1);
-	str *tbl = (str *) getArgReference(stk, pci, 2);
-	sql_schema *s;
-	sql_table *t;
-	mvc *m = NULL;
-	str msg = getSQLContext(cntxt, mb, &m, NULL);
-	sql_trans *tr = m->session->tr;
-	node *o;
-	int ret, i;
-	char buf[PATHLENGTH], *sbuf = buf;
-
-	if ((msg = checkSQLContext(cntxt)) != NULL)
-		return msg;
-	s = mvc_bind_schema(m, *sch);
-	if (s == NULL)
-		throw(SQL, name, "3F000!Schema missing");
-	t = mvc_bind_table(m, s, *tbl);
-	if (t == NULL)
-		throw(SQL, name, "42S02!Table missing");
-
-	/* actually build the hash on the multi-column primary key */
-
-	for (o = t->columns.set->h; msg == MAL_SUCCEED && o; o = o->next) {
-		BAT *b;
-		sql_column *c = o->data;
-
-		for (i = 0; i < 3; i++) {
-			b = store_funcs.bind_col(tr, c, i);
-			if (b == NULL)
-				throw(SQL, name, "Can not access descriptor");
-			snprintf(buf, PATHLENGTH, "%s_%s_%s_%d", *sch, *tbl, c->base.name, i);
-			msg = (*func) (&ret, &b->batCacheid, &sbuf);
-			BBPreleaseref(b->batCacheid);
-		}
-	}
-	return msg;
-}
-
-str
-SQLgzcompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	return gzcompression(cntxt, mb, stk, pci, CMDbbpcompress, "sql.gzcompress");
-}
-
-str
-SQLgzdecompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	return gzcompression(cntxt, mb, stk, pci, CMDbbpdecompress, "sql.gzdecompress");
-}
-
-str
-SQLtruncate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	return gzcompression(cntxt, mb, stk, pci, CMDbbptruncate, "sql.truncate");
-}
-
-str
-SQLexpand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	return gzcompression(cntxt, mb, stk, pci, CMDbbpexpand, "sql.expand");
-}
 
 /* after an update on the optimizer catalog, we have to change
  * the internal optimizer pipe line administration

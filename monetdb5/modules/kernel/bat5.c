@@ -51,7 +51,7 @@ static BAT *
 lock_desc(bat bid)
 {
 	BBPfix(bid);
-	return &BBPgetdesc(bid)->B;
+	return BBPquickdesc(abs(bid), 0);
 }
 
 static void
@@ -231,8 +231,6 @@ CMDinfo(BAT **ret1, BAT **ret2, BAT *b)
 	BUNappend(bv, local_itoa((ssize_t)(BBP_lrefs(b->batCacheid))),FALSE);
 	BUNappend(bk, "batDirty", FALSE);
 	BUNappend(bv, BATdirty(b) ? "dirty" : "clean",FALSE);
-	BUNappend(bk, "batSet", FALSE);
-	BUNappend(bv, local_itoa((ssize_t)(b->batSet)),FALSE);
 
 	BUNappend(bk, "hsorted", FALSE);
 	BUNappend(bv, local_itoa((ssize_t)BAThordered(b)),FALSE);
@@ -447,7 +445,7 @@ CMDrename(bit *retval, BAT *b, str s)
 static int
 CMDunload(bit *res, str input)
 {
-	bat bid = ABS(BBPindex(input));
+	bat bid = abs(BBPindex(input));
 
 	*res = FALSE;
 	if (bid > 0) {
@@ -979,7 +977,7 @@ CMDdestroy(bit *res, const char *input)
 	if (bid) {
 		BBPfix(bid);
 		if (BBPindex(input) == bid) {
-			BAT *b = &BBPgetdesc(ABS(bid))->B;
+			BAT *b = BBPquickdesc(abs(bid), 0);
 
 			BATmode(b, TRANSIENT);
 			*res = TRUE;
@@ -1285,11 +1283,11 @@ BKCgetHeadType(str *res, bat *bid)
 }
 
 str
-BKCgetTailType(str *res, int *bid)
+BKCgetColumnType(str *res, int *bid)
 {
 	const char *ret = str_nil;
 
-	if (BBPcheck(*bid, "bat.getTailType")) {
+	if (BBPcheck(*bid, "bat.getColumnType")) {
 		BAT *b = lock_desc(*bid);
 
 		if (b) {
@@ -1325,33 +1323,6 @@ BKCsetkey(int *res, int *bid, bit *param)
 	BATkey(b, *param ? BOUND2BTRUE :FALSE);
 	*res = b->batCacheid;
 	BBPkeepref(b->batCacheid);
-	return MAL_SUCCEED;
-}
-
-str
-BKCsetSet(int *res, int *bid, bit *param)
-{
-	BAT *b;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "bat.setSet", RUNTIME_OBJECT_MISSING);
-	}
-	BATset(b, *param ? BOUND2BTRUE :FALSE);
-	*res = b->batCacheid;
-	BBPkeepref(b->batCacheid);
-	return MAL_SUCCEED;
-}
-
-str
-BKCisaSet(bit *res, int *bid)
-{
-	BAT *b;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "bat.isaSet", RUNTIME_OBJECT_MISSING);
-	}
-	*res = b->batSet;
-	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -1624,7 +1595,7 @@ BKCinfo(int *ret1, int *ret2, int *bid)
 str
 BKCbatdisksize(lng *tot, int *bid){
 	BAT *b;
-	if ((b = BATdescriptor(ABS(*bid))) == NULL)
+	if ((b = BATdescriptor(abs(*bid))) == NULL)
 		throw(MAL, "bat.getDiskSize", RUNTIME_OBJECT_MISSING);
 	CMDbatdisksize(tot,b);
 	BBPreleaseref(*bid);
@@ -1668,7 +1639,7 @@ str
 BKCgetSpaceUsed(lng *tot, int *bid)
 {
 	BAT *b;
-	size_t size = sizeof(BATstore);
+	size_t size = BATSTORESIZE;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "bat.getSpaceUsed", RUNTIME_OBJECT_MISSING);
@@ -2022,7 +1993,7 @@ BKCsetHash(bit *ret, int *bid, bit *prop)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.setHash", RUNTIME_OBJECT_MISSING);
 	}
-	BAThash(b, 0);
+	BAThash(BATmirror(b), 0);
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }

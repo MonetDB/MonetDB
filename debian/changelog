@@ -1,3 +1,59 @@
+monetdb (11.17.13-20140306) unstable; urgency=low
+
+  * Rebuilt.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 06 Mar 2014 11:48:51 +0100
+
+monetdb (11.17.13-20140306) unstable; urgency=low
+
+  * Rebuilt.
+  * BZ#3452: ODBC driver build fails on Mac OS X due to a conflicting
+    types for the SQLColAttribute with the unixODBC library
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 06 Mar 2014 11:48:50 +0100
+
+monetdb (11.17.11-20140303) unstable; urgency=low
+
+  * Rebuilt.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 03 Mar 2014 12:31:43 +0100
+
+monetdb (11.17.11-20140303) unstable; urgency=low
+
+  * Rebuilt.
+  * BZ#3442: COPY INTO ... LOCKED reports incorrect count
+  * BZ#3443: DROP INDEX crashes server with BATsubselect: invalid argument:
+    b must have a dense head
+  * BZ#3444: AND after ON () of LEFT OUTER JOIN with certain expressions
+    will cause crash
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 03 Mar 2014 12:31:41 +0100
+
+monetdb (11.17.11-20140303) unstable; urgency=low
+
+  * buildtools: Configure now enables the SQL front end by default.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 28 Feb 2014 12:31:41 +0100
+
+monetdb (11.17.11-20140303) unstable; urgency=low
+
+  * merovingian: monetdb destroy -f now also works on running databases
+
+ -- Fabian Groffen <fabian@monetdb.org>  Sun, 16 Feb 2014 12:31:41 +0100
+
+monetdb (11.17.9-20140213) unstable; urgency=low
+
+  * Rebuilt.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 13 Feb 2014 12:40:16 +0100
+
+monetdb (11.17.9-20140213) unstable; urgency=low
+
+  * Rebuilt.
+  * BZ#3435: INDEX prevents JOIN from discovering matches
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 13 Feb 2014 12:40:14 +0100
+
 monetdb (11.17.7-20140207) unstable; urgency=low
 
   * Rebuilt.

@@ -470,7 +470,7 @@ parse_json_array(jsonbat *jb, oid *id, char *p)
 }
 
 #define loadbat(name) \
-	jb.name = BATdescriptor(ABS(*name)); \
+	jb.name = BATdescriptor(abs(*name)); \
 	if (*name < 0) \
 		jb.name = BATmirror(jb.name);
 #define loadbats() \
@@ -617,6 +617,7 @@ strlen_json_value(jsonbat *jb, oid id)
 	BATiter bi;
 	oid v;
 	size_t ret = 0;
+	size_t l;
 
 	bi = bat_iterator(jb->kind);
 
@@ -654,7 +655,10 @@ strlen_json_value(jsonbat *jb, oid id)
 			bi = bat_iterator(elems);
 			ret += 2;
 			BATloop (elems, p, q) {
-				ret += strlen_json_value(jb, *(oid *)BUNtail(bi, p));
+				l = strlen_json_value(jb, *(oid *)BUNtail(bi, p));
+				if (l == ~ (size_t) 0)
+					goto hashfnd_failed;
+				ret += l;
 				if (p < q - 1)
 					ret += 2;
 			}
@@ -674,7 +678,10 @@ strlen_json_value(jsonbat *jb, oid id)
 			BATloop (objects, p, q) {
 				BUNfndOID(n, ni, BUNtail(bi, p));
 				ret += 2 + strlen(BUNtail(ni, n)) + 2;
-				ret += strlen_json_value(jb, *(oid *)BUNtail(bi, p));
+				l = strlen_json_value(jb, *(oid *)BUNtail(bi, p));
+				if (l == ~ (size_t) 0)
+					goto hashfnd_failed;
+				ret += l;
 				if (p < q - 1)
 					ret += 2;
 			}
@@ -685,6 +692,8 @@ strlen_json_value(jsonbat *jb, oid id)
 	}
 
 	return ret;
+  hashfnd_failed:
+	return ~ (size_t) 0;		/* indicate failure */
 }
 
 static void
@@ -795,6 +804,9 @@ print_json_value(jsonbat *jb, stream *s, oid id, int indent)
 			break;
 		}
 	}
+	return;
+  hashfnd_failed:
+	GDKfatal("HASHfnd: hash build failed on %s.\n", BATgetId(bi.b));
 }
 
 str
@@ -826,6 +838,8 @@ JSONprint(int *ret, stream **s, int *kind, int *string, int *integer, int *doble
 		fsize = 4;
 		BATloop (elems, p, q) {
 			esize = strlen_json_value(&jb, *(oid *)BUNtail(bi, p));
+			if (esize == ~ (size_t) 0)
+				goto hashfnd_failed;
 			if (esize > 80)
 				break;
 			fsize += esize;
@@ -869,6 +883,8 @@ JSONprint(int *ret, stream **s, int *kind, int *string, int *integer, int *doble
 
 	*ret = 0;
 	return MAL_SUCCEED;
+  hashfnd_failed:
+	throw(MAL, "json.print", "allocation failed");
 }
 
 str
@@ -935,42 +951,42 @@ JSONstore(int *ret, str *nme, int *kind, int *string, int *integer, int *doble, 
 
 	BBPrename(jb.kind->batCacheid, buf);
 	BATmode(jb.kind, PERSISTENT);
-	blist[bcnt++] = ABS(jb.kind->batCacheid);
+	blist[bcnt++] = abs(jb.kind->batCacheid);
 	if (jb.string != NULL) {
 		snprintf(buf, sizeof(buf), "json_%s_string", *nme);
 		BBPrename(jb.string->batCacheid, buf);
 		BATmode(jb.string, PERSISTENT);
-		blist[bcnt++] = ABS(jb.string->batCacheid);
+		blist[bcnt++] = abs(jb.string->batCacheid);
 	}
 	if (jb.integer != NULL) {
 		snprintf(buf, sizeof(buf), "json_%s_integer", *nme);
 		BBPrename(jb.integer->batCacheid, buf);
 		BATmode(jb.integer, PERSISTENT);
-		blist[bcnt++] = ABS(jb.integer->batCacheid);
+		blist[bcnt++] = abs(jb.integer->batCacheid);
 	}
 	if (jb.doble != NULL) {
 		snprintf(buf, sizeof(buf), "json_%s_doble", *nme);
 		BBPrename(jb.doble->batCacheid, buf);
 		BATmode(jb.doble, PERSISTENT);
-		blist[bcnt++] = ABS(jb.doble->batCacheid);
+		blist[bcnt++] = abs(jb.doble->batCacheid);
 	}
 	if (jb.array != NULL) {
 		snprintf(buf, sizeof(buf), "json_%s_array", *nme);
 		BBPrename(jb.array->batCacheid, buf);
 		BATmode(jb.array, PERSISTENT);
-		blist[bcnt++] = ABS(jb.array->batCacheid);
+		blist[bcnt++] = abs(jb.array->batCacheid);
 	}
 	if (jb.object != NULL) {
 		snprintf(buf, sizeof(buf), "json_%s_object", *nme);
 		BBPrename(jb.object->batCacheid, buf);
 		BATmode(jb.object, PERSISTENT);
-		blist[bcnt++] = ABS(jb.object->batCacheid);
+		blist[bcnt++] = abs(jb.object->batCacheid);
 	}
 	if (jb.name != NULL) {
 		snprintf(buf, sizeof(buf), "json_%s_name", *nme);
 		BBPrename(jb.name->batCacheid, buf);
 		BATmode(jb.name, PERSISTENT);
-		blist[bcnt++] = ABS(jb.name->batCacheid);
+		blist[bcnt++] = abs(jb.name->batCacheid);
 	}
 
 	TMsubcommit_list(blist, bcnt);
@@ -1063,43 +1079,43 @@ JSONdrop(int *ret, str *name)
 				"no such JSON object with name: %s", *name);
 
 	BBPclear(bid);
-	blist[bcnt++] = ABS(bid);
+	blist[bcnt++] = abs(bid);
 
 	snprintf(buf, sizeof(buf), "json_%s_string", *name);
 	bid = BBPindex(buf);
 	if (bid) {
 		BBPclear(bid);
-		blist[bcnt++] = ABS(bid);
+		blist[bcnt++] = abs(bid);
 	}
 	snprintf(buf, sizeof(buf), "json_%s_integer", *name);
 	bid = BBPindex(buf);
 	if (bid) {
 		BBPclear(bid);
-		blist[bcnt++] = ABS(bid);
+		blist[bcnt++] = abs(bid);
 	}
 	snprintf(buf, sizeof(buf), "json_%s_doble", *name);
 	bid = BBPindex(buf);
 	if (bid) {
 		BBPclear(bid);
-		blist[bcnt++] = ABS(bid);
+		blist[bcnt++] = abs(bid);
 	}
 	snprintf(buf, sizeof(buf), "json_%s_array", *name);
 	bid = BBPindex(buf);
 	if (bid) {
 		BBPclear(bid);
-		blist[bcnt++] = ABS(bid);
+		blist[bcnt++] = abs(bid);
 	}
 	snprintf(buf, sizeof(buf), "json_%s_object", *name);
 	bid = BBPindex(buf);
 	if (bid) {
 		BBPclear(bid);
-		blist[bcnt++] = ABS(bid);
+		blist[bcnt++] = abs(bid);
 	}
 	snprintf(buf, sizeof(buf), "json_%s_name", *name);
 	bid = BBPindex(buf);
 	if (bid) {
 		BBPclear(bid);
-		blist[bcnt++] = ABS(bid);
+		blist[bcnt++] = abs(bid);
 	}
 
 	TMsubcommit_list(blist, bcnt);
@@ -1146,6 +1162,8 @@ json_copy_entry(BATiter bik, BATiter bis, BATiter bii, BATiter bid, BATiter bia,
 				x = *(oid *)BUNtail(bio, p);
 				z = json_copy_entry(bik, bis, bii, bid, bia, bio, bin,
 						start, x, jb, jbr);
+				if (z == ~ (oid) 0)
+					goto hashfnd_failed;
 				BUNins(jbr->object, &w, &z, FALSE);
 				BUNfndOID(y, bin, &x);
 				BUNins(jbr->name, &z, BUNtail(bin, y), FALSE);
@@ -1167,6 +1185,8 @@ json_copy_entry(BATiter bik, BATiter bis, BATiter bii, BATiter bid, BATiter bia,
 	}
 
 	return w;
+  hashfnd_failed:
+	return ~ (oid) 0;
 }
 
 str
@@ -1186,7 +1206,7 @@ JSONextract(int *rkind, int *rstring, int *rinteger, int *rdoble, int *rarray, i
 	bia = bat_iterator(jb.array);
 	bio = bat_iterator(jb.object);
 	bin = bat_iterator(jb.name);
-	e = BBPquickdesc(ABS(*elems), FALSE);
+	e = BBPquickdesc(abs(*elems), FALSE);
 	if (*elems < 0)
 		e = BATmirror(e);
 	BBPfix(*elems);
@@ -1196,13 +1216,17 @@ JSONextract(int *rkind, int *rstring, int *rinteger, int *rdoble, int *rarray, i
 
 	/* initialise all bats */
 	jbr.kind = BATnew(TYPE_void, TYPE_bte, BATTINY);
-	jbr.kind = BATseqbase(jbr.kind, *startoid);
 	jbr.string = BATnew(TYPE_oid, TYPE_str, BATTINY);
 	jbr.doble = BATnew(TYPE_oid, TYPE_dbl, BATTINY);
 	jbr.integer = BATnew(TYPE_oid, TYPE_lng, BATTINY);
 	jbr.name = BATnew(TYPE_oid, TYPE_str, BATTINY);
 	jbr.object = BATnew(TYPE_oid, TYPE_oid, BATTINY);
 	jbr.array = BATnew(TYPE_oid, TYPE_oid, BATTINY);
+	if (jbr.kind == NULL || jbr.string == NULL || jbr.doble == NULL ||
+		jbr.integer == NULL || jbr.name == NULL || jbr.object == NULL ||
+		jbr.array == NULL)
+		goto bailout;
+	jbr.kind = BATseqbase(jbr.kind, *startoid);
 
 	/* return all elems as the outermost array */
 	BUNappend(jbr.kind, "a", FALSE);
@@ -1212,6 +1236,8 @@ JSONextract(int *rkind, int *rstring, int *rinteger, int *rdoble, int *rarray, i
 		if (v != oid_nil) {
 			z = json_copy_entry(bik, bis, bii, bid, bia, bio, bin,
 					*startoid, v, &jb, &jbr);
+			if (z == ~ (oid) 0)
+				goto bailout;
 			BUNins(jbr.array, &w, &z, FALSE);
 		}
 	}
@@ -1234,6 +1260,23 @@ JSONextract(int *rkind, int *rstring, int *rinteger, int *rdoble, int *rarray, i
 	BBPkeepref(jbr.name->batCacheid);
 	*rname = jbr.name->batCacheid;
 	return MAL_SUCCEED;
+
+  bailout:
+	if (jbr.kind != NULL)
+		BBPunfix(jbr.kind->batCacheid);
+	if (jbr.string != NULL)
+		BBPunfix(jbr.string->batCacheid);
+	if (jbr.doble != NULL)
+		BBPunfix(jbr.doble->batCacheid);
+	if (jbr.integer != NULL)
+		BBPunfix(jbr.integer->batCacheid);
+	if (jbr.name != NULL)
+		BBPunfix(jbr.name->batCacheid);
+	if (jbr.object != NULL)
+		BBPunfix(jbr.object->batCacheid);
+	if (jbr.array != NULL)
+		BBPunfix(jbr.array->batCacheid);
+	throw(MAL, "???.???", "Allocation failed");
 }
 
 str
@@ -1250,7 +1293,7 @@ JSONwrap(int *rkind, int *rstring, int *rinteger, int *rdoble, int *rarray, int 
 	dbl d;
 	bit b;
 
-	e = BBPquickdesc(ABS(*elems), FALSE);
+	e = BBPquickdesc(abs(*elems), FALSE);
 	if (*elems < 0)
 		e = BATmirror(e);
 
@@ -1612,6 +1655,8 @@ JSONunwrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	return MAL_SUCCEED;
+  hashfnd_failed:
+	throw(MAL, "json.unwrap", "Allocation failed");
 }
 
 str

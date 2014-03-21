@@ -64,7 +64,7 @@ transaction_export str TRNtrans_delta(int *ret, int *bid);
 str
 TRNglobal_sync(bit *ret)
 {
-	*ret = BBPsync(BBPsize,NULL)?FALSE:TRUE;
+	*ret = BBPsync(getBBPsize(),NULL)?FALSE:TRUE;
 	return MAL_SUCCEED;
 }
 

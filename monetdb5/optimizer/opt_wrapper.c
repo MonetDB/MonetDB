@@ -43,7 +43,6 @@
 #include "opt_cluster.h"
 #include "opt_coercion.h"
 #include "opt_commonTerms.h"
-#include "opt_compression.h"
 #include "opt_constants.h"
 #include "opt_costModel.h"
 #include "opt_dataflow.h"
@@ -62,8 +61,6 @@
 #include "opt_mitosis.h"
 #include "opt_multiplex.h"
 #include "opt_octopus.h"
-#include "opt_origin.h"
-#include "opt_prejoin.h"
 #include "opt_pushranges.h"
 #include "opt_pushselect.h"
 #include "opt_qep.h"
@@ -86,7 +83,6 @@ struct{
 	{"cluster", &OPTclusterImplementation},
 	{"coercions", &OPTcoercionImplementation},
 	{"commonTerms", &OPTcommonTermsImplementation},
-	{"compression", &OPTcompressionImplementation},
 	{"constants", &OPTconstantsImplementation},
 	{"costModel", &OPTcostModelImplementation},
 	{"dataflow", &OPTdataflowImplementation},
@@ -106,8 +102,6 @@ struct{
 	{"mitosis", &OPTmitosisImplementation},
 	{"multiplex", &OPTmultiplexImplementation},
 	{"octopus", &OPToctopusImplementation},
-	{"origin", &OPToriginImplementation},
-	{"prejoin", &OPTprejoinImplementation},
 	{"pushranges", &OPTpushrangesImplementation},
 	{"pushselect", &OPTpushselectImplementation},
 	{"querylog", &OPTquerylogImplementation},
@@ -133,7 +127,6 @@ str OPTwrapper (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	char optimizer[256];
 	InstrPtr q= copyInstruction(p);
 
-	optimizerInit();
 	snprintf(optimizer,256,"%s", fcnnme = getFunctionId(p));
 	OPTIMIZERDEBUG 
 		mnstr_printf(cntxt->fdout,"=APPLY OPTIMIZER %s\n",fcnnme);

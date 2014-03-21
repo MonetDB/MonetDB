@@ -1,6 +1,8 @@
 library(MonetDB.R)
 library(sqlsurvey)
 
+# install.packages("sqlsurvey", repos=c("http://cran.r-project.org","http://R-Forge.R-project.org"), dep=TRUE)
+
 db <- dbConnect( MonetDB.R() , "monetdb://localhost/monetdbrtest")
 
 data( api )
@@ -45,7 +47,5 @@ svymean( ~dname , dclus1 , byvar = ~comp_imp )
 dbGetQuery( db , 'select * from apiclus1 limit 2' )
 dbRemoveTable(db,"apiclus1")
 
-# delete these pesky tables
-dbSendUpdate(db,paste0("DROP TABLE \"",grep("_m(f|m)_",dbListTables(db),value=T),"\";",collapse="\n"))
 
 print("SUCCESS")

@@ -18,7 +18,7 @@
  */
 
 /*
- * M. Kersten
+ * (author) M. Kersten
 */
 
 #include "monetdb_config.h"
@@ -408,8 +408,8 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 					advance(t,base,len);
 					if (cv)
 						GDKfree(cv);
-					if ( ABS(stk->stk[getArg(p,i)].val.ival) ){
-						d= BBPquickdesc(ABS(stk->stk[getArg(p,i)].val.ival),TRUE);
+					if ( abs(stk->stk[getArg(p,i)].val.ival) ){
+						d= BBPquickdesc(abs(stk->stk[getArg(p,i)].val.ival),TRUE);
 						if( d){
 							snprintf(t,(len-(t-base)),"[" BUNFMT "]", BATcount(d));
 							advance(t,base,len);
@@ -486,7 +486,7 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 				if ( !isVarConstant(mb, getArg(p,i)) && flg & LIST_MAL_ARG)
 					snprintf(t,(len-(t-base)),"%s%s", (*getArgName(mb,p,i)== TMPMARKER?"X":""), getArgName(mb, p, i));
 				advance(t,base,len);
-				if( getTailType(getArgType(mb,p,i)) > TYPE_str )
+				if( getColumnType(getArgType(mb,p,i)) > TYPE_str )
 				{ 	char *ct;
 					VALformat(&cv, &stk->stk[getArg(p, i)]);
 					ct= (char*) GDKmalloc(1024+strlen(cv));
@@ -501,9 +501,9 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 							snprintf(ct, 1024+strlen(cv), "=\"%s\"", cv);
 					} else
 					if ( strcmp(cv,"nil") == 0)
-						snprintf(ct, 1024+strlen(cv), "=%s:%s", cv, getTypeName(getTailType(getArgType(mb,p,i))));
+						snprintf(ct, 1024+strlen(cv), "=%s:%s", cv, getTypeName(getColumnType(getArgType(mb,p,i))));
 					else
-						snprintf(ct, 1024+strlen(cv), "=\"%s\":%s", cv, getTypeName(getTailType(getArgType(mb,p,i))));
+						snprintf(ct, 1024+strlen(cv), "=\"%s\":%s", cv, getTypeName(getColumnType(getArgType(mb,p,i))));
 					if( cv) GDKfree(cv);
 					cv= ct;
 				} else
@@ -512,7 +512,7 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 				if ( p->recycle && flg & LIST_MAL_ARG)
 					snprintf(t,(len-(t-base)),"%s%s=", (*getArgName(mb,p,i)== TMPMARKER?"X":""), getArgName(mb, p, i));
 				advance(t,base,len);
-				if( getTailType(getArgType(mb,p,i)) > TYPE_str )
+				if( getColumnType(getArgType(mb,p,i)) > TYPE_str )
 				{ char *ct=cv;
 					VALformat(&cv, &getVar(mb, getArg(p, i))->value);
 					ct= (char*) GDKmalloc(1024+strlen(cv));
@@ -527,9 +527,9 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 							snprintf(ct, 1024+strlen(cv), "\"%s\"", cv);
 					} else
 					if ( strcmp(cv,"nil") == 0)
-						snprintf(ct, 1024+strlen(cv), "%s:%s", cv, getTypeName(getTailType(getArgType(mb,p,i))));
+						snprintf(ct, 1024+strlen(cv), "%s:%s", cv, getTypeName(getColumnType(getArgType(mb,p,i))));
 					else
-						snprintf(ct, 1024+strlen(cv), "\"%s\":%s", cv, getTypeName(getTailType(getArgType(mb,p,i))));
+						snprintf(ct, 1024+strlen(cv), "\"%s\":%s", cv, getTypeName(getColumnType(getArgType(mb,p,i))));
 					if( cv) GDKfree(cv);
 					cv= ct;
 				} else
@@ -567,9 +567,9 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 			if( flg & LIST_MAL_VALUE && isaBatType(getVarType(mb,getArg(p,i)) ) ){
 				BAT *d = 0;
 				if (stk && stk->stk[getArg(p,i)].vtype== TYPE_bat){
-					d= BBPquickdesc(ABS(stk->stk[getArg(p,i)].val.ival),TRUE);
+					d= BBPquickdesc(abs(stk->stk[getArg(p,i)].val.ival),TRUE);
 				} else
-					d= BBPquickdesc(ABS(getVarConstant(mb,getArg(p,i)).val.ival),TRUE);
+					d= BBPquickdesc(abs(getVarConstant(mb,getArg(p,i)).val.ival),TRUE);
 				if( d){
 					snprintf(t,(len-(t-base)),"[" BUNFMT "]", BATcount(d));
 					advance(t,base,len);

@@ -440,6 +440,7 @@ mvc_create(int clientid, backend_stack stk, int debug, bstream *rs, stream *ws)
 	store_unlock();
 
 	m->type = Q_PARSE;
+	m->pushdown = 1;
 
 	m->result_id = 0;
 	m->results = NULL;
@@ -504,6 +505,7 @@ mvc_reset(mvc *m, bstream *rs, stream *ws, int debug, int globalvars)
 	m->label = 0;
 	m->cascade_action = NULL;
 	m->type = Q_PARSE;
+	m->pushdown = 1;
 
 	for(i=0;i<MAXSTATS;i++)
 		m->opt_stats[i] = 0;
@@ -1332,7 +1334,7 @@ stack_pop_frame(mvc *sql)
 		_DELETE(v->name);
 		VALclear(&v->value);
 		v->value.vtype = 0;
-		if (v->t) 
+		if (v->t && v->view) 
 			table_destroy(v->t);
 		else if (v->rel)
 			rel_destroy(v->rel);

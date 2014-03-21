@@ -603,7 +603,7 @@ sql_update_feb2013_sp3(Client c)
 static str
 sql_update_jan2014(Client c)
 {
-	size_t bufsize = 15000, pos = 0;
+	size_t bufsize = 25000, pos = 0;
 	char *buf = GDKmalloc(bufsize), *err = NULL;
 	ValRecord *schvar = stack_get_var(((backend *) c->sqlcontext)->mvc, "current_schema");
 	char *schema = NULL;
@@ -818,6 +818,12 @@ external name sql.analyze;\n");
 	pos += snprintf(buf + pos, bufsize - pos, "insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('quantile', 'median') and f.type = %d and f.schema_id = s.id and s.name = 'sys');\n", F_AGGR);
 
 	pos += snprintf(buf + pos, bufsize - pos, "update sys._tables set system = true where name in ('environment', 'optimizers', 'queue', 'sessions', 'statistics', 'storage', 'storagemodel', 'tracelog') and schema_id = (select id from sys.schemas where name = 'sys');\n");
+
+	/* 17_compress script has been removed */
+	pos += snprintf(buf + pos, bufsize - pos, "drop procedure gzcompress;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "drop procedure gzcdeompress;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "drop procedure gzctruncate;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "drop procedure gzcexpand;\n");
 
 	if (schema) {
 		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
@@ -1136,7 +1142,6 @@ SQLexitClient(Client c)
 }
 
 /*
- * @-
  * A statement received internally is simply appended for
  * execution
  */
@@ -1155,7 +1160,6 @@ SQLtrans(mvc *m)
 }
 
 /*
- * @-
  * The SQLcompile operation can be used by separate
  * front-ends to benefit from the SQL functionality.
  * It expects a string and returns the name of the
@@ -1239,7 +1243,6 @@ SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output)
 	if (!m->sa)
 		m->sa = sa_create();
 	/*
-	 * @-
 	 * System has been prepared to parse it and generate code.
 	 * Scan the complete string for SQL statements, stop at the first error.
 	 */
@@ -1400,7 +1403,6 @@ SQLcompile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 /*
- * @-
  * Locate a file with SQL commands and execute it. For the time being a 1MB
  * file limit is implicitly imposed. If the file can not be located in the
  * script library, we assume it is sufficiently self descriptive.
@@ -1440,7 +1442,6 @@ SQLinclude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 /*
- * @-
  * The SQL reader collects a (sequence) of statements from the input
  * stream, but only when no unresolved 'nxt' character is visible.
  * In combination with SQLparser this ensures that all statements
@@ -1499,7 +1500,6 @@ SQLreader(Client c)
 	m = be->mvc;
 	m->errstr[0] = 0;
 	/*
-	 * @-
 	 * Continue processing any left-over input from the previous round.
 	 */
 
@@ -1507,7 +1507,6 @@ SQLreader(Client c)
 	mnstr_printf(GDKout, "#pos %d len %d eof %d \n", in->pos, in->len, in->eof);
 #endif
 	/*
-	 * @-
 	 * Distinguish between console reading and mclient connections.
 	 * The former comes with readline functionality.
 	 */
@@ -1592,7 +1591,7 @@ SQLreader(Client c)
 #endif
 		}
 	}
-	if (!go || (strncmp(CURRENT(c), "\\q", 2) == 0)) {
+	if ( (c->stimeout &&  GDKusec()- c->session > c->stimeout) || !go || (strncmp(CURRENT(c), "\\q", 2) == 0)) {
 		in->pos = in->len;	/* skip rest of the input */
 		c->mode = FINISHCLIENT;
 		return NULL;
@@ -1601,12 +1600,10 @@ SQLreader(Client c)
 }
 
 /*
- * @-
  * The SQL block is stored in the client input buffer, from which it
  * can be parsed by the SQL parser. The client structure contains
  * a small table of bounded tables. This should be reset before we
  * parse a new statement sequence.
- * @-
  * Before we parse the sql statement, we look for any variable settings
  * for specific commands.
  * The most important one is to prepare code to be handled by the debugger.
@@ -1631,7 +1628,6 @@ SQLsetDebugger(Client c, mvc *m, int onoff)
 }
 
 /*
- * @-
  * The trace operation collects the events in the BATs
  * and creates a secondary result set upon termination
  * of the query. This feature is extended with
@@ -2270,7 +2266,6 @@ SQLengine(Client c)
 }
 
 /*
- * @-
  * Assertion errors detected during the execution of a code block
  * raises an exception. An debugger dump is generated upon request
  * to ease debugging.

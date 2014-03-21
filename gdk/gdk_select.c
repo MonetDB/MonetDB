@@ -82,10 +82,10 @@ BATslice2(BAT *b, BUN l1, BUN h1, BUN l2, BUN h2)
 	if (bn == NULL)
 		return bn;
 	for (p = (BUN) l1, q = (BUN) h1; p < q; p++) {
-		bunfastins(bn, NULL, BUNhead(bi, p));
+		bunfastapp(bn, BUNhead(bi, p));
 	}
 	for (p = (BUN) l2, q = (BUN) h2; p < q; p++) {
-		bunfastins(bn, NULL, BUNhead(bi, p));
+		bunfastapp(bn, BUNhead(bi, p));
 	}
 	BATseqbase(bn, 0);
 	bn->tsorted = BAThordered(b);
@@ -131,7 +131,6 @@ BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl, BUN maximum)
 	cnt = 0;
 	if (s) {
 		assert(s->tsorted);
-		s = BATmirror(s);	/* SORTfnd works on HEAD column */
 		HASHloop(bi, b->H->hash, i, tl) {
 			o = (oid) (i + off);
 			if (SORTfnd(s, &o) != BUN_NONE) {
@@ -1336,7 +1335,7 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 		    !b->tvarsized &&
 		    (b->batPersistence == PERSISTENT ||
 		     ((parent = VIEWtparent(b)) != 0 &&
-		      BBPquickdesc(ABS(parent),0)->batPersistence == PERSISTENT))) {
+		      BBPquickdesc(abs(parent),0)->batPersistence == PERSISTENT))) {
 			/* use imprints if
 			 *   i) bat is persistent, or parent is persistent
 			 *  ii) it is not an equi-select, and

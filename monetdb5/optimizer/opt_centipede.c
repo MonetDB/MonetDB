@@ -845,7 +845,7 @@ OPTbakePlans(Client cntxt, MalBlkPtr mb, Slices *slices)
 				q= pushArgument(plan,q,getArg(p,1));
 				q= pushArgument(plan,q,getArg(p,p->argc-1));
 				snprintf(buf,BUFSIZ,"Y_%d",id);
-				getArg(q,0) = newVariable(plan, GDKstrdup(buf), newBatType(TYPE_oid, getTailType(getVarType(plan,id))));
+				getArg(q,0) = newVariable(plan, GDKstrdup(buf), newBatType(TYPE_oid, getColumnType(getVarType(plan,id))));
 				addvartolist(plan,&planreturn,getArg(q,0));
 				addvartolist(plan,&packs,getArg(q,0));
 				setVarUsed(plan,getArg(q,0)); 
@@ -1054,7 +1054,7 @@ OPTcentipedeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	slices.schema = GDKstrdup(getVarConstant(mb, getArg(target,2)).val.sval);
 	slices.table = GDKstrdup(getVarConstant(mb, getArg(target,3)).val.sval);
 	slices.column = GDKstrdup(getVarConstant(mb,getArg(target,4)).val.sval);
-	slices.type = getTailType(getVarType(mb,getArg(target,0)));
+	slices.type = getColumnType(getVarType(mb,getArg(target,0)));
 	slices.lslices=  newTmpVariable(mb, TYPE_oid);
 	slices.hslices=  newTmpVariable(mb, TYPE_oid);
 	slices.slice = 0;

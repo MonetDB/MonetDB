@@ -27,6 +27,7 @@
 #include "mal_exception.h"
 #include "mal_scenario.h"
 #include "mal_instruction.h"
+#include "mal_debugger.h"
 #include "optimizer.h"
 #include "opt_pipes.h"
 
@@ -81,8 +82,6 @@ JAQLinitClient(Client c)
 
 	j = GDKzalloc(sizeof(jc));
 	jaqllex_init_extra(j, &j->scanner);
-
-	optimizerInit();  /* for all xxxRef vars in dumpcode */
 
 	/* Set state, this indicates an initialized client scenario */
 	c->state[MAL_SCENARIO_READER] = c;

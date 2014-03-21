@@ -96,7 +96,7 @@ case TYPE_str: \
 		msg = (*mut->pci->fcn)(&y, __VA_ARGS__); 	\
 		if (msg)					\
 			break;					\
-		bunfastins(mut->args[0].b, (void*) 0, (void*) y);	\
+		bunfastapp(mut->args[0].b, (void*) y);	\
 		for( i = mut->fvar; i<= mut->lvar; i++) {	\
 			if( ATOMstorage(mut->args[i].type) !=  TYPE_str){\
 				args[i] += mut->args[i].size;	\
@@ -179,14 +179,14 @@ MANIFOLDtypecheck(Client cntxt, MalBlkPtr mb, InstrPtr pci){
 		getVarConstant(mb,getArg(pci,pci->retc+1)).val.sval);
 
 	// Prepare the single result variable
-	tpe =getTailType(getArgType(mb,pci,0));
+	tpe =getColumnType(getArgType(mb,pci,0));
 	k= getArg(q,0) = newTmpVariable(nmb, tpe);
 	setVarFixed(nmb,k);
 	setVarUDFtype(nmb,k);
 	
 	// extract their argument type
 	for ( i = pci->retc+2; i < pci->argc; i++){
-		tpe = getTailType(getArgType(mb,pci,i));
+		tpe = getColumnType(getArgType(mb,pci,i));
 		if (ATOMstorage(tpe) > TYPE_str){
 			freeMalBlk(nmb);
 			return NULL;
@@ -249,7 +249,7 @@ MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 				msg = createException(MAL,"mal.manifold", MAL_MALLOC_FAIL);
 				goto wrapup;
 			}
-			mat[i].type = tpe = getTailType(getArgType(mb,pci,i));
+			mat[i].type = tpe = getColumnType(getArgType(mb,pci,i));
 			if (mut.fvar == 0){
 				mut.fvar = i;
 				cnt = BATcount(mat[i].b);
@@ -279,7 +279,7 @@ MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	}
 
 	// prepare result variable
-	mat[0].b =BATnew(TYPE_void, getTailType(getArgType(mb,pci,0)), cnt);
+	mat[0].b =BATnew(TYPE_void, getColumnType(getArgType(mb,pci,0)), cnt);
 	if ( mat[0].b == NULL){
 		msg= createException(MAL,"mal.manifold",MAL_MALLOC_FAIL);
 		goto wrapup;
@@ -292,7 +292,10 @@ MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	mat[0].bi = bat_iterator(mat[0].b);
 	mat[0].first = (void *)  Tloc(mat[0].b, BUNfirst(mat[0].b));
 	mat[0].last = (void *)  Tloc(mat[0].b, BUNlast(mat[0].b));
-	BATseqbase(mat[0].b, mat[mut.fvar].b->H->seq);
+	if ( mat[mut.fvar].b->htype == TYPE_void)
+		BATseqbase(mat[0].b, mat[mut.fvar].b->H->seq);
+	else
+		BATseqbase(mat[0].b, 0);
 
 	mut.pci = copyInstruction(pci);
 	mut.pci->fcn = fcn;

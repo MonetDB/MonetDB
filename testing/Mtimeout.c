@@ -154,7 +154,7 @@ limit(char **argv)
 }
 
 
-static void usage(void)
+__declspec(noreturn) static void usage(void)
 	__attribute__((__noreturn__));
 
 static void

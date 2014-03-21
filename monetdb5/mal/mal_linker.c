@@ -18,51 +18,8 @@
  */
 
 /*
- * @a M. Kersten
- * @v 0.0
- * @-
- * @+ Module Loading
- * The server is bootstrapped by processing a MAL script with
- * module definitions or extensions.
- * For each module file encountered, the object library
- * lib_<modulename>.so is searched for in the location identified
- * by monet_mod_path=exec_prefix/lib/MonetDB5:exec_prefix/lib/MonetDB5/lib:exec_prefix/lib/MonetDB5/bin.
- *
- * The corresponding signature are defined
- * in @dots{}/lib(64)/<modulename>.mal.
- * @-
- * The default bootstrap script is called @dots{}/lib/MonetDB5/mal_init.mal
- * and it is designated in the configuration file as the mal_init property.
- * The rationale for this set-up is that database administrators can
- * extend/overload the bootstrap procedure without affecting the
- * software package being distributed.
- * It merely requires a different direction for the mal_init property.
- * The scheme also isolates the functionality embedded in modules from
- * inadvertise use on non-compliant databases.
- * @-
- * Unlike previous versions of MonetDB, modules can not be unloaded.
- * Dynamic libraries are always global and, therefore, it
- * is best to load them as part of the server initialization phase.
- * @-
- * For the time being we assume that all commands are statically linked.
- */
-/*
- * @-
- * The MAL module should be compiled with -rdynamic and -ldl (Linux).
- * This enables loading the routines and finding out the address
- * of a particular routine.
- * The mapping from MAL module.function() identifier to an address is
- * resolved in the function getAddress. Since all modules libraries are loaded
- * completely with GLOBAL visibility, it suffices to provide the internal function
- * name.
- * In case an attempt to link to an address fails,
- * a final attempt is made to locate the *.o file in
- * the current directory.
- *
- * Note, however, that the libraries are reference counted. Although we
- * don't close them until end of session it seems prudent to maintain
- * the consistency of this counter.
- *
+ * (author) M. Kersten
+ * For documentation see website
  */
 #include "monetdb_config.h"
 #include "mal_module.h"
@@ -101,10 +58,7 @@ static FileRecord filesLoaded[MAXMODULES];
 static int maxfiles = MAXMODULES;
 static int lastfile = 0;
 
-/*
- * @-
- * Search for occurrence of the function in the library identified by the filename.
- */
+/* Search for occurrence of the function in the library identified by the filename.  */
 MALfcn
 getAddress(stream *out, str filename, str modnme, str fcnname, int silent)
 {
@@ -127,7 +81,6 @@ getAddress(stream *out, str filename, str modnme, str fcnname, int silent)
 		}
 	}
 	/*
-	 * @-
 	 * Search for occurrence of the function in any library already loaded.
 	 * This deals with the case that files are linked together to reduce
 	 * the loading time, while the signatures of the functions are still
@@ -142,7 +95,6 @@ getAddress(stream *out, str filename, str modnme, str fcnname, int silent)
 			}
 		}
 	/*
-	 * @-
 	 * Try the program libraries at large or run through all
 	 * loaded files and try to resolve the functionname again.
 	 */
@@ -162,7 +114,7 @@ getAddress(stream *out, str filename, str modnme, str fcnname, int silent)
 	return NULL;
 }
 /*
- * @+ Module file loading
+ * Module file loading
  * The default location to search for the module is in monet_mod_path
  * unless an absolute path is given.
  * Loading further relies on the Linux policy to search for the module
@@ -306,7 +258,6 @@ loadLibrary(str filename, int flag)
 }
 
 /*
- * @-
  * For analysis of memory leaks we should cleanup the libraries before
  * we exit the server. This does not involve the libraries themselves,
  * because they may still be in use.
@@ -327,7 +278,6 @@ unloadLibraries(void)
 	MT_lock_unset(&mal_contextLock, "unloadModule");
 }
 /*
- * @-
  * To speedup restart and to simplify debugging, the MonetDB server can
  * be statically linked with some (or all) of the modules libraries.
  * A complicating factor is then to avoid users to initiate another load
@@ -373,7 +323,7 @@ initLibraries(void)
 }
 
 /*
- * @+ Handling of Module Library Search Path
+ * Handling of Module Library Search Path
  * The plausible locations of the modules can be designated by
  * an environment variable.
  */

@@ -18,10 +18,11 @@
  */
 
 /*
- * M.L. Kersten
+ * (author) M.L. Kersten
  * For documentation see website.
  */
 #include "monetdb_config.h"
+#include "mal.h"
 #include "mal_readline.h"
 #include "mal_debugger.h"
 #include "mal_atom.h"		/* for showAtoms() */
@@ -34,6 +35,23 @@
 #include "mal_private.h"
 
 int MDBdelay;			/* do not immediately react */
+typedef struct {
+	MalBlkPtr brkBlock[MAXBREAKS];
+	int		brkPc[MAXBREAKS];
+	int		brkVar[MAXBREAKS];
+	str		brkMod[MAXBREAKS];
+	str		brkFcn[MAXBREAKS];
+	char	brkCmd[MAXBREAKS];
+	str		brkRequest[MAXBREAKS];
+	int		brkTop;
+} mdbStateRecord, *mdbState;
+
+typedef struct MDBSTATE{
+	MalBlkPtr mb;
+	MalStkPtr stk;
+	InstrPtr p;
+	int pc;
+} MdbState;
 
 #define skipBlanc(c, X)    while (*(X) && isspace((int) *X)) { X++; }
 #define skipNonBlanc(c, X) while (*(X) && !isspace((int) *X)) { X++; }
@@ -299,9 +317,9 @@ static void
 printBATproperties(stream *f, BAT *b)
 {
 	mnstr_printf(f, " count=" BUNFMT " lrefs=%d ",
-			BATcount(b), BBP_lrefs(ABS(b->batCacheid)));
-	if (BBP_refs(ABS(b->batCacheid)) - 1)
-		mnstr_printf(f, " refs=%d ", BBP_refs(ABS(b->batCacheid)));
+			BATcount(b), BBP_lrefs(abs(b->batCacheid)));
+	if (BBP_refs(abs(b->batCacheid)) - 1)
+		mnstr_printf(f, " refs=%d ", BBP_refs(abs(b->batCacheid)));
 	if (b->batSharecnt)
 		mnstr_printf(f, " views=%d", b->batSharecnt);
 	if (b->H->heap.parentid)
@@ -529,8 +547,15 @@ retryRead:
 					}
 				}
 				continue;
-			} else
-				showModules(out, cntxt->nspace);
+			} else{
+				Module s;
+				for( s= cntxt->nspace; s; s= s->outer) {
+					mnstr_printf(out,"%s",s->name);
+					if( s->subscope==0) mnstr_printf(out,"?");
+					if(s->outer) mnstr_printf(out,",");
+				}
+				mnstr_printf(out,"\n");
+			}
 		}
 		break;
 		case 'T':   /* debug type resolver for a function call */
@@ -620,7 +645,7 @@ retryRead:
 				if (i)
 					limit = i + 1;
 				else {
-					limit = BBPsize;
+					limit = getBBPsize();
 					i = 1;
 				}
 				/* the 'dense' qualification only shows entries with a hard ref */
@@ -989,12 +1014,12 @@ mdbSanityCheck(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 			int i = v->val.ival;
 			BAT *b;
 
-			b = BBPquickdesc(ABS(i), TRUE);
+			b = BBPquickdesc(abs(i), TRUE);
 			if (i < 0)
 				b = BATmirror(b);
 			if (b) {
 				nme = getTypeName(n->type);
-				nmeOnStk = getTypeName(newBatType(b->htype, b->ttype));
+				nmeOnStk = getTypeName(newColumnType(b->ttype));
 				if (strcmp(nme, nmeOnStk)) {
 					printTraceCall(cntxt->fdout, mb, stk, pc, cntxt->flags);
 					mnstr_printf(cntxt->fdout, "!ERROR: %s != :%s\n",
@@ -1217,7 +1242,7 @@ printBATelm(stream *f, int i, BUN cnt, BUN first)
 
 	b = BATdescriptor(i);
 	if (b) {
-		tpe = getTypeName(newBatType(b->htype, b->ttype));
+		tpe = getTypeName(newColumnType(b->ttype));
 		mnstr_printf(f, ":%s ", tpe);
 		printBATproperties(f, b);
 		/* perform property checking */
@@ -1276,13 +1301,13 @@ printStackElm(stream *f, MalBlkPtr mb, ValPtr v, int index, BUN cnt, BUN first)
 
 	if (v && v->vtype == TYPE_bat) {
 		int i = v->val.ival;
-		BAT *b = BBPquickdesc(ABS(i), TRUE);
+		BAT *b = BBPquickdesc(abs(i), TRUE);
 
-		b = BBPquickdesc(ABS(i), TRUE);
+		b = BBPquickdesc(abs(i), TRUE);
 		if (i < 0)
 			b = BATmirror(b);
 		if (b) {
-			nme = getTypeName(newBatType(b->htype, b->ttype));
+			nme = getTypeName(newColumnType(b->ttype));
 			mnstr_printf(f, " :%s rows="BUNFMT, nme, BATcount(b));
 		} else {
 			nme = getTypeName(n->type);
@@ -1430,7 +1455,7 @@ memProfileVector(stream *out, int cells)
 		v[i] = '.';
 	v[i] = 0;
 
-	for (i = 1; i < BBPsize; i++)
+	for (i = 1; i < getBBPsize(); i++)
 		if (BBP_status(i) & BBPLOADED) {
 			BAT *b = BATdescriptor(i);
 			Heap *hp;

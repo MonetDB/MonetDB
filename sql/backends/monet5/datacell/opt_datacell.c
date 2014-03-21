@@ -186,7 +186,7 @@ OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 					getFunctionId(p) = newRef;
 					p->argc = p->retc= 1;
 					p = pushType(mb, p, TYPE_oid);
-					p = pushType(mb, p, getTailType(getVarType(mb,getArg(p,0))));
+					p = pushType(mb, p, getColumnType(getVarType(mb,getArg(p,0))));
 					varSetProp(mb, p->argv[0], rowsProp, op_eq, VALset(&vr, TYPE_wrd, &rows));
 				}
 			}

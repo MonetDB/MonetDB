@@ -40,6 +40,20 @@ static int qtop, qsize;
 static int qtag= 1;
 
 
+static void 
+formatVolume(str buf, int len, lng vol){
+	if( vol <1024)
+		snprintf(buf,len,LLFMT,vol);
+	else
+	if( vol <1024*1024)
+		snprintf(buf,len,LLFMT "K",vol/1024);
+	else
+	if( vol <1024* 1024*1024)
+		snprintf(buf,len, LLFMT "M",vol/1024/1024);
+	else
+		snprintf(buf,len, "%6.1fG",vol/1024.0/1024/1024);
+}
+
 static str isaSQLquery(MalBlkPtr mb){
 	int i;
 	InstrPtr p;
@@ -156,45 +170,27 @@ finishSessionProfiler(Client cntxt)
 }
 
 void
-runtimeProfileBegin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int stkpc, RuntimeProfile prof, int start)
+runtimeProfileBegin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, RuntimeProfile prof)
 {
-	if ( mb->profiler == NULL)
-		return;
-
 	/* always collect the MAL instruction execution time */
-	prof->stkpc = stkpc;
-	mb->profiler[stkpc].clk = GDKusec();
-
-	if (malProfileMode == 0 && mb->stmt[stkpc]->recycle == 0)
-		return; /* mostly true */
-	
-	if (stk && mb->profiler[stkpc].trace) {
-		gettimeofday(&mb->profiler[stkpc].clock, NULL);
-		/* emit the instruction upon start as well */
-		if(malProfileMode)
-			profilerEvent(cntxt->idx, mb, stk, stkpc, start);
-#ifdef HAVE_TIMES
-		times(&mb->profiler[stkpc].timer);
-#endif
-	}
+	prof->ticks = GDKusec();
+	/* emit the instruction upon start as well */
+	if(malProfileMode)
+		profilerEvent(cntxt->idx, mb, stk, pci, TRUE);
 }
 
 void
 runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, RuntimeProfile prof)
 {
-	int i,j,fnd, stkpc;
+	int i,j,fnd;
 
-	if ( mb->profiler == NULL)
-		return;
-
+	assert(pci);
+	assert(prof);
 	/* always collect the MAL instruction execution time */
-	stkpc= prof->stkpc;
-	mb->profiler[stkpc].ticks = GDKusec() - mb->profiler[stkpc].clk;
+	pci->ticks += GDKusec() - prof->ticks;
+	pci->calls++;
 
-	if (malProfileMode == 0 && pci->recycle == 0)
-		return; /* mostly true */
-
-	if (getProfileCounter(PROFfootprint) && pci){
+	if (getProfileCounter(PROFfootprint) ){
 		for (i = 0; i < pci->retc; i++)
 			if ( isaBatType(getArgType(mb,pci,i)) && stk->stk[getArg(pci,i)].val.bval){
 				/* avoid simple alias operations */
@@ -207,20 +203,14 @@ runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Runt
 			}
 	}
 
-	if (stk != NULL && stkpc >= 0 && (mb->profiler[stkpc].trace || pci->recycle) ) {
-		gettimeofday(&mb->profiler[stkpc].clock, NULL);
-		mb->profiler[stkpc].calls++;
-		mb->profiler[stkpc].totalticks += mb->profiler[stkpc].ticks;
-		if (pci) {
-			// it is a potential expensive operation
-			if (getProfileCounter(PROFrbytes) || pci->recycle)
-				mb->profiler[stkpc].rbytes = getVolume(stk, pci, 0);
-			if (getProfileCounter(PROFwbytes) || pci->recycle)
-				mb->profiler[stkpc].wbytes = getVolume(stk, pci, 1);
-		}
-		if(malProfileMode)
-			profilerEvent(cntxt->idx, mb, stk, stkpc, 0);
-	}
+	// it is a potential expensive operation
+	if (getProfileCounter(PROFrbytes) || pci->recycle)
+		pci->rbytes += getVolume(stk, pci, 0);
+	if (getProfileCounter(PROFwbytes) || pci->recycle)
+		pci->wbytes += getVolume(stk, pci, 1);
+	
+	if(malProfileMode)
+			profilerEvent(cntxt->idx, mb, stk, pci, FALSE);
 }
 
 /*
@@ -236,11 +226,13 @@ lng getVolume(MalStkPtr stk, InstrPtr pci, int rd)
 	BAT *b;
 	int isview = 0;
 
+	if( stk == NULL)
+		return 0;
 	limit = rd == 0 ? pci->retc : pci->argc;
 	i = rd ? pci->retc : 0;
 
 	if (stk->stk[getArg(pci, 0)].vtype == TYPE_bat) {
-		b = BBPquickdesc(ABS(stk->stk[getArg(pci, 0)].val.bval), TRUE);
+		b = BBPquickdesc(abs(stk->stk[getArg(pci, 0)].val.bval), TRUE);
 		if (b)
 			isview = isVIEW(b);
 	}
@@ -248,7 +240,7 @@ lng getVolume(MalStkPtr stk, InstrPtr pci, int rd)
 		if (stk->stk[getArg(pci, i)].vtype == TYPE_bat) {
 			oid cnt = 0;
 
-			b = BBPquickdesc(ABS(stk->stk[getArg(pci, i)].val.bval), TRUE);
+			b = BBPquickdesc(abs(stk->stk[getArg(pci, i)].val.bval), TRUE);
 			if (b == NULL)
 				continue;
 			cnt = BATcount(b);

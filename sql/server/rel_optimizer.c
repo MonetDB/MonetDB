@@ -3098,9 +3098,9 @@ rel_push_select_down_join(int *changes, mvc *sql, sql_rel *rel)
 				sql_exp *re = e->r;
 
 				if (re->card >= CARD_AGGR) {
-					rel->l = rel_push_join(sql->sa, r, e->l, re, NULL, e);
+					rel->l = rel_push_join(sql, r, e->l, re, NULL, e);
 				} else {
-					rel->l = rel_push_select(sql->sa, r, e->l, e);
+					rel->l = rel_push_select(sql, r, e->l, e);
 				}
 				/* only pushed down selects are counted */
 				if (r == rel->l) {
@@ -3680,7 +3680,7 @@ rel_push_select_down_union(int *changes, mvc *sql, sql_rel *rel)
 static sql_rel *
 rel_push_project_down_union(int *changes, mvc *sql, sql_rel *rel) 
 {
-	/* first remove distinct if allready unique */
+	/* first remove distinct if already unique */
 	if (rel->op == op_project && need_distinct(rel) && rel->exps && exps_unique(rel->exps))
 		set_nodistinct(rel);
 
@@ -5666,7 +5666,9 @@ rel_merge_table_rewrite(int *changes, mvc *sql, sql_rel *rel)
 					node *n, *m;
 
 					/* rename (mostly the idxs) */
+					MT_lock_set(&prel->exps->ht_lock, "rel_merge_table_rewrite");
 					prel->exps->ht = NULL;
+					MT_lock_unset(&prel->exps->ht_lock, "rel_merge_table_rewrite");
 					for (n = rel->exps->h, m = prel->exps->h; n && m; n = n->next, m = m->next ) {
 						sql_exp *e = n->data;
 						sql_exp *ne = m->data;

@@ -23,6 +23,16 @@
 
 /* This file contains the legacy interface to the join functions */
 
+#undef BATsemijoin
+#undef BATjoin
+#undef BATleftjoin
+#undef BATthetajoin
+#undef BATouterjoin
+#undef BATleftfetchjoin
+#undef BATantijoin
+#undef BATbandjoin
+#undef BATrangejoin
+
 /* Return a subset of l where head elements occur as head element in r. */
 BAT *
 BATsemijoin(BAT *l, BAT *r)

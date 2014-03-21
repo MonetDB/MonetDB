@@ -30,6 +30,10 @@
 #include <bat/bat_storage.h>
 #include <rel_exp.h>
 
+#ifndef HAVE_LLABS
+#define llabs(x)	((x) < 0 ? -(x) : (x))
+#endif
+
 #define DEC_TOSTR(X) \
 	char buf[32]; \
 	X v = *(const X*)a; \
@@ -152,7 +156,7 @@ sql_time_tostr(void *TS_RES, char **buf, int *len, int type, const void *A)
 	if (ts_res->has_tz) {
 		timezone = ts_res->timezone / 60000;
 		*s++ = (ts_res->timezone >= 0) ? '+' : '-';
-		sprintf(s, "%02d:%02d", ABS(timezone) / 60, ABS(timezone) % 60);
+		sprintf(s, "%02d:%02d", (int) (llabs(timezone) / 60), (int) (llabs(timezone) % 60));
 		s += 5;
 	}
 	return (int) (s - *buf);
@@ -202,7 +206,7 @@ sql_timestamp_tostr(void *TS_RES, char **buf, int *len, int type, const void *A)
 	if (ts_res->has_tz) {
 		timezone = ts_res->timezone / 60000;
 		*s++ = (ts_res->timezone >= 0) ? '+' : '-';
-		sprintf(s, "%02d:%02d", ABS(timezone) / 60, ABS(timezone) % 60);
+		sprintf(s, "%02d:%02d", (int) (llabs(timezone) / 60), (int) (llabs(timezone) % 60));
 		s += 5;
 	}
 	return (int) (s - *buf);
@@ -218,7 +222,7 @@ bat_max_strlength(BAT *b)
 
 	BATloop(b, p, q) {
 		str v = (str) BUNtail(bi, p);
-		strLength(&l, v);
+		STRLength(&l, &v);
 
 		if (l == int_nil)
 			l = 0;
@@ -511,7 +515,8 @@ _ASCIIadt_frStr(Column *c, int type, const char *s, const char *e, char quote)
 			return NULL;
 		}
 		if (col->type.digits > 0 && len > 0 && len > (int) col->type.digits) {
-			strLength(&len, c->data);
+			str v = c->data;
+			STRLength(&len, &v);
 			if (len > (int) col->type.digits)
 				return NULL;
 		}
@@ -725,8 +730,12 @@ mvc_import_table(Client cntxt, mvc *m, bstream *bs, char *sname, char *tname, ch
 				BBPunfix(b->batCacheid);
 			}
 		}
-		if (as.error)
+		if (as.error) {
 			sql_error(m, 500, "%s", as.error);
+			if (as.error != M5OutOfMemory)
+				GDKfree(as.error);
+			as.error = NULL;
+		}
 		for (n = t->columns.set->h, i = 0; n; n = n->next, i++) {
 			fmt[i].sep = NULL;
 			fmt[i].rsep = NULL;
@@ -1268,7 +1277,7 @@ export_length(stream *s, int mtype, int eclass, int digits, int scale, int tz, b
 			} else if (p) {
 				str v = (str) p;
 
-				strLength(&l, v);
+				STRLength(&l, &v);
 				if (l == int_nil)
 					l = 0;
 			}
@@ -1495,7 +1504,7 @@ mvc_export_head(backend *b, stream *s, int res_id, int only_header)
 	/* tuple count */
 	if (only_header) {
 		if (t->order) {
-			order = BBPquickdesc(ABS(t->order), FALSE);
+			order = BBPquickdesc(abs(t->order), FALSE);
 			if (!order)
 				return -1;
 

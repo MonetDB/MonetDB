@@ -21,28 +21,14 @@
 # @+ Value Selections
 module algebra;
 
-command exist(b:bat[:any_1,:any_2], h:any_1):bit
+command exist(b:bat[:oid,:any_1], val:any_1):bit
 address ALGexist
-comment "Returns whether 'h' occurs as a head value in b.";
-
-command exist(b:bat[:any_1,:any_2], h:any_1, t:any_2):bit
-address ALGexistBUN
-comment "Returns true when 'h,t' occurs as a bun in b.";
+comment "Returns whether 'val' occurs in b.";
 
 command find(b:bat[:any_1,:any_2], h:any_1):any_2
 address ALGfind
 comment "Returns the tail value 't' for which some [h,t] BUN
 	exists in b.  If no such BUN exists, an error occurs." ;
-
-command position(b:bat[:any_1,:any_2], v:any_1):wrd
-address ALGposition
-comment "Returns BAT position [0.. b.count] of 'v' in the head
-	column of b. It Return an error if 'v' does not exist.";
-
-command position(b:bat[:any_1,:any_2], val:any_1, tval:any_2) :wrd
-address ALGpositionBUN
-comment "Returns the position of the value pair It returns an
-	error if 'val' does not exist.";
 
 command fetch(b:bat[:any_2,:any_1], x:oid) :any_1
 address ALGfetchoid;
@@ -379,14 +365,6 @@ comment "Returns a BAT copy with buns in reverse order";
 #
 # The t-@emph{operand} series are cast into a k-@emph{operand}
 # expression enclosing it with a BATmirror.
-# @- Bun-unique elements
-command unique (b:bat[:any_1,:any_2] ) :bat[:any_1,:any_2]
-address ALGsunique;
-command sunique (b:bat[:any_1,:any_2] ) :bat[:any_1,:any_2]
-address ALGsunique
-comment "Select unique tuples from the input BAT. Double elimination is
-		done over BUNs as a whole (head and tail).  Result is a BAT
-	with real set() semantics.";
 # @- Head-unique elements
 command kunique ( b:bat[:any_1,:any_2] ) :bat[:any_1,:any_2]
 address ALGkunique
@@ -399,19 +377,20 @@ address ALGtunique
 comment "Select unique tuples from the input BAT. Double elimination is
 		done over the BUNs tail. The result is a BAT with property
 		tkeyd()== true";
-
-# @- Bun-intersecting elements
-command intersect ( left:bat[:any_1,:any_2], right:bat[:any_1,:any_2])
-		:bat[:any_1,:any_2]
-address ALGsintersect;
-command sintersect ( left:bat[:any_1,:any_2], right:bat[:any_1,:any_2])
-		:bat[:any_1,:any_2]
-address ALGsintersect
-comment "Returns the intersection taken over *both* columns of two BATs.
-		Results in all BUNs of 'left' that are also in 'right'. Does *not*
-		do double-elimination over the 'left' BUNs, If you want this, use:
-	 'sintersect(sunique(left),sunique(right))'
-	or: 'sunique(sintersect(left,right))'.";
+command subunique(b:bat[:oid,:any_1], s:bat[:oid,:oid]) :bat[:oid,:oid]
+address ALGsubunique2
+comment "Select all unique values from the tail of the first input.
+	Input is a dense-headed BAT, the second input is a
+	dense-headed BAT with sorted tail, output is a dense-headed
+	BAT with in the tail the head value of the input BAT that was
+	selected.  The output BAT is sorted on the tail value.  The
+	second input BAT is a list of candidates.";
+command subunique(b:bat[:oid,:any_1]) :bat[:oid,:oid]
+address ALGsubunique1
+comment "Select all unique values from the tail of the input.
+	Input is a dense-headed BAT, output is a dense-headed BAT with
+	in the tail the head value of the input BAT that was selected.
+	The output BAT is sorted on the tail value.";
 
 # @- Head-intersecting elements (a.k.a. semijoin)
 command semijoin( left:bat[:any_1,:any_2], right:bat[:any_1,:any] )
@@ -437,19 +416,6 @@ address ALGtintersect;
 command tinter( left:bat[:oid,:oid], right:bat[:oid,:oid] ) :bat[:oid,:oid]
 address ALGtinter;
 
-# @- Bun-differing elements
-command difference( left:bat[:any_1,:any_2], right:bat[:any_1,:any_2] )
-		:bat[:any_1,:any_2]
-address ALGsdiff;
-command sdifference( left:bat[:any_1,:any_2], right:bat[:any_1,:any_2] )
-		:bat[:any_1,:any_2]
-address ALGsdiff
-comment "Returns the difference taken over *both* columns of two BATs.
-		Results in all BUNs of 'left' that are *not* in 'right'.
-		Does *not* do double-elimination over the 'left' BUNs.
-		If you want this, use:
-		 'sdifference(left.sunique,right.sunique)'
-	or: 'sdifference(left,right).sunique'.";
 # @- Head-differing elements
 command kdifference ( left:bat[:any_1,:any_2], right:bat[:any_1,:any] )
 		:bat[:any_1,:any_2]
@@ -465,29 +431,13 @@ command tdifference ( left:bat[:any_1,:any_2], right:bat[:any_1,:any] )
 address ALGtdifference;
 command tdiff( left:bat[:oid,:oid], right:bat[:oid,:oid] ) :bat[:oid,:oid]
 address ALGtdiff;
-# @- Unions on bun
-command union ( left:bat[:any_1,:any_2], right:bat[:any_1,:any_2])
-		:bat[:any_1,:any_2]
-address ALGsunion;
-command sunion ( left:bat[:any_1,:any_2], right:bat[:any_1,:any_2])
-		:bat[:any_1,:any_2]
-address ALGsunion
-comment "Returns the union of two BATs; looking at both columns of both BATs.
-		Results in all BUNs of 'left' that are  not in 'right', plus all
-		BUNs of 'right'.  *no* double-elimination is done.
-		If you want this, do:
-	 'sunion(left.sunique,right.sunique)'
-	or: 'sunion(left,right).sunique'.";
 # @- Union on head
 command kunion ( left:bat[:any_1,:any_2], right:bat[:any_1,:any_2])
 		:bat[:any_1,:any_2]
 address ALGkunion
 comment "Returns the union of two BATs; looking at head-columns only.
 		Results in all BUNs of 'left' that are  not in 'right', plus
-	all BUNs of 'right'.  *no* double-elimination is done.
-		If you want this, do:
-	'kunion(left.kunique,right.kunique)'
-	or: 'sunion(left,right).kunique'.";
+	all BUNs of 'right'.  *no* double-elimination is done.";
 command tunion ( left:bat[:any_1,:any_2], right:bat[:any_1,:any_2])
 		:bat[:any_1,:any_2]
 address ALGtunion;
@@ -732,7 +682,7 @@ command materialize(b:bat[:oid,:any_1]):bat[:oid,:any_1]
 address ALGmaterialize
 comment "Materialize the void column";
 
-command reuse(b:bat[:any_1,:any_2]):bat[:any_1,:any_2]
+command reuse(b:bat[:oid,:any_2]):bat[:oid,:any_2]
 address ALGreuse
 comment "Reuse a temporary BAT if you can. Otherwise,
 	allocate enough storage to accept result of an
@@ -765,15 +715,15 @@ comment "Produce a BAT containing the histogram over the tail values.";
 # @emph{min()} and @emph{max()} routines below catch any tail-type.
 # The type-specific routines defined later are faster, and will
 # override these any implementations.
-command cardinality( b:bat[:any_1,:any_2] ) :lng
+command cardinality( b:bat[:oid,:any_2] ) :lng
 address ALGcard
 comment "Return the cardinality of the BAT tail values.";
-
 # Implementations a generic Min and Max routines get declared first. The
 # @emph{ min()} and @emph{ max()} routines below catch any tail-type.
 # The type-specific routines defined later are faster, and will
 # override these any implementations.
 
+#JAQL uses variable head types
 command min(b:bat[:any_1,:any_2]):any_2
 address ALGminany
 comment "Return the lowest tail value or nil.";
@@ -782,134 +732,134 @@ command max(b:bat[:any_1,:any_2]):any_2
 address ALGmaxany
 comment "Return the highest tail value or nil.";
 
-command avg (b:bat[:any_1,:bte] ) :dbl
+command avg (b:bat[:oid,:bte] ) :dbl
 address ALGavg
 comment "Gives the avg of all tail values";
 
-command avg (b:bat[:any_1,:sht] ) :dbl
+command avg (b:bat[:oid,:sht] ) :dbl
 address ALGavg
 comment "Gives the avg of all tail values";
 
-command avg (b:bat[:any_1,:int] ) :dbl
+command avg (b:bat[:oid,:int] ) :dbl
 address ALGavg
 comment "Gives the avg of all tail values";
 
-command avg (b:bat[:any_1,:wrd] ) :dbl
+command avg (b:bat[:oid,:wrd] ) :dbl
 address ALGavg
 comment "Gives the avg of all tail values";
 
-command avg (b:bat[:any_1,:lng] ) :dbl
+command avg (b:bat[:oid,:lng] ) :dbl
 address ALGavg
 comment "Gives the avg of all tail values";
 
-command avg (b:bat[:any_1,:flt] ) :dbl
+command avg (b:bat[:oid,:flt] ) :dbl
 address ALGavg
 comment "Gives the avg of all tail values";
 
-command avg (b:bat[:any_1,:dbl] ) :dbl
+command avg (b:bat[:oid,:dbl] ) :dbl
 address ALGavg
 comment "Gives the avg of all tail values";
 
-# @- Standard deviation
+# Standard deviation
 # The standard deviation of a set is the square root of its variance.
 # The variance is the sum of squares of the deviation of each value in the set
 # from the mean (average) value, divided by the population of the set.
-command stdev(b:bat[:any_1,:bte]) :dbl
+command stdev(b:bat[:oid,:bte]) :dbl
 address ALGstdev
 comment "Gives the standard deviation of all tail values";
-command stdevp(b:bat[:any_1,:bte]) :dbl
+command stdevp(b:bat[:oid,:bte]) :dbl
 address ALGstdevp
 comment "Gives the standard deviation of all tail values";
-command variance(b:bat[:any_1,:bte]) :dbl
+command variance(b:bat[:oid,:bte]) :dbl
 address ALGvariance
 comment "Gives the variance of all tail values";
-command variancep(b:bat[:any_1,:bte]) :dbl
+command variancep(b:bat[:oid,:bte]) :dbl
 address ALGvariancep
 comment "Gives the variance of all tail values";
 
-command stdev(b:bat[:any_1,:sht]) :dbl
+command stdev(b:bat[:oid,:sht]) :dbl
 address ALGstdev
 comment "Gives the standard deviation of all tail values";
-command stdevp(b:bat[:any_1,:sht]) :dbl
+command stdevp(b:bat[:oid,:sht]) :dbl
 address ALGstdevp
 comment "Gives the standard deviation of all tail values";
-command variance(b:bat[:any_1,:sht]) :dbl
+command variance(b:bat[:oid,:sht]) :dbl
 address ALGvariance
 comment "Gives the variance of all tail values";
-command variancep(b:bat[:any_1,:sht]) :dbl
+command variancep(b:bat[:oid,:sht]) :dbl
 address ALGvariancep
 comment "Gives the variance of all tail values";
 
-command stdev(b:bat[:any_1,:int]) :dbl
+command stdev(b:bat[:oid,:int]) :dbl
 address ALGstdev
 comment "Gives the standard deviation of all tail values";
-command stdevp(b:bat[:any_1,:int]) :dbl
+command stdevp(b:bat[:oid,:int]) :dbl
 address ALGstdevp
 comment "Gives the standard deviation of all tail values";
-command variance(b:bat[:any_1,:int]) :dbl
+command variance(b:bat[:oid,:int]) :dbl
 address ALGvariance
 comment "Gives the variance of all tail values";
-command variancep(b:bat[:any_1,:int]) :dbl
+command variancep(b:bat[:oid,:int]) :dbl
 address ALGvariancep
 comment "Gives the variance of all tail values";
 
-command stdev(b:bat[:any_1,:wrd]) :dbl
+command stdev(b:bat[:oid,:wrd]) :dbl
 address ALGstdev
 comment "Gives the standard deviation of all tail values";
-command stdevp(b:bat[:any_1,:wrd]) :dbl
+command stdevp(b:bat[:oid,:wrd]) :dbl
 address ALGstdevp
 comment "Gives the standard deviation of all tail values";
-command variance(b:bat[:any_1,:wrd]) :dbl
+command variance(b:bat[:oid,:wrd]) :dbl
 address ALGvariance
 comment "Gives the variance of all tail values";
-command variancep(b:bat[:any_1,:wrd]) :dbl
+command variancep(b:bat[:oid,:wrd]) :dbl
 address ALGvariancep
 comment "Gives the variance of all tail values";
 
-command stdev(b:bat[:any_1,:lng]) :dbl
+command stdev(b:bat[:oid,:lng]) :dbl
 address ALGstdev
 comment "Gives the standard deviation of all tail values";
-command stdevp(b:bat[:any_1,:lng]) :dbl
+command stdevp(b:bat[:oid,:lng]) :dbl
 address ALGstdevp
 comment "Gives the standard deviation of all tail values";
-command variance(b:bat[:any_1,:lng]) :dbl
+command variance(b:bat[:oid,:lng]) :dbl
 address ALGvariance
 comment "Gives the variance of all tail values";
-command variancep(b:bat[:any_1,:lng]) :dbl
+command variancep(b:bat[:oid,:lng]) :dbl
 address ALGvariancep
 comment "Gives the variance of all tail values";
 
-command stdev(b:bat[:any_1,:flt]) :dbl
+command stdev(b:bat[:oid,:flt]) :dbl
 address ALGstdev
 comment "Gives the standard deviation of all tail values";
-command stdevp(b:bat[:any_1,:flt]) :dbl
+command stdevp(b:bat[:oid,:flt]) :dbl
 address ALGstdevp
 comment "Gives the standard deviation of all tail values";
-command variance(b:bat[:any_1,:flt]) :dbl
+command variance(b:bat[:oid,:flt]) :dbl
 address ALGvariance
 comment "Gives the variance of all tail values";
-command variancep(b:bat[:any_1,:flt]) :dbl
+command variancep(b:bat[:oid,:flt]) :dbl
 address ALGvariancep
 comment "Gives the variance of all tail values";
 
-command stdev(b:bat[:any_1,:dbl]) :dbl
+command stdev(b:bat[:oid,:dbl]) :dbl
 address ALGstdev
 comment "Gives the standard deviation of all tail values";
-command stdevp(b:bat[:any_1,:dbl]) :dbl
+command stdevp(b:bat[:oid,:dbl]) :dbl
 address ALGstdevp
 comment "Gives the standard deviation of all tail values";
-command variance(b:bat[:any_1,:dbl]) :dbl
+command variance(b:bat[:oid,:dbl]) :dbl
 address ALGvariance
 comment "Gives the variance of all tail values";
-command variancep(b:bat[:any_1,:dbl]) :dbl
+command variancep(b:bat[:oid,:dbl]) :dbl
 address ALGvariancep
 comment "Gives the variance of all tail values";
 
 
-# @+ Exented selection predicates
+# Exented selection predicates
 # For SQL convenience we provide a serie of interval selectors.
 module algebra;
-# @+ Modeling With Properties
+# Modeling With Properties
 # The Monet kernel performs run-time optimizations. To choose between
 # alternative algorithms in a sensible way, it maintains knowledge about
 # each BAT, sometimes as a BAT property, sometimes as two
@@ -923,7 +873,7 @@ module algebra;
 # column (ordered(BAT)). Tail columns can be described by
 # using the mirror BAT with the minus operator (ordered(-BAT)).
 #
-# @- Column Properties
+# Column Properties
 # @table @code
 # @item [ordered(BAT) :bit]
 # 	TRUE if the head column is stored in ascending order, else FALSE.

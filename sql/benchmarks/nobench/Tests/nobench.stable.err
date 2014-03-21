@@ -28,8 +28,9 @@ stderr of test 'nobench` in directory 'sql/benchmarks/nobench` itself:
 # 13:08:13 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-28559" "--port=33349"
 # 13:08:13 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-28559/.s.monetdb.33349
+MAPI  = (monetdb) /var/tmp/mtest-24220/.s.monetdb.30760
 QUERY = select cast(json.text(json.filter(js,'dyn1')) as integer) from bench10;
+ERROR = !conversion of string 'GBRDA===' to type int failed.
 
 
 # 13:08:14 >  

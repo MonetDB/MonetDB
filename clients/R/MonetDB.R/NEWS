@@ -1,3 +1,18 @@
+0.9.2
+- monetdb_queryinfo method to find out things about an arbitrary query cheaply
+- new option monetdb.sequential
+
+0.9.1
+- dbGetInfo() now supported on MonetDBConnection (dplyr compatibility)
+- dbTransaction(), dbCommit() and dbRollback() support
+- fixed leaking of socket variable in dbConnect()
+- fixed monetdb.server.setup for UNIX-like systems (Thanks, Enzo)
+- fixed issue in dbClearResult() which produced a protocol error
+
+0.9
+- various extensions to monetdb.read.csv
+- removed monet.frame from this package, moved to github
+
 0.8.5
 - added parameters newline and quote to monetdb.write.csv
 

@@ -18,7 +18,8 @@
  */
 
 /*
- *  Author M. Kersten
+ * (author)  Author M. Kersten
+ * For documentation see website
  */
 #include "monetdb_config.h"
 #include "mal_instruction.h"
@@ -90,13 +91,6 @@ newMalBlkStmt(MalBlkPtr mb, int maxstmts)
 	mb->stmt = p;
 	mb->stop = 0;
 	mb->ssize = maxstmts;
-    if (mb->profiler){
-        mb->profiler = (ProfPtr) GDKrealloc(mb->profiler, (mb->ssize ) * sizeof(ProfRecord));
-		if( mb->profiler == 0){
-			GDKerror("newMalBlk:" MAL_MALLOC_FAIL);
-			return -1;
-		}
-	}
 	mb->recid = recycleSeq++;
 	return 0;
 }
@@ -139,7 +133,6 @@ newMalBlk(int maxvars, int maxstmts)
 	mb->maxarg = MAXARG;		/* the minimum for each instruction */
 	mb->typefixed = 0;
 	mb->flowfixed = 0;
-	mb->profiler = NULL;
 	mb->ptop = mb->psize = 0;
 	mb->prps = NULL;
 	mb->replica = NULL;
@@ -177,12 +170,6 @@ resizeMalBlk(MalBlkPtr mb, int maxstmt, int maxvar)
 	for( i = mb->vsize; i < maxvar; i++)
 		mb->var[i] = 0;
 	mb->vsize = maxvar;
-
-	if ( mb->profiler){
-		mb->profiler = (ProfRecord *) GDKrealloc(mb->profiler, maxstmt * sizeof(ProfRecord));
-		if (mb->profiler == NULL)
-			GDKerror("resizeMalBlk:" MAL_MALLOC_FAIL);
-	}
 }
 /* The resetMalBlk code removes instructions, but without freeing the
  * space. This way the structure is prepared for re-use */
@@ -229,9 +216,6 @@ freeMalBlk(MalBlkPtr mb)
 	if (mb->help)
 		GDKfree(mb->help);
 	mb->help = 0;
-	if (mb->profiler)
-		GDKfree(mb->profiler);
-	mb->profiler = NULL;
 	GDKfree(mb);
 }
 
@@ -302,7 +286,6 @@ copyMalBlk(MalBlkPtr old)
 	mb->optimize = old->optimize;
 	mb->replica = old->replica;
 	mb->maxarg = old->maxarg;
-	mb->profiler = NULL;
 
 	mb->ptop = mb->psize = 0;
 	mb->prps = NULL;
@@ -423,10 +406,6 @@ trimexpand(MalBlkPtr mb, int varsize, int stmtsize)
 	mb->stmt = stmt;
 
 	mb->ssize = mb->ssize + stmtsize;
-	if (mb->profiler) {
-		GDKfree(mb->profiler);
-		mb->profiler = 0;
-	}
 }
 
 void
@@ -592,11 +571,8 @@ removeInstruction(MalBlkPtr mb, InstrPtr p)
 	if (i == mb->stop)
 		return;
 
-	for (; i < mb->stop - 1; i++) {
+	for (; i < mb->stop - 1; i++) 
 		mb->stmt[i] = mb->stmt[i + 1];
-		if (mb->profiler)
-			mb->profiler[i] = mb->profiler[i + 1];
-	}
 	mb->stmt[i] = 0;
 	mb->stop--;
 	assert(i == mb->stop);
@@ -1763,9 +1739,9 @@ setPolymorphic(InstrPtr p, int tpe, int force)
 		else if (getHeadType(tpe) == TYPE_any)
 			c1 = 1;
 	}
-	if (getTailIndex(tpe) > 0)
-		c2 = getTailIndex(tpe);
-	else if (getTailType(tpe) == TYPE_any)
+	if (getColumnIndex(tpe) > 0)
+		c2 = getColumnIndex(tpe);
+	else if (getColumnType(tpe) == TYPE_any)
 		c2 = 1;
 	c1 = c1 > c2 ? c1 : c2;
 	if (c1 > 0 && c1 >= p->polymorphic)
@@ -1791,31 +1767,12 @@ pushInstruction(MalBlkPtr mb, InstrPtr p)
 			return;
 		}
 		memcpy(newblk, mb->stmt, mb->ssize * sizeof(InstrPtr));
-
-		/* also extend the storage space for the profiler */
-		/* left to the environment */
-		if (mb->profiler) {
-			ProfPtr old = mb->profiler;
-			int osize = mb->ssize;
-			mb->profiler = (ProfPtr) GDKzalloc((mb->ssize + STMT_INCREMENT) * sizeof(ProfRecord));
-			if ( mb->profiler == NULL){
-				mb->errors++;
-				showException(GDKout, MAL, "pushInstruction", MAL_MALLOC_FAIL);
-				return;
-			}
-			memcpy((char *) mb->profiler, (char *) old, sizeof(ProfRecord) * osize);
-			GDKfree(old);
-		}
 		mb->ssize += STMT_INCREMENT;
 		GDKfree(mb->stmt);
 		mb->stmt = newblk;
 	}
 	/* If the destination variable has not been set, introduce a
 	 * temporary variable to hold the result instead. */
-/*
-	if (p->argv[0] < 0)
-		p->argv[0] = newTmpVariable(mb, TYPE_any);
-*/
 	assert(p->argc == 0 || p->argv[0] >= 0);
 	if (mb->stmt[i]) {
 		/* if( getModuleId(mb->stmt[i] ) )

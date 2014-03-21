@@ -2094,14 +2094,12 @@ doFile(Mapi mid, const char *file, int useinserts, int interactive, int save_his
 		if (line == NULL) {
 			/* end of file */
 			if (hdl == NULL) {
-				if (line != NULL)
-					continue;
 				/* nothing more to do */
+				free(buf);
 				goto bailout;
 			}
 
 			/* hdl != NULL, we should finish the current query */
-			line = NULL;
 			length = 0;
 		} else
 			length = strlen(line);
@@ -2692,7 +2690,7 @@ set_timezone(Mapi mid)
 	mapi_close_handle(hdl);
 }
 
-static void usage(const char *prog, int xit)
+__declspec(noreturn) static void usage(const char *prog, int xit)
 	__attribute__((__noreturn__));
 
 static void
