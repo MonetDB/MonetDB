@@ -26,10 +26,15 @@
 #include "stream.h"
 
 #include <samtools/bam.h>
+#ifdef HAVE_SAMTOOLS_KSTRING_H
 #include <samtools/kstring.h>
+#else
+/* Ubuntu doesn't distribute samtools/kstring.h, so we need our own
+ * version */
+#include "mykstring.h"
+#endif
 #include "bam_globals.h"
 #include "bam_wrapper.h"
-
 
 str
 ordering_str(ordering ord)
