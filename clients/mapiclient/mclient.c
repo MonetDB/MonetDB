@@ -75,12 +75,6 @@
 #endif
 #endif
 
-/* Samtools is not needed for the SAMrenderer, so commented out
-#ifdef HAVE_SAMTOOLS
-#include "bam.h"
-#endif
-*/
-
 #ifndef S_ISCHR
 #define S_ISCHR(m)	(((m) & S_IFMT) == S_IFCHR)
 #endif
@@ -123,7 +117,7 @@ enum formatters {
 	TESTformatter,
 	CLEANformatter,
 	TIMERformatter,
-    SAMformatter
+	SAMformatter
 };
 static enum formatters formatter = NOformatter;
 char *output = NULL;		/* output format as string */
@@ -1041,74 +1035,79 @@ TIMERrenderer(MapiHdl hdl)
 static void
 SAMrenderer(MapiHdl hdl)
 {
-    /* Variables keeping track of which result set fields map to qname, flag etc. (-1 means that it does not occur in result set) */
-    int field_qname = -1;
-    int field_flag = -1;
-    int field_rname = -1;
-    int field_pos = -1;
-    int field_mapq = -1;
-    int field_cigar = -1;
-    int field_rnext = -1;
-    int field_pnext = -1;
-    int field_tlen = -1;
-    int field_seq = -1;
-    int field_qual = -1;
-    
-    int field_count = mapi_get_field_count(hdl); 
-    int t_fields;
-    
-    int i;
+	/* Variables keeping track of which result set fields map to
+	 * qname, flag etc. (-1 means that it does not occur in result
+	 * set) */
+	int field_qname = -1;
+	int field_flag = -1;
+	int field_rname = -1;
+	int field_pos = -1;
+	int field_mapq = -1;
+	int field_cigar = -1;
+	int field_rnext = -1;
+	int field_pnext = -1;
+	int field_tlen = -1;
+	int field_seq = -1;
+	int field_qual = -1;
 
-/* Samtools is not needed for rendering to SAM, so this is commented out
-#ifndef HAVE_SAMTOOLS
-    mnstr_printf(toConsole, "Result set can not be rendered to BAM file, since Samtools could not be found during compilation of mclient\n");
-    return;
-#endif
-*/
+	int field_count = mapi_get_field_count(hdl);
+	int t_fields;
 
-    /* First, initialize field variables properly */
-    for(i=0; i<field_count; ++i) {
-        char *field_name = mapi_get_name(hdl, i);
-        if(strcmp(field_name, "qname") == 0) { field_qname = i; continue; }
-        if(strcmp(field_name, "flag" ) == 0) { field_flag  = i; continue; }
-        if(strcmp(field_name, "rname") == 0) { field_rname = i; continue; }
-        if(strcmp(field_name, "pos"  ) == 0) { field_pos   = i; continue; }
-        if(strcmp(field_name, "mapq" ) == 0) { field_mapq  = i; continue; }
-        if(strcmp(field_name, "cigar") == 0) { field_cigar = i; continue; }
-        if(strcmp(field_name, "rnext") == 0) { field_rnext = i; continue; }
-        if(strcmp(field_name, "pnext") == 0) { field_pnext = i; continue; }
-        if(strcmp(field_name, "tlen" ) == 0) { field_tlen  = i; continue; }
-        if(strcmp(field_name, "seq"  ) == 0) { field_seq   = i; continue; }
-        if(strcmp(field_name, "qual" ) == 0) { field_qual  = i; continue; }
-        
-        mnstr_printf(stderr_stream, "Unexpected column name in result set: '%s'. Data in this column is not used.\n", field_name);
-    }
-    
-    /* Write all alignments */
-    while (!mnstr_errnr(toConsole) && (t_fields = fetch_row(hdl)) != 0) {
-        if (t_fields != field_count) {
+	int i;
+
+	/* First, initialize field variables properly */
+	for (i = 0; i < field_count; i++) {
+		char *field_name = mapi_get_name(hdl, i);
+		if (strcmp(field_name, "qname") == 0)
+			field_qname = i;
+		else if (strcmp(field_name, "flag" ) == 0)
+			field_flag  = i;
+		else if (strcmp(field_name, "rname") == 0)
+			field_rname = i;
+		else if (strcmp(field_name, "pos"  ) == 0)
+			field_pos   = i;
+		else if (strcmp(field_name, "mapq" ) == 0)
+			field_mapq  = i;
+		else if (strcmp(field_name, "cigar") == 0)
+			field_cigar = i;
+		else if (strcmp(field_name, "rnext") == 0)
+			field_rnext = i;
+		else if (strcmp(field_name, "pnext") == 0)
+			field_pnext = i;
+		else if (strcmp(field_name, "tlen" ) == 0)
+			field_tlen  = i;
+		else if (strcmp(field_name, "seq"  ) == 0)
+			field_seq   = i;
+		else if (strcmp(field_name, "qual" ) == 0)
+			field_qual  = i;
+		else
+			mnstr_printf(stderr_stream, "Unexpected column name in result set: '%s'. Data in this column is not used.\n", field_name);
+	}
+
+	/* Write all alignments */
+	while (!mnstr_errnr(toConsole) && (t_fields = fetch_row(hdl)) != 0) {
+		if (t_fields != field_count) {
 			mnstr_printf(stderr_stream,
-					"invalid tuple received from server, "
-					"got %d columns, expected %d, ignoring\n", t_fields, field_count);
+				     "invalid tuple received from server, "
+				     "got %d columns, expected %d, ignoring\n", t_fields, field_count);
 			continue;
-        }
-        
-        /* Write fields to SAM line */
-        mnstr_printf(toConsole, "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
-            (field_qname == -1 ? "*"   : mapi_fetch_field(hdl, field_qname)),
-            (field_flag  == -1 ? "0"   : mapi_fetch_field(hdl, field_flag )),
-            (field_rname == -1 ? "*"   : mapi_fetch_field(hdl, field_rname)),
-            (field_pos   == -1 ? "0"   : mapi_fetch_field(hdl, field_pos  )),
-            (field_mapq  == -1 ? "255" : mapi_fetch_field(hdl, field_mapq )),
-            (field_cigar == -1 ? "*"   : mapi_fetch_field(hdl, field_cigar)),
-            (field_rnext == -1 ? "*"   : mapi_fetch_field(hdl, field_rnext)),
-            (field_pnext == -1 ? "0"   : mapi_fetch_field(hdl, field_pnext)),
-            (field_tlen  == -1 ? "0"   : mapi_fetch_field(hdl, field_tlen )),
-            (field_seq   == -1 ? "*"   : mapi_fetch_field(hdl, field_seq  )),
-            (field_qual  == -1 ? "*"   : mapi_fetch_field(hdl, field_qual)));
-    }
-}
+		}
 
+		/* Write fields to SAM line */
+		mnstr_printf(toConsole, "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
+			     (field_qname == -1 ? "*"   : mapi_fetch_field(hdl, field_qname)),
+			     (field_flag  == -1 ? "0"   : mapi_fetch_field(hdl, field_flag )),
+			     (field_rname == -1 ? "*"   : mapi_fetch_field(hdl, field_rname)),
+			     (field_pos   == -1 ? "0"   : mapi_fetch_field(hdl, field_pos  )),
+			     (field_mapq  == -1 ? "255" : mapi_fetch_field(hdl, field_mapq )),
+			     (field_cigar == -1 ? "*"   : mapi_fetch_field(hdl, field_cigar)),
+			     (field_rnext == -1 ? "*"   : mapi_fetch_field(hdl, field_rnext)),
+			     (field_pnext == -1 ? "0"   : mapi_fetch_field(hdl, field_pnext)),
+			     (field_tlen  == -1 ? "0"   : mapi_fetch_field(hdl, field_tlen )),
+			     (field_seq   == -1 ? "*"   : mapi_fetch_field(hdl, field_seq  )),
+			     (field_qual  == -1 ? "*"   : mapi_fetch_field(hdl, field_qual)));
+	}
+}
 
 static void
 SQLheader(MapiHdl hdl, int *len, int fields, char more)
@@ -1461,9 +1460,9 @@ setFormatter(char *s)
 		formatter = TESTformatter;
 	} else if (strcmp(s, "timer") == 0) {
 		formatter = TIMERformatter;
-    } else if (strcmp(s, "sam") == 0) {
-        formatter = SAMformatter;
-    } else {
+	} else if (strcmp(s, "sam") == 0) {
+		formatter = SAMformatter;
+	} else {
 		mnstr_printf(toConsole, "unsupported formatter\n");
 	}
 }
@@ -1681,9 +1680,9 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 			case TIMERformatter:
 				TIMERrenderer(hdl);
 				break;
-            case SAMformatter:
-                SAMrenderer(hdl);
-                break;
+			case SAMformatter:
+				SAMrenderer(hdl);
+				break;
 			default:
 				RAWrenderer(hdl);
 				break;
