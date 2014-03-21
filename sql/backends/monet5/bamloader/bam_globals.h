@@ -19,31 +19,33 @@
 
 /*
  * (author) R Cijvat
- * This file contains some global definitions, used by multiple bam library files
+ * This file contains some global definitions, used by multiple bam
+ * library files
  */
 
 #ifndef _BAM_LOG_H
 #define _BAM_LOG_H
 
+/* Macro that enables writing to a log. If the debug flag is not set,
+ * it does not do anything */
 #ifndef NDEBUG
-#define BAM_DEBUG /* We are in 'debug-mode' if --enable-assert was set during configuration, since in that case NDEBUG will not be set. */
-#endif
-
-/* Macro that enables writing to a log. If the debug flag is not set, it does not do anything */
-#ifdef BAM_DEBUG
+/* We are in 'debug-mode' if --enable-assert was set during
+ * configuration, since in that case NDEBUG will not be set. */
 #define TO_LOG(...) fprintf(stderr, __VA_ARGS__)
 #else
 #define TO_LOG(...) (void)0
 #endif
 
-/* Macro to create an exception that uses a previous allocated exception as format parameter. Makes sure that the old one is freed and that
- * msg points to the new exception afterwards.
- * I had a look at rethrow but this does not achieve the right thing.
+/* Macro to create an exception that uses a previously allocated
+ * exception as format parameter. Makes sure that the old one is freed
+ * and that msg points to the new exception afterwards.  I had a look
+ * at rethrow but this does not achieve the right thing.
  */
-#define REUSE_EXCEPTION(msg, type, fnc, ...) { \
-    str msg_tmp = createException(type, fnc, __VA_ARGS__); \
-    GDKfree(msg); \
-    msg = msg_tmp; \
-}
+#define REUSE_EXCEPTION(msg, type, fnc, ...)				\
+	do {								\
+		str msg_tmp = createException(type, fnc, __VA_ARGS__);	\
+		GDKfree(msg);						\
+		msg = msg_tmp;						\
+	} while (0)
 
 #endif

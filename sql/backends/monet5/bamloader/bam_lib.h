@@ -19,7 +19,8 @@
 
 /*
  * (author) R Cijvat
- * The functions in this file represent the BAM SQL library, that make querying BAM data easier.
+ * The functions in this file represent the BAM SQL library, that make
+ * querying BAM data easier.
  */
 
 #ifndef _BAM_LIB_H
@@ -37,14 +38,14 @@
 #define bam_export extern
 #endif
 
-bam_export str bam_flag(bit *ret, sht *flag, str *name);
-bam_export str reverse_seq(str *ret, str *seq);
-bam_export str reverse_qual(str *ret, str *qual);
-bam_export str seq_length(int *ret, str *cigar);
+bam_export str bam_flag(bit * ret, sht * flag, str * name);
+bam_export str reverse_seq(str * ret, str * seq);
+bam_export str reverse_qual(str * ret, str * qual);
+bam_export str seq_length(int *ret, str * cigar);
 
-bam_export str bam_flag_bat(bat *ret, bat *bid, str *name);
-bam_export str reverse_seq_bat(bat *ret, bat *bid);
-bam_export str reverse_qual_bat(bat *ret, bat *bid);
-bam_export str seq_length_bat(bat *ret, bat *bid);
+bam_export str bam_flag_bat(bat * ret, bat * bid, str * name);
+bam_export str reverse_seq_bat(bat * ret, bat * bid);
+bam_export str reverse_qual_bat(bat * ret, bat * bid);
+bam_export str seq_length_bat(bat * ret, bat * bid);
 
 #endif

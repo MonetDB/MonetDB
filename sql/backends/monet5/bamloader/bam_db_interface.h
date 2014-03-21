@@ -19,9 +19,10 @@
 
 /*
  * (author) R Cijvat
- * The code in this file handles all communication that is done with the running database.
+ * The code in this file handles all communication that is done with
+ * the running database.
  */
- 
+
 
 #ifndef _BAM_DB_INTERFACE_H
 #define _BAM_DB_INTERFACE_H
@@ -39,8 +40,9 @@
 }
 
 
-/* SQL code for creating header tables; Put in the header to enable other files to use these SQL queries
- * as arguments for making calls to create_table_if_not_exists function */
+/* SQL code for creating header tables; Put in the header to enable
+ * other files to use these SQL queries as arguments for making calls
+ * to create_table_if_not_exists function */
 #define SQL_CREATE_FILES \
     "CREATE TABLE bam.files ( \n\
         file_id                        BIGINT      NOT NULL, \n\
@@ -97,12 +99,15 @@
     );"
 
 
-str create_schema_if_not_exists(Client cntxt, mvc *m, str schemaname, str descr, sql_schema **ret);
-str create_table_if_not_exists(Client cntxt, mvc *m, sql_schema *s, str tablename, str sql_creation, str descr, sql_table **ret);
-str next_file_id(mvc *m, sql_table *files, lng *next_file_id);
-str create_alignment_storage_0(Client cntxt, str descr, bam_wrapper *bw);
-str create_alignment_storage_1(Client cntxt, str descr, bam_wrapper *bw);
-str copy_into_db(Client cntxt, bam_wrapper *bw);
+str create_schema_if_not_exists(Client cntxt, mvc * m, str schemaname,
+				str descr, sql_schema ** ret);
+str create_table_if_not_exists(Client cntxt, mvc * m, sql_schema * s,
+			       str tablename, str sql_creation, str descr,
+			       sql_table ** ret);
+str next_file_id(mvc * m, sql_table * files, lng * next_file_id);
+str create_alignment_storage_0(Client cntxt, str descr, bam_wrapper * bw);
+str create_alignment_storage_1(Client cntxt, str descr, bam_wrapper * bw);
+str copy_into_db(Client cntxt, bam_wrapper * bw);
 str drop_file(Client cntxt, str descr, lng file_id, sht dbschema);
 
 #endif
