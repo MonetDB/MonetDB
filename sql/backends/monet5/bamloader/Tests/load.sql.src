@@ -1,2 +1,0 @@
-CALL bam_loader_repos('/export/scratch2/robin/Monet_bamloader/SOURCE/MonetDB/sql/backends/monet5/bamloader/Tests/bam', 0, 8);
-CALL bam_loader_repos('/export/scratch2/robin/Monet_bamloader/SOURCE/MonetDB/sql/backends/monet5/bamloader/Tests/bam/queryname', 1, 8);

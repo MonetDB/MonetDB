@@ -1,0 +1,3 @@
+samtools sort -f -n -@ 32 $TSTSRCDIR/bam/toy.bam $TSTSRCDIR/bam/queryname/toy.bam
+
+samtools index $TSTSRCDIR/bam/toy_coordinate.bam
