@@ -40998,89 +40998,13 @@ command pcre.select(pat:str,strs:bat[:oid,:str]):bat[:oid,:str]
 address PCREselectDef;
 comment Select tuples based on the pattern
 
-command pqueue.dequeue_max(h:bat[:oid,:any_1]):void 
-address PQdequeue_anymax;
-comment Removes top element of the max-pqueue and updates it
+pattern pqueue.topn_max(a:bat[:oid,:any_1],n:wrd,elim:bit):bat[:oid,:oid] 
+address PQtopn_max;
+comment Return the top n elements using a min-pqueue with/without duplicate elimination
 
-command pqueue.dequeue_min(h:bat[:oid,:any_1]):void 
-address PQdequeue_anymin;
-comment Removes top element of the min-pqueue and updates it
-
-command pqueue.dequeue_max(h:bat[:oid,:dbl]):void 
-address PQdequeue_dblmax;
-command pqueue.dequeue_min(h:bat[:oid,:dbl]):void 
-address PQdequeue_fltmin;
-command pqueue.dequeue_max(h:bat[:oid,:flt]):void 
-address PQdequeue_fltmax;
-command pqueue.dequeue_min(h:bat[:oid,:flt]):void 
-address PQdequeue_fltmin;
-command pqueue.dequeue_max(h:bat[:oid,:lng]):void 
-address PQdequeue_lngmax;
-command pqueue.dequeue_min(h:bat[:oid,:lng]):void 
-address PQdequeue_lngmin;
-command pqueue.dequeue_max(h:bat[:oid,:wrd]):void 
-address PQdequeue_wrdmax;
-command pqueue.dequeue_min(h:bat[:oid,:wrd]):void 
-address PQdequeue_wrdmin;
-command pqueue.dequeue_max(h:bat[:oid,:int]):void 
-address PQdequeue_intmax;
-command pqueue.dequeue_min(h:bat[:oid,:int]):void 
-address PQdequeue_intmin;
-command pqueue.dequeue_max(h:bat[:oid,:sht]):void 
-address PQdequeue_shtmax;
-command pqueue.dequeue_min(h:bat[:oid,:sht]):void 
-address PQdequeue_shtmin;
-command pqueue.dequeue_max(h:bat[:oid,:bte]):void 
-address PQdequeue_btemax;
-comment Removes top element of the max-pqueue and updates it
-
-command pqueue.dequeue_min(h:bat[:oid,:bte]):void 
-address PQdequeue_btemin;
-comment Removes top element of the min-pqueue and updates it
-
-pattern pqueue.enqueue_max(h:bat[:oid,:any_1],id:oid,value:any_1):void 
-address PQenqueue_anymax;
-comment Inserts element (oid,any) in the max-pqueue
-
-pattern pqueue.enqueue_min(h:bat[:oid,:any_1],id:oid,value:any_1):void 
-address PQenqueue_anymin;
-comment Inserts element (oid,any) in the min-pqueue
-
-command pqueue.enqueue_max(h:bat[:oid,:dbl],id:oid,value:dbl):void 
-address PQenqueue_dblmax;
-command pqueue.enqueue_min(h:bat[:oid,:dbl],id:oid,value:flt):void 
-address PQenqueue_fltmin;
-command pqueue.enqueue_max(h:bat[:oid,:flt],id:oid,value:flt):void 
-address PQenqueue_fltmax;
-command pqueue.enqueue_min(h:bat[:oid,:flt],id:oid,value:flt):void 
-address PQenqueue_fltmin;
-command pqueue.enqueue_max(h:bat[:oid,:lng],id:oid,value:lng):void 
-address PQenqueue_lngmax;
-command pqueue.enqueue_min(h:bat[:oid,:lng],id:oid,value:lng):void 
-address PQenqueue_lngmin;
-command pqueue.enqueue_max(h:bat[:oid,:wrd],id:oid,value:wrd):void 
-address PQenqueue_wrdmax;
-command pqueue.enqueue_min(h:bat[:oid,:wrd],id:oid,value:wrd):void 
-address PQenqueue_wrdmin;
-command pqueue.enqueue_max(h:bat[:oid,:int],id:oid,value:int):void 
-address PQenqueue_intmax;
-command pqueue.enqueue_min(h:bat[:oid,:int],id:oid,value:int):void 
-address PQenqueue_intmin;
-command pqueue.enqueue_max(h:bat[:oid,:sht],id:oid,value:sht):void 
-address PQenqueue_shtmax;
-command pqueue.enqueue_min(h:bat[:oid,:sht],id:oid,value:sht):void 
-address PQenqueue_shtmin;
-command pqueue.enqueue_max(h:bat[:oid,:bte],id:oid,value:bte):void 
-address PQenqueue_btemax;
-comment Inserts element (oid,bte) in the max-pqueue
-
-command pqueue.enqueue_min(h:bat[:oid,:bte],id:oid,value:bte):void 
-address PQenqueue_btemin;
-comment Inserts element (oid,bte) in the min-pqueue
-
-command pqueue.init(a:bat[:oid,:any_1],maxsize:wrd):bat[:oid,:any_1] 
-address PQinit;
-comment Creates an empty pqueue of bat a's tailtype with maximum size maxsize
+pattern pqueue.topn_min(a:bat[:oid,:any_1],n:wrd,elim:bit):bat[:oid,:oid] 
+address PQtopn_min;
+comment Return the top n elements using a min-pqueue with/without duplicate elimination
 
 command pqueue.topn_max(a:bat[:oid,:oid],t:bat[:void,:any_1],n:wrd):bat[:oid,:oid] 
 address PQtopn2_anymax;
@@ -41094,10 +41018,6 @@ command pqueue.topn_max(t:bat[:oid,:any_1],n:wrd):bat[:oid,:oid]
 address PQtopn_anymax;
 comment Return the topn elements of the bat t using a max-pqueue
 
-pattern pqueue.topreplace_max(h:bat[:oid,:any_1],id:oid,value:any_1):void 
-address PQtopreplace_anymax;
-comment Replaces top element with input and updates max-pqueue
-
 command pqueue.topn_min(a:bat[:oid,:oid],t:bat[:void,:any_1],n:wrd):bat[:oid,:oid] 
 address PQtopn2_anymin;
 comment Return the topn elements of the bat t using a min-pqueue
@@ -41110,73 +41030,37 @@ command pqueue.topn_min(t:bat[:oid,:any_1],n:wrd):bat[:oid,:oid]
 address PQtopn_anymin;
 comment Return the topn elements of the bat t using a min-pqueue
 
-pattern pqueue.topreplace_min(h:bat[:oid,:any_1],id:oid,value:any_1):void 
-address PQtopreplace_anymin;
-comment Replaces top element with input and updates min-pqueue
-
 command pqueue.topn_max(t:bat[:oid,:dbl],n:wrd):bat[:oid,:oid] 
 address PQtopn_dblmax;
-command pqueue.topreplace_max(h:bat[:oid,:dbl],id:oid,value:dbl):void 
-address PQtopreplace_dblmax;
 command pqueue.topn_min(t:bat[:oid,:dbl],n:wrd):bat[:oid,:oid] 
 address PQtopn_fltmin;
-command pqueue.topreplace_min(h:bat[:oid,:dbl],id:oid,value:flt):void 
-address PQtopreplace_fltmin;
 command pqueue.topn_max(t:bat[:oid,:flt],n:wrd):bat[:oid,:oid] 
 address PQtopn_fltmax;
-command pqueue.topreplace_max(h:bat[:oid,:flt],id:oid,value:flt):void 
-address PQtopreplace_fltmax;
 command pqueue.topn_min(t:bat[:oid,:flt],n:wrd):bat[:oid,:oid] 
 address PQtopn_fltmin;
-command pqueue.topreplace_min(h:bat[:oid,:flt],id:oid,value:flt):void 
-address PQtopreplace_fltmin;
 command pqueue.topn_max(t:bat[:oid,:lng],n:wrd):bat[:oid,:oid] 
 address PQtopn_lngmax;
-command pqueue.topreplace_max(h:bat[:oid,:lng],id:oid,value:lng):void 
-address PQtopreplace_lngmax;
 command pqueue.topn_min(t:bat[:oid,:lng],n:wrd):bat[:oid,:oid] 
 address PQtopn_lngmin;
-command pqueue.topreplace_min(h:bat[:oid,:lng],id:oid,value:lng):void 
-address PQtopreplace_lngmin;
 command pqueue.topn_max(t:bat[:oid,:wrd],n:wrd):bat[:oid,:oid] 
 address PQtopn_wrdmax;
-command pqueue.topreplace_max(h:bat[:oid,:wrd],id:oid,value:wrd):void 
-address PQtopreplace_wrdmax;
 command pqueue.topn_min(t:bat[:oid,:wrd],n:wrd):bat[:oid,:oid] 
 address PQtopn_wrdmin;
-command pqueue.topreplace_min(h:bat[:oid,:wrd],id:oid,value:wrd):void 
-address PQtopreplace_wrdmin;
 command pqueue.topn_max(t:bat[:oid,:int],n:wrd):bat[:oid,:oid] 
 address PQtopn_intmax;
-command pqueue.topreplace_max(h:bat[:oid,:int],id:oid,value:int):void 
-address PQtopreplace_intmax;
 command pqueue.topn_min(t:bat[:oid,:int],n:wrd):bat[:oid,:oid] 
 address PQtopn_intmin;
-command pqueue.topreplace_min(h:bat[:oid,:int],id:oid,value:int):void 
-address PQtopreplace_intmin;
 command pqueue.topn_max(t:bat[:oid,:sht],n:wrd):bat[:oid,:oid] 
 address PQtopn_shtmax;
-command pqueue.topreplace_max(h:bat[:oid,:sht],id:oid,value:sht):void 
-address PQtopreplace_shtmax;
 command pqueue.topn_min(t:bat[:oid,:sht],n:wrd):bat[:oid,:oid] 
 address PQtopn_shtmin;
-command pqueue.topreplace_min(h:bat[:oid,:sht],id:oid,value:sht):void 
-address PQtopreplace_shtmin;
 command pqueue.topn_max(t:bat[:oid,:bte],n:wrd):bat[:oid,:oid] 
 address PQtopn_btemax;
 comment Return the topn elements of the bat t using a max-pqueue
 
-command pqueue.topreplace_max(h:bat[:oid,:bte],id:oid,value:bte):void 
-address PQtopreplace_btemax;
-comment Replaces top element with input and updates max-pqueue
-
 command pqueue.topn_min(t:bat[:oid,:bte],n:wrd):bat[:oid,:oid] 
 address PQtopn_btemin;
 comment Return the topn elements of the bat t using a min-pqueue
-
-command pqueue.topreplace_min(h:bat[:oid,:bte],id:oid,value:bte):void 
-address PQtopreplace_btemin;
-comment Replaces top element with input and updates min-pqueue
 
 command pqueue.utopn_max(a:bat[:oid,:oid],t:bat[:void,:any_1],n:wrd):bat[:oid,:oid] 
 address PQutopn2_anymax;
