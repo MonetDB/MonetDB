@@ -1334,7 +1334,7 @@ stack_pop_frame(mvc *sql)
 		_DELETE(v->name);
 		VALclear(&v->value);
 		v->value.vtype = 0;
-		if (v->t) 
+		if (v->t && v->view) 
 			table_destroy(v->t);
 		else if (v->rel)
 			rel_destroy(v->rel);

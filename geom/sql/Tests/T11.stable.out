@@ -20,21 +20,16 @@ stdout of test 'T11` in directory 'geom/sql` itself:
 # MonetDB/SQL module loaded
 
 Ready.
-#WARNING To speedup geom.IsEmpty a bulk operator implementation is needed
 
 # 22:35:53 >  
 # 22:35:53 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-29384" "--port=35910"
 # 22:35:53 >  
 
-#SELECT IsEmpty(centerline)
-#FROM road_segments
-#WHERE name = 'Route 5';
+#SELECT IsEmpty(centerline) FROM road_segments WHERE name = 'Route 5' AND aliases = 'Main Street';
 % sys.L # table_name
 % isempty_centerline # name
 % boolean # type
 % 5 # length
-[ false	]
-[ false	]
 [ false	]
 
 # 22:35:53 >  

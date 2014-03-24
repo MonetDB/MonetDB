@@ -20,15 +20,12 @@ stdout of test 'T10` in directory 'geom/sql` itself:
 # MonetDB/SQL module loaded
 
 Ready.
-#WARNING To speedup geom.SRID a bulk operator implementation is needed
 
 # 07:38:49 >  
 # 07:38:49 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-3079" "--port=37052"
 # 07:38:49 >  
 
-#SELECT SRID(boundary)
-#FROM named_places
-#WHERE name = 'Goose Island';
+#SELECT SRID(boundary) FROM named_places WHERE name = 'Goose Island';
 % sys.L # table_name
 % srid_boundary # name
 % int # type

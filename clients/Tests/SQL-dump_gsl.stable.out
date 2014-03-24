@@ -5609,7 +5609,7 @@ CREATE TABLE "sys"."functions" (
 COPY 1271 RECORDS INTO "sys"."functions" FROM stdin USING DELIMITERS '\t','\n','"';
 28	"not_uniques"	"not_uniques"	"sql"	false	1	false	false	false	0
 29	"not_uniques"	"not_uniques"	"sql"	false	1	false	false	false	0
-30	"hash"	"hash"	"calc"	false	1	false	false	false	0
+30	"hash"	"hash"	"mkey"	false	1	false	false	false	0
 31	"rotate_xor_hash"	"rotate_xor_hash"	"calc"	false	1	false	false	false	0
 32	"="	"="	"calc"	false	1	false	false	false	0
 33	"<>"	"!="	"calc"	false	1	false	false	false	0

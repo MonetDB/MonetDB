@@ -2415,7 +2415,7 @@ address ALGgroupby;
 comment Produces a new BAT with groups identified by the head column. The result contains tail times the head value, ie the tail contains the result group sizes.
 
 command algebra.ilikesubselect(s:bat[:oid,:str],pat:bat[:oid,:str],esc:str) (l:bat[:oid,:oid],r:bat[:oid,:oid]) 
-address PCREilike_join_pcre;
+address PCREilike_join_pcr5;
 function algebra.ilikesubselect(b:bat[:oid,:str],cand:bat[:oid,:oid],pat:str,esc:str,anti:bit):bat[:oid,:oid];
 function algebra.ilikesubselect(b:bat[:oid,:str],pat:str,esc:str,anti:bit):bat[:oid,:oid];
 command algebra.indexjoin(left:bat[:any_1,:any_2],right:bat[:any_2,:any_3]):bat[:any_1,:any_3] 
@@ -3021,14 +3021,6 @@ command batstr.like(s:bat[:oid,:str],pat:str):bat[:oid,:bit]
 address BATPCRElike2;
 command batstr.like(s:bat[:oid,:str],pat:str,esc:str):bat[:oid,:bit] 
 address BATPCRElike;
-command batstr.like_uselect(s:bat[:oid,:str],pat:str,esc:str):bat[:oid,:void] 
-address STRbatlike_uselect;
-comment Perform SQL like operation against a string bat
-
-command batstr.like_uselect(s:bat[:oid,:str],pat:str):bat[:oid,:void] 
-address STRbatlike_uselect2;
-comment Perform SQL like operation against a string bat
-
 command batstr.ltrim(s:bat[:oid,:str]):bat[:oid,:str] 
 address STRbatLtrim;
 comment Strip whitespaces from start of a string.
@@ -3048,10 +3040,6 @@ address BATPCREnotlike;
 command batstr.nbytes(s:bat[:oid,:str]):bat[:oid,:int] 
 address STRbatBytes;
 comment Return the string length in bytes.
-
-command batstr.replace(s:bat[:oid,:str],pat:str,s2:str):bat[:oid,:str] 
-address STRbatreplace;
-comment Insert a string into another
 
 command batstr.r_search(s:bat[:oid,:str],c:str):bat[:oid,:int] 
 address STRbatRstrSearchcst;
@@ -32082,18 +32070,6 @@ pattern bbp.bind(name:str):bat[:oid,:any_2]
 address CMDbbpbind;
 comment Locate the BAT using its logical name
 
-command bbp.compress(b:bat[:oid,:any_2],fnme:str):bat[:oid,:any_2] 
-address CMDbbpcompress;
-comment Generate a compressed image of the BAT on a specific file
-
-command bbp.decompress(b:bat[:oid,:any_2],fnme:str):bat[:oid,:any_2] 
-address CMDbbpdecompress;
-comment Obtain a temporary decompressed image of a BAT from a specific file
-
-command bbp.expand(b:bat[:oid,:any_2],fnme:str):bat[:oid,:any_2] 
-address CMDbbpexpand;
-comment Expand a compressed image of BAT heaps
-
 command bbp.getPageSize():int 
 address CMDgetPageSize;
 comment Obtain the memory page size
@@ -32157,10 +32133,6 @@ comment Map BAT into its bbp name
 command bbp.getIndex(b:bat[:oid,:any_2]):int 
 address CMDbbpgetIndex;
 comment Retrieve the index in the BBP
-
-command bbp.truncate(b:bat[:oid,:any_2],fnme:str):bat[:oid,:any_2] 
-address CMDbbptruncate;
-comment Truncate the heaps if a compressed image exist
 
 command blob.blob(s:str):blob 
 address BLOBblob_fromstr;
@@ -39627,30 +39599,6 @@ pattern language.source(f:str):void
 address CMDevalFile;
 comment Merge the instructions stored in the file with the current program.
 
-command lock.create():lock 
-address LCKcreate;
-comment Create an unset lock
-
-command lock.destroy(l:lock):void 
-address LCKdestroy;
-comment Destroy a lock
-
-command lock.set(l:lock):void 
-address LCKset;
-comment Try to set a lock. If set, block till it is freed
-
-command lock.tostr(l:lock):void 
-address lockToStr;
-comment Overloaded atom function
-
-command lock.try(l:lock):int 
-address LCKtry;
-comment Try a lock. If free set it, if not return EBUSY
-
-command lock.unset(l:lock):void 
-address LCKunset;
-comment Unset a lock
-
 command lsst.angsep(ra1:dbl,dec1:dbl,ra2:dbl,dec2:dbl):dbl 
 address qserv_angSep;
 comment Returns the angular separation in degrees between two sphericalcoordinate pairs (ra1,dec1) and (ra2,dec2)
@@ -40734,12 +40682,6 @@ comment Duplicate constant removal optimizer
 
 pattern optimizer.constants():str 
 address OPTwrapper;
-pattern optimizer.compression(mod:str,fcn:str):str 
-address OPTwrapper;
-comment Compression code injection
-
-pattern optimizer.compression():str 
-address OPTwrapper;
 pattern optimizer.commonTerms(mod:any_1,fcn:any_2):str 
 address OPTwrapper;
 comment Common sub-expression optimizer
@@ -41014,57 +40956,22 @@ comment Collect trace of a specific operation
 
 pattern optimizer.trace():str 
 address OPTwrapper;
-command pcre.compile(pat:str):pcre 
-address PCREcompile_wrap;
-comment compile a pattern
-
-command pcre.#del():void 
-address pcre_del;
-command pcre.#fromstr():void 
-address pcre_fromstr;
-command pcre.#heap():void 
-address pcre_heap;
-command pcre.#hash():void 
-address pcre_hash;
 command pcre.imatch(s:str,pat:str):bit 
 address PCREimatch;
 comment Caseless Perl Compatible Regular Expression pattern matching against a string
 
-function pcre.ilike_filter(s:bat[:oid,:str],pat:str):bat[:oid,:str];
-command pcre.ilike_select(s:bat[:oid,:str],pat:str,esc:str):bat[:oid,:str] 
-address PCREilike_select_pcre;
 command pcre.ilikesubselect(s:bat[:oid,:str],pat:bat[:oid,:str],esc:str) (l:bat[:oid,:oid],r:bat[:oid,:oid]) 
 address PCREilike_join_pcre;
-command pcre.ilike_filter(s:bat[:oid,:str],pat:str,esc:str):bat[:oid,:oid] 
-address PCREilike_uselect_pcre;
-command pcre.ilike_uselect(s:bat[:oid,:str],pat:str,esc:str):bat[:oid,:oid] 
-address PCREilike_uselect_pcre;
 command pcre.index(pat:pcre,s:str):int 
 address PCREindex;
 comment match a pattern, return matched position (or 0 when not found)
 
-command pcre.like_select(s:bat[:oid,:str],pat:str,esc:str):bat[:oid,:str] 
-address PCRElike_select_pcre;
 command pcre.likesubselect(s:bat[:oid,:str],pat:bat[:oid,:str],esc:str) (l:bat[:oid,:oid],r:bat[:oid,:oid]) 
 address PCRElike_join_pcre;
-command pcre.like_filter(s:bat[:oid,:str],pat:str,esc:str):bat[:oid,:oid] 
-address PCRElike_uselect_pcre;
-command pcre.like_uselect(s:bat[:oid,:str],pat:str,esc:str):bat[:oid,:oid] 
-address PCRElike_uselect_pcre;
-command pcre.#length():void 
-address pcre_length;
 command pcre.match(s:str,pat:str):bit 
 address PCREmatch;
 comment Perl Compatible Regular Expression pattern matching against a string
 
-command pcre.match(pat:pcre,s:str):bit 
-address PCREexec_wrap;
-comment match a pattern
-
-command pcre.#null():void 
-address pcre_null;
-command pcre.#nequal():void 
-address pcre_nequal;
 pattern pcre.prelude():void 
 address pcre_init;
 comment Initialize pcre
@@ -41077,8 +40984,6 @@ command pcre.patindex(pat:str,s:str):int
 address PCREpatindex;
 comment Location of the first POSIX pattern matching against a string
 
-command pcre.#put():void 
-address pcre_put;
 command pcre.replace(orig:bat[:oid,:str],pat:str,repl:str,flag:str):bat[:oid,:str] 
 address PCREreplace_bat_wrap;
 command pcre.replace(origin:str,pat:str,repl:str,flags:str):str 
@@ -41093,95 +40998,13 @@ command pcre.select(pat:str,strs:bat[:oid,:str]):bat[:oid,:str]
 address PCREselectDef;
 comment Select tuples based on the pattern
 
-command pcre.#tostr():void 
-address pcre_tostr;
-command pcre.uselect(pat:str,strs:bat[:oid,:str]):bat[:oid,:oid] 
-address PCREuselectDef;
-comment Select tuples based on the pattern, only returning the head
+pattern pqueue.topn_max(a:bat[:oid,:any_1],n:wrd,elim:bit):bat[:oid,:oid] 
+address PQtopn_max;
+comment Return the top n elements using a min-pqueue with/without duplicate elimination
 
-command pqueue.dequeue_max(h:bat[:oid,:any_1]):void 
-address PQdequeue_anymax;
-comment Removes top element of the max-pqueue and updates it
-
-command pqueue.dequeue_min(h:bat[:oid,:any_1]):void 
-address PQdequeue_anymin;
-comment Removes top element of the min-pqueue and updates it
-
-command pqueue.dequeue_max(h:bat[:oid,:dbl]):void 
-address PQdequeue_dblmax;
-command pqueue.dequeue_min(h:bat[:oid,:dbl]):void 
-address PQdequeue_fltmin;
-command pqueue.dequeue_max(h:bat[:oid,:flt]):void 
-address PQdequeue_fltmax;
-command pqueue.dequeue_min(h:bat[:oid,:flt]):void 
-address PQdequeue_fltmin;
-command pqueue.dequeue_max(h:bat[:oid,:lng]):void 
-address PQdequeue_lngmax;
-command pqueue.dequeue_min(h:bat[:oid,:lng]):void 
-address PQdequeue_lngmin;
-command pqueue.dequeue_max(h:bat[:oid,:wrd]):void 
-address PQdequeue_wrdmax;
-command pqueue.dequeue_min(h:bat[:oid,:wrd]):void 
-address PQdequeue_wrdmin;
-command pqueue.dequeue_max(h:bat[:oid,:int]):void 
-address PQdequeue_intmax;
-command pqueue.dequeue_min(h:bat[:oid,:int]):void 
-address PQdequeue_intmin;
-command pqueue.dequeue_max(h:bat[:oid,:sht]):void 
-address PQdequeue_shtmax;
-command pqueue.dequeue_min(h:bat[:oid,:sht]):void 
-address PQdequeue_shtmin;
-command pqueue.dequeue_max(h:bat[:oid,:bte]):void 
-address PQdequeue_btemax;
-comment Removes top element of the max-pqueue and updates it
-
-command pqueue.dequeue_min(h:bat[:oid,:bte]):void 
-address PQdequeue_btemin;
-comment Removes top element of the min-pqueue and updates it
-
-pattern pqueue.enqueue_max(h:bat[:oid,:any_1],id:oid,value:any_1):void 
-address PQenqueue_anymax;
-comment Inserts element (oid,any) in the max-pqueue
-
-pattern pqueue.enqueue_min(h:bat[:oid,:any_1],id:oid,value:any_1):void 
-address PQenqueue_anymin;
-comment Inserts element (oid,any) in the min-pqueue
-
-command pqueue.enqueue_max(h:bat[:oid,:dbl],id:oid,value:dbl):void 
-address PQenqueue_dblmax;
-command pqueue.enqueue_min(h:bat[:oid,:dbl],id:oid,value:flt):void 
-address PQenqueue_fltmin;
-command pqueue.enqueue_max(h:bat[:oid,:flt],id:oid,value:flt):void 
-address PQenqueue_fltmax;
-command pqueue.enqueue_min(h:bat[:oid,:flt],id:oid,value:flt):void 
-address PQenqueue_fltmin;
-command pqueue.enqueue_max(h:bat[:oid,:lng],id:oid,value:lng):void 
-address PQenqueue_lngmax;
-command pqueue.enqueue_min(h:bat[:oid,:lng],id:oid,value:lng):void 
-address PQenqueue_lngmin;
-command pqueue.enqueue_max(h:bat[:oid,:wrd],id:oid,value:wrd):void 
-address PQenqueue_wrdmax;
-command pqueue.enqueue_min(h:bat[:oid,:wrd],id:oid,value:wrd):void 
-address PQenqueue_wrdmin;
-command pqueue.enqueue_max(h:bat[:oid,:int],id:oid,value:int):void 
-address PQenqueue_intmax;
-command pqueue.enqueue_min(h:bat[:oid,:int],id:oid,value:int):void 
-address PQenqueue_intmin;
-command pqueue.enqueue_max(h:bat[:oid,:sht],id:oid,value:sht):void 
-address PQenqueue_shtmax;
-command pqueue.enqueue_min(h:bat[:oid,:sht],id:oid,value:sht):void 
-address PQenqueue_shtmin;
-command pqueue.enqueue_max(h:bat[:oid,:bte],id:oid,value:bte):void 
-address PQenqueue_btemax;
-comment Inserts element (oid,bte) in the max-pqueue
-
-command pqueue.enqueue_min(h:bat[:oid,:bte],id:oid,value:bte):void 
-address PQenqueue_btemin;
-comment Inserts element (oid,bte) in the min-pqueue
-
-command pqueue.init(a:bat[:oid,:any_1],maxsize:wrd):bat[:oid,:any_1] 
-address PQinit;
-comment Creates an empty pqueue of bat a's tailtype with maximum size maxsize
+pattern pqueue.topn_min(a:bat[:oid,:any_1],n:wrd,elim:bit):bat[:oid,:oid] 
+address PQtopn_min;
+comment Return the top n elements using a min-pqueue with/without duplicate elimination
 
 command pqueue.topn_max(a:bat[:oid,:oid],t:bat[:void,:any_1],n:wrd):bat[:oid,:oid] 
 address PQtopn2_anymax;
@@ -41195,10 +41018,6 @@ command pqueue.topn_max(t:bat[:oid,:any_1],n:wrd):bat[:oid,:oid]
 address PQtopn_anymax;
 comment Return the topn elements of the bat t using a max-pqueue
 
-pattern pqueue.topreplace_max(h:bat[:oid,:any_1],id:oid,value:any_1):void 
-address PQtopreplace_anymax;
-comment Replaces top element with input and updates max-pqueue
-
 command pqueue.topn_min(a:bat[:oid,:oid],t:bat[:void,:any_1],n:wrd):bat[:oid,:oid] 
 address PQtopn2_anymin;
 comment Return the topn elements of the bat t using a min-pqueue
@@ -41211,73 +41030,37 @@ command pqueue.topn_min(t:bat[:oid,:any_1],n:wrd):bat[:oid,:oid]
 address PQtopn_anymin;
 comment Return the topn elements of the bat t using a min-pqueue
 
-pattern pqueue.topreplace_min(h:bat[:oid,:any_1],id:oid,value:any_1):void 
-address PQtopreplace_anymin;
-comment Replaces top element with input and updates min-pqueue
-
 command pqueue.topn_max(t:bat[:oid,:dbl],n:wrd):bat[:oid,:oid] 
 address PQtopn_dblmax;
-command pqueue.topreplace_max(h:bat[:oid,:dbl],id:oid,value:dbl):void 
-address PQtopreplace_dblmax;
 command pqueue.topn_min(t:bat[:oid,:dbl],n:wrd):bat[:oid,:oid] 
 address PQtopn_fltmin;
-command pqueue.topreplace_min(h:bat[:oid,:dbl],id:oid,value:flt):void 
-address PQtopreplace_fltmin;
 command pqueue.topn_max(t:bat[:oid,:flt],n:wrd):bat[:oid,:oid] 
 address PQtopn_fltmax;
-command pqueue.topreplace_max(h:bat[:oid,:flt],id:oid,value:flt):void 
-address PQtopreplace_fltmax;
 command pqueue.topn_min(t:bat[:oid,:flt],n:wrd):bat[:oid,:oid] 
 address PQtopn_fltmin;
-command pqueue.topreplace_min(h:bat[:oid,:flt],id:oid,value:flt):void 
-address PQtopreplace_fltmin;
 command pqueue.topn_max(t:bat[:oid,:lng],n:wrd):bat[:oid,:oid] 
 address PQtopn_lngmax;
-command pqueue.topreplace_max(h:bat[:oid,:lng],id:oid,value:lng):void 
-address PQtopreplace_lngmax;
 command pqueue.topn_min(t:bat[:oid,:lng],n:wrd):bat[:oid,:oid] 
 address PQtopn_lngmin;
-command pqueue.topreplace_min(h:bat[:oid,:lng],id:oid,value:lng):void 
-address PQtopreplace_lngmin;
 command pqueue.topn_max(t:bat[:oid,:wrd],n:wrd):bat[:oid,:oid] 
 address PQtopn_wrdmax;
-command pqueue.topreplace_max(h:bat[:oid,:wrd],id:oid,value:wrd):void 
-address PQtopreplace_wrdmax;
 command pqueue.topn_min(t:bat[:oid,:wrd],n:wrd):bat[:oid,:oid] 
 address PQtopn_wrdmin;
-command pqueue.topreplace_min(h:bat[:oid,:wrd],id:oid,value:wrd):void 
-address PQtopreplace_wrdmin;
 command pqueue.topn_max(t:bat[:oid,:int],n:wrd):bat[:oid,:oid] 
 address PQtopn_intmax;
-command pqueue.topreplace_max(h:bat[:oid,:int],id:oid,value:int):void 
-address PQtopreplace_intmax;
 command pqueue.topn_min(t:bat[:oid,:int],n:wrd):bat[:oid,:oid] 
 address PQtopn_intmin;
-command pqueue.topreplace_min(h:bat[:oid,:int],id:oid,value:int):void 
-address PQtopreplace_intmin;
 command pqueue.topn_max(t:bat[:oid,:sht],n:wrd):bat[:oid,:oid] 
 address PQtopn_shtmax;
-command pqueue.topreplace_max(h:bat[:oid,:sht],id:oid,value:sht):void 
-address PQtopreplace_shtmax;
 command pqueue.topn_min(t:bat[:oid,:sht],n:wrd):bat[:oid,:oid] 
 address PQtopn_shtmin;
-command pqueue.topreplace_min(h:bat[:oid,:sht],id:oid,value:sht):void 
-address PQtopreplace_shtmin;
 command pqueue.topn_max(t:bat[:oid,:bte],n:wrd):bat[:oid,:oid] 
 address PQtopn_btemax;
 comment Return the topn elements of the bat t using a max-pqueue
 
-command pqueue.topreplace_max(h:bat[:oid,:bte],id:oid,value:bte):void 
-address PQtopreplace_btemax;
-comment Replaces top element with input and updates max-pqueue
-
 command pqueue.topn_min(t:bat[:oid,:bte],n:wrd):bat[:oid,:oid] 
 address PQtopn_btemin;
 comment Return the topn elements of the bat t using a min-pqueue
-
-command pqueue.topreplace_min(h:bat[:oid,:bte],id:oid,value:bte):void 
-address PQtopreplace_btemin;
-comment Replaces top element with input and updates min-pqueue
 
 command pqueue.utopn_max(a:bat[:oid,:oid],t:bat[:void,:any_1],n:wrd):bat[:oid,:oid] 
 address PQutopn2_anymax;
@@ -41676,22 +41459,6 @@ comment Run a program block in parallel.
 pattern scheduler.volumeCost(a:any):lng 
 address RUNvolumeCost;
 comment A sample cost function based on materialized results
-
-command sema.create(init:int):sema 
-address SEMAcreate;
-comment Create an unset sema, with an initial value
-
-command sema.destroy(s:sema):void 
-address SEMAdestroy;
-comment Destroy a semaphore
-
-command sema.down(s:sema):void 
-address SEMAdown;
-comment Decrement the semaphpore if >0; else block
-
-command sema.up(s:sema):void 
-address SEMAup;
-comment Increment the semaphore
 
 command sql.alpha(dec:dbl,theta:dbl):dbl 
 address SQLcst_alpha_cst;
@@ -42360,6 +42127,8 @@ command str.prefix(s:str,l:int):str
 address STRprefix;
 comment Extract the prefix of a given length
 
+command str.replace(origin:str,pat:str,repl:str,flags:str):str 
+address PCREreplace_wrap;
 command str.repeat(s2:str,c:int):str 
 address STRrepeat;
 command str.replace(s:str,pat:str,s2:str):str 

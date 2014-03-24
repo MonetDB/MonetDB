@@ -20,16 +20,12 @@ stdout of test 'T45` in directory 'geom/sql` itself:
 # MonetDB/SQL module loaded
 
 Ready.
-#WARNING To speedup geom.Relate a bulk operator implementation is needed
 
 # 07:38:56 >  
 # 07:38:56 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-3079" "--port=37052"
 # 07:38:56 >  
 
-#SELECT Relate(forests.boundary, named_places.boundary, 'TTTTTTTTT')
-#FROM forests, named_places
-#WHERE forests.name = 'Green Forest'
-#AND named_places.name = 'Ashton';
+#SELECT Relate(forests.boundary, named_places.boundary, 'TTTTTTTTT') FROM forests, named_places WHERE forests.name = 'Green Forest' AND named_places.name = 'Ashton';
 % sys.L # table_name
 % relate_boundary # name
 % boolean # type

@@ -25,14 +25,12 @@ Ready.
 # 07:38:48 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-3079" "--port=37052"
 # 07:38:48 >  
 
-#SELECT srtext
-#FROM SPATIAL_REF_SYS
-#WHERE SRID = 101;
+#SELECT srtext FROM SPATIAL_REF_SYS WHERE SRID = 101;
 % sys.spatial_ref_sys # table_name
 % srtext # name
 % varchar # type
-% 408 # length
-[ "PROJCS[\"UTM_ZONE_14N\",\n\tGEOGCS[\"World Geodetic System 72\",\n\tDATUM[\"WGS_72\",\n\tELLIPSOID[\"NWL_10D\", 6378135, 298.26]],\n\tPRIMEM[\"Greenwich\", 0],\n\tUNIT[\"Meter\", 1.0]],\n\tPROJECTION[\"Transverse_Mercator\"],\n\tPARAMETER[\"False_Easting\", 500000.0],\n\tPARAMETER[\"False_Northing\", 0.0],\n\tPARAMETER[\"Central_Meridian\", -99.0],\n\tPARAMETER[\"Scale_Factor\", 0.9996],\n\tPARAMETER[\"Latitude_of_origin\", 0.0],\n\tUNIT[\"Meter\", 1.0]]"	]
+% 396 # length
+[ "PROJCS[\"UTM_ZONE_14N\",\nGEOGCS[\"World Geodetic System 72\",\nDATUM[\"WGS_72\",\nELLIPSOID[\"NWL_10D\", 6378135, 298.26]],\nPRIMEM[\"Greenwich\", 0],\nUNIT[\"Meter\", 1.0]],\nPROJECTION[\"Transverse_Mercator\"],\nPARAMETER[\"False_Easting\", 500000.0],\nPARAMETER[\"False_Northing\", 0.0],\nPARAMETER[\"Central_Meridian\", -99.0],\nPARAMETER[\"Scale_Factor\", 0.9996],\nPARAMETER[\"Latitude_of_origin\", 0.0],\nUNIT[\"Meter\", 1.0]]"	]
 
 # 07:38:48 >  
 # 07:38:48 >  "Done."

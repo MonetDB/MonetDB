@@ -20,15 +20,12 @@ stdout of test 'T37` in directory 'geom/sql` itself:
 # MonetDB/SQL module loaded
 
 Ready.
-#WARNING To speedup geom.Equals a bulk operator implementation is needed
 
 # 22:14:24 >  
 # 22:14:24 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-27415" "--port=31630"
 # 22:14:24 >  
 
-#SELECT Equals(boundary, PolyFromText('POLYGON( ( 67 13, 67 18, 59 18, 59 13, 67 13) )',1))
-#FROM named_places
-#WHERE name = 'Goose Island';
+#SELECT Equals(boundary, PolyFromText('POLYGON( ( 67 13, 67 18, 59 18, 59 13, 67 13) )',1)) FROM named_places WHERE name = 'Goose Island';
 % sys.L # table_name
 % equals_boundary # name
 % boolean # type

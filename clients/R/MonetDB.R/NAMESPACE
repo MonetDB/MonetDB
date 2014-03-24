@@ -7,6 +7,7 @@ export(monet.read.csv,monetdb.read.csv)
 exportMethods(dbSendUpdate,dbSendUpdateAsync,dbTransaction)
 export(monetdbGetTransferredBytes)
 export(monetdbRtype)
+export(monetdb_queryinfo)
 
 # shorthand for db connections
 export(mc)

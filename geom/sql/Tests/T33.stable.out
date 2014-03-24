@@ -20,15 +20,12 @@ stdout of test 'T33` in directory 'geom/sql` itself:
 # MonetDB/SQL module loaded
 
 Ready.
-#WARNING To speedup geom.Length a bulk operator implementation is needed
 
 # 07:38:53 >  
 # 07:38:53 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-3079" "--port=37052"
 # 07:38:53 >  
 
-#SELECT Length(centerlines)
-#FROM divided_routes
-#WHERE name = 'Route 75';
+#SELECT Length(centerlines) FROM divided_routes WHERE name = 'Route 75';
 % sys.L # table_name
 % length_centerlines # name
 % double # type

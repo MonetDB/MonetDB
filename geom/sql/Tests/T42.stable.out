@@ -20,16 +20,12 @@ stdout of test 'T42` in directory 'geom/sql` itself:
 # MonetDB/SQL module loaded
 
 Ready.
-#WARNING To speedup geom.Crosses a bulk operator implementation is needed
 
 # 22:14:26 >  
 # 22:14:26 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-27415" "--port=31630"
 # 22:14:26 >  
 
-#SELECT Crosses(road_segments.centerline, divided_routes.centerlines)
-#FROM road_segments, divided_routes
-#WHERE road_segments.fid = 102
-#AND divided_routes.name = 'Route 75';
+#SELECT Crosses(road_segments.centerline, divided_routes.centerlines) FROM road_segments, divided_routes WHERE road_segments.fid = 102 AND divided_routes.name = 'Route 75';
 % sys.L # table_name
 % crosses_centerline # name
 % boolean # type

@@ -1844,6 +1844,8 @@ str PQtopn_intmax(int *ret, int *bid, wrd *N);
 str PQtopn_intmin(int *ret, int *bid, wrd *N);
 str PQtopn_lngmax(int *ret, int *bid, wrd *N);
 str PQtopn_lngmin(int *ret, int *bid, wrd *N);
+str PQtopn_max(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+str PQtopn_min(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str PQtopn_oidmax(int *ret, int *bid, wrd *N);
 str PQtopn_oidmin(int *ret, int *bid, wrd *N);
 str PQtopn_shtmax(int *ret, int *bid, wrd *N);

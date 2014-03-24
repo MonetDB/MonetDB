@@ -19,12 +19,117 @@ stdout of test 'pqueue` in directory 'monetdb5/modules/mal` itself:
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
 function user.main():void;
-# init pqueue 
-    X_buffer_type:bat[:oid,:int]  := bat.new(:oid,:int,1);
-    X_buffer := pqueue.init(X_buffer_type,5:wrd);
 # enqueue something  
-    pqueue.enqueue_max(X_buffer,5@0:oid,5:int);
+    b := bat.new(:oid,:int);
+    bat.append(b,1);
+    bat.append(b,0);
+    bat.append(b,2);
+    bat.append(b,2);
+    bat.append(b,5);
+    bat.append(b,5);
+    bat.append(b,3);
+    io.print(b);
+    bp := pqueue.topn_min(b,0:wrd,false);
+    io.print(bp);
+    bp := pqueue.topn_min(b,1:wrd,false);
+    io.print(bp);
+    bp := pqueue.topn_min(b,2:wrd,false);
+    io.print(bp);
+    bp := pqueue.topn_min(b,3:wrd,false);
+    io.print(bp);
+    bp := pqueue.topn_min(b,4:wrd,false);
+    io.print(bp);
+    bp := pqueue.topn_min(b,5:wrd,false);
+    io.print(bp);
+    bp := pqueue.topn_min(b,6:wrd,false);
+    io.print(bp);
+    bp := pqueue.topn_min(b,7:wrd,false);
+    io.print(bp);
+    bp := pqueue.topn_min(b,8:wrd,false);
+    io.print(bp);
 end main;
+#--------------------------#
+# h	t  # name
+# void	int  # type
+#--------------------------#
+[ 0@0,	1  ]
+[ 1@0,	0  ]
+[ 2@0,	2  ]
+[ 3@0,	2  ]
+[ 4@0,	5  ]
+[ 5@0,	5  ]
+[ 6@0,	3  ]
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+[ 0@0,	1@0  ]
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+[ 0@0,	1@0  ]
+[ 1@0,	0@0  ]
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+[ 0@0,	1@0  ]
+[ 1@0,	0@0  ]
+[ 2@0,	2@0  ]
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+[ 0@0,	1@0  ]
+[ 1@0,	0@0  ]
+[ 2@0,	2@0  ]
+[ 3@0,	3@0  ]
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+[ 0@0,	1@0  ]
+[ 1@0,	0@0  ]
+[ 2@0,	2@0  ]
+[ 3@0,	3@0  ]
+[ 4@0,	6@0  ]
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+[ 0@0,	1@0  ]
+[ 1@0,	0@0  ]
+[ 2@0,	2@0  ]
+[ 3@0,	3@0  ]
+[ 4@0,	6@0  ]
+[ 5@0,	5@0  ]
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+[ 0@0,	1@0  ]
+[ 1@0,	0@0  ]
+[ 2@0,	2@0  ]
+[ 3@0,	3@0  ]
+[ 4@0,	6@0  ]
+[ 5@0,	5@0  ]
+[ 6@0,	4@0  ]
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+[ 0@0,	1@0  ]
+[ 1@0,	0@0  ]
+[ 2@0,	2@0  ]
+[ 3@0,	3@0  ]
+[ 4@0,	6@0  ]
+[ 5@0,	5@0  ]
+[ 6@0,	4@0  ]
 
 # 21:06:19 >  
 # 21:06:19 >  "Done."
