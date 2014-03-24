@@ -56,7 +56,6 @@
 #define MAX_TKNZR_DEPTH 256
 #define INDEX MAX_TKNZR_DEPTH
 static int tokenDepth = 0;
-//static BAT *tokenBAT[MAX_TKNZR_DEPTH + 1];
 struct {
 	BAT *idx, *val; 
 } tokenBAT[MAX_TKNZR_DEPTH + 1];
@@ -113,7 +112,6 @@ TKNZRopen(int *ret, str *in)
 	}
 
 	for (depth = 0; depth < MAX_TKNZR_DEPTH; depth++) {
-		//tokenBAT[depth] = 0;
 		tokenBAT[depth].idx = 0;
 		tokenBAT[depth].val = 0;
 	}
@@ -142,7 +140,6 @@ TKNZRopen(int *ret, str *in)
 			throw(MAL, "tokenizer.open", MAL_MALLOC_FAIL);
 		BATkey(b, FALSE);
 		BATseqbase(b, 0);
-		//tokenBAT[INDEX] = b;
 		tokenBAT[INDEX].val = b;
 		if (BKCsetName(&r, (int *) &(b->batCacheid), (str *) &batname) != MAL_SUCCEED)
 			throw(MAL, "tokenizer.open", OPERATION_FAILED);
@@ -150,7 +147,6 @@ TKNZRopen(int *ret, str *in)
 			throw(MAL, "tokenizer.open", OPERATION_FAILED);
 		BUNappend(TRANS, batname, FALSE);
 	} else { /* existing tokenizer */
-		//tokenBAT[INDEX] = BATdescriptor(idx);
 		tokenBAT[INDEX].val = BATdescriptor(idx);
 
 		BUNappend(TRANS, batname, FALSE);
@@ -163,7 +159,7 @@ TKNZRopen(int *ret, str *in)
 			tokenBAT[depth].val = BATdescriptor(idx);
 			BUNappend(TRANS, batname, FALSE);
 
-			//For idx BATs
+			/* For idx BATs */
 			snprintf(batname, 132, "%s_idx_%d", name, depth);
 			idx = BBPindex(batname); 
 			if (idx == 0)
@@ -194,7 +190,6 @@ TKNZRclose(int *r)
 		BBPunfix(tokenBAT[i].idx->batCacheid);
 		BBPunfix(tokenBAT[i].val->batCacheid);
 	}
-	//BBPunfix(tokenBAT[INDEX].idx->batCacheid);
 	BBPunfix(tokenBAT[INDEX].val->batCacheid);
 	tokenDepth = 0;
 
@@ -345,7 +340,7 @@ TKNZRappend(oid *pos, str *s)
 		*pos = BUNfnd(BATmirror(tokenBAT[INDEX].val), (ptr) & comp);
 		if (*pos != BUN_NONE) {
 			/* the string is already there */
-			//printf("The string %s is already there",url);
+			/* printf("The string %s is already there",url); */
 			GDKfree(url);
 			return MAL_SUCCEED;
 		}
@@ -520,7 +515,7 @@ takeOid(oid id, str *val)
 	str parts[MAX_TKNZR_DEPTH];
 	size_t lngth = 0;
 	str s;
-	BATiter biidx; //Iterator for index bat
+	BATiter biidx; /* Iterator for index bat */
 
 	if (id >= BATcount(tokenBAT[INDEX].val)) {
 		throw(MAL, "tokenizer.takeOid", OPERATION_FAILED " illegal oid");
@@ -592,7 +587,6 @@ TKNZRgetLevel(int *r, int *level)
 	if (*level < 0 || *level >= tokenDepth)
 		throw(MAL, "tokenizer.getLevel", OPERATION_FAILED " illegal level");
 	view = VIEWcreate(BATmirror(tokenBAT[*level].idx),tokenBAT[*level].val);
-	//*r = tokenBAT[*level].val->batCacheid;
 	*r = view->batCacheid;
 
 	BBPincref(*r, TRUE);
