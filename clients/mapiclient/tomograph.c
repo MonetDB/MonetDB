@@ -1005,8 +1005,18 @@ showio(void)
 	fprintf(gnudata, "unset ylabel\n");
 	fprintf(gnudata, "set y2tics in (0, "LLFMT".0) nomirror\n", max / beat);
 	fprintf(gnudata, "set y2label \"IO per ms\"\n");
+#ifdef GNUPLOT_463_BUG_ON_FEDORA_20
+/* this is the original version, but on Fedora 20 with
+ * gnuplot-4.6.3-6.fc20.x86_64 it produces a red background on most of
+ * the page */
 	fprintf(gnudata, "plot \"%s.dat\" using 1:(($4+$5)/%d.0) title \"reads\" with boxes fs solid linecolor rgb \"gray\" ,\\\n", (tracefile ? "scratch" : filename), beat);
 	fprintf(gnudata, "\"%s.dat\" using 1:($5/%d.0) title \"writes\" with boxes fs solid linecolor rgb \"red\"  \n", (tracefile ? "scratch" : filename), beat);
+#else
+/* this is a slightly modified version that produces decent results on
+ * all platforms */
+	fprintf(gnudata, "plot \"%s.dat\" using 1:(($4+$5)/%d.0) title \"reads\" with impulses linecolor rgb \"gray\" ,\\\n", (tracefile ? "scratch" : filename), beat);
+	fprintf(gnudata, "\"%s.dat\" using 1:($5/%d.0) title \"writes\" with impulses linecolor rgb \"red\"  \n", (tracefile ? "scratch" : filename), beat);
+#endif
 	fprintf(gnudata, "unset y2label\n");
 	fprintf(gnudata, "unset y2tics\n");
 	fprintf(gnudata, "unset y2range\n");
