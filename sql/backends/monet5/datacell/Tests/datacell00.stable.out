@@ -1,34 +1,43 @@
 stdout of test 'datacell00` in directory 'sql/backends/monet5/datacell` itself:
 
 
-# 16:53:52 >  
-# 16:53:52 >   mserver5  --debug=10 --set gdk_nr_threads=0  --set "gdk_dbfarm=/net/rig.ins.cwi.nl/export/scratch0/manegold/Monet/HG/Aug2011/prefix/--enable-datacell_--disable-debug_--enable-optimize_--disable-assert/var/MonetDB" --set mapi_open=true --set mapi_port=39463 --set monet_prompt= --trace --forcemito --set mal_listing=2  "--dbname=mTests_backends_monet5_datacell" --set mal_listing=0 ; echo ; echo Over..
-# 16:53:52 >  
+# 15:50:08 >  
+# 15:50:08 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30649" "--set" "mapi_usock=/var/tmp/mtest-26552/.s.monetdb.30649" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/Jan2014//Linux/var/MonetDB/mTests_sql_backends_monet5_datacell" "--set" "mal_listing=0"
+# 15:50:08 >  
 
-# MonetDB 5 server v11.5.0
+# MonetDB 5 server v11.17.14
 # This is an unreleased version
-# Serving database 'mTests_backends_monet5_datacell', using 4 threads
+# Serving database 'mTests_sql_backends_monet5_datacell', using 8 threads
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
-# Found 7.749 GiB available main-memory.
+# Found 15.591 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
 # Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
-# Listening for connection requests on mapi:monetdb://rig.ins.cwi.nl:39463/
+# Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:30649/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-26552/.s.monetdb.30649
 # MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
-# MonetDB/DataCell module loaded
+# MonetDB/DataCell loaded
 
 Ready.
-# SQL catalog created, loading sql scripts once
 
+# 15:50:09 >  
+# 15:50:09 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-26552" "--port=30649"
+# 15:50:09 >  
 
-# 16:53:52 >  
-# 16:53:52 >  mclient -lsql -ftest -i -e --host=rig --port=39463 
-# 16:53:52 >  
+#create table datacell.X( id string, tag timestamp, payload int);
+#create table datacell.Y( id string, tag timestamp, payload int, msdelay int);
+#create procedure datacell.transport()
+#begin
+#	-- insert into datacell.Y select *, cast(now() as milliseconds) -  cast(tag as milliseconds) from datacell.X;
+#	 insert into datacell.Y select *, 1 from datacell.X;
+#end;
+#drop procedure datacell.transport;
+#drop table datacell.X;
+#drop table datacell.Y;
 
-= to be checked / approved !
-
-# 16:53:52 >  
-# 16:53:52 >  Done.
-# 16:53:52 >  
+# 15:50:09 >  
+# 15:50:09 >  "Done."
+# 15:50:09 >  
 

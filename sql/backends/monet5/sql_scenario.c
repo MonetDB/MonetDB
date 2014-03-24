@@ -1261,7 +1261,9 @@ SQLexitClient(Client c)
 str
 SQLinitEnvironment(Client cntxt)
 {
-	return SQLinitClient(cntxt);
+	if ( !SQLinitialized)
+		return SQLinitClient(cntxt);
+	return MAL_SUCCEED;
 }
 
 static void

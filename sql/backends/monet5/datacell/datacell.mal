@@ -89,6 +89,15 @@ command threshold{unsafe}(bskt:str, mi:int):bit
 address DCthreshold
 comment "Prefilter on bucket content";
 
+command window{unsafe}(bskt:str, size:bte, slide:bte):bit
+address DCwindowBte
+comment "Slide the basket with a limited number of events";
+command window{unsafe}(bskt:str, size:sht, slide:sht):bit
+address DCwindowSht
+comment "Slide the basket with a limited number of events";
+command window{unsafe}(bskt:str, size:int, slide:int):bit
+address DCwindowInt
+comment "Slide the basket with a limited number of events";
 command window{unsafe}(bskt:str, size:lng, slide:lng):bit
 address DCwindow
 comment "Slide the basket with a limited number of events";
@@ -96,6 +105,18 @@ comment "Slide the basket with a limited number of events";
 command timewindow{unsafe}(bskt:str, N:lng, S:lng):bit
 address DCtimewindow
 comment "Slide the basket with a time window of N milliseconds with stride S milliseconds";
+
+command beat(bskt:str, t:bte):bit
+address DCbeatBte
+comment "Schedule query with T milliseconds interval";
+
+command beat(bskt:str, t:sht):bit
+address DCbeatSht
+comment "Schedule query with T milliseconds interval";
+
+command beat(bskt:str, t:int):bit
+address DCbeatInt
+comment "Schedule query with T milliseconds interval";
 
 command beat(bskt:str, t:lng):bit
 address DCbeat

@@ -1,34 +1,58 @@
 stdout of test 'scenario06` in directory 'sql/backends/monet5/datacell` itself:
 
 
-# 16:51:38 >  
-# 16:51:38 >   mserver5  --debug=10 --set gdk_nr_threads=0  --set "gdk_dbfarm=/net/rig.ins.cwi.nl/export/scratch0/manegold/Monet/HG/Aug2011/prefix/--enable-datacell_--disable-debug_--enable-optimize_--disable-assert/var/MonetDB" --set mapi_open=true --set mapi_port=30145 --set monet_prompt= --trace --forcemito --set mal_listing=2  "--dbname=mTests_backends_monet5_datacell" --set mal_listing=0 ; echo ; echo Over..
-# 16:51:38 >  
+# 15:50:07 >  
+# 15:50:07 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30649" "--set" "mapi_usock=/var/tmp/mtest-26552/.s.monetdb.30649" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/Jan2014//Linux/var/MonetDB/mTests_sql_backends_monet5_datacell" "--set" "mal_listing=0"
+# 15:50:07 >  
 
-# MonetDB 5 server v11.5.0
+# MonetDB 5 server v11.17.14
 # This is an unreleased version
-# Serving database 'mTests_backends_monet5_datacell', using 4 threads
+# Serving database 'mTests_sql_backends_monet5_datacell', using 8 threads
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
-# Found 7.749 GiB available main-memory.
+# Found 15.591 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
 # Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
-# Listening for connection requests on mapi:monetdb://rig.ins.cwi.nl:30145/
+# Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:30649/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-26552/.s.monetdb.30649
 # MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
-# MonetDB/DataCell module loaded
+# MonetDB/DataCell loaded
 
 Ready.
-# SQL catalog created, loading sql scripts once
 
+# 15:50:07 >  
+# 15:50:07 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-26552" "--port=30649"
+# 15:50:07 >  
 
-# 16:51:39 >  
-# 16:51:39 >  mclient -lsql -ftest -i -e --host=rig --port=30145 
-# 16:51:39 >  
+#set optimizer='datacell_pipe';
+#create table datacell.barrelin(
+#    id integer,
+#    tag timestamp,
+#    payload integer
+#);
+#create table datacell.barrelout (like datacell.barrelin);
+#create table datacell.barrellog( ts timestamp, cnt integer);
+#create procedure datacell.splitter()
+#begin
+#	insert into datacell.barrelout select * from datacell.barrelin;
+#	insert into datacell.barrellog values (now(), (select count(*) from datacell.barrelin));
+#end;
+#call datacell.dump();
+#baskets[ 1] datacell.barrelin columns 3 threshold 0 window=[0,0] time window=[0,0] beat 0 milliseconds events 0
+#baskets[ 2] datacell.barrelout columns 3 threshold 0 window=[0,0] time window=[0,0] beat 0 milliseconds events 0
+#receptor datacell.barrelin at localhost:50506 protocol=TCP mode=passive status=running delay=1000 
+#emitter datacell.barrelout at localhost:50606 protocol=UDP mode=active status=running delay=1000
+#scheduler status running
+#[0]	datacell.splitter running delay 0 cycles 0 events 0 time 0 ms
+#<--	datacell.barrelin basket[1] 0 0
+#drop procedure datacell.splitter;
+#drop table datacell.barrelin;
+#drop table datacell.barrelout;
+#drop table datacell.barrellog;
 
-= to be checked / approved !
-
-# 16:51:39 >  
-# 16:51:39 >  Done.
-# 16:51:39 >  
+# 15:50:08 >  
+# 15:50:08 >  "Done."
+# 15:50:08 >  
 
