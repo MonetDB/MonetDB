@@ -107,27 +107,27 @@ run_process_bam_alignments(void *d)
 	reader_thread_data *data = (reader_thread_data *) d;
 	bam_wrapper *bw;
 
-	TO_LOG("#<Thread %d> Starting on next file...\n", data->thread_id);
+	TO_LOG("<Thread %d> Starting on next file...\n", data->thread_id);
 	/* First, find out on which bam wrapper we have to work */
 	MT_lock_set(data->reader_lock, data->reader_lock_ref);
 	if (*data->cur_file == data->nr_files - 1) {
 		/* The last file is already (being) processed, this
 		 * thread is done */
 		MT_lock_unset(data->reader_lock, data->reader_lock_ref);
-		TO_LOG("#<Thread %d> No files left to work on; thread done\n",
+		TO_LOG("<Thread %d> No files left to work on; thread done\n",
 		       data->thread_id);
 		return;
 	}
 	(*data->cur_file) += 1;
 	bw = &data->bws[*data->cur_file];
 	MT_lock_unset(data->reader_lock, data->reader_lock_ref);
-	TO_LOG("#<Thread %d> Processing alignments of file '%s' (file id "
+	TO_LOG("<Thread %d> Processing alignments of file '%s' (file id "
 	       LLFMT ")...\n", data->thread_id, bw->file_location,
 	       bw->file_id);
 
 	if ((data->msg =
 	     process_bam_alignments(bw, data->failure)) != MAL_SUCCEED) {
-		TO_LOG("#<Thread %d> Error while processing alignments of file '%s' (file id " LLFMT ") (%s)\n", data->thread_id, bw->file_location, bw->file_id, data->msg);
+		TO_LOG("<Thread %d> Error while processing alignments of file '%s' (file id " LLFMT ") (%s)\n", data->thread_id, bw->file_location, bw->file_id, data->msg);
 		REUSE_EXCEPTION(data->msg, MAL, "run_process_bam_alignments",
 				"Error while processing alignments of file '%s' (file id "
 				LLFMT "): %s", bw->file_location, bw->file_id,
@@ -137,12 +137,12 @@ run_process_bam_alignments(void *d)
 	if (*data->failure) {
 		/* process_bam_alignments returned because another
 		 * thread failed and not because this thread failed */
-		TO_LOG("#<Thread %d> Exit due to failure in other thread\n",
+		TO_LOG("<Thread %d> Exit due to failure in other thread\n",
 		       data->thread_id);
 		return;
 	}
 
-	TO_LOG("#<Thread %d> All alignments in file '%s' (file id " LLFMT
+	TO_LOG("<Thread %d> All alignments in file '%s' (file id " LLFMT
 	       ") processed!\n", data->thread_id, bw->file_location,
 	       bw->file_id);
 	run_process_bam_alignments(d);
@@ -176,7 +176,7 @@ bam_loader(Client cntxt, MalBlkPtr mb, str * filenames, int nr_files,
 	int i, errnr;
 	str msg = MAL_SUCCEED;
 
-	TO_LOG("#<bam_loader>: Loader started for %d BAM file%s...\n",
+	TO_LOG("<bam_loader>: Loader started for %d BAM file%s...\n",
 	       nr_files, (nr_files != 1 ? "s" : ""));
 
 	/* Check sanity of input */
@@ -233,7 +233,7 @@ bam_loader(Client cntxt, MalBlkPtr mb, str * filenames, int nr_files,
 		goto cleanup;
 
 	/* Get next file id */
-	TO_LOG("#<bam_loader> Retrieving next file id...\n");
+	TO_LOG("<bam_loader> Retrieving next file id...\n");
 	if ((msg = next_file_id(m, files_table, &cur_file_id)) != MAL_SUCCEED) {
 		goto cleanup;
 	}
@@ -250,7 +250,7 @@ bam_loader(Client cntxt, MalBlkPtr mb, str * filenames, int nr_files,
 	memset(bws, 0, nr_files * sizeof(bam_wrapper));
 
 	for (i = 0; i < nr_files; ++i) {
-		TO_LOG("#<bam_loader> Initializing BAM wrapper for file '%s'...\n", filenames[i]);
+		TO_LOG("<bam_loader> Initializing BAM wrapper for file '%s'...\n", filenames[i]);
 		if ((msg =
 		     init_bam_wrapper(bws + i, filenames[i], cur_file_id++,
 				      dbschema)) != MAL_SUCCEED) {
@@ -260,7 +260,7 @@ bam_loader(Client cntxt, MalBlkPtr mb, str * filenames, int nr_files,
 
 	/* Parse all headers */
 	for (i = 0; i < nr_files; ++i) {
-		TO_LOG("#<bam_loader> Parsing BAM header for file '%s'...\n",
+		TO_LOG("<bam_loader> Parsing BAM header for file '%s'...\n",
 		       filenames[i]);
 		if ((msg = process_bam_header(bws + i)) != MAL_SUCCEED) {
 			goto cleanup;
@@ -272,7 +272,7 @@ bam_loader(Client cntxt, MalBlkPtr mb, str * filenames, int nr_files,
 	 * QNAME */
 	if (dbschema == 1) {
 		for (i = 0; i < nr_files; ++i) {
-			TO_LOG("#<bam_loader> Checking sortedness for BAM file '%s'...\n", filenames[i]);
+			TO_LOG("<bam_loader> Checking sortedness for BAM file '%s'...\n", filenames[i]);
 			if (bws[i].ord != ORDERING_QUERYNAME) {
 				msg = createException(MAL, "bam_loader",
 						      "Only BAM files that are sorted on queryname can be inserted into the pairwise storage schema; "
@@ -287,7 +287,7 @@ bam_loader(Client cntxt, MalBlkPtr mb, str * filenames, int nr_files,
 
 	/* Create alignment storage */
 	for (i = 0; i < nr_files; ++i) {
-		TO_LOG("#<bam_loader> Creating alignment tables for BAM file '%s'...\n", filenames[i]);
+		TO_LOG("<bam_loader> Creating alignment tables for BAM file '%s'...\n", filenames[i]);
 		if ((dbschema == 0
 		     && create_alignment_storage_0(cntxt,
 						   "bam.create_storage_0",
@@ -303,7 +303,7 @@ bam_loader(Client cntxt, MalBlkPtr mb, str * filenames, int nr_files,
 
 
 	/* Now create threads to read alignment data of different files */
-	TO_LOG("#<bam_loader> Creating reader threads...\n");
+	TO_LOG("<bam_loader> Creating reader threads...\n");
 	if ((reader_threads =
 	     (MT_Id *) GDKmalloc(nr_threads * sizeof(MT_Id))) == NULL) {
 		msg = createException(MAL, "bam_loader", MAL_MALLOC_FAIL);
@@ -329,7 +329,7 @@ bam_loader(Client cntxt, MalBlkPtr mb, str * filenames, int nr_files,
 		}
 	}
 
-	TO_LOG("#<bam_loader> Waiting for reader threads to finish...\n");
+	TO_LOG("<bam_loader> Waiting for reader threads to finish...\n");
 	/* Wait until all threads finish and collect their
 	 * messages. Though it is not very likely, it could be the
 	 * case that more than 1 thread generate an error message (not
@@ -375,7 +375,7 @@ bam_loader(Client cntxt, MalBlkPtr mb, str * filenames, int nr_files,
 		goto cleanup;
 	}
 
-	TO_LOG("#<bam_loader> Copying data into DB...\n");
+	TO_LOG("<bam_loader> Copying data into DB...\n");
 	/* All threads finished succesfully, copy all data into DB */
 	for (i = 0; i < nr_files; ++i) {
 		prepare_for_copy(bws + i);
@@ -398,11 +398,11 @@ bam_loader(Client cntxt, MalBlkPtr mb, str * filenames, int nr_files,
 		destroy_reader_thread_data(r_thread_data);
 
 	if (msg != MAL_SUCCEED) {
-		TO_LOG("#<bam_loader> Error on processing BAM files: %s\n",
+		TO_LOG("<bam_loader> Error on processing BAM files: %s\n",
 		       msg);
 	}
 
-	TO_LOG("#<bam_loader>: Loader finished processing %d BAM file%s...\n",
+	TO_LOG("<bam_loader>: Loader finished processing %d BAM file%s...\n",
 	       nr_files, (nr_files != 1 ? "s" : ""));
 	return msg;
 }

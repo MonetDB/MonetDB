@@ -31,14 +31,14 @@ sys.stderr.write(err)
 
 # now retrieve the file ids that have been inserted
 c = new_client()
-c.stdin.write("SELECT file_id, dbschema FROM bam.files WHERE file_location LIKE '%bam_test_file%';")
+c.stdin.write("SELECT file_id, dbschema FROM bam.files;")
 out, err = c.communicate()
 p = re.compile('^\s*\[\s*(\d)\s*,\s*(\d)\s*\]\s*$', re.MULTILINE)
 files_to_test = []
 for match in p.finditer(out):
     files_to_test.append((int(match.group(1)), int(match.group(2))))
 
-#now we will execute all benchmark queries on all BAM files in the bam.files table that contain 'bam_test_file' in their path
+#now we will execute all benchmark queries on all BAM files in the bam.files table
 c = new_client()
 set_var(c, 'rname_1_3', 'chr22', numeric=False)
 set_var(c, 'pos_1_3_1', 1000000)

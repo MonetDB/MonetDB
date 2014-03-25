@@ -227,7 +227,7 @@ create_schema_if_not_exists(Client cntxt, mvc * m, str schemaname, str descr,
 		snprintf(sql_create_schema, 64, "CREATE SCHEMA %s;",
 			 schemaname);
 
-		TO_LOG("#<bam_loader> Creating schema '%s'...\n", schemaname);
+		TO_LOG("<bam_loader> Creating schema '%s'...\n", schemaname);
 		RUN_SQL(cntxt, &sql_create_schema, descr, msg);
 		if (msg != MAL_SUCCEED) {
 			REUSE_EXCEPTION(msg, MAL,
@@ -263,7 +263,7 @@ create_table_if_not_exists(Client cntxt, mvc * m, sql_schema * s,
 	str msg;
 
 	if ((result = mvc_bind_table(m, s, tablename)) == NULL) {
-		TO_LOG("#<bam_loader> Creating table '%s'...\n", tablename);
+		TO_LOG("<bam_loader> Creating table '%s'...\n", tablename);
 
 		RUN_SQL(cntxt, &sql_creation, descr, msg);
 		if (msg != MAL_SUCCEED) {
