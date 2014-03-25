@@ -7,4 +7,4 @@ WHERE l_rname = rname_2_10
            THEN (pos_2_10 >= l_pos + seq_length(l_cigar) AND pos_2_10 < r_pos)
            ELSE (pos_2_10 >= r_pos + seq_length(r_cigar) AND pos_2_10 < l_pos)
       END
-ORDER BY l_pos
+ORDER BY l_pos;

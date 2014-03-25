@@ -23,15 +23,42 @@
  * library files
  */
 
-#ifndef _BAM_LOG_H
-#define _BAM_LOG_H
+#ifndef _BAM_GLOBALS_H
+#define _BAM_GLOBALS_H
+
+#include <string.h>
+#include "gdk.h"
+
+
 
 /* Macro that enables writing to a log. If the debug flag is not set,
  * it does not do anything */
 #ifndef NDEBUG
+#define BAM_DEBUG /* We are in 'debug-mode' if --enable-assert was set during configuration, since in that case NDEBUG will not be set. */
+#endif
+
+
+
+#ifdef BAM_DEBUG
+
+/**
+ * Function prepares a string for the log by adding hashes in front of every line
+ * Returned string has to be freed
+ */
+char *prepare_for_log(const char *str, bit first_line_dash);
+
+/* Function that adds a dash before every printed line, so Mtest.py will not notice a difference in whether or not we are debugging. Arguments to this function should  */
+int dash_fprintf(FILE *f, const char *format, ...) __attribute__ ((format (printf, 2, 3) ));
+
+
+/* Macro that enables writing to a log. If the debug flag is not set, it does not do anything */
+#define TO_LOG(...) { \
+    dash_fprintf(stderr, __VA_ARGS__); \
+    fprintf(stderr, "\n"); \
+}
+
 /* We are in 'debug-mode' if --enable-assert was set during
  * configuration, since in that case NDEBUG will not be set. */
-#define TO_LOG(...) fprintf(stderr, __VA_ARGS__)
 #else
 #define TO_LOG(...) (void)0
 #endif

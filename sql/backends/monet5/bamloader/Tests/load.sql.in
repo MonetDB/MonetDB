@@ -1,2 +1,0 @@
-CALL bam_loader_repos('$QTSTSRCDIR/bam', 0, 8);
-CALL bam_loader_repos('$QTSTSRCDIR/bam/queryname', 1, 8);

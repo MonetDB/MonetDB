@@ -34,10 +34,20 @@
 
 
 /* macro to run SQL and incorporate logging; sql should be (char **) */
+#ifdef BAM_DEBUG
 #define RUN_SQL(cntxt, sql, descr, msg) { \
-    TO_LOG("%s\n", *sql); \
+    char *sql_log = prepare_for_log(*sql, FALSE); \
+    if(sql_log != NULL) { \
+        TO_LOG("%s\n", sql_log); \
+        GDKfree(sql_log); \
+    } \
     msg = SQLstatementIntern(cntxt, sql, descr, TRUE, FALSE); \
 }
+#else
+#define RUN_SQL(cntxt, sql, descr, msg) { \
+    msg = SQLstatementIntern(cntxt, sql, descr, TRUE, FALSE); \
+}
+#endif
 
 
 /* SQL code for creating header tables; Put in the header to enable
