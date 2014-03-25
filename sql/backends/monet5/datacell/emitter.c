@@ -151,7 +151,7 @@ EMemitterStartInternal(int *ret, str *tbl, str *host, int *port, int mode, int p
 #ifdef _DEBUG_EMITTER_
 	mnstr_printf(EMout, "#Instantiate a new emitter %d fields\n", i);
 #endif
-	if (MT_create_thread(&em->pid, (void (*)(void *))EMstartThread, em, MT_THR_DETACHED) != 0)
+	if (MT_create_thread(&em->pid, (void (*)(void *))EMstartThread, em, MT_THR_JOINABLE) != 0)
 		throw(MAL, "emitter.start", "Emitter '%s' initiation failed",em->name);
 	return MAL_SUCCEED;
 }
@@ -407,9 +407,10 @@ EMstartThread(Emitter em)
 			if (em->error) {
 				em->status = BSKTERROR;
 				mnstr_printf(EMout, "#Emitter listen fails: %s\n", em->error);
+				break;
 			}
 
-			if (MT_create_thread(&em->pid, (void (*)(void *))EMbody, em, MT_THR_DETACHED) != 0) {
+			if (MT_create_thread(&em->pid, (void (*)(void *))EMbody, em, MT_THR_JOINABLE) != 0) {
 				close_stream(em->emitter);
 				throw(MAL, "emitter.start", "Process '%s' creation failed",em->name);
 			}
@@ -419,7 +420,9 @@ EMstartThread(Emitter em)
 			EMbody(em);
 		}
 	}
-	shutdown(em->newsockfd, SHUT_RDWR);
+	socket_close(em->newsockfd);
+	shutdown(em->sockfd, SHUT_RDWR);
+	MT_join_thread(em->pid);
 	return MAL_SUCCEED;
 }
 

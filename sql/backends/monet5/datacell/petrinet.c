@@ -633,7 +633,7 @@ str PNstartThread(int *ret)
 	PNdump(&s);
 #endif
 
-	if (status== BSKTINIT && MT_create_thread(&pid, PNcontroller, &s, MT_THR_DETACHED) != 0)
+	if (status== BSKTINIT && MT_create_thread(&pid, PNcontroller, &s, MT_THR_JOINABLE) != 0)
 		throw(MAL, "petrinet.startThread", "Process creation failed");
 
 	(void) ret;

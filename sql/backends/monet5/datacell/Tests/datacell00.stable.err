@@ -1,15 +1,13 @@
 stderr of test 'datacell00` in directory 'sql/backends/monet5/datacell` itself:
 
 
-# 16:53:52 >  
-# 16:53:52 >   mserver5  --debug=10 --set gdk_nr_threads=0  --set "gdk_dbfarm=/net/rig.ins.cwi.nl/export/scratch0/manegold/Monet/HG/Aug2011/prefix/--enable-datacell_--disable-debug_--enable-optimize_--disable-assert/var/MonetDB" --set mapi_open=true --set mapi_port=39463 --set monet_prompt= --trace --forcemito --set mal_listing=2  "--dbname=mTests_backends_monet5_datacell" --set mal_listing=0 ; echo ; echo Over..
-# 16:53:52 >  
+# 15:50:08 >  
+# 15:50:08 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30649" "--set" "mapi_usock=/var/tmp/mtest-26552/.s.monetdb.30649" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/Jan2014//Linux/var/MonetDB/mTests_sql_backends_monet5_datacell" "--set" "mal_listing=0"
+# 15:50:08 >  
 
-# builtin opt 	gdk_dbname = demo
-# builtin opt 	gdk_dbfarm = /net/rig.ins.cwi.nl/export/scratch0/manegold/Monet/HG/Aug2011/prefix/--enable-datacell_--disable-debug_--enable-optimize_--disable-assert/var/monetdb5/dbfarm
+# builtin opt 	gdk_dbpath = /export/scratch1/mk/Jan2014//Linux/var/monetdb5/dbfarm/demo
 # builtin opt 	gdk_debug = 0
-# builtin opt 	gdk_alloc_map = no
-# builtin opt 	gdk_vmtrim = yes
+# builtin opt 	gdk_vmtrim = no
 # builtin opt 	monet_prompt = >
 # builtin opt 	monet_daemon = no
 # builtin opt 	mapi_port = 50000
@@ -18,20 +16,20 @@ stderr of test 'datacell00` in directory 'sql/backends/monet5/datacell` itself:
 # builtin opt 	sql_optimizer = default_pipe
 # builtin opt 	sql_debug = 0
 # cmdline opt 	gdk_nr_threads = 0
-# cmdline opt 	gdk_dbfarm = /net/rig.ins.cwi.nl/export/scratch0/manegold/Monet/HG/Aug2011/prefix/--enable-datacell_--disable-debug_--enable-optimize_--disable-assert/var/MonetDB
 # cmdline opt 	mapi_open = true
-# cmdline opt 	mapi_port = 39463
+# cmdline opt 	mapi_port = 30649
+# cmdline opt 	mapi_usock = /var/tmp/mtest-26552/.s.monetdb.30649
 # cmdline opt 	monet_prompt = 
 # cmdline opt 	mal_listing = 2
-# cmdline opt 	gdk_dbname = mTests_backends_monet5_datacell
+# cmdline opt 	gdk_dbpath = /export/scratch1/mk/Jan2014//Linux/var/MonetDB/mTests_sql_backends_monet5_datacell
 # cmdline opt 	mal_listing = 0
 
-# 16:53:52 >  
-# 16:53:52 >  mclient -lsql -ftest -i -e --host=rig --port=39463 
-# 16:53:52 >  
+# 15:50:09 >  
+# 15:50:09 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-26552" "--port=30649"
+# 15:50:09 >  
 
 
-# 16:53:52 >  
-# 16:53:52 >  Done.
-# 16:53:52 >  
+# 15:50:09 >  
+# 15:50:09 >  "Done."
+# 15:50:09 >  
 

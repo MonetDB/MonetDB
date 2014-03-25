@@ -459,9 +459,51 @@ DCwindow(int *ret, str *bskt, lng *sz, lng *slide)
 }
 
 str
+DCwindowBte(int *ret, str *bskt, bte *szin, bte *slidein)
+{
+	lng sz = *szin,slide= *slidein;
+	return BSKTwindow(ret, bskt, &sz, &slide);
+}
+
+str
+DCwindowInt(int *ret, str *bskt, int *szin, int *slidein)
+{
+	lng sz = *szin,slide= *slidein;
+	return BSKTwindow(ret, bskt, &sz, &slide);
+}
+
+str
+DCwindowSht(int *ret, str *bskt, sht *szin, sht *slidein)
+{
+	lng sz = *szin, slide= *slidein;
+	return BSKTwindow(ret, bskt, &sz, &slide);
+}
+
+str
 DCtimewindow(int *ret, str *bskt, lng *sz, lng *slide)
 {
 	return BSKTtimewindow(ret, bskt, sz, slide);
+}
+
+str
+DCbeatBte(int *ret, str *bskt, bte *beat)
+{
+	lng b= *beat;
+	return BSKTbeat(ret, bskt, &b);
+}
+
+str
+DCbeatSht(int *ret, str *bskt, sht *beat)
+{
+	lng b= *beat;
+	return BSKTbeat(ret, bskt, &b);
+}
+
+str
+DCbeatInt(int *ret, str *bskt, int *beat)
+{
+	lng b= *beat;
+	return BSKTbeat(ret, bskt, &b);
 }
 
 str
