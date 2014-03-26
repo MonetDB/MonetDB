@@ -72,7 +72,8 @@ DCprocedureStmt(Client cntxt, MalBlkPtr mb, str schema, str nme)
 			be = (void *) backend_create(m, cntxt);
 			if ( be->mvc->sa == NULL)
 				be->mvc->sa = sa_create();
-			backend_create_func(be, f);
+			//TODO fix result type
+			backend_create_func(be, f, NULL,NULL);
 			return MAL_SUCCEED;
 		}
 	}
