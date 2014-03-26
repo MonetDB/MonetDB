@@ -1994,7 +1994,6 @@ str SERVERdisconnectALL(int *ret);
 str SERVERdisconnectWithAlias(int *ret, str *db_alias);
 str SERVERerror(int *ret, int *idx);
 str SERVERexecute(int *ret, int *idx);
-void SERVERexit(void);
 str SERVERexplain(str *ret, int *idx);
 str SERVERfetch_all_rows(lng *ret, int *idx);
 str SERVERfetch_field_bat(int *bid, int *idx);

@@ -641,14 +641,6 @@ SERVERclient(int *res, stream **In, stream **Out)
 	return MAL_SUCCEED;
 }
 
-void
-SERVERexit(void){
-	int ret;
-	SERVERstop(&ret);
-	/* remove any port identity file */
-	ret = system("rm -rf .*_port");
-	(void) ret;
-}
 /*
  * @+ Remote Processing
  * The remainder of the file contains the wrappers around
