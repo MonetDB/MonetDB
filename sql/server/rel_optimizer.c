@@ -3940,6 +3940,55 @@ rel_reduce_groupby_exps(int *changes, mvc *sql, sql_rel *rel)
 		free(tbls);
 		free(scores);
 	}
+	/* remove constants from group by list */
+	if (is_groupby(rel->op) && rel->r && !rel_is_ref(rel)) {
+		int i;
+		node *n;
+		
+		for (i = 0, n = gbe->h; n; n = n->next) {
+			sql_exp *e = n->data;
+
+			if (exp_is_atom(e))
+				i++;
+		}
+		if (i) {
+			list *ngbe = new_exp_list(sql->sa);
+			list *dgbe = new_exp_list(sql->sa);
+
+			for (n = gbe->h; n; n = n->next) {
+				sql_exp *e = n->data;
+
+				if (!exp_is_atom(e))
+					append(ngbe, e);
+				else
+					append(dgbe, e);
+			}
+			rel->r = ngbe;
+			if (!list_empty(dgbe)) {
+				/* use atom's directly in the aggr expr list */
+				list *nexps = new_exp_list(sql->sa);
+
+				for (n = rel->exps->h; n; n = n->next) {
+					sql_exp *e = n->data, *ne = NULL;
+
+					if (is_column(e->type)) {
+						if (e->l) 
+							ne = exps_bind_column2(dgbe, e->l, e->r);
+						else
+							ne = exps_bind_column(dgbe, e->r, NULL);
+						if (ne) {
+							ne = exp_copy(sql->sa, ne);
+							exp_setname(sql->sa, ne, e->rname, e->name);
+							e = ne;
+						}
+					}
+					append(nexps, e);
+				}
+				rel->exps = nexps;
+			}
+			(*changes)++;
+		}
+	}
 	return rel;
 }
 
