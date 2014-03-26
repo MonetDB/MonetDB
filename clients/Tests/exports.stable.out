@@ -310,7 +310,6 @@ size_t MT_getrss(void);
 void MT_global_exit(int status) __attribute__((__noreturn__));
 void MT_init(void);
 int MT_join_thread(MT_Id t);
-int MT_kill_thread(MT_Id t);
 int MT_lockf(char *filename, int mode, off_t off, off_t len);
 MT_Id MT_locktrace;
 unsigned long long MT_locktrace_cnt[65536];
