@@ -18,12 +18,8 @@
  */
 
 /*
- * @f gdk_logger
- * @t Transactions
- * @a N. J. Nes
- * @v 2.0
+ * (author) N. J. Nes
  *
- * @* Introduction
  * In the philosophy of MonetDB, transaction management overhead
  * should only be paid when necessary. Transaction management is for
  * this purpose implemented as a separate module and applications are
@@ -38,7 +34,7 @@
  * file stores information about the version of the logger and the
  * transaction log files. This file is a simple ascii file with the
  * following format:
- *  @code{6DIGIT-VERSION\n[log file number \n]*]*}
+ *  {6DIGIT-VERSION\n[log file number \n]*]*}
  * The transaction log files have a binary format, which stores fixed
  * size logformat headers (flag,nr,bid), where the flag is the type of
  * update logged.  The nr field indicates how many changes there were
@@ -67,8 +63,6 @@
  * or abort on the changed bats. Once all logs have been read, the
  * changes to the bats are made persistent, i.e. a bbp sub-commit is
  * done.
- *
- * @* Implementation Code
  */
 #include "monetdb_config.h"
 #include "gdk.h"
@@ -201,7 +195,7 @@ static void
 log_read_clear(logger *lg, trans *tr, char *name)
 {
 	if (lg->debug & 1)
-		fprintf(stderr, "logger found log_read_clear %s\n", name);
+		fprintf(stderr, "#logger found log_read_clear %s\n", name);
 
 	if (tr_grow(tr)) {
 		tr->changes[tr->nr].type = LOG_CLEAR;
@@ -216,6 +210,8 @@ la_bat_clear(logger *lg, logaction *la)
 	log_bid bid = logger_find_bat(lg, la->name);
 	BAT *b;
 
+	if (lg->debug & 1)
+		fprintf(stderr, "#la_bat_clear %s\n", la->name);
 	/* do we need to skip these old updates */
 	if (BATcount(lg->snapshots_bid)) {
 		BUN p = BUNfndT(lg->snapshots_bid, &bid);
@@ -266,7 +262,7 @@ log_read_updates(logger *lg, trans *tr, logformat *l, char *name)
 	int ht = -1, tt = -1, hseq = 0, tseq = 0;
 
 	if (lg->debug & 1)
-		fprintf(stderr, "logger found log_read_updates %s %s %d\n", name, l->flag == LOG_INSERT ? "insert" : l->flag == LOG_DELETE ? "delete" : "update", l->nr);
+		fprintf(stderr, "#logger found log_read_updates %s %s %d\n", name, l->flag == LOG_INSERT ? "insert" : l->flag == LOG_DELETE ? "delete" : "update", l->nr);
 
 	if (b) {
 		ht = b->htype;
@@ -498,7 +494,7 @@ log_read_create(logger *lg, trans *tr, char *name)
 	char *buf = log_read_string(lg);
 
 	if (lg->debug & 1)
-		fprintf(stderr, "log_read_create %s\n", name);
+		fprintf(stderr, "#log_read_create %s\n", name);
 
 	if (!buf) {
 		return LOG_ERR;
@@ -693,7 +689,7 @@ tr_commit(logger *lg, trans *tr)
 	int i;
 
 	if (lg->debug & 1)
-		fprintf(stderr, "tr_commit\n");
+		fprintf(stderr, "#tr_commit\n");
 
 	for (i = 0; i < tr->nr; i++) {
 		la_apply(lg, &tr->changes[i]);
@@ -708,7 +704,7 @@ tr_abort(logger *lg, trans *tr)
 	int i;
 
 	if (lg->debug & 1)
-		fprintf(stderr, "tr_abort\n");
+		fprintf(stderr, "#tr_abort\n");
 
 	for (i = 0; i < tr->nr; i++)
 		la_destroy(&tr->changes[i]);
@@ -788,7 +784,7 @@ logger_readlog(logger *lg, char *filename)
 			}
 		}
 		if (lg->debug & 1) {
-			fprintf(stderr, "logger_readlog: ");
+			fprintf(stderr, "#logger_readlog: ");
 			if (l.flag > 0 &&
 			    l.flag < (char) (sizeof(log_commands) / sizeof(log_commands[0])))
 				fprintf(stderr, "%s", log_commands[(int) l.flag]);
@@ -808,7 +804,7 @@ logger_readlog(logger *lg, char *filename)
 				lg->tid = l.nr;
 			tr = tr_create(tr, l.nr);
 			if (lg->debug & 1)
-				fprintf(stderr, "logger tstart %d\n", tr->tid);
+				fprintf(stderr, "#logger tstart %d\n", tr->tid);
 			break;
 		case LOG_END:
 			if (tr == NULL)
@@ -879,7 +875,7 @@ logger_readlogs(logger *lg, FILE *fp, char *filename)
 	char id[BUFSIZ];
 
 	if (lg->debug & 1)
-		fprintf(stderr, "logger_readlogs %s\n", filename);
+		fprintf(stderr, "#logger_readlogs %s\n", filename);
 
 	while (fgets(id, BUFSIZ, fp) != NULL) {
 		char buf[BUFSIZ];
@@ -909,7 +905,7 @@ logger_commit(logger *lg)
 	BUN p;
 
 	if (lg->debug & 1)
-		fprintf(stderr, "logger_commit\n");
+		fprintf(stderr, "#logger_commit\n");
 
 	p = BUNfndT(lg->seqs_id, &id);
 	BUNdelete(lg->seqs_id, p, FALSE);
@@ -973,7 +969,7 @@ bm_subcommit(BAT *list_bid, BAT *list_nme, BAT *catalog_bid, BAT *catalog_nme, B
 		bat col = *(log_bid *) Tloc(list_bid, p);
 
 		if (debug & 1)
-			fprintf(stderr, "commit deleted %s (%d) %s\n",
+			fprintf(stderr, "#commit deleted %s (%d) %s\n",
 				BBPname(col), col,
 				(list_bid == catalog_bid) ? BUNtail(iter, p) : "snapshot");
 		n[i++] = abs(col);
@@ -982,7 +978,7 @@ bm_subcommit(BAT *list_bid, BAT *list_nme, BAT *catalog_bid, BAT *catalog_nme, B
 		bat col = *(log_bid *) Tloc(list_bid, p);
 
 		if (debug & 1)
-			fprintf(stderr, "commit new %s (%d) %s\n",
+			fprintf(stderr, "#commit new %s (%d) %s\n",
 				BBPname(col), col,
 				(list_bid == catalog_bid) ? BUNtail(iter, p) : "snapshot");
 		n[i++] = abs(col);
@@ -993,7 +989,7 @@ bm_subcommit(BAT *list_bid, BAT *list_nme, BAT *catalog_bid, BAT *catalog_nme, B
 			str name = (str) BUNtail(iter, p);
 
 			if (debug & 1)
-				fprintf(stderr, "commit extra %s %s\n",
+				fprintf(stderr, "#commit extra %s %s\n",
 					name,
 					(list_bid == catalog_bid) ? BUNtail(iter, p) : "snapshot");
 			n[i++] = abs(BBPindex(name));
@@ -1206,7 +1202,7 @@ logger_new(int debug, char *fn, char *logdir, int version, preversionfix_fptr pr
 		lg->catalog_bid = logbat_new(TYPE_int, BATSIZE);
 		lg->catalog_nme = logbat_new(TYPE_str, BATSIZE);
 		if (debug & 1)
-			fprintf(stderr, "create %s catalog\n", fn);
+			fprintf(stderr, "#create %s catalog\n", fn);
 
 		/* Make persistent */
 		bid = lg->catalog_bid->batCacheid;
@@ -1572,7 +1568,7 @@ logger_cleanup(logger *lg)
 	snprintf(buf, BUFSIZ, "%s%s.bak-" LLFMT, lg->dir, LOGFILE, lg->id);
 
 	if (lg->debug & 1)
-		fprintf(stderr, "logger_cleanup %s\n", buf);
+		fprintf(stderr, "#logger_cleanup %s\n", buf);
 
 	if ((fp = fopen(buf, "r")) == NULL)
 		return LOG_ERR;
@@ -1642,7 +1638,7 @@ log_bat_persists(logger *lg, BAT *b, char *name)
 		return LOG_ERR;
 
 	if (lg->debug & 1)
-		fprintf(stderr, "persists bat %s (%d) %s\n",
+		fprintf(stderr, "#persists bat %s (%d) %s\n",
 			name, b->batCacheid,
 			(flag == LOG_USE) ? "use" : "create");
 
@@ -1672,7 +1668,7 @@ log_bat_persists(logger *lg, BAT *b, char *name)
 		return LOG_ERR;
 
 	if (lg->debug & 1)
-		fprintf(stderr, "Logged new bat [%s,%s] %s " BUNFMT " (%d)\n",
+		fprintf(stderr, "#Logged new bat [%s,%s] %s " BUNFMT " (%d)\n",
 			ha, ta, name, BATcount(b), b->batCacheid);
 	return log_bat(lg, b, name);
 }
@@ -1702,7 +1698,7 @@ log_bat_transient(logger *lg, char *name)
 		return LOG_ERR;
 
 	if (lg->debug & 1)
-		fprintf(stderr, "Logged destroyed bat %s\n", name);
+		fprintf(stderr, "#Logged destroyed bat %s\n", name);
 	return LOG_OK;
 }
 
@@ -1744,7 +1740,7 @@ log_delta(logger *lg, BAT *b, char *name)
 		}
 
 		if (lg->debug & 1)
-			fprintf(stderr, "Logged %s %d inserts\n", name, l.nr);
+			fprintf(stderr, "#Logged %s %d inserts\n", name, l.nr);
 	}
 	return (ok == GDK_SUCCEED) ? LOG_OK : LOG_ERR;
 }
@@ -1793,7 +1789,7 @@ log_bat(logger *lg, BAT *b, char *name)
 		}
 
 		if (lg->debug & 1)
-			fprintf(stderr, "Logged %s %d inserts\n", name, l.nr);
+			fprintf(stderr, "#Logged %s %d inserts\n", name, l.nr);
 	}
 	l.nr = (int) (b->batFirst - b->batDeleted);
 	lg->changes += l.nr;
@@ -1817,7 +1813,7 @@ log_bat(logger *lg, BAT *b, char *name)
 		}
 
 		if (lg->debug & 1)
-			fprintf(stderr, "Logged %s %d deletes\n", name, l.nr);
+			fprintf(stderr, "#Logged %s %d deletes\n", name, l.nr);
 	}
 	return (ok == GDK_SUCCEED) ? LOG_OK : LOG_ERR;
 }
@@ -1843,7 +1839,7 @@ log_bat_clear(logger *lg, char *name)
 		return LOG_ERR;
 
 	if (lg->debug & 1)
-		fprintf(stderr, "Logged clear %s\n", name);
+		fprintf(stderr, "#Logged clear %s\n", name);
 
 	return (ok == GDK_SUCCEED) ? LOG_OK : LOG_ERR;
 }
@@ -1858,7 +1854,7 @@ log_tstart(logger *lg)
 	l.nr = lg->tid;
 
 	if (lg->debug & 1)
-		fprintf(stderr, "log_tstart %d\n", lg->tid);
+		fprintf(stderr, "#log_tstart %d\n", lg->tid);
 
 	return log_write_format(lg, &l);
 }
@@ -1907,7 +1903,7 @@ log_tend(logger *lg)
 	int res = 0;
 
 	if (lg->debug & 1)
-		fprintf(stderr, "log_tend %d\n", lg->tid);
+		fprintf(stderr, "#log_tend %d\n", lg->tid);
 
 	if (DELTAdirty(lg->snapshots_bid)) {
 		/* sub commit all new snapshots */
@@ -1953,7 +1949,7 @@ log_abort(logger *lg)
 	logformat l;
 
 	if (lg->debug & 1)
-		fprintf(stderr, "log_abort %d\n", lg->tid);
+		fprintf(stderr, "#log_abort %d\n", lg->tid);
 
 	l.flag = LOG_END;
 	l.tid = lg->tid;
@@ -1977,7 +1973,7 @@ log_sequence(logger *lg, int seq, lng val)
 	l.nr = seq;
 
 	if (lg->debug & 1)
-		fprintf(stderr, "log_sequence (%d," LLFMT ")\n", seq, val);
+		fprintf(stderr, "#log_sequence (%d," LLFMT ")\n", seq, val);
 
 	if ((p = BUNfndT(lg->seqs_id, &seq)) != BUN_NONE) {
 		BUNdelete(lg->seqs_id, p, FALSE);
@@ -2014,7 +2010,7 @@ bm_commit(logger *lg)
 		logbat_destroy(lb);
 
 		if (lg->debug & 1)
-			fprintf(stderr, "bm_commit: delete %d (%d)\n",
+			fprintf(stderr, "#bm_commit: delete %d (%d)\n",
 				bid, BBP_lrefs(bid));
 	}
 
@@ -2031,7 +2027,7 @@ bm_commit(logger *lg)
 			logbat_destroy(lb);
 			if (lg->debug & 1)
 				fprintf(stderr,
-					"commit deleted (snapshot) %s (%d)\n",
+					"#commit deleted (snapshot) %s (%d)\n",
 					name, bid);
 			BUNappend(n, name, FALSE);
 			BBPdecref(bid, TRUE);
@@ -2047,7 +2043,7 @@ assert(lb->batRestricted > BAT_WRITE);
 		logbat_destroy(lb);
 
 		if (lg->debug & 1)
-			fprintf(stderr, "bm_commit: create %d (%d)\n",
+			fprintf(stderr, "#bm_commit: create %d (%d)\n",
 				bid, BBP_lrefs(bid));
 	}
 	res = bm_subcommit(lg->catalog_bid, lg->catalog_nme, lg->catalog_bid, lg->catalog_nme, n, lg->debug);
@@ -2072,7 +2068,7 @@ logger_add_bat(logger *lg, BAT *b, char *name)
 	}
 	bid = b->batCacheid;
 	if (lg->debug & 1)
-		fprintf(stderr, "create %s\n", name);
+		fprintf(stderr, "#create %s\n", name);
 	lg->changes += BATcount(b) + 1;
 	BUNappend(lg->catalog_bid, &bid, FALSE);
 	BUNappend(lg->catalog_nme, name, FALSE);
@@ -2097,7 +2093,7 @@ logger_del_bat(logger *lg, log_bid bid)
 		BUNdelete(lg->snapshots_tid, q, FALSE);
 		if (lg->debug & 1)
 			fprintf(stderr,
-				"logger_del_bat release snapshot %d (%d)\n",
+				"#logger_del_bat release snapshot %d (%d)\n",
 				bid, BBP_lrefs(bid));
 		BUNappend(lg->freed, &bid, FALSE);
 	} else if (p >= lg->catalog_bid->batInserted)
