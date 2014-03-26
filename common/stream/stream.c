@@ -502,6 +502,9 @@ error(stream *s)
 	case MNSTR_WRITE_ERROR:
 		snprintf(buf, BUFSIZ, "error writing file %s\n", s->name);
 		return strdup(buf);
+	case MNSTR_TIMEOUT:
+		snprintf(buf, BUFSIZ, "timeout on %s\n", s->name);
+		return strdup(buf);
 	}
 	return strdup("Unknown error");
 }
@@ -1518,7 +1521,10 @@ socket_write(stream *s, const void *buf, size_t elmsize, size_t cnt)
 	if ((size_t) res >= elmsize)
 		return (ssize_t) (res / elmsize);
 	if (nr < 0) {
-		s->errnr = MNSTR_WRITE_ERROR;
+		if (s->timeout > 0 && (errno == EAGAIN || errno == EWOULDBLOCK))
+			s->errnr = MNSTR_TIMEOUT;
+		else
+			s->errnr = MNSTR_WRITE_ERROR;
 		return -1;
 	}
 	return 0;
@@ -1546,7 +1552,10 @@ socket_read(stream *s, void *buf, size_t elmsize, size_t cnt)
 	nr = read(s->stream_data.s, (char *) buf + s->len, size - s->len);
 #endif
 	if (nr == -1) {
-		s->errnr = MNSTR_READ_ERROR;
+		if (s->timeout > 0 && (errno == EAGAIN || errno == EWOULDBLOCK))
+			s->errnr = MNSTR_TIMEOUT;
+		else
+			s->errnr = MNSTR_READ_ERROR;
 		return -1;
 	}
 	if (nr == 0)

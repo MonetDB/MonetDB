@@ -236,7 +236,8 @@ typedef enum mnstr_errors {
 	MNSTR_NO__ERROR = 0,
 	MNSTR_OPEN_ERROR,
 	MNSTR_READ_ERROR,
-	MNSTR_WRITE_ERROR
+	MNSTR_WRITE_ERROR,
+	MNSTR_TIMEOUT
 } mnstr_errors;
 
 #endif /*_STREAM_H_*/
