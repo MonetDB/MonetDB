@@ -175,7 +175,7 @@ str RMTconnectScen(
 		throw(ILLARG, "remote.connect", ILLEGAL_ARGUMENT ": scenario is "
 				"NULL or nil");
 	if (strcmp(*scen, "mal") != 0 && strcmp(*scen, "msql") != 0)
-		throw(ILLARG, "remote.connect", ILLEGAL_ARGUMENT ": scenation '%s' "
+		throw(ILLARG, "remote.connect", ILLEGAL_ARGUMENT ": scenario '%s' "
 				"is not supported", *scen);
 
 	m = mapi_mapiuri(*ouri, *user, *passwd, *scen);
