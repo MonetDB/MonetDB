@@ -757,9 +757,9 @@ stmt_idx( mvc *sql, sql_idx *i, stmt *del)
 static stmt *
 stmt_dels( mvc *sql, sql_table *t) 
 {
-	if (!t->readonly) 
+//	if (!t->readonly) 
 		return stmt_tid(sql->sa, t);
-	return NULL;
+//	return NULL;
 }
 
 
