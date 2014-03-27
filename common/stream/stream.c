@@ -2394,10 +2394,8 @@ buffer_read(stream *s, void *buf, size_t elmsize, size_t cnt)
 		memcpy(buf, b->buf + b->pos, size);
 		b->pos += size;
 		return (ssize_t) (size / elmsize);
-	} else {
-		s->errnr = MNSTR_READ_ERROR;
-		return -1;
 	}
+	return 0;
 }
 
 static ssize_t
