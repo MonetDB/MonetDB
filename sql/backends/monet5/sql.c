@@ -489,7 +489,7 @@ table_has_updates(sql_trans *tr, sql_table *t)
 	for ( n = t->columns.set->h; !cnt && n; n = n->next) {
 		sql_column *c = n->data;
 		BAT *b = store_funcs.bind_col(tr, c, RD_UPD);
-		cnt += BATcount(b);
+		cnt |= BATcount(b) > 0;
 		BBPunfix(b->batCacheid);
 	}
 	return cnt;
