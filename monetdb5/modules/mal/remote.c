@@ -960,8 +960,14 @@ str RMTbatload(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		if (fdin->buf[len] != '\n')
 			continue;
 		/* empty line, end of input */
-		if (fdin->pos == len)
+		if (fdin->pos == len) {
+			if (isa_block_stream(fdin->s)) {
+				ssize_t n = bstream_next(fdin);
+				assert(n == 0);
+				(void) n;
+			}
 			break;
+		}
 		fdin->buf[len] = '\0'; /* kill \n */
 		var = &fdin->buf[fdin->pos];
 		/* skip over this line */

@@ -556,14 +556,6 @@ MCreadClient(Client c)
 			if (p != in->buf + in->len - 1)
 				in->len++;
 		}
-		if (sum == 0 && in->eof && isa_block_stream(in->s)) {
-			/* we hadn't seen the EOF before, so just try again
-			   (this time with prompt) */
-#ifdef MAL_CLIENT_DEBUG
-			printf("# retry stream reading %d %d\n", c->idx, in->eof);
-#endif
-			return MCreadClient(c);
-		}
 #ifdef MAL_CLIENT_DEBUG
 		printf("# simple stream received %d sum " SZFMT "\n", c->idx, sum);
 #endif
