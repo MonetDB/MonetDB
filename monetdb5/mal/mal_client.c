@@ -526,20 +526,7 @@ MCreadClient(Client c)
 			mnstr_flush(c->fdout);
 			in->eof = 0;
 		}
-		for (;;) {
-			rd = bstream_next(in);
-			if (GDKexiting())
-				return 0;
-			if (rd < 0) {
-				if (mnstr_errnr(in->s) == MNSTR_TIMEOUT) {
-					mnstr_clearerr(in->s);
-					continue;
-				}
-				/* read error */
-				return 0;
-			}
-			if (in->eof)
-				break;
+		while ((rd = bstream_next(in)) > 0 && !in->eof) {
 			sum += rd;
 			if (!in->mode) /* read one line at a time in line mode */
 				break;

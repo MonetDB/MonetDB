@@ -141,7 +141,8 @@ struct stream {
 	char isutf8;		/* known to be UTF-8 due to BOM */
 	short type;		/* ascii/binary */
 	char *name;
-	unsigned int timeout;
+	unsigned int timeout;	   /* timeout in ms */
+	int (*timeout_func)(void); /* callback function: NULL/true -> return */
 	union {
 		void *p;
 		int i;
@@ -159,11 +160,6 @@ struct stream {
 	int (*fgetpos) (stream *s, lng *p);
 	int (*fsetpos) (stream *s, lng p);
 	void (*update_timeout) (stream *s);
-	/* in case read() read a non-integral number of elements we
-	 * save the last partial element here (only used in
-	 * socket_read() */
-	void *buf;
-	size_t len;
 };
 
 int
@@ -276,9 +272,10 @@ mnstr_write(stream *s, const void *buf, size_t elmsize, size_t cnt)
 }
 
 void
-mnstr_settimeout(stream *s, unsigned int secs)
+mnstr_settimeout(stream *s, unsigned int ms, int (*func)(void))
 {
-	s->timeout = secs;
+	s->timeout = ms;
+	s->timeout_func = func;
 	if (s->update_timeout)
 		(*s->update_timeout)(s);
 }
@@ -481,8 +478,6 @@ get_extention(const char *file)
 static void
 destroy(stream *s)
 {
-	if (s->buf)
-		free(s->buf);
 	free(s->name);
 	free(s);
 }
@@ -535,9 +530,8 @@ create_stream(const char *name)
 	s->fgetpos = NULL;
 	s->fsetpos = NULL;
 	s->timeout = 0;
+	s->timeout_func = NULL;
 	s->update_timeout = NULL;
-	s->buf = NULL;
-	s->len = 0;
 #ifdef STREAM_DEBUG
 	printf("create_stream %s -> " PTRFMT "\n", name ? name : "<unnamed>", PTRFMTCAST s);
 #endif
@@ -1510,9 +1504,12 @@ socket_write(stream *s, const void *buf, size_t elmsize, size_t cnt)
 		((nr = write(s->stream_data.s, ((const char *) buf + res),
 			     size - res)) > 0)
 #endif
-		|| (s->timeout == 0
-		    && (errno == EAGAIN || errno == EWOULDBLOCK))
-		|| errno == EINTR)
+		|| (nr < 0 &&	/* syscall failed */
+		    s->timeout > 0 && /* potentially timeout */
+		    (errno == EAGAIN || errno == EWOULDBLOCK) && /* it was! */
+		    s->timeout_func != NULL && /* callback function exists */
+		    !(*s->timeout_func)())     /* callback says don't stop */
+		|| (nr < 0 && errno == EINTR)) /* interrupted */
 		) {
 		errno = 0;
 		if (nr > 0)
@@ -1538,20 +1535,19 @@ socket_read(stream *s, void *buf, size_t elmsize, size_t cnt)
 	if (!s || s->errnr || size == 0)
 		return -1;
 
-	assert((s->buf == NULL) == (s->len == 0));
-	if (s->buf) {
-		assert((size_t) size > s->len);
-		memcpy(buf, s->buf, s->len);
-	}
-
+	do {
+		errno = 0;
 #ifdef NATIVE_WIN32
-	if (size > INT_MAX)
-		size = elmsize * (INT_MAX / elmsize);
-	nr = recv(s->stream_data.s, (char *) buf + s->len, (int) (size - s->len), 0);
+		if (size > INT_MAX)
+			size = elmsize * (INT_MAX / elmsize);
+		nr = recv(s->stream_data.s, buf, (int) size, 0);
 #else
-	nr = read(s->stream_data.s, (char *) buf + s->len, size - s->len);
+		nr = read(s->stream_data.s, buf, size);
 #endif
-	if (nr == -1) {
+	} while (nr == -1 && s->timeout > 0 &&
+		 (errno == EAGAIN || errno == EWOULDBLOCK) &&
+		 s->timeout_func && !(*s->timeout_func)());
+	if (nr < 0) {
 		if (s->timeout > 0 && (errno == EAGAIN || errno == EWOULDBLOCK))
 			s->errnr = MNSTR_TIMEOUT;
 		else
@@ -1560,17 +1556,30 @@ socket_read(stream *s, void *buf, size_t elmsize, size_t cnt)
 	}
 	if (nr == 0)
 		return 0;	/* end of file */
-	if (s->buf) {
-		nr += s->len;
-		free(s->buf);
-		s->buf = NULL;
-		s->len = 0;
-	}
-	if (elmsize > 1 && (cnt = nr % elmsize) != 0) {
-		s->buf = malloc(cnt);
-		memcpy(s->buf, (char *) buf + nr - cnt, cnt);
-		s->len = cnt;
-		nr -= cnt;
+	while (elmsize > 1 && nr % elmsize != 0) {
+		/* if elmsize > 1, we really expect that "the other
+		 * side" wrote complete items in a single system call,
+		 * so we expect to at least receive complete items,
+		 * and hence we continue reading until we did in fact
+		 * receive an integral number of complete items,
+		 * ignoring any timeouts (but not real errors)
+		 * (note that recursion is limited since we don't
+		 * propagate the element size to the recursive
+		 * call) */
+		ssize_t n;
+		n = socket_read(s, (char *) buf + nr, 1, (size_t) (size - nr));
+		if (n < 0) {
+			if (s->errnr == MNSTR_TIMEOUT) {
+				/* ignore timeout */
+				s->errnr = MNSTR_NO__ERROR;
+				continue;
+			}
+			/* some other read error is serious */
+			return -1;
+		}
+		if (n == 0)	/* unexpected end of file */
+			break;
+		nr += n;
 	}
 	return (ssize_t) (nr / elmsize);
 }
@@ -1598,10 +1607,6 @@ socket_close(stream *s)
 		}
 	}
 	s->stream_data.s = INVALID_SOCKET;
-	if (s->buf)
-		free(s->buf);
-	s->buf = NULL;
-	s->len = 0;
 }
 
 static void
@@ -1610,11 +1615,13 @@ socket_update_timeout(stream *s)
 	SOCKET fd = s->stream_data.s;
 	struct timeval tv;
 
-	tv.tv_sec = s->timeout;
-	tv.tv_usec = 0;
+	tv.tv_sec = s->timeout / 1000;
+	tv.tv_usec = (s->timeout % 1000) * 1000;
 	/* cast to char * for Windows, no harm on "normal" systems */
-	setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, (char *) &tv, (socklen_t) sizeof(tv));
-	setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, (char *) &tv, (socklen_t) sizeof(tv));
+	if (s->access == ST_READ)
+		setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, (char *) &tv, (socklen_t) sizeof(tv));
+	if (s->access == ST_WRITE)
+		setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, (char *) &tv, (socklen_t) sizeof(tv));
 }
 
 static stream *
@@ -2222,6 +2229,7 @@ ic_update_timeout(stream *s)
 
 	if (ic && ic->s) {
 		ic->s->timeout = s->timeout;
+		ic->s->timeout_func = s->timeout_func;
 		if (ic->s->update_timeout)
 			(*ic->s->update_timeout)(ic->s);
 	}
@@ -2764,6 +2772,7 @@ bs_update_timeout(stream *ss)
 	bs *s = ss->stream_data.p;
 	if (s && s->s) {
 		s->s->timeout = ss->timeout;
+		s->s->timeout_func = ss->timeout_func;
 		if (s->s->update_timeout)
 			(*s->s->update_timeout)(s->s);
 	}
@@ -3280,6 +3289,7 @@ wbs_update_timeout(stream *s)
 	wbs_stream *wbs = (wbs_stream *) s->stream_data.p;
 	if (wbs && wbs->s) {
 		wbs->s->timeout = s->timeout;
+		wbs->s->timeout_func = s->timeout_func;
 		if (wbs->s->update_timeout)
 			(*wbs->s->update_timeout)(wbs->s);
 	}

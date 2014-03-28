@@ -132,7 +132,7 @@ stream_export int mnstr_byteorder(stream *s);
 stream_export void mnstr_set_byteorder(stream *s, char bigendian);
 stream_export stream *mnstr_rstream(stream *s);
 stream_export stream *mnstr_wstream(stream *s);
-stream_export void mnstr_settimeout(stream *s, unsigned int secs);
+stream_export void mnstr_settimeout(stream *s, unsigned int ms, int (*func)(void));
 
 stream_export stream *open_rstream(const char *filename);
 stream_export stream *open_wstream(const char *filename);
