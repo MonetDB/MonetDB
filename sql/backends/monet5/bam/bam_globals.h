@@ -38,7 +38,6 @@
 #endif
 
 
-
 #ifdef BAM_DEBUG
 
 /**

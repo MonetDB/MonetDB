@@ -29,21 +29,37 @@
 
 #include "gdk.h"
 
-#include <samtools/bam.h>
+#include <samtools/sam.h>
 
 #define BW_FP_BUF_SIZE 128
 
 typedef sht ordering;
+typedef enum {SAM, BAM} filetype;
+
+typedef struct sam_data {
+    samfile_t *input;
+} sam_data;
+
+typedef struct bam_data {
+    bamFile input;
+} bam_data;
 
 typedef struct bam_wrapper {
-	/* Header fields */
-	bamFile input;
+    /* Type */
+	filetype type;
+	
+	union {
+	    sam_data sam;
+	    bam_data bam;
+    };
+	
+	/* General */
 	bam_header_t *header;
-	ordering ord;
+    ordering ord;
 	lng file_id;
 	str file_location;
 	sht dbschema;
-
+	
 	/* Counters for encountered data */
 	unsigned int cnt_sq;
 	unsigned int cnt_rg;
@@ -72,16 +88,17 @@ typedef struct bam_wrapper {
 	stream *alignments_extra[4];
 	stream *alignments_paired_primary[23];
 	stream *alignments_paired_secondary[23];
+
 } bam_wrapper;
 
 
 str ordering_str(ordering ord);
-str init_bam_wrapper(bam_wrapper * bw, str file_location, lng file_id,
-		     sht dbschema);
+str init_bam_wrapper(bam_wrapper * bw, filetype type, str file_location, 
+             lng file_id, sht dbschema);
 void prepare_for_copy(bam_wrapper * bw);
 void clear_bam_wrapper(bam_wrapper * bw);
-str process_bam_header(bam_wrapper * bw);
-str process_bam_alignments(bam_wrapper *bw, bit *some_thread_failed);	/* (*some_thread_failed) will be set to TRUE if some thread fails during processing alignments */
+str process_header(bam_wrapper * bw);
+str process_alignments(bam_wrapper *bw, bit *some_thread_failed);	/* (*some_thread_failed) will be set to TRUE if some thread fails during processing alignments */
 
 #define DIR_BINARIES "bam_binaries"
 #define BSTREAM_CHUNK_SIZE BUFSIZ

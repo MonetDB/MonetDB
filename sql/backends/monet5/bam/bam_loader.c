@@ -33,6 +33,22 @@
 #include "bam_loader.h"
 
 
+/* Macro that checks whether or not a filename ends with either .sam or .bam 
+ *(case insensitive) */
+#define IS_SAMORBAM(filename, len) \
+    ((filename[len-4] == '.') && \
+     (filename[len-3] == 'b' || filename[len-3] == 'B' || \
+         filename[len-3] == 's' || filename[len-4] == 's') && \
+     (filename[len-2] == 'a' || filename[len-2] == 'A') && \
+     (filename[len-1] == 'm' || filename[len-1] == 'M'))
+
+/* Given a filename that ends on either .sam or .bam, this macro checks if 
+ * it ends on .bam */
+#define IS_BAM(samorbam_filename, len) \
+    (samorbam_filename[len-3] == 'b' || samorbam_filename[len-3] == 'B')
+    
+
+
 typedef struct reader_thread_data {
 	sht thread_id;
 	/* BAM wrappers of all BAM files that have to be processed */
@@ -126,7 +142,7 @@ run_process_bam_alignments(void *d)
 	       bw->file_id);
 
 	if ((data->msg =
-	     process_bam_alignments(bw, data->failure)) != MAL_SUCCEED) {
+	     process_alignments(bw, data->failure)) != MAL_SUCCEED) {
 		TO_LOG("<Thread %d> Error while processing alignments of file '%s' (file id " LLFMT ") (%s)\n", data->thread_id, bw->file_location, bw->file_id, data->msg);
 		REUSE_EXCEPTION(data->msg, MAL, "run_process_bam_alignments",
 				"Error while processing alignments of file '%s' (file id "
@@ -250,10 +266,11 @@ bam_loader(Client cntxt, MalBlkPtr mb, str * filenames, int nr_files,
 	memset(bws, 0, nr_files * sizeof(bam_wrapper));
 
 	for (i = 0; i < nr_files; ++i) {
+	    int fln = strlen(filenames[i]);
 		TO_LOG("<bam_loader> Initializing BAM wrapper for file '%s'...\n", filenames[i]);
 		if ((msg =
-		     init_bam_wrapper(bws + i, filenames[i], cur_file_id++,
-				      dbschema)) != MAL_SUCCEED) {
+		     init_bam_wrapper(bws + i, (IS_BAM(filenames[i], fln) ? BAM : SAM), 
+		              filenames[i], cur_file_id++, dbschema)) != MAL_SUCCEED) {
 			goto cleanup;
 		}
 	}
@@ -262,7 +279,7 @@ bam_loader(Client cntxt, MalBlkPtr mb, str * filenames, int nr_files,
 	for (i = 0; i < nr_files; ++i) {
 		TO_LOG("<bam_loader> Parsing BAM header for file '%s'...\n",
 		       filenames[i]);
-		if ((msg = process_bam_header(bws + i)) != MAL_SUCCEED) {
+		if ((msg = process_header(bws + i)) != MAL_SUCCEED) {
 			goto cleanup;
 		}
 	}
@@ -408,14 +425,6 @@ bam_loader(Client cntxt, MalBlkPtr mb, str * filenames, int nr_files,
 }
 
 
-/* Macro that checks whether or not a filename ends with .bam (case
- * insensitive) */
-#define IS_BAM(filename, len) \
-    (filename[len-4] == '.') && \
-    (filename[len-3] == 'b' || filename[len-3] == 'B') && \
-    (filename[len-2] == 'a' || filename[len-2] == 'A') && \
-    (filename[len-1] == 'm' || filename[len-1] == 'M') \
-
 /**
  * Gathers all BAM files in the given repository and calls bam_loader for these files
  */
@@ -452,17 +461,17 @@ bam_loader_repos(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		goto cleanup;
 	}
 
-	/* First, count number of BAM files */
+	/* First, count number of SAM/BAM files */
 	while ((direntry = readdir(d)) != NULL) {
 		int len = strlen(direntry->d_name);
 
-		if (IS_BAM(direntry->d_name, len))
+		if (IS_SAMORBAM(direntry->d_name, len))
 			++filecount;
 	}
 
 	if (filecount == 0) {
 		msg = createException(MAL, "bam_loader_repos",
-				      "No BAM files found in directory '%s'",
+				      "No SAM or BAM files found in directory '%s'",
 				      bam_repos);
 		goto cleanup;
 	}
@@ -484,18 +493,17 @@ bam_loader_repos(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	 * slashes in a path, but as far as I know, this is no problem
 	 * on all OS's */
 	while ((direntry = readdir(d)) != NULL) {
-		/* Check if d_name has the .bam extension (case
+		/* Check if d_name has the .sam or .bam extension (case
 		 * insensitive) */
 		int len = strlen(direntry->d_name);
-
-		if (IS_BAM(direntry->d_name, len)) {
-			/* This is a BAM file, construct its path and
+		if (IS_SAMORBAM(direntry->d_name, len)) {
+			/* This is a SAM or BAM file, construct its path and
 			 * add that to the files array */
 			if (snprintf
 			    (path, 4096, "%s/%s", bam_repos,
 			     direntry->d_name) < 0) {
 				msg = createException(MAL, "bam_loader_repos",
-						      "Could not construct filepath for BAM file '%s'",
+						      "Could not construct filepath for SAM/BAM file '%s'",
 						      direntry->d_name);
 				goto cleanup;
 			}

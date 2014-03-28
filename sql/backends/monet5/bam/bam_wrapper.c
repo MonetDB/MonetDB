@@ -24,8 +24,9 @@
 #include "monetdb_config.h"
 #include "mal_exception.h"
 #include "stream.h"
+#include "bam_globals.h"
 
-#include <samtools/bam.h>
+#include <samtools/sam.h>
 #ifdef HAVE_SAMTOOLS_KSTRING_H
 #include <samtools/kstring.h>
 #else
@@ -33,7 +34,6 @@
  * version */
 #include "mykstring.h"
 #endif
-#include "bam_globals.h"
 #include "bam_wrapper.h"
 
 str
@@ -62,7 +62,6 @@ get_ordering(str ord)
 		return ORDERING_COORDINATE;
 	return ORDERING_UNKNOWN;
 }
-
 
 static stream *
 bsopen(str filepath)
@@ -96,8 +95,8 @@ bsopen(str filepath)
  * working directory.
  */
 str
-init_bam_wrapper(bam_wrapper * bw, str file_location, lng file_id,
-		 sht dbschema)
+init_bam_wrapper(bam_wrapper * bw, filetype type, str file_location, 
+         lng file_id, sht dbschema)
 {
 	unsigned int i;
 	char flushdir[128];
@@ -120,22 +119,35 @@ init_bam_wrapper(bam_wrapper * bw, str file_location, lng file_id,
 		      file_location, flushdir, strerror(errno));
 	}
 
-	/* Open BAM file */
-	if ((bw->input = bam_open(file_location, "r")) == NULL) {
-		throw(MAL, "init_bam_wrapper",
-		      ERR_INIT_BAM_WRAPPER "BAM file could not be opened",
-		      file_location);
-	}
-
-	/* Get BAM header */
-	if ((bw->header = bam_header_read(bw->input)) == NULL) {
-		throw(MAL, "init_bam_wrapper",
-		      ERR_INIT_BAM_WRAPPER "Unable to read header from file",
-		      file_location);
-	}
-
+    if (type == BAM) {
+	    /* Open BAM file and read its header */
+	    if ((bw->bam.input = bam_open(file_location, "r")) == NULL) {
+		    throw(MAL, "init_bam_wrapper",
+		          ERR_INIT_BAM_WRAPPER "BAM file could not be opened",
+		          file_location);
+	    }
+	    if ((bw->header = bam_header_read(bw->bam.input)) == NULL) {
+	        throw(MAL, "init_bam_wrapper",
+	            ERR_INIT_BAM_WRAPPER "Unable to read header from file",
+	            file_location);
+        }
+    } else {
+        /* Open SAM file and read its header */
+        if ((bw->sam.input = samopen(file_location, "r", NULL)) == NULL) {
+		    throw(MAL, "init_bam_wrapper",
+		          ERR_INIT_BAM_WRAPPER "SAM file could not be opened",
+		          file_location);
+	    }
+	    if ((bw->header = bw->sam.input->header) == NULL) {
+	        throw(MAL, "init_bam_wrapper",
+	            ERR_INIT_BAM_WRAPPER "Unable to read header from file",
+	            file_location);
+        }
+    }
+    
 	/* Set ordering to unknown, since we don't know until we have
 	 * processed the header */
+	bw->type = type;
 	bw->ord = ORDERING_UNKNOWN;
 
 	bw->file_id = file_id;
@@ -247,10 +259,10 @@ init_bam_wrapper(bam_wrapper * bw, str file_location, lng file_id,
 }
 
 static void
-close_streams(bam_wrapper * bw, bit unlink_files)
+close_write_streams(bam_wrapper * bw, bit unlink_files)
 {
 	int i;
-
+    
 	for (i = 0; i < 6; ++i) {
 		if (bw->files[i]) {
 			close_stream(bw->files[i]);
@@ -324,7 +336,7 @@ close_streams(bam_wrapper * bw, bit unlink_files)
 void
 prepare_for_copy(bam_wrapper * bw)
 {
-	close_streams(bw, FALSE);
+	close_write_streams(bw, FALSE);
 }
 
 void
@@ -332,16 +344,22 @@ clear_bam_wrapper(bam_wrapper * bw)
 {
 	char flushdir[128];
 
-	/* Clear fields */
-	if (bw->header) {
-		bam_header_destroy(bw->header);
-	}
-	if (bw->input) {
-		bam_close(bw->input);
-	}
+	/* Clear bam/sam specific fields */
+	if (bw->type == BAM) {
+	    if (bw->header) {
+		    bam_header_destroy(bw->header);
+	    }
+	    if (bw->bam.input) {
+		    bam_close(bw->bam.input);
+	    }
+    } else {
+        if (bw->sam.input) {
+            samclose(bw->sam.input);
+        }
+    }
 
 	/* Close file streams and remove files */
-	close_streams(bw, TRUE);
+	close_write_streams(bw, TRUE);
 
 	/* Finally, attempt to remove flush directory */
 	snprintf(flushdir, 128, DIR_BINARIES "/" LLFMT, bw->file_id);
@@ -422,7 +440,7 @@ typedef struct bam_header_line {
 } bam_header_line;
 
 
-#define ERR_PROCESS_BAM_HEADER_LINE "Could not parse a header line in BAM file '%s': "
+#define ERR_PROCESS_HEADER_LINE "Could not parse a header line in BAM file '%s': "
 
 /**
  * Parses the next BAM header line from the given header.
@@ -430,13 +448,13 @@ typedef struct bam_header_line {
  * and attempts to parse it into the provided bam_header_line
  * structure. In case the function fails, the calling function must
  * call clear_bam_header_line to free possible resources that are
- * malloced by process_bam_header_line.  The *eof flag will be set to
+ * malloced by process_header_line.  The *eof flag will be set to
  * TRUE if the input doesn't contain a header line anymore.  The
  * function needs the file_location in order to generate decent error
  * messages
  */
 static str
-process_bam_header_line(str * header, bam_header_line * ret_hl, bit * eof,
+process_header_line(str * header, bam_header_line * ret_hl, bit * eof,
 			str file_location)
 {
 	bam_header_option *opt = NULL;
@@ -457,8 +475,8 @@ process_bam_header_line(str * header, bam_header_line * ret_hl, bit * eof,
 
 	if (**header != '@') {
 		/* first character on header line should really be @ */
-		throw(MAL, "process_bam_header_line",
-		      ERR_PROCESS_BAM_HEADER_LINE
+		throw(MAL, "process_header_line",
+		      ERR_PROCESS_HEADER_LINE
 		      "Detected header line that does not start with '@'",
 		      file_location);
 	}
@@ -469,8 +487,8 @@ process_bam_header_line(str * header, bam_header_line * ret_hl, bit * eof,
 	/* eof not reached, so a header tag should be present, store
 	 * it as long as no \0 is there */
 	if (**header == '\0' || *(*header + 1) == '\0') {
-		throw(MAL, "process_bam_header_line",
-		      ERR_PROCESS_BAM_HEADER_LINE "Unexpected end of header",
+		throw(MAL, "process_header_line",
+		      ERR_PROCESS_HEADER_LINE "Unexpected end of header",
 		      file_location);
 	}
 	ret_hl->header_tag[0] = **header;
@@ -484,7 +502,7 @@ process_bam_header_line(str * header, bam_header_line * ret_hl, bit * eof,
 		if ((opt =
 		     (bam_header_option *)
 		     GDKmalloc(sizeof(bam_header_option))) == NULL) {
-			throw(MAL, "process_bam_header_line",
+			throw(MAL, "process_header_line",
 			      MAL_MALLOC_FAIL);
 		}
 
@@ -493,7 +511,7 @@ process_bam_header_line(str * header, bam_header_line * ret_hl, bit * eof,
 		if (read_string_until_delim(header, &opt->value, "\n\0", 2) ==
 		    -1) {
 			GDKfree(opt);
-			throw(MAL, "process_bam_header_line",
+			throw(MAL, "process_header_line",
 			      MAL_MALLOC_FAIL);
 		}
 		/* option only has to point to a single
@@ -506,7 +524,7 @@ process_bam_header_line(str * header, bam_header_line * ret_hl, bit * eof,
 	/* reserve enough space for the options (max 12 for RG) */
 	if ((ret_hl->options =
 	     GDKmalloc(12 * sizeof(bam_header_option))) == NULL) {
-		throw(MAL, "process_bam_header_line", MAL_MALLOC_FAIL);
+		throw(MAL, "process_header_line", MAL_MALLOC_FAIL);
 	}
 
 	/* Enables clear function to check individual options */
@@ -525,8 +543,8 @@ process_bam_header_line(str * header, bam_header_line * ret_hl, bit * eof,
 		/* a new option will be presented, see if we don't
 		 * already have too many options */
 		if (ret_hl->nr_options == 12) {
-			throw(MAL, "process_bam_header_line",
-			      ERR_PROCESS_BAM_HEADER_LINE
+			throw(MAL, "process_header_line",
+			      ERR_PROCESS_HEADER_LINE
 			      "Detected header line with more than 12 options",
 			      file_location);
 		}
@@ -536,8 +554,8 @@ process_bam_header_line(str * header, bam_header_line * ret_hl, bit * eof,
 
 		/* read tag */
 		if (**header == '\0' || *(*header + 1) == '\0') {
-			throw(MAL, "process_bam_header_line",
-			      ERR_PROCESS_BAM_HEADER_LINE
+			throw(MAL, "process_header_line",
+			      ERR_PROCESS_HEADER_LINE
 			      "Unexpected end of header", file_location);
 		}
 		opt->tag[0] = **header;
@@ -547,8 +565,8 @@ process_bam_header_line(str * header, bam_header_line * ret_hl, bit * eof,
 
 		/* a colon should be presented at this point */
 		if (**header != ':') {
-			throw(MAL, "process_bam_header_line",
-			      ERR_PROCESS_BAM_HEADER_LINE
+			throw(MAL, "process_header_line",
+			      ERR_PROCESS_HEADER_LINE
 			      "Expected a colon (:) after option tag in header line",
 			      file_location);
 		}
@@ -557,7 +575,7 @@ process_bam_header_line(str * header, bam_header_line * ret_hl, bit * eof,
 		/* read value of this option */
 		if (read_string_until_delim(header, &opt->value, "\t\n\0", 3)
 		    == -1) {
-			throw(MAL, "process_bam_header_line",
+			throw(MAL, "process_header_line",
 			      MAL_MALLOC_FAIL);
 		}
 	}
@@ -602,13 +620,13 @@ clear_bam_header_line(bam_header_line * hl)
 
 
 /**
- * Macros used only by process_bam_header for appending header data to
+ * Macros used only by process_header for appending header data to
  * streams under certain conditions
  */
 #define APPEND_OPTION_COND_STR(strm, opt, cmp, flag)			\
 	if (strcmp((opt).tag, (cmp)) == 0) {				\
 		if (!APPEND_STR(strm, (opt).value)) {			\
-			throw(MAL, "process_bam_header", ERR_PROCESS_BAM_HEADER "Could not write option '%s:%s' to binary file", \
+			throw(MAL, "process_header", ERR_PROCESS_HEADER "Could not write option '%s:%s' to binary file", \
 			      bw->file_location, (opt).tag, (opt).value); \
 		}							\
 		(flag) = TRUE;						\
@@ -621,7 +639,7 @@ clear_bam_header_line(bam_header_line * hl)
 		if ((s) == ((opt).value) || (l) == LONG_MIN || (l) == LONG_MAX) \
 			l = -1;						\
 		if (!APPEND_INT(file, l)) {				\
-			throw(MAL, "process_bam_header", ERR_PROCESS_BAM_HEADER "Could not write option '%s:%s' to binary file", \
+			throw(MAL, "process_header", ERR_PROCESS_HEADER "Could not write option '%s:%s' to binary file", \
 			      bw->file_location, (opt).tag, (opt).value); \
 		}							\
 		(flag) = TRUE;						\
@@ -634,7 +652,7 @@ clear_bam_header_line(bam_header_line * hl)
 		if ((s) == ((opt).value) || (l) == LONG_MIN || (l) == LONG_MAX) \
 			l = -1;						\
 		if (!APPEND_LNG(file, l)) {				\
-			throw(MAL, "process_bam_header", ERR_PROCESS_BAM_HEADER "Could not write option '%s:%s' to binary file", \
+			throw(MAL, "process_header", ERR_PROCESS_HEADER "Could not write option '%s:%s' to binary file", \
 			      bw->file_location, (opt).tag, (opt).value); \
 		}							\
 		(flag) = TRUE;						\
@@ -642,13 +660,13 @@ clear_bam_header_line(bam_header_line * hl)
 	}
 
 /**
- * Macros used only by process_bam_header for convenient error handling
+ * Macros used only by process_header for convenient error handling
  */
-#define ERR_PROCESS_BAM_HEADER "Could not parse header of BAM file '%s': "
+#define ERR_PROCESS_HEADER "Could not parse header of BAM file '%s': "
 #define ERR_NULL_INSERTION(hline, field)				\
 	do {								\
 		clear_bam_header_line(&hl);				\
-		throw(MAL, "process_bam_header", ERR_PROCESS_BAM_HEADER "Could not write NULL to binary file for "hline":"field" option", \
+		throw(MAL, "process_header", ERR_PROCESS_HEADER "Could not write NULL to binary file for "hline":"field" option", \
 		      bw->file_location);				\
 	} while (0)
 
@@ -657,7 +675,7 @@ clear_bam_header_line(bam_header_line * hl)
  * Parse the ASCII BAM header of the given BAM file wrapper.
  */
 str
-process_bam_header(bam_wrapper * bw)
+process_header(bam_wrapper * bw)
 {
 	str header_str = bw->header->text;
 
@@ -681,345 +699,348 @@ process_bam_header(bam_wrapper * bw)
 	hd_comment.s = NULL;
 
 	if (!APPEND_LNG(bw->files[0], bw->file_id)) {
-		throw(MAL, "process_bam_header",
-		      ERR_PROCESS_BAM_HEADER "Could not write file id " LLFMT
+		throw(MAL, "process_header",
+		      ERR_PROCESS_HEADER "Could not write file id " LLFMT
 		      " to binary file", bw->file_location, bw->file_id);
 	}
 	if (!APPEND_STR(bw->files[1], bw->file_location)) {
-		throw(MAL, "process_bam_header",
-		      ERR_PROCESS_BAM_HEADER
+		throw(MAL, "process_header",
+		      ERR_PROCESS_HEADER
 		      "Could not write file location to binary file",
 		      bw->file_location);
 	}
 	if (!APPEND_SHT(bw->files[2], bw->dbschema)) {
-		throw(MAL, "process_bam_header",
-		      ERR_PROCESS_BAM_HEADER
+		throw(MAL, "process_header",
+		      ERR_PROCESS_HEADER
 		      "Could not write dbschema to binary file",
 		      bw->file_location);
 	}
+	
+	if(header_str != NULL) {
 
-	/* loop will run until no more header lines are found */
-	while (TRUE) {
-		/* try to read the next header line */
-		if ((msg =
-		     process_bam_header_line(&header_str, &hl, &eof,
-					     bw->file_location)) !=
-		    MAL_SUCCEED) {
-			clear_bam_header_line(&hl);
-			return msg;
-		}
+	    /* loop will run until no more header lines are found */
+	    while (TRUE) {
+		    /* try to read the next header line */
+		    if ((msg =
+		         process_header_line(&header_str, &hl, &eof,
+					         bw->file_location)) !=
+		        MAL_SUCCEED) {
+			    clear_bam_header_line(&hl);
+			    return msg;
+		    }
 
-		/* if eof is set to TRUE by process_bam_header_line,
-		 * this indicates that we reached the end of the
-		 * header */
-		if (eof) {
-			clear_bam_header_line(&hl);
-			break;
-		}
+		    /* if eof is set to TRUE by process_header_line,
+		     * this indicates that we reached the end of the
+		     * header */
+		    if (eof) {
+			    clear_bam_header_line(&hl);
+			    break;
+		    }
 
-		/* read and interpret the header tag */
-		if (strcmp(hl.header_tag, "HD") == 0) {
-			++nr_hd_lines;
-			if (nr_hd_lines > 1) {
-				clear_bam_header_line(&hl);
-				throw(MAL, "process_bam_header",
-				      ERR_PROCESS_BAM_HEADER
-				      "More than one HD line found in header",
-				      bw->file_location);
-			}
+		    /* read and interpret the header tag */
+		    if (strcmp(hl.header_tag, "HD") == 0) {
+			    ++nr_hd_lines;
+			    if (nr_hd_lines > 1) {
+				    clear_bam_header_line(&hl);
+				    throw(MAL, "process_header",
+				          ERR_PROCESS_HEADER
+				          "More than one HD line found in header",
+				          bw->file_location);
+			    }
 
-			for (o = 0; o < hl.nr_options; ++o) {
-				/* If this option contains sorting
-				 * order, save it in the bam_wrapper
-				 * struct */
-				if (strcmp(hl.options[o].tag, "SO") == 0) {
-					bw->ord =
-						get_ordering(hl.options[o].
-							     value);
-				}
-				APPEND_OPTION_COND_STR(bw->files[3],
-						       hl.options[o], "VN",
-						       hd_fields_found[0]);
-				APPEND_OPTION_COND_STR(bw->files[4],
-						       hl.options[o], "SO",
-						       hd_fields_found[1]);
+			    for (o = 0; o < hl.nr_options; ++o) {
+				    /* If this option contains sorting
+				     * order, save it in the bam_wrapper
+				     * struct */
+				    if (strcmp(hl.options[o].tag, "SO") == 0) {
+					    bw->ord =
+						    get_ordering(hl.options[o].
+							         value);
+				    }
+				    APPEND_OPTION_COND_STR(bw->files[3],
+						           hl.options[o], "VN",
+						           hd_fields_found[0]);
+				    APPEND_OPTION_COND_STR(bw->files[4],
+						           hl.options[o], "SO",
+						           hd_fields_found[1]);
 
-				/* if this point is reached, option
-				 * wasn't recognized */
-				clear_bam_header_line(&hl);
-				throw(MAL, "process_bam_header",
-				      ERR_PROCESS_BAM_HEADER
-				      "Unknown option '%s' found in header tag HD",
-				      bw->file_location, hl.options[o].tag);
-			}
-			if (!hd_fields_found[0]) {
-				clear_bam_header_line(&hl);
-				throw(MAL, "process_bam_header",
-				      "VN tag not found in HD header line\n");
-			}
-		} else if (strcmp(hl.header_tag, "SQ") == 0) {
-			++bw->cnt_sq;
-			if (!APPEND_LNG(bw->sq[1], bw->file_id)) {
-				throw(MAL, "process_bam_header",
-				      ERR_PROCESS_BAM_HEADER
-				      "Could not write file id " LLFMT
-				      " to binary file", bw->file_location,
-				      bw->file_id);
-			}
+				    /* if this point is reached, option
+				     * wasn't recognized */
+				    clear_bam_header_line(&hl);
+				    throw(MAL, "process_header",
+				          ERR_PROCESS_HEADER
+				          "Unknown option '%s' found in header tag HD",
+				          bw->file_location, hl.options[o].tag);
+			    }
+			    if (!hd_fields_found[0]) {
+				    clear_bam_header_line(&hl);
+				    throw(MAL, "process_header",
+				          "VN tag not found in HD header line\n");
+			    }
+		    } else if (strcmp(hl.header_tag, "SQ") == 0) {
+			    ++bw->cnt_sq;
+			    if (!APPEND_LNG(bw->sq[1], bw->file_id)) {
+				    throw(MAL, "process_header",
+				          ERR_PROCESS_HEADER
+				          "Could not write file id " LLFMT
+				          " to binary file", bw->file_location,
+				          bw->file_id);
+			    }
 
-			for (i = 0; i < 6; ++i) {
-				sq_fields_found[i] = FALSE;
-			}
+			    for (i = 0; i < 6; ++i) {
+				    sq_fields_found[i] = FALSE;
+			    }
 
-			for (o = 0; o < hl.nr_options; ++o) {
-				APPEND_OPTION_COND_STR(bw->sq[0],
-						       hl.options[o], "SN",
-						       sq_fields_found[0]);
-				APPEND_OPTION_COND_INT(bw->sq[2],
-						       hl.options[o], "LN",
-						       sq_fields_found[1], l,
-						       s);
-				APPEND_OPTION_COND_INT(bw->sq[3],
-						       hl.options[o], "AS",
-						       sq_fields_found[2], l,
-						       s);
-				APPEND_OPTION_COND_STR(bw->sq[4],
-						       hl.options[o], "M5",
-						       sq_fields_found[3]);
-				APPEND_OPTION_COND_STR(bw->sq[5],
-						       hl.options[o], "SP",
-						       sq_fields_found[4]);
-				APPEND_OPTION_COND_STR(bw->sq[6],
-						       hl.options[o], "UR",
-						       sq_fields_found[5]);
+			    for (o = 0; o < hl.nr_options; ++o) {
+				    APPEND_OPTION_COND_STR(bw->sq[0],
+						           hl.options[o], "SN",
+						           sq_fields_found[0]);
+				    APPEND_OPTION_COND_INT(bw->sq[2],
+						           hl.options[o], "LN",
+						           sq_fields_found[1], l,
+						           s);
+				    APPEND_OPTION_COND_INT(bw->sq[3],
+						           hl.options[o], "AS",
+						           sq_fields_found[2], l,
+						           s);
+				    APPEND_OPTION_COND_STR(bw->sq[4],
+						           hl.options[o], "M5",
+						           sq_fields_found[3]);
+				    APPEND_OPTION_COND_STR(bw->sq[5],
+						           hl.options[o], "SP",
+						           sq_fields_found[4]);
+				    APPEND_OPTION_COND_STR(bw->sq[6],
+						           hl.options[o], "UR",
+						           sq_fields_found[5]);
 
-				/* if this point is reached, option
-				 * wasn't recognized */
-				clear_bam_header_line(&hl);
-				throw(MAL, "process_bam_header",
-				      ERR_PROCESS_BAM_HEADER
-				      "Unknown option '%s' found in header tag SQ",
-				      bw->file_location, hl.options[o].tag);
-			}
-			if (!sq_fields_found[0]) {
-				clear_bam_header_line(&hl);
-				throw(MAL, "process_bam_header",
-				      ERR_PROCESS_BAM_HEADER
-				      "SN tag not found in SQ header line",
-				      bw->file_location);
-			}
-			/*We don't require the LN field for our
-			 * primary key, so to increase user
-			 * friendliness, we accept an absence of the
-			 * LN option, even though the specification
-			 * says it is required */
-			/*if(!sq_fields_found[1]) {
-			 * clear_bam_header_line(&hl);
-			 * throw(MAL, "process_bam_header", ERR_PROCESS_BAM_HEADER "LN tag not found in SQ header line", bw->file_location);
-			 * } */
+				    /* if this point is reached, option
+				     * wasn't recognized */
+				    clear_bam_header_line(&hl);
+				    throw(MAL, "process_header",
+				          ERR_PROCESS_HEADER
+				          "Unknown option '%s' found in header tag SQ",
+				          bw->file_location, hl.options[o].tag);
+			    }
+			    if (!sq_fields_found[0]) {
+				    clear_bam_header_line(&hl);
+				    throw(MAL, "process_header",
+				          ERR_PROCESS_HEADER
+				          "SN tag not found in SQ header line",
+				          bw->file_location);
+			    }
+			    /*We don't require the LN field for our
+			     * primary key, so to increase user
+			     * friendliness, we accept an absence of the
+			     * LN option, even though the specification
+			     * says it is required */
+			    /*if(!sq_fields_found[1]) {
+			     * clear_bam_header_line(&hl);
+			     * throw(MAL, "process_header", ERR_PROCESS_HEADER "LN tag not found in SQ header line", bw->file_location);
+			     * } */
 
-			/* Insert NULL values where needed */
-			if (!sq_fields_found[1]
-			    && !APPEND_INT(bw->sq[2], int_nil))
-				ERR_NULL_INSERTION("SQ", "LN");
-			if (!sq_fields_found[2]
-			    && !APPEND_INT(bw->sq[3], int_nil))
-				ERR_NULL_INSERTION("SQ", "AS");
-			if (!sq_fields_found[3]
-			    && !APPEND_STR(bw->sq[4], str_nil))
-				ERR_NULL_INSERTION("SQ", "M5");
-			if (!sq_fields_found[4]
-			    && !APPEND_STR(bw->sq[5], str_nil))
-				ERR_NULL_INSERTION("SQ", "SP");
-			if (!sq_fields_found[5]
-			    && !APPEND_STR(bw->sq[6], str_nil))
-				ERR_NULL_INSERTION("SQ", "UR");
+			    /* Insert NULL values where needed */
+			    if (!sq_fields_found[1]
+			        && !APPEND_INT(bw->sq[2], int_nil))
+				    ERR_NULL_INSERTION("SQ", "LN");
+			    if (!sq_fields_found[2]
+			        && !APPEND_INT(bw->sq[3], int_nil))
+				    ERR_NULL_INSERTION("SQ", "AS");
+			    if (!sq_fields_found[3]
+			        && !APPEND_STR(bw->sq[4], str_nil))
+				    ERR_NULL_INSERTION("SQ", "M5");
+			    if (!sq_fields_found[4]
+			        && !APPEND_STR(bw->sq[5], str_nil))
+				    ERR_NULL_INSERTION("SQ", "SP");
+			    if (!sq_fields_found[5]
+			        && !APPEND_STR(bw->sq[6], str_nil))
+				    ERR_NULL_INSERTION("SQ", "UR");
 
-		} else if (strcmp(hl.header_tag, "RG") == 0) {
-			++bw->cnt_rg;
-			if (!APPEND_LNG(bw->rg[1], bw->file_id)) {
-				throw(MAL, "process_bam_header",
-				      ERR_PROCESS_BAM_HEADER
-				      "Could not write file id " LLFMT
-				      " to binary file", bw->file_location,
-				      bw->file_id);
-			}
+		    } else if (strcmp(hl.header_tag, "RG") == 0) {
+			    ++bw->cnt_rg;
+			    if (!APPEND_LNG(bw->rg[1], bw->file_id)) {
+				    throw(MAL, "process_header",
+				          ERR_PROCESS_HEADER
+				          "Could not write file id " LLFMT
+				          " to binary file", bw->file_location,
+				          bw->file_id);
+			    }
 
-			for (i = 0; i < 12; ++i) {
-				rg_fields_found[i] = FALSE;
-			}
+			    for (i = 0; i < 12; ++i) {
+				    rg_fields_found[i] = FALSE;
+			    }
 
-			for (o = 0; o < hl.nr_options; ++o) {
-				APPEND_OPTION_COND_STR(bw->rg[0],
-						       hl.options[o], "ID",
-						       rg_fields_found[0]);
-				APPEND_OPTION_COND_STR(bw->rg[2],
-						       hl.options[o], "CN",
-						       rg_fields_found[1]);
-				APPEND_OPTION_COND_STR(bw->rg[3],
-						       hl.options[o], "DS",
-						       rg_fields_found[2]);
-				APPEND_OPTION_COND_LNG(bw->rg[4],
-						       hl.options[o], "DT",
-						       rg_fields_found[3], l,
-						       s);
-				APPEND_OPTION_COND_STR(bw->rg[5],
-						       hl.options[o], "FO",
-						       rg_fields_found[4]);
-				APPEND_OPTION_COND_STR(bw->rg[6],
-						       hl.options[o], "KS",
-						       rg_fields_found[5]);
-				APPEND_OPTION_COND_STR(bw->rg[7],
-						       hl.options[o], "LB",
-						       rg_fields_found[6]);
-				APPEND_OPTION_COND_STR(bw->rg[8],
-						       hl.options[o], "PG",
-						       rg_fields_found[7]);
-				APPEND_OPTION_COND_INT(bw->rg[9],
-						       hl.options[o], "PI",
-						       rg_fields_found[8], l,
-						       s);
-				APPEND_OPTION_COND_STR(bw->rg[10],
-						       hl.options[o], "PL",
-						       rg_fields_found[9]);
-				APPEND_OPTION_COND_STR(bw->rg[11],
-						       hl.options[o], "PU",
-						       rg_fields_found[10]);
-				APPEND_OPTION_COND_STR(bw->rg[12],
-						       hl.options[o], "SM",
-						       rg_fields_found[11]);
+			    for (o = 0; o < hl.nr_options; ++o) {
+				    APPEND_OPTION_COND_STR(bw->rg[0],
+						           hl.options[o], "ID",
+						           rg_fields_found[0]);
+				    APPEND_OPTION_COND_STR(bw->rg[2],
+						           hl.options[o], "CN",
+						           rg_fields_found[1]);
+				    APPEND_OPTION_COND_STR(bw->rg[3],
+						           hl.options[o], "DS",
+						           rg_fields_found[2]);
+				    APPEND_OPTION_COND_LNG(bw->rg[4],
+						           hl.options[o], "DT",
+						           rg_fields_found[3], l,
+						           s);
+				    APPEND_OPTION_COND_STR(bw->rg[5],
+						           hl.options[o], "FO",
+						           rg_fields_found[4]);
+				    APPEND_OPTION_COND_STR(bw->rg[6],
+						           hl.options[o], "KS",
+						           rg_fields_found[5]);
+				    APPEND_OPTION_COND_STR(bw->rg[7],
+						           hl.options[o], "LB",
+						           rg_fields_found[6]);
+				    APPEND_OPTION_COND_STR(bw->rg[8],
+						           hl.options[o], "PG",
+						           rg_fields_found[7]);
+				    APPEND_OPTION_COND_INT(bw->rg[9],
+						           hl.options[o], "PI",
+						           rg_fields_found[8], l,
+						           s);
+				    APPEND_OPTION_COND_STR(bw->rg[10],
+						           hl.options[o], "PL",
+						           rg_fields_found[9]);
+				    APPEND_OPTION_COND_STR(bw->rg[11],
+						           hl.options[o], "PU",
+						           rg_fields_found[10]);
+				    APPEND_OPTION_COND_STR(bw->rg[12],
+						           hl.options[o], "SM",
+						           rg_fields_found[11]);
 
-				/* if this point is reached, option wasn't recognized */
-				clear_bam_header_line(&hl);
-				throw(MAL, "process_bam_header",
-				      ERR_PROCESS_BAM_HEADER
-				      "Unknown option '%s' found in header tag RG",
-				      bw->file_location, hl.options[o].tag);
-			}
-			if (!rg_fields_found[0]) {
-				clear_bam_header_line(&hl);
-				throw(MAL, "process_bam_header",
-				      ERR_PROCESS_BAM_HEADER
-				      "ID tag not found in RG header line",
-				      bw->file_location);
-			}
+				    /* if this point is reached, option wasn't recognized */
+				    clear_bam_header_line(&hl);
+				    throw(MAL, "process_header",
+				          ERR_PROCESS_HEADER
+				          "Unknown option '%s' found in header tag RG",
+				          bw->file_location, hl.options[o].tag);
+			    }
+			    if (!rg_fields_found[0]) {
+				    clear_bam_header_line(&hl);
+				    throw(MAL, "process_header",
+				          ERR_PROCESS_HEADER
+				          "ID tag not found in RG header line",
+				          bw->file_location);
+			    }
 
-			/* Insert NULL values where needed */
-			if (!rg_fields_found[1]
-			    && !APPEND_STR(bw->rg[2], str_nil))
-				ERR_NULL_INSERTION("RG", "CN");
-			if (!rg_fields_found[2]
-			    && !APPEND_STR(bw->rg[3], str_nil))
-				ERR_NULL_INSERTION("RG", "DS");
-			if (!rg_fields_found[3]
-			    && !APPEND_LNG(bw->rg[4], lng_nil))
-				ERR_NULL_INSERTION("RG", "DT");
-			if (!rg_fields_found[4]
-			    && !APPEND_STR(bw->rg[5], str_nil))
-				ERR_NULL_INSERTION("RG", "FO");
-			if (!rg_fields_found[5]
-			    && !APPEND_STR(bw->rg[6], str_nil))
-				ERR_NULL_INSERTION("RG", "KS");
-			if (!rg_fields_found[6]
-			    && !APPEND_STR(bw->rg[7], str_nil))
-				ERR_NULL_INSERTION("RG", "LB");
-			if (!rg_fields_found[7]
-			    && !APPEND_STR(bw->rg[8], str_nil))
-				ERR_NULL_INSERTION("RG", "PG");
-			if (!rg_fields_found[8]
-			    && !APPEND_INT(bw->rg[9], int_nil))
-				ERR_NULL_INSERTION("RG", "PI");
-			if (!rg_fields_found[9]
-			    && !APPEND_STR(bw->rg[10], str_nil))
-				ERR_NULL_INSERTION("RG", "PL");
-			if (!rg_fields_found[10]
-			    && !APPEND_STR(bw->rg[11], str_nil))
-				ERR_NULL_INSERTION("RG", "PU");
-			if (!rg_fields_found[11]
-			    && !APPEND_STR(bw->rg[12], str_nil))
-				ERR_NULL_INSERTION("RG", "SM");
+			    /* Insert NULL values where needed */
+			    if (!rg_fields_found[1]
+			        && !APPEND_STR(bw->rg[2], str_nil))
+				    ERR_NULL_INSERTION("RG", "CN");
+			    if (!rg_fields_found[2]
+			        && !APPEND_STR(bw->rg[3], str_nil))
+				    ERR_NULL_INSERTION("RG", "DS");
+			    if (!rg_fields_found[3]
+			        && !APPEND_LNG(bw->rg[4], lng_nil))
+				    ERR_NULL_INSERTION("RG", "DT");
+			    if (!rg_fields_found[4]
+			        && !APPEND_STR(bw->rg[5], str_nil))
+				    ERR_NULL_INSERTION("RG", "FO");
+			    if (!rg_fields_found[5]
+			        && !APPEND_STR(bw->rg[6], str_nil))
+				    ERR_NULL_INSERTION("RG", "KS");
+			    if (!rg_fields_found[6]
+			        && !APPEND_STR(bw->rg[7], str_nil))
+				    ERR_NULL_INSERTION("RG", "LB");
+			    if (!rg_fields_found[7]
+			        && !APPEND_STR(bw->rg[8], str_nil))
+				    ERR_NULL_INSERTION("RG", "PG");
+			    if (!rg_fields_found[8]
+			        && !APPEND_INT(bw->rg[9], int_nil))
+				    ERR_NULL_INSERTION("RG", "PI");
+			    if (!rg_fields_found[9]
+			        && !APPEND_STR(bw->rg[10], str_nil))
+				    ERR_NULL_INSERTION("RG", "PL");
+			    if (!rg_fields_found[10]
+			        && !APPEND_STR(bw->rg[11], str_nil))
+				    ERR_NULL_INSERTION("RG", "PU");
+			    if (!rg_fields_found[11]
+			        && !APPEND_STR(bw->rg[12], str_nil))
+				    ERR_NULL_INSERTION("RG", "SM");
 
-		} else if (strcmp(hl.header_tag, "PG") == 0) {
-			++bw->cnt_pg;
-			if (!APPEND_LNG(bw->pg[1], bw->file_id)) {
-				throw(MAL, "process_bam_header",
-				      ERR_PROCESS_BAM_HEADER
-				      "Could not write file id " LLFMT
-				      " to binary file", bw->file_location,
-				      bw->file_id);
-			}
+		    } else if (strcmp(hl.header_tag, "PG") == 0) {
+			    ++bw->cnt_pg;
+			    if (!APPEND_LNG(bw->pg[1], bw->file_id)) {
+				    throw(MAL, "process_header",
+				          ERR_PROCESS_HEADER
+				          "Could not write file id " LLFMT
+				          " to binary file", bw->file_location,
+				          bw->file_id);
+			    }
 
-			for (i = 0; i < 5; ++i) {
-				pg_fields_found[i] = FALSE;
-			}
+			    for (i = 0; i < 5; ++i) {
+				    pg_fields_found[i] = FALSE;
+			    }
 
-			for (o = 0; o < hl.nr_options; ++o) {
-				APPEND_OPTION_COND_STR(bw->pg[0],
-						       hl.options[o], "ID",
-						       pg_fields_found[0]);
-				APPEND_OPTION_COND_STR(bw->pg[2],
-						       hl.options[o], "PN",
-						       pg_fields_found[1]);
-				APPEND_OPTION_COND_STR(bw->pg[3],
-						       hl.options[o], "CL",
-						       pg_fields_found[2]);
-				APPEND_OPTION_COND_STR(bw->pg[4],
-						       hl.options[o], "PP",
-						       pg_fields_found[3]);
-				APPEND_OPTION_COND_STR(bw->pg[5],
-						       hl.options[o], "VN",
-						       pg_fields_found[4]);
+			    for (o = 0; o < hl.nr_options; ++o) {
+				    APPEND_OPTION_COND_STR(bw->pg[0],
+						           hl.options[o], "ID",
+						           pg_fields_found[0]);
+				    APPEND_OPTION_COND_STR(bw->pg[2],
+						           hl.options[o], "PN",
+						           pg_fields_found[1]);
+				    APPEND_OPTION_COND_STR(bw->pg[3],
+						           hl.options[o], "CL",
+						           pg_fields_found[2]);
+				    APPEND_OPTION_COND_STR(bw->pg[4],
+						           hl.options[o], "PP",
+						           pg_fields_found[3]);
+				    APPEND_OPTION_COND_STR(bw->pg[5],
+						           hl.options[o], "VN",
+						           pg_fields_found[4]);
 
-				/* if this point is reached, option wasn't recognized */
-				clear_bam_header_line(&hl);
-				throw(MAL, "process_bam_header",
-				      ERR_PROCESS_BAM_HEADER
-				      "Unknown option '%s' found in header tag PG",
-				      bw->file_location, hl.options[o].tag);
-			}
-			if (!pg_fields_found[0]) {
-				clear_bam_header_line(&hl);
-				throw(MAL, "process_bam_header",
-				      ERR_PROCESS_BAM_HEADER
-				      "ID tag not found in PG header line",
-				      bw->file_location);
-			}
-			/* Insert NULL values where needed */
-			if (!pg_fields_found[1]
-			    && !APPEND_STR(bw->pg[2], str_nil))
-				ERR_NULL_INSERTION("PG", "PN");
-			if (!pg_fields_found[2]
-			    && !APPEND_STR(bw->pg[3], str_nil))
-				ERR_NULL_INSERTION("PG", "CL");
-			if (!pg_fields_found[3]
-			    && !APPEND_STR(bw->pg[4], str_nil))
-				ERR_NULL_INSERTION("PG", "PP");
-			if (!pg_fields_found[4]
-			    && !APPEND_STR(bw->pg[5], str_nil))
-				ERR_NULL_INSERTION("PG", "VN");
-		} else if (strcmp(hl.header_tag, "CO") == 0) {
-	    /** a comment hl only has a single option, of which the
-             * tag = NULL and the value contains the actual comment
-             * Concatenate comment to earlier comments Seperate
-             * different comments with a newline
-             */
-			if (comment_found) {
-				kputc('\n', &hd_comment);
-			}
-			kputs(hl.options[0].value, &hd_comment);
-			comment_found = TRUE;
-		} else {
-			clear_bam_header_line(&hl);
-			throw(MAL, "process_bam_header",
-			      ERR_PROCESS_BAM_HEADER
-			      "Incorrect header tag '%s' found in BAM file",
-			      bw->file_location, hl.header_tag);
-		}
+				    /* if this point is reached, option wasn't recognized */
+				    clear_bam_header_line(&hl);
+				    throw(MAL, "process_header",
+				          ERR_PROCESS_HEADER
+				          "Unknown option '%s' found in header tag PG",
+				          bw->file_location, hl.options[o].tag);
+			    }
+			    if (!pg_fields_found[0]) {
+				    clear_bam_header_line(&hl);
+				    throw(MAL, "process_header",
+				          ERR_PROCESS_HEADER
+				          "ID tag not found in PG header line",
+				          bw->file_location);
+			    }
+			    /* Insert NULL values where needed */
+			    if (!pg_fields_found[1]
+			        && !APPEND_STR(bw->pg[2], str_nil))
+				    ERR_NULL_INSERTION("PG", "PN");
+			    if (!pg_fields_found[2]
+			        && !APPEND_STR(bw->pg[3], str_nil))
+				    ERR_NULL_INSERTION("PG", "CL");
+			    if (!pg_fields_found[3]
+			        && !APPEND_STR(bw->pg[4], str_nil))
+				    ERR_NULL_INSERTION("PG", "PP");
+			    if (!pg_fields_found[4]
+			        && !APPEND_STR(bw->pg[5], str_nil))
+				    ERR_NULL_INSERTION("PG", "VN");
+		    } else if (strcmp(hl.header_tag, "CO") == 0) {
+	        /** a comment hl only has a single option, of which the
+                 * tag = NULL and the value contains the actual comment
+                 * Concatenate comment to earlier comments Seperate
+                 * different comments with a newline
+                 */
+			    if (comment_found) {
+				    kputc('\n', &hd_comment);
+			    }
+			    kputs(hl.options[0].value, &hd_comment);
+			    comment_found = TRUE;
+		    } else {
+			    clear_bam_header_line(&hl);
+			    throw(MAL, "process_header",
+			          ERR_PROCESS_HEADER
+			          "Incorrect header tag '%s' found in BAM file",
+			          bw->file_location, hl.header_tag);
+		    }
 
-		/* everything went ok, clear the header line and move
-		 * on to the next header line */
-		clear_bam_header_line(&hl);
-	}
+		    /* everything went ok, clear the header line and move
+		     * on to the next header line */
+		    clear_bam_header_line(&hl);
+	    }
+    }
 
 	if (!hd_fields_found[0] && !APPEND_STR(bw->files[3], str_nil))
 		ERR_NULL_INSERTION("HD", "VN");
@@ -1029,8 +1050,8 @@ process_bam_header(bam_wrapper * bw)
 	if (!APPEND_STR
 	    (bw->files[5],
 	     (comment_found && hd_comment.s ? hd_comment.s : str_nil))) {
-		throw(MAL, "process_bam_header",
-		      ERR_PROCESS_BAM_HEADER
+		throw(MAL, "process_header",
+		      ERR_PROCESS_HEADER
 		      "Could not insert header comments in binary file",
 		      bw->file_location);
 	}
@@ -1620,13 +1641,15 @@ complete_qname_group(alignment * alignments, int nr_alignments,
 	return MAL_SUCCEED;
 }
 
+#define BAMSAM_TELL(bw) (bw->type == BAM ? bam_tell(bw->bam.input) : bw->cnt_alignments)
+
 str
-process_bam_alignments(bam_wrapper * bw, bit * some_thread_failed)
+process_alignments(bam_wrapper * bw, bit * some_thread_failed)
 {
 	alignment *aligs = NULL;
 	int nr_aligs;
 
-	lng voffset = bam_tell(bw->input);
+	lng voffset;
 	bam1_t *alig = bam_init1();
 
 	int alignment_bytes_read;
@@ -1638,9 +1661,12 @@ process_bam_alignments(bam_wrapper * bw, bit * some_thread_failed)
 	/* Initiate to 16 for pairwise schema; if this turns out to be
 	 * too small, realloc will be used */
 	nr_aligs = bw->dbschema == 0 ? 1 : 16;
+	
+	voffset = BAMSAM_TELL(bw);
+	
 	if ((aligs =
 	     (alignment *) GDKmalloc(nr_aligs * sizeof(alignment))) == NULL) {
-		msg = createException(MAL, "process_bam_alignments",
+		msg = createException(MAL, "process_alignments",
 				      MAL_MALLOC_FAIL);
 		goto cleanup;
 	}
@@ -1650,18 +1676,27 @@ process_bam_alignments(bam_wrapper * bw, bit * some_thread_failed)
 
 	for (i = 0; i < nr_aligs; ++i) {
 		if (!init_alignment(aligs + i)) {
-			msg = createException(MAL, "process_bam_alignments",
+			msg = createException(MAL, "process_alignments",
 					      MAL_MALLOC_FAIL);
 			goto cleanup;
 		}
 	}
 
-	while ((alignment_bytes_read = bam_read1(bw->input, alig)) >= 0) {
+	while (TRUE) { /* One iteration per alignment */
 		/* Start the processing of every alignment with
 		 * checking if we should return due to another
 		 * thread's failure */
 		if (*some_thread_failed)
 			goto cleanup;
+			
+		if (bw->type == BAM) {
+		    alignment_bytes_read = bam_read1(bw->bam.input, alig);
+		} else {
+		    alignment_bytes_read = samread(bw->sam.input, alig);
+	    }
+	    if (alignment_bytes_read < 0) {
+	        break;
+        }
 
 		if (bw->dbschema == 1 && alig_index > 0
 		    && strcmp(bam1_qname(alig),
@@ -1682,7 +1717,7 @@ process_bam_alignments(bam_wrapper * bw, bit * some_thread_failed)
 
 		/* voffset can be updated for the next iteration at
 		 * this point already */
-		voffset = bam_tell(bw->input);
+		voffset = BAMSAM_TELL(bw);
 
 		if (bw->dbschema == 1) {
 			/* We are building the paired
@@ -1699,7 +1734,7 @@ process_bam_alignments(bam_wrapper * bw, bit * some_thread_failed)
 			    )
 				) {
 				APPEND_ALIGNMENT_UNPAIRED(msg,
-							  "process_bam_alignments",
+							  "process_alignments",
 							  *a, bw);
 				if (msg != MAL_SUCCEED) {
 					goto cleanup;
@@ -1724,7 +1759,7 @@ process_bam_alignments(bam_wrapper * bw, bit * some_thread_failed)
 							sizeof(alignment))) ==
 					    NULL) {
 						msg = createException(MAL,
-								      "process_bam_alignments",
+								      "process_alignments",
 								      MAL_MALLOC_FAIL);
 						goto cleanup;
 					}
@@ -1743,7 +1778,7 @@ process_bam_alignments(bam_wrapper * bw, bit * some_thread_failed)
 						    (aligs + i)) {
 							msg = createException
 								(MAL,
-								 "process_bam_alignments",
+								 "process_alignments",
 								 MAL_MALLOC_FAIL);
 							goto cleanup;
 						}
