@@ -2863,7 +2863,7 @@ mnstr_read_block(stream *s, void *buf, size_t elmsize, size_t cnt)
 int
 mnstr_readBte(stream *s, signed char *val)
 {
-	return s->read(s, (void *) val, sizeof(*val), 1);
+	return (int) s->read(s, (void *) val, sizeof(*val), 1);
 }
 
 int
