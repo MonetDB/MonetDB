@@ -112,6 +112,7 @@ reverse_seq(str * ret, str * seq)
 			result[len - i - 1] = 'N';
 			break;
 		default:
+            GDKfree(result);
 			throw(MAL, "reverse_seq",
 			      "Invalid character found in sequence: '%c'\n",
 			      (*seq)[i]);
@@ -189,7 +190,7 @@ bam_flag_bat(bat * ret, bat * bid, str * name)
 		throw(MAL, "bam_flag_bat", RUNTIME_OBJECT_MISSING);
 
 	/* allocate result BAT */
-	result = BATnew(TYPE_oid, TYPE_bit, BATcount(flags));
+	result = BATnew(TYPE_void, TYPE_bit, BATcount(flags));
 	if (result == NULL) {
 		throw(MAL, "bam_flag_bat", MAL_MALLOC_FAIL);
 	}
@@ -198,13 +199,10 @@ bam_flag_bat(bat * ret, bat * bid, str * name)
 	li = bat_iterator(flags);
 
 	BATloop(flags, p, q) {
-		ptr h = BUNhead(li, p);
 		sht t = *(sht *) BUNtail(li, p);
 		bit r = kth_bit(t, k);
 
-		/* insert original head and the right flag in result BAT */
-		/* BUNins() takes care of all necessary administration */
-		BUNins(result, h, (ptr) & r, FALSE);
+		BUNappend(result, (ptr) &r, FALSE);
 	}
 
 	/* release input BAT-descriptor */
@@ -228,7 +226,7 @@ reverse_seq_bat(bat * ret, bat * bid)
 		throw(MAL, "reverse_seq_bat", RUNTIME_OBJECT_MISSING);
 
 	/* allocate result BAT */
-	result = BATnew(TYPE_oid, TYPE_str, BATcount(seqs));
+	result = BATnew(TYPE_void, TYPE_str, BATcount(seqs));
 	if (result == NULL) {
 		throw(MAL, "reverse_seq_bat", MAL_MALLOC_FAIL);
 	}
@@ -237,7 +235,6 @@ reverse_seq_bat(bat * ret, bat * bid)
 	li = bat_iterator(seqs);
 
 	BATloop(seqs, p, q) {
-		ptr h = BUNhead(li, p);
 		str t = (str) BUNtail(li, p);
 		str r, msg;
 
@@ -245,10 +242,7 @@ reverse_seq_bat(bat * ret, bat * bid)
 			BBPreleaseref(result->batCacheid);
 			return msg;
 		}
-		/* insert original head and the reversed sequence in
-		 * result BAT */
-		/* BUNins() takes care of all necessary administration */
-		BUNins(result, h, (ptr) r, FALSE);
+        BUNappend(result, (ptr) r, FALSE);
 		GDKfree(r);
 	}
 
@@ -273,7 +267,7 @@ reverse_qual_bat(bat * ret, bat * bid)
 		throw(MAL, "reverse_qual_bat", RUNTIME_OBJECT_MISSING);
 
 	/* allocate result BAT */
-	result = BATnew(TYPE_oid, TYPE_str, BATcount(quals));
+	result = BATnew(TYPE_void, TYPE_str, BATcount(quals));
 	if (result == NULL) {
 		throw(MAL, "reverse_qual_bat", MAL_MALLOC_FAIL);
 	}
@@ -282,7 +276,6 @@ reverse_qual_bat(bat * ret, bat * bid)
 	li = bat_iterator(quals);
 
 	BATloop(quals, p, q) {
-		ptr h = BUNhead(li, p);
 		str t = (str) BUNtail(li, p);
 		str r, msg;
 
@@ -290,10 +283,7 @@ reverse_qual_bat(bat * ret, bat * bid)
 			BBPreleaseref(result->batCacheid);
 			return msg;
 		}
-		/* insert original head and the reversed sequence in
-		 * result BAT */
-		/* BUNins() takes care of all necessary administration */
-		BUNins(result, h, (ptr) r, FALSE);
+        BUNappend(result, (ptr) r, FALSE);
 		GDKfree(r);
 	}
 
@@ -318,7 +308,7 @@ seq_length_bat(bat * ret, bat * bid)
 		throw(MAL, "seq_length_bat", RUNTIME_OBJECT_MISSING);
 
 	/* allocate result BAT */
-	result = BATnew(TYPE_oid, TYPE_int, BATcount(cigars));
+	result = BATnew(TYPE_void, TYPE_int, BATcount(cigars));
 	if (result == NULL) {
 		throw(MAL, "seq_length_bat", MAL_MALLOC_FAIL);
 	}
@@ -327,7 +317,6 @@ seq_length_bat(bat * ret, bat * bid)
 	li = bat_iterator(cigars);
 
 	BATloop(cigars, p, q) {
-		ptr h = BUNhead(li, p);
 		str t = (str) BUNtail(li, p);
 		str msg;
 		int r;
@@ -336,10 +325,7 @@ seq_length_bat(bat * ret, bat * bid)
 			BBPreleaseref(result->batCacheid);
 			return msg;
 		}
-		/* insert original head and the reversed sequence in
-		 * result BAT */
-		/* BUNins() takes care of all necessary administration */
-		BUNins(result, h, (ptr) & r, FALSE);
+        BUNappend(result, (ptr) &r, FALSE);
 	}
 
 	/* release input BAT-descriptor */
