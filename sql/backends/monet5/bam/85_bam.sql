@@ -22,3 +22,10 @@ RETURNS STRING EXTERNAL NAME bam.reverse_qual;
 
 CREATE FUNCTION seq_length(cigar STRING)
 RETURNS INT EXTERNAL NAME bam.seq_length;
+
+
+CREATE PROCEDURE sam_export(output_path STRING)
+EXTERNAL NAME bam.sam_export;
+
+CREATE PROCEDURE bam_export(output_path STRING)
+EXTERNAL NAME bam.bam_export;

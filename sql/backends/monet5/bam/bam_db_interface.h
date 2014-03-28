@@ -108,6 +108,20 @@
         CONSTRAINT pg_fkey_file_id FOREIGN KEY (file_id) REFERENCES bam.files (file_id) \n\
     );"
 
+#define SQL_CREATE_EXPORT \
+    "CREATE TABLE bam.export ( \n\
+        qname                         STRING      NOT NULL, \n\
+        flag                          SMALLINT    NOT NULL, \n\
+        rname                         STRING      NOT NULL, \n\
+        pos                           INT         NOT NULL, \n\
+        mapq                          SMALLINT    NOT NULL, \n\
+        cigar                         STRING      NOT NULL, \n\
+        rnext                         STRING      NOT NULL, \n\
+        pnext                         INT         NOT NULL, \n\
+        tlen                          INT         NOT NULL, \n\
+        seq                           STRING      NOT NULL, \n\
+        qual                          STRING      NOT NULL  \n\
+    );"
 
 str create_schema_if_not_exists(Client cntxt, mvc * m, str schemaname,
 				str descr, sql_schema ** ret);

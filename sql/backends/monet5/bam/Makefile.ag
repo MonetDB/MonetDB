@@ -36,7 +36,12 @@ INCLUDES = .. \
 lib__bam = {
 	MODULE
 	DIR = libdir/monetdb5
-	SOURCES = bam_loader.c bam_loader.h bam_wrapper.c bam_wrapper.h bam_db_interface.c bam_db_interface.h bam_globals.h bam_lib.c bam_lib.h
+	SOURCES = bam_loader.c bam_loader.h \
+	          bam_wrapper.c bam_wrapper.h \
+	          bam_db_interface.c bam_db_interface.h \
+	          bam_globals.h \
+	          bam_lib.c bam_lib.h \
+	          bam_export.c bam_export.h
 	LIBS = ../../../../monetdb5/tools/libmonetdb5 \
 		   ../../../../gdk/libbat \
 	$(SAMTOOLS_LIBS)

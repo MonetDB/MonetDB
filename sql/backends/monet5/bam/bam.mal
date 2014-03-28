@@ -39,6 +39,17 @@ address seq_length_bat
 comment "Calculate the real length of a DNA sequence, given its CIGAR string."
 
 
+# Export signatures
+
+pattern sam_export(output_path:str):void
+address sam_export
+comment "Export results in the bam.export table to a SAM file"
+
+pattern bam_export(output_path:str):void
+address bam_export
+comment "Export results in the bam.export table to a BAM file"
+
+
 # BAT signatures for bam_lib
 
 module batbam;

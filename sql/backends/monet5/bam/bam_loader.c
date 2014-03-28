@@ -247,6 +247,12 @@ bam_loader(Client cntxt, MalBlkPtr mb, str * filenames, int nr_files,
 					"bam.create_pg",
 					NULL)) != MAL_SUCCEED)
 		goto cleanup;
+		
+	if ((msg =
+	     create_table_if_not_exists(cntxt, m, s, "export", SQL_CREATE_EXPORT,
+					"bam.create_export",
+					NULL)) != MAL_SUCCEED)
+		goto cleanup;
 
 	/* Get next file id */
 	TO_LOG("<bam_loader> Retrieving next file id...\n");
