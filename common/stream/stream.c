@@ -2659,9 +2659,14 @@ bs_read(stream *ss, void *buf, size_t elmsize, size_t cnt)
 
 		/* There is nothing more to read in the current block,
 		 * so read the count for the next block */
-		if (!mnstr_readSht(s->s, &blksize)) {
+		switch (mnstr_readSht(s->s, &blksize)) {
+		case -1:
 			ss->errnr = s->s->errnr;
 			return -1;
+		case 0:
+			return 0;
+		case 1:
+			break;
 		}
 		if (blksize < 0) {
 			ss->errnr = MNSTR_READ_ERROR;
@@ -2719,9 +2724,14 @@ bs_read(stream *ss, void *buf, size_t elmsize, size_t cnt)
 			 * if the previous was not the last one */
 			if (s->nr)
 				break;
-			if (!mnstr_readSht(s->s, &blksize)) {
+			switch (mnstr_readSht(s->s, &blksize)) {
+			case -1:
 				ss->errnr = s->s->errnr;
 				return -1;
+			case 0:
+				return 0;
+			case 1:
+				break;
 			}
 			if (blksize < 0) {
 				ss->errnr = MNSTR_READ_ERROR;
@@ -2844,17 +2854,7 @@ mnstr_read_block(stream *s, void *buf, size_t elmsize, size_t cnt)
 int
 mnstr_readBte(stream *s, signed char *val)
 {
-	switch (s->read(s, (void *) val, sizeof(*val), 1)) {
-	case 1:
-		return 1;
-	case 0:
-		/* consider EOF an error */
-		s->errnr = MNSTR_READ_ERROR;
-		/* fall through */
-	default:
-		/* read failed */
-		return 0;
-	}
+	return s->read(s, (void *) val, sizeof(*val), 1);
 }
 
 int
@@ -2874,12 +2874,9 @@ mnstr_readSht(stream *s, short *val)
 			*val = short_int_SWAP(*val);
 		return 1;
 	case 0:
-		/* consider EOF an error */
-		s->errnr = MNSTR_READ_ERROR;
-		/* fall through */
-	default:
-		/* read failed */
 		return 0;
+	default:		/* -1 */
+		return -1;
 	}
 }
 
@@ -2900,12 +2897,9 @@ mnstr_readInt(stream *s, int *val)
 			*val = normal_int_SWAP(*val);
 		return 1;
 	case 0:
-		/* consider EOF an error */
-		s->errnr = MNSTR_READ_ERROR;
-		/* fall through */
-	default:
-		/* read failed */
 		return 0;
+	default:		/* -1 */
+		return -1;
 	}
 }
 
@@ -2926,12 +2920,9 @@ mnstr_readLng(stream *s, lng *val)
 			*val = long_long_SWAP(*val);
 		return 1;
 	case 0:
-		/* consider EOF an error */
-		s->errnr = MNSTR_READ_ERROR;
-		/* fall through */
-	default:
-		/* read failed */
 		return 0;
+	default:		/* -1 */
+		return -1;
 	}
 }
 

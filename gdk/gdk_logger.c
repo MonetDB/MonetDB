@@ -139,8 +139,8 @@ static int
 log_read_format(logger *l, logformat *data)
 {
 	return mnstr_read(l->log, &data->flag, 1, 1) == 1 &&
-		mnstr_readInt(l->log, &data->nr) &&
-		mnstr_readInt(l->log, &data->tid);
+		mnstr_readInt(l->log, &data->nr) == 1 &&
+		mnstr_readInt(l->log, &data->tid) == 1;
 }
 
 static int
@@ -160,7 +160,7 @@ log_read_string(logger *l)
 	ssize_t nr;
 	char *buf;
 
-	if (!mnstr_readInt(l->log, &len))
+	if (mnstr_readInt(l->log, &len) != 1)
 		return NULL;
 	if (len == 0)
 		return NULL;
@@ -241,7 +241,7 @@ log_read_seq(logger *lg, logformat *l)
 	lng val;
 	BUN p;
 
-	if (!mnstr_readLng(lg->log, &val))
+	if (mnstr_readLng(lg->log, &val) != 1)
 		 return LOG_ERR;
 
 	if ((p = BUNfndT(lg->seqs_id, &seq)) != BUN_NONE) {
