@@ -4760,8 +4760,9 @@ rel_remove_unused(mvc *sql, sql_rel *rel)
 				if (e->used)
 					append(exps, e);
 			}
-			/* atleast one (needed for crossproducts, count(*), rank() and single value projections) !, handled by exps_mark_used */
-			assert(list_length(exps) > 0);
+			/* atleast one (needed for crossproducts, count(*), rank() and single value projections) */
+			if (list_length(exps) <= 0)
+				append(exps, rel->exps->h->data);
 			rel->exps = exps;
 		}
 		return rel;

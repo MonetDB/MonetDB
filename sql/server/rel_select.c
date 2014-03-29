@@ -2909,7 +2909,8 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 		    l->card != CARD_ATOM && has_nil(l)) {
 			e = rel_unop_(sql, l, NULL, "isnull", card_value);
 			e = exp_compare(sql->sa, e, exp_atom_bool(sql->sa, 0), cmp_equal);
-			if (!is_select(rel->op) && !rel_is_ref(rel))
+			if (!is_select(rel->op))
+			      // 	&& !rel_is_ref(rel))
 				left = rel = rel_select(sql->sa, rel, e);
 			else
 				rel_select_add_exp(sql->sa, rel, e);
@@ -2958,6 +2959,8 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 					r = rel_value_exp(sql, &z, sval, f, ek);
 					if (z)
 						r_is_rel = 1;
+					if (z && is_project(z->op) && list_length(z->exps) != 1)
+						return sql_error(sql, 02, "IN: iinner query should return a single column");
 					if (!r && sql->session->status != -ERR_AMBIGUOUS) {
 						/* reset error */
 						sql->session->status = 0;

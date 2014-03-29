@@ -11,3 +11,5 @@ utf8bom.Bug-3436
 left-outer-join-with-and.Bug-3444
 setreadonly_forgets_changes.Bug-3446
 select-having.Bug-3458
+crash_on_or_with_in.Bug-3461
+in_incorrect_multi.Bug-3462

@@ -1,4 +1,4 @@
-stdout of test 'select-having.Bug-3458` in directory 'sql/test/BugTracker-2014` itself:
+stdout of test 'in_incorrect_multi.Bug-3462` in directory 'sql/test/BugTracker-2014` itself:
 
 
 # 14:17:10 >  
@@ -21,18 +21,18 @@ stdout of test 'select-having.Bug-3458` in directory 'sql/test/BugTracker-2014` 
 
 Ready.
 
-# 14:17:10 >  
-# 14:17:10 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1586" "--port=39561"
-# 14:17:10 >  
+# 14:17:11 >  
+# 14:17:11 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1586" "--port=39561"
+# 14:17:11 >  
 
-#select count(*) from sys.tables having count(*) > 0;
-% .L1 # table_name
-% L1 # name
-% wrd # type
-% 2 # length
-[ 40	]
+#SELECT * FROM SYS.ARGS
+# WHERE FUNC_ID NOT IN (SELECT FUNC_ID FROM SYS.FUNCTIONS);
+% sys.args,	sys.args,	sys.args,	sys.args,	sys.args,	sys.args,	sys.args # table_name
+% id,	func_id,	name,	type,	type_digits,	type_scale,	number # name
+% int,	int,	varchar,	varchar,	int,	int,	int # type
+% 1,	1,	0,	0,	1,	1,	1 # length
 
-# 14:17:10 >  
-# 14:17:10 >  "Done."
-# 14:17:10 >  
+# 14:17:13 >  
+# 14:17:13 >  "Done."
+# 14:17:13 >  
 
