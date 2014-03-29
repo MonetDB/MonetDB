@@ -23,13 +23,13 @@ CREATE TABLE "datacell"."alarm_hot" (
         "temperature" DOUBLE
 );
 
-CALL datacell.receptor('datacell.sensors', 'localhost', 50500);
+--CALL datacell.receptor('datacell.sensors', 'localhost', 50500);
 
-CALL datacell.emitter('datacell.alarm_warm', 'localhost', 50601);
-CALL datacell.emitter('datacell.alarm_hot', 'localhost', 50602);
+--CALL datacell.emitter('datacell.alarm_warm', 'localhost', 50601);
+--CALL datacell.emitter('datacell.alarm_hot', 'localhost', 50602);
 
-CALL datacell.basket('datacell.warm');
-CALL datacell.basket('datacell.hot');
+--CALL datacell.basket('datacell.warm');
+--CALL datacell.basket('datacell.hot');
 
 CREATE PROCEDURE datacell.warm()
 BEGIN
@@ -38,7 +38,8 @@ BEGIN
 		FROM datacell.warm 
 		WHERE "type" LIKE 'temperature' AND value BETWEEN 21 AND 24;
 END;
-CALL datacell.query('datacell.warm');
+call datacell.warm();
+--CALL datacell.query('datacell.warm');
 
 CREATE PROCEDURE datacell.hot()
 BEGIN
@@ -47,14 +48,16 @@ BEGIN
 	FROM datacell.hot 
 	WHERE type LIKE 'temperature' AND value > 24;
 END;
-CALL datacell.query('datacell.hot');
+call datacell.hot();
+--CALL datacell.query('datacell.hot');
 
 CREATE PROCEDURE datacell.splitter()
 BEGIN
 	INSERT INTO datacell.warm SELECT * FROM datacell.sensors;
 	INSERT INTO datacell.hot SELECT * FROM datacell.sensors;
 END;
-CALL datacell.query('datacell.splitter');
+call datacell.splitter();
+--CALL datacell.query('datacell.splitter');
 
 CALL datacell.resume();
 SELECT * FROM datacell.receptors(); SELECT * FROM datacell.emitters(); SELECT * FROM datacell.queries(); SELECT * FROM datacell.baskets();

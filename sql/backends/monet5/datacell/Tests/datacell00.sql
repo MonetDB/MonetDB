@@ -9,6 +9,6 @@ begin
 	-- insert into datacell.Y select *, cast(now() as milliseconds) -  cast(tag as milliseconds) from datacell.X;
 	 insert into datacell.Y select *, 1 from datacell.X;
 end;
-drop procedure datacell.transport;
-drop table datacell.X;
-drop table datacell.Y;
+--drop procedure datacell.transport;
+--drop table datacell.X;
+--drop table datacell.Y;
