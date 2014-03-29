@@ -38,8 +38,8 @@ BEGIN
 		FROM datacell.warm 
 		WHERE "type" LIKE 'temperature' AND value BETWEEN 21 AND 24;
 END;
-call datacell.warm();
---CALL datacell.query('datacell.warm');
+--call datacell.warm();
+CALL datacell.query('datacell.warm');
 
 CREATE PROCEDURE datacell.hot()
 BEGIN
@@ -48,16 +48,16 @@ BEGIN
 	FROM datacell.hot 
 	WHERE type LIKE 'temperature' AND value > 24;
 END;
-call datacell.hot();
---CALL datacell.query('datacell.hot');
+--call datacell.hot();
+CALL datacell.query('datacell.hot');
 
 CREATE PROCEDURE datacell.splitter()
 BEGIN
 	INSERT INTO datacell.warm SELECT * FROM datacell.sensors;
 	INSERT INTO datacell.hot SELECT * FROM datacell.sensors;
 END;
-call datacell.splitter();
---CALL datacell.query('datacell.splitter');
+--call datacell.splitter();
+CALL datacell.query('datacell.splitter');
 
 CALL datacell.resume();
 SELECT * FROM datacell.receptors(); SELECT * FROM datacell.emitters(); SELECT * FROM datacell.queries(); SELECT * FROM datacell.baskets();
