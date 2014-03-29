@@ -28,6 +28,7 @@
 
 #include <string.h>
 #include "gdk.h"
+#include "stream.h"
 
 
 
@@ -109,5 +110,13 @@ hash_fprintf(FILE *f, const char *format, ...) {
 		GDKfree(msg);						\
 		msg = msg_tmp;						\
 	} while (0)
+    
+    
+    
+#define BSTREAM_CHUNK_SIZE BUFSIZ
+    
+    
+stream *
+bsopen(str filepath);
 
 #endif

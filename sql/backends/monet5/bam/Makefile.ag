@@ -39,7 +39,7 @@ lib__bam = {
 	SOURCES = bam_loader.c bam_loader.h \
 	          bam_wrapper.c bam_wrapper.h \
 	          bam_db_interface.c bam_db_interface.h \
-	          bam_globals.h \
+	          bam_globals.c bam_globals.h \
 	          bam_lib.c bam_lib.h \
 	          bam_export.c bam_export.h
 	LIBS = ../../../../monetdb5/tools/libmonetdb5 \

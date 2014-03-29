@@ -101,7 +101,6 @@ str process_header(bam_wrapper * bw);
 str process_alignments(bam_wrapper *bw, bit *some_thread_failed);	/* (*some_thread_failed) will be set to TRUE if some thread fails during processing alignments */
 
 #define DIR_BINARIES "bam_binaries"
-#define BSTREAM_CHUNK_SIZE BUFSIZ
 
 /* Possible ordering orders for BAM file */
 #define ORDERING_UNSORTED   0

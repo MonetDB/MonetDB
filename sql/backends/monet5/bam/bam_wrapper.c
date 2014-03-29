@@ -63,26 +63,6 @@ get_ordering(str ord)
 	return ORDERING_UNKNOWN;
 }
 
-static stream *
-bsopen(str filepath)
-{
-	stream *s;
-	stream *wbs;
-
-	if ((s = open_wastream(filepath)) == NULL) {
-		return NULL;
-	}
-	if (mnstr_errnr(s)) {
-		close_stream(s);
-		return NULL;
-	}
-	if ((wbs = wbstream(s, BSTREAM_CHUNK_SIZE)) == NULL) {
-		close_stream(s);
-		return NULL;
-	}
-	return wbs;
-}
-
 
 #define ERR_INIT_BAM_WRAPPER "Could not initialize wrapper for BAM file '%s': "
 /**

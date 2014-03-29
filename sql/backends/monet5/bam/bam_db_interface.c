@@ -297,7 +297,6 @@ next_file_id(mvc * m, sql_table * files, lng * next_file_id)
 	sql_column *c;
 	BAT *b = NULL;
 	BATiter li;
-	sht i;
 	BUN p = 0, q = 0;
 	lng max_file_id = 0;
 
@@ -310,20 +309,16 @@ next_file_id(mvc * m, sql_table * files, lng * next_file_id)
 		      "Could not retrieve the next file id: Error binding file_id column of 'files' table");
 	}
 
-	/* Loop through all BATs for this column, i.e. the real BAT
-	 * and the delta BATs and find the maximum file_id */
-	for (i = 0; i < 3; ++i) {
-		b = store_funcs.bind_col(m->session->tr, c, i);
-		if (b != NULL) {
-			li = bat_iterator(b);
-			BATloop(b, p, q) {
-				lng t = *(lng *) BUNtail(li, p);
+	/* Loop through BAT for this column and find the maximum file_id */
+    b = store_funcs.bind_col(m->session->tr, c, RD_INS);
 
-				max_file_id = MAX(max_file_id, t);
-			}
-			BBPreleaseref(b->batCacheid);
-		}
-	}
+    li = bat_iterator(b);
+    BATloop(b, p, q) {
+        lng t = *(lng *) BUNtail(li, p);
+        max_file_id = MAX(max_file_id, t);
+    }
+    BBPreleaseref(b->batCacheid);
+        
 	*next_file_id = max_file_id + 1;
 	return MAL_SUCCEED;
 }
