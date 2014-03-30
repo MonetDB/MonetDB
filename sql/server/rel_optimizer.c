@@ -3912,7 +3912,11 @@ rel_reduce_groupby_exps(int *changes, mvc *sql, sql_rel *rel)
 
 							if (scores[l] == -1 && exp_match_exp(e,gb)) {
 								sql_column *c = exp_find_column_(rel, e, -2, &bt);
-								sql_exp *rs = exp_column(sql->sa, rnme, c->base.name, exp_subtype(e), rel->card, has_nil(e), is_intern(e));
+								sql_exp *rs;
+							       
+								if (!c)
+									c = exp_find_column_(rel, gb, -2, &bt);
+								rs = exp_column(sql->sa, rnme, c->base.name, exp_subtype(e), rel->card, has_nil(e), is_intern(e));
 								exp_setname(sql->sa, rs, exp_find_rel_name(e), exp_name(e));
 								append(r->exps, rs);
 								fnd = 1;
