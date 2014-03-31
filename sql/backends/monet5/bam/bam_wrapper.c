@@ -1630,7 +1630,7 @@ process_alignments(bam_wrapper * bw, bit * some_thread_failed)
 	int nr_aligs;
 
 	lng voffset;
-	bam1_t *alig = bam_init1();
+	bam1_t *alig;
 
 	int alignment_bytes_read;
 	int alig_index = 0;
@@ -1647,7 +1647,7 @@ process_alignments(bam_wrapper * bw, bit * some_thread_failed)
 	if ((aligs =
 	     (alignment *) GDKmalloc(nr_aligs * sizeof(alignment))) == NULL) {
 		msg = createException(MAL, "process_alignments",
-				      MAL_MALLOC_FAIL);
+            MAL_MALLOC_FAIL);
 		goto cleanup;
 	}
 
@@ -1657,10 +1657,15 @@ process_alignments(bam_wrapper * bw, bit * some_thread_failed)
 	for (i = 0; i < nr_aligs; ++i) {
 		if (!init_alignment(aligs + i)) {
 			msg = createException(MAL, "process_alignments",
-					      MAL_MALLOC_FAIL);
+                MAL_MALLOC_FAIL);
 			goto cleanup;
 		}
 	}
+    
+    if((alig = bam_init1()) == NULL) {
+        msg = createException(MAL, "process_alignments",
+            MAL_MALLOC_FAIL);
+    }
 
 	while (TRUE) { /* One iteration per alignment */
 		/* Start the processing of every alignment with
