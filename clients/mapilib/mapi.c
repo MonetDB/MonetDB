@@ -2988,8 +2988,8 @@ mapi_timeout(Mapi mid, unsigned int timeout)
 	mapi_check(mid, "mapi_timeout");
 	if (mid->trace == MAPI_TRACE)
 		printf("Set timeout to %u\n", timeout);
-	mnstr_settimeout(mid->to, timeout);
-	mnstr_settimeout(mid->from, timeout);
+	mnstr_settimeout(mid->to, timeout, NULL);
+	mnstr_settimeout(mid->from, timeout, NULL);
 	return MOK;
 }
 

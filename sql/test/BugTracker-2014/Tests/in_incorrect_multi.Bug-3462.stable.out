@@ -1,0 +1,38 @@
+stdout of test 'in_incorrect_multi.Bug-3462` in directory 'sql/test/BugTracker-2014` itself:
+
+
+# 14:17:10 >  
+# 14:17:10 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=39561" "--set" "mapi_usock=/var/tmp/mtest-1586/.s.monetdb.39561" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/niels/scratch/rc-clean/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2014" "--set" "mal_listing=0"
+# 14:17:10 >  
+
+# MonetDB 5 server v11.17.14
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2014', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.334 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.nes.nl:39561/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-1586/.s.monetdb.39561
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 14:17:11 >  
+# 14:17:11 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1586" "--port=39561"
+# 14:17:11 >  
+
+#SELECT * FROM SYS.ARGS
+# WHERE FUNC_ID NOT IN (SELECT FUNC_ID FROM SYS.FUNCTIONS);
+% sys.args,	sys.args,	sys.args,	sys.args,	sys.args,	sys.args,	sys.args # table_name
+% id,	func_id,	name,	type,	type_digits,	type_scale,	number # name
+% int,	int,	varchar,	varchar,	int,	int,	int # type
+% 1,	1,	0,	0,	1,	1,	1 # length
+
+# 14:17:13 >  
+# 14:17:13 >  "Done."
+# 14:17:13 >  
+

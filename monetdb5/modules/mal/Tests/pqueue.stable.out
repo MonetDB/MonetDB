@@ -47,6 +47,24 @@ function user.main():void;
     io.print(bp);
     bp := pqueue.topn_min(b,8:wrd,false);
     io.print(bp);
+    bp := pqueue.topn_max(b,0:wrd,false);
+    io.print(bp);
+    bp := pqueue.topn_max(b,1:wrd,false);
+    io.print(bp);
+    bp := pqueue.topn_max(b,2:wrd,false);
+    io.print(bp);
+    bp := pqueue.topn_max(b,3:wrd,false);
+    io.print(bp);
+    bp := pqueue.topn_max(b,4:wrd,false);
+    io.print(bp);
+    bp := pqueue.topn_max(b,5:wrd,false);
+    io.print(bp);
+    bp := pqueue.topn_max(b,6:wrd,false);
+    io.print(bp);
+    bp := pqueue.topn_max(b,7:wrd,false);
+    io.print(bp);
+    bp := pqueue.topn_max(b,8:wrd,false);
+    io.print(bp);
 end main;
 #--------------------------#
 # h	t  # name
@@ -130,6 +148,77 @@ end main;
 [ 4@0,	6@0  ]
 [ 5@0,	5@0  ]
 [ 6@0,	4@0  ]
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+[ 0@0,	4@0  ]
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+[ 0@0,	4@0  ]
+[ 1@0,	5@0  ]
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+[ 0@0,	4@0  ]
+[ 1@0,	5@0  ]
+[ 2@0,	6@0  ]
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+[ 0@0,	4@0  ]
+[ 1@0,	5@0  ]
+[ 2@0,	6@0  ]
+[ 3@0,	3@0  ]
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+[ 0@0,	4@0  ]
+[ 1@0,	5@0  ]
+[ 2@0,	6@0  ]
+[ 3@0,	3@0  ]
+[ 4@0,	2@0  ]
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+[ 0@0,	4@0  ]
+[ 1@0,	5@0  ]
+[ 2@0,	6@0  ]
+[ 3@0,	3@0  ]
+[ 4@0,	2@0  ]
+[ 5@0,	0@0  ]
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+[ 0@0,	4@0  ]
+[ 1@0,	5@0  ]
+[ 2@0,	6@0  ]
+[ 3@0,	3@0  ]
+[ 4@0,	2@0  ]
+[ 5@0,	0@0  ]
+[ 6@0,	1@0  ]
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+[ 0@0,	4@0  ]
+[ 1@0,	5@0  ]
+[ 2@0,	6@0  ]
+[ 3@0,	3@0  ]
+[ 4@0,	2@0  ]
+[ 5@0,	0@0  ]
+[ 6@0,	1@0  ]
 
 # 21:06:19 >  
 # 21:06:19 >  "Done."

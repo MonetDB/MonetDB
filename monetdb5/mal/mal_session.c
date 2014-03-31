@@ -325,6 +325,7 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
 	 * demand. */
 
 	/* fork a new thread to handle this client */
+	mnstr_settimeout(c->fdin->s, 50, GDKexiting);
 	if (MT_create_thread(&p, MSserveClient, (void *) c, MT_THR_DETACHED) != 0) {
 		mnstr_printf(fout, "!internal server error (cannot fork new "
 						   "client thread), please try again later\n");

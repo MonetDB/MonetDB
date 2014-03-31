@@ -209,7 +209,7 @@ mnstr_readIntwrap(int *ret, Stream *S)
 {
 	stream *s = *(stream **)S;
 
-	if (!mnstr_readInt(s, ret))
+	if (mnstr_readInt(s, ret) != 1)
 		throw(IO, "streams.readInt", "failed to read int");
 
 	return MAL_SUCCEED;

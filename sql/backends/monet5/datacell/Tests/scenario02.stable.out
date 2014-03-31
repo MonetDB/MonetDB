@@ -21,14 +21,71 @@ stdout of test 'scenario02` in directory 'sql/backends/monet5/datacell` itself:
 Ready.
 # SQL catalog created, loading sql scripts once
 
+# 15:50:02 >  
+# 15:50:02 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-26552" "--port=30649"
+# 15:50:02 >  
 
-# 16:48:27 >  
-# 16:48:27 >  mclient -lsql -ftest -i -e --host=rig --port=34492 
-# 16:48:27 >  
+#set optimizer='datacell_pipe';
+#create table datacell.potin(
+#    id integer,
+#    tag timestamp,
+#    payload integer
+#);
+#create table datacell.potout( tag timestamp, cnt integer);
+#select * from datacell.receptors(); select * from datacell.emitters(); select * from datacell.queries(); select * from datacell.baskets();
+% .,	.,	.,	.,	.,	.,	.,	.,	.,	. # table_name
+% nme,	host,	port,	protocol,	mode,	status,	lastseen,	cycles,	received,	pending # name
+% clob,	clob,	int,	clob,	clob,	clob,	timestamp,	int,	int,	int # type
+% 14,	9,	5,	3,	7,	6,	26,	1,	1,	1 # length
+[ "datacell.potin",	"localhost",	50502,	"TCP",	"passive",	"paused",	NULL,	0,	0,	0	]
+#select * from datacell.receptors(); select * from datacell.emitters(); select * from datacell.queries(); select * from datacell.baskets();
+% .,	.,	.,	.,	.,	.,	.,	.,	.,	. # table_name
+% nme,	host,	port,	protocol,	mode,	status,	lastsent,	cycles,	sent,	pending # name
+% clob,	clob,	int,	clob,	clob,	clob,	timestamp,	int,	int,	int # type
+% 15,	9,	5,	3,	6,	6,	26,	1,	1,	1 # length
+[ "datacell.potout",	"localhost",	50602,	"UDP",	"active",	"paused",	NULL,	0,	0,	0	]
+#select * from datacell.receptors(); select * from datacell.emitters(); select * from datacell.queries(); select * from datacell.baskets();
+% .,	.,	.,	.,	.,	.,	.,	. # table_name
+% nme,	status,	lastrun,	cycles,	events,	time,	error,	def # name
+% clob,	clob,	timestamp,	int,	int,	bigint,	clob,	clob # type
+% 15,	6,	26,	1,	1,	1,	0,	71 # length
+[ "datacell.putter",	"paused",	NULL,	0,	0,	0,	"",	"insert into datacell.potout select now(), count(*) from datacell.potin;"	]
+#select * from datacell.receptors(); select * from datacell.emitters(); select * from datacell.queries(); select * from datacell.baskets();
+% .,	.,	.,	.,	.,	.,	.,	.,	. # table_name
+% nme,	threshold,	winsize,	winstride,	timeslice,	timestride,	beat,	seen,	events # name
+% clob,	int,	int,	int,	int,	int,	int,	timestamp,	int # type
+% 15,	1,	1,	1,	1,	1,	1,	26,	1 # length
+[ "datacell.potin",	0,	0,	0,	0,	0,	0,	NULL,	0	]
+[ "datacell.potout",	0,	0,	0,	0,	0,	0,	NULL,	0	]
+#select * from datacell.receptors(); select * from datacell.emitters(); select * from datacell.queries(); select * from datacell.baskets();
+% .,	.,	.,	.,	.,	.,	.,	.,	.,	. # table_name
+% nme,	host,	port,	protocol,	mode,	status,	lastseen,	cycles,	received,	pending # name
+% clob,	clob,	int,	clob,	clob,	clob,	timestamp,	int,	int,	int # type
+% 14,	9,	5,	3,	7,	7,	26,	1,	1,	1 # length
+[ "datacell.potin",	"localhost",	50502,	"TCP",	"passive",	"running",	NULL,	0,	0,	0	]
+#select * from datacell.receptors(); select * from datacell.emitters(); select * from datacell.queries(); select * from datacell.baskets();
+% .,	.,	.,	.,	.,	.,	.,	.,	.,	. # table_name
+% nme,	host,	port,	protocol,	mode,	status,	lastsent,	cycles,	sent,	pending # name
+% clob,	clob,	int,	clob,	clob,	clob,	timestamp,	int,	int,	int # type
+% 15,	9,	5,	3,	6,	7,	26,	1,	1,	1 # length
+[ "datacell.potout",	"localhost",	50602,	"UDP",	"active",	"running",	NULL,	0,	0,	0	]
+#select * from datacell.receptors(); select * from datacell.emitters(); select * from datacell.queries(); select * from datacell.baskets();
+% .,	.,	.,	.,	.,	.,	.,	. # table_name
+% nme,	status,	lastrun,	cycles,	events,	time,	error,	def # name
+% clob,	clob,	timestamp,	int,	int,	bigint,	clob,	clob # type
+% 15,	7,	26,	1,	1,	1,	0,	71 # length
+[ "datacell.putter",	"running",	NULL,	0,	0,	0,	"",	"insert into datacell.potout select now(), count(*) from datacell.potin;"	]
+#select * from datacell.receptors(); select * from datacell.emitters(); select * from datacell.queries(); select * from datacell.baskets();
+% .,	.,	.,	.,	.,	.,	.,	.,	. # table_name
+% nme,	threshold,	winsize,	winstride,	timeslice,	timestride,	beat,	seen,	events # name
+% clob,	int,	int,	int,	int,	int,	int,	timestamp,	int # type
+% 15,	1,	1,	1,	1,	1,	1,	26,	1 # length
+[ "datacell.potin",	0,	0,	0,	0,	0,	0,	NULL,	0	]
+[ "datacell.potout",	0,	0,	0,	0,	0,	0,	NULL,	0	]
+#drop table datacell.potin;
+#drop table datacell.potout;
 
-= to be checked / approved !
-
-# 16:48:27 >  
-# 16:48:27 >  Done.
-# 16:48:27 >  
+# 15:50:03 >  
+# 15:50:03 >  "Done."
+# 15:50:03 >  
 

@@ -132,7 +132,7 @@ stream_export int mnstr_byteorder(stream *s);
 stream_export void mnstr_set_byteorder(stream *s, char bigendian);
 stream_export stream *mnstr_rstream(stream *s);
 stream_export stream *mnstr_wstream(stream *s);
-stream_export void mnstr_settimeout(stream *s, unsigned int secs);
+stream_export void mnstr_settimeout(stream *s, unsigned int ms, int (*func)(void));
 
 stream_export stream *open_rstream(const char *filename);
 stream_export stream *open_wstream(const char *filename);
@@ -236,7 +236,8 @@ typedef enum mnstr_errors {
 	MNSTR_NO__ERROR = 0,
 	MNSTR_OPEN_ERROR,
 	MNSTR_READ_ERROR,
-	MNSTR_WRITE_ERROR
+	MNSTR_WRITE_ERROR,
+	MNSTR_TIMEOUT
 } mnstr_errors;
 
 #endif /*_STREAM_H_*/

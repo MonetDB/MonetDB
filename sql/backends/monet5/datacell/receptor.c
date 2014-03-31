@@ -150,7 +150,7 @@ RCreceptorStartInternal(int *ret, str *tbl, str *host, int *port, int mode, int 
 		fmt[j].extra = fmt + j;
 		fmt[j].len = fmt[j].nillen =
 						 ATOMlen(fmt[j].adt, ATOMnilptr(fmt[j].adt));
-		fmt[j].data = GDKmalloc(fmt[j].len);
+		fmt[j].data = GDKzalloc(fmt[j].len);
 		fmt[j].nullstr = "";
 		j++;
 	}
@@ -159,7 +159,7 @@ RCreceptorStartInternal(int *ret, str *tbl, str *host, int *port, int mode, int 
 #ifdef _DEBUG_RECEPTOR_
 	mnstr_printf(RCout, "#Instantiate a new receptor %d fields\n", j);
 #endif
-	if (MT_create_thread(&rc->pid, (void (*)(void *))RCstartThread, rc, MT_THR_DETACHED) != 0)
+	if (MT_create_thread(&rc->pid, (void (*)(void *))RCstartThread, rc, MT_THR_JOINABLE) != 0)
 		throw(MAL, "receptor.start", "Receptor '%s' initiation failed", rc->name);
 	(void) ret;
 	return MAL_SUCCEED;
@@ -247,7 +247,7 @@ str RCreceptorStop(int *ret, str *nme)
 	rc->status = BSKTINIT;
 	if (rc->lck)
 		BSKTunlock(&rc->lck, &rc->name);
-	MT_join_thread(rc->pid);
+	rc->status = BSKTSTOP;
 	return MAL_SUCCEED;
 }
 
@@ -639,7 +639,7 @@ parse:
 							/* only keep the last errorenous event for analysis */
 							if (rcError)
 								GDKfree(rcError);
-							rcError = (char *) GDKmalloc(k = strlen(line) + 100);
+							rcError = (char *) GDKzalloc(k = strlen(line) + 100);
 							if (rcError)
 								snprintf(rcError, k, "newline missing:%s", line);
 							rcErrorEvent = cnt;
@@ -657,7 +657,7 @@ parse:
 							/* only keep the last errorenous event for analysis */
 							if (rcError)
 								GDKfree(rcError);
-							rcError = (char *) GDKmalloc(k = strlen(line) + 100);
+							rcError = (char *) GDKzalloc(k = strlen(line) + 100);
 							if (rcError)
 								snprintf(rcError, k, "parsing error:%s", line);
 							rcErrorEvent = cnt;
@@ -855,11 +855,12 @@ RCstartThread(Receptor rc)
 			if (rc->error) {
 				mnstr_printf(RCout, "Receptor listen fails: %s\n", rc->error);
 				rc->status = BSKTERROR;
+				break;
 			}
 #ifdef _DEBUG_RECEPTOR_
 			mnstr_printf(RCout, "#Receptor connection request received \n");
 #endif
-			if (MT_create_thread(&rc->pid, (void (*)(void *))RCbody, rc, MT_THR_DETACHED) != 0) {
+			if (MT_create_thread(&rc->pid, (void (*)(void *))RCbody, rc, MT_THR_JOINABLE) != 0) {
 				shutdown(rc->newsockfd, SHUT_RDWR);
 				close(rc->newsockfd);
 				GDKfree(rc);
@@ -874,7 +875,9 @@ RCstartThread(Receptor rc)
 			RCbody(rc);
 		}
 	}
+	socket_close(rc->newsockfd);
 	shutdown(rc->sockfd, SHUT_RDWR);
+	MT_join_thread(rc->pid);
 	return MAL_SUCCEED;
 }
 

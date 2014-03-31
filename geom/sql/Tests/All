@@ -30,8 +30,8 @@ T8
 T10
 T11
 T12
-# T13	!syntax/parse error (incorrect query in document)
-# T14	!syntax/parse error (incorrect query in document)
+T13
+T14
 T15
 T16
 # T17	no such unary operator 'startpoint(linestring)'

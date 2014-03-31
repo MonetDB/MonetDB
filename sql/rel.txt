@@ -106,7 +106,7 @@ e_convert
 
 e_cmp
 	-> l	left sub expression
-	-> r	right sub expression (f second arg for range expressions)
+	-> r	right sub expression (f second arg (->f) for range expressions)
 	-> flag compare type		
 		(       cmp_gt = 0,
         		cmp_gte = 1,
