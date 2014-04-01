@@ -1185,142 +1185,6 @@ dump_table(Mapi mid, char *schema, char *tname, stream *toConsole, int describe,
 	return rc;
 }
 
-static int
-dump_external_functions(Mapi mid, const char *schema, const char *fname, stream *toConsole, const char dumpSystem)
-{
-	const char functions[] =
-		"SELECT \"f\".\"id\","
-		       "\"f\".\"name\","
-		       "\"f\".\"mod\","
-		       "\"f\".\"func\","
-		       "\"a\".\"name\","
-		       "\"a\".\"type\","
-		       "\"a\".\"type_digits\","
-		       "\"a\".\"type_scale\","
-		       "\"a\".\"number\", "
-			   "\"s\".\"name\" "
-		"FROM \"sys\".\"args\" \"a\","
-		     "\"sys\".\"functions\" \"f\", "
-			 "\"sys\".\"schemas\" \"s\" "
-		"WHERE \"f\".\"sql\" = FALSE AND "
-		      "\"a\".\"func_id\" = \"f\".\"id\" AND "
-			  "\"f\".\"schema_id\" = \"s\".\"id\" "
-		      "%s %s "
-		"ORDER BY \"f\".\"id\", \"a\".\"number\"";
-	char query[512];
-	MapiHdl hdl;
-	char *prev_f_id = NULL;
-	char *prev_f_mod = NULL;
-	char *prev_f_func = NULL;
-	char *prev_a_name = NULL;
-	char *prev_a_type = NULL;
-	char *prev_a_type_digits = NULL;
-	char *prev_a_type_scale = NULL;
-	char *sep = NULL;
-
-	snprintf(query, sizeof(query), functions,
-			dumpSystem ? "" : "AND \"f\".\"id\"",
-			dumpSystem ? "" : has_systemfunctions(mid) ? "NOT IN (SELECT \"function_id\" FROM \"sys\".\"systemfunctions\")" : "> 2000");
-	if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid))
-		goto bailout;
-	while (!mnstr_errnr(toConsole) && mapi_fetch_row(hdl) != 0) {
-		char *f_id = mapi_fetch_field(hdl, 0);
-		char *f_name = mapi_fetch_field(hdl, 1);
-		char *f_mod = mapi_fetch_field(hdl, 2);
-		char *f_func = mapi_fetch_field(hdl, 3);
-		char *a_name = mapi_fetch_field(hdl, 4);
-		char *a_type = mapi_fetch_field(hdl, 5);
-		char *a_type_digits = mapi_fetch_field(hdl, 6);
-		char *a_type_scale = mapi_fetch_field(hdl, 7);
-		char *a_number = mapi_fetch_field(hdl, 8);
-		char *s_name = mapi_fetch_field(hdl, 9);
-
-		if (schema != NULL && strcmp(s_name, schema) != 0)
-			continue;
-		if (fname != NULL && strcmp(f_name, fname) != 0)
-			continue;
-
-		if (prev_f_id == NULL || strcmp(prev_f_id, f_id) != 0) {
-			if (prev_f_id) {
-				mnstr_printf(toConsole, ")");
-				if (strcmp(prev_a_name, "result") == 0) {
-					mnstr_printf(toConsole, " RETURNS ");
-					dump_type(mid, toConsole, prev_a_type, prev_a_type_digits, prev_a_type_scale);
-				}
-				mnstr_printf(toConsole,
-					     " EXTERNAL NAME \"%s\".\"%s\";\n",
-					     prev_f_mod, prev_f_func);
-				free(prev_f_id);
-				free(prev_f_mod);
-				free(prev_f_func);
-				free(prev_a_name);
-				free(prev_a_type);
-				free(prev_a_type_digits);
-				free(prev_a_type_scale);
-			}
-			if (strcmp(a_name, "result") == 0) {
-				mnstr_printf(toConsole,
-					     "CREATE FUNCTION \"%s\"(",
-					     f_name);
-			} else
-				mnstr_printf(toConsole,
-					     "CREATE PROCEDURE \"%s\"(",
-					     f_name);
-			prev_f_id = strdup(f_id);
-			prev_f_mod = strdup(f_mod);
-			prev_f_func = strdup(f_func);
-			prev_a_name = strdup(a_name);
-			prev_a_type = strdup(a_type);
-			prev_a_type_digits = strdup(a_type_digits);
-			prev_a_type_scale = strdup(a_type_scale);
-			sep = "";
-		}
-		if (strcmp(a_name, "result") != 0 ||
-		    strcmp(a_number, "0") != 0) {
-			mnstr_printf(toConsole, "%s\"%s\" ", sep, a_name);
-			dump_type(mid, toConsole, a_type, a_type_digits, a_type_scale);
-			sep = ", ";
-		}
-	}
-	if (prev_f_id) {
-		mnstr_printf(toConsole, ")");
-		if (strcmp(prev_a_name, "result") == 0) {
-			mnstr_printf(toConsole, " RETURNS ");
-			dump_type(mid, toConsole, prev_a_type, prev_a_type_digits, prev_a_type_scale);
-		}
-		mnstr_printf(toConsole,
-			     " EXTERNAL NAME \"%s\".\"%s\";\n",
-			     prev_f_mod, prev_f_func);
-		free(prev_f_id);
-	}
-	if (prev_f_mod)
-		free(prev_f_mod);
-	if (prev_f_func)
-		free(prev_f_func);
-	if (prev_a_name)
-		free(prev_a_name);
-	if (prev_a_type)
-		free(prev_a_type);
-	if (prev_a_type_digits)
-		free(prev_a_type_digits);
-	if (prev_a_type_scale)
-		free(prev_a_type_scale);
-
-	mapi_close_handle(hdl);
-	return mnstr_errnr(toConsole) ? 1 : 0;
-
-  bailout:
-	if (hdl) {
-		if (mapi_result_error(hdl))
-			mapi_explain_result(hdl, stderr);
-		else
-			mapi_explain_query(hdl, stderr);
-		mapi_close_handle(hdl);
-	} else
-		mapi_explain(mid, stderr);
-	return 1;
-}
-
 int
 dump_functions(Mapi mid, stream *toConsole, const char *sname, const char *fname)
 {
@@ -1357,11 +1221,6 @@ dump_functions(Mapi mid, stream *toConsole, const char *sname, const char *fname
 
 	dumpSystem = sname && fname;
 
-	if (dump_external_functions(mid, sname, fname, toConsole, dumpSystem)) {
-		if (schema)
-			free(schema);
-		return 1;
-	}
 	l = sizeof(functions) + (sname ? strlen(sname) : 0) + 100;
 	q = malloc(l);
 	snprintf(q, l, functions,
@@ -1729,8 +1588,6 @@ dump_database(Mapi mid, stream *toConsole, int describe, const char useInserts)
 	hdl = NULL;
 
 	/* dump tables and functions */
-	if (dump_external_functions(mid, NULL, NULL, toConsole, 0))
-		goto bailout;
 	snprintf(query, sizeof(query), tables_and_functions,
 		 has_systemfunctions(mid) ? "AND \"f\".\"id\" NOT IN (SELECT \"function_id\" FROM \"sys\".\"systemfunctions\") " : "");
 	if ((hdl = mapi_query(mid, query)) == NULL ||
