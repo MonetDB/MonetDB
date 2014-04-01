@@ -1325,13 +1325,13 @@ int
 dump_functions(Mapi mid, stream *toConsole, const char *sname, const char *fname)
 {
 	const char functions[] =
-		"SELECT \"f\".\"func\", \"f\".\"name\", \"s\".\"name\" "
+		"SELECT \"f\".\"func\" "
 		"FROM \"sys\".\"schemas\" \"s\","
 		     "\"sys\".\"functions\" \"f\" "
 		"WHERE \"f\".\"sql\" = TRUE AND "
 		      "\"s\".\"id\" = \"f\".\"schema_id\""
 			  "%s %s "
-		      "%s%s%s "
+		      "%s%s%s%s%s%s "
 		"ORDER BY \"f\".\"id\"";
 	MapiHdl hdl;
 	char *q;
@@ -1369,20 +1369,16 @@ dump_functions(Mapi mid, stream *toConsole, const char *sname, const char *fname
 		 dumpSystem ? "" : has_systemfunctions(mid) ? "NOT IN (SELECT \"function_id\" FROM \"sys\".\"systemfunctions\")" : "> 2000",
 		 sname ? " AND \"s\".\"name\" = '" : "",
 		 sname ? sname : "",
-		 sname ? "'" : "");
+		 sname ? "'" : "",
+		 fname ? " AND \"f\".\"name\" = '" : "",
+		 fname ? fname : "",
+		 fname ? "'" : "");
 	hdl = mapi_query(mid, q);
 	free(q);
 	if (hdl == NULL || mapi_error(mid))
 		goto bailout;
 	while (!mnstr_errnr(toConsole) && mapi_fetch_row(hdl) != 0) {
 		char *query = mapi_fetch_field(hdl, 0);
-		char *f_name = mapi_fetch_field(hdl, 1);
-		char *s_name = mapi_fetch_field(hdl, 2);
-
-		if (sname != NULL && strcmp(sname, s_name) != 0)
-			continue;
-		if (fname != NULL && strcmp(fname, f_name) != 0)
-			continue;
 
 		mnstr_printf(toConsole, "%s\n", query);
 	}
