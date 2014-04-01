@@ -1,0 +1,63 @@
+# enqueue something 
+a:= bat.new(:oid,:oid);
+
+bat.append(a,1@0);
+bat.append(a,0@0);
+bat.append(a,2@0);
+bat.append(a,2@0);
+bat.append(a,3@0);
+bat.append(a,3@0);
+bat.append(a,3@0);
+
+io.print(a);
+
+b:= bat.new(:oid,:int);
+
+bat.append(b,1);
+bat.append(b,0);
+bat.append(b,2);
+bat.append(b,2);
+bat.append(b,5);
+bat.append(b,5);
+bat.append(b,3);
+
+io.print(b);
+
+bp:= pqueue.topn_min(a,b,0:wrd,false);
+io.print(bp);
+bp:= pqueue.topn_min(a,b,1:wrd,false);
+io.print(bp);
+bp:= pqueue.topn_min(a,b,2:wrd,false);
+io.print(bp);
+bp:= pqueue.topn_min(a,b,3:wrd,false);
+io.print(bp);
+bp:= pqueue.topn_min(a,b,4:wrd,false);
+io.print(bp);
+bp:= pqueue.topn_min(a,b,5:wrd,false);
+io.print(bp);
+bp:= pqueue.topn_min(a,b,6:wrd,false);
+io.print(bp);
+bp:= pqueue.topn_min(a,b,7:wrd,false);
+io.print(bp);
+bp:= pqueue.topn_min(a,b,8:wrd,false);
+io.print(bp);
+
+bp:= pqueue.topn_max(a,b,0:wrd,false);
+io.print(bp);
+bp:= pqueue.topn_max(a,b,1:wrd,false);
+io.print(bp);
+bp:= pqueue.topn_max(a,b,2:wrd,false);
+io.print(bp);
+bp:= pqueue.topn_max(a,b,3:wrd,false);
+io.print(bp);
+bp:= pqueue.topn_max(a,b,4:wrd,false);
+io.print(bp);
+bp:= pqueue.topn_max(a,b,5:wrd,false);
+io.print(bp);
+bp:= pqueue.topn_max(a,b,6:wrd,false);
+io.print(bp);
+bp:= pqueue.topn_max(a,b,7:wrd,false);
+io.print(bp);
+bp:= pqueue.topn_max(a,b,8:wrd,false);
+io.print(bp);
+
