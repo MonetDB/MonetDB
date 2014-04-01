@@ -21,14 +21,40 @@ stdout of test 'scenario01` in directory 'sql/backends/monet5/datacell` itself:
 Ready.
 # SQL catalog created, loading sql scripts once
 
+# 15:50:02 >  
+# 15:50:02 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-26552" "--port=30649"
+# 15:50:02 >  
 
-# 16:45:05 >  
-# 16:45:05 >  mclient -lsql -ftest -i -e --host=rig --port=38212 
-# 16:45:05 >  
+#set optimizer='datacell_pipe';
+#create table datacell.bsktin(
+#    id integer,
+#    tag timestamp,
+#    payload integer
+#);
+#create table datacell.bsktout( like datacell.bsktin);
+#select * from datacell.receptors(); select * from datacell.emitters(); select * from datacell.baskets();
+% .,	.,	.,	.,	.,	.,	.,	.,	.,	. # table_name
+% nme,	host,	port,	protocol,	mode,	status,	lastseen,	cycles,	received,	pending # name
+% clob,	clob,	int,	clob,	clob,	clob,	timestamp,	int,	int,	int # type
+% 15,	9,	5,	3,	7,	6,	26,	1,	1,	1 # length
+[ "datacell.bsktin",	"localhost",	50501,	"TCP",	"passive",	"paused",	NULL,	0,	0,	0	]
+#select * from datacell.receptors(); select * from datacell.emitters(); select * from datacell.baskets();
+% .,	.,	.,	.,	.,	.,	.,	.,	.,	. # table_name
+% nme,	host,	port,	protocol,	mode,	status,	lastsent,	cycles,	sent,	pending # name
+% clob,	clob,	int,	clob,	clob,	clob,	timestamp,	int,	int,	int # type
+% 16,	9,	5,	3,	6,	6,	26,	1,	1,	1 # length
+[ "datacell.bsktout",	"localhost",	50601,	"UDP",	"active",	"paused",	NULL,	0,	0,	0	]
+#select * from datacell.receptors(); select * from datacell.emitters(); select * from datacell.baskets();
+% .,	.,	.,	.,	.,	.,	.,	.,	. # table_name
+% nme,	threshold,	winsize,	winstride,	timeslice,	timestride,	beat,	seen,	events # name
+% clob,	int,	int,	int,	int,	int,	int,	timestamp,	int # type
+% 16,	1,	1,	1,	1,	1,	1,	26,	1 # length
+[ "datacell.bsktin",	0,	0,	0,	0,	0,	0,	NULL,	0	]
+[ "datacell.bsktout",	0,	0,	0,	0,	0,	0,	NULL,	0	]
+#drop table datacell.bsktin;
+#drop table datacell.bsktout;
 
-= to be checked / approved !
-
-# 16:45:05 >  
-# 16:45:05 >  Done.
-# 16:45:05 >  
+# 15:50:02 >  
+# 15:50:02 >  "Done."
+# 15:50:02 >  
 

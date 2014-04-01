@@ -3912,7 +3912,11 @@ rel_reduce_groupby_exps(int *changes, mvc *sql, sql_rel *rel)
 
 							if (scores[l] == -1 && exp_match_exp(e,gb)) {
 								sql_column *c = exp_find_column_(rel, e, -2, &bt);
-								sql_exp *rs = exp_column(sql->sa, rnme, c->base.name, exp_subtype(e), rel->card, has_nil(e), is_intern(e));
+								sql_exp *rs;
+							       
+								if (!c)
+									c = exp_find_column_(rel, gb, -2, &bt);
+								rs = exp_column(sql->sa, rnme, c->base.name, exp_subtype(e), rel->card, has_nil(e), is_intern(e));
 								exp_setname(sql->sa, rs, exp_find_rel_name(e), exp_name(e));
 								append(r->exps, rs);
 								fnd = 1;
@@ -3939,6 +3943,55 @@ rel_reduce_groupby_exps(int *changes, mvc *sql, sql_rel *rel)
 		free(bts);
 		free(tbls);
 		free(scores);
+	}
+	/* remove constants from group by list */
+	if (is_groupby(rel->op) && rel->r && !rel_is_ref(rel)) {
+		int i;
+		node *n;
+		
+		for (i = 0, n = gbe->h; n; n = n->next) {
+			sql_exp *e = n->data;
+
+			if (exp_is_atom(e))
+				i++;
+		}
+		if (i) {
+			list *ngbe = new_exp_list(sql->sa);
+			list *dgbe = new_exp_list(sql->sa);
+
+			for (n = gbe->h; n; n = n->next) {
+				sql_exp *e = n->data;
+
+				if (!exp_is_atom(e))
+					append(ngbe, e);
+				else
+					append(dgbe, e);
+			}
+			rel->r = ngbe;
+			if (!list_empty(dgbe)) {
+				/* use atom's directly in the aggr expr list */
+				list *nexps = new_exp_list(sql->sa);
+
+				for (n = rel->exps->h; n; n = n->next) {
+					sql_exp *e = n->data, *ne = NULL;
+
+					if (is_column(e->type)) {
+						if (e->l) 
+							ne = exps_bind_column2(dgbe, e->l, e->r);
+						else
+							ne = exps_bind_column(dgbe, e->r, NULL);
+						if (ne) {
+							ne = exp_copy(sql->sa, ne);
+							exp_setname(sql->sa, ne, e->rname, e->name);
+							e = ne;
+						}
+					}
+					append(nexps, e);
+				}
+				rel->exps = nexps;
+			}
+			(*changes)++;
+		}
 	}
 	return rel;
 }
@@ -4711,8 +4764,9 @@ rel_remove_unused(mvc *sql, sql_rel *rel)
 				if (e->used)
 					append(exps, e);
 			}
-			/* atleast one (needed for crossproducts, count(*), rank() and single value projections) !, handled by exps_mark_used */
-			assert(list_length(exps) > 0);
+			/* atleast one (needed for crossproducts, count(*), rank() and single value projections) */
+			if (list_length(exps) <= 0)
+				append(exps, rel->exps->h->data);
 			rel->exps = exps;
 		}
 		return rel;

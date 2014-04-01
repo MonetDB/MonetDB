@@ -103,8 +103,8 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						if (samplesize > 0) {
 							bsample = BATsample(bn, (BUN) 25000);
 						} else
-							bsample = bn;
-						br = BATsubselect(bsample, NULL, ATOMnilptr(bn->ttype), ATOMnilptr(bn->ttype), 0, 0, 0);
+							bsample = NULL;
+						br = BATsubselect(bn, bsample, ATOMnilptr(bn->ttype), ATOMnilptr(bn->ttype), 0, 0, 0);
 						nils = BATcount(br);
 						BBPunfix(br->batCacheid);
 						if (bn->tkey)

@@ -1,25 +1,56 @@
 stdout of test 'receptor00` in directory 'sql/backends/monet5/datacell` itself:
 
 
-# 10:10:33 >  
-# 10:10:33 >   mserver5  --debug=10 --set gdk_nr_threads=0  --set "gdk_dbfarm=/net/rig.ins.cwi.nl/export/scratch0/manegold/Monet/HG/Aug2011/prefix/_/var/MonetDB" --set mapi_open=true --set mapi_port=35652 --set monet_prompt= --trace --forcemito --set mal_listing=2  --dbname=mTests_backends_monet5_datacell  receptor00.mal
-# 10:10:33 >  
+# 21:18:43 >  
+# 21:18:43 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=37111" "--set" "mapi_usock=/var/tmp/mtest-32181/.s.monetdb.37111" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/current//Linux/var/MonetDB/mTests_sql_backends_monet5_datacell" "receptor00.mal"
+# 21:18:43 >  
 
-# MonetDB 5 server v11.5.0
+# MonetDB 5 server v11.18.0
 # This is an unreleased version
-# Serving database 'mTests_backends_monet5_datacell', using 4 threads
+# Serving database 'mTests_sql_backends_monet5_datacell', using 8 threads
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
-# Found 7.749 GiB available main-memory.
+# Found 15.591 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
 # Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
-# Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://rig.ins.cwi.nl:35652/
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:37111/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-32181/.s.monetdb.37111
 # MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
+# MonetDB/DataCell loaded
+function user.main():void;
+#A single thread for a simple stream 
+#The test is based on the definition the datacell baskets x  
+# it starts a receptor in debug mode to see arrivals coming 
+# from a (client) sensor. 
+    sql.init();
+    basket.register("x");
+    receptor.start("x","localhost",50501);
+    io.print("receptor working");
+    alarm.sleep(5);
+    receptor.pause("x");
+    io.print("receptor paused");
+    alarm.sleep(5);
+    receptor.resume("x");
+    io.print("receptor restarted");
+    alarm.sleep(5);
+    receptor.pause("x");
+    io.print("receptor stopped");
+    receptor.stop("x");
+# The SQL equivalents 
+# call datacell.basket('datacell','x); 
+# call datacell.receptor('datacell','x','localhost',50501,'passive'); 
+# call datacell.pause('datacell','x'); 
+# call datacell.resume('datacell','x'); 
+# call datacell.drop('datacell','x'); 
+end main;
+[ "receptor working" ]
+[ "receptor paused" ]
+[ "receptor restarted" ]
+[ "receptor stopped" ]
 
-= to be checked / approved !
-
-# 10:10:34 >  
-# 10:10:34 >  Done.
-# 10:10:34 >  
+# 21:18:58 >  
+# 21:18:58 >  "Done."
+# 21:18:58 >  
 

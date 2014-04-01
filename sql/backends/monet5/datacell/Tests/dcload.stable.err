@@ -30,6 +30,50 @@ stderr of test 'dcload` in directory 'sql/backends/monet5/datacell` itself:
 # 12:45:12 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=vienna" "--port=38236"
 # 12:45:12 >  
 
+MAPI  = (monetdb) /var/tmp/mtest-32181/.s.monetdb.37111
+QUERY = CALL datacell.query('datacell.warm');
+
+        !TypeException:datacell.warm[18]:'algebra.leftfetchjoin' undefined in: _33:bat[:oid,:inet] := algebra.leftfetchjoin(_23:bat[:oid,:oid], _136:BAT)
+        !TypeException:datacell.warm[23]:'algebra.leftfetchjoin' undefined in: _45:bat[:oid,:timestamp] := algebra.leftfetchjoin(_23:bat[:oid,:oid], _136:BAT)
+        !TypeException:datacell.warm[27]:'algebra.leftfetchjoin' undefined in: _53:bat[:oid,:str] := algebra.leftfetchjoin(_23:bat[:oid,:oid], _136:BAT)
+        !TypeException:datacell.warm[28]:'algebra.leftfetchjoin' undefined in: _57:bat[:oid,:dbl] := algebra.leftfetchjoin(_23:bat[:oid,:oid], _136:BAT)
+        !TypeException:datacell.warm[14]:'algebra.subselect' undefined in: _23:bat[:oid,:oid] := algebra.subselect(_136:BAT, _22:str, _22:str, _24:bit, _24:bit, _15:bit)
+        !TypeException:datacell.warm[18]:'algebra.leftfetchjoin' undefined in: _33:bat[:oid,:inet] := algebra.leftfetchjoin(_23:bat[:oid,:oid], _136:BAT)
+        !TypeException:datacell.warm[23]:'algebra.leftfetchjoin' undefined in: _45:bat[:oid,:timestamp] := algebra.leftfetchjoin(_23:bat[:oid,:oid], _136:BAT)
+        !TypeException:datacell.warm[27]:'algebra.leftfetchjoin' undefined in: _53:bat[:oid,:str] := algebra.leftfetchjoin(_23:bat[:oid,:oid], _136:BAT)
+        !TypeException:datacell.warm[28]:'algebra.leftfetchjoin' undefined in: _57:bat[:oid,:dbl] := algebra.leftfetchjoin(_23:bat[:oid,:oid], _136:BAT)
+        !TypeException:datacell.warm[14]:'algebra.subselect' undefined in: _23:bat[:oid,:oid] := algebra.subselect(_136:BAT, _22:str, _22:str, _24:bit, _24:bit, _15:bit)
+        !TypeException:datacell.warm[18]:'algebra.leftfetchjoin' undefined in: _33:bat[:oid,:inet] := algebra.leftfetchjoin(_23:bat[:oid,:oid], _136:BAT)
+        !TypeException:datacell.warm[23]:'algebra.leftfetchjoin' undefined in: _45:bat[:oid,:timestamp] := algebra.leftfetchjoin(_23:bat[:oid,:oid], _136:BAT)
+        !TypeException:datacell.warm[27]:'algebra.leftfetchjoin' undefined in: _53:bat[:oid,:str] := algebra.leftfetchjoin(_23:bat[:oid,:oid], _136:BAT)
+        !TypeException:datacell.warm[28]:'algebra.leftfetchjoin' undefined in: _57:bat[:oid,:dbl] := algebra.leftfetchjoin(_23:bat[:oid,:oid], _136:BAT)
+        !TypeException:datacell.warm[14]:'algebra.subselect' undefined in: _23:bat[:oid,:oid] := algebra.subselect(_136:BAT, _22:str, _22:str, _24:bit, _24:bit, _15:bit)
+        !TypeException:datacell.warm[18]:'algebra.leftfetchjoin' undefined in: _33:bat[:oid,:inet] := algebra.leftfetchjoin(_23:bat[:oid,:oid], _136:BAT)
+        !TypeException:datacell.warm[23]:'algebra.leftfetchjoin' undefined in: _45:bat[:oid,:timestamp] := algebra.leftfetchjoin(_23:bat[:oid,:oid], _136:BAT)
+        !TypeException:datacell.warm[27]:'algebra.leftfetchjoin' undefined in: _53:bat[:oid,:str] := algebra.leftfetchjoin(_23:bat[:oid,:oid], _136:BAT)
+        !TypeException:datacell.warm[28]:'algebra.leftfetchjoin' undefined in: _57:bat[:oid,:dbl] := algebra.leftfetchjoin(_23:bat[:oid,:oid], _136:BAT)
+MAPI  = (monetdb) /var/tmp/mtest-32181/.s.monetdb.37111
+QUERY = CALL datacell.query('datacell.hot');
+
+        !TypeException:datacell.hot[18]:'algebra.leftfetchjoin' undefined in: _33:bat[:oid,:inet] := algebra.leftfetchjoin(_23:bat[:oid,:oid], _135:BAT)
+        !TypeException:datacell.hot[23]:'algebra.leftfetchjoin' undefined in: _45:bat[:oid,:timestamp] := algebra.leftfetchjoin(_23:bat[:oid,:oid], _135:BAT)
+        !TypeException:datacell.hot[27]:'algebra.leftfetchjoin' undefined in: _53:bat[:oid,:str] := algebra.leftfetchjoin(_23:bat[:oid,:oid], _135:BAT)
+        !TypeException:datacell.hot[28]:'algebra.leftfetchjoin' undefined in: _57:bat[:oid,:dbl] := algebra.leftfetchjoin(_23:bat[:oid,:oid], _135:BAT)
+        !TypeException:datacell.hot[14]:'algebra.subselect' undefined in: _23:bat[:oid,:oid] := algebra.subselect(_135:BAT, _22:str, _22:str, _1:bit, _1:bit, _24:bit)
+        !TypeException:datacell.hot[18]:'algebra.leftfetchjoin' undefined in: _33:bat[:oid,:inet] := algebra.leftfetchjoin(_23:bat[:oid,:oid], _135:BAT)
+        !TypeException:datacell.hot[23]:'algebra.leftfetchjoin' undefined in: _45:bat[:oid,:timestamp] := algebra.leftfetchjoin(_23:bat[:oid,:oid], _135:BAT)
+        !TypeException:datacell.hot[27]:'algebra.leftfetchjoin' undefined in: _53:bat[:oid,:str] := algebra.leftfetchjoin(_23:bat[:oid,:oid], _135:BAT)
+        !TypeException:datacell.hot[28]:'algebra.leftfetchjoin' undefined in: _57:bat[:oid,:dbl] := algebra.leftfetchjoin(_23:bat[:oid,:oid], _135:BAT)
+        !TypeException:datacell.hot[14]:'algebra.subselect' undefined in: _23:bat[:oid,:oid] := algebra.subselect(_135:BAT, _22:str, _22:str, _1:bit, _1:bit, _24:bit)
+        !TypeException:datacell.hot[18]:'algebra.leftfetchjoin' undefined in: _33:bat[:oid,:inet] := algebra.leftfetchjoin(_23:bat[:oid,:oid], _135:BAT)
+        !TypeException:datacell.hot[23]:'algebra.leftfetchjoin' undefined in: _45:bat[:oid,:timestamp] := algebra.leftfetchjoin(_23:bat[:oid,:oid], _135:BAT)
+        !TypeException:datacell.hot[27]:'algebra.leftfetchjoin' undefined in: _53:bat[:oid,:str] := algebra.leftfetchjoin(_23:bat[:oid,:oid], _135:BAT)
+        !TypeException:datacell.hot[28]:'algebra.leftfetchjoin' undefined in: _57:bat[:oid,:dbl] := algebra.leftfetchjoin(_23:bat[:oid,:oid], _135:BAT)
+        !TypeException:datacell.hot[14]:'algebra.subselect' undefined in: _23:bat[:oid,:oid] := algebra.subselect(_135:BAT, _22:str, _22:str, _1:bit, _1:bit, _24:bit)
+        !TypeException:datacell.hot[18]:'algebra.leftfetchjoin' undefined in: _33:bat[:oid,:inet] := algebra.leftfetchjoin(_23:bat[:oid,:oid], _135:BAT)
+        !TypeException:datacell.hot[23]:'algebra.leftfetchjoin' undefined in: _45:bat[:oid,:timestamp] := algebra.leftfetchjoin(_23:bat[:oid,:oid], _135:BAT)
+        !TypeException:datacell.hot[27]:'algebra.leftfetchjoin' undefined in: _53:bat[:oid,:str] := algebra.leftfetchjoin(_23:bat[:oid,:oid], _135:BAT)
+        !TypeException:datacell.hot[28]:'algebra.leftfetchjoin' undefined in: _57:bat[:oid,:dbl] := algebra.leftfetchjoin(_23:bat[:oid,:oid], _135:BAT)
 
 # 12:45:12 >  
 # 12:45:12 >  "Done."

@@ -69,7 +69,15 @@ create function datacell.threshold(bskt string, mi integer)
 returns boolean
 	external name datacell.threshold;
 
+create function datacell.window(bskt string, size tinyint, stride tinyint)
+returns boolean
+	external name datacell.window;
+
 create function datacell.window(bskt string, size integer, stride integer)
+returns boolean
+	external name datacell.window;
+
+create function datacell.window(bskt string, size bigint, stride bigint)
 returns boolean
 	external name datacell.window;
 
@@ -77,7 +85,15 @@ create function datacell.window(bskt string, size interval second, stride interv
 returns boolean
 	external name datacell.timewindow;
 
+create function datacell.beat(bskt string, t tinyint)
+returns boolean
+	external name datacell.beat;
+
 create function datacell.beat(bskt string, t integer)
+returns boolean
+	external name datacell.beat;
+
+create function datacell.beat(bskt string, t bigint)
 returns boolean
 	external name datacell.beat;
 

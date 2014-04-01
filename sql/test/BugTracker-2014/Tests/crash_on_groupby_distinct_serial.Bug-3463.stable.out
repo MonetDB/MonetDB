@@ -1,0 +1,39 @@
+stdout of test 'crash_on_groupby_distinct_serial.Bug-3463` in directory 'sql/test/BugTracker-2014` itself:
+
+
+# 12:20:38 >  
+# 12:20:38 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38842" "--set" "mapi_usock=/var/tmp/mtest-18464/.s.monetdb.38842" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/niels/scratch/rc-clean/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2014" "--set" "mal_listing=0"
+# 12:20:38 >  
+
+# MonetDB 5 server v11.17.14
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2014', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.334 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.nes.nl:38842/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-18464/.s.monetdb.38842
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 12:20:39 >  
+# 12:20:39 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-18464" "--port=38842"
+# 12:20:39 >  
+
+#CREATE TABLE test (a int, b int, c serial);
+#SELECT a as t, count(distinct c) FROM test GROUP BY t;
+% sys.test,	sys.L1 # table_name
+% t,	L1 # name
+% int,	wrd # type
+% 1,	1 # length
+#drop table test;
+
+# 12:20:39 >  
+# 12:20:39 >  "Done."
+# 12:20:39 >  
+

@@ -215,13 +215,9 @@ address ALGlike
 comment "Selects all elements that have 'substr' as in the tail.";
 
 # @- Sampling
-command sample ( b:bat[:oid,:any_2], num:int ) :bat[:oid,:any_2]
+command sample ( b:bat[:oid,:any_1], num:int ) :bat[:oid,:oid]
 address ALGsample
-comment "Produce a random selection of size 'num' from the input BAT.";
-
-command subsample(b:bat[:oid,:any_1], num:int ) :bat[:oid,:oid]
-address ALGsubsample
-comment "Return the oids of a random selection of size 'num' from the input BAT.";
+comment "Returns the oids of a random selection of size 'num' from the input BAT.";
 
 # @+ BAT copying
 command copy( b:bat[:any_1,:any_2]) :bat[:any_1,:any_2]

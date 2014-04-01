@@ -83,26 +83,9 @@ SAMPLEuniform(bat *r, bat *b, ptr s) {
 	BAT *br, *bb;
 
 	if ((bb = BATdescriptor(*b)) == NULL) {
-		throw(MAL, "sample.uniform", INTERNAL_BAT_ACCESS);
-	}
-	br = BATsample(bb,*(BUN *)s);
-	if (br == NULL)
-		throw(MAL, "sample.uniform", OPERATION_FAILED);
-
-	BBPunfix(bb->batCacheid);
-	BBPkeepref(*r = br->batCacheid);
-	return MAL_SUCCEED;
-
-}
-
-str
-SAMPLEsubuniform(bat *r, bat *b, ptr s) {
-	BAT *br, *bb;
-
-	if ((bb = BATdescriptor(*b)) == NULL) {
 		throw(MAL, "sample.subuniform", INTERNAL_BAT_ACCESS);
 	}
-	br = BATsample_(bb,*(BUN *)s);
+	br = BATsample(bb,*(BUN *)s);
 	if (br == NULL)
 		throw(MAL, "sample.subuniform", OPERATION_FAILED);
 

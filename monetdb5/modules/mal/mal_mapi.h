@@ -54,7 +54,6 @@ mal_mapi_export str SERVERlisten_usock(int *ret, str *usock);
 mal_mapi_export str SERVERstop(int *ret);
 mal_mapi_export str SERVERsuspend(int *ret);
 mal_mapi_export str SERVERresume(int *ret);
-mal_mapi_export void SERVERexit(void);
 
 mal_mapi_export str SERVERconnect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc);
 mal_mapi_export str SERVERdisconnectWithAlias(int *ret, str *db_alias);

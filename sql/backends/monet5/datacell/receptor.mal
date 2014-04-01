@@ -47,7 +47,7 @@ address RCgenerator
 comment "Use a function/factory to generate the events";
 
 command stop(tbl:str)
-address RCstopReceptor
+address RCreceptorStop
 comment "Stop a receptor";
 
 command stop()

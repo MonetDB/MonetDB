@@ -10,4 +10,4 @@ sql> \<emili.sql
 
 step 3) in a different window sent events at a rate of 10/seconds
 
-cat sensor.log |sensor --port=50500 --delay=100 --trace --replay
+cat emilisensor.log |sensor --port=50500 --delay=100 --trace --replay

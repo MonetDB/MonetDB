@@ -81,3 +81,5 @@ clients-getpasswd
 #cpustat too system dependent to always run.
 
 pqueue
+pqueue2
+pqueueElim

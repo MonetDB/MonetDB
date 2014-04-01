@@ -97,7 +97,8 @@ socket_server_listen(SOCKET sockfd, SOCKET *newsfd)
 #else
 	socklen_t clilen = sizeof(cli_addr);
 #endif
-	listen(sockfd, 5);
+	if( listen(sockfd, 5))
+		return GDKstrdup("Listen on socket failed");
 	*newsfd = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen);
 	if (*newsfd == INVALID_SOCKET)
 		return GDKstrdup("Can not accept on the socket\n");

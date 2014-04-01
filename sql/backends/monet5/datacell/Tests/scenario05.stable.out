@@ -21,14 +21,42 @@ stdout of test 'scenario05` in directory 'sql/backends/monet5/datacell` itself:
 Ready.
 # SQL catalog created, loading sql scripts once
 
+# 20:31:19 >  
+# 20:31:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-30266" "--port=32299"
+# 20:31:19 >  
 
-# 16:51:13 >  
-# 16:51:13 >  mclient -lsql -ftest -i -e --host=rig --port=31262 
-# 16:51:13 >  
+#set optimizer='datacell_pipe';
+#create table datacell.beatin(
+#    id integer,
+#    tag timestamp,
+#    payload integer
+#);
+#create table datacell.beatout( tag timestamp, mi integer, ma integer, su bigint);
+#call datacell.dump();
+#baskets[ 1] datacell.beatin columns 3 threshold 0 window=[0,0] time window=[0,0] beat 0 milliseconds events 0
+#baskets[ 2] datacell.beatout columns 4 threshold 0 window=[0,0] time window=[0,0] beat 0 milliseconds events 0
+#receptor datacell.beatin at localhost:50505 protocol=TCP mode=passive status=running delay=1000 
+#emitter datacell.beatout at localhost:50605 protocol=UDP mode=active status=running delay=1000
+#scheduler status running
+#[0]	datacell.mavgbeat running delay 0 cycles 0 events 0 time 0 ms
+#<--	datacell.beatin basket[1] 0 0
+#select * from datacell.baskets();
+% .,	.,	.,	.,	.,	.,	.,	.,	. # table_name
+% nme,	threshold,	winsize,	winstride,	timeslice,	timestride,	beat,	seen,	events # name
+% clob,	int,	int,	int,	int,	int,	int,	timestamp,	int # type
+% 16,	1,	1,	1,	1,	1,	1,	26,	1 # length
+[ "datacell.beatin",	0,	0,	0,	0,	0,	0,	NULL,	0	]
+[ "datacell.beatout",	0,	0,	0,	0,	0,	0,	NULL,	0	]
+#select * from datacell.queries();
+% .,	.,	.,	.,	.,	.,	.,	. # table_name
+% nme,	status,	lastrun,	cycles,	events,	time,	error,	def # name
+% clob,	clob,	timestamp,	int,	int,	bigint,	clob,	clob # type
+% 17,	7,	26,	1,	1,	1,	0,	195 # length
+[ "datacell.mavgbeat",	"running",	NULL,	0,	0,	0,	"",	"insert into datacell.beatout select now(), min(payload), \n\tmax(payload), sum(payload) from datacell.beatin where datacell.beat('datacell.beatin',2000) and datacell.window('datacell.beatin',10,1);"	]
+#drop table datacell.beatin;
+#drop table datacell.beatout;
 
-= to be checked / approved !
-
-# 16:51:13 >  
-# 16:51:13 >  Done.
-# 16:51:13 >  
+# 20:31:20 >  
+# 20:31:20 >  "Done."
+# 20:31:20 >  
 

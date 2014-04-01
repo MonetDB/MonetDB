@@ -479,6 +479,21 @@ create_table_or_view(mvc *sql, char *sname, sql_table *t, int temp)
 	return MAL_SUCCEED;
 }
 
+static int
+table_has_updates(sql_trans *tr, sql_table *t)
+{
+	node *n;
+	int cnt = 0;
+
+	for ( n = t->columns.set->h; !cnt && n; n = n->next) {
+		sql_column *c = n->data;
+		BAT *b = store_funcs.bind_col(tr, c, RD_UPD);
+		cnt |= BATcount(b) > 0;
+		BBPunfix(b->batCacheid);
+	}
+	return cnt;
+}
+
 static str
 alter_table(mvc *sql, char *sname, sql_table *t)
 {
@@ -508,8 +523,11 @@ alter_table(mvc *sql, char *sname, sql_table *t)
 		}
 	}
 
-	if (t->readonly != nt->readonly)
+	if (t->readonly != nt->readonly) {
+		if (t->readonly && table_has_updates(sql->session->tr, nt)) 
+			return sql_message("40000!ALTER TABLE: set READONLY not possible with outstanding updates (wait until updates are flushed)\n");
 		mvc_readonly(sql, nt, t->readonly);
+	}
 
 	/* check for changes */
 	if (t->tables.dset)
