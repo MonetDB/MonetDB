@@ -48,78 +48,9 @@
  * properties. The sample is without replacement.
  */
 
+/* BATsample implements sampling for void headed BATs */
 BAT *
 BATsample(BAT *b, BUN n)
-{
-	BAT *bn;
-	BUN cnt;
-
-	BATcheck(b, "BATsample");
-	ERRORcheck(n > BUN_MAX, "BATsample: sample size larger than BUN_MAX\n");
-	ALGODEBUG fprintf(stderr, "#BATsample: sample " BUNFMT " elements.\n", n);
-
-	cnt = BATcount(b);
-	if (cnt <= n) {
-		bn = BATcopy(b, b->htype, b->ttype, TRUE);
-	} else {
-		BUN top = cnt - n;
-		BUN smp = n;
-		BATiter iter = bat_iterator(b);
-		BUN p = BUNfirst(b)-1;
-		bn = BATnew(
-			b->htype==TYPE_void && b->hseqbase!=oid_nil?TYPE_oid:b->htype,
-			b->ttype==TYPE_void && b->tseqbase!=oid_nil?TYPE_oid:b->ttype,
-			n);
-		if (bn == NULL)
-			return NULL;
-		if (n == 0)
-			return bn;
-		while (smp-->1) { /* loop until all but 1 values are sampled */
-			double v = DRAND;
-			double quot = (double)top/(double)cnt;
-			BUN jump = 0;
-			while (quot > v) { /* determine how many positions to jump */
-				jump++;
-				top--;
-				cnt--;
-				quot *= (double)top/(double)cnt;
-			}
-			p += (jump+1);
-			cnt--;
-			bunfastins(bn, BUNhead(iter, p), BUNtail(iter,p));
-		}
-		/* 1 left */
-		p += (BUN) rand() % cnt;
-		bunfastins(bn, BUNhead(iter, p+1), BUNtail(iter,p+1));
-
-		/* property management */
-		bn->hsorted = BAThordered(b);
-		bn->tsorted = BATtordered(b);
-		bn->hrevsorted = BAThrevordered(b);
-		bn->trevsorted = BATtrevordered(b);
-		bn->hdense = FALSE;
-		bn->tdense = FALSE;
-		BATkey(bn, BAThkey(b));
-		BATkey(BATmirror(bn), BATtkey(b));
-		bn->H->seq = b->H->seq;
-		bn->T->seq = b->T->seq;
-		bn->H->nil = b->H->nil;
-		bn->T->nil = b->T->nil;
-		bn->H->nonil = b->H->nonil;
-		bn->T->nonil = b->T->nonil;
-		BATsetcount(bn, n);
-	}
-
-	return bn;
-
-bunins_failed:
-	BBPreclaim(bn);
-	return NULL;
-}
-
-/* BATsample_ implements sampling for void headed BATs */
-BAT *
-BATsample_(BAT *b, BUN n)
 {
 	BAT *bn;
 	BUN cnt;
