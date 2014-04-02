@@ -25,13 +25,13 @@ io.print(b);
 
 c:= bat.new(:oid,:str);
 
-bat.append(c,'sjoerd');
-bat.append(c,'peter');
-bat.append(c,'stefan');
-bat.append(c,'stefan');
-bat.append(c,'niels');
-bat.append(c,'martin');
-bat.append(c,'stefan');
+bat.append(c,"sjoerd");
+bat.append(c,"peter");
+bat.append(c,"stefan");
+bat.append(c,"stefan");
+bat.append(c,"niels");
+bat.append(c,"martin");
+bat.append(c,"stefan");
 
 io.print(c);
 
@@ -60,7 +60,7 @@ io.print(bp);
 # 	get the same group id.
 #
 # 	returns both void,pos, void,gid
-bp,bg:= pqueue.utopn_min(b,0:wrd,false);
+(bp,bg):= pqueue.utopn_min(b,0:wrd,false);
 io.print(bp);
 io.print(bg);
 ap := algebra.leftfetchjoin(bp, a);
@@ -71,7 +71,7 @@ io.print(ap);
 bp:= pqueue.topn_min(bg,ap,0:wrd,false);
 io.print(bp);
 
-bp,bg:= pqueue.utopn_min(b,1:wrd,false);
+(bp,bg):= pqueue.utopn_min(b,1:wrd,false);
 io.print(bp);
 io.print(bg);
 ap := algebra.leftfetchjoin(bp, a);
@@ -79,7 +79,7 @@ io.print(ap);
 bp:= pqueue.topn_min(bg,ap,1:wrd,false);
 io.print(bp);
 
-bp,bg:= pqueue.utopn_min(b,2:wrd,false);
+(bp,bg):= pqueue.utopn_min(b,2:wrd,false);
 io.print(bp);
 io.print(bg);
 ap := algebra.leftfetchjoin(bp, a);
@@ -87,7 +87,7 @@ io.print(ap);
 bp:= pqueue.topn_min(bg,ap,2:wrd,false);
 io.print(bp);
 
-bp,bg:= pqueue.utopn_min(b,3:wrd,false);
+(bp,bg):= pqueue.utopn_min(b,3:wrd,false);
 io.print(bp);
 io.print(bg);
 ap := algebra.leftfetchjoin(bp, a);
@@ -95,7 +95,7 @@ io.print(ap);
 bp:= pqueue.topn_min(bg,ap,3:wrd,false);
 io.print(bp);
 
-bp,bg:= pqueue.utopn_min(b,4:wrd,false);
+(bp,bg):= pqueue.utopn_min(b,4:wrd,false);
 io.print(bp);
 io.print(bg);
 ap := algebra.leftfetchjoin(bp, a);
@@ -103,7 +103,7 @@ io.print(ap);
 bp:= pqueue.topn_min(bg,ap,4:wrd,false);
 io.print(bp);
 
-bp,bg:= pqueue.utopn_min(b,5:wrd,false);
+(bp,bg):= pqueue.utopn_min(b,5:wrd,false);
 io.print(bp);
 io.print(bg);
 ap := algebra.leftfetchjoin(bp, a);
@@ -111,7 +111,7 @@ io.print(ap);
 bp:= pqueue.topn_min(bg,ap,5:wrd,false);
 io.print(bp);
 
-bp,bg:= pqueue.utopn_min(b,6:wrd,false);
+(bp,bg):= pqueue.utopn_min(b,6:wrd,false);
 io.print(bp);
 io.print(bg);
 ap := algebra.leftfetchjoin(bp, a);
@@ -119,7 +119,7 @@ io.print(ap);
 bp:= pqueue.topn_min(bg,ap,6:wrd,false);
 io.print(bp);
 
-bp,bg:= pqueue.utopn_min(b,7:wrd,false);
+(bp,bg):= pqueue.utopn_min(b,7:wrd,false);
 io.print(bp);
 io.print(bg);
 ap := algebra.leftfetchjoin(bp, a);
@@ -127,50 +127,11 @@ io.print(ap);
 bp:= pqueue.topn_min(bg,ap,7:wrd,false);
 io.print(bp);
 
-bp,bg:= pqueue.utopn_min(b,8:wrd,false);
+(bp,bg):= pqueue.utopn_min(b,8:wrd,false);
 io.print(bp);
 io.print(bg);
 ap := algebra.leftfetchjoin(bp, a);
 io.print(ap);
 bp:= pqueue.topn_min(bg,ap,8:wrd,false);
-io.print(bp);
-
-# old
-bp:= pqueue.topn_min(a,b,0:wrd,false);
-io.print(bp);
-bp:= pqueue.topn_min(a,b,1:wrd,false);
-io.print(bp);
-bp:= pqueue.topn_min(a,b,2:wrd,false);
-io.print(bp);
-bp:= pqueue.topn_min(a,b,3:wrd,false);
-io.print(bp);
-bp:= pqueue.topn_min(a,b,4:wrd,false);
-io.print(bp);
-bp:= pqueue.topn_min(a,b,5:wrd,false);
-io.print(bp);
-bp:= pqueue.topn_min(a,b,6:wrd,false);
-io.print(bp);
-bp:= pqueue.topn_min(a,b,7:wrd,false);
-io.print(bp);
-bp:= pqueue.topn_min(a,b,8:wrd,false);
-io.print(bp);
-
-bp:= pqueue.topn_max(a,b,0:wrd,false);
-io.print(bp);
-bp:= pqueue.topn_max(a,b,1:wrd,false);
-io.print(bp);
-bp:= pqueue.topn_max(a,b,2:wrd,false);
-io.print(bp);
-bp:= pqueue.topn_max(a,b,3:wrd,false);
-io.print(bp);
-bp:= pqueue.topn_max(a,b,4:wrd,false);
-io.print(bp);
-bp:= pqueue.topn_max(a,b,5:wrd,false);
-io.print(bp);
-bp:= pqueue.topn_max(a,b,6:wrd,false);
-io.print(bp);
-bp:= pqueue.topn_max(a,b,7:wrd,false);
-io.print(bp);
-bp:= pqueue.topn_max(a,b,8:wrd,false);
 io.print(bp);
 

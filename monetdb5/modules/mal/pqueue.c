@@ -1643,3 +1643,12 @@ str PQtopn2_minmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
+str PQutopn_minmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	
+	(void) cntxt;
+	(void) mb;
+	(void) stk;
+	(void) pci;
+	throw( MAL,"pqueue.utop_minmax","to be implemented");
+}
