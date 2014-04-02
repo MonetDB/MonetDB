@@ -69,7 +69,7 @@ simpleFlow(InstrPtr *old, int start, int last)
 	return simple;
 }
 
-/* optimizers may remove the dataflow hints first */
+/* optimizers may remove the dataflow and language.pass hints first */
 void removeDataflow(MalBlkPtr mb)
 {
 	int i, k, flowblock=0, limit;
@@ -103,6 +103,10 @@ void removeDataflow(MalBlkPtr mb)
 				flowblock = 0;
 				delete[i] = 1;
 			}
+		} else 
+		if ( getModuleId(p) == languageRef &&
+			 getFunctionId(p) == passRef){
+			delete[i] =1;
 		} else {
 			/* remember first initialization */
 			for ( k = p->retc; k < p->argc; k++)
