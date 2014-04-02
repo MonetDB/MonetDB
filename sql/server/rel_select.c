@@ -2406,7 +2406,7 @@ rel_or(mvc *sql, sql_rel *l, sql_rel *r, list *oexps, list *lexps, list *rexps, 
 		return l;
 	}
 
-	if (l->op == r->op && ll == rl) {
+	if (l->op == r->op && ll == rl && l->r == r->r) {
 		sql_exp *e = exp_or(sql->sa, l->exps, r->exps);
 		list *nl = new_exp_list(sql->sa); 
 		
