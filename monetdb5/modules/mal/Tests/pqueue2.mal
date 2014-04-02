@@ -23,6 +23,119 @@ bat.append(b,3);
 
 io.print(b);
 
+c:= bat.new(:oid,:str);
+
+bat.append(c,'sjoerd');
+bat.append(c,'peter');
+bat.append(c,'stefan');
+bat.append(c,'stefan');
+bat.append(c,'niels');
+bat.append(c,'martin');
+bat.append(c,'stefan');
+
+io.print(c);
+
+# topn of b, new interface should return void,oid(position)
+bp:= pqueue.topn_min(b,0:wrd,false);
+io.print(bp);
+bp:= pqueue.topn_min(b,1:wrd,false);
+io.print(bp);
+bp:= pqueue.topn_min(b,2:wrd,false);
+io.print(bp);
+bp:= pqueue.topn_min(b,3:wrd,false);
+io.print(bp);
+bp:= pqueue.topn_min(b,4:wrd,false);
+io.print(bp);
+bp:= pqueue.topn_min(b,5:wrd,false);
+io.print(bp);
+bp:= pqueue.topn_min(b,6:wrd,false);
+io.print(bp);
+bp:= pqueue.topn_min(b,7:wrd,false);
+io.print(bp);
+bp:= pqueue.topn_min(b,8:wrd,false);
+io.print(bp);
+
+# utopn only count the unique values - topn of b, 
+# 	duplicates are included in the returned position list and
+# 	get the same group id.
+#
+# 	returns both void,pos, void,gid
+bp,bg:= pqueue.utopn_min(b,0:wrd,false);
+io.print(bp);
+io.print(bg);
+ap := algebra.leftfetchjoin(bp, a);
+io.print(ap);
+# (sub) topn input: aligned bg group id, ap values bat
+#	output:	void,pos
+# returns the topn of the combination gid,value
+bp:= pqueue.topn_min(bg,ap,0:wrd,false);
+io.print(bp);
+
+bp,bg:= pqueue.utopn_min(b,1:wrd,false);
+io.print(bp);
+io.print(bg);
+ap := algebra.leftfetchjoin(bp, a);
+io.print(ap);
+bp:= pqueue.topn_min(bg,ap,1:wrd,false);
+io.print(bp);
+
+bp,bg:= pqueue.utopn_min(b,2:wrd,false);
+io.print(bp);
+io.print(bg);
+ap := algebra.leftfetchjoin(bp, a);
+io.print(ap);
+bp:= pqueue.topn_min(bg,ap,2:wrd,false);
+io.print(bp);
+
+bp,bg:= pqueue.utopn_min(b,3:wrd,false);
+io.print(bp);
+io.print(bg);
+ap := algebra.leftfetchjoin(bp, a);
+io.print(ap);
+bp:= pqueue.topn_min(bg,ap,3:wrd,false);
+io.print(bp);
+
+bp,bg:= pqueue.utopn_min(b,4:wrd,false);
+io.print(bp);
+io.print(bg);
+ap := algebra.leftfetchjoin(bp, a);
+io.print(ap);
+bp:= pqueue.topn_min(bg,ap,4:wrd,false);
+io.print(bp);
+
+bp,bg:= pqueue.utopn_min(b,5:wrd,false);
+io.print(bp);
+io.print(bg);
+ap := algebra.leftfetchjoin(bp, a);
+io.print(ap);
+bp:= pqueue.topn_min(bg,ap,5:wrd,false);
+io.print(bp);
+
+bp,bg:= pqueue.utopn_min(b,6:wrd,false);
+io.print(bp);
+io.print(bg);
+ap := algebra.leftfetchjoin(bp, a);
+io.print(ap);
+bp:= pqueue.topn_min(bg,ap,6:wrd,false);
+io.print(bp);
+
+bp,bg:= pqueue.utopn_min(b,7:wrd,false);
+io.print(bp);
+io.print(bg);
+ap := algebra.leftfetchjoin(bp, a);
+io.print(ap);
+bp:= pqueue.topn_min(bg,ap,7:wrd,false);
+io.print(bp);
+
+bp,bg:= pqueue.utopn_min(b,8:wrd,false);
+io.print(bp);
+io.print(bg);
+ap := algebra.leftfetchjoin(bp, a);
+io.print(ap);
+bp:= pqueue.topn_min(bg,ap,8:wrd,false);
+io.print(bp);
+
+# old
 bp:= pqueue.topn_min(a,b,0:wrd,false);
 io.print(bp);
 bp:= pqueue.topn_min(a,b,1:wrd,false);
