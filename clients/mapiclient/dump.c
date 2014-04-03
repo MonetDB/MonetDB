@@ -108,6 +108,7 @@ get_schema(Mapi mid)
 	return NULL;
 }
 
+/* return TRUE if the sys.systemfunctions table exists */
 int
 has_systemfunctions(Mapi mid)
 {
@@ -121,6 +122,47 @@ has_systemfunctions(Mapi mid)
 			      "WHERE t.name = 'systemfunctions' AND "
 			            "t.schema_id = s.id AND "
 			            "s.name = 'sys'")) == NULL ||
+	    mapi_error(mid))
+		goto bailout;
+	ret = mapi_get_row_count(hdl) == 1;
+	while ((mapi_fetch_row(hdl)) != 0) {
+		if (mapi_error(mid))
+			goto bailout;
+	}
+	if (mapi_error(mid))
+		goto bailout;
+	mapi_close_handle(hdl);
+	return ret;
+
+  bailout:
+	if (hdl) {
+		if (mapi_result_error(hdl))
+			mapi_explain_result(hdl, stderr);
+		else
+			mapi_explain_query(hdl, stderr);
+		mapi_close_handle(hdl);
+	} else
+		mapi_explain(mid, stderr);
+	return 0;
+}
+
+/* return TRUE if the sys.schemas table has a column named system */
+static int
+has_schemas_system(Mapi mid)
+{
+	MapiHdl hdl;
+	int ret;
+
+	if ((hdl = mapi_query(mid,
+			      "SELECT c.id "
+			      "FROM sys._columns c, "
+			           "sys._tables t, "
+			           "sys.schemas s "
+			      "WHERE c.name = 'system' AND "
+				    "c.table_id = t.id AND "
+				    "t.name = 'schemas' AND "
+				    "t.schema_id = s.id AND "
+				    "s.name = 'sys'")) == NULL ||
 	    mapi_error(mid))
 		goto bailout;
 	ret = mapi_get_row_count(hdl) == 1;
@@ -1344,14 +1386,14 @@ dump_database(Mapi mid, stream *toConsole, int describe, const char useInserts)
 		"FROM sys.schemas s, "
 		     "sys.auths a "
 		"WHERE s.\"authorization\" = a.id AND "
-		      "s.system = FALSE "
+		      "%s "
 		"ORDER BY s.name";
 	/* alternative, but then need to handle NULL in second column:
 	   SELECT "s"."name", "a"."name"
 	   FROM "sys"."schemas" "s"
 		LEFT OUTER JOIN "sys"."auths" "a"
 		     ON "s"."authorization" = "a"."id" AND
-		        "s"."system" = FALSE 
+		        "s"."system" = FALSE
 	   ORDER BY "s"."name"
 
 	   This may be needed after a sequence:
@@ -1493,7 +1535,11 @@ dump_database(Mapi mid, stream *toConsole, int describe, const char useInserts)
 		mapi_close_handle(hdl);
 
 		/* dump schemas */
-		if ((hdl = mapi_query(mid, schemas)) == NULL ||
+		snprintf(query, sizeof(query), schemas,
+			 has_schemas_system(mid) ?
+				"s.system = FALSE" :
+				"s.name NOT IN ('sys', 'tmp')");
+		if ((hdl = mapi_query(mid, query)) == NULL ||
 		    mapi_error(mid))
 			goto bailout;
 
