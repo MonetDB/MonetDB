@@ -90,25 +90,24 @@ SQLTables_(ODBCStmt *stmt,
 	    CatalogName &&
 	    strcmp((char *) CatalogName, SQL_ALL_CATALOGS) == 0) {
 		/* Special case query to fetch all Catalog names. */
-		query = strdup("select "
-			       "\"e\".\"value\" as table_cat, "
-			       "cast(null as varchar(1)) as table_schem, "
-			       "cast(null as varchar(1)) as table_name, "
-			       "cast(null as varchar(1)) as table_type, "
-			       "cast(null as varchar(1)) as remarks "
-			       "from \"sys\".\"env\"() \"e\" "
-			       "where \"e\".\"name\" = 'gdk_dbname'");
+		query = strdup("select e.value as table_cat, "
+				      "cast(null as varchar(1)) as table_schem, "
+				      "cast(null as varchar(1)) as table_name, "
+				      "cast(null as varchar(1)) as table_type, "
+				      "cast(null as varchar(1)) as remarks "
+			       "from sys.env() e "
+			       "where e.name = 'gdk_dbname'");
 	} else if (NameLength1 == 0 &&
 		   NameLength3 == 0 &&
 		   SchemaName &&
 		   strcmp((char *) SchemaName, SQL_ALL_SCHEMAS) == 0) {
 		/* Special case query to fetch all Schema names. */
 		query = strdup("select cast(null as varchar(1)) as table_cat, "
-			       "name as table_schem, "
-			       "cast(null as varchar(1)) as table_name, "
-			       "cast(null as varchar(1)) as table_type, "
-			       "cast(null as varchar(1)) as remarks "
-			       "from sys.\"schemas\" order by table_schem");
+				      "name as table_schem, "
+				      "cast(null as varchar(1)) as table_name, "
+				      "cast(null as varchar(1)) as table_type, "
+				      "cast(null as varchar(1)) as remarks "
+			       "from sys.schemas order by table_schem");
 	} else if (NameLength1 == 0 &&
 		   NameLength2 == 0 &&
 		   NameLength3 == 0 &&
@@ -116,16 +115,17 @@ SQLTables_(ODBCStmt *stmt,
 		   strcmp((char *) TableType, SQL_ALL_TABLE_TYPES) == 0) {
 		/* Special case query to fetch all Table type names. */
 		query = strdup("select distinct "
-			       "cast(null as varchar(1)) as table_cat, "
-			       "cast(null as varchar(1)) as table_schem, "
-			       "cast(null as varchar(1)) as table_name, "
-			       "case when t.\"type\" = 0 and t.\"system\" = false and t.\"temporary\" = 0 then cast('TABLE' as varchar(20)) "
-			       "when t.\"type\" = 0 and t.\"system\" = true and t.\"temporary\" = 0 then cast('SYSTEM TABLE' as varchar(20)) "
-			       "when t.\"type\" = 1 then cast('VIEW' as varchar(20)) "
-			       "when t.\"type\" = 0 and t.\"system\" = false and t.\"temporary\" = 1 then cast('LOCAL TEMPORARY' as varchar(20)) "
-			       "else cast('INTERNAL TABLE TYPE' as varchar(20)) end as table_type, "
-			       "cast(null as varchar(1)) as remarks "
-			       "from sys.\"tables\" t order by table_type");
+				      "cast(null as varchar(1)) as table_cat, "
+				      "cast(null as varchar(1)) as table_schem, "
+				      "cast(null as varchar(1)) as table_name, "
+				      "case when t.type = 0 and t.system = false and t.temporary = 0 then cast('TABLE' as varchar(20)) "
+				      "when t.type = 0 and t.system = true and t.temporary = 0 then cast('SYSTEM TABLE' as varchar(20)) "
+				      "when t.type = 1 then cast('VIEW' as varchar(20)) "
+				      "when t.type = 0 and t.system = false and t.temporary = 1 then cast('LOCAL TEMPORARY' as varchar(20)) "
+				      "else cast('INTERNAL TABLE TYPE' as varchar(20)) end as table_type, "
+				      "cast(null as varchar(1)) as remarks "
+			       "from sys.tables t "
+			       "order by table_type");
 	} else {
 		/* no special case argument values */
 		char *query_end;
@@ -171,22 +171,36 @@ SQLTables_(ODBCStmt *stmt,
 		query_end = query;
 
 		strcpy(query_end,
-		       "select "
-		       "e.\"value\" as table_cat, "
-		       "s.\"name\" as table_schem, "
-		       "t.\"name\" as table_name, "
-		       "case when t.\"type\" = 0 and t.\"system\" = false and t.\"temporary\" = 0 and s.\"name\" <> 'tmp' then cast('TABLE' as varchar(20)) "
-		       "when t.\"type\" = 0 and t.\"system\" = false and t.\"temporary\" = 0 and s.\"name\" = 'tmp' then cast('GLOBAL TEMPORARY' as varchar(20)) "
-		       "when t.\"type\" = 0 and t.\"system\" = true and t.\"temporary\" = 0 then cast('SYSTEM TABLE' as varchar(20)) "
-		       "when t.\"type\" = 1 then cast('VIEW' as varchar(20)) "
-		       "when t.\"type\" = 0 and t.\"system\" = false and t.\"temporary\" = 1 then cast('LOCAL TEMPORARY' as varchar(20)) "
-		       "else cast('INTERNAL TABLE TYPE' as varchar(20)) end as table_type, "
-		       "cast(null as varchar(1)) as remarks "
-		       "from sys.\"schemas\" s, "
-		       "sys.\"tables\" t, "
-		       "sys.\"env\"() e "
-		       "where s.\"id\" = t.\"schema_id\""
-		       " and e.name = 'gdk_dbname'");
+		       "select e.value as table_cat, "
+			      "s.name as table_schem, "
+			      "t.name as table_name, "
+			      "case when t.type = 0 and "
+					"t.system = false and "
+					"t.temporary = 0 and "
+					"s.name <> 'tmp' "
+				   "then cast('TABLE' as varchar(20)) "
+				   "when t.type = 0 and "
+					"t.system = false and "
+					"t.temporary = 0 and "
+					"s.name = 'tmp' "
+				   "then cast('GLOBAL TEMPORARY' as varchar(20)) "
+				   "when t.type = 0 and "
+					"t.system = true and "
+					"t.temporary = 0 "
+				   "then cast('SYSTEM TABLE' as varchar(20)) "
+				   "when t.type = 1 "
+				   "then cast('VIEW' as varchar(20)) "
+				   "when t.type = 0 and "
+					"t.system = false and "
+					"t.temporary = 1 "
+				   "then cast('LOCAL TEMPORARY' as varchar(20)) "
+				   "else cast('INTERNAL TABLE TYPE' as varchar(20)) end as table_type, "
+			      "cast(null as varchar(1)) as remarks "
+		       "from sys.schemas s, "
+			    "sys.tables t, "
+			    "sys.env() e "
+		       "where s.id = t.schema_id and "
+			     "e.name = 'gdk_dbname'");
 		assert(strlen(query) < 900);
 		query_end += strlen(query_end);
 
@@ -229,19 +243,19 @@ SQLTables_(ODBCStmt *stmt,
 					buf[j] = 0;
 					if (strcmp(buf, "VIEW") == 0) {
 						strcpy(query_end,
-						       "t.\"type\" = 1 or ");
+						       "t.type = 1 or ");
 					} else if (strcmp(buf, "TABLE") == 0) {
 						strcpy(query_end,
-						       "(t.\"type\" = 0 and t.\"system\" = false and t.\"temporary\" = 0 and s.\"name\" <> 'tmp') or ");
+						       "(t.type = 0 and t.system = false and t.temporary = 0 and s.name <> 'tmp') or ");
 					} else if (strcmp(buf, "GLOBAL TEMPORARY") == 0) {
 						strcpy(query_end,
-						       "(t.\"type\" = 0 and t.\"system\" = false and t.\"temporary\" = 0 and s.\"name\" = 'tmp') or ");
+						       "(t.type = 0 and t.system = false and t.temporary = 0 and s.name = 'tmp') or ");
 					} else if (strcmp(buf, "SYSTEM TABLE") == 0) {
 						strcpy(query_end,
-						       "(t.\"type\" = 0 and t.\"system\" = true and t.\"temporary\" = 0) or ");
+						       "(t.type = 0 and t.system = true and t.temporary = 0) or ");
 					} else if (strcmp(buf, "LOCAL TEMPORARY") == 0) {
 						strcpy(query_end,
-						       "(t.\"type\" = 0 and t.\"system\" = false and t.\"temporary\" = 1) or ");
+						       "(t.type = 0 and t.system = false and t.temporary = 1) or ");
 					}
 					query_end += strlen(query_end);
 					j = 0;

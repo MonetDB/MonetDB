@@ -105,7 +105,6 @@ algebra_export str ALGkdiff(int *result, int *lid, int *rid);
 algebra_export str ALGtdifference(int *result, int *lid, int *rid);
 algebra_export str ALGtdiff(int *result, int *lid, int *rid);
 algebra_export str ALGsample(int *result, int* bid, int *param);
-algebra_export str ALGsubsample(int *result, int* bid, int *param);
 
 algebra_export str ALGtsort(int *result, int *bid);
 algebra_export str ALGtsort_rev(int *result, int *bid);

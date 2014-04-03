@@ -120,9 +120,22 @@ comment "Return the unique topn elements of the bat t using a max-pqueue";
 
 # new interface
 pattern topn_min(a:bat[:oid,:any_1], n:wrd, elim:bit):bat[:oid,:oid]
-address PQtopn_min
+address PQtopn_minmax
 comment "Return the top n elements using a min-pqueue with/without duplicate elimination";
 
 pattern topn_max(a:bat[:oid,:any_1], n:wrd, elim:bit):bat[:oid,:oid]
-address PQtopn_max
+address PQtopn_minmax
+comment "Return the top n elements using a max-pqueue with/without duplicate elimination";
+
+pattern topn_min(a:bat[:oid,:oid],b:bat[:oid,:any_1], n:wrd, elim:bit):bat[:oid,:oid]
+address PQtopn2_minmax
 comment "Return the top n elements using a min-pqueue with/without duplicate elimination";
+
+pattern topn_max(a:bat[:oid,:oid],b:bat[:oid,:any_1], n:wrd, elim:bit):bat[:oid,:oid]
+address PQtopn2_minmax
+comment "Return the top n elements using a max-pqueue with/without duplicate elimination";
+
+pattern utopn_min(b:bat[:oid,:any_1], n:wrd, elim:bit)(bp:bat[:oid,:oid],bg:bat[:oid,:any_1])
+address PQutopn_minmax
+comment "to be defined";
+

@@ -129,7 +129,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		mnstr_printf(cntxt->fdout,"#Push select optimizer started\n");
 	(void) stk;
 	(void) pci;
-	vars= (int*) GDKmalloc(sizeof(int)* mb->vtop);
+	vars= (int*) GDKzalloc(sizeof(int)* mb->vtop);
 	if( vars == NULL)
 		return 0;
 

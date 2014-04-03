@@ -1409,7 +1409,7 @@ PQtopreplace_anymax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 }
 
 /* some new code for headless */
-#define QTOPN_shuffle(TYPE,OPER)\
+#define QTOPN_shuffle(TYPE,OPER,LAB)\
 {	TYPE *val = (TYPE *) Tloc(b,BUNfirst(b)), v;\
 	for(o = 0; o < lim; o++){\
 		v = val[o];\
@@ -1422,20 +1422,21 @@ PQtopreplace_anymax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			oo = tmp;\
 		} else \
 		if (elimdup && (TYPE) val[o] == (TYPE) val[idx[i]])\
-			goto skipit##TYPE;\
+			goto skipit##TYPE##LAB;\
 		if( top < size)\
 			idx[top++] = oo;\
-		skipit##TYPE:;\
+		skipit##TYPE##LAB:;\
 	}\
 }
 
-str PQtopn_min(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+str PQtopn_minmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int tpe, *ret;
 	int elimdup;
 	BAT *b,*bn;
 	BUN i, size,top = 0;
 	oid *idx, lim, o, oo, tmp;
+	int max = 0;
 
 	(void) cntxt;
 	ret = (int*) getArgReference(stk, pci, 0);
@@ -1443,6 +1444,7 @@ str PQtopn_min(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	size = (BUN) *(wrd*) getArgReference(stk,pci,2);
 	elimdup = *(bit*) getArgReference(stk,pci,3);
 
+	max = strstr(getFunctionId(pci),"max") != 0;
 	b = BATdescriptor(*(bat *) getArgReference(stk, pci, 1));
 	if (!b)
 		throw(MAL, "topn_min", RUNTIME_OBJECT_MISSING);
@@ -1461,38 +1463,70 @@ str PQtopn_min(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (!bn){
 		BBPreleaseref(b->batCacheid);
-		throw(MAL, "topn_min", RUNTIME_OBJECT_MISSING);
+		throw(MAL, getFunctionId(pci), RUNTIME_OBJECT_MISSING);
 	}
 	// shuffle insert new values, keep it simple!
-	if( size)
-	switch(tpe){
-	case TYPE_bte: QTOPN_shuffle(bte,<) break;
-	case TYPE_sht: QTOPN_shuffle(sht,<) break;
-	case TYPE_int: QTOPN_shuffle(int,<) break;
-	case TYPE_wrd: QTOPN_shuffle(wrd,<) break;
-	case TYPE_lng: QTOPN_shuffle(lng,<) break;
-	case TYPE_flt: QTOPN_shuffle(flt,<) break;
-	case TYPE_dbl: QTOPN_shuffle(dbl,<) break;
-	default:
-	{	void  *v;
-		int k;
-		for(o = 0; o < lim; o++){
-			v = (void*) Tloc(b,o);
-			oo = o;
-			for (i= 0; i<top; i++)
-			if ( (k = atom_CMP( v, Tloc(b,idx[i]), tpe)) < 0) {
-				v = Tloc(b,idx[i]);
-				tmp = idx[i];
-				idx[i]= oo;
-				oo = tmp;
-			} else 
-			if (elimdup && k == 0)
-				goto skipitdefault;
-			if( top < size)
-				idx[top++] = oo;
-			skipitdefault:;
+	if( size){
+		if ( max )
+		switch(tpe){
+		case TYPE_bte: QTOPN_shuffle(bte,>,GTR) break;
+		case TYPE_sht: QTOPN_shuffle(sht,>,GTR) break;
+		case TYPE_int: QTOPN_shuffle(int,>,GTR) break;
+		case TYPE_wrd: QTOPN_shuffle(wrd,>,GTR) break;
+		case TYPE_lng: QTOPN_shuffle(lng,>,GTR) break;
+		case TYPE_flt: QTOPN_shuffle(flt,>,GTR) break;
+		case TYPE_dbl: QTOPN_shuffle(dbl,>,GTR) break;
+		default:
+		{	void  *v;
+			int k;
+			for(o = 0; o < lim; o++){
+				v = (void*) Tloc(b,o);
+				oo = o;
+				for (i= 0; i<top; i++)
+				if ( (k = atom_CMP( v, Tloc(b,idx[i]), tpe)) > 0) {
+					v = Tloc(b,idx[i]);
+					tmp = idx[i];
+					idx[i]= oo;
+					oo = tmp;
+				} else 
+				if (elimdup && k == 0)
+					goto skipitdefaultGTR;
+				if( top < size)
+					idx[top++] = oo;
+				skipitdefaultGTR:;
+			}
 		}
-	}
+		}
+		if ( max == 0 )
+		switch(tpe){
+		case TYPE_bte: QTOPN_shuffle(bte,<,LESS) break;
+		case TYPE_sht: QTOPN_shuffle(sht,<,LESS) break;
+		case TYPE_int: QTOPN_shuffle(int,<,LESS) break;
+		case TYPE_wrd: QTOPN_shuffle(wrd,<,LESS) break;
+		case TYPE_lng: QTOPN_shuffle(lng,<,LESS) break;
+		case TYPE_flt: QTOPN_shuffle(flt,<,LESS) break;
+		case TYPE_dbl: QTOPN_shuffle(dbl,<,LESS) break;
+		default:
+		{	void  *v;
+			int k;
+			for(o = 0; o < lim; o++){
+				v = (void*) Tloc(b,o);
+				oo = o;
+				for (i= 0; i<top; i++)
+				if ( (k = atom_CMP( v, Tloc(b,idx[i]), tpe)) < 0) {
+					v = Tloc(b,idx[i]);
+					tmp = idx[i];
+					idx[i]= oo;
+					oo = tmp;
+				} else 
+				if (elimdup && k == 0)
+					goto skipitdefault;
+				if( top < size)
+					idx[top++] = oo;
+				skipitdefault:;
+			}
+		}
+		}
 	}
 	
 	BATsetcount(bn, (BUN)  top);
@@ -1503,31 +1537,31 @@ str PQtopn_min(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-str PQtopn_max(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+str PQtopn2_minmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int tpe, *ret;
 	int elimdup;
-	BAT *b,*bn;
+	BAT *a, *b,*bn;
 	BUN i, size,top = 0;
 	oid *idx, lim, o, oo, tmp;
+	int max = 0;
 
 	(void) cntxt;
 	ret = (int*) getArgReference(stk, pci, 0);
-	tpe = ATOMstorage(getColumnType(getArgType(mb, pci, 1)));
-	size = (BUN) *(wrd*) getArgReference(stk,pci,2);
-	elimdup = *(bit*) getArgReference(stk,pci,3);
+	tpe = ATOMstorage(getColumnType(getArgType(mb, pci, 2)));
+	size = (BUN) *(wrd*) getArgReference(stk,pci,3);
+	elimdup = *(bit*) getArgReference(stk,pci,4);
 
-	b = BATdescriptor(*(bat *) getArgReference(stk, pci, 1));
-	if (!b)
+	max = strstr(getFunctionId(pci),"max") != 0;
+	a = BATdescriptor(*(bat *) getArgReference(stk, pci, 1));
+	if (!a)
 		throw(MAL, "topn_min", RUNTIME_OBJECT_MISSING);
+	b = BATdescriptor(*(bat *) getArgReference(stk, pci, 2));
+	if (!b){
+		BBPreleaseref(a->batCacheid);
+		throw(MAL, "topn_min", RUNTIME_OBJECT_MISSING);
+	}
 	lim = BATcount(b);
-
-	if( b->tsorted){
-		bn = BATslice(b, BATcount(b) < size? BATcount(b):0, size);
-		BBPkeepref(*ret = bn->batCacheid);
-		BBPreleaseref(b->batCacheid);
-		return MAL_SUCCEED;
-	} 
 
 	bn = BATnew(TYPE_void, TYPE_oid, size+1);
 	BATseqbase(bn,0);
@@ -1535,38 +1569,70 @@ str PQtopn_max(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (!bn){
 		BBPreleaseref(b->batCacheid);
-		throw(MAL, "topn_min", RUNTIME_OBJECT_MISSING);
+		throw(MAL, getFunctionId(pci), RUNTIME_OBJECT_MISSING);
 	}
 	// shuffle insert new values, keep it simple!
-	if( size)
-	switch(tpe){
-	case TYPE_bte: QTOPN_shuffle(bte,>) break;
-	case TYPE_sht: QTOPN_shuffle(sht,>) break;
-	case TYPE_int: QTOPN_shuffle(int,>) break;
-	case TYPE_wrd: QTOPN_shuffle(wrd,>) break;
-	case TYPE_lng: QTOPN_shuffle(lng,>) break;
-	case TYPE_flt: QTOPN_shuffle(flt,>) break;
-	case TYPE_dbl: QTOPN_shuffle(dbl,>) break;
-	default:
-	{	void  *v;
-		int k;
-		for(o = 0; o < lim; o++){
-			v = (void*) Tloc(b,o);
-			oo = o;
-			for (i= 0; i<top; i++)
-			if ( (k = atom_CMP( v, Tloc(b,idx[i]), tpe)) > 0) {
-				v = Tloc(b,idx[i]);
-				tmp = idx[i];
-				idx[i]= oo;
-				oo = tmp;
-			} else 
-			if (elimdup && k == 0)
-				goto skipitdefault;
-			if( top < size)
-				idx[top++] = oo;
-			skipitdefault:;
+	if( size){
+		if ( max ==0)
+		switch(tpe){
+		case TYPE_bte: QTOPN_shuffle(bte,>,GTR) break;
+		case TYPE_sht: QTOPN_shuffle(sht,>,GTR) break;
+		case TYPE_int: QTOPN_shuffle(int,>,GTR) break;
+		case TYPE_wrd: QTOPN_shuffle(wrd,>,GTR) break;
+		case TYPE_lng: QTOPN_shuffle(lng,>,GTR) break;
+		case TYPE_flt: QTOPN_shuffle(flt,>,GTR) break;
+		case TYPE_dbl: QTOPN_shuffle(dbl,>,GTR) break;
+		default:
+		{	void  *v;
+			int k;
+			for(o = 0; o < lim; o++){
+				v = (void*) Tloc(b,o);
+				oo = o;
+				for (i= 0; i<top; i++)
+				if ( (k = atom_CMP( v, Tloc(b,idx[i]), tpe)) > 0) {
+					v = Tloc(b,idx[i]);
+					tmp = idx[i];
+					idx[i]= oo;
+					oo = tmp;
+				} else 
+				if (elimdup && k == 0)
+					goto skipitdefaultGTR;
+				if( top < size)
+					idx[top++] = oo;
+				skipitdefaultGTR:;
+			}
 		}
-	}
+		}
+		if ( max )
+		switch(tpe){
+		case TYPE_bte: QTOPN_shuffle(bte,<,LESS) break;
+		case TYPE_sht: QTOPN_shuffle(sht,<,LESS) break;
+		case TYPE_int: QTOPN_shuffle(int,<,LESS) break;
+		case TYPE_wrd: QTOPN_shuffle(wrd,<,LESS) break;
+		case TYPE_lng: QTOPN_shuffle(lng,<,LESS) break;
+		case TYPE_flt: QTOPN_shuffle(flt,<,LESS) break;
+		case TYPE_dbl: QTOPN_shuffle(dbl,<,LESS) break;
+		default:
+		{	void  *v;
+			int k;
+			for(o = 0; o < lim; o++){
+				v = (void*) Tloc(b,o);
+				oo = o;
+				for (i= 0; i<top; i++)
+				if ( (k = atom_CMP( v, Tloc(b,idx[i]), tpe)) < 0) {
+					v = Tloc(b,idx[i]);
+					tmp = idx[i];
+					idx[i]= oo;
+					oo = tmp;
+				} else 
+				if (elimdup && k == 0)
+					goto skipitdefault;
+				if( top < size)
+					idx[top++] = oo;
+				skipitdefault:;
+			}
+		}
+		}
 	}
 	
 	BATsetcount(bn, (BUN)  top);
@@ -1575,4 +1641,14 @@ str PQtopn_max(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPkeepref(*ret = bn->batCacheid);
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
+}
+
+str PQutopn_minmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	
+	(void) cntxt;
+	(void) mb;
+	(void) stk;
+	(void) pci;
+	throw( MAL,"pqueue.utop_minmax","to be implemented");
 }

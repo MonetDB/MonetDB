@@ -2204,122 +2204,122 @@ doFile(Mapi mid, const char *file, int useinserts, int interactive, int save_his
 							hasSchema = 0;
 						}
 						if (hasSchema) {
-							snprintf(nameq, sizeof(nameq), 
-									"AND \"s\".\"name\" || '.' || \"o\".\"name\" LIKE '%s'",
+							snprintf(nameq, sizeof(nameq),
+									"s.name || '.' || o.name LIKE '%s'",
 									line);
 						} else {
 							snprintf(nameq, sizeof(nameq),
-									"AND \"s\".\"name\" = \"current_schema\" "
-									"AND \"o\".\"name\" LIKE '%s'",
+									"s.name = current_schema AND "
+									"o.name LIKE '%s'",
 									line);
 						}
 						if (hassysfuncs == YES) {
 							snprintf(funcq, sizeof(funcq),
-								"SELECT \"o\".\"name\", "
-								       "(CASE WHEN \"sf\".\"function_id\" IS NOT NULL "
-									     "THEN 'SYSTEM ' "
-										 "ELSE '' END "
-									   "|| 'FUNCTION') AS \"type\", "
-									   "CASE WHEN \"sf\".\"function_id\" IS NULL "
-										 "THEN false "
-										 "ELSE true END AS \"system\", "
-									   "\"s\".\"name\" AS \"sname\", "
-									   "%d AS \"ntype\" "
-								"FROM \"sys\".\"functions\" \"o\" "
-								      "LEFT JOIN \"sys\".\"systemfunctions\" \"sf\" "
-									    "ON \"o\".\"id\" = \"sf\".\"function_id\", "
-									  "\"sys\".\"schemas\" \"s\" "
-								"WHERE \"o\".\"schema_id\" = \"s\".\"id\" "
-								  "%s ",
-								MD_FUNC,
-								nameq);
+								 "SELECT o.name, "
+									"(CASE WHEN sf.function_id IS NOT NULL "
+									      "THEN 'SYSTEM ' "
+									      "ELSE '' "
+									  "END || 'FUNCTION') AS type, "
+									 "CASE WHEN sf.function_id IS NULL "
+									      "THEN false "
+									      "ELSE true "
+									 "END AS system, "
+									 "s.name AS sname, "
+									 "%d AS ntype "
+								 "FROM sys.functions o "
+								       "LEFT JOIN sys.systemfunctions sf "
+									     "ON o.id = sf.function_id, "
+								       "sys.schemas s "
+								 "WHERE o.schema_id = s.id AND "
+								       "%s ",
+								 MD_FUNC,
+								 nameq);
 						} else {
 							snprintf(funcq, sizeof(funcq),
-								"SELECT \"o\".\"name\", "
-								       "(CASE WHEN \"o\".\"id\" <= 2000 "
-									     "THEN 'SYSTEM ' "
-										 "ELSE '' END "
-									   "|| 'FUNCTION') AS \"type\", "
-									   "CASE WHEN \"o\".\"id\" > 2000 "
-										 "THEN false "
-										 "ELSE true END AS \"system\", "
-									   "\"s\".\"name\" AS \"sname\", "
-									   "%d AS \"ntype\" "
-								"FROM \"sys\".\"functions\" \"o\", "
-									  "\"sys\".\"schemas\" \"s\" "
-								"WHERE \"o\".\"schema_id\" = \"s\".\"id\" "
-								  "%s ",
-								MD_FUNC,
-								nameq);
+								 "SELECT o.name, "
+									"(CASE WHEN o.id <= 2000 "
+									      "THEN 'SYSTEM ' "
+									      "ELSE '' "
+									 "END || 'FUNCTION') AS type, "
+									"CASE WHEN o.id > 2000 "
+									     "THEN false "
+									     "ELSE true END AS system, "
+									"s.name AS sname, "
+									"%d AS ntype "
+								 "FROM sys.functions o, "
+								      "sys.schemas s "
+								 "WHERE o.schema_id = s.id AND "
+								       "%s ",
+								 MD_FUNC,
+								 nameq);
 						}
 						snprintf(q, sizeof(q),
-								"SELECT \"name\", "
-								       "CAST(\"type\" AS VARCHAR(30)) AS \"type\", "
-								       "\"system\", \"sname\", "
-									   "\"ntype\" "
-								"FROM ("
-								"SELECT \"o\".\"name\", "
-								       "(CASE \"o\".\"system\" "
-									     "WHEN true THEN 'SYSTEM ' "
-										 "ELSE '' "
-										 "END || "
-							           "CASE \"o\".\"type\" "
-									     "WHEN 0 THEN 'TABLE' "
-										 "WHEN 1 THEN 'VIEW' "
-										 "ELSE '' "
-									   "END) AS \"type\", "
-								       "\"o\".\"system\", "
-									   "\"s\".\"name\" AS \"sname\", "
-									   "CASE \"o\".\"type\" "
-									     "WHEN 0 THEN %d "
-										 "WHEN 1 THEN %d "
-										 "ELSE 0 "
-									   "END AS \"ntype\" "
-								"FROM \"sys\".\"_tables\" \"o\", "
-								     "\"sys\".\"schemas\" \"s\" "
-								"WHERE \"o\".\"schema_id\" = \"s\".\"id\" "
-								  "%s "
-								  "AND \"o\".\"type\" IN (0, 1) "
-								"UNION "
-								"SELECT \"o\".\"name\", "
-								       "'SEQUENCE' AS \"type\", "
-									   "false AS \"system\", "
-									   "\"s\".\"name\" AS \"sname\", "
-									   "%d AS \"ntype\" "
-								"FROM \"sys\".\"sequences\" \"o\", "
-								     "\"sys\".\"schemas\" \"s\" "
-								"WHERE \"o\".\"schema_id\" = \"s\".\"id\" "
-								  "%s "
-								"UNION "
-								"%s "
-								"UNION "
-								"SELECT NULL AS \"name\", "
-								       "(CASE WHEN \"o\".\"name\" LIKE 'sys' "
+							 "SELECT name, "
+								"CAST(type AS VARCHAR(30)) AS type, "
+								"system, "
+								"sname, "
+								"ntype "
+							 "FROM (SELECT o.name, "
+								      "(CASE o.system "
+									    "WHEN true THEN 'SYSTEM ' "
+									    "ELSE '' "
+								       "END || "
+								       "CASE o.type "
+									    "WHEN 0 THEN 'TABLE' "
+									    "WHEN 1 THEN 'VIEW' "
+									    "ELSE '' "
+								       "END) AS type, "
+								      "o.system, "
+								      "s.name AS sname, "
+								      "CASE o.type "
+									   "WHEN 0 THEN %d "
+									   "WHEN 1 THEN %d "
+									   "ELSE 0 "
+								      "END AS ntype "
+							       "FROM sys._tables o, "
+								    "sys.schemas s "
+							       "WHERE o.schema_id = s.id AND "
+								     "%s AND "
+								     "o.type IN (0, 1) "
+							       "UNION "
+							       "SELECT o.name, "
+								      "'SEQUENCE' AS type, "
+								      "false AS system, "
+								      "s.name AS sname, "
+								      "%d AS ntype "
+							       "FROM sys.sequences o, "
+								    "sys.schemas s "
+							       "WHERE o.schema_id = s.id AND "
+								     "%s "
+							       "UNION "
+							       "%s "
+							       "UNION "
+							       "SELECT NULL AS name, "
+								      "(CASE WHEN o.name LIKE 'sys' "
 									    "THEN 'SYSTEM ' "
-										"ELSE '' END "
-										"|| 'SCHEMA') AS \"type\", "
-									   "CASE WHEN \"o\".\"name\" LIKE 'sys' "
+									    "ELSE '' "
+								       "END "
+								       "|| 'SCHEMA') AS type, "
+								      "CASE WHEN o.name LIKE 'sys' "
 									   "THEN true "
-									   "ELSE false END AS \"system\", "
-									   "\"o\".\"name\" AS \"sname\", "
-									   "%d AS \"ntype\" "
-								"FROM \"sys\".\"schemas\" \"o\" "
-								"WHERE \"o\".\"name\" LIKE '%s' "
-								") AS \"all\" "
-								"WHERE \"ntype\" & %u > 0 "
-								  "%s "
-								"ORDER BY \"system\", \"name\"",
-								MD_TABLE, MD_VIEW,
-								nameq,
-								MD_SEQ,
-								nameq,
-								funcq,
-								MD_SCHEMA,
-								line,
-								x,
-								(wantsSystem ?
-								  "" :
-								  "AND \"system\" = false"));
+									   "ELSE false END AS system, "
+								      "o.name AS sname, "
+								      "%d AS ntype "
+							       "FROM sys.schemas o "
+							       "WHERE o.name LIKE '%s'"
+							       ") AS \"all\" "
+							 "WHERE ntype & %u > 0 "
+							       "%s "
+							 "ORDER BY system, name",
+							 MD_TABLE, MD_VIEW,
+							 nameq,
+							 MD_SEQ,
+							 nameq, funcq,
+							 MD_SCHEMA,
+							 line, x,
+							 (wantsSystem ?
+							   "" :
+							   "AND system = false"));
 						hdl = mapi_query(mid, q);
 						CHECK_RESULT(mid, hdl, buf, continue);
 						while (fetch_row(hdl) == 5) {
