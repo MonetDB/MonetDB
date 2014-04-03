@@ -219,5 +219,5 @@ pqueue_export str PQutopn2_anymin(int *ret, int *aid, int *bid, wrd *N);
 
 pqueue_export str PQtopn_minmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 pqueue_export str PQtopn2_minmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-pqueue_export str PQutopn_minmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+pqueue_export str PQtopn3_minmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 #endif /* _PQUEUE */

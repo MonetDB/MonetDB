@@ -119,23 +119,27 @@ address PQutopn2_anymax
 comment "Return the unique topn elements of the bat t using a max-pqueue";
 
 # new interface
-pattern topn_min(a:bat[:oid,:any_1], n:wrd, elim:bit):bat[:oid,:oid]
+pattern topn_min(a:bat[:oid,:any_1], n:wrd):bat[:oid,:oid]
 address PQtopn_minmax
-comment "Return the top n elements using a min-pqueue with/without duplicate elimination";
+comment "Return the top n elements using a min-pqueue";
 
-pattern topn_max(a:bat[:oid,:any_1], n:wrd, elim:bit):bat[:oid,:oid]
+pattern topn_max(a:bat[:oid,:any_1], n:wrd):bat[:oid,:oid]
 address PQtopn_minmax
-comment "Return the top n elements using a max-pqueue with/without duplicate elimination";
+comment "Return the top n elements using a max-pqueue";
 
-pattern topn_min(a:bat[:oid,:oid],b:bat[:oid,:any_1], n:wrd, elim:bit):bat[:oid,:oid]
+pattern topn_min(b:bat[:oid,:any_1], n:wrd)(piv:bat[:oid,:oid],gid:bat[:oid,:oid])
 address PQtopn2_minmax
-comment "Return the top n elements using a min-pqueue with/without duplicate elimination";
+comment "Return unique top n within groups";
 
-pattern topn_max(a:bat[:oid,:oid],b:bat[:oid,:any_1], n:wrd, elim:bit):bat[:oid,:oid]
+pattern topn_max(b:bat[:oid,:any_1], n:wrd)(piv:bat[:oid,:oid],gid:bat[:oid,:oid])
 address PQtopn2_minmax
-comment "Return the top n elements using a max-pqueue with/without duplicate elimination";
+comment "Return unique top n withn groups";
 
-pattern utopn_min(b:bat[:oid,:any_1], n:wrd, elim:bit)(bp:bat[:oid,:oid],bg:bat[:oid,:any_1])
-address PQutopn_minmax
-comment "to be defined";
+pattern topn_min(gid:bat[:oid,:oid],b:bat[:oid,:any_1], n:wrd):bat[:oid,:oid]
+address PQtopn3_minmax
+comment "Return the top n elements using a min-pqueue";
+
+pattern topn_max(gid:bat[:oid,:oid],b:bat[:oid,:any_1], n:wrd):bat[:oid,:oid]
+address PQtopn3_minmax
+comment "Return the top n elements using a max-pqueue";
 
