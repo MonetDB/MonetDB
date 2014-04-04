@@ -1475,12 +1475,11 @@ str PQtopn_minmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		case TYPE_dbl: QTOPN_shuffle(dbl,>,GTR) break;
 		default:
 		{	void  *v;
-			int k;
 			for(o = 0; o < lim; o++){
 				v = (void*) Tloc(b,o);
 				oo = o;
 				for (i= 0; i<top; i++)
-				if ( (k = atom_CMP( v, Tloc(b,idx[i]), tpe)) > 0) {
+				if (  atom_CMP( v, Tloc(b,idx[i]), tpe) > 0) {
 					v = Tloc(b,idx[i]);
 					tmp = idx[i];
 					idx[i]= oo;
@@ -1502,12 +1501,11 @@ str PQtopn_minmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		case TYPE_dbl: QTOPN_shuffle(dbl,<,LESS) break;
 		default:
 		{	void  *v;
-			int k;
 			for(o = 0; o < lim; o++){
 				v = (void*) Tloc(b,o);
 				oo = o;
 				for (i= 0; i<top; i++)
-				if ( (k = atom_CMP( v, Tloc(b,idx[i]), tpe)) < 0) {
+				if ( atom_CMP( v, Tloc(b,idx[i]), tpe) < 0) {
 					v = Tloc(b,idx[i]);
 					tmp = idx[i];
 					idx[i]= oo;
