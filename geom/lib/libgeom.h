@@ -78,7 +78,8 @@ Flags values:
 
 Type values:
 
-0 = GEOMETRY1 = POINT
+0 = GEOMETRY
+1 = POINT
 2 = CURVE
 3 = LINESTRING
 4 = SURFACE

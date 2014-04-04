@@ -41,7 +41,7 @@ T16
 T21
 # T22	no such unary operator 'numpoints(linestring)'
 # T23	no such binary operator 'pointn(linestring,tinyint)'
-# T24	no such unary operator 'centroid(polygon)'
+T24
 # T25	no such unary operator 'pointonsurface(polygon)'
 T26
 # T27	no such unary operator 'exteriorring(polygon)'

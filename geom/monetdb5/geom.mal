@@ -239,6 +239,11 @@ address wkbSymDifference
 comment "Returns a geometry that represents the point set semmetric difference of Geometry a with b.";
 
 
+command Centroid(w:wkb) :wkb
+address wkbCentroid
+comment "Returns the centroid of this Geometry.";
+
+
 command prelude():void	address geom_prelude;
 command epilogue():void address geom_epilogue;
 

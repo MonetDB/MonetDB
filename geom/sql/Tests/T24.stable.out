@@ -27,10 +27,10 @@ Ready.
 
 #SELECT AsText(Centroid(boundary)) FROM named_places WHERE name = 'Goose Island';
 % sys.L # table_name
-% intersection_centerline # name
+% centroid_boundary # name
 % clob # type
 % 49 # length
-[ "\"POINT (53.0000000000000000 15.5000000000000000)\""	]
+[ "\"POINT (63.0000000000000000 15.5000000000000000)\""	]
 
 # 07:38:56 >  
 # 07:38:56 >  "Done."

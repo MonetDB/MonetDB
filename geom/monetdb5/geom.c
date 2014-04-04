@@ -108,6 +108,9 @@ geom_export str wkbDifference(wkb **out, wkb **a, wkb **b);
 geom_export str wkbSymDifference(wkb **out, wkb **a, wkb **b);
 geom_export str wkbBuffer(wkb **out, wkb **geom, dbl *distance);
 
+
+geom_export str wkbCentroid(wkb **out, wkb **geom);
+
 bat *
 geom_prelude(void)
 {
@@ -1200,4 +1203,26 @@ wkbBuffer(wkb **out, wkb **geom, dbl *distance)
 		return MAL_SUCCEED;
 
 	throw(MAL, "geom.Buffer", "GEOSBuffer failed");
+}
+
+
+
+str
+wkbCentroid(wkb **out, wkb **geom)
+{
+	GEOSGeom geosGeometry = wkb2geos(*geom);
+
+	if (!geosGeometry) {
+		*out = geos2wkb(NULL);
+		return MAL_SUCCEED;
+	}
+
+	*out = geos2wkb(GEOSGetCentroid(geosGeometry));
+
+	GEOSGeom_destroy(geosGeometry);
+
+	if (GDKerrbuf && GDKerrbuf[0])
+		throw(MAL, "geom.Centroid", "GEOSGetCentroid failed");
+	return MAL_SUCCEED;
+
 }

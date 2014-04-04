@@ -87,7 +87,6 @@ CREATE FUNCTION Overlaps(a Geometry, b Geometry) RETURNS BOOLEAN external name g
 CREATE FUNCTION Relate(a Geometry, b Geometry, pattern STRING) RETURNS BOOLEAN external name geom."Relate";
 
 -- ogc Spatial Analysis methods
-
 CREATE FUNCTION Area(g Geometry) RETURNS FLOAT external name geom."Area";
 CREATE FUNCTION Length(g Geometry) RETURNS FLOAT external name geom."Length";
 CREATE FUNCTION Distance(a Geometry, b Geometry) RETURNS FLOAT external name geom."Distance";
@@ -97,3 +96,6 @@ CREATE FUNCTION Intersection(a Geometry, b Geometry) RETURNS Geometry external n
 CREATE FUNCTION "Union"(a Geometry, b Geometry) RETURNS Geometry external name geom."Union";
 CREATE FUNCTION Difference(a Geometry, b Geometry) RETURNS Geometry external name geom."Difference";
 CREATE FUNCTION SymDifference(a Geometry, b Geometry) RETURNS Geometry external name geom."SymDifference";
+
+
+CREATE FUNCTION Centroid(g Geometry) RETURNS Geometry external name geom."Centroid";
