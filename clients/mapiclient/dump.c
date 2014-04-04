@@ -117,10 +117,10 @@ has_systemfunctions(Mapi mid)
 	if ((hdl = mapi_query(mid,
 			      "SELECT \"t\".\"id\" "
 			      "FROM \"sys\".\"_tables\" \"t\","
-			           "\"sys\".\"schemas\" \"s\" "
+				   "\"sys\".\"schemas\" \"s\" "
 			      "WHERE \"t\".\"name\" = 'systemfunctions' AND "
-			            "\"t\".\"schema_id\" = \"s\".\"id\" AND "
-			            "\"s\".\"name\" = 'sys'")) == NULL ||
+				    "\"t\".\"schema_id\" = \"s\".\"id\" AND "
+				    "\"s\".\"name\" = 'sys'")) == NULL ||
 	    mapi_error(mid))
 		goto bailout;
 	ret = mapi_get_row_count(hdl) == 1;
@@ -158,7 +158,7 @@ dump_foreign_keys(Mapi mid, const char *schema, const char *tname, const char *t
 		query = malloc(maxquerylen);
 		snprintf(query, maxquerylen,
 			 "SELECT \"ps\".\"name\","		/* 0 */
-			        "\"pkt\".\"name\","		/* 1 */
+				"\"pkt\".\"name\","		/* 1 */
 				"\"pkkc\".\"name\","		/* 2 */
 				"\"fkkc\".\"name\","		/* 3 */
 				"\"fkkc\".\"nr\","		/* 4 */
@@ -190,7 +190,7 @@ dump_foreign_keys(Mapi mid, const char *schema, const char *tname, const char *t
 		query = malloc(maxquerylen);
 		snprintf(query, maxquerylen,
 			 "SELECT \"ps\".\"name\","		/* 0 */
-			        "\"pkt\".\"name\","		/* 1 */
+				"\"pkt\".\"name\","		/* 1 */
 				"\"pkkc\".\"name\","		/* 2 */
 				"\"fkkc\".\"name\","		/* 3 */
 				"\"fkkc\".\"nr\","		/* 4 */
@@ -1449,12 +1449,7 @@ dump_database(Mapi mid, stream *toConsole, int describe, const char useInserts)
 	const char *table_grants =
 		"SELECT \"s\".\"name\", \"t\".\"name\", "
 		       "\"a\".\"name\", "
-		       "CASE WHEN \"p\".\"privileges\" = 1 THEN 'SELECT' "
-			    "WHEN \"p\".\"privileges\" = 2 THEN 'UPDATE' "
-			    "WHEN \"p\".\"privileges\" = 4 THEN 'INSERT' "
-			    "WHEN \"p\".\"privileges\" = 8 THEN 'DELETE' "
-			    "WHEN \"p\".\"privileges\" = 16 THEN 'EXECUTE' "
-			    "WHEN \"p\".\"privileges\" = 32 THEN 'GRANT' END, "
+		       "sum(\"p\".\"privileges\"), "
 		       "\"g\".\"name\", \"p\".\"grantable\" "
 		"FROM \"sys\".\"schemas\" \"s\", \"sys\".\"tables\" \"t\", "
 		     "\"sys\".\"auths\" \"a\", \"sys\".\"privileges\" \"p\", "
@@ -1463,16 +1458,19 @@ dump_database(Mapi mid, stream *toConsole, int describe, const char useInserts)
 		      "\"p\".\"auth_id\" = \"a\".\"id\" AND "
 		      "\"t\".\"schema_id\" = \"s\".\"id\" AND "
 		      "\"t\".\"system\" = FALSE AND "
-		      "\"p\".\"grantor\" = \"g\".\"id\"";
+		      "\"p\".\"grantor\" = \"g\".\"id\" "
+		"GROUP BY s.name, t.name, a.name, g.name, p.grantable "
+		"ORDER BY s.name, t.name, a.name, g.name, p.grantable";
 	const char *column_grants =
 		"SELECT \"s\".\"name\", \"t\".\"name\", "
 		       "\"c\".\"name\", \"a\".\"name\", "
-		       "CASE WHEN \"p\".\"privileges\" = 1 THEN 'SELECT' "
-			    "WHEN \"p\".\"privileges\" = 2 THEN 'UPDATE' "
-			    "WHEN \"p\".\"privileges\" = 4 THEN 'INSERT' "
-			    "WHEN \"p\".\"privileges\" = 8 THEN 'DELETE' "
-			    "WHEN \"p\".\"privileges\" = 16 THEN 'EXECUTE' "
-			    "WHEN \"p\".\"privileges\" = 32 THEN 'GRANT' END, "
+		       "CASE \"p\".\"privileges\" "
+			    "WHEN 1 THEN 'SELECT' "
+			    "WHEN 2 THEN 'UPDATE' "
+			    "WHEN 4 THEN 'INSERT' "
+			    "WHEN 8 THEN 'DELETE' "
+			    "WHEN 16 THEN 'EXECUTE' "
+			    "WHEN 32 THEN 'GRANT' END, "
 		       "\"g\".\"name\", \"p\".\"grantable\" "
 		"FROM \"sys\".\"schemas\" \"s\", \"sys\".\"tables\" \"t\", "
 		     "\"sys\".\"columns\" \"c\", \"sys\".\"auths\" \"a\", "
@@ -1482,7 +1480,8 @@ dump_database(Mapi mid, stream *toConsole, int describe, const char useInserts)
 		      "\"p\".\"auth_id\" = \"a\".\"id\" AND "
 		      "\"t\".\"schema_id\" = \"s\".\"id\" AND "
 		      "\"t\".\"system\" = FALSE AND "
-		      "\"p\".\"grantor\" = \"g\".\"id\"";
+		      "\"p\".\"grantor\" = \"g\".\"id\" "
+		"ORDER BY s.name, t.name, c.name, a.name, g.name, p.grantable";
 	const char *schemas =
 		"SELECT \"s\".\"name\", \"a\".\"name\" "
 		"FROM \"sys\".\"schemas\" \"s\", "
@@ -1835,7 +1834,7 @@ dump_database(Mapi mid, stream *toConsole, int describe, const char useInserts)
 		char *schema = mapi_fetch_field(hdl, 0);
 		char *tname = mapi_fetch_field(hdl, 1);
 		char *aname = mapi_fetch_field(hdl, 2);
-		char *priv = mapi_fetch_field(hdl, 3);
+		int priv = atoi(mapi_fetch_field(hdl, 3));
 		char *grantable = mapi_fetch_field(hdl, 5);
 
 		if (sname != NULL && strcmp(schema, sname) != 0)
@@ -1847,8 +1846,39 @@ dump_database(Mapi mid, stream *toConsole, int describe, const char useInserts)
 			mnstr_printf(toConsole, "SET SCHEMA \"%s\";\n",
 				     curschema);
 		}
-		mnstr_printf(toConsole, "GRANT %s ON \"%s\" TO \"%s\"",
-			     priv, tname, aname);
+		mnstr_printf(toConsole, "GRANT");
+		if (priv == 15) {
+			mnstr_printf(toConsole, " ALL PRIVILEGES");
+		} else {
+			const char *sep = "";
+
+			if (priv & 1) {
+				mnstr_printf(toConsole, "%s SELECT", sep);
+				sep = ",";
+			}
+			if (priv & 2) {
+				mnstr_printf(toConsole, "%s UPDATE", sep);
+				sep = ",";
+			}
+			if (priv & 4) {
+				mnstr_printf(toConsole, "%s INSERT", sep);
+				sep = ",";
+			}
+			if (priv & 8) {
+				mnstr_printf(toConsole, "%s DELETE", sep);
+				sep = ",";
+			}
+			if (priv & 16) {
+				mnstr_printf(toConsole, "%s EXECUTE", sep);
+				sep = ",";
+			}
+			if (priv & 32) {
+				mnstr_printf(toConsole, "%s GRANT", sep);
+				sep = ",";
+			}
+		}
+		mnstr_printf(toConsole, " ON TABLE \"%s\" TO \"%s\"",
+			     tname, aname);
 		if (strcmp(grantable, "1") == 0)
 			mnstr_printf(toConsole, " WITH GRANT OPTION");
 		mnstr_printf(toConsole, ";\n");
