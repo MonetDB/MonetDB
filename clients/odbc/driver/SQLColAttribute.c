@@ -88,7 +88,7 @@ SQLColAttribute_(ODBCStmt *stmt,
 	switch (FieldIdentifier) {
 	case SQL_DESC_AUTO_UNIQUE_VALUE:	/* SQL_COLUMN_AUTO_INCREMENT */
 		if (NumericAttributePtr)
-			*(int *) NumericAttributePtr = rec->sql_desc_auto_unique_value;
+			*(SQLLEN *) NumericAttributePtr = rec->sql_desc_auto_unique_value;
 		break;
 	case SQL_DESC_BASE_COLUMN_NAME:
 		copyString(rec->sql_desc_base_column_name,
@@ -106,7 +106,7 @@ SQLColAttribute_(ODBCStmt *stmt,
 		break;
 	case SQL_DESC_CASE_SENSITIVE:	/* SQL_COLUMN_CASE_SENSITIVE */
 		if (NumericAttributePtr)
-			*(int *) NumericAttributePtr = rec->sql_desc_case_sensitive;
+			*(SQLLEN *) NumericAttributePtr = rec->sql_desc_case_sensitive;
 		break;
 	case SQL_DESC_CATALOG_NAME:	/* SQL_COLUMN_QUALIFIER_NAME */
 		copyString(rec->sql_desc_catalog_name,
@@ -117,7 +117,7 @@ SQLColAttribute_(ODBCStmt *stmt,
 		break;
 	case SQL_DESC_CONCISE_TYPE:	/* SQL_COLUMN_TYPE */
 		if (NumericAttributePtr)
-			*(int *) NumericAttributePtr = rec->sql_desc_concise_type;
+			*(SQLLEN *) NumericAttributePtr = rec->sql_desc_concise_type;
 		break;
 	case SQL_DESC_COUNT:
 		if (NumericAttributePtr)
@@ -129,7 +129,7 @@ SQLColAttribute_(ODBCStmt *stmt,
 		break;
 	case SQL_DESC_FIXED_PREC_SCALE:	/* SQL_COLUMN_MONEY */
 		if (NumericAttributePtr)
-			*(int *) NumericAttributePtr = rec->sql_desc_fixed_prec_scale;
+			*(SQLLEN *) NumericAttributePtr = rec->sql_desc_fixed_prec_scale;
 		break;
 	case SQL_DESC_LABEL:	/* SQL_COLUMN_LABEL */
 		copyString(rec->sql_desc_label,
@@ -169,11 +169,11 @@ SQLColAttribute_(ODBCStmt *stmt,
 		break;
 	case SQL_DESC_NULLABLE:
 		if (NumericAttributePtr)
-			*(int *) NumericAttributePtr = rec->sql_desc_nullable;
+			*(SQLLEN *) NumericAttributePtr = rec->sql_desc_nullable;
 		break;
 	case SQL_DESC_NUM_PREC_RADIX:
 		if (NumericAttributePtr)
-			*(int *) NumericAttributePtr = rec->sql_desc_num_prec_radix;
+			*(SQLLEN *) NumericAttributePtr = rec->sql_desc_num_prec_radix;
 		break;
 	case SQL_DESC_OCTET_LENGTH:
 		if (NumericAttributePtr)
@@ -182,12 +182,12 @@ SQLColAttribute_(ODBCStmt *stmt,
 	case SQL_COLUMN_PRECISION:
 	case SQL_DESC_PRECISION:
 		if (NumericAttributePtr)
-			*(int *) NumericAttributePtr = rec->sql_desc_precision;
+			*(SQLLEN *) NumericAttributePtr = rec->sql_desc_precision;
 		break;
 	case SQL_COLUMN_SCALE:
 	case SQL_DESC_SCALE:
 		if (NumericAttributePtr)
-			*(int *) NumericAttributePtr = rec->sql_desc_scale;
+			*(SQLLEN *) NumericAttributePtr = rec->sql_desc_scale;
 		break;
 	case SQL_DESC_SCHEMA_NAME:	/* SQL_COLUMN_OWNER_NAME */
 		copyString(rec->sql_desc_schema_name,
@@ -198,7 +198,7 @@ SQLColAttribute_(ODBCStmt *stmt,
 		break;
 	case SQL_DESC_SEARCHABLE:	/* SQL_COLUMN_SEARCHABLE */
 		if (NumericAttributePtr)
-			*(int *) NumericAttributePtr = rec->sql_desc_searchable;
+			*(SQLLEN *) NumericAttributePtr = rec->sql_desc_searchable;
 		break;
 	case SQL_DESC_TABLE_NAME:	/* SQL_COLUMN_TABLE_NAME */
 		copyString(rec->sql_desc_table_name,
@@ -209,7 +209,7 @@ SQLColAttribute_(ODBCStmt *stmt,
 		break;
 	case SQL_DESC_TYPE:
 		if (NumericAttributePtr)
-			*(int *) NumericAttributePtr = rec->sql_desc_type;
+			*(SQLLEN *) NumericAttributePtr = rec->sql_desc_type;
 		break;
 	case SQL_DESC_TYPE_NAME:	/* SQL_COLUMN_TYPE_NAME */
 		copyString(rec->sql_desc_type_name,
@@ -220,15 +220,15 @@ SQLColAttribute_(ODBCStmt *stmt,
 		break;
 	case SQL_DESC_UNNAMED:
 		if (NumericAttributePtr)
-			*(int *) NumericAttributePtr = rec->sql_desc_unnamed;
+			*(SQLLEN *) NumericAttributePtr = rec->sql_desc_unnamed;
 		break;
 	case SQL_DESC_UNSIGNED:	/* SQL_COLUMN_UNSIGNED */
 		if (NumericAttributePtr)
-			*(int *) NumericAttributePtr = rec->sql_desc_unsigned;
+			*(SQLLEN *) NumericAttributePtr = rec->sql_desc_unsigned;
 		break;
 	case SQL_DESC_UPDATABLE:	/* SQL_COLUMN_UPDATABLE */
 		if (NumericAttributePtr)
-			*(int *) NumericAttributePtr = rec->sql_desc_updatable;
+			*(SQLLEN *) NumericAttributePtr = rec->sql_desc_updatable;
 		break;
 	default:
 		/* Invalid descriptor field identifier */
