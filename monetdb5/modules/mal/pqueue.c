@@ -1674,28 +1674,25 @@ str PQtopn2_minmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	TYPE *val = (TYPE *) Tloc(bpiv,BUNfirst(bpiv));\
 	uniq = 0;\
 	gid = BUN_MAX;\
-	for(o = 0; o < lim; o++){\
+	for(o = 0; top < size && o < lim; o++){\
 		idx[top] = gdx[o];\
 		if ( gdx[top] != gid){\
 			gid = gdx[o];\
-			if( uniq <= size) top++;\
+			if( uniq < size) top++;\
+			uniq++;\
 			continue;\
 		}\
 		if(uniq >= size &&  (TYPE) val[o] OPER##= (TYPE) val[idx[top-1]]) \
 			continue;\
-		uniq++;\
 		for (i= top; i>0; i--){\
 			if ( gdx[i-1] != gid)\
 				break;\
 			if( (TYPE) val[idx[i]] OPER (TYPE) val[idx[i-1]]){\
 				tmp= idx[i]; idx[i] = idx[i-1]; idx[i-1] = tmp;\
 			} else\
-			if( (TYPE) val[idx[i]] == (TYPE) val[idx[i-1]]){\
-				uniq--; \
 				break;\
-			} else break;\
 		}\
-		if( top < size) top++; else break;\
+		top++; \
 	}\
 }
 
@@ -1754,11 +1751,12 @@ str PQtopn3_minmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		default:
 		{	uniq = 0;
 			gid = BUN_MAX;
-			for(o = 0; o < lim; o++){
+			for(o = 0; top<size && o < lim; o++){
 				idx[top] = gdx[o];
 				if ( gdx[top] != gid){
 					gid = gdx[o];
 					if( uniq <= size) top++;
+					uniq++;
 					continue;
 				}
 				k = atom_CMP( Tloc(bpiv,o), Tloc(bpiv,idx[top-1]), tpe) >= 0;
@@ -1770,12 +1768,9 @@ str PQtopn3_minmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					if ( (k = atom_CMP( Tloc(bpiv,idx[i]), Tloc(bpiv,idx[i-1]), tpe)) < 0) {
 						tmp= idx[i]; idx[i] = idx[i-1]; idx[i-1] = tmp;
 					} else
-					if ( (k = atom_CMP( Tloc(bpiv,idx[i]), Tloc(bpiv,idx[i-1]), tpe)) == 0) {
-						uniq--; 
 						break;
-					} else break;
 				}
-				if( top < size) top++; else break;
+				top++; 
 			}
 		}
 		}
@@ -1791,11 +1786,12 @@ str PQtopn3_minmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		default:
 		{	uniq = 0;
 			gid = BUN_MAX;
-			for(o = 0; o < lim; o++){
+			for(o = 0; top<size && o < lim; o++){
 				idx[top] = gdx[o];
 				if ( gdx[top] != gid){
 					gid = gdx[o];
 					if( uniq <= size) top++;
+					uniq++;
 					continue;
 				}
 				k = atom_CMP( Tloc(bpiv,o), Tloc(bpiv,idx[top-1]), tpe) < 0;
@@ -1807,12 +1803,9 @@ str PQtopn3_minmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					if ( (k = atom_CMP( Tloc(bpiv,idx[i]), Tloc(bpiv,idx[i-1]), tpe)) >= 0) {
 						tmp= idx[i]; idx[i] = idx[i-1]; idx[i-1] = tmp;
 					} else
-					if ( (k = atom_CMP( Tloc(bpiv,idx[i]), Tloc(bpiv,idx[i-1]), tpe)) == 0) {
-						uniq--; 
 						break;
-					} else break;
 				}
-				if( top < size) top++; else break;
+				top++; 
 			}
 		}
 		}
