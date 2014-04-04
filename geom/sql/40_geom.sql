@@ -99,3 +99,5 @@ CREATE FUNCTION SymDifference(a Geometry, b Geometry) RETURNS Geometry external 
 
 
 CREATE FUNCTION Centroid(g Geometry) RETURNS Geometry external name geom."Centroid";
+CREATE FUNCTION StartPoint(g Geometry) RETURNS Geometry external name geom."StartPoint";
+CREATE FUNCTION EndPoint(g Geometry) RETURNS Geometry external name geom."EndPoint";

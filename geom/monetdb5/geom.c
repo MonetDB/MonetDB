@@ -110,6 +110,8 @@ geom_export str wkbBuffer(wkb **out, wkb **geom, dbl *distance);
 
 
 geom_export str wkbCentroid(wkb **out, wkb **geom);
+geom_export str wkbStartPoint(wkb **out, wkb **geom);
+geom_export str wkbEndPoint(wkb **out, wkb **geom);
 
 bat *
 geom_prelude(void)
@@ -1223,6 +1225,46 @@ wkbCentroid(wkb **out, wkb **geom)
 
 	if (GDKerrbuf && GDKerrbuf[0])
 		throw(MAL, "geom.Centroid", "GEOSGetCentroid failed");
+	return MAL_SUCCEED;
+
+}
+
+str
+wkbStartPoint(wkb **out, wkb **geom)
+{
+	GEOSGeom geosGeometry = wkb2geos(*geom);
+
+	if (!geosGeometry) {
+		*out = geos2wkb(NULL);
+		return MAL_SUCCEED;
+	}
+
+	*out = geos2wkb(GEOSGeomGetStartPoint(geosGeometry));
+
+	GEOSGeom_destroy(geosGeometry);
+
+	if (GDKerrbuf && GDKerrbuf[0])
+		throw(MAL, "geom.StartPoint", "GEOSGeomGetStartPoint failed");
+	return MAL_SUCCEED;
+
+}
+
+str
+wkbEndPoint(wkb **out, wkb **geom)
+{
+	GEOSGeom geosGeometry = wkb2geos(*geom);
+
+	if (!geosGeometry) {
+		*out = geos2wkb(NULL);
+		return MAL_SUCCEED;
+	}
+
+	*out = geos2wkb(GEOSGeomGetEndPoint(geosGeometry));
+
+	GEOSGeom_destroy(geosGeometry);
+
+	if (GDKerrbuf && GDKerrbuf[0])
+		throw(MAL, "geom.EndPoint", "GEOSGeomGetEndPoint failed");
 	return MAL_SUCCEED;
 
 }

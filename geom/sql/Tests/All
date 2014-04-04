@@ -34,8 +34,8 @@ T13
 T14
 T15
 T16
-# T17	no such unary operator 'startpoint(linestring)'
-# T18	no such unary operator 'endpoint(linestring)'
+T17
+T18
 # T19	no such unary operator 'asbinary(geometry)'
 # T20	no such unary operator 'asbinary(geometry)'
 T21
