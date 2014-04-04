@@ -245,7 +245,7 @@ comment "Returns the centroid of this Geometry.";
 
 command StartPoint(w:wkb) :wkb
 address wkbStartPoint
-comment "Returns the start point of this Geometry where should be Linestring (?).";
+comment "Returns the start point of this Geometry which should be Linestring.";
 
 command EndPoint(w:wkb) :wkb
 address wkbEndPoint

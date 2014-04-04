@@ -1235,7 +1235,7 @@ wkbStartPoint(wkb **out, wkb **geom)
 {
 	GEOSGeom geosGeometry = wkb2geos(*geom);
 
-	if (!geosGeometry) {
+	if (!geosGeometry || GEOSGeomTypeId(geosGeometry) != GEOS_LINESTRING) {
 		*out = geos2wkb(NULL);
 		return MAL_SUCCEED;
 	}
