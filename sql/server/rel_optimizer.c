@@ -5621,18 +5621,22 @@ rel_rewrite_semijoin(int *changes, mvc *sql, sql_rel *rel)
 					return rel;
 
 				if (exp_find_column(rl, ne->l, -2) == cl) {
+#ifndef NDEBUG
 					sql_exp *e = (or != r)?rel_find_exp(or, re):re;
 					int equal = exp_match_exp(ne->r, e);
-				       
+
 					assert(equal);
+#endif
 					if (anti && re != ne->r)
 						return rel;
 					re = ne->r;
 				} else if (exp_find_column(rl, ne->r, -2) == cl) {
+#ifndef NDEBUG
 					sql_exp *e = (or != r)?rel_find_exp(or, re):re;
 					int equal = exp_match_exp(ne->l, e);
-				       
+
 					assert(equal);
+#endif
 					if (anti && re != ne->l)
 						return rel;
 					re = ne->l;
