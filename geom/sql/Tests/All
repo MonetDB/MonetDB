@@ -39,7 +39,7 @@ T18
 # T19	no such unary operator 'asbinary(geometry)'
 # T20	no such unary operator 'asbinary(geometry)'
 T21
-# T22	no such unary operator 'numpoints(linestring)'
+T22
 # T23	no such binary operator 'pointn(linestring,tinyint)'
 T24
 # T25	no such unary operator 'pointonsurface(polygon)'

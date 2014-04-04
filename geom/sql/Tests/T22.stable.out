@@ -1,38 +1,39 @@
-stdout of test 'TT22` in directory 'geom/sql` itself:
+stdout of test 'T22` in directory 'geom/sql` itself:
 
 
-# 07:38:48 >  
-# 07:38:48 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=37052" "--set" "mapi_usock=/var/tmp/mtest-3079/.s.monetdb.37052" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/current//Linux/var/MonetDB/mTests_geom_sql" "--set" "mal_listing=0"
-# 07:38:48 >  
+# 16:37:27 >  
+# 16:37:27 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=31363" "--set" "mapi_usock=/var/tmp/mtest-25225/.s.monetdb.31363" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/gast730/INSTALL/var/MonetDB/mTests_geom_sql" "--set" "mal_listing=0"
+# 16:37:27 >  
 
 # MonetDB 5 server v11.18.0
 # This is an unreleased version
 # Serving database 'mTests_geom_sql', using 8 threads
-# Compiled for x8T22_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Found 15.591 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
 # Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
-# Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:37052/
-# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-3079/.s.monetdb.37052
+# Listening for connection requests on mapi:monetdb://athens.ins.cwi.nl:31363/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-25225/.s.monetdb.31363
 # MonetDB/GIS module loaded
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
 
 Ready.
+#WARNING To speedup geom.NumPoints a bulk operator implementation is needed
 
-# 07:38:48 >  
-# 07:38:48 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-3079" "--port=37052"
-# 07:38:48 >  
+# 16:37:29 >  
+# 16:37:29 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-25225" "--port=31363"
+# 16:37:29 >  
 
 #SELECT NumPoints(centerline) FROM road_segments WHERE fid = 102;
 % sys.L # table_name
-% dimension_shore # name
+% numpoints_centerline # name
 % int # type
 % 1 # length
 [ 5	]
 
-# 07:38:48 >  
-# 07:38:48 >  "Done."
-# 07:38:48 >  
+# 16:37:30 >  
+# 16:37:30 >  "Done."
+# 16:37:30 >  
 

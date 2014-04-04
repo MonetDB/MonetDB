@@ -112,6 +112,7 @@ geom_export str wkbBuffer(wkb **out, wkb **geom, dbl *distance);
 geom_export str wkbCentroid(wkb **out, wkb **geom);
 geom_export str wkbStartPoint(wkb **out, wkb **geom);
 geom_export str wkbEndPoint(wkb **out, wkb **geom);
+geom_export str wkbNumPoints(int *out, wkb **geom);
 
 bat *
 geom_prelude(void)
@@ -1267,4 +1268,26 @@ wkbEndPoint(wkb **out, wkb **geom)
 		throw(MAL, "geom.EndPoint", "GEOSGeomGetEndPoint failed");
 	return MAL_SUCCEED;
 
+}
+
+str
+wkbNumPoints(int *out, wkb **geom)
+{
+	str ret = MAL_SUCCEED;
+	GEOSGeom ga = wkb2geos(*geom);
+
+	if (!ga) {
+		*out = dbl_nil;
+		return ret;
+	}
+
+	*out = GEOSGeomGetNumPoints(ga);
+	if (*out == -1)
+		ret = "GEOSGeomGetNumPoints failed";
+
+	GEOSGeom_destroy(ga);
+
+	if (ret != MAL_SUCCEED)
+		throw(MAL, "geom.NumPoints", "%s", ret);
+	return ret;
 }
