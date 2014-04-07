@@ -3029,6 +3029,38 @@ command batstr.like(s:bat[:oid,:str],pat:str):bat[:oid,:bit]
 address BATPCRElike2;
 command batstr.like(s:bat[:oid,:str],pat:str,esc:str):bat[:oid,:bit] 
 address BATPCRElike;
+command batstr.lpad(s:bat[:oid,:str],n:bat[:oid,:int],s2:bat[:oid,:str]):bat[:oid,:str] 
+address STRbatLpad2_bat_bat;
+comment Prepend the second strings to the first strings to reach the given lengths. Truncate the first strings on the right if their lengths is larger than the given lengths.
+
+command batstr.lpad(s:bat[:oid,:str],n:int,s2:bat[:oid,:str]):bat[:oid,:str] 
+address STRbatLpad2_const_bat;
+comment Prepend the second strings to the first strings to reach the given length. Truncate the first strings on the right if their lengths is larger than the given length.
+
+command batstr.lpad(s:bat[:oid,:str],n:bat[:oid,:int],s2:str):bat[:oid,:str] 
+address STRbatLpad2_bat_const;
+comment Prepend the second string to the first strings to reach the given lengths. Truncate the first strings on the right if their lengths is larger than the given lengths.
+
+command batstr.lpad(s:bat[:oid,:str],n:int,s2:str):bat[:oid,:str] 
+address STRbatLpad2_const_const;
+comment Prepend the second string to the first strings to reach the given length. Truncate the first strings on the right if their lengths is larger than the given length.
+
+command batstr.lpad(s:bat[:oid,:str],n:bat[:oid,:int]):bat[:oid,:str] 
+address STRbatLpad_bat;
+comment Prepend whitespaces to the strings to reach the given lengths. Truncate the strings on the right if their lengths is larger than the given lengths.
+
+command batstr.lpad(s:bat[:oid,:str],n:int):bat[:oid,:str] 
+address STRbatLpad_const;
+comment Prepend whitespaces to the strings to reach the given length. Truncate the strings on the right if their lengths is larger than the given length.
+
+command batstr.ltrim(s:bat[:oid,:str],s2:bat[:oid,:str]):bat[:oid,:str] 
+address STRbatLtrim2_bat;
+comment Strip characters in the second strings from start of the first strings.
+
+command batstr.ltrim(s:bat[:oid,:str],s2:str):bat[:oid,:str] 
+address STRbatLtrim2_const;
+comment Strip characters in the second string from start of the first strings.
+
 command batstr.ltrim(s:bat[:oid,:str]):bat[:oid,:str] 
 address STRbatLtrim;
 comment Strip whitespaces from start of a string.
@@ -3056,6 +3088,38 @@ comment Reverse search for a substring. Returns position, -1 if not found.
 command batstr.r_search(s:bat[:oid,:str],c:bat[:oid,:str]):bat[:oid,:int] 
 address STRbatRstrSearch;
 comment Reverse search for a substring. Returns position, -1 if not found.
+
+command batstr.rpad(s:bat[:oid,:str],n:bat[:oid,:int],s2:bat[:oid,:str]):bat[:oid,:str] 
+address STRbatRpad2_bat_bat;
+comment Append the second strings to the first strings to reach the given lengths. Truncate the first strings on the right if their lengths is larger than the given lengths.
+
+command batstr.rpad(s:bat[:oid,:str],n:int,s2:bat[:oid,:str]):bat[:oid,:str] 
+address STRbatRpad2_const_bat;
+comment Append the second strings to the first strings to reach the given length. Truncate the first strings on the right if their lengths is larger than the given length.
+
+command batstr.rpad(s:bat[:oid,:str],n:bat[:oid,:int],s2:str):bat[:oid,:str] 
+address STRbatRpad2_bat_const;
+comment Append the second string to the first strings to reach the given lengths. Truncate the first strings on the right if their lengths is larger than the given lengths.
+
+command batstr.rpad(s:bat[:oid,:str],n:int,s2:str):bat[:oid,:str] 
+address STRbatRpad2_const_const;
+comment Append the second string to the first strings to reach the given length. Truncate the first strings on the right if their lengths is larger than the given length.
+
+command batstr.rpad(s:bat[:oid,:str],n:bat[:oid,:int]):bat[:oid,:str] 
+address STRbatRpad_bat;
+comment Append whitespaces to the strings to reach the given lengths. Truncate the strings on the right if their lengths is larger than the given lengths.
+
+command batstr.rpad(s:bat[:oid,:str],n:int):bat[:oid,:str] 
+address STRbatRpad_const;
+comment Append whitespaces to the strings to reach the given length. Truncate the strings on the right if their lengths is larger than the given length.
+
+command batstr.rtrim(s:bat[:oid,:str],s2:bat[:oid,:str]):bat[:oid,:str] 
+address STRbatRtrim2_bat;
+comment Strip characters in the second strings from end of the first strings.
+
+command batstr.rtrim(s:bat[:oid,:str],s2:str):bat[:oid,:str] 
+address STRbatRtrim2_const;
+comment Strip characters in the second string from end of the first strings.
 
 command batstr.rtrim(s:bat[:oid,:str]):bat[:oid,:str] 
 address STRbatRtrim;
@@ -3100,6 +3164,14 @@ comment Prefix check.
 command batstr.stringlength(s:bat[:oid,:str]):bat[:oid,:int] 
 address STRbatstringLength;
 comment Return the length of a right trimed string.
+
+command batstr.trim(s:bat[:oid,:str],s2:bat[:oid,:str]):bat[:oid,:str] 
+address STRbatStrip2_bat;
+comment Strip characters in the second strings around the first strings.
+
+command batstr.trim(s:bat[:oid,:str],s2:str):bat[:oid,:str] 
+address STRbatStrip2_const;
+comment Strip characters in the second string around the first strings.
 
 command batstr.trim(s:bat[:oid,:str]):bat[:oid,:str] 
 address STRbatStrip;
@@ -42131,6 +42203,18 @@ command str.like(s:str,pat:str):bit
 address STRlikewrap2;
 comment SQL pattern match function
 
+command str.lpad(s:str,len:int,s2:str):str 
+address STRLpad2;
+comment Fill up the first string to the given length prepending characters of the second string.
+
+command str.lpad(s:str,len:int):str 
+address STRLpad;
+comment Fill up a string to the given length prepending the whitespace character.
+
+command str.ltrim(s:str,s2:str):str 
+address STRLtrim2;
+comment Remove the longest string containing only characters from the second string from the start of the first string.
+
 command str.ltrim(s:str):str 
 address STRLtrim;
 comment Strip whitespaces from start of a string.
@@ -42162,6 +42246,18 @@ address STRrepeat;
 command str.replace(s:str,pat:str,s2:str):str 
 address STRreplace;
 comment Insert a string into another
+
+command str.rpad(s:str,len:int,s2:str):str 
+address STRRpad2;
+comment Fill up the first string to the given length appending characters of the second string.
+
+command str.rpad(s:str,len:int):str 
+address STRRpad;
+comment Fill up a string to the given length appending the whitespace character.
+
+command str.rtrim(s:str,s2:str):str 
+address STRRtrim2;
+comment Remove the longest string containing only characters from the second string from the end of the first string.
 
 command str.rtrim(s:str):str 
 address STRRtrim;
@@ -42216,6 +42312,10 @@ comment Return the tail s[offset..n]	 of a string s[0..n].
 command str.str(s:str):str 
 address STRtostr;
 comment Noop routine.
+
+command str.trim(s:str,s2:str):str 
+address STRStrip2;
+comment Remove the longest string containing only characters from the second string around the first string.
 
 command str.trim(s:str):str 
 address STRStrip;
