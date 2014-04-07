@@ -91,6 +91,30 @@ command rtrim( s:str ) :str
 address STRRtrim
 comment "Strip whitespaces from end of a string.";
 
+command trim( s:str, s2:str ) :str
+address STRStrip2
+comment "Remove the longest string containing only characters from the second string around the first string.";
+command ltrim( s:str, s2:str ) :str
+address STRLtrim2
+comment "Remove the longest string containing only characters from the second string from the start of the first string.";
+command rtrim( s:str, s2:str ) :str
+address STRRtrim2
+comment "Remove the longest string containing only characters from the second string from the end of the first string.";
+
+command lpad( s:str, len:int ) :str
+address STRLpad
+comment "Fill up a string to the given length prepending the whitespace character.";
+command rpad( s:str, len:int ) :str
+address STRRpad
+comment "Fill up a string to the given length appending the whitespace character.";
+
+command lpad( s:str, len:int, s2:str ) :str
+address STRLpad2
+comment "Fill up the first string to the given length prepending characters of the second string.";
+command rpad( s:str, len:int, s2:str ) :str
+address STRRpad2
+comment "Fill up the first string to the given length appending characters of the second string.";
+
 command calc.max(s:str, t:str):str
 address STRmax
 comment "Select the maximum string in lexicographic order";

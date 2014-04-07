@@ -1455,8 +1455,16 @@ sqltypeinit( sql_allocator *sa)
 		sql_create_func(sa, "lower", "str", "toLower", *t, NULL, *t, SCALE_NONE);
 		sql_create_func(sa, "lcase", "str", "toLower", *t, NULL, *t, SCALE_NONE);
 		sql_create_func(sa, "trim", "str", "trim", *t, NULL, *t, SCALE_NONE);
+		sql_create_func(sa, "trim", "str", "trim", *t, *t, *t, SCALE_NONE);
 		sql_create_func(sa, "ltrim", "str", "ltrim", *t, NULL, *t, SCALE_NONE);
+		sql_create_func(sa, "ltrim", "str", "ltrim", *t, *t, *t, SCALE_NONE);
 		sql_create_func(sa, "rtrim", "str", "rtrim", *t, NULL, *t, SCALE_NONE);
+		sql_create_func(sa, "rtrim", "str", "rtrim", *t, *t, *t, SCALE_NONE);
+
+		sql_create_func(sa, "lpad", "str", "lpad", *t, INT, *t, SCALE_NONE);
+		sql_create_func3(sa, "lpad", "str", "lpad", *t, INT, *t, *t, SCALE_NONE);
+		sql_create_func(sa, "rpad", "str", "rpad", *t, INT, *t, SCALE_NONE);
+		sql_create_func3(sa, "rpad", "str", "rpad", *t, INT, *t, *t, SCALE_NONE);
 
 		sql_create_func4(sa, "insert", "str", "insert", *t, INT, INT, *t, *t, SCALE_NONE);
 		sql_create_func3(sa, "replace", "str", "replace", *t, *t, *t, *t, SCALE_NONE);
