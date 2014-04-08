@@ -227,7 +227,8 @@ str FITSexportTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	_Bool boolvalue, *readboolrows;
 	struct list * set;
 
-	msg = getSQLContext(cntxt, mb, &m, NULL);
+	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != MAL_SUCCEED)
+		return msg;
 	if ((msg = checkSQLContext(cntxt)) != MAL_SUCCEED)
 		return msg;
 
@@ -680,7 +681,8 @@ str FITSattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	char xtensionname[BUFSIZ] = "", stilversion[BUFSIZ] = "";
 	char stilclass[BUFSIZ] = "", tdate[BUFSIZ] = "", orig[BUFSIZ] = "", comm[BUFSIZ] = "";
 
-	msg = getSQLContext(cntxt, mb, &m, NULL);
+	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != MAL_SUCCEED)
+		return msg;
 	if ((msg = checkSQLContext(cntxt)) != MAL_SUCCEED)
 		return msg;
 
@@ -850,7 +852,8 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	char keywrd[80], **cname, nm[FLEN_VALUE];
 	ptr nilptr;
 
-	msg = getSQLContext(cntxt, mb, &m, NULL);
+	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != MAL_SUCCEED)
+		return msg;
 	if ((msg = checkSQLContext(cntxt)) != MAL_SUCCEED)
 		return msg;
 	sch = mvc_bind_schema(m, "sys");

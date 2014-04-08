@@ -1460,7 +1460,7 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 
 	do {
 		/* handle errors first */
-		if ((reply = mapi_result_error(hdl)) != NULL) {
+		if (mapi_result_error(hdl) != NULL) {
 			mnstr_flush(toConsole);
 			if (formatter == TABLEformatter || formatter == CLEANformatter) {
 				mapi_noexplain(mid, "");
@@ -1829,7 +1829,7 @@ doFile(Mapi mid, const char *file, int useinserts, int interactive, int save_his
 	char *oldbuf = NULL, *buf = NULL;
 	size_t length;
 	size_t bufsiz = 0;
-	MapiHdl hdl = mapi_get_active(mid);
+	MapiHdl hdl;
 	MapiMsg rc = MOK;
 	int lineno = 1;
 	enum hmyesno hassysfuncs = UNKNOWN;

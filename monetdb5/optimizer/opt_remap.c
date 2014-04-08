@@ -202,6 +202,7 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc )
 				setVarType(mq,getArg(q,0),tpe);
 				cst.vtype = TYPE_bat;
 				cst.val.bval = bat_nil;
+				cst.len = 0;
 				getArg(q,1) = defConstant(mq, tpe, &cst);
 				setVarType(mq, getArg(q,1), tpe);
 			} else{

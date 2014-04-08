@@ -253,7 +253,6 @@ rel_getsel(mvc *sql, sql_rel *rel)
 	default:
 		return 1.0;
 	}
-	return 1.0;
 }
 
 static list*

@@ -492,8 +492,10 @@ SQLstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int tpe = getArgType(mb, pci, 5);
 	int len = *(int *) getArgReference(stk, pci, 6);
 	mvc *m = NULL;
-	str msg = getSQLContext(cntxt, mb, &m, NULL);
+	str msg;
 
+	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
+		return msg;
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
 	if (ATOMextern(tpe))
@@ -509,7 +511,7 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BATiter bi;
 	BUN p, q;
 	mvc *m = NULL;
-	str msg = getSQLContext(cntxt, mb, &m, NULL);
+	str msg;
 	char *r = NULL;
 	int *res = (int *) getArgReference(stk, pci, 0);
 	int *eclass = (int *) getArgReference(stk, pci, 1);
@@ -519,6 +521,8 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int *bid = (int *) getArgReference(stk, pci, 5);
 	int *digits = (int *) getArgReference(stk, pci, 6);
 
+	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
+		return msg;
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
 	if ((b = BATdescriptor(*bid)) == NULL) {

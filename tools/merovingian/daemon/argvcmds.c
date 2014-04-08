@@ -107,6 +107,7 @@ command_create(int argc, char *argv[])
 		/* try to create the dbfarm */
 		while ((p = strchr(p + 1, '/')) != NULL) {
 			*p = '\0';
+			/* coverity[toctou] */
 			if (stat(path, &sb) == -1 && mkdir(path, 0755)) {
 				fprintf(stderr, "unable to create directory '%s': %s\n",
 						path, strerror(errno));
