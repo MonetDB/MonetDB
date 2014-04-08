@@ -37,11 +37,13 @@ typedef sht ordering;
 typedef enum {SAM, BAM} filetype;
 
 typedef struct sam_data {
-    samfile_t *input;
+    stream *input;
+    str header;
 } sam_data;
 
 typedef struct bam_data {
     bamFile input;
+    bam_header_t *header;
 } bam_data;
 
 typedef struct bam_wrapper {
@@ -54,7 +56,6 @@ typedef struct bam_wrapper {
     };
 	
 	/* General */
-	bam_header_t *header;
     ordering ord;
 	lng file_id;
 	str file_location;

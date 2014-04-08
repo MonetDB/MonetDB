@@ -106,22 +106,63 @@ init_bam_wrapper(bam_wrapper * bw, filetype type, str file_location,
 		          ERR_INIT_BAM_WRAPPER "BAM file could not be opened",
 		          file_location);
 	    }
-	    if ((bw->header = bam_header_read(bw->bam.input)) == NULL) {
+	    if ((bw->bam.header = bam_header_read(bw->bam.input)) == NULL) {
 	        throw(MAL, "init_bam_wrapper",
 	            ERR_INIT_BAM_WRAPPER "Unable to read header from file",
 	            file_location);
         }
     } else {
         /* Open SAM file and read its header */
-        if ((bw->sam.input = samopen(file_location, "r", NULL)) == NULL) {
+        int bufsize = 4096;
+        lng header_len = 0;
+        if ((bw->sam.input = open_rastream(file_location)) == NULL) {
 		    throw(MAL, "init_bam_wrapper",
 		          ERR_INIT_BAM_WRAPPER "SAM file could not be opened",
 		          file_location);
 	    }
-	    if ((bw->header = bw->sam.input->header) == NULL) {
-	        throw(MAL, "init_bam_wrapper",
-	            ERR_INIT_BAM_WRAPPER "Unable to read header from file",
-	            file_location);
+        if ((bw->sam.header = (str)GDKmalloc(bufsize * sizeof(char))) == NULL) {
+            throw(MAL, "init_bam_wrapper", 
+                  ERR_INIT_BAM_WRAPPER MAL_MALLOC_FAIL, file_location);
+        }
+        while (TRUE) {
+            int read = mnstr_readline(bw->sam.input, bw->sam.header + header_len, bufsize - header_len);
+            
+            if (read <= 0) {
+                throw(MAL, "init_bam_wrapper", 
+                      ERR_INIT_BAM_WRAPPER "Could not read line of SAM header", 
+                      file_location);
+            }
+            
+            if (bw->sam.header[header_len] != '@') {
+                /* This is not a header line, we assume that the header is finished.
+                 * Rewind stream to start of line and stop reading */
+                if (mnstr_fsetpos(bw->sam.input, header_len) < 0) {
+                    throw(MAL, "init_bam_wrapper", 
+                      ERR_INIT_BAM_WRAPPER "Could not read last line of SAM header", 
+                      file_location);
+                }
+                bw->sam.header[header_len] = '\0'; /* Truncate alignment data */
+                break;
+            }
+            
+            if (bw->sam.header[header_len+read-1] != '\n') {
+                /* This line was not completed. Increase buffer size, rewind stream
+                 * and try again */
+                bufsize *= 2;
+                if ((bw->sam.header = (str)GDKrealloc(bw->sam.header, bufsize * sizeof(char))) == NULL) {
+                    throw(MAL, "init_bam_wrapper", 
+                          ERR_INIT_BAM_WRAPPER MAL_MALLOC_FAIL, file_location);
+                }
+                if (mnstr_fsetpos(bw->sam.input, header_len) < 0) {
+                    throw(MAL, "init_bam_wrapper", 
+                      ERR_INIT_BAM_WRAPPER "Could not read last line of SAM header", 
+                      file_location);
+                }
+                continue;
+            }
+            
+            /* Only if no special cases occured, we added the read characters to the header */
+            header_len += read;
         }
     }
     
@@ -326,15 +367,18 @@ clear_bam_wrapper(bam_wrapper * bw)
 
 	/* Clear bam/sam specific fields */
 	if (bw->type == BAM) {
-	    if (bw->header) {
-		    bam_header_destroy(bw->header);
+	    if (bw->bam.header) {
+		    bam_header_destroy(bw->bam.header);
 	    }
 	    if (bw->bam.input) {
 		    bam_close(bw->bam.input);
 	    }
     } else {
         if (bw->sam.input) {
-            samclose(bw->sam.input);
+            close_stream(bw->sam.input);
+        }
+        if (bw->sam.header) {
+            GDKfree(bw->sam.header);
         }
     }
 
@@ -630,7 +674,7 @@ clear_bam_header_line(bam_header_line * hl)
 	if (strcmp((opt).tag, (cmp)) == 0) {				\
 		(l) = strtol((opt).value, &s, 10);			\
 		if ((s) == ((opt).value) || (l) == LONG_MIN || (l) == LONG_MAX) \
-			l = -1;						\
+			l = -1;					\
 		if (!APPEND_LNG(file, l)) {				\
 			throw(MAL, "process_header", ERR_PROCESS_HEADER "Could not write option '%s:%s' to binary file", \
 			      bw->file_location, (opt).tag, (opt).value); \
@@ -657,7 +701,7 @@ clear_bam_header_line(bam_header_line * hl)
 str
 process_header(bam_wrapper * bw)
 {
-	str header_str = bw->header->text;
+	str header_str;
 
 	bam_header_line hl;
 	int i, o;
@@ -674,6 +718,12 @@ process_header(bam_wrapper * bw)
 	bit eof = FALSE;
 	str s;
 	lng l;
+    
+    if (bw->type == BAM) {
+        header_str = bw->bam.header->text;
+    } else {
+        header_str = bw->sam.header;
+    }
 
 	hd_comment.l = hd_comment.m = 0;
 	hd_comment.s = NULL;
@@ -1066,7 +1116,7 @@ process_header(bam_wrapper * bw)
 
 typedef struct alignment {
 	lng virtual_offset;
-	char qname[256];	/* Can't be bigger than 256, since this is the max that Samtools can handle */
+	str qname;
 	sht flag;
 	str rname;
 	int pos;
@@ -1077,33 +1127,68 @@ typedef struct alignment {
 	int tlen;
 	str seq;
 	str qual;
+    
+    str aux; /* Only used when loading SAM */
 
-	int cigar_size;;
-	int seq_size;
+    int qname_size; /* Current buffer size of qname strs (Only used when type = SAM or dbschema = 1) */
+    int rname_size; /* Current buffer size of rname/rnext strs (only used when loading SAM) */
+	int cigar_size; /* Current buffer size of cigar str */
+	int seq_size; /* Current buffer size of seq and qual str */
+    int aux_size; /* Current buffer size of aux (only used when loading SAM) */
 
 	bit written;
 } alignment;
 
 static bit
-init_alignment(alignment * alig)
+init_alignment(bam_wrapper *bw, alignment * alig)
 {
+    bit result;
+    
 	/* Enables clear function to check variables */
 	memset(alig, 0, sizeof(alignment));
 
-	alig->cigar_size = 1024;
-	alig->seq_size = 128;
+    alig->qname_size = 10000;
+    alig->rname_size = 10000;
+	alig->cigar_size = 10000;
+	alig->seq_size = 10000;
+    alig->aux_size = 10000;
 
 	/* Dynamic buffers to be able to expand when necessary */
 	alig->cigar = (str) GDKmalloc(alig->cigar_size * sizeof(char));
 	alig->seq = (str) GDKmalloc(alig->seq_size * sizeof(char));
 	alig->qual = (str) GDKmalloc(alig->seq_size * sizeof(char));
-
-	return (alig->cigar != NULL && alig->seq != NULL
+    
+    result = (alig->cigar != NULL && alig->seq != NULL
 		&& alig->qual != NULL);
+    
+    if (bw->type == SAM || bw->dbschema == 1) {
+        /* In this case we need to allocate space for the qname string 
+         * type == SAM   => qname not stored in bam1_t struct
+         * dbschema == 1 => Alignments need to be stored for more than one
+         *                  iteration
+         * In other cases, it remains NULL and it will point to the qname
+         * in the bam1_t struct 
+         */
+        alig->qname = (str) GDKmalloc(alig->qname_size * sizeof(char));
+    }
+    if (bw->type == SAM) {
+        /* If we are loading SAM, we need buffers for rname and rnext,
+         * since this is not taken care of by a bam_header_t dict now */
+        alig->rname = (str) GDKmalloc(alig->rname_size * sizeof(char));
+        alig->rnext = (str) GDKmalloc(alig->rname_size * sizeof(char));
+
+        /* For SAM, we also need to have a buffer for aux, since this is
+         * not stored in a bam1_t struct anymore */
+         alig->aux = (str) GDKmalloc(alig->aux_size * sizeof(char));
+         result = (result && alig->rname != NULL &&
+                alig->rnext != NULL && alig->aux != NULL);
+    }
+
+	return result;
 }
 
 static void
-clear_alignment(alignment * alig)
+clear_alignment(bam_wrapper *bw, alignment * alig)
 {
 	if (alig->cigar)
 		GDKfree(alig->cigar);
@@ -1111,44 +1196,163 @@ clear_alignment(alignment * alig)
 		GDKfree(alig->seq);
 	if (alig->qual)
 		GDKfree(alig->qual);
+    if (bw->type == SAM || bw->dbschema == 1) {
+        if (alig->qname)
+            GDKfree(alig->qname);
+    }
+    if (bw->type == SAM) {
+        if(alig->rname)
+            GDKfree(alig->rname);
+        if(alig->rnext)
+            GDKfree(alig->rnext);
+        if(alig->aux)
+            GDKfree(alig->aux);
+    }
 }
 
 /**
  * Function checks whether or not the character buffers in the given
  * alignment are big enough to hold the given number of characters. If
- * not, it doubles the buffer sizes
+ * not, it doubles the buffer sizes.
+ * 
+ * Function is only used for loading BAM files
  */
-static bit
-check_alignment_buffers(alignment * alig, int cigar_size, int seq_size)
+static inline bit
+check_alignment_buffers(bam_wrapper *bw, alignment * alig, int qname_size, 
+        int cigar_size, int seq_size)
 {
-	bit resized[] = { FALSE, FALSE };
+	bit resized[] = { FALSE, FALSE, FALSE };
+    
+    assert (bw->type == BAM);
+    
+    if (bw->dbschema == 1) {
+        while (qname_size >= alig->qname_size) {
+            resized[0] = TRUE;
+            alig->qname_size *= 2;
+        }
+    }
 	while (cigar_size >= alig->cigar_size) {
-		resized[0] = TRUE;
+		resized[1] = TRUE;
 		alig->cigar_size *= 2;
 	}
 	while (seq_size >= alig->seq_size) {
-		resized[1] = TRUE;
+		resized[2] = TRUE;
 		alig->seq_size *= 2;
 	}
-	if (resized[0])
+    if (resized[0])
 		alig->cigar =
 			GDKrealloc(alig->cigar,
 				   alig->cigar_size * sizeof(char));
-	if (resized[1]) {
+	if (resized[1])
+		alig->cigar =
+			GDKrealloc(alig->cigar,
+				   alig->cigar_size * sizeof(char));
+	if (resized[2]) {
 		alig->seq =
 			GDKrealloc(alig->seq, alig->seq_size * sizeof(char));
 		alig->qual =
 			GDKrealloc(alig->qual, alig->seq_size * sizeof(char));
 	}
 
-	if (resized[0])
-		TO_LOG("<bam_loader> Increased size of cigar buffer to %d characters\n", alig->cigar_size);
+#ifdef BAM_DEBUG
+    if (resized[0])
+		TO_LOG("<bam_loader> Increased size of qname buffer to %d characters\n", alig->qname_size);
 	if (resized[1])
+		TO_LOG("<bam_loader> Increased size of cigar buffer to %d characters\n", alig->cigar_size);
+	if (resized[2])
 		TO_LOG("<bam_loader> Increased size of seq and qual buffers to %d characters\n", alig->seq_size);
+#endif
 
 	return (alig->cigar != NULL && alig->seq != NULL
 		&& alig->qual != NULL);
 }
+
+
+
+/**
+ * The next checker functions are used only for loading SAM files
+ */
+
+ 
+/**
+ * Function checks if qname buffer can hold one more character
+ */
+static inline bit
+check_qname_buffer(alignment * alig, int cur_size) {
+    if (cur_size + 1 >= alig->qname_size) {
+        alig->qname_size *= 2;
+        alig->qname = GDKrealloc(alig->qname,
+            alig->qname_size * sizeof(char));
+        TO_LOG("<bam_loader> Increased size of qname buffer to %d characters\n", alig->qname_size);
+    }
+    return alig->qname != NULL;
+}
+
+
+/**
+ * Function checks if rname/rnext buffers can hold one more character
+ */
+static inline bit
+check_rname_rnext_buffers(alignment * alig, int cur_size) {
+    if (cur_size + 1 >= alig->rname_size) {
+        alig->rname_size *= 2;
+        alig->rname = GDKrealloc(alig->rname,
+            alig->rname_size * sizeof(char));
+        alig->rnext = GDKrealloc(alig->rnext,
+            alig->rname_size * sizeof(char));
+        TO_LOG("<bam_loader> Increased size of cigar buffer to %d characters\n", alig->rname_size);
+    }
+    return alig->rname != NULL && alig->rnext != NULL;
+}
+
+
+/**
+ * Function checks if cigar buffer can hold one more character
+ */
+static inline bit
+check_cigar_buffer(alignment * alig, int cur_size) {
+    if (cur_size + 1 >= alig->cigar_size) {
+        alig->cigar_size *= 2;
+        alig->cigar = GDKrealloc(alig->cigar,
+            alig->cigar_size * sizeof(char));
+        TO_LOG("<bam_loader> Increased size of cigar buffer to %d characters\n", alig->cigar_size);
+    }
+    return alig->cigar != NULL;
+}
+
+/**
+ * Function checks if seq/qual buffers can hold one more character
+ */
+static inline bit
+check_seq_qual_buffers(alignment * alig, int cur_size) {
+    if (cur_size + 1 >= alig->seq_size) {
+        alig->seq_size *= 2;
+        alig->seq = GDKrealloc(alig->seq,
+            alig->seq_size * sizeof(char));
+        alig->qual = GDKrealloc(alig->qual,
+            alig->seq_size * sizeof(char));
+        TO_LOG("<bam_loader> Increased size of seq and qual buffers to %d characters\n", alig->seq_size);
+    }
+    return alig->seq != NULL && alig->qual != NULL;
+}
+
+/**
+ * Function checks if aux buffer can hold one more character
+ */
+static inline bit
+check_aux_buffer(alignment * alig, int cur_size) {
+    if (cur_size + 1 >= alig->aux_size) {
+        alig->aux_size *= 2;
+        alig->aux = GDKrealloc(alig->aux,
+            alig->aux_size * sizeof(char));
+        TO_LOG("<bam_loader> Increased size of aux buffer to %d characters\n", alig->aux_size);
+    }
+    return alig->aux != NULL;
+}
+
+
+
+typedef bit (*buffer_check)(alignment *, int);
 
 
 /**
@@ -1162,156 +1366,303 @@ check_alignment_buffers(alignment * alig, int cigar_size, int seq_size)
 #define SECO_ALIG(a) (KTH_BIT((a).flag, 8))
 
 
+
+/**
+ * Macro's for building alignment processing errors
+ */
 #define ERR_PROCESS_ALIGNMENT "Could not process alignment for BAM file '%s': "
 #define WRITE_ERR_PROCESS_ALIGNMENT(field) \
-    throw(MAL, "process_alignment", ERR_PROCESS_ALIGNMENT "Could not write field '%s' to binary file", bw->file_location, field)
+    throw(MAL, "process_alignments", ERR_PROCESS_ALIGNMENT "Could not write field '%s' to binary file", bw->file_location, field)
+
+static inline int
+next_alignment_field(stream * input, alignment * a,
+    str buffer, buffer_check bc, bit delim_tab, bit * eol, bit * eof) {
+    signed char c;
+    int index = 0;
+    if (mnstr_readBte(input, &c) == 0) {
+        *eof = TRUE;
+        return 0;
+    }
+    while ((!delim_tab || c != '\t') && c != '\n' && c != '\0') {
+        buffer[index++] = c;
+        if (mnstr_readBte(input, &c) == 0) {
+            *eof = TRUE;
+            return index;
+        }
+        /* Make sure there is enough space for next char */
+        if (bc && !bc(a, index)) {
+            return -1;
+        }
+    }
+    buffer[index] = '\0';
+    *eol = c == '\n';
+    return index;
+}
+
+
+static str
+next_sam_alignment(stream * input, lng virtual_offset, 
+        alignment * a, int * aux_len, bit * eof) {
+        
+    bit eol = FALSE;
+    char lngbuf[64];
+    
+    /* virtual_offset */
+    a->virtual_offset = virtual_offset;
+    
+    /* qname */
+    if (next_alignment_field(input, a, a->qname, 
+            check_qname_buffer, TRUE, &eol, eof) < 0 || eol || *eof) {
+        if (*eof) {
+            /* When reading fails during qname, we assume that 
+             * the file just ended */
+            return MAL_SUCCEED;
+        }
+        throw(MAL, "next_sam_alignment", "Unexpected end of line (after qname)");
+    }
+    
+    /* flag */
+    if (next_alignment_field(input, a, lngbuf, NULL, TRUE, &eol, eof) < 0 || eol || *eof) {
+        throw(MAL, "next_sam_alignment", "Unexpected end of line (after flag)");
+    }
+    a->flag = strtol(lngbuf, NULL, 10);
+    
+    /* rname */
+    if (next_alignment_field(input, a, a->rname, 
+            check_rname_rnext_buffers, TRUE, &eol, eof) < 0 || eol || *eof) {
+        throw(MAL, "next_sam_alignment", "Unexpected end of line (after rname)");
+    }
+    
+    /* pos */
+    if (next_alignment_field(input, a, lngbuf, NULL, TRUE, &eol, eof) < 0 || eol || *eof) {
+        throw(MAL, "next_sam_alignment", "Unexpected end of line (after pos)");
+    }
+    a->pos = strtol(lngbuf, NULL, 10);
+    
+    /* mapq */
+    if (next_alignment_field(input, a, lngbuf, NULL, TRUE, &eol, eof) < 0 || eol || *eof) {
+        throw(MAL, "next_sam_alignment", "Unexpected end of line (after mapq)");
+    }
+    a->mapq = strtol(lngbuf, NULL, 10);
+    
+    /* cigar */
+    if (next_alignment_field(input, a, a->cigar, 
+            check_cigar_buffer, TRUE, &eol, eof) < 0 || eol || *eof) {
+        throw(MAL, "next_sam_alignment", "Unexpected end of line (after cigar)");
+    }
+    
+    /* rnext */
+    if (next_alignment_field(input, a, a->rnext, 
+            check_rname_rnext_buffers, TRUE, &eol, eof) < 0 || eol || *eof) {
+        throw(MAL, "next_sam_alignment", "Unexpected end of line (after rnext)");
+    }
+    
+    /* pnext */
+    if (next_alignment_field(input, a, lngbuf, NULL, TRUE, &eol, eof) < 0 || eol || *eof) {
+        throw(MAL, "next_sam_alignment", "Unexpected end of line (after pnext)");
+    }
+    a->pnext = strtol(lngbuf, NULL, 10);
+    
+    /* tlen */
+    if (next_alignment_field(input, a, lngbuf, NULL, TRUE, &eol, eof) < 0 || eol || *eof) {
+        throw(MAL, "next_sam_alignment", "Unexpected end of line (after tlen)");
+    }
+    a->tlen = strtol(lngbuf, NULL, 10);
+    
+    /* seq */
+    if (next_alignment_field(input, a, a->seq, 
+            check_seq_qual_buffers, TRUE, &eol, eof) < 0 || eol || *eof) {
+        throw(MAL, "next_sam_alignment", "Unexpected end of line (after seq)");
+    }
+    
+    /* qual */
+    if (next_alignment_field(input, a, a->qual, 
+            check_seq_qual_buffers, TRUE, &eol, eof) < 0) {
+        throw(MAL, "next_sam_alignment", "Could not read quality string (after qual)");
+    }
+    
+    /* aux */
+    if(!eol) {
+        *aux_len = next_alignment_field(input, a, a->aux,
+                check_aux_buffer, FALSE, &eol, eof);
+    } else {
+        *aux_len = 0;
+        a->aux[0] = '\0';
+    }
+    
+    assert(eol);
+    
+    return MAL_SUCCEED;
+}
 
 /**
  * Given a Samtools native structure bam1_t, retrieve all information
- * from it and, depending on the dbschema, write it to binary files or
- * store all data in a_out-> Many portions of the code in this
- * function is inspired by the code found in bam.c::bam_format1_core
- * from the Samtools library
+ * from it and store it in an alignment struct
  */
 static str
-process_alignment(bam_wrapper * bw, lng virtual_offset, bam1_t * a_in,
+bam1_t2alignment(bam_wrapper * bw, lng virtual_offset, bam1_t * a_in,
 		  alignment * a_out)
 {
 	uint8_t *s;
 	int i;
 
+    assert(bw->type == BAM);
+    
 	a_out->written = FALSE;
+    
+    /* Start by making sure that the buffers in a_out are large enough */
+    if (!check_alignment_buffers
+        (bw, a_out, a_in->core.l_qname, a_in->core.n_cigar * 4, a_in->core.l_qseq)) {
+        throw(MAL, "process_alignment", MAL_MALLOC_FAIL);
+    }
+    
+    /* virtual_offset */
+    a_out->virtual_offset = virtual_offset;
+    
+    /* qname */
+    if (bw->dbschema == 0) {
+        /* This case is equivalent to !(type == SAM || dbschema == 1),
+         * since we have (type == BAM && dbschema == 0) 
+         * So, no space is allocated for qname since we will point
+         * directly into the bam1_t struct */
+        a_out->qname = bam1_qname(a_in);
+    } else {
+        /* Copy for pairwise schema, since we then want to keep it
+         * alive after we finish processing this alignment */
+        strcpy(a_out->qname, bam1_qname(a_in));
+    }
+    
+    /* flag */
+    a_out->flag = a_in->core.flag;
 
-	/* Start by making sure that the buffers in a_out are large enough */
-	if (!check_alignment_buffers
-	    (a_out, a_in->core.n_cigar * 4, a_in->core.l_qseq)) {
-		throw(MAL, "process_alignment", MAL_MALLOC_FAIL);
+    /* rname */
+    if (a_in->core.tid < 0) {
+        a_out->rname = "*";
+    } else {
+        a_out->rname =
+            bw->bam.header->target_name[a_in->core.tid];
+    }
+    
+    /* pos */
+    a_out->pos = a_in->core.pos + 1;
+    
+    /* mapq */
+    a_out->mapq = a_in->core.qual;
+    
+    /* cigar */
+    if (a_in->core.n_cigar == 0) {
+        a_out->cigar[0] = '*';
+        a_out->cigar[1] = '\0';
+    } else {
+        uint32_t *cigar_bin = bam1_cigar(a_in);
+        int index = 0;
+
+        for (i = 0; i < a_in->core.n_cigar; ++i) {
+            snprintf(&a_out->cigar[index],
+                 a_out->cigar_size - index, "%d%c",
+                 cigar_bin[i] >> BAM_CIGAR_SHIFT,
+                 bam_cigar_opchr(cigar_bin[i]));
+            index += strlen(&a_out->cigar[index]);
+        }
+    }
+    
+    /* rnext */
+    if (a_in->core.mtid < 0) {
+        a_out->rnext = "*";
+    } else if (a_in->core.mtid == a_in->core.tid) {
+        a_out->rnext = "=";
+    } else {
+        a_out->rnext =
+            bw->bam.header->target_name[a_in->core.mtid];
+    }
+    
+    /* pnext */
+    a_out->pnext = a_in->core.mpos + 1;
+
+    /* tlen */
+    a_out->tlen = a_in->core.isize;
+
+    /* seq and qual */
+    if (a_in->core.l_qseq) {
+        s = bam1_seq(a_in);
+        for (i = 0; i < a_in->core.l_qseq; ++i) {
+            a_out->seq[i] = bam_nt16_rev_table[bam1_seqi(s, i)];
+        }
+        a_out->seq[a_in->core.l_qseq] = '\0';
+
+        s = bam1_qual(a_in);
+        if (s[0] == 0xff) {
+            a_out->seq[0] = '*';
+            a_out->seq[1] = '*';
+        } else {
+            for (i = 0; i < a_in->core.l_qseq; ++i) {
+                a_out->qual[i] = s[i] + 33;
+            }
+            a_out->qual[a_in->core.l_qseq] = '\0';
+        }
+    } else {
+        a_out->seq[0] = a_out->qual[0] = '*';
+        a_out->seq[1] = a_out->qual[1] = '\0';
 	}
-
-	/* First save the values in the alignment struct that we have
-	 * to store in additional variables anyway */
-	a_out->pos = a_in->core.pos + 1;
-	a_out->pnext = a_in->core.mpos + 1;
-
-	/* Construct cigar, seq and qual strings in the buffers
-	 * provided in a_out */
-	if (a_in->core.n_cigar == 0) {
-		a_out->cigar[0] = '*';
-		a_out->cigar[1] = '\0';
-	} else {
-		uint32_t *cigar_bin = bam1_cigar(a_in);
-		int index = 0;
-
-		for (i = 0; i < a_in->core.n_cigar; ++i) {
-			snprintf(&a_out->cigar[index],
-				 a_out->cigar_size - index, "%d%c",
-				 cigar_bin[i] >> BAM_CIGAR_SHIFT,
-				 bam_cigar_opchr(cigar_bin[i]));
-			index += strlen(&a_out->cigar[index]);
-		}
-	}
-
-	if (a_in->core.l_qseq) {
-		s = bam1_seq(a_in);
-		for (i = 0; i < a_in->core.l_qseq; ++i) {
-			a_out->seq[i] = bam_nt16_rev_table[bam1_seqi(s, i)];
-		}
-		a_out->seq[a_in->core.l_qseq] = '\0';
-
-		s = bam1_qual(a_in);
-		if (s[0] == 0xff) {
-			a_out->seq[0] = '*';
-			a_out->seq[1] = '*';
-		} else {
-			for (i = 0; i < a_in->core.l_qseq; ++i) {
-				a_out->qual[i] = s[i] + 33;
-			}
-			a_out->qual[a_in->core.l_qseq] = '\0';
-		}
-	} else {
-		a_out->seq[0] = a_out->qual[0] = '*';
-		a_out->seq[1] = a_out->qual[1] = '\0';
-	}
-
-	if (bw->dbschema == 0) {
-		/* Write fields directly to binary files */
-		++bw->cnt_alignments;
-		if (!APPEND_LNG(bw->alignments[0], virtual_offset))
-			WRITE_ERR_PROCESS_ALIGNMENT("virtual_offset");
-		if (!APPEND_STR(bw->alignments[1], bam1_qname(a_in)))
-			WRITE_ERR_PROCESS_ALIGNMENT("qname");
-		if (!APPEND_SHT(bw->alignments[2], a_in->core.flag))
-			WRITE_ERR_PROCESS_ALIGNMENT("flag");
-
-		if (a_in->core.tid < 0) {
-			if (!APPEND_STR(bw->alignments[3], "*"))
-				WRITE_ERR_PROCESS_ALIGNMENT("rname");
-		} else {
-			if (!APPEND_STR
-			    (bw->alignments[3],
-			     bw->header->target_name[a_in->core.tid]))
-				WRITE_ERR_PROCESS_ALIGNMENT("rname");
-		}
-
-		if (!APPEND_INT(bw->alignments[4], a_out->pos))
-			WRITE_ERR_PROCESS_ALIGNMENT("pos");
-		if (!APPEND_SHT(bw->alignments[5], a_in->core.qual))
-			WRITE_ERR_PROCESS_ALIGNMENT("mapq");
-		if (!APPEND_STR(bw->alignments[6], a_out->cigar))
-			WRITE_ERR_PROCESS_ALIGNMENT("cigar");
-
-		if (a_in->core.mtid < 0) {
-			if (!APPEND_STR(bw->alignments[7], "*"))
-				WRITE_ERR_PROCESS_ALIGNMENT("rnext");
-		} else if (a_in->core.mtid == a_in->core.tid) {
-			if (!APPEND_STR(bw->alignments[7], "="))
-				WRITE_ERR_PROCESS_ALIGNMENT("rnext");
-		} else {
-			if (!APPEND_STR
-			    (bw->alignments[7],
-			     bw->header->target_name[a_in->core.mtid]))
-				WRITE_ERR_PROCESS_ALIGNMENT("rnext");
-		}
-
-		if (!APPEND_INT(bw->alignments[8], a_out->pnext))
-			WRITE_ERR_PROCESS_ALIGNMENT("pnext");
-		if (!APPEND_INT(bw->alignments[9], a_in->core.isize))
-			WRITE_ERR_PROCESS_ALIGNMENT("tlen");
-		if (!APPEND_STR(bw->alignments[10], a_out->seq))
-			WRITE_ERR_PROCESS_ALIGNMENT("seq");
-		if (!APPEND_STR(bw->alignments[11], a_out->qual))
-			WRITE_ERR_PROCESS_ALIGNMENT("qual");
-
-		a_out->written = TRUE;
-	} else {
-		/* Complete the a_out struct */
-		a_out->virtual_offset = virtual_offset;
-		strcpy(a_out->qname, bam1_qname(a_in));
-		a_out->flag = a_in->core.flag;
-
-		if (a_in->core.tid < 0) {
-			a_out->rname = "*";
-		} else {
-			a_out->rname =
-				bw->header->target_name[a_in->core.tid];
-		}
-		a_out->mapq = a_in->core.qual;
-		if (a_in->core.mtid < 0) {
-			a_out->rnext = "*";
-		} else if (a_in->core.mtid == a_in->core.tid) {
-			a_out->rnext = "=";
-		} else {
-			a_out->rnext =
-				bw->header->target_name[a_in->core.mtid];
-		}
-
-		a_out->tlen = a_in->core.isize;
-	}
+    
+    return MAL_SUCCEED;
+}
 
 
-	/* parse auxiliary data */
-	s = bam1_aux(a_in);
-	while (s < a_in->data + a_in->data_len) {
+static str
+write_aux(bam_wrapper * bw, str tag, lng virtual_offset, str type, str val) {
+    if (!APPEND_STR(bw->alignments_extra[0], tag))
+        WRITE_ERR_PROCESS_ALIGNMENT("extra:tag");
+    if (!APPEND_LNG(bw->alignments_extra[1], virtual_offset))
+        WRITE_ERR_PROCESS_ALIGNMENT("extra:virtual_offset");
+    if (!APPEND_STR(bw->alignments_extra[2], type))
+        WRITE_ERR_PROCESS_ALIGNMENT("extra:type");
+    if (!APPEND_STR
+        (bw->alignments_extra[3],
+         (val ? val : str_nil)))
+        WRITE_ERR_PROCESS_ALIGNMENT("extra:value");
+    ++bw->cnt_alignments_extra;
+    return MAL_SUCCEED;
+}
+
+static str
+write_aux_str(bam_wrapper * bw, str aux, int aux_len, lng virtual_offset) {
+    str s = aux;
+    char tag[3];
+    char type[2];
+    str val;
+    
+    str msg;
+    
+    tag[2] = '\0';
+    type[1] = '\0';
+    
+    /* Loop until we arrive at a point where there is no more room
+     * for a key:type: string (which takes 5 characters) */
+    while (s <= aux + aux_len - 5) {
+        tag[0] = *s;
+        tag[1] = *(s+1);
+        type[0] = *(s+3);
+        s += 5;
+        if(read_string_until_delim(&s, &val, "\t\n\0", 3) < 0) {
+            throw(MAL, "write_aux_str", MAL_MALLOC_FAIL);
+        }
+        if((msg = write_aux(bw, tag, virtual_offset, type, val)) != MAL_SUCCEED) {
+            GDKfree(val);
+            return msg;
+        }
+        GDKfree(val);
+        ++s;
+    }
+    return MAL_SUCCEED;
+}
+
+static str
+write_aux_bam1_t(bam_wrapper * bw, bam1_t *alig, lng virtual_offset) {
+    int i;
+    uint8_t *s = bam1_aux(alig);
+    str msg;
+	while (s < alig->data + alig->data_len) {
 		char tag_str[3] = { (char) s[0], (char) s[1], '\0' };
 		char type_str[2] = { (char) s[2], '\0' };
 		char type = (char) s[2];
@@ -1407,29 +1758,25 @@ process_alignment(bam_wrapper * bw, lng virtual_offset, bam1_t * a_in,
 				}
 			}
 		}
-
-		++bw->cnt_alignments_extra;
-		if (!APPEND_STR(bw->alignments_extra[0], tag_str))
-			WRITE_ERR_PROCESS_ALIGNMENT("extra:tag");
-		if (!APPEND_LNG(bw->alignments_extra[1], virtual_offset))
-			WRITE_ERR_PROCESS_ALIGNMENT("extra:virtual_offset");
-		if (!APPEND_STR(bw->alignments_extra[2], type_str))
-			WRITE_ERR_PROCESS_ALIGNMENT("extra:type");
-		if (!APPEND_STR
-		    (bw->alignments_extra[3],
-		     (aux_value_stream.s ==
-		      NULL ? str_nil : aux_value_stream.s)))
-			WRITE_ERR_PROCESS_ALIGNMENT("extra:value");
-
+        
+		if((msg = write_aux(bw, tag_str, virtual_offset, 
+                type_str, aux_value_stream.s)) != MAL_SUCCEED) {
+            if (aux_value_stream.s != NULL) {
+                free(aux_value_stream.s);
+            }
+            return msg;
+        }
+        
 		if (aux_value_stream.s != NULL) {
-			/* Can't use GDKfree here, since the kstring
-			 * file doesn't use the GDK versions... */
 			free(aux_value_stream.s);
 		}
 	}
 
 	return MAL_SUCCEED;
 }
+
+
+
 
 
 /* Macros for appending data from an alignment struct to binary
@@ -1506,7 +1853,7 @@ process_alignment(bam_wrapper * bw, lng virtual_offset, bam1_t * a_in,
  */
 
 static str
-complete_qname_group(alignment * alignments, int nr_alignments,
+complete_qname_group(alignment ** alignments, int nr_alignments,
 		     bam_wrapper * bw)
 {
 	int i, j, nr_primary = 0;
@@ -1516,7 +1863,7 @@ complete_qname_group(alignment * alignments, int nr_alignments,
 
 	/* Start with handling the primary alignments */
 	for (i = 0; i < nr_alignments; ++i) {
-		a = &alignments[i];
+		a = alignments[i];
 		if (!SECO_ALIG(*a)) {
 			/* a points to a primary alignment */
 			++nr_primary;
@@ -1545,7 +1892,7 @@ complete_qname_group(alignment * alignments, int nr_alignments,
 
 	/* Now handle the secondary alignments */
 	for (i = 0; i < nr_alignments; ++i) {
-		a = &alignments[i];
+		a = alignments[i];
 		if (a->written || !SECO_ALIG(*a))
 			continue;
 
@@ -1553,7 +1900,7 @@ complete_qname_group(alignment * alignments, int nr_alignments,
 			/* Loop starts from j=i+1 since we have
 			 * symmetry; if a and b are found to be a
 			 * pair, b and a will also be a pair */
-			a2 = &alignments[j];
+			a2 = alignments[j];
 			if (a2->written || !SECO_ALIG(*a2))
 				continue;
 
@@ -1607,13 +1954,13 @@ complete_qname_group(alignment * alignments, int nr_alignments,
 
 	/* Now write all alignments that have not been written yet */
 	for (i = 0; i < nr_alignments; ++i) {
-		if (!alignments[i].written) {
+		if (!alignments[i]->written) {
 			APPEND_ALIGNMENT_UNPAIRED(msg, "complete_qname_group",
-						  alignments[i], bw);
+						  *alignments[i], bw);
 			if (msg != MAL_SUCCEED)
 				return msg;
 
-			alignments[i].written = TRUE;
+			alignments[i]->written = TRUE;
 			++bw->cnt_alignments;
 		}
 	}
@@ -1621,20 +1968,20 @@ complete_qname_group(alignment * alignments, int nr_alignments,
 	return MAL_SUCCEED;
 }
 
-#define BAMSAM_TELL(bw) (bw->type == BAM ? bam_tell(bw->bam.input) : bw->cnt_alignments)
+#define BAMSAM_TELL(bw) (bw->type == BAM ? bam_tell(bw->bam.input) : (bw->cnt_alignments + 1))
 
 str
 process_alignments(bam_wrapper * bw, bit * some_thread_failed)
 {
-	alignment *aligs = NULL;
+	alignment **aligs = NULL;
 	int nr_aligs;
 
 	lng voffset;
 	bam1_t *alig;
 
-	int alignment_bytes_read;
 	int alig_index = 0;
 
+    bit eof = FALSE;
 	int i;
 	str msg = MAL_SUCCEED;
 
@@ -1645,17 +1992,26 @@ process_alignments(bam_wrapper * bw, bit * some_thread_failed)
 	voffset = BAMSAM_TELL(bw);
 	
 	if ((aligs =
-	     (alignment *) GDKmalloc(nr_aligs * sizeof(alignment))) == NULL) {
+	     (alignment **) GDKmalloc(nr_aligs * sizeof(alignment *))) == NULL) {
 		msg = createException(MAL, "process_alignments",
             MAL_MALLOC_FAIL);
 		goto cleanup;
 	}
-
-	/* Enable cleanup to check individual alignments */
-	memset(aligs, 0, nr_aligs * sizeof(alignment));
+    
+    /* Enable cleanup to check individual alignments */
+	memset(aligs, 0, nr_aligs * sizeof(alignment *));
+    
+    for (i = 0; i < nr_aligs; ++i) {
+        if ((aligs[i] = (alignment *)GDKmalloc(sizeof(alignment)))
+            == NULL) {
+            msg = createException(MAL, "process_alignments",
+                MAL_MALLOC_FAIL);
+            goto cleanup;
+        }
+    }
 
 	for (i = 0; i < nr_aligs; ++i) {
-		if (!init_alignment(aligs + i)) {
+		if (!init_alignment(bw, aligs[i])) {
 			msg = createException(MAL, "process_alignments",
                 MAL_MALLOC_FAIL);
 			goto cleanup;
@@ -1665,27 +2021,37 @@ process_alignments(bam_wrapper * bw, bit * some_thread_failed)
     if((alig = bam_init1()) == NULL) {
         msg = createException(MAL, "process_alignments",
             MAL_MALLOC_FAIL);
+        goto cleanup;
     }
 
 	while (TRUE) { /* One iteration per alignment */
+        alignment *a;
+        int aux_len;
+        
 		/* Start the processing of every alignment with
 		 * checking if we should return due to another
 		 * thread's failure */
 		if (*some_thread_failed)
 			goto cleanup;
-			
+	
+        /* First retrieve the next alignment */
+        a = aligs[alig_index];
 		if (bw->type == BAM) {
-		    alignment_bytes_read = bam_read1(bw->bam.input, alig);
+		    if (bam_read1(bw->bam.input, alig) < 0) {
+                break;
+            }
 		} else {
-		    alignment_bytes_read = samread(bw->sam.input, alig);
+		    if((msg = next_sam_alignment(bw->sam.input, voffset, a, &aux_len, &eof)) != MAL_SUCCEED) {
+                goto cleanup;
+            }
+            if (eof) {
+                break;
+            }
 	    }
-	    if (alignment_bytes_read < 0) {
-	        break;
-        }
 
 		if (bw->dbschema == 1 && alig_index > 0
-		    && strcmp(bam1_qname(alig),
-			      aligs[alig_index - 1].qname) != 0) {
+		    && strcmp((bw->type == BAM ? bam1_qname(alig) : a->qname),
+			      aligs[alig_index - 1]->qname) != 0) {
 			/* Qnames do not match, so the previous
 			 * alignments can be considered complete. Use
 			 * this knowledge to write the alignments for
@@ -1695,22 +2061,50 @@ process_alignments(bam_wrapper * bw, bit * some_thread_failed)
 
 			/* All alignments for the previous qname are
 			 * written to files, we can now start
-			 * overwriting them */
+			 * overwriting them. Swap alignments and reset index to 0 */
+            aligs[alig_index] = aligs[0];
+            aligs[0] = a;
 			alig_index = 0;
 		}
-		process_alignment(bw, voffset, alig, &aligs[alig_index]);
+        
+        if (bw->type == BAM) {
+            if((msg = bam1_t2alignment(bw, voffset, alig, a)) != MAL_SUCCEED) {
+                goto cleanup;
+            }
+        }
+        
+        /* At this point, a is completely up to date */
+        
+        if (bw->dbschema == 0) {
+            /* Write data directly if we are loading into the sfw storage schema */
+            APPEND_ALIGNMENT_UNPAIRED(msg, "process_alignments", *a, bw);
+            ++bw->cnt_alignments;
+            if (msg != MAL_SUCCEED) {
+                goto cleanup;
+            }
+        }
+        
+        /* Always write auxiliary data immediately */
+        if (bw->type == BAM) {
+            msg = write_aux_bam1_t(bw, alig, voffset);
+        } else {
+            msg = write_aux_str(bw, a->aux, aux_len, voffset);
+        }
+        
+        if (msg != MAL_SUCCEED) {
+            goto cleanup;
+        }
 
 		/* voffset can be updated for the next iteration at
 		 * this point already */
-		voffset = BAMSAM_TELL(bw);
+		voffset = BAMSAM_TELL(bw); 
 
 		if (bw->dbschema == 1) {
 			/* We are building the paired
-			 * schema. Therefore, alignments[alig_index]
-			 * is now filled with alignment data In some
+			 * schema. Therefore, a
+			 * is now filled with alignment data. In some
 			 * cases, we can dump it in unpaired storage
 			 * immediately */
-			alignment *a = &aligs[alig_index];
 
 			if (FIRS_SEGM(*a) == LAST_SEGM(*a) ||
 			    (SECO_ALIG(*a) &&
@@ -1760,7 +2154,7 @@ process_alignments(bam_wrapper * bw, bit * some_thread_failed)
 					for (i = nr_aligs; i < new_nr_aligs;
 					     ++i) {
 						if (!init_alignment
-						    (aligs + i)) {
+						    (bw, aligs[i])) {
 							msg = createException
 								(MAL,
 								 "process_alignments",
@@ -1785,7 +2179,10 @@ process_alignments(bam_wrapper * bw, bit * some_thread_failed)
 		bam_destroy1(alig);
 	if (aligs) {
 		for (i = 0; i < nr_aligs; ++i) {
-			clear_alignment(aligs + i);
+            if (aligs[i]) {
+                clear_alignment(bw, aligs[i]);
+                GDKfree(aligs[i]);
+            }
 		}
 		GDKfree(aligs);
 	}

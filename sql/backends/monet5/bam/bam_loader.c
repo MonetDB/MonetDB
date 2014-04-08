@@ -283,7 +283,7 @@ bam_loader(Client cntxt, MalBlkPtr mb, str * filenames, int nr_files,
 
 	/* Parse all headers */
 	for (i = 0; i < nr_files; ++i) {
-		TO_LOG("<bam_loader> Parsing BAM header for file '%s'...\n",
+		TO_LOG("<bam_loader> Parsing header for file '%s'...\n",
 		       filenames[i]);
 		if ((msg = process_header(bws + i)) != MAL_SUCCEED) {
 			goto cleanup;
@@ -310,7 +310,7 @@ bam_loader(Client cntxt, MalBlkPtr mb, str * filenames, int nr_files,
 
 	/* Create alignment storage */
 	for (i = 0; i < nr_files; ++i) {
-		TO_LOG("<bam_loader> Creating alignment tables for BAM file '%s'...\n", filenames[i]);
+		TO_LOG("<bam_loader> Creating alignment tables for file '%s'...\n", filenames[i]);
 		if ((dbschema == 0
 		     && create_alignment_storage_0(cntxt,
 						   "bam.create_storage_0",
