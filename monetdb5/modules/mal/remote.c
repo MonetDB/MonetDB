@@ -158,6 +158,7 @@ str RMTconnectScen(
 	char *s;
 	Mapi m;
 	MapiHdl hdl;
+	str msg;
 
 	/* just make sure the return isn't garbage */
 	*ret = 0;
@@ -213,7 +214,9 @@ str RMTconnectScen(
 	c->next = conns;
 	conns = c;
 
-	RMTquery(&hdl, "remote.connect", m, "remote.bintype();");
+	msg = RMTquery(&hdl, "remote.connect", m, "remote.bintype();");
+	if (msg)
+		return msg;
 	if (hdl != NULL && mapi_fetch_row(hdl)) {
 		char *val = mapi_fetch_field(hdl, 0);
 		c->type = (unsigned char)atoi(val);

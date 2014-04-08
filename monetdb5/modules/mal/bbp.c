@@ -655,7 +655,8 @@ CMDbbpdestroyBAT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	bid = (int *) getArgReference(stk, pci, 1);
 	immediate = (bit *) getArgReference(stk, pci, 2);
-	msg = CMDbbpreleaseBAT(cntxt,mb, stk, pci);
+	if ((msg = CMDbbpreleaseBAT(cntxt,mb, stk, pci)) != MAL_SUCCEED)
+		return msg;
 	if( *immediate) 
 		msg = BKCdestroyImmediate(&ret, bid);
 	else 

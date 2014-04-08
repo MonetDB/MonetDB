@@ -276,6 +276,13 @@ newBox(str name)
 			obj->val = newGlobalStack(MAXVARS);
 			if ( obj->val == NULL || obj->sym == NULL){
 				showException(GDKout, MAL,"box.new", MAL_MALLOC_FAIL);
+				if (obj->name)
+					GDKfree(obj->name);
+				if (obj->sym)
+					freeMalBlk(obj->sym);
+				if (obj->val)
+					GDKfree(obj->val);
+				GDKfree(obj);
 				return NULL;
 			}
 			MT_lock_init(&obj->lock,"M5_box_lock");
@@ -745,6 +752,7 @@ loadBox(str name)
 {
 	char boxfile[PATHLENGTH];
 	size_t i = 0;
+	str msg;
 
 	snprintf(boxfile, PATHLENGTH, "%s%cbox", GDKgetenv("gdk_dbpath"), DIR_SEP);
 	mkdir(boxfile,0755); /* ignore errors */
@@ -756,8 +764,16 @@ loadBox(str name)
 	if (access(boxfile, R_OK) == 0) {
 		Client child= MCforkClient(mal_clients);
 		if( child != mal_clients){
-			defaultScenario(child);
-			evalFile(child, boxfile, 0);
+			msg = defaultScenario(child);
+			if (msg) {
+				GDKfree(msg);
+				return;
+			}
+			msg = evalFile(child, boxfile, 0);
+			if (msg) {
+				GDKfree(msg);
+				return;
+			}
 			MCcloseClient(child);
 #ifdef DEBUG_MAL_BOX
 			mnstr_printf(GDKout, "loadBox:loaded the file %s\n", boxfile);
