@@ -69,6 +69,7 @@ typedef struct bam_wrapper {
 	lng cnt_alignments_extra;
 	lng cnt_alignments_paired_primary;
 	lng cnt_alignments_paired_secondary;
+    lng cnt_alignments_total;
 
 	/* File paths to binary files */
 	char fp_files[6][BW_FP_BUF_SIZE];

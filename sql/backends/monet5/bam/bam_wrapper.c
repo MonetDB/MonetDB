@@ -182,6 +182,7 @@ init_bam_wrapper(bam_wrapper * bw, filetype type, str file_location,
 	bw->cnt_alignments_extra = 0;
 	bw->cnt_alignments_paired_primary = 0;
 	bw->cnt_alignments_paired_secondary = 0;
+    bw->cnt_alignments_total = 0;
 
 	for (i = 0; i < 6; ++i) {
 		snprintf(bw->fp_files[i], BW_FP_BUF_SIZE, "%s/files_%d",
@@ -1968,7 +1969,7 @@ complete_qname_group(alignment ** alignments, int nr_alignments,
 	return MAL_SUCCEED;
 }
 
-#define BAMSAM_TELL(bw) (bw->type == BAM ? bam_tell(bw->bam.input) : (bw->cnt_alignments + 1))
+#define BAMSAM_TELL(bw) (bw->type == BAM ? bam_tell(bw->bam.input) : (bw->cnt_alignments_total + 1))
 
 str
 process_alignments(bam_wrapper * bw, bit * some_thread_failed)
@@ -2048,6 +2049,8 @@ process_alignments(bam_wrapper * bw, bit * some_thread_failed)
                 break;
             }
 	    }
+        
+        ++bw->cnt_alignments_total;
 
 		if (bw->dbschema == 1 && alig_index > 0
 		    && strcmp((bw->type == BAM ? bam1_qname(alig) : a->qname),
