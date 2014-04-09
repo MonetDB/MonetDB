@@ -102,3 +102,5 @@ CREATE FUNCTION Centroid(g Geometry) RETURNS Geometry external name geom."Centro
 CREATE FUNCTION StartPoint(g Geometry) RETURNS Geometry external name geom."StartPoint";
 CREATE FUNCTION EndPoint(g Geometry) RETURNS Geometry external name geom."EndPoint";
 CREATE FUNCTION NumPoints(g Geometry) RETURNS integer external name geom."NumPoints";
+CREATE FUNCTION PointN(g Geometry, n SMALLINT) RETURNS Geometry external name geom."PointN";
+
