@@ -30,6 +30,7 @@
 #include <samtools/bam.h>
 
 #include "bam_globals.h"
+#include "bam_db_interface.h"
 #include "bam_export.h"
 
 
@@ -44,7 +45,7 @@ typedef struct bam_field {
 
 /**
  * Copied directly from bam.h/bam_import.c for use by fill_bam_alig
- * Can not change the call to realloc to GDKrealloc, since
+ * Can not change the calls to realloc to GDKrealloc, since
  * bam_destroy1 does not use GDKfree...
  */
 #ifndef kroundup32
@@ -393,6 +394,7 @@ cleanup_fields(bam_field fields[11]) {
     }
 }
 
+
 #define CUR_STR(field, i) ((str) BUNtail(field.iter, (field.cur+i)))
 #define CUR_SHT(field, i) (*(sht *) BUNtail(field.iter, (field.cur+i)))
 #define CUR_INT(field, i) (*(int *) BUNtail(field.iter, (field.cur+i)))
@@ -409,6 +411,7 @@ sam_export(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
     int tuple_count = 0;
     
     int i;
+    str sql;
     str msg = MAL_SUCCEED;
     
     memset(fields, 0, 11 * sizeof(bam_field));
@@ -431,6 +434,13 @@ sam_export(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
                 CUR_INT(fields[3], i), CUR_SHT(fields[4], i), CUR_STR(fields[5], i),
                 CUR_STR(fields[6], i), CUR_INT(fields[7], i), CUR_INT(fields[8], i),
                 CUR_STR(fields[9], i), CUR_STR(fields[10], i));
+    }
+    
+    /* If we got here, we succesfully exported the result. Drop all data in export table */
+    sql = "DELETE FROM bam.export;";
+    RUN_SQL(cntxt, &sql, "bam.drop_export", msg);
+    if (msg != MAL_SUCCEED) {
+        REUSE_EXCEPTION(msg, MAL, "sam_export", "Could not clear the export table after exporting: %s", msg);
     }
     
     (void)stk;
@@ -465,7 +475,10 @@ bam_export(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
     bam1_t *alig = NULL;
     
     int i;
+    str sql;
     str msg = MAL_SUCCEED;
+    
+    throw(MAL, "bam_export", "Exporting to BAM files is not implemented yet. This is our first priority for the next release of the BAM library.");
 
     if ((output = bam_open(output_path, "wb")) == NULL) {
         msg = createException(MAL, "bam_export", "Could not open output file '%s' for writing", output_path);
@@ -516,6 +529,13 @@ bam_export(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
         }
         
         bam_write1(output, alig);
+    }
+    
+    /* If we got here, we succesfully exported the result. Drop all data in export table */
+    sql = "DELETE FROM bam.export;";
+    RUN_SQL(cntxt, &sql, "bam.drop_export", msg);
+    if (msg != MAL_SUCCEED) {
+        REUSE_EXCEPTION(msg, MAL, "sam_export", "Could not clear the export table after exporting: %s", msg);
     }
     
     (void)stk;
