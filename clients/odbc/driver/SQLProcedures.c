@@ -127,21 +127,21 @@ SQLProcedures_(ODBCStmt *stmt,
 #define F_PROC 2
 #define F_UNION 5
 	snprintf(query_end, 1000,
-		 "select \"e\".\"value\" as \"procedure_cat\", "
-			"\"s\".\"name\" as \"procedure_schem\", "
-			"\"p\".\"name\" as \"procedure_name\", "
-			"0 as \"num_input_params\", "
-			"0 as \"num_output_params\", "
-			"0 as \"num_result_sets\", "
-			"cast('' as varchar(1)) as \"remarks\", "
-			"cast(case when \"p\".\"type\" = %d then %d else %d end as smallint) as \"procedure_type\" "
-		 "from \"sys\".\"schemas\" as \"s\", "
-		      "\"sys\".\"env\"() as \"e\", "
-		      "\"sys\".\"functions\" as \"p\" "
-		 "where \"p\".\"schema_id\" = \"s\".\"id\" and "
-		       "\"p\".\"sql\" = true and "
-		       "\"p\".\"type\" in (%d, %d, %d) and "
-		       "\"e\".\"name\" = 'gdk_dbname'",
+		 "select e.value as procedure_cat, "
+			"s.name as procedure_schem, "
+			"p.name as procedure_name, "
+			"0 as num_input_params, "
+			"0 as num_output_params, "
+			"0 as num_result_sets, "
+			"cast('' as varchar(1)) as remarks, "
+			"cast(case when p.type = %d then %d else %d end as smallint) as procedure_type "
+		 "from sys.schemas as s, "
+		      "sys.env() as e, "
+		      "sys.functions as p "
+		 "where p.schema_id = s.id and "
+		       "p.sql = true and "
+		       "p.type in (%d, %d, %d) and "
+		       "e.name = 'gdk_dbname'",
 		 F_PROC, SQL_PT_PROCEDURE, SQL_PT_FUNCTION,
 		 F_FUNC, F_PROC, F_UNION);
 	assert(strlen(query) < 800);
@@ -169,7 +169,7 @@ SQLProcedures_(ODBCStmt *stmt,
 
 	/* add the ordering */
 	strcpy(query_end,
-	       " order by \"procedure_cat\", \"procedure_schem\", \"procedure_name\"");
+	       " order by procedure_cat, procedure_schem, procedure_name");
 	query_end += strlen(query_end);
 
 	/* query the MonetDB data dictionary tables */

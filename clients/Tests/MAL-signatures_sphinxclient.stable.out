@@ -2667,13 +2667,9 @@ command algebra.sort(b:bat[:any_1,:any_2]):bat[:any_1,:any_2]
 address ALGhsort;
 comment Returns a BAT copy sorted on the head column.
 
-command algebra.subsample(b:bat[:oid,:any_1],num:int):bat[:oid,:oid] 
-address ALGsubsample;
-comment Return the oids of a random selection of size 'num' from the input BAT.
-
-command algebra.sample(b:bat[:oid,:any_2],num:int):bat[:oid,:any_2] 
+command algebra.sample(b:bat[:oid,:any_1],num:int):bat[:oid,:oid] 
 address ALGsample;
-comment Produce a random selection of size 'num' from the input BAT.
+comment Returns the oids of a random selection of size 'num' from the input BAT.
 
 command algebra.subslice(b:bat[:oid,:any_1],x:wrd,y:wrd):bat[:oid,:oid] 
 address ALGsubslice_wrd;
@@ -3021,6 +3017,38 @@ command batstr.like(s:bat[:oid,:str],pat:str):bat[:oid,:bit]
 address BATPCRElike2;
 command batstr.like(s:bat[:oid,:str],pat:str,esc:str):bat[:oid,:bit] 
 address BATPCRElike;
+command batstr.lpad(s:bat[:oid,:str],n:bat[:oid,:int],s2:bat[:oid,:str]):bat[:oid,:str] 
+address STRbatLpad2_bat_bat;
+comment Prepend the second strings to the first strings to reach the given lengths. Truncate the first strings on the right if their lengths is larger than the given lengths.
+
+command batstr.lpad(s:bat[:oid,:str],n:int,s2:bat[:oid,:str]):bat[:oid,:str] 
+address STRbatLpad2_const_bat;
+comment Prepend the second strings to the first strings to reach the given length. Truncate the first strings on the right if their lengths is larger than the given length.
+
+command batstr.lpad(s:bat[:oid,:str],n:bat[:oid,:int],s2:str):bat[:oid,:str] 
+address STRbatLpad2_bat_const;
+comment Prepend the second string to the first strings to reach the given lengths. Truncate the first strings on the right if their lengths is larger than the given lengths.
+
+command batstr.lpad(s:bat[:oid,:str],n:int,s2:str):bat[:oid,:str] 
+address STRbatLpad2_const_const;
+comment Prepend the second string to the first strings to reach the given length. Truncate the first strings on the right if their lengths is larger than the given length.
+
+command batstr.lpad(s:bat[:oid,:str],n:bat[:oid,:int]):bat[:oid,:str] 
+address STRbatLpad_bat;
+comment Prepend whitespaces to the strings to reach the given lengths. Truncate the strings on the right if their lengths is larger than the given lengths.
+
+command batstr.lpad(s:bat[:oid,:str],n:int):bat[:oid,:str] 
+address STRbatLpad_const;
+comment Prepend whitespaces to the strings to reach the given length. Truncate the strings on the right if their lengths is larger than the given length.
+
+command batstr.ltrim(s:bat[:oid,:str],s2:bat[:oid,:str]):bat[:oid,:str] 
+address STRbatLtrim2_bat;
+comment Strip characters in the second strings from start of the first strings.
+
+command batstr.ltrim(s:bat[:oid,:str],s2:str):bat[:oid,:str] 
+address STRbatLtrim2_const;
+comment Strip characters in the second string from start of the first strings.
+
 command batstr.ltrim(s:bat[:oid,:str]):bat[:oid,:str] 
 address STRbatLtrim;
 comment Strip whitespaces from start of a string.
@@ -3048,6 +3076,38 @@ comment Reverse search for a substring. Returns position, -1 if not found.
 command batstr.r_search(s:bat[:oid,:str],c:bat[:oid,:str]):bat[:oid,:int] 
 address STRbatRstrSearch;
 comment Reverse search for a substring. Returns position, -1 if not found.
+
+command batstr.rpad(s:bat[:oid,:str],n:bat[:oid,:int],s2:bat[:oid,:str]):bat[:oid,:str] 
+address STRbatRpad2_bat_bat;
+comment Append the second strings to the first strings to reach the given lengths. Truncate the first strings on the right if their lengths is larger than the given lengths.
+
+command batstr.rpad(s:bat[:oid,:str],n:int,s2:bat[:oid,:str]):bat[:oid,:str] 
+address STRbatRpad2_const_bat;
+comment Append the second strings to the first strings to reach the given length. Truncate the first strings on the right if their lengths is larger than the given length.
+
+command batstr.rpad(s:bat[:oid,:str],n:bat[:oid,:int],s2:str):bat[:oid,:str] 
+address STRbatRpad2_bat_const;
+comment Append the second string to the first strings to reach the given lengths. Truncate the first strings on the right if their lengths is larger than the given lengths.
+
+command batstr.rpad(s:bat[:oid,:str],n:int,s2:str):bat[:oid,:str] 
+address STRbatRpad2_const_const;
+comment Append the second string to the first strings to reach the given length. Truncate the first strings on the right if their lengths is larger than the given length.
+
+command batstr.rpad(s:bat[:oid,:str],n:bat[:oid,:int]):bat[:oid,:str] 
+address STRbatRpad_bat;
+comment Append whitespaces to the strings to reach the given lengths. Truncate the strings on the right if their lengths is larger than the given lengths.
+
+command batstr.rpad(s:bat[:oid,:str],n:int):bat[:oid,:str] 
+address STRbatRpad_const;
+comment Append whitespaces to the strings to reach the given length. Truncate the strings on the right if their lengths is larger than the given length.
+
+command batstr.rtrim(s:bat[:oid,:str],s2:bat[:oid,:str]):bat[:oid,:str] 
+address STRbatRtrim2_bat;
+comment Strip characters in the second strings from end of the first strings.
+
+command batstr.rtrim(s:bat[:oid,:str],s2:str):bat[:oid,:str] 
+address STRbatRtrim2_const;
+comment Strip characters in the second string from end of the first strings.
 
 command batstr.rtrim(s:bat[:oid,:str]):bat[:oid,:str] 
 address STRbatRtrim;
@@ -3092,6 +3152,14 @@ comment Prefix check.
 command batstr.stringlength(s:bat[:oid,:str]):bat[:oid,:int] 
 address STRbatstringLength;
 comment Return the length of a right trimed string.
+
+command batstr.trim(s:bat[:oid,:str],s2:bat[:oid,:str]):bat[:oid,:str] 
+address STRbatStrip2_bat;
+comment Strip characters in the second strings around the first strings.
+
+command batstr.trim(s:bat[:oid,:str],s2:str):bat[:oid,:str] 
+address STRbatStrip2_const;
+comment Strip characters in the second string around the first strings.
 
 command batstr.trim(s:bat[:oid,:str]):bat[:oid,:str] 
 address STRbatStrip;
@@ -41022,13 +41090,37 @@ command pcre.select(pat:str,strs:bat[:oid,:str]):bat[:oid,:str]
 address PCREselectDef;
 comment Select tuples based on the pattern
 
-pattern pqueue.topn_max(a:bat[:oid,:any_1],n:wrd,elim:bit):bat[:oid,:oid] 
-address PQtopn_max;
-comment Return the top n elements using a min-pqueue with/without duplicate elimination
+pattern pqueue.topn_max(g:bat[:oid,:oid],b:bat[:oid,:any_1],n:wrd) (piv:bat[:oid,:oid],gid:bat[:oid,:oid]) 
+address PQtopn4_minmax;
+comment Return unique top n withn groups
 
-pattern pqueue.topn_min(a:bat[:oid,:any_1],n:wrd,elim:bit):bat[:oid,:oid] 
-address PQtopn_min;
-comment Return the top n elements using a min-pqueue with/without duplicate elimination
+pattern pqueue.topn_min(g:bat[:oid,:oid],b:bat[:oid,:any_1],n:wrd) (piv:bat[:oid,:oid],gid:bat[:oid,:oid]) 
+address PQtopn4_minmax;
+comment Return unique top n within groups
+
+pattern pqueue.topn_max(gid:bat[:oid,:oid],b:bat[:oid,:any_1],n:wrd):bat[:oid,:oid] 
+address PQtopn3_minmax;
+comment Return the top n elements using a max-pqueue
+
+pattern pqueue.topn_min(gid:bat[:oid,:oid],b:bat[:oid,:any_1],n:wrd):bat[:oid,:oid] 
+address PQtopn3_minmax;
+comment Return the top n elements using a min-pqueue
+
+pattern pqueue.topn_max(b:bat[:oid,:any_1],n:wrd) (piv:bat[:oid,:oid],gid:bat[:oid,:oid]) 
+address PQtopn2_minmax;
+comment Return unique top n withn groups
+
+pattern pqueue.topn_min(b:bat[:oid,:any_1],n:wrd) (piv:bat[:oid,:oid],gid:bat[:oid,:oid]) 
+address PQtopn2_minmax;
+comment Return unique top n within groups
+
+pattern pqueue.topn_max(a:bat[:oid,:any_1],n:wrd):bat[:oid,:oid] 
+address PQtopn_minmax;
+comment Return the top n elements using a max-pqueue
+
+pattern pqueue.topn_min(a:bat[:oid,:any_1],n:wrd):bat[:oid,:oid] 
+address PQtopn_minmax;
+comment Return the top n elements using a min-pqueue
 
 command pqueue.topn_max(a:bat[:oid,:oid],t:bat[:void,:any_1],n:wrd):bat[:oid,:oid] 
 address PQtopn2_anymax;
@@ -41388,17 +41480,13 @@ pattern recycle.setCache(clines:int):void
 address RECYCLEsetCache;
 comment Set recycler cache line parameter
 
-command sample.subuniform(b:bat[:oid,:any],s:wrd):bat[:oid,:oid] 
-address SAMPLEsubuniform;
-comment Returns the oids of a uniform sample of size s
-
-command sample.uniform(b:bat[:oid,:any],p:dbl):bat[:oid,:any] 
+command sample.uniform(b:bat[:oid,:any],p:dbl):bat[:oid,:oid] 
 address SAMPLEuniform_dbl;
-comment Returns a uniform sample of size = (p x count(b)), where 0 <= p <= 1.0
+comment Returns the oids of a uniform sample of size = (p x count(b)), where 0 <= p <= 1.0
 
-command sample.uniform(b:bat[:oid,:any],s:wrd):bat[:oid,:any] 
+command sample.uniform(b:bat[:oid,:any],s:wrd):bat[:oid,:oid] 
 address SAMPLEuniform;
-comment Returns a uniform sample of size s
+comment Returns the oids of a uniform sample of size s
 
 command sabaoth.epilogue():void 
 address SABepilogue;
@@ -41773,22 +41861,6 @@ pattern sql.eval(cmd:str):void
 address SQLstatement;
 comment Compile and execute a single sql statement
 
-pattern sql.gzexpand(sch:str,tbl:str):void 
-address SQLexpand;
-comment Remove the compressed image
-
-pattern sql.gztruncate(sch:str,tbl:str):void 
-address SQLtruncate;
-comment Remove the tables when you have a compressed image
-
-pattern sql.gzdecompress(sch:str,tbl:str):void 
-address SQLgzdecompress;
-comment Perform LZ decompression on a table
-
-pattern sql.gzcompress(sch:str,tbl:str):void 
-address SQLgzcompress;
-comment Perform LZ compression on a table
-
 command sql.getVersion(clientid:int):lng 
 address mvc_getVersion;
 comment Return the database version identifier for a client
@@ -42136,6 +42208,18 @@ command str.like(s:str,pat:str):bit
 address STRlikewrap2;
 comment SQL pattern match function
 
+command str.lpad(s:str,len:int,s2:str):str 
+address STRLpad2;
+comment Fill up the first string to the given length prepending characters of the second string.
+
+command str.lpad(s:str,len:int):str 
+address STRLpad;
+comment Fill up a string to the given length prepending the whitespace character.
+
+command str.ltrim(s:str,s2:str):str 
+address STRLtrim2;
+comment Remove the longest string containing only characters from the second string from the start of the first string.
+
 command str.ltrim(s:str):str 
 address STRLtrim;
 comment Strip whitespaces from start of a string.
@@ -42167,6 +42251,18 @@ address STRrepeat;
 command str.replace(s:str,pat:str,s2:str):str 
 address STRreplace;
 comment Insert a string into another
+
+command str.rpad(s:str,len:int,s2:str):str 
+address STRRpad2;
+comment Fill up the first string to the given length appending characters of the second string.
+
+command str.rpad(s:str,len:int):str 
+address STRRpad;
+comment Fill up a string to the given length appending the whitespace character.
+
+command str.rtrim(s:str,s2:str):str 
+address STRRtrim2;
+comment Remove the longest string containing only characters from the second string from the end of the first string.
 
 command str.rtrim(s:str):str 
 address STRRtrim;
@@ -42221,6 +42317,10 @@ comment Return the tail s[offset..n]	 of a string s[0..n].
 command str.str(s:str):str 
 address STRtostr;
 comment Noop routine.
+
+command str.trim(s:str,s2:str):str 
+address STRStrip2;
+comment Remove the longest string containing only characters from the second string around the first string.
 
 command str.trim(s:str):str 
 address STRStrip;

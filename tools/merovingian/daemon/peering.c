@@ -66,7 +66,9 @@ peeringServerThread(void *d)
 	 * disconnected by either party (typically a shutdown). */
 
 	masquerade = NULL;
-	len = read(s, data, sizeof(data));
+	len = read(s, data, sizeof(data) - 1);
+	if (len > 0)
+		data[len] = 0;
 	if (len > 0 && strncmp(data, "tunnel ", 7) == 0) {
 		/* tunnel mode */
 		masquerade = strdup(data + 7);

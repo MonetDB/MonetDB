@@ -2223,6 +2223,8 @@ gdk_export lng IMPSimprintsize(BAT *b);
  * @tab GDKfree (void* blk)
  * @item str
  * @tab GDKstrdup (str s)
+ * @item str
+ * @tab GDKstrndup (str s, size_t n)
  * @end multitable
  *
  * These utilities are primarily used to maintain control over
@@ -2250,6 +2252,7 @@ gdk_export void *GDKzalloc(size_t size);
 gdk_export void *GDKrealloc(void *pold, size_t size);
 gdk_export void GDKfree(void *blk);
 gdk_export str GDKstrdup(const char *s);
+gdk_export str GDKstrndup(const char *s, size_t n);
 
 #if !defined(NDEBUG) && !defined(__clang_analyzer__)
 /* In debugging mode, replace GDKmalloc and other functions with a
@@ -2317,6 +2320,19 @@ gdk_export str GDKstrdup(const char *s);
 				"#GDKstrdup(len=" SZFMT ") -> " PTRFMT	\
 				" %s[%s:%d]\n",				\
 				strlen(_str),				\
+				PTRFMTCAST _res,			\
+				__func__, __FILE__, __LINE__);		\
+		_res;							\
+	})
+#define GDKstrndup(s,n)							\
+	({								\
+		const char *_str = (s);					\
+		void *_res = GDKstrndup(_str,n);				\
+		ALLOCDEBUG						\
+			fprintf(stderr,					\
+				"#GDKstrndup(len=" SZFMT ") -> " PTRFMT	\
+				" %s[%s:%d]\n",				\
+				n,				\
 				PTRFMTCAST _res,			\
 				__func__, __FILE__, __LINE__);		\
 		_res;							\
@@ -2436,6 +2452,16 @@ GDKstrdup_debug(const char *str, const char *filename, int lineno)
 	return res;
 }
 #define GDKstrdup(s)	GDKstrdup_debug((s), __FILE__, __LINE__)
+static inline char *
+GDKstrndup_debug(const char *str, size_t n, const char *filename, int lineno)
+{
+	void *res = GDKstrndup(str,n);
+	ALLOCDEBUG fprintf(stderr, "#GDKstrndup(len=" SZFMT ") -> "
+			   PTRFMT " [%s:%d]\n",
+			   n, PTRFMTCAST res, filename, lineno);
+	return res;
+}
+#define GDKstrndup(s)	GDKstrndup_debug((s), __FILE__, __LINE__)
 static inline void *
 GDKmmap_debug(const char *path, int mode, size_t len, const char *filename, int lineno)
 {

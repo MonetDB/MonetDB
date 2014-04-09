@@ -1,0 +1,48 @@
+stdout of test 'emilifinish` in directory 'sql/backends/monet5/datacell` itself:
+
+
+# 21:09:10 >  
+# 21:09:10 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=36774" "--set" "mapi_usock=/var/tmp/mtest-26187/.s.monetdb.36774" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/current//Linux/var/MonetDB/mTests_sql_backends_monet5_datacell" "--set" "mal_listing=0"
+# 21:09:10 >  
+
+# MonetDB 5 server v11.18.0
+# This is an unreleased version
+# Serving database 'mTests_sql_backends_monet5_datacell', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.591 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:36774/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-26187/.s.monetdb.36774
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+# MonetDB/DataCell loaded
+
+Ready.
+
+# 21:09:10 >  
+# 21:09:10 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-26187" "--port=36774"
+# 21:09:10 >  
+
+#DROP  PROCEDURE datacell.splitter;
+#DROP  PROCEDURE datacell.firewarning;
+#DROP  PROCEDURE datacell.firespotted;
+#DROP  PROCEDURE datacell.observation;
+#DROP  PROCEDURE datacell.enrich;
+#DROP  PROCEDURE datacell.hot;
+#DROP  TABLE datacell.istream;
+#DROP  TABLE datacell.area;
+#DROP  TABLE datacell.sensors;
+#DROP  TABLE datacell.states;
+#DROP  TABLE datacell.warden;
+#DROP  TABLE datacell.observations;
+#DROP  TABLE datacell.hotsensors;
+#DROP  TABLE datacell.hotsensors1;
+#DROP  TABLE datacell.hotsensors2; 
+
+# 21:09:11 >  
+# 21:09:11 >  "Done."
+# 21:09:11 >  
+

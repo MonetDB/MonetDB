@@ -250,13 +250,13 @@ sql_grant_role(mvc *m, str grantee, str auth /*, grantor?, admin? */ )
 
 	rid = table_funcs.column_find_row(m->session->tr, auths_name, grantee, NULL);
 	if (rid == oid_nil)
-		return sql_message("M1M05!GRANT: cannot grant ROLE '%s' to ROLE '%s'", grantee, auth );
+		return sql_message("M1M05!GRANT: cannot grant ROLE '%s' to ROLE '%s'", auth, grantee);
 	grantee_id = table_funcs.column_find_value(m->session->tr, auths_id, rid);
 
 	rid = table_funcs.column_find_row(m->session->tr, auths_name, auth, NULL);
 	if (rid == oid_nil) {
 		_DELETE(grantee_id);
-		return sql_message("M1M05!GRANT: cannot grant ROLE '%s' to ROLE '%s'", grantee, auth );
+		return sql_message("M1M05!GRANT: cannot grant ROLE '%s' to ROLE '%s'", auth, grantee);
 	}
 	auth_id = table_funcs.column_find_value(m->session->tr, auths_id, rid);
 

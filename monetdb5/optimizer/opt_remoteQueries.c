@@ -166,6 +166,7 @@ OPTremoteQueriesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 	ValRecord cst;
 	cst.vtype= TYPE_int;
 	cst.val.ival= 0;
+	cst.len = 0;
 
 
 	OPTDEBUGremoteQueries

@@ -743,16 +743,13 @@ retryRead:
 				/* optional file */
 				skipBlanc(cntxt, b);
 				if (*b == 0) {
-					strcpy(fname, monet_cwd);
-					strcat(fname, name);
+					snprintf(fname, sizeof(fname), "%s%s", monet_cwd, name);
 				} else if (*b != '/') {
-					strcpy(fname, monet_cwd);
-					strcat(fname, name);
+					snprintf(fname, sizeof(fname), "%s%s", monet_cwd, name);
 				} else if (b[strlen(b) - 1] == '/') {
-					strcpy(fname, b);
-					strcat(fname, name + 1);
+					snprintf(fname, sizeof(fname), "%s%s", b, name + 1);
 				} else
-					strcat(fname, b);
+					snprintf(fname, sizeof(fname), "%s", b);
 
 				showFlowGraph(mdot, 0, fname);
 				mnstr_printf(out, "#dot file '%s' created\n", fname);

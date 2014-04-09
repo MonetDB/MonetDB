@@ -1,6 +1,10 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Wed Apr  9 2014 Jennie Zhang <y.zhang@cwi.nl>
+- Added PostgreSQL compatible string TRIM, LTRIM, RTRIM, LPAD and RPAD
+  functions
+
 * Fri Dec 13 2013 Sjoerd Mullender <sjoerd@acm.org>
 - Stop support for upgrading directly from a database created with a
   server from the Oct2012 release or older.  You can upgrade via the

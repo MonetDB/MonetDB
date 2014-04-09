@@ -704,6 +704,7 @@ typeChecker(stream *out, Module scope, MalBlkPtr mb, InstrPtr p, int silent)
 				ValRecord cst;
 				cst.vtype = TYPE_void;
 				cst.val.oval = void_nil;
+				cst.len = 0;
 
 				rhs = isaBatType(lhs) ? TYPE_bat : lhs;
 				p->argv[i] = defConstant(mb, rhs, &cst);

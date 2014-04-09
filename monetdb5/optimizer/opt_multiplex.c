@@ -258,5 +258,6 @@ OPTmultiplexImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	if (mb->errors){
 		/* rollback */
 	}
+	GDKfree(msg);
 	return mb->errors? 0: actions;
 }
