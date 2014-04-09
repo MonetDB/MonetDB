@@ -517,7 +517,9 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 					qbuf, tmp);
 #endif
 			MT_lock_unset(&c->lock, "remote.get");
-			throw(MAL, "remote.get", "%s", tmp);
+			val = createException(MAL, "remote.get", "%s", tmp);
+			GDKfree(tmp);
+			return val;
 		}
 		h = getHeadType(rtype);
 		t = getTailType(rtype);

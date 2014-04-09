@@ -873,6 +873,7 @@ IOimport(int *ret, int *bid, str *fnme)
 			throw(MAL, "io.import", "insert failed");
 		}
 
+#if 0							/* why do this? any measured effects? */
 /*
  * Unmap already parsed memory, to keep the memory usage low.
  */
@@ -882,6 +883,7 @@ IOimport(int *ret, int *bid, str *fnme)
 			MT_munmap(base, MAXBUF);
 			base += MAXBUF;
 		}
+#endif
 #endif
 	}
 	/* Cleanup and exit. Return the filled BAT.  */

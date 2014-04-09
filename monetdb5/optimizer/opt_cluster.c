@@ -655,6 +655,8 @@ cluster_join(MalBlkPtr mb)
 		    q->argc == 3 && 
 			((state_mr == JOIN_MARK && mr == getArg(q,2)) || 
 			 (state_rmr == JOIN_MARK && rmr == getArg(q,2)))) {
+			GDKfree(join);
+			GDKfree(prj);
 			return 0;
 		} else if (getModuleId(q) == algebraRef &&
 		    	   getFunctionId(q) == leftjoinRef &&

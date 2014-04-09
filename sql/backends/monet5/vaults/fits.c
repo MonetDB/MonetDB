@@ -622,7 +622,7 @@ str FITSdirpat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/*	mnstr_printf(GDKout,"#fulldir: %s \nSize: %lu\n",fulldirectory, globbuf.gl_pathc);*/
 
 	if (globbuf.gl_pathc == 0)
-		msg = createException(MAL, "listdir", "Couldn't open the directory or there are no files that match the pattern");
+		throw(MAL, "listdir", "Couldn't open the directory or there are no files that match the pattern");
 
 	for (j = 0; j < globbuf.gl_pathc; j++) {
 		char stmt[BUFSIZ];
@@ -636,6 +636,7 @@ str FITSdirpat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			snprintf(stmt, BUFSIZ, ATTACHDIR, fname);
 			msg = SQLstatementIntern(cntxt, &s, "fits.listofdirpat", TRUE, FALSE);
 			fits_close_file(fptr, &status);
+			break;
 		}
 	}
 

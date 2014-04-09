@@ -138,8 +138,10 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc )
 	}
 
 	upgrade = (bit*) GDKzalloc(sizeof(bit)*mq->vtop);
-	if( upgrade == NULL) 
+	if( upgrade == NULL) {
+		freeMalBlk(mq);
 		return 0;
+	}
 
 	setVarType(mq, 0,newBatType(TYPE_oid, getArgType(mb,p,0)));
 	clrVarFixed(mq,getArg(getInstrPtr(mq,0),0)); /* for typing */
