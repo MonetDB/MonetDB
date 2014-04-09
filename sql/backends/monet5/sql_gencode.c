@@ -2366,7 +2366,7 @@ monet5_resolve_function(ptr M, sql_func *f)
 }
 
 /* TODO handle aggr */
-static int
+int
 backend_create_func(backend *be, sql_func *f, list *restypes, list *ops)
 {
 	mvc *m = be->mvc;

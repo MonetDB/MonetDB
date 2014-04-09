@@ -3356,7 +3356,6 @@ gdk_export BAT *BATintersectcand(BAT *a, BAT *b);
  *
  */
 gdk_export BAT *BATsample(BAT *b, BUN n);
-gdk_export BAT *BATsample_(BAT *b, BUN n); /* version that expects void head and returns oids */
 
 /*
  *

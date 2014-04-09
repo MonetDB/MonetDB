@@ -1506,7 +1506,7 @@ strRead(str a, stream *s, size_t cnt)
 
 	(void) cnt;
 	assert(cnt == 1);
-	if (!mnstr_readInt(s, &len))
+	if (mnstr_readInt(s, &len) != 1)
 		return NULL;
 	if ((a = GDKmalloc(len + 1)) == NULL)
 		return NULL;

@@ -1,0 +1,6 @@
+# ChangeLog file for mapilib
+# This file is updated with Maddlog
+
+* Fri Mar 28 2014 Sjoerd Mullender <sjoerd@acm.org>
+- Changed mapi_timeout argument from seconds to milliseconds.
+

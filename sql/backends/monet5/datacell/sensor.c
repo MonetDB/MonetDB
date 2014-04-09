@@ -460,7 +460,7 @@ int main(int argc, char **argv)
 				return 0;
 			}
 			if (server) {
-				createThread = MT_create_thread(&pid, (void (*)(void *))produceServerStream, se, MT_THR_DETACHED);
+				createThread = MT_create_thread(&pid, (void (*)(void *))produceServerStream, se, MT_THR_JOINABLE);
 #ifdef SENSOR_DEBUG
 				if (createThread)
 					mnstr_printf(SEout, "#Create thread is : %d \n", createThread);

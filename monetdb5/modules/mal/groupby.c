@@ -103,7 +103,7 @@ GROUPcollect( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		sample = BATcount(b) < 1000 ? BATcount(b): 1000;
 		bs = BATsample( b, sample);
 		if (bs) {
-			bh = BATkunique(BATmirror(bs));
+			bh = BATsubunique(b, bs);
 			a->unique[a->last] = BATcount(bh);
 			if ( bh ) BBPreleaseref(bh->batCacheid);
 		}

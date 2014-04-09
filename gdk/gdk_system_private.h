@@ -25,3 +25,5 @@
 
 __declspec(noreturn) void MT_exit_thread(int status)
 	__attribute__((__noreturn__));
+int MT_kill_thread(MT_Id t)
+	__attribute__((__visibility__("hidden")));

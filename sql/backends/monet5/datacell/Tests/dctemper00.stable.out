@@ -1,34 +1,61 @@
 stdout of test 'dctemper00` in directory 'sql/backends/monet5/datacell` itself:
 
 
-# 16:57:24 >  
-# 16:57:24 >   mserver5  --debug=10 --set gdk_nr_threads=0  --set "gdk_dbfarm=/net/rig.ins.cwi.nl/export/scratch0/manegold/Monet/HG/Aug2011/prefix/--enable-datacell_--disable-debug_--enable-optimize_--disable-assert/var/MonetDB" --set mapi_open=true --set mapi_port=35323 --set monet_prompt= --trace --forcemito --set mal_listing=2  "--dbname=mTests_backends_monet5_datacell" --set mal_listing=0 ; echo ; echo Over..
-# 16:57:24 >  
+# 20:41:52 >  
+# 20:41:52 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=34596" "--set" "mapi_usock=/var/tmp/mtest-31117/.s.monetdb.34596" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/Jan2014//Linux/var/MonetDB/mTests_sql_backends_monet5_datacell" "--set" "mal_listing=0"
+# 20:41:52 >  
 
-# MonetDB 5 server v11.5.0
+# MonetDB 5 server v11.17.14
 # This is an unreleased version
-# Serving database 'mTests_backends_monet5_datacell', using 4 threads
+# Serving database 'mTests_sql_backends_monet5_datacell', using 8 threads
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
-# Found 7.749 GiB available main-memory.
+# Found 15.591 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
 # Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
-# Listening for connection requests on mapi:monetdb://rig.ins.cwi.nl:35323/
+# Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:34596/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-31117/.s.monetdb.34596
 # MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
-# MonetDB/DataCell module loaded
+# MonetDB/DataCell loaded
 
 Ready.
-# SQL catalog created, loading sql scripts once
 
+# 20:41:53 >  
+# 20:41:53 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-31117" "--port=34596"
+# 20:41:53 >  
 
-# 16:57:24 >  
-# 16:57:24 >  mclient -lsql -ftest -i -e --host=rig --port=35323 
-# 16:57:24 >  
+#set optimizer='datacell_pipe';
+#create table datacell.temperature(
+#    location string,
+#    tag time with time zone,
+#    tmp decimal(4,2)
+#);
+#create table datacell.warnings (msg string, ts time with time zone, loc string);
+#create table datacell.templog( ts timestamp with time zone, cnt integer);
+#create procedure datacell.guardian()
+#begin
+#	declare flg boolean;
+#	set flg = datacell.window('datacell.temperature',interval '5' minute, interval '1' minute); 
+#	insert into datacell.warnings
+#	select 'WARNING', now(), location from datacell.temperature group by location having avg(tmp) > 0.2;
+#	insert into datacell.templog values (now(), (select count(*) from datacell.temperature));
+#end;
+#call datacell.dump();
+#baskets[ 1] datacell.temperature columns 3 threshold 0 window=[0,0] time window=[0,0] beat 0 milliseconds events 0
+#baskets[ 2] datacell.warnings columns 3 threshold 0 window=[0,0] time window=[0,0] beat 0 milliseconds events 0
+#receptor datacell.temperature at localhost:50550 protocol=TCP mode=passive status=running delay=1000 
+#emitter datacell.warnings at localhost:50650 protocol=UDP mode=active status=running delay=1000
+#scheduler status running
+#[0]	datacell.guardian running delay 0 cycles 0 events 0 time 0 ms
+#<--	datacell.temperature basket[1] 0 0
+#drop procedure datacell.guardian;
+#drop table datacell.temperature;
+#drop table datacell.warnings;
+#drop table datacell.templog;
 
-= to be checked / approved !
-
-# 16:57:24 >  
-# 16:57:24 >  Done.
-# 16:57:24 >  
+# 20:41:54 >  
+# 20:41:54 >  "Done."
+# 20:41:54 >  
 
