@@ -1132,7 +1132,7 @@ wkbDistance(dbl *out, wkb **a, wkb **b)
 }
 
 static str
-wkbanalysis(wkb **out, wkb **a, wkb **b,
+ wkbanalysis(wkb **out, wkb **a, wkb **b,
 	    GEOSGeometry *(*func)(const GEOSGeometry *, const GEOSGeometry *))
 {
 	GEOSGeom ga = wkb2geos(*a);
@@ -1230,10 +1230,30 @@ wkbCentroid(wkb **out, wkb **geom)
 
 }
 
+static str
+wkbBorderPoint(wkb **out, wkb **geom, GEOSGeometry* (*func)(const GEOSGeometry *), const char *name)
+{
+	GEOSGeom geosGeometry = wkb2geos(*geom);
+
+	if (!geosGeometry || GEOSGeomTypeId(geosGeometry) != GEOS_LINESTRING) {
+		*out = geos2wkb(NULL);
+		return MAL_SUCCEED;
+	}
+
+	*out = geos2wkb((*func)(geosGeometry));
+
+	GEOSGeom_destroy(geosGeometry);
+
+	if (GDKerrbuf && GDKerrbuf[0])
+		throw(MAL, name, "GEOSGeomGet%s failed", name + 5);
+	return MAL_SUCCEED;
+}
+
 str
 wkbStartPoint(wkb **out, wkb **geom)
 {
-	GEOSGeom geosGeometry = wkb2geos(*geom);
+	return wkbBorderPoint(out, geom, GEOSGeomGetStartPoint, "geom.StartPoint");
+	/*GEOSGeom geosGeometry = wkb2geos(*geom);
 
 	if (!geosGeometry || GEOSGeomTypeId(geosGeometry) != GEOS_LINESTRING) {
 		*out = geos2wkb(NULL);
@@ -1246,14 +1266,15 @@ wkbStartPoint(wkb **out, wkb **geom)
 
 	if (GDKerrbuf && GDKerrbuf[0])
 		throw(MAL, "geom.StartPoint", "GEOSGeomGetStartPoint failed");
-	return MAL_SUCCEED;
+	return MAL_SUCCEED;*/
 
 }
 
 str
 wkbEndPoint(wkb **out, wkb **geom)
 {
-	GEOSGeom geosGeometry = wkb2geos(*geom);
+	return wkbBorderPoint(out, geom, GEOSGeomGetEndPoint, "geom.EndPoint");
+	/*GEOSGeom geosGeometry = wkb2geos(*geom);
 
 	if (!geosGeometry) {
 		*out = geos2wkb(NULL);
@@ -1266,7 +1287,7 @@ wkbEndPoint(wkb **out, wkb **geom)
 
 	if (GDKerrbuf && GDKerrbuf[0])
 		throw(MAL, "geom.EndPoint", "GEOSGeomGetEndPoint failed");
-	return MAL_SUCCEED;
+	return MAL_SUCCEED;*/
 
 }
 

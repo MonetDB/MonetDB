@@ -51,7 +51,7 @@ T26
 # T31	no such binary operator 'geometryn(multilinestring,tinyint)'
 # T32	no such unary operator 'isclosed(multilinestring)'
 T33
-# T34	no such unary operator 'centroid(multipolygon)'
+T34
 # T35	no such unary operator 'pointonsurface(multipolygon)'
 T36
 T37
