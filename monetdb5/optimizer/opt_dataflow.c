@@ -77,8 +77,12 @@ void removeDataflow(MalBlkPtr mb)
 	char *delete= (char*) GDKzalloc(mb->stop);
 	char *used= (char*) GDKzalloc(mb->vtop);
 
-	if ( delete == 0 || init == 0 || used == 0)
+	if ( delete == 0 || init == 0 || used == 0){
+		if( delete) GDKfree(delete);
+		if( used) GDKfree(used);
+		if( init) GDKfree(init);
 		return;
+	}
 	old = mb->stmt;
 	limit = mb->stop;
 	if ( newMalBlkStmt(mb, mb->ssize) <0 )
