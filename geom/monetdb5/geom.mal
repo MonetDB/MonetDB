@@ -245,15 +245,19 @@ comment "Returns the centroid of this Geometry.";
 
 command StartPoint(w:wkb) :wkb
 address wkbStartPoint
-comment "Returns the start point of this Geometry which should be Linestring.";
+comment "Returns the start point of this Geometry. Argument w should be Linestring.";
 
 command EndPoint(w:wkb) :wkb
 address wkbEndPoint
-comment "Returns the end point of this Geometry where should be Linestring (?).";
+comment "Returns the end point of this Geometry. Argument w should be Linestring.";
 
 command NumPoints(w:wkb) :int
 address wkbNumPoints
-comment "The number of points in the Geometry where should be Linestring (?).";
+comment "The number of points in the Geometry. Argument w should be Linestring.";
+
+command PointN(w:wkb, n:sht) :wkb
+address wkbPointN
+comment "Returns the n-th point of the Geometry. Argument w should be Linestring.";
 
 
 command prelude():void	address geom_prelude;

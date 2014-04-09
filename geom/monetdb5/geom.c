@@ -113,6 +113,7 @@ geom_export str wkbCentroid(wkb **out, wkb **geom);
 geom_export str wkbStartPoint(wkb **out, wkb **geom);
 geom_export str wkbEndPoint(wkb **out, wkb **geom);
 geom_export str wkbNumPoints(int *out, wkb **geom);
+geom_export str wkbPointN(wkb **out, wkb **geom, short *n);
 
 bat *
 geom_prelude(void)
@@ -794,8 +795,8 @@ wkbcreatepoint_bat(int *out, int *ix, int *iy)
 	}
 
 	BATsetcount(bo, BATcount(bx));
-    BATsettrivprop(bo);
-    BATderiveProps(bo,FALSE);
+    	BATsettrivprop(bo);
+    	BATderiveProps(bo,FALSE);
 	BBPreleaseref(bx->batCacheid);
 	BBPreleaseref(by->batCacheid);
 	BBPkeepref(*out = bo->batCacheid);
@@ -1224,8 +1225,8 @@ wkbCentroid(wkb **out, wkb **geom)
 
 	GEOSGeom_destroy(geosGeometry);
 
-	if (GDKerrbuf && GDKerrbuf[0])
-		throw(MAL, "geom.Centroid", "GEOSGetCentroid failed");
+	//if (GDKerrbuf && GDKerrbuf[0])
+	//	throw(MAL, "geom.Centroid", "GEOSGetCentroid failed");
 	return MAL_SUCCEED;
 
 }
@@ -1235,17 +1236,22 @@ wkbBorderPoint(wkb **out, wkb **geom, GEOSGeometry* (*func)(const GEOSGeometry *
 {
 	GEOSGeom geosGeometry = wkb2geos(*geom);
 
-	if (!geosGeometry || GEOSGeomTypeId(geosGeometry) != GEOS_LINESTRING) {
+	if (!geosGeometry) {
 		*out = geos2wkb(NULL);
 		return MAL_SUCCEED;
+	}
+
+	if (GEOSGeomTypeId(geosGeometry) != GEOS_LINESTRING) {
+		*out = geos2wkb(NULL);
+		throw(MAL, name, "GEOSGeomGet%s failed. Geometry not a LineString", name + 5);
 	}
 
 	*out = geos2wkb((*func)(geosGeometry));
 
 	GEOSGeom_destroy(geosGeometry);
 
-	if (GDKerrbuf && GDKerrbuf[0])
-		throw(MAL, name, "GEOSGeomGet%s failed", name + 5);
+	//if (GDKerrbuf && GDKerrbuf[0])
+	//	throw(MAL, name, "GEOSGeomGet%s failed", name + 5);
 	return MAL_SUCCEED;
 }
 
@@ -1253,62 +1259,73 @@ str
 wkbStartPoint(wkb **out, wkb **geom)
 {
 	return wkbBorderPoint(out, geom, GEOSGeomGetStartPoint, "geom.StartPoint");
-	/*GEOSGeom geosGeometry = wkb2geos(*geom);
-
-	if (!geosGeometry || GEOSGeomTypeId(geosGeometry) != GEOS_LINESTRING) {
-		*out = geos2wkb(NULL);
-		return MAL_SUCCEED;
-	}
-
-	*out = geos2wkb(GEOSGeomGetStartPoint(geosGeometry));
-
-	GEOSGeom_destroy(geosGeometry);
-
-	if (GDKerrbuf && GDKerrbuf[0])
-		throw(MAL, "geom.StartPoint", "GEOSGeomGetStartPoint failed");
-	return MAL_SUCCEED;*/
-
 }
 
 str
 wkbEndPoint(wkb **out, wkb **geom)
 {
 	return wkbBorderPoint(out, geom, GEOSGeomGetEndPoint, "geom.EndPoint");
-	/*GEOSGeom geosGeometry = wkb2geos(*geom);
+}
+
+str
+wkbNumPoints(int *out, wkb **geom)
+{
+	GEOSGeom geosGeometry = wkb2geos(*geom);
+
+	if (!geosGeometry) {
+		*out = int_nil;
+		return MAL_SUCCEED;
+	}
+
+	if (GEOSGeomTypeId(geosGeometry) != GEOS_LINESTRING) {
+		*out = int_nil;
+		throw(MAL, "geom.NumPoints", "GEOSGeomGetNumPoints failed. Geometry not a LineString");
+	}
+
+	*out = GEOSGeomGetNumPoints(geosGeometry);
+	GEOSGeom_destroy(geosGeometry);
+
+	if (*out == -1)
+		throw(MAL, "geom.NumPoints", "GEOSGeomGetNumPoints failed");
+
+	//if (GDKerrbuf && GDKerrbuf[0])
+	//	throw(MAL, "geom.NumPoints", "GEOSGeomGetNumPoints failed");
+
+	return MAL_SUCCEED;
+}
+
+str 
+wkbPointN(wkb **out, wkb **geom, short *n)
+{
+	short rN = -1;
+	GEOSGeom geosGeometry = wkb2geos(*geom);
 
 	if (!geosGeometry) {
 		*out = geos2wkb(NULL);
 		return MAL_SUCCEED;
 	}
 
-	*out = geos2wkb(GEOSGeomGetEndPoint(geosGeometry));
-
-	GEOSGeom_destroy(geosGeometry);
-
-	if (GDKerrbuf && GDKerrbuf[0])
-		throw(MAL, "geom.EndPoint", "GEOSGeomGetEndPoint failed");
-	return MAL_SUCCEED;*/
-
-}
-
-str
-wkbNumPoints(int *out, wkb **geom)
-{
-	str ret = MAL_SUCCEED;
-	GEOSGeom ga = wkb2geos(*geom);
-
-	if (!ga) {
-		*out = dbl_nil;
-		return ret;
+	if (GEOSGeomTypeId(geosGeometry) != GEOS_LINESTRING) {
+		*out = geos2wkb(NULL);
+		throw(MAL, "geom.PointN", "GEOSGeomGetPointN failed. Geometry not a LineString");
 	}
 
-	*out = GEOSGeomGetNumPoints(ga);
-	if (*out == -1)
-		ret = "GEOSGeomGetNumPoints failed";
+	//check number of points
+	rN = GEOSGeomGetNumPoints(geosGeometry);
+	if (rN == -1)
+		throw(MAL, "geom.PointN", "GEOSGeomGetPointN failed becasue GEOSGeomGetNumPoints ");	
 
-	GEOSGeom_destroy(ga);
+	if(rN <= *n || *n<0) {
+		*out = geos2wkb(NULL);
+		GEOSGeom_destroy(geosGeometry);
+		throw(MAL, "geom.PointN", "GEOSGeomGetPointN unable to retrieve point %d (not enough points)", *n);
+	}
 
-	if (ret != MAL_SUCCEED)
-		throw(MAL, "geom.NumPoints", "%s", ret);
-	return ret;
+	*out = geos2wkb(GEOSGeomGetPointN(geosGeometry, *n));
+	GEOSGeom_destroy(geosGeometry);
+
+	if (*out != NULL)
+		return MAL_SUCCEED;
+
+	throw(MAL, "geom.PointN", "GEOSGeomGetPointN failed");
 }
