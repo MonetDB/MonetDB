@@ -492,6 +492,7 @@ OPTorcamImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	Symbol t;
 	str mod,fcn;
 	int j;
+	str msg;
 
 	(void) cntxt;
 	(void) stk;
@@ -517,7 +518,8 @@ OPTorcamImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		for (t = s->subscope[j]; t != NULL; t = t->peer)
 			if (t->def->errors == 0) {
 				if (getSignature(t)->token == FUNCTIONsymbol)
-					ORCAMprocessor(cntxt, target, t);
+					msg =ORCAMprocessor(cntxt, target, t);
+				if( msg) GDKfree(msg);
 			}
 	}
 	return 1;
