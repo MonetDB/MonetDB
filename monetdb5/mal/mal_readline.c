@@ -486,6 +486,7 @@ readConsole(Client cntxt)
 			cntxt->fdin->buf= realloc(cntxt->fdin->buf, len+1);
 			if( cntxt->fdin->buf == NULL) {
 				GDKerror("readConsole" MAL_MALLOC_FAIL);
+				free(buf);
 				goto bailout;
 			}
 			cntxt->fdin->size = len;

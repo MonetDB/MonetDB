@@ -852,7 +852,7 @@ dumpboxes(void)
 						s++;
 					fprintf(fcpu, "0 ");
 					while (s) {
-						s = strchr(s + 1, (int) ' ');
+						s = strchr(s + 1, ' ');
 						while (s && isspace((int) *s))
 							s++;
 						if (s)
@@ -1241,9 +1241,9 @@ updmap(int idx)
 	char *mod, *fcn, buf[BUFSIZ], *call = buf;
 	int i, fnd = 0;
 
-	strcpy(buf, box[idx].fcn);
+	snprintf(buf, sizeof(buf), "%s", box[idx].fcn);
 	mod = call;
-	fcn = strchr(call, (int) '.');
+	fcn = strchr(call, '.');
 	if (fcn) {
 		*fcn = 0;
 		fcn++;
@@ -1341,6 +1341,11 @@ scandata(char *filename)
 		}
 		if (box[i].thread < 0 || box[i].clkstart < 0 || box[i].clkend < 0 || box[i].ticks < 0 || box[i].memstart < 0 || box[i].memend < 0 || box[i].state < 0 || box[i].reads < 0 || box[i].writes < 0) {
 			fprintf(stderr, "scandata: sscanf() read negative value(s) from\n'%s'\n", line);
+			continue; /* don't trust values */
+		}
+		if (box[i].thread >= MAXTHREADS) {
+			fprintf(stderr, "scandata: sscanf() read too large value(s) from\n'%s'\n", line);
+			continue; /* don't trust values */
 		}
 		box[i].fcn = strdup(buf);
 		box[i].stmt = strdup(buf);
@@ -1379,8 +1384,8 @@ gnuplotheader(char *filename)
 	fprintf(gnudata, "set tics front\n");
 	tm = time(0);
 	date = ctime(&tm);
-	if (strchr(date, (int) '\n'))
-		*strchr(date, (int) '\n') = 0;
+	if (strchr(date, '\n'))
+		*strchr(date, '\n') = 0;
 	for (c = title; c && *c; c++)
 		if (*c == '_')
 			*c = '-';
@@ -1409,7 +1414,7 @@ static void createTomogram(void)
 		printf("ERROR in creation of %s\n", buf);
 		exit(-1);
 	}
-	*strchr(buf, (int) '.') = 0;
+	*strchr(buf, '.') = 0;
 	gnuplotheader(buf);
 	dumpboxes();
 	showio();
@@ -1663,7 +1668,7 @@ update(int state, int thread, lng clkticks, lng ticks, lng memory, lng footprint
 		box[idx].footstart = box[idx].footend = footprint;
 		box[idx].reads = reads;
 		box[idx].writes = writes;
-		s = strchr(stmt, (int) ']');
+		s = strchr(stmt, ']');
 		if (s)
 			*s = 0;
 		box[idx].stmt = stmt;
@@ -1751,7 +1756,7 @@ parser(char *row)
 	if ((cc= strrchr(row,']')) == 0 || *(cc+1) !=0)
 		return -1;
 
-	c = strchr(row, (int) '"');
+	c = strchr(row, '"');
 	if (c == 0)
 		return -2;
 	if (strncmp(c + 1, "start", 5) == 0) {
@@ -1771,12 +1776,12 @@ parser(char *row)
 		c += 9;
 	} else {
 		state = 0;
-		c = strchr(c + 1, (int) '"');
+		c = strchr(c + 1, '"');
 		if (c == 0)
 			return -2;
 	}
 
-	c = strchr(c + 1, (int) '"');
+	c = strchr(c + 1, '"');
 	if (c) {
 		/* convert time to epoch in seconds*/
 		memset(&stm, 0, sizeof(struct tm));
@@ -1791,26 +1796,26 @@ parser(char *row)
 			assert(usec >= 0 && usec < 1000000);
 			clkticks += usec;
 		}
-		c = strchr(c + 1, (int) '"');
+		c = strchr(c + 1, '"');
 		if (clkticks < 0) {
 			fprintf(stderr, "parser: read negative value "LLFMT" from\n'%s'\n", clkticks, row);
 		}
 	} else
 		return -3;
 
-	c = strchr(c + 1, (int) ',');
+	c = strchr(c + 1, ',');
 	if (c == 0)
 		return -4;
 	thread = atoi(c + 1);
-	c = strchr(c + 1, (int) ',');
+	c = strchr(c + 1, ',');
 	if (c == 0)
 		return -5;
 	ticks = strtoll(c + 1, NULL, 10);
-	c = strchr(c + 1, (int) ',');
+	c = strchr(c + 1, ',');
 	if (c == 0)
 		return -6;
 	memory = strtoll(c + 1, NULL, 10);
-	c = strchr(c + 1, (int) ',');
+	c = strchr(c + 1, ',');
 	if (c == 0)
 		return -8;
 
@@ -1818,13 +1823,13 @@ parser(char *row)
 	footprint = strtoll(c + 1, NULL, 10);
 	if (debug && state < PING)
 		fprintf(stderr, "%s\n", row);
-	c = strchr(c + 1, (int) ',');
+	c = strchr(c + 1, ',');
 	if (c == 0 && state >= PING)
 		goto wrapup;
 #endif
 
 	reads = strtoll(c + 1, NULL, 10);
-	c = strchr(c + 1, (int) ',');
+	c = strchr(c + 1, ',');
 	if (c == 0)
 		return -8;
 	writes = strtoll(c + 1, NULL, 10);
@@ -1832,7 +1837,7 @@ parser(char *row)
 	/* check basic validity */
 	if ((cc= strrchr(row,']')) == 0 || *(cc+1) !=0)
 		return -1;
-	c = strchr(c + 1, (int) ',');
+	c = strchr(c + 1, ',');
 	if (c == 0)
 		return -9;
 	c++;
@@ -1845,18 +1850,18 @@ parser(char *row)
 		/* find genuine function calls */
 		while (isspace((int) *fcn) && *fcn)
 			fcn++;
-		if (strchr(fcn, (int) '.') == 0)
+		if (strchr(fcn, '.') == 0)
 			return -10;
 	} else {
-		fcn = strchr(fcn, (int) '"');
+		fcn = strchr(fcn, '"');
 		if (fcn) {
 			fcn++;
-			*strchr(fcn, (int) '"') = 0;
+			*strchr(fcn, '"') = 0;
 		}
 	}
 
-	if (fcn && strchr(fcn, (int) '('))
-		*strchr(fcn, (int) '(') = 0;
+	if (fcn && strchr(fcn, '('))
+		*strchr(fcn, '(') = 0;
 
 #ifdef FOOTPRINT
 wrapup:
@@ -2263,19 +2268,20 @@ main(int argc, char **argv)
 			char *s;
 			if (optarg == 0)
 				break;
-			startrange = strtoll(optarg, NULL, 10);
-			if (strchr(optarg, (int) '-'))
-				endrange = strtoll(strchr(optarg, (int) '-') + 1, NULL, 10);
+			startrange = strtoll(optarg, &s, 10);
+			if (*s == '-')
+				endrange = strtoll(s + 1, &s, 10);
 			else
 				endrange = startrange + 1000;
-			s = strchr(optarg, (int) 'm');
-			if (s && *(s + 1) == 's') {
+			if (s[0] == 'm' && s[1] == 's') {
 				startrange *= 1000;
 				endrange *= 1000;
-			} else { /* seconds */
-				s = strchr(optarg, (int) 's');
+			} else if (s[0] == 's') {
 				startrange *= 1000000;
 				endrange *= 1000000;
+			} else {
+				usage();
+				exit(-1);
 			}
 			break;
 		}

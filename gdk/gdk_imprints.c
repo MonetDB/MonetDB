@@ -872,6 +872,8 @@ IMPSprint(BAT *b) {
 	imprints = b->T->imprints;
 	d = (cchdc_t *) imprints->dict->base;
 	s = (char *) malloc(sizeof(char)*(imprints->bits+1));
+	if (s == NULL)
+		return;
 
 #define IMPSPRNTMASK(T,B)						\
 do {									\
@@ -897,5 +899,6 @@ do {									\
 			}
 		}
 	}
+	free(s);
 }
 #endif

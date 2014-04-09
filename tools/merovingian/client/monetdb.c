@@ -634,11 +634,10 @@ simple_command(int argc, char *argv[], char *merocmd, char *successmsg, char glo
 			if (argv[i] != NULL) {
 				/* maintain input order */
 				if (orig == NULL) {
-					stats = orig = malloc(sizeof(sabdb));
+					stats = orig = calloc(1, sizeof(sabdb));
 				} else {
-					stats = stats->next = malloc(sizeof(sabdb));
+					stats = stats->next = calloc(1, sizeof(sabdb));
 				}
-				memset(stats, 0, sizeof(sabdb));
 				stats->dbname = strdup(argv[i]);
 			}
 		}
@@ -1490,11 +1489,10 @@ command_create(int argc, char *argv[])
 		if (argv[i] != NULL) {
 			/* maintain input order */
 			if (orig == NULL) {
-				stats = orig = malloc(sizeof(sabdb));
+				stats = orig = calloc(1, sizeof(sabdb));
 			} else {
-				stats = stats->next = malloc(sizeof(sabdb));
+				stats = stats->next = calloc(1, sizeof(sabdb));
 			}
-			memset(stats, 0, sizeof(sabdb));
 			stats->dbname = strdup(argv[i]);
 		}
 	}

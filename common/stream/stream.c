@@ -1952,6 +1952,7 @@ file_rstream(FILE *fp, const char *name)
 	    (fread((void *) &s->byteorder, sizeof(s->byteorder), 1, fp) < 1 ||
 	     ferror(fp))) {
 		fclose(fp);
+		fp = NULL;
 		s->errnr = MNSTR_OPEN_ERROR;
 	}
 	s->stream_data.p = (void *) fp;
@@ -1977,6 +1978,7 @@ file_wstream(FILE *fp, const char *name)
 	    (fwrite((void *) &s->byteorder, sizeof(s->byteorder), 1, fp) < 1 ||
 	     ferror(fp))) {
 		fclose(fp);
+		fp = NULL;
 		s->errnr = MNSTR_OPEN_ERROR;
 	}
 	s->stream_data.p = (void *) fp;

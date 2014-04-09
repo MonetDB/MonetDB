@@ -69,7 +69,7 @@ simpleFlow(InstrPtr *old, int start, int last)
 	return simple;
 }
 
-/* optimizers may remove the dataflow hints first */
+/* optimizers may remove the dataflow and language.pass hints first */
 void removeDataflow(MalBlkPtr mb)
 {
 	int i, k, flowblock=0, limit;
@@ -78,8 +78,12 @@ void removeDataflow(MalBlkPtr mb)
 	char *delete= (char*) GDKzalloc(mb->stop);
 	char *used= (char*) GDKzalloc(mb->vtop);
 
-	if ( delete == 0 || init == 0 || used == 0)
+	if ( delete == 0 || init == 0 || used == 0){
+		if( delete) GDKfree(delete);
+		if( used) GDKfree(used);
+		if( init) GDKfree(init);
 		return;
+	}
 	old = mb->stmt;
 	limit = mb->stop;
 	if ( newMalBlkStmt(mb, mb->ssize) <0 )
@@ -103,6 +107,10 @@ void removeDataflow(MalBlkPtr mb)
 				flowblock = 0;
 				delete[i] = 1;
 			}
+		} else 
+		if ( getModuleId(p) == languageRef &&
+			 getFunctionId(p) == passRef){
+			delete[i] =1;
 		} else {
 			/* remember first initialization */
 			for ( k = p->retc; k < p->argc; k++)

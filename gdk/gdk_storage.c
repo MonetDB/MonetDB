@@ -979,6 +979,7 @@ BATmultiprintf(stream *s, int argc, BAT *argv[], int printhead, int order, int p
 	ret = BATprintcols(s, argc + printhead, bats + !printhead);
 	for (i = 0; i <= argc; i++)
 		BBPunfix(bats[i]->batCacheid);
+	GDKfree(bats);
 	return ret;
 
   bailout:
@@ -986,5 +987,6 @@ BATmultiprintf(stream *s, int argc, BAT *argv[], int printhead, int order, int p
 		if (bats[i])
 			BBPunfix(bats[i]->batCacheid);
 	}
+	GDKfree(bats);
 	return GDK_FAIL;
 }
