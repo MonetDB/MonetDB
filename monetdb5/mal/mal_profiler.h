@@ -72,6 +72,7 @@ mal_export str setLogStreamStream(Module cntxt, stream *s);
 mal_export str setStartPoint(Module cntxt, str mod, str fcn);
 mal_export str setEndPoint(Module cntxt, str mod, str fcn);
 
+mal_export int profilerAvailable(void);
 mal_export str startProfiling(void);
 mal_export str stopProfiling(void);
 mal_export str cleanupProfiler(void);
