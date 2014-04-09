@@ -160,6 +160,29 @@ schema_destroy(sql_schema *s)
 	s->triggers = NULL;
 }
 
+static void
+trans_drop_tmp(sql_trans *tr) 
+{
+	sql_schema *tmp;
+
+	if (!tr)
+		return;
+
+	tmp = find_sql_schema(tr, "tmp");
+		
+	if (tmp->tables.set) {
+		node *n;
+		for (n = tmp->tables.set->h; n; ) {
+			node *nxt = n->next;
+			sql_table *t = n->data;
+
+			if (t->persistence == SQL_LOCAL_TEMP)
+				list_remove_node(tmp->tables.set, n);
+			n = nxt;
+		}
+	}
+}
+
 /*#define STORE_DEBUG 1*/ 
 
 sql_trans *
@@ -176,6 +199,7 @@ sql_trans_destroy(sql_trans *t)
 #ifdef STORE_DEBUG
 		fprintf(stderr, "#spared (%d) trans (%p)\n", spares, t);
 #endif
+		trans_drop_tmp(t);
 		spare_trans[spares++] = t;
 		return res;
 	}
