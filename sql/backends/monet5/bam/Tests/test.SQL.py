@@ -43,6 +43,8 @@ for match in p.finditer(out):
 
 # Now we will execute all benchmark queries on all BAM files in the bam.files table
 # and output all data contained in the aux table.
+# Furthermore, we transfer every file to the export table, use sam_export to write
+# the contents to a SAM file and then print the raw contents of this SAM file
 c = new_client()
 set_var(c, 'rname_1_3', 'chr22', numeric=False)
 set_var(c, 'pos_1_3_1', 1000000)
@@ -56,6 +58,7 @@ set_var(c, 'rname_2_10', 'chr22', numeric=False)
 set_var(c, 'pos_2_10', 80000000)
 set_var(c, 'distance_2_12', 10000000)
 
+output_files = []
 for f in files_to_test:
     # benchmark 1
     for uc in range(1, 6):
@@ -71,6 +74,15 @@ for f in files_to_test:
     #write all aux data
     c.stdin.write("SELECT * FROM bam.alignments_extra_%d;"% f[0]);
 
+    #load into export table
+    c.stdin.write("INSERT INTO bam.export (SELECT qname, flag, rname, pos, mapq, cigar, rnext, pnext, tlen, seq, qual FROM bam.%salignments_%d);"\
+        % (('unpaired_all_' if f[1] == 1 else ''), f[0]))
+    output_files.append(os.path.join(SRCDIR, ("output_%d.sam"% f[0])))
+    c.stdin.write("CALL sam_export('%s');"% output_files[-1])
+
+
+
+
 out, err = c.communicate()
 
 # The output will contain explicit file_ids in the table names, making the table names
@@ -83,3 +95,11 @@ out = (re.subn(p, replace, out))[0]
 
 sys.stdout.write(out)
 sys.stderr.write(err)
+
+
+# All that is left to do is write the contents of the exported SAM files and delete them
+for f in output_files:
+    sys.stdout.write("\n\nContents of exported SAM file '%s':\n"% f)
+    for ln in open(f):
+        sys.stdout.write(ln)
+    os.remove(f)
