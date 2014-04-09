@@ -41106,21 +41106,37 @@ command pcre.select(pat:str,strs:bat[:oid,:str]):bat[:oid,:str]
 address PCREselectDef;
 comment Select tuples based on the pattern
 
-pattern pqueue.topn_max(a:bat[:oid,:oid],b:bat[:oid,:any_1],n:wrd,elim:bit):bat[:oid,:oid] 
+pattern pqueue.topn_max(g:bat[:oid,:oid],b:bat[:oid,:any_1],n:wrd) (piv:bat[:oid,:oid],gid:bat[:oid,:oid]) 
+address PQtopn4_minmax;
+comment Return unique top n withn groups
+
+pattern pqueue.topn_min(g:bat[:oid,:oid],b:bat[:oid,:any_1],n:wrd) (piv:bat[:oid,:oid],gid:bat[:oid,:oid]) 
+address PQtopn4_minmax;
+comment Return unique top n within groups
+
+pattern pqueue.topn_max(gid:bat[:oid,:oid],b:bat[:oid,:any_1],n:wrd):bat[:oid,:oid] 
+address PQtopn3_minmax;
+comment Return the top n elements using a max-pqueue
+
+pattern pqueue.topn_min(gid:bat[:oid,:oid],b:bat[:oid,:any_1],n:wrd):bat[:oid,:oid] 
+address PQtopn3_minmax;
+comment Return the top n elements using a min-pqueue
+
+pattern pqueue.topn_max(b:bat[:oid,:any_1],n:wrd) (piv:bat[:oid,:oid],gid:bat[:oid,:oid]) 
 address PQtopn2_minmax;
-comment Return the top n elements using a max-pqueue with/without duplicate elimination
+comment Return unique top n withn groups
 
-pattern pqueue.topn_min(a:bat[:oid,:oid],b:bat[:oid,:any_1],n:wrd,elim:bit):bat[:oid,:oid] 
+pattern pqueue.topn_min(b:bat[:oid,:any_1],n:wrd) (piv:bat[:oid,:oid],gid:bat[:oid,:oid]) 
 address PQtopn2_minmax;
-comment Return the top n elements using a min-pqueue with/without duplicate elimination
+comment Return unique top n within groups
 
-pattern pqueue.topn_max(a:bat[:oid,:any_1],n:wrd,elim:bit):bat[:oid,:oid] 
+pattern pqueue.topn_max(a:bat[:oid,:any_1],n:wrd):bat[:oid,:oid] 
 address PQtopn_minmax;
-comment Return the top n elements using a max-pqueue with/without duplicate elimination
+comment Return the top n elements using a max-pqueue
 
-pattern pqueue.topn_min(a:bat[:oid,:any_1],n:wrd,elim:bit):bat[:oid,:oid] 
+pattern pqueue.topn_min(a:bat[:oid,:any_1],n:wrd):bat[:oid,:oid] 
 address PQtopn_minmax;
-comment Return the top n elements using a min-pqueue with/without duplicate elimination
+comment Return the top n elements using a min-pqueue
 
 command pqueue.topn_max(a:bat[:oid,:oid],t:bat[:void,:any_1],n:wrd):bat[:oid,:oid] 
 address PQtopn2_anymax;
@@ -41177,10 +41193,6 @@ comment Return the topn elements of the bat t using a max-pqueue
 command pqueue.topn_min(t:bat[:oid,:bte],n:wrd):bat[:oid,:oid] 
 address PQtopn_btemin;
 comment Return the topn elements of the bat t using a min-pqueue
-
-pattern pqueue.utopn_min(b:bat[:oid,:any_1],n:wrd,elim:bit) (bp:bat[:oid,:oid],bg:bat[:oid,:any_1]) 
-address PQutopn_minmax;
-comment to be defined
 
 command pqueue.utopn_max(a:bat[:oid,:oid],t:bat[:void,:any_1],n:wrd):bat[:oid,:oid] 
 address PQutopn2_anymax;
