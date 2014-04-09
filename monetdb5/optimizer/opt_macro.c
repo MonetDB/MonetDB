@@ -511,9 +511,10 @@ OPTorcamImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		j = getSubScope(fcn);
 		for (t = s->subscope[j]; t != NULL; t = t->peer)
 			if (t->def->errors == 0) {
-				if (getSignature(t)->token == FUNCTIONsymbol)
+				if (getSignature(t)->token == FUNCTIONsymbol) {
 					msg =ORCAMprocessor(cntxt, target, t);
-				if( msg) GDKfree(msg);
+					if( msg) GDKfree(msg);
+				}
 			}
 	}
 	return 1;
