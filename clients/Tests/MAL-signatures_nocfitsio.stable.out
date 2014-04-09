@@ -2667,13 +2667,9 @@ command algebra.sort(b:bat[:any_1,:any_2]):bat[:any_1,:any_2]
 address ALGhsort;
 comment Returns a BAT copy sorted on the head column.
 
-command algebra.subsample(b:bat[:oid,:any_1],num:int):bat[:oid,:oid] 
-address ALGsubsample;
-comment Return the oids of a random selection of size 'num' from the input BAT.
-
-command algebra.sample(b:bat[:oid,:any_2],num:int):bat[:oid,:any_2] 
+command algebra.sample(b:bat[:oid,:any_1],num:int):bat[:oid,:oid] 
 address ALGsample;
-comment Produce a random selection of size 'num' from the input BAT.
+comment Returns the oids of a random selection of size 'num' from the input BAT.
 
 command algebra.subslice(b:bat[:oid,:any_1],x:wrd,y:wrd):bat[:oid,:oid] 
 address ALGsubslice_wrd;
@@ -40998,12 +40994,20 @@ command pcre.select(pat:str,strs:bat[:oid,:str]):bat[:oid,:str]
 address PCREselectDef;
 comment Select tuples based on the pattern
 
-pattern pqueue.topn_max(a:bat[:oid,:any_1],n:wrd,elim:bit):bat[:oid,:oid] 
-address PQtopn_max;
+pattern pqueue.topn_max(a:bat[:oid,:oid],b:bat[:oid,:any_1],n:wrd,elim:bit):bat[:oid,:oid] 
+address PQtopn2_minmax;
+comment Return the top n elements using a max-pqueue with/without duplicate elimination
+
+pattern pqueue.topn_min(a:bat[:oid,:oid],b:bat[:oid,:any_1],n:wrd,elim:bit):bat[:oid,:oid] 
+address PQtopn2_minmax;
 comment Return the top n elements using a min-pqueue with/without duplicate elimination
 
+pattern pqueue.topn_max(a:bat[:oid,:any_1],n:wrd,elim:bit):bat[:oid,:oid] 
+address PQtopn_minmax;
+comment Return the top n elements using a max-pqueue with/without duplicate elimination
+
 pattern pqueue.topn_min(a:bat[:oid,:any_1],n:wrd,elim:bit):bat[:oid,:oid] 
-address PQtopn_min;
+address PQtopn_minmax;
 comment Return the top n elements using a min-pqueue with/without duplicate elimination
 
 command pqueue.topn_max(a:bat[:oid,:oid],t:bat[:void,:any_1],n:wrd):bat[:oid,:oid] 
@@ -41061,6 +41065,10 @@ comment Return the topn elements of the bat t using a max-pqueue
 command pqueue.topn_min(t:bat[:oid,:bte],n:wrd):bat[:oid,:oid] 
 address PQtopn_btemin;
 comment Return the topn elements of the bat t using a min-pqueue
+
+pattern pqueue.utopn_min(b:bat[:oid,:any_1],n:wrd,elim:bit) (bp:bat[:oid,:oid],bg:bat[:oid,:any_1]) 
+address PQutopn_minmax;
+comment to be defined
 
 command pqueue.utopn_max(a:bat[:oid,:oid],t:bat[:void,:any_1],n:wrd):bat[:oid,:oid] 
 address PQutopn2_anymax;
@@ -41364,17 +41372,13 @@ pattern recycle.setCache(clines:int):void
 address RECYCLEsetCache;
 comment Set recycler cache line parameter
 
-command sample.subuniform(b:bat[:oid,:any],s:wrd):bat[:oid,:oid] 
-address SAMPLEsubuniform;
-comment Returns the oids of a uniform sample of size s
-
-command sample.uniform(b:bat[:oid,:any],p:dbl):bat[:oid,:any] 
+command sample.uniform(b:bat[:oid,:any],p:dbl):bat[:oid,:oid] 
 address SAMPLEuniform_dbl;
-comment Returns a uniform sample of size = (p x count(b)), where 0 <= p <= 1.0
+comment Returns the oids of a uniform sample of size = (p x count(b)), where 0 <= p <= 1.0
 
-command sample.uniform(b:bat[:oid,:any],s:wrd):bat[:oid,:any] 
+command sample.uniform(b:bat[:oid,:any],s:wrd):bat[:oid,:oid] 
 address SAMPLEuniform;
-comment Returns a uniform sample of size s
+comment Returns the oids of a uniform sample of size s
 
 command sabaoth.epilogue():void 
 address SABepilogue;
@@ -41739,22 +41743,6 @@ comment Compile and execute a single sql statement (and optionaly send output on
 pattern sql.eval(cmd:str):void 
 address SQLstatement;
 comment Compile and execute a single sql statement
-
-pattern sql.gzexpand(sch:str,tbl:str):void 
-address SQLexpand;
-comment Remove the compressed image
-
-pattern sql.gztruncate(sch:str,tbl:str):void 
-address SQLtruncate;
-comment Remove the tables when you have a compressed image
-
-pattern sql.gzdecompress(sch:str,tbl:str):void 
-address SQLgzdecompress;
-comment Perform LZ decompression on a table
-
-pattern sql.gzcompress(sch:str,tbl:str):void 
-address SQLgzcompress;
-comment Perform LZ compression on a table
 
 command sql.getVersion(clientid:int):lng 
 address mvc_getVersion;

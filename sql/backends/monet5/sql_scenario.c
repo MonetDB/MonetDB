@@ -594,7 +594,7 @@ sql_update_feb2013_sp3(Client c)
 
 /*
  * TODO
- * 	rewrite agrs table, ie add vararg and inout columns
+ * 	rewrite args table, ie add vararg and inout columns
  * 	update all table functions, ie make them type F_UNION
  *	update columns view, ie change storage_type-int into storage - varchar
  *	remove table return types (#..), ie tt_generated from _tables

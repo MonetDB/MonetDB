@@ -568,7 +568,7 @@ BATimprints(BAT *b) {
 		}
 
 #define SMP_SIZE 2048
-		s = BATsample_(b, SMP_SIZE);
+		s = BATsample(b, SMP_SIZE);
 		smp = BATsubunique(b, s);
 		BBPunfix(s->batCacheid);
 		s = BATproject(smp,b);

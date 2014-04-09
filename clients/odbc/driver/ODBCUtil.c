@@ -539,6 +539,49 @@ ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLUINTEGER 
 			free(nquery);
 			nquery = q;
 			q += n;
+		} else if (strncasecmp(p, "call ", 5) == 0) {
+			const char *proc, *procend;
+
+			p += 5;
+			while (*p == ' ')
+				p++;
+			proc = p;
+			while (*p && isascii(*p) && isalnum(*p))
+				p++;
+			if (p == proc ||
+			    (isascii(*proc) && !isalpha(*proc)))
+				continue;
+			procend = p;
+			while (*p == ' ')
+				p++;
+			if (*p == '(') {
+				int nparen = 0;
+				int q1 = 0, q2 = 0;
+
+				p++;
+				while (*p && (*p != ')' || nparen > 0 || q1 || q2)) {
+					nparen += *p == '(';
+					nparen -= *p == ')';
+					q1 ^= (*p == '\'') & !q2;
+					q2 ^= (*p == '"') & !q1;
+					p++;
+				}
+				if (*p == 0)
+					break;
+				procend = ++p;
+				while (*p == ' ')
+					p++;
+			}
+			if (*p != '}')
+				break;
+			p++;
+			n = (int) (q - nquery);
+			pr = (int) (p - q);
+			q = malloc(length - pr + (procend - proc) + 6);
+			sprintf(q, "%.*scall %.*s%s", n, nquery, (int) (procend - proc), proc, p);
+			free(nquery);
+			nquery = q;
+			q += n;
 		} else if (p[0] == 'f' && p[1] == 'n' && p[2] == ' ') {
 			const char *scalarfunc;
 			size_t scalarfunclen;
