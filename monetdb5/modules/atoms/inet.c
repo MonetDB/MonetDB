@@ -331,27 +331,21 @@ INET_comp_CW(bit *retval, inet * val1, inet * val2)
 		 * be contained within */
 		*retval = 0;
 	} else {
-		int mask;
-		unsigned char m[4] = { 255, 255, 255, 255 };
+		unsigned int mask;
+		unsigned char m[4];
+
+		if (val2->mask > 0)
+			mask = ~0 << (32 - val2->mask);
+		else
+			mask = 0;
+
+		m[0] = (mask >> 24) & 0xFF;
+		m[1] = (mask >> 16) & 0xFF;
+		m[2] = (mask >> 8) & 0xFF;
+		m[3] = mask & 0xFF;
 
 		/* all operations here are done byte based, to avoid byte sex
 		 * problems */
-
-		/* adjust the mask such that it represents a bit string where
-		 * each 1 represents a bit that should match
-		 * this is not much clarifying, I know */
-		mask = 32 - val2->mask;
-		if (mask > 0)
-			m[3] <<= mask;
-		mask -= 8;
-		if (mask > 0)
-			m[2] <<= mask;
-		mask -= 8;
-		if (mask > 0)
-			m[1] <<= mask;
-		mask -= 8;
-		if (mask > 0)
-			m[0] <<= mask;
 
 		/* if you want to see some bytes, remove this comment
 		   fprintf(stderr, "%x %x %x %x => %x %x %x %x  %x %x %x %x\n",
@@ -426,27 +420,19 @@ INETbroadcast(inet * retval, inet * val)
 {
 	*retval = *val;
 	if (!in_isnil(val) && val->mask != 32) {
-		int mask;
-		unsigned char m[4] = { 255, 255, 255, 255 };
+		unsigned int mask;
+		unsigned char m[4];
 
-		/* all operations here are done byte based, to avoid byte sex
-		 * problems */
+		if (val->mask > 0)
+			mask = ~0 << (32 - val->mask);
+		else
+			mask = 0;
 
-		/* adjust the mask such that it represents a bit string where
-		 * each 1 represents a bit that should match
-		 * this is not much clarifying, I know */
-		mask = val->mask;
-		if (mask > 0)
-			m[0] >>= mask;
-		mask -= 8;
-		if (mask > 0)
-			m[1] >>= mask;
-		mask -= 8;
-		if (mask > 0)
-			m[2] >>= mask;
-		mask -= 8;
-		if (mask > 0)
-			m[3] >>= mask;
+		mask = ~mask;			/* invert the mask */
+		m[0] = (mask >> 24) & 0xFF;
+		m[1] = (mask >> 16) & 0xFF;
+		m[2] = (mask >> 8) & 0xFF;
+		m[3] = mask & 0xFF;
 
 		/* if you want to see some bytes, remove this comment
 		   fprintf(stderr, "%x %x %x %x => %x %x %x %x\n",
@@ -526,27 +512,18 @@ INETnetmask(inet * retval, inet * val)
 {
 	*retval = *val;
 	if (!in_isnil(val)) {
-		int mask;
-		unsigned char m[4] = { 255, 255, 255, 255 };
+		unsigned int mask;
+		unsigned char m[4];
 
-		/* all operations here are done byte based, to avoid byte sex
-		 * problems */
+		if (val->mask > 0)
+			mask = ~0 << (32 - val->mask);
+		else
+			mask = 0;
 
-		/* adjust the mask such that it represents a bit string where
-		 * each 1 represents a bit that should match
-		 * this is not much clarifying, I know */
-		mask = 32 - val->mask;
-		if (mask > 0)
-			m[3] <<= mask;
-		mask -= 8;
-		if (mask > 0)
-			m[2] <<= mask;
-		mask -= 8;
-		if (mask > 0)
-			m[1] <<= mask;
-		mask -= 8;
-		if (mask > 0)
-			m[0] <<= mask;
+		m[0] = (mask >> 24) & 0xFF;
+		m[1] = (mask >> 16) & 0xFF;
+		m[2] = (mask >> 8) & 0xFF;
+		m[3] = mask & 0xFF;
 
 		retval->q1 = m[0];
 		retval->q2 = m[1];
@@ -596,27 +573,18 @@ INETnetwork(inet * retval, inet * val)
 {
 	*retval = *val;
 	if (!in_isnil(val)) {
-		int mask;
-		unsigned char m[4] = { 255, 255, 255, 255 };
+		unsigned int mask;
+		unsigned char m[4];
 
-		/* all operations here are done byte based, to avoid byte sex
-		 * problems */
+		if (val->mask > 0)
+			mask = ~0 << (32 - val->mask);
+		else
+			mask = 0;
 
-		/* adjust the mask such that it represents a bit string where
-		 * each 1 represents a bit that should match
-		 * this is not much clarifying, I know */
-		mask = 32 - val->mask;
-		if (mask > 0)
-			m[3] <<= mask;
-		mask -= 8;
-		if (mask > 0)
-			m[2] <<= mask;
-		mask -= 8;
-		if (mask > 0)
-			m[1] <<= mask;
-		mask -= 8;
-		if (mask > 0)
-			m[0] <<= mask;
+		m[0] = (mask >> 24) & 0xFF;
+		m[1] = (mask >> 16) & 0xFF;
+		m[2] = (mask >> 8) & 0xFF;
+		m[3] = mask & 0xFF;
 
 		retval->q1 &= m[0];
 		retval->q2 &= m[1];
@@ -666,27 +634,24 @@ INETabbrev(str *retval, inet * val)
 	if (in_isnil(val)) {
 		*retval = GDKstrdup(str_nil);
 	} else {
-		int mask = 32 - val->mask;
-		unsigned char m[4] = { 255, 255, 255, 255 };
+		unsigned int mask;
+		unsigned char m[4];
 
-		/* Zero all bits that are allowed to be in there according to
-		 * the netmask length.  Afterwards it is easy to see if there
-		 * are bits set to the right of the mask, since then all four
-		 * quads are zero. */
-		mask = val->mask;
-		if (mask > 0)
-			m[0] >>= mask;
-		mask -= 8;
-		if (mask > 0)
-			m[1] >>= mask;
-		mask -= 8;
-		if (mask > 0)
-			m[2] >>= mask;
-		mask -= 8;
-		if (mask > 0)
-			m[3] >>= mask;
+		if (val->mask > 0)
+			mask = ~0 << (32 - val->mask);
+		else
+			mask = 0;
+		mask = ~mask;			/* invert the mask */
 
-		if ((val->q1 & m[0]) != 0 || (val->q2 & m[1]) != 0 || (val->q3 & m[2]) != 0 || (val->q4 & m[3]) != 0) {
+		m[0] = (mask >> 24) & 0xFF;
+		m[1] = (mask >> 16) & 0xFF;
+		m[2] = (mask >> 8) & 0xFF;
+		m[3] = mask & 0xFF;
+
+		if ((val->q1 & m[0]) != 0 ||
+			(val->q2 & m[1]) != 0 ||
+			(val->q3 & m[2]) != 0 ||
+			(val->q4 & m[3]) != 0) {
 			mask = 32;
 		} else {
 			mask = val->mask;
