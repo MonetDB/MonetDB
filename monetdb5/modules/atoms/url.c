@@ -427,8 +427,10 @@ URLgetContent(str *retval, str *Str1)
 		(void)memcpy(retbuf + rlen, buf, len);
 		rlen += len;
 	}
-	if (len < 0)
+	if (len < 0) {
+		GDKfree(retbuf);
 		throw(MAL, "url.getContent", "read error");
+	}
 	retbuf[rlen] = '\0';
 
 	*retval = retbuf;

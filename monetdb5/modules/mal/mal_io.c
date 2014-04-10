@@ -144,25 +144,28 @@ str
 IOprint_val(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int i;
+	str msg;
 
 	(void) cntxt;
 	if (p->argc == 2)
-		IOprintBoth(cntxt, mb, stk, p, 1, "[ ", " ]\n", 0);
+		msg = IOprintBoth(cntxt, mb, stk, p, 1, "[ ", " ]\n", 0);
 	else {
-		IOprintBoth(cntxt, mb, stk, p, 1, "[ ", 0, 1);
+		msg = IOprintBoth(cntxt, mb, stk, p, 1, "[ ", 0, 1);
+		if (msg)
+			return msg;
 		for (i = 2; i < p->argc - 1; i++)
-			IOprintBoth(cntxt,mb, stk, p, i, ", ", 0, 1);
-		IOprintBoth(cntxt,mb, stk, p, i, ", ", "]\n", 1);
+			if ((msg = IOprintBoth(cntxt,mb, stk, p, i, ", ", 0, 1)) != NULL)
+				return msg;
+		msg = IOprintBoth(cntxt,mb, stk, p, i, ", ", "]\n", 1);
 	}
-	return MAL_SUCCEED;
+	return msg;
 
 }
 
 str
 IOprint_tables(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	IOtableAll(cntxt->fdout, cntxt, mb, stk, p, 1, 0, FALSE, TRUE);
-	return MAL_SUCCEED;
+	return IOtableAll(cntxt->fdout, cntxt, mb, stk, p, 1, 0, FALSE, TRUE);
 }
 
 str
@@ -744,28 +747,33 @@ IOimport(int *ret, int *bid, str *fnme)
 		if ((fn = fileno(fp)) <= 0) {
 			BBPunfix(b->batCacheid);
 			fclose(fp);
+			GDKfree(buf);
 			throw(MAL, "io.import", OPERATION_FAILED " fileno()");
 		}
 		if (fstat(fn, &st) != 0) {
 			BBPunfix(b->batCacheid);
 			fclose(fp);
+			GDKfree(buf);
 			throw(MAL, "io.imports", OPERATION_FAILED "fstat()");
 		}
 
 		(void) fclose(fp);
 		if (st.st_size <= 0) {
 			BBPunfix(b->batCacheid);
-			throw(MAL, "io.imports", OPERATION_FAILED "Empty file or fstat broken");
+			GDKfree(buf);
+			throw(MAL, "io.imports", OPERATION_FAILED "Empty file");
 		}
 #if SIZEOF_SIZE_T == SIZEOF_INT
 		if (st.st_size > ~ (size_t) 0) {
 			BBPunfix(b->batCacheid);
+			GDKfree(buf);
 			throw(MAL, "io.imports", OPERATION_FAILED "File too large");
 		}
 #endif
 		base = cur = (char *) MT_mmap(*fnme, MMAP_SEQUENTIAL, (size_t) st.st_size);
 		if (cur == NULL) {
 			BBPunfix(b->batCacheid);
+			GDKfree(buf);
 			throw(MAL, "io.mport", OPERATION_FAILED "MT_mmap()");
 		}
 		end = cur + st.st_size;
@@ -823,12 +831,16 @@ IOimport(int *ret, int *bid, str *fnme)
 		if (*p == 0) {
 			BBPunfix(b->batCacheid);
 			snprintf(msg,sizeof(msg),"error in input %s",buf);
+			GDKfree(buf);
+			MT_munmap(base, end - base);
 			throw(MAL, "io.import", "%s", msg);
 		}
 		n = hconvert(p, &lh, (ptr*)&h);
 		if (n <= 0) {
 			BBPunfix(b->batCacheid);
 			snprintf(msg,sizeof(msg),"error in input %s",buf);
+			GDKfree(buf);
+			MT_munmap(base, end - base);
 			throw(MAL, "io.import", "%s", msg);
 		}
 		p += n;
@@ -841,20 +853,27 @@ IOimport(int *ret, int *bid, str *fnme)
 		if (*p == 0) {
 			BBPunfix(b->batCacheid);
 			snprintf(msg,sizeof(msg),"error in input %s",buf);
+			GDKfree(buf);
+			MT_munmap(base, end - base);
 			throw(MAL, "io.import", "%s", msg);
 		}
 		n = tconvert(p, &lt, (ptr*)&t);
 		if (n <= 0) {
 			BBPunfix(b->batCacheid);
 			snprintf(msg,sizeof(msg),"error in input %s",buf);
+			GDKfree(buf);
+			MT_munmap(base, end - base);
 			throw(MAL, "io.import", "%s", msg);
 		}
 		p += n;
 		if (BUNins(b, h, t, FALSE) == NULL) {
 			BBPunfix(b->batCacheid);
+			GDKfree(buf);
+			MT_munmap(base, end - base);
 			throw(MAL, "io.import", "insert failed");
 		}
 
+#if 0							/* why do this? any measured effects? */
 /*
  * Unmap already parsed memory, to keep the memory usage low.
  */
@@ -864,6 +883,7 @@ IOimport(int *ret, int *bid, str *fnme)
 			MT_munmap(base, MAXBUF);
 			base += MAXBUF;
 		}
+#endif
 #endif
 	}
 	/* Cleanup and exit. Return the filled BAT.  */

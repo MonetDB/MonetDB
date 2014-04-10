@@ -173,7 +173,7 @@ INETtoString(str *retval, int *len, inet *handle)
 	if (*len < 19) {
 		if (*retval != NULL)
 			GDKfree(*retval);
-		*retval = GDKmalloc(sizeof(str) * (*len = 19));
+		*retval = GDKmalloc(sizeof(char) * (*len = 19));
 	}
 	if (in_isnil(value)) {
 		*len = snprintf(*retval, *len, "(nil)");

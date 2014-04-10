@@ -1143,6 +1143,135 @@ strEpilogue(void)
 	return MAL_SUCCEED;
 }
 
+/* Get the last char in (X2), and #bytes it takes, but do not decrease the pos in (X2)
+ * The ELSE IF conditions are computed by comparing the left most byte with the
+ * (mask-bits - 1). The '-1' is to use '>' i.s.o. '>='.
+ * See gdk_atoms.c for UTF-8 encoding, especially, definitions of the mask-bits */
+#define UTF8_LASTCHAR(X1, SZ, X2, SZ2)				\
+	do {											\
+		if (*((X2)+SZ2-1) < 0x80) {					\
+			(X1) = *((X2)+SZ2-1);					\
+			(SZ) = 1;								\
+		} else if (*((X2)+SZ2-2) > 0xBF) {			\
+			(X1)  = (*((X2)+SZ2-2) & 0x1F) << 6;	\
+			(X1) |= (*((X2)+SZ2-1) & 0x3F);			\
+			(SZ) = 2;								\
+		} else if (*((X2)+SZ2-3) > 0xDF) {			\
+			(X1)  = (*((X2)+SZ2-3) & 0x0F) << 12;	\
+			(X1) |= (*((X2)+SZ2-2) & 0x3F) << 6;	\
+			(X1) |= (*((X2)+SZ2-1) & 0x3F);			\
+			(SZ) = 3;								\
+		} else if (*((X2)+SZ2-4) > 0xEF) {			\
+			(X1)  = (*((X2)+SZ2-4) & 0x07) << 18;	\
+			(X1) |= (*((X2)+SZ2-3) & 0x3F) << 12;	\
+			(X1) |= (*((X2)+SZ2-2) & 0x3F) << 6;	\
+			(X1) |= (*((X2)+SZ2-1) & 0x3F);			\
+			(SZ) = 4;								\
+		} else if (*((X2)+SZ2-5) > 0xF7) {			\
+			(X1)  = (*((X2)+SZ2-5) & 0x03) << 24;	\
+			(X1) |= (*((X2)+SZ2-4) & 0x3F) << 18;	\
+			(X1) |= (*((X2)+SZ2-3) & 0x3F) << 12;	\
+			(X1) |= (*((X2)+SZ2-2) & 0x3F) << 6;	\
+			(X1) |= (*((X2)+SZ2-1) & 0x3F);			\
+			(SZ) = 5;								\
+		} else if (*((X2)+SZ2-6) > 0xFB) {			\
+			(X1)  = (*((X2)+SZ2-6) & 0x01) << 30;	\
+			(X1) |= (*((X2)+SZ2-5) & 0x3F) << 24;	\
+			(X1) |= (*((X2)+SZ2-4) & 0x3F) << 18;	\
+			(X1) |= (*((X2)+SZ2-3) & 0x3F) << 12;	\
+			(X1) |= (*((X2)+SZ2-2) & 0x3F) << 6;	\
+			(X1) |= (*((X2)+SZ2-1) & 0x3F);			\
+			(SZ) = 6;								\
+		} else {									\
+			(X1) = int_nil;							\
+			(SZ) = 0;								\
+		}											\
+	} while (0)
+
+/* Get the first char in (X2), and #bytes it takes, but do not increase the pos in (X2) */
+#define UTF8_NEXTCHAR(X1, SZ, X2)				\
+	do {										\
+		if (*(X2) < 0x80) {						\
+			(X1) = *(X2);						\
+			(SZ) = 1;							\
+		} else if (*(X2) < 0xE0) {				\
+			(X1)  = ( *(X2)   & 0x1F) << 6;		\
+			(X1) |= (*((X2)+1) & 0x3F);			\
+			(SZ) = 2;							\
+		} else if (*(X2) < 0xF0) {				\
+			(X1)  = ( *(X2)   & 0x0F) << 12;	\
+			(X1) |= (*((X2)+1) & 0x3F) << 6;	\
+			(X1) |= (*((X2)+2) & 0x3F);			\
+			(SZ) = 3;							\
+		} else if (*(X2) < 0xF8) {				\
+			(X1)  = ( *(X2)   & 0x07) << 18;	\
+			(X1) |= (*((X2)+1) & 0x3F) << 12;	\
+			(X1) |= (*((X2)+2) & 0x3F) << 6;	\
+			(X1) |= (*((X2)+3) & 0x3F);			\
+			(SZ) = 4;							\
+		} else if (*(X2) < 0xFC) {				\
+			(X1)  = ( *(X2)   & 0x03) << 24;	\
+			(X1) |= (*((X2)+1) & 0x3F) << 18;	\
+			(X1) |= (*((X2)+2) & 0x3F) << 12;	\
+			(X1) |= (*((X2)+3) & 0x3F) << 6;	\
+			(X1) |= (*((X2)+4) & 0x3F);			\
+			(SZ) = 5;							\
+		} else if (*(X2) < 0xFE) {				\
+			(X1)  = ( *(X2)   & 0x01) << 30;	\
+			(X1) |= (*((X2)+1) & 0x3F) << 24;	\
+			(X1) |= (*((X2)+2) & 0x3F) << 18;	\
+			(X1) |= (*((X2)+3) & 0x3F) << 12;	\
+			(X1) |= (*((X2)+4) & 0x3F) << 6;	\
+			(X1) |= (*((X2)+5) & 0x3F);			\
+			(SZ) = 6;							\
+		} else {								\
+			(X1) = int_nil;						\
+			(SZ) = 0;							\
+		}										\
+	} while (0)
+
+/* Get the first char in (X2), and #bytes it takes */
+#define UTF8_GETCHAR_SZ(X1, SZ, X2)				\
+	do {										\
+		if (*(X2) < 0x80) {						\
+			(X1) = *(X2)++;						\
+			(SZ) = 1;							\
+		} else if (*(X2) < 0xE0) {				\
+			(X1)  = (*(X2)++ & 0x1F) << 6;		\
+			(X1) |= (*(X2)++ & 0x3F);			\
+			(SZ) = 2;							\
+		} else if (*(X2) < 0xF0) {				\
+			(X1)  = (*(X2)++ & 0x0F) << 12;		\
+			(X1) |= (*(X2)++ & 0x3F) << 6;		\
+			(X1) |= (*(X2)++ & 0x3F);			\
+			(SZ) = 3;							\
+		} else if (*(X2) < 0xF8) {				\
+			(X1)  = (*(X2)++ & 0x07) << 18;		\
+			(X1) |= (*(X2)++ & 0x3F) << 12;		\
+			(X1) |= (*(X2)++ & 0x3F) << 6;		\
+			(X1) |= (*(X2)++ & 0x3F);			\
+			(SZ) = 4;							\
+		} else if (*(X2) < 0xFC) {				\
+			(X1)  = (*(X2)++ & 0x03) << 24;		\
+			(X1) |= (*(X2)++ & 0x3F) << 18;		\
+			(X1) |= (*(X2)++ & 0x3F) << 12;		\
+			(X1) |= (*(X2)++ & 0x3F) << 6;		\
+			(X1) |= (*(X2)++ & 0x3F);			\
+			(SZ) = 5;							\
+		} else if (*(X2) < 0xFE) {				\
+			(X1)  = (*(X2)++ & 0x01) << 30;		\
+			(X1) |= (*(X2)++ & 0x3F) << 24;		\
+			(X1) |= (*(X2)++ & 0x3F) << 18;		\
+			(X1) |= (*(X2)++ & 0x3F) << 12;		\
+			(X1) |= (*(X2)++ & 0x3F) << 6;		\
+			(X1) |= (*(X2)++ & 0x3F);			\
+			(SZ) = 6;							\
+		} else {								\
+			(X1) = int_nil;						\
+			(SZ) = 0;							\
+		}										\
+	} while (0)
+
 #define UTF8_GETCHAR(X1, X2)					\
 	do {										\
 		if (*(X2) < 0x80) {						\
@@ -1796,8 +1925,75 @@ STRStrip(str *res, str *arg1)
 
 	len = s - start + 1;
 	*res = GDKmalloc(len);
+	if (*res == NULL)
+		throw(MAL, "str.trim", "Allocation failed");
 	memcpy(*res, start, len - 1);
 	(*res)[len - 1] = '\0';
+	return MAL_SUCCEED;
+}
+
+/* Remove the longest string containing only characters from 'arg2' from the start of 'arg1'
+ * 
+ * Example: trim('zzzytrimzyxyyz', 'xyz')
+ * Result: trim
+ */
+str
+STRStrip2(str *res, str *arg1, str *arg2)
+{
+	const char *s = *arg1, *s2 = *arg2;
+	const unsigned char *u = NULL;
+	int *toRm = NULL; /* candidate list of to be removed characters, converted to INT */
+	int i = 0, rm_cnt = UTF8_strlen(s2);
+	size_t len = strlen(*arg1);
+
+	toRm = GDKmalloc(sizeof(int) * rm_cnt);
+	if (toRm == NULL)
+		throw(MAL, "str.trim", "Allocation failed");
+	u = (const unsigned char *) s2;
+	for (i = 0; i < rm_cnt; i++)
+		UTF8_GETCHAR(toRm[i], u);
+	/* Just a sanity check that all bytes of s2 are consumed */
+	if (u[0] != '\0') {
+		GDKfree(toRm);
+		throw(MAL, "str.trim", "Invalid UTF-8 string %s", *arg2);
+	}
+
+	if (strNil(s)) {
+		*res = GDKstrdup(str_nil);
+	} else {
+		int c = 0, sz = 0;
+		const unsigned char *v = NULL;
+
+		/* trim left */
+		u = (const unsigned char *) s;
+		do {
+			UTF8_NEXTCHAR(c, sz, u);
+
+			for (i = 0; i < rm_cnt; i++) {
+				if (toRm[i] == c) {
+					u += sz;
+					break;
+				}
+			}
+		} while (i < rm_cnt);
+		/* trim right */
+		v = (const unsigned char *) s;
+		do {
+			UTF8_LASTCHAR(c, sz, v, len);
+
+			for (i = 0; i < rm_cnt; i++) {
+				if (toRm[i] == c) {
+					len -= sz;
+					break;
+				}
+			}
+		} while (i < rm_cnt);
+		*res = GDKstrndup((const char*)u, len - ((const char*)u - s));
+	}
+
+	GDKfree(toRm);
+	if (*res == NULL)
+		throw(MAL, "str.ltrim", "Allocation failed");
 	return MAL_SUCCEED;
 }
 
@@ -1817,6 +2013,55 @@ STRLtrim(str *res, str *arg1)
 	return MAL_SUCCEED;
 }
 
+/* Remove the longest string containing only characters from 'arg2' from the start of 'arg1'
+ * 
+ * Example: ltrim('zzzytrim', 'xyz')
+ * Result: trim
+ */
+str
+STRLtrim2(str *res, str *arg1, str *arg2)
+{
+	const char *s = *arg1, *s2 = *arg2;
+	const unsigned char *u = NULL;
+	int *toRm = NULL; /* candidate list of to be removed characters, converted to INT */
+	int i = 0, rm_cnt = UTF8_strlen(s2);
+
+	toRm = GDKmalloc(sizeof(int) * rm_cnt);
+	if (toRm == NULL)
+		throw(MAL, "str.ltrim", "Allocation failed");
+	u = (const unsigned char *) s2;
+	for (i = 0; i < rm_cnt; i++)
+		UTF8_GETCHAR(toRm[i], u);
+	/* Just a sanity check that all bytes of s2 are consumed */
+	if (u[0] != '\0') {
+		GDKfree(toRm);
+		throw(MAL, "str.ltrim", "Invalid UTF-8 string %s", *arg2);
+	}
+
+	if (strNil(s)) {
+		*res = GDKstrdup(str_nil);
+	} else {
+		int c = 0, sz = 0;
+
+		u = (const unsigned char *) s;
+		do {
+			UTF8_NEXTCHAR(c, sz, u);
+
+			for (i = 0; i < rm_cnt; i++) {
+				if (toRm[i] == c) {
+					u += sz;
+					break;
+				}
+			}
+		} while (i < rm_cnt);
+		*res = GDKstrdup((const char*)u);
+	}
+
+	GDKfree(toRm);
+	if (*res == NULL)
+		throw(MAL, "str.ltrim", "Allocation failed");
+	return MAL_SUCCEED;
+}
 
 str
 STRmax(str *res, str *left, str *right){
@@ -1892,6 +2137,253 @@ STRRtrim(str *res, str *arg1)
 	}
 	if (*res == NULL)
 		throw(MAL, "str.rtrim", "Allocation failed");
+	return MAL_SUCCEED;
+}
+
+/* Remove the longest string containing only characters from 'arg2' from the end of 'arg1'
+ * 
+ * Example: rtrim('trimxxxxxxxxx', 'xyz')
+ * Result: trim
+ */
+str
+STRRtrim2(str *res, str *arg1, str *arg2)
+{
+	const char *s = *arg1, *s2 = *arg2;
+	const unsigned char *u = NULL;
+	int *toRm = NULL;
+	int i = 0, rm_cnt = UTF8_strlen(*arg2);
+	size_t len = strlen(*arg1);
+
+	toRm = GDKmalloc(sizeof(int) * rm_cnt);
+	if (toRm == NULL)
+		throw(MAL, "str.rtrim", "Allocation failed");
+	u = (const unsigned char *) s2;
+	for (i = 0; i < rm_cnt; i++)
+		UTF8_GETCHAR(toRm[i], u);
+	/* Just a sanity check that all bytes of arg2 are consumed */
+	if (u[0] != '\0') {
+		GDKfree(toRm);
+		throw(MAL, "str.rtrim", "Invalid UTF-8 string %s", *arg2);
+	}
+
+	if (strNil(s)) {
+		*res = GDKstrdup(str_nil);
+	} else {
+		int c = 0, sz = 0;
+		u = (unsigned char *) s;
+		do {
+			UTF8_LASTCHAR(c, sz, u, len);
+
+			for (i = 0; i < rm_cnt; i++) {
+				if (toRm[i] == c) {
+					len -= sz;
+					break;
+				}
+			}
+		} while (i < rm_cnt);
+		*res = GDKstrndup(s, len);
+	}
+
+	GDKfree(toRm);
+	if (*res == NULL)
+		throw(MAL, "str.ltrim", "Allocation failed");
+	return MAL_SUCCEED;
+}
+
+/* Fill up 'arg1' to lenth 'len' by prepending whitespaces.
+ * If 'arg1' is already longer than 'len', then it's truncated on the right
+ * (NB: this is the PostgreSQL definition).
+ *
+ * Example: lpad('hi', 5)
+ * Result: '   hi'
+ */
+str
+STRLpad(str *res, str *arg1, size_t *len)
+{
+	const char *s = *arg1;
+	int pad_cnt = *len - UTF8_strlen(s); /* #whitespaces to be prepended */
+
+	if (pad_cnt == 0) {
+		*res = GDKstrdup(s);
+	} else if (pad_cnt < 0) { /* truncate */
+		s = UTF8_strtail(s, *len);
+		*res = GDKstrndup(*arg1, s - *arg1);
+	} else { /* pad_cnt > 0: fill */
+		int i = 0;
+		size_t s_len = strlen(s),
+			res_len = pad_cnt + s_len;
+		char *r = GDKmalloc(res_len+1);
+
+		if (r == NULL)
+			throw(MAL, "str.lpad", "Allocation failed");
+		for (i = 0; i < pad_cnt; i++) {
+			r[i] = ' ';
+		}
+		memcpy(r + pad_cnt, s, s_len);
+		r[res_len] = '\0';
+		*res = r;
+	}
+
+	if (res == NULL)
+		throw(MAL, "str.lpad", "Allocation failed");
+	return MAL_SUCCEED;
+}
+
+/* Fill up 'arg1' to lenth 'len' by appending whitespaces.
+ * If 'arg1' is already longer than 'len', then it's truncated (on the right)
+ * (NB: this is the PostgreSQL definition).
+ *
+ * Example: rpad('hi', 5)
+ * Result: 'hi   '
+ */
+str
+STRRpad(str *res, str *arg1, size_t *len)
+{
+	const char *s = *arg1;
+	int pad_cnt = *len - UTF8_strlen(s); /* #whitespaces to be appended */
+
+	if (pad_cnt == 0) {
+		*res = GDKstrdup(s);
+	} else if (pad_cnt < 0) { /* truncate */
+		s = UTF8_strtail(s, *len);
+		*res = GDKstrndup(*arg1, s - *arg1);
+	} else { /* pad_cnt > 0: fill */
+		size_t i = 0,
+			   s_len = strlen(s),
+			   res_len = pad_cnt + s_len;
+		char *r = GDKmalloc(res_len+1);
+
+		if (r == NULL)
+			throw(MAL, "str.lpad", "Allocation failed");
+		memcpy(r, s, s_len);
+		for (i = s_len; i < res_len; i++) {
+			r[i] = ' ';
+		}
+		r[res_len] = '\0';
+		*res = r;
+	}
+
+	if (res == NULL)
+		throw(MAL, "str.lpad", "Allocation failed");
+	return MAL_SUCCEED;
+}
+
+/* Fill up 'arg1' to lenth 'len' by prepending characters from 'arg2'
+ * If 'arg1' is already longer than 'len', then it's truncated on the right
+ * (NB: this is the PostgreSQL definition).
+ *
+ * Example: lpad('hi', 5, 'xy')
+ * Result: xyxhi
+ */
+str
+STRLpad2(str *res, str *arg1, size_t *len, str *arg2)
+{
+	const char *s = *arg1;
+	int pad_cnt = *len - UTF8_strlen(s); /* #chars to be prepended */
+
+	if (pad_cnt == 0) {
+		*res = GDKstrdup(s);
+	} else if (pad_cnt < 0) { /* truncate */
+		s = UTF8_strtail(s, *len);
+		*res = GDKstrndup(*arg1, s - *arg1);
+	} else { /* pad_cnt > 0: fill */
+		const char *s2 = *arg2, *s2_tmp = *arg2;
+		char *r = NULL;
+		const unsigned char *u = NULL;
+		int i = 0, c = 0, sz = 0,
+			s2_cnt = UTF8_strlen(s2),
+			nr_repeat = pad_cnt / s2_cnt,
+			nr_residual = pad_cnt % s2_cnt;
+		size_t s_len = strlen(s),
+			s2_len = strlen(s2),
+			repeat_len = s2_len * nr_repeat,
+			residual_len = 0,
+			res_len = s_len + repeat_len;
+
+		u = (const unsigned char *) s2_tmp;
+		for (i = 0; i < nr_residual; i++) {
+			UTF8_GETCHAR_SZ(c, sz, u);
+			residual_len += sz;
+		}
+		res_len += residual_len;
+		r = GDKmalloc(res_len+1);
+		if (r == NULL)
+			throw(MAL, "str.lpad", "Allocation failed");
+		for (i = 0; i < pad_cnt; i++) {
+			r[i] = ' ';
+		}
+
+		for (i = 0; i < nr_repeat; i++) {
+			memcpy(r + s2_len*i, s2, s2_len);
+		}
+		memcpy(r + repeat_len, s2, residual_len);
+		memcpy(r + repeat_len + residual_len, s, s_len);
+		r[res_len] = '\0';
+		*res = r;
+	}
+
+	if (res == NULL)
+		throw(MAL, "str.lpad", "Allocation failed");
+	return MAL_SUCCEED;
+}
+
+/* Fill up 'arg1' to lenth 'len' by appending characters from 'arg2'
+ * If 'arg1' is already longer than 'len', then it's truncated (on the right)
+ * (NB: this is the PostgreSQL definition).
+ *
+ * Example: rpad('hi', 5, 'xy')
+ * Result: hixyx
+ */
+str
+STRRpad2(str *res, str *arg1, size_t *len, str *arg2)
+{
+	const char *s = *arg1;
+	int pad_cnt = *len - UTF8_strlen(s); /* #chars to be appended */
+
+	if (pad_cnt == 0) {
+		*res = GDKstrdup(s);
+	} else if (pad_cnt < 0) { /* truncate */
+		s = UTF8_strtail(s, *len);
+		*res = GDKstrndup(*arg1, s - *arg1);
+	} else { /* pad_cnt > 0: fill */
+		const char *s2 = *arg2, *s2_tmp = *arg2;
+		char *r = NULL;
+		const unsigned char *u = NULL;
+		int i = 0, c = 0, sz = 0,
+			s2_cnt = UTF8_strlen(s2),
+			nr_repeat = pad_cnt / s2_cnt,
+			nr_residual = pad_cnt % s2_cnt;
+		size_t s_len = strlen(s),
+			s2_len = strlen(s2),
+			repeat_len = s2_len * nr_repeat,
+			residual_len = 0,
+
+			res_len = s_len + repeat_len;
+
+		u = (const unsigned char *)s2_tmp;
+		for (i = 0; i < nr_residual; i++) {
+			UTF8_GETCHAR_SZ(c, sz, u);
+			residual_len += sz;
+		}
+		res_len += residual_len;
+		r = GDKmalloc(res_len+1);
+		if (r == NULL)
+			throw(MAL, "str.lpad", "Allocation failed");
+		for (i = 0; i < pad_cnt; i++) {
+			r[i] = ' ';
+		}
+
+		memcpy(r, s, s_len);
+		for (i = 0; i < nr_repeat; i++) {
+			memcpy(r + s_len + s2_len*i, s2, s2_len);
+		}
+		memcpy(r + s_len + repeat_len, s2, residual_len);
+		r[res_len] = '\0';
+		*res = r;
+	}
+
+	if (res == NULL)
+		throw(MAL, "str.lpad", "Allocation failed");
 	return MAL_SUCCEED;
 }
 

@@ -161,6 +161,7 @@ pushInt(MalBlkPtr mb, InstrPtr q, int val)
 
 	cst.vtype= TYPE_int;
 	cst.val.ival= val;
+	cst.len = 0;
 	_t = defConstant(mb, TYPE_int,&cst);
 	return pushArgument(mb, q, _t);
 }
@@ -173,6 +174,7 @@ pushWrd(MalBlkPtr mb, InstrPtr q, wrd val)
 
 	cst.vtype= TYPE_wrd;
 	cst.val.wval= val;
+	cst.len = 0;
 	_t = defConstant(mb, TYPE_wrd,&cst);
 	return pushArgument(mb, q, _t);
 }
@@ -185,6 +187,7 @@ pushBte(MalBlkPtr mb, InstrPtr q, bte val)
 
 	cst.vtype= TYPE_bte;
 	cst.val.btval= val;
+	cst.len = 0;
 	_t = defConstant(mb, TYPE_bte,&cst);
 	return pushArgument(mb, q, _t);
 }
@@ -197,6 +200,7 @@ pushOid(MalBlkPtr mb, InstrPtr q, oid val)
 
 	cst.vtype= TYPE_oid;
 	cst.val.oval= val;
+	cst.len = 0;
 	_t = defConstant(mb,TYPE_oid,&cst);
 	return pushArgument(mb, q, _t);
 }
@@ -209,6 +213,7 @@ pushVoid(MalBlkPtr mb, InstrPtr q)
 
 	cst.vtype= TYPE_void;
 	cst.val.oval= oid_nil;
+	cst.len = 0;
 	_t = defConstant(mb,TYPE_void,&cst);
 	return pushArgument(mb, q, _t);
 }
@@ -221,6 +226,7 @@ pushLng(MalBlkPtr mb, InstrPtr q, lng val)
 
 	cst.vtype= TYPE_lng;
 	cst.val.lval= val;
+	cst.len = 0;
 	_t = defConstant(mb,TYPE_lng,&cst);
 	return pushArgument(mb, q, _t);
 }
@@ -245,6 +251,7 @@ pushDbl(MalBlkPtr mb, InstrPtr q, dbl val)
 
 	cst.vtype= TYPE_dbl;
 	cst.val.dval= val;
+	cst.len = 0;
 	_t = defConstant(mb,TYPE_dbl,&cst);
 	return pushArgument(mb, q, _t);
 }
@@ -257,6 +264,7 @@ pushFlt(MalBlkPtr mb, InstrPtr q, flt val)
 
 	cst.vtype= TYPE_flt;
 	cst.val.fval= val;
+	cst.len = 0;
 	_t = defConstant(mb,TYPE_flt,&cst);
 	return pushArgument(mb, q, _t);
 }
@@ -282,6 +290,7 @@ pushBit(MalBlkPtr mb, InstrPtr q, bit val)
 
 	cst.vtype= TYPE_bit;
 	cst.val.btval= val;
+	cst.len = 0;
 	_t = defConstant(mb,TYPE_bit,&cst);
 
 	return pushArgument(mb, q, _t);
@@ -293,6 +302,7 @@ pushNil(MalBlkPtr mb, InstrPtr q, int tpe)
 	int _t;
 	ValRecord cst;
 
+	cst.len = 0;
 	if( !isaBatType(tpe) && tpe != TYPE_bat ) {
 		assert(tpe < MAXATOMS);	/* in particular, tpe!=TYPE_any */
 		if (!tpe) {
@@ -326,6 +336,7 @@ pushNilType(MalBlkPtr mb, InstrPtr q, char *tpe)
 	idx= getTypeIndex(tpe, -1, TYPE_any);
 	cst.vtype=TYPE_void;
 	cst.val.oval= oid_nil;
+	cst.len = 0;
 	convertConstant(idx, &cst);
 	_t = defConstant(mb,idx,&cst);
 	setVarUDFtype(mb,_t);
@@ -340,6 +351,7 @@ pushType(MalBlkPtr mb, InstrPtr q, int tpe)
 
 	cst.vtype=TYPE_void;
 	cst.val.oval= oid_nil;
+	cst.len = 0;
 	convertConstant(tpe, &cst);
 	_t = defConstant(mb,tpe,&cst);
 	setVarUDFtype(mb,_t);
@@ -355,6 +367,7 @@ pushZero(MalBlkPtr mb, InstrPtr q, int tpe)
 
 	cst.vtype=TYPE_int;
 	cst.val.ival= 0;
+	cst.len = 0;
 	convertConstant(tpe, &cst);
 	_t = defConstant(mb,tpe,&cst);
 

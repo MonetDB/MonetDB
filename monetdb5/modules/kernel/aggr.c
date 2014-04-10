@@ -629,7 +629,6 @@ AGGRquantile3(bat *retval, bat *bid, bat *gid, bat *eid, bat *quantile)
 	b = BATdescriptor(*bid);	/* [head,value] */
 	g = BATdescriptor(*gid);	/* [head,gid] */
 	e = BATdescriptor(*eid);	/* [gid,any] */
-	e = BATdescriptor(*eid);	/* [gid,any] */
 	q = BATdescriptor(*quantile);
 	return AGGRgrouped(retval, NULL, b, g, e, TYPE_any, NULL, NULL, BATgroupquantile, q, 0,  "aggr.quantile");
 }

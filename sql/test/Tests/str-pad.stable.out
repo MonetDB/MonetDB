@@ -1,0 +1,239 @@
+stdout of test 'str-pad` in directory 'sql/test` itself:
+
+
+# 22:57:28 >  
+# 22:57:28 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=33092" "--set" "mapi_usock=/var/tmp/mtest-11664/.s.monetdb.33092" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch2/zhang/monet-install/default/debug/var/MonetDB/mTests_sql_test" "--set" "mal_listing=0"
+# 22:57:28 >  
+
+# MonetDB 5 server v11.18.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.591 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://riga.ins.cwi.nl:33092/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-11664/.s.monetdb.33092
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 19_cluster.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 24_zorder.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 40_json.sql
+# loading sql script: 41_jsonstore.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 46_gsl.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 99_system.sql
+
+# 22:57:30 >  
+# 22:57:30 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-11664" "--port=33092"
+# 22:57:30 >  
+
+#SELECT '#' || lpad('hi', 7) || '#';
+% .L # table_name
+% concat_single_value # name
+% char # type
+% 0 # length
+[ "#     hi#"	]
+#SELECT '#' || lpad('hixyäbcdef', 7) || '#';
+% .L # table_name
+% concat_single_value # name
+% char # type
+% 0 # length
+[ "#hixyäbc#"	]
+#SELECT '#' || lpad('hi', 7, 'xya') || '#';
+% .L # table_name
+% concat_single_value # name
+% char # type
+% 0 # length
+[ "#xyaxyhi#"	]
+#SELECT '#' || lpad('hi', 7, 'xyä') || '#';
+% .L # table_name
+% concat_single_value # name
+% char # type
+% 0 # length
+[ "#xyäxyhi#"	]
+#SELECT '#' || lpad('hi', 7, 'xyäbcdef') || '#';
+% .L # table_name
+% concat_single_value # name
+% char # type
+% 0 # length
+[ "#xy颖äbhi#"	]
+#SELECT '#' || lpad('hi颖xyäbcdef', 7, 'lmn') || '#';
+% .L # table_name
+% concat_single_value # name
+% char # type
+% 0 # length
+[ "#hi颖xyäb#"	]
+#SELECT '#' || rpad('hi', 7) || '#';
+% .L # table_name
+% concat_single_value # name
+% char # type
+% 0 # length
+[ "#hi     #"	]
+#SELECT '#' || rpad('hixyäbcdef', 7) || '#';
+% .L # table_name
+% concat_single_value # name
+% char # type
+% 0 # length
+[ "#hixyäbc#"	]
+#SELECT '#' || rpad('hi', 7, 'xya') || '#';
+% .L # table_name
+% concat_single_value # name
+% char # type
+% 0 # length
+[ "#hixyaxy#"	]
+#SELECT '#' || rpad('hi', 7, 'xyä') || '#';
+% .L # table_name
+% concat_single_value # name
+% char # type
+% 0 # length
+[ "#hixyäxy#"	]
+#SELECT '#' || rpad('hi', 7, 'xyäbcdef') || '#';
+% .L # table_name
+% concat_single_value # name
+% char # type
+% 0 # length
+[ "#hixy颖äb#"	]
+#SELECT '#' || rpad('hi颖xyäbcdef', 7, 'lmn') || '#';
+% .L # table_name
+% concat_single_value # name
+% char # type
+% 0 # length
+[ "#hi颖xyäb#"	]
+#CREATE TABLE p (s VARCHAR(20), n int);
+#INSERT INTO p VALUES ('hi', 10), ('hixyäbcdef', 7);
+[ 2	]
+#SELECT '#' || lpad(s, 5) || '#' FROM p;
+% .L # table_name
+% concat_single_value # name
+% varchar # type
+% 7 # length
+[ "#   hi#"	]
+[ "#hixyä#"	]
+#SELECT '#' || lpad(s, n) || '#' FROM p;
+% .L # table_name
+% concat_single_value # name
+% varchar # type
+% 12 # length
+[ "#        hi#"	]
+[ "#hixyäbc#"	]
+#SELECT '#' || rpad(s, 5) || '#' FROM p;
+% .L # table_name
+% concat_single_value # name
+% varchar # type
+% 7 # length
+[ "#hi   #"	]
+[ "#hixyä#"	]
+#SELECT '#' || rpad(s, n) || '#' FROM p;
+% .L # table_name
+% concat_single_value # name
+% varchar # type
+% 12 # length
+[ "#hi        #"	]
+[ "#hixyäbc#"	]
+#CREATE TABLE p2 (s VARCHAR(20), n int, s2 VARCHAR(10));
+#INSERT INTO p2 VALUES ('hi', 6, 'xya'), ('hi', 7, 'xyä'), ('hi', 8, 'xy颖äbcdef'), ('hi颖xyäbcdef', 9, 'lmn');
+[ 4	]
+#SELECT '#' || lpad(s, 10, 'x') || '#' FROM p2;
+% .L # table_name
+% concat_single_value # name
+% varchar # type
+% 12 # length
+[ "#xxxxxxxxhi#"	]
+[ "#xxxxxxxxhi#"	]
+[ "#xxxxxxxxhi#"	]
+[ "#hi颖xyäbcde#"	]
+#SELECT '#' || lpad(s, n, 'x') || '#' FROM p2;
+% .L # table_name
+% concat_single_value # name
+% varchar # type
+% 11 # length
+[ "#xxxxhi#"	]
+[ "#xxxxxhi#"	]
+[ "#xxxxxxhi#"	]
+[ "#hi颖xyäbcd#"	]
+#SELECT '#' || lpad(s, 10, s2) || '#' FROM p2;
+% .L # table_name
+% concat_single_value # name
+% varchar # type
+% 12 # length
+[ "#xyaxyaxyhi#"	]
+[ "#xyäxyäxyhi#"	]
+[ "#xy颖äbcdehi#"	]
+[ "#hi颖xyäbcde#"	]
+#SELECT '#' || lpad(s, n, s2) || '#' FROM p2;
+% .L # table_name
+% concat_single_value # name
+% varchar # type
+% 11 # length
+[ "#xyaxhi#"	]
+[ "#xyäxyhi#"	]
+[ "#xy颖äbchi#"	]
+[ "#hi颖xyäbcd#"	]
+#SELECT '#' || rpad(s, 10, 'x') || '#' FROM p2;
+% .L # table_name
+% concat_single_value # name
+% varchar # type
+% 12 # length
+[ "#hixxxxxxxx#"	]
+[ "#hixxxxxxxx#"	]
+[ "#hixxxxxxxx#"	]
+[ "#hi颖xyäbcde#"	]
+#SELECT '#' || rpad(s, n, 'x') || '#' FROM p2;
+% .L # table_name
+% concat_single_value # name
+% varchar # type
+% 11 # length
+[ "#hixxxx#"	]
+[ "#hixxxxx#"	]
+[ "#hixxxxxx#"	]
+[ "#hi颖xyäbcd#"	]
+#SELECT '#' || rpad(s, 10, s2) || '#' FROM p2;
+% .L # table_name
+% concat_single_value # name
+% varchar # type
+% 12 # length
+[ "#hixyaxyaxy#"	]
+[ "#hixyäxyäxy#"	]
+[ "#hixy颖äbcde#"	]
+[ "#hi颖xyäbcde#"	]
+#SELECT '#' || rpad(s, n, s2) || '#' FROM p2;
+% .L # table_name
+% concat_single_value # name
+% varchar # type
+% 11 # length
+[ "#hixyax#"	]
+[ "#hixyäxy#"	]
+[ "#hixy颖äbc#"	]
+[ "#hi颖xyäbcd#"	]
+#DROP TABLE p;
+#DROP TABLE p2;
+
+# 22:57:30 >  
+# 22:57:30 >  "Done."
+# 22:57:30 >  
+
