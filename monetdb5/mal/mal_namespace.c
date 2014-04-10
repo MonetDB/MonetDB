@@ -179,6 +179,11 @@ str putName(str nme, size_t len)
 	memcpy(buf, nme, len);
 	buf[len]=0;
 	n->nme= GDKstrdup(buf);
+	if (n->nme == NULL) {
+        /* absolute an error we can not recover from */
+        showException(GDKout, MAL,"initNamespace",MAL_MALLOC_FAIL);
+		mal_exit();
+	}
 	n->length = len;
 	l = len;
 	NME_HASH(nme, k, l);
