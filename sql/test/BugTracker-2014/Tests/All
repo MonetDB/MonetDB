@@ -9,3 +9,11 @@ sample-crash.Bug-3429
 indices.Bug-3435
 utf8bom.Bug-3436
 left-outer-join-with-and.Bug-3444
+setreadonly_forgets_changes.Bug-3446
+select-having.Bug-3458
+crash_on_or_with_in.Bug-3461
+in_incorrect_multi.Bug-3462
+crash_on_groupby_distinct_serial.Bug-3463
+local-temp-1.Bug-3468.sql 
+local-temp-2.Bug-3468.sql 
+

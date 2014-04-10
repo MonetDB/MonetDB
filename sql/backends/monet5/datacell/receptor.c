@@ -139,18 +139,18 @@ RCreceptorStartInternal(int *ret, str *tbl, str *host, int *port, int mode, int 
 			throw(MAL, "receptor.new", "Could not access descriptor");
 		}
 		BBPincref(b->batCacheid, TRUE);
-		fmt[j].c[0] = b;
+		fmt[j].c = b;
 		fmt[j].name = baskets[idx].cols[i];
 		fmt[j].sep = ",";
 		fmt[j].seplen = 1;
 		fmt[j].type = GDKstrdup(ATOMname(b->ttype));
 		fmt[j].adt = (b)->ttype;
-		fmt[j].tostr = &TABLETadt_toStr;
-		fmt[j].frstr = &TABLETadt_frStr;
+		fmt[j].tostr = (void*) &TABLETadt_toStr;
+		fmt[j].frstr = (void*) &TABLETadt_frStr;
 		fmt[j].extra = fmt + j;
 		fmt[j].len = fmt[j].nillen =
 						 ATOMlen(fmt[j].adt, ATOMnilptr(fmt[j].adt));
-		fmt[j].data = GDKmalloc(fmt[j].len);
+		fmt[j].data = GDKzalloc(fmt[j].len);
 		fmt[j].nullstr = "";
 		j++;
 	}
@@ -159,7 +159,7 @@ RCreceptorStartInternal(int *ret, str *tbl, str *host, int *port, int mode, int 
 #ifdef _DEBUG_RECEPTOR_
 	mnstr_printf(RCout, "#Instantiate a new receptor %d fields\n", j);
 #endif
-	if (MT_create_thread(&rc->pid, (void (*)(void *))RCstartThread, rc, MT_THR_DETACHED) != 0)
+	if (MT_create_thread(&rc->pid, (void (*)(void *))RCstartThread, rc, MT_THR_JOINABLE) != 0)
 		throw(MAL, "receptor.start", "Receptor '%s' initiation failed", rc->name);
 	(void) ret;
 	return MAL_SUCCEED;
@@ -247,7 +247,7 @@ str RCreceptorStop(int *ret, str *nme)
 	rc->status = BSKTINIT;
 	if (rc->lck)
 		BSKTunlock(&rc->lck, &rc->name);
-	MT_join_thread(rc->pid);
+	rc->status = BSKTSTOP;
 	return MAL_SUCCEED;
 }
 
@@ -345,7 +345,7 @@ insert_val(Column *fmt, char *s, char *e, char quote, ptr key, str *err, int c)
 		/* string needs the quotes included */
 		s = find_quote(s, quote);
 		if (!s) {
-			snprintf(buf, BUFSIZ, "quote '%c' expected but not found in \"%s\" from line " BUNFMT "\n", quote, s, BATcount(fmt->c[0]));
+			snprintf(buf, BUFSIZ, "quote '%c' expected but not found in \"%s\" from line " BUNFMT "\n", quote, s, BATcount(fmt->c));
 			*err = GDKstrdup(buf);
 			return -1;
 		}
@@ -360,7 +360,7 @@ insert_val(Column *fmt, char *s, char *e, char quote, ptr key, str *err, int c)
 			 strncasecmp(s, fmt->nullstr + 1, fmt->nillen) == 0 &&
 			 quote == fmt->nullstr[fmt->nillen - 1])) {
 			adt = fmt->nildata;
-			fmt->c[0]->T->nonil = 0;
+			fmt->c->T->nonil = 0;
 		} else
 			adt = fmt->frstr(fmt, fmt->adt, s, e, quote);
 		if (bak)
@@ -374,7 +374,7 @@ insert_val(Column *fmt, char *s, char *e, char quote, ptr key, str *err, int c)
 		if ((s == e && fmt->nullstr[0] == 0) ||
 			(e > s && strcasecmp(s, fmt->nullstr) == 0)) {
 			adt = fmt->nildata;
-			fmt->c[0]->T->nonil = 0;
+			fmt->c->T->nonil = 0;
 		} else
 			adt = fmt->frstr(fmt, fmt->adt, s, e, quote);
 		if (bak)
@@ -388,16 +388,16 @@ insert_val(Column *fmt, char *s, char *e, char quote, ptr key, str *err, int c)
 		val = (s != e) ? GDKstrdup(s) : GDKstrdup("");
 		*e = bak;
 
-		snprintf(buf, BUFSIZ, "value '%s' while parsing '%s' from line " BUNFMT " field %d not inserted, expecting type %s\n", val, s, BATcount(fmt->c[0]), c, fmt->type);
+		snprintf(buf, BUFSIZ, "value '%s' while parsing '%s' from line " BUNFMT " field %d not inserted, expecting type %s\n", val, s, BATcount(fmt->c), c, fmt->type);
 		*err = GDKstrdup(buf);
 		GDKfree(val);
 		return -1;
 	}
 	/* key may be NULL but that's not a problem, as long as we have void */
-	bunfastins(fmt->c[0], key, adt);
+	bunfastins(fmt->c, key, adt);
 	return 0;
   bunins_failed:
-	snprintf(buf, BUFSIZ, "while parsing '%s' from line " BUNFMT " field %d not inserted\n", s, BATcount(fmt->c[0]), c);
+	snprintf(buf, BUFSIZ, "while parsing '%s' from line " BUNFMT " field %d not inserted\n", s, BATcount(fmt->c), c);
 	*err = GDKstrdup(buf);
 	return -1;
 }
@@ -447,7 +447,7 @@ insert_line(Tablet *as, char *line, ptr key, BUN col1, BUN col2)
 			line++;
 			line = tablet_skip_string(line, quote);
 			if (!line) {
-				snprintf(errmsg, BUFSIZ, "End of string (%c) missing " "in %s at line " BUNFMT "\n", quote, s, BATcount(fmt->c[0]));
+				snprintf(errmsg, BUFSIZ, "End of string (%c) missing " "in %s at line " BUNFMT "\n", quote, s, BATcount(fmt->c));
 				as->error = GDKstrdup(errmsg);
 				if (!as->tryall)
 					return -1;
@@ -488,7 +488,7 @@ insert_line(Tablet *as, char *line, ptr key, BUN col1, BUN col2)
 				BUNins(as->complaints, NULL, as->error, TRUE);
 			}
 		} else {
-			snprintf(errmsg, BUFSIZ, "missing separator '%s' line " BUNFMT " field " BUNFMT "\n", fmt->sep, BATcount(fmt->c[0]), i);
+			snprintf(errmsg, BUFSIZ, "missing separator '%s' line " BUNFMT " field " BUNFMT "\n", fmt->sep, BATcount(fmt->c), i);
 			as->error = GDKstrdup(errmsg);
 			if (!as->tryall)
 				return -1;
@@ -567,7 +567,7 @@ bodyRestart:
 			mnstr_close(receptor);
 			for (j = 0; j < rc->table.nr_attrs; j++) {
 				GDKfree(rc->table.format[j].data);
-				BBPdecref(rc->table.format[j].c[0]->batCacheid, TRUE);
+				BBPdecref(rc->table.format[j].c->batCacheid, TRUE);
 				/* above will be double freed with multiple
 				 * streams/threads */
 			}
@@ -610,7 +610,7 @@ bodyRestart:
 			/* BATs may be replaced in the meantime */
 			BSKTlock(&rc->lck, &rc->name, &rc->delay);
 			for (i = 0; i < baskets[rc->bskt].colcount; i++)
-				rc->table.format[i].c[0] = baskets[rc->bskt].primary[i];
+				rc->table.format[i].c = baskets[rc->bskt].primary[i];
 			BSKTunlock(&rc->lck, &rc->name);
 
 			cnt = 0;
@@ -639,7 +639,7 @@ parse:
 							/* only keep the last errorenous event for analysis */
 							if (rcError)
 								GDKfree(rcError);
-							rcError = (char *) GDKmalloc(k = strlen(line) + 100);
+							rcError = (char *) GDKzalloc(k = strlen(line) + 100);
 							if (rcError)
 								snprintf(rcError, k, "newline missing:%s", line);
 							rcErrorEvent = cnt;
@@ -657,7 +657,7 @@ parse:
 							/* only keep the last errorenous event for analysis */
 							if (rcError)
 								GDKfree(rcError);
-							rcError = (char *) GDKmalloc(k = strlen(line) + 100);
+							rcError = (char *) GDKzalloc(k = strlen(line) + 100);
 							if (rcError)
 								snprintf(rcError, k, "parsing error:%s", line);
 							rcErrorEvent = cnt;
@@ -855,11 +855,12 @@ RCstartThread(Receptor rc)
 			if (rc->error) {
 				mnstr_printf(RCout, "Receptor listen fails: %s\n", rc->error);
 				rc->status = BSKTERROR;
+				break;
 			}
 #ifdef _DEBUG_RECEPTOR_
 			mnstr_printf(RCout, "#Receptor connection request received \n");
 #endif
-			if (MT_create_thread(&rc->pid, (void (*)(void *))RCbody, rc, MT_THR_DETACHED) != 0) {
+			if (MT_create_thread(&rc->pid, (void (*)(void *))RCbody, rc, MT_THR_JOINABLE) != 0) {
 				shutdown(rc->newsockfd, SHUT_RDWR);
 				close(rc->newsockfd);
 				GDKfree(rc);
@@ -874,7 +875,9 @@ RCstartThread(Receptor rc)
 			RCbody(rc);
 		}
 	}
+	socket_close(rc->newsockfd);
 	shutdown(rc->sockfd, SHUT_RDWR);
+	MT_join_thread(rc->pid);
 	return MAL_SUCCEED;
 }
 
@@ -946,7 +949,7 @@ RCtable(int *nameId, int *hostId, int *portId, int *protocolId, int *modeId, int
 	BATseqbase(status, 0);
 
 	for (; rc; rc = rc->nxt)
-		if (rc->table.format[1].c[0]) {
+		if (rc->table.format[1].c) {
 			BUNappend(name, rc->name, FALSE);
 			BUNappend(host, rc->host, FALSE);
 			BUNappend(port, &rc->port, FALSE);
@@ -955,7 +958,7 @@ RCtable(int *nameId, int *hostId, int *portId, int *protocolId, int *modeId, int
 			BUNappend(status, statusname[rc->status], FALSE);
 			BUNappend(seen, &rc->lastseen, FALSE);
 			BUNappend(cycles, &rc->cycles, FALSE);
-			rc->pending = (int) BATcount(rc->table.format[1].c[0]);
+			rc->pending = (int) BATcount(rc->table.format[1].c);
 			BUNappend(pending, &rc->pending, FALSE);
 			BUNappend(received, &rc->received, FALSE);
 		}

@@ -54,7 +54,13 @@ datacell_export str DCquery(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 datacell_export str DCdump(int *ret);
 datacell_export str DCthreshold(int *ret, str *bskt, int *mi);
 datacell_export str DCwindow(int *ret, str *bskt, lng *sz, lng *slide);
+datacell_export str DCwindowBte(int *ret, str *bskt, bte *sz, bte *slide);
+datacell_export str DCwindowInt(int *ret, str *bskt, int *sz, int *slide);
+datacell_export str DCwindowSht(int *ret, str *bskt, sht *sz, sht *slide);
 datacell_export str DCtimewindow(int *ret, str *bskt, lng *sz, lng *slide);
+datacell_export str DCbeatBte(int *ret, str *bskt, bte *t);
+datacell_export str DCbeatSht(int *ret, str *bskt, sht *t);
+datacell_export str DCbeatInt(int *ret, str *bskt, int *t);
 datacell_export str DCbeat(int *ret, str *bskt, lng *t);
 
 datacell_export str DCpauseScheduler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);

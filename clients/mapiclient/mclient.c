@@ -709,7 +709,7 @@ CSVrenderer(MapiHdl hdl)
 				mnstr_write(toConsole, "\"", 1, 1);
 			} else
 				mnstr_printf(toConsole, "%s%s",
-					      i == 0 ? "" : sep, s ? s : "");
+					      i == 0 ? "" : sep, s);
 		}
 		mnstr_printf(toConsole, "\n");
 	}
@@ -1463,7 +1463,7 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 
 	do {
 		/* handle errors first */
-		if ((reply = mapi_result_error(hdl)) != NULL) {
+		if (mapi_result_error(hdl) != NULL) {
 			mnstr_flush(toConsole);
 			if (formatter == TABLEformatter || formatter == CLEANformatter) {
 				mapi_noexplain(mid, "");
@@ -1832,7 +1832,7 @@ doFile(Mapi mid, const char *file, int useinserts, int interactive, int save_his
 	char *oldbuf = NULL, *buf = NULL;
 	size_t length;
 	size_t bufsiz = 0;
-	MapiHdl hdl = mapi_get_active(mid);
+	MapiHdl hdl;
 	MapiMsg rc = MOK;
 	int lineno = 1;
 	enum hmyesno hassysfuncs = UNKNOWN;
@@ -2005,14 +2005,12 @@ doFile(Mapi mid, const char *file, int useinserts, int interactive, int save_his
 		if (line == NULL) {
 			/* end of file */
 			if (hdl == NULL) {
-				if (line != NULL)
-					continue;
 				/* nothing more to do */
+				free(buf);
 				goto bailout;
 			}
 
 			/* hdl != NULL, we should finish the current query */
-			line = NULL;
 			length = 0;
 		} else
 			length = strlen(line);
@@ -2603,7 +2601,7 @@ set_timezone(Mapi mid)
 	mapi_close_handle(hdl);
 }
 
-static void usage(const char *prog, int xit)
+__declspec(noreturn) static void usage(const char *prog, int xit)
 	__attribute__((__noreturn__));
 
 static void

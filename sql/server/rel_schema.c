@@ -1518,7 +1518,7 @@ rel_create_index(mvc *sql, char *iname, idx_type itype, dlist *qname, dlist *col
 	sname = get_schema_name( sql, sname, tname);
 	nt = dup_sql_table(sql->sa, t);
 
-	if (t->persistence != SQL_DECLARED_TABLE && s)
+	if (t->persistence != SQL_DECLARED_TABLE)
 		sname = s->base.name;
 	if (t->s && !nt->s)
 		nt->s = t->s;

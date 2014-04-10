@@ -634,11 +634,10 @@ simple_command(int argc, char *argv[], char *merocmd, char *successmsg, char glo
 			if (argv[i] != NULL) {
 				/* maintain input order */
 				if (orig == NULL) {
-					stats = orig = malloc(sizeof(sabdb));
+					stats = orig = calloc(1, sizeof(sabdb));
 				} else {
-					stats = stats->next = malloc(sizeof(sabdb));
+					stats = stats->next = calloc(1, sizeof(sabdb));
 				}
-				memset(stats, 0, sizeof(sabdb));
 				stats->dbname = strdup(argv[i]);
 			}
 		}
@@ -1088,7 +1087,7 @@ typedef enum {
 	INHERIT
 } meroset;
 
-static void command_set(int argc, char *argv[], meroset type)
+__declspec(noreturn) static void command_set(int argc, char *argv[], meroset type)
 	__attribute__((__noreturn__));
 
 static void
@@ -1476,11 +1475,10 @@ command_create(int argc, char *argv[])
 		if (argv[i] != NULL) {
 			/* maintain input order */
 			if (orig == NULL) {
-				stats = orig = malloc(sizeof(sabdb));
+				stats = orig = calloc(1, sizeof(sabdb));
 			} else {
-				stats = stats->next = malloc(sizeof(sabdb));
+				stats = stats->next = calloc(1, sizeof(sabdb));
 			}
-			memset(stats, 0, sizeof(sabdb));
 			stats->dbname = strdup(argv[i]);
 		}
 	}
@@ -1711,17 +1709,14 @@ main(int argc, char *argv[])
 		 * where we should search, which defaults to '/tmp' */
 		if (mero_host == NULL)
 			mero_host = "/tmp";
-		do {
-			/* first try the port given (or else its default) */
-			snprintf(buf, sizeof(buf), "%s/.s.merovingian.%d",
-					mero_host, mero_port == -1 ? 50000 : mero_port);
-			if (control_ping(buf, -1, NULL) == 0) {
-				mero_host = buf;
-				break;
-			}
-
-			/* if port wasn't given, we can try and search for available
-			 * sockets */
+		/* first try the port given (or else its default) */
+		snprintf(buf, sizeof(buf), "%s/.s.merovingian.%d",
+			 mero_host, mero_port == -1 ? 50000 : mero_port);
+		if (control_ping(buf, -1, NULL) == 0) {
+			mero_host = buf;
+		} else {
+			/* if port wasn't given, we can try and search
+			 * for available sockets */
 			if (mero_port == -1) {
 				DIR *d;
 				struct dirent *e;
@@ -1747,7 +1742,7 @@ main(int argc, char *argv[])
 				}
 				closedir(d);
 			}
-		} while(0);
+		}
 
 		if (mero_host != buf) {
 			fprintf(stderr, "monetdb: cannot find a control socket, use -h and/or -p\n");

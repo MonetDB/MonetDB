@@ -83,11 +83,15 @@ monet5_freestack(int clientid, backend_stack stk)
 static void
 monet5_freecode(int clientid, backend_code code, backend_stack stk, int nr, char *name)
 {
+	str msg;
+
 	(void) code;
 	(void) stk;
 	(void) nr;
 	(void) clientid;
-	SQLCacheRemove(MCgetClient(clientid), name);
+	msg = SQLCacheRemove(MCgetClient(clientid), name);
+	if (msg)
+		GDKfree(msg);	/* do something with error? */
 
 #ifdef _SQL_SCENARIO_DEBUG
 	mnstr_printf(GDKout, "#monet5_free:%d\n", nr);
@@ -1285,7 +1289,9 @@ SQLexitClient(Client c)
 str
 SQLinitEnvironment(Client cntxt)
 {
-	return SQLinitClient(cntxt);
+	if ( !SQLinitialized)
+		return SQLinitClient(cntxt);
+	return MAL_SUCCEED;
 }
 
 static void

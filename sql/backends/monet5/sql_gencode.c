@@ -126,7 +126,7 @@ initSQLreferences(void)
  * The dump_header produces a sequence of instructions for
  * the front-end to prepare presentation of a result table.
  */
-static void
+static int
 dump_header(mvc *sql, MalBlkPtr mb, stmt *s, list *l)
 {
 	node *n;
@@ -146,20 +146,26 @@ dump_header(mvc *sql, MalBlkPtr mb, stmt *s, list *l)
 		size_t fqtnl = strlen(ntn) + 1 + strlen(nsn) + 1;
 		char *fqtn = NEW_ARRAY(char, fqtnl);
 
-		snprintf(fqtn, fqtnl, "%s.%s", nsn, ntn);
+		if (ntn && nsn && fqtn) {
+			snprintf(fqtn, fqtnl, "%s.%s", nsn, ntn);
 
-		q = newStmt1(mb, sqlRef, "rsColumn");
-		q = pushArgument(mb, q, s->nr);
-		q = pushStr(mb, q, fqtn);
-		q = pushStr(mb, q, cn);
-		q = pushStr(mb, q, t->type->localtype == TYPE_void ? "char" : t->type->sqlname);
-		q = pushInt(mb, q, t->digits);
-		q = pushInt(mb, q, t->scale);
-		(void) pushArgument(mb, q, c->nr);
+			q = newStmt1(mb, sqlRef, "rsColumn");
+			q = pushArgument(mb, q, s->nr);
+			q = pushStr(mb, q, fqtn);
+			q = pushStr(mb, q, cn);
+			q = pushStr(mb, q, t->type->localtype == TYPE_void ? "char" : t->type->sqlname);
+			q = pushInt(mb, q, t->digits);
+			q = pushInt(mb, q, t->scale);
+			q = pushArgument(mb, q, c->nr);
+		} else
+			q = NULL;
 		_DELETE(ntn);
 		_DELETE(nsn);
 		_DELETE(fqtn);
+		if (q == NULL)
+			return -1;
 	}
+	return 0;
 }
 
 static int
@@ -170,21 +176,28 @@ dump_table(MalBlkPtr mb, sql_table *t)
 	InstrPtr k = newStmt1(mb, sqlRef, "declaredTable");
 
 	nr = getDestVar(k);
-	(void) pushStr(mb, k, t->base.name);
+	k = pushStr(mb, k, t->base.name);
+	if (k == NULL)
+		return -1;
 	for (n = t->columns.set->h; n; n = n->next) {
 		sql_column *c = n->data;
 		char *tname = c->t->base.name;
 		char *tn = sql_escape_ident(tname);
 		char *cn = c->base.name;
-		InstrPtr q = newStmt1(mb, sqlRef, "dtColumn");
+		InstrPtr q;
 
+		if (tn == NULL)
+			return -1;
+		q = newStmt1(mb, sqlRef, "dtColumn");
 		q = pushArgument(mb, q, nr);
 		q = pushStr(mb, q, tn);
 		q = pushStr(mb, q, cn);
 		q = pushStr(mb, q, c->type.type->localtype == TYPE_void ? "char" : c->type.type->sqlname);
 		q = pushInt(mb, q, c->type.digits);
-		(void) pushInt(mb, q, c->type.scale);
+		q = pushInt(mb, q, c->type.scale);
 		_DELETE(tn);
+		if (q == NULL)
+			return -1;
 	}
 	return nr;
 }
@@ -195,7 +208,9 @@ drop_table(MalBlkPtr mb, str n)
 	InstrPtr k = newStmt1(mb, sqlRef, "dropDeclaredTable");
 	int nr = getDestVar(k);
 
-	(void) pushStr(mb, k, n);
+	k = pushStr(mb, k, n);
+	if (k == NULL)
+		return -1;
 	return nr;
 }
 
@@ -205,12 +220,16 @@ dump_cols(MalBlkPtr mb, list *l, InstrPtr q)
 	int i;
 	node *n;
 
+	if (q == NULL)
+		return NULL;
 	q->retc = q->argc = 0;
 	for (i = 0, n = l->h; n; n = n->next, i++) {
 		stmt *c = n->data;
 
 		q = pushArgument(mb, q, c->nr);
 	}
+	if (q == NULL)
+		return NULL;
 	q->retc = q->argc;
 	/* Lets make it a propper assignment */
 	for (i = 0, n = l->h; n; n = n->next, i++) {
@@ -227,14 +246,17 @@ table_func_create_result(MalBlkPtr mb, InstrPtr q, sql_table *f)
 	node *n;
 	int i;
 
+	if (q == NULL)
+		return NULL;
 	for (i = 0, n = f->columns.set->h; n; n = n->next, i++) {
 		sql_column *c = n->data;
 		int type = c->type.type->localtype;
 
 		type = newBatType(TYPE_oid, type);
-		if (i)
-			q = pushReturn(mb, q, newTmpVariable(mb, type));
-		else
+		if (i) {
+			if ((q = pushReturn(mb, q, newTmpVariable(mb, type))) == NULL)
+				return NULL;
+		} else
 			setVarType(mb, getArg(q, 0), type);
 		setVarUDFtype(mb, getArg(q, i));
 	}
@@ -248,6 +270,8 @@ relational_func_create_result(mvc *sql, MalBlkPtr mb, InstrPtr q, sql_rel *f)
 	node *n;
 	int i;
 
+	if (q == NULL)
+		return NULL;
 	if (is_topn(r->op))
 		r = r->l;
 	if (!is_project(r->op))
@@ -731,6 +755,8 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					if (tt == TYPE_bat) {
 						/* declared table */
 						s->nr = dump_table(mb, tail_type(s)->comp_type);
+						if (s->nr < 0)
+							return -1;
 						break;
 					}
 					(void) snprintf(buf, MAXIDENTLEN, "A%s", s->op1->op4.aval->data.val.sval);
@@ -2020,7 +2046,8 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					k = pushInt(mb, k, sql->mvc->type);
 				}
 				(void) pushArgument(mb, k, first->nr);
-				dump_header(sql->mvc, mb, s, l);
+				if (dump_header(sql->mvc, mb, s, l) < 0)
+					return -1;
 
 				if (s->type == st_export && s->op2) {
 					int codeset;
@@ -2131,6 +2158,8 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				getArg(q, 0) = getArg(getInstrPtr(mb, 0), 0);
 				q = pushArgument(mb, q, c);
 			}
+			if (q == NULL)
+				return -1;
 			pushInstruction(mb, q);
 			s->nr = 1;
 		}
@@ -2147,6 +2176,8 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				if (!s->op2) {
 					/* drop declared table */
 					s->nr = drop_table(mb, vn);
+					if (s->nr < 0)
+						return -1;
 					break;
 				}
 				(void) snprintf(buf, MAXIDENTLEN, "A%s", vn);
@@ -2167,6 +2198,8 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			(void) pushArgument(mb, q, r);
 		} break;
 		}
+		if (mb->errors)
+			return -1;
 
 		return s->nr;
 	}

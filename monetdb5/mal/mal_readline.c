@@ -484,8 +484,11 @@ readConsole(Client cntxt)
 		if( len >= cntxt->fdin->size) {
 			/* extremly dirty inplace buffer overwriting */
 			cntxt->fdin->buf= realloc(cntxt->fdin->buf, len+1);
-			if( cntxt->fdin->buf == NULL)
+			if( cntxt->fdin->buf == NULL) {
 				GDKerror("readConsole" MAL_MALLOC_FAIL);
+				free(buf);
+				goto bailout;
+			}
 			cntxt->fdin->size = len;
 		}
 		strcpy(cntxt->fdin->buf, buf);
@@ -493,14 +496,14 @@ readConsole(Client cntxt)
 		cntxt->fdin->len = len;
 		free(buf);
 		return 1;
-	} else {
-		cntxt->fdin->eof = 1;
-#ifdef HAVE_LIBREADLINE
-		if( initReadline ){
-			deinit_readline();
-			initReadline= 0;
-		}
-#endif
 	}
+  bailout:
+	cntxt->fdin->eof = 1;
+#ifdef HAVE_LIBREADLINE
+	if( initReadline ){
+		deinit_readline();
+		initReadline= 0;
+	}
+#endif
 	return -1;
 }

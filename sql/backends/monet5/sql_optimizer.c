@@ -90,6 +90,7 @@ SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 	int oldtop, i, actions = 0, size = 0;
 	lng clk = GDKusec();
 	sql_trans *tr = m->session->tr;
+	str msg;
 
 	old = mb->stmt;
 	oldtop = mb->stop;
@@ -187,7 +188,9 @@ SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 		}
 	}
 	GDKfree(old);
-	optimizerCheck(cntxt, mb, "optimizer.SQLgetstatistics", actions, GDKusec() - clk, 0);
+	msg = optimizerCheck(cntxt, mb, "optimizer.SQLgetstatistics", actions, GDKusec() - clk, 0);
+	if (msg)		/* what to do with an error? */
+		GDKfree(msg);
 }
 
 str
@@ -207,11 +210,14 @@ addOptimizers(Client c, MalBlkPtr mb, char *pipe)
 	int i;
 	InstrPtr q;
 	backend *be;
+	str msg;
 
 	be = (backend *) c->sqlcontext;
 	assert(be && be->mvc);	/* SQL clients should always have their state set */
 
-	addOptimizerPipe(c, mb, pipe ? pipe : "default_pipe");
+	msg = addOptimizerPipe(c, mb, pipe ? pipe : "default_pipe");
+	if (msg)
+		GDKfree(msg);	/* what to do with an error? */
 	/* point queries do not require mitosis and dataflow */
 	if (be->mvc->point_query)
 		for (i = mb->stop - 1; i > 0; i--) {
@@ -267,6 +273,7 @@ addQueryToCache(Client c)
 	msg = optimizeMALBlock(c, mb);
 	if (msg != MAL_SUCCEED) {
 		showScriptException(c->fdout, mb, 0, MAL, "%s", msg);
+		GDKfree(msg);
 		return;
 	}
 

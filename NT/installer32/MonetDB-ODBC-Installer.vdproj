@@ -210,7 +210,7 @@
         {
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_11741B73503C4B6AA61599A42BA38851"
             {
-            "SourcePath" = "8:C:\\Libraries\\openssl-1.0.1b.win32-vs10\\bin\\libeay32.dll"
+            "SourcePath" = "8:C:\\Libraries\\openssl-1.0.1g.win32-vs10\\bin\\libeay32.dll"
             "TargetName" = "8:libeay32.dll"
             "Tag" = "8:"
             "Folder" = "8:_376EC0506E4F452CA2C78ACE11515435"
@@ -350,7 +350,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_64A4AC448DEF46D89377E6F79019D632"
             {
-            "SourcePath" = "8:C:\\Libraries\\openssl-1.0.1b.win32-vs10\\bin\\ssleay32.dll"
+            "SourcePath" = "8:C:\\Libraries\\openssl-1.0.1g.win32-vs10\\bin\\ssleay32.dll"
             "TargetName" = "8:ssleay32.dll"
             "Tag" = "8:"
             "Folder" = "8:_376EC0506E4F452CA2C78ACE11515435"
@@ -566,15 +566,15 @@
         {
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:MonetDB ODBC Driver"
-        "ProductCode" = "8:{3FB262F6-B341-4790-8A23-378B294DD406}"
-        "PackageCode" = "8:{5E1431E1-5C5F-42CC-94F9-F81852780EB5}"
+        "ProductCode" = "8:{4FE34953-AC9E-4D32-BD59-5365141F3EF4}"
+        "PackageCode" = "8:{D0E72C9E-70B6-4A60-80C2-4BCFB415D2DC}"
         "UpgradeCode" = "8:{C1F69378-3F5C-4120-8224-32F07D3458F3}"
         "AspNetVersion" = "8:4.0.30319.0"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:TRUE"
         "DetectNewerInstalledVersion" = "11:TRUE"
         "InstallAllUsers" = "11:TRUE"
-        "ProductVersion" = "8:11.17.12"
+        "ProductVersion" = "8:11.17.14"
         "Manufacturer" = "8:MonetDB"
         "ARPHELPTELEPHONE" = "8:"
         "ARPHELPLINK" = "8:http://www.monetdb.org/"

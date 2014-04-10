@@ -43,7 +43,8 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int i, prog;
 	str usr;
 	timestamp ts, tsn;
-	
+	str msg;
+
 	(void) cntxt;
 	(void) mb;
 	tag = BATnew(TYPE_void, TYPE_lng, 256);
@@ -108,8 +109,12 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 		/* convert number of seconds into a timestamp */
 		now = QRYqueue[i].start * 1000;
-		(void) MTIMEunix_epoch(&ts);
-		(void) MTIMEtimestamp_add(&tsn, &ts, &now);
+		msg = MTIMEunix_epoch(&ts);
+		if (msg)
+			return msg;
+		msg = MTIMEtimestamp_add(&tsn, &ts, &now);
+		if (msg)
+			return msg;
 		BUNappend(started, &tsn, FALSE);
 
 		if ( QRYqueue[i].mb->runtime == 0)

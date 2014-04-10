@@ -23,11 +23,6 @@
 #include "mal_interpreter.h"
 #include "mal_instruction.h"
 
-/*
- * @-
- * The optimizer hooks are introduced first.
- * They are refered to from the optimizer module.
- */
 static int
 malMatch(InstrPtr p1, InstrPtr p2)
 {
@@ -57,7 +52,6 @@ malMatch(InstrPtr p1, InstrPtr p2)
 }
 
 /*
- * @-
  * Matching a block calls for building two variable lists used.
  * The isomorphism can be determined after-wards using a single scan.
  * The candidate block is matched with mb starting at a given pc.
@@ -117,7 +111,7 @@ malFcnMatch(MalBlkPtr mc, MalBlkPtr mb, int pc)
 	return 1;
 }
 /*
- * @- Macro expansions
+ * Macro expansions
  * The macro expansion routine walks through the MAL code block in search
  * for the function to be expanded.
  * The macro expansion process is restarted at the first new instruction.
@@ -273,7 +267,6 @@ inlineMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc)
 }
 
 /*
- * @-
  * The macro processor should be carefull in replacing the
  * instruction. In particular, any RETURN or YIELD statement
  * should be replaced by a jump. For the time being,
@@ -332,7 +325,6 @@ MACROprocessor(Client cntxt, MalBlkPtr mb, Symbol t)
 }
 
 /*
- * @- Macro inversions
  * Macro inversions map a consecutive sequences of MAL instructions
  * into a single call. Subsequence resolution will bind it with the proper
  * function. The pattern being replaced should be a self-standing
@@ -471,14 +463,16 @@ OPTmacroImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		j = getSubScope(fcn);
 		for (t = s->subscope[j]; t != NULL; t = t->peer)
 			if (t->def->errors == 0) {
-				if (getSignature(t)->token == FUNCTIONsymbol)
-					MACROprocessor(cntxt, target, t);
+				if (getSignature(t)->token == FUNCTIONsymbol){
+					str msg = MACROprocessor(cntxt, target, t);
+					if( msg != MAL_SUCCEED)
+						GDKfree(msg);
+				}
 			}
 	}
 	return 1;
 }
 /*
- * @-
  * The optimizer call infrastructure is identical to the liners
  * function with the exception that here we inline all possible
  * functions, regardless their
@@ -492,6 +486,7 @@ OPTorcamImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	Symbol t;
 	str mod,fcn;
 	int j;
+	str msg;
 
 	(void) cntxt;
 	(void) stk;
@@ -516,14 +511,16 @@ OPTorcamImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		j = getSubScope(fcn);
 		for (t = s->subscope[j]; t != NULL; t = t->peer)
 			if (t->def->errors == 0) {
-				if (getSignature(t)->token == FUNCTIONsymbol)
-					ORCAMprocessor(cntxt, target, t);
+				if (getSignature(t)->token == FUNCTIONsymbol) {
+					msg =ORCAMprocessor(cntxt, target, t);
+					if( msg) GDKfree(msg);
+				}
 			}
 	}
 	return 1;
 }
 /*
- * @- Optimizer code wrapper
+ * Optimizer code wrapper
  * The optimizer wrapper code is the interface to the MAL optimizer calls.
  * It prepares the environment for the optimizers to do their work and removes
  * the call itself to avoid endless recursions.

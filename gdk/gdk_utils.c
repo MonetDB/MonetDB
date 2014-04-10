@@ -1153,25 +1153,37 @@ void
 GDKexit(int status)
 {
 	if (ATOMIC_TAS(GDKstopped, GDKstoppedLock, "GDKexit") == 0) {
+		MT_Id pid = MT_getpid();
+		Thread t, s;
+		int i;
+
 		MT_lock_set(&GDKthreadLock, "GDKexit");
 		GDKnrofthreads = 0;
 		MT_lock_unset(&GDKthreadLock, "GDKexit");
 		if (GDKvmtrim_id)
 			MT_join_thread(GDKvmtrim_id);
-		MT_sleep_ms(CATNAP);
-
-		/* Kill all threads except myself */
+		/* first give the other threads a chance to exit */
+		for (i = 0; i < 10; i++) {
+			MT_lock_set(&GDKthreadLock, "GDKexit");
+			for (t = GDKthreads, s = t + THREADS; t < s; t++)
+				if (t->pid && t->pid != pid)
+					break;
+			MT_lock_unset(&GDKthreadLock, "GDKexit");
+			if (t == s) /* no other threads? */
+				break;
+			MT_sleep_ms(CATNAP);
+		}
 		if (status == 0) {
-			MT_Id pid = MT_getpid();
-			Thread t, s;
-
+			/* they had there chance, now kill them */
 			MT_lock_set(&GDKthreadLock, "GDKexit");
 			for (t = GDKthreads, s = t + THREADS; t < s; t++) {
 				if (t->pid) {
 					MT_Id victim = t->pid;
 
-					if (t->pid != pid)
+					if (t->pid != pid) {
+						fprintf(stderr, "#GDKexit: killing thread\n");
 						MT_kill_thread(victim);
+					}
 				}
 			}
 			MT_lock_unset(&GDKthreadLock, "GDKexit");

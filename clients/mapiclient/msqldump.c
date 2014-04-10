@@ -50,7 +50,7 @@
 #include "msqldump.h"
 #include "mprompt.h"
 
-static void usage(const char *prog, int xit)
+__declspec(noreturn) static void usage(const char *prog, int xit)
 	__attribute__((__noreturn__));
 
 static void
@@ -182,6 +182,7 @@ main(int argc, char **argv)
 			host = optarg;
 			break;
 		case 'p':
+			assert(optarg != NULL);
 			port = atoi(optarg);
 			break;
 		case 'd':

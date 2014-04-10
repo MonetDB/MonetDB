@@ -636,11 +636,23 @@ exp_match( sql_exp *e1, sql_exp *e2)
 	if (exp_cmp(e1, e2) == 0)
 		return 1;
 	if (e1->type == e2->type && e1->type == e_column) {
-		if (!e1->name || !e2->name || strcmp(e1->name, e2->name) != 0)
+		if (!e1->l || !e2->l || strcmp(e1->l, e2->l) != 0) 
 			return 0;
-		if (!e1->l || !e2->l || strcmp(e1->l, e2->l) != 0)
+		if (!e1->r || !e2->r || strcmp(e1->r, e2->r) != 0)
 			return 0;
-		/* e1->r */
+		return 1;
+	}
+	return 0;
+}
+
+int 
+exp_refers( sql_exp *c, sql_exp *p)
+{
+	if (c->type == e_column) {
+		if (!p->name || !c->r || strcmp(p->name, c->r) != 0)
+			return 0;
+		if (!c->l || (p->rname && strcmp(p->rname, c->l) != 0) || (!p->rname && strcmp(p->l, c->l) != 0))
+			return 0;
 		return 1;
 	}
 	return 0;

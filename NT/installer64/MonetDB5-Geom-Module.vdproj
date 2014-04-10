@@ -231,7 +231,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_6C07D912740F414490DD35D5A179D268"
             {
-            "SourcePath" = "8:C:\\Libraries\\geos-3.3.0.win64-vs10\\bin\\geos_c.dll"
+            "SourcePath" = "8:C:\\Libraries\\geos-3.4.2.win64-vs10\\bin\\geos_c.dll"
             "TargetName" = "8:geos_c.dll"
             "Tag" = "8:"
             "Folder" = "8:_4D9CE65EDD774551869CFD46B59B4F9E"
@@ -425,14 +425,14 @@
         {
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:MonetDB5 SQL GIS Module"
-        "ProductCode" = "8:{BA0F96AF-F8FA-4923-9435-E1EAAE53082A}"
-        "PackageCode" = "8:{86839D91-D820-4CB5-A64A-86D45AAC151D}"
+        "ProductCode" = "8:{C49139B7-7F4C-4DE6-8837-F3086C33EC39}"
+        "PackageCode" = "8:{29F9F6B0-DAFD-44B1-AD0C-665B64D310EE}"
         "UpgradeCode" = "8:{8E6CDFDE-39B9-43D9-97B3-2440C012845C}"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:TRUE"
         "DetectNewerInstalledVersion" = "11:TRUE"
         "InstallAllUsers" = "11:TRUE"
-        "ProductVersion" = "8:11.17.12"
+        "ProductVersion" = "8:11.17.14"
         "Manufacturer" = "8:MonetDB"
         "ARPHELPTELEPHONE" = "8:"
         "ARPHELPLINK" = "8:http://www.monetdb.org/"

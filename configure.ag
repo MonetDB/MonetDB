@@ -21,7 +21,7 @@ dnl All Rights Reserved.
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.60)
-AC_INIT([MonetDB], [11.17.12], [info@monetdb.org], [MonetDB])
+AC_INIT([MonetDB], [11.17.14], [info@monetdb.org], [MonetDB])
 AC_CONFIG_AUX_DIR([buildtools/conf])
 AC_CONFIG_MACRO_DIR([buildtools/conf])
 AC_CANONICAL_HOST
@@ -129,6 +129,7 @@ case "$CC" in
 	9.*)	CC="$CC -no-gcc";;
 	10.*)	CC="$CC -no-gcc";;
 	11.*)	CC="$CC -no-gcc";;
+	*)	AC_MSG_WARN([icc ($CC) $icc_ver not handled, yet]);;
 	esac
 	;;
 esac
@@ -376,14 +377,60 @@ case $host in
 	;;
 esac
 
+dnl  (try to) determine compiler type (gcc, icc, clang) (and version)
+dnl  independent of call ($CC) and result of AC_PROG_CC() ($GCC)
+dnl  (e.g., on OSX, Apple pretends its clang were gcc)
+AC_MSG_CHECKING(compiler type & version)
 gcc_ver=""
 icc_ver=""
-case $GCC-$CC in
-yes-*clang*)
+CC_ver=""
+CC_version="`$CC --version 2>&1`"
+case "$CC_version" in
+*gcc*GCC*)
+	gcc_ver="`$CC -dumpversion 2>/dev/null`"
+	CC_ver="gcc-$gcc_ver"
+	;;
+*icc*ICC*)
+	icc_ver="`$CC -dumpversion 2>/dev/null`"
+	CC_ver="icc-$icc_ver"
+	;;
+*clang*)
 	dnl  `clang -dumpversion` reports the original/old gcc version it is based on
-	gcc_ver="`$CC -v 2>&1 | grep -w '[[Vv]]ersion [[0-9]]\+\.[[0-9]]\+' | sed 's|^.*[[Vv]]ersion \([[0-9]]\+\(\.[[0-9]]\+\)\+\).*$|\1|'`";;
-yes-*)	gcc_ver="`$CC -dumpversion 2>/dev/null`";;
--*icc*)	icc_ver="`$CC -dumpversion 2>/dev/null`";;
+	gcc_ver="`$CC -v 2>&1 | grep -w '[[Vv]]ersion [[0-9]]\+\.[[0-9]]\+' | sed 's|^.*[[Vv]]ersion \([[0-9]][[0-9]]*\(\.[[0-9]][[0-9]]*\)\(\.[[0-9]][[0-9]]*\)*\).*$|\1|'`"
+	CC_ver="clang-$gcc_ver"
+	;;
+*)
+	CC_version="`$CC -V 2>&1`"
+	case "$CC_version" in
+	*Sun\ Ceres\ C\ *|*Sun\ C\ *)
+		# developer/sunstudioexpress and
+		# developer/sunstudio12u1 respectively
+		CC_ver="suncc-`echo "$CC_version" | sed -n 's/.*Sun Ceres C \(.*\) SunOS.*/\1/p;s/.*Sun C \(.*\) SunOS.*/\1/p'`"
+		;;
+	*)
+		AC_MSG_WARN([compiler not recognized: `$CC --version` says
+$CC_version
+	])
+		;;
+	esac
+	;;
+esac
+AC_MSG_RESULT($CC_ver)
+
+dnl  sanity/consistency check
+case "$GCC!$CC!$CC_ver" in
+yes!*clang*!clang-*)	;;
+yes!*gcc*!clang-*)	;;
+yes!*gcc*!gcc-*)	;;
+!*icc*!icc-*)	;;
+*!*!suncc-*)	;;
+*)	AC_MSG_WARN([compiler potentially not (correctly) recognized:
+GCC=$GCC
+CC=$CC
+CC_ver=$CC_ver
+CC_version=
+$CC_version
+	]);;
 esac
 
 AC_ARG_WITH(bits,
@@ -556,15 +603,18 @@ yes-*-*)
 	MCHECK_ADD_FLAG([-Wmissing-include-dirs])
 	MCHECK_ADD_FLAG([-Wlogical-op])
 
-	dnl  With clang 2.8 & 3.3 dnl (no other tested) and gcc < 4.5
+	dnl  With clang 2.8, 3.3, 5.0 (no other tested) and gcc < 4.5
 	dnl  (tested 3.4.6, 4.2.1, 4.3.2, 4.4.4, 4.4.5, 4.5.1, 4.5.2),
 	dnl  "-Wunreachable-code" triggers numerous "will never be
 	dnl  executed" (at least) in our stream code, mostly (if
 	dnl  not all) false positives, though, as well as in
 	dnl  YACC/BISON-generated code; thus, we do not use
-	dnl  "-Wunreachable-code" with clang 2.8 and gcc < 4.5 .
-	case "$CC-$gcc_ver" in
-	*clang*-2.8|*clang*-3.3|*gcc*-[[0-3]].*|*gcc*-4.[[0-4]].*)
+	dnl  "-Wunreachable-code" with clang and gcc < 4.5 .
+	dnl  At the same time, Apple deprecated OpenSSL in favour of
+	dnl  their own CommonCrypto API.  We don't mind about that.
+	case "$CC_ver" in
+	clang-*|gcc-[[0-3]].*|gcc-4.[[0-4]].*)
+		MCHECK_ADD_FLAG([-Wno-deprecated-declarations])
 		;;
 	*)
 		MCHECK_ADD_FLAG([-Wunreachable-code])
@@ -905,8 +955,8 @@ if test "x$enable_optimize" = xyes; then
 	JAVACFLAGS="`echo "$JAVACFLAGS" | sed -e 's| -g | |g' -e 's| -g:[[a-z]]* | |g' -e 's|^ ||' -e 's| $||'`"
 	dnl  Optimization flags
 	JAVACFLAGS="$JAVACFLAGS -g:none -O"
-	case "$GCC-$CC" in
-	yes-*clang*)
+	case "$GCC-$CC_ver" in
+	yes-clang-*)
 	  CFLAGS="$CFLAGS -O3 -fomit-frame-pointer -finline-functions"
 	  ;;
 	yes-*)
@@ -1084,6 +1134,8 @@ AC_PATH_PROG(BASH,bash, /usr/bin/bash, $PATH)
 AC_CHECK_PROG(RM,rm,rm -f)
 AC_CHECK_PROG(MV,mv,mv -f)
 AC_PROG_LN_S
+AC_CHECK_PROGS(DIFF,gdiff diff)
+AC_DEFINE_UNQUOTED([DIFF], "$DIFF", [Program to perform diffs])
 
 AC_CHECK_PROGS(RPMBUILD,rpmbuild rpm)
 
@@ -1827,8 +1879,21 @@ if test "x$have_pthread" != xno; then
 
 	save_LIBS="$LIBS"
 	save_CPPFLAGS="$CPPFLAGS"
-	case $GCC-$have_pthread in
-		yes-auto|yes-yes)
+	case $GCC-$have_pthread-$CC_ver in
+		yes-auto-clang-5.*|yes-yes-clang-5.*)
+			# clang 5.* (at least on Mac OSX Mavericks) does not
+			# seem to have / require -pthread as compiler
+			# option; on Mac OSX Mavericks, "Apple LLVM version
+			# 5.0 (clang-500.2.79) (based on LLVM 3.3svn)"
+			# complains about "error: argument unused during
+			# compilation: '-pthread'".
+			# However, disabling -pthread completely might be
+			# too redical/harsh; see also
+			# https://www.monetdb.org/pipermail/developers-list/2014-March/004264.html
+			# a better alternative might be required but is
+			# still pending ...
+		;;
+		yes-auto-*|yes-yes-*)
 			# use GCC's knowledge about the target platform, sets flags
 			# for both the preprocessor as well as the linker
 			PTHREAD_INCS="-pthread"
@@ -1842,7 +1907,7 @@ if test "x$have_pthread" != xno; then
 			LIBS="$LIBS $PTHREAD_LIBS"
 			pthread_found=yes
 			AC_SEARCH_LIBS([sem_init], [pthreadGC2 pthreadGC1 pthreadGC pthread],
-				[LIBS="$LIBS $ac_cv_search_sem_init"],
+				[test "$ac_cv_search_sem_init" = "none required" || LIBS="$LIBS $ac_cv_search_sem_init"],
 				[pthread_found=no])
 			if test x"$pthread_found" = xno ; then
 				pthread_found=yes
@@ -2236,6 +2301,8 @@ if test "x$enable_odbc" != xno; then
 	fi
 	if test "x$have_unixodbc" != xno; then
 		AC_MSG_CHECKING([checking whether SQLColAttribute uses SQLLEN * or SQLPOINTER])
+		save_CPPFLAGS="$CPPFLAGS"
+		CPPFLAGS="$CPPFLAGS $ODBC_INCS"
 		AC_COMPILE_IFELSE([
 			AC_LANG_PROGRAM([[
 				#include <sql.h>
@@ -2252,6 +2319,7 @@ if test "x$enable_odbc" != xno; then
 				[[SQLColAttribute(0,0,0,0,0,0,0);]])],
 			[lenp_or_pointer_t='SQLLEN *'],
 			[lenp_or_pointer_t=SQLPOINTER])
+		CPPFLAGS="$save_CPPFLAGS"
 		AC_MSG_RESULT([using "$lenp_or_pointer_t"])
 		AC_DEFINE_UNQUOTED(LENP_OR_POINTER_T, $lenp_or_pointer_t,
 			[Define as SQLLEN * or SQLPOINTER depending on the include file])
@@ -2406,9 +2474,21 @@ if test x"$have_atomic_ops" = x"yes" ; then
 		why_have_atomic_ops="(atomic_ops do not compile with Intel's icc)"
 		;;
 	*)
-		AC_DEFINE(HAVE_LIBATOMIC_OPS, 1, [Define if you have the libatomic_ops library])
+		# On some systems, notably OpenIndiana, atomic_ops may
+		# seem to be installed in that there is a pkg-config
+		# file for it, but that file contains incorrect
+		# information, and can not, in fact, be used.  The
+		# bogus pkg-config file for atomic_ops is part of the
+		# library/gc package.
+		save_CFLAGS="$CFLAGS"
 		CFLAGS="$CFLAGS $atomic_ops_CFLAGS"
-		LIBS="$LIBS $atomic_ops_LIBS"
+		AC_CHECK_HEADERS([atomic_ops.h],[have_atomic_ops=yes],[have_atomic_ops=no why_have_atomic_ops="(atomic_ops was incorrectly installed (happens on at least Solaris/OpenIndiana))"])
+		CFAGS="$save_CFLAGS"
+		if test x"$have_atomic_ops" = x"yes" ; then
+			AC_DEFINE(HAVE_LIBATOMIC_OPS, 1, [Define if you have the libatomic_ops library])
+			CFLAGS="$CFLAGS $atomic_ops_CFLAGS"
+			LIBS="$LIBS $atomic_ops_LIBS"
+		fi
 		;;
 	esac
 fi
@@ -2881,6 +2961,9 @@ AC_SUBST(HWCOUNTERS_LIBS)
 AC_SUBST(HWCOUNTERS_INCS)
 
 dnl check dependencies (might need more than just SQL)
+if test x"$enable_sql" = xyes && test x"$enable_monetdb5" = x"no" ; then
+	AC_MSG_ERROR([MonetDB/SQL requires MonetDB5${disable_monetdb5:+ $disable_monetdb5}.])
+fi
 if test x"$enable_sql" = xauto && test x"$enable_monetdb5" = x"no" ; then
 	enable_sql=no
 	if test "x$disable_sql" = x; then
@@ -3198,6 +3281,7 @@ typedef lng ptrdiff_t;
 #if !defined(_MSC_VER) && !defined(_In_z_)
 # define _In_z_
 # define _Printf_format_string_
+# define __declspec(x)
 #endif
 
 #endif /* _SEEN_MONETDB_CONFIG_H */

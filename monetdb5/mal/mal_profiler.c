@@ -46,15 +46,15 @@
 
 stream *eventstream = 0;
 
-static int offlineProfiling = FALSE;
-static int cachedProfiling = FALSE;
-static str myname = 0;
-
 int
 profilerAvailable(void)
 {
 	return 1;
 }
+static int offlineProfiling = FALSE;
+static int cachedProfiling = FALSE;
+static str myname = 0;
+
 static void offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc, int start);
 static void cachedProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc);
 static int initTrace(void);

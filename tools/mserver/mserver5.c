@@ -76,8 +76,8 @@ mserver_abort()
 }
 #endif
 
-static void usage(char *prog, int xit)
-__attribute__((__noreturn__));
+__declspec(noreturn) static void usage(char *prog, int xit)
+	__attribute__((__noreturn__));
 
 static void
 usage(char *prog, int xit)

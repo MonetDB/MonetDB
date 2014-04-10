@@ -828,13 +828,9 @@ int isAllScalar(MalBlkPtr mb, InstrPtr p)
 int isMapOp(InstrPtr p){
 	return	getModuleId(p) &&
 		((getModuleId(p) == malRef && getFunctionId(p) == multiplexRef) ||
-		(getModuleId(p)== batcalcRef && getFunctionId(p) != mark_grpRef && getFunctionId(p) != rank_grpRef) ||
-		(getModuleId(p)== batmtimeRef) ||
-		(getModuleId(p)== batstrRef) ||
-		(getModuleId(p)== batmmathRef) ||
-		(getModuleId(p)== batxmlRef) ||
-		(strcmp(getModuleId(p),"batsql") == 0) ||
-		(getModuleId(p)== mkeyRef));
+		 (getModuleId(p) == batcalcRef && getFunctionId(p) != mark_grpRef && getFunctionId(p) != rank_grpRef) ||
+		 (getModuleId(p) != batcalcRef && getModuleId(p) != batRef && strncmp(getModuleId(p), "bat", 3) == 0) ||
+		 (getModuleId(p) == mkeyRef));
 }
 
 int isLikeOp(InstrPtr p){

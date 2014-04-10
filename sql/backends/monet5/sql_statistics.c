@@ -60,8 +60,13 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	query = (char *) GDKzalloc(8192);
 	maxval = (char *) GDKzalloc(8192);
 	minval = (char *) GDKzalloc(8192);
-	if (!(dquery && query && maxval && minval))
+	if (!(dquery && query && maxval && minval)) {
+		GDKfree(dquery);
+		GDKfree(query);
+		GDKfree(maxval);
+		GDKfree(minval);
 		throw(SQL, "analyze", MAL_MALLOC_FAIL);
+	}
 
 	switch (argc) {
 	case 4:

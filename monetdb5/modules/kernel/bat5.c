@@ -97,7 +97,7 @@ local_utoa(size_t i)
 	return buf;
 }
 
-#define COLLISION 64
+#define COLLISION (8 * sizeof(size_t))
 
 static void
 HASHinfo(BAT *bk, BAT *bv, Hash *h, str s)
@@ -105,14 +105,14 @@ HASHinfo(BAT *bk, BAT *bv, Hash *h, str s)
 	BUN i;
 	BUN j;
 	BUN k;
-	BUN cnt[COLLISION + 2];
+	BUN cnt[COLLISION + 1];
 
 	BUNappend(bk, pre(s, "type"), FALSE);
 	BUNappend(bv, ATOMname(h->type),FALSE);
 	BUNappend(bk, pre(s, "mask"), FALSE);
 	BUNappend(bv, local_utoa(h->lim),FALSE);
 
-	for (i = 0; i <= COLLISION + 1; i++) {
+	for (i = 0; i < COLLISION + 1; i++) {
 		cnt[i] = 0;
 	}
 	for (i = 0; i <= h->mask; i++) {
@@ -122,9 +122,9 @@ HASHinfo(BAT *bk, BAT *bv, Hash *h, str s)
 		cnt[k]++;
 	}
 
-	for (i = 0; i <= COLLISION + 1; i++)
+	for (i = 0; i < COLLISION + 1; i++)
 		if (cnt[i]) {
-			BUNappend(bk, pre(s, local_itoa((ssize_t) (i?(((ssize_t)1)<<(i-1)):0))), FALSE);
+			BUNappend(bk, pre(s, local_utoa(i?(((size_t)1)<<(i-1)):0)), FALSE);
 			BUNappend(bv, local_utoa((size_t) cnt[i]), FALSE);
 		}
 }

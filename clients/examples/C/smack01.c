@@ -67,10 +67,13 @@ main(int argc, char **argv)
 
 	port = atol(argv[1]);
 	dbh = mapi_connect("localhost", port, "monetdb", "monetdb", l, NULL);
+	if (dbh == NULL || mapi_error(dbh))
+		die(dbh, hdl);
+
 	for (i = 0; i < 1000; i++) {
 		/* printf("setup connection %d\n", i); */
 		mapi_reconnect(dbh);
-		if (dbh == NULL || mapi_error(dbh))
+		if (mapi_error(dbh))
 			die(dbh, hdl);
 
 		/* switch of autocommit */

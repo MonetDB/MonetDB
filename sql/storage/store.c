@@ -100,6 +100,7 @@ key_destroy(sql_key *k)
 		fk->rkey = NULL;
 	}
 	list_destroy(k->columns);
+	k->columns = NULL;
 	if ((k->type == pkey) && (k->t->pkey == (sql_ukey *) k))
 		k->t->pkey = NULL;
 }
@@ -110,6 +111,7 @@ idx_destroy(sql_idx * i)
 	/* remove idx from schema */
 	list_remove_data(i->t->s->idxs, i);
 	list_destroy(i->columns);
+	i->columns = NULL;
 	if (isTable(i->t))
 		store_funcs.destroy_idx(NULL, i);
 }
@@ -119,8 +121,10 @@ trigger_destroy(sql_trigger *tr)
 {
 	/* remove trigger from schema */
 	list_remove_data(tr->t->s->triggers, tr);
-	if (tr->columns)
+	if (tr->columns) {
 		list_destroy(tr->columns);
+		tr->columns = NULL;
+	}
 }
 
 void
@@ -151,6 +155,32 @@ schema_destroy(sql_schema *s)
 	list_destroy(s->keys);
 	list_destroy(s->idxs);
 	list_destroy(s->triggers);
+	s->keys = NULL;
+	s->idxs = NULL;
+	s->triggers = NULL;
+}
+
+static void
+trans_drop_tmp(sql_trans *tr) 
+{
+	sql_schema *tmp;
+
+	if (!tr)
+		return;
+
+	tmp = find_sql_schema(tr, "tmp");
+		
+	if (tmp->tables.set) {
+		node *n;
+		for (n = tmp->tables.set->h; n; ) {
+			node *nxt = n->next;
+			sql_table *t = n->data;
+
+			if (t->persistence == SQL_LOCAL_TEMP)
+				list_remove_node(tmp->tables.set, n);
+			n = nxt;
+		}
+	}
 }
 
 /*#define STORE_DEBUG 1*/ 
@@ -169,6 +199,7 @@ sql_trans_destroy(sql_trans *t)
 #ifdef STORE_DEBUG
 		fprintf(stderr, "#spared (%d) trans (%p)\n", spares, t);
 #endif
+		trans_drop_tmp(t);
 		spare_trans[spares++] = t;
 		return res;
 	}
@@ -327,6 +358,14 @@ load_idxcolumn(sql_trans *tr, sql_idx * i, oid rid)
 	list_append(i->columns, kc);
 	if (hash_index(i->type)) 
 		kc->c->unique = 1;
+	if (hash_index(i->type) && list_length(i->columns) > 1) {
+		/* Correct the unique flag of the keys first column */
+		kc->c->unique = list_length(i->columns); 
+		if (kc->c->unique == 2) {
+			sql_kc *ic1 = i->columns->h->data;
+			ic1->c->unique ++;
+		}
+	}
 }
 
 static sql_idx *
@@ -2299,7 +2338,7 @@ rollforward_changeset_updates(sql_trans *tr, changeset * fs, changeset * ts, sql
 					ok = rollforward_deletes(tr, tb, mode);
 			}
 			list_destroy(ts->dset);
-			fs->dset = NULL;
+			ts->dset = NULL;
 		}
 	}
 	/* changes to the existing bases */
@@ -2870,11 +2909,8 @@ reset_changeset(sql_trans *tr, changeset * fs, changeset * pfs, sql_base *b, res
 	if (fs->nelm) {
 		for (n = fs->nelm; n; ) {
 			node *nxt = n->next;
+
 			list_remove_node(fs->set, n);
-			MT_lock_set(&fs->set->ht_lock, "reset_changeset");
-			if(fs->set->ht)
-				hash_del(fs->set->ht, base_key(n->data), n->data);
-			MT_lock_unset(&fs->set->ht_lock, "reset_changeset");
 			n = nxt;
 		}
 		fs->nelm = NULL;
@@ -2902,16 +2938,12 @@ reset_changeset(sql_trans *tr, changeset * fs, changeset * pfs, sql_base *b, res
 					fprintf(stderr, "#reset_cs %s\n", (fb->name)?fb->name:"help");
 			} else if (fb->id < pfb->id) {  
 				node *t = n->next;
+
 				if (bs_debug) {
 					sql_base *b = n->data;
 					fprintf(stderr, "#reset_cs free %s\n", (b->name)?b->name:"help");
 				}
 				list_remove_node(fs->set, n);
-				MT_lock_set(&fs->set->ht_lock, "reset_changeset");
-				if(fs->set->ht)
-					hash_del(fs->set->ht, base_key(n->data), n->data);
-				MT_lock_unset(&fs->set->ht_lock, "reset_changeset");
-
 				n = t;
 			} else { /* a new id */
 				sql_base *r = fd(tr, TR_OLD, pfb,  b);
@@ -2936,16 +2968,13 @@ reset_changeset(sql_trans *tr, changeset * fs, changeset * pfs, sql_base *b, res
 		}
 		while ( ok == LOG_OK && n) { /* remove remaining old stuff */
 			node *t = n->next;
+
 			if (bs_debug) {
 				sql_base *b = n->data;
 				fprintf(stderr, "#reset_cs free %s\n",
 					(b->name)?b->name:"help");
 			}
 			list_remove_node(fs->set, n);
-			MT_lock_set(&fs->set->ht_lock, "reset_changeset");
-			if(fs->set->ht)
-				hash_del(fs->set->ht, base_key(n->data), n->data);
-			MT_lock_unset(&fs->set->ht_lock, "reset_changeset");
 			n = t;
 		}
 	}
@@ -3063,10 +3092,6 @@ reset_schema(sql_trans *tr, sql_schema *fs, sql_schema *pfs)
 				node *nxt = n->next;
 
 				list_remove_node(fs->tables.set, n);
-				MT_lock_set(&fs->tables.set->ht_lock, "reset_schema");
-				if(fs->tables.set->ht)
-					hash_del(fs->tables.set->ht, base_key(n->data), n->data);
-				MT_lock_unset(&fs->tables.set->ht_lock, "reset_schema");
 				n = nxt;
 			}
 			fs->tables.nelm = NULL;

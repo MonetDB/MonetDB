@@ -178,9 +178,13 @@ doChallenge(stream *in, stream *out) {
 	MSscheduleClient(buf, challenge, bs, fdout);
 }
 
-static MT_Id listener[8];
-static int lastlistener=0;
-static int serveractive=TRUE;
+static volatile ATOMIC_TYPE nlistener = 0; /* nr of listeners */
+static volatile ATOMIC_TYPE serveractive = 0;
+static volatile ATOMIC_TYPE serverexiting = 0; /* listeners should exit */
+#ifdef ATOMIC_LOCK
+/* lock for all three ATOMIC_TYPE variables above */
+static MT_Lock atomicLock MT_LOCK_INITIALIZER("atomicLock");
+#endif
 
 static void
 SERVERlistenThread(SOCKET *Sock)
@@ -199,8 +203,7 @@ SERVERlistenThread(SOCKET *Sock)
 		GDKfree(Sock);
 	}
 
-	if (lastlistener < 8)
-		listener[lastlistener++] = MT_getpid();
+	(void) ATOMIC_INC(nlistener, atomicLock, "SERVERlistenThread");
 
 	do {
 		FD_ZERO(&fds);
@@ -221,7 +224,8 @@ SERVERlistenThread(SOCKET *Sock)
 			msgsock = usock;
 #endif
 		retval = select((int)msgsock + 1, &fds, NULL, NULL, &tv);
-		if (GDKexiting())
+		if (ATOMIC_GET(serverexiting, atomicLock, "SERVERlistenThread") ||
+			GDKexiting())
 			break;
 		if (retval == 0) {
 			/* nothing interesting has happened */
@@ -236,7 +240,7 @@ SERVERlistenThread(SOCKET *Sock)
 		}
 		if (sock != INVALID_SOCKET && FD_ISSET(sock, &fds)) {
 			if ((msgsock = accept(sock, (SOCKPTR)0, (socklen_t *)0)) == INVALID_SOCKET) {
-				if (MT_geterrno() != EINTR || serveractive == FALSE) {
+				if (MT_geterrno() != EINTR || !ATOMIC_GET(serveractive, atomicLock, "SERVERlistenThread")) {
 					msg = "accept failed";
 					goto error;
 				}
@@ -318,7 +322,6 @@ SERVERlistenThread(SOCKET *Sock)
 					fprintf(stderr, "!mal_mapi.listen: "
 							"unknown command type in first byte\n");
 					continue;
-				break;
 			}
 #endif
 		} else {
@@ -331,7 +334,9 @@ SERVERlistenThread(SOCKET *Sock)
 		doChallenge(
 				socket_rastream(msgsock, "Server read"),
 				socket_wastream(msgsock, "Server write"));
-	} while (!GDKexiting());
+	} while (!ATOMIC_GET(serverexiting, atomicLock, "SERVERlistenThread") &&
+			 !GDKexiting());
+	(void) ATOMIC_DEC(nlistener, atomicLock, "SERVERlistenThread");
 	return;
 error:
 	fprintf(stderr, "!mal_mapi.listen: %s, terminating listener\n", msg);
@@ -600,12 +605,12 @@ SERVERlisten_port(int *ret, int *pid)
 str
 SERVERstop(int *ret)
 {
-	int i;
-
-printf("SERVERstop\n");
-	for( i=0; i< lastlistener; i++)
-		MT_kill_thread(listener[i]);
-	lastlistener = 0;
+fprintf(stderr, "SERVERstop\n");
+	ATOMIC_SET(serverexiting, 1, atomicLock, "SERVERstop");
+	/* wait until they all exited, but skip the wait if the whole
+	 * system is going down */
+	while (ATOMIC_GET(nlistener, atomicLock, "SERVERstop") > 0 && !GDKexiting())
+		MT_sleep_ms(100);
 	(void) ret;		/* fool compiler */
 	return MAL_SUCCEED;
 }
@@ -615,14 +620,14 @@ str
 SERVERsuspend(int *res)
 {
 	(void) res;
-	serveractive= FALSE;
+	ATOMIC_SET(serveractive, 0, atomicLock, "SERVERsuspend");
 	return MAL_SUCCEED;
 }
 
 str
 SERVERresume(int *res)
 {
-	serveractive= TRUE;
+	ATOMIC_SET(serveractive, 1, atomicLock, "SERVERsuspend");
 	(void) res;
 	return MAL_SUCCEED;
 }

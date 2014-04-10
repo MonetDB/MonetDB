@@ -571,9 +571,9 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d)
 	ret = pthread_create(newtp, &attr, (void *(*)(void *)) f, arg);
 	if (ret == 0) {
 #ifdef PTW32
-		*t = (MT_Id) (((size_t) newt.p) + 1);	/* use pthread-id + 1 */
+		*t = (MT_Id) (((size_t) newtp->p) + 1);	/* use pthread-id + 1 */
 #else
-		*t = (MT_Id) (((size_t) newt) + 1);	/* use pthread-id + 1 */
+		*t = (MT_Id) (((size_t) *newtp) + 1);	/* use pthread-id + 1 */
 #endif
 	} else if (p) {
 		rm_posthread(p, 1);
