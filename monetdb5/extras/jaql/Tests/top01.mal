@@ -1,5 +1,0 @@
-# from the docs
-
-jaql.x("nums = [1,2,3];");
-jaql.x("nums -> top 2;");
-jaql.x("nums -> top 2 by [ $ desc ];");

@@ -212,22 +212,6 @@ no-auto)
 	;;
 esac
 
-dft_jaql=auto
-AC_ARG_ENABLE(jaql,
-	AS_HELP_STRING([--enable-jaql],
-		[enable support for MonetDB/JAQL (default=auto)]),
-	enable_jaql=$enableval,
-	enable_jaql=$dft_jaql)
-case "$enable_monetdb5-$enable_jaql" in
-no-yes)
-	AC_MSG_ERROR([MonetDB/JAQL requires MonetDB5.])
-	;;
-no-auto)
-	enable_jaql=no
-	disable_jaql="(MonetDB/JAQL requires MonetDB5.)"
-	;;
-esac
-
 dft_jsonstore=no
 AC_ARG_ENABLE(jsonstore,
 	AS_HELP_STRING([--enable-jsonstore],
@@ -1472,7 +1456,6 @@ fi
 AC_SUBST(RUBYGEM)
 AM_CONDITIONAL(HAVE_RUBYGEM, test x"$have_rubygem" != xno -a x"$have_rubygem_dir" != xno)
 
-AM_PROG_LEX
 AC_PROG_YACC
 case "$YACC" in
 	bison*)
@@ -1484,41 +1467,14 @@ case "$YACC" in
 		if test MONETDB_VERSION_TO_NUMBER(echo $BISON_VER) -lt MONETDB_VERSION_TO_NUMBER(echo 2.4.3); then
 			X_CFLAGS="`echo ${X_CFLAGS} | sed -e 's/-Wundef//g'`"
 		fi
-		if test MONETDB_VERSION_TO_NUMBER(echo $BISON_VER) -lt MONETDB_VERSION_TO_NUMBER(echo 2.4); then
-			if test "x$enable_jaql" = xyes; then
-				AC_MSG_ERROR([MonetDB/JAQL requires bison >=2.4])
-			elif test "x$enable_jaql" = xauto; then
-				enable_jaql=no
-				disable_jaql="(MonetDB/JAQL requires bison >= 2.4)"
-			fi
-		fi
 	;;
 	*)
 		if test "x$enable_sql" = xyes; then
 			AC_MSG_ERROR([MonetDB/SQL requires bison])
 		fi
-		if test "x$enable_jaql" = xyes; then
-			AC_MSG_ERROR([MonetDB/JAQL requires bison])
-		fi
 		enable_sql=no
-		enable_jaql=no
 		if test "x$disable_sql" = x; then
 			disable_sql="(MonetDB/SQL requires bison)"
-		fi
-		if test "x$disable_jaql" = x; then
-			disable_jaql="(MonetDB/JAQL requires bison)"
-		fi
-	;;
-esac
-case "$LEX" in
-	flex*) : ;;
-	*)
-		if test "x$enable_jaql" = xyes; then
-			AC_MSG_ERROR([MonetDB/JAQL requires flex])
-		fi
-		enable_jaql=no
-		if test "x$disable_jaql" = x; then
-			disable_jaql="(MonetDB/JAQL requires flex)"
 		fi
 	;;
 esac
@@ -3031,18 +2987,11 @@ if test x"$enable_sql" = xauto && test x"$enable_monetdb5" = x"no" ; then
 		disable_sql="(MonetDB/SQL requires MonetDB5)"
 	fi
 fi
-if test x"$enable_jaql" = xauto && test x"$enable_monetdb5" = x"no" ; then
-	enable_jaql=no
-	if test "x$disable_jaql" = x; then
-		disable_jaql="(MonetDB/JAQL requires MonetDB5)"
-	fi
-fi
 
 dnl     output
 AM_CONDITIONAL(HAVE_GDK, test "x$enable_gdk" = xyes -o "x$enable_gdk" = xauto)
 AM_CONDITIONAL(HAVE_MONETDB5, test "x$enable_monetdb5" = xyes -o "x$enable_monetdb5" = xauto)
 AM_CONDITIONAL(HAVE_SQL, test "x$enable_sql" = xyes -o "x$enable_sql" = xauto)
-AM_CONDITIONAL(HAVE_JAQL, test "x$enable_jaql" = xyes -o "x$enable_jaql" = xauto)
 AM_CONDITIONAL(HAVE_GEOM, test "x$enable_geom" = xyes -o "x$enable_geom" = xauto)
 AM_CONDITIONAL(HAVE_JSONSTORE, test "x$enable_jsonstore" = xyes -o "x$enable_jsonstore" = xauto)
 AM_CONDITIONAL(HAVE_TESTING, test "x$enable_testing" = xyes -o "x$enable_testing" = xauto)
@@ -3388,7 +3337,6 @@ for comp in \
 	'gdk      ' \
 	'monetdb5 ' \
 	'sql      ' \
-	'jaql     ' \
 	'jsonstore' \
 	'geom     ' \
 	'gsl      ' \

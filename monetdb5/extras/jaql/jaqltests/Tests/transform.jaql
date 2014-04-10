@@ -1,5 +1,0 @@
-# from the docs
-
-recs = [ {"a": 1, "b": 4}, {"a": 2, "b": 5}, {"a": -1, "b": 4} ];
-recs -> transform {"sum": $.a + $.b};
-recs -> transform each r {"sum": r.a + r.b};

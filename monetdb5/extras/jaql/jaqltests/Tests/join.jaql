@@ -1,8 +1,0 @@
-# from the docs
-
-users = [ {"name": "Jon Doe", "password": "asdf1234", "id": 1}, {"name": "Jane Doe", "password": "qwertyui", "id": 2}, {"name": "Max Mustermann", "password": "q1w2e3r4", "id": 3} ];
-pages = [ {"userid": 1, "url":"code.google.com/p/jaql/"}, {"userid": 2, "url":"www.cnn.com"}, {"userid": 1, "url":"java.sun.com/javase/6/docs/api/"} ];
-
-join users, pages where users.id == pages.userid into {users.name, pages.*};
-join u in users, p in pages where u.id == p.userid into {u.name, p.*};
-join preserve u in users, p in pages where u.id == p.userid into {u.name, p.*};
