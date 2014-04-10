@@ -1,0 +1,159 @@
+stdout of test 'emilistart` in directory 'sql/backends/monet5/datacell` itself:
+
+
+# 21:09:10 >  
+# 21:09:10 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=36774" "--set" "mapi_usock=/var/tmp/mtest-26187/.s.monetdb.36774" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/current//Linux/var/MonetDB/mTests_sql_backends_monet5_datacell" "--set" "mal_listing=0"
+# 21:09:10 >  
+
+# MonetDB 5 server v11.18.0
+# This is an unreleased version
+# Serving database 'mTests_sql_backends_monet5_datacell', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.591 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:36774/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-26187/.s.monetdb.36774
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+# MonetDB/DataCell loaded
+
+Ready.
+
+# 21:09:10 >  
+# 21:09:10 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-26187" "--port=36774"
+# 21:09:10 >  
+
+#CREATE TABLE datacell.istream(
+#	ip        INET,
+#	location  VARCHAR(5),
+#	kind      VARCHAR(50),
+#	value     DOUBLE
+#);
+#CREATE TABLE datacell.area(
+#	ip INET,
+#	location varchar(5),
+#	primary key(ip)
+#); 
+#CREATE TABLE datacell.sensors(
+#	like datacell.istream,
+#	time timestamp default now()
+#);
+#CREATE TABLE datacell.states(
+#	location varchar(5),
+#	time timestamp default now(),
+#	status varchar(20) default 'normal'
+#);
+#CREATE TABLE datacell.warden(
+#	location varchar(5),
+#	message  varchar(20)
+#);
+#CREATE TABLE datacell.observations(
+#	location varchar(5),
+#	message  varchar(20) 
+#);
+#CREATE PROCEDURE datacell.enrich()
+#BEGIN
+#	INSERT INTO datacell.sensors(ip, location, kind,value) 
+#		SELECT ip, substring(location,0,3), kind, value FROM datacell.istream;
+#
+#	INSERT INTO datacell.area 
+#		SELECT DISTINCT I.ip, substring(I.location,0,3) 
+#		FROM datacell.istream I 
+#		WHERE I.ip NOT IN (SELECT ip FROM datacell.area);
+#
+#	INSERT INTO datacell.states 
+#		SELECT DISTINCT substring(location,0,3), now(), 'normal' 
+#		FROM datacell.istream
+#		WHERE substring(location,0,3) NOT IN (SELECT location FROM datacell.states);
+#CREATE TABLE datacell.hotsensors(
+#	ip INET,
+#	time timestamp,
+#	value double
+#);
+#CREATE TABLE datacell.hotsensors1( LIKE hotsensors);
+#CREATE TABLE datacell.hotsensors2( LIKE hotsensors);
+#CREATE PROCEDURE datacell.splitter()
+#BEGIN
+#	INSERT INTO datacell.hotsensors1 SELECT * from datacell.hotsensors;
+#	INSERT INTO datacell.hotsensors2 SELECT * from datacell.hotsensors;
+#	INSERT INTO datacell.warden SELECT A.location, 'check it' from datacell.area A, datacell.hotsensors H
+#	WHERE H.ip = A.ip;
+#END;
+#CREATE PROCEDURE datacell.firewarning()
+#BEGIN
+#	UPDATE datacell.states
+#	SET status = 'unconfirmed', time = now()
+#	WHERE location IN (SELECT A.location
+#			FROM datacell.states S, datacell.area A, datacell.hotsensors1 H
+#			WHERE S.status ='normal' AND A.ip = H.ip and S.location = A.location);
+#END;
+#CREATE PROCEDURE datacell.firespotted()
+#BEGIN
+#	UPDATE datacell.states
+#	SET status = 'confirmed', time = now()
+#	WHERE location IN (SELECT S.location
+#			FROM datacell.states S, datacell.area A, datacell.area B, datacell.hotsensors2 H
+#			WHERE S.status ='unconfirmed' 
+#			AND A.ip = H.ip 
+#			AND A.ip <> B.ip 
+#			AND S.location = A.location
+#			AND S.location = B.location);
+#END;
+#CREATE PROCEDURE datacell.observation()
+#BEGIN
+#	DELETE FROM datacell.states WHERE location IN (SELECT location FROM datacell.observations);
+#	INSERT INTO datacell.states SELECT O.location, now(), O.message FROM datacell.observations O;
+#END;
+#SELECT * FROM datacell.receptors(); SELECT * FROM datacell.emitters(); SELECT * FROM datacell.queries(); SELECT * FROM datacell.baskets(); SELECT * FROM datacell.area; SELECT * FROM datacell.states;
+% .,	.,	.,	.,	.,	.,	.,	.,	.,	. # table_name
+% nme,	host,	port,	protocol,	mode,	status,	lastseen,	cycles,	received,	pending # name
+% clob,	clob,	int,	clob,	clob,	clob,	timestamp,	int,	int,	int # type
+% 21,	9,	5,	3,	7,	7,	26,	1,	1,	1 # length
+[ "datacell.observations",	"localhost",	50501,	"TCP",	"passive",	"running",	NULL,	0,	0,	0	]
+[ "datacell.istream",	"localhost",	50500,	"TCP",	"passive",	"running",	NULL,	0,	0,	0	]
+#SELECT * FROM datacell.receptors(); SELECT * FROM datacell.emitters(); SELECT * FROM datacell.queries(); SELECT * FROM datacell.baskets(); SELECT * FROM datacell.area; SELECT * FROM datacell.states;
+% .,	.,	.,	.,	.,	.,	.,	.,	.,	. # table_name
+% nme,	host,	port,	protocol,	mode,	status,	lastsent,	cycles,	sent,	pending # name
+% clob,	clob,	int,	clob,	clob,	clob,	timestamp,	int,	int,	int # type
+% 15,	9,	5,	3,	6,	7,	26,	1,	1,	1 # length
+[ "datacell.warden",	"localhost",	50600,	"UDP",	"active",	"running",	NULL,	0,	0,	0	]
+#SELECT * FROM datacell.receptors(); SELECT * FROM datacell.emitters(); SELECT * FROM datacell.queries(); SELECT * FROM datacell.baskets(); SELECT * FROM datacell.area; SELECT * FROM datacell.states;
+% .,	.,	.,	.,	.,	.,	.,	. # table_name
+% nme,	status,	lastrun,	cycles,	events,	time,	error,	def # name
+% clob,	clob,	timestamp,	int,	int,	bigint,	clob,	clob # type
+% 20,	7,	26,	1,	1,	1,	0,	24 # length
+[ "datacell.enrich",	"running",	NULL,	0,	0,	0,	"",	"see procedure definition"	]
+[ "datacell.hot",	"running",	NULL,	0,	0,	0,	"",	"see procedure definition"	]
+[ "datacell.splitter",	"running",	NULL,	0,	0,	0,	"",	"see procedure definition"	]
+[ "datacell.firewarning",	"running",	NULL,	0,	0,	0,	"",	"see procedure definition"	]
+[ "datacell.firespotted",	"running",	NULL,	0,	0,	0,	"",	"see procedure definition"	]
+#SELECT * FROM datacell.receptors(); SELECT * FROM datacell.emitters(); SELECT * FROM datacell.queries(); SELECT * FROM datacell.baskets(); SELECT * FROM datacell.area; SELECT * FROM datacell.states;
+% .,	.,	.,	.,	.,	.,	.,	.,	. # table_name
+% nme,	threshold,	winsize,	winstride,	timeslice,	timestride,	beat,	seen,	events # name
+% clob,	int,	int,	int,	int,	int,	int,	timestamp,	int # type
+% 21,	1,	1,	1,	1,	1,	1,	26,	1 # length
+[ "datacell.istream",	0,	0,	0,	0,	0,	0,	NULL,	0	]
+[ "datacell.sensors",	0,	0,	0,	0,	0,	0,	NULL,	0	]
+[ "datacell.warden",	0,	0,	0,	0,	0,	0,	NULL,	0	]
+[ "datacell.observations",	0,	0,	0,	0,	0,	0,	NULL,	0	]
+[ "datacell.hotsensors",	0,	0,	0,	0,	0,	0,	NULL,	0	]
+[ "datacell.hotsensors1",	0,	0,	0,	0,	0,	0,	NULL,	0	]
+[ "datacell.hotsensors2",	0,	0,	0,	0,	0,	0,	NULL,	0	]
+#SELECT * FROM datacell.receptors(); SELECT * FROM datacell.emitters(); SELECT * FROM datacell.queries(); SELECT * FROM datacell.baskets(); SELECT * FROM datacell.area; SELECT * FROM datacell.states;
+% datacell.area,	datacell.area # table_name
+% ip,	location # name
+% inet,	varchar # type
+% 0,	0 # length
+#SELECT * FROM datacell.receptors(); SELECT * FROM datacell.emitters(); SELECT * FROM datacell.queries(); SELECT * FROM datacell.baskets(); SELECT * FROM datacell.area; SELECT * FROM datacell.states;
+% datacell.states,	datacell.states,	datacell.states # table_name
+% location,	time,	status # name
+% varchar,	timestamp,	varchar # type
+% 0,	26,	0 # length
+
+# 21:09:10 >  
+# 21:09:10 >  "Done."
+# 21:09:10 >  
+

@@ -568,7 +568,7 @@ BATimprints(BAT *b) {
 		}
 
 #define SMP_SIZE 2048
-		s = BATsample_(b, SMP_SIZE);
+		s = BATsample(b, SMP_SIZE);
 		smp = BATsubunique(b, s);
 		BBPunfix(s->batCacheid);
 		s = BATproject(smp,b);
@@ -666,16 +666,16 @@ do {                                                              \
 			GDKerror("#BATimprints: memory allocation error");
 			HEAPfree(imprints->bins);
 			GDKfree(imprints->bins);
-			if (imprints->imps->filename != NULL) {
-				GDKfree(imprints->imps->filename);
-			}
-			if (imprints->dict->filename != NULL) {
-				GDKfree(imprints->dict->filename);
-			}
 			if (imprints->imps != NULL) {
+				if (imprints->imps->filename != NULL) {
+					GDKfree(imprints->imps->filename);
+				}
 				GDKfree(imprints->imps);
 			}
 			if (imprints->dict != NULL) {
+				if (imprints->dict->filename != NULL) {
+					GDKfree(imprints->dict->filename);
+				}
 				GDKfree(imprints->dict);
 			}
 			GDKfree(imprints);
@@ -872,6 +872,8 @@ IMPSprint(BAT *b) {
 	imprints = b->T->imprints;
 	d = (cchdc_t *) imprints->dict->base;
 	s = (char *) malloc(sizeof(char)*(imprints->bits+1));
+	if (s == NULL)
+		return;
 
 #define IMPSPRNTMASK(T,B)						\
 do {									\
@@ -897,5 +899,6 @@ do {									\
 			}
 		}
 	}
+	free(s);
 }
 #endif

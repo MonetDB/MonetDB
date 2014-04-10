@@ -103,14 +103,16 @@ GROUPcollect( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		sample = BATcount(b) < 1000 ? BATcount(b): 1000;
 		bs = BATsample( b, sample);
 		if (bs) {
-			bh = BATkunique(BATmirror(bs));
-			a->unique[a->last] = BATcount(bh);
-			if ( bh ) BBPreleaseref(bh->batCacheid);
+			bh = BATsubunique(b, bs);
+			if (bh) {
+				a->unique[a->last] = BATcount(bh);
+				BBPreleaseref(bh->batCacheid);
+			}
+			BBPreleaseref(bs->batCacheid);
 		}
 		if ( b->tsorted)
 			a->unique[a->last] = 1000; /* sorting helps grouping */
 		a->size = BATcount(b);
-		if ( bs ) BBPreleaseref(bs->batCacheid);
 	}
 
 #ifdef _DEBUG_GROUPBY_

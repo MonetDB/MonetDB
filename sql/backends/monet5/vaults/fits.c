@@ -227,7 +227,8 @@ str FITSexportTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	_Bool boolvalue, *readboolrows;
 	struct list * set;
 
-	msg = getSQLContext(cntxt, mb, &m, NULL);
+	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != MAL_SUCCEED)
+		return msg;
 	if ((msg = checkSQLContext(cntxt)) != MAL_SUCCEED)
 		return msg;
 
@@ -621,7 +622,7 @@ str FITSdirpat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/*	mnstr_printf(GDKout,"#fulldir: %s \nSize: %lu\n",fulldirectory, globbuf.gl_pathc);*/
 
 	if (globbuf.gl_pathc == 0)
-		msg = createException(MAL, "listdir", "Couldn't open the directory or there are no files that match the pattern");
+		throw(MAL, "listdir", "Couldn't open the directory or there are no files that match the pattern");
 
 	for (j = 0; j < globbuf.gl_pathc; j++) {
 		char stmt[BUFSIZ];
@@ -635,6 +636,7 @@ str FITSdirpat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			snprintf(stmt, BUFSIZ, ATTACHDIR, fname);
 			msg = SQLstatementIntern(cntxt, &s, "fits.listofdirpat", TRUE, FALSE);
 			fits_close_file(fptr, &status);
+			break;
 		}
 	}
 
@@ -680,7 +682,8 @@ str FITSattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	char xtensionname[BUFSIZ] = "", stilversion[BUFSIZ] = "";
 	char stilclass[BUFSIZ] = "", tdate[BUFSIZ] = "", orig[BUFSIZ] = "", comm[BUFSIZ] = "";
 
-	msg = getSQLContext(cntxt, mb, &m, NULL);
+	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != MAL_SUCCEED)
+		return msg;
 	if ((msg = checkSQLContext(cntxt)) != MAL_SUCCEED)
 		return msg;
 
@@ -850,7 +853,8 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	char keywrd[80], **cname, nm[FLEN_VALUE];
 	ptr nilptr;
 
-	msg = getSQLContext(cntxt, mb, &m, NULL);
+	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != MAL_SUCCEED)
+		return msg;
 	if ((msg = checkSQLContext(cntxt)) != MAL_SUCCEED)
 		return msg;
 	sch = mvc_bind_schema(m, "sys");

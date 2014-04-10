@@ -1835,7 +1835,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_2E0FEE7726DA47369758C263666F3DB1"
             {
-            "SourcePath" = "8:C:\\Libraries\\openssl-1.0.1b.win32-vs10\\lib\\libeay32.lib"
+            "SourcePath" = "8:C:\\Libraries\\openssl-1.0.1g.win32-vs10\\lib\\libeay32.lib"
             "TargetName" = "8:libeay32.lib"
             "Tag" = "8:"
             "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
@@ -2095,7 +2095,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_45C820B6483D494EBFE6F9A28A30760C"
             {
-            "SourcePath" = "8:C:\\Libraries\\openssl-1.0.1b.win32-vs10\\bin\\ssleay32.dll"
+            "SourcePath" = "8:C:\\Libraries\\openssl-1.0.1g.win32-vs10\\bin\\ssleay32.dll"
             "TargetName" = "8:ssleay32.dll"
             "Tag" = "8:"
             "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
@@ -2455,7 +2455,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_732094CE07974147A084EDD6A5F43C6F"
             {
-            "SourcePath" = "8:C:\\Libraries\\openssl-1.0.1b.win32-vs10\\lib\\ssleay32.lib"
+            "SourcePath" = "8:C:\\Libraries\\openssl-1.0.1g.win32-vs10\\lib\\ssleay32.lib"
             "TargetName" = "8:ssleay32.lib"
             "Tag" = "8:"
             "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
@@ -4095,7 +4095,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_E80B0549492B4D76B7EB93941A6BF89D"
             {
-            "SourcePath" = "8:C:\\Libraries\\openssl-1.0.1b.win32-vs10\\bin\\libeay32.dll"
+            "SourcePath" = "8:C:\\Libraries\\openssl-1.0.1g.win32-vs10\\bin\\libeay32.dll"
             "TargetName" = "8:libeay32.dll"
             "Tag" = "8:"
             "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"

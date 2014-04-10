@@ -40,8 +40,8 @@ Ready.
 % varchar # type
 % 7 # length
 [ "mytest1"	]
-[ "mytest2"	]
 [ "mytest3"	]
+[ "mytest2"	]
 [ "mytest4"	]
 [ "mytest1"	]
 [ "mytest2"	]
@@ -52,24 +52,24 @@ Ready.
 % varchar # type
 % 7 # length
 [ "mydir1/"	]
-[ "mydir1/"	]
+[ "mydir2/"	]
 [ "mydir1/"	]
 [ "mydir1/"	]
 [ "mydir2/"	]
 [ "mydir2/"	]
-[ "mydir2/"	]
+[ "mydir1/"	]
 #select dir_test from lim_prob order by dir,test limit 10;
 % sys.lim_prob # table_name
 % dir_test # name
 % varchar # type
 % 14 # length
 [ "mydir1/mytest1"	]
+[ "mydir2/mytest3"	]
 [ "mydir1/mytest2"	]
-[ "mydir1/mytest3"	]
 [ "mydir1/mytest4"	]
 [ "mydir2/mytest1"	]
 [ "mydir2/mytest2"	]
-[ "mydir2/mytest3"	]
+[ "mydir1/mytest3"	]
 #drop table lim_prob;
 
 # 17:46:36 >  

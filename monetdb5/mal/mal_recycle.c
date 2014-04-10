@@ -312,6 +312,8 @@ newpass:
 	leaves = (int *)GDKzalloc(sizeof(int)*ltop);
 	if( leaves == NULL){
 		GDKerror("RECYCLEcleanCache" MAL_MALLOC_FAIL);
+		GDKfree(lmask);
+		GDKfree(used);
 		return;
 	}
 	l = 0;

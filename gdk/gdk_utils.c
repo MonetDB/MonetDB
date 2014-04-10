@@ -846,6 +846,18 @@ GDKstrdup(const char *s)
 	return n;
 }
 
+#undef GDKstrndup
+char *
+GDKstrndup(const char *s, size_t n)
+{
+	char *r = (char *) GDKmalloc(n+1);
+
+	if (r) {
+		memcpy(r, s, n);
+		r[n] = '\0';
+	}
+	return r;
+}
 
 /*
  * @- virtual memory

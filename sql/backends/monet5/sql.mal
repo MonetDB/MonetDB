@@ -982,19 +982,6 @@ pattern drop_hash(sch:str, tbl:str)
 address SQLdrop_hash
 comment "Drop hash indices for the given table";
 
-pattern gzcompress(sch:str, tbl:str):void
-address SQLgzcompress
-comment "Perform LZ compression on a table";
-pattern gzdecompress(sch:str, tbl:str):void
-address SQLgzdecompress
-comment "Perform LZ decompression on a table";
-pattern gztruncate(sch:str, tbl:str):void
-address SQLtruncate
-comment "Remove the tables when you have a compressed image";
-pattern gzexpand(sch:str, tbl:str):void
-address SQLexpand
-comment "Remove the compressed image";
-
 command prelude()
 address SQLprelude;
 

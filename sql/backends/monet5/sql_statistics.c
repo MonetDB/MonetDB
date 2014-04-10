@@ -60,8 +60,13 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	query = (char *) GDKzalloc(8192);
 	maxval = (char *) GDKzalloc(8192);
 	minval = (char *) GDKzalloc(8192);
-	if (!(dquery && query && maxval && minval))
+	if (!(dquery && query && maxval && minval)) {
+		GDKfree(dquery);
+		GDKfree(query);
+		GDKfree(maxval);
+		GDKfree(minval);
 		throw(SQL, "analyze", MAL_MALLOC_FAIL);
+	}
 
 	switch (argc) {
 	case 4:
@@ -103,8 +108,8 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						if (samplesize > 0) {
 							bsample = BATsample(bn, (BUN) 25000);
 						} else
-							bsample = bn;
-						br = BATsubselect(bsample, NULL, ATOMnilptr(bn->ttype), ATOMnilptr(bn->ttype), 0, 0, 0);
+							bsample = NULL;
+						br = BATsubselect(bn, bsample, ATOMnilptr(bn->ttype), ATOMnilptr(bn->ttype), 0, 0, 0);
 						nils = BATcount(br);
 						BBPunfix(br->batCacheid);
 						if (bn->tkey)

@@ -23,13 +23,13 @@ CREATE TABLE "datacell"."alarm_hot" (
         "temperature" DOUBLE
 );
 
---CALL datacell.receptor('datacell.sensors', 'localhost', 50500);
+CALL datacell.receptor('datacell.sensors', 'localhost', 50500);
 
---CALL datacell.emitter('datacell.alarm_warm', 'localhost', 50601);
---CALL datacell.emitter('datacell.alarm_hot', 'localhost', 50602);
+CALL datacell.emitter('datacell.alarm_warm', 'localhost', 50601);
+CALL datacell.emitter('datacell.alarm_hot', 'localhost', 50602);
 
---CALL datacell.basket('datacell.warm');
---CALL datacell.basket('datacell.hot');
+CALL datacell.basket('datacell.warm');
+CALL datacell.basket('datacell.hot');
 
 CREATE PROCEDURE datacell.warm()
 BEGIN

@@ -472,8 +472,9 @@ PNcontroller(void *dummy)
 	lng t, analysis, now;
 	char buf[BUFSIZ], *modnme, *fcnnme;
 
-	cntxt = mal_clients; /* run as admin */
-	SQLinitEnvironment(cntxt);
+	cntxt = mal_clients; /* run as admin in SQL mode*/
+	 if( strcmp(cntxt->scenario, "sql") )
+		SQLinitEnvironment(cntxt);
 	/* At this point we know what is the total number of factories.
 	 * The most extremely case is when ALL factories are enable to fire
 	 * so the maximum space we could ever need is = #factories (=pnettop)*/

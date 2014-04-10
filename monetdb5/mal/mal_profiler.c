@@ -50,11 +50,6 @@ static int offlineProfiling = FALSE;
 static int cachedProfiling = FALSE;
 static str myname = 0;
 
-int
-profilerAvailable(void)
-{
-	return 1;
-}
 static void offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc, int start);
 static void cachedProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc);
 static int initTrace(void);

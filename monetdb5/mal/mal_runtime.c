@@ -281,13 +281,13 @@ updateFootPrint(MalBlkPtr mb, MalStkPtr stk, int varid)
         if (b == NULL || isVIEW(b) || b->batPersistence == PERSISTENT)
             return;
 		cnt = BATcount(b);
-		if( b->H ) total += heapinfo(&b->H->heap);
-		if( b->H ) total += heapinfo(b->H->vheap);
+		total += heapinfo(&b->H->heap);
+		total += heapinfo(b->H->vheap);
 
-		if ( b->T ) total += heapinfo(&b->T->heap);
-		if ( b->T ) total += heapinfo(b->T->vheap);
-		if ( b->H ) total += hashinfo(b->H->hash);
-		if ( b->T ) total += hashinfo(b->T->hash); 
+		total += heapinfo(&b->T->heap);
+		total += heapinfo(b->T->vheap);
+		total += hashinfo(b->H->hash);
+		total += hashinfo(b->T->hash);
 		BBPreleaseref(b->batCacheid);
 		// no concurrency protection (yet)
 		stk->tmpspace += total/1024/1024; // keep it in MBs

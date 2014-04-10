@@ -204,9 +204,9 @@ rel_table_projections( mvc *sql, sql_rel *rel, char *tname )
 	if (!tname) {
 		if (is_project(rel->op) && rel->l)
 			return rel_projections(sql, rel->l, NULL, 1, 0);
-		else	
+		else
 			return NULL;
-		return rel_projections(sql, rel, NULL, 1, 0);
+		/* return rel_projections(sql, rel, NULL, 1, 0); */
 	}
 
 	switch(rel->op) {
@@ -2410,7 +2410,7 @@ rel_or(mvc *sql, sql_rel *l, sql_rel *r, list *oexps, list *lexps, list *rexps, 
 		return l;
 	}
 
-	if (l->op == r->op && ll == rl) {
+	if (l->op == r->op && ll == rl && l->r == r->r) {
 		sql_exp *e = exp_or(sql->sa, l->exps, r->exps);
 		list *nl = new_exp_list(sql->sa); 
 		
@@ -4599,7 +4599,7 @@ rel_value_exp2(mvc *sql, sql_rel **rel, symbol *se, int f, exp_kind ek, int *is_
 						p->l = r;
 					} else {
 						assert(0);
-						*rel = p = rel_crossproduct(sql->sa, p, r, op_join);
+						*rel = rel_crossproduct(sql->sa, p, r, op_join);
 					}
 				} else {
 					*rel = rel_crossproduct(sql->sa, p, r, op_join);

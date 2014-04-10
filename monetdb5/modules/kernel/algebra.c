@@ -1396,12 +1396,6 @@ ALGsample(bat *result, bat *bid, int *param)
 	return ALGbinaryint(result, bid, param, BATsample, "algebra.sample");
 }
 
-str
-ALGsubsample(bat *result, bat *bid, int *param)
-{
-	return ALGbinaryint(result, bid, param, BATsample_, "algebra.subsample");
-}
-
 /* add items missing in the kernel */
 str
 ALGtunique(int *result, int *bid)

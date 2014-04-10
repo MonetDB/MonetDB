@@ -3910,7 +3910,7 @@ rel_reduce_groupby_exps(int *changes, mvc *sql, sql_rel *rel)
 						for (l = 0, n = gbe->h; l < k && n && !fnd; l++, n = n->next) {
 							sql_exp *gb = n->data;
 
-							if (scores[l] == -1 && exp_match_exp(e,gb)) {
+							if (scores[l] == -1 && exp_refers(e,gb)) {
 								sql_column *c = exp_find_column_(rel, e, -2, &bt);
 								sql_exp *rs;
 							       
@@ -3926,6 +3926,7 @@ rel_reduce_groupby_exps(int *changes, mvc *sql, sql_rel *rel)
 							append(nexps, e);
 					}
 					/* new reduced aggr expression list */
+					assert(list_length(nexps)>0);
 					rel->exps = nexps;
 					rel = rel_crossproduct(sql->sa, rel, r, op_join);
 					rel->exps = lpje;
@@ -5533,11 +5534,6 @@ is_identity_of(sql_exp *e, sql_rel *l)
 }
 
 
-/* More general case is (join reduction)
-   	{semi,anti}join (A, join(A,B) [A.c1 == B.c1]) [ A.c1 == B.c1 ]
-	into {semi,anti}join (A,B) [ A.c1 == B.c1 ] 
-*/
-	
 static sql_rel *
 rel_rewrite_semijoin(int *changes, mvc *sql, sql_rel *rel)
 {
@@ -5584,6 +5580,12 @@ rel_rewrite_semijoin(int *changes, mvc *sql, sql_rel *rel)
 				rl = r->l;
 		}
 
+		/* More general case is (join reduction)
+   		   {semi,anti}join (A, join(A,B) [A.c1 == B.c1]) [ A.c1 == B.c1 ]
+		   into {semi,anti}join (A,B) [ A.c1 == B.c1 ] 
+
+		   for semijoin also A.c1 == B.k1 ] [ A.c1 == B.k2 ] could be rewriten
+		 */
 		if (l && r && rl && 
 		    is_basetable(l->op) && is_basetable(rl->op) &&
 		    is_join(r->op) && l->l == rl->l)
@@ -5603,29 +5605,51 @@ rel_rewrite_semijoin(int *changes, mvc *sql, sql_rel *rel)
 				sql_exp *le = NULL, *oe = n->data;
 				sql_exp *re = NULL, *ne = m->data;
 				sql_column *cl;  
+				int anti = (rel->op == op_anti), equal = 0;
 				
 				if (oe->type != e_cmp || ne->type != e_cmp ||
 				    oe->flag != cmp_equal || 
 				    ne->flag != cmp_equal)
 					return rel;
 
-				if ((cl = exp_find_column(rel->l, oe->l, -2)) != NULL)
+				if ((cl = exp_find_column(rel->l, oe->l, -2)) != NULL) {
 					le = oe->l;
-				else if ((cl = exp_find_column(rel->l, oe->r, -2)) != NULL)
-					le = oe->r;
-
-				if (exp_find_column(rl, ne->l, -2) == cl)
 					re = oe->r;
-				else if (exp_find_column(rl, ne->r, -2) == cl)
+				} else if ((cl = exp_find_column(rel->l, oe->r, -2)) != NULL) {
+					le = oe->r;
 					re = oe->l;
-				if (!re)
+				} else
 					return rel;
+
+				if (exp_find_column(rl, ne->l, -2) == cl) {
+					sql_exp *e = (or != r)?rel_find_exp(or, re):re;
+
+					equal = exp_match_exp(ne->r, e);
+					if (anti && !equal)
+						return rel;
+					re = ne->r;
+				} else if (exp_find_column(rl, ne->r, -2) == cl) {
+					sql_exp *e = (or != r)?rel_find_exp(or, re):re;
+
+					equal = exp_match_exp(ne->l, e);
+					if (anti && !equal)
+						return rel;
+					re = ne->l;
+				} else
+					return rel;
+
 				ne = exp_compare(sql->sa, le, re, cmp_equal);
 				append(exps, ne);
+				if (!equal) {
+					re = (le==oe->r)?oe->l:oe->r;
+					re = (or != r)?rel_find_exp(or, re):re;
+					assert(0);
+					oe = exp_compare(sql->sa, le, re, cmp_equal);
+					append(exps, oe);
+				}
 			}
 
 			rel->r = rel_dup(r->r);
-			/* maybe rename exps ? */
 			rel->exps = exps;
 			rel_destroy(or);
 			(*changes)++;

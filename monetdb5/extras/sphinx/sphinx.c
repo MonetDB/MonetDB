@@ -78,11 +78,14 @@ sphinx_searchIndexLimit(BAT **ret, /* put pointer to BAT[oid,int] record here. *
 str
 SPHINXsearchIndexLimit(int *ret, str *query, str *index, int *limit)
 {
-	BAT *b = NULL;
+	BAT *b;
 	str msg = sphinx_searchIndexLimit(&b, *query, *index, *limit);
 
-	if (!b)
+	if (msg) {
+		GDKfree(msg);
 		throw(MAL, "sphinx.searchIndex", "Cannot create Sphinx object");
+	}
+	assert(b != NULL);
 	*ret = b->batCacheid;
 	BBPkeepref(*ret);
 	return msg;
