@@ -84,16 +84,16 @@ batstr_export str STRbatStrip2_bat(bat *ret, bat *l, bat *l2);
 batstr_export str STRbatLtrim2_bat(bat *ret, bat *l, bat *l2);
 batstr_export str STRbatRtrim2_bat(bat *ret, bat *l, bat *l2);
 
-batstr_export str STRbatLpad_const(bat *ret, bat *l, size_t *n);
-batstr_export str STRbatRpad_const(bat *ret, bat *l, size_t *n);
+batstr_export str STRbatLpad_const(bat *ret, bat *l, int *n);
+batstr_export str STRbatRpad_const(bat *ret, bat *l, int *n);
 batstr_export str STRbatLpad_bat(bat *ret, bat *l, bat *n);
 batstr_export str STRbatRpad_bat(bat *ret, bat *l, bat *n);
-batstr_export str STRbatLpad2_const_const(bat *ret, bat *l, size_t *n, str *s2);
-batstr_export str STRbatRpad2_const_const(bat *ret, bat *l, size_t *n, str *s2);
+batstr_export str STRbatLpad2_const_const(bat *ret, bat *l, int *n, str *s2);
+batstr_export str STRbatRpad2_const_const(bat *ret, bat *l, int *n, str *s2);
 batstr_export str STRbatLpad2_bat_const(bat *ret, bat *l, bat *n, str *s2);
 batstr_export str STRbatRpad2_bat_const(bat *ret, bat *l, bat *n, str *s2);
-batstr_export str STRbatLpad2_const_bat(bat *ret, bat *l, size_t *n, bat *l2);
-batstr_export str STRbatRpad2_const_bat(bat *ret, bat *l, size_t *n, bat *l2);
+batstr_export str STRbatLpad2_const_bat(bat *ret, bat *l, int *n, bat *l2);
+batstr_export str STRbatRpad2_const_bat(bat *ret, bat *l, int *n, bat *l2);
 batstr_export str STRbatLpad2_bat_bat(bat *ret, bat *l, bat *n, bat *l2);
 batstr_export str STRbatRpad2_bat_bat(bat *ret, bat *l, bat *n, bat *l2);
 
@@ -353,7 +353,7 @@ bunins_failed:
  * Output type: str (a BAT of strings)
  */
 static str
-do_batstr_constint_str(bat *ret, bat *l, size_t *n, const char *name, str (*func)(str *, str *, size_t *))
+do_batstr_constint_str(bat *ret, bat *l, int *n, const char *name, str (*func)(str *, str *, int *))
 {
 	BATiter bi;
 	BAT *bn, *b;
@@ -397,12 +397,12 @@ bunins_failed:
  * Output type: str (a BAT of strings)
  */
 static str
-do_batstr_batint_str(bat *ret, bat *l, bat *n, const char *name, str (*func)(str *, str *, size_t *))
+do_batstr_batint_str(bat *ret, bat *l, bat *n, const char *name, str (*func)(str *, str *, int *))
 {
 	BATiter bi, bi2;
 	BAT *bn, *b, *b2;
 	BUN p, q;
-	size_t nn;
+	int nn;
 	str x;
 	str msg = MAL_SUCCEED;
 
@@ -419,7 +419,7 @@ do_batstr_batint_str(bat *ret, bat *l, bat *n, const char *name, str (*func)(str
 		str y = NULL;
 
 		x = (str) BUNtail(bi, p);
-		nn = *(size_t *)BUNtail(bi2, p);
+		nn = *(int *)BUNtail(bi2, p);
 		if (x != 0 && strcmp(x, str_nil) != 0 &&
 			(msg = (*func)(&y, &x, &nn)) != MAL_SUCCEED)
 			goto bunins_failed;
@@ -447,7 +447,7 @@ bunins_failed:
  * Output type: str (a BAT of strings)
  */
 static str
-do_batstr_constint_conststr_str(bat *ret, bat *l, size_t *n, str *s2, const char *name, str (*func)(str *, str *, size_t *, str *))
+do_batstr_constint_conststr_str(bat *ret, bat *l, int *n, str *s2, const char *name, str (*func)(str *, str *, int *, str *))
 {
 	BATiter bi;
 	BAT *bn, *b;
@@ -491,12 +491,12 @@ bunins_failed:
  * Output type: str (a BAT of strings)
  */
 static str
-do_batstr_batint_conststr_str(bat *ret, bat *l, bat *n, str *s2, const char *name, str (*func)(str *, str *, size_t *, str *))
+do_batstr_batint_conststr_str(bat *ret, bat *l, bat *n, str *s2, const char *name, str (*func)(str *, str *, int *, str *))
 {
 	BATiter bi, bi2;
 	BAT *bn, *b, *b2;
 	BUN p, q;
-	size_t nn;
+	int nn;
 	str x;
 	str msg = MAL_SUCCEED;
 
@@ -513,7 +513,7 @@ do_batstr_batint_conststr_str(bat *ret, bat *l, bat *n, str *s2, const char *nam
 		str y = NULL;
 
 		x = (str) BUNtail(bi, p);
-		nn = *(size_t *)BUNtail(bi2, p);
+		nn = *(int *)BUNtail(bi2, p);
 		if (x != 0 && strcmp(x, str_nil) != 0 &&
 			(msg = (*func)(&y, &x, &nn, s2)) != MAL_SUCCEED)
 			goto bunins_failed;
@@ -541,7 +541,7 @@ bunins_failed:
  * Output type: str (a BAT of strings)
  */
 static str
-do_batstr_constint_batstr_str(bat *ret, bat *l, size_t *n, bat *l2, const char *name, str (*func)(str *, str *, size_t *, str *))
+do_batstr_constint_batstr_str(bat *ret, bat *l, int *n, bat *l2, const char *name, str (*func)(str *, str *, int *, str *))
 {
 	BATiter bi, bi2;
 	BAT *bn, *b, *b2;
@@ -591,12 +591,12 @@ bunins_failed:
  * Output type: str (a BAT of strings)
  */
 static str
-do_batstr_batint_batstr_str(bat *ret, bat *l, bat *n, bat *l2, const char *name, str (*func)(str *, str *, size_t *, str *))
+do_batstr_batint_batstr_str(bat *ret, bat *l, bat *n, bat *l2, const char *name, str (*func)(str *, str *, int *, str *))
 {
 	BATiter bi, bi2, bi3;
 	BAT *bn, *b, *b2, *b3;
 	BUN p, q;
-	size_t nn;
+	int nn;
 	str x, x2;
 	str msg = MAL_SUCCEED;
 
@@ -617,7 +617,7 @@ do_batstr_batint_batstr_str(bat *ret, bat *l, bat *n, bat *l2, const char *name,
 		str y = NULL;
 
 		x = (str) BUNtail(bi, p);
-		nn = *(size_t *)BUNtail(bi2, p);
+		nn = *(int *)BUNtail(bi2, p);
 		x2 = (str) BUNtail(bi3, p);
 		if (x != 0 && strcmp(x, str_nil) != 0 &&
 			x2 != 0 && strcmp(x2, str_nil) != 0 &&
@@ -711,13 +711,13 @@ STRbatRtrim2_bat(bat *ret, bat *l, bat *l2)
 }
 
 str
-STRbatLpad_const(bat *ret, bat *l, size_t *n)
+STRbatLpad_const(bat *ret, bat *l, int *n)
 {
 	return do_batstr_constint_str(ret, l, n, "batstr.Lpad", STRLpad);
 }
 
 str
-STRbatRpad_const(bat *ret, bat *l, size_t *n)
+STRbatRpad_const(bat *ret, bat *l, int *n)
 {
 	return do_batstr_constint_str(ret, l, n, "batstr.Rpad", STRRpad);
 }
@@ -735,13 +735,13 @@ STRbatRpad_bat(bat *ret, bat *l, bat *n)
 }
 
 str
-STRbatLpad2_const_const(bat *ret, bat *l, size_t *n, str *s2)
+STRbatLpad2_const_const(bat *ret, bat *l, int *n, str *s2)
 {
 	return do_batstr_constint_conststr_str(ret, l, n, s2, "batstr.Lpad", STRLpad2);
 }
 
 str
-STRbatRpad2_const_const(bat *ret, bat *l, size_t *n, str *s2)
+STRbatRpad2_const_const(bat *ret, bat *l, int *n, str *s2)
 {
 	return do_batstr_constint_conststr_str(ret, l, n, s2, "batstr.Rpad", STRRpad2);
 }
@@ -759,13 +759,13 @@ STRbatRpad2_bat_const(bat *ret, bat *l, bat *n, str *s2)
 }
 
 str
-STRbatLpad2_const_bat(bat *ret, bat *l, size_t *n, bat *l2)
+STRbatLpad2_const_bat(bat *ret, bat *l, int *n, bat *l2)
 {
 	return do_batstr_constint_batstr_str(ret, l, n, l2, "batstr.Lpad", STRLpad2);
 }
 
 str
-STRbatRpad2_const_bat(bat *ret, bat *l, size_t *n, bat *l2)
+STRbatRpad2_const_bat(bat *ret, bat *l, int *n, bat *l2)
 {
 	return do_batstr_constint_batstr_str(ret, l, n, l2, "batstr.Rpad", STRRpad2);
 }
