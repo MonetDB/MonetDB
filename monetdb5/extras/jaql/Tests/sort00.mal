@@ -1,4 +1,0 @@
-jaql.x("[2,1,3]->sort by [$];");
-jaql.x("[2,1,3]->sort each n by [n desc];");
-jaql.x("[{\"a\":2},{\"a\":1},3]->sort by [$];");
-jaql.x("[{\"a\":2},{\"a\":1},3]->sort by [$.a];");

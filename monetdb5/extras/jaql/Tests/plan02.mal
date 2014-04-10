@@ -1,6 +1,0 @@
-# test random functions in various locations of the stack
-
-jaql.x("plan [1,2,3] -> sum();");
-jaql.x("plan sum([1,2,3]) -> transform {\"sum\": $};");
-jaql.x("plan [[1,2,3]] -> transform {\"sum\": sum($[*])};");
-jaql.x("plan arrayToRecord(range(1,5)->transform(strcat(\"s\", $)), range(1,5));");

@@ -15,5 +15,5 @@
 # Copyright August 2008-2014 MonetDB B.V.
 # All Rights Reserved.
 
-SUBDIRS = HAVE_RAPTOR?rdf HAVE_SPHINXCLIENT?sphinx HAVE_JAQL?jaql mal_optimizer_template
+SUBDIRS = HAVE_RAPTOR?rdf HAVE_SPHINXCLIENT?sphinx mal_optimizer_template
 

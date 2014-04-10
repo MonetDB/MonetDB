@@ -1,5 +1,0 @@
-# from the docs
-
-nums = [1,2,3];
-nums -> top 2;
-nums -> top 2 by [ $ desc ];
