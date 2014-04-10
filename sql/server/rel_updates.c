@@ -648,8 +648,10 @@ rel_update_join_idx(mvc *sql, sql_idx *i, sql_rel *updates)
 			rnll_exps = rnl;
 		    }
 		}
-		if (rel_convert_types(sql, &rtc, &upd, 1, type_equal) < 0) 
+		if (rel_convert_types(sql, &rtc, &upd, 1, type_equal) < 0) {
+			list_destroy(join_exps);
 			return NULL;
+		}
 		je = exp_compare(sql->sa, rtc, upd, cmp_equal);
 		append(join_exps, je);
 	}
@@ -828,7 +830,7 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_where)
 	} else {
 		sql_exp *e = NULL, **updates;
 		sql_rel *r = NULL;
-		list *exps = new_exp_list(sql->sa);
+		list *exps;
 		dnode *n;
 
 		if (t && !isTempTable(t) && STORE_READONLY)
@@ -859,6 +861,7 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_where)
 	
 		/* first create the project */
 		e = exp_column(sql->sa, rel_name(r), TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
+		exps = new_exp_list(sql->sa);
 		append(exps, e);
 		updates = table_update_array(sql, t);
 		for (n = assignmentlist->h; n; n = n->next) {

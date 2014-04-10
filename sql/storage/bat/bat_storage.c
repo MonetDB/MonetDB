@@ -1171,11 +1171,12 @@ destroy_delta(sql_delta *b)
 static int
 destroy_bat(sql_trans *tr, sql_delta *b)
 {
-	sql_delta *n = b->next;
+	sql_delta *n;
 
 	(void)tr;
 	if (!b)
 		return LOG_OK;
+	n = b->next;
 	destroy_delta(b);
 	_DELETE(b);
 	if (n)

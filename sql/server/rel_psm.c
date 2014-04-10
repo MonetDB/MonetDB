@@ -906,9 +906,11 @@ rel_drop_func(mvc *sql, dlist *qname, dlist *typelist, int drop_action, int type
 					}
 				}
 				list_destroy(list_func);
+				list_destroy(type_list);
 				return sql_error(sql, 02, "DROP %s%s: no such %s%s '%s' (%s)", KF, F, kf, f, name, arg_list);
 			}
 			list_destroy(list_func);
+			list_destroy(type_list);
 			return sql_error(sql, 02, "DROP %s%s: no such %s%s '%s' ()", KF, F, kf, f, name);
 
 		} else {
@@ -916,13 +918,13 @@ rel_drop_func(mvc *sql, dlist *qname, dlist *typelist, int drop_action, int type
 		}
 	} else if (((is_func && type != F_FILT) && !func->res) || 
 		   (!is_func && func->res)) {
-		if (list_func)
-			list_destroy(list_func);
+		list_destroy(list_func);
+		list_destroy(type_list);
 		return sql_error(sql, 02, "DROP %s%s: cannot drop %s '%s'", KF, F, is_func?"procedure":"function", name);
 	}
 
-	if (list_func)
-		list_destroy(list_func);
+	list_destroy(list_func);
+	list_destroy(type_list);
 	return rel_drop_function(sql->sa, s->base.name, name, func->base.id, type, drop_action);
 }
 

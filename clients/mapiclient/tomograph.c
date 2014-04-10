@@ -1626,7 +1626,7 @@ update(int state, int thread, lng clkticks, lng ticks, lng memory, lng footprint
 		return;
 	}
 
-	if (state == DONE && strncmp(fcn, "profiler.tomograph", 18) == 0) {
+	if (state == DONE && fcn && strncmp(fcn, "profiler.tomograph", 18) == 0) {
 #ifdef _DEBUG_TOMOGRAPH_
 		fprintf(stderr, "Profiler.tomograph ends %d\n", batch);
 #endif
@@ -1887,6 +1887,8 @@ processFile(char *fname)
 	s = open_rastream(fname);
 	if (s == NULL || mnstr_errnr(s)) {
 		fprintf(stderr,"ERROR Can not access '%s'\n",fname);
+		if (s)
+			mnstr_destroy(s);
 		return;
 	}
 	len = 0;
@@ -1909,7 +1911,7 @@ processFile(char *fname)
 		} else
 			len = 0;
 	}
-	mnstr_close(s);
+	close_stream(s);
 }
 
 static void

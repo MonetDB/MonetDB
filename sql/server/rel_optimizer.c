@@ -5605,7 +5605,7 @@ rel_rewrite_semijoin(int *changes, mvc *sql, sql_rel *rel)
 				sql_exp *le = NULL, *oe = n->data;
 				sql_exp *re = NULL, *ne = m->data;
 				sql_column *cl;  
-				int anti = (rel->op == op_anti);
+				int anti = (rel->op == op_anti), equal = 0;
 				
 				if (oe->type != e_cmp || ne->type != e_cmp ||
 				    oe->flag != cmp_equal || 
@@ -5623,15 +5623,15 @@ rel_rewrite_semijoin(int *changes, mvc *sql, sql_rel *rel)
 
 				if (exp_find_column(rl, ne->l, -2) == cl) {
 					sql_exp *e = (or != r)?rel_find_exp(or, re):re;
-					int equal = exp_match_exp(ne->r, e);
 
+					equal = exp_match_exp(ne->r, e);
 					if (anti && !equal)
 						return rel;
 					re = ne->r;
 				} else if (exp_find_column(rl, ne->r, -2) == cl) {
 					sql_exp *e = (or != r)?rel_find_exp(or, re):re;
-					int equal = exp_match_exp(ne->l, e);
 
+					equal = exp_match_exp(ne->l, e);
 					if (anti && !equal)
 						return rel;
 					re = ne->l;
@@ -5640,6 +5640,13 @@ rel_rewrite_semijoin(int *changes, mvc *sql, sql_rel *rel)
 
 				ne = exp_compare(sql->sa, le, re, cmp_equal);
 				append(exps, ne);
+				if (!equal) {
+					re = (le==oe->r)?oe->l:oe->r;
+					re = (or != r)?rel_find_exp(or, re):re;
+					assert(0);
+					oe = exp_compare(sql->sa, le, re, cmp_equal);
+					append(exps, oe);
+				}
 			}
 
 			rel->r = rel_dup(r->r);

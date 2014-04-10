@@ -67,7 +67,7 @@ peeringServerThread(void *d)
 
 	masquerade = NULL;
 	len = read(s, data, sizeof(data) - 1);
-	if (len > 0)
+	if (len >= 0)
 		data[len] = 0;
 	if (len > 0 && strncmp(data, "tunnel ", 7) == 0) {
 		/* tunnel mode */
@@ -98,6 +98,7 @@ peeringServerThread(void *d)
 	} else {
 		/* invalid, abort here */
 		snprintf(data, sizeof(data), "invalid request\n");
+		/* coverity[string_null] */
 		if (write(s, data, strlen(data)) == -1) {
 			/* next thing we do is closing anyway, so just keep this
 			 * condition to keep fortification warnings off */

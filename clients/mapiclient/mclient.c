@@ -709,7 +709,7 @@ CSVrenderer(MapiHdl hdl)
 				mnstr_write(toConsole, "\"", 1, 1);
 			} else
 				mnstr_printf(toConsole, "%s%s",
-					      i == 0 ? "" : sep, s ? s : "");
+					      i == 0 ? "" : sep, s);
 		}
 		mnstr_printf(toConsole, "\n");
 	}

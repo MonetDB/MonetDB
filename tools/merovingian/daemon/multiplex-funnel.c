@@ -85,6 +85,7 @@ MFconnectionManager(void *d)
 					strerror(errno));
 			break;
 		}
+		/* coverity[string_null_argument] */
 		if (read(mfpipe[0], &msg, sizeof(msg)) < 0) {
 			Mfprintf(stderr, "failed reading from notification pipe: %s\n",
 					strerror(errno));
@@ -819,8 +820,7 @@ multiplexThread(void *d)
 			close(p->out);
 			close(p->err);
 			Mfprintf(stdout, "mfunnel '%s' has stopped\n", p->dbname);
-			if (p->dbname)
-				free(p->dbname);
+			free(p->dbname);
 			free(p);
 			break;
 		}
