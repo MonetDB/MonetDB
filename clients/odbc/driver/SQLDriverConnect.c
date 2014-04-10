@@ -326,7 +326,7 @@ SQLDriverConnect_(ODBCDbc *dbc,
 			   getenv("ODBCDEBUG") == NULL) {
 			if (ODBCdebug)
 				free((void *) ODBCdebug); /* discard const */
-			ODBCdebug = strdup(attr);
+			ODBCdebug = attr;
 #endif
 		} else
 			free(attr);

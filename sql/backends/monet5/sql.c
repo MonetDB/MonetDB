@@ -2672,9 +2672,10 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #else
 	s = bstream_create(ss, 0x2000000);
 #endif
-	if (s != NULL)
+	if (s != NULL) {
 		b = mvc_import_table(cntxt, be->mvc, s, *sname, *tname, (char *) tsep, (char *) rsep, (char *) ssep, (char *) ns, *sz, *offset, *locked);
-	bstream_destroy(s);
+		bstream_destroy(s);
+	}
 	GDKfree(filename);
 	GDKfree(tsep);
 	GDKfree(rsep);

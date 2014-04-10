@@ -367,6 +367,7 @@ discoveryRunner(void *d)
 				snprintf(buf, 512, "ANNC * %s:%u %d",
 						_mero_hostname, (unsigned int)getConfNum(_mero_props, "port"),
 						discttl->ival + 60);
+				/* coverity[string_null] */
 				broadcast(buf);
 			}
 		}

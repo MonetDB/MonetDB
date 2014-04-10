@@ -710,7 +710,7 @@ sql_bind_member(sql_allocator *sa, sql_schema *s, char *sqlfname, sql_subtype *t
 			}
 		}
 	}
-	if (tp->type->eclass == EC_NUM) {
+	if (tp && tp->type->eclass == EC_NUM) {
 	 	/* add second round but now look for Decimals only */
 		for (n = funcs->h; n; n = n->next) {
 			sql_func *f = n->data;

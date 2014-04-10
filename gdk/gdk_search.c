@@ -218,10 +218,11 @@ HASHcollisions(BAT *b, Hash *h)
 {
 	lng cnt, entries = 0, max = 0;
 	double total = 0;
-	BUN p, i, j, nil = HASHnil(h);
+	BUN p, i, j, nil;
 
 	if (b == 0 || h == 0)
 		return;
+	nil = HASHnil(h);
 	for (i = 0, j = h->mask; i <= j; i++)
 		if ((p = HASHget(h, i)) != nil) {
 			entries++;
@@ -560,15 +561,18 @@ HASHgonebad(BAT *b, const void *v)
 static BUN
 SORTfndwhich(BAT *b, const void *v, int which)
 {
-	BUN lo = BUNfirst(b), hi = BUNlast(b), mid;
+	BUN lo, hi, mid;
 	int cmp = 1;
 	BUN cur = BUN_NONE;
-	BATiter bi = bat_iterator(b);
+	BATiter bi;
 	BUN diff, end;
 
 	if (b == NULL || (!b->tsorted && !b->trevsorted))
 		return BUN_NONE;
 
+	lo = BUNfirst(b);
+	hi = BUNlast(b);
+	bi = bat_iterator(b);
 	if (BATtdense(b)) {
 		/* no need for binary search on dense column */
 		if (*(const oid *) v < b->tseqbase)
