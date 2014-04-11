@@ -1204,8 +1204,10 @@ SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output)
 		msg = SQLinitEnvironment(c);
 		sql = (backend *) c->sqlcontext;
 	}
-	if (msg)
+	if (msg){
+		GDKfree(msg);
 		throw(SQL, "SQLstatement", "Catalogue not available");
+	}
 
 	initSQLreferences();
 	m = sql->mvc;

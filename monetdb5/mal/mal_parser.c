@@ -797,9 +797,10 @@ propList(Client cntxt, int arg)
 				advance(cntxt, i);
 				if (currChar(cntxt) == ':') {
 					tpe = simpleTypeId(cntxt);
-					if (tpe != TYPE_any)
-						convertConstant(tpe, &cst);
-					else
+					if (tpe != TYPE_any){
+						str msg =convertConstant(tpe, &cst);
+						if( msg) GDKfree(msg);
+					} else
 						parseError(cntxt, "simple type expected\n");
 				}
 				varSetProperty(curBlk, arg, pname, opname, &cst);
@@ -982,8 +983,10 @@ parseLibrary(Client cntxt)
 		libnme = putName(nxt, l);
 	s = loadLibrary(libnme, TRUE);
 	libnme = putName(nxt, l);
-	if (s)
+	if (s){
 		mnstr_printf(cntxt->fdout, "#WARNING: %s\n", s);
+		GDKfree(s);
+	}
 	advance(cntxt, l);
 	return "";
 }
