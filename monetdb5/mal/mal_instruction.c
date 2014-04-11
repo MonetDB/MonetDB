@@ -1579,6 +1579,10 @@ pushArgument(MalBlkPtr mb, InstrPtr p, int varid)
 {
 	if (p == NULL)
 		return NULL;
+	if (varid < 0) {
+		freeInstruction(p);
+		return NULL;
+	}
 	assert(varid >= 0);
 	if (p->argc + 1 == p->maxarg) {
 		InstrPtr pn;
