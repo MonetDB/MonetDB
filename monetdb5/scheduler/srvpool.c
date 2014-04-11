@@ -284,8 +284,8 @@ SRVPOOLdiscover(Client cntxt)
 				str t= (str) BUNtail(bi,p);
 
 				for( j = 0; j < srvtop; j++)
-				if ( strcmp(servers[j].uri, t) == 0) 
-					break;
+					if ( strcmp(servers[j].uri, t) == 0) 
+						break;
 				if ( servers[j].conn == NULL) {
 					j = SRVPOOLnewServer(t); 
 					msg = RMTconnectScen(&conn, &servers[j].uri, &servers[j].usr, &servers[j].pwd, &scen);
@@ -328,19 +328,19 @@ SRVPOOLdiscover(Client cntxt)
 			j = SRVPOOLnewServer(s); /*ref to servers registry*/
 			msg = RMTconnectScen(&conn, &servers[j].uri, &servers[j].usr, &servers[j].pwd, &scen);
 		}
-		if ( msg == MAL_SUCCEED )
+		if ( msg == MAL_SUCCEED ) {
 			servers[j].conn = GDKstrdup(conn);
-		else  
-			GDKfree(msg);
 #ifdef DEBUG_RUN_SRVPOOL
-		mnstr_printf(cntxt->fdout,"#Worker site %d connection %s %s\n", j, servers[j].conn, s);
+			mnstr_printf(cntxt->fdout,"#Worker site %d connection %s %s\n", j, servers[j].conn, s);
 #endif
+		} else
+			GDKfree(msg);
 	}
 
 #ifdef DEBUG_RUN_SRVPOOL
 	mnstr_printf(cntxt->fdout,"#Servers available %d\n", srvtop);
 #else
-		(void) cntxt;
+	(void) cntxt;
 #endif
 	return msg;
 }
