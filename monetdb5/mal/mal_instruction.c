@@ -399,8 +399,10 @@ trimexpand(MalBlkPtr mb, int varsize, int stmtsize)
 		return;
 	len = sizeof(InstrPtr) * (mb->ssize + stmtsize);
 	stmt = (InstrPtr *) GDKzalloc(len);
-	if (stmt == NULL)
+	if (stmt == NULL){
+		GDKfree(v);
 		return;
+	}
 
 	memcpy((str) v, (str) mb->var, sizeof(ValPtr) * mb->vtop);
 
@@ -1817,6 +1819,7 @@ pushInstruction(MalBlkPtr mb, InstrPtr p)
 			mb->profiler = (ProfPtr) GDKzalloc((mb->ssize + STMT_INCREMENT) * sizeof(ProfRecord));
 			if ( mb->profiler == NULL){
 				mb->errors++;
+				GDKfree(newblk);
 				showException(GDKout, MAL, "pushInstruction", MAL_MALLOC_FAIL);
 				return;
 			}

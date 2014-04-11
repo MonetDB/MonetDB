@@ -3620,7 +3620,6 @@ BBPdiskscan(const char *parent)
 		const char *p;
 		bat bid;
 		int ok, delete;
-		struct stat st;
 
 		if (dent->d_name[0] == '.')
 			continue;	/* ignore .dot files and directories (. ..) */

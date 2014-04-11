@@ -390,7 +390,8 @@ CMDdecompressheap(Heap *h, Heap *hn, str fnme)
 		close_stream(fp);
 		return 1;
 	}
-	close_stream(fp);
+	if(fp)
+		close_stream(fp);
 #else
 	(void) h;
 	(void) hn;

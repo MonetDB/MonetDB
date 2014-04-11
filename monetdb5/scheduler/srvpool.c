@@ -259,7 +259,7 @@ SRVPOOLdiscover(Client cntxt)
 	BUN p,q;
 	str msg = MAL_SUCCEED, conn, scen = "msql";
 	BATiter bi;
-	int j;
+	int j = -1;
 	char buf[BUFSIZ], *s= buf, *dbname;
 
 
@@ -331,6 +331,7 @@ SRVPOOLdiscover(Client cntxt)
 		if ( msg == MAL_SUCCEED ) {
 			servers[j].conn = GDKstrdup(conn);
 #ifdef DEBUG_RUN_SRVPOOL
+		if( j>=0) 
 			mnstr_printf(cntxt->fdout,"#Worker site %d connection %s %s\n", j, servers[j].conn, s);
 #endif
 		} else
