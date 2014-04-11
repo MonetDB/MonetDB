@@ -390,6 +390,7 @@ CMDdecompressheap(Heap *h, Heap *hn, str fnme)
 		close_stream(fp);
 		return 1;
 	}
+	close_stream(fp);
 #else
 	(void) h;
 	(void) hn;
@@ -650,7 +651,7 @@ CMDbbpdestroyBAT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bit ret = 0;
 	int *bid;
 	bit *immediate;
-	str msg;
+	str msg= MAL_SUCCEED;
 
 	(void) cntxt;
 	bid = (int *) getArgReference(stk, pci, 1);
