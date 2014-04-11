@@ -1276,8 +1276,23 @@ public class MonetPreparedStatement
 	 * @throws SQLFeatureNotSupportedException the JDBC driver does
 	 *         not support this method
 	 */
-	public void setClob(int i, Reader x) throws SQLException {
-		throw new SQLFeatureNotSupportedException("setClob(int, Reader) not supported", "0A000");
+	public void setClob(int i, Reader reader) throws SQLException {
+		if (reader == null) {
+			setNull(i, -1);
+			return;
+		}
+		// Some buffer. Size of 8192 is default for BufferedReader, so...
+		char[] arr = new char[8192];  
+		StringBuffer buf = new StringBuffer();
+		int numChars;
+		try {
+			while ((numChars = reader.read(arr, 0, arr.length)) > 0) {
+				buf.append(arr, 0, numChars);
+			}
+			setString(i, buf.toString());
+		} catch (IOException e) {
+			throw new SQLException(e);
+		}
 	}
 
 	/**
@@ -1298,11 +1313,10 @@ public class MonetPreparedStatement
 	 * @throws SQLException if a database access error occurs
 	 */
 	public void setClob(int i, Reader reader, long length) throws SQLException {
-		if (reader == null) {
+		if (reader == null || length < 0) {
 			setNull(i, -1);
 			return;
 		}
-
 		// simply serialise the CLOB into a variable for now... far from
 		// efficient, but might work for a few cases...
 		CharBuffer buf = CharBuffer.allocate((int)length); // have to down cast :(
@@ -1312,6 +1326,8 @@ public class MonetPreparedStatement
 			throw new SQLException("failed to read from stream: " +
 					e.getMessage(), "M1M25");
 		}
+		// We have to rewind the buffer, because otherwise toString() returns "".
+		buf.rewind();
 		setString(i, buf.toString());
 	}
 
