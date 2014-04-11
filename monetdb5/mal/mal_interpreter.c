@@ -1379,7 +1379,7 @@ void garbageElement(Client cntxt, ValPtr v)
 		if (!BBP_lrefs(bid))
 			return;
 		BBPdecref(bid, TRUE);
-	} else if (0 < v->vtype && v->vtype < TYPE_any && ATOMextern(v->vtype)) {
+	} else if (0 < v->vtype && v->vtype < MAXATOMS && ATOMextern(v->vtype)) {
 		if (v->val.pval)
 			GDKfree(v->val.pval);
 		v->val.pval = 0;
