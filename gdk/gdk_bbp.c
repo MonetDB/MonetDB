@@ -3650,11 +3650,6 @@ BBPdiskscan(const char *parent)
 			/* it was a directory */
 			continue;
 		}
-		if (stat(fullname, &st)) {
-			IODEBUG mnstr_printf(GDKstdout,"BBPdiskscan: stat(%s)", fullname);
-			continue;
-		}
-		IODEBUG THRprintf(GDKstdout, "#BBPdiskscan: stat(%s) = 0\n", fullname);
 
 		if (ok == FALSE || !persistent_bat(bid)) {
 			delete = TRUE;
@@ -3688,7 +3683,7 @@ BBPdiskscan(const char *parent)
 			break;
 		}
 		if (delete) {
-			if (unlink(fullname) < 0) {
+			if (unlink(fullname) < 0 && errno != ENOENT) {
 				GDKsyserror("BBPdiskscan: unlink(%s)", fullname);
 				continue;
 			}
