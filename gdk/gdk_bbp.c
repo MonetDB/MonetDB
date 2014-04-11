@@ -398,8 +398,8 @@ recover_dir(int direxists)
 {
 	if (direxists) {
 		/* just try; don't care about these non-vital files */
-		GDKunlink(BATDIR, "BBP", "bak");
-		GDKmove(BATDIR, "BBP", "dir", BATDIR, "BBP", "bak");
+		(void) GDKunlink(BATDIR, "BBP", "bak");
+		(void) GDKmove(BATDIR, "BBP", "dir", BATDIR, "BBP", "bak");
 	}
 	return GDKmove(BAKDIR, "BBP", "dir", BATDIR, "BBP", "dir");
 }
@@ -3399,23 +3399,19 @@ force_move(const char *srcdir, const char *dstdir, const char *name)
 
 		/* step 1: remove the X.new file that is going to be
 		 * overridden by X */
-		if (stat(dstpath, &st) == 0) {
-			ret = unlink(dstpath);	/* clear destination */
-			if (ret) {
-				/* if it exists and cannot be removed,
-				 * all this is going to fail */
-				GDKsyserror("force_move: unlink(%s)\n", dstpath);
-				return ret;
-			}
+		if (unlink(dstpath) < 0 && errno != ENOENT) {
+			/* if it exists and cannot be removed, all
+			 * this is going to fail */
+			GDKsyserror("force_move: unlink(%s)\n", dstpath);
+			return -1
 		}
 
 		/* step 2: now remove the .kill file. This one is
 		 * crucial, otherwise we'll never finish recovering */
 		GDKfilepath(killfile, srcdir, name, NULL);
-		ret = unlink(killfile);
-		if (ret) {
+		if (unlink(killfile) < 0) {
 			GDKsyserror("force_move: unlink(%s)\n", killfile);
-			return ret;
+			return -1;
 		}
 		return 0;
 	}
