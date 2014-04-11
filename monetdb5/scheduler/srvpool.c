@@ -187,6 +187,8 @@ SRVPOOLdisconnect(Client cntxt)
 
 	for ( i=0; i< srvtop; i++)
 	if ( servers[i].conn != NULL ) {
+		if( msg) 
+			GDKfree(msg);
 		msg = RMTdisconnect(cntxt,&servers[i].conn);
 		GDKfree(servers[i].conn);
 		servers[i].conn = NULL;
@@ -321,13 +323,15 @@ SRVPOOLdiscover(Client cntxt)
 	while (srvtop < srvbaseline) {
 	 	/* there is a last resort, use local execution */
 		/* make sure you have enough connections */
-		SABAOTHgetLocalConnection(&s);
-
-		j = SRVPOOLnewServer(s); /*ref to servers registry*/
-		msg = RMTconnectScen(&conn, &servers[j].uri, &servers[j].usr, &servers[j].pwd, &scen);
+		msg = SABAOTHgetLocalConnection(&s);
+		if( msg == MAL_SUCCEED){
+			j = SRVPOOLnewServer(s); /*ref to servers registry*/
+			msg = RMTconnectScen(&conn, &servers[j].uri, &servers[j].usr, &servers[j].pwd, &scen);
+		}
 		if ( msg == MAL_SUCCEED )
 			servers[j].conn = GDKstrdup(conn);
-		else  GDKfree(msg);
+		else  
+			GDKfree(msg);
 #ifdef DEBUG_RUN_SRVPOOL
 		mnstr_printf(cntxt->fdout,"#Worker site %d connection %s %s\n", j, servers[j].conn, s);
 #endif

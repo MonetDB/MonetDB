@@ -1734,7 +1734,7 @@ mvc_append_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
-	if (tpe > TYPE_any)
+	if (tpe > GDKatomcnt)
 		tpe = TYPE_bat;
 	if (tpe == TYPE_bat && (ins = BATdescriptor(*(int *) ins)) == NULL)
 		throw(SQL, "sql.append", "Cannot access descriptor");
@@ -4619,7 +4619,8 @@ RAstatement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			resetMalBlk(cntxt->curprg->def, oldstop);
 			freeVariables(cntxt, cntxt->curprg->def, NULL, oldvtop);
 		}
-		assert(cntxt->glb == 0 || cntxt->glb == oldglb);	/* detect leak */
+		if( !(cntxt->glb == 0 || cntxt->glb == oldglb))
+			msg= createException(MAL,"sql","global stack leakage");	/* detect leak */
 		cntxt->glb = oldglb;
 	}
 	return msg;

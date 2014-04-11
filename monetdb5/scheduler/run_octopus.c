@@ -233,7 +233,7 @@ OCTOPUSdiscover(Client cntxt){
 
 	if ( !nrworkers  ) {
 	 	/* there is a last resort, local execution */
-		SABAOTHgetLocalConnection(&s);
+		msg = SABAOTHgetLocalConnection(&s);
 
 		workers[nrworkers].pnum = OCTOPUSgetPeer(s); /*ref to peers registry*/
 		snprintf(buf,BUFSIZ,"worker_%d",nrworkers);
@@ -256,7 +256,7 @@ OCTOPUSdiscover(Client cntxt){
 		if ( !peers[i].active )
 			OCTOPUScleanFunReg(i);
 
-	return MAL_SUCCEED;
+	return msg;
 }
 
 /*
@@ -651,7 +651,9 @@ OCTOPUSdisconnect(Client cntxt)
 	str msg = MAL_SUCCEED;
 
 	for ( i=0; i< nrpeers; i++)
-		if ( peers[i].active && peers[i].conn != NULL ) {
+	if ( peers[i].active && peers[i].conn != NULL ) {
+		if( msg ) 
+			GDKfree(msg);
 		msg = RMTdisconnect(cntxt,&peers[i].conn);
 		GDKfree(peers[i].conn);
 		peers[i].conn = NULL;
