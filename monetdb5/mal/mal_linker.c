@@ -156,9 +156,12 @@ getAddress(stream *out, str filename, str modnme, str fcnname, int silent)
 		if( adr != NULL)
 			return adr; /* found it */
 	}
-	if (!silent)
+	if (!silent){
+		if ( dl)
+			dlclose(dl);
 		showException(out, MAL,"MAL.getAddress", "address of '%s.%s' not found",
 			(modnme?modnme:"<unknown>"), fcnname);
+	}
 	return NULL;
 }
 /*
@@ -448,6 +451,7 @@ locate_file(const char *basename, const char *ext, bit recurse)
 						while (lasts >= 0)
 							GDKfree(strs[lasts--]);
 						GDKfree(fullname);
+						(void)closedir(rdir);
 						return NULL;
 					}
 					sprintf(strs[lasts], "%s%c%s%c", fullname, DIR_SEP, e->d_name, PATH_SEP);
