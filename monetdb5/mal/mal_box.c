@@ -417,6 +417,8 @@ depositBox(Box box, str name, int type, ValPtr val)
 		return 0;
 	if (i < 0) {
 		i = newVariable(box->sym, GDKstrdup(name), type);
+		if ( i < 0)
+			return -1;
 		if (box->val->stksize <= i)
 			box->val =reallocStack(box->val, STACKINCR);
 	}
@@ -498,6 +500,8 @@ bindBAT(Box box, str name, str location)
 		return 0;
 	if (i < 0)
 		i = newVariable(box->sym, GDKstrdup(name), TYPE_any);
+	if ( i< 0)
+		return -1;
 	v = &box->val->stk[i];
 	v->val.bval = BBPindex(location);
 
