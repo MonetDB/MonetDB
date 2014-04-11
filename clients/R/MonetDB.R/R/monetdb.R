@@ -32,7 +32,7 @@ mc <- function(dbname="demo", user="monetdb", password="monetdb", host="localhos
 	dbConnect(MonetDB.R(),dbname,user,password,host,port,timeout,wait,language,...)
 }
 
-# TODO: document, export etc
+# TODO: document
 mq <- function(db,query,...) {
   conn <- mc(db,...)
   res <- dbGetQuery(conn,query)
@@ -48,7 +48,7 @@ setMethod("dbConnect", "MonetDBDriver", def=function(drv,dbname="demo", user="mo
 			timeout <- as.integer(timeout)
 			
 			if (substring(dbname,1,10) == "monetdb://") {
-				#warning("MonetDB.R: Using 'monetdb://...' URIs in dbConnect() is deprecated. Please switch to dbname, host, port named arguments.")
+				message("MonetDB.R: Using 'monetdb://...' URIs in dbConnect() is deprecated. Please switch to dbname, host, port named arguments.")
 				rest <- substring(dbname,11,nchar(dbname))
 				# split at /, so we get the dbname
 				slashsplit <- strsplit(rest,"/",fixed=TRUE)
@@ -90,8 +90,6 @@ setMethod("dbConnect", "MonetDBDriver", def=function(drv,dbname="demo", user="mo
 			}
 			
 			# make new socket with user-specified timeout
-			#socket <- socket <<- socketConnection(host = host, port = port, 
-			#	blocking = TRUE, open="r+b",timeout = timeout) 
 			socket <- .Call("mapiConnect",host,port,timeout,PACKAGE=C_LIBRARY)
 			.monetAuthenticate(socket,dbname,user,password,language=language)
 			connenv <- new.env(parent=emptyenv())
@@ -183,7 +181,7 @@ setMethod("dbSendQuery", signature(conn="MonetDBConnection", statement="characte
 			}	
 			conn@connenv$exception <- list()
 			env <- NULL
-			if (getOption("monetdb.debug.query",F))  message("QQ: '",statement)
+			if (getOption("monetdb.debug.query",F))  message("QQ: '",statement,"'")
 			resp <- .mapiParseResponse(.mapiRequest(conn,paste0("s",statement,";"),async=async))
 			
 			env <- new.env(parent=emptyenv())
@@ -430,14 +428,6 @@ setMethod("fetch", signature(res="MonetDBResult", n="numeric"), def=function(res
 			}
 			
 			# convert tuple string vector into matrix so we can access a single column efficiently
-			# stupid MAPI, [, ] and , or \t are completely unneccessary
-			
-			#rawdata <- gsub(",\t", "\t", res@env$data[1:n],fixed=T)
-			#rawdata <- gsub("^\\[ ", "",rawdata)
-			#rawdata <- gsub("\t\\]$", "", rawdata)
-			#parts <- do.call("rbind", strsplit(rawdata,"\t",fixed=TRUE,useBytes=TRUE))
-			#parts[parts=="NULL"] <- NA
-			
 			# call to a faster C implementation for the hard and annoying task of splitting everyting into fields
 			parts <- .Call("mapiSplit", res@env$data[1:n],as.integer(info$cols), PACKAGE=C_LIBRARY)
 			
@@ -451,8 +441,6 @@ setMethod("fetch", signature(res="MonetDBResult", n="numeric"), def=function(res
 				if (col == .CT_BOOL) 
 					df[[j]] <- parts[[j]]=="true"
 				if (col == .CT_CHR) { 
-					#strings <- parts[,j]	
-					#df[[j]] <- substring(strings,2,nchar(strings)-1)
 					df[[j]] <- parts[[j]]
 				}
 				if (col == .CT_RAW) {
@@ -629,8 +617,6 @@ REPLY_SIZE    <- 100 # Apparently, -1 means unlimited, but we will start with a 
 	.Call("mapiWrite",con,msg,PACKAGE=C_LIBRARY)
 	return (NULL)
 }
-
-
 
 .mapiLongInt <- function(someint) {
 	stopifnot(length(someint) == 1)

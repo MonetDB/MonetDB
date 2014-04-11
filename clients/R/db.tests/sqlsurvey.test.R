@@ -1,6 +1,8 @@
 library(MonetDB.R)
 library(sqlsurvey)
 
+options(monetdb.debug.query=T)
+
 # install.packages("sqlsurvey", repos=c("http://cran.r-project.org","http://R-Forge.R-project.org"), dep=TRUE)
 
 db <- dbConnect( MonetDB.R() , "monetdb://localhost/monetdbrtest")

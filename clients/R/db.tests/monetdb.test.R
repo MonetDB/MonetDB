@@ -1,13 +1,15 @@
+options(monetdb.debug.query=T)
+
 library(MonetDB.R)
 
 drv <- dbDriver("MonetDB")
 stopifnot(identical(dbGetInfo(drv)$name,"MonetDBDriver"))
 
-con <- dbConnect(drv, "monetdb://localhost:50000/monetdbrtest", "monetdb", "monetdb",timeout=100,debug.queries=T)
+con <- dbConnect(drv, "monetdbrtest")
 stopifnot(identical(class(con)[[1]],"MonetDBConnection"))
 # overwrite variable to force destructor
-con <- dbConnect(drv, "monetdb://localhost:50000/monetdbrtest", "monetdb", "monetdb",timeout=100,debug.queries=T)
-con <- dbConnect(drv, "monetdb://localhost:50000/monetdbrtest", "monetdb", "monetdb",timeout=100,debug.queries=T)
+con <- dbConnect(drv, "monetdbrtest")
+con <- dbConnect(drv, "monetdbrtest")
 gc()
 
 # basic MAPI/SQL test
