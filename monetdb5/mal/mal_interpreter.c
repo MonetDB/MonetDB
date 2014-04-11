@@ -479,7 +479,7 @@ callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[], char debug)
 	}
 	MT_sema_up(&mal_parallelism,"callMAL");
 	cntxt->active = FALSE;
-	if (cntxt->qtimeout && GDKusec()- mb->starttime > cntxt->qtimeout)
+	if ( ret == MAL_SUCCEED && cntxt->qtimeout && GDKusec()- mb->starttime > cntxt->qtimeout)
 		throw(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
 	return ret;
 }
