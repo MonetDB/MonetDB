@@ -3128,14 +3128,11 @@ BBPprepare(bit subcommit)
 		ret = (BBPrecover_subdir() < 0);
 	}
 	if (backup_files == 0) {
-		struct stat st;
-
 		backup_dir = 0;
-		ret = (stat(BAKDIR, &st) == 0 && BBPrecover());
-
+		ret = BBPrecover();
 		if (ret == 0) {
-			/* make a new BAKDIR */
-			ret = mkdir(BAKDIR, 0755);
+			ret = (mkdir(BAKDIR, 0755) < 0 && errno != EEXIST);
+			/* if BAKDIR already exists, don't signal error */
 			IODEBUG THRprintf(GDKstdout, "#mkdir %s = %d\n", BAKDIR, ret);
 		}
 	}
@@ -3390,7 +3387,6 @@ force_move(const char *srcdir, const char *dstdir, const char *name)
 
 	if ((p = strrchr(name, '.')) != NULL && strcmp(p, ".kill") == 0) {
 		/* Found a X.new.kill file, ie remove the X.new file */
-		struct stat st;
 		ptrdiff_t len = p - name;
 
 		strncpy(srcpath, name, len);
@@ -3403,7 +3399,7 @@ force_move(const char *srcdir, const char *dstdir, const char *name)
 			/* if it exists and cannot be removed, all
 			 * this is going to fail */
 			GDKsyserror("force_move: unlink(%s)\n", dstpath);
-			return -1
+			return -1;
 		}
 
 		/* step 2: now remove the .kill file. This one is
