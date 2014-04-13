@@ -38,7 +38,7 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 	int first = 0;
 	char *logdir = "sql_logs";
 
-	mvc_debug = debug;
+	mvc_debug = debug&4;
 	if (mvc_debug)
 		fprintf(stderr, "#mvc_init logdir %s\n", logdir);
 	keyword_init();

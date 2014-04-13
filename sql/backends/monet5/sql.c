@@ -4508,3 +4508,191 @@ freeVariables(Client c, MalBlkPtr mb, MalStkPtr glb, int start)
 	}
 	mb->ptop = j;
 }
+
+/* if at least (2*SIZEOF_BUN), also store length (heaps are then
+ * incompatible) */
+#define EXTRALEN ((SIZEOF_BUN + GDK_VARALIGN - 1) & ~(GDK_VARALIGN - 1))
+
+str
+STRindex_int(int *i, str src, bit *u)
+{
+	(void)src; (void)u;
+	*i = 0;
+	return MAL_SUCCEED;
+}
+
+str
+BATSTRindex_int(bat *res, bat *src, bit *u)
+{
+	BAT *s, *r;
+
+	if ((s = BATdescriptor(*src)) == NULL)
+		throw(SQL, "calc.index", "Cannot access descriptor");
+	
+	if (*u) {
+		Heap *h = s->T->vheap;
+		size_t pad, pos;
+		const size_t extralen = h->hashash ? EXTRALEN : 0;
+		int v;
+
+		r = BATnew(TYPE_void, TYPE_int, 1024);
+		BATseqbase(r, 0);
+		pos = GDK_STRHASHSIZE;
+		while (pos < h->free) {
+			const char *s;
+
+			pad = GDK_VARALIGN - (pos & (GDK_VARALIGN - 1));
+			if (pad < sizeof(stridx_t))
+				pad += GDK_VARALIGN;
+			pos += pad + extralen;
+			s = h->base + pos;
+			v = pos-GDK_STRHASHSIZE;
+			BUNappend(r, &v, FALSE);
+			pos += GDK_STRLEN(s);
+		}
+	} else {
+		r = VIEWcreate(s, s);
+		r->ttype = TYPE_int;
+		r->tvarsized = 0;
+		r->T->vheap = NULL;
+	}
+	BBPunfix(s->batCacheid);
+	BBPkeepref((*res = r->batCacheid));
+	return MAL_SUCCEED;
+}
+
+str
+STRindex_sht(sht *i, str src, bit *u)
+{
+	(void)src; (void)u;
+	*i = 0;
+	return MAL_SUCCEED;
+}
+
+str
+BATSTRindex_sht(bat *res, bat *src, bit *u)
+{
+	BAT *s, *r;
+
+	if ((s = BATdescriptor(*src)) == NULL)
+		throw(SQL, "calc.index", "Cannot access descriptor");
+	
+	if (*u) {
+		Heap *h = s->T->vheap;
+		size_t pad, pos;
+		const size_t extralen = h->hashash ? EXTRALEN : 0;
+		sht v;
+
+		r = BATnew(TYPE_void, TYPE_sht, 1024);
+		BATseqbase(r, 0);
+		pos = GDK_STRHASHSIZE;
+		while (pos < h->free) {
+			const char *s;
+
+			pad = GDK_VARALIGN - (pos & (GDK_VARALIGN - 1));
+			if (pad < sizeof(stridx_t))
+				pad += GDK_VARALIGN;
+			pos += pad + extralen;
+			s = h->base + pos;
+			v = pos-GDK_STRHASHSIZE;
+			BUNappend(r, &v, FALSE);
+			pos += GDK_STRLEN(s);
+		}
+	} else {
+		r = VIEWcreate(s, s);
+		r->ttype = TYPE_sht;
+		r->tvarsized = 0;
+		r->T->vheap = NULL;
+	}
+	BBPunfix(s->batCacheid);
+	BBPkeepref((*res = r->batCacheid));
+	return MAL_SUCCEED;
+}
+
+str
+STRindex_bte(bte *i, str src, bit *u)
+{
+	(void)src; (void)u;
+	*i = 0;
+	return MAL_SUCCEED;
+}
+
+str
+BATSTRindex_bte(bat *res, bat *src, bit *u)
+{
+	BAT *s, *r;
+
+	if ((s = BATdescriptor(*src)) == NULL)
+		throw(SQL, "calc.index", "Cannot access descriptor");
+	
+	if (*u) {
+		Heap *h = s->T->vheap;
+		size_t pad, pos;
+		const size_t extralen = h->hashash ? EXTRALEN : 0;
+		bte v;
+
+		r = BATnew(TYPE_void, TYPE_bte, 64);
+		BATseqbase(r, 0);
+		pos = GDK_STRHASHSIZE;
+		while (pos < h->free) {
+			const char *s;
+
+			pad = GDK_VARALIGN - (pos & (GDK_VARALIGN - 1));
+			if (pad < sizeof(stridx_t))
+				pad += GDK_VARALIGN;
+			pos += pad + extralen;
+			s = h->base + pos;
+			v = pos-GDK_STRHASHSIZE;
+			BUNappend(r, &v, FALSE);
+			pos += GDK_STRLEN(s);
+		}
+	} else {
+		r = VIEWcreate(s, s);
+		r->ttype = TYPE_bte;
+		r->tvarsized = 0;
+		r->T->vheap = NULL;
+	}
+	BBPunfix(s->batCacheid);
+	BBPkeepref((*res = r->batCacheid));
+	return MAL_SUCCEED;
+}
+
+str
+STRstrings(str *i, str src)
+{
+	(void)src;
+	*i = 0;
+	return MAL_SUCCEED;
+}
+
+str
+BATSTRstrings(bat *res, bat *src)
+{
+	BAT *s, *r;
+	Heap *h;
+	size_t pad, pos;
+	size_t extralen;
+
+	if ((s = BATdescriptor(*src)) == NULL)
+		throw(SQL, "calc.strings", "Cannot access descriptor");
+	
+       	h = s->T->vheap;
+       	extralen = h->hashash ? EXTRALEN : 0;
+	r = BATnew(TYPE_void, TYPE_str, 1024);
+	BATseqbase(r, 0);
+	pos = GDK_STRHASHSIZE;
+	while (pos < h->free) {
+		const char *s;
+
+		pad = GDK_VARALIGN - (pos & (GDK_VARALIGN - 1));
+		if (pad < sizeof(stridx_t))
+			pad += GDK_VARALIGN;
+		pos += pad + extralen;
+		s = h->base + pos;
+		BUNappend(r, s, FALSE);
+		pos += GDK_STRLEN(s);
+	}
+	BBPunfix(s->batCacheid);
+	BBPkeepref((*res = r->batCacheid));
+	return MAL_SUCCEED;
+}

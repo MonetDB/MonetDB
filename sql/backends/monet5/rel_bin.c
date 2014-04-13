@@ -1136,19 +1136,40 @@ static stmt *
 rel2bin_basetable( mvc *sql, sql_rel *rel)
 {
 	sql_table *t = rel->l;
+	sql_column *c = rel->r;
 	list *l = sa_list(sql->sa);
-	stmt *dels = stmt_dels( sql, t);
+	stmt *dels;
 	node *en;
 
-	assert(rel->exps);
+	if (!t && c)
+		t = c->t;
+       	dels = stmt_dels( sql, t);
+
 	/* add aliases */
+	assert(rel->exps);
 	for( en = rel->exps->h; en; en = en->next ) {
 		sql_exp *exp = en->data;
 		char *rname = exp->rname?exp->rname:exp->l;
 		char *oname = exp->r;
 		stmt *s = NULL;
 
-		if (oname[0] == '%' && strcmp(oname, TID) == 0) {
+		if (is_func(exp->type)) {
+			list *exps = exp->l;
+			sql_exp *cexp = exps->h->data;
+			char *cname = cexp->r;
+			list *l = sa_list(sql->sa);
+
+		       	c = find_sql_column(t, cname);
+			s = stmt_col(sql, c, dels);
+			append(l, s);
+			if (exps->h->next) {
+				sql_exp *at = exps->h->next->data;
+				stmt *u = exp_bin(sql, at, NULL, NULL, NULL, NULL, NULL, NULL);
+
+				append(l, u);
+			}
+			s = stmt_Nop(sql->sa, stmt_list(sql->sa, l), exp->f);
+		} else if (oname[0] == '%' && strcmp(oname, TID) == 0) {
 			/* tid function  sql.tid(t) */
 			char *rnme = t->base.name;
 
