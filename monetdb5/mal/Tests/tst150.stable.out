@@ -27,8 +27,6 @@ end sample;
 #user.sample("hello",1);
 #
 !TypeException:user.main[1]:'user.sample' undefined in: _1:bit := user.sample(_2:str, _3:str)
-
-!TypeException:user.main[2]:'user.sample' undefined in: _4:bit := user.sample(_2:str, _5:int)
 function user.main():void;
     user.sample("hello","world");
     user.sample("hello",1);

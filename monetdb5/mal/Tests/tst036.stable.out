@@ -16,8 +16,6 @@ stdout of test 'tst036` in directory 'monetdb5/mal` itself:
 # MonetDB/SQL module v2.39.0 loaded
 # MonetDB/GIS module v0.19.0 loaded
 !TypeException:user.main[6]:Multiple assignment mismatch
-!TypeException:user.main[7]:Multiple assignment mismatch
-!TypeException:user.main[8]:Multiple assignment mismatch
 function user.main():void;
 # test for proper use of list assignments 
     (z0,z1) := (1,"help");
