@@ -1255,7 +1255,7 @@ stack_push_var(mvc *sql, char *name, sql_subtype *type)
 	}
 	sql->vars[sql->topvars].s = (void*)1;
 	sql->vars[sql->topvars].name = _STRDUP(name);
-	VALinit(&sql->vars[sql->topvars].value, tpe, ATOMnil(tpe));
+	VALinit(&sql->vars[sql->topvars].value, tpe, ATOMnilptr(tpe));
 	sql->vars[sql->topvars].type = *type;
 	assert(sql->vars[sql->topvars].type.comp_type == NULL);
 	sql->vars[sql->topvars].view = 0;

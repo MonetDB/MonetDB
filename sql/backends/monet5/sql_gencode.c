@@ -766,7 +766,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 						return -1;
 				} else {
 					int tt = tail_type(s)->type->localtype;
-					char *buf = GDKmalloc(MAXIDENTLEN);
+					char *buf;
 
 					if (tt == TYPE_bat) {
 						/* declared table */
@@ -775,6 +775,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 							return -1;
 						break;
 					}
+				       	buf = GDKmalloc(MAXIDENTLEN);
 					(void) snprintf(buf, MAXIDENTLEN, "A%s", s->op1->op4.aval->data.val.sval);
 					q = newInstruction(mb, ASSIGNsymbol);
 					if (q == NULL)
@@ -788,12 +789,11 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					q->retc++;
 				}
 			} else {
-				char *buf = GDKmalloc(SMALLBUFSIZ);
-				
 				q = newAssignment(mb);
 				if (sql->mvc->argc && sql->mvc->args[s->flag]->varid >= 0) {
 					q = pushArgument(mb, q, sql->mvc->args[s->flag]->varid);
 				} else {
+					char *buf = GDKmalloc(SMALLBUFSIZ);
 					(void) snprintf(buf, SMALLBUFSIZ, "A%d", s->flag);
 					q = pushArgumentId(mb, q, buf);
 				}
@@ -2518,7 +2518,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			if (s->op2 && (r = _dumpstmt(sql, mb, s->op2)) < 0)
 				return -1;
 			if (!VAR_GLOBAL(s->flag)) {	/* globals */
-				char *buf = GDKmalloc(MAXIDENTLEN);
+				char *buf;
 				char *vn = atom2string(sql->mvc->sa, s->op1->op4.aval);
 
 				if (!s->op2) {
@@ -2528,6 +2528,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 						return -1;
 					break;
 				}
+				buf = GDKmalloc(MAXIDENTLEN);
 				(void) snprintf(buf, MAXIDENTLEN, "A%s", vn);
 				q = newInstruction(mb, ASSIGNsymbol);
 				if (q == NULL)
