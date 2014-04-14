@@ -62,7 +62,9 @@
 #endif
 
 static int malloc_init = 1;
+#ifdef HAVE_CONSOLE
 static int monet_daemon;
+#endif
 
 /* NEEDED? */
 #if defined(_MSC_VER) && defined(__cplusplus)
