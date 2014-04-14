@@ -22,7 +22,6 @@ stdout of test 'tst611` in directory 'monetdb5/mal` itself:
 #setWriteMode(RKB);
 #
 !TypeException:user.main[7]:'bat.setWriteMode' undefined in: _11:any := bat.setWriteMode(RKB:any)
-!TypeException:user.main[7]:'RKB' may not be used before being initialized
 function user.main():void;
 # initialization of BATs on the stack 
 # caused a problem when executed in interactve mode 

@@ -382,8 +382,10 @@ trimexpand(MalBlkPtr mb, int varsize, int stmtsize)
 		return;
 	len = sizeof(InstrPtr) * (mb->ssize + stmtsize);
 	stmt = (InstrPtr *) GDKzalloc(len);
-	if (stmt == NULL)
+	if (stmt == NULL){
+		GDKfree(v);
 		return;
+	}
 
 	memcpy((str) v, (str) mb->var, sizeof(ValPtr) * mb->vtop);
 

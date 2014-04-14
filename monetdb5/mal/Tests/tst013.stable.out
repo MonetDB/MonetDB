@@ -34,7 +34,7 @@ stdout of test 'tst013` in directory 'monetdb5/mal` itself:
 function user.main():void;
 # incomplete barrier blocks. Resolve them when unambigous 
 barrier z := true;
-    leave X_4;
+    leave ;
 exit z;
 barrier i := 1;
     i := calc.+(i,1);
