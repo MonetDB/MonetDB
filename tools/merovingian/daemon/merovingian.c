@@ -645,7 +645,7 @@ main(int argc, char *argv[])
 				Mfprintf(stderr, "could not get dbfarm working directory: %s\n",
 						strerror(errno));
 			}
-			MERO_EXIT(1);
+			MERO_EXIT_CLEAN(1);
 		}
 	}
 
