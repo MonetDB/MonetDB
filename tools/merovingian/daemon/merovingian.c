@@ -404,7 +404,7 @@ main(int argc, char *argv[])
 	pthread_t tid = 0;
 	struct sigaction sa;
 	int ret;
-	int lockfd;
+	int lockfd = -1;
 	int sock = -1;
 	int usock = -1;
 	int unsock = -1;
@@ -1062,8 +1062,10 @@ shutdown:
 		free(_mero_db_props);
 	}
 
-	MT_lockf(".merovingian_lock", F_ULOCK, 4, 1);
-	close(lockfd);
+	if (lockfd >= 0) {
+		MT_lockf(".merovingian_lock", F_ULOCK, 4, 1);
+		close(lockfd);
+	}
 
 	/* the child's return code at this point doesn't matter, as noone
 	 * will see it */
