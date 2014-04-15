@@ -72,7 +72,6 @@ BAT *GDKval = NULL;
 
 static volatile ATOMIC_FLAG GDKstopped = ATOMIC_FLAG_INIT;
 static void GDKunlockHome(void);
-static int GDKgetHome(void);
 
 #undef malloc
 #undef calloc
@@ -200,14 +199,13 @@ GDKlog(const char *format, ...)
 {
 	va_list ap;
 	char *p = 0, buf[1024];
-	int mustopen = GDKgetHome();
 	time_t tm = time(0);
 #if defined(HAVE_CTIME_R3) || defined(HAVE_CTIME_R)
 	char tbuf[26];
 #endif
 	char *ctm;
 
-	if (MT_pagesize() == 0)
+	if (MT_pagesize() == 0 || GDKlockFile == NULL)
 		return;
 
 	va_start(ap, format);
@@ -235,9 +233,6 @@ GDKlog(const char *format, ...)
 #endif
 	fprintf(GDKlockFile, "USR=%d PID=%d TIME=%.24s @ %s\n", (int) getuid(), (int) getpid(), ctm, buf);
 	fflush(GDKlockFile);
-
-	if (mustopen)
-		GDKunlockHome();
 }
 
 /*
@@ -1004,6 +999,7 @@ GDKinit(opt *set, int setlen)
 	_set_abort_behavior(0, _CALL_REPORTFAULT | _WRITE_ABORT_MSG);
 	_set_error_mode(_OUT_TO_STDERR);
 #endif
+	/* now try to lock the database */
 	GDKlockHome();
 
 	/* Mserver by default takes 80% of all memory as a default */
@@ -1149,6 +1145,10 @@ GDKexiting(void)
 void
 GDKexit(int status)
 {
+	if (GDKlockFile == NULL) {
+		/* no database lock, so no threads, so exit now */
+		exit(status);
+	}
 	if (ATOMIC_TAS(GDKstopped, GDKstoppedLock, "GDKexit") == 0) {
 		MT_Id pid = MT_getpid();
 		Thread t, s;
@@ -1185,7 +1185,6 @@ GDKexit(int status)
 			}
 			MT_lock_unset(&GDKthreadLock, "GDKexit");
 		}
-		(void) GDKgetHome();
 #if 0
 		/* we can't clean up after killing threads */
 		BBPexit();
@@ -1227,8 +1226,9 @@ MT_Lock GDKtmLock MT_LOCK_INITIALIZER("GDKtmLock");
 static void
 GDKlockHome(void)
 {
-	char *p = 0, buf[1024], host[PATHLENGTH];
+	int fd;
 
+	assert(GDKlockFile == NULL);
 	/*
 	 * Go there and obtain the global database lock.
 	 */
@@ -1244,20 +1244,15 @@ GDKlockHome(void)
 			GDKfatal("GDKlockHome: could not move to %s\n", GDKdbpathStr);
 		IODEBUG THRprintf(GDKstdout, "#GDKlockHome: created directory %s\n", GDKdbpathStr);
 	}
-	if (MT_lockf(GDKLOCK, F_TLOCK, 4, 1) < 0) {
-		GDKlockFile = 0;
+	if ((fd = MT_lockf(GDKLOCK, F_TLOCK, 4, 1)) < 0) {
 		GDKfatal("GDKlockHome: Database lock '%s' denied\n", GDKLOCK);
 	}
-	if ((GDKlockFile = fopen(GDKLOCK, "rb+")) == NULL) {
+
+	/* now we have the lock on the database */
+
+	if ((GDKlockFile = fdopen(fd, "r+")) == NULL) {
+		close(fd);
 		GDKfatal("GDKlockHome: Could not open %s\n", GDKLOCK);
-	}
-	if (fgets(buf, 1024, GDKlockFile) && (p = strchr(buf, ':')))
-		*p = 0;
-	if (p) {
-		sprintf(host, " from '%s'", buf);
-	} else {
-		IODEBUG THRprintf(GDKstdout, "#GDKlockHome: ignoring empty or invalid %s.\n", GDKLOCK);
-		host[0] = 0;
 	}
 	/*
 	 * We have the lock, are the only process currently allowed in
@@ -1290,28 +1285,8 @@ GDKunlockHome(void)
 }
 
 /*
- * Really really get the lock. Now!!
- */
-static int
-GDKgetHome(void)
-{
-	if (MT_pagesize() == 0 || GDKlockFile)
-		return 0;
-	while ((GDKlockFile = fopen(GDKLOCK, "r+")) == NULL) {
-		GDKerror("GDKgetHome: PANIC on open %s. sleep(1)\n", GDKLOCK);
-		MT_sleep_ms(1000);
-	}
-	if (MT_lockf(GDKLOCK, F_TLOCK, 4, 1) < 0) {
-		IODEBUG THRprintf(GDKstdout, "#GDKgetHome: blocking on lock '%s'.\n", GDKLOCK);
-		MT_lockf(GDKLOCK, F_LOCK, 4, 1);
-	}
-	return 1;
-}
-
-
-/*
  * @+ Error handling
-  * Errors come in three flavors: warnings, non-fatal and fatal errors.
+ * Errors come in three flavors: warnings, non-fatal and fatal errors.
  * A fatal error leaves a core dump behind after trying to safe the
  * content of the relation.  A non-fatal error returns a message to
  * the user and aborts the current transaction.  Fatal errors are also
