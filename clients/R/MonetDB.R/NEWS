@@ -8,6 +8,7 @@
   schema name and quoting in the result (sys_tables, schema_names and quote)
 - fixed various TODO's in the code to get closer to 1.0 (exciting)
 - fixed a bug when the error identifier sent by MonetDB was non-numeric
+- IPv6 addresses in dbConnect() should now work (another long-standing TODO)
 
 0.9.1
 - dbGetInfo() now supported on MonetDBConnection (dplyr compatibility)

@@ -29,7 +29,7 @@ setMethod("dbGetInfo", "MonetDBDriver", def=function(dbObj, ...)
 
 # shorthand for connecting to the DB, very handy, e.g. dbListTables(mc("acs"))
 mc <- function(dbname="demo", user="monetdb", password="monetdb", host="localhost", port=50000L, 
-  timeout=86400L, wait=FALSE, language="sql", ...) {
+               timeout=86400L, wait=FALSE, language="sql", ...) {
   
   dbConnect(MonetDB.R(), dbname, user, password, host, port, timeout, wait, language, ...)
 }
@@ -42,8 +42,8 @@ mq <- function(dbname, query, ...) {
 }
 
 setMethod("dbConnect", "MonetDBDriver", def=function(drv, dbname="demo", user="monetdb", 
-  password="monetdb", host="localhost", port=50000L, timeout=86400L, wait=FALSE, language="sql", 
-  ..., url="") {
+                                                     password="monetdb", host="localhost", port=50000L, timeout=86400L, wait=FALSE, language="sql", 
+                                                     ..., url="") {
   
   if (substring(url, 1, 10) == "monetdb://") {
     dbname <- url
@@ -53,26 +53,43 @@ setMethod("dbConnect", "MonetDBDriver", def=function(drv, dbname="demo", user="m
   
   if (substring(dbname, 1, 10) == "monetdb://") {
     message("MonetDB.R: Using 'monetdb://...' URIs in dbConnect() is deprecated. Please switch to ",
-    "dbname, host, port named arguments.")
+            "dbname, host, port named arguments.")
     rest <- substring(dbname, 11, nchar(dbname))
     # split at /, so we get the dbname
     slashsplit <- strsplit(rest, "/", fixed=TRUE)
     hostport <- slashsplit[[1]][1]
     dbname <- slashsplit[[1]][2]
     
-    # TODO: handle IPv6 IPs, they contain : chars, later
-    if (length(grep(":", hostport, fixed=TRUE)) == 1) {
+    # count the number of : in the string
+    ndc <- nchar(hostport) - nchar(gsub(":","",hostport,fixed=T))
+    if (ndc == 0) {
+      host <- hostport
+    }
+    if (ndc == 1) { # ipv4 case, any ipv6 address has more than one :
       hostportsplit <- strsplit(hostport, ":", fixed=TRUE)
       host <- hostportsplit[[1]][1]
       port <- hostportsplit[[1]][2]
-    } else {
-      host <- hostport
+    }
+    if (ndc > 1) { # ipv6 case, now we only need to check for ]:
+      if (length(grep("]:", hostport, fixed=TRUE)) == 1) { # ipv6 with port number
+        hostportsplit <- strsplit(hostport, "]:", fixed=TRUE)
+        host <- substring(hostportsplit[[1]][1],2)
+        port <- hostportsplit[[1]][2]
+      }
+      else {
+        host <- hostport
+      }
     }
   }
   
+  # validate port number
+  if (length(port) != 1 || port < 1 || port > 65535) {
+    stop("Illegal port number ",port)
+  }
+  
   if (getOption("monetdb.debug.mapi", F)) message("II: Connecting to MonetDB on host ", host, " at "
-    ,"port ", port, " to DB ", dbname, " with user ", user, " and a non-printed password, timeout is "
-    , timeout, " seconds.")
+                                                  ,"port ", port, " to DB ", dbname, " with user ", user, " and a non-printed password, timeout is "
+                                                  , timeout, " seconds.")
   socket <- FALSE
   if (wait) {
     repeat {
@@ -117,7 +134,7 @@ valueClass="MonetDBConnection")
 
 ### MonetDBConnection
 setClass("MonetDBConnection", representation("DBIConnection", socket="externalptr", 
-  connenv="environment", fetchSize="integer", Id="integer"))
+                                             connenv="environment", fetchSize="integer", Id="integer"))
 
 setMethod("dbGetInfo", "MonetDBConnection", def=function(dbObj, ...) {
   envdata <- dbGetQuery(dbObj, "SELECT name, value from env()")
@@ -190,78 +207,78 @@ setMethod("dbReadTable", "MonetDBConnection", def=function(conn, name, ...) {
 })
 
 setMethod("dbGetQuery", signature(conn="MonetDBConnection", statement="character"),  
-  def=function(conn, statement, ...) {
-
-  res <- dbSendQuery(conn, statement, ...)
-  data <- fetch(res, -1)
-  dbClearResult(res)
-  return(data)
-})
+          def=function(conn, statement, ...) {
+            
+            res <- dbSendQuery(conn, statement, ...)
+            data <- fetch(res, -1)
+            dbClearResult(res)
+            return(data)
+          })
 
 # This one does all the work in this class
 setMethod("dbSendQuery", signature(conn="MonetDBConnection", statement="character"),  
-  def=function(conn, statement, ..., list=NULL, async=FALSE) {
-
-  if(!is.null(list) || length(list(...))){
-    if (length(list(...))) statement <- .bindParameters(statement, list(...))
-    if (!is.null(list)) statement <- .bindParameters(statement, list)
-  }	
-  conn@connenv$exception <- list()
-  env <- NULL
-  if (getOption("monetdb.debug.query", F))  message("QQ: '", statement, "'")
-  resp <- .mapiParseResponse(.mapiRequest(conn, paste0("s", statement, ";"), async=async))
-  
-  env <- new.env(parent=emptyenv())
-  
-  if (resp$type == Q_TABLE) {
-    # we have to pass this as an environment to make conn object available to result for fetching
-    env$success = TRUE
-    env$conn <- conn
-    env$data <- resp$tuples
-    resp$tuples <- NULL # clean up
-    env$info <- resp
-    env$delivered <- 0
-    env$query <- statement
-  }
-  if (resp$type == Q_UPDATE || resp$type == Q_CREATE || resp$type == MSG_ASYNC_REPLY) {
-    env$success = TRUE
-    env$conn <- conn
-    env$query <- statement
-    env$info <- resp
-  }
-  if (resp$type == MSG_MESSAGE) {
-    env$success = FALSE
-    env$conn <- conn
-    env$query <- statement
-    env$info <- resp
-    env$message <- resp$message
-  }
-  
-  if (!env$success) {
-    sp <- strsplit(env$message, "!", fixed=T)[[1]]
-    # truncate statement to not hide actual error message
-    if (nchar(statement) > 100) { statement <- paste0(substring(statement, 1, 100), "...") }
-    if (length(sp) == 3) {
-      errno <- sp[[2]]
-      errmsg <- sp[[3]]
-      conn@connenv$exception <- list(errNum=errno, errMsg=errmsg)
-      stop("Unable to execute statement '", statement, "'.\nServer says '", errmsg, "' [#", 
-        errno, "].")
-    }
-    else {
-      conn@connenv$exception <- list(errNum=NA, errMsg=env$message)
-      stop("Unable to execute statement '", statement, "'.\nServer says '", env$message, "'.")
-    }
-  }
-  
-  return(new("MonetDBResult", env=env))
-})
+          def=function(conn, statement, ..., list=NULL, async=FALSE) {
+            
+            if(!is.null(list) || length(list(...))){
+              if (length(list(...))) statement <- .bindParameters(statement, list(...))
+              if (!is.null(list)) statement <- .bindParameters(statement, list)
+            }	
+            conn@connenv$exception <- list()
+            env <- NULL
+            if (getOption("monetdb.debug.query", F))  message("QQ: '", statement, "'")
+            resp <- .mapiParseResponse(.mapiRequest(conn, paste0("s", statement, ";"), async=async))
+            
+            env <- new.env(parent=emptyenv())
+            
+            if (resp$type == Q_TABLE) {
+              # we have to pass this as an environment to make conn object available to result for fetching
+              env$success = TRUE
+              env$conn <- conn
+              env$data <- resp$tuples
+              resp$tuples <- NULL # clean up
+              env$info <- resp
+              env$delivered <- 0
+              env$query <- statement
+            }
+            if (resp$type == Q_UPDATE || resp$type == Q_CREATE || resp$type == MSG_ASYNC_REPLY) {
+              env$success = TRUE
+              env$conn <- conn
+              env$query <- statement
+              env$info <- resp
+            }
+            if (resp$type == MSG_MESSAGE) {
+              env$success = FALSE
+              env$conn <- conn
+              env$query <- statement
+              env$info <- resp
+              env$message <- resp$message
+            }
+            
+            if (!env$success) {
+              sp <- strsplit(env$message, "!", fixed=T)[[1]]
+              # truncate statement to not hide actual error message
+              if (nchar(statement) > 100) { statement <- paste0(substring(statement, 1, 100), "...") }
+              if (length(sp) == 3) {
+                errno <- sp[[2]]
+                errmsg <- sp[[3]]
+                conn@connenv$exception <- list(errNum=errno, errMsg=errmsg)
+                stop("Unable to execute statement '", statement, "'.\nServer says '", errmsg, "' [#", 
+                     errno, "].")
+              }
+              else {
+                conn@connenv$exception <- list(errNum=NA, errMsg=env$message)
+                stop("Unable to execute statement '", statement, "'.\nServer says '", env$message, "'.")
+              }
+            }
+            
+            return(new("MonetDBResult", env=env))
+          })
 
 
 # adapted from RMonetDB, very useful...
 setMethod("dbWriteTable", "MonetDBConnection", def=function(conn, name, value, overwrite=TRUE, 
-  ...) {
-
+                                                            ...) {
+  
   if (is.vector(value) && !is.list(value)) value <- data.frame(x=value)
   if (length(value)<1) stop("value must have at least one column")
   if (is.null(names(value))) names(value) <- paste("V", 1:length(value), sep='')
@@ -284,7 +301,7 @@ setMethod("dbWriteTable", "MonetDBConnection", def=function(conn, name, value, o
   
   if (length(value[[1]])) {
     inss <- paste("INSERT INTO ", qname, " VALUES(", paste(rep("?", length(value)), collapse=', '), 
-      ")", sep='')
+                  ")", sep='')
     .mapiRequest(conn, "Xauto_commit 0")
     for (j in 1:length(value[[1]])) dbSendUpdate(conn, inss, list=as.list(value[j, ]))
     dbSendQuery(conn, "COMMIT")
@@ -294,8 +311,8 @@ setMethod("dbWriteTable", "MonetDBConnection", def=function(conn, name, value, o
 })
 
 setMethod("dbDataType", signature(dbObj="MonetDBConnection", obj = "ANY"), def = function(dbObj, 
-  obj, ...) {
-
+                                                                                          obj, ...) {
+  
   if (is.logical(obj)) "BOOLEAN"
   else if (is.integer(obj)) "INTEGER"
   else if (is.numeric(obj)) "DOUBLE PRECISION"
@@ -316,29 +333,29 @@ setMethod("dbRemoveTable", "MonetDBConnection", def=function(conn, name, ...) {
 # for compatibility with RMonetDB (and dbWriteTable support), we will allow parameters to this 
 # method, but will not use prepared statements internally
 if (is.null(getGeneric("dbSendUpdate"))) setGeneric("dbSendUpdate", function(conn, statement, ..., 
-  async=FALSE) standardGeneric("dbSendUpdate"))
+                                                                             async=FALSE) standardGeneric("dbSendUpdate"))
 setMethod("dbSendUpdate", signature(conn="MonetDBConnection", statement="character"),  
-  def=function(conn, statement, ..., list=NULL, async=FALSE) {
-
-  if(!is.null(list) || length(list(...))){
-    if (length(list(...))) statement <- .bindParameters(statement, list(...))
-    if (!is.null(list)) statement <- .bindParameters(statement, list)
-  }
-  res <- dbSendQuery(conn, statement, async=async)
-  if (!res@env$success) {
-    stop(paste(statement, "failed!\nServer says:", res@env$message))
-  }
-  return(invisible(TRUE))
-})
+          def=function(conn, statement, ..., list=NULL, async=FALSE) {
+            
+            if(!is.null(list) || length(list(...))){
+              if (length(list(...))) statement <- .bindParameters(statement, list(...))
+              if (!is.null(list)) statement <- .bindParameters(statement, list)
+            }
+            res <- dbSendQuery(conn, statement, async=async)
+            if (!res@env$success) {
+              stop(paste(statement, "failed!\nServer says:", res@env$message))
+            }
+            return(invisible(TRUE))
+          })
 
 # this can be used in finalizers to not mess up the socket
 if (is.null(getGeneric("dbSendUpdateAsync"))) setGeneric("dbSendUpdateAsync", function(conn, 
-  statement, ...) standardGeneric("dbSendUpdateAsync"))
+                                                                                       statement, ...) standardGeneric("dbSendUpdateAsync"))
 setMethod("dbSendUpdateAsync", signature(conn="MonetDBConnection", statement="character"),  
-  def=function(conn, statement, ..., list=NULL) {
-
-  dbSendUpdate(conn, statement, async=TRUE)
-})
+          def=function(conn, statement, ..., list=NULL) {
+            
+            dbSendUpdate(conn, statement, async=TRUE)
+          })
 
 .bindParameters <- function(statement, param) {
   for (i in 1:length(param)) {
@@ -352,7 +369,7 @@ setMethod("dbSendUpdateAsync", signature(conn="MonetDBConnection", statement="ch
       stop("raw() data is so far only supported when reading from BLOBs")
     else
       statement <- sub("?", paste("'", .mapiQuote(toString(value)), "'", sep=""), statement, 
-        fixed=TRUE)
+                       fixed=TRUE)
   }
   return(statement)
 }
@@ -461,7 +478,7 @@ setMethod("fetch", signature(res="MonetDBResult", n="numeric"), def=function(res
   # if our tuple cache in res@env$data does not contain n rows, we fetch from server until it does
   if (length(res@env$data) < n) {
     cresp <- .mapiParseResponse(.mapiRequest(res@env$conn, paste0("Xexport ", .mapiLongInt(info$id), 
-      " ", .mapiLongInt(info$index), " ", .mapiLongInt(n-length(res@env$data)))))
+                                                                  " ", .mapiLongInt(info$index), " ", .mapiLongInt(n-length(res@env$data)))))
     stopifnot(cresp$type == Q_BLOCK && cresp$rows > 0)
     
     res@env$data <- c(res@env$data, cresp$tuples)
@@ -521,21 +538,21 @@ setMethod("dbHasCompleted", "MonetDBResult", def = function(res, ...) {
 
 monetTypes <- rep(c("numeric", "character", "character", "logical", "raw"), c(8, 3, 4, 1, 1))
 names(monetTypes) <- c(c("TINYINT", "SMALLINT", "INT", "BIGINT", "REAL", "DOUBLE", "DECIMAL", "WRD"), 
-                     c("CHAR", "VARCHAR", "CLOB"), 
-                     c("INTERVAL", "DATE", "TIME", "TIMESTAMP"), 
-                     "BOOLEAN", 
-                     "BLOB")
+                       c("CHAR", "VARCHAR", "CLOB"), 
+                       c("INTERVAL", "DATE", "TIME", "TIMESTAMP"), 
+                       "BOOLEAN", 
+                       "BLOB")
 
 
 setMethod("dbColumnInfo", "MonetDBResult", def = function(res, ...) {
   return(data.frame(field.name=res@env$info$names, field.type=res@env$info$types, 
-    data.type=monetTypes[res@env$info$types]))	
+                    data.type=monetTypes[res@env$info$types]))	
 }, 
 valueClass = "data.frame")
 
 setMethod("dbGetInfo", "MonetDBResult", def=function(dbObj, ...) {
   return(list(statement=dbObj@env$query, rows.affected=0, row.count=dbObj@env$info$rows, 
-    has.completed=dbHasCompleted(dbObj), is.select=TRUE))	
+              has.completed=dbHasCompleted(dbObj), is.select=TRUE))	
 }, valueClass="list")
 
 
@@ -586,7 +603,7 @@ REPLY_SIZE    <- 100 # Apparently, -1 means unlimited, but we will start with a 
   if (conObj@connenv$lock > 0) {
     if (async) {
       if (getOption("monetdb.debug.mapi", F)) message("II: Attempted parallel access to socket. ",
-        "Deferred query '", msg, "'")
+                                                      "Deferred query '", msg, "'")
       conObj@connenv$deferred <- c(conObj@connenv$deferred, msg)
       return("_")
     } else {
@@ -624,7 +641,7 @@ REPLY_SIZE    <- 100 # Apparently, -1 means unlimited, but we will start with a 
     if (dresp$type == MSG_MESSAGE) {
       conObj@connenv$lock <- 0
       warning(paste("II: Failed to execute deferred statement '", dmesg, "'. Server said: '", 
-        dresp$message, "'"))
+                    dresp$message, "'"))
     }
   }	
   # release lock
@@ -690,7 +707,7 @@ REPLY_SIZE    <- 100 # Apparently, -1 means unlimited, but we will start with a 
     if (typeKey == Q_TABLE || typeKey == Q_PREPARE) {
       header <- .mapiParseHeader(lines[1])
       if (getOption("monetdb.debug.query", F)) message("QQ: Query result for query ", header$id, 
-        " with ", header$rows, " rows and ", header$cols, " cols, ", header$index, " rows.")
+                                                       " with ", header$rows, " rows and ", header$cols, " cols, ", header$index, " rows.")
       
       env$type	<- Q_TABLE
       env$id		<- header$id
@@ -711,7 +728,7 @@ REPLY_SIZE    <- 100 # Apparently, -1 means unlimited, but we will start with a 
     if (typeKey == Q_BLOCK) {
       header <- .mapiParseHeader(lines[1], TRUE)
       if (getOption("monetdb.debug.query", F)) message("QQ: Continuation for query ", header$id, 
-        " with ", header$rows, " rows and ", header$cols, " cols, index ", header$inde, ".")
+                                                       " with ", header$rows, " rows and ", header$cols, " cols, index ", header$inde, ".")
       
       env$type	<- Q_BLOCK
       env$id		<- header$id
@@ -773,8 +790,8 @@ REPLY_SIZE    <- 100 # Apparently, -1 means unlimited, but we will start with a 
 # hashing our login information using the server-requested hashing algorithm and its salt.
 
 .monetAuthenticate <- function(con, dbname, user="monetdb", password="monetdb", 
-  endhashfunc="sha512", language="sql") {
-
+                               endhashfunc="sha512", language="sql") {
+  
   endhashfunc <- tolower(endhashfunc)
   # read challenge from server, it looks like this
   # oRzY7XZr1EfNWETqU6b2:merovingian:9:RIPEMD160, SHA256, SHA1, MD5:LIT:SHA512:
@@ -806,13 +823,13 @@ REPLY_SIZE    <- 100 # Apparently, -1 means unlimited, but we will start with a 
   # a hash function from the list provided by the server. 
   # By default, we use SHA512 for both.
   hashsum <- digest(paste0(digest(password, algo=pwhashfunc, serialize=FALSE), salt), 
-    algo=endhashfunc, serialize=FALSE)	
+                    algo=endhashfunc, serialize=FALSE)	
   
   # we respond to the authentication challeng with something like
   # LIT:monetdb:{SHA512}eec43c24242[...]cc33147:sql:acs
   # endianness:username:passwordhash:language:databasename
   authString <- paste0("LIT:", user, ":{", toupper(endhashfunc), "}", hashsum, ":", language, ":", 
-    dbname, ":")
+                       dbname, ":")
   .mapiWrite(con, authString)
   authResponse <- .mapiRead(con)
   respKey <- substring(authResponse, 1, 1)
@@ -855,11 +872,11 @@ REPLY_SIZE    <- 100 # Apparently, -1 means unlimited, but we will start with a 
 
 # copied from RMonetDB, no java-specific things in here...
 monet.read.csv <- monetdb.read.csv <- function(conn, files, tablename, nrows, header=TRUE, 
-  locked=FALSE, na.strings="", nrow.check=500, delim=",", newline="\\n", quote="\"", ...){
-
+                                               locked=FALSE, na.strings="", nrow.check=500, delim=",", newline="\\n", quote="\"", ...){
+  
   if (length(na.strings)>1) stop("na.strings must be of length 1")
   headers <- lapply(files, read.csv, sep=delim, na.strings=na.strings, quote=quote, nrows=nrow.check, 
-    ...)
+                    ...)
   
   if (length(files)>1){
     nn <- sapply(headers, ncol)
@@ -879,14 +896,14 @@ monet.read.csv <- monetdb.read.csv <- function(conn, files, tablename, nrows, he
     for(i in seq_along(files)) {
       cat(files[i], thefile <- normalizePath(files[i]), "\n")
       dbSendUpdate(conn, paste("COPY", format(nrows[i], scientific=FALSE), "OFFSET 2 RECORDS INTO", 
-        tablename, "FROM", paste("'", thefile, "'", sep=""), delimspec, "NULL as", paste("'", 
-          na.strings[1], "'", sep=""), if(locked) "LOCKED"))
+                               tablename, "FROM", paste("'", thefile, "'", sep=""), delimspec, "NULL as", paste("'", 
+                                                                                                                na.strings[1], "'", sep=""), if(locked) "LOCKED"))
     }
   } else {
     for(i in seq_along(files)) {
       cat(files[i], thefile <- normalizePath(files[i]), "\n")
       dbSendUpdate(conn, paste0("COPY INTO ", tablename, " FROM ", paste("'", thefile, "'", sep=""), 
-        delimspec, "NULL as ", paste("'", na.strings[1], "'", sep=""), if(locked) " LOCKED "))
+                                delimspec, "NULL as ", paste("'", na.strings[1], "'", sep=""), if(locked) " LOCKED "))
     }
   }
   dbGetQuery(conn, paste("select count(*) from", tablename))
@@ -908,48 +925,6 @@ monetdbGetTransferredBytes <- function() {
   ret <- .mapiRead(socket)
   .Call("mapiDisconnect", socket, PACKAGE=C_LIBRARY)
   return (ret)
-}
-
-monetdbd.liststatus <- monetdb.liststatus <- function(passphrase, host="localhost", port=50000L, 
-  timeout=86400L) {
-
-  rawstr <- .monetdbd.command(passphrase, host, port, timeout)
-  lines <- strsplit(rawstr, "\n", fixed=T)[[1]] # split by newline, first line is "=OK", so skip
-  lines <- lines[grepl("^=sabdb:2:", lines)] # make sure we get a db list here, protocol v.2
-  lines <- sub("=sabdb:2:", "", lines, fixed=T)
-  # convert value into propert types etc
-  dbdf <- as.data.frame(do.call("rbind", strsplit(lines, ", ", fixed=T)), stringsAsFactors=F)
-  names(dbdf) <- c("dbname", "uri", "locked", "state", "scenarios", "startCounter", "stopCounter", 
-    "crashCounter", "avgUptime", "maxUptime", "minUptime", "lastCrash", "lastStart", "lastStop", 
-    "crashAvg1", "crashAvg10", "crashAvg30")
-  
-  dbdf$locked <- dbdf$locked=="1"
-  
-  states <- c("illegal", "running", "crashed", "inactive", "starting")
-  dbdf$state <- factor(states[as.integer(dbdf$state)+1])
-  
-  dbdf$startCounter <- as.numeric(dbdf$startCounter)
-  dbdf$stopCounter <- as.numeric(dbdf$stopCounter)
-  dbdf$crashCounter <- as.numeric(dbdf$crashCounter)
-  
-  dbdf$avgUptime <- as.numeric(dbdf$avgUptime)
-  dbdf$maxUptime <- as.numeric(dbdf$maxUptime)
-  dbdf$minUptime <- as.numeric(dbdf$minUptime)
-  
-  convertts <- function(col) {
-    col[col=="-1"] <- NA
-    return(as.POSIXct(as.numeric(col), origin="1970-01-01"))
-  }
-  dbdf$lastCrash <- convertts(dbdf$lastCrash)
-  dbdf$lastStart <- convertts(dbdf$lastStart)
-  dbdf$lastStop <- convertts(dbdf$lastStop)
-  
-  dbdf$crashAvg1 <- dbdf$crashAvg1=="1"
-  dbdfcrashAvg10 <- as.numeric(dbdf$crashAvg10)
-  dbdf$crashAvg30 <- as.numeric(dbdf$crashAvg30)
-  dbdf$scenarios <- gsub("'", ", ", dbdf$scenarios, fixed=T)
-  
-  return(dbdf[order(dbdf$dbname), ])
 }
 
 monetdb_queryinfo <- function(conn, query) {
