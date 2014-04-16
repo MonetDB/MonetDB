@@ -1,0 +1,30 @@
+stderr of test 'alastair_udf_mergetable_bug` in directory 'sql/test` itself:
+
+
+# 14:10:49 >  
+# 14:10:49 >  "/usr/bin/python2" "alastair_udf_mergetable_bug.py" "alastair_udf_mergetable_bug"
+# 14:10:49 >  
+
+# builtin opt 	gdk_dbpath = /export/scratch2/zhang/monet-install/Jan2014/debug/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 31835
+# cmdline opt 	mapi_usock = /var/tmp/mtest-11152/.s.monetdb.31835
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbpath = /export/scratch2/zhang/monet-install/Jan2014/debug/var/MonetDB/mTests_sql_test
+# cmdline opt 	gdk_nr_threads = 2
+
+# 14:10:50 >  
+# 14:10:50 >  "Done."
+# 14:10:50 >  
+

@@ -94,10 +94,13 @@ static int
 argumentZero(MalBlkPtr mb, int tpe)
 {
 	ValRecord cst;
+	str msg;
 
 	cst.vtype = TYPE_int;
 	cst.val.ival = 0;
-	convertConstant(tpe, &cst);
+	msg = convertConstant(tpe, &cst);
+	if( msg)
+		GDKfree(msg); // will not be called
 	return defConstant(mb, tpe, &cst);
 }
 

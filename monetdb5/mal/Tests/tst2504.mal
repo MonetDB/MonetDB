@@ -10,6 +10,7 @@ factory random(seed:int):int;
 	i:= 125 *i;
 	i:= i % 32767;
 	yield i;
+	return random:=0;
 end random;
 
 r1:= user.random(1);

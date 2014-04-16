@@ -207,8 +207,11 @@ command_get(confkeyval *ckv, int argc, char *argv[])
 				meropid = atoi(buf);
 			}
 		} else {
-			if (ret >= 0)
-				close(ret); /* release a possible lock */
+			if (ret >= 0) {
+				/* release a possible lock */
+				MT_lockf(".merovingian_lock", F_ULOCK, 4, 1);
+				close(ret);
+			}
 			meropid = 0;
 		}
 	}

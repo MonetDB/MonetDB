@@ -2183,7 +2183,7 @@ SQLengineIntern(Client c, backend *be)
 		msg = (str) runMAL(c, c->curprg->def, 0, 0);
 	}
 
-      cleanup_engine:
+cleanup_engine:
 	if (m->type == Q_SCHEMA)
 		qc_clean(m->qc);
 	if (msg) {
@@ -2194,7 +2194,9 @@ SQLengineIntern(Client c, backend *be)
 			be->language = oldlang;
 			assert(c->glb == 0 || c->glb == oldglb);	/* detect leak */
 			c->glb = oldglb;
-			return SQLrecompile(c, be);
+			if ( msg)
+				GDKfree(msg);
+			return SQLrecompile(c, be); // retry compilation
 		} else {
 			/* don't print exception decoration, just the message */
 			char *n = NULL;
@@ -2216,7 +2218,7 @@ SQLengineIntern(Client c, backend *be)
 	if (m->type != Q_SCHEMA && be->q && msg) {
 		qc_delete(m->qc, be->q);
 	} else if (m->type != Q_SCHEMA && be->q && mb && varGetProp(mb, getArg(p = getInstrPtr(mb, 0), 0), runonceProp)) {
-		SQLCacheRemove(c, getFunctionId(p));
+		msg = SQLCacheRemove(c, getFunctionId(p));
 		qc_delete(be->mvc->qc, be->q);
 		///* this should invalidate any match */
 		//be->q->key= -1;
@@ -2244,8 +2246,11 @@ SQLrecompile(Client c, backend *be)
 	mvc *m = be->mvc;
 	int oldvtop = c->curprg->def->vtop;
 	int oldstop = c->curprg->def->stop;
+	str msg;
 
-	SQLCacheRemove(c, be->q->name);
+	msg = SQLCacheRemove(c, be->q->name);
+	if( msg )
+		GDKfree(msg);
 	s = sql_relation2stmt(m, be->q->rel);
 	be->q->code = (backend_code) backend_dumpproc(be, c, be->q, s);
 	be->q->stk = 0;
