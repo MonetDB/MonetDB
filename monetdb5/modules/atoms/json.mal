@@ -147,6 +147,14 @@ command values(val:json):bat[:oid,:json]
 address JSONvalueTable
 comment "Expands the outermost JSON values.";
 
+command output(b:bat[:oid,:any_1]):str
+address JSONtextString
+comment "Pack the values into a single json structure";
+
+command suboutput(b:bat[:oid,:any_1], gid:bat[:oid,:oid], ext:bat[:oid,:wrd], flg:bit):bat[:oid,:str]
+address JSONtextGrouped
+comment "Pack the values into a json structure";
+
 command prelude()
 address JSONprelude;
 

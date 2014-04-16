@@ -824,7 +824,7 @@ JSONparse(char *j, int silent)
 	skipblancs(j);
 	if( *j ){
 		if( !silent)
-			jt->error = createException(MAL, "json.parser", "Syntax error");
+			jt->error = createException(MAL, "json.parser", "Syntax error: json parse failed");
 	}
 	return jt;
 }
@@ -1576,5 +1576,25 @@ JSONfold(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	ret = (str *) getArgReference(stk, pci, 0);
 	return JSONfoldKeyValue(ret, id, key, val);
+}
+
+str
+JSONtextString(str *ret, int *bid)
+{
+	(void) ret;
+	(void) bid;
+	throw(MAL,"json.text","tobeimplemented");
+}
+
+
+str
+JSONtextGrouped(int *ret, int *bid, int *gid, int *ext, bit *flg)
+{
+	(void) ret;
+	(void) bid;
+	(void) gid;
+	(void) ext;
+	(void) flg;
+	throw(MAL,"json.text","tobeimplemented");
 }
 
