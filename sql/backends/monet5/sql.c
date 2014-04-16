@@ -4549,7 +4549,7 @@ BATSTRindex_int(bat *res, bat *src, bit *u)
 				pad += GDK_VARALIGN;
 			pos += pad + extralen;
 			s = h->base + pos;
-			v = pos-GDK_STRHASHSIZE;
+			v = (int) (pos - GDK_STRHASHSIZE);
 			BUNappend(r, &v, FALSE);
 			pos += GDK_STRLEN(s);
 		}
@@ -4597,7 +4597,7 @@ BATSTRindex_sht(bat *res, bat *src, bit *u)
 				pad += GDK_VARALIGN;
 			pos += pad + extralen;
 			s = h->base + pos;
-			v = pos-GDK_STRHASHSIZE;
+			v = (sht) (pos - GDK_STRHASHSIZE);
 			BUNappend(r, &v, FALSE);
 			pos += GDK_STRLEN(s);
 		}
@@ -4645,7 +4645,7 @@ BATSTRindex_bte(bat *res, bat *src, bit *u)
 				pad += GDK_VARALIGN;
 			pos += pad + extralen;
 			s = h->base + pos;
-			v = pos-GDK_STRHASHSIZE;
+			v = (bte) (pos - GDK_STRHASHSIZE);
 			BUNappend(r, &v, FALSE);
 			pos += GDK_STRLEN(s);
 		}
