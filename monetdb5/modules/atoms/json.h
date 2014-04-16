@@ -94,6 +94,8 @@ json_export str JSONvalueTable(int *ret, json *j);
 json_export str JSONkeyArray(json *ret, json *arg);
 json_export str JSONvalueArray(json *ret, json *arg);
 
+json_export str JSONtextString(str *ret, int *bid);
+json_export str JSONtextGrouped(int *ret, int *bid, int *gid, int *ext, bit *flg);
 json_export str JSONdump(int *ret, json *val);
 json_export str JSONprelude(int *ret);
 

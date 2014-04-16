@@ -1669,24 +1669,26 @@ str PQtopn2_minmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 /* some new code for headless */
 #define QTOPN_shuffle3(TYPE,OPER)\
-{	TYPE *val = (TYPE *) Tloc(bpiv,BUNfirst(bpiv));\
+{	TYPE *val = (TYPE *) Tloc(a,BUNfirst(a));\
 	uniq = 0;\
 	gid = BUN_MAX;\
-	for(o = 0; top < size && o < lim; o++){\
-		idx[top] = gdx[o];\
-		if ( gdx[top] != gid){\
-			gid = gdx[o];\
-			if( uniq < size) top++;\
+	for(o = 0; uniq <= size && o < lim; o++){\
+		cpx[top] = bpx[o];\
+		cgx[top] = bgx[o];\
+		if ( cgx[top] != gid){\
+			gid = cgx[o];\
+			top++;\
 			uniq++;\
 			continue;\
 		}\
-		if(uniq >= size &&  (TYPE) val[o] OPER##= (TYPE) val[idx[top-1]]) \
+		if(uniq >= size &&  (TYPE) val[cpx[o]] OPER##= (TYPE) val[cpx[top-1]]) \
 			continue;\
 		for (i= top; i>0; i--){\
-			if ( gdx[i-1] != gid)\
+			if ( cgx[i-1] != gid)\
 				break;\
-			if( (TYPE) val[idx[i]] OPER (TYPE) val[idx[i-1]]){\
-				tmp= idx[i]; idx[i] = idx[i-1]; idx[i-1] = tmp;\
+			if( (TYPE) val[cpx[i]] OPER (TYPE) val[cpx[i-1]]){\
+				tmp= cpx[i]; cpx[i] = cpx[i-1]; cpx[i-1] = tmp;\
+				tmp= cgx[i]; cgx[i] = cgx[i-1]; cgx[i-1] = tmp;\
 			} else\
 				break;\
 		}\
@@ -1697,43 +1699,62 @@ str PQtopn2_minmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str PQtopn3_minmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	
-	int tpe, *ret;
-	BAT *bn,*bpiv, *bgid;
+	int tpe, *retcp,*retcg;
+	BAT *bp,*bg, *a, *cp, *cg;
 	BUN i, size, top = 0, uniq, gid;
-	oid *idx, *gdx, lim, o, tmp;
+	oid *bpx, *bgx, *cpx, *cgx, lim, o, tmp;
 	int k,max = 0;
 
 	(void) cntxt;
-	ret = (int*) getArgReference(stk, pci, 0);
+	(void) k;
+	retcp = (int*) getArgReference(stk, pci, 0);
+	retcg = (int*) getArgReference(stk, pci, 1);
 	tpe = ATOMstorage(getColumnType(getArgType(mb, pci, 2)));
-	size = (BUN) *(wrd*) getArgReference(stk,pci,3);
+	size = (BUN) *(wrd*) getArgReference(stk,pci,5);
 	max = strstr(getFunctionId(pci),"max") != 0;
 
-	bgid = BATdescriptor(*(bat *) getArgReference(stk, pci, 1));
-	if (!bgid)
+	a = BATdescriptor(*(bat *) getArgReference(stk, pci, 2));
+	if (!a)
 		throw(MAL, "topn_min", RUNTIME_OBJECT_MISSING);
 
-	bpiv = BATdescriptor(*(bat *) getArgReference(stk, pci, 2));
-	if (!bpiv){
-		BBPreleaseref(bgid->batCacheid);
+	bp = BATdescriptor(*(bat *) getArgReference(stk, pci, 3));
+	if (!bp){
+		BBPreleaseref(a->batCacheid);
 		throw(MAL, "topn_min", RUNTIME_OBJECT_MISSING);
-	}
-	if( BATcount(bpiv) != BATcount(bgid)){
-		BBPreleaseref(bgid->batCacheid);
-		BBPreleaseref(bpiv->batCacheid);
-		throw(MAL,"topn_minmax","Arguments not aligned");
 	}
 
-	bn = BATnew(TYPE_void, TYPE_oid, BATcount(bpiv));
-	if (!bn){
-		BBPreleaseref(bgid->batCacheid);
-		BBPreleaseref(bpiv->batCacheid);
+	bg = BATdescriptor(*(bat *) getArgReference(stk, pci, 4));
+	if (!bg){
+		BBPreleaseref(a->batCacheid);
+		BBPreleaseref(bp->batCacheid);
 		throw(MAL, "topn_min", RUNTIME_OBJECT_MISSING);
 	}
-	lim = BATcount(bpiv);
-	BATseqbase(bn,0);
-	idx = (oid*) Tloc(bn,BUNfirst(bpiv));
-	gdx = (oid*) Tloc(bgid,BUNfirst(bgid));
+
+	cp = BATnew(TYPE_void, TYPE_oid, BATcount(bp));
+	if (!cp){
+		BBPreleaseref(a->batCacheid);
+		BBPreleaseref(bg->batCacheid);
+		BBPreleaseref(bp->batCacheid);
+		throw(MAL, "topn_min", MAL_MALLOC_FAIL);
+	}
+	cg = BATnew(TYPE_void, TYPE_oid, BATcount(bp));
+	if (!cg){
+		BBPreleaseref(a->batCacheid);
+		BBPreleaseref(bg->batCacheid);
+		BBPreleaseref(bp->batCacheid);
+		BBPreleaseref(cp->batCacheid);
+		throw(MAL, "topn_min", MAL_MALLOC_FAIL);
+	}
+
+	lim = BATcount(bp);
+	BATseqbase(cp,0);
+	BATseqbase(cg,0);
+
+	bgx = (oid*) Tloc(bg,BUNfirst(bg));
+	bpx = (oid*) Tloc(bp,BUNfirst(bp));
+
+	cpx = (oid*) Tloc(cp,BUNfirst(cp));
+	cgx = (oid*) Tloc(cg,BUNfirst(cg));
 
 	// shuffle insert new values, keep it simple!
 	if( size){
@@ -1741,7 +1762,7 @@ str PQtopn3_minmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		switch(tpe){
 		case TYPE_bte: QTOPN_shuffle3(bte,<) break;
 		case TYPE_sht: QTOPN_shuffle3(sht,<) break;
-		case TYPE_int: QTOPN_shuffle3(sht,<) break;
+		case TYPE_int: QTOPN_shuffle3(int,<) break;
 		case TYPE_wrd: QTOPN_shuffle3(wrd,<) break;
 		case TYPE_lng: QTOPN_shuffle3(lng,<) break;
 		case TYPE_flt: QTOPN_shuffle3(flt,<) break;
@@ -1749,29 +1770,33 @@ str PQtopn3_minmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		default:
 		{	uniq = 0;
 			gid = BUN_MAX;
-			for(o = 0; top<size && o < lim; o++){
-				idx[top] = gdx[o];
-				if ( gdx[top] != gid){
-					gid = gdx[o];
-					if( uniq <= size) top++;
+			for(o = 0; uniq<=size && o < lim; o++){
+				cpx[top] = bpx[o];
+				cgx[top] = bgx[o];
+				if ( cgx[top] != gid){
+					gid = cgx[o];\
+					top++;
 					uniq++;
 					continue;
 				}
-				k = atom_CMP( Tloc(bpiv,o), Tloc(bpiv,idx[top-1]), tpe) >= 0;
+				k = atom_CMP( Tloc(bp,cpx[o]), Tloc(bp,cpx[top-1]), tpe) <= 0;
 				if( uniq >= size &&  k) 
 					continue;
 				for (i= top; i>0; i--){
-					if ( gdx[i-1] != gid)
+					if ( cgx[i-1] != gid)
 						break;
-					if ( (k = atom_CMP( Tloc(bpiv,idx[i]), Tloc(bpiv,idx[i-1]), tpe)) < 0) {
-						tmp= idx[i]; idx[i] = idx[i-1]; idx[i-1] = tmp;
+					if ( (k = atom_CMP( Tloc(bp,cpx[i]), Tloc(bp,cpx[i-1]), tpe)) < 0) {
+						tmp= cpx[i]; cpx[i] = cpx[i-1]; cpx[i-1] = tmp;
+						tmp= cgx[i]; cgx[i] = cgx[i-1]; cgx[i-1] = tmp;
 					} else
 						break;
 				}
 				top++; 
 			}
 		}
+
 		}
+/*
 		if ( max )
 		switch(tpe){
 		case TYPE_bte: QTOPN_shuffle3(bte,>) break;
@@ -1781,170 +1806,6 @@ str PQtopn3_minmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		case TYPE_lng: QTOPN_shuffle3(lng,>) break;
 		case TYPE_flt: QTOPN_shuffle3(flt,>) break;
 		case TYPE_dbl: QTOPN_shuffle3(dbl,>) break;
-		default:
-		{	uniq = 0;
-			gid = BUN_MAX;
-			for(o = 0; top<size && o < lim; o++){
-				idx[top] = gdx[o];
-				if ( gdx[top] != gid){
-					gid = gdx[o];
-					if( uniq <= size) top++;
-					uniq++;
-					continue;
-				}
-				k = atom_CMP( Tloc(bpiv,o), Tloc(bpiv,idx[top-1]), tpe) < 0;
-				if( uniq >= size &&  k) 
-					continue;
-				for (i= top; i>0; i--){
-					if ( gdx[i-1] != gid)
-						break;
-					if ( (k = atom_CMP( Tloc(bpiv,idx[i]), Tloc(bpiv,idx[i-1]), tpe)) >= 0) {
-						tmp= idx[i]; idx[i] = idx[i-1]; idx[i-1] = tmp;
-					} else
-						break;
-				}
-				top++; 
-			}
-		}
-		}
-	}
-	
-	BATsetcount(bn, (BUN)  top);
-	BATderiveProps(bn, TRUE);
-
-	BBPkeepref(*ret = bn->batCacheid);
-	BBPreleaseref(bpiv->batCacheid);
-	BBPreleaseref(bgid->batCacheid);
-	return MAL_SUCCEED;
-}
-
-/* some new code for headless */
-#define QTOPN_shuffle4(TYPE,OPER)\
-{	TYPE *val = (TYPE *) Tloc(bpiv,BUNfirst(bpiv));\
-	uniq = 0;\
-	gid = BUN_MAX;\
-	for(o = 0; uniq <= size && o < lim; o++){\
-		idx[top] = gdx[o];\
-		grp[top] = gdx[o];\
-		if ( gdx[top] != gid){\
-			gid = gdx[o];\
-			top++;\
-			uniq++;\
-			continue;\
-		}\
-		if(uniq >= size &&  (TYPE) val[o] OPER##= (TYPE) val[idx[top-1]]) \
-			continue;\
-		for (i= top; i>0; i--){\
-			if ( gdx[i-1] != gid)\
-				break;\
-			if( (TYPE) val[idx[i]] OPER (TYPE) val[idx[i-1]]){\
-				tmp= idx[i]; idx[i] = idx[i-1]; idx[i-1] = tmp;\
-				tmp= grp[i]; grp[i] = grp[i-1]; grp[i-1] = tmp;\
-			} else\
-				break;\
-		}\
-		top++; \
-	}\
-}
-
-str PQtopn4_minmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	
-	int tpe, *ret;
-	BAT *bn,*bg, *bpiv, *bgid;
-	BUN i, size, top = 0, uniq, gid;
-	oid *idx, *gdx, *grp, lim, o, tmp;
-	int k,max = 0;
-
-	(void) cntxt;
-	ret = (int*) getArgReference(stk, pci, 0);
-	tpe = ATOMstorage(getColumnType(getArgType(mb, pci, 2)));
-	size = (BUN) *(wrd*) getArgReference(stk,pci,3);
-	max = strstr(getFunctionId(pci),"max") != 0;
-
-	bgid = BATdescriptor(*(bat *) getArgReference(stk, pci, 1));
-	if (!bgid)
-		throw(MAL, "topn_min", RUNTIME_OBJECT_MISSING);
-
-	bpiv = BATdescriptor(*(bat *) getArgReference(stk, pci, 2));
-	if (!bpiv){
-		BBPreleaseref(bgid->batCacheid);
-		throw(MAL, "topn_min", RUNTIME_OBJECT_MISSING);
-	}
-	if( BATcount(bpiv) != BATcount(bgid)){
-		BBPreleaseref(bgid->batCacheid);
-		BBPreleaseref(bpiv->batCacheid);
-		throw(MAL,"topn_minmax","Arguments not aligned");
-	}
-
-	bn = BATnew(TYPE_void, TYPE_oid, BATcount(bpiv));
-	if (!bn){
-		BBPreleaseref(bgid->batCacheid);
-		BBPreleaseref(bpiv->batCacheid);
-		throw(MAL, "topn_min", MAL_MALLOC_FAIL);
-	}
-	bg = BATnew(TYPE_void, TYPE_oid, BATcount(bpiv));
-	if (!bg){
-		BBPreleaseref(bgid->batCacheid);
-		BBPreleaseref(bpiv->batCacheid);
-		BBPreleaseref(bn->batCacheid);
-		throw(MAL, "topn_min", MAL_MALLOC_FAIL);
-	}
-
-	lim = BATcount(bpiv);
-	BATseqbase(bn,0);
-	idx = (oid*) Tloc(bn,BUNfirst(bpiv));
-	grp = (oid*) Tloc(bg,BUNfirst(bg));
-	gdx = (oid*) Tloc(bgid,BUNfirst(bgid));
-
-	// shuffle insert new values, keep it simple!
-	if( size){
-		if ( max ==0)
-		switch(tpe){
-		case TYPE_bte: QTOPN_shuffle4(bte,<) break;
-		case TYPE_sht: QTOPN_shuffle4(sht,<) break;
-		case TYPE_int: QTOPN_shuffle4(sht,<) break;
-		case TYPE_wrd: QTOPN_shuffle4(wrd,<) break;
-		case TYPE_lng: QTOPN_shuffle4(lng,<) break;
-		case TYPE_flt: QTOPN_shuffle4(flt,<) break;
-		case TYPE_dbl: QTOPN_shuffle4(dbl,<) break;
-		default:
-		{	uniq = 0;
-			gid = BUN_MAX;
-			for(o = 0; uniq<=size && o < lim; o++){
-				idx[top] = gdx[o];
-				grp[top] = gdx[o];
-				if ( gdx[top] != gid){
-					gid = gdx[o];
-					top++;
-					uniq++;
-					continue;
-				}
-				k = atom_CMP( Tloc(bpiv,o), Tloc(bpiv,idx[top-1]), tpe) >= 0;
-				if( uniq >= size &&  k) 
-					continue;
-				for (i= top; i>0; i--){
-					if ( gdx[i-1] != gid)
-						break;
-					if ( (k = atom_CMP( Tloc(bpiv,idx[i]), Tloc(bpiv,idx[i-1]), tpe)) < 0) {
-						tmp= idx[i]; idx[i] = idx[i-1]; idx[i-1] = tmp;
-						tmp= grp[i]; grp[i] = grp[i-1]; grp[i-1] = tmp;
-					} else
-						break;
-				}
-				top++; 
-			}
-		}
-		}
-		if ( max )
-		switch(tpe){
-		case TYPE_bte: QTOPN_shuffle4(bte,>) break;
-		case TYPE_sht: QTOPN_shuffle4(sht,>) break;
-		case TYPE_int: QTOPN_shuffle4(int,>) break;
-		case TYPE_wrd: QTOPN_shuffle4(wrd,>) break;
-		case TYPE_lng: QTOPN_shuffle4(lng,>) break;
-		case TYPE_flt: QTOPN_shuffle4(flt,>) break;
-		case TYPE_dbl: QTOPN_shuffle4(dbl,>) break;
 		default:
 		{	uniq = 0;
 			gid = BUN_MAX;
@@ -1973,13 +1834,18 @@ str PQtopn4_minmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		}
 		}
+*/
 	}
 	
-	BATsetcount(bn, (BUN)  top);
-	BATderiveProps(bn, TRUE);
+	BATsetcount(cg, (BUN)  top);
+	BATderiveProps(cg, TRUE);
+	BATsetcount(cp, (BUN)  top);
+	BATderiveProps(cp, TRUE);
 
-	BBPkeepref(*ret = bn->batCacheid);
-	BBPreleaseref(bpiv->batCacheid);
-	BBPreleaseref(bgid->batCacheid);
+	BBPkeepref(*retcp = cp->batCacheid);
+	BBPkeepref(*retcg = cg->batCacheid);
+	BBPreleaseref(bp->batCacheid);
+	BBPreleaseref(bg->batCacheid);
+	BBPreleaseref(a->batCacheid);
 	return MAL_SUCCEED;
 }

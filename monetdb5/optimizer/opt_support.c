@@ -128,6 +128,7 @@
 #include "mal_listing.h"
 #include "mal_debugger.h"
 #include "opt_multiplex.h"
+#include "optimizer_private.h"
 #include "manifold.h"
 
 /*
@@ -275,6 +276,7 @@ optimizeMALBlock(Client cntxt, MalBlkPtr mb)
 		 varGetProp( mb, getArg(getInstrPtr(mb,0),0), sqlfunctionProp ) != NULL
 	)
         return 0;
+	optimizerInit();
 
 
 	do {
