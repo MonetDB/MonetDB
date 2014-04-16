@@ -1,13 +1,13 @@
 # enqueue something 
-a:= bat.new(:oid,:oid);
+a:= bat.new(:oid,:int);
 
-bat.append(a,1@0);
-bat.append(a,0@0);
-bat.append(a,2@0);
-bat.append(a,2@0);
-bat.append(a,3@0);
-bat.append(a,3@0);
-bat.append(a,3@0);
+bat.append(a,1);
+bat.append(a,0);
+bat.append(a,2);
+bat.append(a,2);
+bat.append(a,3);
+bat.append(a,3);
+bat.append(a,3);
 
 io.print(a);
 
@@ -64,75 +64,65 @@ io.print("Start of compound");
 (bp,bg):= pqueue.topn_min(b,0:wrd);
 io.print(bp);
 io.print(bg);
-ap := algebra.leftfetchjoin(bp, a);
-io.print(ap);
 # (sub) topn input: aligned bg group id, ap values bat
 #	output:	void,pos
 # returns the topn of the combination gid,value
-bp:= pqueue.topn_min(bg,ap,0:wrd);
-io.print(bp);
+(cp,cg):= pqueue.topn_min(a,bp,bg,0:wrd);
+io.print(cp);
 
 (bp,bg):= pqueue.topn_min(b,1:wrd);
 io.print(bp);
 io.print(bg);
-ap := algebra.leftfetchjoin(bp, a);
-io.print(ap);
-bp:= pqueue.topn_min(bg,ap,1:wrd);
-io.print(bp);
+(cp,cg):= pqueue.topn_min(a,bp,bg,1:wrd);
+io.print(cp);
+io.print(cg);
 
 (bp,bg):= pqueue.topn_min(b,2:wrd);
 io.print(bp);
 io.print(bg);
-ap := algebra.leftfetchjoin(bp, a);
-io.print(ap);
-bp:= pqueue.topn_min(bg,ap,2:wrd);
-io.print(bp);
+(cp,cg):= pqueue.topn_min(a,bp,bg,2:wrd);
+io.print(cp);
+io.print(cg);
 
 (bp,bg):= pqueue.topn_min(b,3:wrd);
 io.print(bp);
 io.print(bg);
-ap := algebra.leftfetchjoin(bp, a);
-io.print(ap);
-bp:= pqueue.topn_min(bg,ap,3:wrd);
-io.print(bp);
+(cp,cg):= pqueue.topn_min(a,bp,bg,3:wrd);
+io.print(cp);
+io.print(cg);
 
 (bp,bg):= pqueue.topn_min(b,4:wrd);
 io.print(bp);
 io.print(bg);
-ap := algebra.leftfetchjoin(bp, a);
-io.print(ap);
-bp:= pqueue.topn_min(bg,ap,4:wrd);
-io.print(bp);
+(cp,cg):= pqueue.topn_min(a,bp,bg,4:wrd);
+io.print(cp);
+io.print(cg);
 
 (bp,bg):= pqueue.topn_min(b,5:wrd);
 io.print(bp);
 io.print(bg);
-ap := algebra.leftfetchjoin(bp, a);
-io.print(ap);
-bp:= pqueue.topn_min(bg,ap,5:wrd);
-io.print(bp);
+(cp,cg):= pqueue.topn_min(a,bp,bg,5:wrd);
+io.print(cp);
+io.print(cg);
 
 (bp,bg):= pqueue.topn_min(b,6:wrd);
 io.print(bp);
 io.print(bg);
-ap := algebra.leftfetchjoin(bp, a);
-io.print(ap);
-bp:= pqueue.topn_min(bg,ap,6:wrd);
-io.print(bp);
+(cp,cg):= pqueue.topn_min(a,bp,bg,6:wrd);
+io.print(cp);
+io.print(cg);
 
 (bp,bg):= pqueue.topn_min(b,7:wrd);
 io.print(bp);
 io.print(bg);
-ap := algebra.leftfetchjoin(bp, a);
-io.print(ap);
-bp:= pqueue.topn_min(bg,ap,7:wrd);
-io.print(bp);
+(cp,cg):= pqueue.topn_min(a,bp,bg,7:wrd);
+io.print(cp);
+io.print(cg);
 
 (bp,bg):= pqueue.topn_min(b,8:wrd);
 io.print(bp);
 io.print(bg);
-ap := algebra.leftfetchjoin(bp, a);
-io.print(ap);
-bp:= pqueue.topn_min(bg,ap,8:wrd);
-io.print(bp);
+(cp,cg):= pqueue.topn_min(a,bp,bg,8:wrd);
+io.print(cp);
+io.print(cg);
 
