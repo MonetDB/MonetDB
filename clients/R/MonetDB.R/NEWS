@@ -3,6 +3,11 @@
 - new options monetdb.sequential, monetdb.debug.query and monetdb.debug.mapi
 - debug output now uses the message() function
 - reinstated warning about monetdb:// db urls, we do not like them
+- source code cleanup
+- dbListTables() now hides system tables per default, also got options to include the
+  schema name and quoting in the result (sys_tables, schema_names and quote)
+- fixed various TODO's in the code to get closer to 1.0 (exciting)
+- fixed a bug when the error identifier sent by MonetDB was non-numeric
 
 0.9.1
 - dbGetInfo() now supported on MonetDBConnection (dplyr compatibility)

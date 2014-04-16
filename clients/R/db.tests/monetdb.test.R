@@ -27,10 +27,10 @@ dbSendUpdate(con,"INSERT INTO monetdbtest VALUES ('one',1,'1111')")
 dbSendUpdate(con,"INSERT INTO monetdbtest VALUES ('two',2,'22222222')")
 stopifnot(identical(dbGetQuery(con,"SELECT count(*) FROM monetdbtest")[[1]],2))
 stopifnot(identical(dbReadTable(con,"monetdbtest")[[3]],list(charToRaw("1111"),charToRaw("22222222"))))
+stopifnot(identical(as.character(dbListTables(con)),"monetdbtest"))
 
 dbRemoveTable(con,"monetdbtest")
 stopifnot(identical(dbExistsTable(con,"monetdbtest"),FALSE))
-
 
 # write test table iris
 data(iris)
