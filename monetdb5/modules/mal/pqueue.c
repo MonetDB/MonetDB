@@ -335,10 +335,9 @@ str PQtopn3_minmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *bp,*bg, *a, *cp, *cg;
 	BUN i, size, top = 0, uniq, gid;
 	oid *bpx, *bgx, *cpx, *cgx, lim, o, tmp;
-	int k,max = 0;
+	int k =0,max = 0;
 
 	(void) cntxt;
-	(void) k;
 	retcp = (int*) getArgReference(stk, pci, 0);
 	retcg = (int*) getArgReference(stk, pci, 1);
 	tpe = ATOMstorage(getColumnType(getArgType(mb, pci, 2)));
