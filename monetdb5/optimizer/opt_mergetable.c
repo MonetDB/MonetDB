@@ -1333,7 +1333,7 @@ static int
 mat_topn(MalBlkPtr mb, InstrPtr p, mat_t *mat, int mtop, int m, int n, int o)
 {
 	int tpe = getArgType(mb,p,0), k, is_slice = isSlice(p), zero = -1;
-	InstrPtr pck, gpck, q, r, r2;
+	InstrPtr pck, gpck, q, r;
 	int with_groups = (p->retc == 2), piv = 0, topn2 = (n >= 0);
 
 	assert( topn2 || o < 0);
