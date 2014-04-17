@@ -17,108 +17,6 @@
 
 module pqueue;
 
-command topn_min(t:bat[:oid,:bte], n:wrd) :bat[:oid,:oid] 
-address PQtopn_btemin
-comment "Return the topn elements of the bat t using a min-pqueue";
-
-command utopn_min(t:bat[:oid,:bte], n:wrd) :bat[:oid,:oid] 
-address PQutopn_btemin
-comment "Return the unique topn elements of the bat t using a min-pqueue";
-
-command topn_max(t:bat[:oid,:bte], n:wrd) :bat[:oid,:oid] 
-address PQtopn_btemax
-comment "Return the topn elements of the bat t using a max-pqueue";
-
-command utopn_max(t:bat[:oid,:bte], n:wrd) :bat[:oid,:oid] 
-address PQutopn_btemax
-comment "Return the unique topn elements of the bat t using a max-pqueue";
-
-# all other types
-command topn_min(t:bat[:oid,:sht], n:wrd) :bat[:oid,:oid] address PQtopn_shtmin;
-command utopn_min(t:bat[:oid,:sht], n:wrd) :bat[:oid,:oid] address PQutopn_shtmin;
-
-command topn_max(t:bat[:oid,:sht], n:wrd) :bat[:oid,:oid] address PQtopn_shtmax;
-command utopn_max(t:bat[:oid,:sht], n:wrd) :bat[:oid,:oid] address PQutopn_shtmax;
-
-command topn_min(t:bat[:oid,:int], n:wrd) :bat[:oid,:oid] address PQtopn_intmin;
-command utopn_min(t:bat[:oid,:int], n:wrd) :bat[:oid,:oid] address PQutopn_intmin;
-
-command topn_max(t:bat[:oid,:int], n:wrd) :bat[:oid,:oid] address PQtopn_intmax;
-command utopn_max(t:bat[:oid,:int], n:wrd) :bat[:oid,:oid] address PQutopn_intmax;
-
-command topn_min(t:bat[:oid,:wrd], n:wrd) :bat[:oid,:oid] address PQtopn_wrdmin;
-command utopn_min(t:bat[:oid,:wrd], n:wrd) :bat[:oid,:oid] address PQutopn_wrdmin;
-
-command topn_max(t:bat[:oid,:wrd], n:wrd) :bat[:oid,:oid] address PQtopn_wrdmax;
-command utopn_max(t:bat[:oid,:wrd], n:wrd) :bat[:oid,:oid] address PQutopn_wrdmax;
-
-command topn_min(t:bat[:oid,:lng], n:wrd) :bat[:oid,:oid] address PQtopn_lngmin;
-command utopn_min(t:bat[:oid,:lng], n:wrd) :bat[:oid,:oid] address PQutopn_lngmin;
-
-command topn_max(t:bat[:oid,:lng], n:wrd) :bat[:oid,:oid] address PQtopn_lngmax;
-command utopn_max(t:bat[:oid,:lng], n:wrd) :bat[:oid,:oid] address PQutopn_lngmax;
-
-command topn_min(t:bat[:oid,:flt], n:wrd) :bat[:oid,:oid] address PQtopn_fltmin;
-command utopn_min(t:bat[:oid,:flt], n:wrd) :bat[:oid,:oid] address PQutopn_fltmin;
-
-command topn_max(t:bat[:oid,:flt], n:wrd) :bat[:oid,:oid] address PQtopn_fltmax;
-command utopn_max(t:bat[:oid,:flt], n:wrd) :bat[:oid,:oid] address PQutopn_fltmax;
-
-command topn_min(t:bat[:oid,:dbl], n:wrd) :bat[:oid,:oid] address PQtopn_fltmin;
-command utopn_min(t:bat[:oid,:dbl], n:wrd) :bat[:oid,:oid] address PQutopn_fltmin;
-
-command topn_max(t:bat[:oid,:dbl], n:wrd) :bat[:oid,:oid] address PQtopn_dblmax;
-command utopn_max(t:bat[:oid,:dbl], n:wrd) :bat[:oid,:oid] address PQutopn_dblmax;
-
-command topn_min(t:bat[:oid,:any_1], n:wrd) :bat[:oid,:oid] 
-address PQtopn_anymin
-comment "Return the topn elements of the bat t using a min-pqueue";
-
-command utopn_min(t:bat[:oid,:any_1], n:wrd) :bat[:oid,:oid] 
-address PQutopn_anymin
-comment "Return the unique topn elements of the bat t using a min-pqueue";
-
-command topn_min(a:bat[:oid,:oid], t:bat[:oid,:any_1], n:wrd) :bat[:oid,:oid] 
-address PQtopn2_anymin
-comment "Return the topn elements of the bat t using a min-pqueue";
-
-command topn_min(a:bat[:oid,:oid], t:bat[:void,:any_1], n:wrd) :bat[:oid,:oid] 
-address PQtopn2_anymin
-comment "Return the topn elements of the bat t using a min-pqueue";
-
-command utopn_min(a:bat[:oid,:oid], t:bat[:oid,:any_1], n:wrd) :bat[:oid,:oid] 
-address PQutopn2_anymin
-comment "Return the unique topn elements of the bat t using a min-pqueue";
-
-command utopn_min(a:bat[:oid,:oid], t:bat[:void,:any_1], n:wrd) :bat[:oid,:oid] 
-address PQutopn2_anymin
-comment "Return the unique topn elements of the bat t using a min-pqueue";
-
-command topn_max(t:bat[:oid,:any_1], n:wrd) :bat[:oid,:oid] 
-address PQtopn_anymax
-comment "Return the topn elements of the bat t using a max-pqueue";
-
-command utopn_max(t:bat[:oid,:any_1], n:wrd) :bat[:oid,:oid] 
-address PQutopn_anymax
-comment "Return the unique topn elements of the bat t using a max-pqueue";
-
-command topn_max(a:bat[:oid,:oid], t:bat[:oid,:any_1], n:wrd) :bat[:oid,:oid] 
-address PQtopn2_anymax
-comment "Return the topn elements of the bat t using a max-pqueue";
-
-command topn_max(a:bat[:oid,:oid], t:bat[:void,:any_1], n:wrd) :bat[:oid,:oid] 
-address PQtopn2_anymax
-comment "Return the topn elements of the bat t using a max-pqueue";
-
-command utopn_max(a:bat[:oid,:oid], t:bat[:oid,:any_1], n:wrd) :bat[:oid,:oid] 
-address PQutopn2_anymax
-comment "Return the unique topn elements of the bat t using a max-pqueue";
-
-command utopn_max(a:bat[:oid,:oid], t:bat[:void,:any_1], n:wrd) :bat[:oid,:oid] 
-address PQutopn2_anymax
-comment "Return the unique topn elements of the bat t using a max-pqueue";
-
-# new interface
 pattern topn_min(a:bat[:oid,:any_1], n:wrd):bat[:oid,:oid]
 address PQtopn_minmax
 comment "Return the top n elements using a min-pqueue";
@@ -143,3 +41,12 @@ pattern topn_max(a:bat[:oid,:any_1],bp:bat[:oid,:oid], bg:bat[:oid,:oid],n:wrd)(
 address PQtopn3_minmax
 comment "Return unique top n within groups";
 
+function topn_min(a:bat[:oid,:any_1],bp:bat[:oid,:oid], bg:bat[:oid,:oid],n:wrd):bat[:oid,:oid];
+	(p,g) := pqueue.topn_max(a,bp,bg,n);
+	return p;
+end topn_min;
+
+function topn_max(a:bat[:oid,:any_1],bp:bat[:oid,:oid], bg:bat[:oid,:oid],n:wrd):bat[:oid,:oid];
+	(p,g) := pqueue.topn_max(a,bp,bg,n);
+	return p;
+end topn_max;

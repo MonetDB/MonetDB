@@ -951,20 +951,22 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			break;
 		case st_limit2:
 		case st_limit:{
-			stmt *l1, *l2;
-			int l, offset, len, la;
+			stmt *piv, *gid, *col;
+			int l, offset, len, p, g, c;
 
 			if ((l = _dumpstmt(sql, mb, s->op1)) < 0)
 				return -1;
-			l1 = (s->type == st_limit2) ? s->op1->op4.lval->h->data : s->op1;
-			l2 = (s->type == st_limit2) ? s->op1->op4.lval->t->data : NULL;
+			col = (s->type == st_limit2) ? s->op1->op4.lval->h->data : s->op1;
+			piv = (s->type == st_limit2) ? s->op1->op4.lval->h->next->data : NULL;
+			gid = (s->type == st_limit2) ? s->op1->op4.lval->t->data : NULL;
 			if ((offset = _dumpstmt(sql, mb, s->op2)) < 0)
 				return -1;
 			if ((len = _dumpstmt(sql, mb, s->op3)) < 0)
 				return -1;
-			la = (l2) ? l2->nr : 0;
+			c = (col) ? col->nr : 0;
+			p = (piv) ? piv->nr : 0;
+			g = (gid) ? gid->nr : 0;
 
-			l = l1->nr;
 			/* first insert single value into a bat */
 			assert(s->nrcols);
 			if (s->nrcols == 0) {
@@ -972,6 +974,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				int ht = TYPE_oid;
 				int tt = tail_type(s->op1)->type->localtype;
 
+				assert(0);
 				q = newStmt1(mb, batRef, "new");
 				if (q == NULL)
 					return -1;
@@ -985,21 +988,19 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 				q = newStmt2(mb, batRef, appendRef);
 				q = pushArgument(mb, q, k);
-				q = pushArgument(mb, q, l);
+				q = pushArgument(mb, q, c);
 				if (q == NULL)
 					return -1;
-				l = k;
+				c = k;
 			}
 			if (s->flag) {
 				int topn = 0, flag = s->flag, utopn = flag & 2;
-				char *name = "utopn_min";
+				char *name = "topn_min";
 
 				flag >>= 2;
 				if (flag)
-					name = "utopn_max";
+					name = "topn_max";
 
-				if (!utopn)
-					name = name + 1;
 				q = newStmt1(mb, calcRef, "+");
 				q = pushArgument(mb, q, offset);
 				q = pushArgument(mb, q, len);
@@ -1008,12 +1009,18 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				topn = getDestVar(q);
 
 				q = newStmt(mb, "pqueue", name);
-				if (la)
-					q = pushArgument(mb, q, la);
-				q = pushArgument(mb, q, l);
+				if (utopn)
+					q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				q = pushArgument(mb, q, c);
+				if (p)
+					q = pushArgument(mb, q, p);
+				if (g)
+					q = pushArgument(mb, q, g);
 				q = pushArgument(mb, q, topn);
 				if (q == NULL)
 					return -1;
+				s->nr = getArg(q, 0);
+				renameVariable(mb, getArg(q, 1), "r1_%d", s->nr);
 				l = getDestVar(q);
 			} else {
 				q = newStmt1(mb, calcRef, "+");
@@ -1034,7 +1041,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				len = getDestVar(q);
 
 				q = newStmt1(mb, algebraRef, "subslice");
-				q = pushArgument(mb, q, l);
+				q = pushArgument(mb, q, c);
 				q = pushArgument(mb, q, offset);
 				q = pushArgument(mb, q, len);
 				if (q == NULL)

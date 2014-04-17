@@ -2281,7 +2281,7 @@ rel2bin_project( mvc *sql, sql_rel *rel, list *refs, sql_rel *topn)
 		list *oexps = rel->r, *npl = sa_list(sql->sa);
 		/* distinct, topn returns atleast N (unique) */
 		int distinct = need_distinct(rel);
-		stmt *limit = NULL; 
+		stmt *limit = NULL, *lpiv = NULL, *lgid = NULL; 
 
 		for (n=oexps->h; n; n = n->next) {
 			sql_exp *orderbycole = n->data; 
@@ -2295,18 +2295,19 @@ rel2bin_project( mvc *sql, sql_rel *rel, list *refs, sql_rel *topn)
 			if (!limit) {	/* topn based on a single column */
 				limit = stmt_limit(sql->sa, orderbycolstmt, stmt_atom_wrd(sql->sa, 0), l, LIMIT_DIRECTION(is_ascending(orderbycole), 1, inc));
 			} else { 	/* topn based on 2 columns */
-				stmt *obc = stmt_reorder_project(sql->sa, stmt_mirror(sql->sa, limit), orderbycolstmt);
-
-				limit = stmt_limit2(sql->sa, limit, obc, stmt_atom_wrd(sql->sa, 0), l, LIMIT_DIRECTION(is_ascending(orderbycole), 1, inc));
+				limit = stmt_limit2(sql->sa, orderbycolstmt, lpiv, lgid, stmt_atom_wrd(sql->sa, 0), l, LIMIT_DIRECTION(is_ascending(orderbycole), 1, inc));
 			}
 			if (!limit) 
 				return NULL;
+			lpiv = stmt_result(sql->sa, limit, 0);
+			lgid = stmt_result(sql->sa, limit, 1);
 		}
 
-		if (!distinct) 
-			limit = stmt_reverse(sql->sa, stmt_mark_tail(sql->sa, limit, 0));
-		else	/* add limit to mark end of pqueue topns */
-			limit = stmt_limit(sql->sa, limit, stmt_atom_wrd(sql->sa, 0), l, LIMIT_DIRECTION(0, 0, 0));
+		if (!distinct)  /* ready to project */
+			limit = lpiv;
+		else 		/* TODO */
+			limit = lpiv; 
+		
 		for ( n=pl->h ; n; n = n->next) 
 			list_append(npl, stmt_project(sql->sa, limit, column(sql->sa, n->data)));
 		psub = stmt_list(sql->sa, npl);
@@ -2332,7 +2333,7 @@ rel2bin_project( mvc *sql, sql_rel *rel, list *refs, sql_rel *topn)
 			sub = stmt_list(sql->sa, npl);
 		}
 	}
-	if ((!topn || need_distinct(rel)) && rel->r) {
+	if (/*(!topn || need_distinct(rel)) &&*/ rel->r) {
 		list *oexps = rel->r;
 		stmt *orderby_ids = NULL, *orderby_grp = NULL;
 
