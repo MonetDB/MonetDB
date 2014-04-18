@@ -24,23 +24,23 @@ bat.append(a,"stefan");
 io.print(a);
 
 # topn of b, new interface should return void,oid(position)
-bp:= pqueue.topn_min(b,0:wrd);
+bp:= pqueue.topn_min(a,0:wrd);
 io.print(bp);
-bp:= pqueue.topn_min(b,1:wrd);
+bp:= pqueue.topn_min(a,1:wrd);
 io.print(bp);
-bp:= pqueue.topn_min(b,2:wrd);
+bp:= pqueue.topn_min(a,2:wrd);
 io.print(bp);
-bp:= pqueue.topn_min(b,3:wrd);
+bp:= pqueue.topn_min(a,3:wrd);
 io.print(bp);
-bp:= pqueue.topn_min(b,4:wrd);
+bp:= pqueue.topn_min(a,4:wrd);
 io.print(bp);
-bp:= pqueue.topn_min(b,5:wrd);
+bp:= pqueue.topn_min(a,5:wrd);
 io.print(bp);
-bp:= pqueue.topn_min(b,6:wrd);
+bp:= pqueue.topn_min(a,6:wrd);
 io.print(bp);
-bp:= pqueue.topn_min(b,7:wrd);
+bp:= pqueue.topn_min(a,7:wrd);
 io.print(bp);
-bp:= pqueue.topn_min(b,8:wrd);
+bp:= pqueue.topn_min(a,8:wrd);
 io.print(bp);
 
 # utopn only count the unique values - topn of b, 

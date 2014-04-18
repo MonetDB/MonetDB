@@ -23,18 +23,6 @@ bat.append(b,3);
 
 io.print(b);
 
-c:= bat.new(:oid,:str);
-
-bat.append(c,"sjoerd");
-bat.append(c,"peter");
-bat.append(c,"stefan");
-bat.append(c,"stefan");
-bat.append(c,"niels");
-bat.append(c,"martin");
-bat.append(c,"stefan");
-
-io.print(c);
-
 # topn of b, new interface should return void,oid(position)
 bp:= pqueue.topn_min(b,0:wrd);
 io.print(bp);

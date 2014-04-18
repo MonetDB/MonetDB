@@ -20,22 +20,17 @@
 #include "monetdb_config.h"
 #include "pqueue.h"
 
-#define QTOPN_shuffle(TYPE,OPER,LAB)\
-{	TYPE *val = (TYPE *) Tloc(b,BUNfirst(b)), v;\
+#define QTOPN_shuffle(TYPE,OPER)\
+{	TYPE *val = (TYPE *) Tloc(b,BUNfirst(b));\
 	for(o = 0; o < lim; o++){\
-		v = val[o];\
-		oo = o;\
-		if( top == size &&  !((TYPE) v OPER (TYPE) val[idx[top-1]]) )\
+		if( top == size &&  !((TYPE) val[o] OPER (TYPE) val[idx[top-1]]) )\
 			continue;\
-		for (i= 0; i<top; i++)\
-		if ( (TYPE) v OPER (TYPE) val[idx[i]]) {\
-			v= val[idx[i]];\
-			tmp = idx[i];\
-			idx[i]= oo;\
-			oo = tmp;\
-		} \
-		if( top < size)\
-			idx[top++] = oo;\
+		idx[top] = o;\
+		for (i= top; i> 0; i--)\
+		if ( (TYPE) val[idx[i]] OPER (TYPE) val[idx[i-1]]) {\
+			tmp = idx[i]; idx[i]= idx[i-1]; idx[i-1] = tmp;\
+		} else break; \
+		if( top < size) top++;\
 	}\
 }
 
@@ -44,8 +39,8 @@ str PQtopn_minmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int tpe, *ret;
 	BAT *b,*bn;
 	BUN i, size,top = 0;
-	oid *idx, lim, o, oo, tmp, off;
-	int max = 0;
+	oid *idx, lim, o, tmp, off;
+	int max = 0,min=0;
 
 	(void) cntxt;
 	ret = (int*) getArgReference(stk, pci, 0);
@@ -53,8 +48,9 @@ str PQtopn_minmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	size = (BUN) *(wrd*) getArgReference(stk,pci,2);
 
 	max = strstr(getFunctionId(pci),"max") != 0;
+	min = strstr(getFunctionId(pci),"min") != 0;
 
-	max = (max)?0:1;
+	assert(max+min == 1);
 	b = BATdescriptor(*(bat *) getArgReference(stk, pci, 1));
 	if (!b)
 		throw(MAL, "topn_min", RUNTIME_OBJECT_MISSING);
@@ -86,58 +82,49 @@ str PQtopn_minmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	// shuffle insert new values, keep it simple!
 	if( size){
+		if ( min )
+		switch(tpe){
+		case TYPE_bte: QTOPN_shuffle(bte,<) break;
+		case TYPE_sht: QTOPN_shuffle(sht,<) break;
+		case TYPE_int: QTOPN_shuffle(int,<) break;
+		case TYPE_wrd: QTOPN_shuffle(wrd,<) break;
+		case TYPE_lng: QTOPN_shuffle(lng,<) break;
+		case TYPE_flt: QTOPN_shuffle(flt,<) break;
+		case TYPE_dbl: QTOPN_shuffle(dbl,<) break;
+		default:
+			for(o = 0; o < lim; o++){
+				if( top == size &&  atom_CMP((void*) Tloc(b,o), (void*) Tloc(b,idx[top-1]), tpe) > 0 )
+					continue;
+				idx[top] = o;
+				for (i= top; i> 0; i--)
+				if (  atom_CMP( Tloc(b,idx[i]), Tloc(b,idx[i-1]), tpe) < 0) {
+					tmp = idx[i]; idx[i]= idx[i-1]; idx[i-1] = tmp;
+				} else break; 
+				if( top < size)
+					top++;
+			}
+		}
 		if ( max )
 		switch(tpe){
-		case TYPE_bte: QTOPN_shuffle(bte,>,GTR) break;
-		case TYPE_sht: QTOPN_shuffle(sht,>,GTR) break;
-		case TYPE_int: QTOPN_shuffle(int,>,GTR) break;
-		case TYPE_wrd: QTOPN_shuffle(wrd,>,GTR) break;
-		case TYPE_lng: QTOPN_shuffle(lng,>,GTR) break;
-		case TYPE_flt: QTOPN_shuffle(flt,>,GTR) break;
-		case TYPE_dbl: QTOPN_shuffle(dbl,>,GTR) break;
+		case TYPE_bte: QTOPN_shuffle(bte,>) break;
+		case TYPE_sht: QTOPN_shuffle(sht,>) break;
+		case TYPE_int: QTOPN_shuffle(int,>) break;
+		case TYPE_wrd: QTOPN_shuffle(wrd,>) break;
+		case TYPE_lng: QTOPN_shuffle(lng,>) break;
+		case TYPE_flt: QTOPN_shuffle(flt,>) break;
+		case TYPE_dbl: QTOPN_shuffle(dbl,>) break;
 		default:
-		{	void  *v;
-
 			for(o = 0; o < lim; o++){
-				v = (void*) Tloc(b,o);
-				oo = o;
-				for (i= 0; i<top; i++)
-				if (  atom_CMP( v, Tloc(b,idx[i]), tpe) > 0) {
-					v = Tloc(b,idx[i]);
-					tmp = idx[i];
-					idx[i]= oo;
-					oo = tmp;
-				} 
+				if( top == size &&  atom_CMP((void*) Tloc(b,o), (void*) Tloc(b,idx[top-1]), tpe) < 0 )
+					continue;
+				idx[top] = o;
+				for (i= top; i> 0; i--)
+				if (  atom_CMP( Tloc(b,idx[i]), Tloc(b,idx[i-1]), tpe) > 0) {
+					tmp = idx[i]; idx[i]= idx[i-1]; idx[i-1] = tmp;
+				} else break; 
 				if( top < size)
-					idx[top++] = oo;
+					top++;
 			}
-		}
-		}
-		if ( max == 0 )
-		switch(tpe){
-		case TYPE_bte: QTOPN_shuffle(bte,<,LESS) break;
-		case TYPE_sht: QTOPN_shuffle(sht,<,LESS) break;
-		case TYPE_int: QTOPN_shuffle(int,<,LESS) break;
-		case TYPE_wrd: QTOPN_shuffle(wrd,<,LESS) break;
-		case TYPE_lng: QTOPN_shuffle(lng,<,LESS) break;
-		case TYPE_flt: QTOPN_shuffle(flt,<,LESS) break;
-		case TYPE_dbl: QTOPN_shuffle(dbl,<,LESS) break;
-		default:
-		{	void  *v;
-			for(o = 0; o < lim; o++){
-				v = (void*) Tloc(b,o);
-				oo = o;
-				for (i= 0; i<top; i++)
-				if ( atom_CMP( v, Tloc(b,idx[i]), tpe) < 0) {
-					v = Tloc(b,idx[i]);
-					tmp = idx[i];
-					idx[i]= oo;
-					oo = tmp;
-				} 
-				if( top < size)
-					idx[top++] = oo;
-			}
-		}
 		}
 	}
 	
@@ -159,7 +146,7 @@ str PQtopn_minmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	TYPE *val = (TYPE *) Tloc(b,BUNfirst(b));\
 	uniq = 0;\
 	for(o = 0; o < lim; o++){\
-		if(uniq >= size &&  !((TYPE) val[o] OPER##= (TYPE) val[idx[top-1]]) )\
+		if(uniq >= size &&  !((TYPE) val[o] OPER (TYPE) val[idx[top-1]]) )\
 			continue;\
 		idx[top] = gdx[top] = o;\
 		uniq++;\
@@ -182,7 +169,7 @@ str PQtopn2_minmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *b,*bpiv, *bgid;
 	BUN i, size, top = 0, uniq;
 	oid *idx, *gdx, lim, o, tmp, off;
-	int max = 0;
+	int max = 0, min =0;
 
 	(void) cntxt;
 	ret = (int*) getArgReference(stk, pci, 0);
@@ -190,8 +177,9 @@ str PQtopn2_minmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	tpe = ATOMstorage(getColumnType(getArgType(mb, pci, 2)));
 	size = (BUN) *(wrd*) getArgReference(stk,pci,3);
 	max = strstr(getFunctionId(pci),"max") != 0;
+	min = strstr(getFunctionId(pci),"min") != 0;
 
-	max = (max)?0:1;
+	assert(max+min == 1);
 	b = BATdescriptor(*(bat *) getArgReference(stk, pci, 2));
 	if (!b)
 		throw(MAL, "topn_min", RUNTIME_OBJECT_MISSING);
@@ -217,7 +205,7 @@ str PQtopn2_minmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	// shuffle insert new values, keep it simple!
 	if( size){
-		if ( max ==0)
+		if ( min )
 		switch(tpe){
 		case TYPE_bte: QTOPN_shuffle2(bte,<) break;
 		case TYPE_sht: QTOPN_shuffle2(sht,<) break;
@@ -335,7 +323,7 @@ str PQtopn3_minmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *bp,*bg, *a, *cp, *cg;
 	BUN i, size, top = 0, uniq, gid;
 	oid *bpx, *bgx, *cpx, *cgx, lim, o, tmp;
-	int k =0,max = 0;
+	int k =0,max = 0,min=0;
 
 	(void) cntxt;
 	retcp = (int*) getArgReference(stk, pci, 0);
@@ -343,8 +331,9 @@ str PQtopn3_minmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	tpe = ATOMstorage(getColumnType(getArgType(mb, pci, 2)));
 	size = (BUN) *(wrd*) getArgReference(stk,pci,5);
 	max = strstr(getFunctionId(pci),"max") != 0;
+	min = strstr(getFunctionId(pci),"min") != 0;
 
-	max = (max)?0:1;
+	assert(max+min==1);
 	a = BATdescriptor(*(bat *) getArgReference(stk, pci, 2));
 	if (!a)
 		throw(MAL, "topn_min", RUNTIME_OBJECT_MISSING);
