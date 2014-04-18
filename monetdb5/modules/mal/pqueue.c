@@ -146,7 +146,7 @@ str PQtopn_minmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	TYPE *val = (TYPE *) Tloc(b,BUNfirst(b));\
 	uniq = 0;\
 	for(o = 0; o < lim; o++){\
-		if(uniq >= size &&  !((TYPE) val[o] OPER (TYPE) val[idx[top-1]]) )\
+		if(uniq == size &&  !((TYPE) val[o] OPER##= (TYPE) val[idx[top-1]]) )\
 			continue;\
 		idx[top] = gdx[top] = o;\
 		uniq++;\
@@ -159,13 +159,13 @@ str PQtopn_minmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				break;\
 			} else break;\
 		}\
-		if( uniq <= size) top++;\
+		top++;\
 	}\
 }
 
 str PQtopn2_minmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int tpe, *ret, *ret1;
+int tpe, *ret, *ret1;
 	BAT *b,*bpiv, *bgid;
 	BUN i, size, top = 0, uniq;
 	oid *idx, *gdx, lim, o, tmp, off;
@@ -218,8 +218,8 @@ str PQtopn2_minmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		{	int k;
 			uniq = 0;
 			for(o = 0; o < lim; o++){
-				k = atom_CMP( Tloc(b,o), Tloc(b,idx[top-1]), tpe) >= 0;
-				if( uniq >= size &&  k) 
+				k = atom_CMP( Tloc(b,o), Tloc(b,idx[top-1]), tpe) > 0;
+				if( uniq == size &&  k) 
 					continue;
 				uniq++;
 				idx[top] = gdx[top] = o;
@@ -233,7 +233,7 @@ str PQtopn2_minmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						break;
 					} else break;
 				}
-				if( uniq < size) top++;
+				top++;
 			}
 		}
 		}
@@ -248,13 +248,13 @@ str PQtopn2_minmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		case TYPE_dbl: QTOPN_shuffle2(dbl,>) break;
 		default:
 		{	int k;
-			uniq=0;
+			uniq = 0;
 			for(o = 0; o < lim; o++){
-				k = atom_CMP( Tloc(b,o), Tloc(b,idx[top-1]), tpe) <= 0;
-				if( uniq >= size &&  k) 
+				k = atom_CMP( Tloc(b,o), Tloc(b,idx[top-1]), tpe) < 0;
+				if( uniq == size &&  k) 
 					continue;
-				idx[top] = gdx[top] = o;
 				uniq++;
+				idx[top] = gdx[top] = o;
 				for (i= top; i>0; i--){
 					if ( (k = atom_CMP( Tloc(b,idx[i]), Tloc(b,idx[i-1]), tpe)) > 0) {
 						tmp= idx[i]; idx[i] = idx[i-1]; idx[i-1] = tmp;
@@ -265,7 +265,7 @@ str PQtopn2_minmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						break;
 					} else break;
 				}
-				if( uniq < size) top++;
+				top++;
 			}
 		}
 		}
