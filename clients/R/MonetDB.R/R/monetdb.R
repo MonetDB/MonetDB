@@ -52,8 +52,6 @@ setMethod("dbConnect", "MonetDBDriver", def=function(drv, dbname="demo", user="m
   timeout <- as.integer(timeout)
   
   if (substring(dbname, 1, 10) == "monetdb://") {
-    message("MonetDB.R: Using 'monetdb://...' URIs in dbConnect() is deprecated. Please switch to ",
-            "dbname, host, port named arguments.")
     rest <- substring(dbname, 11, nchar(dbname))
     # split at /, so we get the dbname
     slashsplit <- strsplit(rest, "/", fixed=TRUE)
@@ -193,7 +191,8 @@ setMethod("dbListFields", "MonetDBConnection", def=function(conn, name, ...) {
 })
 
 setMethod("dbExistsTable", "MonetDBConnection", def=function(conn, name, ...) {
-  tolower(name) %in% tolower(dbListTables(conn))
+  #TODO: make this work with more cases
+  tolower(name) %in% tolower(dbListTables(conn,sys_tables=T))
 })
 
 setMethod("dbGetException", "MonetDBConnection", def=function(conn, ...) {
