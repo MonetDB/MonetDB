@@ -141,25 +141,28 @@ str PQtopn_minmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-/* some new code for headless */
 #define QTOPN_shuffle2(TYPE,OPER)\
 {	TYPE *val = (TYPE *) Tloc(b,BUNfirst(b));\
-	uniq = 0;\
 	for(o = 0; o < lim; o++){\
-		if(uniq == size &&  !((TYPE) val[o] OPER##= (TYPE) val[idx[top-1]]) )\
-			continue;\
 		idx[top] = gdx[top] = o;\
-		uniq++;\
-		for (i= top; i>0; i--){\
+		for (i= top; i>0; i--)\
 			if( (TYPE) val[idx[i]] OPER (TYPE) val[idx[i-1]]){\
 				tmp= idx[i]; idx[i] = idx[i-1]; idx[i-1] = tmp;\
 				tmp= gdx[i]; gdx[i] = gdx[i-1]; gdx[i-1] = tmp;\
-			} else if( (TYPE) val[idx[i]] == (TYPE) val[idx[i-1]]){\
-				uniq--; gdx[i] = gdx[i-1];\
-				break;\
+			} else\
+			if( (TYPE) val[idx[i]] == (TYPE) val[idx[i-1]]){\
+				gdx[i] = gdx[i-1];\
 			} else break;\
+		uniq=0;\
+		for( i=1; i <= top; i++)\
+		if( gdx[i]!= gdx[i-1]){\
+			uniq++;\
+			if( uniq >= size) {\
+				top = i;\
+				break;\
+			}\
 		}\
-		top++;\
+		top= i;\
 	}\
 }
 
@@ -169,7 +172,7 @@ int tpe, *ret, *ret1;
 	BAT *b,*bpiv, *bgid;
 	BUN i, size, top = 0, uniq;
 	oid *idx, *gdx, lim, o, tmp, off;
-	int max = 0, min =0;
+	int k=0, max = 0, min =0;
 
 	(void) cntxt;
 	ret = (int*) getArgReference(stk, pci, 0);
@@ -215,28 +218,30 @@ int tpe, *ret, *ret1;
 		case TYPE_flt: QTOPN_shuffle2(flt,<) break;
 		case TYPE_dbl: QTOPN_shuffle2(dbl,<) break;
 		default:
-		{	int k;
-			uniq = 0;
-			for(o = 0; o < lim; o++){
-				k = atom_CMP( Tloc(b,o), Tloc(b,idx[top-1]), tpe) > 0;
-				if( uniq == size &&  k) 
-					continue;
-				uniq++;
+		{	for(o = 0; o < lim; o++){
 				idx[top] = gdx[top] = o;
-				for (i= top; i>0; i--){
+				for (i= top; i>0; i--)
 					if ( (k = atom_CMP( Tloc(b,idx[i]), Tloc(b,idx[i-1]), tpe)) < 0) {
 						tmp= idx[i]; idx[i] = idx[i-1]; idx[i-1] = tmp;
 						tmp= gdx[i]; gdx[i] = gdx[i-1]; gdx[i-1] = tmp;
-					} else if ( atom_CMP( Tloc(b,idx[i]), Tloc(b,idx[i-1]), tpe) == 0) {
+					} else
+					if( k == 0){
 						gdx[i] = gdx[i-1];
-						uniq--;
-						break;
 					} else break;
+				uniq=0;
+				for( i=1; i <= top; i++)
+				if( gdx[i]!= gdx[i-1]){
+					uniq++;
+					if( uniq >= size) {
+						top = i;
+						break;
+					}
 				}
-				top++;
+				top= i;
 			}
 		}
 		}
+
 		if ( max )
 		switch(tpe){
 		case TYPE_bte: QTOPN_shuffle2(bte,>) break;
@@ -247,25 +252,26 @@ int tpe, *ret, *ret1;
 		case TYPE_flt: QTOPN_shuffle2(flt,>) break;
 		case TYPE_dbl: QTOPN_shuffle2(dbl,>) break;
 		default:
-		{	int k;
-			uniq = 0;
-			for(o = 0; o < lim; o++){
-				k = atom_CMP( Tloc(b,o), Tloc(b,idx[top-1]), tpe) < 0;
-				if( uniq == size &&  k) 
-					continue;
-				uniq++;
+		{	for(o = 0; o < lim; o++){
 				idx[top] = gdx[top] = o;
-				for (i= top; i>0; i--){
+				for (i= top; i>0; i--)
 					if ( (k = atom_CMP( Tloc(b,idx[i]), Tloc(b,idx[i-1]), tpe)) > 0) {
 						tmp= idx[i]; idx[i] = idx[i-1]; idx[i-1] = tmp;
 						tmp= gdx[i]; gdx[i] = gdx[i-1]; gdx[i-1] = tmp;
-					} else if ( atom_CMP( Tloc(b,idx[i]), Tloc(b,idx[i-1]), tpe) == 0) {
+					} else
+					if( k == 0){
 						gdx[i] = gdx[i-1];
-						uniq--;
-						break;
 					} else break;
+				uniq=0;
+				for( i=1; i <= top; i++)
+				if( gdx[i]!= gdx[i-1]){
+					uniq++;
+					if( uniq >= size) {
+						top = i;
+						break;
+					}
 				}
-				top++;
+				top= i;
 			}
 		}
 		}
@@ -287,32 +293,29 @@ int tpe, *ret, *ret1;
 	return MAL_SUCCEED;
 }
 
-/* some new code for headless */
 #define QTOPN_shuffle3(TYPE,OPER)\
 {	TYPE *val = (TYPE *) Tloc(a,BUNfirst(a));\
-	uniq = 0;\
-	gid = BUN_MAX;\
-	for(o = 0; uniq <= size && o < lim; o++){\
+	for(o = 0; o < lim; o++){\
 		cpx[top] = bpx[o];\
 		cgx[top] = bgx[o];\
-		if ( cgx[top] != gid){\
-			gid = cgx[o];\
-			top++;\
-			uniq++;\
-			continue;\
-		}\
-		if(uniq >= size &&  (TYPE) val[cpx[o]] OPER##= (TYPE) val[cpx[top-1]]) \
-			continue;\
-		for (i= top; i>0; i--){\
-			if ( cgx[i-1] != gid)\
-				break;\
+		for (i= top; i>0; i--)\
 			if( (TYPE) val[cpx[i]] OPER (TYPE) val[cpx[i-1]]){\
 				tmp= cpx[i]; cpx[i] = cpx[i-1]; cpx[i-1] = tmp;\
 				tmp= cgx[i]; cgx[i] = cgx[i-1]; cgx[i-1] = tmp;\
 			} else\
+			if( (TYPE) val[cpx[i]] == (TYPE) val[cpx[i-1]]){\
+				cgx[i] = cgx[i-1];\
+			} else break;\
+		uniq=0;\
+		for( i=1; i <= top; i++)\
+		if( cgx[i]!= cgx[i-1]){\
+			uniq++;\
+			if( uniq >= size) {\
+				top = i;\
 				break;\
+			}\
 		}\
-		top++; \
+		top= i;\
 	}\
 }
 
