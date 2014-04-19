@@ -1333,7 +1333,7 @@ static int
 mat_topn(MalBlkPtr mb, InstrPtr p, mat_t *mat, int mtop, int m, int n, int o)
 {
 	int tpe = getArgType(mb,p,0), k, is_slice = isSlice(p), zero = -1;
-	InstrPtr pck, gpck, q, r;
+	InstrPtr pck, gpck = NULL, q, r;
 	int with_groups = (p->retc == 2), piv = 0, topn2 = (n >= 0);
 
 	assert( topn2 || o < 0);
@@ -1382,9 +1382,8 @@ mat_topn(MalBlkPtr mb, InstrPtr p, mat_t *mat, int mtop, int m, int n, int o)
 	piv = mtop;
 	mtop = mat_add_var(mat, mtop, pck, p, getArg(p,0), is_slice?mat_slc:mat_tpn, m, n);
 	mat[mtop-1].pushed = 0;
-	if (with_groups) {
+	if (with_groups)
 		mtop = mat_add_var(mat, mtop, gpck, p, getArg(p,1), is_slice?mat_slc:mat_tpn, m, piv);
-	}
 
 	if (is_slice || p->retc ==1 /* single result, ie last of the topn's */) {
 		if (mat[m].type == mat_tpn || !is_slice) 
