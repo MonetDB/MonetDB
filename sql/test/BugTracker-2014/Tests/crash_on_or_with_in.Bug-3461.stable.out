@@ -28,10 +28,10 @@ Ready.
 #SELECT * FROM SYS.ARGS
 # WHERE FUNC_ID NOT IN (SELECT ID FROM SYS.FUNCTIONS)
 #    OR FUNC_ID NOT IN (SELECT ID FROM SYS.FUNCTIONS);
-% .args,	.args,	.args,	.args,	.args,	.args,	.args # table_name
-% id,	func_id,	name,	type,	type_digits,	type_scale,	number # name
-% int,	int,	varchar,	varchar,	int,	int,	int # type
-% 1,	1,	0,	0,	1,	1,	1 # length
+% .args,	.args,	.args,	.args,	.args,	.args,	.args,	.args # table_name
+% id,	func_id,	name,	type,	type_digits,	type_scale,	inout,	number # name
+% int,	int,	varchar,	varchar,	int,	int,	tinyint,	int # type
+% 1,	1,	0,	0,	1,	1,	1,	1 # length
 
 # 14:17:10 >  
 # 14:17:10 >  "Done."
