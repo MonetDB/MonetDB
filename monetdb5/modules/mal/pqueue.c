@@ -66,7 +66,7 @@ str PQtopn_minmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 		if ((b->tsorted && max) || (b->trevsorted && !max)) {
 			size_t l = BATcount(b) < size ? 0 : BATcount(b)-size;
-			bn = BATslice(b, l, size);
+			bn = BATslice(b, l, BATcount(b));
 		} else
 			bn = BATslice(b, 0, size);
 		r = BATmirror(BATmark(bn, 0));
