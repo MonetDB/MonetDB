@@ -27,10 +27,12 @@
 			continue;\
 		idx[top] = o;\
 		for (i= top; i> 0; i--)\
-		if ( (TYPE) val[idx[i]] OPER (TYPE) val[idx[i-1]]) {\
-			tmp = idx[i]; idx[i]= idx[i-1]; idx[i-1] = tmp;\
-		} else break; \
-		if( top < size) top++;\
+			if ( (TYPE) val[idx[i]] OPER (TYPE) val[idx[i-1]]) {\
+				tmp = idx[i]; idx[i]= idx[i-1]; idx[i-1] = tmp;\
+			} else \
+	       			break; \
+		if( top < size) \
+			top++;\
 	}\
 }
 
@@ -51,6 +53,8 @@ str PQtopn_minmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	min = strstr(getFunctionId(pci),"min") != 0;
 
 	assert(max+min == 1);
+	max = !(max);
+	min = !(min);
 	b = BATdescriptor(*(bat *) getArgReference(stk, pci, 1));
 	if (!b)
 		throw(MAL, "topn_min", RUNTIME_OBJECT_MISSING);
@@ -93,13 +97,14 @@ str PQtopn_minmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		case TYPE_dbl: QTOPN_shuffle(dbl,<) break;
 		default:
 			for(o = 0; o < lim; o++){
-				if( top == size &&  atom_CMP((void*) Tloc(b,o), (void*) Tloc(b,idx[top-1]), tpe) > 0 )
+				if( top == size && atom_CMP((void*) Tloc(b,o), (void*) Tloc(b,idx[top-1]), tpe) > 0 )
 					continue;
 				idx[top] = o;
 				for (i= top; i> 0; i--)
-				if (  atom_CMP( Tloc(b,idx[i]), Tloc(b,idx[i-1]), tpe) < 0) {
-					tmp = idx[i]; idx[i]= idx[i-1]; idx[i-1] = tmp;
-				} else break; 
+					if (atom_CMP( Tloc(b,idx[i]), Tloc(b,idx[i-1]), tpe) < 0) {
+						tmp = idx[i]; idx[i]= idx[i-1]; idx[i-1] = tmp;
+					} else 
+						break; 
 				if( top < size)
 					top++;
 			}
@@ -115,13 +120,14 @@ str PQtopn_minmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		case TYPE_dbl: QTOPN_shuffle(dbl,>) break;
 		default:
 			for(o = 0; o < lim; o++){
-				if( top == size &&  atom_CMP((void*) Tloc(b,o), (void*) Tloc(b,idx[top-1]), tpe) < 0 )
+				if( top == size && atom_CMP((void*) Tloc(b,o), (void*) Tloc(b,idx[top-1]), tpe) < 0 )
 					continue;
 				idx[top] = o;
 				for (i= top; i> 0; i--)
-				if (  atom_CMP( Tloc(b,idx[i]), Tloc(b,idx[i-1]), tpe) > 0) {
-					tmp = idx[i]; idx[i]= idx[i-1]; idx[i-1] = tmp;
-				} else break; 
+					if (atom_CMP( Tloc(b,idx[i]), Tloc(b,idx[i-1]), tpe) > 0) {
+						tmp = idx[i]; idx[i]= idx[i-1]; idx[i-1] = tmp;
+					} else 
+						break; 
 				if( top < size)
 					top++;
 			}
@@ -149,19 +155,19 @@ str PQtopn_minmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if( (TYPE) val[idx[i]] OPER (TYPE) val[idx[i-1]]){\
 				tmp= idx[i]; idx[i] = idx[i-1]; idx[i-1] = tmp;\
 				tmp= gdx[i]; gdx[i] = gdx[i-1]; gdx[i-1] = tmp;\
-			} else\
-			if( (TYPE) val[idx[i]] == (TYPE) val[idx[i-1]]){\
+			} else if( (TYPE) val[idx[i]] == (TYPE) val[idx[i-1]]){\
 				gdx[i] = gdx[i-1];\
-			} else break;\
+			} else \
+				break;\
 		uniq=0;\
 		for( i=1; i <= top; i++)\
-		if( gdx[i]!= gdx[i-1]){\
-			uniq++;\
-			if( uniq >= size) {\
-				top = i;\
-				break;\
+			if( gdx[i]!= gdx[i-1]){\
+				uniq++;\
+				if( uniq >= size) {\
+					top = i;\
+					break;\
+				}\
 			}\
-		}\
 		top= i;\
 	}\
 }
@@ -183,6 +189,8 @@ int tpe, *ret, *ret1;
 	min = strstr(getFunctionId(pci),"min") != 0;
 
 	assert(max+min == 1);
+	max = !(max);
+	min = !(min);
 	b = BATdescriptor(*(bat *) getArgReference(stk, pci, 2));
 	if (!b)
 		throw(MAL, "topn_min", RUNTIME_OBJECT_MISSING);
@@ -337,6 +345,9 @@ str PQtopn3_minmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	min = strstr(getFunctionId(pci),"min") != 0;
 
 	assert(max+min==1);
+
+	max = !(max);
+	min = !(min);
 	a = BATdescriptor(*(bat *) getArgReference(stk, pci, 2));
 	if (!a)
 		throw(MAL, "topn_min", RUNTIME_OBJECT_MISSING);
