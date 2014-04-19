@@ -382,7 +382,7 @@ str PQtopn3_minmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	// shuffle insert new values, keep it simple!
 	if( size){
-		if ( max ==0)
+		if ( min)
 		switch(tpe){
 		case TYPE_bte: QTOPN_shuffle3(bte,<) break;
 		case TYPE_sht: QTOPN_shuffle3(sht,<) break;
