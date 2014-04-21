@@ -181,11 +181,15 @@ MATpackIncrement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			if (BATcount(b) == 0)
 				BATseqbase(BATmirror(b), bb->T->seq);
 			BATappend(b,bb,FALSE);
+		} else {
+			BBPreleaseref(b->batCacheid);
+			throw(MAL, "mat.pack", RUNTIME_OBJECT_MISSING);
 		}
 		assert(!b->H->nil || !b->H->nonil);
 		assert(!b->T->nil || !b->T->nonil);
 		BBPkeepref(*ret = b->batCacheid);
 		BBPreleaseref(bb->batCacheid);
+		BBPreleaseref(b->batCacheid);
 	}
 	return MAL_SUCCEED;
 }
@@ -265,6 +269,9 @@ MATpackSliceInternal(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			 */
 			if (lst <= cap + c) {
 				b = BATdescriptor(bid);
+				if ( b == NULL){
+					throw(MAL,"mat.packSlice", RUNTIME_OBJECT_MISSING);
+				}
 				bn = BATslice(b, fst - cap, lst - cap);
 				BBPunfix(b->batCacheid);
 				BBPkeepref(*ret = bn->batCacheid);
@@ -348,6 +355,8 @@ MATpack2Internal(MalStkPtr stk, InstrPtr p)
 		BBPunfix(b->batCacheid);
 	}
 	bn = BATextend(bn, cap);
+	if( bn == NULL)
+		throw(MAL, "mat.pack", MAL_MALLOC_FAIL);
 	for( i = 2; i < p->argc; i++){
 		b= BATdescriptor(stk->stk[getArg(p,i)].val.ival);
 		if( b == NULL){
@@ -485,8 +494,12 @@ MATmergepack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	}
 
 	bn = BATnew(TYPE_void, TYPE_oid, cap);
-	if (bn == NULL)
+	if (bn == NULL){
+		GDKfree(bats);
+		GDKfree(o_src);
+		GDKfree(o_end);
 		throw(MAL, "mat.pack", MAL_MALLOC_FAIL);
+	}
 	if ( cap == 0){
 		BATseqbase(bn, 0);
 		BATseqbase(BATmirror(bn), 0);
@@ -845,9 +858,11 @@ MATproject_( BAT *map, BAT **bats, int len )
 	} else {
 		res = MATproject_any(map, bats, len);
 	}
-	res->tsorted = 0;
-	res->trevsorted = 0;
-	res->T->nonil = MATnonil(bats, len);
+	if( res) {
+		res->tsorted = 0;
+		res->trevsorted = 0;
+		res->T->nonil = MATnonil(bats, len);
+	}
 	return res;
 }
 
@@ -1601,6 +1616,9 @@ MATsort(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int rev)
 	int i, len = pci->argc-2;
 
 	(void) cntxt; (void) mb; (void) stk; 
+	if( bats ==NULL)
+		throw(SQL, "mat.sortTail",MAL_MALLOC_FAIL);
+
 	for (i=2; i<pci->argc; i++) {
 		bat id = *(bat*) getArgReference(stk,pci,i);
 		bats[i-2] = BATdescriptor(id);
@@ -1638,8 +1656,8 @@ error:
 	if (bats) {
 		for (i=0; i<len && bats[i]; i++)
 			BBPunfix(bats[i]->batCacheid);
+		GDKfree(bats);
 	}
-	GDKfree(bats);
 	if (map && res) {
 		map->tsorted = 0;
 		map->trevsorted = 0;
