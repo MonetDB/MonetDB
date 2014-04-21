@@ -1352,7 +1352,7 @@ static int getCPULoad(char cpuload[BUFSIZ]){
 			}  else 
 				cpu = atoi(s);
 			s= strchr(s,' ');
-			if ( s== 0) goto skip;
+			if ( s== 0 || cpu < 0 || cpu > 255) goto skip;
 			
 			while( *s && isspace((int)*s)) s++;
 			i= sscanf(s,LLFMT" "LLFMT" "LLFMT" "LLFMT" "LLFMT,  &user, &nice, &system, &idle, &iowait);
@@ -1367,7 +1367,7 @@ static int getCPULoad(char cpuload[BUFSIZ]){
 			corestat[cpu].idle = idle;
 			corestat[cpu].iowait = iowait;
 		} 
-		skip: while( *s && *s != '\n') s++;
+		skip: if(s) while( *s && *s != '\n') s++;
 	}
 
 	s= cpuload;
