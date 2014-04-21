@@ -194,7 +194,8 @@ runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Runt
 	if (malProfileMode == 0 && pci->recycle == 0)
 		return; /* mostly true */
 
-	if (getProfileCounter(PROFfootprint) && pci){
+	if (getProfileCounter(PROFfootprint) ){
+		if( pci)
 		for (i = 0; i < pci->retc; i++)
 			if ( isaBatType(getArgType(mb,pci,i)) && stk->stk[getArg(pci,i)].val.bval){
 				/* avoid simple alias operations */
