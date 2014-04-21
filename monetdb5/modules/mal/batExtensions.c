@@ -113,7 +113,6 @@ CMDBATnewDerived(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 
 	(void) mb;
 	(void) cntxt;
-	res = (int *) getArgReference(s, p, 0);
 	bid = *(int *) getArgReference(s, p, 1);
 	if ((b = BATdescriptor(bid)) == NULL) {
 		throw(MAL, "bat.new", INTERNAL_BAT_ACCESS);
@@ -175,7 +174,6 @@ CMDBATnewint(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	int *res;
 
 	(void) cntxt;
-	res = (int *) getArgReference(s, p, 0);
 	ht = getArgType(m, p, 1);
 	tt = getArgType(m, p, 2);
 	icap = *(int *) getArgReference(s, p, 3);
