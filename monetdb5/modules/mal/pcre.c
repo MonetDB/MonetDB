@@ -1798,8 +1798,20 @@ PCRElike_join(int *l, int *r, int *b, int *pat, str *esc, int case_sensitive)
 {
 	BUN p;
 	BAT *B = BATdescriptor(*b), *Bpat = BATdescriptor(*pat), *L, *R;
-	BAT *tr, *x, *j = BATnew(TYPE_oid, TYPE_oid, BATcount(B) * BATcount(Bpat));
+	BAT *tr, *x, *j;
 	BATiter pati = bat_iterator(Bpat);
+
+	if( B == NULL || Bpat == NULL){
+		if( B) BBPreleaseref(B->batCacheid);
+		if( Bpat) BBPreleaseref(Bpat->batCacheid);
+		throw(MAL,"pcre.like", MAL_MALLOC_FAIL);
+	}
+	j = BATnew(TYPE_oid, TYPE_oid, BATcount(B) * BATcount(Bpat));
+	if( j == NULL){
+		if( B) BBPreleaseref(B->batCacheid);
+		if( Bpat) BBPreleaseref(Bpat->batCacheid);
+		throw(MAL,"pcre.like", MAL_MALLOC_FAIL);
+	}
 
 	for(p = 0; p < BATcount(Bpat); p++) {
 		char *ppat = (str)BUNtail(pati, p);
@@ -1807,11 +1819,19 @@ PCRElike_join(int *l, int *r, int *b, int *pat, str *esc, int case_sensitive)
 		str err;
 
 		if (case_sensitive) {
-			if ((err = PCRElike_uselect_pcre( &r, b, &ppat, esc)) != MAL_SUCCEED)
+			if ((err = PCRElike_uselect_pcre( &r, b, &ppat, esc)) != MAL_SUCCEED){
+				BBPunfix(j->batCacheid);
+				BBPreleaseref(B->batCacheid);
+				BBPreleaseref(Bpat->batCacheid);
 				return err;
+			}
 		} else {
-			if ((err = PCREilike_uselect_pcre( &r, b, &ppat, esc)) != MAL_SUCCEED)
+			if ((err = PCREilike_uselect_pcre( &r, b, &ppat, esc)) != MAL_SUCCEED){
+				BBPunfix(j->batCacheid);
+				BBPreleaseref(B->batCacheid);
+				BBPreleaseref(Bpat->batCacheid);
 				return err;
+			}
 		}
 
 		tr = BATdescriptor(r);
