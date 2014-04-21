@@ -328,10 +328,9 @@ SRVPOOLdiscover(Client cntxt)
 			j = SRVPOOLnewServer(s); /*ref to servers registry*/
 			msg = RMTconnectScen(&conn, &servers[j].uri, &servers[j].usr, &servers[j].pwd, &scen);
 		}
-		if ( msg == MAL_SUCCEED ) {
+		if ( j >= 0 && msg == MAL_SUCCEED ) {
 			servers[j].conn = GDKstrdup(conn);
 #ifdef DEBUG_RUN_SRVPOOL
-		if( j>=0) 
 			mnstr_printf(cntxt->fdout,"#Worker site %d connection %s %s\n", j, servers[j].conn, s);
 #endif
 		} else
