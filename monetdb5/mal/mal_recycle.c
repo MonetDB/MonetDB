@@ -843,7 +843,8 @@ RECYCLEreuse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, RuntimeProfi
         p->recycle = NO_RECYCLING; /* No recycling for instructions with subsumption */
 		runtimeProfileInit(cntxt, mb, stk);
         runtimeProfileBegin(cntxt, mb, stk, i, &prof, 1);
-        (void) reenterMAL(cntxt,mb,i,i+1,stk);
+		if ( i >=0 && i < mb->stop)
+			(void) reenterMAL(cntxt,mb,i,i+1,stk);
 		runtimeProfileExit(cntxt, mb, stk, p, &prof);
         p->recycle= k;
         stk->keepAlive= j;
