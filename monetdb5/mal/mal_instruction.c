@@ -166,14 +166,14 @@ resizeMalBlk(MalBlkPtr mb, int maxstmt, int maxvar)
 
 	mb->stmt = (InstrPtr *) GDKrealloc(mb->stmt, maxstmt * sizeof(InstrPtr));
 	if ( mb->stmt == NULL)
-		GDKerror("resizeMalBlk:" MAL_MALLOC_FAIL);
+		goto wrapup;
 	for ( i = mb->ssize; i < maxstmt; i++)
 		mb->stmt[i] = 0;
 	mb->ssize = maxstmt;
 
 	mb->var = (VarPtr*) GDKrealloc(mb->var, maxvar * sizeof (VarPtr));
 	if ( mb->var == NULL)
-		GDKerror("resizeMalBlk:" MAL_MALLOC_FAIL);
+		goto wrapup;
 	for( i = mb->vsize; i < maxvar; i++)
 		mb->var[i] = 0;
 	mb->vsize = maxvar;
@@ -181,8 +181,11 @@ resizeMalBlk(MalBlkPtr mb, int maxstmt, int maxvar)
 	if ( mb->profiler){
 		mb->profiler = (ProfRecord *) GDKrealloc(mb->profiler, maxstmt * sizeof(ProfRecord));
 		if (mb->profiler == NULL)
-			GDKerror("resizeMalBlk:" MAL_MALLOC_FAIL);
+			goto wrapup;
 	}
+	return;
+wrapup:
+	GDKerror("resizeMalBlk:" MAL_MALLOC_FAIL);
 }
 /* The resetMalBlk code removes instructions, but without freeing the
  * space. This way the structure is prepared for re-use */
@@ -1316,6 +1319,8 @@ trimMalVariables(MalBlkPtr mb, MalStkPtr stk)
 str
 convertConstant(int type, ValPtr vr)
 {
+	if( type > GDKatomcnt )
+		throw(SYNTAX, "convertConstant", "type index out of bound");
 	if (vr->vtype == type)
 		return MAL_SUCCEED;
 	if (vr->vtype == TYPE_str) {
