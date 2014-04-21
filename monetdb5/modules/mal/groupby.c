@@ -98,6 +98,7 @@ GROUPcollect( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		if ( a->cols[a->last] == NULL){
 			for(a->last--; a->last>=0; a->last--)
 				BBPreleaseref(a->cols[a->last]->batCacheid);
+			GDKfree(a);
 			return NULL;
 		}
 		sample = BATcount(b) < 1000 ? BATcount(b): 1000;
