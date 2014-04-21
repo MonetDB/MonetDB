@@ -1016,7 +1016,7 @@ parseLibrary(Client cntxt)
 	} else
 		libnme = putName(nxt, l);
 	s = loadLibrary(libnme, TRUE);
-	libnme = putName(nxt, l);
+	(void) putName(nxt, l);
 	if (s){
 		mnstr_printf(cntxt->fdout, "#WARNING: %s\n", s);
 		GDKfree(s);
@@ -1563,8 +1563,8 @@ parseEnd(Client cntxt)
 	if ((varid = findVariableLength(curBlk, CURRENT(cntxt), l)) == -1) { \
 		arg = idCopy(cntxt, l);	 \
 		varid = newVariable(curBlk, arg, TYPE_any);	\
-	} \
-	else \
+		assert(varid >=  0);\
+	} else \
 		advance(cntxt, l);
 
 /* The parameter of parseArguments is the return value of the enclosing function. */
