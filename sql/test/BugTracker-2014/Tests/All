@@ -14,6 +14,6 @@ select-having.Bug-3458
 crash_on_or_with_in.Bug-3461
 in_incorrect_multi.Bug-3462
 crash_on_groupby_distinct_serial.Bug-3463
-local-temp-1.Bug-3468.sql 
-local-temp-2.Bug-3468.sql 
-
+local-temp-1.Bug-3468
+local-temp-2.Bug-3468
+python-microseconds.Bug-3439
