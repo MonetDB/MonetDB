@@ -40,6 +40,22 @@ def _extract_timezone(data):
 
     return dt, tzhour, tzmin
 
+def _extract_time(data, tzhour = 0, tzmin = 0):
+    time = data.split(':')
+    hour = int(time[0]) + tzhour
+    minute = int(time[1]) + tzmin
+    second = time[2]
+    if '.' in second:
+        second, microsecond = second.split('.')
+        while len(microsecond) < 6:
+            microsecond += '0'
+        while len(microsecond) > 6:
+            microsecond = microsecond[:-1]
+        microsecond = int(microsecond)
+    else:
+        microsecond = 0
+    second = int(second)
+    return hour, minute, second, microsecond
 
 def strip(data):
     """ returns a python string, with chopped off quotes,
@@ -55,29 +71,28 @@ def py_bool(data):
 def py_time(data):
     """ returns a python Time
     """
-    return Time(*[int(float(x)) for x in data.split(':')])
+    return Time(*_extract_time(data))
 
 
 def py_timetz(data):
     """ returns a python Time where data contains a tz code
     """
     dt, tzhour, tzmin = _extract_timezone(data)
-    hour, minute, second = [int(float(x)) for x in dt.split(':')]
-    return Time(hour + tzhour, minute + tzmin, second)
+    return Time(*_extract_time(dt, tzhour, tzmin))
 
 
 def py_date(data):
     """ Returns a python Date
     """
-    return Date(*[int(float(x)) for x in data.split('-')])
+    return Date(*[int(x) for x in data.split('-')])
 
 
 def py_timestamp(data):
     """ Returns a python Timestamp
     """
-    splitted = data.split(" ")
-    date = [int(float(x)) for x in splitted[0].split('-')]
-    time = [int(float(x)) for x in splitted[1].split(':')]
+    (datestr, timestr) = data.split(" ")
+    date = [int(x) for x in datestr.split('-')]
+    time = list(_extract_time(timestr))
     return Timestamp(*(date + time))
 
 
@@ -86,11 +101,9 @@ def py_timestamptz(data):
     """
     dt, tzhour, tzmin = _extract_timezone(data)
     (datestr, timestr) = dt.split(" ")
-    date = [int(float(x)) for x in datestr.split('-')]
-    time = [int(float(x)) for x in timestr.split(':')]
-    year, month, day = date
-    hour, minute, second = time
-    return Timestamp(year, month, day, hour + tzhour, minute + tzmin, second)
+    date = [int(x) for x in datestr.split('-')]
+    time = list(_extract_time(timestr, tzhour, tzmin))
+    return Timestamp(*(date + time))
 
 
 mapping = {

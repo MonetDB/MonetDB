@@ -357,7 +357,7 @@ where
     length is not NULL and length like '%\'' and hair like '%blonde%')
 UNION ALL
 (select name, (12*cast(substring(length from 0 for (position('\'' in length) - 1)) AS integer)
-    + cast(substring(length from (position('\'' in length) + 1) for (position('"' in length) + 1)) AS integer)) as height from victim v
+    + cast(substring(length from (position('\'' in length) + 1) for (position('"' in length) - position('\'' in length) - 1)) AS integer)) as height from victim v
     where
     length is not NULL and length like '%\'%"' and hair like '%blonde%')) AS h
 )
@@ -371,7 +371,7 @@ where
     length is not NULL and length like '%\'' and hair like '%brown%')
 UNION ALL
 (select name, (12*cast(substring(length from 0 for (position('\'' in length) - 1)) AS integer)
-    + cast(substring(length from (position('\'' in length) + 1) for (position('"' in length) + 1)) AS integer)) as height from victim v
+    + cast(substring(length from (position('\'' in length) + 1) for (position('"' in length) - position('\'' in length) - 1)) AS integer)) as height from victim v
     where
     length is not NULL and length like '%\'%"' and hair like '%brown%')) AS h
 );
