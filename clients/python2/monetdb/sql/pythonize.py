@@ -27,37 +27,16 @@ from monetdb.exceptions import ProgrammingError
 
 
 def _extract_timezone(data):
-    if data.find('+') != -1:
-        (dt, tz) = data.split("+")
-        (tzhour, tzmin) = [int(x) for x in tz.split(':')]
-    elif data.rfind('-') > data.find(' '):
-        data = data.split("-")
-        dt = '-'.join(data[:-1])
-        tz = data[-1]
-        (tzhour, tzmin) = [int(x) for x in tz.split(':')]
-        tzhour *= -1
-        tzmin *= -1
+    sign_symbol = data[-6]
+
+    if sign_symbol == '+':
+        sign = 1
+    elif sign_symbol == '-':
+        sign = -1
     else:
         raise ProgrammingError("no + or - in %s" % data)
 
-    return dt, tzhour, tzmin
-
-def _extract_time(data, tzhour = 0, tzmin = 0):
-    time = data.split(':')
-    hour = int(time[0]) + tzhour
-    minute = int(time[1]) + tzmin
-    second = time[2]
-    if '.' in second:
-        second, microsecond = second.split('.')
-        while len(microsecond) < 6:
-            microsecond += '0'
-        while len(microsecond) > 6:
-            microsecond = microsecond[:-1]
-        microsecond = int(microsecond)
-    else:
-        microsecond = 0
-    second = int(second)
-    return hour, minute, second, microsecond
+    return data[:-6], datetime.timedelta(hours=sign * int(data[-5:-3]), minutes=sign * int(data[-2:]))
 
 def strip(data):
     """ returns a python string, with chopped off quotes,
@@ -73,39 +52,33 @@ def py_bool(data):
 def py_time(data):
     """ returns a python Time
     """
-    return Time(*_extract_time(data))
+    return datetime.datetime.strptime(data, '%H:%M:%S').time()
 
 
 def py_timetz(data):
     """ returns a python Time where data contains a tz code
     """
-    dt, tzhour, tzmin = _extract_timezone(data)
-    return Time(*_extract_time(dt, tzhour, tzmin))
+    t, timezone_delta = _extract_timezone(data)
+    return (datetime.datetime.strptime(t, '%H:%M:%S') + timezone_delta).time()
 
 
 def py_date(data):
     """ Returns a python Date
     """
-    return Date(*[int(x) for x in data.split('-')])
+    return datetime.datetime.strptime(data, '%Y-%m-%d').date()
 
 
 def py_timestamp(data):
     """ Returns a python Timestamp
     """
-    (datestr, timestr) = data.split(" ")
-    date = [int(x) for x in datestr.split('-')]
-    time = list(_extract_time(timestr))
-    return Timestamp(*(date + time))
+    return datetime.datetime.strptime(data, '%Y-%m-%d %H:%M:%S.%f')
 
 
 def py_timestamptz(data):
     """ Returns a python Timestamp where data contains a tz code
     """
-    dt, tzhour, tzmin = _extract_timezone(data)
-    (datestr, timestr) = dt.split(" ")
-    date = [int(x) for x in datestr.split('-')]
-    time = list(_extract_time(timestr, tzhour, tzmin))
-    return Timestamp(*(date + time))
+    dt, timezone_delta = _extract_timezone(data)
+    return datetime.datetime.strptime(dt, '%Y-%m-%d %H:%M:%S.%f') + timezone_delta
 
 
 mapping = {
