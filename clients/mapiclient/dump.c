@@ -786,70 +786,69 @@ describe_table(Mapi mid, char *schema, char *tname, stream *toConsole, int forei
 	if (view) {
 		/* the table is actually a view */
 		mnstr_printf(toConsole, "%s\n", view);
-		goto doreturn;
-	}
+	} else {
+		/* the table is a real table */
+		mnstr_printf(toConsole, "CREATE TABLE \"%s\".\"%s\" ", schema, tname);
 
-	mnstr_printf(toConsole, "CREATE TABLE \"%s\".\"%s\" ", schema, tname);
+		if (dump_column_definition(mid, toConsole, schema, tname, NULL, foreign))
+			goto bailout;
+		mnstr_printf(toConsole, ";\n");
 
-	if (dump_column_definition(mid, toConsole, schema, tname, NULL, foreign))
-		goto bailout;
-	mnstr_printf(toConsole, ";\n");
+		snprintf(query, maxquerylen,
+			 "SELECT \"i\".\"name\", "		/* 0 */
+				"\"k\".\"name\", "		/* 1 */
+				"\"kc\".\"nr\", "		/* 2 */
+				"\"c\".\"name\" "		/* 3 */
+			 "FROM \"sys\".\"idxs\" AS \"i\" LEFT JOIN \"sys\".\"keys\" AS \"k\" "
+					"ON \"i\".\"name\" = \"k\".\"name\", "
+			      "\"sys\".\"objects\" AS \"kc\", "
+			      "\"sys\".\"_columns\" AS \"c\", "
+			      "\"sys\".\"schemas\" \"s\", "
+			      "\"sys\".\"_tables\" AS \"t\" "
+			 "WHERE \"i\".\"table_id\" = \"t\".\"id\" AND "
+			       "\"i\".\"id\" = \"kc\".\"id\" AND "
+			       "\"t\".\"id\" = \"c\".\"table_id\" AND "
+			       "\"kc\".\"name\" = \"c\".\"name\" AND "
+			       "(\"k\".\"type\" IS NULL OR \"k\".\"type\" = 1) AND "
+			       "\"t\".\"schema_id\" = \"s\".\"id\" AND "
+			       "\"s\".\"name\" = '%s' AND "
+			       "\"t\".\"name\" = '%s' "
+			 "ORDER BY \"i\".\"name\", \"kc\".\"nr\"", schema, tname);
+		if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid))
+			goto bailout;
+		cnt = 0;
+		while (mapi_fetch_row(hdl) != 0) {
+			char *i_name = mapi_fetch_field(hdl, 0);
+			char *k_name = mapi_fetch_field(hdl, 1);
+			char *kc_nr = mapi_fetch_field(hdl, 2);
+			char *c_name = mapi_fetch_field(hdl, 3);
 
-	snprintf(query, maxquerylen,
-		 "SELECT \"i\".\"name\", "		/* 0 */
-			"\"k\".\"name\", "		/* 1 */
-			"\"kc\".\"nr\", "		/* 2 */
-			"\"c\".\"name\" "		/* 3 */
-		 "FROM \"sys\".\"idxs\" AS \"i\" LEFT JOIN \"sys\".\"keys\" AS \"k\" "
-				"ON \"i\".\"name\" = \"k\".\"name\", "
-		      "\"sys\".\"objects\" AS \"kc\", "
-		      "\"sys\".\"_columns\" AS \"c\", "
-		      "\"sys\".\"schemas\" \"s\", "
-		      "\"sys\".\"_tables\" AS \"t\" "
-		 "WHERE \"i\".\"table_id\" = \"t\".\"id\" AND "
-		       "\"i\".\"id\" = \"kc\".\"id\" AND "
-		       "\"t\".\"id\" = \"c\".\"table_id\" AND "
-		       "\"kc\".\"name\" = \"c\".\"name\" AND "
-		       "(\"k\".\"type\" IS NULL OR \"k\".\"type\" = 1) AND "
-		       "\"t\".\"schema_id\" = \"s\".\"id\" AND "
-		       "\"s\".\"name\" = '%s' AND "
-		       "\"t\".\"name\" = '%s' "
-		 "ORDER BY \"i\".\"name\", \"kc\".\"nr\"", schema, tname);
-	if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid))
-		goto bailout;
-	cnt = 0;
-	while (mapi_fetch_row(hdl) != 0) {
-		char *i_name = mapi_fetch_field(hdl, 0);
-		char *k_name = mapi_fetch_field(hdl, 1);
-		char *kc_nr = mapi_fetch_field(hdl, 2);
-		char *c_name = mapi_fetch_field(hdl, 3);
+			if (mapi_error(mid))
+				goto bailout;
+			if (k_name != NULL) {
+				/* unique key, already handled */
+				continue;
+			}
 
+			if (strcmp(kc_nr, "0") == 0) {
+				if (cnt)
+					mnstr_printf(toConsole, ");\n");
+				mnstr_printf(toConsole,
+					     "CREATE INDEX \"%s\" ON \"%s\".\"%s\" (",
+					     i_name, schema, tname);
+				cnt = 1;
+			} else
+				mnstr_printf(toConsole, ", ");
+			mnstr_printf(toConsole, "\"%s\"", c_name);
+			if (mnstr_errnr(toConsole))
+				goto bailout;
+		}
+		if (cnt)
+			mnstr_printf(toConsole, ");\n");
 		if (mapi_error(mid))
 			goto bailout;
-		if (k_name != NULL) {
-			/* unique key, already handled */
-			continue;
-		}
-
-		if (strcmp(kc_nr, "0") == 0) {
-			if (cnt)
-				mnstr_printf(toConsole, ");\n");
-			mnstr_printf(toConsole,
-				     "CREATE INDEX \"%s\" ON \"%s\".\"%s\" (",
-				     i_name, schema, tname);
-			cnt = 1;
-		} else
-			mnstr_printf(toConsole, ", ");
-		mnstr_printf(toConsole, "\"%s\"", c_name);
-		if (mnstr_errnr(toConsole))
-			goto bailout;
 	}
-	if (cnt)
-		mnstr_printf(toConsole, ");\n");
-	if (mapi_error(mid))
-		goto bailout;
 
-  doreturn:
 	if (hdl)
 		mapi_close_handle(hdl);
 	if (view)
