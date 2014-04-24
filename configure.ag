@@ -2791,6 +2791,7 @@ save_LIBS="$LIBS"
 LIBS="$LIBS $MATH_LIBS"
 AC_CHECK_FUNCS([\
 				asctime_r \
+				backtrace \
 				ctime_r \
 				fabsf \
 				fcntl \

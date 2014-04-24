@@ -770,6 +770,8 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				} else if ((s->flag & VAR_DECLARE) == 0) {
 					char *buf = GDKmalloc(MAXIDENTLEN);
 
+					if (buf == NULL)
+						return -1;
 					(void) snprintf(buf, MAXIDENTLEN, "A%s", s->op1->op4.aval->data.val.sval);
 					q = newAssignment(mb);
 					q = pushArgumentId(mb, q, buf);
@@ -789,10 +791,14 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					}
 					tt = st->type->localtype;
 				       	buf = GDKmalloc(MAXIDENTLEN);
+					if (buf == NULL)
+						return -1;
 					(void) snprintf(buf, MAXIDENTLEN, "A%s", s->op1->op4.aval->data.val.sval);
 					q = newInstruction(mb, ASSIGNsymbol);
-					if (q == NULL)
+					if (q == NULL) {
+						GDKfree(buf);
 						return -1;
+					}
 					q->argc = q->retc = 0;
 					q = pushArgumentId(mb, q, buf);
 					q = pushNil(mb, q, tt);
@@ -807,6 +813,8 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					q = pushArgument(mb, q, sql->mvc->args[s->flag]->varid);
 				} else {
 					char *buf = GDKmalloc(SMALLBUFSIZ);
+					if (buf == NULL)
+						return -1;
 					(void) snprintf(buf, SMALLBUFSIZ, "A%d", s->flag);
 					q = pushArgumentId(mb, q, buf);
 				}
@@ -2454,10 +2462,14 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					break;
 				}
 				buf = GDKmalloc(MAXIDENTLEN);
+				if (buf == NULL)
+					return -1;
 				(void) snprintf(buf, MAXIDENTLEN, "A%s", vn);
 				q = newInstruction(mb, ASSIGNsymbol);
-				if (q == NULL)
+				if (q == NULL) {
+					GDKfree(buf);
 					return -1;
+				}
 				q->argc = q->retc = 0;
 				q = pushArgumentId(mb, q, buf);
 				if (q == NULL)
@@ -2850,6 +2862,8 @@ backend_create_func(backend *be, sql_func *f, list *restypes, list *ops)
 			int varid = 0;
 			char *buf = GDKmalloc(MAXIDENTLEN);
 
+			if (buf == NULL)
+				return -1;
 			if (a->name)
 				(void) snprintf(buf, MAXIDENTLEN, "A%s", a->name);
 			else
