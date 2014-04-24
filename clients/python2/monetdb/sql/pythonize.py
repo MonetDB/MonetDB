@@ -30,8 +30,10 @@ def _extract_timezone(data):
     if data.find('+') != -1:
         (dt, tz) = data.split("+")
         (tzhour, tzmin) = [int(x) for x in tz.split(':')]
-    elif data.find('-') != -1:
-        (dt, tz) = data.split("-")
+    elif data.rfind('-') > data.find(' '):
+        data = data.split("-")
+        dt = '-'.join(data[:-1])
+        tz = data[-1]
         (tzhour, tzmin) = [int(x) for x in tz.split(':')]
         tzhour *= -1
         tzmin *= -1
