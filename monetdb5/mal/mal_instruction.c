@@ -932,6 +932,7 @@ makeVarSpace(MalBlkPtr mb)
 	return 0;
 }
 
+/* swallows name argument */
 int
 newVariable(MalBlkPtr mb, str name, malType type)
 {
@@ -939,8 +940,10 @@ newVariable(MalBlkPtr mb, str name, malType type)
 
 	if (name == NULL)
 		return -1;
-	if (makeVarSpace(mb))
+	if (makeVarSpace(mb)) {
+		GDKfree(name);
 		return -1;
+	}
 	if (isTmpName(name)) {
 		int i = atol(name + (*name == TMPMARKER ? 1 : 2));
 
@@ -956,8 +959,11 @@ newVariable(MalBlkPtr mb, str name, malType type)
 	n = mb->vtop;
 	if (getVar(mb, n) == NULL){
 		getVar(mb, n) = (VarPtr) GDKzalloc(sizeof(VarRecord) + MAXARG * sizeof(int));
-		if ( getVar(mb,n) == NULL)
+		if ( getVar(mb,n) == NULL) {
 			GDKerror("newVariable:" MAL_MALLOC_FAIL);
+			GDKfree(name);
+			return -1;
+		}
 	}
 	mb->var[n]->name = name;
 	mb->var[n]->propc = 0;
@@ -1661,11 +1667,16 @@ pushReturn(MalBlkPtr mb, InstrPtr p, int varid)
  * pushArgument, but it is more efficient in searching and collecting
  * the information.
  * TODO */
+/* swallows name argument */
 InstrPtr
 pushArgumentId(MalBlkPtr mb, InstrPtr p, str name)
 {
 	int v;
 
+	if (p == NULL) {
+		GDKfree(name);
+		return NULL;
+	}
 	v = findVariable(mb, name);
 	if (v < 0) {
 		if ((v = newVariable(mb, name, getTypeIndex(name, -1, TYPE_any))) < 0) {
