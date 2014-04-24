@@ -3,11 +3,13 @@ nested_common_table_exp.Bug-3417
 query-crash.Bug-3418
 groupby.Bug-3421
 groupby_distict.Bug-3423
+integer-cast.Bug-3424
 current_timestamp.Bug-3427
 two-column-aggr-with-null.Bug-3428
 sample-crash.Bug-3429
 indices.Bug-3435
 utf8bom.Bug-3436
+python-microseconds.Bug-3439
 left-outer-join-with-and.Bug-3444
 setreadonly_forgets_changes.Bug-3446
 select-having.Bug-3458
@@ -16,4 +18,3 @@ in_incorrect_multi.Bug-3462
 crash_on_groupby_distinct_serial.Bug-3463
 local-temp-1.Bug-3468
 local-temp-2.Bug-3468
-python-microseconds.Bug-3439
