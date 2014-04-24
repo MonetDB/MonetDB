@@ -1247,7 +1247,7 @@ stack_set(mvc *sql, int var, char *name, sql_subtype *type, sql_rel *rel, sql_ta
 	v->type.type = NULL;
 	if (type) {
 		int tpe = type->type->localtype;
-		VALinit(&sql->vars[var].value, tpe, ATOMnil(tpe));
+		VALinit(&sql->vars[var].value, tpe, ATOMnilptr(tpe));
 		v->type = *type;
 	}
 	if (name)
