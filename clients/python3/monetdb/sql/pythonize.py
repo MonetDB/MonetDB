@@ -94,7 +94,7 @@ def py_date(data):
 def py_timestamp(data):
     """ Returns a python Timestamp
     """
-    (datestr, timestr) = dt.split(" ")
+    (datestr, timestr) = data.split(" ")
     date = [int(x) for x in datestr.split('-')]
     time = list(_extract_time(timestr))
     return Timestamp(*(date + time))
