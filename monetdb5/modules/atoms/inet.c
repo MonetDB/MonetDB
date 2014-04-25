@@ -75,13 +75,13 @@ INETfromString(str src, int *len, inet **retval)
 				/* this is for the cat his violin
 				throw(PARSE, "inet.fromStr", "Error while parsing, unexpected string '%s'", endptr);
 				*/
-				goto error;	/* yeah, I know, but I'm just simulating try-catch stuff in C now */
+				goto error;
 			}
 			if (parse > 255 || parse < 0) {
 				/* this is for the cat his violin
 				throw(PARSE, "inet.fromStr", "Illegal quad value: %d", parse);
 				*/
-				goto error;	/* yeah, I know, but I'm just simulating try-catch stuff in C now */
+				goto error;
 			}
 			switch (type) {
 				case 0:
@@ -127,14 +127,14 @@ INETfromString(str src, int *len, inet **retval)
 		/* this is for the cat his violin
 		throw(PARSE, "inet.fromStr", "Error while parsing, unexpected string '%s'", endptr);
 		*/
-		goto error;	/* yeah, I know, but I'm just simulating try-catch stuff in C now */
+		goto error;
 	}
 	if (type == 3) {
 		if (parse > 255 || parse < 0) {
 			/* this is for the cat his violin
 			throw(PARSE, "inet.fromStr", "Illegal quad value: %d", parse);
 			*/
-			goto error;	/* yeah, I know, but I'm just simulating try-catch stuff in C now */
+			goto error;
 		}
 		(*retval)->q4 = (unsigned char) parse;
 		/* default to an exact match (all bits) */
@@ -144,14 +144,14 @@ INETfromString(str src, int *len, inet **retval)
 			/* this is for the cat his violin
 			throw(PARSE, "inet.fromStr", "Illegal mask value: %d", parse);
 			*/
-			goto error;	/* yeah, I know, but I'm just simulating try-catch stuff in C now */
+			goto error;
 		}
 		(*retval)->mask = (unsigned char) parse;
 	} else {
 		/* this is for the cat his violin
 		   throw(PARSE, "inet.fromStr", "Error while parsing, unexpected string '%s'", endptr);
 		   */
-		goto error;	/* yeah, I know, but I'm just simulating try-catch stuff in C now */
+		goto error;
 	}
 
 	return(i);
@@ -178,9 +178,12 @@ INETtoString(str *retval, int *len, inet *handle)
 	if (in_isnil(value)) {
 		*len = snprintf(*retval, *len, "(nil)");
 	} else if (value->mask == 32) {
-		*len = snprintf(*retval, *len, "%d.%d.%d.%d", value->q1, value->q2, value->q3, value->q4);
+		*len = snprintf(*retval, *len, "%d.%d.%d.%d",
+						value->q1, value->q2, value->q3, value->q4);
 	} else {
-		*len = snprintf(*retval, *len, "%d.%d.%d.%d/%d", value->q1, value->q2, value->q3, value->q4, value->mask);
+		*len = snprintf(*retval, *len, "%d.%d.%d.%d/%d",
+						value->q1, value->q2, value->q3, value->q4,
+						value->mask);
 	}
 
 	return(*len);
@@ -222,7 +225,9 @@ INET_comp_EQ(bit *retval, inet * val1, inet * val2)
 {
 	if (in_isnil(val1) || in_isnil(val2)) {
 		*retval = bit_nil;
-	} else if (val1->q1 == val2->q1 && val1->q2 == val2->q2 && val1->q3 == val2->q3 && val1->q4 == val2->q4 && val1->mask == val2->mask) {
+	} else if (val1->q1 == val2->q1 && val1->q2 == val2->q2 &&
+			   val1->q3 == val2->q3 && val1->q4 == val2->q4 &&
+			   val1->mask == val2->mask) {
 		*retval = 1;
 	} else {
 		*retval = 0;
@@ -238,7 +243,9 @@ INET_comp_NEQ(bit *retval, inet * val1, inet * val2)
 {
 	if (in_isnil(val1) || in_isnil(val2)) {
 		*retval = bit_nil;
-	} else if (val1->q1 == val2->q1 && val1->q2 == val2->q2 && val1->q3 == val2->q3 && val1->q4 == val2->q4 && val1->mask == val2->mask) {
+	} else if (val1->q1 == val2->q1 && val1->q2 == val2->q2 &&
+			   val1->q3 == val2->q3 && val1->q4 == val2->q4 &&
+			   val1->mask == val2->mask) {
 		*retval = 0;
 	} else {
 		*retval = 1;
@@ -331,27 +338,21 @@ INET_comp_CW(bit *retval, inet * val1, inet * val2)
 		 * be contained within */
 		*retval = 0;
 	} else {
-		int mask;
-		unsigned char m[4] = { 255, 255, 255, 255 };
+		unsigned int mask;
+		unsigned char m[4];
+
+		if (val2->mask > 0)
+			mask = ~0 << (32 - val2->mask);
+		else
+			mask = 0;
+
+		m[0] = (mask >> 24) & 0xFF;
+		m[1] = (mask >> 16) & 0xFF;
+		m[2] = (mask >> 8) & 0xFF;
+		m[3] = mask & 0xFF;
 
 		/* all operations here are done byte based, to avoid byte sex
 		 * problems */
-
-		/* adjust the mask such that it represents a bit string where
-		 * each 1 represents a bit that should match
-		 * this is not much clarifying, I know */
-		mask = 32 - val2->mask;
-		if (mask > 0)
-			m[3] <<= mask;
-		mask -= 8;
-		if (mask > 0)
-			m[2] <<= mask;
-		mask -= 8;
-		if (mask > 0)
-			m[1] <<= mask;
-		mask -= 8;
-		if (mask > 0)
-			m[0] <<= mask;
 
 		/* if you want to see some bytes, remove this comment
 		   fprintf(stderr, "%x %x %x %x => %x %x %x %x  %x %x %x %x\n",
@@ -360,7 +361,10 @@ INET_comp_CW(bit *retval, inet * val1, inet * val2)
 		   val2->q4);
 		 */
 
-		if ((val1->q1 & m[0]) == (val2->q1 & m[0]) && (val1->q2 & m[1]) == (val2->q2 & m[1]) && (val1->q3 & m[2]) == (val2->q3 & m[2]) && (val1->q4 & m[3]) == (val2->q4 & m[3])) {
+		if ((val1->q1 & m[0]) == (val2->q1 & m[0]) &&
+			(val1->q2 & m[1]) == (val2->q2 & m[1]) &&
+			(val1->q3 & m[2]) == (val2->q3 & m[2]) &&
+			(val1->q4 & m[3]) == (val2->q4 & m[3])) {
 			*retval = 1;
 		} else {
 			*retval = 0;
@@ -426,27 +430,19 @@ INETbroadcast(inet * retval, inet * val)
 {
 	*retval = *val;
 	if (!in_isnil(val) && val->mask != 32) {
-		int mask;
-		unsigned char m[4] = { 255, 255, 255, 255 };
+		unsigned int mask;
+		unsigned char m[4];
 
-		/* all operations here are done byte based, to avoid byte sex
-		 * problems */
+		if (val->mask > 0)
+			mask = ~0 << (32 - val->mask);
+		else
+			mask = 0;
 
-		/* adjust the mask such that it represents a bit string where
-		 * each 1 represents a bit that should match
-		 * this is not much clarifying, I know */
-		mask = val->mask;
-		if (mask > 0)
-			m[0] >>= mask;
-		mask -= 8;
-		if (mask > 0)
-			m[1] >>= mask;
-		mask -= 8;
-		if (mask > 0)
-			m[2] >>= mask;
-		mask -= 8;
-		if (mask > 0)
-			m[3] >>= mask;
+		mask = ~mask;			/* invert the mask */
+		m[0] = (mask >> 24) & 0xFF;
+		m[1] = (mask >> 16) & 0xFF;
+		m[2] = (mask >> 8) & 0xFF;
+		m[3] = mask & 0xFF;
 
 		/* if you want to see some bytes, remove this comment
 		   fprintf(stderr, "%x %x %x %x => %x %x %x %x\n",
@@ -526,27 +522,18 @@ INETnetmask(inet * retval, inet * val)
 {
 	*retval = *val;
 	if (!in_isnil(val)) {
-		int mask;
-		unsigned char m[4] = { 255, 255, 255, 255 };
+		unsigned int mask;
+		unsigned char m[4];
 
-		/* all operations here are done byte based, to avoid byte sex
-		 * problems */
+		if (val->mask > 0)
+			mask = ~0 << (32 - val->mask);
+		else
+			mask = 0;
 
-		/* adjust the mask such that it represents a bit string where
-		 * each 1 represents a bit that should match
-		 * this is not much clarifying, I know */
-		mask = 32 - val->mask;
-		if (mask > 0)
-			m[3] <<= mask;
-		mask -= 8;
-		if (mask > 0)
-			m[2] <<= mask;
-		mask -= 8;
-		if (mask > 0)
-			m[1] <<= mask;
-		mask -= 8;
-		if (mask > 0)
-			m[0] <<= mask;
+		m[0] = (mask >> 24) & 0xFF;
+		m[1] = (mask >> 16) & 0xFF;
+		m[2] = (mask >> 8) & 0xFF;
+		m[3] = mask & 0xFF;
 
 		retval->q1 = m[0];
 		retval->q2 = m[1];
@@ -596,27 +583,18 @@ INETnetwork(inet * retval, inet * val)
 {
 	*retval = *val;
 	if (!in_isnil(val)) {
-		int mask;
-		unsigned char m[4] = { 255, 255, 255, 255 };
+		unsigned int mask;
+		unsigned char m[4];
 
-		/* all operations here are done byte based, to avoid byte sex
-		 * problems */
+		if (val->mask > 0)
+			mask = ~0 << (32 - val->mask);
+		else
+			mask = 0;
 
-		/* adjust the mask such that it represents a bit string where
-		 * each 1 represents a bit that should match
-		 * this is not much clarifying, I know */
-		mask = 32 - val->mask;
-		if (mask > 0)
-			m[3] <<= mask;
-		mask -= 8;
-		if (mask > 0)
-			m[2] <<= mask;
-		mask -= 8;
-		if (mask > 0)
-			m[1] <<= mask;
-		mask -= 8;
-		if (mask > 0)
-			m[0] <<= mask;
+		m[0] = (mask >> 24) & 0xFF;
+		m[1] = (mask >> 16) & 0xFF;
+		m[2] = (mask >> 8) & 0xFF;
+		m[3] = mask & 0xFF;
 
 		retval->q1 &= m[0];
 		retval->q2 &= m[1];
@@ -647,7 +625,8 @@ INETtext(str *retval, inet * val)
 	} else {
 		ip = GDKmalloc(sizeof(char) * 19);
 
-		sprintf(ip, "%d.%d.%d.%d/%d", val->q1, val->q2, val->q3, val->q4, val->mask);
+		snprintf(ip, sizeof(char) * 19, "%d.%d.%d.%d/%d",
+				val->q1, val->q2, val->q3, val->q4, val->mask);
 
 		*retval = ip;
 	}
@@ -666,27 +645,24 @@ INETabbrev(str *retval, inet * val)
 	if (in_isnil(val)) {
 		*retval = GDKstrdup(str_nil);
 	} else {
-		int mask = 32 - val->mask;
-		unsigned char m[4] = { 255, 255, 255, 255 };
+		unsigned int mask;
+		unsigned char m[4];
 
-		/* Zero all bits that are allowed to be in there according to
-		 * the netmask length.  Afterwards it is easy to see if there
-		 * are bits set to the right of the mask, since then all four
-		 * quads are zero. */
-		mask = val->mask;
-		if (mask > 0)
-			m[0] >>= mask;
-		mask -= 8;
-		if (mask > 0)
-			m[1] >>= mask;
-		mask -= 8;
-		if (mask > 0)
-			m[2] >>= mask;
-		mask -= 8;
-		if (mask > 0)
-			m[3] >>= mask;
+		if (val->mask > 0)
+			mask = ~0 << (32 - val->mask);
+		else
+			mask = 0;
+		mask = ~mask;			/* invert the mask */
 
-		if ((val->q1 & m[0]) != 0 || (val->q2 & m[1]) != 0 || (val->q3 & m[2]) != 0 || (val->q4 & m[3]) != 0) {
+		m[0] = (mask >> 24) & 0xFF;
+		m[1] = (mask >> 16) & 0xFF;
+		m[2] = (mask >> 8) & 0xFF;
+		m[3] = mask & 0xFF;
+
+		if ((val->q1 & m[0]) != 0 ||
+			(val->q2 & m[1]) != 0 ||
+			(val->q3 & m[2]) != 0 ||
+			(val->q4 & m[3]) != 0) {
 			mask = 32;
 		} else {
 			mask = val->mask;
@@ -703,15 +679,18 @@ INETabbrev(str *retval, inet * val)
 		ip = GDKmalloc(sizeof(char) * 19);
 
 		if (mask > 24) {
-			sprintf(ip, "%d.%d.%d.%d/%d", val->q1, val->q2, val->q3, val->q4, val->mask);
+			snprintf(ip, sizeof(char) * 19, "%d.%d.%d.%d/%d",
+					 val->q1, val->q2, val->q3, val->q4, val->mask);
 		} else if (mask > 16) {
-			sprintf(ip, "%d.%d.%d/%d", val->q1, val->q2, val->q3, val->mask);
+			snprintf(ip, sizeof(char) * 19, "%d.%d.%d/%d",
+					 val->q1, val->q2, val->q3, val->mask);
 		} else if (mask > 8) {
-			sprintf(ip, "%d.%d/%d", val->q1, val->q2, val->mask);
+			snprintf(ip, sizeof(char) * 19, "%d.%d/%d",
+					 val->q1, val->q2, val->mask);
 		} else if (mask > 0) {
-			sprintf(ip, "%d/%d", val->q1, val->mask);
+			snprintf(ip, sizeof(char) * 19, "%d/%d", val->q1, val->mask);
 		} else {
-			sprintf(ip, "/0");
+			snprintf(ip, sizeof(char) * 19, "/0");
 		}
 
 		*retval = ip;

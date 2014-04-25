@@ -429,8 +429,8 @@ recover_dir(int farmid, int direxists)
 {
 	if (direxists) {
 		/* just try; don't care about these non-vital files */
-		GDKunlink(farmid, BATDIR, "BBP", "bak");
-		GDKmove(farmid, BATDIR, "BBP", "dir", BATDIR, "BBP", "bak");
+		(void) GDKunlink(farmid, BATDIR, "BBP", "bak");
+		(void) GDKmove(farmid, BATDIR, "BBP", "dir", BATDIR, "BBP", "bak");
 	}
 	return GDKmove(farmid, BAKDIR, "BBP", "dir", BATDIR, "BBP", "dir");
 }
@@ -3215,14 +3215,11 @@ BBPprepare(bit subcommit)
 		ret = (BBPrecover_subdir() < 0);
 	}
 	if (backup_files == 0) {
-		struct stat st;
-
 		backup_dir = 0;
-		ret = (stat(BAKDIR, &st) == 0 && BBPrecover(0));
-
+		ret = BBPrecover(0);
 		if (ret == 0) {
-			/* make a new BAKDIR */
-			ret = mkdir(BAKDIR, 0755);
+			ret = (mkdir(BAKDIR, 0755) < 0 && errno != EEXIST);
+			/* if BAKDIR already exists, don't signal error */
 			IODEBUG THRprintf(GDKstdout, "#mkdir %s = %d\n", BAKDIR, ret);
 		}
 	}
@@ -3482,7 +3479,6 @@ force_move(int farmid, const char *srcdir, const char *dstdir, const char *name)
 
 	if ((p = strrchr(name, '.')) != NULL && strcmp(p, ".kill") == 0) {
 		/* Found a X.new.kill file, ie remove the X.new file */
-		struct stat st;
 		ptrdiff_t len = p - name;
 		long_str srcpath;
 
@@ -3492,23 +3488,19 @@ force_move(int farmid, const char *srcdir, const char *dstdir, const char *name)
 
 		/* step 1: remove the X.new file that is going to be
 		 * overridden by X */
-		if (stat(dstpath, &st) == 0) {
-			ret = unlink(dstpath);	/* clear destination */
-			if (ret) {
-				/* if it exists and cannot be removed,
-				 * all this is going to fail */
-				GDKsyserror("force_move: unlink(%s)\n", dstpath);
-				GDKfree(dstpath);
-				return ret;
-			}
+		if (unlink(dstpath) < 0 && errno != ENOENT) {
+			/* if it exists and cannot be removed, all
+			 * this is going to fail */
+			GDKsyserror("force_move: unlink(%s)\n", dstpath);
+			GDKfree(dstpath);
+			return -1;
 		}
 		GDKfree(dstpath);
 
 		/* step 2: now remove the .kill file. This one is
 		 * crucial, otherwise we'll never finish recovering */
 		killfile = GDKfilepath(farmid, srcdir, name, NULL);
-		ret = unlink(killfile);
-		if (ret)
+		if ((ret = unlink(killfile)) < 0)
 			GDKsyserror("force_move: unlink(%s)\n", killfile);
 		GDKfree(killfile);
 		return ret;
@@ -3558,7 +3550,8 @@ BBPrecover(int farmid)
 	dstdir = dstpath + j;
 	IODEBUG THRprintf(GDKstdout, "#BBPrecover(start)\n");
 
-	mkdir(LEFTDIR, 0755);
+	if (mkdir(LEFTDIR, 0755) < 0 && errno != EEXIST)
+		return -1;;
 
 	/* move back all files */
 	while ((dent = readdir(dirp)) != NULL) {
@@ -3730,7 +3723,6 @@ BBPdiskscan(const char *parent)
 		const char *p;
 		bat bid;
 		int ok, delete;
-		struct stat st;
 
 		if (dent->d_name[0] == '.')
 			continue;	/* ignore .dot files and directories (. ..) */
@@ -3760,11 +3752,6 @@ BBPdiskscan(const char *parent)
 			/* it was a directory */
 			continue;
 		}
-		if (stat(fullname, &st)) {
-			IODEBUG mnstr_printf(GDKstdout,"BBPdiskscan: stat(%s)", fullname);
-			continue;
-		}
-		IODEBUG THRprintf(GDKstdout, "#BBPdiskscan: stat(%s) = 0\n", fullname);
 
 		if (ok == FALSE || !persistent_bat(bid)) {
 			delete = TRUE;
@@ -3798,7 +3785,7 @@ BBPdiskscan(const char *parent)
 			break;
 		}
 		if (delete) {
-			if (unlink(fullname) < 0) {
+			if (unlink(fullname) < 0 && errno != ENOENT) {
 				GDKsyserror("BBPdiskscan: unlink(%s)", fullname);
 				continue;
 			}

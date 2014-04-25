@@ -326,7 +326,7 @@ MACROprocessor(Client cntxt, MalBlkPtr mb, Symbol t)
 
 /*
  * Macro inversions map a consecutive sequences of MAL instructions
- * into a single call. Subsequence resolution will bind it with the proper
+ * into a single call. Subsequent resolution will bind it with the proper
  * function. The pattern being replaced should be a self-standing
  * assignment. [could be improved]
  *

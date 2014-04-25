@@ -519,16 +519,22 @@ OPTbakePlans(Client cntxt, MalBlkPtr mb, Slices *slices)
 	plantag= OIDnew(1);
 	snprintf(nme,BUFSIZ,"%s_plan"OIDFMT,getFunctionId( getInstrPtr(mb,0)), plantag);
 	s = newFunction(userRef, putName(nme, strlen(nme)),FUNCTIONsymbol);
-	if ( s == NULL)
+	if ( s == NULL){
+		GDKfree(status);
+		GDKfree(vars);
 		return;
+	}
 	freeMalBlk(s->def);
 	s->def = copyMalBlk(mb);
 	plan = s->def;
 
 	limit = plan->stop;
 	old = plan->stmt;
-	if ( newMalBlkStmt(plan,plan->ssize) < 0 )
+	if ( newMalBlkStmt(plan,plan->ssize) < 0 ){
+		GDKfree(status);
+		GDKfree(vars);
 		return;
+	}
 
 #ifdef _DEBUG_OPT_CENTIPEDE_
 	mnstr_printf(cntxt->fdout,"#Remote plan framework\n");
@@ -955,6 +961,7 @@ OPTbakePlans(Client cntxt, MalBlkPtr mb, Slices *slices)
 #endif
 	GDKfree(old);
 	GDKfree(vars);
+	GDKfree(status);
 }
 
 /*
@@ -1087,6 +1094,8 @@ OPTcentipedeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	if (msg || mb->errors ) {
 		/* restore MAL block */
 		mnstr_printf(cntxt->fdout,"#partition %s\n", msg?msg:"generic error");
+		if( msg)
+			GDKfree(msg);
 #ifdef _DEBUG_OPT_CENTIPEDE_
 		printFunction(cntxt->fdout, mb, 0, LIST_MAL_STMT);
 #endif

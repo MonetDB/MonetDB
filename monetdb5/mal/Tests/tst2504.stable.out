@@ -9,10 +9,14 @@ stdout of test 'tst2504` in directory 'monetdb5/mal` itself:
 # Serving database 'mTests_src_mal', using 4 threads
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008- MonetDB B.V., all rights reserved
-# Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:34870/
-!SyntaxException:user.random[0]:RETURN missing
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:34673/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-21340/.s.monetdb.34673
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+# MonetDB/DataCell loaded
 factory user.random(seed:int):int;
     random := seed;
     i := seed;
@@ -22,11 +26,8 @@ factory user.random(seed:int):int;
     i := calc.*(125,i);
     i := calc.%(i,32767);
     yield random := i;
+    return random := 0;
 end random;
-!TypeException:user.main[3]:'user.random' undefined in: r1:int := user.random(_4:int)
-!TypeException:user.main[5]:'user.random' undefined in: r2:int := user.random(_4:int)
-!TypeException:user.main[7]:'user.random' undefined in: r2:int := user.random(_4:int)
-!TypeException:user.main[9]:'user.random' undefined in: r2:int := user.random(_4:int)
 function user.main():void;
 # The prototypical factory construct 
 # test factory return and restart 
@@ -39,6 +40,10 @@ function user.main():void;
     r2 := user.random(1);
     io.print(r2);
 end main;
+[ 125 ]
+[ 15625 ]
+[ 0 ]
+[ 125 ]
 
 # 08:01:06 >  
 # 08:01:06 >  Done.

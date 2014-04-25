@@ -515,10 +515,7 @@ OPTmapreduceImplementation(
 	snprintf(nme, IDLENGTH, "%smap", getFunctionId(getInstrPtr(reduce, 0)));
 
 	/* zap */
-	if (newMalBlkStmt(map, map->ssize) < 0) {
-		return 0;
-	}
-	if (newMalBlkStmt(reduce, reduce->ssize) < 0) {
+	if (newMalBlkStmt(map, map->ssize) < 0 || newMalBlkStmt(reduce, reduce->ssize) < 0) {
 		freeMalBlk(map);
 		return 0;
 	}

@@ -28,7 +28,7 @@
 #endif
 #include "mutils.h"
 
-#ifdef HAVE_EXECINFO_H
+#if defined(HAVE_EXECINFO_H) && defined(HAVE_BACKTRACE)
 #include <execinfo.h>
 #endif
 
@@ -204,12 +204,16 @@ dirname(char *path)
 int
 MT_lockf(char *filename, int mode, off_t off, off_t len)
 {
-	int ret = 1, illegalmode = 0, fd = -1;
+	int ret = 1, fd = -1;
 	OVERLAPPED ov;
 	OSVERSIONINFO os;
-	HANDLE fh = CreateFile(filename,
-			       GENERIC_READ | GENERIC_WRITE, 0,
-			       NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+	HANDLE fh;
+	static struct lockedfiles {
+		struct lockedfiles *next;
+		char *filename;
+		int fildes;
+	} *lockedfiles;
+	struct lockedfiles **fpp, *fp;
 
 	os.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
 	GetVersionEx(&os);
@@ -230,36 +234,59 @@ MT_lockf(char *filename, int mode, off_t off, off_t len)
 #endif
 #endif
 
-	if (fh == NULL) {
+	if (mode == F_ULOCK) {
+		for (fpp = &lockedfiles; (fp = *fpp) != NULL; fpp = &fp->next) {
+			if (strcmp(fp->filename, filename) == 0) {
+				free(fp->filename);
+				fd = fp->fildes;
+				fh = (HANDLE) _get_osfhandle(fd);
+				fp = *fpp;
+				*fpp = fp->next;
+				free(fp);
+				ret = UnlockFileEx(fh, 0, len, 0, &ov);
+				return ret ? 0 : -1;
+			}
+		}
+		/* didn't find the locked file, try opening the file
+		 * directly */
+		fh = CreateFile(filename,
+				GENERIC_READ | GENERIC_WRITE, 0,
+				NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+		if (fh == INVALID_HANDLE_VALUE)
+			return -2;
+		ret = UnlockFileEx(fh, 0, len, 0, &ov);
+		CloseHandle(fh);
+		return 0;
+	}
+
+	fd = open(filename, O_CREAT | O_RDWR | O_TEXT, MONETDB_MODE);
+	if (fd < 0)
+		return -2;
+	fh = (HANDLE) _get_osfhandle(fd);
+	if (fh == INVALID_HANDLE_VALUE) {
+		close(fd);
 		return -2;
 	}
-	if (mode == F_ULOCK) {
-		if (os.dwPlatformId != VER_PLATFORM_WIN32_WINDOWS)
-			ret = UnlockFileEx(fh, 0, 0, len, &ov);
-	} else if (mode == F_TLOCK) {
-		if (os.dwPlatformId != VER_PLATFORM_WIN32_WINDOWS)
-			ret = LockFileEx(fh, LOCKFILE_FAIL_IMMEDIATELY | LOCKFILE_EXCLUSIVE_LOCK, 0, 0, len, &ov);
+
+	if (mode == F_TLOCK) {
+		ret = LockFileEx(fh, LOCKFILE_FAIL_IMMEDIATELY | LOCKFILE_EXCLUSIVE_LOCK, 0, len, 0, &ov);
 	} else if (mode == F_LOCK) {
-		if (os.dwPlatformId != VER_PLATFORM_WIN32_WINDOWS)
-			ret = LockFileEx(fh, LOCKFILE_EXCLUSIVE_LOCK, 0, 0, len, &ov);
+		ret = LockFileEx(fh, LOCKFILE_EXCLUSIVE_LOCK, 0, len, 0, &ov);
 	} else {
-		illegalmode = 1;
-	}
-	CloseHandle(fh);
-	if (illegalmode) {
+		close(fd);
 		SetLastError(ERROR_INVALID_DATA);
+		return -2;
 	}
 	if (ret != 0) {
-		fd = open(filename, O_CREAT | O_RDWR, MONETDB_MODE);
-		if (fd < 0) {
-			/* this is nasty, but I "trust" windows that it in this case
-			 * also cannot open the file into a filehandle any more, so
-			 * unlocking is in vain. */
-			return -2;
-		} else {
-			return fd;
+		if ((fp = malloc(sizeof(*fp))) != NULL &&
+		    (fp->filename = strdup(filename)) != NULL) {
+			fp->fildes = fd;
+			fp->next = lockedfiles;
+			lockedfiles = fp;
 		}
+		return fd;
 	} else {
+		close(fd);
 		return -1;
 	}
 }
@@ -292,20 +319,25 @@ lockf(int fd, int cmd, off_t len)
 }
 #endif
 
+#ifndef O_TEXT
+#define O_TEXT 0
+#endif
 /* returns -1 when locking failed,
  * returns -2 when the lock file could not be opened/created
  * returns the (open) file descriptor to the file otherwise */
 int
 MT_lockf(char *filename, int mode, off_t off, off_t len)
 {
-	int fd = open(filename, O_CREAT | O_RDWR, MONETDB_MODE);
+	int fd = open(filename, O_CREAT | O_RDWR | O_TEXT, MONETDB_MODE);
 
 	if (fd < 0)
 		return -2;
 
-	if (lseek(fd, off, SEEK_SET) == off && lockf(fd, mode, len) == 0) {
+	if (lseek(fd, off, SEEK_SET) >= 0 &&
+	    lockf(fd, mode, len) == 0) {
 		/* do not close else we lose the lock we want */
-		return fd;
+		(void) lseek(fd, 0, SEEK_SET); /* move seek pointer back */
+		return mode == F_ULOCK ? 0 : fd;
 	}
 	close(fd);
 	return -1;
@@ -313,7 +345,7 @@ MT_lockf(char *filename, int mode, off_t off, off_t len)
 
 #endif
 
-#ifdef HAVE_EXECINFO_H
+#if defined(HAVE_EXECINFO_H) && defined(HAVE_BACKTRACE)
 
 /* Obtain a backtrace and print it to stdout. */
 void

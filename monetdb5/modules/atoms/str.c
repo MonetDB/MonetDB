@@ -1775,6 +1775,7 @@ STRIconv(str *res, str *o, str *fp, str *tp)
 	if (iconv(cd, &from, &len, &r, &size) == (size_t) - 1) {
 		GDKfree(*res);
 		*res = NULL;
+		iconv_close(cd);
 		throw(MAL, "str.iconv", "String conversion failed from (%s) to (%s)", f, t);
 	}
 	*r = 0;

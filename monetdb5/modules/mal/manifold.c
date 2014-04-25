@@ -168,7 +168,7 @@ MANIFOLDtypecheck(Client cntxt, MalBlkPtr mb, InstrPtr pci){
 	MalBlkPtr nmb;
 	MALfcn fcn;
 
-	if ( pci->argc > 8) // limitation on MANIFOLDjob
+	if ( pci->argc > 8 || getModuleId(pci) == NULL) // limitation on MANIFOLDjob
 		return NULL;
 	// We need a private MAL context to resolve the function call
 	nmb = newMalBlk(MAXVARS, STMT_INCREMENT);

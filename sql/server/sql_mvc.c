@@ -38,7 +38,7 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 	int first = 0;
 	char *logdir = "sql_logs";
 
-	mvc_debug = debug;
+	mvc_debug = debug&4;
 	if (mvc_debug)
 		fprintf(stderr, "#mvc_init logdir %s\n", logdir);
 	keyword_init();
@@ -1247,7 +1247,7 @@ stack_set(mvc *sql, int var, char *name, sql_subtype *type, sql_rel *rel, sql_ta
 	v->type.type = NULL;
 	if (type) {
 		int tpe = type->type->localtype;
-		VALinit(&sql->vars[var].value, tpe, ATOMnil(tpe));
+		VALinit(&sql->vars[var].value, tpe, ATOMnilptr(tpe));
 		v->type = *type;
 	}
 	if (name)

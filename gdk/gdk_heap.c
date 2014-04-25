@@ -655,15 +655,15 @@ HEAPload_intern(Heap *h, const char *nme, const char *ext, const char *suffix, i
 	dstpath = GDKfilepath(h->farmid, BATDIR, nme, ext);
 	srcpath = GDKrealloc(srcpath, strlen(srcpath) + strlen(suffix) + 1);
 	strcat(srcpath, suffix);
-	ret = stat(dstpath, &st);
 	if (stat(srcpath, &st) == 0) {
 		int t0;
-		if (ret == 0) {
-			t0 = GDKms();
-			ret = unlink(dstpath);
-			HEAPDEBUG fprintf(stderr, "#unlink %s = %d (%dms)\n", dstpath, ret, GDKms() - t0);
-		}
 		t0 = GDKms();
+		ret = unlink(dstpath);
+		if (ret < 0 && errno == ENOENT)
+			ret = 0; /* no error if it doesn't exist */
+		HEAPDEBUG fprintf(stderr, "#unlink %s = %d (%dms)\n", dstpath, ret, GDKms() - t0);
+		t0 = GDKms();
+		/* coverity[toctou] */
 		ret = rename(srcpath, dstpath);
 		if (ret < 0) {
 			GDKsyserror("HEAPload: rename of %s failed\n", srcpath);

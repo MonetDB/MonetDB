@@ -12,8 +12,6 @@ stdout of test 'ADT_not_available.SF-850137` in directory 'monetdb5/tests/BugDay
 #u := url.new(void,url);
 #
 !TypeException:user.main[1]:'url.new' undefined in: u:any := url.new(void:any, url:any)
-!TypeException:user.main[1]:'void' may not be used before being initialized
-!TypeException:user.main[1]:'url' may not be used before being initialized
 function user.main():void;
     u := url.new(void,url);
 end main;

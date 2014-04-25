@@ -74,6 +74,8 @@ name_find_column( sql_rel *rel, char *rname, char *name, int pnr, sql_rel **bt )
 				rname = e->l;
 			name = e->r;
 		}
+		if (name && !t)
+			return rel->r;
 		if (rname && strcmp(t->base.name, rname) != 0)
 			return NULL;
 		for (cn = t->columns.set->h; cn; cn = cn->next) {
@@ -562,6 +564,8 @@ find_basetable( sql_rel *r)
 		return NULL;
 	switch(r->op) {
 	case op_basetable:	
+		if (!r->l)
+			return NULL;
 		return r;
 	case op_project:
 	case op_select:
@@ -2908,6 +2912,94 @@ rel_push_aggr_down(int *changes, mvc *sql, sql_rel *rel)
 }
 
 /*
+ * Rewrite group(project(join(A,Dict)[a.i==dict.i])[...dict.n])[dict.n][ ... dict.n ]
+ * into
+ * 	project(join(groupby (A)[a.i],[a.i]), Dict)[a.i==dict.i])[dict.n] 
+ */
+static sql_rel *
+rel_push_groupby_down(int *changes, mvc *sql, sql_rel *rel) 
+{
+	sql_rel *p = rel->l;
+	list *gbe = rel->r;
+
+	if (rel->op == op_groupby && gbe && p) {
+		sql_rel *j = p->l;
+		sql_rel *jl, *jr;
+		node *n;
+
+		if (p->op != op_project || !j || j->op != op_join || list_length(j->exps) != 1)
+			return rel;
+		jl = j->l;
+		jr = j->r;
+
+		/* check if jr is a dict with index and var still used */
+		if (jr->op != op_basetable || jr->l || !jr->r || list_length(jr->exps) != 2) 
+			return rel;
+
+		/* check if group by is done on dict column */
+		for(n = gbe->h; n; n = n->next) {
+			sql_exp *ge = n->data, *pe = NULL, *e = NULL;
+
+			/* find group by exp in project, then in dict */
+			pe = rel_find_exp(p, ge);
+			if (pe) /* find project exp in right hand of join, ie dict */
+				e = rel_find_exp(jr, pe);
+			if (pe && e) {  /* Rewrite: join with dict after the group by */
+				list *pexps = rel_projections(sql, rel, NULL, 1, 1), *npexps;
+				node *m;
+				sql_exp *ne = j->exps->h->data; /* join exp */
+				p->l = jl;	/* Project now only on the left side of the join */
+
+				ne = ne->l; 	/* The left side of the compare is the index of the left */
+
+				/* find ge reference in new projection list */
+				npexps = sa_list(sql->sa);
+				for (m = pexps->h; m; m = m->next) {
+					sql_exp *a = m->data;
+
+					if (exp_refers(a, ge)) { 
+						sql_exp *sc = jr->exps->t->data;
+						sql_exp *e = exp_column(sql->sa, exp_relname(sc), exp_name(sc), exp_subtype(sc), sc->card, has_nil(sc), is_intern(sc));
+						exp_setname(sql->sa, e, exp_relname(a), exp_name(a));
+						a = e;
+					}
+					append(npexps, a);
+				}
+
+				/* find ge in aggr list */
+				for (m = rel->exps->h; m; m = m->next) {
+					sql_exp *a = m->data;
+
+					if (exp_match_exp(a, ge) || exp_refers(a, ge)) {
+						a = exp_column(sql->sa, exp_relname(ne), exp_name(ne), exp_subtype(ne), ne->card, has_nil(ne), is_intern(ne));
+						exp_setname(sql->sa, a, exp_relname(ne), exp_name(ne));
+						m->data = a;
+					}
+				}
+
+				/* change alias pe, ie project out the index  */
+				pe->l = exp_relname(ne); 
+				pe->r = exp_name(ne);
+				exp_setname(sql->sa, pe, exp_relname(ne), exp_name(ne));
+
+				/* change alias ge */
+				ge->l = exp_relname(pe); 
+				ge->r = exp_name(pe);
+				exp_setname(sql->sa, ge, exp_relname(pe), exp_name(pe));
+
+				/* add join */
+				j->l = rel;
+				rel = j;
+				rel = rel_project(sql->sa, rel, npexps);
+				(*changes)++;
+			}
+		}
+		(void)sql;
+	}
+	return rel;
+}
+
+/*
  * Push select down, pushes the selects through (simple) projections. Also
  * it cleans up the projections which become useless.
  */
@@ -3785,7 +3877,6 @@ rel_groupby_order(int *changes, mvc *sql, sql_rel *rel)
  * The reduced group by and aggr expressions are restored via
  * a join with the base table (ie which is similar to late projection).
  */
-
 static sql_rel *
 rel_reduce_groupby_exps(int *changes, mvc *sql, sql_rel *rel) 
 {
@@ -4195,6 +4286,23 @@ exp_use_consts(mvc *sql, sql_exp *e, list *consts)
 	return NULL;
 }
 
+static list *
+exps_remove_dictexps(mvc *sql, list *exps, sql_rel *r)
+{
+	node *n;
+	list *nl = new_exp_list(sql->sa);
+
+	if (!exps)
+		return nl;
+	for(n = exps->h; n; n = n->next) {
+		sql_exp *arg = n->data;
+
+		if (!list_find_exp(r->exps, arg->l) && !list_find_exp(r->exps, arg->r)) 
+			append(nl, arg);
+	}
+	return nl;
+}
+
 static sql_rel *
 rel_remove_join(int *changes, mvc *sql, sql_rel *rel)
 {
@@ -4203,7 +4311,6 @@ rel_remove_join(int *changes, mvc *sql, sql_rel *rel)
 		sql_rel *r = rel->r;
 		int lconst = 0, rconst = 0;
 
-
 		if (!l || rel_is_ref(l) || !r || rel_is_ref(r) ||
 		   (l->op != op_project && r->op != op_project)) 
 			return rel;
@@ -4211,24 +4318,87 @@ rel_remove_join(int *changes, mvc *sql, sql_rel *rel)
 			lconst = 1;
 		if (r->op == op_project && exps_are_atoms(r->exps))
 			rconst = 1;
-		if (!lconst && !rconst)
+		if (lconst || rconst) {
+			(*changes)++;
+			/* use constant (instead of alias) in expressions */
+			if (lconst) {
+				sql_rel *s = l;
+				l = r;
+				r = s;
+			}
+			rel->exps = exps_use_consts(sql, rel->exps, r->exps);
+			/* change into select */
+			rel->op = op_select;
+			rel->l = l;
+			rel->r = NULL;
+			/* wrap in a project including, the constant columns */
+			l->subquery = 0;
+			rel = rel_project(sql->sa, rel, rel_projections(sql, l, NULL, 1, 1));
+			list_merge(rel->exps, r->exps, (fdup)NULL);
+		}
+	}
+	if (is_join(rel->op) && 0) {
+		sql_rel *l = rel->l;
+		sql_rel *r = rel->r;
+		int ldict = 0, rdict = 0;
+
+		if (!l || rel_is_ref(l) || !r || rel_is_ref(r) ||
+		   (l->op != op_basetable && r->op != op_basetable)) 
+			return rel;
+		/* check if dict (last column) isn't used, one column only */
+		if (l->op == op_basetable && !l->l && list_length(l->exps) <= 1)
+			ldict = 1;
+		if (r->op == op_basetable && !r->l && list_length(r->exps) <= 1)
+			rdict = 1;
+		if (!ldict && !rdict)
 			return rel;
 		(*changes)++;
-		/* use constant (instead of alias) in expressions */
-		if (lconst) {
+
+		assert(0);
+		if (ldict) {
 			sql_rel *s = l;
 			l = r;
 			r = s;
 		}
-		rel->exps = exps_use_consts(sql, rel->exps, r->exps);
+		rel->exps = exps_remove_dictexps(sql, rel->exps, r);
 		/* change into select */
 		rel->op = op_select;
 		rel->l = l;
 		rel->r = NULL;
-		/* wrap in a project including, the constant columns */
+		/* wrap in a project including, the dict/index columns */
 		l->subquery = 0;
 		rel = rel_project(sql->sa, rel, rel_projections(sql, l, NULL, 1, 1));
 		list_merge(rel->exps, r->exps, (fdup)NULL);
+	}
+	/* project (join (A,B)[ A.x = B.y ] ) [project_cols] -> project (A) [project_cols]
+	 * where non of the project_cols are from B and x=y is a foreign key join (B is the unique side)
+	 * and there are no filters on B
+	 */
+	if (0 && is_project(rel->op)) {
+		sql_rel *j = rel->l;
+
+		if (is_join(j->op)) {
+			node *n;
+			sql_rel *l = j->l;
+			sql_rel *r = j->r;
+
+			if (!l || rel_is_ref(l) || !r || rel_is_ref(r) || r->op != op_basetable || r->l)
+				return rel;
+
+			/* check if all projection cols can be found in l */
+			for(n = rel->exps->h; n; n = n->next) {
+				sql_exp *e = n->data;
+
+				if (!rel_find_exp(l, e))
+					return rel;
+
+			}
+			assert(0);
+			(*changes)++;
+			rel->l = l;
+			rel->r = NULL;
+			l->subquery = 0;
+		}
 	}
 	return rel;
 }
@@ -4702,7 +4872,7 @@ rel_remove_unused(mvc *sql, sql_rel *rel)
 	case op_basetable: {
 		sql_table *t = rel->l;
 
-		if (isMergeTable(t) || isReplicaTable(t)) 
+		if (t && (isMergeTable(t) || isReplicaTable(t))) 
 			return rel;
 	}
 	case op_table:
@@ -5719,11 +5889,134 @@ rel_rewrite_types(int *changes, mvc *sql, sql_rel *rel)
 	return rel;
 }
 
+static sql_exp *
+exp_indexcol(mvc *sql, sql_exp *e, char *tname, char *cname, int de, bit unique)
+{
+	sql_subtype *rt = sql_bind_localtype(de==1?"bte":de==2?"sht":"int");
+	sql_exp *u = exp_atom_bool(sql->sa, unique);
+	sql_subfunc *f = sql_bind_func_result(sql->sa, mvc_bind_schema(sql,"sys"), "index", exp_subtype(e), exp_subtype(u), rt);
+
+	e = exp_binop(sql->sa, e, u, f);
+	exp_setname(sql->sa, e, tname, cname);
+	return e;
+}
+
+static sql_exp *
+exp_stringscol(mvc *sql, sql_exp *e, char *tname, char *cname)
+{
+	sql_subfunc *f = sql_bind_func(sql->sa, mvc_bind_schema(sql,"sys"), "strings", exp_subtype(e), NULL, F_FUNC);
+
+	e = exp_unop(sql->sa, e, f);
+	exp_setname(sql->sa, e, tname, cname);
+	return e;
+}
+
+static sql_rel *
+rel_dicttable(mvc *sql, sql_column *c, char *tname, int de)
+{
+	sql_rel *rel = rel_create(sql->sa);
+	sql_exp *e, *ie;
+	int nr = 0;
+	char name[16], *nme;
+
+       	e = exp_alias(sql->sa, tname, c->base.name, tname, c->base.name, &c->type, CARD_MULTI, c->null, 0);
+	rel->l = NULL;
+	rel->r = c;
+	rel->op = op_basetable; 
+	rel->exps = new_exp_list(sql->sa);
+
+	ie = exp_indexcol(sql, e, tname, c->base.name, de, 1);
+        nr = ++sql->label;
+	nme = sa_strdup(sql->sa, number2name(name, 16, nr));
+	exp_setname(sql->sa, ie, nme, nme);
+	append(rel->exps, ie);
+
+	ie = exp_stringscol(sql, e, tname, c->base.name);
+        nr = ++sql->label;
+	nme = sa_strdup(sql->sa, number2name(name, 16, nr));
+	exp_setname(sql->sa, ie, nme, nme);
+	append(rel->exps, ie);
+	e->p = prop_create(sql->sa, PROP_HASHCOL, e->p);
+
+	rel->card = CARD_MULTI;
+	rel->nrcols = 2;
+	return rel;
+}
+
+/* rewrite merge tables into union of base tables and call optimizer again */
+static sql_rel *
+rel_add_dicts(int *changes, mvc *sql, sql_rel *rel)
+{
+	if (is_basetable(rel->op) && rel->l) {
+		node *n;
+		sql_table *t = rel->l;
+		list *l = sa_list(sql->sa), *vcols = NULL, *pexps = sa_list(sql->sa);
+
+		for (n = rel->exps->h; n; n = n->next) {
+			sql_exp *e = n->data, *ne = NULL;
+			char *rname = e->rname?e->rname:e->l;
+			char *oname = e->r;
+			int de;
+
+			if (!is_func(e->type) && oname[0] != '%') { 
+				sql_column *c = find_sql_column(t, oname);
+
+				if (EC_VARCHAR(c->type.type->eclass) && (de = store_funcs.double_elim_col(sql->session->tr, c)) != 0) {
+					int nr = ++sql->label;
+					char name[16], *nme;
+					sql_rel *vt = rel_dicttable(sql, c, rname, de);
+
+					nme = sa_strdup(sql->sa, number2name(name, 16, nr));
+					if (!vcols)
+						vcols = sa_list(sql->sa);
+					append(vcols, vt);
+					e = exp_indexcol(sql, e, nme, nme, de, 0);
+					ne = exp_column(sql->sa, e->rname, e->name, exp_subtype(e), e->card, has_nil(e), is_intern(e));
+					append(vcols, ne);
+					append(vcols, n->data);
+					(*changes)++;
+				}
+			}
+			list_append(l, e);
+			if (!ne)
+				list_append(pexps, e);
+		}
+		rel->exps = l;
+
+		/* add joins for double_eliminated (large) columns */
+		if (vcols) {
+			node *n;
+
+			for(n = vcols->h; n; n = n->next->next->next) {
+				sql_rel *vt = n->data;
+				sql_exp *ic = n->next->data, *vti = NULL, *vtv;
+				sql_exp *c = n->next->next->data, *cmp;
+				char *rname = c->rname?c->rname:c->l;
+				char *oname = c->r;
+	
+				rel = rel_crossproduct(sql->sa, rel, vt, op_join);
+				vti = vt->exps->h->data;
+				vtv = vt->exps->h->next->data;
+				vti = exp_column(sql->sa, vti->rname, vti->name, exp_subtype(vti), vti->card, has_nil(vti), is_intern(vti));
+				cmp = exp_compare(sql->sa, ic, vti, cmp_equal);
+				cmp->p = prop_create(sql->sa, PROP_FETCH, cmp->p);
+				rel_join_add_exp( sql->sa, rel, cmp);
+	
+				vtv = exp_column(sql->sa, vtv->rname, vtv->name, exp_subtype(vtv), vtv->card, has_nil(vtv), is_intern(vtv));
+				exp_setname(sql->sa, vtv, rname, oname);
+				append(pexps, vtv);
+			}
+			rel = rel_project(sql->sa, rel, pexps);
+		}
+	}
+	return rel;
+}
+
 /* rewrite merge tables into union of base tables and call optimizer again */
 static sql_rel *
 rel_merge_table_rewrite(int *changes, mvc *sql, sql_rel *rel)
 {
-	if (is_basetable(rel->op)) {
+	if (is_basetable(rel->op) && rel->l) {
 		sql_table *t = rel->l;
 
 		if (isMergeTable(t)) {
@@ -6483,7 +6776,11 @@ _rel_optimizer(mvc *sql, sql_rel *rel, int level)
 		rel = rewrite(sql, rel, &rel_push_project_up, &changes); 
 
 	/* join's/crossproducts between a relation and a constant (row).
-	 * could be rewritten */
+	 * could be rewritten 
+	 *
+	 * also joins between a relation and a DICT (which isn't used)
+	 * could be removed.
+	 * */
 	if (gp.cnt[op_join] && gp.cnt[op_project])
 		rel = rewrite(sql, rel, &rel_remove_join, &changes); 
 
@@ -6553,6 +6850,7 @@ _rel_optimizer(mvc *sql, sql_rel *rel, int level)
 
 	if (gp.cnt[op_groupby]) {
 		rel = rewrite_topdown(sql, rel, &rel_push_aggr_down, &changes);
+		rel = rewrite_topdown(sql, rel, &rel_push_groupby_down, &changes);
 		rel = rewrite(sql, rel, &rel_groupby_order, &changes); 
 		rel = rewrite(sql, rel, &rel_reduce_groupby_exps, &changes); 
 		rel = rewrite(sql, rel, &rel_groupby_distinct, &changes); 
@@ -6596,13 +6894,15 @@ _rel_optimizer(mvc *sql, sql_rel *rel, int level)
 	}
 
 	rel = rewrite_topdown(sql, rel, &rel_merge_table_rewrite, &changes);
+	if (level <= 0 && mvc_debug_on(sql,8))
+		rel = rewrite_topdown(sql, rel, &rel_add_dicts, &changes);
 
 	if (changes && level > 10) {
 		assert(0);
 		return rel;
 	}
 
-	if (changes)
+	if (changes || level == 0)
 		return _rel_optimizer(sql, rel, ++level);
 
 	/* optimize */

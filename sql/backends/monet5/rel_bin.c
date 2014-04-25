@@ -1136,19 +1136,40 @@ static stmt *
 rel2bin_basetable( mvc *sql, sql_rel *rel)
 {
 	sql_table *t = rel->l;
+	sql_column *c = rel->r;
 	list *l = sa_list(sql->sa);
-	stmt *dels = stmt_dels( sql, t);
+	stmt *dels;
 	node *en;
 
-	assert(rel->exps);
+	if (!t && c)
+		t = c->t;
+       	dels = stmt_dels( sql, t);
+
 	/* add aliases */
+	assert(rel->exps);
 	for( en = rel->exps->h; en; en = en->next ) {
 		sql_exp *exp = en->data;
 		char *rname = exp->rname?exp->rname:exp->l;
 		char *oname = exp->r;
 		stmt *s = NULL;
 
-		if (oname[0] == '%' && strcmp(oname, TID) == 0) {
+		if (is_func(exp->type)) {
+			list *exps = exp->l;
+			sql_exp *cexp = exps->h->data;
+			char *cname = cexp->r;
+			list *l = sa_list(sql->sa);
+
+		       	c = find_sql_column(t, cname);
+			s = stmt_col(sql, c, dels);
+			append(l, s);
+			if (exps->h->next) {
+				sql_exp *at = exps->h->next->data;
+				stmt *u = exp_bin(sql, at, NULL, NULL, NULL, NULL, NULL, NULL);
+
+				append(l, u);
+			}
+			s = stmt_Nop(sql->sa, stmt_list(sql->sa, l), exp->f);
+		} else if (oname[0] == '%' && strcmp(oname, TID) == 0) {
 			/* tid function  sql.tid(t) */
 			char *rnme = t->base.name;
 
@@ -2260,7 +2281,7 @@ rel2bin_project( mvc *sql, sql_rel *rel, list *refs, sql_rel *topn)
 		list *oexps = rel->r, *npl = sa_list(sql->sa);
 		/* distinct, topn returns atleast N (unique) */
 		int distinct = need_distinct(rel);
-		stmt *limit = NULL; 
+		stmt *limit = NULL, *lpiv = NULL, *lgid = NULL; 
 
 		for (n=oexps->h; n; n = n->next) {
 			sql_exp *orderbycole = n->data; 
@@ -2274,18 +2295,19 @@ rel2bin_project( mvc *sql, sql_rel *rel, list *refs, sql_rel *topn)
 			if (!limit) {	/* topn based on a single column */
 				limit = stmt_limit(sql->sa, orderbycolstmt, stmt_atom_wrd(sql->sa, 0), l, LIMIT_DIRECTION(is_ascending(orderbycole), 1, inc));
 			} else { 	/* topn based on 2 columns */
-				stmt *obc = stmt_reorder_project(sql->sa, stmt_mirror(sql->sa, limit), orderbycolstmt);
-
-				limit = stmt_limit2(sql->sa, limit, obc, stmt_atom_wrd(sql->sa, 0), l, LIMIT_DIRECTION(is_ascending(orderbycole), 1, inc));
+				limit = stmt_limit2(sql->sa, orderbycolstmt, lpiv, lgid, stmt_atom_wrd(sql->sa, 0), l, LIMIT_DIRECTION(is_ascending(orderbycole), 1, inc));
 			}
 			if (!limit) 
 				return NULL;
+			lpiv = stmt_result(sql->sa, limit, 0);
+			lgid = stmt_result(sql->sa, limit, 1);
 		}
 
-		if (!distinct) 
-			limit = stmt_reverse(sql->sa, stmt_mark_tail(sql->sa, limit, 0));
-		else	/* add limit to mark end of pqueue topns */
-			limit = stmt_limit(sql->sa, limit, stmt_atom_wrd(sql->sa, 0), l, LIMIT_DIRECTION(0, 0, 0));
+		if (!distinct)  /* ready to project */
+			limit = lpiv;
+		else 		/* TODO */
+			limit = lpiv; 
+		
 		for ( n=pl->h ; n; n = n->next) 
 			list_append(npl, stmt_project(sql->sa, limit, column(sql->sa, n->data)));
 		psub = stmt_list(sql->sa, npl);
@@ -2311,7 +2333,7 @@ rel2bin_project( mvc *sql, sql_rel *rel, list *refs, sql_rel *topn)
 			sub = stmt_list(sql->sa, npl);
 		}
 	}
-	if ((!topn || need_distinct(rel)) && rel->r) {
+	if (/*(!topn || need_distinct(rel)) &&*/ rel->r) {
 		list *oexps = rel->r;
 		stmt *orderby_ids = NULL, *orderby_grp = NULL;
 

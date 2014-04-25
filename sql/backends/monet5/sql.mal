@@ -1004,6 +1004,37 @@ command calc.timestamp( v:date, d:int) :timestamp
 address date_2_timestamp
 comment "cast date to a timestamp and check for overflow";
 
+command calc.index(v:str, u:bit) :bte 
+address STRindex_bte
+comment "Return the offsets as an index bat";
+
+command batcalc.index(v:bat[:oid,:str], u:bit) :bat[:oid,:bte] 
+address BATSTRindex_bte
+comment "Return the offsets as an index bat";
+
+command calc.index(v:str, u:bit) :sht 
+address STRindex_sht
+comment "Return the offsets as an index bat";
+
+command batcalc.index(v:bat[:oid,:str], u:bit) :bat[:oid,:sht] 
+address BATSTRindex_sht
+comment "Return the offsets as an index bat";
+
+command calc.index(v:str, u:bit) :int 
+address STRindex_int
+comment "Return the offsets as an index bat";
+
+command batcalc.index(v:bat[:oid,:str], u:bit) :bat[:oid,:int] 
+address BATSTRindex_int
+comment "Return the offsets as an index bat";
+
+command calc.strings(v:str) :str 
+address STRstrings
+comment "Return the strings";
+
+command batcalc.strings(v:bat[:oid,:str]) :bat[:oid,:str] 
+address BATSTRstrings
+comment "Return the strings";
 
 include sql_decimal;
 include sql_rank;

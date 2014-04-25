@@ -728,11 +728,14 @@ rel_create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_n
 			}
 			(void)sql_error(sql, 02, "CREATE %s%s: name '%s' (%s) already in use", KF, F, fname, arg_list);
 			_DELETE(arg_list);
+			list_destroy(type_list);
 			return NULL;
 		} else {
+			list_destroy(type_list);
 			return sql_error(sql, 02, "CREATE %s%s: name '%s' already in use", KF, F, fname);
 		}
 	} else {
+		list_destroy(type_list);
 		if (create && !schema_privs(sql->role_id, s)) {
 			return sql_error(sql, 02, "CREATE %s%s: insufficient privileges "
 					"for user '%s' in schema '%s'", KF, F,

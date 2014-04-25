@@ -1,6 +1,13 @@
 0.9.2
 - monetdb_queryinfo method to find out things about an arbitrary query cheaply
-- new option monetdb.sequential
+- new options monetdb.sequential, monetdb.debug.query and monetdb.debug.mapi
+- debug output now uses the message() function
+- source code cleanup
+- dbListTables() now hides system tables per default, also got options to include the
+  schema name and quoting in the result (sys_tables, schema_names and quote)
+- fixed various TODO's in the code to get closer to 1.0 (exciting)
+- fixed a bug when the error identifier sent by MonetDB was non-numeric
+- IPv6 addresses in dbConnect() should now work (another long-standing TODO)
 
 0.9.1
 - dbGetInfo() now supported on MonetDBConnection (dplyr compatibility)

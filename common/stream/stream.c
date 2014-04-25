@@ -3111,10 +3111,12 @@ bstream_read(bstream *s, size_t size)
 		return 0;
 
 	if (s->pos > 0) {
-		if (s->pos < s->len)
+		if (s->pos < s->len) {
 			/* move all data and end of string marker */
 			memmove(s->buf, s->buf + s->pos, s->len - s->pos + 1);
-		s->len -= s->pos;
+			s->len -= s->pos;
+		} else
+			s->len = 0;
 		s->pos = 0;
 	}
 
@@ -3159,10 +3161,12 @@ bstream_readline(bstream *s)
 		return 0;
 
 	if (s->pos > 0 && s->len + size >= s->size) {
-		if (s->pos < s->len)
+		if (s->pos < s->len) {
 			/* move all data and end of string marker */
 			memmove(s->buf, s->buf + s->pos, s->len - s->pos + 1);
-		s->len -= s->pos;
+			s->len -= s->pos;
+		} else
+			s->len = 0;
 		s->pos = 0;
 	}
 

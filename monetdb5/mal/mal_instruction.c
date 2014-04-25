@@ -382,8 +382,10 @@ trimexpand(MalBlkPtr mb, int varsize, int stmtsize)
 		return;
 	len = sizeof(InstrPtr) * (mb->ssize + stmtsize);
 	stmt = (InstrPtr *) GDKzalloc(len);
-	if (stmt == NULL)
+	if (stmt == NULL){
+		GDKfree(v);
 		return;
+	}
 
 	memcpy((str) v, (str) mb->var, sizeof(ValPtr) * mb->vtop);
 
@@ -711,6 +713,8 @@ findVariable(MalBlkPtr mb, str name)
 {
 	int i;
 
+	if (name == NULL)
+		return -1;
 	if (isTmpName(name)) {
 		int j;
 		i = atol(name + (*name == TMPMARKER ? 1 : 2));
@@ -722,8 +726,6 @@ findVariable(MalBlkPtr mb, str name)
 				return j;
 		return -1;
 	}
-	if (name == NULL)
-		return -1;
 	for (i = mb->vtop - 1; i >= 0; i--)
 		if (!isTmpVar(mb, i) && idcmp(name, getVarName(mb, i)) == 0)
 			return i;
@@ -906,6 +908,7 @@ makeVarSpace(MalBlkPtr mb)
 	return 0;
 }
 
+/* swallows name argument */
 int
 newVariable(MalBlkPtr mb, str name, malType type)
 {
@@ -913,8 +916,10 @@ newVariable(MalBlkPtr mb, str name, malType type)
 
 	if (name == NULL)
 		return -1;
-	if (makeVarSpace(mb))
+	if (makeVarSpace(mb)) {
+		GDKfree(name);
 		return -1;
+	}
 	if (isTmpName(name)) {
 		int i = atol(name + (*name == TMPMARKER ? 1 : 2));
 
@@ -930,8 +935,11 @@ newVariable(MalBlkPtr mb, str name, malType type)
 	n = mb->vtop;
 	if (getVar(mb, n) == NULL){
 		getVar(mb, n) = (VarPtr) GDKzalloc(sizeof(VarRecord) + MAXARG * sizeof(int));
-		if ( getVar(mb,n) == NULL)
+		if ( getVar(mb,n) == NULL) {
 			GDKerror("newVariable:" MAL_MALLOC_FAIL);
+			GDKfree(name);
+			return -1;
+		}
 	}
 	mb->var[n]->name = name;
 	mb->var[n]->propc = 0;
@@ -960,6 +968,8 @@ cloneVariable(MalBlkPtr tm, MalBlkPtr mb, int x)
 		res = newTmpVariable(tm, getVarType(mb, x));
 	else
 		res = newVariable(tm, GDKstrdup(getVarName(mb, x)), getVarType(mb, x));
+	if (res < 0)
+		return res;
 	if (isVarFixed(mb, x))
 		setVarFixed(tm, res);
 	if (isVarUsed(mb, x))
@@ -1551,6 +1561,12 @@ defConstant(MalBlkPtr mb, int type, ValPtr cst)
 InstrPtr
 pushArgument(MalBlkPtr mb, InstrPtr p, int varid)
 {
+	if (p == NULL)
+		return NULL;
+	if (varid < 0) {
+		freeInstruction(p);
+		return NULL;
+	}
 	assert(varid >= 0);
 	if (p->argc + 1 == p->maxarg) {
 		InstrPtr pn;
@@ -1558,10 +1574,8 @@ pushArgument(MalBlkPtr mb, InstrPtr p, int varid)
 		int space = p->maxarg * sizeof(p->argv[0]) + sizeof(InstrRecord);
 		pn = GDKmalloc(space + MAXARG * sizeof(p->maxarg));
 		if (pn == NULL) {
-			/* this is almost deadly, we abort by not extending the
-			 * instruction, which leads to detection of errors later
-			 * in the pipeline. */
-			return p;
+			freeInstruction(p);
+			return NULL;
 		}
 		memcpy((char *) pn, (char *) p, space);
 		pn->maxarg += MAXARG;
@@ -1600,7 +1614,11 @@ setArgument(MalBlkPtr mb, InstrPtr p, int idx, int varid)
 {
 	int i;
 
+	if (p == NULL)
+		return NULL;
 	p = pushArgument(mb, p, varid);	/* make space */
+	if (p == NULL)
+		return NULL;
 	for (i = p->argc - 1; i > idx; i--)
 		getArg(p, i) = getArg(p, i - 1);
 	getArg(p, i) = varid;
@@ -1614,7 +1632,8 @@ pushReturn(MalBlkPtr mb, InstrPtr p, int varid)
 		p->argv[0] = varid;
 		return p;
 	}
-	p = setArgument(mb, p, p->retc, varid);
+	if ((p = setArgument(mb, p, p->retc, varid)) == NULL)
+		return NULL;
 	p->retc++;
 	return p;
 }
@@ -1624,15 +1643,23 @@ pushReturn(MalBlkPtr mb, InstrPtr p, int varid)
  * pushArgument, but it is more efficient in searching and collecting
  * the information.
  * TODO */
+/* swallows name argument */
 InstrPtr
 pushArgumentId(MalBlkPtr mb, InstrPtr p, str name)
 {
 	int v;
 
+	if (p == NULL) {
+		GDKfree(name);
+		return NULL;
+	}
 	v = findVariable(mb, name);
-	if (v < 0)
-		v = newVariable(mb, name, getTypeIndex(name, -1, TYPE_any));
-	else
+	if (v < 0) {
+		if ((v = newVariable(mb, name, getTypeIndex(name, -1, TYPE_any))) < 0) {
+			freeInstruction(p);
+			return NULL;
+		}
+	} else
 		GDKfree(name);
 	return pushArgument(mb, p, v);
 }
@@ -1755,6 +1782,9 @@ void
 pushInstruction(MalBlkPtr mb, InstrPtr p)
 {
 	int i;
+
+	if (p == NULL)
+		return;
 
 	i = mb->stop;
 	if (i + 1 >= mb->ssize) {

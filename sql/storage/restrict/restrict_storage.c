@@ -938,7 +938,7 @@ su_storage_init( store_functions *sf)
 	sf->count_del = (count_del_fptr)&count_del;
 	sf->count_col = (count_col_fptr)&count_col;
 	sf->count_idx = (count_idx_fptr)&count_idx;
-	sf->sorted_col = (sorted_col_fptr)&sorted_col;
+	sf->sorted_col = (prop_col_fptr)&sorted_col;
 
 	sf->create_col = (create_col_fptr)&create_col;
 	sf->create_idx = (create_idx_fptr)&create_idx;
@@ -990,7 +990,7 @@ ro_storage_init( store_functions *sf)
 	sf->count_del = (count_del_fptr)&count_del;
 	sf->count_col = (count_col_fptr)&count_col;
 	sf->count_idx = (count_idx_fptr)&count_idx;
-	sf->sorted_col = (sorted_col_fptr)&sorted_col;
+	sf->sorted_col = (prop_col_fptr)&sorted_col;
 
 	sf->create_col = (create_col_fptr)&create_col;
 	sf->create_idx = (create_idx_fptr)&create_idx;
