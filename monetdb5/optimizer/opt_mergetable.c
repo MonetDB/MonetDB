@@ -117,6 +117,7 @@ mat_pack(MalBlkPtr mb, mat_t *mat, int m)
 
 	if (mat[m].packed)
 		return ;
+
 	if((mat[m].mi->argc-mat[m].mi->retc) == 1){
 		/* simple assignment is sufficient */
 		r = newInstruction(mb, ASSIGNsymbol);
@@ -1310,48 +1311,44 @@ mat_pack_topn(MalBlkPtr mb, InstrPtr slc, mat_t *mat, int m)
 		}
 		pushInstruction(mb, pck);
 
-		if (cur) {
-			InstrPtr mirror = newInstruction(mb, ASSIGNsymbol);
-			setModuleId(mirror, batRef);
-			setFunctionId(mirror, mirrorRef);
-			getArg(mirror, 0) = newTmpVariable(mb, newBatType(TYPE_oid, TYPE_oid));
-			pushArgument(mb, mirror, getArg(cur, 0));
-			pushInstruction(mb, mirror);
-
-			a = newInstruction(mb, ASSIGNsymbol);
-			setModuleId(a, algebraRef);
-			setFunctionId(a, leftjoinRef);
-			getArg(a, 0) = newTmpVariable(mb, tpe);
-			pushArgument(mb, a, getArg(mirror, 0));
-			pushArgument(mb, a, getArg(pck, 0));
-			pushInstruction(mb, a);
-		} else {
-			a = pck;
-		}
+		a = pck;
 
 		tpn = copyInstruction(otopn);
 		var = 1;
 		if (cur) {
-			getArg(tpn, 1) = getArg(cur, 0);
+			getArg(tpn, tpn->retc+var) = getArg(cur, 0);
 			var++;
+			if (cur->retc == 2) {
+				getArg(tpn, tpn->retc+var) = getArg(cur, 1);
+				var++;
+			}
 		}
-		getArg(tpn, var) = getArg(a,0);
+		getArg(tpn, tpn->retc) = getArg(a,0);
 		pushInstruction(mb, tpn);
 		cur = tpn;
 	}
 }
 
 static int
-mat_topn(MalBlkPtr mb, InstrPtr p, mat_t *mat, int mtop, int m, int n)
+mat_topn(MalBlkPtr mb, InstrPtr p, mat_t *mat, int mtop, int m, int n, int o)
 {
 	int tpe = getArgType(mb,p,0), k, is_slice = isSlice(p), zero = -1;
-	InstrPtr pck, q, r;
+	InstrPtr pck, gpck = NULL, q, r;
+	int with_groups = (p->retc == 2), piv = 0, topn2 = (n >= 0);
 
+	assert( topn2 || o < 0);
 	/* dummy mat instruction (needed to share result of p) */
 	pck = newInstruction(mb,ASSIGNsymbol);
 	setModuleId(pck, matRef);
 	setFunctionId(pck, packRef);
 	getArg(pck,0) = getArg(p,0);
+
+	if (with_groups) {
+		gpck = newInstruction(mb,ASSIGNsymbol);
+		setModuleId(gpck, matRef);
+		setFunctionId(gpck, packRef);
+		getArg(gpck,0) = getArg(p,1);
+	}
 
 	if (is_slice) {
 		ValRecord cst;
@@ -1359,41 +1356,60 @@ mat_topn(MalBlkPtr mb, InstrPtr p, mat_t *mat, int mtop, int m, int n)
 		cst.val.wval= 0;
 		zero = defConstant(mb, cst.vtype, &cst);
 	}
+	assert( (n<0 && o<0) || 
+		(mat[m].mi->argc == mat[n].mi->argc && 
+		 mat[m].mi->argc == mat[o].mi->argc));
+	
 	for(k=1; k< mat[m].mi->argc; k++) {
 		q = copyInstruction(p);
 		getArg(q,0) = newTmpVariable(mb, tpe);
-		getArg(q,1) = getArg(mat[m].mi,k);
+		if (with_groups)
+			getArg(q,1) = newTmpVariable(mb, tpe);
+		getArg(q,q->retc) = getArg(mat[m].mi,k);
 		if (is_slice) /* lower bound should always be 0 on partial slices */
-			getArg(q,2) = zero;
-		else if (n >= 0)
-			getArg(q,2) = getArg(mat[n].mi,k);
+			getArg(q,q->retc+1) = zero;
+		else if (topn2) {
+			getArg(q,q->retc+1) = getArg(mat[n].mi,k);
+			getArg(q,q->retc+2) = getArg(mat[o].mi,k);
+		}
 		pushInstruction(mb,q);
 		
 		pck = pushArgument(mb, pck, getArg(q,0));
+		if (with_groups)
+			gpck = pushArgument(mb, gpck, getArg(q,1));
 	}
 
-	mtop = mat_add_var(mat, mtop, pck, p, getArg(p,0), is_slice?mat_slc:mat_tpn, (n>=0)?n:m, (n>=0)?m:-1);
+	piv = mtop;
+	mtop = mat_add_var(mat, mtop, pck, p, getArg(p,0), is_slice?mat_slc:mat_tpn, m, n);
 	mat[mtop-1].pushed = 0;
+	if (with_groups)
+		mtop = mat_add_var(mat, mtop, gpck, p, getArg(p,1), is_slice?mat_slc:mat_tpn, m, piv);
 
-	if (is_slice) {
-		/* real instruction */
-		r = newInstruction(mb,ASSIGNsymbol);
-		setModuleId(r, matRef);
-		setFunctionId(r, packRef);
-		getArg(r,0) = newTmpVariable(mb, tpe);
-	
-		for(k=1; k< pck->argc; k++) 
-			r = pushArgument(mb, r, getArg(pck,k));
-		pushInstruction(mb,r);
-
-		if (mat[m].type == mat_tpn) 
-			mat_pack_topn(mb, pck, mat, m);
+	if (is_slice || p->retc ==1 /* single result, ie last of the topn's */) {
+		if (mat[m].type == mat_tpn || !is_slice) 
+			mat_pack_topn(mb, pck, mat, (!is_slice)?piv:m);
 
 		/* topn/slice over merged parts */
-		q = copyInstruction(p);
-		if (mat[m].type != mat_tpn) 
-			getArg(q,1) = getArg(r,0);
-		pushInstruction(mb,q);
+		if (is_slice) {
+			/* real instruction */
+			r = newInstruction(mb,ASSIGNsymbol);
+			setModuleId(r, matRef);
+			setFunctionId(r, packRef);
+			getArg(r,0) = newTmpVariable(mb, tpe);
+	
+			for(k=1; k< pck->argc; k++) 
+				r = pushArgument(mb, r, getArg(pck,k));
+			pushInstruction(mb,r);
+
+			q = copyInstruction(p);
+			if (mat[m].type != mat_tpn || is_slice) 
+				getArg(q,1) = getArg(r,0);
+			pushInstruction(mb,q);
+		}
+
+		mat[piv].pushed = 1;
+		mat[piv].packed = 1;
+		mat[piv].type = mat_slc;
 	}
 	return mtop;
 }
@@ -1404,7 +1420,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	InstrPtr *old;
 	mat_t *mat;
 	int oldtop, fm, fn, fo, fe, i, k, m, n, o, e, mtop=0, slimit;
-	int size=0, match, actions=0, distinct_topn = 0, topn_res = 0, groupdone = 0, *vars;
+	int size=0, match, actions=0, distinct_topn = 0, /*topn_res = 0,*/ groupdone = 0, *vars;
 
 	old = mb->stmt;
 	oldtop= mb->stop;
@@ -1434,10 +1450,12 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				groupdone = 1;
 		}
 
+		/*
 		if (isTopn(p))
 			topn_res = getArg(p, 0);
-		if (getModuleId(p) == algebraRef && getFunctionId(p) == markTRef && getArg(p, 1) == topn_res)
-			distinct_topn = 1;
+			*/
+		/* not idea how to detect this yet */
+			//distinct_topn = 1;
 	}
 	GDKfree(vars);
 
@@ -1517,23 +1535,22 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			continue;
 		} 
 
-		if (match == 1 && bats == 1 && p->argc == 4 && isSlice(p) &&
-	 	   ((m=is_a_mat(getArg(p,p->retc), mat, mtop)) >= 0)) {
-			mtop = mat_topn(mb, p, mat, mtop, m, -1);
+		if (match == 1 && bats == 1 && p->argc == 4 && isSlice(p) && ((m=is_a_mat(getArg(p,p->retc), mat, mtop)) >= 0)) {
+			mtop = mat_topn(mb, p, mat, mtop, m, -1, -1);
 			actions++;
 			continue;
 		}
 
-		if (!distinct_topn && match == 1 && bats == 1 && p->argc == 3 && isTopn(p) &&
-	 	   ((m=is_a_mat(getArg(p,p->retc), mat, mtop)) >= 0)) {
-			mtop = mat_topn(mb, p, mat, mtop, m, -1);
+		if (!distinct_topn && match == 1 && bats == 1 && (p->argc-p->retc) == 2 && isTopn(p) && ((m=is_a_mat(getArg(p,p->retc), mat, mtop)) >= 0)) {
+			mtop = mat_topn(mb, p, mat, mtop, m, -1, -1);
 			actions++;
 			continue;
 		}
-		if (!distinct_topn && match == 2 && bats == 2 && p->argc == 4 && isTopn(p) &&
+		if (!distinct_topn && match == 3 && bats == 3 && (p->argc-p->retc) == 4 && isTopn(p) &&
 	 	   ((m=is_a_mat(getArg(p,p->retc), mat, mtop)) >= 0) &&
-	 	   ((n=is_a_mat(getArg(p,p->retc+1), mat, mtop)) >= 0)) {
-			mtop = mat_topn(mb, p, mat, mtop, m, n);
+	 	   ((n=is_a_mat(getArg(p,p->retc+1), mat, mtop)) >= 0) &&
+	 	   ((o=is_a_mat(getArg(p,p->retc+2), mat, mtop)) >= 0)) {
+			mtop = mat_topn(mb, p, mat, mtop, m, n, o);
 			actions++;
 			continue;
 		}

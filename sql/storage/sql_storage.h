@@ -115,7 +115,7 @@ typedef void (*delete_tab_fptr) (sql_trans *tr, sql_table *t, void *d, int tpe);
 typedef size_t (*count_del_fptr) (sql_trans *tr, sql_table *t);
 typedef size_t (*count_col_fptr) (sql_trans *tr, sql_column *c, int all /* all or new only */);
 typedef size_t (*count_idx_fptr) (sql_trans *tr, sql_idx *i, int all /* all or new only */);
-typedef int (*sorted_col_fptr) (sql_trans *tr, sql_column *c);
+typedef int (*prop_col_fptr) (sql_trans *tr, sql_column *c);
 
 /*
 -- create the necessary storage resources for columns, indices and tables
@@ -191,7 +191,8 @@ typedef struct store_functions {
 	count_del_fptr count_del;
 	count_col_fptr count_col;
 	count_idx_fptr count_idx;
-	sorted_col_fptr sorted_col;
+	prop_col_fptr sorted_col;
+	prop_col_fptr double_elim_col; /* varsize col with double elimination */
 
 	create_col_fptr create_col;
 	create_idx_fptr create_idx;

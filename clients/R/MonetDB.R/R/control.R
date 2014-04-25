@@ -224,3 +224,46 @@ monetdb.server.setup <-
     # return the filepath to the batch file
     bfl
   }
+
+
+monetdbd.liststatus <- monetdb.liststatus <- function(passphrase, host="localhost", port=50000L, 
+                                                      timeout=86400L) {
+  
+  rawstr <- .monetdbd.command(passphrase, host, port, timeout)
+  lines <- strsplit(rawstr, "\n", fixed=T)[[1]] # split by newline, first line is "=OK", so skip
+  lines <- lines[grepl("^=sabdb:2:", lines)] # make sure we get a db list here, protocol v.2
+  lines <- sub("=sabdb:2:", "", lines, fixed=T)
+  # convert value into propert types etc
+  dbdf <- as.data.frame(do.call("rbind", strsplit(lines, ", ", fixed=T)), stringsAsFactors=F)
+  names(dbdf) <- c("dbname", "uri", "locked", "state", "scenarios", "startCounter", "stopCounter", 
+                   "crashCounter", "avgUptime", "maxUptime", "minUptime", "lastCrash", "lastStart", "lastStop", 
+                   "crashAvg1", "crashAvg10", "crashAvg30")
+  
+  dbdf$locked <- dbdf$locked=="1"
+  
+  states <- c("illegal", "running", "crashed", "inactive", "starting")
+  dbdf$state <- factor(states[as.integer(dbdf$state)+1])
+  
+  dbdf$startCounter <- as.numeric(dbdf$startCounter)
+  dbdf$stopCounter <- as.numeric(dbdf$stopCounter)
+  dbdf$crashCounter <- as.numeric(dbdf$crashCounter)
+  
+  dbdf$avgUptime <- as.numeric(dbdf$avgUptime)
+  dbdf$maxUptime <- as.numeric(dbdf$maxUptime)
+  dbdf$minUptime <- as.numeric(dbdf$minUptime)
+  
+  convertts <- function(col) {
+    col[col=="-1"] <- NA
+    return(as.POSIXct(as.numeric(col), origin="1970-01-01"))
+  }
+  dbdf$lastCrash <- convertts(dbdf$lastCrash)
+  dbdf$lastStart <- convertts(dbdf$lastStart)
+  dbdf$lastStop <- convertts(dbdf$lastStop)
+  
+  dbdf$crashAvg1 <- dbdf$crashAvg1=="1"
+  dbdfcrashAvg10 <- as.numeric(dbdf$crashAvg10)
+  dbdf$crashAvg30 <- as.numeric(dbdf$crashAvg30)
+  dbdf$scenarios <- gsub("'", ", ", dbdf$scenarios, fixed=T)
+  
+  return(dbdf[order(dbdf$dbname), ])
+}

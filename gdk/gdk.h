@@ -2324,15 +2324,16 @@ gdk_export str GDKstrndup(const char *s, size_t n);
 				__func__, __FILE__, __LINE__);		\
 		_res;							\
 	})
-#define GDKstrndup(s,n)							\
+#define GDKstrndup(s, n)						\
 	({								\
 		const char *_str = (s);					\
-		void *_res = GDKstrndup(_str,n);				\
+		size_t _n = (n);					\
+		void *_res = GDKstrndup(_str, _n);			\
 		ALLOCDEBUG						\
 			fprintf(stderr,					\
 				"#GDKstrndup(len=" SZFMT ") -> " PTRFMT	\
 				" %s[%s:%d]\n",				\
-				n,				\
+				_n,					\
 				PTRFMTCAST _res,			\
 				__func__, __FILE__, __LINE__);		\
 		_res;							\
@@ -2455,13 +2456,13 @@ GDKstrdup_debug(const char *str, const char *filename, int lineno)
 static inline char *
 GDKstrndup_debug(const char *str, size_t n, const char *filename, int lineno)
 {
-	void *res = GDKstrndup(str,n);
+	void *res = GDKstrndup(str, n);
 	ALLOCDEBUG fprintf(stderr, "#GDKstrndup(len=" SZFMT ") -> "
 			   PTRFMT " [%s:%d]\n",
 			   n, PTRFMTCAST res, filename, lineno);
 	return res;
 }
-#define GDKstrndup(s)	GDKstrndup_debug((s), __FILE__, __LINE__)
+#define GDKstrndup(s, n)	GDKstrndup_debug((s), (n), __FILE__, __LINE__)
 static inline void *
 GDKmmap_debug(const char *path, int mode, size_t len, const char *filename, int lineno)
 {

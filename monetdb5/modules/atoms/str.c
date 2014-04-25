@@ -1775,6 +1775,7 @@ STRIconv(str *res, str *o, str *fp, str *tp)
 	if (iconv(cd, &from, &len, &r, &size) == (size_t) - 1) {
 		GDKfree(*res);
 		*res = NULL;
+		iconv_close(cd);
 		throw(MAL, "str.iconv", "String conversion failed from (%s) to (%s)", f, t);
 	}
 	*r = 0;
@@ -2198,7 +2199,7 @@ STRRtrim2(str *res, str *arg1, str *arg2)
  * Result: '   hi'
  */
 str
-STRLpad(str *res, str *arg1, size_t *len)
+STRLpad(str *res, str *arg1, int *len)
 {
 	const char *s = *arg1;
 	int pad_cnt = *len - UTF8_strlen(s); /* #whitespaces to be prepended */
@@ -2224,7 +2225,7 @@ STRLpad(str *res, str *arg1, size_t *len)
 		*res = r;
 	}
 
-	if (res == NULL)
+	if (*res == NULL)
 		throw(MAL, "str.lpad", "Allocation failed");
 	return MAL_SUCCEED;
 }
@@ -2237,7 +2238,7 @@ STRLpad(str *res, str *arg1, size_t *len)
  * Result: 'hi   '
  */
 str
-STRRpad(str *res, str *arg1, size_t *len)
+STRRpad(str *res, str *arg1, int *len)
 {
 	const char *s = *arg1;
 	int pad_cnt = *len - UTF8_strlen(s); /* #whitespaces to be appended */
@@ -2263,7 +2264,7 @@ STRRpad(str *res, str *arg1, size_t *len)
 		*res = r;
 	}
 
-	if (res == NULL)
+	if (*res == NULL)
 		throw(MAL, "str.lpad", "Allocation failed");
 	return MAL_SUCCEED;
 }
@@ -2276,7 +2277,7 @@ STRRpad(str *res, str *arg1, size_t *len)
  * Result: xyxhi
  */
 str
-STRLpad2(str *res, str *arg1, size_t *len, str *arg2)
+STRLpad2(str *res, str *arg1, int *len, str *arg2)
 {
 	const char *s = *arg1;
 	int pad_cnt = *len - UTF8_strlen(s); /* #chars to be prepended */
@@ -2322,7 +2323,7 @@ STRLpad2(str *res, str *arg1, size_t *len, str *arg2)
 		*res = r;
 	}
 
-	if (res == NULL)
+	if (*res == NULL)
 		throw(MAL, "str.lpad", "Allocation failed");
 	return MAL_SUCCEED;
 }
@@ -2335,7 +2336,7 @@ STRLpad2(str *res, str *arg1, size_t *len, str *arg2)
  * Result: hixyx
  */
 str
-STRRpad2(str *res, str *arg1, size_t *len, str *arg2)
+STRRpad2(str *res, str *arg1, int *len, str *arg2)
 {
 	const char *s = *arg1;
 	int pad_cnt = *len - UTF8_strlen(s); /* #chars to be appended */
@@ -2382,7 +2383,7 @@ STRRpad2(str *res, str *arg1, size_t *len, str *arg2)
 		*res = r;
 	}
 
-	if (res == NULL)
+	if (*res == NULL)
 		throw(MAL, "str.lpad", "Allocation failed");
 	return MAL_SUCCEED;
 }

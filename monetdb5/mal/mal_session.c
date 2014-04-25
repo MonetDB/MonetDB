@@ -42,13 +42,14 @@ int
 malBootstrap(void)
 {
 	Client c;
-	str bootfile = "mal_init", s;
+	str msg, bootfile = "mal_init", s;
 
 	c = MCinitClient((oid) 0, 0, 0);
 	assert(c != NULL);
 	c->nspace = newModule(NULL, putName("user", 4));
 	initLibraries();
-	if (defaultScenario(c)) {
+	if ( (msg = defaultScenario(c)) ) {
+		GDKfree(msg);
 		GDKerror("Failed to initialise default scenario");
 		return 0;
 	}
@@ -251,6 +252,7 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
 		if (err != MAL_SUCCEED) {
 			mnstr_printf(fout, "!%s\n", err);
 			exit_streams(fin, fout);
+			GDKfree(err);
 			GDKfree(command);
 			return;
 		}
@@ -450,6 +452,7 @@ MSserveClient(void *dummy)
 	if (msg) {
 		showException(c->fdout, MAL, "serveClient", "could not initialize default scenario");
 		c->mode = FINISHCLIENT + 1; /* == RUNCLIENT */
+		GDKfree(msg);
 	} else {
 		do {
 			do {

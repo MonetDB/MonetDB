@@ -839,10 +839,11 @@ int
 MT_path_absolute(const char *pathname)
 {
 	/* drive letter, colon, directory separator */
-	return ((('a' <= pathname[0] && pathname[0] <= 'z') ||
-		 ('A' <= pathname[0] && pathname[0] <= 'Z')) &&
-		pathname[1] == ':' &&
-		(pathname[2] == '/' || pathname[2] == '\\'));
+	return (((('a' <= pathname[0] && pathname[0] <= 'z') ||
+		  ('A' <= pathname[0] && pathname[0] <= 'Z')) &&
+		 pathname[1] == ':' &&
+		 (pathname[2] == '/' || pathname[2] == '\\')) ||
+		(pathname[0] == '\\' && pathname[1] == '\\'));
 }
 
 

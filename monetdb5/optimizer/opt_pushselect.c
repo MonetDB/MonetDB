@@ -121,7 +121,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	InstrPtr p, *old;
 	subselect_t subselects;
 
-	subselects.nr = 0;
+	memset(&subselects, 0, sizeof(subselects));
 	if( mb->errors) 
 		return 0;
 

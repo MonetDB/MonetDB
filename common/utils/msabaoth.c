@@ -49,6 +49,7 @@
 #if defined(_MSC_VER) && _MSC_VER >= 1400
 #define close _close
 #define unlink _unlink
+#define fdopen _fdopen
 #endif
 
 #define PATHLENGTH 4096
@@ -674,7 +675,7 @@ msab_getStatus(sabdb** ret, char *dbname)
 		} else {
 			/* locking succeed, check for a crash in the uplog */
 			snprintf(log, sizeof(log), "%s/%s/%s", path, e->d_name, UPLOGFILE);
-			if ((f = fopen(log, "r")) != NULL) {
+			if ((f = fdopen(fd, "r+")) != NULL) {
 				(void)fseek(f, -1, SEEK_END);
 				if (fread(data, 1, 1, f) != 1) {
 					/* the log is empty, assume no crash */
@@ -684,11 +685,13 @@ msab_getStatus(sabdb** ret, char *dbname)
 				} else { /* should be \t */
 					sdb->state = SABdbCrashed;
 				}
+				/* release the lock */
+				MT_lockf(buf, F_ULOCK, 4, 1);
 				(void)fclose(f);
-			} /* cannot happen, we checked it before */
-
-			/* release the lock */
-			close(fd);
+			} else {
+				/* shouldn't happen */
+				close(fd);
+			}
 		}
 		snprintf(buf, sizeof(buf), "%s/%s/%s", path, e->d_name,
 				MAINTENANCEFILE);

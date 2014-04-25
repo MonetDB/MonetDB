@@ -753,31 +753,31 @@ stmt_result(sql_allocator *sa, stmt *s, int nr)
 
 /* limit maybe atom nil */
 stmt *
-stmt_limit(sql_allocator *sa, stmt *s, stmt *offset, stmt *limit, int direction)
+stmt_limit(sql_allocator *sa, stmt *c, stmt *offset, stmt *limit, int direction)
 {
 	stmt *ns = stmt_create(sa, st_limit);
 
-	ns->op1 = s;
+	ns->op1 = c;
 	ns->op2 = offset;
 	ns->op3 = limit;
-	ns->nrcols = s->nrcols;
-	ns->key = s->key;
-	ns->aggr = s->aggr;
+	ns->nrcols = c->nrcols;
+	ns->key = c->key;
+	ns->aggr = c->aggr;
 	ns->flag = direction;
 	return ns;
 }
 
 stmt *
-stmt_limit2(sql_allocator *sa, stmt *a, stmt *b, stmt *offset, stmt *limit, int direction)
+stmt_limit2(sql_allocator *sa, stmt *c, stmt *piv, stmt *gid, stmt *offset, stmt *limit, int direction)
 {
 	stmt *ns = stmt_create(sa, st_limit2);
 
-	ns->op1 = stmt_list(sa, list_append(list_append(sa_list(sa), b), a));
+	ns->op1 = stmt_list(sa, list_append(list_append(list_append(sa_list(sa), c), piv), gid));
 	ns->op2 = offset;
 	ns->op3 = limit;
-	ns->nrcols = b->nrcols;
-	ns->key = b->key;
-	ns->aggr = b->aggr;
+	ns->nrcols = piv->nrcols;
+	ns->key = piv->key;
+	ns->aggr = piv->aggr;
 	ns->flag = direction;
 	return ns;
 }

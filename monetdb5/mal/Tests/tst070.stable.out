@@ -12,7 +12,6 @@ stdout of test 'tst070` in directory 'monetdb5/mal` itself:
 # Visit http://monetdb.cwi.nl/ for further information
 # Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:33085/
 !TypeException:user.foo[1]:'user.point' undefined in: (x:any, y:any) := user.point(_3:int)
-!TypeException:user.foo[2]:'user.getName' undefined in: (initial:str, surname:str) := user.getName()
 function user.foo():void;
     (x,y) := user.point(1);
     (initial:str ,surname:str ) := user.getName();
