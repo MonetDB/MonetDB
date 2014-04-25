@@ -471,8 +471,10 @@ newPlant(MalBlkPtr mb)
 	for (p = plants; p < plim && p->factory; p++)
 		;
 	stk = newGlobalStack(mb->vsize);
-	if (lastPlant == MAXPLANTS || stk == NULL)
+	if (lastPlant == MAXPLANTS || stk == NULL){
+		if( stk) GDKfree(stk);
 		return 0;
+	}
 	if (p == plim)
 		lastPlant++;
 	p->factory = mb;

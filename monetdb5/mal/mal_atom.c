@@ -110,7 +110,7 @@ int malAtomProperty(MalBlkPtr mb, InstrPtr pci)
 	assert(pci != 0);
 	name = getFunctionId(pci);
 	tpe = getTypeIndex(getModuleId(pci), (int)strlen(getModuleId(pci)), TYPE_any);
-	if (tpe < 0 || tpe >= GDKatomcnt)
+	if (tpe < 0 || tpe >= MAXATOMS)
 		return 0;
 	assert(pci->fcn != NULL);
 	switch (name[0]) {
@@ -281,7 +281,7 @@ int malAtomSize(int size, int align, char *name)
 void showAtoms(stream *fd)
 {
 	int i;
-	for (i = 0; BATatoms[i].name[0] && i < MAXATOMS; i++) {
+	for (i = 0; i < MAXATOMS && BATatoms[i].name[0]; i++) {
 		mnstr_printf(fd, "%s", BATatoms[i].name);
 		if (BATatoms[i + 1].name[0]) mnstr_printf(fd, ",");
 	}

@@ -367,8 +367,11 @@ str
 SQLshutdown_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str answ = *(str *) getArgReference(stk, pci, 0);
+	str msg;
 
-	CLTshutdown(cntxt, mb, stk, pci);
+	msg =CLTshutdown(cntxt, mb, stk, pci);
+	if( msg)
+		GDKfree(msg);
 
 	// administer the shutdown
 	mnstr_printf(GDKstdout, "#%s\n", answ);
@@ -1734,7 +1737,7 @@ mvc_append_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
-	if (tpe > TYPE_any)
+	if (tpe > GDKatomcnt)
 		tpe = TYPE_bat;
 	if (tpe == TYPE_bat && (ins = BATdescriptor(*(int *) ins)) == NULL)
 		throw(SQL, "sql.append", "Cannot access descriptor");
@@ -4139,7 +4142,7 @@ SQLvacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_table *t;
 	sql_column *c;
 	mvc *m = NULL;
-	str msg;
+	str msg= MAL_SUCCEED;
 	BAT *b, *del;
 	node *o;
 	int ordered = 0;
@@ -4181,12 +4184,12 @@ SQLvacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* now decide on the algorithm */
 	if (ordered) {
 		if (BATcount(del) > cnt / 20)
-			SQLshrink(cntxt, mb, stk, pci);
+			msg = SQLshrink(cntxt, mb, stk, pci);
 	} else
-		SQLreuse(cntxt, mb, stk, pci);
+		msg = SQLreuse(cntxt, mb, stk, pci);
 
 	BBPreleaseref(del->batCacheid);
-	return MAL_SUCCEED;
+	return msg;
 }
 
 /*
@@ -4676,7 +4679,8 @@ RAstatement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			resetMalBlk(cntxt->curprg->def, oldstop);
 			freeVariables(cntxt, cntxt->curprg->def, NULL, oldvtop);
 		}
-		assert(cntxt->glb == 0 || cntxt->glb == oldglb);	/* detect leak */
+		if( !(cntxt->glb == 0 || cntxt->glb == oldglb))
+			msg= createException(MAL,"sql","global stack leakage");	/* detect leak */
 		cntxt->glb = oldglb;
 	}
 	return msg;

@@ -482,7 +482,7 @@ callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[], char debug)
 	}
 	MT_sema_up(&mal_parallelism,"callMAL");
 	cntxt->active = FALSE;
-	if (cntxt->qtimeout && GDKusec()- mb->starttime > cntxt->qtimeout)
+	if ( ret == MAL_SUCCEED && cntxt->qtimeout && GDKusec()- mb->starttime > cntxt->qtimeout)
 		throw(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
 	return ret;
 }
@@ -1396,7 +1396,7 @@ void garbageElement(Client cntxt, ValPtr v)
 		if (!BBP_lrefs(bid))
 			return;
 		BBPdecref(bid, TRUE);
-	} else if (0 < v->vtype && v->vtype < TYPE_any && ATOMextern(v->vtype)) {
+	} else if (0 < v->vtype && v->vtype < MAXATOMS && ATOMextern(v->vtype)) {
 		if (v->val.pval)
 			GDKfree(v->val.pval);
 		v->val.pval = 0;

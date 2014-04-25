@@ -921,8 +921,10 @@ TRACEcreate(str hnme, str tnme, int tt)
 
 	snprintf(buf, 128, "trace_%s_%s", hnme, tnme);
 	b = BATdescriptor(BBPindex(buf));
-	if (b) 
+	if (b) {
+		BBPincref(b->batCacheid, TRUE);
 		return b;
+	}
 
 	b = BATnew(TYPE_void, tt, 1 << 16);
 	if (b == NULL)

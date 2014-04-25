@@ -39,8 +39,8 @@ end main;
 function user.qry():void;               #  0 qry:void := user.qry() {G}
     b := bat.new(:oid,:str);            #  1 b:bat[:oid,:str] := CMDBATnew(_2:oid, _3:str) {G}
     bat.insert(b,0@0,1);                #  2 _4:any := bat.insert(b:bat[:oid,:str], _5:oid, _6:int) {U}
-    z:bat[:oid,:str]  := mal.multiplex("user","bar",b,b);#  3 z:bat[:oid,:str] := OPTremapMultiplex(_8:str, _9:str, b:bat[:oid,:str], b:bat[:oid,:str]) {G}
-end qry;                                #  4  
+    z:bat[:oid,:str]  := mal.multiplex("user","bar",b,b);#  3 z:bat[:oid,:str] := mal.multiplex(_8:str, _9:str, b:bat[:oid,:str], b:bat[:oid,:str]) {U}
+end qry;                                #  4  {U}
 
 # 20:02:17 >  
 # 20:02:17 >  Done.

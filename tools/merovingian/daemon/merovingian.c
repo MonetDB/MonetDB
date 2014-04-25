@@ -404,6 +404,7 @@ main(int argc, char *argv[])
 	pthread_t tid = 0;
 	struct sigaction sa;
 	int ret;
+	int lockfd = -1;
 	int sock = -1;
 	int usock = -1;
 	int unsock = -1;
@@ -644,7 +645,7 @@ main(int argc, char *argv[])
 				Mfprintf(stderr, "could not get dbfarm working directory: %s\n",
 						strerror(errno));
 			}
-			MERO_EXIT(1);
+			MERO_EXIT_CLEAN(1);
 		}
 	}
 
@@ -716,11 +717,11 @@ main(int argc, char *argv[])
 			p, port);
 
 	/* lock such that we are alone on this world */
-	if ((ret = MT_lockf(".merovingian_lock", F_TLOCK, 4, 1)) == -1) {
+	if ((lockfd = MT_lockf(".merovingian_lock", F_TLOCK, 4, 1)) == -1) {
 		/* locking failed */
 		Mfprintf(stderr, "another monetdbd is already running\n");
 		MERO_EXIT_CLEAN(1);
-	} else if (ret == -2) {
+	} else if (lockfd == -2) {
 		/* directory or something doesn't exist */
 		Mfprintf(stderr, "unable to create %s/.merovingian_lock file: %s\n",
 				dbfarm, strerror(errno));
@@ -740,6 +741,8 @@ main(int argc, char *argv[])
 	if (_mero_topdp->out == -1) {
 		Mfprintf(stderr, "unable to open '%s': %s\n",
 				p, strerror(errno));
+		MT_lockf(".merovingian_lock", F_ULOCK, 4, 1);
+		close(lockfd);
 		MERO_EXIT_CLEAN(1);
 	}
 	_mero_topdp->err = _mero_topdp->out;
@@ -1057,6 +1060,11 @@ shutdown:
 	if (_mero_db_props != NULL) {
 		freeConfFile(_mero_db_props);
 		free(_mero_db_props);
+	}
+
+	if (lockfd >= 0) {
+		MT_lockf(".merovingian_lock", F_ULOCK, 4, 1);
+		close(lockfd);
 	}
 
 	/* the child's return code at this point doesn't matter, as noone

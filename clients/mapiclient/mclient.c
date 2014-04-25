@@ -1639,7 +1639,7 @@ doRequest(Mapi mid, const char *buf)
 	return 0;
 }
 
-#define CHECK_RESULT(mid, hdl, buf, break_or_continue)			\
+#define CHECK_RESULT(mid, hdl, buf, break_or_continue,freebuf)			\
 		switch (mapi_error(mid)) {				\
 		case MOK:						\
 			/* everything A OK */				\
@@ -1674,7 +1674,7 @@ doRequest(Mapi mid, const char *buf)
 				mapi_explain(mid, stderr);		\
 			errseen = 1;					\
 			timerEnd();					\
-			free(buf);					\
+			if( freebuf) free(freebuf);					\
 			return 1;					\
 		}
 
@@ -1721,7 +1721,7 @@ doFileBulk(Mapi mid, FILE *fp)
 
 		if (hdl == NULL) {
 			hdl = mapi_query_prep(mid);
-			CHECK_RESULT(mid, hdl, buf, continue);
+			CHECK_RESULT(mid, hdl, buf, continue, buf);
 		}
 
 		if (first &&
@@ -1735,7 +1735,7 @@ doFileBulk(Mapi mid, FILE *fp)
 			assert(hdl != NULL);
 
 			mapi_query_part(hdl, buf + skip, length - skip);
-			CHECK_RESULT(mid, hdl, buf + skip, continue);
+			CHECK_RESULT(mid, hdl, buf + skip, continue, buf);
 
 			/*  make sure there is a newline in the buffer */
 			if (strchr(buf + skip, '\n') == NULL)
@@ -1754,14 +1754,14 @@ doFileBulk(Mapi mid, FILE *fp)
 				(length > 0 || mapi_query_done(hdl) == MMORE))
 			continue;	/* get more data */
 
-		CHECK_RESULT(mid, hdl, buf + skip, continue);
+		CHECK_RESULT(mid, hdl, buf + skip, continue, buf);
 
 		rc = format_result(mid, hdl, 0);
 
 		if (rc == MMORE && (length > 0 || mapi_query_done(hdl) != MOK))
 			continue;	/* get more data */
 
-		CHECK_RESULT(mid, hdl, buf + skip, continue);
+		CHECK_RESULT(mid, hdl, buf + skip, continue, buf);
 
 		mapi_close_handle(hdl);
 		hdl = NULL;
@@ -2317,7 +2317,7 @@ doFile(Mapi mid, const char *file, int useinserts, int interactive, int save_his
 								  "" :
 								  "AND \"system\" = false"));
 						hdl = mapi_query(mid, q);
-						CHECK_RESULT(mid, hdl, buf, continue);
+						CHECK_RESULT(mid, hdl, buf, continue, buf);
 						while (fetch_row(hdl) == 5) {
 							name = mapi_fetch_field(hdl, 0);
 							type = mapi_fetch_field(hdl, 1);
@@ -2505,7 +2505,7 @@ doFile(Mapi mid, const char *file, int useinserts, int interactive, int save_his
 		if (hdl == NULL) {
 			timerStart();
 			hdl = mapi_query_prep(mid);
-			CHECK_RESULT(mid, hdl, buf, continue);
+			CHECK_RESULT(mid, hdl, buf, continue, buf);
 		} else
 			timerResume();
 
@@ -2514,7 +2514,7 @@ doFile(Mapi mid, const char *file, int useinserts, int interactive, int save_his
 		if (length > 0) {
 			SQLsetSpecial(line);
 			mapi_query_part(hdl, line, length);
-			CHECK_RESULT(mid, hdl, buf, continue);
+			CHECK_RESULT(mid, hdl, buf, continue, buf);
 		}
 
 		/* If the server wants more but we're at the
@@ -2532,7 +2532,7 @@ doFile(Mapi mid, const char *file, int useinserts, int interactive, int save_his
 				continue;	/* done */
 			}
 		}
-		CHECK_RESULT(mid, hdl, buf, continue);
+		CHECK_RESULT(mid, hdl, buf, continue, buf);
 
 		if (mapi_get_querytype(hdl) == Q_PREPARE) {
 			prepno = mapi_get_tableid(hdl);
@@ -2544,7 +2544,7 @@ doFile(Mapi mid, const char *file, int useinserts, int interactive, int save_his
 		if (rc == MMORE && (line != NULL || mapi_query_done(hdl) != MOK))
 			continue;	/* get more data */
 
-		CHECK_RESULT(mid, hdl, buf, continue);
+		CHECK_RESULT(mid, hdl, buf, continue, buf);
 
 		timerEnd();
 		mapi_close_handle(hdl);

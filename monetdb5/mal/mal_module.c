@@ -852,7 +852,7 @@ char **getHelp(Module m, str inputpat, int completion)
 	Symbol s;
 	size_t len1 = 0,len2 = 0;
 	int fnd=0;
-	char *t, **msg, buf[1024];
+	char *t, **msg, buf[1024]={0};
 	int top=0, i,j,k, sig = 0, doc = 0;
 	int maxhelp= MAXHELP;
 

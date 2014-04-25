@@ -12235,6 +12235,7 @@ convert_str_any(BAT *b, int tp, void *dst,
 	char *s;
 	void *d;
 	int len = ATOMsize(tp);
+	int l;
 	int (*atomfromstr)(const char *, int *, ptr *) = BATatoms[tp].atomFromStr;
 	BATiter bi = bat_iterator(b);
 
@@ -12260,7 +12261,8 @@ convert_str_any(BAT *b, int tp, void *dst,
 			nils++;
 		} else {
 			d = dst;
-			if ((*atomfromstr)(s, &len, &d) <= 0) {
+			if ((l = (*atomfromstr)(s, &len, &d)) <= 0 ||
+			    l < (int) strlen(s)) {
 				if (abort_on_error) {
 					GDKerror("22018!conversion of string "
 						 "'%s' to type %s failed.\n",
@@ -12976,11 +12978,12 @@ VARconvert(ValPtr ret, const ValRecord *v, int abort_on_error)
 						      1, 0, 1, NULL, NULL, 0,
 						      abort_on_error);
 		} else {
+			int len;
 			p = VALget(ret);
 			ret->len = BATatoms[ret->vtype].size;
-			if ((*BATatoms[ret->vtype].atomFromStr)(v->val.sval,
-								&ret->len,
-								&p) <= 0) {
+			if ((len = (*BATatoms[ret->vtype].atomFromStr)(
+				     v->val.sval, &ret->len, &p)) <= 0 ||
+			    len < (int) strlen(v->val.sval)) {
 				GDKerror("22018!conversion of string "
 					 "'%s' to type %s failed.\n",
 					 v->val.sval, ATOMname(ret->vtype));

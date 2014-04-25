@@ -1476,6 +1476,7 @@ strIconv(str *res, str org, str f, str t)
 	if (iconv(cd, &from, &len, &r, &size) == (size_t) - 1) {
 		GDKfree(*res);
 		*res = NULL;
+		iconv_close(cd);
 		GDKerror("strIconv: String conversion failed from (%s) to (%s)\n", f, t);
 		return GDK_FAIL;
 	}
