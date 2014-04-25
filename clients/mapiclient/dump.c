@@ -34,18 +34,13 @@ quoted_print(stream *f, const char *s, const char singleq)
 	while (*s) {
 		switch (*s) {
 		case '\\':
-			mnstr_write(f, "\\", 1, 1);
-			mnstr_write(f, s, 1, 1);
+			mnstr_write(f, "\\\\", 1, 2);
 			break;
 		case '"':
-			if (!singleq)
-				mnstr_write(f, "\\", 1, 1);
-			mnstr_write(f, s, 1, 1);
+			mnstr_write(f, "\"\"", 1, singleq ? 1 : 2);
 			break;
 		case '\'':
-			if (singleq)
-				mnstr_write(f, "\\", 1, 1);
-			mnstr_write(f, s, 1, 1);
+			mnstr_write(f, "''", 1, singleq ? 2 : 1);
 			break;
 		case '\n':
 			mnstr_write(f, "\\n", 1, 2);
