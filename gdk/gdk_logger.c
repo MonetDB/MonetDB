@@ -76,7 +76,7 @@
 #include "gdk_logger.h"
 #include <string.h>
 
-static BUN BUNfndT( BAT *b, ptr v)
+static BUN BUNfndT(BAT *b, ptr v)
 {
 	return BUNfnd(BATmirror(b), v);
 }
@@ -137,6 +137,8 @@ logbat_new(int tt, BUN size)
 	if (nb) {
 		BATseqbase(nb, 0);
 		nb->batDirty |= 2;
+	} else {
+		fprintf(stderr, "!ERROR: logbat_new: creating new BAT[void:%s]#" BUNFMT " failed\n", ATOMname(tt), size);
 	}
 	return nb;
 }
@@ -156,6 +158,7 @@ log_write_format(logger *l, logformat *data)
 	    mnstr_writeInt(l->log, data->nr) &&
 	    mnstr_writeInt(l->log, data->tid))
 		return LOG_OK;
+	fprintf(stderr, "!ERROR: log_write_format: write failed\n");
 	return LOG_ERR;
 }
 
@@ -166,17 +169,21 @@ log_read_string(logger *l)
 	ssize_t nr;
 	char *buf;
 
-	if (!mnstr_readInt(l->log, &len))
+	if (!mnstr_readInt(l->log, &len)) {
+		fprintf(stderr, "!ERROR: log_read_string: read failed\n");
 		return NULL;
+	}
 	if (len == 0)
 		return NULL;
 	buf = (char *) GDKmalloc(len);
-	if (buf == NULL)
+	if (buf == NULL) {
+		fprintf(stderr, "!ERROR: log_read_string: malloc failed\n");
 		return NULL;
+	}
 
 	if ((nr = mnstr_read(l->log, buf, 1, len)) != (ssize_t) len) {
 		buf[len - 1] = 0;
-		fprintf(stderr, "!ERROR: couldn't read name (%s) " SSZFMT "\n", buf, nr);
+		fprintf(stderr, "!ERROR: log_read_string: couldn't read name (%s) " SSZFMT "\n", buf, nr);
 		GDKfree(buf);
 		return NULL;
 	}
@@ -192,8 +199,10 @@ log_write_string(logger *l, char *n)
 	assert(len > 1);
 	assert(len <= INT_MAX);
 	if (!mnstr_writeInt(l->log, (int) len) ||
-	    mnstr_write(l->log, n, 1, len) != (ssize_t) len)
+	    mnstr_write(l->log, n, 1, len) != (ssize_t) len) {
+		fprintf(stderr, "!ERROR: log_write_string: write failed\n");
 		return LOG_ERR;
+	}
 	return LOG_OK;
 }
 
@@ -245,8 +254,10 @@ log_read_seq(logger *lg, logformat *l)
 	lng val;
 	BUN p;
 
-	if (!mnstr_readLng(lg->log, &val))
-		 return LOG_ERR;
+	if (!mnstr_readLng(lg->log, &val)) {
+		fprintf(stderr, "!ERROR: log_read_seq: read failed\n");
+		return LOG_ERR;
+	}
 
 	if ((p = BUNfndT(lg->seqs_id, &seq)) != BUN_NONE) {
 		BUNdelete(lg->seqs_id, p, FALSE);
@@ -506,8 +517,10 @@ log_read_create(logger *lg, trans *tr, char *name)
 		int ht, tt;
 		char *ha = buf, *ta = strchr(buf, ',');
 
-		if (!ta)
+		if (!ta) {
+			fprintf(stderr, "!ERROR: log_read_create: inconsistent data read\n");
 			return LOG_ERR;
+		}
 		*ta = 0;
 		ta++;		/* skip over , */
 		if (strcmp(ha, "vid") == 0) {
@@ -724,8 +737,10 @@ logger_open(logger *lg)
 
 	lg->log = open_wstream(filename);
 	lg->end = 0;
-	if (mnstr_errnr(lg->log))
+	if (lg->log == NULL || mnstr_errnr(lg->log)) {
+		fprintf(stderr, "!ERROR: logger_open: creating %s failed\n", filename);
 		return LOG_ERR;
+	}
 
 	return LOG_OK;
 }
@@ -762,6 +777,7 @@ logger_readlog(logger *lg, char *filename)
 		return 0;
 	}
 	if (fstat(fileno(getFile(lg->log)), &sb) < 0) {
+		fprintf(stderr, "!ERROR: logger_readlog: fstat on opened file %s failed\n", filename);
 		mnstr_destroy(lg->log);
 		lg->log = NULL;
 		return 0;
@@ -1007,6 +1023,8 @@ bm_subcommit(BAT *list_bid, BAT *list_nme, BAT *catalog_bid, BAT *catalog_nme, B
 	BATcommit(catalog_nme);
 	res = TMsubcommit_list(n, i);
 	GDKfree(n);
+	if (res < 0)
+		fprintf(stderr, "!ERROR: bm_subcommit: commit failed\n");
 	return res;
 }
 
@@ -1035,8 +1053,10 @@ logger_new(int debug, char *fn, char *logdir, int version, preversionfix_fptr pr
 	log_bid seqs_id = 0;
 	bat catalog_bid, catalog_nme, bid;
 
-	if (lg == NULL)
+	if (lg == NULL) {
+		fprintf(stderr, "!ERROR: logger_new: allocating logger structure failed\n");
 		return NULL;
+	}
 
 	lg->debug = debug;
 
@@ -1056,8 +1076,14 @@ logger_new(int debug, char *fn, char *logdir, int version, preversionfix_fptr pr
 	snprintf(filename, BUFSIZ, "%s%c%s%c%s%c",
 		 GDKgetenv("gdk_dbpath"), DIR_SEP,
 		 logdir, DIR_SEP, fn, DIR_SEP);
-	lg->fn = GDKstrdup(fn);
-	lg->dir = GDKstrdup(filename);
+	if ((lg->fn = GDKstrdup(fn)) == NULL ||
+	    (lg->dir = GDKstrdup(filename)) == NULL) {
+		fprintf(stderr, "!ERROR: logger_new: strdup failed\n");
+		GDKfree(lg->fn);
+		GDKfree(lg->dir);
+		GDKfree(lg);
+		return NULL;
+	}
 	lg->prefuncp = prefuncp;
 	lg->postfuncp = postfuncp;
 	lg->log = NULL;
@@ -1077,7 +1103,7 @@ logger_new(int debug, char *fn, char *logdir, int version, preversionfix_fptr pr
 	 * checking the database consistency later on */
 	if ((fp = fopen(bak, "r")) != NULL) {
 		fclose(fp);
-		GDKunlink(lg->dir, LOGFILE, NULL);
+		(void) GDKunlink(lg->dir, LOGFILE, NULL);
 		if (GDKmove(lg->dir, LOGFILE, "bak", lg->dir, LOGFILE, NULL) != 0)
 			logger_fatal("logger_new: cannot move log.bak file back.\n", 0, 0, 0);
 	}
@@ -1092,7 +1118,7 @@ logger_new(int debug, char *fn, char *logdir, int version, preversionfix_fptr pr
 		BAT *b = BATdescriptor(bid);
 		BAT *v;
 
-		if ( b == 0)
+		if (b == 0)
 			logger_fatal("Logger_new: inconsistent database, '%s' does not exist",bak,0,0);
 		lg->catalog_bid = logbat_new(TYPE_int, BATSIZE);
 		lg->catalog_nme = logbat_new(TYPE_str, BATSIZE);
@@ -1123,7 +1149,7 @@ logger_new(int debug, char *fn, char *logdir, int version, preversionfix_fptr pr
 		/* split snapshots -> snapshots_bid, snapshots_tid */
 		bid = logger_find_bat(lg, "snapshots");
 		b = BATdescriptor(bid);
-		if ( b == 0)
+		if (b == 0)
 			logger_fatal("Logger_new: inconsistent database, '%s' snapshots does not exist",bak,0,0);
 
 		lg->snapshots_bid = logbat_new(TYPE_int, 1);
@@ -1149,7 +1175,7 @@ logger_new(int debug, char *fn, char *logdir, int version, preversionfix_fptr pr
 		/* split seqs -> seqs_id, seqs_val */
 		bid = logger_find_bat(lg, "seqs");
 		b = BATdescriptor(bid);
-		if ( b == 0)
+		if (b == 0)
 			logger_fatal("Logger_new: inconsistent database, '%s' seqs does not exist",bak,0,0);
 
 		lg->seqs_id = logbat_new(TYPE_int, 1);
@@ -1249,13 +1275,13 @@ logger_new(int debug, char *fn, char *logdir, int version, preversionfix_fptr pr
 		 * reference for the persistent bats */
 		BUN p, q;
 		BAT *b = BATdescriptor(catalog_bid), *n;
-		if ( b == 0)
+		if (b == 0)
 			logger_fatal("Logger_new: inconsistent database, catalog does not exist",0,0,0);
 
 		snprintf(bak, BUFSIZ, "%s_catalog_nme", fn);
 		catalog_nme = BBPindex(bak);
 		n = BATdescriptor(catalog_nme);
-		if ( n == 0)
+		if (n == 0)
 			logger_fatal("Logger_new: inconsistent database, catalog_nme does not exist",0,0,0);
 
 		/* the catalog exists, and so should the log file */
@@ -1314,10 +1340,10 @@ logger_new(int debug, char *fn, char *logdir, int version, preversionfix_fptr pr
 		bat snapshots_tid = logger_find_bat(lg, "snapshots_tid");
 
 		lg->seqs_id = BATdescriptor(seqs_id);
-		if ( lg->seqs_id == 0)
+		if (lg->seqs_id == 0)
 			logger_fatal("Logger_new: inconsistent database, seqs_id does not exist",0,0,0);
 		lg->seqs_val = BATdescriptor(seqs_val);
-		if ( lg->seqs_val == 0)
+		if (lg->seqs_val == 0)
 			logger_fatal("Logger_new: inconsistent database, seqs_val does not exist",0,0,0);
 		if (BATcount(lg->seqs_id)) {
 			BUN p = BUNfndT(lg->seqs_id, &id);
@@ -1327,10 +1353,10 @@ logger_new(int debug, char *fn, char *logdir, int version, preversionfix_fptr pr
 			BUNappend(lg->seqs_val, &lg->id, FALSE);
 		}
 		lg->snapshots_bid = BATdescriptor(snapshots_bid);
-		if ( lg->snapshots_bid == 0)
+		if (lg->snapshots_bid == 0)
 			logger_fatal("Logger_new: inconsistent database, snapshots_bid does not exist",0,0,0);
 		lg->snapshots_tid = BATdescriptor(snapshots_tid);
-		if ( lg->snapshots_tid == 0)
+		if (lg->snapshots_tid == 0)
 			logger_fatal("Logger_new: inconsistent database, snapshots_tid does not exist",0,0,0);
 	}
 	lg->freed = BATnew(TYPE_void, TYPE_int, 1);
@@ -1520,6 +1546,8 @@ logger_exit(logger *lg)
 
 	logger_close(lg);
 	if (GDKmove(lg->dir, LOGFILE, NULL, lg->dir, LOGFILE, "bak") < 0) {
+		fprintf(stderr, "!ERROR: logger_exit: rename %s to %s.bak in %s failed\n",
+			LOGFILE, LOGFILE, lg->dir);
 		return LOG_ERR;
 	}
 
@@ -1527,24 +1555,39 @@ logger_exit(logger *lg)
 	if ((fp = fopen(filename, "w")) != NULL) {
 		char ext[BUFSIZ];
 
-		fprintf(fp, "%06d\n\n", lg->version);
+		if (fprintf(fp, "%06d\n\n", lg->version) < 0) {
+			fprintf(stderr, "!ERROR: logger_exit: write to %s failed\n",
+				filename);
+			return LOG_ERR;
+		}
 		lg->id ++;
 
-		if (logger_commit(lg) != LOG_OK)
+		if (logger_commit(lg) != LOG_OK) {
+			fprintf(stderr, "!ERROR: logger_exit: logger_commit failed\n");
 			return LOG_ERR;
+		}
 
-		fprintf(fp, LLFMT "\n", lg->id);
-		fclose(fp);
+		if (fprintf(fp, LLFMT "\n", lg->id) < 0 ||
+		    fclose(fp) < 0) {
+			fprintf(stderr, "!ERROR: logger_exit: write/flush to %s failed\n",
+				filename);
+			return LOG_ERR;
+		}
 
 		/* atomic action, switch to new log, keep old for
 		 * later cleanup actions */
 		snprintf(ext, BUFSIZ, "bak-" LLFMT, lg->id);
 
-		if (GDKmove(lg->dir, LOGFILE, "bak", lg->dir, LOGFILE, ext) < 0)
+		if (GDKmove(lg->dir, LOGFILE, "bak", lg->dir, LOGFILE, ext) < 0) {
+			fprintf(stderr, "!ERROR: logger_exit: rename %s.bak to %s.%s failed\n",
+				LOGFILE, LOGFILE, ext);
 			return LOG_ERR;
+		}
 
 		lg->changes = 0;
 	} else {
+		fprintf(stderr, "!ERROR: logger_exit: could not create %s\n",
+			filename);
 		GDKerror("logger_exit: could not open %s\n", filename);
 		return LOG_ERR;
 	}
@@ -1574,8 +1617,10 @@ logger_cleanup(logger *lg)
 	if (lg->debug & 1)
 		fprintf(stderr, "logger_cleanup %s\n", buf);
 
-	if ((fp = fopen(buf, "r")) == NULL)
+	if ((fp = fopen(buf, "r")) == NULL) {
+		fprintf(stderr, "!ERROR: logger_cleanup: cannot open file %s\n", buf);
 		return LOG_ERR;
+	}
 
 	/* skip catalog */
 	while (fgets(id, BUFSIZ, fp) != NULL && id[0] != '\n')
@@ -1668,8 +1713,10 @@ log_bat_persists(logger *lg, BAT *b, char *name)
 	len = snprintf(buf, BUFSIZ, "%s,%s", ha, ta);
 	len++;			/* include EOS */
 	if (!mnstr_writeInt(lg->log, len) ||
-	    mnstr_write(lg->log, buf, 1, len) != (ssize_t) len)
+	    mnstr_write(lg->log, buf, 1, len) != (ssize_t) len) {
+		fprintf(stderr, "!ERROR: log_bat_persists: write failed\n");
 		return LOG_ERR;
+	}
 
 	if (lg->debug & 1)
 		fprintf(stderr, "Logged new bat [%s,%s] %s " BUNFMT " (%d)\n",
@@ -1698,8 +1745,10 @@ log_bat_transient(logger *lg, char *name)
 	}
 
 	if (log_write_format(lg, &l) == LOG_ERR ||
-	    log_write_string(lg, name) == LOG_ERR)
+	    log_write_string(lg, name) == LOG_ERR) {
+		fprintf(stderr, "!ERROR: log_bat_transient: write failed\n");
 		return LOG_ERR;
+	}
 
 	if (lg->debug & 1)
 		fprintf(stderr, "Logged destroyed bat %s\n", name);
@@ -1746,6 +1795,8 @@ log_delta(logger *lg, BAT *b, char *name)
 		if (lg->debug & 1)
 			fprintf(stderr, "Logged %s %d inserts\n", name, l.nr);
 	}
+	if (ok == GDK_FAIL)
+		fprintf(stderr, "!ERROR: log_delta: write failed\n");
 	return (ok == GDK_SUCCEED) ? LOG_OK : LOG_ERR;
 }
 
@@ -1819,13 +1870,14 @@ log_bat(logger *lg, BAT *b, char *name)
 		if (lg->debug & 1)
 			fprintf(stderr, "Logged %s %d deletes\n", name, l.nr);
 	}
+	if (ok == GDK_FAIL)
+		fprintf(stderr, "!ERROR: log_bat: write failed\n");
 	return (ok == GDK_SUCCEED) ? LOG_OK : LOG_ERR;
 }
 
 int
 log_bat_clear(logger *lg, char *name)
 {
-	int ok = GDK_SUCCEED;
 	logformat l;
 
 	if (lg->debug & 128) {
@@ -1845,7 +1897,7 @@ log_bat_clear(logger *lg, char *name)
 	if (lg->debug & 1)
 		fprintf(stderr, "Logged clear %s\n", name);
 
-	return (ok == GDK_SUCCEED) ? LOG_OK : LOG_ERR;
+	return LOG_OK;
 }
 
 int
@@ -1919,18 +1971,24 @@ log_tend(logger *lg)
 		 * necessarily dense-headed */
 		tids = BATsubselect(lg->snapshots_tid, NULL, &lg->tid, &lg->tid,
 				    TRUE, TRUE, FALSE);
-		if (tids == NULL)
+		if (tids == NULL) {
+			fprintf(stderr, "!ERROR: log_tend: subselect failed\n");
 			return LOG_ERR;
+		}
 		bids = BATproject(tids, lg->snapshots_bid);
 #else
                 tids = BATuselect(lg->snapshots_tid, &lg->tid, &lg->tid);
-		if (tids == NULL)
+		if (tids == NULL) {
+			fprintf(stderr, "!ERROR: log_tend: select failed\n");
 			return LOG_ERR;
+		}
                 bids = BATsemijoin(lg->snapshots_bid, tids);
 #endif
 		BBPunfix(tids->batCacheid);
-		if (bids == NULL)
+		if (bids == NULL) {
+			fprintf(stderr, "!ERROR: log_tend: semijoin failed\n");
 			return LOG_ERR;
+		}
 		res = bm_subcommit(bids, NULL, lg->snapshots_bid,
 				   lg->snapshots_tid, NULL, lg->debug);
 		BBPunfix(bids->batCacheid);
@@ -1942,8 +2000,10 @@ log_tend(logger *lg)
 	    log_write_format(lg, &l) == LOG_ERR ||
 	    mnstr_flush(lg->log) ||
 	    mnstr_fsync(lg->log) ||
-	    pre_allocate(lg) < 0)
+	    pre_allocate(lg) < 0) {
+		fprintf(stderr, "!ERROR: log_tend: write failed\n");
 		return LOG_ERR;
+	}
 	return LOG_OK;
 }
 
@@ -1990,8 +2050,10 @@ log_sequence(logger *lg, int seq, lng val)
 	    !mnstr_writeLng(lg->log, val) ||
 	    mnstr_flush(lg->log) ||
 	    mnstr_fsync(lg->log) ||
-	    pre_allocate(lg) < 0)
-		 return LOG_ERR;
+	    pre_allocate(lg) < 0) {
+		fprintf(stderr, "!ERROR: log_sequence: write failed\n");
+		return LOG_ERR;
+	}
 
 	return LOG_OK;
 }
@@ -2108,7 +2170,7 @@ logger_del_bat(logger *lg, log_bid bid)
 	}
 	BUNdelete(lg->catalog_bid, p, FALSE);
 	BUNdelete(lg->catalog_nme, p, FALSE);
-/*assert( BBP_lrefs(bid) == 0 );*/
+/*assert(BBP_lrefs(bid) == 0);*/
 }
 
 log_bid
