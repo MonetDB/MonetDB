@@ -1642,11 +1642,9 @@ MATsort(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int rev)
 		}
 	}
 error:
-	if (bats) {
-		for (i=0; i<len && bats[i]; i++)
-			BBPunfix(bats[i]->batCacheid);
-		GDKfree(bats);
-	}
+	for (i=0; i<len && bats[i]; i++)
+		BBPunfix(bats[i]->batCacheid);
+	GDKfree(bats);
 	if (map && res) {
 		map->tsorted = 0;
 		map->trevsorted = 0;

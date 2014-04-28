@@ -679,9 +679,10 @@ prepareSaveBox(Box box, str *boxfile, str *boxfilebak)
 #define S_IRUSR 0400
 #define S_IWUSR 0200
 #endif
-	if (f != NULL)
-		chmod(*boxfile, (S_IRUSR | S_IWUSR));
-	else
+	if (f != NULL){
+		if( chmod(*boxfile, (S_IRUSR | S_IWUSR)) )
+				showException(GDKout, MAL,"box.saveBox", "can not change box file mode");
+	} else
 		showException(GDKout, MAL,"box.saveBox", "can not create box file");
 	if (f == NULL) {
 		GDKfree(*boxfile); *boxfile= NULL;
@@ -759,7 +760,8 @@ loadBox(str name)
 	str msg;
 
 	snprintf(boxfile, PATHLENGTH, "%s%cbox", GDKgetenv("gdk_dbpath"), DIR_SEP);
-	mkdir(boxfile,0755); /* ignore errors */
+	if( mkdir(boxfile,0755) )
+		return ; /* ignore errors */
 	i = strlen(boxfile);
 	snprintf(boxfile + i, PATHLENGTH - i, "%c%s.box", DIR_SEP, name);
 #ifdef DEBUG_MAL_BOX
