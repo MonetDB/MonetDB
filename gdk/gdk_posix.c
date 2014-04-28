@@ -393,6 +393,7 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 	assert(mode & MMAP_WRITABLE);
 
 	if (*new_size < old_size) {
+#ifndef __clang_analyzer__	/* hide this from static code analyzer */
 		/* shrink */
 		if (munmap((char *) old_address + *new_size,
 			   old_size - *new_size) < 0) {
@@ -404,6 +405,7 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 #ifdef MMAP_DEBUG
 		fprintf(stderr, "MT_mremap(%s,"PTRFMT","SZFMT","SZFMT") -> shrinking\n", path?path:"NULL", PTRFMTCAST old_address, old_size, *new_size);
 #endif
+#endif	/* !__clang_analyzer__ */
 		return old_address;
 	}
 	if (*new_size == old_size) {
