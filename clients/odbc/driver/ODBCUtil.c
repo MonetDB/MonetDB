@@ -124,7 +124,7 @@ ODBCwchar2utf8(const SQLWCHAR *s, SQLLEN length, char **errmsg)
 	e = s + length;
 	/* count necessary length */
 	l = 1;			/* space for NULL byte */
-	for (s1 = s; s1 < e; s1++) {
+	for (s1 = s; s1 < e && *s1; s1++) {
 		c = *s1;
 		if (0xD800 <= c && c <= 0xDBFF) {
 			/* high surrogate, must be followed by low surrogate */
@@ -159,7 +159,7 @@ ODBCwchar2utf8(const SQLWCHAR *s, SQLLEN length, char **errmsg)
 			*errmsg = "Memory allocation error";
 		return NULL;
 	}
-	for (s1 = s, p = buf; s1 < e; s1++) {
+	for (s1 = s, p = buf; s1 < e && *s1; s1++) {
 		c = *s1;
 		if (0xD800 <= c && c <= 0xDBFF) {
 			/* high surrogate followed by low surrogate */

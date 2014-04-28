@@ -1636,7 +1636,7 @@ doRequest(Mapi mid, const char *buf)
 	return 0;
 }
 
-#define CHECK_RESULT(mid, hdl, buf, break_or_continue,freebuf)			\
+#define CHECK_RESULT(mid, hdl, buf, break_or_continue, freebuf)		\
 		switch (mapi_error(mid)) {				\
 		case MOK:						\
 			/* everything A OK */				\
@@ -1671,7 +1671,8 @@ doRequest(Mapi mid, const char *buf)
 				mapi_explain(mid, stderr);		\
 			errseen = 1;					\
 			timerEnd();					\
-			if( freebuf) free(freebuf);					\
+			if (freebuf)					\
+				free(freebuf);				\
 			return 1;					\
 		}
 

@@ -139,7 +139,10 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 			if (fd >= 0) {
 				close(fd);
 				h->newstorage = STORE_MMAP;
+				/* coverity[check_return] */
 				HEAPload(h, nme, ext, FALSE);
+				/* success checked by looking at
+				 * h->base below */
 			}
 			GDKfree(of);
 		}
