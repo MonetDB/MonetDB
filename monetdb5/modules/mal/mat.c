@@ -181,15 +181,11 @@ MATpackIncrement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			if (BATcount(b) == 0)
 				BATseqbase(BATmirror(b), bb->T->seq);
 			BATappend(b,bb,FALSE);
-		} else {
-			BBPreleaseref(b->batCacheid);
-			throw(MAL, "mat.pack", RUNTIME_OBJECT_MISSING);
 		}
 		assert(!b->H->nil || !b->H->nonil);
 		assert(!b->T->nil || !b->T->nonil);
 		BBPkeepref(*ret = b->batCacheid);
 		BBPreleaseref(bb->batCacheid);
-		BBPreleaseref(b->batCacheid);
 	}
 	return MAL_SUCCEED;
 }
@@ -269,9 +265,6 @@ MATpackSliceInternal(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			 */
 			if (lst <= cap + c) {
 				b = BATdescriptor(bid);
-				if ( b == NULL){
-					throw(MAL,"mat.packSlice", RUNTIME_OBJECT_MISSING);
-				}
 				bn = BATslice(b, fst - cap, lst - cap);
 				BBPunfix(b->batCacheid);
 				BBPkeepref(*ret = bn->batCacheid);
@@ -356,7 +349,7 @@ MATpack2Internal(MalStkPtr stk, InstrPtr p)
 	}
 	bn = BATextend(bn, cap);
 	if( bn == NULL)
-		throw(MAL, "mat.pack", MAL_MALLOC_FAIL);
+		throw(MAL, "mat.pack", RUNTIME_OBJECT_MISSING);
 	for( i = 2; i < p->argc; i++){
 		b= BATdescriptor(stk->stk[getArg(p,i)].val.ival);
 		if( b == NULL){
@@ -494,12 +487,8 @@ MATmergepack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	}
 
 	bn = BATnew(TYPE_void, TYPE_oid, cap);
-	if (bn == NULL){
-		GDKfree(bats);
-		GDKfree(o_src);
-		GDKfree(o_end);
+	if (bn == NULL)
 		throw(MAL, "mat.pack", MAL_MALLOC_FAIL);
-	}
 	if ( cap == 0){
 		BATseqbase(bn, 0);
 		BATseqbase(BATmirror(bn), 0);
@@ -821,9 +810,8 @@ MATproject_var( BAT *map, BAT **bats, int len )
 			res->T->shift = bats[j]->T->shift;
 			BBPshare(bats[j]->T->vheap->parentid);
 		}
-	} else {
+	} else
 		res = MATproject_any( map, bats, len );
-	}
 	return res;
 }
 
@@ -858,7 +846,7 @@ MATproject_( BAT *map, BAT **bats, int len )
 	} else {
 		res = MATproject_any(map, bats, len);
 	}
-	if( res) {
+	if(res){
 		res->tsorted = 0;
 		res->trevsorted = 0;
 		res->T->nonil = MATnonil(bats, len);
@@ -878,6 +866,8 @@ MATproject(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int i, len = pci->argc-2, sorted = 1;
 
 	(void) cntxt; (void) mb; (void) stk; 
+	if( bats == NULL)
+		throw(SQL, "mat.project",MAL_MALLOC_FAIL);
 	map = BATdescriptor(map_id);
 	if (!map)
 		goto error;
@@ -1616,9 +1606,8 @@ MATsort(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int rev)
 	int i, len = pci->argc-2;
 
 	(void) cntxt; (void) mb; (void) stk; 
-	if( bats ==NULL)
+	if( bats == NULL)
 		throw(SQL, "mat.sortTail",MAL_MALLOC_FAIL);
-
 	for (i=2; i<pci->argc; i++) {
 		bat id = *(bat*) getArgReference(stk,pci,i);
 		bats[i-2] = BATdescriptor(id);

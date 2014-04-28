@@ -771,7 +771,7 @@ setFilter(Module cntxt, str mod, str fcn)
 	profileAll = strcmp(mod, "*") == 0 && strcmp(fcn, "*") == 0;
 
 	MT_lock_set(&mal_profileLock, "setFilter");
-	if (mod && fcn && topFilter < 32) {
+	if (topFilter < 32) {
 		modFilter[topFilter] = putName(mod, strlen(mod));
 		fcnFilter[topFilter++] = putName(fcn, strlen(fcn));
 	}
