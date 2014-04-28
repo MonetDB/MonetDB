@@ -78,9 +78,6 @@
 #ifdef HAVE_FCNTL_H
 #include <fcntl.h>
 #endif
-#ifdef HAVE_SYS_STAT_H
-#include <sys/stat.h>
-#endif
 #include <unistd.h>
 
 #if defined(_MSC_VER) && _MSC_VER >= 1400
@@ -237,7 +234,6 @@ loadLibrary(str filename, int flag)
 
 	while (*mod_path) {
 		char *p;
-		struct stat stbuf;
 
 		if ((p = strchr(mod_path, PATH_SEP)) != NULL)
 			*p = '\0';
@@ -249,22 +245,19 @@ loadLibrary(str filename, int flag)
 		snprintf(nme, MAXPATHLEN, "%s%c%s_%s%s",
 				mod_path, DIR_SEP, SO_PREFIX, s, SO_EXT);
 #endif
-		if (stat(nme, &stbuf) != 0 || !S_ISREG(stbuf.st_mode))
-			*nme = '\0';
-		if (*nme == '\0' && strcmp(SO_EXT, ".so") != 0) {
+		handle = dlopen(nme, mode);
+		if (handle == NULL && strcmp(SO_EXT, ".so") != 0) {
 			/* try .so */
 			snprintf(nme, MAXPATHLEN, "%s%c%s_%s.so",
 					mod_path, DIR_SEP, SO_PREFIX, s);
-			if (stat(nme, &stbuf) != 0 || !S_ISREG(stbuf.st_mode))
-				*nme = '\0';
+			handle = dlopen(nme, mode);
 		}
 #ifdef __APPLE__
-		if (*nme == '\0' && strcmp(SO_EXT, ".bundle") != 0) {
+		if (handle == NULL && strcmp(SO_EXT, ".bundle") != 0) {
 			/* try .bundle */
 			snprintf(nme, MAXPATHLEN, "%s%c%s_%s.bundle",
 					mod_path, DIR_SEP, SO_PREFIX, s);
-			if (stat(nme, &stbuf) != 0 || !S_ISREG(stbuf.st_mode))
-				*nme = '\0';
+			handle = dlopen(nme, mode);
 		}
 #endif
 
@@ -272,17 +265,7 @@ loadLibrary(str filename, int flag)
 		if (p != NULL)
 			*p = PATH_SEP;
 
-		if (*nme != '\0') {
-			handle = dlopen(nme, mode);
-			if (handle != NULL) {
-				break;
-			} else {
-				throw(LOADER, "loadLibrary",
-						"failed to load library: %s", dlerror());
-			}
-		}
-
-		if (p == NULL)
+		if (p == NULL || handle != NULL)
 			break;
 		mod_path = p + 1;
 	}
