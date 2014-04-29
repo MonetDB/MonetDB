@@ -93,6 +93,7 @@ test_TEXT (__main__.Test_Capabilities) ... ok
 test_TIME (__main__.Test_Capabilities) ... ok
 test_TIMESTAMP (__main__.Test_Capabilities) ... ok
 test_TIMESTAMPTZ (__main__.Test_Capabilities) ... ok
+test_TIMETZ (__main__.Test_Capabilities) ... ok
 test_TINYINT (__main__.Test_Capabilities) ... ok
 test_URL (__main__.Test_Capabilities) ... ok
 test_bigresult (__main__.Test_Capabilities) ... ok
@@ -106,7 +107,7 @@ test_transactions (__main__.Test_Capabilities) ... ok
 test_truncation (__main__.Test_Capabilities) ... ok
 
 ----------------------------------------------------------------------
-Ran 25 tests
+Ran 26 tests
 
 OK
 test_BINARY (__main__.Test_DBAPI20) ... ok

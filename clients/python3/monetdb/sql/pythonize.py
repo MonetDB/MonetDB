@@ -63,7 +63,7 @@ def py_timetz(data):
     """ returns a python Time where data contains a tz code
     """
     t, timezone_delta = _extract_timezone(data)
-    return (datetime.datetime.strptime(t, '%H:%M:%S') + timezone_delta).time()
+    return (datetime.datetime.strptime(t, '%H:%M:%S.%f') + timezone_delta).time()
 
 
 def py_date(data):
