@@ -68,13 +68,29 @@ opendir(const char *dirname)
 	DIR *result = NULL;
 	char *mask;
 	size_t k;
+	DWORD e;
 
-	if (dirname == NULL)
+	if (dirname == NULL) {
+		SetLastError(ERROR_INVALID_ADDRESS);
 		return NULL;
+	}
 
 	result = (DIR *) malloc(sizeof(DIR));
+	if (result == NULL) {
+		SetLastError(ERROR_NOT_ENOUGH_MEMORY);
+		return NULL;
+	}
 	result->find_file_data = malloc(sizeof(WIN32_FIND_DATA));
 	result->dir_name = strdup(dirname);
+	if (result->find_file_data == NULL || result->dir_name) {
+		if (result->find_file_data)
+			free(result->find_file_data);
+		if (result->dir_name)
+			free(result->dir_name);
+		free(result);
+		SetLastError(ERROR_NOT_ENOUGH_MEMORY);
+		return NULL;
+	}
 
 	k = strlen(result->dir_name);
 	if (k && result->dir_name[k - 1] == '\\') {
@@ -82,16 +98,25 @@ opendir(const char *dirname)
 		k--;
 	}
 	mask = malloc(strlen(result->dir_name) + 3);
+	if (mask == NULL) {
+		free(result->find_file_data);
+		free(result->dir_name);
+		free(result);
+		SetLastError(ERROR_NOT_ENOUGH_MEMORY);
+		return NULL;
+	}
 	sprintf(mask, "%s\\*", result->dir_name);
 
 	result->find_file_handle = FindFirstFile(mask, (LPWIN32_FIND_DATA) result->find_file_data);
+	if (result->find_file_handle == INVALID_HANDLE_VALUE)
+		e = GetLastError();
 	free(mask);
 
 	if (result->find_file_handle == INVALID_HANDLE_VALUE) {
 		free(result->dir_name);
 		free(result->find_file_data);
 		free(result);
-		SetLastError(ERROR_OPEN_FAILED);	/* enforce EIO */
+		SetLastError(e);
 		return NULL;
 	}
 	result->just_opened = TRUE;
@@ -102,17 +127,21 @@ opendir(const char *dirname)
 static char *
 basename(const char *file_name)
 {
-	register char *base;
+	const char *p;
+	const char *base;
 
 	if (file_name == NULL)
 		return NULL;
 
-	base = strrchr(file_name, '\\');
-	if (base)
-		return base + 1;
-
 	if (isalpha((int) (unsigned char) file_name[0]) && file_name[1] == ':')
-		return (char *) file_name + 2;
+		file_name += 2;	/* skip over drive letter */
+
+	base = NULL;
+	for (p = file_name; *p; p++)
+		if (*p == '\\' || *p == '/')
+			base = p;
+	if (base)
+		return (char *) base + 1;
 
 	return (char *) file_name;
 }
@@ -122,22 +151,16 @@ readdir(DIR *dir)
 {
 	static struct dirent result;
 
-	if (dir == NULL)
+	if (dir == NULL) {
+		SetLastError(ERROR_INVALID_ADDRESS);
 		return NULL;
+	}
 
 	if (dir->just_opened)
 		dir->just_opened = FALSE;
-	else {
-		if (!FindNextFile(dir->find_file_handle, (LPWIN32_FIND_DATA) dir->find_file_data)) {
-			int error = GetLastError();
-
-			if (error) {
-				if (error != ERROR_NO_MORE_FILES)
-					SetLastError(ERROR_OPEN_FAILED);	/* enforce EIO */
-				return NULL;
-			}
-		}
-	}
+	else if (!FindNextFile(dir->find_file_handle,
+			       (LPWIN32_FIND_DATA) dir->find_file_data))
+		return NULL;
 	strncpy(result.d_name, basename(((LPWIN32_FIND_DATA) dir->find_file_data)->cFileName), sizeof(result.d_name));
 	result.d_name[sizeof(result.d_name) - 1] = '\0';
 	result.d_namelen = (int) strlen(result.d_name);
@@ -150,34 +173,38 @@ rewinddir(DIR *dir)
 {
 	char *mask;
 
-	if (dir == NULL)
+	if (dir == NULL) {
+		SetLastError(ERROR_INVALID_ADDRESS);
 		return;
+	}
 
 	if (!FindClose(dir->find_file_handle))
 		fprintf(stderr, "#rewinddir(): FindClose() failed\n");
 
 	mask = malloc(strlen(dir->dir_name) + 3);
+	if (mask == NULL) {
+		SetLastError(ERROR_NOT_ENOUGH_MEMORY);
+		dir->find_file_handle = INVALID_HANDLE_VALUE;
+		return;
+	}
 	sprintf(mask, "%s\\*", dir->dir_name);
 	dir->find_file_handle = FindFirstFile(mask, (LPWIN32_FIND_DATA) dir->find_file_data);
 	free(mask);
-
-	if (dir->find_file_handle == INVALID_HANDLE_VALUE) {
-		SetLastError(ERROR_OPEN_FAILED);	/* enforce EIO */
+	if (dir->find_file_handle == INVALID_HANDLE_VALUE)
 		return;
-	}
 	dir->just_opened = TRUE;
 }
 
 int
 closedir(DIR *dir)
 {
-	if (dir == NULL)
-		return -1;
-
-	if (!FindClose(dir->find_file_handle)) {
-		SetLastError(ERROR_OPEN_FAILED);	/* enforce EIO */
+	if (dir == NULL) {
+		SetLastError(ERROR_INVALID_ADDRESS);
 		return -1;
 	}
+
+	if (!FindClose(dir->find_file_handle))
+		return -1;
 
 	free(dir->dir_name);
 	free(dir->find_file_data);

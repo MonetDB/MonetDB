@@ -1119,6 +1119,7 @@ win_errmap_t win_errmap[] = {
 	{ERROR_DEVICE_IN_USE, "ERROR_DEVICE_IN_USE", EAGAIN},
 	{ERROR_INVALID_AT_INTERRUPT_TIME, "ERROR_INVALID_AT_INTERRUPT_TIME", EINTR},
 	{ERROR_IO_DEVICE, "ERROR_IO_DEVICE", EIO},
+	{ERROR_INVALID_ADDRESS, "ERROR_INVALID_ADDRESS", EFAULT},
 };
 
 #define GDK_WIN_ERRNO_TLS 13
@@ -1136,6 +1137,7 @@ win_errno(void)
 		*result = 0;
 		TlsSetValue(GDK_WIN_ERRNO_TLS, result);
 	}
+	*result = ENOSYS;	/* fallback error */
 	for (i = 0; win_errmap[i].w != 0; ++i) {
 		if (err == win_errmap[i].w) {
 			*result = win_errmap[i].e;
