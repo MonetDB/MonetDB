@@ -2258,14 +2258,14 @@ BBPkeepref(bat i)
 void
 BBPreleaseref(bat i)
 {
-        int lock = locked_by ? MT_getpid() != locked_by : 1;
+	int lock = locked_by ? MT_getpid() != locked_by : 1;
 
-        if (i == bat_nil)
-                return;
-        if (i < 0)
-                i = -i;
-        assert(BBP_refs(i) > 0);
-        decref(i, FALSE, FALSE, lock);
+	if (i == bat_nil)
+		return;
+	if (i < 0)
+		i = -i;
+	assert(BBP_refs(i) > 0);
+	decref(i, FALSE, FALSE, lock);
 }
 
 static inline void
@@ -3206,7 +3206,7 @@ do_backup(const char *srcdir, const char *nme, const char *extbase,
 		if (tp && dirty && !file_exists(BAKDIR, nme, ext)) {
 			/* file will be saved (is dirty), move the old
 			 * image into backup */
-		        mvret = heap_move(h, srcdir, subcommit ? SUBDIR : BAKDIR, nme, ext);
+			mvret = heap_move(h, srcdir, subcommit ? SUBDIR : BAKDIR, nme, ext);
 		} else if (subcommit && tp &&
 			   (dirty || file_exists(BAKDIR, nme, ext))) {
 			/* file is clean. move the backup into the
@@ -3215,10 +3215,10 @@ do_backup(const char *srcdir, const char *nme, const char *extbase,
 			mvret = file_move(BAKDIR, SUBDIR, nme, ext);
 		}
 		/* there is a situation where the move may fail,
-                 * namely if this heap was not supposed to be existing
-                 * before, i.e. after a BATmaterialize on a persistent
-                 * bat as a workaround, do not complain about move
-                 * failure if the source file is nonexistent
+		 * namely if this heap was not supposed to be existing
+		 * before, i.e. after a BATmaterialize on a persistent
+		 * bat as a workaround, do not complain about move
+		 * failure if the source file is nonexistent
 		 */
 		if (mvret && file_exists(srcdir, nme, ext)) {
 			ret |= mvret;

@@ -598,7 +598,7 @@ BATclear(BAT *b, int force)
 	}
 
 	if (force)
-                b->batFirst = b->batDeleted = b->batInserted = 0;
+		b->batFirst = b->batDeleted = b->batInserted = 0;
 	else
 		b->batFirst = b->batInserted;
 	BATsetcount(b,0);
@@ -1807,9 +1807,9 @@ BUNfnd(BAT *b, const void *v)
 		bi.b = b = BATmirror(b);			\
 	} while (0)
 
-#define dohash(hp)        (ATOMstorage(hp->type) != TYPE_bte &&		\
-			   (ATOMstorage(hp->type) != TYPE_str ||	\
-			    !GDK_ELIMDOUBLES(hp->vheap)))
+#define dohash(hp)	(ATOMstorage(hp->type) != TYPE_bte &&	\
+			 (ATOMstorage(hp->type) != TYPE_str ||	\
+			  !GDK_ELIMDOUBLES(hp->vheap)))
 
 static BUN
 BUNlocate(BAT *b, const void *x, const void *y)

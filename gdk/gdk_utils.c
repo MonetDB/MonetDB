@@ -301,8 +301,8 @@ size_t GDK_vm_maxsize = GDK_VM_MAXSIZE;
 
 int GDK_vm_trim = 1;
 
-#define SEG_SIZE(x,y)   ((x)+(((x)&((1<<(y))-1))?(1<<(y))-((x)&((1<<(y))-1)):0))
-#define MAX_BIT         ((int) (sizeof(ssize_t)<<3))
+#define SEG_SIZE(x,y)	((x)+(((x)&((1<<(y))-1))?(1<<(y))-((x)&((1<<(y))-1)):0))
+#define MAX_BIT		((int) (sizeof(ssize_t)<<3))
 
 #if defined(GDK_MEM_KEEPHISTO) || defined(GDK_VM_KEEPHISTO)
 /* histogram update macro */

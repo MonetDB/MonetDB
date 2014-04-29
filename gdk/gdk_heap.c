@@ -824,11 +824,11 @@ HEAPmemsize(Heap *h)
 #define HEAPVERSION	20030408
 
 typedef struct heapheader {
-	size_t head;		/* index to first free block            */
-	int alignment;		/* alignment of objects on heap         */
-	size_t firstblock;	/* first block in heap                  */
+	size_t head;		/* index to first free block */
+	int alignment;		/* alignment of objects on heap */
+	size_t firstblock;	/* first block in heap */
 	int version;
-	int (*sizefcn)(const void *);	/* ADT function to ask length           */
+	int (*sizefcn)(const void *);	/* ADT function to ask length */
 } HEADER32;
 
 typedef struct {
@@ -847,8 +847,8 @@ typedef HEADER32 HEADER;
 typedef HEADER64 HEADER_OTHER;
 #endif
 typedef struct hfblock {
-	size_t size;		/* Size of this block in freelist        */
-	size_t next;		/* index of next block                   */
+	size_t size;		/* Size of this block in freelist */
+	size_t next;		/* index of next block */
 } CHUNK;
 
 #define roundup_8(x)	(((x)+7)&~7)

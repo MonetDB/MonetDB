@@ -208,7 +208,7 @@ SQLColumnPrivileges_(ODBCStmt *stmt,
 	query_end += strlen(query_end);
 
 	/* query the MonetDB data dictionary tables */
-        rc = SQLExecDirect_(stmt, (SQLCHAR *) query,
+	rc = SQLExecDirect_(stmt, (SQLCHAR *) query,
 			    (SQLINTEGER) (query_end - query));
 
 	free(query);

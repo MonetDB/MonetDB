@@ -1973,12 +1973,12 @@ log_tend(logger *lg)
 		}
 		bids = BATproject(tids, lg->snapshots_bid);
 #else
-                tids = BATuselect(lg->snapshots_tid, &lg->tid, &lg->tid);
+		tids = BATuselect(lg->snapshots_tid, &lg->tid, &lg->tid);
 		if (tids == NULL) {
 			fprintf(stderr, "!ERROR: log_tend: select failed\n");
 			return LOG_ERR;
 		}
-                bids = BATsemijoin(lg->snapshots_bid, tids);
+		bids = BATsemijoin(lg->snapshots_bid, tids);
 #endif
 		BBPunfix(tids->batCacheid);
 		if (bids == NULL) {

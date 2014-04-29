@@ -27,7 +27,7 @@
  * emulation of Posix functionality on the WIN32 native platform.
  */
 #include "monetdb_config.h"
-#include "gdk.h"        /* includes gdk_posix.h */
+#include "gdk.h"		/* includes gdk_posix.h */
 #include "gdk_private.h"
 #include "mutils.h"
 #include <stdio.h>
