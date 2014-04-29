@@ -1114,7 +1114,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 
 	if (task == 0) {
 		MT_lock_set(&errorlock, "SQLload_file");
-		if (task->as->error == NULL)
+		if (as->error == NULL)
 			as->error = M5OutOfMemory;
 		MT_lock_unset(&errorlock, "SQLload_file");
 		return BUN_NONE;
