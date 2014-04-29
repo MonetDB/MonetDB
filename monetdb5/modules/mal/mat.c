@@ -266,9 +266,13 @@ MATpackSliceInternal(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			 */
 			if (lst <= cap + c) {
 				b = BATdescriptor(bid);
-				bn = BATslice(b, fst - cap, lst - cap);
-				BBPunfix(b->batCacheid);
-				BBPkeepref(*ret = bn->batCacheid);
+				if( b){
+					bn = BATslice(b, fst - cap, lst - cap);
+					BBPunfix(b->batCacheid);
+					BBPkeepref(*ret = bn->batCacheid);
+				} else
+					throw(MAL, "mat.packSlice", RUNTIME_OBJECT_MISSING);
+
 				return MAL_SUCCEED;
 			}
 			if (fst < cap + c) {
