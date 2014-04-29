@@ -902,6 +902,7 @@ main(int argc, char *argv[])
 	/* open up connections */
 	if (
 			(e = openConnectionTCP(&sock, port, stdout)) == NO_ERR &&
+			/* coverity[operator_confusion] */
 			(unlink(control_usock) | unlink(mapi_usock) | 1) &&
 			(e = openConnectionUNIX(&socku, mapi_usock, 0, stdout)) == NO_ERR &&
 			(discovery == 0 || (e = openConnectionUDP(&usock, port)) == NO_ERR) &&
