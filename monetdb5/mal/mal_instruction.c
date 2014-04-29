@@ -1573,7 +1573,7 @@ defConstant(MalBlkPtr mb, int type, ValPtr cst)
 	k = newTmpVariable(mb, type);
 	setVarConstant(mb, k);
 	setVarFixed(mb, k);
-	if (type >= 0 && type < TYPE_any && ATOMextern(type))
+	if (type >= 0 && type < GDKatomcnt && ATOMextern(type))
 		setVarCleanup(mb, k);
 	else
 		clrVarCleanup(mb, k);
