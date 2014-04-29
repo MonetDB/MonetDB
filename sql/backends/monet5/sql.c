@@ -964,6 +964,7 @@ drop_trigger(mvc *sql, char *sname, char *tname)
 		return sql_message("3F000!DROP TRIGGER: no such schema '%s'", sname);
 	if (!s)
 		s = cur_schema(sql);
+	assert(s);
 	if (s && !schema_privs(sql->role_id, s))
 		return sql_message("3F000!DROP TRIGGER: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), s->base.name);
 
