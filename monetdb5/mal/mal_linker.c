@@ -235,37 +235,38 @@ loadLibrary(str filename, int flag)
 	while (*mod_path) {
 		char *p;
 
-		if ((p = strchr(mod_path, PATH_SEP)) != NULL)
-			*p = '\0';
+		for (p = mod_path; *p && *p != PATH_SEP; p++)
+			;
+
 		/* try hardcoded SO_EXT if that is the same for modules */
 #ifdef _AIX
-		snprintf(nme, MAXPATHLEN, "%s%c%s_%s%s(%s_%s.0)",
-				mod_path, DIR_SEP, SO_PREFIX, s, SO_EXT, SO_PREFIX, s);
+		snprintf(nme, MAXPATHLEN, "%.*s%c%s_%s%s(%s_%s.0)",
+				 (int) (p - mod_path),
+				 mod_path, DIR_SEP, SO_PREFIX, s, SO_EXT, SO_PREFIX, s);
 #else
-		snprintf(nme, MAXPATHLEN, "%s%c%s_%s%s",
-				mod_path, DIR_SEP, SO_PREFIX, s, SO_EXT);
+		snprintf(nme, MAXPATHLEN, "%.*s%c%s_%s%s",
+				 (int) (p - mod_path),
+				 mod_path, DIR_SEP, SO_PREFIX, s, SO_EXT);
 #endif
 		handle = dlopen(nme, mode);
 		if (handle == NULL && strcmp(SO_EXT, ".so") != 0) {
 			/* try .so */
-			snprintf(nme, MAXPATHLEN, "%s%c%s_%s.so",
-					mod_path, DIR_SEP, SO_PREFIX, s);
+			snprintf(nme, MAXPATHLEN, "%.*s%c%s_%s.so",
+					 (int) (p - mod_path),
+					 mod_path, DIR_SEP, SO_PREFIX, s);
 			handle = dlopen(nme, mode);
 		}
 #ifdef __APPLE__
 		if (handle == NULL && strcmp(SO_EXT, ".bundle") != 0) {
 			/* try .bundle */
-			snprintf(nme, MAXPATHLEN, "%s%c%s_%s.bundle",
-					mod_path, DIR_SEP, SO_PREFIX, s);
+			snprintf(nme, MAXPATHLEN, "%.*s%c%s_%s.bundle",
+					 (int) (p - mod_path),
+					 mod_path, DIR_SEP, SO_PREFIX, s);
 			handle = dlopen(nme, mode);
 		}
 #endif
 
-		/* restore path */
-		if (p != NULL)
-			*p = PATH_SEP;
-
-		if (p == NULL || handle != NULL)
+		if (*p == 0 || handle != NULL)
 			break;
 		mod_path = p + 1;
 	}
