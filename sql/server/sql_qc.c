@@ -255,13 +255,14 @@ qc_insert(qc *cache, sql_allocator *sa, sql_rel *r, symbol *s, atom **params, in
 
 	n->params = NULL;
 	n->paramlen = paramlen;
-	if (paramlen)
+	if (paramlen) {
 		n->params = SA_NEW_ARRAY(sa, sql_subtype,paramlen);
 		for (i = 0; i < paramlen; i++) {
 			atom *a = params[i];
 
 			n->params[i] = *(atom_type(a));
 		}
+	}
 	n->next = cache->q;
 	n->stk = 0;
 	n->code = NULL;
