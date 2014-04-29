@@ -212,8 +212,9 @@ mal_help(int cnt, int key)
 
 	printf("\n");
 	while (seekpos < rowcount) {
-		mapi_seek_row(table_hdl, seekpos++, MAPI_SEEK_SET);
-		mapi_fetch_row(table_hdl);
+		if (mapi_seek_row(table_hdl, seekpos++, MAPI_SEEK_SET) != MOK ||
+		    mapi_fetch_row(table_hdl) <= 0)
+			continue;
 		name = mapi_fetch_field(table_hdl, 0);
 		if (name)
 			printf("%s\n", name);
@@ -279,8 +280,9 @@ mal_command_generator(const char *text, int state)
 	}
 
 	while (seekpos < rowcount) {
-		mapi_seek_row(table_hdl, seekpos++, MAPI_SEEK_SET);
-		mapi_fetch_row(table_hdl);
+		if (mapi_seek_row(table_hdl, seekpos++, MAPI_SEEK_SET) != MOK ||
+		    mapi_fetch_row(table_hdl) <= 0)
+			continue;
 		name = mapi_fetch_field(table_hdl, 0);
 		if (name)
 			return strdup(name);

@@ -324,7 +324,8 @@ lockf(int fd, int cmd, off_t len)
 #endif
 /* returns -1 when locking failed,
  * returns -2 when the lock file could not be opened/created
- * returns the (open) file descriptor to the file otherwise */
+ * returns the (open) file descriptor to the file when locking
+ * returns 0 when unlocking */
 int
 MT_lockf(char *filename, int mode, off_t off, off_t len)
 {
@@ -335,9 +336,13 @@ MT_lockf(char *filename, int mode, off_t off, off_t len)
 
 	if (lseek(fd, off, SEEK_SET) >= 0 &&
 	    lockf(fd, mode, len) == 0) {
+		if (mode == F_ULOCK) {
+			close(fd);
+			return 0;
+		}
 		/* do not close else we lose the lock we want */
 		(void) lseek(fd, 0, SEEK_SET); /* move seek pointer back */
-		return mode == F_ULOCK ? 0 : fd;
+		return fd;
 	}
 	close(fd);
 	return -1;

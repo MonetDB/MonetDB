@@ -1866,7 +1866,7 @@ parser(char *row)
 	}
 
 	if (fcn && (v=strchr(fcn, '(')))
-		v = 0;
+		*v = 0;
 
 #ifdef FOOTPRINT
 wrapup:

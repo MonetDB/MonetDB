@@ -292,15 +292,17 @@ msab_retreatScenario(const char *lang)
 				unlink(path);
 				return(NULL);
 			}
-		} else if (len == 0) {
+		} else {
+			if (ferror(f)) {
+				/* some error */
+				snprintf(buf, sizeof(buf), "failed to write: %s (%s)",
+					 strerror(errno), path);
+				(void)fclose(f);
+				return strdup(buf);
+			} else
+				unlink(path);  /* empty file? try to remove */
 			(void)fclose(f);
-			unlink(path);  /* empty file? try to remove */
 			return(NULL);
-		} else { /* some error */
-			(void)fclose(f);
-			snprintf(buf, sizeof(buf), "failed to write: %s (%s)",
-					strerror(errno), path);
-			return(strdup(buf));
 		}
 	}
 	snprintf(buf, sizeof(buf), "failed to open file: %s (%s)",
@@ -419,13 +421,15 @@ msab_registerStarting(void)
 
 	/* we treat errors here (albeit being quite unlikely) as non-fatal,
 	 * since they will cause wrong state information in the worst case
-	 * lateron */
+	 * later on */
 	if ((tmp = getDBPath(&path, PATHLENGTH, _sabaoth_internal_uuid)) != NULL) {
 		free(tmp);
 		return(NULL);
 	}
-	fclose(fopen(path, "w"));
-	
+	f = fopen(path, "w");
+	if (f)
+		fclose(f);
+
 	/* remove any stray file that would suggest we've finished starting up */
 	if ((tmp = getDBPath(&path, PATHLENGTH, STARTEDFILE)) != NULL)
 		return(tmp);
@@ -446,11 +450,16 @@ msab_registerStarted(void)
 	char pathbuf[PATHLENGTH];
 	char *path = pathbuf;
 	char *tmp;
+	FILE *fp;
 
 	/* flag this database as started up */
 	if ((tmp = getDBPath(&path, PATHLENGTH, STARTEDFILE)) != NULL)
 		return(tmp);
-	fclose(fopen(path, "w"));
+	fp = fopen(path, "w");
+	if (fp)
+		fclose(fp);
+	else
+		return strdup("sabaoth cannot create " STARTEDFILE);
 
 	return(NULL);
 }
@@ -1134,8 +1143,8 @@ msab_deserialise(sabdb **ret, char *sdb)
 	if ((p = strchr(p, ',')) != NULL) {
 		free(u);
 		snprintf(buf, sizeof(buf), 
-				"string does contain additional garbage after crashavg30: %s",
-				lasts);
+				"string contains additional garbage after crashavg30: %s",
+				p);
 		return(strdup(buf));
 	}
 	u->crashavg30 = atof(lasts);
