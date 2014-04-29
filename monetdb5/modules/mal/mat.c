@@ -185,7 +185,8 @@ MATpackIncrement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		assert(!b->H->nil || !b->H->nonil);
 		assert(!b->T->nil || !b->T->nonil);
 		BBPkeepref(*ret = b->batCacheid);
-		BBPreleaseref(bb->batCacheid);
+		if( bb) 
+			BBPreleaseref(bb->batCacheid);
 	}
 	return MAL_SUCCEED;
 }
