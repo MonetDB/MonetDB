@@ -282,7 +282,7 @@ loadLibrary(str filename, int flag)
 		showException(GDKout, MAL,"loadModule", "internal error, too many modules loaded");
 	} else {
 		filesLoaded[lastfile].filename = GDKstrdup(filename);
-		filesLoaded[lastfile].fullname = GDKstrdup(nme);
+		filesLoaded[lastfile].fullname = GDKstrdup(handle ? nme : "");
 		filesLoaded[lastfile].handle = handle;
 		lastfile ++;
 	}

@@ -82,7 +82,7 @@ opendir(const char *dirname)
 	}
 	result->find_file_data = malloc(sizeof(WIN32_FIND_DATA));
 	result->dir_name = strdup(dirname);
-	if (result->find_file_data == NULL || result->dir_name) {
+	if (result->find_file_data == NULL || result->dir_name == NULL) {
 		if (result->find_file_data)
 			free(result->find_file_data);
 		if (result->dir_name)
