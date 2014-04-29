@@ -805,7 +805,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 								backup[i].val.bval = 0;
 								BBPdecref(bx, TRUE);
 							}
-							if (garbage[i] >= 0) {
+							if (i >= 0 && garbage[i] >= 0) {
 								PARDEBUG mnstr_printf(GDKstdout, "#GC pc=%d bid=%d %s done\n", stkpc, bid, getVarName(mb, garbage[i]));
 								bid = abs(stk->stk[garbage[i]].val.bval);
 								stk->stk[garbage[i]].val.bval = 0;
