@@ -672,7 +672,7 @@ prepareSaveBox(Box box, str *boxfile, str *boxfilebak)
 		GDKfree(*boxfile); *boxfile = NULL;
 		GDKfree(*boxfilebak); *boxfilebak = NULL;
 		return 0;
-		}
+	}
 
 	f = open_wastream(*boxfile);
 #ifndef S_IRUSR
@@ -681,7 +681,7 @@ prepareSaveBox(Box box, str *boxfile, str *boxfilebak)
 #endif
 	if (f != NULL){
 		if( chmod(*boxfile, (S_IRUSR | S_IWUSR)) )
-				showException(GDKout, MAL,"box.saveBox", "can not change box file mode");
+			showException(GDKout, MAL,"box.saveBox", "can not change box file mode");
 	} else
 		showException(GDKout, MAL,"box.saveBox", "can not create box file");
 	if (f == NULL) {
