@@ -441,7 +441,8 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 					OPERATION_FAILED ": creation of stream socket failed: %s",
 					strerror(errno));
 
-		setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char *) &on, sizeof on);
+		if( setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char *) &on, sizeof on) )
+			throw(IO, "mal_mapi.listen", OPERATION_FAILED ": setsockptr failed %s", strerror(errno));
 
 		server.sin_family = AF_INET;
 		if (accept_any)
