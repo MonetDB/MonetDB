@@ -146,10 +146,11 @@ dump_header(mvc *sql, MalBlkPtr mb, stmt *s, list *l)
 		char *cn = column_name(sql->sa, c);
 		char *ntn = sql_escape_ident(tn);
 		char *nsn = sql_escape_ident(sn);
-		size_t fqtnl = strlen(ntn) + 1 + strlen(nsn) + 1;
-		char *fqtn = NEW_ARRAY(char, fqtnl);
+		size_t fqtnl;
+		char *fqtn;
 
-		if (ntn && nsn && fqtn) {
+		if (ntn && nsn && (fqtnl = strlen(ntn) + 1 + strlen(nsn) + 1) ){
+			fqtn = NEW_ARRAY(char, fqtnl);
 			snprintf(fqtn, fqtnl, "%s.%s", nsn, ntn);
 
 			q = newStmt1(mb, sqlRef, "rsColumn");
@@ -160,11 +161,11 @@ dump_header(mvc *sql, MalBlkPtr mb, stmt *s, list *l)
 			q = pushInt(mb, q, t->digits);
 			q = pushInt(mb, q, t->scale);
 			q = pushArgument(mb, q, c->nr);
+			_DELETE(fqtn);
 		} else
 			q = NULL;
 		_DELETE(ntn);
 		_DELETE(nsn);
-		_DELETE(fqtn);
 		if (q == NULL)
 			return -1;
 	}
