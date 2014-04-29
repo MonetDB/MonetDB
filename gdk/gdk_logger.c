@@ -2104,8 +2104,9 @@ bm_commit(logger *lg)
 		log_bid bid = *(log_bid *) Tloc(b, p);
 		BAT *lb = BATdescriptor(bid);
 
+		assert(lb);
 		BATmode(lb, PERSISTENT);
-assert(lb->batRestricted > BAT_WRITE);
+		assert(lb->batRestricted > BAT_WRITE);
 		logbat_destroy(lb);
 
 		if (lg->debug & 1)
