@@ -4053,8 +4053,10 @@ vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, str (*func) (int
 		sql_column *c = o->data;
 		BAT *ins = BATdescriptor(bids[i]);	/* use the insert bat */
 
-		store_funcs.append_col(tr, c, ins, TYPE_bat);
-		BBPreleaseref(ins->batCacheid);
+		if( ins){
+			store_funcs.append_col(tr, c, ins, TYPE_bat);
+			BBPreleaseref(ins->batCacheid);
+		}
 		BBPdecref(bids[i], TRUE);
 	}
 	/* TODO indices */
