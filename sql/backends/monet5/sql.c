@@ -3393,10 +3393,13 @@ second_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	switch (k) {
 	case iday:
 		r *= 24;
+		/* fall through */
 	case ihour:
 		r *= 60;
+		/* fall through */
 	case imin:
 		r *= 60;
+		/* fall through */
 	case isec:
 		r *= 1000;
 		break;

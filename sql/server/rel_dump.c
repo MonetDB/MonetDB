@@ -772,6 +772,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, char *r, int *pos, int grp)
 			rexps = read_exps(sql, lrel, rrel, r, pos, '(', 0);
 			return exp_or(sql->sa, lexps, rexps);
 		}
+		/* fall through */
 	case '[': 
 		old = *e;
 		*e = 0;
@@ -1296,11 +1297,13 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 			*pos += (int) strlen("union");
 			j = op_union;
 		}
+		/* fall through */
 	case 'i':
 		if (j != op_basetable) {
 			*pos += (int) strlen("intersect");
 			j = op_inter;
 		}
+		/* fall through */
 	case 'e':
 		if (j != op_basetable) {
 			*pos += (int) strlen("except");
