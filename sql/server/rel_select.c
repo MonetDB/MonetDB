@@ -2544,7 +2544,7 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 		symbol *lo = dl->h->data.sym;
 		dnode *n = dl->h->next;
 		sql_exp *l = rel_value_exp(sql, rel, lo, f, ek), *r = NULL;
-		sql_rel *left = NULL, *right = NULL, *p = NULL;
+		sql_rel *left = NULL, *right = NULL;
 		int needproj = 0, vals_only = 1;
 		list *vals = NULL;
 
@@ -2624,20 +2624,14 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 			if (rel_convert_types(sql, &l, &r, 1, type_equal) < 0) 
 				return NULL;
 			left = rel_crossproduct(sql->sa, left, right, op_join);
-			if (p) {
-				rel_destroy(p->l);
-				p->l = left;
-			}
 			left->op = op_left;
 			set_processed(left);
 			e = exp_compare(sql->sa, l, r, cmp_equal );
 			rel_join_add_exp(sql->sa, left, e);
-			if (!p) {
-				if (*rel && needproj)
-					left = *rel = rel_project(sql->sa, left, NULL);
-				else
-					*rel = left;
-			}
+			if (*rel && needproj)
+				left = *rel = rel_project(sql->sa, left, NULL);
+			else
+				*rel = left;
 			if (sc->token == SQL_NOT_IN)
 				e = rel_binop_(sql, l, r, NULL, "<>", card_value);
 			else
