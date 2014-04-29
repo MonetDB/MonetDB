@@ -664,7 +664,7 @@ prepareSaveBox(Box box, str *boxfile, str *boxfilebak)
 
 	if (*boxfile == 0)
 		return 0;
-	if ( unlink(*boxfilebak), rename(*boxfile, *boxfilebak) < 0) {
+	if (rename(*boxfile, *boxfilebak) < 0 && errno != ENOENT) {
 #ifdef DEBUG_MAL_BOX
 		mnstr_printf(GDKout, "saveBox:can not rename %s to %s\n", *boxfile, *boxfilebak);
 #endif
