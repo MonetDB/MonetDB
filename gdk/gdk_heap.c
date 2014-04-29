@@ -605,7 +605,7 @@ HEAPload_intern(Heap *h, const char *nme, const char *ext, const char *suffix, i
 	size_t minsize;
 	int ret = 0, desc_status = 0;
 	long_str srcpath, dstpath;
-	struct stat st;
+	int t0;
 
 	h->storage = h->newstorage = h->size < GDK_mmap_minsize ? STORE_MEM : STORE_MMAP;
 	if (h->filename == NULL)
@@ -654,22 +654,12 @@ HEAPload_intern(Heap *h, const char *nme, const char *ext, const char *suffix, i
 	GDKfilepath(dstpath, BATDIR, nme, ext);
 	assert(strlen(srcpath) + strlen(suffix) < sizeof(srcpath));
 	strcat(srcpath, suffix);
-	if (stat(srcpath, &st) == 0) {
-		int t0;
-		t0 = GDKms();
-		ret = unlink(dstpath);
-		if (ret < 0 && errno == ENOENT)
-			ret = 0; /* no error if it doesn't exist */
-		HEAPDEBUG fprintf(stderr, "#unlink %s = %d (%dms)\n", dstpath, ret, GDKms() - t0);
-		t0 = GDKms();
-		/* coverity[toctou] */
-		ret = rename(srcpath, dstpath);
-		if (ret < 0) {
-			GDKsyserror("HEAPload: rename of %s failed\n", srcpath);
-			return -1;
-		}
-		HEAPDEBUG fprintf(stderr, "#rename %s %s = %d (%dms)\n", srcpath, dstpath, ret, GDKms() - t0);
-	}
+
+	t0 = GDKms();
+	ret = rename(srcpath, dstpath);
+	HEAPDEBUG fprintf(stderr, "#rename %s %s = %d %s (%dms)\n",
+			  srcpath, dstpath, ret, ret < 0 ? strerror(errno) : "",
+			  GDKms() - t0);
 
 	h->base = GDKload(nme, ext, h->free, &h->size, h->newstorage);
 	if (h->base == NULL)
