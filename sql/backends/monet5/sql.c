@@ -4626,9 +4626,9 @@ RAstatement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (!msg) {
 			resetMalBlk(cntxt->curprg->def, oldstop);
 			freeVariables(cntxt, cntxt->curprg->def, NULL, oldvtop);
+			if( !(cntxt->glb == 0 || cntxt->glb == oldglb))
+				msg= createException(MAL,"sql","global stack leakage");	/* detect leak */
 		}
-		if( !(cntxt->glb == 0 || cntxt->glb == oldglb))
-			msg= createException(MAL,"sql","global stack leakage");	/* detect leak */
 		cntxt->glb = oldglb;
 	}
 	return msg;
