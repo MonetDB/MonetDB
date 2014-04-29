@@ -404,6 +404,7 @@ exp_count(int *cnt, int seqnr, sql_exp *e)
 		/* functions are more expensive, depending on the number of columns involved. */ 
 		if (e->card == CARD_ATOM)
 			return 0;
+		/* fall through */
 	default:
 		*cnt -= 5;
 		return -5;
@@ -4705,6 +4706,7 @@ rel_remove_unused(mvc *sql, sql_rel *rel)
 		if (isMergeTable(t) || isReplicaTable(t)) 
 			return rel;
 	}
+		/* fall through */
 	case op_table:
 		if (rel->exps) {
 			node *n;

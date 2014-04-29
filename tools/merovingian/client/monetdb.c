@@ -437,6 +437,7 @@ printStatus(sabdb *stats, int mode, int dbwidth, int uriwidth)
 			case SABdbStarting:
 				snprintf(buf, sizeof(buf), "starting ");
 				off = sizeof("starting ") - 1;
+				/* fall through */
 			case SABdbRunning:
 				t = localtime(&uplog.laststart);
 				strftime(buf + off, sizeof(buf) - off,

@@ -233,6 +233,7 @@ rel_table_projections( mvc *sql, sql_rel *rel, char *tname )
 	case op_project:
 		if (!is_processed(rel))
 			return rel_table_projections( sql, rel->l, tname);
+		/* fall through */
 	case op_table:
 	case op_basetable:
 		if (rel->exps) {

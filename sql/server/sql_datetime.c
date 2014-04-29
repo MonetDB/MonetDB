@@ -64,15 +64,19 @@ qualifier2multiplier( int sk )
 	switch (sk) {
 	case iyear:
 		mul *= 12;
+		/* fall through */
 	case imonth:
 		break;
 
 	case iday:
 		mul *= 24;
+		/* fall through */
 	case ihour:
 		mul *= 60;
+		/* fall through */
 	case imin:
 		mul *= 60000;
+		/* fall through */
 	case isec:
 		break;
 	default:
@@ -99,6 +103,7 @@ parse_interval_(mvc *sql, lng sign, char *str, int sk, int ek, int sp, int ep, l
 	switch (sk) {
 	case iyear:
 		mul *= 12;
+		/* fall through */
 	case imonth:
 		sep = '-';
 		type = 0;
@@ -107,10 +112,13 @@ parse_interval_(mvc *sql, lng sign, char *str, int sk, int ek, int sp, int ep, l
 	case iday:
 		mul *= 24;
 		sep = ' ';
+		/* fall through */
 	case ihour:
 		mul *= 60;
+		/* fall through */
 	case imin:
 		mul *= 60000;
+		/* fall through */
 	case isec:
 		type = 1;
 		break;
@@ -196,6 +204,7 @@ parse_interval(mvc *sql, lng sign, char *str, int sk, int ek, int sp, int ep, ln
 	switch (sk) {
 	case iyear:
 		mul *= 12;
+		/* fall through */
 	case imonth:
 		sep = '-';
 		type = 0;
@@ -204,10 +213,13 @@ parse_interval(mvc *sql, lng sign, char *str, int sk, int ek, int sp, int ep, ln
 	case iday:
 		mul *= 24;
 		sep = ' ';
+		/* fall through */
 	case ihour:
 		mul *= 60;
+		/* fall through */
 	case imin:
 		mul *= 60000;
+		/* fall through */
 	case isec:
 		type = 1;
 		break;

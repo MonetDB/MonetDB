@@ -41,7 +41,8 @@ has_remote_or_replica( sql_rel *rel )
 
 		if (isReplicaTable(t) || isRemote(t)) 
 			return 1;
-	} 	
+		break;
+	}
 	case op_table:
 		break;
 	case op_join: 
@@ -71,6 +72,7 @@ has_remote_or_replica( sql_rel *rel )
 	case op_ddl: 
 		if (has_remote_or_replica( rel->l )) 
 			return 1;
+		/* fall through */
 	case op_insert:
 	case op_update:
 	case op_delete:
@@ -143,6 +145,7 @@ replica(mvc *sql, sql_rel *rel, char *uri)
 				}
 			}
 		}
+		break;
 	}
 	case op_table:
 		break;
@@ -215,6 +218,7 @@ distribute(mvc *sql, sql_rel *rel)
 			p = rel->p = prop_create(sql->sa, PROP_REMOTE, rel->p); 
 			p->value = uri;
 		}
+		break;
 	}
 	case op_table:
 		break;
