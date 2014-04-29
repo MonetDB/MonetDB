@@ -2257,7 +2257,7 @@ doFile(Mapi mid, const char *file, int useinserts, int interactive, int save_his
 									     "WHEN true THEN 'SYSTEM ' "
 										 "ELSE '' "
 										 "END || "
-							           "CASE \"o\".\"type\" "
+								   "CASE \"o\".\"type\" "
 									     "WHEN 0 THEN 'TABLE' "
 										 "WHEN 1 THEN 'VIEW' "
 										 "ELSE '' "
