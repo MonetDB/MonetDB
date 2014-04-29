@@ -1349,8 +1349,11 @@ static int getCPULoad(char cpuload[BUFSIZ]){
 			if ( *s == ' ') {
 				s++;
 				cpu = 255; // the cpu totals stored here
-			}  else 
+			}  else {
 				cpu = atoi(s);
+				if (cpu < 0 || cpu > 255)
+					cpu = 255;
+			}
 			s= strchr(s,' ');
 			if ( s== 0 || cpu < 0 || cpu > 255) goto skip;
 			

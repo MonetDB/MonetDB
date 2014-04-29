@@ -1099,6 +1099,8 @@ dump_table_data(Mapi mid, char *schema, char *tname, stream *toConsole,
 		goto bailout;
 
 	cnt = mapi_get_field_count(hdl);
+	if (cnt < 1 || cnt >= 1 << 29)
+		goto bailout;	/* ridiculous number of columns */
 	string = malloc(sizeof(int) * cnt);
 	for (i = 0; i < cnt; i++) {
 		string[i] = 0;
