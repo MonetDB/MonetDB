@@ -256,6 +256,7 @@ newBox(str name)
 			obj->sym=  newMalBlk(MAXVARS,STMT_INCREMENT);
 			obj->val = newGlobalStack(MAXVARS);
 			if ( obj->val == NULL || obj->sym == NULL){
+				GDKfree(obj);
 				showException(GDKout, MAL,"box.new", MAL_MALLOC_FAIL);
 				return NULL;
 			}
