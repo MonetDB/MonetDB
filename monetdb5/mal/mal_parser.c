@@ -831,7 +831,7 @@ propList(Client cntxt, int arg)
 				advance(cntxt, i);
 				if (currChar(cntxt) == ':') {
 					tpe = simpleTypeId(cntxt);
-					if (tpe != TYPE_any){
+					if (tpe >=0 && tpe != TYPE_any){
 						str msg =convertConstant(tpe, &cst);
 						if( msg) GDKfree(msg);
 					} else
@@ -853,7 +853,7 @@ propList(Client cntxt, int arg)
 static InstrPtr
 binding(Client cntxt, MalBlkPtr curBlk, InstrPtr curInstr, int flag)
 {
-	int l, varid;
+	int l, varid = -1;
 	malType type;
 
 	l = idLength(cntxt);
@@ -861,6 +861,8 @@ binding(Client cntxt, MalBlkPtr curBlk, InstrPtr curInstr, int flag)
 		varid = findVariableLength(curBlk, CURRENT(cntxt), l);
 		if (varid < 0) {
 			varid = newVariable(curBlk, idCopy(cntxt, l), TYPE_any);
+			if ( varid < 0)
+				return curInstr;
 			type = typeElm(cntxt, TYPE_any);
 			if (isPolymorphic(type))
 				setPolymorphic(curInstr, type, TRUE);
@@ -883,15 +885,18 @@ binding(Client cntxt, MalBlkPtr curBlk, InstrPtr curInstr, int flag)
 	} else if (currChar(cntxt) == ':') {
 		type = typeElm(cntxt, TYPE_any);
 		varid = newTmpVariable(curBlk, type);
+		if ( varid < 0)
+			return curInstr;
 		if ( isPolymorphic(type))
 			setPolymorphic(curInstr, type, TRUE);
 		setVarType(curBlk, varid, type);
 		propList(cntxt, varid);
 	} else {
-		varid = -1;
 		parseError(cntxt, "argument expected\n");
+		return curInstr;
 	}
-	curInstr = pushArgument(curBlk, curInstr, varid);
+	if( varid >=0)
+		curInstr = pushArgument(curBlk, curInstr, varid);
 	return curInstr;
 }
 
@@ -954,6 +959,8 @@ term(Client cntxt, MalBlkPtr curBlk, InstrPtr *curInstr, int ret)
 		if ((idx = findVariableLength(curBlk, CURRENT(cntxt), i)) == -1) {
 			v = idCopy(cntxt, i);
 			idx = newVariable(curBlk, v, TYPE_any);
+			if( idx <0)
+				return 0;
 			propList(cntxt, idx);
 		} else {
 			advance(cntxt, i);
