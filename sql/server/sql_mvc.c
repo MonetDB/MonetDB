@@ -639,7 +639,7 @@ mvc_bind_table(mvc *m, sql_schema *s, char *tname)
 	if (!t)
 		return NULL;
 	if (mvc_debug)
-		fprintf(stderr, "#mvc_bind_table %s.%s\n", s->base.name, tname);
+		fprintf(stderr, "#mvc_bind_table %s.%s\n", s ? s->base.name : "<noschema>", tname);
 
 	return t;
 }

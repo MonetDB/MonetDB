@@ -1439,6 +1439,7 @@ BUNdelete_(BAT *b, BUN p, bit force)
 			unsigned short hs = Hsize(b), ts = Tsize(b);
 			BATiter bi2 = bat_iterator(b);
 
+			/* coverity[result_independent_of_operands] */
 			acc_move(last,p,idx2,idx1);
 			/* If a column was sorted before the BUN was
 			   deleted, check whether it is still sorted

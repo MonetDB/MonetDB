@@ -1667,37 +1667,41 @@ static str
 PCRElike_join(int *l, int *r, int *b, int *pat, str *esc, int case_sensitive)
 {
 	BUN p;
-	BAT *B, *Bpat, *L, *R;
+	BAT *B = BATdescriptor(*b), *Bpat = BATdescriptor(*pat), *L, *R;
 	BAT *tr, *x, *j;
-	BATiter pati;
+	BATiter pati = bat_iterator(Bpat);
 
-	B = BATdescriptor(*b);
-	if (B == NULL)
-		throw(MAL,"pcre.like_join", RUNTIME_OBJECT_MISSING);
-	Bpat = BATdescriptor(*pat);
-	if ( Bpat == NULL){
-		BBPreleaseref(B->batCacheid);
-		throw(MAL,"pcre.like_join", RUNTIME_OBJECT_MISSING);
+	if( B == NULL || Bpat == NULL){
+		if( B) BBPreleaseref(B->batCacheid);
+		if( Bpat) BBPreleaseref(Bpat->batCacheid);
+		throw(MAL,"pcre.like", MAL_MALLOC_FAIL);
+	}
+	j = BATnew(TYPE_oid, TYPE_oid, BATcount(B) * BATcount(Bpat));
+	if( j == NULL){
+		if( B) BBPreleaseref(B->batCacheid);
+		if( Bpat) BBPreleaseref(Bpat->batCacheid);
+		throw(MAL,"pcre.like", MAL_MALLOC_FAIL);
 	}
 
-	j = BATnew(TYPE_oid, TYPE_oid, BATcount(B) * BATcount(Bpat));
-	if( j == NULL)
-		throw(MAL,"pcre.like_join", MAL_MALLOC_FAIL);
-
-	pati = bat_iterator(Bpat);
-	if( j==NULL)
-		throw(MAL,"pcre.likejoin",MAL_MALLOC_FAIL);
 	for(p = 0; p < BATcount(Bpat); p++) {
 		char *ppat = (str)BUNtail(pati, p);
 		int r;
 		str err;
 
 		if (case_sensitive) {
-			if ((err = PCRElike_pcre( &r, b, &ppat, esc, TRUE, FALSE)) != MAL_SUCCEED)
+			if ((err = PCRElike_pcre( &r, b, &ppat, esc, TRUE, FALSE)) != MAL_SUCCEED) {
+				BBPunfix(j->batCacheid);
+				BBPreleaseref(B->batCacheid);
+				BBPreleaseref(Bpat->batCacheid);
 				return err;
+			}
 		} else {
-			if ((err = PCRElike_pcre( &r, b, &ppat, esc, TRUE,TRUE)) != MAL_SUCCEED)
+			if ((err = PCRElike_pcre( &r, b, &ppat, esc, TRUE,TRUE)) != MAL_SUCCEED) {
+				BBPunfix(j->batCacheid);
+				BBPreleaseref(B->batCacheid);
+				BBPreleaseref(Bpat->batCacheid);
 				return err;
+			}
 		}
 
 		tr = BATdescriptor(r);

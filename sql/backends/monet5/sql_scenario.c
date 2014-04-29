@@ -1159,7 +1159,7 @@ static void
 SQLtrans(mvc *m)
 {
 	m->caching = m->cache;
-	if (m && !m->session->active)
+	if (!m->session->active)
 		mvc_trans(m);
 }
 

@@ -250,18 +250,25 @@ mcrypt_RIPEMD160Sum(const char *string, size_t len)
 char *
 mcrypt_BackendSum(const char *string, size_t len)
 {
+	/* coverity[pointless_string_compare] */
 	if (strcmp(MONETDB5_PASSWDHASH, "RIPEMD160") == 0)
 		return mcrypt_RIPEMD160Sum(string, len);
+	/* coverity[pointless_string_compare] */
 	if (strcmp(MONETDB5_PASSWDHASH, "SHA512") == 0)
 		return mcrypt_SHA512Sum(string, len);
+	/* coverity[pointless_string_compare] */
 	if (strcmp(MONETDB5_PASSWDHASH, "SHA384") == 0)
 		return mcrypt_SHA384Sum(string, len);
+	/* coverity[pointless_string_compare] */
 	if (strcmp(MONETDB5_PASSWDHASH, "SHA256") == 0)
 		return mcrypt_SHA256Sum(string, len);
+	/* coverity[pointless_string_compare] */
 	if (strcmp(MONETDB5_PASSWDHASH, "SHA224") == 0)
 		return mcrypt_SHA224Sum(string, len);
+	/* coverity[pointless_string_compare] */
 	if (strcmp(MONETDB5_PASSWDHASH, "SHA1") == 0)
 		return mcrypt_SHA1Sum(string, len);
+	/* coverity[pointless_string_compare] */
 	if (strcmp(MONETDB5_PASSWDHASH, "MD5") == 0)
 		return mcrypt_MD5Sum(string, len);
 	assert(0); /* should never get reached, backend would be unsupported */

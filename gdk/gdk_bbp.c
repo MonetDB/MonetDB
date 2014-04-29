@@ -3466,8 +3466,10 @@ BBPrecover(void)
 	dstdir = dstpath + j;
 	IODEBUG THRprintf(GDKstdout, "#BBPrecover(start)\n");
 
-	if (mkdir(LEFTDIR, 0755) < 0 && errno != EEXIST)
-		return -1;;
+	if (mkdir(LEFTDIR, 0755) < 0 && errno != EEXIST) {
+		closedir(dirp);
+		return -1;
+	}
 
 	/* move back all files */
 	while ((dent = readdir(dirp)) != NULL) {

@@ -127,7 +127,10 @@ str OPTwrapper (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	char optimizer[256];
 	InstrPtr q= copyInstruction(p);
 
+	if( p == NULL)
+		throw(MAL, "opt_wrapper", "missing optimizer statement");
 	snprintf(optimizer,256,"%s", fcnnme = getFunctionId(p));
+	q= copyInstruction(p);
 	OPTIMIZERDEBUG 
 		mnstr_printf(cntxt->fdout,"=APPLY OPTIMIZER %s\n",fcnnme);
 	if( p && p->argc > 1 ){
