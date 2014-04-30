@@ -1942,9 +1942,13 @@ DELTAbat(bat *result, bat *col, bat *uid, bat *uval, bat *ins)
 	}
 
 	c = BATdescriptor(*col);
-	if ((res = BATcopy(c, TYPE_void, c->ttype, TRUE)) == NULL)
-		throw(MAL, "sql.delta", OPERATION_FAILED);
-	BBPunfix(c->batCacheid);
+	if ( c ) {
+		if ((res = BATcopy(c, TYPE_void, c->ttype, TRUE)) == NULL){
+			BBPunfix(c->batCacheid);
+			throw(MAL, "sql.delta", OPERATION_FAILED);
+		}
+		BBPunfix(c->batCacheid);
+	}
 
 	if ((u_val = BATdescriptor(*uval)) == NULL)
 		throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
