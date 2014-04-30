@@ -664,7 +664,7 @@ prepareSaveBox(Box box, str *boxfile, str *boxfilebak)
 
 	if (*boxfile == 0)
 		return 0;
-	if ( unlink(*boxfilebak), rename(*boxfile, *boxfilebak) < 0) {
+	if (rename(*boxfile, *boxfilebak) < 0 && errno != ENOENT) {
 #ifdef DEBUG_MAL_BOX
 		mnstr_printf(GDKout, "saveBox:can not rename %s to %s\n", *boxfile, *boxfilebak);
 #endif
@@ -672,7 +672,7 @@ prepareSaveBox(Box box, str *boxfile, str *boxfilebak)
 		GDKfree(*boxfile); *boxfile = NULL;
 		GDKfree(*boxfilebak); *boxfilebak = NULL;
 		return 0;
-		}
+	}
 
 	f = open_wastream(*boxfile);
 #ifndef S_IRUSR
@@ -681,7 +681,7 @@ prepareSaveBox(Box box, str *boxfile, str *boxfilebak)
 #endif
 	if (f != NULL){
 		if( chmod(*boxfile, (S_IRUSR | S_IWUSR)) )
-				showException(GDKout, MAL,"box.saveBox", "can not change box file mode");
+			showException(GDKout, MAL,"box.saveBox", "can not change box file mode");
 	} else
 		showException(GDKout, MAL,"box.saveBox", "can not create box file");
 	if (f == NULL) {
