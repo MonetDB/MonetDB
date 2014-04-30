@@ -958,6 +958,7 @@ drop_trigger(mvc *sql, char *sname, char *tname)
 		return sql_message("3F000!DROP TRIGGER: no such schema '%s'", sname);
 	if (!s)
 		s = cur_schema(sql);
+	assert(s);
 	if (s && !schema_privs(sql->role_id, s))
 		return sql_message("3F000!DROP TRIGGER: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), s->base.name);
 
@@ -4048,8 +4049,10 @@ vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, str (*func) (int
 		sql_column *c = o->data;
 		BAT *ins = BATdescriptor(bids[i]);	/* use the insert bat */
 
-		store_funcs.append_col(tr, c, ins, TYPE_bat);
-		BBPreleaseref(ins->batCacheid);
+		if( ins){
+			store_funcs.append_col(tr, c, ins, TYPE_bat);
+			BBPreleaseref(ins->batCacheid);
+		}
 		BBPdecref(bids[i], TRUE);
 	}
 	/* TODO indices */
@@ -4476,9 +4479,9 @@ RAstatement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (!msg) {
 			resetMalBlk(cntxt->curprg->def, oldstop);
 			freeVariables(cntxt, cntxt->curprg->def, NULL, oldvtop);
+			if( !(cntxt->glb == 0 || cntxt->glb == oldglb))
+				msg= createException(MAL,"sql","global stack leakage");	/* detect leak */
 		}
-		if( !(cntxt->glb == 0 || cntxt->glb == oldglb))
-			msg= createException(MAL,"sql","global stack leakage");	/* detect leak */
 		cntxt->glb = oldglb;
 	}
 	return msg;

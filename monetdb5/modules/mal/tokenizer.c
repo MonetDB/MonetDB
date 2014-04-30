@@ -232,6 +232,7 @@ TKNZRappend(oid *pos, str *s)
 	str url;
 	str batname;
 	str parts[MAX_TKNZR_DEPTH];
+	str msg;
 	int i, new, r, depth;
 	BAT *bVal;
 	BAT *bIdx; 
@@ -303,17 +304,15 @@ TKNZRappend(oid *pos, str *s)
 			
 			tokenBAT[i].idx = bIdx;
 
-			if (BKCsetName(&r, (int *) &(bIdx->batCacheid), (str *) &batname)
-				!= MAL_SUCCEED) {
+			if ((msg = BKCsetName(&r, (int *) &(bIdx->batCacheid), (str *) &batname)) != MAL_SUCCEED) {
 				GDKfree(batname);
 				GDKfree(url);
-				throw(MAL, "tokenizer.open", OPERATION_FAILED);
+				return msg;
 			}
-			if (BKCsetPersistent(&r, (int *) &(bIdx->batCacheid))
-				!= MAL_SUCCEED) {
+			if ( (msg=BKCsetPersistent(&r, (int *) &(bIdx->batCacheid))) != MAL_SUCCEED) {
 				GDKfree(batname);
 				GDKfree(url);
-				throw(MAL, "tokenizer.open", OPERATION_FAILED);
+				return msg;
 			}
 			BUNappend(TRANS, batname, FALSE);
 
@@ -399,6 +398,7 @@ TKNZRdepositFile(int *r, str *fnme)
 	int len = 0;
 	char buf[PATHLENGTH];
 	oid pos;
+	str msg= MAL_SUCCEED;
 
 	if (TRANS == NULL)
 		throw(MAL, "tokenizer", "no tokenizer store open");
@@ -437,7 +437,8 @@ TKNZRdepositFile(int *r, str *fnme)
 			}
 			/* found a string to be processed */
 			*t = 0;
-			TKNZRappend(&pos, &s);
+			msg = TKNZRappend(&pos, &s);
+			if (msg ) break;
 			*t = '\n';
 			s = t + 1;
 			t = s;
@@ -447,7 +448,7 @@ TKNZRdepositFile(int *r, str *fnme)
 	bstream_destroy(bs);
 	mnstr_close(fs);
 	mnstr_destroy(fs);
-	return MAL_SUCCEED;
+	return msg;
 }
 
 str

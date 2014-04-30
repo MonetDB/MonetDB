@@ -507,6 +507,8 @@ GDKvm_cursize(void)
 	ATOMIC_SUB(GDK_vm_cursize, (ssize_t) SEG_SIZE((vmdelta), MT_VMUNITLOG), mbyteslock, fcn)
 #endif
 
+#ifndef STATIC_CODE_ANALYSIS
+
 static void
 GDKmemdump(void)
 {
@@ -828,7 +830,6 @@ GDKrealloc(void *blk, size_t size)
 	return p;
 }
 
-
 #undef GDKstrdup
 char *
 GDKstrdup(const char *s)
@@ -840,6 +841,66 @@ GDKstrdup(const char *s)
 		memcpy(n, s, l);
 	return n;
 }
+
+#else
+
+#define GDKmemfail(s, len)	/* nothing */
+
+void *
+GDKmallocmax(size_t size, size_t *maxsize, int emergency)
+{
+	void *ptr = malloc(size);
+	*maxsize = size;
+	if (ptr == 0 && emergency)
+		GDKfatal("fatal\n");
+	return ptr;
+}
+
+void *
+GDKmalloc(size_t size)
+{
+	return malloc(size);
+}
+
+void
+GDKfree(void *ptr)
+{
+	if (ptr)
+		free(ptr);
+}
+
+void *
+GDKzalloc(size_t size)
+{
+	void *ptr = malloc(size);
+	if (ptr)
+		memset(ptr, 0, size);
+	return ptr;
+}
+
+void *
+GDKreallocmax(void *blk, size_t size, size_t *maxsize, int emergency)
+{
+	void *ptr = realloc(blk, size);
+	*maxsize = size;
+	if (ptr == 0 && emergency)
+		GDKfatal("fatal\n");
+	return ptr;
+}
+
+void *
+GDKrealloc(void *ptr, size_t size)
+{
+	return realloc(ptr, size);
+}
+
+char *
+GDKstrdup(const char *s)
+{
+	return strdup(s);
+}
+
+#endif	/* STATIC_CODE_ANALYSIS */
 
 #undef GDKstrndup
 char *
