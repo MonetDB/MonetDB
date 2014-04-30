@@ -515,7 +515,7 @@ error(stream *s)
 		snprintf(buf, sizeof(buf), "error writing file %s\n", s->name);
 		return strdup(buf);
 	case MNSTR_TIMEOUT:
-		snprintf(buf, BUFSIZ, "timeout on %s\n", s->name);
+		snprintf(buf, sizeof(buf), "timeout on %s\n", s->name);
 		return strdup(buf);
 	}
 	return strdup("Unknown error");
