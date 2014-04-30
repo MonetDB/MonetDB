@@ -196,6 +196,7 @@ str RMTconnectScen(
 	}
 
 	if (mapi_reconnect(m) != MOK) {
+		mapi_disconnect(m);
 		MT_lock_unset(&mal_remoteLock, "remote.connect");
 		throw(IO, "remote.connect", "unable to connect to '%s': %s",
 				*ouri, mapi_error_str(m));
