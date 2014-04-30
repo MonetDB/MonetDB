@@ -52,14 +52,20 @@ def py_bool(data):
 def py_time(data):
     """ returns a python Time
     """
-    return datetime.datetime.strptime(data, '%H:%M:%S').time()
+    if '.' in data:
+        return datetime.datetime.strptime(data, '%H:%M:%S.%f').time()
+    else:
+        return datetime.datetime.strptime(data, '%H:%M:%S').time()
 
 
 def py_timetz(data):
     """ returns a python Time where data contains a tz code
     """
     t, timezone_delta = _extract_timezone(data)
-    return (datetime.datetime.strptime(t, '%H:%M:%S.%f') + timezone_delta).time()
+    if '.' in t:
+        return (datetime.datetime.strptime(t, '%H:%M:%S.%f') + timezone_delta).time()
+    else:
+        return (datetime.datetime.strptime(t, '%H:%M:%S') + timezone_delta).time()
 
 
 def py_date(data):
@@ -71,14 +77,19 @@ def py_date(data):
 def py_timestamp(data):
     """ Returns a python Timestamp
     """
-    return datetime.datetime.strptime(data, '%Y-%m-%d %H:%M:%S.%f')
-
+    if '.' in data:
+        return datetime.datetime.strptime(data, '%Y-%m-%d %H:%M:%S.%f')
+    else:
+        return datetime.datetime.strptime(data, '%Y-%m-%d %H:%M:%S')
 
 def py_timestamptz(data):
     """ Returns a python Timestamp where data contains a tz code
     """
     dt, timezone_delta = _extract_timezone(data)
-    return datetime.datetime.strptime(dt, '%Y-%m-%d %H:%M:%S.%f') + timezone_delta
+    if '.' in dt:
+        return datetime.datetime.strptime(dt, '%Y-%m-%d %H:%M:%S.%f') + timezone_delta
+    else:
+        return datetime.datetime.strptime(dt, '%Y-%m-%d %H:%M:%S') + timezone_delta
 
 
 mapping = {
