@@ -994,17 +994,25 @@ win_unlink(const char *pathname)
 
 #undef rename
 int
-win_rename(const char *old, const char *new)
+win_rename(const char *old, const char *dst)
 {
-	int ret = rename(old, new);
+	int ret;
+
+	ret = rename(old, dst);
+	if (ret == 0 || (ret < 0 && errno == ENOENT))
+		return ret;
+	if (ret < 0 && errno == EEXIST) {
+		(void) win_unlink(dst);
+		ret = rename(old, dst);
+	}
 
 	if (ret < 0 && errno != ENOENT) {
 		/* it could be the <expletive deleted> indexing
 		 * service which prevents us from doing what we have a
 		 * right to do, so try again (once) */
-		IODEBUG THRprintf(GDKstdout, "#retry rename %s %s\n", old, new);
+		IODEBUG THRprintf(GDKstdout, "#retry rename %s %s\n", old, dst);
 		MT_sleep_ms(100);	/* wait a little */
-		ret = rename(old, new);
+		ret = rename(old, dst);
 	}
 	return ret;
 }
