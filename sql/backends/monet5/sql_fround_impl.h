@@ -17,8 +17,18 @@
  * All Rights Reserved.
  */
 
+#define dec_round_body_nonil	FUN(TYPE, dec_round_body_nonil)
+#define dec_round_body		FUN(TYPE, dec_round_body)
+#define dec_round_wrap		FUN(TYPE, dec_round_wrap)
+#define bat_dec_round_wrap	FUN(TYPE, bat_dec_round_wrap)
+#define round_body_nonil	FUN(TYPE, round_body_nonil)
+#define round_body		FUN(TYPE, round_body)
+#define round_wrap		FUN(TYPE, round_wrap)
+#define bat_round_wrap		FUN(TYPE, bat_round_wrap)
+#define trunc_wrap		FUN(TYPE, trunc_wrap)
+
 static inline TYPE
-FUN(TYPE, dec_round_body_nonil)(TYPE v, TYPE r)
+dec_round_body_nonil(TYPE v, TYPE r)
 {
 	assert(v != NIL(TYPE));
 
@@ -26,34 +36,33 @@ FUN(TYPE, dec_round_body_nonil)(TYPE v, TYPE r)
 }
 
 static inline TYPE
-FUN(TYPE, dec_round_body)(TYPE v, TYPE r)
+dec_round_body(TYPE v, TYPE r)
 {
 	/* shortcut nil */
 	if (v == NIL(TYPE)) {
 		return NIL(TYPE);
 	} else {
-		return FUN(TYPE, dec_round_body_nonil)(v, r);
+		return dec_round_body_nonil(v, r);
 	}
 }
 
 str
-FUN(TYPE, dec_round_wrap)(TYPE *res, TYPE *v, TYPE *r)
+dec_round_wrap(TYPE *res, TYPE *v, TYPE *r)
 {
 	/* basic sanity checks */
 	assert(res && v && r);
 
-	*res = FUN(TYPE, dec_round_body)(*v, *r);
+	*res = dec_round_body(*v, *r);
 	return MAL_SUCCEED;
 }
 
 str
-FUN(TYPE, bat_dec_round_wrap)(bat *_res, bat *_v, TYPE *r)
+bat_dec_round_wrap(bat *_res, bat *_v, TYPE *r)
 {
 	BAT *res, *v;
 	TYPE *src, *dst;
 	BUN i, cnt;
-	bit nonil;		/* TRUE: we know there are no NIL (NULL) values */
-	bit nil;		/* TRUE: we know there is at least one NIL (NULL) value */
+	int nonil;		/* TRUE: we know there are no NIL (NULL) values */
 
 	/* basic sanity checks */
 	assert(_res && _v && r);
@@ -84,19 +93,17 @@ FUN(TYPE, bat_dec_round_wrap)(bat *_res, bat *_v, TYPE *r)
 	src = (TYPE *) Tloc(v, BUNfirst(v));
 	dst = (TYPE *) Tloc(res, BUNfirst(res));
 
-	nil = FALSE;
 	nonil = TRUE;
 	if (v->T->nonil == TRUE) {
 		for (i = 0; i < cnt; i++)
-			dst[i] = FUN(TYPE, dec_round_body_nonil)(src[i], *r);
+			dst[i] = dec_round_body_nonil(src[i], *r);
 	} else {
 		for (i = 0; i < cnt; i++) {
 			if (src[i] == NIL(TYPE)) {
-				nil = TRUE;
 				nonil = FALSE;
 				dst[i] = NIL(TYPE);
 			} else {
-				dst[i] = FUN(TYPE, dec_round_body_nonil)(src[i], *r);
+				dst[i] = dec_round_body_nonil(src[i], *r);
 			}
 		}
 	}
@@ -107,7 +114,7 @@ FUN(TYPE, bat_dec_round_wrap)(bat *_res, bat *_v, TYPE *r)
 	ALIGNsetH(res, v);
 	/* hard to predict correct tail properties in general */
 	res->T->nonil = nonil;
-	res->T->nil = nil;
+	res->T->nil = !nonil;
 	res->tdense = FALSE;
 	res->tsorted = v->tsorted;
 	BATkey(BATmirror(res), FALSE);
@@ -122,7 +129,7 @@ FUN(TYPE, bat_dec_round_wrap)(bat *_res, bat *_v, TYPE *r)
 }
 
 static inline TYPE
-FUN(TYPE, round_body_nonil)(TYPE v, bte r)
+round_body_nonil(TYPE v, int r)
 {
 	TYPE res = NIL(TYPE);
 
@@ -144,34 +151,33 @@ FUN(TYPE, round_body_nonil)(TYPE v, bte r)
 }
 
 static inline TYPE
-FUN(TYPE, round_body)(TYPE v, bte r)
+round_body(TYPE v, int r)
 {
 	/* shortcut nil */
 	if (v == NIL(TYPE)) {
 		return NIL(TYPE);
 	} else {
-		return FUN(TYPE, round_body_nonil)(v, r);
+		return round_body_nonil(v, r);
 	}
 }
 
 str
-FUN(TYPE, round_wrap)(TYPE *res, TYPE *v, bte *r)
+round_wrap(TYPE *res, TYPE *v, bte *r)
 {
 	/* basic sanity checks */
 	assert(res && v && r);
 
-	*res = FUN(TYPE, round_body)(*v, *r);
+	*res = round_body(*v, *r);
 	return MAL_SUCCEED;
 }
 
 str
-FUN(TYPE, bat_round_wrap)(bat *_res, bat *_v, bte *r)
+bat_round_wrap(bat *_res, bat *_v, bte *r)
 {
 	BAT *res, *v;
 	TYPE *src, *dst;
 	BUN i, cnt;
-	bit nonil;		/* TRUE: we know there are no NIL (NULL) values */
-	bit nil;		/* TRUE: we know there is at least one NIL (NULL) value */
+	int nonil;		/* TRUE: we know there are no NIL (NULL) values */
 
 	/* basic sanity checks */
 	assert(_res && _v && r);
@@ -202,19 +208,17 @@ FUN(TYPE, bat_round_wrap)(bat *_res, bat *_v, bte *r)
 	src = (TYPE *) Tloc(v, BUNfirst(v));
 	dst = (TYPE *) Tloc(res, BUNfirst(res));
 
-	nil = FALSE;
 	nonil = TRUE;
 	if (v->T->nonil == TRUE) {
 		for (i = 0; i < cnt; i++)
-			dst[i] = FUN(TYPE, round_body_nonil)(src[i], *r);
+			dst[i] = round_body_nonil(src[i], *r);
 	} else {
 		for (i = 0; i < cnt; i++) {
 			if (src[i] == NIL(TYPE)) {
-				nil = TRUE;
 				nonil = FALSE;
 				dst[i] = NIL(TYPE);
 			} else {
-				dst[i] = FUN(TYPE, round_body_nonil)(src[i], *r);
+				dst[i] = round_body_nonil(src[i], *r);
 			}
 		}
 	}
@@ -225,7 +229,7 @@ FUN(TYPE, bat_round_wrap)(bat *_res, bat *_v, bte *r)
 	ALIGNsetH(res, v);
 	/* hard to predict correct tail properties in general */
 	res->T->nonil = nonil;
-	res->T->nil = nil;
+	res->T->nil = !nonil;
 	res->tdense = FALSE;
 	res->tsorted = v->tsorted;
 	BATkey(BATmirror(res), FALSE);
@@ -240,7 +244,7 @@ FUN(TYPE, bat_round_wrap)(bat *_res, bat *_v, bte *r)
 }
 
 str
-FUN(TYPE, trunc_wrap)(TYPE *res, TYPE *v, int *r)
+trunc_wrap(TYPE *res, TYPE *v, int *r)
 {
 	/* shortcut nil */
 	if (*v == NIL(TYPE)) {
@@ -256,3 +260,13 @@ FUN(TYPE, trunc_wrap)(TYPE *res, TYPE *v, int *r)
 	}
 	return MAL_SUCCEED;
 }
+
+#undef dec_round_body_nonil
+#undef dec_round_body
+#undef dec_round_wrap
+#undef bat_dec_round_wrap
+#undef round_body_nonil
+#undef round_body
+#undef round_wrap
+#undef bat_round_wrap
+#undef trunc_wrap
