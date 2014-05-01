@@ -103,4 +103,4 @@ returns string external name json.output;
 -- create function json.nest table( id integer, k string, v string)
 -- returns json external name json.nest;
 
-
+create aggregate json.tojsonarray( x string ) returns string external name json.aggr;
