@@ -1450,16 +1450,15 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 			for (j = 0; j < threads; j++)
 				MT_sema_down(&ptask[j].reply, "SQLload_file");
 		}
-#ifndef SQLLOADTHREAD
-		if ((e == NULL || s >= end || e >= end) && cnt < (BUN) maxrow)
+		if ((e == NULL || s >= end || e >= end) && cnt < (BUN) maxrow) {
+#ifdef SQLLOADTHREAD
+			MT_sema_down(&task->consumer, "SQLload_file");
+#else
 			task->ateof = tablet_read_more(task->b, task->out, task->b->size - (task->b->len - task->b->pos)) == EOF;
 #endif
+		}
 		if (task->ateof)
 			break;
-#ifdef SQLLOADTHREAD
-		if ((e == NULL || s >= end || e >= end) && cnt < (BUN) maxrow)
-			MT_sema_down(&task->consumer, "SQLload_file");
-#endif
 	}
 
 	if (task->b->pos < task->b->len && cnt < (BUN) maxrow && task->ateof) {
