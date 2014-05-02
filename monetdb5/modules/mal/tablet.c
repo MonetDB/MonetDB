@@ -53,8 +53,6 @@
 #include <string.h>
 #include <ctype.h>
 
-tablet_export str CMDtablet_input(int *ret, int *nameid, int *sepid, int *typeid, stream *s, int *nr);
-
 static MT_Lock errorlock MT_LOCK_INITIALIZER("errorlock");
 
 static BAT *
