@@ -1067,7 +1067,7 @@ SQLworkdivider(READERtask *task, READERtask *ptask, int nr_attrs, int threads)
 
 /*
  * Reading is handled by a separate task as a preparation for
- * mode parallelism
+ * more parallelism
  */
 static void
 SQLloader(void *p)
@@ -1126,7 +1126,6 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 	assert(rsep);
 	assert(csep);
 	assert(maxrow < 0 || maxrow <= (lng) BUN_MAX);
-	rseplen = strlen(rsep);
 	task->fields = (char ***) GDKzalloc(as->nr_attrs * sizeof(char **));
 	task->cols = (int *) GDKzalloc(as->nr_attrs * sizeof(int));
 	task->time = (lng *) GDKzalloc(as->nr_attrs * sizeof(lng));
@@ -1146,7 +1145,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 	task->csep = csep;
 	task->seplen = strlen(csep);
 	task->rsep = rsep;
-	task->rseplen = strlen(rsep);
+	task->rseplen = rseplen = strlen(rsep);
 	task->errbuf = cntxt->errbuf;
 	task->input = task->base + 1;	/* wrap the buffer with null bytes */
 	task->base[b->size + 1] = 0;
@@ -1163,9 +1162,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 	mlock(task->time, as->nr_attrs * sizeof(lng));
 	mlock(task->base, b->size + 2);
 #endif
-	MT_lock_set(&errorlock, "SQLload_file");
 	as->error = NULL;
-	MT_lock_unset(&errorlock, "SQLload_file");
 
 	/* there is no point in creating more threads than we have columns */
 	if (as->nr_attrs < (BUN) threads)
@@ -1177,10 +1174,8 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 	for (i = 0; i < as->nr_attrs; i++) {
 		task->fields[i] = GDKzalloc(sizeof(char *) * task->limit);
 		if (task->fields[i] == 0) {
-			MT_lock_set(&errorlock, "SQLload_file");
 			if (task->as->error == NULL)
 				as->error = M5OutOfMemory;
-			MT_lock_unset(&errorlock, "SQLload_file");
 			goto bailout;
 		}
 #ifdef MLOCK_TST
@@ -1216,10 +1211,10 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 #ifdef _DEBUG_TABLET_
 	mnstr_printf(GDKout, "parallel bulk load " LLFMT " - " LLFMT "\n", skip, maxrow);
 #endif
+	if (maxrow < 0)
+		maxrow = (lng) BUN_MAX;
 
 	tio = GDKusec();
-	MT_sema_up(&task->producer, "SQLload_file");
-	MT_sema_down(&task->consumer, "SQLload_file");
 	tio = GDKusec() - tio;
 	t1 = GDKusec();
 #ifdef MLOCK_TST
@@ -1283,7 +1278,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 		 * the middle of the record separator).  If this is too
 		 * costly, we have to rethink the matter. */
 		e = s;
-		while (s < end && task->next < task->limit && (maxrow < 0 || cnt < (BUN) maxrow)) {
+		while (s < end && task->next < task->limit && cnt < (BUN) maxrow) {
 			char q = 0;
 			/* tokenize the record completely the format of the input
 			 * should comply to the following grammar rule [
@@ -1388,7 +1383,8 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 			}
 		}
 		/* start feeding new data */
-		MT_sema_up(&task->producer, "SQLload_file");
+		if ((e == NULL || s >= end || e >= end) && cnt < (BUN) maxrow)
+			MT_sema_up(&task->producer, "SQLload_file");
 		t1 = GDKusec() - t1;
 		total += t1;
 		iototal += tio;
@@ -1444,7 +1440,8 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 		}
 		if (task->ateof)
 			break;
-		MT_sema_down(&task->consumer, "SQLload_file");
+		if ((e == NULL || s >= end || e >= end) && cnt < (BUN) maxrow)
+			MT_sema_down(&task->consumer, "SQLload_file");
 	}
 
 	if (task->b->pos < task->b->len && cnt < (BUN) maxrow && task->ateof) {
@@ -1461,7 +1458,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 	}
 
 	if (GDKdebug & GRPalgorithms) {
-		if (cnt < (BUN) maxrow && maxrow > 0)
+		if (cnt < (BUN) maxrow)
 			/* providing a precise count is not always easy, instead
 			 * consider maxrow as an upper bound */
 			mnstr_printf(GDKout, "#SQLload_file: read error, tuples missing (after loading " BUNFMT " records)\n", BATcount(as->format[0].c));
