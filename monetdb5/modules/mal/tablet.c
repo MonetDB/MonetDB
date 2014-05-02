@@ -53,7 +53,7 @@
 #include <string.h>
 #include <ctype.h>
 
-#define SQLLOADTHREAD		/* define to get separate reader thread */
+/* #define SQLLOADTHREAD */		/* define to get separate reader thread */
 
 static MT_Lock errorlock MT_LOCK_INITIALIZER("errorlock");
 
