@@ -18,56 +18,62 @@ normalized
 binary
 
 conformance_load
+
+#query the geometry_columns table 
 T1
 T2
 T3
 T4
-T5
-T6
-# T7	no such unary operator 'geometrytype(multilinestring)'
-T8
-# T9	no such unary operator 'asbinary(polygon)'
-T10
-T11
-T12
-T13
-T14
-T15
-T16
-T17
-T18
-# T19	no such unary operator 'asbinary(geometry)'
-# T20	no such unary operator 'asbinary(geometry)'
-T21
-T22
-T23
-T24
-# T25	no such unary operator 'pointonsurface(polygon)'
-T26
-# T27	no such unary operator 'exteriorring(polygon)'
-# T28	no such unary operator 'numinteriorring(polygon)'
-# T29	no such binary operator 'interiorringn(polygon,tinyint)'
-# T30	no such unary operator 'numgeometries(multilinestring)'
-# T31	no such binary operator 'geometryn(multilinestring,tinyint)'
-# T32	no such unary operator 'isclosed(multilinestring)'
-T33
-T34
-# T35	no such unary operator 'pointonsurface(multipolygon)'
-T36
-T37
-T38
-T39
-T40
-T41
-T42
-# T43	no such binary operator 'intersects(linestring,multilinestring)'
-T44
-T45
-T46
-T47
-T48
-T49
-T50
-T51
-T52
+
+T5	//query the spatial_ref_sys table
+
+#Geometry Constructors
+
+T6	//Dimension
+# T7	//GeometryType
+T8	//AsText
+# T9	//PolyFromWKB	no such unary operator 'asbinary(polygon)'
+T10	//SRID
+T11	//IsEmpty
+T12	//IsSimple
+T13	//Boundary
+T14	//Envelope
+T15	//X
+T16	//Y
+T17	//StartPoint
+T18	//EndPoint
+# T19	//IsClosed	no such unary operator 'asbinary(geometry)'
+# T20	//IsRing	no such unary operator 'asbinary(geometry)'
+T21	//Length
+T22	//NumPoints
+T23	//PointN
+T24	//Centroid
+# T25	//Contains	no such unary operator 'pointonsurface(polygon)'
+T26	//Area
+# T27	//ExteriorRing	no such unary operator 'exteriorring(polygon)'
+# T28	//NumInteriorRing	no such unary operator 'numinteriorring(polygon)'
+# T29	//InteriorRingN	no such binary operator 'interiorringn(polygon,tinyint)'
+# T30	//NumGeometries	no such unary operator 'numgeometries(multilinestring)'
+# T31	//GeometryN	no such binary operator 'geometryn(multilinestring,tinyint)'
+# T32	IsClosed	no such unary operator 'isclosed(multilinestring)'
+T33	//Lenght
+T34	//Centroid
+# T35	//Contains	no such unary operator 'pointonsurface(multipolygon)'
+T36	//Area
+T37	//Equals
+T38	//Disjoint
+T39	//Touches
+T40	//Within
+T41	//Overlaps
+T42	//Crosses
+# T43	//Intersects	no such binary operator 'intersects(linestring,multilinestring)'
+T44	//Contains
+T45	//Relate
+T46	//Distance
+T47	//Intersection
+T48	//Difference
+T49	//Union
+T50	//SymDifference
+T51	//Contains
+T52	//ConvexHull
 conformance_drop

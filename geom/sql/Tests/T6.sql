@@ -1,2 +1,2 @@
 -- Conformance Item T6
-SELECT Dimension(shore) FROM lakes WHERE name = 'Blue Lake';
+SELECT Dimension(shore) FROM lakes2d WHERE name = 'Blue Lake';
