@@ -92,10 +92,6 @@ public class SQLcopyinto {
 			error = in.waitForPrompt();
 			if (error != null)
 				throw new Exception(error);
-			out.writeLine(""); // server wants more, we're going to tell it, this is it
-			error = in.waitForPrompt();
-			if (error != null)
-				throw new Exception(error);
 			// disconnect from server
 			server.close();
 		} catch (IOException e) {
