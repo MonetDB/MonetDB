@@ -1251,7 +1251,6 @@ str CMDstartProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str CMDstopProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str CMDstr2qgrams(int *ret, str *val);
 str CMDstrlength(int *ret, str *v);
-str CMDtablet_input(int *ret, int *nameid, int *sepid, int *typeid, stream *s, int *nr);
 str CMDtomograph(int *ret);
 str CMDvarABS(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str CMDvarADD(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
