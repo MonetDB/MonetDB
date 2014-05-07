@@ -99,6 +99,11 @@ ODBCExecDirect(ODBCStmt *stmt, SQLCHAR *StatementText, SQLINTEGER TextLength)
 	 * syntax */
 	query = ODBCTranslateSQL(stmt->Dbc, StatementText, (size_t) TextLength,
 				 stmt->noScan);
+	if (query == NULL) {
+		/* Memory allocation error */
+		addStmtError(stmt, "HY001", NULL, 0);
+		return SQL_ERROR;
+	}
 
 	ODBCResetStmt(stmt);
 

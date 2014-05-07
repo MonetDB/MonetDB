@@ -331,6 +331,11 @@ SQLColAttributeW(SQLHSTMT StatementHandle,
 		clearStmtErrors(stmt);
 		n++;		/* account for NUL byte */
 		ptr = (SQLPOINTER) malloc(n);
+		if (ptr == NULL) {
+			/* Memory allocation error */
+			addStmtError(stmt, "HY001", NULL, 0);
+			return SQL_ERROR;
+		}
 		break;
 	default:
 		n = BufferLength;

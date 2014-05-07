@@ -1242,6 +1242,11 @@ ODBCFetch(ODBCStmt *stmt,
 			     sql_type == SQL_WLONGVARCHAR))
 				buflen = (SQLLEN) datalen + 1; /* but this is certainly enough for strings */
 			ptr = malloc(buflen);
+			if (ptr == NULL) {
+				/* Memory allocation error */
+				addStmtError(stmt, "HY001", NULL, 0);
+				return SQL_ERROR;
+			}
 
 			lenp = NULL;
 		}

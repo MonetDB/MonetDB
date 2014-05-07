@@ -64,6 +64,8 @@ ODBCGetKeyAttr(SQLCHAR **conn, SQLSMALLINT *nconn, char **key, char **attr)
 		return 0;
 	len = *conn - p;
 	*key = (char *) malloc(len + 1);
+	if (*key == NULL)
+		return -1;
 	strncpy(*key, (char *) p, len);
 	(*key)[len] = 0;
 	(*conn)++;
@@ -80,6 +82,11 @@ ODBCGetKeyAttr(SQLCHAR **conn, SQLSMALLINT *nconn, char **key, char **attr)
 		}
 		len = *conn - p;
 		*attr = (char *) malloc(len + 1);
+		if (*attr == NULL) {
+			free(*key);
+			*key = NULL;
+			return -1;
+		}
 		strncpy(*attr, (char *) p, len);
 		(*attr)[len] = 0;
 		(*conn)++;
@@ -92,6 +99,11 @@ ODBCGetKeyAttr(SQLCHAR **conn, SQLSMALLINT *nconn, char **key, char **attr)
 		}
 		len = *conn - p;
 		*attr = (char *) malloc(len + 1);
+		if (*attr == NULL) {
+			free(*key);
+			*key = NULL;
+			return -1;
+		}
 		strncpy(*attr, (char *) p, len);
 		(*attr)[len] = 0;
 	}
@@ -274,6 +286,7 @@ SQLDriverConnect_(ODBCDbc *dbc,
 	char *dsn = 0, *uid = 0, *pwd = 0, *host = 0, *database = 0;
 	int port = 0;
 	SQLRETURN rc;
+	int n;
 
 	(void) WindowHandle;		/* Stefan: unused!? */
 
@@ -307,7 +320,7 @@ SQLDriverConnect_(ODBCDbc *dbc,
 		return SQL_ERROR;
 	}
 
-	while (ODBCGetKeyAttr(&InConnectionString, &StringLength1, &key, &attr)) {
+	while ((n = ODBCGetKeyAttr(&InConnectionString, &StringLength1, &key, &attr)) > 0) {
 		if (strcasecmp(key, "dsn") == 0 && dsn == NULL)
 			dsn = attr;
 		else if (strcasecmp(key, "uid") == 0 && uid == NULL)
@@ -333,7 +346,11 @@ SQLDriverConnect_(ODBCDbc *dbc,
 		free(key);
 	}
 
-	if (dsn && strlen(dsn) > SQL_MAX_DSN_LENGTH) {
+	if (n < 0) {
+		/* Memory allocation error */
+		addDbcError(dbc, "HY001", NULL, 0);
+		rc = SQL_ERROR;
+	} else if (dsn && strlen(dsn) > SQL_MAX_DSN_LENGTH) {
 		/* Data source name too long */
 		addDbcError(dbc, "IM010", NULL, 0);
 		rc = SQL_ERROR;
@@ -451,6 +468,11 @@ SQLDriverConnectW(SQLHDBC ConnectionHandle,
 	clearDbcErrors(dbc);
 	n++;			/* account for NUL byte */
 	out = malloc(n);
+	if (out == NULL) {
+		/* Memory allocation error */
+		addDbcError(dbc, "HY001", NULL, 0);
+		return SQL_ERROR;
+	}
 	rc = SQLDriverConnect_(dbc, WindowHandle, in, SQL_NTS, out, n, &n,
 			       DriverCompletion, 0);
 	if (SQL_SUCCEEDED(rc)) {

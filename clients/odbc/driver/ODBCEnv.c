@@ -56,7 +56,8 @@ newODBCEnv(void)
 {
 	ODBCEnv *env = (ODBCEnv *) malloc(sizeof(ODBCEnv));
 
-	assert(env);
+	if (env == NULL)
+		return NULL;
 
 	env->Error = NULL;
 	env->RetrievedErrors = 0;

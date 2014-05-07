@@ -89,7 +89,7 @@ SQLBrowseConnect_(ODBCDbc *dbc,
 	port = dbc->port;
 	dbname = dbc->dbname;
 
-	while (ODBCGetKeyAttr(&InConnectionString, &StringLength1, &key, &attr)) {
+	while ((n = ODBCGetKeyAttr(&InConnectionString, &StringLength1, &key, &attr)) > 0) {
 		if (strcasecmp(key, "dsn") == 0 && dsn == NULL) {
 			dsn = attr;
 			allocated |= 1;
@@ -121,12 +121,16 @@ SQLBrowseConnect_(ODBCDbc *dbc,
 			free(attr);
 		free(key);
 	}
+	if (n < 0)
+		goto nomem;
 
 	if (dsn) {
 		if (uid == NULL) {
 			n = SQLGetPrivateProfileString(dsn, "uid", "", buf, sizeof(buf), "odbc.ini");
 			if (n > 0 && buf[0]) {
 				uid = strdup(buf);
+				if (uid == NULL)
+					goto nomem;
 				allocated |= 2;
 			}
 		}
@@ -134,6 +138,8 @@ SQLBrowseConnect_(ODBCDbc *dbc,
 			n = SQLGetPrivateProfileString(dsn, "pwd", "", buf, sizeof(buf), "odbc.ini");
 			if (n > 0 && buf[0]) {
 				pwd = strdup(buf);
+				if (pwd == NULL)
+					goto nomem;
 				allocated |= 4;
 			}
 		}
@@ -141,6 +147,8 @@ SQLBrowseConnect_(ODBCDbc *dbc,
 			n = SQLGetPrivateProfileString(dsn, "host", "", buf, sizeof(buf), "odbc.ini");
 			if (n > 0 && buf[0]) {
 				host = strdup(buf);
+				if (host == NULL)
+					goto nomem;
 				allocated |= 8;
 			}
 		}
@@ -154,6 +162,8 @@ SQLBrowseConnect_(ODBCDbc *dbc,
 			n = SQLGetPrivateProfileString(dsn, "database", "", buf, sizeof(buf), "odbc.ini");
 			if (n > 0 && buf[0]) {
 				dbname = strdup(buf);
+				if (dbname == NULL)
+					goto nomem;
 				allocated |= 16;
 			}
 		}
@@ -229,6 +239,7 @@ SQLBrowseConnect_(ODBCDbc *dbc,
 		rc = SQL_NEED_DATA;
 	}
 
+  bailout:
 	if (allocated & 1)
 		free(dsn);
 	if (allocated & 2)
@@ -240,6 +251,12 @@ SQLBrowseConnect_(ODBCDbc *dbc,
 	if (allocated & 16)
 		free(dbname);
 	return rc;
+
+  nomem:
+	/* Memory allocation error */
+	addDbcError(dbc, "HY001", NULL, 0);
+	rc = SQL_ERROR;
+	goto bailout;
 }
 
 SQLRETURN SQL_API
@@ -300,6 +317,11 @@ SQLBrowseConnectW(SQLHDBC ConnectionHandle,
 	fixWcharIn(InConnectionString, StringLength1, SQLCHAR, in,
 		   addDbcError, dbc, return SQL_ERROR);
 	out = malloc(1024);
+	if (out == NULL) {
+		/* Memory allocation error */
+		addDbcError(dbc, "HY001", NULL, 0);
+		return SQL_ERROR;
+	}
 	rc = SQLBrowseConnect_(dbc, in, SQL_NTS, out, 1024, &n);
 	if (SQL_SUCCEEDED(rc) || rc == SQL_NEED_DATA) {
 		fixWcharOut(rc, out, n, OutConnectionString, BufferLength,
