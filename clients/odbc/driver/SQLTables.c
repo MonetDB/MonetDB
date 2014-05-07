@@ -260,7 +260,9 @@ SQLTables_(ODBCStmt *stmt,
 			query_end += strlen(query_end);
 			for (i = j = 0; i < NameLength4 + 1; i++) {
 				if (i == NameLength4 || TableType[i] == ',') {
-					if (j > 16 || j == 0) {
+					if (j > 0 && buf[j - 1] == ' ')
+						j--;
+					if (j >= (int) sizeof(buf) || j == 0) {
 						j = 0;
 						continue;
 					}
@@ -283,7 +285,10 @@ SQLTables_(ODBCStmt *stmt,
 					}
 					query_end += strlen(query_end);
 					j = 0;
-				} else if (j < 17 && TableType[i] != '\'' && (j > 0 || TableType[i] != ' '))
+				} else if (j < (int) sizeof(buf) &&
+					   TableType[i] != '\'' &&
+					   (TableType[i] != ' ' ||
+					    (j > 0 && buf[j - 1] != ' ')))
 					buf[j++] = TableType[i];
 			}
 			if (query_end[-1] == '(') {
