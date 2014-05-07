@@ -780,6 +780,23 @@ rel_update(mvc *sql, sql_rel *t, sql_rel *uprel, sql_exp **updates, list *exps)
 	return r;
 }
 
+
+static sql_exp *
+update_check_column(mvc *sql, sql_table *t, sql_column *c, sql_exp *v, sql_rel *r, char *cname)
+{
+	if (!c) {
+		rel_destroy(r);
+		return sql_error(sql, 02, "42S22!UPDATE: no such column '%s.%s'", t->base.name, cname);
+	}
+	if (!table_privs(sql, t, PRIV_UPDATE) && !sql_privilege(sql, sql->user_id, c->base.id, PRIV_UPDATE, 0)) 
+		return sql_error(sql, 02, "UPDATE: insufficient privileges for user '%s' to update table '%s' on column '%s'", stack_get_string(sql, "current_user"), t->base.name, cname);
+	if (!v || (v = rel_check_type(sql, &c->type, v, type_equal)) == NULL) {
+		rel_destroy(r);
+		return NULL;
+	}
+	return v;
+}
+
 static sql_rel *
 update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_where)
 {
@@ -816,7 +833,7 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_where)
 	} else {
 		sql_exp *e = NULL, **updates;
 		sql_rel *r = NULL;
-		list *exps;	//, *pexps;
+		list *exps;
 		dnode *n;
 
 		if (t && !isTempTable(t) && STORE_READONLY)
@@ -845,79 +862,52 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_where)
 			bt = r = rel_basetable(sql, t, t->base.name );
 		}
 	
-		//pexps = rel_projections(sql, r, NULL, 1, 0);
-		/* We simply create a relation TID, updates */
-
 		/* first create the project */
 		e = exp_column(sql->sa, rel_name(r), TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
-		//r = rel_project(sql->sa, r, append(new_exp_list(sql->sa),e));
-		//e = exp_column(sql->sa, rel_name(r), TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
 		exps = new_exp_list(sql->sa);
 		append(exps, e);
 		updates = table_update_array(sql, t);
 		for (n = assignmentlist->h; n; n = n->next) {
 			symbol *a = NULL;
 			sql_exp *v = NULL;
+			sql_rel *rel_val = NULL;
 			dlist *assignment = n->data.sym->data.lval;
 			char *cname = assignment->h->next->data.sval;
 			sql_column *c = mvc_bind_column(sql, t, cname);
 
-			if (!c) {
-				rel_destroy(r);
-				return sql_error(sql, 02, "42S22!UPDATE: no such column '%s.%s'", t->base.name, cname);
-			}
-			if (!table_privs(sql, t, PRIV_UPDATE) && !sql_privilege(sql, sql->user_id, c->base.id, PRIV_UPDATE, 0)) 
-				return sql_error(sql, 02, "UPDATE: insufficient privileges for user '%s' to update table '%s' on column '%s'", stack_get_string(sql, "current_user"), tname, c->base.name);
 			a = assignment->h->data.sym;
 			if (a) {
 				int status = sql->session->status;
-				sql_rel *rel_val = NULL;
 				exp_kind ek = {type_value, card_column, FALSE};
 
 				v = rel_value_exp(sql, &rel_val, a, sql_sel, ek);
 
 				if (!v) {
-					//symbol *s = n->data.sym;
 					sql->errstr[0] = 0;
 					sql->session->status = status;
 					v = rel_value_exp(sql, &r, a, sql_sel, ek);
-					//s->token = SQL_COLUMN;
-					//v = rel_column_exp(sql, &r, s, sql_sel);
-
-					/*
-					if (v && r && r->op == op_project) {
-						sql_rel *rl = r->l;
-
-						if (rl && rl->op == op_project)
-							list_merge(rl->exps, pexps, (fdup)NULL);
-					}
-					*/
 				}
-				if (!v || (v = rel_check_type(sql, &c->type, v, type_equal)) == NULL) {
+				if (!v) {
 					rel_destroy(r);
 					return NULL;
 				}
 				if (rel_val) {
-					//sql_rel *nr;
-					//list *exps;
-
 					if (!exp_name(v))
 						exp_label(sql->sa, v, ++sql->label);
 					rel_val = rel_project(sql->sa, rel_val, rel_projections(sql, rel_val, NULL, 0, 1));
 					rel_project_add_exp(sql, rel_val, v);
-					//exps = rel_projections(sql, r, NULL, 0, 1);
-					//nr = rel_project(sql->sa, rel_crossproduct(sql->sa, rel_dup(r->l), rel_val, op_join), exps);
 					r = rel_crossproduct(sql->sa, r, rel_val, op_join);
-					//rel_destroy(r);
-					//r = nr;
 					v = exp_column(sql->sa, NULL, exp_name(v), exp_subtype(v), v->card, has_nil(v), is_intern(v));
-				}		
+				}
 			} else {
 				v = exp_atom(sql->sa, atom_general(sql->sa, &c->type, NULL));
 			}
 
 			if (!v) {
 				rel_destroy(r);
+				return NULL;
+			}
+			if ((v = update_check_column(sql, t, c, v, r, cname)) == NULL) {
 				return NULL;
 			}
 			list_append(exps, exp_column(sql->sa, t->base.name, cname, &c->type, CARD_MULTI, 0, 0));
