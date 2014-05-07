@@ -3435,7 +3435,7 @@ wbs_write(stream *s, const void *buf, size_t elmsize, size_t cnt)
 	size_t nbytes, reqsize = cnt * elmsize, todo = reqsize;
 
 	wbs = (wbs_stream *) s->stream_data.p;
-	if (wbs == NULL || wbs->buf == NULL)
+	if (wbs == NULL)
 		return -1;
 	while (todo > 0) {
 		int flush = 1;
