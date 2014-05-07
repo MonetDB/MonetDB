@@ -1861,7 +1861,7 @@ exp_push_down_prj(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 			sql_exp *gbe = NULL;
 			if (ne->l) 
 				gbe = exps_bind_column2(f->r, ne->l, ne->r);
-			if (!ne && !e->l)
+			if (!gbe && !e->l)
 				gbe = exps_bind_column(f->r, ne->r, NULL);
 			ne = gbe;
 			if (!ne || (ne->type != e_column && ne->type != e_atom))
@@ -3296,6 +3296,9 @@ rel_push_join_down(int *changes, mvc *sql, sql_rel *rel)
 					rname = exp_find_rel_name(gbe);
 					name = exp_name(gbe);
 				}
+
+				if (!name) 
+					return rel;
 
 				for (m = exps->h; m && !fnd; m = m->next) {
 					sql_exp *je = m->data;

@@ -760,11 +760,12 @@ rel_update(mvc *sql, sql_rel *t, sql_rel *uprel, sql_exp **updates, list *exps)
 	sql_table *tab = get_table(t);
 	node *m;
 
+	if (tab)
 	for (m = tab->columns.set->h; m; m = m->next) {
 		sql_column *c = m->data;
 		sql_exp *v = updates[c->colnr];
 
-		if (tab && tab->idxs.set && !v) 
+		if (tab->idxs.set && !v) 
 			v = exp_column(sql->sa, tab->base.name, c->base.name, &c->type, CARD_MULTI, c->null, 0);
 		if (v)
 			rel_project_add_exp(sql, uprel, v);
@@ -1068,6 +1069,8 @@ rel_import(mvc *sql, sql_table *t, char *tsep, char *rsep, char *ssep, char *ns,
 	int len = 7 + (filename?1:0);
 	sql_subfunc *f = sql_find_func(sql->sa, sys, "copyfrom", len, F_UNION); 
 	
+	if (!f) /* we do expect copyfrom to be there */
+		return NULL;
 	f->res = table_column_types(sql->sa, t);
  	sql_find_subtype(&tpe, "varchar", 0, 0);
 	args = append( append( append( append( append( append( new_exp_list(sql->sa), 

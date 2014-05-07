@@ -1876,7 +1876,7 @@ tr_log_delta( sql_trans *tr, sql_delta *cbat, int cleared)
 
 	(void)tr;
 	assert(tr->parent == gtrans);
-	if (cbat->name && cleared) 
+	if (cleared) 
 		log_bat_clear(bat_logger, cbat->name);
 
 	ins = temp_descriptor(cbat->ibid);

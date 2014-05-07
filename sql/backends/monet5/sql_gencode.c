@@ -572,7 +572,7 @@ range_join_convertable(stmt *s, stmt **base, stmt **L, stmt **H)
 		h = s->op3->op1->op4.lval->t->data;
 	}
 
-	if ((ls = (l && strcmp(s->op2->op4.funcval->func->base.name, "sql_sub") == 0 && l->nrcols == 0) || (hs = (h && strcmp(s->op3->op4.funcval->func->base.name, "sql_add") == 0 && h->nrcols == 0))) && (ls || hs) && bl == bh) {
+	if (((ls = (l && strcmp(s->op2->op4.funcval->func->base.name, "sql_sub") == 0 && l->nrcols == 0)) || (hs = (h && strcmp(s->op3->op4.funcval->func->base.name, "sql_add") == 0 && h->nrcols == 0))) && (ls || hs) && bl == bh) {
 		*base = bl;
 		*L = l;
 		*H = h;
@@ -1135,19 +1135,13 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 		} break;
 		case st_uselect:{
 			bit need_not;
-			int l;
-			int r;
-			int sub;
-			int anti;
+			int l, r, sub, anti;
 
 			need_not = FALSE;
 			if ((l = _dumpstmt(sql, mb, s->op1)) < 0)
 				return -1;
-			if (s->op2) {
-				if ((r = _dumpstmt(sql, mb, s->op2)) < 0)
-					return -1;
-			} else
-				r = -1;
+			if ((r = _dumpstmt(sql, mb, s->op2)) < 0)
+				return -1;
 			sub = -1;
 			anti = is_anti(s);
 

@@ -3118,8 +3118,8 @@ reset_schema(sql_trans *tr, sql_schema *fs, sql_schema *pfs)
 			ok = reset_changeset(tr, &fs->seqs, &pfs->seqs, &fs->base, (resetf) &reset_seq, (dupfunc) &seq_dup);
 
 		if (ok == LOG_OK)
-			return reset_changeset(tr, &fs->tables, &pfs->tables, &fs->base, (resetf) &reset_table, (dupfunc) &table_dup);
-		if (ok == LOG_OK) {
+			ok = reset_changeset(tr, &fs->tables, &pfs->tables, &fs->base, (resetf) &reset_table, (dupfunc) &table_dup);
+		if (ok == LOG_OK && cs_size(&pfs->tables)) {
 			node *n;
 			for (n = pfs->tables.set->h; n; n = n->next) {
 				sql_table *ot = n->data;

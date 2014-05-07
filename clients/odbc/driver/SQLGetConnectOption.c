@@ -125,6 +125,11 @@ SQLGetConnectOptionW(SQLHDBC ConnectionHandle,
 	case SQL_OPT_TRACEFILE:
 	case SQL_TRANSLATE_DLL:
 		ptr = (SQLPOINTER) malloc(SQL_MAX_OPTION_STRING_LENGTH);
+		if (ptr == NULL) {
+			/* Memory allocation error */
+			addDbcError(dbc, "HY001", NULL, 0);
+			return SQL_ERROR;
+		}
 		break;
 	default:
 		ptr = ValuePtr;

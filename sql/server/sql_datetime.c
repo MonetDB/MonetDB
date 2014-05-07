@@ -130,6 +130,8 @@ parse_interval_(mvc *sql, lng sign, char *str, int sk, int ek, int sp, int ep, l
 	}
 
 	val = strtol(str, &n, 10);
+	if (!n)
+		return -1;
 	if (sk == isec) {
 		int msec = 0;
 		val *= 1000;
@@ -142,6 +144,7 @@ parse_interval_(mvc *sql, lng sign, char *str, int sk, int ek, int sp, int ep, l
 					msec *= 10;
 				for( ;d>3; d--) 
 					msec /= 10;
+				n = nn;
 			}
 		}
 		val += msec;
@@ -231,6 +234,8 @@ parse_interval(mvc *sql, lng sign, char *str, int sk, int ek, int sp, int ep, ln
 	}
 
 	val = strtol(str, &n, 10);
+	if (!n)
+		return -1;
 	if (sk == isec) {
 		int msec = 0;
 		val *= 1000;

@@ -608,7 +608,8 @@ alter_table(mvc *sql, char *sname, sql_table *t)
 			for (n = t->keys.dset->h; n; n = n->next) {
 				sql_key *k = n->data;
 				sql_key *nk = mvc_bind_key(sql, s, k->base.name);
-				mvc_drop_key(sql, s, nk, k->drop_action);
+				if (nk)
+					mvc_drop_key(sql, s, nk, k->drop_action);
 			}
 		/* alter add key */
 		for (n = t->keys.nelm; n; n = n->next) {
@@ -959,7 +960,7 @@ drop_trigger(mvc *sql, char *sname, char *tname)
 	if (!s)
 		s = cur_schema(sql);
 	assert(s);
-	if (s && !schema_privs(sql->role_id, s))
+	if (!schema_privs(sql->role_id, s))
 		return sql_message("3F000!DROP TRIGGER: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), s->base.name);
 
 	if ((tri = mvc_bind_trigger(sql, s, tname)) == NULL)
@@ -1993,7 +1994,13 @@ DELTAsub(bat *result, bat *col, bat *cid, bat *uid, bat *uval, bat *ins)
 	res = c;
 	if (BATcount(u_id)) {
 		u_id = BATdescriptor(*uid);
+		if (!u_id)
+			throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
 		cminu = BATkdiff(BATmirror(c), BATmirror(u_id));
+		if (!cminu) {
+			BBPunfix(u_id->batCacheid);
+			throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
+		}
 		BBPunfix(c->batCacheid);
 		res = c = BATmirror(BATmark(cminu, 0));
 		BBPunfix(cminu->batCacheid);
@@ -2006,12 +2013,25 @@ DELTAsub(bat *result, bat *col, bat *cid, bat *uid, bat *uval, bat *ins)
 		u = BATleftfetchjoin(u_val, u_id, BATcount(u_val));
 		BBPunfix(u_val->batCacheid);
 		BBPunfix(u_id->batCacheid);
+		if (!u) {
+			BBPunfix(c->batCacheid);
+			throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
+		}
 		if (BATcount(u)) {	/* check selected updated values against candidates */
 			BAT *c_ids = BATdescriptor(*cid);
 
+			if (!c_ids){
+				BBPunfix(c->batCacheid);
+				BBPunfix(u->batCacheid);
+				throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
+			}
 			cminu = BATsemijoin(BATmirror(u), BATmirror(c_ids));
 			BBPunfix(c_ids->batCacheid);
 			BBPunfix(u->batCacheid);
+			if (!cminu) {
+				BBPunfix(c->batCacheid);
+				throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
+			}
 			u = BATmirror(cminu);
 		}
 		res = BATappend(c, u, TRUE);
@@ -2019,17 +2039,25 @@ DELTAsub(bat *result, bat *col, bat *cid, bat *uid, bat *uval, bat *ins)
 
 		u = BATsort(BATmirror(res));
 		BBPunfix(res->batCacheid);
+		if (!u) {
+			BBPunfix(c->batCacheid);
+			throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
+		}
 		res = BATmirror(BATmark(u, 0));
 		BBPunfix(u->batCacheid);
 	}
 
 	if (i) {
 		i = BATdescriptor(*ins);
+		if (!i)
+			throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
 		if (BATcount(u_id)) {
 			u_id = BATdescriptor(*uid);
 			cminu = BATkdiff(BATmirror(i), BATmirror(u_id));
 			BBPunfix(i->batCacheid);
 			BBPunfix(u_id->batCacheid);
+			if (!cminu) 
+				throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
 			i = BATmirror(BATmark(cminu, 0));
 			BBPunfix(cminu->batCacheid);
 		}
@@ -2038,6 +2066,8 @@ DELTAsub(bat *result, bat *col, bat *cid, bat *uid, bat *uval, bat *ins)
 
 		u = BATsort(BATmirror(res));
 		BBPunfix(res->batCacheid);
+		if (!u) 
+			throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
 		res = BATmirror(BATmark(u, 0));
 		BBPunfix(u->batCacheid);
 	}
@@ -2812,6 +2842,10 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 				throw(SQL, "sql", "failed to re-open file %s", *(str *) getArgReference(stk, pci, i));
 
 			buf = GDKmalloc(bufsiz);
+			if (!buf) {
+				fclose(f);
+				throw(SQL, "sql", "failed to create buffer");
+			}
 			while (fgets(buf, bufsiz, f) != NULL) {
 				char *t = strrchr(buf, '\n');
 				if (t)
@@ -4465,7 +4499,6 @@ RAstatement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		int oldvtop = cntxt->curprg->def->vtop;
 		int oldstop = cntxt->curprg->def->stop;
 		stmt *s;
-		char *msg;
 		MalStkPtr oldglb = cntxt->glb;
 
 		if (*opt)

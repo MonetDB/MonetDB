@@ -55,7 +55,6 @@ ODBCStmt *
 newODBCStmt(ODBCDbc *dbc)
 {
 	ODBCStmt *stmt = (ODBCStmt *) malloc(sizeof(ODBCStmt));
-	assert(stmt);
 
 	assert(dbc);
 	assert(dbc->mid);

@@ -870,6 +870,8 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, char *r, int *pos, int grp)
 			skipWS(r,pos);
 		}
 	}
+	if (!exp)
+		return NULL;
 	/* [ ASC ] */
 	if (strncmp(r+*pos, "ASC",  strlen("ASC")) == 0) {
 		(*pos)+= (int) strlen("NOT");

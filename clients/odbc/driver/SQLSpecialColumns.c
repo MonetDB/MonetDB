@@ -180,38 +180,51 @@ SQLSpecialColumns_(ODBCStmt *stmt,
 				cat = ODBCParseOA("e", "value",
 						  (const char *) CatalogName,
 						  (size_t) NameLength1);
+				if (cat == NULL)
+					goto nomem;
 			}
 			if (NameLength2 > 0) {
 				sch = ODBCParseOA("s", "name",
 						  (const char *) SchemaName,
 						  (size_t) NameLength2);
+				if (sch == NULL)
+					goto nomem;
 			}
 			if (NameLength3 > 0) {
 				tab = ODBCParseOA("t", "name",
 						  (const char *) TableName,
 						  (size_t) NameLength3);
+				if (tab == NULL)
+					goto nomem;
 			}
 		} else {
 			if (NameLength1 > 0) {
 				cat = ODBCParseID("e", "value",
 						  (const char *) CatalogName,
 						  (size_t) NameLength1);
+				if (cat == NULL)
+					goto nomem;
 			}
 			if (NameLength2 > 0) {
 				sch = ODBCParseID("s", "name",
 						  (const char *) SchemaName,
 						  (size_t) NameLength2);
+				if (sch == NULL)
+					goto nomem;
 			}
 			if (NameLength3 > 0) {
 				tab = ODBCParseID("t", "name",
 						  (const char *) TableName,
 						  (size_t) NameLength3);
+				if (tab == NULL)
+					goto nomem;
 			}
 		}
 
 		/* first create a string buffer (1000 extra bytes is plenty */
 		query = (char *) malloc(5000 + NameLength1 + NameLength2 + NameLength3);
-		assert(query);
+		if (query == NULL)
+			goto nomem;
 		query_end = query;
 
 		/* Note: SCOPE is SQL_SCOPE_TRANSACTION */
@@ -516,6 +529,19 @@ SQLSpecialColumns_(ODBCStmt *stmt,
 	free(query);
 
 	return rc;
+
+  nomem:
+	if (cat)
+		free(cat);
+	if (sch)
+		free(sch);
+	if (tab)
+		free(tab);
+	if (query)
+		free(query);
+	/* Memory allocation error */
+	addStmtError(stmt, "HY001", NULL, 0);
+	return SQL_ERROR;
 }
 
 SQLRETURN SQL_API
