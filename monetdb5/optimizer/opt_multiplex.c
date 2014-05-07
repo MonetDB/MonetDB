@@ -108,7 +108,7 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 									  getHeadType(getVarType(mb,iter))));
 	q = newFcnCall(mb, batRef, reverseRef);
 	getArg(q, 0) = x;
-	q = pushArgument(mb, q, iter);
+	(void) pushArgument(mb, q, iter);
 
 	/* resB := new(refBat) */
 	q = newFcnCall(mb, batRef, newRef);

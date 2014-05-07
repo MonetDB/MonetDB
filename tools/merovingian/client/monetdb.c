@@ -1221,7 +1221,7 @@ command_get(int argc, char *argv[])
 	char *property = NULL;
 	char propall = 0;
 	char vbuf[512];
-	char *buf;
+	char *buf = 0;
 	char *e;
 	int i;
 	sabdb *orig, *stats;
@@ -1303,13 +1303,14 @@ command_get(int argc, char *argv[])
 		fprintf(stderr, "get: %s\n", e);
 		free(e);
 		exit(2);
-	} else if (strncmp(buf, "OK\n", 3) != 0) {
+	} else if ( buf && strncmp(buf, "OK\n", 3) != 0) {
 		fprintf(stderr, "get: %s\n", buf);
 		free(buf);
 		exit(1);
 	}
 	readPropsBuf(defprops, buf + 3);
-	free(buf);
+	if( buf) 
+		free(buf);
 
 	if (twidth > 0) {
 		/* name = 15 */

@@ -710,6 +710,7 @@ mat_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m)
 		pushInstruction(mb, s);
 		r = s;
 
+/* DEAD CODE FOUND BY COVERITY
 		if (isAvg) {
 			s = newInstruction(mb,ASSIGNsymbol);
 			setModuleId(s, algebraRef);
@@ -719,6 +720,7 @@ mat_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m)
 			pushInstruction(mb, s);
 			u = s;
 		}
+*/
 	}
 
 	/* for avg we do sum (avg*(count/sumcount) ) */
