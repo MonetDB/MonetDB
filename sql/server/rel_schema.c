@@ -596,9 +596,6 @@ create_column(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 		if (column_options(sql, opt_list, ss, t, cs) == SQL_ERR)
 			return SQL_ERR;
 	}
-
-	if (res == SQL_ERR) 
-		sql_error(sql, 02, "42000!CREATE: column type or name");
 	return res;
 }
 

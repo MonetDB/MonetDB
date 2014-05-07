@@ -612,7 +612,8 @@ alter_table(mvc *sql, char *sname, sql_table *t)
 			for (n = t->keys.dset->h; n; n = n->next) {
 				sql_key *k = n->data;
 				sql_key *nk = mvc_bind_key(sql, s, k->base.name);
-				mvc_drop_key(sql, s, nk, k->drop_action);
+				if (nk)
+					mvc_drop_key(sql, s, nk, k->drop_action);
 			}
 		/* alter add key */
 		for (n = t->keys.nelm; n; n = n->next) {
@@ -965,7 +966,7 @@ drop_trigger(mvc *sql, char *sname, char *tname)
 	if (!s)
 		s = cur_schema(sql);
 	assert(s);
-	if (s && !schema_privs(sql->role_id, s))
+	if (!schema_privs(sql->role_id, s))
 		return sql_message("3F000!DROP TRIGGER: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), s->base.name);
 
 	if ((tri = mvc_bind_trigger(sql, s, tname)) == NULL)
@@ -2846,6 +2847,10 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 				throw(SQL, "sql", "failed to re-open file %s", *(str *) getArgReference(stk, pci, i));
 
 			buf = GDKmalloc(bufsiz);
+			if (!buf) {
+				fclose(f);
+				throw(SQL, "sql", "failed to create buffer");
+			}
 			while (fgets(buf, bufsiz, f) != NULL) {
 				char *t = strrchr(buf, '\n');
 				if (t)

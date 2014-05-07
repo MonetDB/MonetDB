@@ -65,52 +65,52 @@ list_find_column(sql_allocator *sa, list *l, char *rname, char *name )
 	stmt *res = NULL;
 	node *n;
 
-	if (l) {
-		MT_lock_set(&l->ht_lock, "list_find_column");
-		if (!l->ht && list_length(l) > HASH_MIN_SIZE) {
-			l->ht = hash_new(l->sa, MAX(list_length(l), l->expected_cnt), (fkeyvalue)&stmt_key);
+	if (!l)
+		return NULL;
+	MT_lock_set(&l->ht_lock, "list_find_column");
+	if (!l->ht && list_length(l) > HASH_MIN_SIZE) {
+		l->ht = hash_new(l->sa, MAX(list_length(l), l->expected_cnt), (fkeyvalue)&stmt_key);
 
-			for (n = l->h; n; n = n->next) {
-				char *nme = column_name(sa, n->data);
-				int key = hash_key(nme);
+		for (n = l->h; n; n = n->next) {
+			char *nme = column_name(sa, n->data);
+			int key = hash_key(nme);
 
-				hash_add(l->ht, key, n->data);
-			}
+			hash_add(l->ht, key, n->data);
 		}
-		if (l->ht) {
-			int key = hash_key(name);
-			sql_hash_e *e = l->ht->buckets[key&(l->ht->size-1)];
+	}
+	if (l->ht) {
+		int key = hash_key(name);
+		sql_hash_e *e = l->ht->buckets[key&(l->ht->size-1)];
 
-			if (rname) {
-				for (; e; e = e->chain) {
-					stmt *s = e->value;
-					char *rnme = table_name(sa, s);
-					char *nme = column_name(sa, s);
+		if (rname) {
+			for (; e; e = e->chain) {
+				stmt *s = e->value;
+				char *rnme = table_name(sa, s);
+				char *nme = column_name(sa, s);
 
-					if (rnme && strcmp(rnme, rname) == 0 &&
-			 	            strcmp(nme, name) == 0) {
-						res = s;
-						break;
-					}
-				}
-			} else {
-				for (; e; e = e->chain) {
-					stmt *s = e->value;
-					char *nme = column_name(sa, s);
-
-					if (nme && strcmp(nme, name) == 0) {
-						res = s;
-						break;
-					}
+				if (rnme && strcmp(rnme, rname) == 0 &&
+		 	            strcmp(nme, name) == 0) {
+					res = s;
+					break;
 				}
 			}
-			MT_lock_unset(&l->ht_lock, "list_find_column");
-			if (!res)
-				return NULL;
-			return res;
+		} else {
+			for (; e; e = e->chain) {
+				stmt *s = e->value;
+				char *nme = column_name(sa, s);
+
+				if (nme && strcmp(nme, name) == 0) {
+					res = s;
+					break;
+				}
+			}
 		}
 		MT_lock_unset(&l->ht_lock, "list_find_column");
+		if (!res)
+			return NULL;
+		return res;
 	}
+	MT_lock_unset(&l->ht_lock, "list_find_column");
 	if (rname) {
 		for (n = l->h; n; n = n->next) {
 			char *rnme = table_name(sa, n->data);
@@ -1241,7 +1241,7 @@ rel2bin_table( mvc *sql, sql_rel *rel, list *refs)
 			sql_exp *c = n->data;
 			stmt *s = stmt_rs_column(sql->sa, sub, i, exp_subtype(c)); 
 			char *nme = exp_name(c);
-			char *rnme = op?exp_find_rel_name(op):NULL;
+			char *rnme = NULL;
 
 			s = stmt_alias(sql->sa, s, rnme, nme);
 			list_append(l, s);
@@ -1739,7 +1739,6 @@ rel2bin_semijoin( mvc *sql, sql_rel *rel, list *refs)
 		}
 		/* recreate join output */
 		jl = stmt_project(sql->sa, sel, jl); 
-		jr = stmt_project(sql->sa, sel, jr); 
 	}
 
 	/* construct relation */
@@ -1799,6 +1798,8 @@ rel2bin_distinct(mvc *sql, stmt *s)
 		}
 	}
 	stmt_group_done(g);
+	if (!ext)
+		return NULL;
 
 	for (n = s->op4.lval->h; n; n = n->next) {
 		stmt *t = n->data;
@@ -2563,11 +2564,10 @@ rel2bin_sample( mvc *sql, sql_rel *rel, list *refs)
 	stmt *sub = NULL, *s = NULL, *sample = NULL;
 	node *n;
 
-	if (rel->l) { /* first construct the sub relation */
+	if (rel->l) /* first construct the sub relation */
 		sub = subrel_bin(sql, rel->l, refs);
-		if (!sub)
-			return NULL;
-	}
+	if (!sub)
+		return NULL;
 
 	n = sub->op4.lval->h;
 	newl = sa_list(sql->sa);
@@ -3745,6 +3745,8 @@ update_idxs_and_check_keys(mvc *sql, sql_table *t, stmt *rows, stmt **updates, l
 		if (hash_index(i->type)) {
 			is = hash_update(sql, i, updates, updcol);
 		} else if (i->type == join_idx) {
+			if (updcol < 0)
+				return NULL;
 			is = join_idx_update(sql, i, updates, updcol);
 		}
 		if (i->key) {

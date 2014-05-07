@@ -490,7 +490,7 @@ sql_bind_aggr_(sql_allocator *sa, sql_schema *s, char *sqlaname, list *ops)
 				scale = type->scale;
 			}
 			/* same type as the input */
-			if (a->res.type->eclass == EC_ANY) 
+			if (a->res.type->eclass == EC_ANY && type) 
 				sql_init_subtype(&ares->res, type->type, digits, scale);
 			else
 				sql_init_subtype(&ares->res, a->res.type, digits, scale);
@@ -522,7 +522,7 @@ sql_bind_aggr_(sql_allocator *sa, sql_schema *s, char *sqlaname, list *ops)
 					scale = type->scale;
 				}
 				/* same type as the input */
-				if (a->res.type->eclass == EC_ANY && type )  
+				if (a->res.type->eclass == EC_ANY && type)  
 					sql_init_subtype(&ares->res, type->type, digits, scale);
 				else
 					sql_init_subtype(&ares->res, a->res.type, digits, scale);

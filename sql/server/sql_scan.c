@@ -780,6 +780,8 @@ int scanner_symbol(mvc * c, int cur)
 		if (next == '*') {
 			lc->started = started;
 			cur = skip_c_comment(lc);
+			if (cur < 0)
+				return EOF;
 			return tokenize(c, cur);
 		} else {
 			utf8_putchar(lc, next); 
@@ -955,7 +957,7 @@ static inline int
 sql_get_next_token(YYSTYPE *yylval, void *parm) {
 	mvc *c = (mvc*)parm;
 	struct scanner *lc = &c->scanner;
-	int token = 0;
+	int token = 0, cur = 0;
 
 	if (lc->rs->buf == NULL) /* malloc failure */
 		return EOF;
@@ -974,7 +976,10 @@ sql_get_next_token(YYSTYPE *yylval, void *parm) {
 	
 	lc->yysval = lc->yycur;
 	lc->yylast = lc->yyval;
-	token = tokenize(c, scanner_getc(lc));
+	cur = scanner_getc(lc);
+	if (cur < 0)
+		return EOF;
+	token = tokenize(c, cur);
 
 	yylval->sval = (lc->rs->buf + (int)lc->rs->pos + lc->yysval);
 

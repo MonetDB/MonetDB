@@ -1115,19 +1115,13 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 		} break;
 		case st_uselect:{
 			bit need_not;
-			int l;
-			int r;
-			int sub;
-			int anti;
+			int l, r, sub, anti;
 
 			need_not = FALSE;
 			if ((l = _dumpstmt(sql, mb, s->op1)) < 0)
 				return -1;
-			if (s->op2) {
-				if ((r = _dumpstmt(sql, mb, s->op2)) < 0)
-					return -1;
-			} else
-				r = -1;
+			if ((r = _dumpstmt(sql, mb, s->op2)) < 0)
+				return -1;
 			sub = -1;
 			anti = is_anti(s);
 

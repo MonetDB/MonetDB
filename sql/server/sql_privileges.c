@@ -87,12 +87,14 @@ sql_grant_table_privs( mvc *sql, char *grantee, int privs, char *sname, char *tn
 		return sql_message("42S02!GRANT no such table '%s'", tname);
 
 	allowed = schema_privs(grantor, t->s);
-	if (!allowed)
-		allowed = sql_grantable(sql, grantor, t->base.id, all, 0);
 
-	if (!allowed) 
-		return sql_message("0L000!GRANT: grantor '%s' is not allowed to grant privileges for table '%s'", stack_get_string(sql,"current_user"), tname);
+	if (!cname) {
+		if (!allowed)
+			allowed = sql_grantable(sql, grantor, t->base.id, all, 0);
 
+		if (!allowed) 
+			return sql_message("0L000!GRANT: grantor '%s' is not allowed to grant privileges for table '%s'", stack_get_string(sql,"current_user"), tname);
+	}
 	if (cname) { 
 		c = mvc_bind_column(sql, t, cname);
 		if (!c) 

@@ -1857,7 +1857,7 @@ exp_push_down_prj(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 			sql_exp *gbe = NULL;
 			if (ne->l) 
 				gbe = exps_bind_column2(f->r, ne->l, ne->r);
-			if (!ne && !e->l)
+			if (!gbe && !e->l)
 				gbe = exps_bind_column(f->r, ne->r, NULL);
 			ne = gbe;
 			if (!ne || (ne->type != e_column && ne->type != e_atom))

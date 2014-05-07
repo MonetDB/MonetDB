@@ -384,7 +384,7 @@ rel_psm_return( mvc *sql, sql_subtype *restype, symbol *return_sym )
 	if (ek.card != card_relation && (!res || 
            	(res = rel_check_type(sql, restype, res, type_equal)) == NULL))
 		return NULL;
-	else if (ek.card == card_relation && (!rel && !res->tpe.comp_type))
+	else if (ek.card == card_relation && !rel && !res->tpe.comp_type)
 		return NULL;
 	
 	if (rel && ek.card != card_relation)
@@ -797,6 +797,8 @@ rel_create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_n
 				char *fmod = qname_module(ext_name);
 				char *fnme = qname_fname(ext_name);
 
+				if (!fmod || !fnme)
+					return NULL;
 				sql->params = NULL;
 				if (create) {
 					f = mvc_create_func(sql, sql->sa, s, fname, l, restype, type, fmod, fnme, q);

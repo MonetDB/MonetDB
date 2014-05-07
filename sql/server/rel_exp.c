@@ -1503,7 +1503,9 @@ exp_copy( sql_allocator *sa, sql_exp * e)
 			ne = exp_set(sa, e->name, exp_copy(sa, e->l), GET_PSM_LEVEL(e->flag));
 		break;
 	}
-	if (ne && e->p)
+	if (!ne)
+		return ne;
+	if (e->p)
 		ne->p = prop_copy(sa, e->p);
 	if (e->name)
 		exp_setname(sa, ne, exp_find_rel_name(e), exp_name(e));

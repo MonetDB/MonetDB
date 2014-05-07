@@ -2255,7 +2255,7 @@ SQLengineIntern(Client c, backend *be)
 			printFunction(c->fdout, ((Symbol) (be->q->code))->def, 0, LIST_MAL_STMT | LIST_MAL_UDF | LIST_MAPI);
 		else if (be->q)
 			msg = createException(PARSE, "SQLparser", "%s", (*m->errstr) ? m->errstr : "39000!program contains errors");
-		else if (c->curprg && c->curprg->def)
+		else if (c->curprg->def)
 			printFunction(c->fdout, c->curprg->def, 0, LIST_MAL_STMT | LIST_MAL_UDF | LIST_MAPI);
 		goto cleanup_engine;
 	}
@@ -2264,7 +2264,7 @@ SQLengineIntern(Client c, backend *be)
 			showFlowGraph(((Symbol) (be->q->code))->def, 0, "stdout-mapi");
 		else if (be->q)
 			msg = createException(PARSE, "SQLparser", "%s", (*m->errstr) ? m->errstr : "39000!program contains errors");
-		else if (c->curprg && c->curprg->def)
+		else if (c->curprg->def)
 			showFlowGraph(c->curprg->def, 0, "stdout-mapi");
 		goto cleanup_engine;
 	}
