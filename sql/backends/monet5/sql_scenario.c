@@ -200,7 +200,7 @@ MT_Id sqllogthread, minmaxthread;
 static str
 SQLinit(void)
 {
-	char *debug_str = GDKgetenv("sql_debug");
+	char *debug_str = GDKgetenv("sql_debug"), *msg = MAL_SUCCEED;
 	int readonly = GDKgetenv_isyes("gdk_readonly");
 	int single_user = GDKgetenv_isyes("gdk_single_user");
 	const char *gmt = "GMT";
@@ -223,7 +223,9 @@ SQLinit(void)
 	be_funcs.fresolve_function = &monet5_resolve_function;
 	monet5_user_init(&be_funcs);
 
-	MTIMEtimezone(&tz, &gmt);
+	msg = MTIMEtimezone(&tz, &gmt);
+	if (msg)
+		return msg;
 	(void) tz;
 	if (debug_str)
 		SQLdebug = strtol(debug_str, NULL, 10);

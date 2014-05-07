@@ -169,10 +169,8 @@ VLTimport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	snprintf(path,BUFSIZ,"%s%c%s", vaultpath, DIR_SEP, *target);
 	/*mnstr_printf(GDKout,"#vault.import: %s\n",path);*/
-	if (strcmp(path, *source) == 0) {
-		MTIMEcurrent_timestamp(ret);
-		return MAL_SUCCEED;
-	}
+	if (strcmp(path, *source) == 0) 
+		return MTIMEcurrent_timestamp(ret);
 	/* create the subdir */
 	GDKcreatedir(path);
 	curl = curl_easy_init();
@@ -205,7 +203,7 @@ VLTimport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		curl_easy_cleanup(curl);
 
 		if(CURLE_OK != res)
-			msg= createException(MAL,"vault.import", "curl [%d] %s '%s' -> '%s'\n", res, curl_easy_strerror(res), *source,path);
+			msg = createException(MAL,"vault.import", "curl [%d] %s '%s' -> '%s'\n", res, curl_easy_strerror(res), *source,path);
 	}
 
 	if(ftpfile.stream)
@@ -217,12 +215,11 @@ VLTimport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) target;
 	msg = createException(MAL,"vault.import", "No curl library");
 #endif
-	if ( msg)
+	if (msg)
 		return msg;
-	MTIMEcurrent_timestamp(ret);
 	(void) mb;
 	(void) cntxt;
-	return msg;
+	return MTIMEcurrent_timestamp(ret);
 }
 
 

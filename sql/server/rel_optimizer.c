@@ -3205,6 +3205,9 @@ rel_push_join_down(int *changes, mvc *sql, sql_rel *rel)
 					name = exp_name(gbe);
 				}
 
+				if (!name) 
+					return rel;
+
 				for (m = exps->h; m && !fnd; m = m->next) {
 					sql_exp *je = m->data;
 

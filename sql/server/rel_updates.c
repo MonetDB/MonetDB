@@ -1015,6 +1015,8 @@ rel_import(mvc *sql, sql_table *t, char *tsep, char *rsep, char *ssep, char *ns,
 	int len = 7 + (filename?1:0);
 	sql_subfunc *f = sql_find_func(sql->sa, sys, "copyfrom", len, F_FUNC); 
 	
+	if (!f) /* we do expect copyfrom to be there */
+		return NULL;
 	f->res.comp_type = t;
  	sql_find_subtype(&tpe, "varchar", 0, 0);
 	args = append( append( append( append( append( append( new_exp_list(sql->sa), 

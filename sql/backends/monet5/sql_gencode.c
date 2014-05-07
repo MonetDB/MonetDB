@@ -564,7 +564,7 @@ range_join_convertable(stmt *s, stmt **base, stmt **L, stmt **H)
 		h = s->op3->op1->op4.lval->t->data;
 	}
 
-	if ((ls = (l && strcmp(s->op2->op4.funcval->func->base.name, "sql_sub") == 0 && l->nrcols == 0) || (hs = (h && strcmp(s->op3->op4.funcval->func->base.name, "sql_add") == 0 && h->nrcols == 0))) && (ls || hs) && bl == bh) {
+	if (((ls = (l && strcmp(s->op2->op4.funcval->func->base.name, "sql_sub") == 0 && l->nrcols == 0)) || (hs = (h && strcmp(s->op3->op4.funcval->func->base.name, "sql_add") == 0 && h->nrcols == 0))) && (ls || hs) && bl == bh) {
 		*base = bl;
 		*L = l;
 		*H = h;

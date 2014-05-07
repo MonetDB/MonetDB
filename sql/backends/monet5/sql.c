@@ -1999,7 +1999,13 @@ DELTAsub(bat *result, bat *col, bat *cid, bat *uid, bat *uval, bat *ins)
 	res = c;
 	if (BATcount(u_id)) {
 		u_id = BATdescriptor(*uid);
+		if (!u_id)
+			throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
 		cminu = BATkdiff(BATmirror(c), BATmirror(u_id));
+		if (!cminu) {
+			BBPunfix(u_id->batCacheid);
+			throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
+		}
 		BBPunfix(c->batCacheid);
 		res = c = BATmirror(BATmark(cminu, 0));
 		BBPunfix(cminu->batCacheid);
@@ -2012,12 +2018,25 @@ DELTAsub(bat *result, bat *col, bat *cid, bat *uid, bat *uval, bat *ins)
 		u = BATleftfetchjoin(u_val, u_id, BATcount(u_val));
 		BBPunfix(u_val->batCacheid);
 		BBPunfix(u_id->batCacheid);
+		if (!u) {
+			BBPunfix(c->batCacheid);
+			throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
+		}
 		if (BATcount(u)) {	/* check selected updated values against candidates */
 			BAT *c_ids = BATdescriptor(*cid);
 
+			if (!c_ids){
+				BBPunfix(c->batCacheid);
+				BBPunfix(u->batCacheid);
+				throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
+			}
 			cminu = BATsemijoin(BATmirror(u), BATmirror(c_ids));
 			BBPunfix(c_ids->batCacheid);
 			BBPunfix(u->batCacheid);
+			if (!cminu) {
+				BBPunfix(c->batCacheid);
+				throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
+			}
 			u = BATmirror(cminu);
 		}
 		res = BATappend(c, u, TRUE);
@@ -2025,17 +2044,25 @@ DELTAsub(bat *result, bat *col, bat *cid, bat *uid, bat *uval, bat *ins)
 
 		u = BATsort(BATmirror(res));
 		BBPunfix(res->batCacheid);
+		if (!u) {
+			BBPunfix(c->batCacheid);
+			throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
+		}
 		res = BATmirror(BATmark(u, 0));
 		BBPunfix(u->batCacheid);
 	}
 
 	if (i) {
 		i = BATdescriptor(*ins);
+		if (!i)
+			throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
 		if (BATcount(u_id)) {
 			u_id = BATdescriptor(*uid);
 			cminu = BATkdiff(BATmirror(i), BATmirror(u_id));
 			BBPunfix(i->batCacheid);
 			BBPunfix(u_id->batCacheid);
+			if (!cminu) 
+				throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
 			i = BATmirror(BATmark(cminu, 0));
 			BBPunfix(cminu->batCacheid);
 		}
@@ -2044,6 +2071,8 @@ DELTAsub(bat *result, bat *col, bat *cid, bat *uid, bat *uval, bat *ins)
 
 		u = BATsort(BATmirror(res));
 		BBPunfix(res->batCacheid);
+		if (!u) 
+			throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
 		res = BATmirror(BATmark(u, 0));
 		BBPunfix(u->batCacheid);
 	}
@@ -4613,7 +4642,6 @@ RAstatement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		int oldvtop = cntxt->curprg->def->vtop;
 		int oldstop = cntxt->curprg->def->stop;
 		stmt *s;
-		char *msg;
 		MalStkPtr oldglb = cntxt->glb;
 
 		if (*opt)

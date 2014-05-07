@@ -861,7 +861,7 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, char *sname, char *name, sy
 			return NULL;
 
 		/* create table */
-		if (create && (t = mvc_create_table_as_subquery( sql, sq, s, name, column_spec, temp, commit_action)) == NULL) { 
+		if ((t = mvc_create_table_as_subquery( sql, sq, s, name, column_spec, temp, commit_action)) == NULL) { 
 			rel_destroy(sq);
 			return NULL;
 		}
@@ -1089,7 +1089,7 @@ rel_alter_table(mvc *sql, dlist *qname, symbol *te)
 			return rel_schema(sql->sa, DDL_DROP_CONSTRAINT, sname, kname, drop_action);
 		}
 
-		if (t->persistence != SQL_DECLARED_TABLE && s)
+		if (t->persistence != SQL_DECLARED_TABLE)
 			sname = s->base.name;
 
 		/* read only or read write */

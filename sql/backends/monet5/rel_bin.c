@@ -1291,7 +1291,7 @@ rel2bin_hash_lookup( mvc *sql, sql_rel *rel, stmt *left, stmt *right, sql_idx *i
 	stmt *idx = bin_find_column(sql->sa, left, l->l, sa_strconcat(sql->sa, "%", i->base.name));
 	int swap_exp = 0, swap_rel = 0;
 
-	if (!idx && left) {
+	if (!idx) {
 		swap_exp = 1;
 		l = e->r;
 		idx = bin_find_column(sql->sa, left, l->l, sa_strconcat(sql->sa, "%", i->base.name));
@@ -2792,6 +2792,9 @@ insert_check_ukey(mvc *sql, list *inserts, sql_key *k, stmt *idx_inserts)
 				orderby_grp = stmt_result(sql->sa, orderby, 2);
 			}
 
+			if (!orderby_grp || !orderby_ids)
+				return NULL;
+
 			sum = sql_bind_aggr(sql->sa, sql->session->schema, "not_unique", tail_type(orderby_grp));
 			ssum = stmt_aggr(sql->sa, orderby_grp, NULL, NULL, sum, 1, 0);
 			/* combine results */
@@ -3220,7 +3223,8 @@ update_check_ukey(mvc *sql, stmt **updates, sql_key *k, stmt *tids, stmt *idx_up
 				}
 
 				/* apply cand list first */
-				upd = stmt_project(sql->sa, cand, upd);
+				if (cand)
+					upd = stmt_project(sql->sa, cand, upd);
 
 				/* remove nulls */
 				if ((k->type == ukey) && stmt_has_null(upd)) {
@@ -3362,7 +3366,7 @@ join_updated_pkey(mvc *sql, sql_key * k, stmt *tids, stmt **updates, int updcol)
 	node *m, *o;
 	sql_key *rk = &((sql_fkey*)k)->rkey->k;
 	stmt *s = NULL, *dels = stmt_dels(sql, rk->t), *fdels;
-	stmt *null = NULL, *rows, *ntids, *ids;
+	stmt *null = NULL, *rows;
 	sql_subtype *wrd = sql_bind_localtype("wrd");
 	sql_subtype *bt = sql_bind_localtype("bit");
 	sql_subaggr *cnt = sql_bind_aggr(sql->sa, sql->session->schema, "count", NULL);
@@ -3374,11 +3378,7 @@ join_updated_pkey(mvc *sql, sql_key * k, stmt *tids, stmt **updates, int updcol)
 	rows = stmt_idx(sql, k->idx, fdels);
 
 	rows = stmt_join(sql->sa, rows, tids, cmp_equal); /* join over the join index */
-	ids = stmt_result(sql->sa, rows, 1);
 	rows = stmt_result(sql->sa, rows, 0);
-	ntids = stmt_tid(sql->sa, k->idx->t);
-	ntids = stmt_project(sql->sa, rows, ntids);
-	ids = stmt_project(sql->sa, stmt_reverse(sql->sa, ntids), ids);
 
 	for (m = k->idx->columns->h, o = rk->columns->h; m && o; m = m->next, o = o->next) {
 		sql_kc *fc = m->data;

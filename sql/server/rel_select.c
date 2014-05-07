@@ -2823,12 +2823,12 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 			lr = rel_select_copy(sql->sa, lr, sa_list(sql->sa));
 			lr = rel_logical_exp(sql, lr, lo, f);
 			lexps = lr?lr->exps:NULL;
-			lr = lr->l;
+			lr = lr?lr->l:NULL;
 
 			rr = rel_select_copy(sql->sa, rr, sa_list(sql->sa));
 			rr = rel_logical_exp(sql, rr, ro, f);
 			rexps = rr?rr->exps:NULL;
-			rr = rr->l;
+			rr = rr?rr->l:NULL;
 			sql->pushdown = pushdown;
 		} else {
 			lr = rel_logical_exp(sql, lr, lo, f);
@@ -2990,6 +2990,8 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 				}
 			}
 			if (!correlated) {
+				if (!right)
+					return NULL;
 				if (right->processed)
 					right = rel_label(sql, right);
 				right = rel_distinct(right);
@@ -3897,8 +3899,6 @@ rel_case(mvc *sql, sql_rel **rel, int token, symbol *opt_cond, dlist *when_searc
 		if (!tpe) 
 			return sql_error(sql, 02, "result type missing");
 		supertype(&rtype, restype, tpe);
-		if (!tpe) 
-			return sql_error(sql, 02, "result types %s,%s of case are not compatible", restype->type->sqlname, tpe->type->sqlname);
 		restype = &rtype;
 	}
 	if (opt_else || else_exp) {
@@ -4620,9 +4620,7 @@ rel_value_exp2(mvc *sql, sql_rel **rel, symbol *se, int f, exp_kind ek, int *is_
 			}
 			return rs;
 		}
-		if (!r)
-			return NULL;
-		return rel_find_lastexp(*rel);
+		return NULL;
 	}
 	case SQL_TABLE: {
 		/* turn a subquery into a tabular result */
