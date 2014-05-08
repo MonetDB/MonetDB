@@ -1435,8 +1435,10 @@ SQLinclude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "sql.include", "could not open file: %s\n", *name);
 	}
 	bfd = bstream_create(fd, 128 * BLOCK);
-	if (bstream_next(bfd) < 0)
+	if (bstream_next(bfd) < 0) {
+		bstream_destroy(bfd);
 		throw(MAL, "sql.include", "could not read %s\n", *name);
+	}
 
 	expr = &bfd->buf;
 	msg = SQLstatementIntern(cntxt, expr, "sql.include", TRUE, FALSE);

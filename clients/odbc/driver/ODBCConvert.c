@@ -2760,6 +2760,8 @@ ODBCFetch(ODBCStmt *stmt,
 				char *b = realloc(buf, buflen += 1024);	\
 				if (b == NULL) {			\
 					free(buf);			\
+					if (ctype == SQL_C_WCHAR && sval) \
+						free(sval);		\
 					/* Memory allocation error */	\
 					addStmtError(stmt, "HY001", NULL, 0); \
 					return SQL_ERROR;		\
@@ -2776,6 +2778,8 @@ ODBCFetch(ODBCStmt *stmt,
 				char *b = realloc(buf, buflen += 1024);	\
 				if (b == NULL) {			\
 					free(buf);			\
+					if (ctype == SQL_C_WCHAR && sval) \
+						free(sval);		\
 					/* Memory allocation error */	\
 					addStmtError(stmt, "HY001", NULL, 0); \
 					return SQL_ERROR;		\
