@@ -45,7 +45,7 @@ Vendor: MonetDB BV <info@monetdb.org>
 Group: Applications/Databases
 License: MPL - http://www.monetdb.org/Legal/MonetDBLicense
 URL: http://www.monetdb.org/
-Source: http://dev.monetdb.org/downloads/sources/Jan2014-SP1/%{name}-%{version}.tar.bz2
+Source: http://dev.monetdb.org/downloads/sources/Jan2014-SP2/%{name}-%{version}.tar.bz2
 
 BuildRequires: bison
 BuildRequires: bzip2-devel
@@ -827,6 +827,45 @@ mv $RPM_BUILD_ROOT%{_datadir}/doc/MonetDB-SQL-%{version} $RPM_BUILD_ROOT%{_datad
 rm -fr $RPM_BUILD_ROOT
 
 %changelog
+* Thu May 08 2014 Sjoerd Mullender <sjoerd@acm.org> - 11.17.15-20140508
+- Rebuilt.
+- BZ#3424: numeric values at the front of strings determines whether
+  CAST works successfully
+- BZ#3439: Python driver drops milliseconds from timestamps
+- BZ#3446: SET READ ONLY forgets previous changes
+- BZ#3455: String columns unusable from 64-bit .NET via ODBC
+- BZ#3456: Insert fails
+- BZ#3457: When kernel of remote client crashes, the connection remains
+  established on server side
+- BZ#3458: mserver5 crash on SQL: SELECT COUNT(*) FROM SYS.TABLES HAVING
+  COUNT(*) > 0
+- BZ#3461: mserver5 crash on SQL: SELECT * FROM SYS.ARGS WHERE FUNC_ID
+  NOT IN (SELECT ID FROM SYS.FUNCTIONS) OR FUNC_ID NOT IN (SELECT *
+  FROM SYS.FUNCTIONS)
+- BZ#3462: Invalid SQL (IN with subquery which returns multiple columns)
+  is accepted
+- BZ#3463: Crash on SELECT with SERIAL aggregation and GROUP BY column
+  alias's
+- BZ#3468: Local temporary table persists across sessions
+- BZ#3469: Absolute network paths considered invalid for COPY INTO
+  ... FROM statement.
+- BZ#3473: Various memory leaks in SQL compilation
+- BZ#3477: ODBC driver raises "unexpected end of input" for prepared
+  string parameter from .NET application
+- BZ#3481: Cannot run multiple COPY INTO statements in one 's'-command
+
+* Wed Apr 30 2014 Sjoerd Mullender <sjoerd@acm.org> - 11.17.15-20140508
+- buildtools: Lots of minor fixes were made for potential defects found by Coverity
+  Scan.
+
+* Tue Apr  1 2014 Sjoerd Mullender <sjoerd@acm.org> - 11.17.15-20140508
+- clients: ODBC: Implemented {call procedure-name(...)} escape.  The version
+  {?=call ...} is not implemented.
+
+* Mon Mar 24 2014 Sjoerd Mullender <sjoerd@acm.org> - 11.17.15-20140508
+- buildtools: On Windows we now build the geom module against version 3.4.2 of the
+  geos library.
+
 * Thu Mar 06 2014 Sjoerd Mullender <sjoerd@acm.org> - 11.17.13-20140306
 - Rebuilt.
 - BZ#3452: ODBC driver build fails on Mac OS X due to a conflicting
