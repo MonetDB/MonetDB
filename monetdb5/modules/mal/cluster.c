@@ -1242,8 +1242,8 @@ CLS_create2_bte( bat *rpsum, bat *rcmap, bat *B, unsigned int *Bits, unsigned in
 	BBPunfix(*B);
 	BBPkeepref(*rpsum = psum->batCacheid);
 	BBPkeepref(*rcmap = cmap->batCacheid);
-	psum = BATsetaccess(psum, BAT_READ);
-	cmap = BATsetaccess(cmap, BAT_READ);
+	(void) BATsetaccess(psum, BAT_READ);
+	(void) BATsetaccess(cmap, BAT_READ);
 	return MAL_SUCCEED;
 }
 

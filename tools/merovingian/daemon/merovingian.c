@@ -142,7 +142,7 @@ logFD(int fd, char *type, char *dbname, long long int pid, FILE *stream)
 {
 	time_t now;
 	char buf[8096];
-	size_t len;
+	int len = 0;
 	char *p, *q;
 	struct tm *tmp;
 	char mytime[20];
@@ -165,7 +165,7 @@ logFD(int fd, char *type, char *dbname, long long int pid, FILE *stream)
 			q = p + 1;
 			writeident = 1;
 		}
-		if ((size_t)(q - buf) < len) {
+		if ((int)(q - buf) < len) {
 			if (writeident == 1)
 				fprintf(stream, "%s %s %s[" LLFMT "]: ",
 						mytime, type, dbname, pid);

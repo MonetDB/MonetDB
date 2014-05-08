@@ -105,12 +105,11 @@ getAddress(stream *out, str filename, str modnme, str fcnname, int silent)
 		if( adr != NULL)
 			return adr; /* found it */
 	}
-	if (!silent){
-		if ( dl)
-			dlclose(dl);
+	if (!silent)
 		showException(out, MAL,"MAL.getAddress", "address of '%s.%s' not found",
 			(modnme?modnme:"<unknown>"), fcnname);
-	}
+	if ( dl)
+		dlclose(dl);
 	return NULL;
 }
 /*

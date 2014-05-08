@@ -428,8 +428,13 @@ MATmergepack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	}
 
 	bn = BATnew(TYPE_void, TYPE_oid, cap);
-	if (bn == NULL)
+	if (bn == NULL){
+		GDKfree(bats);
+		GDKfree(o_src);
+		GDKfree(o_end);
 		throw(MAL, "mat.pack", MAL_MALLOC_FAIL);
+	}
+
 	if ( cap == 0){
 		BATseqbase(bn, 0);
 		BATseqbase(BATmirror(bn), 0);

@@ -385,7 +385,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				InstrPtr q = newAssignment(mb);
 
 				getArg(q, 0) = getArg(p, 0); 
-				q = pushArgument(mb, q, getArg(p, 2));
+				(void) pushArgument(mb, q, getArg(p, 2));
 				actions++;
 				freeInstruction(p);
 				continue;
