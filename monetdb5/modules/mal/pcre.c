@@ -1838,7 +1838,6 @@ PCRElike_join(int *l, int *r, int *b, int *pat, str *esc, int case_sensitive)
 		if ( tr == NULL) {
 			BBPreleaseref(B->batCacheid);
 			BBPreleaseref(Bpat->batCacheid);
-			BBPreleaseref(x->batCacheid);
 			BBPreleaseref(j->batCacheid);
 			throw(MAL,"pcre",RUNTIME_OBJECT_MISSING);
 		}
