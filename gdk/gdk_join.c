@@ -2958,18 +2958,19 @@ BATproject(BAT *l, BAT *r)
 
 		bn = BATconstant(r->ttype == TYPE_oid ? TYPE_void : r->ttype,
 				 nil, BATcount(l), TRANSIENT);
-		if (bn != NULL) {
-			bn = BATseqbase(bn, l->hseqbase);
-			if (ATOMtype(bn->ttype) == TYPE_oid &&
-			    BATcount(bn) == 0) {
-				bn->tdense = 1;
-				BATseqbase(BATmirror(bn), 0);
-			}
+		if (bn == NULL)
+			return NULL;
+		bn = BATseqbase(bn, l->hseqbase);
+		if (ATOMtype(bn->ttype) == TYPE_oid &&
+		    BATcount(bn) == 0) {
+			bn->tdense = 1;
+			BATseqbase(BATmirror(bn), 0);
 		}
 		ALGODEBUG fprintf(stderr, "#BATproject(l=%s,r=%s)=%s#"BUNFMT"%s%s\n",
-			  BATgetId(l), BATgetId(r), BATgetId(bn), BATcount(bn),
-			  bn->tsorted ? "-sorted" : "",
-			  bn->trevsorted ? "-revsorted" : "");
+				  BATgetId(l), BATgetId(r),
+				  BATgetId(bn), BATcount(bn),
+				  bn->tsorted ? "-sorted" : "",
+				  bn->trevsorted ? "-revsorted" : "");
 		return bn;
 	}
 	assert(l->ttype == TYPE_oid);

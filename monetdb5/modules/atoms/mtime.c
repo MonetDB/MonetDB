@@ -2629,7 +2629,7 @@ MTIMEtimestamp_bulk(bat *ret, bat *bid)
 			*t = *timestamp_nil;
 			bn->T->nil = 1;
 		} else {
-			ms = *s * 1000;
+			ms = ((lng)*s) * 1000;
 			if ((msg = MTIMEtimestamp_add(t, &e, &ms)) != MAL_SUCCEED) {
 				BBPreclaim(bn);
 				BBPreleaseref(b->batCacheid);

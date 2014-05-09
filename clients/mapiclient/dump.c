@@ -1136,6 +1136,8 @@ dump_table_data(Mapi mid, char *schema, char *tname, stream *toConsole,
 		goto bailout;
 
 	cnt = mapi_get_field_count(hdl);
+	if (cnt < 1 || cnt >= 1 << 29)
+		goto bailout;	/* ridiculous number of columns */
 	string = malloc(sizeof(int) * cnt);
 	for (i = 0; i < cnt; i++) {
 		string[i] = 0;
@@ -1831,6 +1833,8 @@ dump_database(Mapi mid, stream *toConsole, int describe, const char useInserts)
 	return rc;
 
   bailout:
+	if( curschema )
+		free(curschema);
 	if (hdl) {
 		if (mapi_result_error(hdl))
 			mapi_explain_result(hdl, stderr);

@@ -286,8 +286,14 @@ stringdiff_impl(int *res, str *s1, str *s2)
 	str r = MAL_SUCCEED;
 	char *S1 = NULL, *S2 = NULL;
 
-	soundex_impl(&S1, s1);
-	soundex_impl(&S2, s2);
+	r = soundex_impl(&S1, s1);
+	if( r != MAL_SUCCEED)
+		return r;
+	r = soundex_impl(&S2, s2);
+	if( r != MAL_SUCCEED){
+		GDKfree(S1);
+		return r;
+	}
 	r = levenshteinbasic_impl(res, &S1, &S2);
 	GDKfree(S1);
 	GDKfree(S2);

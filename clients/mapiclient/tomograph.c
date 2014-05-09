@@ -618,7 +618,7 @@ fixed_colors[] = {
 };
 /* initial mod.fcn list for adaptive colormap */
 Color
-base_colors[] = {
+base_colors[NUM_COLORS] = {
 	/* reserve (base_)colors[0] for generic "*.*" */
 /* 99999 */	{ 0, 0, "*", "*", 0 },
 /* arbitrarily ordered by descending frequency in TPCH SF-100 with 32 threads */
@@ -831,6 +831,10 @@ dumpboxes(void)
 		f = fopen(buf, "w");
 		snprintf(buf, BUFSIZ, "%s_cpu.dat", filename);
 		fcpu = fopen(buf, "w");
+	}
+	if( fcpu == NULL){
+		fprintf(stderr,"Can not create/open the trace file\n");
+		return;
 	}
 
 	for (i = 0; i < topbox; i++)
@@ -1414,7 +1418,8 @@ static void createTomogram(void)
 		printf("ERROR in creation of %s\n", buf);
 		exit(-1);
 	}
-	*strchr(buf, '.') = 0;
+	if( strchr(buf,'.'))
+		*strchr(buf, '.') = 0;
 	gnuplotheader(buf);
 	dumpboxes();
 	showio();
@@ -1739,7 +1744,7 @@ static int
 parser(char *row)
 {
 #ifdef HAVE_STRPTIME
-	char *c, *cc;
+	char *c, *cc, *v;
 	struct tm stm;
 	lng clkticks = 0;
 	int thread = 0;
@@ -1855,13 +1860,13 @@ parser(char *row)
 	} else {
 		fcn = strchr(fcn, '"');
 		if (fcn) {
-			fcn++;
-			*strchr(fcn, '"') = 0;
+			v=  strchr(fcn+1,'"');
+			if ( v ) *v = 0;
 		}
 	}
 
-	if (fcn && strchr(fcn, '('))
-		*strchr(fcn, '(') = 0;
+	if (fcn && (v=strchr(fcn, '(')))
+		*v = 0;
 
 #ifdef FOOTPRINT
 wrapup:

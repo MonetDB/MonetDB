@@ -630,7 +630,7 @@ exp_match( sql_exp *e1, sql_exp *e2)
 	if (exp_cmp(e1, e2) == 0)
 		return 1;
 	if (e1->type == e2->type && e1->type == e_column) {
-		if (!e1->l || !e2->l || strcmp(e1->l, e2->l) != 0) 
+		if (e1->l != e2->l && (!e1->l || !e2->l || strcmp(e1->l, e2->l) != 0)) 
 			return 0;
 		if (!e1->r || !e2->r || strcmp(e1->r, e2->r) != 0)
 			return 0;
@@ -1516,7 +1516,9 @@ exp_copy( sql_allocator *sa, sql_exp * e)
 			ne = exp_set(sa, e->name, exp_copy(sa, e->l), GET_PSM_LEVEL(e->flag));
 		break;
 	}
-	if (ne && e->p)
+	if (!ne)
+		return ne;
+	if (e->p)
 		ne->p = prop_copy(sa, e->p);
 	if (e->name)
 		exp_setname(sa, ne, exp_find_rel_name(e), exp_name(e));

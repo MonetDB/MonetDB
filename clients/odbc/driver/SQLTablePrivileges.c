@@ -77,38 +77,52 @@ SQLTablePrivileges_(ODBCStmt *stmt,
 			cat = ODBCParseOA("e", "value",
 					  (const char *) CatalogName,
 					  (size_t) NameLength1);
+			if (cat == NULL)
+				goto nomem;
 		}
 		if (NameLength2 > 0) {
 			sch = ODBCParsePV("s", "name",
 					  (const char *) SchemaName,
 					  (size_t) NameLength2);
+			if (sch == NULL)
+				goto nomem;
 		}
 		if (NameLength3 > 0) {
 			tab = ODBCParsePV("t", "name",
 					  (const char *) TableName,
 					  (size_t) NameLength3);
+			if (tab == NULL)
+				goto nomem;
 		}
 	} else {
 		if (NameLength1 > 0) {
 			cat = ODBCParseID("e", "value",
 					  (const char *) CatalogName,
 					  (size_t) NameLength1);
+			if (cat == NULL)
+				goto nomem;
 		}
 		if (NameLength2 > 0) {
 			sch = ODBCParseID("s", "name",
 					  (const char *) SchemaName,
 					  (size_t) NameLength2);
+			if (sch == NULL)
+				goto nomem;
 		}
 		if (NameLength3 > 0) {
 			tab = ODBCParseID("t", "name",
 					  (const char *) TableName,
 					  (size_t) NameLength3);
+			if (tab == NULL)
+				goto nomem;
 		}
 	}
 
 	/* construct the query now */
 	query = malloc(1200 + (cat ? strlen(cat) : 0) +
 		       (sch ? strlen(sch) : 0) + (tab ? strlen(tab) : 0));
+	if (query == NULL)
+		goto nomem;
 	query_end = query;
 
 	/* SQLTablePrivileges returns a table with the following columns:
@@ -186,12 +200,25 @@ SQLTablePrivileges_(ODBCStmt *stmt,
 	query_end += strlen(query_end);
 
 	/* query the MonetDB data dictionary tables */
-        rc = SQLExecDirect_(stmt, (SQLCHAR *) query,
+	rc = SQLExecDirect_(stmt, (SQLCHAR *) query,
 			    (SQLINTEGER) (query_end - query));
 
 	free(query);
 
 	return rc;
+
+  nomem:
+	if (cat)
+		free(cat);
+	if (sch)
+		free(sch);
+	if (tab)
+		free(tab);
+	if (query)
+		free(query);
+	/* Memory allocation error */
+	addStmtError(stmt, "HY001", NULL, 0);
+	return SQL_ERROR;
 }
 
 SQLRETURN SQL_API

@@ -2257,7 +2257,7 @@ gdk_export void GDKfree(void *blk);
 gdk_export str GDKstrdup(const char *s);
 gdk_export str GDKstrndup(const char *s, size_t n);
 
-#if !defined(NDEBUG) && !defined(__clang_analyzer__)
+#if !defined(NDEBUG) && !defined(STATIC_CODE_ANALYSIS)
 /* In debugging mode, replace GDKmalloc and other functions with a
  * version that optionally prints calling information.
  *

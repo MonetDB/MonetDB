@@ -149,9 +149,9 @@ GDKremovedir(int farmid, const char *dirname)
 	return ret;
 }
 
-#define _FUNBUF         0x040000
-#define _FWRTHR         0x080000
-#define _FRDSEQ         0x100000
+#define _FUNBUF		0x040000
+#define _FWRTHR		0x080000
+#define _FRDSEQ		0x100000
 
 int
 GDKfdlocate(int farmid, const char *nme, const char *mode, const char *extension)

@@ -39420,6 +39420,10 @@ command iterator.new(b:bat[:oid,:any_2],size:lng) (X_3:lng,X_4:bat[:oid,:any_2])
 address ITRnewChunk;
 comment Create an iterator with fixed granule size.	  The result is a view.
 
+command json.aggr(val:bat[:oid,:str]):str 
+address JSONgroupStr;
+comment Aggregate the string values to array.
+
 command json.dump(j:json):void 
 address JSONdump;
 pattern json.fold(k:bat[:oid,:any]):json 
@@ -39508,6 +39512,10 @@ command json.new(j:str):json
 address JSONstr2json;
 comment Convert string to its JSON. Dealing with escape characters
 
+command json.output(b:bat[:oid,:any_1]):str 
+address JSONtextString;
+comment Pack the values into a single json structure
+
 command json.prelude():void 
 address JSONprelude;
 command json.resultSet(u:bat[:oid,:uuid],rev:bat[:oid,:lng],js:bat[:oid,:json]):json 
@@ -39518,6 +39526,18 @@ pattern json.renderarray(val:any...):json
 address JSONrenderarray;
 pattern json.renderobject(val:any...):json 
 address JSONrenderobject;
+command json.subaggr(val:bat[:oid,:str],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:bit):bat[:oid,:str] 
+address JSONsubjsoncand;
+comment Grouped aggregation of values with candidates list.
+
+command json.subaggr(val:bat[:oid,:str],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:bit):bat[:oid,:str] 
+address JSONsubjson;
+comment Grouped aggregation of values.
+
+command json.suboutput(b:bat[:oid,:any_1],gid:bat[:oid,:oid],ext:bat[:oid,:wrd],flg:bit):bat[:oid,:str] 
+address JSONtextGrouped;
+comment Pack the values into a json structure
+
 command json.str(j:json):str 
 address JSONjson2str;
 comment Convert JSON to its string equivalent. Dealing with escape characters
@@ -40999,21 +41019,15 @@ command pcre.select(pat:str,strs:bat[:oid,:str]):bat[:oid,:str]
 address PCREselectDef;
 comment Select tuples based on the pattern
 
-pattern pqueue.topn_max(g:bat[:oid,:oid],b:bat[:oid,:any_1],n:wrd) (piv:bat[:oid,:oid],gid:bat[:oid,:oid]) 
-address PQtopn4_minmax;
-comment Return unique top n withn groups
-
-pattern pqueue.topn_min(g:bat[:oid,:oid],b:bat[:oid,:any_1],n:wrd) (piv:bat[:oid,:oid],gid:bat[:oid,:oid]) 
-address PQtopn4_minmax;
+function pqueue.topn_max(a:bat[:oid,:any_1],bp:bat[:oid,:oid],bg:bat[:oid,:oid],n:wrd):bat[:oid,:oid];
+function pqueue.topn_min(a:bat[:oid,:any_1],bp:bat[:oid,:oid],bg:bat[:oid,:oid],n:wrd):bat[:oid,:oid];
+pattern pqueue.topn_max(a:bat[:oid,:any_1],bp:bat[:oid,:oid],bg:bat[:oid,:oid],n:wrd) (cp:bat[:oid,:oid],cg:bat[:oid,:oid]) 
+address PQtopn3_minmax;
 comment Return unique top n within groups
 
-pattern pqueue.topn_max(gid:bat[:oid,:oid],b:bat[:oid,:any_1],n:wrd):bat[:oid,:oid] 
+pattern pqueue.topn_min(a:bat[:oid,:any_1],bp:bat[:oid,:oid],bg:bat[:oid,:oid],n:wrd) (cp:bat[:oid,:oid],cg:bat[:oid,:oid]) 
 address PQtopn3_minmax;
-comment Return the top n elements using a max-pqueue
-
-pattern pqueue.topn_min(gid:bat[:oid,:oid],b:bat[:oid,:any_1],n:wrd):bat[:oid,:oid] 
-address PQtopn3_minmax;
-comment Return the top n elements using a min-pqueue
+comment Return unique top n within groups
 
 pattern pqueue.topn_max(b:bat[:oid,:any_1],n:wrd) (piv:bat[:oid,:oid],gid:bat[:oid,:oid]) 
 address PQtopn2_minmax;
@@ -41030,118 +41044,6 @@ comment Return the top n elements using a max-pqueue
 pattern pqueue.topn_min(a:bat[:oid,:any_1],n:wrd):bat[:oid,:oid] 
 address PQtopn_minmax;
 comment Return the top n elements using a min-pqueue
-
-command pqueue.topn_max(a:bat[:oid,:oid],t:bat[:void,:any_1],n:wrd):bat[:oid,:oid] 
-address PQtopn2_anymax;
-comment Return the topn elements of the bat t using a max-pqueue
-
-command pqueue.topn_max(a:bat[:oid,:oid],t:bat[:oid,:any_1],n:wrd):bat[:oid,:oid] 
-address PQtopn2_anymax;
-comment Return the topn elements of the bat t using a max-pqueue
-
-command pqueue.topn_max(t:bat[:oid,:any_1],n:wrd):bat[:oid,:oid] 
-address PQtopn_anymax;
-comment Return the topn elements of the bat t using a max-pqueue
-
-command pqueue.topn_min(a:bat[:oid,:oid],t:bat[:void,:any_1],n:wrd):bat[:oid,:oid] 
-address PQtopn2_anymin;
-comment Return the topn elements of the bat t using a min-pqueue
-
-command pqueue.topn_min(a:bat[:oid,:oid],t:bat[:oid,:any_1],n:wrd):bat[:oid,:oid] 
-address PQtopn2_anymin;
-comment Return the topn elements of the bat t using a min-pqueue
-
-command pqueue.topn_min(t:bat[:oid,:any_1],n:wrd):bat[:oid,:oid] 
-address PQtopn_anymin;
-comment Return the topn elements of the bat t using a min-pqueue
-
-command pqueue.topn_max(t:bat[:oid,:dbl],n:wrd):bat[:oid,:oid] 
-address PQtopn_dblmax;
-command pqueue.topn_min(t:bat[:oid,:dbl],n:wrd):bat[:oid,:oid] 
-address PQtopn_fltmin;
-command pqueue.topn_max(t:bat[:oid,:flt],n:wrd):bat[:oid,:oid] 
-address PQtopn_fltmax;
-command pqueue.topn_min(t:bat[:oid,:flt],n:wrd):bat[:oid,:oid] 
-address PQtopn_fltmin;
-command pqueue.topn_max(t:bat[:oid,:lng],n:wrd):bat[:oid,:oid] 
-address PQtopn_lngmax;
-command pqueue.topn_min(t:bat[:oid,:lng],n:wrd):bat[:oid,:oid] 
-address PQtopn_lngmin;
-command pqueue.topn_max(t:bat[:oid,:wrd],n:wrd):bat[:oid,:oid] 
-address PQtopn_wrdmax;
-command pqueue.topn_min(t:bat[:oid,:wrd],n:wrd):bat[:oid,:oid] 
-address PQtopn_wrdmin;
-command pqueue.topn_max(t:bat[:oid,:int],n:wrd):bat[:oid,:oid] 
-address PQtopn_intmax;
-command pqueue.topn_min(t:bat[:oid,:int],n:wrd):bat[:oid,:oid] 
-address PQtopn_intmin;
-command pqueue.topn_max(t:bat[:oid,:sht],n:wrd):bat[:oid,:oid] 
-address PQtopn_shtmax;
-command pqueue.topn_min(t:bat[:oid,:sht],n:wrd):bat[:oid,:oid] 
-address PQtopn_shtmin;
-command pqueue.topn_max(t:bat[:oid,:bte],n:wrd):bat[:oid,:oid] 
-address PQtopn_btemax;
-comment Return the topn elements of the bat t using a max-pqueue
-
-command pqueue.topn_min(t:bat[:oid,:bte],n:wrd):bat[:oid,:oid] 
-address PQtopn_btemin;
-comment Return the topn elements of the bat t using a min-pqueue
-
-command pqueue.utopn_max(a:bat[:oid,:oid],t:bat[:void,:any_1],n:wrd):bat[:oid,:oid] 
-address PQutopn2_anymax;
-comment Return the unique topn elements of the bat t using a max-pqueue
-
-command pqueue.utopn_max(a:bat[:oid,:oid],t:bat[:oid,:any_1],n:wrd):bat[:oid,:oid] 
-address PQutopn2_anymax;
-comment Return the unique topn elements of the bat t using a max-pqueue
-
-command pqueue.utopn_max(t:bat[:oid,:any_1],n:wrd):bat[:oid,:oid] 
-address PQutopn_anymax;
-comment Return the unique topn elements of the bat t using a max-pqueue
-
-command pqueue.utopn_min(a:bat[:oid,:oid],t:bat[:void,:any_1],n:wrd):bat[:oid,:oid] 
-address PQutopn2_anymin;
-comment Return the unique topn elements of the bat t using a min-pqueue
-
-command pqueue.utopn_min(a:bat[:oid,:oid],t:bat[:oid,:any_1],n:wrd):bat[:oid,:oid] 
-address PQutopn2_anymin;
-comment Return the unique topn elements of the bat t using a min-pqueue
-
-command pqueue.utopn_min(t:bat[:oid,:any_1],n:wrd):bat[:oid,:oid] 
-address PQutopn_anymin;
-comment Return the unique topn elements of the bat t using a min-pqueue
-
-command pqueue.utopn_max(t:bat[:oid,:dbl],n:wrd):bat[:oid,:oid] 
-address PQutopn_dblmax;
-command pqueue.utopn_min(t:bat[:oid,:dbl],n:wrd):bat[:oid,:oid] 
-address PQutopn_fltmin;
-command pqueue.utopn_max(t:bat[:oid,:flt],n:wrd):bat[:oid,:oid] 
-address PQutopn_fltmax;
-command pqueue.utopn_min(t:bat[:oid,:flt],n:wrd):bat[:oid,:oid] 
-address PQutopn_fltmin;
-command pqueue.utopn_max(t:bat[:oid,:lng],n:wrd):bat[:oid,:oid] 
-address PQutopn_lngmax;
-command pqueue.utopn_min(t:bat[:oid,:lng],n:wrd):bat[:oid,:oid] 
-address PQutopn_lngmin;
-command pqueue.utopn_max(t:bat[:oid,:wrd],n:wrd):bat[:oid,:oid] 
-address PQutopn_wrdmax;
-command pqueue.utopn_min(t:bat[:oid,:wrd],n:wrd):bat[:oid,:oid] 
-address PQutopn_wrdmin;
-command pqueue.utopn_max(t:bat[:oid,:int],n:wrd):bat[:oid,:oid] 
-address PQutopn_intmax;
-command pqueue.utopn_min(t:bat[:oid,:int],n:wrd):bat[:oid,:oid] 
-address PQutopn_intmin;
-command pqueue.utopn_max(t:bat[:oid,:sht],n:wrd):bat[:oid,:oid] 
-address PQutopn_shtmax;
-command pqueue.utopn_min(t:bat[:oid,:sht],n:wrd):bat[:oid,:oid] 
-address PQutopn_shtmin;
-command pqueue.utopn_max(t:bat[:oid,:bte],n:wrd):bat[:oid,:oid] 
-address PQutopn_btemax;
-comment Return the unique topn elements of the bat t using a max-pqueue
-
-command pqueue.utopn_min(t:bat[:oid,:bte],n:wrd):bat[:oid,:oid] 
-address PQutopn_btemin;
-comment Return the unique topn elements of the bat t using a min-pqueue
 
 pattern profiler.activate(name:str...):void 
 address CMDactivateProfiler;
@@ -41388,6 +41290,10 @@ comment Reset a recycled bat variable
 pattern recycle.setCache(clines:int):void 
 address RECYCLEsetCache;
 comment Set recycler cache line parameter
+
+command sample.subuniform(b:bat[:oid,:any],s:wrd):bat[:oid,:oid] 
+address SAMPLEuniform;
+comment Returns the oids of a uniform sample of size s
 
 command sample.uniform(b:bat[:oid,:any],p:dbl):bat[:oid,:oid] 
 address SAMPLEuniform_dbl;

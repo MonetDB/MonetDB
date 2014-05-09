@@ -407,6 +407,8 @@ OCTOPUSdiscoverRegister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	worker to be skipped. */
 
 	start= getPC(mb,pci);
+	if( start< 0)
+		throw(MAL,"run.octopus","Illegal instruction");
 	for (j = start + 1; j<mb->stop ; j++){
 		p= getInstrPtr(mb,j);
 		if ( p->barrier == EXITsymbol )
@@ -503,6 +505,8 @@ OCTOPUSbidding(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
     *res = 1;       /* execute the block */
 
     start = getPC(mb,pci);
+	if( start < 0)
+		throw(MAL,"octopus.bidding","Illegal instruction pointer");
     for (j = start + 1; j< mb->stop ; j++){
     	p = getInstrPtr(mb,j);
     	if ( p->barrier == EXITsymbol )
@@ -671,6 +675,8 @@ OCTOPUSrun(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	*res = 1;	/* execute the block */
 	start = getPC(mb,pci);
+	if( start < 0)
+		throw(MAL,"octopus.run","Illegal instruction pointer");
 	for (j = start + 1; j< mb->stop ; j++){
 		p = getInstrPtr(mb,j);
 		if ( p->barrier == EXITsymbol )

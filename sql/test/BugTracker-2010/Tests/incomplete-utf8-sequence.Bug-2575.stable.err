@@ -71,7 +71,6 @@ MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
 QUERY = copy 2 records into tbl_bug2575 from stdin using delimiters '\t','\n','';
         10001160000	29	.v.
         10001690001	0	co√
-                
 ERROR = !value 'co√' from line 2 field 3 not inserted, expecting type char(3)
         !failed to import table
 
