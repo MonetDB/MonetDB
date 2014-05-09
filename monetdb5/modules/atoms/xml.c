@@ -642,8 +642,10 @@ XMLprelude(void)
 int
 XMLfromString(str src, int *len, xml *x)
 {
-	if (*x)
+	if (*x){
 		GDKfree(*x);
+		*x = NULL;
+	}
 	if (strcmp(src, "nil") == 0) {
 		*x = GDKstrdup(str_nil);
 		if (*x == NULL)
@@ -656,7 +658,9 @@ XMLfromString(str src, int *len, xml *x)
 			return -1;
 		}
 	}
-	*len = (int) strlen(*x);
+	if( *x)
+		*len = (int) strlen(*x);
+	else *len = 0;
 	return *len;
 }
 

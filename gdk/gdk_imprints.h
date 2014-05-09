@@ -25,8 +25,8 @@
  */
 typedef struct {
 	unsigned int cnt:24,   /* cnt of pages <= IMPS_MAX_CNT */
-	             repeat:1, /* repeat flag                 */
-	             flags:7;  /* reserved flags for future   */
+		     repeat:1, /* repeat flag                 */
+		     flags:7;  /* reserved flags for future   */
 } cchdc_t;
 
 /* hard bounds */

@@ -22,7 +22,7 @@
 
 #define BBPLOADED	1	/* set if bat in memory */
 #define BBPSWAPPED	2	/* set if dirty bat is not in memory */
-#define BBPTMP          4	/* set if non-persistent bat has image on disk */
+#define BBPTMP		4	/* set if non-persistent bat has image on disk */
 
 /* These 4 symbols indicate what the persistence state is of a bat.
  * - If the bat was persistent at the last commit (or at startup

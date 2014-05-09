@@ -1702,10 +1702,11 @@ strSubstitute(str *res, str s, str src, str dst, bit *g)
 	if (repeat && ldst > lsrc && lsrc) {
 		n = (ldst * l) / lsrc;	/* max length */
 	}
-	buf = *res = (str) GDKmalloc(n);
+	buf = *res = (str) GDKzalloc(n);
 	end = buf + l;
 	fnd = buf;
-	strcpy(buf, s);
+	if( s)
+		strcpy(buf, s);
 	if (!lsrc)
 		return GDK_SUCCEED;
 	do {

@@ -121,7 +121,7 @@
 #define GRP_compare_consecutive_values_tpe(TYPE)		\
 	GRP_compare_consecutive_values(				\
 	/* INIT_0 */	TYPE *w = (TYPE *) Tloc(b, 0);		\
-	            	TYPE pw = w[BUNfirst(b)]	,	\
+			TYPE pw = w[BUNfirst(b)]	,	\
 	/* INIT_1 */					,	\
 	/* COMP   */	w[p] != pw			,	\
 	/* KEEP   */	pw = w[p]				\

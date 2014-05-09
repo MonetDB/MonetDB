@@ -1011,8 +1011,10 @@ OPToctopusImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 		}
 	}
 	/* we do not  support yet update operations in the octopus */
-	if ( update || autocommit==0 ) 
+	if ( update || autocommit==0 ) {
+		GDKfree(mod);
 		return 0;
+	}
 
 	/* find table leading the split */
 	for (i = 1; i < limit; i++) {

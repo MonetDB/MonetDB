@@ -25,7 +25,7 @@
 
 static BAT *
 BAT_select_(BAT *b, const void *tl, const void *th,
-            bit li, bit hi, bit tail, bit anti, const char *name)
+	    bit li, bit hi, bit tail, bit anti, const char *name)
 {
 	BAT *bn;
 	BAT *bn1 = NULL;

@@ -471,6 +471,8 @@ parse_json_array(jsonbat *jb, oid *id, char *p)
 
 #define loadbat(name) \
 	jb.name = BATdescriptor(abs(*name)); \
+	if( jb.name == NULL) \
+		throw(MAL,"json.loadbat",RUNTIME_OBJECT_MISSING);\
 	if (*name < 0) \
 		jb.name = BATmirror(jb.name);
 #define loadbats() \
@@ -483,6 +485,8 @@ parse_json_array(jsonbat *jb, oid *id, char *p)
 	loadbat(name);
 
 #define unloadbat(name) \
+	if( jb.name == NULL) \
+		throw(MAL,"json.loadbat",RUNTIME_OBJECT_MISSING);\
 	BBPunfix(jb.name->batCacheid);
 #define unloadbats() \
 	unloadbat(kind); \
@@ -1431,7 +1435,7 @@ JSONunwrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	/* special case for when the argument is a single array */
 	c = BATantiuselect_(b, "a", NULL, TRUE, TRUE);
-	if (BATcount(c) != 0) {
+	if ( c && BATcount(c) != 0) {
 		c = BATmirror(BATselect(BATmirror(jb.kind), arrid, NULL));
 	} else {
 		c = b;

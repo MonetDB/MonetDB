@@ -475,7 +475,7 @@ sql_bind_aggr(sql_allocator *sa, sql_schema *s, char *sqlaname, sql_subtype *typ
 					scale = type->scale;
 				}
 				/* same type as the input */
-				if (a->res.type->eclass == EC_ANY) 
+				if (a->res.type->eclass == EC_ANY && type) 
 					sql_init_subtype(&ares->res, type->type, digits, scale);
 				else
 					sql_init_subtype(&ares->res, a->res.type, digits, scale);
@@ -513,7 +513,7 @@ sql_bind_aggr_(sql_allocator *sa, sql_schema *s, char *sqlaname, list *ops)
 				scale = type->scale;
 			}
 			/* same type as the input */
-			if (a->res.type->eclass == EC_ANY) 
+			if (a->res.type->eclass == EC_ANY && type) 
 				sql_init_subtype(&ares->res, type->type, digits, scale);
 			else
 				sql_init_subtype(&ares->res, a->res.type, digits, scale);
@@ -545,7 +545,7 @@ sql_bind_aggr_(sql_allocator *sa, sql_schema *s, char *sqlaname, list *ops)
 					scale = type->scale;
 				}
 				/* same type as the input */
-				if (a->res.type->eclass == EC_ANY) 
+				if (a->res.type->eclass == EC_ANY && type)  
 					sql_init_subtype(&ares->res, type->type, digits, scale);
 				else
 					sql_init_subtype(&ares->res, a->res.type, digits, scale);
@@ -863,6 +863,7 @@ sql_bind_func_(sql_allocator *sa, sql_schema *s, char *sqlfname, list *ops, int 
 								a = n->data;
 							}
 						}
+						assert(a);
 						sql_init_subtype(&fres->res, a->type, digits, scale);
 					} else {
 						sql_init_subtype(&fres->res, f->res.type, digits, scale);
@@ -977,6 +978,7 @@ sql_bind_func_result_(sql_allocator *sa, sql_schema *s, char *sqlfname, list *op
 						a = n->data;
 					}
 				}
+				assert(a);
 				sql_init_subtype(&fres->res, a->type, f->res.digits, scale);
 			} else {
 				sql_init_subtype(&fres->res, f->res.type, f->res.digits, scale);

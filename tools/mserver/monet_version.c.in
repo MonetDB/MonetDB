@@ -38,6 +38,7 @@ monet_version(void)
 	cores = MT_check_nr_cores();
 
 	printf("MonetDB 5 server v" VERSION " ");
+	/* coverity[pointless_string_compare] */
 	if (strcmp(MONETDB_RELEASE, "unreleased") != 0)
 		printf("\"%s\" ", MONETDB_RELEASE);
 	printf("(" SZFMT "-bit, " SZFMT "-bit oids%s)\n",
@@ -49,6 +50,7 @@ monet_version(void)
 			""
 #endif
 	);
+	/* coverity[pointless_string_compare] */
 	if (strcmp(MONETDB_RELEASE, "unreleased") == 0)
 		printf("This is an unreleased version\n");
 	printf("Copyright (c) 1993-July 2008 CWI\n"

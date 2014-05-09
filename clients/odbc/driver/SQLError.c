@@ -58,14 +58,35 @@ SQLError(SQLHENV EnvironmentHandle,
 #endif
 
 	/* use mapping as described in ODBC 3 SDK Help file */
-	return SQLGetDiagRec_(StatementHandle ? SQL_HANDLE_STMT : (ConnectionHandle ? SQL_HANDLE_DBC : SQL_HANDLE_ENV),
-			      StatementHandle ? StatementHandle : (ConnectionHandle ? ConnectionHandle : EnvironmentHandle),
-			      StatementHandle ? ++((ODBCStmt *) StatementHandle)->RetrievedErrors : (ConnectionHandle ? ++((ODBCDbc *) ConnectionHandle)->RetrievedErrors : ++((ODBCEnv *) EnvironmentHandle)->RetrievedErrors),
-			      SQLState,
-			      NativeErrorPtr,
-			      MessageText,
-			      BufferLength,
-			      TextLengthPtr);
+	if (StatementHandle)
+		return SQLGetDiagRec_(SQL_HANDLE_STMT,
+				      StatementHandle,
+				      ++((ODBCStmt *) StatementHandle)->RetrievedErrors,
+				      SQLState,
+				      NativeErrorPtr,
+				      MessageText,
+				      BufferLength,
+				      TextLengthPtr);
+	else if (ConnectionHandle)
+		return SQLGetDiagRec_(SQL_HANDLE_DBC,
+				      ConnectionHandle,
+				      ++((ODBCDbc *) ConnectionHandle)->RetrievedErrors,
+				      SQLState,
+				      NativeErrorPtr,
+				      MessageText,
+				      BufferLength,
+				      TextLengthPtr);
+	else if (EnvironmentHandle)
+		return SQLGetDiagRec_(SQL_HANDLE_ENV,
+				      EnvironmentHandle,
+				      ++((ODBCEnv *) EnvironmentHandle)->RetrievedErrors,
+				      SQLState,
+				      NativeErrorPtr,
+				      MessageText,
+				      BufferLength,
+				      TextLengthPtr);
+	else
+		return SQL_ERROR;
 }
 
 SQLRETURN SQL_API
@@ -101,25 +122,33 @@ SQLErrorW(SQLHENV EnvironmentHandle,
 	SQLCHAR state[6];
 	SQLRETURN rc;
 	SQLSMALLINT n;
-	SQLCHAR *errmsg;
+	SQLCHAR errmsg[512];
 
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLErrorW " PTRFMT " " PTRFMT " " PTRFMT "\n", PTRFMTCAST EnvironmentHandle, PTRFMTCAST ConnectionHandle, PTRFMTCAST StatementHandle);
 #endif
 
 	/* use mapping as described in ODBC 3 SDK Help file */
-	/* first try to figure out how big the buffer needs to be */
-	rc = SQLGetDiagRec_(StatementHandle ? SQL_HANDLE_STMT : (ConnectionHandle ? SQL_HANDLE_DBC : SQL_HANDLE_ENV),
-			    StatementHandle ? StatementHandle : (ConnectionHandle ? ConnectionHandle : EnvironmentHandle),
-			    StatementHandle ? ++((ODBCStmt *) StatementHandle)->RetrievedErrors : (ConnectionHandle ? ++((ODBCDbc *) ConnectionHandle)->RetrievedErrors : ++((ODBCEnv *) EnvironmentHandle)->RetrievedErrors),
-			    state, NativeErrorPtr, NULL, 0, &n);
-
-	/* and now for real */
-	errmsg = (SQLCHAR *) malloc(n + 1);
-	rc = SQLGetDiagRec_(StatementHandle ? SQL_HANDLE_STMT : (ConnectionHandle ? SQL_HANDLE_DBC : SQL_HANDLE_ENV),
-			    StatementHandle ? StatementHandle : (ConnectionHandle ? ConnectionHandle : EnvironmentHandle),
-			    StatementHandle ? ((ODBCStmt *) StatementHandle)->RetrievedErrors : (ConnectionHandle ? ((ODBCDbc *) ConnectionHandle)->RetrievedErrors : ((ODBCEnv *) EnvironmentHandle)->RetrievedErrors),
-			    state, NativeErrorPtr, errmsg, n + 1, &n);
+	if (StatementHandle)
+		rc = SQLGetDiagRec_(SQL_HANDLE_STMT,
+				    StatementHandle,
+				    ((ODBCStmt *) StatementHandle)->RetrievedErrors,
+				    state, NativeErrorPtr,
+				    errmsg, (SQLSMALLINT) sizeof(errmsg), &n);
+	else if (ConnectionHandle)
+		rc = SQLGetDiagRec_(SQL_HANDLE_DBC,
+				    ConnectionHandle,
+				    ((ODBCDbc *) ConnectionHandle)->RetrievedErrors,
+				    state, NativeErrorPtr,
+				    errmsg, (SQLSMALLINT) sizeof(errmsg), &n);
+	else if (EnvironmentHandle)
+		rc = SQLGetDiagRec_(SQL_HANDLE_ENV,
+				    EnvironmentHandle,
+				    ((ODBCEnv *) EnvironmentHandle)->RetrievedErrors,
+				    state, NativeErrorPtr,
+				    errmsg, (SQLSMALLINT) sizeof(errmsg), &n);
+	else
+		return SQL_ERROR;
 
 	if (SQL_SUCCEEDED(rc)) {
 		char *e = ODBCutf82wchar(state, 5, SQLState, 6, NULL);
@@ -137,7 +166,6 @@ SQLErrorW(SQLHENV EnvironmentHandle,
 		if (TextLengthPtr)
 			*TextLengthPtr = n;
 	}
-	free(errmsg);
 
 	return rc;
 }

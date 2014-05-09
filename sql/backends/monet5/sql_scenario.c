@@ -200,7 +200,7 @@ MT_Id sqllogthread, minmaxthread;
 static str
 SQLinit(void)
 {
-	char *debug_str = GDKgetenv("sql_debug");
+	char *debug_str = GDKgetenv("sql_debug"), *msg = MAL_SUCCEED;
 	int readonly = GDKgetenv_isyes("gdk_readonly");
 	int single_user = GDKgetenv_isyes("gdk_single_user");
 	const char *gmt = "GMT";
@@ -223,7 +223,9 @@ SQLinit(void)
 	be_funcs.fresolve_function = &monet5_resolve_function;
 	monet5_user_init(&be_funcs);
 
-	MTIMEtimezone(&tz, &gmt);
+	msg = MTIMEtimezone(&tz, &gmt);
+	if (msg)
+		return msg;
 	(void) tz;
 	if (debug_str)
 		SQLdebug = strtol(debug_str, NULL, 10);
@@ -1298,7 +1300,7 @@ static void
 SQLtrans(mvc *m)
 {
 	m->caching = m->cache;
-	if (m && !m->session->active)
+	if (!m->session->active)
 		mvc_trans(m);
 }
 
@@ -1571,8 +1573,10 @@ SQLinclude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "sql.include", "could not open file: %s\n", *name);
 	}
 	bfd = bstream_create(fd, 128 * BLOCK);
-	if (bstream_next(bfd) < 0)
+	if (bstream_next(bfd) < 0) {
+		bstream_destroy(bfd);
 		throw(MAL, "sql.include", "could not read %s\n", *name);
+	}
 
 	expr = &bfd->buf;
 	msg = SQLstatementIntern(cntxt, expr, "sql.include", TRUE, FALSE);
@@ -2277,7 +2281,7 @@ SQLengineIntern(Client c, backend *be)
 			printFunction(c->fdout, ((Symbol) (be->q->code))->def, 0, LIST_MAL_STMT | LIST_MAL_UDF | LIST_MAPI);
 		else if (be->q)
 			msg = createException(PARSE, "SQLparser", "%s", (*m->errstr) ? m->errstr : "39000!program contains errors");
-		else if (c->curprg && c->curprg->def)
+		else if (c->curprg->def)
 			printFunction(c->fdout, c->curprg->def, 0, LIST_MAL_STMT | LIST_MAL_UDF | LIST_MAPI);
 		goto cleanup_engine;
 	}
@@ -2286,7 +2290,7 @@ SQLengineIntern(Client c, backend *be)
 			showFlowGraph(((Symbol) (be->q->code))->def, 0, "stdout-mapi");
 		else if (be->q)
 			msg = createException(PARSE, "SQLparser", "%s", (*m->errstr) ? m->errstr : "39000!program contains errors");
-		else if (c->curprg && c->curprg->def)
+		else if (c->curprg->def)
 			showFlowGraph(c->curprg->def, 0, "stdout-mapi");
 		goto cleanup_engine;
 	}

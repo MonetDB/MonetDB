@@ -1242,6 +1242,11 @@ ODBCFetch(ODBCStmt *stmt,
 			     sql_type == SQL_WLONGVARCHAR))
 				buflen = (SQLLEN) datalen + 1; /* but this is certainly enough for strings */
 			ptr = malloc(buflen);
+			if (ptr == NULL) {
+				/* Memory allocation error */
+				addStmtError(stmt, "HY001", NULL, 0);
+				return SQL_ERROR;
+			}
 
 			lenp = NULL;
 		}
@@ -2706,6 +2711,8 @@ ODBCFetch(ODBCStmt *stmt,
 				char *b = realloc(buf, buflen += 1024);	\
 				if (b == NULL) {			\
 					free(buf);			\
+					if (ctype == SQL_C_WCHAR && sval) \
+						free(sval);		\
 					/* Memory allocation error */	\
 					addStmtError(stmt, "HY001", NULL, 0); \
 					return SQL_ERROR;		\
@@ -2722,6 +2729,8 @@ ODBCFetch(ODBCStmt *stmt,
 				char *b = realloc(buf, buflen += 1024);	\
 				if (b == NULL) {			\
 					free(buf);			\
+					if (ctype == SQL_C_WCHAR && sval) \
+						free(sval);		\
 					/* Memory allocation error */	\
 					addStmtError(stmt, "HY001", NULL, 0); \
 					return SQL_ERROR;		\
@@ -2822,6 +2831,7 @@ ODBCStore(ODBCStmt *stmt,
 	case SQL_C_WCHAR:
 		slen = strlen_or_ind_ptr ? *strlen_or_ind_ptr : SQL_NTS;
 		fixWcharIn((SQLWCHAR *) ptr, slen, char, sval, addStmtError, stmt, return SQL_ERROR);
+		slen = strlen(sval);
 		break;
 	case SQL_C_BIT:
 		nval.precision = 1;
@@ -3054,7 +3064,9 @@ ODBCStore(ODBCStmt *stmt,
 			for (i = 0; i < slen; i++) {
 				unsigned char c = (unsigned char) sval[i];
 
-				if (c < 0x20 /* || c >= 0x7F */) {
+				if (c == 0) {
+					break;
+				} else if (c < 0x20 /* || c >= 0x7F */) {
 					assign(buf, bufpos, buflen, '\\', stmt);
 					assign(buf, bufpos, buflen, '0' + (c >> 6), stmt);
 					assign(buf, bufpos, buflen, '0' + ((c >> 3) & 0x7), stmt);

@@ -244,11 +244,6 @@ build up the hash (not copyied in the trans dup)) */
 	}
 	cur -> parent = tr;
 	tr = cur;
-	if (ok != SQL_OK) {
-		(void)sql_error(m, 010, "40000!COMMIT: transaction is aborted, will ROLLBACK instead");
-		mvc_rollback(m, chain, name);
-		return -1;
-	}
 
 	store_lock();
 	/* if there is nothing to commit reuse the current transaction */
@@ -369,6 +364,9 @@ mvc_release(mvc *m, char *name)
 
 	if (mvc_debug)
 		fprintf(stderr, "#mvc_release %s\n", (name) ? name : "");
+
+	if (!name)
+		mvc_rollback(m, 0, name);
 
 	while (tr && (!tr->name || strcmp(tr->name, name) != 0))
 		tr = tr->parent;
@@ -642,7 +640,7 @@ mvc_bind_table(mvc *m, sql_schema *s, char *tname)
 	if (!t)
 		return NULL;
 	if (mvc_debug)
-		fprintf(stderr, "#mvc_bind_table %s.%s\n", s->base.name, tname);
+		fprintf(stderr, "#mvc_bind_table %s.%s\n", s ? s->base.name : "<noschema>", tname);
 
 	return t;
 }

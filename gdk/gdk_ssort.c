@@ -133,13 +133,13 @@ merge_getmem(MergeState *ms, ssize_t need, void ***ap,
 	return -1;
 }
 
-#define MERGE_GETMEMH(MS, NEED)                                         \
-	((NEED) * (MS)->hs <= (MS)->allocedh ? 0 :                      \
-	 merge_getmem(MS, NEED, &(MS)->ah, &(MS)->allocedh, (MS)->hs,   \
+#define MERGE_GETMEMH(MS, NEED)						\
+	((NEED) * (MS)->hs <= (MS)->allocedh ? 0 :			\
+	 merge_getmem(MS, NEED, &(MS)->ah, &(MS)->allocedh, (MS)->hs,	\
 		      (MS)->temparrayh))
-#define MERGE_GETMEMT(MS, NEED)                                         \
-	((NEED) * (MS)->ts <= (MS)->allocedt ? 0 :                      \
-	 merge_getmem(MS, NEED, &(MS)->at, &(MS)->allocedt, (MS)->ts,   \
+#define MERGE_GETMEMT(MS, NEED)						\
+	((NEED) * (MS)->ts <= (MS)->allocedt ? 0 :			\
+	 merge_getmem(MS, NEED, &(MS)->at, &(MS)->allocedt, (MS)->ts,	\
 		      (MS)->temparrayt))
 
 #define PTRADD(p, n, w)		((void *) ((char *) (p) + (n) * (w)))

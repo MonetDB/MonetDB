@@ -400,6 +400,7 @@ make_jaql_group(tree *inputs, tree *tmpl, tree *var)
 			freetree(inputs);
 			freetree(tmpl);
 			freetree(var);
+			GDKfree(res);
 			return w;
 		}
 	}
@@ -648,6 +649,7 @@ make_pred(tree *l, tree *comp, tree *r)
 	/* shortcut to optimize non-not constructions */
 	if (comp == NULL && l == NULL)
 		return r;
+	assert(comp);
 
 	/* optimise the case where comp is j_not, and r is a variable to
 	 * rewrite its comp to j_nequal */
@@ -660,7 +662,7 @@ make_pred(tree *l, tree *comp, tree *r)
 		return r;
 	}
 
-	if ((r->type == j_bool || l->type == j_bool)
+	if ((r->type == j_bool || (l && l->type == j_bool))
 			&& comp->cval != j_nequal && comp->cval != j_equals
 			&& comp->cval != j_and && comp->cval != j_or)
 	{

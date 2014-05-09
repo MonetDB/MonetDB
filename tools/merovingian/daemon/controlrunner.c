@@ -774,6 +774,7 @@ static void ctl_handle_client(
 					send_client("!");
 					Mfprintf(_mero_ctlerr, "%s: status: msab_getStatus: "
 							"%s\n", origin, e);
+					msab_freeStatus(&topdb);
 					freeErr(e);
 					break;
 				}

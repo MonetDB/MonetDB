@@ -169,6 +169,7 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							if (sz)
 								width = (int) (sum / sz);
 						}
+							/* fall through */
 
 						default:
 							snprintf(maxval, 8192, "nil");

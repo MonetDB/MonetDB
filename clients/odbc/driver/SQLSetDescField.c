@@ -205,6 +205,11 @@ SQLSetDescField_(ODBCDesc *desc,
 			if (rec->sql_desc_name != NULL)
 				free(rec->sql_desc_name);
 			rec->sql_desc_name = (SQLCHAR *) dupODBCstring((SQLCHAR *) ValuePtr, (size_t) BufferLength);
+			if (rec->sql_desc_name == NULL) {
+				/* Memory allocation error */
+				addDescError(desc, "HY001", NULL, 0);
+				return SQL_ERROR;
+			}
 			rec->sql_desc_unnamed = *rec->sql_desc_name ? SQL_NAMED : SQL_UNNAMED;
 		}
 		return SQL_SUCCESS;

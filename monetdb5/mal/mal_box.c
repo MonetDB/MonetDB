@@ -256,6 +256,7 @@ newBox(str name)
 			obj->sym=  newMalBlk(MAXVARS,STMT_INCREMENT);
 			obj->val = newGlobalStack(MAXVARS);
 			if ( obj->val == NULL || obj->sym == NULL){
+				GDKfree(obj);
 				showException(GDKout, MAL,"box.new", MAL_MALLOC_FAIL);
 				return NULL;
 			}
@@ -663,8 +664,7 @@ prepareSaveBox(Box box, str *boxfile, str *boxfilebak)
 
 	if (*boxfile == 0)
 		return 0;
-	if (access(*boxfile,R_OK)==0 &&
-		(unlink(*boxfilebak), rename(*boxfile, *boxfilebak) < 0)) {
+	if (rename(*boxfile, *boxfilebak) < 0 && errno != ENOENT) {
 #ifdef DEBUG_MAL_BOX
 		mnstr_printf(GDKout, "saveBox:can not rename %s to %s\n", *boxfile, *boxfilebak);
 #endif
@@ -672,16 +672,17 @@ prepareSaveBox(Box box, str *boxfile, str *boxfilebak)
 		GDKfree(*boxfile); *boxfile = NULL;
 		GDKfree(*boxfilebak); *boxfilebak = NULL;
 		return 0;
-		}
+	}
 
 	f = open_wastream(*boxfile);
 #ifndef S_IRUSR
 #define S_IRUSR 0400
 #define S_IWUSR 0200
 #endif
-	if (f != NULL)
-		chmod(*boxfile, (S_IRUSR | S_IWUSR));
-	else
+	if (f != NULL){
+		if( chmod(*boxfile, (S_IRUSR | S_IWUSR)) )
+			showException(GDKout, MAL,"box.saveBox", "can not change box file mode");
+	} else
 		showException(GDKout, MAL,"box.saveBox", "can not create box file");
 	if (f == NULL) {
 		GDKfree(*boxfile); *boxfile= NULL;
@@ -759,7 +760,8 @@ loadBox(str name)
 	str msg;
 
 	snprintf(boxfile, PATHLENGTH, "%s%cbox", GDKgetenv("gdk_dbpath"), DIR_SEP);
-	mkdir(boxfile,0755); /* ignore errors */
+	if( mkdir(boxfile,0755) )
+		return ; /* ignore errors */
 	i = strlen(boxfile);
 	snprintf(boxfile + i, PATHLENGTH - i, "%c%s.box", DIR_SEP, name);
 #ifdef DEBUG_MAL_BOX

@@ -73,7 +73,6 @@ MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
 QUERY = COPY 2 RECORDS INTO number FROM stdin USING DELIMITERS '\n';
         1
         bla
-        drop table number;
 ERROR = !value 'bla' from line 2 field 1 not inserted, expecting type int
         !failed to import table
 

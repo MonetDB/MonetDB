@@ -199,6 +199,7 @@ URLBOXdepositFile(int *r, str *fnme){
 	char *s,*t;
 	int len=0;
 	char buf[PATHLENGTH];
+	str msg= MAL_SUCCEED;
 
 	(void) r; 
 	if( **fnme == '/')
@@ -232,7 +233,9 @@ URLBOXdepositFile(int *r, str *fnme){
 			}
 			/* found a string to be processed */
 			*t = 0;
-			URLBOXinsert(s);
+			msg =URLBOXinsert(s);
+			if( msg != MAL_SUCCEED)
+				break;
 			*t= '\n';
 			s= t+1;
 			t= s;
@@ -242,7 +245,7 @@ URLBOXdepositFile(int *r, str *fnme){
 	bstream_destroy(bs);
 	mnstr_close(fs);
 	mnstr_destroy(fs);
-	return MAL_SUCCEED;
+	return msg;
 }
 str
 URLBOXdeposit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)

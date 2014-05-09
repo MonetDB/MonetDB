@@ -1356,11 +1356,13 @@ tail_type(stmt *st)
 		} else if (st->op4.idxval->type == join_idx) {
 			return sql_bind_localtype("oid");
 		}
+		/* fall through */
 	case st_join:
 	case st_join2:
 	case st_joinN:
 		if (st->flag == cmp_project || st->flag == cmp_reorder_project)
 			return tail_type(st->op2);
+		/* fall through */
 	case st_mark:
 	case st_reorder:
 	case st_group:
@@ -1520,6 +1522,7 @@ _column_name(sql_allocator *sa, stmt *st)
 	case st_atom:
 		if (st->op4.aval->data.vtype == TYPE_str)
 			return atom2string(sa, st->op4.aval);
+		/* fall through */
 	case st_var:
 	case st_temp:
 	case st_single:
@@ -1530,6 +1533,7 @@ _column_name(sql_allocator *sa, stmt *st)
 	case st_list:
 		if (list_length(st->op4.lval))
 			return column_name(sa, st->op4.lval->h->data);
+		/* fall through */
 	case st_rs_column:
 		return NULL;
 	default:

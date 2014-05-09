@@ -191,10 +191,11 @@ runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Runt
 	stkpc= prof->stkpc;
 	mb->profiler[stkpc].ticks = GDKusec() - mb->profiler[stkpc].clk;
 
-	if (malProfileMode == 0 && pci->recycle == 0)
+	if (malProfileMode == 0 && pci && pci->recycle == 0)
 		return; /* mostly true */
 
-	if (getProfileCounter(PROFfootprint) && pci){
+	if (getProfileCounter(PROFfootprint) ){
+		if( pci)
 		for (i = 0; i < pci->retc; i++)
 			if ( isaBatType(getArgType(mb,pci,i)) && stk->stk[getArg(pci,i)].val.bval){
 				/* avoid simple alias operations */
@@ -207,7 +208,7 @@ runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Runt
 			}
 	}
 
-	if (stk != NULL && stkpc >= 0 && (mb->profiler[stkpc].trace || pci->recycle) ) {
+	if (stk != NULL && stkpc >= 0 && (mb->profiler[stkpc].trace || (pci && pci->recycle)) ) {
 		gettimeofday(&mb->profiler[stkpc].clock, NULL);
 		mb->profiler[stkpc].calls++;
 		mb->profiler[stkpc].totalticks += mb->profiler[stkpc].ticks;

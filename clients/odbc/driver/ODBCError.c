@@ -225,6 +225,13 @@ getStandardSQLStateMsg(const char *SQLState)
 }
 
 
+static ODBCError malloc_error = {
+	"HY001",
+	NULL,
+	0,
+	NULL,
+};
+
 /*
  * Creates a new allocated ODBCError object, initializes it and
  * adds copies of the SQLstate, msg and nativeErrorCode to the object.
@@ -237,7 +244,10 @@ newODBCError(const char *SQLState, const char *msg, int nativeCode)
 {
 	ODBCError *error = (ODBCError *) malloc(sizeof(ODBCError));
 
-	assert(error);
+	if (error == NULL) {
+		/* malloc failure, override anything given to us */
+		return &malloc_error;
+	}
 
 	if (SQLState) {
 		strncpy(error->sqlState, SQLState, SQL_SQLSTATE_SIZE);
@@ -254,6 +264,11 @@ newODBCError(const char *SQLState, const char *msg, int nativeCode)
 		size_t len;
 
 		error->message = strdup(msg);
+		if (error->message == NULL) {
+			free(error);
+			return &malloc_error;
+		}
+
 		/* remove trailing newlines */
 		len = strlen(error->message);
 		while (len > 0 && error->message[len - 1] == '\n') {
@@ -411,6 +426,9 @@ deleteODBCErrorList(ODBCError **error)
 		*error = cur->next;
 		if (cur->message)
 			free(cur->message);
-		free(cur);
+		if (cur != &malloc_error)
+			free(cur);
+		else
+			cur->next = NULL;
 	}
 }

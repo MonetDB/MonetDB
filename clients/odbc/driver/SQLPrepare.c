@@ -91,10 +91,21 @@ SQLPrepare_(ODBCStmt *stmt,
 	 * syntax */
 	query = ODBCTranslateSQL(stmt->Dbc, StatementText, (size_t) TextLength,
 				 stmt->noScan);
+	if (query == NULL) {
+		/* Memory allocation error */
+		addStmtError(stmt, "HY001", NULL, 0);
+		return SQL_ERROR;
+	}
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLPrepare: \"%s\"\n", query);
 #endif
 	s = malloc(strlen(query) + 9);
+	if (s == NULL) {
+		free(query);
+		/* Memory allocation error */
+		addStmtError(stmt, "HY001", NULL, 0);
+		return SQL_ERROR;
+	}
 	strcat(strcpy(s, "prepare "), query);
 	free(query);
 

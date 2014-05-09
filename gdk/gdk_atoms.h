@@ -29,22 +29,22 @@
  * code in one CPP macro we use the following #defines for comparing
  * atoms:
  */
-#define simple_CMP(x,y,tpe)     (simple_GT(x,y,tpe) - simple_LT(x,y,tpe))
-#define simple_EQ(x,y,tpe)      ((*(const tpe*) (x)) == (*(const tpe*) (y)))
-#define simple_NE(x,y,tpe,nl)   ((*(const tpe*)(y)) != nl && (*(const tpe*) (x)) != (*(const tpe*) (y)))
-#define simple_LT(x,y,tpe)      ((*(const tpe*) (x))  < (*(const tpe*) (y)))
-#define simple_GT(x,y,tpe)      ((*(const tpe*) (x))  > (*(const tpe*) (y)))
-#define simple_LE(x,y,tpe)      ((*(const tpe*) (x)) <= (*(const tpe*) (y)))
-#define simple_GE(x,y,tpe)      ((*(const tpe*) (x)) >= (*(const tpe*) (y)))
-#define atom_CMP(x,y,id)        (*BATatoms[id].atomCmp)(x,y)
-#define atom_EQ(x,y,id)         ((*BATatoms[id].atomCmp)(x,y) == 0)
-#define atom_NE(x,y,id,nl)      ((*BATatoms[id].atomCmp)(y,BATatoms[id].atomNull) != 0 && (*BATatoms[id].atomCmp)(x,y) != 0)
-#define atom_LT(x,y,id)         ((*BATatoms[id].atomCmp)(x,y) < 0)
-#define atom_GT(x,y,id)         ((*BATatoms[id].atomCmp)(x,y) > 0)
-#define atom_LE(x,y,id)         ((*BATatoms[id].atomCmp)(x,y) <= 0)
-#define atom_GE(x,y,id)         ((*BATatoms[id].atomCmp)(x,y) >= 0)
-#define simple_HASH(v,tpe,dst)  ((dst) *(const tpe *) (v))
-#define atom_HASH(v,id,dst)     ((dst) (*BATatoms[id].atomHash)(v))
+#define simple_CMP(x,y,tpe)	(simple_GT(x,y,tpe) - simple_LT(x,y,tpe))
+#define simple_EQ(x,y,tpe)	((*(const tpe*) (x)) == (*(const tpe*) (y)))
+#define simple_NE(x,y,tpe,nl)	((*(const tpe*)(y)) != nl && (*(const tpe*) (x)) != (*(const tpe*) (y)))
+#define simple_LT(x,y,tpe)	((*(const tpe*) (x))  < (*(const tpe*) (y)))
+#define simple_GT(x,y,tpe)	((*(const tpe*) (x))  > (*(const tpe*) (y)))
+#define simple_LE(x,y,tpe)	((*(const tpe*) (x)) <= (*(const tpe*) (y)))
+#define simple_GE(x,y,tpe)	((*(const tpe*) (x)) >= (*(const tpe*) (y)))
+#define atom_CMP(x,y,id)	(*BATatoms[id].atomCmp)(x,y)
+#define atom_EQ(x,y,id)		((*BATatoms[id].atomCmp)(x,y) == 0)
+#define atom_NE(x,y,id,nl)	((*BATatoms[id].atomCmp)(y,BATatoms[id].atomNull) != 0 && (*BATatoms[id].atomCmp)(x,y) != 0)
+#define atom_LT(x,y,id)		((*BATatoms[id].atomCmp)(x,y) < 0)
+#define atom_GT(x,y,id)		((*BATatoms[id].atomCmp)(x,y) > 0)
+#define atom_LE(x,y,id)		((*BATatoms[id].atomCmp)(x,y) <= 0)
+#define atom_GE(x,y,id)		((*BATatoms[id].atomCmp)(x,y) >= 0)
+#define simple_HASH(v,tpe,dst)	((dst) *(const tpe *) (v))
+#define atom_HASH(v,id,dst)	((dst) (*BATatoms[id].atomHash)(v))
 
 /*
  * @- maximum atomic string lengths
@@ -362,9 +362,9 @@ gdk_export const ptr ptr_nil;
 #define GDK_STRNIL(s)    ((s) == NULL || *(char*) (s) == '\200')
 #define GDK_STRLEN(s)    ((GDK_STRNIL(s)?1:strlen(s))+1)
 #define GDK_STRCMP(l,r)  (GDK_STRNIL(l)?(GDK_STRNIL(r)?0:-1):GDK_STRNIL(r)?1: \
-                          (*(const unsigned char*)(l) < *(const unsigned char*)(r))?-1: \
-                          (*(const unsigned char*)(l) > *(const unsigned char*)(r))?1: \
-                          strCmpNoNil((const unsigned char*)(l),(const unsigned char*)(r)))
+			  (*(const unsigned char*)(l) < *(const unsigned char*)(r))?-1: \
+			  (*(const unsigned char*)(l) > *(const unsigned char*)(r))?1: \
+			  strCmpNoNil((const unsigned char*)(l),(const unsigned char*)(r)))
 /*
  * @- Hash Function
  * The string hash function is a very simple hash function that xors

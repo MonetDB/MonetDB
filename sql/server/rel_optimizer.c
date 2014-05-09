@@ -404,6 +404,7 @@ exp_count(int *cnt, int seqnr, sql_exp *e)
 		/* functions are more expensive, depending on the number of columns involved. */ 
 		if (e->card == CARD_ATOM)
 			return 0;
+		/* fall through */
 	default:
 		*cnt -= 5;
 		return -5;
@@ -1856,7 +1857,7 @@ exp_push_down_prj(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 			sql_exp *gbe = NULL;
 			if (ne->l) 
 				gbe = exps_bind_column2(f->r, ne->l, ne->r);
-			if (!ne && !e->l)
+			if (!gbe && !e->l)
 				gbe = exps_bind_column(f->r, ne->r, NULL);
 			ne = gbe;
 			if (!ne || (ne->type != e_column && ne->type != e_atom))
@@ -3203,6 +3204,9 @@ rel_push_join_down(int *changes, mvc *sql, sql_rel *rel)
 					rname = exp_find_rel_name(gbe);
 					name = exp_name(gbe);
 				}
+
+				if (!name) 
+					return rel;
 
 				for (m = exps->h; m && !fnd; m = m->next) {
 					sql_exp *je = m->data;
@@ -4705,6 +4709,7 @@ rel_remove_unused(mvc *sql, sql_rel *rel)
 		if (isMergeTable(t) || isReplicaTable(t)) 
 			return rel;
 	}
+		/* fall through */
 	case op_table:
 		if (rel->exps) {
 			node *n;

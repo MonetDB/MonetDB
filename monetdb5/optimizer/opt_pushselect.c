@@ -385,7 +385,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				InstrPtr q = newAssignment(mb);
 
 				getArg(q, 0) = getArg(p, 0); 
-				q = pushArgument(mb, q, getArg(p, 2));
+				(void) pushArgument(mb, q, getArg(p, 2));
 				actions++;
 				freeInstruction(p);
 				continue;
@@ -398,10 +398,10 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 					q = mb->stmt[vars[var]]; 
 				}
 				if (subselect_find_subselect(&subselects, var) > 0) {
-					InstrPtr q = newAssignment(mb);
+					InstrPtr qq = newAssignment(mb);
 
-					getArg(q, 0) = getArg(p, 0); 
-					q = pushArgument(mb, q, getArg(p, 1));
+					getArg(qq, 0) = getArg(p, 0); 
+					qq = pushArgument(mb, qq, getArg(p, 1));
 					actions++;
 					freeInstruction(p);
 					continue;

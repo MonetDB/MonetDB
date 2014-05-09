@@ -35,8 +35,8 @@ float nextafterf(float x, float y);
 		if ((I) == BATcapacity(B)) {			\
 			BATsetcount((B), (I));			\
 			if (BATextend((B),			\
-			              MIN(BATcapacity(B) + (G),	\
-			                  (M))) == NULL) {	\
+				      MIN(BATcapacity(B) + (G),	\
+					  (M))) == NULL) {	\
 				BBPreclaim(B);			\
 				return (R);			\
 			}					\
@@ -136,8 +136,8 @@ BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl, BUN maximum)
 			o = (oid) (i + off);
 			if (SORTfnd(s, &o) != BUN_NONE) {
 				buninsfix(bn, T, dst, cnt, oid, o,
-				          maximum - BATcapacity(bn),
-				          maximum, NULL);
+					  maximum - BATcapacity(bn),
+					  maximum, NULL);
 				cnt++;
 			}
 		}
@@ -244,36 +244,36 @@ do {									    \
 } while (0)
 
 /* construct the mask */
-#define impsmask(CAND,TEST,B)						    \
-do {									    \
-	uint##B##_t *im = (uint##B##_t *) imprints->imps->base;		    \
-	uint##B##_t mask = 0, innermask;				    \
-	int j, lbin, hbin;						    \
-	lbin = IMPSgetbin(ATOMstorage(b->ttype), imprints->bits,	    \
-			imprints->bins->base, tl);			    \
-	hbin = IMPSgetbin(ATOMstorage(b->ttype), imprints->bits,	    \
-			imprints->bins->base, th);			    \
-	for (j=lbin; j<=hbin; j++) mask = IMPSsetBit(B, mask, j);	    \
-	innermask = mask;						    \
-	if (!b->T->nonil || vl != minval)				    \
-		innermask = IMPSunsetBit(B, innermask, lbin);		    \
-	if (vh != maxval)						    \
-		innermask = IMPSunsetBit(B, innermask, hbin);		    \
-	if (anti) {							    \
-		uint##B##_t tmp = mask;					    \
-		mask = ~innermask;					    \
-		innermask = ~tmp;					    \
-	}								    \
-									    \
-	if (BATcapacity(bn) < maximum) {				    \
-		impsloop(CAND, TEST,					    \
-			 buninsfix(bn, T, dst, cnt, oid, (oid)(o),          \
-			           (BUN) ((dbl) cnt / (dbl) (p-r)	    \
-			                  * (dbl) (q-p) * 1.1 + 1024),	    \
-			           BATcapacity(bn) + q - p, BUN_NONE));	    \
-	} else {							    \
-		impsloop(CAND, TEST, dst[cnt] = (oid)(o));	            \
-	}								    \
+#define impsmask(CAND,TEST,B)						\
+do {									\
+	uint##B##_t *im = (uint##B##_t *) imprints->imps->base;		\
+	uint##B##_t mask = 0, innermask;				\
+	int j, lbin, hbin;						\
+	lbin = IMPSgetbin(ATOMstorage(b->ttype), imprints->bits,	\
+			imprints->bins->base, tl);			\
+	hbin = IMPSgetbin(ATOMstorage(b->ttype), imprints->bits,	\
+			imprints->bins->base, th);			\
+	for (j=lbin; j<=hbin; j++) mask = IMPSsetBit(B, mask, j);	\
+	innermask = mask;						\
+	if (!b->T->nonil || vl != minval)				\
+		innermask = IMPSunsetBit(B, innermask, lbin);		\
+	if (vh != maxval)						\
+		innermask = IMPSunsetBit(B, innermask, hbin);		\
+	if (anti) {							\
+		uint##B##_t tmp = mask;					\
+		mask = ~innermask;					\
+		innermask = ~tmp;					\
+	}								\
+									\
+	if (BATcapacity(bn) < maximum) {				\
+		impsloop(CAND, TEST,					\
+			 buninsfix(bn, T, dst, cnt, oid, (oid)(o),	\
+				   (BUN) ((dbl) cnt / (dbl) (p-r)	\
+					  * (dbl) (q-p) * 1.1 + 1024),	\
+				   BATcapacity(bn) + q - p, BUN_NONE));	\
+	} else {							\
+		impsloop(CAND, TEST, dst[cnt] = (oid)(o));		\
+	}								\
 } while (0)
 
 /* choose number of bits */
@@ -307,9 +307,9 @@ do {									\
 			CAND;						\
 			v = src[o-off];					\
 			buninsfix(bn, T, dst, cnt, oid, (oid)(o),	\
-			          (BUN) ((dbl) cnt / (dbl) (p-r)	\
-			                 * (dbl) (q-p) * 1.1 + 1024),	\
-			          BATcapacity(bn) + q - p, BUN_NONE);	\
+				  (BUN) ((dbl) cnt / (dbl) (p-r)	\
+					 * (dbl) (q-p) * 1.1 + 1024),	\
+				  BATcapacity(bn) + q - p, BUN_NONE);	\
 			cnt += (TEST);					\
 			p++;						\
 		}							\
@@ -381,55 +381,55 @@ if (use_imprints) {							     \
 }
 
 /* definition of type-specific core scan select function */
-#define scanfunc(NAME, TYPE, CAND, END)					     \
-static BUN								     \
-NAME##_##TYPE (BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,	     \
-               int li, int hi, int equi, int anti, int lval, int hval,	     \
-               BUN r, BUN q, BUN cnt, wrd off, oid *dst,		     \
-               const oid *candlist, BUN maximum, int use_imprints)	     \
-{									     \
-	TYPE vl = *(const TYPE *) tl;					     \
-	TYPE vh = *(const TYPE *) th;					     \
-	TYPE v;								     \
-	TYPE nil = TYPE##_nil;						     \
-	TYPE minval = MINVALUE##TYPE;					     \
-	TYPE maxval = MAXVALUE##TYPE;					     \
-	const TYPE *src = (const TYPE *) Tloc(b, 0);			     \
-	oid o;								     \
-	BUN w, p = r;							     \
-	BUN pr_off = 0;							     \
-	Imprints *imprints;						     \
-	(void) candlist;						     \
-	(void) li;							     \
-	(void) hi;							     \
-	(void) lval;							     \
-	(void) hval;							     \
-	if (use_imprints && VIEWtparent(b)) {				     \
-		BAT *parent = BATmirror(BATdescriptor(VIEWtparent(b)));	     \
-		imprints = parent->T->imprints;				     \
-		pr_off = (BUN) ((TYPE *)Tloc(b,0) -			     \
-		         (TYPE *)Tloc(parent,0)+BUNfirst(parent));	     \
-		BBPunfix(parent->batCacheid);				     \
-	} else {							     \
-		imprints= b->T->imprints;				     \
-	}								     \
-	END;								     \
-	if (equi) {							     \
-		choose(CAND, v == vl);					     \
-	} else if (anti) {						     \
-		if (b->T->nonil) {					     \
-			choose(CAND,(v <= vl || v >= vh));		     \
-		} else {						     \
-			choose(CAND,(v <= vl || v >= vh) && v != nil);	     \
-		}							     \
-	} else if (b->T->nonil && vl == minval) {			     \
-		choose(CAND,v <= vh);					     \
-	} else if (vh == maxval) {					     \
-		choose(CAND,v >= vl);					     \
-	} else {							     \
-		choose(CAND,v >= vl && v <= vh);			     \
-	}								     \
-	return cnt;							     \
+#define scanfunc(NAME, TYPE, CAND, END)					\
+static BUN								\
+NAME##_##TYPE (BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,	\
+	       int li, int hi, int equi, int anti, int lval, int hval,	\
+	       BUN r, BUN q, BUN cnt, wrd off, oid *dst,		\
+	       const oid *candlist, BUN maximum, int use_imprints)	\
+{									\
+	TYPE vl = *(const TYPE *) tl;					\
+	TYPE vh = *(const TYPE *) th;					\
+	TYPE v;								\
+	TYPE nil = TYPE##_nil;						\
+	TYPE minval = MINVALUE##TYPE;					\
+	TYPE maxval = MAXVALUE##TYPE;					\
+	const TYPE *src = (const TYPE *) Tloc(b, 0);			\
+	oid o;								\
+	BUN w, p = r;							\
+	BUN pr_off = 0;							\
+	Imprints *imprints;						\
+	(void) candlist;						\
+	(void) li;							\
+	(void) hi;							\
+	(void) lval;							\
+	(void) hval;							\
+	if (use_imprints && VIEWtparent(b)) {				\
+		BAT *parent = BATmirror(BATdescriptor(VIEWtparent(b)));	\
+		imprints = parent->T->imprints;				\
+		pr_off = (BUN) ((TYPE *)Tloc(b,0) -			\
+				(TYPE *)Tloc(parent,0)+BUNfirst(parent)); \
+		BBPunfix(parent->batCacheid);				\
+	} else {							\
+		imprints= b->T->imprints;				\
+	}								\
+	END;								\
+	if (equi) {							\
+		choose(CAND, v == vl);					\
+	} else if (anti) {						\
+		if (b->T->nonil) {					\
+			choose(CAND,(v <= vl || v >= vh));		\
+		} else {						\
+			choose(CAND,(v <= vl || v >= vh) && v != nil);	\
+		}							\
+	} else if (b->T->nonil && vl == minval) {			\
+		choose(CAND,v <= vh);					\
+	} else if (vh == maxval) {					\
+		choose(CAND,v >= vl);					\
+	} else {							\
+		choose(CAND,v >= vl && v <= vh);			\
+	}								\
+	return cnt;							\
 }
 
 static BUN
@@ -457,9 +457,9 @@ candscan_any (BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 			o = *candlist++;
 			v = BUNtail(bi,(BUN)(o-off));
 			buninsfix(bn, T, dst, cnt, oid, o,
-			          (BUN) ((dbl) cnt / (dbl) (p-r)
-			                 * (dbl) (q-p) * 1.1 + 1024),
-			          BATcapacity(bn) + q - p, BUN_NONE);
+				  (BUN) ((dbl) cnt / (dbl) (p-r)
+					 * (dbl) (q-p) * 1.1 + 1024),
+				  BATcapacity(bn) + q - p, BUN_NONE);
 			cnt += ((*cmp)(tl, v) == 0);
 			p++;
 		}
@@ -472,9 +472,9 @@ candscan_any (BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 			o = *candlist++;
 			v = BUNtail(bi,(BUN)(o-off));
 			buninsfix(bn, T, dst, cnt, oid, o,
-			          (BUN) ((dbl) cnt / (dbl) (p-r)
-			                 * (dbl) (q-p) * 1.1 + 1024),
-			          BATcapacity(bn) + q - p, BUN_NONE);
+				  (BUN) ((dbl) cnt / (dbl) (p-r)
+					 * (dbl) (q-p) * 1.1 + 1024),
+				  BATcapacity(bn) + q - p, BUN_NONE);
 			cnt += ((nil == NULL || (*cmp)(v, nil) != 0) &&
 			     ((lval &&
 			       ((c = (*cmp)(tl, v)) > 0 ||
@@ -493,9 +493,9 @@ candscan_any (BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 			o = *candlist++;
 			v = BUNtail(bi,(BUN)(o-off));
 			buninsfix(bn, T, dst, cnt, oid, o,
-			          (BUN) ((dbl) cnt / (dbl) (p-r)
-			                 * (dbl) (q-p) * 1.1 + 1024),
-			          BATcapacity(bn) + q - p, BUN_NONE);
+				  (BUN) ((dbl) cnt / (dbl) (p-r)
+					 * (dbl) (q-p) * 1.1 + 1024),
+				  BATcapacity(bn) + q - p, BUN_NONE);
 			cnt += ((nil == NULL || (*cmp)(v, nil) != 0) &&
 			     ((!lval ||
 			       (c = cmp(tl, v)) < 0 ||
@@ -536,9 +536,9 @@ fullscan_any(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 			o = (oid)(p + off);
 			v = BUNtail(bi,(BUN)(o-off));
 			buninsfix(bn, T, dst, cnt, oid, o,
-			          (BUN) ((dbl) cnt / (dbl) (p-r)
-			                 * (dbl) (q-p) * 1.1 + 1024),
-			          BATcapacity(bn) + q - p, BUN_NONE);
+				  (BUN) ((dbl) cnt / (dbl) (p-r)
+					 * (dbl) (q-p) * 1.1 + 1024),
+				  BATcapacity(bn) + q - p, BUN_NONE);
 			cnt += ((*cmp)(tl, v) == 0);
 			p++;
 		}
@@ -551,9 +551,9 @@ fullscan_any(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 			o = (oid)(p + off);
 			v = BUNtail(bi,(BUN)(o-off));
 			buninsfix(bn, T, dst, cnt, oid, o,
-			          (BUN) ((dbl) cnt / (dbl) (p-r)
-			                 * (dbl) (q-p) * 1.1 + 1024),
-			          BATcapacity(bn) + q - p, BUN_NONE);
+				  (BUN) ((dbl) cnt / (dbl) (p-r)
+					 * (dbl) (q-p) * 1.1 + 1024),
+				  BATcapacity(bn) + q - p, BUN_NONE);
 			cnt += ((nil == NULL || (*cmp)(v, nil) != 0) &&
 			     ((lval &&
 			       ((c = (*cmp)(tl, v)) > 0 ||
@@ -572,9 +572,9 @@ fullscan_any(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 			o = (oid)(p + off);
 			v = BUNtail(bi,(BUN)(o-off));
 			buninsfix(bn, T, dst, cnt, oid, o,
-			          (BUN) ((dbl) cnt / (dbl) (p-r)
-			                 * (dbl) (q-p) * 1.1 + 1024),
-			          BATcapacity(bn) + q - p, BUN_NONE);
+				  (BUN) ((dbl) cnt / (dbl) (p-r)
+					 * (dbl) (q-p) * 1.1 + 1024),
+				  BATcapacity(bn) + q - p, BUN_NONE);
 			cnt += ((nil == NULL || (*cmp)(v, nil) != 0) &&
 			     ((!lval ||
 			       (c = cmp(tl, v)) < 0 ||
@@ -945,7 +945,7 @@ BAT_scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 
 BAT *
 BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
-             int li, int hi, int anti)
+	     int li, int hi, int anti)
 {
 	int hval, lval, equi, t, lnil, hash;
 	bat parent;
@@ -1333,7 +1333,7 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 				smpl = BATslice(b, pos - delta, pos + delta);
 				if (smpl) {
 					slct = BATsubselect(smpl, NULL, tl,
-					                    th, li, hi, anti);
+							    th, li, hi, anti);
 					if (slct) {
 						smpl_cnt += BATcount(smpl);
 						slct_cnt += BATcount(slct);
@@ -1345,7 +1345,7 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 			if (smpl_cnt > 0 && slct_cnt > 0) {
 				/* linear extrapolation plus 10% margin */
 				estimate = (BUN) ((dbl) slct_cnt / (dbl) smpl_cnt 
-				                  * (dbl) BATcount(b) * 1.1);
+						  * (dbl) BATcount(b) * 1.1);
 			} else if (smpl_cnt > 0 && slct_cnt == 0) {
 				/* estimate low enough to trigger hash select */
 				estimate = (BATcount(b) / 100) - 1;

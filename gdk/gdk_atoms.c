@@ -1451,7 +1451,7 @@ strFromStr(const char *src, int *len, char **dst)
  */
 /*
 #define printable_chr(ch) ((ch)==0 || GDKisgraph((ch)) || GDKisspace((ch)) || \
-		         GDKisspecial((ch)) || GDKisupperl((ch)) || GDKislowerl((ch)))
+			   GDKisspecial((ch)) || GDKisupperl((ch)) || GDKislowerl((ch)))
 */
 /* all but control characters (in range 0 to 31) and DEL */
 #ifdef ASCII_CHR
@@ -1972,7 +1972,7 @@ atomDesc BATatoms[MAXATOMS] = {
 	 (int (*)(const void *, stream *, size_t)) ptrWrite, /* atomWrite */
 #if SIZEOF_VOID_P == SIZEOF_INT
 	 (int (*)(const void *, const void *)) intCmp,       /* atomCmp */
-	 (BUN (*)(const void *)) intHash,	             /* atomHash */
+	 (BUN (*)(const void *)) intHash,		     /* atomHash */
 #else /* SIZEOF_VOID_P == SIZEOF_LNG */
 	 (int (*)(const void *, const void *)) lngCmp,	     /* atomCmp */
 	 (BUN (*)(const void *)) lngHash,		     /* atomHash */

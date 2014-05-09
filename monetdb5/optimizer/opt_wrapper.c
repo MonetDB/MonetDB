@@ -131,10 +131,13 @@ str OPTwrapper (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	lng t,clk= GDKusec();
 	int i, actions = 0;
 	char optimizer[256];
-	InstrPtr q= copyInstruction(p);
+	InstrPtr q;
 
+	if( p == NULL)
+		throw(MAL, "opt_wrapper", "missing optimizer statement");
 	optimizerInit();
 	snprintf(optimizer,256,"%s", fcnnme = getFunctionId(p));
+	q= copyInstruction(p);
 	OPTIMIZERDEBUG 
 		mnstr_printf(cntxt->fdout,"=APPLY OPTIMIZER %s\n",fcnnme);
 	if( p && p->argc > 1 ){

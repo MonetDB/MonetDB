@@ -1208,7 +1208,13 @@ AGGRsubmin_val(bat *retval, bat *bid, bat *gid, bat *eid, bit *skip_nils)
 						  0, TYPE_oid, BATgroupmin, NULL, "aggr.submin")) != MAL_SUCCEED)
 		return res;
 	b = BATdescriptor(*bid);
+	if( b == NULL)
+		throw(MAL,"aggr.submax", INTERNAL_BAT_ACCESS);
 	a = BATdescriptor(ret);
+	if( a == NULL){
+		BBPreleaseref(b->batCacheid);
+		throw(MAL,"aggr.submax", INTERNAL_BAT_ACCESS);
+	}
 	r = BATproject(a, b);
 	BBPreleaseref(b->batCacheid);
 	BBPreleaseref(a->batCacheid);
@@ -1229,7 +1235,13 @@ AGGRsubmincand_val(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, bit *ski
 						  0, TYPE_oid, BATgroupmin, NULL, "aggr.submin")) != MAL_SUCCEED)
 		return res;
 	b = BATdescriptor(*bid);
+	if( b == NULL)
+		throw(MAL,"aggr.submax", INTERNAL_BAT_ACCESS);
 	a = BATdescriptor(ret);
+	if( a == NULL){
+		BBPreleaseref(b->batCacheid);
+		throw(MAL,"aggr.submax", INTERNAL_BAT_ACCESS);
+	}
 	r = BATproject(a, b);
 	BBPreleaseref(b->batCacheid);
 	BBPreleaseref(a->batCacheid);
@@ -1250,7 +1262,13 @@ AGGRsubmax_val(bat *retval, bat *bid, bat *gid, bat *eid, bit *skip_nils)
 						  0, TYPE_oid, BATgroupmax, NULL, "aggr.submax")) != MAL_SUCCEED)
 		return res;
 	b = BATdescriptor(*bid);
+	if( b == NULL)
+		throw(MAL,"aggr.submax", INTERNAL_BAT_ACCESS);
 	a = BATdescriptor(ret);
+	if( a == NULL){
+		BBPreleaseref(b->batCacheid);
+		throw(MAL,"aggr.submax", INTERNAL_BAT_ACCESS);
+	}
 	r = BATproject(a, b);
 	BBPreleaseref(b->batCacheid);
 	BBPreleaseref(a->batCacheid);
@@ -1271,7 +1289,13 @@ AGGRsubmaxcand_val(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, bit *ski
 						  0, TYPE_oid, BATgroupmax, NULL, "aggr.submax")) != MAL_SUCCEED)
 		return res;
 	b = BATdescriptor(*bid);
+	if ( b == NULL)
+		throw(MAL,"aggr.max",RUNTIME_OBJECT_MISSING);
 	a = BATdescriptor(ret);
+	if ( a == NULL){
+		BBPreleaseref(b->batCacheid);
+		throw(MAL,"aggr.max",RUNTIME_OBJECT_MISSING);
+	}	
 	r = BATproject(a, b);
 	BBPreleaseref(b->batCacheid);
 	BBPreleaseref(a->batCacheid);

@@ -436,6 +436,8 @@ pushNilType(MalBlkPtr mb, InstrPtr q, char *tpe)
 	if (q == NULL)
 		return NULL;
 	idx= getTypeIndex(tpe, -1, TYPE_any);
+	if( idx < 0)
+		return NULL;
 	cst.vtype=TYPE_void;
 	cst.val.oval= oid_nil;
 	cst.len = 0;

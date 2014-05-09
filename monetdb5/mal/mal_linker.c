@@ -78,9 +78,6 @@
 #ifdef HAVE_FCNTL_H
 #include <fcntl.h>
 #endif
-#ifdef HAVE_SYS_STAT_H
-#include <sys/stat.h>
-#endif
 #include <unistd.h>
 
 #if defined(_MSC_VER) && _MSC_VER >= 1400
@@ -156,12 +153,11 @@ getAddress(stream *out, str filename, str modnme, str fcnname, int silent)
 		if( adr != NULL)
 			return adr; /* found it */
 	}
-	if (!silent){
-		if ( dl)
-			dlclose(dl);
+	if (!silent)
 		showException(out, MAL,"MAL.getAddress", "address of '%s.%s' not found",
 			(modnme?modnme:"<unknown>"), fcnname);
-	}
+	if ( dl)
+		dlclose(dl);
 	return NULL;
 }
 /*
@@ -237,52 +233,39 @@ loadLibrary(str filename, int flag)
 
 	while (*mod_path) {
 		char *p;
-		struct stat stbuf;
 
-		if ((p = strchr(mod_path, PATH_SEP)) != NULL)
-			*p = '\0';
+		for (p = mod_path; *p && *p != PATH_SEP; p++)
+			;
+
 		/* try hardcoded SO_EXT if that is the same for modules */
 #ifdef _AIX
-		snprintf(nme, MAXPATHLEN, "%s%c%s_%s%s(%s_%s.0)",
-				mod_path, DIR_SEP, SO_PREFIX, s, SO_EXT, SO_PREFIX, s);
+		snprintf(nme, MAXPATHLEN, "%.*s%c%s_%s%s(%s_%s.0)",
+				 (int) (p - mod_path),
+				 mod_path, DIR_SEP, SO_PREFIX, s, SO_EXT, SO_PREFIX, s);
 #else
-		snprintf(nme, MAXPATHLEN, "%s%c%s_%s%s",
-				mod_path, DIR_SEP, SO_PREFIX, s, SO_EXT);
+		snprintf(nme, MAXPATHLEN, "%.*s%c%s_%s%s",
+				 (int) (p - mod_path),
+				 mod_path, DIR_SEP, SO_PREFIX, s, SO_EXT);
 #endif
-		if (stat(nme, &stbuf) != 0 || !S_ISREG(stbuf.st_mode))
-			*nme = '\0';
-		if (*nme == '\0' && strcmp(SO_EXT, ".so") != 0) {
+		handle = dlopen(nme, mode);
+		if (handle == NULL && strcmp(SO_EXT, ".so") != 0) {
 			/* try .so */
-			snprintf(nme, MAXPATHLEN, "%s%c%s_%s.so",
-					mod_path, DIR_SEP, SO_PREFIX, s);
-			if (stat(nme, &stbuf) != 0 || !S_ISREG(stbuf.st_mode))
-				*nme = '\0';
+			snprintf(nme, MAXPATHLEN, "%.*s%c%s_%s.so",
+					 (int) (p - mod_path),
+					 mod_path, DIR_SEP, SO_PREFIX, s);
+			handle = dlopen(nme, mode);
 		}
 #ifdef __APPLE__
-		if (*nme == '\0' && strcmp(SO_EXT, ".bundle") != 0) {
+		if (handle == NULL && strcmp(SO_EXT, ".bundle") != 0) {
 			/* try .bundle */
-			snprintf(nme, MAXPATHLEN, "%s%c%s_%s.bundle",
-					mod_path, DIR_SEP, SO_PREFIX, s);
-			if (stat(nme, &stbuf) != 0 || !S_ISREG(stbuf.st_mode))
-				*nme = '\0';
+			snprintf(nme, MAXPATHLEN, "%.*s%c%s_%s.bundle",
+					 (int) (p - mod_path),
+					 mod_path, DIR_SEP, SO_PREFIX, s);
+			handle = dlopen(nme, mode);
 		}
 #endif
 
-		/* restore path */
-		if (p != NULL)
-			*p = PATH_SEP;
-
-		if (*nme != '\0') {
-			handle = dlopen(nme, mode);
-			if (handle != NULL) {
-				break;
-			} else {
-				throw(LOADER, "loadLibrary",
-						"failed to load library: %s", dlerror());
-			}
-		}
-
-		if (p == NULL)
+		if (*p == 0 || handle != NULL)
 			break;
 		mod_path = p + 1;
 	}
@@ -299,7 +282,7 @@ loadLibrary(str filename, int flag)
 		showException(GDKout, MAL,"loadModule", "internal error, too many modules loaded");
 	} else {
 		filesLoaded[lastfile].filename = GDKstrdup(filename);
-		filesLoaded[lastfile].fullname = GDKstrdup(nme);
+		filesLoaded[lastfile].fullname = GDKstrdup(handle ? nme : "");
 		filesLoaded[lastfile].handle = handle;
 		lastfile ++;
 	}
