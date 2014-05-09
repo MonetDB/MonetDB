@@ -963,7 +963,9 @@ BATbloom(BAT *b) {
 	}
 
 	o = (bit *) Tloc(bn, BUNfirst(bn));
-	for (p = 0; (o[p] = 0) && (p < mn); p++);
+	for (p = 0; p < mn; p++) {
+		o[p] = 0;
+	}
 
 #define BLOOM_BUILD(TYPE)						\
 do {											\
