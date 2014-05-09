@@ -101,4 +101,7 @@ json_export str JSONprelude(int *ret);
 
 json_export str JSONrenderobject(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 json_export str JSONrenderarray(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+json_export str JSONgroupStr(str *ret, const bat *bid);
+json_export str JSONsubjsoncand(bat *retval, bat *bid, bat *gid, bat *eid, bat *id, bit *skip_nils);
+json_export str JSONsubjson(bat *retval, bat *bid, bat *gid, bat *eid, bit *skipnils);
 #endif /* JSON_H */

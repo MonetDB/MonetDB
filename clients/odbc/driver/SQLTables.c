@@ -95,6 +95,7 @@ SQLTables_(ODBCStmt *stmt,
 	   SQLCHAR *TableType, SQLSMALLINT NameLength4)
 {
 	RETCODE rc;
+	char *cat = NULL, *sch = NULL, *tab = NULL;
 
 	/* buffer for the constructed query to do meta data retrieval */
 	char *query = NULL;
@@ -166,45 +167,57 @@ SQLTables_(ODBCStmt *stmt,
 	} else {
 		/* no special case argument values */
 		char *query_end;
-		char *cat = NULL, *sch = NULL, *tab = NULL;
 
 		if (stmt->Dbc->sql_attr_metadata_id == SQL_FALSE) {
 			if (NameLength1 > 0) {
 				cat = ODBCParsePV("e", "value",
 						  (const char *) CatalogName,
 						  (size_t) NameLength1);
+				if (cat == NULL)
+					goto nomem;
 			}
 			if (NameLength2 > 0) {
 				sch = ODBCParsePV("s", "name",
 						  (const char *) SchemaName,
 						  (size_t) NameLength2);
+				if (sch == NULL)
+					goto nomem;
 			}
 			if (NameLength3 > 0) {
 				tab = ODBCParsePV("t", "name",
 						  (const char *) TableName,
 						  (size_t) NameLength3);
+				if (tab == NULL)
+					goto nomem;
 			}
 		} else {
 			if (NameLength1 > 0) {
 				cat = ODBCParseID("e", "value",
 						  (const char *) CatalogName,
 						  (size_t) NameLength1);
+				if (cat == NULL)
+					goto nomem;
 			}
 			if (NameLength2 > 0) {
 				sch = ODBCParseID("s", "name",
 						  (const char *) SchemaName,
 						  (size_t) NameLength2);
+				if (sch == NULL)
+					goto nomem;
 			}
 			if (NameLength3 > 0) {
 				tab = ODBCParseID("t", "name",
 						  (const char *) TableName,
 						  (size_t) NameLength3);
+				if (tab == NULL)
+					goto nomem;
 			}
 		}
 
 		/* construct the query now */
 		query = (char *) malloc(1000 + (cat ? strlen(cat) : 0) + (sch ? strlen(sch) : 0) + (tab ? strlen(tab) : 0) + ((NameLength4 + 1) / 5) * 67);
-		assert(query);
+		if (query == NULL)
+			goto nomem;
 		query_end = query;
 
 		strcpy(query_end,
@@ -273,7 +286,9 @@ SQLTables_(ODBCStmt *stmt,
 			query_end += strlen(query_end);
 			for (i = j = 0; i < NameLength4 + 1; i++) {
 				if (i == NameLength4 || TableType[i] == ',') {
-					if (j > 16 || j == 0) {
+					if (j > 0 && buf[j - 1] == ' ')
+						j--;
+					if (j >= (int) sizeof(buf) || j == 0) {
 						j = 0;
 						continue;
 					}
@@ -296,7 +311,10 @@ SQLTables_(ODBCStmt *stmt,
 					}
 					query_end += strlen(query_end);
 					j = 0;
-				} else if (j < 17 && TableType[i] != '\'' && (j > 0 || TableType[i] != ' '))
+				} else if (j < (int) sizeof(buf) &&
+					   TableType[i] != '\'' &&
+					   (TableType[i] != ' ' ||
+					    (j > 0 && buf[j - 1] != ' ')))
 					buf[j++] = TableType[i];
 			}
 			if (query_end[-1] == '(') {
@@ -324,6 +342,19 @@ SQLTables_(ODBCStmt *stmt,
 	free(query);
 
 	return rc;
+
+  nomem:
+	if (cat)
+		free(cat);
+	if (sch)
+		free(sch);
+	if (tab)
+		free(tab);
+	if (query)
+		free(query);
+	/* Memory allocation error */
+	addStmtError(stmt, "HY001", NULL, 0);
+	return SQL_ERROR;
 }
 
 SQLRETURN SQL_API

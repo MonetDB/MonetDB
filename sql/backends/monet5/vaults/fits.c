@@ -585,7 +585,7 @@ str FITSdir(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 		s = stmt;
 
-		while ((ep = readdir(dp)) != NULL) {
+		while ((ep = readdir(dp)) != NULL && !msg) {
 			snprintf(fname, BUFSIZ, "%s%s", dir, ep->d_name);
 			status = 0;
 			fits_open_file(&fptr, fname, READONLY, &status);
@@ -596,7 +596,7 @@ str FITSdir(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		}
 		(void)closedir(dp);
-	}else
+	} else
 		msg = createException(MAL, "listdir", "Couldn't open the directory");
 
 	return msg;

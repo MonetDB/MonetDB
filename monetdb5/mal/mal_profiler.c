@@ -754,7 +754,7 @@ setFilter(Module cntxt, str mod, str fcn)
 	profileAll = strcmp(mod, "*") == 0 && strcmp(fcn, "*") == 0;
 
 	MT_lock_set(&mal_profileLock, "setFilter");
-	if (mod && fcn && topFilter < 32) {
+	if (topFilter < 32) {
 		modFilter[topFilter] = putName(mod, strlen(mod));
 		fcnFilter[topFilter++] = putName(fcn, strlen(fcn));
 	}
@@ -1309,10 +1309,13 @@ static int getCPULoad(char cpuload[BUFSIZ]){
 			if ( *s == ' ') {
 				s++;
 				cpu = 255; // the cpu totals stored here
-			}  else 
+			}  else {
 				cpu = atoi(s);
+				if (cpu < 0 || cpu > 255)
+					cpu = 255;
+			}
 			s= strchr(s,' ');
-			if ( s== 0) goto skip;
+			if ( s== 0 || cpu < 0 || cpu > 255) goto skip;
 			
 			while( *s && isspace((int)*s)) s++;
 			i= sscanf(s,LLFMT" "LLFMT" "LLFMT" "LLFMT" "LLFMT,  &user, &nice, &system, &idle, &iowait);
@@ -1327,7 +1330,7 @@ static int getCPULoad(char cpuload[BUFSIZ]){
 			corestat[cpu].idle = idle;
 			corestat[cpu].iowait = iowait;
 		} 
-		skip: while( *s && *s != '\n') s++;
+		skip: if(s) while( *s && *s != '\n') s++;
 	}
 
 	s= cpuload;

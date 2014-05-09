@@ -134,15 +134,19 @@ memoitem_create( list *memo, sql_allocator *sa, char *lname, char *rname, int le
 static lng
 rel_getcount(mvc *sql, sql_rel *rel)
 {
+	lng cnt = 1;
+
 	if (!sql->session->tr)
-		return 0;
+		return 1;
 
 	switch(rel->op) {
 	case op_basetable: {
 		sql_table *t = rel->l;
 
-		if (isTable(t))
-			return store_funcs.count_col(sql->session->tr, t->columns.set->h->data, 1);
+		if (isTable(t)) 
+			cnt = store_funcs.count_col(sql->session->tr, t->columns.set->h->data, 1);
+		if (cnt)
+			return cnt;
 	}	break;
 	case op_select:
 	case op_project:
@@ -150,9 +154,9 @@ rel_getcount(mvc *sql, sql_rel *rel)
 			return rel_getcount(sql, rel->l);
 		return 1;
 	default:
-		return 0;
+		return 1;
 	}
-	return 0;
+	return 1;
 }
 
 static dbl

@@ -137,14 +137,17 @@ struct FtpFile {
 
 static size_t my_fwrite(void *buffer, size_t size, size_t nmemb, void *stream)
 {
-  struct FtpFile *out=(struct FtpFile *)stream;
-  if(out && !out->stream) {
-    /* open file for writing */
-    out->stream=fopen(out->filename, "wb");
-    if(!out->stream)
-      return -1; /* failure, can't open file to write */
-  }
-  return fwrite(buffer, size, nmemb, out->stream);
+	struct FtpFile *out=(struct FtpFile *)stream;
+
+	if (!out)
+		return -1;
+	if (!out->stream) {
+		/* open file for writing */
+		out->stream=fopen(out->filename, "wb");
+		if (!out->stream)
+			return -1; /* failure, can't open file to write */
+	}
+	return fwrite(buffer, size, nmemb, out->stream);
 }
 #endif
 
@@ -169,10 +172,8 @@ VLTimport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	snprintf(path,BUFSIZ,"%s%c%s", vaultpath, DIR_SEP, *target);
 	/*mnstr_printf(GDKout,"#vault.import: %s\n",path);*/
-	if (strcmp(path, *source) == 0) {
-		MTIMEcurrent_timestamp(ret);
-		return MAL_SUCCEED;
-	}
+	if (strcmp(path, *source) == 0) 
+		return MTIMEcurrent_timestamp(ret);
 	/* create the subdir */
 	GDKcreatedir(path);
 	curl = curl_easy_init();
@@ -193,6 +194,7 @@ VLTimport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		/* Define our callback to get called when there's data to be written */
 		curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, my_fwrite);
 		/* Set a pointer to our struct to pass to the callback */
+		/* coverity[bad_sizeof] */
 		curl_easy_setopt(curl, CURLOPT_WRITEDATA, &ftpfile);
 
 		/* Switch on full protocol/debug output */
@@ -204,7 +206,7 @@ VLTimport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		curl_easy_cleanup(curl);
 
 		if(CURLE_OK != res)
-			msg= createException(MAL,"vault.import", "curl [%d] %s '%s' -> '%s'\n", res, curl_easy_strerror(res), *source,path);
+			msg = createException(MAL,"vault.import", "curl [%d] %s '%s' -> '%s'\n", res, curl_easy_strerror(res), *source,path);
 	}
 
 	if(ftpfile.stream)
@@ -216,12 +218,11 @@ VLTimport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) target;
 	msg = createException(MAL,"vault.import", "No curl library");
 #endif
-	if ( msg)
+	if (msg)
 		return msg;
-	MTIMEcurrent_timestamp(ret);
 	(void) mb;
 	(void) cntxt;
-	return msg;
+	return MTIMEcurrent_timestamp(ret);
 }
 
 

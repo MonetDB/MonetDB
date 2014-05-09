@@ -94,62 +94,86 @@ SQLForeignKeys_(ODBCStmt *stmt,
 			pcat = ODBCParseOA("e", "value",
 					   (const char *) PKCatalogName,
 					   (size_t) NameLength1);
+			if (pcat == NULL)
+				goto nomem;
 		}
 		if (NameLength2 > 0) {
 			psch = ODBCParseOA("pks", "name",
 					   (const char *) PKSchemaName,
 					   (size_t) NameLength2);
+			if (psch == NULL)
+				goto nomem;
 		}
 		if (NameLength3 > 0) {
 			ptab = ODBCParseOA("pkt", "name",
 					   (const char *) PKTableName,
 					   (size_t) NameLength3);
+			if (ptab == NULL)
+				goto nomem;
 		}
 		if (NameLength4 > 0) {
 			fcat = ODBCParseOA("e", "value",
 					   (const char *) FKCatalogName,
 					   (size_t) NameLength4);
+			if (fcat == NULL)
+				goto nomem;
 		}
 		if (NameLength5 > 0) {
 			fsch = ODBCParseOA("fks", "name",
 					   (const char *) FKSchemaName,
 					   (size_t) NameLength5);
+			if (fsch == NULL)
+				goto nomem;
 		}
 		if (NameLength6 > 0) {
 			ftab = ODBCParseOA("fkt", "name",
 					   (const char *) FKTableName,
 					   (size_t) NameLength6);
+			if (ftab == NULL)
+				goto nomem;
 		}
 	} else {
 		if (NameLength1 > 0) {
 			pcat = ODBCParseID("e", "value",
 					   (const char *) PKCatalogName,
 					   (size_t) NameLength1);
+			if (pcat == NULL)
+				goto nomem;
 		}
 		if (NameLength2 > 0) {
 			psch = ODBCParseID("pks", "name",
 					   (const char *) PKSchemaName,
 					   (size_t) NameLength2);
+			if (psch == NULL)
+				goto nomem;
 		}
 		if (NameLength3 > 0) {
 			ptab = ODBCParseID("pkt", "name",
 					   (const char *) PKTableName,
 					   (size_t) NameLength3);
+			if (ptab == NULL)
+				goto nomem;
 		}
 		if (NameLength4 > 0) {
 			fcat = ODBCParseID("e", "value",
 					   (const char *) FKCatalogName,
 					   (size_t) NameLength4);
+			if (fcat == NULL)
+				goto nomem;
 		}
 		if (NameLength5 > 0) {
 			fsch = ODBCParseID("fks", "name",
 					   (const char *) FKSchemaName,
 					   (size_t) NameLength5);
+			if (fsch == NULL)
+				goto nomem;
 		}
 		if (NameLength6 > 0) {
 			ftab = ODBCParseID("fkt", "name",
 					   (const char *) FKTableName,
 					   (size_t) NameLength6);
+			if (ftab == NULL)
+				goto nomem;
 		}
 	}
 
@@ -159,7 +183,8 @@ SQLForeignKeys_(ODBCStmt *stmt,
 		       (psch ? strlen(psch) : 0) + (ptab ? strlen(ptab) : 0) +
 		       (fcat ? strlen(fcat) : 0) + (fsch ? strlen(fsch) : 0) +
 		       (ftab ? strlen(ftab) : 0));
-	assert(query);
+	if (query == NULL)
+		goto nomem;
 	query_end = query;
 
 	/* SQLForeignKeys returns a table with the following columns:
@@ -267,6 +292,25 @@ SQLForeignKeys_(ODBCStmt *stmt,
 	free(query);
 
 	return rc;
+
+  nomem:
+	if (pcat)
+		free(pcat);
+	if (psch)
+		free(psch);
+	if (ptab)
+		free(ptab);
+	if (fcat)
+		free(fcat);
+	if (fsch)
+		free(fsch);
+	if (ftab)
+		free(ftab);
+	if (query)
+		free(query);
+	/* Memory allocation error */
+	addStmtError(stmt, "HY001", NULL, 0);
+	return SQL_ERROR;
 }
 
 SQLRETURN SQL_API

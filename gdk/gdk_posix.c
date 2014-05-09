@@ -27,7 +27,7 @@
  * emulation of Posix functionality on the WIN32 native platform.
  */
 #include "monetdb_config.h"
-#include "gdk.h"        /* includes gdk_posix.h */
+#include "gdk.h"		/* includes gdk_posix.h */
 #include "gdk_private.h"
 #include "mutils.h"
 #include <stdio.h>
@@ -393,6 +393,7 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 	assert(mode & MMAP_WRITABLE);
 
 	if (*new_size < old_size) {
+#ifndef STATIC_CODE_ANALYSIS	/* hide this from static code analyzer */
 		/* shrink */
 		if (munmap((char *) old_address + *new_size,
 			   old_size - *new_size) < 0) {
@@ -404,6 +405,7 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 #ifdef MMAP_DEBUG
 		fprintf(stderr, "MT_mremap(%s,"PTRFMT","SZFMT","SZFMT") -> shrinking\n", path?path:"NULL", PTRFMTCAST old_address, old_size, *new_size);
 #endif
+#endif	/* !STATIC_CODE_ANALYSIS */
 		return old_address;
 	}
 	if (*new_size == old_size) {
@@ -992,17 +994,25 @@ win_unlink(const char *pathname)
 
 #undef rename
 int
-win_rename(const char *old, const char *new)
+win_rename(const char *old, const char *dst)
 {
-	int ret = rename(old, new);
+	int ret;
+
+	ret = rename(old, dst);
+	if (ret == 0 || (ret < 0 && errno == ENOENT))
+		return ret;
+	if (ret < 0 && errno == EEXIST) {
+		(void) win_unlink(dst);
+		ret = rename(old, dst);
+	}
 
 	if (ret < 0 && errno != ENOENT) {
 		/* it could be the <expletive deleted> indexing
 		 * service which prevents us from doing what we have a
 		 * right to do, so try again (once) */
-		IODEBUG THRprintf(GDKstdout, "#retry rename %s %s\n", old, new);
+		IODEBUG THRprintf(GDKstdout, "#retry rename %s %s\n", old, dst);
 		MT_sleep_ms(100);	/* wait a little */
-		ret = rename(old, new);
+		ret = rename(old, dst);
 	}
 	return ret;
 }
@@ -1117,6 +1127,7 @@ win_errmap_t win_errmap[] = {
 	{ERROR_DEVICE_IN_USE, "ERROR_DEVICE_IN_USE", EAGAIN},
 	{ERROR_INVALID_AT_INTERRUPT_TIME, "ERROR_INVALID_AT_INTERRUPT_TIME", EINTR},
 	{ERROR_IO_DEVICE, "ERROR_IO_DEVICE", EIO},
+	{ERROR_INVALID_ADDRESS, "ERROR_INVALID_ADDRESS", EFAULT},
 };
 
 #define GDK_WIN_ERRNO_TLS 13
@@ -1134,6 +1145,7 @@ win_errno(void)
 		*result = 0;
 		TlsSetValue(GDK_WIN_ERRNO_TLS, result);
 	}
+	*result = ENOSYS;	/* fallback error */
 	for (i = 0; win_errmap[i].w != 0; ++i) {
 		if (err == win_errmap[i].w) {
 			*result = win_errmap[i].e;

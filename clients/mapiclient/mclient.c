@@ -669,8 +669,7 @@ CSVrenderer(MapiHdl hdl)
 			s = mapi_get_name(hdl, i);
 			if (s == NULL)
 				s = "";
-			mnstr_printf(toConsole, "%s%s",
-				     i == 0 ? "" : sep, s ? s : "");
+			mnstr_printf(toConsole, "%s%s", i == 0 ? "" : sep, s);
 		}
 		mnstr_printf(toConsole, "\n");
 	}
@@ -1621,6 +1620,7 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 					      "execute prepared statement "
 					      "using: EXEC %d(...)\n",
 					      mapi_get_tableid(hdl));
+			/* fall through */
 		case Q_TABLE:
 			timerHumanStop();
 			break;
@@ -1727,7 +1727,7 @@ doRequest(Mapi mid, const char *buf)
 	return 0;
 }
 
-#define CHECK_RESULT(mid, hdl, buf, break_or_continue,freebuf)			\
+#define CHECK_RESULT(mid, hdl, buf, break_or_continue, freebuf)		\
 		switch (mapi_error(mid)) {				\
 		case MOK:						\
 			/* everything A OK */				\
@@ -1762,7 +1762,8 @@ doRequest(Mapi mid, const char *buf)
 				mapi_explain(mid, stderr);		\
 			errseen = 1;					\
 			timerEnd();					\
-			if( freebuf) free(freebuf);					\
+			if (freebuf)					\
+				free(freebuf);				\
 			return 1;					\
 		}
 
