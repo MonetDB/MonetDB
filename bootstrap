@@ -29,6 +29,14 @@ type -P glibtoolize > /dev/null \
 	&& libtoolize=glibtoolize \
 	|| libtoolize=libtoolize
 
+# cope with systems where aclocal is known as aclocal-1.10 (and
+# automake as automake-1.10), e.g. OpenIndiana
+if ! type -P aclocal > /dev/null && type -P aclocal-1.10 > /dev/null; then
+    amv=-1.10
+else
+    amv=
+fi
+
 _m4_extra_dirs=
 if [[ -n ${M4DIRS} ]] ; then
 	for d in ${M4DIRS} ; do
@@ -52,9 +60,9 @@ while read f; do [ -x $f.in ] && echo "AC_CONFIG_FILES([$f], [chmod +x $f])"; do
 sed '1,/^AC_CONFIG_FILES/d' configure.ag
 ) > configure.ac &&
 $libtoolize -c -f  &&
-aclocal ${_m4_extra_dirs} &&
+aclocal$amv ${_m4_extra_dirs} &&
 autoheader  &&
-automake --add-missing --copy --foreign  &&
+automake$amv --add-missing --copy --foreign  &&
 autoconf
 if [ -f buildtools/conf/install-sh -a ! -x buildtools/conf/install-sh ]; then
     chmod +x buildtools/conf/install-sh
