@@ -39,7 +39,7 @@ jaql_import void GDKfree(const char *);
 %error-verbose
 
 %parse-param { struct _jc *j }
-%lex-param { void *scanner }
+%lex-param { void *jscanner }
 
 %union {
 	long long int  j_number;
@@ -82,6 +82,7 @@ jaql_import void GDKfree(const char *);
 
 %{
 #define YYLEX_PARAM j->scanner
+#define jscanner j->scanner
 
 int jaqllex(YYSTYPE* lvalp, void *scanner);
 
