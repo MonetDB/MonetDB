@@ -25,7 +25,7 @@
 //#define VLT_DEBUG 
 
 #ifdef WIN32
-#ifndef LIBMSEED
+#ifndef LIBGENERATOR
 #define vault_export extern __declspec(dllimport)
 #else
 #define vault_export extern __declspec(dllexport)
