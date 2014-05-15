@@ -78,11 +78,14 @@ typedef struct logger {
 				   commit). */
 } logger;
 
-/* holds logger settings*/
+/* Holds logger settings
+ * if shared_logdir and shared_drift_threshold are set,
+ * as well as if readonly = 1, the instance presumed to be in slave mode*/
 typedef struct logger_settings {
 	char *logdir;	/* server (the regular) write-ahead log directory */
 	char *shared_logdir;	/* shared write-ahead log directory */
 	int	shared_drift_threshold; /* shared write-ahead log drift threshold */
+	int	readonly; /* flag if the db is in read-only mode */
 } logger_settings;
 
 #define BATSIZE 0

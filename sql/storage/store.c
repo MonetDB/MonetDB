@@ -1288,7 +1288,7 @@ store_schema_number(void)
 }
 
 int
-store_init(int debug, store_type store, int readonly, int singleuser, logger_settings *log_settings, backend_stack stk)
+store_init(int debug, store_type store, int singleuser, logger_settings *log_settings, backend_stack stk)
 {
 	sqlid id = 0;
 	lng lng_store_oid;
@@ -1334,12 +1334,12 @@ store_init(int debug, store_type store, int readonly, int singleuser, logger_set
 	gtrans = tr = create_trans(sa, stk);
 	active_transactions = sa_list(sa); 
 
-	store_readonly = readonly;
+	store_readonly = log_settings->readonly;
 	store_singleuser = singleuser;
 
 	if (logger_funcs.log_isnew()) {
 		/* cannot initialize database in readonly mode */
-		if (readonly)
+		if (log_settings->readonly)
 			return -1;
 		tr = sql_trans_create(stk, NULL, NULL);
 	} else {
