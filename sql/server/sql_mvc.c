@@ -39,17 +39,25 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 	int first = 0;
 
 	logger_settings *log_settings = (struct logger_settings *) GDKmalloc(sizeof(struct logger_settings));
+	/* Set the default WAL directory. "sql_logs" by default */
 	log_settings->logdir = "sql_logs";
-	/* get and pass on the shared WAL directory location, if set */
-	log_settings->shared_wal_dir = GDKgetenv("gdk_shared_wal_dir");
-	/* get and pass on the shared WAL drift threshold, if set */
-	log_settings->shared_wal_threshold = strtol(GDKgetenv("gdk_shared_wal_threshold"), NULL, 10);
+	/* Get and pass on the WAL directory location, if set */
+	if (GDKgetenv("gdk_logdir") != NULL) {
+		log_settings->logdir = GDKgetenv("gdk_logdir");
+	}
+	/* Get and pass on the shared WAL directory location, if set */
+	log_settings->shared_logdir = GDKgetenv("gdk_shared_logdir");
+	/* Get and pass on the shared WAL directory location, if set.
+	 * -1 by default, meaning it should be ignored, since it is not set */
+	log_settings->shared_drift_threshold = GDKgetenv_int("gdk_shared_drift_threshold", -1);
 
 	mvc_debug = debug&4;
 	if (mvc_debug) {
 		fprintf(stderr, "#mvc_init logdir %s\n", log_settings->logdir);
-		fprintf(stderr, "#mvc_init shared_wal_dir %s\n", log_settings->shared_wal_dir);
-		fprintf(stderr, "#mvc_init shared_wal_threshold %d\n", log_settings->shared_wal_threshold);
+		if (log_settings->shared_logdir != NULL) {
+			fprintf(stderr, "#mvc_init shared_logdir %s\n", log_settings->shared_logdir);
+		}
+		fprintf(stderr, "#mvc_init shared_drift_threshold %d\n", log_settings->shared_drift_threshold);
 	}
 	keyword_init();
 	scanner_init_keywords();

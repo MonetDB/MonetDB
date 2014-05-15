@@ -81,8 +81,8 @@ typedef struct logger {
 /* holds logger settings*/
 typedef struct logger_settings {
 	char *logdir;	/* server (the regular) write-ahead log directory */
-	char *shared_wal_dir;	/* shared write-ahead log directory */
-	int	shared_wal_threshold; /* shared write-ahead log drift threshold */
+	char *shared_logdir;	/* shared write-ahead log directory */
+	int	shared_drift_threshold; /* shared write-ahead log drift threshold */
 } logger_settings;
 
 #define BATSIZE 0
