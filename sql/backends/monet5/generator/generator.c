@@ -150,92 +150,120 @@ VLTgenerator_noop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-/* 
+/*
  * The base line consists of materializing the generator iterator value
  */
-#define VLTmaterialize(TPE) {\
-			TPE *v,f,l,s;\
-			f = *(TPE*) getArgReference(stk,pci, 1);\
-			l = *(TPE*) getArgReference(stk,pci, 2);\
-			s = pci->argc == 3 ? 1:  *(TPE*) getArgReference(stk,pci, 3);\
-			bn = BATnew(TYPE_void, TYPE_##TPE, (l>f ? (l-f+abs(s))/abs(s):(f-l+abs(s))/abs(s)));\
-			if( bn == NULL)\
-				throw(MAL,"generator.table",MAL_MALLOC_FAIL);\
-			v = (TPE*) Tloc(bn,BUNfirst(bn));\
-			if( f < l && s > 0)\
-				for(; f<l; f+= s){\
-					*v++ = f;\
-					c++;\
-				}\
-			else\
-			if( f > l && s < 0)\
-				for(; f>l; f+= s){\
-					*v++ = f;\
-					c++;\
-				}\
-			else\
-				throw(MAL,"generator.table","illegal generator arguments");\
-		}
+#define VLTmaterialize(TPE)						\
+	do {								\
+		TPE *v, f, l, s;					\
+		f = *(TPE*) getArgReference(stk, pci, 1);		\
+		l = *(TPE*) getArgReference(stk, pci, 2);		\
+		s = pci->argc == 3 ? 1 : *(TPE*) getArgReference(stk, pci, 3); \
+		if (s == 0 || (s > 0 && f > l) || (s < 0 && f < l))	\
+			throw(MAL, "generator.table",			\
+			      "illegal generator arguments");		\
+		n = (lng) ((l - f) / s);				\
+		assert(n >= 0);						\
+		if (n * s + f != l)					\
+			n++;						\
+		bn = BATnew(TYPE_void, TYPE_##TPE, (BUN) n);		\
+		if (bn == NULL)						\
+			throw(MAL, "generator.table", MAL_MALLOC_FAIL);	\
+		v = (TPE*) Tloc(bn, BUNfirst(bn));			\
+		for (c = 0; c < n; c++)					\
+			*v++ = (TPE) (f + c * s);			\
+		bn->tsorted = s > 0 || n <= 1;				\
+		bn->trevsorted = s < 0 || n <= 1;			\
+	} while (0)
 
 str
 VLTgenerator_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	BUN c= 0;
-	BAT *bn= 0;
-	str msg= MAL_SUCCEED;
+	lng c, n;
+	BAT *bn;
+	str msg;
 	int tpe;
 	(void) cntxt;
 
-	if ( (msg= VLTgenerator_noop(cntxt,mb,stk,pci)) )
+	if ((msg = VLTgenerator_noop(cntxt, mb, stk, pci)) != MAL_SUCCEED)
 		return msg;
-	if( VLTgenerator_optimizer(cntxt,mb) == 0 )
+	if (VLTgenerator_optimizer(cntxt, mb) == 0)
 		return MAL_SUCCEED;
 
-	switch( tpe = getArgType(mb,pci,1)){
-	case TYPE_bte: VLTmaterialize(bte); break;
-	case TYPE_sht: VLTmaterialize(sht); break;
-	case TYPE_int: VLTmaterialize(int); break;
-	case TYPE_lng: VLTmaterialize(lng); break;
-	case TYPE_flt: VLTmaterialize(flt); break;
-	case TYPE_dbl: VLTmaterialize(dbl); break;
+	tpe = getArgType(mb, pci, 1);
+	switch (tpe) {
+	case TYPE_bte:
+		VLTmaterialize(bte);
+		break;
+	case TYPE_sht:
+		VLTmaterialize(sht);
+		break;
+	case TYPE_int:
+		VLTmaterialize(int);
+		break;
+	case TYPE_wrd:
+		VLTmaterialize(wrd);
+		break;
+	case TYPE_lng:
+		VLTmaterialize(lng);
+		break;
+	case TYPE_flt:
+		VLTmaterialize(flt);
+		break;
+	case TYPE_dbl:
+		VLTmaterialize(dbl);
+		break;
 	default:
-		if ( tpe == TYPE_timestamp){
+		if (tpe == TYPE_timestamp) {
 			timestamp *v,f,l;
 			lng s;
-			f = *(timestamp*) getArgReference(stk,pci, 1);
-			l = *(timestamp*) getArgReference(stk,pci, 2);
-			s =  *(lng *) getArgReference(stk,pci, 3) ;
-			bn = BATnew(TYPE_void, tpe, (l.days > f.days ? ((l.days -f.days)*24*60*60 +abs(s))/abs(s):((f.days -l.days)*24*60*60 +abs(s))/abs(s)));
-			if( bn == NULL)
-				throw(MAL,"generator.table",MAL_MALLOC_FAIL);
-			v = (timestamp*) Tloc(bn,BUNfirst(bn));
-			if( (f.days < l.days || (f.days = l.days && f.msecs <l.msecs)) && s > 0){
-				for(; f.days<l.days || (f.days == l.days && f.msecs <l.msecs); ){
-					*v++ = f;
-					if( (msg=MTIMEtimestamp_add(&f, &f, &s)) != MAL_SUCCEED)
-						return msg;
-					c++;
+			ValRecord ret;
+			if (VARcalccmp(&ret, &stk->stk[pci->argv[1]],
+				       &stk->stk[pci->argv[2]]) == GDK_FAIL)
+				throw(MAL, "generator.table",
+				      "illegal generator arguments");
+			f = *(timestamp *) getArgReference(stk, pci, 1);
+			l = *(timestamp *) getArgReference(stk, pci, 2);
+			s = *(lng *) getArgReference(stk, pci, 3);
+			if (s == 0 ||
+			    (s > 0 && ret.val.btval > 0) ||
+			    (s < 0 && ret.val.btval < 0))
+				throw(MAL, "generator.table",
+				      "illegal generator arguments");
+			/* casting one value to lng causes the whole
+			 * computation to be done as lng, reducing the
+			 * risk of overflow */
+			n = (BUN) ((((lng) l.days - f.days) * 24*60*60*1000 + l.msecs - f.msecs) / s);
+			bn = BATnew(TYPE_void, tpe, n + 1);
+			if (bn == NULL)
+				throw(MAL, "generator.table", MAL_MALLOC_FAIL);
+			v = (timestamp *) Tloc(bn, BUNfirst(bn));
+			for (c = 0; c < n; c++) {
+				*v++ = f;
+				msg = MTIMEtimestamp_add(&f, &f, &s);
+				if (msg != MAL_SUCCEED) {
+					BBPreclaim(bn);
+					return msg;
 				}
-			} else
-			if( f.days > l.days && s < 0)
-				for(; f.days>l.days || (f.days == l.days && f.msecs > l.msecs); ){
-					*v++ = f;
-					if( (msg = MTIMEtimestamp_add(&f, &f, &s)) != MAL_SUCCEED)
-						return msg;
-					c++;
-				}
-			else
-				throw(MAL,"generator.table","illegal generator arguments");
+			}
+			if (f.days != l.days || f.msecs != l.msecs) {
+				*v++ = f;
+				n++;
+			}
+			bn->tsorted = s > 0 || n <= 1;
+			bn->trevsorted = s < 0 || n <= 1;
+		} else {
+			throw(MAL, "generator.table", "unsupported type");
 		}
+		break;
 	}
-	if( bn){
-		BATsetcount(bn,c);
-        bn->hdense = 1;
-        bn->hseqbase = 0;
-        bn->hkey = 1;
-		BATderiveProps(bn,0);
-		BBPkeepref(*(int*)getArgReference(stk,pci,0)= bn->batCacheid);
-	}
+	BATsetcount(bn, c);
+	BATseqbase(bn, 0);
+	bn->tkey = 1;
+	bn->T->nil = 0;
+	bn->T->nonil = 1;
+	*(bat*) getArgReference(stk, pci, 0) = bn->batCacheid;
+	BBPkeepref(bn->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -251,139 +279,209 @@ findLastAssign(MalBlkPtr mb, InstrPtr pci, int target)
 	InstrPtr q, p = NULL;
 	int i;
 
-	for( i= 1; i< mb->stop; i++){
-		q= getInstrPtr(mb,i);
-		if( q->argv[0] == target)
+	for (i = 1; i < mb->stop; i++) {
+		q = getInstrPtr(mb, i);
+		if (q->argv[0] == target)
 			p = q;
-		if( q == pci)
+		if (q == pci)
 			return p;
 	}
 	return p;
 }
 
-#define VLTsubselect(TPE) {\
-	TPE f,l,s, low,hgh;\
-	oid *v;\
-	f = *(TPE*) getArgReference(stk,p, 1);\
-	l = *(TPE*) getArgReference(stk,p, 2);\
-	s = pci->argc == 3 ? 1:  *(TPE*) getArgReference(stk,p, 3);\
-	low = *(TPE*) getArgReference(stk,pci, i);\
-	hgh = *(TPE*) getArgReference(stk,pci, i+1);\
-	bn = BATnew(TYPE_void, TYPE_oid, (l>f ? (l-f+abs(s))/abs(s):(f-l+abs(s))/abs(s)));\
-	if( bn == NULL)\
-		throw(MAL,"generator.subselect",MAL_MALLOC_FAIL);\
-	if( low == TPE##_nil ) low = li?f:f+1;\
-	if( hgh == TPE##_nil ) hgh = hi?l+1:l;\
-	v = (oid*) Tloc(bn,BUNfirst(bn));\
-	if( f < l && s > 0){\
-		for(; f<l; f+= s, o++)\
-		if( ((low == TPE##_nil || f >= low) && (f <= hgh || hgh == TPE##_nil)) || anti){\
-			*v++ = o;\
-			c++;\
-		} \
-	} else\
-	if( f > l && s < 0){\
-		for(; f>l; f+= s, o++)\
-		if( ((low == TPE##_nil || f >= low) && (f <= hgh || hgh == TPE##_nil)) || anti){\
-			*v++ = o;\
-			c++;\
-		} \
-	} else\
-		throw(MAL,"generator.subselect","illegal generator arguments");\
-}
+#define calculate_range(TPE, TPE2)					\
+	do {								\
+		TPE f, l, s, low, hgh;					\
+									\
+		f = * (TPE *) getArgReference(stk, p, 1);		\
+		l = * (TPE *) getArgReference(stk, p, 2);		\
+		s = p->argc == 3 ? 1 : * (TPE *) getArgReference(stk, p, 3); \
+		if (s == 0 || (s > 0 && f > l) || (s < 0 && f < l))	\
+			throw(MAL, "generator.subselect",		\
+			      "illegal generator arguments");		\
+		n = (lng) (((TPE2) l - (TPE2) f) / (TPE2) s);		\
+		assert(n >= 0);						\
+		if (n * s + f != l)					\
+			n++;						\
+									\
+		low = * (TPE *) getArgReference(stk, pci, i);		\
+		hgh = * (TPE *) getArgReference(stk, pci, i + 1);	\
+									\
+		if (low == TPE##_nil && hgh == TPE##_nil) {		\
+			if (li && hi && !anti) {			\
+				/* match NILs (of which there aren't */	\
+				/* any) */				\
+				o1 = o2 = 0;				\
+			} else {					\
+				/* match all non-NIL values, */		\
+				/* i.e. everything */			\
+				o1 = 0;					\
+				o2 = n;					\
+			}						\
+		} else if (s > 0) {					\
+			if (low == TPE##_nil || low < f)		\
+				o1 = 0;					\
+			else {						\
+				o1 = (lng) (((TPE2) low - (TPE2) f) / (TPE2) s); \
+				if (f + o1 * s < low ||			\
+				    (!li && f + o1 * s == low))		\
+					o1++;				\
+			}						\
+			if (hgh == TPE##_nil)				\
+				o2 = n;					\
+			else if (hgh < f)				\
+				o2 = 0;					\
+			else {						\
+				o2 = (lng) (((TPE2) hgh - (TPE2) f) / (TPE2) s); \
+				if ((hi && f + o2 * s == hgh) ||	\
+				    f + o2 * s < hgh)			\
+					o2++;				\
+			}						\
+		} else {						\
+			if (low == TPE##_nil)				\
+				o2 = n;					\
+			else if (low > f)				\
+				o2 = 0;					\
+			else {						\
+				o2 = (lng) (((TPE2) low - (TPE2) f) / (TPE2) s); \
+				if ((li && f + o2 * s == low) ||	\
+				    f + o2 * s > low)			\
+					o2++;				\
+			}						\
+			if (hgh == TPE##_nil || hgh > f)		\
+				o1 = 0;					\
+			else {						\
+				o1 = (lng) (((TPE2) hgh - (TPE2) f) / (TPE2) s); \
+				if ((!hi && f + o1 * s == hgh) ||	\
+				    f + o1 * s > hgh)			\
+					o1++;				\
+			}						\
+		}							\
+	} while (0)
 
-str VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+str
+VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i, hi,li, anti, cndid= 0, c= 0;
-	BAT *cnd= 0, *bn= 0;
+	int li, hi, anti, i;
+	lng o1, o2;
+	lng n;
+	BAT *bn, *cand = NULL;
 	InstrPtr p;
-	oid o = 0;
-	int tpe;
-	str msg= MAL_SUCCEED;
 
 	(void) cntxt;
-	p = findLastAssign(mb,pci,pci->argv[1]);
-	if( p == NULL)
-		throw(MAL,"generator.subselect","Could not locate definition for object");
+	p = findLastAssign(mb, pci, pci->argv[1]);
+	if (p == NULL)
+		throw(MAL, "generator.subselect",
+		      "Could not locate definition for object");
 
-	if( pci->argc == 8){ // candidate list included
-		cndid = *(int*) getArgReference(stk,pci, 2);
-		if( cndid){
-			cnd = BATdescriptor(cndid);
-			if( cnd == NULL)
-				throw(MAL,"generator.subselect",RUNTIME_OBJECT_MISSING);
-		} else throw(MAL,"generator.subselect","candidate list not implemented");
+	if (pci->argc == 8) {	/* candidate list included */
+		bat candid = *(bat*) getArgReference(stk, pci, 2);
+		if (candid) {
+			cand = BATdescriptor(candid);
+			if (cand == NULL)
+				throw(MAL, "generator.subselect",
+				      RUNTIME_OBJECT_MISSING);
+		}
 		i = 3;
-	} else i = 2;
+	} else
+		i = 2;
 
-	li = *(bit*) getArgReference(stk,pci, i+2);
-	hi = *(bit*) getArgReference(stk,pci, i+3);
-	anti = *(bit*) getArgReference(stk,pci, i+4);
+	li = * (bit *) getArgReference(stk, pci, i + 2);
+	hi = * (bit *) getArgReference(stk, pci, i + 3);
+	anti = * (bit *) getArgReference(stk, pci, i + 4);
 
-	switch( tpe = getArgType(mb,pci,i)){
-	case TYPE_bte: VLTsubselect(bte); break;
-	case TYPE_sht: VLTsubselect(sht); break;
-	case TYPE_int: VLTsubselect(int); break;
-	case TYPE_lng: VLTsubselect(lng); break;
-	case TYPE_flt: VLTsubselect(flt); break;
-	case TYPE_dbl: VLTsubselect(dbl); break;
+	switch (getArgType(mb, pci, i)) {
+	case TYPE_bte: calculate_range(bte, int); break;
+	case TYPE_sht: calculate_range(sht, int); break;
+	case TYPE_int: calculate_range(int, lng); break;
+	case TYPE_wrd: calculate_range(wrd, lng); break;
+	case TYPE_lng: calculate_range(lng, lng); break;
+	case TYPE_flt: calculate_range(flt, dbl); break;
+	case TYPE_dbl: calculate_range(dbl, dbl); break;
 	default:
-		if ( tpe == TYPE_timestamp){
-			timestamp f,l, low,hgh;
-			lng s;
-			oid *v;
-
-			f = *(timestamp*) getArgReference(stk,p, 1);
-			l = *(timestamp*) getArgReference(stk,p, 2);
-			s =  *(lng*) getArgReference(stk,p, 3);
-			low = *(timestamp*) getArgReference(stk,pci, i);
-			hgh = *(timestamp*) getArgReference(stk,pci, i+1);
-			bn = BATnew(TYPE_void, TYPE_oid, (l.days > f.days ? ((l.days -f.days)*24*60*60 +abs(s))/abs(s):((f.days -l.days)*24*60*60 +abs(s))/abs(s)));
-			if( bn == NULL)
-				throw(MAL,"generator.subselect",MAL_MALLOC_FAIL);
-
-			if( timestamp_isnil(low) ){
-				low = f;
-				if( li)f.msecs++;
+		/* timestamp to be implemented */
+		throw(MAL, "generator.subselect", "unsupported type");
+	}
+	if (o1 > n)
+		o1 = n;
+	if (o2 > n)
+		o2 = n;
+	assert(o1 >= 0);
+	assert(o1 <= o2);
+	assert(o2 - o1 <= n);
+	if (anti && o1 == o2) {
+		o1 = 0;
+		o2 = n;
+		anti = 0;
+	}
+	if (cand) {
+		oid o;
+		o = (oid) o1;
+		o1 = (lng) SORTfndfirst(cand, &o);
+		o = (oid) o2;
+		o2 = (lng) SORTfndfirst(cand, &o);
+		n = (lng) BATcount(cand);
+		if (anti && o1 < o2) {
+			bn = BATnew(TYPE_void, TYPE_oid, (BUN) (n - (o2 - o1)));
+			if (bn) {
+				oid *op = (oid *) Tloc(bn, BUNfirst(bn));
+				const oid *cp = (const oid *) Tloc(cand, BUNfirst(cand));
+				BATsetcount(bn, (BUN) (n - (o2 - o1)));
+				BATseqbase(bn, 0);
+				bn->T->nil = 0;
+				bn->T->nonil = 1;
+				bn->tsorted = 1;
+				bn->trevsorted = BATcount(bn) <= 1;
+				bn->tkey = 1;
+				for (o = 0; o < (oid) o1; o++)
+					*op++ = cp[o];
+				for (o = (oid) o2; o < (oid) n; o++)
+					*op++ = cp[o];
 			}
-			if( timestamp_isnil(hgh)){
-				hgh = l;
-				if( hi) l.msecs++;
+		} else {
+			if (anti) {
+				o1 = 0;
+				o2 = n;
 			}
-			v = (oid*) Tloc(bn,BUNfirst(bn));
+			bn = BATslice(cand, (BUN) o1, (BUN) o2);
+		}
+		BBPreleaseref(cand->batCacheid);
+		if (bn == NULL)
+			throw(MAL, "generator.subselect",
+			      MAL_MALLOC_FAIL);
+	} else {
+		if (anti) {
+			lng o;
+			oid *op;
 
-			if( (f.days < l.days || (f.days = l.days && f.msecs <l.msecs)) && s > 0){
-				for(; f.days<l.days || (f.days == l.days && f.msecs <l.msecs); o++)
-				if( ((timestamp_isnil(low) || (f.days > low.days || (f.days == l.days && f.msecs >= l.msecs)) ) && ((f.days<hgh.days|| (f.days== hgh.days && f.msecs < hgh.msecs))  || timestamp_isnil(hgh))) || anti){
-					*v++ = o;
-					if( (msg = MTIMEtimestamp_add(&f, &f, &s)) != MAL_SUCCEED)
-						return msg;
-					c++;
-				} 
-			} else
-			if( (f.days > l.days || (f.days = l.days && f.msecs >= l.msecs)) && s < 0){
-				for(; f.days>l.days || (f.days == l.days && f.msecs > l.msecs);o++ )
-				if( ((timestamp_isnil(low) || (f.days > low.days || (f.days == l.days && f.msecs >= l.msecs)) ) && ((f.days<hgh.days|| (f.days== hgh.days && f.msecs < hgh.msecs))  || timestamp_isnil(hgh))) || anti){
-					*v++ = o;
-					if( (msg = MTIMEtimestamp_add(&f, &f, &s)) != MAL_SUCCEED)
-						return msg;
-					c++;
-				} 
-			} else
-				throw(MAL,"generator.subselect","illegal generator arguments");
+			bn = BATnew(TYPE_void, TYPE_oid, (BUN) (n - (o2 - o1)));
+			if (bn == NULL)
+				throw(MAL, "generator.subselect",
+				      MAL_MALLOC_FAIL);
+			BATsetcount(bn, (BUN) (n - (o2 - o1)));
+			BATseqbase(bn, 0);
+			op = (oid *) Tloc(bn, BUNfirst(bn));
+			for (o = 0; o < o1; o++)
+				*op++ = (oid) o;
+			for (o = o2; o < n; o++)
+				*op++ = (oid) o;
+			bn->T->nil = 0;
+			bn->T->nonil = 1;
+			bn->tsorted = 1;
+			bn->trevsorted = BATcount(bn) <= 1;
+			bn->tkey = 1;
+		} else {
+			bn = BATnew(TYPE_void, TYPE_void, (BUN) (o2 - o1));
+			if (bn == NULL)
+				throw(MAL, "generator.subselect",
+				      MAL_MALLOC_FAIL);
+			BATsetcount(bn, o2 - o1);
+			BATseqbase(bn, 0);
+			BATseqbase(BATmirror(bn), o1);
 		}
 	}
-
-	if( cnd)
-		BBPreleaseref(cndid);
-	if( bn){
-		BATsetcount(bn,c);
-		bn->hdense = 1;
-		bn->hseqbase = 0;
-		bn->hkey = 1;
-		BATderiveProps(bn,0);
-		BBPkeepref(*(int*)getArgReference(stk,pci,0)= bn->batCacheid);
-	}
+	* (bat *) getArgReference(stk, pci, 0) = bn->batCacheid;
+	BBPkeepref(bn->batCacheid);
 	return MAL_SUCCEED;
 }
 
