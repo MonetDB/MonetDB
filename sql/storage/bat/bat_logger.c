@@ -275,11 +275,11 @@ bl_postversion( void *lg)
 }
 
 static int 
-bl_create(int debug, char *logdir, int cat_version)
+bl_create(int debug, logger_settings *log_settings, int cat_version)
 {
 	if (bat_logger)
 		return LOG_ERR;
-	bat_logger = logger_create(debug, "sql", logdir, cat_version, bl_preversion, bl_postversion);
+	bat_logger = logger_create(debug, "sql", log_settings, cat_version, bl_preversion, bl_postversion);
 	if (bat_logger)
 		return LOG_OK;
 	return LOG_ERR;

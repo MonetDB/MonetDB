@@ -29,6 +29,7 @@
 #include "sql_semantic.h"
 #include "sql_privileges.h"
 #include "rel_select.h"
+#include "gdk_logger.h"
 
 static int mvc_debug = 0;
 
@@ -36,15 +37,25 @@ int
 mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 {
 	int first = 0;
-	char *logdir = "sql_logs";
+
+	logger_settings *log_settings = (struct logger_settings *) GDKmalloc(sizeof(struct logger_settings));
+	log_settings->logdir = "sql_logs";
+	/* get and pass on the shared WAL directory location, if set */
+	log_settings->shared_wal_dir = GDKgetenv("gdk_shared_wal_dir");
+	/* get and pass on the shared WAL drift threshold, if set */
+	log_settings->shared_wal_threshold = GDKgetenv("gdk_shared_wal_threshold");
 
 	mvc_debug = debug&4;
-	if (mvc_debug)
-		fprintf(stderr, "#mvc_init logdir %s\n", logdir);
+	if (mvc_debug) {
+		fprintf(stderr, "#mvc_init logdir %s\n", log_settings->logdir);
+		fprintf(stderr, "#mvc_init shared_wal_dir %s\n", log_settings->shared_wal_dir);
+		fprintf(stderr, "#mvc_init shared_wal_threshold %s\n", log_settings->shared_wal_threshold);
+	}
 	keyword_init();
 	scanner_init_keywords();
 
-	if ((first = store_init(debug, store, ro, su, logdir, stk)) < 0) {
+
+	if ((first = store_init(debug, store, ro, su, log_settings, stk)) < 0) {
 		fprintf(stderr, "!mvc_init: unable to create system tables\n");
 		return -1;
 	}
@@ -1550,4 +1561,3 @@ mvc_copy_idx(mvc *m, sql_table *t, sql_idx *i)
 {
 	return sql_trans_copy_idx(m->session->tr, t, i);
 }
-

@@ -1288,7 +1288,7 @@ store_schema_number(void)
 }
 
 int
-store_init(int debug, store_type store, int readonly, int singleuser, char *logdir, backend_stack stk)
+store_init(int debug, store_type store, int readonly, int singleuser, logger_settings *log_settings, backend_stack stk)
 {
 	sqlid id = 0;
 	lng lng_store_oid;
@@ -1316,7 +1316,7 @@ store_init(int debug, store_type store, int readonly, int singleuser, char *logd
 	}
 	active_store_type = store;
 	if (!logger_funcs.create ||
-	    logger_funcs.create(debug, logdir, CATALOG_VERSION*v) == LOG_ERR) {
+	    logger_funcs.create(debug, log_settings, CATALOG_VERSION*v) == LOG_ERR) {
 		MT_lock_unset(&bs_lock, "store_init");
 		return -1;
 	}

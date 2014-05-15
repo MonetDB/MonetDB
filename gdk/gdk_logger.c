@@ -1039,7 +1039,7 @@ logger_fatal(const char *format, const char *arg1, const char *arg2, const char 
 }
 
 static logger *
-logger_new(int debug, char *fn, char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp)
+logger_new(int debug, char *fn, logger_settings *log_settings, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp)
 {
 	int id = LOG_SID;
 	logger *lg = (struct logger *) GDKmalloc(sizeof(struct logger));
@@ -1067,11 +1067,11 @@ logger_new(int debug, char *fn, char *logdir, int version, preversionfix_fptr pr
 
 	/* if the path is absolute, it means someone is still calling
 	 * logger_create/logger_new "manually" */
-	assert(!MT_path_absolute(logdir));
+	assert(!MT_path_absolute(log_settings->logdir));
 
 	snprintf(filename, BUFSIZ, "%s%c%s%c%s%c",
 		 GDKgetenv("gdk_dbpath"), DIR_SEP,
-		 logdir, DIR_SEP, fn, DIR_SEP);
+		 log_settings->logdir, DIR_SEP, fn, DIR_SEP);
 	if ((lg->fn = GDKstrdup(fn)) == NULL ||
 	    (lg->dir = GDKstrdup(filename)) == NULL) {
 		fprintf(stderr, "!ERROR: logger_new: strdup failed\n");
@@ -1399,7 +1399,7 @@ logger_new(int debug, char *fn, char *logdir, int version, preversionfix_fptr pr
 		snprintf(cvfile, sizeof(cvfile),
 			 "%s%c%s%c%s%cconvert-32-64",
 			 GDKgetenv("gdk_dbpath"),
-			 DIR_SEP, logdir, DIR_SEP, fn, DIR_SEP);
+			 DIR_SEP, log_settings->logdir, DIR_SEP, fn, DIR_SEP);
 		snprintf(bak, sizeof(bak), "%s_32-64-convert", fn);
 		{
 			FILE *fp1;
@@ -1477,9 +1477,9 @@ logger_new(int debug, char *fn, char *logdir, int version, preversionfix_fptr pr
 }
 
 logger *
-logger_create(int debug, char *fn, char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp)
+logger_create(int debug, char *fn, logger_settings *log_settings, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp)
 {
-	logger *lg = logger_new(debug, fn, logdir, version, prefuncp, postfuncp);
+	logger *lg = logger_new(debug, fn, log_settings, version, prefuncp, postfuncp);
 
 	if (!lg)
 		return NULL;
