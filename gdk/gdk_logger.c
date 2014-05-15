@@ -1065,10 +1065,6 @@ logger_new(int debug, char *fn, logger_settings *log_settings, int version, prev
 	lg->read32bitoid = 0;
 #endif
 
-	/* if the path is absolute, it means someone is still calling
-	 * logger_create/logger_new "manually" */
-	assert(!MT_path_absolute(log_settings->logdir));
-
 	snprintf(filename, BUFSIZ, "%s%c%s%c%s%c",
 		 GDKgetenv("gdk_dbpath"), DIR_SEP,
 		 log_settings->logdir, DIR_SEP, fn, DIR_SEP);
