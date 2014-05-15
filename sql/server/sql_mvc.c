@@ -43,13 +43,13 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 	/* get and pass on the shared WAL directory location, if set */
 	log_settings->shared_wal_dir = GDKgetenv("gdk_shared_wal_dir");
 	/* get and pass on the shared WAL drift threshold, if set */
-	log_settings->shared_wal_threshold = GDKgetenv("gdk_shared_wal_threshold");
+	log_settings->shared_wal_threshold = strtol(GDKgetenv("gdk_shared_wal_threshold"), NULL, 10);
 
 	mvc_debug = debug&4;
 	if (mvc_debug) {
 		fprintf(stderr, "#mvc_init logdir %s\n", log_settings->logdir);
 		fprintf(stderr, "#mvc_init shared_wal_dir %s\n", log_settings->shared_wal_dir);
-		fprintf(stderr, "#mvc_init shared_wal_threshold %s\n", log_settings->shared_wal_threshold);
+		fprintf(stderr, "#mvc_init shared_wal_threshold %d\n", log_settings->shared_wal_threshold);
 	}
 	keyword_init();
 	scanner_init_keywords();

@@ -21,6 +21,7 @@
 #define SQL_STORAGE_H
 
 #include "sql_catalog.h"
+#include "gdk_logger.h"
 
 #define COLSIZE	1024
 
@@ -246,7 +247,7 @@ typedef struct store_functions {
 
 extern store_functions store_funcs;
 
-typedef int (*logger_create_fptr) (int debug, char *logdir, int catalog_version);
+typedef int (*logger_create_fptr) (int debug, logger_settings *log_settings, int catalog_version);
 
 typedef void (*logger_destroy_fptr) (void);
 typedef int (*logger_restart_fptr) (void);
@@ -289,7 +290,7 @@ extern void res_tables_destroy(res_table *results);
 extern res_table *res_tables_find(res_table *results, int res_id);
 
 extern int
- store_init(int debug, store_type store, int readonly, int singleuser, char *logdir, backend_stack stk);
+ store_init(int debug, store_type store, int readonly, int singleuser, logger_settings *log_settings, backend_stack stk);
 extern void store_exit(void);
 
 extern void store_apply_deltas(void);

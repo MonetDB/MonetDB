@@ -91,11 +91,11 @@ str
 logger_create_wrap( logger *L, int *debug, str *fn, str *dirname, int *version)
 {
 	logger_settings *log_settings = (struct logger_settings *) GDKmalloc(sizeof(struct logger_settings));
-	log_settings->logdir = dirname;
+	log_settings->logdir = *dirname;
 	/* get and pass on the shared WAL directory location, if set */
 	log_settings->shared_wal_dir = GDKgetenv("gdk_shared_wal_dir");
 	/* get and pass on the shared WAL drift threshold, if set */
-	log_settings->shared_wal_threshold = GDKgetenv("gdk_shared_wal_threshold");
+	log_settings->shared_wal_threshold = strtol(GDKgetenv("gdk_shared_wal_threshold"), NULL, 10);
 	logger *l = logger_create(*debug, *fn, log_settings, *version, NULL, NULL);
 
 	if (l) {
