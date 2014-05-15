@@ -1065,9 +1065,15 @@ logger_new(int debug, char *fn, logger_settings *log_settings, int version, prev
 	lg->read32bitoid = 0;
 #endif
 
-	snprintf(filename, BUFSIZ, "%s%c%s%c%s%c",
-		 GDKgetenv("gdk_dbpath"), DIR_SEP,
-		 log_settings->logdir, DIR_SEP, fn, DIR_SEP);
+	/* if the logdir path is absolute, do not prefix it with the gdk_dbpath */
+	if (MT_path_absolute(log_settings->logdir)) {
+		snprintf(filename, BUFSIZ, "%s%c%s%c%s%c",
+				log_settings->logdir, DIR_SEP, fn, DIR_SEP);
+	} else {
+		snprintf(filename, BUFSIZ, "%s%c%s%c%s%c",
+				GDKgetenv("gdk_dbpath"), DIR_SEP,
+				log_settings->logdir, DIR_SEP, fn, DIR_SEP);
+	}
 	if ((lg->fn = GDKstrdup(fn)) == NULL ||
 	    (lg->dir = GDKstrdup(filename)) == NULL) {
 		fprintf(stderr, "!ERROR: logger_new: strdup failed\n");
