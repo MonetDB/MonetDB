@@ -17,7 +17,7 @@ geom-null-tests
 normalized
 binary
 
-conformance_load
+conformance_load	//PointFromText, LineFromText, PolyFromTextMPointFromText, MLineFromText, MPolyFromText
 
 #query the geometry_columns table 
 T1

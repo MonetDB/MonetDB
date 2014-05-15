@@ -41,7 +41,43 @@ CREATE FUNCTION mbr (g Geometry) RETURNS mbr external name geom.mbr;
 
 CREATE FUNCTION mbroverlaps(a mbr, b mbr) RETURNS BOOLEAN external name geom."mbroverlaps";
 
--- The srid in the *FromText Functions is currently not used
+-- Geometry Constructors
+--CREATE FUNCTION ST_BdPolyFromText(wkt string, srid SMALLINT) RETURNS Geometry external name geom."BdPolyFromText"; 
+--CREATE FUNCTION ST_BdMPolyFromText(wkt string, srid SMALLINT) RETURNS Geometry external name geom."BdMPolyFromText";
+--CREATE FUNCTION ST_GeogFromText(wkt string) RETURNS Geometry external name geom."GeogFromText";
+--CREATE FUNCTION ST_GeographyFromText(wkt string) RETURNS Geometry external name geom."GeographyFromText";
+--CREATE FUNCTION ST_GeogFromWKB
+--CREATE FUNCTION ST_GeomCollFromText
+--CREATE FUNCTION ST_GeomFromWKB
+--CREATE FUNCTION ST_GeomFromEWKT
+--CREATE FUNCTION ST_GeometryFromText
+--CREATE FUNCTION ST_GeomFromGML
+--CREATE FUNCTION ST_GeomFromGeoJSON
+--CREATE FUNCTION ST_GeomFromKML
+--CREATE FUNCTION ST_GMLToSQL
+--CREATE FUNCTION ST_GeomFromText
+--CREATE FUNCTION ST_GeomFromWKB
+--CREATE FUNCTION ST_LineFromMultiPoint
+--CREATE FUNCTION ST_LineFromText
+--CREATE FUNCTION ST_LineFromWKB
+--CREATE FUNCTION ST_LinestringFromWKB
+--CREATE FUNCTION ST_MakeBox2D
+--CREATE FUNCTION ST_3DMakeBox
+--CREATE FUNCTION ST_MakeLine
+--CREATE FUNCTION ST_MakeEnvelope
+--CREATE FUNCTION ST_MakePolygon
+--CREATE FUNCTION ST_MakePoint
+--CREATE FUNCTION ST_MakePointM
+--CREATE FUNCTION ST_MLineFromText
+--CREATE FUNCTION ST_MPointFromText
+--CREATE FUNCTION ST_MPolyFromText
+--CREATE FUNCTION ST_Point
+--CREATE FUNCTION ST_PointFromText
+--CREATE FUNCTION ST_PointFromWKB
+--CREATE FUNCTION ST_Polygon
+--CREATE FUNCTION ST_PolygonFromText
+--CREATE FUNCTION ST_WKBToSQL
+--CREATE FUNCTION ST_WKTToSQL
 CREATE FUNCTION GeomFromText(wkt string, srid SMALLINT) RETURNS Geometry external name geom."GeomFromText";
 CREATE FUNCTION PointFromText(wkt string, srid SMALLINT) RETURNS Point external name geom."PointFromText";
 CREATE FUNCTION LineFromText(wkt string, srid SMALLINT) RETURNS LineString external name geom."LineFromText";
@@ -104,3 +140,59 @@ CREATE FUNCTION EndPoint(g Geometry) RETURNS Geometry external name geom."EndPoi
 CREATE FUNCTION NumPoints(g Geometry) RETURNS integer external name geom."NumPoints";
 CREATE FUNCTION PointN(g Geometry, n SMALLINT) RETURNS Geometry external name geom."PointN";
 
+-- create metadata tables
+-- CREATE SPATIAL_REF_SYS METADATA TABLE
+--CREATE TABLE spatial_ref_sys (
+--        srid INTEGER NOT NULL PRIMARY KEY,
+--        auth_name CHARACTER LARGE OBJECT,
+--        auth_srid INTEGER,
+--        srtext CHARACTER VARYING(2048));
+
+-- CREATE GEOMETRY_COLUMNS METADATA TABLE
+f_table_catalog ==> 
+f_table_schema ==> 
+f_table_name ==>
+f_geometry_column ==> 
+coord_dimension ==>
+srid ==>
+
+create view geometry_columns as
+	select e.value as f_table_catalog,
+		s.name as f_table_schema,
+		y.f_table_name, y.f_geometry_column
+	from schemas s, environment e, (
+		select t.schema_id,
+			t.name as f_table_name,
+			x.name as f_geometry_column
+		from tables t, (
+			select name, table_id
+			from columns
+			where type in (
+					select distinct sqlname
+					from types
+					where systemname='wkb'
+					)
+			) as x
+		where t.id=x.table_id
+		) y
+	where y.schema_id=s.id and e.name='gdk_dbname';
+--CREATE TABLE geometry_columns (
+--	f_catalog_name CHARACTER LARGE OBJECT,
+--        f_table_schema CHARACTER LARGE OBJECT,
+--        f_table_name CHARACTER LARGE OBJECT,
+--        f_geometry_column CHARACTER LARGE OBJECT,
+--	g_catalog_name CHARACTER LARGE OBJECT,
+--        g_table_schema CHARACTER LARGE OBJECT,
+--        g_table_name CHARACTER LARGE OBJECT,
+--        storage_type INTEGER,
+--        geometry_type INTEGER,
+--        coord_dimension INTEGER,
+--        max_ppr INTEGER,
+--        srid INTEGER REFERENCES spatial_ref_sys,
+--        CONSTRAINT gc_pk PRIMARY KEY (f_table_schema, f_table_name, f_geometry_column));
+
+--INSERT INTO spatial_ref_sys VALUES (101, 'POSC', 32214, 'PROJCS["UTM_ZONE_14N", GEOGCS["World Geodetic System 72",
+--DATUM["WGS_72", ELLIPSOID["NWL_10D", 6378135, 298.26]], PRIMEM["Greenwich", 0], UNIT["Meter", 1.0]],
+--PROJECTION["Transverse_Mercator"], PARAMETER["False_Easting", 500000.0], PARAMETER["False_Northing", 0.0],
+--PARAMETER["Central_Meridian", -99.0], PARAMETER["Scale_Factor", 0.9996], PARAMETER["Latitude_of_origin", 0.0],
+--UNIT["Meter", 1.0]]');

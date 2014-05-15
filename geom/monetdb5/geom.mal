@@ -142,6 +142,23 @@ command Boundary(w:wkb) :wkb
 address wkbBoundary
 comment "Returns the closure of the combinatorial boundary of this Geometry.";
 
+command StartPoint(w:wkb) :wkb
+address wkbStartPoint
+comment "Returns the start point of this Geometry. Argument w should be Linestring.";
+
+command EndPoint(w:wkb) :wkb
+address wkbEndPoint
+comment "Returns the end point of this Geometry. Argument w should be Linestring.";
+
+command NumPoints(w:wkb) :int
+address wkbNumPoints
+comment "The number of points in the Geometry. Argument w should be Linestring.";
+
+command PointN(w:wkb, n:sht) :wkb
+address wkbPointN
+comment "Returns the n-th point of the Geometry. Argument w should be Linestring.";
+
+
 # @+ ogc spatial relation methods
 
 command Equals(a:wkb, b:wkb) :bit
@@ -206,6 +223,10 @@ command Area(g:wkb) :dbl
 address wkbArea
 comment "Returns the area of the geometry.";
 
+command Centroid(w:wkb) :wkb
+address wkbCentroid
+comment "Returns the centroid of this Geometry.";
+
 command Length(g:wkb) :dbl
 address wkbLength
 comment "Returns the length of the geometry.";
@@ -239,25 +260,6 @@ address wkbSymDifference
 comment "Returns a geometry that represents the point set semmetric difference of Geometry a with b.";
 
 
-command Centroid(w:wkb) :wkb
-address wkbCentroid
-comment "Returns the centroid of this Geometry.";
-
-command StartPoint(w:wkb) :wkb
-address wkbStartPoint
-comment "Returns the start point of this Geometry. Argument w should be Linestring.";
-
-command EndPoint(w:wkb) :wkb
-address wkbEndPoint
-comment "Returns the end point of this Geometry. Argument w should be Linestring.";
-
-command NumPoints(w:wkb) :int
-address wkbNumPoints
-comment "The number of points in the Geometry. Argument w should be Linestring.";
-
-command PointN(w:wkb, n:sht) :wkb
-address wkbPointN
-comment "Returns the n-th point of the Geometry. Argument w should be Linestring.";
 
 
 command prelude():void	address geom_prelude;
