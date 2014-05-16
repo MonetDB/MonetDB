@@ -14,3 +14,16 @@ select * from generate_series(0,10,2) X, tmp Y where X.value = Y.i and value <5;
 select * from generate_series(0,10,2) as  X, tmp Y where X.value = Y.i and value <7 and value >3;
 
 drop table tmp;
+
+create table tmp2(i tinyint);
+insert into tmp2 values(8),(9),(10),(11),(12);
+select * from tmp2;
+
+select * from generate_series(0,10,2) X, tmp2 Y where X.value = Y.i;
+select * from generate_series(0,10,2) X, tmp2 Y where Y.i = X.value;
+
+select * from generate_series(0,10,2) X, tmp2 Y where X.value = Y.i and value >5;
+
+select * from generate_series(0,10,2) as  X, tmp2 Y where X.value = Y.i and value <12 and value >3;
+
+drop table tmp2;
