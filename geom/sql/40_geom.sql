@@ -37,64 +37,84 @@ CREATE TYPE mbr EXTERNAL NAME mbr;
 -- Envelope():Geometry
 -- as that returns Geometry objects, and we prefer the explicit mbr's
 -- minimum bounding rectangle (mbr)
-CREATE FUNCTION mbr (g Geometry) RETURNS mbr external name geom.mbr;
+--//CREATE FUNCTION mbr (g Geometry) RETURNS mbr external name geom.mbr;
 
-CREATE FUNCTION mbroverlaps(a mbr, b mbr) RETURNS BOOLEAN external name geom."mbroverlaps";
+--//CREATE FUNCTION mbroverlaps(a mbr, b mbr) RETURNS BOOLEAN external name geom."mbroverlaps";
 
 -- Geometry Constructors
+CREATE FUNCTION ST_PointFromText(wkt string, srid SMALLINT) RETURNS Geometry external name geom."PointFromText"; 
+CREATE FUNCTION ST_LineFromText(wkt string, srid SMALLINT) RETURNS Geometry external name geom."LineFromText";
+CREATE FUNCTION ST_PolygonFromText(wkt string, srid SMALLINT) RETURNS Geometry external name geom."PolygonFromText";
+CREATE FUNCTION ST_MPointFromText(wkt string, srid SMALLINT) RETURNS Geometry external name geom."MPointFromText";
+CREATE FUNCTION ST_MLineFromText(wkt string, srid SMALLINT) RETURNS Geometry external name geom."MLineFromText";
+CREATE FUNCTION ST_MPolyFromText(wkt string, srid SMALLINT) RETURNS Geometry external name geom."MPolyFromText";
+CREATE FUNCTION ST_GeomCollFromText(wkt string, srid SMALLINT) RETURNS Geometry external name geom."GeomCollFromText";
+
 --CREATE FUNCTION ST_BdPolyFromText(wkt string, srid SMALLINT) RETURNS Geometry external name geom."BdPolyFromText"; 
 --CREATE FUNCTION ST_BdMPolyFromText(wkt string, srid SMALLINT) RETURNS Geometry external name geom."BdMPolyFromText";
---CREATE FUNCTION ST_GeogFromText(wkt string) RETURNS Geometry external name geom."GeogFromText";
---CREATE FUNCTION ST_GeographyFromText(wkt string) RETURNS Geometry external name geom."GeographyFromText";
---CREATE FUNCTION ST_GeogFromWKB
---CREATE FUNCTION ST_GeomCollFromText
---CREATE FUNCTION ST_GeomFromWKB
+--> CREATE FUNCTION ST_Box2dFromGeoHash() RETURNS mbr external name geom."Box2dFromGeoHash";
+--> CREATE FUNCTION ST_GeogFromText(wkt string) RETURNS Geography external name geom."GeographyFromText";
+--> CREATE FUNCTION ST_GeographyFromText(wkt string) RETURNS Geography external name geom."GeographyFromText";
+--> CREATE FUNCTION ST_GeogFromWKB(wkb_arr byte[]) RETURNS Geography external name geom."GeogFromWKB";  
+--CREATE FUNCTION ST_GeomCollFromText(wkt string) RETURNS Geometry external name geom."GeomCollFromText";
+--CREATE FUNCTION ST_GeomFromEWKB
 --CREATE FUNCTION ST_GeomFromEWKT
---CREATE FUNCTION ST_GeometryFromText
+--CREATE FUNCTION ST_GeometryFromText(wkt string, srid SMALLINT) RETURNS Geometry external name geom."GeomFromText";
+--CREATE FUNCTION ST_GeometryFromText(wkt string) RETURNS Geometry external name geom."GeomFromText";
 --CREATE FUNCTION ST_GeomFromGML
 --CREATE FUNCTION ST_GeomFromGeoJSON
 --CREATE FUNCTION ST_GeomFromKML
 --CREATE FUNCTION ST_GMLToSQL
---CREATE FUNCTION ST_GeomFromText
---CREATE FUNCTION ST_GeomFromWKB
---CREATE FUNCTION ST_LineFromMultiPoint
---CREATE FUNCTION ST_LineFromText
---CREATE FUNCTION ST_LineFromWKB
---CREATE FUNCTION ST_LinestringFromWKB
---CREATE FUNCTION ST_MakeBox2D
+--CREATE FUNCTION ST_GeomFromText(wkt string, srid SMALLINT) RETURNS Geometry external name geom."GeomFromText";
+--CREATE FUNCTION ST_GeomFromText(wkt string) RETURNS Geometry external name geom."GeomFromText";
+--CREATE FUNCTION ST_GeomFromWKB(wkb_arr byte[], srid smallint) RETURNS Geometry external name geom."GeomFromWKB";
+--CREATE FUNCTION ST_GeomFromWKB(wkb_arr byte[]) RETURNS Geometry external name geom."GeomFromWKB";
+--CREATE FUNCTION ST_LineFromMultiPoint(pointGeom Geometry) RETURNS Geometry external name geom."LineFromMultiPoint";
+--CREATE FUNCTION ST_LineFromText(wkt string) RETURNS Geometry external name geom."LineFromText";
+--CREATE FUNCTION ST_LineFromWKB(wkb_arr byte[], srid smallint) RETURNS Geometry external name geom."LineFromWKB";
+--CREATE FUNCTION ST_LineFromWKB(wkb_arr byte[]) RETURNS Geometry external name geom."LineFromWKB";
+--CREATE FUNCTION ST_LinestringFromWKB(wkb_arr byte[], srid smallint) RETURNS Geometry external name geom."LinestringFromWKB";
+--CREATE FUNCTION ST_LinestringFromWKB(wkb_arr byte[]) RETURNS Geometry external name geom."LinestringFromWKB";
+--CREATE FUNCTION ST_MakeBox2D(lowLeftPointGeom Geometry, upRightPointGeom Geometry) RETURNS mbr external name geom."MakeBox2D";
 --CREATE FUNCTION ST_3DMakeBox
---CREATE FUNCTION ST_MakeLine
---CREATE FUNCTION ST_MakeEnvelope
---CREATE FUNCTION ST_MakePolygon
---CREATE FUNCTION ST_MakePoint
---CREATE FUNCTION ST_MakePointM
---CREATE FUNCTION ST_MLineFromText
---CREATE FUNCTION ST_MPointFromText
---CREATE FUNCTION ST_MPolyFromText
---CREATE FUNCTION ST_Point
---CREATE FUNCTION ST_PointFromText
---CREATE FUNCTION ST_PointFromWKB
---CREATE FUNCTION ST_Polygon
---CREATE FUNCTION ST_PolygonFromText
---CREATE FUNCTION ST_WKBToSQL
---CREATE FUNCTION ST_WKTToSQL
-CREATE FUNCTION GeomFromText(wkt string, srid SMALLINT) RETURNS Geometry external name geom."GeomFromText";
-CREATE FUNCTION PointFromText(wkt string, srid SMALLINT) RETURNS Point external name geom."PointFromText";
-CREATE FUNCTION LineFromText(wkt string, srid SMALLINT) RETURNS LineString external name geom."LineFromText";
-CREATE FUNCTION PolyFromText(wkt string, srid SMALLINT) RETURNS Polygon external name geom."PolyFromText";
-CREATE FUNCTION MPointFromText(wkt string, srid SMALLINT) RETURNS MultiPoint external name geom."MultiPointFromText";
-CREATE FUNCTION MLineFromText(wkt string, srid SMALLINT) RETURNS MultiLineString external name geom."MultiLineFromText";
-CREATE FUNCTION MPolyFromText(wkt string, srid SMALLINT) RETURNS MultiPolygon external name geom."MultiPolyFromText";
-CREATE FUNCTION GeomCollectionFromText(wkt string, srid SMALLINT) RETURNS MultiPolygon external name geom."GeomCollectionFromText";
+--CREATE FUNCTION ST_MakeLine(geometry set geoms)?????
+--CREATE FUNCTION ST_MakeLine(geom1 Geometry, geom2 Geometry) RETURNS Geometry external name geom."MakeLine";
+--CREATE FUNCTION ST_MakeLine(geoms_arr Geometry[]) RETURNS Geometry external name geom."MakeLine";
+--CREATE FUNCTION ST_MakeEnvelope(xmin double, ymin double, xmax double, ymax double, srid SMALLINT) RETURNS Geometry external name geom."MakeEnvelope";
+--CREATE FUNCTION ST_MakePolygon(linestringGeom Geometry) RETURNS Geometry external name geom."MakePolygon";
+--CREATE FUNCTION ST_MakePolygon(outerLinestringGeom Geometry, interiorLinestringGeoms Geometry[]) RETURNS Geometry external name geom."MakePolygon";
+--CREATE FUNCTION ST_MakePoint(x double, y double) RETURNS Geometry external name geom."MakePoint"; 
+--CREATE FUNCTION ST_MakePoint(x double, y double, z double) RETURNS Geometry external name geom."MakePoint";
+--CREATE FUNCTION ST_MakePoint(x double, y double, z double, m double) RETURNS Geometry external name geom."MakePoint";
+--CREATE FUNCTION ST_MakePointM(x double, y double, m double) RETURNS Geometry external name geom."MakePointM";
+--CREATE FUNCTION ST_MLineFromText(wkt string) RETURNS Geometry external name geom."MLineFromText";
+--CREATE FUNCTION ST_MPointFromText(wkt string) RETURNS Geometry external name geom."MPointFromText";
+--CREATE FUNCTION ST_MPolyFromText(wkt string) RETURNS Geometry external name geom."MPolyFromText";
+--CREATE FUNCTION ST_Point(x double, y double) RETURNS Geometry external name geom."Point";
+--CREATE FUNCTION ST_PointFromGeoHash
+--CREATE FUNCTION ST_PointFromText(wkt string) RETURNS Geometry external name geom."PointFromText";
+--CREATE FUNCTION ST_PointFromWKB(wkb_arr byte[], srid smallint) RETURNS Geometry external name geom."PointFromWKB";
+--CREATE FUNCTION ST_PointFromWKB(wkb_arr byte[]) RETURNS Geometry external name geom."PointFromWKB";
+--CREATE FUNCTION ST_Polygon(linestringGeom Geometry, srid SMALLINT) RETURNS Geometry external name geom."Polygon";
+--CREATE FUNCTION ST_WKBToSQL(wkb_arr byte[]) RETURNS Geometry external name geom."GeomFromWKB";
+--CREATE FUNCTION ST_WKTToSQL(wkt string) RETURNS Geometry external name geom."GeomFromText";
+--//CREATE FUNCTION GeomFromText(wkt string, srid SMALLINT) RETURNS Geometry external name geom."GeomFromText";
+----CREATE FUNCTION PointFromText(wkt string, srid SMALLINT) RETURNS Point external name geom."PointFromText";
+--//CREATE FUNCTION LineFromText(wkt string, srid SMALLINT) RETURNS LineString external name geom."LineFromText";
+--//CREATE FUNCTION PolyFromText(wkt string, srid SMALLINT) RETURNS Polygon external name geom."PolyFromText";
+--//CREATE FUNCTION MPointFromText(wkt string, srid SMALLINT) RETURNS MultiPoint external name geom."MultiPointFromText";
+--//CREATE FUNCTION MLineFromText(wkt string, srid SMALLINT) RETURNS MultiLineString external name geom."MultiLineFromText";
+--//CREATE FUNCTION MPolyFromText(wkt string, srid SMALLINT) RETURNS MultiPolygon external name geom."MultiPolyFromText";
+--//CREATE FUNCTION GeomCollectionFromText(wkt string, srid SMALLINT) RETURNS MultiPolygon external name geom."GeomCollectionFromText";
 -- alias
-CREATE FUNCTION PolygonFromText(wkt string, srid SMALLINT) RETURNS Polygon external name geom."PolyFromText";
+--CREATE FUNCTION PolygonFromText(wkt string, srid SMALLINT) RETURNS Polygon external name geom."PolyFromText";
 
-CREATE FUNCTION AsText(g Geometry) RETURNS STRING external name geom."AsText";
+--//CREATE FUNCTION AsText(g Geometry) RETURNS STRING external name geom."AsText";
 
-CREATE FUNCTION X(g Geometry) RETURNS double external name geom."X";
-CREATE FUNCTION Y(g Geometry) RETURNS double external name geom."Y";
+--//CREATE FUNCTION X(g Geometry) RETURNS double external name geom."X";
+--//CREATE FUNCTION Y(g Geometry) RETURNS double external name geom."Y";
 
-CREATE FUNCTION Point(x double,y double) RETURNS Point external name geom.point;
+--//CREATE FUNCTION Point(x double,y double) RETURNS Point external name geom.point;
 
 -- CREATE FUNCTION Point(g Geometry) RETURNS Point external name geom.point;
 -- CREATE FUNCTION Curve(g Geometry) RETURNS Curve external name geom.curve;
@@ -103,42 +123,42 @@ CREATE FUNCTION Point(x double,y double) RETURNS Point external name geom.point;
 -- CREATE FUNCTION Polygon(g Geometry) RETURNS Polygon external name geom.polygon;
 
 -- ogc basic methods
-CREATE FUNCTION Dimension(g Geometry) RETURNS integer external name geom."Dimension";
-CREATE FUNCTION GeometryTypeId(g Geometry) RETURNS integer external name geom."GeometryTypeId";
-CREATE FUNCTION SRID(g Geometry) RETURNS integer external name geom."SRID";
-CREATE FUNCTION Envelope(g Geometry) RETURNS Geometry external name geom."Envelope";
-CREATE FUNCTION IsEmpty(g Geometry) RETURNS BOOLEAN external name geom."IsEmpty";
-CREATE FUNCTION IsSimple(g Geometry) RETURNS BOOLEAN external name geom."IsSimple";
-CREATE FUNCTION Boundary(g Geometry) RETURNS Geometry external name geom."Boundary";
+--//CREATE FUNCTION Dimension(g Geometry) RETURNS integer external name geom."Dimension";
+--//CREATE FUNCTION GeometryTypeId(g Geometry) RETURNS integer external name geom."GeometryTypeId";
+--//CREATE FUNCTION SRID(g Geometry) RETURNS integer external name geom."SRID";
+--//CREATE FUNCTION Envelope(g Geometry) RETURNS Geometry external name geom."Envelope";
+--//CREATE FUNCTION IsEmpty(g Geometry) RETURNS BOOLEAN external name geom."IsEmpty";
+--//CREATE FUNCTION IsSimple(g Geometry) RETURNS BOOLEAN external name geom."IsSimple";
+--//CREATE FUNCTION Boundary(g Geometry) RETURNS Geometry external name geom."Boundary";
 
 -- ogc spatial relation methods
-CREATE FUNCTION Equals(a Geometry, b Geometry) RETURNS BOOLEAN external name geom."Equals";
-CREATE FUNCTION Disjoint(a Geometry, b Geometry) RETURNS BOOLEAN external name geom."Disjoint";
-CREATE FUNCTION "Intersect"(a Geometry, b Geometry) RETURNS BOOLEAN external name geom."Intersect";
-CREATE FUNCTION Touches(a Geometry, b Geometry) RETURNS BOOLEAN external name geom."Touches";
-CREATE FUNCTION Crosses(a Geometry, b Geometry) RETURNS BOOLEAN external name geom."Crosses";
-CREATE FUNCTION Within(a Geometry, b Geometry) RETURNS BOOLEAN external name geom."Within";
-CREATE FUNCTION Contains(a Geometry, b Geometry) RETURNS BOOLEAN external name geom."Contains";
-CREATE FUNCTION Overlaps(a Geometry, b Geometry) RETURNS BOOLEAN external name geom."Overlaps";
-CREATE FUNCTION Relate(a Geometry, b Geometry, pattern STRING) RETURNS BOOLEAN external name geom."Relate";
+--//CREATE FUNCTION Equals(a Geometry, b Geometry) RETURNS BOOLEAN external name geom."Equals";
+--//CREATE FUNCTION Disjoint(a Geometry, b Geometry) RETURNS BOOLEAN external name geom."Disjoint";
+--//CREATE FUNCTION "Intersect"(a Geometry, b Geometry) RETURNS BOOLEAN external name geom."Intersect";
+--//CREATE FUNCTION Touches(a Geometry, b Geometry) RETURNS BOOLEAN external name geom."Touches";
+--//CREATE FUNCTION Crosses(a Geometry, b Geometry) RETURNS BOOLEAN external name geom."Crosses";
+--//CREATE FUNCTION Within(a Geometry, b Geometry) RETURNS BOOLEAN external name geom."Within";
+--//CREATE FUNCTION Contains(a Geometry, b Geometry) RETURNS BOOLEAN external name geom."Contains";
+--//CREATE FUNCTION Overlaps(a Geometry, b Geometry) RETURNS BOOLEAN external name geom."Overlaps";
+--//CREATE FUNCTION Relate(a Geometry, b Geometry, pattern STRING) RETURNS BOOLEAN external name geom."Relate";
 
 -- ogc Spatial Analysis methods
-CREATE FUNCTION Area(g Geometry) RETURNS FLOAT external name geom."Area";
-CREATE FUNCTION Length(g Geometry) RETURNS FLOAT external name geom."Length";
-CREATE FUNCTION Distance(a Geometry, b Geometry) RETURNS FLOAT external name geom."Distance";
-CREATE FUNCTION Buffer(a Geometry, distance FLOAT) RETURNS Geometry external name geom."Buffer";
-CREATE FUNCTION ConvexHull(a Geometry) RETURNS Geometry external name geom."ConvexHull";
-CREATE FUNCTION Intersection(a Geometry, b Geometry) RETURNS Geometry external name geom."Intersection";
-CREATE FUNCTION "Union"(a Geometry, b Geometry) RETURNS Geometry external name geom."Union";
-CREATE FUNCTION Difference(a Geometry, b Geometry) RETURNS Geometry external name geom."Difference";
-CREATE FUNCTION SymDifference(a Geometry, b Geometry) RETURNS Geometry external name geom."SymDifference";
+--//CREATE FUNCTION Area(g Geometry) RETURNS FLOAT external name geom."Area";
+--//CREATE FUNCTION Length(g Geometry) RETURNS FLOAT external name geom."Length";
+--//CREATE FUNCTION Distance(a Geometry, b Geometry) RETURNS FLOAT external name geom."Distance";
+--//CREATE FUNCTION Buffer(a Geometry, distance FLOAT) RETURNS Geometry external name geom."Buffer";
+--//CREATE FUNCTION ConvexHull(a Geometry) RETURNS Geometry external name geom."ConvexHull";
+--//CREATE FUNCTION Intersection(a Geometry, b Geometry) RETURNS Geometry external name geom."Intersection";
+--//CREATE FUNCTION "Union"(a Geometry, b Geometry) RETURNS Geometry external name geom."Union";
+--//CREATE FUNCTION Difference(a Geometry, b Geometry) RETURNS Geometry external name geom."Difference";
+--//CREATE FUNCTION SymDifference(a Geometry, b Geometry) RETURNS Geometry external name geom."SymDifference";
 
 
-CREATE FUNCTION Centroid(g Geometry) RETURNS Geometry external name geom."Centroid";
-CREATE FUNCTION StartPoint(g Geometry) RETURNS Geometry external name geom."StartPoint";
-CREATE FUNCTION EndPoint(g Geometry) RETURNS Geometry external name geom."EndPoint";
-CREATE FUNCTION NumPoints(g Geometry) RETURNS integer external name geom."NumPoints";
-CREATE FUNCTION PointN(g Geometry, n SMALLINT) RETURNS Geometry external name geom."PointN";
+--//CREATE FUNCTION Centroid(g Geometry) RETURNS Geometry external name geom."Centroid";
+--//CREATE FUNCTION StartPoint(g Geometry) RETURNS Geometry external name geom."StartPoint";
+--//CREATE FUNCTION EndPoint(g Geometry) RETURNS Geometry external name geom."EndPoint";
+--//CREATE FUNCTION NumPoints(g Geometry) RETURNS integer external name geom."NumPoints";
+--//CREATE FUNCTION PointN(g Geometry, n SMALLINT) RETURNS Geometry external name geom."PointN";
 
 -- create metadata tables
 -- CREATE SPATIAL_REF_SYS METADATA TABLE
@@ -149,12 +169,12 @@ CREATE FUNCTION PointN(g Geometry, n SMALLINT) RETURNS Geometry external name ge
 --        srtext CHARACTER VARYING(2048));
 
 -- CREATE GEOMETRY_COLUMNS METADATA TABLE
-f_table_catalog ==> 
-f_table_schema ==> 
-f_table_name ==>
-f_geometry_column ==> 
-coord_dimension ==>
-srid ==>
+--f_table_catalog ==> 
+--f_table_schema ==> 
+--f_table_name ==>
+--f_geometry_column ==> 
+--coord_dimension ==>
+--srid ==>
 
 create view geometry_columns as
 	select e.value as f_table_catalog,
