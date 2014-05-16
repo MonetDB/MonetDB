@@ -797,7 +797,7 @@ str VLTgenerator_join(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *bl, *br, *bln = NULL, *brn= NULL;
 	BUN cnt,c =0;
-	oid o = 0, os= 0, *ol, *or;
+	oid *o = 0, os= 0, *ol, *or;
 	int tpe,bid;
 	InstrPtr p = NULL;
 	str msg = MAL_SUCCEED;
@@ -811,17 +811,16 @@ str VLTgenerator_join(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL,"generator.join",RUNTIME_OBJECT_MISSING);
 	br = BATdescriptor(bid = *(int*) getArgReference(stk,pci,3));
 	if( br == NULL){
-		BBPreleaseref(bl->batCacheid));
+		//BBPreleaseref(bl->batCacheid));
 		throw(MAL,"generator.join",RUNTIME_OBJECT_MISSING);
 	}
 
 	cnt = BATcount(bl);
 	tpe = br->ttype;
 	if( bl->ttype == TYPE_void)
-		os = bl->seqbase;
+		os = bl->tseqbase;
 	else
 		o = (oid*) Tloc(bl,BUNfirst(bl));
-
 
 	bln = BATnew(TYPE_void,TYPE_oid, cnt);
 	brn = BATnew(TYPE_void,TYPE_oid, cnt);
@@ -846,11 +845,11 @@ str VLTgenerator_join(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		s = *(bte*) getArgReference(stk,p, 3);
 		lo = (l-f)/s;
 		for( ; cnt >0; cnt--,os++,o++){
-			v = (bte*) Tloc(bv,BUNfirst(bv));
+			v = (bte*) Tloc(bl,BUNfirst(bl));
 			w = (*v -f)/s;
 			if ( w * s == *v && (oid) w < lo){
 				*or++ = (oid) w;
-				*ol++ = o;
+				*ol++ = *o;
 				c++;
 			}
 		}
