@@ -775,23 +775,22 @@ break;
 
 /* The operands of a join operation can either be defined on a generator */
 #define VLTjoin(TPE) \
-		{ TPE f,l,s;\
-		TPE *v,w;\
-		oid lo;\
-		f = *(TPE*) getArgReference(stk,p, 1);\
-		l = *(TPE*) getArgReference(stk,p, 2);\
-		s = *(TPE*) getArgReference(stk,p, 3);\
-		lo = (l-f)/s;\
-		for( ; cap >0; cap--,o++){\
-			v = (TPE*) Tloc(bv,BUNfirst(bv));\
-			w = (*v -f)/s;\
-			if ( w * s == *v && (oid) w < lo){\
-				*or++ = (oid) w;\
-				*ol++ = o;\
-				c++;\
-			}\
-		} }
-
+	{ TPE f,l,s;\
+	TPE *v,w;\
+	oid lo;\
+	f = *(TPE*) getArgReference(stk,p, 1);\
+	l = *(TPE*) getArgReference(stk,p, 2);\
+	s = *(TPE*) getArgReference(stk,p, 3);\
+	lo = (l-f)/s;\
+	for( ; cnt >0; cnt--,os++,o++){\
+		v = (TPE*) Tloc(bl,BUNfirst(bl));\
+		w = (*v -f)/s;\
+		if ( w * s == *v && (oid) w < lo){\
+			*or++ = (oid) w;\
+			*ol++ = *o;\
+			c++;\
+		}\
+	} }\
 
 str VLTgenerator_join(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -805,7 +804,6 @@ str VLTgenerator_join(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	// we assume at most one of the arguments to refer to the generator
 	p = findLastAssign(mb,pci,pci->argv[3]);
-
 	bl = BATdescriptor(bid = *(int*) getArgReference(stk,pci,2));
 	if( bl == NULL)
 		throw(MAL,"generator.join",RUNTIME_OBJECT_MISSING);
@@ -836,17 +834,28 @@ str VLTgenerator_join(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	/* The actual join code for generators be injected here */
 	switch(tpe){
-	case TYPE_bte:
-		{ bte f,l,s;
-		bte *v,w;
-		oid lo;
-		f = *(bte*) getArgReference(stk,p, 1);
-		l = *(bte*) getArgReference(stk,p, 2);
-		s = *(bte*) getArgReference(stk,p, 3);
-		lo = (l-f)/s;
+	case TYPE_bte: VLTjoin(bte); break;
+	case TYPE_sht: VLTjoin(sht); break;
+	case TYPE_int: VLTjoin(int); break;
+	case TYPE_lng: VLTjoin(lng); break;
+	case TYPE_flt: VLTjoin(flt); break;
+	case TYPE_dbl: VLTjoin(dbl); break;
+/* to be fixed
+	default:
+	if( tpe == TYPE_timestamp){ 
+		timestamp f,l,val;
+		timestamp *v,w;
+		lng s,offset;
+
+		f = *(timestamp*) getArgReference(stk,p, 1);
+		l = *(timestamp*) getArgReference(stk,p, 2);
+		s = *(lng*) getArgReference(stk,p, 3);
 		for( ; cnt >0; cnt--,os++,o++){
-			v = (bte*) Tloc(bl,BUNfirst(bl));
-			w = (*v -f)/s;
+			v = (timestamp*) Tloc(bl,BUNfirst(bl));
+			offset = ((lng)*o) * s;
+			if( (msg = MTIMEtimestamp_add(&val, &f, &offset)) != MAL_SUCCEED)
+				return msg;
+
 			if ( w * s == *v && (oid) w < lo){
 				*or++ = (oid) w;
 				*ol++ = *o;
@@ -854,7 +863,7 @@ str VLTgenerator_join(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		}
 		}
-		break;
+*/
 	}
 
 	BATsetcount(bln,c);
