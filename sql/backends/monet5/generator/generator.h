@@ -25,19 +25,20 @@
 //#define VLT_DEBUG 
 
 #ifdef WIN32
-#ifndef LIBGENERATOR
-#define vault_export extern __declspec(dllimport)
+#ifndef LIBMSEED
+#define generator_export extern __declspec(dllimport)
 #else
-#define vault_export extern __declspec(dllexport)
+#define generator_export extern __declspec(dllexport)
 #endif
 #else
-#define vault_export extern
+#define generator_export extern
 #endif
 
-vault_export str VLTgenerator_noop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-vault_export str VLTgenerator_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-vault_export str VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-vault_export str VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-vault_export str VLTgenerator_leftfetchjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+generator_export str VLTgenerator_noop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+generator_export str VLTgenerator_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+generator_export str VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+generator_export str VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+generator_export str VLTgenerator_leftfetchjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+generator_export str VLTgenerator_join(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #endif

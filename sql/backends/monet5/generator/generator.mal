@@ -167,5 +167,8 @@ address VLTgenerator_leftfetchjoin;
 
 pattern leftfetchjoin(b:bat[:oid,:oid], cand:bat[:oid,:timestamp]) :bat[:oid,:timestamp]
 address VLTgenerator_leftfetchjoin
-comment "Overloaded join operation";
+comment "Overloaded leftfetchjoin operation";
 
+pattern join(b:bat[:oid,:any_1], gen:bat[:oid,:any_1]) (l:bat[:oid,:oid],r:bat[:oid,:oid])
+address VLTgenerator_join
+comment "Overloaded join operation";
