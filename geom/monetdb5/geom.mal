@@ -20,63 +20,91 @@ module geom;
 # @' overwrite lng needed for fixed size! Sizes are fixed in geom.prelude
 atom mbr:lng;
 
-#command tostr() :str		address mbrTOSTR;
-#command fromstr() :mbr		address mbrFROMSTR;
-#command hash() :int		address mbrHASH;
+command tostr() :str		address mbrTOSTR;
+command fromstr() :mbr		address mbrFROMSTR;
+command hash() :int		address mbrHASH;
 command null() :int		address mbrNULL;
-#command cmp() :int		address mbrCOMP;
-#command read()			address mbrREAD;
-#command write()			address mbrWRITE;
+command cmp() :int		address mbrCOMP;
+command read()			address mbrREAD;
+command write()			address mbrWRITE;
 
-#command mbr(v:str) :mbr address mbrFromString;
+command mbr(v:str) :mbr address mbrFromString;
 
 atom wkb;
 
-#command tostr() :str		address wkbTOSTR;
+command tostr() :str		address wkbTOSTR;
 command fromstr() :wkb		address wkbFROMSTR;
-#command hash() :int		address wkbHASH;
-#command null() :int		address wkbNULL;
-#command cmp() :int		address wkbCOMP;
-#command read()			address wkbREAD;
-#command write()			address wkbWRITE;
+command hash() :int		address wkbHASH;
+command null() :int		address wkbNULL;
+command cmp() :int		address wkbCOMP;
+command read()			address wkbREAD;
+command write()			address wkbWRITE;
+command put() :int		address wkbPUT;
+command del() :int		address wkbDEL;
+command length() :int		address wkbLENGTH;
+command heap() :int		address wkbHEAP;
 
-#command put() :int		address wkbPUT;
-#command del() :int		address wkbDEL;
-#command length() :int		address wkbLENGTH;
-#command heap() :int		address wkbHEAP;
-
-#command wkb{unsafe}(v:str) :wkb address wkbFromString;
-command FromText{unsafe}(w:str, type:int) :wkb	address wkbFromText;
+command wkb{unsafe}(v:str) :wkb address wkbFromString;
+command FromText{unsafe}(wkt:str, srid:int, type:int) :wkb	address wkbFromText;
 
 module geom;
 
 #Geometry Constructors
-function PointFromText{unsafe}(wkt:str, srid:sht) :wkb; 
-	x := wkb.FromText(wkt,1);
+function PointFromText{unsafe}(wkt:str, srid:int) :wkb; 
+	x := wkb.FromText(wkt,srid,1);
 	return x;
 end PointFromText;
-function LineFromText{unsafe}( wkt:str, srid:sht ) :wkb;
-	x := wkb.FromText(wkt,2);
+function LineFromText{unsafe}(wkt:str, srid:int) :wkb;
+	x := wkb.FromText(wkt,srid,2);
 	return x;
 end LineFromText;
-function PolyFromText{unsafe}( wkt:str, srid:sht ) :wkb;
-	x := wkb.FromText(wkt,3);
+function PolygonFromText{unsafe}(wkt:str, srid:int) :wkb;
+	x := wkb.FromText(wkt,srid,3);
 	return x;
-end PolyFromText;
-function MPointFromText{unsafe}( wkt:str, srid:sht ) :wkb;
-	x := wkb.FromText(wkt,4);
+end PolygonFromText;
+function MPointFromText{unsafe}(wkt:str, srid:int) :wkb;
+	x := wkb.FromText(wkt,srid,4);
 	return x;
 end MPointFromText;
-function MLineFromText{unsafe}( wkt:str, srid:sht ) :wkb;
-	x := wkb.FromText(wkt,5);
+function MLineFromText{unsafe}(wkt:str, srid:int) :wkb;
+	x := wkb.FromText(wkt,srid,5);
 	return x;
 end MLineFromText;
-function MPolyFromText{unsafe}( wkt:str, srid:sht ) :wkb;
-	x := wkb.FromText(wkt,6);
+function MPolyFromText{unsafe}(wkt:str, srid:int) :wkb;
+	x := wkb.FromText(wkt,srid,6);
 	return x;
 end MPolyFromText;
-function GeomCollFromText{unsafe}( wkt:str, srid:sht ) :wkb;
-	x := wkb.FromText(wkt,7);
+function GeomCollFromText{unsafe}(wkt:str, srid:int) :wkb;
+	x := wkb.FromText(wkt,srid,7);
+	return x;
+end GeomCollFromText;
+
+function PointFromText{unsafe}(wkt:str) :wkb; 
+	x := wkb.FromText(wkt,0,1);
+	return x;
+end PointFromText;
+function LineFromText{unsafe}(wkt:str) :wkb;
+	x := wkb.FromText(wkt,0,2);
+	return x;
+end LineFromText;
+function PolygonFromText{unsafe}(wkt:str) :wkb;
+	x := wkb.FromText(wkt,0,3);
+	return x;
+end PolygonFromText;
+function MPointFromText{unsafe}(wkt:str) :wkb;
+	x := wkb.FromText(wkt,0,4);
+	return x;
+end MPointFromText;
+function MLineFromText{unsafe}(wkt:str) :wkb;
+	x := wkb.FromText(wkt,0,5);
+	return x;
+end MLineFromText;
+function MPolyFromText{unsafe}(wkt:str) :wkb;
+	x := wkb.FromText(wkt,0,6);
+	return x;
+end MPolyFromText;
+function GeomCollFromText{unsafe}(wkt:str) :wkb;
+	x := wkb.FromText(wkt,0,7);
 	return x;
 end GeomCollFromText;
 
@@ -132,7 +160,6 @@ end GeomCollFromText;
 #function PointFromWKB(wkb_arr byte[], srid:sht) :wkb;
 #function PointFromWKB(wkb_arr byte[]) :wkb;
 #function Polygon(linestringGeom:wkb, srid:sht) :wkb;
-#function PolygonFromText(wkt:str, srid:sht) :wkb;
 
 #function CurveFromText{unsafe}( wkt:str, srid:sht ) :wkb;
 #	x := wkb.FromText(wkt,2);
@@ -142,7 +169,6 @@ end GeomCollFromText;
 #	x := wkb.FromText(wkt,3);
 #	return x;
 #end SurfaceFromText;
-
 #function MultiCurveFromText{unsafe}( wkt:str, srid:sht ) :wkb;
 #	x := wkb.FromText(wkt,5);
 #	return x;
@@ -161,7 +187,10 @@ end GeomCollFromText;
 #comment "Returns true if the two mbrs overlap";
 
 
-#command AsText(w:wkb) :str	address wkbAsText;
+command AsText(w:wkb) :str 
+address wkbAsText
+comment "Creates the text representation of the Geometry.";
+
 #command mbr(:flt,:flt,:flt,:flt) :mbr
 #address ordinatesMBR
 #comment "Creates the mbr for the given (xmin,ymin) and (xmax,ymax).";
@@ -326,10 +355,10 @@ geom.prelude();
 
 module calc;
 
-#command mbr{unsafe}(v:str) :mbr address mbrFromString;
-#command mbr(v:mbr) :mbr address mbrFromMBR;
-#command wkb{unsafe}(v:str) :wkb address wkbFromString;
-#command wkb(v:wkb) :wkb address wkbFromWKB;
+command mbr{unsafe}(v:str) :mbr address mbrFromString;
+command mbr(v:mbr) :mbr address mbrFromMBR;
+command wkb{unsafe}(v:str) :wkb address wkbFromString;
+command wkb(v:wkb) :wkb address wkbFromWKB;
 
 #function point{unsafe}( wkt:str ) :wkb;
 #	x := wkb.FromText(wkt,1);
@@ -380,10 +409,10 @@ module calc;
 #	return x;
 #end geomcollection;
 
-#module geom;
-#command calc.isnil(v:wkb):bit
-#address wkbIsnil
-#comment "Nil test for wkb value";
+module geom;
+command calc.isnil(v:wkb):bit
+address wkbIsnil
+comment "Nil test for wkb value";
 
 
 # wkbPoint := 1;

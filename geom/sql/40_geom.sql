@@ -17,17 +17,15 @@
 
 -- make sure you load the geom module before loading this sql module
 CREATE TYPE Point EXTERNAL NAME wkb;
-CREATE TYPE Curve EXTERNAL NAME wkb;
+--//CREATE TYPE Curve EXTERNAL NAME wkb;
 CREATE TYPE LineString EXTERNAL NAME wkb;
-CREATE TYPE Surface EXTERNAL NAME wkb;
+--//CREATE TYPE Surface EXTERNAL NAME wkb;
 CREATE TYPE Polygon EXTERNAL NAME wkb;
-
 CREATE TYPE MultiPoint EXTERNAL NAME wkb;
-CREATE TYPE MultiCurve EXTERNAL NAME wkb;
+--//CREATE TYPE MultiCurve EXTERNAL NAME wkb;
 CREATE TYPE MultiLineString EXTERNAL NAME wkb;
-CREATE TYPE MultiSurface EXTERNAL NAME wkb;
+--//CREATE TYPE MultiSurface EXTERNAL NAME wkb;
 CREATE TYPE MultiPolygon EXTERNAL NAME wkb;
-
 CREATE TYPE Geometry EXTERNAL NAME wkb;
 CREATE TYPE GeomCollection EXTERNAL NAME wkb;
 
@@ -41,14 +39,28 @@ CREATE TYPE mbr EXTERNAL NAME mbr;
 
 --//CREATE FUNCTION mbroverlaps(a mbr, b mbr) RETURNS BOOLEAN external name geom."mbroverlaps";
 
+CREATE FUNCTION ST_AsText(g Geometry) RETURNS string external name geom."AsText";
+
 -- Geometry Constructors
-CREATE FUNCTION ST_PointFromText(wkt string, srid SMALLINT) RETURNS Geometry external name geom."PointFromText"; 
-CREATE FUNCTION ST_LineFromText(wkt string, srid SMALLINT) RETURNS Geometry external name geom."LineFromText";
-CREATE FUNCTION ST_PolygonFromText(wkt string, srid SMALLINT) RETURNS Geometry external name geom."PolygonFromText";
-CREATE FUNCTION ST_MPointFromText(wkt string, srid SMALLINT) RETURNS Geometry external name geom."MPointFromText";
-CREATE FUNCTION ST_MLineFromText(wkt string, srid SMALLINT) RETURNS Geometry external name geom."MLineFromText";
-CREATE FUNCTION ST_MPolyFromText(wkt string, srid SMALLINT) RETURNS Geometry external name geom."MPolyFromText";
-CREATE FUNCTION ST_GeomCollFromText(wkt string, srid SMALLINT) RETURNS Geometry external name geom."GeomCollFromText";
+CREATE FUNCTION ST_GeomFromText(wkt string, srid int) RETURNS Geometry external name geom."GeomFromText";
+CREATE FUNCTION ST_GeometryFromText(wkt string, srid int) RETURNS Geometry external name geom."GeomFromText";
+CREATE FUNCTION ST_PointFromText(wkt string, srid int) RETURNS Geometry external name geom."PointFromText"; 
+CREATE FUNCTION ST_LineFromText(wkt string, srid int) RETURNS Geometry external name geom."LineFromText";
+CREATE FUNCTION ST_PolygonFromText(wkt string, srid int) RETURNS Geometry external name geom."PolygonFromText";
+CREATE FUNCTION ST_MPointFromText(wkt string, srid int) RETURNS Geometry external name geom."MPointFromText";
+CREATE FUNCTION ST_MLineFromText(wkt string, srid int) RETURNS Geometry external name geom."MLineFromText";
+CREATE FUNCTION ST_MPolyFromText(wkt string, srid int) RETURNS Geometry external name geom."MPolyFromText";
+CREATE FUNCTION ST_GeomCollFromText(wkt string, srid int) RETURNS Geometry external name geom."GeomCollFromText";
+
+CREATE FUNCTION ST_GeomFromText(wkt string) RETURNS Geometry external name geom."GeomFromText";
+CREATE FUNCTION ST_GeometryFromText(wkt string) RETURNS Geometry external name geom."GeomFromText";
+CREATE FUNCTION ST_PointFromText(wkt string) RETURNS Geometry external name geom."PointFromText";
+CREATE FUNCTION ST_LineFromText(wkt string) RETURNS Geometry external name geom."LineFromText";
+CREATE FUNCTION ST_PolygonFromText(wkt string) RETURNS Geometry external name geom."PolygonFromText";
+CREATE FUNCTION ST_MPointFromText(wkt string) RETURNS Geometry external name geom."MPointFromText";
+CREATE FUNCTION ST_MLineFromText(wkt string) RETURNS Geometry external name geom."MLineFromText";
+CREATE FUNCTION ST_MPolyFromText(wkt string) RETURNS Geometry external name geom."MPolyFromText";
+CREATE FUNCTION ST_GeomCollFromText(wkt string) RETURNS Geometry external name geom."GeomCollFromText";
 
 --CREATE FUNCTION ST_BdPolyFromText(wkt string, srid SMALLINT) RETURNS Geometry external name geom."BdPolyFromText"; 
 --CREATE FUNCTION ST_BdMPolyFromText(wkt string, srid SMALLINT) RETURNS Geometry external name geom."BdMPolyFromText";
@@ -56,21 +68,15 @@ CREATE FUNCTION ST_GeomCollFromText(wkt string, srid SMALLINT) RETURNS Geometry 
 --> CREATE FUNCTION ST_GeogFromText(wkt string) RETURNS Geography external name geom."GeographyFromText";
 --> CREATE FUNCTION ST_GeographyFromText(wkt string) RETURNS Geography external name geom."GeographyFromText";
 --> CREATE FUNCTION ST_GeogFromWKB(wkb_arr byte[]) RETURNS Geography external name geom."GeogFromWKB";  
---CREATE FUNCTION ST_GeomCollFromText(wkt string) RETURNS Geometry external name geom."GeomCollFromText";
 --CREATE FUNCTION ST_GeomFromEWKB
 --CREATE FUNCTION ST_GeomFromEWKT
---CREATE FUNCTION ST_GeometryFromText(wkt string, srid SMALLINT) RETURNS Geometry external name geom."GeomFromText";
---CREATE FUNCTION ST_GeometryFromText(wkt string) RETURNS Geometry external name geom."GeomFromText";
 --CREATE FUNCTION ST_GeomFromGML
 --CREATE FUNCTION ST_GeomFromGeoJSON
 --CREATE FUNCTION ST_GeomFromKML
 --CREATE FUNCTION ST_GMLToSQL
---CREATE FUNCTION ST_GeomFromText(wkt string, srid SMALLINT) RETURNS Geometry external name geom."GeomFromText";
---CREATE FUNCTION ST_GeomFromText(wkt string) RETURNS Geometry external name geom."GeomFromText";
 --CREATE FUNCTION ST_GeomFromWKB(wkb_arr byte[], srid smallint) RETURNS Geometry external name geom."GeomFromWKB";
 --CREATE FUNCTION ST_GeomFromWKB(wkb_arr byte[]) RETURNS Geometry external name geom."GeomFromWKB";
 --CREATE FUNCTION ST_LineFromMultiPoint(pointGeom Geometry) RETURNS Geometry external name geom."LineFromMultiPoint";
---CREATE FUNCTION ST_LineFromText(wkt string) RETURNS Geometry external name geom."LineFromText";
 --CREATE FUNCTION ST_LineFromWKB(wkb_arr byte[], srid smallint) RETURNS Geometry external name geom."LineFromWKB";
 --CREATE FUNCTION ST_LineFromWKB(wkb_arr byte[]) RETURNS Geometry external name geom."LineFromWKB";
 --CREATE FUNCTION ST_LinestringFromWKB(wkb_arr byte[], srid smallint) RETURNS Geometry external name geom."LinestringFromWKB";
@@ -87,29 +93,15 @@ CREATE FUNCTION ST_GeomCollFromText(wkt string, srid SMALLINT) RETURNS Geometry 
 --CREATE FUNCTION ST_MakePoint(x double, y double, z double) RETURNS Geometry external name geom."MakePoint";
 --CREATE FUNCTION ST_MakePoint(x double, y double, z double, m double) RETURNS Geometry external name geom."MakePoint";
 --CREATE FUNCTION ST_MakePointM(x double, y double, m double) RETURNS Geometry external name geom."MakePointM";
---CREATE FUNCTION ST_MLineFromText(wkt string) RETURNS Geometry external name geom."MLineFromText";
---CREATE FUNCTION ST_MPointFromText(wkt string) RETURNS Geometry external name geom."MPointFromText";
---CREATE FUNCTION ST_MPolyFromText(wkt string) RETURNS Geometry external name geom."MPolyFromText";
 --CREATE FUNCTION ST_Point(x double, y double) RETURNS Geometry external name geom."Point";
 --CREATE FUNCTION ST_PointFromGeoHash
---CREATE FUNCTION ST_PointFromText(wkt string) RETURNS Geometry external name geom."PointFromText";
 --CREATE FUNCTION ST_PointFromWKB(wkb_arr byte[], srid smallint) RETURNS Geometry external name geom."PointFromWKB";
 --CREATE FUNCTION ST_PointFromWKB(wkb_arr byte[]) RETURNS Geometry external name geom."PointFromWKB";
 --CREATE FUNCTION ST_Polygon(linestringGeom Geometry, srid SMALLINT) RETURNS Geometry external name geom."Polygon";
 --CREATE FUNCTION ST_WKBToSQL(wkb_arr byte[]) RETURNS Geometry external name geom."GeomFromWKB";
 --CREATE FUNCTION ST_WKTToSQL(wkt string) RETURNS Geometry external name geom."GeomFromText";
---//CREATE FUNCTION GeomFromText(wkt string, srid SMALLINT) RETURNS Geometry external name geom."GeomFromText";
-----CREATE FUNCTION PointFromText(wkt string, srid SMALLINT) RETURNS Point external name geom."PointFromText";
---//CREATE FUNCTION LineFromText(wkt string, srid SMALLINT) RETURNS LineString external name geom."LineFromText";
---//CREATE FUNCTION PolyFromText(wkt string, srid SMALLINT) RETURNS Polygon external name geom."PolyFromText";
---//CREATE FUNCTION MPointFromText(wkt string, srid SMALLINT) RETURNS MultiPoint external name geom."MultiPointFromText";
---//CREATE FUNCTION MLineFromText(wkt string, srid SMALLINT) RETURNS MultiLineString external name geom."MultiLineFromText";
---//CREATE FUNCTION MPolyFromText(wkt string, srid SMALLINT) RETURNS MultiPolygon external name geom."MultiPolyFromText";
---//CREATE FUNCTION GeomCollectionFromText(wkt string, srid SMALLINT) RETURNS MultiPolygon external name geom."GeomCollectionFromText";
--- alias
---CREATE FUNCTION PolygonFromText(wkt string, srid SMALLINT) RETURNS Polygon external name geom."PolyFromText";
 
---//CREATE FUNCTION AsText(g Geometry) RETURNS STRING external name geom."AsText";
+
 
 --//CREATE FUNCTION X(g Geometry) RETURNS double external name geom."X";
 --//CREATE FUNCTION Y(g Geometry) RETURNS double external name geom."Y";
