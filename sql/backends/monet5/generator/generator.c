@@ -89,7 +89,13 @@ VLTgenerator_optimizer(Client cntxt, MalBlkPtr mb)
 						typeChecker(cntxt->fdout, cntxt->nspace, mb, q, TRUE);
 						used++;
 					}
-					if ( getModuleId(q) == algebraRef && getFunctionId(q) == leftfetchjoinRef && getArg(q,3) == getArg(p,0)){
+					if ( getModuleId(q) == algebraRef && getFunctionId(q) == leftfetchjoinRef && getArg(q,2) == getArg(p,0)){
+						// projection over a series
+						setModuleId(q, generatorRef);
+						typeChecker(cntxt->fdout, cntxt->nspace, mb, q, TRUE);
+						used++;
+					}
+					if ( getModuleId(q) == algebraRef && getFunctionId(q) == joinRef && (getArg(q,2) == getArg(p,0) || getArg(q,3) == getArg(p,0))){
 						// projection over a series
 						setModuleId(q, generatorRef);
 						typeChecker(cntxt->fdout, cntxt->nspace, mb, q, TRUE);
@@ -667,7 +673,7 @@ str VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 		throw(MAL,"generator.thetasubselect",MAL_MALLOC_FAIL);\
 	}\
 	v = (TPE*) Tloc(bn,BUNfirst(bn));\
-	for(; --cnt > 0; os++, o++){\
+	for(; cnt-- > 0; os++, o++){\
 		val = f + ((TPE) ( b->ttype == TYPE_void?os:*o)) * s;\
 		if ( val < f || val >= l)\
 			continue;\
@@ -681,7 +687,7 @@ str VLTgenerator_leftfetchjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 	int bid =0, c= 0, tpe;
 	BAT *b, *bn = NULL;
 	BUN cnt;
-	oid *o, os= 0;
+	oid *o =0, os= 0;
 	InstrPtr p;
 	str msg;
 
@@ -702,29 +708,7 @@ str VLTgenerator_leftfetchjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 
 	/* the actual code to perform a leftfetchjoin over generators */
 	switch( tpe = getArgType(mb,p,1)){
-	case TYPE_bte:  //VLTleftfetchjoin(bte); break;
-{
-	bte f,l,s, val;
-	bte *v;
-	f = *(bte*) getArgReference(stk,p, 1);
-	l = *(bte*) getArgReference(stk,p, 2);
-	s = *(bte*) getArgReference(stk,p, 3);
-
-	bn = BATnew(TYPE_void, TYPE_bte, cnt);
-	if( bn == NULL){
-		BBPreleaseref(bid);
-		throw(MAL,"generator.thetasubselect",MAL_MALLOC_FAIL);
-	}
-	v = (bte*) Tloc(bn,BUNfirst(bn));
-	for(; --cnt > 0; os++, o++){
-		val = f + ((bte) ( b->ttype == TYPE_void?os:*o)) * s;
-		if ( val < f || val >= l)
-			continue;
-		*v++ = val;
-		c++;
-	}
-}
-break;
+	case TYPE_bte:  VLTleftfetchjoin(bte); break;
 	case TYPE_sht:  VLTleftfetchjoin(sht); break;
 	case TYPE_int:  VLTleftfetchjoin(int); break;
 	case TYPE_lng:  VLTleftfetchjoin(lng); break;
@@ -747,12 +731,12 @@ break;
 
 			v = (timestamp*) Tloc(bn,BUNfirst(bn));
 
-			for(; --cnt > 0; os++, o++){
+			for(; cnt-- > 0; os++, o++){
 				t = ((lng) ( b->ttype == TYPE_void?os:*o)) * s;
 				if( (msg = MTIMEtimestamp_add(&val, &f, &t)) != MAL_SUCCEED)
 					return msg;
 
-				if ((val.days < f.days || (f.days == l.days && f.msecs < l.msecs)) || ((val.days>l.days || (val.days== l.days && val.msecs >= l.msecs)))  || timestamp_isnil(val))
+				if ((val.days < f.days || (val.days == f.days && val.msecs < f.msecs)) || ((val.days>l.days || (val.days== l.days && val.msecs >= l.msecs)))  || timestamp_isnil(val))
 					continue;
 				*v++ = val;
 				c++;
@@ -777,15 +761,13 @@ break;
 #define VLTjoin(TPE) \
 	{ TPE f,l,s;\
 	TPE *v,w;\
-	oid lo;\
 	f = *(TPE*) getArgReference(stk,p, 1);\
 	l = *(TPE*) getArgReference(stk,p, 2);\
 	s = *(TPE*) getArgReference(stk,p, 3);\
-	lo = (l-f)/s;\
 	for( ; cnt >0; cnt--,os++,o++){\
 		v = (TPE*) Tloc(bl,BUNfirst(bl));\
-		w = (*v -f)/s;\
-		if ( w * s == *v && (oid) w < lo){\
+		w = (int) ((*v -f)/s);\
+		if ( *v >= f && *v < l && f + w * s == *v ){\
 			*or++ = (oid) w;\
 			*ol++ = *o;\
 			c++;\
@@ -804,6 +786,7 @@ str VLTgenerator_join(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	// we assume at most one of the arguments to refer to the generator
 	p = findLastAssign(mb,pci,pci->argv[3]);
+	assert(p);
 	bl = BATdescriptor(bid = *(int*) getArgReference(stk,pci,2));
 	if( bl == NULL)
 		throw(MAL,"generator.join",RUNTIME_OBJECT_MISSING);

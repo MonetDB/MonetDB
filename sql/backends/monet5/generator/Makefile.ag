@@ -35,7 +35,7 @@ INCLUDES = ../../../include \
 lib__generator = {
 	MODULE
 	DIR = libdir/monetdb5
-	SOURCES = generator.c 
+	SOURCES = generator.c  generator.h
 	LIBS = ../../../../monetdb5/tools/libmonetdb5 \
 		   ../../../../gdk/libbat $(curl_LIBS)
 }
