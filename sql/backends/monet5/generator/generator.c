@@ -26,6 +26,7 @@
 #include "opt_prelude.h"
 #include "generator.h"
 #include "mtime.h"
+#include "math.h"
 
 
 static int
@@ -666,7 +667,6 @@ str VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 	f = *(TPE*) getArgReference(stk,p, 1);\
 	l = *(TPE*) getArgReference(stk,p, 2);\
 	s = *(TPE*) getArgReference(stk,p, 3);\
-\
 	bn = BATnew(TYPE_void, TYPE_##TPE, cnt);\
 	if( bn == NULL){\
 		BBPreleaseref(bid);\
@@ -766,7 +766,7 @@ str VLTgenerator_leftfetchjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 	s = *(TPE*) getArgReference(stk,p, 3);\
 	for( ; cnt >0; cnt--,os++,o++){\
 		v = (TPE*) Tloc(bl,BUNfirst(bl));\
-		w = (int) ((*v -f)/s);\
+		w = floor((*v -f)/s);\
 		if ( *v >= f && *v < l && f + w * s == *v ){\
 			*or++ = (oid) w;\
 			*ol++ = *o;\
@@ -785,8 +785,6 @@ str VLTgenerator_join(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) cntxt;
 	// we assume at most one of the arguments to refer to the generator
-	p = findLastAssign(mb,pci,pci->argv[3]);
-	assert(p);
 	bl = BATdescriptor(bid = *(int*) getArgReference(stk,pci,2));
 	if( bl == NULL)
 		throw(MAL,"generator.join",RUNTIME_OBJECT_MISSING);
@@ -795,6 +793,9 @@ str VLTgenerator_join(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		//BBPreleaseref(bl->batCacheid));
 		throw(MAL,"generator.join",RUNTIME_OBJECT_MISSING);
 	}
+
+	p = findLastAssign(mb,pci,pci->argv[3]);
+	assert(p);
 
 	cnt = BATcount(bl);
 	tpe = br->ttype;
@@ -817,7 +818,22 @@ str VLTgenerator_join(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	/* The actual join code for generators be injected here */
 	switch(tpe){
-	case TYPE_bte: VLTjoin(bte); break;
+	case TYPE_bte: //VLTjoin(bte); break;
+	{ bte f,l,s;
+	bte *v,w;
+	f = *(bte*) getArgReference(stk,p, 1);
+	l = *(bte*) getArgReference(stk,p, 2);
+	s = *(bte*) getArgReference(stk,p, 3);
+	for( ; cnt >0; cnt--,os++,o++){
+		v = (bte*) Tloc(bl,BUNfirst(bl));
+		w = (int) ((*v -f)/s);
+		if ( *v >= f && *v < l && f + w * s == *v ){
+			*or++ = (oid) w;
+			*ol++ = *o;
+			c++;
+		}
+	} }
+	break;
 	case TYPE_sht: VLTjoin(sht); break;
 	case TYPE_int: VLTjoin(int); break;
 	case TYPE_lng: VLTjoin(lng); break;
