@@ -1160,7 +1160,7 @@ logger_new(int debug, char *fn, logger_settings *log_settings, int version, prev
 
 	/* if the logdir path is absolute, do not prefix it with the gdk_dbpath */
 	if (MT_path_absolute(log_settings->logdir)) {
-		snprintf(filename, BUFSIZ, "%s%c%s%c%s%c",
+		snprintf(filename, BUFSIZ, "%s%c%s%c",
 				log_settings->logdir, DIR_SEP, fn, DIR_SEP);
 	} else {
 		snprintf(filename, BUFSIZ, "%s%c%s%c%s%c",
