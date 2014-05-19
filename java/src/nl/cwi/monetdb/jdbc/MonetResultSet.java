@@ -47,6 +47,7 @@ import nl.cwi.monetdb.mcl.parser.*;
  * for FORWARD_ONLY result sets the memory usage will be likely lower for large
  * result sets.
  *
+ * @author Fabian Groffen <Fabian.Groffen@cwi.nl>
  * @version 0.7
  */
 public class MonetResultSet extends MonetWrapper implements ResultSet {
