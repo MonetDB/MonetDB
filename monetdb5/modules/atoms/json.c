@@ -1825,12 +1825,16 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 				v = (const char *) BUNtail(bi, BUNfirst(b) + (map ? (BUN) map[p] : p + mapoff));
 				break;
 			case TYPE_dbl:
-		        	val = (const double *) BUNtail(bi, BUNfirst(b) + (map ? (BUN) map[p] : p + mapoff));
-				snprintf(temp, sizeof(temp), "%f", *val);
-				v = (const char *)temp;
+				val = (const double *) BUNtail(bi, BUNfirst(b) + (map ? (BUN) map[p] : p + mapoff));
+				if (*val != dbl_nil) {
+					snprintf(temp, sizeof(temp), "%f", *val);
+					v = (const char *)temp;
+			  	} else {
+                                	v =  NULL;
+				} 
 				break;
 			}
-			if (strNil(v)) {
+			if (!v||strNil(v)) {
 				if (skip_nils)
 					continue;
 				strncpy(buf, str_nil, buflen);

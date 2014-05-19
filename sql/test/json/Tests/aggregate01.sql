@@ -1,21 +1,37 @@
-create table aggrtest1 ( col1 double, col2 integer );
+create table aggrtest01 ( col1 double, col2 integer );
 
-select json.tojsonarray(col1) from aggrtest1;
+select json.tojsonarray(col1) from aggrtest01;
 
-insert into aggrtest1 values (0.1234, 1);
+insert into aggrtest01 values (0.1234, 1);
 
-select json.tojsonarray(col1) from aggrtest1;
+select json.tojsonarray(col1) from aggrtest01;
 
-insert into aggrtest1 values (5.6789, 1);
+insert into aggrtest01 values (5.6789, 1);
 
-select json.tojsonarray(col1) from aggrtest1;
+select json.tojsonarray(col1) from aggrtest01;
 
-select json.tojsonarray(col1) from aggrtest1 group by col2;
+select json.tojsonarray(col1) from aggrtest01 group by col2;
 
-insert into aggrtest1 values (0.516273849, 2);
+insert into aggrtest01 values (0.516273849, 2);
 
-select json.tojsonarray(col1) from aggrtest1;
+select json.tojsonarray(col1) from aggrtest01;
 
-select json.tojsonarray(col1) from aggrtest1 group by col2;
+select json.tojsonarray(col1) from aggrtest01 group by col2;
 
-drop table aggrtest1;
+delete from aggrtest01;
+
+insert into aggrtest01 values (NULL, 1);
+
+select json.tojsonarray(col1) from aggrtest01;
+
+insert into aggrtest01 values (0.1234, 1);
+
+select json.tojsonarray(col1) from aggrtest01;
+
+insert into aggrtest01 values (0.516273849, 2);
+
+select json.tojsonarray(col1) from aggrtest01;
+
+select json.tojsonarray(col1) from aggrtest01 group by col2;
+
+drop table aggrtest01;
