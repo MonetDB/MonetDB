@@ -80,7 +80,7 @@ typedef struct logger {
 
 /* Holds logger settings
  * if shared_logdir and shared_drift_threshold are set,
- * as well as if readonly = 1, the instance presumed to be in slave mode*/
+ * as well as if readonly = 1, the instance is assumed to be in slave mode*/
 typedef struct logger_settings {
 	char *logdir;	/* server (the regular) write-ahead log directory */
 	char *shared_logdir;	/* shared write-ahead log directory */
