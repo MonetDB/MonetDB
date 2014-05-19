@@ -1185,6 +1185,43 @@ logger_create_catalog_file(int debug, logger *lg, char *fn, FILE *fp, char *file
 	return 1;
 }
 
+/* find the persistent catalog. As non persistent bats
+ * require a logical reference we also add a logical
+ * reference for the persistent bats */
+static int
+logger_find_persistent_catalog(logger *lg, char *fn, FILE *fp, char *bak, bat *catalog_bid, bat *catalog_nme) {
+	BUN p, q;
+	BAT *b = BATdescriptor(*catalog_bid), *n;
+	if (b == 0)
+		logger_fatal("Logger_new: inconsistent database, catalog does not exist", 0, 0, 0);
+
+	snprintf(bak, BUFSIZ, "%s_catalog_nme", fn);
+	n = BATdescriptor(*catalog_nme);
+	if (n == 0)
+		logger_fatal("Logger_new: inconsistent database, catalog_nme does not exist", 0, 0, 0);
+
+	/* the catalog exists, and so should the log file */
+	if (fp == NULL) {
+		logger_fatal(
+				"logger_new: there is a logger catalog, but no log file.\n"
+						"Are you sure you are using the correct combination of database\n"
+						"(--dbpath) and log directory (--set %s_logdir)?\n"
+						"If you have done a recent update of the server, it may be that your\n"
+						"logs are in an old location.  You should then either use\n"
+						"--set %s_logdir=<path to old log directory> or move the old log\n"
+						"directory to the new location (%s).\n", fn, fn,
+				lg->dir);
+		return 0;
+	}
+	lg->catalog_bid = b;
+	lg->catalog_nme = n;
+	BATloop(b, p, q) {
+		bat bid = *(log_bid *) Tloc(b, p);
+		BBPincref(bid, TRUE);
+	}
+	return 1;
+}
+
 static logger *
 logger_new(int debug, char *fn, logger_settings *log_settings, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp)
 {
@@ -1270,38 +1307,9 @@ logger_new(int debug, char *fn, logger_settings *log_settings, int version, prev
 			goto error;
 		}
 	} else {
-		/* find the persistent catalog. As non persistent bats
-		 * require a logical reference we also add a logical
-		 * reference for the persistent bats */
-		BUN p, q;
-		BAT *b = BATdescriptor(catalog_bid), *n;
-		if (b == 0)
-			logger_fatal("Logger_new: inconsistent database, catalog does not exist",0,0,0);
-
-		snprintf(bak, BUFSIZ, "%s_catalog_nme", fn);
 		catalog_nme = BBPindex(bak);
-		n = BATdescriptor(catalog_nme);
-		if (n == 0)
-			logger_fatal("Logger_new: inconsistent database, catalog_nme does not exist",0,0,0);
-
-		/* the catalog exists, and so should the log file */
-		if (fp == NULL) {
-			logger_fatal("logger_new: there is a logger catalog, but no log file.\n"
-				     "Are you sure you are using the correct combination of database\n"
-				     "(--dbpath) and log directory (--set %s_logdir)?\n"
-				     "If you have done a recent update of the server, it may be that your\n"
-				     "logs are in an old location.  You should then either use\n"
-				     "--set %s_logdir=<path to old log directory> or move the old log\n"
-				     "directory to the new location (%s).\n",
-				     fn, fn, lg->dir);
+		if (!logger_find_persistent_catalog(lg, fn, fp, bak, &catalog_bid, &catalog_nme)) {
 			goto error;
-		}
-		lg->catalog_bid = b;
-		lg->catalog_nme = n;
-		BATloop(b, p, q) {
-			bat bid = *(log_bid *) Tloc(b, p);
-
-			BBPincref(bid, TRUE);
 		}
 	}
 	seqs_id = logger_find_bat(lg, "seqs_id");
