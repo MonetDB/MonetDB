@@ -356,6 +356,7 @@ static struct scalars {
 	{"now", 0, "\"now\"()", },
 	{"quarter", 1, "((\"month\"(\1) - 1) / 3 + 1)", },
 	{"second", 1, "\"second\"(\1)", },
+	{"timestampadd", 3, NULL, },
 	{"timestampdiff", 3, NULL, },
 	{"week", 1, "\"week\"(\1)", },
 	{"year", 1, "\"year\"(\1)", },
