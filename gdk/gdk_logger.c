@@ -1205,7 +1205,7 @@ logger_new(int debug, char *fn, logger_settings *log_settings, int version, prev
 
 	if (bid) {
 		/* upgrade from old logger format */
-		logger_upgrade_format(fn, lg, &bid, &bak[0]);
+		logger_upgrade_format(fn, lg, &bid, bak);
 	}
 
 	snprintf(bak, BUFSIZ, "%s_catalog_bid", fn);
