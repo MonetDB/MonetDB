@@ -565,7 +565,7 @@ ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLUINTEGER 
 			while (*p == ' ')
 				p++;
 			proc = p;
-			while (*p && isascii(*p) && isalnum(*p))
+			while (*p && isascii(*p) && (*p == '_' || isalnum(*p)))
 				p++;
 			if (p == proc ||
 			    (isascii(*proc) && !isalpha(*proc)))
@@ -619,7 +619,7 @@ ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLUINTEGER 
 			while (*p == ' ')
 				p++;
 			scalarfunc = p;
-			while (*p && isascii(*p) && isalnum(*p))
+			while (*p && isascii(*p) && (*p == '_' || isalnum(*p)))
 				p++;
 			if (p == scalarfunc ||
 			    (isascii(*scalarfunc) && !isalpha(*scalarfunc)))
