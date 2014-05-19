@@ -1131,6 +1131,60 @@ logger_upgrade_format(char *fn, logger *lg, bat *bid, char *bak) {
 	lg->seqs_val = NULL;
 }
 
+
+static int
+logger_create_catalog_file(int debug, logger *lg, char *fn, FILE *fp, char *filename, char *bak) {
+	log_bid bid = 0;
+	/* catalog does not exist, so the log file also
+	 * shouldn't exist */
+	if (fp != NULL) {
+		logger_fatal(
+				"logger_new: there is no logger catalog, but there is a log file.\n"
+						"Are you sure you are using the correct combination of database\n"
+						"(--dbpath) and log directory (--set %s_logdir)?\n", fn,
+				0, 0);
+		return 0;
+	}
+	lg->catalog_bid = logbat_new(TYPE_int, BATSIZE);
+	lg->catalog_nme = logbat_new(TYPE_str, BATSIZE);
+	if (debug & 1)
+		fprintf(stderr, "#create %s catalog\n", fn);
+
+	/* Make persistent */
+	bid = lg->catalog_bid->batCacheid;
+	BBPincref(bid, TRUE);
+	BATmode(lg->catalog_bid, PERSISTENT);
+	snprintf(bak, BUFSIZ, "%s_catalog_bid", fn);
+	BBPrename(lg->catalog_bid->batCacheid, bak);
+	/* Make persistent */
+	bid = lg->catalog_nme->batCacheid;
+	BBPincref(bid, TRUE);
+	BATmode(lg->catalog_nme, PERSISTENT);
+	snprintf(bak, BUFSIZ, "%s_catalog_nme", fn);
+	BBPrename(lg->catalog_nme->batCacheid, bak);
+	if (!GDKcreatedir(filename)) {
+		logger_fatal("logger_new: cannot create directory for log file %s\n",
+				filename, 0, 0);
+		return 0;
+	}
+	if ((fp = fopen(filename, "w")) == NULL) {
+		logger_fatal("logger_new: cannot create log file %s\n", filename, 0, 0);
+		return 0;
+	}
+	fprintf(fp, "%06d\n\n", lg->version);
+	lg->id++;
+	fprintf(fp, LLFMT "\n", lg->id);
+	fclose(fp);
+	fp = NULL;
+	if (bm_subcommit(lg->catalog_bid, lg->catalog_nme, lg->catalog_bid,
+			lg->catalog_nme, NULL, lg->debug) != 0) {
+		/* cannot commit catalog, so remove log */
+		unlink(filename);
+		return 0;
+	}
+	return 1;
+}
+
 static logger *
 logger_new(int debug, char *fn, logger_settings *log_settings, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp)
 {
@@ -1212,56 +1266,7 @@ logger_new(int debug, char *fn, logger_settings *log_settings, int version, prev
 	catalog_bid = BBPindex(bak);
 
 	if (catalog_bid == 0) {
-		log_bid bid = 0;
-
-		/* catalog does not exist, so the log file also
-		 * shouldn't exist */
-		if (fp != NULL) {
-			logger_fatal("logger_new: there is no logger catalog, but there is a log file.\n"
-				     "Are you sure you are using the correct combination of database\n"
-				     "(--dbpath) and log directory (--set %s_logdir)?\n",
-				     fn, 0, 0);
-			goto error;
-		}
-
-		lg->catalog_bid = logbat_new(TYPE_int, BATSIZE);
-		lg->catalog_nme = logbat_new(TYPE_str, BATSIZE);
-		if (debug & 1)
-			fprintf(stderr, "#create %s catalog\n", fn);
-
-		/* Make persistent */
-		bid = lg->catalog_bid->batCacheid;
-		BBPincref(bid, TRUE);
-		BATmode(lg->catalog_bid, PERSISTENT);
-		snprintf(bak, BUFSIZ, "%s_catalog_bid", fn);
-		BBPrename(lg->catalog_bid->batCacheid, bak);
-
-		/* Make persistent */
-		bid = lg->catalog_nme->batCacheid;
-		BBPincref(bid, TRUE);
-		BATmode(lg->catalog_nme, PERSISTENT);
-		snprintf(bak, BUFSIZ, "%s_catalog_nme", fn);
-		BBPrename(lg->catalog_nme->batCacheid, bak);
-
-		if (!GDKcreatedir(filename)) {
-			logger_fatal("logger_new: cannot create directory for log file %s\n",
-				     filename, 0, 0);
-			goto error;
-		}
-		if ((fp = fopen(filename, "w")) == NULL) {
-			logger_fatal("logger_new: cannot create log file %s\n",
-				     filename, 0, 0);
-			goto error;
-		}
-		fprintf(fp, "%06d\n\n", lg->version);
-		lg->id ++;
-		fprintf(fp, LLFMT "\n", lg->id);
-		fclose(fp);
-		fp = NULL;
-
-		if (bm_subcommit(lg->catalog_bid, lg->catalog_nme, lg->catalog_bid, lg->catalog_nme, NULL, lg->debug) != 0) {
-			/* cannot commit catalog, so remove log */
-			unlink(filename);
+		if (!logger_create_catalog_file(debug, lg, fn, fp, filename, bak)) {
 			goto error;
 		}
 	} else {
