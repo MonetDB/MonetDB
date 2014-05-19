@@ -17,3 +17,5 @@ insert into aggrtest values ('foobar', 2);
 select json.tojsonarray(col1) from aggrtest;
 
 select json.tojsonarray(col1) from aggrtest group by col2;
+
+drop table aggrtest;
