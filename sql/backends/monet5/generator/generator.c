@@ -18,7 +18,7 @@
  */
 
 /*
- * (c) Martin Kersten
+ * (c) Martin Kersten, Sjoerd Mullender
  * Series generating module for integer, decimal, real, double and timestamps.
  */
 
@@ -289,10 +289,11 @@ findLastAssign(MalBlkPtr mb, InstrPtr pci, int target)
 {
 	InstrPtr q, p = NULL;
 	int i;
+	str vaultRef = putName("vault",5);
 
 	for (i = 1; i < mb->stop; i++) {
 		q = getInstrPtr(mb, i);
-		if (q->argv[0] == target)
+		if (q->argv[0] == target && getModuleId(q) == vaultRef)
 			p = q;
 		if (q == pci)
 			return p;
@@ -759,16 +760,15 @@ str VLTgenerator_leftfetchjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 
 /* The operands of a join operation can either be defined on a generator */
 #define VLTjoin(TPE) \
-	{ TPE f,l,s;\
-	TPE *v,w;\
+	{ TPE f,l,s; TPE *v; BUN w;\
 	f = *(TPE*) getArgReference(stk,p, 1);\
 	l = *(TPE*) getArgReference(stk,p, 2);\
 	s = *(TPE*) getArgReference(stk,p, 3);\
 	for( ; cnt >0; cnt--,os++,o++){\
 		v = (TPE*) Tloc(bl,BUNfirst(bl));\
-		w = floor((*v -f)/s);\
-		if ( *v >= f && *v < l && f + w * s == *v ){\
-			*or++ = (oid) w;\
+		w = (BUN) floor((*v -f)/s);\
+		if ( *v >= f && *v < l && f + (TPE)(w * s) == *v ){\
+			*or++ = w;\
 			*ol++ = *o;\
 			c++;\
 		}\
@@ -776,34 +776,46 @@ str VLTgenerator_leftfetchjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 
 str VLTgenerator_join(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	BAT *bl, *br, *bln = NULL, *brn= NULL;
+	BAT  *b, *bl = NULL, *br = NULL, *bln = NULL, *brn= NULL;
 	BUN cnt,c =0;
 	oid *o = 0, os= 0, *ol, *or;
-	int tpe,bid;
-	InstrPtr p = NULL;
+	int tpe;
+	InstrPtr p = NULL, q = NULL;
 	str msg = MAL_SUCCEED;
 
 	(void) cntxt;
 	// we assume at most one of the arguments to refer to the generator
-	bl = BATdescriptor(bid = *(int*) getArgReference(stk,pci,2));
-	if( bl == NULL)
-		throw(MAL,"generator.join",RUNTIME_OBJECT_MISSING);
-	br = BATdescriptor(bid = *(int*) getArgReference(stk,pci,3));
-	if( br == NULL){
-		//BBPreleaseref(bl->batCacheid));
-		throw(MAL,"generator.join",RUNTIME_OBJECT_MISSING);
+	p = findLastAssign(mb,pci,pci->argv[2]);
+	if( p == NULL){
+		bl = BATdescriptor(*(int*) getArgReference(stk,pci,2));
+		if( bl == NULL)
+			throw(MAL,"generator.join",RUNTIME_OBJECT_MISSING);
+	}
+	q = findLastAssign(mb,pci,pci->argv[3]);
+	if ( q == NULL){
+		br = BATdescriptor(*(int*) getArgReference(stk,pci,3));
+		if( br == NULL){
+			BBPreleaseref(bl->batCacheid);
+			throw(MAL,"generator.join",RUNTIME_OBJECT_MISSING);
+		}
 	}
 
-	p = findLastAssign(mb,pci,pci->argv[3]);
-	assert(p);
+	// in case of both generators materialize the 'smallest' one first
+	// or implement more knowledge, postponed
+	assert(!( p && q));
+	assert(p || q);
 
-	cnt = BATcount(bl);
-	tpe = br->ttype;
-	if( bl->ttype == TYPE_void)
-		os = bl->tseqbase;
+	// switch roles to have a single target bat[:oid,:any] designated 
+	// by b and reference instruction p for the generator
+	b = q? br : bl;
+	p = q? q : p;
+	cnt = BATcount(b);
+	tpe = b->ttype;
+	if( b->ttype == TYPE_void)
+		os = b->tseqbase;
 	else
-		o = (oid*) Tloc(bl,BUNfirst(bl));
-
+		o = (oid*) Tloc(b,BUNfirst(b));
+	
 	bln = BATnew(TYPE_void,TYPE_oid, cnt);
 	brn = BATnew(TYPE_void,TYPE_oid, cnt);
 	if( bln == NULL || brn == NULL){
@@ -818,16 +830,15 @@ str VLTgenerator_join(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	/* The actual join code for generators be injected here */
 	switch(tpe){
-	case TYPE_bte: //VLTjoin(bte); break;
-	{ bte f,l,s;
-	bte *v,w;
+	case TYPE_bte: //VLTjoin(bte); break; 
+	{ bte f,l,s; bte *v; BUN w;
 	f = *(bte*) getArgReference(stk,p, 1);
 	l = *(bte*) getArgReference(stk,p, 2);
 	s = *(bte*) getArgReference(stk,p, 3);
 	for( ; cnt >0; cnt--,os++,o++){
-		v = (bte*) Tloc(bl,BUNfirst(bl));
-		w = (int) ((*v -f)/s);
-		if ( *v >= f && *v < l && f + w * s == *v ){
+		v = (bte*) Tloc(b,BUNfirst(b));
+		w = (BUN) ((*v -f)/s);
+		if ( *v >= f && *v < l && f + (bte)( w * s) == *v ){
 			*or++ = (oid) w;
 			*ol++ = *o;
 			c++;
@@ -870,14 +881,20 @@ str VLTgenerator_join(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bln->hseqbase = 0;
 	bln->hkey = 1;
 	BATderiveProps(bln,0);
-	BBPkeepref(*(int*)getArgReference(stk,pci,0)= bln->batCacheid);
 	
 	BATsetcount(brn,c);
 	brn->hdense = 1;
 	brn->hseqbase = 0;
 	brn->hkey = 1;
 	BATderiveProps(brn,0);
-	BBPkeepref(*(int*)getArgReference(stk,pci,1)= brn->batCacheid);
+	if( q){
+		BBPkeepref(*(int*)getArgReference(stk,pci,1)= brn->batCacheid);
+		BBPkeepref(*(int*)getArgReference(stk,pci,0)= bln->batCacheid);
+	} else {
+		// switch their role
+		BBPkeepref(*(int*)getArgReference(stk,pci,0)= brn->batCacheid);
+		BBPkeepref(*(int*)getArgReference(stk,pci,1)= bln->batCacheid);
+	}
 	return msg;
 /*
 wrapup:
