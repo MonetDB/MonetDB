@@ -44,7 +44,14 @@
 #define geom_export extern
 #endif
 
+
+#define GEOMETRY_HAS_Z(info)(info & 0x02)
+#define GEOMETRY_HAS_M(info)(info & 0x01)
+
 int TYPE_mbr;
+
+geom_export void geoHasZ(int* res, int* info);
+geom_export void geoHasM(int* res, int* info);
 
 geom_export bat *geom_prelude(void);
 geom_export void geom_epilogue(void);
@@ -58,6 +65,20 @@ geom_export int wkbFROMSTR(char *src, int *len, wkb **atom);
 geom_export int wkbTOSTR(char **dst, int *len, wkb *atom);
 geom_export str wkbFromText(wkb **w, str *wkt, int srid, int *tpe);
 geom_export str wkbAsText(str *r, wkb **w);
+
+
+
+/*check if the geometry has z coordinate*/
+void geoHasZ(int* res, int* info) {
+	if(GEOMETRY_HAS_Z(*info)) *res=1;
+	else *res=0;
+
+}
+/*check if the geometry has m coordinate*/
+void geoHasM(int* res, int* info) {
+	if(GEOMETRY_HAS_M(*info)) *res=1;
+	else *res=0;
+}
 
 /* initialise geos */
 bat *geom_prelude(void) {

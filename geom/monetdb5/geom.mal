@@ -49,6 +49,12 @@ command FromText{unsafe}(wkt:str, srid:int, type:int) :wkb	address wkbFromText;
 
 module geom;
 
+command hasZ{unsafe}(flags:int) :int address geoHasZ
+comment "returns 1 if the geometry has z coordinate";
+
+command hasM{unsafe}(flags:int) :int address geoHasM
+comment "returns 1 if the geometry has m coordinate";
+
 #Geometry Constructors
 function PointFromText{unsafe}(wkt:str, srid:int) :wkb; 
 	x := wkb.FromText(wkt,srid,1);
