@@ -1221,39 +1221,6 @@ logger_find_persistent_catalog(logger *lg, char *fn, FILE *fp, char *bak, bat *c
 	return 1;
 }
 
-static void
-logger_find_logbat(logger* lg, int id, log_bid seqs_id) {
-	bat seqs_val = logger_find_bat(lg, "seqs_val");
-	bat snapshots_bid = logger_find_bat(lg, "snapshots_bid");
-	bat snapshots_tid = logger_find_bat(lg, "snapshots_tid");
-	lg->seqs_id = BATdescriptor(seqs_id);
-	if (lg->seqs_id == 0) {
-		logger_fatal("Logger_new: inconsistent database, seqs_id does not exist", 0, 0, 0);
-	}
-
-	lg->seqs_val = BATdescriptor(seqs_val);
-	if (lg->seqs_val == 0) {
-		logger_fatal("Logger_new: inconsistent database, seqs_val does not exist", 0, 0, 0);
-	}
-
-	if (BATcount(lg->seqs_id)) {
-		BUN p = BUNfndT(lg->seqs_id, &id);
-		lg->id = *(lng *) Tloc(lg->seqs_val, p);
-	} else {
-		BUNappend(lg->seqs_id, &id, FALSE);
-		BUNappend(lg->seqs_val, &lg->id, FALSE);
-	}
-	lg->snapshots_bid = BATdescriptor(snapshots_bid);
-	if (lg->snapshots_bid == 0) {
-		logger_fatal("Logger_new: inconsistent database, snapshots_bid does not exist", 0, 0, 0);
-	}
-
-	lg->snapshots_tid = BATdescriptor(snapshots_tid);
-	if (lg->snapshots_tid == 0) {
-		logger_fatal("Logger_new: inconsistent database, snapshots_tid does not exist", 0, 0, 0);
-	}
-}
-
 static logger *
 logger_new(int debug, char *fn, logger_settings *log_settings, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp)
 {
@@ -1346,7 +1313,6 @@ logger_new(int debug, char *fn, logger_settings *log_settings, int version, prev
 			goto error;
 		}
 	}
-
 	seqs_id = logger_find_bat(lg, "seqs_id");
 	if (seqs_id == 0) {
 		lg->seqs_id = logbat_new(TYPE_int, 1);
@@ -1378,9 +1344,30 @@ logger_new(int debug, char *fn, logger_settings *log_settings, int version, prev
 
 		bm_subcommit(lg->catalog_bid, lg->catalog_nme, lg->catalog_bid, lg->catalog_nme, NULL, lg->debug);
 	} else {
-		logger_find_logbat(lg, id, seqs_id);
-	}
+		bat seqs_val = logger_find_bat(lg, "seqs_val");
+		bat snapshots_bid = logger_find_bat(lg, "snapshots_bid");
+		bat snapshots_tid = logger_find_bat(lg, "snapshots_tid");
 
+		lg->seqs_id = BATdescriptor(seqs_id);
+		if (lg->seqs_id == 0)
+			logger_fatal("Logger_new: inconsistent database, seqs_id does not exist",0,0,0);
+		lg->seqs_val = BATdescriptor(seqs_val);
+		if (lg->seqs_val == 0)
+			logger_fatal("Logger_new: inconsistent database, seqs_val does not exist",0,0,0);
+		if (BATcount(lg->seqs_id)) {
+			BUN p = BUNfndT(lg->seqs_id, &id);
+			lg->id = *(lng *) Tloc(lg->seqs_val, p);
+		} else {
+			BUNappend(lg->seqs_id, &id, FALSE);
+			BUNappend(lg->seqs_val, &lg->id, FALSE);
+		}
+		lg->snapshots_bid = BATdescriptor(snapshots_bid);
+		if (lg->snapshots_bid == 0)
+			logger_fatal("Logger_new: inconsistent database, snapshots_bid does not exist",0,0,0);
+		lg->snapshots_tid = BATdescriptor(snapshots_tid);
+		if (lg->snapshots_tid == 0)
+			logger_fatal("Logger_new: inconsistent database, snapshots_tid does not exist",0,0,0);
+	}
 	lg->freed = BATnew(TYPE_void, TYPE_int, 1);
 	BATseqbase(lg->freed, 0);
 	snprintf(bak, BUFSIZ, "%s_freed", fn);
