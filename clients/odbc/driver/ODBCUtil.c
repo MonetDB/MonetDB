@@ -290,7 +290,7 @@ static struct scalars {
 } scalars[] = {
 	{"ascii", 1, "\"ascii\"(\1)", },
 	{"bit_length", 1, NULL, },
-	{"char", 1, NULL, },
+	{"char", 1, "\"code\"(\1)", },
 	{"char_length", 1, "\"char_length\"(\1)", },
 	{"character_length", 1, "\"character_length\"(\1)", },
 	{"concat", 2, "\"concat\"(\1,\2)", },
