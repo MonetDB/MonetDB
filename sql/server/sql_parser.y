@@ -474,6 +474,7 @@ int yydebug=1;
 	BOOL_FALSE BOOL_TRUE
 	CURRENT_DATE CURRENT_TIMESTAMP CURRENT_TIME LOCALTIMESTAMP LOCALTIME
 	LEX_ERROR 
+	GEOMETRY GEOMETRYSUBTYPE  
 
 %token	USER CURRENT_USER SESSION_USER LOCAL LOCKED
 %token  CURRENT_ROLE sqlSESSION
@@ -4648,8 +4649,79 @@ data_type:
 				sql_init_subtype(&$$, t, $3, 0);
 			  }
 			}
+| GEOMETRY {
+	sql_type *t = mvc_bind_type(m, "geometry");
+	if (!t) {
+		char *msg = sql_message("\b22000!type (%s) unknown", $1);
 
+		yyerror(m, msg);
+		_DELETE(msg);
+		$$.type = NULL;
+		YYABORT;
+	  } else {
+		sql_init_subtype(&$$, t, 0, 0);
+	  }
+}
+| GEOMETRY {
+		char* geoType = (char*) malloc(sizeof($1)); 
+		strcpy(geoType, $1); 
+		$<sval>$=geoType;
+	} '(' subgeometry_type ',' nonzero ')' {
+		char* geoType = $<sval>2; 
+		char* geoSubType = $<sval>4; 
+		int srid = $6; 
+
+		sql_type *t = mvc_bind_type(m, geoType);
+		if (!t) {
+			char *msg = sql_message("\b22000!type (%s) unknown", $1);
+			free(geoSubType);
+			free(geoType);
+			yyerror(m, msg);
+			_DELETE(msg);
+			$$.type = NULL;
+			YYABORT;
+		} else {
+			unsigned int geoSubType_i = 0;
+			if(strcmp(geoSubType, "point") == 0 )
+				geoSubType_i = 1;
+			else if(strcmp(geoSubType, "linestring") == 0)
+				geoSubType_i = 2;
+			else if(strcmp(geoSubType, "polygon") == 0)
+				geoSubType_i = 3;
+			else if(strcmp(geoSubType, "multipoint") == 0)
+				geoSubType_i = 4;
+			else if(strcmp(geoSubType, "multilinestring") == 0)
+				geoSubType_i = 5;
+			else if(strcmp(geoSubType, "multipolygon") == 0)
+				geoSubType_i = 6;
+			else if(strcmp(geoSubType, "geometrycollection") == 0)
+				geoSubType_i = 7;
+			else {
+				char *msg = sql_message("\b22000!type (%s) unknown", geoSubType);
+				free(geoSubType);
+				free(geoType);
+				yyerror(m, msg);
+				_DELETE(msg);
+				$$.type = NULL;
+				YYABORT;
+			}	
+			sql_init_subtype(&$$, t, geoSubType_i, srid);
+			free(geoSubType);
+			free(geoType);
+		}
+	}
  ;
+
+subgeometry_type:
+  GEOMETRYSUBTYPE {
+		char* geoSubType = (char*) malloc(sizeof($1)); 
+		strcpy(geoSubType, $1); 
+		$<sval>$=geoSubType; }
+| string {
+		char* geoSubType = (char*) malloc(sizeof($1)); 
+		strcpy(geoSubType, $1); 
+		$<sval>$=geoSubType; }
+;
 
 type_alias:
  ALIAS
@@ -4764,6 +4836,7 @@ non_reserved_word:
 |  FILTER	{ $$ = sa_strdup(SA, "filter"); }
 |  TEMPORARY	{ $$ = sa_strdup(SA, "temporary"); }
 |  ANALYZE	{ $$ = sa_strdup(SA, "analyze"); }
+|  GEOMETRY	{ $$ = sa_strdup(SA, "geometry"); }
 ;
 
 name_commalist:

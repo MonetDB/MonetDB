@@ -369,6 +369,16 @@ scanner_init_keywords(void)
 	keywords_insert("URI", URI);
 	keywords_insert("XMLAGG", XMLAGG);
 
+	/* keywords for opengis */
+	keywords_insert("GEOMETRY", GEOMETRY);
+	keywords_insert("POINT", GEOMETRYSUBTYPE);
+	keywords_insert("LINESTRING", GEOMETRYSUBTYPE);
+	keywords_insert("POLYGON", GEOMETRYSUBTYPE);
+	keywords_insert("MULTIPOINT", GEOMETRYSUBTYPE);
+	keywords_insert("MULTILINESTRING", GEOMETRYSUBTYPE);
+	keywords_insert("MULTIPOLYGON", GEOMETRYSUBTYPE);
+	keywords_insert("GEOMETRYCOLLECTION", GEOMETRYSUBTYPE);
+
 }
 
 #define find_keyword_bs(lc, s) find_keyword(lc->rs->buf+lc->rs->pos+s)
