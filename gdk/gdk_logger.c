@@ -1221,7 +1221,7 @@ logger_find_persistent_catalog(logger *lg, char *fn, FILE *fp, char *bak, bat *c
 }
 
 static logger *
-logger_new(int debug, char *fn, logger_settings *log_settings, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp)
+logger_new(int debug, char *fn, logger_settings *log_settings, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp, int readonly)
 {
 	int id = LOG_SID;
 	logger *lg = (struct logger *) GDKmalloc(sizeof(struct logger));
@@ -1300,7 +1300,7 @@ logger_new(int debug, char *fn, logger_settings *log_settings, int version, prev
 	snprintf(bak, BUFSIZ, "%s_catalog_bid", fn);
 	catalog_bid = BBPindex(bak);
 
-	if (catalog_bid == 0) {
+	if (catalog_bid == 0 && !readonly) {
 		if (!logger_create_catalog_file(debug, lg, fn, fp, filename, bak)) {
 			goto error;
 		}
@@ -1310,6 +1310,7 @@ logger_new(int debug, char *fn, logger_settings *log_settings, int version, prev
 			goto error;
 		}
 	}
+
 	seqs_id = logger_find_bat(lg, "seqs_id");
 	if (seqs_id == 0) {
 		lg->seqs_id = logbat_new(TYPE_int, 1);
@@ -1372,15 +1373,12 @@ logger_new(int debug, char *fn, logger_settings *log_settings, int version, prev
 	BBPrename(lg->freed->batCacheid, bak);
 
 	if (fp != NULL) {
-#if SIZEOF_OID == 8
-		char cvfile[BUFSIZ];
-#endif
-
 		if (check_version(lg, fp)) {
 			goto error;
 		}
 
-#if SIZEOF_OID == 8
+/* Do not do conversion is running in readonly mode */
+#if SIZEOF_OID == 8 && !readonly
 		/* When a file *_32-64-convert exists in the database,
 		 * it was left there by the BBP initialization code
 		 * when it did a conversion of 32-bit OIDs to 64 bits
@@ -1407,6 +1405,7 @@ logger_new(int debug, char *fn, logger_settings *log_settings, int version, prev
 		 * what we expect, the conversion was apparently done
 		 * already, and so we can delete the file. */
 
+		char cvfile[BUFSIZ];
 		snprintf(cvfile, sizeof(cvfile), "%sconvert-32-64", lg->dir);
 		snprintf(bak, sizeof(bak), "%s_32-64-convert", fn);
 		{
@@ -1485,9 +1484,9 @@ logger_new(int debug, char *fn, logger_settings *log_settings, int version, prev
 }
 
 logger *
-logger_create(int debug, char *fn, logger_settings *log_settings, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp)
+logger_create(int debug, char *fn, logger_settings *log_settings, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp, int readonly)
 {
-	logger *lg = logger_new(debug, fn, log_settings, version, prefuncp, postfuncp);
+	logger *lg = logger_new(debug, fn, log_settings, version, prefuncp, postfuncp, readonly);
 
 	if (!lg)
 		return NULL;

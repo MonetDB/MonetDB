@@ -98,7 +98,7 @@ logger_create_wrap( logger *L, int *debug, str *fn, str *dirname, int *version)
 	 * -1 by default, meaning it should be ignored, since it is not set */
 	log_settings->shared_drift_threshold = GDKgetenv_int("gdk_shared_drift_threshold", -1);
 
-	logger *l = logger_create(*debug, *fn, log_settings, *version, NULL, NULL);
+	logger *l = logger_create(*debug, *fn, log_settings, *version, NULL, NULL, 0);
 
 	if (l) {
 		*(logger**)L = l;

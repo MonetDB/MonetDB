@@ -1288,7 +1288,7 @@ store_schema_number(void)
 }
 
 int
-store_init(int debug, store_type store, int singleuser, logger_settings *log_settings, backend_stack stk)
+store_init(int debug, store_type store, int readonly, int singleuser, logger_settings *log_settings, backend_stack stk)
 {
 	sqlid id = 0;
 	lng lng_store_oid;
@@ -1316,9 +1316,16 @@ store_init(int debug, store_type store, int singleuser, logger_settings *log_set
 	}
 	active_store_type = store;
 	if (!logger_funcs.create ||
-	    logger_funcs.create(debug, log_settings, CATALOG_VERSION*v) == LOG_ERR) {
+	    logger_funcs.create(debug, log_settings, CATALOG_VERSION*v, 0) == LOG_ERR) {
 		MT_lock_unset(&bs_lock, "store_init");
 		return -1;
+	}
+	/* check if we need to create a read-only log as well */
+	if (log_settings->create_readonly) {
+		if (!logger_funcs.create || logger_funcs.create(debug, log_settings, CATALOG_VERSION*v, 1) == LOG_ERR) {
+			MT_lock_unset(&bs_lock, "store_init");
+			return -1;
+		}
 	}
 
 	sa = sa_create();
@@ -1334,12 +1341,12 @@ store_init(int debug, store_type store, int singleuser, logger_settings *log_set
 	gtrans = tr = create_trans(sa, stk);
 	active_transactions = sa_list(sa); 
 
-	store_readonly = log_settings->readonly;
+	store_readonly = readonly;
 	store_singleuser = singleuser;
 
 	if (logger_funcs.log_isnew()) {
 		/* cannot initialize database in readonly mode */
-		if (log_settings->readonly)
+		if (readonly)
 			return -1;
 		tr = sql_trans_create(stk, NULL, NULL);
 	} else {

@@ -51,7 +51,12 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 	 * -1 by default, meaning it should be ignored, since it is not set */
 	log_settings->shared_drift_threshold = GDKgetenv_int("gdk_shared_drift_threshold", -1);
 
-	log_settings->readonly = ro;
+	/* log is not readonly by default */
+	log_settings->create_readonly = 0;
+	/* check if all parameters for a shared log are set */
+	if (ro && log_settings->shared_logdir != NULL && log_settings->shared_drift_threshold >= 0) {
+		log_settings->create_readonly = 1;
+	}
 
 	mvc_debug = debug&4;
 	if (mvc_debug) {
@@ -65,7 +70,7 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 	scanner_init_keywords();
 
 
-	if ((first = store_init(debug, store, su, log_settings, stk)) < 0) {
+	if ((first = store_init(debug, store, ro, su, log_settings, stk)) < 0) {
 		fprintf(stderr, "!mvc_init: unable to create system tables\n");
 		return -1;
 	}
