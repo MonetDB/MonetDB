@@ -1142,8 +1142,7 @@ logger_create_catalog_file(int debug, logger *lg, char *fn, FILE *fp, char *file
 		logger_fatal(
 				"logger_new: there is no logger catalog, but there is a log file.\n"
 						"Are you sure you are using the correct combination of database\n"
-						"(--dbpath) and log directory (--set %s_logdir)?\n", fn,
-				0, 0);
+						"(--dbpath) and log directory (--set %s_logdir)?\n", fn, 0, 0);
 		return 0;
 	}
 	lg->catalog_bid = logbat_new(TYPE_int, BATSIZE);
@@ -1210,8 +1209,7 @@ logger_find_persistent_catalog(logger *lg, char *fn, FILE *fp, char *bak, bat *c
 						"If you have done a recent update of the server, it may be that your\n"
 						"logs are in an old location.  You should then either use\n"
 						"--set %s_logdir=<path to old log directory> or move the old log\n"
-						"directory to the new location (%s).\n", fn, fn,
-				lg->dir);
+						"directory to the new location (%s).\n", fn, fn, lg->dir);
 		return 0;
 	}
 	lg->catalog_bid = b;
