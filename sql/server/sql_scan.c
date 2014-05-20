@@ -379,6 +379,29 @@ scanner_init_keywords(void)
 	keywords_insert("MULTIPOLYGON", GEOMETRYSUBTYPE);
 	keywords_insert("GEOMETRYCOLLECTION", GEOMETRYSUBTYPE);
 
+	keywords_insert("POINTZ", GEOMETRYSUBTYPE);
+	keywords_insert("LINESTRINGZ", GEOMETRYSUBTYPE);
+	keywords_insert("POLYGONZ", GEOMETRYSUBTYPE);
+	keywords_insert("MULTIPOINTZ", GEOMETRYSUBTYPE);
+	keywords_insert("MULTILINESTRINGZ", GEOMETRYSUBTYPE);
+	keywords_insert("MULTIPOLYGONZ", GEOMETRYSUBTYPE);
+	keywords_insert("GEOMETRYCOLLECTIONZ", GEOMETRYSUBTYPE);
+
+	keywords_insert("POINTM", GEOMETRYSUBTYPE);
+	keywords_insert("LINESTRINGM", GEOMETRYSUBTYPE);
+	keywords_insert("POLYGONM", GEOMETRYSUBTYPE);
+	keywords_insert("MULTIPOINTM", GEOMETRYSUBTYPE);
+	keywords_insert("MULTILINESTRINGM", GEOMETRYSUBTYPE);
+	keywords_insert("MULTIPOLYGONM", GEOMETRYSUBTYPE);
+	keywords_insert("GEOMETRYCOLLECTIONM", GEOMETRYSUBTYPE);
+
+	keywords_insert("POINTZM", GEOMETRYSUBTYPE);
+	keywords_insert("LINESTRINGZM", GEOMETRYSUBTYPE);
+	keywords_insert("POLYGONZM", GEOMETRYSUBTYPE);
+	keywords_insert("MULTIPOINTZM", GEOMETRYSUBTYPE);
+	keywords_insert("MULTILINESTRINGZM", GEOMETRYSUBTYPE);
+	keywords_insert("MULTIPOLYGONZM", GEOMETRYSUBTYPE);
+	keywords_insert("GEOMETRYCOLLECTIONZM", GEOMETRYSUBTYPE);
 }
 
 #define find_keyword_bs(lc, s) find_keyword(lc->rs->buf+lc->rs->pos+s)

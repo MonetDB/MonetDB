@@ -60,6 +60,10 @@
 #define FALSE 0
 #define TRUE 1
 
+#define SET_Z(info)(info = info | 0x02)
+#define SET_M(info)(info = info | 0x01)
+
+
 %}
 /* KNOWN NOT DONE OF sql'99
  *
@@ -68,6 +72,8 @@
  * REF/SCOPE
  * UDT
  */
+
+
 
 %parse-param { mvc *m }
 %lex-param { void *m }
@@ -425,6 +431,7 @@ int yydebug=1;
 	XML_whitespace_option
 	window_frame_units
 	window_frame_exclusion
+	subgeometry_type
 
 %type <w_val>
 	wrdval
@@ -4650,77 +4657,83 @@ data_type:
 			  }
 			}
 | GEOMETRY {
-	sql_type *t = mvc_bind_type(m, "geometry");
-	if (!t) {
-		char *msg = sql_message("\b22000!type (%s) unknown", $1);
-
-		yyerror(m, msg);
-		_DELETE(msg);
-		$$.type = NULL;
-		YYABORT;
-	  } else {
-		sql_init_subtype(&$$, t, 0, 0);
-	  }
-}
-| GEOMETRY {
-		char* geoType = (char*) malloc(sizeof($1)); 
-		strcpy(geoType, $1); 
-		$<sval>$=geoType;
-	} '(' subgeometry_type ',' nonzero ')' {
-		char* geoType = $<sval>2; 
-		char* geoSubType = $<sval>4; 
-		int srid = $6; 
-
-		sql_type *t = mvc_bind_type(m, geoType);
+		sql_type *t = mvc_bind_type(m, "geometry");
 		if (!t) {
 			char *msg = sql_message("\b22000!type (%s) unknown", $1);
-			free(geoSubType);
-			free(geoType);
+
+			yyerror(m, msg);
+			_DELETE(msg);
+			$$.type = NULL;
+			YYABORT;
+		  } else {
+			sql_init_subtype(&$$, t, 0, 0);
+	  	}
+	}
+| GEOMETRY '(' subgeometry_type ')' {
+		int geoSubType = $3; 
+		int srid = 0; 
+
+		sql_type *t = mvc_bind_type(m, "geometry");
+		if (!t) {
+			char *msg = sql_message("\b22000!type (%s) unknown", $1);
 			yyerror(m, msg);
 			_DELETE(msg);
 			$$.type = NULL;
 			YYABORT;
 		} else {
-			unsigned int geoSubType_i = 0;
-			if(strcmp(geoSubType, "point") == 0 )
-				geoSubType_i = 1;
-			else if(strcmp(geoSubType, "linestring") == 0)
-				geoSubType_i = 2;
-			else if(strcmp(geoSubType, "polygon") == 0)
-				geoSubType_i = 3;
-			else if(strcmp(geoSubType, "multipoint") == 0)
-				geoSubType_i = 4;
-			else if(strcmp(geoSubType, "multilinestring") == 0)
-				geoSubType_i = 5;
-			else if(strcmp(geoSubType, "multipolygon") == 0)
-				geoSubType_i = 6;
-			else if(strcmp(geoSubType, "geometrycollection") == 0)
-				geoSubType_i = 7;
-			else {
-				char *msg = sql_message("\b22000!type (%s) unknown", geoSubType);
-				free(geoSubType);
-				free(geoType);
-				yyerror(m, msg);
-				_DELETE(msg);
+			if(geoSubType == 0) {
 				$$.type = NULL;
 				YYABORT;
 			}	
-			sql_init_subtype(&$$, t, geoSubType_i, srid);
-			free(geoSubType);
-			free(geoType);
+			sql_init_subtype(&$$, t, geoSubType, srid);
+		}
+	}
+| GEOMETRY '(' subgeometry_type ',' nonzero ')' {
+		int geoSubType = $3; 
+		int srid = $5; 
+
+		sql_type *t = mvc_bind_type(m, "geometry");
+		if (!t) {
+			char *msg = sql_message("\b22000!type (%s) unknown", $1);
+			yyerror(m, msg);
+			_DELETE(msg);
+			$$.type = NULL;
+			YYABORT;
+		} else {
+			if(geoSubType == 0) {
+				$$.type = NULL;
+				YYABORT;
+			}	
+			sql_init_subtype(&$$, t, geoSubType, srid);
 		}
 	}
  ;
 
 subgeometry_type:
   GEOMETRYSUBTYPE {
-		char* geoSubType = (char*) malloc(sizeof($1)); 
-		strcpy(geoSubType, $1); 
-		$<sval>$=geoSubType; }
+	int subtype = find_subgeometry_type($1);
+	char* geoSubType = $1;
+
+	if(subtype == 0) {
+		char *msg = sql_message("\b22000!type (%s) unknown", geoSubType);
+		yyerror(m, msg);
+		_DELETE(msg);
+		
+	} 
+	$$ = subtype;	
+}
 | string {
-		char* geoSubType = (char*) malloc(sizeof($1)); 
-		strcpy(geoSubType, $1); 
-		$<sval>$=geoSubType; }
+	int subtype = find_subgeometry_type($1);
+	char* geoSubType = $1;
+
+	if(subtype == 0) {
+		char *msg = sql_message("\b22000!type (%s) unknown", geoSubType);
+		yyerror(m, msg);
+		_DELETE(msg);
+		
+	} 
+	$$ = subtype;	
+}
 ;
 
 type_alias:
@@ -5444,6 +5457,43 @@ XML_aggregate:
  ;
 
 %%
+int find_subgeometry_type(char* geoSubType) {
+	int subType = 0;
+	if(strcmp(geoSubType, "point") == 0 )
+		subType = (1 << 2);
+	else if(strcmp(geoSubType, "linestring") == 0)
+		subType = (2 << 2);
+	else if(strcmp(geoSubType, "polygon") == 0)
+		subType = (3 << 2);
+	else if(strcmp(geoSubType, "multipoint") == 0)
+		subType = (4 << 2);
+	else if(strcmp(geoSubType, "multilinestring") == 0)
+		subType = (5 << 2);
+	else if(strcmp(geoSubType, "multipolygon") == 0)
+		subType = (6 << 2);
+	else if(strcmp(geoSubType, "geometrycollection") == 0)
+		subType = (7 << 2);
+	else {
+		int strLength = strlen(geoSubType);
+		if(strLength > 0 ) {
+			char typeSubStr[strLength];
+			char flag = geoSubType[strLength-1]; 
+			
+			memcpy(typeSubStr, geoSubType, strLength-1);
+			typeSubStr[strLength-1]='\0';
+			subType = find_subgeometry_type(typeSubStr);
+			
+			
+			if(flag == 'z')
+				SET_Z(subType);
+			if(flag == 'm')
+				SET_M(subType);
+		}
+
+	}
+	return subType;	
+}
+
 char *token2string(int token)
 {
 	switch (token) {
