@@ -1,5 +1,5 @@
 %define name MonetDB
-%define version 11.17.15
+%define version 11.17.17
 %{!?buildno: %define buildno %(date +%Y%m%d)}
 
 # groups of related archs
@@ -828,6 +828,10 @@ mv $RPM_BUILD_ROOT%{_datadir}/doc/MonetDB-SQL-%{version} $RPM_BUILD_ROOT%{_datad
 rm -fr $RPM_BUILD_ROOT
 
 %changelog
+* Wed May 14 2014 Sjoerd Mullender <sjoerd@acm.org> - 11.17.17-20140514
+- Rebuilt.
+- BZ#3482: Crossproduct error
+
 * Thu May 08 2014 Sjoerd Mullender <sjoerd@acm.org> - 11.17.15-20140508
 - Rebuilt.
 - BZ#3424: numeric values at the front of strings determines whether

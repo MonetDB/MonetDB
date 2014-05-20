@@ -5094,7 +5094,6 @@ rel_select_exp(mvc *sql, sql_rel *rel, SelectNode *sn, exp_kind ek)
 	return rel;
 }
 
-
 static sql_rel *
 rel_query(mvc *sql, sql_rel *rel, symbol *sq, int toplevel, exp_kind ek, int apply)
 {
@@ -5117,10 +5116,11 @@ rel_query(mvc *sql, sql_rel *rel, symbol *sq, int toplevel, exp_kind ek, int app
 
 
 	sql->use_views = 1;
-	if (sn->from) {		/* keep variable list with tables and names */
+	if (sn->from) {	
 		dlist *fl = sn->from->data.lval;
 		dnode *n = NULL;
 		sql_rel *fnd = NULL;
+		list *aliases =  sa_list(sql->sa);
 
 		for (n = fl->h; n ; n = n->next) {
 			fnd = table_ref(sql, NULL, n->data.sym);
@@ -5146,10 +5146,14 @@ rel_query(mvc *sql, sql_rel *rel, symbol *sq, int toplevel, exp_kind ek, int app
 
 			if (!fnd)
 				break;
-			if (res)
+			if (res && list_find(aliases, rel_name(fnd), (fcmp)&strcmp)) 
+				return sql_error(sql, ERR_AMBIGUOUS, "SELECT: identifier '%s' ambiguous", rel_name(fnd));
+			else if (res)
 				res = rel_crossproduct(sql->sa, res, fnd, op_join);
-			else
+			else 
 				res = fnd;
+			if (rel_name(fnd))
+				list_append(aliases, rel_name(fnd));
 		}
 		if (!fnd) {
 			if (res)

@@ -927,6 +927,7 @@ stream *open_gzrstream(const char *filename) {
 	(void) filename;
 	return NULL;
 }
+#define open_gzwstream_(filename, mode)		NULL
 stream *open_gzwstream(const char *filename) {
 	(void) filename;
 	return NULL;
@@ -935,6 +936,7 @@ stream *open_gzrastream(const char *filename) {
 	(void) filename;
 	return NULL;
 }
+#define open_gzwastream_(filename, mode)	NULL
 stream *open_gzwastream(const char *filename) {
 	(void) filename;
 	return NULL;
@@ -1140,6 +1142,7 @@ stream *open_bzrstream(const char *filename) {
 	(void) filename;
 	return NULL;
 }
+#define open_bzwstream_(filename, mode)		NULL
 stream *open_bzwstream(const char *filename) {
 	(void) filename;
 	return NULL;
@@ -1148,6 +1151,7 @@ stream *open_bzrastream(const char *filename) {
 	(void) filename;
 	return NULL;
 }
+#define open_bzwastream_(filename, mode)	NULL
 stream *open_bzwastream(const char *filename) {
 	(void) filename;
 	return NULL;

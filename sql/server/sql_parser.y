@@ -79,7 +79,7 @@
 %lex-param { void *m }
 
 /* reentrant parser */
-%pure_parser
+%pure-parser
 %union {
 	int		i_val,bval;
 	wrd		w_val;
