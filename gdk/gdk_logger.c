@@ -1038,6 +1038,7 @@ logger_fatal(const char *format, const char *arg1, const char *arg2, const char 
 	GDKexit(1);
 }
 
+/* upgrade from old logger format */
 static void
 logger_upgrade_format(char *fn, logger *lg, bat *bid, char *bak) {
 	/* split catalog -> catalog_bid, catalog_nme */
@@ -1328,7 +1329,6 @@ logger_new(int debug, char *fn, logger_settings *log_settings, int version, prev
 	bid = BBPindex(bak);
 
 	if (bid) {
-		/* upgrade from old logger format */
 		logger_upgrade_format(fn, lg, &bid, bak);
 	}
 
