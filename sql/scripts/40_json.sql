@@ -104,3 +104,4 @@ returns string external name json.output;
 -- returns json external name json.nest;
 
 create aggregate json.tojsonarray( x string ) returns string external name json.aggr;
+create aggregate json.tojsonarray( x double ) returns string external name json.aggr;
