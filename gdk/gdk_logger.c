@@ -1132,7 +1132,6 @@ logger_upgrade_format(char *fn, logger *lg, bat *bid, char *bak) {
 	lg->seqs_val = NULL;
 }
 
-
 static int
 logger_create_catalog_file(int debug, logger *lg, char *fn, FILE *fp, char *filename, char *bak) {
 	log_bid bid = 0;
@@ -1227,7 +1226,6 @@ logger_new(int debug, char *fn, logger_settings *log_settings, int version, prev
 	int id = LOG_SID;
 	logger *lg = (struct logger *) GDKmalloc(sizeof(struct logger));
 	FILE *fp;
-	char directory[BUFSIZ];
 	char filename[BUFSIZ];
 	char bak[BUFSIZ];
 	log_bid seqs_id = 0;
@@ -1251,16 +1249,16 @@ logger_new(int debug, char *fn, logger_settings *log_settings, int version, prev
 
 	/* if the logdir path is absolute, do not prefix it with the gdk_dbpath */
 	if (MT_path_absolute(log_settings->logdir)) {
-		snprintf(directory, BUFSIZ, "%s%c%s%c",
+		snprintf(filename, BUFSIZ, "%s%c%s%c",
 				log_settings->logdir, DIR_SEP, fn, DIR_SEP);
 	} else {
-		snprintf(directory, BUFSIZ, "%s%c%s%c%s%c",
+		snprintf(filename, BUFSIZ, "%s%c%s%c%s%c",
 				GDKgetenv("gdk_dbpath"), DIR_SEP,
 				log_settings->logdir, DIR_SEP, fn, DIR_SEP);
 	}
 
 	if ((lg->fn = GDKstrdup(fn)) == NULL ||
-	    (lg->dir = GDKstrdup(directory)) == NULL) {
+	    (lg->dir = GDKstrdup(filename)) == NULL) {
 		fprintf(stderr, "!ERROR: logger_new: strdup failed\n");
 		GDKfree(lg->fn);
 		GDKfree(lg->dir);
@@ -1278,7 +1276,6 @@ logger_new(int debug, char *fn, logger_settings *log_settings, int version, prev
 	lg->seqs_id = NULL;
 	lg->seqs_val = NULL;
 
-	filename = directory;
 	snprintf(filename, BUFSIZ, "%s%s", lg->dir, LOGFILE);
 	snprintf(bak, BUFSIZ, "%s.bak", filename);
 
@@ -1368,6 +1365,7 @@ logger_new(int debug, char *fn, logger_settings *log_settings, int version, prev
 		if (lg->snapshots_tid == 0)
 			logger_fatal("Logger_new: inconsistent database, snapshots_tid does not exist",0,0,0);
 	}
+
 	lg->freed = BATnew(TYPE_void, TYPE_int, 1);
 	BATseqbase(lg->freed, 0);
 	snprintf(bak, BUFSIZ, "%s_freed", fn);
@@ -1409,7 +1407,7 @@ logger_new(int debug, char *fn, logger_settings *log_settings, int version, prev
 		 * what we expect, the conversion was apparently done
 		 * already, and so we can delete the file. */
 
-		snprintf(cvfile, sizeof(cvfile), "%sconvert-32-64", directory);
+		snprintf(cvfile, sizeof(cvfile), "%sconvert-32-64", lg->dir);
 		snprintf(bak, sizeof(bak), "%s_32-64-convert", fn);
 		{
 			FILE *fp1;
