@@ -94,7 +94,7 @@ logger_create_wrap( logger *L, int *debug, str *fn, str *dirname, int *version)
 	log_settings->logdir = *dirname;
 	/* Get and pass on the shared WAL directory location, if set */
 	log_settings->shared_logdir = GDKgetenv("gdk_shared_logdir");
-	/* Get and pass on the shared WAL directory location, if set.
+	/* Get and pass on the shared WAL drift threshold, if set.
 	 * -1 by default, meaning it should be ignored, since it is not set */
 	log_settings->shared_drift_threshold = GDKgetenv_int("gdk_shared_drift_threshold", -1);
 
