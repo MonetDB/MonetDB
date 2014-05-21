@@ -4680,13 +4680,12 @@ data_type:
 			_DELETE(msg);
 			$$.type = NULL;
 			YYABORT;
-		} else {
-			if(geoSubType == 0) {
+		} else if(geoSubType == 0) {
 				$$.type = NULL;
 				YYABORT;
-			}	
+		} else
 			sql_init_subtype(&$$, t, geoSubType, srid);
-		}
+		
 	}
 | GEOMETRY '(' subgeometry_type ',' nonzero ')' {
 		int geoSubType = $3; 
@@ -4699,13 +4698,11 @@ data_type:
 			_DELETE(msg);
 			$$.type = NULL;
 			YYABORT;
-		} else {
-			if(geoSubType == 0) {
+		} else if(geoSubType == 0) {
 				$$.type = NULL;
 				YYABORT;
-			}	
+		} else	
 			sql_init_subtype(&$$, t, geoSubType, srid);
-		}
 	}
  ;
 
@@ -5481,13 +5478,15 @@ int find_subgeometry_type(char* geoSubType) {
 			
 			memcpy(typeSubStr, geoSubType, strLength-1);
 			typeSubStr[strLength-1]='\0';
-			subType = find_subgeometry_type(typeSubStr);
+			if(flag == 'z' || flag == 'm' ) {
+				subType = find_subgeometry_type(typeSubStr);
 			
 			
-			if(flag == 'z')
-				SET_Z(subType);
-			if(flag == 'm')
-				SET_M(subType);
+				if(flag == 'z')
+					SET_Z(subType);
+				if(flag == 'm')
+					SET_M(subType);
+			}
 		}
 
 	}
