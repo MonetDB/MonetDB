@@ -379,7 +379,7 @@ static struct convert {
 	{ "SQL_DECIMAL", "decimal(18,7)", },
 	{ "SQL_DOUBLE", "double", },
 	{ "SQL_FLOAT", "float", },
-	/* { "SQL_GUID", "SQL_GUID", }, */
+	/* { "SQL_GUID", "uuid", }, */
 	{ "SQL_INTEGER", "integer", },
 	{ "SQL_INTERVAL_DAY", "interval day", },
 	{ "SQL_INTERVAL_DAY_TO_HOUR", "interval day to hour", },
@@ -403,7 +403,7 @@ static struct convert {
 	{ "SQL_TIMESTAMP", "timestamp", },
 	{ "SQL_TINYINT", "tinyint", },
 	{ "SQL_VARBINARY", "binary large object", },
-	{ "SQL_VARCHAR", "character large object", },
+	{ "SQL_VARCHAR", "character varying", },
 	{ "SQL_WCHAR", "character", },
 	{ "SQL_WLONGVARCHAR", "character large object", },
 	{ "SQL_WVARCHAR", "character large object", },
