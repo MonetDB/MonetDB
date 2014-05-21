@@ -1373,12 +1373,14 @@ logger_new(int debug, char *fn, logger_settings *log_settings, int version, prev
 	BBPrename(lg->freed->batCacheid, bak);
 
 	if (fp != NULL) {
+#if SIZEOF_OID == 8
+		char cvfile[BUFSIZ];
+#endif
 		if (check_version(lg, fp)) {
 			goto error;
 		}
 
-/* Do not do conversion is running in readonly mode */
-#if SIZEOF_OID == 8 && !readonly
+#if SIZEOF_OID == 8
 		/* When a file *_32-64-convert exists in the database,
 		 * it was left there by the BBP initialization code
 		 * when it did a conversion of 32-bit OIDs to 64 bits
@@ -1405,56 +1407,58 @@ logger_new(int debug, char *fn, logger_settings *log_settings, int version, prev
 		 * what we expect, the conversion was apparently done
 		 * already, and so we can delete the file. */
 
-		char cvfile[BUFSIZ];
-		snprintf(cvfile, sizeof(cvfile), "%sconvert-32-64", lg->dir);
-		snprintf(bak, sizeof(bak), "%s_32-64-convert", fn);
-		{
-			FILE *fp1;
-			long off;
-			int curid;
+		/* Do not do conversion logger is readonly */
+		if (!readonly) {
+			snprintf(cvfile, sizeof(cvfile), "%sconvert-32-64", lg->dir);
+			snprintf(bak, sizeof(bak), "%s_32-64-convert", fn);
+			{
+				FILE *fp1;
+				long off;
+				int curid;
 
-			/* read the current log id without disturbing
-			 * the file pointer */
-			off = ftell(fp);
-			if (fscanf(fp, "%d", &curid) != 1)
-				curid = -1; /* shouldn't happen? */
-			fseek(fp, off, SEEK_SET);
+				/* read the current log id without disturbing
+				 * the file pointer */
+				off = ftell(fp);
+				if (fscanf(fp, "%d", &curid) != 1)
+					curid = -1; /* shouldn't happen? */
+				fseek(fp, off, SEEK_SET);
 
-			if ((fp1 = fopen(bak, "r")) != NULL) {
-				/* file indicating that we need to do
-				 * a 32->64 bit OID conversion exists;
-				 * record the fact in case we get
-				 * interrupted, and set the flag so
-				 * that we actually do what's asked */
-				fclose(fp1);
-				/* first create a versioned file using
-				 * the current log id */
-				fp1 = fopen(cvfile, "w");
-				fprintf(fp1, "%d\n", curid);
-				fclose(fp1);
-				/* then remove the unversioned file
-				 * that gdk_bbp created (in this
-				 * order!) */
-				unlink(bak);
-				/* set the flag that we need to convert */
-				lg->read32bitoid = 1;
-			} else if ((fp1 = fopen(cvfile, "r")) != NULL) {
-				/* the versioned conversion file
-				 * exists: check version */
-				int newid;
-
-				if (fscanf(fp1, "%d", &newid) == 1 &&
-				    newid == curid) {
-					/* versions match, we need to
-					 * convert */
+				if ((fp1 = fopen(bak, "r")) != NULL) {
+					/* file indicating that we need to do
+					 * a 32->64 bit OID conversion exists;
+					 * record the fact in case we get
+					 * interrupted, and set the flag so
+					 * that we actually do what's asked */
+					fclose(fp1);
+					/* first create a versioned file using
+					 * the current log id */
+					fp1 = fopen(cvfile, "w");
+					fprintf(fp1, "%d\n", curid);
+					fclose(fp1);
+					/* then remove the unversioned file
+					 * that gdk_bbp created (in this
+					 * order!) */
+					unlink(bak);
+					/* set the flag that we need to convert */
 					lg->read32bitoid = 1;
-				}
-				fclose(fp1);
-				if (!lg->read32bitoid) {
-					/* no conversion, so we can
-					 * remove the versioned
-					 * file */
-					unlink(cvfile);
+				} else if ((fp1 = fopen(cvfile, "r")) != NULL) {
+					/* the versioned conversion file
+					 * exists: check version */
+					int newid;
+
+					if (fscanf(fp1, "%d", &newid) == 1 &&
+						newid == curid) {
+						/* versions match, we need to
+						 * convert */
+						lg->read32bitoid = 1;
+					}
+					fclose(fp1);
+					if (!lg->read32bitoid) {
+						/* no conversion, so we can
+						 * remove the versioned
+						 * file */
+						unlink(cvfile);
+					}
 				}
 			}
 		}
