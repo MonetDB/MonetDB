@@ -1195,6 +1195,7 @@ logger_find_persistent_catalog(logger *lg, char *fn, FILE *fp, char *bak, bat *c
 		logger_fatal("Logger_new: inconsistent database, catalog does not exist", 0, 0, 0);
 
 	snprintf(bak, BUFSIZ, "%s_catalog_nme", fn);
+	*catalog_nme = BBPindex(bak);
 	n = BATdescriptor(*catalog_nme);
 	if (n == 0)
 		logger_fatal("Logger_new: inconsistent database, catalog_nme does not exist", 0, 0, 0);
@@ -1305,7 +1306,6 @@ logger_new(int debug, char *fn, logger_settings *log_settings, int version, prev
 			goto error;
 		}
 	} else {
-		catalog_nme = BBPindex(bak);
 		if (!logger_find_persistent_catalog(lg, fn, fp, bak, &catalog_bid, &catalog_nme)) {
 			goto error;
 		}
