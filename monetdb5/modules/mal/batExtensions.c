@@ -283,6 +283,7 @@ CMDBATimprints(int *ret, int *bid)
 	BBPkeepref(*ret = b->batCacheid);
 	return MAL_SUCCEED;
 }
+
 str
 CMDBATimprintsize(lng *ret, int *bid)
 {
@@ -293,5 +294,47 @@ CMDBATimprintsize(lng *ret, int *bid)
 
 	*ret = IMPSimprintsize(b);
 	BBPreleaseref(b->batCacheid);
+	return MAL_SUCCEED;
+}
+
+str
+CMDBATbloom(int *ret, int *bid)
+{
+	BAT *b, *bn;
+
+	if ((b = BATdescriptor(*bid)) == NULL)
+		throw(MAL, "bat.bloom", INTERNAL_BAT_ACCESS);
+
+	bn = BATbloom(b);
+	BBPkeepref(*ret = bn->batCacheid);
+	BBPreleaseref(b->batCacheid);
+	return MAL_SUCCEED;
+}
+
+str
+CMDBLOOMselect(int *ret, int *bid, int *sid, int *bfid)
+{
+	BAT *b, *s, *bf, *bn;
+
+	if ((b = BATdescriptor(*bid)) == NULL)
+		throw(MAL, "bat.bloom", INTERNAL_BAT_ACCESS);
+
+	if ((s = BATdescriptor(*sid)) == NULL)
+		throw(MAL, "bat.bloom", INTERNAL_BAT_ACCESS);
+
+	if ((bf = BATdescriptor(*bfid)) == NULL)
+		throw(MAL, "bat.bloom", INTERNAL_BAT_ACCESS);
+
+	bn = BLOOMselect(b, s, bf);
+	if (bn == NULL) {
+		BBPunfix(b->batCacheid);
+		BBPunfix(s->batCacheid);
+		BBPunfix(bf->batCacheid);
+		throw(MAL,"bat.bloom", INTERNAL_OBJ_CREATE);
+	}
+	BBPkeepref(*ret = bn->batCacheid);
+	BBPreleaseref(b->batCacheid);
+	BBPreleaseref(s->batCacheid);
+	BBPreleaseref(bf->batCacheid);
 	return MAL_SUCCEED;
 }
