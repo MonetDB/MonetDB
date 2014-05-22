@@ -60,6 +60,7 @@ typedef struct logger {
 #endif
 	char *fn;
 	char *dir;
+	int readonly; /* a flag to indicate if the logger is read-only */
 	preversionfix_fptr prefuncp;
 	postversionfix_fptr postfuncp;
 	stream *log;
@@ -116,6 +117,7 @@ gdk_export int logger_restart(logger *lg);
 gdk_export int logger_cleanup(logger *lg);
 gdk_export size_t logger_changes(logger *lg);
 gdk_export int logger_sequence(logger *lg, int seq, lng *id);
+gdk_export int logger_reload(logger *lg);
 
 /* todo pass the transaction id */
 gdk_export int log_bat(logger *lg, BAT *b, char *n);

@@ -257,6 +257,8 @@ typedef int (*logger_cleanup_fptr) (void);
 typedef int (*logger_changes_fptr)(void);
 typedef int (*logger_get_sequence_fptr) (int seq, lng *id);
 
+typedef int (*logger_reload_fptr) (void);
+
 typedef int (*log_isnew_fptr)(void);
 typedef int (*log_tstart_fptr) (void);
 typedef int (*log_tend_fptr) (void);
@@ -270,6 +272,8 @@ typedef struct logger_functions {
 
 	logger_changes_fptr changes;
 	logger_get_sequence_fptr get_sequence;
+
+	logger_reload_fptr reload;
 
 	log_isnew_fptr log_isnew;
 	log_tstart_fptr log_tstart;

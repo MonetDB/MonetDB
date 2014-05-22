@@ -309,6 +309,18 @@ bl_destroy(void)
 	}
 }
 
+static void
+bl_destroy_shared(void)
+{
+	logger *l = bat_logger_shared;
+
+	bat_logger_shared = NULL;
+	if (l) {
+		logger_exit(l);
+		logger_destroy(l);
+	}
+}
+
 static int 
 bl_restart(void)
 {
@@ -331,6 +343,12 @@ bl_changes(void)
 	return (int) MIN(logger_changes(bat_logger), GDK_int_max);
 }
 
+static int
+bl_changes_shared(void)
+{
+	return (int) MIN(logger_changes(bat_logger_shared), GDK_int_max);
+}
+
 static int 
 bl_get_sequence(int seq, lng *id)
 {
@@ -338,9 +356,24 @@ bl_get_sequence(int seq, lng *id)
 }
 
 static int
+bl_get_sequence_shared(int seq, lng *id)
+{
+	return logger_sequence(bat_logger_shared, seq, id);
+}
+
+static int
 bl_log_isnew(void)
 {
 	if (BATcount(bat_logger->catalog_bid) > 10) {
+		return 0;
+	}
+	return 1;
+}
+
+static int
+bl_log_isnew_shared(void)
+{
+	if (BATcount(bat_logger_shared->catalog_bid) > 10) {
 		return 0;
 	}
 	return 1;
@@ -364,6 +397,12 @@ bl_sequence(int seq, lng id)
 	return log_sequence(bat_logger, seq, id);
 }
 
+static int
+bl_reload_shared(void)
+{
+	return log_reload(bat_logger_shared);
+}
+
 int 
 bat_logger_init( logger_functions *lf )
 {
@@ -384,9 +423,10 @@ int
 bat_logger_init_shared( logger_functions *lf )
 {
 	lf->create = bl_create_shared;
-	lf->destroy = bl_destroy;
-	lf->changes = bl_changes;
-	lf->get_sequence = bl_get_sequence;
-	lf->log_isnew = bl_log_isnew;
+	lf->destroy = bl_destroy_shared;
+	lf->changes = bl_changes_shared;
+	lf->get_sequence = bl_get_sequence_shared;
+	lf->log_isnew = bl_log_isnew_shared;
+	lf->reload = bl_reload_shared;
 	return LOG_OK;
 }

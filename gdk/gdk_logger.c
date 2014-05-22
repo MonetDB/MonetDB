@@ -1235,8 +1235,12 @@ logger_init_logdir(char *filename, char *fn, char *logdir)
 	}
 }
 
+/* Load data from the logger logdir
+ * Initialize new directories and catalog files if none are present,  unless running in read-only mode
+ * Load catalog and data and persist it in the BATs
+ * Convert 32bit data to 64bit, unless running in read-only mode */
 static int
-logger_init(int debug, char* fn, int readonly, char filename[BUFSIZ], logger* lg)
+logger_load(int debug, char* fn, char filename[BUFSIZ], logger* lg)
 {
 	int id = LOG_SID;
 	FILE *fp;
@@ -1268,7 +1272,7 @@ logger_init(int debug, char* fn, int readonly, char filename[BUFSIZ], logger* lg
 	snprintf(bak, BUFSIZ, "%s_catalog_bid", fn);
 	catalog_bid = BBPindex(bak);
 
-	if (catalog_bid == 0 && !readonly) {
+	if (catalog_bid == 0 && !lg->readonly) {
 		if (!logger_create_catalog_file(debug, lg, fn, fp, filename, bak)) {
 			goto error;
 		}
@@ -1375,7 +1379,7 @@ logger_init(int debug, char* fn, int readonly, char filename[BUFSIZ], logger* lg
 		 * already, and so we can delete the file. */
 
 		/* Do not do conversion logger is readonly */
-		if (!readonly) {
+		if (!lg->readonly) {
 			snprintf(cvfile, sizeof(cvfile), "%sconvert-32-64", lg->dir);
 			snprintf(bak, sizeof(bak), "%s_32-64-convert", fn);
 			{
@@ -1435,7 +1439,7 @@ logger_init(int debug, char* fn, int readonly, char filename[BUFSIZ], logger* lg
 		fclose(fp);
 		fp = NULL;
 #if SIZEOF_OID == 8
-		if (lg->read32bitoid && !readonly) {
+		if (lg->read32bitoid && !lg->readonly) {
 			/* we converted, remove versioned file and
 			 * reset conversion flag */
 			unlink(cvfile);
@@ -1455,6 +1459,8 @@ logger_init(int debug, char* fn, int readonly, char filename[BUFSIZ], logger* lg
 	return LOG_ERR;
 }
 
+/* Initialize a new logger
+ * It will load any data in the logdir and persist it in the BATs*/
 static logger *
 logger_new(int debug, char *fn, char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp, int readonly)
 {
@@ -1467,6 +1473,7 @@ logger_new(int debug, char *fn, char *logdir, int version, preversionfix_fptr pr
 	}
 
 	lg->debug = debug;
+	lg->readonly = readonly;
 
 	lg->changes = 0;
 	lg->version = version;
@@ -1498,12 +1505,25 @@ logger_new(int debug, char *fn, char *logdir, int version, preversionfix_fptr pr
 	lg->seqs_id = NULL;
 	lg->seqs_val = NULL;
 
-	if (logger_init(debug, fn, readonly, filename, lg) == LOG_OK) {
+	if (logger_load(debug, fn, filename, lg) == LOG_OK) {
 		return lg;
 	}
 	return NULL;
 }
 
+/* Reload (shared) logger
+ * It will load any data in the logdir and persist it in the BATs */
+int
+logger_reload(logger *lg)
+{
+	char filename[BUFSIZ];
+
+	logger_init_logdir(filename, lg->fn, lg->dir);
+
+	return logger_load(debug, lg->fn, filename, lg);
+}
+
+/* Create a logger */
 logger *
 logger_create(int debug, char *fn, char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp)
 {
@@ -1526,6 +1546,8 @@ logger_create(int debug, char *fn, char *logdir, int version, preversionfix_fptr
 	return lg;
 }
 
+/* Create new read-only logger
+ * Usually reserved for shared log directories */
 logger *
 logger_create_ro(int debug, char *fn, char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp)
 {
