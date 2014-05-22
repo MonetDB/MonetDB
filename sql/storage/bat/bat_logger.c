@@ -400,7 +400,7 @@ bl_sequence(int seq, lng id)
 static int
 bl_reload_shared(void)
 {
-	return log_reload(bat_logger_shared);
+	return logger_reload(bat_logger_shared);
 }
 
 int 

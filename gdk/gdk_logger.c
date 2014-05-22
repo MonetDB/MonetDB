@@ -1520,7 +1520,7 @@ logger_reload(logger *lg)
 
 	logger_init_logdir(filename, lg->fn, lg->dir);
 
-	return logger_load(debug, lg->fn, filename, lg);
+	return logger_load(lg->debug, lg->fn, filename, lg);
 }
 
 /* Create a logger */
