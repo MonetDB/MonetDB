@@ -1316,13 +1316,17 @@ store_init(int debug, store_type store, int readonly, int singleuser, logger_set
 	}
 	active_store_type = store;
 	if (!logger_funcs.create ||
-	    logger_funcs.create(debug, log_settings, CATALOG_VERSION*v, 0) == LOG_ERR) {
+	    logger_funcs.create(debug, log_settings->logdir, CATALOG_VERSION*v, 0) == LOG_ERR) {
 		MT_lock_unset(&bs_lock, "store_init");
 		return -1;
 	}
-	/* check if we need to create a read-only log as well */
-	if (log_settings->create_readonly) {
-		if (!logger_funcs.create || logger_funcs.create(debug, log_settings, CATALOG_VERSION*v, 1) == LOG_ERR) {
+	/* check if all parameters for a shared log are set */
+	if (readonly && log_settings->shared_logdir != NULL && log_settings->shared_drift_threshold >= 0) {
+		/* create a read-only logger for the shared directory */
+#ifdef STORE_DEBUG
+	fprintf(stderr, "#store_init creating read-only logger\n");
+#endif
+		if (!logger_funcs.create || logger_funcs.create(debug, log_settings->shared_logdir, CATALOG_VERSION*v, 1) == LOG_ERR) {
 			MT_lock_unset(&bs_lock, "store_init");
 			return -1;
 		}

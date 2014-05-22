@@ -1222,7 +1222,7 @@ logger_find_persistent_catalog(logger *lg, char *fn, FILE *fp, char *bak, bat *c
 }
 
 static logger *
-logger_new(int debug, char *fn, logger_settings *log_settings, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp, int readonly)
+logger_new(int debug, char *fn, char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp, int readonly)
 {
 	int id = LOG_SID;
 	logger *lg = (struct logger *) GDKmalloc(sizeof(struct logger));
@@ -1249,13 +1249,13 @@ logger_new(int debug, char *fn, logger_settings *log_settings, int version, prev
 #endif
 
 	/* if the logdir path is absolute, do not prefix it with the gdk_dbpath */
-	if (MT_path_absolute(log_settings->logdir)) {
+	if (MT_path_absolute(logdir)) {
 		snprintf(filename, BUFSIZ, "%s%c%s%c",
-				log_settings->logdir, DIR_SEP, fn, DIR_SEP);
+				logdir, DIR_SEP, fn, DIR_SEP);
 	} else {
 		snprintf(filename, BUFSIZ, "%s%c%s%c%s%c",
 				GDKgetenv("gdk_dbpath"), DIR_SEP,
-				log_settings->logdir, DIR_SEP, fn, DIR_SEP);
+				logdir, DIR_SEP, fn, DIR_SEP);
 	}
 
 	if ((lg->fn = GDKstrdup(fn)) == NULL ||
@@ -1468,7 +1468,7 @@ logger_new(int debug, char *fn, logger_settings *log_settings, int version, prev
 		fclose(fp);
 		fp = NULL;
 #if SIZEOF_OID == 8
-		if (lg->read32bitoid) {
+		if (lg->read32bitoid && !readonly) {
 			/* we converted, remove versioned file and
 			 * reset conversion flag */
 			unlink(cvfile);
@@ -1488,9 +1488,9 @@ logger_new(int debug, char *fn, logger_settings *log_settings, int version, prev
 }
 
 logger *
-logger_create(int debug, char *fn, logger_settings *log_settings, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp, int readonly)
+logger_create(int debug, char *fn, char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp, int readonly)
 {
-	logger *lg = logger_new(debug, fn, log_settings, version, prefuncp, postfuncp, readonly);
+	logger *lg = logger_new(debug, fn, logdir, version, prefuncp, postfuncp, readonly);
 
 	if (!lg)
 		return NULL;

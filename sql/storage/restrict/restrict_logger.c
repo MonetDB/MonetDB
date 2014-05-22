@@ -23,11 +23,11 @@
 logger *restrict_logger = NULL;
 
 static int 
-bl_create(int debug, logger_settings *log_settings, int catalog_version)
+bl_create(int debug, char *logdir, int catalog_version)
 {
 	if (restrict_logger)
 		return LOG_ERR;
-	restrict_logger = logger_create(debug, "sql", log_settings, catalog_version, NULL, NULL, 0);
+	restrict_logger = logger_create(debug, "sql", logdir, catalog_version, NULL, NULL, 0);
 	if (restrict_logger)
 		return LOG_OK;
 	return LOG_ERR;
