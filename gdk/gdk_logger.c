@@ -1221,33 +1221,9 @@ logger_find_persistent_catalog(logger *lg, char *fn, FILE *fp, char *bak, bat *c
 	return 1;
 }
 
-static logger *
-logger_new(int debug, char *fn, char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp, int readonly)
+static void
+logger_init_logdir(char *filename, char *fn, char *logdir)
 {
-	int id = LOG_SID;
-	logger *lg = (struct logger *) GDKmalloc(sizeof(struct logger));
-	FILE *fp;
-	char filename[BUFSIZ];
-	char bak[BUFSIZ];
-	log_bid seqs_id = 0;
-	bat catalog_bid, catalog_nme, bid;
-
-	if (lg == NULL) {
-		fprintf(stderr, "!ERROR: logger_new: allocating logger structure failed\n");
-		return NULL;
-	}
-
-	lg->debug = debug;
-
-	lg->changes = 0;
-	lg->version = version;
-	lg->id = 1;
-
-	lg->tid = 0;
-#if SIZEOF_OID == 8
-	lg->read32bitoid = 0;
-#endif
-
 	/* if the logdir path is absolute, do not prefix it with the gdk_dbpath */
 	if (MT_path_absolute(logdir)) {
 		snprintf(filename, BUFSIZ, "%s%c%s%c",
@@ -1257,25 +1233,16 @@ logger_new(int debug, char *fn, char *logdir, int version, preversionfix_fptr pr
 				GDKgetenv("gdk_dbpath"), DIR_SEP,
 				logdir, DIR_SEP, fn, DIR_SEP);
 	}
+}
 
-	if ((lg->fn = GDKstrdup(fn)) == NULL ||
-	    (lg->dir = GDKstrdup(filename)) == NULL) {
-		fprintf(stderr, "!ERROR: logger_new: strdup failed\n");
-		GDKfree(lg->fn);
-		GDKfree(lg->dir);
-		GDKfree(lg);
-		return NULL;
-	}
-	lg->prefuncp = prefuncp;
-	lg->postfuncp = postfuncp;
-	lg->log = NULL;
-	lg->end = 0;
-	lg->catalog_bid = NULL;
-	lg->catalog_nme = NULL;
-	lg->snapshots_bid = NULL;
-	lg->snapshots_tid = NULL;
-	lg->seqs_id = NULL;
-	lg->seqs_val = NULL;
+static int
+logger_init(int debug, char* fn, int readonly, char filename[BUFSIZ], logger* lg)
+{
+	int id = LOG_SID;
+	FILE *fp;
+	log_bid seqs_id = 0;
+	char bak[BUFSIZ];
+	bat catalog_bid, catalog_nme, bid;
 
 	snprintf(filename, BUFSIZ, "%s%s", lg->dir, LOGFILE);
 	snprintf(bak, BUFSIZ, "%s.bak", filename);
@@ -1478,12 +1445,62 @@ logger_new(int debug, char *fn, char *logdir, int version, preversionfix_fptr pr
 		if (lg->postfuncp)
 			(*lg->postfuncp)(lg);
 	}
-	return lg;
-      error:
+
+	return LOG_OK;
+	error:
 	if (fp)
 		fclose(fp);
 	if (lg)
 		GDKfree(lg);
+	return LOG_ERR;
+}
+
+static logger *
+logger_new(int debug, char *fn, char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp, int readonly)
+{
+	logger *lg = (struct logger *) GDKmalloc(sizeof(struct logger));
+	char filename[BUFSIZ];
+
+	if (lg == NULL) {
+		fprintf(stderr, "!ERROR: logger_new: allocating logger structure failed\n");
+		return NULL;
+	}
+
+	lg->debug = debug;
+
+	lg->changes = 0;
+	lg->version = version;
+	lg->id = 1;
+
+	lg->tid = 0;
+#if SIZEOF_OID == 8
+	lg->read32bitoid = 0;
+#endif
+
+	logger_init_logdir(filename, fn, logdir);
+
+	if ((lg->fn = GDKstrdup(fn)) == NULL ||
+	    (lg->dir = GDKstrdup(filename)) == NULL) {
+		fprintf(stderr, "!ERROR: logger_new: strdup failed\n");
+		GDKfree(lg->fn);
+		GDKfree(lg->dir);
+		GDKfree(lg);
+		return NULL;
+	}
+	lg->prefuncp = prefuncp;
+	lg->postfuncp = postfuncp;
+	lg->log = NULL;
+	lg->end = 0;
+	lg->catalog_bid = NULL;
+	lg->catalog_nme = NULL;
+	lg->snapshots_bid = NULL;
+	lg->snapshots_tid = NULL;
+	lg->seqs_id = NULL;
+	lg->seqs_val = NULL;
+
+	if (logger_init(debug, fn, readonly, filename, lg) == LOG_OK) {
+		return lg;
+	}
 	return NULL;
 }
 
