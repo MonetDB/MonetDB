@@ -108,7 +108,8 @@ typedef int log_bid;
 /* the sequence identifier for frontend objects */
 #define OBJ_SID	1
 
-gdk_export logger *logger_create(int debug, char *fn, char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp, int readonly);
+gdk_export logger *logger_create(int debug, char *fn, char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp);
+gdk_export logger *logger_create_ro(int debug, char *fn, char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp);
 gdk_export void logger_destroy(logger *lg);
 gdk_export int logger_exit(logger *lg);
 gdk_export int logger_restart(logger *lg);

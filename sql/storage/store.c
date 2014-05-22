@@ -48,6 +48,7 @@ int store_singleuser = 0;
 store_functions store_funcs;
 table_functions table_funcs;
 logger_functions logger_funcs;
+logger_functions shared_logger_funcs;
 
 static int schema_number = 0; /* each committed schema change triggers a new
 				 schema number (session wise unique number) */
@@ -1298,6 +1299,7 @@ store_init(int debug, store_type store, int readonly, int singleuser, logger_set
 	sql_trans *tr;
 	int v = 1;
 	sql_allocator *sa;
+	int create_readonly_logger = 0;
 
 	bs_debug = debug&2;
 
@@ -1306,6 +1308,11 @@ store_init(int debug, store_type store, int readonly, int singleuser, logger_set
 #endif
 	MT_lock_set(&bs_lock, "store_init");
 
+	/* check if all parameters for a shared log are set */
+	if (readonly && log_settings->shared_logdir != NULL && log_settings->shared_drift_threshold >= 0) {
+		create_readonly_logger = 1;
+	}
+
 	/* initialize empty bats */
 	if (store == store_bat) 
 		bat_utils_init();
@@ -1313,20 +1320,23 @@ store_init(int debug, store_type store, int readonly, int singleuser, logger_set
 		bat_storage_init(&store_funcs);
 		bat_table_init(&table_funcs);
 		bat_logger_init(&logger_funcs);
+		if (create_readonly_logger) {
+			bat_logger_init_shared(&shared_logger_funcs);
+		}
 	}
 	active_store_type = store;
 	if (!logger_funcs.create ||
-	    logger_funcs.create(debug, log_settings->logdir, CATALOG_VERSION*v, 0) == LOG_ERR) {
+	    logger_funcs.create(debug, log_settings->logdir, CATALOG_VERSION*v) == LOG_ERR) {
 		MT_lock_unset(&bs_lock, "store_init");
 		return -1;
 	}
-	/* check if all parameters for a shared log are set */
-	if (readonly && log_settings->shared_logdir != NULL && log_settings->shared_drift_threshold >= 0) {
+
+	if (create_readonly_logger) {
 		/* create a read-only logger for the shared directory */
 #ifdef STORE_DEBUG
 	fprintf(stderr, "#store_init creating read-only logger\n");
 #endif
-		if (!logger_funcs.create || logger_funcs.create(debug, log_settings->shared_logdir, CATALOG_VERSION*v, 1) == LOG_ERR) {
+		if (!shared_logger_funcs.create || shared_logger_funcs.create(debug, log_settings->shared_logdir, CATALOG_VERSION*v) == LOG_ERR) {
 			MT_lock_unset(&bs_lock, "store_init");
 			return -1;
 		}

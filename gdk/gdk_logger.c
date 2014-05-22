@@ -1488,9 +1488,9 @@ logger_new(int debug, char *fn, char *logdir, int version, preversionfix_fptr pr
 }
 
 logger *
-logger_create(int debug, char *fn, char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp, int readonly)
+logger_create(int debug, char *fn, char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp)
 {
-	logger *lg = logger_new(debug, fn, logdir, version, prefuncp, postfuncp, readonly);
+	logger *lg = logger_new(debug, fn, logdir, version, prefuncp, postfuncp, 0);
 
 	if (!lg)
 		return NULL;
@@ -1506,6 +1506,16 @@ logger_create(int debug, char *fn, char *logdir, int version, preversionfix_fptr
 
 		return NULL;
 	}
+	return lg;
+}
+
+logger *
+logger_create_ro(int debug, char *fn, char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp)
+{
+	logger *lg = NULL;
+
+	lg = logger_new(debug, fn, logdir, version, prefuncp, postfuncp, 1);
+
 	return lg;
 }
 

@@ -22,6 +22,7 @@
 #include "bat_utils.h"
 
 logger *bat_logger = NULL;
+logger *bat_logger_shared = NULL;
 
 static int
 bl_preversion( int oldversion, int newversion)
@@ -275,12 +276,23 @@ bl_postversion( void *lg)
 }
 
 static int 
-bl_create(int debug, char *logdir, int cat_version, int readonly_logger)
+bl_create(int debug, char *logdir, int cat_version)
 {
 	if (bat_logger)
 		return LOG_ERR;
-	bat_logger = logger_create(debug, "sql", logdir, cat_version, bl_preversion, bl_postversion, readonly_logger);
+	bat_logger = logger_create(debug, "sql", logdir, cat_version, bl_preversion, bl_postversion);
 	if (bat_logger)
+		return LOG_OK;
+	return LOG_ERR;
+}
+
+static int
+bl_create_shared(int debug, char *logdir, int cat_version)
+{
+	if (bat_logger_shared)
+		return LOG_ERR;
+	bat_logger_shared = logger_create_ro(debug, "sql", logdir, cat_version, bl_preversion, bl_postversion);
+	if (bat_logger_shared)
 		return LOG_OK;
 	return LOG_ERR;
 }
@@ -365,5 +377,16 @@ bat_logger_init( logger_functions *lf )
 	lf->log_tstart = bl_tstart;
 	lf->log_tend = bl_tend;
 	lf->log_sequence = bl_sequence;
+	return LOG_OK;
+}
+
+int
+bat_logger_init_shared( logger_functions *lf )
+{
+	lf->create = bl_create_shared;
+	lf->destroy = bl_destroy;
+	lf->changes = bl_changes;
+	lf->get_sequence = bl_get_sequence;
+	lf->log_isnew = bl_log_isnew;
 	return LOG_OK;
 }
