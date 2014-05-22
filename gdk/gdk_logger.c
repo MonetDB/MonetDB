@@ -1142,7 +1142,7 @@ logger_create_catalog_file(int debug, logger *lg, char *fn, FILE *fp, char *file
 				"logger_new: there is no logger catalog, but there is a log file.\n"
 						"Are you sure you are using the correct combination of database\n"
 						"(--dbpath) and log directory (--set %s_logdir)?\n", fn, 0, 0);
-		return 0;
+		return LOG_ERR;
 	}
 	lg->catalog_bid = logbat_new(TYPE_int, BATSIZE);
 	lg->catalog_nme = logbat_new(TYPE_str, BATSIZE);
@@ -1162,13 +1162,12 @@ logger_create_catalog_file(int debug, logger *lg, char *fn, FILE *fp, char *file
 	snprintf(bak, BUFSIZ, "%s_catalog_nme", fn);
 	BBPrename(lg->catalog_nme->batCacheid, bak);
 	if (!GDKcreatedir(filename)) {
-		logger_fatal("logger_new: cannot create directory for log file %s\n",
-				filename, 0, 0);
-		return 0;
+		logger_fatal("logger_new: cannot create directory for log file %s\n", filename, 0, 0);
+		return LOG_ERR;
 	}
 	if ((fp = fopen(filename, "w")) == NULL) {
 		logger_fatal("logger_new: cannot create log file %s\n", filename, 0, 0);
-		return 0;
+		return LOG_ERR;
 	}
 	fprintf(fp, "%06d\n\n", lg->version);
 	lg->id++;
@@ -1179,9 +1178,9 @@ logger_create_catalog_file(int debug, logger *lg, char *fn, FILE *fp, char *file
 			lg->catalog_nme, NULL, lg->debug) != 0) {
 		/* cannot commit catalog, so remove log */
 		unlink(filename);
-		return 0;
+		return LOG_ERR;
 	}
-	return 1;
+	return LOG_OK;
 }
 
 /* find the persistent catalog. As non persistent bats
@@ -1210,7 +1209,7 @@ logger_find_persistent_catalog(logger *lg, char *fn, FILE *fp, char *bak, bat *c
 						"logs are in an old location.  You should then either use\n"
 						"--set %s_logdir=<path to old log directory> or move the old log\n"
 						"directory to the new location (%s).\n", fn, fn, lg->dir);
-		return 0;
+		return LOG_ERR;
 	}
 	lg->catalog_bid = b;
 	lg->catalog_nme = n;
@@ -1218,11 +1217,11 @@ logger_find_persistent_catalog(logger *lg, char *fn, FILE *fp, char *bak, bat *c
 		bat bid = *(log_bid *) Tloc(b, p);
 		BBPincref(bid, TRUE);
 	}
-	return 1;
+	return LOG_OK;
 }
 
 static void
-logger_init_logdir(char *filename, char *fn, char *logdir)
+logger_set_logdir_path(char *filename, char *fn, char *logdir)
 {
 	/* if the logdir path is absolute, do not prefix it with the gdk_dbpath */
 	if (MT_path_absolute(logdir)) {
@@ -1237,7 +1236,7 @@ logger_init_logdir(char *filename, char *fn, char *logdir)
 
 /* Load data from the logger logdir
  * Initialize new directories and catalog files if none are present,  unless running in read-only mode
- * Load catalog and data and persist it in the BATs
+ * Load data and persist it in the BATs
  * Convert 32bit data to 64bit, unless running in read-only mode */
 static int
 logger_load(int debug, char* fn, char filename[BUFSIZ], logger* lg)
@@ -1273,11 +1272,11 @@ logger_load(int debug, char* fn, char filename[BUFSIZ], logger* lg)
 	catalog_bid = BBPindex(bak);
 
 	if (catalog_bid == 0 && !lg->readonly) {
-		if (!logger_create_catalog_file(debug, lg, fn, fp, filename, bak)) {
+		if (logger_create_catalog_file(debug, lg, fn, fp, filename, bak) == LOG_ERR) {
 			goto error;
 		}
 	} else {
-		if (!logger_find_persistent_catalog(lg, fn, fp, bak, &catalog_bid, &catalog_nme)) {
+		if (logger_find_persistent_catalog(lg, fn, fp, bak, &catalog_bid, &catalog_nme) == LOG_ERR) {
 			goto error;
 		}
 	}
@@ -1484,7 +1483,7 @@ logger_new(int debug, char *fn, char *logdir, int version, preversionfix_fptr pr
 	lg->read32bitoid = 0;
 #endif
 
-	logger_init_logdir(filename, fn, logdir);
+	logger_set_logdir_path(filename, fn, logdir);
 
 	if ((lg->fn = GDKstrdup(fn)) == NULL ||
 	    (lg->dir = GDKstrdup(filename)) == NULL) {
@@ -1518,7 +1517,7 @@ logger_reload(logger *lg)
 {
 	char filename[BUFSIZ];
 
-	logger_init_logdir(filename, lg->fn, lg->dir);
+	logger_set_logdir_path(filename, lg->fn, lg->dir);
 
 	return logger_load(lg->debug, lg->fn, filename, lg);
 }
@@ -1701,6 +1700,40 @@ size_t
 logger_changes(logger *lg)
 {
 	return lg->changes;
+}
+
+/* Read the last recorded transactions id from the logfile */
+int
+logger_read_last_transaction_id(logger *lg)
+{
+	char filename[BUFSIZ];
+	FILE *fp;
+	int id;
+
+	snprintf(filename, BUFSIZ, "%s%s", lg->dir, LOGFILE);
+	if ((fp = fopen(filename, "r")) == NULL) {
+		fprintf(stderr, "!ERROR: logger_read_last_transaction_id: unable to open file %s\n", filename);
+		goto error;
+	}
+	if (check_version(lg, fp)) {
+		fprintf(stderr, "!ERROR: logger_read_last_transaction_id: inconsistent log version for file %s\n", filename);
+		goto error;
+	}
+
+	/* read the last id */
+	if(fscanf(fp, "%d", &id) != 1) {
+		fprintf(stderr, "!ERROR: logger_read_last_transaction_id: unable to read last transaction from file %s\n", filename);
+		goto error;
+	}
+
+	return id;
+
+	error:
+	if (fp)
+		fclose(fp);
+	if (lg)
+		GDKfree(lg);
+	return LOG_ERR;
 }
 
 int

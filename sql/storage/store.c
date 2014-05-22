@@ -45,6 +45,9 @@ store_type active_store_type = store_bat;
 int store_readonly = 0;
 int store_singleuser = 0;
 
+int create_shared_logger = 0;
+int shared_drift_threshold = -1;
+
 store_functions store_funcs;
 table_functions table_funcs;
 logger_functions logger_funcs;
@@ -1299,9 +1302,11 @@ store_init(int debug, store_type store, int readonly, int singleuser, logger_set
 	sql_trans *tr;
 	int v = 1;
 	sql_allocator *sa;
-	int create_readonly_logger = 0;
 
 	bs_debug = debug&2;
+	/* get the set shared_drift_threshold
+	 * we will need it later in store_manager */
+	shared_drift_threshold = log_settings->shared_drift_threshold;
 
 #ifdef NEED_MT_LOCK_INIT
 	MT_lock_init(&bs_lock, "SQL_bs_lock");
@@ -1310,7 +1315,7 @@ store_init(int debug, store_type store, int readonly, int singleuser, logger_set
 
 	/* check if all parameters for a shared log are set */
 	if (readonly && log_settings->shared_logdir != NULL && log_settings->shared_drift_threshold >= 0) {
-		create_readonly_logger = 1;
+		create_shared_logger = 1;
 	}
 
 	/* initialize empty bats */
@@ -1320,7 +1325,7 @@ store_init(int debug, store_type store, int readonly, int singleuser, logger_set
 		bat_storage_init(&store_funcs);
 		bat_table_init(&table_funcs);
 		bat_logger_init(&logger_funcs);
-		if (create_readonly_logger) {
+		if (create_shared_logger) {
 			bat_logger_init_shared(&shared_logger_funcs);
 		}
 	}
@@ -1331,7 +1336,7 @@ store_init(int debug, store_type store, int readonly, int singleuser, logger_set
 		return -1;
 	}
 
-	if (create_readonly_logger) {
+	if (create_shared_logger) {
 		/* create a read-only logger for the shared directory */
 #ifdef STORE_DEBUG
 	fprintf(stderr, "#store_init creating read-only logger\n");
@@ -1590,17 +1595,34 @@ store_manager(void)
 	while (!GDKexiting()) {
 		int res = LOG_OK;
 		int t;
+		int shared_transactions_drift = -1;
 
 		for (t = 30000; t > 0; t -= 50) {
 			MT_sleep_ms(50);
 			if (GDKexiting())
 				return;
 		}
+		/* check if we have a shared logger as well */
+		if (create_shared_logger) {
+			/* get the shared transactions drift */
+			shared_transactions_drift = shared_logger_funcs.changes();
+			if (shared_transactions_drift == LOG_ERR) {
+				GDKfatal("shared write-ahead log loading failure");
+			}
+		}
+
 		MT_lock_set(&bs_lock, "store_manager");
 		if (store_nr_active || GDKexiting() ||
-			logger_funcs.changes() < 1000) {
+			(logger_funcs.changes() < 1000 && shared_transactions_drift <= shared_drift_threshold)) {
 			MT_lock_unset(&bs_lock, "store_manager");
 			continue;
+		}
+
+		/* (re)load data from share write-ahead log */
+		res = shared_logger_funcs.reload();
+		if (res != LOG_OK) {
+			MT_lock_unset(&bs_lock, "store_manager");
+			GDKfatal("shared write-ahead log loading failure");
 		}
 		logging = 1;
 		/* make sure we reset all transactions on re-activation */
