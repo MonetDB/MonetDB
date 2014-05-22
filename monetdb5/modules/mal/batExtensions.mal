@@ -72,3 +72,31 @@ command bat.imprintsize(b:bat[:oid,:dbl]):lng
 address CMDBATimprintsize
 comment "Return the size of the imprints";
 
+command bat.bloom(b:bat[:oid,:bte]):bat[:oid,:bit]
+address CMDBATbloom;
+command bat.bloom(b:bat[:oid,:sht]):bat[:oid,:bit]
+address CMDBATbloom;
+command bat.bloom(b:bat[:oid,:int]):bat[:oid,:bit]
+address CMDBATbloom;
+command bat.bloom(b:bat[:oid,:lng]):bat[:oid,:bit]
+address CMDBATbloom;
+command bat.bloom(b:bat[:oid,:flt]):bat[:oid,:bit]
+address CMDBATbloom;
+command bat.bloom(b:bat[:oid,:dbl]):bat[:oid,:bit]
+address CMDBATbloom
+comment "Create a Bloom filter on the BAT";
+
+command bat.bloomselect(b:bat[:oid,:bte], cand:bat[:oid,:oid], bloom:bat[:oid,:bit]):bat[:oid,:oid]
+address CMDBLOOMselect;
+command bat.bloomselect(b:bat[:oid,:sht], cand:bat[:oid,:oid], bloom:bat[:oid,:bit]):bat[:oid,:oid]
+address CMDBLOOMselect;
+command bat.bloomselect(b:bat[:oid,:int], cand:bat[:oid,:oid], bloom:bat[:oid,:bit]):bat[:oid,:oid]
+address CMDBLOOMselect;
+command bat.bloomselect(b:bat[:oid,:lng], cand:bat[:oid,:oid], bloom:bat[:oid,:bit]):bat[:oid,:oid]
+address CMDBLOOMselect;
+command bat.bloomselect(b:bat[:oid,:flt], cand:bat[:oid,:oid], bloom:bat[:oid,:bit]):bat[:oid,:oid]
+address CMDBLOOMselect;
+command bat.bloomselect(b:bat[:oid,:dbl], cand:bat[:oid,:oid], bloom:bat[:oid,:bit]):bat[:oid,:oid]
+address CMDBLOOMselect
+comment "Select using a Bloom filter";
+

@@ -44,5 +44,8 @@ be_export str CMDBATpartition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 be_export str CMDBATpartition2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 be_export str CMDBATimprints(int *ret, int *bid);
 be_export str CMDBATimprintsize(lng *ret, int *bid);
+be_export str CMDBATbloom(int *ret, int *bid);
+be_export str CMDBLOOMselect(int *ret, int *bid, int *sid, int *bfid);
+
 
 #endif /* _BAT_EXTENSIONS_ */
