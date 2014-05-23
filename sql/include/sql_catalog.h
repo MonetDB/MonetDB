@@ -168,7 +168,7 @@ typedef struct sql_base {
 	int allocated;
 	int flag;
 	sqlid id;
-	char *name;
+	char *name; 
 } sql_base;
 
 extern void base_init(sql_allocator *sa, sql_base * b, sqlid id, int flag, char *name);

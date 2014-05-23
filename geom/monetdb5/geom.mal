@@ -44,18 +44,26 @@ command del() :int		address wkbDEL;
 command length() :int		address wkbLENGTH;
 command heap() :int		address wkbHEAP;
 
-command wkb{unsafe}(v:str) :wkb address wkbFromString;
+#command wkb{unsafe}(v:str) :wkb address wkbFromString;
 command FromText{unsafe}(wkt:str, srid:int, type:int) :wkb	address wkbFromText;
 
 module geom;
 
 command hasZ{unsafe}(flags:int) :int address geoHasZ
 comment "returns 1 if the geometry has z coordinate";
-
 command hasM{unsafe}(flags:int) :int address geoHasM
 comment "returns 1 if the geometry has m coordinate";
+command getType{unsafe}(flags:int) :str address geoGetType
+comment "returns the str representation of the geometry type";
 
 #Geometry Constructors
+command AsText(w:wkb) :str address wkbAsText
+comment "Creates the text representation of the Geometry.";
+
+function GeomFromText{unsafe}(wkt:str, srid:int) :wkb; 
+	x := wkb.FromText(wkt,srid,0);
+	return x;
+end GeomFromText;
 function PointFromText{unsafe}(wkt:str, srid:int) :wkb; 
 	x := wkb.FromText(wkt,srid,1);
 	return x;
@@ -85,6 +93,10 @@ function GeomCollFromText{unsafe}(wkt:str, srid:int) :wkb;
 	return x;
 end GeomCollFromText;
 
+function GeomFromText{unsafe}(wkt:str) :wkb; 
+	x := wkb.FromText(wkt,0,0);
+	return x;
+end GeomFromText;
 function PointFromText{unsafe}(wkt:str) :wkb; 
 	x := wkb.FromText(wkt,0,1);
 	return x;
@@ -114,58 +126,36 @@ function GeomCollFromText{unsafe}(wkt:str) :wkb;
 	return x;
 end GeomCollFromText;
 
+#function GeomFromWKB{unsafe}(wkb_raw:????, srid:int) : wkb;
+#	x := wkb.FromWKB(wkb_raw, srid, 0);
+#	return x;
+#end GeomFromWKB;
 
+command MakePoint{unsafe}(x:dbl, y:dbl) :wkb address geomMakePoint2D
+comment "creates a point using the coordinates";
+command MakePoint{unsafe}(x:dbl, y:dbl, z:dbl) :wkb address geomMakePoint3D
+comment "creates a point using the coordinates";
+#Gives error. I do not know how to create 4d point
+command MakePoint{unsafe}(x:dbl, y:dbl, z:dbl, m:dbl) :wkb address geomMakePoint4D
+comment "creates a point using the coordinates";
+command MakePointM{unsafe}(x:dbl, y:dbl, m:dbl) :wkb address geomMakePointM
+comment "creates a point using the coordinates";
 
-#function BdPolyFromText(wkt:str, srid:sht) :wkb; 
-#function BdMPolyFromText(wkt:str, srid:sht) :wkb;
-#function Box2dFromGeoHash(???) RETURNS mbr external name geom."Box2dFromGeoHash";
-#function GeographyFromText(wkt:str) :Geography;
-#function GeogFromWKB(wkb_arr byte[]) :Geography;  
-#function GeomCollFromText(wkt:str, srid:sht) :wkb;
-#function GeomCollFromText(wkt:str) :wkb;
-#function GeomFromEWKB
-#function GeomFromEWKT
-#function GeometryFromText(wkt:str, srid:sht) :wkb;
-#function GeometryFromText(wkt:str) :wkb;
-#function GeomFromGML
-#function GeomFromGeoJSON
-#function GeomFromKML
-#function GMLToSQL
-#function GeomFromText(wkt:str, srid:sht) :wkb;
-#function GeomFromText(wkt:str) :wkb;
-#function GeomFromWKB(wkb_arr byte[], srid:sht) :wkb;
-#function GeomFromWKB(wkb_arr byte[]) :wkb;
-#function LineFromMultiPoint(pointGeom:wkb) :wkb;
-#function LineFromText(wkt:str, srid:sht) :wkb;
-#function LineFromText(wkt:str) :wkb;
-#function LineFromWKB(wkb_arr byte[], srid:sht) :wkb;
-#function LineFromWKB(wkb_arr byte[]) :wkb;
-#function LinestringFromWKB(wkb_arr byte[], srid:sht) :wkb";
-#function LinestringFromWKB(wkb_arr byte[]) :wkb;
-#function MakeBox2D(lowLeftPointGeom:wkb, upRightPointGeom:wkb) :mbr;
-#function 3DMakeBox
-#function MakeLine(geometry set geoms)?????
-#function MakeLine(geom1:wkb, geom2:wkb) :wkb;
-#function MakeLine(geoms_arr:wkb[]) :wkb;
-#function MakeEnvelope(xmin:dbl, ymin:dbl, xmax:dbl, ymax:dbl, srid:sht) :wkb;
-#function MakePolygon(linestringGeom:wkb) :wkb;
-#function MakePolygon(outerLinestringGeom:wkb, interiorLinestringGeoms:wkb[]) :wkb;
-#function MakePoint(x:dbl, y:dbl) :wkb; 
-#function MakePoint(x:dbl, y:dbl, z:dbl) :wkb;
-#function MakePoint(x:dbl, y:dbl, z:dbl, m:dbl) :wkb;
-#function MakePointM(x:dbl, y:dbl, m:dbl) :wkb;
-#function MLineFromText(wkt:str, srid:sht) :wkb;
-#function MLineFromText(wkt:str) :wkb;
-#function MPointFromText(wkt:str, srid:sht) :wkb;
-#function MPointFromText(wkt:str) :wkb;
-#function MPolyFromText(wkt:str, srid:sht) :wkb;
-#function MPolyFromText(wkt:str) :wkb;
-#function Point(x:dbl, y:dbl) :wkb;
-#function PointFromGeoHash
-#function PointFromText(wkt:str) :wkb;
-#function PointFromWKB(wkb_arr byte[], srid:sht) :wkb;
-#function PointFromWKB(wkb_arr byte[]) :wkb;
-#function Polygon(linestringGeom:wkb, srid:sht) :wkb;
+#Geometry Accessors
+command GeometryType(w:wkb) :str address wkbGeometryType
+comment "Returns the type of the geometry as a string";
+command CoordDim(w:wkb) :int address wkbCoordDim
+comment " Return the coordinate dimension of the geometry";
+command Dimension(w:wkb) :int address wkbDimension
+comment "The inherent dimension of this Geometry object, which must be less than or equal to the coordinate dimension.";
+command SRID(w:wkb) :int address wkbSRID
+comment "Returns the Spatial Reference System ID for this Geometry.";
+command X(g:wkb) :dbl address wkbGetCoordX
+comment  "Return the X coordinate of the point, or NULL if not available. Input must be a point.";
+command Y(g:wkb) :dbl address wkbGetCoordY
+comment "Return the Y coordinate of the point, or NULL if not available. Input must be a point.";
+command Z(g:wkb) :dbl address wkbGetCoordZ
+comment "Return the Z coordinate of the point, or NULL if not available. Input must be a point.";
 
 #function CurveFromText{unsafe}( wkt:str, srid:sht ) :wkb;
 #	x := wkb.FromText(wkt,2);
@@ -193,9 +183,6 @@ end GeomCollFromText;
 #comment "Returns true if the two mbrs overlap";
 
 
-command AsText(w:wkb) :str 
-address wkbAsText
-comment "Creates the text representation of the Geometry.";
 
 #command mbr(:flt,:flt,:flt,:flt) :mbr
 #address ordinatesMBR
@@ -206,17 +193,8 @@ comment "Creates the text representation of the Geometry.";
 #comment "Creates the mbr for the given wkb.";
 
 # @+ ogc basic methods
-#command Dimension(w:wkb) :int
-#address wkbDimension
-#comment "The inherent dimension of this geometry object, which must be less than or equal to the coordinate dimension. This specification is restricted to geometries in two-dimensional coordinate space.";
 
-#command GeometryTypeId(w:wkb) :int
-#address wkbGeometryTypeId
-#comment "Returns the name of the instantiable subtype of Geometry of which this Geometry instance is a member. The name of the instantiable subtype of Geometry is returned as string.";
 
-#command SRID(w:wkb) :int
-#address wkbSRID
-#comment "Returns the Spatial Reference System ID for this Geometry.";
 
 #command Envelope(w:wkb) :wkb
 #address wkbEnvelope
@@ -301,13 +279,7 @@ comment "Creates the text representation of the Geometry.";
 module geom;
 
 # @+ ogc information methods
-#command X(g:wkb) :dbl
-#address wkbgetcoordX
-#comment "Returns the x-coordinate of a point geometry.";
 
-#command Y(g:wkb) :dbl
-#address wkbgetcoordY
-#comment "Returns the y-coordinate of a point geometry.";
 
 # @+ ogc Spatial Analysis methods
 

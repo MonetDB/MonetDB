@@ -44,6 +44,9 @@ typedef struct mbr {
 	float ymin;
 	float xmax;
 	float ymax;
+	//mserver could not start with z coordinate
+	//float zmin;
+	//float zmax;
 } mbr;
 
 /*
@@ -94,6 +97,7 @@ Type values:
 */
 
 typedef enum wkb_type {
+	//wkbGeometry = 0,
 	wkbPoint = 1,
 	wkbLineString = 2,
 	wkbPolygon = 3,

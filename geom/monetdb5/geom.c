@@ -48,10 +48,13 @@
 #define GEOMETRY_HAS_Z(info)(info & 0x02)
 #define GEOMETRY_HAS_M(info)(info & 0x01)
 
+/* the first argument in the functions is the return variable */
+
 int TYPE_mbr;
 
 geom_export void geoHasZ(int* res, int* info);
 geom_export void geoHasM(int* res, int* info);
+geom_export void geoGetType(char** res, int* info);
 
 geom_export bat *geom_prelude(void);
 geom_export void geom_epilogue(void);
@@ -61,11 +64,26 @@ geom_export mbr *mbrNULL(void);
 
 geom_export int mbrFROMSTR(char *src, int *len, mbr **atom);
 geom_export int mbrTOSTR(char **dst, int *len, mbr *atom);
-geom_export int wkbFROMSTR(char *src, int *len, wkb **atom);
+geom_export int wkbFROMSTR(char *src, int srid, int *len, wkb **atom);
 geom_export int wkbTOSTR(char **dst, int *len, wkb *atom);
 geom_export str wkbFromText(wkb **w, str *wkt, int srid, int *tpe);
 geom_export str wkbAsText(str *r, wkb **w);
 
+geom_export str geomMakePoint2D(wkb**, double*, double*);
+geom_export str geomMakePoint3D(wkb**, double*, double*, double*);
+geom_export str geomMakePoint4D(wkb**, double*, double*, double*, double*);
+geom_export str geomMakePointM(wkb**, double*, double*, double*);
+
+geom_export str wkbGeometryType(char** out, wkb** geom);
+geom_export str wkbCoordDim(int *out, wkb **geom);
+geom_export str wkbDimension(int *out, wkb **geom);
+geom_export str wkbSRID(int *out, wkb **geom);
+geom_export str wkbGetCoordX(double*, wkb**);
+geom_export str wkbGetCoordY(double*, wkb**);
+geom_export str wkbGetCoordZ(double*, wkb**);
+
+geom_export str wkbIsEmpty(bit *out, wkb **geom);
+geom_export str wkbIsSimple(bit *out, wkb **geom);
 
 
 /*check if the geometry has z coordinate*/
@@ -78,6 +96,15 @@ void geoHasZ(int* res, int* info) {
 void geoHasM(int* res, int* info) {
 	if(GEOMETRY_HAS_M(*info)) *res=1;
 	else *res=0;
+}
+/*check the geometry subtype*/
+/*returns the length of the resulting string*/
+void geoGetType(char** res, int* info) {
+	int type = (*info >> 2);
+	const char* typeStr=geom_type2str(type) ;
+	
+	*res=GDKmalloc(strlen(typeStr));
+	strcpy(*res, typeStr);
 }
 
 /* initialise geos */
@@ -188,7 +215,7 @@ int mbrTOSTR(char **dst, int *len, mbr *atom) {
 
 /* FROMSTR: parse string to @1. */
 /* return number of parsed characters. */
-int wkbFROMSTR(char *src, int *len, wkb **atom) {
+int wkbFROMSTR(char *src, int srid, int *len, wkb **atom) {
 	GEOSGeom geosGeometry = NULL;	/* The geometry object that is parsed from the src string. */
 	unsigned char *wkbSer = NULL;	/* The "well known binary" serialization of the geometry object. */
 	size_t wkbLen = 0;		/* The length of the wkbSer string. */
@@ -207,6 +234,12 @@ int wkbFROMSTR(char *src, int *len, wkb **atom) {
 	}
 
 	if (!nil) {
+		//add the srid
+		if(srid == 0 )
+			GEOSSetSRID(geosGeometry, 4326);
+		else //should we check whether the srid exists in spatial_ref_sys?
+			GEOSSetSRID(geosGeometry, srid);
+		//the srid is lost with the transformation of the GEOSGeom to wkb
 		wkbSer = GEOSGeomToWKB_buf(geosGeometry, &wkbLen);
 		GEOSGeom_destroy(geosGeometry);
 	}
@@ -269,24 +302,23 @@ int wkbTOSTR(char **dst, int *len, wkb *atom) {
 }
 
 /* creates a wkb from the given textual representation */
+/*int* tpe is needed to verify that the type of the FromText function used is the
+ * same with the type of the geometry created from the wkt representation */
 str wkbFromText(wkb **w, str *wkt, int srid, int *tpe) {
 	int len = 0, te = *tpe;
 	char *errbuf;
 	str ex;
-srid=1000;
-if(srid < 1000)
-	throw(MAL, "wkb.FromText", "dadsadas");
 
 	*w = NULL;
-	if (wkbFROMSTR(*wkt, &len, w) &&
+	if (wkbFROMSTR(*wkt, srid, &len, w) &&
 	    (wkb_isnil(*w) || *tpe == wkbGeometryCollection ||
 	     (te = *((*w)->data + 1) & 0x0f) == *tpe))
 		return MAL_SUCCEED;
 	if (*w == NULL)
 		*w = (wkb *) GDKmalloc(sizeof(wkb));
 	**w = *wkbNULL();
-	if (te != *tpe)
-		throw(MAL, "wkb.FromText", "Trying to reaf Geometry type '%s' with function for Geometry type '%s'", geom_type2str(te), geom_type2str(*tpe));
+	if (*tpe > 0 && te != *tpe)
+		throw(MAL, "wkb.FromText", "Trying to read Geometry type '%s' with function for Geometry type '%s'", geom_type2str(te), geom_type2str(*tpe));
 	errbuf = GDKerrbuf;
 	if (errbuf) {
 		if (strncmp(errbuf, "!ERROR: ", 8) == 0)
@@ -313,13 +345,255 @@ str wkbAsText(str *r, wkb **w) {
 	throw(MAL, "geom.AsText", "Failed to create Text from Well Known Format");
 }
 
+static str geomMakePoint(wkb **out, GEOSGeom geosGeometry) {
+	unsigned char* wkbSer = NULL;
+	size_t wkbLen = 0;
+
+	//creates the wkbSer from the GeosGeometry structure
+	wkbSer = GEOSGeomToWKB_buf(geosGeometry, &wkbLen);
+	GEOSGeom_destroy(geosGeometry);
+
+	if(!wkbSer) {
+		**out = *wkbNULL();
+		throw(MAL, "geomMakePoint", "Failed to create wkb from GEOSGeometry");
+	}
+
+	assert(wkbLen <= GDK_int_max);
+	*out = GDKmalloc((int) wkb_size(wkbLen));
+
+	if(*out == NULL) {
+		**out = *wkbNULL();
+		throw(MAL, "geomMakePoint", "Failed to reserve memory for *wkb");
+	}
+
+	(*out)->len = (int) wkbLen;
+	memcpy(&(*out)->data, wkbSer, wkbLen);
+	GEOSFree(wkbSer);
+
+	return MAL_SUCCEED;
+}
+
+/* creates a point using the x, y coordinates */
+str geomMakePoint2D(wkb** out, double* x, double* y) {
+	GEOSGeom geosGeometry = NULL;
+
+	//create the point from the coordinates
+	GEOSCoordSequence *seq = GEOSCoordSeq_create(1, 2);
+	GEOSCoordSeq_setX(seq, 0, *x);
+	GEOSCoordSeq_setY(seq, 0, *y);
+	geosGeometry = GEOSGeom_createPoint(seq);
+
+	if(geosGeometry == NULL){
+		**out = *wkbNULL();
+		throw(MAL, "geomMakePoint", "Failed to create GEOSGeometry from the coordiates");
+	}
+
+	return geomMakePoint(out, geosGeometry);
+}
+
+/* creates a point using the x, y, z coordinates */
+str geomMakePoint3D(wkb** out, double* x, double* y, double* z) {
+	GEOSGeom geosGeometry = NULL;
+
+	//create the point from the coordinates
+	GEOSCoordSequence *seq = GEOSCoordSeq_create(1, 3);
+	GEOSCoordSeq_setX(seq, 0, *x);
+	GEOSCoordSeq_setY(seq, 0, *y);
+	GEOSCoordSeq_setZ(seq, 0, *z);
+	geosGeometry = GEOSGeom_createPoint(seq);
+
+	if(geosGeometry == NULL){
+		**out = *wkbNULL();
+		throw(MAL, "geomMakePoint", "Failed to create GEOSGeometry from the coordiates");
+	}
+
+	return geomMakePoint(out, geosGeometry);
+}
+
+/* creates a point using the x, y, z, m coordinates */
+str geomMakePoint4D(wkb** out, double* x, double* y, double* z, double* m) {
+	GEOSGeom geosGeometry = NULL;
+
+	//create the point from the coordinates
+	GEOSCoordSequence *seq = GEOSCoordSeq_create(1, 4);
+	GEOSCoordSeq_setX(seq, 0, *x);
+	GEOSCoordSeq_setY(seq, 0, *y);
+	GEOSCoordSeq_setZ(seq, 0, *z);
+	GEOSCoordSeq_setOrdinate(seq, 0, 3, *m);
+	geosGeometry = GEOSGeom_createPoint(seq);
+
+	if(geosGeometry == NULL){
+		**out = *wkbNULL();
+		throw(MAL, "geomMakePoint", "Failed to create GEOSGeometry from the coordiates");
+	}
+
+	return geomMakePoint(out, geosGeometry);
+}
+
+/* creates a point using the x, y, m coordinates */
+str geomMakePointM(wkb** out, double* x, double* y, double* m) {
+	GEOSGeom geosGeometry = NULL;
+
+	//create the point from the coordinates
+	GEOSCoordSequence *seq = GEOSCoordSeq_create(1, 3);
+	GEOSCoordSeq_setOrdinate(seq, 0, 0, *x);
+	GEOSCoordSeq_setOrdinate(seq, 0, 1, *y);
+	GEOSCoordSeq_setOrdinate(seq, 0, 2, *m);
+	geosGeometry = GEOSGeom_createPoint(seq);
+
+	if(geosGeometry == NULL){
+		**out = *wkbNULL();
+		throw(MAL, "geomMakePoint", "Failed to create GEOSGeometry from the coordiates");
+	}
+
+	return geomMakePoint(out, geosGeometry);
+}
+
+
+static str wkbbasic(int *out, wkb **geom, int (*func)(const GEOSGeometry *), const char *name) {
+	GEOSGeom geosGeometry = wkb2geos(*geom);
+
+	if (!geosGeometry) {
+		*out = int_nil;
+		return MAL_SUCCEED;
+	}
+
+	*out = (*func)(geosGeometry);
+
+	GEOSGeom_destroy(geosGeometry);
+
+	if (GDKerrbuf && GDKerrbuf[0])
+		throw(MAL, name, "failed");
+	return MAL_SUCCEED;
+
+}
+
+
+/* returns the type of the geometry as a string*/
+str wkbGeometryType(char** out, wkb** geom) {
+	int typeId = 0;
+	str ret = MAL_SUCCEED;
+
+	ret = wkbbasic(&typeId, geom, GEOSGeomTypeId, "geom.GeometryType");
+	typeId = ((typeId+1) << 2);
+	geoGetType(out, &typeId);
+	
+	return ret;
+}
+
+/* returns the number of dimensions of the geometry */
+/* geos does not know the number of dimensions as long as a wkb has been created 
+ * more precisely it descards all dimensions but x and y*/
+str wkbCoordDim(int *out, wkb **geom) {
+	return wkbbasic(out, geom, GEOSGeom_getCoordinateDimension, "geom.CoordDim");
+}
+
+/* returns the inherent dimension of the geometry, e.g 0 for point */
+str wkbDimension(int *out, wkb **geom) {
+	return wkbbasic(out, geom, GEOSGeom_getDimensions, "geom.Dimensions");
+}
+
+/* returns the srid of the geometry */
+/* there is no srid information on the wkb representation of the wkb*/
+str wkbSRID(int *out, wkb **geom) {
+	return wkbbasic(out, geom, GEOSGetSRID, "geom.SRID");
+}
+
+
+/* depending on the specific function it returns the X,Y or Z coordinate of a point */
+static str wkbGetCoord(double *out, wkb **geom, int dimNum, const char *name) {
+	//int ret=MAL_SUCCEED;
+	GEOSGeom geosGeometry = wkb2geos(*geom);
+#if GEOS_CAPI_VERSION_MAJOR >= 1 && GEOS_CAPI_VERSION_MINOR >= 3
+	const GEOSCoordSequence *gcs;
+#else
+	const GEOSCoordSeq gcs;
+#endif
+
+	if (!geosGeometry) {
+		*out = dbl_nil;
+		throw(MAL, name, "wkb2geos failed");
+	}
+
+	gcs = GEOSGeom_getCoordSeq(geosGeometry);
+
+	if (!gcs) {
+		throw(MAL, name, "GEOSGeom_getCoordSeq failed");
+	}
+	
+	GEOSCoordSeq_getOrdinate(gcs, 0, dimNum, out);
+	/* gcs shouldn't be freed, it's internal to the GEOSGeom */
+	GEOSGeom_destroy(geosGeometry);
+
+//	if (ret == 0)
+//		throw(MAL, name, "GEOSCoordSeq_get%s failed", name + 5);
+
+	return MAL_SUCCEED;
+}
+
+str wkbGetCoordX(double *out, wkb **geom) {
+	return wkbGetCoord(out, geom, 0, "geom.X");
+}
+
+str wkbGetCoordY(double *out, wkb **geom) {
+	return wkbGetCoord(out, geom, 1, "geom.Y");
+}
+
+/* geos does not store more than 3 dimensions in wkb so this function
+ * will never work unless we change geos */
+str wkbGetCoordZ(double *out, wkb **geom) {
+	return wkbGetCoord(out, geom, 2, "geom.Z");
+}
+
+str
+wkbIsEmpty(bit *out, wkb **geom)
+{
+	GEOSGeom geosGeometry = wkb2geos(*geom);
+
+	if (!geosGeometry) {
+		*out = bit_nil;
+		return MAL_SUCCEED;
+	}
+
+	*out = GEOSisEmpty(geosGeometry);
+
+	GEOSGeom_destroy(geosGeometry);
+
+	if (GDKerrbuf && GDKerrbuf[0])
+		throw(MAL, "geom.IsEmpty", "GEOSisEmpty failed");
+	return MAL_SUCCEED;
+
+}
+
+str
+wkbIsSimple(bit *out, wkb **geom)
+{
+	GEOSGeom geosGeometry = wkb2geos(*geom);
+
+	if (!geosGeometry) {
+		*out = bit_nil;
+		return MAL_SUCCEED;
+	}
+
+	*out = GEOSisSimple(geosGeometry);
+
+	GEOSGeom_destroy(geosGeometry);
+
+	if (GDKerrbuf && GDKerrbuf[0])
+		throw(MAL, "geom.IsSimple", "GEOSisSimple failed");
+	return MAL_SUCCEED;
+
+}
+
+
+
 geom_export BUN mbrHASH(mbr *atom);
 geom_export int mbrCOMP(mbr *l, mbr *r);
 geom_export mbr *mbrREAD(mbr *a, stream *s, size_t cnt);
 geom_export int mbrWRITE(mbr *c, stream *s, size_t cnt);
 geom_export str mbrFromString(mbr **w, str *src);
 geom_export str mbrFromMBR(mbr **w, mbr **src);
-geom_export str wkbFromString(wkb **w, str *wkt);
+//geom_export str wkbFromString(wkb **w, str *wkt);
 geom_export str wkbFromWKB(wkb **w, wkb **src);
 geom_export BUN wkbHASH(wkb *w);
 geom_export int wkbCOMP(wkb *l, wkb *r);
@@ -333,16 +607,11 @@ geom_export var_t wkbPUT(Heap *h, var_t *bun, wkb *val);
 geom_export str ordinatesMBR(mbr **res, flt *minX, flt *minY, flt *maxX, flt *maxY);
 geom_export str wkbMBR(mbr **res, wkb **geom);
 geom_export wkb *geos2wkb(GEOSGeom geosGeometry);
-geom_export str wkbgetcoordX(double *out, wkb **geom);
-geom_export str wkbgetcoordY(double *out, wkb **geom);
+
 geom_export str wkbcreatepoint(wkb **out, dbl *x, dbl *y);
 geom_export str wkbcreatepoint_bat(int *out, int *x, int *y);
 geom_export str mbroverlaps(bit *out, mbr **b1, mbr **b2);
-geom_export str wkbDimension(int *out, wkb **geom);
-geom_export str wkbGeometryTypeId(int *out, wkb **geom);
-geom_export str wkbSRID(int *out, wkb **geom);
-geom_export str wkbIsEmpty(bit *out, wkb **geom);
-geom_export str wkbIsSimple(bit *out, wkb **geom);
+
 geom_export str wkbEnvelope(wkb **out, wkb **geom);
 geom_export str wkbBoundary(wkb **out, wkb **geom);
 geom_export str wkbConvexHull(wkb **out, wkb **geom);
@@ -478,7 +747,7 @@ mbrFromMBR(mbr **w, mbr **src)
 
 
 
-str
+/*str
 wkbFromString(wkb **w, str *wkt)
 {
 	int len = 0;
@@ -501,7 +770,7 @@ wkbFromString(wkb **w, str *wkt)
 		GDKerrbuf[0] = '\0';
 
 	return ex;
-}
+}*/
 
 str
 wkbFromWKB(wkb **w, wkb **src)
@@ -686,54 +955,7 @@ geos2wkb(GEOSGeom geosGeometry)
 	return atom;
 }
 
-static str
-wkbgetcoordXY(double *out, wkb **geom,
-	      int (*func)(const GEOSCoordSequence *, unsigned int, double *),
-	      const char *name)
-{
-	int ret;
-	GEOSGeom geosGeometry = wkb2geos(*geom);
-#if GEOS_CAPI_VERSION_MAJOR >= 1 && GEOS_CAPI_VERSION_MINOR >= 3
-	const GEOSCoordSequence *gcs;
-#else
-	const GEOSCoordSeq gcs;
-#endif
 
-	if (!geosGeometry) {
-		*out = dbl_nil;
-		return MAL_SUCCEED;
-	}
-
-	gcs = GEOSGeom_getCoordSeq(geosGeometry);
-
-	if (!gcs) {
-		throw(MAL, name, "GEOSGeom_getCoordSeq failed");
-	}
-
-	/* we could also check if geom is a LineString, LinearRing or
-	 * Point */
-	ret = (*func)(gcs, 0, out);
-
-	/* gcs shouldn't be freed, it's internal to the GEOSGeom */
-	GEOSGeom_destroy(geosGeometry);
-
-	if (ret == 0)
-		throw(MAL, name, "GEOSCoordSeq_get%s failed", name + 5);
-
-	return MAL_SUCCEED;
-}
-
-str
-wkbgetcoordX(double *out, wkb **geom)
-{
-	return wkbgetcoordXY(out, geom, GEOSCoordSeq_getX, "geom.X");
-}
-
-str
-wkbgetcoordY(double *out, wkb **geom)
-{
-	return wkbgetcoordXY(out, geom, GEOSCoordSeq_getY, "geom.Y");
-}
 
 str
 wkbcreatepoint(wkb **out, dbl *x, dbl *y)
@@ -819,83 +1041,8 @@ mbroverlaps(bit *out, mbr **b1, mbr **b2)
 	return MAL_SUCCEED;
 }
 
-static str
-wkbbasic(int *out, wkb **geom, int (*func)(const GEOSGeometry *), const char *name)
-{
-	GEOSGeom geosGeometry = wkb2geos(*geom);
 
-	if (!geosGeometry) {
-		*out = int_nil;
-		return MAL_SUCCEED;
-	}
 
-	*out = (*func)(geosGeometry);
-
-	GEOSGeom_destroy(geosGeometry);
-
-	if (GDKerrbuf && GDKerrbuf[0])
-		throw(MAL, name, "GEOSGeom_getDimensions failed");
-	return MAL_SUCCEED;
-
-}
-
-str
-wkbDimension(int *out, wkb **geom)
-{
-	return wkbbasic(out, geom, GEOSGeom_getDimensions, "geom.Dimension");
-}
-
-str
-wkbGeometryTypeId(int *out, wkb **geom)
-{
-	return wkbbasic(out, geom, GEOSGeomTypeId, "geom.GeometryTypeId");
-}
-
-str
-wkbSRID(int *out, wkb **geom)
-{
-	return wkbbasic(out, geom, GEOSGetSRID, "geom.SRID");
-}
-
-str
-wkbIsEmpty(bit *out, wkb **geom)
-{
-	GEOSGeom geosGeometry = wkb2geos(*geom);
-
-	if (!geosGeometry) {
-		*out = bit_nil;
-		return MAL_SUCCEED;
-	}
-
-	*out = GEOSisEmpty(geosGeometry);
-
-	GEOSGeom_destroy(geosGeometry);
-
-	if (GDKerrbuf && GDKerrbuf[0])
-		throw(MAL, "geom.IsEmpty", "GEOSisEmpty failed");
-	return MAL_SUCCEED;
-
-}
-
-str
-wkbIsSimple(bit *out, wkb **geom)
-{
-	GEOSGeom geosGeometry = wkb2geos(*geom);
-
-	if (!geosGeometry) {
-		*out = bit_nil;
-		return MAL_SUCCEED;
-	}
-
-	*out = GEOSisSimple(geosGeometry);
-
-	GEOSGeom_destroy(geosGeometry);
-
-	if (GDKerrbuf && GDKerrbuf[0])
-		throw(MAL, "geom.IsSimple", "GEOSisSimple failed");
-	return MAL_SUCCEED;
-
-}
 
 str
 wkbEnvelope(wkb **out, wkb **geom)

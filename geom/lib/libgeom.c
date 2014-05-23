@@ -130,20 +130,22 @@ const char *
 geom_type2str(int t)
 {
 	switch (t) {
+	//case wkbGeometry:
+	//	return "GEOMETRY";
 	case wkbPoint:
-		return "Point";
+		return "POINT";
 	case wkbLineString:
-		return "Line";
+		return "LINESTRING";
 	case wkbPolygon:
-		return "Polygon";
+		return "POLYGON";
 	case wkbMultiPoint:
-		return "MultiPoint";
+		return "MULTIPOINT";
 	case wkbMultiLineString:
-		return "MultiLine";
+		return "MULTILINESTRING";
 	case wkbMultiPolygon:
-		return "MultiPolygon";
+		return "MULTIPOLYGON";
 	case wkbGeometryCollection:
-		return "GeomCollection";
+		return "GEOMETRYCOLLECTION";
 	}
-	return "unknown";
+	return "UKNOWN";
 }
