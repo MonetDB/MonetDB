@@ -1045,7 +1045,7 @@ logger_upgrade_format(char *fn, logger *lg, bat *bid, char *bak) {
 	BAT* b = BATdescriptor(*bid);
 	BAT* v;
 	if (b == 0) {
-		logger_fatal("Logger_new: inconsistent database, '%s' does not exist", bak, 0, 0);
+		logger_fatal("logger_upgrade_format: inconsistent database, '%s' does not exist", bak, 0, 0);
 	}
 
 	lg->catalog_bid = logbat_new(TYPE_int, BATSIZE);
@@ -1073,7 +1073,7 @@ logger_upgrade_format(char *fn, logger *lg, bat *bid, char *bak) {
 	*bid = logger_find_bat(lg, "snapshots");
 	b = BATdescriptor(*bid);
 	if (b == 0) {
-		logger_fatal("Logger_new: inconsistent database, '%s' snapshots does not exist", bak, 0, 0);
+		logger_fatal("logger_upgrade_format: inconsistent database, '%s' snapshots does not exist", bak, 0, 0);
 	}
 
 	lg->snapshots_bid = logbat_new(TYPE_int, 1);
@@ -1097,7 +1097,7 @@ logger_upgrade_format(char *fn, logger *lg, bat *bid, char *bak) {
 	*bid = logger_find_bat(lg, "seqs");
 	b = BATdescriptor(*bid);
 	if (b == 0) {
-		logger_fatal("Logger_new: inconsistent database, '%s' seqs does not exist", bak, 0, 0);
+		logger_fatal("logger_upgrade_format: inconsistent database, '%s' seqs does not exist", bak, 0, 0);
 	}
 
 	lg->seqs_id = logbat_new(TYPE_int, 1);
@@ -1139,7 +1139,7 @@ logger_create_catalog_file(int debug, logger *lg, char *fn, FILE *fp, char *file
 	 * shouldn't exist */
 	if (fp != NULL) {
 		logger_fatal(
-				"logger_new: there is no logger catalog, but there is a log file.\n"
+				"logger_create_catalog_file: there is no logger catalog, but there is a log file.\n"
 						"Are you sure you are using the correct combination of database\n"
 						"(--dbpath) and log directory (--set %s_logdir)?\n", fn, 0, 0);
 		return LOG_ERR;
@@ -1162,11 +1162,11 @@ logger_create_catalog_file(int debug, logger *lg, char *fn, FILE *fp, char *file
 	snprintf(bak, BUFSIZ, "%s_catalog_nme", fn);
 	BBPrename(lg->catalog_nme->batCacheid, bak);
 	if (!GDKcreatedir(filename)) {
-		logger_fatal("logger_new: cannot create directory for log file %s\n", filename, 0, 0);
+		logger_fatal("logger_create_catalog_file: cannot create directory for log file %s\n", filename, 0, 0);
 		return LOG_ERR;
 	}
 	if ((fp = fopen(filename, "w")) == NULL) {
-		logger_fatal("logger_new: cannot create log file %s\n", filename, 0, 0);
+		logger_fatal("logger_create_catalog_file: cannot create log file %s\n", filename, 0, 0);
 		return LOG_ERR;
 	}
 	fprintf(fp, "%06d\n\n", lg->version);
@@ -1191,18 +1191,18 @@ logger_find_persistent_catalog(logger *lg, char *fn, FILE *fp, char *bak, bat *c
 	BUN p, q;
 	BAT *b = BATdescriptor(*catalog_bid), *n;
 	if (b == 0)
-		logger_fatal("Logger_new: inconsistent database, catalog does not exist", 0, 0, 0);
+		logger_fatal("logger_find_persistent_catalog: inconsistent database, catalog does not exist", 0, 0, 0);
 
 	snprintf(bak, BUFSIZ, "%s_catalog_nme", fn);
 	*catalog_nme = BBPindex(bak);
 	n = BATdescriptor(*catalog_nme);
 	if (n == 0)
-		logger_fatal("Logger_new: inconsistent database, catalog_nme does not exist", 0, 0, 0);
+		logger_fatal("logger_find_persistent_catalog: inconsistent database, catalog_nme does not exist", 0, 0, 0);
 
 	/* the catalog exists, and so should the log file */
 	if (fp == NULL) {
 		logger_fatal(
-				"logger_new: there is a logger catalog, but no log file.\n"
+				"logger_find_persistent_catalog: there is a logger catalog, but no log file.\n"
 						"Are you sure you are using the correct combination of database\n"
 						"(--dbpath) and log directory (--set %s_logdir)?\n"
 						"If you have done a recent update of the server, it may be that your\n"
@@ -1257,7 +1257,7 @@ logger_load(int debug, char* fn, char filename[BUFSIZ], logger* lg)
 		fclose(fp);
 		(void) GDKunlink(lg->dir, LOGFILE, NULL);
 		if (GDKmove(lg->dir, LOGFILE, "bak", lg->dir, LOGFILE, NULL) != 0)
-			logger_fatal("logger_new: cannot move log.bak file back.\n", 0, 0, 0);
+			logger_fatal("logger_load: cannot move log.bak file back.\n", 0, 0, 0);
 	}
 	fp = fopen(filename, "r");
 
@@ -1271,9 +1271,11 @@ logger_load(int debug, char* fn, char filename[BUFSIZ], logger* lg)
 	snprintf(bak, BUFSIZ, "%s_catalog_bid", fn);
 	catalog_bid = BBPindex(bak);
 
-	if (catalog_bid == 0 && !lg->readonly) {
-		if (logger_create_catalog_file(debug, lg, fn, fp, filename, bak) == LOG_ERR) {
-			goto error;
+	if (catalog_bid == 0 ) {
+		if (!lg->readonly) {
+			if (logger_create_catalog_file(debug, lg, fn, fp, filename, bak) == LOG_ERR) {
+				goto error;
+			}
 		}
 	} else {
 		if (logger_find_persistent_catalog(lg, fn, fp, bak, &catalog_bid, &catalog_nme) == LOG_ERR) {
@@ -1318,10 +1320,10 @@ logger_load(int debug, char* fn, char filename[BUFSIZ], logger* lg)
 
 		lg->seqs_id = BATdescriptor(seqs_id);
 		if (lg->seqs_id == 0)
-			logger_fatal("Logger_new: inconsistent database, seqs_id does not exist",0,0,0);
+			logger_fatal("logger_load: inconsistent database, seqs_id does not exist", 0, 0, 0);
 		lg->seqs_val = BATdescriptor(seqs_val);
 		if (lg->seqs_val == 0)
-			logger_fatal("Logger_new: inconsistent database, seqs_val does not exist",0,0,0);
+			logger_fatal("logger_load: inconsistent database, seqs_val does not exist", 0, 0, 0);
 		if (BATcount(lg->seqs_id)) {
 			BUN p = BUNfndT(lg->seqs_id, &id);
 			lg->id = *(lng *) Tloc(lg->seqs_val, p);
@@ -1331,10 +1333,10 @@ logger_load(int debug, char* fn, char filename[BUFSIZ], logger* lg)
 		}
 		lg->snapshots_bid = BATdescriptor(snapshots_bid);
 		if (lg->snapshots_bid == 0)
-			logger_fatal("Logger_new: inconsistent database, snapshots_bid does not exist",0,0,0);
+			logger_fatal("logger_load: inconsistent database, snapshots_bid does not exist", 0, 0, 0);
 		lg->snapshots_tid = BATdescriptor(snapshots_tid);
 		if (lg->snapshots_tid == 0)
-			logger_fatal("Logger_new: inconsistent database, snapshots_tid does not exist",0,0,0);
+			logger_fatal("logger_load: inconsistent database, snapshots_tid does not exist", 0, 0, 0);
 	}
 
 	lg->freed = BATnew(TYPE_void, TYPE_int, 1);
@@ -1461,7 +1463,7 @@ logger_load(int debug, char* fn, char filename[BUFSIZ], logger* lg)
 /* Initialize a new logger
  * It will load any data in the logdir and persist it in the BATs*/
 static logger *
-logger_new(int debug, char *fn, char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp, int readonly, int keep_logs_files)
+logger_new(int debug, char *fn, char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp, int readonly)
 {
 	logger *lg = (struct logger *) GDKmalloc(sizeof(struct logger));
 	char filename[BUFSIZ];
@@ -1473,7 +1475,6 @@ logger_new(int debug, char *fn, char *logdir, int version, preversionfix_fptr pr
 
 	lg->debug = debug;
 	lg->readonly = readonly;
-	lg->keep_logs_files = keep_logs_files;
 
 	lg->changes = 0;
 	lg->version = version;
@@ -1529,11 +1530,11 @@ logger_reload(logger *lg)
 	return logger_load(lg->debug, lg->fn, filename, lg);
 }
 
-/* Create a logger */
+/* Create a new logger */
 logger *
-logger_create(int debug, char *fn, char *logdir, int version, int keep_logs_files, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp)
+logger_create(int debug, char *fn, char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp)
 {
-	logger *lg = logger_new(debug, fn, logdir, version, prefuncp, postfuncp, 0, keep_logs_files);
+	logger *lg = logger_new(debug, fn, logdir, version, prefuncp, postfuncp, 0);
 
 	if (!lg)
 		return NULL;
@@ -1544,7 +1545,7 @@ logger_create(int debug, char *fn, char *logdir, int version, int keep_logs_file
 	}
 	if (lg->changes &&
 	    (logger_restart(lg) != LOG_OK ||
-	     logger_cleanup(lg) != LOG_OK)) {
+	     logger_cleanup(lg, 1) != LOG_OK)) {
 		logger_destroy(lg);
 
 		return NULL;
@@ -1552,14 +1553,14 @@ logger_create(int debug, char *fn, char *logdir, int version, int keep_logs_file
 	return lg;
 }
 
-/* Create new read-only logger
+/* Create a new read-only logger
  * Usually reserved for shared log directories */
 logger *
-logger_create_ro(int debug, char *fn, char *logdir, int version, int keep_logs_files, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp)
+logger_create_ro(int debug, char *fn, char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp)
 {
 	logger *lg = NULL;
 
-	lg = logger_new(debug, fn, logdir, version, prefuncp, postfuncp, 1, keep_logs_files);
+	lg = logger_new(debug, fn, logdir, version, prefuncp, postfuncp, 1);
 
 	return lg;
 }
@@ -1571,7 +1572,7 @@ logger_destroy(logger *lg)
 		BUN p, q;
 		BAT *b = lg->catalog_bid;
 
-		logger_cleanup(lg);
+		logger_cleanup(lg, 0);
 
 		/* destroy the deleted */
 /* would be an error ....
@@ -1667,10 +1668,14 @@ logger_restart(logger *lg)
 	return res;
 }
 
+/* Clean-up write-ahead log files already persisted in the BATs, leaving only the most recent one.
+ * Update the LOGFILE and delete all bak- files as well.
+ * If the keep_persisted_log_files, no clean-up happens.
+ */
 int
-logger_cleanup(logger *lg)
+logger_cleanup(logger *lg, int keep_persisted_log_files)
 {
-	if (!lg->keep_logs_files) {
+	if (!keep_persisted_log_files) {
 		char buf[BUFSIZ];
 		char id[BUFSIZ];
 		FILE *fp = NULL;
@@ -1700,7 +1705,6 @@ logger_cleanup(logger *lg)
 		snprintf(buf, BUFSIZ, "bak-" LLFMT, lg->id);
 
 		GDKunlink(lg->dir, LOGFILE, buf);
-
 	}
 	return LOG_OK;
 }
@@ -1711,7 +1715,7 @@ logger_changes(logger *lg)
 	return lg->changes;
 }
 
-/* Read the last recorded transactions id from the logfile */
+/* Read the last recorded transactions id from the LOGFILE */
 int
 logger_read_last_transaction_id(logger *lg)
 {

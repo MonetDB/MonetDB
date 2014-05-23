@@ -45,6 +45,7 @@ store_type active_store_type = store_bat;
 int store_readonly = 0;
 int store_singleuser = 0;
 
+int keep_persisted_log_files = 0;
 int create_shared_logger = 0;
 int shared_drift_threshold = -1;
 
@@ -1307,6 +1308,9 @@ store_init(int debug, store_type store, int readonly, int singleuser, logger_set
 	/* get the set shared_drift_threshold
 	 * we will need it later in store_manager */
 	shared_drift_threshold = log_settings->shared_drift_threshold;
+	/* get the set shared_drift_threshold
+	 * we will need it later when calling logger_cleanup */
+	keep_persisted_log_files = log_settings->keep_persisted_log_files;
 
 #ifdef NEED_MT_LOCK_INIT
 	MT_lock_init(&bs_lock, "SQL_bs_lock");
@@ -1331,7 +1335,7 @@ store_init(int debug, store_type store, int readonly, int singleuser, logger_set
 	}
 	active_store_type = store;
 	if (!logger_funcs.create ||
-	    logger_funcs.create(debug, log_settings->logdir, CATALOG_VERSION*v, log_settings->keep_logs_files) == LOG_ERR) {
+	    logger_funcs.create(debug, log_settings->logdir, CATALOG_VERSION*v) == LOG_ERR) {
 		MT_lock_unset(&bs_lock, "store_init");
 		return -1;
 	}
@@ -1341,7 +1345,7 @@ store_init(int debug, store_type store, int readonly, int singleuser, logger_set
 #ifdef STORE_DEBUG
 	fprintf(stderr, "#store_init creating read-only logger\n");
 #endif
-		if (!shared_logger_funcs.create || shared_logger_funcs.create(debug, log_settings->shared_logdir, CATALOG_VERSION*v, log_settings->keep_logs_files) == LOG_ERR) {
+		if (!shared_logger_funcs.create || shared_logger_funcs.create(debug, log_settings->shared_logdir, CATALOG_VERSION*v) == LOG_ERR) {
 			MT_lock_unset(&bs_lock, "store_init");
 			return -1;
 		}
@@ -1558,6 +1562,9 @@ store_exit(void)
 		destroy_spare_transactions();
 
 	logger_funcs.destroy();
+	if (create_shared_logger) {
+		shared_logger_funcs.destroy();
+	}
 
 	/* Open transactions have a link to the global transaction therefore
 	   we need busy waiting until all transactions have ended or
@@ -1587,7 +1594,7 @@ store_apply_deltas(void)
 		store_funcs.gtrans_update(gtrans);
 	res = logger_funcs.restart();
 	if (logging && res == LOG_OK)
-		res = logger_funcs.cleanup();
+		res = logger_funcs.cleanup(keep_persisted_log_files);
 	logging = 0;
 }
 
@@ -1607,7 +1614,7 @@ store_manager(void)
 		/* check if we have a shared logger as well */
 		if (create_shared_logger) {
 			/* get the shared transactions drift */
-			shared_transactions_drift = shared_logger_funcs.changes();
+			shared_transactions_drift = shared_logger_funcs.get_transaction_drift();
 			if (shared_transactions_drift == LOG_ERR) {
 				GDKfatal("shared write-ahead log loading failure");
 			}
@@ -1640,7 +1647,7 @@ store_manager(void)
 		res = logger_funcs.restart();
 		MT_lock_unset(&bs_lock, "store_manager");
 		if (logging && res == LOG_OK)
-			res = logger_funcs.cleanup();
+			res = logger_funcs.cleanup(keep_persisted_log_files);
 		MT_lock_set(&bs_lock, "store_manager");
 		logging = 0;
 		MT_lock_unset(&bs_lock, "store_manager");

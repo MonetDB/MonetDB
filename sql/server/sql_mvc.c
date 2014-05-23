@@ -52,7 +52,7 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 	log_settings->shared_drift_threshold = GDKgetenv_int("gdk_shared_drift_threshold", -1);
 
 	/* Get and pass on the flag if old WAL files should be preserved. 0 (no) by default */
-	log_settings->keep_logs_files = GDKgetenv_int("gdk_keep_logs_files", 0);
+	log_settings->keep_persisted_log_files = GDKgetenv_int("gdk_keep_persisted_log_files", 0);
 
 	mvc_debug = debug&4;
 	if (mvc_debug) {

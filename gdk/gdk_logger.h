@@ -61,7 +61,6 @@ typedef struct logger {
 	char *fn;
 	char *dir;
 	int readonly; /* a flag to indicate if the logger is read-only */
-	int keep_logs_files; 	/* a flag if old WAL files should be preserved */
 	preversionfix_fptr prefuncp;
 	postversionfix_fptr postfuncp;
 	stream *log;
@@ -87,7 +86,7 @@ typedef struct logger_settings {
 	char *logdir;	/* (the regular) server write-ahead log directory */
 	char *shared_logdir;	/* shared write-ahead log directory */
 	int	shared_drift_threshold; /* shared write-ahead log drift threshold */
-	int keep_logs_files; 	/* a flag if old WAL files should be preserved */
+	int keep_persisted_log_files; 	/* a flag if old WAL files should be preserved */
 } logger_settings;
 
 #define BATSIZE 0
@@ -111,12 +110,12 @@ typedef int log_bid;
 /* the sequence identifier for frontend objects */
 #define OBJ_SID	1
 
-gdk_export logger *logger_create(int debug, char *fn, char *logdir, int version, int keep_logs_files, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp);
-gdk_export logger *logger_create_ro(int debug, char *fn, char *logdir, int version, int keep_logs_files, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp);
+gdk_export logger *logger_create(int debug, char *fn, char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp);
+gdk_export logger *logger_create_ro(int debug, char *fn, char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp);
 gdk_export void logger_destroy(logger *lg);
 gdk_export int logger_exit(logger *lg);
 gdk_export int logger_restart(logger *lg);
-gdk_export int logger_cleanup(logger *lg);
+gdk_export int logger_cleanup(logger *lg, int keep_persisted_log_files);
 gdk_export size_t logger_changes(logger *lg);
 gdk_export int logger_read_last_transaction_id(logger *lg);
 gdk_export int logger_sequence(logger *lg, int seq, lng *id);

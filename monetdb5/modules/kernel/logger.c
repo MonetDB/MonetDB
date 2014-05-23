@@ -90,7 +90,7 @@ logger_export str logger_create_wrap( logger *L, int *debug, str *fn, str *dirna
 str
 logger_create_wrap( logger *L, int *debug, str *fn, str *dirname, int *version)
 {
-	logger *l = logger_create(*debug, *fn, *dirname, *version, 0, NULL, NULL);
+	logger *l = logger_create(*debug, *fn, *dirname, *version, NULL, NULL);
 
 	if (l) {
 		*(logger**)L = l;
@@ -141,7 +141,7 @@ int
 logger_cleanup_wrap(logger *L )
 {
 	logger *l = *(logger**)L;
-	if (l && logger_cleanup(l) == LOG_OK)
+	if (l && logger_cleanup(l, 0) == LOG_OK)
 		return GDK_SUCCEED;
 	return GDK_FAIL;
 }

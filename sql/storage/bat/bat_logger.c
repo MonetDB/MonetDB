@@ -276,22 +276,22 @@ bl_postversion( void *lg)
 }
 
 static int 
-bl_create(int debug, char *logdir, int cat_version, int keep_logs_files)
+bl_create(int debug, char *logdir, int cat_version)
 {
 	if (bat_logger)
 		return LOG_ERR;
-	bat_logger = logger_create(debug, "sql", logdir, cat_version, keep_logs_files, bl_preversion, bl_postversion);
+	bat_logger = logger_create(debug, "sql", logdir, cat_version, bl_preversion, bl_postversion);
 	if (bat_logger)
 		return LOG_OK;
 	return LOG_ERR;
 }
 
 static int
-bl_create_shared(int debug, char *logdir, int cat_version, int keep_logs_files)
+bl_create_shared(int debug, char *logdir, int cat_version)
 {
 	if (bat_logger_shared)
 		return LOG_ERR;
-	bat_logger_shared = logger_create_ro(debug, "sql", logdir, cat_version, keep_logs_files, bl_preversion, bl_postversion);
+	bat_logger_shared = logger_create_ro(debug, "sql", logdir, cat_version, bl_preversion, bl_postversion);
 	if (bat_logger_shared)
 		return LOG_OK;
 	return LOG_ERR;
@@ -330,10 +330,18 @@ bl_restart(void)
 }
 
 static int
-bl_cleanup(void)
+bl_cleanup(int keep_persisted_log_files)
 {
 	if (bat_logger)
-		return logger_cleanup(bat_logger);
+		return logger_cleanup(bat_logger, keep_persisted_log_files);
+	return LOG_OK;
+}
+
+static int
+bl_cleanup_shared(int keep_persisted_log_files)
+{
+	if (bat_logger)
+		return logger_cleanup(bat_logger_shared, keep_persisted_log_files);
 	return LOG_OK;
 }
 
@@ -344,7 +352,13 @@ bl_changes(void)
 }
 
 static int
-bl_changes_shared(void)
+bl_read_last_transaction_id_shared(void)
+{
+	return logger_read_last_transaction_id(bat_logger_shared);
+}
+
+static int
+bl_get_transaction_drift_shared(void)
 {
 	int res = logger_read_last_transaction_id(bat_logger_shared);
 	if (res != LOG_ERR) {
@@ -357,12 +371,6 @@ static int
 bl_get_sequence(int seq, lng *id)
 {
 	return logger_sequence(bat_logger, seq, id);
-}
-
-static int
-bl_get_sequence_shared(int seq, lng *id)
-{
-	return logger_sequence(bat_logger_shared, seq, id);
 }
 
 static int
@@ -428,8 +436,9 @@ bat_logger_init_shared( logger_functions *lf )
 {
 	lf->create = bl_create_shared;
 	lf->destroy = bl_destroy_shared;
-	lf->changes = bl_changes_shared;
-	lf->get_sequence = bl_get_sequence_shared;
+	lf->cleanup = bl_cleanup_shared;
+	lf->read_last_transaction_id = bl_read_last_transaction_id_shared;
+	lf->get_transaction_drift = bl_get_transaction_drift_shared;
 	lf->log_isnew = bl_log_isnew_shared;
 	lf->reload = bl_reload_shared;
 	return LOG_OK;

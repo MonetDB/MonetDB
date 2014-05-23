@@ -247,15 +247,17 @@ typedef struct store_functions {
 
 extern store_functions store_funcs;
 
-typedef int (*logger_create_fptr) (int debug, char *logdir, int catalog_version, int keep_logs_files);
-typedef int (*logger_create_shared_fptr) (int debug, char *logdir, int catalog_version, int keep_logs_files);
+typedef int (*logger_create_fptr) (int debug, char *logdir, int catalog_version);
+typedef int (*logger_create_shared_fptr) (int debug, char *logdir, int catalog_version);
 
 typedef void (*logger_destroy_fptr) (void);
 typedef int (*logger_restart_fptr) (void);
-typedef int (*logger_cleanup_fptr) (void);
+typedef int (*logger_cleanup_fptr) (int keep_persisted_log_files);
 
 typedef int (*logger_changes_fptr)(void);
 typedef int (*logger_get_sequence_fptr) (int seq, lng *id);
+typedef int (*logger_read_last_transaction_id_fptr)(void);
+typedef int (*logger_get_transaction_drift_fptr)(void);
 
 typedef int (*logger_reload_fptr) (void);
 
@@ -272,6 +274,8 @@ typedef struct logger_functions {
 
 	logger_changes_fptr changes;
 	logger_get_sequence_fptr get_sequence;
+	logger_read_last_transaction_id_fptr read_last_transaction_id;
+	logger_get_transaction_drift_fptr get_transaction_drift;
 
 	logger_reload_fptr reload;
 
