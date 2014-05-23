@@ -1364,9 +1364,11 @@ store_init(int debug, store_type store, int readonly, int singleuser, logger_set
 	store_singleuser = singleuser;
 
 	if (logger_funcs.log_isnew()) {
-		/* cannot initialize database in readonly mode */
-		if (readonly)
+		/* cannot initialize database in readonly mode
+		 * unless this is a slave instance with a read-only/shared logger */
+		if (readonly && !create_shared_logger) {
 			return -1;
+		}
 		tr = sql_trans_create(stk, NULL, NULL);
 	} else {
 		first = 0;
@@ -1618,12 +1620,15 @@ store_manager(void)
 			continue;
 		}
 
-		/* (re)load data from share write-ahead log */
-		res = shared_logger_funcs.reload();
-		if (res != LOG_OK) {
-			MT_lock_unset(&bs_lock, "store_manager");
-			GDKfatal("shared write-ahead log loading failure");
+		if (create_shared_logger) {
+			/* (re)load data from share write-ahead log */
+			res = shared_logger_funcs.reload();
+			if (res != LOG_OK) {
+				MT_lock_unset(&bs_lock, "store_manager");
+				GDKfatal("shared write-ahead log loading failure");
+			}
 		}
+
 		logging = 1;
 		/* make sure we reset all transactions on re-activation */
 		gtrans->wstime = timestamp();
