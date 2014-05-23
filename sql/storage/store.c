@@ -1621,7 +1621,7 @@ store_manager(void)
 		}
 
 		if (create_shared_logger) {
-			/* (re)load data from share write-ahead log */
+			/* (re)load data from shared write-ahead log */
 			res = shared_logger_funcs.reload();
 			if (res != LOG_OK) {
 				MT_lock_unset(&bs_lock, "store_manager");

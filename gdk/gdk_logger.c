@@ -1518,6 +1518,9 @@ logger_reload(logger *lg)
 	char filename[BUFSIZ];
 
 	logger_set_logdir_path(filename, lg->fn, lg->dir);
+	if (lg->debug & 1) {
+			fprintf(stderr, "#logger_reload %s\n", filename);
+	}
 
 	return logger_load(lg->debug, lg->fn, filename, lg);
 }
@@ -1715,6 +1718,9 @@ logger_read_last_transaction_id(logger *lg)
 		fprintf(stderr, "!ERROR: logger_read_last_transaction_id: unable to open file %s\n", filename);
 		goto error;
 	}
+	if (lg->debug & 1) {
+		fprintf(stderr, "#logger_read_last_transaction_id opening file %s\n", filename);
+	}
 	if (check_version(lg, fp)) {
 		fprintf(stderr, "!ERROR: logger_read_last_transaction_id: inconsistent log version for file %s\n", filename);
 		goto error;
@@ -1724,6 +1730,9 @@ logger_read_last_transaction_id(logger *lg)
 	if(fscanf(fp, "%d", &id) != 1) {
 		fprintf(stderr, "!ERROR: logger_read_last_transaction_id: unable to read last transaction from file %s\n", filename);
 		goto error;
+	}
+	if (lg->debug & 1) {
+		fprintf(stderr, "#logger_read_last_transaction_id %d\n", id);
 	}
 
 	return id;
