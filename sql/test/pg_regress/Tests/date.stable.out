@@ -1,0 +1,431 @@
+stdout of test 'date` in directory 'sql/test/pg_regress` itself:
+
+
+# 17:10:12 >  
+# 17:10:12 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
+# 17:10:12 >  
+
+# MonetDB 5 server v11.18.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_pg_regress', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.356 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://uwakai.da.cwi.nl:38959/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-1142/.s.monetdb.38959
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 17:10:16 >  
+# 17:10:16 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
+# 17:10:16 >  
+
+#CREATE TABLE DATE_TBL (f1 date);
+#INSERT INTO DATE_TBL VALUES ('1957-04-09');
+[ 1	]
+#INSERT INTO DATE_TBL VALUES ('1957-06-13');
+[ 1	]
+#INSERT INTO DATE_TBL VALUES ('1996-02-28');
+[ 1	]
+#INSERT INTO DATE_TBL VALUES ('1996-02-29');
+[ 1	]
+#INSERT INTO DATE_TBL VALUES ('1996-03-01');
+[ 1	]
+#INSERT INTO DATE_TBL VALUES ('1996-03-02');
+[ 1	]
+#INSERT INTO DATE_TBL VALUES ('1997-02-28');
+[ 1	]
+#INSERT INTO DATE_TBL VALUES ('1997-03-01');
+[ 1	]
+#INSERT INTO DATE_TBL VALUES ('1997-03-02');
+[ 1	]
+#INSERT INTO DATE_TBL VALUES ('2000-04-01');
+[ 1	]
+#INSERT INTO DATE_TBL VALUES ('2000-04-02');
+[ 1	]
+#INSERT INTO DATE_TBL VALUES ('2000-04-03');
+[ 1	]
+#INSERT INTO DATE_TBL VALUES ('2038-04-08');
+[ 1	]
+#INSERT INTO DATE_TBL VALUES ('2039-04-09');
+[ 1	]
+#INSERT INTO DATE_TBL VALUES ('2040-04-10');
+[ 1	]
+#SELECT f1 AS "Fifteen" FROM DATE_TBL;
+% sys.L # table_name
+% Fifteen # name
+% date # type
+% 10 # length
+[ 1957-04-09	]
+[ 1957-06-13	]
+[ 1996-02-28	]
+[ 1996-02-29	]
+[ 1996-03-01	]
+[ 1996-03-02	]
+[ 1997-02-28	]
+[ 1997-03-01	]
+[ 1997-03-02	]
+[ 2000-04-01	]
+[ 2000-04-02	]
+[ 2000-04-03	]
+[ 2038-04-08	]
+[ 2039-04-09	]
+[ 2040-04-10	]
+#SELECT f1 AS "Nine" FROM DATE_TBL WHERE f1 < '2000-01-01';
+% sys.L # table_name
+% Nine # name
+% date # type
+% 10 # length
+[ 1957-04-09	]
+[ 1957-06-13	]
+[ 1996-02-28	]
+[ 1996-02-29	]
+[ 1996-03-01	]
+[ 1996-03-02	]
+[ 1997-02-28	]
+[ 1997-03-01	]
+[ 1997-03-02	]
+#SELECT f1 AS "Three" FROM DATE_TBL
+#  WHERE f1 BETWEEN '2000-01-01' AND '2001-01-01';
+% sys.L # table_name
+% Three # name
+% date # type
+% 10 # length
+[ 2000-04-01	]
+[ 2000-04-02	]
+[ 2000-04-03	]
+#SELECT date 'January 8, 1999';
+% .L # table_name
+% single_value # name
+% date # type
+% 10 # length
+[ 1999-01-08	]
+#SELECT date '1999-01-08';
+% .L # table_name
+% single_value # name
+% date # type
+% 10 # length
+[ 1999-01-08	]
+#SELECT date '1999-01-18';
+% .L # table_name
+% single_value # name
+% date # type
+% 10 # length
+[ 1999-01-18	]
+#SELECT date '01/02/03';
+% .L # table_name
+% single_value # name
+% date # type
+% 10 # length
+[ 1-02-03	]
+#SELECT date 'January 8, 99 BC';
+% .L # table_name
+% single_value # name
+% date # type
+% 10 # length
+[ 99-01-08	]
+#SELECT date '99-Jan-08';
+% .L # table_name
+% single_value # name
+% date # type
+% 10 # length
+[ 99-01-08	]
+#SELECT date '1999-Jan-08';
+% .L # table_name
+% single_value # name
+% date # type
+% 10 # length
+[ 1999-01-08	]
+#SELECT date '99 Jan 08';
+% .L # table_name
+% single_value # name
+% date # type
+% 10 # length
+[ 99-01-08	]
+#SELECT date '1999 Jan 08';
+% .L # table_name
+% single_value # name
+% date # type
+% 10 # length
+[ 1999-01-08	]
+#SELECT date '99-01-08';
+% .L # table_name
+% single_value # name
+% date # type
+% 10 # length
+[ 99-01-08	]
+#SELECT date '1999-01-08';
+% .L # table_name
+% single_value # name
+% date # type
+% 10 # length
+[ 1999-01-08	]
+#SELECT date '99-08-01';
+% .L # table_name
+% single_value # name
+% date # type
+% 10 # length
+[ 99-08-01	]
+#SELECT date '1999-08-01';
+% .L # table_name
+% single_value # name
+% date # type
+% 10 # length
+[ 1999-08-01	]
+#SELECT date '99 01 08';
+% .L # table_name
+% single_value # name
+% date # type
+% 10 # length
+[ 99-01-08	]
+#SELECT date '1999 01 08';
+% .L # table_name
+% single_value # name
+% date # type
+% 10 # length
+[ 1999-01-08	]
+#SELECT date '99 08 01';
+% .L # table_name
+% single_value # name
+% date # type
+% 10 # length
+[ 99-08-01	]
+#SELECT date '1999 08 01';
+% .L # table_name
+% single_value # name
+% date # type
+% 10 # length
+[ 1999-08-01	]
+#SELECT date 'January 8, 1999';
+% .L # table_name
+% single_value # name
+% date # type
+% 10 # length
+[ 1999-01-08	]
+#SELECT date '1999-01-08';
+% .L # table_name
+% single_value # name
+% date # type
+% 10 # length
+[ 1999-01-08	]
+#SELECT date '1999-01-18';
+% .L # table_name
+% single_value # name
+% date # type
+% 10 # length
+[ 1999-01-18	]
+#SELECT date '01/02/03';
+% .L # table_name
+% single_value # name
+% date # type
+% 10 # length
+[ 1-02-03	]
+#SELECT date 'January 8, 99 BC';
+% .L # table_name
+% single_value # name
+% date # type
+% 10 # length
+[ 99-01-08	]
+#SELECT date '99-Jan-08';
+% .L # table_name
+% single_value # name
+% date # type
+% 10 # length
+[ 99-01-08	]
+#SELECT date '1999-Jan-08';
+% .L # table_name
+% single_value # name
+% date # type
+% 10 # length
+[ 1999-01-08	]
+#SELECT date '99 Jan 08';
+% .L # table_name
+% single_value # name
+% date # type
+% 10 # length
+[ 99-01-08	]
+#SELECT date '1999 Jan 08';
+% .L # table_name
+% single_value # name
+% date # type
+% 10 # length
+[ 1999-01-08	]
+#SELECT date '99-01-08';
+% .L # table_name
+% single_value # name
+% date # type
+% 10 # length
+[ 99-01-08	]
+#SELECT date '1999-01-08';
+% .L # table_name
+% single_value # name
+% date # type
+% 10 # length
+[ 1999-01-08	]
+#SELECT date '99-08-01';
+% .L # table_name
+% single_value # name
+% date # type
+% 10 # length
+[ 99-08-01	]
+#SELECT date '1999-08-01';
+% .L # table_name
+% single_value # name
+% date # type
+% 10 # length
+[ 1999-08-01	]
+#SELECT date '99 01 08';
+% .L # table_name
+% single_value # name
+% date # type
+% 10 # length
+[ 99-01-08	]
+#SELECT date '1999 01 08';
+% .L # table_name
+% single_value # name
+% date # type
+% 10 # length
+[ 1999-01-08	]
+#SELECT date '99 08 01';
+% .L # table_name
+% single_value # name
+% date # type
+% 10 # length
+[ 99-08-01	]
+#SELECT date '1999 08 01';
+% .L # table_name
+% single_value # name
+% date # type
+% 10 # length
+[ 1999-08-01	]
+#SELECT date 'January 8, 1999';
+% .L # table_name
+% single_value # name
+% date # type
+% 10 # length
+[ 1999-01-08	]
+#SELECT date '1999-01-08';
+% .L # table_name
+% single_value # name
+% date # type
+% 10 # length
+[ 1999-01-08	]
+#SELECT date '1999-01-18';
+% .L # table_name
+% single_value # name
+% date # type
+% 10 # length
+[ 1999-01-18	]
+#SELECT date '01/02/03';
+% .L # table_name
+% single_value # name
+% date # type
+% 10 # length
+[ 1-02-03	]
+#SELECT date 'January 8, 99 BC';
+% .L # table_name
+% single_value # name
+% date # type
+% 10 # length
+[ 99-01-08	]
+#SELECT date '99-Jan-08';
+% .L # table_name
+% single_value # name
+% date # type
+% 10 # length
+[ 99-01-08	]
+#SELECT date '1999-Jan-08';
+% .L # table_name
+% single_value # name
+% date # type
+% 10 # length
+[ 1999-01-08	]
+#SELECT date '99 Jan 08';
+% .L # table_name
+% single_value # name
+% date # type
+% 10 # length
+[ 99-01-08	]
+#SELECT date '1999 Jan 08';
+% .L # table_name
+% single_value # name
+% date # type
+% 10 # length
+[ 1999-01-08	]
+#SELECT date '99-01-08';
+% .L # table_name
+% single_value # name
+% date # type
+% 10 # length
+[ 99-01-08	]
+#SELECT date '1999-01-08';
+% .L # table_name
+% single_value # name
+% date # type
+% 10 # length
+[ 1999-01-08	]
+#SELECT date '99-08-01';
+% .L # table_name
+% single_value # name
+% date # type
+% 10 # length
+[ 99-08-01	]
+#SELECT date '1999-08-01';
+% .L # table_name
+% single_value # name
+% date # type
+% 10 # length
+[ 1999-08-01	]
+#SELECT date '99 01 08';
+% .L # table_name
+% single_value # name
+% date # type
+% 10 # length
+[ 99-01-08	]
+#SELECT date '1999 01 08';
+% .L # table_name
+% single_value # name
+% date # type
+% 10 # length
+[ 1999-01-08	]
+#SELECT date '99 08 01';
+% .L # table_name
+% single_value # name
+% date # type
+% 10 # length
+[ 99-08-01	]
+#SELECT date '1999 08 01';
+% .L # table_name
+% single_value # name
+% date # type
+% 10 # length
+[ 1999-08-01	]
+#SELECT f1 - date '2000-01-01' AS "Days From 2K" FROM DATE_TBL;
+% sys.L # table_name
+% Days From 2K # name
+% int # type
+% 6 # length
+[ -15607	]
+[ -15542	]
+[ -1403	]
+[ -1402	]
+[ -1401	]
+[ -1400	]
+[ -1037	]
+[ -1036	]
+[ -1035	]
+[ 91	]
+[ 92	]
+[ 93	]
+[ 13977	]
+[ 14343	]
+[ 14710	]
+
+# 17:10:16 >  
+# 17:10:16 >  "Done."
+# 17:10:16 >  
+

@@ -1,0 +1,165 @@
+stderr of test 'triggers` in directory 'sql/test/pg_regress` itself:
+
+
+# 17:11:51 >  
+# 17:11:51 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
+# 17:11:51 >  
+
+# builtin opt 	gdk_dbpath = /ufs/dinther/INSTALL/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 38959
+# cmdline opt 	mapi_usock = /var/tmp/mtest-1142/.s.monetdb.38959
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbpath = /ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress
+# cmdline opt 	mal_listing = 0
+# cmdline opt 	gdk_debug = 536870922
+
+# 17:11:53 >  
+# 17:11:53 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
+# 17:11:53 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = create trigger check_fkeys_pkey_exist 
+        	before insert or update on fkeys 
+        	for each row 
+        	execute procedure 
+        	check_primary_key ('fkey1', 'fkey2', 'pkeys', 'pkey1', 'pkey2');
+ERROR = !syntax error, unexpected OR, expecting ON in: "create trigger check_fkeys_pkey_exist 
+        !	before insert or"
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = create trigger check_fkeys_pkey2_exist 
+        	before insert or update on fkeys 
+        	for each row 
+        	execute procedure check_primary_key ('fkey3', 'fkeys2', 'pkey23');
+ERROR = !syntax error, unexpected OR, expecting ON in: "create trigger check_fkeys_pkey2_exist 
+        !	before insert or"
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = create trigger check_fkeys2_pkey_exist 
+        	before insert or update on fkeys2 
+        	for each row 
+        	execute procedure 
+        	check_primary_key ('fkey21', 'fkey22', 'pkeys', 'pkey1', 'pkey2');
+ERROR = !syntax error, unexpected OR, expecting ON in: "create trigger check_fkeys2_pkey_exist 
+        !	before insert or"
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = create trigger check_pkeys_fkey_cascade
+        	before delete or update on pkeys 
+        	for each row 
+        	execute procedure 
+        	check_foreign_key (2, 'cascade', 'pkey1', 'pkey2', 
+        	'fkeys', 'fkey1', 'fkey2', 'fkeys2', 'fkey21', 'fkey22');
+ERROR = !syntax error, unexpected OR, expecting ON in: "create trigger check_pkeys_fkey_cascade
+        !	before delete or"
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = create trigger check_fkeys2_fkey_restrict 
+        	before delete or update on fkeys2
+        	for each row 
+        	execute procedure check_foreign_key (1, 'restrict', 'pkey23', 'fkeys', 'fkey3');
+ERROR = !syntax error, unexpected OR, expecting ON in: "create trigger check_fkeys2_fkey_restrict 
+        !	before delete or"
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = create sequence ttdummy_seq increment 10 start 0 minvalue 0;
+ERROR = !syntax error, unexpected INCREMENT, expecting AS in: "create sequence ttdummy_seq increment"
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = create trigger ttdummy 
+        	before delete or update on tttest
+        	for each row 
+        	execute procedure 
+        	ttdummy (price_on, price_off);
+ERROR = !syntax error, unexpected OR, expecting ON in: "create trigger ttdummy 
+        !	before delete or"
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = create trigger ttserial 
+        	before insert or update on tttest
+        	for each row 
+        	execute procedure 
+        	autoinc (price_on, ttdummy_seq);
+ERROR = !syntax error, unexpected OR, expecting ON in: "create trigger ttserial 
+        !	before insert or"
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = insert into tttest values (1, 1, null);
+ERROR = !INSERT INTO: number of values doesn't match number of columns of table 'tttest'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = insert into tttest values (2, 2, null);
+ERROR = !INSERT INTO: number of values doesn't match number of columns of table 'tttest'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = insert into tttest values (3, 3, 0);
+ERROR = !INSERT INTO: number of values doesn't match number of columns of table 'tttest'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = select set_ttdummy(0);
+ERROR = !SELECT: no such unary operator 'set_ttdummy(tinyint)'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = select set_ttdummy(1);
+ERROR = !SELECT: no such unary operator 'set_ttdummy(tinyint)'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = select set_ttdummy(0);
+ERROR = !SELECT: no such unary operator 'set_ttdummy(tinyint)'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = drop sequence ttdummy_seq;
+ERROR = !DROP SEQUENCE: no such sequence 'ttdummy_seq'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = CREATE TABLE log_table (tstamp timestamp default timeofday()::timestamp);
+ERROR = !unexpected symbol (:)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = COPY main_table (a,b) FROM stdin;
+ERROR = !syntax error, unexpected IDENT, expecting BINARY or INTO in: "copy main_table"
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = 5	10
+        20	20
+        30	10
+        50	35
+        80	15
+        \.
+        
+        CREATE FUNCTION trigger_func() RETURNS trigger LANGUAGE 'plpgsql' AS '
+        BEGIN
+        	RAISE NOTICE ''trigger_func() called: action = %, when = %, level = %'', TG_OP, TG_WHEN, TG_LEVEL;
+        	RETURN NULL;
+        COMMIT;';
+ERROR = !syntax error, unexpected sqlINT in: "5"
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = CREATE TRIGGER before_ins_stmt_trig BEFORE INSERT ON main_table
+        FOR EACH STATEMENT EXECUTE PROCEDURE trigger_func();
+ERROR = !syntax error, unexpected PROCEDURE, expecting ':' in: "create trigger before_ins_stmt_trig before insert on main_table
+        !for each statement execute procedure"
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = CREATE TRIGGER after_ins_stmt_trig AFTER INSERT ON main_table
+        FOR EACH STATEMENT EXECUTE PROCEDURE trigger_func();
+ERROR = !syntax error, unexpected PROCEDURE, expecting ':' in: "create trigger after_ins_stmt_trig after insert on main_table
+        !for each statement execute procedure"
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = CREATE TRIGGER before_upd_stmt_trig AFTER UPDATE ON main_table
+        EXECUTE PROCEDURE trigger_func();
+ERROR = !syntax error, unexpected PROCEDURE, expecting ':' in: "create trigger before_upd_stmt_trig after update on main_table
+        !execute procedure"
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = CREATE TRIGGER before_upd_row_trig AFTER UPDATE ON main_table
+        FOR EACH ROW EXECUTE PROCEDURE trigger_func();
+ERROR = !syntax error, unexpected PROCEDURE, expecting ':' in: "create trigger before_upd_row_trig after update on main_table
+        !for each row execute procedure"
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = COPY main_table (a, b) FROM stdin;
+ERROR = !syntax error, unexpected IDENT, expecting BINARY or INTO in: "copy main_table"
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = 30	40
+        50	60
+        \.
+        
+        SELECT * FROM main_table ORDER BY a, b;
+ERROR = !syntax error, unexpected sqlINT in: "30"
+
+# 17:11:54 >  
+# 17:11:54 >  "Done."
+# 17:11:54 >  
+

@@ -1,0 +1,163 @@
+stdout of test 'rangefuncs` in directory 'sql/test/pg_regress` itself:
+
+
+# 17:11:07 >  
+# 17:11:07 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
+# 17:11:07 >  
+
+# MonetDB 5 server v11.18.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_pg_regress', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.356 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://uwakai.da.cwi.nl:38959/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-1142/.s.monetdb.38959
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 17:11:09 >  
+# 17:11:09 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
+# 17:11:09 >  
+
+#CREATE TABLE foo2(fooid int, f2 int);
+#INSERT INTO foo2 VALUES(1, 11);
+[ 1	]
+#INSERT INTO foo2 VALUES(2, 22);
+[ 1	]
+#INSERT INTO foo2 VALUES(1, 111);
+[ 1	]
+#CREATE TABLE foo (fooid int, foosubid int, fooname text, primary key(fooid,foosubid));
+#INSERT INTO foo VALUES(1,1,'Joe');
+[ 1	]
+#INSERT INTO foo VALUES(1,2,'Ed');
+[ 1	]
+#INSERT INTO foo VALUES(2,1,'Mary');
+[ 1	]
+#DROP TABLE foo2;
+#DROP TABLE foo;
+#CREATE TABLE foorescan (fooid int, foosubid int, fooname text, primary key(fooid,foosubid));
+#INSERT INTO foorescan values(5000,1,'abc.5000.1');
+[ 1	]
+#INSERT INTO foorescan values(5001,1,'abc.5001.1');
+[ 1	]
+#INSERT INTO foorescan values(5002,1,'abc.5002.1');
+[ 1	]
+#INSERT INTO foorescan values(5003,1,'abc.5003.1');
+[ 1	]
+#INSERT INTO foorescan values(5004,1,'abc.5004.1');
+[ 1	]
+#INSERT INTO foorescan values(5005,1,'abc.5005.1');
+[ 1	]
+#INSERT INTO foorescan values(5006,1,'abc.5006.1');
+[ 1	]
+#INSERT INTO foorescan values(5007,1,'abc.5007.1');
+[ 1	]
+#INSERT INTO foorescan values(5008,1,'abc.5008.1');
+[ 1	]
+#INSERT INTO foorescan values(5009,1,'abc.5009.1');
+[ 1	]
+#INSERT INTO foorescan values(5000,2,'abc.5000.2');
+[ 1	]
+#INSERT INTO foorescan values(5001,2,'abc.5001.2');
+[ 1	]
+#INSERT INTO foorescan values(5002,2,'abc.5002.2');
+[ 1	]
+#INSERT INTO foorescan values(5003,2,'abc.5003.2');
+[ 1	]
+#INSERT INTO foorescan values(5004,2,'abc.5004.2');
+[ 1	]
+#INSERT INTO foorescan values(5005,2,'abc.5005.2');
+[ 1	]
+#INSERT INTO foorescan values(5006,2,'abc.5006.2');
+[ 1	]
+#INSERT INTO foorescan values(5007,2,'abc.5007.2');
+[ 1	]
+#INSERT INTO foorescan values(5008,2,'abc.5008.2');
+[ 1	]
+#INSERT INTO foorescan values(5009,2,'abc.5009.2');
+[ 1	]
+#INSERT INTO foorescan values(5000,3,'abc.5000.3');
+[ 1	]
+#INSERT INTO foorescan values(5001,3,'abc.5001.3');
+[ 1	]
+#INSERT INTO foorescan values(5002,3,'abc.5002.3');
+[ 1	]
+#INSERT INTO foorescan values(5003,3,'abc.5003.3');
+[ 1	]
+#INSERT INTO foorescan values(5004,3,'abc.5004.3');
+[ 1	]
+#INSERT INTO foorescan values(5005,3,'abc.5005.3');
+[ 1	]
+#INSERT INTO foorescan values(5006,3,'abc.5006.3');
+[ 1	]
+#INSERT INTO foorescan values(5007,3,'abc.5007.3');
+[ 1	]
+#INSERT INTO foorescan values(5008,3,'abc.5008.3');
+[ 1	]
+#INSERT INTO foorescan values(5009,3,'abc.5009.3');
+[ 1	]
+#INSERT INTO foorescan values(5000,4,'abc.5000.4');
+[ 1	]
+#INSERT INTO foorescan values(5001,4,'abc.5001.4');
+[ 1	]
+#INSERT INTO foorescan values(5002,4,'abc.5002.4');
+[ 1	]
+#INSERT INTO foorescan values(5003,4,'abc.5003.4');
+[ 1	]
+#INSERT INTO foorescan values(5004,4,'abc.5004.4');
+[ 1	]
+#INSERT INTO foorescan values(5005,4,'abc.5005.4');
+[ 1	]
+#INSERT INTO foorescan values(5006,4,'abc.5006.4');
+[ 1	]
+#INSERT INTO foorescan values(5007,4,'abc.5007.4');
+[ 1	]
+#INSERT INTO foorescan values(5008,4,'abc.5008.4');
+[ 1	]
+#INSERT INTO foorescan values(5009,4,'abc.5009.4');
+[ 1	]
+#INSERT INTO foorescan values(5000,5,'abc.5000.5');
+[ 1	]
+#INSERT INTO foorescan values(5001,5,'abc.5001.5');
+[ 1	]
+#INSERT INTO foorescan values(5002,5,'abc.5002.5');
+[ 1	]
+#INSERT INTO foorescan values(5003,5,'abc.5003.5');
+[ 1	]
+#INSERT INTO foorescan values(5004,5,'abc.5004.5');
+[ 1	]
+#INSERT INTO foorescan values(5005,5,'abc.5005.5');
+[ 1	]
+#INSERT INTO foorescan values(5006,5,'abc.5006.5');
+[ 1	]
+#INSERT INTO foorescan values(5007,5,'abc.5007.5');
+[ 1	]
+#INSERT INTO foorescan values(5008,5,'abc.5008.5');
+[ 1	]
+#INSERT INTO foorescan values(5009,5,'abc.5009.5');
+[ 1	]
+#CREATE TABLE barrescan (fooid int primary key);
+#INSERT INTO barrescan values(5003);
+[ 1	]
+#INSERT INTO barrescan values(5004);
+[ 1	]
+#INSERT INTO barrescan values(5005);
+[ 1	]
+#INSERT INTO barrescan values(5006);
+[ 1	]
+#INSERT INTO barrescan values(5007);
+[ 1	]
+#INSERT INTO barrescan values(5008);
+[ 1	]
+#DROP TABLE foorescan;
+#DROP TABLE barrescan;
+
+# 17:11:10 >  
+# 17:11:10 >  "Done."
+# 17:11:10 >  
+

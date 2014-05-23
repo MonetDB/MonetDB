@@ -1,0 +1,117 @@
+stderr of test 'polygon` in directory 'sql/test/pg_regress` itself:
+
+
+# 17:10:58 >  
+# 17:10:58 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
+# 17:10:58 >  
+
+# builtin opt 	gdk_dbpath = /ufs/dinther/INSTALL/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 38959
+# cmdline opt 	mapi_usock = /var/tmp/mtest-1142/.s.monetdb.38959
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbpath = /ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress
+# cmdline opt 	mal_listing = 0
+# cmdline opt 	gdk_debug = 536870922
+
+# 17:10:58 >  
+# 17:10:58 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
+# 17:10:58 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT '' AS four, POLYGON_TBL.*;
+ERROR = !Column expression Table 'polygon_tbl' unknown
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT '' AS three, p.*
+           FROM POLYGON_TBL p
+           WHERE p.f1 && '(3.0,1.0),(3.0,3.0),(1.0,0.0)';
+ERROR = !syntax error, unexpected '&' in: "select '' as three, p.*
+        !   from polygon_tbl p
+        !   where p.f1 &&"
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT '' AS four, p.* 
+           FROM POLYGON_TBL p
+           WHERE p.f1 &< '(3.0,1.0),(3.0,3.0),(1.0,0.0)';
+ERROR = !syntax error, unexpected COMPARISON in: "select '' as four, p.* 
+        !   from polygon_tbl p
+        !   where p.f1 &<"
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT '' AS two, p.* 
+           FROM POLYGON_TBL p
+           WHERE p.f1 &> '(3.0,1.0),(3.0,3.0),(1.0,0.0)';
+ERROR = !syntax error, unexpected COMPARISON in: "select '' as two, p.* 
+        !   from polygon_tbl p
+        !   where p.f1 &>"
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT '' AS one, p.*
+           FROM POLYGON_TBL p
+           WHERE p.f1 << '(3.0,1.0),(3.0,3.0),(1.0,0.0)';
+ERROR = !TypeException:user.s3_1[13]:'calc.lng' undefined in: _27:any := calc.lng(_26:bit, _21:int, _10:int)
+        !program contains errors
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT '' AS zero, p.*
+           FROM POLYGON_TBL p
+           WHERE p.f1 >> '(3.0,1.0),(3.0,3.0),(1.0,0.0)';
+ERROR = !TypeException:user.s4_1[13]:'calc.lng' undefined in: _27:any := calc.lng(_26:bit, _21:int, _10:int)
+        !program contains errors
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT '' AS one, p.* 
+           FROM POLYGON_TBL p
+           WHERE p.f1 @ string '(3.0,1.0),(3.0,3.0),(1.0,0.0)';
+ERROR = !syntax error, unexpected AT, expecting SCOLON in: "select '' as one, p.* 
+        !   from polygon_tbl p
+        !   where p.f1 @"
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT '' AS one, p.*
+           FROM POLYGON_TBL p
+           WHERE p.f1 ~= string '(3.0,1.0),(3.0,3.0),(1.0,0.0)';
+ERROR = !syntax error, unexpected '~', expecting SCOLON in: "select '' as one, p.*
+        !   from polygon_tbl p
+        !   where p.f1 ~"
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT '' AS one, p.*
+           FROM POLYGON_TBL p
+           WHERE p.f1 ~ string '(3.0,1.0),(3.0,3.0),(1.0,0.0)';
+ERROR = !syntax error, unexpected '~', expecting SCOLON in: "select '' as one, p.*
+        !   from polygon_tbl p
+        !   where p.f1 ~"
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT string '(2.0,0.0),(2.0,4.0),(0.0,0.0)' << string '(3.0,1.0),(3.0,3.0),(1.0,0.0)' AS false;
+ERROR = !syntax error, unexpected CLOB in: "select string"
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT string '(2.0,0.0),(2.0,4.0),(0.0,0.0)' << string '(3.0,1.0),(3.0,3.0),(1.0,0.0)' AS true;
+ERROR = !syntax error, unexpected CLOB in: "select string"
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT string '(2.0,0.0),(2.0,4.0),(0.0,0.0)' &> string '(3.0,1.0),(3.0,3.0),(1.0,0.0)' AS true;
+ERROR = !syntax error, unexpected CLOB in: "select string"
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT string '(2.0,0.0),(2.0,4.0),(0.0,0.0)' >> string '(3.0,1.0),(3.0,3.0),(1.0,0.0)' AS false;
+ERROR = !syntax error, unexpected CLOB in: "select string"
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT string '(2.0,0.0),(2.0,4.0),(0.0,0.0)' @ string '(3.0,1.0),(3.0,3.0),(1.0,0.0)' AS false;
+ERROR = !syntax error, unexpected CLOB in: "select string"
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT string '(2.0,0.0),(2.0,4.0),(0.0,0.0)' ~ string '(3.0,1.0),(3.0,3.0),(1.0,0.0)' AS false;
+ERROR = !syntax error, unexpected CLOB in: "select string"
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT string '(2.0,0.0),(2.0,4.0),(0.0,0.0)' ~= string '(3.0,1.0),(3.0,3.0),(1.0,0.0)' AS false;
+ERROR = !syntax error, unexpected CLOB in: "select string"
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT string '(2.0,0.0),(2.0,4.0),(0.0,0.0)' && string '(3.0,1.0),(3.0,3.0),(1.0,0.0)' AS true;
+ERROR = !syntax error, unexpected CLOB in: "select string"
+
+# 17:10:59 >  
+# 17:10:59 >  "Done."
+# 17:10:59 >  
+
