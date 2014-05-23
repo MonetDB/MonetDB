@@ -348,7 +348,7 @@ bl_changes_shared(void)
 {
 	int res = logger_read_last_transaction_id(bat_logger_shared);
 	if (res != LOG_ERR) {
-		return (int) (MIN(res, GDK_int_max) - MIN(bat_logger->id, GDK_int_max));
+		return (int) (MIN(res, GDK_int_max) - MIN(bat_logger_shared->id, GDK_int_max));
 	}
 	return res;
 }

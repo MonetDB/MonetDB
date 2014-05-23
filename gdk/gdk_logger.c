@@ -1493,6 +1493,9 @@ logger_new(int debug, char *fn, char *logdir, int version, preversionfix_fptr pr
 		GDKfree(lg);
 		return NULL;
 	}
+	if (lg->debug & 1) {
+		fprintf(stderr, "#logger_new dir=%s\n", lg->dir);
+	}
 	lg->prefuncp = prefuncp;
 	lg->postfuncp = postfuncp;
 	lg->log = NULL;
@@ -1517,9 +1520,9 @@ logger_reload(logger *lg)
 {
 	char filename[BUFSIZ];
 
-	logger_set_logdir_path(filename, lg->fn, lg->dir);
+	snprintf(filename, BUFSIZ, "%s", lg->dir);
 	if (lg->debug & 1) {
-			fprintf(stderr, "#logger_reload %s\n", filename);
+		fprintf(stderr, "#logger_reload %s\n", filename);
 	}
 
 	return logger_load(lg->debug, lg->fn, filename, lg);
@@ -1719,7 +1722,7 @@ logger_read_last_transaction_id(logger *lg)
 		goto error;
 	}
 	if (lg->debug & 1) {
-		fprintf(stderr, "#logger_read_last_transaction_id opening file %s\n", filename);
+		fprintf(stderr, "#logger_read_last_transaction_id reading file %s\n", filename);
 	}
 	if (check_version(lg, fp)) {
 		fprintf(stderr, "!ERROR: logger_read_last_transaction_id: inconsistent log version for file %s\n", filename);

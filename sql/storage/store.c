@@ -1611,6 +1611,9 @@ store_manager(void)
 			if (shared_transactions_drift == LOG_ERR) {
 				GDKfatal("shared write-ahead log loading failure");
 			}
+#ifdef STORE_DEBUG
+	fprintf(stderr, "#store_manager shared_transactions_drift=%d\n", shared_transactions_drift);
+#endif
 		}
 
 		MT_lock_set(&bs_lock, "store_manager");
