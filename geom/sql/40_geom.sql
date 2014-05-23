@@ -122,15 +122,15 @@ CREATE FUNCTION ST_MakePointM(x double, y double, m double) RETURNS Geometry EXT
 
 ------------------------------------------- Geometry Accessors -----------------------------------------------------------------------------
 CREATE FUNCTION GeometryType(geom Geometry) RETURNS string EXTERNAL NAME geom."GeometryType";
---CREATE FUNCTION ST_Boundary(geom Geometry) RETURNS Geometry EXTERNAL NAME
+CREATE FUNCTION ST_Boundary(geom Geometry) RETURNS Geometry EXTERNAL NAME geom."Boundary"
 CREATE FUNCTION ST_CoordDim(geom Geometry) RETURNS integer EXTERNAL NAME geom."CoordDim";
 CREATE FUNCTION ST_Dimension(geom Geometry) RETURNS integer EXTERNAL NAME geom."Dimension";
---CREATE FUNCTION ST_EndPoint(geom Geometry) RETURNS Geometry EXTERNAL NAME --returns point gets linestring
---CREATE FUNCTION ST_Envelope(geom Geometry) RETURNS Geometry EXTERNAL NAME
---CREATE FUNCTION ST_ExteriorRing(geom Geometry) RETURNS Geometry EXTERNAL NAME --returns linestring gets polygon
+CREATE FUNCTION ST_EndPoint(geom Geometry) RETURNS Geometry EXTERNAL NAME geom."EndPoint"; --returns point gets linestring
+CREATE FUNCTION ST_Envelope(geom Geometry) RETURNS Geometry EXTERNAL NAME geom."Envelope";
+CREATE FUNCTION ST_ExteriorRing(geom Geometry) RETURNS Geometry EXTERNAL NAME geom."ExteriorRing"; --returns linestring gets polygon
 --CREATE FUNCTION ST_GeometryN(gem Geometry, geomNum integer) RETURNS Geometry EXTERNAL NAME
 --CREATE FUNCTION ST_GeometryType(geom Geometry) RETURNS string EXTERNAL NAME
---CREATE FUNCTION ST_InteriorRingN(geom Geometry, ringNum integer) RETURNS Geometry EXTERNAL NAME --returns linestring gets polygon
+CREATE FUNCTION ST_InteriorRingN(geom Geometry, ringNum integer) RETURNS Geometry EXTERNAL NAME "InteriorRingN"; --returns linestring gets polygon
 --CREATE FUNCTION ST_IsClosed(geom Geometry) RETURNS boolean EXTERNAL NAME
 --CREATE FUNCTION ST_IsCollection(geom Geometry) RETURNS boolean EXTERNAL NAME
 --CREATE FUNCTION ST_IsEmpty(geom Geometry) RETURNS boolean EXTERNAL NAME
@@ -150,11 +150,11 @@ CREATE FUNCTION ST_Dimension(geom Geometry) RETURNS integer EXTERNAL NAME geom."
 --CREATE FUNCTION ST_NumInteriorRings(geom Geometry) RETURNS integer EXTERNAL NAME --works only with polygon
 --CREATE FUNCTION ST_NumInteriorRing(geom Geometry) RETURNS integer EXTERNAL NAME --alias opf the above
 --CREATE FUNCTION ST_NumPatches(geom Geometry) RETURNS integer EXTERNAL NAME --works only with polyhedral surface
---CREATE FUNCTION ST_NumPoints(geom Geometry) RETURNS integer EXTERNAL NAME --works with linestring and circularstring
+CREATE FUNCTION ST_NumPoints(geom Geometry) RETURNS integer EXTERNAL NAME geom."NumPoints"; --works with linestring and circularstring
 --CREATE FUNCTION ST_PatchN(geom Geometry, patchNum integer) RETURNS Geometry EXTERNAL NAME --works with polyhedral surface
---CREATE FUNCTION ST_PointN(geom Geometry, pointNum n) RETURNS Geometry EXTERNAL NAME --get linestring returns point
+CREATE FUNCTION ST_PointN(geom Geometry, pointNum n) RETURNS Geometry EXTERNAL NAME geom."PointN"; --get linestring returns point
 CREATE FUNCTION ST_SRID(geom Geometry) RETURNS integer EXTERNAL NAME geom."SRID";
---CREATE FUNCTION ST_StartPoint(geom Geometry) RETURNS geometry EXTERNAL NAME --gets linestring returns point
+CREATE FUNCTION ST_StartPoint(geom Geometry) RETURNS geometry EXTERNAL NAME geom."StartPoint"; --gets linestring returns point
 --CREATE FUNCTION ST_Summary(geom Geometry) RETURNS string EXTERNAL NAME
 CREATE FUNCTION ST_X(geom Geometry) RETURNS double EXTERNAL NAME geom."X"; --gets point
 --CREATE FUNCTION ST_XMax(box3d Geometry_OR_Box2D_OR_Box3D) RETURNS double EXTERNAL NAME
@@ -188,11 +188,8 @@ CREATE FUNCTION ST_Z(geom Geometry) RETURNS double EXTERNAL NAME geom."Z"; --get
 -- CREATE FUNCTION Polygon(g Geometry) RETURNS Polygon external name geom.polygon;
 
 -- ogc basic methods
---//CREATE FUNCTION SRID(g Geometry) RETURNS integer external name geom."SRID";
---//CREATE FUNCTION Envelope(g Geometry) RETURNS Geometry external name geom."Envelope";
 --//CREATE FUNCTION IsEmpty(g Geometry) RETURNS BOOLEAN external name geom."IsEmpty";
 --//CREATE FUNCTION IsSimple(g Geometry) RETURNS BOOLEAN external name geom."IsSimple";
---//CREATE FUNCTION Boundary(g Geometry) RETURNS Geometry external name geom."Boundary";
 
 -- ogc spatial relation methods
 --//CREATE FUNCTION Equals(a Geometry, b Geometry) RETURNS BOOLEAN external name geom."Equals";
@@ -218,10 +215,6 @@ CREATE FUNCTION ST_Z(geom Geometry) RETURNS double EXTERNAL NAME geom."Z"; --get
 
 
 --//CREATE FUNCTION Centroid(g Geometry) RETURNS Geometry external name geom."Centroid";
---//CREATE FUNCTION StartPoint(g Geometry) RETURNS Geometry external name geom."StartPoint";
---//CREATE FUNCTION EndPoint(g Geometry) RETURNS Geometry external name geom."EndPoint";
---//CREATE FUNCTION NumPoints(g Geometry) RETURNS integer external name geom."NumPoints";
---//CREATE FUNCTION PointN(g Geometry, n SMALLINT) RETURNS Geometry external name geom."PointN";
 
 
 -- create spatial_ref_sys metadata table

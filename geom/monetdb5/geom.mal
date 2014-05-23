@@ -144,6 +144,8 @@ comment "creates a point using the coordinates";
 #Geometry Accessors
 command GeometryType(w:wkb) :str address wkbGeometryType
 comment "Returns the type of the geometry as a string";
+command Boundary(w:wkb) :wkb address wkbBoundary
+comment "Returns the closure of the combinatorial boundary of the Geometry.";
 command CoordDim(w:wkb) :int address wkbCoordDim
 comment " Return the coordinate dimension of the geometry";
 command Dimension(w:wkb) :int address wkbDimension
@@ -156,6 +158,21 @@ command Y(g:wkb) :dbl address wkbGetCoordY
 comment "Return the Y coordinate of the point, or NULL if not available. Input must be a point.";
 command Z(g:wkb) :dbl address wkbGetCoordZ
 comment "Return the Z coordinate of the point, or NULL if not available. Input must be a point.";
+command StartPoint(w:wkb) :wkb address wkbStartPoint
+comment "Returns the first point of a LINESTRING geometry as a POINT or NULL if the input parameter is not a LINESTRING";
+command EndPoint(w:wkb) :wkb address wkbEndPoint
+comment "Returns the last point of a LINESTRING geometry as a POINT or NULL if the input parameter is not a LINESTRING.";
+command NumPoints(w:wkb) :int address wkbNumPoints
+comment "The number of points in the Geometry. Argument w should be Linestring.";
+command PointN(w:wkb, n:sht) :wkb address wkbPointN
+comment "Returns the n-th point of the Geometry. Argument w should be Linestring.";
+command Envelope(w:wkb) :wkb address wkbEnvelope
+comment "The minimum bounding box for this Geometry, returned as a Geometry. The polygon is defined by the corner points of the bounding box ((MINX,MINY),(MAXX,MINY),(MAXX,MAXY),(MINX,MAXY)).";
+command ExteriorRing(w:wkb) :wkb address wkbExteriorRing
+comment "Returns a line string representing the exterior ring of the POLYGON geometry. Return NULL if the geometry is not a polygon.";
+commad InteriorRingN(w:wkb) :wkb address wkbInteriorRingN
+comment "Return the Nth interior linestring ring of the polygon geometry. Return NULL if the geometry is not a polygon or the given N is out of range.";
+
 
 #function CurveFromText{unsafe}( wkt:str, srid:sht ) :wkb;
 #	x := wkb.FromText(wkt,2);
@@ -196,9 +213,7 @@ comment "Return the Z coordinate of the point, or NULL if not available. Input m
 
 
 
-#command Envelope(w:wkb) :wkb
-#address wkbEnvelope
-#comment "The minimum bounding box for this Geometry, returned as a Geometry. The polygon is defined by the corner points of the bounding box ((MINX,MINY),(MAXX,MINY),(MAXX,MAXY),(MINX,MAXY)).";
+
 
 #command IsEmpty(w:wkb) :bit
 #address wkbIsEmpty
@@ -208,25 +223,9 @@ comment "Return the Z coordinate of the point, or NULL if not available. Input m
 #address wkbIsSimple
 #comment "Returns true if this Geometry has no anomalous geometric points, such as self intersection or self tangency. The description of each instantiable geometric class will include the specific conditions that cause an instance of that class to be classified as not simple.";
 
-#command Boundary(w:wkb) :wkb
-#address wkbBoundary
-#comment "Returns the closure of the combinatorial boundary of this Geometry.";
 
-#command StartPoint(w:wkb) :wkb
-#address wkbStartPoint
-#comment "Returns the start point of this Geometry. Argument w should be Linestring.";
 
-#command EndPoint(w:wkb) :wkb
-#address wkbEndPoint
-#comment "Returns the end point of this Geometry. Argument w should be Linestring.";
 
-#command NumPoints(w:wkb) :int
-#address wkbNumPoints
-#comment "The number of points in the Geometry. Argument w should be Linestring.";
-
-#command PointN(w:wkb, n:sht) :wkb
-#address wkbPointN
-#comment "Returns the n-th point of the Geometry. Argument w should be Linestring.";
 
 
 # @+ ogc spatial relation methods
