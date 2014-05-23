@@ -27,7 +27,7 @@ bl_create(int debug, char *logdir, int catalog_version)
 {
 	if (restrict_logger)
 		return LOG_ERR;
-	restrict_logger = logger_create(debug, "sql", logdir, catalog_version, NULL, NULL, 0);
+	restrict_logger = logger_create(debug, "sql", logdir, catalog_version, 0, NULL, NULL);
 	if (restrict_logger)
 		return LOG_OK;
 	return LOG_ERR;

@@ -1461,7 +1461,7 @@ logger_load(int debug, char* fn, char filename[BUFSIZ], logger* lg)
 /* Initialize a new logger
  * It will load any data in the logdir and persist it in the BATs*/
 static logger *
-logger_new(int debug, char *fn, char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp, int readonly)
+logger_new(int debug, char *fn, char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp, int readonly, int keep_logs_files)
 {
 	logger *lg = (struct logger *) GDKmalloc(sizeof(struct logger));
 	char filename[BUFSIZ];
@@ -1473,6 +1473,7 @@ logger_new(int debug, char *fn, char *logdir, int version, preversionfix_fptr pr
 
 	lg->debug = debug;
 	lg->readonly = readonly;
+	lg->keep_logs_files = keep_logs_files;
 
 	lg->changes = 0;
 	lg->version = version;
@@ -1530,9 +1531,9 @@ logger_reload(logger *lg)
 
 /* Create a logger */
 logger *
-logger_create(int debug, char *fn, char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp)
+logger_create(int debug, char *fn, char *logdir, int version, int keep_logs_files, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp)
 {
-	logger *lg = logger_new(debug, fn, logdir, version, prefuncp, postfuncp, 0);
+	logger *lg = logger_new(debug, fn, logdir, version, prefuncp, postfuncp, 0, keep_logs_files);
 
 	if (!lg)
 		return NULL;
@@ -1554,11 +1555,11 @@ logger_create(int debug, char *fn, char *logdir, int version, preversionfix_fptr
 /* Create new read-only logger
  * Usually reserved for shared log directories */
 logger *
-logger_create_ro(int debug, char *fn, char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp)
+logger_create_ro(int debug, char *fn, char *logdir, int version, int keep_logs_files, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp)
 {
 	logger *lg = NULL;
 
-	lg = logger_new(debug, fn, logdir, version, prefuncp, postfuncp, 1);
+	lg = logger_new(debug, fn, logdir, version, prefuncp, postfuncp, 1, keep_logs_files);
 
 	return lg;
 }
@@ -1669,36 +1670,38 @@ logger_restart(logger *lg)
 int
 logger_cleanup(logger *lg)
 {
-	char buf[BUFSIZ];
-	char id[BUFSIZ];
-	FILE *fp = NULL;
+	if (!lg->keep_logs_files) {
+		char buf[BUFSIZ];
+		char id[BUFSIZ];
+		FILE *fp = NULL;
 
-	snprintf(buf, BUFSIZ, "%s%s.bak-" LLFMT, lg->dir, LOGFILE, lg->id);
+		snprintf(buf, BUFSIZ, "%s%s.bak-" LLFMT, lg->dir, LOGFILE, lg->id);
 
-	if (lg->debug & 1)
-		fprintf(stderr, "#logger_cleanup %s\n", buf);
+		if (lg->debug & 1)
+			fprintf(stderr, "#logger_cleanup %s\n", buf);
 
-	if ((fp = fopen(buf, "r")) == NULL) {
-		fprintf(stderr, "!ERROR: logger_cleanup: cannot open file %s\n", buf);
-		return LOG_ERR;
+		if ((fp = fopen(buf, "r")) == NULL) {
+			fprintf(stderr, "!ERROR: logger_cleanup: cannot open file %s\n", buf);
+			return LOG_ERR;
+		}
+
+		/* skip catalog */
+		while (fgets(id, BUFSIZ, fp) != NULL && id[0] != '\n')
+			;
+
+		while (fgets(id, BUFSIZ, fp) != NULL) {
+			char *e = strchr(id, '\n');
+
+			if (e)
+				*e = 0;
+			GDKunlink(lg->dir, LOGFILE, id);
+		}
+		fclose(fp);
+		snprintf(buf, BUFSIZ, "bak-" LLFMT, lg->id);
+
+		GDKunlink(lg->dir, LOGFILE, buf);
+
 	}
-
-	/* skip catalog */
-	while (fgets(id, BUFSIZ, fp) != NULL && id[0] != '\n')
-		;
-
-	while (fgets(id, BUFSIZ, fp) != NULL) {
-		char *e = strchr(id, '\n');
-
-		if (e)
-			*e = 0;
-		GDKunlink(lg->dir, LOGFILE, id);
-	}
-	fclose(fp);
-	snprintf(buf, BUFSIZ, "bak-" LLFMT, lg->id);
-
-	GDKunlink(lg->dir, LOGFILE, buf);
-
 	return LOG_OK;
 }
 
