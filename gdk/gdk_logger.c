@@ -1271,11 +1271,11 @@ logger_load(int debug, char* fn, char filename[BUFSIZ], logger* lg)
 	snprintf(bak, BUFSIZ, "%s_catalog_bid", fn);
 	catalog_bid = BBPindex(bak);
 
-	if (catalog_bid == 0 ) {
-		if (!lg->readonly) {
-			if (logger_create_catalog_file(debug, lg, fn, fp, filename, bak) == LOG_ERR) {
-				goto error;
-			}
+	/* this is intentional - even if catalog_bid, but the logger is read-only,
+	 * force it to find the persistent catalog */
+	if (catalog_bid == 0 &&	!lg->readonly) {
+		if (logger_create_catalog_file(debug, lg, fn, fp, filename, bak) == LOG_ERR) {
+			goto error;
 		}
 	} else {
 		if (logger_find_persistent_catalog(lg, fn, fp, bak, &catalog_bid, &catalog_nme) == LOG_ERR) {

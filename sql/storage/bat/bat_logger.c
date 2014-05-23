@@ -340,7 +340,7 @@ bl_cleanup(int keep_persisted_log_files)
 static int
 bl_cleanup_shared(int keep_persisted_log_files)
 {
-	if (bat_logger)
+	if (bat_logger_shared)
 		return logger_cleanup(bat_logger_shared, keep_persisted_log_files);
 	return LOG_OK;
 }
