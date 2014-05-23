@@ -1,0 +1,174 @@
+# The contents of this file are subject to the MonetDB Public License
+# Version 1.1 (the "License"); you may not use this file except in
+# compliance with the License. You may obtain a copy of the License at
+# http://www.monetdb.org/Legal/MonetDBLicense
+#
+# Software distributed under the License is distributed on an "AS IS"
+# basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+# License for the specific language governing rights and limitations
+# under the License.
+#
+# The Original Code is the MonetDB Database System.
+#
+# The Initial Developer of the Original Code is CWI.
+# Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+# Copyright August 2008-2014 MonetDB B.V.
+# All Rights Reserved.
+
+module vault;
+
+pattern generate_series(first:bte,last:bte):bat[:oid,:bte]
+address VLTgenerator_table;
+
+pattern generate_series(first:sht,last:sht):bat[:oid,:sht]
+address VLTgenerator_table;
+
+pattern generate_series(first:int,last:int):bat[:oid,:int]
+address VLTgenerator_table;
+
+pattern generate_series(first:lng,last:lng):bat[:oid,:lng]
+address VLTgenerator_table;
+
+pattern generate_series(first:flt,last:flt):bat[:oid,:flt]
+address VLTgenerator_table;
+
+pattern generate_series(first:dbl,last:dbl):bat[:oid,:dbl]
+address VLTgenerator_table;
+
+pattern generate_series(first:bte,last:bte,step:bte):bat[:oid,:bte]
+address VLTgenerator_table;
+
+pattern generate_series(first:sht,last:sht,step:sht):bat[:oid,:sht]
+address VLTgenerator_table;
+
+pattern generate_series(first:int,last:int,step:int):bat[:oid,:int]
+address VLTgenerator_table;
+
+pattern generate_series(first:lng,last:lng,step:lng):bat[:oid,:lng]
+address VLTgenerator_table;
+
+pattern generate_series(first:flt,last:flt,step:flt):bat[:oid,:flt]
+address VLTgenerator_table;
+
+pattern generate_series(first:dbl,last:dbl,step:dbl):bat[:oid,:dbl]
+address VLTgenerator_table
+comment "Create and materialize a generator table";
+
+pattern generate_series(first:timestamp,last:timestamp,step:lng):bat[:oid,:timestamp]
+address VLTgenerator_table;
+
+module generator;
+
+pattern parameters(first:bte,last:bte,step:bte):bat[:oid,:bte]
+address VLTgenerator_noop;
+
+pattern parameters(first:sht,last:sht,step:sht):bat[:oid,:sht]
+address VLTgenerator_noop;
+
+pattern parameters(first:int,last:int,step:int):bat[:oid,:int]
+address VLTgenerator_noop;
+
+pattern parameters(first:lng,last:lng,step:lng):bat[:oid,:lng]
+address VLTgenerator_noop;
+
+pattern parameters(first:flt,last:flt,step:flt):bat[:oid,:flt]
+address VLTgenerator_noop;
+
+pattern parameters(first:dbl,last:dbl,step:dbl):bat[:oid,:dbl]
+address VLTgenerator_noop;
+
+pattern parameters(first:timestamp,last:timestamp,step:int):bat[:oid,:timestamp]
+address VLTgenerator_noop
+comment "Retain the table definition, but don't materialize";
+
+pattern thetasubselect(b:bat[:oid,:bte], low:bte, oper:str) :bat[:oid,:oid]
+address VLTgenerator_thetasubselect;
+
+pattern thetasubselect(b:bat[:oid,:sht], low:sht, oper:str) :bat[:oid,:oid]
+address VLTgenerator_thetasubselect;
+
+pattern thetasubselect(b:bat[:oid,:int], low:int, oper:str) :bat[:oid,:oid]
+address VLTgenerator_thetasubselect;
+
+pattern thetasubselect(b:bat[:oid,:lng], low:lng, oper:str) :bat[:oid,:oid]
+address VLTgenerator_thetasubselect;
+
+pattern thetasubselect(b:bat[:oid,:flt], low:flt, oper:str) :bat[:oid,:oid]
+address VLTgenerator_thetasubselect;
+
+pattern thetasubselect(b:bat[:oid,:dbl], low:dbl, oper:str) :bat[:oid,:oid]
+address VLTgenerator_thetasubselect;
+
+pattern thetasubselect(b:bat[:oid,:timestamp], low:timestamp, oper:str) :bat[:oid,:timestamp]
+address VLTgenerator_thetasubselect
+comment "Overloaded selection routine";
+
+pattern subselect(b:bat[:oid,:bte], low:bte, high:bte, li:bit, hi:bit, anti:bit) :bat[:oid,:oid]
+address VLTgenerator_subselect;
+
+pattern subselect(b:bat[:oid,:sht], low:sht, high:sht, li:bit, hi:bit, anti:bit) :bat[:oid,:oid]
+address VLTgenerator_subselect;
+
+pattern subselect(b:bat[:oid,:int], low:int, high:int, li:bit, hi:bit, anti:bit) :bat[:oid,:oid]
+address VLTgenerator_subselect;
+
+pattern subselect(b:bat[:oid,:lng], low:lng, high:lng, li:bit, hi:bit, anti:bit) :bat[:oid,:oid]
+address VLTgenerator_subselect;
+
+pattern subselect(b:bat[:oid,:flt], low:flt, high:flt, li:bit, hi:bit, anti:bit) :bat[:oid,:oid]
+address VLTgenerator_subselect;
+
+pattern subselect(b:bat[:oid,:dbl], low:dbl, high:dbl, li:bit, hi:bit, anti:bit) :bat[:oid,:oid]
+address VLTgenerator_subselect;
+
+pattern subselect(b:bat[:oid,:timestamp], low:timestamp, high:timestamp, li:bit, hi:bit, anti:bit) :bat[:oid,:oid]
+address VLTgenerator_subselect
+comment "Overloaded selection routine";
+
+pattern subselect(b:bat[:oid,:bte], cand:bat[:oid,:oid], low:bte, high:bte, li:bit, hi:bit, anti:bit) :bat[:oid,:oid]
+address VLTgenerator_subselect;
+
+pattern subselect(b:bat[:oid,:sht], cand:bat[:oid,:oid], low:sht, high:sht, li:bit, hi:bit, anti:bit) :bat[:oid,:oid]
+address VLTgenerator_subselect;
+
+pattern subselect(b:bat[:oid,:int], cand:bat[:oid,:oid], low:int, high:int, li:bit, hi:bit, anti:bit) :bat[:oid,:oid]
+address VLTgenerator_subselect;
+
+pattern subselect(b:bat[:oid,:lng], cand:bat[:oid,:oid], low:lng, high:lng, li:bit, hi:bit, anti:bit) :bat[:oid,:oid]
+address VLTgenerator_subselect;
+
+pattern subselect(b:bat[:oid,:flt], cand:bat[:oid,:oid], low:flt, high:flt, li:bit, hi:bit, anti:bit) :bat[:oid,:oid]
+address VLTgenerator_subselect;
+
+pattern subselect(b:bat[:oid,:dbl], cand:bat[:oid,:oid], low:dbl, high:dbl, li:bit, hi:bit, anti:bit) :bat[:oid,:oid]
+address VLTgenerator_subselect;
+
+pattern subselect(b:bat[:oid,:timestamp], cand:bat[:oid,:oid], low:timestamp, high:timestamp, li:bit, hi:bit, anti:bit) :bat[:oid,:oid]
+address VLTgenerator_subselect
+comment "Overloaded selection routine";
+
+pattern leftfetchjoin(b:bat[:oid,:oid], cand:bat[:oid,:bte]) :bat[:oid,:bte]
+address VLTgenerator_leftfetchjoin;
+
+pattern leftfetchjoin(b:bat[:oid,:oid], cand:bat[:oid,:sht]) :bat[:oid,:sht]
+address VLTgenerator_leftfetchjoin;
+
+pattern leftfetchjoin(b:bat[:oid,:oid], cand:bat[:oid,:int]) :bat[:oid,:int]
+address VLTgenerator_leftfetchjoin;
+
+pattern leftfetchjoin(b:bat[:oid,:oid], cand:bat[:oid,:lng]) :bat[:oid,:lng]
+address VLTgenerator_leftfetchjoin;
+
+pattern leftfetchjoin(b:bat[:oid,:oid], cand:bat[:oid,:flt]) :bat[:oid,:flt]
+address VLTgenerator_leftfetchjoin;
+
+pattern leftfetchjoin(b:bat[:oid,:oid], cand:bat[:oid,:dbl]) :bat[:oid,:dbl]
+address VLTgenerator_leftfetchjoin;
+
+pattern leftfetchjoin(b:bat[:oid,:oid], cand:bat[:oid,:timestamp]) :bat[:oid,:timestamp]
+address VLTgenerator_leftfetchjoin
+comment "Overloaded leftfetchjoin operation";
+
+pattern join(b:bat[:oid,:any_1], gen:bat[:oid,:any_1]) (l:bat[:oid,:oid],r:bat[:oid,:oid])
+address VLTgenerator_join
+comment "Overloaded join operation";

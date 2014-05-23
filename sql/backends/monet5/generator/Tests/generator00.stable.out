@@ -1,0 +1,86 @@
+stdout of test 'generator00` in directory 'sql/backends/monet5/generator` itself:
+
+
+# 18:09:06 >  
+# 18:09:06 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30145" "--set" "mapi_usock=/var/tmp/mtest-27022/.s.monetdb.30145" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/vault//Linux/var/MonetDB/mTests_sql_backends_monet5_vaults_generator" "--set" "mal_listing=0"
+# 18:09:06 >  
+
+# MonetDB 5 server v11.18.0
+# This is an unreleased version
+# Serving database 'mTests_sql_backends_monet5_vaults_generator', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.591 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:30145/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-27022/.s.monetdb.30145
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 19_cluster.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 24_zorder.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 40_json.sql
+# loading sql script: 41_jsonstore.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 46_gsl.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 90_generator.sql
+# loading sql script: 99_system.sql
+
+# 18:09:06 >  
+# 18:09:06 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-27022" "--port=30145"
+# 18:09:06 >  
+
+#select * from generate_series(0,10,2);
+% . # table_name
+% value # name
+% tinyint # type
+% 1 # length
+[ 0	]
+[ 2	]
+[ 4	]
+[ 6	]
+[ 8	]
+#select * from generate_series(0,10,2) 
+#where value <5;
+% . # table_name
+% value # name
+% tinyint # type
+% 1 # length
+[ 0	]
+[ 2	]
+[ 4	]
+#select * from generate_series(0,10,2) as v
+#where value <7 and value >3;
+% .v # table_name
+% value # name
+% tinyint # type
+% 1 # length
+[ 4	]
+[ 6	]
+
+# 18:09:07 >  
+# 18:09:07 >  "Done."
+# 18:09:07 >  
+
