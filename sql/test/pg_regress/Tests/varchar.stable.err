@@ -74,7 +74,6 @@ stderr of test 'varchar` in directory 'sql/test/pg_regress` itself:
 # 17:12:08 >  Mtimeout -timeout 60 mclient -lsql -ftest -Eutf-8 -i -e --host=/var/tmp/mtest-1142 --port=38959 -e < /ufs/dinther/dev/dev/sql/test/pg_regress/Tests/../monetdb/varchar.sql
 # 17:12:08 >  
 
-/ufs/dinther/INSTALL/bin/Mlog: line 31: /ufs/dinther/dev/dev/sql/test/pg_regress/Tests/../monetdb/varchar.sql: No such file or directory
 
 # 17:12:08 >  
 # 17:12:08 >  "Done."

@@ -74,7 +74,6 @@ stderr of test 'char` in directory 'sql/test/pg_regress` itself:
 # 17:09:57 >  Mtimeout -timeout 60 mclient -lsql -ftest -Eutf-8 -i -e --host=/var/tmp/mtest-1142 --port=38959 -e < /ufs/dinther/dev/dev/sql/test/pg_regress/Tests/../monetdb/char.sql
 # 17:09:57 >  
 
-/ufs/dinther/INSTALL/bin/Mlog: line 31: /ufs/dinther/dev/dev/sql/test/pg_regress/Tests/../monetdb/char.sql: No such file or directory
 
 # 17:09:57 >  
 # 17:09:57 >  "Done."

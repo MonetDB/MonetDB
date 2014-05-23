@@ -74,7 +74,6 @@ stderr of test 'strings_like` in directory 'sql/test/pg_regress` itself:
 # 21:34:53 >  Mtimeout -timeout 60 mclient -lsql -umonetdb -Pmonetdb --host=pegasus --port=39171  -e < ../../../../../../../../../../mirror/fabian/monetdb/current/sql/src/test/pg_regress/Tests/../monetdb/strings_like.sql
 # 21:34:53 >  
 
-/ufs/dinther/INSTALL/bin/Mlog: line 31: /ufs/dinther/dev/dev/sql/test/pg_regress/Tests/../monetdb/strings_like.sql: No such file or directory
 
 
 # 21:34:53 >  
