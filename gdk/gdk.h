@@ -2196,9 +2196,6 @@ gdk_export void IMPSdestroy(BAT *b);
 gdk_export BAT *BATimprints(BAT *b);
 gdk_export lng IMPSimprintsize(BAT *b);
 
-gdk_export BAT *BATbloom(BAT *b);
-gdk_export BAT *BLOOMselect(BAT *b, BAT *s, BAT *bf);
-
 /*
  * @- Multilevel Storage Modes
  *

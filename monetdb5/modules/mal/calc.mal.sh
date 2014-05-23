@@ -356,13 +356,6 @@ address CMDsetoid;
 pattern setoid(v:lng) :void
 address CMDsetoid;
 
-command getBATidentifier(b:bat[:any_1,:any_2]):int
-address CALCbat2int
-comment "Coerce bat to BAT identifier";
-command getBAT(b:int):bat[:any_1,:any_2]
-address CALCbat2int
-comment "Coerce bat to BAT identifier";
-
 pattern ifthenelse(b:bit,t:any_1,f:any_1):any_1
 address CALCswitchbit
 comment "If VALUE is true return MIDDLE else RIGHT";
