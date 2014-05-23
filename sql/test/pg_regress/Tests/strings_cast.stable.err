@@ -70,25 +70,28 @@ stderr of test 'strings_cast` in directory 'sql/test/pg_regress` itself:
 # 22:34:06 >  
 
 
-# 22:34:06 >  
-# 22:34:06 >  Mtimeout -timeout 60 mclient -lsql -umonetdb -Pmonetdb --host=pegasus --port=34030  -e < ../../../../../../../../../../mirror/fabian/monetdb/current/sql/src/test/pg_regress/Tests/../monetdb/strings_cast.sql
-# 22:34:06 >  
+# 19:52:32 >  
+# 19:52:32 >  Mtimeout -timeout 60 mclient -lsql -ftest -Eutf-8 -i -e --host=/var/tmp/mtest-15695 --port=36739 -e < /home/niels/data/rc/clean/sql/test/pg_regress/Tests/../monetdb/strings_cast.sql
+# 19:52:32 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-15695/.s.monetdb.36739
+QUERY = SELECT CAST(f1 AS text) AS "text(char)" FROM CHAR_TBL;
+ERROR = !SELECT: no such table 'char_tbl'
+MAPI  = (monetdb) /var/tmp/mtest-15695/.s.monetdb.36739
 QUERY = SELECT CAST(name 'namefield' AS text) AS "text(name)";
 ERROR = !syntax error, unexpected STRING, expecting AS in: "select cast(name 'namefield'"
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-15695/.s.monetdb.36739
 QUERY = SELECT CAST(name 'namefield' AS char(10)) AS "char(name)";
 ERROR = !syntax error, unexpected STRING, expecting AS in: "select cast(name 'namefield'"
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-15695/.s.monetdb.36739
 QUERY = SELECT CAST(f1 AS varchar) AS "varchar(text)" FROM TEXT_TBL;
 ERROR = !CHARACTER VARYING needs a mandatory length specification in: "select cast(f1 as varchar)"
         !syntax error, unexpected AS in: "as"
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-15695/.s.monetdb.36739
 QUERY = SELECT CAST(f1 AS varchar) AS "varchar(char)" FROM CHAR_TBL;
 ERROR = !CHARACTER VARYING needs a mandatory length specification in: "select cast(f1 as varchar)"
         !syntax error, unexpected AS in: "as"
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-15695/.s.monetdb.36739
 QUERY = SELECT CAST(name 'namefield' AS varchar) AS "varchar(name)";
 ERROR = !syntax error, unexpected STRING, expecting AS in: "select cast(name 'namefield'"
 
