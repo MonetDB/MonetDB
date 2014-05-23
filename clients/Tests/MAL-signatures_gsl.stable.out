@@ -39444,6 +39444,10 @@ command iterator.new(b:bat[:oid,:any_2],size:lng) (X_3:lng,X_4:bat[:oid,:any_2])
 address ITRnewChunk;
 comment Create an iterator with fixed granule size.	  The result is a view.
 
+command json.aggr(val:bat[:oid,:dbl]):str 
+address JSONgroupStr;
+comment Aggregate the double values to array.
+
 command json.aggr(val:bat[:oid,:str]):str 
 address JSONgroupStr;
 comment Aggregate the string values to array.
@@ -39550,9 +39554,17 @@ pattern json.renderarray(val:any...):json
 address JSONrenderarray;
 pattern json.renderobject(val:any...):json 
 address JSONrenderobject;
+command json.subaggr(val:bat[:oid,:dbl],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:bit):bat[:oid,:str] 
+address JSONsubjsoncand;
+comment Grouped aggregation of values with candidates list.
+
 command json.subaggr(val:bat[:oid,:str],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:bit):bat[:oid,:str] 
 address JSONsubjsoncand;
 comment Grouped aggregation of values with candidates list.
+
+command json.subaggr(val:bat[:oid,:dbl],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:bit):bat[:oid,:str] 
+address JSONsubjson;
+comment Grouped aggregation of values.
 
 command json.subaggr(val:bat[:oid,:str],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:bit):bat[:oid,:str] 
 address JSONsubjson;
